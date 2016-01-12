@@ -17,11 +17,9 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  drivers/crypto/sunxi-ss/sun4i-ss-core.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/crypto/sunxi-ss/sun4i-ss-core.c b/drivers/crypto/sunxi-ss/sun4i-ss-core.c
-index eab6fe2..107cd2a 100644
 --- a/drivers/crypto/sunxi-ss/sun4i-ss-core.c
 +++ b/drivers/crypto/sunxi-ss/sun4i-ss-core.c
-@@ -39,6 +39,7 @@ static struct sun4i_ss_alg_template ss_algs[] = {
+@@ -39,6 +39,7 @@ static struct sun4i_ss_alg_template ss_a
  		.import = sun4i_hash_import_md5,
  		.halg = {
  			.digestsize = MD5_DIGEST_SIZE,
@@ -29,7 +27,7 @@ index eab6fe2..107cd2a 100644
  			.base = {
  				.cra_name = "md5",
  				.cra_driver_name = "md5-sun4i-ss",
-@@ -66,6 +67,7 @@ static struct sun4i_ss_alg_template ss_algs[] = {
+@@ -66,6 +67,7 @@ static struct sun4i_ss_alg_template ss_a
  		.import = sun4i_hash_import_sha1,
  		.halg = {
  			.digestsize = SHA1_DIGEST_SIZE,

@@ -20,11 +20,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  3 files changed, 176 insertions(+)
  create mode 100644 drivers/clk/sunxi/clk-a10-ve.c
 
-diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
-index 014eab8..e59f57b 100644
 --- a/Documentation/devicetree/bindings/clock/sunxi.txt
 +++ b/Documentation/devicetree/bindings/clock/sunxi.txt
-@@ -76,6 +76,7 @@ Required properties:
+@@ -71,6 +71,7 @@ Required properties:
  	"allwinner,sun8i-h3-usb-clk" - for usb gates + resets on H3
  	"allwinner,sun9i-a80-usb-mod-clk" - for usb gates + resets on A80
  	"allwinner,sun9i-a80-usb-phy-clk" - for usb phy gates + resets on A80
@@ -32,7 +30,7 @@ index 014eab8..e59f57b 100644
  
  Required properties for all clocks:
  - reg : shall be the control register address for the clock.
-@@ -95,6 +96,9 @@ Required properties for all clocks:
+@@ -90,6 +91,9 @@ Required properties for all clocks:
  And "allwinner,*-usb-clk" clocks also require:
  - reset-cells : shall be set to 1
  
@@ -42,8 +40,6 @@ index 014eab8..e59f57b 100644
  The "allwinner,sun9i-a80-mmc-config-clk" clock also requires:
  - #reset-cells : shall be set to 1
  - resets : shall be the reset control phandle for the mmc block.
-diff --git a/drivers/clk/sunxi/Makefile b/drivers/clk/sunxi/Makefile
-index abf4916..1a909f9 100644
 --- a/drivers/clk/sunxi/Makefile
 +++ b/drivers/clk/sunxi/Makefile
 @@ -7,6 +7,7 @@ obj-y += clk-a10-codec.o
@@ -54,9 +50,6 @@ index abf4916..1a909f9 100644
  obj-y += clk-a20-gmac.o
  obj-y += clk-mod0.o
  obj-y += clk-simple-gates.o
-diff --git a/drivers/clk/sunxi/clk-a10-ve.c b/drivers/clk/sunxi/clk-a10-ve.c
-new file mode 100644
-index 0000000..044c171
 --- /dev/null
 +++ b/drivers/clk/sunxi/clk-a10-ve.c
 @@ -0,0 +1,171 @@

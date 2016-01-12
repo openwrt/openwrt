@@ -13,8 +13,6 @@ Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
  drivers/phy/phy-sun4i-usb.c | 121 +++++++++++++++++++++++++++++---------------
  1 file changed, 79 insertions(+), 42 deletions(-)
 
-diff --git a/drivers/phy/phy-sun4i-usb.c b/drivers/phy/phy-sun4i-usb.c
-index b12964b..35b1fa3 100644
 --- a/drivers/phy/phy-sun4i-usb.c
 +++ b/drivers/phy/phy-sun4i-usb.c
 @@ -32,6 +32,7 @@
@@ -52,7 +50,7 @@ index b12964b..35b1fa3 100644
  	struct sun4i_usb_phy {
  		struct phy *phy;
  		void __iomem *pmu;
-@@ -159,17 +171,14 @@ static void sun4i_usb_phy_write(struct sun4i_usb_phy *phy, u32 addr, u32 data,
+@@ -159,17 +171,14 @@ static void sun4i_usb_phy_write(struct s
  {
  	struct sun4i_usb_phy_data *phy_data = to_sun4i_usb_phy_data(phy);
  	u32 temp, usbc_bit = BIT(phy->index * 2);
@@ -72,7 +70,7 @@ index b12964b..35b1fa3 100644
  	}
  
  	for (i = 0; i < len; i++) {
-@@ -249,7 +258,8 @@ static int sun4i_usb_phy_init(struct phy *_phy)
+@@ -249,7 +258,8 @@ static int sun4i_usb_phy_init(struct phy
  	sun4i_usb_phy_write(phy, PHY_TX_AMPLITUDE_TUNE, 0x14, 5);
  
  	/* Disconnect threshold adjustment */
@@ -82,7 +80,7 @@ index b12964b..35b1fa3 100644
  
  	sun4i_usb_phy_passby(phy, 1);
  
-@@ -476,7 +486,7 @@ static struct phy *sun4i_usb_phy_xlate(struct device *dev,
+@@ -476,7 +486,7 @@ static struct phy *sun4i_usb_phy_xlate(s
  {
  	struct sun4i_usb_phy_data *data = dev_get_drvdata(dev);
  
@@ -91,7 +89,7 @@ index b12964b..35b1fa3 100644
  		return ERR_PTR(-ENODEV);
  
  	return data->phys[args->args[0]].phy;
-@@ -511,7 +521,6 @@ static int sun4i_usb_phy_probe(struct platform_device *pdev)
+@@ -511,7 +521,6 @@ static int sun4i_usb_phy_probe(struct pl
  	struct device *dev = &pdev->dev;
  	struct device_node *np = dev->of_node;
  	struct phy_provider *phy_provider;
@@ -99,7 +97,7 @@ index b12964b..35b1fa3 100644
  	struct resource *res;
  	int i, ret;
  
-@@ -522,29 +531,9 @@ static int sun4i_usb_phy_probe(struct platform_device *pdev)
+@@ -522,29 +531,9 @@ static int sun4i_usb_phy_probe(struct pl
  	mutex_init(&data->mutex);
  	INIT_DELAYED_WORK(&data->detect, sun4i_usb_phy0_id_vbus_det_scan);
  	dev_set_drvdata(dev, data);
@@ -132,7 +130,7 @@ index b12964b..35b1fa3 100644
  
  	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "phy_ctrl");
  	data->base = devm_ioremap_resource(dev, res);
-@@ -590,7 +579,7 @@ static int sun4i_usb_phy_probe(struct platform_device *pdev)
+@@ -590,7 +579,7 @@ static int sun4i_usb_phy_probe(struct pl
  		}
  	}
  
@@ -141,7 +139,7 @@ index b12964b..35b1fa3 100644
  		struct sun4i_usb_phy *phy = data->phys + i;
  		char name[16];
  
-@@ -602,7 +591,7 @@ static int sun4i_usb_phy_probe(struct platform_device *pdev)
+@@ -602,7 +591,7 @@ static int sun4i_usb_phy_probe(struct pl
  			phy->vbus = NULL;
  		}
  
@@ -150,7 +148,7 @@ index b12964b..35b1fa3 100644
  			snprintf(name, sizeof(name), "usb%d_phy", i);
  		else
  			strlcpy(name, "usb_phy", sizeof(name));
-@@ -689,13 +678,61 @@ static int sun4i_usb_phy_probe(struct platform_device *pdev)
+@@ -689,13 +678,61 @@ static int sun4i_usb_phy_probe(struct pl
  	return 0;
  }
  

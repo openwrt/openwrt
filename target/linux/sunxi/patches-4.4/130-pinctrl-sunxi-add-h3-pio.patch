@@ -16,8 +16,6 @@ Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  4 files changed, 522 insertions(+)
  create mode 100644 drivers/pinctrl/sunxi/pinctrl-sun8i-h3.c
 
-diff --git a/Documentation/devicetree/bindings/pinctrl/allwinner,sunxi-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/allwinner,sunxi-pinctrl.txt
-index b321b26..e6ba602 100644
 --- a/Documentation/devicetree/bindings/pinctrl/allwinner,sunxi-pinctrl.txt
 +++ b/Documentation/devicetree/bindings/pinctrl/allwinner,sunxi-pinctrl.txt
 @@ -18,6 +18,7 @@ Required properties:
@@ -28,8 +26,6 @@ index b321b26..e6ba602 100644
  
  - reg: Should contain the register physical address and length for the
    pin controller.
-diff --git a/drivers/pinctrl/sunxi/Kconfig b/drivers/pinctrl/sunxi/Kconfig
-index e68fd95..89ab7f5 100644
 --- a/drivers/pinctrl/sunxi/Kconfig
 +++ b/drivers/pinctrl/sunxi/Kconfig
 @@ -51,6 +51,10 @@ config PINCTRL_SUN8I_A23_R
@@ -43,19 +39,14 @@ index e68fd95..89ab7f5 100644
  config PINCTRL_SUN9I_A80
  	def_bool MACH_SUN9I
  	select PINCTRL_SUNXI_COMMON
-diff --git a/drivers/pinctrl/sunxi/Makefile b/drivers/pinctrl/sunxi/Makefile
-index e080290..6bd818e 100644
 --- a/drivers/pinctrl/sunxi/Makefile
 +++ b/drivers/pinctrl/sunxi/Makefile
-@@ -13,4 +13,5 @@ obj-$(CONFIG_PINCTRL_SUN8I_A23)		+= pinctrl-sun8i-a23.o
+@@ -13,4 +13,5 @@ obj-$(CONFIG_PINCTRL_SUN8I_A23)		+= pinc
  obj-$(CONFIG_PINCTRL_SUN8I_A23_R)	+= pinctrl-sun8i-a23-r.o
  obj-$(CONFIG_PINCTRL_SUN8I_A33)		+= pinctrl-sun8i-a33.o
  obj-$(CONFIG_PINCTRL_SUN8I_A83T)	+= pinctrl-sun8i-a83t.o
 +obj-$(CONFIG_PINCTRL_SUN8I_H3)		+= pinctrl-sun8i-h3.o
  obj-$(CONFIG_PINCTRL_SUN9I_A80)		+= pinctrl-sun9i-a80.o
-diff --git a/drivers/pinctrl/sunxi/pinctrl-sun8i-h3.c b/drivers/pinctrl/sunxi/pinctrl-sun8i-h3.c
-new file mode 100644
-index 0000000..98d465d
 --- /dev/null
 +++ b/drivers/pinctrl/sunxi/pinctrl-sun8i-h3.c
 @@ -0,0 +1,516 @@

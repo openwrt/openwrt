@@ -13,7 +13,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -61,6 +61,34 @@ static void bcm47xxpart_add_part(struct mtd_partition *part, const char *name,
+@@ -61,6 +61,34 @@ static void bcm47xxpart_add_part(struct
  	part->mask_flags = mask_flags;
  }
  
@@ -48,7 +48,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  static const char *bcm47xxpart_trx_data_part_name(struct mtd_info *master,
  						  size_t offset)
  {
-@@ -182,6 +210,8 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -182,6 +210,8 @@ static int bcm47xxpart_parse(struct mtd_
  
  		/* TRX */
  		if (buf[0x000 / 4] == TRX_MAGIC) {
@@ -57,7 +57,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  			if (BCM47XXPART_MAX_PARTS - curr_part < 4) {
  				pr_warn("Not enough partitions left to register trx, scanning stopped!\n");
  				break;
-@@ -196,18 +226,18 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -196,18 +226,18 @@ static int bcm47xxpart_parse(struct mtd_
  			i = 0;
  			/* We have LZMA loader if offset[2] points to sth */
  			if (trx->offset[2]) {
@@ -82,7 +82,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  				i++;
  			}
  
-@@ -219,11 +249,11 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -219,11 +249,11 @@ static int bcm47xxpart_parse(struct mtd_
  			if (trx->offset[i]) {
  				const char *name;
  

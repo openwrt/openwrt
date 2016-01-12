@@ -18,11 +18,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  2 files changed, 298 insertions(+)
  create mode 100644 arch/arm/boot/dts/sun7i-a20-lamobo-r1.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index cc7309b..6f8deac 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -639,6 +639,7 @@ dtb-$(CONFIG_MACH_SUN7I) += \
+@@ -638,6 +638,7 @@ dtb-$(CONFIG_MACH_SUN7I) += \
  	sun7i-a20-cubietruck.dtb \
  	sun7i-a20-hummingbird.dtb \
  	sun7i-a20-i12-tvbox.dtb \
@@ -30,9 +28,6 @@ index cc7309b..6f8deac 100644
  	sun7i-a20-m3.dtb \
  	sun7i-a20-mk808c.dtb \
  	sun7i-a20-olimex-som-evb.dtb \
-diff --git a/arch/arm/boot/dts/sun7i-a20-lamobo-r1.dts b/arch/arm/boot/dts/sun7i-a20-lamobo-r1.dts
-new file mode 100644
-index 0000000..975b0b2
 --- /dev/null
 +++ b/arch/arm/boot/dts/sun7i-a20-lamobo-r1.dts
 @@ -0,0 +1,297 @@

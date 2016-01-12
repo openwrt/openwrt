@@ -121,7 +121,8 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +		};
 +
 +		iprocmed: iprocmed {
-+			#clock-cells = <0>;
+ 			#clock-cells = <0>;
+-			clock-frequency = <400000000>;
 +			compatible = "fixed-factor-clock";
 +			clocks = <&genpll BCM_NSP_GENPLL_IPROCFAST_CLK>;
 +			clock-div = <2>;
@@ -137,8 +138,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +		};
 +
 +		periph_clk: periph_clk {
- 			#clock-cells = <0>;
--			clock-frequency = <400000000>;
++			#clock-cells = <0>;
 +			compatible = "fixed-factor-clock";
 +			clocks = <&a9pll>;
 +			clock-div = <2>;

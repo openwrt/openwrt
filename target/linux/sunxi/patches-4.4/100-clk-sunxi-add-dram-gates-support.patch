@@ -19,13 +19,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clk/sunxi/clk-simple-gates.c              | 12 ++++++++++++
  2 files changed, 13 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
-index 153ac72..ef0b452 100644
-diff --git a/drivers/clk/sunxi/clk-simple-gates.c b/drivers/clk/sunxi/clk-simple-gates.c
-index c8acc06..f4da52b 100644
 --- a/drivers/clk/sunxi/clk-simple-gates.c
 +++ b/drivers/clk/sunxi/clk-simple-gates.c
-@@ -160,3 +160,15 @@ CLK_OF_DECLARE(sun5i_a13_ahb, "allwinner,sun5i-a13-ahb-gates-clk",
+@@ -158,3 +158,15 @@ CLK_OF_DECLARE(sun5i_a13_ahb, "allwinner
  	       sun4i_a10_ahb_init);
  CLK_OF_DECLARE(sun7i_a20_ahb, "allwinner,sun7i-a20-ahb-gates-clk",
  	       sun4i_a10_ahb_init);
