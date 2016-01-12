@@ -14,11 +14,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/mtd/bcm47xxpart.c | 38 ++++++++++++++++++++++----------------
  1 file changed, 22 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/mtd/bcm47xxpart.c b/drivers/mtd/bcm47xxpart.c
-index 4450e74..1ab3451 100644
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -66,11 +66,13 @@ static const char *bcm47xxpart_trx_data_part_name(struct mtd_info *master,
+@@ -66,11 +66,13 @@ static const char *bcm47xxpart_trx_data_
  {
  	uint32_t buf;
  	size_t bytes_read;
@@ -36,7 +34,7 @@ index 4450e74..1ab3451 100644
  		goto out_default;
  	}
  
-@@ -95,6 +97,7 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -95,6 +97,7 @@ static int bcm47xxpart_parse(struct mtd_
  	int trx_part = -1;
  	int last_trx_part = -1;
  	int possible_nvram_sizes[] = { 0x8000, 0xF000, 0x10000, };
@@ -44,7 +42,7 @@ index 4450e74..1ab3451 100644
  
  	/*
  	 * Some really old flashes (like AT45DB*) had smaller erasesize-s, but
-@@ -128,10 +131,11 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -128,10 +131,11 @@ static int bcm47xxpart_parse(struct mtd_
  		}
  
  		/* Read beginning of the block */
@@ -60,7 +58,7 @@ index 4450e74..1ab3451 100644
  			continue;
  		}
  
-@@ -254,10 +258,11 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -254,10 +258,11 @@ static int bcm47xxpart_parse(struct mtd_
  		}
  
  		/* Read middle of the block */
@@ -76,7 +74,7 @@ index 4450e74..1ab3451 100644
  			continue;
  		}
  
-@@ -277,10 +282,11 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -277,10 +282,11 @@ static int bcm47xxpart_parse(struct mtd_
  		}
  
  		offset = master->size - possible_nvram_sizes[i];
@@ -92,6 +90,3 @@ index 4450e74..1ab3451 100644
  			continue;
  		}
  
--- 
-1.8.4.5
-

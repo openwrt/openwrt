@@ -38,7 +38,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -331,6 +331,14 @@
+@@ -331,6 +331,14 @@ config PHY_XGENE
  	help
  	  This option enables support for APM X-Gene SoC multi-purpose PHY.
  
@@ -55,7 +55,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on RESET_CONTROLLER
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -46,3 +46,4 @@
+@@ -46,3 +46,4 @@ obj-$(CONFIG_PHY_QCOM_UFS) 	+= phy-qcom-
  obj-$(CONFIG_PHY_TUSB1210)		+= phy-tusb1210.o
  obj-$(CONFIG_PHY_BRCMSTB_SATA)		+= phy-brcmstb-sata.o
  obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o

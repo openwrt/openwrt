@@ -5391,7 +5391,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  /* TODO: copied from ehci-hcd.c - can this be refactored? */
  /*
   * xhci_handshake - spin reading hc until handshake completes or fails
-@@ -198,7 +220,7 @@ int xhci_reset(struct xhci_hcd *xhci)
+@@ -208,7 +230,7 @@ int xhci_reset(struct xhci_hcd *xhci)
  	return ret;
  }
  
@@ -5400,7 +5400,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int xhci_free_msi(struct xhci_hcd *xhci)
  {
  	int i;
-@@ -448,6 +470,11 @@ static void compliance_mode_recovery(uns
+@@ -458,6 +480,11 @@ static void compliance_mode_recovery(uns
  					"Attempting compliance mode recovery");
  			hcd = xhci->shared_hcd;
  
@@ -5412,7 +5412,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			if (hcd->state == HC_STATE_SUSPENDED)
  				usb_hcd_resume_root_hub(hcd);
  
-@@ -495,6 +522,9 @@ static bool xhci_compliance_mode_recover
+@@ -505,6 +532,9 @@ static bool xhci_compliance_mode_recover
  {
  	const char *dmi_product_name, *dmi_sys_vendor;
  
@@ -5422,7 +5422,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	dmi_product_name = dmi_get_system_info(DMI_PRODUCT_NAME);
  	dmi_sys_vendor = dmi_get_system_info(DMI_SYS_VENDOR);
  	if (!dmi_product_name || !dmi_sys_vendor)
-@@ -540,6 +570,10 @@ int xhci_init(struct usb_hcd *hcd)
+@@ -550,6 +580,10 @@ int xhci_init(struct usb_hcd *hcd)
  		xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  				"xHCI doesn't need link TRB QUIRK");
  	}
@@ -5433,7 +5433,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	retval = xhci_mem_init(xhci, GFP_KERNEL);
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init, "Finished xhci_init");
  
-@@ -624,7 +658,11 @@ int xhci_run(struct usb_hcd *hcd)
+@@ -634,7 +668,11 @@ int xhci_run(struct usb_hcd *hcd)
  			"// Set the interrupt modulation register");
  	temp = readl(&xhci->ir_set->irq_control);
  	temp &= ~ER_IRQ_INTERVAL_MASK;
@@ -5445,7 +5445,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -649,6 +687,9 @@ int xhci_run(struct usb_hcd *hcd)
+@@ -659,6 +697,9 @@ int xhci_run(struct usb_hcd *hcd)
  		xhci_queue_vendor_command(xhci, command, 0, 0, 0,
  				TRB_TYPE(TRB_NEC_GET_FW));
  	}
@@ -5455,7 +5455,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  			"Finished xhci_run for USB2 roothub");
  	return 0;
-@@ -1639,6 +1680,14 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1649,6 +1690,14 @@ int xhci_drop_endpoint(struct usb_hcd *h
  	u32 drop_flag;
  	u32 new_add_flags, new_drop_flags;
  	int ret;
@@ -5470,7 +5470,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	ret = xhci_check_args(hcd, udev, ep, 1, true, __func__);
  	if (ret <= 0)
-@@ -1688,6 +1737,40 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1698,6 +1747,40 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -5511,7 +5511,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1720,6 +1803,19 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1730,6 +1813,19 @@ int xhci_add_endpoint(struct usb_hcd *hc
  	u32 new_add_flags, new_drop_flags;
  	struct xhci_virt_device *virt_dev;
  	int ret = 0;
@@ -5531,7 +5531,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	ret = xhci_check_args(hcd, udev, ep, 1, true, __func__);
  	if (ret <= 0) {
-@@ -1783,6 +1879,56 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1793,6 +1889,56 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  
@@ -5588,7 +5588,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	ctrl_ctx->add_flags |= cpu_to_le32(added_ctxs);
  	new_add_flags = le32_to_cpu(ctrl_ctx->add_flags);
  
-@@ -4446,8 +4592,14 @@ static u16 xhci_call_host_update_timeout
+@@ -4456,8 +4602,14 @@ static u16 xhci_call_host_update_timeout
  		u16 *timeout)
  {
  	if (state == USB3_LPM_U1)
@@ -5603,7 +5603,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		return xhci_calculate_u2_timeout(xhci, udev, desc);
  
  	return USB3_LPM_DISABLED;
-@@ -4839,7 +4991,9 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4849,7 +5001,9 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  	hcd->self.no_sg_constraint = 1;
  
  	/* XHCI controllers don't stop the ep queue on short packets :| */
@@ -5613,7 +5613,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	if (usb_hcd_is_primary_hcd(hcd)) {
  		xhci = hcd_to_xhci(hcd);
-@@ -4900,6 +5054,10 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4910,6 +5064,10 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  		return retval;
  	xhci_dbg(xhci, "Reset complete\n");
  
@@ -5624,7 +5624,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* Set dma_mask and coherent_dma_mask to 64-bits,
  	 * if xHC supports 64-bit addressing */
  	if (HCC_64BIT_ADDR(xhci->hcc_params) &&
-@@ -5005,8 +5163,57 @@ MODULE_DESCRIPTION(DRIVER_DESC);
+@@ -5015,8 +5173,57 @@ MODULE_DESCRIPTION(DRIVER_DESC);
  MODULE_AUTHOR(DRIVER_AUTHOR);
  MODULE_LICENSE("GPL");
  

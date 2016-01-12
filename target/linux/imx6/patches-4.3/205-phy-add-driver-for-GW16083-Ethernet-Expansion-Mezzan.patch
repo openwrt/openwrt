@@ -1,8 +1,6 @@
-Index: linux-4.3/drivers/net/phy/Kconfig
-===================================================================
---- linux-4.3.orig/drivers/net/phy/Kconfig	2015-12-18 10:39:44.371158315 -0800
-+++ linux-4.3/drivers/net/phy/Kconfig	2015-12-18 10:39:44.951158318 -0800
-@@ -309,6 +309,14 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -309,6 +309,14 @@ endif # RTL8366_SMI
  
  source "drivers/net/phy/b53/Kconfig"
  
@@ -17,11 +15,9 @@ Index: linux-4.3/drivers/net/phy/Kconfig
  endif # PHYLIB
  
  config MICREL_KS8995MA
-Index: linux-4.3/drivers/net/phy/Makefile
-===================================================================
---- linux-4.3.orig/drivers/net/phy/Makefile	2015-12-18 10:39:44.371158315 -0800
-+++ linux-4.3/drivers/net/phy/Makefile	2015-12-18 10:39:44.951158318 -0800
-@@ -44,6 +44,7 @@
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -44,6 +44,7 @@ obj-$(CONFIG_DP83848_PHY)	+= dp83848.o
  obj-$(CONFIG_DP83867_PHY)	+= dp83867.o
  obj-$(CONFIG_STE10XP)		+= ste10Xp.o
  obj-$(CONFIG_MICREL_PHY)	+= micrel.o

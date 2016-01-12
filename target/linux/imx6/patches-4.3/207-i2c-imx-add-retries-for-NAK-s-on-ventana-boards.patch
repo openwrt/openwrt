@@ -1,8 +1,6 @@
-Index: linux-4.3/drivers/i2c/busses/i2c-imx.c
-===================================================================
---- linux-4.3.orig/drivers/i2c/busses/i2c-imx.c	2015-11-01 16:05:25.000000000 -0800
-+++ linux-4.3/drivers/i2c/busses/i2c-imx.c	2015-12-18 10:39:44.971158318 -0800
-@@ -461,6 +461,8 @@
+--- a/drivers/i2c/busses/i2c-imx.c
++++ b/drivers/i2c/busses/i2c-imx.c
+@@ -461,6 +461,8 @@ static int i2c_imx_acked(struct imx_i2c_
  {
  	if (imx_i2c_read_reg(i2c_imx, IMX_I2C_I2SR) & I2SR_RXAK) {
  		dev_dbg(&i2c_imx->adapter.dev, "<%s> No ACK\n", __func__);
@@ -11,7 +9,7 @@ Index: linux-4.3/drivers/i2c/busses/i2c-imx.c
  		return -EIO;  /* No ACK */
  	}
  
-@@ -1010,6 +1012,10 @@
+@@ -1010,6 +1012,10 @@ static int i2c_imx_probe(struct platform
  	i2c_imx->adapter.nr		= pdev->id;
  	i2c_imx->adapter.dev.of_node	= pdev->dev.of_node;
  	i2c_imx->base			= base;

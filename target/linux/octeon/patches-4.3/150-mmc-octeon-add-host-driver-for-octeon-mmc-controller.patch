@@ -73,9 +73,9 @@
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
 @@ -436,6 +436,16 @@ config MMC_MXS
-
-	  If unsure, say N.
-
+ 
+ 	  If unsure, say N.
+ 
 +config MMC_OCTEON
 +	tristate "Cavium OCTEON Multimedia Card Interface support"
 +	depends on CAVIUM_OCTEON_SOC
@@ -87,8 +87,8 @@
 +	  If unsure, say N.
 +
  config MMC_TIFM_SD
-	tristate "TI Flash Media MMC/SD Interface support"
-	depends on PCI
+ 	tristate "TI Flash Media MMC/SD Interface support"
+ 	depends on PCI
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
 @@ -20,6 +20,7 @@ obj-$(CONFIG_MMC_SDHCI_F_SDH30)	+= sdhci
