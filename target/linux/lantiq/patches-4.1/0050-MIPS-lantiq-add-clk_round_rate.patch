@@ -17,9 +17,9 @@ Cc: <stable@vger.kernel.org> # 4.1+
 
 --- a/arch/mips/lantiq/clk.c
 +++ b/arch/mips/lantiq/clk.c
-@@ -99,6 +99,23 @@ int clk_set_rate(struct clk *clk, unsign
+@@ -116,6 +116,23 @@ long clk_round_rate(struct clk *clk, uns
  }
- EXPORT_SYMBOL(clk_set_rate);
+ EXPORT_SYMBOL(clk_round_rate);
  
 +long clk_round_rate(struct clk *clk, unsigned long rate)
 +{
