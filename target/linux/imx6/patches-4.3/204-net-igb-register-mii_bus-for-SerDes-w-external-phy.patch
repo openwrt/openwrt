@@ -21,11 +21,9 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  drivers/net/ethernet/intel/igb/igb_main.c    | 168 ++++++++++++++++++++++++++-
  3 files changed, 185 insertions(+), 5 deletions(-)
 
-Index: linux-4.3/drivers/net/ethernet/intel/igb/e1000_82575.c
-===================================================================
---- linux-4.3.orig/drivers/net/ethernet/intel/igb/e1000_82575.c	2015-12-18 10:39:44.935158318 -0800
-+++ linux-4.3/drivers/net/ethernet/intel/igb/e1000_82575.c	2015-12-18 10:39:44.943158318 -0800
-@@ -612,13 +612,25 @@
+--- a/drivers/net/ethernet/intel/igb/e1000_82575.c
++++ b/drivers/net/ethernet/intel/igb/e1000_82575.c
+@@ -612,13 +612,25 @@ static s32 igb_get_invariants_82575(stru
  	switch (link_mode) {
  	case E1000_CTRL_EXT_LINK_MODE_1000BASE_KX:
  		hw->phy.media_type = e1000_media_type_internal_serdes;
@@ -51,7 +49,7 @@ Index: linux-4.3/drivers/net/ethernet/intel/igb/e1000_82575.c
  		}
  		/* fall through for I2C based SGMII */
  	case E1000_CTRL_EXT_LINK_MODE_PCIE_SERDES:
-@@ -635,8 +647,11 @@
+@@ -635,8 +647,11 @@ static s32 igb_get_invariants_82575(stru
  				hw->phy.media_type = e1000_media_type_copper;
  				dev_spec->sgmii_active = true;
  			}
@@ -63,10 +61,8 @@ Index: linux-4.3/drivers/net/ethernet/intel/igb/e1000_82575.c
  		}
  
  		/* do not change link mode for 100BaseFX */
-Index: linux-4.3/drivers/net/ethernet/intel/igb/e1000_hw.h
-===================================================================
---- linux-4.3.orig/drivers/net/ethernet/intel/igb/e1000_hw.h	2015-11-01 16:05:25.000000000 -0800
-+++ linux-4.3/drivers/net/ethernet/intel/igb/e1000_hw.h	2015-12-18 10:39:44.943158318 -0800
+--- a/drivers/net/ethernet/intel/igb/e1000_hw.h
++++ b/drivers/net/ethernet/intel/igb/e1000_hw.h
 @@ -27,6 +27,7 @@
  #include <linux/delay.h>
  #include <linux/io.h>
@@ -75,7 +71,7 @@ Index: linux-4.3/drivers/net/ethernet/intel/igb/e1000_hw.h
  
  #include "e1000_regs.h"
  #include "e1000_defines.h"
-@@ -543,6 +544,12 @@
+@@ -543,6 +544,12 @@ struct e1000_hw {
  	struct e1000_mbx_info mbx;
  	struct e1000_host_mng_dhcp_cookie mng_cookie;
  
@@ -88,10 +84,8 @@ Index: linux-4.3/drivers/net/ethernet/intel/igb/e1000_hw.h
  	union {
  		struct e1000_dev_spec_82575	_82575;
  	} dev_spec;
-Index: linux-4.3/drivers/net/ethernet/intel/igb/igb_main.c
-===================================================================
---- linux-4.3.orig/drivers/net/ethernet/intel/igb/igb_main.c	2015-12-18 10:39:44.407158315 -0800
-+++ linux-4.3/drivers/net/ethernet/intel/igb/igb_main.c	2015-12-18 10:39:44.943158318 -0800
+--- a/drivers/net/ethernet/intel/igb/igb_main.c
++++ b/drivers/net/ethernet/intel/igb/igb_main.c
 @@ -41,6 +41,7 @@
  #include <linux/if_vlan.h>
  #include <linux/pci.h>
@@ -100,7 +94,7 @@ Index: linux-4.3/drivers/net/ethernet/intel/igb/igb_main.c
  #include <linux/delay.h>
  #include <linux/interrupt.h>
  #include <linux/ip.h>
-@@ -2223,6 +2224,126 @@
+@@ -2223,6 +2224,126 @@ static s32 igb_init_i2c(struct igb_adapt
  	return status;
  }
  
@@ -227,7 +221,7 @@ Index: linux-4.3/drivers/net/ethernet/intel/igb/igb_main.c
  /**
   *  igb_probe - Device Initialization Routine
   *  @pdev: PCI device information struct
-@@ -2645,6 +2766,13 @@
+@@ -2645,6 +2766,13 @@ static int igb_probe(struct pci_dev *pde
  		}
  	}
  	pm_runtime_put_noidle(&pdev->dev);
@@ -241,7 +235,7 @@ Index: linux-4.3/drivers/net/ethernet/intel/igb/igb_main.c
  	return 0;
  
  err_register:
-@@ -2792,6 +2920,10 @@
+@@ -2792,6 +2920,10 @@ static void igb_remove(struct pci_dev *p
  	struct e1000_hw *hw = &adapter->hw;
  
  	pm_runtime_get_noresume(&pdev->dev);
@@ -252,7 +246,7 @@ Index: linux-4.3/drivers/net/ethernet/intel/igb/igb_main.c
  #ifdef CONFIG_IGB_HWMON
  	igb_sysfs_exit(adapter);
  #endif
-@@ -3105,6 +3237,12 @@
+@@ -3105,6 +3237,12 @@ static int __igb_open(struct net_device
  	if (!resuming)
  		pm_runtime_put(&pdev->dev);
  
@@ -265,7 +259,7 @@ Index: linux-4.3/drivers/net/ethernet/intel/igb/igb_main.c
  	/* start the watchdog. */
  	hw->mac.get_link_status = 1;
  	schedule_work(&adapter->watchdog_task);
-@@ -7090,21 +7228,41 @@
+@@ -7090,21 +7228,41 @@ void igb_alloc_rx_buffers(struct igb_rin
  static int igb_mii_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
  {
  	struct igb_adapter *adapter = netdev_priv(netdev);

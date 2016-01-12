@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/early_printk.c |   25 +++++++++++++++++++++++++
  1 file changed, 25 insertions(+)
 
-diff --git a/arch/mips/ralink/early_printk.c b/arch/mips/ralink/early_printk.c
-index 255d695..c04ee53 100644
 --- a/arch/mips/ralink/early_printk.c
 +++ b/arch/mips/ralink/early_printk.c
 @@ -25,11 +25,13 @@
@@ -61,6 +59,3 @@ index 255d695..c04ee53 100644
  	if (IS_ENABLED(CONFIG_SOC_MT7621) || soc_is_mt7628()) {
  		uart_w32(ch, UART_TX);
  		while ((uart_r32(UART_REG_LSR) & UART_LSR_THRE) == 0)
--- 
-1.7.10.4
-

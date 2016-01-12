@@ -19,8 +19,6 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  arch/arc/kernel/vmlinux.lds.S | 13 +++++++++++++
  3 files changed, 26 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arc/kernel/head.S b/arch/arc/kernel/head.S
-index 689dd86..51154ae 100644
 --- a/arch/arc/kernel/head.S
 +++ b/arch/arc/kernel/head.S
 @@ -49,6 +49,16 @@
@@ -38,13 +36,11 @@ index 689dd86..51154ae 100644
 +END(__image_dtb)
 +
  	.section .init.text, "ax",@progbits
- 
- ;----------------------------------------------------------------
-diff --git a/arch/arc/kernel/setup.c b/arch/arc/kernel/setup.c
-index c33e77c..96fbfd0 100644
+ 	.type stext, @function
+ 	.globl stext
 --- a/arch/arc/kernel/setup.c
 +++ b/arch/arc/kernel/setup.c
-@@ -370,6 +370,8 @@ static inline int is_kernel(unsigned long addr)
+@@ -374,6 +374,8 @@ static inline int is_kernel(unsigned lon
  	return 0;
  }
  
@@ -53,7 +49,7 @@ index c33e77c..96fbfd0 100644
  void __init setup_arch(char **cmdline_p)
  {
  #ifdef CONFIG_ARC_UBOOT_SUPPORT
-@@ -383,7 +385,7 @@ void __init setup_arch(char **cmdline_p)
+@@ -387,7 +389,7 @@ void __init setup_arch(char **cmdline_p)
  #endif
  	{
  		/* No, so try the embedded one */
@@ -62,8 +58,6 @@ index c33e77c..96fbfd0 100644
  		if (!machine_desc)
  			panic("Embedded DT invalid\n");
  
-diff --git a/arch/arc/kernel/vmlinux.lds.S b/arch/arc/kernel/vmlinux.lds.S
-index dd35bde..f309104 100644
 --- a/arch/arc/kernel/vmlinux.lds.S
 +++ b/arch/arc/kernel/vmlinux.lds.S
 @@ -30,6 +30,19 @@ SECTIONS
@@ -86,6 +80,3 @@ index dd35bde..f309104 100644
  	_int_vec_base_lds = .;
  	.vector : {
  		*(.vector)
--- 
-2.4.3
-

@@ -1,7 +1,5 @@
-Index: linux-4.3/drivers/thermal/imx_thermal.c
-===================================================================
---- linux-4.3.orig/drivers/thermal/imx_thermal.c	2015-11-01 16:05:25.000000000 -0800
-+++ linux-4.3/drivers/thermal/imx_thermal.c	2015-12-18 10:39:44.915158318 -0800
+--- a/drivers/thermal/imx_thermal.c
++++ b/drivers/thermal/imx_thermal.c
 @@ -55,6 +55,7 @@
  #define TEMPSENSE2_PANIC_VALUE_SHIFT	16
  #define TEMPSENSE2_PANIC_VALUE_MASK	0xfff0000
@@ -10,7 +8,7 @@ Index: linux-4.3/drivers/thermal/imx_thermal.c
  #define OCOTP_ANA1			0x04e0
  
  /* The driver supports 1 passive trip point and 1 critical trip point */
-@@ -64,12 +65,6 @@
+@@ -64,12 +65,6 @@ enum imx_thermal_trip {
  	IMX_TRIP_NUM,
  };
  
@@ -23,7 +21,7 @@ Index: linux-4.3/drivers/thermal/imx_thermal.c
  #define IMX_POLLING_DELAY		2000 /* millisecond */
  #define IMX_PASSIVE_DELAY		1000
  
-@@ -100,12 +95,14 @@
+@@ -100,12 +95,14 @@ struct imx_thermal_data {
  	u32 c1, c2; /* See formula in imx_get_sensor_data() */
  	int temp_passive;
  	int temp_critical;
@@ -38,7 +36,7 @@ Index: linux-4.3/drivers/thermal/imx_thermal.c
  };
  
  static void imx_set_panic_temp(struct imx_thermal_data *data,
-@@ -285,10 +282,12 @@
+@@ -285,10 +282,12 @@ static int imx_set_trip_temp(struct ther
  {
  	struct imx_thermal_data *data = tz->devdata;
  
@@ -52,7 +50,7 @@ Index: linux-4.3/drivers/thermal/imx_thermal.c
  		return -EINVAL;
  
  	data->temp_passive = temp;
-@@ -404,17 +403,39 @@
+@@ -404,17 +403,39 @@ static int imx_get_sensor_data(struct pl
  	data->c1 = temp64;
  	data->c2 = n1 * data->c1 + 1000 * t1;
  
@@ -100,7 +98,7 @@ Index: linux-4.3/drivers/thermal/imx_thermal.c
  
  	return 0;
  }
-@@ -559,6 +580,11 @@
+@@ -559,6 +580,11 @@ static int imx_thermal_probe(struct plat
  		return ret;
  	}
  
