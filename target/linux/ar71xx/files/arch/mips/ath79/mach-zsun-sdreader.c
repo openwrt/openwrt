@@ -9,6 +9,7 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/gpio.h>
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h>
 #include "common.h"
@@ -24,6 +25,8 @@
 #define ZSUN_SDREADER_GPIO_LED_SYSTEM		0
 
 #define ZSUN_SDREADER_GPIO_SW_SD		22
+#define ZSUN_SDREADER_GPIO_USB_SWITCH		21
+#define ZSUN_SDREADER_GPIO_SD_RESET		18
 
 #define ZSUN_SDREADER_MAC0_OFFSET		0x0000
 #define ZSUN_SDREADER_MAC1_OFFSET		0x0006
@@ -88,6 +91,8 @@ static void __init zsun_sdreader_setup(void)
 	ath79_register_gpio_keys_polled(-1, ZSUN_SDREADER_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(zsun_sdreader_gpio_keys),
 					zsun_sdreader_gpio_keys);
+	gpio_request_one(ZSUN_SDREADER_GPIO_USB_SWITCH, GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED, "USB switch");
+	gpio_request_one(ZSUN_SDREADER_GPIO_SD_RESET, GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_CHANGEABLE, "SD reader reset");
 
 	ath79_register_usb();
 }
