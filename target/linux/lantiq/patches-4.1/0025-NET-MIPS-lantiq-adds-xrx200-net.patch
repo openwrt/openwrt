@@ -16,7 +16,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -101,7 +101,13 @@
+@@ -101,7 +101,13 @@ config LANTIQ_ETOP
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
  	---help---
@@ -33,7 +33,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
  source "drivers/net/ethernet/mellanox/Kconfig"
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -43,6 +43,7 @@
+@@ -43,6 +43,7 @@ obj-$(CONFIG_IP1000) += icplus/
  obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
