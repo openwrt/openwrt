@@ -1,6 +1,8 @@
 #ifndef __PERF_MUSL_COMPAT_H
 #define __PERF_MUSL_COMPAT_H
 
+#ifndef __ASSEMBLER__
+
 #include <sys/ioctl.h>
 #include <string.h>
 #include <unistd.h>
@@ -15,8 +17,14 @@
 #undef _IO
 
 /* Change XSI compliant version into GNU extension hackery */
-#define strerror_r(err, buf, buflen) \
-	(strerror_r(err, buf, buflen) ? NULL : buf)
+static inline char *
+gnu_strerror_r(int err, char *buf, size_t buflen)
+{
+	if (strerror_r(err, buf, buflen))
+		return NULL;
+	return buf;
+}
+#define strerror_r gnu_strerror_r
 
 #define _SC_LEVEL1_DCACHE_LINESIZE -1
 
@@ -59,4 +67,5 @@ static inline int compat_sched_getcpu(void)
 
 #define sched_getcpu compat_sched_getcpu
 
+#endif
 #endif
