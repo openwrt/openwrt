@@ -16,11 +16,9 @@ Signed-off-by: Philipp Zabel <p.zabel@pengutronix.de>
  include/linux/reset.h |  9 +++++++++
  2 files changed, 38 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/reset/core.c b/drivers/reset/core.c
-index 7955e00..81ae17d 100644
 --- a/drivers/reset/core.c
 +++ b/drivers/reset/core.c
-@@ -141,27 +141,24 @@ int reset_control_status(struct reset_control *rstc)
+@@ -141,27 +141,24 @@ int reset_control_status(struct reset_co
  EXPORT_SYMBOL_GPL(reset_control_status);
  
  /**
@@ -56,7 +54,7 @@ index 7955e00..81ae17d 100644
  	ret = of_parse_phandle_with_args(node, "resets", "#reset-cells",
  					 index, &args);
  	if (ret)
-@@ -202,6 +199,27 @@ struct reset_control *of_reset_control_get(struct device_node *node,
+@@ -202,6 +199,27 @@ struct reset_control *of_reset_control_g
  
  	return rstc;
  }
@@ -84,11 +82,9 @@ index 7955e00..81ae17d 100644
  EXPORT_SYMBOL_GPL(of_reset_control_get);
  
  /**
-diff --git a/include/linux/reset.h b/include/linux/reset.h
-index 7f65f9c..6db74ad 100644
 --- a/include/linux/reset.h
 +++ b/include/linux/reset.h
-@@ -38,6 +38,9 @@ static inline struct reset_control *devm_reset_control_get_optional(
+@@ -38,6 +38,9 @@ static inline struct reset_control *devm
  struct reset_control *of_reset_control_get(struct device_node *node,
  					   const char *id);
  
@@ -98,7 +94,7 @@ index 7f65f9c..6db74ad 100644
  #else
  
  static inline int reset_control_reset(struct reset_control *rstc)
-@@ -106,6 +109,12 @@ static inline struct reset_control *of_reset_control_get(
+@@ -106,6 +109,12 @@ static inline struct reset_control *of_r
  	return ERR_PTR(-ENOSYS);
  }
  

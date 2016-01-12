@@ -12,8 +12,6 @@ Signed-off-by: Jens Kuske <jenskuske@gmail.com>
  drivers/reset/reset-sunxi.c                        | 30 +++++++++++++++++++---
  2 files changed, 28 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/reset/allwinner,sunxi-clock-reset.txt b/Documentation/devicetree/bindings/reset/allwinner,sunxi-clock-reset.txt
-index c8f77571..e11f023 100644
 --- a/Documentation/devicetree/bindings/reset/allwinner,sunxi-clock-reset.txt
 +++ b/Documentation/devicetree/bindings/reset/allwinner,sunxi-clock-reset.txt
 @@ -8,6 +8,7 @@ Required properties:
@@ -24,11 +22,9 @@ index c8f77571..e11f023 100644
  - reg: should be register base and length as documented in the
    datasheet
  - #reset-cells: 1, see below
-diff --git a/drivers/reset/reset-sunxi.c b/drivers/reset/reset-sunxi.c
-index 3d95c87..c91e146 100644
 --- a/drivers/reset/reset-sunxi.c
 +++ b/drivers/reset/reset-sunxi.c
-@@ -75,7 +75,9 @@ static struct reset_control_ops sunxi_reset_ops = {
+@@ -75,7 +75,9 @@ static struct reset_control_ops sunxi_re
  	.deassert	= sunxi_reset_deassert,
  };
  
@@ -39,7 +35,7 @@ index 3d95c87..c91e146 100644
  {
  	struct sunxi_reset_data *data;
  	struct resource res;
-@@ -108,6 +110,7 @@ static int sunxi_reset_init(struct device_node *np)
+@@ -108,6 +110,7 @@ static int sunxi_reset_init(struct devic
  	data->rcdev.nr_resets = size * 32;
  	data->rcdev.ops = &sunxi_reset_ops;
  	data->rcdev.of_node = np;
@@ -47,7 +43,7 @@ index 3d95c87..c91e146 100644
  	reset_controller_register(&data->rcdev);
  
  	return 0;
-@@ -117,6 +120,21 @@ static int sunxi_reset_init(struct device_node *np)
+@@ -117,6 +120,21 @@ err_alloc:
  	return ret;
  };
  
@@ -69,7 +65,7 @@ index 3d95c87..c91e146 100644
  /*
   * These are the reset controller we need to initialize early on in
   * our system, before we can even think of using a regular device
-@@ -124,15 +142,21 @@ static int sunxi_reset_init(struct device_node *np)
+@@ -124,15 +142,21 @@ err_alloc:
   */
  static const struct of_device_id sunxi_early_reset_dt_ids[] __initdata = {
  	{ .compatible = "allwinner,sun6i-a31-ahb1-reset", },
@@ -80,12 +76,13 @@ index 3d95c87..c91e146 100644
  void __init sun6i_reset_init(void)
  {
  	struct device_node *np;
+-
+-	for_each_matching_node(np, sunxi_early_reset_dt_ids)
+-		sunxi_reset_init(np);
 +	const struct of_device_id *match;
 +	int (*of_xlate)(struct reset_controller_dev *rcdev,
 +			const struct of_phandle_args *reset_spec);
- 
--	for_each_matching_node(np, sunxi_early_reset_dt_ids)
--		sunxi_reset_init(np);
++
 +	for_each_matching_node_and_match(np, sunxi_early_reset_dt_ids, &match) {
 +		of_xlate = match->data;
 +		sunxi_reset_init(np, of_xlate);

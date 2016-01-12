@@ -217,7 +217,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  {
  	void __iomem *boot_reg;
  	phys_addr_t boot_func;
-@@ -154,15 +179,16 @@ static int bcm_boot_secondary(unsigned int cpu, struct task_struct *idle)
+@@ -154,15 +179,16 @@ static int bcm_boot_secondary(unsigned i
  		return -EINVAL;
  	}
  
@@ -237,7 +237,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  	}
  
  	/*
-@@ -191,12 +217,12 @@ static int bcm_boot_secondary(unsigned int cpu, struct task_struct *idle)
+@@ -191,12 +217,12 @@ static int bcm_boot_secondary(unsigned i
  
  	pr_err("timeout waiting for cpu %u to start\n", cpu_id);
  

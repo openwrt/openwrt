@@ -61,7 +61,7 @@
  	.probe			= at803x_probe,
  	.config_init		= at803x_config_init,
  	.link_change_notify	= at803x_link_change_notify,
-@@ -413,7 +438,7 @@ static struct phy_driver at803x_driver[]
+@@ -415,7 +440,7 @@ static struct phy_driver at803x_driver[]
  	/* ATHEROS 8030 */
  	.phy_id			= ATH8030_PHY_ID,
  	.name			= "Atheros 8030 ethernet",
@@ -70,7 +70,7 @@
  	.probe			= at803x_probe,
  	.config_init		= at803x_config_init,
  	.link_change_notify	= at803x_link_change_notify,
-@@ -431,8 +456,8 @@ static struct phy_driver at803x_driver[]
+@@ -435,8 +460,8 @@ static struct phy_driver at803x_driver[]
  }, {
  	/* ATHEROS 8031 */
  	.phy_id			= ATH8031_PHY_ID,
@@ -81,7 +81,7 @@
  	.probe			= at803x_probe,
  	.config_init		= at803x_config_init,
  	.link_change_notify	= at803x_link_change_notify,
-@@ -454,9 +479,9 @@ static struct phy_driver at803x_driver[]
+@@ -458,9 +483,9 @@ static struct phy_driver at803x_driver[]
  module_phy_driver(at803x_driver);
  
  static struct mdio_device_id __maybe_unused atheros_tbl[] = {

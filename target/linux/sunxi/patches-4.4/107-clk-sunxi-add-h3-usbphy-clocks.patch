@@ -17,8 +17,6 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clk/sunxi/clk-usb.c                       | 12 ++++++++++++
  2 files changed, 13 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
-index 8a47b77..a94bb56 100644
 --- a/Documentation/devicetree/bindings/clock/sunxi.txt
 +++ b/Documentation/devicetree/bindings/clock/sunxi.txt
 @@ -68,6 +68,7 @@ Required properties:
@@ -29,11 +27,9 @@ index 8a47b77..a94bb56 100644
  	"allwinner,sun9i-a80-usb-mod-clk" - for usb gates + resets on A80
  	"allwinner,sun9i-a80-usb-phy-clk" - for usb phy gates + resets on A80
  
-diff --git a/drivers/clk/sunxi/clk-usb.c b/drivers/clk/sunxi/clk-usb.c
-index 1a72cd6..67b8e38 100644
 --- a/drivers/clk/sunxi/clk-usb.c
 +++ b/drivers/clk/sunxi/clk-usb.c
-@@ -243,3 +243,15 @@ static void __init sun9i_a80_usb_phy_setup(struct device_node *node)
+@@ -243,3 +243,15 @@ static void __init sun9i_a80_usb_phy_set
  	sunxi_usb_clk_setup(node, &sun9i_a80_usb_phy_data, &a80_usb_phy_lock);
  }
  CLK_OF_DECLARE(sun9i_a80_usb_phy, "allwinner,sun9i-a80-usb-phy-clk", sun9i_a80_usb_phy_setup);

@@ -19,8 +19,6 @@ Changes in v2:
  drivers/usb/host/ehci-platform.c                   | 47 +++++++++++++---------
  2 files changed, 30 insertions(+), 19 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/usb-ehci.txt b/Documentation/devicetree/bindings/usb/usb-ehci.txt
-index a12d601..0701812 100644
 --- a/Documentation/devicetree/bindings/usb/usb-ehci.txt
 +++ b/Documentation/devicetree/bindings/usb/usb-ehci.txt
 @@ -18,7 +18,7 @@ Optional properties:
@@ -32,8 +30,6 @@ index a12d601..0701812 100644
  
  Example (Sequoia 440EPx):
      ehci@e0000300 {
-diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
-index bd7082f2..6fbf32a 100644
 --- a/drivers/usb/host/ehci-platform.c
 +++ b/drivers/usb/host/ehci-platform.c
 @@ -39,11 +39,12 @@
@@ -50,7 +46,7 @@ index bd7082f2..6fbf32a 100644
  	struct phy **phys;
  	int num_phys;
  	bool reset_on_resume;
-@@ -149,7 +150,7 @@ static int ehci_platform_probe(struct platform_device *dev)
+@@ -149,7 +150,7 @@ static int ehci_platform_probe(struct pl
  	struct usb_ehci_pdata *pdata = dev_get_platdata(&dev->dev);
  	struct ehci_platform_priv *priv;
  	struct ehci_hcd *ehci;
@@ -59,7 +55,7 @@ index bd7082f2..6fbf32a 100644
  
  	if (usb_disabled())
  		return -ENODEV;
-@@ -232,18 +233,24 @@ static int ehci_platform_probe(struct platform_device *dev)
+@@ -232,18 +233,24 @@ static int ehci_platform_probe(struct pl
  				break;
  			}
  		}
@@ -95,7 +91,7 @@ index bd7082f2..6fbf32a 100644
  	}
  
  	if (pdata->big_endian_desc)
-@@ -300,8 +307,10 @@ static int ehci_platform_probe(struct platform_device *dev)
+@@ -302,8 +309,10 @@ err_power:
  	if (pdata->power_off)
  		pdata->power_off(dev);
  err_reset:
@@ -108,7 +104,7 @@ index bd7082f2..6fbf32a 100644
  err_put_clks:
  	while (--clk >= 0)
  		clk_put(priv->clks[clk]);
-@@ -319,15 +328,17 @@ static int ehci_platform_remove(struct platform_device *dev)
+@@ -321,15 +330,17 @@ static int ehci_platform_remove(struct p
  	struct usb_hcd *hcd = platform_get_drvdata(dev);
  	struct usb_ehci_pdata *pdata = dev_get_platdata(&dev->dev);
  	struct ehci_platform_priv *priv = hcd_to_ehci_priv(hcd);

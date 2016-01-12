@@ -16,8 +16,6 @@ Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
  drivers/phy/phy-sun4i-usb.c                        | 41 +++++++++++++++++-----
  2 files changed, 33 insertions(+), 9 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/phy/sun4i-usb-phy.txt b/Documentation/devicetree/bindings/phy/sun4i-usb-phy.txt
-index 0cebf74..95736d7 100644
 --- a/Documentation/devicetree/bindings/phy/sun4i-usb-phy.txt
 +++ b/Documentation/devicetree/bindings/phy/sun4i-usb-phy.txt
 @@ -9,6 +9,7 @@ Required properties:
@@ -28,8 +26,6 @@ index 0cebf74..95736d7 100644
  - reg : a list of offset + length pairs
  - reg-names :
    * "phy_ctrl"
-diff --git a/drivers/phy/phy-sun4i-usb.c b/drivers/phy/phy-sun4i-usb.c
-index 35b1fa3..bae54f7 100644
 --- a/drivers/phy/phy-sun4i-usb.c
 +++ b/drivers/phy/phy-sun4i-usb.c
 @@ -47,6 +47,9 @@
@@ -59,7 +55,7 @@ index 35b1fa3..bae54f7 100644
  };
  
  struct sun4i_usb_phy_cfg {
-@@ -239,6 +243,7 @@ static int sun4i_usb_phy_init(struct phy *_phy)
+@@ -239,6 +243,7 @@ static int sun4i_usb_phy_init(struct phy
  	struct sun4i_usb_phy *phy = phy_get_drvdata(_phy);
  	struct sun4i_usb_phy_data *data = to_sun4i_usb_phy_data(phy);
  	int ret;
@@ -67,13 +63,20 @@ index 35b1fa3..bae54f7 100644
  
  	ret = clk_prepare_enable(phy->clk);
  	if (ret)
-@@ -250,16 +255,26 @@ static int sun4i_usb_phy_init(struct phy *_phy)
+@@ -250,16 +255,26 @@ static int sun4i_usb_phy_init(struct phy
  		return ret;
  	}
  
 -	/* Enable USB 45 Ohm resistor calibration */
 -	if (phy->index == 0)
 -		sun4i_usb_phy_write(phy, PHY_RES45_CAL_EN, 0x01, 1);
+-
+-	/* Adjust PHY's magnitude and rate */
+-	sun4i_usb_phy_write(phy, PHY_TX_AMPLITUDE_TUNE, 0x14, 5);
+-
+-	/* Disconnect threshold adjustment */
+-	sun4i_usb_phy_write(phy, PHY_DISCON_TH_SEL,
+-			    data->cfg->disc_thresh, 2);
 +	if (data->cfg->type == sun8i_h3_phy) {
 +		if (phy->index == 0) {
 +			val = readl(data->base + REG_PHY_UNK_H3);
@@ -86,15 +89,10 @@ index 35b1fa3..bae54f7 100644
 +		/* Enable USB 45 Ohm resistor calibration */
 +		if (phy->index == 0)
 +			sun4i_usb_phy_write(phy, PHY_RES45_CAL_EN, 0x01, 1);
- 
--	/* Adjust PHY's magnitude and rate */
--	sun4i_usb_phy_write(phy, PHY_TX_AMPLITUDE_TUNE, 0x14, 5);
++
 +		/* Adjust PHY's magnitude and rate */
 +		sun4i_usb_phy_write(phy, PHY_TX_AMPLITUDE_TUNE, 0x14, 5);
- 
--	/* Disconnect threshold adjustment */
--	sun4i_usb_phy_write(phy, PHY_DISCON_TH_SEL,
--			    data->cfg->disc_thresh, 2);
++
 +		/* Disconnect threshold adjustment */
 +		sun4i_usb_phy_write(phy, PHY_DISCON_TH_SEL,
 +				    data->cfg->disc_thresh, 2);
@@ -102,7 +100,7 @@ index 35b1fa3..bae54f7 100644
  
  	sun4i_usb_phy_passby(phy, 1);
  
-@@ -726,6 +741,13 @@ static const struct sun4i_usb_phy_cfg sun8i_a33_cfg = {
+@@ -726,6 +741,13 @@ static const struct sun4i_usb_phy_cfg su
  	.dedicated_clocks = true,
  };
  
@@ -116,7 +114,7 @@ index 35b1fa3..bae54f7 100644
  static const struct of_device_id sun4i_usb_phy_of_match[] = {
  	{ .compatible = "allwinner,sun4i-a10-usb-phy", .data = &sun4i_a10_cfg },
  	{ .compatible = "allwinner,sun5i-a13-usb-phy", .data = &sun5i_a13_cfg },
-@@ -733,6 +755,7 @@ static const struct of_device_id sun4i_usb_phy_of_match[] = {
+@@ -733,6 +755,7 @@ static const struct of_device_id sun4i_u
  	{ .compatible = "allwinner,sun7i-a20-usb-phy", .data = &sun7i_a20_cfg },
  	{ .compatible = "allwinner,sun8i-a23-usb-phy", .data = &sun8i_a23_cfg },
  	{ .compatible = "allwinner,sun8i-a33-usb-phy", .data = &sun8i_a33_cfg },

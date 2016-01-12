@@ -37,7 +37,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  };
  
  /* Wait for bitmask in a register to get set or cleared.
-@@ -228,19 +230,12 @@ static void bcma_hcd_init_chip_arm(struct bcma_device *dev)
+@@ -228,19 +230,12 @@ static void bcma_hcd_init_chip_arm(struc
  
  static void bcma_hci_platform_power_gpio(struct bcma_device *dev, bool val)
  {
@@ -60,7 +60,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  }
  
  static const struct usb_ehci_pdata ehci_pdata = {
-@@ -314,7 +309,11 @@ static int bcma_hcd_probe(struct bcma_device *dev)
+@@ -314,7 +309,11 @@ static int bcma_hcd_probe(struct bcma_de
  	if (!usb_dev)
  		return -ENOMEM;
  

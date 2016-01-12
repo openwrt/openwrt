@@ -24,10 +24,6 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  4 files changed, 121 insertions(+)
  create mode 100644 drivers/clk/sunxi/clk-sun8i-bus-gates.c
 
-diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
-index ef0b452..014eab8 100644
-diff --git a/drivers/clk/sunxi/Makefile b/drivers/clk/sunxi/Makefile
-index 103efab..abf4916 100644
 --- a/drivers/clk/sunxi/Makefile
 +++ b/drivers/clk/sunxi/Makefile
 @@ -10,6 +10,7 @@ obj-y += clk-a10-pll2.o
@@ -38,9 +34,6 @@ index 103efab..abf4916 100644
  obj-y += clk-sun8i-mbus.o
  obj-y += clk-sun9i-core.o
  obj-y += clk-sun9i-mmc.o
-diff --git a/drivers/clk/sunxi/clk-sun8i-bus-gates.c b/drivers/clk/sunxi/clk-sun8i-bus-gates.c
-new file mode 100644
-index 0000000..7ab60c5
 --- /dev/null
 +++ b/drivers/clk/sunxi/clk-sun8i-bus-gates.c
 @@ -0,0 +1,112 @@
@@ -156,11 +149,9 @@ index 0000000..7ab60c5
 +
 +CLK_OF_DECLARE(sun8i_h3_bus_gates, "allwinner,sun8i-h3-bus-gates-clk",
 +	       sun8i_h3_bus_gates_init);
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 9c79af0c..5ba2188 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -778,6 +778,10 @@ static const struct mux_data sun6i_a31_ahb1_mux_data __initconst = {
+@@ -778,6 +778,10 @@ static const struct mux_data sun6i_a31_a
  	.shift = 12,
  };
  
@@ -171,7 +162,7 @@ index 9c79af0c..5ba2188 100644
  static void __init sunxi_mux_clk_setup(struct device_node *node,
  				       struct mux_data *data)
  {
-@@ -1130,6 +1134,7 @@ static const struct of_device_id clk_divs_match[] __initconst = {
+@@ -1130,6 +1134,7 @@ static const struct of_device_id clk_div
  static const struct of_device_id clk_mux_match[] __initconst = {
  	{.compatible = "allwinner,sun4i-a10-cpu-clk", .data = &sun4i_cpu_mux_data,},
  	{.compatible = "allwinner,sun6i-a31-ahb1-mux-clk", .data = &sun6i_a31_ahb1_mux_data,},
@@ -179,7 +170,7 @@ index 9c79af0c..5ba2188 100644
  	{}
  };
  
-@@ -1212,6 +1217,7 @@ CLK_OF_DECLARE(sun6i_a31_clk_init, "allwinner,sun6i-a31", sun6i_init_clocks);
+@@ -1212,6 +1217,7 @@ CLK_OF_DECLARE(sun6i_a31_clk_init, "allw
  CLK_OF_DECLARE(sun6i_a31s_clk_init, "allwinner,sun6i-a31s", sun6i_init_clocks);
  CLK_OF_DECLARE(sun8i_a23_clk_init, "allwinner,sun8i-a23", sun6i_init_clocks);
  CLK_OF_DECLARE(sun8i_a33_clk_init, "allwinner,sun8i-a33", sun6i_init_clocks);

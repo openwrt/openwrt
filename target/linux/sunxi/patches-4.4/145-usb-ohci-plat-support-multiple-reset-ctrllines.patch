@@ -19,8 +19,6 @@ Changes in v2:
  drivers/usb/host/ohci-platform.c                   | 49 +++++++++++++---------
  2 files changed, 30 insertions(+), 21 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/usb-ohci.txt b/Documentation/devicetree/bindings/usb/usb-ohci.txt
-index 19233b7..9df4569 100644
 --- a/Documentation/devicetree/bindings/usb/usb-ohci.txt
 +++ b/Documentation/devicetree/bindings/usb/usb-ohci.txt
 @@ -14,7 +14,7 @@ Optional properties:
@@ -32,8 +30,6 @@ index 19233b7..9df4569 100644
  
  Example:
  
-diff --git a/drivers/usb/host/ohci-platform.c b/drivers/usb/host/ohci-platform.c
-index c2669f18..7d8bbc4 100644
 --- a/drivers/usb/host/ohci-platform.c
 +++ b/drivers/usb/host/ohci-platform.c
 @@ -33,11 +33,12 @@
@@ -50,7 +46,7 @@ index c2669f18..7d8bbc4 100644
  	struct phy **phys;
  	int num_phys;
  };
-@@ -117,7 +118,7 @@ static int ohci_platform_probe(struct platform_device *dev)
+@@ -117,7 +118,7 @@ static int ohci_platform_probe(struct pl
  	struct usb_ohci_pdata *pdata = dev_get_platdata(&dev->dev);
  	struct ohci_platform_priv *priv;
  	struct ohci_hcd *ohci;
@@ -59,7 +55,7 @@ index c2669f18..7d8bbc4 100644
  
  	if (usb_disabled())
  		return -ENODEV;
-@@ -195,19 +196,23 @@ static int ohci_platform_probe(struct platform_device *dev)
+@@ -195,19 +196,23 @@ static int ohci_platform_probe(struct pl
  				break;
  			}
  		}
@@ -96,7 +92,7 @@ index c2669f18..7d8bbc4 100644
  	}
  
  	if (pdata->big_endian_desc)
-@@ -265,8 +270,10 @@ static int ohci_platform_probe(struct platform_device *dev)
+@@ -265,8 +270,10 @@ err_power:
  	if (pdata->power_off)
  		pdata->power_off(dev);
  err_reset:
@@ -109,7 +105,7 @@ index c2669f18..7d8bbc4 100644
  err_put_clks:
  	while (--clk >= 0)
  		clk_put(priv->clks[clk]);
-@@ -284,15 +291,17 @@ static int ohci_platform_remove(struct platform_device *dev)
+@@ -284,15 +291,17 @@ static int ohci_platform_remove(struct p
  	struct usb_hcd *hcd = platform_get_drvdata(dev);
  	struct usb_ohci_pdata *pdata = dev_get_platdata(&dev->dev);
  	struct ohci_platform_priv *priv = hcd_to_ohci_priv(hcd);

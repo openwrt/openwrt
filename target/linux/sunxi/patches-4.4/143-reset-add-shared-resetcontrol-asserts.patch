@@ -22,11 +22,9 @@ Changes in v2:
  include/linux/reset.h            |   2 +
  3 files changed, 116 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/reset/core.c b/drivers/reset/core.c
-index 9ab9290..8c3436c 100644
 --- a/drivers/reset/core.c
 +++ b/drivers/reset/core.c
-@@ -22,16 +22,29 @@ static DEFINE_MUTEX(reset_controller_list_mutex);
+@@ -22,16 +22,29 @@ static DEFINE_MUTEX(reset_controller_lis
  static LIST_HEAD(reset_controller_list);
  
  /**
@@ -59,7 +57,7 @@ index 9ab9290..8c3436c 100644
  };
  
  /**
-@@ -66,6 +79,8 @@ int reset_controller_register(struct reset_controller_dev *rcdev)
+@@ -66,6 +79,8 @@ int reset_controller_register(struct res
  		rcdev->of_xlate = of_reset_simple_xlate;
  	}
  
@@ -68,7 +66,7 @@ index 9ab9290..8c3436c 100644
  	mutex_lock(&reset_controller_list_mutex);
  	list_add(&rcdev->list, &reset_controller_list);
  	mutex_unlock(&reset_controller_list_mutex);
-@@ -93,7 +108,7 @@ EXPORT_SYMBOL_GPL(reset_controller_unregister);
+@@ -93,7 +108,7 @@ EXPORT_SYMBOL_GPL(reset_controller_unreg
  int reset_control_reset(struct reset_control *rstc)
  {
  	if (rstc->rcdev->ops->reset)
@@ -143,7 +141,7 @@ index 9ab9290..8c3436c 100644
   * reset_control_status - returns a negative errno if not supported, a
   * positive value if the reset line is asserted, or zero if the reset
   * line is not asserted.
-@@ -134,12 +191,47 @@ EXPORT_SYMBOL_GPL(reset_control_deassert);
+@@ -134,12 +191,47 @@ EXPORT_SYMBOL_GPL(reset_control_deassert
  int reset_control_status(struct reset_control *rstc)
  {
  	if (rstc->rcdev->ops->status)
@@ -192,7 +190,7 @@ index 9ab9290..8c3436c 100644
  /**
   * of_reset_control_get_by_index - Lookup and obtain a reference to a reset
   * controller by index.
-@@ -155,6 +247,7 @@ struct reset_control *of_reset_control_get_by_index(struct device_node *node,
+@@ -155,6 +247,7 @@ struct reset_control *of_reset_control_g
  {
  	struct reset_control *rstc = ERR_PTR(-EPROBE_DEFER);
  	struct reset_controller_dev *r, *rcdev;
@@ -200,7 +198,7 @@ index 9ab9290..8c3436c 100644
  	struct of_phandle_args args;
  	int rstc_id;
  	int ret;
-@@ -186,16 +279,22 @@ struct reset_control *of_reset_control_get_by_index(struct device_node *node,
+@@ -186,16 +279,22 @@ struct reset_control *of_reset_control_g
  	}
  
  	try_module_get(rcdev->owner);
@@ -225,7 +223,7 @@ index 9ab9290..8c3436c 100644
  
  	return rstc;
  }
-@@ -259,6 +358,10 @@ void reset_control_put(struct reset_control *rstc)
+@@ -259,6 +358,10 @@ void reset_control_put(struct reset_cont
  	if (IS_ERR(rstc))
  		return;
  
@@ -236,8 +234,6 @@ index 9ab9290..8c3436c 100644
  	module_put(rstc->rcdev->owner);
  	kfree(rstc);
  }
-diff --git a/include/linux/reset-controller.h b/include/linux/reset-controller.h
-index ce6b962..7f2cbd1 100644
 --- a/include/linux/reset-controller.h
 +++ b/include/linux/reset-controller.h
 @@ -31,6 +31,7 @@ struct of_phandle_args;
@@ -256,11 +252,9 @@ index ce6b962..7f2cbd1 100644
  	struct device_node *of_node;
  	int of_reset_n_cells;
  	int (*of_xlate)(struct reset_controller_dev *rcdev,
-diff --git a/include/linux/reset.h b/include/linux/reset.h
-index c4c097d..1cca8ce 100644
 --- a/include/linux/reset.h
 +++ b/include/linux/reset.h
-@@ -11,6 +11,8 @@ int reset_control_reset(struct reset_control *rstc);
+@@ -11,6 +11,8 @@ int reset_control_reset(struct reset_con
  int reset_control_assert(struct reset_control *rstc);
  int reset_control_deassert(struct reset_control *rstc);
  int reset_control_status(struct reset_control *rstc);

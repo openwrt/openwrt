@@ -1,6 +1,6 @@
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -100,6 +100,7 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -127,6 +127,7 @@ static int bcm47xxpart_parse(struct mtd_
  	int last_trx_part = -1;
  	int possible_nvram_sizes[] = { 0x8000, 0xF000, 0x10000, };
  	int err;
@@ -8,7 +8,7 @@
  
  	/*
  	 * Some really old flashes (like AT45DB*) had smaller erasesize-s, but
-@@ -306,12 +307,23 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -334,12 +335,23 @@ static int bcm47xxpart_parse(struct mtd_
  		if (buf[0] == NVRAM_HEADER) {
  			bcm47xxpart_add_part(&parts[curr_part++], "nvram",
  					     master->size - blocksize, 0);
