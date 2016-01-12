@@ -4,7 +4,6 @@
 #ifndef __ASSEMBLER__
 
 #include <sys/ioctl.h>
-#include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <syscall.h>
@@ -15,16 +14,6 @@
 #undef _IOW
 #undef _IOC
 #undef _IO
-
-/* Change XSI compliant version into GNU extension hackery */
-static inline char *
-gnu_strerror_r(int err, char *buf, size_t buflen)
-{
-	if (strerror_r(err, buf, buflen))
-		return NULL;
-	return buf;
-}
-#define strerror_r gnu_strerror_r
 
 #define _SC_LEVEL1_DCACHE_LINESIZE -1
 
