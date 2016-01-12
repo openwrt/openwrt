@@ -31,7 +31,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
-@@ -455,6 +455,18 @@ out:
+@@ -454,6 +454,18 @@ out:
  	return NET_RX_DROP;
  }
  
@@ -50,7 +50,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  /************************************************************************
   *
   * Receive a PPPoE Discovery frame.
-@@ -500,7 +512,8 @@ static int pppoe_disc_rcv(struct sk_buff
+@@ -499,7 +511,8 @@ static int pppoe_disc_rcv(struct sk_buff
  		}
  
  		bh_unlock_sock(sk);
@@ -60,7 +60,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  abort:
-@@ -613,6 +626,8 @@ static int pppoe_connect(struct socket *
+@@ -612,6 +625,8 @@ static int pppoe_connect(struct socket *
  
  	lock_sock(sk);
  
