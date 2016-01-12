@@ -13,7 +13,7 @@ FEATURES:=squashfs ext4 vdi vmdk pcmcia targz
 SUBTARGETS=generic xen_domu ep80579 geode kvm_guest 64
 MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=4.4
 
 KERNELNAME:=bzImage
 
