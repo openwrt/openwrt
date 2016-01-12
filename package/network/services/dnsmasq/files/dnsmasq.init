@@ -599,10 +599,24 @@ start_service() {
 	config_foreach dhcp_hostrecord_add hostrecord
 
 	# add own hostname
-	local lanaddr
-	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && network_get_ipaddr lanaddr "lan" && {
+	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && {
+		local lanaddr lanaddr6
+		local ulaprefix="$(uci_get network @globals[0] ula_prefix)"
 		local hostname="$(uci_get system @system[0] hostname OpenWrt)"
-		dhcp_domain_add "" "$hostname" "$lanaddr"
+
+		network_get_ipaddr lanaddr "lan" && {
+			dhcp_domain_add "" "$hostname" "$lanaddr"
+		}
+
+		network_get_ipaddrs6 lanaddr6 "lan" && {
+			for lanaddr6 in $lanaddr6; do
+				case "$lanaddr6" in
+					"${ulaprefix%%:/*}"*)
+						dhcp_domain_add "" "$hostname" "${ulaprefix%%/*}1"
+					;;
+				esac
+			done
+		}
 	}
 
 	echo >> $CONFIGFILE
