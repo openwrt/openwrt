@@ -2,11 +2,11 @@
 country 00:
 	(2402 - 2472 @ 40), (20)
 	# Channel 12 - 13.
-	(2457 - 2482 @ 40), (20), NO-IR
+	(2457 - 2482 @ 20), (20), NO-IR, AUTO-BW
 	# Channel 14. Only JP enables this and for 802.11b only
 	(2474 - 2494 @ 20), (20), NO-IR, NO-OFDM
 	# Channel 36 - 48
-	(5170 - 5250 @ 80), (20)
+	(5170 - 5250 @ 80), (20), AUTO-BW
 	# Channel 52 - 64
 	(5250 - 5330 @ 80), (20), NO-IR, DFS, AUTO-BW
 	# Channel 100 - 144
@@ -22,7 +22,7 @@ country AD:
 	(5170 - 5250 @ 80), (20)
 	(5250 - 5330 @ 80), (20), DFS
 	(5490 - 5710 @ 80), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country AE: DFS-FCC
@@ -54,8 +54,8 @@ country AL: DFS-ETSI
 
 country AM: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (18)
-	(5250 - 5330 @ 80), (18), DFS
+	(5170 - 5250 @ 20), (18)
+	(5250 - 5330 @ 20), (18), DFS
 
 country AN: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
@@ -82,10 +82,10 @@ country AT: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
-country AU:
+country AU: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
 	(5170 - 5250 @ 80), (17), AUTO-BW
 	(5250 - 5330 @ 80), (24), DFS, AUTO-BW
@@ -108,7 +108,7 @@ country BA: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country BB: DFS-FCC
@@ -126,7 +126,7 @@ country BE: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country BF: DFS-FCC
@@ -141,14 +141,20 @@ country BG: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 5 GHz Short Range Devices, ref:
+	# Etsi EN 300 440-1
+	# Etsi EN 300 440-2
+	# http://crc.bg/files/_bg/Spisak_2015.pdf
+	# http://crc.bg/files/_bg/Pravila_2015_resh24.pdf
+	(5725 - 5875 @ 80), (14)
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country BH: DFS-JP
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20)
-	(5250 - 5330 @ 80), (20), DFS
-	(5735 - 5835 @ 80), (20)
+	(5170 - 5250 @ 20), (20)
+	(5250 - 5330 @ 20), (20), DFS
+	(5735 - 5835 @ 20), (20)
 
 country BL: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
@@ -210,7 +216,8 @@ country CA: DFS-FCC
 	(2402 - 2472 @ 40), (30)
 	(5170 - 5250 @ 80), (17), AUTO-BW
 	(5250 - 5330 @ 80), (24), DFS, AUTO-BW
-	(5490 - 5730 @ 160), (24), DFS
+	(5490 - 5600 @ 80), (24), DFS
+	(5650 - 5730 @ 80), (24), DFS
 	(5735 - 5835 @ 80), (30)
 
 # Source:
@@ -227,7 +234,7 @@ country CH: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country CI: DFS-FCC
@@ -248,7 +255,7 @@ country CN: DFS-FCC
 	(5170 - 5250 @ 80), (23), AUTO-BW
 	(5250 - 5330 @ 80), (23), DFS, AUTO-BW
 	(5735 - 5835 @ 80), (30)
-	# 60 gHz band channels 1,4: 28dBm, channels 2,3: 44dBm
+	# 60 GHz band channels 1,4: 28dBm, channels 2,3: 44dBm
 	# ref: http://www.miit.gov.cn/n11293472/n11505629/n11506593/n11960250/n11960606/n11960700/n12330791.files/n12330790.pdf
 	(57240 - 59400 @ 2160), (28)
 	(59400 - 63720 @ 2160), (44)
@@ -263,10 +270,10 @@ country CO: DFS-FCC
 
 country CR: DFS-FCC
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (17)
-	(5250 - 5330 @ 80), (24), DFS
-	(5490 - 5730 @ 80), (24), DFS
-	(5735 - 5835 @ 80), (30)
+	(5170 - 5250 @ 20), (17)
+	(5250 - 5330 @ 20), (24), DFS
+	(5490 - 5730 @ 20), (24), DFS
+	(5735 - 5835 @ 20), (30)
 
 country CX: DFS-FCC
 	(2402 - 2482 @ 40), (20)
@@ -280,7 +287,7 @@ country CY: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 # Data from http://www.ctu.eu/164/download/VOR/VOR-12-08-2005-34.pdf
@@ -292,7 +299,7 @@ country CZ: DFS-ETSI
 	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, AUTO-BW
 	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, DFS, AUTO-BW
 	(5470 - 5725 @ 160), (500 mW), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 # Data from "Frequenznutzungsplan" (as published in April 2008), downloaded from
@@ -316,7 +323,7 @@ country DE: DFS-ETSI
 	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, DFS, AUTO-BW
 	# entries 308002, 309001 and 310003
 	(5470 - 5725 @ 160), (500 mW), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country DK: DFS-ETSI
@@ -324,7 +331,7 @@ country DK: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 # Source:
@@ -349,23 +356,23 @@ country DZ: DFS-JP
 
 country EC: DFS-FCC
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (17)
-	(5250 - 5330 @ 80), (24), DFS
-	(5490 - 5730 @ 80), (24), DFS
-	(5735 - 5835 @ 80), (30)
+	(5170 - 5250 @ 20), (17)
+	(5250 - 5330 @ 20), (24), DFS
+	(5490 - 5730 @ 20), (24), DFS
+	(5735 - 5835 @ 20), (30)
 
 country EE: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country EG: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20)
-	(5250 - 5330 @ 80), (20), DFS
+	(5170 - 5250 @ 40), (20)
+	(5250 - 5330 @ 40), (20), DFS
 
 # Orden IET/787/2013, de 25 de abril, por la que se aprueba
 # el cuadro nacional de atribución de frecuencias.
@@ -379,7 +386,7 @@ country ES: DFS-ETSI
 	(5150 - 5250 @ 80), (200 mW), NO-OUTDOOR, AUTO-BW
 	(5250 - 5350 @ 80), (100 mW), NO-OUTDOOR, DFS, AUTO-BW
 	(5470 - 5725 @ 160), (500 mW), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country ET: DFS-ETSI
@@ -389,11 +396,11 @@ country ET: DFS-ETSI
 	(5490 - 5710 @ 160), (27), DFS
 
 country FI: DFS-ETSI
-	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20), AUTO-BW
-	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
-	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	(2400 - 2483.5 @ 40), (20)
+	(5150 - 5250 @ 80), (23), NO-OUTDOOR, AUTO-BW
+	(5250 - 5350 @ 80), (20), NO-OUTDOOR, DFS, AUTO-BW
+	(5470 - 5725 @ 160), (27), DFS
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country FM: DFS-FCC
@@ -408,7 +415,7 @@ country FR: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country GB: DFS-ETSI
@@ -416,7 +423,7 @@ country GB: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country GD: DFS-FCC
@@ -430,7 +437,7 @@ country GE: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
 	(5170 - 5250 @ 80), (18), AUTO-BW
 	(5250 - 5330 @ 80), (18), DFS, AUTO-BW
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country GF: DFS-ETSI
@@ -448,9 +455,9 @@ country GH: DFS-FCC
 
 country GL: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20)
-	(5250 - 5330 @ 80), (20), DFS
-	(5490 - 5710 @ 80), (27), DFS
+	(5170 - 5250 @ 80), (20), AUTO-BW
+	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
+	(5490 - 5710 @ 160), (27), DFS
 
 country GP: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
@@ -463,7 +470,7 @@ country GR: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country GT: DFS-FCC
@@ -474,16 +481,16 @@ country GT: DFS-FCC
 
 country GU: DFS-FCC
 	(2402 - 2472 @ 40), (30)
-	(5170 - 5250 @ 80), (17)
-	(5250 - 5330 @ 80), (24), DFS
-	(5490 - 5730 @ 80), (24), DFS
-	(5735 - 5835 @ 80), (30)
+	(5170 - 5250 @ 20), (17)
+	(5250 - 5330 @ 20), (24), DFS
+	(5490 - 5730 @ 20), (24), DFS
+	(5735 - 5835 @ 20), (30)
 
 country GY:
 	(2402 - 2482 @ 40), (30)
 	(5735 - 5835 @ 80), (30)
 
-country HK:
+country HK: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
 	(5170 - 5250 @ 80), (17), AUTO-BW
 	(5250 - 5330 @ 80), (24), DFS, AUTO-BW
@@ -498,11 +505,11 @@ country HN: DFS-FCC
 	(5735 - 5835 @ 80), (30)
 
 country HR: DFS-ETSI
-	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20), AUTO-BW
-	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
-	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	(2400 - 2483.5 @ 40), (20)
+	(5150 - 5250 @ 80), (23), NO-OUTDOOR, AUTO-BW
+	(5250 - 5350 @ 80), (20), NO-OUTDOOR, DFS, AUTO-BW
+	(5470 - 5725 @ 160), (27), DFS
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country HT: DFS-FCC
@@ -517,20 +524,20 @@ country HU: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country ID: DFS-JP
 	# ref: http://www.postel.go.id/content/ID/regulasi/standardisasi/kepdir/bwa%205,8%20ghz.pdf
-	(2402 - 2482 @ 40), (20)
-	(5735 - 5815 @ 80), (23)
+	(2402 - 2482 @ 20), (20)
+	(5735 - 5815 @ 20), (23)
 
 country IE: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country IL: DFS-ETSI
@@ -553,7 +560,7 @@ country IS: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country IT: DFS-ETSI
@@ -561,7 +568,7 @@ country IT: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country JM: DFS-FCC
@@ -584,6 +591,9 @@ country JP: DFS-JP
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (23), DFS
+	# 60 GHz band channels 2-4 at 10mW,
+	# ref: http://www.arib.or.jp/english/html/overview/doc/1-STD-T74v1_1.pdf
+	(59000 - 66000 @ 2160), (10 mW)
 
 country KE: DFS-JP
 	(2402 - 2482 @ 40), (20)
@@ -607,11 +617,11 @@ country KN: DFS-ETSI
 	(5735 - 5815 @ 80), (30)
 
 country KP: DFS-JP
-	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20), AUTO-BW
-	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
-	(5490 - 5630 @ 80), (30), DFS
-	(5735 - 5815 @ 80), (30)
+	(2402 - 2482 @ 20), (20)
+	(5170 - 5250 @ 20), (20)
+	(5250 - 5330 @ 20), (20), DFS
+	(5490 - 5630 @ 20), (30), DFS
+	(5735 - 5815 @ 20), (30)
 
 country KR: DFS-JP
 	(2402 - 2482 @ 40), (20)
@@ -659,10 +669,10 @@ country LI: DFS-ETSI
 
 country LK: DFS-FCC
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (17)
-	(5250 - 5330 @ 80), (24), DFS
-	(5490 - 5730 @ 80), (24), DFS
-	(5735 - 5835 @ 80), (30)
+	(5170 - 5250 @ 20), (17)
+	(5250 - 5330 @ 20), (24), DFS
+	(5490 - 5730 @ 20), (24), DFS
+	(5735 - 5835 @ 20), (30)
 
 # Source:
 # http://lca.org.ls/images/documents/lesotho_national_frequency_allocation_plan.pdf
@@ -677,7 +687,7 @@ country LT: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country LU: DFS-ETSI
@@ -685,7 +695,7 @@ country LU: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country LV: DFS-ETSI
@@ -693,7 +703,7 @@ country LV: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country MA: DFS-ETSI
@@ -741,7 +751,7 @@ country MK: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country MN: DFS-FCC
@@ -751,11 +761,12 @@ country MN: DFS-FCC
 	(5490 - 5730 @ 160), (24), DFS
 	(5735 - 5835 @ 80), (30)
 
-country MO:
-	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 40), (23)
-	(5250 - 5330 @ 40), (23), DFS
-	(5735 - 5835 @ 40), (30)
+country MO: DFS-FCC
+	(2402 - 2482 @ 40), (23)
+	(5170 - 5250 @ 80), (23), AUTO-BW
+	(5250 - 5330 @ 80), (23), DFS, AUTO-BW
+	(5490 - 5730 @ 160), (30), DFS
+	(5735 - 5835 @ 80), (30)
 
 country MP: DFS-FCC
 	(2402 - 2472 @ 40), (30)
@@ -783,7 +794,7 @@ country MT: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country MU: DFS-FCC
@@ -792,6 +803,14 @@ country MU: DFS-FCC
 	(5250 - 5330 @ 80), (24), DFS, AUTO-BW
 	(5490 - 5730 @ 160), (24), DFS
 	(5735 - 5835 @ 80), (30)
+
+# Source:
+# http://www.cam.gov.mv/docs/tech_standards/TAM-TS-100-2004-WLAN.pdf
+country MV: DFS-ETSI
+	(2400 - 2483.5 @ 40), (100 mW)
+	(5150 - 5250 @ 80), (200 mW), AUTO-BW
+	(5250 - 5350 @ 80), (100 mW), DFS, AUTO-BW
+	(5725 - 5850 @ 80), (100 mW)
 
 country MW: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
@@ -808,8 +827,14 @@ country MX: DFS-FCC
 
 country MY: DFS-FCC
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (17), AUTO-BW
-	(5250 - 5330 @ 80), (23), DFS, AUTO-BW
+	(5170 - 5250 @ 80), (24), AUTO-BW
+	(5250 - 5330 @ 80), (24), DFS, AUTO-BW
+	(5490 - 5650 @ 160), (24), DFS
+	(5735 - 5835 @ 80), (24)
+
+country NG: DFS-ETSI
+	(2402 - 2482 @ 40), (20)
+	(5250 - 5330 @ 80), (30), DFS
 	(5735 - 5835 @ 80), (30)
 
 country NI: DFS-FCC
@@ -824,7 +849,7 @@ country NL: DFS-ETSI
 	(5170 - 5250 @ 80), (20), NO-OUTDOOR, AUTO-BW
 	(5250 - 5330 @ 80), (20), NO-OUTDOOR, DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 # Data from http://www.lovdata.no/dokument/SF/forskrift/2012-01-19-77
@@ -839,7 +864,7 @@ country NO: DFS-ETSI
 	(5470 - 5795 @ 160), (500 mW), DFS
 	(5815 - 5850 @ 35), (2000 mW), DFS
 	(17100 - 17300 @ 200), (100 mW)
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country NP: DFS-JP
@@ -848,7 +873,7 @@ country NP: DFS-JP
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5735 - 5835 @ 80), (20)
 
-country NZ: DFS-FCC
+country NZ: DFS-ETSI
 	(2402 - 2482 @ 40), (30)
 	(5170 - 5250 @ 80), (17), AUTO-BW
 	(5250 - 5330 @ 80), (24), DFS, AUTO-BW
@@ -903,7 +928,7 @@ country PL: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country PM: DFS-ETSI
@@ -924,7 +949,7 @@ country PT: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country PW: DFS-FCC
@@ -956,7 +981,7 @@ country RO: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 
@@ -966,15 +991,17 @@ country RS: DFS-ETSI
 	(2400 - 2483.5 @ 40), (100 mW)
 	(5150 - 5350 @ 40), (200 mW), NO-OUTDOOR
 	(5470 - 5725 @ 20), (1000 mW), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country RU: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20)
-	(5250 - 5330 @ 80), (20), DFS
+	(5170 - 5250 @ 80), (20), AUTO-BW
+	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5650 - 5730 @ 80), (30), DFS
 	(5735 - 5835 @ 80), (30)
+	# 60 GHz band channels 1-4, ref: Changes to NLA 124_Order №129_22042015.pdf
+	(57000 - 66000 @ 2160), (40)
 
 country RW: DFS-FCC
 	(2402 - 2482 @ 40), (20)
@@ -994,7 +1021,7 @@ country SE: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country SG: DFS-FCC
@@ -1009,7 +1036,7 @@ country SI: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country SK: DFS-ETSI
@@ -1017,7 +1044,7 @@ country SK: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 # Source:
@@ -1037,9 +1064,9 @@ country SR: DFS-ETSI
 
 country SV: DFS-FCC
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (17)
-	(5250 - 5330 @ 80), (23), DFS
-	(5735 - 5835 @ 80), (30)
+	(5170 - 5250 @ 20), (17)
+	(5250 - 5330 @ 20), (23), DFS
+	(5735 - 5835 @ 20), (30)
 
 country SY:
 	(2402 - 2482 @ 40), (20)
@@ -1082,7 +1109,7 @@ country TR: DFS-ETSI
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country TT: DFS-FCC
@@ -1092,13 +1119,25 @@ country TT: DFS-FCC
 	(5490 - 5730 @ 160), (24), DFS
 	(5735 - 5835 @ 80), (30)
 
-country TW: DFS-JP
-	(2402 - 2472 @ 40), (30)
-	(5270 - 5330 @ 40), (17), DFS
-	(5490 - 5590 @ 80), (30), DFS
-	(5650 - 5710 @ 40), (30), DFS
-	(5735 - 5835 @ 80), (30)
+# Source:
+# Table of Frequency Allocations of Republic of China (Taiwan) / Nov 2014:
+#   http://www.motc.gov.tw/websitedowndoc?file=post/201411171137330.doc& \
+#      filedisplay=Table+of+radio+frequency+allocation.doc
+# LP0002 Low-power Radio-frequency Devices Technical Regulations / 28 Jun 2011:
+#   http://www.ncc.gov.tw/english/show_file.aspx?table_name=news&file_sn=681
+#   (section 3.10.1, 4.7)
+country TW: DFS-FCC
+	(2400 - 2483.5 @ 40), (30)
+	# Follow US 5.15 ~ 5.25 GHz: 30 dBm for master mode, 23 dBm for clients
+	(5150 - 5250 @ 80), (23), AUTO-BW
+	(5250 - 5350 @ 80), (23), DFS, AUTO-BW
+	(5470 - 5725 @ 160), (23), DFS
+	(5725 - 5850 @ 80), (30)
  
+country TZ:
+	(2402 - 2482 @ 40), (20)
+	(5735 - 5835 @ 80), (30)
+
 # Source:
 # #914 / 06 Sep 2007: http://www.ucrf.gov.ua/uk/doc/nkrz/1196068874
 # #1174 / 23 Oct 2008: http://www.nkrz.gov.ua/uk/activities/ruling/1225269361
@@ -1108,10 +1147,11 @@ country TW: DFS-JP
 # disputable definitions there.
 country UA: DFS-ETSI
 	(2400 - 2483.5 @ 40), (20), NO-OUTDOOR
-	(5150 - 5350 @ 40), (20), NO-OUTDOOR
-	(5490 - 5670 @ 80), (20), DFS
+	(5150 - 5250 @ 80), (20), NO-OUTDOOR, AUTO-BW
+	(5250 - 5350 @ 80), (20), DFS, NO-OUTDOOR, AUTO-BW
+	(5490 - 5670 @ 160), (20), DFS
 	(5735 - 5835 @ 80), (20)
-	# 60 gHz band channels 1-4, ref: Etsi En 302 567
+	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 
 country UG: DFS-FCC
@@ -1123,8 +1163,10 @@ country UG: DFS-FCC
 
 country US: DFS-FCC
 	(2402 - 2472 @ 40), (30)
-	(5170 - 5250 @ 80), (17), AUTO-BW
+	# 5.15 ~ 5.25 GHz: 30 dBm for master mode, 23 dBm for clients
+	(5170 - 5250 @ 80), (23), AUTO-BW
 	(5250 - 5330 @ 80), (23), DFS, AUTO-BW
+	(5490 - 5730 @ 160), (23), DFS
 	(5735 - 5835 @ 80), (30)
 	# 60g band
 	# reference: http://cfr.regstoday.com/47cfr15.aspx#47_CFR_15p255
@@ -1133,9 +1175,8 @@ country US: DFS-FCC
 
 country UY: DFS-FCC
 	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (17), AUTO-BW
-	(5250 - 5330 @ 80), (24), DFS, AUTO-BW
-	(5490 - 5730 @ 160), (24), DFS
+	(5170 - 5250 @ 80), (23), AUTO-BW
+	(5250 - 5330 @ 80), (23), DFS, AUTO-BW
 	(5735 - 5835 @ 80), (30)
 
 # Source:
@@ -1192,6 +1233,12 @@ country WF: DFS-ETSI
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
 	(5490 - 5710 @ 160), (27), DFS
 
+country WS: DFS-ETSI
+	(2402 - 2482 @ 40), (20)
+	(5170 - 5250 @ 40), (20)
+	(5250 - 5330 @ 40), (20), DFS
+	(5490 - 5710 @ 40), (27), DFS
+
 country YE:
 	(2402 - 2482 @ 40), (20)
 
@@ -1205,7 +1252,7 @@ country ZA: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
 	(5170 - 5250 @ 80), (20), AUTO-BW
 	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
-	(5490 - 5710 @ 160), (27), DFS
+	(5490 - 5710 @ 160), (30)
 
 country ZW: DFS-ETSI
 	(2402 - 2482 @ 40), (20)
