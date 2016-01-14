@@ -1,0 +1,54 @@
+From: Aaro Koskinen <aaro.koskinen@nokia.com>
+Date: Wed, 1 Jul 2015 14:54:42 +0300
+Subject: [PATCH] perf tools: Create config.detected into OUTPUT directory
+
+Create config.detected into OUTPUT directory instead of source
+directory.
+
+This fixes parallel builds that share the same source directory.
+
+Signed-off-by: Aaro Koskinen <aaro.koskinen@nokia.com>
+Acked-by: Jiri Olsa <jolsa@kernel.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Link: http://lkml.kernel.org/r/1435751683-18500-1-git-send-email-aaro.koskinen@nokia.com
+Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
+---
+
+--- a/tools/build/Makefile.build
++++ b/tools/build/Makefile.build
+@@ -25,7 +25,7 @@ build-dir := $(srctree)/tools/build
+ include $(build-dir)/Build.include
+ 
+ # do not force detected configuration
+--include .config-detected
++-include $(OUTPUT).config-detected
+ 
+ # Init all relevant variables used in build files so
+ # 1) they have correct type
+--- a/tools/perf/Makefile.perf
++++ b/tools/perf/Makefile.perf
+@@ -528,7 +528,7 @@ config-clean:
+ clean: $(LIBTRACEEVENT)-clean $(LIBAPI)-clean config-clean
+ 	$(call QUIET_CLEAN, core-objs)  $(RM) $(LIB_FILE) $(OUTPUT)perf-archive $(OUTPUT)perf-with-kcore $(LANG_BINDINGS)
+ 	$(Q)find . -name '*.o' -delete -o -name '\.*.cmd' -delete -o -name '\.*.d' -delete
+-	$(Q)$(RM) .config-detected
++	$(Q)$(RM) $(OUTPUT).config-detected
+ 	$(call QUIET_CLEAN, core-progs) $(RM) $(ALL_PROGRAMS) perf perf-read-vdso32 perf-read-vdsox32
+ 	$(call QUIET_CLEAN, core-gen)   $(RM)  *.spec *.pyc *.pyo */*.pyc */*.pyo $(OUTPUT)common-cmds.h TAGS tags cscope* $(OUTPUT)PERF-VERSION-FILE $(OUTPUT)FEATURE-DUMP $(OUTPUT)util/*-bison* $(OUTPUT)util/*-flex*
+ 	$(QUIET_SUBDIR0)Documentation $(QUIET_SUBDIR1) clean
+--- a/tools/perf/config/Makefile
++++ b/tools/perf/config/Makefile
+@@ -11,9 +11,9 @@ ifneq ($(obj-perf),)
+ obj-perf := $(abspath $(obj-perf))/
+ endif
+ 
+-$(shell echo -n > .config-detected)
+-detected     = $(shell echo "$(1)=y"       >> .config-detected)
+-detected_var = $(shell echo "$(1)=$($(1))" >> .config-detected)
++$(shell echo -n > $(OUTPUT).config-detected)
++detected     = $(shell echo "$(1)=y"       >> $(OUTPUT).config-detected)
++detected_var = $(shell echo "$(1)=$($(1))" >> $(OUTPUT).config-detected)
+ 
+ CFLAGS := $(EXTRA_CFLAGS) $(EXTRA_WARNINGS)
+ 
