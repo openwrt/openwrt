@@ -1,0 +1,28 @@
+--- a/drivers/net/ethernet/marvell/sky2.c
++++ b/drivers/net/ethernet/marvell/sky2.c
+@@ -4812,7 +4812,24 @@ static struct net_device *sky2_init_netd
+ 	 * 1) from device tree data
+ 	 * 2) from internal registers set by bootloader
+ 	 */
+-	iap = of_get_mac_address(hw->pdev->dev.of_node);
++
++	iap = NULL;
++	if (IS_ENABLED(CONFIG_OF)) {
++		struct device_node *np;
++		np = of_find_node_by_path("/aliases");
++		if (np) {
++			const char *path = of_get_property(np, "sky2", NULL);
++			if (path)
++				np = of_find_node_by_path(path);
++			if (np)
++				path = of_get_mac_address(np);
++			if (path)
++				iap = (unsigned char *) path;
++		}
++	}
++
++	if (!iap)
++		iap = of_get_mac_address(hw->pdev->dev.of_node);
+ 	if (iap)
+ 		memcpy(dev->dev_addr, iap, ETH_ALEN);
+ 	else
