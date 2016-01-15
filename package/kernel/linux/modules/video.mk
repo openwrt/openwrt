@@ -127,9 +127,10 @@ define KernelPackage/video-videobuf2
 	CONFIG_VIDEOBUF2_VMALLOC
   FILES:= \
 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-core.ko \
+	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-v4l2.ko@ge4.4 \
 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-memops.ko \
 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videobuf2-vmalloc.ko
-  AUTOLOAD:=$(call AutoLoad,65,videobuf2-core videobuf2-memops videobuf2-vmalloc)
+  AUTOLOAD:=$(call AutoLoad,65,videobuf2-core videobuf-v4l2@ge4.4 videobuf2-memops videobuf2-vmalloc)
   $(call AddDepends/video)
 endef
 
