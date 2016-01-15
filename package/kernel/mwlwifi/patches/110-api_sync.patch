@@ -1,0 +1,19 @@
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -597,10 +597,13 @@ static int mwl_mac80211_get_survey(struc
+ 
+ static int mwl_mac80211_ampdu_action(struct ieee80211_hw *hw,
+ 				     struct ieee80211_vif *vif,
+-				     enum ieee80211_ampdu_mlme_action action,
+-				     struct ieee80211_sta *sta,
+-				     u16 tid, u16 *ssn, u8 buf_size, bool amsdu)
++				     struct ieee80211_ampdu_params *params)
+ {
++	enum ieee80211_ampdu_mlme_action action = params->action;
++	struct ieee80211_sta *sta = params->sta;
++	u16 tid = params->tid;
++	u16 *ssn = &params->ssn;
++	u8 buf_size = params->buf_size;
+ 	int rc = 0;
+ 	struct mwl_priv *priv = hw->priv;
+ 	struct mwl_ampdu_stream *stream;
