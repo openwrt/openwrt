@@ -1,0 +1,27 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -336,6 +336,14 @@ endif # RTL8366_SMI
+ 
+ source "drivers/net/phy/b53/Kconfig"
+ 
++config GATEWORKS_GW16083
++	tristate "Gateworks GW16083 Ethernet Expansion Mezzanine"
++	---help---
++	  The Gateworks GW16083 Ethernet Expansion Mezzanine connects to a
++	  Gateworks Ventana baseboard and provides a 7-port GbE managed
++	  Ethernet switch with 4 dedicated GbE RJ45 ports, and 2 Gbe/SFP
++	  ports"
++
+ endif # PHYLIB
+ 
+ config MICREL_KS8995MA
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -46,6 +46,7 @@ obj-$(CONFIG_DP83848_PHY)	+= dp83848.o
+ obj-$(CONFIG_DP83867_PHY)	+= dp83867.o
+ obj-$(CONFIG_STE10XP)		+= ste10Xp.o
+ obj-$(CONFIG_MICREL_PHY)	+= micrel.o
++obj-$(CONFIG_GATEWORKS_GW16083)	+= gw16083.o
+ obj-$(CONFIG_MDIO_OCTEON)	+= mdio-octeon.o
+ obj-$(CONFIG_MICREL_KS8995MA)	+= spi_ks8995.o
+ obj-$(CONFIG_AT803X_PHY)	+= at803x.o
