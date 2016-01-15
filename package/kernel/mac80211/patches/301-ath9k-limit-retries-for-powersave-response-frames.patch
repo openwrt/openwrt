@@ -58,7 +58,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (aggr)
  		last = ath_tx_form_aggr(sc, txq, tid, &bf_q, bf,
  					tid_q, &aggr_len);
-@@ -1632,7 +1647,7 @@ void ath9k_release_buffered_frames(struc
+@@ -1647,7 +1662,7 @@ void ath9k_release_buffered_frames(struc
  
  			__skb_unlink(bf->bf_mpdu, tid_q);
  			list_add_tail(&bf->list, &bf_q);
@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  			if (bf_isampdu(bf)) {
  				ath_tx_addto_baw(sc, tid, bf);
  				bf->bf_state.bf_type &= ~BUF_AGGR;
-@@ -2278,7 +2293,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2293,7 +2308,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ath_txq *txq = txctl->txq;
  	struct ath_atx_tid *tid = NULL;
  	struct ath_buf *bf;
@@ -76,7 +76,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	int q, ret;
  
  	if (vif)
-@@ -2325,13 +2340,13 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2346,13 +2361,13 @@ int ath_tx_start(struct ieee80211_hw *hw
  		if (!txctl->an)
  			txctl->an = &avp->mcast_node;
  		queue = true;
@@ -92,7 +92,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		ath_txq_unlock(sc, txq);
  		txq = sc->tx.uapsdq;
  		ath_txq_lock(sc, txq);
-@@ -2369,7 +2384,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2390,7 +2405,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  	if (txctl->paprd)
  		bf->bf_state.bfs_paprd_timestamp = jiffies;
  
@@ -101,7 +101,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	ath_tx_send_normal(sc, txq, tid, skb);
  
  out:
-@@ -2408,7 +2423,7 @@ void ath_tx_cabq(struct ieee80211_hw *hw
+@@ -2429,7 +2444,7 @@ void ath_tx_cabq(struct ieee80211_hw *hw
  			break;
  
  		bf->bf_lastbf = bf;
@@ -110,7 +110,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		ath_buf_set_rate(sc, bf, &info, fi->framelen, false);
  		duration += info.rates[0].PktDuration;
  		if (bf_tail)
-@@ -2911,7 +2926,7 @@ int ath9k_tx99_send(struct ath_softc *sc
+@@ -2932,7 +2947,7 @@ int ath9k_tx99_send(struct ath_softc *sc
  		return -EINVAL;
  	}
  
