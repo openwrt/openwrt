@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2014 OpenWrt.org
+# Copyright (C) 2013-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2016.01-rc3
+PKG_VERSION:=2016.01
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
 
-PKG_MD5SUM:=8ec1743d75448bd3d0c73f8722db9213
+PKG_MD5SUM:=7d4f65fd43d4d706f5c5650e020d899d
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
