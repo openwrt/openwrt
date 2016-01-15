@@ -1,7 +1,7 @@
-From 271777096a31e76b2ffd750bc44efde9656de857 Mon Sep 17 00:00:00 2001
+From adfbf9e6cad93281cffceab078e7f6f2a8e094f9 Mon Sep 17 00:00:00 2001
 From: Alexey Brodkin <abrodkin@synopsys.com>
 Date: Thu, 13 Aug 2015 01:56:02 +0300
-Subject: [PATCH] openwrt: arc - remove dependency on DEVTMPFS
+Subject: [PATCH 1/2] openwrt: arc - remove dependency on DEVTMPFS
 
 OpenWRT builds initramfs so that it doesn't require DEVTMPFS so dropping
 this dependency. That helps to escape 2 separate kernel rebuilds with
@@ -18,6 +18,8 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  arch/arc/Kconfig | 2 --
  1 file changed, 2 deletions(-)
 
+diff --git a/arch/arc/Kconfig b/arch/arc/Kconfig
+index 6312f60..a95bab3 100644
 --- a/arch/arc/Kconfig
 +++ b/arch/arc/Kconfig
 @@ -12,8 +12,6 @@ config ARC
@@ -29,3 +31,6 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  	select GENERIC_ATOMIC64
  	select GENERIC_CLOCKEVENTS
  	select GENERIC_FIND_FIRST_BIT
+-- 
+2.4.3
+

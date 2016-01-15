@@ -13,7 +13,7 @@ CFLAGS:=-Os -pipe -fno-caller-saves -matomic
 MAINTAINER:=Alexey Brodkin <abrodkin@synopsys.com>
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=4.3
+KERNEL_PATCHVER:=4.4
 
 DEVICE_TYPE:=developerboard
 
