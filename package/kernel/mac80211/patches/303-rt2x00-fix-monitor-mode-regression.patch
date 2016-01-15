@@ -1,0 +1,156 @@
+From: Eli Cooper <elicooper@gmx.com>
+Date: Thu, 14 Jan 2016 00:07:12 +0800
+Subject: [PATCH] rt2x00: fix monitor mode regression
+
+Since commit df1404650ccbfeb76a84f301f22316be0d00a864 monitor mode for rt2x00
+has been made effectively useless because the hardware filter is configured to
+drop packets whose intended recipient is not the device, regardless of the
+presence of monitor mode interfaces.
+
+This patch fixes this regression by adding explicit monitor mode support, and
+configuring the hardware filter accordingly.
+
+Signed-off-by: Eli Cooper <elicooper@gmx.com>
+---
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2400pci.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2400pci.c
+@@ -273,8 +273,10 @@ static void rt2400pci_config_filter(stru
+ 			   !(filter_flags & FIF_PLCPFAIL));
+ 	rt2x00_set_field32(&reg, RXCSR0_DROP_CONTROL,
+ 			   !(filter_flags & FIF_CONTROL));
+-	rt2x00_set_field32(&reg, RXCSR0_DROP_NOT_TO_ME, 1);
++	rt2x00_set_field32(&reg, RXCSR0_DROP_NOT_TO_ME,
++			   !rt2x00dev->is_monitoring);
+ 	rt2x00_set_field32(&reg, RXCSR0_DROP_TODS,
++			   !rt2x00dev->is_monitoring &&
+ 			   !rt2x00dev->intf_ap_count);
+ 	rt2x00_set_field32(&reg, RXCSR0_DROP_VERSION_ERROR, 1);
+ 	rt2x00mmio_register_write(rt2x00dev, RXCSR0, reg);
+--- a/drivers/net/wireless/ralink/rt2x00/rt2500pci.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2500pci.c
+@@ -274,8 +274,10 @@ static void rt2500pci_config_filter(stru
+ 			   !(filter_flags & FIF_PLCPFAIL));
+ 	rt2x00_set_field32(&reg, RXCSR0_DROP_CONTROL,
+ 			   !(filter_flags & FIF_CONTROL));
+-	rt2x00_set_field32(&reg, RXCSR0_DROP_NOT_TO_ME, 1);
++	rt2x00_set_field32(&reg, RXCSR0_DROP_NOT_TO_ME,
++			   !rt2x00dev->is_monitoring);
+ 	rt2x00_set_field32(&reg, RXCSR0_DROP_TODS,
++			   !rt2x00dev->is_monitoring &&
+ 			   !rt2x00dev->intf_ap_count);
+ 	rt2x00_set_field32(&reg, RXCSR0_DROP_VERSION_ERROR, 1);
+ 	rt2x00_set_field32(&reg, RXCSR0_DROP_MCAST,
+--- a/drivers/net/wireless/ralink/rt2x00/rt2500usb.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2500usb.c
+@@ -437,8 +437,10 @@ static void rt2500usb_config_filter(stru
+ 			   !(filter_flags & FIF_PLCPFAIL));
+ 	rt2x00_set_field16(&reg, TXRX_CSR2_DROP_CONTROL,
+ 			   !(filter_flags & FIF_CONTROL));
+-	rt2x00_set_field16(&reg, TXRX_CSR2_DROP_NOT_TO_ME, 1);
++	rt2x00_set_field16(&reg, TXRX_CSR2_DROP_NOT_TO_ME,
++			   !rt2x00dev->is_monitoring);
+ 	rt2x00_set_field16(&reg, TXRX_CSR2_DROP_TODS,
++			   !rt2x00dev->is_monitoring &&
+ 			   !rt2x00dev->intf_ap_count);
+ 	rt2x00_set_field16(&reg, TXRX_CSR2_DROP_VERSION_ERROR, 1);
+ 	rt2x00_set_field16(&reg, TXRX_CSR2_DROP_MULTICAST,
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -1490,7 +1490,8 @@ void rt2800_config_filter(struct rt2x00_
+ 			   !(filter_flags & FIF_FCSFAIL));
+ 	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_PHY_ERROR,
+ 			   !(filter_flags & FIF_PLCPFAIL));
+-	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_TO_ME, 1);
++	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_TO_ME,
++			   !rt2x00dev->is_monitoring);
+ 	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_NOT_MY_BSSD, 0);
+ 	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_VER_ERROR, 1);
+ 	rt2x00_set_field32(&reg, RX_FILTER_CFG_DROP_MULTICAST,
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+@@ -844,11 +844,13 @@ struct rt2x00_dev {
+ 	 *  - Open sta interface count.
+ 	 *  - Association count.
+ 	 *  - Beaconing enabled count.
++	 *  - Whether the device is monitoring.
+ 	 */
+ 	unsigned int intf_ap_count;
+ 	unsigned int intf_sta_count;
+ 	unsigned int intf_associated;
+ 	unsigned int intf_beaconing;
++	bool is_monitoring;
+ 
+ 	/*
+ 	 * Interface combinations
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00config.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00config.c
+@@ -244,6 +244,16 @@ void rt2x00lib_config(struct rt2x00_dev
+ 	    (ieee80211_flags & IEEE80211_CONF_CHANGE_PS))
+ 		cancel_delayed_work_sync(&rt2x00dev->autowakeup_work);
+ 
++	if (ieee80211_flags & IEEE80211_CONF_CHANGE_MONITOR) {
++		if (conf->flags & IEEE80211_CONF_MONITOR) {
++			rt2x00_dbg(rt2x00dev, "Monitor mode is enabled\n");
++			rt2x00dev->is_monitoring = true;
++		} else {
++			rt2x00_dbg(rt2x00dev, "Monitor mode is disabled\n");
++			rt2x00dev->is_monitoring = false;
++		}
++	}
++
+ 	/*
+ 	 * Start configuration.
+ 	 */
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
+@@ -1204,6 +1204,7 @@ int rt2x00lib_start(struct rt2x00_dev *r
+ 	rt2x00dev->intf_ap_count = 0;
+ 	rt2x00dev->intf_sta_count = 0;
+ 	rt2x00dev->intf_associated = 0;
++	rt2x00dev->is_monitoring = false;
+ 
+ 	/* Enable the radio */
+ 	retval = rt2x00lib_enable_radio(rt2x00dev);
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
+@@ -385,11 +385,6 @@ void rt2x00mac_configure_filter(struct i
+ 			*total_flags |= FIF_PSPOLL;
+ 	}
+ 
+-	/*
+-	 * Check if there is any work left for us.
+-	 */
+-	if (rt2x00dev->packet_filter == *total_flags)
+-		return;
+ 	rt2x00dev->packet_filter = *total_flags;
+ 
+ 	rt2x00dev->ops->lib->config_filter(rt2x00dev, *total_flags);
+--- a/drivers/net/wireless/ralink/rt2x00/rt61pci.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt61pci.c
+@@ -530,8 +530,10 @@ static void rt61pci_config_filter(struct
+ 			   !(filter_flags & FIF_PLCPFAIL));
+ 	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_CONTROL,
+ 			   !(filter_flags & (FIF_CONTROL | FIF_PSPOLL)));
+-	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_NOT_TO_ME, 1);
++	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_NOT_TO_ME,
++			   !rt2x00dev->is_monitoring);
+ 	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_TO_DS,
++			   !rt2x00dev->is_monitoring &&
+ 			   !rt2x00dev->intf_ap_count);
+ 	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_VERSION_ERROR, 1);
+ 	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_MULTICAST,
+--- a/drivers/net/wireless/ralink/rt2x00/rt73usb.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt73usb.c
+@@ -480,8 +480,10 @@ static void rt73usb_config_filter(struct
+ 			   !(filter_flags & FIF_PLCPFAIL));
+ 	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_CONTROL,
+ 			   !(filter_flags & (FIF_CONTROL | FIF_PSPOLL)));
+-	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_NOT_TO_ME, 1);
++	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_NOT_TO_ME,
++			   !rt2x00dev->is_monitoring);
+ 	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_TO_DS,
++			   !rt2x00dev->is_monitoring &&
+ 			   !rt2x00dev->intf_ap_count);
+ 	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_VERSION_ERROR, 1);
+ 	rt2x00_set_field32(&reg, TXRX_CSR0_DROP_MULTICAST,

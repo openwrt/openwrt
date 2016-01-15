@@ -187,7 +187,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -4884,14 +4917,19 @@ static int rt2800_init_registers(struct
+@@ -4885,14 +4918,19 @@ static int rt2800_init_registers(struct
  	/*
  	 * ASIC will keep garbage value after boot, clear encryption keys.
  	 */
@@ -207,7 +207,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -5017,8 +5055,10 @@ static int rt2800_wait_bbp_ready(struct
+@@ -5018,8 +5056,10 @@ static int rt2800_wait_bbp_ready(struct
  	 * BBP was enabled after firmware was loaded,
  	 * but we need to reactivate it now.
  	 */
@@ -218,7 +218,7 @@ Changes since v1: ---
  	msleep(1);
  
  	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-@@ -6714,11 +6754,19 @@ int rt2800_enable_radio(struct rt2x00_de
+@@ -6715,11 +6755,19 @@ int rt2800_enable_radio(struct rt2x00_de
  	/*
  	 * Send signal during boot time to initialize firmware.
  	 */
@@ -239,7 +239,7 @@ Changes since v1: ---
  	msleep(1);
  
  	/*
-@@ -7725,6 +7773,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -7726,6 +7774,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	int retval;
  	u32 reg;
  
@@ -248,7 +248,7 @@ Changes since v1: ---
  	retval = rt2800_probe_rt(rt2x00dev);
  	if (retval)
  		return retval;
-@@ -7808,8 +7858,11 @@ void rt2800_get_key_seq(struct ieee80211
+@@ -7809,8 +7859,11 @@ void rt2800_get_key_seq(struct ieee80211
  		return;
  
  	offset = MAC_IVEIV_ENTRY(key->hw_key_idx);
