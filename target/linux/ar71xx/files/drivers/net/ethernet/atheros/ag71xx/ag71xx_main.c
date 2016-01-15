@@ -919,7 +919,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag, bool flush)
 		struct sk_buff *skb = ring->buf[i].skb;
 
 		if (!flush && !ag71xx_desc_empty(desc)) {
-			if (pdata->is_ar7240 &&
+			if (pdata->is_ar724x &&
 			    ag71xx_check_dma_stuck(ag, ring->buf[i].timestamp))
 				schedule_work(&ag->restart_work);
 			break;
