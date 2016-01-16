@@ -53,7 +53,7 @@ endef
 
 define Package/libustream-mbedtls
   $(Package/libustream/default)
-  TITLE += (polarssl)
+  TITLE += (mbedtls)
   DEPENDS += +libmbedtls
   VARIANT:=mbedtls
   DEFAULT_VARIANT:=1
