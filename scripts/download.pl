@@ -63,7 +63,7 @@ sub hash_cmd() {
 	my $len = length($file_hash);
 	my $cmd;
 
-	$len == 64 and return "openssl dgst -sha256";
+	$len == 64 and return "openssl dgst -sha256 | sed -e 's,.*= ,,'";
 	$len == 32 and do {
 		my $cmd = which("md5sum") || which("md5") || die 'no md5 checksum program found, please install md5 or md5sum';
 		chomp $cmd;
