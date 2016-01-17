@@ -417,7 +417,7 @@ Image/BuildKernel/Profile/VGV7510KW22NOR=$(call Image/BuildKernel/Template,VGV75
 Image/Build/Profile/VGV7510KW22NOR=$(call Image/Build/$(1),$(1),VGV7510KW22NOR)
 
 Image/BuildKernel/Profile/VGV7510KW22BRN=$(call Image/BuildKernel/Template,VGV7510KW22BRN,$(1))
-Image/Build/Profile/VGV7510KW22BRN=$(call Image/Build/$(1),$(1),VGV7510KW22BRN,5BRNDA6431,0x12345678,0x04c11db7,$(1))
+Image/Build/Profile/VGV7510KW22BRN=$(call Image/Build/$(1),$(1),VGV7510KW22BRN,BRNDA6431,0x12345678,0x04c11db7,$(1))
 
 Image/BuildKernel/Profile/VGV7519NOR=$(call Image/BuildKernel/Template,VGV7519NOR,$(1))
 Image/Build/Profile/VGV7519NOR=$(call Image/Build/$(1),$(1),VGV7519NOR)
