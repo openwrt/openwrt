@@ -49,7 +49,7 @@ mtdsplit_parse_squashfs(struct mtd_info *master,
 	part->name = ROOTFS_SPLIT_NAME;
 	part->offset = mtd_roundup_to_eb(part_offset + squashfs_len,
 					 parent_mtd) - part_offset;
-	part->size = master->size - part->offset;
+	part->size = mtd_rounddown_to_eb(master->size - part->offset, master);
 
 	*pparts = part;
 	return 1;
