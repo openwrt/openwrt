@@ -68,7 +68,7 @@
 			state_default: pinmux {
 				spi {
 					lantiq,groups = "spi", "spi_cs4";
-					lantiq,function = "gpio";
+					lantiq,function = "spi";
 				};
 				mdio {
 					lantiq,groups = "mdio";
@@ -173,45 +173,6 @@
 		};
 	};
 
-	spi {
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		compatible = "spi-gpio";
-
-		gpio-miso = <&gpio 16 0>;
-		gpio-mosi = <&gpio 17 0>;
-		gpio-sck = <&gpio 18 0>;
-		num-chipselects = <1>;
-		cs-gpios = <&gpio 10 1>;
-
-		m25p80@0 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			compatible = "jedec,spi-nor";
-			reg = <0 0>;
-			spi-max-frequency = <1000000>;
-
-			ath9k_cal: partition@0 {
-				reg = <0x0 0x20000>;
-				label = "urlader";
-				read-only;
-			};
-
-			partition@20000 {
-				reg = <0x20000 0x10000>;
-				label = "tffs (1)";
-				read-only;
-			};
-
-			partition@30000 {
-				reg = <0x30000 0x10000>;
-				label = "tffs (2)";
-				read-only;
-			};
-		};
-	};
-
 	ath9k_eep {
 		compatible = "ath9k,eeprom";
 		ath,eep-flash = <&ath9k_cal 0x985>;
@@ -273,6 +234,36 @@
 		info_green: info_green {
 			label = "fritz3370:green:info";
 			gpios = <&gpio 47 1>;
+		};
+	};
+};
+
+&spi {
+	status = "ok";
+
+	m25p80@3 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <3 0>;
+		spi-max-frequency = <1000000>;
+
+		ath9k_cal: partition@0 {
+			reg = <0x0 0x20000>;
+			label = "urlader";
+			read-only;
+		};
+
+		partition@20000 {
+			reg = <0x20000 0x10000>;
+			label = "tffs (1)";
+			read-only;
+		};
+
+		partition@30000 {
+			reg = <0x30000 0x10000>;
+			label = "tffs (2)";
+			read-only;
 		};
 	};
 };
