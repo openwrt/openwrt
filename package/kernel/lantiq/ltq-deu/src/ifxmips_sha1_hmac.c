@@ -47,7 +47,7 @@
 #include <linux/cryptohash.h>
 #include <crypto/internal/hash.h>
 #include <linux/types.h>
-#include <asm/scatterlist.h>
+#include <linux/scatterlist.h>
 #include <asm/byteorder.h>
 #include <linux/delay.h>
 
