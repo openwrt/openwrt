@@ -53,7 +53,7 @@
 #include <crypto/algapi.h>
 #include <linux/module.h>
 #include <linux/mm.h>
-#include <asm/scatterlist.h>
+#include <linux/scatterlist.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
 #include "ifxmips_deu.h"
