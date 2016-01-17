@@ -39,10 +39,6 @@ endef
 
 Package/ip-full=$(call Package/iproute2/Default,full,Full)
 
-define Package/ip-$(BUILD_VARIANT)/conffiles
-$(Package/ip/conffiles)
-endef
-
 define Package/tc
 $(call Package/iproute2/Default)
   TITLE:=Traffic control utility
