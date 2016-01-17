@@ -39,18 +39,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static const struct ltq_cfg_param xway_cfg_params[] = {
  	{"lantiq,pull",		LTQ_PINCONF_PARAM_PULL},
  	{"lantiq,open-drain",	LTQ_PINCONF_PARAM_OPEN_DRAIN},
-@@ -676,6 +683,10 @@ static int xway_gpio_dir_out(struct gpio
- {
- 	struct ltq_pinmux_info *info = dev_get_drvdata(chip->dev);
- 
-+	if (PORT(pin) == PORT3)
-+		gpio_setbit(info->membase[0], GPIO3_OD, PORT_PIN(pin));
-+	else
-+		gpio_setbit(info->membase[0], GPIO_OD(pin), PORT_PIN(pin));
- 	gpio_setbit(info->membase[0], GPIO_DIR(pin), PORT_PIN(pin));
- 	xway_gpio_set(chip, pin, val);
- 
-@@ -696,6 +707,18 @@ static void xway_gpio_free(struct gpio_c
+@@ -696,6 +703,18 @@ static void xway_gpio_free(struct gpio_c
  	pinctrl_free_gpio(gpio);
  }
  
@@ -69,7 +58,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static struct gpio_chip xway_chip = {
  	.label = "gpio-xway",
  	.direction_input = xway_gpio_dir_in,
-@@ -704,6 +727,7 @@ static struct gpio_chip xway_chip = {
+@@ -704,6 +723,7 @@ static struct gpio_chip xway_chip = {
  	.set = xway_gpio_set,
  	.request = xway_gpio_req,
  	.free = xway_gpio_free,
