@@ -17,7 +17,7 @@
 #
 --- a/arch/um/drivers/mconsole.h
 +++ b/arch/um/drivers/mconsole.h
-@@ -85,6 +85,7 @@ extern void mconsole_cad(struct mc_reque
+@@ -85,6 +85,7 @@
  extern void mconsole_stop(struct mc_request *req);
  extern void mconsole_go(struct mc_request *req);
  extern void mconsole_log(struct mc_request *req);
@@ -43,7 +43,7 @@
  #include <asm/uaccess.h>
  #include <asm/switch_to.h>
  
-@@ -121,6 +123,59 @@ void mconsole_log(struct mc_request *req
+@@ -121,6 +123,59 @@
  	mconsole_reply(req, "", 0, 0);
  }
  
@@ -103,7 +103,7 @@
  void mconsole_proc(struct mc_request *req)
  {
  	struct vfsmount *mnt = task_active_pid_ns(current)->proc_mnt;
-@@ -187,6 +242,7 @@ void mconsole_proc(struct mc_request *re
+@@ -187,6 +242,7 @@
      stop - pause the UML; it will do nothing until it receives a 'go' \n\
      go - continue the UML after a 'stop' \n\
      log <string> - make UML enter <string> into the kernel log\n\
@@ -113,7 +113,7 @@
  "
 --- a/arch/um/drivers/mconsole_user.c
 +++ b/arch/um/drivers/mconsole_user.c
-@@ -30,6 +30,7 @@ static struct mconsole_command commands[
+@@ -30,6 +30,7 @@
  	{ "stop", mconsole_stop, MCONSOLE_PROC },
  	{ "go", mconsole_go, MCONSOLE_INTR },
  	{ "log", mconsole_log, MCONSOLE_INTR },
@@ -123,7 +123,7 @@
  };
 --- a/arch/um/os-Linux/file.c
 +++ b/arch/um/os-Linux/file.c
-@@ -534,6 +534,8 @@ int os_create_unix_socket(const char *fi
+@@ -535,6 +535,8 @@
  
  	addr.sun_family = AF_UNIX;
  
@@ -134,7 +134,7 @@
  	err = bind(sock, (struct sockaddr *) &addr, sizeof(addr));
 --- a/include/linux/kmod.h
 +++ b/include/linux/kmod.h
-@@ -62,6 +62,7 @@ struct subprocess_info {
+@@ -62,6 +62,7 @@
  	int wait;
  	int retval;
  	int (*init)(struct subprocess_info *info, struct cred *new);
@@ -142,7 +142,7 @@
  	void (*cleanup)(struct subprocess_info *info);
  	void *data;
  };
-@@ -104,4 +105,6 @@ extern int usermodehelper_read_trylock(v
+@@ -102,4 +103,6 @@
  extern long usermodehelper_read_lock_wait(long timeout);
  extern void usermodehelper_read_unlock(void);
  
@@ -159,36 +159,36 @@
  #include <asm/uaccess.h>
  
  #include <trace/events/module.h>
-@@ -223,6 +224,28 @@ static int ____call_usermodehelper(void
+@@ -222,6 +223,28 @@
  	flush_signal_handlers(current, 1);
  	spin_unlock_irq(&current->sighand->siglock);
  
-+        /* Install output when needed */
-+        if (sub_info->stdout) {
-+                struct files_struct *f = current->files;
-+                struct fdtable *fdt;
++	/* Install output when needed */
++	if (sub_info->stdout) {
++		struct files_struct *f = current->files;
++		struct fdtable *fdt;
 +
-+                sys_close(1);
-+                sys_close(2);
-+                get_file(sub_info->stdout);
-+                fd_install(1, sub_info->stdout);
-+                fd_install(2, sub_info->stdout);
-+                spin_lock(&f->file_lock);
-+                fdt = files_fdtable(f);
-+                __set_bit(1, fdt->open_fds);
-+                __clear_bit(1, fdt->close_on_exec);
-+                __set_bit(2, fdt->open_fds);
-+                __clear_bit(2, fdt->close_on_exec);
-+                spin_unlock(&f->file_lock);
++		sys_close(1);
++		sys_close(2);
++		get_file(sub_info->stdout);
++		fd_install(1, sub_info->stdout);
++		fd_install(2, sub_info->stdout);
++		spin_lock(&f->file_lock);
++		fdt = files_fdtable(f);
++		__set_bit(1, fdt->open_fds);
++		__clear_bit(1, fdt->close_on_exec);
++		__set_bit(2, fdt->open_fds);
++		__clear_bit(2, fdt->close_on_exec);
++		spin_unlock(&f->file_lock);
 +
-+                /* disallow core files */
-+                current->signal->rlim[RLIMIT_CORE] = (struct rlimit){0, 0};
-+        }
++		/* disallow core files */
++		current->signal->rlim[RLIMIT_CORE] = (struct rlimit){0, 0};
++	}
 +
- 	/* We can run anywhere, unlike our parent keventd(). */
- 	set_cpus_allowed_ptr(current, cpu_all_mask);
- 
-@@ -522,6 +545,20 @@ struct subprocess_info *call_usermodehel
+ 	/*
+ 	 * Our parent (unbound workqueue) runs with elevated scheduling
+ 	 * priority. Avoid propagating that into the userspace child.
+@@ -540,6 +563,20 @@
  }
  EXPORT_SYMBOL(call_usermodehelper_setup);
  

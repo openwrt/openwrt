@@ -23,7 +23,7 @@ BOARDNAME:=User Mode Linux
 FEATURES:=ext4 audio
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-KERNEL_PATCHVER:=4.1
+KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
