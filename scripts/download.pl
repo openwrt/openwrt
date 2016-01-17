@@ -158,6 +158,12 @@ foreach my $mirror (@ARGV) {
 		for (1 .. 5) {
 			push @mirrors, "http://downloads.sourceforge.net/$1";
 		}
+	} elsif ($mirror =~ /^\@APACHE\/(.+)$/) {
+		push @mirrors, "http://ftp.tudelft.nl/apache/$1";
+		push @mirrors, "http://apache.openmirror.de/$1";
+		push @mirrors, "http://mirrors.ocf.berkeley.edu/apache/$1";
+		push @mirrors, "http://mirror.cc.columbia.edu/pub/software/apache/$1";
+		push @mirrors, "http://ftp.jaist.ac.jp/pub/apache/$1";
 	} elsif ($mirror =~ /^\@GNU\/(.+)$/) {
 		push @mirrors, "http://ftpmirror.gnu.org/$1";
 		push @mirrors, "http://ftp.gnu.org/pub/gnu/$1";
