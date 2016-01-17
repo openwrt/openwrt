@@ -102,6 +102,7 @@ define KernelPackage/crypto-rng
   TITLE:=CryptoAPI random number generation
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:= \
+	CONFIG_CRYPTO_DRBG_MENU \
 	CONFIG_CRYPTO_DRBG \
 	CONFIG_CRYPTO_JITTERENTROPY \
 	CONFIG_CRYPTO_RNG2
