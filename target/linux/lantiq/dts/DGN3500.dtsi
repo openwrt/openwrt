@@ -45,15 +45,9 @@
 					lantiq,output = <1>;
 					lantiq,pull = <0>;
 				};
-				spi-in {
-					lantiq,pins = "io16";
-					lantiq,open-drain = <1>;
-					lantiq,pull = <2>;
-				};
-				spi-out {
-					lantiq,pins = "io10", "io17", "io18", "io21";
-					lantiq,open-drain = <0>;
-					lantiq,pull = <2>;
+				spi {
+					lantiq,groups = "spi", "spi_cs4";
+					lantiq,function = "spi";
 				};
 			};
 		};
@@ -75,50 +69,6 @@
 			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
 			gpio-reset = <&gpio 21 0>;
 			req-mask = <0x1>; /* GNT1 */
-		};
-	};
-
-	spi {
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		compatible = "spi-gpio";
-
-		gpio-miso = <&gpio 16 0>;
-		gpio-mosi = <&gpio 17 0>;
-		gpio-sck = <&gpio 18 0>;
-		num-chipselects = <1>;
-		cs-gpios = <&gpio 10 1>;
-
-		m25p80@0 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			compatible = "jedec,spi-nor";
-			reg = <0 0>;
-			spi-max-frequency = <1000000>;
-
-			partition@0 {
-				reg = <0x0 0x10000>;
-				label = "uboot";
-				read-only;
-			};
-
-			partition@10000 {
-				reg = <0x10000 0x10000>;
-				label = "uboot-env";
-				read-only;
-			};
-
-			ath9k_cal: partition@20000 {
-				reg = <0x20000 0x10000>;
-				label = "calibration";
-				read-only;
-			};
-
-			partition@50000 {
-				reg = <0x50000 0xfa0000>;
-				label = "firmware";
-			};
 		};
 	};
 
@@ -195,6 +145,41 @@
 		wps {
 			label = "dgn3500:green:wps";
 			gpios = <&gpio 52 1>;
+		};
+	};
+};
+
+&spi {
+	status = "ok";
+
+	m25p80@3 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <3 0>;
+		spi-max-frequency = <1000000>;
+
+		partition@0 {
+			reg = <0x0 0x10000>;
+			label = "uboot";
+			read-only;
+		};
+
+		partition@10000 {
+			reg = <0x10000 0x10000>;
+			label = "uboot-env";
+			read-only;
+		};
+
+		ath9k_cal: partition@20000 {
+			reg = <0x20000 0x10000>;
+			label = "calibration";
+			read-only;
+		};
+
+		partition@50000 {
+			reg = <0x50000 0xfa0000>;
+			label = "firmware";
 		};
 	};
 };
