@@ -1,0 +1,31 @@
+From 38395f1ae1258743c3e0081c86bb4b65ad06dd69 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 4 Dec 2015 17:41:50 +0000
+Subject: [PATCH 005/127] irq-bcm2836: Prevent spurious interrupts, and trap
+ them early
+
+The old arch-specific IRQ macros included a dsb to ensure the
+write to clear the mailbox interrupt completed before returning
+from the interrupt. The BCM2836 irqchip driver needs the same
+precaution to avoid spurious interrupts.
+
+Spurious interrupts are still possible for other reasons,
+though, so trap them early.
+---
+ drivers/irqchip/irq-bcm2836.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/irqchip/irq-bcm2836.c
++++ b/drivers/irqchip/irq-bcm2836.c
+@@ -170,9 +170,10 @@ __exception_irq_entry bcm2836_arm_irqchi
+ 		u32 ipi = ffs(mbox_val) - 1;
+ 
+ 		writel(1 << ipi, mailbox0);
++		dsb();
+ 		handle_IPI(ipi, regs);
+ #endif
+-	} else {
++	} else if (stat) {
+ 		u32 hwirq = ffs(stat) - 1;
+ 
+ 		handle_IRQ(irq_linear_revmap(intc.domain, hwirq), regs);
