@@ -1,5 +1,4 @@
-menu "Configuration"
-	depends on PACKAGE_libopenssl
+if PACKAGE_libopenssl
 
 config OPENSSL_WITH_EC
 	bool
@@ -16,10 +15,6 @@ config OPENSSL_WITH_SSL3
 	default n
 	prompt "Enable sslv3 support"
 
-config OPENSSL_ENGINE_CRYPTO
-	bool
-	prompt "Crypto acceleration support"
-
 config OPENSSL_ENGINE_DIGEST
 	bool
 	depends on OPENSSL_ENGINE_CRYPTO
@@ -30,4 +25,8 @@ config OPENSSL_HARDWARE_SUPPORT
 	default n
 	prompt "Enable hardware support"
 
-endmenu
+endif
+
+config OPENSSL_ENGINE_CRYPTO
+	bool
+	prompt "Crypto acceleration support" if PACKAGE_libopenssl
