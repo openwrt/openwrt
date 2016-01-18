@@ -22,5 +22,3 @@ ifeq ($(BUILD_VARIANT),vr9)
   ltq_deu_vr9-objs = ifxmips_deu.o ifxmips_deu_vr9.o ifxmips_des.o ifxmips_aes.o ifxmips_arc4.o \
   			ifxmips_sha1.o ifxmips_md5.o ifxmips_sha1_hmac.o ifxmips_md5_hmac.o
 endif
-
-obj-m += ltq_deu_testmgr.o
