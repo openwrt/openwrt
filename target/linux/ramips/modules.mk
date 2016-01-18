@@ -105,7 +105,7 @@ $(eval $(call KernelPackage,sound-mtk-mt7628))
 
 define KernelPackage/sound-mtk
   TITLE:=Mediatek I2S Alsa Driver
-  DEPENDS:= \
+  DEPENDS:= @BROKEN \
 	+kmod-sound-soc-core +kmod-regmap +kmod-i2c-ralink \
 	@(TARGET_ramips_mt7628||TARGET_ramips_mt7688||TARGET_ramips_mt7620) \
 	+TARGET_ramips_mt7620:kmod-sound-mtk-mt7620 \
