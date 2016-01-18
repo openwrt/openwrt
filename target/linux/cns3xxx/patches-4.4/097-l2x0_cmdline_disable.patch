@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/core.c
 +++ b/arch/arm/mach-cns3xxx/core.c
-@@ -303,13 +303,26 @@ void __init cns3xxx_timer_init(void)
+@@ -307,13 +307,26 @@ void __init cns3xxx_timer_init(void)
  
  #ifdef CONFIG_CACHE_L2X0
  
@@ -30,7 +30,7 @@
  
  	/*
  	 * Tag RAM Control register
-@@ -339,7 +352,10 @@ void __init cns3xxx_l2x0_init(void)
+@@ -343,7 +356,10 @@ void __init cns3xxx_l2x0_init(void)
  
  	/* 32 KiB, 8-way, parity disable */
  	l2x0_init(base, 0x00500000, 0xfe0f0fff);

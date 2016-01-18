@@ -1,7 +1,7 @@
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
-@@ -29,12 +29,23 @@ static const struct ata_port_info ahci_p
- 	.port_ops	= &ahci_platform_ops,
+@@ -37,12 +37,23 @@ static struct scsi_host_template ahci_pl
+ 	AHCI_SHT(DRV_NAME),
  };
  
 +static const struct ata_port_info cns3xxx_port_info = {

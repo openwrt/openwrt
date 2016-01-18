@@ -1,8 +1,8 @@
 --- a/drivers/usb/dwc2/platform.c
 +++ b/drivers/usb/dwc2/platform.c
-@@ -105,6 +105,34 @@ static const struct dwc2_core_params par
- 	.uframe_sched			= -1,
- };
+@@ -144,6 +144,34 @@ static int __dwc2_lowlevel_hw_enable(str
+ 	return ret;
+ }
  
 +static const struct dwc2_core_params params_cns3xxx = {
 +	.otg_cap			= 2,	/* non-HNP/non-SRP capable */
@@ -33,9 +33,9 @@
 +};
 +
  /**
-  * dwc2_driver_remove() - Called when the DWC_otg core is unregistered with the
-  * DWC_otg driver
-@@ -165,6 +193,9 @@ static int dwc2_driver_probe(struct plat
+  * dwc2_lowlevel_hw_enable - enable platform lowlevel hw resources
+  * @hsotg: The driver state
+@@ -344,6 +372,9 @@ static int dwc2_driver_probe(struct plat
  		/* Default all params to autodetect */
  		dwc2_set_all_params(&defparams, -1);
  		params = &defparams;

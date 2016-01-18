@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/pcie.c
 +++ b/arch/arm/mach-cns3xxx/pcie.c
-@@ -88,6 +88,79 @@ static void __iomem *cns3xxx_pci_cfg_bas
+@@ -86,6 +86,79 @@ static void __iomem *cns3xxx_pci_map_bus
  	return base + (where & 0xffc) + (devfn << 12);
  }
  
@@ -63,7 +63,7 @@
 +			printk("\n");
 +*/
 +			pr_debug("%s failed port%d sreg=0x%04x\n", __func__,
-+				cnspci->hw_pci.domain, sreg);
++				pci_domain_nr(bus), sreg);
 +
 +			/* make sure the status bits are reset */
 +			__raw_writew(sreg, host_base + 6);
@@ -80,39 +80,19 @@
  static int cns3xxx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
  				   int where, int size, u32 *val)
  {
-@@ -104,6 +177,11 @@ static int cns3xxx_pci_read_config(struc
+@@ -95,6 +168,11 @@ static int cns3xxx_pci_read_config(struc
  
- 	v = __raw_readl(base);
+ 	ret = pci_generic_config_read32(bus, devfn, where, size, val);
  
 +	if (check_master_abort(bus, devfn, where)) {
 +		printk(KERN_ERR "pci error: %04d:%02x:%02x.%02x %02x(%d)= master_abort on read\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size);
 +		return PCIBIOS_DEVICE_NOT_FOUND;
 +	}
 +
- 	if (bus->number == 0 && devfn == 0 &&
- 			(where & 0xffc) == PCI_CLASS_REVISION) {
+ 	if (ret == PCIBIOS_SUCCESSFUL && !bus->number && !devfn &&
+ 	    (where & 0xffc) == PCI_CLASS_REVISION)
  		/*
-@@ -133,11 +211,19 @@ static int cns3xxx_pci_write_config(stru
- 		return PCIBIOS_SUCCESSFUL;
- 
- 	v = __raw_readl(base);
-+	if (check_master_abort(bus, devfn, where)) {
-+		printk(KERN_ERR "pci error: %04d:%02x:%02x.%02x %02x(%d)=0x%08x master_abort on read\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size, val);
-+		return PCIBIOS_DEVICE_NOT_FOUND;
-+	}
- 
- 	v &= ~(mask << shift);
- 	v |= (val & mask) << shift;
- 
- 	__raw_writel(v, base);
-+	if (check_master_abort(bus, devfn, where)) {
-+		printk(KERN_ERR "pci error: %04d:%02x:%02x.%02x %02x(%d)=0x%08x master_abort on write\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size, val);
-+		return PCIBIOS_DEVICE_NOT_FOUND;
-+	}
- 
- 	return PCIBIOS_SUCCESSFUL;
- }
-@@ -315,8 +401,14 @@ static void __init cns3xxx_pcie_hw_init(
+@@ -257,8 +335,14 @@ static void __init cns3xxx_pcie_hw_init(
  static int cns3xxx_pcie_abort_handler(unsigned long addr, unsigned int fsr,
  				      struct pt_regs *regs)
  {
