@@ -13,6 +13,10 @@ extern int _libiconv_version; /* Likewise */
 
 typedef long iconv_t;
 
+#define iconv_open libiconv_open
+#define iconv libiconv
+#define iconv_close libiconv_close
+
 extern iconv_t
 iconv_open(const char *tocode, const char *fromcode);
 
