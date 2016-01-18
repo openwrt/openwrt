@@ -6,13 +6,13 @@
 
 get_status_led() {
 	case $(oxnas_board_name) in
-	stg212)
+	stg-212)
 		status_led="zyxel:blue:status"
 		;;
 	kd20)
 		status_led="kd20:blue:status"
 		;;
-	pogoplugpro | pogoplugv3)
+	pogoplug-pro | pogoplug-v3)
 		status_led="pogoplug:blue:internal"
 		;;
 	esac
