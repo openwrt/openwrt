@@ -17,13 +17,13 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
 +#include "boards/board_common.h"
 +
- /* for registering lookups; make them large enough to hold OF names */
- static char *gpio_chip_labels[] = {
- 	"xxxxxxxx.gpio-controller",
-@@ -50,8 +52,9 @@ static void __init bcm63xx_gpio_init_one
+ static const char * const gpio_chip_labels[] = {
+ 	"bcm63xx-gpio.0",
+ 	"bcm63xx-gpio.1",
+@@ -48,8 +50,9 @@ static void __init bcm63xx_gpio_init_one
+ 	pdata.base = id * 32;
  	pdata.ngpio = ngpio;
  
- 	sprintf(gpio_chip_labels[id], "bcm63xx-gpio.%d", id);
 -	platform_device_register_resndata(NULL, "bcm63xx-gpio", id, res, 2,
 -					  &pdata, sizeof(pdata));
 +	if (!board_of_device_present("gpio0"))

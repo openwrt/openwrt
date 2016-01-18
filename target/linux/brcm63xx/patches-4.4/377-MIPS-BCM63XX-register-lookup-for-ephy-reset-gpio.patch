@@ -42,7 +42,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  }
 --- a/arch/mips/bcm63xx/gpio.c
 +++ b/arch/mips/bcm63xx/gpio.c
-@@ -8,15 +8,24 @@
+@@ -8,15 +8,23 @@
   * Copyright (C) Jonas Gorski <jogo@openwrt.org>
   */
  
@@ -58,24 +58,15 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #include <bcm63xx_gpio.h>
  #include <bcm63xx_regs.h>
  
-+/* for registering lookups; make them large enough to hold OF names */
-+static char *gpio_chip_labels[] = {
-+	"xxxxxxxx.gpio-controller",
-+	"xxxxxxxx.gpio-controller",
++static const char * const gpio_chip_labels[] = {
++	"bcm63xx-gpio.0",
++	"bcm63xx-gpio.1",
 +};
 +
  static void __init bcm63xx_gpio_init_one(int id, int dir, int data, int ngpio)
  {
  	struct resource res[2];
-@@ -40,6 +49,7 @@ static void __init bcm63xx_gpio_init_one
- 	pdata.base = id * 32;
- 	pdata.ngpio = ngpio;
- 
-+	sprintf(gpio_chip_labels[id], "bcm63xx-gpio.%d", id);
- 	platform_device_register_resndata(NULL, "bcm63xx-gpio", id, res, 2,
- 					  &pdata, sizeof(pdata));
- }
-@@ -64,3 +74,25 @@ int __init bcm63xx_gpio_init(void)
+@@ -64,3 +72,25 @@ int __init bcm63xx_gpio_init(void)
  	return 0;
  
  }
