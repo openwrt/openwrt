@@ -1,30 +1,32 @@
 --- a/arch/arm/mach-cns3xxx/core.c
 +++ b/arch/arm/mach-cns3xxx/core.c
-@@ -135,12 +135,13 @@ static void cns3xxx_timer_set_mode(enum
+@@ -138,6 +138,7 @@ static int cns3xxx_set_oneshot(struct cl
  
- 	switch (mode) {
- 	case CLOCK_EVT_MODE_PERIODIC:
--		reload = pclk * 20 / (3 * HZ) * 0x25000;
-+		reload = pclk * 1000000 / HZ;
- 		writel(reload, cns3xxx_tmr1 + TIMER1_AUTO_RELOAD_OFFSET);
- 		ctrl |= (1 << 0) | (1 << 2) | (1 << 9);
- 		break;
- 	case CLOCK_EVT_MODE_ONESHOT:
- 		/* period set, and timer enabled in 'next_event' hook */
-+		writel(0, cns3xxx_tmr1 + TIMER1_AUTO_RELOAD_OFFSET);
- 		ctrl |= (1 << 2) | (1 << 9);
- 		break;
- 	case CLOCK_EVT_MODE_UNUSED:
-@@ -168,7 +169,7 @@ static struct clock_event_device cns3xxx
- 	.features       = CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT,
- 	.set_mode	= cns3xxx_timer_set_mode,
- 	.set_next_event	= cns3xxx_timer_set_next_event,
--	.rating		= 350,
-+	.rating		= 300,
- 	.cpumask	= cpu_all_mask,
+ 	/* period set, and timer enabled in 'next_event' hook */
+ 	ctrl |= (1 << 2) | (1 << 9);
++	writel(0, cns3xxx_tmr1 + TIMER1_AUTO_RELOAD_OFFSET);
+ 	writel(ctrl, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
+ 	return 0;
+ }
+@@ -148,7 +149,7 @@ static int cns3xxx_set_periodic(struct c
+ 	int pclk = cns3xxx_cpu_clock() / 8;
+ 	int reload;
+ 
+-	reload = pclk * 20 / (3 * HZ) * 0x25000;
++	reload = pclk * 1000000 / HZ;
+ 	writel(reload, cns3xxx_tmr1 + TIMER1_AUTO_RELOAD_OFFSET);
+ 	ctrl |= (1 << 0) | (1 << 2) | (1 << 9);
+ 	writel(ctrl, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
+@@ -175,7 +176,7 @@ static struct clock_event_device cns3xxx
+ 	.set_state_oneshot	= cns3xxx_set_oneshot,
+ 	.tick_resume		= cns3xxx_shutdown,
+ 	.set_next_event		= cns3xxx_timer_set_next_event,
+-	.rating			= 350,
++	.rating			= 300,
+ 	.cpumask		= cpu_all_mask,
  };
  
-@@ -213,6 +214,35 @@ static void __init cns3xxx_init_twd(void
+@@ -220,6 +221,32 @@ static void __init cns3xxx_init_twd(void
  	twd_local_timer_register(&cns3xx_twd_local_timer);
  }
  
@@ -43,7 +45,6 @@
 +	.rating = 200,
 +	.read = cns3xxx_get_cycles,
 +	.mask = CLOCKSOURCE_MASK(48),
-+	.shift  = 16,
 +	.flags  = CLOCK_SOURCE_IS_CONTINUOUS,
 +};
 +
@@ -52,15 +53,13 @@
 +	/* Reset the FreeRunning counter */
 +	writel((1 << 16), cns3xxx_tmr1 + TIMER_FREERUN_CONTROL_OFFSET);
 +
-+	clocksource_cns3xxx.mult =
-+		clocksource_khz2mult(100, clocksource_cns3xxx.shift);
-+	clocksource_register(&clocksource_cns3xxx);
++	clocksource_register_khz(&clocksource_cns3xxx, 100);
 +}
 +
  /*
   * Set up the clock source and clock events devices
   */
-@@ -230,13 +260,12 @@ static void __init __cns3xxx_timer_init(
+@@ -237,13 +264,12 @@ static void __init __cns3xxx_timer_init(
  	/* stop free running timer3 */
  	writel(0, cns3xxx_tmr1 + TIMER_FREERUN_CONTROL_OFFSET);
  
@@ -77,7 +76,7 @@
  	/* mask irq, non-mask timer1 overflow */
  	irq_mask = readl(cns3xxx_tmr1 + TIMER1_2_INTERRUPT_MASK_OFFSET);
  	irq_mask &= ~(1 << 2);
-@@ -248,23 +277,9 @@ static void __init __cns3xxx_timer_init(
+@@ -255,23 +281,9 @@ static void __init __cns3xxx_timer_init(
  	val |= (1 << 9);
  	writel(val, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
  
