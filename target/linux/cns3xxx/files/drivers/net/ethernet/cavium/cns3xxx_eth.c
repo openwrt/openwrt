@@ -56,7 +56,6 @@
 #define FIRST_SEGMENT 0x20000000
 #define LAST_SEGMENT 0x10000000
 #define FORCE_ROUTE 0x04000000
-#define IP_CHECKSUM 0x00040000
 #define UDP_CHECKSUM 0x00020000
 #define TCP_CHECKSUM 0x00010000
 
@@ -662,7 +661,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 			sw->frag_first = skb;
 		else {
 			if (sw->frag_first == sw->frag_last)
-				skb_frag_add_head(sw->frag_first, skb);
+				skb_shinfo(sw->frag_first)->frag_list = skb;
 			else
 				sw->frag_last->next = skb;
 			sw->frag_first->len += skb->len;
