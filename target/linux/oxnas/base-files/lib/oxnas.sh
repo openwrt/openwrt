@@ -14,16 +14,16 @@ oxnas_board_detect() {
 
 	case "$machine" in
 	*"MitraStar Technology Corp. STG-212"*)
-		name="stg212"
+		name="stg-212"
 		;;
 	*"Shuttle KD20"*)
 		name="kd20"
 		;;
 	*"Pogoplug Pro"*)
-		name="pogoplugpro"
+		name="pogoplug-pro"
 		;;
 	*"Pogoplug V3"*)
-		name="pogoplugv3"
+		name="pogoplug-v3"
 		;;
 	esac
 
