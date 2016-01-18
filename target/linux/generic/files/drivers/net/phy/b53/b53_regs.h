@@ -181,7 +181,8 @@
 
 /* Broadcom Header control register (8 bit) */
 #define B53_BRCM_HDR			0x03
-#define   BRCM_HDR_EN			BIT(0) /* Enable tagging on IMP port */
+#define   BRCM_HDR_P8_EN		BIT(0) /* Enable tagging on port 8 */
+#define   BRCM_HDR_P5_EN		BIT(1) /* Enable tagging on port 5 */
 
 /* Device ID register (8 or 32 bit) */
 #define B53_DEVICE_ID			0x30
