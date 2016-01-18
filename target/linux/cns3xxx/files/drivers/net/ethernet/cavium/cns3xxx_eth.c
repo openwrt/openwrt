@@ -717,6 +717,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 	if (!received) {
 		napi_complete(napi);
 		enable_irq(sw->rx_irq);
+		budget = 0;
 
 		/* if rx descriptors are full schedule another poll */
 		if (rx_ring->desc[(i-1) & (RX_DESCS-1)].cown)
@@ -732,7 +733,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 	wmb();
 	enable_rx_dma(sw);
 
-	return received;
+	return budget;
 }
 
 static void eth_set_desc(struct sw *sw, struct _tx_ring *tx_ring, int index,
