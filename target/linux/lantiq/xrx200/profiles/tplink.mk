@@ -11,3 +11,10 @@ define Profile/TDW8980
 endef
 
 $(eval $(call Profile,TDW8980))
+
+define Profile/VR200v
+  NAME:=TP-LINK Archer VR200v
+  PACKAGES:=kmod-usb-dwc2 kmod-ledtrig-usbdev
+endef
+
+$(eval $(call Profile,VR200v))

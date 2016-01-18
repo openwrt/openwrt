@@ -96,6 +96,13 @@ TDW8970|TDW8980)
 		"0:lan:1" "2:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
 	;;
 
+VR200v)
+	lan_mac=$(mtd_get_mac_binary romfile 61696)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_add_switch "switch0" \
+		"0:lan:1" "2:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
+	;;
+
 ARV7519RW22)
 	lan_mac=$(mtd_get_mac_binary boardconfig 22)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
