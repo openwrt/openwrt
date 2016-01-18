@@ -159,6 +159,9 @@ brcm63xx_dt_detect() {
 	"Huawei EchoLife HG556a (version C)")
 		board_name="hg556a_c"
 		;;
+	"Huawei HG622")
+		board_name="hg622"
+		;;
 	"Huawei HG655b")
 		board_name="hg655b"
 		;;
