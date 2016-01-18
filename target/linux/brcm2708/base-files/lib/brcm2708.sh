@@ -11,6 +11,7 @@ brcm2708_detect() {
 	"Raspberry Pi Model B Rev"*)
 		board_name="rpi-b"
 		;;
+	"Raspberry Pi Model B Plus Rev"* |\
 	"Raspberry Pi Model B+ Rev"*)
 		board_name="rpi-b-plus"
 		;;
