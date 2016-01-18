@@ -17,25 +17,23 @@
  static struct map_desc cns3xxx_io_desc[] __initdata = {
  	{
  		.virtual	= CNS3XXX_TC11MP_SCU_BASE_VIRT,
-@@ -191,6 +194,17 @@ static struct irqaction cns3xxx_timer_ir
+@@ -191,6 +194,15 @@ static struct irqaction cns3xxx_timer_ir
  	.handler	= cns3xxx_timer_interrupt,
  };
  
 +static void __init cns3xxx_init_twd(void)
 +{
-+#ifdef CONFIG_LOCAL_TIMERS
 +	static DEFINE_TWD_LOCAL_TIMER(cns3xx_twd_local_timer,
 +		CNS3XXX_TC11MP_TWD_BASE,
 +		IRQ_LOCALTIMER);
 +
 +	twd_local_timer_register(&cns3xx_twd_local_timer);
-+#endif
 +}
 +
  /*
   * Set up the clock source and clock events devices
   */
-@@ -244,6 +258,7 @@ static void __init __cns3xxx_timer_init(
+@@ -244,6 +256,7 @@ static void __init __cns3xxx_timer_init(
  	setup_irq(timer_irq, &cns3xxx_timer_irq);
  
  	cns3xxx_clockevents_init(timer_irq);

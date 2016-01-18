@@ -13,7 +13,7 @@
  	select ARM_GIC
  	select PCI_DOMAINS if PCI
 +	select HAVE_ARM_SCU if SMP
-+	select HAVE_ARM_TWD if LOCAL_TIMERS
++	select HAVE_ARM_TWD
 +	select HAVE_SMP
  	help
  	  Support for Cavium Networks CNS3XXX platform.

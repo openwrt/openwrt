@@ -24,8 +24,8 @@
  	.cpumask	= cpu_all_mask,
  };
  
-@@ -215,6 +216,35 @@ static void __init cns3xxx_init_twd(void
- #endif
+@@ -213,6 +214,35 @@ static void __init cns3xxx_init_twd(void
+ 	twd_local_timer_register(&cns3xx_twd_local_timer);
  }
  
 +static cycle_t cns3xxx_get_cycles(struct clocksource *cs)
@@ -60,7 +60,7 @@
  /*
   * Set up the clock source and clock events devices
   */
-@@ -232,13 +262,12 @@ static void __init __cns3xxx_timer_init(
+@@ -230,13 +260,12 @@ static void __init __cns3xxx_timer_init(
  	/* stop free running timer3 */
  	writel(0, cns3xxx_tmr1 + TIMER_FREERUN_CONTROL_OFFSET);
  
@@ -77,7 +77,7 @@
  	/* mask irq, non-mask timer1 overflow */
  	irq_mask = readl(cns3xxx_tmr1 + TIMER1_2_INTERRUPT_MASK_OFFSET);
  	irq_mask &= ~(1 << 2);
-@@ -250,23 +279,9 @@ static void __init __cns3xxx_timer_init(
+@@ -248,23 +277,9 @@ static void __init __cns3xxx_timer_init(
  	val |= (1 << 9);
  	writel(val, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
  
