@@ -178,10 +178,10 @@ define Package/atm-diagnostics/install
 endef
 
 define Package/br2684ctl/install
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/hotplug.d/atm
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/hotplug.d/atm $(1)/usr/sbin $(1)/lib/netifd
+	$(INSTALL_BIN) ./files/br2684-up $(1)/lib/netifd/br2684-up
 	$(INSTALL_BIN) ./files/br2684ctl $(1)/etc/init.d/
 	$(INSTALL_DATA) ./files/atm.hotplug $(1)/etc/hotplug.d/atm/00-trigger
-	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) \
 		./files/br2684ctl_wrap \
 		$(PKG_INSTALL_DIR)/usr/sbin/br2684ctl \
