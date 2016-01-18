@@ -6,7 +6,7 @@ platform_check_image() {
 	local board=$(ipq806x_board_name)
 
 	case "$board" in
-	AP148 |\
+	ap148 |\
 	r7500)
 		nand_do_platform_check $board $1
 		return $?;
@@ -20,7 +20,7 @@ platform_pre_upgrade() {
 	local board=$(ipq806x_board_name)
 
 	case "$board" in
-	AP148 |\
+	ap148 |\
 	r7500)
 		nand_do_upgrade "$1"
 		;;
