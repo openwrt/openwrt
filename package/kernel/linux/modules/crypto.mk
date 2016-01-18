@@ -100,10 +100,11 @@ $(eval $(call KernelPackage,crypto-wq))
 
 define KernelPackage/crypto-rng
   TITLE:=CryptoAPI random number generation
-  DEPENDS:=+kmod-crypto-hash
+  DEPENDS:=+kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha256
   KCONFIG:= \
-	CONFIG_CRYPTO_DRBG_MENU \
 	CONFIG_CRYPTO_DRBG \
+	CONFIG_CRYPTO_DRBG_HMAC=y \
+	CONFIG_CRYPTO_DRBG_MENU \
 	CONFIG_CRYPTO_JITTERENTROPY \
 	CONFIG_CRYPTO_RNG2
   FILES:= \
