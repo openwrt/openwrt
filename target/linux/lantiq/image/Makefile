@@ -413,6 +413,9 @@ Image/Build/Profile/TDW8970=$(call Image/BuildTPLink/$(1),$(1),TDW8970,TD-W8970v
 Image/BuildKernel/Profile/TDW8980=$(call Image/BuildKernelTPLink/Template,TDW8980,TD-W8980v1,$(1))
 Image/Build/Profile/TDW8980=$(call Image/BuildTPLink/$(1),$(1),TDW8980,TD-W8980v1)
 
+Image/BuildKernel/Profile/VR200v=$(call Image/BuildKernelTPLink/Template,VR200v,ArcherVR200V,$(1))
+Image/Build/Profile/VR200v=$(call Image/BuildTPLink/$(1),$(1),VR200v,ArcherVR200V)
+
 Image/BuildKernel/Profile/VGV7510KW22NOR=$(call Image/BuildKernel/Template,VGV7510KW22NOR,$(1))
 Image/Build/Profile/VGV7510KW22NOR=$(call Image/Build/$(1),$(1),VGV7510KW22NOR)
 
