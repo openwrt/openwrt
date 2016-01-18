@@ -21,7 +21,7 @@
 +	select GENERIC_IRQ_CHIP
  	select PCI_DOMAINS if PCI
  	select HAVE_ARM_SCU if SMP
- 	select HAVE_ARM_TWD if LOCAL_TIMERS
+ 	select HAVE_ARM_TWD
 --- a/arch/arm/mach-cns3xxx/Makefile
 +++ b/arch/arm/mach-cns3xxx/Makefile
 @@ -1,7 +1,7 @@
