@@ -62,7 +62,11 @@ static int rps_irq_domain_xlate(struct irq_domain *d,
 				unsigned long *out_hwirq,
 				unsigned int *out_type)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,3,0)
 	if (d->of_node != controller)
+#else
+	if (irq_domain_get_of_node(d) != controller)
+#endif
 		return -EINVAL;
 	if (intsize < 1)
 		return -EINVAL;
