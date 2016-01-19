@@ -1,13 +1,14 @@
-From d85a955118c8d8679d4f746fe2189c172d7c365f Mon Sep 17 00:00:00 2001
+From e8b8318de645c04f8600cb5af6f6773a1878ee9d Mon Sep 17 00:00:00 2001
 From: Ray Jui <rjui@broadcom.com>
-Date: Mon, 16 Nov 2015 17:18:05 -0800
-Subject: [PATCH 150/154] PCI: iproc: Update iProc PCIe device tree binding
+Date: Fri, 4 Dec 2015 09:34:58 -0800
+Subject: [PATCH 1/5] PCI: iproc: Update iProc PCIe device tree binding
 
-Add a new compatible string "brcm,iproc-pcie-paxc", for PAXC based iProc
-PCIe root complex. A PAXC based PCIe root complex is connected to
-emulated endpoint devices internal to the ASIC
+Add a new compatible string "brcm,iproc-pcie-paxc", for PAXC-based iProc
+PCIe root complex.  A PAXC-based PCIe root complex is connected to emulated
+endpoint devices internal to the ASIC.
 
 Signed-off-by: Ray Jui <rjui@broadcom.com>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 Reviewed-by: Scott Branden <sbranden@broadcom.com>
 ---
  Documentation/devicetree/bindings/pci/brcm,iproc-pcie.txt | 5 ++++-
@@ -21,8 +22,8 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
  Required properties:
 -- compatible: Must be "brcm,iproc-pcie"
 +- compatible: Must be "brcm,iproc-pcie" for PAXB, or "brcm,iproc-pcie-paxc"
-+  for PAXC. PAXB based root complex is used for external endpoint devices.
-+  PAXC based root complex is connected to emulated endpoint devices
++  for PAXC.  PAXB-based root complex is used for external endpoint devices.
++  PAXC-based root complex is connected to emulated endpoint devices
 +  internal to the ASIC
  - reg: base address and length of the PCIe controller I/O register space
  - #interrupt-cells: set to <1>

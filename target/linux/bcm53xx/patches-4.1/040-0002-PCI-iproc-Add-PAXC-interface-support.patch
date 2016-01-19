@@ -1,20 +1,21 @@
-From a13fc4733b25d6dad6ec1826f09225c69ee21e3a Mon Sep 17 00:00:00 2001
+From 943ebae781f519ecfecbfa1b997f15f59116e41d Mon Sep 17 00:00:00 2001
 From: Ray Jui <rjui@broadcom.com>
-Date: Mon, 16 Nov 2015 17:41:43 -0800
-Subject: [PATCH 151/154] PCI: iproc: Add PAXC interface support
+Date: Fri, 4 Dec 2015 09:34:59 -0800
+Subject: [PATCH 2/5] PCI: iproc: Add PAXC interface support
 
-Traditionally, all iProc PCIe root complexes use PAXB based wrapper,
-with an integrated on-chip Serdes to support external endpoint devices.
-On newer iProc platforms, a PAXC based wrapper is introduced, for
-connection with internally emulated PCIe endpoint devices in the ASIC
+Traditionally, all iProc PCIe root complexes use PAXB-based wrapper, with
+an integrated on-chip Serdes to support external endpoint devices.  On
+newer iProc platforms, a PAXC-based wrapper is introduced, for connection
+with internally emulated PCIe endpoint devices in the ASIC.
 
-This patch adds support for PAXC based iProc PCIe root complex in the
-iProc PCIe core driver. This change fators out common logic between
-PAXB and PAXC, and use tables to store register offsets that are
-different between PAXB and PAXC. This allows the driver to be scaled to
-support subsequent PAXC revisions in the future
+Add support for PAXC-based iProc PCIe root complex in the iProc PCIe core
+driver.  This change factors out common logic between PAXB and PAXC, and
+uses tables to store register offsets that are different between PAXB and
+PAXC.  This allows the driver to be scaled to support subsequent PAXC
+revisions in the future.
 
 Signed-off-by: Ray Jui <rjui@broadcom.com>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 Reviewed-by: Scott Branden <sbranden@broadcom.com>
 ---
  drivers/pci/host/pcie-iproc-platform.c |  24 +++-
@@ -324,7 +325,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 -	val = readl(pcie->base + PCIE_LINK_STATUS_OFFSET);
 +	/*
 +	 * PAXC connects to emulated endpoint devices directly and does not
-+	 * have a Serdes. Therefore skip the link detection logic here
++	 * have a Serdes.  Therefore skip the link detection logic here.
 +	 */
 +	if (pcie->type == IPROC_PCIE_PAXC)
 +		return 0;
@@ -392,10 +393,10 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 + * iProc PCIe interface type
 + *
 + * PAXB is the wrapper used in root complex that can be connected to an
-+ * external endpoint device
++ * external endpoint device.
 + *
 + * PAXC is the wrapper used in root complex dedicated for internal emulated
-+ * endpoint devices
++ * endpoint devices.
 + */
 +enum iproc_pcie_type {
 +	IPROC_PCIE_PAXB = 0,
