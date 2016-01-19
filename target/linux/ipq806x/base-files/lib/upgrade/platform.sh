@@ -7,6 +7,7 @@ platform_check_image() {
 
 	case "$board" in
 	ap148 |\
+	d7800 |\
 	r7500)
 		nand_do_platform_check $board $1
 		return $?;
@@ -21,6 +22,7 @@ platform_pre_upgrade() {
 
 	case "$board" in
 	ap148 |\
+	d7800 |\
 	r7500)
 		nand_do_upgrade "$1"
 		;;
