@@ -1,7 +1,7 @@
 From 199ff14100095d52cd1b232cc0f3b12f348b5b07 Mon Sep 17 00:00:00 2001
 From: Ray Jui <rjui@broadcom.com>
 Date: Tue, 15 Sep 2015 17:39:18 -0700
-Subject: [PATCH 143/147] PCI: iproc: Fix PCIe reset logic
+Subject: [PATCH 4/7] PCI: iproc: Fix PCIe reset logic
 
 The current reset logic does not always properly reset the device.  For
 example, in the case when the perst_b signal is already de-asserted in the
