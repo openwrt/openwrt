@@ -634,8 +634,19 @@ wpa_supplicant_add_network() {
 					append network_data "private_key_passwd=\"$priv_key_pwd\"" "$N$T"
 				;;
 				fast|peap|ttls)
-					json_get_vars auth password
+					json_get_vars auth password ca_cert2 client_cert2 priv_key2 priv_key2_pwd
 					set_default auth MSCHAPV2
+
+					if [ "$auth" = "EAP-TLS" ]; then
+						[ -n "$ca_cert2" ] &&
+							append network_data "ca_cert2=\"$ca_cert2\"" "$N$T"
+						append network_data "client_cert2=\"$client_cert2\"" "$N$T"
+						append network_data "private_key2=\"$priv_key2\"" "$N$T"
+						append network_data "private_key2_passwd=\"$priv_key2_pwd\"" "$N$T"
+					else
+						append network_data "password=\"$password\"" "$N$T"
+					fi
+
 					phase2proto="auth="
 					case "$auth" in
 						"auth"*)
@@ -648,7 +659,6 @@ wpa_supplicant_add_network() {
 						;;
 					esac
 					append network_data "phase2=\"$phase2proto$auth\"" "$N$T"
-					append network_data "password=\"$password\"" "$N$T"
 				;;
 			esac
 			append network_data "eap=$(echo $eap_type | tr 'a-z' 'A-Z')" "$N$T"
