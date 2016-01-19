@@ -63,7 +63,7 @@ endif
   AUTOLOAD:=$(call AutoLoad,51,at91_udc)
 endef
 
-define KernelPackage/at91-adc/description
+define KernelPackage/at91-udc/description
  Kernel module to use the USB Device controller for Atmel AT91
 endef
 
