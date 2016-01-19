@@ -13,6 +13,10 @@ choice
 		bool "glibc 2.21"
 		select GLIBC_VERSION_2_21
 
+	config GLIBC_USE_VERSION_2_22
+		bool "glibc 2.22"
+		select GLIBC_VERSION_2_22
+
 endchoice
 
 menu "eglibc configuration"
