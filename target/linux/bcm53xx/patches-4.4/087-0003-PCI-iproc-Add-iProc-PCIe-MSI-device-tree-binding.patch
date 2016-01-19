@@ -1,12 +1,13 @@
-From 96b40de5e36ec479dabb88500f1830a87818a809 Mon Sep 17 00:00:00 2001
+From c7bd48195377435ecaf38869b936be8e7abe3489 Mon Sep 17 00:00:00 2001
 From: Ray Jui <rjui@broadcom.com>
-Date: Mon, 16 Nov 2015 17:57:33 -0800
-Subject: [PATCH 152/154] PCI: iproc: Add iProc PCIe MSI device tree binding
+Date: Fri, 4 Dec 2015 09:35:00 -0800
+Subject: [PATCH 3/5] PCI: iproc: Add iProc PCIe MSI device tree binding
 
-This patch updates the iProc PCIe device tree bindings with added
-binding information for MSI
+Update the iProc PCIe device tree bindings with added binding information
+for MSI.
 
 Signed-off-by: Ray Jui <rjui@broadcom.com>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 Reviewed-by: Anup Patel <anup.patel@broadcom.com>
 Reviewed-by: Vikram Prakash <vikramp@broadcom.com>
 Reviewed-by: Scott Branden <sbranden@broadcom.com>
@@ -23,13 +24,13 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +MSI support (optional):
 +
 +For older platforms without MSI integrated in the GIC, iProc PCIe core provides
-+an event queue based MSI support. The iProc MSI uses host memories to store
++an event queue based MSI support.  The iProc MSI uses host memories to store
 +MSI posted writes in the event queues
 +
-+- msi-parent: Link to the device node of the MSI controller. On newer iProc
-+platforms, the MSI controller may be gicv2m or gicv3-its. On older iProc
++- msi-parent: Link to the device node of the MSI controller.  On newer iProc
++platforms, the MSI controller may be gicv2m or gicv3-its.  On older iProc
 +platforms without MSI support in its interrupt controller, one may use the
-+event queue based MSI support integrated within the iProc PCIe core
++event queue based MSI support integrated within the iProc PCIe core.
 +
 +When the iProc event queue based MSI is used, one needs to define the
 +following properties in the MSI device node:

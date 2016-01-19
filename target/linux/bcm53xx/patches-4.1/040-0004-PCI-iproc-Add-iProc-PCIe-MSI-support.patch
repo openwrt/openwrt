@@ -1,83 +1,85 @@
-From c81922174d61127ff5baad6059ae148794c72276 Mon Sep 17 00:00:00 2001
+From 3bc2b2348835f6edd33c383a2fbcf15fe3dac3b2 Mon Sep 17 00:00:00 2001
 From: Ray Jui <rjui@broadcom.com>
-Date: Tue, 17 Nov 2015 13:14:37 -0800
-Subject: [PATCH 153/154] PCI: iproc: Add iProc PCIe MSI support
+Date: Wed, 6 Jan 2016 18:04:35 -0600
+Subject: [PATCH 4/5] PCI: iproc: Add iProc PCIe MSI support
 
-This patch adds PCIe MSI support for both PAXB and PAXC interfaces on
-all iProc based platforms
+Add PCIe MSI support for both PAXB and PAXC interfaces on all iProc-based
+platforms.
 
-The iProc PCIe MSI support deploys an event queue based implementation.
+The iProc PCIe MSI support deploys an event queue-based implementation.
 Each event queue is serviced by a GIC interrupt and can support up to 64
-MSI vectors. Host memory is allocated for the event queues, and each event
-queue consists of 64 word-sized entries. MSI data is written to the
-lower 16-bit of each entry, whereas the upper 16-bit of the entry is
-reserved for the controller for internal processing
+MSI vectors.  Host memory is allocated for the event queues, and each event
+queue consists of 64 word-sized entries.  MSI data is written to the lower
+16-bit of each entry, whereas the upper 16-bit of the entry is reserved for
+the controller for internal processing.
 
-Each event queue is tracked by a head pointer and tail pointer. Head
+Each event queue is tracked by a head pointer and tail pointer.  Head
 pointer indicates the next entry in the event queue to be processed by
 the driver and is updated by the driver after processing is done.
 The controller uses the tail pointer as the next MSI data insertion
-point. The controller ensures MSI data is flushed to host memory before
-updating the tail pointer and then triggering the interrupt
+point.  The controller ensures MSI data is flushed to host memory before
+updating the tail pointer and then triggering the interrupt.
 
-MSI IRQ affinity is supported by evenly distributing the interrupts to
-each CPU core. MSI vector is moved from one GIC interrupt to another in
-order to steer to the target CPU
+MSI IRQ affinity is supported by evenly distributing the interrupts to each
+CPU core.  MSI vector is moved from one GIC interrupt to another in order
+to steer to the target CPU.
 
 Therefore, the actual number of supported MSI vectors is:
 
-M * 64 / N
+  M * 64 / N
 
-where M denotes the number of GIC interrupts (event queues), and N
-denotes the number of CPU cores
+where M denotes the number of GIC interrupts (event queues), and N denotes
+the number of CPU cores.
 
-This iProc event queue based MSI support should not be used with newer
+This iProc event queue-based MSI support should not be used with newer
 platforms with integrated MSI support in the GIC (e.g., giv2m or
-gicv3-its)
+gicv3-its).
 
+[bhelgaas: fold in Kconfig fixes from Arnd Bergmann <arnd@arndb.de>]
 Signed-off-by: Ray Jui <rjui@broadcom.com>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 Reviewed-by: Anup Patel <anup.patel@broadcom.com>
 Reviewed-by: Vikram Prakash <vikramp@broadcom.com>
 Reviewed-by: Scott Branden <sbranden@broadcom.com>
+Reviewed-by: Marc Zyngier <marc.zyngier@arm.com>
 ---
- drivers/pci/host/Kconfig               |   9 +
+ drivers/pci/host/Kconfig               |  10 +
  drivers/pci/host/Makefile              |   1 +
  drivers/pci/host/pcie-iproc-bcma.c     |   1 +
  drivers/pci/host/pcie-iproc-msi.c      | 675 +++++++++++++++++++++++++++++++++
  drivers/pci/host/pcie-iproc-platform.c |   1 +
  drivers/pci/host/pcie-iproc.c          |  26 ++
  drivers/pci/host/pcie-iproc.h          |  23 +-
- 7 files changed, 734 insertions(+), 2 deletions(-)
+ 7 files changed, 735 insertions(+), 2 deletions(-)
  create mode 100644 drivers/pci/host/pcie-iproc-msi.c
 
 --- a/drivers/pci/host/Kconfig
 +++ b/drivers/pci/host/Kconfig
-@@ -127,6 +127,15 @@ config PCIE_IPROC
- 	  iProc family of SoCs. An appropriate bus interface driver also needs
- 	  to be enabled
- 
+@@ -133,5 +133,15 @@ config PCIE_IPROC_BCMA
+ 	help
+ 	  Say Y here if you want to use the Broadcom iProc PCIe controller
+ 	  through the BCMA bus interface
++ 
 +config PCIE_IPROC_MSI
 +	bool "Broadcom iProc PCIe MSI support"
-+	depends on ARCH_BCM_IPROC && PCI_MSI
++	depends on PCIE_IPROC_PLATFORM || PCIE_IPROC_BCMA
++	depends on PCI_MSI
 +	select PCI_MSI_IRQ_DOMAIN
 +	default ARCH_BCM_IPROC
 +	help
 +	  Say Y here if you want to enable MSI support for Broadcom's iProc
 +	  PCIe controller
-+
- config PCIE_IPROC_PLATFORM
- 	tristate "Broadcom iProc PCIe platform bus driver"
- 	depends on ARCH_BCM_IPROC || (ARM && COMPILE_TEST)
+ 
+ endmenu
 --- a/drivers/pci/host/Makefile
 +++ b/drivers/pci/host/Makefile
-@@ -15,6 +15,7 @@ obj-$(CONFIG_PCI_XGENE_MSI) += pci-xgene
+@@ -14,5 +14,6 @@ obj-$(CONFIG_PCI_XGENE) += pci-xgene.o
  obj-$(CONFIG_PCI_LAYERSCAPE) += pci-layerscape.o
  obj-$(CONFIG_PCI_VERSATILE) += pci-versatile.o
  obj-$(CONFIG_PCIE_IPROC) += pcie-iproc.o
 +obj-$(CONFIG_PCIE_IPROC_MSI) += pcie-iproc-msi.o
  obj-$(CONFIG_PCIE_IPROC_PLATFORM) += pcie-iproc-platform.o
  obj-$(CONFIG_PCIE_IPROC_BCMA) += pcie-iproc-bcma.o
- obj-$(CONFIG_PCIE_ALTERA) += pcie-altera.o
 --- a/drivers/pci/host/pcie-iproc-bcma.c
 +++ b/drivers/pci/host/pcie-iproc-bcma.c
 @@ -55,6 +55,7 @@ static int iproc_pcie_bcma_probe(struct
@@ -123,16 +125,16 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +
 +#define IPROC_MSI_EQ_MASK              0x3f
 +
-+/* max number of GIC interrupts */
++/* Max number of GIC interrupts */
 +#define NR_HW_IRQS                     6
 +
-+/* number of entries in each event queue */
++/* Number of entries in each event queue */
 +#define EQ_LEN                         64
 +
-+/* size of each event queue memory region */
++/* Size of each event queue memory region */
 +#define EQ_MEM_REGION_SIZE             SZ_4K
 +
-+/* size of each MSI address region */
++/* Size of each MSI address region */
 +#define MSI_MEM_REGION_SIZE            SZ_4K
 +
 +enum iproc_msi_reg {
@@ -153,7 +155,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 + * iProc MSI group
 + *
 + * One MSI group is allocated per GIC interrupt, serviced by one iProc MSI
-+ * event queue
++ * event queue.
 + *
 + * @msi: pointer to iProc MSI data
 + * @gic_irq: GIC interrupt
@@ -169,7 +171,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 + * iProc event queue based MSI
 + *
 + * Only meant to be used on platforms without MSI support integrated into the
-+ * GIC
++ * GIC.
 + *
 + * @pcie: pointer to iProc PCIe data
 + * @reg_offsets: MSI register offsets
@@ -278,12 +280,12 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +
 +/*
 + * In iProc PCIe core, each MSI group is serviced by a GIC interrupt and a
-+ * dedicated event queue. Each MSI group can support up to 64 MSI vectors
++ * dedicated event queue.  Each MSI group can support up to 64 MSI vectors.
 + *
-+ * The number of MSI groups varies between different iProc SoCs. The total
-+ * number of CPU cores also varies. To support MSI IRQ affinity, we
-+ * distribute GIC interrupts across all available CPUs. MSI vector is moved
-+ * from one GIC interrupt to another to steer to the target CPU
++ * The number of MSI groups varies between different iProc SoCs.  The total
++ * number of CPU cores also varies.  To support MSI IRQ affinity, we
++ * distribute GIC interrupts across all available CPUs.  MSI vector is moved
++ * from one GIC interrupt to another to steer to the target CPU.
 + *
 + * Assuming:
 + * - the number of MSI groups is M
@@ -348,7 +350,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +
 +	mutex_lock(&msi->bitmap_lock);
 +
-+	/* allocate 'nr_cpus' number of MSI vectors each time */
++	/* Allocate 'nr_cpus' number of MSI vectors each time */
 +	hwirq = bitmap_find_next_zero_area(msi->bitmap, msi->nr_msi_vecs, 0,
 +					   msi->nr_cpus, 0);
 +	if (hwirq < msi->nr_msi_vecs) {
@@ -399,8 +401,8 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +
 +	/*
 +	 * Since we have multiple hwirq mapped to a single MSI vector,
-+	 * now we need to derive the hwirq at CPU0. It can then be used to
-+	 * mapped back to virq
++	 * now we need to derive the hwirq at CPU0.  It can then be used to
++	 * mapped back to virq.
 +	 */
 +	return hwirq_to_canonical_hwirq(msi, hwirq);
 +}
@@ -423,14 +425,14 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +	eq = grp->eq;
 +
 +	/*
-+	 * iProc MSI event queue is tracked by head and tail pointers. Head
++	 * iProc MSI event queue is tracked by head and tail pointers.  Head
 +	 * pointer indicates the next entry (MSI data) to be consumed by SW in
-+	 * the queue and needs to be updated by SW. iProc MSI core uses the
-+	 * tail pointer as the next data insertion point
++	 * the queue and needs to be updated by SW.  iProc MSI core uses the
++	 * tail pointer as the next data insertion point.
 +	 *
-+	 * Entries between head and tail pointers contain valid MSI data. MSI
++	 * Entries between head and tail pointers contain valid MSI data.  MSI
 +	 * data is guaranteed to be in the event queue memory before the tail
-+	 * pointer is updated by the iProc MSI core
++	 * pointer is updated by the iProc MSI core.
 +	 */
 +	head = iproc_msi_read_reg(msi, IPROC_MSI_EQ_HEAD,
 +				  eq) & IPROC_MSI_EQ_MASK;
@@ -440,7 +442,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +
 +		/*
 +		 * Figure out total number of events (MSI data) to be
-+		 * processed
++		 * processed.
 +		 */
 +		nr_events = (tail < head) ?
 +			(EQ_LEN - (head - tail)) : (tail - head);
@@ -458,14 +460,14 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +		}
 +
 +		/*
-+		 * Now all outstanding events have been processed. Update the
-+		 * head pointer
++		 * Now all outstanding events have been processed.  Update the
++		 * head pointer.
 +		 */
 +		iproc_msi_write_reg(msi, IPROC_MSI_EQ_HEAD, eq, head);
 +
 +		/*
 +		 * Now go read the tail pointer again to see if there are new
-+		 * oustanding events that came in during the above window
++		 * oustanding events that came in during the above window.
 +		 */
 +	} while (true);
 +
@@ -477,7 +479,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +	int i, eq;
 +	u32 val;
 +
-+	/* program memory region for each event queue */
++	/* Program memory region for each event queue */
 +	for (i = 0; i < msi->nr_eq_region; i++) {
 +		dma_addr_t addr = msi->eq_dma + (i * EQ_MEM_REGION_SIZE);
 +
@@ -487,7 +489,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +				    upper_32_bits(addr));
 +	}
 +
-+	/* program address region for MSI posted writes */
++	/* Program address region for MSI posted writes */
 +	for (i = 0; i < msi->nr_msi_region; i++) {
 +		phys_addr_t addr = msi->msi_addr + (i * MSI_MEM_REGION_SIZE);
 +
@@ -498,14 +500,14 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +	}
 +
 +	for (eq = 0; eq < msi->nr_irqs; eq++) {
-+		/* enable MSI event queue */
++		/* Enable MSI event queue */
 +		val = IPROC_MSI_INTR_EN | IPROC_MSI_INT_N_EVENT |
 +			IPROC_MSI_EQ_EN;
 +		iproc_msi_write_reg(msi, IPROC_MSI_CTRL, eq, val);
 +
 +		/*
 +		 * Some legacy platforms require the MSI interrupt enable
-+		 * register to be set explicitly
++		 * register to be set explicitly.
 +		 */
 +		if (msi->has_inten_reg) {
 +			val = iproc_msi_read_reg(msi, IPROC_MSI_INTS_EN, eq);
@@ -581,7 +583,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +		irq_set_chained_handler_and_data(msi->grps[i].gic_irq,
 +						 iproc_msi_handler,
 +						 &msi->grps[i]);
-+		/* dedicate GIC interrupt to each CPU core */
++		/* Dedicate GIC interrupt to each CPU core */
 +		if (alloc_cpumask_var(&mask, GFP_KERNEL)) {
 +			cpumask_clear(mask);
 +			cpumask_set_cpu(cpu, mask);
@@ -597,7 +599,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +		}
 +
 +		if (ret) {
-+			/* free all configured/unconfigured irqs */
++			/* Free all configured/unconfigured IRQs */
 +			iproc_msi_irq_free(msi, cpu);
 +			return ret;
 +		}
@@ -698,7 +700,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +		msi->grps[i].eq = i;
 +	}
 +
-+	/* reserve memory for event queue and make sure memories are zeroed */
++	/* Reserve memory for event queue and make sure memories are zeroed */
 +	msi->eq_cpu = dma_zalloc_coherent(pcie->dev,
 +					  msi->nr_eq_region * EQ_MEM_REGION_SIZE,
 +					  &msi->eq_dma, GFP_KERNEL);
@@ -805,7 +807,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
  int iproc_pcie_setup(struct iproc_pcie *pcie, struct list_head *res)
  {
  	int ret;
-@@ -507,6 +527,10 @@ int iproc_pcie_setup(struct iproc_pcie *
+@@ -506,6 +526,10 @@ int iproc_pcie_setup(struct iproc_pcie *
  
  	iproc_pcie_enable(pcie);
  
@@ -816,7 +818,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
  	pci_scan_child_bus(bus);
  	pci_assign_unassigned_bus_resources(bus);
  	pci_fixup_irqs(pci_common_swizzle, pcie->map_irq);
-@@ -531,6 +555,8 @@ int iproc_pcie_remove(struct iproc_pcie
+@@ -530,6 +554,8 @@ int iproc_pcie_remove(struct iproc_pcie
  	pci_stop_root_bus(pcie->root_bus);
  	pci_remove_root_bus(pcie->root_bus);
  
@@ -870,7 +872,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
  int iproc_pcie_setup(struct iproc_pcie *pcie, struct list_head *res);
  int iproc_pcie_remove(struct iproc_pcie *pcie);
  
-+#ifdef CONFIG_PCI_MSI
++#ifdef CONFIG_PCIE_IPROC_MSI
 +int iproc_msi_init(struct iproc_pcie *pcie, struct device_node *node);
 +void iproc_msi_exit(struct iproc_pcie *pcie);
 +#else
@@ -879,7 +881,7 @@ Reviewed-by: Scott Branden <sbranden@broadcom.com>
 +{
 +	return -ENODEV;
 +}
-+static void iproc_msi_exit(struct iproc_pcie *pcie)
++static inline void iproc_msi_exit(struct iproc_pcie *pcie)
 +{
 +}
 +#endif
