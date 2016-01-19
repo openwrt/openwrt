@@ -41,6 +41,7 @@ define Package/opkg/Default
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=opkg package manager
+  DEPENDS:=+uclient-fetch
   URL:=http://wiki.openmoko.org/wiki/Opkg
 endef
 
