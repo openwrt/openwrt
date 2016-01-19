@@ -40,11 +40,6 @@ MUSL_CONFIGURE:= \
 		--disable-gcc-wrapper \
 		--enable-debug
 
-ifeq ($(CONFIG_MUSL_ENABLE_DEBUG),y)
-MUSL_CONFIGURE+= \
-	--enable-debug
-endif
-
 define Host/Prepare
 	$(call Host/Prepare/Default)
 	$(if $(strip $(QUILT)), \
