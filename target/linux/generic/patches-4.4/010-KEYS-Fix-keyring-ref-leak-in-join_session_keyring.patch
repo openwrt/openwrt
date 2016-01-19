@@ -1,0 +1,75 @@
+From 7ca88764d45c209791e8813131c1457c2e9e51e7 Mon Sep 17 00:00:00 2001
+From: Yevgeny Pats <yevgeny@perception-point.io>
+Date: Mon, 11 Jan 2016 12:05:28 +0000
+Subject: KEYS: Fix keyring ref leak in join_session_keyring()
+
+If a thread is asked to join as a session keyring the keyring that's already
+set as its session, we leak a keyring reference.
+
+This can be tested with the following program:
+
+	#include <stddef.h>
+	#include <stdio.h>
+	#include <sys/types.h>
+	#include <keyutils.h>
+
+	int main(int argc, const char *argv[])
+	{
+		int i = 0;
+		key_serial_t serial;
+
+		serial = keyctl(KEYCTL_JOIN_SESSION_KEYRING,
+				"leaked-keyring");
+		if (serial < 0) {
+			perror("keyctl");
+			return -1;
+		}
+
+		if (keyctl(KEYCTL_SETPERM, serial,
+			   KEY_POS_ALL | KEY_USR_ALL) < 0) {
+			perror("keyctl");
+			return -1;
+		}
+
+		for (i = 0; i < 100; i++) {
+			serial = keyctl(KEYCTL_JOIN_SESSION_KEYRING,
+					"leaked-keyring");
+			if (serial < 0) {
+				perror("keyctl");
+				return -1;
+			}
+		}
+
+		return 0;
+	}
+
+If, after the program has run, there something like the following line in
+/proc/keys:
+
+3f3d898f I--Q---   100 perm 3f3f0000     0     0 keyring   leaked-keyring: empty
+
+with a usage count of 100 * the number of times the program has been run,
+then the kernel is malfunctioning.  If leaked-keyring has zero usages or
+has been garbage collected, then the problem is fixed.
+
+Reported-by: Yevgeny Pats <yevgeny@perception-point.io>
+Signed-off-by: David Howells <dhowells@redhat.com>
+---
+ security/keys/process_keys.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/security/keys/process_keys.c b/security/keys/process_keys.c
+index a3f85d2..e6d50172 100644
+--- a/security/keys/process_keys.c
++++ b/security/keys/process_keys.c
+@@ -794,6 +794,7 @@ long join_session_keyring(const char *name)
+ 		ret = PTR_ERR(keyring);
+ 		goto error2;
+ 	} else if (keyring == new->session_keyring) {
++		key_put(keyring);
+ 		ret = 0;
+ 		goto error2;
+ 	}
+-- 
+2.7.0.rc3
+
