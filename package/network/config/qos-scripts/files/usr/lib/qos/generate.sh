@@ -427,7 +427,7 @@ ${iptrules:+${iptrules}${N}iptables -t mangle -A qos_${cg}_ct -j CONNMARK --save
 iptables -t mangle -A qos_${cg} -j CONNMARK --restore-mark --mask 0x0f
 iptables -t mangle -A qos_${cg} -m mark --mark 0/0x0f -j qos_${cg}_ct
 $pktrules
-${iptrules:+${iptrules}${N}iptables -t mangle -A qos_${cg} -j CONNMARK --save-mark --mask 0xf0}
+${iptrules:+${iptrules}${N}iptables -t mangle -A qos_${cg} -j CONNMARK --save-mark --mask 0xff}
 $up$N${down:+${down}$N}
 EOF
 	unset INSMOD
