@@ -1,0 +1,28 @@
+From 70d334ca71b0e35ef21493d86799cec83f452d94 Mon Sep 17 00:00:00 2001
+From: Ray Jui <rjui@broadcom.com>
+Date: Wed, 29 Jul 2015 10:12:53 -0700
+Subject: [PATCH] PCI: iproc: Fix BCMA dependency in Kconfig
+
+The current iProc BCMA front-end driver can only work on ARM32 based
+platforms; therefore its config option in Kconfig should be changed to
+reflect that. This fixes arm64 allmodconfig build failure when compiling
+the the iProc BCMA driver that contains struct pci_sys_data that is
+arm32 specific
+
+Signed-off-by: Ray Jui <rjui@broadcom.com>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ drivers/pci/host/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pci/host/Kconfig
++++ b/drivers/pci/host/Kconfig
+@@ -127,7 +127,7 @@ config PCIE_IPROC_PLATFORM
+ 
+ config PCIE_IPROC_BCMA
+ 	bool "Broadcom iProc PCIe BCMA bus driver"
+-	depends on ARCH_BCM_IPROC || (ARM && COMPILE_TEST)
++	depends on ARM && (ARCH_BCM_IPROC || COMPILE_TEST)
+ 	select PCIE_IPROC
+ 	select BCMA
+ 	select PCI_DOMAINS
