@@ -29,6 +29,7 @@ $(eval $(call KernelPackage,fs-fscache))
 define KernelPackage/fs-afs
   SUBMENU:=$(FS_MENU)
   TITLE:=Andrew FileSystem client
+  DEFAULT:=n
   DEPENDS:=+kmod-rxrpc +kmod-dnsresolver +kmod-fs-fscache
   KCONFIG:=\
 	CONFIG_AFS_FS=m \
