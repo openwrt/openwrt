@@ -968,6 +968,7 @@ $(eval $(call KernelPackage,dnsresolver))
 define KernelPackage/rxrpc
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=AF_RXRPC support
+  HIDDEN:=1
   KCONFIG:= \
 	CONFIG_AF_RXRPC \
 	CONFIG_RXKAD=m \
