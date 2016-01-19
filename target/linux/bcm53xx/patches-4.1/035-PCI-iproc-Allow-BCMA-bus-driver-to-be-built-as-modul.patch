@@ -1,0 +1,26 @@
+From 05aa7d6a72c1fca809e4d8bfdc5fa202cb8bed37 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 25 Jul 2015 21:15:24 +0200
+Subject: [PATCH] PCI: iproc: Allow BCMA bus driver to be built as module
+
+Change CONFIG_PCIE_IPROC_BCMA to tristate to make it possible to build this
+driver as a module.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Acked-by: Ray Jui <rjui@broadcom.com>
+---
+ drivers/pci/host/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pci/host/Kconfig
++++ b/drivers/pci/host/Kconfig
+@@ -126,7 +126,7 @@ config PCIE_IPROC_PLATFORM
+ 	  through the generic platform bus interface
+ 
+ config PCIE_IPROC_BCMA
+-	bool "Broadcom iProc PCIe BCMA bus driver"
++	tristate "Broadcom iProc PCIe BCMA bus driver"
+ 	depends on ARM && (ARCH_BCM_IPROC || COMPILE_TEST)
+ 	select PCIE_IPROC
+ 	select BCMA
