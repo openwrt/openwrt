@@ -97,7 +97,7 @@ endef
 define Host/Prepare
 	$(call Host/Prepare/Default)
 	ln -snf $(PKG_SOURCE_SUBDIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
-ifeq ($(CONFIG_GLIBC_VERSION_2_21),)
+ifeq ($(CONFIG_GLIBC_VERSION_2_21)$(CONFIG_GLIBC_VERSION_2_22),)
 	$(SED) 's,y,n,' $(HOST_BUILD_DIR)/libc/option-groups.defaults
 endif
 endef
