@@ -177,6 +177,24 @@ endef
 $(eval $(call KernelPackage,crypto-hw-padlock))
 
 
+define KernelPackage/crypto-hw-ccp
+  TITLE:=AMD Cryptographic Coprocessor
+  DEPENDS:=+kmod-crypto-authenc +kmod-crypto-hash +kmod-crypto-manager +kmod-random-core
+  KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
+	CONFIG_CRYPTO_DEV_CCP=y \
+	CONFIG_CRYPTO_DEV_CCP_CRYPTO \
+	CONFIG_CRYPTO_DEV_CCP_DD
+  FILES:= \
+	$(LINUX_DIR)/drivers/crypto/ccp/ccp.ko \
+	$(LINUX_DIR)/drivers/crypto/ccp/ccp-crypto.ko
+  AUTOLOAD:=$(call AutoLoad,09,ccp ccp-crypto)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-hw-ccp))
+
+
 define KernelPackage/crypto-hw-geode
   TITLE:=AMD Geode hardware crypto module
   DEPENDS:=+kmod-crypto-manager
