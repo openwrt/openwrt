@@ -54,6 +54,7 @@ define Package/uhttpd-mod-tls
   TITLE+= (TLS plugin)
   DEPENDS:=uhttpd \
 	+PACKAGE_uhttpd-mod-tls_polarssl:libustream-polarssl \
+	+PACKAGE_uhttpd-mod-tls_mbedtls:libustream-mbedtls \
 	+PACKAGE_uhttpd-mod-tls_cyassl:libustream-cyassl \
 	+PACKAGE_uhttpd-mod-tls_openssl:libustream-openssl
 endef
@@ -67,6 +68,9 @@ define Package/uhttpd-mod-tls/config
     depends on PACKAGE_uhttpd-mod-tls
     prompt "TLS Provider"
     default PACKAGE_uhttpd-mod-tls_polarssl
+
+    config PACKAGE_uhttpd-mod-tls_mbedtls
+      bool "mbedTLS"
 
     config PACKAGE_uhttpd-mod-tls_polarssl
       bool "PolarSSL"
