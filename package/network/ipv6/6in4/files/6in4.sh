@@ -108,7 +108,7 @@ proto_6in4_setup() {
 			fi
 		}
 
-		local url="$http://$username:$password@ipv4.tunnelbroker.net/nic/update?hostname=$tunnelid"
+		local url="$http://ipv4.tunnelbroker.net/nic/update?username=$username&password=$password&hostname=$tunnelid"
 		local try=0
 		local max=3
 
