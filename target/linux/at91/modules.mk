@@ -69,6 +69,25 @@ endef
 
 $(eval $(call KernelPackage,at91-udc))
 
+define KernelPackage/atmel-usba-udc
+  SUBMENU:=$(USB_MENU)
+  TITLE:=High-speed USB Device Controller on atmel SoC
+  DEPENDS:=@TARGET_at91 +kmod-usb-gadget
+  KCONFIG:=CONFIG_USB_ATMEL_USBA
+ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/gadget/udc/atmel_usba_udc.ko),)
+  FILES:=$(LINUX_DIR)/drivers/usb/gadget/udc/atmel_usba_udc.ko
+else
+  FILES:=$(LINUX_DIR)/drivers/usb/gadget/atmel_usba_udc.ko
+endif
+  AUTOLOAD:=$(call AutoLoad,51,atmel_usba_udc)
+endef
+
+define KernelPackage/atmel-usba-udc/description
+ Kernel module to use the High-speed USB Device controller for Atmel AT91
+endef
+
+$(eval $(call KernelPackage,atmel-usba-udc))
+
 I2C_AT91_MODULES:=\
   CONFIG_I2C_AT91:drivers/i2c/busses/i2c-at91
 
