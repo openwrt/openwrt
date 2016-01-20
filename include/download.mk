@@ -182,6 +182,6 @@ define Download
 
   $(DL_DIR)/$(FILE):
 	mkdir -p $(DL_DIR)
-	$(if $(DownloadMethod/$(call dl_method,$(URL),$(PROTO))),$(DownloadMethod/$(call dl_method,$(URL),$(PROTO))),$(DownloadMethod/unknown))
+	$(call locked,$(if $(DownloadMethod/$(call dl_method,$(URL),$(PROTO))),$(DownloadMethod/$(call dl_method,$(URL),$(PROTO))),$(DownloadMethod/unknown)),$(FILE))
 
 endef
