@@ -82,40 +82,23 @@ proto_6in4_setup() {
 		[ -n "$updatekey" ] && password="$updatekey"
 
 		local http="http"
-		local urlget="wget"
+		local urlget="uclient-fetch"
 		local urlget_opts="-qO-"
 		local ca_path="${SSL_CERT_DIR-/etc/ssl/certs}"
 
-		if [ -n "$(which curl)" ]; then
-			urlget="curl"
-			urlget_opts="-s -S"
-			if curl -V | grep "Protocols:" | grep -qF "https"; then
-				http="https"
-				urlget_opts="$urlget_opts --capath $ca_path"
-			fi
-		fi
-		if [ "$http" = "http" ] &&
-			wget --version 2>&1 | grep -qF "+https"; then
-			urlget="wget"
-			urlget_opts="-qO- --ca-directory=$ca_path"
-			http="https"
-		fi
+		[ -f /lib/libustream-ssl.so ] && http=https
 		[ "$http" = "https" -a -z "$(find $ca_path -name "*.0" 2>/dev/null)" ] && {
-			if [ "$urlget" = "curl" ]; then
-				urlget_opts="$urlget_opts -k"
-			else
-				urlget_opts="$urlget_opts --no-check-certificate"
-			fi
+			urlget_opts="$urlget_opts --no-check-certificate"
 		}
 
-		local url="$http://ipv4.tunnelbroker.net/nic/update?username=$username&password=$password&hostname=$tunnelid"
+		local url="$http://ipv4.tunnelbroker.net/nic/update?hostname=$tunnelid"
 		local try=0
 		local max=3
 
 		(
 			set -o pipefail
 			while [ $((++try)) -le $max ]; do
-				if proto_6in4_update $urlget $urlget_opts "$url" 2>&1 | \
+				if proto_6in4_update $urlget $urlget_opts --user="$username" --password="$password" "$url" 2>&1 | \
 					sed -e 's,^Killed$,timeout,' -e "s,^,update $try/$max: ," | \
 					logger -t "$link";
 				then
