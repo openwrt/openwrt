@@ -6,7 +6,7 @@
  # - gettext_datadir     directory where the data files are stored.
 -prefix="@prefix@"
 +if [ -n "$STAGING_DIR" ]; then
-+	prefix="$STAGING_DIR/../host"
++	prefix="$STAGING_DIR/host"
 +else
 +	prefix="@prefix@"
 +fi
@@ -21,7 +21,7 @@
  # - gettext_datadir     directory where the data files are stored.
 -prefix="@prefix@"
 +if [ -n "$STAGING_DIR" ]; then
-+	prefix="$STAGING_DIR/../host"
++	prefix="$STAGING_DIR/host"
 +else
 +	prefix="@prefix@"
 +fi
