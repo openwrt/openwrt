@@ -143,21 +143,27 @@ define patch_libtool_host
     $(HOST_BUILD_DIR)))
 endef
 
-ifneq ($(filter patch-libtool-host,$(PKG_FIXUP)),)
+ifneq ($(filter patch-libtool,$(PKG_FIXUP)),)
   Hooks/HostConfigure/Pre += patch_libtool_host
 endif
 
-ifneq ($(filter patch-libtool-host,$(HOST_FIXUP)),)
+ifneq ($(filter patch-libtool,$(HOST_FIXUP)),)
   Hooks/HostConfigure/Pre += $(strip $(call patch_libtool,$(HOST_BUILD_DIR)))
 endif
 
-ifneq ($(filter libtool-host,$(HOST_FIXUP)),)
+ifneq ($(filter libtool,$(HOST_FIXUP)),)
  ifeq ($(filter no-autoreconf,$(HOST_FIXUP)),)
   Hooks/HostConfigure/Pre += autoreconf_host
  endif
 endif
 
-ifneq ($(filter autoreconf-host,$(HOST_FIXUP)),)
+ifneq ($(filter libtool-ucxx,$(HOST_FIXUP)),)
+ ifeq ($(filter no-autoreconf,$(HOST_FIXUP)),)
+  Hooks/HostConfigure/Pre += autoreconf_host
+ endif
+endif
+
+ifneq ($(filter autoreconf,$(HOST_FIXUP)),)
   ifeq ($(filter autoreconf,$(Hooks/HostConfigure/Pre)),)
     Hooks/HostConfigure/Pre += autoreconf_host
   endif
