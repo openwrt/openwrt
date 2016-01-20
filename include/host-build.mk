@@ -30,7 +30,8 @@ BUILD_TYPES += host
 HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(HOST_QUILT)$(DUMP),,$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPENDS),)))
 HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
-HOST_STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.$(PKG_NAME)_installed
+HOST_BUILD_PREFIX:=$(if $(IS_PACKAGE_BUILD),$(STAGING_DIR)/host,$(STAGING_DIR_HOST))
+HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.$(PKG_NAME)_installed
 
 override MAKEFLAGS=
 
@@ -68,11 +69,11 @@ HOST_CONFIGURE_ARGS = \
 	--build=$(GNU_HOST_NAME) \
 	--program-prefix="" \
 	--program-suffix="" \
-	--prefix=$(STAGING_DIR_HOST) \
-	--exec-prefix=$(STAGING_DIR_HOST) \
-	--sysconfdir=$(STAGING_DIR_HOST)/etc \
-	--localstatedir=$(STAGING_DIR_HOST)/var \
-	--sbindir=$(STAGING_DIR_HOST)/bin
+	--prefix=$(HOST_BUILD_PREFIX) \
+	--exec-prefix=$(HOST_BUILD_PREFIX) \
+	--sysconfdir=$(HOST_BUILD_PREFIX)/etc \
+	--localstatedir=$(HOST_BUILD_PREFIX)/var \
+	--sbindir=$(HOST_BUILD_PREFIX)/bin
 
 HOST_MAKE_FLAGS =
 
@@ -132,11 +133,12 @@ define Download/default
 endef
 
 define Host/Exports/Default
-  $(1) : export ACLOCAL_INCLUDE=$$(foreach p,$$(wildcard $$(STAGING_DIR_HOST)/share/aclocal $$(STAGING_DIR_HOST)/share/aclocal-*),-I $$(p))
-  $(1) : export STAGING_PREFIX=$$(STAGING_DIR_HOST)
-  $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig
-  $(1) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
+  $(1) : export ACLOCAL_INCLUDE=$$(foreach p,$$(wildcard $$(STAGING_DIR_HOST)/share/aclocal $$(STAGING_DIR_HOST)/share/aclocal-* $(if $(IS_PACKAGE_BUILD),$$(STAGING_DIR_HOST)/share/aclocal $$(STAGING_DIR_HOST)/share/aclocal-*)),-I $$(p))
+  $(1) : export STAGING_PREFIX=$$(HOST_BUILD_PREFIX)
+  $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig:$$(HOST_BUILD_PREFIX)/lib/pkgconfig
+  $(1) : export PKG_CONFIG_LIBDIR=$$(HOST_BUILD_PREFIX)/lib/pkgconfig
   $(1) : export CCACHE_DIR:=$(STAGING_DIR_HOST)/ccache
+  $(if $(IS_PACKAGE_BUILD),$(1) : export PATH=$$(TARGET_PATH_PKG))
 endef
 Host/Exports=$(Host/Exports/Default)
 
