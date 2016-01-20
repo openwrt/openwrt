@@ -366,9 +366,9 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(CP) $(TOOLCHAIN_DIR)/lib/libstdc++.so.* $(1)/usr/lib/
   endef
 
-  use_libutil=$(if $(CONFIG_GLIBC_USE_VERSION_2_21)$(CONFIG_GLIBC_USE_VERSION_2_22)$(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),libutil)
-  use_libnsl=$(if $(CONFIG_GLIBC_USE_VERSION_2_21)$(CONFIG_GLIBC_USE_VERSION_2_22)$(CONFIG_EGLIBC_OPTION_EGLIBC_NIS),libnsl)
-  use_nsswitch=$(if $(CONFIG_GLIBC_USE_VERSION_2_21)$(CONFIG_GLIBC_USE_VERSION_2_22)$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),libnss_dns libnss_files)
+  use_libutil=$(if $(if $(CONFIG_EGLIBC_USE_VERSION_2_19),$(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),y),libutil)
+  use_libnsl=$(if $(if $(CONFIG_EGLIBC_USE_VERSION_2_19),$(CONFIG_EGLIBC_OPTION_EGLIBC_NIS),y),libnsl)
+  use_nsswitch=$(if $(if $(CONFIG_EGLIBC_USE_VERSION_2_19),$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),y),libnss_dns libnss_files)
 
   define Package/glibc/install
 	$(CP) ./glibc-files/* $(1)/
