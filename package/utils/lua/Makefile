@@ -117,7 +117,7 @@ define Build/Compile
 endef
 
 define Host/Configure
-	$(SED) 's,"/usr/local/","$(STAGING_DIR_HOST)/",' $(HOST_BUILD_DIR)/src/luaconf.h
+	$(SED) 's,"/usr/local/","$(STAGING_DIR)/host/",' $(HOST_BUILD_DIR)/src/luaconf.h
 endef
 
 ifeq ($(HOST_OS),Darwin)
@@ -138,7 +138,7 @@ endef
 
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) \
-		INSTALL_TOP="$(STAGING_DIR_HOST)" \
+		INSTALL_TOP="$(STAGING_DIR)/host" \
 		install
 endef
 
