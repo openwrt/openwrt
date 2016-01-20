@@ -59,9 +59,10 @@ export EXTRA_OPTIMIZATION:=$(call qstrip,$(CONFIG_EXTRA_OPTIMIZATION))
 TARGET_SUFFIX=$(call qstrip,$(CONFIG_TARGET_SUFFIX))
 BUILD_SUFFIX:=$(call qstrip,$(CONFIG_BUILD_SUFFIX))
 SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
+BUILD_SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
 export SHELL:=/usr/bin/env bash
 
-IS_PACKAGE_BUILD := $(if $(filter package/%,$(SUBDIR)),1)
+IS_PACKAGE_BUILD := $(if $(filter package/%,$(BUILD_SUBDIR)),1)
 
 OPTIMIZE_FOR_CPU=$(subst i386,i486,$(ARCH))
 
