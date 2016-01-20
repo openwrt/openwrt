@@ -1,0 +1,65 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 20 Jan 2016 16:35:12 +0100
+Subject: [PATCH] brcmfmac: fix setting primary channel for 80 MHz width
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+First of all it changes the way we calculate primary channel offset. If
+we use e.g. 80 MHz channel with primary frequency 5180 MHz (which means
+center frequency is 5210 MHz) it makes sense to calculate primary offset
+as -30 MHz.
+Then it fixes values we compare primary_offset with. We were comparing
+offset in MHz against -2 or 2 which was resulting in picking a wrong
+primary channel.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ .../brcm80211/brcmfmac/cfg80211.c         | 23 ++++++++++------------
+ 1 file changed, 10 insertions(+), 13 deletions(-)
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
+@@ -246,7 +246,7 @@ static u16 chandef_to_chanspec(struct br
+ 	brcmf_dbg(TRACE, "chandef: control %d center %d width %d\n",
+ 		  ch->chan->center_freq, ch->center_freq1, ch->width);
+ 	ch_inf.chnum = ieee80211_frequency_to_channel(ch->center_freq1);
+-	primary_offset = ch->center_freq1 - ch->chan->center_freq;
++	primary_offset = ch->chan->center_freq - ch->center_freq1;
+ 	switch (ch->width) {
+ 	case NL80211_CHAN_WIDTH_20:
+ 	case NL80211_CHAN_WIDTH_20_NOHT:
+@@ -255,24 +255,21 @@ static u16 chandef_to_chanspec(struct br
+ 		break;
+ 	case NL80211_CHAN_WIDTH_40:
+ 		ch_inf.bw = BRCMU_CHAN_BW_40;
+-		if (primary_offset < 0)
++		if (primary_offset > 0)
+ 			ch_inf.sb = BRCMU_CHAN_SB_U;
+ 		else
+ 			ch_inf.sb = BRCMU_CHAN_SB_L;
+ 		break;
+ 	case NL80211_CHAN_WIDTH_80:
+ 		ch_inf.bw = BRCMU_CHAN_BW_80;
+-		if (primary_offset < 0) {
+-			if (primary_offset < -CH_10MHZ_APART)
+-				ch_inf.sb = BRCMU_CHAN_SB_UU;
+-			else
+-				ch_inf.sb = BRCMU_CHAN_SB_UL;
+-		} else {
+-			if (primary_offset > CH_10MHZ_APART)
+-				ch_inf.sb = BRCMU_CHAN_SB_LL;
+-			else
+-				ch_inf.sb = BRCMU_CHAN_SB_LU;
+-		}
++		if (primary_offset == -30)
++			ch_inf.sb = BRCMU_CHAN_SB_LL;
++		else if (primary_offset == -10)
++			ch_inf.sb = BRCMU_CHAN_SB_LU;
++		else if (primary_offset == 10)
++			ch_inf.sb = BRCMU_CHAN_SB_UL;
++		else
++			ch_inf.sb = BRCMU_CHAN_SB_UU;
+ 		break;
+ 	case NL80211_CHAN_WIDTH_80P80:
+ 	case NL80211_CHAN_WIDTH_160:
