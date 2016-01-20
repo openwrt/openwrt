@@ -1,5 +1,5 @@
-#ifndef _ICONV_H
-#define _ICONV_H 1
+#ifndef _LIBICONV_H
+#define _LIBICONV_H 1
 
 #define _LIBICONV_VERSION 0x010B    /* version number: (major<<8) + minor */
 
@@ -33,4 +33,4 @@ iconv_close(iconv_t cd);
 }
 #endif
 
-#endif /* _ICONV_H */
+#endif /* _LIBICONV_H */
