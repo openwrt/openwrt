@@ -7,9 +7,9 @@ board=$(oxnas_board_name)
 board_config_update
 
 case $board in
-	stg-212)
+	stg212)
 		ucidef_set_led_default "power" "power" "zyxel:blue:status" "1"
-		ucidef_set_led_usbdev "usb" "USB" "$1" "1-1"
+		ucidef_set_led_usbdev "usb" "USB" "zyxel:orange:copy" "1-1"
 		;;
 	kd20)
 		ucidef_set_led_default "power" "power" "kd20:blue:status" "1"

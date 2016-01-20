@@ -6,7 +6,7 @@
 
 get_status_led() {
 	case $(oxnas_board_name) in
-	stg-212)
+	stg212)
 		status_led="zyxel:blue:status"
 		;;
 	kd20)
