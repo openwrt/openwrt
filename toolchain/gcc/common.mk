@@ -28,30 +28,8 @@ GCC_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-ifeq ($(PKG_VERSION),4.8.0)
-  PKG_MD5SUM:=e6040024eb9e761c3bea348d1fa5abb0
-endif
 ifeq ($(PKG_VERSION),5.2.0)
   PKG_MD5SUM:=a51bcfeb3da7dd4c623e27207ed43467
-endif
-
-ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
-    LINARO_RELEASE:=
-    ifeq ($(CONFIG_GCC_VERSION),"4.8-linaro")
-      PKG_REV:=4.8-2014.04
-      PKG_VERSION:=4.8.3
-      PKG_VERSION_MAJOR:=4.8
-      PKG_MD5SUM:=5ba2f3a449b1658ccc09d27cc7ab3c03
-      PKG_COMP:=xz
-    endif
-    ifneq ($(LINARO_RELEASE),)
-      PKG_SOURCE_URL:=http://releases.linaro.org/$(LINARO_RELEASE)/components/toolchain/gcc-linaro/$(PKG_VERSION_MAJOR)
-    else
-      PKG_SOURCE_URL:=http://launchpad.net/gcc-linaro/$(PKG_VERSION_MAJOR)/$(PKG_REV)/+download/
-    endif
-    PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.$(PKG_COMP)
-    GCC_DIR:=gcc-linaro-$(PKG_REV)
-    HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)
 endif
 
 ifneq ($(CONFIG_GCC_VERSION_4_8_ARC),)
