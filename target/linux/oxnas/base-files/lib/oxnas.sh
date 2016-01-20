@@ -14,7 +14,7 @@ oxnas_board_detect() {
 
 	case "$machine" in
 	*"MitraStar Technology Corp. STG-212"*)
-		name="stg-212"
+		name="stg212"
 		;;
 	*"Shuttle KD20"*)
 		name="kd20"
