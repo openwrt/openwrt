@@ -1,0 +1,34 @@
+--- a/VEX/priv/guest_mips_helpers.c
++++ b/VEX/priv/guest_mips_helpers.c
+@@ -1189,6 +1189,7 @@ extern UInt mips_dirtyhelper_calculate_F
+                                                    flt_op inst )
+ {
+    UInt ret = 0;
++#ifndef __mips_soft_float
+ #if defined(__mips__)
+    VexGuestMIPS32State* guest_state = (VexGuestMIPS32State*)gs;
+    UInt loFsVal, hiFsVal, loFtVal, hiFtVal;
+@@ -1308,6 +1309,7 @@ extern UInt mips_dirtyhelper_calculate_F
+          break;
+    }
+ #endif
++#endif
+    return ret;
+ }
+ 
+@@ -1317,6 +1319,7 @@ extern UInt mips_dirtyhelper_calculate_F
+                                                    flt_op inst )
+ {
+    UInt ret = 0;
++#ifndef __mips_soft_float
+ #if defined(__mips__)
+ #if defined(VGA_mips32)
+    VexGuestMIPS32State* guest_state = (VexGuestMIPS32State*)gs;
+@@ -1427,6 +1430,7 @@ extern UInt mips_dirtyhelper_calculate_F
+          break;
+    }
+ #endif
++#endif
+    return ret;
+ }
+ 
