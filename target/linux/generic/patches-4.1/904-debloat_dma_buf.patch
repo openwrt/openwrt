@@ -17,12 +17,21 @@
 +dma-shared-buffer-objs := dma-buf.o fence.o reservation.o seqno-fence.o
 --- a/drivers/dma-buf/dma-buf.c
 +++ b/drivers/dma-buf/dma-buf.c
-@@ -901,4 +901,4 @@ static void __exit dma_buf_deinit(void)
+@@ -32,6 +32,7 @@
+ #include <linux/seq_file.h>
+ #include <linux/poll.h>
+ #include <linux/reservation.h>
++#include <linux/module.h>
+ 
+ static inline int is_dma_buf_file(struct file *);
+ 
+@@ -901,4 +902,5 @@ static void __exit dma_buf_deinit(void)
  {
  	dma_buf_uninit_debugfs();
  }
 -__exitcall(dma_buf_deinit);
 +module_exit(dma_buf_deinit);
++MODULE_LICENSE("GPL");
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1768,6 +1768,7 @@ int wake_up_state(struct task_struct *p,
