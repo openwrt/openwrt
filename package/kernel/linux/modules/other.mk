@@ -101,6 +101,16 @@ endef
 $(eval $(call KernelPackage,bluetooth-hci-h4p))
 
 
+define KernelPackage/dma-buf
+  TITLE:=DMA shared buffer support
+  HIDDEN:=1
+  KCONFIG:=CONFIG_DMA_SHARED_BUFFER
+  FILES:=$(LINUX_DIR)/drivers/dma-buf/dma-shared-buffer.ko
+  AUTOLOAD:=$(call AutoLoad,20,dma-shared-buffer)
+endef
+$(eval $(call KernelPackage,dma-buf))
+
+
 define KernelPackage/eeprom-93cx6
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM 93CX6 support
