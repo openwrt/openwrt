@@ -101,6 +101,7 @@ detect_mac80211() {
 		fi
 		if [ -n "$path" ]; then
 			path="${path##/sys/devices/}"
+			path="${path##platform/}"
 			dev_id="	option path	'$path'"
 		else
 			dev_id="	option macaddr	$(cat /sys/class/ieee80211/${dev}/macaddress)"
