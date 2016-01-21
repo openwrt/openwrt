@@ -18,6 +18,8 @@ V4L2_USB_DIR=usb
 define KernelPackage/backlight
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=Backlight support
+	DEPENDS:=@DISPLAY_SUPPORT
+	HIDDEN:=1
 	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE=m \
 		CONFIG_BACKLIGHT_LCD_SUPPORT=y \
 		CONFIG_LCD_CLASS_DEVICE=n \
@@ -39,7 +41,7 @@ $(eval $(call KernelPackage,backlight))
 define KernelPackage/backlight-pwm
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=PWM Backlight support
-	DEPENDS:=+kmod-pwm kmod-backlight
+	DEPENDS:=+kmod-pwm +kmod-backlight
 	KCONFIG:=CONFIG_BACKLIGHT_PWM=m
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/pwm_bl.ko
 	AUTOLOAD:=$(call AutoProbe,video pwm_bl)
