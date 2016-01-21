@@ -48,6 +48,8 @@ define Package/grub2-editenv/description
 	Edit grub2 environment files.
 endef
 
+HOST_BUILD_PREFIX := $(STAGING_DIR_HOST)
+
 CONFIGURE_ARGS += \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--disable-werror \
