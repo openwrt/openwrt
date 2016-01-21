@@ -183,6 +183,7 @@ $(eval $(call KernelPackage,fb-sys-fops))
 define KernelPackage/drm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Direct Rendering Manager (DRM) support
+  HIDDEN:=1
   DEPENDS:=+kmod-dma-buf
   KCONFIG:=CONFIG_DRM \
 	CONFIG_DRM_FBDEV_EMULATION=n \
@@ -230,7 +231,7 @@ $(eval $(call KernelPackage,drm))
 define KernelPackage/drm-imx
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX DRM support
-  DEPENDS:=@TARGET_imx6 kmod-drm +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops
+  DEPENDS:=@TARGET_imx6 +kmod-drm +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops
   KCONFIG:=CONFIG_DRM_IMX=m \
 	CONFIG_DRM_FBDEV_EMULATION=y \
 	CONFIG_IMX_IPUV3_CORE=m \
