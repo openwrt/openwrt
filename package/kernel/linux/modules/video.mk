@@ -61,7 +61,10 @@ define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer support
   DEPENDS:=@DISPLAY_SUPPORT
-  KCONFIG:=CONFIG_FB
+  KCONFIG:= \
+	CONFIG_FB \
+	CONFIG_FB_MXS=n \
+	CONFIG_FB_SM750=n
   FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb.ko
   AUTOLOAD:=$(call AutoLoad,06,fb)
 endef
@@ -76,6 +79,50 @@ define KernelPackage/fb/x86
 endef
 
 $(eval $(call KernelPackage,fb))
+
+
+define KernelPackage/fbcon
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Framebuffer Console support
+  DEPENDS:=+kmod-fb
+  KCONFIG:= \
+	CONFIG_FRAMEBUFFER_CONSOLE \
+	CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y \
+	CONFIG_FRAMEBUFFER_CONSOLE_ROTATION=y \
+	CONFIG_FONTS=y \
+	CONFIG_FONT_8x8=y \
+	CONFIG_FONT_8x16=y \
+	CONFIG_FONT_6x11=n \
+	CONFIG_FONT_7x14=n \
+	CONFIG_FONT_PEARL_8x8=n \
+	CONFIG_FONT_ACORN_8x8=n \
+	CONFIG_FONT_MINI_4x6=n \
+	CONFIG_FONT_6x10=n \
+	CONFIG_FONT_SUN8x16=n \
+	CONFIG_FONT_SUN12x22=n \
+	CONFIG_FONT_10x18=n \
+	CONFIG_VT=y \
+	CONFIG_CONSOLE_TRANSLATIONS=y \
+	CONFIG_VT_CONSOLE=y \
+	CONFIG_VT_HW_CONSOLE_BINDING=y
+  $(call AddDepends/fb)
+  FILES:= \
+	$(LINUX_DIR)/drivers/video/console/bitblit.ko \
+	$(LINUX_DIR)/drivers/video/console/softcursor.ko \
+	$(LINUX_DIR)/drivers/video/console/fbcon.ko \
+	$(LINUX_DIR)/drivers/video/console/fbcon_rotate.ko \
+	$(LINUX_DIR)/drivers/video/console/fbcon_cw.ko \
+	$(LINUX_DIR)/drivers/video/console/fbcon_ud.ko \
+	$(LINUX_DIR)/drivers/video/console/fbcon_ccw.ko \
+	$(LINUX_DIR)/lib/fonts/font.ko
+  AUTOLOAD:=$(call AutoLoad,94,font softcursor tileblit fbcon_cw fbcon_ud fbcon_ccw fbcon_rotate bitblit fbcon)
+endef
+
+define KernelPackage/fbcon/description
+  Kernel support for framebuffer console
+endef
+
+$(eval $(call KernelPackage,fbcon))
 
 define KernelPackage/fb-cfb-fillrect
   SUBMENU:=$(VIDEO_MENU)
