@@ -155,6 +155,10 @@ endef
 
 $(eval $(call KernelPackage,fb-cfb-copyarea))
 
+define AddDepends/fb-cfb-copyarea
+  DEPENDS+=kmod-fb-cfb-copyarea $(1)
+endef
+
 define KernelPackage/fb-cfb-imgblt
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer software image blit support
@@ -170,6 +174,174 @@ endef
 
 $(eval $(call KernelPackage,fb-cfb-imgblt))
 
+define AddDepends/fb-cfb-imgblt
+  DEPENDS+=kmod-fb-cfb-imgblt $(1)
+endef
+
+
+define KernelPackage/fb-sys-fops
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Framebuffer software sys ops support
+  DEPENDS:=+kmod-fb
+  KCONFIG:=CONFIG_FB_SYS_FOPS
+  FILES:=$(LINUX_DIR)/drivers/video/fbdev/core/fb_sys_fops.ko
+  AUTOLOAD:=$(call AutoLoad,07,fbsysfops)
+endef
+
+define KernelPackage/fb-sys-fops/description
+ Kernel support for framebuffer sys ops
+endef
+
+$(eval $(call KernelPackage,fb-sys-fops))
+
+define AddDepends/fb-sys-fops
+  DEPENDS+=kmod-fb-sys-fops $(1)
+endef
+
+
+define KernelPackage/drm
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Direct Rendering Manager (DRM) support
+  DEPENDS:=+kmod-dma-buf
+  KCONFIG:=CONFIG_DRM \
+	CONFIG_DRM_FBDEV_EMULATION=n \
+	CONFIG_DRM_LOAD_EDID_FIRMWARE=n \
+	CONFIG_DRM_IMX=n \
+	CONFIG_DRM_PTN3460=n \
+	CONFIG_DRM_PS8622=n \
+	CONFIG_DRM_TDFX=n \
+	CONFIG_DRM_R128=n \
+	CONFIG_DRM_RADEON=n \
+	CONFIG_DRM_AMDGPU=n \
+	CONFIG_DRM_NOUVEAU=n \
+	CONFIG_DRM_MGA=n \
+	CONFIG_DRM_VIA=n \
+	CONFIG_DRM_SAVAGE=n \
+	CONFIG_DRM_VGEM=n \
+	CONFIG_DRM_EXYNOS=n \
+	CONFIG_DRM_VMWGFX=n \
+	CONFIG_DRM_UDL=n \
+	CONFIG_DRM_AST=n \
+	CONFIG_DRM_MGAG200=n \
+	CONFIG_DRM_CIRRUS_QEMU=n \
+	CONFIG_DRM_ARMADA=n \
+	CONFIG_DRM_TILCDC=n \
+	CONFIG_DRM_QXL=n \
+	CONFIG_DRM_BOCHS=n \
+	CONFIG_DRM_FSL_DCU=n \
+	CONFIG_DRM_STI=n \
+	CONFIG_DRM_NXP_PTN3460=n \
+	CONFIG_DRM_PARADE_PS8622=n \
+	CONFIG_DRM_I2C_ADV7511=n \
+	CONFIG_DRM_I2C_CH7006=n \
+	CONFIG_DRM_I2C_SIL164=n \
+	CONFIG_DRM_I2C_NXP_TDA998X=n
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm.ko
+  AUTOLOAD:=$(call AutoLoad,05,drm)
+endef
+
+define KernelPackage/drm/description
+  Direct Rendering Manager (DRM) core support
+endef
+
+$(eval $(call KernelPackage,drm))
+
+define AddDepends/drm
+  DEPENDS+=kmod-drm $(1)
+endef
+
+define KernelPackage/drm-imx
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Freescale i.MX DRM support
+  DEPENDS:=@TARGET_imx6 +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops
+  KCONFIG:=CONFIG_DRM_IMX=m \
+	CONFIG_DRM_FBDEV_EMULATION=y \
+	CONFIG_IMX_IPUV3_CORE=m \
+	CONFIG_RESET_CONTROLLER=y \
+	CONFIG_DRM_IMX_IPUV3 \
+	CONFIG_IMX_IPUV3 \
+	CONFIG_DRM_KMS_HELPER \
+	CONFIG_FB_SYS_FILLRECT \
+	CONFIG_FB_SYS_COPYAREA \
+	CONFIG_FB_SYS_IMAGEBLIT \
+	CONFIG_DRM_KMS_FB_HELPER=y \
+	CONFIG_DRM_GEM_CMA_HELPER=y \
+	CONFIG_DRM_KMS_CMA_HELPER=y \
+	CONFIG_DRM_IMX_FB_HELPER \
+	CONFIG_DRM_IMX_PARALLEL_DISPLAY=n \
+	CONFIG_DRM_IMX_TVE=n \
+	CONFIG_DRM_IMX_LDB=n \
+	CONFIG_DRM_IMX_HDMI=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/imx/imxdrm.ko \
+	$(LINUX_DIR)/drivers/gpu/ipu-v3/imx-ipu-v3.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/imx/imx-ipuv3-crtc.ko \
+	$(LINUX_DIR)/drivers/video/fbdev/core/syscopyarea.ko \
+	$(LINUX_DIR)/drivers/video/fbdev/core/sysfillrect.ko \
+	$(LINUX_DIR)/drivers/video/fbdev/core/sysimgblt.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/drm_kms_helper.ko
+  AUTOLOAD:=$(call AutoLoad,05,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
+  $(call AddDepends/drm)
+endef
+
+define KernelPackage/drm-imx/description
+  Direct Rendering Manager (DRM) support for Freescale i.MX
+endef
+
+$(eval $(call KernelPackage,drm-imx))
+
+define AddDepends/drm-imx
+  DEPENDS+=kmod-drm-imx $(1)
+endef
+
+define KernelPackage/drm-imx-hdmi
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Freescale i.MX HDMI DRM support
+  DEPENDS:=+kmod-sound-core
+  KCONFIG:=CONFIG_DRM_IMX_HDMI=m \
+	CONFIG_DRM_DW_HDMI_AHB_AUDIO=m
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw_hdmi.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw_hdmi-ahb-audio.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/imx/dw_hdmi-imx.ko
+  AUTOLOAD:=$(call AutoLoad,05,dw_hdmi dw_hdmi-ahb-audio.ko dw_hdmi-imx)
+  $(call AddDepends/drm-imx)
+endef
+
+define KernelPackage/drm-imx-hdmi/description
+  Direct Rendering Manager (DRM) support for Freescale i.MX HDMI
+endef
+
+$(eval $(call KernelPackage,drm-imx-hdmi))
+
+define KernelPackage/drm-imx-ldb
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Freescale i.MX LVDS DRM support
+  DEPENDS:=+kmod-backlight
+  KCONFIG:=CONFIG_DRM_IMX_LDB=m \
+	CONFIG_DRM_PANEL_SIMPLE \
+	CONFIG_DRM_PANEL=y \
+	CONFIG_DRM_PANEL_SAMSUNG_LD9040=n \
+	CONFIG_DRM_PANEL_SAMSUNG_S6E8AA0=n \
+	CONFIG_DRM_PANEL_LG_LG4573=n \
+	CONFIG_DRM_PANEL_LD9040=n \
+	CONFIG_DRM_PANEL_S6E8AA0=n
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/imx/imx-ldb.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko
+  AUTOLOAD:=$(call AutoLoad,05,imx-ldb)
+  $(call AddDepends/drm-imx)
+endef
+
+define KernelPackage/drm-imx-ldb/description
+  Direct Rendering Manager (DRM) support for Freescale i.MX LVDS
+endef
+
+$(eval $(call KernelPackage,drm-imx-ldb))
+
+
+#
+# Video Capture
+#
 
 define KernelPackage/video-core
   SUBMENU:=$(VIDEO_MENU)
