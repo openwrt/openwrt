@@ -36,18 +36,13 @@ endef
 
 $(eval $(call KernelPackage,backlight))
 
-define AddDepends/backlight
-	SUBMENU:=$(VIDEO_MENU)
-	DEPENDS+=kmod-backlight $(1)
-endef
-
 define KernelPackage/backlight-pwm
+	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=PWM Backlight support
-	DEPENDS:=+kmod-pwm
+	DEPENDS:=+kmod-pwm kmod-backlight
 	KCONFIG:=CONFIG_BACKLIGHT_PWM=m
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/pwm_bl.ko
 	AUTOLOAD:=$(call AutoProbe,video pwm_bl)
-	$(call AddDepends/backlight)
 endef
 
 define KernelPackage/backlight/backlight-pwm
@@ -105,7 +100,6 @@ define KernelPackage/fbcon
 	CONFIG_CONSOLE_TRANSLATIONS=y \
 	CONFIG_VT_CONSOLE=y \
 	CONFIG_VT_HW_CONSOLE_BINDING=y
-  $(call AddDepends/fb)
   FILES:= \
 	$(LINUX_DIR)/drivers/video/console/bitblit.ko \
 	$(LINUX_DIR)/drivers/video/console/softcursor.ko \
@@ -155,10 +149,6 @@ endef
 
 $(eval $(call KernelPackage,fb-cfb-copyarea))
 
-define AddDepends/fb-cfb-copyarea
-  DEPENDS+=kmod-fb-cfb-copyarea $(1)
-endef
-
 define KernelPackage/fb-cfb-imgblt
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer software image blit support
@@ -173,10 +163,6 @@ define KernelPackage/fb-cfb-imgblt/description
 endef
 
 $(eval $(call KernelPackage,fb-cfb-imgblt))
-
-define AddDepends/fb-cfb-imgblt
-  DEPENDS+=kmod-fb-cfb-imgblt $(1)
-endef
 
 
 define KernelPackage/fb-sys-fops
@@ -193,11 +179,6 @@ define KernelPackage/fb-sys-fops/description
 endef
 
 $(eval $(call KernelPackage,fb-sys-fops))
-
-define AddDepends/fb-sys-fops
-  DEPENDS+=kmod-fb-sys-fops $(1)
-endef
-
 
 define KernelPackage/drm
   SUBMENU:=$(VIDEO_MENU)
@@ -246,14 +227,10 @@ endef
 
 $(eval $(call KernelPackage,drm))
 
-define AddDepends/drm
-  DEPENDS+=kmod-drm $(1)
-endef
-
 define KernelPackage/drm-imx
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX DRM support
-  DEPENDS:=@TARGET_imx6 +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops
+  DEPENDS:=@TARGET_imx6 kmod-drm +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops
   KCONFIG:=CONFIG_DRM_IMX=m \
 	CONFIG_DRM_FBDEV_EMULATION=y \
 	CONFIG_IMX_IPUV3_CORE=m \
@@ -281,7 +258,6 @@ define KernelPackage/drm-imx
 	$(LINUX_DIR)/drivers/video/fbdev/core/sysimgblt.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/drm_kms_helper.ko
   AUTOLOAD:=$(call AutoLoad,05,imxdrm imx-ipu-v3 imx-ipuv3-crtc)
-  $(call AddDepends/drm)
 endef
 
 define KernelPackage/drm-imx/description
@@ -290,14 +266,10 @@ endef
 
 $(eval $(call KernelPackage,drm-imx))
 
-define AddDepends/drm-imx
-  DEPENDS+=kmod-drm-imx $(1)
-endef
-
 define KernelPackage/drm-imx-hdmi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX HDMI DRM support
-  DEPENDS:=+kmod-sound-core
+  DEPENDS:=+kmod-sound-core kmod-drm-imx
   KCONFIG:=CONFIG_DRM_IMX_HDMI=m \
 	CONFIG_DRM_DW_HDMI_AHB_AUDIO=m
   FILES:= \
@@ -305,7 +277,6 @@ define KernelPackage/drm-imx-hdmi
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw_hdmi-ahb-audio.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/dw_hdmi-imx.ko
   AUTOLOAD:=$(call AutoLoad,05,dw_hdmi dw_hdmi-ahb-audio.ko dw_hdmi-imx)
-  $(call AddDepends/drm-imx)
 endef
 
 define KernelPackage/drm-imx-hdmi/description
@@ -317,7 +288,7 @@ $(eval $(call KernelPackage,drm-imx-hdmi))
 define KernelPackage/drm-imx-ldb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX LVDS DRM support
-  DEPENDS:=+kmod-backlight
+  DEPENDS:=+kmod-backlight kmod-drm-imx
   KCONFIG:=CONFIG_DRM_IMX_LDB=m \
 	CONFIG_DRM_PANEL_SIMPLE \
 	CONFIG_DRM_PANEL=y \
@@ -329,7 +300,6 @@ define KernelPackage/drm-imx-ldb
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/imx/imx-ldb.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko
   AUTOLOAD:=$(call AutoLoad,05,imx-ldb)
-  $(call AddDepends/drm-imx)
 endef
 
 define KernelPackage/drm-imx-ldb/description
@@ -377,10 +347,9 @@ define AddDepends/video
 endef
 
 define AddDepends/camera
-  SUBMENU:=$(VIDEO_MENU)
+$(AddDepends/video)
   KCONFIG+=CONFIG_MEDIA_USB_SUPPORT=y \
 	 CONFIG_MEDIA_CAMERA_SUPPORT=y
-  DEPENDS+=kmod-video-core $(1)
 endef
 
 
