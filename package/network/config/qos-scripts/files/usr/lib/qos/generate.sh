@@ -141,6 +141,9 @@ parse_matching_rule() {
 					append "$var" "-i $device"
 				fi
 			;;
+			*:srciface)
+				append "$var" "-i $value"
+			;;
 			1:pktsize)
 				value="$(echo "$value" | sed -e 's,-,:,g')"
 				add_insmod xt_length
