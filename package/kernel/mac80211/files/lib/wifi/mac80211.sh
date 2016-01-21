@@ -9,9 +9,9 @@ lookup_phy() {
 	local devpath
 	config_get devpath "$device" path
 	[ -n "$devpath" ] && {
-		for _phy in /sys/devices/$devpath/ieee80211/phy*; do
-			case "$(readlink -f /sys/class/ieee80211/$_phy/device)" in
-				*$devpath) return 0;;
+		for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
+			case "$(readlink -f /sys/class/ieee80211/$phy/device)" in
+				*$devpath) return;;
 			esac
 		done
 	}
