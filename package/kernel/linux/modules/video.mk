@@ -11,6 +11,52 @@ VIDEO_MENU:=Video Support
 V4L2_DIR=v4l2-core
 V4L2_USB_DIR=usb
 
+#
+# Video Display
+#
+
+define KernelPackage/backlight
+	SUBMENU:=$(VIDEO_MENU)
+	TITLE:=Backlight support
+	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE=m \
+		CONFIG_BACKLIGHT_LCD_SUPPORT=y \
+		CONFIG_LCD_CLASS_DEVICE=n \
+		CONFIG_BACKLIGHT_PWM=n \
+		CONFIG_BACKLIGHT_GENERIC=n \
+		CONFIG_BACKLIGHT_ADP8860=n \
+		CONFIG_BACKLIGHT_ADP8870=n \
+		CONFIG_BACKLIGHT_PM8941_WLED=n
+	FILES:=$(LINUX_DIR)/drivers/video/backlight/backlight.ko
+	AUTOLOAD:=$(call AutoProbe,video backlight)
+endef
+
+define KernelPackage/backlight/description
+	Kernel module for Backlight support.
+endef
+
+$(eval $(call KernelPackage,backlight))
+
+define AddDepends/backlight
+	SUBMENU:=$(VIDEO_MENU)
+	DEPENDS+=kmod-backlight $(1)
+endef
+
+define KernelPackage/backlight-pwm
+	TITLE:=PWM Backlight support
+	DEPENDS:=+kmod-pwm
+	KCONFIG:=CONFIG_BACKLIGHT_PWM=m
+	FILES:=$(LINUX_DIR)/drivers/video/backlight/pwm_bl.ko
+	AUTOLOAD:=$(call AutoProbe,video pwm_bl)
+	$(call AddDepends/backlight)
+endef
+
+define KernelPackage/backlight/backlight-pwm
+	Kernel module for PWM based Backlight support.
+endef
+
+$(eval $(call KernelPackage,backlight-pwm))
+
+
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer support
