@@ -84,7 +84,7 @@ END {
 
 	# filter rule
 	for (i = 1; i <= n; i++) {
-		filter_cmd = "tc filter add dev "device" parent 1: prio %d protocol ip handle %s fw flowid 1:%d0\n";
+		filter_cmd = "tc filter add dev "device" parent 1: prio %d handle %s fw flowid 1:%d0\n";
 		if (direction == "up") {
 			filter_1 = sprintf("0x%x0/0xf0", class[i])
 			filter_2 = sprintf("0x0%x/0x0f", class[i])
