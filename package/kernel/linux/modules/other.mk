@@ -666,6 +666,22 @@ endef
 
 $(eval $(call KernelPackage,rtc-pt7c4338))
 
+define KernelPackage/rtc-snvs
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Freescale SNVS RTC support
+  DEPENDS:=@TARGET_imx6 @RTC_SUPPORT
+  KCONFIG:=CONFIG_RTC_DRV_SNVS \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-snvs.ko
+  AUTOLOAD:=$(call AutoLoad,50,rtc-snvs,1)
+endef
+
+define KernelPackage/rtc-snvs/description
+ Kernel module for Freescale SNVS RTC on chip module
+endef
+
+$(eval $(call KernelPackage,rtc-snvs))
+
 
 define KernelPackage/mtdtests
   SUBMENU:=$(OTHER_MENU)
