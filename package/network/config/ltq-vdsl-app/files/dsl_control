@@ -133,6 +133,8 @@ start_service() {
 	config_get firmware dsl firmware
 	config_get xfer_mode dsl xfer_mode
 
+	eval "xtse=\"\${xtse_xdsl_$annex}\""
+
 	[ -z "${xfer_mode}" ] && xfer_mode=ptm
 
 	case "${xfer_mode}" in
@@ -140,6 +142,9 @@ start_service() {
 		LOAD=ltq_atm_vr9
 		UNLOAD=ltq_ptm_vr9
 		mode=1
+
+		# mask out VDSL bits when ATM is requested
+		xtse="${xtse%_*}_00"
 		;;
 	*)
 		LOAD=ltq_ptm_vr9
@@ -147,8 +152,6 @@ start_service() {
 		mode=2
 		;;
 	esac
-
-	eval "xtse=\"\${xtse_xdsl_$annex}\""
 
 	[ -z "${firmware}" ] && firmware=/lib/firmware/vdsl.bin
 	[ -f "${firmware}" ] || {
