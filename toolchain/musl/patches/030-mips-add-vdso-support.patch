@@ -1,0 +1,29 @@
+From c29a29c3334344e0f3cfdec6130a6261514507a0 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 23 Jan 2016 16:23:09 +0100
+Subject: [PATCH 2/2] mips: add vdso support
+
+vdso support is available on mips starting with kernel 4.4, see kernel
+commit a7f4df4e21 "MIPS: VDSO: Add implementations of gettimeofday()
+and clock_gettime()" for details.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/syscall_arch.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/mips/syscall_arch.h b/arch/mips/syscall_arch.h
+index e74e0ad..39c0ea3 100644
+--- a/arch/mips/syscall_arch.h
++++ b/arch/mips/syscall_arch.h
+@@ -161,3 +161,7 @@ static inline long __syscall6(long n, long a, long b, long c, long d, long e, lo
+ 	if (n == SYS_fstatat) __stat_fix(c);
+ 	return r2;
+ }
++
++#define VDSO_USEFUL
++#define VDSO_CGT_SYM "__vdso_clock_gettime"
++#define VDSO_CGT_VER "LINUX_2.6"
+-- 
+2.7.0.rc3
+
