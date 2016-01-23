@@ -42,6 +42,15 @@
    printf("  encapsulations: 0=llc, 1=vcmux\n  payloads: 0=routed, 1=bridged\n");
    exit(1);
  }
+@@ -225,7 +234,7 @@ int main (int argc, char **argv)
+ 
+   openlog (LOG_NAME,LOG_OPTION,LOG_FACILITY);
+   if (argc>1)
+-    while ((c = getopt(argc, argv,"q:a:bc:e:s:p:?h")) !=EOF)
++    while ((c = getopt(argc, argv,"q:a:bc:e:s:S:p:?h")) !=EOF)
+       switch (c) {
+       case 'q':
+ 	printf ("optarg : %s",optarg);
 @@ -258,6 +267,9 @@ int main (int argc, char **argv)
  	  params.sndbuf=8192;
  	}
