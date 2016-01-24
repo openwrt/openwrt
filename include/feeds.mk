@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
--include $(TMP_DIR)/.packagefeeds
+-include $(TMP_DIR)/.packagesubdirs
 
 FEEDS_AVAILABLE:=$(shell $(SCRIPT_DIR)/feeds list -n)
 FEEDS_INSTALLED:=$(notdir $(wildcard $(TOPDIR)/package/feeds/*))
@@ -21,7 +21,7 @@ PKG_CONFIG_DEPENDS += \
 # 1: package name
 define FeedPackageDir
 $(strip $(if $(CONFIG_PER_FEED_REPO), \
-  $(abspath $(PACKAGE_DIR)/$(if $(Package/$(1)/feed),$(Package/$(1)/feed),base)), \
+  $(abspath $(PACKAGE_DIR)/$(if $(Package/$(1)/subdir),$(Package/$(1)/subdir),base)), \
   $(PACKAGE_DIR)))
 endef
 
@@ -29,7 +29,7 @@ endef
 define FeedSourcesAppend
 ( \
   $(strip $(if $(CONFIG_PER_FEED_REPO), \
-	$(foreach feed,base $(FEEDS_ENABLED),echo "src/gz %n_$(feed) %U/$(feed)";) \
+	$(foreach feed,base kernel $(FEEDS_ENABLED),echo "src/gz %n_$(feed) %U/$(feed)";) \
 	$(if $(CONFIG_PER_FEED_REPO_ADD_DISABLED), \
 		$(foreach feed,$(FEEDS_DISABLED),echo "$(if $(CONFIG_PER_FEED_REPO_ADD_COMMENTED),# )src/gz %n_$(feed) %U/$(feed)";)) \
   , \

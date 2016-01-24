@@ -833,12 +833,12 @@ sub gen_package_source() {
 	}
 }
 
-sub gen_package_feeds() {
+sub gen_package_subdirs() {
 	parse_package_metadata($ARGV[0]) or exit 1;
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
 		my $pkg = $package{$name};
-		if ($pkg->{name} && $pkg->{feed}) {
-			print "Package/$name/feed = $pkg->{feed}\n";
+		if ($pkg->{name} && $pkg->{package_subdir}) {
+			print "Package/$name/subdir = $pkg->{package_subdir}\n";
 		}
 	}
 }
@@ -880,7 +880,7 @@ sub parse_command() {
 		/^package_config$/ and return gen_package_config();
 		/^kconfig/ and return gen_kconfig_overrides();
 		/^package_source$/ and return gen_package_source();
-		/^package_feeds$/ and return gen_package_feeds();
+		/^package_subdirs$/ and return gen_package_subdirs();
 		/^package_license$/ and return gen_package_license(0);
 		/^package_licensefull$/ and return gen_package_license(1);
 		/^version_filter$/ and return gen_version_filtered_list();
@@ -892,7 +892,7 @@ Available Commands:
 	$0 package_config [file] 		Package metadata in Kconfig format
 	$0 kconfig [file] [config] [patchver]	Kernel config overrides
 	$0 package_source [file] 		Package source file information
-	$0 package_feeds [file]			Package feed information in makefile format
+	$0 package_subdirs [file]		Package subdir information in makefile format
 	$0 package_license [file] 		Package license information
 	$0 package_licensefull [file] 		Package license information (full list)
 	$0 version_filter [patchver] [list...]	Filter list of version tagged strings
