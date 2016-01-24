@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/extensions/libxt_id.c
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,55 @@
 +/* Shared library add-on to iptables to add id match support. */
 +
 +#include <stdio.h>
@@ -22,13 +22,22 @@
 +	XTOPT_TABLEEND,
 +};
 +
++static void
++id_print(const void *ip, const struct xt_entry_match *match, int numeric)
++{
++	struct xt_id_info *idinfo = (void *)match->data;
++
++	printf(" ID:%08lx", idinfo->id);
++}
++
++
 +/* Saves the union ipt_matchinfo in parsable form to stdout. */
 +static void
 +id_save(const void *ip, const struct xt_entry_match *match)
 +{
 +	struct xt_id_info *idinfo = (void *)match->data;
 +
-+	printf(" --id %lu", idinfo->id);
++	printf(" --id 0x%lx", idinfo->id);
 +}
 +
 +static struct xtables_match id_match = {
@@ -37,6 +46,7 @@
 +	.version	= XTABLES_VERSION,
 +	.size		= XT_ALIGN(sizeof(struct xt_id_info)),
 +	.userspacesize	= XT_ALIGN(sizeof(struct xt_id_info)),
++	.print		= id_print,
 +	.save 		= id_save,
 +	.x6_parse	= xtables_option_parse,
 +	.x6_options	= id_opts,
