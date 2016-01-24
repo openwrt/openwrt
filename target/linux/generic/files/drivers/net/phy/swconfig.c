@@ -1173,33 +1173,13 @@ static int __init
 swconfig_init(void)
 {
 	int err;
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0))
-	int i;
-#endif
 
 	INIT_LIST_HEAD(&swdevs);
 	
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0))
-	err = genl_register_family(&switch_fam);
-	if (err)
-		return err;
-
-	for (i = 0; i < ARRAY_SIZE(swconfig_ops); i++) {
-		err = genl_register_ops(&switch_fam, &swconfig_ops[i]);
-		if (err)
-			goto unregister;
-	}
-	return 0;
-
-unregister:
-	genl_unregister_family(&switch_fam);
-	return err;
-#else
 	err = genl_register_family_with_ops(&switch_fam, swconfig_ops);
 	if (err)
 		return err;
 	return 0;
-#endif
 }
 
 static void __exit
