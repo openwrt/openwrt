@@ -1,0 +1,35 @@
+From: nsz <nsz@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date: Mon, 23 Nov 2015 15:17:55 +0000
+Subject: [PATCH] [ARM] PR target/68059 libgcc should not use __write for
+ printing fatal error
+
+libgcc/
+	PR target/68059
+	* config/arm/linux-atomic-64bit.c (__write): Rename to...
+	(write): ...this and fix the return type.
+
+
+
+git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@230762 138bc75d-0d04-0410-961f-82ee72b054a4
+---
+
+--- a/libgcc/config/arm/linux-atomic-64bit.c
++++ b/libgcc/config/arm/linux-atomic-64bit.c
+@@ -33,7 +33,7 @@ see the files COPYING3 and COPYING.RUNTI
+    kernels; we check for that in an init section and bail out rather
+    unceremoneously.  */
+ 
+-extern unsigned int __write (int fd, const void *buf, unsigned int count);
++extern int write (int fd, const void *buf, unsigned int count);
+ extern void abort (void);
+ 
+ /* Kernel helper for compare-and-exchange.  */
+@@ -56,7 +56,7 @@ static void __check_for_sync8_kernelhelp
+ 	 for the user - I'm not sure I can rely on much else being
+ 	 available at this point, so do the same as generic-morestack.c
+ 	 write () and abort ().  */
+-      __write (2 /* stderr.  */, err, sizeof (err));
++      write (2 /* stderr.  */, err, sizeof (err));
+       abort ();
+     }
+ };
