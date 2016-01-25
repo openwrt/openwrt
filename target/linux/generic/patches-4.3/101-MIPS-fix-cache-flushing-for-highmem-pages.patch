@@ -79,17 +79,23 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	addr = (unsigned long) page_address(page);
  	flush_data_cache_page(addr);
-@@ -142,7 +161,12 @@ void __update_cache(struct vm_area_struc
+@@ -142,12 +161,17 @@ void __update_cache(struct vm_area_struc
  	if (unlikely(!pfn_valid(pfn)))
  		return;
  	page = pfn_to_page(pfn);
 -	if (page_mapping(page) && Page_dcache_dirty(page)) {
-+	if (!Page_dcache_dirty(page))
++	if (!Page_dcache_dirty(page) || !page_mapping(page))
 +		return;
 +
 +	if (PageHighMem(page)) {
 +		flush_highmem_page(page);
-+	} else if (page_mapping(page)) {
++	} else {
  		addr = (unsigned long) page_address(page);
  		if (exec || pages_do_alias(addr, address & PAGE_MASK))
  			flush_data_cache_page(addr);
+-		ClearPageDcacheDirty(page);
+ 	}
++	ClearPageDcacheDirty(page);
+ }
+ 
+ unsigned long _page_cachable_default;
