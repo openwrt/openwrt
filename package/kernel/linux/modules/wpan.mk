@@ -85,7 +85,7 @@ $(eval $(call KernelPackage,at86rf230))
 define KernelPackage/mrf24j40
   SUBMENU:=$(WPAN_MENU)
   TITLE:=MRF24J40 transceiver driver
-  DEPENDS:=+kmod-mac802154
+  DEPENDS:=+kmod-mac802154 +kmod-regmap
   KCONFIG:=CONFIG_IEEE802154_MRF24J40 \
 	CONFIG_SPI=y \
 	CONFIG_SPI_MASTER=y
