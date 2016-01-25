@@ -11,12 +11,26 @@ Make it possible to run these devices in soft-float mode.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
- create mode 100644 src/fenv/powerpc-sf/fenv.sub
- create mode 100644 src/setjmp/powerpc-sf/longjmp.s
- create mode 100644 src/setjmp/powerpc-sf/longjmp.sub
- create mode 100644 src/setjmp/powerpc-sf/setjmp.s
- create mode 100644 src/setjmp/powerpc-sf/setjmp.sub
+ create mode 100644 src/fenv/powerpc/fenv-sf.c
 
+--- a/arch/powerpc/bits/fenv.h
++++ b/arch/powerpc/bits/fenv.h
+@@ -1,3 +1,7 @@
++#ifdef _SOFT_FLOAT
++#define FE_ALL_EXCEPT 0
++#define FE_TONEAREST  0
++#else
+ #define FE_TONEAREST	0
+ #define FE_TOWARDZERO	1
+ #define FE_UPWARD	2
+@@ -24,6 +28,7 @@
+ 
+ #define FE_ALL_INVALID		0x01f80700
+ #endif
++#endif
+ 
+ typedef unsigned fexcept_t;
+ typedef double fenv_t;
 --- a/arch/powerpc/reloc.h
 +++ b/arch/powerpc/reloc.h
 @@ -1,4 +1,10 @@
@@ -33,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 --- a/configure
 +++ b/configure
-@@ -538,6 +538,10 @@ trycppif "_MIPSEL || __MIPSEL || __MIPSE
+@@ -595,6 +595,10 @@ trycppif "_MIPSEL || __MIPSEL || __MIPSE
  trycppif __mips_soft_float "$t" && SUBARCH=${SUBARCH}-sf
  fi
  
@@ -45,31 +59,293 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  && SUBARCH=${SUBARCH}el
  
 --- /dev/null
-+++ b/src/fenv/powerpc-sf/fenv.sub
-@@ -0,0 +1 @@
-+../fenv.c
++++ b/src/fenv/powerpc/fenv-sf.c
+@@ -0,0 +1,3 @@
++#ifdef _SOFT_FLOAT
++#include "../fenv.c"
++#endif
 --- /dev/null
-+++ b/src/setjmp/powerpc-sf/longjmp.s
-@@ -0,0 +1,47 @@
++++ b/src/fenv/powerpc/fenv.S
+@@ -0,0 +1,129 @@
++#ifndef _SOFT_FLOAT
++.global feclearexcept
++.type feclearexcept,@function
++feclearexcept:
++	andis. 3,3,0x3e00
++	/* if (r3 & FE_INVALID) r3 |= all_invalid_flags */
++	andis. 0,3,0x2000
++	stwu 1,-16(1)
++	beq- 0,1f
++	oris 3,3,0x01f8
++	ori  3,3,0x0700
++1:
++	/*
++	 * note: fpscr contains various fpu status and control
++	 * flags and we dont check if r3 may alter other flags
++	 * than the exception related ones
++	 * ufpscr &= ~r3
++	 */
++	mffs 0
++	stfd 0,8(1)
++	lwz 9,12(1)
++	andc 9,9,3
++	stw 9,12(1)
++	lfd 0,8(1)
++	mtfsf 255,0
++
++	/* return 0 */
++	li 3,0
++	addi 1,1,16
++	blr
++
++.global feraiseexcept
++.type feraiseexcept,@function
++feraiseexcept:
++	andis. 3,3,0x3e00
++	/* if (r3 & FE_INVALID) r3 |= software_invalid_flag */
++	andis. 0,3,0x2000
++	stwu 1,-16(1)
++	beq- 0,1f
++	ori 3,3,0x0400
++1:
++	/* fpscr |= r3 */
++	mffs 0
++	stfd 0,8(1)
++	lwz 9,12(1)
++	or 9,9,3
++	stw 9,12(1)
++	lfd 0,8(1)
++	mtfsf 255,0
++
++	/* return 0 */
++	li 3,0
++	addi 1,1,16
++	blr
++
++.global fetestexcept
++.type fetestexcept,@function
++fetestexcept:
++	andis. 3,3,0x3e00
++	/* return r3 & fpscr */
++	stwu 1,-16(1)
++	mffs 0
++	stfd 0,8(1)
++	lwz 9,12(1)
++	addi 1,1,16
++	and 3,3,9
++	blr
++
++.global fegetround
++.type fegetround,@function
++fegetround:
++	/* return fpscr & 3 */
++	stwu 1,-16(1)
++	mffs 0
++	stfd 0,8(1)
++	lwz 3,12(1)
++	addi 1,1,16
++	clrlwi 3,3,30
++	blr
++
++.global __fesetround
++.type __fesetround,@function
++__fesetround:
++	/*
++	 * note: invalid input is not checked, r3 < 4 must hold
++	 * fpscr = (fpscr & -4U) | r3
++	 */
++	stwu 1,-16(1)
++	mffs 0
++	stfd 0,8(1)
++	lwz 9,12(1)
++	clrrwi 9,9,2
++	or 9,9,3
++	stw 9,12(1)
++	lfd 0,8(1)
++	mtfsf 255,0
++
++	/* return 0 */
++	li 3,0
++	addi 1,1,16
++	blr
++
++.global fegetenv
++.type fegetenv,@function
++fegetenv:
++	/* *r3 = fpscr */
++	mffs 0
++	stfd 0,0(3)
++	/* return 0 */
++	li 3,0
++	blr
++
++.global fesetenv
++.type fesetenv,@function
++fesetenv:
++	cmpwi 3, -1
++	bne 1f
++	mflr 4
++	bl 2f
++	.zero 8
++2:	mflr 3
++	mtlr 4
++1:	/* fpscr = *r3 */
++	lfd 0,0(3)
++	mtfsf 255,0
++	/* return 0 */
++	li 3,0
++	blr
++#endif
+--- a/src/fenv/powerpc/fenv.s
++++ /dev/null
+@@ -1,123 +0,0 @@
+-.global feclearexcept
+-.type feclearexcept,@function
+-feclearexcept:
+-	andis. 3,3,0x3e00
+-	# if (r3 & FE_INVALID) r3 |= all_invalid_flags
+-	andis. 0,3,0x2000
+-	stwu 1,-16(1)
+-	beq- 0,1f
+-	oris 3,3,0x01f8
+-	ori  3,3,0x0700
+-1:
+-	# note: fpscr contains various fpu status and control
+-	# flags and we dont check if r3 may alter other flags
+-	# than the exception related ones
+-	# fpscr &= ~r3
+-	mffs 0
+-	stfd 0,8(1)
+-	lwz 9,12(1)
+-	andc 9,9,3
+-	stw 9,12(1)
+-	lfd 0,8(1)
+-	mtfsf 255,0
+-
+-	# return 0
+-	li 3,0
+-	addi 1,1,16
+-	blr
+-
+-.global feraiseexcept
+-.type feraiseexcept,@function
+-feraiseexcept:
+-	andis. 3,3,0x3e00
+-	# if (r3 & FE_INVALID) r3 |= software_invalid_flag
+-	andis. 0,3,0x2000
+-	stwu 1,-16(1)
+-	beq- 0,1f
+-	ori 3,3,0x0400
+-1:
+-	# fpscr |= r3
+-	mffs 0
+-	stfd 0,8(1)
+-	lwz 9,12(1)
+-	or 9,9,3
+-	stw 9,12(1)
+-	lfd 0,8(1)
+-	mtfsf 255,0
+-
+-	# return 0
+-	li 3,0
+-	addi 1,1,16
+-	blr
+-
+-.global fetestexcept
+-.type fetestexcept,@function
+-fetestexcept:
+-	andis. 3,3,0x3e00
+-	# return r3 & fpscr
+-	stwu 1,-16(1)
+-	mffs 0
+-	stfd 0,8(1)
+-	lwz 9,12(1)
+-	addi 1,1,16
+-	and 3,3,9
+-	blr
+-
+-.global fegetround
+-.type fegetround,@function
+-fegetround:
+-	# return fpscr & 3
+-	stwu 1,-16(1)
+-	mffs 0
+-	stfd 0,8(1)
+-	lwz 3,12(1)
+-	addi 1,1,16
+-	clrlwi 3,3,30
+-	blr
+-
+-.global __fesetround
+-.type __fesetround,@function
+-__fesetround:
+-	# note: invalid input is not checked, r3 < 4 must hold
+-	# fpscr = (fpscr & -4U) | r3
+-	stwu 1,-16(1)
+-	mffs 0
+-	stfd 0,8(1)
+-	lwz 9,12(1)
+-	clrrwi 9,9,2
+-	or 9,9,3
+-	stw 9,12(1)
+-	lfd 0,8(1)
+-	mtfsf 255,0
+-
+-	# return 0
+-	li 3,0
+-	addi 1,1,16
+-	blr
+-
+-.global fegetenv
+-.type fegetenv,@function
+-fegetenv:
+-	# *r3 = fpscr
+-	mffs 0
+-	stfd 0,0(3)
+-	# return 0
+-	li 3,0
+-	blr
+-
+-.global fesetenv
+-.type fesetenv,@function
+-fesetenv:
+-	cmpwi 3, -1
+-	bne 1f
+-	mflr 4
+-	bl 2f
+-	.zero 8
+-2:	mflr 3
+-	mtlr 4
+-1:	# fpscr = *r3
+-	lfd 0,0(3)
+-	mtfsf 255,0
+-	# return 0
+-	li 3,0
+-	blr
+--- /dev/null
++++ b/src/setjmp/powerpc/longjmp.S
+@@ -0,0 +1,69 @@
 +	.global _longjmp
 +	.global longjmp
 +	.type   _longjmp,@function
 +	.type   longjmp,@function
 +_longjmp:
 +longjmp:
-+# void longjmp(jmp_buf env, int val);
-+# put val into return register and restore the env saved in setjmp
-+# if val(r4) is 0, put 1 there.
-+	# 0) move old return address into r0
++	/*
++	 * void longjmp(jmp_buf env, int val);
++	 * put val into return register and restore the env saved in setjmp
++	 * if val(r4) is 0, put 1 there.
++	 */
++	/* 0) move old return address into r0 */
 +	lwz 0, 0(3)
-+	# 1) put it into link reg
++	/* 1) put it into link reg */
 +	mtlr 0
-+	#2 ) restore stack ptr
++	/* 2 ) restore stack ptr */
 +	lwz 1, 4(3)
-+	#3) restore control reg
++	/* 3) restore control reg */
 +	lwz 0, 8(3)
 +	mtcr 0
-+	#4) restore r14-r31
++	/* 4) restore r14-r31 */
 +	lwz 14, 12(3)
 +	lwz 15, 16(3)
 +	lwz 16, 20(3)
@@ -88,23 +364,107 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	lwz 29, 72(3)
 +	lwz 30, 76(3)
 +	lwz 31, 80(3)
-+	#5) put val into return reg r3
++#ifndef _SOFT_FLOAT
++	lfd 14,88(3)
++	lfd 15,96(3)
++	lfd 16,104(3)
++	lfd 17,112(3)
++	lfd 18,120(3)
++	lfd 19,128(3)
++	lfd 20,136(3)
++	lfd 21,144(3)
++	lfd 22,152(3)
++	lfd 23,160(3)
++	lfd 24,168(3)
++	lfd 25,176(3)
++	lfd 26,184(3)
++	lfd 27,192(3)
++	lfd 28,200(3)
++	lfd 29,208(3)
++	lfd 30,216(3)
++	lfd 31,224(3)
++#endif
++	/* 5) put val into return reg r3 */
 +	mr 3, 4
 +
-+	#6) check if return value is 0, make it 1 in that case
++	/* 6) check if return value is 0, make it 1 in that case */
 +	cmpwi cr7, 4, 0
 +	bne cr7, 1f
 +	li 3, 1
 +1:
 +	blr
 +
+--- a/src/setjmp/powerpc/longjmp.s
++++ /dev/null
+@@ -1,65 +0,0 @@
+-	.global _longjmp
+-	.global longjmp
+-	.type   _longjmp,@function
+-	.type   longjmp,@function
+-_longjmp:
+-longjmp:
+-# void longjmp(jmp_buf env, int val);
+-# put val into return register and restore the env saved in setjmp
+-# if val(r4) is 0, put 1 there.
+-	# 0) move old return address into r0
+-	lwz 0, 0(3)
+-	# 1) put it into link reg
+-	mtlr 0
+-	#2 ) restore stack ptr
+-	lwz 1, 4(3)
+-	#3) restore control reg
+-	lwz 0, 8(3)
+-	mtcr 0
+-	#4) restore r14-r31
+-	lwz 14, 12(3)
+-	lwz 15, 16(3)
+-	lwz 16, 20(3)
+-	lwz 17, 24(3)
+-	lwz 18, 28(3)
+-	lwz 19, 32(3)
+-	lwz 20, 36(3)
+-	lwz 21, 40(3)
+-	lwz 22, 44(3)
+-	lwz 23, 48(3)
+-	lwz 24, 52(3)
+-	lwz 25, 56(3)
+-	lwz 26, 60(3)
+-	lwz 27, 64(3)
+-	lwz 28, 68(3)
+-	lwz 29, 72(3)
+-	lwz 30, 76(3)
+-	lwz 31, 80(3)
+-	lfd 14,88(3)
+-	lfd 15,96(3)
+-	lfd 16,104(3)
+-	lfd 17,112(3)
+-	lfd 18,120(3)
+-	lfd 19,128(3)
+-	lfd 20,136(3)
+-	lfd 21,144(3)
+-	lfd 22,152(3)
+-	lfd 23,160(3)
+-	lfd 24,168(3)
+-	lfd 25,176(3)
+-	lfd 26,184(3)
+-	lfd 27,192(3)
+-	lfd 28,200(3)
+-	lfd 29,208(3)
+-	lfd 30,216(3)
+-	lfd 31,224(3)
+-	#5) put val into return reg r3
+-	mr 3, 4
+-
+-	#6) check if return value is 0, make it 1 in that case
+-	cmpwi cr7, 4, 0
+-	bne cr7, 1f
+-	li 3, 1
+-1:
+-	blr
+-
 --- /dev/null
-+++ b/src/setjmp/powerpc-sf/longjmp.sub
-@@ -0,0 +1 @@
-+longjmp.s
---- /dev/null
-+++ b/src/setjmp/powerpc-sf/setjmp.s
-@@ -0,0 +1,43 @@
++++ b/src/setjmp/powerpc/setjmp.S
+@@ -0,0 +1,63 @@
 +	.global ___setjmp
 +	.hidden ___setjmp
 +	.global __setjmp
@@ -117,15 +477,15 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +__setjmp:
 +_setjmp:
 +setjmp:
-+	# 0) store IP int 0, then into the jmpbuf pointed to by r3 (first arg)
++	/* 0) store IP int 0, then into the jmpbuf pointed to by r3 (first arg) */
 +	mflr 0
 +	stw 0, 0(3)
-+	# 1) store reg1 (SP)
++	/* 1) store reg1 (SP) */
 +	stw 1, 4(3)
-+	# 2) store cr
++	/* 2) store cr */
 +	mfcr 0
 +	stw 0, 8(3)
-+	# 3) store r14-31
++	/* 3) store r14-31 */
 +	stw 14, 12(3)
 +	stw 15, 16(3)
 +	stw 16, 20(3)
@@ -144,11 +504,91 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	stw 29, 72(3)
 +	stw 30, 76(3)
 +	stw 31, 80(3)
-+	# 4) set return value to 0
++#ifndef _SOFT_FLOAT
++	stfd 14,88(3)
++	stfd 15,96(3)
++	stfd 16,104(3)
++	stfd 17,112(3)
++	stfd 18,120(3)
++	stfd 19,128(3)
++	stfd 20,136(3)
++	stfd 21,144(3)
++	stfd 22,152(3)
++	stfd 23,160(3)
++	stfd 24,168(3)
++	stfd 25,176(3)
++	stfd 26,184(3)
++	stfd 27,192(3)
++	stfd 28,200(3)
++	stfd 29,208(3)
++	stfd 30,216(3)
++	stfd 31,224(3)
++#endif
++	/* 4) set return value to 0 */
 +	li 3, 0
-+	# 5) return
++	/* 5) return */
 +	blr
---- /dev/null
-+++ b/src/setjmp/powerpc-sf/setjmp.sub
-@@ -0,0 +1 @@
-+setjmp.s
+--- a/src/setjmp/powerpc/setjmp.s
++++ /dev/null
+@@ -1,61 +0,0 @@
+-	.global ___setjmp
+-	.hidden ___setjmp
+-	.global __setjmp
+-	.global _setjmp
+-	.global setjmp
+-	.type   __setjmp,@function
+-	.type   _setjmp,@function
+-	.type   setjmp,@function
+-___setjmp:
+-__setjmp:
+-_setjmp:
+-setjmp:
+-	# 0) store IP int 0, then into the jmpbuf pointed to by r3 (first arg)
+-	mflr 0
+-	stw 0, 0(3)
+-	# 1) store reg1 (SP)
+-	stw 1, 4(3)
+-	# 2) store cr
+-	mfcr 0
+-	stw 0, 8(3)
+-	# 3) store r14-31
+-	stw 14, 12(3)
+-	stw 15, 16(3)
+-	stw 16, 20(3)
+-	stw 17, 24(3)
+-	stw 18, 28(3)
+-	stw 19, 32(3)
+-	stw 20, 36(3)
+-	stw 21, 40(3)
+-	stw 22, 44(3)
+-	stw 23, 48(3)
+-	stw 24, 52(3)
+-	stw 25, 56(3)
+-	stw 26, 60(3)
+-	stw 27, 64(3)
+-	stw 28, 68(3)
+-	stw 29, 72(3)
+-	stw 30, 76(3)
+-	stw 31, 80(3)
+-	stfd 14,88(3)
+-	stfd 15,96(3)
+-	stfd 16,104(3)
+-	stfd 17,112(3)
+-	stfd 18,120(3)
+-	stfd 19,128(3)
+-	stfd 20,136(3)
+-	stfd 21,144(3)
+-	stfd 22,152(3)
+-	stfd 23,160(3)
+-	stfd 24,168(3)
+-	stfd 25,176(3)
+-	stfd 26,184(3)
+-	stfd 27,192(3)
+-	stfd 28,200(3)
+-	stfd 29,208(3)
+-	stfd 30,216(3)
+-	stfd 31,224(3)
+-	# 4) set return value to 0
+-	li 3, 0
+-	# 5) return
+-	blr
