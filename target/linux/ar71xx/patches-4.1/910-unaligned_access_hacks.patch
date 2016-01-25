@@ -214,7 +214,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -775,10 +776,10 @@ static void tcp_v6_send_response(struct
+@@ -774,10 +775,10 @@ static void tcp_v6_send_response(struct
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -346,7 +346,7 @@
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1323,8 +1323,8 @@ static struct sk_buff **inet_gro_receive
+@@ -1326,8 +1326,8 @@ static struct sk_buff **inet_gro_receive
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out_unlock;
  
