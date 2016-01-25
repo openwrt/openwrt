@@ -14,6 +14,7 @@ PKG_INSTALL_DIR ?= $(PKG_BUILD_DIR)/ipkg-install
 PKG_MD5SUM ?= unknown
 PKG_BUILD_PARALLEL ?=
 PKG_USE_MIPS16 ?= 1
+PKG_IREMAP ?= 1
 
 ifneq ($(CONFIG_PKG_BUILD_USE_JOBSERVER),)
   MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) -j)
@@ -32,6 +33,10 @@ ifdef CONFIG_USE_MIPS16
     TARGET_ASFLAGS_DEFAULT = $(filter-out -mips16 -minterlink-mips16,$(TARGET_CFLAGS))
     TARGET_CFLAGS += -mips16 -minterlink-mips16
   endif
+endif
+ifeq ($(strip $(PKG_IREMAP)),1)
+  IREMAP_CFLAGS = $(call iremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR)))
+  TARGET_CFLAGS += $(IREMAP_CFLAGS)
 endif
 
 include $(INCLUDE_DIR)/hardening.mk
