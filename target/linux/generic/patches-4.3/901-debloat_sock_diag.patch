@@ -25,7 +25,7 @@
  obj-$(CONFIG_PROC_FS) += net-procfs.o
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -1454,9 +1454,11 @@ void sk_destruct(struct sock *sk)
+@@ -1453,9 +1453,11 @@ void sk_destruct(struct sock *sk)
  
  static void __sk_free(struct sock *sk)
  {
