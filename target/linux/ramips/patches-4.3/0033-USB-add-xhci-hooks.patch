@@ -59,7 +59,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		/* EHCI, OHCI */
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -1287,7 +1287,7 @@ static void hub_quiesce(struct usb_hub *
+@@ -1291,7 +1291,7 @@ static void hub_quiesce(struct usb_hub *
  	if (type != HUB_SUSPEND) {
  		/* Disconnect all the children */
  		for (i = 0; i < hdev->maxchild; ++i) {
