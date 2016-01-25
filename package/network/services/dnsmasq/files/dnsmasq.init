@@ -609,11 +609,11 @@ start_service() {
 			dhcp_domain_add "" "$hostname" "$lanaddr"
 		}
 
-		network_get_ipaddrs6 lanaddr6 "lan" && {
+		[ -n "$ulaprefix" ] && network_get_ipaddrs6 lanaddr6 "lan" && {
 			for lanaddr6 in $lanaddr6; do
 				case "$lanaddr6" in
 					"${ulaprefix%%:/*}"*)
-						dhcp_domain_add "" "$hostname" "${ulaprefix%%/*}1"
+						dhcp_domain_add "" "$hostname" "$lanaddr6"
 					;;
 				esac
 			done
