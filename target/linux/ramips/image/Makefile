@@ -1010,6 +1010,7 @@ endef
 
 define Device/wsr-600
   DTS := WSR-600
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
 endef
 
 define Device/re6500
@@ -1019,6 +1020,7 @@ endef
 define Device/wsr-1166
   DTS := WSR-1166
   IMAGE/sysupgrade.bin := trx | pad-rootfs
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
 endef
 
 define Device/dir-860l-b1
