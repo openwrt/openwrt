@@ -58,11 +58,9 @@ Signed-off-by: David Howells <dhowells@redhat.com>
  security/keys/process_keys.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/security/keys/process_keys.c b/security/keys/process_keys.c
-index a3f85d2..e6d50172 100644
 --- a/security/keys/process_keys.c
 +++ b/security/keys/process_keys.c
-@@ -794,6 +794,7 @@ long join_session_keyring(const char *name)
+@@ -794,6 +794,7 @@ long join_session_keyring(const char *na
  		ret = PTR_ERR(keyring);
  		goto error2;
  	} else if (keyring == new->session_keyring) {
@@ -70,6 +68,3 @@ index a3f85d2..e6d50172 100644
  		ret = 0;
  		goto error2;
  	}
--- 
-2.7.0.rc3
-
