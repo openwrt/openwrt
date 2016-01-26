@@ -152,7 +152,7 @@ menu "Global build settings"
 			bool "none"
 			help
 			  This will install unstripped binaries (useful for native
-		 	  compiling/debugging).
+			  compiling/debugging).
 
 		config USE_STRIP
 			bool "strip"
@@ -162,7 +162,6 @@ menu "Global build settings"
 
 		config USE_SSTRIP
 			bool "sstrip"
-			depends on !DEBUG
 			depends on !USE_GLIBC
 			help
 			  This will install binaries stripped using sstrip.
