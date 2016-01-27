@@ -24,7 +24,16 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  /**
   * of_get_phy_mode - Get phy mode for given device_node
-@@ -47,6 +48,66 @@ static const void *of_get_mac_addr(struc
+@@ -38,7 +39,7 @@ int of_get_phy_mode(struct device_node *
+ }
+ EXPORT_SYMBOL_GPL(of_get_phy_mode);
+ 
+-static const void *of_get_mac_addr(struct device_node *np, const char *name)
++static void *of_get_mac_addr(struct device_node *np, const char *name)
+ {
+ 	struct property *pp = of_find_property(np, name, NULL);
+ 
+@@ -47,6 +48,73 @@ static const void *of_get_mac_addr(struc
  	return NULL;
  }
  
@@ -41,6 +50,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	phandle phandle;
 +	u32 mac_inc = 0;
 +	u8 mac[ETH_ALEN];
++	void *addr;
 +
 +	list = of_get_property(np, "mtd-mac-address", &size);
 +	if (!list || (size != (2 * sizeof(*list))))
@@ -70,6 +80,12 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	if (!is_valid_ether_addr(mac))
 +		return NULL;
 +
++	addr = of_get_mac_addr(np, "mac-address");
++	if (addr) {
++		memcpy(addr, mac, ETH_ALEN);
++		return addr;
++	}
++
 +	prop = kzalloc(sizeof(*prop), GFP_KERNEL);
 +	if (!prop)
 +		return NULL;
@@ -91,7 +107,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  /**
   * Search the device tree for the best MAC address to use.  'mac-address' is
   * checked first, because that is supposed to contain to "most recent" MAC
-@@ -64,6 +125,9 @@ static const void *of_get_mac_addr(struc
+@@ -64,11 +132,18 @@ static const void *of_get_mac_addr(struc
   * addresses.  Some older U-Boots only initialized 'local-mac-address'.  In
   * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
   * but is all zeros.
@@ -101,15 +117,12 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  */
  const void *of_get_mac_address(struct device_node *np)
  {
-@@ -77,6 +141,10 @@ const void *of_get_mac_address(struct de
- 	if (addr)
- 		return addr;
+ 	const void *addr;
  
--	return of_get_mac_addr(np, "address");
-+	addr = of_get_mac_addr(np, "address");
++	addr = of_get_mac_address_mtd(np);
 +	if (addr)
 +		return addr;
 +
-+	return of_get_mac_address_mtd(np);
- }
- EXPORT_SYMBOL(of_get_mac_address);
+ 	addr = of_get_mac_addr(np, "mac-address");
+ 	if (addr)
+ 		return addr;
