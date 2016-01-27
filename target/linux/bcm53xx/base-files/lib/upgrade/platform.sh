@@ -44,6 +44,10 @@ platform_identify() {
 			echo "chk"
 			return
 			;;
+		"5ea3a417")
+			echo "seama"
+			return
+			;;
 	esac
 
 	magic=$(get_magic_long_at "$1" 14)
@@ -94,6 +98,10 @@ platform_check_image() {
 				echo "No valid TRX firmware in the CyberTAN image"
 				error=1
 			fi
+		;;
+		"seama")
+			echo "Seama firmware format is unsupported"
+			error=1
 		;;
 		"trx")
 			if ! otrx check "$1"; then
