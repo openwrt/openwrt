@@ -4,6 +4,22 @@
 # See /LICENSE for more information.
 #
 
+config KERNEL_BUILD_USER
+	string "Custom Kernel Build User Name"
+	default ""
+	help
+	  Sets the Kernel build user string, which for example will be returned
+	  by 'uname -a' on running systems.
+	  If not set, uses system user at build time.
+
+config KERNEL_BUILD_DOMAIN
+	string "Custom Kernel Build Domain Name"
+	default ""
+	help
+	  Sets the Kernel build domain string, which for example will be
+	  returned by 'uname -a' on running systems.
+	  If not set, uses system hostname at build time.
+
 config KERNEL_PRINTK
 	bool "Enable support for printk"
 	default y
