@@ -1,6 +1,34 @@
 --- a/drivers/bcma/driver_chipcommon.c
 +++ b/drivers/bcma/driver_chipcommon.c
-@@ -185,7 +185,7 @@ u32 bcma_chipco_watchdog_timer_set(struc
+@@ -15,6 +15,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/bcma/bcma.h>
+ 
++static void bcma_chipco_serial_init(struct bcma_drv_cc *cc);
++
+ static inline u32 bcma_cc_write32_masked(struct bcma_drv_cc *cc, u16 offset,
+ 					 u32 mask, u32 value)
+ {
+@@ -115,6 +117,8 @@ int bcma_chipco_watchdog_register(struct
+ 
+ void bcma_core_chipcommon_early_init(struct bcma_drv_cc *cc)
+ {
++	struct bcma_bus *bus = cc->core->bus;
++
+ 	if (cc->early_setup_done)
+ 		return;
+ 
+@@ -129,6 +133,9 @@ void bcma_core_chipcommon_early_init(str
+ 	if (cc->capabilities & BCMA_CC_CAP_PMU)
+ 		bcma_pmu_early_init(cc);
+ 
++	if (IS_BUILTIN(CONFIG_BCM47XX) && bus->hosttype == BCMA_HOSTTYPE_SOC)
++		bcma_chipco_serial_init(cc);
++
+ 	cc->early_setup_done = true;
+ }
+ 
+@@ -185,11 +192,12 @@ u32 bcma_chipco_watchdog_timer_set(struc
  			ticks = 2;
  		else if (ticks > maxt)
  			ticks = maxt;
@@ -9,6 +37,30 @@
  	} else {
  		struct bcma_bus *bus = cc->core->bus;
  
+ 		if (bus->chipinfo.id != BCMA_CHIP_ID_BCM4707 &&
++		    bus->chipinfo.id != BCMA_CHIP_ID_BCM47094 &&
+ 		    bus->chipinfo.id != BCMA_CHIP_ID_BCM53018)
+ 			bcma_core_set_clockmode(cc->core,
+ 						ticks ? BCMA_CLKMODE_FAST : BCMA_CLKMODE_DYNAMIC);
+@@ -314,9 +322,9 @@ u32 bcma_chipco_gpio_pulldown(struct bcm
+ 	return res;
+ }
+ 
+-#ifdef CONFIG_BCMA_DRIVER_MIPS
+-void bcma_chipco_serial_init(struct bcma_drv_cc *cc)
++static void bcma_chipco_serial_init(struct bcma_drv_cc *cc)
+ {
++#if IS_BUILTIN(CONFIG_BCM47XX)
+ 	unsigned int irq;
+ 	u32 baud_base;
+ 	u32 i;
+@@ -358,5 +366,5 @@ void bcma_chipco_serial_init(struct bcma
+ 		ports[i].baud_base = baud_base;
+ 		ports[i].reg_shift = 0;
+ 	}
++#endif /* CONFIG_BCM47XX */
+ }
+-#endif /* CONFIG_BCMA_DRIVER_MIPS */
 --- a/drivers/bcma/driver_chipcommon_pmu.c
 +++ b/drivers/bcma/driver_chipcommon_pmu.c
 @@ -15,44 +15,44 @@
@@ -275,6 +327,14 @@
  #define BCMA_CORE_ARM_CA7		0x847
  #define BCMA_CORE_SYS_MEM		0x849
  #define BCMA_CORE_DEFAULT		0xFFF
+@@ -199,6 +201,7 @@ struct bcma_host_ops {
+ #define  BCMA_PKG_ID_BCM4707	1
+ #define  BCMA_PKG_ID_BCM4708	2
+ #define  BCMA_PKG_ID_BCM4709	0
++#define BCMA_CHIP_ID_BCM47094	53030
+ #define BCMA_CHIP_ID_BCM53018	53018
+ 
+ /* Board types (on PCI usually equals to the subsystem dev id) */
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
 @@ -217,6 +217,11 @@
@@ -336,3 +396,49 @@
  extern u32 bcma_chipco_watchdog_timer_set(struct bcma_drv_cc *cc, u32 ticks);
  
  extern u32 bcma_chipco_get_alp_clock(struct bcma_drv_cc *cc);
+--- a/drivers/bcma/bcma_private.h
++++ b/drivers/bcma/bcma_private.h
+@@ -47,7 +47,6 @@ void bcma_core_chipcommon_early_init(str
+ void bcma_core_chipcommon_init(struct bcma_drv_cc *cc);
+ void bcma_chipco_bcm4331_ext_pa_lines_ctl(struct bcma_drv_cc *cc, bool enable);
+ #ifdef CONFIG_BCMA_DRIVER_MIPS
+-void bcma_chipco_serial_init(struct bcma_drv_cc *cc);
+ extern struct platform_device bcma_pflash_dev;
+ #endif /* CONFIG_BCMA_DRIVER_MIPS */
+ 
+--- a/drivers/bcma/driver_gpio.c
++++ b/drivers/bcma/driver_gpio.c
+@@ -229,6 +229,7 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+ 	case BCMA_CHIP_ID_BCM4707:
+ 	case BCMA_CHIP_ID_BCM5357:
+ 	case BCMA_CHIP_ID_BCM53572:
++	case BCMA_CHIP_ID_BCM47094:
+ 		chip->ngpio	= 32;
+ 		break;
+ 	default:
+--- a/drivers/bcma/driver_mips.c
++++ b/drivers/bcma/driver_mips.c
+@@ -337,12 +337,9 @@ static void bcma_core_mips_flash_detect(
+ 
+ void bcma_core_mips_early_init(struct bcma_drv_mips *mcore)
+ {
+-	struct bcma_bus *bus = mcore->core->bus;
+-
+ 	if (mcore->early_setup_done)
+ 		return;
+ 
+-	bcma_chipco_serial_init(&bus->drv_cc);
+ 	bcma_core_mips_flash_detect(mcore);
+ 
+ 	mcore->early_setup_done = true;
+--- a/drivers/bcma/host_pci.c
++++ b/drivers/bcma/host_pci.c
+@@ -294,7 +294,7 @@ static const struct pci_device_id bcma_p
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4358) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4359) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4360) },
+-	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4365) },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_BROADCOM, 0x4365, PCI_VENDOR_ID_DELL, 0x0016) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a0) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
