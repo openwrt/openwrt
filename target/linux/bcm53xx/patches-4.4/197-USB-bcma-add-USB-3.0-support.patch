@@ -255,7 +255,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	return 0;
 +}
 +
- static int bcma_hcd_probe(struct bcma_device *dev)
+ static int bcma_hcd_probe(struct bcma_device *core)
  {
  	int err;
 @@ -364,6 +580,11 @@ static int bcma_hcd_probe(struct bcma_de
