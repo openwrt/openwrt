@@ -367,9 +367,11 @@ define KernelPackage/usb2-fsl
   DEPENDS:=@TARGET_mpc85xx
   KCONFIG:=\
 	CONFIG_USB_FSL_MPH_DR_OF \
-  	CONFIG_USB_EHCI_FSL=y
-  FILES:=$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
-  AUTOLOAD:=$(call AutoLoad,39,fsl-mph-dr-of,1)
+	CONFIG_USB_EHCI_FSL
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko \
+	$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
+  AUTOLOAD:=$(call AutoLoad,39,ehci-fsl fsl-mph-dr-of,1)
   $(call AddDepends/usb)
 endef
 
