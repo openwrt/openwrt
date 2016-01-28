@@ -1,25 +1,22 @@
 --- a/src/ap/wps_hostapd.c
 +++ b/src/ap/wps_hostapd.c
-@@ -1052,11 +1052,9 @@ int hostapd_init_wps(struct hostapd_data
- 
- 		if (conf->rsn_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP))
+@@ -352,8 +352,7 @@ static int hapd_wps_reconfig_in_memory(s
+ 				bss->wpa_pairwise |= WPA_CIPHER_GCMP;
+ 			else
+ 				bss->wpa_pairwise |= WPA_CIPHER_CCMP;
+-		}
+-		if (cred->encr_type & WPS_ENCR_TKIP)
++		} else if (cred->encr_type & WPS_ENCR_TKIP)
+ 			bss->wpa_pairwise |= WPA_CIPHER_TKIP;
+ 		bss->rsn_pairwise = bss->wpa_pairwise;
+ 		bss->wpa_group = wpa_select_ap_group_cipher(bss->wpa,
+@@ -1073,8 +1072,7 @@ int hostapd_init_wps(struct hostapd_data
+ 		if (conf->rsn_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP)) {
  			wps->encr_types |= WPS_ENCR_AES;
--		if (conf->rsn_pairwise & WPA_CIPHER_TKIP)
-+		else if (conf->rsn_pairwise & WPA_CIPHER_TKIP)
+ 			wps->encr_types_rsn |= WPS_ENCR_AES;
+-		}
+-		if (conf->rsn_pairwise & WPA_CIPHER_TKIP) {
++		} else if (conf->rsn_pairwise & WPA_CIPHER_TKIP) {
  			wps->encr_types |= WPS_ENCR_TKIP;
--	}
--
--	if (conf->wpa & WPA_PROTO_WPA) {
-+	} else if (conf->wpa & WPA_PROTO_WPA) {
- 		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_PSK)
- 			wps->auth_types |= WPS_AUTH_WPAPSK;
- 		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_IEEE8021X)
-@@ -1064,7 +1062,7 @@ int hostapd_init_wps(struct hostapd_data
- 
- 		if (conf->wpa_pairwise & WPA_CIPHER_CCMP)
- 			wps->encr_types |= WPS_ENCR_AES;
--		if (conf->wpa_pairwise & WPA_CIPHER_TKIP)
-+		else if (conf->wpa_pairwise & WPA_CIPHER_TKIP)
- 			wps->encr_types |= WPS_ENCR_TKIP;
- 	}
- 
+ 			wps->encr_types_rsn |= WPS_ENCR_TKIP;
+ 		}
