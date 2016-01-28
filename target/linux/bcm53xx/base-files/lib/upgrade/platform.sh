@@ -100,8 +100,19 @@ platform_check_image() {
 			fi
 		;;
 		"seama")
-			echo "Seama firmware format is unsupported"
-			error=1
+			local img_signature=$(oseama info "$1" | grep "Meta entry:.*signature=" | sed "s/.*=//")
+			local dev_signature=$(platform_expected_image)
+			echo "Found Seama image with device signature: $img_signature"
+
+			[ -n "$dev_signature" -a "seama $img_signature" != "$dev_signature" ] && {
+				echo "Firmware signature doesn't match device signature ($dev_signature)"
+				error=1
+			}
+
+			$(oseama info "$1" -e 0 | grep -q "Meta entry:.*type=firmware") || {
+				echo "Seama container doesn't have firmware entity"
+				error=1
+			}
 		;;
 		"trx")
 			if ! otrx check "$1"; then
@@ -119,6 +130,8 @@ platform_check_image() {
 }
 
 platform_pre_upgrade() {
+	export RAMFS_COPY_BIN="${RAMFS_COPY_BIN} /usr/bin/oseama /bin/sed"
+
 	local file_type=$(platform_identify "$1")
 	local dir="/tmp/sysupgrade-bcm53xx"
 	local trx="$1"
@@ -130,6 +143,7 @@ platform_pre_upgrade() {
 	case "$file_type" in
 		"chk")		offset=$((0x$(get_magic_long_at "$1" 4)));;
 		"cybertan")	offset=32;;
+		"seama")	return;;
 	esac
 
 	# Extract partitions from trx
@@ -200,6 +214,22 @@ platform_trx_from_cybertan_cmd() {
 	echo -n dd bs=32 skip=1
 }
 
+platform_img_from_seama() {
+	local dir="/tmp/sysupgrade-bcm53xx"
+	local offset=$(oseama info "$1" -e 0 | grep "Entity offset:" | sed "s/.*:\s*//")
+	local size=$(oseama info "$1" -e 0 | grep "Entity size:" | sed "s/.*:\s*//")
+
+	# Busybox doesn't support required iflag-s
+	# echo -n dd iflag=skip_bytes,count_bytes skip=$offset count=$size
+
+	rm -fR $dir
+	mkdir -p $dir
+	dd if="$1" of=$dir/image-noheader.bin bs=$offset skip=1
+	dd if=$dir/image-noheader.bin of=$dir/image-entity.bin bs=$size count=1
+
+	echo -n $dir/image-entity.bin
+}
+
 platform_do_upgrade() {
 	local file_type=$(platform_identify "$1")
 	local trx="$1"
@@ -212,6 +242,7 @@ platform_do_upgrade() {
 	case "$file_type" in
 		"chk")		cmd=$(platform_trx_from_chk_cmd "$trx");;
 		"cybertan")	cmd=$(platform_trx_from_cybertan_cmd "$trx");;
+		"seama")	trx=$(platform_img_from_seama "$trx");;
 	esac
 
 	default_do_upgrade "$trx" "$cmd"
