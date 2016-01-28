@@ -57,6 +57,9 @@ endef
 
 BUSYBOX_SYM=$(if $(CONFIG_BUSYBOX_CUSTOM),CONFIG,DEFAULT)
 
+# don't create a version string containing the actual timestamp
+export KCONFIG_NOTIMESTAMP=1
+
 define Build/Configure
 	rm -f $(PKG_BUILD_DIR)/.configured*
 	grep 'CONFIG_BUSYBOX_$(BUSYBOX_SYM)' $(TOPDIR)/.config | sed -e "s,\\(# \)\\?CONFIG_BUSYBOX_$(BUSYBOX_SYM)_\\(.*\\),\\1CONFIG_\\2,g" > $(PKG_BUILD_DIR)/.config
