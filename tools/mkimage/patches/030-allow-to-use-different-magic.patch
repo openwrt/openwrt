@@ -1,6 +1,6 @@
 --- a/tools/mkimage.c
 +++ b/tools/mkimage.c
-@@ -24,6 +24,7 @@
+@@ -24,6 +24,7 @@ struct image_tool_params params = {
  	.arch = IH_ARCH_PPC,
  	.type = IH_TYPE_KERNEL,
  	.comp = IH_COMP_GZIP,
@@ -8,7 +8,7 @@
  	.dtc = MKIMAGE_DEFAULT_DTC_OPTIONS,
  	.imagename = "",
  	.imagename2 = "",
-@@ -168,6 +169,16 @@
+@@ -168,6 +169,16 @@ main (int argc, char **argv)
  					genimg_get_comp_id (*++argv)) < 0)
  					usage ();
  				goto NXTARG;
@@ -25,7 +25,7 @@
  			case 'D':
  				if (--argc <= 0)
  					usage ();
-@@ -623,12 +634,13 @@
+@@ -623,12 +634,13 @@ static void usage(void)
  	fprintf (stderr, "Usage: %s -l image\n"
  			 "          -l ==> list image header information\n",
  		params.cmdname);
@@ -42,7 +42,7 @@
  			 "          -n ==> set image name to 'name'\n"
 --- a/tools/default_image.c
 +++ b/tools/default_image.c
-@@ -98,7 +98,7 @@
+@@ -98,7 +98,7 @@ static void image_set_header(void *ptr,
  			sbuf->st_size - sizeof(image_header_t));
  
  	/* Build new header */
@@ -53,7 +53,7 @@
  	image_set_load(hdr, params->addr);
 --- a/tools/imagetool.h
 +++ b/tools/imagetool.h
-@@ -44,6 +44,7 @@
+@@ -44,6 +44,7 @@ struct image_tool_params {
  	int arch;
  	int type;
  	int comp;
