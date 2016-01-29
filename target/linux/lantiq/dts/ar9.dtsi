@@ -40,7 +40,7 @@
 	sram@1F000000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "lantiq,sram";
+		compatible = "lantiq,sram", "simple-bus";
 		reg = <0x1F000000 0x800000>;
 		ranges = <0x0 0x1F000000 0x7FFFFF>;
 
