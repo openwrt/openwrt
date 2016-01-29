@@ -1,6 +1,6 @@
 --- a/drivers/staging/octeon/ethernet.c
 +++ b/drivers/staging/octeon/ethernet.c
-@@ -663,6 +663,7 @@ static int cvm_oct_probe(struct platform
+@@ -667,6 +667,7 @@ static int cvm_oct_probe(struct platform
  	int interface;
  	int fau = FAU_NUM_PACKET_BUFFERS_TO_FREE;
  	int qos;
@@ -8,7 +8,7 @@
  	struct device_node *pip;
  
  	octeon_mdiobus_force_mod_depencency();
-@@ -747,13 +748,19 @@ static int cvm_oct_probe(struct platform
+@@ -751,13 +752,19 @@ static int cvm_oct_probe(struct platform
  	}
  
  	num_interfaces = cvmx_helper_get_number_of_interfaces();
