@@ -7,13 +7,13 @@ config GLIBC_VERSION
 	default "2.22" if GLIBC_VERSION_2_22
 
 config EGLIBC_VERSION_2_19
-	default y if !TOOLCHAINOPTS
 	bool
 
 config GLIBC_VERSION_2_21
 	bool
 
 config GLIBC_VERSION_2_22
+	default y if !TOOLCHAINOPTS
 	bool
 
 config GLIBC_REVISION
