@@ -1,0 +1,38 @@
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -1209,13 +1209,18 @@ static void xrx200_gmac_update(struct xr
+ static void xrx200_mdio_link(struct net_device *dev)
+ {
+ 	struct xrx200_priv *priv = netdev_priv(dev);
++	bool changed = false, link = false;
+ 	int i;
+ 
+ 	for (i = 0; i < priv->num_port; i++) {
+ 		if (!priv->port[i].phydev)
+ 			continue;
+ 
++		if (priv->port[i].phydev->link)
++			link = true;
++
+ 		if (priv->port[i].link != priv->port[i].phydev->link) {
++			changed = true;
+ 			xrx200_gmac_update(&priv->port[i]);
+ 			priv->port[i].link = priv->port[i].phydev->link;
+ 			netdev_info(dev, "port %d %s link\n",
+@@ -1223,6 +1228,8 @@ static void xrx200_mdio_link(struct net_
+ 				(priv->port[i].link)?("got"):("lost"));
+ 		}
+ 	}
++	if (changed && !link)
++		netif_carrier_off(dev);
+ }
+ 
+ static inline int xrx200_mdio_poll(struct mii_bus *bus)
+@@ -1300,6 +1307,7 @@ static int xrx200_mdio_probe(struct net_
+ 			| SUPPORTED_TP);
+ 	phydev->advertising = phydev->supported;
+ 	port->phydev = phydev;
++	phydev->no_auto_carrier_off = true;
+ 
+ 	pr_info("%s: attached PHY [%s] (phy_addr=%s, irq=%d)\n",
+ 		dev->name, phydev->drv->name,
