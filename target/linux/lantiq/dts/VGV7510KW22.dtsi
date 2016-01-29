@@ -80,76 +80,6 @@
 			};
 		};
 
-		eth@E108000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "lantiq,xrx200-net";
-			reg = <	0xE108000 0x3000 /* switch */
-				0xE10B100 0x70 /* mdio */
-				0xE10B1D8 0x30 /* mii */
-				0xE10B308 0x30 /* pmac */
-			>;
-			interrupt-parent = <&icu0>;
-			interrupts = <73 72>;
-
-			lan: interface@0 {
-				compatible = "lantiq,xrx200-pdi";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <0>;
-				mtd-mac-address = <&boardconfig 0x16>;
-				lantiq,switch;
-
-				ethernet@2 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <2>;
-					phy-mode = "mii";
-					phy-handle = <&phy11>;
-				};
-				ethernet@3 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <3>;
-					phy-mode = "mii";
-					phy-handle = <&phy12>;
-				};
-				ethernet@4 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <4>;
-					phy-mode = "mii";
-					phy-handle = <&phy13>;
-				};
-				ethernet@5 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <5>;
-					phy-mode = "mii";
-					phy-handle = <&phy14>;
-				};
-			};
-
-			mdio@0 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				compatible = "lantiq,xrx200-mdio";
-
-				phy11: ethernet-phy@11 {
-					reg = <0x11>;
-					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
-				};
-				phy12: ethernet-phy@12 {
-					reg = <0x12>;
-					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
-				};
-				phy13: ethernet-phy@13 {
-					reg = <0x13>;
-					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
-				};
-				phy14: ethernet-phy@14 {
-					reg = <0x14>;
-					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
-				};
-			};
-		};
-
 		stp: stp@E100BB0 {
 			compatible = "lantiq,gpio-stp-xway";
 			reg = <0xE100BB0 0x40>;
@@ -262,6 +192,65 @@
 		phone {
 			label = "vgv7510kw22:green:telefon";
 			gpios = <&gpio 29 1>;
+		};
+	};
+};
+
+&eth0 {
+	lan: interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		mtd-mac-address = <&boardconfig 0x16>;
+		lantiq,switch;
+
+		ethernet@2 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <2>;
+			phy-mode = "mii";
+			phy-handle = <&phy11>;
+		};
+		ethernet@3 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <3>;
+			phy-mode = "mii";
+			phy-handle = <&phy12>;
+		};
+		ethernet@4 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "mii";
+			phy-handle = <&phy13>;
+		};
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "mii";
+			phy-handle = <&phy14>;
+		};
+	};
+
+	mdio@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "lantiq,xrx200-mdio";
+
+		phy11: ethernet-phy@11 {
+			reg = <0x11>;
+			compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+		};
+		phy12: ethernet-phy@12 {
+			reg = <0x12>;
+			compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+		};
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+		};
+		phy14: ethernet-phy@14 {
+			reg = <0x14>;
+			compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
 		};
 	};
 };
