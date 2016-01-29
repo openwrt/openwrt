@@ -4,13 +4,10 @@
 #
 
 . /lib/functions/uci-defaults.sh
-. /lib/functions/octeon.sh
 
 board_config_update
 
-board=$(octeon_board_name)
-
-case "$board" in
+case "$(cat /tmp/sysinfo/board_name)" in
 erlite)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;
