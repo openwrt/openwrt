@@ -18,6 +18,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "md5.h"
+
 #if !defined(__BYTE_ORDER)
 #error "Unknown byte order"
 #endif
@@ -215,6 +217,181 @@ out:
 }
 
 /**************************************************
+ * Create
+ **************************************************/
+
+static ssize_t oseama_entity_append_file(FILE *seama, const char *in_path) {
+	FILE *in;
+	size_t bytes;
+	ssize_t length = 0;
+	uint8_t buf[128];
+
+	in = fopen(in_path, "r");
+	if (!in) {
+		fprintf(stderr, "Couldn't open %s\n", in_path);
+		return -EACCES;
+	}
+
+	while ((bytes = fread(buf, 1, sizeof(buf), in)) > 0) {
+		if (fwrite(buf, 1, bytes, seama) != bytes) {
+			fprintf(stderr, "Couldn't write %zu B to %s\n", bytes, seama_path);
+			length = -EIO;
+			break;
+		}
+		length += bytes;
+	}
+
+	fclose(in);
+
+	return length;
+}
+
+static ssize_t oseama_entity_append_zeros(FILE *seama, size_t length) {
+	uint8_t *buf;
+
+	buf = malloc(length);
+	if (!buf)
+		return -ENOMEM;
+	memset(buf, 0, length);
+
+	if (fwrite(buf, 1, length, seama) != length) {
+		fprintf(stderr, "Couldn't write %zu B to %s\n", length, seama_path);
+		return -EIO;
+	}
+
+	return length;
+}
+
+static ssize_t oseama_entity_align(FILE *seama, size_t curr_offset, size_t alignment) {
+	if (curr_offset & (alignment - 1)) {
+		size_t length = alignment - (curr_offset % alignment);
+
+		return oseama_entity_append_zeros(seama, length);
+	}
+
+	return 0;
+}
+
+static int oseama_entity_write_hdr(FILE *seama, size_t metasize, size_t imagesize) {
+	struct seama_entity_header hdr = {};
+	uint8_t buf[128];
+	size_t length = imagesize;
+	size_t bytes;
+	MD5_CTX ctx;
+
+	fseek(seama, sizeof(hdr) + metasize, SEEK_SET);
+	MD5_Init(&ctx);
+	while ((bytes = fread(buf, 1, oseama_min(sizeof(buf), length), seama)) > 0) {
+		MD5_Update(&ctx, buf, bytes);
+		length -= bytes;
+	}
+	MD5_Final(hdr.md5, &ctx);
+
+	hdr.magic = cpu_to_be32(SEAMA_MAGIC);
+	hdr.metasize = cpu_to_be16(metasize);
+	hdr.imagesize = cpu_to_be32(imagesize);
+
+	fseek(seama, 0, SEEK_SET);
+	bytes = fwrite(&hdr, 1, sizeof(hdr), seama);
+	if (bytes != sizeof(hdr)) {
+		fprintf(stderr, "Couldn't write Seama entity header to %s\n", seama_path);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int oseama_entity(int argc, char **argv) {
+	FILE *seama;
+	ssize_t sbytes;
+	size_t curr_offset = sizeof(struct seama_entity_header);
+	size_t metasize = 0, imagesize = 0;
+	int c;
+	int err = 0;
+
+	if (argc < 3) {
+		fprintf(stderr, "No Seama file passed\n");
+		err = -EINVAL;
+		goto out;
+	}
+	seama_path = argv[2];
+
+	seama = fopen(seama_path, "w+");
+	if (!seama) {
+		fprintf(stderr, "Couldn't open %s\n", seama_path);
+		err = -EACCES;
+		goto out;
+	}
+	fseek(seama, curr_offset, SEEK_SET);
+
+	optind = 3;
+	while ((c = getopt(argc, argv, "m:f:b:")) != -1) {
+		switch (c) {
+		case 'm':
+			sbytes = fwrite(optarg, 1, strlen(optarg) + 1, seama);
+			if (sbytes < 0) {
+				fprintf(stderr, "Failed to write meta %s\n", optarg);
+			} else {
+				curr_offset += sbytes;
+				metasize += sbytes;
+			}
+
+			sbytes = oseama_entity_align(seama, curr_offset, 4);
+			if (sbytes < 0) {
+				fprintf(stderr, "Failed to append zeros\n");
+			} else {
+				curr_offset += sbytes;
+				metasize += sbytes;
+			}
+
+			break;
+		case 'f':
+		case 'b':
+			break;
+		}
+	}
+
+	optind = 3;
+	while ((c = getopt(argc, argv, "m:f:b:")) != -1) {
+		switch (c) {
+		case 'm':
+			break;
+		case 'f':
+			sbytes = oseama_entity_append_file(seama, optarg);
+			if (sbytes < 0) {
+				fprintf(stderr, "Failed to append file %s\n", optarg);
+			} else {
+				curr_offset += sbytes;
+				imagesize += sbytes;
+			}
+			break;
+		case 'b':
+			sbytes = strtol(optarg, NULL, 0) - curr_offset;
+			if (sbytes < 0) {
+				fprintf(stderr, "Current Seama entity length is 0x%zx, can't pad it with zeros to 0x%lx\n", curr_offset, strtol(optarg, NULL, 0));
+			} else {
+				sbytes = oseama_entity_append_zeros(seama, sbytes);
+				if (sbytes < 0) {
+					fprintf(stderr, "Failed to append zeros\n");
+				} else {
+					curr_offset += sbytes;
+					imagesize += sbytes;
+				}
+			}
+			break;
+		}
+		if (err)
+			break;
+	}
+
+	oseama_entity_write_hdr(seama, metasize, imagesize);
+
+	fclose(seama);
+out:
+	return err;
+}
+
+/**************************************************
  * Start
  **************************************************/
 
@@ -224,12 +401,20 @@ static void usage() {
 	printf("Info about Seama seal (container):\n");
 	printf("\toseama info <file> [options]\n");
 	printf("\t-e\t\t\t\tprint info about specified entity only\n");
+	printf("\n");
+	printf("Create Seama entity:\n");
+	printf("\toseama entity <file> [options]\n");
+	printf("\t-m meta\t\t\t\tmeta into to put in header\n");
+	printf("\t-f file\t\t\t\tappend content from file\n");
+	printf("\t-b offset\t\t\tappend zeros till reaching absolute offset\n");
 }
 
 int main(int argc, char **argv) {
 	if (argc > 1) {
 		if (!strcmp(argv[1], "info"))
 			return oseama_info(argc, argv);
+		else if (!strcmp(argv[1], "entity"))
+			return oseama_entity(argc, argv);
 	}
 
 	usage();
