@@ -125,6 +125,7 @@ define BuildKernel
 	$(MAKE) -C image compile TARGET_BUILD=
 
   oldconfig menuconfig nconfig: $(STAMP_PREPARED) $(STAMP_CHECKED) FORCE
+	rm -f $(LINUX_DIR)/.config.prev
 	rm -f $(STAMP_CONFIGURED)
 	$(LINUX_RECONF_CMD) > $(LINUX_DIR)/.config
 	$(_SINGLE)$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $$@
