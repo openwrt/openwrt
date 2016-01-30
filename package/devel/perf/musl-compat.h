@@ -4,9 +4,9 @@
 #ifndef __ASSEMBLER__
 
 #include <sys/ioctl.h>
+#include <asm/unistd.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <syscall.h>
 #include <sched.h>
 
 #undef _IOWR
