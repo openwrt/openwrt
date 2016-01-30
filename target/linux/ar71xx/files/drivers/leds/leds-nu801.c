@@ -20,7 +20,7 @@
 #include <linux/delay.h>
 #include <linux/leds-nu801.h>
 
-#include <asm/gpio.h>
+#include <linux/gpio.h>
 #include <linux/of_gpio.h>
 
 #define MAX_NAME_LENGTH 24
