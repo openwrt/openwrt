@@ -30,8 +30,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  include/syslog.h   | 12 ++++++++++--
  4 files changed, 57 insertions(+), 22 deletions(-)
 
-diff --git a/include/err.h b/include/err.h
-index 9f5cb6b..a5e3cde 100644
 --- a/include/err.h
 +++ b/include/err.h
 @@ -8,15 +8,23 @@
@@ -42,17 +40,16 @@ index 9f5cb6b..a5e3cde 100644
 -void vwarn(const char *, va_list);
 -void warnx(const char *, ...);
 -void vwarnx(const char *, va_list);
--
--_Noreturn void err(int, const char *, ...);
--_Noreturn void verr(int, const char *, va_list);
--_Noreturn void errx(int, const char *, ...);
--_Noreturn void verrx(int, const char *, va_list);
 +#if __GNUC__ >= 3
 +#define __fp(x, y) __attribute__ ((__format__ (__printf__, x, y)))
 +#else
 +#define __fp(x, y)
 +#endif
-+
+ 
+-_Noreturn void err(int, const char *, ...);
+-_Noreturn void verr(int, const char *, va_list);
+-_Noreturn void errx(int, const char *, ...);
+-_Noreturn void verrx(int, const char *, va_list);
 +void warn(const char *, ...) __fp(1, 2);
 +void vwarn(const char *, va_list) __fp(1, 0);
 +void warnx(const char *, ...) __fp(1, 2);
@@ -67,8 +64,6 @@ index 9f5cb6b..a5e3cde 100644
  
  #ifdef __cplusplus
  }
-diff --git a/include/monetary.h b/include/monetary.h
-index a91fa56..85c4d23 100644
 --- a/include/monetary.h
 +++ b/include/monetary.h
 @@ -13,8 +13,16 @@ extern "C" {
@@ -90,8 +85,6 @@ index a91fa56..85c4d23 100644
  
  #ifdef __cplusplus
  }
-diff --git a/include/stdio.h b/include/stdio.h
-index 884d2e6..17ca68e 100644
 --- a/include/stdio.h
 +++ b/include/stdio.h
 @@ -21,6 +21,14 @@ extern "C" {
@@ -156,7 +149,7 @@ index 884d2e6..17ca68e 100644
  #endif
  
  #ifdef _GNU_SOURCE
-@@ -184,6 +192,9 @@ char *fgets_unlocked(char *, int, FILE *);
+@@ -184,6 +192,9 @@ char *fgets_unlocked(char *, int, FILE *
  int fputs_unlocked(const char *, FILE *);
  #endif
  
@@ -166,8 +159,6 @@ index 884d2e6..17ca68e 100644
  #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
  #define tmpfile64 tmpfile
  #define fopen64 fopen
-diff --git a/include/syslog.h b/include/syslog.h
-index 5b4d296..33b549d 100644
 --- a/include/syslog.h
 +++ b/include/syslog.h
 @@ -56,16 +56,22 @@ extern "C" {
@@ -204,6 +195,3 @@ index 5b4d296..33b549d 100644
  #ifdef __cplusplus
  }
  #endif
--- 
-2.7.0.rc3
-
