@@ -1,0 +1,10 @@
+--- a/arch/arm/mach-mxs/Kconfig
++++ b/arch/arm/mach-mxs/Kconfig
+@@ -17,6 +17,7 @@ config ARCH_MXS
+ 	depends on ARCH_MULTI_V5
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select CLKSRC_MMIO
++	select MFD_SYSCON
+ 	select PINCTRL
+ 	select SOC_BUS
+ 	select SOC_IMX23
