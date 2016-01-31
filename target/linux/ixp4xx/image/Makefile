@@ -36,6 +36,11 @@ define Image/BuildKernel
 	BIN_DIR=$(BIN_DIR) IMG_PREFIX="$(IMG_PREFIX)" $(TOPDIR)/scripts/arm-magic.sh
 endef
 
+define Image/BuildKernel/Initramfs
+	cp $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-initramfs-zImage
+	BIN_DIR=$(BIN_DIR) IMG_PREFIX="$(IMG_PREFIX)-initramfs" $(TOPDIR)/scripts/arm-magic.sh
+endef
+
 # Build sysupgrade image
 define BuildFirmware/Generic
 	dd if=$(KDIR)/zImage of=$(KDIR)/zImage.pad bs=64k conv=sync; \
