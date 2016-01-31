@@ -17227,7 +17227,7 @@
  .type   __unmapself,%function
 --- /dev/null
 +++ b/src/thread/arm/atomics.s
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,113 @@
 +.syntax unified
 +.text
 +
@@ -17325,6 +17325,8 @@
 +	bx lr
 +
 +.data
++.align 2
++
 +.global __a_barrier_ptr
 +.hidden __a_barrier_ptr
 +__a_barrier_ptr:
