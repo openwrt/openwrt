@@ -22,7 +22,9 @@ define Build/netgear-squashfs
 	cp $@ $@.fs/image/uImage
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
 		$@.fs $@.squashfs \
-		-noappend -root-owned -be -b 65536
+		-noappend -root-owned -be -b 65536 \
+		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
+
 	dd if=/dev/zero bs=1k count=1 >> $@.squashfs
 	mkimage \
 		-A mips -O linux -T filesystem -C none \
@@ -2064,7 +2066,8 @@ define Image/Build/Netgear/buildkernel
 	cat $(KDIR_TMP)/vmlinux-$(2).uImage > $(KDIR_TMP)/$(2)/image/uImage
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
 		$(KDIR_TMP)/$(2) $(KDIR_TMP)/vmlinux-$(2).uImage.squashfs.tmp1 \
-		-noappend -root-owned -be -b 65536
+		-noappend -root-owned -be -b 65536 \
+		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
 	( \
 		cat $(KDIR_TMP)/vmlinux-$(2).uImage.squashfs.tmp1; \
 		dd if=/dev/zero bs=1k count=1 \
