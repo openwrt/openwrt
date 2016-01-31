@@ -306,8 +306,6 @@ static struct switch_regs __iomem *mdio_regs; /* mdio command and status only */
 struct mii_bus *mdio_bus;
 static int ports_open;
 static struct port *switch_port_tab[4];
-static struct dma_pool *rx_dma_pool;
-static struct dma_pool *tx_dma_pool;
 struct net_device *napi_dev;
 
 static int cns3xxx_mdio_cmd(struct mii_bus *bus, int phy_id, int location,
@@ -898,16 +896,13 @@ static int init_rings(struct sw *sw)
 
 	__raw_writel(QUEUE_THRESHOLD, &sw->regs->dma_ring_ctrl);
 
-	if (!(rx_dma_pool = dma_pool_create(DRV_NAME, sw->dev,
-					    RX_POOL_ALLOC_SIZE, 32, 0)))
+	rx_ring->desc = dmam_alloc_coherent(sw->dev, RX_POOL_ALLOC_SIZE,
+					    &rx_ring->phys_addr, GFP_KERNEL);
+	if (!rx_ring->desc)
 		return -ENOMEM;
-
-	if (!(rx_ring->desc = dma_pool_alloc(rx_dma_pool, GFP_KERNEL,
-					      &rx_ring->phys_addr)))
-		return -ENOMEM;
-	memset(rx_ring->desc, 0, RX_POOL_ALLOC_SIZE);
 
 	/* Setup RX buffers */
+	memset(rx_ring->desc, 0, RX_POOL_ALLOC_SIZE);
 	for (i = 0; i < RX_DESCS; i++) {
 		struct rx_desc *desc = &(rx_ring)->desc[i];
 		void *buf;
@@ -934,16 +929,13 @@ static int init_rings(struct sw *sw)
 	__raw_writel(rx_ring->phys_addr, &sw->regs->fs_desc_ptr0);
 	__raw_writel(rx_ring->phys_addr, &sw->regs->fs_desc_base_addr0);
 
-	if (!(tx_dma_pool = dma_pool_create(DRV_NAME, sw->dev,
-					    TX_POOL_ALLOC_SIZE, 32, 0)))
+	tx_ring->desc = dmam_alloc_coherent(sw->dev, TX_POOL_ALLOC_SIZE,
+					    &tx_ring->phys_addr, GFP_KERNEL);
+	if (!tx_ring->desc)
 		return -ENOMEM;
-
-	if (!(tx_ring->desc = dma_pool_alloc(tx_dma_pool, GFP_KERNEL,
-					      &tx_ring->phys_addr)))
-		return -ENOMEM;
-	memset(tx_ring->desc, 0, TX_POOL_ALLOC_SIZE);
 
 	/* Setup TX buffers */
+	memset(tx_ring->desc, 0, TX_POOL_ALLOC_SIZE);
 	for (i = 0; i < TX_DESCS; i++) {
 		struct tx_desc *desc = &(tx_ring)->desc[i];
 		tx_ring->buff_tab[i] = 0;
@@ -961,39 +953,30 @@ static int init_rings(struct sw *sw)
 static void destroy_rings(struct sw *sw)
 {
 	int i;
-	if (sw->rx_ring.desc) {
-		for (i = 0; i < RX_DESCS; i++) {
-			struct _rx_ring *rx_ring = &sw->rx_ring;
-			struct rx_desc *desc = &(rx_ring)->desc[i];
-			struct sk_buff *skb = sw->rx_ring.buff_tab[i];
 
-			if (!skb)
-				continue;
+	for (i = 0; i < RX_DESCS; i++) {
+		struct _rx_ring *rx_ring = &sw->rx_ring;
+		struct rx_desc *desc = &(rx_ring)->desc[i];
+		struct sk_buff *skb = sw->rx_ring.buff_tab[i];
 
-			dma_unmap_single(sw->dev, desc->sdp, RX_SEGMENT_MRU,
-					 DMA_FROM_DEVICE);
-			dev_kfree_skb(skb);
-		}
-		dma_pool_free(rx_dma_pool, sw->rx_ring.desc, sw->rx_ring.phys_addr);
-		dma_pool_destroy(rx_dma_pool);
-		rx_dma_pool = 0;
-		sw->rx_ring.desc = 0;
+		if (!skb)
+			continue;
+
+		dma_unmap_single(sw->dev, desc->sdp, RX_SEGMENT_MRU,
+				 DMA_FROM_DEVICE);
+		dev_kfree_skb(skb);
 	}
-	if (sw->tx_ring.desc) {
-		for (i = 0; i < TX_DESCS; i++) {
-			struct _tx_ring *tx_ring = &sw->tx_ring;
-			struct tx_desc *desc = &(tx_ring)->desc[i];
-			struct sk_buff *skb = sw->tx_ring.buff_tab[i];
-			if (skb) {
-				dma_unmap_single(sw->dev, desc->sdp,
-					skb->len, DMA_TO_DEVICE);
-				dev_kfree_skb(skb);
-			}
-		}
-		dma_pool_free(tx_dma_pool, sw->tx_ring.desc, sw->tx_ring.phys_addr);
-		dma_pool_destroy(tx_dma_pool);
-		tx_dma_pool = 0;
-		sw->tx_ring.desc = 0;
+
+	for (i = 0; i < TX_DESCS; i++) {
+		struct _tx_ring *tx_ring = &sw->tx_ring;
+		struct tx_desc *desc = &(tx_ring)->desc[i];
+		struct sk_buff *skb = sw->tx_ring.buff_tab[i];
+
+		if (!skb)
+			continue;
+
+		dma_unmap_single(sw->dev, desc->sdp, skb->len, DMA_TO_DEVICE);
+		dev_kfree_skb(skb);
 	}
 }
 
@@ -1227,7 +1210,6 @@ static int eth_init_one(struct platform_device *pdev)
 		     CRC_STRIPPING, &sw->regs->mac_glob_cfg);
 
 	if ((err = init_rings(sw)) != 0) {
-		destroy_rings(sw);
 		err = -ENOMEM;
 		goto err_free;
 	}
@@ -1314,8 +1296,8 @@ static int eth_remove_one(struct platform_device *pdev)
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct sw *sw = netdev_priv(dev);
 	int i;
-	destroy_rings(sw);
 
+	destroy_rings(sw);
 	for (i = 3; i >= 0; i--) {
 		if (switch_port_tab[i]) {
 			struct port *port = switch_port_tab[i];
