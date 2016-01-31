@@ -13,6 +13,13 @@
 
 #include "ag71xx.h"
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+static inline void skb_free_frag(void *data)
+{
+	put_page(virt_to_head_page(data));
+}
+#endif
+
 #define AG71XX_DEFAULT_MSG_ENABLE	\
 	(NETIF_MSG_DRV			\
 	| NETIF_MSG_PROBE		\
@@ -197,7 +204,7 @@ static void ag71xx_ring_rx_clean(struct ag71xx *ag)
 		if (ring->buf[i].rx_buf) {
 			dma_unmap_single(&ag->dev->dev, ring->buf[i].dma_addr,
 					 ag->rx_buf_size, DMA_FROM_DEVICE);
-			kfree(ring->buf[i].rx_buf);
+			skb_free_frag(ring->buf[i].rx_buf);
 		}
 }
 
@@ -217,16 +224,21 @@ static int ag71xx_buffer_offset(struct ag71xx *ag)
 	return offset + NET_IP_ALIGN;
 }
 
+static int ag71xx_buffer_size(struct ag71xx *ag)
+{
+	return ag->rx_buf_size +
+	       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+}
+
 static bool ag71xx_fill_rx_buf(struct ag71xx *ag, struct ag71xx_buf *buf,
-			       int offset)
+			       int offset,
+			       void *(*alloc)(unsigned int size))
 {
 	struct ag71xx_ring *ring = &ag->rx_ring;
 	struct ag71xx_desc *desc = ag71xx_ring_desc(ring, buf - &ring->buf[0]);
 	void *data;
 
-	data = kmalloc(ag->rx_buf_size +
-		       SKB_DATA_ALIGN(sizeof(struct skb_shared_info)),
-		       GFP_ATOMIC);
+	data = alloc(ag71xx_buffer_size(ag));
 	if (!data)
 		return false;
 
@@ -258,7 +270,8 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 	for (i = 0; i < ring->size; i++) {
 		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
 
-		if (!ag71xx_fill_rx_buf(ag, &ring->buf[i], offset)) {
+		if (!ag71xx_fill_rx_buf(ag, &ring->buf[i], offset,
+					netdev_alloc_frag)) {
 			ret = -ENOMEM;
 			break;
 		}
@@ -290,7 +303,8 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 		desc = ag71xx_ring_desc(ring, i);
 
 		if (!ring->buf[i].rx_buf &&
-		    !ag71xx_fill_rx_buf(ag, &ring->buf[i], offset))
+		    !ag71xx_fill_rx_buf(ag, &ring->buf[i], offset,
+					napi_alloc_frag))
 			break;
 
 		desc->ctrl = DESC_EMPTY;
@@ -680,7 +694,7 @@ static int ag71xx_open(struct net_device *dev)
 
 	netif_carrier_off(dev);
 	max_frame_len = ag71xx_max_frame_len(dev->mtu);
-	ag->rx_buf_size = max_frame_len + NET_SKB_PAD + NET_IP_ALIGN;
+	ag->rx_buf_size = SKB_DATA_ALIGN(max_frame_len + NET_SKB_PAD + NET_IP_ALIGN);
 
 	/* setup max frame length */
 	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, max_frame_len);
@@ -1012,9 +1026,9 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += pktlen;
 
-		skb = build_skb(ring->buf[i].rx_buf, 0);
+		skb = build_skb(ring->buf[i].rx_buf, ag71xx_buffer_size(ag));
 		if (!skb) {
-			kfree(ring->buf[i].rx_buf);
+			skb_free_frag(ring->buf[i].rx_buf);
 			goto next;
 		}
 
