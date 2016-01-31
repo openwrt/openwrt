@@ -518,14 +518,14 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 	unsigned int phys;
 
 	for (received += rx_ring->alloc_count; received > 0; received--) {
-		buf = kmalloc(RX_SEGMENT_ALLOC_SIZE, GFP_ATOMIC);
+		buf = napi_alloc_frag(RX_SEGMENT_ALLOC_SIZE);
 		if (!buf)
 			break;
 
 		phys = dma_map_single(sw->dev, buf + SKB_HEAD_ALIGN,
 				      RX_SEGMENT_MRU, DMA_FROM_DEVICE);
 		if (dma_mapping_error(sw->dev, phys)) {
-			kfree(buf);
+			skb_free_frag(buf);
 			break;
 		}
 
@@ -636,7 +636,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		dma_unmap_single(sw->dev, rx_ring->phys_tab[i],
 				 RX_SEGMENT_MRU, DMA_FROM_DEVICE);
 
-		skb = build_skb(rx_ring->buff_tab[i], 0);
+		skb = build_skb(rx_ring->buff_tab[i], RX_SEGMENT_ALLOC_SIZE);
 		if (!skb)
 			break;
 
@@ -907,7 +907,7 @@ static int init_rings(struct sw *sw)
 		struct rx_desc *desc = &(rx_ring)->desc[i];
 		void *buf;
 
-		buf = kzalloc(RX_SEGMENT_ALLOC_SIZE, GFP_KERNEL);
+		buf = netdev_alloc_frag(RX_SEGMENT_ALLOC_SIZE);
 		if (!buf)
 			return -ENOMEM;
 
@@ -957,14 +957,14 @@ static void destroy_rings(struct sw *sw)
 	for (i = 0; i < RX_DESCS; i++) {
 		struct _rx_ring *rx_ring = &sw->rx_ring;
 		struct rx_desc *desc = &(rx_ring)->desc[i];
-		struct sk_buff *skb = sw->rx_ring.buff_tab[i];
+		void *buf = sw->rx_ring.buff_tab[i];
 
-		if (!skb)
+		if (!buf)
 			continue;
 
 		dma_unmap_single(sw->dev, desc->sdp, RX_SEGMENT_MRU,
 				 DMA_FROM_DEVICE);
-		dev_kfree_skb(skb);
+		skb_free_frag(buf);
 	}
 
 	for (i = 0; i < TX_DESCS; i++) {
