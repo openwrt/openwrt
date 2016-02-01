@@ -58,8 +58,8 @@ static int mtdsplit_parse_lzma(struct mtd_info *master,
 	if (t)
 		return -EINVAL;
 
-	err = mtd_find_rootfs_from(master, master->erasesize,
-				   master->size, &rootfs_offset);
+	err = mtd_find_rootfs_from(master, master->erasesize, master->size,
+				   &rootfs_offset, NULL);
 	if (err)
 		return err;
 

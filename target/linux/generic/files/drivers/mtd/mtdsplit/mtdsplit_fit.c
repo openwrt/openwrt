@@ -93,8 +93,8 @@ mtdsplit_fit_parse(struct mtd_info *mtd, struct mtd_partition **pparts,
 	}
 
 	/* Search for the rootfs partition after the FIT image */
-	ret = mtd_find_rootfs_from(mtd, fit_offset + fit_size,
-				   mtd->size, &rootfs_offset);
+	ret = mtd_find_rootfs_from(mtd, fit_offset + fit_size, mtd->size,
+				   &rootfs_offset, NULL);
 	if (ret) {
 		pr_info("no rootfs found after FIT image in \"%s\"\n",
 			mtd->name);

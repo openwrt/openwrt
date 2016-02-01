@@ -122,7 +122,7 @@ static int mtdsplit_parse_tplink(struct mtd_info *master,
 		return -EINVAL;
 
 	/* Find the rootfs after the kernel. */
-	err = mtd_check_rootfs_magic(master, kernel_size);
+	err = mtd_check_rootfs_magic(master, kernel_size, NULL);
 	if (!err) {
 		rootfs_offset = kernel_size;
 	} else {
@@ -131,7 +131,7 @@ static int mtdsplit_parse_tplink(struct mtd_info *master,
 		 * Start the search from an arbitrary offset.
 		 */
 		err = mtd_find_rootfs_from(master, TPLINK_MIN_ROOTFS_OFFS,
-					   master->size, &rootfs_offset);
+					   master->size, &rootfs_offset, NULL);
 		if (err)
 			return err;
 	}

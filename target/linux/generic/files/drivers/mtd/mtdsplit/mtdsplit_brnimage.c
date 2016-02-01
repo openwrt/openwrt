@@ -38,7 +38,7 @@ static int mtdsplit_parse_brnimage(struct mtd_info *master,
 
 	for (rootfs_offset = 0; rootfs_offset < master->size;
 	     rootfs_offset += BRNIMAGE_ALIGN_BYTES) {
-		ret = mtd_check_rootfs_magic(master, rootfs_offset);
+		ret = mtd_check_rootfs_magic(master, rootfs_offset, NULL);
 		if (!ret)
 			break;
 	}
