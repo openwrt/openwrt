@@ -28,6 +28,8 @@ ${CROSS}objcopy \
 	-R .mdebug.abi32 \
 	-R .gnu.attributes \
 	-R .reginfo \
+	-R .MIPS.abiflags \
+	-R .note.GNU-stack \
 	$ARGS \
 	"$MODULE" "$MODULE.tmp"
 
