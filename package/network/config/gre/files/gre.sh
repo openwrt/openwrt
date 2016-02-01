@@ -13,10 +13,11 @@ gre_generic_setup() {
 	local local="$3"
 	local remote="$4"
 	local link="$5"
-	local mtu ttl tos zone ikey okey icsum ocsum iseqno oseqno
-	json_get_vars mtu ttl tos zone ikey okey icsum ocsum iseqno oseqno
+	local mtu ttl tos zone ikey okey icsum ocsum iseqno oseqno multicast
+	json_get_vars mtu ttl tos zone ikey okey icsum ocsum iseqno oseqno multicast
 
 	[ -z "$zone" ] && zone="wan"
+	[ -z "$multicast" ] && multicast=1
 
 	proto_init_update "$link" 1
 
@@ -26,6 +27,7 @@ gre_generic_setup() {
 	[ -n "$df" ] && json_add_boolean df "$df"
 	json_add_int ttl "${ttl:-64}"
 	[ -n "$tos" ] && json_add_string tos "$tos"
+	json_add_boolean multicast "$multicast"
 	json_add_string local "$local"
 	json_add_string remote "$remote"
 	[ -n "$tunlink" ] && json_add_string link "$tunlink"
@@ -203,6 +205,7 @@ gre_generic_init_config() {
 	proto_config_add_boolean "ocsum"
 	proto_config_add_boolean "iseqno"
 	proto_config_add_boolean "oseqno"
+	proto_config_add_boolean "multicast"
 }
 
 proto_gre_init_config() {
