@@ -22,6 +22,8 @@
 
 #include "mtdsplit.h"
 
+#define UBI_EC_MAGIC			0x55424923	/* UBI# */
+
 struct squashfs_super_block {
 	__le32 s_magic;
 	__le32 pad0[9];
@@ -92,6 +94,10 @@ int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset,
 	} else if (magic == 0x19852003) {
 		if (type)
 			*type = MTDSPLIT_PART_TYPE_JFFS2;
+		return 0;
+	} else if (be32_to_cpu(magic) == UBI_EC_MAGIC) {
+		if (type)
+			*type = MTDSPLIT_PART_TYPE_UBI;
 		return 0;
 	}
 
