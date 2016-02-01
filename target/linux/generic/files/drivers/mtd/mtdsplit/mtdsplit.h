@@ -15,6 +15,7 @@
 
 #define KERNEL_PART_NAME	"kernel"
 #define ROOTFS_PART_NAME	"rootfs"
+#define UBI_PART_NAME		"ubi"
 
 #define ROOTFS_SPLIT_NAME	"rootfs_data"
 
