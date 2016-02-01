@@ -1,6 +1,6 @@
 --- a/ip/Makefile
 +++ b/ip/Makefile
-@@ -16,6 +16,13 @@ ifeq ($(IP_CONFIG_SETNS),y)
+@@ -17,6 +17,13 @@ ifeq ($(IP_CONFIG_SETNS),y)
  	CFLAGS += -DHAVE_SETNS
  endif
  
@@ -14,7 +14,7 @@
  ALLOBJ=$(IPOBJ) $(RTMONOBJ)
  SCRIPTS=ifcfg rtpr routel routef
  TARGETS=ip rtmon
-@@ -43,7 +50,7 @@ else
+@@ -44,7 +51,7 @@ else
  
  ip: static-syms.o
  static-syms.o: static-syms.h
@@ -70,7 +70,7 @@
  };
 --- a/lib/utils.c
 +++ b/lib/utils.c
-@@ -675,6 +675,7 @@ const char *rt_addr_n2a(int af, int len,
+@@ -710,6 +710,7 @@ const char *rt_addr_n2a(int af, int len,
  		return inet_ntop(af, addr, buf, buflen);
  	case AF_MPLS:
  		return mpls_ntop(af, addr, buf, buflen);
@@ -78,7 +78,7 @@
  	case AF_IPX:
  		return ipx_ntop(af, addr, buf, buflen);
  	case AF_DECnet:
-@@ -683,6 +684,7 @@ const char *rt_addr_n2a(int af, int len,
+@@ -718,6 +719,7 @@ const char *rt_addr_n2a(int af, int len,
  		memcpy(dna.a_addr, addr, 2);
  		return dnet_ntop(af, &dna, buf, buflen);
  	}
@@ -89,7 +89,7 @@
 --- a/lib/Makefile
 +++ b/lib/Makefile
 @@ -4,6 +4,10 @@ ifeq ($(IP_CONFIG_SETNS),y)
-	CFLAGS += -DHAVE_SETNS
+ 	CFLAGS += -DHAVE_SETNS
  endif
  
 +ifeq ($(IP_CONFIG_TINY),y)
@@ -98,4 +98,4 @@
 +
  CFLAGS += $(FPIC)
  
- UTILOBJ=utils.o rt_names.o ll_types.o ll_proto.o ll_addr.o inet_proto.o namespace.o \
+ UTILOBJ = utils.o rt_names.o ll_types.o ll_proto.o ll_addr.o \
