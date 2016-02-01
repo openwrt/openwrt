@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=4.3.0
+PKG_VERSION:=4.4.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://kernel.org/pub/linux/utils/net/iproute2/
-PKG_MD5SUM:=1a2bbb80cfc7ab3f3e987e18b3207c2f
+PKG_MD5SUM:=d762653ec3e1ab0d4a9689e169ca184f
 PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0
 
