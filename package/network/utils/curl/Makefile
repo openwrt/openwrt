@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=curl
-PKG_VERSION:=7.43.0
+PKG_VERSION:=7.47.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -18,7 +18,7 @@ PKG_SOURCE_URL:=http://curl.haxx.se/download/ \
 	ftp://ftp.planetmirror.com/pub/curl/ \
 	http://www.mirrormonster.com/curl/download/ \
 	http://curl.mirrors.cyberservers.net/download/
-PKG_MD5SUM:=11bddbb452a8b766b932f859aaeeed39
+PKG_MD5SUM:=85c58a00412476993050cb242a3f365d
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
@@ -114,7 +114,7 @@ CONFIGURE_ARGS += \
 	\
 	$(if $(CONFIG_LIBCURL_AXTLS),--with-axtls="$(STAGING_DIR)/usr" --without-ca-path,--without-axtls) \
 	$(if $(CONFIG_LIBCURL_CYASSL),--with-cyassl="$(STAGING_DIR)/usr" --without-ca-path,--without-cyassl) \
-	$(if $(CONFIG_LIBCURL_GNUTLS),--with-gnutls="$(STAGING_DIR)/usr" --without-ca-path,--without-gnutls) \
+	$(if $(CONFIG_LIBCURL_GNUTLS),--with-gnutls="$(STAGING_DIR)/usr" --with-ca-path=/etc/ssl/certs,--without-gnutls) \
 	$(if $(CONFIG_LIBCURL_OPENSSL),--with-ssl="$(STAGING_DIR)/usr" --with-ca-path=/etc/ssl/certs,--without-ssl) \
 	$(if $(CONFIG_LIBCURL_POLARSSL),--with-polarssl="$(STAGING_DIR)/usr" --with-ca-path=/etc/ssl/certs,--without-polarssl) \
 	\
