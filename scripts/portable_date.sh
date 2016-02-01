@@ -5,7 +5,7 @@ case $(uname) in
 		date -j -f "%Y-%m-%d %H:%M:%S %z" "$1" "$2" 2>/dev/null
 		;;
 	*)
-		date -d "@$1" "$2"
+		date -d "$1" "$2"
 esac
 
 exit $?
