@@ -11,7 +11,7 @@ try_version() {
 
 try_svn() {
 	[ -d .svn ] || return 1
-	SOURCE_DATE_EPOCH="$(./scripts/portable_date.sh "$(svn info --show-item last-changed-date)" +%s)"
+	SOURCE_DATE_EPOCH="$(./scripts/portable_date.sh "$(LC_ALL=C svn info | sed -ne 's/^Last Changed Date: //p')" +%s)"
 	[ -n "$SOURCE_DATE_EPOCH" ]
 }
 
