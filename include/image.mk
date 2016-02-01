@@ -263,7 +263,7 @@ define Image/mkfs/ext4
 		-i $(CONFIG_TARGET_EXT4_MAXINODE) \
 		-m $(CONFIG_TARGET_EXT4_RESERVED_PCT) \
 		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
-		$(if $(SOURCE_DATE_EPOCH),-t $(SOURCE_DATE_EPOCH)) \
+		$(if $(SOURCE_DATE_EPOCH),-T $(SOURCE_DATE_EPOCH)) \
 		$(KDIR)/root.ext4 $(TARGET_DIR)/
 endef
 
