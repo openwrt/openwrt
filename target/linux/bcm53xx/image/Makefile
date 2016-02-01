@@ -60,7 +60,24 @@ define Build/asus-trx
 	mv $@.new $@
 endef
 
-DEVICE_VARS += DT PRODUCTID NETGEAR_BOARD_ID NETGEAR_REGION
+define Build/seama-nand
+	# Seama entity
+	$(STAGING_DIR_HOST)/bin/oseama \
+		entity $@.entity \
+		-m "dev=/dev/mtdblock/7" \
+		-m "type=firmware" \
+		-f $(word 1,$^) \
+		-b 0x400000 \
+		-f $(KDIR)/root-block-0x20000-min-0x800.ubi \
+		-f $(KDIR)/ubi_mark
+	# Seama container
+	$(STAGING_DIR_HOST)/bin/seama \
+		-s $@ \
+		-m "signature=$(SIGNATURE)" \
+		-i $@.entity
+endef
+
+DEVICE_VARS += DT PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION
 
 define Device/Default
   # .dtb files are prefixed by SoC type, e.g. bcm4708- which is not included in device/image names
@@ -98,6 +115,19 @@ define LinksysDevice
 	$$(Device/linksys)
   endef
   TARGET_DEVICES += linksys-$(1)
+endef
+
+define Device/dlink
+  IMAGES := bin
+  IMAGE/bin := seama-nand
+endef
+
+define DLinkDevice
+  define Device/dlink-$(1)
+	$$(Device/dlink)
+	SIGNATURE := $(2)
+  endef
+  TARGET_DEVICES += dlink-$(1)
 endef
 
 define Device/netgear
@@ -144,6 +174,7 @@ $(eval $(call AsusDevice,rt-ac56u,RT-AC56U))
 $(eval $(call AsusDevice,rt-ac68u,RT-AC68U))
 $(eval $(call AsusDevice,rt-ac87u,RT-AC87U))
 $(eval $(call AsusDevice,rt-n18u,RT-N18U))
+$(eval $(call DLinkDevice,dir-885l,wrgac42_dlink.2015_dir885l))
 $(eval $(call LinksysDevice,ea6300-v1))
 $(eval $(call NetgearDevice,r7000,U12H270T00_NETGEAR))
 
