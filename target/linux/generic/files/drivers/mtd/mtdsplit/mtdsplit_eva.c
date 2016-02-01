@@ -59,7 +59,7 @@ static int mtdsplit_parse_eva(struct mtd_info *master,
 	if (rootfs_offset >= master->size)
 		return -EINVAL;
 
-	err = mtd_check_rootfs_magic(master, rootfs_offset);
+	err = mtd_check_rootfs_magic(master, rootfs_offset, NULL);
 	if (err)
 		return err;
 

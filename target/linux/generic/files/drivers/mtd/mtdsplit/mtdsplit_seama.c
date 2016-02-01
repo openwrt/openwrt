@@ -56,7 +56,7 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 		return -EINVAL;
 
 	/* Check for the rootfs right after Seama entity with a kernel. */
-	err = mtd_check_rootfs_magic(master, kernel_ent_size);
+	err = mtd_check_rootfs_magic(master, kernel_ent_size, NULL);
 	if (!err) {
 		rootfs_offset = kernel_ent_size;
 	} else {
@@ -67,7 +67,7 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 		 * Start the search from an arbitrary offset.
 		 */
 		err = mtd_find_rootfs_from(master, SEAMA_MIN_ROOTFS_OFFS,
-					   master->size, &rootfs_offset);
+					   master->size, &rootfs_offset, NULL);
 		if (err)
 			return err;
 	}
