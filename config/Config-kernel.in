@@ -590,3 +590,37 @@ if KERNEL_IPV6
 		def_bool n
 
 endif
+
+#
+# NFS related symbols
+#
+config KERNEL_IP_PNP
+	bool "Compile the kernel with rootfs on NFS"
+	help
+	   If you want to make your kernel boot off a NFS server as root
+	   filesystem, select Y here.
+
+if KERNEL_IP_PNP
+
+	config KERNEL_IP_PNP_DHCP
+		def_bool y
+
+	config KERNEL_IP_PNP_BOOTP
+		def_bool n
+
+	config KERNEL_IP_PNP_RARP
+		def_bool n
+
+	config KERNEL_NFS_FS
+		def_bool y
+
+	config KERNEL_NFS_V2
+		def_bool y
+
+	config KERNEL_NFS_V3
+		def_bool y
+
+	config KERNEL_ROOT_NFS
+		def_bool y
+
+endif
