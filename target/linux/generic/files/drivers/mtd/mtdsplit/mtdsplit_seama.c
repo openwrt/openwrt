@@ -36,6 +36,7 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 	size_t hdr_len, retlen, kernel_ent_size;
 	size_t rootfs_offset;
 	struct mtd_partition *parts;
+	enum mtdsplit_part_type type;
 	int err;
 
 	hdr_len = sizeof(hdr);
@@ -56,7 +57,7 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 		return -EINVAL;
 
 	/* Check for the rootfs right after Seama entity with a kernel. */
-	err = mtd_check_rootfs_magic(master, kernel_ent_size, NULL);
+	err = mtd_check_rootfs_magic(master, kernel_ent_size, &type);
 	if (!err) {
 		rootfs_offset = kernel_ent_size;
 	} else {
@@ -67,7 +68,7 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 		 * Start the search from an arbitrary offset.
 		 */
 		err = mtd_find_rootfs_from(master, SEAMA_MIN_ROOTFS_OFFS,
-					   master->size, &rootfs_offset, NULL);
+					   master->size, &rootfs_offset, &type);
 		if (err)
 			return err;
 	}
@@ -80,7 +81,10 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 	parts[0].offset = 0;
 	parts[0].size = rootfs_offset;
 
-	parts[1].name = ROOTFS_PART_NAME;
+	if (type == MTDSPLIT_PART_TYPE_UBI)
+		parts[1].name = UBI_PART_NAME;
+	else
+		parts[1].name = ROOTFS_PART_NAME;
 	parts[1].offset = rootfs_offset;
 	parts[1].size = master->size - rootfs_offset;
 
