@@ -794,6 +794,34 @@ static int b53_port_get_link(struct switch_dev *dev, int port,
 
 }
 
+static int b53_port_set_link(struct switch_dev *sw_dev, int port,
+			     struct switch_port_link *link)
+{
+	struct b53_device *dev = sw_to_b53(sw_dev);
+
+	/*
+	 * TODO: BCM63XX requires special handling as it can have external phys
+	 * and ports might be GE or only FE
+	 */
+	if (is63xx(dev))
+		return -ENOTSUPP;
+
+	if (port == sw_dev->cpu_port)
+		return -EINVAL;
+
+	if (!(BIT(port) & dev->enabled_ports))
+		return -EINVAL;
+
+	if (link->speed == SWITCH_PORT_SPEED_1000 &&
+	    (is5325(dev) || is5365(dev)))
+		return -EINVAL;
+
+	if (link->speed == SWITCH_PORT_SPEED_1000 && !link->duplex)
+		return -EINVAL;
+
+	return switch_generic_set_link(sw_dev, port, link);
+}
+
 static int b53_phy_read16(struct switch_dev *dev, int addr, u8 reg, u16 *value)
 {
 	struct b53_device *priv = sw_to_b53(dev);
@@ -1022,6 +1050,7 @@ static const struct switch_dev_ops b53_switch_ops_25 = {
 	.apply_config = b53_global_apply_config,
 	.reset_switch = b53_global_reset_switch,
 	.get_port_link = b53_port_get_link,
+	.set_port_link = b53_port_set_link,
 	.phy_read16 = b53_phy_read16,
 	.phy_write16 = b53_phy_write16,
 };
@@ -1047,6 +1076,7 @@ static const struct switch_dev_ops b53_switch_ops_65 = {
 	.apply_config = b53_global_apply_config,
 	.reset_switch = b53_global_reset_switch,
 	.get_port_link = b53_port_get_link,
+	.set_port_link = b53_port_set_link,
 	.phy_read16 = b53_phy_read16,
 	.phy_write16 = b53_phy_write16,
 };
@@ -1072,6 +1102,7 @@ static const struct switch_dev_ops b53_switch_ops = {
 	.apply_config = b53_global_apply_config,
 	.reset_switch = b53_global_reset_switch,
 	.get_port_link = b53_port_get_link,
+	.set_port_link = b53_port_set_link,
 	.phy_read16 = b53_phy_read16,
 	.phy_write16 = b53_phy_write16,
 };
