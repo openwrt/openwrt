@@ -99,6 +99,9 @@ struct switch_dev_ops {
 			     struct switch_port_link *link);
 	int (*get_port_stats)(struct switch_dev *dev, int port,
 			      struct switch_port_stats *stats);
+
+	int (*phy_read16)(struct switch_dev *dev, int addr, u8 reg, u16 *value);
+	int (*phy_write16)(struct switch_dev *dev, int addr, u8 reg, u16 value);
 };
 
 struct switch_dev {
@@ -169,5 +172,8 @@ struct switch_attr {
 	int ofs;
 	int max;
 };
+
+int switch_generic_set_link(struct switch_dev *dev, int port,
+			    struct switch_port_link *link);
 
 #endif /* _LINUX_SWITCH_H */
