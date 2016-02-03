@@ -177,5 +177,6 @@ $(eval $(call AsusDevice,rt-n18u,RT-N18U))
 $(eval $(call DLinkDevice,dir-885l,wrgac42_dlink.2015_dir885l))
 $(eval $(call LinksysDevice,ea6300-v1))
 $(eval $(call NetgearDevice,r7000,U12H270T00_NETGEAR))
+# $(eval $(call NetgearDevice,r8500,U12H334T00_NETGEAR))
 
 $(eval $(call BuildImage))
