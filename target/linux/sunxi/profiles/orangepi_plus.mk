@@ -8,7 +8,7 @@
 define Profile/orangepi_plus
 	NAME:=orangepi_plus
 	PACKAGES:=\
-		kmod-rtc-sunxi uboot-sunxi-xunlong_orangepi_plus
+		kmod-rtc-sunxi uboot-sunxi-orangepi_plus
 endef
 
 define Profile/orangepi_plus/Description
