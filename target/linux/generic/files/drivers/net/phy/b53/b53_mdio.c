@@ -238,6 +238,24 @@ static int b53_mdio_write64(struct b53_device *dev, u8 page, u8 reg,
 	return b53_mdio_op(dev, page, reg, REG_MII_ADDR_WRITE);
 }
 
+static int b53_mdio_phy_read16(struct b53_device *dev, int addr, u8 reg,
+			       u16 *value)
+{
+	struct mii_bus *bus = dev->priv;
+
+	*value = mdiobus_read(bus, addr, reg);
+
+	return 0;
+}
+
+static int b53_mdio_phy_write16(struct b53_device *dev, int addr, u8 reg,
+				u16 value)
+{
+	struct mii_bus *bus = dev->priv;
+
+	return mdiobus_write(bus, addr, reg, value);
+}
+
 static struct b53_io_ops b53_mdio_ops = {
 	.read8 = b53_mdio_read8,
 	.read16 = b53_mdio_read16,
@@ -249,6 +267,8 @@ static struct b53_io_ops b53_mdio_ops = {
 	.write32 = b53_mdio_write32,
 	.write48 = b53_mdio_write48,
 	.write64 = b53_mdio_write64,
+	.phy_read16 = b53_mdio_phy_read16,
+	.phy_write16 = b53_mdio_phy_write16,
 };
 
 static int b53_phy_probe(struct phy_device *phydev)
