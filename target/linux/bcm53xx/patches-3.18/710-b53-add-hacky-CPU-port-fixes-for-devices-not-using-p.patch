@@ -21,13 +21,15 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  #include "b53_regs.h"
  #include "b53_priv.h"
-@@ -1313,6 +1314,18 @@ static int b53_switch_init(struct b53_de
+@@ -1313,6 +1314,20 @@ static int b53_switch_init(struct b53_de
  			sw_dev->cpu_port = 5;
  	}
  
 +	if (of_machine_is_compatible("asus,rt-ac87u"))
 +		sw_dev->cpu_port = 7;
 +	else if (of_machine_is_compatible("netgear,r8000"))
++		sw_dev->cpu_port = 8;
++	else if (of_machine_is_compatible("netgear,r8500"))
 +		sw_dev->cpu_port = 8;
 +
 +	/*
