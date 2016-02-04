@@ -1,0 +1,35 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Tue, 2 Feb 2016 14:39:08 +0100
+Subject: [PATCH] mac80211: move A-MSDU skb_linearize call to
+ ieee80211_amsdu_to_8023s
+
+Prepararation for zero-copy A-MSDU support with page fragment SKBs
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2203,9 +2203,6 @@ ieee80211_rx_h_amsdu(struct ieee80211_rx
+ 	skb->dev = dev;
+ 	__skb_queue_head_init(&frame_list);
+ 
+-	if (skb_linearize(skb))
+-		return RX_DROP_UNUSABLE;
+-
+ 	ieee80211_amsdu_to_8023s(skb, &frame_list, dev->dev_addr,
+ 				 rx->sdata->vif.type,
+ 				 rx->local->hw.extra_tx_headroom, true);
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -657,6 +657,9 @@ void ieee80211_amsdu_to_8023s(struct sk_
+ 	int remaining, err;
+ 	u8 dst[ETH_ALEN], src[ETH_ALEN];
+ 
++	if (skb_linearize(skb))
++		goto out;
++
+ 	if (has_80211_header) {
+ 		err = ieee80211_data_to_8023(skb, addr, iftype);
+ 		if (err)
