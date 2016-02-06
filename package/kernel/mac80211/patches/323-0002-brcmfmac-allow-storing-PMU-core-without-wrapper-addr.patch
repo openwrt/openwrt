@@ -1,0 +1,28 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 26 Jan 2016 17:57:02 +0100
+Subject: [PATCH] brcmfmac: allow storing PMU core without wrapper address
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Separated PMU core can be found in new devices and should be used for
+accessing PMU registers (which were routed through ChipCommon so far).
+This core is one of exceptions that doesn't have or need wrapper address
+to be still safely accessible.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.c
+@@ -883,7 +883,8 @@ int brcmf_chip_dmp_erom_scan(struct brcm
+ 		rev = (val & DMP_COMP_REVISION) >> DMP_COMP_REVISION_S;
+ 
+ 		/* need core with ports */
+-		if (nmw + nsw == 0)
++		if (nmw + nsw == 0 &&
++		    id != BCMA_CORE_PMU)
+ 			continue;
+ 
+ 		/* try to obtain register address info */
