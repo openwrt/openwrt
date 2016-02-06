@@ -44,8 +44,6 @@ struct trx_header {
 	uint32_t offsets[3];    /* Offsets of partitions from start of header */
 };
 
-#define SEAMA_MAGIC	0x17a4a35e
-
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define STORE32_LE(X)           ((((X) & 0x000000FF) << 24) | (((X) & 0x0000FF00) << 8) | (((X) & 0x00FF0000) >> 8) | (((X) & 0xFF000000) >> 24))
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
@@ -114,15 +112,13 @@ trx_check(int imagefd, const char *mtd, char *buf, int *len)
 	if (strcmp(mtd, "firmware") != 0)
 		return 1;
 
-	*len = read(imagefd, buf, 32);
 	if (*len < 32) {
-		fprintf(stdout, "Could not get image header, file too small (%d bytes)\n", *len);
-		return 0;
+		*len += read(imagefd, buf + *len, 32 - *len);
+		if (*len < 32) {
+			fprintf(stdout, "Could not get image header, file too small (%d bytes)\n", *len);
+			return 0;
+		}
 	}
-
-	/* Allow writing Seama files to firmware without an extra validation */
-	if (trx->magic == SEAMA_MAGIC)
-		return 1;
 
 	if (trx->magic != TRX_MAGIC || trx->len < sizeof(struct trx_header)) {
 		if (quiet < 2) {

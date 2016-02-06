@@ -22,6 +22,7 @@
  */
 
 #define _GNU_SOURCE
+#include <byteswap.h>
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -50,8 +51,32 @@
 #define MAX_ARGS 8
 #define JFFS2_DEFAULT_DIR	"" /* directory name without /, empty means root dir */
 
+#define TRX_MAGIC		0x48445230	/* "HDR0" */
+#define SEAMA_MAGIC		0x5ea3a417
+
+#if !defined(__BYTE_ORDER)
+#error "Unknown byte order"
+#endif
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define cpu_to_be32(x)	(x)
+#define be32_to_cpu(x)	(x)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define cpu_to_be32(x)	bswap_32(x)
+#define be32_to_cpu(x)	bswap_32(x)
+#else
+#error "Unsupported endianness"
+#endif
+
+enum mtd_image_format {
+	MTD_IMAGE_FORMAT_UNKNOWN,
+	MTD_IMAGE_FORMAT_TRX,
+	MTD_IMAGE_FORMAT_SEAMA,
+};
+
 static char *buf = NULL;
 static char *imagefile = NULL;
+static enum mtd_image_format imageformat = MTD_IMAGE_FORMAT_UNKNOWN;
 static char *jffs2file = NULL, *jffs2dir = JFFS2_DEFAULT_DIR;
 static int buflen = 0;
 int quiet;
@@ -149,13 +174,39 @@ int mtd_write_buffer(int fd, const char *buf, int offset, int length)
 	return 0;
 }
 
-
 static int
 image_check(int imagefd, const char *mtd)
 {
+	uint32_t magic;
 	int ret = 1;
-	if (trx_check) {
-	  ret = trx_check(imagefd, mtd, buf, &buflen);
+
+	if (buflen < sizeof(magic)) {
+		buflen += read(imagefd, buf + buflen, sizeof(magic) - buflen);
+		if (buflen < sizeof(magic)) {
+			fprintf(stdout, "Could not get image magic\n");
+			return 0;
+		}
+	}
+	magic = ((uint32_t *)buf)[0];
+
+	if (be32_to_cpu(magic) == TRX_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_TRX;
+	else if (be32_to_cpu(magic) == SEAMA_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_SEAMA;
+
+	switch (imageformat) {
+	case MTD_IMAGE_FORMAT_TRX:
+		if (trx_check)
+			ret = trx_check(imagefd, mtd, buf, &buflen);
+		break;
+	case MTD_IMAGE_FORMAT_SEAMA:
+		break;
+	default:
+#ifdef target_brcm
+		if (!strcmp(mtd, "firmware"))
+			ret = 0;
+#endif
+		break;
 	}
 
 	return ret;
