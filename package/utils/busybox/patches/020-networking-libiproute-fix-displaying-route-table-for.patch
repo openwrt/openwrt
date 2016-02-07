@@ -1,0 +1,23 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sun, 7 Feb 2016 21:11:21 +0100
+Subject: [PATCH] networking/libiproute: fix displaying route table for rules
+
+r->rtm_table only supports a 8 bit table id, prefer RTA_TABLE if
+present.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/networking/libiproute/iprule.c
++++ b/networking/libiproute/iprule.c
+@@ -119,7 +119,9 @@ static int FAST_FUNC print_rule(const st
+ 		printf("iif %s ", (char*)RTA_DATA(tb[RTA_IIF]));
+ 	}
+ 
+-	if (r->rtm_table)
++	if (tb[RTA_TABLE])
++		printf("lookup %s ", rtnl_rttable_n2a(*(uint32_t*)RTA_DATA(tb[RTA_TABLE])));
++	else if (r->rtm_table)
+ 		printf("lookup %s ", rtnl_rttable_n2a(r->rtm_table));
+ 
+ 	if (tb[RTA_FLOW]) {
