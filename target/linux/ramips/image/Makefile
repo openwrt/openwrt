@@ -1034,8 +1034,8 @@ define Device/dir-860l-b1
   IMAGE/factory.bin := \
 	append-kernel | pad-offset 65536 64 | append-rootfs | pad-rootfs -x 64 | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	check-size $$$$(IMAGE_SIZE) | \
-	seama-seal -m "signature=wrgac13_dlink.2013gui_dir860lb"
+	seama-seal -m "signature=wrgac13_dlink.2013gui_dir860lb" | \
+	check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/firewrt
