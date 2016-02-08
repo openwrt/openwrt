@@ -48,21 +48,20 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	/* keep last, obviously */
  	NUM_IEEE80211_HW_FLAGS
-@@ -2070,6 +2080,9 @@ enum ieee80211_hw_flags {
+@@ -2070,6 +2080,8 @@ enum ieee80211_hw_flags {
   *	size is smaller (an example is LinkSys WRT120N with FW v1.0.07
   *	build 002 Jun 18 2012).
   *
-+ * @max_tx_amsdu_subframes: maximum number of subframes used in software
-+ *	A-MSDU aggregation
++ * @max_tx_fragments: maximum fragments per (A-)MSDU.
 + *
   * @offchannel_tx_hw_queue: HW queue ID to use for offchannel TX
   *	(if %IEEE80211_HW_QUEUE_CONTROL is set)
   *
-@@ -2124,6 +2137,7 @@ struct ieee80211_hw {
+@@ -2124,6 +2136,7 @@ struct ieee80211_hw {
  	u8 max_rate_tries;
  	u8 max_rx_aggregation_subframes;
  	u8 max_tx_aggregation_subframes;
-+	u8 max_tx_amsdu_subframes;
++	u8 max_tx_fragments;
  	u8 offchannel_tx_hw_queue;
  	u8 radiotap_mcs_details;
  	u16 radiotap_vht_details;
@@ -121,7 +120,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return skb;
  }
  EXPORT_SYMBOL(ieee80211_tx_dequeue);
-@@ -2757,6 +2761,149 @@ void ieee80211_clear_fast_xmit(struct st
+@@ -2757,6 +2761,158 @@ void ieee80211_clear_fast_xmit(struct st
  		kfree_rcu(fast_tx, rcu_head);
  }
  
@@ -192,11 +191,13 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	struct txq_info *txqi;
 +	struct sk_buff **frag_tail, *head;
 +	int subframe_len = skb->len - ETH_ALEN;
++	u8 max_subframes = sta->sta.max_amsdu_subframes;
++	int max_frags = local->hw.max_tx_fragments;
 +	int max_amsdu_len;
 +	__be16 len;
 +	void *data;
 +	bool ret = false;
-+	int n = 1;
++	int n = 1, nfrags;
 +
 +	if (!ieee80211_hw_check(&local->hw, TX_AMSDU))
 +		return false;
@@ -208,13 +209,6 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	if (test_bit(IEEE80211_TXQ_NO_AMSDU, &txqi->flags))
 +		return false;
 +
-+	/*
-+	 * A-MPDU limits maximum MPDU size to 4095 bytes. Since aggregation
-+	 * sessions are started/stopped without txq flush, use the limit here
-+	 * to avoid having to de-aggregate later.
-+	 */
-+	max_amsdu_len = min_t(int, sta->sta.max_amsdu_len, 4095);
-+
 +	spin_lock_bh(&txqi->queue.lock);
 +
 +	head = skb_peek_tail(&txqi->queue);
@@ -224,17 +218,31 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	if (skb->len + head->len > max_amsdu_len)
 +		goto out;
 +
++	/*
++	 * HT A-MPDU limits maximum MPDU size to 4095 bytes. Since aggregation
++	 * sessions are started/stopped without txq flush, use the limit here
++	 * to avoid having to de-aggregate later.
++	 */
++	if (skb->len + head->len > 4095 &&
++	    !sta->sta.vht_cap.vht_supported)
++		goto out;
++
 +	if (!ieee80211_amsdu_prepare_head(sdata, fast_tx, head))
 +		goto out;
 +
++	nfrags = 1 + skb_shinfo(skb)->nr_frags;
++	nfrags += 1 + skb_shinfo(head)->nr_frags;
 +	frag_tail = &skb_shinfo(head)->frag_list;
 +	while (*frag_tail) {
-+	     frag_tail = &(*frag_tail)->next;
-+		 n++;
++		nfrags += 1 + skb_shinfo(*frag_tail)->nr_frags;
++		frag_tail = &(*frag_tail)->next;
++		n++;
 +	}
 +
-+	if (local->hw.max_tx_amsdu_subframes &&
-+	    n > local->hw.max_tx_amsdu_subframes)
++	if (max_subframes && n > max_subframes)
++		goto out;
++
++	if (max_frags && nfrags > max_frags)
 +		goto out;
 +
 +	if (skb_headroom(skb) < 8 || skb_tailroom(skb) < 3) {
@@ -271,7 +279,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
  				struct net_device *dev, struct sta_info *sta,
  				struct ieee80211_fast_tx *fast_tx,
-@@ -2811,6 +2958,10 @@ static bool ieee80211_xmit_fast(struct i
+@@ -2811,6 +2967,10 @@ static bool ieee80211_xmit_fast(struct i
  
  	ieee80211_tx_stats(dev, skb->len + extra_head);
  
