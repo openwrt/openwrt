@@ -4,6 +4,9 @@ define Package/brcmfmac-firmware-pcie/install
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/brcm/brcmfmac43602-pcie.ap.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43602-pcie.bin
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/brcm/brcmfmac4366b-pcie.bin \
+		$(1)/lib/firmware/brcm/
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-pcie))
 
