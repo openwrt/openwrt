@@ -60,7 +60,7 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "jtag";
+				ralink,group = "i2c", "jtag";
 				ralink,function = "gpio";
 			};
 		};
@@ -80,6 +80,25 @@
 
 	ohci@101c1000 {
 		status = "okay";
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		/* I2C */
+		gpio1 {
+			/* I2C_I2C_SD */
+			gpio-export,name = "hlk-rm04:gpio0";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 1 0>;
+		};
+		gpio2 {
+			/* I2C_I2C_SCLK */
+			gpio-export,name = "hlk-rm04:gpio1";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 2 0>;
+		};
 	};
 
 	gpio-keys-polled {
