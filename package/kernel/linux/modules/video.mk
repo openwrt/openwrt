@@ -20,10 +20,9 @@ define KernelPackage/backlight
 	TITLE:=Backlight support
 	DEPENDS:=@DISPLAY_SUPPORT
 	HIDDEN:=1
-	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE=m \
+	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE \
 		CONFIG_BACKLIGHT_LCD_SUPPORT=y \
 		CONFIG_LCD_CLASS_DEVICE=n \
-		CONFIG_BACKLIGHT_PWM=n \
 		CONFIG_BACKLIGHT_GENERIC=n \
 		CONFIG_BACKLIGHT_ADP8860=n \
 		CONFIG_BACKLIGHT_ADP8870=n \
@@ -42,7 +41,7 @@ define KernelPackage/backlight-pwm
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=PWM Backlight support
 	DEPENDS:=+kmod-pwm +kmod-backlight
-	KCONFIG:=CONFIG_BACKLIGHT_PWM=m
+	KCONFIG:=CONFIG_BACKLIGHT_PWM
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/pwm_bl.ko
 	AUTOLOAD:=$(call AutoProbe,video pwm_bl)
 endef
@@ -234,9 +233,9 @@ define KernelPackage/drm-imx
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX DRM support
   DEPENDS:=@TARGET_imx6 +kmod-drm +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops
-  KCONFIG:=CONFIG_DRM_IMX=m \
+  KCONFIG:=CONFIG_DRM_IMX \
 	CONFIG_DRM_FBDEV_EMULATION=y \
-	CONFIG_IMX_IPUV3_CORE=m \
+	CONFIG_IMX_IPUV3_CORE \
 	CONFIG_RESET_CONTROLLER=y \
 	CONFIG_DRM_IMX_IPUV3 \
 	CONFIG_IMX_IPUV3 \
@@ -273,8 +272,8 @@ define KernelPackage/drm-imx-hdmi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX HDMI DRM support
   DEPENDS:=+kmod-sound-core kmod-drm-imx
-  KCONFIG:=CONFIG_DRM_IMX_HDMI=m \
-	CONFIG_DRM_DW_HDMI_AHB_AUDIO=m
+  KCONFIG:=CONFIG_DRM_IMX_HDMI \
+	CONFIG_DRM_DW_HDMI_AHB_AUDIO
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw_hdmi.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw_hdmi-ahb-audio.ko \
@@ -292,7 +291,7 @@ define KernelPackage/drm-imx-ldb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX LVDS DRM support
   DEPENDS:=+kmod-backlight kmod-drm-imx
-  KCONFIG:=CONFIG_DRM_IMX_LDB=m \
+  KCONFIG:=CONFIG_DRM_IMX_LDB \
 	CONFIG_DRM_PANEL_SIMPLE \
 	CONFIG_DRM_PANEL=y \
 	CONFIG_DRM_PANEL_SAMSUNG_LD9040=n \
@@ -321,7 +320,7 @@ define KernelPackage/video-core
   TITLE=Video4Linux support
   DEPENDS:=@PCI_SUPPORT||USB_SUPPORT +PACKAGE_kmod-i2c-core:kmod-i2c-core
   KCONFIG:= \
-	CONFIG_MEDIA_SUPPORT=m \
+	CONFIG_MEDIA_SUPPORT \
 	CONFIG_MEDIA_CAMERA_SUPPORT=y \
 	CONFIG_VIDEO_DEV \
 	CONFIG_VIDEO_V4L1=y \
