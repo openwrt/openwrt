@@ -69,7 +69,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 +	if (req_mask) {
 +		if (cmd != NAND_CMD_STATUS)
-+			ltq_ebu_w32(EBU_NAND_WAIT, 0); /* Clear nand ready */
++			ltq_ebu_w32(0, EBU_NAND_WAIT); /* Clear nand ready */
 +	}
 +
 +
