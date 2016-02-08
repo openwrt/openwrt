@@ -2,10 +2,24 @@
 # Copyright (C) 2013-2014 OpenWrt.org
 
 START=00
+STOP=90
+
+RTC_DEV=/dev/rtc0
+HWCLOCK=/sbin/hwclock
 
 boot() {
+	start && exit 0
+
 	local curtime="$(date +%s)"
 	local maxtime="$(find /etc -type f -exec date -r {} +%s \; | sort -nr | head -n1)"
 	[ $curtime -lt $maxtime ] && date -s @$maxtime
 }
 
+start() {
+	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -s -f $RTC_DEV
+}
+
+stop() {
+	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -w -f $RTC_DEV && \
+		logger -t sysfixtime "saved '$(date)' to $RTC_DEV"
+}
