@@ -1,0 +1,22 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Mon, 8 Feb 2016 14:24:36 +0100
+Subject: [PATCH] cfg80211: fix faulty variable initialization in
+ ieee80211_amsdu_to_8023s
+
+reuse_skb is set to true if the code decides to use the last segment.
+Fixes a memory leak
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -676,7 +676,7 @@ void ieee80211_amsdu_to_8023s(struct sk_
+ 	u8 *payload;
+ 	int offset = 0, remaining, err;
+ 	struct ethhdr eth;
+-	bool reuse_skb = true;
++	bool reuse_skb = false;
+ 	bool last = false;
+ 
+ 	if (has_80211_header) {
