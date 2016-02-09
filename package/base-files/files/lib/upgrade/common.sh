@@ -68,6 +68,7 @@ run_ramfs() { # <command> [...]
 	install_bin /usr/sbin/ubirsvol
 	install_bin /usr/sbin/ubirmvol
 	install_bin /usr/sbin/ubimkvol
+	install_bin /usr/sbin/partx
 	for file in $RAMFS_COPY_BIN; do
 		install_bin ${file//:/ }
 	done
