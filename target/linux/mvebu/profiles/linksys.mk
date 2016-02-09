@@ -53,7 +53,7 @@ define Profile/Mamba
 	kmod-ata-core kmod-ata-marvell-sata \
 	kmod-rtc-marvell kmod-thermal-armada \
 	kmod-gpio-button-hotplug kmod-hwmon-tmp421 \
-	kmod-hwmon-pwmfan kmod-leds-tlc59116 \
+	kmod-hwmon-pwmfan kmod-leds-tlc591xx \
 	kmod-ledtrig-usbdev kmod-mwlwifi wpad-mini \
 	swconfig
 endef
