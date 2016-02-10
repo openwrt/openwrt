@@ -659,8 +659,19 @@ resume:
 		offset = 0;
 	}
 
-	if (jffs2_replaced && trx_fixup) {
-		trx_fixup(fd, mtd);
+	if (jffs2_replaced) {
+		switch (imageformat) {
+		case MTD_IMAGE_FORMAT_TRX:
+			if (trx_fixup)
+				trx_fixup(fd, mtd);
+			break;
+		case MTD_IMAGE_FORMAT_SEAMA:
+			if (mtd_fixseama)
+				mtd_fixseama(mtd, 0);
+			break;
+		default:
+			break;
+		}
 	}
 
 	if (!quiet)
