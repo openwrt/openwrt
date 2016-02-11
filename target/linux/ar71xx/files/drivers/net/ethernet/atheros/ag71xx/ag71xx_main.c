@@ -995,15 +995,18 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 	struct ag71xx_ring *ring = &ag->rx_ring;
 	int offset = ag71xx_buffer_offset(ag);
 	unsigned int pktlen_mask = ag->desc_pktlen_mask;
+	struct sk_buff_head queue;
+	struct sk_buff *skb;
 	int done = 0;
 
 	DBG("%s: rx packets, limit=%d, curr=%u, dirty=%u\n",
 			dev->name, limit, ring->curr, ring->dirty);
 
+	skb_queue_head_init(&queue);
+
 	while (done < limit) {
 		unsigned int i = ring->curr % ring->size;
 		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
-		struct sk_buff *skb;
 		int pktlen;
 		int err = 0;
 
@@ -1044,8 +1047,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		} else {
 			skb->dev = dev;
 			skb->ip_summed = CHECKSUM_NONE;
-			skb->protocol = eth_type_trans(skb, dev);
-			netif_receive_skb(skb);
+			__skb_queue_tail(&queue, skb);
 		}
 
 next:
@@ -1056,6 +1058,11 @@ next:
 	}
 
 	ag71xx_ring_rx_refill(ag);
+
+	while ((skb = __skb_dequeue(&queue)) != NULL) {
+		skb->protocol = eth_type_trans(skb, dev);
+		netif_receive_skb(skb);
+	}
 
 	DBG("%s: rx finish, curr=%u, dirty=%u, done=%d\n",
 		dev->name, ring->curr, ring->dirty, done);
