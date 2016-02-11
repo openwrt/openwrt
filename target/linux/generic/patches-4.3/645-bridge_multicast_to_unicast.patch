@@ -135,7 +135,11 @@ Implement optinal multicast->unicast conversion for igmp snooping
  	struct igmpv3_report *ih;
  	struct igmpv3_grec *grec;
  	int i;
-@@ -1038,9 +1062,10 @@ static int br_ip4_multicast_igmp3_report
+@@ -1035,12 +1059,13 @@ static int br_ip4_multicast_igmp3_report
+ 			continue;
+ 		}
+ 
++		src = eth_hdr(skb)->h_source;
  		if ((type == IGMPV3_CHANGE_TO_INCLUDE ||
  		     type == IGMPV3_MODE_IS_INCLUDE) &&
  		    ntohs(grec->grec_nsrcs) == 0) {
@@ -143,7 +147,6 @@ Implement optinal multicast->unicast conversion for igmp snooping
 +			br_ip4_multicast_leave_group(br, port, group, vid, src);
  		} else {
 -			err = br_ip4_multicast_add_group(br, port, group, vid);
-+			src = eth_hdr(skb)->h_source;
 +			err = br_ip4_multicast_add_group(br, port, group, vid, src);
  			if (err)
  				break;
