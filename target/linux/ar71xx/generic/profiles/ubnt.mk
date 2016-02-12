@@ -38,6 +38,17 @@ endef
 
 $(eval $(call Profile,UBNTUNIFI))
 
+define Profile/UBNTUNIFIAC
+	NAME:=Ubiquiti UniFi AP AC
+	PACKAGES:=kmod-ath10k ath10k-firmware-qca988x
+endef
+
+define Profile/UBNTUNIFIAC/Description
+	Package set optimized for the Ubiquiti UniFi AP AC.
+endef
+
+$(eval $(call Profile,UBNTUNIFIAC))
+
 define Profile/UBNTUNIFIOUTDOOR
 	NAME:=Ubiquiti UniFiAP Outdoor
 	PACKAGES:=
