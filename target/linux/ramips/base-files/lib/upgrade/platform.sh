@@ -51,6 +51,7 @@ platform_check_image() {
 	dir-810l|\
 	e1700|\
 	esr-9753|\
+	ex2700|\
 	f7c027|\
 	firewrt|\
 	fonera20n|\
