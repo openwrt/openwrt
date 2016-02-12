@@ -32,7 +32,7 @@ endef
 define Package/vtiv4
 $(call Package/vti/Default)
   TITLE:=Virtual IPsec Tunnel Interface (IPv4) config support
-  DEPENDS:=@(PACKAGE_vti) +kmod-ip_vti
+  DEPENDS:=@(PACKAGE_vti) +kmod-ip-vti
 endef
 
 define Package/vtiv4/description
@@ -42,7 +42,7 @@ endef
 define Package/vtiv6
 $(call Package/vti/Default)
   TITLE:=Virtual IPsec Tunnel Interface (IPv6) config support
-  DEPENDS:=@(PACKAGE_vti) @IPV6 +kmod-ip6_vti
+  DEPENDS:=@(PACKAGE_vti) @IPV6 +kmod-ip6-vti
 endef
 
 define Package/vtiv6/description
