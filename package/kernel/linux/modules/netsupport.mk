@@ -420,6 +420,22 @@ endef
 $(eval $(call KernelPackage,ip-vti))
 
 
+define KernelPackage/ip6-vti
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IPv6 VTI (Virtual Tunnel Interface)
+  DEPENDS:=+kmod-iptunnel +kmod-ip6-tunnel +kmod-ipsec6
+  KCONFIG:=CONFIG_IPV6_VTI
+  FILES:=$(LINUX_DIR)/net/ipv6/ip6_vti.ko
+  AUTOLOAD:=$(call AutoLoad,33,ip6_vti)
+endef
+
+define KernelPackage/ip6-vti/description
+ Kernel modules for IPv6 VTI (Virtual Tunnel Interface)
+endef
+
+$(eval $(call KernelPackage,ip6-vti))
+
+
 define KernelPackage/iptunnel4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv4 tunneling
