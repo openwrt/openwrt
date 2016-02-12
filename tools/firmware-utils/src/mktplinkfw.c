@@ -51,6 +51,7 @@
 #define HWID_TL_WA830RE_V1	0x08300010
 #define HWID_TL_WA830RE_V2	0x08300002
 #define HWID_TL_WA801ND_V2	0x08010002
+#define HWID_TL_WA801ND_V3	0x08010003
 #define HWID_TL_WA901ND_V1	0x09010001
 #define HWID_TL_WA901ND_V2	0x09010002
 #define HWID_TL_WDR4300_V1_IL	0x43008001
@@ -298,6 +299,11 @@ static struct board_info boards[] = {
 		.hw_id          = HWID_TL_WA801ND_V2,
 		.hw_rev         = 1,
 		.layout_id	= "4Mlzma",
+	},{
+		.id							= "TL-WA801NDv3",
+		.hw_id          = HWID_TL_WA801ND_V3,
+		.hw_rev         = 1,
+		.layout_id  = "4Mlzma",
 	}, {
 		.id		= "TL-WA901NDv1",
 		.hw_id		= HWID_TL_WA901ND_V1,
@@ -1219,4 +1225,3 @@ int main(int argc, char *argv[])
  out:
 	return ret;
 }
-
