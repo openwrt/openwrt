@@ -404,7 +404,7 @@ endef
 $(eval $(call KernelPackage,iptunnel))
 
 
-define KernelPackage/ipvti
+define KernelPackage/ip-vti
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP VTI (Virtual Tunnel Interface)
   DEPENDS:=+kmod-iptunnel +kmod-iptunnel4 +kmod-ipsec4
@@ -413,11 +413,11 @@ define KernelPackage/ipvti
   AUTOLOAD:=$(call AutoLoad,33,ip_vti)
 endef
 
-define KernelPackage/ipvti/description
+define KernelPackage/ip-vti/description
  Kernel modules for IP VTI (Virtual Tunnel Interface)
 endef
 
-$(eval $(call KernelPackage,ipvti))
+$(eval $(call KernelPackage,ip-vti))
 
 
 define KernelPackage/iptunnel4
