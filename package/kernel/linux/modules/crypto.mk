@@ -133,6 +133,18 @@ endef
 
 $(eval $(call KernelPackage,crypto-iv))
 
+
+define KernelPackage/crypto-echainiv
+  TITLE:=Encrypted Chain IV Generator
+  KCONFIG:=CONFIG_CRYPTO_ECHAINIV
+  FILES:=$(LINUX_DIR)/crypto/echainiv.ko
+  AUTOLOAD:=$(call AutoLoad,09,echainiv)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-echainiv))
+
+
 define KernelPackage/crypto-seqiv
   TITLE:=CryptoAPI Sequence Number IV Generator
   DEPENDS:=+kmod-crypto-aead +kmod-crypto-rng
