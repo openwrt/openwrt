@@ -1001,3 +1001,25 @@ define KernelPackage/rxrpc/description
 endef
 
 $(eval $(call KernelPackage,rxrpc))
+
+define KernelPackage/mpls
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=MPLS support
+  KCONFIG:= \
+	CONFIG_MPLS=y \
+	CONFIG_LWTUNNEL=y \
+	CONFIG_NET_MPLS_GSO=m \
+	CONFIG_MPLS_ROUTING=m \
+	CONFIG_MPLS_IPTUNNEL=m
+  FILES:= \
+	$(LINUX_DIR)/net/mpls/mpls_gso.ko \
+	$(LINUX_DIR)/net/mpls/mpls_iptunnel.ko \
+	$(LINUX_DIR)/net/mpls/mpls_router.ko
+  AUTOLOAD:=$(call AutoLoad,30,mpls_router mpls_iptunnel mpls_gso)
+endef
+
+define KernelPackage/mpls/description
+  Kernel support for MPLS
+endef
+
+$(eval $(call KernelPackage,mpls))
