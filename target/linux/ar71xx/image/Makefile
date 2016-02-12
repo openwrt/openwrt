@@ -1141,12 +1141,21 @@ define Device/ubnt-unifi
   DEVICE_PROFILE := UBNT UBNTUNIFI
 endef
 
+define Device/ubnt-unifiac
+  DEVICE_PROFILE := UBNT UBNTUNIFIAC
+  IMAGE_SIZE := 7744k
+  MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  BOARDNAME := UBNT-UF-AC
+endef
+
 define Device/ubnt-unifi-outdoor
   $(Device/ubnt-bz)
   BOARDNAME := UBNT-U20
   DEVICE_PROFILE := UBNT UBNTUNIFIOUTDOOR
 endef
-TARGET_DEVICES += ubnt-unifi ubnt-unifi-outdoor
+TARGET_DEVICES += ubnt-unifi ubnt-unifiac ubnt-unifi-outdoor
 
 define Device/ubnt-nano-m-xw
   $(Device/ubnt-xw)
