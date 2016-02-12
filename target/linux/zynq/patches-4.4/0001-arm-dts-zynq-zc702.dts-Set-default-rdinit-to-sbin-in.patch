@@ -1,0 +1,23 @@
+From 987b68a94c91b62c020869aec9d9a118259b1f3a Mon Sep 17 00:00:00 2001
+From: Jason Wu <jason.wu.misc@gmail.com>
+Date: Tue, 19 Jan 2016 14:24:16 +1000
+Subject: [PATCH] arm: dts: zynq-zc702.dts: Set default rdinit to /sbin/init
+
+Signed-off-by: Jason Wu <jason.wu.misc@gmail.com>
+
+diff --git a/arch/arm/boot/dts/zynq-zc702.dts b/arch/arm/boot/dts/zynq-zc702.dts
+index 68bd8c1..adf9a1d 100644
+--- a/arch/arm/boot/dts/zynq-zc702.dts
++++ b/arch/arm/boot/dts/zynq-zc702.dts
+@@ -31,7 +31,7 @@
+	};
+
+	chosen {
+-		bootargs = "earlyprintk";
++		bootargs = "earlyprintk rdinit=/sbin/init";
+		stdout-path = "serial0:115200n8";
+	};
+
+--
+1.9.1
+
