@@ -98,6 +98,26 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
+		power {
+			label = "dir-860l-b1:orange:power";
+			gpios = <&gpio0 13 1>;
+		};
+
+		power2 {
+			label = "dir-860l-b1:green:power";
+			gpios = <&gpio0 15 1>;
+		};
+
+		net {
+			label = "dir-860l-b1:orange:net";
+			gpios = <&gpio0 14 1>;
+		};
+
+		net2 {
+			label = "dir-860l-b1:green:net";
+			gpios = <&gpio0 16 1>;
+		};
 	};
 
 	gpio-keys-polled {
