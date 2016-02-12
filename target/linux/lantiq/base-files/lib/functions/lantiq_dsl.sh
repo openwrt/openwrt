@@ -414,13 +414,13 @@ latency_delay() {
 	[ -z "$idd" ] && idd=0
 	[ -z "$idu" ] && idu=0
 
-	if [ "$idd" > 100 ]; then
+	if [ "$idd" -gt 100 ]; then
 		idd_s="Interleave"
 	else
 		idd_s="Fast"
 	fi
 
-	if [ "$idu" > 100 ]; then
+	if [ "$idu" -gt 100 ]; then
 		idu_s="Interleave"
 	else
 		idu_s="Fast"
