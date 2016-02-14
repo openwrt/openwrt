@@ -1,0 +1,36 @@
+From: Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>
+Date: Wed, 10 Feb 2016 16:08:17 +0100
+Subject: [PATCH] mac80211: fix wiphy supported_band access
+
+Fix wiphy supported_band access in tx radiotap parsing. In particular,
+info->band is always set to 0 (IEEE80211_BAND_2GHZ) since it has not
+assigned yet. This cause a kernel crash on 5GHz only devices.
+Move ieee80211_parse_tx_radiotap() after info->band assignment
+
+Signed-off-by: Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>
+---
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1890,10 +1890,6 @@ netdev_tx_t ieee80211_monitor_start_xmit
+ 	info->flags = IEEE80211_TX_CTL_REQ_TX_STATUS |
+ 		      IEEE80211_TX_CTL_INJECTED;
+ 
+-	/* process and remove the injection radiotap header */
+-	if (!ieee80211_parse_tx_radiotap(local, skb))
+-		goto fail;
+-
+ 	rcu_read_lock();
+ 
+ 	/*
+@@ -1955,6 +1951,10 @@ netdev_tx_t ieee80211_monitor_start_xmit
+ 		goto fail_rcu;
+ 
+ 	info->band = chandef->chan->band;
++	/* process and remove the injection radiotap header */
++	if (!ieee80211_parse_tx_radiotap(local, skb))
++		goto fail_rcu;
++
+ 	ieee80211_xmit(sdata, NULL, skb);
+ 	rcu_read_unlock();
+ 
