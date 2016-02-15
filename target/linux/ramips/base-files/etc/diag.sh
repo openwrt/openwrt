@@ -75,7 +75,8 @@ get_status_led() {
 	dir-645)
 		status_led="$board:green:wps"
 		;;
-	cf-wr800n)
+	cf-wr800n|\
+	psg1208)
 		status_led="$board:white:wps"
 		;;
 	cy-swr1100|\
