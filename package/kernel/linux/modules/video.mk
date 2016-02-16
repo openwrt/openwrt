@@ -26,6 +26,7 @@ define KernelPackage/backlight
 		CONFIG_BACKLIGHT_GENERIC=n \
 		CONFIG_BACKLIGHT_ADP8860=n \
 		CONFIG_BACKLIGHT_ADP8870=n \
+		CONFIG_BACKLIGHT_OT200=n \
 		CONFIG_BACKLIGHT_PM8941_WLED=n
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/backlight.ko
 	AUTOLOAD:=$(call AutoProbe,video backlight)
