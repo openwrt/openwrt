@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_REV).tar.gz
 PKG_SOURCE_URL:=https://github.com/Hexxeh/rpi-firmware/archive/
 PKG_MD5SUM:=66bbad77fdd9e5391d4130fa11d94646
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_REV)
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_REV)
 
 include $(INCLUDE_DIR)/package.mk
 
