@@ -19,6 +19,9 @@ define KernelPackage/dsa
 	CONFIG_NET_SWITCHDEV=y \
 	CONFIG_NET_DSA_HWMON=n
   DEPENDS:=+kmod-libphy
+ifeq ($(CONFIG_OF),y)
+  DEPENDS+=+kmod-of-mdio
+endif
   FILES:=$(LINUX_DIR)/net/dsa/dsa_core.ko
   AUTOLOAD:=$(call AutoLoad,34,dsa_core)
 endef
