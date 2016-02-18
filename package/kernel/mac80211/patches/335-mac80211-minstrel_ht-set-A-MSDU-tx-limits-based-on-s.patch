@@ -1,0 +1,61 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 18 Feb 2016 19:30:05 +0100
+Subject: [PATCH] mac80211: minstrel_ht: set A-MSDU tx limits based on selected
+ max_prob_rate
+
+Prevents excessive A-MSDU aggregation at low data rates or bad
+conditions.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/net/mac80211/rc80211_minstrel_ht.c
++++ b/net/mac80211/rc80211_minstrel_ht.c
+@@ -883,6 +883,39 @@ minstrel_ht_set_rate(struct minstrel_pri
+ 	ratetbl->rate[offset].flags = flags;
+ }
+ 
++static int
++minstrel_ht_get_max_amsdu_len(struct minstrel_ht_sta *mi)
++{
++	int group = mi->max_prob_rate / MCS_GROUP_RATES;
++	const struct mcs_group *g = &minstrel_mcs_groups[group];
++	int rate = mi->max_prob_rate % MCS_GROUP_RATES;
++
++	/* Disable A-MSDU if max_prob_rate is bad */
++	if (mi->groups[group].rates[rate].prob_ewma < MINSTREL_FRAC(50, 100))
++		return 1;
++
++	/* If the rate is slower than single-stream MCS1, make A-MSDU limit small */
++	if (g->duration[rate] > MCS_DURATION(1, 0, 52))
++		return 500;
++
++	/*
++	 * If the rate is slower than single-stream MCS4, limit A-MSDU to usual
++	 * data packet size
++	 */
++	if (g->duration[rate] > MCS_DURATION(1, 0, 104))
++		return 1500;
++
++	/*
++	 * If the rate is slower than single-stream MCS7, limit A-MSDU to twice
++	 * the usual data packet size
++	 */
++	if (g->duration[rate] > MCS_DURATION(1, 0, 260))
++		return 3000;
++
++	/* unlimited */
++	return 0;
++}
++
+ static void
+ minstrel_ht_update_rates(struct minstrel_priv *mp, struct minstrel_ht_sta *mi)
+ {
+@@ -907,6 +940,7 @@ minstrel_ht_update_rates(struct minstrel
+ 		minstrel_ht_set_rate(mp, mi, rates, i++, mi->max_prob_rate);
+ 	}
+ 
++	mi->sta->max_rc_amsdu_len = minstrel_ht_get_max_amsdu_len(mi);
+ 	rates->rate[i].idx = -1;
+ 	rate_control_set_rates(mp->hw, mi->sta, rates);
+ }
