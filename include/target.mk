@@ -265,6 +265,7 @@ ifeq ($(DUMP),1)
     CPU_TYPE ?= arc700
     CPU_CFLAGS += -matomic
     CPU_CFLAGS_arc700 = -marc700
+    CPU_CFLAGS_archs = -marchs
   endif
   DEFAULT_CFLAGS=$(strip $(CPU_CFLAGS) $(CPU_CFLAGS_$(CPU_TYPE)) $(CPU_CFLAGS_$(CPU_SUBTYPE)))
 endif
