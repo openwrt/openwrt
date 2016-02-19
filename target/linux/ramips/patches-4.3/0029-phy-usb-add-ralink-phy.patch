@@ -38,7 +38,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -331,6 +331,14 @@ config PHY_XGENE
+@@ -331,6 +331,14 @@
  	help
  	  This option enables support for APM X-Gene SoC multi-purpose PHY.
  
@@ -55,14 +55,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on RESET_CONTROLLER
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -46,3 +46,4 @@ obj-$(CONFIG_PHY_QCOM_UFS) 	+= phy-qcom-
+@@ -46,3 +46,4 @@
  obj-$(CONFIG_PHY_TUSB1210)		+= phy-tusb1210.o
  obj-$(CONFIG_PHY_BRCMSTB_SATA)		+= phy-brcmstb-sata.o
  obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o
 +obj-$(CONFIG_PHY_RALINK_USB)		+= phy-ralink-usb.o
 --- /dev/null
 +++ b/drivers/phy/phy-ralink-usb.c
-@@ -0,0 +1,175 @@
+@@ -0,0 +1,228 @@
 +/*
 + * Allwinner ralink USB phy driver
 + *
@@ -99,6 +99,20 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define RT_SYSC_REG_CLKCFG1		0x030
 +#define RT_SYSC_REG_USB_PHY_CFG		0x05c
 +
++#define OFS_U2_PHY_AC0                  0x00
++#define OFS_U2_PHY_AC1                  0x04
++#define OFS_U2_PHY_AC2                  0x08
++#define OFS_U2_PHY_ACR0                 0x10
++#define OFS_U2_PHY_ACR1                 0x14
++#define OFS_U2_PHY_ACR2                 0x18
++#define OFS_U2_PHY_ACR3                 0x1C
++#define OFS_U2_PHY_ACR4                 0x20
++#define OFS_U2_PHY_AMON0                0x24
++#define OFS_U2_PHY_DCR0                 0x60
++#define OFS_U2_PHY_DCR1                 0x64
++#define OFS_U2_PHY_DTM0                 0x68
++#define OFS_U2_PHY_DTM1                 0x6C
++
 +#define RT_RSTCTRL_UDEV			BIT(25)
 +#define RT_RSTCTRL_UHST			BIT(22)
 +#define RT_SYSCFG1_USB0_HOST_MODE	BIT(10)
@@ -116,7 +130,39 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct reset_control	*rsthost;
 +	u32			clk;
 +	struct phy		*phy;
++	void __iomem		*base;
 +};
++
++static void u2_phy_w32(struct ralink_usb_phy *phy, u32 val, u32 reg)
++{
++	iowrite32(val, phy->base + reg);
++}
++
++static u32 u2_phy_r32(struct ralink_usb_phy *phy, u32 reg)
++{
++	return ioread32(phy->base + reg);
++}
++
++static void
++u2_phy_init(struct ralink_usb_phy *phy)
++{
++	u2_phy_r32(phy, OFS_U2_PHY_AC2);
++	u2_phy_r32(phy, OFS_U2_PHY_ACR0);
++	u2_phy_r32(phy, OFS_U2_PHY_DCR0);
++
++	u2_phy_w32(phy, 0x00ffff02, OFS_U2_PHY_DCR0);
++	u2_phy_r32(phy, OFS_U2_PHY_DCR0);
++	u2_phy_w32(phy, 0x00555502, OFS_U2_PHY_DCR0);
++	u2_phy_r32(phy, OFS_U2_PHY_DCR0);
++	u2_phy_w32(phy, 0x00aaaa02, OFS_U2_PHY_DCR0);
++	u2_phy_r32(phy, OFS_U2_PHY_DCR0);
++	u2_phy_w32(phy, 0x00000402, OFS_U2_PHY_DCR0);
++	u2_phy_r32(phy, OFS_U2_PHY_DCR0);
++	u2_phy_w32(phy, 0x0048086a, OFS_U2_PHY_AC0);
++	u2_phy_w32(phy, 0x4400001c, OFS_U2_PHY_AC1);
++	u2_phy_w32(phy, 0xc0200000, OFS_U2_PHY_ACR3);
++	u2_phy_w32(phy, 0x02000000, OFS_U2_PHY_DTM0);
++}
 +
 +static int ralink_usb_phy_power_on(struct phy *_phy)
 +{
@@ -139,6 +185,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	 */
 +	mdelay(10);
 +
++	if (!IS_ERR(phy->base))
++		u2_phy_init(phy);
++
 +	/* print some status info */
 +	t = rt_sysc_r32(RT_SYSC_REG_USB_PHY_CFG);
 +	dev_info(&phy->phy->dev, "remote usb device wakeup %s\n",
@@ -155,12 +204,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	struct ralink_usb_phy *phy = phy_get_drvdata(_phy);
 +
-+	/* disable the phy */
-+	rt_sysc_m32(phy->clk, 0, RT_SYSC_REG_CLKCFG1);
-+
 +	/* assert the reset lines */
 +	reset_control_assert(phy->rstdev);
 +	reset_control_assert(phy->rsthost);
++
++	/* disable the phy */
++	rt_sysc_m32(phy->clk, 0, RT_SYSC_REG_CLKCFG1);
 +
 +	return 0;
 +}
@@ -187,6 +236,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static int ralink_usb_phy_probe(struct platform_device *pdev)
 +{
++	struct resource *res;
 +	struct device *dev = &pdev->dev;
 +	struct phy_provider *phy_provider;
 +	const struct of_device_id *match;
@@ -201,6 +251,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		return -ENODEV;
 +
 +	phy->clk = (int) match->data;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	phy->base = devm_ioremap_resource(&pdev->dev, res);
 +
 +	phy->rsthost = devm_reset_control_get(&pdev->dev, "host");
 +	if (IS_ERR(phy->rsthost)) {
