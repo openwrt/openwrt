@@ -222,7 +222,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	const char *port4 = NULL;
 +	struct mt7620_gsw *gsw;
-+	struct device_node *np;
++	struct device_node *np = pdev->dev.of_node;
 +
 +	gsw = devm_kzalloc(&pdev->dev, sizeof(struct mt7620_gsw), GFP_KERNEL);
 +	if (!gsw)
