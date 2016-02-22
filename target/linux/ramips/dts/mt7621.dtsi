@@ -107,6 +107,28 @@
 			pinctrl-0 = <&i2c_pins>;
 		};
 
+		i2s: i2s@a00 {
+			compatible = "mediatek,mt7621-i2s";
+			reg = <0xa00 0x100>;
+
+			clocks = <&sysclock>;
+
+			resets = <&rstctrl 17>;
+			reset-names = "i2s";
+
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 16 IRQ_TYPE_LEVEL_HIGH>;
+
+			txdma-req = <2>;
+			rxdma-req = <3>;
+
+			dmas = <&gdma 4>,
+				<&gdma 6>;
+			dma-names = "tx", "rx";
+
+			status = "disabled";
+		};
+
 		memc: memc@5000 {
 			compatible = "mtk,mt7621-memc";
 			reg = <0x300 0x100>;

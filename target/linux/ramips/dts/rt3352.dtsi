@@ -162,6 +162,26 @@
 			pinctrl-0 = <&i2c_pins>;
 		};
 
+		i2s@a00 {
+			compatible = "ralink,rt3352-i2s";
+			reg = <0xa00 0x100>;
+
+			resets = <&rstctrl 17>;
+			reset-names = "i2s";
+
+			interrupt-parent = <&intc>;
+			interrupts = <10>;
+
+			txdma-req = <2>;
+			rxdma-req = <3>;
+
+			dmas = <&gdma 4>,
+				<&gdma 6>;
+			dma-names = "tx", "rx";
+
+			status = "disabled";
+		};
+
 		spi0: spi@b00 {
 			compatible = "ralink,rt3352-spi", "ralink,rt2880-spi";
 			reg = <0xb00 0x40>;
