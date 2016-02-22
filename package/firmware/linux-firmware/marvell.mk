@@ -44,3 +44,13 @@ define Package/libertas-sdio-firmware/install
 endef
 $(eval $(call BuildPackage,libertas-sdio-firmware))
 
+Package/libertas-spi-firmware = $(call Package/firmware-default,Marvell 8686 SPI firmware)
+define Package/libertas-spi-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/libertas
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/libertas/gspi8686_v9_helper.bin \
+		$(PKG_BUILD_DIR)/libertas/gspi8686_v9.bin \
+		$(1)/lib/firmware/libertas
+endef
+$(eval $(call BuildPackage,libertas-spi-firmware))
+

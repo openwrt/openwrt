@@ -31,7 +31,7 @@ PKG_DRIVERS = \
 	iwl-legacy iwl3945 iwl4965 iwlwifi \
 	lib80211 \
 	libipw ipw2100 ipw2200 \
-	libertas-sdio libertas-usb \
+	libertas-sdio libertas-usb libertas-spi \
 	mac80211-hwsim \
 	mt7601u \
 	mwl8k mwifiex-pcie \
@@ -975,6 +975,20 @@ define KernelPackage/libertas-sdio
   AUTOLOAD:=$(call AutoProbe,libertas libertas_sdio)
 endef
 
+define KernelPackage/libertas-spi
+  $(call KernelPackage/mac80211/Default)
+  SUBMENU:=Wireless Drivers
+  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +@DRIVER_WEXT_SUPPORT +libertas-spi-firmware
+  KCONFIG := \
+	CONFIG_SPI=y \
+	CONFIG_SPI_MASTER=y
+  TITLE:=Marvell 88W8686 SPI Wireless Driver
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas_spi.ko
+  AUTOLOAD:=$(call AutoProbe,libertas libertas_spi)
+endef
+
 define KernelPackage/mac80211-hwsim
   $(call KernelPackage/mac80211/Default)
   TITLE:=mac80211 HW simulation device
@@ -1573,6 +1587,7 @@ config-y += HERMES_PRISM
 config-$(call config_package,adm8211) += ADM8211
 config-$(call config_package,libertas-sdio) += LIBERTAS LIBERTAS_SDIO
 config-$(call config_package,libertas-usb) += LIBERTAS LIBERTAS_USB
+config-$(call config_package,libertas-spi) += LIBERTAS LIBERTAS_SPI
 config-$(call config_package,mwl8k) += MWL8K
 config-$(call config_package,mwifiex-pcie) += MWIFIEX MWIFIEX_PCIE
 config-$(call config_package,rtl8180) += RTL8180
@@ -1773,6 +1788,7 @@ $(eval $(call KernelPackage,iwl3945))
 $(eval $(call KernelPackage,lib80211))
 $(eval $(call KernelPackage,libertas-usb))
 $(eval $(call KernelPackage,libertas-sdio))
+$(eval $(call KernelPackage,libertas-spi))
 $(eval $(call KernelPackage,libipw))
 $(eval $(call KernelPackage,ipw2100))
 $(eval $(call KernelPackage,ipw2200))
