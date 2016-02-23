@@ -26,6 +26,7 @@ struct seama_header {
 	__be16	reserved;	/* reserved for  */
 	__be16	metasize;	/* size of the META data */
 	__be32	size;		/* size of the image */
+	u8	md5[16];	/* digest */
 };
 
 static int mtdsplit_parse_seama(struct mtd_info *master,
