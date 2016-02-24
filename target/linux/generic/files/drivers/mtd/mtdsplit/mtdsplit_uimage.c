@@ -95,6 +95,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	size_t rootfs_size = 0;
 	int uimage_part, rf_part;
 	int ret;
+	enum mtdsplit_part_type type;
 
 	nr_parts = 2;
 	parts = kzalloc(nr_parts * sizeof(*parts), GFP_KERNEL);
@@ -148,7 +149,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 		/* find the roots after the uImage */
 		ret = mtd_find_rootfs_from(master, uimage_offset + uimage_size,
-					   master->size, &rootfs_offset, NULL);
+					   master->size, &rootfs_offset, &type);
 		if (ret) {
 			pr_debug("no rootfs after uImage in \"%s\"\n",
 				 master->name);
@@ -162,7 +163,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		uimage_part = 1;
 
 		/* check rootfs presence at offset 0 */
-		ret = mtd_check_rootfs_magic(master, 0, NULL);
+		ret = mtd_check_rootfs_magic(master, 0, &type);
 		if (ret) {
 			pr_debug("no rootfs before uImage in \"%s\"\n",
 				 master->name);
@@ -183,7 +184,10 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	parts[uimage_part].offset = uimage_offset;
 	parts[uimage_part].size = uimage_size;
 
-	parts[rf_part].name = ROOTFS_PART_NAME;
+	if (type == MTDSPLIT_PART_TYPE_UBI)
+		parts[rf_part].name = UBI_PART_NAME;
+	else
+		parts[rf_part].name = ROOTFS_PART_NAME;
 	parts[rf_part].offset = rootfs_offset;
 	parts[rf_part].size = rootfs_size;
 
