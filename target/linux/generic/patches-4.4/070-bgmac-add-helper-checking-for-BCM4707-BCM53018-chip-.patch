@@ -1,6 +1,6 @@
-From 1b49522dc7154751401512977d07ad01e5182c47 Mon Sep 17 00:00:00 2001
+From 387b75f8b31437792e8334390fdf5cf060d1e3da Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Sat, 30 Jan 2016 00:35:37 +0100
+Date: Tue, 2 Feb 2016 07:47:14 +0100
 Subject: [PATCH] bgmac: add helper checking for BCM4707 / BCM53018 chip id
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -11,9 +11,10 @@ places in the code. It's likely there will be more IDs to check in the
 future. To simplify it add this trivial helper.
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
- drivers/net/ethernet/broadcom/bgmac.c | 29 ++++++++++++++++-------------
- 1 file changed, 16 insertions(+), 13 deletions(-)
+ drivers/net/ethernet/broadcom/bgmac.c | 30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
@@ -69,7 +70,13 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		rxq_ctl = bgmac_read(bgmac, BGMAC_RXQ_CTL);
  		rxq_ctl &= ~BGMAC_RXQ_CTL_MDP_MASK;
  		bp_clk = bcma_pmu_get_bus_clock(&bgmac->core->bus->drv_cc) /
-@@ -1473,8 +1479,7 @@ static int bgmac_mii_register(struct bgm
+@@ -1467,14 +1473,12 @@ static int bgmac_fixed_phy_register(stru
+ 
+ static int bgmac_mii_register(struct bgmac *bgmac)
+ {
+-	struct bcma_chipinfo *ci = &bgmac->core->bus->chipinfo;
+ 	struct mii_bus *mii_bus;
+ 	struct phy_device *phy_dev;
  	char bus_id[MII_BUS_ID_SIZE + 3];
  	int i, err = 0;
  
@@ -79,7 +86,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		return bgmac_fixed_phy_register(bgmac);
  
  	mii_bus = mdiobus_alloc();
-@@ -1545,7 +1550,6 @@ static void bgmac_mii_unregister(struct
+@@ -1545,7 +1549,6 @@ static void bgmac_mii_unregister(struct
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipattach */
  static int bgmac_probe(struct bcma_device *core)
  {
@@ -87,7 +94,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	struct net_device *net_dev;
  	struct bgmac *bgmac;
  	struct ssb_sprom *sprom = &core->bus->sprom;
-@@ -1626,8 +1630,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1626,8 +1629,7 @@ static int bgmac_probe(struct bcma_devic
  	bgmac_chip_reset(bgmac);
  
  	/* For Northstar, we have to take all GMAC core out of reset */
