@@ -75,7 +75,7 @@
  	$(call if_changed,objcopy)
 +ifdef CONFIG_OX820
 +	$(OBJTREE)/tools/mkox820crc $@
-+endef
++endif
  
  LDFLAGS_$(SPL_BIN) += -T u-boot-spl.lds $(LDFLAGS_FINAL)
  ifneq ($(CONFIG_SPL_TEXT_BASE),)
