@@ -195,7 +195,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  #if IS_BUILTIN(CONFIG_OF)
  	if (cc->core->bus->hosttype == BCMA_HOSTTYPE_SOC)
  		chip->of_node	= cc->core->dev.of_node;
-@@ -216,13 +248,13 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+@@ -217,13 +249,13 @@ int bcma_gpio_init(struct bcma_drv_cc *c
  	else
  		chip->base		= -1;
  
@@ -212,7 +212,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		return err;
  	}
  
-@@ -231,7 +263,7 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+@@ -232,7 +264,7 @@ int bcma_gpio_init(struct bcma_drv_cc *c
  
  int bcma_gpio_unregister(struct bcma_drv_cc *cc)
  {
@@ -223,7 +223,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  }
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -640,6 +640,7 @@ struct bcma_drv_cc {
+@@ -646,6 +646,7 @@ struct bcma_drv_cc {
  	spinlock_t gpio_lock;
  #ifdef CONFIG_BCMA_DRIVER_GPIO
  	struct gpio_chip gpio;

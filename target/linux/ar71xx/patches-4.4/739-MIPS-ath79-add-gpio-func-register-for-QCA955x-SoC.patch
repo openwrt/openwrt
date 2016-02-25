@@ -9,9 +9,6 @@
  	u32 t, s;
  
 -	BUG_ON(!soc_is_ar934x() && !soc_is_qca953x() && !soc_is_qca956x());
--
--	if (gpio >= AR934X_GPIO_COUNT)
--		return;
 +	if (soc_is_ar934x())
 +		reg_base = AR934X_GPIO_REG_OUT_FUNC0;
 +	else if (soc_is_qca953x())
@@ -23,6 +20,9 @@
 +	else
 +		BUG();
  
+-	if (gpio >= AR934X_GPIO_COUNT)
+-		return;
+-
 -	reg = AR934X_GPIO_REG_OUT_FUNC0 + 4 * (gpio / 4);
 +	reg = reg_base + 4 * (gpio / 4);
  	s = 8 * (gpio % 4);

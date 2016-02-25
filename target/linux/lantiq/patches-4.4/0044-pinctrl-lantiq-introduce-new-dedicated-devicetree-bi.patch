@@ -1266,7 +1266,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  /* ---------  pinconf related code --------- */
  static int xway_pinconf_get(struct pinctrl_dev *pctldev,
  				unsigned pin,
-@@ -714,10 +1601,7 @@ static struct gpio_chip xway_chip = {
+@@ -715,10 +1602,7 @@ static struct gpio_chip xway_chip = {
  
  
  /* --------- register the pinctrl layer --------- */
@@ -1278,7 +1278,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	int pin_count;
  	const struct ltq_mfp_pin *mfp;
  	const struct ltq_pin_group *grps;
-@@ -726,22 +1610,54 @@ static struct pinctrl_xway_soc {
+@@ -727,22 +1611,54 @@ static struct pinctrl_xway_soc {
  	unsigned int num_funcs;
  	const unsigned *exin;
  	unsigned int num_exin;
@@ -1349,7 +1349,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  };
  
  static struct pinctrl_gpio_range xway_gpio_range = {
-@@ -750,9 +1666,14 @@ static struct pinctrl_gpio_range xway_gp
+@@ -751,9 +1667,14 @@ static struct pinctrl_gpio_range xway_gp
  };
  
  static const struct of_device_id xway_match[] = {
@@ -1367,7 +1367,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	{},
  };
  MODULE_DEVICE_TABLE(of, xway_match);
-@@ -774,7 +1695,7 @@ static int pinmux_xway_probe(struct plat
+@@ -775,7 +1696,7 @@ static int pinmux_xway_probe(struct plat
  	if (match)
  		xway_soc = (const struct pinctrl_xway_soc *) match->data;
  	else
