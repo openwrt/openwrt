@@ -30,12 +30,6 @@ PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_REVISION)
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.bz2
 
 GLIBC_PATH:=
-ifneq ($(CONFIG_EGLIBC_VERSION_2_19),)
-  GLIBC_PATH:=libc/
-  PKG_SOURCE_PROTO:=svn
-  PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.bz2
-  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_19
-endif
 
 PATCH_DIR:=$(PATH_PREFIX)/patches/$(PKG_VERSION)
 
@@ -85,11 +79,7 @@ export HOST_CFLAGS := $(HOST_CFLAGS) -idirafter $(CURDIR)/$(PATH_PREFIX)/include
 
 define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
-ifneq ($(CONFIG_EGLIBC_VERSION_2_19),)
-	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.eglibc.org/,' $(TOOLCHAIN_DIR)/info.mk
-else
 	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.gnu.org/software/libc/,' $(TOOLCHAIN_DIR)/info.mk
-endif
 	$(SED) 's,^\(LIBC_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_SO_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 endef
@@ -101,7 +91,6 @@ define Host/Configure
 		touch $(HOST_BUILD_DIR)/.autoconf; \
 	}
 	mkdir -p $(CUR_BUILD_DIR)
-	grep 'CONFIG_EGLIBC_OPTION_' $(TOPDIR)/.config | sed -e "s,\\(# \)\\?CONFIG_EGLIBC_\\(.*\\),\\1\\2,g" > $(CUR_BUILD_DIR)/option-groups.config
 	( cd $(CUR_BUILD_DIR); rm -f config.cache; \
 		$(GLIBC_CONFIGURE) \
 	);
@@ -110,9 +99,6 @@ endef
 define Host/Prepare
 	$(call Host/Prepare/Default)
 	ln -snf $(PKG_SOURCE_SUBDIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
-ifneq ($(CONFIG_EGLIBC_VERSION_2_19),)
-	$(SED) 's,y,n,' $(HOST_BUILD_DIR)/libc/option-groups.defaults
-endif
 endef
 
 define Host/Clean
