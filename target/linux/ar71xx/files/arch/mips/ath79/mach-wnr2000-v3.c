@@ -14,6 +14,7 @@
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/kernel.h> /* for max() macro */
 
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h> /* needed to disable switch LEDs */
@@ -66,6 +67,7 @@
 #define WNR2000V3_MAC0_OFFSET		0
 #define WNR2000V3_MAC1_OFFSET		6
 #define WNR2000V3_PCIE_CALDATA_OFFSET	0x1000
+#define WNR2000V3_WMAC_OFFSET		0x108c	/* wireless MAC is inside ART */
 
 static struct gpio_led wnr2000v3_leds_gpio[] __initdata = {
 	{
@@ -181,7 +183,35 @@ static struct gpio_keys_button wnr2000v3_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init wnr_common_setup(void)
+/*
+ * For WNR2000v3 ART flash area used for WLAN MAC is usually empty (0xff)
+ * so ath9k driver uses random MAC instead each time module is loaded.
+ * To fix that, assign permanent WLAN MAC equal to ethN's MAC plus 1,
+ * so network interfaces get sequential addresses.
+ * If ART wireless MAC address field has been filled by user, use it.
+ */
+static void __init wnr_get_wmac(u8 *wmac_gen_addr, int mac0_art_offset,
+				int mac1_art_offset, int wmac_art_offset)
+{
+	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+	u8 *eth0_mac_addr = (u8 *) (art + mac0_art_offset);
+	u8 *eth1_mac_addr = (u8 *) (art + mac1_art_offset);
+	u8 *wlan_mac_addr = (u8 *) (art + wmac_art_offset);
+
+	/* only 0xff if all bits are set - address is invalid, empty area */
+	if ((wlan_mac_addr[0] & wlan_mac_addr[1] & wlan_mac_addr[2] &
+	     wlan_mac_addr[3] & wlan_mac_addr[4] & wlan_mac_addr[5]) == 0xff) {
+		memcpy(wmac_gen_addr, eth0_mac_addr, 5);
+		wmac_gen_addr[5] = max(eth0_mac_addr[5], eth1_mac_addr[5]) + 1;
+
+		/* Avoid potential conflict in case max(0xff,0x00)+1==0x00 */
+		if (!wmac_gen_addr[5])
+			wmac_gen_addr[5] = 1;
+	} else
+		memcpy(wmac_gen_addr, wlan_mac_addr, 6);
+}
+
+static void __init wnr_common_setup(u8 *wmac_addr)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 
@@ -200,12 +230,17 @@ static void __init wnr_common_setup(void)
 	ath79_register_eth(1);
 
 	ath79_register_m25p80(NULL);
-	ap91_pci_init(art + WNR2000V3_PCIE_CALDATA_OFFSET, NULL);
+	ap91_pci_init(art + WNR2000V3_PCIE_CALDATA_OFFSET, wmac_addr);
 }
 
 static void __init wnr2000v3_setup(void)
 {
-	wnr_common_setup();
+	u8 wlan_mac_addr[6];
+
+	wnr_get_wmac(wlan_mac_addr, WNR2000V3_MAC0_OFFSET,
+		     WNR2000V3_MAC1_OFFSET, WNR2000V3_WMAC_OFFSET);
+
+	wnr_common_setup(wlan_mac_addr);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr2000v3_leds_gpio),
 				 wnr2000v3_leds_gpio);
@@ -219,7 +254,7 @@ MIPS_MACHINE(ATH79_MACH_WNR2000_V3, "WNR2000V3", "NETGEAR WNR2000 V3", wnr2000v3
 
 static void __init wnr612v2_setup(void)
 {
-	wnr_common_setup();
+	wnr_common_setup(NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr612v2_leds_gpio),
 				 wnr612v2_leds_gpio);
@@ -229,7 +264,7 @@ MIPS_MACHINE(ATH79_MACH_WNR612_V2, "WNR612V2", "NETGEAR WNR612 V2", wnr612v2_set
 
 static void __init wnr1000v2_setup(void)
 {
-	wnr_common_setup();
+	wnr_common_setup(NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr1000v2_leds_gpio),
 				 wnr1000v2_leds_gpio);
@@ -247,7 +282,7 @@ static void __init wpn824n_setup(void)
 				  AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN |
 				  AR724X_GPIO_FUNC_CLK_OBS3_EN);
 
-	wnr_common_setup();
+	wnr_common_setup(NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wpn824n_leds_gpio),
 				 wpn824n_leds_gpio);
