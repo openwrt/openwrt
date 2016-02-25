@@ -64,6 +64,7 @@
 #define WNR2000V3_KEYS_POLL_INTERVAL	20	/* msecs */
 #define WNR2000V3_KEYS_DEBOUNCE_INTERVAL	(3 * WNR2000V3_KEYS_POLL_INTERVAL)
 
+/* ART offsets for: WNR2000v3, WNR612v2 */
 #define WNR2000V3_MAC0_OFFSET		0
 #define WNR2000V3_MAC1_OFFSET		6
 #define WNR2000V3_PCIE_CALDATA_OFFSET	0x1000
@@ -254,7 +255,12 @@ MIPS_MACHINE(ATH79_MACH_WNR2000_V3, "WNR2000V3", "NETGEAR WNR2000 V3", wnr2000v3
 
 static void __init wnr612v2_setup(void)
 {
-	wnr_common_setup(NULL);
+	u8 wlan_mac_addr[6];
+
+	wnr_get_wmac(wlan_mac_addr, WNR2000V3_MAC0_OFFSET,
+		     WNR2000V3_MAC1_OFFSET, WNR2000V3_WMAC_OFFSET);
+
+	wnr_common_setup(wlan_mac_addr);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr612v2_leds_gpio),
 				 wnr612v2_leds_gpio);
