@@ -12,7 +12,7 @@ Signed-off-by: Steven Barth <steven@midlink.org>
 
 --- a/Makefile
 +++ b/Makefile
-@@ -60,7 +60,7 @@ CRT_LIBS = lib/crt1.o lib/Scrt1.o lib/rc
+@@ -66,7 +66,7 @@ CRT_LIBS = $(addprefix lib/,$(notdir $(C
  STATIC_LIBS = lib/libc.a
  SHARED_LIBS = lib/libc.so
  TOOL_LIBS = lib/musl-gcc.specs
@@ -21,7 +21,7 @@ Signed-off-by: Steven Barth <steven@midlink.org>
  ALL_TOOLS = obj/musl-gcc
  
  WRAPCC_GCC = gcc
-@@ -123,7 +123,8 @@ NOSSP_SRCS = $(wildcard crt/*.c) \
+@@ -125,7 +125,8 @@ NOSSP_SRCS = $(wildcard crt/*.c) \
  	src/thread/__set_thread_area.c src/thread/$(ARCH)/__set_thread_area.c \
  	src/string/memset.c src/string/$(ARCH)/memset.c \
  	src/string/memcpy.c src/string/$(ARCH)/memcpy.c \
@@ -30,8 +30,8 @@ Signed-off-by: Steven Barth <steven@midlink.org>
 +	src/libssp_nonshared/__stack_chk_fail_local.c
  $(NOSSP_SRCS:%.c=obj/%.o) $(NOSSP_SRCS:%.c=obj/%.lo): CFLAGS_ALL += $(CFLAGS_NOSSP)
  
- $(CRT_LIBS:lib/%=obj/crt/%): CFLAGS_ALL += -DCRT
-@@ -167,6 +168,11 @@ lib/libc.a: $(AOBJS)
+ $(CRT_OBJS): CFLAGS_ALL += -DCRT
+@@ -168,6 +169,11 @@ lib/libc.a: $(AOBJS)
  	$(AR) rc $@ $(AOBJS)
  	$(RANLIB) $@
  
