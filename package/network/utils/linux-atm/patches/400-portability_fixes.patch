@@ -1,6 +1,5 @@
-diff -urN linux-atm-2.5.2/src/ilmid/io.c linux-atm-2.5.2.new/src/ilmid/io.c
---- linux-atm-2.5.2/src/ilmid/io.c	2008-01-01 01:14:50.000000000 +0100
-+++ linux-atm-2.5.2.new/src/ilmid/io.c	2012-11-23 17:32:18.149268039 +0100
+--- a/src/ilmid/io.c
++++ b/src/ilmid/io.c
 @@ -48,6 +48,14 @@
  			     be manually configured (after ilmid has
  			     registered the "official" address) - HACK */
@@ -16,9 +15,8 @@ diff -urN linux-atm-2.5.2/src/ilmid/io.c linux-atm-2.5.2.new/src/ilmid/io.c
  extern SysGroup *remsys;
  extern State ilmi_state;
  static short atm_itf = -1; /* bad value */
-diff -urN linux-atm-2.5.2/src/mpoad/io.c linux-atm-2.5.2.new/src/mpoad/io.c
---- linux-atm-2.5.2/src/mpoad/io.c	2008-01-01 01:14:51.000000000 +0100
-+++ linux-atm-2.5.2.new/src/mpoad/io.c	2012-11-23 17:34:17.745271101 +0100
+--- a/src/mpoad/io.c
++++ b/src/mpoad/io.c
 @@ -10,14 +10,7 @@
  #include <errno.h>
  #include <sys/ioctl.h>
@@ -34,10 +32,9 @@ diff -urN linux-atm-2.5.2/src/mpoad/io.c linux-atm-2.5.2.new/src/mpoad/io.c
  #include <atm.h>
  #include <linux/types.h>
  #include <linux/atmioc.h>
-diff -urN linux-atm-2.5.2/src/sigd/atmsigd.c linux-atm-2.5.2.new/src/sigd/atmsigd.c
---- linux-atm-2.5.2/src/sigd/atmsigd.c	2008-01-01 01:14:52.000000000 +0100
-+++ linux-atm-2.5.2.new/src/sigd/atmsigd.c	2012-11-23 17:30:38.689265492 +0100
-@@ -517,7 +517,7 @@
+--- a/src/sigd/atmsigd.c
++++ b/src/sigd/atmsigd.c
+@@ -517,7 +517,7 @@ int main(int argc,char **argv)
  	    exit(0);
  	}
      }
@@ -46,9 +43,8 @@ diff -urN linux-atm-2.5.2/src/sigd/atmsigd.c linux-atm-2.5.2.new/src/sigd/atmsig
      poll_loop();
      close_all();
      for (sig = entities; sig; sig = sig->next) stop_saal(&sig->saal);
-diff -urN linux-atm-2.5.2/src/test/align.c linux-atm-2.5.2.new/src/test/align.c
---- linux-atm-2.5.2/src/test/align.c	2001-10-10 00:33:08.000000000 +0200
-+++ linux-atm-2.5.2.new/src/test/align.c	2012-11-23 17:25:15.077257206 +0100
+--- a/src/test/align.c
++++ b/src/test/align.c
 @@ -24,7 +24,7 @@
  #include <signal.h>
  #include <sys/types.h>
