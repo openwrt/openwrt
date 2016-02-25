@@ -1,26 +1,12 @@
 choice
 	prompt "(e)glibc version"
 	depends on TOOLCHAINOPTS && USE_GLIBC
-	default EGLIBC_USE_VERSION_2_22
+	default GLIBC_USE_VERSION_2_22
 	help
 	  Select the version of glibc you wish to use.
-
-	config EGLIBC_USE_VERSION_2_19
-		bool "eglibc 2.19"
-		depends on BROKEN
-		select EGLIBC_VERSION_2_19
-
-	config GLIBC_USE_VERSION_2_21
-		bool "glibc 2.21"
-		select GLIBC_VERSION_2_21
 
 	config GLIBC_USE_VERSION_2_22
 		bool "glibc 2.22"
 		select GLIBC_VERSION_2_22
 
 endchoice
-
-menu "eglibc configuration"
-	depends on TOOLCHAINOPTS && USE_GLIBC && EGLIBC_USE_VERSION_2_19
-	source toolchain/glibc/config/Config.in
-endmenu

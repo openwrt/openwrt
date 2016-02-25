@@ -2,23 +2,10 @@ if USE_GLIBC
 
 config GLIBC_VERSION
 	string
-	default "2.19" if EGLIBC_VERSION_2_19
-	default "2.21" if GLIBC_VERSION_2_21
 	default "2.22" if GLIBC_VERSION_2_22
-
-config EGLIBC_VERSION_2_19
-	bool
-
-config GLIBC_VERSION_2_21
-	bool
 
 config GLIBC_VERSION_2_22
 	default y if !TOOLCHAINOPTS
 	bool
 
 endif
-
-menu "eglibc configuration"
-	depends on !TOOLCHAINOPTS && USE_GLIBC
-	source toolchain/glibc/config/Config.in
-endmenu

@@ -366,10 +366,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(CP) $(TOOLCHAIN_DIR)/lib/libstdc++.so.* $(1)/usr/lib/
   endef
 
-  use_libutil=$(if $(if $(CONFIG_EGLIBC_USE_VERSION_2_19),$(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),y),libutil)
-  use_libnsl=$(if $(if $(CONFIG_EGLIBC_USE_VERSION_2_19),$(CONFIG_EGLIBC_OPTION_EGLIBC_NIS),y),libnsl)
-  use_nsswitch=$(if $(if $(CONFIG_EGLIBC_USE_VERSION_2_19),$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),y),libnss_dns libnss_files)
-
   define Package/glibc/install
 	$(CP) ./glibc-files/* $(1)/
 	rm -f $(1)/etc/localtime
@@ -379,7 +375,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
 		$(TOOLCHAIN_DIR)/lib/ld-$(LIBC_SO_VERSION).so \
 		$(1)/lib/
-	for file in libanl libc libcidn libcrypt libdl libm $(use_libnsl) $(use_nsswitch) libresolv $(use_libutil); do \
+	for file in libanl libc libcidn libcrypt libdl libm libnsl libnss_dns libnss_files libresolv libutil; do \
 		for file in $(TOOLCHAIN_DIR)/lib/$$$$file.so.* $(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so; do \
 			if [ -e "$$$$file" ]; then \
 				$(CP) $$$$file $(1)/lib/; \
