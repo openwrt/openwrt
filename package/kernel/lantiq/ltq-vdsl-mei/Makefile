@@ -19,7 +19,6 @@ PKG_MD5SUM:=78bf61dbc3421123c6716b874a930759
 PKG_FIXUP:=autoreconf
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 PKG_USE_MIPS16:=0
-PKG_CHECK_FORMAT_SECURITY:=0
 
 include $(INCLUDE_DIR)/package.mk
 
