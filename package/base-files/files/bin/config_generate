@@ -303,11 +303,11 @@ generate_led() {
 			EOF
 		;;
 
-		timer)
+		timer|oneshot)
 			local delayon delayoff
 			json_get_vars delayon delayoff
 			uci -q batch <<-EOF
-				set system.$cfg.trigger='timer'
+				set system.$cfg.trigger='$type'
 				set system.$cfg.delayon='$delayon'
 				set system.$cfg.delayoff='$delayoff'
 			EOF
