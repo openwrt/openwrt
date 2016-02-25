@@ -94,37 +94,28 @@ swconfig_trig_port_mask_store(struct device *dev, struct device_attribute *attr,
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct swconfig_trig_data *trig_data = led_cdev->trigger_data;
 	unsigned long port_mask;
-	ssize_t ret = -EINVAL;
-	char *after;
-	size_t count;
+	int ret;
+	bool changed;
 
-	port_mask = simple_strtoul(buf, &after, 16);
-	count =	after - buf;
+	ret = kstrtoul(buf, 0, &port_mask);
+	if (ret)
+		return ret;
 
-	if (*after && isspace(*after))
-		count++;
+	write_lock(&trig_data->lock);
 
-	if (count == size) {
-		bool changed;
-
-		write_lock(&trig_data->lock);
-
-		changed = (trig_data->port_mask != port_mask);
-		if (changed) {
-			trig_data->port_mask = port_mask;
-			if (port_mask == 0)
-				swconfig_trig_set_brightness(trig_data, LED_OFF);
-		}
-
-		write_unlock(&trig_data->lock);
-
-		if (changed)
-			swconfig_trig_update_port_mask(led_cdev->trigger);
-
-		ret = count;
+	changed = (trig_data->port_mask != port_mask);
+	if (changed) {
+		trig_data->port_mask = port_mask;
+		if (port_mask == 0)
+			swconfig_trig_set_brightness(trig_data, LED_OFF);
 	}
 
-	return ret;
+	write_unlock(&trig_data->lock);
+
+	if (changed)
+		swconfig_trig_update_port_mask(led_cdev->trigger);
+
+	return size;
 }
 
 static ssize_t
