@@ -42,12 +42,15 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	struct ieee80211_txq *txq[IEEE80211_NUM_TIDS];
  
-@@ -1961,6 +1965,12 @@ struct ieee80211_txq {
+@@ -1961,6 +1965,15 @@ struct ieee80211_txq {
   *	order and does not need to manage its own reorder buffer or BA session
   *	timeout.
   *
 + * @IEEE80211_HW_TX_AMSDU: Hardware (or driver) supports software aggregated
-+ *	A-MSDU frames. Requires software tx queueing support.
++ *	A-MSDU frames. Requires software tx queueing and fast-xmit support.
++ *	When not using minstrel/minstrel_ht rate control, the driver should
++ *	limit the maximum A-MSDU size based on the current tx rate by setting
++ *	max_rc_amsdu_len in struct ieee80211_sta.
 + *
 + * @IEEE80211_HW_TX_FRAG_LIST: Hardware (or driver) supports sending frag_list
 + *	skbs, needed for zero-copy software A-MSDU.
@@ -55,7 +58,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -1998,6 +2008,8 @@ enum ieee80211_hw_flags {
+@@ -1998,6 +2011,8 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_BEACON_TX_STATUS,
  	IEEE80211_HW_NEEDS_UNIQUE_STA_ADDR,
  	IEEE80211_HW_SUPPORTS_REORDERING_BUFFER,
@@ -64,16 +67,17 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	/* keep last, obviously */
  	NUM_IEEE80211_HW_FLAGS
-@@ -2070,6 +2082,8 @@ enum ieee80211_hw_flags {
+@@ -2070,6 +2085,9 @@ enum ieee80211_hw_flags {
   *	size is smaller (an example is LinkSys WRT120N with FW v1.0.07
   *	build 002 Jun 18 2012).
   *
-+ * @max_tx_fragments: maximum fragments per (A-)MSDU.
++ * @max_tx_fragments: maximum number of tx buffers per (A)-MSDU, sum
++ *	of 1 + skb_shinfo(skb)->nr_frags for each skb in the frag_list.
 + *
   * @offchannel_tx_hw_queue: HW queue ID to use for offchannel TX
   *	(if %IEEE80211_HW_QUEUE_CONTROL is set)
   *
-@@ -2124,6 +2138,7 @@ struct ieee80211_hw {
+@@ -2124,6 +2142,7 @@ struct ieee80211_hw {
  	u8 max_rate_tries;
  	u8 max_rx_aggregation_subframes;
  	u8 max_tx_aggregation_subframes;
@@ -136,19 +140,33 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return skb;
  }
  EXPORT_SYMBOL(ieee80211_tx_dequeue);
-@@ -2757,6 +2761,165 @@ void ieee80211_clear_fast_xmit(struct st
+@@ -2757,6 +2761,163 @@ void ieee80211_clear_fast_xmit(struct st
  		kfree_rcu(fast_tx, rcu_head);
  }
  
-+static int ieee80211_amsdu_pad(struct sk_buff *skb, int subframe_len)
++static bool ieee80211_amsdu_realloc_pad(struct ieee80211_local *local,
++					struct sk_buff *skb, int headroom,
++					int *subframe_len)
 +{
-+	int amsdu_len = subframe_len + sizeof(struct ethhdr);
++	int amsdu_len = *subframe_len + sizeof(struct ethhdr);
 +	int padding = (4 - amsdu_len) & 3;
 +
-+	if (padding)
-+		memset(skb_put(skb, padding), 0, padding);
++	if (skb_headroom(skb) < headroom || skb_tailroom(skb) < padding) {
++		I802_DEBUG_INC(local->tx_expand_skb_head);
 +
-+	return padding;
++		if (pskb_expand_head(skb, headroom, padding, GFP_ATOMIC)) {
++			wiphy_debug(local->hw.wiphy,
++				    "failed to reallocate TX buffer\n");
++			return false;
++		}
++	}
++
++	if (padding) {
++		*subframe_len += padding;
++		memset(skb_put(skb, padding), 0, padding);
++	}
++
++	return true;
 +}
 +
 +static bool ieee80211_amsdu_prepare_head(struct ieee80211_sub_if_data *sdata,
@@ -170,17 +188,9 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	if (info->control.flags & IEEE80211_TX_CTRL_AMSDU)
 +		return true;
 +
-+	if (skb_headroom(skb) < sizeof(amsdu_hdr) || skb_tailroom(skb) < 3) {
-+		I802_DEBUG_INC(local->tx_expand_skb_head);
-+
-+		if (pskb_expand_head(skb, sizeof(amsdu_hdr), 3, GFP_ATOMIC)) {
-+			wiphy_debug(local->hw.wiphy,
-+				    "failed to reallocate TX buffer\n");
-+			return false;
-+		}
-+	}
-+
-+	subframe_len += ieee80211_amsdu_pad(skb, subframe_len);
++	if (!ieee80211_amsdu_realloc_pad(local, skb, sizeof(amsdu_hdr),
++					 &subframe_len))
++		return false;
 +
 +	amsdu_hdr.h_proto = cpu_to_be16(subframe_len);
 +	memcpy(amsdu_hdr.h_source, skb->data + fast_tx->sa_offs, ETH_ALEN);
@@ -268,17 +278,9 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	if (max_frags && nfrags > max_frags)
 +		goto out;
 +
-+	if (skb_headroom(skb) < 8 || skb_tailroom(skb) < 3) {
-+		I802_DEBUG_INC(local->tx_expand_skb_head);
-+
-+		if (pskb_expand_head(skb, 8, 3, GFP_ATOMIC)) {
-+			wiphy_debug(local->hw.wiphy,
-+				    "failed to reallocate TX buffer\n");
-+			goto out;
-+		}
-+	}
-+
-+	subframe_len += ieee80211_amsdu_pad(skb, subframe_len);
++	if (!ieee80211_amsdu_realloc_pad(local, skb, sizeof(rfc1042_header) + 2,
++					 &subframe_len))
++		return false;
 +
 +	ret = true;
 +	data = skb_push(skb, ETH_ALEN + 2);
@@ -287,7 +289,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	data += 2 * ETH_ALEN;
 +	len = cpu_to_be16(subframe_len);
 +	memcpy(data, &len, 2);
-+	memcpy(data + 2, rfc1042_header, ETH_ALEN);
++	memcpy(data + 2, rfc1042_header, sizeof(rfc1042_header));
 +
 +	head->len += skb->len;
 +	head->data_len += skb->len;
@@ -302,7 +304,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
  				struct net_device *dev, struct sta_info *sta,
  				struct ieee80211_fast_tx *fast_tx,
-@@ -2811,6 +2974,10 @@ static bool ieee80211_xmit_fast(struct i
+@@ -2811,6 +2972,10 @@ static bool ieee80211_xmit_fast(struct i
  
  	ieee80211_tx_stats(dev, skb->len + extra_head);
  
