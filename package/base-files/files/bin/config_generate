@@ -296,10 +296,11 @@ generate_led() {
 		;;
 
 		switch)
-			local port_mask
-			json_get_vars port_mask
+			local port_mask speed_mask
+			json_get_vars port_mask speed_mask
 			uci -q batch <<-EOF
 				set system.$cfg.port_mask='$port_mask'
+				set system.$cfg.speed_mask='$speed_mask'
 			EOF
 		;;
 

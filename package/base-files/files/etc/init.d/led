@@ -88,11 +88,14 @@ load_led() {
 			;;
 
 		switch[0-9]*)
-			local port_mask
+			local port_mask speed_mask
 
 			config_get port_mask $1 port_mask
 			[ -n "$port_mask" ] && \
 				echo $port_mask > /sys/class/leds/${sysfs}/port_mask
+			config_get speed_mask $1 speed_mask
+			[ -n "$speed_mask" ] && \
+				echo $speed_mask > /sys/class/leds/${sysfs}/speed_mask
 			;;
 		esac
 	}
