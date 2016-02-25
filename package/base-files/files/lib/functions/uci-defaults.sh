@@ -410,6 +410,7 @@ ucidef_set_led_switch() {
 	local sysfs="$3"
 	local trigger="$4"
 	local port_mask="$5"
+	local speed_mask="$6"
 
 	json_select_object led
 
@@ -419,6 +420,7 @@ ucidef_set_led_switch() {
 	json_add_string sysfs "$sysfs"
 	json_add_string trigger "$trigger"
 	json_add_string port_mask "$port_mask"
+	json_add_string speed_mask "$speed_mask"
 	json_select ..
 
 	json_select ..
