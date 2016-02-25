@@ -935,7 +935,7 @@ define Device/tl-wdr4900-v2
 endef
 TARGET_DEVICES += tl-wdr4900-v2
 
-define Device/tl-wa701n-v1
+define Device/tl-wa701nd-v1
     $(Device/tplink-4m)
     BOARDNAME := TL-WA901ND
     DEVICE_PROFILE := TLWA701
@@ -970,7 +970,7 @@ define Device/tl-wa7510n
     DEVICE_PROFILE := TLWA7510
     TPLINK_HWID := 0x75100001
 endef
-TARGET_DEVICES += tl-wa701n-v1 tl-wa701nd-v2 tl-wa730rev1 tl-wa750re-v1 tl-wa7510n
+TARGET_DEVICES += tl-wa701nd-v1 tl-wa701nd-v2 tl-wa730rev1 tl-wa750re-v1 tl-wa7510n
 
 define Device/tl-wa801nd-v1
     $(Device/tplink-4m)
