@@ -14,7 +14,7 @@ FEATURES:=ext4 audio usb usbgadget display gpio fpu
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 SUBTARGETS:=bcm2708 bcm2709
 
-KERNEL_PATCHVER:=4.1
+KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += brcm2708-gpu-fw kmod-usb-hid kmod-sound-core kmod-sound-arm-bcm2835 kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
