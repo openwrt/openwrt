@@ -1,7 +1,7 @@
-From c5200dcf1298dc6789a88640ab581e364d92282b Mon Sep 17 00:00:00 2001
+From 72d3af528b1ac1e2606d252d49f3f50281976f5c Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 19 Oct 2015 08:32:24 -0700
-Subject: [PATCH 095/127] drm/vc4: Use job_lock to protect seqno_cb_list.
+Subject: [PATCH 095/156] drm/vc4: Use job_lock to protect seqno_cb_list.
 
 We're (mostly) not supposed to be using struct_mutex in drivers these
 days.
