@@ -24,3 +24,14 @@
  
     if (pDynNfc->pRecvDataCntrl[pDynNfc->rdIdxRd].bufCtrl != MEI_RECV_BUF_CTRL_FREE)      /* buffer in use */
     {
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -201,7 +201,7 @@ else
+ 
+ drv_mei_cpe_common_cflags = \
+ 	$(AM_CFLAGS) -D__KERNEL__ -DLINUX -D__linux__ -DMODULE -DEXPORT_SYMTAB \
+-	-pipe -Wno-format -Wimplicit -Wunused -Wuninitialized -Wsign-compare -Wstrict-aliasing
++	-pipe -Wall -Wimplicit -Wunused -Wuninitialized -Wstrict-aliasing
+ 
+ endif
+ 
