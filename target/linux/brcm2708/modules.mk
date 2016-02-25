@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012 OpenWrt.org
+# Copyright (C) 2012-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -25,27 +25,6 @@ endef
 $(eval $(call KernelPackage,sound-arm-bcm2835))
 
 
-define KernelPackage/sound-soc-bcm2708-i2s
-  TITLE:=SoC Audio support for the Broadcom 2708 I2S module
-  KCONFIG:= \
-	CONFIG_BCM2708_SPIDEV=n \
-	CONFIG_MFD_RPISENSE_CORE=n \
-	CONFIG_SND_BCM2708_SOC_I2S \
-	CONFIG_SND_SOC_DMAENGINE_PCM=y \
-	CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
-  FILES:= \
-	$(LINUX_DIR)/sound/soc/bcm/snd-soc-bcm2708-i2s.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-bcm2708-i2s)
-  DEPENDS:=@TARGET_brcm2708 @LINUX_4_1 +kmod-regmap +kmod-sound-soc-core
-  $(call AddDepends/sound)
-endef
-
-define KernelPackage/sound-soc-bcm2708-i2s/description
-  This package contains support for codecs attached to the Broadcom 2708 I2S interface
-endef
-
-$(eval $(call KernelPackage,sound-soc-bcm2708-i2s))
-
 define KernelPackage/sound-soc-bcm2835-i2s
   TITLE:=SoC Audio support for the Broadcom 2835 I2S module
   KCONFIG:= \
@@ -55,7 +34,7 @@ define KernelPackage/sound-soc-bcm2835-i2s
   FILES:= \
 	$(LINUX_DIR)/sound/soc/bcm/snd-soc-bcm2835-i2s.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-bcm2835-i2s)
-  DEPENDS:=@TARGET_brcm2708 @LINUX_4_4 +kmod-regmap +kmod-sound-soc-core
+  DEPENDS:=@TARGET_brcm2708 +kmod-regmap +kmod-sound-soc-core
   $(call AddDepends/sound)
 endef
 
@@ -75,8 +54,7 @@ define KernelPackage/sound-soc-hifiberry-dac
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm5102a.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm5102a snd-soc-hifiberry-dac)
   DEPENDS:= \
-	LINUX_4_1:kmod-sound-soc-bcm2708-i2s \
-	LINUX_4_4:kmod-sound-soc-bcm2835-i2s \
+	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
@@ -98,8 +76,7 @@ define KernelPackage/sound-soc-hifiberry-dacplus
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko
   AUTOLOAD:=$(call AutoLoad,68,clk-hifiberry-dacpro snd-soc-pcm512x snd-soc-hifiberry-dacplus)
   DEPENDS:= \
-	LINUX_4_1:kmod-sound-soc-bcm2708-i2s \
-	LINUX_4_4:kmod-sound-soc-bcm2835-i2s \
+	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
@@ -120,8 +97,7 @@ define KernelPackage/sound-soc-hifiberry-digi
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804 snd-soc-hifiberry-digi)
   DEPENDS:= \
-	LINUX_4_1:kmod-sound-soc-bcm2708-i2s \
-	LINUX_4_4:kmod-sound-soc-bcm2835-i2s \
+	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
@@ -142,8 +118,7 @@ define KernelPackage/sound-soc-hifiberry-amp
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-tas5713.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-tas5713 snd-soc-hifiberry-amp)
   DEPENDS:= \
-	LINUX_4_1:kmod-sound-soc-bcm2708-i2s \
-	LINUX_4_4:kmod-sound-soc-bcm2835-i2s \
+	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
@@ -164,8 +139,7 @@ define KernelPackage/sound-soc-rpi-dac
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm1794a.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm1794a snd-soc-rpi-dac)
   DEPENDS:= \
-	LINUX_4_1:kmod-sound-soc-bcm2708-i2s \
-	LINUX_4_4:kmod-sound-soc-bcm2835-i2s \
+	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
@@ -186,8 +160,7 @@ define KernelPackage/sound-soc-rpi-proto
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8731.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8731 snd-soc-rpi-proto)
   DEPENDS:= \
-	LINUX_4_1:kmod-sound-soc-bcm2708-i2s \
-	LINUX_4_4:kmod-sound-soc-bcm2835-i2s \
+	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
@@ -210,8 +183,7 @@ define KernelPackage/sound-soc-iqaudio-dac
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c snd-soc-iqaudio-dac)
   DEPENDS:= \
-	LINUX_4_1:kmod-sound-soc-bcm2708-i2s \
-	LINUX_4_4:kmod-sound-soc-bcm2835-i2s \
+	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
@@ -236,8 +208,7 @@ define KernelPackage/sound-soc-raspidac3
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-tpa6130a2.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c snd-soc-tpa6130a2 snd-soc-raspidac3)
   DEPENDS:= \
-	LINUX_4_1:kmod-sound-soc-bcm2708-i2s \
-	LINUX_4_4:kmod-sound-soc-bcm2835-i2s \
+	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
@@ -248,21 +219,6 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-raspidac3))
 
-
-define KernelPackage/random-bcm2708
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=BCM2708 HW Random Number Generator
-  KCONFIG:=CONFIG_HW_RANDOM_BCM2708
-  FILES:=$(LINUX_DIR)/drivers/char/hw_random/bcm2708-rng.ko
-  AUTOLOAD:=$(call AutoLoad,11,bcm2708-rng)
-  DEPENDS:=@TARGET_brcm2708 @LINUX_4_1 +kmod-random-core
-endef
-
-define KernelPackage/random-bcm2708/description
-  This package contains the Broadcom 2708 HW random number generator driver
-endef
-
-$(eval $(call KernelPackage,random-bcm2708))
 
 define KernelPackage/random-bcm2835
   SUBMENU:=$(OTHER_MENU)
@@ -313,25 +269,6 @@ endef
 
 $(eval $(call KernelPackage,smi-bcm2835-dev))
 
-
-define KernelPackage/spi-bcm2708
-  SUBMENU:=$(SPI_MENU)
-  TITLE:=BCM2708 SPI controller driver
-  KCONFIG:= \
-    CONFIG_BCM2708_SPIDEV=n \
-    CONFIG_SPI=y \
-    CONFIG_SPI_BCM2708 \
-    CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spi-bcm2708.ko
-  AUTOLOAD:=$(call AutoLoad,89,spi-bcm2708)
-  DEPENDS:=@TARGET_brcm2708 @LINUX_4_1
-endef
-
-define KernelPackage/spi-bcm2708/description
-  This package contains the Broadcom 2708 SPI master controller driver
-endef
-
-$(eval $(call KernelPackage,spi-bcm2708))
 
 define KernelPackage/spi-bcm2835
   SUBMENU:=$(SPI_MENU)
