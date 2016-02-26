@@ -546,6 +546,24 @@ dhcp_hostrecord_add() {
 	xappend "--host-record=$record"
 }
 
+dhcp_relay_add() {
+	local cfg="$1"
+	local local_addr server_addr interface
+
+	config_get local_addr "$cfg" local_addr
+	[ -n "$local_addr" ] || return 0
+
+	config_get server_addr "$cfg" server_addr
+	[ -n "$server_addr" ] || return 0
+
+	config_get interface "$cfg" interface
+	if [ -z "$interface" ]; then
+		xappend "--dhcp-relay=$local_addr,$server_addr"
+	else
+		xappend "--dhcp-relay=$local_addr,$server_addr,$interface"
+	fi
+}
+
 service_triggers()
 {
 	procd_add_reload_trigger "dhcp"
@@ -594,6 +612,7 @@ start_service() {
 	config_foreach dhcp_subscrid_add subscrid
 	config_foreach dhcp_domain_add domain
 	config_foreach dhcp_hostrecord_add hostrecord
+	config_foreach dhcp_relay_add relay
 
 	# add own hostname
 	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && {
