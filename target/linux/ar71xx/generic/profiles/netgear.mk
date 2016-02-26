@@ -54,7 +54,6 @@ $(eval $(call Profile,WNR2000V4))
 
 define Profile/WNR612V2
 	NAME:=NETGEAR WNR612V2 / On Networks N150
-	PACKAGES:= -kmod-usb-core -kmod-usb-ohci -kmod-usb2 -kmod-ledtrig-usbdev
 endef
 
 define Profile/WNR612V2/Description
