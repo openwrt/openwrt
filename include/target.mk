@@ -56,14 +56,14 @@ DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
 filter_packages = $(filter-out -% $(patsubst -%,%,$(filter -%,$(1))),$(1))
 extra_packages = $(if $(filter wpad-mini wpad nas,$(1)),iwinfo)
 
-define Profile/Default
+define ProfileDefault
   NAME:=
   PACKAGES:=
 endef
 
 ifndef Profile
 define Profile
-  $(eval $(call Profile/Default))
+  $(eval $(call ProfileDefault))
   $(eval $(call Profile/$(1)))
   dumpinfo : $(call shexport,Profile/$(1)/Config)
   dumpinfo : $(call shexport,Profile/$(1)/Description)
