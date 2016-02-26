@@ -1,6 +1,6 @@
-From dfe4b4c732365fc1d83c2d2fd9cc18054ae850b7 Mon Sep 17 00:00:00 2001
+From 36bcc0c9c2bc8f56569cd735ba531a51358d7c2b Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Sun, 6 Dec 2015 11:24:05 +0100
+Date: Sun, 6 Dec 2015 11:31:38 +0100
 Subject: [PATCH] mtd: bcm47xxpart: don't fail because of bit-flips
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -10,6 +10,7 @@ Bit-flip errors may occur on NAND flashes and are harmless. Handle them
 gracefully as read content is still reliable and can be parsed.
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 ---
  drivers/mtd/bcm47xxpart.c | 38 ++++++++++++++++++++++----------------
  1 file changed, 22 insertions(+), 16 deletions(-)
