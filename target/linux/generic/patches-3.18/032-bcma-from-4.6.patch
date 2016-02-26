@@ -1,0 +1,72 @@
+--- a/drivers/bcma/driver_chipcommon.c
++++ b/drivers/bcma/driver_chipcommon.c
+@@ -190,6 +190,7 @@ u32 bcma_chipco_watchdog_timer_set(struc
+ 		struct bcma_bus *bus = cc->core->bus;
+ 
+ 		if (bus->chipinfo.id != BCMA_CHIP_ID_BCM4707 &&
++		    bus->chipinfo.id != BCMA_CHIP_ID_BCM47094 &&
+ 		    bus->chipinfo.id != BCMA_CHIP_ID_BCM53018)
+ 			bcma_core_set_clockmode(cc->core,
+ 						ticks ? BCMA_CLKMODE_FAST : BCMA_CLKMODE_DYNAMIC);
+--- a/drivers/bcma/driver_chipcommon_sflash.c
++++ b/drivers/bcma/driver_chipcommon_sflash.c
+@@ -38,6 +38,7 @@ static const struct bcma_sflash_tbl_e bc
+ 	{ "M25P32", 0x15, 0x10000, 64, },
+ 	{ "M25P64", 0x16, 0x10000, 128, },
+ 	{ "M25FL128", 0x17, 0x10000, 256, },
++	{ "MX25L25635F", 0x18, 0x10000, 512, },
+ 	{ NULL },
+ };
+ 
+--- a/drivers/bcma/driver_gpio.c
++++ b/drivers/bcma/driver_gpio.c
+@@ -229,6 +229,7 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+ 	case BCMA_CHIP_ID_BCM4707:
+ 	case BCMA_CHIP_ID_BCM5357:
+ 	case BCMA_CHIP_ID_BCM53572:
++	case BCMA_CHIP_ID_BCM47094:
+ 		chip->ngpio	= 32;
+ 		break;
+ 	default:
+--- a/drivers/bcma/host_pci.c
++++ b/drivers/bcma/host_pci.c
+@@ -294,7 +294,7 @@ static const struct pci_device_id bcma_p
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4358) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4359) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4360) },
+-	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4365) },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_BROADCOM, 0x4365, PCI_VENDOR_ID_DELL, 0x0016) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a0) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
+--- a/drivers/bcma/scan.c
++++ b/drivers/bcma/scan.c
+@@ -98,6 +98,9 @@ static const struct bcma_device_id_name
+ 	{ BCMA_CORE_SHIM, "SHIM" },
+ 	{ BCMA_CORE_PCIE2, "PCIe Gen2" },
+ 	{ BCMA_CORE_ARM_CR4, "ARM CR4" },
++	{ BCMA_CORE_GCI, "GCI" },
++	{ BCMA_CORE_CMEM, "CNDS DDR2/3 memory controller" },
++	{ BCMA_CORE_ARM_CA7, "ARM CA7" },
+ 	{ BCMA_CORE_DEFAULT, "Default" },
+ };
+ 
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -151,6 +151,8 @@ struct bcma_host_ops {
+ #define BCMA_CORE_PCIE2			0x83C	/* PCI Express Gen2 */
+ #define BCMA_CORE_USB30_DEV		0x83D
+ #define BCMA_CORE_ARM_CR4		0x83E
++#define BCMA_CORE_GCI			0x840
++#define BCMA_CORE_CMEM			0x846	/* CNDS DDR2/3 memory controller */
+ #define BCMA_CORE_ARM_CA7		0x847
+ #define BCMA_CORE_SYS_MEM		0x849
+ #define BCMA_CORE_DEFAULT		0xFFF
+@@ -199,6 +201,7 @@ struct bcma_host_ops {
+ #define  BCMA_PKG_ID_BCM4707	1
+ #define  BCMA_PKG_ID_BCM4708	2
+ #define  BCMA_PKG_ID_BCM4709	0
++#define BCMA_CHIP_ID_BCM47094	53030
+ #define BCMA_CHIP_ID_BCM53018	53018
+ 
+ /* Board types (on PCI usually equals to the subsystem dev id) */
