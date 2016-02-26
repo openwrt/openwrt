@@ -17,7 +17,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1561,11 +1561,20 @@ static int bgmac_probe(struct bcma_devic
+@@ -1566,11 +1566,20 @@ static int bgmac_probe(struct bcma_devic
  	struct net_device *net_dev;
  	struct bgmac *bgmac;
  	struct ssb_sprom *sprom = &core->bus->sprom;
@@ -41,7 +41,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		pr_err("Unsupported core_unit %d\n", core->core_unit);
  		return -ENOTSUPP;
  	}
-@@ -1600,8 +1609,17 @@ static int bgmac_probe(struct bcma_devic
+@@ -1605,8 +1614,17 @@ static int bgmac_probe(struct bcma_devic
  	}
  	bgmac->cmn = core->bus->drv_gmac_cmn.core;
  
