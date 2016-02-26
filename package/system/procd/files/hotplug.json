@@ -58,10 +58,6 @@
 		]
 	} ],
 	[ "if",
-		[ "eq", "SUBSYSTEM", "platform" ],
-		[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
-	],
-	[ "if",
 		[ "and",
 			[ "has", "BUTTON" ],
 			[ "eq", "SUBSYSTEM", "button" ],
@@ -69,18 +65,16 @@
 		[ "button", "/etc/rc.button/%BUTTON%" ]
 	],
 	[ "if",
-		[ "eq", "SUBSYSTEM",
-			[ "net", "input", "usb", "usbmisc", "ieee1394", "block", "atm", "zaptel", "tty", "button", "sound" ]
-		],
-		[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
-	],
-	[ "if",
 		[ "and",
 			[ "eq", "SUBSYSTEM", "usb-serial" ],
 			[ "regex", "DEVNAME",
 				[ "^ttyUSB", "^ttyACM" ]
-			],
+			]
 		],
-		[ "exec", "/sbin/hotplug-call", "tty" ]
+		[ "exec", "/sbin/hotplug-call", "tty" ],
+		[ "if",
+			[ "isdir", "/etc/hotplug.d/%SUBSYSTEM%" ],
+			[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
+		]
 	],
 ]
