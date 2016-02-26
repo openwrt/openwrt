@@ -1,5 +1,6 @@
+From 2a36a5c30eab9cd1c9d2d08bd27cd763325d70c5 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Sat, 5 Dec 2015 02:03:32 +0100
+Date: Sat, 5 Dec 2015 02:09:43 +0100
 Subject: [PATCH] mtd: bcm47xxpart: limit scanned flash area on BCM47XX (MIPS)
  only
 MIME-Version: 1.0
@@ -14,6 +15,7 @@ Netgear R8000 has board_data at 0x2600000. To detect them we should
 use size limit on MIPS only.
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 ---
  drivers/mtd/bcm47xxpart.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
