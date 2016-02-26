@@ -263,11 +263,11 @@ generate_led() {
 		;;
 
 		netdev)
-			local device
-			json_get_vars device
+			local device mode
+			json_get_vars device mode
 			uci -q batch <<-EOF
 				set system.$cfg.trigger='netdev'
-				set system.$cfg.mode='link tx rx'
+				set system.$cfg.mode='$mode'
 				set system.$cfg.dev='$device'
 			EOF
 		;;
