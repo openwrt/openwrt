@@ -342,7 +342,9 @@ dhcp_host_add() {
 	config_get_bool broadcast "$cfg" broadcast 0
 	[ "$broadcast" = "0" ] && broadcast=
 
-	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip}${name:+,$name}"
+	config_get leasetime "$cfg" leasetime
+
+	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip}${name:+,$name}${leasetime:+,$leasetime}"
 }
 
 dhcp_tag_add() {
