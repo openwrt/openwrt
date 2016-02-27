@@ -118,7 +118,7 @@ sub download
 		copy($link, "$target/$filename.dl");
 
 		$hash_cmd and do {
-			if (system("$hash_cmd '$target/$filename.dl' > '$target/$filename.hash'")) {
+			if (system("cat '$target/$filename.dl' | $hash_cmd > '$target/$filename.hash'")) {
 				print("Failed to generate hash for $filename\n");
 				return;
 			}
