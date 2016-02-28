@@ -78,6 +78,7 @@ platform_check_image() {
 	mpr-a1|\
 	mpr-a2|\
 	mr-102n|\
+	mt7628|\
 	mzk-dp150n|\
 	mzk-w300nh2|\
 	nbg-419n|\
