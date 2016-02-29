@@ -90,8 +90,9 @@ define DownloadMethod/git
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		git clone $(URL) $(SUBDIR) --recursive && \
-		(cd $(SUBDIR) && git checkout $(VERSION) && git submodule update) && \
+		git clone $(URL) $(SUBDIR) && \
+		(cd $(SUBDIR) && git checkout $(VERSION) && \
+		git submodule update --init --recursive) && \
 		echo "Packing checkout..." && \
 		rm -rf $(SUBDIR)/.git && \
 		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
