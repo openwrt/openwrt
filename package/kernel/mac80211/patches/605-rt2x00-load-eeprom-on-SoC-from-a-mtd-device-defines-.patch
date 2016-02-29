@@ -6,12 +6,12 @@ Subject: [PATCH] rt2x00: load eeprom on SoC from a mtd device defines inside
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/Kconfig     |    1 +
- drivers/net/wireless/rt2x00/rt2800pci.c |   44 ++++++++++++++++++++++++++-----
+ drivers/net/wireless/ralink/rt2x00/Kconfig     |    1 +
+ drivers/net/wireless/ralink/rt2x00/rt2800pci.c |   44 ++++++++++++++++++++++++++-----
  2 files changed, 39 insertions(+), 6 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/Kconfig
-+++ b/drivers/net/wireless/rt2x00/Kconfig
+--- a/drivers/net/wireless/ralink/rt2x00/Kconfig
++++ b/drivers/net/wireless/ralink/rt2x00/Kconfig
 @@ -219,6 +219,7 @@ config RT2800SOC
  	select RT2X00_LIB_EEPROM
  	select RT2800_LIB
@@ -20,8 +20,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	---help---
  	  This adds support for Ralink WiSoC devices.
  	  Supported chips: RT2880, RT3050, RT3052, RT3350, RT3352.
---- a/drivers/net/wireless/rt2x00/rt2x00eeprom.c
-+++ b/drivers/net/wireless/rt2x00/rt2x00eeprom.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
 @@ -26,11 +26,66 @@
  
  #include <linux/kernel.h>
@@ -79,7 +79,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (!ret) {
 +		rt2x00dev->eeprom_file = &mtd_fw;
 +		mtd_fw.size = len;
-+		mtd_fw.data = rt2x00dev->eeprom;
++		mtd_fw.data = (const u8 *) rt2x00dev->eeprom;
 +	}
 +#endif
 +

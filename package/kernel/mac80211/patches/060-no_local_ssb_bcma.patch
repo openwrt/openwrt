@@ -1,9 +1,9 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -344,40 +344,3 @@ USB_CDC_PHONET=
- USB_IPHETH=
+@@ -476,44 +476,6 @@ USB_IPHETH=
  USB_SIERRA_NET=
  USB_VL600=
+ USB_NET_CH9200=
 -SSB_POSSIBLE=
 -SSB=
 -SSB_SPROM=
@@ -15,6 +15,7 @@
 -SSB_PCMCIAHOST=
 -SSB_SDIOHOST_POSSIBLE=
 -SSB_SDIOHOST=
+-SSB_HOST_SOC=
 -SSB_SILENT=
 -SSB_DEBUG=
 -SSB_SERIAL=
@@ -32,28 +33,20 @@
 -BCMA_BLOCKIO=
 -BCMA_HOST_PCI_POSSIBLE=
 -BCMA_HOST_PCI=
--BCMA_DRIVER_PCI_HOSTMODE=
 -BCMA_HOST_SOC=
 -BCMA_DRIVER_PCI=
+-BCMA_DRIVER_PCI_HOSTMODE=
 -BCMA_DRIVER_MIPS=
 -BCMA_SFLASH=
 -BCMA_NFLASH=
 -BCMA_DRIVER_GMAC_CMN=
 -BCMA_DRIVER_GPIO=
 -BCMA_DEBUG=
---- a/Makefile.kernel
-+++ b/Makefile.kernel
-@@ -38,8 +38,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
- obj-$(CPTCFG_WLAN) += drivers/net/wireless/
- #obj-$(CPTCFG_BT) += net/bluetooth/
- #obj-$(CPTCFG_BT) += drivers/bluetooth/
--obj-$(CPTCFG_SSB) += drivers/ssb/
--obj-$(CPTCFG_BCMA) += drivers/bcma/
- #obj-$(CPTCFG_ETHERNET) += drivers/net/ethernet/
- obj-$(CPTCFG_USB_NET_RNDIS_WLAN) += drivers/net/usb/
- #obj-$(CPTCFG_NFC) += net/nfc/
---- a/drivers/net/wireless/b43/main.c
-+++ b/drivers/net/wireless/b43/main.c
+ NFC=
+ NFC_DIGITAL=
+ NFC_NCI=
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
 @@ -2866,7 +2866,7 @@ static struct ssb_device *b43_ssb_gpio_d
  {
  	struct ssb_bus *bus = dev->dev->sdev->bus;
@@ -63,7 +56,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4907,7 +4907,7 @@ static int b43_wireless_core_init(struct
+@@ -4903,7 +4903,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */
@@ -72,8 +65,8 @@
  	if (dev->dev->bus_type == B43_BUS_SSB &&
  	    dev->dev->sdev->bus->bustype == SSB_BUSTYPE_PCI &&
  	    dev->dev->sdev->bus->pcicore.dev->id.revision <= 10)
---- a/drivers/net/wireless/b43legacy/main.c
-+++ b/drivers/net/wireless/b43legacy/main.c
+--- a/drivers/net/wireless/broadcom/b43legacy/main.c
++++ b/drivers/net/wireless/broadcom/b43legacy/main.c
 @@ -1937,7 +1937,7 @@ static int b43legacy_gpio_init(struct b4
  	if (dev->dev->id.revision >= 2)
  		mask  |= 0x0010; /* FIXME: This is redundant. */
@@ -92,8 +85,8 @@
  	pcidev = bus->pcicore.dev;
  #endif
  	gpiodev = bus->chipco.dev ? : pcidev;
---- a/drivers/net/wireless/brcm80211/brcmsmac/Makefile
-+++ b/drivers/net/wireless/brcm80211/brcmsmac/Makefile
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmsmac/Makefile
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmsmac/Makefile
 @@ -43,6 +43,6 @@ brcmsmac-y := \
  	brcms_trace_events.o \
  	debug.o
@@ -102,8 +95,8 @@
 +brcmsmac-$(CONFIG_BCMA_DRIVER_GPIO) += led.o
  
  obj-$(CPTCFG_BRCMSMAC)	+= brcmsmac.o
---- a/drivers/net/wireless/brcm80211/brcmsmac/led.h
-+++ b/drivers/net/wireless/brcm80211/brcmsmac/led.h
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmsmac/led.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmsmac/led.h
 @@ -22,7 +22,7 @@ struct brcms_led {
  	bool active_low;
  };
@@ -116,12 +109,23 @@
 --- a/Kconfig.sources
 +++ b/Kconfig.sources
 @@ -9,9 +9,6 @@ source "$BACKPORT_DIR/drivers/net/wirele
- #source "$BACKPORT_DIR/drivers/net/ethernet/Kconfig"
+ source "$BACKPORT_DIR/drivers/net/ethernet/Kconfig"
  source "$BACKPORT_DIR/drivers/net/usb/Kconfig"
  
 -source "$BACKPORT_DIR/drivers/ssb/Kconfig"
 -source "$BACKPORT_DIR/drivers/bcma/Kconfig"
 -
- #source "$BACKPORT_DIR/net/nfc/Kconfig"
+ source "$BACKPORT_DIR/net/nfc/Kconfig"
  
- #source "$BACKPORT_DIR/drivers/media/Kconfig"
+ source "$BACKPORT_DIR/drivers/media/Kconfig"
+--- a/Makefile.kernel
++++ b/Makefile.kernel
+@@ -38,8 +38,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
+ obj-$(CPTCFG_WLAN) += drivers/net/wireless/
+ obj-$(CPTCFG_BT) += net/bluetooth/
+ obj-$(CPTCFG_BT) += drivers/bluetooth/
+-obj-$(CPTCFG_SSB) += drivers/ssb/
+-obj-$(CPTCFG_BCMA) += drivers/bcma/
+ obj-$(CPTCFG_ETHERNET) += drivers/net/ethernet/
+ obj-$(CPTCFG_USB_NET_RNDIS_WLAN) += drivers/net/usb/
+ obj-$(CPTCFG_NFC) += net/nfc/

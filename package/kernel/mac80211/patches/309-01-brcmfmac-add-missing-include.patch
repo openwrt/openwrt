@@ -1,0 +1,19 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Fri, 15 Jan 2016 15:59:45 +0100
+Subject: [PATCH] brcmfmac: add missing include
+
+linux/module.h is required for defining module parameters
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
+@@ -17,6 +17,7 @@
+ #include <linux/kernel.h>
+ #include <linux/string.h>
+ #include <linux/netdevice.h>
++#include <linux/module.h>
+ #include <brcmu_wifi.h>
+ #include <brcmu_utils.h>
+ #include "core.h"

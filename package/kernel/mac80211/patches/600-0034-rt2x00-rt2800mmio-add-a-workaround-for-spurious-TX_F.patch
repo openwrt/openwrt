@@ -6,12 +6,12 @@ Subject: [PATCH] rt2x00: rt2800mmio: add a workaround for spurious
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800mmio.c |   72 +++++++++++++++++++++++++-----
- drivers/net/wireless/rt2x00/rt2x00.h     |    5 +++
+ drivers/net/wireless/ralink/rt2x00/rt2800mmio.c |   72 +++++++++++++++++++++++++-----
+ drivers/net/wireless/ralink/rt2x00/rt2x00.h     |    5 +++
  2 files changed, 65 insertions(+), 12 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800mmio.c
-+++ b/drivers/net/wireless/rt2x00/rt2800mmio.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
 @@ -415,9 +415,9 @@ void rt2800mmio_autowake_tasklet(unsigne
  }
  EXPORT_SYMBOL_GPL(rt2800mmio_autowake_tasklet);
@@ -120,9 +120,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		/*
  		 * Never disable the TX_FIFO_STATUS interrupt.
  		 */
---- a/drivers/net/wireless/rt2x00/rt2x00.h
-+++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -987,6 +987,11 @@ struct rt2x00_dev {
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+@@ -991,6 +991,11 @@ struct rt2x00_dev {
  	int rf_channel;
  
  	/*

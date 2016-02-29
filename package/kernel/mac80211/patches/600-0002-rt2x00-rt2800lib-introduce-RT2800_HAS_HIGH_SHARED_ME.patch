@@ -18,13 +18,13 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Changes since v1:
   - don't enable the new flag for RT3071 and RT5592
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    4 ++++
- drivers/net/wireless/rt2x00/rt2800lib.h |   13 +++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    4 ++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.h |   13 +++++++++++++
  2 files changed, 17 insertions(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -7747,6 +7747,7 @@ static int rt2800_probe_rt(struct rt2x00
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -7722,6 +7722,7 @@ static int rt2800_probe_rt(struct rt2x00
  
  int rt2800_probe_hw(struct rt2x00_dev *rt2x00dev)
  {
@@ -32,7 +32,7 @@ Changes since v1:
  	int retval;
  	u32 reg;
  
-@@ -7754,6 +7755,9 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -7729,6 +7730,9 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	if (retval)
  		return retval;
  
@@ -42,11 +42,11 @@ Changes since v1:
  	/*
  	 * Allocate eeprom data.
  	 */
---- a/drivers/net/wireless/rt2x00/rt2800lib.h
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.h
-@@ -20,6 +20,10 @@
- #ifndef RT2800LIB_H
- #define RT2800LIB_H
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
+@@ -22,6 +22,10 @@
+ 
+ #include "rt2800.h"
  
 +enum rt2800_flag {
 +	RT2800_HAS_HIGH_SHARED_MEM,
@@ -55,16 +55,16 @@ Changes since v1:
  /* RT2800 driver data structure */
  struct rt2800_drv_data {
  	u8 calibration_bw20;
-@@ -29,6 +33,8 @@ struct rt2800_drv_data {
- 	u8 txmixer_gain_24g;
+@@ -32,6 +36,8 @@ struct rt2800_drv_data {
  	u8 txmixer_gain_5g;
  	unsigned int tbtt_tick;
+ 	DECLARE_BITMAP(sta_ids, STA_IDS_SIZE);
 +
 +	unsigned long rt2800_flags;
  };
  
  struct rt2800_ops {
-@@ -61,6 +67,13 @@ struct rt2800_ops {
+@@ -64,6 +70,13 @@ struct rt2800_ops {
  	__le32 *(*drv_get_txwi)(struct queue_entry *entry);
  };
  

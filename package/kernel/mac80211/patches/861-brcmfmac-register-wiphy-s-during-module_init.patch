@@ -11,9 +11,9 @@ module loads successfully.
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 ---
 
---- a/drivers/net/wireless/brcm80211/brcmfmac/core.c
-+++ b/drivers/net/wireless/brcm80211/brcmfmac/core.c
-@@ -1226,6 +1226,7 @@ static int __init brcmfmac_module_init(v
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -1332,6 +1332,7 @@ static int __init brcmfmac_module_init(v
  #endif
  	if (!schedule_work(&brcmf_driver_work))
  		return -EBUSY;
@@ -21,9 +21,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	return 0;
  }
---- a/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
-+++ b/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
-@@ -422,13 +422,14 @@ struct brcmf_fw {
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
+@@ -418,6 +418,7 @@ struct brcmf_fw {
  	u16 bus_nr;
  	void (*done)(struct device *dev, const struct firmware *fw,
  		     void *nvram_image, u32 nvram_len);
@@ -31,16 +31,8 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  };
  
  static void brcmf_fw_request_nvram_done(const struct firmware *fw, void *ctx)
- {
- 	struct brcmf_fw *fwctx = ctx;
- #if IS_ENABLED(CONFIG_BCM47XX_NVRAM)
--	const u8 *bcm47xx_nvram = NULL;
-+	u8 *bcm47xx_nvram = NULL;
- 	size_t bcm47xx_nvram_len;
- #endif
- 	const u8 *data = NULL;
-@@ -468,6 +469,8 @@ static void brcmf_fw_request_nvram_done(
- 	}
+@@ -452,6 +453,8 @@ static void brcmf_fw_request_nvram_done(
+ 		goto fail;
  
  	fwctx->done(fwctx->dev, fwctx->code, nvram, nvram_length);
 +	if (fwctx->completion)
@@ -48,7 +40,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	kfree(fwctx);
  	return;
  
-@@ -475,6 +478,8 @@ fail:
+@@ -459,6 +462,8 @@ fail:
  	brcmf_dbg(TRACE, "failed: dev=%s\n", dev_name(fwctx->dev));
  	release_firmware(fwctx->code);
  	device_release_driver(fwctx->dev);
@@ -57,7 +49,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	kfree(fwctx);
  }
  
-@@ -490,6 +495,8 @@ static void brcmf_fw_request_code_done(c
+@@ -474,6 +479,8 @@ static void brcmf_fw_request_code_done(c
  	/* only requested code so done here */
  	if (!(fwctx->flags & BRCMF_FW_REQUEST_NVRAM)) {
  		fwctx->done(fwctx->dev, fw, NULL, 0);
@@ -66,16 +58,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		kfree(fwctx);
  		return;
  	}
-@@ -504,6 +511,8 @@ static void brcmf_fw_request_code_done(c
- 	/* when nvram is optional call .done() callback here */
- 	if (fwctx->flags & BRCMF_FW_REQ_NV_OPTIONAL) {
- 		fwctx->done(fwctx->dev, fw, NULL, 0);
-+		if (fwctx->completion)
-+			complete(fwctx->completion);
- 		kfree(fwctx);
- 		return;
- 	}
-@@ -513,6 +522,8 @@ static void brcmf_fw_request_code_done(c
+@@ -491,6 +498,8 @@ static void brcmf_fw_request_code_done(c
  fail:
  	brcmf_dbg(TRACE, "failed: dev=%s\n", dev_name(fwctx->dev));
  	device_release_driver(fwctx->dev);
@@ -84,7 +67,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	kfree(fwctx);
  }
  
-@@ -524,6 +535,8 @@ int brcmf_fw_get_firmwares_pcie(struct d
+@@ -502,6 +511,8 @@ int brcmf_fw_get_firmwares_pcie(struct d
  				u16 domain_nr, u16 bus_nr)
  {
  	struct brcmf_fw *fwctx;
@@ -93,7 +76,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	brcmf_dbg(TRACE, "enter: dev=%s\n", dev_name(dev));
  	if (!fw_cb || !code)
-@@ -544,9 +557,17 @@ int brcmf_fw_get_firmwares_pcie(struct d
+@@ -522,9 +533,17 @@ int brcmf_fw_get_firmwares_pcie(struct d
  	fwctx->domain_nr = domain_nr;
  	fwctx->bus_nr = bus_nr;
  

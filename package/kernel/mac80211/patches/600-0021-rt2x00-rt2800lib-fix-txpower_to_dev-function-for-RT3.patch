@@ -5,12 +5,12 @@ Subject: [PATCH] rt2x00: rt2800lib: fix txpower_to_dev function for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    6 ++++--
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -3416,13 +3416,15 @@ static char rt2800_txpower_to_dev(struct
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -3393,13 +3393,15 @@ static char rt2800_txpower_to_dev(struct
  				  unsigned int channel,
  				  char txpower)
  {

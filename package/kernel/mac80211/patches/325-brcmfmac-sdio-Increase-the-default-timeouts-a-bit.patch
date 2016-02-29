@@ -1,0 +1,41 @@
+From: Sjoerd Simons <sjoerd.simons@collabora.co.uk>
+Date: Mon, 25 Jan 2016 11:47:29 +0100
+Subject: [PATCH] brcmfmac: sdio: Increase the default timeouts a bit
+
+On a Radxa Rock2 board with a Ampak AP6335 (Broadcom 4339 core) it seems
+the card responds very quickly most of the time, unfortunately during
+initialisation it sometimes seems to take just a bit over 2 seconds to
+respond.
+
+This results intialization failing with message like:
+  brcmf_c_preinit_dcmds: Retreiving cur_etheraddr failed, -52
+  brcmf_bus_start: failed: -52
+  brcmf_sdio_firmware_callback: dongle is not responding
+
+Increasing the timeout to allow for a bit more headroom allows the
+card to initialize reliably.
+
+A quick search online after diagnosing/fixing this showed that Google
+has a similar patch in their ChromeOS tree, so this doesn't seem
+specific to the board I'm using.
+
+Signed-off-by: Sjoerd Simons <sjoerd.simons@collabora.co.uk>
+Reviewed-by: Julian Calaby <julian.calaby@gmail.com>
+Acked-by: Arend van Spriel <arend@broadcom.com>
+Reviewed-by: Douglas Anderson <dianders@chromium.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -45,8 +45,8 @@
+ #include "chip.h"
+ #include "firmware.h"
+ 
+-#define DCMD_RESP_TIMEOUT	msecs_to_jiffies(2000)
+-#define CTL_DONE_TIMEOUT	msecs_to_jiffies(2000)
++#define DCMD_RESP_TIMEOUT	msecs_to_jiffies(2500)
++#define CTL_DONE_TIMEOUT	msecs_to_jiffies(2500)
+ 
+ #ifdef DEBUG
+ 

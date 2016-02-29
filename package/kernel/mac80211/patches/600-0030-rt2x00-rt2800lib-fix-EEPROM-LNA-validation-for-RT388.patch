@@ -5,12 +5,12 @@ Subject: [PATCH] rt2x00: rt2800lib: fix EEPROM LNA validation for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    9 ++++++---
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -7630,7 +7630,8 @@ static int rt2800_validate_eeprom(struct
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -7607,7 +7607,8 @@ static int rt2800_validate_eeprom(struct
  	rt2800_eeprom_read(rt2x00dev, EEPROM_RSSI_BG2, &word);
  	if (abs(rt2x00_get_field16(word, EEPROM_RSSI_BG2_OFFSET2)) > 10)
  		rt2x00_set_field16(&word, EEPROM_RSSI_BG2_OFFSET2, 0);
@@ -20,7 +20,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		if (rt2x00_get_field16(word, EEPROM_RSSI_BG2_LNA_A1) == 0x00 ||
  		    rt2x00_get_field16(word, EEPROM_RSSI_BG2_LNA_A1) == 0xff)
  			rt2x00_set_field16(&word, EEPROM_RSSI_BG2_LNA_A1,
-@@ -7650,7 +7651,8 @@ static int rt2800_validate_eeprom(struct
+@@ -7627,7 +7628,8 @@ static int rt2800_validate_eeprom(struct
  	rt2800_eeprom_read(rt2x00dev, EEPROM_RSSI_A2, &word);
  	if (abs(rt2x00_get_field16(word, EEPROM_RSSI_A2_OFFSET2)) > 10)
  		rt2x00_set_field16(&word, EEPROM_RSSI_A2_OFFSET2, 0);
@@ -30,7 +30,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		if (rt2x00_get_field16(word, EEPROM_RSSI_A2_LNA_A2) == 0x00 ||
  		    rt2x00_get_field16(word, EEPROM_RSSI_A2_LNA_A2) == 0xff)
  			rt2x00_set_field16(&word, EEPROM_RSSI_A2_LNA_A2,
-@@ -7658,7 +7660,8 @@ static int rt2800_validate_eeprom(struct
+@@ -7635,7 +7637,8 @@ static int rt2800_validate_eeprom(struct
  	}
  	rt2800_eeprom_write(rt2x00dev, EEPROM_RSSI_A2, word);
  

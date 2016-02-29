@@ -5,11 +5,11 @@ Subject: [PATCH] rt2x00: rt2800soc: fix rt2800soc_disable_radio for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800soc.c |    9 ++++++++-
+ drivers/net/wireless/ralink/rt2x00/rt2800soc.c |    9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800soc.c
-+++ b/drivers/net/wireless/rt2x00/rt2800soc.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
 @@ -51,9 +51,16 @@ static bool rt2800soc_hwcrypt_disabled(s
  
  static void rt2800soc_disable_radio(struct rt2x00_dev *rt2x00dev)

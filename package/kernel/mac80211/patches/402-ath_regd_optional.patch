@@ -47,9 +47,9 @@
  
 --- a/drivers/net/wireless/ath/Kconfig
 +++ b/drivers/net/wireless/ath/Kconfig
-@@ -22,6 +22,9 @@ menuconfig ATH_CARDS
+@@ -23,6 +23,9 @@ config WLAN_VENDOR_ATH
  
- if ATH_CARDS
+ if WLAN_VENDOR_ATH
  
 +config ATH_USER_REGD
 +	bool "Do not enforce EEPROM regulatory restrictions"
@@ -59,9 +59,9 @@
  	---help---
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -89,6 +89,7 @@ RTL8187_LEDS=
+@@ -125,6 +125,7 @@ ADM8211=
  ATH_COMMON=
- ATH_CARDS=
+ WLAN_VENDOR_ATH=
  ATH_DEBUG=
 +ATH_USER_REGD=
  ATH_TRACEPOINTS=

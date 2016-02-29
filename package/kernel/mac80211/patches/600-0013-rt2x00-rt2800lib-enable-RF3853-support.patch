@@ -5,12 +5,12 @@ Subject: [PATCH] rt2x00: rt2800lib: enable RF3853 support
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    1 +
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    1 +
  1 file changed, 1 insertion(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -7430,6 +7430,7 @@ static int rt2800_init_eeprom(struct rt2
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -7407,6 +7407,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF3290:
  	case RF3320:
  	case RF3322:

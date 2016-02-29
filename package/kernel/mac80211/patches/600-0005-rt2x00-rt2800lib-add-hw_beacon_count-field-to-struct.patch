@@ -18,13 +18,13 @@ new field with the actually used value.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    5 ++++-
- drivers/net/wireless/rt2x00/rt2800lib.h |    1 +
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    5 ++++-
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.h |    1 +
  2 files changed, 5 insertions(+), 1 deletion(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -4638,6 +4638,7 @@ EXPORT_SYMBOL_GPL(rt2800_link_tuner);
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -4615,6 +4615,7 @@ EXPORT_SYMBOL_GPL(rt2800_link_tuner);
   */
  static int rt2800_init_registers(struct rt2x00_dev *rt2x00dev)
  {
@@ -32,7 +32,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	u32 reg;
  	u16 eeprom;
  	unsigned int i;
-@@ -5003,7 +5004,7 @@ static int rt2800_init_registers(struct
+@@ -4980,7 +4981,7 @@ static int rt2800_init_registers(struct
  	/*
  	 * Clear all beacons
  	 */
@@ -41,7 +41,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		rt2800_clear_beacon_register(rt2x00dev, i);
  
  	if (rt2x00_is_usb(rt2x00dev)) {
-@@ -7852,6 +7853,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -7827,6 +7828,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	if (rt2x00_rt(rt2x00dev, RT3593))
  		__set_bit(RT2800_HAS_HIGH_SHARED_MEM, &drv_data->rt2800_flags);
  
@@ -50,13 +50,13 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	/*
  	 * Allocate eeprom data.
  	 */
---- a/drivers/net/wireless/rt2x00/rt2800lib.h
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.h
-@@ -33,6 +33,7 @@ struct rt2800_drv_data {
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
+@@ -35,6 +35,7 @@ struct rt2800_drv_data {
  	u8 txmixer_gain_24g;
  	u8 txmixer_gain_5g;
  	unsigned int tbtt_tick;
 +	unsigned int hw_beacon_count;
+ 	DECLARE_BITMAP(sta_ids, STA_IDS_SIZE);
  
  	unsigned long rt2800_flags;
- 

@@ -6,12 +6,12 @@ Subject: [PATCH] rt2x00: rt2800lib: hardcode txmixer gain values to zero for
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    6 ++++--
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -7493,7 +7493,8 @@ static u8 rt2800_get_txmixer_gain_24g(st
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -7470,7 +7470,8 @@ static u8 rt2800_get_txmixer_gain_24g(st
  {
  	u16 word;
  
@@ -21,7 +21,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		return 0;
  
  	rt2800_eeprom_read(rt2x00dev, EEPROM_TXMIXER_GAIN_BG, &word);
-@@ -7507,7 +7508,8 @@ static u8 rt2800_get_txmixer_gain_5g(str
+@@ -7484,7 +7485,8 @@ static u8 rt2800_get_txmixer_gain_5g(str
  {
  	u16 word;
  

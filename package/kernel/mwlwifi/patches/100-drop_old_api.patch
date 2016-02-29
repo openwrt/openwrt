@@ -1,0 +1,92 @@
+--- a/main.c
++++ b/main.c
+@@ -418,11 +418,7 @@ static void mwl_set_ht_caps(struct mwl_p
+ 	band->ht_cap.cap |= IEEE80211_HT_CAP_SGI_20;
+ 	band->ht_cap.cap |= IEEE80211_HT_CAP_SGI_40;
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+-	hw->flags |= IEEE80211_HW_AMPDU_AGGREGATION;
+-#else
+ 	ieee80211_hw_set(hw, AMPDU_AGGREGATION);
+-#endif
+ 	band->ht_cap.ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
+ 	band->ht_cap.ampdu_density = IEEE80211_HT_MPDU_DENSITY_4;
+ 
+@@ -524,29 +520,16 @@ static int mwl_wl_init(struct mwl_priv *
+ 	hw->queues = SYSADPT_TX_WMM_QUEUES;
+ 
+ 	/* Set rssi values to dBm */
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+-	hw->flags |= IEEE80211_HW_SIGNAL_DBM | IEEE80211_HW_HAS_RATE_CONTROL;
+-#else
+ 	ieee80211_hw_set(hw, SIGNAL_DBM);
+ 	ieee80211_hw_set(hw, HAS_RATE_CONTROL);
+-#endif
+ 
+ 	/* Ask mac80211 not to trigger PS mode
+ 	 * based on PM bit of incoming frames.
+ 	 */
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+-	hw->flags |= IEEE80211_HW_AP_LINK_PS;
+-#else
+ 	ieee80211_hw_set(hw, AP_LINK_PS);
+-#endif
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+-	hw->flags |= IEEE80211_HW_SUPPORTS_PER_STA_GTK |
+-		     IEEE80211_HW_MFP_CAPABLE;
+-#else
+ 	ieee80211_hw_set(hw, SUPPORTS_PER_STA_GTK);
+ 	ieee80211_hw_set(hw, MFP_CAPABLE);
+-#endif
+ 
+ 	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
+ 
+--- a/dev.h
++++ b/dev.h
+@@ -484,10 +484,6 @@ static inline struct mwl_sta *mwl_dev_ge
+ 	return (struct mwl_sta *)&sta->drv_priv;
+ }
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+-#define ether_addr_copy(dst, src) memcpy(dst, src, ETH_ALEN)
+-#endif
+-
+ /* Defined in mac80211.c. */
+ extern const struct ieee80211_ops mwl_mac80211_ops;
+ 
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -572,19 +572,11 @@ static int mwl_mac80211_get_survey(struc
+ 	return 0;
+ }
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
+-static int mwl_mac80211_ampdu_action(struct ieee80211_hw *hw,
+-				     struct ieee80211_vif *vif,
+-				     enum ieee80211_ampdu_mlme_action action,
+-				     struct ieee80211_sta *sta,
+-				     u16 tid, u16 *ssn, u8 buf_size)
+-#else
+ static int mwl_mac80211_ampdu_action(struct ieee80211_hw *hw,
+ 				     struct ieee80211_vif *vif,
+ 				     enum ieee80211_ampdu_mlme_action action,
+ 				     struct ieee80211_sta *sta,
+ 				     u16 tid, u16 *ssn, u8 buf_size, bool amsdu)
+-#endif
+ {
+ 	int rc = 0;
+ 	struct mwl_priv *priv = hw->priv;
+--- a/rx.c
++++ b/rx.c
+@@ -232,10 +232,8 @@ static inline void mwl_rx_prepare_status
+ 		status->flag |= RX_FLAG_VHT;
+ 		if (bw == RX_RATE_INFO_HT40)
+ 			status->flag |= RX_FLAG_40MHZ;
+-#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 18, 0)
+ 		if (bw == RX_RATE_INFO_HT80)
+ 			status->vht_flag |= RX_VHT_FLAG_80MHZ;
+-#endif
+ 		if (gi == RX_RATE_INFO_SHORT_INTERVAL)
+ 			status->flag |= RX_FLAG_SHORT_GI;
+ 		status->vht_nss = (nss + 1);

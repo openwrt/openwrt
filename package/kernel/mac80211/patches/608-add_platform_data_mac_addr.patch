@@ -8,8 +8,8 @@
  
  	int disable_2ghz;
  	int disable_5ghz;
---- a/drivers/net/wireless/rt2x00/rt2x00dev.c
-+++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
 @@ -931,6 +931,18 @@ static void rt2x00lib_rate(struct ieee80
  		entry->flags |= IEEE80211_RATE_SHORT_PREAMBLE;
  }
@@ -29,9 +29,9 @@
  static int rt2x00lib_probe_hw_modes(struct rt2x00_dev *rt2x00dev,
  				    struct hw_mode_spec *spec)
  {
---- a/drivers/net/wireless/rt2x00/rt2x00.h
-+++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -1410,6 +1410,7 @@ static inline void rt2x00debug_dump_fram
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+@@ -1414,6 +1414,7 @@ static inline void rt2x00debug_dump_fram
   */
  u32 rt2x00lib_get_bssidx(struct rt2x00_dev *rt2x00dev,
  			 struct ieee80211_vif *vif);
@@ -39,8 +39,8 @@
  
  /*
   * Interrupt context handlers.
---- a/drivers/net/wireless/rt2x00/rt61pci.c
-+++ b/drivers/net/wireless/rt2x00/rt61pci.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt61pci.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt61pci.c
 @@ -2392,6 +2392,7 @@ static int rt61pci_validate_eeprom(struc
  	u32 reg;
  	u16 word;

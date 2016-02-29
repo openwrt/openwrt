@@ -5,12 +5,12 @@ Subject: [PATCH] rt2x00: rt2800lib: fix antenna configuration for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    3 ++-
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -1961,7 +1961,8 @@ void rt2800_config_ant(struct rt2x00_dev
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -1938,7 +1938,8 @@ void rt2800_config_ant(struct rt2x00_dev
  	rt2800_bbp_write(rt2x00dev, 3, r3);
  	rt2800_bbp_write(rt2x00dev, 1, r1);
  

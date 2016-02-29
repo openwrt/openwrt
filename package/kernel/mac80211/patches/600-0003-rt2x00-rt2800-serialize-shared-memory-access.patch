@@ -17,17 +17,17 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
 Changes since v1: ---
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c  |   55 +++++++++++++++++++++++++++++-
- drivers/net/wireless/rt2x00/rt2800lib.h  |   32 +++++++++++++++++
- drivers/net/wireless/rt2x00/rt2800mmio.c |   26 ++++++++++++++
- drivers/net/wireless/rt2x00/rt2800mmio.h |    4 +++
- drivers/net/wireless/rt2x00/rt2800pci.c  |   14 ++++++++
- drivers/net/wireless/rt2x00/rt2800soc.c  |    3 ++
- drivers/net/wireless/rt2x00/rt2800usb.c  |   31 +++++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c  |   55 +++++++++++++++++++++++++++++-
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.h  |   32 +++++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800mmio.c |   26 ++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800mmio.h |    4 +++
+ drivers/net/wireless/ralink/rt2x00/rt2800pci.c  |   14 ++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800soc.c  |    3 ++
+ drivers/net/wireless/ralink/rt2x00/rt2800usb.c  |   31 +++++++++++++++++
  7 files changed, 164 insertions(+), 1 deletion(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -451,11 +451,13 @@ void rt2800_mcu_request(struct rt2x00_de
  		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_CMD_TOKEN, token);
  		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG0, arg0);
@@ -175,7 +175,7 @@ Changes since v1: ---
  
  	/*
  	 * Update WCID information
-@@ -1437,8 +1467,11 @@ int rt2800_config_pairwise_key(struct rt
+@@ -1405,8 +1435,11 @@ int rt2800_config_pairwise_key(struct rt
  		       sizeof(key_entry.rx_mic));
  
  		offset = PAIRWISE_KEY_ENTRY(key->hw_key_idx);
@@ -187,7 +187,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -4908,14 +4941,19 @@ static int rt2800_init_registers(struct
+@@ -4885,14 +4918,19 @@ static int rt2800_init_registers(struct
  	/*
  	 * ASIC will keep garbage value after boot, clear encryption keys.
  	 */
@@ -207,7 +207,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -5041,8 +5079,10 @@ static int rt2800_wait_bbp_ready(struct
+@@ -5018,8 +5056,10 @@ static int rt2800_wait_bbp_ready(struct
  	 * BBP was enabled after firmware was loaded,
  	 * but we need to reactivate it now.
  	 */
@@ -218,7 +218,7 @@ Changes since v1: ---
  	msleep(1);
  
  	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-@@ -6738,11 +6778,19 @@ int rt2800_enable_radio(struct rt2x00_de
+@@ -6715,11 +6755,19 @@ int rt2800_enable_radio(struct rt2x00_de
  	/*
  	 * Send signal during boot time to initialize firmware.
  	 */
@@ -239,7 +239,7 @@ Changes since v1: ---
  	msleep(1);
  
  	/*
-@@ -7751,6 +7799,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -7726,6 +7774,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	int retval;
  	u32 reg;
  
@@ -248,22 +248,22 @@ Changes since v1: ---
  	retval = rt2800_probe_rt(rt2x00dev);
  	if (retval)
  		return retval;
-@@ -7830,8 +7880,11 @@ void rt2800_get_tkip_seq(struct ieee8021
- 	u32 offset;
+@@ -7809,8 +7859,11 @@ void rt2800_get_key_seq(struct ieee80211
+ 		return;
  
- 	offset = MAC_IVEIV_ENTRY(hw_key_idx);
+ 	offset = MAC_IVEIV_ENTRY(key->hw_key_idx);
 +
 +	rt2800_shared_mem_lock(rt2x00dev);
  	rt2800_register_multiread(rt2x00dev, offset,
  				      &iveiv_entry, sizeof(iveiv_entry));
 +	rt2800_shared_mem_unlock(rt2x00dev);
  
- 	memcpy(iv16, &iveiv_entry.iv[0], sizeof(*iv16));
- 	memcpy(iv32, &iveiv_entry.iv[4], sizeof(*iv32));
---- a/drivers/net/wireless/rt2x00/rt2800lib.h
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.h
-@@ -35,6 +35,11 @@ struct rt2800_drv_data {
- 	unsigned int tbtt_tick;
+ 	memcpy(&seq->tkip.iv16, &iveiv_entry.iv[0], 2);
+ 	memcpy(&seq->tkip.iv32, &iveiv_entry.iv[4], 4);
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
+@@ -38,6 +38,11 @@ struct rt2800_drv_data {
+ 	DECLARE_BITMAP(sta_ids, STA_IDS_SIZE);
  
  	unsigned long rt2800_flags;
 +
@@ -274,7 +274,7 @@ Changes since v1: ---
  };
  
  struct rt2800_ops {
-@@ -65,6 +70,10 @@ struct rt2800_ops {
+@@ -68,6 +73,10 @@ struct rt2800_ops {
  				  const u8 *data, const size_t len);
  	int (*drv_init_registers)(struct rt2x00_dev *rt2x00dev);
  	__le32 *(*drv_get_txwi)(struct queue_entry *entry);
@@ -285,7 +285,7 @@ Changes since v1: ---
  };
  
  static inline bool rt2800_has_high_shared_mem(struct rt2x00_dev *rt2x00dev)
-@@ -74,6 +83,29 @@ static inline bool rt2800_has_high_share
+@@ -77,6 +86,29 @@ static inline bool rt2800_has_high_share
  	return test_bit(RT2800_HAS_HIGH_SHARED_MEM, &drv_data->rt2800_flags);
  }
  
@@ -315,8 +315,8 @@ Changes since v1: ---
  static inline void rt2800_register_read(struct rt2x00_dev *rt2x00dev,
  					const unsigned int offset,
  					u32 *value)
---- a/drivers/net/wireless/rt2x00/rt2800mmio.c
-+++ b/drivers/net/wireless/rt2x00/rt2800mmio.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
 @@ -820,8 +820,10 @@ int rt2800mmio_init_registers(struct rt2
  	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DRX_IDX0, 1);
  	rt2x00mmio_register_write(rt2x00dev, WPDMA_RST_IDX, reg);
@@ -359,8 +359,8 @@ Changes since v1: ---
  MODULE_AUTHOR(DRV_PROJECT);
  MODULE_VERSION(DRV_VERSION);
  MODULE_DESCRIPTION("rt2800 MMIO library");
---- a/drivers/net/wireless/rt2x00/rt2800mmio.h
-+++ b/drivers/net/wireless/rt2x00/rt2800mmio.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.h
 @@ -160,4 +160,8 @@ int rt2800mmio_init_registers(struct rt2
  /* Device state switch handlers. */
  int rt2800mmio_enable_radio(struct rt2x00_dev *rt2x00dev);
@@ -370,8 +370,8 @@ Changes since v1: ---
 +void rt2800mmio_shmem_unlock(struct rt2x00_dev *rt2x00dev);
 +
  #endif /* RT2800MMIO_H */
---- a/drivers/net/wireless/rt2x00/rt2800pci.c
-+++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
 @@ -69,7 +69,9 @@ static void rt2800pci_mcu_status(struct
  		return;
  
@@ -444,8 +444,8 @@ Changes since v1: ---
  };
  
  static const struct rt2x00lib_ops rt2800pci_rt2x00_ops = {
---- a/drivers/net/wireless/rt2x00/rt2800soc.c
-+++ b/drivers/net/wireless/rt2x00/rt2800soc.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
 @@ -176,6 +176,9 @@ static const struct rt2800_ops rt2800soc
  	.drv_write_firmware	= rt2800soc_write_firmware,
  	.drv_init_registers	= rt2800mmio_init_registers,
@@ -456,8 +456,8 @@ Changes since v1: ---
  };
  
  static const struct rt2x00lib_ops rt2800soc_rt2x00_ops = {
---- a/drivers/net/wireless/rt2x00/rt2800usb.c
-+++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
 @@ -51,6 +51,27 @@ static bool rt2800usb_hwcrypt_disabled(s
  	return modparam_nohwcrypt;
  }
@@ -486,7 +486,7 @@ Changes since v1: ---
  /*
   * Queue handlers.
   */
-@@ -294,8 +315,10 @@ static int rt2800usb_write_firmware(stru
+@@ -299,8 +320,10 @@ static int rt2800usb_write_firmware(stru
  					      data + offset, length);
  	}
  
@@ -497,7 +497,7 @@ Changes since v1: ---
  
  	/*
  	 * Send firmware request to device to load firmware,
-@@ -310,7 +333,10 @@ static int rt2800usb_write_firmware(stru
+@@ -315,7 +338,10 @@ static int rt2800usb_write_firmware(stru
  	}
  
  	msleep(10);
@@ -508,7 +508,7 @@ Changes since v1: ---
  
  	return 0;
  }
-@@ -328,8 +354,10 @@ static int rt2800usb_init_registers(stru
+@@ -333,8 +359,10 @@ static int rt2800usb_init_registers(stru
  	if (rt2800_wait_csr_ready(rt2x00dev))
  		return -EBUSY;
  
@@ -519,7 +519,7 @@ Changes since v1: ---
  
  	reg = 0;
  	rt2x00_set_field32(&reg, MAC_SYS_CTRL_RESET_CSR, 1);
-@@ -859,6 +887,9 @@ static const struct rt2800_ops rt2800usb
+@@ -863,6 +891,9 @@ static const struct rt2800_ops rt2800usb
  	.drv_write_firmware	= rt2800usb_write_firmware,
  	.drv_init_registers	= rt2800usb_init_registers,
  	.drv_get_txwi		= rt2800usb_get_txwi,

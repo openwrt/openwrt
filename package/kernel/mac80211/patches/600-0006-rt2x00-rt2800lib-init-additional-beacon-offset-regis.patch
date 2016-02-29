@@ -5,12 +5,12 @@ Subject: [PATCH] rt2x00: rt2800lib: init additional beacon offset registers
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800.h    |   14 ++++++++++++++
- drivers/net/wireless/rt2x00/rt2800lib.c |   24 ++++++++++++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800.h    |   14 ++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |   24 ++++++++++++++++++++++++
  2 files changed, 38 insertions(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800.h
-+++ b/drivers/net/wireless/rt2x00/rt2800.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
 @@ -629,6 +629,20 @@
   */
  #define PBF_DBG				0x043c
@@ -32,9 +32,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  /*
   * RF registers
   */
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -4650,6 +4650,30 @@ static int rt2800_init_registers(struct
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -4627,6 +4627,30 @@ static int rt2800_init_registers(struct
  	if (ret)
  		return ret;
  

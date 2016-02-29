@@ -5,11 +5,11 @@ Subject: [PATCH] rt2x00: rt2800lib: use correct [RT]XWI size for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    1 +
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    1 +
  1 file changed, 1 insertion(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -558,6 +558,7 @@ void rt2800_get_txwi_rxwi_size(struct rt
  {
  	switch (rt2x00dev->chip.rt) {

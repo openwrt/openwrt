@@ -1,5 +1,5 @@
---- a/drivers/net/wireless/libertas/cfg.c
-+++ b/drivers/net/wireless/libertas/cfg.c
+--- a/drivers/net/wireless/marvell/libertas/cfg.c
++++ b/drivers/net/wireless/marvell/libertas/cfg.c
 @@ -2084,6 +2084,8 @@ struct wireless_dev *lbs_cfg_alloc(struc
  		goto err_wiphy_new;
  	}
@@ -9,8 +9,8 @@
  	lbs_deb_leave(LBS_DEB_CFG80211);
  	return wdev;
  
---- a/drivers/net/wireless/libertas/main.c
-+++ b/drivers/net/wireless/libertas/main.c
+--- a/drivers/net/wireless/marvell/libertas/main.c
++++ b/drivers/net/wireless/marvell/libertas/main.c
 @@ -987,6 +987,7 @@ struct lbs_private *lbs_add_card(void *c
  		goto err_adapter;
  	}

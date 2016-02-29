@@ -5,12 +5,12 @@ Subject: [PATCH] rt2x00: rt2800lib: enable support for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    1 +
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    1 +
  1 file changed, 1 insertion(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -7847,6 +7847,7 @@ static int rt2800_probe_rt(struct rt2x00
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -7822,6 +7822,7 @@ static int rt2800_probe_rt(struct rt2x00
  	case RT3390:
  	case RT3572:
  	case RT3593:

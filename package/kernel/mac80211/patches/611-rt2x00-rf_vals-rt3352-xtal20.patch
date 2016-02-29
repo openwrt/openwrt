@@ -1,6 +1,6 @@
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -8209,6 +8209,27 @@ static const struct rf_channel rf_vals_5
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -8186,6 +8186,27 @@ static const struct rf_channel rf_vals_5
  	{196, 83, 0, 12, 1},
  };
  
@@ -28,7 +28,7 @@
  static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  {
  	struct hw_mode_spec *spec = &rt2x00dev->spec;
-@@ -8297,7 +8318,10 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8272,7 +8293,10 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5390:
  	case RF5392:
  		spec->num_channels = 14;
@@ -40,7 +40,7 @@
  		break;
  
  	case RF3052:
-@@ -8481,6 +8505,19 @@ static int rt2800_probe_rt(struct rt2x00
+@@ -8456,6 +8480,19 @@ static int rt2800_probe_rt(struct rt2x00
  	return 0;
  }
  
@@ -60,7 +60,7 @@
  int rt2800_probe_hw(struct rt2x00_dev *rt2x00dev)
  {
  	struct rt2800_drv_data *drv_data = rt2x00dev->drv_data;
-@@ -8523,6 +8560,15 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -8498,6 +8535,15 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	rt2800_register_write(rt2x00dev, GPIO_CTRL, reg);
  
  	/*
@@ -76,9 +76,9 @@
  	 * Initialize hw specifications.
  	 */
  	retval = rt2800_probe_hw_mode(rt2x00dev);
---- a/drivers/net/wireless/rt2x00/rt2x00.h
-+++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -398,6 +398,7 @@ static inline struct rt2x00_intf* vif_to
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+@@ -400,6 +400,7 @@ static inline struct rt2x00_intf* vif_to
   * @channels: Device/chipset specific channel values (See &struct rf_channel).
   * @channels_info: Additional information for channels (See &struct channel_info).
   * @ht: Driver HT Capabilities (See &ieee80211_sta_ht_cap).
@@ -86,7 +86,7 @@
   */
  struct hw_mode_spec {
  	unsigned int supported_bands;
-@@ -414,6 +415,7 @@ struct hw_mode_spec {
+@@ -416,6 +417,7 @@ struct hw_mode_spec {
  	const struct channel_info *channels_info;
  
  	struct ieee80211_sta_ht_cap ht;

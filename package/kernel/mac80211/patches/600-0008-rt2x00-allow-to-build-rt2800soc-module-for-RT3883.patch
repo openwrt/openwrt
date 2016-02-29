@@ -5,11 +5,11 @@ Subject: [PATCH] rt2x00: allow to build rt2800soc module for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/Kconfig |    2 +-
+ drivers/net/wireless/ralink/rt2x00/Kconfig |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
---- a/drivers/net/wireless/rt2x00/Kconfig
-+++ b/drivers/net/wireless/rt2x00/Kconfig
+--- a/drivers/net/wireless/ralink/rt2x00/Kconfig
++++ b/drivers/net/wireless/ralink/rt2x00/Kconfig
 @@ -210,7 +210,7 @@ endif
  config RT2800SOC
  	tristate "Ralink WiSoC support"

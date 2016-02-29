@@ -1,5 +1,5 @@
---- a/drivers/net/wireless/b43/Makefile
-+++ b/drivers/net/wireless/b43/Makefile
+--- a/drivers/net/wireless/broadcom/b43/Makefile
++++ b/drivers/net/wireless/broadcom/b43/Makefile
 @@ -17,7 +17,7 @@ b43-$(CPTCFG_B43_PHY_AC)	+= phy_ac.o
  b43-y				+= sysfs.o
  b43-y				+= xmit.o
@@ -9,8 +9,8 @@
  b43-y				+= rfkill.o
  b43-y				+= ppr.o
  b43-$(CPTCFG_B43_LEDS)		+= leds.o
---- a/drivers/net/wireless/b43/main.c
-+++ b/drivers/net/wireless/b43/main.c
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
 @@ -2008,10 +2008,12 @@ static void b43_do_interrupt_thread(stru
  			dma_reason[0], dma_reason[1],
  			dma_reason[2], dma_reason[3],
@@ -24,8 +24,8 @@
  		b43_controller_restart(dev, "DMA error");
  		return;
  	}
---- a/drivers/net/wireless/b43/pio.h
-+++ b/drivers/net/wireless/b43/pio.h
+--- a/drivers/net/wireless/broadcom/b43/pio.h
++++ b/drivers/net/wireless/broadcom/b43/pio.h
 @@ -150,7 +150,7 @@ static inline void b43_piorx_write32(str
  	b43_write32(q->dev, q->mmio_base + offset, value);
  }
@@ -73,9 +73,9 @@
 +#endif /* CPTCFG_B43_PIO */
  
  #endif /* B43_PIO_H_ */
---- a/drivers/net/wireless/b43/Kconfig
-+++ b/drivers/net/wireless/b43/Kconfig
-@@ -118,7 +118,7 @@ config B43_BCMA_PIO
+--- a/drivers/net/wireless/broadcom/b43/Kconfig
++++ b/drivers/net/wireless/broadcom/b43/Kconfig
+@@ -98,7 +98,7 @@ config B43_BCMA_PIO
  	default y
  
  config B43_PIO

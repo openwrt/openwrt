@@ -1,6 +1,6 @@
 --- a/net/wireless/reg.c
 +++ b/net/wireless/reg.c
-@@ -2368,6 +2368,8 @@ void regulatory_hint_country_ie(struct w
+@@ -2411,6 +2411,8 @@ void regulatory_hint_country_ie(struct w
  	enum environment_cap env = ENVIRON_ANY;
  	struct regulatory_request *request = NULL, *lr;
  
@@ -9,11 +9,11 @@
  	/* IE len must be evenly divisible by 2 */
  	if (country_ie_len & 0x01)
  		return;
-@@ -2571,6 +2573,7 @@ static void restore_regulatory_settings(
+@@ -2617,6 +2619,7 @@ static void restore_regulatory_settings(
  
  void regulatory_hint_disconnect(void)
  {
 +	return;
- 	REG_DBG_PRINT("All devices are disconnected, going to restore regulatory settings\n");
+ 	pr_debug("All devices are disconnected, going to restore regulatory settings\n");
  	restore_regulatory_settings(false);
  }

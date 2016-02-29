@@ -6,12 +6,12 @@ Subject: [PATCH] rt2x00: rt2800lib: add channel configuration function for
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |  208 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |  208 +++++++++++++++++++++++++++++++
  1 file changed, 208 insertions(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -2649,6 +2649,211 @@ static void rt2800_config_channel_rf3053
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -2626,6 +2626,211 @@ static void rt2800_config_channel_rf3053
  	}
  }
  
@@ -223,7 +223,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  #define POWER_BOUND		0x27
  #define POWER_BOUND_5G		0x2b
  
-@@ -3261,6 +3466,9 @@ static void rt2800_config_channel(struct
+@@ -3238,6 +3443,9 @@ static void rt2800_config_channel(struct
  	case RF3322:
  		rt2800_config_channel_rf3322(rt2x00dev, conf, rf, info);
  		break;

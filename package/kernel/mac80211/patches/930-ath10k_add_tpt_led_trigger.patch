@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -5416,6 +5416,21 @@ struct ath10k_vif *ath10k_get_arvif(stru
+@@ -7141,6 +7141,21 @@ struct ath10k_vif *ath10k_get_arvif(stru
  	return arvif_iter.arvif;
  }
  
@@ -22,7 +22,7 @@
  int ath10k_mac_register(struct ath10k *ar)
  {
  	static const u32 cipher_suites[] = {
-@@ -5590,6 +5605,12 @@ int ath10k_mac_register(struct ath10k *a
+@@ -7357,6 +7372,12 @@ int ath10k_mac_register(struct ath10k *a
  	ar->hw->wiphy->cipher_suites = cipher_suites;
  	ar->hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
  

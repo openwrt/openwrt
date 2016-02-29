@@ -5,12 +5,12 @@ Subject: [PATCH] rt2x00: rt2800lib: fix txpower compensation for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    3 +++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    3 +++
  1 file changed, 3 insertions(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -4005,6 +4005,9 @@ static u8 rt2800_compensate_txpower(stru
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -3982,6 +3982,9 @@ static u8 rt2800_compensate_txpower(stru
  	if (rt2x00_rt(rt2x00dev, RT3593))
  		return min_t(u8, txpower, 0xc);
  
