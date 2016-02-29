@@ -1203,7 +1203,7 @@ define Device/ubdev01
   $(Device/ubnt-xm)
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7488k(firmware),64k(certs),256k(cfg)ro,64k(EEPROM)ro
   BOARDNAME := UBNT-UF
-  UBNT_BOARD := XM
+  UBNT_BOARD := UBDEV01
   UBNT_TYPE := XM
   UBNT_CHIP := ar7240
 endef
