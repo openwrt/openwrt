@@ -81,6 +81,12 @@ fw_layout_t fw_layout_data[] = {
 		.kern_entry	=	0x80002000,
 		.firmware_max_length=	0x006A0000,
 	},
+	{
+		.name		=	"UBDEV01",
+		.kern_start	=	0x9f050000,
+		.kern_entry	=	0x80002000,
+		.firmware_max_length=	0x006A0000,
+	},
 	{	.name		=	"",
 	},
 };
