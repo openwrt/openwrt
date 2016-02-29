@@ -498,14 +498,16 @@ static void ag71xx_fast_reset(struct ag71xx *ag)
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct net_device *dev = ag->dev;
 	u32 reset_mask = pdata->reset_bit;
-	u32 rx_ds, tx_ds;
+	u32 rx_ds;
 	u32 mii_reg;
 
 	reset_mask &= AR71XX_RESET_GE0_MAC | AR71XX_RESET_GE1_MAC;
 
+	ag71xx_hw_stop(ag);
+	wmb();
+
 	mii_reg = ag71xx_rr(ag, AG71XX_REG_MII_CFG);
 	rx_ds = ag71xx_rr(ag, AG71XX_REG_RX_DESC);
-	tx_ds = ag71xx_rr(ag, AG71XX_REG_TX_DESC);
 
 	ath79_device_reset_set(reset_mask);
 	udelay(10);
@@ -515,13 +517,16 @@ static void ag71xx_fast_reset(struct ag71xx *ag)
 	ag71xx_dma_reset(ag);
 	ag71xx_hw_setup(ag);
 	ag71xx_tx_packets(ag, true);
+	ag->tx_ring.curr = 0;
+	ag->tx_ring.dirty = 0;
+	netdev_reset_queue(ag->dev);
 
 	/* setup max frame length */
 	ag71xx_wr(ag, AG71XX_REG_MAC_MFL,
 		  ag71xx_max_frame_len(ag->dev->mtu));
 
 	ag71xx_wr(ag, AG71XX_REG_RX_DESC, rx_ds);
-	ag71xx_wr(ag, AG71XX_REG_TX_DESC, tx_ds);
+	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->tx_ring.descs_dma);
 	ag71xx_wr(ag, AG71XX_REG_MII_CFG, mii_reg);
 
 	ag71xx_hw_set_macaddr(ag, dev->dev_addr);
@@ -941,6 +946,9 @@ static int ag71xx_tx_packets(struct ag71xx *ag, bool flush)
 				schedule_work(&ag->restart_work);
 			break;
 		}
+
+		if (flush)
+			desc->ctrl |= DESC_EMPTY;
 
 		n++;
 		if (!skb)
