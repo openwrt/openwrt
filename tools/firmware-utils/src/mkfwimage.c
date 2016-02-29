@@ -79,7 +79,7 @@ fw_layout_t fw_layout_data[] = {
 		.name		=	"XM",
 		.kern_start	=	0x9f050000,
 		.kern_entry	=	0x80002000,
-		.firmware_max_length=	0x006A0000,
+		.firmware_max_length=	0x00760000,
 	},
 	{
 		.name		=	"UBDEV01",
