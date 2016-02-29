@@ -5,14 +5,14 @@
 
 
 do_patch_ath10k_firmware() {
-	local firmware_file="/lib/firmware/ath10k/QCA988X/hw2.0/firmware-4.bin"
+	local firmware_file="/lib/firmware/ath10k/QCA988X/hw2.0/firmware-5.bin"
 
 	# bail out if firmware does not exist
 	[ -f "$firmware_file" ] || {
 		return
 	}
 
-	local firmware_md5_orig="ab36ef267d15cfc02317ceeb38e8f548"
+	local firmware_md5_orig="fcb2fbd42d73a63fbf603505c718cbde"
 	local firmware_md5_current="$(md5sum $firmware_file)"
 	local firmware_md5_current="${firmware_md5_current%% *}"
 
@@ -23,7 +23,7 @@ do_patch_ath10k_firmware() {
 
 	# some boards have bogus mac in otp, patch the default mac in the firmware
 	case $(ar71xx_board_name) in
-		dgl-5500-a1)
+		dgl-5500-a1 | tew-823dru)
 			local mac
 			mac=$(mtd_get_mac_ascii nvram wlan1_mac)
 
@@ -42,7 +42,7 @@ do_patch_ath10k_firmware() {
 
 check_patch_ath10k_firmware() {
 	case $(ar71xx_board_name) in
-		dgl-5500-a1)
+		dgl-5500-a1 | tew-823dru)
 			do_patch_ath10k_firmware
 		;;
 	esac
