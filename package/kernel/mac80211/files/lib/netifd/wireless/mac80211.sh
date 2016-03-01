@@ -455,12 +455,7 @@ mac80211_prepare_vif() {
 			}
 		;;
 		mesh)
-			json_get_vars key mesh_id
-			if [ -n "$key" ]; then
-				iw phy "$phy" interface add "$ifname" type mp
-			else
-				iw phy "$phy" interface add "$ifname" type mp mesh_id "$mesh_id"
-			fi
+			iw phy "$phy" interface add "$ifname" type mp
 		;;
 		monitor)
 			iw phy "$phy" interface add "$ifname" type monitor
@@ -606,6 +601,13 @@ mac80211_setup_vif() {
 					wireless_vif_parse_encryption
 					mac80211_setup_supplicant || failed=1
 				fi
+			else
+				json_get_vars mesh_id mcast_rate
+
+				mcval=
+				[ -n "$mcast_rate" ] && wpa_supplicant_add_rate mcval "$mcast_rate"
+
+				iw dev "$ifname" mesh join "$mesh_id" ${mcval:+mcast-rate $mcval}
 			fi
 
 			for var in $MP_CONFIG_INT $MP_CONFIG_BOOL $MP_CONFIG_STRING; do
