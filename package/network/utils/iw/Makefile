@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iw
-PKG_VERSION:=3.17
+PKG_VERSION:=4.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://www.kernel.org/pub/software/network/iw
-PKG_MD5SUM:=69c4a2f29cf560247febc6cad7161a72
+PKG_MD5SUM:=7adec72e91ebdd9c55429fa34a23a6f5
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=GPL-2.0

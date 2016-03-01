@@ -1,0 +1,41 @@
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Fri, 18 Sep 2015 11:11:38 +0200
+Subject: ibss: use correct "MHz" instead of "MHZ"
+
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ ibss.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/ibss.c b/ibss.c
+index a99a262..23bda70 100644
+--- a/ibss.c
++++ b/ibss.c
+@@ -81,15 +81,15 @@ static int join_ibss(struct nl80211_state *state,
+ 		  .width = NL80211_CHAN_WIDTH_20_NOHT,
+ 		  .freq1_diff = 0,
+ 		  .chantype = NL80211_CHAN_NO_HT },
+-		{ .name = "5MHZ",
++		{ .name = "5MHz",
+ 		  .width = NL80211_CHAN_WIDTH_5,
+ 		  .freq1_diff = 0,
+ 		  .chantype = -1 },
+-		{ .name = "10MHZ",
++		{ .name = "10MHz",
+ 		  .width = NL80211_CHAN_WIDTH_10,
+ 		  .freq1_diff = 0,
+ 		  .chantype = -1 },
+-		{ .name = "80MHZ",
++		{ .name = "80MHz",
+ 		  .width = NL80211_CHAN_WIDTH_80,
+ 		  .freq1_diff = 0,
+ 		  .chantype = -1 },
+@@ -225,7 +225,7 @@ COMMAND(ibss, leave, NULL,
+ 	NL80211_CMD_LEAVE_IBSS, 0, CIB_NETDEV, leave_ibss,
+ 	"Leave the current IBSS cell.");
+ COMMAND(ibss, join,
+-	"<SSID> <freq in MHz> [HT20|HT40+|HT40-|NOHT|5MHZ|10MHZ|80MHZ] [fixed-freq] [<fixed bssid>] [beacon-interval <TU>]"
++	"<SSID> <freq in MHz> [HT20|HT40+|HT40-|NOHT|5MHz|10MHz|80MHz] [fixed-freq] [<fixed bssid>] [beacon-interval <TU>]"
+ 	" [basic-rates <rate in Mbps,rate2,...>] [mcast-rate <rate in Mbps>] "
+ 	"[key d:0:abcde]",
+ 	NL80211_CMD_JOIN_IBSS, 0, CIB_NETDEV, join_ibss,
