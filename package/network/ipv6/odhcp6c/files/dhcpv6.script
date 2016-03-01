@@ -76,7 +76,7 @@ setup_interface () {
 	done
 
 	for entry in $RA_ROUTES; do
-		local duplicate=0
+		local duplicate=$NOSOURCEFILTER
 		local addr="${entry%%/*}"
 		entry="${entry#*/}"
 		local mask="${entry%%,*}"
