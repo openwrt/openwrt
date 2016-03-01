@@ -1,10 +1,19 @@
---- a/cyassl/openssl/ssl.h
-+++ b/cyassl/openssl/ssl.h
-@@ -372,6 +373,7 @@
- #define SSL_CTX_get_ex_new_index CyaSSL_CTX_get_ex_new_index
+--- a/wolfssl/openssl/ssl.h
++++ b/wolfssl/openssl/ssl.h
+@@ -401,6 +401,8 @@ typedef WOLFSSL_X509_STORE_CTX X509_STOR
+ /* yassl had set the default to be 500 */
+ #define SSL_get_default_timeout(ctx) 500
  
++#define SSL_set_tlsext_host_name(x, y) wolfSSL_UseSNI(x, WOLFSSL_SNI_HOST_NAME, y, strlen(y))
++ 
+ /* Lighthttp compatability */
  
-+#define SSL_set_tlsext_host_name(x, y) CyaSSL_UseSNI(x, CYASSL_SNI_HOST_NAME, y, strlen(y))
+ #ifdef HAVE_LIGHTY                       
+@@ -487,7 +489,6 @@ typedef WOLFSSL_ASN1_BIT_STRING    ASN1_
+ #define SSL_TLSEXT_ERR_NOACK                 alert_warning
+ #define TLSEXT_NAMETYPE_host_name            WOLFSSL_SNI_HOST_NAME
  
- #ifdef __cplusplus
-     } /* extern "C" */
+-#define SSL_set_tlsext_host_name wolfSSL_set_tlsext_host_name
+ #define SSL_get_servername wolfSSL_get_servername
+ #define SSL_set_SSL_CTX                  wolfSSL_set_SSL_CTX
+ #define SSL_CTX_get_verify_callback      wolfSSL_CTX_get_verify_callback
