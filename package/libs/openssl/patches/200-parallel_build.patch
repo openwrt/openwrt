@@ -164,7 +164,7 @@
  	ctags $(SRC)
 --- a/test/Makefile
 +++ b/test/Makefile
-@@ -138,7 +138,7 @@ install:
+@@ -139,7 +139,7 @@ install:
  tags:
  	ctags $(SRC)
  
@@ -173,7 +173,7 @@
  
  apps:
  	@(cd ..; $(MAKE) DIRS=apps all)
-@@ -549,7 +549,7 @@ $(CLIENTHELLOTEST)$(EXE_EXT): $(CLIENTHE
+@@ -557,7 +557,7 @@ $(SSLV2CONFTEST)$(EXE_EXT): $(SSLV2CONFT
  #	fi
  
  dummytest$(EXE_EXT): dummytest.o $(DLIBCRYPTO)
