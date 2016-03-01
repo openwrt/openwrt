@@ -551,20 +551,22 @@
  		if (IS_ERR(jid)) {
  			return PTR_ERR(jid);
  		} else if (jid != id) {
-@@ -965,9 +984,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -965,10 +984,10 @@ int spi_nor_scan(struct spi_nor *nor, co
  	 * up with the software protection bits set
  	 */
  
 -	if (JEDEC_MFR(info->jedec_id) == CFI_MFR_ATMEL ||
 -	    JEDEC_MFR(info->jedec_id) == CFI_MFR_INTEL ||
+-	    JEDEC_MFR(info->jedec_id) == CFI_MFR_MACRONIX ||
 -	    JEDEC_MFR(info->jedec_id) == CFI_MFR_SST) {
 +	if (JEDEC_MFR(info) == CFI_MFR_ATMEL ||
 +	    JEDEC_MFR(info) == CFI_MFR_INTEL ||
++	    JEDEC_MFR(info) == CFI_MFR_MACRONIX ||
 +	    JEDEC_MFR(info) == CFI_MFR_SST) {
  		write_enable(nor);
  		write_sr(nor, 0);
  	}
-@@ -982,7 +1001,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -983,7 +1002,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	mtd->_read = spi_nor_read;
  
  	/* nor protection support for STmicro chips */
@@ -573,7 +575,7 @@
  		mtd->_lock = spi_nor_lock;
  		mtd->_unlock = spi_nor_unlock;
  	}
-@@ -993,9 +1012,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -994,9 +1013,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  	else
  		mtd->_write = spi_nor_write;
  
@@ -585,7 +587,7 @@
  
  #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
  	/* prefer "small sector" erase if possible */
-@@ -1036,7 +1054,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1037,7 +1055,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	/* Quad/Dual-read mode takes precedence over fast/normal */
  	if (mode == SPI_NOR_QUAD && info->flags & SPI_NOR_QUAD_READ) {
@@ -594,7 +596,7 @@
  		if (ret) {
  			dev_err(dev, "quad mode not supported\n");
  			return ret;
-@@ -1072,7 +1090,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1073,7 +1091,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	else if (mtd->size > 0x1000000) {
  		/* enable 4-byte addressing if the device exceeds 16MiB */
  		nor->addr_width = 4;
@@ -603,7 +605,7 @@
  			/* Dedicated 4-byte command set */
  			switch (nor->flash_read) {
  			case SPI_NOR_QUAD:
-@@ -1093,7 +1111,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1094,7 +1112,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  			nor->erase_opcode = SPINOR_OP_SE_4B;
  			mtd->erasesize = info->sector_size;
  		} else
