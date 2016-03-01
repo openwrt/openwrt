@@ -123,6 +123,7 @@ static void __init common_setup(void)
 	ath79_register_wmac(art + WPJ531_WMAC_CALDATA_OFFSET, NULL);
 
 	ath79_register_pci();
+	ath79_register_usb();
 }
 
 static void __init wpj531_setup(void)
