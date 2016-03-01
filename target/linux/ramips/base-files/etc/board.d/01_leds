@@ -268,6 +268,11 @@ zbt-wa05)
 	set_wifi_led "$board:blue:air"
 	set_usb_led "$board:blue:usb"
 	;;
+zbt-we826)
+	ucidef_set_led_default "power" "power" "$board:green:power" "1"
+	set_wifi_led "$board:green:wifi"
+	set_usb_led "$board:green:usb"
+	;;
 zbt-wr8305rt)
 	ucidef_set_led_default "power" "power" "$board:green:sys" "1"
 	set_usb_led "$board:green:usb"
