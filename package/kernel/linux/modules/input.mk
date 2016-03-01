@@ -75,7 +75,7 @@ define KernelPackage/input-gpio-keys
 	CONFIG_KEYBOARD_GPIO \
 	CONFIG_INPUT_KEYBOARD=y
   FILES:=$(LINUX_DIR)/drivers/input/keyboard/gpio_keys.ko
-  AUTOLOAD:=$(call AutoProbe,gpio_keys)
+  AUTOLOAD:=$(call AutoProbe,gpio_keys,1)
 endef
 
 define KernelPackage/input-gpio-keys/description
