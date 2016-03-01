@@ -279,7 +279,8 @@ get_status_led() {
 	tl-wdr4300 | \
 	tl-wr703n | \
 	tl-wr710n | \
-	tl-wr720n-v3)
+	tl-wr720n-v3 | \
+	tl-wr941nd-v6)
 		status_led="tp-link:blue:system"
 		;;
 	tl-wr841n-v9)
