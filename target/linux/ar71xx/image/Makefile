@@ -2031,7 +2031,7 @@ $(eval $(call SingleProfile,TPLINK-SAFELOADER,64kraw,CPE510,cpe210-220-510-520,C
 $(eval $(call SingleProfile,UAPPRO,64k,UAPPRO,ubnt-uap-pro,UAP-PRO,ttyS0,115200,BZ,BZ,ar934x))
 $(eval $(call SingleProfile,UAPPRO,64k,UBNTUNIFIOUTDOORPLUS,ubnt-unifi-outdoor-plus,UBNT-UOP,ttyS0,115200,BZ,BZ,ar7240))
 
-$(eval $(call SingleProfile,UBDEV,64kraw,UBDEV01,ubdev01,UBNT-UF,ttyS0,115200,XM,XM,ar7240))
+$(eval $(call SingleProfile,UBDEV,64kraw,UBDEV01,ubdev01,UBNT-UF,ttyS0,115200,UBDEV01,XM,ar7240))
 
 $(eval $(call SingleProfile,UBNT,64k,UBNTRS,ubnt-rs,UBNT-RS,ttyS0,115200,RS,RSx,ar7100))
 $(eval $(call SingleProfile,UBNT,64k,UBNTRSPRO,ubnt-rspro,UBNT-RSPRO,ttyS0,115200,RSPRO,RSPRO,ar7100pro))
