@@ -139,6 +139,7 @@ platform_check_image() {
 	y1|\
 	y1s|\
 	zbt-wa05|\
+	zbt-we826|\
 	zbt-wg2626|\
 	zbt-wr8305rt|\
 	zte-q7|\

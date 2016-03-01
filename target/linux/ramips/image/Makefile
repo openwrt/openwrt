@@ -976,6 +976,7 @@ Image/Build/Profile/MIWIFI-MINI=$(call BuildFirmware/Default16M/$(1),$(1),miwifi
 Image/Build/Profile/ZTE-Q7=$(call BuildFirmware/Default8M/$(1),$(1),zte-q7,ZTE-Q7)
 Image/Build/Profile/YOUKU-YK1=$(call BuildFirmware/Default16M/$(1),$(1),youku-yk1,YOUKU-YK1)
 Image/Build/Profile/ZBT-WA05=$(call BuildFirmware/Default8M/$(1),$(1),zbt-wa05,ZBT-WA05)
+Image/Build/Profile/ZBT-WE826=$(call BuildFirmware/Default16M/$(1),$(1),zbt-we826,ZBT-WE826)
 Image/Build/Profile/ZBT-WR8305RT=$(call BuildFirmware/Default8M/$(1),$(1),zbt-wr8305rt,ZBT-WR8305RT)
 Image/Build/Profile/ArcherC20i=$(call BuildFirmware/Tplink/$(1),$(1),ArcherC20i,ArcherC20i)
 microwrt_mtd_size=16515072
@@ -1018,6 +1019,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ZTE-Q7,$(1))
 	$(call Image/Build/Profile/YOUKU-YK1,$(1))
 	$(call Image/Build/Profile/ZBT-WA05,$(1))
+	$(call Image/Build/Profile/ZBT-WE826,$(1))
 	$(call Image/Build/Profile/ZBT-WR8305RT,$(1))
 	$(call Image/Build/Profile/ArcherC20i,$(1))
 	$(call Image/Build/Profile/MicroWRT,$(1))
