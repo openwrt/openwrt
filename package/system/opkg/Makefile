@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/feeds.mk
 PKG_NAME:=opkg
 PKG_REV:=9c97d5ecd795709c8584e972bfdf3aee3a5b846d
 PKG_VERSION:=$(PKG_REV)
-PKG_RELEASE:=10
+PKG_RELEASE:=11
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=$(PKG_REV)
@@ -43,6 +43,7 @@ define Package/opkg/Default
   TITLE:=opkg package manager
   DEPENDS:=+uclient-fetch
   URL:=http://wiki.openmoko.org/wiki/Opkg
+  MENU:=1
 endef
 
 define Package/opkg/Default/description
@@ -53,6 +54,16 @@ define Package/opkg/Default/description
   necessary to install a particular package.
 
   opkg knows how to install both .ipk and .deb packages.
+endef
+
+define Package/opkg/config
+config OPKG_SUPPORT_MD5
+  bool
+  default n
+  depends on PACKAGE_opkg
+  prompt "Support reading old md5 hashes."
+  help
+	Old opkg used md5s, new uses sha. This options enables understanding both while prefering sha.
 endef
 
 define Package/opkg
@@ -84,6 +95,16 @@ define Package/opkg-smime/description
   This package allows the Package index to be verified with S/MIME.
 endef
 
+define Package/opkg-smime/config
+config OPKG_SMIME_SUPPORT_MD5
+  bool
+  default n
+  depends on PACKAGE_opkg-smime
+  prompt "Support reading old md5 hashes."
+  help
+	Old opkg used md5s, new uses sha. This options enables understanding both while prefering sha.
+endef
+
 Package/opkg-smime/conffiles = $(Package/opkg/conffiles)
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
@@ -97,10 +118,20 @@ CONFIGURE_ARGS += \
 	--with-opkglockfile=/var/lock/opkg.lock
 
 ifeq ($(BUILD_VARIANT),smime)
-	CONFIGURE_ARGS += --enable-openssl --disable-usign
+  CONFIGURE_ARGS += --enable-openssl --disable-usign
+  ifeq ($(CONFIG_OPKG_SMIME_SUPPORT_MD5),y)
+    CONFIGURE_ARGS += --enable-md5
+  else
+    CONFIGURE_ARGS += --disable-md5
+  endif
 else
   ifndef CONFIG_SIGNED_PACKAGES
     CONFIGURE_ARGS += --disable-usign
+  endif
+  ifeq ($(CONFIG_OPKG_SUPPORT_MD5),y)
+    CONFIGURE_ARGS += --enable-md5
+  else
+    CONFIGURE_ARGS += --disable-md5
   endif
 endif
 
