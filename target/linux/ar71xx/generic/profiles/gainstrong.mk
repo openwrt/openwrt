@@ -15,3 +15,14 @@ define Profile/MINIBOXV1/Description
 	Package set optimized for the Gainstrong MiniBox V1.0
 endef
 $(eval $(call Profile,MINIBOXV1))
+
+define Profile/OOLITE
+	NAME:=Gainstrong OOLITE
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+endef
+
+
+define Profile/OOLITE/Description
+	Package set optimized for the Gainstrong OOLITE.
+endef
+$(eval $(call Profile,OOLITE))
