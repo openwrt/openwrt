@@ -1,0 +1,23 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Wed, 2 Mar 2016 15:51:40 +0100
+Subject: [PATCH] mac80211: do not pass injected frames without a valid rate to
+ the driver
+
+Fall back to rate control if the requested bitrate was not found.
+
+Fixes: dfdfc2beb0dd ("mac80211: Parse legacy and HT rate in injected frames")
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1837,6 +1837,9 @@ static bool ieee80211_parse_tx_radiotap(
+ 			}
+ 		}
+ 
++		if (info->control.rates[0].idx < 0)
++			info->control.flags &= ~IEEE80211_TX_CTRL_RATE_INJECT;
++
+ 		info->control.rates[0].flags = rate_flags;
+ 		info->control.rates[0].count = min_t(u8, rate_retries + 1,
+ 						     local->hw.max_rate_tries);
