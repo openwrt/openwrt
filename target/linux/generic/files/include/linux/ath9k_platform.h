@@ -45,6 +45,7 @@ struct ath9k_platform_data {
 
 	int num_leds;
 	const struct gpio_led *leds;
+	const char *led_name;
 };
 
 #endif /* _LINUX_ATH9K_PLATFORM_H */
