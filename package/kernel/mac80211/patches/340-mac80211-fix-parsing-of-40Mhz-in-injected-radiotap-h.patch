@@ -1,0 +1,36 @@
+From: Sven Eckelmann <sven@narfation.org>
+Date: Wed, 24 Feb 2016 16:25:49 +0100
+Subject: [PATCH] mac80211: fix parsing of 40Mhz in injected radiotap
+ header
+
+The MCS bandwidth part of the radiotap header is 2 bits wide. The full 2
+bit have to compared against IEEE80211_RADIOTAP_MCS_BW_40 and not only if
+the first bit is set. Otherwise IEEE80211_RADIOTAP_MCS_BW_40 can be
+confused with IEEE80211_RADIOTAP_MCS_BW_20U.
+
+Fixes: 5ec3aed9ba4c ("mac80211: Parse legacy and HT rate in injected frames")
+Signed-off-by: Sven Eckelmann <sven@narfation.org>
+---
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1689,7 +1689,7 @@ static bool ieee80211_parse_tx_radiotap(
+ 	bool rate_found = false;
+ 	u8 rate_retries = 0;
+ 	u16 rate_flags = 0;
+-	u8 mcs_known, mcs_flags;
++	u8 mcs_known, mcs_flags, mcs_bw;
+ 	int i;
+ 
+ 	info->flags |= IEEE80211_TX_INTFL_DONT_ENCRYPT |
+@@ -1765,8 +1765,9 @@ static bool ieee80211_parse_tx_radiotap(
+ 			    mcs_flags & IEEE80211_RADIOTAP_MCS_SGI)
+ 				rate_flags |= IEEE80211_TX_RC_SHORT_GI;
+ 
++			mcs_bw = mcs_flags & IEEE80211_RADIOTAP_MCS_BW_MASK;
+ 			if (mcs_known & IEEE80211_RADIOTAP_MCS_HAVE_BW &&
+-			    mcs_flags & IEEE80211_RADIOTAP_MCS_BW_40)
++			    mcs_bw == IEEE80211_RADIOTAP_MCS_BW_40)
+ 				rate_flags |= IEEE80211_TX_RC_40_MHZ_WIDTH;
+ 			break;
+ 
