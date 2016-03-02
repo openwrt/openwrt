@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt76
-PKG_VERSION:=2016-02-28
+PKG_VERSION:=2016-03-02
 PKG_RELEASE=1
 
 PKG_LICENSE:=GPLv2
@@ -10,7 +10,7 @@ PKG_LICENSE_FILES:=
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=675868d4e84f0f4be2449c40902b229b79ecf926
+PKG_SOURCE_VERSION:=c190f15d6f4a112e795ac50391e8adc50a80fe91
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.xz
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
@@ -55,6 +55,10 @@ endef
 define KernelPackage/mt76/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	cp \
+		$(if $(CONFIG_TARGET_ramips_mt7628), \
+			$(PKG_BUILD_DIR)/firmware/mt7628_e1.bin \
+			$(PKG_BUILD_DIR)/firmware/mt7628_e2.bin \
+		) \
 		$(PKG_BUILD_DIR)/firmware/mt7603_e1.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7603_e2.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7662_rom_patch.bin \
