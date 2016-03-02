@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2014 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
 PKG_VERSION:=3.8.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
 PKG_SOURCE_URL:=https://www.wolfssl.com/
@@ -46,12 +46,12 @@ CONFIGURE_ARGS += \
 	--enable-sslv3 \
 	--disable-examples
 
-ifneq ($(CONFIG_TARGET_x86),)
-	CONFIGURE_ARGS += --enable-intelasm
-endif
-ifneq ($(CONFIG_TARGET_x86_64),)
-	CONFIGURE_ARGS += --enable-intelasm
-endif
+#ifneq ($(CONFIG_TARGET_x86),)
+#	CONFIGURE_ARGS += --enable-intelasm
+#endif
+#ifneq ($(CONFIG_TARGET_x86_64),)
+#	CONFIGURE_ARGS += --enable-intelasm
+#endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
