@@ -225,7 +225,7 @@ Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
  /*******************/
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -979,6 +979,7 @@ int ath9k_init_device(u16 devid, struct
+@@ -975,6 +975,7 @@ int ath9k_init_device(u16 devid, struct
  			goto debug_cleanup;
  	}
  
@@ -233,7 +233,7 @@ Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
  	ath_init_leds(sc);
  	ath_start_rfkill_poll(sc);
  
-@@ -1026,6 +1027,7 @@ void ath9k_deinit_device(struct ath_soft
+@@ -1022,6 +1023,7 @@ void ath9k_deinit_device(struct ath_soft
  
  	wiphy_rfkill_stop_polling(sc->hw->wiphy);
  	ath_deinit_leds(sc);
