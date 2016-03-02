@@ -1,0 +1,21 @@
+From: Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>
+Date: Fri, 19 Feb 2016 11:43:04 +0100
+Subject: [PATCH] cfg80211: add radiotap VHT info to rtap_namespace_sizes
+
+Add IEEE80211_RADIOTAP_VHT entry to rtap_namespace_sizes array in order to
+define alignment and size of VHT info in tx radiotap
+
+Signed-off-by: Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/wireless/radiotap.c
++++ b/net/wireless/radiotap.c
+@@ -43,6 +43,7 @@ static const struct radiotap_align_size
+ 	[IEEE80211_RADIOTAP_DATA_RETRIES] = { .align = 1, .size = 1, },
+ 	[IEEE80211_RADIOTAP_MCS] = { .align = 1, .size = 3, },
+ 	[IEEE80211_RADIOTAP_AMPDU_STATUS] = { .align = 4, .size = 8, },
++	[IEEE80211_RADIOTAP_VHT] = { .align = 2, .size = 12, },
+ 	/*
+ 	 * add more here as they are defined in radiotap.h
+ 	 */
