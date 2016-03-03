@@ -1,0 +1,47 @@
+From 791efec78373248926a542d30013639bc0cf580a Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Wed, 23 Dec 2015 11:57:39 +0530
+Subject: [PATCH 132/153] pistacho_marduk.dts: add sc16is752 clk dependency on
+ cc2520
+
+As cc2520 extclk is now a clk provider, add dependancy of sc16is752
+on cc2520 so that sc16is752 driver is initalized after cc2520.
+
+Change-Id: Ieb765ef04a60d3b6c42a49f151104f53fb04bf5b
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 457ccf1..f3ab241 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -149,7 +149,7 @@
+ 	cs-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>, <&gpio0 2 GPIO_ACTIVE_HIGH>,
+ 			<&gpio1 12 GPIO_ACTIVE_HIGH>, <&gpio1 13 GPIO_ACTIVE_HIGH>;
+ 
+-	cc2520@0 {
++	cc2520: cc2520@0 {
+ 		compatible = "ti,cc2520";
+ 		reg = <0>;
+ 		spi-max-frequency = <4000000>;
+@@ -159,13 +159,14 @@
+ 		cca-gpio = <&gpio3 6 GPIO_ACTIVE_HIGH>;
+ 		vreg-gpio = <&gpio2 12 GPIO_ACTIVE_HIGH>;
+ 		reset-gpio = <&gpio0 12 GPIO_ACTIVE_HIGH>;
++		#clock-cells = <0>;
+ 		extclock-freq = <16000000>;
+ 	};
+ 
+ 	sc16is752: sc16is752@1 {
+ 		compatible = "nxp,sc16is752";
+ 		reg = <1>;
+-		clocks = <&cc2520_ext_clk>;
++		clocks = <&cc2520 0>;
+ 		spi-max-frequency = <4000000>;
+ 		interrupt-parent = <&gpio0>;
+ 		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
+-- 
+1.9.1
+

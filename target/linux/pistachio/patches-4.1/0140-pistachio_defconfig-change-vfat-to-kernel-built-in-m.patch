@@ -1,0 +1,43 @@
+From 3e213462af52371ac94290f522e0194e500b839d Mon Sep 17 00:00:00 2001
+From: Abhishek Singh <Abhishek.Singh@imgtec.com>
+Date: Thu, 4 Feb 2016 14:44:49 +0530
+Subject: [PATCH 140/153] pistachio_defconfig: change vfat to kernel built-in
+ module
+
+vfat was not built-in, so mounting of fat based pendrive was not working
+in auto mode. So make it a built-in module.
+
+Change-Id: I192a9c431c2ac5834de707e7a10c6f57e181b748
+Signed-off-by: Abhishek Singh <Abhishek.Singh@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 6b12421..069a658 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -336,7 +336,7 @@ CONFIG_ISO9660_FS=m
+ CONFIG_JOLIET=y
+ CONFIG_ZISOFS=y
+ CONFIG_UDF_FS=m
+-CONFIG_VFAT_FS=m
++CONFIG_VFAT_FS=y
+ CONFIG_TMPFS=y
+ CONFIG_TMPFS_POSIX_ACL=y
+ CONFIG_ECRYPT_FS=y
+@@ -351,9 +351,9 @@ CONFIG_PSTORE_RAM=y
+ CONFIG_NFS_FS=y
+ CONFIG_ROOT_NFS=y
+ CONFIG_NLS_DEFAULT="utf8"
+-CONFIG_NLS_CODEPAGE_437=m
++CONFIG_NLS_CODEPAGE_437=y
+ CONFIG_NLS_ASCII=m
+-CONFIG_NLS_ISO8859_1=m
++CONFIG_NLS_ISO8859_1=y
+ CONFIG_PRINTK_TIME=y
+ CONFIG_DEBUG_INFO=y
+ CONFIG_MAGIC_SYSRQ=y
+-- 
+1.9.1
+

@@ -1,0 +1,81 @@
+From b7d56b09a15223b6a9900095fa9405a7b6f371cb Mon Sep 17 00:00:00 2001
+From: Zdenko Pulitika <zdenko.pulitika@imgtec.com>
+Date: Fri, 19 Jun 2015 15:33:59 +0100
+Subject: [PATCH 030/153] pistachio: pll: Set operating mode in .set_rate and
+ fix vco calculation
+
+This commit sets operating mode of fractional pll based on
+the value of the fractional divider. Previous version assumed that
+the pll will always be configured in fractional mode which may not be
+the case. This may result in the wrong output frequency.
+
+Also fixes the bug in vco frequency calculation in .set_rate for fractional
+pll. Vco was calculated based on the current operating mode which
+makes no sense because .set_rate is setting operating mode. Instead,
+vco should be calculated using pll settings that are about to be set.
+This bug was introduced in commit d259b8083fb6b51ad9c431ed73d1c745af4eaf08,
+but it doesn't affect clock tree setup.
+
+Change-Id: I8701f96acba07031653fcc8c2dc8709d9250c047
+Signed-off-by: Zdenko Pulitika <zdenko.pulitika@imgtec.com>
+---
+ drivers/clk/pistachio/clk-pll.c | 28 ++++++++++++++++++++++------
+ 1 file changed, 22 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/clk/pistachio/clk-pll.c b/drivers/clk/pistachio/clk-pll.c
+index f1d3da4..5a7b774 100644
+--- a/drivers/clk/pistachio/clk-pll.c
++++ b/drivers/clk/pistachio/clk-pll.c
+@@ -112,6 +112,20 @@ static inline u32 pll_frac_get_mode(struct clk_hw *hw)
+ 	return val ? PLL_MODE_INT : PLL_MODE_FRAC;
+ }
+ 
++static inline void pll_frac_set_mode(struct clk_hw *hw, u32 mode)
++{
++	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
++	u32 val;
++
++	val = pll_readl(pll, PLL_CTRL3);
++	if (mode == PLL_MODE_INT)
++		val |= PLL_FRAC_CTRL3_DSMPD | PLL_FRAC_CTRL3_DACPD;
++	else
++		val &= ~(PLL_FRAC_CTRL3_DSMPD | PLL_FRAC_CTRL3_DACPD);
++
++	pll_writel(pll, val, PLL_CTRL3);
++}
++
+ static struct pistachio_pll_rate_table *
+ pll_get_params(struct pistachio_clk_pll *pll, unsigned long fref,
+ 	       unsigned long fout)
+@@ -208,13 +222,9 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 	if (!params || !params->refdiv)
+ 		return -EINVAL;
+ 
+-	/* get operating mode and calculate vco accordingly */
++	/* calculate vco */
+ 	vco = params->fref;
+-	if (pll_frac_get_mode(hw) == PLL_MODE_INT)
+-		vco *= params->fbdiv << 24;
+-	else
+-		vco *= (params->fbdiv << 24) + params->frac;
+-
++	vco *= (params->fbdiv << 24) + params->frac;
+ 	vco = div64_u64(vco, params->refdiv << 24);
+ 
+ 	if (vco < MIN_VCO_FRAC_FRAC || vco > MAX_VCO_FRAC_FRAC)
+@@ -265,6 +275,12 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 		(params->postdiv2 << PLL_FRAC_CTRL2_POSTDIV2_SHIFT);
+ 	pll_writel(pll, val, PLL_CTRL2);
+ 
++	/* set operating mode */
++	if (params->frac)
++		pll_frac_set_mode(hw, PLL_MODE_FRAC);
++	else
++		pll_frac_set_mode(hw, PLL_MODE_INT);
++
+ 	if (enabled)
+ 		pll_lock(pll);
+ 
+-- 
+1.9.1
+

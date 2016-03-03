@@ -1,0 +1,40 @@
+From 16f6b0f924aca8fdbabe529d1866feeb6a1ce006 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <govindraj.raja@imgtec.com>
+Date: Thu, 20 Aug 2015 15:10:50 +0100
+Subject: [PATCH 056/153] pistachio: defconfig: change default governor to
+ conservative
+
+Patch changes default freq governor to conservative.
+
+*Note* : Ondemand governor can switch from min freq to max freq
+when cpu load increases, but this can cause mips freq overshoot on pistachio
+and can cause instabilities so to be on safer side switch to conservative
+governor which will increase freq in steps and gradually move to max when
+there is a request to handle cpu load increase.
+
+Change-Id: Ibaaab014db455b6030cfd4983e16e3b52f9049fd
+Signed-off-by: Govindraj Raja <govindraj.raja@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 2adbce1..556aec7 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -40,10 +40,10 @@ CONFIG_PM_DEBUG=y
+ CONFIG_PM_ADVANCED_DEBUG=y
+ CONFIG_CPU_FREQ=y
+ CONFIG_CPU_FREQ_STAT_DETAILS=y
+-CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
++CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE=y
+ CONFIG_CPU_FREQ_GOV_POWERSAVE=y
+ CONFIG_CPU_FREQ_GOV_USERSPACE=y
+-CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+ CONFIG_CPUFREQ_DT=y
+ CONFIG_CPU_IDLE=y
+ # CONFIG_MIPS_CPS_CPUIDLE is not set
+-- 
+1.9.1
+

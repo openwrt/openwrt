@@ -1,0 +1,3081 @@
+From 84fd7560692417027a67713df9b98a33d4d3ebb3 Mon Sep 17 00:00:00 2001
+From: Damien Horsley <Damien.Horsley@imgtec.com>
+Date: Mon, 2 Feb 2015 02:22:43 +0000
+Subject: [PATCH 026/153] ASoC: img: Add IMG i2s, spdif input output and
+ parallel output drivers
+
+This change adds following drivers and their binding documents :-
+1. Add Imagination Technologies I2S input driver
+2. Add Imagination Technologies I2S output driver
+3. Add Imagination Technologies spdif input driver
+4. Add Imagination Technologies spdif output driver
+5. Add Imagination Technologies parallel output driver
+
+Change-Id: I53667b75f604101c37ed8fe9f1a7d15acd63bd7f
+Signed-off-by: Damien Horsley <Damien.Horsley@imgtec.com>
+---
+ .../devicetree/bindings/sound/img,i2s-in.txt       |  45 ++
+ .../devicetree/bindings/sound/img,i2s-out.txt      |  49 ++
+ .../devicetree/bindings/sound/img,parallel-out.txt |  44 ++
+ .../devicetree/bindings/sound/img,spdif-in.txt     |  41 ++
+ .../devicetree/bindings/sound/img,spdif-out.txt    |  44 ++
+ sound/soc/Kconfig                                  |   1 +
+ sound/soc/Makefile                                 |   1 +
+ sound/soc/img/Kconfig                              |  45 ++
+ sound/soc/img/Makefile                             |   5 +
+ sound/soc/img/img-i2s-in.c                         | 508 +++++++++++++
+ sound/soc/img/img-i2s-out.c                        | 552 ++++++++++++++
+ sound/soc/img/img-parallel-out.c                   | 373 ++++++++++
+ sound/soc/img/img-spdif-in.c                       | 799 +++++++++++++++++++++
+ sound/soc/img/img-spdif-out.c                      | 433 +++++++++++
+ 14 files changed, 2940 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/sound/img,i2s-in.txt
+ create mode 100644 Documentation/devicetree/bindings/sound/img,i2s-out.txt
+ create mode 100644 Documentation/devicetree/bindings/sound/img,parallel-out.txt
+ create mode 100644 Documentation/devicetree/bindings/sound/img,spdif-in.txt
+ create mode 100644 Documentation/devicetree/bindings/sound/img,spdif-out.txt
+ create mode 100644 sound/soc/img/Kconfig
+ create mode 100644 sound/soc/img/Makefile
+ create mode 100644 sound/soc/img/img-i2s-in.c
+ create mode 100644 sound/soc/img/img-i2s-out.c
+ create mode 100644 sound/soc/img/img-parallel-out.c
+ create mode 100644 sound/soc/img/img-spdif-in.c
+ create mode 100644 sound/soc/img/img-spdif-out.c
+
+diff --git a/Documentation/devicetree/bindings/sound/img,i2s-in.txt b/Documentation/devicetree/bindings/sound/img,i2s-in.txt
+new file mode 100644
+index 0000000..a9e3c86
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sound/img,i2s-in.txt
+@@ -0,0 +1,45 @@
++Imagination Technologies I2S Input Controller
++
++Required Properties:
++
++  - compatible : Compatible list, must contain "img,i2s-in"
++
++  - #sound-dai-cells : Must be equal to 0
++
++  - reg : Offset and length of the register set for the device
++
++  - clocks : Contains an entry for each entry in clock-names
++
++  - clock-names : Must include the following entry:
++	"sys"	The system clock
++
++  - dmas: Contains an entry for each entry in dma-names.
++
++  - dma-names: Must include the following entry:
++	"rx"	Single DMA channel used by all active I2S channels
++
++  - img,i2s-channels : Number of I2S channels instantiated in the I2S in block
++
++Optional Properties:
++
++  - interrupts : Contains the I2S in interrupts. Depending on
++	the configuration, there may be no interrupts, one interrupt,
++	or an interrupt per I2S channel
++
++  - resets: Contains a phandle to the I2S in reset signal
++
++  - reset-names: Contains the reset signal name "rst"
++
++Example:
++
++i2s_in: i2s-in@18100800 {
++	compatible = "img,i2s-in";
++	reg = <0x18100800 0x200>;
++	interrupts = <GIC_SHARED 7 IRQ_TYPE_LEVEL_HIGH>;
++	dmas = <&mdc 30 0xffffffff 0>;
++	dma-names = "rx";
++	clocks = <&cr_periph SYS_CLK_I2S_IN>;
++	clock-names = "sys";
++	img,i2s-channels = <6>;
++	#sound-dai-cells = <0>;
++};
+diff --git a/Documentation/devicetree/bindings/sound/img,i2s-out.txt b/Documentation/devicetree/bindings/sound/img,i2s-out.txt
+new file mode 100644
+index 0000000..dc110ce
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sound/img,i2s-out.txt
+@@ -0,0 +1,49 @@
++Imagination Technologies I2S Output Controller
++
++Required Properties:
++
++  - compatible : Compatible list, must contain "img,i2s-out"
++
++  - #sound-dai-cells : Must be equal to 0
++
++  - reg : Offset and length of the register set for the device
++
++  - clocks : Contains an entry for each entry in clock-names
++
++  - clock-names : Must include the following entries:
++	"sys"	The system clock
++	"ref"	The reference clock
++
++  - dmas: Contains an entry for each entry in dma-names.
++
++  - dma-names: Must include the following entry:
++	"tx"	Single DMA channel used by all active I2S channels
++
++  - img,i2s-channels : Number of I2S channels instantiated in the I2S out block
++
++  - resets: Contains a phandle to the I2S out reset signal
++
++  - reset-names: Contains the reset signal name "rst"
++
++Optional Properties:
++
++  - interrupts : Contains the I2S out interrupts. Depending on
++	the configuration, there may be no interrupts, one interrupt,
++	or an interrupt per I2S channel
++
++Example:
++
++i2s_out: i2s-out@18100A00 {
++	compatible = "img,i2s-out";
++	reg = <0x18100A00 0x200>;
++	interrupts = <GIC_SHARED 13 IRQ_TYPE_LEVEL_HIGH>;
++	dmas = <&mdc 23 0xffffffff 0>;
++	dma-names = "tx";
++	clocks = <&cr_periph SYS_CLK_I2S_OUT>,
++		 <&clk_core CLK_I2S>;
++	clock-names = "sys", "ref";
++	img,i2s-channels = <6>;
++	resets = <&pistachio_reset PISTACHIO_RESET_I2S_OUT>;
++	reset-names = "rst";
++	#sound-dai-cells = <0>;
++};
+diff --git a/Documentation/devicetree/bindings/sound/img,parallel-out.txt b/Documentation/devicetree/bindings/sound/img,parallel-out.txt
+new file mode 100644
+index 0000000..a3015d2
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sound/img,parallel-out.txt
+@@ -0,0 +1,44 @@
++Imagination Technologies Parallel Output Controller
++
++Required Properties:
++
++  - compatible : Compatible list, must contain "img,parallel-out".
++
++  - #sound-dai-cells : Must be equal to 0
++
++  - reg : Offset and length of the register set for the device.
++
++  - dmas: Contains an entry for each entry in dma-names.
++
++  - dma-names: Must include the following entry:
++	"tx"
++
++  - clocks : Contains an entry for each entry in clock-names.
++
++  - clock-names : Includes the following entries:
++	"sys"	The system clock
++	"ref"	The reference clock
++
++  - resets: Contains a phandle to the parallel out reset signal
++
++  - reset-names: Contains the reset signal name "rst"
++
++Optional Properties:
++
++  - interrupts : Contains the parallel out interrupt, if present
++
++Example:
++
++parallel_out: parallel-out@18100C00 {
++	compatible = "img,parallel-out";
++	reg = <0x18100C00 0x100>;
++	interrupts = <GIC_SHARED 19 IRQ_TYPE_LEVEL_HIGH>;
++	dmas = <&mdc 16 0xffffffff 0>;
++	dma-names = "tx";
++	clocks = <&cr_periph SYS_CLK_PAUD_OUT>,
++		 <&clk_core CLK_AUDIO_DAC>;
++	clock-names = "sys", "ref";
++	resets = <&pistachio_reset PISTACHIO_RESET_PRL_OUT>;
++	reset-names = "rst";
++	#sound-dai-cells = <0>;
++};
+diff --git a/Documentation/devicetree/bindings/sound/img,spdif-in.txt b/Documentation/devicetree/bindings/sound/img,spdif-in.txt
+new file mode 100644
+index 0000000..aab9a81
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sound/img,spdif-in.txt
+@@ -0,0 +1,41 @@
++Imagination Technologies SPDIF Input Controller
++
++Required Properties:
++
++  - compatible : Compatible list, must contain "img,spdif-in"
++
++  - #sound-dai-cells : Must be equal to 0
++
++  - reg : Offset and length of the register set for the device
++
++  - dmas: Contains an entry for each entry in dma-names.
++
++  - dma-names: Must include the following entry:
++	"rx"
++
++  - clocks : Contains an entry for each entry in clock-names
++
++  - clock-names : Includes the following entries:
++	"sys"	The system clock
++
++Optional Properties:
++
++  - resets: Should contain a phandle to the spdif in reset signal, if any
++
++  - reset-names: Should contain the reset signal name "rst", if a
++	reset phandle is given
++
++  - interrupts : Contains the spdif in interrupt, if present
++
++Example:
++
++spdif_in: spdif-in@18100E00 {
++	compatible = "img,spdif-in";
++	reg = <0x18100E00 0x100>;
++	interrupts = <GIC_SHARED 20 IRQ_TYPE_LEVEL_HIGH>;
++	dmas = <&mdc 15 0xffffffff 0>;
++	dma-names = "rx";
++	clocks = <&cr_periph SYS_CLK_SPDIF_IN>;
++	clock-names = "sys";
++	#sound-dai-cells = <0>;
++};
+diff --git a/Documentation/devicetree/bindings/sound/img,spdif-out.txt b/Documentation/devicetree/bindings/sound/img,spdif-out.txt
+new file mode 100644
+index 0000000..470a519
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sound/img,spdif-out.txt
+@@ -0,0 +1,44 @@
++Imagination Technologies SPDIF Output Controller
++
++Required Properties:
++
++  - compatible : Compatible list, must contain "img,spdif-out"
++
++  - #sound-dai-cells : Must be equal to 0
++
++  - reg : Offset and length of the register set for the device
++
++  - dmas: Contains an entry for each entry in dma-names.
++
++  - dma-names: Must include the following entry:
++	"tx"
++
++  - clocks : Contains an entry for each entry in clock-names.
++
++  - clock-names : Includes the following entries:
++	"sys"	The system clock
++	"ref"	The reference clock
++
++  - resets: Contains a phandle to the spdif out reset signal
++
++  - reset-names: Contains the reset signal name "rst"
++
++Optional Properties:
++
++  - interrupts : Contains the parallel out interrupt, if present
++
++Example:
++
++spdif_out: spdif-out@18100D00 {
++	compatible = "img,spdif-out";
++	reg = <0x18100D00 0x100>;
++	interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>;
++	dmas = <&mdc 14 0xffffffff 0>;
++	dma-names = "tx";
++	clocks = <&cr_periph SYS_CLK_SPDIF_OUT>,
++		 <&clk_core CLK_SPDIF>;
++	clock-names = "sys", "ref";
++	resets = <&pistachio_reset PISTACHIO_RESET_SPDIF_OUT>;
++	reset-names = "rst";
++	#sound-dai-cells = <0>;
++};
+diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
+index 3ba52da..c19c983 100644
+--- a/sound/soc/Kconfig
++++ b/sound/soc/Kconfig
+@@ -44,6 +44,7 @@ source "sound/soc/jz4740/Kconfig"
+ source "sound/soc/nuc900/Kconfig"
+ source "sound/soc/omap/Kconfig"
+ source "sound/soc/kirkwood/Kconfig"
++source "sound/soc/img/Kconfig"
+ source "sound/soc/intel/Kconfig"
+ source "sound/soc/mxs/Kconfig"
+ source "sound/soc/pxa/Kconfig"
+diff --git a/sound/soc/Makefile b/sound/soc/Makefile
+index 974ba70..87cd716 100644
+--- a/sound/soc/Makefile
++++ b/sound/soc/Makefile
+@@ -22,6 +22,7 @@ obj-$(CONFIG_SND_SOC)	+= davinci/
+ obj-$(CONFIG_SND_SOC)	+= dwc/
+ obj-$(CONFIG_SND_SOC)	+= fsl/
+ obj-$(CONFIG_SND_SOC)	+= jz4740/
++obj-$(CONFIG_SND_SOC)	+= img/
+ obj-$(CONFIG_SND_SOC)	+= intel/
+ obj-$(CONFIG_SND_SOC)	+= mxs/
+ obj-$(CONFIG_SND_SOC)	+= nuc900/
+diff --git a/sound/soc/img/Kconfig b/sound/soc/img/Kconfig
+new file mode 100644
+index 0000000..1b76dc8
+--- /dev/null
++++ b/sound/soc/img/Kconfig
+@@ -0,0 +1,45 @@
++config SND_SOC_IMG
++	bool "Audio support for Imagination Technologies designs"
++	depends on MACH_PISTACHIO
++	help
++	  Audio support for Imagination Technologies audio hardware
++
++config SND_SOC_IMG_I2S_IN
++	tristate "Imagination I2S Input Device Driver"
++	depends on SND_SOC_IMG
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	help
++	  Say Y or M if you want to add support for I2S in driver for
++	  Imagination Technologies I2S in device.
++
++config SND_SOC_IMG_I2S_OUT
++	tristate "Imagination I2S Output Device Driver"
++	depends on SND_SOC_IMG
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	help
++	  Say Y or M if you want to add support for I2S out driver for
++	  Imagination Technologies I2S out device.
++
++config SND_SOC_IMG_PARALLEL_OUT
++	tristate "Imagination Parallel Output Device Driver"
++	depends on SND_SOC_IMG
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	help
++	  Say Y or M if you want to add support for parallel out driver for
++	  Imagination Technologies parallel out device.
++
++config SND_SOC_IMG_SPDIF_IN
++	tristate "Imagination SPDIF Input Device Driver"
++	depends on SND_SOC_IMG
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	help
++	  Say Y or M if you want to add support for SPDIF input driver for
++	  Imagination Technologies SPDIF input device.
++
++config SND_SOC_IMG_SPDIF_OUT
++	tristate "Imagination SPDIF Output Device Driver"
++	depends on SND_SOC_IMG
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	help
++	  Say Y or M if you want to add support for SPDIF out driver for
++	  Imagination Technologies SPDIF out device.
+diff --git a/sound/soc/img/Makefile b/sound/soc/img/Makefile
+new file mode 100644
+index 0000000..1a44fb4
+--- /dev/null
++++ b/sound/soc/img/Makefile
+@@ -0,0 +1,5 @@
++obj-$(CONFIG_SND_SOC_IMG_I2S_IN) += img-i2s-in.o
++obj-$(CONFIG_SND_SOC_IMG_I2S_OUT) += img-i2s-out.o
++obj-$(CONFIG_SND_SOC_IMG_PARALLEL_OUT) += img-parallel-out.o
++obj-$(CONFIG_SND_SOC_IMG_SPDIF_IN) += img-spdif-in.o
++obj-$(CONFIG_SND_SOC_IMG_SPDIF_OUT) += img-spdif-out.o
+diff --git a/sound/soc/img/img-i2s-in.c b/sound/soc/img/img-i2s-in.c
+new file mode 100644
+index 0000000..dc1e53a
+--- /dev/null
++++ b/sound/soc/img/img-i2s-in.c
+@@ -0,0 +1,508 @@
++/*
++ * IMG I2S input controller driver
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * Author: Damien Horsley <Damien.Horsley@imgtec.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/clk.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/reset.h>
++
++#include <sound/core.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/initval.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++
++#define IMG_I2S_IN_RX_FIFO			0x0
++
++#define IMG_I2S_IN_CTL				0x4
++#define IMG_I2S_IN_CTL_ACTIVE_CHAN_MASK		0xfffffffc
++#define IMG_I2S_IN_CTL_ACTIVE_CH_SHIFT		2
++#define IMG_I2S_IN_CTL_16PACK_MASK		BIT(1)
++#define IMG_I2S_IN_CTL_ME_MASK			BIT(0)
++
++#define IMG_I2S_IN_CH_CTL			0x4
++#define IMG_I2S_IN_CH_CTL_CCDEL_MASK		0x38000
++#define IMG_I2S_IN_CH_CTL_CCDEL_SHIFT		15
++#define IMG_I2S_IN_CH_CTL_FEN_MASK		BIT(14)
++#define IMG_I2S_IN_CH_CTL_FMODE_MASK		BIT(13)
++#define IMG_I2S_IN_CH_CTL_16PACK_MASK		BIT(12)
++#define IMG_I2S_IN_CH_CTL_JUST_MASK		BIT(10)
++#define IMG_I2S_IN_CH_CTL_PACKH_MASK		BIT(9)
++#define IMG_I2S_IN_CH_CTL_CLK_TRANS_MASK	BIT(8)
++#define IMG_I2S_IN_CH_CTL_BLKP_MASK		BIT(7)
++#define IMG_I2S_IN_CH_CTL_FIFO_FLUSH_MASK	BIT(6)
++#define IMG_I2S_IN_CH_CTL_LRD_MASK		BIT(3)
++#define IMG_I2S_IN_CH_CTL_FW_MASK		BIT(2)
++#define IMG_I2S_IN_CH_CTL_SW_MASK		BIT(1)
++#define IMG_I2S_IN_CH_CTL_ME_MASK		BIT(0)
++
++#define IMG_I2S_IN_CH_STRIDE			0x20
++
++struct img_i2s_in {
++	void __iomem *base;
++	struct clk *clk_sys;
++	struct snd_dmaengine_dai_dma_data dma_data;
++	struct device *dev;
++	unsigned int max_i2s_chan;
++	void __iomem *channel_base;
++	unsigned int active_channels;
++	struct snd_soc_dai_driver dai_driver;
++};
++
++static inline void img_i2s_in_writel(struct img_i2s_in *i2s, u32 val, u32 reg)
++{
++	writel(val, i2s->base + reg);
++}
++
++static inline u32 img_i2s_in_readl(struct img_i2s_in *i2s, u32 reg)
++{
++	return readl(i2s->base + reg);
++}
++
++static inline void img_i2s_in_ch_writel(struct img_i2s_in *i2s, u32 chan,
++					u32 val, u32 reg)
++{
++	writel(val, i2s->channel_base + (chan * IMG_I2S_IN_CH_STRIDE) + reg);
++}
++
++static inline u32 img_i2s_in_ch_readl(struct img_i2s_in *i2s, u32 chan,
++					u32 reg)
++{
++	return readl(i2s->channel_base + (chan * IMG_I2S_IN_CH_STRIDE) + reg);
++}
++
++static inline u32 img_i2s_in_ch_disable(struct img_i2s_in *i2s, u32 chan)
++{
++	u32 reg;
++
++	reg = img_i2s_in_ch_readl(i2s, chan, IMG_I2S_IN_CH_CTL);
++	reg &= ~IMG_I2S_IN_CH_CTL_ME_MASK;
++	img_i2s_in_ch_writel(i2s, chan, reg, IMG_I2S_IN_CH_CTL);
++
++	return reg;
++}
++
++static inline void img_i2s_in_ch_enable(struct img_i2s_in *i2s, u32 chan,
++					u32 reg)
++{
++	reg |= IMG_I2S_IN_CH_CTL_ME_MASK;
++	img_i2s_in_ch_writel(i2s, chan, reg, IMG_I2S_IN_CH_CTL);
++}
++
++static inline void img_i2s_in_flush(struct img_i2s_in *i2s)
++{
++	int i;
++	u32 reg;
++
++	for (i = 0; i < i2s->active_channels; i++) {
++		reg = img_i2s_in_ch_disable(i2s, i);
++		reg |= IMG_I2S_IN_CH_CTL_FIFO_FLUSH_MASK;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		reg &= ~IMG_I2S_IN_CH_CTL_FIFO_FLUSH_MASK;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		img_i2s_in_ch_enable(i2s, i, reg);
++	}
++}
++
++static int img_i2s_in_trigger(struct snd_pcm_substream *substream, int cmd,
++	struct snd_soc_dai *dai)
++{
++	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(dai);
++	u32 reg;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
++		reg |= IMG_I2S_IN_CTL_ME_MASK;
++		img_i2s_in_writel(i2s, reg, IMG_I2S_IN_CTL);
++		break;
++
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
++		reg &= ~IMG_I2S_IN_CTL_ME_MASK;
++		img_i2s_in_writel(i2s, reg, IMG_I2S_IN_CTL);
++		img_i2s_in_flush(i2s);
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int img_i2s_in_check_rate(struct img_i2s_in *i2s,
++		unsigned int sample_rate, unsigned int frame_size,
++		unsigned int *bclk_filter_enable,
++		unsigned int *bclk_filter_value)
++{
++	unsigned int bclk_freq, cur_freq;
++
++	bclk_freq = sample_rate * frame_size;
++
++	cur_freq = clk_get_rate(i2s->clk_sys);
++
++	if (cur_freq >= bclk_freq * 8) {
++		*bclk_filter_enable = 1;
++		*bclk_filter_value = 0;
++	} else if (cur_freq >= bclk_freq * 7) {
++		*bclk_filter_enable = 1;
++		*bclk_filter_value = 1;
++	} else if (cur_freq >= bclk_freq * 6) {
++		*bclk_filter_enable = 0;
++		*bclk_filter_value = 0;
++	} else {
++		dev_err(i2s->dev,
++			"Sys clock rate %u insufficient for sample rate %u\n",
++			cur_freq, sample_rate);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int img_i2s_in_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(dai);
++	unsigned int rate, channels, i2s_channels, frame_size;
++	unsigned int bclk_filter_enable, bclk_filter_value;
++	int i, ret = 0;
++	u32 reg, control_reg, control_mask, chan_control_mask;
++	u32 control_set = 0, chan_control_set = 0;
++	snd_pcm_format_t format;
++
++	rate = params_rate(params);
++	format = params_format(params);
++	channels = params_channels(params);
++	i2s_channels = channels / 2;
++
++	switch (format) {
++	case SNDRV_PCM_FORMAT_S32_LE:
++		frame_size = 64;
++		chan_control_set |= IMG_I2S_IN_CH_CTL_SW_MASK;
++		chan_control_set |= IMG_I2S_IN_CH_CTL_FW_MASK;
++		chan_control_set |= IMG_I2S_IN_CH_CTL_PACKH_MASK;
++		break;
++	case SNDRV_PCM_FORMAT_S24_LE:
++		frame_size = 64;
++		chan_control_set |= IMG_I2S_IN_CH_CTL_SW_MASK;
++		chan_control_set |= IMG_I2S_IN_CH_CTL_FW_MASK;
++		break;
++	case SNDRV_PCM_FORMAT_S16_LE:
++		frame_size = 32;
++		control_set |= IMG_I2S_IN_CTL_16PACK_MASK;
++		chan_control_set |= IMG_I2S_IN_CH_CTL_16PACK_MASK;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	if ((channels < 2) ||
++			(channels > (i2s->max_i2s_chan * 2)) ||
++			(channels % 2))
++		return -EINVAL;
++
++	control_set |= ((i2s_channels - 1) << IMG_I2S_IN_CTL_ACTIVE_CH_SHIFT);
++
++	ret = img_i2s_in_check_rate(i2s, rate, frame_size,
++			&bclk_filter_enable, &bclk_filter_value);
++	if (ret < 0)
++		return ret;
++
++	if (bclk_filter_enable)
++		chan_control_set |= IMG_I2S_IN_CH_CTL_FEN_MASK;
++
++	if (bclk_filter_value)
++		chan_control_set |= IMG_I2S_IN_CH_CTL_FMODE_MASK;
++
++	control_mask = (u32)(~IMG_I2S_IN_CTL_16PACK_MASK &
++			~IMG_I2S_IN_CTL_ACTIVE_CHAN_MASK);
++
++	chan_control_mask = (u32)(~IMG_I2S_IN_CH_CTL_16PACK_MASK &
++			~IMG_I2S_IN_CH_CTL_FEN_MASK &
++			~IMG_I2S_IN_CH_CTL_FMODE_MASK &
++			~IMG_I2S_IN_CH_CTL_SW_MASK &
++			~IMG_I2S_IN_CH_CTL_FW_MASK &
++			~IMG_I2S_IN_CH_CTL_PACKH_MASK);
++
++	control_reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
++	control_reg = (control_reg & control_mask) | control_set;
++	img_i2s_in_writel(i2s, control_reg, IMG_I2S_IN_CTL);
++
++	for (i = 0; i < i2s_channels; i++) {
++		reg = img_i2s_in_ch_disable(i2s, i);
++		reg = (reg & chan_control_mask) | chan_control_set;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		img_i2s_in_ch_enable(i2s, i, reg);
++	}
++	for (; i < i2s->max_i2s_chan; i++) {
++		reg = img_i2s_in_ch_disable(i2s, i);
++		reg = (reg & chan_control_mask) | chan_control_set;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++	}
++
++	i2s->active_channels = i2s_channels;
++
++	return 0;
++}
++
++static int img_i2s_in_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
++{
++	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(dai);
++	int i;
++	u32 chan_control_mask, lrd_set = 0, blkp_set = 0, chan_control_set = 0;
++	u32 reg;
++
++	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
++	case SND_SOC_DAIFMT_NB_NF:
++		lrd_set |= IMG_I2S_IN_CH_CTL_LRD_MASK;
++		break;
++	case SND_SOC_DAIFMT_NB_IF:
++		break;
++	case SND_SOC_DAIFMT_IB_NF:
++		lrd_set |= IMG_I2S_IN_CH_CTL_LRD_MASK;
++		blkp_set |= IMG_I2S_IN_CH_CTL_BLKP_MASK;
++		break;
++	case SND_SOC_DAIFMT_IB_IF:
++		blkp_set |= IMG_I2S_IN_CH_CTL_BLKP_MASK;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
++	case SND_SOC_DAIFMT_I2S:
++		chan_control_set |= IMG_I2S_IN_CH_CTL_CLK_TRANS_MASK;
++		break;
++	case SND_SOC_DAIFMT_LEFT_J:
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
++	case SND_SOC_DAIFMT_CBM_CFM:
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	chan_control_mask = (u32)~IMG_I2S_IN_CH_CTL_CLK_TRANS_MASK;
++
++	/*
++	 * BLKP and LRD must be set during separate register writes
++	 */
++	for (i = 0; i < i2s->active_channels; i++) {
++		reg = img_i2s_in_ch_disable(i2s, i);
++		reg = (reg & chan_control_mask) | chan_control_set;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		reg = (reg & ~IMG_I2S_IN_CH_CTL_BLKP_MASK) | blkp_set;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		reg = (reg & ~IMG_I2S_IN_CH_CTL_LRD_MASK) | lrd_set;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		img_i2s_in_ch_enable(i2s, i, reg);
++	}
++
++	for (; i < i2s->max_i2s_chan; i++) {
++		reg = img_i2s_in_ch_readl(i2s, i, IMG_I2S_IN_CH_CTL);
++		reg = (reg & chan_control_mask) | chan_control_set;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		reg = (reg & ~IMG_I2S_IN_CH_CTL_BLKP_MASK) | blkp_set;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		reg = (reg & ~IMG_I2S_IN_CH_CTL_LRD_MASK) | lrd_set;
++		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++	}
++
++	return 0;
++}
++
++static const struct snd_soc_dai_ops img_i2s_in_dai_ops = {
++	.trigger = img_i2s_in_trigger,
++	.hw_params = img_i2s_in_hw_params,
++	.set_fmt = img_i2s_in_set_fmt
++};
++
++static int img_i2s_in_dai_probe(struct snd_soc_dai *dai)
++{
++	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(dai);
++
++	snd_soc_dai_init_dma_data(dai, NULL, &i2s->dma_data);
++
++	return 0;
++}
++
++static const struct snd_soc_component_driver img_i2s_in_component = {
++	.name = "img-i2s-in"
++};
++
++static int img_i2s_in_dma_prepare_slave_config(struct snd_pcm_substream *st,
++	struct snd_pcm_hw_params *params, struct dma_slave_config *sc)
++{
++	unsigned int i2s_channels = params_channels(params) / 2;
++	struct snd_soc_pcm_runtime *rtd = st->private_data;
++	struct snd_dmaengine_dai_dma_data *dma_data;
++	int ret;
++
++	dma_data = snd_soc_dai_get_dma_data(rtd->cpu_dai, st);
++
++	ret = snd_hwparams_to_dma_slave_config(st, params, sc);
++	if (ret)
++		return ret;
++
++	sc->src_addr = dma_data->addr;
++	sc->src_addr_width = dma_data->addr_width;
++	sc->src_maxburst = 4 * i2s_channels;
++
++	return 0;
++}
++
++static const struct snd_dmaengine_pcm_config img_i2s_in_dma_config = {
++	.prepare_slave_config = img_i2s_in_dma_prepare_slave_config
++};
++
++static int img_i2s_in_probe(struct platform_device *pdev)
++{
++	struct img_i2s_in *i2s;
++	struct resource *res;
++	void __iomem *base;
++	int ret, i;
++	struct reset_control *rst;
++	u32 reg;
++	unsigned int max_i2s_chan_pow_2;
++	struct device *dev = &pdev->dev;
++
++	i2s = devm_kzalloc(dev, sizeof(*i2s), GFP_KERNEL);
++	if (!i2s)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, i2s);
++
++	i2s->dev = dev;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	base = devm_ioremap_resource(dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	i2s->base = base;
++
++	if (of_property_read_u32(pdev->dev.of_node, "img,i2s-channels",
++			&i2s->max_i2s_chan)) {
++		dev_err(dev, "No img,i2s-channels property\n");
++		return -EINVAL;
++	}
++
++	max_i2s_chan_pow_2 = 1 << get_count_order(i2s->max_i2s_chan);
++
++	i2s->channel_base = base + (max_i2s_chan_pow_2 * 0x20);
++
++	i2s->clk_sys = devm_clk_get(dev, "sys");
++	if (IS_ERR(i2s->clk_sys))
++		return PTR_ERR(i2s->clk_sys);
++
++	ret = clk_prepare_enable(i2s->clk_sys);
++	if (ret)
++		return ret;
++
++	i2s->active_channels = 1;
++	i2s->dma_data.addr = res->start + IMG_I2S_IN_RX_FIFO;
++	i2s->dma_data.addr_width = 4;
++
++	i2s->dai_driver.probe = img_i2s_in_dai_probe;
++	i2s->dai_driver.capture.channels_min = 2;
++	i2s->dai_driver.capture.channels_max = i2s->max_i2s_chan * 2;
++	i2s->dai_driver.capture.rates = SNDRV_PCM_RATE_8000_192000;
++	i2s->dai_driver.capture.formats = SNDRV_PCM_FMTBIT_S32_LE |
++		SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S16_LE;
++	i2s->dai_driver.ops = &img_i2s_in_dai_ops;
++
++	rst = devm_reset_control_get(dev, "rst");
++	if (IS_ERR(rst)) {
++		dev_dbg(dev, "No top level reset found\n");
++
++		reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
++		reg &= ~IMG_I2S_IN_CTL_ME_MASK;
++		img_i2s_in_writel(i2s, reg, IMG_I2S_IN_CTL);
++
++		for (i = 0; i < i2s->max_i2s_chan; i++) {
++			reg = img_i2s_in_ch_disable(i2s, i);
++			reg |= IMG_I2S_IN_CH_CTL_FIFO_FLUSH_MASK;
++			img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++			reg &= ~IMG_I2S_IN_CH_CTL_FIFO_FLUSH_MASK;
++			img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		}
++	} else {
++		reset_control_assert(rst);
++		reset_control_deassert(rst);
++	}
++
++	img_i2s_in_writel(i2s, 0, IMG_I2S_IN_CTL);
++
++	for (i = 0; i < i2s->max_i2s_chan; i++)
++		img_i2s_in_ch_writel(i2s, i,
++			(4 << IMG_I2S_IN_CH_CTL_CCDEL_SHIFT) |
++			IMG_I2S_IN_CH_CTL_JUST_MASK |
++			IMG_I2S_IN_CH_CTL_FW_MASK, IMG_I2S_IN_CH_CTL);
++
++	ret = devm_snd_soc_register_component(dev, &img_i2s_in_component,
++						&i2s->dai_driver, 1);
++	if (ret)
++		goto err_clk_disable;
++
++	ret = devm_snd_dmaengine_pcm_register(dev, &img_i2s_in_dma_config, 0);
++	if (ret)
++		goto err_clk_disable;
++
++	return 0;
++
++err_clk_disable:
++	clk_disable_unprepare(i2s->clk_sys);
++
++	return ret;
++}
++
++static int img_i2s_in_dev_remove(struct platform_device *pdev)
++{
++	struct img_i2s_in *i2s = platform_get_drvdata(pdev);
++
++	clk_disable_unprepare(i2s->clk_sys);
++
++	return 0;
++}
++
++static const struct of_device_id img_i2s_in_of_match[] = {
++	{ .compatible = "img,i2s-in" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, img_i2s_in_of_match);
++
++static struct platform_driver img_i2s_in_driver = {
++	.driver = {
++		.name = "img-i2s-in",
++		.of_match_table = img_i2s_in_of_match
++	},
++	.probe = img_i2s_in_probe,
++	.remove = img_i2s_in_dev_remove
++};
++module_platform_driver(img_i2s_in_driver);
++
++MODULE_AUTHOR("Damien Horsley <Damien.Horsley@imgtec.com>");
++MODULE_DESCRIPTION("IMG I2S Input Driver");
++MODULE_LICENSE("GPL v2");
+diff --git a/sound/soc/img/img-i2s-out.c b/sound/soc/img/img-i2s-out.c
+new file mode 100644
+index 0000000..c1b39ec
+--- /dev/null
++++ b/sound/soc/img/img-i2s-out.c
+@@ -0,0 +1,552 @@
++/*
++ * IMG I2S output controller driver
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * Author: Damien Horsley <Damien.Horsley@imgtec.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/clk.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/reset.h>
++
++#include <sound/core.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/initval.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++
++#define IMG_I2S_OUT_TX_FIFO			0x0
++
++#define IMG_I2S_OUT_CTL				0x4
++#define IMG_I2S_OUT_CTL_DATA_EN_MASK		BIT(24)
++#define IMG_I2S_OUT_CTL_ACTIVE_CHAN_MASK	0xffe000
++#define IMG_I2S_OUT_CTL_ACTIVE_CHAN_SHIFT	13
++#define IMG_I2S_OUT_CTL_FRM_SIZE_MASK		BIT(8)
++#define IMG_I2S_OUT_CTL_MASTER_MASK		BIT(6)
++#define IMG_I2S_OUT_CTL_CLK_MASK		BIT(5)
++#define IMG_I2S_OUT_CTL_CLK_EN_MASK		BIT(4)
++#define IMG_I2S_OUT_CTL_FRM_CLK_POL_MASK	BIT(3)
++#define IMG_I2S_OUT_CTL_BCLK_POL_MASK		BIT(2)
++#define IMG_I2S_OUT_CTL_ME_MASK			BIT(0)
++
++#define IMG_I2S_OUT_CH_CTL			0x4
++#define IMG_I2S_OUT_CHAN_CTL_CH_MASK		BIT(11)
++#define IMG_I2S_OUT_CHAN_CTL_LT_MASK		BIT(10)
++#define IMG_I2S_OUT_CHAN_CTL_FMT_MASK		0xf0
++#define IMG_I2S_OUT_CHAN_CTL_FMT_SHIFT		4
++#define IMG_I2S_OUT_CHAN_CTL_JUST_MASK		BIT(3)
++#define IMG_I2S_OUT_CHAN_CTL_CLKT_MASK		BIT(1)
++#define IMG_I2S_OUT_CHAN_CTL_ME_MASK		BIT(0)
++
++#define IMG_I2S_OUT_CH_STRIDE			0x20
++
++struct img_i2s_out {
++	void __iomem *base;
++	struct clk *clk_sys;
++	struct clk *clk_ref;
++	struct snd_dmaengine_dai_dma_data dma_data;
++	struct device *dev;
++	unsigned int max_i2s_chan;
++	void __iomem *channel_base;
++	bool force_clk_active;
++	unsigned int active_channels;
++	struct reset_control *rst;
++	struct snd_soc_dai_driver dai_driver;
++};
++
++static int img_i2s_out_suspend(struct device *dev)
++{
++	struct img_i2s_out *i2s = dev_get_drvdata(dev);
++
++	if (!i2s->force_clk_active)
++		clk_disable_unprepare(i2s->clk_ref);
++
++	return 0;
++}
++
++static int img_i2s_out_resume(struct device *dev)
++{
++	struct img_i2s_out *i2s = dev_get_drvdata(dev);
++	int ret;
++
++	if (!i2s->force_clk_active) {
++		ret = clk_prepare_enable(i2s->clk_ref);
++		if (ret) {
++			dev_err(dev, "clk_enable failed: %d\n", ret);
++			return ret;
++		}
++	}
++
++	return 0;
++}
++
++static inline void img_i2s_out_writel(struct img_i2s_out *i2s, u32 val,
++					u32 reg)
++{
++	writel(val, i2s->base + reg);
++}
++
++static inline u32 img_i2s_out_readl(struct img_i2s_out *i2s, u32 reg)
++{
++	return readl(i2s->base + reg);
++}
++
++static inline void img_i2s_out_ch_writel(struct img_i2s_out *i2s,
++					u32 chan, u32 val, u32 reg)
++{
++	writel(val, i2s->channel_base + (chan * IMG_I2S_OUT_CH_STRIDE) + reg);
++}
++
++static inline u32 img_i2s_out_ch_readl(struct img_i2s_out *i2s, u32 chan,
++					u32 reg)
++{
++	return readl(i2s->channel_base + (chan * IMG_I2S_OUT_CH_STRIDE) + reg);
++}
++
++static inline u32 img_i2s_out_ch_disable(struct img_i2s_out *i2s, u32 chan)
++{
++	u32 reg;
++
++	reg = img_i2s_out_ch_readl(i2s, chan, IMG_I2S_OUT_CH_CTL);
++	reg &= ~IMG_I2S_OUT_CHAN_CTL_ME_MASK;
++	img_i2s_out_ch_writel(i2s, chan, reg, IMG_I2S_OUT_CH_CTL);
++
++	return reg;
++}
++
++static inline void img_i2s_out_ch_enable(struct img_i2s_out *i2s, u32 chan,
++					u32 reg)
++{
++	reg |= IMG_I2S_OUT_CHAN_CTL_ME_MASK;
++	img_i2s_out_ch_writel(i2s, chan, reg, IMG_I2S_OUT_CH_CTL);
++}
++
++static inline u32 img_i2s_out_disable(struct img_i2s_out *i2s)
++{
++	u32 reg;
++
++	reg = img_i2s_out_readl(i2s, IMG_I2S_OUT_CTL);
++	reg &= ~IMG_I2S_OUT_CTL_ME_MASK;
++	img_i2s_out_writel(i2s, reg, IMG_I2S_OUT_CTL);
++
++	return reg;
++}
++
++static inline void img_i2s_out_enable(struct img_i2s_out *i2s, u32 reg)
++{
++	reg |= IMG_I2S_OUT_CTL_ME_MASK;
++	img_i2s_out_writel(i2s, reg, IMG_I2S_OUT_CTL);
++}
++
++static void img_i2s_out_reset(struct img_i2s_out *i2s)
++{
++	int i;
++	u32 core_ctl, chan_ctl;
++
++	core_ctl = img_i2s_out_readl(i2s, IMG_I2S_OUT_CTL) &
++			~IMG_I2S_OUT_CTL_ME_MASK &
++			~IMG_I2S_OUT_CTL_DATA_EN_MASK;
++
++	if (!i2s->force_clk_active)
++		core_ctl &= ~IMG_I2S_OUT_CTL_CLK_EN_MASK;
++
++	chan_ctl = img_i2s_out_ch_readl(i2s, 0, IMG_I2S_OUT_CH_CTL) &
++			~IMG_I2S_OUT_CHAN_CTL_ME_MASK;
++
++	reset_control_assert(i2s->rst);
++	reset_control_deassert(i2s->rst);
++
++	for (i = 0; i < i2s->max_i2s_chan; i++)
++		img_i2s_out_ch_writel(i2s, i, chan_ctl, IMG_I2S_OUT_CH_CTL);
++
++	for (i = 0; i < i2s->active_channels; i++)
++		img_i2s_out_ch_enable(i2s, i, chan_ctl);
++
++	img_i2s_out_writel(i2s, core_ctl, IMG_I2S_OUT_CTL);
++	img_i2s_out_enable(i2s, core_ctl);
++}
++
++static int img_i2s_out_trigger(struct snd_pcm_substream *substream, int cmd,
++	struct snd_soc_dai *dai)
++{
++	struct img_i2s_out *i2s = snd_soc_dai_get_drvdata(dai);
++	u32 reg;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		reg = img_i2s_out_readl(i2s, IMG_I2S_OUT_CTL);
++		if (!i2s->force_clk_active)
++			reg |= IMG_I2S_OUT_CTL_CLK_EN_MASK;
++		reg |= IMG_I2S_OUT_CTL_DATA_EN_MASK;
++		img_i2s_out_writel(i2s, reg, IMG_I2S_OUT_CTL);
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		img_i2s_out_reset(i2s);
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int img_i2s_out_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct img_i2s_out *i2s = snd_soc_dai_get_drvdata(dai);
++	unsigned int channels, i2s_channels;
++	long pre_div_a, pre_div_b, diff_a, diff_b, rate, clk_rate;
++	int i;
++	u32 reg, control_reg, control_mask, control_set = 0;
++	snd_pcm_format_t format;
++
++	rate = params_rate(params);
++	format = params_format(params);
++	channels = params_channels(params);
++	i2s_channels = channels / 2;
++
++	if (format != SNDRV_PCM_FORMAT_S32_LE)
++		return -EINVAL;
++
++	if ((channels < 2) ||
++			(channels > (i2s->max_i2s_chan * 2)) ||
++			(channels % 2))
++		return -EINVAL;
++
++	pre_div_a = clk_round_rate(i2s->clk_ref, rate * 256);
++	if (pre_div_a < 0)
++		return pre_div_a;
++	pre_div_b = clk_round_rate(i2s->clk_ref, rate * 384);
++	if (pre_div_b < 0)
++		return pre_div_b;
++
++	diff_a = abs((pre_div_a / 256) - rate);
++	diff_b = abs((pre_div_b / 384) - rate);
++
++	/* If diffs are equal, use lower clock rate */
++	if (diff_a > diff_b)
++		clk_set_rate(i2s->clk_ref, pre_div_b);
++	else
++		clk_set_rate(i2s->clk_ref, pre_div_a);
++
++	/*
++	 * Another driver (eg alsa machine driver) may have rejected the above
++	 * change. Get the current rate and set the register bit according to
++	 * the new minimum diff
++	 */
++	clk_rate = clk_get_rate(i2s->clk_ref);
++
++	diff_a = abs((clk_rate / 256) - rate);
++	diff_b = abs((clk_rate / 384) - rate);
++
++	if (diff_a > diff_b)
++		control_set |= IMG_I2S_OUT_CTL_CLK_MASK;
++
++	control_set |= (((i2s_channels - 1) <<
++			IMG_I2S_OUT_CTL_ACTIVE_CHAN_SHIFT) &
++			IMG_I2S_OUT_CTL_ACTIVE_CHAN_MASK);
++
++	control_mask = (u32)(~IMG_I2S_OUT_CTL_CLK_MASK &
++			~IMG_I2S_OUT_CTL_ACTIVE_CHAN_MASK);
++
++	control_reg = img_i2s_out_disable(i2s);
++	control_reg = (control_reg & control_mask) | control_set;
++	img_i2s_out_writel(i2s, control_reg, IMG_I2S_OUT_CTL);
++
++	for (i = 0; i < i2s_channels; i++) {
++		reg = img_i2s_out_ch_readl(i2s, i, IMG_I2S_OUT_CH_CTL);
++		img_i2s_out_ch_enable(i2s, i, reg);
++	}
++
++	for (; i < i2s->max_i2s_chan; i++)
++		img_i2s_out_ch_disable(i2s, i);
++
++	img_i2s_out_enable(i2s, control_reg);
++
++	i2s->active_channels = i2s_channels;
++
++	return 0;
++}
++
++static int img_i2s_out_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
++{
++	struct img_i2s_out *i2s = snd_soc_dai_get_drvdata(dai);
++	int i, ret = 0;
++	bool force_clk_active;
++	u32 chan_control_mask, control_mask, chan_control_set = 0;
++	u32 reg = 0, control_reg, control_set = 0;
++
++	force_clk_active = ((fmt & SND_SOC_DAIFMT_CLOCK_MASK) ==
++			SND_SOC_DAIFMT_CONT);
++
++	if (force_clk_active)
++		control_set |= IMG_I2S_OUT_CTL_CLK_EN_MASK;
++
++	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
++	case SND_SOC_DAIFMT_CBM_CFM:
++		break;
++	case SND_SOC_DAIFMT_CBS_CFS:
++		control_set |= IMG_I2S_OUT_CTL_MASTER_MASK;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
++	case SND_SOC_DAIFMT_NB_NF:
++		control_set |= IMG_I2S_OUT_CTL_BCLK_POL_MASK;
++		break;
++	case SND_SOC_DAIFMT_NB_IF:
++		control_set |= IMG_I2S_OUT_CTL_BCLK_POL_MASK;
++		control_set |= IMG_I2S_OUT_CTL_FRM_CLK_POL_MASK;
++		break;
++	case SND_SOC_DAIFMT_IB_NF:
++		break;
++	case SND_SOC_DAIFMT_IB_IF:
++		control_set |= IMG_I2S_OUT_CTL_FRM_CLK_POL_MASK;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
++	case SND_SOC_DAIFMT_I2S:
++		chan_control_set |= IMG_I2S_OUT_CHAN_CTL_CLKT_MASK;
++		break;
++	case SND_SOC_DAIFMT_LEFT_J:
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	control_mask = (u32)(~IMG_I2S_OUT_CTL_CLK_EN_MASK &
++		~IMG_I2S_OUT_CTL_MASTER_MASK &
++		~IMG_I2S_OUT_CTL_BCLK_POL_MASK &
++		~IMG_I2S_OUT_CTL_FRM_CLK_POL_MASK);
++
++	chan_control_mask = (u32)~IMG_I2S_OUT_CHAN_CTL_CLKT_MASK;
++
++	control_reg = img_i2s_out_disable(i2s);
++	control_reg = (control_reg & control_mask) | control_set;
++	img_i2s_out_writel(i2s, control_reg, IMG_I2S_OUT_CTL);
++
++	for (i = 0; i < i2s->active_channels; i++) {
++		reg = img_i2s_out_ch_disable(i2s, i);
++		reg = (reg & chan_control_mask) | chan_control_set;
++		img_i2s_out_ch_writel(i2s, i, reg, IMG_I2S_OUT_CH_CTL);
++		img_i2s_out_ch_enable(i2s, i, reg);
++	}
++
++	for (; i < i2s->max_i2s_chan; i++)
++		img_i2s_out_ch_writel(i2s, i, reg, IMG_I2S_OUT_CH_CTL);
++
++	img_i2s_out_enable(i2s, control_reg);
++
++	i2s->force_clk_active = force_clk_active;
++
++	return ret;
++}
++
++static const struct snd_soc_dai_ops img_i2s_out_dai_ops = {
++	.trigger = img_i2s_out_trigger,
++	.hw_params = img_i2s_out_hw_params,
++	.set_fmt = img_i2s_out_set_fmt,
++};
++
++static int img_i2s_out_dai_probe(struct snd_soc_dai *dai)
++{
++	struct img_i2s_out *i2s = snd_soc_dai_get_drvdata(dai);
++
++	snd_soc_dai_init_dma_data(dai, &i2s->dma_data, NULL);
++
++	return 0;
++}
++
++static const struct snd_soc_component_driver img_i2s_out_component = {
++	.name = "img-i2s-out"
++};
++
++static int img_i2s_out_dma_prepare_slave_config(struct snd_pcm_substream *st,
++	struct snd_pcm_hw_params *params, struct dma_slave_config *sc)
++{
++	unsigned int i2s_channels = params_channels(params) / 2;
++	struct snd_soc_pcm_runtime *rtd = st->private_data;
++	struct snd_dmaengine_dai_dma_data *dma_data;
++	int ret;
++
++	dma_data = snd_soc_dai_get_dma_data(rtd->cpu_dai, st);
++
++	ret = snd_hwparams_to_dma_slave_config(st, params, sc);
++	if (ret)
++		return ret;
++
++	sc->dst_addr = dma_data->addr;
++	sc->dst_addr_width = dma_data->addr_width;
++	sc->dst_maxburst = 4 * i2s_channels;
++
++	return 0;
++}
++
++static const struct snd_dmaengine_pcm_config img_i2s_out_dma_config = {
++	.prepare_slave_config = img_i2s_out_dma_prepare_slave_config
++};
++
++static int img_i2s_out_probe(struct platform_device *pdev)
++{
++	struct img_i2s_out *i2s;
++	struct resource *res;
++	void __iomem *base;
++	int i, ret;
++	unsigned int max_i2s_chan_pow_2;
++	u32 reg;
++
++	i2s = devm_kzalloc(&pdev->dev, sizeof(*i2s), GFP_KERNEL);
++	if (!i2s)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, i2s);
++
++	i2s->dev = &pdev->dev;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	i2s->base = base;
++
++	if (of_property_read_u32(pdev->dev.of_node, "img,i2s-channels",
++			&i2s->max_i2s_chan)) {
++		dev_err(&pdev->dev, "No img,i2s-channels property\n");
++		return -EINVAL;
++	}
++
++	max_i2s_chan_pow_2 = 1 << get_count_order(i2s->max_i2s_chan);
++
++	i2s->channel_base = base + (max_i2s_chan_pow_2 * 0x20);
++
++	i2s->rst = devm_reset_control_get(&pdev->dev, "rst");
++	if (IS_ERR(i2s->rst)) {
++		dev_err(&pdev->dev, "No top level reset found\n");
++		return PTR_ERR(i2s->rst);
++	}
++
++	i2s->clk_sys = devm_clk_get(&pdev->dev, "sys");
++	if (IS_ERR(i2s->clk_sys))
++		return PTR_ERR(i2s->clk_sys);
++
++	i2s->clk_ref = devm_clk_get(&pdev->dev, "ref");
++	if (IS_ERR(i2s->clk_ref))
++		return PTR_ERR(i2s->clk_ref);
++
++	ret = clk_prepare_enable(i2s->clk_sys);
++	if (ret)
++		return ret;
++
++	reg = IMG_I2S_OUT_CTL_FRM_SIZE_MASK;
++	img_i2s_out_writel(i2s, reg, IMG_I2S_OUT_CTL);
++
++	reg = IMG_I2S_OUT_CHAN_CTL_JUST_MASK |
++		IMG_I2S_OUT_CHAN_CTL_LT_MASK |
++		IMG_I2S_OUT_CHAN_CTL_CH_MASK |
++		(8 << IMG_I2S_OUT_CHAN_CTL_FMT_SHIFT);
++
++	for (i = 0; i < i2s->max_i2s_chan; i++)
++		img_i2s_out_ch_writel(i2s, i, reg, IMG_I2S_OUT_CH_CTL);
++
++	img_i2s_out_reset(i2s);
++
++	pm_runtime_enable(&pdev->dev);
++	if (!pm_runtime_enabled(&pdev->dev)) {
++		ret = img_i2s_out_resume(&pdev->dev);
++		if (ret)
++			goto err_pm_disable;
++	}
++
++	i2s->active_channels = 1;
++	i2s->dma_data.addr = res->start + IMG_I2S_OUT_TX_FIFO;
++	i2s->dma_data.addr_width = 4;
++	i2s->dma_data.maxburst = 4;
++
++	i2s->dai_driver.probe = img_i2s_out_dai_probe;
++	i2s->dai_driver.playback.channels_min = 2;
++	i2s->dai_driver.playback.channels_max = i2s->max_i2s_chan * 2;
++	i2s->dai_driver.playback.rates = SNDRV_PCM_RATE_8000_192000;
++	i2s->dai_driver.playback.formats = SNDRV_PCM_FMTBIT_S32_LE;
++	i2s->dai_driver.ops = &img_i2s_out_dai_ops;
++
++	ret = devm_snd_soc_register_component(&pdev->dev,
++			&img_i2s_out_component, &i2s->dai_driver, 1);
++	if (ret)
++		goto err_suspend;
++
++	ret = devm_snd_dmaengine_pcm_register(&pdev->dev,
++			&img_i2s_out_dma_config, 0);
++	if (ret)
++		goto err_suspend;
++
++	return 0;
++
++err_suspend:
++	if (!pm_runtime_status_suspended(&pdev->dev))
++		img_i2s_out_suspend(&pdev->dev);
++err_pm_disable:
++	pm_runtime_disable(&pdev->dev);
++	clk_disable_unprepare(i2s->clk_sys);
++
++	return ret;
++}
++
++static int img_i2s_out_dev_remove(struct platform_device *pdev)
++{
++	struct img_i2s_out *i2s = platform_get_drvdata(pdev);
++
++	pm_runtime_disable(&pdev->dev);
++	if (!pm_runtime_status_suspended(&pdev->dev))
++		img_i2s_out_suspend(&pdev->dev);
++
++	clk_disable_unprepare(i2s->clk_sys);
++
++	return 0;
++}
++
++static const struct of_device_id img_i2s_out_of_match[] = {
++	{ .compatible = "img,i2s-out" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, img_i2s_out_of_match);
++
++static const struct dev_pm_ops img_i2s_out_pm_ops = {
++	SET_RUNTIME_PM_OPS(img_i2s_out_suspend,
++			   img_i2s_out_resume, NULL)
++};
++
++static struct platform_driver img_i2s_out_driver = {
++	.driver = {
++		.name = "img-i2s-out",
++		.of_match_table = img_i2s_out_of_match,
++		.pm = &img_i2s_out_pm_ops
++	},
++	.probe = img_i2s_out_probe,
++	.remove = img_i2s_out_dev_remove
++};
++module_platform_driver(img_i2s_out_driver);
++
++MODULE_AUTHOR("Damien Horsley <Damien.Horsley@imgtec.com>");
++MODULE_DESCRIPTION("IMG I2S Output Driver");
++MODULE_LICENSE("GPL v2");
+diff --git a/sound/soc/img/img-parallel-out.c b/sound/soc/img/img-parallel-out.c
+new file mode 100644
+index 0000000..00c0611
+--- /dev/null
++++ b/sound/soc/img/img-parallel-out.c
+@@ -0,0 +1,373 @@
++/*
++ * IMG parallel output controller driver
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * Author: Damien Horsley <Damien.Horsley@imgtec.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/clk.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/reset.h>
++
++#include <sound/core.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/initval.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++
++#define IMG_PRL_OUT_TX_FIFO		0
++
++#define IMG_PRL_OUT_CTL			0x4
++#define IMG_PRL_OUT_CTL_CH_MASK		BIT(4)
++#define IMG_PRL_OUT_CTL_PACKH_MASK	BIT(3)
++#define IMG_PRL_OUT_CTL_EDGE_MASK	BIT(2)
++#define IMG_PRL_OUT_CTL_ME_MASK		BIT(1)
++#define IMG_PRL_OUT_CTL_SRST_MASK	BIT(0)
++
++static const char *const img_prl_out_edge_names[] = { "Rising", "Falling" };
++
++struct img_prl_out {
++	spinlock_t lock;
++	void __iomem *base;
++	struct clk *clk_sys;
++	struct clk *clk_ref;
++	struct snd_dmaengine_dai_dma_data dma_data;
++	struct device *dev;
++	bool active;
++	struct reset_control *rst;
++};
++
++static int img_prl_out_suspend(struct device *dev)
++{
++	struct img_prl_out *prl = dev_get_drvdata(dev);
++
++	clk_disable_unprepare(prl->clk_ref);
++
++	return 0;
++}
++
++static int img_prl_out_resume(struct device *dev)
++{
++	struct img_prl_out *prl = dev_get_drvdata(dev);
++	int ret;
++
++	ret = clk_prepare_enable(prl->clk_ref);
++	if (ret) {
++		dev_err(dev, "clk_enable failed: %d\n", ret);
++		return ret;
++	}
++
++	return 0;
++}
++
++static inline void img_prl_out_writel(struct img_prl_out *prl,
++				u32 val, u32 reg)
++{
++	writel(val, prl->base + reg);
++}
++
++static inline u32 img_prl_out_readl(struct img_prl_out *prl, u32 reg)
++{
++	return readl(prl->base + reg);
++}
++
++static void img_prl_out_reset(struct img_prl_out *prl)
++{
++	u32 ctl;
++
++	ctl = img_prl_out_readl(prl, IMG_PRL_OUT_CTL) &
++			~IMG_PRL_OUT_CTL_ME_MASK;
++
++	reset_control_assert(prl->rst);
++	reset_control_deassert(prl->rst);
++
++	img_prl_out_writel(prl, ctl, IMG_PRL_OUT_CTL);
++}
++
++static int img_prl_out_edge_info(struct snd_kcontrol *kcontrol,
++					struct snd_ctl_elem_info *uinfo)
++{
++	return snd_ctl_enum_info(uinfo, 1, 2, img_prl_out_edge_names);
++}
++
++static int img_prl_out_get_edge(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_prl_out *prl = snd_soc_dai_get_drvdata(cpu_dai);
++	u32 reg;
++	unsigned long flags;
++
++	spin_lock_irqsave(&prl->lock, flags);
++	reg = img_prl_out_readl(prl, IMG_PRL_OUT_CTL);
++	ucontrol->value.integer.value[0] = !!(reg & IMG_PRL_OUT_CTL_EDGE_MASK);
++	spin_unlock_irqrestore(&prl->lock, flags);
++
++	return 0;
++}
++
++static int img_prl_out_set_edge(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_prl_out *prl = snd_soc_dai_get_drvdata(cpu_dai);
++	unsigned long flags;
++	int ret = 0;
++	u32 reg;
++
++	spin_lock_irqsave(&prl->lock, flags);
++	if (prl->active) {
++		ret = -EBUSY;
++	} else {
++		reg = img_prl_out_readl(prl, IMG_PRL_OUT_CTL);
++		if (ucontrol->value.integer.value[0])
++			reg |= IMG_PRL_OUT_CTL_EDGE_MASK;
++		else
++			reg &= ~IMG_PRL_OUT_CTL_EDGE_MASK;
++		img_prl_out_writel(prl, reg, IMG_PRL_OUT_CTL);
++	}
++	spin_unlock_irqrestore(&prl->lock, flags);
++
++	return ret;
++}
++
++static struct snd_kcontrol_new img_prl_out_controls[] = {
++	{
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = "Parallel Out Edge Falling",
++		.info = img_prl_out_edge_info,
++		.get = img_prl_out_get_edge,
++		.put = img_prl_out_set_edge
++	}
++};
++
++static int img_prl_out_trigger(struct snd_pcm_substream *substream, int cmd,
++			struct snd_soc_dai *dai)
++{
++	struct img_prl_out *prl = snd_soc_dai_get_drvdata(dai);
++	unsigned long flags;
++	int ret = 0;
++	u32 reg;
++
++	spin_lock_irqsave(&prl->lock, flags);
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		reg = img_prl_out_readl(prl, IMG_PRL_OUT_CTL);
++		reg |= IMG_PRL_OUT_CTL_ME_MASK;
++		img_prl_out_writel(prl, reg, IMG_PRL_OUT_CTL);
++		prl->active = true;
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		img_prl_out_reset(prl);
++		prl->active = false;
++		break;
++	default:
++		ret = -EINVAL;
++	}
++
++	spin_unlock_irqrestore(&prl->lock, flags);
++
++	return ret;
++}
++
++static int img_prl_out_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct img_prl_out *prl = snd_soc_dai_get_drvdata(dai);
++	unsigned int rate, channels;
++	u32 reg, reg_set = 0;
++	unsigned long flags;
++	snd_pcm_format_t format;
++
++	rate = params_rate(params);
++	format = params_format(params);
++	channels = params_channels(params);
++
++	switch (params_format(params)) {
++	case SNDRV_PCM_FORMAT_S32_LE:
++		reg_set |= IMG_PRL_OUT_CTL_PACKH_MASK;
++		break;
++	case SNDRV_PCM_FORMAT_S24_LE:
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	if (channels != 2)
++		return -EINVAL;
++
++	clk_set_rate(prl->clk_ref, rate * 256);
++
++	spin_lock_irqsave(&prl->lock, flags);
++	reg = img_prl_out_readl(prl, IMG_PRL_OUT_CTL);
++	reg = (reg & ~IMG_PRL_OUT_CTL_PACKH_MASK) | reg_set;
++	img_prl_out_writel(prl, reg, IMG_PRL_OUT_CTL);
++	spin_unlock_irqrestore(&prl->lock, flags);
++
++	return 0;
++}
++
++static const struct snd_soc_dai_ops img_prl_out_dai_ops = {
++	.trigger = img_prl_out_trigger,
++	.hw_params = img_prl_out_hw_params,
++};
++
++static int img_prl_out_dai_probe(struct snd_soc_dai *dai)
++{
++	struct img_prl_out *prl = snd_soc_dai_get_drvdata(dai);
++
++	snd_soc_dai_init_dma_data(dai, &prl->dma_data, NULL);
++
++	snd_soc_add_dai_controls(dai, img_prl_out_controls,
++			ARRAY_SIZE(img_prl_out_controls));
++
++	return 0;
++}
++
++static struct snd_soc_dai_driver img_prl_out_dai = {
++	.probe = img_prl_out_dai_probe,
++	.playback = {
++		.channels_min = 2,
++		.channels_max = 2,
++		.rates = SNDRV_PCM_RATE_8000_192000,
++		.formats = SNDRV_PCM_FMTBIT_S32_LE | SNDRV_PCM_FMTBIT_S24_LE
++	},
++	.ops = &img_prl_out_dai_ops
++};
++
++static const struct snd_soc_component_driver img_prl_out_component = {
++	.name = "img-prl-out"
++};
++
++static int img_prl_out_probe(struct platform_device *pdev)
++{
++	struct img_prl_out *prl;
++	struct resource *res;
++	void __iomem *base;
++	int ret;
++
++	prl = devm_kzalloc(&pdev->dev, sizeof(*prl), GFP_KERNEL);
++	if (!prl)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, prl);
++
++	prl->dev = &pdev->dev;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	prl->base = base;
++
++	prl->rst = devm_reset_control_get(&pdev->dev, "rst");
++	if (IS_ERR(prl->rst)) {
++		dev_err(&pdev->dev, "No top level reset found\n");
++		return PTR_ERR(prl->rst);
++	}
++
++	prl->clk_sys = devm_clk_get(&pdev->dev, "sys");
++	if (IS_ERR(prl->clk_sys))
++		return PTR_ERR(prl->clk_sys);
++
++	prl->clk_ref = devm_clk_get(&pdev->dev, "ref");
++	if (IS_ERR(prl->clk_ref))
++		return PTR_ERR(prl->clk_ref);
++
++	ret = clk_prepare_enable(prl->clk_sys);
++	if (ret)
++		return ret;
++
++	img_prl_out_writel(prl, IMG_PRL_OUT_CTL_EDGE_MASK, IMG_PRL_OUT_CTL);
++	img_prl_out_reset(prl);
++
++	pm_runtime_enable(&pdev->dev);
++	if (!pm_runtime_enabled(&pdev->dev)) {
++		ret = img_prl_out_resume(&pdev->dev);
++		if (ret)
++			goto err_pm_disable;
++	}
++
++	spin_lock_init(&prl->lock);
++
++	prl->dma_data.addr = res->start + IMG_PRL_OUT_TX_FIFO;
++	prl->dma_data.addr_width = 4;
++	prl->dma_data.maxburst = 4;
++
++	ret = devm_snd_soc_register_component(&pdev->dev,
++			&img_prl_out_component,
++			&img_prl_out_dai, 1);
++	if (ret)
++		goto err_suspend;
++
++	ret = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL, 0);
++	if (ret)
++		goto err_suspend;
++
++	return 0;
++
++err_suspend:
++	if (!pm_runtime_status_suspended(&pdev->dev))
++		img_prl_out_suspend(&pdev->dev);
++err_pm_disable:
++	pm_runtime_disable(&pdev->dev);
++	clk_disable_unprepare(prl->clk_sys);
++
++	return ret;
++}
++
++static int img_prl_out_dev_remove(struct platform_device *pdev)
++{
++	struct img_prl_out *prl = platform_get_drvdata(pdev);
++
++	pm_runtime_disable(&pdev->dev);
++	if (!pm_runtime_status_suspended(&pdev->dev))
++		img_prl_out_suspend(&pdev->dev);
++
++	clk_disable_unprepare(prl->clk_sys);
++
++	return 0;
++}
++
++static const struct of_device_id img_prl_out_of_match[] = {
++	{ .compatible = "img,parallel-out" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, img_prl_out_of_match);
++
++static const struct dev_pm_ops img_prl_out_pm_ops = {
++	SET_RUNTIME_PM_OPS(img_prl_out_suspend,
++			   img_prl_out_resume, NULL)
++};
++
++static struct platform_driver img_prl_out_driver = {
++	.driver = {
++		.name = "img-parallel-out",
++		.of_match_table = img_prl_out_of_match,
++		.pm = &img_prl_out_pm_ops
++	},
++	.probe = img_prl_out_probe,
++	.remove = img_prl_out_dev_remove
++};
++module_platform_driver(img_prl_out_driver);
++
++MODULE_AUTHOR("Damien Horsley <Damien.Horsley@imgtec.com>");
++MODULE_DESCRIPTION("IMG Parallel Output Driver");
++MODULE_LICENSE("GPL v2");
+diff --git a/sound/soc/img/img-spdif-in.c b/sound/soc/img/img-spdif-in.c
+new file mode 100644
+index 0000000..b388b2d
+--- /dev/null
++++ b/sound/soc/img/img-spdif-in.c
+@@ -0,0 +1,799 @@
++/*
++ * IMG SPDIF input controller driver
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * Author: Damien Horsley <Damien.Horsley@imgtec.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/clk.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/reset.h>
++
++#include <sound/core.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/initval.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++
++#define IMG_SPDIF_IN_RX_FIFO_OFFSET		0
++
++#define IMG_SPDIF_IN_CTL			0x4
++#define IMG_SPDIF_IN_CTL_LOCKLO_MASK		0xff
++#define IMG_SPDIF_IN_CTL_LOCKLO_SHIFT		0
++#define IMG_SPDIF_IN_CTL_LOCKHI_MASK		0xff00
++#define IMG_SPDIF_IN_CTL_LOCKHI_SHIFT		8
++#define IMG_SPDIF_IN_CTL_TRK_MASK		0xff0000
++#define IMG_SPDIF_IN_CTL_TRK_SHIFT		16
++#define IMG_SPDIF_IN_CTL_SRD_MASK		0x70000000
++#define IMG_SPDIF_IN_CTL_SRD_SHIFT		28
++#define IMG_SPDIF_IN_CTL_SRT_MASK		BIT(31)
++
++#define IMG_SPDIF_IN_STATUS			0x8
++#define IMG_SPDIF_IN_STATUS_SAM_MASK		0x7000
++#define IMG_SPDIF_IN_STATUS_SAM_SHIFT		12
++#define IMG_SPDIF_IN_STATUS_LOCK_MASK		BIT(15)
++#define IMG_SPDIF_IN_STATUS_LOCK_SHIFT		15
++
++#define IMG_SPDIF_IN_CLKGEN			0x1c
++#define IMG_SPDIF_IN_CLKGEN_NOM_MASK		0x3ff
++#define IMG_SPDIF_IN_CLKGEN_NOM_SHIFT		0
++#define IMG_SPDIF_IN_CLKGEN_HLD_MASK		0x3ff0000
++#define IMG_SPDIF_IN_CLKGEN_HLD_SHIFT		16
++
++#define IMG_SPDIF_IN_CSL			0x20
++
++#define IMG_SPDIF_IN_CSH			0x24
++#define IMG_SPDIF_IN_CSH_MASK			0xff
++#define IMG_SPDIF_IN_CSH_SHIFT			0
++
++#define IMG_SPDIF_IN_SOFT_RESET			0x28
++#define IMG_SPDIF_IN_SOFT_RESET_MASK		BIT(0)
++
++#define IMG_SPDIF_IN_ACLKGEN_START		0x2c
++#define IMG_SPDIF_IN_ACLKGEN_NOM_MASK		0x3ff
++#define IMG_SPDIF_IN_ACLKGEN_NOM_SHIFT		0
++#define IMG_SPDIF_IN_ACLKGEN_HLD_MASK		0xffc00
++#define IMG_SPDIF_IN_ACLKGEN_HLD_SHIFT		10
++#define IMG_SPDIF_IN_ACLKGEN_TRK_MASK		0xff00000
++#define IMG_SPDIF_IN_ACLKGEN_TRK_SHIFT		20
++
++#define IMG_SPDIF_IN_NUM_ACLKGEN		4
++
++struct img_spdif_in {
++	spinlock_t lock;
++	void __iomem *base;
++	struct clk *clk_sys;
++	struct snd_dmaengine_dai_dma_data dma_data;
++	struct device *dev;
++	unsigned int trk;
++	bool multi_freq;
++	int lock_acquire;
++	int lock_release;
++	unsigned int single_freq;
++	unsigned int multi_freqs[IMG_SPDIF_IN_NUM_ACLKGEN];
++	bool active;
++
++	/* Write-only registers */
++	unsigned int aclkgen_regs[IMG_SPDIF_IN_NUM_ACLKGEN];
++};
++
++static inline void img_spdif_in_writel(struct img_spdif_in *spdif,
++					u32 val, u32 reg)
++{
++	writel(val, spdif->base + reg);
++}
++
++static inline u32 img_spdif_in_readl(struct img_spdif_in *spdif, u32 reg)
++{
++	return readl(spdif->base + reg);
++}
++
++static inline void img_spdif_in_aclkgen_writel(struct img_spdif_in *spdif,
++						u32 index)
++{
++	img_spdif_in_writel(spdif, spdif->aclkgen_regs[index],
++			IMG_SPDIF_IN_ACLKGEN_START + (index * 0x4));
++}
++
++static int img_spdif_in_check_max_rate(struct img_spdif_in *spdif,
++		unsigned int sample_rate, unsigned long *actual_freq)
++{
++	unsigned long min_freq, freq_t;
++
++	/* Clock rate must be at least 24x the bit rate */
++	min_freq = sample_rate * 2 * 32 * 24;
++
++	freq_t = clk_get_rate(spdif->clk_sys);
++
++	if (freq_t < min_freq)
++		return -EINVAL;
++
++	*actual_freq = freq_t;
++
++	return 0;
++}
++
++static int img_spdif_in_do_clkgen_calc(unsigned int rate, unsigned int *pnom,
++		unsigned int *phld, unsigned long clk_rate)
++{
++	unsigned int ori, nom, hld;
++
++	/*
++	 * Calculate oversampling ratio, nominal phase increment and hold
++	 * increment for the given rate / frequency
++	 */
++
++	if (!rate)
++		return -EINVAL;
++
++	ori = clk_rate / (rate * 64);
++
++	if (!ori)
++		return -EINVAL;
++
++	nom = (4096 / ori) + 1;
++	do
++		hld = 4096 - (--nom * (ori - 1));
++	while (hld < 120);
++
++	*pnom = nom;
++	*phld = hld;
++
++	return 0;
++}
++
++static int img_spdif_in_do_clkgen_single(struct img_spdif_in *spdif,
++		unsigned int rate)
++{
++	unsigned int nom, hld;
++	unsigned long flags, clk_rate;
++	int ret = 0;
++	u32 reg;
++
++	ret = img_spdif_in_check_max_rate(spdif, rate, &clk_rate);
++	if (ret)
++		return ret;
++
++	ret = img_spdif_in_do_clkgen_calc(rate, &nom, &hld, clk_rate);
++	if (ret)
++		return ret;
++
++	reg = (nom << IMG_SPDIF_IN_CLKGEN_NOM_SHIFT) &
++		IMG_SPDIF_IN_CLKGEN_NOM_MASK;
++	reg |= (hld << IMG_SPDIF_IN_CLKGEN_HLD_SHIFT) &
++		IMG_SPDIF_IN_CLKGEN_HLD_MASK;
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	if (spdif->active) {
++		spin_unlock_irqrestore(&spdif->lock, flags);
++		return -EBUSY;
++	}
++
++	img_spdif_in_writel(spdif, reg, IMG_SPDIF_IN_CLKGEN);
++
++	spdif->single_freq = rate;
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static int img_spdif_in_do_clkgen_multi(struct img_spdif_in *spdif,
++		unsigned int multi_freqs[])
++{
++	unsigned int nom, hld, rate, max_rate = 0;
++	unsigned long flags, clk_rate;
++	int i, ret = 0;
++	u32 reg, trk_reg, temp_regs[IMG_SPDIF_IN_NUM_ACLKGEN];
++
++	for (i = 0; i < IMG_SPDIF_IN_NUM_ACLKGEN; i++)
++		if (multi_freqs[i] > max_rate)
++			max_rate = multi_freqs[i];
++
++	ret = img_spdif_in_check_max_rate(spdif, max_rate, &clk_rate);
++	if (ret)
++		return ret;
++
++	for (i = 0; i < IMG_SPDIF_IN_NUM_ACLKGEN; i++) {
++		rate = multi_freqs[i];
++
++		ret = img_spdif_in_do_clkgen_calc(rate, &nom, &hld, clk_rate);
++		if (ret)
++			return ret;
++
++		reg = (nom << IMG_SPDIF_IN_ACLKGEN_NOM_SHIFT) &
++			IMG_SPDIF_IN_ACLKGEN_NOM_MASK;
++		reg |= (hld << IMG_SPDIF_IN_ACLKGEN_HLD_SHIFT) &
++			IMG_SPDIF_IN_ACLKGEN_HLD_MASK;
++		temp_regs[i] = reg;
++	}
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	if (spdif->active) {
++		spin_unlock_irqrestore(&spdif->lock, flags);
++		return -EBUSY;
++	}
++
++	trk_reg = spdif->trk << IMG_SPDIF_IN_ACLKGEN_TRK_SHIFT;
++
++	for (i = 0; i < IMG_SPDIF_IN_NUM_ACLKGEN; i++) {
++		spdif->aclkgen_regs[i] = temp_regs[i] | trk_reg;
++		img_spdif_in_aclkgen_writel(spdif, i);
++	}
++
++	spdif->multi_freq = true;
++	spdif->multi_freqs[0] = multi_freqs[0];
++	spdif->multi_freqs[1] = multi_freqs[1];
++	spdif->multi_freqs[2] = multi_freqs[2];
++	spdif->multi_freqs[3] = multi_freqs[3];
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static int img_spdif_in_iec958_info(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_IEC958;
++	uinfo->count = 1;
++
++	return 0;
++}
++
++static int img_spdif_in_get_status_mask(struct snd_kcontrol *kcontrol,
++				       struct snd_ctl_elem_value *ucontrol)
++{
++	ucontrol->value.iec958.status[0] = 0xff;
++	ucontrol->value.iec958.status[1] = 0xff;
++	ucontrol->value.iec958.status[2] = 0xff;
++	ucontrol->value.iec958.status[3] = 0xff;
++	ucontrol->value.iec958.status[4] = 0xff;
++
++	return 0;
++}
++
++static int img_spdif_in_get_status(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++	u32 reg;
++
++	reg = img_spdif_in_readl(spdif, IMG_SPDIF_IN_CSL);
++	ucontrol->value.iec958.status[0] = reg & 0xff;
++	ucontrol->value.iec958.status[1] = (reg >> 8) & 0xff;
++	ucontrol->value.iec958.status[2] = (reg >> 16) & 0xff;
++	ucontrol->value.iec958.status[3] = (reg >> 24) & 0xff;
++	reg = img_spdif_in_readl(spdif, IMG_SPDIF_IN_CSH);
++	ucontrol->value.iec958.status[4] = (reg & IMG_SPDIF_IN_CSH_MASK)
++		>> IMG_SPDIF_IN_CSH_SHIFT;
++
++	return 0;
++}
++
++static int img_spdif_in_info_multi_freq(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = IMG_SPDIF_IN_NUM_ACLKGEN;
++	uinfo->value.integer.min = 0;
++	uinfo->value.integer.max = LONG_MAX;
++
++	return 0;
++}
++
++static int img_spdif_in_get_multi_freq(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++	unsigned long flags;
++
++	spin_lock_irqsave(&spdif->lock, flags);
++	if (spdif->multi_freq) {
++		ucontrol->value.integer.value[0] = spdif->multi_freqs[0];
++		ucontrol->value.integer.value[1] = spdif->multi_freqs[1];
++		ucontrol->value.integer.value[2] = spdif->multi_freqs[2];
++		ucontrol->value.integer.value[3] = spdif->multi_freqs[3];
++	} else {
++		ucontrol->value.integer.value[0] = 0;
++		ucontrol->value.integer.value[1] = 0;
++		ucontrol->value.integer.value[2] = 0;
++		ucontrol->value.integer.value[3] = 0;
++	}
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static int img_spdif_in_set_multi_freq(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++	unsigned int multi_freqs[IMG_SPDIF_IN_NUM_ACLKGEN];
++	bool multi_freq;
++	unsigned long flags;
++
++	if ((ucontrol->value.integer.value[0] == 0) &&
++			(ucontrol->value.integer.value[1] == 0) &&
++			(ucontrol->value.integer.value[2] == 0) &&
++			(ucontrol->value.integer.value[3] == 0)) {
++		multi_freq = false;
++	} else {
++		multi_freqs[0] = ucontrol->value.integer.value[0];
++		multi_freqs[1] = ucontrol->value.integer.value[1];
++		multi_freqs[2] = ucontrol->value.integer.value[2];
++		multi_freqs[3] = ucontrol->value.integer.value[3];
++		multi_freq = true;
++	}
++
++	if (multi_freq)
++		return img_spdif_in_do_clkgen_multi(spdif, multi_freqs);
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	if (spdif->active) {
++		spin_unlock_irqrestore(&spdif->lock, flags);
++		return -EBUSY;
++	}
++
++	spdif->multi_freq = false;
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static int img_spdif_in_info_lock_freq(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = 1;
++	uinfo->value.integer.min = 0;
++	uinfo->value.integer.max = LONG_MAX;
++
++	return 0;
++}
++
++static int img_spdif_in_get_lock_freq(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *uc)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++	u32 reg;
++	int i;
++	unsigned long flags;
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	reg = img_spdif_in_readl(spdif, IMG_SPDIF_IN_STATUS);
++	if (reg & IMG_SPDIF_IN_STATUS_LOCK_MASK) {
++		if (spdif->multi_freq) {
++			i = ((reg & IMG_SPDIF_IN_STATUS_SAM_MASK) >>
++					IMG_SPDIF_IN_STATUS_SAM_SHIFT) - 1;
++			uc->value.integer.value[0] = spdif->multi_freqs[i];
++		} else {
++			uc->value.integer.value[0] = spdif->single_freq;
++		}
++	} else {
++		uc->value.integer.value[0] = 0;
++	}
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static int img_spdif_in_info_trk(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = 1;
++	uinfo->value.integer.min = 0;
++	uinfo->value.integer.max = 255;
++
++	return 0;
++}
++
++static int img_spdif_in_get_trk(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++
++	ucontrol->value.integer.value[0] = spdif->trk;
++
++	return 0;
++}
++
++static int img_spdif_in_set_trk(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++	unsigned long flags;
++	int i;
++	u32 reg;
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	if (spdif->active) {
++		spin_unlock_irqrestore(&spdif->lock, flags);
++		return -EBUSY;
++	}
++
++	spdif->trk = ucontrol->value.integer.value[0];
++
++	reg = img_spdif_in_readl(spdif, IMG_SPDIF_IN_CTL);
++	reg &= ~IMG_SPDIF_IN_CTL_TRK_MASK;
++	reg |= spdif->trk << IMG_SPDIF_IN_CTL_TRK_SHIFT;
++	img_spdif_in_writel(spdif, reg, IMG_SPDIF_IN_CTL);
++
++	for (i = 0; i < IMG_SPDIF_IN_NUM_ACLKGEN; i++) {
++		spdif->aclkgen_regs[i] = (spdif->aclkgen_regs[i] &
++			~IMG_SPDIF_IN_ACLKGEN_TRK_MASK) |
++			(spdif->trk << IMG_SPDIF_IN_ACLKGEN_TRK_SHIFT);
++
++		img_spdif_in_aclkgen_writel(spdif, i);
++	}
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static int img_spdif_in_info_lock(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = 1;
++	uinfo->value.integer.min = -128;
++	uinfo->value.integer.max = 127;
++
++	return 0;
++}
++
++static int img_spdif_in_get_lock_acquire(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++
++	ucontrol->value.integer.value[0] = spdif->lock_acquire;
++
++	return 0;
++}
++
++static int img_spdif_in_set_lock_acquire(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++	unsigned long flags;
++	u32 reg;
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	if (spdif->active) {
++		spin_unlock_irqrestore(&spdif->lock, flags);
++		return -EBUSY;
++	}
++
++	spdif->lock_acquire = ucontrol->value.integer.value[0];
++
++	reg = img_spdif_in_readl(spdif, IMG_SPDIF_IN_CTL);
++	reg &= ~IMG_SPDIF_IN_CTL_LOCKHI_MASK;
++	reg |= (spdif->lock_acquire << IMG_SPDIF_IN_CTL_LOCKHI_SHIFT) &
++		IMG_SPDIF_IN_CTL_LOCKHI_MASK;
++	img_spdif_in_writel(spdif, reg, IMG_SPDIF_IN_CTL);
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static int img_spdif_in_get_lock_release(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++
++	ucontrol->value.integer.value[0] = spdif->lock_release;
++
++	return 0;
++}
++
++static int img_spdif_in_set_lock_release(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++	unsigned long flags;
++	u32 reg;
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	if (spdif->active) {
++		spin_unlock_irqrestore(&spdif->lock, flags);
++		return -EBUSY;
++	}
++
++	spdif->lock_release = ucontrol->value.integer.value[0];
++
++	reg = img_spdif_in_readl(spdif, IMG_SPDIF_IN_CTL);
++	reg &= ~IMG_SPDIF_IN_CTL_LOCKLO_MASK;
++	reg |= (spdif->lock_release << IMG_SPDIF_IN_CTL_LOCKLO_SHIFT) &
++		IMG_SPDIF_IN_CTL_LOCKLO_MASK;
++	img_spdif_in_writel(spdif, reg, IMG_SPDIF_IN_CTL);
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static struct snd_kcontrol_new img_spdif_in_controls[] = {
++	{
++		.access = SNDRV_CTL_ELEM_ACCESS_READ,
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = SNDRV_CTL_NAME_IEC958("", CAPTURE, MASK),
++		.info = img_spdif_in_iec958_info,
++		.get = img_spdif_in_get_status_mask
++	},
++	{
++		.access = SNDRV_CTL_ELEM_ACCESS_READ |
++			SNDRV_CTL_ELEM_ACCESS_VOLATILE,
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = SNDRV_CTL_NAME_IEC958("", CAPTURE, DEFAULT),
++		.info = img_spdif_in_iec958_info,
++		.get = img_spdif_in_get_status
++	},
++	{
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = "SPDIF In Multi Frequency Acquire",
++		.info = img_spdif_in_info_multi_freq,
++		.get = img_spdif_in_get_multi_freq,
++		.put = img_spdif_in_set_multi_freq
++	},
++	{
++		.access = SNDRV_CTL_ELEM_ACCESS_READ |
++			SNDRV_CTL_ELEM_ACCESS_VOLATILE,
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = "SPDIF In Lock Frequency",
++		.info = img_spdif_in_info_lock_freq,
++		.get = img_spdif_in_get_lock_freq
++	},
++	{
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = "SPDIF In Lock TRK",
++		.info = img_spdif_in_info_trk,
++		.get = img_spdif_in_get_trk,
++		.put = img_spdif_in_set_trk
++	},
++	{
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = "SPDIF In Lock Acquire Threshold",
++		.info = img_spdif_in_info_lock,
++		.get = img_spdif_in_get_lock_acquire,
++		.put = img_spdif_in_set_lock_acquire
++	},
++	{
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = "SPDIF In Lock Release Threshold",
++		.info = img_spdif_in_info_lock,
++		.get = img_spdif_in_get_lock_release,
++		.put = img_spdif_in_set_lock_release
++	}
++};
++
++static int img_spdif_in_trigger(struct snd_pcm_substream *substream, int cmd,
++	struct snd_soc_dai *dai)
++{
++	unsigned long flags;
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(dai);
++	int ret = 0;
++	u32 reg;
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		reg = img_spdif_in_readl(spdif, IMG_SPDIF_IN_CTL);
++		if (spdif->multi_freq)
++			reg &= ~IMG_SPDIF_IN_CTL_SRD_MASK;
++		else
++			reg |= (1UL << IMG_SPDIF_IN_CTL_SRD_SHIFT);
++		reg |= IMG_SPDIF_IN_CTL_SRT_MASK;
++		img_spdif_in_writel(spdif, reg, IMG_SPDIF_IN_CTL);
++		spdif->active = true;
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		reg = img_spdif_in_readl(spdif, IMG_SPDIF_IN_CTL);
++		reg &= ~IMG_SPDIF_IN_CTL_SRT_MASK;
++		img_spdif_in_writel(spdif, reg, IMG_SPDIF_IN_CTL);
++		spdif->active = false;
++		break;
++	default:
++		ret = -EINVAL;
++	}
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return ret;
++}
++
++static int img_spdif_in_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(dai);
++	unsigned int rate, channels;
++	snd_pcm_format_t format;
++
++	rate = params_rate(params);
++	channels = params_channels(params);
++	format = params_format(params);
++
++	if (format != SNDRV_PCM_FORMAT_S32_LE)
++		return -EINVAL;
++
++	if (channels != 2)
++		return -EINVAL;
++
++	return img_spdif_in_do_clkgen_single(spdif, rate);
++}
++
++static const struct snd_soc_dai_ops img_spdif_in_dai_ops = {
++	.trigger = img_spdif_in_trigger,
++	.hw_params = img_spdif_in_hw_params
++};
++
++static int img_spdif_in_dai_probe(struct snd_soc_dai *dai)
++{
++	struct img_spdif_in *spdif = snd_soc_dai_get_drvdata(dai);
++
++	snd_soc_dai_init_dma_data(dai, NULL, &spdif->dma_data);
++
++	snd_soc_add_dai_controls(dai, img_spdif_in_controls,
++			ARRAY_SIZE(img_spdif_in_controls));
++
++	return 0;
++}
++
++static struct snd_soc_dai_driver img_spdif_in_dai = {
++	.probe = img_spdif_in_dai_probe,
++	.capture = {
++		.channels_min = 2,
++		.channels_max = 2,
++		.rates = SNDRV_PCM_RATE_8000_192000,
++		.formats = SNDRV_PCM_FMTBIT_S32_LE
++	},
++	.ops = &img_spdif_in_dai_ops
++};
++
++static const struct snd_soc_component_driver img_spdif_in_component = {
++	.name = "img-spdif-in"
++};
++
++static int img_spdif_in_probe(struct platform_device *pdev)
++{
++	struct img_spdif_in *spdif;
++	struct resource *res;
++	void __iomem *base;
++	int ret;
++	struct reset_control *rst;
++	u32 reg;
++
++	spdif = devm_kzalloc(&pdev->dev, sizeof(*spdif), GFP_KERNEL);
++	if (!spdif)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, spdif);
++
++	spdif->dev = &pdev->dev;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	spdif->base = base;
++
++	spdif->clk_sys = devm_clk_get(&pdev->dev, "sys");
++	if (IS_ERR(spdif->clk_sys))
++		return PTR_ERR(spdif->clk_sys);
++
++	ret = clk_prepare_enable(spdif->clk_sys);
++	if (ret)
++		return ret;
++
++	rst = devm_reset_control_get(&pdev->dev, "rst");
++	if (IS_ERR(rst)) {
++		dev_dbg(&pdev->dev,
++				"No top level reset found\n");
++		img_spdif_in_writel(spdif, IMG_SPDIF_IN_SOFT_RESET_MASK,
++				IMG_SPDIF_IN_SOFT_RESET);
++		img_spdif_in_writel(spdif, 0, IMG_SPDIF_IN_SOFT_RESET);
++	} else {
++		reset_control_assert(rst);
++		reset_control_deassert(rst);
++	}
++
++	spin_lock_init(&spdif->lock);
++
++	spdif->dma_data.addr = res->start + IMG_SPDIF_IN_RX_FIFO_OFFSET;
++	spdif->dma_data.addr_width = 4;
++	spdif->dma_data.maxburst = 4;
++	spdif->trk = 0x80;
++	spdif->lock_acquire = 4;
++	spdif->lock_release = -128;
++
++	reg = (spdif->lock_acquire << IMG_SPDIF_IN_CTL_LOCKHI_SHIFT) &
++		IMG_SPDIF_IN_CTL_LOCKHI_MASK;
++	reg |= (spdif->lock_release << IMG_SPDIF_IN_CTL_LOCKLO_SHIFT) &
++		IMG_SPDIF_IN_CTL_LOCKLO_MASK;
++	reg |= (spdif->trk << IMG_SPDIF_IN_CTL_TRK_SHIFT) &
++		IMG_SPDIF_IN_CTL_TRK_MASK;
++	img_spdif_in_writel(spdif, reg, IMG_SPDIF_IN_CTL);
++
++	ret = devm_snd_soc_register_component(&pdev->dev,
++			&img_spdif_in_component, &img_spdif_in_dai, 1);
++	if (ret)
++		goto err_clk_disable;
++
++	ret = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL, 0);
++	if (ret)
++		goto err_clk_disable;
++
++	return 0;
++
++err_clk_disable:
++	clk_disable_unprepare(spdif->clk_sys);
++
++	return ret;
++}
++
++static int img_spdif_in_dev_remove(struct platform_device *pdev)
++{
++	struct img_spdif_in *spdif = platform_get_drvdata(pdev);
++
++	clk_disable_unprepare(spdif->clk_sys);
++
++	return 0;
++}
++
++static const struct of_device_id img_spdif_in_of_match[] = {
++	{ .compatible = "img,spdif-in" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, img_spdif_in_of_match);
++
++static struct platform_driver img_spdif_in_driver = {
++	.driver = {
++		.name = "img-spdif-in",
++		.of_match_table = img_spdif_in_of_match
++	},
++	.probe = img_spdif_in_probe,
++	.remove = img_spdif_in_dev_remove
++};
++module_platform_driver(img_spdif_in_driver);
++
++MODULE_AUTHOR("Damien Horsley <Damien.Horsley@imgtec.com>");
++MODULE_DESCRIPTION("IMG SPDIF Input driver");
++MODULE_LICENSE("GPL v2");
+diff --git a/sound/soc/img/img-spdif-out.c b/sound/soc/img/img-spdif-out.c
+new file mode 100644
+index 0000000..91a3cc1
+--- /dev/null
++++ b/sound/soc/img/img-spdif-out.c
+@@ -0,0 +1,433 @@
++/*
++ * IMG SPDIF output controller driver
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * Author: Damien Horsley <Damien.Horsley@imgtec.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/clk.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/reset.h>
++
++#include <sound/core.h>
++#include <sound/dmaengine_pcm.h>
++#include <sound/initval.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++
++#define IMG_SPDIF_OUT_TX_FIFO		0x0
++
++#define IMG_SPDIF_OUT_CTL		0x4
++#define IMG_SPDIF_OUT_CTL_FS_MASK	BIT(4)
++#define IMG_SPDIF_OUT_CTL_CLK_MASK	BIT(2)
++#define IMG_SPDIF_OUT_CTL_SRT_MASK	BIT(0)
++
++#define IMG_SPDIF_OUT_CSL		0x14
++
++#define IMG_SPDIF_OUT_CSH_UV		0x18
++#define IMG_SPDIF_OUT_CSH_UV_CSH_SHIFT	0
++#define IMG_SPDIF_OUT_CSH_UV_CSH_MASK	0xff
++
++struct img_spdif_out {
++	spinlock_t lock;
++	void __iomem *base;
++	struct clk *clk_sys;
++	struct clk *clk_ref;
++	struct snd_dmaengine_dai_dma_data dma_data;
++	struct device *dev;
++	struct reset_control *rst;
++};
++
++static int img_spdif_out_suspend(struct device *dev)
++{
++	struct img_spdif_out *spdif = dev_get_drvdata(dev);
++
++	clk_disable_unprepare(spdif->clk_ref);
++
++	return 0;
++}
++
++static int img_spdif_out_resume(struct device *dev)
++{
++	struct img_spdif_out *spdif = dev_get_drvdata(dev);
++	int ret;
++
++	ret = clk_prepare_enable(spdif->clk_ref);
++	if (ret) {
++		dev_err(dev, "clk_enable failed: %d\n", ret);
++		return ret;
++	}
++
++	return 0;
++}
++
++static inline void img_spdif_out_writel(struct img_spdif_out *spdif, u32 val,
++				u32 reg)
++{
++	writel(val, spdif->base + reg);
++}
++
++static inline u32 img_spdif_out_readl(struct img_spdif_out *spdif, u32 reg)
++{
++	return readl(spdif->base + reg);
++}
++
++static void img_spdif_out_reset(struct img_spdif_out *spdif)
++{
++	u32 ctl, status_low, status_high;
++
++	ctl = img_spdif_out_readl(spdif, IMG_SPDIF_OUT_CTL) &
++			~IMG_SPDIF_OUT_CTL_SRT_MASK;
++	status_low = img_spdif_out_readl(spdif, IMG_SPDIF_OUT_CSL);
++	status_high = img_spdif_out_readl(spdif, IMG_SPDIF_OUT_CSH_UV);
++
++	reset_control_assert(spdif->rst);
++	reset_control_deassert(spdif->rst);
++
++	img_spdif_out_writel(spdif, ctl, IMG_SPDIF_OUT_CTL);
++	img_spdif_out_writel(spdif, status_low, IMG_SPDIF_OUT_CSL);
++	img_spdif_out_writel(spdif, status_high, IMG_SPDIF_OUT_CSH_UV);
++}
++
++static int img_spdif_out_info(struct snd_kcontrol *kcontrol,
++					struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_IEC958;
++	uinfo->count = 1;
++
++	return 0;
++}
++
++static int img_spdif_out_get_status_mask(struct snd_kcontrol *kcontrol,
++				       struct snd_ctl_elem_value *ucontrol)
++{
++	ucontrol->value.iec958.status[0] = 0xff;
++	ucontrol->value.iec958.status[1] = 0xff;
++	ucontrol->value.iec958.status[2] = 0xff;
++	ucontrol->value.iec958.status[3] = 0xff;
++	ucontrol->value.iec958.status[4] = 0xff;
++
++	return 0;
++}
++
++static int img_spdif_out_get_status(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_out *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++	u32 reg;
++	unsigned long flags;
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	reg = img_spdif_out_readl(spdif, IMG_SPDIF_OUT_CSL);
++	ucontrol->value.iec958.status[0] = reg & 0xff;
++	ucontrol->value.iec958.status[1] = (reg >> 8) & 0xff;
++	ucontrol->value.iec958.status[2] = (reg >> 16) & 0xff;
++	ucontrol->value.iec958.status[3] = (reg >> 24) & 0xff;
++
++	reg = img_spdif_out_readl(spdif, IMG_SPDIF_OUT_CSH_UV);
++	ucontrol->value.iec958.status[4] =
++		(reg & IMG_SPDIF_OUT_CSH_UV_CSH_MASK) >>
++		IMG_SPDIF_OUT_CSH_UV_CSH_SHIFT;
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static int img_spdif_out_set_status(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_spdif_out *spdif = snd_soc_dai_get_drvdata(cpu_dai);
++	u32 reg;
++	unsigned long flags;
++
++	reg = ((u32)ucontrol->value.iec958.status[3] << 24);
++	reg |= ((u32)ucontrol->value.iec958.status[2] << 16);
++	reg |= ((u32)ucontrol->value.iec958.status[1] << 8);
++	reg |= (u32)ucontrol->value.iec958.status[0];
++
++	spin_lock_irqsave(&spdif->lock, flags);
++
++	img_spdif_out_writel(spdif, reg, IMG_SPDIF_OUT_CSL);
++
++	reg = img_spdif_out_readl(spdif, IMG_SPDIF_OUT_CSH_UV);
++	reg &= ~IMG_SPDIF_OUT_CSH_UV_CSH_MASK;
++	reg |= (u32)ucontrol->value.iec958.status[4] <<
++			IMG_SPDIF_OUT_CSH_UV_CSH_SHIFT;
++	img_spdif_out_writel(spdif, reg, IMG_SPDIF_OUT_CSH_UV);
++
++	spin_unlock_irqrestore(&spdif->lock, flags);
++
++	return 0;
++}
++
++static struct snd_kcontrol_new img_spdif_out_controls[] = {
++	{
++		.access = SNDRV_CTL_ELEM_ACCESS_READ,
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = SNDRV_CTL_NAME_IEC958("", PLAYBACK, MASK),
++		.info = img_spdif_out_info,
++		.get = img_spdif_out_get_status_mask
++	},
++	{
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = SNDRV_CTL_NAME_IEC958("", PLAYBACK, DEFAULT),
++		.info = img_spdif_out_info,
++		.get = img_spdif_out_get_status,
++		.put = img_spdif_out_set_status
++	}
++};
++
++static int img_spdif_out_trigger(struct snd_pcm_substream *substream, int cmd,
++			struct snd_soc_dai *dai)
++{
++	struct img_spdif_out *spdif = snd_soc_dai_get_drvdata(dai);
++	u32 reg;
++	unsigned long flags;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		reg = img_spdif_out_readl(spdif, IMG_SPDIF_OUT_CTL);
++		reg |= IMG_SPDIF_OUT_CTL_SRT_MASK;
++		img_spdif_out_writel(spdif, reg, IMG_SPDIF_OUT_CTL);
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		spin_lock_irqsave(&spdif->lock, flags);
++		img_spdif_out_reset(spdif);
++		spin_unlock_irqrestore(&spdif->lock, flags);
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int img_spdif_out_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct img_spdif_out *spdif = snd_soc_dai_get_drvdata(dai);
++	unsigned int channels;
++	long pre_div_a, pre_div_b, diff_a, diff_b, rate, clk_rate;
++	u32 reg;
++	snd_pcm_format_t format;
++
++	rate = params_rate(params);
++	format = params_format(params);
++	channels = params_channels(params);
++
++	dev_dbg(spdif->dev, "hw_params rate %ld channels %u format %u\n",
++			rate, channels, format);
++
++	if (format != SNDRV_PCM_FORMAT_S32_LE)
++		return -EINVAL;
++
++	if (channels != 2)
++		return -EINVAL;
++
++	pre_div_a = clk_round_rate(spdif->clk_ref, rate * 256);
++	if (pre_div_a < 0)
++		return pre_div_a;
++	pre_div_b = clk_round_rate(spdif->clk_ref, rate * 384);
++	if (pre_div_b < 0)
++		return pre_div_b;
++
++	diff_a = abs((pre_div_a / 256) - rate);
++	diff_b = abs((pre_div_b / 384) - rate);
++
++	/* If diffs are equal, use lower clock rate */
++	if (diff_a > diff_b)
++		clk_set_rate(spdif->clk_ref, pre_div_b);
++	else
++		clk_set_rate(spdif->clk_ref, pre_div_a);
++
++	/*
++	 * Another driver (eg machine driver) may have rejected the above
++	 * change. Get the current rate and set the register bit according to
++	 * the new min diff
++	 */
++	clk_rate = clk_get_rate(spdif->clk_ref);
++
++	diff_a = abs((clk_rate / 256) - rate);
++	diff_b = abs((clk_rate / 384) - rate);
++
++	reg = img_spdif_out_readl(spdif, IMG_SPDIF_OUT_CTL);
++	if (diff_a <= diff_b)
++		reg &= ~IMG_SPDIF_OUT_CTL_CLK_MASK;
++	else
++		reg |= IMG_SPDIF_OUT_CTL_CLK_MASK;
++	img_spdif_out_writel(spdif, reg, IMG_SPDIF_OUT_CTL);
++
++	return 0;
++}
++
++static const struct snd_soc_dai_ops img_spdif_out_dai_ops = {
++	.trigger = img_spdif_out_trigger,
++	.hw_params = img_spdif_out_hw_params
++};
++
++static int img_spdif_out_dai_probe(struct snd_soc_dai *dai)
++{
++	struct img_spdif_out *spdif = snd_soc_dai_get_drvdata(dai);
++
++	snd_soc_dai_init_dma_data(dai, &spdif->dma_data, NULL);
++
++	snd_soc_add_dai_controls(dai, img_spdif_out_controls,
++			ARRAY_SIZE(img_spdif_out_controls));
++
++	return 0;
++}
++
++static struct snd_soc_dai_driver img_spdif_out_dai = {
++	.probe = img_spdif_out_dai_probe,
++	.playback = {
++		.channels_min = 2,
++		.channels_max = 2,
++		.rates = SNDRV_PCM_RATE_8000_192000,
++		.formats = SNDRV_PCM_FMTBIT_S32_LE
++	},
++	.ops = &img_spdif_out_dai_ops
++};
++
++static const struct snd_soc_component_driver img_spdif_out_component = {
++	.name = "img-spdif-out"
++};
++
++static int img_spdif_out_probe(struct platform_device *pdev)
++{
++	struct img_spdif_out *spdif;
++	struct resource *res;
++	void __iomem *base;
++	int ret;
++
++	spdif = devm_kzalloc(&pdev->dev, sizeof(*spdif), GFP_KERNEL);
++	if (!spdif)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, spdif);
++
++	spdif->dev = &pdev->dev;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	spdif->base = base;
++
++	spdif->rst = devm_reset_control_get(&pdev->dev, "rst");
++	if (IS_ERR(spdif->rst)) {
++		dev_err(&pdev->dev, "No top level reset found\n");
++		return PTR_ERR(spdif->rst);
++	}
++
++	spdif->clk_sys = devm_clk_get(&pdev->dev, "sys");
++	if (IS_ERR(spdif->clk_sys))
++		return PTR_ERR(spdif->clk_sys);
++
++	spdif->clk_ref = devm_clk_get(&pdev->dev, "ref");
++	if (IS_ERR(spdif->clk_ref))
++		return PTR_ERR(spdif->clk_ref);
++
++	ret = clk_prepare_enable(spdif->clk_sys);
++	if (ret)
++		return ret;
++
++	img_spdif_out_writel(spdif, IMG_SPDIF_OUT_CTL_FS_MASK,
++				IMG_SPDIF_OUT_CTL);
++
++	img_spdif_out_reset(spdif);
++
++	pm_runtime_enable(&pdev->dev);
++	if (!pm_runtime_enabled(&pdev->dev)) {
++		ret = img_spdif_out_resume(&pdev->dev);
++		if (ret)
++			goto err_pm_disable;
++	}
++
++	spin_lock_init(&spdif->lock);
++
++	spdif->dma_data.addr = res->start + IMG_SPDIF_OUT_TX_FIFO;
++	spdif->dma_data.addr_width = 4;
++	spdif->dma_data.maxburst = 4;
++
++	ret = devm_snd_soc_register_component(&pdev->dev,
++			&img_spdif_out_component,
++			&img_spdif_out_dai, 1);
++	if (ret)
++		goto err_suspend;
++
++	ret = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL, 0);
++	if (ret)
++		goto err_suspend;
++
++	dev_dbg(&pdev->dev, "Probe successful\n");
++
++	return 0;
++
++err_suspend:
++	if (!pm_runtime_status_suspended(&pdev->dev))
++		img_spdif_out_suspend(&pdev->dev);
++err_pm_disable:
++	pm_runtime_disable(&pdev->dev);
++	clk_disable_unprepare(spdif->clk_sys);
++
++	return ret;
++}
++
++static int img_spdif_out_dev_remove(struct platform_device *pdev)
++{
++	struct img_spdif_out *spdif = platform_get_drvdata(pdev);
++
++	pm_runtime_disable(&pdev->dev);
++	if (!pm_runtime_status_suspended(&pdev->dev))
++		img_spdif_out_suspend(&pdev->dev);
++
++	clk_disable_unprepare(spdif->clk_sys);
++
++	return 0;
++}
++
++static const struct of_device_id img_spdif_out_of_match[] = {
++	{ .compatible = "img,spdif-out" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, img_spdif_out_of_match);
++
++static const struct dev_pm_ops img_spdif_out_pm_ops = {
++	SET_RUNTIME_PM_OPS(img_spdif_out_suspend,
++			   img_spdif_out_resume, NULL)
++};
++
++static struct platform_driver img_spdif_out_driver = {
++	.driver = {
++		.name = "img-spdif-out",
++		.of_match_table = img_spdif_out_of_match,
++		.pm = &img_spdif_out_pm_ops
++	},
++	.probe = img_spdif_out_probe,
++	.remove = img_spdif_out_dev_remove
++};
++module_platform_driver(img_spdif_out_driver);
++
++MODULE_AUTHOR("Damien Horsley <Damien.Horsley@imgtec.com>");
++MODULE_DESCRIPTION("IMG SPDIF Output driver");
++MODULE_LICENSE("GPL v2");
+-- 
+1.9.1
+

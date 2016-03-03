@@ -1,0 +1,63 @@
+From 276b655feb21346f95e7f9e55d77b1103242b222 Mon Sep 17 00:00:00 2001
+From: Zdenko Pulitika <zdenko.pulitika@imgtec.com>
+Date: Mon, 22 Jun 2015 13:52:56 +0100
+Subject: [PATCH 029/153] clk: pistachio: Add cs_RPUCORECLKOUT_1 clock mux
+
+Clock mux cs_RPUCORECLKOUT_1 wasn't registered to the clock framework.
+Therefore, it wasn't possible to feed RPU_CORE_CLK_OUT from rpu_l_pll.
+This commit fixes this bug.
+
+Change-Id: I1e78a0f01c952773f3cd80be047284545c11e5e0
+Signed-off-by: Zdenko Pulitika <zdenko.pulitika@imgtec.com>
+---
+ drivers/clk/pistachio/clk-pistachio.c     | 4 +++-
+ include/dt-bindings/clock/pistachio-clk.h | 3 ++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/clk/pistachio/clk-pistachio.c b/drivers/clk/pistachio/clk-pistachio.c
+index 4f1f755..c4f3a59 100644
+--- a/drivers/clk/pistachio/clk-pistachio.c
++++ b/drivers/clk/pistachio/clk-pistachio.c
+@@ -72,7 +72,7 @@ static struct pistachio_div pistachio_divs[] __initdata = {
+ 	DIV(CLK_RPU_V_DIV, "rpu_v_div", "rpu_v_pll_mux", 0x21c, 2),
+ 	DIV(CLK_RPU_L_DIV, "rpu_l_div", "rpu_l_mux", 0x220, 2),
+ 	DIV(CLK_RPU_SLEEP_DIV, "rpu_sleep_div", "xtal", 0x224, 10),
+-	DIV(CLK_RPU_CORE_DIV, "rpu_core_div", "rpu_core_mux", 0x228, 3),
++	DIV(CLK_RPU_CORE_DIV, "rpu_core_div", "rpu_core_mux_1", 0x228, 3),
+ 	DIV(CLK_USB_PHY_DIV, "usb_phy_div", "sys_internal_div", 0x22c, 6),
+ 	DIV(CLK_ENET_DIV, "enet_div", "enet_mux", 0x230, 6),
+ 	DIV_F(CLK_UART0_INTERNAL_DIV, "uart0_internal_div", "sys_pll_mux",
+@@ -118,6 +118,7 @@ PNAME(mux_xtal_wifi_div4) = { "xtal", "wifi_div4" };
+ PNAME(mux_xtal_wifi_div8) = { "xtal", "wifi_div8" };
+ PNAME(mux_wifi_div4_rpu_l) = { "wifi_pll_gate", "wifi_div4_mux",
+ 			       "rpu_l_pll_mux" };
++PNAME(mux_rpu_core_1) = { "rpu_core_mux", "rpu_l_pll_mux"};
+ PNAME(mux_xtal_sys) = { "xtal", "sys_pll" };
+ PNAME(mux_sys_enet) = { "sys_internal_div", "enet_in" };
+ PNAME(mux_audio_sys) = { "audio_pll_mux", "sys_internal_div" };
+@@ -138,6 +139,7 @@ static struct pistachio_mux pistachio_muxes[] __initdata = {
+ 	MUX(CLK_WIFI_DIV4_MUX, "wifi_div4_mux", mux_xtal_wifi_div4, 0x200, 9),
+ 	MUX(CLK_WIFI_DIV8_MUX, "wifi_div8_mux", mux_xtal_wifi_div8, 0x200, 10),
+ 	MUX(CLK_RPU_CORE_MUX, "rpu_core_mux", mux_wifi_div4_rpu_l, 0x200, 11),
++	MUX(CLK_RPU_CORE_MUX_1, "rpu_core_mux_1", mux_rpu_core_1, 0x200, 12),
+ 	MUX(CLK_SYS_PLL_MUX, "sys_pll_mux", mux_xtal_sys, 0x200, 13),
+ 	MUX(CLK_ENET_MUX, "enet_mux", mux_sys_enet, 0x200, 14),
+ 	MUX(CLK_EVENT_TIMER_MUX, "event_timer_mux", mux_audio_sys, 0x200, 15),
+diff --git a/include/dt-bindings/clock/pistachio-clk.h b/include/dt-bindings/clock/pistachio-clk.h
+index 039f83f..dfda0c3 100644
+--- a/include/dt-bindings/clock/pistachio-clk.h
++++ b/include/dt-bindings/clock/pistachio-clk.h
+@@ -104,8 +104,9 @@
+ #define CLK_SD_HOST_MUX			110
+ #define CLK_BT_PLL_MUX			111
+ #define CLK_DEBUG_MUX			112
++#define CLK_RPU_CORE_MUX_1		113
+ 
+-#define CLK_NR_CLKS			113
++#define CLK_NR_CLKS			114
+ 
+ /* Peripheral gate clocks */
+ #define PERIPH_CLK_SYS			0
+-- 
+1.9.1
+

@@ -1,0 +1,376 @@
+From f7a656a92758c7558abc0143f48eda43de32e6a0 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Thu, 13 Aug 2015 17:00:14 +0100
+Subject: [PATCH 052/153] pistachio: update connectivity hostport driver
+
+This include following changes :-
+1. Poll for ACK
+Relying on an interrupt for every acknowledgement required use of a
+semaphore in poking routines, which influenced client's design. They could
+only call them from contexts that could sleep. Now img-hostport polls
+for the ACK after sending a message which makes it possible
+to replace the semaphore with a spinlock.
+
+2. Extend API with poke callbacks
+Added two new routines that execute user callback just before writing to
+the poke register.
+
+3. Add an argument to the poke callback
+*_callback variants of the API routines implement callback as a closure
+now.
+
+4. Send ACKs to common endpoint
+Hostport ACKs are now serviced by the common endpoint (ID 0) in the RPU.
+
+5. Clear interrupt triggers on startup
+Bits that trigger hostport interrupts have to be cleared as part of
+the hardware preparation routine. This can't be guaranteed by the RPU.
+This fixes img-hostport lockups when the RPU is re-booted by the
+img-connectivity loader.
+
+6. Clear the interrupt bit at the end of the ISR
+This is a fix to be compatible with uccp420wlan driver.
+
+7. Clear interrupt flag in all paths
+There are three possible paths through the IRQ handler. One of them, whereby
+received caller_id was out of bounds, was not clearing the interrupt
+flag properly.
+
+8. Release C2H reg. at the end of ISR.
+As the RPU is not polling on the interrupt flag, but instead waits for a
+notification, this notification should be sent as the last action in the
+ISR, when we are ready to received another interrupt. Otherwise, some
+interrupts could be lost.
+
+9. Change the location of execution tag
+New versions of the firmware write execution tag to a different
+location.
+
+Change-Id: I64d3a5c10bfe290c0c1018690b47178ad024ab78
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ drivers/soc/img/connectivity/img-fwldr-private.h |   2 +-
+ drivers/soc/img/connectivity/img-hostport.c      | 147 ++++++++++++++---------
+ include/soc/img/img-transport.h                  |  42 ++++++-
+ 3 files changed, 129 insertions(+), 62 deletions(-)
+
+diff --git a/drivers/soc/img/connectivity/img-fwldr-private.h b/drivers/soc/img/connectivity/img-fwldr-private.h
+index ec1d915..8212114 100644
+--- a/drivers/soc/img/connectivity/img-fwldr-private.h
++++ b/drivers/soc/img/connectivity/img-fwldr-private.h
+@@ -206,7 +206,7 @@
+ #define LTP_THREAD_NUM 0 /* Since, only one thread exists */
+ 
+ /* Thread completion signature */
+-#define UCCP_THRD_EXEC_SIG_OFFSET 0x00000430
++#define UCCP_THRD_EXEC_SIG_OFFSET 0x00000434
+ #define UCCP_THRD_EXEC_SIG 0x00ADF00D
+ 
+ #define MAX_LOAD_MEM_LEN 4096
+diff --git a/drivers/soc/img/connectivity/img-hostport.c b/drivers/soc/img/connectivity/img-hostport.c
+index 2a18efb..ee2b8ba 100644
+--- a/drivers/soc/img/connectivity/img-hostport.c
++++ b/drivers/soc/img/connectivity/img-hostport.c
+@@ -31,6 +31,7 @@
+ 
+ #include <linux/export.h>
+ #include <linux/interrupt.h>
++#include <linux/jiffies.h>
+ #include <linux/module.h>
+ #include <linux/moduleparam.h>
+ #include <linux/of.h>
+@@ -47,6 +48,8 @@
+ 
+ #include "img-hostport.h"
+ 
++typedef void (*gen_handler)(void *);
++
+ static struct img_hostport *module;
+ static const char *hal_name = "img-hostport";
+ #define dbg(format, ...) pr_debug("%s: " format, hal_name, ## __VA_ARGS__)
+@@ -67,19 +70,71 @@ static const char *hal_name = "img-hostport";
+ #define CALLEE(reg) ((reg & CALLEE_MASK) >> CALLEE_SHIFT)
+ #define CALLER(reg) (reg & CALLER_MASK)
+ #define USERMSG(reg) ((reg & USERMSG_MASK) >> USERMSG_SHIFT)
++#define IS_BUSY(reg) (ioread32(reg) & 0x80000000)
+ #define mtx_int_en_WIDTH 4
+ 
+-DEFINE_SEMAPHORE(host_to_uccp_core_lock);
++DEFINE_SPINLOCK(host_to_uccp_core_lock);
+ 
+ /*
+  * Forward declarations
+  */
+-static void notify_common(u16 user_data, int user_id);
++static void notify_common(u16 user_data, int user_id, gen_handler poke_ready,
++							void *poke_ready_arg);
+ 
+ /*
+  * Public interface procs
+  */
+ 
++void img_transport_notify(u16 user_data, int user_id)
++{
++	img_transport_notify_callback(user_data, user_id, NULL, NULL);
++}
++EXPORT_SYMBOL(img_transport_notify);
++
++int __must_check img_transport_notify_timeout(u16 user_data,
++					int user_id,
++					long jiffies_timeout)
++{
++	return img_transport_notify_callback_timeout(user_data, user_id,
++						jiffies_timeout, NULL, NULL);
++}
++EXPORT_SYMBOL(img_transport_notify_timeout);
++
++void img_transport_notify_callback(u16 user_data,
++					int user_id,
++					gen_handler poke_ready,
++					void *poke_ready_arg)
++{
++	unsigned long flags;
++	spin_lock_irqsave(&host_to_uccp_core_lock, flags);
++	while(IS_BUSY(H2C_CMD_ADDR(module->vbase)))
++		continue;
++	notify_common(user_data, user_id, poke_ready, poke_ready_arg);
++	spin_unlock_irqrestore(&host_to_uccp_core_lock, flags);
++}
++EXPORT_SYMBOL(img_transport_notify_callback);
++
++int __must_check img_transport_notify_callback_timeout(u16 user_data,
++					int user_id,
++					long jiffies_timeout,
++					gen_handler poke_ready,
++					void *poke_ready_arg)
++{
++	unsigned long start_time = jiffies, flags;
++	spin_lock_irqsave(&host_to_uccp_core_lock, flags);
++	while(IS_BUSY(H2C_CMD_ADDR(module->vbase))) {
++		if (time_after_eq(start_time + jiffies_timeout, jiffies)) {
++			spin_unlock_irqrestore(&host_to_uccp_core_lock, flags);
++			return -ETIME;
++		}
++	}
++
++	notify_common(user_data, user_id, poke_ready, poke_ready_arg);
++	spin_unlock_irqrestore(&host_to_uccp_core_lock, flags);
++	return 0;
++}
++EXPORT_SYMBOL(img_transport_notify_callback_timeout);
++
+ int img_transport_register_callback(
+ 		img_transport_handler poke,
+ 		unsigned int client_id)
+@@ -98,25 +153,6 @@ int img_transport_register_callback(
+ }
+ EXPORT_SYMBOL(img_transport_register_callback);
+ 
+-void img_transport_notify(u16 user_data, int user_id)
+-{
+-	down(&host_to_uccp_core_lock);
+-	notify_common(user_data, user_id);
+-}
+-EXPORT_SYMBOL(img_transport_notify);
+-
+-int __must_check img_transport_notify_timeout(u16 user_data,
+-					int user_id,
+-					long jiffies_timeout)
+-{
+-	if (-ETIME == down_timeout(&host_to_uccp_core_lock, jiffies_timeout)) {
+-		return -ETIME;
+-	}
+-	notify_common(user_data, user_id);
+-	return 0;
+-}
+-EXPORT_SYMBOL(img_transport_notify_timeout);
+-
+ int img_transport_remove_callback(unsigned int client_id)
+ {
+ 	if (client_id > MAX_ENDPOINT_ID || !module->endpoints.f[client_id])
+@@ -140,8 +176,12 @@ static u8 id_to_field(int id)
+ 	return (id << 4) | id;
+ }
+ 
+-static void notify_common(u16 user_data, int user_id)
++static void notify_common(u16 user_data, int user_id, gen_handler poke_ready,
++							void *poke_ready_arg)
+ {
++	dbgn("snd -- %d:%d:%02X", user_id, user_id, user_data);
++	if (poke_ready)
++		poke_ready(poke_ready_arg);
+ 	iowrite32(0x87 << 24 | user_data << 8 | id_to_field(user_id),
+ 			(void __iomem *)H2C_CMD_ADDR(module->vbase));
+ }
+@@ -162,54 +202,43 @@ static irqreturn_t hal_irq_handler(int    irq, void  *p)
+ 	first_bit = (reg_value & (1 << 31)) >> 31;
+ 	if (0 == first_bit) {
+ 		err("unexpected spurious interrupt detected!\n");
+-		return IRQ_HANDLED;
++		goto exit;
+ 	}
+ 
+-	/* Clear the uccp interrupt */
+-	value = 0;
+-	value |= BIT(C_INT_CLR_SHIFT);
+-	writel(value, (void __iomem *)(H2C_ACK_ADDR(module->vbase)));
+-
+ 	callee_id = CALLEE(reg_value);
+ 	caller_id = CALLER(reg_value);
+ 	user_message = USERMSG(reg_value);
++	dbgn("rcv -- %d:%d:%02X", callee_id, caller_id, user_message);
++
+ 	/*
+-	 * We are ready to release the spinlock
+-	 * once we get the all zeros message.
+-	 *
+ 	 * callee_id is tainted, therefore must be checked.
+ 	 */
+ 	if (callee_id > MAX_ENDPOINT_ID) {
+ 		errn("endpoint with id = %u doesn't exist", callee_id);
+-		return IRQ_HANDLED;
++		goto deassert;
+ 	}
+ 
+-	if (COMMON_HOST_ID == callee_id) {
+-		switch (user_message) {
+-		case 0:
+-			/*
+-			 * now H2C_CMD_ADDR can
+-			 * be written to again
+-			 */
+-			up(&host_to_uccp_core_lock);
+-			break;
+-		default:
+-			errn("unexpected controller message, dropping :");
+-			errn("\tcallee_id : %d", callee_id);
+-			errn("\tcaller_id : %d", caller_id);
+-			errn("\tuser_message : %d", user_message);
+-		}
+-	} else {
+-		handler = module->endpoints.f[callee_id];
+-		handler_in_use = module->endpoints.in_use + callee_id;
+-		if (NULL != handler) {
+-			spin_lock_irqsave(handler_in_use, flags);
+-			handler((u16)user_message);
+-			spin_unlock_irqrestore(handler_in_use, flags);
+-		} else
+-			errn("endpoint with id = %u not registered", callee_id);
++	handler = module->endpoints.f[callee_id];
++	handler_in_use = module->endpoints.in_use + callee_id;
++	if (NULL == handler) {
++		errn("endpoint with id = %u not registered", callee_id);
++		goto deassert;
+ 	}
++	spin_lock_irqsave(handler_in_use, flags);
++	handler((u16)user_message);
++	spin_unlock_irqrestore(handler_in_use, flags);
++
++deassert:
++	/* Clear the uccp interrupt */
++	value = 0;
++	value |= BIT(C_INT_CLR_SHIFT);
++	writel(value, (void __iomem *)(H2C_ACK_ADDR(module->vbase)));
+ 
++	/*
++	 * Send ACK to the RPU
++	 */
++	img_transport_notify(0, COMMON_HOST_ID);
++exit:
+ 	return IRQ_HANDLED;
+ }
+ 
+@@ -222,6 +251,9 @@ static void img_hostport_irq_on(void)
+ 	 * receive inerrupts on the host
+ 	 */
+ 
++	iowrite32(0x80000000, H2C_ACK_ADDR(module->vbase));
++	iowrite32(0x80000000, C2H_ACK_ADDR(module->vbase));
++
+ 	value = readl(module->vmtx_irq_en);
+ 	value |= BIT(C_IRQ_EN_SHIFT);
+ 	writel(value, module->vmtx_irq_en);
+@@ -384,6 +416,9 @@ static int img_hostport_pltfr_probe(struct platform_device *pdev)
+ 	dbg("activating hostport interrupt");
+ 	img_hostport_irq_on();
+ 
++	dbg("releasing C2H register");
++	img_transport_notify(0, COMMON_HOST_ID);
++
+ 	dbg("hostport driver registration completed");
+ 	return result;
+ 
+diff --git a/include/soc/img/img-transport.h b/include/soc/img/img-transport.h
+index cd29e65..069d819 100644
+--- a/include/soc/img/img-transport.h
++++ b/include/soc/img/img-transport.h
+@@ -43,15 +43,19 @@
+ typedef void (*img_transport_handler)(u16 user_data);
+ 
+ /*
+- * Note that this function may sleep forever when,
+- * for example, RPU is unable to respond.
+- *
+- * Possible return values:
+- * 0		: RPU has been notified
++ * The following 4 procedures issue pokes to the RPU. They are guaranteed not
++ * to sleep.
++ */
++
++/*
++ * May spin forever when, for example, RPU is unable to respond. If you can't
++ * afford that, use *_timeout variant.
+  */
+ void img_transport_notify(u16 user_data, int user_id);
+ 
+ /*
++ * Times out after jiffies_timeout kernel ticks have passed.
++ *
+  * Possible return values:
+  * @ -ETIME	: request timed out
+  * @ 0		: RPU has been notified
+@@ -61,6 +65,32 @@ int __must_check img_transport_notify_timeout(u16 user_data,
+ 					long jiffies_timeout);
+ 
+ /*
++ * May spin forever when, for example, RPU is unable to respond. If you can't
++ * afford that, use *_timeout variant.
++ */
++void img_transport_notify_callback(u16 user_data,
++					int user_id,
++					void (*poke_ready)(void *),
++					void *poke_ready_arg);
++
++/*
++ * Times out after jiffies_timeout kernel ticks have passed. 'poke_ready' called
++ * just before the poke is issued.
++ *
++ * Possible return values:
++ * @ -ETIME	: request timed out
++ * @ 0		: RPU has been notified
++ */
++int __must_check img_transport_notify_callback_timeout(u16 user_data,
++					int user_id,
++					long jiffies_timeout,
++					void (*poke_ready)(void *),
++					void *poke_ready_arg);
++
++/*
++ * Register a routine which will be invoked whenever a message for client_id
++ * is received.
++ *
+  * Possible return values:
+  *  @ -EBADSLT	: id unavailable
+  *  @  0	: callback registered
+@@ -69,6 +99,8 @@ int img_transport_register_callback(img_transport_handler,
+ 					unsigned int client_id);
+ 
+ /*
++ * Remove previously registerd routine.
++ *
+  * Possible return values:
+  *  @ -EBADSLT	: client id not found
+  *  @  0	: callback removed
+-- 
+1.9.1
+

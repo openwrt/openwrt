@@ -1,0 +1,30 @@
+From 3cfcb1fb427135a980386c5d988f5a7efcf47bf9 Mon Sep 17 00:00:00 2001
+From: Ian Pozella <ian.pozella@imgtec.com>
+Date: Fri, 30 Oct 2015 14:36:17 +0000
+Subject: [PATCH 091/153] add clocks for uart0 for pistachio boards
+
+Upstream commit e763fa87b36f3292284165e431a59638600324d1 removed
+clocks for uart0 in pistachio base dtsi which caused bluetooth to
+break in boards using it. Have added the clocks back in the board
+specific dts files.
+
+Change-Id: I504de0f95131938ad88e25171555d7de0a1c39d1
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index c5f98e4..0527cb8 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -189,6 +189,7 @@
+ 
+ &uart0 {
+ 	status = "okay";
++	assigned-clock-rates = <114278400>, <1843200>;
+ };
+ 
+ &uart1 {
+-- 
+1.9.1
+

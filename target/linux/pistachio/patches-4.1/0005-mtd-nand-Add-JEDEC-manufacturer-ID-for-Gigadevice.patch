@@ -1,0 +1,42 @@
+From 14bd0ff2287f52be6bb4b118a922724ab3dde26e Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Date: Tue, 2 Dec 2014 09:58:52 -0300
+Subject: [PATCH 005/153] mtd: nand: Add JEDEC manufacturer ID for Gigadevice
+
+This commit adds gigadevice to the list of manufacturer ID and name strings.
+
+Change-Id: I5263151c93d383d7b6e13fc75f6c4d33be4c9e54
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Reviewed-by: Dan Ehrenberg <dehrenberg@chromium.org>
+---
+ drivers/mtd/nand/nand_ids.c | 1 +
+ include/linux/mtd/nand.h    | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/drivers/mtd/nand/nand_ids.c b/drivers/mtd/nand/nand_ids.c
+index dd620c1..8c12231 100644
+--- a/drivers/mtd/nand/nand_ids.c
++++ b/drivers/mtd/nand/nand_ids.c
+@@ -179,6 +179,7 @@ struct nand_manufacturers nand_manuf_ids[] = {
+ 	{NAND_MFR_SANDISK, "SanDisk"},
+ 	{NAND_MFR_INTEL, "Intel"},
+ 	{NAND_MFR_ATO, "ATO"},
++	{NAND_MFR_GIGADEVICE, "Gigadevice"},
+ 	{0x0, "Unknown"}
+ };
+ 
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 12b75f3..d128b24 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -737,6 +737,7 @@ struct nand_chip {
+ #define NAND_MFR_SANDISK	0x45
+ #define NAND_MFR_INTEL		0x89
+ #define NAND_MFR_ATO		0x9b
++#define NAND_MFR_GIGADEVICE	0xc8
+ 
+ /* The maximum expected count of bytes in the NAND ID sequence */
+ #define NAND_MAX_ID_LEN 8
+-- 
+1.9.1
+

@@ -1,0 +1,232 @@
+From 0cbf301602900456199537cb6d951c535aa77691 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Wed, 9 Sep 2015 09:58:39 +0100
+Subject: [PATCH 073/153] pistachio: bt: fix backlog processing and fix for
+ destroying workqueue
+
+This include following fixes :-
+1. Having backlog processing as a separate job drains work depot very
+quickly. It was always executed in fixed spots anyway, so there is no
+need for it to be a job.
+
+2. Workqueue has to be destroyed first, because doing so executes all the
+pending jobs. Those in turn need the module to be fully functional.
+
+Change-Id: I1787c7b43072d511b48de891c976b34f2fc31cfc
+---
+ drivers/bluetooth/pistachio/img-bt-main.c | 107 +++++++++++++++---------------
+ 1 file changed, 53 insertions(+), 54 deletions(-)
+
+diff --git a/drivers/bluetooth/pistachio/img-bt-main.c b/drivers/bluetooth/pistachio/img-bt-main.c
+index e942481..2205c6d 100644
+--- a/drivers/bluetooth/pistachio/img-bt-main.c
++++ b/drivers/bluetooth/pistachio/img-bt-main.c
+@@ -124,6 +124,11 @@ static struct message_xfer *prepare_work(work_func_t todo, unsigned long data)
+ 	return work;
+ }
+ 
++static void return_work(struct message_xfer *work)
++{
++	kfifo_put(&work_depot, work);
++}
++
+ static unsigned char next_char(void *buffer, unsigned idx)
+ {
+ 	struct circ_buf_ext *rx;
+@@ -144,9 +149,6 @@ static void payload_to_circ_buf_ext(
+ 	int i;
+ 	int length = payload_length(pld);
+ 
+-	print_hex_dump(KERN_DEBUG, "payload: ", DUMP_PREFIX_NONE,
+-			payload_length(pld), 1, payload_raw(pld),
+-			payload_length(pld), 1);
+ 	for (i = 0; i < length; i++) {
+ 		c = payload_at(pld, i);
+ 		iowrite8(c, (void __iomem *)circ_buf_ext_write_offset(buf, i));
+@@ -154,6 +156,35 @@ static void payload_to_circ_buf_ext(
+ 	circ_buf_ext_take(buf, length);
+ }
+ 
++static void do_tx_backlog(void)
++{
++	struct payload *pld;
++	int dummy, length_sum = 0;
++
++	if (kfifo_is_empty(&tx_backlog))
++		return;
++
++	while (kfifo_peek(&tx_backlog, &pld) &&
++		circ_buf_out_space(&xmit_buffers.tx) >= payload_length(pld)) {
++
++		length_sum += payload_length(pld);
++		/*
++		 * The following call must succeed because we checked
++		 * kfifo_peek and the fifo is managed only by this
++		 * background thread.
++		 *
++		 * Dummy read just to make __must_check_helper satisfied
++		 */
++		dummy = kfifo_get(&tx_backlog, &pld);
++		payload_to_circ_buf_out(pld, &xmit_buffers.tx);
++		payload_delete(pld);
++	}
++
++	if (length_sum > 0) {
++		img_transport_notify(RPU_REQ((u16)length_sum), BLUETOOTH_ID);
++	}
++}
++
+ /*
+  * *** Worker procs ***
+  */
+@@ -165,7 +196,9 @@ static void ack_from_controller(struct work_struct *tbd)
+ 
+ 	circ_buf_ext_give(&xmit_buffers.tx, payload_length);
+ 
+-	kfifo_put(&work_depot, work);
++	return_work(work);
++
++	do_tx_backlog();
+ }
+ 
+ static void req_from_controller(struct work_struct *tbd)
+@@ -190,6 +223,7 @@ static void req_from_controller(struct work_struct *tbd)
+ 	if (0 == user_data_length)
+ 		goto exit;
+ 
++	do_tx_backlog();
+ 	/*
+ 	 * Push messages going from the controller
+ 	 */
+@@ -202,7 +236,7 @@ static void req_from_controller(struct work_struct *tbd)
+ 	img_transport_notify(RPU_ACK(user_data_length), BLUETOOTH_ID);
+ 
+ exit:
+-	kfifo_put(&work_depot, work);
++	return_work(work);
+ }
+ 
+ static void req_to_controller(struct work_struct *tbd)
+@@ -231,45 +265,14 @@ static void req_to_controller(struct work_struct *tbd)
+ 		 * Save for backlog processing, which should be fired on every
+ 		 * poke confirmation and controller ACK
+ 		 */
+-		if (kfifo_put(&tx_backlog, pld)) {
++		if (!kfifo_put(&tx_backlog, pld)) {
+ 			diagerrn("no space in backlog, dropping payload");
+ 			payload_delete(pld);
+ 		}
+ 	}
+ 
+ exit:
+-	kfifo_put(&work_depot, work);
+-}
+-
+-static void do_tx_backlog(struct work_struct *tbd)
+-{
+-	struct payload *pld;
+-	int dummy, length_sum = 0;
+-	struct message_xfer *work = container_of(tbd, struct message_xfer, tbd);
+-
+-	if (kfifo_is_empty(&tx_backlog))
+-		goto exit;
+-
+-	while (kfifo_peek(&tx_backlog, &pld) &&
+-		circ_buf_ext_space(&xmit_buffers.tx) >= payload_length(pld)) {
+-
+-		length_sum += payload_length(pld);
+-		/*
+-		 * The following call must succeed because we checked
+-		 * kfifo_peek and the fifo is managed only by this
+-		 * background thread.
+-		 *
+-		 * Dummy read just to make __must_check_helper satisfied
+-		 */
+-		dummy = kfifo_get(&tx_backlog, &pld);
+-		payload_to_circ_buf_ext(pld, &xmit_buffers.tx);
+-		payload_delete(pld);
+-	}
+-
+-	img_transport_notify(RPU_REQ((u16)length_sum), BLUETOOTH_ID);
+-
+-exit:
+-	(void)kfifo_put(&work_depot, work);
++	return_work(work);
+ }
+ 
+ /*
+@@ -277,44 +280,40 @@ exit:
+  */
+ static void handle_gateway_message(struct payload *pld)
+ {
+-	struct message_xfer *backlog = prepare_work(do_tx_backlog, 1);
+ 	struct message_xfer *work = prepare_work(req_to_controller,
+ 			(unsigned long)pld);
+-	work->pld = pld;
+-	if (NULL == work || NULL == backlog) {
++	if (NULL == work) {
+ 		diagerrn(
+ 			"no more free work structures, payload dropped");
+ 		payload_delete(pld);
+ 		return;
+ 	}
+-	if (!queue_work(img_bt_workqueue, &backlog->tbd) ||
+-			!queue_work(img_bt_workqueue, &work->tbd)) {
++	work->pld = pld;
++	if (!queue_work(img_bt_workqueue, &work->tbd)) {
+ 		diagerrn("bug : work already scheduled");
+ 	}
+ }
+ 
+ static void handle_controller_message(u16 user_data)
+ {
+-	struct message_xfer *work1, *work2;
++	struct message_xfer *work;
+ 	unsigned int content;
+ 	content = CONTENT(user_data);
+ 	switch (TYPE(user_data)) {
+ 	case ACK:
+ 		/* An acknowledgment has been received */
+-		work1 = prepare_work(ack_from_controller, content);
+-		work1->req_length = content;
++		work = prepare_work(ack_from_controller, content);
++		work->req_length = content;
+ 		/* Process whatever may be pending in the TX backlog */
+-		work2 = prepare_work(do_tx_backlog, 0);
+-		if (NULL == work1 || NULL == work2)
++		if (NULL == work)
+ 			diagerrn("no more free work structures");
+-		queue_work(img_bt_workqueue, &work1->tbd);
+-		queue_work(img_bt_workqueue, &work2->tbd);
++		queue_work(img_bt_workqueue, &work->tbd);
+ 		break;
+ 	case REQUEST:
+ 		/* A data request has arrived */
+-		work1 = prepare_work(req_from_controller, content);
+-		work1->req_length = content;
+-		queue_work(img_bt_workqueue, &work1->tbd);
++		work = prepare_work(req_from_controller, content);
++		work->req_length = content;
++		queue_work(img_bt_workqueue, &work->tbd);
+ 		break;
+ 	default:
+ 		errn("received unknown message type from controller");
+@@ -336,7 +335,6 @@ static int img_bt_pltfr_memsetup(void)
+ 
+ static void img_bt_pltfr_memsetup_rollback(void)
+ {
+-	destroy_workqueue(img_bt_workqueue);
+ 	memset(&xmit_buffers, 0 , sizeof(xmit_buffers));
+ 	return;
+ }
+@@ -485,6 +483,7 @@ memsetup_failed:
+ static int img_bt_pltfr_remove(struct platform_device *pdev)
+ {
+ 	gateway_exit();
++	destroy_workqueue(img_bt_workqueue);
+ 	img_bt_pltfr_reg_handler_rollback(0);
+ 	img_bt_pltfr_bufsetup_rollback();
+ 	img_bt_pltfr_dtsetup_rollback();
+-- 
+1.9.1
+

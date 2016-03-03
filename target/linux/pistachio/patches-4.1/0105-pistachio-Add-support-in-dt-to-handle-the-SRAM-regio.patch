@@ -1,0 +1,53 @@
+From 7499824cbdab985ccaf2548df1dd270d0c470479 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Mon, 2 Nov 2015 17:45:06 +0000
+Subject: [PATCH 105/153] pistachio: Add support in dt to handle the SRAM
+ region and enable it in defconfig
+
+Pistachio has a SRAM and is currently not
+used from Linux, this can be handled in Linux
+using the simple SRAM driver available from kernel.
+
+SRAM region can be used to execute suspend code
+to put DDR in self-refresh mode.
+
+Also Enable SRAM driver support to manage the SRAM region.
+
+Change-Id: I2d024063565a080f70a579c7dd14fead63ada16c
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 5 +++++
+ arch/mips/configs/pistachio_defconfig       | 1 +
+ 2 files changed, 6 insertions(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index ba65f9e..2220b5d 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -904,6 +904,11 @@
+ 		status = "disabled";
+ 	};
+ 
++	sram: sram@1b000000 {
++		compatible = "mmio-sram";
++		reg = <0x1b000000 0x10000>;
++	};
++
+ 	mdc: dma-controller@18143000 {
+ 		compatible = "img,pistachio-mdc-dma";
+ 		reg = <0x18143000 0x1000>;
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index c2bc625..fc287d0 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -165,6 +165,7 @@ CONFIG_MTD_UBI=y
+ CONFIG_MTD_UBI_BLOCK=y
+ CONFIG_ZRAM=m
+ CONFIG_BLK_DEV_LOOP=y
++CONFIG_SRAM=y
+ CONFIG_ATU=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+-- 
+1.9.1
+

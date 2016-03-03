@@ -1,0 +1,31 @@
+From 03c746f16b58520c4b08089e6e97b487199adb34 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Wed, 23 Dec 2015 12:03:46 +0530
+Subject: [PATCH 133/153] pistachio_defconfig: enable SC16IS7XX as builtin
+ module
+
+sc16is7xx clk dependency on cc2520 is now specified in DT, so
+make sc16is7xx as builtin module.
+
+Change-Id: I47ae03588080af5c98078b184fa048147a97c3e9
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index f747d08..6b12421 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -226,7 +226,7 @@ CONFIG_SERIAL_8250=y
+ CONFIG_SERIAL_8250_CONSOLE=y
+ CONFIG_SERIAL_8250_DW=y
+ CONFIG_SERIAL_OF_PLATFORM=y
+-CONFIG_SERIAL_SC16IS7XX=m
++CONFIG_SERIAL_SC16IS7XX=y
+ # CONFIG_SERIAL_SC16IS7XX_I2C is not set
+ CONFIG_SERIAL_SC16IS7XX_SPI=y
+ CONFIG_HW_RANDOM=y
+-- 
+1.9.1
+

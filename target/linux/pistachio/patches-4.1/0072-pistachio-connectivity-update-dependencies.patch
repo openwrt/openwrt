@@ -1,0 +1,30 @@
+From 46e52ea76281788aa94b9d3d6885b098808cac17 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Mon, 28 Sep 2015 09:23:05 +0100
+Subject: [PATCH 072/153] pistachio: connectivity: update dependencies
+
+'img-connectivity' module allocates memory using CMA. This patch updates
+Kconfig accordingly.
+
+Change-Id: Ia8f8b0418a2c853f2095ca1b12ec10ac0a373adf
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ drivers/soc/img/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/soc/img/Kconfig b/drivers/soc/img/Kconfig
+index 5908c20..bdf667d 100644
+--- a/drivers/soc/img/Kconfig
++++ b/drivers/soc/img/Kconfig
+@@ -15,7 +15,7 @@ config IMG_EFUSE
+ 
+ config IMG_CONNECTIVITY
+ 	tristate "Imagination Technologies UCCP base driver"
+-	depends on HAS_IOMEM
++	depends on HAS_IOMEM && CMA
+ 	default m
+ 	help
+ 	  Imagination Technologies UCCP driver which loads the firmware
+-- 
+1.9.1
+

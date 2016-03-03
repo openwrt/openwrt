@@ -1,0 +1,87 @@
+From 1aebaf0a39d1bdbaa90eab1cca4b2a8ec71465a4 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Thu, 3 Sep 2015 15:50:30 +0530
+Subject: [PATCH 061/153] pistachio-usb-phy: add support for vbus drive
+
+pistachio has an option of enabling vbus drive from USB block to mfio pad,
+add dts option in the driver to enable this.
+If enabled in dts, it overrides the primary function RPU_L_PLL
+lock signal available on the pin mfio86.
+
+Change-Id: I814cfd28997df982be79872b5fabee01e462a9c5
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ .../devicetree/bindings/phy/pistachio-usb-phy.txt         |  4 ++++
+ drivers/phy/phy-pistachio-usb.c                           | 15 +++++++++++++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/phy/pistachio-usb-phy.txt b/Documentation/devicetree/bindings/phy/pistachio-usb-phy.txt
+index afbc7e2..486423d 100644
+--- a/Documentation/devicetree/bindings/phy/pistachio-usb-phy.txt
++++ b/Documentation/devicetree/bindings/phy/pistachio-usb-phy.txt
+@@ -15,6 +15,9 @@ Required properties:
+ Optional properties:
+ --------------------
+  - phy-supply: USB VBUS supply.  Must supply 5.0V.
++ - enable-vbus-drive: include if USB block should drive the VBUS on mfio86,
++		      this will override the primary function RPU_L_PLL lock signal
++		      available on this pin.
+ 
+ Example:
+ --------
+@@ -26,4 +29,5 @@ usb_phy: usb-phy {
+ 	img,refclk = <REFCLK_CLK_CORE>;
+ 	img,cr-top = <&cr_top>;
+ 	#phy-cells = <0>;
++	enable-vbus-drive;
+ };
+diff --git a/drivers/phy/phy-pistachio-usb.c b/drivers/phy/phy-pistachio-usb.c
+index c6db35e..466b24f 100644
+--- a/drivers/phy/phy-pistachio-usb.c
++++ b/drivers/phy/phy-pistachio-usb.c
+@@ -21,6 +21,10 @@
+ 
+ #include <dt-bindings/phy/phy-pistachio-usb.h>
+ 
++#define USB_PHY_CONTROL0				0x00
++#define USB_PHY_CONTROL0_OTG_DRVVBUS_SHIFT		11
++#define USB_PHY_CONTROL0_OTG_DRVVBUS_MASK		1
++
+ #define USB_PHY_CONTROL1				0x04
+ #define USB_PHY_CONTROL1_FSEL_SHIFT			2
+ #define USB_PHY_CONTROL1_FSEL_MASK			0x7
+@@ -38,6 +42,7 @@ struct pistachio_usb_phy {
+ 	struct device *dev;
+ 	struct regmap *cr_top;
+ 	struct clk *phy_clk;
++	bool vbus_drive;
+ 	unsigned int refclk;
+ };
+ 
+@@ -70,6 +75,14 @@ static int pistachio_usb_phy_power_on(struct phy *phy)
+ 			   USB_PHY_STRAP_CONTROL_REFCLK_SHIFT,
+ 			   p_phy->refclk << USB_PHY_STRAP_CONTROL_REFCLK_SHIFT);
+ 
++	if (p_phy->vbus_drive) {
++		/* allow USB block to control VBUS */
++		regmap_update_bits(p_phy->cr_top, USB_PHY_CONTROL0,
++				   USB_PHY_CONTROL0_OTG_DRVVBUS_MASK <<
++				   USB_PHY_CONTROL0_OTG_DRVVBUS_SHIFT,
++				   1 << USB_PHY_CONTROL0_OTG_DRVVBUS_SHIFT);
++	}
++
+ 	rate = clk_get_rate(p_phy->phy_clk);
+ 	if (p_phy->refclk == REFCLK_XO_CRYSTAL && rate != 12000000) {
+ 		dev_err(p_phy->dev, "Unsupported rate for XO crystal: %ld\n",
+@@ -167,6 +180,8 @@ static int pistachio_usb_phy_probe(struct platform_device *pdev)
+ 		return ret;
+ 	}
+ 
++	p_phy->vbus_drive = of_property_read_bool(p_phy->dev->of_node, "enable-vbus-drive");
++
+ 	phy = devm_phy_create(p_phy->dev, NULL, &pistachio_usb_phy_ops);
+ 	if (IS_ERR(phy)) {
+ 		dev_err(p_phy->dev, "Failed to create PHY: %ld\n",
+-- 
+1.9.1
+

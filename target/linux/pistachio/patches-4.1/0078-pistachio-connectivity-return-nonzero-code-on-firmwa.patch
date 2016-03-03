@@ -1,0 +1,30 @@
+From 46298b48842bae91a1f643e577f43425d7182016 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Fri, 9 Oct 2015 14:31:05 +0100
+Subject: [PATCH 078/153] pistachio: connectivity: return nonzero code on
+ firmware load error
+
+Makes loading the module fail when firmware loader has not succeeded.
+
+Change-Id: Ib3034a16cdbeb9a962fe3ba88fb75edacbaac612
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ drivers/soc/img/connectivity/img-connectivity-main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/soc/img/connectivity/img-connectivity-main.c b/drivers/soc/img/connectivity/img-connectivity-main.c
+index 012324c..c07ce2d 100644
+--- a/drivers/soc/img/connectivity/img-connectivity-main.c
++++ b/drivers/soc/img/connectivity/img-connectivity-main.c
+@@ -170,7 +170,7 @@ static int boot_cpu(struct device *d, const char *fw_name,
+ 		mod_err("firmware %s load failed", fw_name);
+ 
+ 	release_firmware(fw);
+-	return 0;
++	return err;
+ }
+ 
+ static int remap_uccp_regions(struct device *d)
+-- 
+1.9.1
+

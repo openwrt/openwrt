@@ -1,0 +1,109 @@
+From bd63774c8de676edd1b4dd6b25aa7a6988916744 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Date: Fri, 15 May 2015 11:04:20 -0300
+Subject: [PATCH 015/153] mips: pistachio: Add CPUFreq support and add CPU
+ operation points to devicetree
+
+This commit adds a cpufreq-dt platform device and enables CPUFreq
+support.
+
+Now that Pistachio supports cpufreq-dt driver, let's add CPU
+operation points to populate the cpufreq driver. The clock is
+changed to MIPS_PLL, since that's the clock that needs to be changed.
+
+Also updates the Pistachio defconfig, selecting the general purpose
+timer clocksource and CPUFreq support.
+
+Change-Id: Ic40acc8b4672ff5ca295fa866bd5c0d14ba4d221
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+---
+ arch/mips/Kconfig                           |  1 +
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 13 ++++++++++++-
+ arch/mips/configs/pistachio_defconfig       |  8 ++++++++
+ arch/mips/pistachio/init.c                  |  3 +++
+ 4 files changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index bdf263a..9617933 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -380,6 +380,7 @@ config MACH_PISTACHIO
+ 	select MIPS_GIC
+ 	select PINCTRL
+ 	select REGULATOR
++	select CPU_SUPPORTS_CPUFREQ
+ 	select SYS_HAS_CPU_MIPS32_R2
+ 	select SYS_SUPPORTS_32BIT_KERNEL
+ 	select SYS_SUPPORTS_LITTLE_ENDIAN
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 34ad201..ee7f61f 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -28,7 +28,18 @@
+ 			device_type = "cpu";
+ 			compatible = "mti,interaptiv";
+ 			reg = <0>;
+-			clocks = <&clk_core CLK_MIPS>;
++			clocks = <&clk_core CLK_MIPS_PLL>;
++			clock-names = "cpu";
++			clock-latency = <1000>;
++			operating-points = <
++				/* kHz    uV(dummy) */
++				546000 1150000
++				520000 1100000
++				494000 1000000
++				468000 950000
++				442000 900000
++				416000 800000
++			>;
+ 		};
+ 	};
+ 
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index fc9cc25..8dd88cf 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -1,4 +1,5 @@
+ CONFIG_MACH_PISTACHIO=y
++CONFIG_PISTACHIO_GPTIMER_CLKSRC=y
+ CONFIG_MIPS_MT_SMP=y
+ CONFIG_MIPS_CPS=y
+ # CONFIG_COMPACTION is not set
+@@ -38,6 +39,13 @@ CONFIG_PM_DEBUG=y
+ CONFIG_PM_ADVANCED_DEBUG=y
+ CONFIG_CPU_IDLE=y
+ # CONFIG_MIPS_CPS_CPUIDLE is not set
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_STAT_DETAILS=y
++CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=y
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
++CONFIG_CPUFREQ_DT=y
+ CONFIG_NET=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
+diff --git a/arch/mips/pistachio/init.c b/arch/mips/pistachio/init.c
+index d2dc836..40cea12 100644
+--- a/arch/mips/pistachio/init.c
++++ b/arch/mips/pistachio/init.c
+@@ -13,6 +13,7 @@
+ #include <linux/of_address.h>
+ #include <linux/of_fdt.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_device.h>
+ 
+ #include <asm/cacheflush.h>
+ #include <asm/dma-coherence.h>
+@@ -126,6 +127,8 @@ static int __init plat_of_setup(void)
+ 	if (of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL))
+ 		panic("Failed to populate DT");
+ 
++	platform_device_register_simple("cpufreq-dt", -1, NULL, 0);
++
+ 	return 0;
+ }
+ arch_initcall(plat_of_setup);
+-- 
+1.9.1
+

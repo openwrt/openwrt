@@ -1,0 +1,1239 @@
+From fc55cff0595fbdbf0c9d63610f9888140d2e08de Mon Sep 17 00:00:00 2001
+From: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+Date: Sat, 6 Feb 2016 19:01:54 +0530
+Subject: [PATCH 144/153] uccp420wlan: Feature addition and fixes
+
+This commit has the following changes:
+
+1. STA+STA TSMC support added
+2. Production mode fixes and improvements to fix some crashes/error messages
+3. Encryption control logic moved to driver
+4. /proc/uccp420/hal_stats file creation/destruction moved to insmod/rmmod from interface up/down
+
+Change-Id: I736496fc94f175c1e026106c314675e0ba17d746
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+---
+ drivers/net/wireless/uccp420wlan/inc/core.h        |   1 +
+ drivers/net/wireless/uccp420wlan/inc/hal.h         |   6 +-
+ .../net/wireless/uccp420wlan/inc/host_umac_if.h    |   5 +-
+ drivers/net/wireless/uccp420wlan/inc/umac_if.h     |   2 +-
+ drivers/net/wireless/uccp420wlan/inc/version.h     |   2 +-
+ drivers/net/wireless/uccp420wlan/src/80211_if.c    | 484 +++++++++++++--------
+ drivers/net/wireless/uccp420wlan/src/core.c        |   6 +-
+ .../net/wireless/uccp420wlan/src/hal_hostport.c    |  50 ++-
+ .../net/wireless/uccp420wlan/src/hal_hostport.h    |   2 +-
+ drivers/net/wireless/uccp420wlan/src/umac_if.c     |  44 +-
+ 10 files changed, 377 insertions(+), 225 deletions(-)
+
+diff --git a/drivers/net/wireless/uccp420wlan/inc/core.h b/drivers/net/wireless/uccp420wlan/inc/core.h
+index 1adf5cf..0791fed 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/core.h
++++ b/drivers/net/wireless/uccp420wlan/inc/core.h
+@@ -200,6 +200,7 @@ struct wifi_params {
+ 	unsigned int bt_state;
+ 	unsigned int antenna_sel;
+ 	int pkt_gen_val;
++	int init_pkt_gen;
+ 	int payload_length;
+ 	int start_prod_mode;
+ 	int init_prod;
+diff --git a/drivers/net/wireless/uccp420wlan/inc/hal.h b/drivers/net/wireless/uccp420wlan/inc/hal.h
+index 4b850e2..b126825 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/hal.h
++++ b/drivers/net/wireless/uccp420wlan/inc/hal.h
+@@ -37,8 +37,8 @@ typedef int (*msg_handler)(void *, unsigned char);
+ struct hal_ops_tag {
+ 	int (*init)(void *);
+ 	int (*deinit)(void *);
+-	int (*start)(struct proc_dir_entry *);
+-	int (*stop)(struct proc_dir_entry *);
++	int (*start)(void);
++	int (*stop)(void);
+ 	void (*register_callback)(msg_handler, unsigned char);
+ 	void (*send)(void*, unsigned char, unsigned char, void*);
+ 	int (*init_bufs)(unsigned int, unsigned int, unsigned int,
+@@ -50,6 +50,8 @@ struct hal_ops_tag {
+ 	void (*set_mem_region)(unsigned int);
+ 	void (*request_mem_regions)(unsigned char **, unsigned char **,
+ 				    unsigned char **);
++	void (*enable_irq_wake)(void);
++	void (*disable_irq_wake)(void);
+ };
+ 
+ extern struct hal_ops_tag hal_ops;
+diff --git a/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h b/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h
+index bb3034a..66cb2a8 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h
++++ b/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h
+@@ -511,7 +511,10 @@ struct cmd_tx_ctrl {
+ #define AMPDU_AGGR_DISABLED 0x00000000
+ 	unsigned char aggregate_mpdu;
+ 
+-	unsigned char force_encrypt;
++#define ENCRYPT_DISABLE 0
++#define ENCRYPT_ENABLE 1
++	unsigned char encrypt;
++
+ 
+ #define MAC_HDR_SIZE 52
+ 	unsigned int pkt_gram_payload_len;
+diff --git a/drivers/net/wireless/uccp420wlan/inc/umac_if.h b/drivers/net/wireless/uccp420wlan/inc/umac_if.h
+index 63c1584..4810619 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/umac_if.h
++++ b/drivers/net/wireless/uccp420wlan/inc/umac_if.h
+@@ -186,7 +186,7 @@ extern int uccp420wlan_prog_mcast_filter_control(unsigned int
+ 
+ extern int uccp420wlan_prog_rcv_bcn_mode(unsigned int  bcn_rcv_mode);
+ extern int uccp420wlan_prog_aux_adc_chain(unsigned int chain_id);
+-extern int uccp420wlan_cont_tx(int val);
++extern int uccp420wlan_prog_cont_tx(int val);
+ extern int uccp420wlan_prog_txq_params(int index,
+ 				       unsigned char *vif_addr,
+ 				       unsigned int queue,
+diff --git a/drivers/net/wireless/uccp420wlan/inc/version.h b/drivers/net/wireless/uccp420wlan/inc/version.h
+index 99f0685..637d566 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/version.h
++++ b/drivers/net/wireless/uccp420wlan/inc/version.h
+@@ -23,7 +23,7 @@
+  */
+ #ifndef _UCCP420WLAN_VERSION_H
+ #define _UCCP420WLAN_VERSION_H
+-#define UCCP_DRIVER_VERSION "6_0_2"
++#define UCCP_DRIVER_VERSION "6_0_3"
+ #define UCCP_DRIVER_NAME "UCCP420WIFI"
+ #endif /* _UCCP420WLAN_VERSION_H */
+ 
+diff --git a/drivers/net/wireless/uccp420wlan/src/80211_if.c b/drivers/net/wireless/uccp420wlan/src/80211_if.c
+index 774d9c0..b9b2fbe 100644
+--- a/drivers/net/wireless/uccp420wlan/src/80211_if.c
++++ b/drivers/net/wireless/uccp420wlan/src/80211_if.c
+@@ -24,7 +24,6 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/moduleparam.h>
+-#include <linux/proc_fs.h>
+ #include <linux/version.h>
+ #include <linux/device.h>
+ 
+@@ -37,6 +36,7 @@
+ #include <linux/etherdevice.h>
+ #include <linux/platform_device.h>
+ #include <linux/interrupt.h>
++#include <linux/proc_fs.h>
+ 
+ #include "version.h"
+ #include "core.h"
+@@ -62,6 +62,7 @@ unsigned int system_rev = 0x494D47; /*ASCII: IMG*/
+ static void uccp420_roc_complete_work(struct work_struct *work);
+ static void uccp420wlan_exit(void);
+ static int load_fw(struct ieee80211_hw *hw);
++int uccp_reinit;
+ 
+ #define CHAN2G(_freq, _idx)  {		\
+ 	.band = IEEE80211_BAND_2GHZ,	\
+@@ -204,7 +205,8 @@ static const struct ieee80211_iface_limit if_limit4[] = {
+ static const struct ieee80211_iface_limit if_limit5[] = {
+ 		{ .max = 1, .types = BIT(NL80211_IFTYPE_STATION)},
+ 		{ .max = 1, .types = BIT(NL80211_IFTYPE_AP) |
+-				     BIT(NL80211_IFTYPE_P2P_GO)}
++				     BIT(NL80211_IFTYPE_P2P_GO) |
++				     BIT(NL80211_IFTYPE_P2P_CLIENT)}
+ };
+ #endif
+ 
+@@ -226,6 +228,10 @@ static const struct ieee80211_iface_combination if_comb[] = {
+ 	  .n_limits = ARRAY_SIZE(if_limit5),
+ 	  .max_interfaces = 2,
+ 	  .num_different_channels = 2},
++	{ .limits = if_limit1,
++	  .n_limits = ARRAY_SIZE(if_limit1),
++	  .max_interfaces = 2,
++	  .num_different_channels = 2},
+ #endif
+ 	{ .limits = if_limit4,
+ 	  .n_limits = ARRAY_SIZE(if_limit4),
+@@ -1663,7 +1669,7 @@ static int img_resume(struct ieee80211_hw *hw)
+ 			dev->power_save = PWRSAVE_STATE_AWAKE;
+ 			pr_debug("%s: Successful\n",
+ 				 __func__);
+-
++			hal_ops.disable_irq_wake();
+ 			return 0;
+ 		}
+ 	}
+@@ -1737,6 +1743,7 @@ static int img_suspend(struct ieee80211_hw *hw,
+ 			dev->power_save = PWRSAVE_STATE_DOZE;
+ 			pr_debug("%s: Successful\n",
+ 				 __func__);
++			hal_ops.enable_irq_wake();
+ 			return 0;
+ 		}
+ 	}
+@@ -2365,11 +2372,13 @@ static void uccp420wlan_exit(void)
+ 	/* DEV Release */
+ 	struct mac80211_dev *dev = (struct mac80211_dev *)wifi->hw->priv;
+ 
+-	ieee80211_unregister_hw(wifi->hw);
+-	device_release_driver(dev->dev);
+-	device_destroy(hwsim_class, 0);
+-	ieee80211_free_hw(wifi->hw);
+-	wifi->hw = NULL;
++	if (wifi->hw) {
++		ieee80211_unregister_hw(wifi->hw);
++		device_release_driver(dev->dev);
++		device_destroy(hwsim_class, 0);
++		ieee80211_free_hw(wifi->hw);
++		wifi->hw = NULL;
++	}
+ 
+ 	class_destroy(hwsim_class);
+ }
+@@ -2652,29 +2661,37 @@ static int proc_read_config(struct seq_file *m, void *v)
+ 	seq_printf(m, "bt_state = %d\n", wifi->params.bt_state);
+ 
+ 	/* Beacon Time Stamp */
+-	for (cnt = 0; cnt < MAX_VIFS; cnt++) {
+-		unsigned long long ts1;
+-		unsigned long long bssid, atu;
+-		int status;
+-		char dev_name[10];
+-		unsigned int t2;
+-
+-		spin_lock_bh(&tsf_lock);
+-		ts1 = get_unaligned_le64(wifi->params.sync[cnt].ts1);
+-		bssid = get_unaligned_le64(wifi->params.sync[cnt].bssid);
+-		status = wifi->params.sync[cnt].status;
+-		sprintf(dev_name, "%s%d", "wlan", cnt);
+-		atu = wifi->params.sync[cnt].atu;
+-		t2 = wifi->params.sync[cnt].ts2;
+-		spin_unlock_bh(&tsf_lock);
+-		if (status && wifi->params.sync[cnt].name)
+-			seq_printf(m, "sync=%s %d %llu %llu %llx t2=%u\n",
+-				dev_name, status, (unsigned long long)ts1,
+-				atu, (unsigned long long) bssid, t2);
++	if (dev->state == STARTED) {
++		for (cnt = 0; cnt < MAX_VIFS; cnt++) {
++			unsigned long long ts1;
++			unsigned long long bssid, atu;
++			int status;
++			char dev_name[10];
++			unsigned int t2;
++
++			spin_lock_bh(&tsf_lock);
++			ts1 = get_unaligned_le64(wifi->params.sync[cnt].ts1);
++			bssid =
++			    get_unaligned_le64(wifi->params.sync[cnt].bssid);
++			status = wifi->params.sync[cnt].status;
++			sprintf(dev_name, "%s%d", "wlan", cnt);
++			atu = wifi->params.sync[cnt].atu;
++			t2 = wifi->params.sync[cnt].ts2;
++			spin_unlock_bh(&tsf_lock);
++			if (status && wifi->params.sync[cnt].name)
++				seq_printf(m,
++					   "sync=%s %d %llu %llu %llx t2=%u\n",
++					   dev_name,
++					   status,
++					   (unsigned long long)ts1,
++					   atu,
++					   (unsigned long long)bssid,
++					   t2);
++		}
+ 	}
+ 
+ 	seq_puts(m, "****** Production Test (or) FTM Parameters *******\n");
+-	seq_printf(m, "pkt_gen_val = %d (-1: Infinite loop)\n",
++	seq_printf(m, "start_packet_gen = %d (-1: Infinite loop)\n",
+ 		   wifi->params.pkt_gen_val);
+ 	seq_printf(m, "payload_length = %d bytes\n",
+ 		   wifi->params.payload_length);
+@@ -3097,7 +3114,14 @@ static long param_get_match(unsigned char *buf, unsigned char *str)
+ 	else
+ 		return 0;
+ }
++void uccp420wlan_reinit(void)
++{
+ 
++	if (wifi->hw)
++		uccp420wlan_exit();
++	uccp420wlan_init();
++	uccp_reinit = 1;
++}
+ static ssize_t proc_write_config(struct file *file,
+ 				 const char __user *buffer,
+ 				 size_t count,
+@@ -3106,6 +3130,10 @@ static ssize_t proc_write_config(struct file *file,
+ 	char buf[(RF_PARAMS_SIZE * 2) + 50];
+ 	unsigned long val;
+ 	long sval;
++	unsigned int rate = wifi->params.prod_mode_rate_flag;
++	unsigned int b40 = wifi->params.prod_mode_chnl_bw_40_mhz;
++	unsigned int b80 = wifi->params.prod_mode_chnl_bw_80_mhz;
++	struct mac80211_dev *dev = wifi->hw->priv;
+ 
+ 	if (count >= sizeof(buf))
+ 		count = sizeof(buf) - 1;
+@@ -3124,18 +3152,13 @@ static ssize_t proc_write_config(struct file *file,
+ 			    (wifi->params.dot11a_support == 0)) {
+ 				pr_err("Invalid parameter value. Both bands can't be disabled, at least 1 is needed\n");
+ 			} else {
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
+-
+-				pr_info("Re-initializing UMAC ..with 2.4GHz support %s and 5GHz support %s\n",
++					uccp420wlan_reinit();
++					pr_info("Re-initializing UMAC ..with 2.4GHz support %s and 5GHz support %s\n",
+ 					wifi->params.dot11g_support == 0 ?
+ 					"disabled" : "enabled",
+ 					wifi->params.dot11a_support == 0 ?
+ 					"disabled" : "enabled");
+ 
+-				uccp420wlan_init();
+ 			}
+ 		} else
+ 			pr_err("Invalid parameter value\n");
+@@ -3148,18 +3171,13 @@ static ssize_t proc_write_config(struct file *file,
+ 			    (wifi->params.dot11a_support == 0)) {
+ 				pr_err("Invalid parameter value. Both bands can't be disabled, at least 1 is needed\n");
+ 			} else {
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
+-
+-				pr_info("Re-initializing UMAC ..with 2.4GHz support %s and 5GHz support %s\n",
++					uccp420wlan_reinit();
++					pr_info("Re-initializing UMAC ..with 2.4GHz support %s and 5GHz support %s\n",
+ 					wifi->params.dot11g_support == 0 ?
+ 					"disabled" : "enabled",
+ 					wifi->params.dot11a_support == 0 ?
+ 					"disabled" : "enabled");
+ 
+-				uccp420wlan_init();
+ 			}
+ 		} else
+ 			pr_err("Invalid parameter value\n");
+@@ -3181,13 +3199,8 @@ static ssize_t proc_write_config(struct file *file,
+ 
+ 				wifi->params.production_test = val;
+ 
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
+-
++				uccp420wlan_reinit();
+ 				pr_err("Re-initializing UMAC ..\n");
+-				uccp420wlan_init();
+ 			}
+ 		} else
+ 			pr_err("Invalid parameter value\n");
+@@ -3200,15 +3213,9 @@ static ssize_t proc_write_config(struct file *file,
+ 	} else if (param_get_val(buf, "num_vifs=", &val)) {
+ 		if (val > 0 && val <= MAX_VIFS) {
+ 			if (wifi->params.num_vifs != val) {
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
+-
++				uccp420wlan_reinit();
+ 				pr_err("Re-initializing UMAC ..\n");
+ 				wifi->params.num_vifs = val;
+-
+-				uccp420wlan_init();
+ 			}
+ 		}
+ 	} else if (param_get_match(buf, "rf_params=")) {
+@@ -3222,6 +3229,10 @@ static ssize_t proc_write_config(struct file *file,
+ 	} else if (param_get_val(buf, "pdout_val=", &val)) {
+ 		wifi->stats.pdout_val = val;
+ 	} else if (param_get_val(buf, "get_stats=", &val)) {
++		if (dev->state != STARTED) {
++			pr_err("Interface is not initialized\n");
++			goto error;
++		}
+ 		uccp420wlan_prog_mib_stats();
+ 	} else if (param_get_val(buf, "max_data_size=", &val)) {
+ 		if (wifi->params.max_data_size != val) {
+@@ -3229,15 +3240,10 @@ static ssize_t proc_write_config(struct file *file,
+ 			    (wifi->params.max_data_size <= (12 * 1024))) {
+ 				wifi->params.max_data_size = val;
+ 
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
+-
++				uccp420wlan_reinit();
+ 				pr_err("Re-initalizing UCCP420 with %ld as max data size\n",
+ 				       val);
+ 
+-				uccp420wlan_init();
+ 			} else
+ 				pr_err("Invalid Value for max data size: should be (2K-12K)\n");
+ 		}
+@@ -3249,15 +3255,9 @@ static ssize_t proc_write_config(struct file *file,
+ 			if (val != wifi->params.disable_power_save) {
+ 				wifi->params.disable_power_save = val;
+ 
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
+-
++				uccp420wlan_reinit();
+ 				pr_err("Re-initalizing UCCP420 with global powerave %s\n",
+ 				       val ? "DISABLED" : "ENABLED");
+-
+-				uccp420wlan_init();
+ 			}
+ 		}
+ 	} else if (param_get_val(buf, "disable_sm_power_save=", &val)) {
+@@ -3265,15 +3265,10 @@ static ssize_t proc_write_config(struct file *file,
+ 			if (val != wifi->params.disable_sm_power_save) {
+ 				wifi->params.disable_sm_power_save = val;
+ 
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
+-
++				uccp420wlan_reinit();
+ 				pr_err("Re-initalizing UCCP420 with smps %s\n",
+ 				       val ? "DISABLED" : "ENABLED");
+ 
+-				uccp420wlan_init();
+ 			}
+ 		}
+ 	} else if (param_get_val(buf, "uccp_num_spatial_streams=", &val)) {
+@@ -3283,13 +3278,9 @@ static ssize_t proc_write_config(struct file *file,
+ 				wifi->params.num_spatial_streams = val;
+ 				wifi->params.max_tx_streams = val;
+ 				wifi->params.max_rx_streams = val;
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
++				uccp420wlan_reinit();
+ 				pr_err("Re-initalizing UCCP420 with %ld spatial streams\n",
+ 				       val);
+-				uccp420wlan_init();
+ 			}
+ 		} else
+ 			pr_err("Invalid parameter value: Allowed Range: 1 to %d\n",
+@@ -3298,13 +3289,9 @@ static ssize_t proc_write_config(struct file *file,
+ 		if (val == 1 || val == 2) {
+ 			if (val != wifi->params.antenna_sel) {
+ 				wifi->params.antenna_sel = val;
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
++				uccp420wlan_reinit();
+ 				pr_err("Re-initalizing UCCP420 with %ld antenna selection\n",
+ 				       val);
+-				uccp420wlan_init();
+ 			}
+ 		} else
+ 			pr_err("Invalid parameter value: Allowed Values: 1 or 2\n");
+@@ -3375,89 +3362,91 @@ static ssize_t proc_write_config(struct file *file,
+ 		} else
+ 			pr_err("MCS data rate(index) is currently set\n");
+ 	} else if (param_get_sval(buf, "tx_fixed_mcs_indx=", &sval)) {
++		if (wifi->params.production_test != 1) {
++			pr_err("Only can be set in production mode.\n");
++			goto error;
++		}
+ 
+-		do {
+-			if (wifi->params.production_test != 1) {
+-				pr_err("Only can be set in production mode\n");
+-				break;
+-			}
+-
+-			if ((wifi->params.num_spatial_streams == 2) &&
+-			    (sval >= -1) && (sval <= 15))
+-				wifi->params.tx_fixed_mcs_indx = sval;
+-			else
+-				pr_err("Invalid MIMO HT MCS: %ld\n", sval);
+-
+-			if ((wifi->params.num_spatial_streams == 1) &&
+-			    (sval >= -1) && (sval <= 7))
+-				wifi->params.tx_fixed_mcs_indx = sval;
+-			else
+-				pr_err("Invalid SISO HT MCS: %ld\n", sval);
+-
+-		} while (0);
+-
+-		if (wifi->params.production_test == 1 &&
+-		    wifi->params.tx_fixed_rate == -1 &&
+-		    vht_support && (wifi->params.prod_mode_rate_flag &
+-				    ENABLE_VHT_FORMAT)) {
++		if (sval == -1) {
++			wifi->params.tx_fixed_mcs_indx = -1;
++			goto error;
++		}
+ 
+-			if (!((sval >= -1) && (sval <= 9)))
++		if (wifi->params.tx_fixed_rate != -1) {
++			pr_err("Fixed rate other than MCS index is currently set\n");
++			goto error;
++		}
++		if (vht_support && (rate & ENABLE_VHT_FORMAT)) {
++			if ((sval >= -1) && (sval <= 9)) {
++				if ((b40 == 0) && (b80 == 0) && (sval == 9)) {
++					pr_err("Invalid VHT MCS: 20MHZ-MCS9.\n");
++					/*Reset to Default*/
++					wifi->params.tx_fixed_mcs_indx = 7;
++				} else
++					wifi->params.tx_fixed_mcs_indx = sval;
++			} else
+ 				pr_err("Invalid parameter value.\n");
+-
+-			if ((sval >= -1) && (sval <= 9))
+-				wifi->params.tx_fixed_mcs_indx = sval;
+-
+-			if ((wifi->params.prod_mode_chnl_bw_40_mhz == 0) &&
+-			    (wifi->params.prod_mode_chnl_bw_80_mhz == 0) &&
+-			    (sval == 9)) {
+-				pr_err("Invalid VHT MCS: 20MHZ-MCS9.\n");
+-
+-				/*Reset to Default*/
+-				wifi->params.tx_fixed_mcs_indx = 7;
++		} else if (vht_support && (rate & ENABLE_11N_FORMAT)) {
++			if (wifi->params.num_spatial_streams == 2) {
++				if ((sval >= -1) && (sval <= 15))
++					wifi->params.tx_fixed_mcs_indx = sval;
++				else
++					pr_err("Invalid MIMO HT MCS: %ld\n",
++						sval);
++			} else if (wifi->params.num_spatial_streams == 1) {
++				if ((sval >= -1) && (sval <= 7))
++					wifi->params.tx_fixed_mcs_indx = sval;
++				else
++					pr_err("Invalid SISO HT MCS: %ld\n",
++						sval);
+ 			}
+-		}
++		} else
++			pr_err("MCS Setting is invalid for Legacy, please set prod_mode_rate_flag first.\n");
+ 
+ 	} else if (param_get_sval(buf, "tx_fixed_rate=", &sval)) {
+-		if (wifi->params.production_test == 1) {
+-			if (wifi->params.tx_fixed_mcs_indx == -1) {
+-				if ((wifi->params.dot11g_support == 1) &&
+-				    ((sval == 1) ||
+-				     (sval == 2) ||
+-				     (sval == 55) ||
+-				     (sval == 11))) {
+-					wifi->params.tx_fixed_rate = sval;
+-				} else if ((sval == 6) ||
+-					   (sval == 9) ||
+-					   (sval == 12) ||
+-					   (sval == 18) ||
+-					   (sval == 24) ||
+-					   (sval == 36) ||
+-					   (sval == 48) ||
+-					   (sval == 54) ||
+-					   (sval == -1)) {
+-					wifi->params.tx_fixed_rate = sval;
+-				} else {
+-					pr_err("Invalid parameter value.\n");
+-					return count;
+-				}
+-			} else
+-				pr_err("MCS data rate(index) is currently set\n");
+-		} else
++		if (wifi->params.production_test != 1) {
+ 			pr_err("Only can be set in production mode.\n");
++			goto error;
++		}
++
++		if (sval == -1) {
++			wifi->params.tx_fixed_rate = -1;
++			goto error;
++		}
++		if (wifi->params.tx_fixed_mcs_indx != -1) {
++			pr_err("MCS Index is currently set.\n");
++			goto error;
++		}
++
++		if ((wifi->params.dot11g_support == 1) &&
++			    ((sval == 1) ||
++			     (sval == 2) ||
++			     (sval == 55) ||
++			     (sval == 11))) {
++				wifi->params.tx_fixed_rate = sval;
++		} else if ((sval == 6) ||
++			   (sval == 9) ||
++			   (sval == 12) ||
++			   (sval == 18) ||
++			   (sval == 24) ||
++			   (sval == 36) ||
++			   (sval == 48) ||
++			   (sval == 54) ||
++			   (sval == -1)) {
++				wifi->params.tx_fixed_rate = sval;
++		} else {
++			pr_err("Invalid parameter value: tx_fixed_rate=%ld\n",
++				sval);
++			goto error;
++		}
+ 	} else if (param_get_val(buf, "chnl_bw=", &val)) {
+ 		if (((val == 0) ||
+ 		    (vht_support && (val == 2)) ||
+ 		     (val == 1))) {
+ 			wifi->params.chnl_bw = val;
+ 
+-			if (wifi->hw) {
+-				uccp420wlan_exit();
+-				wifi->hw = NULL;
+-			}
+-
++			uccp420wlan_reinit();
+ 			pr_err("Re-initializing UMAC ..\n");
+-
+-			uccp420wlan_init();
+ 		} else
+ 			pr_err("Invalid parameter value.\n");
+ 	} else if (param_get_val(buf, "prod_mode_chnl_bw_40_mhz=", &val)) {
+@@ -3498,6 +3487,11 @@ static ssize_t proc_write_config(struct file *file,
+ 				break;
+ 			}
+ 
++			if (val == 0) {
++				wifi->params.sec_ch_offset_40_plus = 0;
++				goto error;
++			}
++
+ 			if (!((wifi->params.prod_mode_chnl_bw_40_mhz == 1)
+ 			    || (vht_support &&
+ 				(wifi->params.prod_mode_chnl_bw_80_mhz == 1))
+@@ -3528,6 +3522,11 @@ static ssize_t proc_write_config(struct file *file,
+ 				break;
+ 			}
+ 
++			if (val == 0) {
++				wifi->params.sec_ch_offset_40_minus = 0;
++				goto error;
++			}
++
+ 			if (!((wifi->params.prod_mode_chnl_bw_40_mhz == 1)
+ 			    || (vht_support &&
+ 				(wifi->params.prod_mode_chnl_bw_80_mhz == 1))
+@@ -3559,8 +3558,13 @@ static ssize_t proc_write_config(struct file *file,
+ 				break;
+ 			}
+ 
++			if (val == 0) {
++				wifi->params.sec_40_ch_offset_80_plus = 0;
++				goto error;
++			}
++
+ 			if (!(wifi->params.prod_mode_chnl_bw_80_mhz == 1)) {
+-				pr_err("Can be set if prod_mode_chnl_bw_80_mhz is set\n");
++				pr_err("Can be set only when prod_mode_chnl_bw_80_mhz is set\n");
+ 				break;
+ 			}
+ 
+@@ -3587,6 +3591,10 @@ static ssize_t proc_write_config(struct file *file,
+ 				break;
+ 			}
+ 
++			if (val == 0) {
++				wifi->params.sec_40_ch_offset_80_minus = 0;
++				goto error;
++			}
+ 			if (!(wifi->params.prod_mode_chnl_bw_80_mhz == 1)) {
+ 				pr_err("Can be set if prod_mode_chnl_bw_80_mhz is set\n");
+ 				break;
+@@ -3657,8 +3665,7 @@ static ssize_t proc_write_config(struct file *file,
+ 		else
+ 			pr_err("Invalid parameter value\n");
+ 	} else if (param_get_val(buf, "reset_hal_params=", &val)) {
+-		if (((struct mac80211_dev *)
+-		     (wifi->hw->priv))->state != STARTED) {
++		if (dev->state != STARTED) {
+ 			if (val != 1)
+ 				pr_err("Invalid parameter value\n");
+ 			else
+@@ -3688,6 +3695,11 @@ static ssize_t proc_write_config(struct file *file,
+ 
+ 			vht_beamform_period = wifi->params.vht_beamform_period;
+ 
++			if (dev->state != STARTED) {
++				pr_err("Interface is not initialized\n");
++				goto error;
++			}
++
+ 			uccp420wlan_prog_vht_bform(val, vht_beamform_period);
+ 		} while (0);
+ 
+@@ -3720,6 +3732,11 @@ static ssize_t proc_write_config(struct file *file,
+ 
+ 			vht_beamform_enable = wifi->params.vht_beamform_period;
+ 
++			if (dev->state != STARTED) {
++				pr_err("Interface is not initialized\n");
++				goto error;
++			}
++
+ 			uccp420wlan_prog_vht_bform(vht_beamform_enable, val);
+ 		} while (0);
+ 
+@@ -3727,12 +3744,9 @@ static ssize_t proc_write_config(struct file *file,
+ 		if (wifi->params.bg_scan_enable != val) {
+ 			if ((val == 1) || (val == 0)) {
+ 				wifi->params.bg_scan_enable = val;
+-				if (wifi->hw) {
+-					uccp420wlan_exit();
+-					wifi->hw = NULL;
+-				}
++
++				uccp420wlan_reinit();
+ 				pr_err("Re-initializing UMAC ..\n");
+-				uccp420wlan_init();
+ 			} else
+ 				pr_err("Invalid bg_scan_enable value should be 1 or 0\n");
+ 		}
+@@ -3765,6 +3779,12 @@ static ssize_t proc_write_config(struct file *file,
+ 	} else if (param_get_val(buf, "bg_scan_num_channels=", &val)) {
+ 		wifi->params.bg_scan_num_channels = val;
+ 	} else if (param_get_val(buf, "nw_selection=", &val)) {
++
++		if (dev->state != STARTED) {
++			pr_err("Interface is not initialized\n");
++			goto error;
++		}
++
+ 		if ((val == 1) || (val == 0)) {
+ 			wifi->params.nw_selection = val;
+ 			pr_err("in nw_selection\n");
+@@ -3778,6 +3798,12 @@ static ssize_t proc_write_config(struct file *file,
+ 			pr_err("Invalid scan type value %d, should be 0 or 1\n",
+ 			       (unsigned int)val);
+ 	} else if (ftm && param_get_val(buf, "aux_adc_chain_id=", &val)) {
++
++		if (dev->state != STARTED) {
++			pr_err("Interface is not initialized\n");
++			goto error;
++		}
++
+ 		memset(wifi->params.pdout_voltage, 0,
+ 		       sizeof(char) * MAX_AUX_ADC_SAMPLES);
+ 		if ((val == AUX_ADC_CHAIN1) || (val == AUX_ADC_CHAIN2)) {
+@@ -3788,19 +3814,36 @@ static ssize_t proc_write_config(struct file *file,
+ 			       (unsigned int) val,
+ 			       AUX_ADC_CHAIN1,
+ 			       AUX_ADC_CHAIN2);
+-	} else if ((wifi->params.production_test) &&
+-		param_get_val(buf, "continuous_tx=", &val)) {
++	} else if (param_get_val(buf, "continuous_tx=", &val)) {
++		if (wifi->params.production_test != 1) {
++			pr_err("continuous_tx: Can be set in only in production mode.\n");
++			goto error;
++		}
++
++		if (dev->state != STARTED) {
++			pr_err("Interface is not initialized\n");
++			goto error;
++		}
++
+ 		if (val == 0 || val == 1) {
+ 			wifi->params.cont_tx = val;
+-			uccp420wlan_cont_tx(val);
+-		   } else
++			uccp420wlan_prog_cont_tx(val);
++		} else
+ 			pr_err("Invalid tx_continuous parameter\n");
+-	} else if ((wifi->params.production_test) &&
+-		    param_get_val(buf, "start_prod_mode=", &val)) {
++	} else if (param_get_val(buf, "start_prod_mode=", &val)) {
+ 			unsigned int pri_chnl_num = 0;
+ 			unsigned int freq_band = IEEE80211_BAND_5GHZ;
+ 			int center_freq = 0;
+-			struct mac80211_dev *dev = wifi->hw->priv;
++
++			if (wifi->params.production_test != 1) {
++				pr_err("start_prod_mode: Can be set in only in production mode.\n");
++				goto error;
++			}
++
++			if (wifi->params.init_prod) {
++				pr_err("Production Test is already initialized.\n");
++				goto error;
++			}
+ 
+ 			pri_chnl_num = val;
+ 			wifi->params.start_prod_mode = val;
+@@ -3820,12 +3863,14 @@ static ssize_t proc_write_config(struct file *file,
+ 				pr_err("%s: Firmware loading failed\n",
+ 				       dev->name);
+ 				goto error;
+-			 }
++			}
++
+ 			if (!uccp420wlan_core_init(dev, ftm)) {
+ 				uccp420wlan_prog_vif_ctrl(0,
+ 						dev->if_mac_addresses[0].addr,
+ 						IF_MODE_STA_IBSS,
+ 						IF_ADD);
++
+ 				proc_bss_info_changed(
+ 						dev->if_mac_addresses[0].addr,
+ 						val);
+@@ -3841,14 +3886,19 @@ static ssize_t proc_write_config(struct file *file,
+ 							 freq_band);
+ 				skb_queue_head_init(&dev->tx.proc_tx_list[0]);
+ 				wifi->params.init_prod = 1;
++				dev->state = STARTED;
++				uccp_reinit = 0;
+ 			 } else {
+-				pr_err("LMAC Initialization Failed\n");
++				pr_err("RPU Initialization Failed\n");
+ 				wifi->params.init_prod = 0;
+ 			}
+ 
+-	} else if ((wifi->params.production_test) && (wifi->params.init_prod)
+-		   && param_get_sval(buf, "stop_prod_mode=", &sval)) {
+-			struct mac80211_dev *dev = wifi->hw->priv;
++	} else if (param_get_sval(buf, "stop_prod_mode=", &sval)) {
++
++			if (!wifi->params.init_prod) {
++				DEBUG_LOG("Prod mode is not initialized\n");
++				goto error;
++			}
+ 
+ 			tasklet_kill(&dev->proc_tx_tasklet);
+ #if 0
+@@ -3860,30 +3910,61 @@ static ssize_t proc_write_config(struct file *file,
+ 						  IF_MODE_STA_IBSS,
+ 						  IF_REM);
+ #endif
+-			uccp420wlan_core_deinit(dev, 0);
++			if (!uccp_reinit)
++				stop(wifi->hw);
++
+ 			wifi->params.start_prod_mode = 0;
+ 			wifi->params.pkt_gen_val = 1;
+-			hal_ops.reset_hal_params();
+ 			wifi->params.init_prod = 0;
+-	} else if ((wifi->params.production_test) && (wifi->params.init_prod)
+-		 &&   param_get_sval(buf, "start_packet_gen=", &sval)) {
+-		struct mac80211_dev *dev = wifi->hw->priv;
++			wifi->params.init_pkt_gen = 0;
++	} else if (param_get_sval(buf, "start_packet_gen=", &sval)) {
++
++
++		if (!wifi->params.init_prod) {
++			pr_err("NEW Production Mode is not Initialized\n");
++			goto error;
++		}
++
++		if (wifi->params.init_pkt_gen) {
++			pr_err("packet gen is already running\n");
++			goto error;
++		}
++
++		if (wifi->params.tx_fixed_mcs_indx == -1 &&
++			wifi->params.tx_fixed_rate == -1) {
++			pr_err("Either tx_fixed_mcs_index Or tx_fixed_rate should be set, both can't be NULL.\n");
++			goto error;
++		}
++
++		wifi->params.init_pkt_gen = 1;
+ 
+ 		wifi->params.pkt_gen_val = sval;
+ 		if (sval != 0)
+ 			tasklet_schedule(&dev->proc_tx_tasklet);
+ 
+-	} else if ((wifi->params.production_test) && (wifi->params.init_prod)
+-		 && param_get_sval(buf, "stop_packet_gen=", &sval)) {
+-			struct mac80211_dev *dev = wifi->hw->priv;
++	} else if (param_get_sval(buf, "stop_packet_gen=", &sval)) {
++
++		if (!wifi->params.init_prod) {
++			DEBUG_LOG("NEW Production Mode is not Initialized\n");
++			goto error;
++		}
++
++		wifi->params.pkt_gen_val = 1;
++		wifi->params.init_pkt_gen = 0;
++		tasklet_kill(&dev->proc_tx_tasklet);
++	} else if (param_get_val(buf, "payload_length=", &val)) {
++		wifi->params.payload_length = val;
++	} else if (param_get_sval(buf, "set_tx_power=", &sval)) {
++		if (wifi->params.production_test != 1 && !ftm) {
++			pr_err("set_tx_power: Can be set in only in FTM/production mode.\n");
++			goto error;
++		}
++
++		if (!wifi->params.init_prod) {
++			DEBUG_LOG("NEW Production Mode is not Initialized\n");
++			goto error;
++		}
+ 
+-			wifi->params.pkt_gen_val = 1;
+-			tasklet_kill(&dev->proc_tx_tasklet);
+-	} else if ((wifi->params.production_test) &&
+-		    param_get_val(buf, "payload_length=", &val)) {
+-			wifi->params.payload_length = val;
+-	} else if ((ftm || wifi->params.production_test) &&
+-		    param_get_sval(buf, "set_tx_power=", &sval)) {
+ 		memset(wifi->params.pdout_voltage, 0,
+ 		       sizeof(char) * MAX_AUX_ADC_SAMPLES);
+ 		wifi->params.set_tx_power = sval;
+@@ -3898,6 +3979,11 @@ static ssize_t proc_write_config(struct file *file,
+ 	} else if (param_get_val(buf, "fw_loading=", &val)) {
+ 			wifi->params.fw_loading = val;
+ 	} else if (param_get_val(buf, "bt_state=", &val)) {
++		if (dev->state != STARTED) {
++			pr_err("Interface is not initialized\n");
++			goto error;
++		}
++
+ 		if (val == 0 || val == 1) {
+ 			if (val != wifi->params.bt_state) {
+ 				wifi->params.bt_state = val;
+@@ -3906,6 +3992,10 @@ static ssize_t proc_write_config(struct file *file,
+ 		} else
+ 			pr_err("Invalid parameter value: Allowed values: 0 or 1\n");
+ 	} else if (param_get_val(buf, "clear_stats=", &val)) {
++		if (dev->state != STARTED) {
++			pr_err("Interface is not initialized\n");
++			goto error;
++		}
+ 		uccp420wlan_prog_clear_stats();
+ 	} else if (param_get_val(buf, "disable_beacon_ibss=", &val)) {
+ 		if ((val == 1) || (val == 0))
+@@ -3959,7 +4049,7 @@ static const struct file_operations params_fops_mac_stats = {
+ 	.write = NULL,
+ 	.release = single_release
+ };
+-static int proc_init(void)
++static int proc_init(struct proc_dir_entry ***main_dir_entry)
+ {
+ 	struct proc_dir_entry *entry;
+ 	int err = 0;
+@@ -4097,6 +4187,7 @@ static int proc_init(void)
+ 
+ 	wifi->params.disable_beacon_ibss = 0;
+ 	wifi->params.pkt_gen_val = -1;
++	wifi->params.init_pkt_gen = 0;
+ 	wifi->params.payload_length = 4000;
+ 	wifi->params.start_prod_mode = 0;
+ 	wifi->params.init_prod = 0;
+@@ -4108,6 +4199,7 @@ static int proc_init(void)
+ 	wifi->params.hw_scan_status = HW_SCAN_STATUS_NONE;
+ 	wifi->params.fw_loading = 1;
+ 
++	**main_dir_entry = wifi->umac_proc_dir_entry;
+ 	return err;
+ 
+ proc_entry3_fail:
+@@ -4125,6 +4217,8 @@ out:
+ 
+ static void proc_exit(void)
+ {
++	/* This is created in hal_init */
++	remove_proc_entry("hal_stats", wifi->umac_proc_dir_entry);
+ 	remove_proc_entry("mac_stats", wifi->umac_proc_dir_entry);
+ 	remove_proc_entry("phy_stats", wifi->umac_proc_dir_entry);
+ 	remove_proc_entry("params", wifi->umac_proc_dir_entry);
+@@ -4133,11 +4227,11 @@ static void proc_exit(void)
+ }
+ 
+ 
+-int _uccp420wlan_80211if_init(void)
++int _uccp420wlan_80211if_init(struct proc_dir_entry **main_dir_entry)
+ {
+ 	int error;
+ 
+-	error = proc_init();
++	error = proc_init(&main_dir_entry);
+ 	if (error)
+ 		return error;
+ 
+@@ -4148,7 +4242,15 @@ int _uccp420wlan_80211if_init(void)
+ 
+ void _uccp420wlan_80211if_exit(void)
+ {
++	struct mac80211_dev  *dev = (struct mac80211_dev *)wifi->hw->priv;
++
+ 	if (wifi && wifi->hw) {
++		/* We can safely call stop as mac80211
++		 * will not call stop because of new
++		 * production mode.
++		 */
++		if (dev && wifi->params.init_prod)
++			stop(wifi->hw);
+ 		uccp420wlan_exit();
+ 		proc_exit();
+ 	}
+diff --git a/drivers/net/wireless/uccp420wlan/src/core.c b/drivers/net/wireless/uccp420wlan/src/core.c
+index 45e754a..6281597 100644
+--- a/drivers/net/wireless/uccp420wlan/src/core.c
++++ b/drivers/net/wireless/uccp420wlan/src/core.c
+@@ -408,7 +408,7 @@ int uccp420wlan_core_init(struct mac80211_dev *dev, unsigned int ftm)
+ 
+ 	UMAC_PRINT("%s-UMAC: Reset (ENABLE)\n", dev->name);
+ 
+-	if (hal_ops.start(dev->umac_proc_dir_entry))
++	if (hal_ops.start())
+ 		goto lmac_deinit;
+ 	if (ftm)
+ 		uccp420wlan_prog_reset(LMAC_ENABLE, LMAC_MODE_FTM);
+@@ -436,7 +436,7 @@ int uccp420wlan_core_init(struct mac80211_dev *dev, unsigned int ftm)
+ 
+ 	return 0;
+ hal_stop:
+-	hal_ops.stop(dev->umac_proc_dir_entry);
++	hal_ops.stop();
+ lmac_deinit:
+ 	uccp420wlan_lmac_if_deinit();
+ 	return -1;
+@@ -464,7 +464,7 @@ void uccp420wlan_core_deinit(struct mac80211_dev *dev, unsigned int ftm)
+ 
+ 	uccp420_lmac_if_free_outstnding();
+ 
+-	hal_ops.stop(dev->umac_proc_dir_entry);
++	hal_ops.stop();
+ 	hal_ops.deinit_bufs();
+ 
+ 	uccp420wlan_lmac_if_deinit();
+diff --git a/drivers/net/wireless/uccp420wlan/src/hal_hostport.c b/drivers/net/wireless/uccp420wlan/src/hal_hostport.c
+index b00a6a9..10f9baf 100644
+--- a/drivers/net/wireless/uccp420wlan/src/hal_hostport.c
++++ b/drivers/net/wireless/uccp420wlan/src/hal_hostport.c
+@@ -29,6 +29,7 @@
+ #include <linux/skbuff.h>
+ #include <linux/slab.h>
+ #include <linux/netdevice.h>
++#include <linux/proc_fs.h>
+ 
+ #include <asm/unaligned.h>
+ 
+@@ -954,21 +955,14 @@ static void stats_timer_expiry(unsigned long data)
+ #endif
+ 
+ 
+-int hal_start(struct proc_dir_entry *main_dir_entry)
++int hal_start(void)
+ {
+-	int err = 0;
+-
+ #ifdef PERF_PROFILING
+ 	init_timer(&stats_timer);
+ 	stats_timer.function = stats_timer_expiry;
+ 	stats_timer.data = (unsigned long) NULL;
+ 	mod_timer(&stats_timer, jiffies + msecs_to_jiffies(1000));
+ #endif
+-	err = hal_proc_init(main_dir_entry);
+-
+-	if (err)
+-		return err;
+-
+ 	hpriv->hal_disabled = 0;
+ 
+ 	/* Enable host_int and uccp_int */
+@@ -978,10 +972,8 @@ int hal_start(struct proc_dir_entry *main_dir_entry)
+ }
+ 
+ 
+-int hal_stop(struct proc_dir_entry *main_dir_entry)
++int hal_stop(void)
+ {
+-	/* This is created in hal_start */
+-	remove_proc_entry("hal_stats", main_dir_entry);
+ 
+ 	/* Disable host_int and uccp_irq */
+ 	hal_disable_int(NULL);
+@@ -1169,6 +1161,13 @@ static int uccp420_pltfr_probe(struct platform_device *pdev)
+ 	clk_prepare_enable(devm_clk_get(&pdev->dev, "aux_adc"));
+ 	clk_prepare_enable(devm_clk_get(&pdev->dev, "aux_adc_internal"));
+ 
++	/* To support suspend/resume (economy mode)
++	 * during probe a wake up capable device will invoke
++	 * the below routine with second parameter("can_wakeup" flag)
++	 * set to 1.
++	 */
++	device_init_wakeup(&pdev->dev, 1);
++
+ 
+ 	ret = hal_ops.init(&pdev->dev);
+ 
+@@ -1192,6 +1191,13 @@ static int uccp420_pltfr_remove(struct platform_device *pdev)
+ 	clk_disable_unprepare(devm_clk_get(&pdev->dev, "aux_adc"));
+ 	clk_disable_unprepare(devm_clk_get(&pdev->dev, "aux_adc_internal"));
+ 
++	/* To support suspend/resume feature (economy mode)
++	 * during remove a wake up capable device will invoke
++	 * the below routine with second parameter("can_wakeup" flag)
++	 * set to 0.
++	 */
++	device_init_wakeup(&pdev->dev, 0);
++
+ 	return 0;
+ }
+ 
+@@ -1247,6 +1253,9 @@ static int hal_deinit(void *dev)
+ 
+ static int hal_init(void *dev)
+ {
++	struct proc_dir_entry *main_dir_entry;
++	int err = 0;
++
+ 	(void) (dev);
+ 
+ 	hpriv->shm_offset =  shm_offset;
+@@ -1437,12 +1446,17 @@ static int hal_init(void *dev)
+ 	spin_lock_init(&timing_lock);
+ #endif
+ 
+-	if (_uccp420wlan_80211if_init() < 0) {
++	if (_uccp420wlan_80211if_init(&main_dir_entry) < 0) {
+ 		pr_err("%s: wlan_init failed\n", hal_name);
+ 		hal_deinit(NULL);
+ 		return -ENOMEM;
+ 	}
+ 
++	err = hal_proc_init(main_dir_entry);
++
++	if (err)
++		return err;
++
+ 	hpriv->cmd_cnt = COMMAND_START_MAGIC;
+ 	hpriv->event_cnt = 0;
+ 	return 0;
+@@ -1827,6 +1841,16 @@ void hal_request_mem_regions(unsigned char **gram_addr,
+ 	*gram_b4_addr = (unsigned char *)hpriv->gram_b4_addr;
+ }
+ 
++void hal_enable_irq_wake(void)
++{
++	enable_irq_wake(hpriv->irq);
++}
++
++void hal_disable_irq_wake(void)
++{
++	disable_irq_wake(hpriv->irq);
++}
++
+ 
+ struct hal_ops_tag hal_ops = {
+ 	.init = hal_init,
+@@ -1842,6 +1866,8 @@ struct hal_ops_tag hal_ops = {
+ 	.reset_hal_params	= hal_reset_hal_params,
+ 	.set_mem_region	= hal_set_mem_region,
+ 	.request_mem_regions	= hal_request_mem_regions,
++	.enable_irq_wake = hal_enable_irq_wake,
++	.disable_irq_wake = hal_disable_irq_wake,
+ };
+ 
+ 
+diff --git a/drivers/net/wireless/uccp420wlan/src/hal_hostport.h b/drivers/net/wireless/uccp420wlan/src/hal_hostport.h
+index 46adc88..4509a8c 100644
+--- a/drivers/net/wireless/uccp420wlan/src/hal_hostport.h
++++ b/drivers/net/wireless/uccp420wlan/src/hal_hostport.h
+@@ -148,7 +148,7 @@ struct event_hal {
+ } _PACKED_;
+ 
+ 
+-int _uccp420wlan_80211if_init(void);
++int _uccp420wlan_80211if_init(struct proc_dir_entry **);
+ void _uccp420wlan_80211if_exit(void);
+ 
+ /*Porting information:
+diff --git a/drivers/net/wireless/uccp420wlan/src/umac_if.c b/drivers/net/wireless/uccp420wlan/src/umac_if.c
+index 74bbffd..5bacb07 100644
+--- a/drivers/net/wireless/uccp420wlan/src/umac_if.c
++++ b/drivers/net/wireless/uccp420wlan/src/umac_if.c
+@@ -502,10 +502,14 @@ static int uccp420wlan_send_cmd(unsigned char *buf,
+ 	unsigned long irq_flags;
+ 
+ 	rcu_read_lock();
++
+ 	p = (struct lmac_if_data *)(rcu_dereference(lmac_if));
+ 
+ 	if (!p) {
++		pr_err("%s: Unable to retrieve lmac_if\n", __func__);
++#ifdef DRIVER_DEBUG
+ 		WARN_ON(1);
++#endif
+ 		rcu_read_unlock();
+ 		return -1;
+ 	}
+@@ -698,6 +702,10 @@ int uccp420wlan_proc_tx(void)
+ 		tx_cmd.bcc_or_ldpc = 0;
+ 		tx_cmd.stbc_enabled = 0;
+ 		tx_cmd.num_rates++;
++	} else {
++		WARN_ON(1);
++		rcu_read_unlock();
++		return -90;
+ 	}
+ 
+ 	nbuf = alloc_skb(sizeof(struct cmd_tx_ctrl) +
+@@ -1454,18 +1462,28 @@ int uccp420wlan_prog_tx(unsigned int queue,
+ 	if ((ieee80211_is_data(fc) ||
+ 	     ieee80211_is_data_qos(fc))
+ 	    && ieee80211_has_protected(fc)) {
+-		DEBUG_LOG("%s:cipher: %d,icv_len: %d,iv_len: %d,keylen:%d\n",
+-			     __func__,
+-			     tx_info_first->control.hw_key->cipher,
+-			     tx_info_first->control.hw_key->icv_len,
+-			     tx_info_first->control.hw_key->iv_len,
+-			     tx_info_first->control.hw_key->keylen);
+-
+-		/* iv_len is always the header ahd
+-		 * icv_len is always the trailer
+-		 * include only iv_len
++		/* hw_key == NULL: Encrypted in SW (injected frames)
++		 * iv_len = 0: treat as SW encryption.
+ 		 */
+-		hdrlen += tx_info_first->control.hw_key->iv_len;
++		if (tx_info_first->control.hw_key == NULL ||
++		    !tx_info_first->control.hw_key->iv_len) {
++			DEBUG_LOG("%s: hw_key is %s and iv_len: 0\n",
++				  __func__,
++				  tx_info_first->control.hw_key?"valid":"NULL");
++			tx_cmd.encrypt = ENCRYPT_DISABLE;
++		 } else {
++			DEBUG_LOG("%s: cipher: %d, icv: %d, iv: %d, key: %d\n",
++				  __func__,
++				  tx_info_first->control.hw_key->cipher,
++				  tx_info_first->control.hw_key->icv_len,
++				  tx_info_first->control.hw_key->iv_len,
++				  tx_info_first->control.hw_key->keylen);
++			/* iv_len is always the header and icv_len is always
++			 * the trailer include only iv_len
++			 */
++			hdrlen += tx_info_first->control.hw_key->iv_len;
++			tx_cmd.encrypt = ENCRYPT_ENABLE;
++		}
+ 	}
+ 
+ 	if (tx_info_first->flags & IEEE80211_TX_CTL_TX_OFFCHAN)
+@@ -1478,7 +1496,7 @@ int uccp420wlan_prog_tx(unsigned int queue,
+ 	if (ieee80211_is_unicast_robust_mgmt_frame(skb_first) &&
+ 	    ieee80211_has_protected(fc)) {
+ 		hdrlen += 8;
+-		tx_cmd.force_encrypt = 1;
++		tx_cmd.encrypt = ENCRYPT_ENABLE;
+ 	}
+ 
+ 	/* separate in to up to TSF and From TSF*/
+@@ -2037,7 +2055,7 @@ int uccp420wlan_prog_aux_adc_chain(unsigned int chain_id)
+ 				    UMAC_CMD_AUX_ADC_CHAIN_SEL);
+ }
+ 
+-int uccp420wlan_cont_tx(int val)
++int uccp420wlan_prog_cont_tx(int val)
+ {
+ 	struct cmd_cont_tx status;
+ 
+-- 
+1.9.1
+

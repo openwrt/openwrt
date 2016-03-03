@@ -1,0 +1,34 @@
+From 9984055b808f3a391e226bc6375894f1cba13bb0 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Mon, 19 Oct 2015 15:49:26 +0530
+Subject: [PATCH 080/153] pistachio_marduk.dts: change drive-strength of
+ spim0-clk to 2mA
+
+It has been observed by the hardware team that the spim0-clk line is suffering
+from multiple reflections from various stubs going to connectors and ICs.
+Reducing the drive strength to 2mA from the default 4mA helps in improving the signal.
+
+Change-Id: I0a514a15fcfa692e6b618298ea8781015ff2f3ea
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 633b8f8..c5f98e4 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -99,6 +99,10 @@
+ 	};
+ };
+ 
++&spim0_clk {
++	drive-strength = <2>;
++};
++
+ &spfi0 {
+ 	status = "okay";
+ 	pinctrl-0 = <&spim0_pins>;
+-- 
+1.9.1
+

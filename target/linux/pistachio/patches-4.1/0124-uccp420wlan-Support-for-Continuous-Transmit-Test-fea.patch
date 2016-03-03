@@ -1,0 +1,167 @@
+From 944019cffe07c00e2dd6490b9fdc407f1bd25f74 Mon Sep 17 00:00:00 2001
+From: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+Date: Thu, 31 Dec 2015 17:08:49 +0530
+Subject: [PATCH 124/153] uccp420wlan: Support for "Continuous Transmit Test"
+ feature
+
+This commit has the following changes:
+
+1. Added support for "Continuous Transmit Test" feature
+
+Change-Id: I4c7d2e633e83ce466466ba583e29571ebe658ebb
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+---
+ drivers/net/wireless/uccp420wlan/inc/core.h         |  1 +
+ drivers/net/wireless/uccp420wlan/inc/host_umac_if.h |  7 +++++++
+ drivers/net/wireless/uccp420wlan/inc/umac_if.h      |  1 +
+ drivers/net/wireless/uccp420wlan/inc/version.h      |  2 +-
+ drivers/net/wireless/uccp420wlan/src/80211_if.c     | 18 +++++++++++++++---
+ drivers/net/wireless/uccp420wlan/src/umac_if.c      | 13 +++++++++++++
+ 6 files changed, 38 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/wireless/uccp420wlan/inc/core.h b/drivers/net/wireless/uccp420wlan/inc/core.h
+index fd04cae..1adf5cf 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/core.h
++++ b/drivers/net/wireless/uccp420wlan/inc/core.h
+@@ -204,6 +204,7 @@ struct wifi_params {
+ 	int start_prod_mode;
+ 	int init_prod;
+ 	unsigned char bypass_vpd;
++	unsigned int cont_tx;
+ };
+ 
+ struct cmd_send_recv_cnt {
+diff --git a/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h b/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h
+index 0d7eb63..bb3034a 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h
++++ b/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h
+@@ -402,6 +402,7 @@ enum UMAC_CMD_TAG {
+ #ifdef MULTI_CHAN_SUPPORT
+ 	UMAC_CMD_CHANCTX_TIME_INFO,
+ #endif
++	UMAC_CMD_CONT_TX,
+ };
+ 
+ enum UMAC_EVENT_TAG {
+@@ -934,6 +935,12 @@ struct cmd_aux_adc_chain_sel {
+ 	unsigned int chain_id;
+ } __packed;
+ 
++struct cmd_cont_tx {
++	struct host_mac_msg_hdr hdr;
++	unsigned int op;
++} __packed;
++
++
+ 
+ /* DFS SUPPORT */
+ /* Command to start/stop Radar detection operation */
+diff --git a/drivers/net/wireless/uccp420wlan/inc/umac_if.h b/drivers/net/wireless/uccp420wlan/inc/umac_if.h
+index 8a2172c..63c1584 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/umac_if.h
++++ b/drivers/net/wireless/uccp420wlan/inc/umac_if.h
+@@ -186,6 +186,7 @@ extern int uccp420wlan_prog_mcast_filter_control(unsigned int
+ 
+ extern int uccp420wlan_prog_rcv_bcn_mode(unsigned int  bcn_rcv_mode);
+ extern int uccp420wlan_prog_aux_adc_chain(unsigned int chain_id);
++extern int uccp420wlan_cont_tx(int val);
+ extern int uccp420wlan_prog_txq_params(int index,
+ 				       unsigned char *vif_addr,
+ 				       unsigned int queue,
+diff --git a/drivers/net/wireless/uccp420wlan/inc/version.h b/drivers/net/wireless/uccp420wlan/inc/version.h
+index 55ed0c6..99f0685 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/version.h
++++ b/drivers/net/wireless/uccp420wlan/inc/version.h
+@@ -23,7 +23,7 @@
+  */
+ #ifndef _UCCP420WLAN_VERSION_H
+ #define _UCCP420WLAN_VERSION_H
+-#define UCCP_DRIVER_VERSION "6_0_1"
++#define UCCP_DRIVER_VERSION "6_0_2"
+ #define UCCP_DRIVER_NAME "UCCP420WIFI"
+ #endif /* _UCCP420WLAN_VERSION_H */
+ 
+diff --git a/drivers/net/wireless/uccp420wlan/src/80211_if.c b/drivers/net/wireless/uccp420wlan/src/80211_if.c
+index fa92e70..774d9c0 100644
+--- a/drivers/net/wireless/uccp420wlan/src/80211_if.c
++++ b/drivers/net/wireless/uccp420wlan/src/80211_if.c
+@@ -1841,7 +1841,8 @@ void uccp420wlan_scan_complete(void *context,
+ 			ieee80211_scan_completed(dev->hw, false);
+ 
+ 			/* WAR for TT_PRB0164. To be removed after patch
+-			   submitted to kernel */
++			 *  submitted to kernel
++			 */
+ 			for (i = 0; i < MAX_VIFS; i++) {
+ 
+ 				if (!(dev->active_vifs & (1 << i)))
+@@ -2242,7 +2243,8 @@ static void unassign_vif_chanctx(struct ieee80211_hw *hw,
+ 	mutex_lock(&dev->mutex);
+ 
+ 	/* We need to specifically handle flushing tx queues for the AP VIF
+-	 * here (for STA VIF, mac80211 handles this via flush_queues) */
++	 * here (for STA VIF, mac80211 handles this via flush_queues)
++	 */
+ 	if (vif->type == NL80211_IFTYPE_AP) {
+ 		/* Flush all queues for this VIF */
+ 		for (i = 0; i < NUM_ACS; i++)
+@@ -2301,7 +2303,8 @@ static void flush_queues(struct ieee80211_hw *hw,
+ 	/* This op should not get called during ROC operation, so we can assume
+ 	 * that the vif_chanctx_type will be UMAC_VIF_CHANCTX_TYPE_OPER. As for
+ 	 * TSMC operation the VIF can only be associated to one channel context,
+-	 * so we pass uvif->chanctx->index as the parameter for chanctx_idx */
++	 * so we pass uvif->chanctx->index as the parameter for chanctx_idx
++	 */
+ 	uccp420_flush_vif_queues(dev,
+ 				 uvif,
+ 				 uvif->chanctx->index,
+@@ -2677,6 +2680,8 @@ static int proc_read_config(struct seq_file *m, void *v)
+ 		   wifi->params.payload_length);
+ 	seq_printf(m, "start_prod_mode = channel: %d\n",
+ 		   wifi->params.start_prod_mode);
++	seq_printf(m, "continuous_tx = %d\n",
++		   wifi->params.cont_tx);
+ 
+ 	if (ftm || wifi->params.production_test)
+ 		seq_printf(m, "set_tx_power = %d dB\n",
+@@ -3784,6 +3789,13 @@ static ssize_t proc_write_config(struct file *file,
+ 			       AUX_ADC_CHAIN1,
+ 			       AUX_ADC_CHAIN2);
+ 	} else if ((wifi->params.production_test) &&
++		param_get_val(buf, "continuous_tx=", &val)) {
++		if (val == 0 || val == 1) {
++			wifi->params.cont_tx = val;
++			uccp420wlan_cont_tx(val);
++		   } else
++			pr_err("Invalid tx_continuous parameter\n");
++	} else if ((wifi->params.production_test) &&
+ 		    param_get_val(buf, "start_prod_mode=", &val)) {
+ 			unsigned int pri_chnl_num = 0;
+ 			unsigned int freq_band = IEEE80211_BAND_5GHZ;
+diff --git a/drivers/net/wireless/uccp420wlan/src/umac_if.c b/drivers/net/wireless/uccp420wlan/src/umac_if.c
+index f435dd1..74bbffd 100644
+--- a/drivers/net/wireless/uccp420wlan/src/umac_if.c
++++ b/drivers/net/wireless/uccp420wlan/src/umac_if.c
+@@ -2037,6 +2037,19 @@ int uccp420wlan_prog_aux_adc_chain(unsigned int chain_id)
+ 				    UMAC_CMD_AUX_ADC_CHAIN_SEL);
+ }
+ 
++int uccp420wlan_cont_tx(int val)
++{
++	struct cmd_cont_tx status;
++
++	memset(&status, 0, sizeof(struct cmd_cont_tx));
++	status.op = val;
++
++	return uccp420wlan_send_cmd((unsigned char *)&status,
++				    sizeof(struct cmd_cont_tx),
++				    UMAC_CMD_CONT_TX);
++}
++
++
+ 
+ int uccp420wlan_prog_mib_stats(void)
+ {
+-- 
+1.9.1
+

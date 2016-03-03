@@ -1,0 +1,183 @@
+From 532797f1f2bcca0abfc7686aecccbe0a9f706f1c Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Thu, 29 Oct 2015 10:48:01 +0000
+Subject: [PATCH 104/153] add a simple irq wake driver and its support in
+ pistachio dts
+
+In pistachio platform the irq wake up support is available
+and can be enabled from irq wake register available
+from Top-level clock control block. Wake_irq support is
+added from irqchip data using the irq_get_chip support from
+kernel.
+
+Tested with Pistachio Bring-Up-board based on irq wake from uart
+module support configured from serial-core layer.
+
+Also add support in dt to utilise the simple irq wake driver, which sets up
+pistachio specific wake irq bits.
+
+The peripheral TOP level clock reg has the mapping for wakeup irq mappings,
+so we need to share this with irq-wake driver.
+
+Change-Id: I0f336542c2d66783de43e3fa90320e33f65a21a5
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi |   9 ++-
+ arch/mips/pistachio/Makefile                |   2 +
+ arch/mips/pistachio/irq_wake.c              | 109 ++++++++++++++++++++++++++++
+ 3 files changed, 119 insertions(+), 1 deletion(-)
+ create mode 100644 arch/mips/pistachio/irq_wake.c
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 3e4cf3c..ba65f9e 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -929,7 +929,7 @@
+ 	};
+ 
+ 	clk_core: clk@18144000 {
+-		compatible = "img,pistachio-clk";
++		compatible = "img,pistachio-clk", "syscon";
+ 		clocks = <&xtal>, <&cr_top EXT_CLK_AUDIO_IN>,
+ 			 <&cr_top EXT_CLK_ENET_IN>;
+ 		clock-names = "xtal", "audio_refclk_ext_gate",
+@@ -971,6 +971,13 @@
+ 		reg = <0x18149200 0x200>;
+ 	};
+ 
++	pistachio_irqwake: irq-wake {
++		compatible = "pistachio,irq-wake";
++		irq-start = <2>;
++		irq-end = <95>;
++		img,clk_core = <&clk_core>;
++	};
++
+ 	hash: hash@18149600 {
+ 		compatible = "img,hash-accelerator";
+ 		reg = <0x18149600 0x100>, <0x18101100 0x4>;
+diff --git a/arch/mips/pistachio/Makefile b/arch/mips/pistachio/Makefile
+index 32189c6..ca50711 100644
+--- a/arch/mips/pistachio/Makefile
++++ b/arch/mips/pistachio/Makefile
+@@ -1 +1,3 @@
+ obj-y	+= init.o irq.o time.o
++
++obj-$(CONFIG_SUSPEND) += irq_wake.o
+diff --git a/arch/mips/pistachio/irq_wake.c b/arch/mips/pistachio/irq_wake.c
+new file mode 100644
+index 0000000..73914a8
+--- /dev/null
++++ b/arch/mips/pistachio/irq_wake.c
+@@ -0,0 +1,109 @@
++/*
++ * Irq wake driver for Pistachio Platform.
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/irqchip/mips-gic.h>
++#include <linux/irq.h>
++#include <linux/mfd/syscon.h>
++#include <linux/of_platform.h>
++#include <linux/regmap.h>
++
++#define	PISTACHIO_CLK_WAKEUP		0x010C
++#define PISTACHIO_DEFAULT_WAKEIRQ_START	2
++#define	PISTACHIO_DEFAULT_WAKEIRQ_END	95
++/* Max number of wake registers available in Pistachio platform */
++#define	PISTACHIO_WAKEREGS_NUM		3
++
++static struct regmap *pistachio_clk_regs;
++static int wakeirq_start, wakeirq_end;
++
++bool pistachio_wakeirq_set(void)
++{
++	int ret = false;
++	int val[PISTACHIO_WAKEREGS_NUM], i, wake_irq = 0;
++
++	regmap_bulk_read(pistachio_clk_regs, PISTACHIO_CLK_WAKEUP, &val,
++				PISTACHIO_WAKEREGS_NUM);
++
++	for (i = 0 ; i < PISTACHIO_WAKEREGS_NUM; i++)
++		wake_irq |= val[i];
++
++	if (wake_irq)
++		ret = true;
++
++	return ret;
++}
++
++static int pistachio_irq_wake(struct irq_data *data, unsigned int on)
++{
++	unsigned int irq = GIC_HWIRQ_TO_SHARED(data->hwirq);
++	unsigned int wake_irq_off = GIC_INTR_OFS(irq);
++	unsigned int wake_irq_bit = irq - wakeirq_start;
++
++	unsigned int offset = PISTACHIO_CLK_WAKEUP + wake_irq_off;
++	unsigned int mask = BIT(wake_irq_bit);
++	unsigned int val = 0;
++
++	if (on)
++		val = mask;
++
++	regmap_update_bits(pistachio_clk_regs, offset, mask, val);
++
++	return 0;
++}
++
++static int pistachio_irqwake_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	int ret = 0;
++	int i = 0;
++
++	pistachio_clk_regs = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
++					"img,clk_core");
++	if (IS_ERR(pistachio_clk_regs)) {
++		dev_err(&pdev->dev, "[%s]: pistachio-clk_core lookup \
++			failure irq-wake will be non-functional\n", __func__);
++		return PTR_ERR(pistachio_clk_regs);
++	}
++
++	if (of_property_read_u32(np, "irq-start", &wakeirq_start))
++		wakeirq_start = PISTACHIO_DEFAULT_WAKEIRQ_START;
++
++	if (of_property_read_u32(np, "irq-end", &wakeirq_end))
++		wakeirq_start = PISTACHIO_DEFAULT_WAKEIRQ_END;
++
++	for (i = wakeirq_start; i < wakeirq_end; i++) {
++		struct irq_chip *chip = irq_get_chip(i);
++		chip->irq_set_wake = pistachio_irq_wake;
++	}
++
++	return ret;
++}
++
++static int pistachio_irqwake_remove(struct platform_device *pdev)
++{
++	return 0;
++}
++
++static const struct of_device_id pistachio_irqwake_match[] = {
++	{ .compatible = "pistachio,irq-wake" },
++	{}
++};
++
++static struct platform_driver pistachio_irqwake_driver = {
++	.probe		= pistachio_irqwake_probe,
++	.remove		= pistachio_irqwake_remove,
++	.driver		= {
++		.name	= "pistachio-irq-wake",
++		.of_match_table	= of_match_ptr(pistachio_irqwake_match),
++	}
++};
++module_platform_driver(pistachio_irqwake_driver);
+-- 
+1.9.1
+

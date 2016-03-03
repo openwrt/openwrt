@@ -1,0 +1,140 @@
+From 1e472c1071acf535fd200b85e72440f1c0fe20b9 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Mon, 27 Jul 2015 14:32:08 +0100
+Subject: [PATCH 044/153] pistachio: connectivity: allocate DMA buffer
+
+4MB contiguous space is reserved in RAM. It is used for two purposes:
+ * UCCP code & data placement
+ * WLAN bounce buffer
+
+BUGS=none
+TEST=none
+
+Change-Id: Id1af5601ca913c670aa1f9f14296d40bd051c3c3
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi         | 15 +++++++++++++++
+ arch/mips/configs/pistachio_defconfig               |  5 +++++
+ .../soc/img/connectivity/img-connectivity-main.c    | 21 ++++++++++++++++++++-
+ include/soc/img/img-connectivity.h                  |  6 ++++++
+ 4 files changed, 46 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 3a43317..d87c606 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -21,6 +21,21 @@
+ 
+ 	interrupt-parent = <&gic>;
+ 
++	reserved-memory {
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		ranges;
++
++		linux,cma {
++			compatible = "shared-dma-pool";
++			reusable;
++			size = <0x400000>;
++			alignment = <0x1000>;
++			linux,cma-default;
++		};
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index cc91a03..4137909 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -385,3 +385,8 @@ CONFIG_CRYPTO_DEV_IMGTEC_HASH=y
+ CONFIG_BT_HCIUART_H4=y
+ CONFIG_BT_IMG=m
+ CONFIG_SOC_IMG=y
++CONFIG_CMA_SIZE_MBYTES=4
++CONFIG_CMA_SIZE_SEL_MBYTES=y
++CONFIG_CMA_ALIGNMENT=8
++CONFIG_CMA=y
++CONFIG_CMA_AREAS=7
+diff --git a/drivers/soc/img/connectivity/img-connectivity-main.c b/drivers/soc/img/connectivity/img-connectivity-main.c
+index 008e6f4..8d8eb8f 100644
+--- a/drivers/soc/img/connectivity/img-connectivity-main.c
++++ b/drivers/soc/img/connectivity/img-connectivity-main.c
+@@ -27,6 +27,7 @@
+  ******************************************************************************
+  *END**************************************************************************/
+ #include <linux/clk.h>
++#include <linux/dma-mapping.h>
+ #include <linux/firmware.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+@@ -43,6 +44,8 @@
+ #define mod_info(format, ...) pr_info(MOD_NAME ": " format "\n", ##__VA_ARGS__)
+ 
+ #define MAX_LOADERS 2
++#define MB (1024*1024)
++#define SCRATCHBUF_SIZE (4*MB)
+ 
+ enum {
+ 	BOOT_OFF = 0,
+@@ -86,7 +89,8 @@ module_param(mcp_ldr, charp, 0400);
+ MODULE_PARM_DESC(mcp_ldr, "MCP loader binary");
+ 
+ struct img_connectivity {
+-	unsigned int mtx_threads;
++	void *scratch;
++	dma_addr_t scratch_bus;
+ 	unsigned char __iomem *uccp_sbus_v;
+ 	unsigned char __iomem *uccp_gram_v;
+ 	struct resource *uccp_sbus;
+@@ -110,6 +114,16 @@ struct img_version_info img_connectivity_version(void)
+ }
+ EXPORT_SYMBOL(img_connectivity_version);
+ 
++struct img_scratch_info img_connectivity_scratch(void)
++{
++	struct img_scratch_info si = {
++		.virt_addr = module->scratch,
++		.bus_addr = module->scratch_bus
++	};
++	return si;
++}
++EXPORT_SYMBOL(img_connectivity_scratch);
++
+ /*
+  * *** Private API ***
+  */
+@@ -121,6 +135,11 @@ static int img_connectivity_memsetup(struct platform_device *d)
+ 		return -ENOMEM;
+ 	}
+ 
++	module->scratch = dmam_alloc_coherent(&d->dev, SCRATCHBUF_SIZE,
++					&module->scratch_bus, GFP_KERNEL);
++	if (NULL == module->scratch)
++		return -ENOMEM;
++
+ 	return 0;
+ }
+ 
+diff --git a/include/soc/img/img-connectivity.h b/include/soc/img/img-connectivity.h
+index 16e8fa7..398c466 100644
+--- a/include/soc/img/img-connectivity.h
++++ b/include/soc/img/img-connectivity.h
+@@ -34,6 +34,12 @@ struct img_version_info {
+ 	int wlan;
+ };
+ 
++struct img_scratch_info {
++	void *virt_addr;
++	dma_addr_t bus_addr;
++};
++
+ struct img_version_info img_connectivity_version(void);
++struct img_scratch_info img_connectivity_scratch(void);
+ 
+ #endif /* __IMG_CONNECTIVITY_H */
+-- 
+1.9.1
+

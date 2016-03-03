@@ -1,0 +1,52 @@
+From 850453fa175c39d0e0466f8c4dfb1094d06eb4f5 Mon Sep 17 00:00:00 2001
+From: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+Date: Fri, 18 Sep 2015 15:46:52 +0530
+Subject: [PATCH 070/153] pistachio: connectivity: fix kernel Oops on module
+ load
+
+Change #1139 introduced the use of uninitialized pointer, which caused
+kernel Oops when the user attempted to load the module.
+
+BUG=None
+TEST=recompiled & loaded img-connectivity boot=0
+
+Change-Id: If2ba4c766a9e1cb838fa978fd4bf947642cd9eb0
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+---
+ drivers/soc/img/connectivity/img-connectivity-main.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/soc/img/connectivity/img-connectivity-main.c b/drivers/soc/img/connectivity/img-connectivity-main.c
+index f3532e8..012324c 100644
+--- a/drivers/soc/img/connectivity/img-connectivity-main.c
++++ b/drivers/soc/img/connectivity/img-connectivity-main.c
+@@ -196,19 +196,20 @@ static int img_connectivity_boot(struct platform_device *d)
+ {
+ 	int err, t_idx;
+ 
++	err = remap_uccp_regions(&d->dev);
++	if (err)
++		return err;
++
++	fwldr_init(module->uccp_sbus_v, module->uccp_gram_v, NULL);
++
+ 	soc_set_uccp_extram_base(module->uccp_sbus_v, module->scratch_bus);
+ 
+ 	if (BOOT_OFF == boot) {
++		unmap_uccp_regions(&d->dev);
+ 		mod_info("skipping boot");
+ 		return 0;
+ 	}
+ 
+-	err = remap_uccp_regions(&d->dev);
+-	if (err)
+-		return err;
+-
+-	fwldr_init(module->uccp_sbus_v, module->uccp_gram_v, NULL);
+-
+ 	/*
+ 	 * MCP code, if provided, has to be loaded first. After that it is
+ 	 * necessary to stop all META threads.
+-- 
+1.9.1
+

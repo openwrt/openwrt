@@ -1,0 +1,31 @@
+From 54a07896556b5d77c1644af338ba82d8f238ed5f Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Tue, 1 Sep 2015 17:11:03 +0100
+Subject: [PATCH 058/153] pistachio: dts: add a alias for ethernet.
+
+With u-boot going to be used as bootloader,
+mac-address from u-boot setup can be passed to kernel
+for this u-boot does a fdt_fixup for mac but expects
+'ethernet0' entry in dtb for mac to be appended into dtb.
+
+Change-Id: I69f2839eaa07bbb2c5c4c16fcfa01ba06f0c6a46
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 8278800..e8e54c7 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -19,6 +19,7 @@
+ 	aliases {
+ 		serial0 = &uart0;
+ 		serial1 = &uart1;
++		ethernet0 = &enet;
+ 	};
+ 
+ 	chosen {
+-- 
+1.9.1
+

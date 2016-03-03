@@ -1,0 +1,32 @@
+From a4ab383d4922f9a140c81399ec1803f1d3ceaca1 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Mon, 20 Jul 2015 12:34:19 +0100
+Subject: [PATCH 038/153] dts, marduk: Update mmc quirks for marduk
+
+marduk uses micro-sd card slot and
+doesnt use write protect line.
+
+So avoid probing of the wp line.
+
+Change-Id: I5e7b83703e63a8f3bac74b22fefcd60151b0bb17
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Signed-off-by: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 143357d..e9a0759 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -99,6 +99,7 @@
+ 	status = "okay";
+ 
+ 	bus-width = <4>;
++	disable-wp;
+ };
+ 
+ &ir {
+-- 
+1.9.1
+

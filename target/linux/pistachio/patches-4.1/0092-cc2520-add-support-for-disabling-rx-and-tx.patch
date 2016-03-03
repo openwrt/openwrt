@@ -1,0 +1,200 @@
+From d0a826fefe7d0055932c9cfa31d1e7df684e7fcb Mon Sep 17 00:00:00 2001
+From: Rahul Daga <Rahul.Daga@imgtec.com>
+Date: Tue, 27 Oct 2015 18:59:07 +0530
+Subject: [PATCH 092/153] cc2520: add support for disabling rx and tx
+
+For 802.15.4 RF testing, rx and tx modes need to be supported
+in the driver.
+
+Change-Id: I3d18e91666e04770538b0dea6e0df260db81cf26
+Signed-off-by: Rahul Daga <Rahul.Daga@imgtec.com>
+---
+ drivers/net/ieee802154/cc2520.c | 119 ++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 115 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ieee802154/cc2520.c b/drivers/net/ieee802154/cc2520.c
+index 4a3692f..f359764 100644
+--- a/drivers/net/ieee802154/cc2520.c
++++ b/drivers/net/ieee802154/cc2520.c
+@@ -209,6 +209,9 @@ struct cc2520_private {
+ 	struct work_struct fifop_irqwork;/* Workqueue for FIFOP */
+ 	spinlock_t lock;		/* Lock for is_tx*/
+ 	struct completion tx_complete;	/* Work completion for Tx */
++	bool disable_tx;		/* don't send any packets */
++	bool disable_rx;		/* disable rx */
++	bool started;			/* Flag to know if device is up */
+ };
+ 
+ /* Generic Functions */
+@@ -463,12 +466,33 @@ cc2520_read_rxfifo(struct cc2520_private *priv, u8 *data, u8 len, u8 *lqi)
+ 
+ static int cc2520_start(struct ieee802154_hw *hw)
+ {
+-	return cc2520_cmd_strobe(hw->priv, CC2520_CMD_SRXON);
++	struct cc2520_private *priv = hw->priv;
++	int ret;
++
++	if (priv->disable_rx) {
++		/* disable enabling of RX after TX
++		 * SET_RXENMASK_ON_TX = 0 in FRMCTRL1
++		 */
++		ret = cc2520_write_register(priv, CC2520_FRMCTRL1, 0x02);
++	} else {
++		/* enable RX after TX
++		 * SET_RXENMASK_ON_TX = 1 in FRMCTRL1
++		 */
++		ret = cc2520_write_register(priv, CC2520_FRMCTRL1, 0x03);
++		if (ret)
++			return ret;
++		ret = cc2520_cmd_strobe(priv, CC2520_CMD_SRXON);
++	}
++	priv->started = true;
++	return ret;
+ }
+ 
+ static void cc2520_stop(struct ieee802154_hw *hw)
+ {
+-	cc2520_cmd_strobe(hw->priv, CC2520_CMD_SRFOFF);
++	struct cc2520_private *priv = hw->priv;
++
++	cc2520_cmd_strobe(priv, CC2520_CMD_SRFOFF);
++	priv->started = false;
+ }
+ 
+ static int
+@@ -479,6 +503,12 @@ cc2520_tx(struct ieee802154_hw *hw, struct sk_buff *skb)
+ 	int rc;
+ 	u8 status = 0;
+ 
++	/* there is no command to disable tx in cc2520,
++	 * so not sending any packets would mean disable tx
++	 */
++	if (priv->disable_tx)
++		return 0;
++
+ 	rc = cc2520_cmd_strobe(priv, CC2520_CMD_SFLUSHTX);
+ 	if (rc)
+ 		goto err_tx;
+@@ -501,7 +531,12 @@ cc2520_tx(struct ieee802154_hw *hw, struct sk_buff *skb)
+ 	priv->is_tx = 1;
+ 	spin_unlock_irqrestore(&priv->lock, flags);
+ 
+-	rc = cc2520_cmd_strobe(priv, CC2520_CMD_STXONCCA);
++	/* if rx is disabled then CCA is always low, then don't use TXONCCA */
++	if (!priv->disable_rx)
++		rc = cc2520_cmd_strobe(priv, CC2520_CMD_STXONCCA);
++	else
++		rc = cc2520_cmd_strobe(priv, CC2520_CMD_STXON);
++
+ 	if (rc)
+ 		goto err;
+ 
+@@ -510,7 +545,9 @@ cc2520_tx(struct ieee802154_hw *hw, struct sk_buff *skb)
+ 		goto err;
+ 
+ 	cc2520_cmd_strobe(priv, CC2520_CMD_SFLUSHTX);
+-	cc2520_cmd_strobe(priv, CC2520_CMD_SRXON);
++
++	if (!priv->disable_rx)
++		cc2520_cmd_strobe(priv, CC2520_CMD_SRXON);
+ 
+ 	return rc;
+ err:
+@@ -908,6 +945,75 @@ err_ret:
+ 	return ret;
+ }
+ 
++ssize_t disable_tx_show(struct device *dev, struct device_attribute *attr,
++			char *buf)
++{
++	struct spi_device *spi = to_spi_device(dev);
++	struct cc2520_private *priv = spi_get_drvdata(spi);
++
++	return sprintf(buf, "%u\n", priv->disable_tx);
++}
++
++ssize_t disable_rx_show(struct device *dev, struct device_attribute *attr,
++			char *buf)
++{
++	struct spi_device *spi = to_spi_device(dev);
++	struct cc2520_private *priv = spi_get_drvdata(spi);
++
++	return sprintf(buf, "%u\n", priv->disable_rx);
++}
++
++static ssize_t attr_store(const struct cc2520_private *priv, const char *buf,
++			  size_t count, bool *priv_attr)
++{
++	int ret;
++	unsigned long state;
++
++	if (priv->started)
++		return -EBUSY;
++
++	ret = kstrtoul(buf, 10, &state);
++	if (ret)
++		return ret;
++
++	if (state)
++		*priv_attr = true;
++	else
++		*priv_attr = false;
++	return count;
++}
++
++ssize_t disable_tx_store(struct device *dev, struct device_attribute *attr,
++			 const char *buf, size_t count)
++{
++	struct spi_device *spi = to_spi_device(dev);
++	struct cc2520_private *priv = spi_get_drvdata(spi);
++
++	return attr_store(priv, buf, count, &priv->disable_tx);
++}
++
++ssize_t disable_rx_store(struct device *dev, struct device_attribute *attr,
++			 const char *buf, size_t count)
++{
++	struct spi_device *spi = to_spi_device(dev);
++	struct cc2520_private *priv = spi_get_drvdata(spi);
++
++	return attr_store(priv, buf, count, &priv->disable_rx);
++}
++
++static DEVICE_ATTR_RW(disable_tx);
++static DEVICE_ATTR_RW(disable_rx);
++
++static struct attribute *dev_attrs[] = {
++	&dev_attr_disable_tx.attr,
++	&dev_attr_disable_rx.attr,
++	NULL,
++};
++
++static struct attribute_group dev_attr_group = {
++	.attrs = dev_attrs,
++};
++
+ static int cc2520_probe(struct spi_device *spi)
+ {
+ 	struct cc2520_private *priv;
+@@ -1043,6 +1149,10 @@ static int cc2520_probe(struct spi_device *spi)
+ 	if (ret)
+ 		goto err_hw_init;
+ 
++	ret = sysfs_create_group(&spi->dev.kobj, &dev_attr_group);
++	if (ret)
++		goto err_hw_init;
++
+ 	return 0;
+ 
+ err_hw_init:
+@@ -1055,6 +1165,7 @@ static int cc2520_remove(struct spi_device *spi)
+ {
+ 	struct cc2520_private *priv = spi_get_drvdata(spi);
+ 
++	sysfs_remove_group(&spi->dev.kobj, &dev_attr_group);
+ 	mutex_destroy(&priv->buffer_mutex);
+ 	flush_work(&priv->fifop_irqwork);
+ 
+-- 
+1.9.1
+

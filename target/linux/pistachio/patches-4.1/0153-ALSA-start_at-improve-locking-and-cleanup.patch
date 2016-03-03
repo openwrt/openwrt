@@ -1,0 +1,365 @@
+From 9129496b43e9a6d0e916a0f8ff09febdf695c1e5 Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Mon, 19 Oct 2015 14:26:45 +0100
+Subject: [PATCH 153/153] ALSA: start_at: improve locking and cleanup
+
+Fix existing deadlock issues and race conditions between
+start_at, start_at_abort and stream release
+
+Change-Id: I2a9b5e60f03066274a800e0f3e8d3454b76758ad
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ include/sound/pcm.h         |  21 ++++--
+ include/uapi/sound/asound.h |   8 --
+ sound/core/pcm.c            |   1 +
+ sound/core/pcm_native.c     | 179 +++++++++++++++-----------------------------
+ 4 files changed, 79 insertions(+), 130 deletions(-)
+
+diff --git a/include/sound/pcm.h b/include/sound/pcm.h
+index 99fffbc..f5cc5db 100644
+--- a/include/sound/pcm.h
++++ b/include/sound/pcm.h
+@@ -30,6 +30,9 @@
+ #include <linux/mm.h>
+ #include <linux/bitops.h>
+ #include <linux/pm_qos.h>
++#if defined(CONFIG_HIGH_RES_TIMERS)
++#include <linux/hrtimer.h>
++#endif
+ 
+ #define snd_pcm_substream_chip(substream) ((substream)->private_data)
+ #define snd_pcm_chip(pcm) ((pcm)->private_data)
+@@ -434,11 +437,6 @@ struct snd_pcm_runtime {
+ #ifdef CONFIG_SND_PCM_XRUN_DEBUG
+ 	struct snd_pcm_hwptr_log *hwptr_log;
+ #endif
+-
+-	/* startat status info */
+-	struct snd_pcm_startat_state startat_state;
+-	/* data associated with current startat timer, otherwise NULL */
+-	void *startat_data;
+ };
+ 
+ struct snd_pcm_group {		/* keep linked substreams */
+@@ -499,6 +497,16 @@ struct snd_pcm_substream {
+ #endif /* CONFIG_SND_VERBOSE_PROCFS */
+ 	/* misc flags */
+ 	unsigned int hw_opened: 1;
++	/* start at wait queue */
++	wait_queue_head_t start_at_wait;
++	/* start at status info */
++	bool start_at_pending;
++	/* Clock type for pending start at */
++	int start_at_clock_class;
++#ifdef CONFIG_HIGH_RES_TIMERS
++	/* start at timer for use with system startat */
++	struct hrtimer start_at_timer;
++#endif
+ };
+ 
+ #define SUBSTREAM_BUSY(substream) ((substream)->ref_count > 0)
+@@ -1091,6 +1099,9 @@ snd_pcm_sframes_t snd_pcm_lib_writev(struct snd_pcm_substream *substream,
+ snd_pcm_sframes_t snd_pcm_lib_readv(struct snd_pcm_substream *substream,
+ 				    void __user **bufs, snd_pcm_uframes_t frames);
+ 
++void snd_pcm_start_at_trigger(struct snd_pcm_substream *substream);
++void snd_pcm_start_at_cleanup(struct snd_pcm_substream *substream);
++
+ extern const struct snd_pcm_hw_constraint_list snd_pcm_known_rates;
+ 
+ int snd_pcm_limit_hw_rates(struct snd_pcm_runtime *runtime);
+diff --git a/include/uapi/sound/asound.h b/include/uapi/sound/asound.h
+index feb2da3..627c97a2 100644
+--- a/include/uapi/sound/asound.h
++++ b/include/uapi/sound/asound.h
+@@ -508,14 +508,6 @@ enum {
+ 	SNDRV_PCM_CLOCK_CLASS_LAST = SNDRV_PCM_CLOCK_CLASS_AUDIO,
+ };
+ 
+-struct snd_pcm_startat_state {
+-	int pending;			/* 0 or 1 */
+-	int clock_class;		/* SNDRV_PCM_CLOCK_CLASS_* */
+-	int clock_type;			/* SNDRV_PCM_TSTAMP_* or
+-					 * SNDRV_PCM_AUDIO_TSTAMP_TYPE_* */
+-	struct timespec start_time;
+-};
+-
+ struct snd_startat {
+ 	int clock_class;
+ 	int clock_type;
+diff --git a/sound/core/pcm.c b/sound/core/pcm.c
+index 6874dce..0426663 100644
+--- a/sound/core/pcm.c
++++ b/sound/core/pcm.c
+@@ -747,6 +747,7 @@ int snd_pcm_new_stream(struct snd_pcm *pcm, int stream, int substream_count)
+ 		INIT_LIST_HEAD(&substream->self_group.substreams);
+ 		list_add_tail(&substream->link_list, &substream->self_group.substreams);
+ 		atomic_set(&substream->mmap_count, 0);
++		init_waitqueue_head(&substream->start_at_wait);
+ 		prev = substream;
+ 	}
+ 	return 0;
+diff --git a/sound/core/pcm_native.c b/sound/core/pcm_native.c
+index 4bb2f29..d7dd74c 100644
+--- a/sound/core/pcm_native.c
++++ b/sound/core/pcm_native.c
+@@ -1061,64 +1061,36 @@ static struct action_ops snd_pcm_action_start = {
+ 	.post_action = snd_pcm_post_start
+ };
+ 
+-void snd_pcm_startat_register(struct snd_pcm_substream *substream,
+-	int clock_class, int clock_type, const struct timespec *start_time,
+-	void *data)
++void snd_pcm_start_at_cleanup(struct snd_pcm_substream *substream)
+ {
+-	struct snd_pcm_runtime *runtime = substream->runtime;
+-
+-	runtime->startat_state.pending = 1;
+-	runtime->startat_state.clock_class = clock_class;
+-	runtime->startat_state.clock_type = clock_type;
+-	runtime->startat_state.start_time = *start_time;
+-
+-	runtime->startat_data = data;
++	substream->start_at_pending = 0;
++	wake_up(&substream->start_at_wait);
+ }
+-EXPORT_SYMBOL(snd_pcm_startat_register);
++EXPORT_SYMBOL_GPL(snd_pcm_start_at_cleanup);
+ 
+-void snd_pcm_startat_unregister(struct snd_pcm_substream *substream)
++void snd_pcm_start_at_trigger(struct snd_pcm_substream *substream)
+ {
+-	struct snd_pcm_runtime *runtime = substream->runtime;
++	snd_pcm_stream_lock(substream);
+ 
+-	runtime->startat_state.pending = 0;
+-	runtime->startat_data = NULL;
+-}
+-EXPORT_SYMBOL(snd_pcm_startat_unregister);
++	if(substream->runtime->status->state == SNDRV_PCM_STATE_STARTING)
++		if(!snd_pcm_do_start(substream, SNDRV_PCM_STATE_RUNNING))
++			snd_pcm_post_start(substream, SNDRV_PCM_STATE_RUNNING);
+ 
+-#ifdef CONFIG_HIGH_RES_TIMERS
+-/*
+- * hrtimer interface
+- */
++	snd_pcm_start_at_cleanup(substream);
+ 
+-struct hrtimer_pcm {
+-	struct hrtimer timer;
+-	struct snd_pcm_substream *substream;
+-};
++	snd_pcm_stream_unlock(substream);
++}
++EXPORT_SYMBOL_GPL(snd_pcm_start_at_trigger);
+ 
+-enum hrtimer_restart snd_pcm_do_start_time(struct hrtimer *timer)
++#ifdef CONFIG_HIGH_RES_TIMERS
++static enum hrtimer_restart snd_pcm_do_start_time(struct hrtimer *timer)
+ {
+-	struct hrtimer_pcm *pcm_timer;
+ 	struct snd_pcm_substream *substream;
+-	int ret;
+-
+-	pcm_timer = container_of(timer, struct hrtimer_pcm, timer);
+-	substream = pcm_timer->substream;
+ 
+-	snd_pcm_stream_lock(substream);
+-
+-	/*
+-	 * Timer may have fired while substream was locked during
+-	 * timer cancellation. We need to recheck that we're still
+-	 * supposed to start.
+-	 */
+-	if (substream->runtime->startat_state.pending == 1) {
+-		snd_pcm_startat_unregister(substream);
+-		ret = snd_pcm_do_start(substream, SNDRV_PCM_STATE_RUNNING);
+-		if (ret == 0)
+-			snd_pcm_post_start(substream, SNDRV_PCM_STATE_RUNNING);
+-	}
++	substream = container_of(timer, struct snd_pcm_substream,
++					start_at_timer);
+ 
+-	snd_pcm_stream_unlock(substream);
++	snd_pcm_start_at_trigger(substream);
+ 
+ 	return HRTIMER_NORESTART;
+ }
+@@ -1128,9 +1100,7 @@ static int snd_pcm_startat_system(struct snd_pcm_substream *substream,
+ 	int clock_type, const struct timespec *start_time)
+ {
+ #ifdef CONFIG_HIGH_RES_TIMERS
+-	struct hrtimer_pcm *pcm_timer;
+ 	struct timespec now;
+-	int ret;
+ 	clockid_t clock;
+ 
+ 	switch (clock_type) {
+@@ -1150,50 +1120,21 @@ static int snd_pcm_startat_system(struct snd_pcm_substream *substream,
+ 	if (timespec_compare(&now, start_time) >= 0)
+ 		return -ETIME;
+ 
+-	/* Allocate a hrtimer to handle the start_at */
+-	pcm_timer = kmalloc(sizeof(*pcm_timer), GFP_KERNEL);
+-	if (!pcm_timer)
+-		return -ENOMEM;
+-
+-	hrtimer_init(&pcm_timer->timer, clock, HRTIMER_MODE_ABS);
+-
+-	/* Setup timer */
+-	pcm_timer->timer.function = snd_pcm_do_start_time;
+-	pcm_timer->substream = substream;
+-
+-	/* Store timer in runtime start_at info */
+-	snd_pcm_startat_register(substream, SNDRV_PCM_CLOCK_CLASS_SYSTEM,
+-		clock_type, start_time, pcm_timer);
+-
+-	/* Pre start */
+-	ret = snd_pcm_pre_start(substream, SNDRV_PCM_STATE_PREPARED);
+-	if (ret < 0)
+-		goto error;
+-
+-	ret = hrtimer_start(&pcm_timer->timer, timespec_to_ktime(*start_time),
+-				HRTIMER_MODE_ABS);
+-	if (ret < 0)
+-		goto error;
++	hrtimer_init(&substream->start_at_timer, clock, HRTIMER_MODE_ABS);
++	substream->start_at_timer.function = snd_pcm_do_start_time;
+ 
+-	return 0;
+-error:
+-	kfree(pcm_timer);
+-	return ret;
++	return hrtimer_start(&substream->start_at_timer,
++			timespec_to_ktime(*start_time), HRTIMER_MODE_ABS);
+ #else
+ 	return -ENOSYS;
+ #endif
+ }
+ 
+-static int snd_pcm_startat_system_cancel(struct snd_pcm_substream *substream)
++static void snd_pcm_startat_system_cancel(struct snd_pcm_substream *substream)
+ {
+ #ifdef CONFIG_HIGH_RES_TIMERS
+-	struct hrtimer_pcm *pcm_timer = substream->runtime->startat_data;
+-	hrtimer_cancel(&pcm_timer->timer);	/* Cancel existing timer */
+-	snd_pcm_startat_unregister(substream);
+-	kfree(pcm_timer);
+-	return 0;
+-#else
+-	return -ENOSYS;
++	if(hrtimer_try_to_cancel(&substream->start_at_timer) == 1)
++		snd_pcm_start_at_cleanup(substream);
+ #endif
+ }
+ 
+@@ -1207,37 +1148,13 @@ static int snd_pcm_startat_audio(struct snd_pcm_substream *substream,
+ 		return -ENOSYS;
+ }
+ 
+-static int snd_pcm_startat_audio_cancel(struct snd_pcm_substream *substream)
++static void snd_pcm_startat_audio_cancel(struct snd_pcm_substream *substream)
+ {
+ 	if (substream->ops->start_at_abort)
+-		return substream->ops->start_at_abort(substream);
+-	else
+-		return -ENOSYS;
+-}
+-
+-/* Must be called with stream locked */
+-static int snd_pcm_startat_cancel(struct snd_pcm_substream *substream)
+-{
+-	struct snd_pcm_runtime *runtime = substream->runtime;
+-	int ret = 0;
+-
+-	if (runtime->startat_state.pending == 0)
+-		return 0;
+-
+-	switch (runtime->startat_state.clock_class) {
+-	case SNDRV_PCM_CLOCK_CLASS_SYSTEM:
+-		ret = snd_pcm_startat_system_cancel(substream);
+-		break;
+-	case SNDRV_PCM_CLOCK_CLASS_AUDIO:
+-		ret = snd_pcm_startat_audio_cancel(substream);
+-		break;
+-	default:
+-		ret = -ENOSYS;
+-	}
+-	return ret;
++		substream->ops->start_at_abort(substream);
+ }
+ 
+-int snd_pcm_start_at(struct snd_pcm_substream *substream,
++static int snd_pcm_start_at(struct snd_pcm_substream *substream,
+ 	struct snd_startat *start_at)
+ {
+ 	int ret;
+@@ -1247,15 +1164,14 @@ int snd_pcm_start_at(struct snd_pcm_substream *substream,
+ 
+ 	snd_pcm_stream_lock(substream);
+ 
+-	if (substream->runtime->status->state != SNDRV_PCM_STATE_PREPARED) {
+-		ret = -EBADFD;
++	if(substream->start_at_pending) {
++		ret = -EBUSY;
+ 		goto end;
+ 	}
+ 
+-	if (substream->runtime->startat_state.pending == 1) {
+-		ret = -EINPROGRESS;
++	ret = snd_pcm_pre_start(substream, SNDRV_PCM_STATE_PREPARED);
++	if (ret < 0)
+ 		goto end;
+-	}
+ 
+ 	switch (start_at->clock_class) {
+ 	case SNDRV_PCM_CLOCK_CLASS_SYSTEM:
+@@ -1272,14 +1188,43 @@ int snd_pcm_start_at(struct snd_pcm_substream *substream,
+ 		ret = -EINVAL;
+ 	}
+ 
+-	if (ret == 0)
++	if (!ret) {
+ 		substream->runtime->status->state = SNDRV_PCM_STATE_STARTING;
++		substream->start_at_pending = true;
++		substream->start_at_clock_class = start_at->clock_class;
++	}
+ 
+ end:
+ 	snd_pcm_stream_unlock(substream);
+ 	return ret;
+ }
+ 
++static void snd_pcm_startat_cancel(struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++
++	if (runtime->status->state != SNDRV_PCM_STATE_STARTING)
++		return;
++
++	switch (substream->start_at_clock_class) {
++	case SNDRV_PCM_CLOCK_CLASS_SYSTEM:
++		snd_pcm_startat_system_cancel(substream);
++		break;
++	case SNDRV_PCM_CLOCK_CLASS_AUDIO:
++		snd_pcm_startat_audio_cancel(substream);
++		break;
++	default:
++		return;
++	}
++
++	runtime->status->state = SNDRV_PCM_STATE_SETUP;
++
++	wait_event_cmd(substream->start_at_wait,
++			!substream->start_at_pending,
++			snd_pcm_stream_unlock(substream),
++			snd_pcm_stream_lock(substream));
++}
++
+ int snd_pcm_start_at_user(struct snd_pcm_substream *substream,
+ 	struct snd_startat __user *_start_at_user)
+ {
+-- 
+1.9.1
+

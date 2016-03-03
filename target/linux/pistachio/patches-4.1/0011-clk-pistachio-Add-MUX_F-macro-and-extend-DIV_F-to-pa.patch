@@ -1,0 +1,167 @@
+From 1f228adb75338cec975d49d5487010019fc2135a Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Date: Thu, 21 May 2015 16:11:13 -0300
+Subject: [PATCH 011/153] clk: pistachio: Add MUX_F macro and extend DIV_F to
+ pass clk_flags as well
+
+As preparation work to support MIPS PLL rate change propagation, this
+commit extends the DIV_F macro and adds a MUX_F macro to pass clk_flags
+in addition to div_flags.
+
+Change-Id: I2ccaf3552b2c8ce1f5773328a5bd3e79c344af21
+Reviewed-by: Andrew Bresticker <abrestic@chromium.org>
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+---
+ drivers/clk/pistachio/clk-pistachio.c | 24 ++++++++++++------------
+ drivers/clk/pistachio/clk.c           |  5 +++--
+ drivers/clk/pistachio/clk.h           | 19 +++++++++++++++++--
+ 3 files changed, 32 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/clk/pistachio/clk-pistachio.c b/drivers/clk/pistachio/clk-pistachio.c
+index c4ceb5e..b6ad3ef 100644
+--- a/drivers/clk/pistachio/clk-pistachio.c
++++ b/drivers/clk/pistachio/clk-pistachio.c
+@@ -61,13 +61,13 @@ static struct pistachio_div pistachio_divs[] __initdata = {
+ 	    0x204, 2),
+ 	DIV(CLK_MIPS_DIV, "mips_div", "mips_internal_div", 0x208, 8),
+ 	DIV_F(CLK_AUDIO_DIV, "audio_div", "audio_mux",
+-		0x20c, 8, CLK_DIVIDER_ROUND_CLOSEST),
++		0x20c, 8, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_I2S_DIV, "i2s_div", "audio_pll_mux",
+-		0x210, 8, CLK_DIVIDER_ROUND_CLOSEST),
++		0x210, 8, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_SPDIF_DIV, "spdif_div", "audio_pll_mux",
+-		0x214, 8, CLK_DIVIDER_ROUND_CLOSEST),
++		0x214, 8, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_AUDIO_DAC_DIV, "audio_dac_div", "audio_pll_mux",
+-		0x218, 8, CLK_DIVIDER_ROUND_CLOSEST),
++		0x218, 8, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV(CLK_RPU_V_DIV, "rpu_v_div", "rpu_v_pll_mux", 0x21c, 2),
+ 	DIV(CLK_RPU_L_DIV, "rpu_l_div", "rpu_l_mux", 0x220, 2),
+ 	DIV(CLK_RPU_SLEEP_DIV, "rpu_sleep_div", "xtal", 0x224, 10),
+@@ -75,13 +75,13 @@ static struct pistachio_div pistachio_divs[] __initdata = {
+ 	DIV(CLK_USB_PHY_DIV, "usb_phy_div", "sys_internal_div", 0x22c, 6),
+ 	DIV(CLK_ENET_DIV, "enet_div", "enet_mux", 0x230, 6),
+ 	DIV_F(CLK_UART0_INTERNAL_DIV, "uart0_internal_div", "sys_pll_mux",
+-	      0x234, 3, CLK_DIVIDER_ROUND_CLOSEST),
++	      0x234, 3, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_UART0_DIV, "uart0_div", "uart0_internal_div", 0x238, 10,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_UART1_INTERNAL_DIV, "uart1_internal_div", "sys_pll_mux",
+-	      0x23c, 3, CLK_DIVIDER_ROUND_CLOSEST),
++	      0x23c, 3, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_UART1_DIV, "uart1_div", "uart1_internal_div", 0x240, 10,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV(CLK_SYS_INTERNAL_DIV, "sys_internal_div", "sys_pll_mux", 0x244, 3),
+ 	DIV(CLK_SPI0_INTERNAL_DIV, "spi0_internal_div", "sys_pll_mux",
+ 	    0x248, 3),
+@@ -232,13 +232,13 @@ static struct pistachio_div pistachio_periph_divs[] __initdata = {
+ 	DIV(PERIPH_CLK_COUNTER_SLOW_DIV, "counter_slow_div",
+ 	    "counter_slow_pre_div", 0x118, 7),
+ 	DIV_F(PERIPH_CLK_IR_PRE_DIV, "ir_pre_div", "periph_sys", 0x11c, 7,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_IR_DIV, "ir_div", "ir_pre_div", 0x120, 7,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_WD_PRE_DIV, "wd_pre_div", "periph_sys", 0x124, 7,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_WD_DIV, "wd_div", "wd_pre_div", 0x128, 7,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV(PERIPH_CLK_PDM_PRE_DIV, "pdm_pre_div", "periph_sys", 0x12c, 7),
+ 	DIV(PERIPH_CLK_PDM_DIV, "pdm_div", "pdm_pre_div", 0x130, 7),
+ 	DIV(PERIPH_CLK_PWM_PRE_DIV, "pwm_pre_div", "periph_sys", 0x134, 7),
+diff --git a/drivers/clk/pistachio/clk.c b/drivers/clk/pistachio/clk.c
+index 85faa83..c9228e3 100644
+--- a/drivers/clk/pistachio/clk.c
++++ b/drivers/clk/pistachio/clk.c
+@@ -82,7 +82,7 @@ void pistachio_clk_register_mux(struct pistachio_clk_provider *p,
+ 	for (i = 0; i < num; i++) {
+ 		clk = clk_register_mux(NULL, mux[i].name, mux[i].parents,
+ 				       mux[i].num_parents,
+-				       CLK_SET_RATE_NO_REPARENT,
++				       mux[i].clk_flags,
+ 				       p->base + mux[i].reg, mux[i].shift,
+ 				       get_count_order(mux[i].num_parents),
+ 				       0, NULL);
+@@ -99,7 +99,8 @@ void pistachio_clk_register_div(struct pistachio_clk_provider *p,
+ 
+ 	for (i = 0; i < num; i++) {
+ 		clk = clk_register_divider(NULL, div[i].name, div[i].parent,
+-					   0, p->base + div[i].reg, 0,
++					   div[i].clk_flags,
++					   p->base + div[i].reg, 0,
+ 					   div[i].width, div[i].div_flags,
+ 					   NULL);
+ 		p->clk_data.clks[div[i].id] = clk;
+diff --git a/drivers/clk/pistachio/clk.h b/drivers/clk/pistachio/clk.h
+index ea48d15..249aa24 100644
+--- a/drivers/clk/pistachio/clk.h
++++ b/drivers/clk/pistachio/clk.h
+@@ -32,6 +32,7 @@ struct pistachio_mux {
+ 	unsigned int id;
+ 	unsigned long reg;
+ 	unsigned int shift;
++	unsigned int clk_flags;
+ 	unsigned int num_parents;
+ 	const char *name;
+ 	const char **parents;
+@@ -44,16 +45,28 @@ struct pistachio_mux {
+ 		.id		= _id,				\
+ 		.reg		= _reg,				\
+ 		.shift		= _shift,			\
++		.clk_flags      = CLK_SET_RATE_NO_REPARENT,     \
+ 		.name		= _name,			\
+ 		.parents	= _pnames,			\
+ 		.num_parents	= ARRAY_SIZE(_pnames)		\
+ 	}
+ 
++#define MUX_F(_id, _name, _pnames, _reg, _shift, _clkf)		\
++	{							\
++		.id             = _id,				\
++		.reg            = _reg,				\
++		.shift          = _shift,			\
++		.name           = _name,			\
++		.parents        = _pnames,			\
++		.num_parents    = ARRAY_SIZE(_pnames),		\
++		.clk_flags      = _clkf,			\
++	}
+ 
+ struct pistachio_div {
+ 	unsigned int id;
+ 	unsigned long reg;
+ 	unsigned int width;
++	unsigned int clk_flags;
+ 	unsigned int div_flags;
+ 	const char *name;
+ 	const char *parent;
+@@ -64,17 +77,19 @@ struct pistachio_div {
+ 		.id		= _id,				\
+ 		.reg		= _reg,				\
+ 		.width		= _width,			\
++		.clk_flags	= 0,				\
+ 		.div_flags	= 0,				\
+ 		.name		= _name,			\
+ 		.parent		= _pname,			\
+ 	}
+ 
+-#define DIV_F(_id, _name, _pname, _reg, _width, _div_flags)	\
++#define DIV_F(_id, _name, _pname, _reg, _width, _clkf, _divf)	\
+ 	{							\
+ 		.id		= _id,				\
+ 		.reg		= _reg,				\
+ 		.width		= _width,			\
+-		.div_flags	= _div_flags,			\
++		.clk_flags	= _clkf,			\
++		.div_flags	= _divf,			\
+ 		.name		= _name,			\
+ 		.parent		= _pname,			\
+ 	}
+-- 
+1.9.1
+

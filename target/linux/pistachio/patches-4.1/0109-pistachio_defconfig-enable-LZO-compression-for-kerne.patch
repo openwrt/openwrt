@@ -1,0 +1,30 @@
+From 6a7ae308089303532fc9d69704017f1806907919 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Wed, 25 Nov 2015 14:49:07 +0530
+Subject: [PATCH 109/153] pistachio_defconfig: enable LZO compression for
+ kernel
+
+Enabling compression reduces image size and inturn is reducing
+boot time for nand boot
+
+Change-Id: I6fca975d9636146b608c0a48e0b22f78f7529351
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index fc287d0..28d914a 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -9,6 +9,7 @@ CONFIG_ZSMALLOC=y
+ CONFIG_NR_CPUS=4
+ CONFIG_PREEMPT_VOLUNTARY=y
+ # CONFIG_LOCALVERSION_AUTO is not set
++CONFIG_KERNEL_LZO=y
+ CONFIG_DEFAULT_HOSTNAME="localhost"
+ CONFIG_SYSVIPC=y
+ CONFIG_NO_HZ=y
+-- 
+1.9.1
+

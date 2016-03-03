@@ -1,0 +1,31 @@
+From 2a4003e9589faa9da0136160acbf203a717735f8 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Mon, 8 Feb 2016 16:38:53 +0000
+Subject: [PATCH 143/153] rtc: pistachio: remove __init for probe
+
+__init should be used for module init not for probe
+this will cause section mismatch warning since probe is
+not part of the init section.
+
+Change-Id: I8c0f7ddfcbda7f6e5fea71ffab22724d1baa2abb
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/rtc/rtc-pistachio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/rtc/rtc-pistachio.c b/drivers/rtc/rtc-pistachio.c
+index 1ebbcc8..8d8794f 100644
+--- a/drivers/rtc/rtc-pistachio.c
++++ b/drivers/rtc/rtc-pistachio.c
+@@ -315,7 +315,7 @@ static irqreturn_t pistachio_alarm_handler(int irq, void *dev)
+ 	return IRQ_HANDLED;
+ }
+ 
+-static int __init pistachio_rtc_probe(struct platform_device *pdev)
++static int pistachio_rtc_probe(struct platform_device *pdev)
+ {
+ 	struct pistachio_rtc *priv;
+ 	struct regmap *periph_regs;
+-- 
+1.9.1
+

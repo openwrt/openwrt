@@ -1,0 +1,27 @@
+From 5e8c9c70dda221cbde80386390ec62d59700315a Mon Sep 17 00:00:00 2001
+From: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+Date: Mon, 14 Dec 2015 13:48:18 +0530
+Subject: [PATCH 122/153] linux/pistachio_defconfig :
+ CONFIG_MAC80211_RC_MINSTREL_VHT=y
+
+Enable VHT rates in minstrel algorithm. This is required so wireless
+driver can use higher rates.
+
+Change-Id: I6ddcd7dc84bf2699b461f44d9c28b548b443c536
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index aba4a97..d0ed232 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -409,3 +409,4 @@ CONFIG_CMA_SIZE_SEL_MBYTES=y
+ CONFIG_CMA_ALIGNMENT=8
+ CONFIG_CMA=y
+ CONFIG_CMA_AREAS=7
++CONFIG_MAC80211_RC_MINSTREL_VHT=y
+-- 
+1.9.1
+

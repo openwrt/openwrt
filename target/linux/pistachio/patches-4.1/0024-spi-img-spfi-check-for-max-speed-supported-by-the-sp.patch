@@ -1,0 +1,91 @@
+From 7b46210ba8ca11936bdbf96626c3311e5f0d7cc6 Mon Sep 17 00:00:00 2001
+From: Sifan Naeem <sifan.naeem@imgtec.com>
+Date: Wed, 17 Jun 2015 18:13:39 +0100
+Subject: [PATCH 024/153] spi: img-spfi: check for max speed supported by the
+ spfi block
+
+Maximum speed supported by spfi is limited to 1/4 of the spfi clock.
+
+But in some SoCs the maximum speed supported by the spfi block can
+be limited to less than 1/4 of the spfi clock. In such cases we have
+to define the limit in the device tree so that the driver can pick
+it up.
+
+Change-Id: I0397e46c4742d457d5d089095bd0ff3a715a7745
+Signed-off-by: Sifan Naeem <sifan.naeem@imgtec.com>
+---
+ Documentation/devicetree/bindings/spi/spi-img-spfi.txt |  1 +
+ arch/mips/boot/dts/pistachio/pistachio.dtsi            |  4 ++--
+ drivers/spi/spi-img-spfi.c                             | 15 +++++++++++++++
+ 3 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/spi/spi-img-spfi.txt b/Documentation/devicetree/bindings/spi/spi-img-spfi.txt
+index e02fbf1..494db60 100644
+--- a/Documentation/devicetree/bindings/spi/spi-img-spfi.txt
++++ b/Documentation/devicetree/bindings/spi/spi-img-spfi.txt
+@@ -21,6 +21,7 @@ Required properties:
+ Optional properties:
+ - img,supports-quad-mode: Should be set if the interface supports quad mode
+   SPI transfers.
++- spfi-max-frequency: Maximum speed supported by the spfi block.
+ 
+ Example:
+ 
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index a5a68e6..e561c38 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -245,7 +245,7 @@
+ 		clock-names = "sys", "spfi";
+ 		dmas = <&mdc 9 0xffffffff 0>, <&mdc 10 0xffffffff 0>;
+ 		dma-names = "rx", "tx";
+-		spi-max-frequency = <50000000>;
++		spfi-max-frequency = <50000000>;
+ 		status = "disabled";
+ 
+ 		#address-cells = <1>;
+@@ -261,7 +261,7 @@
+ 		dmas = <&mdc 1 0xffffffff 0>, <&mdc 2 0xffffffff 0>;
+ 		dma-names = "rx", "tx";
+ 		img,supports-quad-mode;
+-		spi-max-frequency = <50000000>;
++		spfi-max-frequency = <50000000>;
+ 		status = "disabled";
+ 
+ 		#address-cells = <1>;
+diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
+index bb916c8..417d9cf 100644
+--- a/drivers/spi/spi-img-spfi.c
++++ b/drivers/spi/spi-img-spfi.c
+@@ -581,6 +581,7 @@ static int img_spfi_probe(struct platform_device *pdev)
+ 	struct img_spfi *spfi;
+ 	struct resource *res;
+ 	int ret;
++	u32 max_speed_hz;
+ 
+ 	master = spi_alloc_master(&pdev->dev, sizeof(*spfi));
+ 	if (!master)
+@@ -645,6 +646,20 @@ static int img_spfi_probe(struct platform_device *pdev)
+ 	master->max_speed_hz = clk_get_rate(spfi->spfi_clk) / 4;
+ 	master->min_speed_hz = clk_get_rate(spfi->spfi_clk) / 512;
+ 
++	/*
++	 * Maximum speed supported by spfi is limited to the lower value
++	 * between 1/4 of the SPFI clock or to "spfi-max-frequency"
++	 * defined in the device tree.
++	 * If no value is defined in the device tree assume the maximum
++	 * speed supported to be 1/4 of the SPFI clock.
++	 */
++	if (!of_property_read_u32(spfi->dev->of_node, "spfi-max-frequency",
++				  &max_speed_hz))
++	{
++		if (master->max_speed_hz > max_speed_hz)
++			master->max_speed_hz = max_speed_hz;
++	}
++
+ 	master->setup = img_spfi_setup;
+ 	master->cleanup = img_spfi_cleanup;
+ 	master->transfer_one = img_spfi_transfer_one;
+-- 
+1.9.1
+

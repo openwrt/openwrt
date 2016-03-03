@@ -1,0 +1,31 @@
+From d80ffa64fd046c235b3cc76a8f6d8f5f81cd3ea8 Mon Sep 17 00:00:00 2001
+From: Abhijit Mahajani <Abhijit.Mahajani@imgtec.com>
+Date: Mon, 2 Nov 2015 15:34:02 +0530
+Subject: [PATCH 094/153] pistachio.dtsi: corrected mfio86 function definition
+
+upstream commit 7166d82a84a8e877fdc3af3d0bc096334d8c05ec has changed
+mfio86 function definition to reg_lock_rpu_l_pll
+
+Change-Id: I4bacaed62d497d3aa998d9485ca277505a3a7e2e
+Signed-off-by: Abhijit Mahajani <Abhijit.Mahajani@imgtec.com>
+Signed-off-by: Neha Bairathi <Neha.Bairathi@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 5840529..3e4cf3c 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -815,7 +815,7 @@
+ 		usb_pwr_on_pins: usb-pwr-on-pins {
+ 			usb-pwr-on {
+ 				pins = "mfio86";
+-				function = "bt_pll_lock";
++				function = "rpu_l_pll_lock";
+ 			};
+ 		};
+ 
+-- 
+1.9.1
+

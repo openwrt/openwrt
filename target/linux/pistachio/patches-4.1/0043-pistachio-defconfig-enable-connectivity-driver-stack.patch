@@ -1,0 +1,31 @@
+From 2d6ec391c761e8b9a088fa09e8a723b1a8d6b28b Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Mon, 27 Jul 2015 15:44:58 +0100
+Subject: [PATCH 043/153] pistachio: defconfig: enable connectivity driver
+ stack
+
+Build img-connectivity, img-hostport and img-bt as modules by default.
+
+BUG=none
+TEST=compared to upstream using 'make savedefconfig'
+
+Change-Id: Iae3a6b491a1e667c93615090aeee9ad26f0e9a12
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 28c7240..cc91a03 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -382,3 +382,6 @@ CONFIG_BT_RFCOMM=y
+ CONFIG_BT_RFCOMM_TTY=y
+ CONFIG_UCCP420WLAN=m
+ CONFIG_CRYPTO_DEV_IMGTEC_HASH=y
++CONFIG_BT_HCIUART_H4=y
++CONFIG_BT_IMG=m
++CONFIG_SOC_IMG=y
+-- 
+1.9.1
+

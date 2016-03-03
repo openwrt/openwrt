@@ -1,0 +1,27 @@
+From 4cf9141421546807d9e2002bffeca4d3510d11fa Mon Sep 17 00:00:00 2001
+From: James Hartley <james.hartley@imgtec.com>
+Date: Mon, 6 Jul 2015 18:52:23 +0100
+Subject: [PATCH 034/153] crypto: Enable the hash accelerator by default
+
+The hash accelerator is not currently enabled by default, but
+there is no reason not to do this.  Amend the defconfig to
+enable it.
+
+Change-Id: I105125bf7021566aa248a9da180bde8bbf8d7296
+Signed-off-by: James Hartley <james.hartley@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 5a43466..d3bfd8d 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -367,3 +367,4 @@ CONFIG_BT_HIDP=y
+ CONFIG_BT_RFCOMM=y
+ CONFIG_BT_RFCOMM_TTY=y
+ CONFIG_UCCP420WLAN=m
++CONFIG_CRYPTO_DEV_IMGTEC_HASH=y
+-- 
+1.9.1
+

@@ -1,0 +1,46 @@
+From 0d043ba74a213d3cd23620b8e069c9ceb94f849d Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Wed, 11 Nov 2015 09:55:00 +0000
+Subject: [PATCH 107/153] Pistachio: HACK: PM-SUSPEND: Gate audio clocks
+
+This is a workaround to gate audio clocks left on by audio driver.
+However this would be taken care with audio PM solution.
+
+*Note*:
+To be reverted with audio PM solution merge.
+
+Change-Id: I0334e260449094d5898e5763ac243258507f2959
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ arch/mips/pistachio/pm.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/mips/pistachio/pm.c b/arch/mips/pistachio/pm.c
+index 206c6bb..33b2ce8 100644
+--- a/arch/mips/pistachio/pm.c
++++ b/arch/mips/pistachio/pm.c
+@@ -44,6 +44,10 @@ static int pistachio_pm_enter(suspend_state_t state)
+ {
+ 	local_flush_tlb_all();
+ 
++	/* AUDIO Workaround: Gate audio clocks. */
++	clear_bit(2, (void __iomem *)CR_TOP_MIPS_CLOCK_GATE);
++	clear_bit(22, (void __iomem *)CR_TOP_MIPS_CLOCK_GATE);
++
+ 	if (!pistachio_suspend_in_sram_fn) {
+ 		/*
+ 		 * Disable MIPS clock, this is only clock gating not power gating.
+@@ -73,6 +77,10 @@ static int pistachio_pm_enter(suspend_state_t state)
+ 		pistachio_suspend_in_sram_fn();
+ 	}
+ 
++	/* AUDIO Workaround: Enable Audio clks. */
++	set_bit(2, (void __iomem *)CR_TOP_MIPS_CLOCK_GATE);
++	set_bit(22, (void __iomem *)CR_TOP_MIPS_CLOCK_GATE);
++
+ 	return 0;
+ }
+ 
+-- 
+1.9.1
+

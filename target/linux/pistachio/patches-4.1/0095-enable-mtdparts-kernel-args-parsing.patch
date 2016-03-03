@@ -1,0 +1,26 @@
+From 703892f4229aec4834eda602427804317629d5d7 Mon Sep 17 00:00:00 2001
+From: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
+Date: Mon, 2 Nov 2015 13:01:20 +0530
+Subject: [PATCH 095/153] enable mtdparts kernel args parsing
+
+Change-Id: I335ab3afb87e77947f7f911065febcd1df803299
+Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 7938ddf..5b0ea7e 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -154,6 +154,7 @@ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_DEBUG_DEVRES=y
+ CONFIG_CONNECTOR=y
+ CONFIG_MTD=y
++CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_M25P80=y
+ CONFIG_MTD_SPI_NAND=y
+-- 
+1.9.1
+

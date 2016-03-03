@@ -1,0 +1,33 @@
+From 897203679e378625f7b932f36dbe3defbae91a02 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Thu, 26 Nov 2015 17:29:39 +0000
+Subject: [PATCH 118/153] clocksource: pistachio: remove clock-source as valid
+ in suspend path
+
+The clock source from timer0 is advertising that it is valid in the
+suspend path, but it is not as it could overflow.
+After a resume we sync with the RTC.
+
+Change-Id: Id3a886afb8930f67b1395787139f7722d2c901df
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/clocksource/time-pistachio.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/clocksource/time-pistachio.c b/drivers/clocksource/time-pistachio.c
+index 18d52ec..a29a093 100644
+--- a/drivers/clocksource/time-pistachio.c
++++ b/drivers/clocksource/time-pistachio.c
+@@ -121,8 +121,7 @@ static struct clocksource pistachio_clocksource_gpt = {
+ 	.disable	= pistachio_clocksource_disable,
+ 	.read		= pistachio_clocksource_read_cycles,
+ 	.mask		= CLOCKSOURCE_MASK(32),
+-	.flags		= CLOCK_SOURCE_IS_CONTINUOUS |
+-			  CLOCK_SOURCE_SUSPEND_NONSTOP,
++	.flags		= CLOCK_SOURCE_IS_CONTINUOUS,
+ };
+ 
+ static void __init pistachio_clksrc_of_init(struct device_node *node)
+-- 
+1.9.1
+

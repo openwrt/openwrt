@@ -1,0 +1,3302 @@
+From 79dee288361341cf018fa55a48b46ea57943f720 Mon Sep 17 00:00:00 2001
+From: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+Date: Fri, 30 Oct 2015 16:57:36 +0530
+Subject: [PATCH 090/153] uccp420wlan: Fix and Enhancement
+
+This commit has the following changes:
+
+1) Fixed a connectivity issue with WEP shared key.
+Authentication used to timeout when security mode was configured as
+WEP-Shared Key. This has been currently resolved by advertising
+IEEE80211_HW_REPORTS_TX_ACK_STATUS to
+mac80211(which effectively increases the authentication timeout to 500ms).
+
+2) Increased AP peer limit to 14.
+Previously this used to be 2. Each peer entry takes up some memory in the
+RPU and currently Danube can support upto 14 AP peers (considering an
+additional entry for STA interface peer).
+
+3) Included P2P + ROC changes
+
+4) Fix for Ping failure when RoC is in progress (STA Connected, Listen Channel != STA-VIF channel). (bug #6491)
+
+5) Fix for issue where softAP connection lost on performing 'iw scan' (PRB01634)
+
+6) Included temporary workaround for StreamSync issue
+
+7) Updated driver to allow setting rf_params from /proc interface in non-production mode
+
+Change-Id: Ia5f7c3558996ef55dfda57d4684a0e87622288a2
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+---
+ drivers/net/wireless/uccp420wlan/inc/core.h        |   73 +-
+ .../net/wireless/uccp420wlan/inc/host_umac_if.h    |   43 +-
+ drivers/net/wireless/uccp420wlan/inc/umac_if.h     |    5 +-
+ drivers/net/wireless/uccp420wlan/inc/version.h     |    2 +-
+ drivers/net/wireless/uccp420wlan/src/80211_if.c    |  618 ++++++-----
+ drivers/net/wireless/uccp420wlan/src/core.c        |  223 ++--
+ drivers/net/wireless/uccp420wlan/src/tx.c          | 1121 +++++++++++++-------
+ drivers/net/wireless/uccp420wlan/src/umac_if.c     |   67 +-
+ 8 files changed, 1317 insertions(+), 835 deletions(-)
+
+diff --git a/drivers/net/wireless/uccp420wlan/inc/core.h b/drivers/net/wireless/uccp420wlan/inc/core.h
+index abb9fa3..fd04cae 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/core.h
++++ b/drivers/net/wireless/uccp420wlan/inc/core.h
+@@ -88,7 +88,8 @@ extern spinlock_t tsf_lock;
+ #define TX_COMPLETE_TIMEOUT_TICKS msecs_to_jiffies(TX_COMPLETE_TIMEOUT)
+ #define SCAN_ABORT_TIMEOUT 1000
+ #define SCAN_ABORT_TIMEOUT_TICKS msecs_to_jiffies(SCAN_ABORT_TIMEOUT)
+-
++#define CANCEL_HW_ROC_TIMEOUT 1000
++#define CANCEL_HW_ROC_TIMEOUT_TICKS msecs_to_jiffies(CANCEL_HW_ROC_TIMEOUT)
+ 
+ #define DEFAULT_TX_ANT_SELECT 3 /* bitmap of antennas for tx, 3=> both first and
+ 				 * second antenna to be used
+@@ -202,6 +203,7 @@ struct wifi_params {
+ 	int payload_length;
+ 	int start_prod_mode;
+ 	int init_prod;
++	unsigned char bypass_vpd;
+ };
+ 
+ struct cmd_send_recv_cnt {
+@@ -334,6 +336,10 @@ struct wifi_stats {
+ 	unsigned int cts_received_mcp_cnt;
+ 
+ 	/*MAC Stats*/
++	unsigned int roc_start;
++	unsigned int roc_stop;
++	unsigned int roc_complete;
++	unsigned int roc_stop_complete;
+ 	/* TX related */
+ 	unsigned int tx_cmd_cnt; /* Num of TX commands received from host */
+ 	unsigned int tx_done_cnt; /* Num of Tx done events sent to host */
+@@ -388,10 +394,12 @@ struct tx_pkt_info {
+ 	struct sk_buff_head pkt;
+ 	unsigned int hdr_len;
+ 	unsigned int queue;
++	unsigned int vif_index;
+ 	unsigned int rate[4];
+ 	unsigned int retries[4];
+ 	unsigned int curr_retries;
+ 	unsigned int max_retries;
++	int roc_peer_id;
+ 	bool adjusted_rates;
+ };
+ 
+@@ -410,11 +418,13 @@ struct tx_config {
+ 	unsigned int next_spare_token_ac;
+ 
+ 	/* Used to store the address of pending skbs per ac */
+-	struct sk_buff_head pending_pkt[MAX_PEND_Q_PER_AC][NUM_ACS];
++	struct sk_buff_head pending_pkt[MAX_UMAC_VIF_CHANCTX_TYPES]
++				       [MAX_PEND_Q_PER_AC]
++				       [NUM_ACS];
+ 
+ #ifdef MULTI_CHAN_SUPPORT
+ 	/* Peer which has the opportunity to xmit next on a queue */
+-	unsigned int curr_peer_opp[MAX_CHANCTX][NUM_ACS];
++	unsigned int curr_peer_opp[MAX_CHANCTX + MAX_OFF_CHANCTX][NUM_ACS];
+ #else
+ 	unsigned int curr_peer_opp[NUM_ACS];
+ #endif
+@@ -423,8 +433,9 @@ struct tx_config {
+ 	 * it will be used in tx complete.
+ 	 */
+ #ifdef MULTI_CHAN_SUPPORT
+-	unsigned char desc_chan_map[NUM_TX_DESCS];
+-	struct tx_pkt_info pkt_info[MAX_CHANCTX][NUM_TX_DESCS];
++	int desc_chan_map[NUM_TX_DESCS];
++	struct tx_pkt_info pkt_info[MAX_CHANCTX + MAX_OFF_CHANCTX]
++				   [NUM_TX_DESCS];
+ #else
+ 	struct tx_pkt_info pkt_info[NUM_TX_DESCS];
+ #endif
+@@ -462,17 +473,17 @@ struct econ_ps_cfg_status {
+ #endif
+ 
+ struct current_channel {
++	unsigned int pri_chnl_num;
+ 	unsigned int center_freq1;
+ 	unsigned int center_freq2;
+ 	unsigned int freq_band;
+ 	unsigned int ch_width;
+-	unsigned int pri_chnl_num;
+ };
+ 
+ struct roc_params {
+ 	unsigned char roc_in_progress;
+-	unsigned char roc_ps_changed;
+-	unsigned char roc_chan_changed;
++	unsigned int roc_type;
++	bool need_offchan;
+ 	atomic_t roc_mgmt_tx_count;
+ };
+ 
+@@ -480,11 +491,12 @@ struct mac80211_dev {
+ 	struct proc_dir_entry *umac_proc_dir_entry;
+ 	struct device *dev;
+ 	struct mac_address if_mac_addresses[MAX_VIFS];
++	unsigned int current_vif_count;
+ 	unsigned int active_vifs;
+ 	struct mutex mutex;
+ 	int state;
+ 	int txpower;
+-	unsigned char	mc_filters[MCST_ADDR_LIMIT][6];
++	unsigned char mc_filters[MCST_ADDR_LIMIT][6];
+ 	int mc_filter_count;
+ 
+ 	struct tasklet_struct proc_tx_tasklet;
+@@ -504,6 +516,8 @@ struct mac80211_dev {
+ 	struct wifi_stats  *stats;
+ 	char name[20];
+ 	char scan_abort_done;
++	char cancel_hw_roc_done;
++	char cancel_roc;
+ 	char chan_prog_done;
+ 	char reset_complete;
+ 	int power_save; /* Will be set only when a single VIF in
+@@ -517,12 +531,15 @@ struct mac80211_dev {
+ 				* when transmitting bcast frames in AP in IBSS
+ 				* modes
+ 				*/
++	spinlock_t roc_lock;
+ 	unsigned char tx_antenna;
+ 	unsigned char tx_last_beacon;
+ 	unsigned int rts_threshold;
+ #ifdef MULTI_CHAN_SUPPORT
+ 	spinlock_t chanctx_lock;
+ 	struct ieee80211_chanctx_conf *chanctx[MAX_CHANCTX];
++	struct umac_chanctx *off_chanctx[MAX_OFF_CHANCTX];
++	int roc_off_chanctx_idx;
+ 	int curr_chanctx_idx;
+ 	int num_active_chanctx;
+ #endif
+@@ -564,6 +581,7 @@ struct umac_vif {
+ #ifdef MULTI_CHAN_SUPPORT
+ 	struct list_head list;
+ 	struct umac_chanctx *chanctx;
++	struct umac_chanctx *off_chanctx;
+ #endif
+ };
+ 
+@@ -585,15 +603,23 @@ struct umac_chanctx {
+ 
+ #endif
+ 
++struct curr_peer_info {
++	int id;
++	int op_chan_idx;
++};
++
+ 
+-extern int wait_for_scan_abort(struct mac80211_dev *dev);
+-extern int wait_for_channel_prog_complete(struct mac80211_dev *dev);
+-extern int uccp420wlan_prog_nw_selection(unsigned int nw_select_enabled,
+-					 unsigned char *mac_addr);
+ #ifdef MULTI_CHAN_SUPPORT
+ void uccp420wlan_proc_ch_sw_event(struct umac_event_ch_switch *ch_sw_info,
+ 				  void *context);
+ #endif
++extern int wait_for_cancel_hw_roc(struct mac80211_dev *dev);
++extern int wait_for_scan_abort(struct mac80211_dev *dev);
++extern int wait_for_channel_prog_complete(struct mac80211_dev *dev);
++extern int wait_for_tx_queue_flush_complete(struct mac80211_dev *dev,
++					    unsigned int token);
++extern int uccp420wlan_prog_nw_selection(unsigned int nw_select_enabled,
++					 unsigned char *mac_addr);
+ extern int  uccp420wlan_core_init(struct mac80211_dev *dev, unsigned int ftm);
+ extern void uccp420wlan_core_deinit(struct mac80211_dev *dev, unsigned int ftm);
+ extern void uccp420wlan_vif_add(struct umac_vif  *uvif);
+@@ -622,30 +648,43 @@ extern int __uccp420wlan_tx_frame(struct mac80211_dev *dev,
+ 				  bool retry);
+ extern void uccp420wlan_tx_init(struct mac80211_dev *dev);
+ extern void uccp420wlan_tx_deinit(struct mac80211_dev *dev);
+-
++void uccp420wlan_tx_proc_send_pend_frms_all(struct mac80211_dev *dev,
++					   int chan_id);
+ extern void proc_bss_info_changed(unsigned char *mac_addr, int value);
+ extern void packet_generation(unsigned long data);
+ extern int wait_for_reset_complete(struct mac80211_dev *dev);
+ 
+-extern void uccp420wlan_tx_proc_pend_frms(struct mac80211_dev *dev,
++extern int uccp420wlan_tx_proc_pend_frms(struct mac80211_dev *dev,
+ 				   int queue,
+ #ifdef MULTI_CHAN_SUPPORT
+ 				   int curr_chanctx_idx,
+ #endif
+-				   int peer_id,
+ 				   int token_id);
+-int get_curr_peer_opp(struct mac80211_dev *dev,
++void free_token(struct mac80211_dev *dev,
++		int token_id,
++		int queue);
++
++struct curr_peer_info get_curr_peer_opp(struct mac80211_dev *dev,
+ #ifdef MULTI_CHAN_SUPPORT
+ 		      int curr_chanctx_idx,
+ #endif
+ 		      int queue);
+ 
++int uccp420_flush_vif_queues(struct mac80211_dev *dev,
++			     struct umac_vif *uvif,
++			     int chanctx_idx,
++			     unsigned int hw_queue_map,
++			     enum UMAC_VIF_CHANCTX_TYPE vif_chanctx_type);
++
+ /* Beacon TimeStamp */
+ __s32 __attribute__((weak)) frc_to_atu(__u32 frccnt, __u64 *patu, s32 dir);
+ int __attribute__((weak)) get_evt_timer_freq(unsigned int *mask,
+ 						unsigned int *num,
+ 						unsigned int *denom);
+ 
++int tx_queue_map(int queue);
++int tx_queue_unmap(int queue);
++
+ extern unsigned char *rf_params_vpd;
+ extern int num_streams_vpd;
+ 
+diff --git a/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h b/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h
+index c142450..0d7eb63 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h
++++ b/drivers/net/wireless/uccp420wlan/inc/host_umac_if.h
+@@ -33,14 +33,16 @@
+ #define MAX_KEY_LEN 16
+ #define MAX_VIFS 2
+ 
+-#define MAX_PEERS 3
++#define MAX_PEERS 15
+ /* Additional queue for unicast frames directed to non-associated peers (for
+  * e.g. Probe Responses etc)
+  */
+ #define MAX_PEND_Q_PER_AC (MAX_PEERS + MAX_VIFS)
+ 
+ #ifdef MULTI_CHAN_SUPPORT
+-#define MAX_CHANCTX 2
++#define MAX_CHANCTX MAX_VIFS
++#define MAX_OFF_CHANCTX MAX_VIFS
++#define OFF_CHANCTX_IDX_BASE MAX_CHANCTX
+ #endif
+ 
+ #define WEP40_KEYLEN 5
+@@ -95,6 +97,20 @@ enum UMAC_QUEUE_NUM {
+ 	WLAN_AC_MAX_CNT
+ };
+ 
++
++enum UMAC_EVENT_ROC_STAT {
++	UMAC_ROC_STAT_STARTED,
++	UMAC_ROC_STAT_STOPPED,
++	UMAC_ROC_STAT_DONE,
++	UMAC_ROC_STAT_ABORTED
++};
++
++enum UMAC_VIF_CHANCTX_TYPE {
++	UMAC_VIF_CHANCTX_TYPE_OPER,
++	UMAC_VIF_CHANCTX_TYPE_OFF,
++	MAX_UMAC_VIF_CHANCTX_TYPES
++};
++
+ struct umac_event_tx_done {
+ 	struct host_mac_msg_hdr hdr;
+ 
+@@ -114,6 +130,7 @@ struct umac_event_tx_done {
+ #ifdef MULTI_CHAN_SUPPORT
+ #define TX_DONE_STAT_DISCARD_CHSW (6)
+ #endif
++#define TX_DONE_STAT_DISCARD_OP_TX (7)
+ 	unsigned char frm_status[MAX_TX_CMDS];
+ 	unsigned char retries_num[MAX_TX_CMDS];
+ 	/* rate = Units of 500 Kbps or mcs index = 0 to 7*/
+@@ -231,6 +248,10 @@ struct umac_event_mib_stats {
+ 
+ struct umac_event_mac_stats {
+ 	struct host_mac_msg_hdr hdr;
++	unsigned int roc_start;
++	unsigned int roc_stop;
++	unsigned int roc_complete;
++	unsigned int roc_stop_complete;
+ 	/* TX related */
+ 	unsigned int tx_cmd_cnt; /* Num of TX commands received from host */
+ 	unsigned int tx_done_cnt; /* Num of Tx done events sent to host */
+@@ -409,6 +430,7 @@ enum UMAC_EVENT_TAG {
+ 	UMAC_EVENT_RF_CALIB_DATA,
+ 	UMAC_EVENT_RADAR_DETECTED,
+ 	UMAC_EVENT_MSRMNT_COMPLETE,
++	UMAC_EVENT_ROC_STATUS,
+ #ifdef MULTI_CHAN_SUPPORT
+ 	UMAC_EVENT_CHAN_SWITCH,
+ #endif
+@@ -424,6 +446,9 @@ enum CONNECT_RESULT_TAG {
+ 	CONNECT_START_IBSS
+ };
+ 
++enum UMAC_TX_FLAGS {
++	UMAC_TX_FLAG_OFFCHAN_FRM
++};
+ 
+ /* Commands */
+ struct cmd_tx_ctrl {
+@@ -449,6 +474,9 @@ struct cmd_tx_ctrl {
+ 	 */
+ 	unsigned int force_tx;
+ 
++	/* Flags to communicate special cases regarding the frame to the FW */
++	unsigned int tx_flags;
++
+ 	unsigned char num_rates;
+ 
+ #define USE_PROTECTION_NONE 0
+@@ -678,10 +706,12 @@ struct cmd_roc {
+ 	struct host_mac_msg_hdr hdr;
+ #define ROC_STOP 0
+ #define ROC_START 1
+-	unsigned int roc_status;
++	unsigned int roc_ctrl;
+ 	unsigned int roc_channel;
+ 	unsigned int roc_duration;
+-
++#define ROC_TYPE_NORMAL 0
++#define ROC_TYPE_OFFCHANNEL_TX 1
++	unsigned int roc_type;
+ } __packed;
+ 
+ enum POWER_SAVE_TAG {
+@@ -1099,4 +1129,9 @@ struct cmd_bt_info {
+ 	unsigned int bt_state;
+ } __packed;
+ 
++struct umac_event_roc_status {
++	struct host_mac_msg_hdr hdr;
++	unsigned int roc_status;
++} __packed;
++
+ #endif /*_UCCP420HOST_UMAC_IF_H_*/
+diff --git a/drivers/net/wireless/uccp420wlan/inc/umac_if.h b/drivers/net/wireless/uccp420wlan/inc/umac_if.h
+index cd6ba74..8a2172c 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/umac_if.h
++++ b/drivers/net/wireless/uccp420wlan/inc/umac_if.h
+@@ -33,6 +33,8 @@
+ #include "hal.h"
+ #include "host_umac_if.h"
+ 
++#define UMAC_ROC_AC WLAN_AC_VO
++
+ struct umac_key {
+ 	unsigned char *peer_mac;
+ 	unsigned char *tx_mic;
+@@ -235,7 +237,8 @@ extern int uccp420wlan_prog_vht_bform(unsigned int vht_beamform_status,
+ 
+ extern int uccp420wlan_prog_roc(unsigned int roc_status,
+ 				unsigned int roc_channel,
+-				unsigned int roc_duration);
++				unsigned int roc_duration,
++				unsigned int roc_type);
+ 
+ #ifdef CONFIG_PM
+ extern int uccp420wlan_prog_econ_ps_state(int if_index,
+diff --git a/drivers/net/wireless/uccp420wlan/inc/version.h b/drivers/net/wireless/uccp420wlan/inc/version.h
+index 275fd3e..55ed0c6 100644
+--- a/drivers/net/wireless/uccp420wlan/inc/version.h
++++ b/drivers/net/wireless/uccp420wlan/inc/version.h
+@@ -23,7 +23,7 @@
+  */
+ #ifndef _UCCP420WLAN_VERSION_H
+ #define _UCCP420WLAN_VERSION_H
+-#define UCCP_DRIVER_VERSION "4_5_7"
++#define UCCP_DRIVER_VERSION "6_0_1"
+ #define UCCP_DRIVER_NAME "UCCP420WIFI"
+ #endif /* _UCCP420WLAN_VERSION_H */
+ 
+diff --git a/drivers/net/wireless/uccp420wlan/src/80211_if.c b/drivers/net/wireless/uccp420wlan/src/80211_if.c
+index b2fd915..fa92e70 100644
+--- a/drivers/net/wireless/uccp420wlan/src/80211_if.c
++++ b/drivers/net/wireless/uccp420wlan/src/80211_if.c
+@@ -178,7 +178,7 @@ static struct ieee80211_supported_band band_5ghz = {
+ };
+ 
+ 
+-/* Interface combinations for Virtual interfaces*/
++/* Interface combinations for Virtual interfaces */
+ static const struct ieee80211_iface_limit if_limit1[] = {
+ 		{ .max = 2, .types = BIT(NL80211_IFTYPE_STATION)}
+ };
+@@ -203,7 +203,8 @@ static const struct ieee80211_iface_limit if_limit4[] = {
+ #ifdef MULTI_CHAN_SUPPORT
+ static const struct ieee80211_iface_limit if_limit5[] = {
+ 		{ .max = 1, .types = BIT(NL80211_IFTYPE_STATION)},
+-		{ .max = 1, .types = BIT(NL80211_IFTYPE_AP)}
++		{ .max = 1, .types = BIT(NL80211_IFTYPE_AP) |
++				     BIT(NL80211_IFTYPE_P2P_GO)}
+ };
+ #endif
+ 
+@@ -274,6 +275,111 @@ static int conv_str_to_byte(unsigned char *byte,
+ }
+ 
+ 
++static void uccp420_roc_complete_work(struct work_struct *work)
++{
++	struct delayed_work *dwork = NULL;
++	struct mac80211_dev *dev = NULL;
++	unsigned long flags;
++	struct umac_chanctx *off_chanctx = NULL;
++	struct umac_vif *uvif = NULL, *tmp = NULL;
++	struct tx_config *tx = NULL;
++	u32 roc_queue = 0;
++	bool need_offchan;
++	int roc_off_chanctx_idx = -1;
++	int chan_id = 0;
++
++	dwork = container_of(work, struct delayed_work, work);
++	dev = container_of(dwork, struct mac80211_dev, roc_complete_work);
++	tx = &dev->tx;
++
++	mutex_lock(&dev->mutex);
++	need_offchan = dev->roc_params.need_offchan;
++
++	roc_queue = tx_queue_unmap(UMAC_ROC_AC);
++	roc_off_chanctx_idx = dev->roc_off_chanctx_idx;
++
++	/* Stop the ROC queue */
++	ieee80211_stop_queue(dev->hw, roc_queue);
++	/* Unlock RCU immediately as we are freeing off_chanctx in this funciton
++	 * only and because flush_vif_queues sleep
++	 */
++	rcu_read_lock();
++	off_chanctx = rcu_dereference(dev->off_chanctx[roc_off_chanctx_idx]);
++	rcu_read_unlock();
++
++	list_for_each_entry_safe(uvif, tmp, &off_chanctx->vifs, list) {
++		if (uvif == NULL || uvif->off_chanctx  == NULL)
++			continue;
++		/* Flush the TX queues */
++		uccp420_flush_vif_queues(dev,
++					 uvif,
++					 uvif->off_chanctx->index,
++					 BIT(UMAC_ROC_AC),
++					 UMAC_VIF_CHANCTX_TYPE_OFF);
++
++
++		spin_lock_irqsave(&tx->lock, flags);
++		spin_lock(&dev->chanctx_lock);
++
++		/* ROC DONE: Move the channel context */
++		if (uvif->chanctx)
++			dev->curr_chanctx_idx = uvif->chanctx->index;
++		else
++			dev->curr_chanctx_idx = -1;
++
++		spin_unlock(&dev->chanctx_lock);
++		spin_unlock_irqrestore(&tx->lock, flags);
++
++		if (need_offchan) {
++			/* DEL from OFF chan list */
++			list_del_init(&uvif->list);
++			if (uvif->chanctx) {
++				/* Add it back to OP chan list */
++				list_add_tail(&uvif->list,
++					      &uvif->chanctx->vifs);
++
++				/* !need_offchan: In this case, the frames are
++				 * transmitted, so trigger is not needed.
++				 *
++				 * need_offchan: In this case, frames are
++				 * buffered so we need trigger in case no frames
++				 * come from mac80211.
++				 */
++				/* Process OPER pending frames only.
++				 * TXQ is flushed before start of ROC
++				 */
++				chan_id = uvif->chanctx->index;
++				uccp420wlan_tx_proc_send_pend_frms_all(dev,
++								       chan_id);
++			}
++			off_chanctx->nvifs--;
++		}
++		uvif->off_chanctx = NULL;
++	}
++
++	if (need_offchan)
++		kfree(off_chanctx);
++
++
++	rcu_assign_pointer(dev->off_chanctx[roc_off_chanctx_idx], NULL);
++	dev->roc_off_chanctx_idx = -1;
++	dev->roc_params.roc_in_progress = 0;
++
++	if (dev->cancel_roc == 0) {
++		ieee80211_remain_on_channel_expired(dev->hw);
++		DEBUG_LOG("%s-80211IF: ROC STOPPED..\n", dev->name);
++	} else {
++		dev->cancel_hw_roc_done = 1;
++		dev->cancel_roc = 0;
++		DEBUG_LOG("%s-80211IF: ROC CANCELLED..\n", dev->name);
++	}
++
++	/* Start the ROC queue */
++	ieee80211_wake_queue(dev->hw, roc_queue);
++	mutex_unlock(&dev->mutex);
++}
++
++
+ static void tx(struct ieee80211_hw *hw,
+ 	       struct ieee80211_tx_control *txctl,
+ 	       struct sk_buff *skb)
+@@ -377,10 +483,13 @@ static int start(struct ieee80211_hw *hw)
+ 		mutex_unlock(&dev->mutex);
+ 		return -ENODEV;
+ 	}
++
+ 	INIT_DELAYED_WORK(&dev->roc_complete_work, uccp420_roc_complete_work);
++
+ 	dev->state = STARTED;
+ 	memset(dev->params->pdout_voltage, 0,
+ 	       sizeof(char) * MAX_AUX_ADC_SAMPLES);
++	dev->roc_off_chanctx_idx = -1;
+ 	mutex_unlock(&dev->mutex);
+ 
+ 	return 0;
+@@ -408,20 +517,29 @@ static int add_interface(struct ieee80211_hw *hw,
+ 	struct umac_vif   *uvif;
+ 	int vif_index, iftype;
+ 
++	mutex_lock(&dev->mutex);
+ 	iftype = vif->type;
+ 	v = vif;
+ 	vif->driver_flags |= IEEE80211_VIF_BEACON_FILTER;
+ 	vif->driver_flags |= IEEE80211_VIF_SUPPORTS_UAPSD;
+ 
++	if (dev->current_vif_count == wifi->params.num_vifs) {
++		pr_err("%s: Exceeded Maximum supported VIF's cur:%d max: %d.\n",
++		       __func__,
++		       dev->current_vif_count,
++		       wifi->params.num_vifs);
++
++		mutex_unlock(&dev->mutex);
++		return -ENOTSUPP;
++	}
++
+ 	if (!(iftype == NL80211_IFTYPE_STATION ||
+-				iftype == NL80211_IFTYPE_ADHOC ||
+-				iftype == NL80211_IFTYPE_AP)) {
++	      iftype == NL80211_IFTYPE_ADHOC ||
++	      iftype == NL80211_IFTYPE_AP)) {
+ 		pr_err("Invalid Interface type\n");
+ 		return -ENOTSUPP;
+ 	}
+ 
+-	mutex_lock(&dev->mutex);
+-
+ 	if (wifi->params.production_test) {
+ 		if (dev->active_vifs || iftype != NL80211_IFTYPE_ADHOC) {
+ 			mutex_unlock(&dev->mutex);
+@@ -448,6 +566,7 @@ static int add_interface(struct ieee80211_hw *hw,
+ 	uvif->seq_no = 0;
+ 	uccp420wlan_vif_add(uvif);
+ 	dev->active_vifs |= (1 << vif_index);
++	dev->current_vif_count++;
+ 
+ 	if (iftype == NL80211_IFTYPE_ADHOC)
+ 		dev->tx_last_beacon = 0;
+@@ -467,16 +586,16 @@ static void remove_interface(struct ieee80211_hw *hw,
+ 	struct ieee80211_vif *v;
+ 	int vif_index;
+ 
++	mutex_lock(&dev->mutex);
+ 	v = vif;
+ 	vif_index = ((struct umac_vif *)&v->drv_priv)->vif_index;
+ 
+-	mutex_lock(&dev->mutex);
+-
+ 	uccp420wlan_vif_remove((struct umac_vif *)&v->drv_priv);
+ 	dev->active_vifs &= ~(1 << vif_index);
+ 	rcu_assign_pointer(dev->vifs[vif_index], NULL);
+ 	synchronize_rcu();
+ 
++	dev->current_vif_count--;
+ 	mutex_unlock(&dev->mutex);
+ 
+ }
+@@ -587,9 +706,9 @@ static int config(struct ieee80211_hw *hw,
+ 	if (changed & IEEE80211_CONF_CHANGE_RETRY_LIMITS) {
+ 
+ 		DEBUG_LOG("%s-80211IF:Retry Limits changed to %d and %d\n",
+-			       dev->name,
+-			       conf->short_frame_max_tx_count,
+-			       conf->long_frame_max_tx_count);
++			  dev->name,
++			  conf->short_frame_max_tx_count,
++			  conf->long_frame_max_tx_count);
+ 	}
+ 
+ 	for (i = 0; i < MAX_VIFS; i++) {
+@@ -1121,6 +1240,7 @@ static void init_hw(struct ieee80211_hw *hw)
+ 	hw->flags |= IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING;
+ 	hw->flags |= IEEE80211_HW_AMPDU_AGGREGATION;
+ 	hw->flags |= IEEE80211_HW_MFP_CAPABLE;
++	hw->flags |= IEEE80211_HW_REPORTS_TX_ACK_STATUS;
+ 
+ 	if (wifi->params.dot11a_support)
+ 		hw->flags |= IEEE80211_HW_SPECTRUM_MGMT;
+@@ -1135,6 +1255,7 @@ static void init_hw(struct ieee80211_hw *hw)
+ 	hw->wiphy->max_scan_ie_len = IEEE80211_MAX_DATA_LEN;
+ 	hw->max_listen_interval = 10;
+ 	hw->wiphy->max_remain_on_channel_duration = 5000; /*ROC*/
++	hw->offchannel_tx_hw_queue = WLAN_AC_VO;
+ 	hw->max_rates = 4;
+ 	hw->max_rate_tries = 5;
+ 	hw->queues = 4;
+@@ -1270,193 +1391,160 @@ static int set_antenna(struct ieee80211_hw *hw, u32 tx_ant, u32 rx_ant)
+ }
+ 
+ 
+-static void uccp420_roc_complete_work(struct work_struct *work)
+-{
+-	struct delayed_work *dwork;
+-	int i;
+-	struct mac80211_dev *dev;
+-
+-	dwork = container_of(work, struct delayed_work, work);
+-	dev = container_of(dwork, struct mac80211_dev, roc_complete_work);
+-
+-	if (atomic_read(&dev->roc_params.roc_mgmt_tx_count) != 0) {
+-		DEBUG_LOG("%s:%d but %d off channel tx frames pending\n",
+-			  __func__,
+-			  __LINE__,
+-			  atomic_read(&dev->roc_params.roc_mgmt_tx_count));
+-		return;
+-	}
+-
+-	/* ROC Completed */
+-	mutex_lock(&dev->mutex);
+-
+-	/* Put the chip back to its original state */
+-	for (i = 0; i < MAX_VIFS; i++) {
+-
+-		if (!dev->roc_params.roc_ps_changed)
+-			break;
+-
+-		if (!(dev->active_vifs & (1 << i)))
+-			continue;
+-
+-		uccp420wlan_prog_ps_state(i,
+-					  dev->if_mac_addresses[i].addr,
+-					  dev->power_save);
+-	}
+-
+-	dev->roc_params.roc_ps_changed = 0;
+-
+-	if (dev->roc_params.roc_chan_changed) {
+-		dev->chan_prog_done = 0;
+-
+-		uccp420wlan_prog_channel(dev->cur_chan.pri_chnl_num,
+-					 dev->cur_chan.center_freq1,
+-					 dev->cur_chan.center_freq2,
+-					 dev->cur_chan.ch_width,
+-#ifdef MULTI_CHAN_SUPPORT
+-					 0,
+-#endif
+-					 dev->cur_chan.freq_band);
+-
+-		if (wait_for_channel_prog_complete(dev)) {
+-			pr_err("%s:%d ROC Complete: Programming the Channel %d Timed-out (500ms)\n",
+-			       __func__, __LINE__, dev->cur_chan.pri_chnl_num);
+-			dev->roc_params.roc_in_progress = 0;
+-			dev->roc_params.roc_chan_changed = 0;
+-			ieee80211_remain_on_channel_expired(dev->hw);
+-			mutex_unlock(&dev->mutex);
+-
+-			/* Unable to go back to Home channel, what next?? */
+-			return;
+-		}
+-
+-		dev->roc_params.roc_chan_changed = 0;
+-	}
+-
+-	/* Inform FW that ROC is started */
+-	uccp420wlan_prog_roc(ROC_START, dev->cur_chan.pri_chnl_num, 0);
+-
+-	ieee80211_remain_on_channel_expired(dev->hw);
+-	dev->roc_params.roc_in_progress = 0;
+-
+-	DEBUG_LOG("%s:%d Coming back to Orig: %d\n",
+-		  __func__,
+-		  __LINE__,
+-		  dev->power_save);
+-
+-	mutex_unlock(&dev->mutex);
+-}
+-
+-
+ static int remain_on_channel(struct ieee80211_hw *hw,
+ 			     struct ieee80211_vif *vif,
+ 			     struct ieee80211_channel *channel,
+ 			     int duration,
+ 			     enum ieee80211_roc_type type)
+-
+ {
+-	int i;
+ 	struct mac80211_dev *dev = (struct mac80211_dev *)hw->priv;
+-	unsigned int pri_chnl_num = 0;
+-	unsigned int chnl_num1 = 0;
+-	unsigned int freq_band = channel->band;
+-	unsigned int ch_width = 0; /* 20MHz */
+-#ifdef MULTI_CHAN_SUPPORT
++	unsigned int pri_chnl_num =
++		ieee80211_frequency_to_channel(channel->center_freq);
+ 	struct umac_vif *uvif = (struct umac_vif *)vif->drv_priv;
+-#endif
+-
+-	pri_chnl_num = ieee80211_frequency_to_channel(channel->center_freq);
+-	chnl_num1 = ieee80211_frequency_to_channel(channel->center_freq);
++	struct umac_chanctx *off_chanctx = NULL;
++	int off_chanctx_id = 0, i = 0;
++	unsigned long flags;
++	struct tx_config *tx = &dev->tx;
++	u32 hw_queue_map = 0;
++	struct ieee80211_chanctx_conf *vif_chanctx;
++	bool need_offchan = true;
+ 
+ 	mutex_lock(&dev->mutex);
+ 
+-	DEBUG_LOG("%s:%d orig_ps: %d The Params are: channel:%d\n",
+-		  __func__, __LINE__,
+-		  dev->power_save,
+-		  pri_chnl_num);
+-	DEBUG_LOG("	duration:%d type: %d c1:%d band:%d\n",
++	DEBUG_LOG("%s-80211IF: Params are Chan:%d Dur:%d Type: %d\n",
++		  dev->name,
++		  ieee80211_frequency_to_channel(channel->center_freq),
+ 		  duration,
+-		  type,
+-		  chnl_num1,
+-		  freq_band);
+-
+-	/* Put the chip in powersave */
+-	for (i = 0; i < MAX_VIFS; i++) {
+-		if (dev->power_save == PWRSAVE_STATE_AWAKE)
+-			break;
++		  type);
+ 
+-		dev->roc_params.roc_ps_changed = 1;
++	if (dev->roc_params.roc_in_progress) {
++		DEBUG_LOG("%s-80211IF: Dropping roc...Busy\n", dev->name);
++		mutex_unlock(&dev->mutex);
++		return -EBUSY;
++	}
+ 
+-		if (!(dev->active_vifs & (1 << i)))
+-			continue;
++	if (dev->num_active_chanctx == 2) {
++		DEBUG_LOG("%s-80211IF: ROC is not supported in TSMC Mode\n",
++			  dev->name);
+ 
+-		uccp420wlan_prog_ps_state(i,
+-					  dev->if_mac_addresses[i].addr,
+-					  PWRSAVE_STATE_AWAKE);
++		mutex_unlock(&dev->mutex);
++		return -ENOTSUPP;
+ 	}
+ 
+-	do {
+-		if (dev->cur_chan.pri_chnl_num == pri_chnl_num)
+-			break;
++	/* Inform FW that ROC is started:
++	 * For pure TX we send OFFCHANNEL_TX so that driver can terminate ROC
++	 * For Tx + Rx we use NORMAL, FW will terminate ROC based on duration.
++	 */
++	if (duration != 10 && type == ROC_TYPE_OFFCHANNEL_TX)
++		type = ROC_TYPE_NORMAL;
+ 
+-		DEBUG_LOG("%s:%d Programming the Channel\n",
+-			  __func__, __LINE__);
++	/* uvif is in connected state
++	 */
++	if (uvif->chanctx) {
++		rcu_read_lock();
+ 
+-		dev->chan_prog_done = 0;
++		vif_chanctx =
++			rcu_dereference(dev->chanctx[uvif->chanctx->index]);
+ 
+-		uccp420wlan_prog_channel(dev->cur_chan.pri_chnl_num,
+-					channel->center_freq,
+-					 0,
+-					 ch_width,
+-#ifdef MULTI_CHAN_SUPPORT
+-					 uvif->vif_index,
+-#endif
+-					 freq_band);
++		/* AS ROC frames are MGMT frames, checking only for Primary
++		 * Channel.
++		 */
++		if (vif_chanctx->def.chan->center_freq == channel->center_freq)
++			need_offchan = false;
+ 
+-		if (!wait_for_channel_prog_complete(dev)) {
+-			dev->roc_params.roc_chan_changed = 1;
+-			break;
+-		}
++		rcu_read_unlock();
++	}
+ 
+-		pr_err("%s:%d ROC Start: Programming the Channel %d Timed-out (500ms)\n",
+-			__func__, __LINE__, pri_chnl_num);
++	DEBUG_LOG("%s-80211IF: need_offchan: %d\n", dev->name, need_offchan);
++	dev->roc_params.need_offchan = need_offchan;
+ 
+-		/* Put the chip back to its orig state*/
+-		for (i = 0; i < MAX_VIFS; i++) {
+-			if (!dev->roc_params.roc_ps_changed)
+-				break;
++	if (need_offchan) {
++		/* Different chan context than the uvif */
++		off_chanctx = kmalloc(sizeof(struct umac_chanctx),
++				      GFP_KERNEL);
+ 
+-			if (!(dev->active_vifs & (1 << i)))
+-				continue;
++		if (!off_chanctx) {
++			pr_err("%s: Unable to alloc mem for channel context\n",
++			       __func__);
++			mutex_unlock(&dev->mutex);
++			return -ENOMEM;
++		}
+ 
+-			uccp420wlan_prog_ps_state(i,
+-						  dev->if_mac_addresses[i].addr,
+-						  dev->power_save);
++		/** Currently OFFCHAN is limited to handling ROC case
++		 *  but it is meant for a generic case.
++		 *  ideally we should look for existing offchan context
++		 *  and re-use/create.
++		 */
++		for (i = 0; i < MAX_OFF_CHANCTX; i++) {
++			if (!dev->off_chanctx[i]) {
++				off_chanctx_id = i;
++				break;
++			}
+ 		}
+ 
+-		dev->roc_params.roc_ps_changed = 0;
++		if (uvif->chanctx) {
++			ieee80211_stop_queues(hw);
+ 
+-		ieee80211_remain_on_channel_expired(dev->hw);
+-		mutex_unlock(&dev->mutex);
++			hw_queue_map = BIT(WLAN_AC_BK) |
++				BIT(WLAN_AC_BE) |
++				BIT(WLAN_AC_VI) |
++				BIT(WLAN_AC_VO) |
++				BIT(WLAN_AC_BCN);
+ 
+-		return 0;
++			uccp420_flush_vif_queues(dev,
++					uvif,
++					uvif->chanctx->index,
++					hw_queue_map,
++					UMAC_VIF_CHANCTX_TYPE_OPER);
++		}
+ 
+-	} while (0);
+ 
+-	DEBUG_LOG("%s:%d Programming the Channel Success:%d\n",
+-		  __func__, __LINE__,
+-		  dev->chan_prog_done);
++		off_chanctx->index = OFF_CHANCTX_IDX_BASE + off_chanctx_id;
++		dev->roc_off_chanctx_idx = off_chanctx_id;
++		INIT_LIST_HEAD(&off_chanctx->vifs);
++		off_chanctx->nvifs = 0;
++
++		if (uvif->chanctx) {
++			/* Delete the uvif from OP channel list */
++			list_del_init(&uvif->list);
++		}
++		/* Add the vif to the off_chanctx */
++		list_add_tail(&uvif->list, &off_chanctx->vifs);
++		off_chanctx->nvifs++;
++		rcu_assign_pointer(dev->off_chanctx[off_chanctx_id],
++				   off_chanctx);
++		synchronize_rcu();
+ 
+-	/* Inform FW that ROC is started */
+-	uccp420wlan_prog_roc(ROC_START, pri_chnl_num, duration);
+ 
+-	ieee80211_queue_delayed_work(hw,
+-				     &dev->roc_complete_work,
+-				     msecs_to_jiffies(duration));
++		/* Move the channel context */
++		spin_lock_bh(&dev->chanctx_lock);
++		dev->curr_chanctx_idx = off_chanctx->index;
++		spin_unlock_bh(&dev->chanctx_lock);
++	} else {
++		/* Same channel context, just update off_chanctx
++		 * to chanctx
++		 */
++		off_chanctx = uvif->chanctx;
++
++		for (i = 0; i < MAX_OFF_CHANCTX; i++) {
++			if (!dev->off_chanctx[i]) {
++				off_chanctx_id = i;
++				break;
++			}
++		}
++		dev->roc_off_chanctx_idx = off_chanctx->index;
++		rcu_assign_pointer(dev->off_chanctx[off_chanctx_id],
++				   off_chanctx);
++		synchronize_rcu();
++	}
++	spin_lock_irqsave(&tx->lock, flags);
++	uvif->off_chanctx = off_chanctx;
++	spin_unlock_irqrestore(&tx->lock, flags);
+ 
+-	dev->roc_params.roc_in_progress = 1;
++	uccp420wlan_prog_roc(ROC_START, pri_chnl_num, duration, type);
+ 
+-	ieee80211_ready_on_channel(dev->hw);
++	if (uvif->chanctx)
++		ieee80211_wake_queues(hw);
+ 
+ 	mutex_unlock(&dev->mutex);
+ 
+@@ -1466,34 +1554,34 @@ static int remain_on_channel(struct ieee80211_hw *hw,
+ 
+ static int cancel_remain_on_channel(struct ieee80211_hw *hw)
+ {
+-	int i = 0;
+ 	struct mac80211_dev *dev = (struct mac80211_dev *)hw->priv;
++	int ret = 0;
+ 
+ 	mutex_lock(&dev->mutex);
+ 
+ 	if (dev->roc_params.roc_in_progress) {
+-		cancel_delayed_work_sync(&dev->roc_complete_work);
++		dev->cancel_hw_roc_done = 0;
++		dev->cancel_roc = 1;
++		DEBUG_LOG("%s-80211IF: Cancelling HW ROC....\n", dev->name);
+ 
+-		/* Put the chip back to its original state */
+-		for (i = 0; i < MAX_VIFS; i++) {
+-			if (!(dev->active_vifs & (1 << i)))
+-				continue;
+-
+-			uccp420wlan_prog_ps_state(i,
+-						  dev->if_mac_addresses[i].addr,
+-						  dev->power_save);
+-		}
++		uccp420wlan_prog_roc(ROC_STOP, 0, 0, 0);
+ 
+-		DEBUG_LOG("%s:%d Coming back to Orig:%d\n",
+-			  __func__, __LINE__,
+-			  dev->power_save);
++		mutex_unlock(&dev->mutex);
+ 
+-		dev->roc_params.roc_in_progress = 0;
++		if (!wait_for_cancel_hw_roc(dev)) {
++			DEBUG_LOG("%s-80211IF: Cancel HW ROC....done\n",
++				  dev->name);
++			ret = 0;
++		} else {
++			DEBUG_LOG("%s-80211IF: Cancel HW ROC..timedout\n",
++				  dev->name);
++			ret = -1;
++		}
++	} else {
++		mutex_unlock(&dev->mutex);
+ 	}
+ 
+-	mutex_unlock(&dev->mutex);
+-
+-	return 0;
++	return ret;
+ }
+ 
+ 
+@@ -1562,7 +1650,7 @@ static int img_resume(struct ieee80211_hw *hw)
+ 
+ 	if (uccp420wlan_prog_econ_ps_state(active_vif_index,
+ 					   PWRSAVE_STATE_AWAKE)) {
+-		pr_err(" %s : Error Occured\n",
++		pr_err("%s : Error Occured\n",
+ 		       __func__);
+ 		mutex_unlock(&dev->mutex);
+ 		return -1;
+@@ -1616,7 +1704,7 @@ static int img_suspend(struct ieee80211_hw *hw,
+ 	}
+ 
+ 	if (count != 1) {
+-		pr_err("%s: Economy mode supported only for single VIF in STA mode\n",
++		pr_err("%s: Economy mode supp only for single VIF(STA mode)\n",
+ 		       __func__);
+ 		mutex_unlock(&dev->mutex);
+ 		return -1;
+@@ -1730,6 +1818,9 @@ void uccp420wlan_scan_complete(void *context,
+ 			       unsigned int len)
+ {
+ 	struct mac80211_dev *dev = (struct mac80211_dev *)context;
++	int i = 0;
++	struct ieee80211_vif *vif = NULL;
++	const char ra[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+ 
+ 	/* DO NOT update the scan results through cfg80211 API's we just pass
+ 	 * the beacons and probe responses up and mac80211 will inform cfg80211
+@@ -1749,6 +1840,24 @@ void uccp420wlan_scan_complete(void *context,
+ 			dev->stats->umac_scan_complete++;
+ 			ieee80211_scan_completed(dev->hw, false);
+ 
++			/* WAR for TT_PRB0164. To be removed after patch
++			   submitted to kernel */
++			for (i = 0; i < MAX_VIFS; i++) {
++
++				if (!(dev->active_vifs & (1 << i)))
++					continue;
++
++				rcu_read_lock();
++				vif = rcu_dereference(dev->vifs[i]);
++				rcu_read_unlock();
++
++				if (vif->type != NL80211_IFTYPE_AP)
++					continue;
++
++				ieee80211_stop_tx_ba_cb_irqsafe(vif,
++						ra, IEEE80211_NUM_TIDS);
++			}
++
+ 			/* Keep track of HW Scan requests and compeltes */
+ 			wifi->params.hw_scan_status = HW_SCAN_STATUS_NONE;
+ 		}
+@@ -1986,8 +2095,8 @@ static int add_chanctx(struct ieee80211_hw *hw,
+ 	}
+ 
+ 	DEBUG_LOG("%s: %d MHz\n",
+-			 __func__,
+-			 conf->def.chan->center_freq);
++		  __func__,
++		  conf->def.chan->center_freq);
+ 
+ 	mutex_lock(&dev->mutex);
+ 
+@@ -2116,20 +2225,36 @@ static void unassign_vif_chanctx(struct ieee80211_hw *hw,
+ 	struct mac80211_dev *dev = NULL;
+ 	struct umac_vif *uvif = NULL;
+ 	struct umac_chanctx *ctx = NULL;
++	u32 hw_queue_map = 0;
++	int i = 0;
+ 
+ 	dev = hw->priv;
+ 	uvif = (struct umac_vif *)vif->drv_priv;
+ 	ctx = (struct umac_chanctx *)conf->drv_priv;
+ 
+ 	DEBUG_LOG("%s: addr: %pM, type: %d, p2p: %d chan: %d MHz\n",
+-			 __func__,
+-			 vif->addr,
+-			 vif->type,
+-			 vif->p2p,
+-			 conf->def.chan->center_freq);
++		  __func__,
++		  vif->addr,
++		  vif->type,
++		  vif->p2p,
++		  conf->def.chan->center_freq);
+ 
+ 	mutex_lock(&dev->mutex);
+ 
++	/* We need to specifically handle flushing tx queues for the AP VIF
++	 * here (for STA VIF, mac80211 handles this via flush_queues) */
++	if (vif->type == NL80211_IFTYPE_AP) {
++		/* Flush all queues for this VIF */
++		for (i = 0; i < NUM_ACS; i++)
++			hw_queue_map |= BIT(i);
++
++		uccp420_flush_vif_queues(dev,
++					 uvif,
++					 uvif->chanctx->index,
++					 hw_queue_map,
++					 UMAC_VIF_CHANCTX_TYPE_OPER);
++	}
++
+ 	uvif->chanctx = NULL;
+ 
+ 	list_del(&uvif->list);
+@@ -2153,25 +2278,13 @@ static void flush_queues(struct ieee80211_hw *hw,
+ {
+ 	struct mac80211_dev *dev = NULL;
+ 	struct umac_vif *uvif = NULL;
+-	struct umac_chanctx *ctx = NULL;
+-	unsigned int chan_ctx_id = 0;
+-	unsigned int queue = 0;
+-	unsigned int pending = 0;
+-	int count = 0;
+-	int peer_id = -1;
++	u32 hw_queue_map = 0;
+ 	int i = 0;
+-	unsigned long flags = 0;
+-	struct sk_buff_head *pend_pkt_q = NULL;
+-	struct tx_config *tx = NULL;
+-	struct ieee80211_sta *sta = NULL;
+-	struct umac_sta *usta = NULL;
+ 
+ 	dev = hw->priv;
+ 
+ 	mutex_lock(&dev->mutex);
+ 
+-	tx = &dev->tx;
+-
+ 	if (!vif)
+ 		goto out;
+ 
+@@ -2180,75 +2293,20 @@ static void flush_queues(struct ieee80211_hw *hw,
+ 	if (!uvif->chanctx)
+ 		goto out;
+ 
+-	if (dev->num_active_chanctx != 2) {
+-		DEBUG_LOG("%s-80211IF: Flush is only supported for TSMC case\n",
+-			  __func__);
+-		goto out;
+-	}
+-
+-	ctx = uvif->chanctx;
+-	chan_ctx_id = ctx->index;
+-
+-	for (queue = 0; queue < WLAN_AC_MAX_CNT; queue++) {
+-		if (!((1 << queue) & queues))
+-			continue;
+-
+-check_tokens_flush_complete:
+-	pending = 0;
+-
+-	spin_lock_irqsave(&tx->lock, flags);
+-	rcu_read_lock();
+-
+-	for (i = 0; i < MAX_PEND_Q_PER_AC; i++) {
+-		if (i < MAX_PEERS) {
+-			sta = rcu_dereference(dev->peers[i]);
+-
+-			if (!sta)
+-				continue;
+-
+-			usta = (struct umac_sta *)(sta->drv_priv);
+-
+-			if (usta->vif_index == uvif->vif_index)
+-				peer_id = i;
+-			else
+-				continue;
+-		} else if (i == uvif->vif_index) {
+-			peer_id = uvif->vif_index;
+-		} else
+-			continue;
+-
+-		pend_pkt_q = &tx->pending_pkt[peer_id][queue];
+-
+-		/* Assuming all packets for the peer have same channel
+-		 * context
+-		 */
+-		pending = skb_queue_len(pend_pkt_q);
+-	}
+-
+-	rcu_read_unlock();
+-	spin_unlock_irqrestore(&tx->lock, flags);
+-
+-	if (pending && (count < QUEUE_FLUSH_TIMEOUT_TICKS)) {
+-		current->state = TASK_INTERRUPTIBLE;
+-
+-		if (0 == schedule_timeout(1))
+-			count++;
+-
+-		goto check_tokens_flush_complete;
+-	}
+-
+-	if (pending)
+-		DEBUG_LOG("%s: failed for VIF: %d and Queue: %d, pending: %d\n",
+-				__func__,
+-				uvif->vif_index,
+-				queue,
+-				pending);
+-	else
+-		DEBUG_LOG("%s: Flush for VIF: %d and Queue: %d success\n",
+-				__func__,
+-				uvif->vif_index,
+-				queue);
++	/* Convert the mac80211 queue map to our hw queue map */
++	for (i = 0; i < IEEE80211_NUM_ACS; i++) {
++		if (queues & BIT(i))
++			hw_queue_map |= BIT(tx_queue_map(i));
+ 	}
++	/* This op should not get called during ROC operation, so we can assume
++	 * that the vif_chanctx_type will be UMAC_VIF_CHANCTX_TYPE_OPER. As for
++	 * TSMC operation the VIF can only be associated to one channel context,
++	 * so we pass uvif->chanctx->index as the parameter for chanctx_idx */
++	uccp420_flush_vif_queues(dev,
++				 uvif,
++				 uvif->chanctx->index,
++				 hw_queue_map,
++				 UMAC_VIF_CHANCTX_TYPE_OPER);
+ 
+ out:
+ 	mutex_unlock(&dev->mutex);
+@@ -2330,6 +2388,7 @@ static int uccp420wlan_init(void)
+ 	}
+ 
+ 	dev = (struct mac80211_dev *)hw->priv;
++	memset(dev, 0, sizeof(struct mac80211_dev));
+ 
+ 	hwsim_class = class_create(THIS_MODULE, "uccp420");
+ 
+@@ -2373,6 +2432,7 @@ static int uccp420wlan_init(void)
+ 	spin_lock_init(&dev->chanctx_lock);
+ #endif
+ 
++	spin_lock_init(&dev->roc_lock);
+ 	dev->state = STOPPED;
+ 	dev->active_vifs = 0;
+ 	dev->txpower = DEFAULT_TX_POWER;
+@@ -2390,6 +2450,7 @@ static int uccp420wlan_init(void)
+ 	dev->params = &wifi->params;
+ 	dev->stats = &wifi->stats;
+ 	dev->umac_proc_dir_entry = wifi->umac_proc_dir_entry;
++	dev->current_vif_count = 0;
+ 	dev->stats->system_rev = system_rev;
+ #ifdef MULTI_CHAN_SUPPORT
+ 	dev->num_active_chanctx = 0;
+@@ -2461,6 +2522,7 @@ static int proc_read_config(struct seq_file *m, void *v)
+ 	seq_puts(m, "\n");
+ 
+ 	seq_printf(m, "production_test = %d\n", wifi->params.production_test);
++	seq_printf(m, "bypass_vpd = %d\n", wifi->params.bypass_vpd);
+ 	seq_printf(m, "tx_fixed_mcs_indx = %d (%s)\n",
+ 		   wifi->params.tx_fixed_mcs_indx,
+ 		   (wifi->params.prod_mode_rate_flag &
+@@ -2914,6 +2976,14 @@ static int proc_read_mac_stats(struct seq_file *m, void *v)
+ 			   total_rssi_samples);
+ 
+ 	seq_puts(m, "************* LMAC STATS ***********\n");
++	seq_printf(m, "roc_start =%d\n",
++		   wifi->stats.roc_start);
++	seq_printf(m, "roc_stop =%d\n",
++		   wifi->stats.roc_stop);
++	seq_printf(m, "roc_complete =%d\n",
++		   wifi->stats.roc_complete);
++	seq_printf(m, "roc_stop_complete =%d\n",
++		   wifi->stats.roc_stop_complete);
+ 	/* TX related */
+ 	seq_printf(m, "tx_cmd_cnt =%d\n",
+ 		   wifi->stats.tx_cmd_cnt);
+@@ -3116,6 +3186,12 @@ static ssize_t proc_write_config(struct file *file,
+ 			}
+ 		} else
+ 			pr_err("Invalid parameter value\n");
++	} else if (param_get_val(buf, "bypass_vpd=", &val)) {
++		if ((val == 0) || (val == 1)) {
++			if (wifi->params.bypass_vpd != val)
++				wifi->params.bypass_vpd = val;
++		} else
++			pr_err("Invalid parameter value\n");
+ 	} else if (param_get_val(buf, "num_vifs=", &val)) {
+ 		if (val > 0 && val <= MAX_VIFS) {
+ 			if (wifi->params.num_vifs != val) {
+diff --git a/drivers/net/wireless/uccp420wlan/src/core.c b/drivers/net/wireless/uccp420wlan/src/core.c
+index 9df0fda..45e754a 100644
+--- a/drivers/net/wireless/uccp420wlan/src/core.c
++++ b/drivers/net/wireless/uccp420wlan/src/core.c
+@@ -117,6 +117,31 @@ check_scan_abort_complete:
+ 
+ }
+ 
++int wait_for_cancel_hw_roc(struct mac80211_dev *dev)
++{
++	int count = 0;
++
++check_cancel_hw_roc_complete:
++	if (!dev->cancel_hw_roc_done && (count < CANCEL_HW_ROC_TIMEOUT_TICKS)) {
++		current->state = TASK_INTERRUPTIBLE;
++		if (0 == schedule_timeout(1))
++			count++;
++		goto check_cancel_hw_roc_complete;
++	}
++
++	if (!dev->cancel_hw_roc_done) {
++		pr_err("%s-UMAC: Warning: Didn't get CANCEL_HW_ROC_DONE after %ld timer ticks\n",
++		       dev->name,
++		       CANCEL_HW_ROC_TIMEOUT_TICKS);
++		return -1;
++	}
++
++	DEBUG_LOG("%s-UMAC: Cancel HW RoC complete after %d timer ticks\n",
++		   dev->name, count);
++
++	return 0;
++
++}
+ 
+ int wait_for_channel_prog_complete(struct mac80211_dev *dev)
+ {
+@@ -147,6 +172,38 @@ check_ch_prog_complete:
+ 
+ }
+ 
++int wait_for_tx_queue_flush_complete(struct mac80211_dev *dev,
++				     unsigned int queue)
++{
++	int count = 0;
++
++check_tx_queue_flush_complete:
++	if (dev->tx.outstanding_tokens[queue] &&
++	    (count < QUEUE_FLUSH_TIMEOUT_TICKS)) {
++		current->state = TASK_INTERRUPTIBLE;
++		if (0 == schedule_timeout(1))
++			count++;
++		goto check_tx_queue_flush_complete;
++	}
++
++	if (dev->tx.outstanding_tokens[queue]) {
++		pr_err("%s-UMAC: Warning: Tx Queue %d flush failed pending: %d after %ld timer ticks\n",
++		       dev->name,
++		       queue,
++		       dev->tx.outstanding_tokens[queue],
++		       QUEUE_FLUSH_TIMEOUT_TICKS);
++		return -1;
++	}
++
++	DEBUG_LOG("%s-UMAC: Flushed Tx queue %d in %d timer ticks\n",
++		  dev->name,
++		  queue,
++		  count);
++
++	return 0;
++
++}
++
+ 
+ int wait_for_reset_complete(struct mac80211_dev *dev)
+ {
+@@ -880,6 +937,10 @@ void uccp420wlan_mac_stats(struct umac_event_mac_stats *mac_stats,
+ 	struct mac80211_dev *dev = (struct mac80211_dev *)context;
+ 
+ 	/* TX related */
++	dev->stats->roc_start = mac_stats->roc_start;
++	dev->stats->roc_stop = mac_stats->roc_stop;
++	dev->stats->roc_complete = mac_stats->roc_complete;
++	dev->stats->roc_stop_complete = mac_stats->roc_stop_complete;
+ 	dev->stats->tx_cmd_cnt = mac_stats->tx_cmd_cnt;
+ 	dev->stats->tx_done_cnt = mac_stats->tx_done_cnt;
+ 	dev->stats->tx_edca_trigger_cnt = mac_stats->tx_edca_trigger_cnt;
+@@ -1045,168 +1106,6 @@ static unsigned int get_real_ts2(unsigned int t2, unsigned int delta)
+ #endif
+ 
+ 
+-#ifdef MULTI_CHAN_SUPPORT
+-void uccp420wlan_proc_ch_sw_event(struct umac_event_ch_switch *ch_sw_info,
+-				  void *context)
+-{
+-	struct mac80211_dev *dev = NULL;
+-	int chan = 0;
+-	int curr_freq = 0;
+-	int chan_id = 0;
+-	struct sk_buff_head *txq = NULL;
+-	int txq_len = 0;
+-	int i = 0;
+-	int queue = 0;
+-	unsigned long flags = 0;
+-	int curr_bit = 0;
+-	int pool_id = 0;
+-	int ret = 0;
+-	int peer_id = -1;
+-	int ac = 0;
+-	struct ieee80211_chanctx_conf *curr_chanctx = NULL;
+-	struct tx_config *tx = NULL;
+-
+-	if (!ch_sw_info || !context) {
+-		pr_err("%s: Invalid Parameters\n", __func__);
+-		return;
+-	}
+-
+-	dev = (struct mac80211_dev *)context;
+-	chan = ch_sw_info->chan;
+-	tx = &dev->tx;
+-
+-	rcu_read_lock();
+-
+-	for (i = 0; i < MAX_CHANCTX; i++) {
+-		curr_chanctx = rcu_dereference(dev->chanctx[i]);
+-
+-		if (curr_chanctx) {
+-			curr_freq = curr_chanctx->def.chan->center_freq;
+-
+-			if (ieee80211_frequency_to_channel(curr_freq) == chan) {
+-				chan_id = i;
+-				break;
+-			}
+-		}
+-	}
+-
+-	rcu_read_unlock();
+-
+-	if (i == MAX_CHANCTX) {
+-		pr_err("%s: Invalid Channel Context: chan: %d\n",
+-		       __func__,
+-		       chan);
+-		return;
+-	}
+-
+-
+-	/* Switch to the new channel context */
+-	spin_lock(&dev->chanctx_lock);
+-	dev->curr_chanctx_idx = chan_id;
+-	spin_unlock(&dev->chanctx_lock);
+-
+-	/* We now try to xmit any frames whose xmission got cancelled due to a
+-	 * previous channel switch
+-	 */
+-	for (i = 0; i < NUM_TX_DESCS; i++) {
+-		spin_lock_irqsave(&tx->lock, flags);
+-
+-		curr_bit = (i % TX_DESC_BUCKET_BOUND);
+-		pool_id = (i / TX_DESC_BUCKET_BOUND);
+-
+-		if (test_and_set_bit(curr_bit, &tx->buf_pool_bmp[pool_id])) {
+-			spin_unlock_irqrestore(&tx->lock, flags);
+-			continue;
+-		}
+-
+-		txq = &tx->pkt_info[chan_id][i].pkt;
+-		txq_len = skb_queue_len(txq);
+-		queue = tx->pkt_info[chan_id][i].queue;
+-
+-		if (!txq_len) {
+-			/* Reserved token */
+-			if (i < (NUM_TX_DESCS_PER_AC * NUM_ACS)) {
+-				queue = (i % NUM_ACS);
+-				peer_id = get_curr_peer_opp(dev,
+-							    chan_id,
+-							    queue);
+-
+-				if (peer_id == -1) {
+-					/* Mark the token as available */
+-					__clear_bit(curr_bit,
+-						    &tx->buf_pool_bmp[pool_id]);
+-
+-					spin_unlock_irqrestore(&tx->lock,
+-							       flags);
+-					continue;
+-				}
+-
+-			/* Spare token */
+-			} else {
+-				for (ac = WLAN_AC_VO; ac >= 0; ac--) {
+-					peer_id = get_curr_peer_opp(dev,
+-								    chan_id,
+-								    ac);
+-
+-					if (peer_id != -1) {
+-						queue = ac;
+-						break;
+-					}
+-				}
+-
+-				if (ac < 0) {
+-					/* Mark the token as available */
+-					__clear_bit(curr_bit,
+-						    &tx->buf_pool_bmp[pool_id]);
+-
+-					spin_unlock_irqrestore(&tx->lock,
+-							       flags);
+-					continue;
+-				}
+-			}
+-
+-			uccp420wlan_tx_proc_pend_frms(dev,
+-						      queue,
+-						      chan_id,
+-						      peer_id,
+-						      i);
+-
+-			tx->outstanding_tokens[queue]++;
+-
+-		}
+-
+-		spin_unlock_irqrestore(&tx->lock, flags);
+-
+-		ret = __uccp420wlan_tx_frame(dev,
+-					     queue,
+-					     i,
+-					     chan_id,
+-					     0,
+-					     0); /* TODO: Currently sending 0
+-						    since this param is not used
+-						    as expected in the orig
+-						    code for multiple frames etc
+-						    Need to set this
+-						    properly when the orig code
+-						    logic is corrected
+-						  */
+-		if (ret < 0) {
+-			/* SDK: Check if we need to clear the TX bitmap and
+-			 * desc_chan_map here
+-			 */
+-			pr_err("%s: Queueing of TX frame to FW failed\n",
+-			       __func__);
+-		} else {
+-			spin_lock_irqsave(&tx->lock, flags);
+-			tx->desc_chan_map[i] = chan_id;
+-			spin_unlock_irqrestore(&tx->lock, flags);
+-		}
+-
+-	}
+-}
+-#endif
+-
+-
+ void uccp420wlan_rx_frame(struct sk_buff *skb, void *context)
+ {
+ 	struct mac80211_dev *dev = (struct mac80211_dev *)context;
+diff --git a/drivers/net/wireless/uccp420wlan/src/tx.c b/drivers/net/wireless/uccp420wlan/src/tx.c
+index 04db7b9..fac99c7 100644
+--- a/drivers/net/wireless/uccp420wlan/src/tx.c
++++ b/drivers/net/wireless/uccp420wlan/src/tx.c
+@@ -61,8 +61,7 @@ static void wait_for_tx_complete(struct tx_config *tx)
+ 	}
+ }
+ 
+-
+-static inline int tx_queue_map(int queue)
++int tx_queue_map(int queue)
+ {
+ 	unsigned int ac[4] = {WLAN_AC_VO, WLAN_AC_VI, WLAN_AC_BE, WLAN_AC_BK};
+ 
+@@ -72,8 +71,7 @@ static inline int tx_queue_map(int queue)
+ 	return WLAN_AC_VO;
+ }
+ 
+-
+-static inline int tx_queue_unmap(int queue)
++int tx_queue_unmap(int queue)
+ {
+ 	unsigned int ac[4] = {3, 2, 1, 0};
+ 
+@@ -105,6 +103,9 @@ static void tx_status(struct sk_buff *skb,
+ 	int tx_fixed_mcs_idx = 0;
+ 	int tx_fixed_rate = 0;
+ 	struct ieee80211_supported_band *band = NULL;
++	struct umac_vif *uvif = NULL;
++
++	uvif = (struct umac_vif *)(tx_info->control.vif->drv_priv);
+ 
+ 	/* Rate info will be retained, except the count*/
+ 	ieee80211_tx_info_clear_status(tx_info);
+@@ -207,13 +208,18 @@ static void tx_status(struct sk_buff *skb,
+ 		index++;
+ 	}
+ 
+-	if ((tx_info->flags & IEEE80211_TX_CTL_TX_OFFCHAN) &&
++	if (((tx_info->flags & IEEE80211_TX_CTL_TX_OFFCHAN) ||
++	     (uvif->chanctx &&
++	      (uvif->chanctx->index == dev->roc_off_chanctx_idx))) &&
+ 	    (atomic_dec_return(&dev->roc_params.roc_mgmt_tx_count) == 0)) {
+-		if (dev->roc_params.roc_in_progress) {
+-			/* Reuse the delayed workqueue with 1ms delay */
+-			ieee80211_queue_delayed_work(dev->hw,
+-						     &dev->roc_complete_work,
+-						     msecs_to_jiffies(1));
++		DEBUG_LOG("%s-UMACTX: TXDONE Frame: %d\n",
++			  dev->name,
++			  atomic_read(&dev->roc_params.roc_mgmt_tx_count));
++		if (dev->roc_params.roc_in_progress &&
++		    dev->roc_params.roc_type == ROC_TYPE_OFFCHANNEL_TX) {
++			uccp420wlan_prog_roc(ROC_STOP, 0, 0, 0);
++			DEBUG_LOG("%s-UMACTX: all offchan pend frames clear\n",
++				  dev->name);
+ 		}
+ 	}
+ 
+@@ -242,6 +248,7 @@ static int get_token(struct mac80211_dev *dev,
+ 
+ 		if (!test_and_set_bit(curr_bit, &tx->buf_pool_bmp[pool_id])) {
+ 			token_id = queue + (NUM_ACS * cnt);
++			tx->outstanding_tokens[queue]++;
+ 			break;
+ 		}
+ 	}
+@@ -258,29 +265,40 @@ static int get_token(struct mac80211_dev *dev,
+ 			/* Do not set, we will queue to the same token */
+ 			if (!test_and_set_bit(curr_bit,
+ 					      &tx->buf_pool_bmp[pool_id])) {
++				tx->outstanding_tokens[queue]++;
+ 				break;
+ 			}
+ 		}
+ 	}
+ 
+-	if (token_id != NUM_TX_DESCS) {
+-		tx->outstanding_tokens[queue]++;
+-#ifdef MULTI_CHAN_SUPPORT
+-		tx->desc_chan_map[token_id] = curr_chanctx_idx;
+-#endif
+-	}
+-
+ 	return token_id;
+ }
+ 
++void free_token(struct mac80211_dev *dev,
++		int token_id,
++		int queue)
++{
++	struct tx_config *tx = &dev->tx;
++	int bit = -1;
++	int pool_id = -1;
++
++	bit = (token_id % TX_DESC_BUCKET_BOUND);
++	pool_id = (token_id / TX_DESC_BUCKET_BOUND);
+ 
+-int get_curr_peer_opp(struct mac80211_dev *dev,
++	__clear_bit(bit, &tx->buf_pool_bmp[pool_id]);
++
++	tx->outstanding_tokens[queue]--;
++}
++
++
++struct curr_peer_info get_curr_peer_opp(struct mac80211_dev *dev,
+ #ifdef MULTI_CHAN_SUPPORT
+-		      int curr_chanctx_idx,
++					int curr_chanctx_idx,
+ #endif
+-		      int queue)
+-{
++					int ac)
++	{
+ 	unsigned int curr_peer_opp = 0;
++	unsigned int curr_vif_op_chan = UMAC_VIF_CHANCTX_TYPE_OPER;
+ 	unsigned int i = 0;
+ 	struct tx_config *tx = NULL;
+ #ifdef MULTI_CHAN_SUPPORT
+@@ -291,21 +309,28 @@ int get_curr_peer_opp(struct mac80211_dev *dev,
+ 	int vif_index = -1;
+ #endif
+ 	unsigned int init_peer_opp = 0;
++	struct curr_peer_info peer_info;
++	unsigned int pend_q_len;
++	struct sk_buff_head *pend_q = NULL;
+ 
+ 	tx = &dev->tx;
+ 
+ #ifdef MULTI_CHAN_SUPPORT
+-	init_peer_opp = tx->curr_peer_opp[curr_chanctx_idx][queue];
++	init_peer_opp = tx->curr_peer_opp[curr_chanctx_idx][ac];
+ #else
+-	init_peer_opp = tx->curr_peer_opp[queue];
++	init_peer_opp = tx->curr_peer_opp[ac];
+ #endif
+-
++	/*TODO: Optimize this loop for BCN_Q
++	 */
+ 	for (i = 0; i < MAX_PEND_Q_PER_AC; i++) {
+ 		curr_peer_opp = (init_peer_opp + i) % MAX_PEND_Q_PER_AC;
+ 
+ #ifdef MULTI_CHAN_SUPPORT
+ 		rcu_read_lock();
+ 
++		/* RoC Frame do not have a "sta" entry.
++		 * so we need not handle RoC stuff here
++		 */
+ 		if (curr_peer_opp < MAX_PEERS) {
+ 			sta = rcu_dereference(dev->peers[curr_peer_opp]);
+ 
+@@ -316,16 +341,43 @@ int get_curr_peer_opp(struct mac80211_dev *dev,
+ 
+ 			usta = (struct umac_sta *)(sta->drv_priv);
+ 
+-			if (!usta->chanctx) {
++			vif = rcu_dereference(dev->vifs[usta->vif_index]);
++
++			if (!vif) {
+ 				rcu_read_unlock();
+ 				continue;
+ 			}
+ 
+-			if (usta->chanctx->index != curr_chanctx_idx) {
++
++			uvif = (struct umac_vif *)(vif->drv_priv);
++
++			if (!uvif->chanctx && !uvif->off_chanctx) {
+ 				rcu_read_unlock();
+ 				continue;
+ 			}
+ 
++			if ((uvif->chanctx &&
++			     (uvif->chanctx->index != curr_chanctx_idx)) ||
++			    !uvif->chanctx) {
++				if ((uvif->off_chanctx &&
++				     (uvif->off_chanctx->index !=
++				      curr_chanctx_idx)) ||
++				    !uvif->off_chanctx) {
++					rcu_read_unlock();
++					continue;
++				} else {
++					curr_vif_op_chan =
++						UMAC_VIF_CHANCTX_TYPE_OFF;
++				}
++			} else {
++				if (dev->roc_params.roc_in_progress &&
++				    !dev->roc_params.need_offchan)
++					curr_vif_op_chan =
++						UMAC_VIF_CHANCTX_TYPE_OFF;
++				else
++					curr_vif_op_chan =
++						UMAC_VIF_CHANCTX_TYPE_OPER;
++			}
+ 		} else {
+ 			vif_index = (curr_peer_opp - MAX_PEERS);
+ 
+@@ -338,46 +390,177 @@ int get_curr_peer_opp(struct mac80211_dev *dev,
+ 
+ 			uvif = (struct umac_vif *)(vif->drv_priv);
+ 
+-			if (!uvif->chanctx) {
++			if (!uvif->chanctx && !uvif->off_chanctx) {
+ 				rcu_read_unlock();
+ 				continue;
+ 			}
+ 
+-			if (uvif->chanctx->index != curr_chanctx_idx) {
+-				rcu_read_unlock();
+-				continue;
++			/* For a beacon queue we will process the frames
++			 * irrespective of the current channel context.
++			 * The FW will take care of transmitting them in the
++			 * appropriate channel.
++			 */
++
++			if (ac != WLAN_AC_BCN &&
++			    ((uvif->chanctx &&
++			      (uvif->chanctx->index != curr_chanctx_idx)) ||
++			     !uvif->chanctx)) {
++				if ((uvif->off_chanctx &&
++				     (uvif->off_chanctx->index !=
++				      curr_chanctx_idx)) ||
++				    !uvif->off_chanctx) {
++					rcu_read_unlock();
++					continue;
++				} else {
++					curr_vif_op_chan =
++						UMAC_VIF_CHANCTX_TYPE_OFF;
++				}
++			} else {
++				if (dev->roc_params.roc_in_progress &&
++				    !dev->roc_params.need_offchan)
++					curr_vif_op_chan =
++						UMAC_VIF_CHANCTX_TYPE_OFF;
++				else
++					curr_vif_op_chan =
++						UMAC_VIF_CHANCTX_TYPE_OPER;
+ 			}
+ 		}
+ 
+ 		rcu_read_unlock();
+ #endif
++		pend_q = &tx->pending_pkt[curr_vif_op_chan][curr_peer_opp][ac];
++		pend_q_len = skb_queue_len(pend_q);
+ 
+-		if (skb_queue_len(&tx->pending_pkt[curr_peer_opp][queue])) {
++		if (pend_q_len) {
+ #ifdef MULTI_CHAN_SUPPORT
+-			tx->curr_peer_opp[curr_chanctx_idx][queue] =
++			tx->curr_peer_opp[curr_chanctx_idx][ac] =
+ 				(curr_peer_opp + 1) % MAX_PEND_Q_PER_AC;
+ #else
+-			tx->curr_peer_opp[queue] =
++			tx->curr_peer_opp[ac] =
+ 				(curr_peer_opp + 1) % MAX_PEND_Q_PER_AC;
+ #endif
+ 			break;
+ 		}
+ 	}
+ 
+-	if (i == MAX_PEND_Q_PER_AC)
+-		return -1;
++	if (i == MAX_PEND_Q_PER_AC) {
++		peer_info.id = -1;
++		peer_info.op_chan_idx = -1;
++	} else {
++		peer_info.id = curr_peer_opp;
++		peer_info.op_chan_idx = curr_vif_op_chan;
++		DEBUG_LOG("%s-UMACTX: Queue: %d Peer: %d op_chan: %d ",
++			  dev->name,
++			  ac,
++			  curr_peer_opp,
++			  curr_vif_op_chan);
++		DEBUG_LOG("chanctx: %d got opportunity, pending: %d\n",
++			  curr_chanctx_idx,
++			  pend_q_len);
++	}
+ 
+-	return curr_peer_opp;
++	return peer_info;
+ }
+ 
+ 
+-void uccp420wlan_tx_proc_pend_frms(struct mac80211_dev *dev,
+-				   int queue,
+ #ifdef MULTI_CHAN_SUPPORT
+-				   int curr_chanctx_idx,
++void uccp420wlan_tx_proc_send_pend_frms_all(struct mac80211_dev *dev,
++					    int ch_id)
++{
++	int txq_len = 0;
++	int i = 0, cnt = 0;
++	int queue = 0;
++	unsigned long flags = 0;
++	int curr_bit = 0;
++	int pool_id = 0;
++	int ret = 0;
++	int start_ac, end_ac;
++	unsigned int pkts_pend = 0;
++	struct tx_config *tx = NULL;
++	struct sk_buff_head *txq = NULL;
++
++	tx = &dev->tx;
++
++	for (i = 0; i < NUM_TX_DESCS; i++) {
++		spin_lock_irqsave(&tx->lock, flags);
++
++		curr_bit = (i % TX_DESC_BUCKET_BOUND);
++		pool_id = (i / TX_DESC_BUCKET_BOUND);
++
++		if (test_and_set_bit(curr_bit, &tx->buf_pool_bmp[pool_id])) {
++			spin_unlock_irqrestore(&tx->lock, flags);
++			continue;
++		}
++
++		txq = &tx->pkt_info[ch_id][i].pkt;
++		txq_len = skb_queue_len(txq);
++
++		/* Not valid when txq len is 0 */
++		queue = tx->pkt_info[ch_id][i].queue;
++
++		if (!txq_len) {
++			/* Reserved token */
++			if (i < (NUM_TX_DESCS_PER_AC * NUM_ACS)) {
++				queue = (i % NUM_ACS);
++				start_ac = end_ac = queue;
++			} else {
++				/* Spare token:
++				 * Loop through all AC's
++				 */
++				start_ac = WLAN_AC_VO;
++				end_ac = WLAN_AC_BK;
++			}
++
++			for (cnt = start_ac; cnt >= end_ac; cnt--) {
++				pkts_pend = uccp420wlan_tx_proc_pend_frms(dev,
++									  cnt,
++									  ch_id,
++									  i);
++				if (pkts_pend) {
++					queue = cnt;
++					break;
++				}
++			}
++
++			if (pkts_pend == 0) {
++				__clear_bit(curr_bit,
++					    &tx->buf_pool_bmp[pool_id]);
++				spin_unlock_irqrestore(&tx->lock, flags);
++				continue;
++			}
++		}
++
++		tx->outstanding_tokens[queue]++;
++		spin_unlock_irqrestore(&tx->lock, flags);
++
++		ret = __uccp420wlan_tx_frame(dev,
++					     queue,
++					     i,
++					     ch_id,
++					     0,
++					     0); /* TODO: Currently sending 0
++						    since this param is not used
++						    as expected in the orig
++						    code for multiple frames etc
++						    Need to set this
++						    properly when the orig code
++						    logic is corrected
++						  */
++		if (ret < 0) {
++			pr_err("%s: Queueing of TX frame to FW failed\n",
++			       __func__);
++		}
++	}
++}
+ #endif
+-				   int peer_id,
+-				   int token_id)
++
++
++int uccp420wlan_tx_proc_pend_frms(struct mac80211_dev *dev,
++				  int ac,
++#ifdef MULTI_CHAN_SUPPORT
++				  int curr_chanctx_idx,
++#endif
++				  int token_id)
+ {
+ 	struct tx_config *tx = &dev->tx;
+ 	unsigned long ampdu_len = 0;
+@@ -394,8 +577,22 @@ void uccp420wlan_tx_proc_pend_frms(struct mac80211_dev *dev,
+ 	unsigned int max_tx_cmds = dev->params->max_tx_cmds;
+ 	struct sk_buff_head *txq = NULL;
+ 	struct sk_buff_head *pend_pkt_q = NULL;
++	unsigned int total_pending_processed = 0;
++	int pend_pkt_q_len = 0;
++	struct curr_peer_info peer_info;
++
++	peer_info = get_curr_peer_opp(dev,
++#ifdef MULTI_CHAN_SUPPORT
++				       curr_chanctx_idx,
++#endif
++				       ac);
+ 
+-	pend_pkt_q = &tx->pending_pkt[peer_id][queue];
++	/* No pending frames for any peer in that AC.
++	 */
++	if (peer_info.id == -1)
++		return 0;
++
++	pend_pkt_q = &tx->pending_pkt[peer_info.op_chan_idx][peer_info.id][ac];
+ 
+ #ifdef MULTI_CHAN_SUPPORT
+ 	txq = &dev->tx.pkt_info[curr_chanctx_idx][token_id].pkt;
+@@ -405,6 +602,12 @@ void uccp420wlan_tx_proc_pend_frms(struct mac80211_dev *dev,
+ 
+ 	skb_first = skb_peek(pend_pkt_q);
+ 
++	if (skb_first == NULL)
++		pr_err("%s:%d Null SKB: peer: %d\n",
++		       __func__,
++		       __LINE__,
++		       peer_info.id);
++
+ 	mac_hdr_first = (struct ieee80211_hdr *)skb_first->data;
+ 
+ 	tx_info_first = IEEE80211_SKB_CB(skb_first);
+@@ -443,8 +646,18 @@ void uccp420wlan_tx_proc_pend_frms(struct mac80211_dev *dev,
+ 			    IEEE80211_TX_MAX_RATES) != 0) ||
+ 		    (tx_info_first->flags != tx_info->flags) ||
+ #endif
++		    /* RPU has a limitation, it expects A1-A2-A3 to be same
++		     * for all MPDU's within an AMPDU. This is a temporary
++		     * solution, remove it when RPU has fix for this.
++		     */
+ 		    (memcmp(mac_hdr->addr1,
+ 			    mac_hdr_first->addr1,
++			    ETH_ALEN) != 0) ||
++		    (memcmp(mac_hdr->addr2,
++			    mac_hdr_first->addr2,
++			    ETH_ALEN) != 0) ||
++		    (memcmp(mac_hdr->addr3,
++			    mac_hdr_first->addr3,
+ 			    ETH_ALEN) != 0))
+ 			break;
+ 
+@@ -457,115 +670,120 @@ void uccp420wlan_tx_proc_pend_frms(struct mac80211_dev *dev,
+ 	if (!skb_queue_len(txq))
+ 		skb_queue_tail(txq, skb_dequeue(pend_pkt_q));
+ 
+-	DEBUG_LOG("%s-UMACTX:Max_pkt_thresh: send spare: %d with %d\n",
++	total_pending_processed = skb_queue_len(txq);
++
++	pend_pkt_q_len = skb_queue_len(pend_pkt_q);
++	if ((ac != WLAN_AC_BCN) &&
++	    (tx->queue_stopped_bmp & (1 << ac)) &&
++	    pend_pkt_q_len < (MAX_TX_QUEUE_LEN / 2)) {
++		ieee80211_wake_queue(dev->hw, tx_queue_unmap(ac));
++		tx->queue_stopped_bmp &= ~(1 << (ac));
++	}
++
++	DEBUG_LOG("%s-UMACTX: token_id: %d total_pending_packets_process: %d\n",
+ 		  dev->name,
+ 		  token_id,
+ 		  skb_queue_len(txq));
++
++	return total_pending_processed;
+ }
+ 
+ 
+-int uccp420wlan_tx_alloc_buff_req(struct mac80211_dev *dev,
+-				  int queue,
++int uccp420wlan_tx_alloc_token(struct mac80211_dev *dev,
++			       int ac,
+ #ifdef MULTI_CHAN_SUPPORT
+-				  struct umac_vif *uvif,
+-				  int curr_chanctx_idx,
++			       int off_chanctx_idx,
++			       int curr_chanctx_idx,
+ #endif
+-				  int peer_id,
+-				  struct sk_buff *skb)
++			       int peer_id,
++			       struct sk_buff *skb)
+ {
+ 	int token_id = NUM_TX_DESCS;
+ 	struct tx_config *tx = &dev->tx;
+-	struct sk_buff_head *txq = NULL;
+-	unsigned long flags = 0;
++	unsigned long flags;
+ 	struct sk_buff_head *pend_pkt_q = NULL;
+-	int tx_peer_id = 0;
+-	struct ieee80211_hdr *mac_hdr = NULL;
++	unsigned int pkts_pend = 0;
+ 
+ 	spin_lock_irqsave(&tx->lock, flags);
+ 
+-	pend_pkt_q = &tx->pending_pkt[peer_id][queue];
++	pend_pkt_q = &tx->pending_pkt[off_chanctx_idx][peer_id][ac];
+ 
+-	DEBUG_LOG("%s-UMACTX:Alloc buf Req q = %d,\n", dev->name, queue);
++	DEBUG_LOG("%s-UMACTX:Alloc buf Req q = %d off_chan: %d peerid: %d,\n",
++		  dev->name,
++		  ac,
++		  off_chanctx_idx,
++		  peer_id);
+ 
+-#ifdef MULTI_CHAN_SUPPORT
+-	if (uvif->chanctx->index == curr_chanctx_idx)
+-		token_id = get_token(dev,
+-				     curr_chanctx_idx,
+-				     queue);
+-#else
+-	token_id = get_token(dev,
+-			     queue);
+-#endif
++	/* Queue the frame to the pending frames queue */
++	skb_queue_tail(pend_pkt_q, skb);
++
++	/* If the number of outstanding Tx tokens is greater than
++	 * NUM_TX_DESCS_PER_AC we try and encourage aggregation to the max size
++	 * supported (dev->params->max_tx_cmds)
++	 */
++	if (tx->outstanding_tokens[ac] >= NUM_TX_DESCS_PER_AC) {
++		if ((skb_queue_len(pend_pkt_q) < dev->params->max_tx_cmds) ||
++		   ac == WLAN_AC_BCN)
++			goto out;
++	}
+ 
++	/* Take steps to stop the TX traffic if we have reached
++	 * the queueing limit.
++	 * We dont this for the ROC queue to avoid the case where we are in the
++	 * OFF channel but there is lot of traffic for the operating channel on
++	 * the shared ROC queue (which is VO right now), since this would block
++	 * ROC traffic too.
++	 */
++	if (skb_queue_len(pend_pkt_q) >= MAX_TX_QUEUE_LEN) {
++		if ((!dev->roc_params.roc_in_progress) ||
++		    (dev->roc_params.roc_in_progress &&
++		     (ac != UMAC_ROC_AC))) {
++			ieee80211_stop_queue(dev->hw,
++					     skb->queue_mapping);
++			tx->queue_stopped_bmp |= (1 << ac);
++		}
++	}
+ 
+-	/* If we got a reserved token, then queue frame to the Xmit queue */
+-	if (token_id < NUM_TX_DESCS_PER_AC * NUM_ACS) {
+-		DEBUG_LOG("%s-UMACTX:Reserved Token, Sending single\n",
+-			  dev->name);
++	token_id = get_token(dev,
+ #ifdef MULTI_CHAN_SUPPORT
+-		txq = &dev->tx.pkt_info[curr_chanctx_idx][token_id].pkt;
+-#else
+-		txq = &dev->tx.pkt_info[token_id].pkt;
++			     curr_chanctx_idx,
+ #endif
+-		skb_queue_tail(txq, skb);
+-	} else {
+-		/* A frame for a beacon queue should never get a reserved
+-		 * token
+-		 */
+-		mac_hdr = (struct ieee80211_hdr *)(skb->data);
+-
+-		if ((queue == WLAN_AC_BCN) &&
+-		    (ieee80211_is_beacon(mac_hdr->frame_control))) {
+-			if (net_ratelimit())
+-				pr_warn("Did not get rsvd token for beacon\n");
+-		}
++			     ac);
+ 
+-		/* Queue the frame to the pending frames queue */
+-		skb_queue_tail(pend_pkt_q, skb);
++	DEBUG_LOG("%s-UMACTX:Alloc buf Result *id= %d q = %d peerid: %d,\n",
++		  dev->name,
++		  token_id,
++		  ac,
++		  peer_id);
+ 
+-		if (queue != WLAN_AC_BCN) {
+-			/* Take steps to stop the TX traffic if we have reached
+-			 * the queueing limit
+-			 */
+-			if (skb_queue_len(pend_pkt_q) >= MAX_TX_QUEUE_LEN) {
+-				ieee80211_stop_queue(dev->hw,
+-						     skb->queue_mapping);
+-				tx->queue_stopped_bmp |= (1 << queue);
+-			}
++	if (token_id == NUM_TX_DESCS)
++		goto out;
+ 
+-			/* If we got a spare token, try sending out pending
+-			 * frames
+-			 */
+-			if (token_id < NUM_TX_DESCS) {
+-				tx_peer_id = get_curr_peer_opp(dev,
++	pkts_pend = uccp420wlan_tx_proc_pend_frms(dev,
++						  ac,
+ #ifdef MULTI_CHAN_SUPPORT
+-							       curr_chanctx_idx,
++						  curr_chanctx_idx,
+ #endif
+-							       queue);
++						  token_id);
+ 
+-				uccp420wlan_tx_proc_pend_frms(dev,
+-							      queue,
+-#ifdef MULTI_CHAN_SUPPORT
+-							      curr_chanctx_idx,
+-#endif
+-							      tx_peer_id,
+-							      token_id);
+-			}
+-		}
+-	}
++	/* We have just added a frame to pending_q but channel context is
++	 * mismatch.
++	 */
+ 
+-	DEBUG_LOG("%s-UMACTX:Alloc buf Result *id = %d q = %d peer_id = %d\n",
+-		  dev->name,
+-		  token_id
+-		  queue,
+-		  peer_id);
++	if (!pkts_pend) {
++		free_token(dev, token_id, ac);
++		token_id = NUM_TX_DESCS;
++	}
+ 
++out:
+ 	spin_unlock_irqrestore(&tx->lock, flags);
+ 
++	DEBUG_LOG("%s-UMACTX:Alloc buf Result *id= %d\n", dev->name, token_id);
+ 	/* If token is available, just return tokenid, list will be sent*/
+ 	return token_id;
+ }
+ 
++
+ int get_band_chanctx(struct mac80211_dev *dev, struct umac_vif *uvif)
+ {
+ 	struct ieee80211_chanctx_conf *chanctx = NULL;
+@@ -581,9 +799,10 @@ int get_band_chanctx(struct mac80211_dev *dev, struct umac_vif *uvif)
+ 	return band;
+ }
+ 
++
+ int uccp420wlan_tx_free_buff_req(struct mac80211_dev *dev,
+ 				 struct umac_event_tx_done *tx_done,
+-				 unsigned char *queue,
++				 unsigned char *ac,
+ #ifdef MULTI_CHAN_SUPPORT
+ 				 int curr_chanctx_idx,
+ #endif
+@@ -601,18 +820,15 @@ int uccp420wlan_tx_free_buff_req(struct mac80211_dev *dev,
+ 	int vif_index = -1;
+ 	unsigned int pkt = 0;
+ 	int cnt = 0;
+-	int bit = 0;
+-	int pool_id = 0;
+ 	unsigned int desc_id = tx_done->descriptor_id;
+-	unsigned int max_tx_cmds = dev->params->max_tx_cmds;
+ 	struct umac_vif *uvif = NULL;
+ 	struct ieee80211_vif *ivif = NULL;
+ 	unsigned long bcn_int = 0;
+-	int pend_pkt_q_len = 0;
+-	int peer_id = 0;
+ #ifdef MULTI_CHAN_SUPPORT
+ 	int chanctx_idx = 0;
++	struct tx_pkt_info *pkt_info = NULL;
+ #endif
++	int start_ac, end_ac;
+ 
+ 	skb_queue_head_init(&tx_done_list);
+ 
+@@ -623,67 +839,17 @@ int uccp420wlan_tx_free_buff_req(struct mac80211_dev *dev,
+ 
+ 	spin_lock_irqsave(&tx->lock, flags);
+ 
+-	tx->outstanding_tokens[tx_done->queue]--;
+-
+ #ifdef MULTI_CHAN_SUPPORT
+ 	chanctx_idx = tx->desc_chan_map[desc_id];
+-#endif
+-
+-	bit = (desc_id % TX_DESC_BUCKET_BOUND);
+-	pool_id = (desc_id / TX_DESC_BUCKET_BOUND);
+-
+-	/* Reserved token */
+-	if (desc_id < (NUM_TX_DESCS_PER_AC * NUM_ACS)) {
+-		*queue = tx_done->queue;
+-
+-		peer_id = get_curr_peer_opp(dev,
+-#ifdef MULTI_CHAN_SUPPORT
+-					    curr_chanctx_idx,
+-#endif
+-					    *queue);
+-
+-		if (peer_id == -1) {
+-			__clear_bit(bit, &tx->buf_pool_bmp[pool_id]);
+-#ifdef MULTI_CHAN_SUPPORT
+-			tx->desc_chan_map[desc_id] = -1;
+-#endif
+-		}
+-	/* Spare token */
+-	} else {
+-		for (cnt = WLAN_AC_VO; cnt >= 0; cnt--) {
+-			peer_id = get_curr_peer_opp(dev,
+-#ifdef MULTI_CHAN_SUPPORT
+-						    curr_chanctx_idx,
+-#endif
+-						    cnt);
+-
+-			if (peer_id != -1) {
+-				*queue = cnt;
+-				break;
+-			}
+-		}
+-
+-		/* If beacon queue has pending and no other AC
+-		 *  has pending
+-		 */
+-		if (peer_id == -1) {
+-			__clear_bit(bit, &tx->buf_pool_bmp[pool_id]);
+-#ifdef MULTI_CHAN_SUPPORT
+-			tx->desc_chan_map[desc_id] = -1;
+-#endif
+-		}
++	if (chanctx_idx == -1) {
++		spin_unlock_irqrestore(&tx->lock, flags);
++		pr_err("%s: Unexpected channel context\n", __func__);
++		goto out;
+ 	}
++	pkt_info = &dev->tx.pkt_info[chanctx_idx][desc_id];
++#endif
+ 
+-	if (peer_id != -1)
+-		pkts_pend = skb_queue_len(&tx->pending_pkt[peer_id][*queue]);
+ 
+-	DEBUG_LOG("%s-UMACTX:%s pend_q = %d, sta_id = %d desc_id: %d pend:%d\n",
+-		  dev->name,
+-		  __func__,
+-		  *queue,
+-		  peer_id,
+-		  desc_id,
+-		  pkts_pend);
+ 
+ 	/* Defer Tx Done Processsing */
+ #ifdef MULTI_CHAN_SUPPORT
+@@ -700,48 +866,28 @@ int uccp420wlan_tx_free_buff_req(struct mac80211_dev *dev,
+ 			  dev->name, skb_list);
+ 	}
+ 
+-	if (pkts_pend > 0) {
+-		/* For a beacon queue we will process the frames irrespective
+-		 * of the current channel context. The FW will take care of
+-		 * transmitting them in the appropriate channel. Hence pass the
+-		 * interfaces channel context instead of the actual current
+-		 * channel context.
++	/* Reserved token */
++	if (desc_id < (NUM_TX_DESCS_PER_AC * NUM_ACS)) {
++		start_ac = end_ac = tx_done->queue;
++	} else {
++		/* Spare token:
++		 * Loop through all AC's
+ 		 */
+-		if (*queue == WLAN_AC_BCN) {
+-			rcu_read_lock();
+-
+-			vif_index = (peer_id - MAX_PEERS);
+-			ivif = rcu_dereference(dev->vifs[vif_index]);
+-			uvif = (struct umac_vif *)(ivif->drv_priv);
+-			curr_chanctx_idx = uvif->chanctx->index;
+-			rcu_read_unlock();
+-		}
+-
+-		uccp420wlan_tx_proc_pend_frms(dev,
+-					      *queue,
++		start_ac = WLAN_AC_VO;
++		end_ac = WLAN_AC_BK;
++	}
++	for (cnt = start_ac; cnt >= end_ac; cnt--) {
++		pkts_pend = uccp420wlan_tx_proc_pend_frms(dev,
++					      cnt,
+ #ifdef MULTI_CHAN_SUPPORT
+ 					      curr_chanctx_idx,
+ #endif
+-					      peer_id,
+ 					      desc_id);
+ 
+-		tx->outstanding_tokens[*queue]++;
+-
+-		DEBUG_LOG("%s-UMACTX:Pending packets: %d, Total: %d\n",
+-			  dev->name,
+-			  pkts_pend,
+-			  skb_queue_len(skb_list));
+-	} else {
+-		DEBUG_LOG("%s-UMACTX:No Pending Packets\n", dev->name);
+-	}
+-
+-	pend_pkt_q_len = skb_queue_len(&tx->pending_pkt[peer_id][*queue]);
+-
+-	if ((*queue != WLAN_AC_BCN) &&
+-	    (tx->queue_stopped_bmp & (1 << *queue)) &&
+-	    pend_pkt_q_len < (MAX_TX_QUEUE_LEN / 2)) {
+-		ieee80211_wake_queue(dev->hw, tx_queue_unmap(*queue));
+-		tx->queue_stopped_bmp &= ~(1 << (*queue));
++		if (pkts_pend) {
++			*ac = cnt;
++			break;
++		}
+ 	}
+ 
+ 	/* Unmap here before release lock to avoid race */
+@@ -872,35 +1018,81 @@ int uccp420wlan_tx_free_buff_req(struct mac80211_dev *dev,
+ 		pkt++;
+ 	}
+ out:
+-	return min(pkts_pend, max_tx_cmds);
++	return pkts_pend;
+ }
+ 
+ 
+ #ifdef MULTI_CHAN_SUPPORT
+-void uccp420wlan_proc_tx_discard_chsw(struct mac80211_dev *dev,
+-				      int curr_chanctx_idx,
+-				      struct umac_event_tx_done *tx_done)
++void uccp420wlan_proc_ch_sw_event(struct umac_event_ch_switch *ch_sw_info,
++				  void *context)
++{
++	struct mac80211_dev *dev = NULL;
++	int chan = 0;
++	int curr_freq = 0;
++	int chan_id = 0;
++	struct ieee80211_chanctx_conf *curr_chanctx = NULL;
++	int i = 0;
++
++	if (!ch_sw_info || !context) {
++		pr_err("%s: Invalid Parameters:\n", __func__);
++		return;
++	}
++
++	dev = (struct mac80211_dev *)context;
++	chan = ch_sw_info->chan;
++
++	rcu_read_lock();
++
++	for (i = 0; i < MAX_CHANCTX; i++) {
++		curr_chanctx = rcu_dereference(dev->chanctx[i]);
++
++		if (curr_chanctx) {
++			curr_freq = curr_chanctx->def.chan->center_freq;
++
++			if (ieee80211_frequency_to_channel(curr_freq) == chan) {
++				chan_id = i;
++				break;
++			}
++		}
++	}
++
++	rcu_read_unlock();
++
++	if (i == MAX_CHANCTX) {
++		pr_err("%s: Invalid Channel Context: chan: %d\n",
++		       __func__,
++		       chan);
++		return;
++	}
++
++	/* Switch to the new channel context */
++	spin_lock(&dev->chanctx_lock);
++	dev->curr_chanctx_idx = chan_id;
++	spin_unlock(&dev->chanctx_lock);
++
++	/* We now try to xmit any frames whose xmission got cancelled due to a
++	 * previous channel switch
++	 */
++	uccp420wlan_tx_proc_send_pend_frms_all(dev, chan_id);
++}
++
++
++unsigned int uccp420wlan_proc_tx_dscrd_chsw(struct mac80211_dev *dev,
++					    int curr_chanctx_idx,
++					    struct umac_event_tx_done *tx_done)
+ {
+ 	struct tx_config *tx = &dev->tx;
+-	struct sk_buff_head *txq = NULL;
+-	struct sk_buff_head tx_done_list;
++	struct sk_buff_head *txq = NULL, tx_done_list;
+ 	int chanctx_idx = -1;
+ 	int pkt = 0;
+-#ifdef notyet
+-	int i = 0;
+-#endif
+ 	unsigned long flags;
+ 	int txq_len = 0;
+ 	struct sk_buff *skb = NULL;
+ 	struct sk_buff *skb_first = NULL;
+ 	struct sk_buff *tmp = NULL;
+-	int curr_bit = 0;
+-	int pool_id = 0;
+ 	int queue = 0;
+-	int ret = 0;
++	int ret = 0, cnt = 0;
+ 	unsigned int desc_id = 0;
+-	int peer_id = -1;
+-	int ac = -1;
+ 	unsigned int *curr_retries = NULL;
+ 	unsigned int max_retries = 0;
+ 	struct ieee80211_tx_info tx_info_1st_mpdu;
+@@ -908,6 +1100,8 @@ void uccp420wlan_proc_tx_discard_chsw(struct mac80211_dev *dev,
+ 	bool retries_exceeded = false;
+ 	unsigned int *rate = NULL;
+ 	unsigned int *retries = NULL;
++	int start_ac, end_ac;
++	unsigned int pkts_pend = 0;
+ 
+ 	skb_queue_head_init(&tx_done_list);
+ 
+@@ -921,8 +1115,11 @@ void uccp420wlan_proc_tx_discard_chsw(struct mac80211_dev *dev,
+ 	 */
+ 	chanctx_idx = tx->desc_chan_map[desc_id];
+ 
+-	if (chanctx_idx == -1) {
+-		pr_err("%s: Unexpected channel context\n", __func__);
++	if ((chanctx_idx == -1) ||
++	    (chanctx_idx > (MAX_CHANCTX + MAX_OFF_CHANCTX))) {
++		pr_err("%s: Unexpected channel context: %d\n",
++		       __func__,
++		       chanctx_idx);
+ 		goto out;
+ 	}
+ 
+@@ -930,7 +1127,10 @@ void uccp420wlan_proc_tx_discard_chsw(struct mac80211_dev *dev,
+ 	txq_len = skb_queue_len(txq);
+ 
+ 	if (!txq_len) {
+-		pr_err("%s: TX_DONE received for empty queue\n", __func__);
++		pr_err("%s: TX_DONE received for empty queue: chan: %d desc_id: %d\n",
++		       __func__,
++		       chanctx_idx,
++		       desc_id);
+ 		goto out;
+ 	}
+ 
+@@ -944,34 +1144,25 @@ void uccp420wlan_proc_tx_discard_chsw(struct mac80211_dev *dev,
+ 	pkt = 0;
+ 
+ 	skb_first = skb_peek(txq);
++
++	if (!skb_first) {
++		pr_err("%s: Empty txq: chan: %d desc_id: %d\n",
++		       __func__,
++		       chanctx_idx,
++		       desc_id);
++		goto out;
++	}
++
+ 	curr_retries = &tx->pkt_info[chanctx_idx][desc_id].curr_retries;
+ 	max_retries = tx->pkt_info[chanctx_idx][desc_id].max_retries;
+ 	retries = tx->pkt_info[chanctx_idx][desc_id].retries;
+ 	rate = tx->pkt_info[chanctx_idx][desc_id].rate;
+ 	tx->pkt_info[chanctx_idx][desc_id].adjusted_rates = true;
+ 
+-	if ((tx_done->retries_num[0] + *curr_retries) > max_retries) {
++	if ((tx_done->retries_num[0] + *curr_retries) > max_retries)
+ 		retries_exceeded = true;
+-	} else {
++	else
+ 		*curr_retries += tx_done->retries_num[0];
+-#ifdef notyet
+-		/* Adjust the counters here */
+-		for (i = 0; i < 4; i++) {
+-			if (tx_done->rate[0] != rate[i])
+-				retries[i] = 0;
+-			else
+-				retries[i] -= tx_done->retries_num[0];
+-
+-			DEBUG_LOG("%s-UMACTX: %s: %d %s %d == %d retries\n",
+-				  dev->name,
+-				  __func__,
+-				  __LINE__,
+-				  "adjusted indices are",
+-				  i,
+-				  retries[i]);
+-		}
+-#endif
+-	}
+ 
+ 	memcpy(&tx_info_1st_mpdu,
+ 	       (struct ieee80211_tx_info *)IEEE80211_SKB_CB(skb_first),
+@@ -1019,79 +1210,69 @@ void uccp420wlan_proc_tx_discard_chsw(struct mac80211_dev *dev,
+ 		pkt++;
+ 	}
+ 
+-	if (chanctx_idx != curr_chanctx_idx) {
+-		/* First check if there is a packet in the txq of the current
+-		 * chanctx that needs to be transmitted
+-		 */
+-		txq = &tx->pkt_info[curr_chanctx_idx][desc_id].pkt;
+-		txq_len = skb_queue_len(txq);
+-		queue = tx->pkt_info[curr_chanctx_idx][desc_id].queue;
++	/* First check if there is a packet in the txq of the current
++	 * chanctx that needs to be transmitted
++	 */
++	txq = &tx->pkt_info[curr_chanctx_idx][desc_id].pkt;
++	txq_len = skb_queue_len(txq);
++	queue = tx->pkt_info[curr_chanctx_idx][desc_id].queue;
++	pkts_pend = txq_len;
+ 
+-		if (txq_len) {
+-			spin_unlock_irqrestore(&tx->lock, flags);
++	if (txq_len) {
++		spin_unlock_irqrestore(&tx->lock, flags);
+ 
+-			/* TODO: Currently sending 0 since this param is not
+-			 * used as expected in the orig code for multiple
+-			 * frames etc Need to set this properly when the orig
+-			 * code logic is corrected
++		/* TODO: Currently sending 0 since this param is not
++		 * used as expected in the orig code for multiple
++		 * frames etc Need to set this properly when the orig
++		 * code logic is corrected
++		 */
++		ret = __uccp420wlan_tx_frame(dev,
++					     queue,
++					     desc_id,
++					     curr_chanctx_idx,
++					     0,
++					     1);
++		if (ret < 0) {
++			/* TODO: Check if we need to clear the TX bitmap
++			 * and desc_chan_map here
+ 			 */
+-			ret = __uccp420wlan_tx_frame(dev,
+-						     queue,
+-						     desc_id,
+-						     curr_chanctx_idx,
+-						     0,
+-						     1);
+-			if (ret < 0) {
+-				/* TODO: Check if we need to clear the TX bitmap
+-				 * and desc_chan_map here
+-				 */
+-				pr_err("%s: Queueing of TX frame to FW failed\n",
+-				       __func__);
+-			} else {
+-				spin_lock_irqsave(&tx->lock, flags);
+-				tx->desc_chan_map[desc_id] = curr_chanctx_idx;
+-				spin_unlock_irqrestore(&tx->lock, flags);
+-			}
+-
+-			goto tx_done;
+-		} else {
+-			/* Check pending queue */
+-			/* Reserved token */
+-			if (desc_id < (NUM_TX_DESCS_PER_AC * NUM_ACS)) {
+-				queue = (desc_id % NUM_ACS);
+-
+-				peer_id = get_curr_peer_opp(dev,
+-							    curr_chanctx_idx,
+-							    queue);
+-
+-				if (peer_id == -1)
+-					goto done;
++			pr_err("%s: Queueing of TX frame to FW failed\n",
++			       __func__);
++		}
+ 
+-			/* Spare token */
+-			} else {
+-				for (ac = WLAN_AC_VO; ac >= 0; ac--) {
+-					peer_id = get_curr_peer_opp(dev,
+-							   curr_chanctx_idx,
+-							   ac);
+-
+-					if (peer_id != -1) {
+-						queue = ac;
+-						break;
+-					}
+-				}
++		/* This is needed to avoid freeing up the token
++		 */
++		pkts_pend = 1;
+ 
+-				if (ac < 0)
+-					goto done;
+-			}
++		goto tx_done;
++	} else {
++		/* Check pending queue */
++		/* Reserved token */
++		if (desc_id < (NUM_TX_DESCS_PER_AC * NUM_ACS)) {
++			queue = (desc_id % NUM_ACS);
++			start_ac = end_ac = queue;
++		} else {
++			/* Spare token:
++			 * Loop through all AC's
++			 */
++			start_ac = WLAN_AC_VO;
++			end_ac = WLAN_AC_BK;
++		}
+ 
+-			uccp420wlan_tx_proc_pend_frms(dev,
+-						      queue,
++		for (cnt = start_ac; cnt >= end_ac; cnt--) {
++			pkts_pend = uccp420wlan_tx_proc_pend_frms(dev,
++						      cnt,
+ 						      curr_chanctx_idx,
+-						      peer_id,
+ 						      desc_id);
++			if (pkts_pend) {
++				queue = cnt;
++				break;
++			}
++		}
+ 
+-			spin_unlock_irqrestore(&tx->lock, flags);
++		spin_unlock_irqrestore(&tx->lock, flags);
+ 
++		if (pkts_pend > 0) {
+ 			/* TODO: Currently sending 0 since this param is not
+ 			 * used as expected in the orig code for multiple
+ 			 * frames etc. Need to set this properly when the orig
+@@ -1105,32 +1286,13 @@ void uccp420wlan_proc_tx_discard_chsw(struct mac80211_dev *dev,
+ 						     0);
+ 
+ 			if (ret < 0) {
+-				/* SDK: Check if we need to clear the TX bitmap
+-				 * and desc_chan_map here
+-				 */
+ 				pr_err("%s: Queueing of TX frame to FW failed\n",
+ 				       __func__);
+-			} else {
+-				spin_lock_irqsave(&tx->lock, flags);
+-				tx->desc_chan_map[desc_id] = curr_chanctx_idx;
+-				spin_unlock_irqrestore(&tx->lock, flags);
+ 			}
+-
+-			goto tx_done;
+ 		}
++		goto tx_done;
+ 	}
+ 
+-done:
+-	curr_bit = (desc_id % TX_DESC_BUCKET_BOUND);
+-	pool_id = (desc_id / TX_DESC_BUCKET_BOUND);
+-
+-	/* Mark the token as available */
+-	__clear_bit(curr_bit, &tx->buf_pool_bmp[pool_id]);
+-
+-	tx->desc_chan_map[desc_id] = -1;
+-
+-	tx->outstanding_tokens[tx_done->queue]--;
+-
+ 	if (txq_len == 1)
+ 		dev->stats->tx_cmd_send_count_single--;
+ 	else
+@@ -1139,6 +1301,8 @@ done:
+ out:
+ 	spin_unlock_irqrestore(&tx->lock, flags);
+ 
++	return pkts_pend;
++
+ tx_done:
+ 	skb_queue_walk_safe(&tx_done_list, skb, tmp) {
+ 			tx_status(skb,
+@@ -1147,6 +1311,8 @@ tx_done:
+ 				  dev,
+ 				  tx_info_1st_mpdu);
+ 	}
++
++	return pkts_pend;
+ }
+ #endif
+ 
+@@ -1180,6 +1346,7 @@ void uccp420wlan_tx_init(struct mac80211_dev *dev)
+ {
+ 	int i = 0;
+ 	int j = 0;
++	int k = 0;
+ 	struct tx_config *tx = &dev->tx;
+ 
+ 	memset(&tx->buf_pool_bmp,
+@@ -1190,8 +1357,10 @@ void uccp420wlan_tx_init(struct mac80211_dev *dev)
+ 	tx->next_spare_token_ac = WLAN_AC_BE;
+ 
+ 	for (i = 0; i < NUM_ACS; i++) {
+-		for (j = 0; j < MAX_PEND_Q_PER_AC; j++)
+-			skb_queue_head_init(&tx->pending_pkt[j][i]);
++		for (j = 0; j < MAX_PEND_Q_PER_AC; j++) {
++			for (k = 0; k < MAX_UMAC_VIF_CHANCTX_TYPES; k++)
++				skb_queue_head_init(&tx->pending_pkt[k][j][i]);
++		}
+ 
+ 		tx->outstanding_tokens[i] = 0;
+ 	}
+@@ -1200,7 +1369,7 @@ void uccp420wlan_tx_init(struct mac80211_dev *dev)
+ #ifdef MULTI_CHAN_SUPPORT
+ 		tx->desc_chan_map[i] = -1;
+ 
+-		for (j = 0; j < MAX_CHANCTX; j++)
++		for (j = 0; j < MAX_CHANCTX + MAX_OFF_CHANCTX ; j++)
+ 			skb_queue_head_init(&tx->pkt_info[j][i].pkt);
+ #else
+ 		skb_queue_head_init(&tx->pkt_info[i].pkt);
+@@ -1221,10 +1390,12 @@ void uccp420wlan_tx_init(struct mac80211_dev *dev)
+ 	tx->persec_timer.function = print_persec_stats;
+ 	mod_timer(&tx->persec_timer, jiffies + msecs_to_jiffies(1000));
+ #endif
++	dev->curr_chanctx_idx = -1;
+ 	spin_lock_init(&tx->lock);
+ 	ieee80211_wake_queues(dev->hw);
+ 
+-	DEBUG_LOG("%s-UMACTX:Initialization successful\n", dev->name);
++	DEBUG_LOG("%s-UMACTX: initialization successful\n",
++		  UMACTX_TO_MACDEV(tx)->name);
+ }
+ 
+ 
+@@ -1232,9 +1403,12 @@ void uccp420wlan_tx_deinit(struct mac80211_dev *dev)
+ {
+ 	int i = 0;
+ 	int j = 0;
+-	unsigned long flags = 0;
++	int k = 0;
++	unsigned long flags;
+ 	struct tx_config *tx = &dev->tx;
+-	struct sk_buff *skb;
++	struct sk_buff *skb = NULL;
++	unsigned int qlen = 0;
++	struct sk_buff_head *pend_q = NULL;
+ 
+ 	ieee80211_stop_queues(dev->hw);
+ 
+@@ -1244,10 +1418,17 @@ void uccp420wlan_tx_deinit(struct mac80211_dev *dev)
+ 
+ 	for (i = 0; i < NUM_TX_DESCS; i++) {
+ #ifdef MULTI_CHAN_SUPPORT
+-		for (j = 0; j < MAX_CHANCTX; j++)
+-			while ((skb = skb_dequeue(&tx->pkt_info[j][i].pkt)) !=
+-			       NULL)
+-				dev_kfree_skb_any(skb);
++		for (j = 0; j < MAX_CHANCTX + MAX_OFF_CHANCTX; j++) {
++			qlen = skb_queue_len(&tx->pkt_info[j][i].pkt);
++
++			if (qlen) {
++				while ((skb =
++					skb_dequeue(&tx->pkt_info[j][i].pkt)) !=
++				       NULL) {
++					dev_kfree_skb_any(skb);
++				}
++			}
++		}
+ #else
+ 		while ((skb = skb_dequeue(&tx->pkt_info[i].pkt)) != NULL)
+ 			dev_kfree_skb_any(skb);
+@@ -1256,16 +1437,19 @@ void uccp420wlan_tx_deinit(struct mac80211_dev *dev)
+ 
+ 	for (i = 0; i < NUM_ACS; i++) {
+ 		for (j = 0; j < MAX_PEND_Q_PER_AC; j++) {
+-			while ((skb =
+-				skb_dequeue(&tx->pending_pkt[j][i])) !=
+-			       NULL)
+-				dev_kfree_skb_any(skb);
++			for (k = 0; k < MAX_UMAC_VIF_CHANCTX_TYPES; k++) {
++				pend_q = &tx->pending_pkt[k][j][i];
++
++				while ((skb = skb_dequeue(pend_q)) != NULL)
++					dev_kfree_skb_any(skb);
++			}
+ 		}
+ 	}
+ 
+ 	spin_unlock_irqrestore(&tx->lock, flags);
+ 
+-	DEBUG_LOG("%s-UMACTX:Deinitialization successful\n", dev->name);
++	DEBUG_LOG("%s-UMACTX: deinitialization successful\n",
++		  UMACTX_TO_MACDEV(tx)->name);
+ }
+ 
+ 
+@@ -1297,6 +1481,7 @@ int __uccp420wlan_tx_frame(struct mac80211_dev *dev,
+ 
+ 		tx_done.descriptor_id = token_id;
+ 		tx_done.queue = queue;
++		dev->tx.desc_chan_map[token_id] = curr_chanctx_idx;
+ 
+ #ifdef MULTI_CHAN_SUPPORT
+ 		txq = &dev->tx.pkt_info[curr_chanctx_idx][token_id].pkt;
+@@ -1337,6 +1522,9 @@ int uccp420wlan_tx_frame(struct sk_buff *skb,
+ 	struct umac_vif *uvif = NULL;
+ 	struct umac_sta *usta = NULL;
+ 	int peer_id = -1;
++#ifdef MULTI_CHAN_SUPPORT
++	int off_chanctx_idx;
++#endif
+ 
+ 	uvif = (struct umac_vif *)(tx_info->control.vif->drv_priv);
+ 
+@@ -1350,21 +1538,27 @@ int uccp420wlan_tx_frame(struct sk_buff *skb,
+ 	if (bcast == false) {
+ 		queue = tx_queue_map(skb->queue_mapping);
+ 		more_frames = 0;
++		dev->stats->tx_cmds_from_stack++;
+ 	} else {
+ 		queue = WLAN_AC_BCN;
+ 		/* Hack: skb->priority is used to indicate more frames */
+ 		more_frames = skb->priority;
+ 	}
+ 
+-	dev->stats->tx_cmds_from_stack++;
+ 
+ 	if (dev->params->production_test == 1)
+ 		tx_info->flags |= IEEE80211_TX_CTL_AMPDU;
+ 
+-	if (tx_info->flags & IEEE80211_TX_CTL_TX_OFFCHAN) {
+-		/* These are high priority frames, send them in VO */
+-		queue = WLAN_AC_VO;
++	if ((tx_info->flags & IEEE80211_TX_CTL_TX_OFFCHAN) ||
++	    (uvif->chanctx &&
++	    uvif->chanctx->index == dev->roc_off_chanctx_idx))  {
+ 		atomic_inc(&dev->roc_params.roc_mgmt_tx_count);
++		off_chanctx_idx = UMAC_VIF_CHANCTX_TYPE_OFF;
++		DEBUG_LOG("%s-UMACTX: Sending OFFCHAN Frame: %d\n",
++			  dev->name,
++			  atomic_read(&dev->roc_params.roc_mgmt_tx_count));
++	} else {
++		off_chanctx_idx = UMAC_VIF_CHANCTX_TYPE_OPER;
+ 	}
+ 
+ 	mac_hdr = (struct ieee80211_hdr *)(skb->data);
+@@ -1378,10 +1572,10 @@ int uccp420wlan_tx_frame(struct sk_buff *skb,
+ 		  skb->queue_mapping,
+ 		  ieee80211_is_beacon(mac_hdr->frame_control));
+ 
+-	token_id = uccp420wlan_tx_alloc_buff_req(dev,
++	token_id = uccp420wlan_tx_alloc_token(dev,
+ 						 queue,
+ #ifdef MULTI_CHAN_SUPPORT
+-						 uvif,
++						 off_chanctx_idx,
+ 						 curr_chanctx_idx,
+ #endif
+ 						 peer_id,
+@@ -1458,19 +1652,23 @@ void uccp420wlan_tx_complete(struct umac_event_tx_done *tx_done,
+ 	qlen = skb_queue_len(&dev->tx.pkt_info[token_id].pkt);
+ #endif
+ 
+-	DEBUG_LOG("%s-UMACTX:TX Done Rx for desc_id: %d qlen: %d\n",
++	DEBUG_LOG("%s-UMACTX:TX Done Rx for desc_id: %d Q: %d qlen: %d ",
+ 		  dev->name,
+ 		  tx_done->descriptor_id,
+-		  qlen);
++		  tx_done->queue, qlen);
++	DEBUG_LOG("status: %d chactx: %d out_tok: %d\n",
++		  tx_done->frm_status[0],
++		  curr_chanctx_idx,
++		  dev->tx.outstanding_tokens[tx_done->queue]);
+ 
+ 	update_aux_adc_voltage(dev, tx_done->pdout_voltage);
+ 
+ #ifdef MULTI_CHAN_SUPPORT
+ 	if (tx_done->frm_status[0] == TX_DONE_STAT_DISCARD_CHSW) {
+-		uccp420wlan_proc_tx_discard_chsw(dev,
+-						 curr_chanctx_idx,
+-						 tx_done);
+-		return;
++		pkts_pending = uccp420wlan_proc_tx_dscrd_chsw(dev,
++							      curr_chanctx_idx,
++							      tx_done);
++		goto out;
+ 	}
+ #endif
+ 	pkts_pending = uccp420wlan_tx_free_buff_req(dev,
+@@ -1483,12 +1681,6 @@ void uccp420wlan_tx_complete(struct umac_event_tx_done *tx_done,
+ 
+ 	if (pkts_pending) {
+ 		/*TODO..Do we need to check each skb for more_frames??*/
+-#if 0
+-		if ((queue == WLAN_AC_BCN) && (skb->priority == 1))
+-			more_frames = 1;
+-		else
+-			more_frames = 0;
+-#endif
+ 		more_frames = 0;
+ 
+ 		DEBUG_LOG("%s-UMACTX:%s:%d Transfer Pending Frames:\n",
+@@ -1508,6 +1700,13 @@ void uccp420wlan_tx_complete(struct umac_event_tx_done *tx_done,
+ 		DEBUG_LOG("%s-UMACTX:No Pending Packets\n", dev->name);
+ 	}
+ 
++out:
++	if (!pkts_pending) {
++		/* Mark the token as available */
++		free_token(dev, token_id, tx_done->queue);
++		dev->tx.desc_chan_map[token_id] = -1;
++	}
++
+ 	for (vif_index = 0; vif_index < MAX_VIFS; vif_index++) {
+ 		if (vif_index_bitmap & (1 << vif_index)) {
+ 			memset(&noa_event, 0, sizeof(noa_event));
+@@ -1519,3 +1718,191 @@ void uccp420wlan_tx_complete(struct umac_event_tx_done *tx_done,
+ 		}
+ 	}
+ }
++
++
++static int uccp420_flush_vif_all_pend_q(struct mac80211_dev *dev,
++					struct umac_vif *uvif,
++					unsigned int hw_queue_map,
++					enum UMAC_VIF_CHANCTX_TYPE chanctx_type)
++{
++	unsigned int pending = 0;
++	int count = 0;
++	int peer_id = -1;
++	unsigned int queue = 0;
++	int pend_q = 0;
++	unsigned long flags;
++	struct sk_buff_head *pend_pkt_q = NULL;
++	struct tx_config *tx = NULL;
++	struct ieee80211_sta *sta = NULL;
++	struct umac_sta *usta = NULL;
++
++	tx = &dev->tx;
++
++	if (!uvif->chanctx) {
++		DEBUG_LOG("%s-UMACTX: Chanctx NULL, returning\n", dev->name);
++		return -1;
++	}
++
++	for (queue = 0; queue < NUM_ACS; queue++) {
++		if (!(BIT(queue) & hw_queue_map))
++			continue;
++
++		for (pend_q = 0; pend_q < MAX_PEND_Q_PER_AC; pend_q++) {
++			if (pend_q < MAX_PEERS) {
++				rcu_read_lock();
++				sta = rcu_dereference(dev->peers[pend_q]);
++
++				if (!sta) {
++					rcu_read_unlock();
++					continue;
++				}
++
++				usta = (struct umac_sta *)(sta->drv_priv);
++
++				if (usta->vif_index == uvif->vif_index)
++					peer_id = pend_q;
++				else {
++					rcu_read_unlock();
++					continue;
++				}
++
++				rcu_read_unlock();
++			} else if (pend_q == uvif->vif_index)
++				peer_id = uvif->vif_index;
++			else
++				continue;
++
++			while (1) {
++				spin_lock_irqsave(&tx->lock, flags);
++
++				pend_pkt_q =
++					&tx->pending_pkt[chanctx_type]
++							[peer_id]
++							[queue];
++
++				/* Assuming all packets for the peer have same
++				 * channel context
++				 */
++				pending = skb_queue_len(pend_pkt_q);
++
++				spin_unlock_irqrestore(&tx->lock, flags);
++
++				if (!pending)
++					break;
++
++				if (count >= QUEUE_FLUSH_TIMEOUT_TICKS)
++					break;
++
++				current->state = TASK_INTERRUPTIBLE;
++
++				if (0 == schedule_timeout(1))
++					count++;
++
++			}
++
++			if (pending) {
++				pr_err("%s-UMACTX: Failed for VIF: %d and Queue: %d, pending: %d\n",
++				       dev->name,
++				       uvif->vif_index,
++				       queue,
++				       pending);
++
++				return -1;
++			}
++		}
++	}
++
++	DEBUG_LOG("%s-UMACTX: Success for VIF: %d and Queue: %d\n",
++			dev->name,
++			uvif->vif_index,
++			queue);
++	return 0;
++}
++
++
++static int uccp420_flush_vif_tx_queues(struct mac80211_dev *dev,
++				       struct umac_vif *uvif,
++				       int chanctx_idx,
++				       unsigned int hw_queue_map)
++{
++	unsigned int tokens = 0;
++	unsigned int i = 0;
++	unsigned long buf_pool_bmp = 0;
++	unsigned long flags;
++	struct tx_pkt_info *pkt_info = NULL;
++	struct tx_config *tx = NULL;
++	int count = 0;
++
++	tx = &dev->tx;
++
++	spin_lock_irqsave(&tx->lock, flags);
++
++	for (i = 0; i < NUM_TX_DESCS; i++) {
++		pkt_info = &tx->pkt_info[chanctx_idx][i];
++
++		if ((pkt_info->vif_index == uvif->vif_index) &&
++		    (BIT(pkt_info->queue) & hw_queue_map))
++			tokens |= BIT(i);
++	}
++
++	spin_unlock_irqrestore(&tx->lock, flags);
++
++	if (!tokens)
++		return 0;
++
++	while (1) {
++		spin_lock_irqsave(&tx->lock, flags);
++		buf_pool_bmp = tx->buf_pool_bmp[0];
++		spin_unlock_irqrestore(&tx->lock, flags);
++
++		if (!(buf_pool_bmp & tokens))
++			break;
++
++		if (count >= QUEUE_FLUSH_TIMEOUT_TICKS)
++			break;
++
++		current->state = TASK_INTERRUPTIBLE;
++
++		if (0 == schedule_timeout(1))
++			count++;
++	}
++
++	if (buf_pool_bmp & tokens) {
++		pr_err("%s-UMACTX: Failed for VIF: %d, buf_pool_bmp : 0x%lx\n",
++		       dev->name,
++		       uvif->vif_index,
++		       buf_pool_bmp);
++
++		return -1;
++	}
++
++	DEBUG_LOG("%s-UMACTX: Success for VIF: %d, buf_pool_bmp : 0x%lx\n",
++			dev->name,
++			uvif->vif_index,
++			buf_pool_bmp);
++	return 0;
++}
++
++
++int uccp420_flush_vif_queues(struct mac80211_dev *dev,
++			     struct umac_vif *uvif,
++			     int chanctx_idx,
++			     unsigned int hw_queue_map,
++			     enum UMAC_VIF_CHANCTX_TYPE vif_chanctx_type)
++{
++	int result  = -1;
++
++	result = uccp420_flush_vif_all_pend_q(dev,
++					      uvif,
++					      hw_queue_map,
++					      vif_chanctx_type);
++
++	if (result == 0) {
++		result = uccp420_flush_vif_tx_queues(dev,
++						     uvif,
++						     chanctx_idx,
++						     hw_queue_map);
++	}
++
++	return result;
++}
+diff --git a/drivers/net/wireless/uccp420wlan/src/umac_if.c b/drivers/net/wireless/uccp420wlan/src/umac_if.c
+index 51e5bb7..f435dd1 100644
+--- a/drivers/net/wireless/uccp420wlan/src/umac_if.c
++++ b/drivers/net/wireless/uccp420wlan/src/umac_if.c
+@@ -581,7 +581,8 @@ int uccp420wlan_prog_reset(unsigned int reset_type, unsigned int lmac_mode)
+ 		reset.lmac_mode = lmac_mode;
+ 		reset.antenna_sel = dev->params->antenna_sel;
+ 
+-		if (dev->params->production_test == 0) {
++		if (dev->params->production_test == 0 &&
++			dev->params->bypass_vpd == 0) {
+ 			memcpy(reset.rf_params, dev->params->rf_params_vpd,
+ 			       RF_PARAMS_SIZE);
+ 		} else {
+@@ -837,17 +838,19 @@ int uccp420wlan_prog_vht_bform(unsigned int vht_beamform_status,
+ }
+ 
+ 
+-int uccp420wlan_prog_roc(unsigned int roc_status,
++int uccp420wlan_prog_roc(unsigned int roc_ctrl,
+ 			 unsigned int roc_channel,
+-			 unsigned int roc_duration)
++			 unsigned int roc_duration,
++			 unsigned int roc_type)
+ {
+ 	struct cmd_roc cmd_roc;
+ 
+ 	memset(&cmd_roc, 0, sizeof(struct cmd_roc));
+ 
+-	cmd_roc.roc_status	= roc_status;
++	cmd_roc.roc_ctrl = roc_ctrl;
+ 	cmd_roc.roc_channel	= roc_channel;
+-	cmd_roc.roc_duration	= roc_duration;
++	cmd_roc.roc_duration = roc_duration;
++	cmd_roc.roc_type = roc_type;
+ 
+ 	return uccp420wlan_send_cmd((unsigned char *) &cmd_roc,
+ 			sizeof(struct cmd_roc), UMAC_CMD_ROC_CTRL);
+@@ -1302,6 +1305,8 @@ int uccp420wlan_prog_channel(unsigned int prim_ch,
+ 	dev->cur_chan.freq_band = freq_band;
+ 	dev->chan_prog_done = 0;
+ 
++	rcu_read_unlock();
++
+ 	return uccp420wlan_send_cmd((unsigned char *) &channel,
+ 				    sizeof(struct cmd_channel),
+ 				    UMAC_CMD_CHANNEL);
+@@ -1404,6 +1409,7 @@ int uccp420wlan_prog_tx(unsigned int queue,
+ 	unsigned long irq_flags, tx_irq_flags;
+ #ifdef MULTI_CHAN_SUPPORT
+ 	struct tx_pkt_info *pkt_info = NULL;
++	struct tx_config *tx;
+ #endif
+ 
+ 	memset(&tx_cmd, 0, sizeof(struct cmd_tx_ctrl));
+@@ -1419,6 +1425,7 @@ int uccp420wlan_prog_tx(unsigned int queue,
+ 
+ 	dev = p->context;
+ 	spin_lock_irqsave(&dev->tx.lock, tx_irq_flags);
++	tx = &dev->tx;
+ #ifdef MULTI_CHAN_SUPPORT
+ 	txq = &dev->tx.pkt_info[curr_chanctx_idx][descriptor_id].pkt;
+ 	pkt_info = &dev->tx.pkt_info[curr_chanctx_idx][descriptor_id];
+@@ -1461,6 +1468,9 @@ int uccp420wlan_prog_tx(unsigned int queue,
+ 		hdrlen += tx_info_first->control.hw_key->iv_len;
+ 	}
+ 
++	if (tx_info_first->flags & IEEE80211_TX_CTL_TX_OFFCHAN)
++		tx_cmd.tx_flags |= (1 << UMAC_TX_FLAG_OFFCHAN_FRM);
++
+ 	/* For injected frames (wlantest) hw_key is not set,as PMF uses
+ 	 * CCMP always so hardcode this to CCMP IV LEN 8.
+ 	 * For Auth3: It is completely handled in SW (mac80211).
+@@ -1493,6 +1503,14 @@ int uccp420wlan_prog_tx(unsigned int queue,
+ 	tx_cmd.pkt_gram_payload_len = hdrlen;
+ 	tx_cmd.aggregate_mpdu = AMPDU_AGGR_DISABLED;
+ 
++#ifdef MULTI_CHAN_SUPPORT
++	dev->tx.pkt_info[curr_chanctx_idx][descriptor_id].vif_index = vif_index;
++	dev->tx.pkt_info[curr_chanctx_idx][descriptor_id].queue = queue;
++#else
++	dev->tx.pkt_info[descriptor_id].vif_index = vif_index;
++	dev->tx.pkt_info[descriptor_id].queue = queue;
++#endif
++
+ 	uvif = (struct umac_vif *) (tx_info_first->control.vif->drv_priv);
+ 
+ 	nbuf = alloc_skb(sizeof(struct cmd_tx_ctrl) +
+@@ -1541,6 +1559,10 @@ int uccp420wlan_prog_tx(unsigned int queue,
+ 		  tx_cmd.rate_retries[2],
+ 		  tx_cmd.rate_retries[3]);
+ 
++#ifdef MULTI_CHAN_SUPPORT
++	tx->desc_chan_map[descriptor_id] = curr_chanctx_idx;
++#endif
++
+ 	skb_queue_walk_safe(txq, skb, tmp) {
+ 		if (!skb || (pkt > tx_cmd.num_frames_per_desc))
+ 			break;
+@@ -1566,11 +1588,8 @@ int uccp420wlan_prog_tx(unsigned int queue,
+ #ifdef MULTI_CHAN_SUPPORT
+ 		dev->tx.pkt_info[curr_chanctx_idx][descriptor_id].hdr_len =
+ 			hdrlen;
+-		dev->tx.pkt_info[curr_chanctx_idx][descriptor_id].queue =
+-			queue;
+ #else
+ 		dev->tx.pkt_info[descriptor_id].hdr_len = hdrlen;
+-		dev->tx.pkt_info[descriptor_id].queue = queue;
+ #endif
+ 
+ 		/* Complete packet length */
+@@ -2280,13 +2299,37 @@ int uccp420wlan_msg_handler(void *nbuff,
+ 		uccp420wlan_ch_prog_complete(event,
+ 			(struct umac_event_ch_prog_complete *)buff, p->context);
+ 	} else if (event == UMAC_EVENT_RF_CALIB_DATA) {
+-		struct umac_event_rf_calib_data  *rf_data = (void *) buff;
++		struct umac_event_rf_calib_data  *rf_data = (void *)buff;
+ 
+ 		uccp420wlan_rf_calib_data(rf_data, p->context);
++	} else if (event == UMAC_EVENT_ROC_STATUS) {
++		struct umac_event_roc_status *roc_status = (void *)buff;
++		struct delayed_work *work = NULL;
++
++		DEBUG_LOG("%s-UMACIF: ROC status is %d\n",
++			  dev->name,
++			  roc_status->roc_status);
++
++		switch (roc_status->roc_status) {
++		case UMAC_ROC_STAT_STARTED:
++			if (dev->roc_params.roc_in_progress == 0) {
++				dev->roc_params.roc_in_progress = 1;
++				ieee80211_ready_on_channel(dev->hw);
++				DEBUG_LOG("%s-UMACIF: ROC READY..\n",
++					  dev->name);
++			}
++			break;
++		case UMAC_ROC_STAT_DONE:
++		case UMAC_ROC_STAT_STOPPED:
++			if (dev->roc_params.roc_in_progress == 1) {
++				work = &dev->roc_complete_work;
++				ieee80211_queue_delayed_work(dev->hw,
++							     work,
++							     0);
++			}
++			break;
++		}
+ #ifdef MULTI_CHAN_SUPPORT
+-	/* SDK: Need to see if this will work in tasklet context (due to
+-	 * scheduling latencies)
+-	 */
+ 	} else if (event == UMAC_EVENT_CHAN_SWITCH) {
+ 		uccp420wlan_proc_ch_sw_event((void *)buff,
+ 					     p->context);
+-- 
+1.9.1
+

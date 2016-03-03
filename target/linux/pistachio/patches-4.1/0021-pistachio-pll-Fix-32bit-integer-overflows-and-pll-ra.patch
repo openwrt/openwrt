@@ -1,0 +1,200 @@
+From d737672ece8d49a42014c467fc617d16c91ac557 Mon Sep 17 00:00:00 2001
+From: Zdenko Pulitika <zdenko.pulitika@imgtec.com>
+Date: Fri, 12 Jun 2015 10:32:19 +0100
+Subject: [PATCH 021/153] pistachio: pll: Fix 32bit integer overflows and pll
+ rate calculation in integer mode
+
+This commit fixes two issues :-
+1. This commit fixes 32bit integer overflows throughout the pll driver
+(i.e. wherever the result of integer multiplication may exceed the
+range of u32).
+
+One of the functions affected by this problem is .recalc_rate. It
+returns incorrect rate for some pll settings (not for all though)
+which in turn results in the incorrect rate setup of pll's child
+clocks.
+
+2. Bug: .recalc_rate callback for the fractional pll doesn't take operating
+mode into account when calculating pll rate. This bug results in
+the incorrect pll rates when pll is operating in integer mode.
+
+This commit fixes this bug by checking the operating mode before
+calculating pll rate.
+
+Change-Id: Ic3c528533d2ce6ddeb17f8f8450ca39018cde8b0
+Signed-off-by: Zdenko Pulitika <zdenko.pulitika@imgtec.com>
+---
+ drivers/clk/pistachio/clk-pll.c | 56 +++++++++++++++++++++++++++++------------
+ drivers/clk/pistachio/clk.h     | 22 +++++++++-------
+ 2 files changed, 53 insertions(+), 25 deletions(-)
+
+diff --git a/drivers/clk/pistachio/clk-pll.c b/drivers/clk/pistachio/clk-pll.c
+index f46e1c4..f1d3da4 100644
+--- a/drivers/clk/pistachio/clk-pll.c
++++ b/drivers/clk/pistachio/clk-pll.c
+@@ -65,6 +65,10 @@
+ #define MIN_OUTPUT_FRAC			12000000UL
+ #define MAX_OUTPUT_FRAC			1600000000UL
+ 
++/* Fractional PLL operating modes */
++#define PLL_MODE_INT			1
++#define PLL_MODE_FRAC			0
++
+ struct pistachio_clk_pll {
+ 	struct clk_hw hw;
+ 	void __iomem *base;
+@@ -88,12 +92,10 @@ static inline void pll_lock(struct pistachio_clk_pll *pll)
+ 		cpu_relax();
+ }
+ 
+-static inline u32 do_div_round_closest(u64 dividend, u32 divisor)
++static inline u64 do_div_round_closest(u64 dividend, u64 divisor)
+ {
+ 	dividend += divisor / 2;
+-	do_div(dividend, divisor);
+-
+-	return dividend;
++	return div64_u64(dividend, divisor);
+ }
+ 
+ static inline struct pistachio_clk_pll *to_pistachio_pll(struct clk_hw *hw)
+@@ -101,6 +103,15 @@ static inline struct pistachio_clk_pll *to_pistachio_pll(struct clk_hw *hw)
+ 	return container_of(hw, struct pistachio_clk_pll, hw);
+ }
+ 
++static inline u32 pll_frac_get_mode(struct clk_hw *hw)
++{
++	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
++	u32 val;
++
++	val = pll_readl(pll, PLL_CTRL3) & PLL_FRAC_CTRL3_DSMPD;
++	return val ? PLL_MODE_INT : PLL_MODE_FRAC;
++}
++
+ static struct pistachio_pll_rate_table *
+ pll_get_params(struct pistachio_clk_pll *pll, unsigned long fref,
+ 	       unsigned long fout)
+@@ -187,7 +198,7 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
+ 	struct pistachio_pll_rate_table *params;
+ 	int enabled = pll_gf40lp_frac_is_enabled(hw);
+-	u32 val, vco, old_postdiv1, old_postdiv2, frac;
++	u64 val, vco, old_postdiv1, old_postdiv2, frac;
+ 	const char *name = __clk_get_name(hw->clk);
+ 
+ 	if (rate < MIN_OUTPUT_FRAC || rate > MAX_OUTPUT_FRAC)
+@@ -197,23 +208,31 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 	if (!params || !params->refdiv)
+ 		return -EINVAL;
+ 
+-	vco = params->fref * params->fbdiv / params->refdiv;
++	/* get operating mode and calculate vco accordingly */
++	vco = params->fref;
++	if (pll_frac_get_mode(hw) == PLL_MODE_INT)
++		vco *= params->fbdiv << 24;
++	else
++		vco *= (params->fbdiv << 24) + params->frac;
++
++	vco = div64_u64(vco, params->refdiv << 24);
++
+ 	if (vco < MIN_VCO_FRAC_FRAC || vco > MAX_VCO_FRAC_FRAC)
+-		pr_warn("%s: VCO %u is out of range %lu..%lu\n", name, vco,
++		pr_warn("%s: VCO %llu is out of range %lu..%lu\n", name, vco,
+ 			MIN_VCO_FRAC_FRAC, MAX_VCO_FRAC_FRAC);
+ 
+-	val = params->fref / params->refdiv;
++	val = div64_u64(params->fref, params->refdiv);
+ 	if (val < MIN_PFD)
+-		pr_warn("%s: PFD %u is too low (min %lu)\n",
++		pr_warn("%s: PFD %llu is too low (min %lu)\n",
+ 			name, val, MIN_PFD);
+ 	if (val > vco / 16)
+-		pr_warn("%s: PFD %u is too high (max %u)\n",
++		pr_warn("%s: PFD %llu is too high (max %llu)\n",
+ 			name, val, vco / 16);
+ 
+ 	/* Calculate the frac parameter */
+ 	frac = rate * params->refdiv * params->postdiv1 * params->postdiv2;
+ 	frac -= (params->fbdiv * parent_rate);
+-	frac = do_div_round_closest((u64)frac << 24, parent_rate);
++	frac = do_div_round_closest(frac << 24, parent_rate);
+ 
+ 	val = pll_readl(pll, PLL_CTRL1);
+ 	val &= ~((PLL_CTRL1_REFDIV_MASK << PLL_CTRL1_REFDIV_SHIFT) |
+@@ -256,8 +275,7 @@ static unsigned long pll_gf40lp_frac_recalc_rate(struct clk_hw *hw,
+ 						 unsigned long parent_rate)
+ {
+ 	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
+-	u32 val, prediv, fbdiv, frac, postdiv1, postdiv2;
+-	u64 rate = parent_rate;
++	u64 val, prediv, fbdiv, frac, postdiv1, postdiv2, rate;
+ 
+ 	val = pll_readl(pll, PLL_CTRL1);
+ 	prediv = (val >> PLL_CTRL1_REFDIV_SHIFT) & PLL_CTRL1_REFDIV_MASK;
+@@ -270,7 +288,13 @@ static unsigned long pll_gf40lp_frac_recalc_rate(struct clk_hw *hw,
+ 		PLL_FRAC_CTRL2_POSTDIV2_MASK;
+ 	frac = (val >> PLL_FRAC_CTRL2_FRAC_SHIFT) & PLL_FRAC_CTRL2_FRAC_MASK;
+ 
+-	rate *= (fbdiv << 24) + frac;
++	/* get operating mode (int/frac) and calculate rate accordingly */
++	rate = parent_rate;
++	if (pll_frac_get_mode(hw) == PLL_MODE_FRAC)
++		rate *= (fbdiv << 24) + frac;
++	else
++		rate *= (fbdiv << 24);
++
+ 	rate = do_div_round_closest(rate, (prediv * postdiv1 * postdiv2) << 24);
+ 
+ 	return rate;
+@@ -344,12 +368,12 @@ static int pll_gf40lp_laint_set_rate(struct clk_hw *hw, unsigned long rate,
+ 	if (!params || !params->refdiv)
+ 		return -EINVAL;
+ 
+-	vco = params->fref * params->fbdiv / params->refdiv;
++	vco = div_u64(params->fref * params->fbdiv, params->refdiv);
+ 	if (vco < MIN_VCO_LA || vco > MAX_VCO_LA)
+ 		pr_warn("%s: VCO %u is out of range %lu..%lu\n", name, vco,
+ 			MIN_VCO_LA, MAX_VCO_LA);
+ 
+-	val = params->fref / params->refdiv;
++	val = div_u64(params->fref, params->refdiv);
+ 	if (val < MIN_PFD)
+ 		pr_warn("%s: PFD %u is too low (min %lu)\n",
+ 			name, val, MIN_PFD);
+diff --git a/drivers/clk/pistachio/clk.h b/drivers/clk/pistachio/clk.h
+index f8a8534..1ae53c2 100644
+--- a/drivers/clk/pistachio/clk.h
++++ b/drivers/clk/pistachio/clk.h
+@@ -109,16 +109,20 @@ struct pistachio_fixed_factor {
+ 		.parent		= _pname,			\
+ 	}
+ 
++/*
++ * in order to avoid u32 multiplication overflow, declare all
++ * members of this structure as u64
++ */
+ struct pistachio_pll_rate_table {
+-	unsigned long fref;
+-	unsigned long fout;
+-	unsigned long fout_min;
+-	unsigned long fout_max;
+-	unsigned int refdiv;
+-	unsigned int fbdiv;
+-	unsigned int postdiv1;
+-	unsigned int postdiv2;
+-	unsigned int frac;
++	unsigned long long fref;
++	unsigned long long fout;
++	unsigned long long fout_min;
++	unsigned long long fout_max;
++	unsigned long long refdiv;
++	unsigned long long fbdiv;
++	unsigned long long postdiv1;
++	unsigned long long postdiv2;
++	unsigned long long frac;
+ };
+ 
+ #define INT_PLL_RATES(_fref, _fout, _refdiv, _fbdiv,		\
+-- 
+1.9.1
+

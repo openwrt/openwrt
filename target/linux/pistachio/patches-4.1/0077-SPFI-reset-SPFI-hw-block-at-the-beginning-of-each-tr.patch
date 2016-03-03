@@ -1,0 +1,36 @@
+From b4d8ebb48bc8a8f8b1523640260d00303d6af985 Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Fri, 2 Oct 2015 16:11:26 +0100
+Subject: [PATCH 077/153] SPFI: reset SPFI hw block at the beginning of each
+ transaction
+
+Before configuring the next transaction it's good to make sure
+the process is started from a known (reset) state and that the
+SPFI hardware block was not left in a state that might influence
+the new transaction. Making sure of this eliminates an SPFI
+transaction timeout that was noticed to happen intermittently
+after a large number of transactions.
+
+Change-Id: I51f6fb05524c649df088408656f5541794acee55
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ drivers/spi/spi-img-spfi.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
+index 417d9cf..da4adb6 100644
+--- a/drivers/spi/spi-img-spfi.c
++++ b/drivers/spi/spi-img-spfi.c
+@@ -496,6 +496,9 @@ static void img_spfi_config(struct spi_master *master, struct spi_device *spi,
+ 	struct img_spfi *spfi = spi_master_get_devdata(spi->master);
+ 	u32 val, div;
+ 
++	/* Start the transaction from a known (reset) state */
++	spfi_reset(spfi);
++
+ 	/*
+ 	 * output = spfi_clk * (BITCLK / 512), where BITCLK must be a
+ 	 * power of 2 up to 128
+-- 
+1.9.1
+

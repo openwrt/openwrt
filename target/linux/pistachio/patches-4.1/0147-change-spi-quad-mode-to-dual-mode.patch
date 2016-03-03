@@ -1,0 +1,27 @@
+From 2b65d471c73c71ab44463b07415cb787e5893750 Mon Sep 17 00:00:00 2001
+From: Zoltan Kun <Zoltan.Kun@imgtec.com>
+Date: Mon, 15 Feb 2016 15:20:47 +0000
+Subject: [PATCH 147/153] change spi quad mode to dual mode
+
+Change-Id: I8bd51d7d0cfb2e3a67cca029a34c23608a384777
+Signed-off-by: Zoltan Kun <Zoltan.Kun@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 0d57c7e..17df961 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -213,7 +213,7 @@
+ 		reg = <1>;
+ 		spi-max-frequency = <50000000>;
+ 		nand-on-flash-bbt;
+-		spi-rx-bus-width = <4>;
++		spi-rx-bus-width = <2>;
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 		linux,mtd-name = "spi-nand";
+-- 
+1.9.1
+

@@ -1,0 +1,21 @@
+diff --git a/include/linux/mtd/spi-nor.h b/include/linux/mtd/spi-nor.h
+index fbe026f..c8723b6 100644
+--- a/include/linux/mtd/spi-nor.h
++++ b/include/linux/mtd/spi-nor.h
+@@ -12,7 +12,6 @@
+ 
+ #include <linux/bitops.h>
+ #include <linux/mtd/cfi.h>
+-#include <linux/mtd/mtd.h>
+ 
+ /*
+  * Manufacturer IDs
+@@ -118,6 +117,8 @@ enum spi_nor_option_flags {
+ 	SNOR_F_USE_FSR		= BIT(0),
+ };
+ 
++struct mtd_info;
++
+ /**
+  * struct spi_nor - Structure for defining a the SPI NOR layer
+  * @mtd:		point to a mtd_info structure

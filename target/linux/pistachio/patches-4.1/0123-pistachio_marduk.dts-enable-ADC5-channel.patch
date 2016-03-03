@@ -1,0 +1,26 @@
+From 8196ab4f31d5d28dd0591bbf24bec9ee8cbdc242 Mon Sep 17 00:00:00 2001
+From: Pranit Tanaji Sirsat <Pranit.Sirsat@imgtec.com>
+Date: Thu, 24 Dec 2015 14:37:41 +0530
+Subject: [PATCH 123/153] pistachio_marduk.dts: enable ADC5 channel
+
+Change-Id: Id12a99b5d2ac7d888a216d0f98341f83c6b1f3f5
+Signed-off-by: Pranit Tanaji Sirsat <Pranit.Sirsat@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 978f70c..457ccf1 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -274,6 +274,7 @@
+ &adc {
+ 	status = "okay";
+ 	vref-supply = <&reg_1v8>;
++	adc-reserved-channels = <0x10>;
+ };
+ 
+ &i2c2 {
+-- 
+1.9.1
+

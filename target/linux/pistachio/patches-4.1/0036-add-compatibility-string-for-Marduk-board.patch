@@ -1,0 +1,32 @@
+From 2c87dc3b3970928643bff19123c6ecbd74e9f72d Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Thu, 16 Jul 2015 13:13:06 +0100
+Subject: [PATCH 036/153] add compatibility string for Marduk board
+
+A specific compatibility string is needed here for Depthcharge
+to be able to choose this as best match when booting the Marduk
+board.
+
+Change-Id: I31d3408555e2f860225cbf37d6349e4fc82f9e30
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Signed-off-by: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 23d3aec..143357d 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -13,7 +13,7 @@
+ 
+ / {
+ 	model = "IMG Marduk";
+-	compatible = "img,pistachio";
++	compatible = "img,pistachio-marduk", "img,pistachio";
+ 
+ 	aliases {
+ 		serial0 = &uart0;
+-- 
+1.9.1
+

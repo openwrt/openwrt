@@ -1,0 +1,42 @@
+From 8386743a67891e6a17f4126c308d8c36413378c6 Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Wed, 11 Nov 2015 13:54:42 +0000
+Subject: [PATCH 100/153] dma: mdc: Correct event check comparison
+
+The event count check should be >= to cause a return
+of 0 for no new events
+
+Presently it returns the maximum number of events
+when there are no new events
+
+Change-Id: I09afba598bfb45bdfea7b64b78ff313e06e506ed
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ drivers/dma/img-mdc-dma.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/dma/img-mdc-dma.c b/drivers/dma/img-mdc-dma.c
+index 6ca1954..5c3fc9d 100644
+--- a/drivers/dma/img-mdc-dma.c
++++ b/drivers/dma/img-mdc-dma.c
+@@ -678,7 +678,7 @@ static unsigned int mdc_get_new_events(struct mdc_chan *mchan)
+ 			MDC_CMDS_PROCESSED_CMDS_DONE_MASK;
+ 	} while (done1 != done2);
+ 
+-	if(done1 > processed)
++	if (done1 >= processed)
+ 		ret = done1 - processed;
+ 	else
+ 		ret = ((MDC_CMDS_PROCESSED_CMDS_PROCESSED_MASK + 1) -
+@@ -749,7 +749,7 @@ static irqreturn_t mdc_chan_irq(int irq, void *dev_id)
+ 
+ 	new_events = mdc_get_new_events(mchan);
+ 
+-	if(!new_events)
++	if (!new_events)
+ 		goto out;
+ 
+ 	mdesc = mchan->desc;
+-- 
+1.9.1
+

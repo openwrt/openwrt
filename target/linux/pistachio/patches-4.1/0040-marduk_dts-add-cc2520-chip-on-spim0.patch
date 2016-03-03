@@ -1,0 +1,59 @@
+From 61f9f808aa9d3933ad1542449cc886f225ad19a6 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Mon, 20 Jul 2015 11:23:29 +0100
+Subject: [PATCH 040/153] marduk_dts: add cc2520 chip on spim0
+
+Remove I2C1 from dts as the pins are used for other functions,
+one of them is cc2520 chip select.
+
+Change-Id: I10e5ff86b3d6ed95eaa1f022e58a0adf44b63720
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 25 ++++++++++++++++++-----
+ 1 file changed, 20 insertions(+), 5 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index e9a0759..a501b26 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -38,6 +38,26 @@
+ 	};
+ };
+ 
++&spfi0 {
++	status = "okay";
++	pinctrl-0 = <&spim0_pins>;
++	pinctrl-names = "default";
++
++	cs-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
++
++	cc2520@0 {
++		compatible = "ti,cc2520";
++		reg = <0>;
++		spi-max-frequency = <8000000>;
++		fifo-gpio = <&gpio3 4 GPIO_ACTIVE_HIGH>;
++		fifop-gpio = <&gpio3 5 GPIO_ACTIVE_HIGH>;
++		sfd-gpio = <&gpio4 15 GPIO_ACTIVE_HIGH>;
++		cca-gpio = <&gpio3 6 GPIO_ACTIVE_HIGH>;
++		vreg-gpio = <&gpio2 12 GPIO_ACTIVE_HIGH>;
++		reset-gpio = <&gpio0 12 GPIO_ACTIVE_HIGH>;
++	};
++};
++
+ &spfi1 {
+ 	status = "okay";
+ 
+@@ -124,11 +144,6 @@
+ 	clock-frequency = <400000>;
+ };
+ 
+-&i2c1 {
+-	status = "okay";
+-	clock-frequency = <400000>;
+-};
+-
+ &i2c2 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
+-- 
+1.9.1
+

@@ -1,0 +1,60 @@
+From f0f8bc130e627831f24a45a10460e278d8edb6c9 Mon Sep 17 00:00:00 2001
+From: Abhijit Mahajani <Abhijit.Mahajani@imgtec.com>
+Date: Wed, 16 Sep 2015 19:33:45 +0530
+Subject: [PATCH 066/153] pistachio_defconfig: add back 6lowpan drivers
+
+Change-Id: Ifcbc43f00aa0de5310f541e4bd97496518fd4143
+Signed-off-by: Abhijit Mahajani <Abhijit.Mahajani@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 13 +------------
+ 1 file changed, 1 insertion(+), 12 deletions(-)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 556aec7..dc6ec4a 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -113,16 +113,7 @@ CONFIG_IP6_NF_MANGLE=m
+ CONFIG_BRIDGE=m
+ CONFIG_VLAN_8021Q=m
+ CONFIG_6LOWPAN=y
+-CONFIG_6LOWPAN_NHC=y
+-CONFIG_6LOWPAN_NHC_DEST=y
+-CONFIG_6LOWPAN_NHC_FRAGMENT=y
+-CONFIG_6LOWPAN_NHC_HOP=y
+-CONFIG_6LOWPAN_NHC_IPV6=y
+-CONFIG_6LOWPAN_NHC_MOBILITY=y
+-CONFIG_6LOWPAN_NHC_ROUTING=y
+-CONFIG_6LOWPAN_NHC_UDP=y
+ CONFIG_IEEE802154=y
+-CONFIG_IEEE802154_SOCKET=y
+ CONFIG_IEEE802154_6LOWPAN=y
+ CONFIG_MAC802154=y
+ CONFIG_NET_SCHED=y
+@@ -210,8 +201,8 @@ CONFIG_HOSTAP_FIRMWARE=y
+ CONFIG_HOSTAP_FIRMWARE_NVRAM=y
+ CONFIG_RT2X00=m
+ CONFIG_RT2800USB=m
+-CONFIG_IEEE802154_CC2520=y
+ CONFIG_UCCP420WLAN=m
++CONFIG_IEEE802154_CC2520=y
+ # CONFIG_INPUT_MOUSEDEV is not set
+ CONFIG_INPUT_EVDEV=y
+ # CONFIG_KEYBOARD_ATKBD is not set
+@@ -372,14 +363,12 @@ CONFIG_SECURITY_NETWORK=y
+ CONFIG_SECURITY_YAMA=y
+ CONFIG_SECURITY_YAMA_STACKED=y
+ CONFIG_DEFAULT_SECURITY_DAC=y
+-CONFIG_CRYPTO_AUTHENC=y
+ CONFIG_CRYPTO_HMAC=y
+ CONFIG_CRYPTO_SHA512=m
+ CONFIG_CRYPTO_ARC4=y
+ CONFIG_CRYPTO_DES=y
+ # CONFIG_CRYPTO_ANSI_CPRNG is not set
+ CONFIG_CRYPTO_DEV_IMGTEC_HASH=y
+-CONFIG_CRC_CCITT=y
+ CONFIG_CRC_T10DIF=m
+ CONFIG_CRC7=m
+ CONFIG_LIBCRC32C=m
+-- 
+1.9.1
+

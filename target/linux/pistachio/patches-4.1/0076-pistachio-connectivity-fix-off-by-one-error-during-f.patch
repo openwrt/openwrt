@@ -1,0 +1,31 @@
+From f6796b1029b73d4c30b3addf38aa31ed2ef13932 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Thu, 8 Oct 2015 14:13:42 +0100
+Subject: [PATCH 076/153] pistachio: connectivity: fix off-by-one error during
+ fw load
+
+When something has gone wrong and the firmware has not written its
+execution signature in memory, the module fails to load.
+
+Change-Id: Iab6ffa715633841d281181abda3c1560f619dc2e
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ drivers/soc/img/connectivity/img-fwldr.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/soc/img/connectivity/img-fwldr.c b/drivers/soc/img/connectivity/img-fwldr.c
+index 543666a..45c521d 100644
+--- a/drivers/soc/img/connectivity/img-fwldr.c
++++ b/drivers/soc/img/connectivity/img-fwldr.c
+@@ -1190,7 +1190,7 @@ static int fwldr_wait_for_completion(void)
+ 	while (!check_exec_signature(UCCP_THRD_EXEC_SIG) && i++ < 1000)
+ 		mdelay(10);
+ 
+-	if (i == 1000)
++	if (i == 1001)
+ 		result = 0;
+ 
+ 	return result;
+-- 
+1.9.1
+

@@ -1,0 +1,33 @@
+From 876c6bbdf258e0d83c899564eafda95e630903a8 Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Fri, 27 Nov 2015 10:41:31 +0000
+Subject: [PATCH 114/153] ethernet: free socket buffers when suspending state.
+
+When opening the device and resuming state, TX/RX buffers
+are allocated and re-allocated which results in memory
+leaks when returning from suspend.
+
+Change-Id: I842e50edf9433ecd4a8941c19d81e481c2eac134
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac_main.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+index e5445ae..0b163de 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -3032,6 +3032,10 @@ int stmmac_suspend(struct net_device *ndev)
+ 
+ 	stmmac_clear_descriptors(priv);
+ 
++	/* Release the DMA TX/RX socket buffers */
++	dma_free_rx_skbufs(priv);
++	dma_free_tx_skbufs(priv);
++
+ 	/* Enable Power down mode by programming the PMT regs */
+ 	if (device_may_wakeup(priv->device)) {
+ 		priv->hw->mac->pmt(priv->hw, priv->wolopts);
+-- 
+1.9.1
+

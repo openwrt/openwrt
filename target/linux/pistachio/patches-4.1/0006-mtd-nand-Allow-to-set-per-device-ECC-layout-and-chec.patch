@@ -1,0 +1,78 @@
+From 2a21bdd8d393a52af51982d9e955c4516275fc0c Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Date: Tue, 2 Dec 2014 09:58:53 -0300
+Subject: [PATCH 006/153] mtd: nand: Allow to set per-device ECC layout and
+ check length of ID
+
+This commit includes following changes :-
+1. Allow to set per-device ECC layout
+Until now, the ECC was handled either by Linux (i.e. software ECC) or by the
+NAND controller (i.e. hardware ECC). In each of these, the ECC layout is
+defined by the controller of the NAND device, not by the NAND device itself.
+
+However, devices with on-die ECC support have their own ECC layout so we need
+a way to specify a per-device ECC layout.
+
+This commit adds a new field to the nand_flash_dev structure, to allow devices
+to specify its own ECC layout.
+
+2. Check length of ID before reading bits per cell
+The table-based NAND identification currently reads the number
+of bits per cell from the 3rd byte of the extended ID. This is done
+for the so-called 'full ID' devices; i.e. devices that have a known
+length ID.
+
+However, if the ID length is shorter than three, there's no 3rd byte,
+and so it's wrong to read the bits per cell from there. Fix this by
+adding a check for the ID length.
+
+Change-Id: If3fa72bb7ee24921b645d0cea8df8a033d446518
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Reviewed-by: Dan Ehrenberg <dehrenberg@chromium.org>
+---
+ drivers/mtd/nand/nand_base.c | 4 +++-
+ include/linux/mtd/nand.h     | 2 ++
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index c2e1232..bcf5e09 100644
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -3616,11 +3616,13 @@ static bool find_full_id_nand(struct mtd_info *mtd, struct nand_chip *chip,
+ 		mtd->erasesize = type->erasesize;
+ 		mtd->oobsize = type->oobsize;
+ 
+-		chip->bits_per_cell = nand_get_bits_per_cell(id_data[2]);
++		if (type->id_len > 2)
++			chip->bits_per_cell = nand_get_bits_per_cell(id_data[2]);
+ 		chip->chipsize = (uint64_t)type->chipsize << 20;
+ 		chip->options |= type->options;
+ 		chip->ecc_strength_ds = NAND_ECC_STRENGTH(type);
+ 		chip->ecc_step_ds = NAND_ECC_STEP(type);
++		chip->ecc.layout = type->ecc.layout;
+ 		chip->onfi_timing_mode_default =
+ 					type->onfi_timing_mode_default;
+ 
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index d128b24..93cb633 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -794,6 +794,7 @@ struct nand_chip {
+  *               @ecc_step_ds in nand_chip{}, also from the datasheet.
+  *               For example, the "4bit ECC for each 512Byte" can be set with
+  *               NAND_ECC_INFO(4, 512).
++ * @ecc.layout: If the device has on-die ECC, it can provide its own ECC layout.
+  * @onfi_timing_mode_default: the default ONFI timing mode entered after a NAND
+  *			      reset. Should be deduced from timings described
+  *			      in the datasheet.
+@@ -817,6 +818,7 @@ struct nand_flash_dev {
+ 	struct {
+ 		uint16_t strength_ds;
+ 		uint16_t step_ds;
++		struct nand_ecclayout *layout;
+ 	} ecc;
+ 	int onfi_timing_mode_default;
+ };
+-- 
+1.9.1
+

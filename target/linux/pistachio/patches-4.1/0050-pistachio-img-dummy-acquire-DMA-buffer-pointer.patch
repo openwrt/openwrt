@@ -1,0 +1,52 @@
+From 5bdc51ec11065ee1cae3ab769da55d03d19a1487 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Wed, 29 Jul 2015 17:03:18 +0100
+Subject: [PATCH 050/153] pistachio: img-dummy: acquire DMA buffer pointer
+
+Add example code that shows how to get a pointer to a physically
+contiguous memory allocated exclusively for the RPU.
+
+BUGS=none
+TEST=module compilation, the variable is unused anyway
+
+Change-Id: I3008b2209ac8b15d34fd93a10c45a34ee61960c9
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ drivers/soc/img/connectivity/img-dummy.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/soc/img/connectivity/img-dummy.c b/drivers/soc/img/connectivity/img-dummy.c
+index 908ae51..10434f4 100644
+--- a/drivers/soc/img/connectivity/img-dummy.c
++++ b/drivers/soc/img/connectivity/img-dummy.c
+@@ -37,6 +37,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/string.h>
+ 
++#include <soc/img/img-connectivity.h>
+ #include <soc/img/img-transport.h>
+ 
+ #define FIVE_S (5 * HZ)
+@@ -98,7 +99,18 @@ void received_message(u16 user_data)
+ static int __init img_dummy_probe(struct platform_device *d)
+ {
+ 	int result;
+-	struct proc_dir_entry *entry = proc_create("hsdummy", 0600, NULL, &ops);
++	struct proc_dir_entry *entry;
++	struct img_scratch_info si;
++
++	/*
++	 * This is how you can get hold of the pointer to an auxiliary,
++	 * physically contiguous buffer.
++	 * si.virt_addr is the address you most probably want to use.
++	 */
++	si = img_connectivity_scratch();
++	(void)si;
++
++	entry = proc_create("hsdummy", 0600, NULL, &ops);
+ 	if (IS_ERR_OR_NULL(entry)) {
+ 		result = PTR_ERR(entry);
+ 		goto proc_create_failed;
+-- 
+1.9.1
+

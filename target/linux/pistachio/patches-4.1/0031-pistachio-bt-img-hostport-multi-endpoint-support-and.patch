@@ -1,0 +1,446 @@
+From b52b8372fd9ab62f5463fb7b4a5b00c5ce9ff99a Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <Bartosz.Flis@imgtec.com>
+Date: Wed, 24 Jun 2015 11:49:45 +0100
+Subject: [PATCH 031/153] pistachio: bt: img-hostport multi-endpoint support
+ and remove hotplugging support
+
+'img-hostport' driver can now handle multiple clients
+with proper synchronisation of access to the
+hostport registers.
+
+Also use platform_driver_probe() in place of platform_driver_register(). The
+most important implication is that in case probe() fails, the whole module
+entry() fails. This allows to express dependencies between the platform
+drivers in a more natural way, through modules.dep file, without
+resorting to deferred probing.
+
+Change-Id: I2d64d7f0d700f203e09fa8c43e5ada5a806a2ca6
+Signed-off-by: Bartosz Flis <Bartosz.Flis@imgtec.com>
+---
+ drivers/bluetooth/pistachio/img-bt-main.c       |  35 ++-----
+ drivers/bluetooth/pistachio/img-hostport-main.c | 119 ++++++++++++++++--------
+ drivers/bluetooth/pistachio/img-hostport-main.h |  10 +-
+ drivers/bluetooth/pistachio/img-transport.h     |  27 ++++--
+ 4 files changed, 118 insertions(+), 73 deletions(-)
+
+diff --git a/drivers/bluetooth/pistachio/img-bt-main.c b/drivers/bluetooth/pistachio/img-bt-main.c
+index 2376664..e942481 100644
+--- a/drivers/bluetooth/pistachio/img-bt-main.c
++++ b/drivers/bluetooth/pistachio/img-bt-main.c
+@@ -63,6 +63,8 @@ static const char *client_name = "img-bt";
+ #define RPU_ACK(length) ((u16)(length | 0x8000))
+ #define RPU_REQ(length) ((u16)(length & 0x7FFF))
+ 
++#define BLUETOOTH_ID 1
++
+ typedef void __iomem *ioaddr_t;
+ 
+ /*
+@@ -197,7 +199,7 @@ static void req_from_controller(struct work_struct *tbd)
+ 	gateway_send(pld);
+ 
+ 	circ_buf_ext_give(&xmit_buffers.rx, user_data_length);
+-	img_transport_notify(RPU_ACK(user_data_length));
++	img_transport_notify(RPU_ACK(user_data_length), BLUETOOTH_ID);
+ 
+ exit:
+ 	kfifo_put(&work_depot, work);
+@@ -223,7 +225,7 @@ static void req_to_controller(struct work_struct *tbd)
+ 		 */
+ 		payload_to_circ_buf_ext(pld, &xmit_buffers.tx);
+ 		payload_delete(pld);
+-		img_transport_notify(RPU_REQ(space_needed));
++		img_transport_notify(RPU_REQ(space_needed), BLUETOOTH_ID);
+ 	} else {
+ 		/*
+ 		 * Save for backlog processing, which should be fired on every
+@@ -248,13 +250,8 @@ static void do_tx_backlog(struct work_struct *tbd)
+ 	if (kfifo_is_empty(&tx_backlog))
+ 		goto exit;
+ 
+-	while (true) {
+-		if (!kfifo_peek(&tx_backlog, &pld)) {
+-			/* The fifo was empty */
+-			break;
+-		}
+-		if (circ_buf_ext_space(&xmit_buffers.tx) < payload_length(pld))
+-			break;
++	while (kfifo_peek(&tx_backlog, &pld) &&
++		circ_buf_ext_space(&xmit_buffers.tx) >= payload_length(pld)) {
+ 
+ 		length_sum += payload_length(pld);
+ 		/*
+@@ -269,7 +266,7 @@ static void do_tx_backlog(struct work_struct *tbd)
+ 		payload_delete(pld);
+ 	}
+ 
+-	img_transport_notify(RPU_REQ((u16)length_sum));
++	img_transport_notify(RPU_REQ((u16)length_sum), BLUETOOTH_ID);
+ 
+ exit:
+ 	(void)kfifo_put(&work_depot, work);
+@@ -437,7 +434,7 @@ static void img_bt_pltfr_reg_handler_rollback(unsigned int client_id)
+ 	img_transport_remove_callback(client_id);
+ }
+ 
+-static int img_bt_pltfr_probe(struct platform_device *pdev)
++static int __init img_bt_pltfr_probe(struct platform_device *pdev)
+ {
+ 	int result = 0;
+ 
+@@ -459,7 +456,7 @@ static int img_bt_pltfr_probe(struct platform_device *pdev)
+ 		goto bufsetup_failed;
+ 	}
+ 
+-	result = img_bt_pltfr_reg_handler(0);
++	result = img_bt_pltfr_reg_handler(BLUETOOTH_ID);
+ 	if (result) {
+ 		err("failed to install callback in the transport interface\n");
+ 		goto callback_regist_failed;
+@@ -503,7 +500,6 @@ static const struct of_device_id img_bt_dt_ids[] = {
+ MODULE_DEVICE_TABLE(of, img_bt_dt_ids);
+ 
+ struct platform_driver img_bt_driver = {
+-	.probe = img_bt_pltfr_probe,
+ 	.remove = img_bt_pltfr_remove,
+ 	.driver = {
+ 		.name   = "img-bt",
+@@ -518,18 +514,7 @@ struct platform_driver img_bt_driver = {
+ 
+ static int __init img_bt_init(void)
+ {
+-	int result = 0;
+-
+-	result = platform_driver_register(&img_bt_driver);
+-	if (result) {
+-		dbg("failed to register platform driver\n");
+-		goto pltfr_regist_failed;
+-	}
+-
+-	return result;
+-
+-pltfr_regist_failed:
+-	return result;
++	return platform_driver_probe(&img_bt_driver, img_bt_pltfr_probe);
+ }
+ 
+ static void __exit img_bt_exit(void)
+diff --git a/drivers/bluetooth/pistachio/img-hostport-main.c b/drivers/bluetooth/pistachio/img-hostport-main.c
+index 8f95887..cd88b31 100644
+--- a/drivers/bluetooth/pistachio/img-hostport-main.c
++++ b/drivers/bluetooth/pistachio/img-hostport-main.c
+@@ -40,6 +40,7 @@
+ #include <linux/proc_fs.h>
+ #include <linux/semaphore.h>
+ #include <linux/slab.h>
++#include <linux/spinlock.h>
+ #include <linux/clk.h>
+ 
+ #include "img-hostport-main.h"
+@@ -55,7 +56,7 @@ static const char *hal_name = "img-hostport";
+ #define diagdbgn(format, ...) \
+ 	dbgn("%s : %d : " format, __func__, __LINE__, ## __VA_ARGS__)
+ 
+-#define COMMON_HOST_ID 1
++#define COMMON_HOST_ID 0
+ #define CALLEE_MASK 0x000000f0
+ #define CALLEE_SHIFT 4
+ #define CALLER_MASK 0x0000000f
+@@ -75,6 +76,11 @@ static const char * const clock_names[] = {"rpu_core", "bt", "bt_div4",
+ static struct clk *clocks[CLK_QTY];
+ 
+ /*
++ * Forward declarations
++ */
++static void notify_common(u16 user_data, int user_id);
++
++/*
+  * Public interface procs
+  */
+ 
+@@ -82,39 +88,44 @@ int img_transport_register_callback(
+ 		img_transport_handler poke,
+ 		unsigned int client_id)
+ {
+-	/*
+-	 * TODO: watch out for an interrupt!
+-	 * This variable has to be protected by
+-	 * a spinlock => accessor procs needed.
+-	 */
+-	module->rcv_handler = poke;
++	if (client_id > MAX_ENDPOINT_ID || module->endpoints.f[client_id])
++		return -EBADSLT;
++
++	spin_lock(module->endpoints.in_use + client_id);
++	module->endpoints.f[client_id] = poke;
++	spin_unlock(module->endpoints.in_use + client_id);
+ 
+-	/*
+-	 * TODO: proper error reporting needed.
+-	 * For now, just succeed every time.
+-	 */
+ 	return 0;
+ }
+ EXPORT_SYMBOL(img_transport_register_callback);
+ 
+-int img_transport_notify(u16 user_data)
++void img_transport_notify(u16 user_data, int user_id)
+ {
+ 	down(&host_to_uccp_core_lock);
+-	iowrite32(0x87 << 24 | user_data << 8 | 0x00,
+-			(void __iomem *)H2C_CMD_ADDR(module->uccp_mem_addr));
++	notify_common(user_data, user_id);
++}
++EXPORT_SYMBOL(img_transport_notify);
+ 
+-	/*
+-	 * TODO: for now, just succeed every time.
+-	 * Proper error reporting needed.
+-	 */
++int __must_check img_transport_notify_timeout(u16 user_data,
++					int user_id,
++					long jiffies_timeout)
++{
++	if (-ETIME == down_timeout(&host_to_uccp_core_lock, jiffies_timeout)) {
++		return -ETIME;
++	}
++	notify_common(user_data, user_id);
+ 	return 0;
+ }
+-EXPORT_SYMBOL(img_transport_notify);
++EXPORT_SYMBOL(img_transport_notify_timeout);
+ 
+ int img_transport_remove_callback(unsigned int client_id)
+ {
+-	/* TODO: proper locking */
+-	module->rcv_handler = NULL;
++	if (client_id > MAX_ENDPOINT_ID || !module->endpoints.f[client_id])
++		return -EBADSLT;
++
++	spin_lock(module->endpoints.in_use + client_id);
++	module->endpoints.f[client_id] = NULL;
++	spin_unlock(module->endpoints.in_use + client_id);
+ 
+ 	return 0;
+ }
+@@ -124,11 +135,26 @@ EXPORT_SYMBOL(img_transport_remove_callback);
+  * Private procs
+  */
+ 
++static u8 id_to_field(int id)
++{
++	id &= 0xF;
++	return (id << 4) | id;
++}
++
++static void notify_common(u16 user_data, int user_id)
++{
++	iowrite32(0x87 << 24 | user_data << 8 | id_to_field(user_id),
++			(void __iomem *)H2C_CMD_ADDR(module->uccp_mem_addr));
++}
++
+ static irqreturn_t hal_irq_handler(int    irq, void  *p)
+ {
+ 	/* p is module here! */
++	unsigned long flags;
+ 	unsigned int reg_value;
+ 	unsigned int value, caller_id, callee_id, user_message, first_bit;
++	img_transport_handler handler;
++	spinlock_t *handler_in_use;
+ 
+ 	reg_value =
+ 		readl((void __iomem *)(C2H_CMD_ADDR(module->uccp_mem_addr)));
+@@ -143,16 +169,22 @@ static irqreturn_t hal_irq_handler(int    irq, void  *p)
+ 	/* Clear the uccp interrupt */
+ 	value = 0;
+ 	value |= BIT(C_INT_CLR_SHIFT);
+-	writel(*((unsigned long *)&(value)),
+-			(void __iomem *)(H2C_ACK_ADDR(module->uccp_mem_addr)));
++	writel(value, (void __iomem *)(H2C_ACK_ADDR(module->uccp_mem_addr)));
+ 
+ 	callee_id = CALLEE(reg_value);
+ 	caller_id = CALLER(reg_value);
+ 	user_message = USERMSG(reg_value);
+ 	/*
+-	 * we are ready to release the spinlock
+-	 * once we get the all zeros message
++	 * We are ready to release the spinlock
++	 * once we get the all zeros message.
++	 *
++	 * callee_id is tainted, therefore must be checked.
+ 	 */
++	if (callee_id > MAX_ENDPOINT_ID) {
++		errn("endpoint with id = %u doesn't exist", callee_id);
++		return IRQ_HANDLED;
++	}
++
+ 	if (COMMON_HOST_ID == callee_id) {
+ 		switch (user_message) {
+ 		case 0:
+@@ -169,10 +201,14 @@ static irqreturn_t hal_irq_handler(int    irq, void  *p)
+ 			errn("\tuser_message : %d", user_message);
+ 		}
+ 	} else {
+-		/* invoke client callback */
+-		/* TODO: add support for multiple IDs */
+-		if (NULL != module->rcv_handler)
+-			module->rcv_handler((u16)user_message);
++		handler = module->endpoints.f[callee_id];
++		handler_in_use = module->endpoints.in_use + callee_id;
++		if (NULL != handler) {
++			spin_lock_irqsave(handler_in_use, flags);
++			handler((u16)user_message);
++			spin_unlock_irqrestore(handler_in_use, flags);
++		} else
++			errn("endpoint with id = %u not registered", callee_id);
+ 	}
+ 
+ 	return IRQ_HANDLED;
+@@ -185,16 +221,14 @@ static void img_hostport_irq_on(void)
+ 	/* Set external pin irq enable for host_irq and uccp_irq */
+ 	value = readl((void __iomem *)C_INT_ENAB_ADDR(module->uccp_mem_addr));
+ 	value |= BIT(C_INT_IRQ_ENAB_SHIFT);
+-	writel(*((unsigned long *)&(value)),
++	writel(value,
+ 		(void __iomem *)(C_INT_ENAB_ADDR(module->uccp_mem_addr)));
+ 
+ 	/* Enable raising uccp_int when UCCP_INT = 1 */
+ 	value = 0;
+ 	value |= BIT(C_INT_EN_SHIFT);
+-	writel(*((unsigned long *)&(value)),
++	writel(value,
+ 		(void __iomem *)(C_INT_ENABLE_ADDR(module->uccp_mem_addr)));
+-
+-	return;
+ }
+ 
+ static void img_hostport_irq_off(void)
+@@ -204,16 +238,14 @@ static void img_hostport_irq_off(void)
+ 	/* Reset external pin irq enable for host_irq and uccp_irq */
+ 	value = readl((void __iomem *)C_INT_ENAB_ADDR(module->uccp_mem_addr));
+ 	value &= ~(BIT(C_INT_IRQ_ENAB_SHIFT));
+-	writel(*((unsigned long   *)&(value)),
++	writel(value,
+ 		(void __iomem *)(C_INT_ENAB_ADDR(module->uccp_mem_addr)));
+ 
+ 	/* Disable raising uccp_int when UCCP_INT = 1 */
+ 	value = 0;
+ 	value &= ~(BIT(C_INT_EN_SHIFT));
+-	writel(*((unsigned long *)&(value)),
++	writel(value,
+ 		(void __iomem *)(C_INT_ENABLE_ADDR(module->uccp_mem_addr)));
+-
+-	return;
+ }
+ 
+ static int img_hostport_pltfr_irqregist(int irq_line)
+@@ -310,12 +342,16 @@ static void img_hostport_pltfr_memmap_rollback(void)
+ 
+ static int img_hostport_pltfr_memsetup(void)
+ {
++	int i;
++
+ 	module = kzalloc(sizeof(struct img_hostport), GFP_KERNEL);
+ 
+ 	if (IS_ERR_OR_NULL(module))
+ 		return PTR_ERR(module);
+-	else
+-		return 0;
++
++	for (i = 0; i < MAX_ENDPOINTS; i++)
++		spin_lock_init(module->endpoints.in_use + i);
++	return 0;
+ }
+ 
+ static void img_hostport_pltfr_memsetup_rollback(void)
+@@ -342,7 +378,7 @@ static void img_hostport_pltfr_clksetup_rollback(void)
+ 
+ }
+ 
+-static int img_hostport_pltfr_probe(struct platform_device *pdev)
++static int __init img_hostport_pltfr_probe(struct platform_device *pdev)
+ {
+ 	int result = 0;
+ 
+@@ -429,7 +465,8 @@ static void __exit img_hostport_leave(void)
+ 
+ static int __init img_hostport_entry(void)
+ {
+-	return platform_driver_register(&img_uccp_driver);
++	return platform_driver_probe(&img_uccp_driver,
++					img_hostport_pltfr_probe);
+ }
+ 
+ module_init(img_hostport_entry);
+diff --git a/drivers/bluetooth/pistachio/img-hostport-main.h b/drivers/bluetooth/pistachio/img-hostport-main.h
+index c72de69..4120864 100644
+--- a/drivers/bluetooth/pistachio/img-hostport-main.h
++++ b/drivers/bluetooth/pistachio/img-hostport-main.h
+@@ -35,8 +35,16 @@
+ 
+ #include "img-transport.h"
+ 
++#define MAX_ENDPOINTS 3
++#define MAX_ENDPOINT_ID (MAX_ENDPOINTS - 1)
++
++struct img_hostport_endpoints {
++	img_transport_handler f[MAX_ENDPOINTS];
++	spinlock_t in_use[MAX_ENDPOINTS];
++};
++
+ struct img_hostport {
+-	img_transport_handler rcv_handler;
++	struct img_hostport_endpoints endpoints;
+ 	/* RPU system bus remapped addresses */
+ 	void __iomem *uccp_mem_addr;
+ 	void __iomem *uccp_base_addr;
+diff --git a/drivers/bluetooth/pistachio/img-transport.h b/drivers/bluetooth/pistachio/img-transport.h
+index 1164e34..cd29e65 100644
+--- a/drivers/bluetooth/pistachio/img-transport.h
++++ b/drivers/bluetooth/pistachio/img-transport.h
+@@ -42,21 +42,36 @@
+  */
+ typedef void (*img_transport_handler)(u16 user_data);
+ 
+-int img_transport_notify(u16 user_data);
++/*
++ * Note that this function may sleep forever when,
++ * for example, RPU is unable to respond.
++ *
++ * Possible return values:
++ * 0		: RPU has been notified
++ */
++void img_transport_notify(u16 user_data, int user_id);
++
++/*
++ * Possible return values:
++ * @ -ETIME	: request timed out
++ * @ 0		: RPU has been notified
++ */
++int __must_check img_transport_notify_timeout(u16 user_data,
++					int user_id,
++					long jiffies_timeout);
+ 
+ /*
+  * Possible return values:
+- *  @ -ENOBUFS  : all handler slots in use
+- *  @ -EBADSLT  : id unavailable
+- *  @  0        : callback registered
++ *  @ -EBADSLT	: id unavailable
++ *  @  0	: callback registered
+  */
+ int img_transport_register_callback(img_transport_handler,
+ 					unsigned int client_id);
+ 
+ /*
+  * Possible return values:
+- * @ -EIDRM    : client id not found
+- * @  0        : callback removed
++ *  @ -EBADSLT	: client id not found
++ *  @  0	: callback removed
+  */
+ int img_transport_remove_callback(unsigned int client_id);
+ 
+-- 
+1.9.1
+

@@ -1,0 +1,47 @@
+From 06eb5d9d2397eba406e1d987fce9a6711eee3ccb Mon Sep 17 00:00:00 2001
+From: Abhishek Singh <Abhishek.Singh@imgtec.com>
+Date: Wed, 23 Dec 2015 16:16:21 +0530
+Subject: [PATCH 125/153] pistachio.dtsi: add labels to node
+
+Add pin_dac_clk, pin_i2s_mclk, pins_i2s_out labels so that their
+properties can be overridden in board dts
+
+Change-Id: I25da0028bb782481bb9547f164c54575bc029733
+Signed-off-by: Abhishek Singh <Abhishek.Singh@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 1b8559c..c87bb79 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -766,14 +766,14 @@
+ 		};
+ 
+ 		dac_clk_pin: dac-clk-pin {
+-			dac-clk {
++			pin_dac_clk: dac-clk {
+ 				pins = "mfio45";
+ 				function = "i2s_dac_clk";
+ 			};
+ 		};
+ 
+ 		i2s_mclk_pin: i2s-mclk-pin {
+-			i2s-mclk {
++			pin_i2s_mclk: i2s-mclk {
+ 				pins = "mfio36";
+ 				function = "i2s_out";
+ 			};
+@@ -795,7 +795,7 @@
+ 		};
+ 
+ 		i2s_out_pins: i2s-out-pins {
+-			i2s-out {
++			pins_i2s_out: i2s-out {
+ 				pins = "mfio37", "mfio38", "mfio39",
+ 				       "mfio40", "mfio41", "mfio42",
+ 				       "mfio43", "mfio44";
+-- 
+1.9.1
+

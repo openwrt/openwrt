@@ -1,0 +1,209 @@
+From 7beba6400ec70fcd576ba06d6e3ae023a5968217 Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Tue, 15 Sep 2015 15:02:56 +0100
+Subject: [PATCH 084/153] ASoC: img: add tpa6130a2 hacks
+
+Partially convert the legcay tpa6130a2 driver to use the latest alsa
+framework. This allows for use with Pistachio.
+
+Incompatibilities with existing drivers that use tpa6130a2 in
+conjunction with the legacy omap sound framework are not
+resolved by this patch.
+
+Please do not upstream this code.
+
+Change-Id: I5bfb29bbb992cddcda99977b5ef8508c1f71d4d9
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ .../bindings/sound/img,pistachio-audio.txt         | 21 ++++++----
+ sound/soc/img/pistachio.c                          | 48 ++++++++++++++++++++--
+ 2 files changed, 58 insertions(+), 11 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/img,pistachio-audio.txt b/Documentation/devicetree/bindings/sound/img,pistachio-audio.txt
+index 9024641..ea0e041 100644
+--- a/Documentation/devicetree/bindings/sound/img,pistachio-audio.txt
++++ b/Documentation/devicetree/bindings/sound/img,pistachio-audio.txt
+@@ -59,6 +59,10 @@ Required parallel-out subnode properties:
+ 
+   - sound-dai : phandle of internal dac
+ 
++Optional parallel-out subnode properties:
++
++  - tpa6130a2 : phandle of the tpa6130a2 amplifier
++
+ Required i2s-out subnode properties:
+ 
+   - cpu-dai : phandle of i2s out cpu dai
+@@ -79,7 +83,7 @@ Optional i2s-out subnodes:
+   - <codec-name> : Contains codec information. <codec-name> will be used as
+ 		   the prefix for the codec. This name must be unique for
+ 		   each individual codec (unique codec device node), and
+-		   cannot be equal to "internal-dac". The name
++		   cannot be equal to "internal-dac" or "tpa6130a2". The name
+ 		   should be short to avoid control name truncation
+ 
+ Required i2s-in subnode properties:
+@@ -102,7 +106,7 @@ Optional i2s-in subnodes:
+   - <codec-name> : Contains codec information. <codec-name> will be used as
+ 		   the prefix for the codec. This name must be unique for
+ 		   each individual codec (unique codec device node), and
+-		   cannot be equal to "internal-dac". The name
++		   cannot be equal to "internal-dac" or "tpa6130a2". The name
+ 		   should be short to avoid control name truncation
+ 
+ Required <codec-name> subnode properties:
+@@ -186,12 +190,14 @@ pistachio_audio_card {
+ 		      "Speaker", "Speakers",
+ 		      "Line", "RCA Out";
+ 
+-	img,routing = "Headphones", "internal-dac AOUTL",
+-		      "Headphones", "internal-dac AOUTR",
+-		      "Speakers", "internal-dac AOUTL",
+-		      "Speakers", "internal-dac AOUTR",
++	img,routing = "Headphones", "tpa OUTL",
++		      "Headphones", "tpa OUTR",
++		      "Speakers", "tpa OUTL",
++		      "Speakers", "tpa OUTR",
+ 		      "RCA Out", "internal-dac AOUTL",
+-		      "RCA Out", "internal-dac AOUTR";
++		      "RCA Out", "internal-dac AOUTR",
++		      "tpa INL", "internal-dac AOUTL",
++		      "tpa INR", "internal-dac AOUTR";
+ 
+ 	spdif-out {
+ 		cpu-dai = <&spdif_out>;
+@@ -204,6 +210,7 @@ pistachio_audio_card {
+ 	parallel-out {
+ 		cpu-dai = <&parallel_out>;
+ 		sound-dai = <&internal_dac>;
++		tpa6130a2 = <&tpa6130a2>;
+ 	};
+ 
+ 	i2s-out {
+diff --git a/sound/soc/img/pistachio.c b/sound/soc/img/pistachio.c
+index 0ba5f87..1a8a6d7 100644
+--- a/sound/soc/img/pistachio.c
++++ b/sound/soc/img/pistachio.c
+@@ -24,6 +24,8 @@
+ #include <sound/jack.h>
+ #include <sound/soc.h>
+ 
++#include "../codecs/tpa6130a2.h"
++
+ #include <dt-bindings/sound/pistachio-audio.h>
+ 
+ #include "pistachio-event-timer.h"
+@@ -45,6 +47,8 @@
+ 
+ #define	PISTACHIO_INTERNAL_DAC_PREFIX	"internal-dac"
+ 
++#define	PISTACHIO_TPA6130A2_PREFIX	"tpa"
++
+ #define PISTACHIO_I2S_LOOPBACK_REG		0x88
+ #define PISTACHIO_I2S_LOOPBACK_CLK_MASK		0x3
+ #define PISTACHIO_I2S_LOOPBACK_CLK_SHIFT	0
+@@ -67,7 +71,7 @@ struct pistachio_output {
+ 
+ struct pistachio_parallel_out {
+ 	struct pistachio_output output;
+-	struct snd_soc_dai_link_component internal_dac;
++	struct snd_soc_dai_link_component components[2];
+ };
+ 
+ struct pistachio_mclk {
+@@ -156,6 +160,7 @@ struct pistachio_card {
+ 	struct notifier_block i2s_clk_notifier;
+ 	struct snd_ctl_elem_id *sample_rate_ids[PISTACHIO_EVT_MAX_SOURCES];
+ 	struct snd_ctl_elem_id *phase_difference_id;
++	struct snd_soc_dai_link_component *tpa6130a2;
+ };
+ 
+ static void pistachio_card_set_mclk_codecs(struct pistachio_i2s *i2s,
+@@ -559,6 +564,17 @@ static int pistachio_card_i2s_link_init(struct pistachio_i2s *i2s,
+ 	return 0;
+ }
+ 
++static int pistachio_card_prl_out_link_init(struct snd_soc_pcm_runtime *rtd)
++{
++	struct pistachio_card *pbc = snd_soc_card_get_drvdata(rtd->card);
++	int ret = 0;
++
++	if (pbc->tpa6130a2)
++		ret = tpa6130a2_stereo_enable(rtd->codec_dais[1]->codec, 1);
++
++	return ret;
++}
++
+ static void pistachio_card_parallel_out_shutdown(struct snd_pcm_substream *st)
+ {
+ 	struct snd_soc_pcm_runtime *rtd = st->private_data;
+@@ -884,7 +900,8 @@ static int pistachio_card_parse_of_parallel_out(struct device_node *node,
+ 
+ 	link->cpu_of_node = np;
+ 	link->platform_of_node = np;
+-	link->codecs = &pbc->parallel_out->internal_dac;
++	link->codecs = pbc->parallel_out->components;
++
+ 	np = of_parse_phandle(node, "sound-dai", 0);
+ 	if (!np)
+ 		return -EINVAL;
+@@ -894,6 +911,15 @@ static int pistachio_card_parse_of_parallel_out(struct device_node *node,
+ 	if (ret)
+ 		return ret;
+ 
++	np = of_parse_phandle(node, "tpa6130a2", 0);
++	if (np) {
++		link->codecs[1].of_node = np;
++		link->codecs[1].dai_name = "tpa6130a2";
++		link->num_codecs++;
++		pbc->tpa6130a2 = &link->codecs[1];
++	}
++
++	link->init = pistachio_card_prl_out_link_init;
+ 	link->ops = &pistachio_card_parallel_out_ops;
+ 
+ 	return 0;
+@@ -1277,7 +1303,7 @@ static int pistachio_card_parse_of_confs(struct pistachio_card *pbc,
+ 
+ 	n = codec_info->unique_codecs;
+ 	if (parallel_out)
+-		n++;
++		n += pbc->tpa6130a2 ? 2 : 1;
+ 	codecs = codec_info->codecs;
+ 
+ 	size = sizeof(*pbc->card.codec_conf) * n;
+@@ -1301,6 +1327,11 @@ static int pistachio_card_parse_of_confs(struct pistachio_card *pbc,
+ 	if (parallel_out) {
+ 		conf->of_node = parallel_out->codecs[0].of_node;
+ 		conf->name_prefix = PISTACHIO_INTERNAL_DAC_PREFIX;
++		conf++;
++		if (pbc->tpa6130a2) {
++			conf->of_node = parallel_out->codecs[1].of_node;
++			conf->name_prefix = PISTACHIO_TPA6130A2_PREFIX;
++		}
+ 	}
+ 
+ 	pbc->card.num_configs = n;
+@@ -2190,9 +2221,18 @@ static void pistachio_card_info(struct pistachio_card *pbc)
+ 		dev_dbg(dev, "\n");
+ 		dev_dbg(dev, "    CODECS\n");
+ 		conf = &pbc->card.codec_conf[pbc->card.num_configs - 1];
++		if (pbc->tpa6130a2)
++			conf--;
+ 		dev_dbg(dev, "        %s (%s) (%s)\n", conf->name_prefix,
+ 			conf->of_node->name,
+-			pbc->parallel_out->internal_dac.dai_name);
++			pbc->parallel_out->components[0].dai_name);
++		if (pbc->tpa6130a2) {
++			conf++;
++			dev_dbg(dev, "        %s (%s) (%s)\n",
++				conf->name_prefix,
++				conf->of_node->name,
++				pbc->parallel_out->components[1].dai_name);
++		}
+ 		dev_dbg(dev, "\n");
+ 		link++;
+ 	}
+-- 
+1.9.1
+

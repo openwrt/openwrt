@@ -1,0 +1,29 @@
+From b58af25729847456f683b0eabf29033794d42ffa Mon Sep 17 00:00:00 2001
+From: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+Date: Thu, 13 Aug 2015 14:55:12 +0530
+Subject: [PATCH 053/153] pistachio.dtsi : Remove channel 5 from uccp entry
+
+adc5 entry in the DTS entry for UCCP is invalid and is being
+removed since wlan uses only channel 4
+
+Change-Id: I6b74c4ee87939ecad5013574f8dcff67b9dd8af8
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index d87c606..bdf10c8 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -1051,6 +1051,6 @@
+ 			<52000>,
+ 			<320000000>,
+ 			<320000000>;
+-		io-channels = <&adc 4>, <&adc 5>;
++		io-channels = <&adc 4>;
+ 	};
+ };
+-- 
+1.9.1
+

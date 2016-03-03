@@ -1,0 +1,36 @@
+From b09ae32e756d7b4fb60f27c03a05be5be20d0a22 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Wed, 23 Sep 2015 09:53:01 +0100
+Subject: [PATCH 067/153] cpufreq: governor: decrease freq step ups to 4%.
+
+Current conservative governor takes freq in terms of step-ups
+of 5% from current freq, But however the freq table has differential
+freq's mapped little less than 5%, So if the requested freq is greater
+than current freq's 5%, clock can set the next highest freq hopping
+one freq data from table.
+
+To Avoid this we can reduce freq step to 4% for next freq step calculation
+which will avoid any freq hop.
+
+Change-Id: I4133b25309e6ccbe7fc8a679356d135884192324
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/cpufreq/cpufreq_conservative.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/cpufreq/cpufreq_conservative.c b/drivers/cpufreq/cpufreq_conservative.c
+index 25a70d0..3c4c64c 100644
+--- a/drivers/cpufreq/cpufreq_conservative.c
++++ b/drivers/cpufreq/cpufreq_conservative.c
+@@ -17,7 +17,7 @@
+ /* Conservative governor macros */
+ #define DEF_FREQUENCY_UP_THRESHOLD		(80)
+ #define DEF_FREQUENCY_DOWN_THRESHOLD		(20)
+-#define DEF_FREQUENCY_STEP			(5)
++#define DEF_FREQUENCY_STEP			(4)
+ #define DEF_SAMPLING_DOWN_FACTOR		(1)
+ #define MAX_SAMPLING_DOWN_FACTOR		(10)
+ 
+-- 
+1.9.1
+

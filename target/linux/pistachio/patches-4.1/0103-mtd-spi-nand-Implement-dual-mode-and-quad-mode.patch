@@ -1,0 +1,184 @@
+From a5e251dbd197258f2ea79c6542fe5e1002d667a2 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Date: Tue, 2 Jun 2015 10:52:29 -0300
+Subject: [PATCH 103/153] mtd: spi-nand: Implement dual-mode and quad-mode
+
+1. Dual-mode
+Read cache operations will from this moment on be performed
+in dual mode (bus width = 2).
+There is no dual mode operation for programming the cache.
+
+Test:
+ECC corrections: 0
+ECC failures   : 0
+Bad blocks     : 4
+BBT blocks     : 0
+Bad block at 0x08200000
+Bad block at 0x18000000
+Bad block at 0x18040000
+Bad block at 0x1ff00000
+Bad block at 0x1ff40000
+Bad block at 0x1ff80000
+Bad block at 0x1ffc0000
+
+Finished pass 1 successfully
+real    7m 45.10s
+user    2m 31.91s
+sys     1m 54.66s
+
+2. Quad-mode
+Read cache operations will from this moment on be performed
+in quad mode (bus width = 4).
+
+Test:
+
+ECC corrections: 0
+ECC failures   : 0
+Bad blocks     : 4
+BBT blocks     : 0
+Bad block at 0x08200000
+Bad block at 0x18000000
+Bad block at 0x18040000
+Bad block at 0x1ff00000
+Bad block at 0x1ff40000
+Bad block at 0x1ff80000
+Bad block at 0x1ffc0000
+
+Finished pass 1 successfully
+real    7m 41.94s
+user    2m 24.96s
+sys     2m 4.58s
+
+3. This also makes transfer command dependent on DTS value
+The transfer mode, obtained from the DTS file is checked, and
+the transfer command is determined based on the obtained value.
+This way, to switch between single, dual and quad modes only
+the DTS file has to be modified by altering the RX/TX bus width value.
+
+Change-Id: I06b1f53160ae8e9d458ee01dc565d87752cb4e29
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Signed-off-by: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+---
+ drivers/mtd/spi-nand/spi-nand-base.c   | 27 +++++++++++++++++++++++++++
+ drivers/mtd/spi-nand/spi-nand-device.c | 17 ++++++++++++++---
+ 2 files changed, 41 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/mtd/spi-nand/spi-nand-base.c b/drivers/mtd/spi-nand/spi-nand-base.c
+index 4710280..95f5975 100644
+--- a/drivers/mtd/spi-nand/spi-nand-base.c
++++ b/drivers/mtd/spi-nand/spi-nand-base.c
+@@ -31,6 +31,7 @@
+ 
+ #define SPI_NAND_FEATURE_REG		0xb0
+ #define SPI_NAND_ECC_EN			BIT(4)
++#define SPI_NAND_QUAD_EN		BIT(0)
+ 
+ #define SPI_NAND_STATUS_REG		0xc0
+ #define SPI_NAND_STATUS_REG_ECC_MASK	0x3
+@@ -83,6 +84,21 @@ static int spi_nand_disable_ecc(struct spi_nand *snand)
+ 	return 0;
+ }
+ 
++static int spi_nand_enable_quad(struct spi_nand *snand)
++{
++	int ret;
++
++	ret = snand->read_reg(snand, SPI_NAND_FEATURE_REG, snand->buf);
++	if (ret)
++		return ret;
++
++	snand->buf[0] |= SPI_NAND_QUAD_EN;
++	ret = snand->write_reg(snand, SPI_NAND_FEATURE_REG, snand->buf);
++	if (ret)
++		return ret;
++
++	return 0;
++}
+ /*
+  * Wait until the status register busy bit is cleared.
+  * Returns a negatie errno on error or time out, and a non-negative status
+@@ -264,6 +280,12 @@ static int spi_nand_read_page(struct spi_nand *snand, unsigned int page_addr,
+ 		}
+ 	}
+ 
++	/* Enable quad mode */
++	ret = spi_nand_enable_quad(snand);
++	if (ret) {
++		dev_err(snand->dev, "error %d enabling quad mode\n", ret);
++		return ret;
++	}
+ 	/* Get page from the device cache into our internal buffer */
+ 	ret = snand->read_cache(snand, page_offset, length, snand->data_buf);
+ 	if (ret < 0) {
+@@ -478,6 +500,11 @@ int spi_nand_register(struct spi_nand *snand, struct nand_flash_dev *flash_ids)
+ 	if (!snand->buf)
+ 		return -ENOMEM;
+ 
++	/* This is enabled at device power up but we'd better make sure */
++	ret = spi_nand_enable_ecc(snand);
++	if (ret)
++		return ret;
++
+ 	/* Preallocate buffer for flash identification (NAND_CMD_READID) */
+ 	snand->buf_size = SPI_NAND_CMD_BUF_LEN;
+ 	snand->data_buf = kmalloc(snand->buf_size, GFP_KERNEL);
+diff --git a/drivers/mtd/spi-nand/spi-nand-device.c b/drivers/mtd/spi-nand/spi-nand-device.c
+index f1639ea..cf8e2d2 100644
+--- a/drivers/mtd/spi-nand/spi-nand-device.c
++++ b/drivers/mtd/spi-nand/spi-nand-device.c
+@@ -151,7 +151,7 @@ struct spi_nand_device_cmd {
+ 	 * so keep them together.
+ 	 */
+ 	u32 n_cmd;
+-	u8 cmd[4];
++	u8 cmd[5];
+ 
+ 	/* Tx data */
+ 	u32 n_tx;
+@@ -160,6 +160,7 @@ struct spi_nand_device_cmd {
+ 	/* Rx data */
+ 	u32 n_rx;
+ 	u8 *rx_buf;
++	u8 rx_nbits;
+ };
+ 
+ struct spi_nand_device {
+@@ -204,6 +205,7 @@ static int spi_nand_send_command(struct spi_device *spi,
+ 	if (cmd->n_rx) {
+ 		x[1].len = cmd->n_rx;
+ 		x[1].rx_buf = cmd->rx_buf;
++		x[1].rx_nbits = cmd->rx_nbits;
+ 		spi_message_add_tail(&x[1], &message);
+ 	}
+ 
+@@ -348,15 +350,24 @@ static int spi_nand_device_read_cache(struct spi_nand *snand,
+ {
+ 	struct spi_nand_device *snand_dev = snand->priv;
+ 	struct spi_nand_device_cmd *cmd = &snand_dev->cmd;
++	struct spi_device *spi = snand_dev->spi;
+ 
+ 	memset(cmd, 0, sizeof(struct spi_nand_device_cmd));
+-	cmd->n_cmd = 4;
+-	cmd->cmd[0] = SPI_NAND_READ_CACHE;
++	if ((spi->mode & SPI_RX_DUAL) || (spi->mode & SPI_RX_QUAD))
++		cmd->n_cmd = 5;
++	else
++		cmd->n_cmd = 4;
++	cmd->cmd[0] = (spi->mode & SPI_RX_QUAD) ? SPI_NAND_READ_CACHE_X4 :
++			((spi->mode & SPI_RX_DUAL) ? SPI_NAND_READ_CACHE_X2 :
++			SPI_NAND_READ_CACHE);
+ 	cmd->cmd[1] = 0; /* dummy byte */
+ 	cmd->cmd[2] = (u8)((page_offset & 0xff00) >> 8);
+ 	cmd->cmd[3] = (u8)(page_offset & 0xff);
++	cmd->cmd[4] = 0; /* dummy byte */
+ 	cmd->n_rx = length;
+ 	cmd->rx_buf = read_buf;
++	cmd->rx_nbits = (spi->mode & SPI_RX_QUAD) ? 4 :
++			((spi->mode & SPI_RX_DUAL) ? 2 : 1);
+ 
+ 	dev_dbg(snand->dev, "%s: offset 0x%x\n", __func__, page_offset);
+ 
+-- 
+1.9.1
+

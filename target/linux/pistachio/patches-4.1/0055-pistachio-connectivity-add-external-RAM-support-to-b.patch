@@ -1,0 +1,419 @@
+From 4152cc796eb9c97dbaaf498ee2b203a97e60784e Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Mon, 27 Jul 2015 15:05:27 +0100
+Subject: [PATCH 055/153] pistachio: connectivity: add external RAM support to
+ bootloader
+
+Bootloader is now able to load code & data to addresses in external
+RAM using META slave port.
+In order to do that, a mapping regiser in UCCPSOCWRAP region is set with
+the address to a CMA-reserved DMA memory block.
+
+Change-Id: I199bc073adc7773847bc0eba8e233dba1f7a8603
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi        |  1 +
+ drivers/soc/img/connectivity/Makefile              |  2 +-
+ .../soc/img/connectivity/img-connectivity-main.c   | 40 +++++++----
+ .../img/connectivity/img-connectivity-pistachio.h  | 47 +++++++++++++
+ .../img/connectivity/img-connectivity-platform.h   | 25 +++++++
+ drivers/soc/img/connectivity/img-fwldr.c           | 40 +++++------
+ drivers/soc/img/connectivity/mem-region.c          | 79 ++++++++++++++++++++++
+ drivers/soc/img/connectivity/mem-region.h          | 43 ++++++++++++
+ 8 files changed, 243 insertions(+), 34 deletions(-)
+ create mode 100644 drivers/soc/img/connectivity/img-connectivity-pistachio.h
+ create mode 100644 drivers/soc/img/connectivity/img-connectivity-platform.h
+ create mode 100644 drivers/soc/img/connectivity/mem-region.c
+ create mode 100644 drivers/soc/img/connectivity/mem-region.h
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 43a7223..e7e30d7 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -32,6 +32,7 @@
+ 			reusable;
+ 			size = <0x400000>;
+ 			alignment = <0x1000>;
++			alloc-ranges = <0x00000000 0x4000000>;
+ 			linux,cma-default;
+ 		};
+ 	};
+diff --git a/drivers/soc/img/connectivity/Makefile b/drivers/soc/img/connectivity/Makefile
+index 70eba65..543cd23 100644
+--- a/drivers/soc/img/connectivity/Makefile
++++ b/drivers/soc/img/connectivity/Makefile
+@@ -2,4 +2,4 @@ obj-$(CONFIG_IMG_CONNECTIVITY)		+= img-connectivity.o
+ obj-$(CONFIG_IMG_HOSTPORT)		+= img-hostport.o
+ obj-$(CONFIG_IMG_HOSTPORT_DUMMY_CLIENT)	+= img-dummy.o
+ 
+-img-connectivity-y := img-connectivity-main.o img-fwldr.o
++img-connectivity-y := img-connectivity-main.o img-fwldr.o mem-region.o
+diff --git a/drivers/soc/img/connectivity/img-connectivity-main.c b/drivers/soc/img/connectivity/img-connectivity-main.c
+index 8d8eb8f..f982cea 100644
+--- a/drivers/soc/img/connectivity/img-connectivity-main.c
++++ b/drivers/soc/img/connectivity/img-connectivity-main.c
+@@ -37,6 +37,7 @@
+ #include <soc/img/img-connectivity.h>
+ 
+ #include "devres-ext.h"
++#include "img-connectivity-platform.h"
+ #include "img-fwldr.h"
+ 
+ #define MOD_NAME "img-connectivity"
+@@ -172,6 +173,25 @@ static int boot_cpu(struct device *d, const char *fw_name,
+ 	return 0;
+ }
+ 
++static int remap_uccp_regions(struct device *d)
++{
++	module->uccp_sbus_v = devm_ioremap_resource(d, module->uccp_sbus);
++	if (IS_ERR(module->uccp_sbus_v))
++		return PTR_ERR(module->uccp_sbus_v);
++
++	module->uccp_gram_v = devm_ioremap_resource(d, module->uccp_gram);
++	if (IS_ERR(module->uccp_gram_v))
++		return PTR_ERR(module->uccp_gram_v);
++
++	return 0;
++}
++
++static void unmap_uccp_regions(struct device *d)
++{
++	devm_iounmap_resource(d, module->uccp_gram, module->uccp_gram_v);
++	devm_iounmap_resource(d, module->uccp_sbus, module->uccp_sbus_v);
++}
++
+ static int img_connectivity_boot(struct platform_device *d)
+ {
+ 	int err, t_idx;
+@@ -181,16 +201,13 @@ static int img_connectivity_boot(struct platform_device *d)
+ 		return 0;
+ 	}
+ 
+-	module->uccp_sbus_v = devm_ioremap_resource(&d->dev, module->uccp_sbus);
+-	if (IS_ERR(module->uccp_sbus_v))
+-		return PTR_ERR(module->uccp_sbus_v);
+-
+-	module->uccp_gram_v = devm_ioremap_resource(&d->dev, module->uccp_gram);
+-	if (IS_ERR(module->uccp_gram_v))
+-		return PTR_ERR(module->uccp_gram_v);
++	err = remap_uccp_regions(&d->dev);
++	if (err)
++		return err;
+ 
+ 	fwldr_init(module->uccp_sbus_v, module->uccp_gram_v, NULL);
+ 
++	soc_set_uccp_extram_base(module->uccp_sbus_v, module->scratch_bus);
+ 	/*
+ 	 * MCP code, if provided, has to be loaded first. After that it is
+ 	 * necessary to stop all META threads.
+@@ -203,21 +220,18 @@ static int img_connectivity_boot(struct platform_device *d)
+ 		}
+ 
+ 		err = boot_cpu(&d->dev, mcp_ldr, mtx_threads);
+-		if (err) {
++		if (err)
+ 			return err;
+-		}
+ 
+ 		until(t_idx, mtx_threads)
+ 			fwldr_stop_thrd(t_idx);
+ 	}
+ 
+ 	err = boot_cpu(&d->dev, mtx_ldr, mtx_threads);
+-	if (err) {
++	if (err)
+ 		return err;
+-	}
+ 
+-	devm_iounmap_resource(&d->dev, module->uccp_gram, module->uccp_gram_v);
+-	devm_iounmap_resource(&d->dev, module->uccp_sbus, module->uccp_sbus_v);
++	unmap_uccp_regions(&d->dev);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/soc/img/connectivity/img-connectivity-pistachio.h b/drivers/soc/img/connectivity/img-connectivity-pistachio.h
+new file mode 100644
+index 0000000..6beb1c8
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-connectivity-pistachio.h
+@@ -0,0 +1,47 @@
++/*
++ * File Name  : img-connectivity-pistachio.h
++ *
++ * File Description: Platform specific definitions for Pistachio SoC
++ *
++ * Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ * All rights reserved
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ * USA.
++ */
++
++#ifndef _IMG_CONNECTIVITY_PISTACHIO_H_
++#define _IMG_CONNECTIVITY_PISTACHIO_H_
++
++#include <linux/io.h>
++
++#define CR_MC_SYS_MEM_BASE0_OFFSET 0x38218
++
++static inline void soc_set_uccp_extram_base(void __iomem *sbus,
++							phys_addr_t addr)
++{
++	/*
++	 * For Pistachio platform this setup is sufficient to use DRAM from
++	 * UCCP. For other platforms additional registers inside the UCCP may
++	 * need to be set up.
++	 *
++	 * For details of the bitshifts refer to Pistachio TRM p.481
++	 *
++	 */
++	iowrite32((addr >> 12) << 10,
++		(void __iomem *)((u32)sbus + CR_MC_SYS_MEM_BASE0_OFFSET));
++}
++
++#endif
+diff --git a/drivers/soc/img/connectivity/img-connectivity-platform.h b/drivers/soc/img/connectivity/img-connectivity-platform.h
+new file mode 100644
+index 0000000..37a54da
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-connectivity-platform.h
+@@ -0,0 +1,25 @@
++/*
++ * File Name  : img-connectivity-platform.h
++ *
++ * File Description: Platform-specific headers dispatch
++ *
++ * Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ * All rights reserved
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ * USA.
++ */
++
++#include "img-connectivity-pistachio.h"
+diff --git a/drivers/soc/img/connectivity/img-fwldr.c b/drivers/soc/img/connectivity/img-fwldr.c
+index 3aba9136..543666a 100644
+--- a/drivers/soc/img/connectivity/img-fwldr.c
++++ b/drivers/soc/img/connectivity/img-fwldr.c
+@@ -30,9 +30,17 @@
+ #include <linux/slab.h>
+ 
+ #include "img-fwldr-private.h"
++#include "mem-region.h"
+ 
+ struct fwload_priv  *fpriv, fpv;
+ 
++static struct mem_region core_regions[] = {
++	{0x03000000, 0x04FFFFFF},
++	{0x02009000, 0x0203BFFF},
++	{0x80000000, 0x87FFFFFF},
++	{0xB0000000, 0xB7FFFFFF},
++};
++
+ static unsigned short fwldr_read_le2(unsigned char *buf);
+ static unsigned int fwldr_read_le4(unsigned char *buf);
+ static unsigned fwldr_virt_to_linear_off(unsigned page_size,
+@@ -560,29 +568,21 @@ static void fwldr_config_write(unsigned int dst_addr,
+ 
+ static enum uccp_mem_region fwldr_chk_region(unsigned int src_addr, int len)
+ {
+-	unsigned int dst_addr = src_addr + len;
+-
+-	if (((src_addr >= 0x03000000) && (src_addr <= 0x04FFFFFF))  ||
+-	    ((src_addr >= 0x02009000) && (src_addr <= 0x0203BFFF))  ||
+-	    ((src_addr >= 0x80000000) && (src_addr <= 0x87FFFFFF))) {
+-		if (len != 0) {
+-			if (((dst_addr >= 0x03000000) &&
+-			     (dst_addr <= 0x04FFFFFF)) ||
+-			    ((dst_addr >= 0x02009000) &&
+-			     (dst_addr <= 0x0203BFFF)) ||
+-			    ((dst_addr >= 0x80000000) &&
+-			     (dst_addr <= 0x87FFFFFF)))
+-				return UCCP_MEM_CORE;
+-			else
+-				return UCCP_MEM_ERR;
+-		}
++	struct mem_region r;
++	r.from = src_addr;
++	r.to = src_addr + len;
+ 
+-		return UCCP_MEM_CORE;
+-	} else if ((src_addr & 0xFF000000) == 0xB0000000) {
++	fwldr_dbg_info("Checking range 0x%08X - 0x%08X\n", r.from, r.to);
++	fwldr_dbg_info("\tLegal: %s\n", legal(&r) ? "yes" : "no");
++	fwldr_dbg_info("\tOverlap: %s\n", overlaps_any(core_regions, ARRAY_SIZE(core_regions), &r) ? "yes" : "no");
++
++	if (!legal(&r) || overlaps_any(core_regions, ARRAY_SIZE(core_regions), &r))
+ 		return UCCP_MEM_ERR;
+-	} else {
++
++	if (within_any(core_regions, ARRAY_SIZE(core_regions), &r))
++		return UCCP_MEM_CORE;
++	else
+ 		return UCCP_MEM_DIRECT;
+-	}
+ }
+ 
+ void fwldr_soft_reset(unsigned int thrd_num)
+diff --git a/drivers/soc/img/connectivity/mem-region.c b/drivers/soc/img/connectivity/mem-region.c
+new file mode 100644
+index 0000000..f166acb
+--- /dev/null
++++ b/drivers/soc/img/connectivity/mem-region.c
+@@ -0,0 +1,79 @@
++/*
++ * File Name  : mem-region.c
++ *
++ * File Description : Memory regions manipulation - implementation
++ *
++ * Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ * All rights reserved
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ * USA.
++ */
++
++#include "mem-region.h"
++
++static bool any(struct mem_region haystack[], unsigned int n,
++						mr_relation_fn predicate,
++						struct mem_region *needle)
++{
++	int i;
++	for (i = 0; i < n; i++) {
++		if (predicate(haystack + i, needle))
++			return true;
++	}
++	return false;
++}
++
++static bool addr_within(struct mem_region *r, u32 addr)
++{
++	return addr >= r->from && addr <= r->to;
++}
++
++static bool addr_beyond(struct mem_region *r, u32 addr)
++{
++	return addr > r->to;
++}
++
++static bool addr_before(struct mem_region *r, u32 addr)
++{
++	return addr < r->from;
++}
++
++bool legal(struct mem_region *r)
++{
++	return r->from <= r->to;
++}
++
++bool within(struct mem_region *legal, struct mem_region *r)
++{
++	return (r->from >= legal->from) && (r->to <= legal->to);
++}
++
++bool overlaps(struct mem_region *legal, struct mem_region *r)
++{
++	return (addr_within(legal, r->from) && addr_beyond(legal, r->to)) ||
++		(addr_before(legal, r->from) && addr_within(legal, r->to));
++}
++
++bool within_any(struct mem_region rs[], unsigned int n, struct mem_region *r)
++{
++	return any(rs, n, within, r);
++}
++
++bool overlaps_any(struct mem_region rs[], unsigned int n, struct mem_region *r)
++{
++	return any(rs, n, overlaps, r);
++}
++
+diff --git a/drivers/soc/img/connectivity/mem-region.h b/drivers/soc/img/connectivity/mem-region.h
+new file mode 100644
+index 0000000..756c75a
+--- /dev/null
++++ b/drivers/soc/img/connectivity/mem-region.h
+@@ -0,0 +1,43 @@
++/*
++ * File Name  : mem_region.h
++ *
++ * File Description: Memory regions manipulation - interface declaration
++ *
++ * Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ * All rights reserved
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ * USA.
++ */
++
++#ifndef _MEM_REGION_H_
++#define _MEM_REGION_H_
++
++#include <linux/kernel.h>
++
++struct mem_region {
++	u32 from;
++	u32 to;
++};
++
++typedef bool (*mr_relation_fn)(struct mem_region *, struct mem_region *);
++
++bool legal(struct mem_region *r);
++bool within(struct mem_region *legal, struct mem_region *r);
++bool overlaps(struct mem_region *legal, struct mem_region *r);
++bool within_any(struct mem_region rs[], unsigned int n, struct mem_region *r);
++bool overlaps_any(struct mem_region rs[], unsigned int n, struct mem_region *r);
++
++#endif
+-- 
+1.9.1
+

@@ -1,0 +1,32 @@
+From 478ba195b111f18339d5a19a03327bf3dabeca85 Mon Sep 17 00:00:00 2001
+From: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+Date: Wed, 13 Jan 2016 16:47:07 +0530
+Subject: [PATCH 134/153] pistachio_marduk.dts: add ak5720vt ADC configuration
+
+Change-Id: I762ef785113df9192bc445f647c994b7e3ec3b44
+Signed-off-by: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index f3ab241..a91fe62 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -74,6 +74,13 @@
+ 			i2s-in {
+ 				cpu-dai = <&i2s_in>;
+ 				format = "i2s";
++
++				ak5720vt {
++					mclk = <PISTACHIO_MCLK_I2S>;
++					mclk-fs = <256>;
++					mclk-min-freq = <8192000>;
++					mclk-max-freq = <24576000>;
++				};
+ 			};
+ 		};
+ 
+-- 
+1.9.1
+

@@ -1,0 +1,31 @@
+From 4134251f060b1036950c108c89289b4b5d18f7fe Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Thu, 26 Nov 2015 11:15:40 +0000
+Subject: [PATCH 111/153] pistachio: defconfig: add autosleep and wakelock
+ usage to kernel.
+
+With suspend/resume infrastructure in place, enable auto-sleep
+and wake-lock usage for user-space.
+
+Change-Id: Ib4565787c23bb579623044c67b9ddaf5c7bafe39
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 28d914a..25ebb84 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -37,6 +37,8 @@ CONFIG_MODULES=y
+ CONFIG_MODULE_UNLOAD=y
+ CONFIG_MODULE_FORCE_UNLOAD=y
+ CONFIG_PARTITION_ADVANCED=y
++CONFIG_PM_AUTOSLEEP=y
++CONFIG_PM_WAKELOCKS=y
+ CONFIG_PM_DEBUG=y
+ CONFIG_PM_ADVANCED_DEBUG=y
+ CONFIG_CPU_FREQ=y
+-- 
+1.9.1
+

@@ -1,0 +1,29 @@
+From b1b3c75a6c1e70ab48b322f84671929283435d45 Mon Sep 17 00:00:00 2001
+From: Matin Momin <Matin.Momin@imgtec.com>
+Date: Wed, 25 Nov 2015 15:20:11 +0530
+Subject: [PATCH 112/153] dts: enable spi-nand quad-mode read operation
+
+Updated dts files for beetle, concerto, marduk to use spi-nand
+quad-mode operation.
+
+Change-Id: I13a4c8f590f7421d996d7febd6e0e2c367b649c6
+Signed-off-by: Matin Momin <Matin.Momin@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 8013bb5..6466383 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -167,6 +167,7 @@
+ 		reg = <1>;
+ 		spi-max-frequency = <50000000>;
+ 		nand-on-flash-bbt;
++		spi-rx-bus-width = <4>;
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 		linux,mtd-name = "spi-nand";
+-- 
+1.9.1
+

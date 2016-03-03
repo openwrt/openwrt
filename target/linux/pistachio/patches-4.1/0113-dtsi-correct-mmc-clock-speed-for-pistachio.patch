@@ -1,0 +1,37 @@
+From 1c70c995aaf00debcadd6e70a0ba3732fcf6f8c6 Mon Sep 17 00:00:00 2001
+From: James Hartley <james.hartley@imgtec.com>
+Date: Fri, 27 Nov 2015 11:22:12 +0000
+Subject: [PATCH 113/153] dtsi: correct mmc clock speed for pistachio
+
+The sdhost interface on pistachio is designed for up to 50MHz, but
+currently the DT entry allows up to 200MHz.
+
+In addition to possible timing violations, A side effect occurs which artificially
+slows down cards requesting certain frequencies.  For example, due to the source PLL
+running at 350MHz, the frequency passed into the sdhost block is as close as possible
+to 200MHz, which is 350/2 = 175MHz.  So a card requesting 50MHz actually receives
+175/4=43.75MHz.  This change will pass 350/7 = 50MHz to the block, and 50MHz cards will
+now run at 50/1 = 50MHz.
+
+Change-Id: I33532b98f23d1f927aadfb6585860823ed115aec
+Signed-off-by: James Hartley <james.hartley@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 6ce7c43..b292f88 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -893,7 +893,7 @@
+ 		pinctrl-names = "default";
+ 		fifo-depth = <0x20>;
+ 		num-slots = <1>;
+-		clock-frequency = <200000000>;
++		clock-frequency = <50000000>;
+ 		bus-width = <8>;
+ 		cap-mmc-highspeed;
+ 		cap-sd-highspeed;
+-- 
+1.9.1
+

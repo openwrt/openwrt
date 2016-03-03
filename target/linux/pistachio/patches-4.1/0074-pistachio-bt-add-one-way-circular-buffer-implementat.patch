@@ -1,0 +1,651 @@
+From 7cd68b87a5a639309fec62db79402006743df597 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Thu, 10 Sep 2015 10:05:53 +0100
+Subject: [PATCH 074/153] pistachio: bt: add one way circular buffer
+ implementation and event tracing
+
+This include followinf changes :-
+1. Kernel's circ_buf implementation does not allow to use the full buffer
+capacity. Add another implementation, which is compatible with the one
+used on the RPU.
+
+2. Use Linux trace events architecture to profile img-bt driver
+
+Change-Id: Id2aa277bf0f84635d445c058c480794fbf17384e
+---
+ drivers/bluetooth/pistachio/Makefile          |   4 +-
+ drivers/bluetooth/pistachio/circ-buf-oneway.h | 134 +++++++++++++++++++++++++
+ drivers/bluetooth/pistachio/etrace.c          |  31 ++++++
+ drivers/bluetooth/pistachio/etrace.h          | 138 ++++++++++++++++++++++++++
+ drivers/bluetooth/pistachio/img-bt-chardev.c  |  24 ++---
+ drivers/bluetooth/pistachio/img-bt-main.c     |  75 ++++++++------
+ 6 files changed, 358 insertions(+), 48 deletions(-)
+ create mode 100644 drivers/bluetooth/pistachio/circ-buf-oneway.h
+ create mode 100644 drivers/bluetooth/pistachio/etrace.c
+ create mode 100644 drivers/bluetooth/pistachio/etrace.h
+
+diff --git a/drivers/bluetooth/pistachio/Makefile b/drivers/bluetooth/pistachio/Makefile
+index 877974c..230ea47 100644
+--- a/drivers/bluetooth/pistachio/Makefile
++++ b/drivers/bluetooth/pistachio/Makefile
+@@ -1,2 +1,4 @@
+ obj-$(CONFIG_BT_IMG)	+=	img-bt.o
+-img-bt-objs := img-bt-main.o img-bt-chardev.o payload.o
++img-bt-objs := img-bt-main.o img-bt-chardev.o payload.o etrace.o
++
++CFLAGS_etrace.o = -I$(src)
+diff --git a/drivers/bluetooth/pistachio/circ-buf-oneway.h b/drivers/bluetooth/pistachio/circ-buf-oneway.h
+new file mode 100644
+index 0000000..7ba6b88
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/circ-buf-oneway.h
+@@ -0,0 +1,134 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : circ_buf_oneway.h
++ ***
++ *** File Description:
++ *** This file contains interface and implementation of circular buffers
++ *** which only maintain one read/write pointer and therefore use their
++ *** full capacity.
++ ***
++ ******************************************************************************
++ *END*************************************************************************/
++
++#ifndef __CIRC_BUF_ONEWAY_H__
++#define __CIRC_BUF_ONEWAY_H__ 1
++
++#include <asm/atomic.h>
++
++#include <linux/log2.h>
++
++#define CIRC_BUF_CORE \
++	u8 *base;\
++	atomic_t cur;\
++	size_t size
++
++/*
++ * Routines common for both types of buffer
++ */
++
++static inline size_t __pure offset_from_cur(size_t cur, size_t off,
++								size_t buf_size)
++{
++	return (cur + off) & (buf_size - 1);
++}
++
++/*
++ * Buffer for incoming data - no need to track available space.
++ */
++
++struct circ_buf_in {
++	CIRC_BUF_CORE;
++};
++
++static inline int circ_buf_in_init(struct circ_buf_in *buf,
++								u8 *base,
++								size_t size)
++{
++
++	if (!is_power_of_2(size))
++		return -1;
++	buf->base = base;
++	buf->size = size;
++	atomic_set(&buf->cur, 0);
++	return 0;
++}
++
++static inline void circ_buf_in_read_done(struct circ_buf_in *buf, size_t n)
++{
++	atomic_add(n, &buf->cur);
++}
++
++static inline u8 *circ_buf_in_read_offset(struct circ_buf_in *buf, size_t off)
++{
++	return buf->base + offset_from_cur(atomic_read(&buf->cur), off,
++								buf->size);
++}
++
++/*
++ * Buffer for outgoing data - tracking where to write next and how much can
++ * be written.
++ */
++
++struct circ_buf_out {
++	CIRC_BUF_CORE;
++	atomic_t avail;
++};
++
++static inline int circ_buf_out_init(struct circ_buf_out *buf,
++								u8 *base,
++								size_t size)
++{
++	if (!is_power_of_2(size))
++		return -1;
++	buf->base = base;
++	buf->size = size;
++	atomic_set(&buf->cur, 0);
++	atomic_set(&buf->avail, size);
++	return 0;
++}
++
++static inline void circ_buf_out_write_done(struct circ_buf_out *buf,
++								size_t n)
++{
++	atomic_add(n, &buf->cur);
++	atomic_sub(n, &buf->avail);
++}
++
++static inline void circ_buf_out_write_rcvd(struct circ_buf_out *buf,
++								size_t n)
++{
++	atomic_add(n, &buf->avail);
++}
++
++static inline u8 *circ_buf_out_write_offset(const struct circ_buf_out *buf,
++								size_t off)
++{
++	return buf-> base + offset_from_cur(atomic_read(&buf->cur), off,
++								buf->size);
++}
++
++static inline size_t circ_buf_out_space(const struct circ_buf_out *buf)
++{
++	return atomic_read(&buf->avail);
++}
++
++#endif
+diff --git a/drivers/bluetooth/pistachio/etrace.c b/drivers/bluetooth/pistachio/etrace.c
+new file mode 100644
+index 0000000..ca8a25f
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/etrace.c
+@@ -0,0 +1,31 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : etrace.c
++ ***
++ *** File Description:
++ *** Tracepoint exports for Imagination Bluetooth driver
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++#define CREATE_TRACE_POINTS
++#include "etrace.h"
+diff --git a/drivers/bluetooth/pistachio/etrace.h b/drivers/bluetooth/pistachio/etrace.h
+new file mode 100644
+index 0000000..77f63ff
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/etrace.h
+@@ -0,0 +1,138 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : etrace.h
++ ***
++ *** File Description:
++ *** Declaration of trace events
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++#undef TRACE_SYSTEM
++#define TRACE_SYSTEM img_bt
++
++#if !defined(__IMG_BT_TRACE_H__) || defined(TRACE_HEADER_MULTI_READ)
++#define __IMG_BT_TRACE_H__
++
++#include <linux/tracepoint.h>
++
++#define DEFINE_HOSTPORT_EVENT(name) \
++	DEFINE_EVENT(hostport_event_template, name,\
++		TP_PROTO(unsigned long id, unsigned long size),\
++		TP_ARGS(id, size))
++
++DECLARE_EVENT_CLASS(hostport_event_template,
++		TP_PROTO(unsigned long id, unsigned long size),
++		TP_ARGS(id, size),
++		TP_STRUCT__entry(
++			__field(	unsigned long,	time	)
++			__field(	unsigned int,	id	)
++			__field(	unsigned int,	size	)
++			),
++		TP_fast_assign(
++			__entry->time = jiffies;
++			__entry->id = id;
++			__entry->size = size;
++			),
++		TP_printk("time=%lu id=%u size=%u",
++			__entry->time,
++			__entry->id,
++			__entry->size)
++	);
++
++DEFINE_HOSTPORT_EVENT(ctl_ack_sched);
++DEFINE_HOSTPORT_EVENT(ctl_ack_execd);
++
++DEFINE_HOSTPORT_EVENT(ctl_req_sched);
++DEFINE_HOSTPORT_EVENT(ctl_req_execd);
++
++DEFINE_HOSTPORT_EVENT(hst_ack_sched);
++DEFINE_HOSTPORT_EVENT(hst_ack_execd);
++
++DEFINE_HOSTPORT_EVENT(hst_req_sched);
++DEFINE_HOSTPORT_EVENT(hst_req_execd_sent);
++DEFINE_HOSTPORT_EVENT(hst_req_execd_delayed);
++DEFINE_HOSTPORT_EVENT(hst_req_execd_catchup);
++
++#define DEFINE_CHARDEV_EVENT(name) \
++	DEFINE_EVENT(chardev_event_template, name,\
++		TP_PROTO(int dummy),\
++		TP_ARGS(dummy))
++
++DECLARE_EVENT_CLASS(chardev_event_template,
++		TP_PROTO(int dummy),
++		TP_ARGS(dummy),
++		TP_STRUCT__entry(
++			__field(unsigned long, time)
++			__field(int, dummy)
++			),
++		TP_fast_assign(
++			__entry->time = jiffies;
++			__entry->dummy = dummy;
++			),
++		TP_printk("time=%lu data=%d",
++			__entry->time, __entry->dummy)
++	);
++
++DEFINE_CHARDEV_EVENT(tty_flip_depleted);
++DEFINE_CHARDEV_EVENT(tty_stop_rx_requested);
++DEFINE_CHARDEV_EVENT(tty_request_port);
++DEFINE_CHARDEV_EVENT(tty_release_port);
++DEFINE_CHARDEV_EVENT(tty_start_tx);
++DEFINE_CHARDEV_EVENT(tty_stop_tx);
++DEFINE_CHARDEV_EVENT(tty_shutdown_port);
++DEFINE_CHARDEV_EVENT(tty_startup_port);
++
++#define DEFINE_PAYLOAD_EVENT(name) \
++	DEFINE_EVENT(payload_event_template, name,\
++		TP_PROTO(unsigned int size, const char *type),\
++		TP_ARGS(size, type))
++
++DECLARE_EVENT_CLASS(payload_event_template,
++		TP_PROTO(unsigned int size, const char *type),
++		TP_ARGS(size, type),
++		TP_STRUCT__entry(
++			__field(unsigned int, size)
++			__field(const char *, type)
++			),
++		TP_fast_assign(
++			__entry->size = size;
++			__entry->type = type;
++			),
++		TP_printk("size=%u type=%s",
++			__entry->size, __entry->type)
++	);
++
++DEFINE_PAYLOAD_EVENT(header_detected);
++DEFINE_PAYLOAD_EVENT(header_parsed);
++DEFINE_PAYLOAD_EVENT(length_detected);
++DEFINE_PAYLOAD_EVENT(length_parsed);
++DEFINE_PAYLOAD_EVENT(data_detected);
++DEFINE_PAYLOAD_EVENT(data_parsed);
++
++#endif /* __IMG_BT_TRACE_H__ */
++
++/* This part must be outside protection */
++#undef TRACE_INCLUDE_PATH
++#define TRACE_INCLUDE_PATH .
++#define TRACE_INCLUDE_FILE etrace
++#include <trace/define_trace.h>
++
+diff --git a/drivers/bluetooth/pistachio/img-bt-chardev.c b/drivers/bluetooth/pistachio/img-bt-chardev.c
+index 498e5b5..b8d2a47 100644
+--- a/drivers/bluetooth/pistachio/img-bt-chardev.c
++++ b/drivers/bluetooth/pistachio/img-bt-chardev.c
+@@ -35,6 +35,7 @@
+ #include <linux/tty_flip.h>
+ 
+ #include "circ-buf-ext.h"
++#include "etrace.h"
+ #include "gateway.h"
+ #include "payload.h"
+ 
+@@ -81,8 +82,8 @@ static void img_bt_set_mctrl(struct uart_port *port, unsigned int mctrl) {}
+ static unsigned int img_bt_get_mctrl(struct uart_port *port) { return 0; }
+ static void img_bt_break_ctl(struct uart_port *port, int break_state) {}
+ static void img_bt_enable_ms(struct uart_port *port) {}
+-static void img_bt_release_port(struct uart_port *port) {}
+-static int img_bt_request_port(struct uart_port *port) { return 0; }
++static void img_bt_release_port(struct uart_port *port) {trace_tty_release_port(0);}
++static int img_bt_request_port(struct uart_port *port) { trace_tty_request_port(0);return 0; }
+ static void img_bt_config_port(struct uart_port *port, int flags) {}
+ static int img_bt_verify_port(struct uart_port *port,
+ 		struct serial_struct *ser) { return 0; }
+@@ -96,9 +97,7 @@ static const char *img_bt_type(struct uart_port *port)
+ 
+ static void img_bt_stop_rx(struct uart_port *port)
+ {
+-	/*
+-	 * TODO: implement
+-	 */
++	trace_tty_stop_rx_requested(0);
+ }
+ 
+ static void img_bt_start_tx(struct uart_port *port)
+@@ -118,6 +117,8 @@ static void img_bt_start_tx(struct uart_port *port)
+ 	 */
+ 	struct circ_buf *xmit = &port->state->xmit;
+ 
++	trace_tty_start_tx(CIRC_CNT(xmit->head, xmit->tail, UART_XMIT_SIZE));
++
+ 	if (uart_circ_empty(xmit))
+ 		return;
+ 
+@@ -137,23 +138,17 @@ static void img_bt_start_tx(struct uart_port *port)
+ 
+ static void img_bt_stop_tx(struct uart_port *port)
+ {
+-	/*
+-	 * TODO: implement
+-	 */
++	trace_tty_stop_tx(0);
+ }
+ 
+ static void img_bt_shutdown(struct uart_port *port)
+ {
+-	/*
+-	 * TODO: implement
+-	 */
++	trace_tty_shutdown_port(0);
+ }
+ 
+ static int img_bt_startup(struct uart_port *port)
+ {
+-	/*
+-	 * TODO: implement
+-	 */
++	trace_tty_startup_port(0);
+ 	return 0;
+ }
+ 
+@@ -218,6 +213,7 @@ void gateway_exit(void)
+ 
+ int gateway_send(struct payload *pld)
+ {
++	trace_tty_flip_depleted(tty_buffer_space_avail(&gateway.port.state->port));
+ 	tty_insert_flip_string(&gateway.port.state->port,
+ 		payload_raw(pld),
+ 		payload_length(pld));
+diff --git a/drivers/bluetooth/pistachio/img-bt-main.c b/drivers/bluetooth/pistachio/img-bt-main.c
+index 2205c6d..fbdf35f 100644
+--- a/drivers/bluetooth/pistachio/img-bt-main.c
++++ b/drivers/bluetooth/pistachio/img-bt-main.c
+@@ -40,7 +40,8 @@
+ 
+ #include <soc/img/img-transport.h>
+ 
+-#include "circ-buf-ext.h"
++#include "circ-buf-oneway.h"
++#include "etrace.h"
+ #include "gateway.h"
+ #include "payload.h"
+ 
+@@ -75,8 +76,8 @@ static const resource_size_t buffer_length = 0x800;
+ static struct workqueue_struct *img_bt_workqueue;
+ 
+ static struct {
+-	struct circ_buf_ext tx;
+-	struct circ_buf_ext rx;
++	struct circ_buf_out tx;
++	struct circ_buf_in rx;
+ 	phys_addr_t phys_base;
+ 	ioaddr_t virt_base;
+ 	resource_size_t length;
+@@ -131,19 +132,19 @@ static void return_work(struct message_xfer *work)
+ 
+ static unsigned char next_char(void *buffer, unsigned idx)
+ {
+-	struct circ_buf_ext *rx;
++	struct circ_buf_in *rx;
+ 	u8 retval;
+ 
+-	rx = (struct circ_buf_ext *)buffer;
++	rx = (struct circ_buf_in *)buffer;
+ 
+-	retval = (u8)ioread8((void __iomem *)circ_buf_ext_read_offset(rx, idx));
++	retval = (u8)ioread8((void __iomem *)circ_buf_in_read_offset(rx, idx));
+ 
+ 	return retval;
+ }
+ 
+-static void payload_to_circ_buf_ext(
++static void payload_to_circ_buf_out(
+ 		const struct payload *pld,
+-		struct circ_buf_ext *buf)
++		struct circ_buf_out *buf)
+ {
+ 	char c;
+ 	int i;
+@@ -151,9 +152,9 @@ static void payload_to_circ_buf_ext(
+ 
+ 	for (i = 0; i < length; i++) {
+ 		c = payload_at(pld, i);
+-		iowrite8(c, (void __iomem *)circ_buf_ext_write_offset(buf, i));
++		iowrite8(c, (void __iomem *)circ_buf_out_write_offset(buf, i));
+ 	}
+-	circ_buf_ext_take(buf, length);
++	circ_buf_out_write_done(buf, length);
+ }
+ 
+ static void do_tx_backlog(void)
+@@ -182,6 +183,7 @@ static void do_tx_backlog(void)
+ 
+ 	if (length_sum > 0) {
+ 		img_transport_notify(RPU_REQ((u16)length_sum), BLUETOOTH_ID);
++		trace_hst_req_execd_catchup(BLUETOOTH_ID, length_sum);
+ 	}
+ }
+ 
+@@ -194,11 +196,13 @@ static void ack_from_controller(struct work_struct *tbd)
+ 	struct message_xfer *work = container_of(tbd, struct message_xfer, tbd);
+ 	u16 payload_length = work->req_length;
+ 
+-	circ_buf_ext_give(&xmit_buffers.tx, payload_length);
++	circ_buf_out_write_rcvd(&xmit_buffers.tx, payload_length);
+ 
+ 	return_work(work);
+ 
+ 	do_tx_backlog();
++
++	trace_ctl_ack_execd(BLUETOOTH_ID, payload_length);
+ }
+ 
+ static void req_from_controller(struct work_struct *tbd)
+@@ -211,15 +215,6 @@ static void req_from_controller(struct work_struct *tbd)
+ 	 * This is the length of the data that has just arrived
+ 	 */
+ 	user_data_length = work->req_length;
+-
+-	/*
+-	 * Acknowledge the reception of new data
+-	 * by updating the tracking structure accordingly.
+-	 * Assume the other side behaves well and doesn't
+-	 * write beyond the buffer capacity.
+-	 */
+-	circ_buf_ext_take(&xmit_buffers.rx, user_data_length);
+-
+ 	if (0 == user_data_length)
+ 		goto exit;
+ 
+@@ -232,11 +227,12 @@ static void req_from_controller(struct work_struct *tbd)
+ 	/* TODO: service this call's failure */
+ 	gateway_send(pld);
+ 
+-	circ_buf_ext_give(&xmit_buffers.rx, user_data_length);
++	circ_buf_in_read_done(&xmit_buffers.rx, user_data_length);
+ 	img_transport_notify(RPU_ACK(user_data_length), BLUETOOTH_ID);
+ 
+ exit:
+ 	return_work(work);
++	trace_ctl_req_execd(BLUETOOTH_ID, user_data_length);
+ }
+ 
+ static void req_to_controller(struct work_struct *tbd)
+@@ -252,14 +248,15 @@ static void req_to_controller(struct work_struct *tbd)
+ 	}
+ 
+ 	space_needed = payload_length(pld);
+-	space_available = circ_buf_ext_space(&xmit_buffers.tx);
++	space_available = circ_buf_out_space(&xmit_buffers.tx);
+ 	if (space_needed <= space_available) {
+ 		/*
+ 		 * Process message going to the controller
+ 		 */
+-		payload_to_circ_buf_ext(pld, &xmit_buffers.tx);
++		payload_to_circ_buf_out(pld, &xmit_buffers.tx);
+ 		payload_delete(pld);
+ 		img_transport_notify(RPU_REQ(space_needed), BLUETOOTH_ID);
++		trace_hst_req_execd_sent(BLUETOOTH_ID, space_needed);
+ 	} else {
+ 		/*
+ 		 * Save for backlog processing, which should be fired on every
+@@ -269,6 +266,7 @@ static void req_to_controller(struct work_struct *tbd)
+ 			diagerrn("no space in backlog, dropping payload");
+ 			payload_delete(pld);
+ 		}
++		trace_hst_req_execd_delayed(BLUETOOTH_ID, space_needed);
+ 	}
+ 
+ exit:
+@@ -288,6 +286,7 @@ static void handle_gateway_message(struct payload *pld)
+ 		payload_delete(pld);
+ 		return;
+ 	}
++	trace_hst_req_sched(BLUETOOTH_ID, payload_length(pld));
+ 	work->pld = pld;
+ 	if (!queue_work(img_bt_workqueue, &work->tbd)) {
+ 		diagerrn("bug : work already scheduled");
+@@ -307,12 +306,14 @@ static void handle_controller_message(u16 user_data)
+ 		/* Process whatever may be pending in the TX backlog */
+ 		if (NULL == work)
+ 			diagerrn("no more free work structures");
++		trace_ctl_ack_sched(BLUETOOTH_ID, work->req_length);
+ 		queue_work(img_bt_workqueue, &work->tbd);
+ 		break;
+ 	case REQUEST:
+ 		/* A data request has arrived */
+ 		work = prepare_work(req_from_controller, content);
+ 		work->req_length = content;
++		trace_ctl_req_sched(BLUETOOTH_ID, work->req_length);
+ 		queue_work(img_bt_workqueue, &work->tbd);
+ 		break;
+ 	default:
+@@ -362,6 +363,7 @@ static void img_bt_pltfr_dtsetup_rollback(void)
+ 
+ static int img_bt_pltfr_bufsetup(void)
+ {
++	ioaddr_t tx_base, rx_base;
+ 	int result = 0;
+ 
+ 	if (NULL == request_mem_region(xmit_buffers.phys_base,
+@@ -388,16 +390,21 @@ static int img_bt_pltfr_bufsetup(void)
+ 	/*
+ 	 * TODO: this assumes contiguous placement
+ 	 */
+-	xmit_buffers.tx.base =
+-		(ioaddr_t)((resource_size_t)xmit_buffers.virt_base +
+-			buffer_length);
+-	xmit_buffers.rx.base =
+-		(ioaddr_t)((resource_size_t)xmit_buffers.virt_base + 0);
+-	dbg("tx buffer at : 0x%p\n", xmit_buffers.tx.base);
+-	dbg("rx buffer at : 0x%p\n", xmit_buffers.rx.base);
+-	xmit_buffers.tx.head = xmit_buffers.tx.tail = 0;
+-	xmit_buffers.rx.head = xmit_buffers.rx.tail = 0;
+-	xmit_buffers.tx.size = xmit_buffers.rx.size = buffer_length;
++	rx_base = (ioaddr_t)((resource_size_t)xmit_buffers.virt_base + 0);
++	tx_base = (ioaddr_t)((resource_size_t)xmit_buffers.virt_base +
++								buffer_length);
++	dbgn("tx buffer at : 0x%p", tx_base);
++	dbgn("rx buffer at : 0x%p", rx_base);
++	if (circ_buf_out_init(&xmit_buffers.tx, tx_base, buffer_length)) {
++		errn("<out> circular buffer init failed, size is not "
++					"a power of 2: %d", buffer_length);
++		goto buffer_alloc_failed;
++	}
++	if (circ_buf_in_init(&xmit_buffers.rx, rx_base, buffer_length)) {
++		errn("<in> circular buffer init failed, size is not "
++					"a power of 2: %d", buffer_length);
++		goto buffer_alloc_failed;
++	}
+ 
+ 	result = work_depot_init();
+ 	if (result) {
+@@ -409,6 +416,8 @@ static int img_bt_pltfr_bufsetup(void)
+ 
+ work_depot_init_failed:
+ 	(void)0;
++buffer_alloc_failed:
++	(void)0;
+ remap_failed:
+ 	release_mem_region(xmit_buffers.phys_base, xmit_buffers.length);
+ request_failed:
+-- 
+1.9.1
+

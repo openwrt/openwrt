@@ -1,0 +1,56 @@
+From 7367aaa95e1feba5dc9aa5ce735c58c4e3240bff Mon Sep 17 00:00:00 2001
+From: Marcin Nowakowski <marcin.nowakowski@imgtec.com>
+Date: Mon, 8 Feb 2016 10:32:03 +0100
+Subject: [PATCH 141/153] MIPS: Fix buffer overflow in syscall_get_arguments()
+
+[This patch is not yet available upstream, so I have just copied it from
+http://patchwork.linux-mips.org/patch/12213/]
+
+Since commit 4c21b8fd8f14 ("MIPS: seccomp: Handle indirect system calls
+(o32)"), syscall_get_arguments() attempts to handle o32 indirect syscall
+arguments by incrementing both the start argument number and the number
+of arguments to fetch. However only the start argument number needs to
+be incremented. The number of arguments does not change, they're just
+shifted up by one, and in fact the output array is provided by the
+caller and is likely only n entries long, so reading more arguments
+overflows the output buffer.
+
+In the case of seccomp, this results in it fetching 7 arguments starting
+at the 2nd one, which overflows the unsigned long args[6] in
+populate_seccomp_data(). This clobbers the $s0 register from
+syscall_trace_enter() which __seccomp_phase1_filter() saved onto the
+stack, into which syscall_trace_enter() had placed its syscall number
+argument. This caused Chromium to crash.
+
+Credit goes to Milko for tracking it down as far as $s0 being clobbered.
+
+Fixes: 4c21b8fd8f14 ("MIPS: seccomp: Handle indirect system calls
+(o32)")
+Reported-by: Milko Leporis <milko.leporis@imgtec.com>
+Signed-off-by: James Hogan <james.hogan@imgtec.com>
+Signed-off-by: Marcin Nowakowski <marcin.nowakowski@imgtec.com>
+
+Change-Id: Icd8989077ac7957e2fddab7601730b6c7c581de2
+---
+ arch/mips/include/asm/syscall.h | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/mips/include/asm/syscall.h b/arch/mips/include/asm/syscall.h
+index 6499d93..47bc45a 100644
+--- a/arch/mips/include/asm/syscall.h
++++ b/arch/mips/include/asm/syscall.h
+@@ -101,10 +101,8 @@ static inline void syscall_get_arguments(struct task_struct *task,
+ 	/* O32 ABI syscall() - Either 64-bit with O32 or 32-bit */
+ 	if ((config_enabled(CONFIG_32BIT) ||
+ 	    test_tsk_thread_flag(task, TIF_32BIT_REGS)) &&
+-	    (regs->regs[2] == __NR_syscall)) {
++	    (regs->regs[2] == __NR_syscall))
+ 		i++;
+-		n++;
+-	}
+ 
+ 	while (n--)
+ 		ret |= mips_get_syscall_arg(args++, task, regs, i++);
+-- 
+1.9.1
+

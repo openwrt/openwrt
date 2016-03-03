@@ -1,0 +1,44 @@
+From 96d86888a1dc9d5eddd2bc189fb2bc4895510f0a Mon Sep 17 00:00:00 2001
+From: Manohar Narkhede <Manohar.Narkhede@imgtec.com>
+Date: Tue, 23 Feb 2016 15:46:45 +0530
+Subject: [PATCH 148/153] pistachio_dts: reduce ethernet clock drive strength
+ to 2mA for marduk.
+
+Change-Id: I48de1793b8b0d12f3d991479b698e2d2f52ca9ec
+Signed-off-by: Manohar Narkhede <Manohar.Narkhede@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi       | 2 +-
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 4 ++++
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index c87bb79..7e3af14 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -686,7 +686,7 @@
+ 				slew-rate = <1>;
+ 				drive-strength = <4>;
+ 			};
+-			enet-phy-clk {
++			pin_enet_phy_clk: enet-phy-clk {
+ 				pins = "mfio71";
+ 				function = "eth";
+ 				slew-rate = <1>;
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 17df961..33991d4 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -261,6 +261,10 @@
+ 	mac-address = [0123456789AB];
+ };
+ 
++&pin_enet_phy_clk {
++	drive-strength = <2>;
++};
++
+ &sdhost {
+ 	status = "okay";
+ 	bus-width = <4>;
+-- 
+1.9.1
+

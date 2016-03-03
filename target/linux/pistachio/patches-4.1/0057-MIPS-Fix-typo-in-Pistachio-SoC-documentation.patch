@@ -1,0 +1,29 @@
+From 894b53b8ecca3639e73c81b9253dcb6bda6bdb1c Mon Sep 17 00:00:00 2001
+From: James Hartley <james.hartley@imgtec.com>
+Date: Sun, 23 Aug 2015 22:37:10 +0100
+Subject: [PATCH 057/153] MIPS: Fix typo in Pistachio SoC documentation
+
+Simple spelling fix.
+
+Change-Id: I2bc5768b0b5d598db3cddb371adf0bfb83a2c7c2
+Signed-off-by: James Hartley <james.hartley@imgtec.com>
+---
+ Documentation/devicetree/bindings/mips/img/pistachio.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/mips/img/pistachio.txt b/Documentation/devicetree/bindings/mips/img/pistachio.txt
+index a736d88..4a06847 100644
+--- a/Documentation/devicetree/bindings/mips/img/pistachio.txt
++++ b/Documentation/devicetree/bindings/mips/img/pistachio.txt
+@@ -12,7 +12,7 @@ A "cpus" node is required.  Required properties:
+  - #size-cells: Must be 0.
+ A CPU sub-node is also required for at least CPU 0.  Since the topology may
+ be probed via CPS, it is not necessary to specify secondary CPUs.  Required
+-propertis:
++properties:
+  - device_type: Must be "cpu".
+  - compatible: Must be "mti,interaptiv".
+  - reg: CPU number.
+-- 
+1.9.1
+

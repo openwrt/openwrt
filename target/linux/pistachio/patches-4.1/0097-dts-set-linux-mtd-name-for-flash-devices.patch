@@ -1,0 +1,34 @@
+From 9dfdee93c3501fb8258cd6c789fab646e99b8483 Mon Sep 17 00:00:00 2001
+From: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
+Date: Wed, 4 Nov 2015 17:40:52 +0530
+Subject: [PATCH 097/153] dts: set linux,mtd-name for flash devices
+
+Change-Id: Ib1b9475b7dacffa3ae4839a4fa7b6cba308465a3
+Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 0527cb8..cb26f0d 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -159,6 +159,7 @@
+ 		compatible = "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <50000000>;
++		linux,mtd-name = "spi-nor";
+ 	};
+ 
+ 	flash@1 {
+@@ -168,6 +169,7 @@
+ 		nand-on-flash-bbt;
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
++		linux,mtd-name = "spi-nand";
+ 	};
+ };
+ 
+-- 
+1.9.1
+

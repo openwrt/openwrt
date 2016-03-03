@@ -1,0 +1,33 @@
+From a22e4b8c5b1b4213e40104d3abe7db729649b48f Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Mon, 27 Jul 2015 15:59:41 +0100
+Subject: [PATCH 046/153] pistachio: hostport: prohibit using endpoint ID 0
+
+Endpoint ID 0 is reserved for "common endpoint" and is intended for
+img-hostport internal use.
+
+BUG=none
+TEST=message exchange using img-dummy
+
+Change-Id: I766628cc1ae4e9f6d77801c80745ac1daa726a6a
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ drivers/soc/img/connectivity/img-hostport.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/soc/img/connectivity/img-hostport.c b/drivers/soc/img/connectivity/img-hostport.c
+index 1972418..2a18efb 100644
+--- a/drivers/soc/img/connectivity/img-hostport.c
++++ b/drivers/soc/img/connectivity/img-hostport.c
+@@ -87,7 +87,7 @@ int img_transport_register_callback(
+ 	/*
+ 	 * Make sure that the slot is free, i.e. null
+ 	 */
+-	if (client_id > MAX_ENDPOINT_ID || module->endpoints.f[client_id])
++	if (0 == client_id || client_id > MAX_ENDPOINT_ID || module->endpoints.f[client_id])
+ 		return -EBADSLT;
+ 
+ 	spin_lock(module->endpoints.in_use + client_id);
+-- 
+1.9.1
+

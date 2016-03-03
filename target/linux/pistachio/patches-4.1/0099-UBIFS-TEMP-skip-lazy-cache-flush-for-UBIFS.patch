@@ -1,0 +1,48 @@
+From 8e1a18bf727bb91e3de3f706efe84a82dce3c892 Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Fri, 6 Nov 2015 13:07:17 +0000
+Subject: [PATCH 099/153] UBIFS: TEMP: skip lazy cache flush for UBIFS
+
+When flush_dcache_page in called in do_readpage in UBIFS
+for executable mappings, the data cache is not actually flushed,
+but the flush is postponed until flush_icache_page is called.
+
+This approach seems to cause cache coherency issues that might be
+sourced either to the cache flush handling for MIPS or by an
+incorrect sequence of operations followed by UBIFS.
+
+Until the source of the problem is pin-pointed, call __flush_dcache_page
+in do_readpage directly which will result in an immediate data flush
+for executable pages.
+
+Change-Id: I384aa9149f375be76e5028ce762860426907b220
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ fs/ubifs/file.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/ubifs/file.c b/fs/ubifs/file.c
+index 35efc10..853d078 100644
+--- a/fs/ubifs/file.c
++++ b/fs/ubifs/file.c
+@@ -177,7 +177,7 @@ out_free:
+ out:
+ 	SetPageUptodate(page);
+ 	ClearPageError(page);
+-	flush_dcache_page(page);
++	__flush_dcache_page(page);
+ 	kunmap(page);
+ 	return 0;
+ 
+@@ -185,7 +185,7 @@ error:
+ 	kfree(dn);
+ 	ClearPageUptodate(page);
+ 	SetPageError(page);
+-	flush_dcache_page(page);
++	__flush_dcache_page(page);
+ 	kunmap(page);
+ 	return err;
+ }
+-- 
+1.9.1
+

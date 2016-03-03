@@ -1,0 +1,41 @@
+From f3160c51a06551175401615e1ce16caf8ebf4470 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Wed, 2 Sep 2015 15:50:43 +0530
+Subject: [PATCH 059/153] marduk_dts: change SPI frequency of cc2520 and
+ sc16is752 to 4MHz
+
+SPI read failure are being observed when running at a higher frequency,
+reduce the frequency from 8MHz to 4MHz.
+Also marduk has sc16is752 chip which supports a max SPI frequency of 4MHz.
+
+Change-Id: Ice8251baf8e845ba5ae26155fc33962d6b770267
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index e8e54c7..c94cd52 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -96,7 +96,7 @@
+ 	cc2520@0 {
+ 		compatible = "ti,cc2520";
+ 		reg = <0>;
+-		spi-max-frequency = <8000000>;
++		spi-max-frequency = <4000000>;
+ 		fifo-gpio = <&gpio3 4 GPIO_ACTIVE_HIGH>;
+ 		fifop-gpio = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+ 		sfd-gpio = <&gpio4 15 GPIO_ACTIVE_HIGH>;
+@@ -110,7 +110,7 @@
+ 		compatible = "nxp,sc16is752";
+ 		reg = <1>;
+ 		clocks = <&cc2520_ext_clk>;
+-		spi-max-frequency = <15000000>;
++		spi-max-frequency = <4000000>;
+ 		interrupt-parent = <&gpio0>;
+ 		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
+ 		gpio-controller;
+-- 
+1.9.1
+

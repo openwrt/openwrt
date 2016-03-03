@@ -1,0 +1,87 @@
+From 959ae9daabcbc9b57eaa1ceda3ae80b6b086b2b3 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Thu, 26 Nov 2015 11:05:49 +0000
+Subject: [PATCH 110/153] clock timer fixes and updates
+
+This include following changes :-
+1. Fix timer block usage with clock source.
+Timer0 block is used as clock source which runs on fast clock
+so avoid passing timer1/2/3 irq numbers and slow clock to clock
+source driver.
+
+2. Fix configuring all timer clocks
+Timer0 which uses fast clock to provide clock source
+is configuring by mistake all other timer block
+to use fast clock, fix this and configure only
+timer0 clock to use fast clock.
+
+3. Allow timer slow clock rate to be changed.
+Pistachio has not previously used the slow clock for the timer.
+The new RTC driver will use it, so modify the divider table to allow
+clock set_rate to be called.
+This will allow the RTC driver to be used for time stamp and alarms.
+
+Change-Id: I9f58c1eba8bd0771e9d6bdc2d1daa9e28ed5c603
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 8 ++------
+ drivers/clk/pistachio/clk-pistachio.c       | 8 ++++----
+ drivers/clocksource/time-pistachio.c        | 2 +-
+ 3 files changed, 7 insertions(+), 11 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 2220b5d..6ce7c43 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -824,14 +824,10 @@
+ 	timer: timer@18102000 {
+ 		compatible = "img,pistachio-gptimer";
+ 		reg = <0x18102000 0x100>;
+-		interrupts = <GIC_SHARED 60 IRQ_TYPE_LEVEL_HIGH>,
+-			     <GIC_SHARED 61 IRQ_TYPE_LEVEL_HIGH>,
+-			     <GIC_SHARED 62 IRQ_TYPE_LEVEL_HIGH>,
+-			     <GIC_SHARED 63 IRQ_TYPE_LEVEL_HIGH>;
++		interrupts = <GIC_SHARED 60 IRQ_TYPE_LEVEL_HIGH>;
+ 		clocks = <&clk_periph PERIPH_CLK_COUNTER_FAST>,
+-			 <&clk_periph PERIPH_CLK_COUNTER_SLOW>,
+ 			 <&cr_periph SYS_CLK_TIMER>;
+-		clock-names = "fast", "slow", "sys";
++		clock-names = "fast", "sys";
+ 		img,cr-periph = <&cr_periph>;
+ 	};
+ 
+diff --git a/drivers/clk/pistachio/clk-pistachio.c b/drivers/clk/pistachio/clk-pistachio.c
+index c4f3a59..8a28824 100644
+--- a/drivers/clk/pistachio/clk-pistachio.c
++++ b/drivers/clk/pistachio/clk-pistachio.c
+@@ -262,10 +262,10 @@ static struct pistachio_div pistachio_periph_divs[] __initdata = {
+ 	DIV(PERIPH_CLK_ROM_DIV, "rom_div", "periph_sys", 0x10c, 7),
+ 	DIV(PERIPH_CLK_COUNTER_FAST_DIV, "counter_fast_div", "periph_sys",
+ 	    0x110, 7),
+-	DIV(PERIPH_CLK_COUNTER_SLOW_PRE_DIV, "counter_slow_pre_div",
+-	    "periph_sys", 0x114, 7),
+-	DIV(PERIPH_CLK_COUNTER_SLOW_DIV, "counter_slow_div",
+-	    "counter_slow_pre_div", 0x118, 7),
++	DIV_F(PERIPH_CLK_COUNTER_SLOW_PRE_DIV, "counter_slow_pre_div",
++	    "periph_sys", 0x114, 7, 0, CLK_DIVIDER_ROUND_CLOSEST),
++	DIV_F(PERIPH_CLK_COUNTER_SLOW_DIV, "counter_slow_div",
++	    "counter_slow_pre_div", 0x118, 7, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_IR_PRE_DIV, "ir_pre_div", "periph_sys", 0x11c, 7,
+ 	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_IR_DIV, "ir_div", "ir_pre_div", 0x120, 7,
+diff --git a/drivers/clocksource/time-pistachio.c b/drivers/clocksource/time-pistachio.c
+index d461bd1..18d52ec 100644
+--- a/drivers/clocksource/time-pistachio.c
++++ b/drivers/clocksource/time-pistachio.c
+@@ -147,7 +147,7 @@ static void __init pistachio_clksrc_of_init(struct device_node *node)
+ 
+ 	/* Switch to using the fast counter clock */
+ 	ret = regmap_update_bits(periph_regs, PERIP_TIMER_CONTROL,
+-				 0xf, 0x0);
++				 0x1, 0x0);
+ 	if (ret)
+ 		return;
+ 
+-- 
+1.9.1
+

@@ -1,0 +1,59 @@
+From 1b8e707427a3d34b1bbf6a661853864162f7f877 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <govindraj.raja@imgtec.com>
+Date: Tue, 18 Aug 2015 10:55:58 +0100
+Subject: [PATCH 054/153] pistachio: dt: add high speed sd/mmc quirks and
+ increase sdhost to 8bit bus width
+
+This includes :-
+1. Pistachio-sdhost dwc block supports high speed sd/mmc cards,
+by default if these support quirks are not specified the
+slot ios set for clock is limited to 25Mhz if the high
+speed card needs better throughput we need to use 50Mhz clock.
+If these quirks are added them slot requests 50Mhz clock.
+
+2. Pistachio-sdhost dwc block supports 8-bit bus width mode
+specify the same from dt.
+Remove the bus-width field limited to 4 bit mode
+for bring-up-board and marduk board.
+
+References:
+----------
+Documentation/devicetree/bindings/mmc/synopsys-dw-mshc.txt
+
+Change-Id: If955738e2330cd06c6ca30034e3fa6003eb712a3
+Signed-off-by: Govindraj Raja <govindraj.raja@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi       | 3 +++
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 2 --
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index bdf10c8..43a7223 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -886,6 +886,9 @@
+ 		fifo-depth = <0x20>;
+ 		num-slots = <1>;
+ 		clock-frequency = <200000000>;
++		bus-width = <8>;
++		cap-mmc-highspeed;
++		cap-sd-highspeed;
+ 		status = "disabled";
+ 	};
+ 
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 1a1c8a0..8278800 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -188,8 +188,6 @@
+ 
+ &sdhost {
+ 	status = "okay";
+-
+-	bus-width = <4>;
+ 	disable-wp;
+ };
+ 
+-- 
+1.9.1
+

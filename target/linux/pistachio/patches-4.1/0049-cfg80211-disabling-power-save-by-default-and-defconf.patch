@@ -1,0 +1,107 @@
+From 532cfc658dce3cb5494ed89105a89d6b5f68f26b Mon Sep 17 00:00:00 2001
+From: sridhar nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+Date: Wed, 29 Jul 2015 16:50:10 +0530
+Subject: [PATCH 049/153] cfg80211: disabling power save by default and
+ defconfig fixup
+
+This include following changes :-
+1. Temporarily disabling power save by default since with power save enabled,
+the round trip delays from DUT to AP and DUT to a third party connected to
+the AP are sometimes pretty huge.. This option will be enabled again after the
+issue gets fixed.
+
+2 Defconfig fixup done by make savedefconfig.
+Any defconfig updates should be strictly done
+by make savedefconfig.
+
+Change-Id: I6f56f18a19a92514985e0961f7302779f5082adb
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+Signed-off-by: Govindraj Raja <govindraj.raja@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 29 ++++++++++++++++++++++-------
+ 1 file changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 716767e..2adbce1 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -4,6 +4,7 @@ CONFIG_MIPS_MT_SMP=y
+ CONFIG_MIPS_CPS=y
+ # CONFIG_COMPACTION is not set
+ CONFIG_DEFAULT_MMAP_MIN_ADDR=32768
++CONFIG_CMA=y
+ CONFIG_ZSMALLOC=y
+ CONFIG_NR_CPUS=4
+ CONFIG_PREEMPT_VOLUNTARY=y
+@@ -130,13 +131,25 @@ CONFIG_NET_SCH_CODEL=m
+ CONFIG_NET_SCH_FQ_CODEL=m
+ CONFIG_NET_CLS_U32=m
+ CONFIG_CLS_U32_MARK=y
+-CONFIG_BT=m
+-CONFIG_BT_RFCOMM=m
+-CONFIG_BT_HCIBTUSB=m
+-CONFIG_BT_HCIBFUSB=m
+-CONFIG_BT_HCIVHCI=m
++CONFIG_NET_PKTGEN=y
++CONFIG_BT=y
++CONFIG_BT_RFCOMM=y
++CONFIG_BT_RFCOMM_TTY=y
++CONFIG_BT_BNEP=y
++CONFIG_BT_BNEP_MC_FILTER=y
++CONFIG_BT_BNEP_PROTO_FILTER=y
++CONFIG_BT_HIDP=y
++CONFIG_BT_HCIBTUSB=y
++CONFIG_BT_HCIBTSDIO=y
++CONFIG_BT_HCIUART=y
++CONFIG_BT_HCIUART_H4=y
++CONFIG_BT_HCIUART_BCSP=y
++CONFIG_BT_HCIBFUSB=y
++CONFIG_BT_HCIVHCI=y
++CONFIG_BT_IMG=m
+ CONFIG_CFG80211=m
+ CONFIG_NL80211_TESTMODE=y
++# CONFIG_CFG80211_DEFAULT_PS is not set
+ CONFIG_CFG80211_DEBUGFS=y
+ CONFIG_CFG80211_WEXT=y
+ CONFIG_MAC80211=m
+@@ -158,6 +171,7 @@ CONFIG_MTD_UBI=y
+ CONFIG_MTD_UBI_BLOCK=y
+ CONFIG_ZRAM=m
+ CONFIG_BLK_DEV_LOOP=y
++CONFIG_ATU=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_BLK_DEV_SR=m
+@@ -197,6 +211,7 @@ CONFIG_HOSTAP_FIRMWARE_NVRAM=y
+ CONFIG_RT2X00=m
+ CONFIG_RT2800USB=m
+ CONFIG_IEEE802154_CC2520=y
++CONFIG_UCCP420WLAN=m
+ # CONFIG_INPUT_MOUSEDEV is not set
+ CONFIG_INPUT_EVDEV=y
+ # CONFIG_KEYBOARD_ATKBD is not set
+@@ -301,6 +316,7 @@ CONFIG_STAGING=y
+ CONFIG_ASHMEM=y
+ # CONFIG_ANDROID_TIMED_OUTPUT is not set
+ # CONFIG_IOMMU_SUPPORT is not set
++CONFIG_SOC_IMG=y
+ CONFIG_MEMORY=y
+ CONFIG_IIO=y
+ CONFIG_CC10001_ADC=y
+@@ -358,12 +374,11 @@ CONFIG_SECURITY_YAMA_STACKED=y
+ CONFIG_DEFAULT_SECURITY_DAC=y
+ CONFIG_CRYPTO_AUTHENC=y
+ CONFIG_CRYPTO_HMAC=y
+-CONFIG_CRYPTO_SHA1=y
+-CONFIG_CRYPTO_SHA256=y
+ CONFIG_CRYPTO_SHA512=m
+ CONFIG_CRYPTO_ARC4=y
+ CONFIG_CRYPTO_DES=y
+ # CONFIG_CRYPTO_ANSI_CPRNG is not set
++CONFIG_CRYPTO_DEV_IMGTEC_HASH=y
+ CONFIG_CRC_CCITT=y
+ CONFIG_CRC_T10DIF=m
+ CONFIG_CRC7=m
+-- 
+1.9.1
+

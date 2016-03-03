@@ -1,0 +1,30 @@
+From c1e216e5ab3fc004491b5580bdc7dc7f649b671e Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Date: Tue, 28 Apr 2015 19:08:35 -0300
+Subject: [PATCH 009/153] MIPS: pistachio: Support 8250-based early printk
+
+Pistachio SoCs are capable of early printk with generic 8250 support,
+so let's select the options to enable it.
+
+Change-Id: Icad8d6d0d0c7c0bb9133b2ab0d1191b5c59f0a35
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+---
+ arch/mips/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index a3b1ffe..119181e 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -386,6 +386,8 @@ config MACH_PISTACHIO
+ 	select SYS_SUPPORTS_MIPS_CPS
+ 	select SYS_SUPPORTS_MULTITHREADING
+ 	select SYS_SUPPORTS_ZBOOT
++	select SYS_HAS_EARLY_PRINTK
++	select USE_GENERIC_EARLY_PRINTK_8250
+ 	select USE_OF
+ 	help
+ 	  This enables support for the IMG Pistachio SoC platform.
+-- 
+1.9.1
+

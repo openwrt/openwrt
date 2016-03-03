@@ -1,0 +1,36 @@
+From 6b9d6ba974f353a8e30efdb95e47464b83c3728c Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Mon, 21 Sep 2015 11:36:42 +0100
+Subject: [PATCH 068/153] serial: 8250_dw: Allow clock reconfiguration for baud
+ change.
+
+Usage of standard termios function for baud change can change the
+UART baud, but if soc'c needs clock rate change for associated baud clock
+then it is not taken care with default termios function.
+However the 8250_serial has a wrapper function which takes care
+of this issue, so use the wrapper termios function to set the
+clock rate before configuring controller for baud change.
+
+Issue-Id: 73650 (Danube BuB serial port drops bytes at higher baudrates)
+
+Change-Id: I130bf56c6cf65470e07b3ee8a961cbd18bfb4f77
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/tty/serial/8250/8250_dw.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/tty/serial/8250/8250_dw.c b/drivers/tty/serial/8250/8250_dw.c
+index 176f18f..e27bd5d 100644
+--- a/drivers/tty/serial/8250/8250_dw.c
++++ b/drivers/tty/serial/8250/8250_dw.c
+@@ -374,6 +374,7 @@ static int dw8250_probe_of(struct uart_port *p,
+ 		data->msr_mask_off |= UART_MSR_TERI;
+ 	}
+ 
++	up->port.set_termios = dw8250_set_termios;
+ 	return 0;
+ }
+ 
+-- 
+1.9.1
+

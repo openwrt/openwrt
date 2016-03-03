@@ -1,0 +1,133 @@
+From cb36a69de1b96042fbe17215e17c2fe5637ccd28 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Date: Thu, 21 May 2015 10:03:12 -0300
+Subject: [PATCH 008/153] clk: pistachio: Add pll_lock() helper and lock it
+ when enabled upon rate change
+
+Currently, when the rate is changed, the driver makes sure the
+PLL is enabled before doing so. This is done because the PLL
+cannot be locked while disabled. Once locked, the drivers
+returns the PLL to its previous enable/disable state.
+
+This is a bit cumbersome, and can be simplified.
+
+This commit reworks the .set_rate() functions for the integer
+and fractional PLLs. Upon rate change, the PLL is now locked
+only if it's already enabled.
+
+Also, the driver locks the PLL on .enable(). This makes sure
+the PLL is locked when enabled, and not locked when disabled.
+
+Commit also adds a pll_lock() helper making the code more readable.
+
+Change-Id: I97a5f37835ec5f1b8a4b8627f02959ac396ddc2c
+Signed-off-by: Andrew Bresticker <abrestic@chromium.org>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+---
+ drivers/clk/pistachio/clk-pll.c | 36 ++++++++++++++++--------------------
+ 1 file changed, 16 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/clk/pistachio/clk-pll.c b/drivers/clk/pistachio/clk-pll.c
+index ebd0d2a..9675429 100644
+--- a/drivers/clk/pistachio/clk-pll.c
++++ b/drivers/clk/pistachio/clk-pll.c
+@@ -67,6 +67,12 @@ static inline void pll_writel(struct pistachio_clk_pll *pll, u32 val, u32 reg)
+ 	writel(val, pll->base + reg);
+ }
+ 
++static inline void pll_lock(struct pistachio_clk_pll *pll)
++{
++	while (!(pll_readl(pll, PLL_STATUS) & PLL_STATUS_LOCK))
++		cpu_relax();
++}
++
+ static inline u32 do_div_round_closest(u64 dividend, u32 divisor)
+ {
+ 	dividend += divisor / 2;
+@@ -123,6 +129,8 @@ static int pll_gf40lp_frac_enable(struct clk_hw *hw)
+ 	val &= ~PLL_FRAC_CTRL4_BYPASS;
+ 	pll_writel(pll, val, PLL_CTRL4);
+ 
++	pll_lock(pll);
++
+ 	return 0;
+ }
+ 
+@@ -148,17 +156,13 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ {
+ 	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
+ 	struct pistachio_pll_rate_table *params;
+-	bool was_enabled;
++	int enabled = pll_gf40lp_frac_is_enabled(hw);
+ 	u32 val;
+ 
+ 	params = pll_get_params(pll, parent_rate, rate);
+ 	if (!params)
+ 		return -EINVAL;
+ 
+-	was_enabled = pll_gf40lp_frac_is_enabled(hw);
+-	if (!was_enabled)
+-		pll_gf40lp_frac_enable(hw);
+-
+ 	val = pll_readl(pll, PLL_CTRL1);
+ 	val &= ~((PLL_CTRL1_REFDIV_MASK << PLL_CTRL1_REFDIV_SHIFT) |
+ 		 (PLL_CTRL1_FBDIV_MASK << PLL_CTRL1_FBDIV_SHIFT));
+@@ -177,11 +181,8 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 		(params->postdiv2 << PLL_FRAC_CTRL2_POSTDIV2_SHIFT);
+ 	pll_writel(pll, val, PLL_CTRL2);
+ 
+-	while (!(pll_readl(pll, PLL_STATUS) & PLL_STATUS_LOCK))
+-		cpu_relax();
+-
+-	if (!was_enabled)
+-		pll_gf40lp_frac_disable(hw);
++	if (enabled)
++		pll_lock(pll);
+ 
+ 	return 0;
+ }
+@@ -240,6 +241,8 @@ static int pll_gf40lp_laint_enable(struct clk_hw *hw)
+ 	val &= ~PLL_INT_CTRL2_BYPASS;
+ 	pll_writel(pll, val, PLL_CTRL2);
+ 
++	pll_lock(pll);
++
+ 	return 0;
+ }
+ 
+@@ -265,17 +268,13 @@ static int pll_gf40lp_laint_set_rate(struct clk_hw *hw, unsigned long rate,
+ {
+ 	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
+ 	struct pistachio_pll_rate_table *params;
+-	bool was_enabled;
++	int enabled = pll_gf40lp_laint_is_enabled(hw);
+ 	u32 val;
+ 
+ 	params = pll_get_params(pll, parent_rate, rate);
+ 	if (!params)
+ 		return -EINVAL;
+ 
+-	was_enabled = pll_gf40lp_laint_is_enabled(hw);
+-	if (!was_enabled)
+-		pll_gf40lp_laint_enable(hw);
+-
+ 	val = pll_readl(pll, PLL_CTRL1);
+ 	val &= ~((PLL_CTRL1_REFDIV_MASK << PLL_CTRL1_REFDIV_SHIFT) |
+ 		 (PLL_CTRL1_FBDIV_MASK << PLL_CTRL1_FBDIV_SHIFT) |
+@@ -287,11 +286,8 @@ static int pll_gf40lp_laint_set_rate(struct clk_hw *hw, unsigned long rate,
+ 		(params->postdiv2 << PLL_INT_CTRL1_POSTDIV2_SHIFT);
+ 	pll_writel(pll, val, PLL_CTRL1);
+ 
+-	while (!(pll_readl(pll, PLL_STATUS) & PLL_STATUS_LOCK))
+-		cpu_relax();
+-
+-	if (!was_enabled)
+-		pll_gf40lp_laint_disable(hw);
++	if (enabled)
++		pll_lock(pll);
+ 
+ 	return 0;
+ }
+-- 
+1.9.1
+

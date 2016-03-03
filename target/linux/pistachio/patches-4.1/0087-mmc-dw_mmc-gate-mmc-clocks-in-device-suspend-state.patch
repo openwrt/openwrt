@@ -1,0 +1,53 @@
+From add46584a5b662413e9d17057301f0a3084eabd1 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Tue, 27 Oct 2015 12:46:32 +0000
+Subject: [PATCH 087/153] mmc: dw_mmc: gate mmc clocks in device suspend state.
+
+Add support to clock gate mmc in device suspend state.
+mmc clock can be disabled in suspend callback and enabled
+back in resume callback.
+
+Change-Id: Iae2c0581114f85c9ccc5ebe8e2e9109fde1afa1c
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/mmc/host/dw_mmc.c | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/mmc/host/dw_mmc.c b/drivers/mmc/host/dw_mmc.c
+index b354c8b..bc7b621 100644
+--- a/drivers/mmc/host/dw_mmc.c
++++ b/drivers/mmc/host/dw_mmc.c
+@@ -3001,11 +3001,14 @@ EXPORT_SYMBOL(dw_mci_remove);
+ 
+ 
+ #ifdef CONFIG_PM_SLEEP
+-/*
+- * TODO: we should probably disable the clock to the card in the suspend path.
+- */
+ int dw_mci_suspend(struct dw_mci *host)
+ {
++	if (!IS_ERR(host->ciu_clk))
++		clk_disable(host->ciu_clk);
++
++	if (!IS_ERR(host->biu_clk))
++		clk_disable(host->biu_clk);
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL(dw_mci_suspend);
+@@ -3014,6 +3017,12 @@ int dw_mci_resume(struct dw_mci *host)
+ {
+ 	int i, ret;
+ 
++	if (!IS_ERR(host->ciu_clk))
++		clk_enable(host->ciu_clk);
++
++	if (!IS_ERR(host->biu_clk))
++		clk_enable(host->biu_clk);
++
+ 	if (!dw_mci_ctrl_reset(host, SDMMC_CTRL_ALL_RESET_FLAGS)) {
+ 		ret = -ENODEV;
+ 		return ret;
+-- 
+1.9.1
+

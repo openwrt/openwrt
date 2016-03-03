@@ -1,0 +1,43 @@
+From ba9a61bff8f3866682bcbc49241689c3a16a00c1 Mon Sep 17 00:00:00 2001
+From: Sridhar Nuvusetty <sridhar.nuvusetty@imgtec.com>
+Date: Tue, 15 Sep 2015 13:10:47 +0530
+Subject: [PATCH 065/153] pistachio: connectivity: set GRAM map offset value
+ even when boot=0
+
+This patch modifies the connectivity driver to configure the GRAM to RAM
+mapping offset regardless of the boot option passed. This is required when
+LDRs are loaded using codescape, where we need to pass boot=0
+
+BUG=None
+TEST=None
+
+Change-Id: I925e61c05c1c2fedb961764d117eafc2efa012ad
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+---
+ drivers/soc/img/connectivity/img-connectivity-main.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/soc/img/connectivity/img-connectivity-main.c b/drivers/soc/img/connectivity/img-connectivity-main.c
+index f982cea..f3532e8 100644
+--- a/drivers/soc/img/connectivity/img-connectivity-main.c
++++ b/drivers/soc/img/connectivity/img-connectivity-main.c
+@@ -196,6 +196,8 @@ static int img_connectivity_boot(struct platform_device *d)
+ {
+ 	int err, t_idx;
+ 
++	soc_set_uccp_extram_base(module->uccp_sbus_v, module->scratch_bus);
++
+ 	if (BOOT_OFF == boot) {
+ 		mod_info("skipping boot");
+ 		return 0;
+@@ -207,7 +209,6 @@ static int img_connectivity_boot(struct platform_device *d)
+ 
+ 	fwldr_init(module->uccp_sbus_v, module->uccp_gram_v, NULL);
+ 
+-	soc_set_uccp_extram_base(module->uccp_sbus_v, module->scratch_bus);
+ 	/*
+ 	 * MCP code, if provided, has to be loaded first. After that it is
+ 	 * necessary to stop all META threads.
+-- 
+1.9.1
+

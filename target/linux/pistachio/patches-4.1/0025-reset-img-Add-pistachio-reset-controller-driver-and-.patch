@@ -1,0 +1,357 @@
+From 3c71fbbef205948c475e6a204f97b73ecdd1349e Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Mon, 15 Jun 2015 18:01:03 +0100
+Subject: [PATCH 025/153] reset: img: Add pistachio reset controller driver and
+ its binding document
+
+Add reset controller driver for Pistachio SoC and its binding document
+
+Change-Id: I6890d6dbe4f11d5a59c0fc11cbc4c58d416f750b
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ .../bindings/reset/img,pistachio-reset.txt         |  51 +++++++
+ arch/mips/boot/dts/pistachio/pistachio.dtsi        |  16 +-
+ drivers/reset/Makefile                             |   1 +
+ drivers/reset/reset-pistachio.c                    | 162 +++++++++++++++++++++
+ .../reset-controller/pistachio-resets.h            |  36 +++++
+ 5 files changed, 263 insertions(+), 3 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/reset/img,pistachio-reset.txt
+ create mode 100644 drivers/reset/reset-pistachio.c
+ create mode 100644 include/dt-bindings/reset-controller/pistachio-resets.h
+
+diff --git a/Documentation/devicetree/bindings/reset/img,pistachio-reset.txt b/Documentation/devicetree/bindings/reset/img,pistachio-reset.txt
+new file mode 100644
+index 0000000..12558d2
+--- /dev/null
++++ b/Documentation/devicetree/bindings/reset/img,pistachio-reset.txt
+@@ -0,0 +1,51 @@
++Pistachio Reset Controller
++=============================================================================
++
++This binding describes a reset controller device that is used to enable and
++disable individual IP blocks within the Pistachio SoC using "soft reset"
++control bits found in the Pistachio SoC top level registers.
++
++The actual action taken when soft reset is asserted is hardware dependent.
++However, when asserted it may not be possible to access the hardware's
++registers, and following an assert/deassert sequence the hardware's previous
++state may no longer be valid.
++
++Please refer to Documentation/devicetree/bindings/reset/reset.txt
++for common reset controller binding usage.
++
++Required properties:
++
++- compatible: Contains "img,pistachio-reset"
++
++- img,cr-periph: Contains a phandle to the peripheral control syscon
++                    node which contains the soft reset register
++
++- #reset-cells: Contains 1
++
++Example:
++
++	pistachio_reset: reset-controller {
++		compatible = "img,pistachio-reset";
++		img,cr-periph = <&cr_periph>;
++		#reset-cells = <1>;
++	};
++
++Specifying reset control of devices
++=======================================
++
++Device nodes should specify the reset channel required in their "resets"
++property, containing a phandle to the pistachio reset device node and an
++index specifying which reset to use, as described in
++Documentation/devicetree/bindings/reset/reset.txt.
++
++Example:
++
++	spdif_out: spdif-out@18100d00 {
++		...
++		resets = <&pistachio_reset PISTACHIO_RESET_SPDIF_OUT>;
++		reset-names = "rst";
++		...
++	};
++
++Macro definitions for the supported resets can be found in:
++include/dt-bindings/reset-controller/pistachio-resets.h
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index e561c38..976b12e 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -11,6 +11,7 @@
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/interrupt-controller/mips-gic.h>
++#include <dt-bindings/reset-controller/pistachio-resets.h>
+ 
+ / {
+ 	compatible = "img,pistachio";
+@@ -184,7 +185,8 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&i2s_out_pins>;
+ 		status = "disabled";
+-
++		resets = <&pistachio_reset PISTACHIO_RESET_I2S_OUT>;
++		reset-names = "rst";
+ 		#sound-dai-cells = <0>;
+ 	};
+ 
+@@ -200,7 +202,8 @@
+ 		assigned-clocks = <&clk_core CLK_AUDIO_DAC_DIV>;
+ 		assigned-clock-rates = <12288000>;
+ 		status = "disabled";
+-
++		resets = <&pistachio_reset PISTACHIO_RESET_PRL_OUT>;
++		reset-names = "rst";
+ 		#sound-dai-cells = <0>;
+ 	};
+ 
+@@ -218,7 +221,8 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&spdif_out_pin>;
+ 		status = "disabled";
+-
++		resets = <&pistachio_reset PISTACHIO_RESET_SPDIF_OUT>;
++		reset-names = "rst";
+ 		#sound-dai-cells = <0>;
+ 	};
+ 
+@@ -848,6 +852,12 @@
+ 		#clock-cells = <1>;
+ 	};
+ 
++	pistachio_reset: reset-controller {
++		compatible = "img,pistachio-reset";
++		img,cr-periph = <&cr_periph>;
++		#reset-cells = <1>;
++	};
++
+ 	fuse@18149200 {
+ 		compatible = "img,pistachio-efuse";
+ 		reg = <0x18149200 0x200>;
+diff --git a/drivers/reset/Makefile b/drivers/reset/Makefile
+index 157d421..2670e14 100644
+--- a/drivers/reset/Makefile
++++ b/drivers/reset/Makefile
+@@ -1,5 +1,6 @@
+ obj-$(CONFIG_RESET_CONTROLLER) += core.o
+ obj-$(CONFIG_ARCH_SOCFPGA) += reset-socfpga.o
+ obj-$(CONFIG_ARCH_BERLIN) += reset-berlin.o
++obj-$(CONFIG_MACH_PISTACHIO) += reset-pistachio.o
+ obj-$(CONFIG_ARCH_SUNXI) += reset-sunxi.o
+ obj-$(CONFIG_ARCH_STI) += sti/
+diff --git a/drivers/reset/reset-pistachio.c b/drivers/reset/reset-pistachio.c
+new file mode 100644
+index 0000000..039ecb0
+--- /dev/null
++++ b/drivers/reset/reset-pistachio.c
+@@ -0,0 +1,162 @@
++/*
++ * Pistachio SoC Reset Controller driver
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * Author: Damien Horsley <Damien.Horsley@imgtec.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <linux/reset-controller.h>
++#include <linux/slab.h>
++#include <linux/mfd/syscon.h>
++
++#include <dt-bindings/reset-controller/pistachio-resets.h>
++
++#define	PISTACHIO_SOFT_RESET		0
++
++struct pistachio_reset_data {
++	struct reset_controller_dev	rcdev;
++	struct regmap			*periph_regs;
++};
++
++static inline int pistachio_reset_shift(unsigned long id)
++{
++	switch (id) {
++	case PISTACHIO_RESET_I2C0:
++	case PISTACHIO_RESET_I2C1:
++	case PISTACHIO_RESET_I2C2:
++	case PISTACHIO_RESET_I2C3:
++	case PISTACHIO_RESET_I2S_IN:
++	case PISTACHIO_RESET_PRL_OUT:
++	case PISTACHIO_RESET_SPDIF_OUT:
++	case PISTACHIO_RESET_SPI:
++	case PISTACHIO_RESET_PWM_PDM:
++	case PISTACHIO_RESET_UART0:
++	case PISTACHIO_RESET_UART1:
++	case PISTACHIO_RESET_QSPI:
++	case PISTACHIO_RESET_MDC:
++	case PISTACHIO_RESET_SDHOST:
++	case PISTACHIO_RESET_ETHERNET:
++	case PISTACHIO_RESET_IR:
++	case PISTACHIO_RESET_HASH:
++	case PISTACHIO_RESET_TIMER:
++		return id;
++	case PISTACHIO_RESET_I2S_OUT:
++	case PISTACHIO_RESET_SPDIF_IN:
++	case PISTACHIO_RESET_EVT:
++		return id + 6;
++	case PISTACHIO_RESET_USB_H:
++	case PISTACHIO_RESET_USB_PR:
++	case PISTACHIO_RESET_USB_PHY_PR:
++	case PISTACHIO_RESET_USB_PHY_PON:
++		return id + 7;
++	default:
++		return -1;
++	}
++}
++
++static int pistachio_reset_assert(struct reset_controller_dev *rcdev,
++			      unsigned long id)
++{
++	struct pistachio_reset_data *rd;
++	u32 mask;
++	int shift;
++
++	rd = container_of(rcdev, struct pistachio_reset_data, rcdev);
++	shift = pistachio_reset_shift(id);
++	if (shift < 0)
++		return shift;
++	mask = 1UL << shift;
++
++	regmap_update_bits(rd->periph_regs, PISTACHIO_SOFT_RESET, mask, mask);
++
++	return 0;
++}
++
++static int pistachio_reset_deassert(struct reset_controller_dev *rcdev,
++				unsigned long id)
++{
++	struct pistachio_reset_data *rd;
++	u32 mask;
++	int shift;
++
++	rd = container_of(rcdev, struct pistachio_reset_data, rcdev);
++	shift = pistachio_reset_shift(id);
++	if (shift < 0)
++		return shift;
++	mask = 1UL << shift;
++
++	regmap_update_bits(rd->periph_regs, PISTACHIO_SOFT_RESET, mask, 0);
++
++	return 0;
++}
++
++static struct reset_control_ops pistachio_reset_ops = {
++	.assert		= pistachio_reset_assert,
++	.deassert	= pistachio_reset_deassert,
++};
++
++static int pistachio_reset_probe(struct platform_device *pdev)
++{
++	struct pistachio_reset_data *rd;
++	int ret;
++	struct device *dev = &pdev->dev;
++	struct device_node *np = pdev->dev.of_node;
++
++	rd = devm_kzalloc(dev, sizeof(*rd), GFP_KERNEL);
++	if (!rd)
++		return -ENOMEM;
++
++	rd->periph_regs = syscon_regmap_lookup_by_phandle(np, "img,cr-periph");
++	if (IS_ERR(rd->periph_regs))
++		return PTR_ERR(rd->periph_regs);
++
++	rd->rcdev.owner = THIS_MODULE;
++	rd->rcdev.nr_resets = PISTACHIO_RESET_MAX + 1;
++	rd->rcdev.ops = &pistachio_reset_ops;
++	rd->rcdev.of_node = np;
++
++	ret = reset_controller_register(&rd->rcdev);
++	if (ret)
++		return ret;
++
++	return 0;
++}
++
++static int pistachio_reset_remove(struct platform_device *pdev)
++{
++	struct pistachio_reset_data *data = platform_get_drvdata(pdev);
++
++	reset_controller_unregister(&data->rcdev);
++
++	return 0;
++}
++
++
++static const struct of_device_id pistachio_reset_dt_ids[] = {
++	 { .compatible = "img,pistachio-reset", },
++	 { /* sentinel */ },
++};
++MODULE_DEVICE_TABLE(of, pistachio_reset_dt_ids);
++
++static struct platform_driver pistachio_reset_driver = {
++	.probe	= pistachio_reset_probe,
++	.remove	= pistachio_reset_remove,
++	.driver = {
++		.name		= "pistachio-reset",
++		.of_match_table	= pistachio_reset_dt_ids,
++	},
++};
++module_platform_driver(pistachio_reset_driver);
++
++MODULE_AUTHOR("Damien Horsley <Damien.Horsley@imgtec.com>");
++MODULE_DESCRIPTION("Pistacho Reset Controller Driver");
++MODULE_LICENSE("GPL v2");
+diff --git a/include/dt-bindings/reset-controller/pistachio-resets.h b/include/dt-bindings/reset-controller/pistachio-resets.h
+new file mode 100644
+index 0000000..60a189b
+--- /dev/null
++++ b/include/dt-bindings/reset-controller/pistachio-resets.h
+@@ -0,0 +1,36 @@
++/*
++ * This header provides constants for the reset controller
++ * present in the Pistachio SoC
++ */
++
++#ifndef _PISTACHIO_RESETS_H
++#define _PISTACHIO_RESETS_H
++
++#define PISTACHIO_RESET_I2C0		0
++#define PISTACHIO_RESET_I2C1		1
++#define PISTACHIO_RESET_I2C2		2
++#define PISTACHIO_RESET_I2C3		3
++#define PISTACHIO_RESET_I2S_IN		4
++#define PISTACHIO_RESET_PRL_OUT		5
++#define PISTACHIO_RESET_SPDIF_OUT	6
++#define PISTACHIO_RESET_SPI		7
++#define PISTACHIO_RESET_PWM_PDM		8
++#define PISTACHIO_RESET_UART0		9
++#define PISTACHIO_RESET_UART1		10
++#define PISTACHIO_RESET_QSPI		11
++#define PISTACHIO_RESET_MDC		12
++#define PISTACHIO_RESET_SDHOST		13
++#define PISTACHIO_RESET_ETHERNET	14
++#define PISTACHIO_RESET_IR		15
++#define PISTACHIO_RESET_HASH		16
++#define PISTACHIO_RESET_TIMER		17
++#define PISTACHIO_RESET_I2S_OUT		18
++#define PISTACHIO_RESET_SPDIF_IN	19
++#define PISTACHIO_RESET_EVT		20
++#define PISTACHIO_RESET_USB_H		21
++#define PISTACHIO_RESET_USB_PR		22
++#define PISTACHIO_RESET_USB_PHY_PR	23
++#define PISTACHIO_RESET_USB_PHY_PON	24
++#define PISTACHIO_RESET_MAX		24
++
++#endif
+-- 
+1.9.1
+

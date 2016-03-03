@@ -1,0 +1,26 @@
+From 331acb22218737b76c19d350e6a4fbdb2ad5d7ef Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Fri, 6 Nov 2015 17:56:46 +0530
+Subject: [PATCH 101/153] pistachio_defconfig: enable overlayfs
+
+Change-Id: I6eef48010bb50b60487a9982a9f394ecfbdc2715
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 9792d64..c2bc625 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -322,6 +322,7 @@ CONFIG_EXT4_FS_POSIX_ACL=y
+ CONFIG_EXT4_FS_SECURITY=y
+ # CONFIG_DNOTIFY is not set
+ CONFIG_FUSE_FS=m
++CONFIG_OVERLAY_FS=y
+ CONFIG_ISO9660_FS=m
+ CONFIG_JOLIET=y
+ CONFIG_ZISOFS=y
+-- 
+1.9.1
+

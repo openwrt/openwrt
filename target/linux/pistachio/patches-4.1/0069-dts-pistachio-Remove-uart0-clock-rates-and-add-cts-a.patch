@@ -1,0 +1,39 @@
+From 645535bbd4fa30929e5debf99ebba29b826446c5 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Mon, 21 Sep 2015 11:41:23 +0100
+Subject: [PATCH 069/153] dts: pistachio: Remove uart0 clock rates and add cts
+ and rts pins.
+
+uart0 on danube can be connected to any connectivity device like BT
+and baud rates should be selected based on user space requirement
+from connectivity chip, So remove locking baud to 115200 from DT
+and this is now taken care with driver, which can configure clock
+based on baud.
+
+Issue-Id: 73650 (Danube BuB serial port drops bytes at higher baudrates)
+
+Change-Id: Ic8b99588a98b1c76c6a0ac3395b0bb5f9d480b3d
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 5c8d7bb..c8bb34d 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -384,10 +384,9 @@
+ 		clock-names = "baudclk", "apb_pclk";
+ 		assigned-clocks = <&clk_core CLK_UART0_INTERNAL_DIV>,
+ 				  <&clk_core CLK_UART0_DIV>;
+-		assigned-clock-rates = <114278400>, <1843200>;
+ 		reg-shift = <2>;
+ 		reg-io-width = <4>;
+-		pinctrl-0 = <&uart0_pins>;
++		pinctrl-0 = <&uart0_pins>, <&uart0_rts_cts_pins>;
+ 		pinctrl-names = "default";
+ 		status = "disabled";
+ 	};
+-- 
+1.9.1
+

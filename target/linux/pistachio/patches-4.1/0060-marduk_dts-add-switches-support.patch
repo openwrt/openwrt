@@ -1,0 +1,42 @@
+From 5e87e140467817d75016afc216a25256ac19e109 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Wed, 2 Sep 2015 15:53:15 +0530
+Subject: [PATCH 060/153] marduk_dts: add switches support
+
+marduk has two switch buttons, enable gpio-keys driver for the
+two switches
+
+Change-Id: Ib744612d8442c0058e0dd1699e17bfbbc2f5cad0
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index c94cd52..ab7b1ee 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -83,6 +83,20 @@
+ 		clock-frequency = <16000000>;
+ 		clock-output-names = "cc2520_ext_clock";
+ 	};
++
++	gpio_keys {
++		compatible = "gpio-keys";
++		switch@1 {
++			label = "SWITCH 1";
++			linux,code = <0x101>; /* BTN_1 */
++			gpios = <&gpio2 13 GPIO_ACTIVE_LOW>;
++		};
++		switch@2 {
++			label = "SWITCH 2";
++			linux,code = <0x102>; /* BTN_2 */
++			gpios = <&gpio2 14 GPIO_ACTIVE_LOW>;
++		};
++	};
+ };
+ 
+ &spfi0 {
+-- 
+1.9.1
+

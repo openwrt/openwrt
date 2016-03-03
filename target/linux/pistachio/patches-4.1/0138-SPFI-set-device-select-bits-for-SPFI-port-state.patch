@@ -1,0 +1,33 @@
+From bd3d3da1c769cd699be010a7f3c574e9ff2e9ccc Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Mon, 1 Feb 2016 10:58:08 +0000
+Subject: [PATCH 138/153] SPFI: set device select bits for SPFI port state
+
+Even if the chip select line is not controlled by the SPFI
+hardware, the device select bits need to be set to specify
+the chip select line in use for the hardware to know what
+parameters to use for the current transfer.
+
+Change-Id: I2417c39d5f568c61ca95e52cf46422a1b1c8f9bd
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ drivers/spi/spi-img-spfi.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
+index 1571c77..78830af 100644
+--- a/drivers/spi/spi-img-spfi.c
++++ b/drivers/spi/spi-img-spfi.c
+@@ -437,6 +437,9 @@ static int img_spfi_prepare(struct spi_master *master, struct spi_message *msg)
+ 	u32 val;
+ 
+ 	val = spfi_readl(spfi, SPFI_PORT_STATE);
++	val &= ~(SPFI_PORT_STATE_DEV_SEL_MASK <<
++		 SPFI_PORT_STATE_DEV_SEL_SHIFT);
++	val |= msg->spi->chip_select << SPFI_PORT_STATE_DEV_SEL_SHIFT;
+ 	if (msg->spi->mode & SPI_CPHA)
+ 		val |= SPFI_PORT_STATE_CK_PHASE(msg->spi->chip_select);
+ 	else
+-- 
+1.9.1
+

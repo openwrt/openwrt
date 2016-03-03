@@ -1,0 +1,34 @@
+From baeadd49350d35c2eae6e224c327899ba5638c6c Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Mon, 19 Oct 2015 15:48:11 +0530
+Subject: [PATCH 079/153] pistachio.dtsi: add label to spim0-clk
+
+separate spim0-clk declaration from other SPI lines so that
+its properties can be overridden in board dts
+
+Change-Id: I1cb32dad6c0727afecd17a3d7b24bdbcd2506dc7
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index c8bb34d..5840529 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -515,7 +515,11 @@
+ 
+ 		spim0_pins: spim0-pins {
+ 			spim0 {
+-				pins = "mfio8", "mfio9", "mfio10";
++				pins = "mfio9", "mfio10";
++				function = "spim0";
++			};
++			spim0_clk: spim0-clk {
++				pins = "mfio8";
+ 				function = "spim0";
+ 			};
+ 		};
+-- 
+1.9.1
+

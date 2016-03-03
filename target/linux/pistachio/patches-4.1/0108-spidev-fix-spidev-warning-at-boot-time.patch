@@ -1,0 +1,51 @@
+From 24ddd63f63303a9c6f9890dadc7272cf19378719 Mon Sep 17 00:00:00 2001
+From: Abhishek Singh <Abhishek.Singh@imgtec.com>
+Date: Mon, 23 Nov 2015 14:57:04 +0530
+Subject: [PATCH 108/153] spidev: fix spidev warning at boot time
+
+Recently warning was added to spidev if it is instantiated as a DT node
+without an ID in the match table. To fix this add "img,click-interface" to the list
+of compatible strings.
+
+Change-Id: I3107d4af387fac939d7566d91c53edd588a756de
+Signed-off-by: Abhishek Singh <Abhishek.Singh@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 4 ++--
+ drivers/spi/spidev.c                              | 1 +
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index cb26f0d..8013bb5 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -136,13 +136,13 @@
+ 	};
+ 
+ 	spidev@2 {
+-		compatible = "linux,spidev";
++		compatible = "img,click-interface";
+ 		reg = <2>;
+ 		spi-max-frequency = <2000000>;
+ 	};
+ 
+ 	spidev@3 {
+-		compatible = "linux,spidev";
++		compatible = "img,click-interface";
+ 		reg = <3>;
+ 		spi-max-frequency = <2000000>;
+ 	};
+diff --git a/drivers/spi/spidev.c b/drivers/spi/spidev.c
+index 8fab566..a4062ca 100644
+--- a/drivers/spi/spidev.c
++++ b/drivers/spi/spidev.c
+@@ -707,6 +707,7 @@ static struct class *spidev_class;
+ #ifdef CONFIG_OF
+ static const struct of_device_id spidev_dt_ids[] = {
+ 	{ .compatible = "rohm,dh2228fv" },
++	{ .compatible = "img,click-interface" },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, spidev_dt_ids);
+-- 
+1.9.1
+

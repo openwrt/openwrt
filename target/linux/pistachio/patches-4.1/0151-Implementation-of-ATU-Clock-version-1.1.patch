@@ -1,0 +1,1494 @@
+From 0ef5d17d179754ecb9ec85fed3deed87a972ece8 Mon Sep 17 00:00:00 2001
+From: Surendra Yeragam <Surendra.Yeragamreddy@imgtec.com>
+Date: Tue, 30 Jun 2015 22:07:54 +0530
+Subject: [PATCH 151/153] Implementation of ATU Clock version 1.1
+
+This kernel module implements an independent adjustable "ATU" clock for
+audio/media applications and drivers (ATU stands for "audio time unit"). It
+requires the platform to register a cycle counter as the hardware basis for
+measuring time. The module constructs a software clock using a design based on
+RFC 1305. An ioctl API is provided for applications to access and adjust the
+clock. A kernel API allows other kernel drivers to convert between the cycle
+counter units and ATU (nanosecond) units.
+
+BUG=none
+TEST=compiled and tested on danube
+
+Change-Id: Ic919c4d4b2a300abd326fab1f0ac1ef2f1c16617
+Signed-off-by: Surendra Yeragam <Surendra.Yeragamreddy@imgtec.com>
+---
+ drivers/misc/Kconfig                  |   1 +
+ drivers/misc/Makefile                 |   1 +
+ drivers/misc/atu/Kconfig              |   5 +
+ drivers/misc/atu/Makefile             |   2 +
+ drivers/misc/atu/atu_clk_maintainer.c | 867 ++++++++++++++++++++++++++++++++++
+ drivers/misc/atu/atu_clk_maintainer.h |  22 +
+ drivers/misc/atu/atu_clk_ntp.c        | 378 +++++++++++++++
+ drivers/misc/atu/atu_clk_ntp.h        |  40 ++
+ include/linux/atu_clk.h               |  27 ++
+ include/uapi/atu_ioctl.h              |  43 ++
+ 10 files changed, 1386 insertions(+)
+ create mode 100644 drivers/misc/atu/Kconfig
+ create mode 100644 drivers/misc/atu/Makefile
+ create mode 100644 drivers/misc/atu/atu_clk_maintainer.c
+ create mode 100644 drivers/misc/atu/atu_clk_maintainer.h
+ create mode 100644 drivers/misc/atu/atu_clk_ntp.c
+ create mode 100644 drivers/misc/atu/atu_clk_ntp.h
+ create mode 100644 include/linux/atu_clk.h
+ create mode 100644 include/uapi/atu_ioctl.h
+
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index 24d1435..438761f 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -548,4 +548,5 @@ source "drivers/misc/mic/Kconfig"
+ source "drivers/misc/genwqe/Kconfig"
+ source "drivers/misc/echo/Kconfig"
+ source "drivers/misc/cxl/Kconfig"
++source "drivers/misc/atu/Kconfig"
+ endmenu
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index fd0e064..55df0b0 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -57,4 +57,5 @@ obj-$(CONFIG_GENWQE)		+= genwqe/
+ obj-$(CONFIG_ECHO)		+= echo/
+ obj-$(CONFIG_VEXPRESS_SYSCFG)	+= vexpress-syscfg.o
+ obj-$(CONFIG_CXL_BASE)		+= cxl/
++obj-$(CONFIG_ATU)		+= atu/
+ obj-$(CONFIG_IMG_PDM)           += img-pdm.o
+diff --git a/drivers/misc/atu/Kconfig b/drivers/misc/atu/Kconfig
+new file mode 100644
+index 0000000..9083303
+--- /dev/null
++++ b/drivers/misc/atu/Kconfig
+@@ -0,0 +1,5 @@
++config ATU
++	tristate "ATU Clock IP"
++	---help---
++	  Say Y here if you want to use ATU Clock IP.
++	  If you select to build as a module it will be called atu_clk_driver.
+diff --git a/drivers/misc/atu/Makefile b/drivers/misc/atu/Makefile
+new file mode 100644
+index 0000000..8f0cead
+--- /dev/null
++++ b/drivers/misc/atu/Makefile
+@@ -0,0 +1,2 @@
++atu_clk_driver-objs		:= atu_clk_maintainer.o atu_clk_ntp.o
++obj-$(CONFIG_ATU)		+= atu_clk_driver.o
+diff --git a/drivers/misc/atu/atu_clk_maintainer.c b/drivers/misc/atu/atu_clk_maintainer.c
+new file mode 100644
+index 0000000..82c11ef
+--- /dev/null
++++ b/drivers/misc/atu/atu_clk_maintainer.c
+@@ -0,0 +1,867 @@
++/*
++ * Atu Clock Maintainer
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/atu_clk.h>
++#include <linux/clk.h>
++#include <linux/clocksource.h>
++#include <linux/export.h>
++#include <linux/fs.h>
++#include <linux/io.h>
++#include <linux/miscdevice.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++#include <linux/timecounter.h>
++#include <linux/timer.h>
++#include <linux/uaccess.h>
++
++#include <uapi/atu_ioctl.h>
++
++#include "atu_clk_maintainer.h"
++#include "atu_clk_ntp.h"
++
++
++#define ATU_UPDATE_TIMER_INTRVL     1
++
++/* Structure holding internal clk managing values. */
++struct atu_clk_maintainer {
++	struct	timespec atu_time;
++	struct	timecounter atu_timecntr;
++	int	shift;
++	u32	mult;
++	cycle_t clk_cycles_per_ntp_cycle;
++	cycle_t	shifted_ns_per_ntp_cycle;
++	s64	shifted_remain_ns_per_ntp_cycle;
++	/* NTP_SCALE_SHIFT bit shfted error */
++	s64	tm_error;
++	/*
++	 * Error shift with respect to current clock's
++	 * shift i.e (NTP_SCALE_SHIFT - clock shift)
++	 */
++	int	tm_error_shift;
++	/* Char device which holds IOCTL handler */
++	struct	miscdevice miscdev;
++	/*
++	 * The timer structure used to update the elapsed ticks count
++	 * at regular interval
++	 */
++	struct	timer_list atu_timer;
++	unsigned long	atu_timer_data;
++	struct atu_clk_ntp atu_ntp;
++	struct clk *clk_atu;
++	spinlock_t atu_clk_lock;
++	int event_timer_rate;
++};
++
++static void atu_time_update(void);
++static int atu_adjtimex(struct timex *txc);
++
++static struct atu_clk_maintainer *patu_clk_mtner;
++
++static u64 do_div_round_closest(u64 numerator, u32 denominator)
++{
++	u64 result = 0;
++
++	result = denominator >> 1;
++	result += numerator;
++	do_div(result, denominator);
++
++	return result;
++}
++
++/*
++ * This function updates ATU wall time and
++ * reschedules for next ATU wall time update.
++ */
++static void atu_timer_timeout(unsigned long dat)
++{
++	atu_time_update();
++	add_timer(&patu_clk_mtner->atu_timer);
++}
++
++/* This function initialises atu wall time update scheduler */
++static void atu_timer_init(void)
++{
++	init_timer(&patu_clk_mtner->atu_timer);
++	patu_clk_mtner->atu_timer.expires  = jiffies + ATU_UPDATE_TIMER_INTRVL;
++	patu_clk_mtner->atu_timer.data =
++		(unsigned long)&patu_clk_mtner->atu_timer_data;
++	patu_clk_mtner->atu_timer.function = atu_timer_timeout;
++
++	add_timer(&patu_clk_mtner->atu_timer);
++	pr_debug("ATU Wall Time scheduler started\n");
++}
++
++static void atu_timer_exit(void)
++{
++	del_timer_sync(&patu_clk_mtner->atu_timer);
++	pr_debug("ATU Wall Time scheduler removed\n");
++}
++
++static int atu_gettimestamp(struct atu_event *event)
++{
++	struct timespec timeofday;
++	unsigned long flags;
++
++	if (event->counter < ATU_MAX_COUNTERS) {
++		spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++		if (!patu_clk_mtner->atu_timecntr.cc) {
++			spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++			return -EFAULT;
++		}
++		event->timestamp_counter =
++			patu_clk_mtner->atu_timecntr.cc->
++			read(patu_clk_mtner->atu_timecntr.cc);
++
++		event->timestamp = 0x0;
++		event->timekeeping_shift = patu_clk_mtner->shift;
++		event->timekeeping_mult = patu_clk_mtner->mult;
++		atu_getnstimeofday(&timeofday);
++		spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++
++		event->timeofday_sec = timeofday.tv_sec;
++		event->timeofday_ns = timeofday.tv_nsec;
++
++		return 0;
++	} else {
++		return -ERANGE;
++	}
++}
++
++static long
++ioctl_img_atu(struct file *file, unsigned int cmd, unsigned long arg)
++{
++	void __user *argp = (void __user *)arg;
++	struct atu_event event;
++	int ret;
++	struct timex u_txc;
++	struct timeval u_tv;
++	struct timespec	u_ts;
++	unsigned long flags;
++
++	if (!argp)
++		return -EINVAL;
++
++	switch (cmd) {
++	default:
++		return -EINVAL;
++
++	case ATUIO_GETEVTS:
++		if (copy_from_user(&event, argp, sizeof(event)))
++			return -EFAULT;
++
++		ret = atu_gettimestamp(&event);
++		if (ret)
++			return ret;
++
++		if (copy_to_user(argp, &event, sizeof(event)))
++			return -EFAULT;
++		break;
++
++	case ATUIO_ADJTIMEX:
++		if (copy_from_user(&u_txc, argp, sizeof(u_txc)))
++			return -EFAULT;
++
++		if (u_txc.modes == 0) {
++			return -EINVAL;
++		}
++
++		ret = atu_adjtimex(&u_txc);
++
++		if (copy_to_user(argp, &u_txc, sizeof(u_txc)))
++			return -EFAULT;
++
++		if (ret)
++			return ret;
++		break;
++
++	case ATUIO_SETTIMEOFDAY:
++		if (copy_from_user(&u_tv, argp, sizeof(u_tv)))
++			return -EFAULT;
++		u_ts.tv_sec = u_tv.tv_sec;
++		u_ts.tv_nsec = u_tv.tv_usec * NSEC_PER_USEC;
++		ret = atu_settimeofday(&u_ts);
++		if (ret)
++			return ret;
++		break;
++
++	case ATUIO_GETTIMESPEC:
++		spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++		if (!patu_clk_mtner->atu_timecntr.cc) {
++			spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock,
++									flags);
++			return -EFAULT;
++		}
++		atu_getnstimeofday(&u_ts);
++		spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++
++		if (copy_to_user(argp, &u_ts, sizeof(u_ts)))
++			return -EFAULT;
++		break;
++	}
++
++	return 0;
++}
++
++static const struct file_operations atu_dev_fops = {
++	.unlocked_ioctl		= ioctl_img_atu,
++};
++
++static int atu_chardev_init(void)
++{
++	int error;
++
++	patu_clk_mtner->miscdev.minor = MISC_DYNAMIC_MINOR;
++	patu_clk_mtner->miscdev.fops = &atu_dev_fops;
++	patu_clk_mtner->miscdev.name = "img-atu";
++	error = misc_register(&patu_clk_mtner->miscdev);
++	if (error) {
++		pr_err("Unable to register atu device\n");
++		goto err_misc_reg;
++	}
++	pr_debug("ATU Clock dev added\n");
++
++	return 0;
++
++err_misc_reg:
++	return error;
++}
++
++static int atu_chardev_remove(void)
++{
++	misc_deregister(&patu_clk_mtner->miscdev);
++	pr_debug("ATU Clock dev removed\n");
++
++	return 0;
++}
++
++static void
++atu_clk_mtner_setup_internals(struct cyclecounter *patu_cyclecntr,
++				struct clk *clk_atu)
++{
++	cycle_t clk_cycle;
++	u64 tmp, ntp_ns_per_cycle;
++
++	patu_clk_mtner->atu_timecntr.cc = patu_cyclecntr;
++	patu_clk_mtner->clk_atu = clk_atu;
++
++	/* Clear the error */
++	patu_clk_mtner->tm_error = 0;
++	patu_clk_mtner->tm_error_shift = NTP_SCALE_SHIFT -
++					patu_clk_mtner->atu_timecntr.cc->shift;
++
++	tmp = NTP_INTERVAL_LENGTH;
++	tmp <<= patu_clk_mtner->atu_timecntr.cc->shift;
++	ntp_ns_per_cycle = tmp;
++
++	tmp = do_div_round_closest(tmp, patu_clk_mtner->atu_timecntr.cc->mult);
++	if (tmp == 0)
++		tmp = 1;
++
++	clk_cycle = (cycle_t) tmp;
++	patu_clk_mtner->clk_cycles_per_ntp_cycle = clk_cycle;
++
++	patu_clk_mtner->shifted_ns_per_ntp_cycle =
++		(u64) clk_cycle * patu_clk_mtner->atu_timecntr.cc->mult;
++	patu_clk_mtner->shifted_remain_ns_per_ntp_cycle =
++		ntp_ns_per_cycle - patu_clk_mtner->shifted_ns_per_ntp_cycle;
++
++	patu_clk_mtner->shift = patu_clk_mtner->atu_timecntr.cc->shift;
++
++	patu_clk_mtner->mult = patu_clk_mtner->atu_timecntr.cc->mult;
++
++	/* Update cycle_last with current read value */
++	patu_clk_mtner->atu_timecntr.cycle_last = patu_clk_mtner->
++			atu_timecntr.cc->read(patu_clk_mtner->atu_timecntr.cc);
++}
++
++static s64 atu_tm_get_ns(void)
++{
++	cycle_t ticks_now, ticks_delta;
++
++	/* Read present clock ticks */
++	ticks_now = patu_clk_mtner->atu_timecntr.cc->
++				read(patu_clk_mtner->atu_timecntr.cc);
++
++	/* Calculate the ticks delta since the last atu_update_clk_time: */
++	ticks_delta = (ticks_now - patu_clk_mtner->atu_timecntr.cycle_last) &
++			patu_clk_mtner->atu_timecntr.cc->mask;
++
++	/* Convert to nanoseconds */
++	return clocksource_cyc2ns(ticks_delta, patu_clk_mtner->mult,
++				  patu_clk_mtner->shift);
++}
++
++/* It will update the latest clock's tick to the clk time */
++static void atu_time_refresh(void)
++{
++	cycle_t cycle_now, cycle_delta;
++	s64 nsec;
++
++	cycle_now = patu_clk_mtner->atu_timecntr.cc->
++				read(patu_clk_mtner->atu_timecntr.cc);
++
++	cycle_delta = (cycle_now - patu_clk_mtner->atu_timecntr.cycle_last) &
++			patu_clk_mtner->atu_timecntr.cc->mask;
++	patu_clk_mtner->atu_timecntr.cycle_last = cycle_now;
++
++	nsec = clocksource_cyc2ns(cycle_delta, patu_clk_mtner->mult,
++				  patu_clk_mtner->shift);
++
++	timespec_add_ns(&patu_clk_mtner->atu_time, nsec);
++}
++
++void atu_getnstimeofday(struct timespec *ts)
++{
++	s64 nsecs;
++
++	if (ts == NULL)
++		return;
++	*ts = patu_clk_mtner->atu_time;
++	nsecs = atu_tm_get_ns();
++	timespec_add_ns(ts, nsecs);
++}
++
++u64 atu_get_current_time(void)
++{
++	u64 nsecs;
++	struct timespec ts;
++	unsigned long flags;
++
++	spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++	if (!patu_clk_mtner->atu_timecntr.cc) {
++		spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++		return -EFAULT;
++	}
++	ts = patu_clk_mtner->atu_time;
++	nsecs = atu_tm_get_ns();
++	spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++
++	nsecs += ((u64)ts.tv_sec * NSEC_PER_SEC) + ((u64)ts.tv_nsec);
++
++	return nsecs;
++}
++EXPORT_SYMBOL(atu_get_current_time);
++
++int atu_settimeofday(const struct timespec *ts)
++{
++	unsigned long flags;
++
++	if (ts->tv_nsec >= NSEC_PER_SEC)
++		return -EINVAL;
++
++	spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++	if (!patu_clk_mtner->atu_timecntr.cc) {
++		spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++		return -EFAULT;
++	}
++
++	/*
++	 * Refresh the time so that it will update
++	 * clock's last cycle to present value
++	 */
++	atu_time_refresh();
++
++	patu_clk_mtner->atu_time = *ts;
++
++	patu_clk_mtner->tm_error = 0;
++	atu_ntp_reset(&patu_clk_mtner->atu_ntp);
++
++	spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++
++	return 0;
++}
++
++int atu_tm_add_offset(struct timespec *ts)
++{
++	if (ts->tv_nsec >= NSEC_PER_SEC)
++		return -EINVAL;
++
++	atu_time_refresh();
++
++	patu_clk_mtner->atu_time = timespec_add(patu_clk_mtner->atu_time, *ts);
++
++	patu_clk_mtner->tm_error = 0;
++
++	atu_ntp_reset(&patu_clk_mtner->atu_ntp);
++
++	return 0;
++}
++
++unsigned long atu_get_seconds(void)
++{
++	return patu_clk_mtner->atu_time.tv_sec;
++}
++
++static void frc_ticks_to_atu_units(u32 frccnt, u64 *patu)
++{
++	*patu = ((__u64)frccnt * patu_clk_mtner->mult) >> patu_clk_mtner->shift;
++}
++
++static void atu_units_to_frc_ticks(u64 atu, u64 *pfrccnt)
++{
++	*pfrccnt = do_div_round_closest(atu <<
++			patu_clk_mtner->shift, patu_clk_mtner->mult);
++}
++
++static void atu_get_cur_atu_frc_pair(u64 *patu, u32 *pfrc)
++{
++	u64 nsecs;
++	struct timespec ts;
++	cycle_t ticks_now, ticks_delta;
++
++	ts = patu_clk_mtner->atu_time;
++
++	/* Read present clock ticks */
++	ticks_now = patu_clk_mtner->atu_timecntr.cc->
++				read(patu_clk_mtner->atu_timecntr.cc);
++	ticks_now = ticks_now & patu_clk_mtner->atu_timecntr.cc->mask;
++
++	/* Calculate the ticks delta since the last atu_update_clk_time: */
++	ticks_delta = (ticks_now - patu_clk_mtner->atu_timecntr.cycle_last) &
++			patu_clk_mtner->atu_timecntr.cc->mask;
++
++	/* Convert to nanoseconds */
++	nsecs = clocksource_cyc2ns(ticks_delta, patu_clk_mtner->mult,
++				  patu_clk_mtner->shift);
++
++	nsecs += ((u64)ts.tv_sec * NSEC_PER_SEC) + ((u64)ts.tv_nsec);
++
++	*patu = nsecs;
++	*pfrc = ticks_now;
++}
++
++int frc_to_atu(u32 frc, u64 *patu, s32 dir)
++{
++	u32 diff = 0, cur_frc;
++	u64 cur_atu;
++	unsigned long flags;
++
++	if (patu == NULL)
++		return -EINVAL;
++
++	spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++	if (patu_clk_mtner->atu_timecntr.cc == NULL) {
++		spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++		return -EFAULT;
++	}
++
++	/* Get current atu and frc count */
++	atu_get_cur_atu_frc_pair(&cur_atu, &cur_frc);
++
++	if (cur_frc >= frc)
++		diff = cur_frc - frc;
++	else
++		diff = patu_clk_mtner->atu_timecntr.cc->mask +
++					1 + cur_frc - frc;
++	frc_ticks_to_atu_units(diff, patu);
++	spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++
++	if (dir == ATU_PAST) {
++		*patu = cur_atu - *patu;
++		if (*patu < 0)
++			return -ERANGE;
++	} else {
++		*patu = cur_atu + *patu;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL(frc_to_atu);
++
++int atu_to_frc(u64 atu, u32 *pfrc, u64 min_nsec)
++{
++	u64 cur_atu, atu_diff, frc_cnt;
++	u32 cur_frc;
++	unsigned long flags;
++
++	if (pfrc == NULL)
++		return -EINVAL;
++
++	spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++	if (patu_clk_mtner->atu_timecntr.cc == NULL) {
++		spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++		return -EFAULT;
++	}
++
++	/* Get current atu and frc count */
++	atu_get_cur_atu_frc_pair(&cur_atu, &cur_frc);
++
++	atu_diff = atu - cur_atu;
++
++	/* Check for past time and min time diff */
++	if (atu < cur_atu || atu_diff < min_nsec) {
++		spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++		return -ERANGE;
++	}
++
++	atu_units_to_frc_ticks(atu_diff, &frc_cnt);
++	spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++
++	/* Check for obtained value is not more than counter rollover value */
++	if (frc_cnt > patu_clk_mtner->atu_timecntr.cc->mask)
++		return -ERANGE;
++
++	/* Get cycle count val at the given atu time */
++	*pfrc = (frc_cnt + cur_frc) &
++			patu_clk_mtner->atu_timecntr.cc->mask;
++
++	/* Check with latest time for min time diff */
++	if ((atu - min_nsec) < atu_get_current_time())
++		return -ERANGE;
++
++	return 0;
++}
++EXPORT_SYMBOL(atu_to_frc);
++
++void
++atu_clocks_calc_mult_shift(u32 *mult, u32 *shift, u32 from, u32 to, u32 maxsec)
++{
++	u64 tmp;
++	u32 sft, sftacc= 32;
++
++	/*
++	 * Calculate the shift factor which is limiting the conversion
++	 * range:
++	 */
++	tmp = ((u64)maxsec * from) >> 32;
++	while (tmp) {
++		tmp >>=1;
++		sftacc--;
++	}
++
++	/*
++	 * Find the conversion shift/mult pair which has the best
++	 * accuracy and fits the maxsec conversion range:
++	 */
++	for (sft = 32; sft > 0; sft--) {
++		tmp = (u64) to << sft;
++		tmp += from / 2;
++		do_div(tmp, from);
++		if ((tmp >> sftacc) == 0)
++			break;
++	}
++	*mult = tmp;
++	*shift = sft;
++}
++
++static int atu_adjtimex(struct timex *txc)
++{
++	int ret=0;
++	unsigned long flags;
++
++	spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++	if (!patu_clk_mtner->atu_timecntr.cc) {
++		spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++		return -EFAULT;
++	}
++
++	if (patu_clk_mtner->clk_atu) {
++
++		if (txc->modes & ADJ_SETOFFSET) {
++			ret = atu_set_time_offset(txc);
++			if (ret) {
++				spin_unlock_irqrestore(
++					&patu_clk_mtner->atu_clk_lock, flags);
++				return ret;
++			}
++		}
++
++		if (txc->modes & ADJ_FREQUENCY) {
++			unsigned long int rate;
++			long int freq;
++			int dir;
++
++			freq = txc->freq;
++			freq = (freq * NSEC_PER_USEC) >> 16;
++
++			if (freq < 0) {
++				dir = -1;
++				freq = -freq;
++			} else  {
++				dir = 1;
++			}
++
++			rate = patu_clk_mtner->event_timer_rate +
++					do_div_round_closest(((u64)freq) *
++					patu_clk_mtner->event_timer_rate,
++					NSEC_PER_SEC) * dir;
++
++			/* Current Range of adjustable PLL is 147MHz - 149MHz */
++			clk_set_rate(patu_clk_mtner->clk_atu, rate);
++			txc->freq = rate;
++		}
++
++	} else {
++		ret = __atu_adjtimex(txc, &patu_clk_mtner->atu_ntp);
++	}
++	spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++
++	return ret;
++}
++
++static int atu_tm_big_adj_clk(s64 error, s64 *clk_cycle, s64 *ticks)
++{
++	s64 ntp_error, clk_interval;
++	u32 look_ahead, shift;
++	s32 mult = 1;
++	s32 tm_error;
++
++	/*
++	 * Correction of about 1msec within about 1 sec
++	 * or 2^20 nsec in 2^SHIFT_HZ ticks.
++	 */
++	tm_error = patu_clk_mtner->tm_error >>
++				(NTP_SCALE_SHIFT + 22 - 2 * SHIFT_HZ);
++
++	tm_error = abs(tm_error);
++
++	for (look_ahead = 0; tm_error > 0; look_ahead++)
++		tm_error >>= 2;
++
++	ntp_error = get_ntp_shifted_nsecs_per_cycle(&patu_clk_mtner->atu_ntp) >>
++				(patu_clk_mtner->tm_error_shift + 1);
++	ntp_error -= patu_clk_mtner->shifted_ns_per_ntp_cycle >> 1;
++
++	error = ((error - ntp_error) >> look_ahead) + ntp_error;
++
++	clk_interval = *clk_cycle;
++	if (error < 0) {
++		error = -error;
++		*clk_cycle = -*clk_cycle;
++		*ticks = -*ticks;
++		mult = -1;
++	}
++	for (shift = 0;
++		error > clk_interval; shift++)
++		error >>= 1;
++
++	*clk_cycle <<= shift;
++	*ticks <<= shift;
++	return mult << shift;
++}
++
++static void atu_tm_adj_clk(s64 ticks)
++{
++	s64 error, clk_cycle;
++	int mult;
++
++	clk_cycle = patu_clk_mtner->clk_cycles_per_ntp_cycle;
++
++	error = patu_clk_mtner->tm_error >>
++			(patu_clk_mtner->tm_error_shift - 1);
++
++	if (error > clk_cycle) {
++		error >>= 3;
++
++		if (likely(error <= clk_cycle))
++				mult = 1;
++		else
++				mult = atu_tm_big_adj_clk(error, &clk_cycle,
++								&ticks);
++	} else if (error < -clk_cycle) {
++		error >>= 3;
++
++		if (likely(error >= -clk_cycle)) {
++				mult = -1;
++				clk_cycle = -clk_cycle;
++				ticks = -ticks;
++		} else {
++				mult = atu_tm_big_adj_clk(error, &clk_cycle,
++								&ticks);
++		}
++	} else {
++		return;
++	}
++
++		patu_clk_mtner->mult += mult;
++		patu_clk_mtner->shifted_ns_per_ntp_cycle += clk_cycle;
++		patu_clk_mtner->atu_time.tv_nsec -=
++				ticks >> patu_clk_mtner->shift;
++		patu_clk_mtner->tm_error -= (clk_cycle - ticks) <<
++						patu_clk_mtner->tm_error_shift;
++}
++
++static cycle_t calculate_remainder_ticks(cycle_t ticks)
++{
++	u64 no_cycles = ticks;
++	u64 clk_cycle;
++	s64 tick_error = 0;
++
++	clk_cycle = patu_clk_mtner->clk_cycles_per_ntp_cycle;
++
++	/* Get the no clk cycles per ntp cycle in the given ticks */
++	do_div(no_cycles, clk_cycle);
++
++	/* Subtract the no. of rounded cycles from ticks */
++	ticks -= (no_cycles * patu_clk_mtner->clk_cycles_per_ntp_cycle);
++
++	/* Add the no. of clk cycles to the cycle_last */
++	patu_clk_mtner->atu_timecntr.cycle_last +=
++		(no_cycles * patu_clk_mtner->clk_cycles_per_ntp_cycle);
++
++	/* Add the no.of clk cycles to nano seconds */
++	patu_clk_mtner->atu_time.tv_nsec += (no_cycles * patu_clk_mtner->
++		shifted_ns_per_ntp_cycle) >> patu_clk_mtner->shift;
++
++	/*
++	 * If there is an overflow of nano seconds will update tv_sec and
++	 * try to update/sync ntp's params
++	 */
++	while (patu_clk_mtner->atu_time.tv_nsec >= NSEC_PER_SEC) {
++		patu_clk_mtner->atu_time.tv_nsec -= NSEC_PER_SEC;
++		patu_clk_mtner->atu_time.tv_sec++;
++		atu_ntp_param_update_per_second(&patu_clk_mtner->atu_ntp);
++	}
++
++	tick_error += get_ntp_shifted_nsecs_per_cycle(&patu_clk_mtner->atu_ntp);
++	tick_error -=
++		(patu_clk_mtner->shifted_ns_per_ntp_cycle +
++		patu_clk_mtner->shifted_remain_ns_per_ntp_cycle) <<
++				(patu_clk_mtner->tm_error_shift);
++
++	/* Add the tick error of no_cycles to ntp error */
++	patu_clk_mtner->tm_error += (no_cycles * tick_error);
++
++	/* Return the left over ticks count */
++	return ticks;
++}
++
++static void atu_update_clk_time(void)
++{
++	cycle_t ticks;
++	cycle_t curticks;
++
++	curticks = patu_clk_mtner->atu_timecntr.cc->
++			read(patu_clk_mtner->atu_timecntr.cc);
++
++	ticks = (curticks - patu_clk_mtner->atu_timecntr.cycle_last) &
++					patu_clk_mtner->atu_timecntr.cc->mask;
++
++	ticks = calculate_remainder_ticks(ticks);
++
++	/* Correct the clock */
++	atu_tm_adj_clk(ticks);
++
++	/* If tv_nsec is -ve we will adjust that as error */
++	if (unlikely((s64)patu_clk_mtner->atu_time.tv_nsec < 0)) {
++		s64 neg = -(s64)patu_clk_mtner->atu_time.tv_nsec;
++		patu_clk_mtner->atu_time.tv_nsec = 0;
++		patu_clk_mtner->tm_error +=
++			neg << patu_clk_mtner->tm_error_shift;
++	}
++
++	while((patu_clk_mtner->atu_time.tv_nsec >= NSEC_PER_SEC)) {
++		patu_clk_mtner->atu_time.tv_nsec -= NSEC_PER_SEC;
++		patu_clk_mtner->atu_time.tv_sec++;
++		atu_ntp_param_update_per_second(&patu_clk_mtner->atu_ntp);
++	}
++}
++
++static void atu_time_update()
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++	if (patu_clk_mtner->atu_timecntr.cc == NULL) {
++		spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++		return;
++	}
++	atu_update_clk_time();
++	spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++}
++
++int atu_cyclecounter_register(struct cyclecounter *pcc, struct clk *clk_atu)
++{
++	unsigned long flags;
++
++	if (pcc == NULL) {
++		pr_err("%s got NULL pointer\n", __func__);
++		return -EINVAL;
++	}
++
++	if (clk_atu)
++		pr_info("Register Fractional PLL to ATU Clock\n");
++	else
++		pr_info("Register Fixed PLL to ATU Clock\n");
++
++	if(clk_atu)
++		patu_clk_mtner->event_timer_rate = clk_get_rate(clk_atu);;
++	atu_chardev_init();
++	atu_ntp_init(&patu_clk_mtner->atu_ntp);
++
++	spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++	atu_clk_mtner_setup_internals(pcc, clk_atu);
++	atu_ntp_reset(&patu_clk_mtner->atu_ntp);
++	spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++	atu_timer_init();
++	pr_info("ATU Clock Registered for cycle counter:0x%p\n", pcc);
++
++	return 0;
++}
++EXPORT_SYMBOL(atu_cyclecounter_register);
++
++int atu_cyclecounter_unregister(struct cyclecounter *pcc)
++{
++	unsigned long flags;
++
++	if (pcc == NULL) {
++		pr_err("%s got NULL pointer\n", __func__);
++		return -EINVAL;
++	}
++	if (pcc != patu_clk_mtner->atu_timecntr.cc) {
++		pr_err("Invalid input data to %s\n", __func__);
++		return -EINVAL;
++	}
++
++	atu_timer_exit();
++	atu_chardev_remove();
++	spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++	patu_clk_mtner->atu_timecntr.cc = NULL;
++	patu_clk_mtner->clk_atu = NULL;
++	spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock, flags);
++	pr_info("ATU Clock Un-Registered for cycle counter:0x%p\n", pcc);
++
++	return 0;
++}
++EXPORT_SYMBOL(atu_cyclecounter_unregister);
++
++static int __init atu_tm_init(void)
++{
++	patu_clk_mtner = kzalloc(sizeof(*patu_clk_mtner), GFP_KERNEL);
++	if (!patu_clk_mtner)
++		return -ENOMEM;
++
++	/* initialise the spin lock */
++	spin_lock_init(&patu_clk_mtner->atu_clk_lock);
++
++	/* Initialise ATU wall time */
++	patu_clk_mtner->atu_time.tv_sec = 0;
++	patu_clk_mtner->atu_time.tv_nsec = 0;
++
++	pr_info("ATU Clock Module Loaded\n");
++
++	return 0;
++}
++module_init(atu_tm_init);
++
++static void __exit atu_tm_exit(void)
++{
++	if (patu_clk_mtner->atu_timecntr.cc)
++		atu_timer_exit();
++	atu_chardev_remove();
++	kfree(patu_clk_mtner);
++	patu_clk_mtner = NULL;
++}
++module_exit(atu_tm_exit);
++
++MODULE_DESCRIPTION("ATU Clock Maintainer");
++MODULE_AUTHOR("Krishna.Badam@imgtec.com");
++MODULE_LICENSE("GPL v2");
+diff --git a/drivers/misc/atu/atu_clk_maintainer.h b/drivers/misc/atu/atu_clk_maintainer.h
+new file mode 100644
+index 0000000..8b082d1
+--- /dev/null
++++ b/drivers/misc/atu/atu_clk_maintainer.h
+@@ -0,0 +1,22 @@
++/*
++ * Atu Clock Maintainer Header File
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#ifndef _ATU_CLK_MAINTAINER_H
++#define _ATU_CLK_MAINTAINER_H
++
++#include <linux/clocksource.h>
++#include <linux/time.h>
++
++extern int atu_tm_add_offset(struct timespec *ts);
++extern unsigned long atu_get_seconds(void);
++extern void atu_getnstimeofday(struct timespec *tv);
++extern int atu_settimeofday(const struct timespec *ts);
++
++#endif /* _ATU_CLK_MAINTAINER_H */
+diff --git a/drivers/misc/atu/atu_clk_ntp.c b/drivers/misc/atu/atu_clk_ntp.c
+new file mode 100644
+index 0000000..f186c52
+--- /dev/null
++++ b/drivers/misc/atu/atu_clk_ntp.c
+@@ -0,0 +1,378 @@
++/*
++ * Atu Clock NTP handler
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#include <linux/export.h>
++#include <linux/jiffies.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++
++#include "atu_clk_maintainer.h"
++#include "atu_clk_ntp.h"
++
++#define ATU_NTP_MAX_TICK_ADJ		(500LL)		/* usecs */
++#define ATU_NTP_MAX_TICK_ADJ_SCALED \
++	(((ATU_NTP_MAX_TICK_ADJ * NSEC_PER_USEC) << \
++	NTP_SCALE_SHIFT) / NTP_INTERVAL_FREQ)
++#define ATU_NTP_DEV_CAP			15000
++
++u64 get_ntp_shifted_nsecs_per_cycle(struct atu_clk_ntp *patu_ntp)
++{
++	return patu_ntp->shifted_nsecs_per_cycle;
++}
++
++static
++void atu_ntp_shifted_nsecs_per_cycle_update(struct atu_clk_ntp *patu_ntp)
++{
++	u64 num_ticks_per_second;
++	u64 new_base;
++	s32 remainder;
++
++	num_ticks_per_second = (u64)(patu_ntp->cycle_period_usec *
++			NSEC_PER_USEC * USER_HZ) << NTP_SCALE_SHIFT;
++
++	num_ticks_per_second += patu_ntp->ntp_tick_adj;
++
++	num_ticks_per_second += patu_ntp->time_freq;
++
++	patu_ntp->nsec_per_cycle = div_u64_rem(num_ticks_per_second,
++					 HZ, &remainder) >> NTP_SCALE_SHIFT;
++	new_base = div_u64_rem(num_ticks_per_second, NTP_INTERVAL_FREQ,
++								&remainder);
++
++	/* Update shifted_nsecs_per_cycle */
++	patu_ntp->shifted_nsecs_per_cycle += new_base -
++					patu_ntp->shifted_nsecs_per_cycle_ref;
++
++	patu_ntp->shifted_nsecs_per_cycle_ref = new_base;
++}
++
++static
++s64 atu_calc_freq_adj(struct atu_clk_ntp *patu_ntp, s64 offset, long secs)
++{
++	s32 remainder;
++
++	/* Check lapsed seconds with in perimitted range of update intervals */
++	if (secs < MINSEC || secs > MAXSEC)
++		return 0;
++
++	/* If it is in not in FLL mode, we won't adjust frequency */
++	if (!(patu_ntp->time_status & STA_FLL))
++		return 0;
++
++	return div_s64_rem(offset << (NTP_SCALE_SHIFT - SHIFT_FLL),
++							secs, &remainder);
++}
++
++static void atu_ntp_offset_update(struct atu_clk_ntp *patu_ntp, s64 offset)
++{
++	s32 remainder;
++
++	/* Check offset is with in allowed range */
++	offset = clamp_val(offset, -MAXPHASE, MAXPHASE);
++	patu_ntp->time_offset = div_s64_rem(offset << NTP_SCALE_SHIFT,
++				NTP_INTERVAL_FREQ, &remainder);
++}
++
++static
++void atu_ntp_offset_freq_adjust(struct atu_clk_ntp *patu_ntp, s64 offset)
++{
++	s64 freq_adj;
++	long secs;
++
++	/* Get the update interval time and update ref time */
++	secs = atu_get_seconds() - patu_ntp->time_reftime;
++	patu_ntp->time_reftime = secs + patu_ntp->time_reftime;
++
++	/* If freq is in locked state, then we wont do freq adjustments */
++	if (patu_ntp->time_status & STA_FREQHOLD)
++		secs = 0;
++
++	freq_adj = atu_calc_freq_adj(patu_ntp, offset, secs);
++
++	/*
++	 * If update interval is long then clamp to some value,
++	 * such that it won't mess PLL adjustments too much
++	 */
++	if (secs > (1 << (SHIFT_PLL + 1 + patu_ntp->time_constant)))
++		secs = 1 << (SHIFT_PLL + 1 + patu_ntp->time_constant);
++
++	freq_adj += (offset * secs) <<
++			(NTP_SCALE_SHIFT - 2 *
++			 (SHIFT_PLL + 2 + patu_ntp->time_constant));
++
++	patu_ntp->time_freq = clamp_val(freq_adj + patu_ntp->time_freq,
++					-MAXFREQ_SCALED, MAXFREQ_SCALED);
++}
++
++void atu_ntp_reset(struct atu_clk_ntp *patu_ntp)
++{
++	patu_ntp->time_adjust = 0;
++	patu_ntp->time_status |= STA_UNSYNC;
++	patu_ntp->time_maxerror = NTP_PHASE_LIMIT;
++	patu_ntp->time_esterror = NTP_PHASE_LIMIT;
++
++	atu_ntp_shifted_nsecs_per_cycle_update(patu_ntp);
++
++	/* Update shifted_nsecs_per_cycle to last update value */
++	patu_ntp->shifted_nsecs_per_cycle =
++		patu_ntp->shifted_nsecs_per_cycle_ref;
++	patu_ntp->time_offset = 0;
++}
++
++void atu_ntp_param_update_per_second(struct atu_clk_ntp *patu_ntp)
++{
++	s64 delta;
++
++	patu_ntp->time_maxerror += MAXFREQ / NSEC_PER_USEC;
++
++	if (patu_ntp->time_maxerror > NTP_PHASE_LIMIT) {
++		patu_ntp->time_maxerror = NTP_PHASE_LIMIT;
++		patu_ntp->time_status |= STA_UNSYNC;
++	}
++
++	patu_ntp->shifted_nsecs_per_cycle =
++		patu_ntp->shifted_nsecs_per_cycle_ref;
++
++	delta = shift_right(patu_ntp->time_offset,
++			SHIFT_PLL + patu_ntp->time_constant);
++	patu_ntp->time_offset -= delta;
++	patu_ntp->shifted_nsecs_per_cycle += delta;
++
++	if (!patu_ntp->time_adjust)
++		return;
++
++	if (patu_ntp->time_adjust > ATU_NTP_MAX_TICK_ADJ) {
++		patu_ntp->time_adjust -= ATU_NTP_MAX_TICK_ADJ;
++		patu_ntp->shifted_nsecs_per_cycle +=
++				ATU_NTP_MAX_TICK_ADJ_SCALED;
++		return;
++	}
++
++	if (patu_ntp->time_adjust < -ATU_NTP_MAX_TICK_ADJ) {
++		patu_ntp->time_adjust += ATU_NTP_MAX_TICK_ADJ;
++		patu_ntp->shifted_nsecs_per_cycle -=
++				ATU_NTP_MAX_TICK_ADJ_SCALED;
++		return;
++	}
++
++	patu_ntp->shifted_nsecs_per_cycle += (s64)(patu_ntp->time_adjust *
++	     NSEC_PER_USEC / NTP_INTERVAL_FREQ) << NTP_SCALE_SHIFT;
++
++	patu_ntp->time_adjust = 0;
++}
++
++static
++void atu_ntp_status_update(struct timex *txc, struct atu_clk_ntp *patu_ntp)
++{
++	/*
++	 * If local time status is PLL and ntp's time status FLL,
++	 * then update status as not in sync
++	 */
++	if ((patu_ntp->time_status & STA_PLL) && !(txc->status & STA_PLL)) {
++		patu_ntp->time_state = TIME_OK;
++		patu_ntp->time_status = STA_UNSYNC;
++	}
++
++	/* If PLL is just selected then we have to update the reference time */
++	if (!(patu_ntp->time_status & STA_PLL) && (txc->status & STA_PLL))
++		patu_ntp->time_reftime = atu_get_seconds();
++
++	/* We are interested only in related status bits */
++	patu_ntp->time_status &= STA_RONLY;
++	patu_ntp->time_status |= txc->status & ~STA_RONLY;
++}
++
++static
++void adjtimex_modes_handler(struct timex *txc, struct atu_clk_ntp *patu_ntp)
++{
++	if (txc->modes & ADJ_STATUS)
++		atu_ntp_status_update(txc, patu_ntp);
++
++	if (txc->modes & ADJ_NANO)
++		patu_ntp->time_status |= STA_NANO;
++
++	if (txc->modes & ADJ_MICRO)
++		patu_ntp->time_status &= ~STA_NANO;
++
++	if (txc->modes & ADJ_MAXERROR)
++		patu_ntp->time_maxerror = txc->maxerror;
++
++	if (txc->modes & ADJ_ESTERROR)
++		patu_ntp->time_esterror = txc->esterror;
++
++	if (txc->modes & ADJ_FREQUENCY) {
++		patu_ntp->time_freq = txc->freq * PPM_SCALE;
++		patu_ntp->time_freq = clamp_val(patu_ntp->time_freq,
++					-MAXFREQ_SCALED, MAXFREQ_SCALED);
++	}
++
++	if (txc->modes & ADJ_TIMECONST) {
++		patu_ntp->time_constant = txc->constant;
++		if (!(patu_ntp->time_status & STA_NANO))
++			patu_ntp->time_constant += 4;
++		patu_ntp->time_constant = clamp_val(patu_ntp->time_constant,
++								0, MAXTC);
++	}
++
++	if (txc->modes & ADJ_OFFSET) {
++		s64 offset;
++		if (!(patu_ntp->time_status & STA_PLL))
++			return;
++
++		offset = txc->offset;
++
++		if (!(patu_ntp->time_status & STA_NANO))
++			offset *= NSEC_PER_USEC;
++
++		/* Adjust time_offset for the given offset */
++		atu_ntp_offset_update(patu_ntp, offset);
++
++		/* Adjust time_freq for the given offset */
++		atu_ntp_offset_freq_adjust(patu_ntp, offset);
++	}
++
++	if (txc->modes & ADJ_TICK)
++		patu_ntp->cycle_period_usec = txc->tick;
++
++	/*
++	 * We need to adjust shifted_nsecs_per_cycle in case of
++	 * ADJ_TICK, ADJ_FREQUENCY and ADJ_OFFSET modes
++	 */
++	if (txc->modes & (ADJ_TICK|ADJ_FREQUENCY|ADJ_OFFSET))
++		atu_ntp_shifted_nsecs_per_cycle_update(patu_ntp);
++}
++
++int atu_set_time_offset(struct timex *txc)
++{
++	int result;
++	struct timespec offset_time;
++
++	offset_time.tv_sec  = txc->time.tv_sec;
++	offset_time.tv_nsec = txc->time.tv_usec;
++	if (!(txc->modes & ADJ_NANO))
++		offset_time.tv_nsec *= NSEC_PER_USEC;
++
++	result = atu_tm_add_offset(&offset_time);
++
++	return result;
++}
++
++int __atu_adjtimex(struct timex *txc, struct atu_clk_ntp *patu_ntp)
++{
++	struct timespec ts;
++	int result;
++
++	if (txc->modes & ADJ_ADJTIME) {
++		/*
++		 * ADJTIME's single shot must not be used
++		 * with any other mode bits
++		 */
++		if (!(txc->modes & ADJ_OFFSET_SINGLESHOT))
++			return -EINVAL;
++	} else {
++		/* ADJ_TIMEX mode */
++
++		/*
++		 * If the tick duaration is deviated more than
++		 * 15% then treat it as invalid data
++		 */
++		if (txc->modes & ADJ_TICK &&
++		    (txc->tick <  (NSEC_PER_SEC - ATU_NTP_DEV_CAP)/USER_HZ ||
++		     txc->tick > (NSEC_PER_SEC + ATU_NTP_DEV_CAP)/USER_HZ))
++			return -EINVAL;
++	}
++
++	if (txc->modes & ADJ_SETOFFSET) {
++		result = atu_set_time_offset(txc);
++		if (result)
++			return result;
++	}
++
++	if (txc->modes & ADJ_ADJTIME) {
++		long save_adjust = patu_ntp->time_adjust;
++
++		/*
++		 * This is not part of time adjust, it is a one and time
++		 * independent one. After this update will return back old
++		 * time_adjust
++		 */
++		if (!(txc->modes & ADJ_OFFSET_READONLY))
++			patu_ntp->time_adjust = txc->offset;
++
++		txc->offset = save_adjust;
++	} else {
++
++		if (txc->modes)
++			adjtimex_modes_handler(txc, patu_ntp);
++
++		txc->offset = shift_right(patu_ntp->time_offset *
++				NTP_INTERVAL_FREQ, NTP_SCALE_SHIFT);
++
++		if (!(patu_ntp->time_status & STA_NANO))
++			txc->offset /= NSEC_PER_USEC;
++	}
++
++	if (patu_ntp->time_status & (STA_UNSYNC|STA_CLOCKERR))
++		result = TIME_ERROR;
++	else
++		result = TIME_OK;
++
++	/* Fill txc with possible/available data */
++	txc->freq = shift_right((patu_ntp->time_freq >> PPM_SCALE_INV_SHIFT) *
++				 PPM_SCALE_INV, NTP_SCALE_SHIFT);
++	txc->maxerror = patu_ntp->time_maxerror;
++	txc->esterror = patu_ntp->time_esterror;
++	txc->status = patu_ntp->time_status;
++	txc->constant = patu_ntp->time_constant;
++	txc->precision = 1;
++	txc->tolerance = MAXFREQ_SCALED / PPM_SCALE;
++	txc->tick = patu_ntp->cycle_period_usec;
++	txc->tai = 0;
++	txc->ppsfreq = 0;
++	txc->jitter = 0;
++	txc->shift = 0;
++	txc->stabil = 0;
++	txc->jitcnt = 0;
++	txc->calcnt = 0;
++	txc->errcnt = 0;
++	txc->stbcnt = 0;
++
++	/* Update time */
++	atu_getnstimeofday(&ts);
++	txc->time.tv_sec = ts.tv_sec;
++	txc->time.tv_usec = ts.tv_nsec;
++	if (!(patu_ntp->time_status & STA_NANO))
++		txc->time.tv_usec /= NSEC_PER_USEC;
++
++	return result;
++}
++
++void atu_ntp_init(struct atu_clk_ntp *patu_ntp)
++{
++	/* Initialise with default values */
++	patu_ntp->time_state = TIME_OK;
++	patu_ntp->time_status = STA_UNSYNC;
++	patu_ntp->cycle_period_usec = TICK_USEC;
++	patu_ntp->nsec_per_cycle = 0;
++	patu_ntp->shifted_nsecs_per_cycle = 0;
++	patu_ntp->shifted_nsecs_per_cycle_ref = 0;
++	patu_ntp->time_offset = 0;
++	patu_ntp->time_constant = 0x2;
++	patu_ntp->time_freq = 0;
++	patu_ntp->time_maxerror = NTP_PHASE_LIMIT;
++	patu_ntp->time_esterror = 0;
++	patu_ntp->time_reftime = 0;
++	patu_ntp->time_adjust = 0;
++	patu_ntp->ntp_tick_adj = 0;
++
++	atu_ntp_reset(patu_ntp);
++}
+diff --git a/drivers/misc/atu/atu_clk_ntp.h b/drivers/misc/atu/atu_clk_ntp.h
+new file mode 100644
+index 0000000..3b0b44a
+--- /dev/null
++++ b/drivers/misc/atu/atu_clk_ntp.h
+@@ -0,0 +1,40 @@
++/*
++ * Atu Clock NTP handler Header File
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#ifndef ATU_NTP_H
++#define ATU_NTP_H
++
++struct atu_clk_ntp {
++	int	time_state;
++	int	time_status;
++	unsigned long cycle_period_usec;
++	unsigned long nsec_per_cycle;
++	u64	shifted_nsecs_per_cycle;
++	u64	shifted_nsecs_per_cycle_ref;
++	s64	time_offset;
++	long	time_constant;
++	s64	time_freq;
++	long	time_maxerror;
++	long	time_esterror;
++	long	time_reftime;
++	long	time_adjust;
++	s64	ntp_tick_adj;
++};
++
++struct timex;
++
++extern u64 get_ntp_shifted_nsecs_per_cycle(struct atu_clk_ntp *patu_ntp);
++extern void atu_ntp_param_update_per_second(struct atu_clk_ntp *patu_ntp);
++extern void atu_ntp_init(struct atu_clk_ntp *patu_ntp);
++extern void atu_ntp_reset(struct atu_clk_ntp *patu_ntp);
++extern int __atu_adjtimex(struct timex *txc, struct atu_clk_ntp *patu_ntp);
++extern int atu_set_time_offset(struct timex *txc);
++
++#endif /* ATU_NTP_H */
+diff --git a/include/linux/atu_clk.h b/include/linux/atu_clk.h
+new file mode 100644
+index 0000000..bcaf138
+--- /dev/null
++++ b/include/linux/atu_clk.h
+@@ -0,0 +1,27 @@
++/*
++ * Atu Clock Header File
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#ifndef _ATU_CLK_H
++#define _ATU_CLK_H
++
++#include <linux/time.h>
++#include <linux/types.h>
++
++struct cyclecounter;
++struct clk;
++
++extern u64 atu_get_current_time(void);
++extern int frc_to_atu(u32 frc, u64 *patu, s32 dir);
++extern int atu_to_frc(u64 atu, u32 *pfrc, u64 min_nsec);
++extern int
++atu_cyclecounter_register(struct cyclecounter *pcc, struct clk *clk_atu);
++extern int atu_cyclecounter_unregister(struct cyclecounter *pcc);
++
++#endif /* _ATU_CLK_H */
+diff --git a/include/uapi/atu_ioctl.h b/include/uapi/atu_ioctl.h
+new file mode 100644
+index 0000000..70063dc
+--- /dev/null
++++ b/include/uapi/atu_ioctl.h
+@@ -0,0 +1,43 @@
++/*
++ * Atu Ioctl Header file
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#ifndef ATU_IOCTL_H
++#define ATU_IOCTL_H
++
++#include <linux/time.h>
++#include <linux/types.h>
++
++#define ATU_MAX_COUNTERS	6
++#define ATU_PAST		0
++#define ATU_FUTURE		1
++
++struct atu_event {
++	u32	counter;
++	u32	source;
++	u32	timestamp;
++	u32	timestamp_counter;
++	u32	txtimer;
++	u32	timeofday_sec;
++	u32	timeofday_ns;
++	u32	timekeeping_shift;
++	u32	timekeeping_mult;
++};
++
++#define ATUIO	(0xF2)
++/*get event timestamp*/
++#define ATUIO_GETEVTS		_IOWR(ATUIO, 0x42, struct atu_event)
++/*set timex adjustments*/
++#define ATUIO_ADJTIMEX		_IOWR(ATUIO, 0x43, struct timex)
++/*set timeofday*/
++#define ATUIO_SETTIMEOFDAY	_IOWR(ATUIO, 0x44, struct timex)
++/*get timespec of atu clock*/
++#define ATUIO_GETTIMESPEC	_IOWR(ATUIO, 0x45, struct timex)
++
++#endif /* ATU_IOCTL_H */
+-- 
+1.9.1
+

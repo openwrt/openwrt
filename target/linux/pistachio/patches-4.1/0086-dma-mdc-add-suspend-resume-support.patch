@@ -1,0 +1,57 @@
+From bfcb316d06c595cae55a08ed9775344f841307e5 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Tue, 27 Oct 2015 12:43:48 +0000
+Subject: [PATCH 086/153] dma: mdc: add suspend resume support.
+
+Add support for mdc dev pm ops with suspend-resume,
+mdc clocks can be gated when device suspends.
+
+Change-Id: I9e79ab0267cbbffc8f9fe561ad452e948495d1a7
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/dma/img-mdc-dma.c | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/drivers/dma/img-mdc-dma.c b/drivers/dma/img-mdc-dma.c
+index 17f8839..6ca1954 100644
+--- a/drivers/dma/img-mdc-dma.c
++++ b/drivers/dma/img-mdc-dma.c
+@@ -1009,9 +1009,35 @@ static int mdc_dma_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_PM_SLEEP
++static int img_mdc_suspend(struct device *dev)
++{
++	struct mdc_dma *mdma = dev_get_drvdata(dev);
++
++	clk_disable_unprepare(mdma->clk);
++
++	return 0;
++}
++
++static int img_mdc_resume(struct device *dev)
++{
++	struct mdc_dma *mdma = dev_get_drvdata(dev);
++	int ret = 0;
++
++	ret = clk_prepare_enable(mdma->clk);
++
++	return ret;
++}
++#endif /* CONFIG_PM_SLEEP */
++
++static const struct dev_pm_ops img_mdc_pm_ops = {
++	SET_SYSTEM_SLEEP_PM_OPS(img_mdc_suspend, img_mdc_resume)
++};
++
+ static struct platform_driver mdc_dma_driver = {
+ 	.driver = {
+ 		.name = "img-mdc-dma",
++		.pm	= &img_mdc_pm_ops,
+ 		.of_match_table = of_match_ptr(mdc_dma_of_match),
+ 	},
+ 	.probe = mdc_dma_probe,
+-- 
+1.9.1
+

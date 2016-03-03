@@ -1,0 +1,2300 @@
+From d536e1c73025d21bf42abb23b1228d92c4c03409 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Thu, 9 Jul 2015 10:58:06 +0100
+Subject: [PATCH 041/153] pistachio: connectivity: add bootloader and hostport
+ dependency on img-connectivity
+
+Generic bootloader for META and MCP on the RPU. It lacks support for
+placing code & data in the external RAM.
+
+User can disable booting altogether by loading the module with 'boot'
+option set to 0.
+
+Also img-hostport implicitly depends on img-connectivity to set up the RPU.
+This change adds a dummy function call so that a correct dependency tree
+is built.
+
+Change-Id: Id6b2d52e38ad9b04498a00e0689e2bc9d0b46bf6
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi        |    2 +
+ drivers/soc/img/connectivity/Makefile              |    2 +
+ drivers/soc/img/connectivity/devres-ext.h          |    7 +
+ .../soc/img/connectivity/img-connectivity-main.c   |  403 +++++++
+ drivers/soc/img/connectivity/img-connectivity.c    |  217 ----
+ drivers/soc/img/connectivity/img-fwldr-private.h   |  342 ++++++
+ drivers/soc/img/connectivity/img-fwldr.c           | 1197 ++++++++++++++++++++
+ drivers/soc/img/connectivity/img-fwldr.h           |   10 +
+ drivers/soc/img/connectivity/img-hostport.c        |    8 +
+ 9 files changed, 1971 insertions(+), 217 deletions(-)
+ create mode 100644 drivers/soc/img/connectivity/devres-ext.h
+ create mode 100644 drivers/soc/img/connectivity/img-connectivity-main.c
+ delete mode 100644 drivers/soc/img/connectivity/img-connectivity.c
+ create mode 100644 drivers/soc/img/connectivity/img-fwldr-private.h
+ create mode 100644 drivers/soc/img/connectivity/img-fwldr.c
+ create mode 100644 drivers/soc/img/connectivity/img-fwldr.h
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 0babfc5..3a43317 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -121,6 +121,8 @@
+ 			<598000000>,
+ 			<320000000>,
+ 			<320000000>;
++		reg = <0x18480000 0x40000>, <0x1a000000 0x00066cc0>;
++		reg-names = "UCCP system bus", "UCCP packed GRAM";
+ 	};
+ 
+ 	uccphostport: uccp-hostport@0 {
+diff --git a/drivers/soc/img/connectivity/Makefile b/drivers/soc/img/connectivity/Makefile
+index f02b486..70eba65 100644
+--- a/drivers/soc/img/connectivity/Makefile
++++ b/drivers/soc/img/connectivity/Makefile
+@@ -1,3 +1,5 @@
+ obj-$(CONFIG_IMG_CONNECTIVITY)		+= img-connectivity.o
+ obj-$(CONFIG_IMG_HOSTPORT)		+= img-hostport.o
+ obj-$(CONFIG_IMG_HOSTPORT_DUMMY_CLIENT)	+= img-dummy.o
++
++img-connectivity-y := img-connectivity-main.o img-fwldr.o
+diff --git a/drivers/soc/img/connectivity/devres-ext.h b/drivers/soc/img/connectivity/devres-ext.h
+new file mode 100644
+index 0000000..147d2c9
+--- /dev/null
++++ b/drivers/soc/img/connectivity/devres-ext.h
+@@ -0,0 +1,7 @@
++static void devm_iounmap_resource(struct device *d, struct resource *r,
++							void __iomem *addr)
++{
++	devm_iounmap(d, addr);
++	devm_release_mem_region(d, r->start, resource_size(r));
++}
++
+diff --git a/drivers/soc/img/connectivity/img-connectivity-main.c b/drivers/soc/img/connectivity/img-connectivity-main.c
+new file mode 100644
+index 0000000..008e6f4
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-connectivity-main.c
+@@ -0,0 +1,403 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-connectivity.c
++ ***
++ *** File Description:
++ *** This file contains the implementation of the UCCP base driver.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++#include <linux/clk.h>
++#include <linux/firmware.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++
++#include <soc/img/img-connectivity.h>
++
++#include "devres-ext.h"
++#include "img-fwldr.h"
++
++#define MOD_NAME "img-connectivity"
++#define mod_err(format, ...) pr_err(MOD_NAME ": " format "\n", ##__VA_ARGS__)
++#define mod_info(format, ...) pr_info(MOD_NAME ": " format "\n", ##__VA_ARGS__)
++
++#define MAX_LOADERS 2
++
++enum {
++	BOOT_OFF = 0,
++	BOOT_MTX = 1,
++	BOOT_MCP = 2,
++};
++static uint boot = BOOT_MTX;
++module_param(boot, uint, 0400);
++MODULE_PARM_DESC(boot,
++	"Boot flag: \n\t0 - skip booting altogether"
++	"\n\t1 - boot META"
++	"\n\t2 - boot META and MCP");
++
++/*
++ * The following assumes BT configuration, i.e. one loader file and two
++ * META threads.
++ * # modprobe img-connectivity
++ *
++ * WIFI only configuration is two loaders (MCP, META) and one META thread.
++ * Though binaries' names are just examples, remember that they must be relative
++ * to [/usr]/lib/firmware/.
++ * # modprobe img-connectivity mtx_threads=1 mcp_ldr="img/mcp.ldr"
++ * mtx_ldr="img/mtx.ldr" boot=2
++ *
++ * Combo configuration is the best of both worlds: two loaders (MCP, META)
++ * and two META threads. You use it like that:
++ * # modprobe img-connectivity mcp_ldr="img/mcp.ldr" mtx_ldr="img/mtx.ldr"
++ * boot=2
++ */
++
++static unsigned int mtx_threads = 2;
++module_param(mtx_threads, uint, 0400);
++MODULE_PARM_DESC(mtx_threads, "Number of available meta threads");
++
++static char *mtx_ldr = "img/connectivity-mtx.ldr";
++module_param(mtx_ldr, charp, 0400);
++MODULE_PARM_DESC(mtx_ldr, "META loader binary");
++
++static char *mcp_ldr = NULL;
++module_param(mcp_ldr, charp, 0400);
++MODULE_PARM_DESC(mcp_ldr, "MCP loader binary");
++
++struct img_connectivity {
++	unsigned int mtx_threads;
++	unsigned char __iomem *uccp_sbus_v;
++	unsigned char __iomem *uccp_gram_v;
++	struct resource *uccp_sbus;
++	struct resource *uccp_gram;
++};
++static struct img_connectivity *module;
++
++struct clock {
++	struct list_head xs;
++	struct clk *p;
++};
++static LIST_HEAD(clocks);
++
++/*
++ * *** Public API ***
++ */
++struct img_version_info img_connectivity_version(void)
++{
++	struct img_version_info vi = { .bt = 0, .wlan = 0 };
++	return vi;
++}
++EXPORT_SYMBOL(img_connectivity_version);
++
++/*
++ * *** Private API ***
++ */
++static int img_connectivity_memsetup(struct platform_device *d)
++{
++	module = devm_kzalloc(&d->dev, sizeof(struct img_connectivity),
++								GFP_KERNEL);
++	if (NULL == module) {
++		return -ENOMEM;
++	}
++
++	return 0;
++}
++
++static void img_connectivity_memsetup_rollback(struct platform_device *d)
++{}
++
++#define until(i, max) for (i = 0; i < max; i++)
++static int boot_cpu(struct device *d, const char *fw_name,
++						unsigned int num_threads)
++{
++	int err, t_idx;
++	const struct firmware *fw = NULL;
++
++	err = request_firmware(&fw, fw_name, d);
++	if (err) {
++		mod_err("firmware request failed for %s", fw_name);
++		return err;
++	}
++
++	until(t_idx, num_threads)
++		fwldr_soft_reset(t_idx);
++
++	err = fwldr_load_fw(fw->data);
++	if (!err)
++		mod_info("firmware %s loaded", fw_name);
++	else
++		mod_err("firmware %s load failed", fw_name);
++
++	release_firmware(fw);
++	return 0;
++}
++
++static int img_connectivity_boot(struct platform_device *d)
++{
++	int err, t_idx;
++
++	if (BOOT_OFF == boot) {
++		mod_info("skipping boot");
++		return 0;
++	}
++
++	module->uccp_sbus_v = devm_ioremap_resource(&d->dev, module->uccp_sbus);
++	if (IS_ERR(module->uccp_sbus_v))
++		return PTR_ERR(module->uccp_sbus_v);
++
++	module->uccp_gram_v = devm_ioremap_resource(&d->dev, module->uccp_gram);
++	if (IS_ERR(module->uccp_gram_v))
++		return PTR_ERR(module->uccp_gram_v);
++
++	fwldr_init(module->uccp_sbus_v, module->uccp_gram_v, NULL);
++
++	/*
++	 * MCP code, if provided, has to be loaded first. After that it is
++	 * necessary to stop all META threads.
++	 */
++	if(BOOT_MCP == boot) {
++		if (!mcp_ldr) {
++			mod_err("MCP boot requested, but MCP loader binary "
++							"not specified");
++			return -ENOENT;
++		}
++
++		err = boot_cpu(&d->dev, mcp_ldr, mtx_threads);
++		if (err) {
++			return err;
++		}
++
++		until(t_idx, mtx_threads)
++			fwldr_stop_thrd(t_idx);
++	}
++
++	err = boot_cpu(&d->dev, mtx_ldr, mtx_threads);
++	if (err) {
++		return err;
++	}
++
++	devm_iounmap_resource(&d->dev, module->uccp_gram, module->uccp_gram_v);
++	devm_iounmap_resource(&d->dev, module->uccp_sbus, module->uccp_sbus_v);
++
++	return 0;
++}
++
++static void img_connectivity_boot_rollback(struct platform_device *d)
++{}
++
++static int img_connectivity_clock_setup(struct platform_device *d)
++{
++	int ret;
++	struct clock *clock;
++
++	list_for_each_entry(clock, &clocks, xs) {
++		ret = clk_prepare_enable(clock->p);
++		if (ret) {
++			list_for_each_entry_continue_reverse(clock, &clocks, xs)
++				clk_disable_unprepare(clock->p);
++			return ret;
++		}
++	}
++
++	return 0;
++}
++
++static void img_connectivity_clock_setup_rollback(struct platform_device *d)
++{
++	struct clock *clock;
++
++	list_for_each_entry(clock, &clocks, xs)
++		clk_disable_unprepare(clock->p);
++}
++
++static struct clock *alloc_single_clock(struct device *d, int index)
++{
++	struct clock *tmp;
++	struct clk *tmpclk;
++
++	tmpclk = of_clk_get(d->of_node, index);
++	if (IS_ERR(tmpclk)) {
++		return ERR_PTR(-ENODEV);
++	}
++
++	tmp = devm_kzalloc(d, sizeof(struct clock), GFP_KERNEL);
++	if (NULL == tmp) {
++		return ERR_PTR(-ENOMEM);
++	}
++	INIT_LIST_HEAD(&tmp->xs);
++	tmp->p = tmpclk;
++	return tmp;
++}
++
++static int img_connectivity_dtsetup(struct platform_device *d)
++{
++	int i;
++	struct clock *tmp;
++	int clocks_no;
++
++	/*
++	 * Check how many clocks we have defined.
++	 *
++	 * Note that 'clocks' is an optional property.
++	 */
++	if (of_property_read_u32(d->dev.of_node, "clocks-number", &clocks_no)) {
++		mod_info("img-connectivity: could not find 'clocks-number' "
++			"dt property");
++		return 0;
++	}
++
++	mod_info("img-connectivity: detected %d clocks", clocks_no);
++
++	INIT_LIST_HEAD(&clocks);
++	for (i = 0; i < clocks_no; i++) {
++		tmp = alloc_single_clock(&d->dev, i);
++		if (!IS_ERR(tmp)) {
++			list_add(&tmp->xs, &clocks);
++		} else if (ERR_PTR(-ENODEV) == tmp) {
++			mod_err("img-connectivity: invalid clock reference %d",
++					i);
++			return PTR_ERR(tmp);
++		} else if (ERR_PTR(-ENOMEM) == tmp) {
++			mod_err("img-connectivity: failed to allocate "
++					"clock descriptor");
++			return PTR_ERR(tmp);
++		} else {
++			mod_err("img-connectivity: BUG: unknown return value "
++					"%ld", PTR_ERR(tmp));
++			return PTR_ERR(tmp);
++		}
++	}
++
++	/*
++	 * Parse 'reg' property
++	 */
++	module->uccp_sbus = platform_get_resource_byname(d, IORESOURCE_MEM,
++							"UCCP system bus");
++	if (IS_ERR(module->uccp_sbus))
++		return -ENOENT;
++
++	module->uccp_gram = platform_get_resource_byname(d, IORESOURCE_MEM,
++							"UCCP packed GRAM");
++	if (IS_ERR(module->uccp_gram))
++		return -ENOENT;
++
++	return 0;
++}
++
++static void img_connectivity_dtsetup_rollback(struct platform_device *d)
++{}
++
++static int img_connectivity_memmap(struct platform_device *d)
++{
++	return 0;
++}
++
++static void img_connectivity_memmap_rollback(struct platform_device *d)
++{}
++
++/*
++ * * platform driver code & data
++ */
++static int __init img_connectivity_probe(struct platform_device *d)
++{
++	int ret;
++
++	ret = img_connectivity_memsetup(d);
++	if (ret)
++		goto memsetup_failed;
++
++	ret = img_connectivity_dtsetup(d);
++	if (ret)
++		goto dtsetup_failed;
++
++	ret = img_connectivity_memmap(d);
++	if (ret)
++		goto memmap_failed;
++
++	ret = img_connectivity_clock_setup(d);
++	if (ret)
++		goto clock_setup_failed;
++
++	ret = img_connectivity_boot(d);
++	if (ret)
++		goto boot_failed;
++
++	return 0;
++boot_failed:
++	img_connectivity_clock_setup_rollback(d);
++clock_setup_failed:
++	img_connectivity_memmap_rollback(d);
++memmap_failed:
++	img_connectivity_dtsetup_rollback(d);
++dtsetup_failed:
++	img_connectivity_memsetup_rollback(d);
++memsetup_failed:
++	return ret;
++}
++
++static int img_connectivity_remove(struct platform_device *d)
++{
++	img_connectivity_boot_rollback(d);
++	img_connectivity_clock_setup_rollback(d);
++	img_connectivity_dtsetup_rollback(d);
++	img_connectivity_memsetup_rollback(d);
++	return 0;
++}
++
++static const struct of_device_id img_connectivity_dt_ids[] = {
++	{ .compatible = "img,pistachio-uccp-system" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, img_connectivity_dt_ids);
++
++static struct platform_driver img_connectivity_pd = {
++	.remove = img_connectivity_remove,
++	.driver = {
++		.name = "img-connectivity",
++		.of_match_table = of_match_ptr(img_connectivity_dt_ids),
++	},
++};
++
++/*
++ * * .ko entry and exit points
++ */
++static int __init img_connectivity_entry(void)
++{
++	return platform_driver_probe(&img_connectivity_pd, img_connectivity_probe);
++}
++
++static void __exit img_connectivity_leave(void)
++{
++	platform_driver_unregister(&img_connectivity_pd);
++}
++
++module_init(img_connectivity_entry);
++module_exit(img_connectivity_leave);
++
++/*
++ * * module metadata
++ */
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Bartosz Flis <bartosz.flis@imgtec.com>");
++MODULE_DESCRIPTION("Imagination Technologies RPU base driver - www.imgtec.com");
+diff --git a/drivers/soc/img/connectivity/img-connectivity.c b/drivers/soc/img/connectivity/img-connectivity.c
+deleted file mode 100644
+index 24f2fac..0000000
+--- a/drivers/soc/img/connectivity/img-connectivity.c
++++ /dev/null
+@@ -1,217 +0,0 @@
+-/*HEADER**********************************************************************
+- ******************************************************************************
+- ***
+- *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
+- *** All rights reserved
+- ***
+- *** This program is free software; you can redistribute it and/or
+- *** modify it under the terms of the GNU General Public License
+- *** as published by the Free Software Foundation; either version 2
+- *** of the License, or (at your option) any later version.
+- ***
+- *** This program is distributed in the hope that it will be useful,
+- *** but WITHOUT ANY WARRANTY; without even the implied warranty of
+- *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- *** GNU General Public License for more details.
+- ***
+- *** You should have received a copy of the GNU General Public License
+- *** along with this program; if not, write to the Free Software
+- *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+- *** USA.
+- ***
+- *** File Name  : img-connectivity.c
+- ***
+- *** File Description:
+- *** This file contains the implementation of the UCCP base driver.
+- ***
+- ******************************************************************************
+- *END**************************************************************************/
+-#include <linux/clk.h>
+-#include <linux/kernel.h>
+-#include <linux/module.h>
+-#include <linux/of.h>
+-#include <linux/of_device.h>
+-
+-#include <soc/img/img-connectivity.h>
+-
+-struct img_connectivity {
+-	phys_addr_t rpu_sbus;
+-};
+-
+-struct clock {
+-	struct list_head xs;
+-	struct clk *p;
+-};
+-static LIST_HEAD(clocks);
+-
+-/*
+- * *** Public API ***
+- */
+-struct img_version_info img_connectivity_version(void)
+-{
+-	struct img_version_info vi = { .bt = 0, .wlan = 0 };
+-	return vi;
+-}
+-
+-/*
+- * *** Private API ***
+- */
+-static int img_connectivity_clock_setup(struct platform_device *d)
+-{
+-	int ret;
+-	struct clock *clock;
+-
+-	list_for_each_entry(clock, &clocks, xs) {
+-		ret = clk_prepare_enable(clock->p);
+-		if (ret) {
+-			list_for_each_entry_continue_reverse(clock, &clocks, xs)
+-				clk_disable_unprepare(clock->p);
+-			return ret;
+-		}
+-	}
+-
+-	return 0;
+-}
+-
+-static void img_connectivity_clock_setup_rollback(struct platform_device *d)
+-{
+-	struct clock *clock;
+-
+-	list_for_each_entry(clock, &clocks, xs)
+-		clk_disable_unprepare(clock->p);
+-}
+-
+-static struct clock *alloc_single_clock(struct device *d, int index)
+-{
+-	struct clock *tmp;
+-	struct clk *tmpclk;
+-
+-	tmpclk = of_clk_get(d->of_node, index);
+-	if (IS_ERR(tmpclk)) {
+-		return ERR_PTR(-ENODEV);
+-	}
+-
+-	tmp = devm_kzalloc(d, sizeof(struct clock), GFP_KERNEL);
+-	if (NULL == tmp) {
+-		return ERR_PTR(-ENOMEM);
+-	}
+-	INIT_LIST_HEAD(&tmp->xs);
+-	tmp->p = tmpclk;
+-	return tmp;
+-}
+-
+-static int img_connectivity_dtsetup(struct platform_device *d)
+-{
+-	int i;
+-	struct clock *tmp;
+-	int clocks_no;
+-
+-	/*
+-	 * Check how many clocks we have defined.
+-	 *
+-	 * Note that 'clocks' is an optional property.
+-	 */
+-	if (of_property_read_u32(d->dev.of_node, "clocks-number", &clocks_no)) {
+-		pr_info("img-connectivity: could not find 'clocks-number' "
+-			"dt property\n");
+-		return 0;
+-	}
+-
+-	pr_info("img-connectivity: detected %d clocks\n", clocks_no);
+-
+-	INIT_LIST_HEAD(&clocks);
+-	for (i = 0; i < clocks_no; i++) {
+-		tmp = alloc_single_clock(&d->dev, i);
+-		if (!IS_ERR(tmp)) {
+-			list_add(&tmp->xs, &clocks);
+-		} else if (ERR_PTR(-ENODEV) == tmp) {
+-			pr_err("img-connectivity: invalid clock reference %d\n",
+-					i);
+-			return PTR_ERR(tmp);
+-		} else if (ERR_PTR(-ENOMEM) == tmp) {
+-			pr_err("img-connectivity: failed to allocate "
+-					"clock descriptor\n");
+-			return PTR_ERR(tmp);
+-		} else {
+-			pr_err("img-connectivity: BUG: unknown return value "
+-					"%ld\n", PTR_ERR(tmp));
+-			return PTR_ERR(tmp);
+-		}
+-	}
+-
+-	return 0;
+-}
+-
+-static void img_connectivity_dtsetup_rollback(struct platform_device *d)
+-{}
+-/*
+- * * platform driver code & data
+- */
+-static int __init img_connectivity_probe(struct platform_device *d)
+-{
+-	int ret;
+-
+-	ret = img_connectivity_dtsetup(d);
+-	if (ret)
+-		goto dtsetup_failed;
+-
+-	ret = img_connectivity_clock_setup(d);
+-	if (ret)
+-		goto clock_setup_failed;
+-
+-	/*
+-	 * TODO: request and load the code
+-	 */
+-	return 0;
+-clock_setup_failed:
+-	img_connectivity_dtsetup_rollback(d);
+-dtsetup_failed:
+-	return ret;
+-}
+-
+-static int img_connectivity_remove(struct platform_device *d)
+-{
+-	img_connectivity_clock_setup_rollback(d);
+-	img_connectivity_dtsetup_rollback(d);
+-	/*
+-	 * Quiesce the RPU (?)
+-	 */
+-	return 0;
+-}
+-
+-static const struct of_device_id img_connectivity_dt_ids[] = {
+-	{ .compatible = "img,pistachio-uccp-system" },
+-	{}
+-};
+-MODULE_DEVICE_TABLE(of, img_connectivity_dt_ids);
+-
+-static struct platform_driver img_connectivity_pd = {
+-	.remove = img_connectivity_remove,
+-	.driver = {
+-		.name = "img-connectivity",
+-		.of_match_table = of_match_ptr(img_connectivity_dt_ids),
+-	},
+-};
+-
+-/*
+- * * .ko entry and exit points
+- */
+-static int __init img_connectivity_entry(void)
+-{
+-	return platform_driver_probe(&img_connectivity_pd, img_connectivity_probe);
+-}
+-
+-static void __exit img_connectivity_leave(void)
+-{
+-	platform_driver_unregister(&img_connectivity_pd);
+-}
+-
+-module_init(img_connectivity_entry);
+-module_exit(img_connectivity_leave);
+-
+-/*
+- * * module metadata
+- */
+-MODULE_LICENSE("GPL v2");
+-MODULE_AUTHOR("Bartosz Flis <bartosz.flis@imgtec.com>");
+-MODULE_DESCRIPTION("Imagination Technologies RPU base driver - www.imgtec.com");
+diff --git a/drivers/soc/img/connectivity/img-fwldr-private.h b/drivers/soc/img/connectivity/img-fwldr-private.h
+new file mode 100644
+index 0000000..ec1d915
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-fwldr-private.h
+@@ -0,0 +1,342 @@
++/*
++ * File Name  : fwldr.h
++ *
++ * File Description: This file contains definitions used for firmware loader
++ *
++ * Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ * All rights reserved
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ * USA.
++ */
++
++#ifndef _FWLDR_H_
++#define _FWLDR_H_
++
++#include "img-fwldr.h"
++
++#ifdef DRIVER_DEBUG
++
++#define fwldr_dbg_err(...) pr_err(__VA_ARGS__)
++#define fwldr_dbg_info(...) pr_info(__VA_ARGS__)
++#define fwldr_dbg_dump(...) pr_info(__VA_ARGS__)
++
++#else
++#define fwldr_dbg_err(...) do { } while (0)
++#define fwldr_dbg_info(...) do { } while (0)
++#define fwldr_dbg_dump(...) do { } while (0)
++
++#endif
++
++#define FWLDR_PLRCRD_WORDS 16  /* 64-bit WORDS */
++#define FWLDR_PLRCRD_BYTES (FWLDR_PLRCRD_WORDS * 8)
++#define FWLDR_PLRCRD_TRAIL_BYTES 8
++#define FWLDR_PLRCRD_DATA_BYTES (FWLDR_PLRCRD_BYTES - FWLDR_PLRCRD_TRAIL_BYTES)
++
++
++/******************************************************************************
++* These constants are used to access various fields within an L1 record as well
++* as other constants that are used.
++******************************************************************************/
++
++/* The maximum number of bytes in an L1 record. */
++#define FWLDR_L1_MAXSIZE 32
++
++/* The maximum number of bytes in an L2 record. */
++#define FWLDR_L2_MAXSIZE 4096
++
++/* The size in bytes of the 'cmd' field in an L1 Record. */
++#define FWLDR_L1_CMD_SIZE 2
++
++/* The size in bytes of the 'length' field in an L1 Record. */
++#define FWLDR_L1_LEN_SIZE 2
++
++/* The size in bytes of the 'next' field in an L1 Record. */
++#define FWLDR_L1_NXT_SIZE 4
++
++/* The size in bytes of the 'arg1' field in an L1 Record. */
++#define FWLDR_L1_ARG1_SIZE 4
++
++/* The size in bytes of the 'arg2' field in an L1 Record. */
++#define FWLDR_L1_ARG2_SIZE 4
++
++/* The size in bytes of the 'l2offset' field in an L1 Record. */
++#define FWLDR_L1_L2OFF_SIZE 4
++
++/* The size in bytes of the 'xsum' field in an L1 Record. */
++#define FWLDR_L1_XSUM_SIZE 2
++
++/* The offset in bytes of the 'cmd' field in an L1 record. */
++#define FWLDR_L1_CMD_OFF 0
++
++/* The offset in bytes of the 'length' field in an L1 record. */
++#define FWLDR_L1_LEN_OFF (FWLDR_L1_CMD_OFF + FWLDR_L1_CMD_SIZE)
++
++/* The offset in bytes of the 'next' field in an L1 record. */
++#define FWLDR_L1_NXT_OFF (FWLDR_L1_LEN_OFF + FWLDR_L1_LEN_SIZE)
++
++/* The offset in bytes of the 'arg1' field in an L1 record. */
++#define FWLDR_L1_ARG1_OFF (FWLDR_L1_NXT_OFF + FWLDR_L1_NXT_SIZE)
++
++/* The offset in bytes of the 'arg2' field in an L1 record. */
++#define FWLDR_L1_ARG2_OFF (FWLDR_L1_ARG1_OFF + FWLDR_L1_ARG1_SIZE)
++
++/* The following is the value used to terminate a chain of L1 records */
++#define FWLDR_L1_TERMINATE 0xffffffff
++
++
++/******************************************************************************
++* These constants are used to access various fields within an L2 record as well
++* as other constants that are used.
++******************************************************************************/
++
++/* The size in bytes of the 'cmd' field in an L2 Record. */
++#define FWLDR_L2_CMD_SIZE 2
++
++/* The size in bytes of the 'length' field in an L2 Record. */
++#define FWLDR_L2_LEN_SIZE 2
++
++/* The size in bytes of the 'xsum' field in an L2 Record. */
++#define FWLDR_L2_XSUM_SIZE 2
++
++/* The offset in bytes from the beginning of an L2 record to the data
++ * payload
++ */
++#define FWLDR_L2_DATA (FWLDR_L2_CMD_SIZE + FWLDR_L2_LEN_SIZE)
++
++
++/******************************************************************************
++* Various combined values...
++******************************************************************************/
++
++/* Sizes of common items between L1 and L2 records */
++#define FWLDR_L1_L2LEN_SIZE FWLDR_L2_LEN_SIZE
++
++/* The size in bytes of an L1 record when it contains no data */
++#define FWLDR_L1_BASIC_SIZE (FWLDR_L1_CMD_SIZE + \
++			     FWLDR_L1_LEN_SIZE + \
++			     FWLDR_L1_NXT_SIZE + \
++			     FWLDR_L1_L2OFF_SIZE + \
++			     FWLDR_L1_L2LEN_SIZE + \
++			     FWLDR_L1_XSUM_SIZE)
++
++/* The size in bytes of an L2 record when it contains no data */
++#define FWLDR_L2_BASIC_SIZE (FWLDR_L2_CMD_SIZE + \
++			     FWLDR_L2_LEN_SIZE + \
++			     FWLDR_L2_XSUM_SIZE)
++
++
++/* Offsets in bytes from the end of an L1 record for various fields */
++#define FWLDR_L1_L2LEN_OFF (FWLDR_L1_XSUM_SIZE + FWLDR_L1_L2LEN_SIZE)
++#define FWLDR_L1_L2OFF_OFF (FWLDR_L1_L2LEN_OFF + FWLDR_L1_L2OFF_SIZE)
++
++#define UCCP_GRAM_BASE	    0xB7000000
++
++#define UCCP_SLAVE_PORT_OFFSET 0x3C000
++#define UCCP_OFFSET_MASK    0x00FFFFFF
++#define UCCP_BASE_MASK      0xFF000000
++#define UCCP_SYSBUS_REG     0x02
++#define UCCP_GRAM_PACKED    0xB7
++#define UCCP_GRAM_MSB       0xB4
++
++#define THREAD_STRIDE 0x1000
++#define ON_THREAD_INDIRECT(n, ind_addr) ((ind_addr) | ((n) & 0x3) << 12)
++#define ON_THREAD(n, addr) ((addr) + THREAD_STRIDE*(n))
++#define MTX_REG_INDIRECT(unit, reg) (((reg & 0x7) << 4) | (unit & 0xF))
++
++#define MTX_PC_REG_IND_ADDR        MTX_REG_INDIRECT(5, 0)
++#define MTX_A0STP_REG_IND_ADDR     MTX_REG_INDIRECT(3, 0)
++
++#define MTX_PCX_REG_IND_ADDR MTX_REG_INDIRECT(5, 1)
++#define MTX_TXMASK_REG_IND_ADDR MTX_REG_INDIRECT(7, 1)
++#define MTX_TXMASKI_REG_IND_ADDR MTX_REG_INDIRECT(7, 3)
++#define MTX_TXPOLL_REG_IND_ADDR MTX_REG_INDIRECT(7, 4)
++#define MTX_TXPOLLI_REG_IND_ADDR MTX_REG_INDIRECT(7, 6)
++#define MTX_TXSTAT_REG_IND_ADDR MTX_REG_INDIRECT(7, 0)
++#define MTX_TXSTATI_REG_IND_ADDR MTX_REG_INDIRECT(7, 2)
++
++#define REG_IND_READ_FLAG (1 << 16)
++
++#define MTX_TXPRIVEXT_ADDR 0x048000E8
++#define MTX_TXSTATUS_ADDR 0x48000010
++#define	MTX_TXENABLE_ADDR 0x04800000
++#define	MTX_START_EXECUTION 1
++#define	MTX_STOP_EXECUTION 0
++
++#define MTX_TXUXXRXDT 0x0480FFF0
++#define MTX_TXUXXRXRQ 0x0480FFF8
++
++#define MSLV_BASE_ADDR 0x0203C000
++
++/* DATA Exchange Register */
++#define MSLVDATAX (MSLV_BASE_ADDR + 0x2000)
++
++/* DATA Transfer Register */
++#define MSLVDATAT (MSLV_BASE_ADDR + 0x2040)
++
++/* Control Register 0 */
++#define MSLVCTRL0 (MSLV_BASE_ADDR + 0x2080)
++
++/* Soft Reset register */
++#define MSLVSRST (MSLV_BASE_ADDR + 0x2600)
++
++#define SLAVE_ADDR_MODE_MASK 0xFFFFFFFC
++#define SLAVE_SINGLE_WRITE 0x00
++#define SLAVE_SINGLE_READ 0x01
++#define SLAVE_BLOCK_WRITE 0x02
++#define SLAVE_BLOCK_READ 0x03
++
++/* Control Register 1 */
++#define MSLVCTRL1 (MSLV_BASE_ADDR + 0x20c0)
++
++#define MSLVCTRL1_POLL_MASK 0x07000000
++#define MSLAVE_READY(v) ((v & MSLVCTRL1_POLL_MASK) == MSLVCTRL1_POLL_MASK)
++#define LTP_THREAD_NUM 0 /* Since, only one thread exists */
++
++/* Thread completion signature */
++#define UCCP_THRD_EXEC_SIG_OFFSET 0x00000430
++#define UCCP_THRD_EXEC_SIG 0x00ADF00D
++
++#define MAX_LOAD_MEM_LEN 4096
++
++
++enum fwldr_status {
++	FWLDR_SUCCESS,
++	FWLDR_FAIL
++};
++
++/* Cmd or Tag values used in the L1/L2 records */
++enum fwldr_cmd_tag_l1_l2 {
++	FWLDR_L1_CMD_LOAD_MEM = 0x0000, /* Command - L1 LoadMem. */
++	FWLDR_L1_CMD_START_THRDS = 0x0003, /* Command - L1 StartThrds. */
++	FWLDR_L1_CMD_ZERO_MEM = 0x0004, /* Command - L1 ZeroMem. */
++	FWLDR_L1_CMD_CONFIG = 0x0005, /* Command - L1 Config. */
++	FWLDR_L1_CMD_FILENAME = 0x0010, /* Command - L1 FileName. */
++};
++
++/* Enumerates all possible types of configuration commands */
++enum fwldr_conf_cmd {
++	FWLDR_CONF_CMD_PAUSE = 0x0000, /* Pause */
++	FWLDR_CONF_CMD_READ, /* Read */
++	FWLDR_CONF_CMD_WRITE, /* Write */
++	FWLDR_CONF_CMD_MEMSET, /* MemSet */
++	FWLDR_CONF_CMD_MEMCHK, /* MemChk */
++	FWLDR_CONF_CMD_USER, /* User */
++};
++
++/* Information contained within an .ldr file */
++enum fwldr_ldr_sec {
++	FWLDR_SEC_NONE = 0, /* Element is undefined */
++	FWLDR_SEC_BOOT_HEADER, /* Boot header */
++	FWLDR_LDR_CODE, /* Secondary loader executable */
++	FWLDR_SEC_DATA_L1, /* Secondary loader top level data stream */
++	FWLDR_SEC_DATA_L2 /* Secondary loader raw data stream */
++};
++
++enum uccp_mem_region {
++	UCCP_MEM_CORE,
++	UCCP_MEM_DIRECT,
++	UCCP_MEM_ERR
++};
++
++struct fwldr_bootdevhdr {
++	unsigned int  dev_id; /* Value used to verify access to boot device */
++	unsigned int  sl_code; /* Offset to secondary loader code */
++#define BOOTDEV_SLCSECURE_BIT 0x80000000
++#define BOOTDEV_SLCCRITICAL_BIT 0x40000000
++
++	unsigned int  sl_data; /* Offset to data used by secondary loader */
++	unsigned short pl_ctrl; /* Primary loader control */
++#define BOOTDEV_PLCREMAP_BITS 0x00FF
++#define BOOTDEV_PLCREMAP_S 0
++
++	unsigned short CRC; /* CRC value */
++};
++
++struct fwldr_load_mem_info {
++	unsigned int dst_addr;
++	unsigned int len;
++	unsigned char *src_buf;
++};
++
++struct fwldr_thrd_info {
++	unsigned int thrd_num;
++	unsigned int stack_ptr;
++	unsigned int prog_ctr;
++	unsigned int catch_state_addr;
++};
++
++struct fwldr_cfg_rw {
++	unsigned int addr;
++	unsigned int val;
++};
++
++/*  Represents a secondary loader top level data stream record. */
++struct fwldr_sec_ldr_l1_record {
++	unsigned short cmd_tag; /* Command TagMember comment goes here */
++	unsigned short len; /* Total length os this record */
++	unsigned short crc; /* X25 CRC checksum for this record (including the
++			     * checksum itself)
++			     */
++	unsigned int nxt; /* Offset within the .ldr to the next L1RECORD */
++	unsigned int arg1; /* The first command argument for the command */
++	unsigned int arg2; /* The second command argument for the command */
++	unsigned int l2_offset; /* Offset within the .ldr to the corresponding
++				 * raw data record
++				 */
++	unsigned int l2_len; /* The expected length of the raw data record */
++};
++
++struct fwldr_memhdr_tag {
++	struct fwldr_memhdr_tag *p_next;
++	unsigned int addr; /* Target byte address */
++	unsigned char *data; /* Data block pointer */
++	unsigned int len; /* Len in bytes of data block */
++
++};
++
++struct fwload_priv {
++	unsigned char           *gram_addr;
++	unsigned char           *core_addr;
++	unsigned char           *gram_b4_addr;
++};
++
++static inline void fwload_uccp_read(struct fwload_priv *fpriv,
++				    unsigned long base,
++				    unsigned long offset,
++				    unsigned int *data)
++{
++	if (base == UCCP_SYSBUS_REG)
++		*data = readl((void __iomem *)fpriv->core_addr + (offset));
++	else if (base == UCCP_GRAM_PACKED)
++		*data = readl((void __iomem *)fpriv->gram_addr + (offset));
++	else if (base == UCCP_GRAM_MSB)
++		*data = readl((void __iomem *)fpriv->gram_b4_addr + (offset));
++}
++
++static inline void fwload_uccp_write(struct fwload_priv *fpriv,
++				     unsigned long base,
++				     unsigned long offset,
++				     unsigned int data)
++{
++	if (base == UCCP_SYSBUS_REG)
++		writel(data, (void __iomem *)(fpriv->core_addr + (offset)));
++	else if (base == UCCP_GRAM_PACKED)
++		writel(data, (void __iomem *)(fpriv->gram_addr + (offset)));
++	else if (base == UCCP_GRAM_MSB)
++		writel(data, (void __iomem *)(fpriv->gram_b4_addr + (offset)));
++}
++
++#endif /* _FWLDR_H_ */
+diff --git a/drivers/soc/img/connectivity/img-fwldr.c b/drivers/soc/img/connectivity/img-fwldr.c
+new file mode 100644
+index 0000000..3aba9136
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-fwldr.c
+@@ -0,0 +1,1197 @@
++/*
++ * File Name  : fwldr.c
++ *
++ * This file contains contains functions related to firmware loading
++ * functionality.
++ *
++ * Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ * All rights reserved
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ * USA.
++ */
++
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/dma-mapping.h>
++#include <linux/delay.h>
++#include <linux/slab.h>
++
++#include "img-fwldr-private.h"
++
++struct fwload_priv  *fpriv, fpv;
++
++static unsigned short fwldr_read_le2(unsigned char *buf);
++static unsigned int fwldr_read_le4(unsigned char *buf);
++static unsigned fwldr_virt_to_linear_off(unsigned page_size,
++					 unsigned offset);
++
++
++static void fwldr_load_mem(unsigned int dst_addr,
++		    unsigned int len,
++		    unsigned char *src_buf);
++
++static void fwldr_start_thrd(unsigned int thrd_number,
++			unsigned int stack_ptr,
++			unsigned int program_ctr,
++			unsigned int catch_state_addr);
++
++static void fwldr_zero_mem(unsigned int dst_addr,
++		    unsigned int len);
++
++static unsigned int fwldr_config_read(unsigned int dst_addr);
++
++static void fwldr_config_write(unsigned int dst_addr,
++			unsigned int val);
++
++static enum uccp_mem_region fwldr_chk_region(unsigned int src_addr,
++				      int length);
++
++static int fwldr_parser(const unsigned char *fw_data);
++
++static int fwldr_wait_for_completion(void);
++
++static void dir_mem_cpy(unsigned int addr,
++			unsigned char *data,
++			unsigned int len);
++
++static void dir_mem_set(unsigned int addr,
++			unsigned char data,
++			unsigned int len);
++
++static void dir_mem_read(unsigned int addr,
++			 unsigned int *data,
++			 unsigned int len);
++
++static void dir_mem_write(unsigned int addr,
++			 unsigned int data);
++
++static void core_mem_cpy(unsigned int addr,
++			 unsigned char *data,
++			 unsigned int len);
++
++static void core_mem_set(unsigned int addr,
++			 unsigned int data,
++			 unsigned int len);
++
++static void core_mem_read(unsigned int addr,
++			  unsigned int *data,
++			  unsigned int len);
++
++/* dir_mem_cpy
++ *
++ * Perform a memcpy of 'len' bytes from 'src_addr' to the UCCP memory location
++ * pointed by 'dst_addr'.
++ *
++ * dst_addr is always a 4 byte aligned address
++ * data is always a 4 byte aligned address
++ * len is always a multiple of 4 when dst_addr is of type 0xB4xxxxxx
++ * len may NOT be a multiple of 4 when dst_addr is of type 0xB7xxxxxx
++ *
++ *
++ * When dst_addr is of type 0xB4xxxxxx, perform only 32 bit writes to these
++ * locations
++ *
++ */
++static void dir_mem_cpy(unsigned int addr,
++			unsigned char *data,
++			unsigned int len)
++{
++	int i;
++	unsigned long offset = (unsigned long)addr & UCCP_OFFSET_MASK;
++	unsigned long base = ((unsigned long)addr & UCCP_BASE_MASK) >> 24;
++	unsigned int *data_addr = (unsigned int *)data;
++	unsigned char *gram_byte_addr, *data_byte_addr;
++
++	if ((fpriv->gram_b4_addr ==  NULL) && (base == UCCP_GRAM_MSB)) {
++
++		/* The HAL didn't provide a virtual address for 0xB4xxxxxx alias
++		 * Convert into 0xB7 and do the writes by ignoring MSB of the
++		 * 32-bit word
++		 */
++
++		addr &= 0x00FFFFFF;
++		addr |= 0xB7000000;
++
++		data_byte_addr = (unsigned char *)data_addr;
++		gram_byte_addr = (void *)(fpriv->gram_addr + (offset / 4) * 3);
++
++
++		if (len % 4 == 0) {
++			for (i = 0; i < len / 4; i++) {
++				memcpy(gram_byte_addr, data_byte_addr + 1, 3);
++				gram_byte_addr += 3;
++				data_byte_addr += 4;
++			}
++		} else {
++			fwldr_dbg_err("%s:Unexpected length(base:%lx)\n",
++				      __func__, base);
++		}
++
++	} else {
++
++		if (len % 4 == 0) {
++			for (i = 0; i < len / 4; i++) {
++				fwload_uccp_write(fpriv, base, offset,
++						  data_addr[i]);
++				offset += 4;
++			}
++		} else {
++			if (base == UCCP_GRAM_PACKED)
++				memcpy((void *)(fpriv->gram_addr + offset),
++				       (void *)data_addr, len);
++			else
++				fwldr_dbg_err("%s:Unexpected length(%lx)\n",
++					      __func__, base);
++		}
++	}
++
++	return;
++}
++
++
++/* dir_mem_set
++ *
++ * Perform a memset of 'len' bytes with value of 'val' to the UCCP memory
++ * location pointed by 'dst_addr'.
++ *
++ * dst_addr is always a 4 byte aligned address
++ * len is always a multiple of 4 when dst_addr is of type 0xB4xxxxxx
++ * len may NOT be a multiple of 4 when dst_addr is of type 0xB7xxxxxx
++ *
++ *
++ * When dst_addr is of type 0xB4xxxxxx, perform only 32 bit writes to these
++ * locations
++ *
++ */
++static void dir_mem_set(unsigned int addr,
++			unsigned char data,
++			unsigned int len)
++{
++	int i;
++	unsigned long offset = (unsigned long)addr & UCCP_OFFSET_MASK;
++	unsigned long base = ((unsigned long)addr & UCCP_BASE_MASK) >> 24;
++	unsigned char *gram_byte_addr;
++
++	if ((fpriv->gram_b4_addr ==  NULL) && (base == UCCP_GRAM_MSB)) {
++
++		/* The HAL didn't provide a virtual address for 0xB4xxxxxx alias
++		 * Convert into 0xB7 and do the writes by ignoring MSB of the
++		 * 32-bit word
++		 */
++
++		addr &= 0x00FFFFFF;
++		addr |= 0xB7000000;
++
++		gram_byte_addr = (void *)(fpriv->gram_addr + (offset / 4) * 3);
++
++
++		if (len % 4 == 0) {
++			memset(gram_byte_addr, data, (len / 4) * 3);
++		} else {
++			fwldr_dbg_err("%s :Unexpected length (base : %lx)\n",
++				      __func__, base);
++		}
++
++	} else {
++
++
++		if (len % 4 == 0) {
++			for (i = 0; i <= len / 4; i++) {
++				fwload_uccp_write(fpriv, base, offset, data);
++				offset += 4;
++			}
++		} else if (base == UCCP_GRAM_PACKED) {
++			memset((void *)(fpriv->gram_addr + offset),
++			       data, len);
++		} else {
++			fwldr_dbg_err("%s: Unexpected length (base %lx)\n",
++				      __func__, base);
++		}
++	}
++
++	return;
++}
++
++/* Perform 'len' 32 bit reads from a UCCP memory location 'addr'
++ * 'addr' is always a 4 byte aligned address
++ */
++static void dir_mem_read(unsigned int addr,
++			 unsigned int *data,
++			 unsigned int len)
++{
++	int i = 0;
++	unsigned long offset = (unsigned long)addr & UCCP_OFFSET_MASK;
++	unsigned long base = ((unsigned long)addr & UCCP_BASE_MASK) >> 24;
++
++
++	for (i = 0; i <= len / 4; i++) {
++		fwload_uccp_read(fpriv, base, offset, data+i);
++		offset += 4;
++	}
++}
++
++/* 32 bit write to UCCP memory location 'addr'
++ * 'addr' is always a 4 byte aligned address
++ */
++static void dir_mem_write(unsigned int addr,
++			 unsigned int data)
++{
++	unsigned long offset = (unsigned long)addr & UCCP_OFFSET_MASK;
++	unsigned long base = ((unsigned long)addr & UCCP_BASE_MASK) >> 24;
++
++	fwload_uccp_write(fpriv, base, offset, data);
++}
++
++
++static void core_mem_cpy(unsigned int addr,
++			 unsigned char *data,
++			 unsigned int len)
++{
++	unsigned int i = 0;
++	unsigned int *src_data = (unsigned int *)data;
++	unsigned int flag = 0;
++	unsigned int val = 0;
++
++	/* Poll MSLVCTRL1 */
++	do {
++		dir_mem_read(MSLVCTRL1, &val, 1);
++	} while (!MSLAVE_READY(val));
++
++	if (len > 1)
++		flag = SLAVE_BLOCK_WRITE;
++	else
++		flag = SLAVE_SINGLE_WRITE;
++
++	dir_mem_write(MSLVCTRL0,
++			((addr & SLAVE_ADDR_MODE_MASK) | flag));
++
++	for (i = 0; i < len / 4; i++) {
++		do {
++			dir_mem_read(MSLVCTRL1, &val, 1);
++		} while (!MSLAVE_READY(val));
++
++		if (data != NULL)
++			dir_mem_write(MSLVDATAT, src_data[i]);
++		else
++			dir_mem_write(MSLVDATAT, 0x00);
++	}
++
++}
++
++
++static void core_mem_set(unsigned int addr,
++			 unsigned int data,
++			 unsigned int len)
++{
++	unsigned int flag = 0;
++	unsigned int val = 0;
++
++	/* Poll MSLVCTRL1 */
++	do {
++		dir_mem_read(MSLVCTRL1, &val, 1);
++	} while (!MSLAVE_READY(val));
++
++	if (len > 1)
++		flag = SLAVE_BLOCK_WRITE;
++	else
++		flag = SLAVE_SINGLE_WRITE;
++
++	dir_mem_write(MSLVCTRL0,
++			((addr & SLAVE_ADDR_MODE_MASK) | flag));
++	dir_mem_write(MSLVDATAT, data);
++}
++
++
++static void core_mem_read(unsigned int addr,
++			  unsigned int *data,
++			  unsigned int len)
++{
++	unsigned int i = 0;
++	unsigned int val = 0;
++
++	/* Poll MSLVCTRL1 */
++	do {
++		dir_mem_read(MSLVCTRL1, &val, 1);
++	} while (!MSLAVE_READY(val));
++
++	dir_mem_write(MSLVCTRL0,
++			((addr & SLAVE_ADDR_MODE_MASK) | SLAVE_BLOCK_READ));
++
++	for (i = 0; i < len-1; i++) {
++		do {
++			dir_mem_read(MSLVCTRL1, &val, 1);
++		} while (!MSLAVE_READY(val));
++
++		dir_mem_read(MSLVDATAT, &data[i], 1);
++	}
++
++	/* Read the last word */
++	do {
++		dir_mem_read(MSLVCTRL1, &val, 1);
++	} while (!MSLAVE_READY(val));
++
++	dir_mem_read(MSLVDATAX, &data[len-1], 1);
++
++
++}
++
++static void clear_exec_signature(void)
++{
++	fwload_uccp_write(fpriv, UCCP_SYSBUS_REG, UCCP_THRD_EXEC_SIG_OFFSET, 0);
++}
++
++static bool check_exec_signature(u32 signature)
++{
++	u32 sig;
++	fwload_uccp_read(fpriv, UCCP_SYSBUS_REG, UCCP_THRD_EXEC_SIG_OFFSET,
++									&sig);
++	return ((sig & 0x00FFFFFF) == signature);
++}
++
++void fwldr_init(unsigned char *core_addr, unsigned char *gram_addr,
++		unsigned char *gram_b4_addr)
++{
++	fpriv = &fpv;
++	fpriv->gram_addr = gram_addr;
++	fpriv->core_addr = core_addr;
++	fpriv->gram_b4_addr = gram_b4_addr;
++}
++
++int fwldr_load_fw(const unsigned char *fw_data)
++{
++	int err = FWLDR_SUCCESS;
++
++	clear_exec_signature();
++
++	err = fwldr_parser(fw_data);
++
++	if (err != FWLDR_SUCCESS) {
++		pr_err("FW load failed\n");
++		return err;
++	}
++
++	if (!fwldr_wait_for_completion()) {
++		pr_err("FW load timed out waiting for completion\n");
++		return FWLDR_FAIL;
++	}
++
++	return err;
++}
++
++static void fwldr_load_mem(unsigned int dst_addr,
++		    unsigned int len,
++		    unsigned char *src_buf)
++{
++	enum uccp_mem_region mem_region = UCCP_MEM_ERR;
++	int i = 0;
++
++	mem_region = fwldr_chk_region(dst_addr, len);
++
++	fwldr_dbg_info("%s dst_addr = 0x%X, length = 0x%X, srcaddr = 0x%X\n",
++		       __func__, dst_addr, len, (unsigned int)src_buf);
++
++	fwldr_dbg_info("Dump upto 16 bytes\n");
++
++	if (0 != (dst_addr % 4))
++		fwldr_dbg_info("Destination Address is not 4 - byte aligned\n");
++
++	for (i = 0; i < 16; i += 2)
++		fwldr_dbg_dump("0x%X \t 0x%X\n", src_buf[i], src_buf[i + 1]);
++
++	switch (mem_region) {
++	case UCCP_MEM_CORE:
++		core_mem_cpy(dst_addr, src_buf, len);
++		break;
++
++	case UCCP_MEM_DIRECT:
++		dir_mem_cpy(dst_addr, src_buf, len);
++		break;
++
++	default:
++		fwldr_dbg_err("Region unknown. Skipped writing\n");
++		break;
++	}
++}
++
++static void fwldr_start_thrd(unsigned int thrd_num,
++		      unsigned int stack_ptr,
++		      unsigned int prog_ctr,
++		      unsigned int catch_state_addr)
++{
++	fwldr_dbg_info("%s PC = 0x%X,\tSP = 0x%X\n",
++		       __func__, prog_ctr, stack_ptr);
++
++	/* Program Counter */
++	core_mem_set(MTX_TXUXXRXDT, prog_ctr, 1);
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num, MTX_PC_REG_IND_ADDR), 1);
++
++	/* Stack Pointer */
++	core_mem_set(MTX_TXUXXRXDT, stack_ptr, 1);
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num, MTX_A0STP_REG_IND_ADDR),
++			1);
++
++	/* Thread Enable */
++	core_mem_set(ON_THREAD(thrd_num, MTX_TXENABLE_ADDR), MTX_START_EXECUTION, 1);
++
++	fwldr_dbg_info("Thread %d is Enabled\n", thrd_num);
++}
++
++void fwldr_stop_thrd(unsigned int thrd_num)
++{
++	unsigned int val;
++
++	/* Thread Disable */
++	core_mem_set(ON_THREAD(thrd_num, MTX_TXENABLE_ADDR), MTX_STOP_EXECUTION, 1);
++
++	core_mem_read(ON_THREAD(thrd_num, MTX_TXENABLE_ADDR), &val, 1);
++
++	while ((val & 0x2) != 0x2) {
++		core_mem_read(ON_THREAD(thrd_num, MTX_TXENABLE_ADDR), &val, 1);
++
++		fwldr_dbg_info("%s val = 0x%X\n", __func__, val);
++
++	}
++
++	fwldr_dbg_info("TXENABLE = 0x%X\n", val);
++	fwldr_dbg_info("Thread %d is Stopped\n", thrd_num);
++}
++
++static void fwldr_zero_mem(unsigned int dst_addr,
++		    unsigned int len)
++{
++	int mem_region = 0;
++
++	fwldr_dbg_info("%s DestAddr = 0x%X, length = 0x%X\n",
++		       __func__, dst_addr, len);
++
++	if (0 != (dst_addr % 4))
++		fwldr_dbg_info("Destination Address is not 4 - byte aligned");
++
++	mem_region = fwldr_chk_region(dst_addr, len);
++
++	switch (mem_region) {
++	case UCCP_MEM_CORE:
++		core_mem_cpy(dst_addr, NULL, len);
++		break;
++
++	case UCCP_MEM_DIRECT:
++		dir_mem_set(dst_addr, 0x00, len);
++		break;
++
++	default:
++		fwldr_dbg_err("Region unknown. Skipped setting\n");
++		break;
++	}
++}
++
++static unsigned int fwldr_config_read(unsigned int dst_addr)
++{
++	int mem_region = 0;
++	int val = 0;
++
++	fwldr_dbg_info("%s dst_addr = 0x%X\n", __func__, dst_addr);
++
++	if (0 != (dst_addr % 4))
++		fwldr_dbg_info("Destination Address is not 4 - byte aligned");
++
++	mem_region = fwldr_chk_region(dst_addr, 0);
++
++	switch (mem_region) {
++	case UCCP_MEM_CORE:
++		core_mem_read(dst_addr, &val, 1);
++		return val;
++
++	case UCCP_MEM_DIRECT:
++		dir_mem_read(dst_addr, &val, 1);
++		return val;
++
++	default:
++		fwldr_dbg_err("Region unknown. Skipped reading\n");
++		return 0;
++	}
++
++	return 0;
++}
++
++static void fwldr_config_write(unsigned int dst_addr,
++			unsigned int val)
++{
++	int mem_region = 0;
++
++	fwldr_dbg_info("%s dst_addr = 0x%X,\tValue = 0x%X\n",
++		       __func__, dst_addr, val);
++
++	if (0 != (dst_addr % 4))
++		fwldr_dbg_info("Destination Address is not 4 - byte aligned");
++
++	mem_region = fwldr_chk_region(dst_addr, 0);
++
++
++	switch (mem_region) {
++	case UCCP_MEM_CORE:
++		core_mem_set(dst_addr, val, 1);
++		break;
++
++	case UCCP_MEM_DIRECT:
++		dir_mem_write(dst_addr, val);
++		break;
++
++	default:
++		fwldr_dbg_err("Region unknown. Skipped writing\n");
++		break;
++	}
++
++}
++
++static enum uccp_mem_region fwldr_chk_region(unsigned int src_addr, int len)
++{
++	unsigned int dst_addr = src_addr + len;
++
++	if (((src_addr >= 0x03000000) && (src_addr <= 0x04FFFFFF))  ||
++	    ((src_addr >= 0x02009000) && (src_addr <= 0x0203BFFF))  ||
++	    ((src_addr >= 0x80000000) && (src_addr <= 0x87FFFFFF))) {
++		if (len != 0) {
++			if (((dst_addr >= 0x03000000) &&
++			     (dst_addr <= 0x04FFFFFF)) ||
++			    ((dst_addr >= 0x02009000) &&
++			     (dst_addr <= 0x0203BFFF)) ||
++			    ((dst_addr >= 0x80000000) &&
++			     (dst_addr <= 0x87FFFFFF)))
++				return UCCP_MEM_CORE;
++			else
++				return UCCP_MEM_ERR;
++		}
++
++		return UCCP_MEM_CORE;
++	} else if ((src_addr & 0xFF000000) == 0xB0000000) {
++		return UCCP_MEM_ERR;
++	} else {
++		return UCCP_MEM_DIRECT;
++	}
++}
++
++void fwldr_soft_reset(unsigned int thrd_num)
++{
++	unsigned int val, temp;
++	unsigned int retries = 3;
++
++	/*
++	 * If the thread is running, then stop it and clear the registers,
++	 * otherwise do nothing
++	 */
++	core_mem_read(ON_THREAD(thrd_num, MTX_TXENABLE_ADDR), &val, 1);
++
++	fwldr_dbg_info("Resetting UCCP420\n");
++
++	/* Soft Reset */
++	dir_mem_read(MSLVSRST, &val, 1);
++	dir_mem_write(MSLVSRST, (val | 1));
++
++	/* Wait for 16 core clock cycles. Core runs at 320MHz */
++	udelay(10);
++
++	/* Clear the Soft Reset */
++	dir_mem_write(MSLVSRST, (val & 0xFFFFFFFE));
++
++	/* Give additional 20 ms for the DA to do its own reset */
++	mdelay(20);
++
++	/* Clear the Minim Bit in PrivExt */
++	core_mem_set(ON_THREAD(thrd_num, MTX_TXPRIVEXT_ADDR), 0, 1);
++
++	/* Set the PCX value i to 0 */
++	core_mem_set(MTX_TXUXXRXDT, 0, 1);
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num, MTX_PCX_REG_IND_ADDR), 1);
++
++
++	/*
++	 * Clear TXPOLL{I} to clear TXSTAT{I}
++	 * Writing 0xFFFFFFFF clears TXSTATI, but TXMASKI must
++	 * be all set too for this to work.
++	 */
++	core_mem_set(MTX_TXUXXRXDT, 0xFFFFFFFF, 1);
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num, MTX_TXMASK_REG_IND_ADDR),
++			1);
++
++	core_mem_set(MTX_TXUXXRXDT, 0xFFFFFFFF, 1);
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num, MTX_TXMASKI_REG_IND_ADDR),
++			1);
++
++	core_mem_set(MTX_TXUXXRXDT, 0xFFFFFFFF, 1);
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num, MTX_TXPOLL_REG_IND_ADDR),
++			1);
++
++	core_mem_set(MTX_TXUXXRXDT, 0xFFFFFFFF, 1);
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num, MTX_TXPOLLI_REG_IND_ADDR),
++			1);
++
++	/* Clear TXMASK and TXMASKI */
++	core_mem_set(MTX_TXUXXRXDT, 0x0, 1);
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num, MTX_TXMASK_REG_IND_ADDR),
++			1);
++
++
++	core_mem_set(MTX_TXUXXRXDT, 0x0, 1);
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num, MTX_TXMASKI_REG_IND_ADDR),
++			1);
++
++	/* Ensure all kicks are cleared */
++	core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num,
++				MTX_TXPOLLI_REG_IND_ADDR | REG_IND_READ_FLAG),
++			1);
++
++	core_mem_read(MTX_TXUXXRXDT, &temp, 1);
++
++	while (temp && retries--) {
++		core_mem_set(MTX_TXUXXRXDT, 0x2, 1);
++
++		core_mem_set(MTX_TXUXXRXRQ,
++					ON_THREAD_INDIRECT(thrd_num,
++						MTX_TXPOLLI_REG_IND_ADDR),
++					1);
++
++		core_mem_set(MTX_TXUXXRXRQ,
++			ON_THREAD_INDIRECT(thrd_num,
++				MTX_TXPOLLI_REG_IND_ADDR | REG_IND_READ_FLAG),
++			1);
++
++		core_mem_read(MTX_TXUXXRXDT, &temp, 1);
++	}
++
++	/* Reset TXSTATUS */
++	core_mem_set(ON_THREAD(thrd_num, MTX_TXSTATUS_ADDR), 0x00020000, 1);
++
++	fwldr_dbg_info("Soft Reset core\n");
++}
++
++/* Reads a 16-bit little endian value from the specified position in a buffer */
++static unsigned short fwldr_read_le2(unsigned char *buf)
++{
++	unsigned short val = 0;
++
++	val  = buf[0];
++	val |= buf[1] << 8;
++
++	return val;
++}
++
++/* Reads a 32-bit little endian value from the specified position in a buffer */
++static unsigned int fwldr_read_le4(unsigned char *buf)
++{
++	unsigned int val = 0;
++
++	val = buf[0];
++	val |= buf[1] << 8;
++	val |= buf[2] << 16;
++	val |= buf[3] << 24;
++
++	return val;
++}
++
++/* Converts a virtual (paged) offset to a linear (non-paged) offset */
++static unsigned fwldr_virt_to_linear_off(unsigned page_size, unsigned offset)
++{
++	static unsigned virt_page_size;
++
++	unsigned val = offset;
++
++	if (page_size) {
++		if (virt_page_size == 0) {
++			virt_page_size = 1;
++			while (virt_page_size < page_size)
++				virt_page_size <<= 1;
++		}
++
++		val = ((offset / virt_page_size) * page_size) +
++			(offset % virt_page_size);
++	}
++
++	return val;
++}
++
++static int fwldr_parser(const unsigned char *fw_data)
++{
++	int quit = 0;
++	signed int nxt = 0;
++	signed int file_offset = 0;
++	signed int page_size = 0;
++	signed int orig_offset = 0;
++	signed int prev_offset = 0;
++	struct fwldr_bootdevhdr boot_dev_hdr;
++	char info_buf[256];
++	char *cfg_str = NULL;
++	char cfg_buf[256];
++	char *cfg_buf_ptr = NULL;
++	struct fwldr_sec_ldr_l1_record l1_rec;
++	struct fwldr_load_mem_info lm_v;
++	struct fwldr_cfg_rw rw_v;
++	unsigned char l1_buf[FWLDR_L1_MAXSIZE];
++	signed int seek_off;
++	char *str_curr = NULL;
++	char *str_end = NULL;
++	char *str_new = NULL;
++	int buf_len = 0;
++	int res = FWLDR_SUCCESS;
++
++	/* Lets really do it */
++	memcpy(&boot_dev_hdr, fw_data, sizeof(struct fwldr_bootdevhdr));
++
++	fwldr_dbg_info("DevID:  0x%08X\n", boot_dev_hdr.dev_id);
++	fwldr_dbg_info("SLCode: 0x%08X\n", boot_dev_hdr.sl_code);
++	fwldr_dbg_info("SLData: 0x%08X\n", boot_dev_hdr.sl_data);
++	fwldr_dbg_info("PLCtrl: 0x%04X\n", boot_dev_hdr.pl_ctrl);
++	fwldr_dbg_info("CRC:    0x%04X\n", boot_dev_hdr.CRC);
++	fwldr_dbg_info("%d", sizeof(boot_dev_hdr));
++	fwldr_dbg_info("\n");
++
++	file_offset = fwldr_virt_to_linear_off(page_size, boot_dev_hdr.sl_code);
++	orig_offset = fwldr_virt_to_linear_off(page_size, boot_dev_hdr.sl_data);
++
++	nxt = sizeof(struct fwldr_bootdevhdr);
++
++	do {
++		unsigned char sec_ldr_code[FWLDR_PLRCRD_BYTES];
++
++		memcpy(&sec_ldr_code,
++		       fw_data + file_offset,
++		       FWLDR_PLRCRD_BYTES);
++
++		nxt = fwldr_read_le4(&sec_ldr_code[FWLDR_PLRCRD_DATA_BYTES]);
++
++		file_offset = fwldr_virt_to_linear_off(page_size,
++						       nxt);
++	} while (nxt);
++
++	file_offset = orig_offset;
++
++	while (!quit) {
++		unsigned char *l2_buf = NULL, *l2_blk = NULL;
++		unsigned int l2_len = 0U;
++
++		memcpy(&l1_buf,
++		       fw_data + file_offset,
++		       FWLDR_L1_MAXSIZE);
++
++		l1_rec.cmd_tag = fwldr_read_le2(&l1_buf[FWLDR_L1_CMD_OFF]);
++		l1_rec.len = fwldr_read_le2(&l1_buf[FWLDR_L1_LEN_OFF]);
++		l1_rec.nxt = fwldr_read_le4(&l1_buf[FWLDR_L1_NXT_OFF]);
++
++		if ((l1_rec.len > FWLDR_L1_MAXSIZE) ||
++		    (l1_rec.len < FWLDR_L1_L2OFF_OFF) ||
++		    (l1_rec.len < FWLDR_L1_L2LEN_OFF)) {
++			fwldr_dbg_err("Maximum L1 length exceeded\n");
++			res = FWLDR_FAIL;
++			break;
++		}
++
++		/* Extract generic L1 fields */
++		l1_rec.l2_offset = fwldr_read_le4(&l1_buf[l1_rec.len -
++						  FWLDR_L1_L2OFF_OFF]);
++
++		l1_rec.l2_len = fwldr_read_le2(&l1_buf[l1_rec.len -
++					       FWLDR_L1_L2LEN_OFF]);
++
++		if (l1_rec.l2_len > FWLDR_L2_BASIC_SIZE) {
++			/* Read the L2 data */
++			seek_off = fwldr_virt_to_linear_off(page_size,
++							    l1_rec.l2_offset);
++
++			if (l1_rec.l2_len > FWLDR_L2_MAXSIZE) {
++				fwldr_dbg_err("Maximum L2 length exceeded\n");
++				res = FWLDR_FAIL;
++				break;
++			}
++
++			l2_blk = kmalloc(l1_rec.l2_len + 1,
++					 GFP_KERNEL);
++
++			if (l2_blk == NULL) {
++				fwldr_dbg_err("Not Enough Memory\n");
++				res = FWLDR_FAIL;
++				break;
++			}
++
++			memcpy(l2_blk,
++			       fw_data + seek_off,
++			       l1_rec.l2_len);
++
++			l2_blk[l1_rec.l2_len] = '\0';
++
++			l2_buf = l2_blk +
++				(FWLDR_L2_CMD_SIZE + FWLDR_L2_LEN_SIZE);
++
++			l2_len = l1_rec.l2_len - FWLDR_L2_BASIC_SIZE;
++		}
++
++		switch (l1_rec.cmd_tag) {
++		case FWLDR_L1_CMD_LOAD_MEM:
++			if (!l2_buf) {
++				fwldr_dbg_err("Invalid params to Load Mem\n");
++				res = FWLDR_FAIL;
++				quit = 1;
++				break;
++			}
++
++			/* Load mem record */
++			l1_rec.arg1 =
++				fwldr_read_le4(&l1_buf[FWLDR_L1_ARG1_OFF]);
++
++			snprintf(info_buf,
++				 sizeof(info_buf),
++				 "%-12s: Addr: 0x%08X: Size: 0x%08X\n",
++				 "LoadMem", l1_rec.arg1, l2_len);
++
++			lm_v.dst_addr = l1_rec.arg1;
++			lm_v.len = l2_len;
++			lm_v.src_buf = l2_buf;
++
++			fwldr_load_mem(lm_v.dst_addr,
++				       lm_v.len,
++				       lm_v.src_buf);
++			break;
++
++		case FWLDR_L1_CMD_START_THRDS:
++			/* Start each thread with initial SP */
++			if (!l2_buf) {
++				fwldr_dbg_err("%s : %d Invalid params\n",
++					      __func__, __LINE__);
++				res = FWLDR_FAIL;
++				quit = 1;
++				break;
++			}
++
++			cfg_buf[0] = '\0';
++			cfg_buf_ptr = cfg_buf;
++
++			while (l2_len > 0) {
++				struct fwldr_thrd_info tinfo_v;
++
++				snprintf(cfg_buf_ptr,
++					 sizeof(cfg_buf),
++					 "\tThrd %d: SP: 0x%08X: PC: 0x%08X: Catch: 0x%08X\n",
++					 fwldr_read_le4(l2_buf),
++					 fwldr_read_le4(l2_buf + 4),
++					 fwldr_read_le4(l2_buf + 8),
++					 fwldr_read_le4(l2_buf + 12));
++
++				tinfo_v.thrd_num = fwldr_read_le4(l2_buf);
++				tinfo_v.stack_ptr = fwldr_read_le4(l2_buf + 4);
++				tinfo_v.prog_ctr = fwldr_read_le4(l2_buf + 8);
++				tinfo_v.catch_state_addr =
++					fwldr_read_le4(l2_buf + 12);
++
++				fwldr_start_thrd(tinfo_v.thrd_num,
++						 tinfo_v.stack_ptr,
++						 tinfo_v.prog_ctr,
++						 tinfo_v.catch_state_addr);
++
++				l2_buf += (4 * sizeof(unsigned int));
++				l2_len -= (4 * sizeof(unsigned int));
++				cfg_buf_ptr += strlen(cfg_buf_ptr);
++			}
++
++			snprintf(info_buf,
++				 sizeof(info_buf),
++				 "%-12s:\n%s",
++				 "StartThrds",
++				 cfg_buf);
++
++			break;
++
++		case FWLDR_L1_CMD_ZERO_MEM:
++			/* Zero memory */
++			l1_rec.arg1 =
++				fwldr_read_le4(&l1_buf[FWLDR_L1_ARG1_OFF]);
++			l1_rec.arg2 =
++				fwldr_read_le4(&l1_buf[FWLDR_L1_ARG2_OFF]);
++
++			snprintf(info_buf,
++				 sizeof(info_buf),
++				 "%-12s: Addr: 0x%08X: Size: 0x%08X\n",
++				 "ZeroMem",
++				 l1_rec.arg1,
++				 l1_rec.arg2);
++
++			lm_v.dst_addr = l1_rec.arg1;
++			lm_v.len = l1_rec.arg2;
++
++			fwldr_zero_mem(lm_v.dst_addr, lm_v.len);
++
++			break;
++
++		case FWLDR_L1_CMD_CONFIG:
++			/* Configuration commands */
++			buf_len = (l1_rec.l2_len / 8) * 40;
++
++			if (!l2_buf) {
++				fwldr_dbg_err("%s:%d:Invalid params\n",
++					      __func__, __LINE__);
++				res = FWLDR_FAIL;
++				quit = 1;
++				break;
++			}
++
++			cfg_str = kmalloc(buf_len, GFP_KERNEL);
++
++			if (cfg_str == NULL) {
++				fwldr_dbg_err("Failed to allocate cfg_str\n");
++			} else {
++				str_curr = cfg_str;
++				str_end = cfg_str + buf_len;
++			}
++
++			do {
++				int rec_len = 0, len = 0;
++				unsigned int cmd = fwldr_read_le4(l2_buf);
++
++				if ((str_curr && cfg_str) &&
++				    ((str_end - str_curr) < 256)) {
++					size_t pos = str_curr - cfg_str;
++
++					/* Extend buffer */
++					buf_len *= 2;
++
++					str_new = krealloc(cfg_str,
++							   buf_len,
++							   GFP_KERNEL);
++
++					if (str_new == NULL) {
++						fwldr_dbg_err("%s : %d %s\n",
++							__func__,
++							__LINE__,
++							"realloc failed");
++						kfree(cfg_str);
++						cfg_str = NULL;
++						str_curr = NULL;
++						str_end = NULL;
++					} else {
++						cfg_str	= str_new;
++						/* Relocate pointers */
++						str_curr = cfg_str +
++							   pos;
++						str_end = cfg_str +
++							  buf_len;
++					}
++				}
++
++				switch (cmd) {
++				case FWLDR_CONF_CMD_PAUSE:
++					rec_len = 8;
++					/* TODO: Calculate the exact delay */
++					mdelay(2);
++					break;
++				case FWLDR_CONF_CMD_READ:
++					rec_len = 8;
++
++					rw_v.addr = fwldr_read_le4(&l2_buf[4]);
++					rw_v.val = fwldr_config_read(rw_v.addr);
++
++					if (str_curr) {
++						len = snprintf(str_curr,
++							       buf_len,
++							       "\tRead : 0x%08X\n",
++							       rw_v.addr);
++					}
++
++
++					/* Value read is in rw_v */
++					break;
++
++				case FWLDR_CONF_CMD_WRITE:
++					rec_len = 12;
++
++					rw_v.addr = fwldr_read_le4(&l2_buf[4]);
++					rw_v.val = fwldr_read_le4(&l2_buf[8]);
++
++					if (str_curr) {
++						len = snprintf(str_curr,
++							       buf_len,
++							       "\tWrite: 0x%08X: 0x%08X\n",
++							       rw_v.addr,
++							       rw_v.val);
++					}
++
++
++					fwldr_config_write(rw_v.addr, rw_v.val);
++
++					break;
++
++				case FWLDR_CONF_CMD_USER:
++					if (str_curr) {
++						unsigned int v1 = 0;
++						unsigned int v2 = 0;
++						unsigned int v3 = 0;
++						unsigned int v4 = 0;
++
++						v1 =
++						    fwldr_read_le4(&l2_buf[4]),
++						v2 =
++						    fwldr_read_le4(&l2_buf[8]),
++						v3 =
++						    fwldr_read_le4(&l2_buf[12]),
++						v4 =
++						    fwldr_read_le4(&l2_buf[16]),
++
++						len = snprintf(str_curr,
++							       buf_len,
++							       "\tUser: 0x%08X: 0x%08X: 0x%08X: 0x%08X\n",
++							       v1,
++							       v2,
++							       v3,
++							       v4);
++					}
++
++					rec_len = 20;
++					break;
++
++				default:
++					if (str_curr) {
++						len = snprintf(str_curr,
++							       buf_len,
++							       "\tUnknown: %08X (%d bytes remain)\n",
++							       cmd,
++							       l2_len);
++					}
++					break;
++				}
++
++				if ((rec_len == 0) || (res == FWLDR_FAIL))
++					break;
++
++				if (str_curr)
++					str_curr += len;
++
++				l2_buf += rec_len;
++				l2_len -= rec_len;
++			} while (l2_len > 0);
++
++			snprintf(info_buf, sizeof(info_buf),
++				 "%-12s: %d bytes %s\n", "Config",
++				 (unsigned int)(l2_buf-l2_blk),
++				 ((l2_len != 0) ? ": ERROR!!" : ""));
++			break;
++
++		case FWLDR_L1_CMD_FILENAME:
++			if (!l2_blk) {
++				fwldr_dbg_err("Invalid params to Filename\n");
++				res = FWLDR_FAIL;
++				quit = 1;
++				break;
++			}
++
++			snprintf(info_buf,
++				 sizeof(info_buf),
++				 "%-12s: %s\n",
++				 "FileName",
++				 l2_blk + 8);
++			break;
++
++		default:
++			/* Not expected */
++			snprintf(info_buf,
++				 sizeof(info_buf),
++				 "%-12s\n",
++				 "Unknown");
++			break;
++		}
++
++		kfree(l2_blk);
++
++		if (cfg_str) {
++			fwldr_dbg_info("0x%08X: %s%s",
++				       file_offset,
++				       info_buf,
++				       cfg_str);
++			kfree(cfg_str);
++			cfg_str = NULL;
++		} else {
++			fwldr_dbg_info("0x%08X: %s ",
++				       file_offset,
++				       info_buf);
++		}
++
++		if (l1_rec.nxt == FWLDR_L1_TERMINATE) {
++			unsigned int overlay_off = 0;
++
++			/* There is the possibility of further overlays.
++			 * Without additional information, the best guess is
++			 * that they start immediately after the L2 data of the
++			 * last record.
++			 */
++			l1_rec.l2_offset = fwldr_read_le4(&l1_buf[l1_rec.len -
++							  FWLDR_L1_L2OFF_OFF]);
++			l1_rec.l2_len = fwldr_read_le2(&l1_buf[l1_rec.len -
++						       FWLDR_L1_L2LEN_OFF]);
++
++			overlay_off = fwldr_virt_to_linear_off(page_size,
++							      l1_rec.l2_offset);
++			overlay_off += l1_rec.l2_len;
++
++			/* Round to next 32-bit boundary */
++			overlay_off += 3;
++			overlay_off &= ~3;
++
++			fwldr_dbg_info("\n");
++			fwldr_dbg_info("Possible next L1 Record 0x%08X\n",
++				       overlay_off);
++
++			quit = 1;
++		} else {
++			/* Move on to next L1 record */
++			prev_offset = file_offset;
++			file_offset = fwldr_virt_to_linear_off(page_size,
++							       l1_rec.nxt);
++
++			if (file_offset <= prev_offset) {
++				/* Possibly incorrect page size specified.
++				 * Stopping
++				 */
++				fwldr_dbg_err("Out of sequence record found\n");
++				quit = 1;
++			}
++		}
++	}
++
++	return res;
++}
++
++static int fwldr_wait_for_completion(void)
++{
++	int result = 1;
++	unsigned int i = 0;
++
++	/*
++	 * We want to wait until a magic value appears in the specified
++	 * location. That should only happen once the RPU is ready.
++	 */
++	while (!check_exec_signature(UCCP_THRD_EXEC_SIG) && i++ < 1000)
++		mdelay(10);
++
++	if (i == 1000)
++		result = 0;
++
++	return result;
++}
+diff --git a/drivers/soc/img/connectivity/img-fwldr.h b/drivers/soc/img/connectivity/img-fwldr.h
+new file mode 100644
+index 0000000..43b8a69
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-fwldr.h
+@@ -0,0 +1,10 @@
++#ifndef __IMG_FWLDR
++#define __IMG_FWLDR 1
++
++void fwldr_init(unsigned char *core_addr, unsigned char *gram_addr,
++		unsigned char *gram_b4_addr);
++void fwldr_stop_thrd(unsigned int tno);
++void fwldr_soft_reset(unsigned int tno);
++int fwldr_load_fw(const unsigned char *fw_data);
++
++#endif
+diff --git a/drivers/soc/img/connectivity/img-hostport.c b/drivers/soc/img/connectivity/img-hostport.c
+index 3437314..1972418 100644
+--- a/drivers/soc/img/connectivity/img-hostport.c
++++ b/drivers/soc/img/connectivity/img-hostport.c
+@@ -43,6 +43,8 @@
+ #include <linux/spinlock.h>
+ #include <linux/clk.h>
+ 
++#include <soc/img/img-connectivity.h>
++
+ #include "img-hostport.h"
+ 
+ static struct img_hostport *module;
+@@ -428,6 +430,12 @@ static void __exit img_hostport_leave(void)
+ 
+ static int __init img_hostport_entry(void)
+ {
++	/*
++	 * The following line is here purely to make sure that the current
++	 * module depends on img-connectivity when it's loaded as a module.
++	 */
++	 img_connectivity_version();
++
+ 	return platform_driver_probe(&img_uccp_driver,
+ 					img_hostport_pltfr_probe);
+ }
+-- 
+1.9.1
+

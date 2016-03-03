@@ -1,0 +1,56 @@
+From 4f7d213a504cb75e528c7470b628284d632c42c0 Mon Sep 17 00:00:00 2001
+From: Gregory Herrero <gregory.herrero@intel.com>
+Date: Wed, 29 Apr 2015 22:09:13 +0200
+Subject: [PATCH 085/153] usb: dwc2: host: add bus_suspend/bus_resume callback
+
+Update controller state to indicate suspend entry.
+
+Change-Id: I7c4fa4179f8e17775441e4705df4f4af286bef2e
+Acked-by: John Youn <johnyoun@synopsys.com>
+Signed-off-by: Gregory Herrero <gregory.herrero@intel.com>
+Signed-off-by: Felipe Balbi <balbi@ti.com>
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/usb/dwc2/hcd.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/usb/dwc2/hcd.c b/drivers/usb/dwc2/hcd.c
+index fbbbac2..2b42851 100644
+--- a/drivers/usb/dwc2/hcd.c
++++ b/drivers/usb/dwc2/hcd.c
+@@ -2313,6 +2313,22 @@ static void _dwc2_hcd_stop(struct usb_hcd *hcd)
+ 	usleep_range(1000, 3000);
+ }
+ 
++static int _dwc2_hcd_suspend(struct usb_hcd *hcd)
++{
++	struct dwc2_hsotg *hsotg = dwc2_hcd_to_hsotg(hcd);
++
++	hsotg->lx_state = DWC2_L2;
++	return 0;
++}
++
++static int _dwc2_hcd_resume(struct usb_hcd *hcd)
++{
++	struct dwc2_hsotg *hsotg = dwc2_hcd_to_hsotg(hcd);
++
++	hsotg->lx_state = DWC2_L0;
++	return 0;
++}
++
+ /* Returns the current frame number */
+ static int _dwc2_hcd_get_frame_number(struct usb_hcd *hcd)
+ {
+@@ -2683,6 +2699,9 @@ static struct hc_driver dwc2_hc_driver = {
+ 	.hub_status_data = _dwc2_hcd_hub_status_data,
+ 	.hub_control = _dwc2_hcd_hub_control,
+ 	.clear_tt_buffer_complete = _dwc2_hcd_clear_tt_buffer_complete,
++
++	.bus_suspend = _dwc2_hcd_suspend,
++	.bus_resume = _dwc2_hcd_resume,
+ };
+ 
+ /*
+-- 
+1.9.1
+

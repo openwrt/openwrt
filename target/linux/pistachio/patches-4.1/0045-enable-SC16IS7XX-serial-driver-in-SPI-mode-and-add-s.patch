@@ -1,0 +1,84 @@
+From 5a8eaee704685d3da70ece0a296d1b1d6c8c0bc3 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Mon, 27 Jul 2015 10:42:07 +0530
+Subject: [PATCH 045/153] enable SC16IS7XX serial driver in SPI mode and add
+ sc16is752 chip on spim0
+
+This change enables SC16IS7XX serial driver in pistachio_defconfig and adds
+sc16is752 with support only for driving the led's. For using the uarts,
+sc16is752 has to be driven by 16Mhz clock for which cc2520 driver has to be
+modified.
+
+Change-Id: I4b059562683032f49b563901ddb9c52887a2fb78
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Signed-off-by: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 23 ++++++++++++++++++++++-
+ arch/mips/configs/pistachio_defconfig             |  3 +++
+ 2 files changed, 25 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 233d0cd..6b889b8 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -74,6 +74,16 @@
+ 				format = "i2s";
+ 			};
+ 		};
++
++		/* EXT clock from cc2520 is fed to sc16is752,
++		cc2520 driver is not modifying the clock and
++		on reset cc2520 starts with 1Mhz EXT clock */
++		cc2520_ext_clk: cc2520-ext-clk {
++			compatible = "fixed-clock";
++			#clock-cells = <0>;
++			clock-frequency = <1000000>;
++			clock-output-names = "cc2520_ext_clock";
++        };
+ };
+ 
+ &spfi0 {
+@@ -81,7 +91,7 @@
+ 	pinctrl-0 = <&spim0_pins>;
+ 	pinctrl-names = "default";
+ 
+-	cs-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
++	cs-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>, <&gpio0 2 GPIO_ACTIVE_HIGH>;
+ 
+ 	cc2520@0 {
+ 		compatible = "ti,cc2520";
+@@ -94,6 +104,17 @@
+ 		vreg-gpio = <&gpio2 12 GPIO_ACTIVE_HIGH>;
+ 		reset-gpio = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+ 	};
++
++	sc16is752@1 {
++		compatible = "nxp,sc16is752";
++		reg = <1>;
++		clocks = <&cc2520_ext_clk>;
++		spi-max-frequency = <15000000>;
++		interrupt-parent = <&gpio0>;
++		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
+ };
+ 
+ &spfi1 {
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 4137909..716767e 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -211,6 +211,9 @@ CONFIG_SERIAL_8250=y
+ CONFIG_SERIAL_8250_CONSOLE=y
+ CONFIG_SERIAL_8250_DW=y
+ CONFIG_SERIAL_OF_PLATFORM=y
++CONFIG_SERIAL_SC16IS7XX=m
++# CONFIG_SERIAL_SC16IS7XX_I2C is not set
++CONFIG_SERIAL_SC16IS7XX_SPI=y
+ CONFIG_HW_RANDOM=y
+ CONFIG_TCG_TPM=y
+ CONFIG_I2C=y
+-- 
+1.9.1
+

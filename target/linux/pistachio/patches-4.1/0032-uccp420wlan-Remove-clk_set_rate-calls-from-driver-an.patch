@@ -1,0 +1,143 @@
+From 9e841c59c1ed58a5ba6967d81a9a33f859f99026 Mon Sep 17 00:00:00 2001
+From: sridhar nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+Date: Fri, 3 Jul 2015 16:26:43 +0530
+Subject: [PATCH 032/153] uccp420wlan: Remove clk_set_rate calls from driver
+ and set it from dts entry
+
+uccp420wlan driver will not be setting clock rates anymore. This apparently
+needs to be configured from dtsi.
+
+uccp420wlan driver will not be setting clock rates anymore. This apparently
+needs to be configured from dtsi file so updated 'wifi: uccp@18480000' entry
+to set WIFI_PLL, RPU_CORE clocks to 320Mhz
+
+Change-Id: I7bf66cee51a6f5ac02595d753ed74a492b05d6f6
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi        | 21 +++++++++++----------
+ .../net/wireless/uccp420wlan/src/hal_hostport.c    | 22 ++++++++++++++++++----
+ 2 files changed, 29 insertions(+), 14 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index c49b039..63ba464 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -921,50 +921,51 @@
+ 		interrupts = <GIC_SHARED 67 IRQ_TYPE_LEVEL_HIGH>;
+ 		interrupt-names = "uccpirq";
+ 		clocks = <&clk_core CLK_RPU_CORE>,
+-			<&clk_core CLK_RPU_CORE_DIV>,
+ 			<&clk_core CLK_RPU_V>,
+ 			<&clk_core CLK_RPU_L>,
+ 			<&clk_core CLK_RPU_SLEEP>,
+-			<&clk_core CLK_WIFI_PLL>,
+ 			<&clk_core CLK_WIFI_ADC>,
+ 			<&clk_core CLK_WIFI_DAC>,
+ 			<&clk_core CLK_EVENT_TIMER>,
+ 			<&cr_periph SYS_CLK_EVENT_TIMER>,
+ 			<&clk_core CLK_AUX_ADC>,
+ 			<&clk_core CLK_AUX_ADC_INTERNAL>;
+-		clock-names = "rpu_core", "rpu_core_div", "rpu_v", "rpu_l", "rpu_sleep",
+-			"wifi_pll", "wifi_adc", "wifi_dac", "event_timer",
+-			"sys_event_timer", "aux_adc", "aux_adc_internal";
++		clock-names = "rpu_core", "rpu_v", "rpu_l", "rpu_sleep",
++				"wifi_adc", "wifi_dac", "event_timer",
++				"sys_event_timer", "aux_adc", "aux_adc_internal";
+ 		assigned-clocks = <&clk_core CLK_RPU_L_DIV>,
+ 			<&clk_core CLK_RPU_L_MUX>,
+ 			<&clk_core CLK_RPU_L_PLL_MUX>,
+ 			<&clk_core CLK_RPU_V_DIV>,
+ 			<&clk_core CLK_RPU_V_PLL_MUX>,
+-			<&clk_core CLK_RPU_CORE_DIV>,
+ 			<&clk_core CLK_WIFI_PLL_MUX>,
+ 			<&clk_core CLK_WIFI_DIV4_MUX>,
+ 			<&clk_core CLK_WIFI_DIV8_MUX>,
+-			<&clk_core CLK_RPU_SLEEP_DIV>;
++			<&clk_core CLK_RPU_SLEEP_DIV>,
++			<&clk_core CLK_WIFI_PLL>,
++			<&clk_core CLK_RPU_CORE_DIV>;
+ 		assigned-clock-parents = <0>,
+ 			<&clk_core CLK_RPU_L_PLL_MUX>,
+ 			<&clk_core CLK_RPU_L_PLL>,
+ 			<0>,
+ 			<&clk_core CLK_RPU_V_PLL>,
+-			<0>,
+ 			<&clk_core CLK_WIFI_PLL>,
+ 			<&clk_core CLK_WIFI_DIV4>,
+ 			<&clk_core CLK_WIFI_DIV8>,
++			<0>,
++			<0>,
+ 			<0>;
+ 		assigned-clock-rates = <559000000>,
+ 			<0>,
+ 			<0>,
+ 			<598000000>,
+ 			<0>,
+-			<320000000>,
+ 			<0>,
+ 			<0>,
+ 			<0>,
+-			<52000>;
++			<52000>,
++			<320000000>,
++			<320000000>;
+ 		io-channels = <&adc 4>, <&adc 5>;
+ 	};
+ };
+diff --git a/drivers/net/wireless/uccp420wlan/src/hal_hostport.c b/drivers/net/wireless/uccp420wlan/src/hal_hostport.c
+index 71a2af9..c67f530 100644
+--- a/drivers/net/wireless/uccp420wlan/src/hal_hostport.c
++++ b/drivers/net/wireless/uccp420wlan/src/hal_hostport.c
+@@ -1084,7 +1084,7 @@ static int cleanup_all_resources(void)
+ 	return 0;
+ }
+ 
+-static int uccp420_pltfr_probe(struct platform_device *pdev)
++static int uccp420_pltfr_probe (struct platform_device *pdev)
+ {
+ 	struct resource *res;
+ 	int irq;
+@@ -1171,9 +1171,6 @@ static int uccp420_pltfr_probe(struct platform_device *pdev)
+ 	if (pp && pp->value)
+ 		num_streams_vpd = *((int *)pp->value);
+ 
+-	clk_set_rate(devm_clk_get(&pdev->dev, "wifi_pll"), 320000000);
+-	clk_set_rate(devm_clk_get(&pdev->dev, "rpu_core_div"), 320000000);
+-
+ 	clk_prepare_enable(devm_clk_get(&pdev->dev, "rpu_core"));
+ 	clk_prepare_enable(devm_clk_get(&pdev->dev, "rpu_l"));
+ 	clk_prepare_enable(devm_clk_get(&pdev->dev, "rpu_v"));
+@@ -1195,6 +1192,22 @@ static int uccp420_pltfr_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
++static int uccp420_pltfr_remove (struct platform_device *pdev)
++{
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "rpu_core"));
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "rpu_l"));
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "rpu_v"));
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "rpu_sleep"));
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "wifi_adc"));
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "wifi_dac"));
++
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "event_timer"));
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "sys_event_timer"));
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "aux_adc"));
++	clk_disable_unprepare (devm_clk_get(&pdev->dev, "aux_adc_internal"));
++
++	return 0;
++}
+ 
+ static const struct of_device_id uccp420_dt_ids[] = {
+ 	{ .compatible = "img,pistachio-uccp"},
+@@ -1204,6 +1217,7 @@ MODULE_DEVICE_TABLE(of, uccp420_dt_ids);
+ 
+ struct platform_driver img_uccp_driver = {
+ 	.probe = uccp420_pltfr_probe,
++	.remove = uccp420_pltfr_remove,
+ 	.driver = {
+ 		.name     = "uccp420",
+ 		.owner    = THIS_MODULE,
+-- 
+1.9.1
+

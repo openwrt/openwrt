@@ -1,0 +1,1946 @@
+From 854b8736a4667497032dea577397b7434f62de58 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Wed, 27 May 2015 17:28:36 +0100
+Subject: [PATCH 022/153] pistachio: bt: add img-bt and img-hostport driver
+
+Patch adds a bluetooth driver and tty based
+hostport support for the pistachio platform.
+
+Limitations of this revision:
+* img-hostport driver supports just one client,
+* no firmware loader, all needed setup has
+  to be done via Codescape.
+* conflicting with uccp420 wlan driver.
+
+BUG=none
+TEST=tested on Danube BuB with Bluez 5,
+both local commands and data transfer work
+
+Change-Id: I8f974b22f841bb66cca80c4b351e25d8e9e554c6
+Signed-off-by: Bartosz Flis <Bartosz.Flis@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi       |  41 ++
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts |   8 +
+ drivers/bluetooth/Kconfig                         |   9 +
+ drivers/bluetooth/Makefile                        |   2 +
+ drivers/bluetooth/pistachio/Makefile              |   3 +
+ drivers/bluetooth/pistachio/circ-buf-ext.h        |  98 ++++
+ drivers/bluetooth/pistachio/gateway.h             |  44 ++
+ drivers/bluetooth/pistachio/img-bt-chardev.c      | 228 +++++++++
+ drivers/bluetooth/pistachio/img-bt-main.c         | 545 ++++++++++++++++++++++
+ drivers/bluetooth/pistachio/img-hostport-main.c   | 440 +++++++++++++++++
+ drivers/bluetooth/pistachio/img-hostport-main.h   |  80 ++++
+ drivers/bluetooth/pistachio/img-transport.h       |  63 +++
+ drivers/bluetooth/pistachio/payload.c             | 162 +++++++
+ drivers/bluetooth/pistachio/payload.h             |  58 +++
+ include/uapi/linux/serial_core.h                  |   3 +
+ 15 files changed, 1784 insertions(+)
+ create mode 100644 drivers/bluetooth/pistachio/Makefile
+ create mode 100644 drivers/bluetooth/pistachio/circ-buf-ext.h
+ create mode 100644 drivers/bluetooth/pistachio/gateway.h
+ create mode 100644 drivers/bluetooth/pistachio/img-bt-chardev.c
+ create mode 100644 drivers/bluetooth/pistachio/img-bt-main.c
+ create mode 100644 drivers/bluetooth/pistachio/img-hostport-main.c
+ create mode 100644 drivers/bluetooth/pistachio/img-hostport-main.h
+ create mode 100644 drivers/bluetooth/pistachio/img-transport.h
+ create mode 100644 drivers/bluetooth/pistachio/payload.c
+ create mode 100644 drivers/bluetooth/pistachio/payload.h
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 40eb931..a5a68e6 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -43,6 +43,47 @@
+ 		};
+ 	};
+ 
++	uccp: bt-uccp@0 {
++		compatible = "img,pistachio-uccp-base";
++		/* RPU system bus */
++		reg = <0x18480000 0x40000>;
++		status = "disabled";
++		interrupts = <GIC_SHARED 67 IRQ_TYPE_LEVEL_HIGH>;
++		clocks = <&clk_core CLK_RPU_CORE>,
++			<&clk_core CLK_BT>,
++			<&clk_core CLK_BT_DIV4>,
++			<&clk_core CLK_BT_DIV8>;
++		clock-names = "rpu_core",
++			"bt",
++			"bt_div4",
++			"bt_div8";
++		assigned-clocks = <&clk_core CLK_BT_PLL_MUX>,
++			<&clk_core CLK_RPU_CORE_DIV>,
++			<&clk_core CLK_BT_DIV>,
++			<&clk_core CLK_BT_DIV4_DIV>,
++			<&clk_core CLK_BT_DIV8_DIV>,
++			<&clk_core CLK_BT_PLL>;
++		assigned-clock-parents = <&clk_core CLK_BT_PLL>;
++		assigned-clock-rates = <0>,
++			<52000000>,
++			<104000000>,
++			<26000000>,
++			<13000000>,
++			<0>;
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++	};
++
++	bt: bt@0 {
++		compatible = "img,pistachio-uccp-bt";
++		reg = <0x1A000000 0x1000>;
++		status = "disabled";
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++	};
++
+ 	i2c0: i2c@18100000 {
+ 		compatible = "img,scb-i2c";
+ 		reg = <0x18100000 0x200>;
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 793c86b4..347ab9e 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -61,6 +61,14 @@
+ 	};
+ };
+ 
++&uccp {
++    status = "okay";
++};
++
++&bt {
++    status = "okay";
++};
++
+ &uart0 {
+ 	status = "okay";
+ };
+diff --git a/drivers/bluetooth/Kconfig b/drivers/bluetooth/Kconfig
+index ed5c273..123085d 100644
+--- a/drivers/bluetooth/Kconfig
++++ b/drivers/bluetooth/Kconfig
+@@ -285,4 +285,13 @@ config BT_WILINK
+ 	  Say Y here to compile support for Texas Instrument's WiLink7 driver
+ 	  into the kernel or say M to compile it as module (btwilink).
+ 
++config BT_IMG
++	tristate "Imagination Technologies Bluetooth driver"
++	depends on BT_HCIUART && BT_HCIUART_H4
++	help
++	  Imagination Technologies Bluetooth driver and accompanying
++	  Host Port transport driver.
++
++	  Say Y here to compile support for Imagination Technologies' Bluetooth
++	  driver into the kernel or say M to compile it as module.
+ endmenu
+diff --git a/drivers/bluetooth/Makefile b/drivers/bluetooth/Makefile
+index dd0d9c4..098d213 100644
+--- a/drivers/bluetooth/Makefile
++++ b/drivers/bluetooth/Makefile
+@@ -2,6 +2,8 @@
+ # Makefile for the Linux Bluetooth HCI device drivers.
+ #
+ 
++obj-$(CONFIG_BT_IMG)	+=	pistachio/
++
+ obj-$(CONFIG_BT_HCIVHCI)	+= hci_vhci.o
+ obj-$(CONFIG_BT_HCIUART)	+= hci_uart.o
+ obj-$(CONFIG_BT_HCIBCM203X)	+= bcm203x.o
+diff --git a/drivers/bluetooth/pistachio/Makefile b/drivers/bluetooth/pistachio/Makefile
+new file mode 100644
+index 0000000..c86891b
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/Makefile
+@@ -0,0 +1,3 @@
++obj-$(CONFIG_BT_IMG)	+=	img-hostport.o img-bt.o
++img-hostport-objs := img-hostport-main.o
++img-bt-objs := img-bt-main.o img-bt-chardev.o payload.o
+diff --git a/drivers/bluetooth/pistachio/circ-buf-ext.h b/drivers/bluetooth/pistachio/circ-buf-ext.h
+new file mode 100644
+index 0000000..908d2a9
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/circ-buf-ext.h
+@@ -0,0 +1,98 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : circ_buf_ext.h
++ ***
++ *** File Description:
++ *** This file contains interface and implementation of an extension to
++ *** the Linux circ_buf module
++ ***
++ ******************************************************************************
++ *END*************************************************************************/
++
++#ifndef __CIRC_BUF_EXT_H__
++#define __CIRC_BUF_EXT_H__ 1
++
++#include <linux/circ_buf.h>
++
++#define DEFINE_CIRC_BUF_EXT_TYPE(mem_type, name) \
++	struct name {\
++		mem_type *base;\
++		int tail;\
++		int head;\
++		int size;\
++	};
++
++DEFINE_CIRC_BUF_EXT_TYPE(u8, circ_buf_ext);
++
++#define circ_buf_ext_scroll(field, buf_ptr, by) \
++	((buf_ptr)->field = ((buf_ptr)->field + (by)) & ((buf_ptr)->size - 1))
++#define circ_buf_ext_take(buf, n) \
++	circ_buf_ext_scroll(head, buf, n)
++#define circ_buf_ext_give(buf, n) \
++	circ_buf_ext_scroll(tail, buf, n)
++#define circ_buf_ext_read_offset(buf, idx) \
++	((buf)->base + (((buf)->tail + (idx)) & ((buf)->size - 1)))
++#define circ_buf_ext_write_offset(buf, idx) \
++	((buf)->base + (((buf)->head + (idx)) & ((buf)->size - 1)))
++
++static inline void circ_buf_ext_io_to_krn(
++		struct circ_buf_ext *to,
++		struct circ_buf_ext *from,
++		unsigned int n)
++{
++	unsigned int idx;
++	u8 tmp;
++	for (idx = 0; idx < n; idx++) {
++		tmp = ioread8((u8 __iomem *)circ_buf_ext_read_offset(from,
++						idx));
++		*circ_buf_ext_write_offset(to, idx) = tmp;
++	}
++	circ_buf_ext_take(to, n);
++	circ_buf_ext_give(from, n);
++}
++
++static inline void circ_buf_ext_krn_to_io(
++		struct circ_buf_ext *to,
++		struct circ_buf_ext *from,
++		unsigned int n)
++{
++	unsigned int idx;
++	u8 tmp;
++	for (idx = 0; idx < n; idx++) {
++		tmp = *circ_buf_ext_read_offset(from, idx);
++		iowrite8(tmp, (u8 __iomem *)circ_buf_ext_write_offset(to, idx));
++	}
++	circ_buf_ext_take(to, n);
++	circ_buf_ext_give(from, n);
++}
++
++static inline int circ_buf_ext_space(struct circ_buf_ext *buf)
++{
++	return CIRC_SPACE(buf->head, buf->tail, buf->size);
++}
++
++static inline int circ_buf_ext_count(struct circ_buf_ext *buf)
++{
++	return CIRC_CNT(buf->head, buf->tail, buf->size);
++}
++
++#endif
+diff --git a/drivers/bluetooth/pistachio/gateway.h b/drivers/bluetooth/pistachio/gateway.h
+new file mode 100644
+index 0000000..2b15742
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/gateway.h
+@@ -0,0 +1,44 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : gateway.h
++ ***
++ *** File Description:
++ *** This file contains interface declarations for gateway to the userspace
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++#ifndef __GATEWAY_H__
++#define __GATEWAY_H__
++
++#include <linux/device.h>
++#include <linux/list.h>
++
++struct payload;
++
++typedef void (*push_message)(struct payload *pld);
++
++int gateway_init(push_message, struct device *pdev);
++void gateway_exit(void);
++int gateway_send(struct payload *pld);
++
++#endif /* __GATEWAY_H__ */
+diff --git a/drivers/bluetooth/pistachio/img-bt-chardev.c b/drivers/bluetooth/pistachio/img-bt-chardev.c
+new file mode 100644
+index 0000000..498e5b5
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/img-bt-chardev.c
+@@ -0,0 +1,228 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-bt-chardev.h
++ ***
++ *** File Description:
++ *** This file contains concrete implementation of gateway interface -
++ *** - serial device.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++#include <linux/device.h>
++#include <linux/serial.h>
++#include <linux/serial_core.h>
++#include <linux/string.h>
++#include <linux/tty_flip.h>
++
++#include "circ-buf-ext.h"
++#include "gateway.h"
++#include "payload.h"
++
++static const char *client_name = "img-bt";
++#define dbg(format, ...) pr_debug("%s: " format, client_name, ## __VA_ARGS__)
++#define err(format, ...) pr_err("%s: " format, client_name, ## __VA_ARGS__)
++#define dbgn(format, ...) dbg(format "\n", ## __VA_ARGS__)
++#define errn(format, ...) err(format "\n", ## __VA_ARGS__)
++
++/*
++ * *** Private storage ***
++ */
++
++static struct {
++	push_message push_client_msg;
++	struct uart_port port;
++} gateway;
++
++static struct uart_driver img_bt_uart_driver = {
++	.driver_name    = "img-bt-uart",
++	.dev_name       = "ttyHS",
++	.nr             = 1,
++};
++
++/*
++ * *** Private procs ***
++ */
++
++static unsigned char next_char(void *port, unsigned int idx)
++{
++	unsigned char c;
++	struct uart_port *uport = (struct uart_port *)port;
++	struct circ_buf *xmit = &uport->state->xmit;
++	(void)idx;
++
++	c = xmit->buf[xmit->tail];
++	xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
++	uport->icount.tx++;
++	return c;
++}
++
++static unsigned int img_bt_tx_empty(struct uart_port *port) { return 0; }
++static void img_bt_set_mctrl(struct uart_port *port, unsigned int mctrl) {}
++static unsigned int img_bt_get_mctrl(struct uart_port *port) { return 0; }
++static void img_bt_break_ctl(struct uart_port *port, int break_state) {}
++static void img_bt_enable_ms(struct uart_port *port) {}
++static void img_bt_release_port(struct uart_port *port) {}
++static int img_bt_request_port(struct uart_port *port) { return 0; }
++static void img_bt_config_port(struct uart_port *port, int flags) {}
++static int img_bt_verify_port(struct uart_port *port,
++		struct serial_struct *ser) { return 0; }
++static void img_bt_set_termios(struct uart_port *port, struct ktermios *new,
++		struct ktermios *old) {}
++
++static const char *img_bt_type(struct uart_port *port)
++{
++	return client_name;
++}
++
++static void img_bt_stop_rx(struct uart_port *port)
++{
++	/*
++	 * TODO: implement
++	 */
++}
++
++static void img_bt_start_tx(struct uart_port *port)
++{
++	struct payload *pld;
++	/*
++	 * As this driver is intended to be used with the HCI line
++	 * discipline, whenever this is called it means
++	 * that some data has arrived from the top. Effectively,
++	 * this proc plays the role of a TX interrupt in a proper
++	 * UART driver.
++	 */
++
++	/*
++	 * Author doesn't like this. State structure is supposed to be private
++	 * to serial_core. TODO: find another way.
++	 */
++	struct circ_buf *xmit = &port->state->xmit;
++
++	if (uart_circ_empty(xmit))
++		return;
++
++	/*
++	 * next_char is guaranteed not to be called
++	 * if this function returns error
++	 */
++	pld = payload_from_string(uart_circ_chars_pending(xmit),
++		next_char,
++		port);
++	if (IS_ERR_OR_NULL(pld))
++		return;
++
++	gateway.push_client_msg(pld);
++
++}
++
++static void img_bt_stop_tx(struct uart_port *port)
++{
++	/*
++	 * TODO: implement
++	 */
++}
++
++static void img_bt_shutdown(struct uart_port *port)
++{
++	/*
++	 * TODO: implement
++	 */
++}
++
++static int img_bt_startup(struct uart_port *port)
++{
++	/*
++	 * TODO: implement
++	 */
++	return 0;
++}
++
++/* serial core callbacks */
++static struct uart_ops img_bt_ops = {
++	.tx_empty       = img_bt_tx_empty,
++	.get_mctrl      = img_bt_get_mctrl,
++	.set_mctrl      = img_bt_set_mctrl,
++	.start_tx       = img_bt_start_tx,
++	.stop_tx        = img_bt_stop_tx,
++	.stop_rx        = img_bt_stop_rx,
++	.enable_ms      = img_bt_enable_ms,
++	.break_ctl      = img_bt_break_ctl,
++	.startup        = img_bt_startup,
++	.shutdown       = img_bt_shutdown,
++	.set_termios    = img_bt_set_termios,
++	.type           = img_bt_type,
++	.release_port   = img_bt_release_port,
++	.request_port   = img_bt_request_port,
++	.config_port    = img_bt_config_port,
++	.verify_port    = img_bt_verify_port,
++};
++
++/*
++ * *** Public API ***
++ */
++
++int gateway_init(push_message push_f, struct device *pdev)
++{
++	int ret;
++
++	ret = uart_register_driver(&img_bt_uart_driver);
++	if (ret) {
++		errn("failed to register serial driver : errno %d", ret);
++		goto uart_register_driver_failed;
++	}
++
++	gateway.push_client_msg = push_f;
++
++	memset(&gateway.port, 0, sizeof(gateway.port));
++	gateway.port.dev = pdev;
++	gateway.port.ops = &img_bt_ops;
++	gateway.port.type = PORT_HOSTPORT;
++	ret = uart_add_one_port(&img_bt_uart_driver, &gateway.port);
++	if (ret) {
++		errn("adding uart port failed");
++		goto uart_add_one_port_failed;
++	}
++	return 0;
++
++uart_add_one_port_failed:
++	uart_unregister_driver(&img_bt_uart_driver);
++uart_register_driver_failed:
++	return ret;
++}
++
++void gateway_exit(void)
++{
++	uart_remove_one_port(&img_bt_uart_driver, &gateway.port);
++	uart_unregister_driver(&img_bt_uart_driver);
++}
++
++int gateway_send(struct payload *pld)
++{
++	tty_insert_flip_string(&gateway.port.state->port,
++		payload_raw(pld),
++		payload_length(pld));
++	tty_flip_buffer_push(&gateway.port.state->port);
++	payload_delete(pld);
++
++	return 0;
++}
+diff --git a/drivers/bluetooth/pistachio/img-bt-main.c b/drivers/bluetooth/pistachio/img-bt-main.c
+new file mode 100644
+index 0000000..2376664
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/img-bt-main.c
+@@ -0,0 +1,545 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-bt-main.c
++ ***
++ *** File Description:
++ *** This file contains the implementation of the IMG Bluetooth
++ *** transport protocol.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/kfifo.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include <linux/string.h>
++#include <linux/types.h>
++#include <linux/workqueue.h>
++
++#include <soc/img/img-transport.h>
++
++#include "circ-buf-ext.h"
++#include "gateway.h"
++#include "payload.h"
++
++static const char *client_name = "img-bt";
++#define dbg(format, ...) pr_debug("%s: " format, client_name, ## __VA_ARGS__)
++#define err(format, ...) pr_err("%s: " format, client_name, ## __VA_ARGS__)
++#define dbgn(format, ...) dbg(format "\n", ## __VA_ARGS__)
++#define errn(format, ...) err(format "\n", ## __VA_ARGS__)
++#define diagerrn(format, ...) \
++	errn("%s : %d : " format, __func__, __LINE__, ## __VA_ARGS__)
++#define diagdbgn(format, ...) \
++	dbgn("%s : %d : " format, __func__, __LINE__, ## __VA_ARGS__)
++
++#define ACK 1
++#define REQUEST 0
++#define CONTENT_MASK 0x7fff
++#define CONTENT(msg) (msg & CONTENT_MASK)
++#define TYPE_MASK 0x8000
++#define TYPE(msg) ((msg & TYPE_MASK) >> 15)
++#define RPU_ACK(length) ((u16)(length | 0x8000))
++#define RPU_REQ(length) ((u16)(length & 0x7FFF))
++
++typedef void __iomem *ioaddr_t;
++
++/*
++ * TODO: parameterize buffer length through module params
++ */
++static const resource_size_t buffer_length = 0x800;
++
++static struct workqueue_struct *img_bt_workqueue;
++
++static struct {
++	struct circ_buf_ext tx;
++	struct circ_buf_ext rx;
++	phys_addr_t phys_base;
++	ioaddr_t virt_base;
++	resource_size_t length;
++} xmit_buffers;
++
++/*
++ * *** Work structures depot ***
++ *
++ * TODO: measure how many work_structs are actually needed
++ * with ACLs, because for any other command there should
++ * only be one msg in that ring buffer at any given time.
++ *
++ */
++
++#define WORK_DEPOT_SIZE (1<<5)
++#define TX_BACKLOG_SIZE (1<<5)
++struct message_xfer {
++	union {
++		struct payload *pld;
++		u16 req_length;
++	};
++	struct work_struct tbd;
++};
++static struct message_xfer work_store[WORK_DEPOT_SIZE];
++static DEFINE_KFIFO(work_depot, struct message_xfer*, WORK_DEPOT_SIZE);
++static DEFINE_KFIFO(tx_backlog, struct payload*, TX_BACKLOG_SIZE);
++
++static int work_depot_init(void)
++{
++	int i = 0;
++	for (i = 0; i < WORK_DEPOT_SIZE; i++) {
++		kfifo_put(&work_depot, work_store + i);
++	}
++	return 0;
++}
++
++static struct message_xfer *prepare_work(work_func_t todo, unsigned long data)
++{
++	struct message_xfer *work;
++	if (!kfifo_get(&work_depot, &work)) {
++		errn("no free work structures");
++		return NULL;
++	}
++	INIT_WORK(&work->tbd, todo);
++	return work;
++}
++
++static unsigned char next_char(void *buffer, unsigned idx)
++{
++	struct circ_buf_ext *rx;
++	u8 retval;
++
++	rx = (struct circ_buf_ext *)buffer;
++
++	retval = (u8)ioread8((void __iomem *)circ_buf_ext_read_offset(rx, idx));
++
++	return retval;
++}
++
++static void payload_to_circ_buf_ext(
++		const struct payload *pld,
++		struct circ_buf_ext *buf)
++{
++	char c;
++	int i;
++	int length = payload_length(pld);
++
++	print_hex_dump(KERN_DEBUG, "payload: ", DUMP_PREFIX_NONE,
++			payload_length(pld), 1, payload_raw(pld),
++			payload_length(pld), 1);
++	for (i = 0; i < length; i++) {
++		c = payload_at(pld, i);
++		iowrite8(c, (void __iomem *)circ_buf_ext_write_offset(buf, i));
++	}
++	circ_buf_ext_take(buf, length);
++}
++
++/*
++ * *** Worker procs ***
++ */
++
++static void ack_from_controller(struct work_struct *tbd)
++{
++	struct message_xfer *work = container_of(tbd, struct message_xfer, tbd);
++	u16 payload_length = work->req_length;
++
++	circ_buf_ext_give(&xmit_buffers.tx, payload_length);
++
++	kfifo_put(&work_depot, work);
++}
++
++static void req_from_controller(struct work_struct *tbd)
++{
++	u16 user_data_length;
++	struct payload *pld;
++
++	struct message_xfer *work = container_of(tbd, struct message_xfer, tbd);
++	/*
++	 * This is the length of the data that has just arrived
++	 */
++	user_data_length = work->req_length;
++
++	/*
++	 * Acknowledge the reception of new data
++	 * by updating the tracking structure accordingly.
++	 * Assume the other side behaves well and doesn't
++	 * write beyond the buffer capacity.
++	 */
++	circ_buf_ext_take(&xmit_buffers.rx, user_data_length);
++
++	if (0 == user_data_length)
++		goto exit;
++
++	/*
++	 * Push messages going from the controller
++	 */
++	pld = payload_from_string(user_data_length, next_char,
++		&xmit_buffers.rx);
++	/* TODO: service this call's failure */
++	gateway_send(pld);
++
++	circ_buf_ext_give(&xmit_buffers.rx, user_data_length);
++	img_transport_notify(RPU_ACK(user_data_length));
++
++exit:
++	kfifo_put(&work_depot, work);
++}
++
++static void req_to_controller(struct work_struct *tbd)
++{
++	int space_needed, space_available;
++	struct payload *pld;
++
++	struct message_xfer *work = container_of(tbd, struct message_xfer, tbd);
++	pld = work->pld;
++	if (IS_ERR_OR_NULL(pld)) {
++		diagerrn("payload is not a valid pointer");
++		goto exit;
++	}
++
++	space_needed = payload_length(pld);
++	space_available = circ_buf_ext_space(&xmit_buffers.tx);
++	if (space_needed <= space_available) {
++		/*
++		 * Process message going to the controller
++		 */
++		payload_to_circ_buf_ext(pld, &xmit_buffers.tx);
++		payload_delete(pld);
++		img_transport_notify(RPU_REQ(space_needed));
++	} else {
++		/*
++		 * Save for backlog processing, which should be fired on every
++		 * poke confirmation and controller ACK
++		 */
++		if (kfifo_put(&tx_backlog, pld)) {
++			diagerrn("no space in backlog, dropping payload");
++			payload_delete(pld);
++		}
++	}
++
++exit:
++	kfifo_put(&work_depot, work);
++}
++
++static void do_tx_backlog(struct work_struct *tbd)
++{
++	struct payload *pld;
++	int dummy, length_sum = 0;
++	struct message_xfer *work = container_of(tbd, struct message_xfer, tbd);
++
++	if (kfifo_is_empty(&tx_backlog))
++		goto exit;
++
++	while (true) {
++		if (!kfifo_peek(&tx_backlog, &pld)) {
++			/* The fifo was empty */
++			break;
++		}
++		if (circ_buf_ext_space(&xmit_buffers.tx) < payload_length(pld))
++			break;
++
++		length_sum += payload_length(pld);
++		/*
++		 * The following call must succeed because we checked
++		 * kfifo_peek and the fifo is managed only by this
++		 * background thread.
++		 *
++		 * Dummy read just to make __must_check_helper satisfied
++		 */
++		dummy = kfifo_get(&tx_backlog, &pld);
++		payload_to_circ_buf_ext(pld, &xmit_buffers.tx);
++		payload_delete(pld);
++	}
++
++	img_transport_notify(RPU_REQ((u16)length_sum));
++
++exit:
++	(void)kfifo_put(&work_depot, work);
++}
++
++/*
++ * *** Message handlers ***
++ */
++static void handle_gateway_message(struct payload *pld)
++{
++	struct message_xfer *backlog = prepare_work(do_tx_backlog, 1);
++	struct message_xfer *work = prepare_work(req_to_controller,
++			(unsigned long)pld);
++	work->pld = pld;
++	if (NULL == work || NULL == backlog) {
++		diagerrn(
++			"no more free work structures, payload dropped");
++		payload_delete(pld);
++		return;
++	}
++	if (!queue_work(img_bt_workqueue, &backlog->tbd) ||
++			!queue_work(img_bt_workqueue, &work->tbd)) {
++		diagerrn("bug : work already scheduled");
++	}
++}
++
++static void handle_controller_message(u16 user_data)
++{
++	struct message_xfer *work1, *work2;
++	unsigned int content;
++	content = CONTENT(user_data);
++	switch (TYPE(user_data)) {
++	case ACK:
++		/* An acknowledgment has been received */
++		work1 = prepare_work(ack_from_controller, content);
++		work1->req_length = content;
++		/* Process whatever may be pending in the TX backlog */
++		work2 = prepare_work(do_tx_backlog, 0);
++		if (NULL == work1 || NULL == work2)
++			diagerrn("no more free work structures");
++		queue_work(img_bt_workqueue, &work1->tbd);
++		queue_work(img_bt_workqueue, &work2->tbd);
++		break;
++	case REQUEST:
++		/* A data request has arrived */
++		work1 = prepare_work(req_from_controller, content);
++		work1->req_length = content;
++		queue_work(img_bt_workqueue, &work1->tbd);
++		break;
++	default:
++		errn("received unknown message type from controller");
++	}
++}
++
++/*
++ * *** Platform API ***
++ */
++
++static int img_bt_pltfr_memsetup(void)
++{
++	img_bt_workqueue = create_singlethread_workqueue("img_bt_workqueue");
++	if (IS_ERR_OR_NULL(img_bt_workqueue))
++		return PTR_ERR(img_bt_workqueue);
++
++	return 0;
++}
++
++static void img_bt_pltfr_memsetup_rollback(void)
++{
++	destroy_workqueue(img_bt_workqueue);
++	memset(&xmit_buffers, 0 , sizeof(xmit_buffers));
++	return;
++}
++
++static int img_bt_pltfr_dtsetup(struct platform_device *pdev)
++{
++	const struct resource *buffers_area = platform_get_resource(pdev,
++			IORESOURCE_MEM, 0);
++	if (NULL == buffers_area) {
++		errn("no DTS entry for buffers base address");
++		return -ENOENT;
++	}
++	xmit_buffers.phys_base =
++		(phys_addr_t)buffers_area->start;
++	xmit_buffers.length =
++		(resource_size_t)(buffers_area->end - buffers_area->start + 1);
++
++	return 0;
++}
++
++static void img_bt_pltfr_dtsetup_rollback(void)
++{
++	return;
++}
++
++static int img_bt_pltfr_bufsetup(void)
++{
++	int result = 0;
++
++	if (NULL == request_mem_region(xmit_buffers.phys_base,
++				xmit_buffers.length, client_name)) {
++		err("could not request memory region : %p - %p\n",
++				(ioaddr_t)xmit_buffers.phys_base,
++				(ioaddr_t)(xmit_buffers.phys_base +
++					xmit_buffers.length - 1));
++		result = -ENOMEM;
++		goto request_failed;
++	}
++
++	xmit_buffers.virt_base =
++		ioremap(xmit_buffers.phys_base, xmit_buffers.length);
++
++	if (NULL == xmit_buffers.virt_base) {
++		errn("could not remap memory region : %p + %x",
++				(ioaddr_t)xmit_buffers.phys_base,
++				xmit_buffers.length);
++		result = -ENOMEM;
++		goto remap_failed;
++	}
++
++	/*
++	 * TODO: this assumes contiguous placement
++	 */
++	xmit_buffers.tx.base =
++		(ioaddr_t)((resource_size_t)xmit_buffers.virt_base +
++			buffer_length);
++	xmit_buffers.rx.base =
++		(ioaddr_t)((resource_size_t)xmit_buffers.virt_base + 0);
++	dbg("tx buffer at : 0x%p\n", xmit_buffers.tx.base);
++	dbg("rx buffer at : 0x%p\n", xmit_buffers.rx.base);
++	xmit_buffers.tx.head = xmit_buffers.tx.tail = 0;
++	xmit_buffers.rx.head = xmit_buffers.rx.tail = 0;
++	xmit_buffers.tx.size = xmit_buffers.rx.size = buffer_length;
++
++	result = work_depot_init();
++	if (result) {
++		errn("workqueue init failed");
++		goto work_depot_init_failed;
++	}
++
++	return result;
++
++work_depot_init_failed:
++	(void)0;
++remap_failed:
++	release_mem_region(xmit_buffers.phys_base, xmit_buffers.length);
++request_failed:
++	return result;
++}
++
++static void img_bt_pltfr_bufsetup_rollback(void)
++{
++	iounmap(xmit_buffers.virt_base);
++	release_mem_region(xmit_buffers.phys_base, xmit_buffers.length);
++}
++
++static int img_bt_pltfr_reg_handler(unsigned int client_id)
++{
++	return img_transport_register_callback(handle_controller_message,
++			client_id);
++}
++
++static void img_bt_pltfr_reg_handler_rollback(unsigned int client_id)
++{
++	img_transport_remove_callback(client_id);
++}
++
++static int img_bt_pltfr_probe(struct platform_device *pdev)
++{
++	int result = 0;
++
++	result = img_bt_pltfr_memsetup();
++	if (result) {
++		err("memory setup failed\n");
++		goto memsetup_failed;
++	}
++
++	result = img_bt_pltfr_dtsetup(pdev);
++	if (result) {
++		err("DT setup failed\n");
++		goto dtsetup_failed;
++	}
++
++	result = img_bt_pltfr_bufsetup();
++	if (result) {
++		err("buffer setup failed\n");
++		goto bufsetup_failed;
++	}
++
++	result = img_bt_pltfr_reg_handler(0);
++	if (result) {
++		err("failed to install callback in the transport interface\n");
++		goto callback_regist_failed;
++	}
++
++	result = gateway_init(handle_gateway_message, &pdev->dev);
++	if (result) {
++		errn("could not initialize gateway");
++		goto gateway_init_failed;
++	}
++
++	return result;
++
++gateway_init_failed:
++	img_bt_pltfr_reg_handler_rollback(0);
++callback_regist_failed:
++	img_bt_pltfr_bufsetup_rollback();
++bufsetup_failed:
++	img_bt_pltfr_dtsetup_rollback();
++dtsetup_failed:
++	img_bt_pltfr_memsetup_rollback();
++memsetup_failed:
++	return result;
++}
++
++static int img_bt_pltfr_remove(struct platform_device *pdev)
++{
++	gateway_exit();
++	img_bt_pltfr_reg_handler_rollback(0);
++	img_bt_pltfr_bufsetup_rollback();
++	img_bt_pltfr_dtsetup_rollback();
++	img_bt_pltfr_memsetup_rollback();
++
++	return 0;
++}
++
++static const struct of_device_id img_bt_dt_ids[] = {
++	{ .compatible = "img,pistachio-uccp-bt" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, img_bt_dt_ids);
++
++struct platform_driver img_bt_driver = {
++	.probe = img_bt_pltfr_probe,
++	.remove = img_bt_pltfr_remove,
++	.driver = {
++		.name   = "img-bt",
++		.owner  = THIS_MODULE,
++		.of_match_table = of_match_ptr(img_bt_dt_ids),
++	},
++};
++
++/*
++ * *** Entry and exit points ***
++ */
++
++static int __init img_bt_init(void)
++{
++	int result = 0;
++
++	result = platform_driver_register(&img_bt_driver);
++	if (result) {
++		dbg("failed to register platform driver\n");
++		goto pltfr_regist_failed;
++	}
++
++	return result;
++
++pltfr_regist_failed:
++	return result;
++}
++
++static void __exit img_bt_exit(void)
++{
++	platform_driver_unregister(&img_bt_driver);
++}
++
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Bartosz Flis <bartosz.flis@imgtec.com>");
++MODULE_DESCRIPTION("Imagination Technologies Bluetooth driver - www.imgtec.com");
++
++module_init(img_bt_init);
++module_exit(img_bt_exit);
+diff --git a/drivers/bluetooth/pistachio/img-hostport-main.c b/drivers/bluetooth/pistachio/img-hostport-main.c
+new file mode 100644
+index 0000000..8f95887
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/img-hostport-main.c
+@@ -0,0 +1,440 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-hostport-main.c
++ ***
++ *** File Description:
++ *** This file contains the implementation of the IMG low level
++ *** shared memory based transport.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++#include <asm/unaligned.h>
++
++#include <linux/export.h>
++#include <linux/interrupt.h>
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/of_net.h>
++#include <linux/platform_device.h>
++#include <linux/proc_fs.h>
++#include <linux/semaphore.h>
++#include <linux/slab.h>
++#include <linux/clk.h>
++
++#include "img-hostport-main.h"
++
++static struct img_hostport *module;
++static const char *hal_name = "img-hostport";
++#define dbg(format, ...) pr_debug("%s: " format, hal_name, ## __VA_ARGS__)
++#define err(format, ...) pr_err("%s: " format, hal_name, ## __VA_ARGS__)
++#define dbgn(format, ...) dbg(format "\n", ## __VA_ARGS__)
++#define errn(format, ...) err(format "\n", ## __VA_ARGS__)
++#define diagerrn(format, ...) \
++	errn("%s : %d : " format, __func__, __LINE__, ## __VA_ARGS__)
++#define diagdbgn(format, ...) \
++	dbgn("%s : %d : " format, __func__, __LINE__, ## __VA_ARGS__)
++
++#define COMMON_HOST_ID 1
++#define CALLEE_MASK 0x000000f0
++#define CALLEE_SHIFT 4
++#define CALLER_MASK 0x0000000f
++#define USERMSG_MASK 0x00ffff00
++#define USERMSG_SHIFT 8
++#define CALLEE(reg) ((reg & CALLEE_MASK) >> CALLEE_SHIFT)
++#define CALLER(reg) (reg & CALLER_MASK)
++#define USERMSG(reg) ((reg & USERMSG_MASK) >> USERMSG_SHIFT)
++
++DEFINE_SEMAPHORE(host_to_uccp_core_lock);
++
++enum {
++	CLK_RPU_CORE = 0, CLK_BT, CLK_BT_DIV4, CLK_BT_DIV8, CLK_QTY
++};
++static const char * const clock_names[] = {"rpu_core", "bt", "bt_div4",
++	"bt_div8"};
++static struct clk *clocks[CLK_QTY];
++
++/*
++ * Public interface procs
++ */
++
++int img_transport_register_callback(
++		img_transport_handler poke,
++		unsigned int client_id)
++{
++	/*
++	 * TODO: watch out for an interrupt!
++	 * This variable has to be protected by
++	 * a spinlock => accessor procs needed.
++	 */
++	module->rcv_handler = poke;
++
++	/*
++	 * TODO: proper error reporting needed.
++	 * For now, just succeed every time.
++	 */
++	return 0;
++}
++EXPORT_SYMBOL(img_transport_register_callback);
++
++int img_transport_notify(u16 user_data)
++{
++	down(&host_to_uccp_core_lock);
++	iowrite32(0x87 << 24 | user_data << 8 | 0x00,
++			(void __iomem *)H2C_CMD_ADDR(module->uccp_mem_addr));
++
++	/*
++	 * TODO: for now, just succeed every time.
++	 * Proper error reporting needed.
++	 */
++	return 0;
++}
++EXPORT_SYMBOL(img_transport_notify);
++
++int img_transport_remove_callback(unsigned int client_id)
++{
++	/* TODO: proper locking */
++	module->rcv_handler = NULL;
++
++	return 0;
++}
++EXPORT_SYMBOL(img_transport_remove_callback);
++
++/*
++ * Private procs
++ */
++
++static irqreturn_t hal_irq_handler(int    irq, void  *p)
++{
++	/* p is module here! */
++	unsigned int reg_value;
++	unsigned int value, caller_id, callee_id, user_message, first_bit;
++
++	reg_value =
++		readl((void __iomem *)(C2H_CMD_ADDR(module->uccp_mem_addr)));
++
++	/* TODO: need to change that to support platforms other that 32 bit */
++	first_bit = (reg_value & (1 << 31)) >> 31;
++	if (0 == first_bit) {
++		err("unexpected spurious interrupt detected!\n");
++		return IRQ_HANDLED;
++	}
++
++	/* Clear the uccp interrupt */
++	value = 0;
++	value |= BIT(C_INT_CLR_SHIFT);
++	writel(*((unsigned long *)&(value)),
++			(void __iomem *)(H2C_ACK_ADDR(module->uccp_mem_addr)));
++
++	callee_id = CALLEE(reg_value);
++	caller_id = CALLER(reg_value);
++	user_message = USERMSG(reg_value);
++	/*
++	 * we are ready to release the spinlock
++	 * once we get the all zeros message
++	 */
++	if (COMMON_HOST_ID == callee_id) {
++		switch (user_message) {
++		case 0:
++			/*
++			 * now H2C_CMD_ADDR can
++			 * be written to again
++			 */
++			up(&host_to_uccp_core_lock);
++			break;
++		default:
++			errn("unexpected controller message, dropping :");
++			errn("\tcallee_id : %d", callee_id);
++			errn("\tcaller_id : %d", caller_id);
++			errn("\tuser_message : %d", user_message);
++		}
++	} else {
++		/* invoke client callback */
++		/* TODO: add support for multiple IDs */
++		if (NULL != module->rcv_handler)
++			module->rcv_handler((u16)user_message);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static void img_hostport_irq_on(void)
++{
++	unsigned int value = 0;
++
++	/* Set external pin irq enable for host_irq and uccp_irq */
++	value = readl((void __iomem *)C_INT_ENAB_ADDR(module->uccp_mem_addr));
++	value |= BIT(C_INT_IRQ_ENAB_SHIFT);
++	writel(*((unsigned long *)&(value)),
++		(void __iomem *)(C_INT_ENAB_ADDR(module->uccp_mem_addr)));
++
++	/* Enable raising uccp_int when UCCP_INT = 1 */
++	value = 0;
++	value |= BIT(C_INT_EN_SHIFT);
++	writel(*((unsigned long *)&(value)),
++		(void __iomem *)(C_INT_ENABLE_ADDR(module->uccp_mem_addr)));
++
++	return;
++}
++
++static void img_hostport_irq_off(void)
++{
++	unsigned int value = 0;
++
++	/* Reset external pin irq enable for host_irq and uccp_irq */
++	value = readl((void __iomem *)C_INT_ENAB_ADDR(module->uccp_mem_addr));
++	value &= ~(BIT(C_INT_IRQ_ENAB_SHIFT));
++	writel(*((unsigned long   *)&(value)),
++		(void __iomem *)(C_INT_ENAB_ADDR(module->uccp_mem_addr)));
++
++	/* Disable raising uccp_int when UCCP_INT = 1 */
++	value = 0;
++	value &= ~(BIT(C_INT_EN_SHIFT));
++	writel(*((unsigned long *)&(value)),
++		(void __iomem *)(C_INT_ENABLE_ADDR(module->uccp_mem_addr)));
++
++	return;
++}
++
++static int img_hostport_pltfr_irqregist(int irq_line)
++{
++	dbg("requesting interrupt line %d\n", irq_line);
++
++	return request_irq(irq_line, hal_irq_handler, 0, hal_name, module);
++}
++
++static int img_hostport_pltfr_irqregist_rollback(int irq_line)
++{
++	dbg("releasing interrupt line %d\n", irq_line);
++
++	free_irq(irq_line, module);
++
++	return 0;
++}
++
++static int img_hostport_pltfr_dtsetup(struct platform_device *pdev)
++{
++	/* struct resource *res; */
++	int irq_or_error, i;
++	const struct resource *rpu_sbus;
++	/* Get resources from platform device */
++	irq_or_error = platform_get_irq(pdev, 0);
++	if (irq_or_error < 0) { /* it's an error */
++		err("cannot find IRQ resource\n");
++		return irq_or_error; /* it's now error code */
++	}
++	module->irq_line = irq_or_error; /* it's now a valid IRQ line */
++
++	rpu_sbus = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (rpu_sbus == NULL) {
++		err("no dts entry : reg with index 0\n");
++		return -ENOENT;
++	}
++
++	module->uccp_core_base = rpu_sbus->start;
++	module->uccp_core_len = (rpu_sbus->end) - (rpu_sbus->start) + 1;
++
++	/* Retrieve clocks */
++	for (i = 0; i < CLK_QTY; i++) {
++		clocks[i] = devm_clk_get(&pdev->dev, clock_names[i]);
++		if (IS_ERR(clocks[i])) {
++			errn("could not get %s clock", clock_names[i]);
++			return -ENOENT;
++		}
++	}
++
++	return 0;
++}
++
++static void img_hostport_pltfr_dtsetup_rollback(void)
++{
++	module->uccp_core_base = 0;
++	module->uccp_core_len = 0;
++	module->irq_line = 0;
++	memset(clocks, 0, CLK_QTY*sizeof(clocks[0]));
++}
++
++static int img_hostport_pltfr_memmap(void)
++{
++#define REQUEST_MEM_FAILED_MSG "request_mem_region failed for UCCP region"
++	/* Map UCCP memory */
++	if (NULL == (request_mem_region(module->uccp_core_base,
++					module->uccp_core_len, "uccp"))) {
++		errn(REQUEST_MEM_FAILED_MSG ". base = %p, length = %lx\n",
++				(void *)module->uccp_core_base,
++				module->uccp_core_len);
++		goto uccp_memory_request_error;
++	}
++
++	module->uccp_base_addr = ioremap(module->uccp_core_base,
++			module->uccp_core_len);
++	if (module->uccp_base_addr == 0) {
++		errn("ioremap failed for UCCP mem region\n");
++		goto uccp_memory_remap_error;
++	}
++	module->uccp_mem_addr = module->uccp_base_addr + C_REG_OFFSET;
++
++	return 0;
++
++uccp_memory_remap_error:
++	release_mem_region(module->uccp_core_base, module->uccp_core_len);
++uccp_memory_request_error:
++	return -ENOMEM;
++}
++
++static void img_hostport_pltfr_memmap_rollback(void)
++{
++	iounmap((void __iomem *)module->uccp_base_addr);
++	release_mem_region(module->uccp_core_base, module->uccp_core_len);
++}
++
++static int img_hostport_pltfr_memsetup(void)
++{
++	module = kzalloc(sizeof(struct img_hostport), GFP_KERNEL);
++
++	if (IS_ERR_OR_NULL(module))
++		return PTR_ERR(module);
++	else
++		return 0;
++}
++
++static void img_hostport_pltfr_memsetup_rollback(void)
++{
++	kfree(module);
++}
++
++static int img_hostport_pltfr_clksetup(struct platform_device *pdev)
++{
++	int i;
++
++	for (i = 0; i < CLK_QTY; i++)
++		clk_prepare_enable(clocks[i]);
++
++	return 0;
++}
++
++static void img_hostport_pltfr_clksetup_rollback(void)
++{
++	int i;
++
++	for (i = 0; i < CLK_QTY; i++)
++		clk_disable_unprepare(clocks[i]);
++
++}
++
++static int img_hostport_pltfr_probe(struct platform_device *pdev)
++{
++	int result = 0;
++
++	result = img_hostport_pltfr_memsetup();
++	if (result) {
++		err("Memory setup failed");
++		goto memsetup_failed;
++	}
++
++	result = img_hostport_pltfr_dtsetup(pdev);
++	if (result) {
++		err("DT setup failed");
++		goto dtsetup_failed;
++	}
++
++	result = img_hostport_pltfr_memmap();
++	if (result) {
++		errn("Memory remapping failed");
++		goto memmap_failed;
++	}
++
++	result = img_hostport_pltfr_clksetup(pdev);
++	if (result) {
++		err("Clock setup failed");
++		goto clksetup_failed;
++	}
++
++	/* Register irq handler, irq_line comes from dtsetup */
++	result = img_hostport_pltfr_irqregist(module->irq_line);
++	if (result) {
++		err("Unable to register IRQ handler\n");
++		goto irqsetup_failed;
++	}
++
++	dbg("activating hostport interrupt");
++	img_hostport_irq_on();
++
++	dbg("hostport driver registration completed");
++	return result;
++
++irqsetup_failed:
++	img_hostport_pltfr_clksetup_rollback();
++clksetup_failed:
++	img_hostport_pltfr_memmap_rollback();
++memmap_failed:
++	img_hostport_pltfr_dtsetup_rollback();
++dtsetup_failed:
++	img_hostport_pltfr_memsetup_rollback();
++memsetup_failed:
++	return result;
++}
++
++static int img_hostport_pltfr_remove(struct platform_device *pdev)
++{
++	img_hostport_irq_off();
++	img_hostport_pltfr_irqregist_rollback(module->irq_line);
++	img_hostport_pltfr_clksetup_rollback();
++	img_hostport_pltfr_memmap_rollback();
++	img_hostport_pltfr_dtsetup_rollback();
++	img_hostport_pltfr_memsetup_rollback();
++
++	return 0;
++}
++
++static const struct of_device_id img_hostport_dt_ids[] = {
++	{ .compatible = "img,pistachio-uccp-base" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, img_hostport_dt_ids);
++
++struct platform_driver img_uccp_driver = {
++	.probe = img_hostport_pltfr_probe,
++	.remove = img_hostport_pltfr_remove,
++	.driver = {
++		.name     = "uccp420",
++		.of_match_table = of_match_ptr(img_hostport_dt_ids),
++	},
++};
++
++static void __exit img_hostport_leave(void)
++{
++	platform_driver_unregister(&img_uccp_driver);
++}
++
++static int __init img_hostport_entry(void)
++{
++	return platform_driver_register(&img_uccp_driver);
++}
++
++module_init(img_hostport_entry);
++module_exit(img_hostport_leave);
++
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Bartosz Flis <bartosz.flis@imgtec.com>");
++MODULE_DESCRIPTION("Imagination Technologies Host Port driver - www.imgtec.com");
+diff --git a/drivers/bluetooth/pistachio/img-hostport-main.h b/drivers/bluetooth/pistachio/img-hostport-main.h
+new file mode 100644
+index 0000000..c72de69
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/img-hostport-main.h
+@@ -0,0 +1,80 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-hostport-main.h
++ ***
++ *** File Description:
++ *** This file contains private definitions specific to Host Port comms
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++#ifndef _IMGBT_HOSTPORT_H_
++#define _IMGBT_HOSTPORT_H_
++
++/* Include files */
++#include <linux/types.h>
++
++#include "img-transport.h"
++
++struct img_hostport {
++	img_transport_handler rcv_handler;
++	/* RPU system bus remapped addresses */
++	void __iomem *uccp_mem_addr;
++	void __iomem *uccp_base_addr;
++	/* DTS entries */
++	phys_addr_t uccp_core_base;
++	unsigned long uccp_core_len;
++	unsigned int irq_line;
++};
++
++#define C_REG_OFFSET 0x400
++
++/* Register H2C_CMD */
++#define H2C_CMD 0x0030
++#define H2C_CMD_ADDR(base) ((base) + H2C_CMD)
++#define C_HOST_INT_SHIFT 31
++
++/* Register C2H_CMD */
++#define C2H_CMD 0x0034
++#define C2H_CMD_ADDR(base) ((base) + C2H_CMD)
++
++/* Register H2C_ACK */
++#define H2C_ACK 0x0038
++#define H2C_ACK_ADDR(base) ((base) + H2C_ACK)
++#define C_INT_CLR_SHIFT 31
++
++/* Register C2H_ACK */
++#define C2H_ACK 0x003C
++#define C2H_ACK_ADDR(base) ((base) + C2H_ACK)
++
++/* Register C_INT_ENABLE */
++#define C_INT_ENABLE 0x0044
++#define C_INT_ENABLE_ADDR(base) ((base) + C_INT_ENABLE)
++#define C_INT_EN_SHIFT 31
++
++#define C_INT_ENAB 0x0000
++#define C_INT_ENAB_ADDR(base) ((base) + C_INT_ENAB)
++#define C_INT_IRQ_ENAB_SHIFT 15
++
++#endif
++
++/* EOF */
+diff --git a/drivers/bluetooth/pistachio/img-transport.h b/drivers/bluetooth/pistachio/img-transport.h
+new file mode 100644
+index 0000000..1164e34
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/img-transport.h
+@@ -0,0 +1,63 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-transport.h
++ ***
++ *** File Description:
++ *** This file contains interface definition of the low level IMG transport
++ *** mechanism.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++
++#ifndef __IMG_TRANSPORT_H__
++#define __IMG_TRANSPORT_H__
++
++#include <linux/types.h>
++
++/*
++ * Note that this procedure is going to be executed
++ * in the interrupt context, so it has to be as lean
++ * as possible and should preferably defer all heavy
++ * lifting.
++ */
++typedef void (*img_transport_handler)(u16 user_data);
++
++int img_transport_notify(u16 user_data);
++
++/*
++ * Possible return values:
++ *  @ -ENOBUFS  : all handler slots in use
++ *  @ -EBADSLT  : id unavailable
++ *  @  0        : callback registered
++ */
++int img_transport_register_callback(img_transport_handler,
++					unsigned int client_id);
++
++/*
++ * Possible return values:
++ * @ -EIDRM    : client id not found
++ * @  0        : callback removed
++ */
++int img_transport_remove_callback(unsigned int client_id);
++
++#endif
+diff --git a/drivers/bluetooth/pistachio/payload.c b/drivers/bluetooth/pistachio/payload.c
+new file mode 100644
+index 0000000..c754d2f
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/payload.c
+@@ -0,0 +1,162 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : payload.c
++ ***
++ *** File Description:
++ *** This file contains implementation of payload module, which represents
++ *** packets transferred between IMG Bluetooth device and Linux userspace.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++#include <linux/err.h>
++#include <linux/io.h>
++#include <linux/printk.h>
++#include <linux/slab.h>
++#include <linux/uaccess.h>
++
++#include "payload.h"
++
++#define GUARDED_ALLOC(var, alloc_f, fail_action) \
++	(var = ({\
++		typeof(var) ptr;\
++		ptr = (alloc_f);\
++		if (IS_ERR_OR_NULL(ptr)) {\
++			(void)(fail_action);\
++			return ptr;\
++		};\
++		ptr;\
++		}))
++
++/*
++ * *** Private storage ***
++ */
++struct payload {
++	u8 *data;
++	size_t length;
++};
++
++/*
++ * *** Private API ***
++ */
++static struct payload *get_payload_obj(size_t length)
++{
++	struct payload *pld;
++	void *blob_start;
++
++	blob_start = kzalloc(length + sizeof(struct payload), GFP_KERNEL);
++	if (IS_ERR_OR_NULL(blob_start))
++		return ERR_PTR(-ENOMEM);
++
++	pld = blob_start;
++	pld->data = blob_start + sizeof(*pld);
++	pld->length = length;
++	return pld;
++}
++
++static void dispose_of_payload_obj(struct payload *pld)
++{
++	/*
++	 * Note: there is no need to worry about the 'data'
++	 * pointer, because it is allocated as a single blob,
++	 * whose starting address is stored as pld
++	 */
++	kfree(pld);
++}
++
++/*
++ * *** Public API ***
++ */
++struct payload *payload_from_io(size_t length, const void __iomem *data)
++{
++	struct payload *pld;
++	GUARDED_ALLOC(pld, get_payload_obj(length), NULL);
++	memcpy_fromio(pld->data, data, pld->length);
++	return pld;
++}
++
++struct payload *payload_from_user(size_t length, const void __user *data)
++{
++	struct payload *pld;
++	GUARDED_ALLOC(pld, get_payload_obj(length), NULL);
++	if (copy_from_user(pld->data, data, pld->length)) {
++		/*
++		 * That means that some bytes could not be copied
++		 * and buffer had to be zero padded.
++		 */
++		dispose_of_payload_obj(pld);
++		return ERR_PTR(-EFAULT);
++	}
++	return pld;
++}
++
++struct payload *payload_from_string(
++		size_t length,
++		unsigned char (*one_char)(void *, unsigned int),
++		void *arg)
++{
++	size_t p;
++	struct payload *pld;
++	if (IS_ERR_OR_NULL(one_char))
++		return 0;
++	GUARDED_ALLOC(pld, get_payload_obj(length),
++			pr_err("failed to allocate payload obj\n"));
++	for (p = 0; p < length; p++)
++		pld->data[p] = one_char(arg, p);
++
++	return pld;
++}
++
++void payload_to_io(struct payload *pld, void __iomem *data)
++{
++	memcpy_toio(data, pld->data, pld->length);
++	dispose_of_payload_obj(pld);
++}
++
++int payload_to_user(struct payload *pld, void __user *data)
++{
++	if (copy_to_user(data, pld->data, pld->length))
++		return -EFAULT;
++
++	dispose_of_payload_obj(pld);
++	return 0;
++}
++
++void payload_delete(struct payload *pld)
++{
++	dispose_of_payload_obj(pld);
++}
++
++const u8 *payload_raw(const struct payload *pld)
++{
++	return pld->data;
++}
++
++size_t payload_length(const struct payload *pld)
++{
++	return pld->length;
++}
++
++unsigned char payload_at(const struct payload *pld, unsigned int idx)
++{
++	return pld->data[idx];
++}
+diff --git a/drivers/bluetooth/pistachio/payload.h b/drivers/bluetooth/pistachio/payload.h
+new file mode 100644
+index 0000000..77482f6
+--- /dev/null
++++ b/drivers/bluetooth/pistachio/payload.h
+@@ -0,0 +1,58 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : payload.h
++ ***
++ *** File Description:
++ *** This file contains interface definition of payload module, which represents
++ *** packets transferred between IMG Bluetooth device and Linux userspace.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++#ifndef __PAYLOAD_H__
++#define __PAYLOAD_H__ 1
++
++#include <linux/types.h>
++
++struct payload;
++
++/*
++ * *** Create/teardown ***
++ */
++struct payload *payload_from_io(size_t length,
++		const void __iomem *data);
++struct payload *payload_from_user(size_t length, const void __user *data);
++struct payload *payload_from_raw(size_t length, const u8 *data);
++struct payload *payload_from_string(size_t length,
++		unsigned char (*one_char)(void *, unsigned int), void *arg);
++void payload_to_io(struct payload *pld, void __iomem *data);
++int payload_to_user(struct payload *pld, void __user *data);
++void payload_delete(struct payload *pld);
++
++/*
++ * *** Data access ***
++ */
++const u8 *payload_raw(const struct payload *pld);
++size_t payload_length(const struct payload *pld);
++unsigned char payload_at(const struct payload *pld, unsigned int idx);
++
++#endif /* __PAYLOAD_H__ */
+diff --git a/include/uapi/linux/serial_core.h b/include/uapi/linux/serial_core.h
+index b212281..1f65890 100644
+--- a/include/uapi/linux/serial_core.h
++++ b/include/uapi/linux/serial_core.h
+@@ -258,4 +258,7 @@
+ /* Cris v10 / v32 SoC */
+ #define PORT_CRIS	112
+ 
++/* Pistachio SOC host port */
++#define PORT_HOSTPORT 113
++
+ #endif /* _UAPILINUX_SERIAL_CORE_H */
+-- 
+1.9.1
+

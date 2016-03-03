@@ -1,0 +1,2005 @@
+From ba46706124be7edad67df471064e9f50187428f4 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Thu, 2 Jul 2015 11:29:01 +0100
+Subject: [PATCH 035/153] pistachio: add img-connectivity driver and add
+ hostport example client
+
+This driver serves as a base for all the other img-* drivers. It will be
+the home of the UCCP firmware loader. It also sets up all the clocks
+needed for correct UCCP operation.
+
+This driver is an example of how to use the Hostport API provided in
+include/soc/img/img-transport.h.
+
+Change-Id: I8191bf1ff9c6f940314b221598368f957544da95
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi       |  94 ++++-
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts |  16 +-
+ drivers/bluetooth/Kconfig                         |   8 +-
+ drivers/bluetooth/pistachio/Makefile              |   3 +-
+ drivers/bluetooth/pistachio/img-hostport-main.c   | 477 ----------------------
+ drivers/bluetooth/pistachio/img-hostport-main.h   |  88 ----
+ drivers/bluetooth/pistachio/img-transport.h       |  78 ----
+ drivers/soc/img/Kconfig                           |  33 ++
+ drivers/soc/img/Makefile                          |   1 +
+ drivers/soc/img/connectivity/Makefile             |   3 +
+ drivers/soc/img/connectivity/img-connectivity.c   | 217 ++++++++++
+ drivers/soc/img/connectivity/img-dummy.c          | 156 +++++++
+ drivers/soc/img/connectivity/img-hostport.c       | 440 ++++++++++++++++++++
+ drivers/soc/img/connectivity/img-hostport.h       |  83 ++++
+ include/soc/img/img-connectivity.h                |  39 ++
+ include/soc/img/img-transport.h                   |  78 ++++
+ 16 files changed, 1148 insertions(+), 666 deletions(-)
+ delete mode 100644 drivers/bluetooth/pistachio/img-hostport-main.c
+ delete mode 100644 drivers/bluetooth/pistachio/img-hostport-main.h
+ delete mode 100644 drivers/bluetooth/pistachio/img-transport.h
+ create mode 100644 drivers/soc/img/connectivity/Makefile
+ create mode 100644 drivers/soc/img/connectivity/img-connectivity.c
+ create mode 100644 drivers/soc/img/connectivity/img-dummy.c
+ create mode 100644 drivers/soc/img/connectivity/img-hostport.c
+ create mode 100644 drivers/soc/img/connectivity/img-hostport.h
+ create mode 100644 include/soc/img/img-connectivity.h
+ create mode 100644 include/soc/img/img-transport.h
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 63ba464..0babfc5 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -44,39 +44,102 @@
+ 		};
+ 	};
+ 
+-	uccp: bt-uccp@0 {
+-		compatible = "img,pistachio-uccp-base";
+-		/* RPU system bus */
+-		reg = <0x18480000 0x40000>;
++	uccpsystem: uccp-system@0 {
++		compatible = "img,pistachio-uccp-system";
+ 		status = "disabled";
+-		interrupts = <GIC_SHARED 67 IRQ_TYPE_LEVEL_HIGH>;
++		/*
++		 * RPU-only clock signals:
++		 * CLK_RPU_CORE, CLK_RPU_CORE_DIV
++		 * BT-only:
++		 * CLK_BT, CLK_BT_DIV4, CLK_BT_DIV8
++		 * WIFI-only:
++		 * the rest
++		 */
++		clocks-number = <13>;
+ 		clocks = <&clk_core CLK_RPU_CORE>,
+ 			<&clk_core CLK_BT>,
+ 			<&clk_core CLK_BT_DIV4>,
+-			<&clk_core CLK_BT_DIV8>;
++			<&clk_core CLK_BT_DIV8>,
++			<&clk_core CLK_RPU_V>,
++			<&clk_core CLK_RPU_L>,
++			<&clk_core CLK_RPU_SLEEP>,
++			<&clk_core CLK_WIFI_ADC>,
++			<&clk_core CLK_WIFI_DAC>,
++			<&clk_core CLK_EVENT_TIMER>,
++			<&cr_periph SYS_CLK_EVENT_TIMER>,
++			<&clk_core CLK_AUX_ADC>,
++			<&clk_core CLK_AUX_ADC_INTERNAL>;
+ 		clock-names = "rpu_core",
+ 			"bt",
+ 			"bt_div4",
+-			"bt_div8";
++			"bt_div8",
++			"rpu_v",
++			"rpu_l",
++			"rpu_sleep",
++			"wifi_adc",
++			"wifi_dac",
++			"event_timer",
++			"sys_event_timer",
++			"aux_adc",
++			"aux_adc_internal";
+ 		assigned-clocks = <&clk_core CLK_BT_PLL_MUX>,
+-			<&clk_core CLK_RPU_CORE_DIV>,
++			<&clk_core CLK_RPU_L_MUX>,
++			<&clk_core CLK_RPU_L_PLL_MUX>,
++			<&clk_core CLK_RPU_V_PLL_MUX>,
++			<&clk_core CLK_WIFI_PLL_MUX>,
++			<&clk_core CLK_WIFI_DIV4_MUX>,
++			<&clk_core CLK_WIFI_DIV8_MUX>,
++			<&clk_core CLK_RPU_SLEEP_DIV>,
+ 			<&clk_core CLK_BT_DIV>,
+ 			<&clk_core CLK_BT_DIV4_DIV>,
+ 			<&clk_core CLK_BT_DIV8_DIV>,
+-			<&clk_core CLK_BT_PLL>;
+-		assigned-clock-parents = <&clk_core CLK_BT_PLL>;
++			<&clk_core CLK_BT_PLL>,
++			<&clk_core CLK_RPU_L_DIV>,
++			<&clk_core CLK_RPU_V_DIV>,
++			<&clk_core CLK_WIFI_PLL>,
++			<&clk_core CLK_RPU_CORE_DIV>;
++		assigned-clock-parents = <&clk_core CLK_BT_PLL>,
++			<&clk_core CLK_RPU_L_PLL_MUX>,
++			<&clk_core CLK_RPU_L_PLL>,
++			<&clk_core CLK_RPU_V_PLL>,
++			<&clk_core CLK_WIFI_PLL>,
++			<&clk_core CLK_WIFI_DIV4>,
++			<&clk_core CLK_WIFI_DIV8>;
+ 		assigned-clock-rates = <0>,
+-			<52000000>,
++			<0>,
++			<0>,
++			<0>,
++			<0>,
++			<0>,
++			<0>,
++			<52000>,
+ 			<104000000>,
+ 			<26000000>,
+ 			<13000000>,
+-			<0>;
++			<0>,
++			<559000000>,
++			<598000000>,
++			<320000000>,
++			<320000000>;
++	};
++
++	uccphostport: uccp-hostport@0 {
++		compatible = "img,pistachio-uccp-hostport";
++		/* Hostport block Meta IRQ enable */
++		reg = <0x18480400 4>,
++			<0x18480430 0x10>,
++			<0x18480444 4>;
++		reg-names = "Hostport mtx_irq enable",
++			"Hostport control block",
++			"Hostport mtx_int enable";
++		status = "disabled";
++		interrupts = <GIC_SHARED 67 IRQ_TYPE_LEVEL_HIGH>;
+ 
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 	};
+ 
+-	bt: bt@0 {
++	uccpbthp: uccp-bt-hostport@0 {
+ 		compatible = "img,pistachio-uccp-bt";
+ 		reg = <0x1A000000 0x1000>;
+ 		status = "disabled";
+@@ -85,6 +148,11 @@
+ 		#size-cells = <1>;
+ 	};
+ 
++	uccpdummyhp: uccp-dummy-hostport@0 {
++		compatible = "img,pistachio-uccp-dummy";
++		status = "disabled";
++	};
++
+ 	i2c0: i2c@18100000 {
+ 		compatible = "img,scb-i2c";
+ 		reg = <0x18100000 0x200>;
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 347ab9e..23d3aec 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -61,12 +61,20 @@
+ 	};
+ };
+ 
+-&uccp {
+-    status = "okay";
++&uccpsystem {
++	status = "okay";
++};
++
++&uccphostport {
++	status = "okay";
+ };
+ 
+-&bt {
+-    status = "okay";
++&uccpbthp {
++	status = "okay";
++};
++
++&uccpdummyhp {
++	status = "okay";
+ };
+ 
+ &uart0 {
+diff --git a/drivers/bluetooth/Kconfig b/drivers/bluetooth/Kconfig
+index 123085d..dc5c02f 100644
+--- a/drivers/bluetooth/Kconfig
++++ b/drivers/bluetooth/Kconfig
+@@ -287,11 +287,11 @@ config BT_WILINK
+ 
+ config BT_IMG
+ 	tristate "Imagination Technologies Bluetooth driver"
+-	depends on BT_HCIUART && BT_HCIUART_H4
++	depends on BT_HCIUART && BT_HCIUART_H4 && IMG_HOSTPORT
+ 	help
+-	  Imagination Technologies Bluetooth driver and accompanying
+-	  Host Port transport driver.
++	  Imagination Technologies Bluetooth driver which exposes UCCP bluetooth
++	  subsystem as a serial device.
+ 
+ 	  Say Y here to compile support for Imagination Technologies' Bluetooth
+-	  driver into the kernel or say M to compile it as module.
++	  driver into the kernel or say M to compile it as module (img-bt).
+ endmenu
+diff --git a/drivers/bluetooth/pistachio/Makefile b/drivers/bluetooth/pistachio/Makefile
+index c86891b..877974c 100644
+--- a/drivers/bluetooth/pistachio/Makefile
++++ b/drivers/bluetooth/pistachio/Makefile
+@@ -1,3 +1,2 @@
+-obj-$(CONFIG_BT_IMG)	+=	img-hostport.o img-bt.o
+-img-hostport-objs := img-hostport-main.o
++obj-$(CONFIG_BT_IMG)	+=	img-bt.o
+ img-bt-objs := img-bt-main.o img-bt-chardev.o payload.o
+diff --git a/drivers/bluetooth/pistachio/img-hostport-main.c b/drivers/bluetooth/pistachio/img-hostport-main.c
+deleted file mode 100644
+index cd88b31..0000000
+--- a/drivers/bluetooth/pistachio/img-hostport-main.c
++++ /dev/null
+@@ -1,477 +0,0 @@
+-/*HEADER**********************************************************************
+- ******************************************************************************
+- ***
+- *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
+- ***
+- *** This program is free software; you can redistribute it and/or
+- *** modify it under the terms of the GNU General Public License
+- *** as published by the Free Software Foundation; either version 2
+- *** of the License, or (at your option) any later version.
+- ***
+- *** This program is distributed in the hope that it will be useful,
+- *** but WITHOUT ANY WARRANTY; without even the implied warranty of
+- *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- *** GNU General Public License for more details.
+- ***
+- *** You should have received a copy of the GNU General Public License
+- *** along with this program; if not, write to the Free Software
+- *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+- *** USA.
+- ***
+- *** File Name  : img-hostport-main.c
+- ***
+- *** File Description:
+- *** This file contains the implementation of the IMG low level
+- *** shared memory based transport.
+- ***
+- ******************************************************************************
+- *END**************************************************************************/
+-
+-#include <asm/unaligned.h>
+-
+-#include <linux/export.h>
+-#include <linux/interrupt.h>
+-#include <linux/module.h>
+-#include <linux/moduleparam.h>
+-#include <linux/of.h>
+-#include <linux/of_device.h>
+-#include <linux/of_net.h>
+-#include <linux/platform_device.h>
+-#include <linux/proc_fs.h>
+-#include <linux/semaphore.h>
+-#include <linux/slab.h>
+-#include <linux/spinlock.h>
+-#include <linux/clk.h>
+-
+-#include "img-hostport-main.h"
+-
+-static struct img_hostport *module;
+-static const char *hal_name = "img-hostport";
+-#define dbg(format, ...) pr_debug("%s: " format, hal_name, ## __VA_ARGS__)
+-#define err(format, ...) pr_err("%s: " format, hal_name, ## __VA_ARGS__)
+-#define dbgn(format, ...) dbg(format "\n", ## __VA_ARGS__)
+-#define errn(format, ...) err(format "\n", ## __VA_ARGS__)
+-#define diagerrn(format, ...) \
+-	errn("%s : %d : " format, __func__, __LINE__, ## __VA_ARGS__)
+-#define diagdbgn(format, ...) \
+-	dbgn("%s : %d : " format, __func__, __LINE__, ## __VA_ARGS__)
+-
+-#define COMMON_HOST_ID 0
+-#define CALLEE_MASK 0x000000f0
+-#define CALLEE_SHIFT 4
+-#define CALLER_MASK 0x0000000f
+-#define USERMSG_MASK 0x00ffff00
+-#define USERMSG_SHIFT 8
+-#define CALLEE(reg) ((reg & CALLEE_MASK) >> CALLEE_SHIFT)
+-#define CALLER(reg) (reg & CALLER_MASK)
+-#define USERMSG(reg) ((reg & USERMSG_MASK) >> USERMSG_SHIFT)
+-
+-DEFINE_SEMAPHORE(host_to_uccp_core_lock);
+-
+-enum {
+-	CLK_RPU_CORE = 0, CLK_BT, CLK_BT_DIV4, CLK_BT_DIV8, CLK_QTY
+-};
+-static const char * const clock_names[] = {"rpu_core", "bt", "bt_div4",
+-	"bt_div8"};
+-static struct clk *clocks[CLK_QTY];
+-
+-/*
+- * Forward declarations
+- */
+-static void notify_common(u16 user_data, int user_id);
+-
+-/*
+- * Public interface procs
+- */
+-
+-int img_transport_register_callback(
+-		img_transport_handler poke,
+-		unsigned int client_id)
+-{
+-	if (client_id > MAX_ENDPOINT_ID || module->endpoints.f[client_id])
+-		return -EBADSLT;
+-
+-	spin_lock(module->endpoints.in_use + client_id);
+-	module->endpoints.f[client_id] = poke;
+-	spin_unlock(module->endpoints.in_use + client_id);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(img_transport_register_callback);
+-
+-void img_transport_notify(u16 user_data, int user_id)
+-{
+-	down(&host_to_uccp_core_lock);
+-	notify_common(user_data, user_id);
+-}
+-EXPORT_SYMBOL(img_transport_notify);
+-
+-int __must_check img_transport_notify_timeout(u16 user_data,
+-					int user_id,
+-					long jiffies_timeout)
+-{
+-	if (-ETIME == down_timeout(&host_to_uccp_core_lock, jiffies_timeout)) {
+-		return -ETIME;
+-	}
+-	notify_common(user_data, user_id);
+-	return 0;
+-}
+-EXPORT_SYMBOL(img_transport_notify_timeout);
+-
+-int img_transport_remove_callback(unsigned int client_id)
+-{
+-	if (client_id > MAX_ENDPOINT_ID || !module->endpoints.f[client_id])
+-		return -EBADSLT;
+-
+-	spin_lock(module->endpoints.in_use + client_id);
+-	module->endpoints.f[client_id] = NULL;
+-	spin_unlock(module->endpoints.in_use + client_id);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(img_transport_remove_callback);
+-
+-/*
+- * Private procs
+- */
+-
+-static u8 id_to_field(int id)
+-{
+-	id &= 0xF;
+-	return (id << 4) | id;
+-}
+-
+-static void notify_common(u16 user_data, int user_id)
+-{
+-	iowrite32(0x87 << 24 | user_data << 8 | id_to_field(user_id),
+-			(void __iomem *)H2C_CMD_ADDR(module->uccp_mem_addr));
+-}
+-
+-static irqreturn_t hal_irq_handler(int    irq, void  *p)
+-{
+-	/* p is module here! */
+-	unsigned long flags;
+-	unsigned int reg_value;
+-	unsigned int value, caller_id, callee_id, user_message, first_bit;
+-	img_transport_handler handler;
+-	spinlock_t *handler_in_use;
+-
+-	reg_value =
+-		readl((void __iomem *)(C2H_CMD_ADDR(module->uccp_mem_addr)));
+-
+-	/* TODO: need to change that to support platforms other that 32 bit */
+-	first_bit = (reg_value & (1 << 31)) >> 31;
+-	if (0 == first_bit) {
+-		err("unexpected spurious interrupt detected!\n");
+-		return IRQ_HANDLED;
+-	}
+-
+-	/* Clear the uccp interrupt */
+-	value = 0;
+-	value |= BIT(C_INT_CLR_SHIFT);
+-	writel(value, (void __iomem *)(H2C_ACK_ADDR(module->uccp_mem_addr)));
+-
+-	callee_id = CALLEE(reg_value);
+-	caller_id = CALLER(reg_value);
+-	user_message = USERMSG(reg_value);
+-	/*
+-	 * We are ready to release the spinlock
+-	 * once we get the all zeros message.
+-	 *
+-	 * callee_id is tainted, therefore must be checked.
+-	 */
+-	if (callee_id > MAX_ENDPOINT_ID) {
+-		errn("endpoint with id = %u doesn't exist", callee_id);
+-		return IRQ_HANDLED;
+-	}
+-
+-	if (COMMON_HOST_ID == callee_id) {
+-		switch (user_message) {
+-		case 0:
+-			/*
+-			 * now H2C_CMD_ADDR can
+-			 * be written to again
+-			 */
+-			up(&host_to_uccp_core_lock);
+-			break;
+-		default:
+-			errn("unexpected controller message, dropping :");
+-			errn("\tcallee_id : %d", callee_id);
+-			errn("\tcaller_id : %d", caller_id);
+-			errn("\tuser_message : %d", user_message);
+-		}
+-	} else {
+-		handler = module->endpoints.f[callee_id];
+-		handler_in_use = module->endpoints.in_use + callee_id;
+-		if (NULL != handler) {
+-			spin_lock_irqsave(handler_in_use, flags);
+-			handler((u16)user_message);
+-			spin_unlock_irqrestore(handler_in_use, flags);
+-		} else
+-			errn("endpoint with id = %u not registered", callee_id);
+-	}
+-
+-	return IRQ_HANDLED;
+-}
+-
+-static void img_hostport_irq_on(void)
+-{
+-	unsigned int value = 0;
+-
+-	/* Set external pin irq enable for host_irq and uccp_irq */
+-	value = readl((void __iomem *)C_INT_ENAB_ADDR(module->uccp_mem_addr));
+-	value |= BIT(C_INT_IRQ_ENAB_SHIFT);
+-	writel(value,
+-		(void __iomem *)(C_INT_ENAB_ADDR(module->uccp_mem_addr)));
+-
+-	/* Enable raising uccp_int when UCCP_INT = 1 */
+-	value = 0;
+-	value |= BIT(C_INT_EN_SHIFT);
+-	writel(value,
+-		(void __iomem *)(C_INT_ENABLE_ADDR(module->uccp_mem_addr)));
+-}
+-
+-static void img_hostport_irq_off(void)
+-{
+-	unsigned int value = 0;
+-
+-	/* Reset external pin irq enable for host_irq and uccp_irq */
+-	value = readl((void __iomem *)C_INT_ENAB_ADDR(module->uccp_mem_addr));
+-	value &= ~(BIT(C_INT_IRQ_ENAB_SHIFT));
+-	writel(value,
+-		(void __iomem *)(C_INT_ENAB_ADDR(module->uccp_mem_addr)));
+-
+-	/* Disable raising uccp_int when UCCP_INT = 1 */
+-	value = 0;
+-	value &= ~(BIT(C_INT_EN_SHIFT));
+-	writel(value,
+-		(void __iomem *)(C_INT_ENABLE_ADDR(module->uccp_mem_addr)));
+-}
+-
+-static int img_hostport_pltfr_irqregist(int irq_line)
+-{
+-	dbg("requesting interrupt line %d\n", irq_line);
+-
+-	return request_irq(irq_line, hal_irq_handler, 0, hal_name, module);
+-}
+-
+-static int img_hostport_pltfr_irqregist_rollback(int irq_line)
+-{
+-	dbg("releasing interrupt line %d\n", irq_line);
+-
+-	free_irq(irq_line, module);
+-
+-	return 0;
+-}
+-
+-static int img_hostport_pltfr_dtsetup(struct platform_device *pdev)
+-{
+-	/* struct resource *res; */
+-	int irq_or_error, i;
+-	const struct resource *rpu_sbus;
+-	/* Get resources from platform device */
+-	irq_or_error = platform_get_irq(pdev, 0);
+-	if (irq_or_error < 0) { /* it's an error */
+-		err("cannot find IRQ resource\n");
+-		return irq_or_error; /* it's now error code */
+-	}
+-	module->irq_line = irq_or_error; /* it's now a valid IRQ line */
+-
+-	rpu_sbus = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (rpu_sbus == NULL) {
+-		err("no dts entry : reg with index 0\n");
+-		return -ENOENT;
+-	}
+-
+-	module->uccp_core_base = rpu_sbus->start;
+-	module->uccp_core_len = (rpu_sbus->end) - (rpu_sbus->start) + 1;
+-
+-	/* Retrieve clocks */
+-	for (i = 0; i < CLK_QTY; i++) {
+-		clocks[i] = devm_clk_get(&pdev->dev, clock_names[i]);
+-		if (IS_ERR(clocks[i])) {
+-			errn("could not get %s clock", clock_names[i]);
+-			return -ENOENT;
+-		}
+-	}
+-
+-	return 0;
+-}
+-
+-static void img_hostport_pltfr_dtsetup_rollback(void)
+-{
+-	module->uccp_core_base = 0;
+-	module->uccp_core_len = 0;
+-	module->irq_line = 0;
+-	memset(clocks, 0, CLK_QTY*sizeof(clocks[0]));
+-}
+-
+-static int img_hostport_pltfr_memmap(void)
+-{
+-#define REQUEST_MEM_FAILED_MSG "request_mem_region failed for UCCP region"
+-	/* Map UCCP memory */
+-	if (NULL == (request_mem_region(module->uccp_core_base,
+-					module->uccp_core_len, "uccp"))) {
+-		errn(REQUEST_MEM_FAILED_MSG ". base = %p, length = %lx\n",
+-				(void *)module->uccp_core_base,
+-				module->uccp_core_len);
+-		goto uccp_memory_request_error;
+-	}
+-
+-	module->uccp_base_addr = ioremap(module->uccp_core_base,
+-			module->uccp_core_len);
+-	if (module->uccp_base_addr == 0) {
+-		errn("ioremap failed for UCCP mem region\n");
+-		goto uccp_memory_remap_error;
+-	}
+-	module->uccp_mem_addr = module->uccp_base_addr + C_REG_OFFSET;
+-
+-	return 0;
+-
+-uccp_memory_remap_error:
+-	release_mem_region(module->uccp_core_base, module->uccp_core_len);
+-uccp_memory_request_error:
+-	return -ENOMEM;
+-}
+-
+-static void img_hostport_pltfr_memmap_rollback(void)
+-{
+-	iounmap((void __iomem *)module->uccp_base_addr);
+-	release_mem_region(module->uccp_core_base, module->uccp_core_len);
+-}
+-
+-static int img_hostport_pltfr_memsetup(void)
+-{
+-	int i;
+-
+-	module = kzalloc(sizeof(struct img_hostport), GFP_KERNEL);
+-
+-	if (IS_ERR_OR_NULL(module))
+-		return PTR_ERR(module);
+-
+-	for (i = 0; i < MAX_ENDPOINTS; i++)
+-		spin_lock_init(module->endpoints.in_use + i);
+-	return 0;
+-}
+-
+-static void img_hostport_pltfr_memsetup_rollback(void)
+-{
+-	kfree(module);
+-}
+-
+-static int img_hostport_pltfr_clksetup(struct platform_device *pdev)
+-{
+-	int i;
+-
+-	for (i = 0; i < CLK_QTY; i++)
+-		clk_prepare_enable(clocks[i]);
+-
+-	return 0;
+-}
+-
+-static void img_hostport_pltfr_clksetup_rollback(void)
+-{
+-	int i;
+-
+-	for (i = 0; i < CLK_QTY; i++)
+-		clk_disable_unprepare(clocks[i]);
+-
+-}
+-
+-static int __init img_hostport_pltfr_probe(struct platform_device *pdev)
+-{
+-	int result = 0;
+-
+-	result = img_hostport_pltfr_memsetup();
+-	if (result) {
+-		err("Memory setup failed");
+-		goto memsetup_failed;
+-	}
+-
+-	result = img_hostport_pltfr_dtsetup(pdev);
+-	if (result) {
+-		err("DT setup failed");
+-		goto dtsetup_failed;
+-	}
+-
+-	result = img_hostport_pltfr_memmap();
+-	if (result) {
+-		errn("Memory remapping failed");
+-		goto memmap_failed;
+-	}
+-
+-	result = img_hostport_pltfr_clksetup(pdev);
+-	if (result) {
+-		err("Clock setup failed");
+-		goto clksetup_failed;
+-	}
+-
+-	/* Register irq handler, irq_line comes from dtsetup */
+-	result = img_hostport_pltfr_irqregist(module->irq_line);
+-	if (result) {
+-		err("Unable to register IRQ handler\n");
+-		goto irqsetup_failed;
+-	}
+-
+-	dbg("activating hostport interrupt");
+-	img_hostport_irq_on();
+-
+-	dbg("hostport driver registration completed");
+-	return result;
+-
+-irqsetup_failed:
+-	img_hostport_pltfr_clksetup_rollback();
+-clksetup_failed:
+-	img_hostport_pltfr_memmap_rollback();
+-memmap_failed:
+-	img_hostport_pltfr_dtsetup_rollback();
+-dtsetup_failed:
+-	img_hostport_pltfr_memsetup_rollback();
+-memsetup_failed:
+-	return result;
+-}
+-
+-static int img_hostport_pltfr_remove(struct platform_device *pdev)
+-{
+-	img_hostport_irq_off();
+-	img_hostport_pltfr_irqregist_rollback(module->irq_line);
+-	img_hostport_pltfr_clksetup_rollback();
+-	img_hostport_pltfr_memmap_rollback();
+-	img_hostport_pltfr_dtsetup_rollback();
+-	img_hostport_pltfr_memsetup_rollback();
+-
+-	return 0;
+-}
+-
+-static const struct of_device_id img_hostport_dt_ids[] = {
+-	{ .compatible = "img,pistachio-uccp-base" },
+-	{ /* sentinel */ }
+-};
+-MODULE_DEVICE_TABLE(of, img_hostport_dt_ids);
+-
+-struct platform_driver img_uccp_driver = {
+-	.probe = img_hostport_pltfr_probe,
+-	.remove = img_hostport_pltfr_remove,
+-	.driver = {
+-		.name     = "uccp420",
+-		.of_match_table = of_match_ptr(img_hostport_dt_ids),
+-	},
+-};
+-
+-static void __exit img_hostport_leave(void)
+-{
+-	platform_driver_unregister(&img_uccp_driver);
+-}
+-
+-static int __init img_hostport_entry(void)
+-{
+-	return platform_driver_probe(&img_uccp_driver,
+-					img_hostport_pltfr_probe);
+-}
+-
+-module_init(img_hostport_entry);
+-module_exit(img_hostport_leave);
+-
+-MODULE_LICENSE("GPL v2");
+-MODULE_AUTHOR("Bartosz Flis <bartosz.flis@imgtec.com>");
+-MODULE_DESCRIPTION("Imagination Technologies Host Port driver - www.imgtec.com");
+diff --git a/drivers/bluetooth/pistachio/img-hostport-main.h b/drivers/bluetooth/pistachio/img-hostport-main.h
+deleted file mode 100644
+index 4120864..0000000
+--- a/drivers/bluetooth/pistachio/img-hostport-main.h
++++ /dev/null
+@@ -1,88 +0,0 @@
+-/*HEADER**********************************************************************
+- ******************************************************************************
+- ***
+- *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
+- *** All rights reserved
+- ***
+- *** This program is free software; you can redistribute it and/or
+- *** modify it under the terms of the GNU General Public License
+- *** as published by the Free Software Foundation; either version 2
+- *** of the License, or (at your option) any later version.
+- ***
+- *** This program is distributed in the hope that it will be useful,
+- *** but WITHOUT ANY WARRANTY; without even the implied warranty of
+- *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- *** GNU General Public License for more details.
+- ***
+- *** You should have received a copy of the GNU General Public License
+- *** along with this program; if not, write to the Free Software
+- *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+- *** USA.
+- ***
+- *** File Name  : img-hostport-main.h
+- ***
+- *** File Description:
+- *** This file contains private definitions specific to Host Port comms
+- ***
+- ******************************************************************************
+- *END**************************************************************************/
+-
+-#ifndef _IMGBT_HOSTPORT_H_
+-#define _IMGBT_HOSTPORT_H_
+-
+-/* Include files */
+-#include <linux/types.h>
+-
+-#include "img-transport.h"
+-
+-#define MAX_ENDPOINTS 3
+-#define MAX_ENDPOINT_ID (MAX_ENDPOINTS - 1)
+-
+-struct img_hostport_endpoints {
+-	img_transport_handler f[MAX_ENDPOINTS];
+-	spinlock_t in_use[MAX_ENDPOINTS];
+-};
+-
+-struct img_hostport {
+-	struct img_hostport_endpoints endpoints;
+-	/* RPU system bus remapped addresses */
+-	void __iomem *uccp_mem_addr;
+-	void __iomem *uccp_base_addr;
+-	/* DTS entries */
+-	phys_addr_t uccp_core_base;
+-	unsigned long uccp_core_len;
+-	unsigned int irq_line;
+-};
+-
+-#define C_REG_OFFSET 0x400
+-
+-/* Register H2C_CMD */
+-#define H2C_CMD 0x0030
+-#define H2C_CMD_ADDR(base) ((base) + H2C_CMD)
+-#define C_HOST_INT_SHIFT 31
+-
+-/* Register C2H_CMD */
+-#define C2H_CMD 0x0034
+-#define C2H_CMD_ADDR(base) ((base) + C2H_CMD)
+-
+-/* Register H2C_ACK */
+-#define H2C_ACK 0x0038
+-#define H2C_ACK_ADDR(base) ((base) + H2C_ACK)
+-#define C_INT_CLR_SHIFT 31
+-
+-/* Register C2H_ACK */
+-#define C2H_ACK 0x003C
+-#define C2H_ACK_ADDR(base) ((base) + C2H_ACK)
+-
+-/* Register C_INT_ENABLE */
+-#define C_INT_ENABLE 0x0044
+-#define C_INT_ENABLE_ADDR(base) ((base) + C_INT_ENABLE)
+-#define C_INT_EN_SHIFT 31
+-
+-#define C_INT_ENAB 0x0000
+-#define C_INT_ENAB_ADDR(base) ((base) + C_INT_ENAB)
+-#define C_INT_IRQ_ENAB_SHIFT 15
+-
+-#endif
+-
+-/* EOF */
+diff --git a/drivers/bluetooth/pistachio/img-transport.h b/drivers/bluetooth/pistachio/img-transport.h
+deleted file mode 100644
+index cd29e65..0000000
+--- a/drivers/bluetooth/pistachio/img-transport.h
++++ /dev/null
+@@ -1,78 +0,0 @@
+-/*HEADER**********************************************************************
+- ******************************************************************************
+- ***
+- *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
+- *** All rights reserved
+- ***
+- *** This program is free software; you can redistribute it and/or
+- *** modify it under the terms of the GNU General Public License
+- *** as published by the Free Software Foundation; either version 2
+- *** of the License, or (at your option) any later version.
+- ***
+- *** This program is distributed in the hope that it will be useful,
+- *** but WITHOUT ANY WARRANTY; without even the implied warranty of
+- *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- *** GNU General Public License for more details.
+- ***
+- *** You should have received a copy of the GNU General Public License
+- *** along with this program; if not, write to the Free Software
+- *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+- *** USA.
+- ***
+- *** File Name  : img-transport.h
+- ***
+- *** File Description:
+- *** This file contains interface definition of the low level IMG transport
+- *** mechanism.
+- ***
+- ******************************************************************************
+- *END**************************************************************************/
+-
+-
+-#ifndef __IMG_TRANSPORT_H__
+-#define __IMG_TRANSPORT_H__
+-
+-#include <linux/types.h>
+-
+-/*
+- * Note that this procedure is going to be executed
+- * in the interrupt context, so it has to be as lean
+- * as possible and should preferably defer all heavy
+- * lifting.
+- */
+-typedef void (*img_transport_handler)(u16 user_data);
+-
+-/*
+- * Note that this function may sleep forever when,
+- * for example, RPU is unable to respond.
+- *
+- * Possible return values:
+- * 0		: RPU has been notified
+- */
+-void img_transport_notify(u16 user_data, int user_id);
+-
+-/*
+- * Possible return values:
+- * @ -ETIME	: request timed out
+- * @ 0		: RPU has been notified
+- */
+-int __must_check img_transport_notify_timeout(u16 user_data,
+-					int user_id,
+-					long jiffies_timeout);
+-
+-/*
+- * Possible return values:
+- *  @ -EBADSLT	: id unavailable
+- *  @  0	: callback registered
+- */
+-int img_transport_register_callback(img_transport_handler,
+-					unsigned int client_id);
+-
+-/*
+- * Possible return values:
+- *  @ -EBADSLT	: client id not found
+- *  @  0	: callback removed
+- */
+-int img_transport_remove_callback(unsigned int client_id);
+-
+-#endif
+diff --git a/drivers/soc/img/Kconfig b/drivers/soc/img/Kconfig
+index 81d82f9..5908c20 100644
+--- a/drivers/soc/img/Kconfig
++++ b/drivers/soc/img/Kconfig
+@@ -13,4 +13,37 @@ config IMG_EFUSE
+ 	  To compile this driver as a module, choose M here: the module will
+ 	  be called img-efuse.
+ 
++config IMG_CONNECTIVITY
++	tristate "Imagination Technologies UCCP base driver"
++	depends on HAS_IOMEM
++	default m
++	help
++	  Imagination Technologies UCCP driver which loads the firmware
++	  and sets it up for operation. Drivers providing separate
++	  features like Bluetooth or WLAN use this driver.
++
++	  To compile this driver as a module, choose M here: the module will
++	  be called img-connectivity.
++
++config IMG_HOSTPORT
++	tristate "Imagination Technologies Hostport driver"
++	depends on IMG_CONNECTIVITY
++	default m
++	help
++	  Imagination Technologies Hostport driver which provides the API to
++	  communicate with the UCCP through shared memory.
++
++	  To compile this driver as a module, choose M here: the module will
++	  be called img-hostport.
++
++config IMG_HOSTPORT_DUMMY_CLIENT
++	tristate "Imagination Technologies Hostport dummy client"
++	depends on IMG_HOSTPORT
++	default n
++	help
++	  An example how to use the API exported by the Hostport driver.
++
++	  To compile this driver as a module, choose M here: the module will
++	  be called img-hostport.
++
+ endif # SOC_IMG
+diff --git a/drivers/soc/img/Makefile b/drivers/soc/img/Makefile
+index f33a89f..5347ed9 100644
+--- a/drivers/soc/img/Makefile
++++ b/drivers/soc/img/Makefile
+@@ -1 +1,2 @@
+ obj-$(CONFIG_SOC_IMG)	+= fuse/
++obj-$(CONFIG_SOC_IMG)	+= connectivity/
+diff --git a/drivers/soc/img/connectivity/Makefile b/drivers/soc/img/connectivity/Makefile
+new file mode 100644
+index 0000000..f02b486
+--- /dev/null
++++ b/drivers/soc/img/connectivity/Makefile
+@@ -0,0 +1,3 @@
++obj-$(CONFIG_IMG_CONNECTIVITY)		+= img-connectivity.o
++obj-$(CONFIG_IMG_HOSTPORT)		+= img-hostport.o
++obj-$(CONFIG_IMG_HOSTPORT_DUMMY_CLIENT)	+= img-dummy.o
+diff --git a/drivers/soc/img/connectivity/img-connectivity.c b/drivers/soc/img/connectivity/img-connectivity.c
+new file mode 100644
+index 0000000..24f2fac
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-connectivity.c
+@@ -0,0 +1,217 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-connectivity.c
++ ***
++ *** File Description:
++ *** This file contains the implementation of the UCCP base driver.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++#include <linux/clk.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++
++#include <soc/img/img-connectivity.h>
++
++struct img_connectivity {
++	phys_addr_t rpu_sbus;
++};
++
++struct clock {
++	struct list_head xs;
++	struct clk *p;
++};
++static LIST_HEAD(clocks);
++
++/*
++ * *** Public API ***
++ */
++struct img_version_info img_connectivity_version(void)
++{
++	struct img_version_info vi = { .bt = 0, .wlan = 0 };
++	return vi;
++}
++
++/*
++ * *** Private API ***
++ */
++static int img_connectivity_clock_setup(struct platform_device *d)
++{
++	int ret;
++	struct clock *clock;
++
++	list_for_each_entry(clock, &clocks, xs) {
++		ret = clk_prepare_enable(clock->p);
++		if (ret) {
++			list_for_each_entry_continue_reverse(clock, &clocks, xs)
++				clk_disable_unprepare(clock->p);
++			return ret;
++		}
++	}
++
++	return 0;
++}
++
++static void img_connectivity_clock_setup_rollback(struct platform_device *d)
++{
++	struct clock *clock;
++
++	list_for_each_entry(clock, &clocks, xs)
++		clk_disable_unprepare(clock->p);
++}
++
++static struct clock *alloc_single_clock(struct device *d, int index)
++{
++	struct clock *tmp;
++	struct clk *tmpclk;
++
++	tmpclk = of_clk_get(d->of_node, index);
++	if (IS_ERR(tmpclk)) {
++		return ERR_PTR(-ENODEV);
++	}
++
++	tmp = devm_kzalloc(d, sizeof(struct clock), GFP_KERNEL);
++	if (NULL == tmp) {
++		return ERR_PTR(-ENOMEM);
++	}
++	INIT_LIST_HEAD(&tmp->xs);
++	tmp->p = tmpclk;
++	return tmp;
++}
++
++static int img_connectivity_dtsetup(struct platform_device *d)
++{
++	int i;
++	struct clock *tmp;
++	int clocks_no;
++
++	/*
++	 * Check how many clocks we have defined.
++	 *
++	 * Note that 'clocks' is an optional property.
++	 */
++	if (of_property_read_u32(d->dev.of_node, "clocks-number", &clocks_no)) {
++		pr_info("img-connectivity: could not find 'clocks-number' "
++			"dt property\n");
++		return 0;
++	}
++
++	pr_info("img-connectivity: detected %d clocks\n", clocks_no);
++
++	INIT_LIST_HEAD(&clocks);
++	for (i = 0; i < clocks_no; i++) {
++		tmp = alloc_single_clock(&d->dev, i);
++		if (!IS_ERR(tmp)) {
++			list_add(&tmp->xs, &clocks);
++		} else if (ERR_PTR(-ENODEV) == tmp) {
++			pr_err("img-connectivity: invalid clock reference %d\n",
++					i);
++			return PTR_ERR(tmp);
++		} else if (ERR_PTR(-ENOMEM) == tmp) {
++			pr_err("img-connectivity: failed to allocate "
++					"clock descriptor\n");
++			return PTR_ERR(tmp);
++		} else {
++			pr_err("img-connectivity: BUG: unknown return value "
++					"%ld\n", PTR_ERR(tmp));
++			return PTR_ERR(tmp);
++		}
++	}
++
++	return 0;
++}
++
++static void img_connectivity_dtsetup_rollback(struct platform_device *d)
++{}
++/*
++ * * platform driver code & data
++ */
++static int __init img_connectivity_probe(struct platform_device *d)
++{
++	int ret;
++
++	ret = img_connectivity_dtsetup(d);
++	if (ret)
++		goto dtsetup_failed;
++
++	ret = img_connectivity_clock_setup(d);
++	if (ret)
++		goto clock_setup_failed;
++
++	/*
++	 * TODO: request and load the code
++	 */
++	return 0;
++clock_setup_failed:
++	img_connectivity_dtsetup_rollback(d);
++dtsetup_failed:
++	return ret;
++}
++
++static int img_connectivity_remove(struct platform_device *d)
++{
++	img_connectivity_clock_setup_rollback(d);
++	img_connectivity_dtsetup_rollback(d);
++	/*
++	 * Quiesce the RPU (?)
++	 */
++	return 0;
++}
++
++static const struct of_device_id img_connectivity_dt_ids[] = {
++	{ .compatible = "img,pistachio-uccp-system" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, img_connectivity_dt_ids);
++
++static struct platform_driver img_connectivity_pd = {
++	.remove = img_connectivity_remove,
++	.driver = {
++		.name = "img-connectivity",
++		.of_match_table = of_match_ptr(img_connectivity_dt_ids),
++	},
++};
++
++/*
++ * * .ko entry and exit points
++ */
++static int __init img_connectivity_entry(void)
++{
++	return platform_driver_probe(&img_connectivity_pd, img_connectivity_probe);
++}
++
++static void __exit img_connectivity_leave(void)
++{
++	platform_driver_unregister(&img_connectivity_pd);
++}
++
++module_init(img_connectivity_entry);
++module_exit(img_connectivity_leave);
++
++/*
++ * * module metadata
++ */
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Bartosz Flis <bartosz.flis@imgtec.com>");
++MODULE_DESCRIPTION("Imagination Technologies RPU base driver - www.imgtec.com");
+diff --git a/drivers/soc/img/connectivity/img-dummy.c b/drivers/soc/img/connectivity/img-dummy.c
+new file mode 100644
+index 0000000..908ae51
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-dummy.c
+@@ -0,0 +1,156 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-dummy.c
++ ***
++ *** File Description:
++ *** This file contains an example of how to use the Hostport
++ *** transport protocol.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/printk.h>
++#include <linux/proc_fs.h>
++#include <linux/spinlock.h>
++#include <linux/string.h>
++
++#include <soc/img/img-transport.h>
++
++#define FIVE_S (5 * HZ)
++#define DUMMY_ID 2
++
++static DEFINE_SPINLOCK(busy_writing);
++
++static bool strneq(const char *c1, const char *c2, __kernel_size_t count)
++{
++    return 0 == strncmp(c1, c2, count);
++}
++
++static void async_request(int number, const char *err_msg)
++{
++	spin_lock(&busy_writing);
++	if (-ETIME == img_transport_notify_timeout(number, DUMMY_ID, FIVE_S)) {
++		pr_err("img-dummy : %s", err_msg);
++	}
++	spin_unlock(&busy_writing);
++}
++
++static void async_on(void)
++{
++	async_request(0xFFFF, "could not turn on async messages");
++}
++
++static void async_off(void)
++{
++	async_request(0, "could not turn off async messages");
++}
++
++static ssize_t write(struct file *file, const char *buf, size_t count,
++			loff_t *pos)
++{
++	printk("%.*s\n", count, buf);
++	if (strneq("on", buf, min(count,(size_t)2))) {
++		pr_info("img-dummy : requesting async on\n");
++		async_on();
++	} else if (strneq("off", buf, min(count,(size_t)3))) {
++		pr_info("img-dummy : requesting async off\n");
++		async_off();
++	}
++	return count;
++}
++
++static struct file_operations ops = {
++	.owner = THIS_MODULE,
++	.write = write,
++};
++
++void received_message(u16 user_data)
++{
++	pr_info("img-dummy : received message 0x%04X\n", user_data);
++}
++
++/*
++ * * platform driver code & data
++ */
++static int __init img_dummy_probe(struct platform_device *d)
++{
++	int result;
++	struct proc_dir_entry *entry = proc_create("hsdummy", 0600, NULL, &ops);
++	if (IS_ERR_OR_NULL(entry)) {
++		result = PTR_ERR(entry);
++		goto proc_create_failed;
++	}
++
++	result = img_transport_register_callback(received_message, DUMMY_ID);
++	if (result)
++		goto register_callback_failed;
++
++	return 0;
++
++register_callback_failed:
++	remove_proc_entry("hsdummy", NULL);
++proc_create_failed:
++	return result;
++}
++
++static int img_dummy_remove(struct platform_device *d)
++{
++	img_transport_remove_callback(DUMMY_ID);
++	remove_proc_entry("hsdummy", NULL);
++	return 0;
++}
++
++static const struct of_device_id img_dummy_dt_ids[] = {
++	{ .compatible = "img,pistachio-uccp-dummy" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, img_dummy_dt_ids);
++
++static struct platform_driver img_dummy_pd = {
++	.remove = img_dummy_remove,
++	.driver = {
++		.name = "img-dummy",
++		.of_match_table = of_match_ptr(img_dummy_dt_ids),
++	},
++};
++
++static int __init img_bt_init(void)
++{
++	return platform_driver_probe(&img_dummy_pd, img_dummy_probe);
++}
++
++static void __exit img_bt_exit(void)
++{
++	platform_driver_unregister(&img_dummy_pd);
++}
++
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Bartosz Flis <bartosz.flis@imgtec.com>");
++MODULE_DESCRIPTION("Imagination Technologies dummy Hostport endpoint \
++- www.imgtec.com");
++
++module_init(img_bt_init);
++module_exit(img_bt_exit);
+diff --git a/drivers/soc/img/connectivity/img-hostport.c b/drivers/soc/img/connectivity/img-hostport.c
+new file mode 100644
+index 0000000..3437314
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-hostport.c
+@@ -0,0 +1,440 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-hostport-main.c
++ ***
++ *** File Description:
++ *** This file contains the implementation of the IMG low level
++ *** shared memory based transport.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++#include <asm/unaligned.h>
++
++#include <linux/export.h>
++#include <linux/interrupt.h>
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/of_net.h>
++#include <linux/platform_device.h>
++#include <linux/proc_fs.h>
++#include <linux/semaphore.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++#include <linux/clk.h>
++
++#include "img-hostport.h"
++
++static struct img_hostport *module;
++static const char *hal_name = "img-hostport";
++#define dbg(format, ...) pr_debug("%s: " format, hal_name, ## __VA_ARGS__)
++#define err(format, ...) pr_err("%s: " format, hal_name, ## __VA_ARGS__)
++#define dbgn(format, ...) dbg(format "\n", ## __VA_ARGS__)
++#define errn(format, ...) err(format "\n", ## __VA_ARGS__)
++#define diagerrn(format, ...) \
++	errn("%s : %d : " format, __func__, __LINE__, ## __VA_ARGS__)
++#define diagdbgn(format, ...) \
++	dbgn("%s : %d : " format, __func__, __LINE__, ## __VA_ARGS__)
++
++#define COMMON_HOST_ID 0
++#define CALLEE_MASK 0x000000f0
++#define CALLEE_SHIFT 4
++#define CALLER_MASK 0x0000000f
++#define USERMSG_MASK 0x00ffff00
++#define USERMSG_SHIFT 8
++#define CALLEE(reg) ((reg & CALLEE_MASK) >> CALLEE_SHIFT)
++#define CALLER(reg) (reg & CALLER_MASK)
++#define USERMSG(reg) ((reg & USERMSG_MASK) >> USERMSG_SHIFT)
++#define mtx_int_en_WIDTH 4
++
++DEFINE_SEMAPHORE(host_to_uccp_core_lock);
++
++/*
++ * Forward declarations
++ */
++static void notify_common(u16 user_data, int user_id);
++
++/*
++ * Public interface procs
++ */
++
++int img_transport_register_callback(
++		img_transport_handler poke,
++		unsigned int client_id)
++{
++	/*
++	 * Make sure that the slot is free, i.e. null
++	 */
++	if (client_id > MAX_ENDPOINT_ID || module->endpoints.f[client_id])
++		return -EBADSLT;
++
++	spin_lock(module->endpoints.in_use + client_id);
++	module->endpoints.f[client_id] = poke;
++	spin_unlock(module->endpoints.in_use + client_id);
++
++	return 0;
++}
++EXPORT_SYMBOL(img_transport_register_callback);
++
++void img_transport_notify(u16 user_data, int user_id)
++{
++	down(&host_to_uccp_core_lock);
++	notify_common(user_data, user_id);
++}
++EXPORT_SYMBOL(img_transport_notify);
++
++int __must_check img_transport_notify_timeout(u16 user_data,
++					int user_id,
++					long jiffies_timeout)
++{
++	if (-ETIME == down_timeout(&host_to_uccp_core_lock, jiffies_timeout)) {
++		return -ETIME;
++	}
++	notify_common(user_data, user_id);
++	return 0;
++}
++EXPORT_SYMBOL(img_transport_notify_timeout);
++
++int img_transport_remove_callback(unsigned int client_id)
++{
++	if (client_id > MAX_ENDPOINT_ID || !module->endpoints.f[client_id])
++		return -EBADSLT;
++
++	spin_lock(module->endpoints.in_use + client_id);
++	module->endpoints.f[client_id] = NULL;
++	spin_unlock(module->endpoints.in_use + client_id);
++
++	return 0;
++}
++EXPORT_SYMBOL(img_transport_remove_callback);
++
++/*
++ * Private procs
++ */
++
++static u8 id_to_field(int id)
++{
++	id &= 0xF;
++	return (id << 4) | id;
++}
++
++static void notify_common(u16 user_data, int user_id)
++{
++	iowrite32(0x87 << 24 | user_data << 8 | id_to_field(user_id),
++			(void __iomem *)H2C_CMD_ADDR(module->vbase));
++}
++
++static irqreturn_t hal_irq_handler(int    irq, void  *p)
++{
++	/* p is module here! */
++	unsigned long flags;
++	unsigned int reg_value;
++	unsigned int value, caller_id, callee_id, user_message, first_bit;
++	img_transport_handler handler;
++	spinlock_t *handler_in_use;
++
++	reg_value =
++		readl((void __iomem *)(C2H_CMD_ADDR(module->vbase)));
++
++	/* TODO: need to change that to support platforms other that 32 bit */
++	first_bit = (reg_value & (1 << 31)) >> 31;
++	if (0 == first_bit) {
++		err("unexpected spurious interrupt detected!\n");
++		return IRQ_HANDLED;
++	}
++
++	/* Clear the uccp interrupt */
++	value = 0;
++	value |= BIT(C_INT_CLR_SHIFT);
++	writel(value, (void __iomem *)(H2C_ACK_ADDR(module->vbase)));
++
++	callee_id = CALLEE(reg_value);
++	caller_id = CALLER(reg_value);
++	user_message = USERMSG(reg_value);
++	/*
++	 * We are ready to release the spinlock
++	 * once we get the all zeros message.
++	 *
++	 * callee_id is tainted, therefore must be checked.
++	 */
++	if (callee_id > MAX_ENDPOINT_ID) {
++		errn("endpoint with id = %u doesn't exist", callee_id);
++		return IRQ_HANDLED;
++	}
++
++	if (COMMON_HOST_ID == callee_id) {
++		switch (user_message) {
++		case 0:
++			/*
++			 * now H2C_CMD_ADDR can
++			 * be written to again
++			 */
++			up(&host_to_uccp_core_lock);
++			break;
++		default:
++			errn("unexpected controller message, dropping :");
++			errn("\tcallee_id : %d", callee_id);
++			errn("\tcaller_id : %d", caller_id);
++			errn("\tuser_message : %d", user_message);
++		}
++	} else {
++		handler = module->endpoints.f[callee_id];
++		handler_in_use = module->endpoints.in_use + callee_id;
++		if (NULL != handler) {
++			spin_lock_irqsave(handler_in_use, flags);
++			handler((u16)user_message);
++			spin_unlock_irqrestore(handler_in_use, flags);
++		} else
++			errn("endpoint with id = %u not registered", callee_id);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static void img_hostport_irq_on(void)
++{
++	unsigned int value = 0;
++
++	/*
++	 * Both mtx_irq and mtx_int must be asserted in order to
++	 * receive inerrupts on the host
++	 */
++
++	value = readl(module->vmtx_irq_en);
++	value |= BIT(C_IRQ_EN_SHIFT);
++	writel(value, module->vmtx_irq_en);
++
++	value = 0;
++	value |= BIT(C_INT_EN_SHIFT);
++	writel(value, module->vmtx_int_en);
++}
++
++static void img_hostport_irq_off(void)
++{
++	unsigned int value = 0;
++
++	value = 0;
++	value &= ~(BIT(C_INT_EN_SHIFT));
++	writel(value, module->vmtx_int_en);
++
++	value = readl(module->vmtx_irq_en);
++	value &= ~(BIT(C_IRQ_EN_SHIFT));
++	writel(value, module->vmtx_irq_en);
++}
++
++static int img_hostport_pltfr_irqregist(int irq_line)
++{
++	dbg("requesting interrupt line %d\n", irq_line);
++
++	return request_irq(irq_line, hal_irq_handler, 0, hal_name, module);
++}
++
++static int img_hostport_pltfr_irqregist_rollback(int irq_line)
++{
++	dbg("releasing interrupt line %d\n", irq_line);
++
++	free_irq(irq_line, module);
++
++	return 0;
++}
++
++static int img_hostport_pltfr_dtsetup(struct platform_device *pdev)
++{
++	int irq_or_error;
++	/* Get resources from platform device */
++	irq_or_error = platform_get_irq(pdev, 0);
++	if (irq_or_error < 0) { /* it's an error */
++		err("cannot find IRQ resource\n");
++		return irq_or_error; /* it's now error code */
++	}
++	module->irq_line = irq_or_error; /* it's now a valid IRQ line */
++
++	module->base = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++						"Hostport control block");
++	if (IS_ERR_OR_NULL(module->base)) {
++		errn("hostport base address not found");
++		return PTR_ERR(module->base);
++	}
++
++	module->mtx_int_en = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++						"Hostport mtx_int enable");
++	if (IS_ERR_OR_NULL(module->mtx_int_en)) {
++		errn("mtx_int enable address not found");
++		return PTR_ERR(module->base);
++	}
++
++	module->mtx_irq_en = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++						"Hostport mtx_irq enable");
++	if (IS_ERR_OR_NULL(module->mtx_irq_en)) {
++		errn("mtx_irq enable address not found");
++		return PTR_ERR(module->mtx_irq_en);
++	}
++
++	return 0;
++}
++
++static void img_hostport_pltfr_dtsetup_rollback(void)
++{
++	module->base = 0;
++	module->mtx_int_en = 0;
++	module->irq_line = 0;
++}
++
++static int img_hostport_pltfr_memmap(struct platform_device *d)
++{
++	/* Map RPU sbus */
++	module->vbase = devm_ioremap_resource(&d->dev, module->base);
++	if (NULL == module->vbase) {
++		errn("failed to remap Hostport control block");
++		return -ENOMEM;
++	}
++
++	module->vmtx_int_en = devm_ioremap_resource(&d->dev,
++							module->mtx_int_en);
++	if (module->vmtx_int_en == 0) {
++		errn("failed to remap mtx_int enable register");
++		return -ENOMEM;
++	}
++
++	module->vmtx_irq_en = devm_ioremap_resource(&d->dev,
++							module->mtx_irq_en);
++	if (module->vmtx_irq_en == 0) {
++		errn("faield to remap mtx_irq enable register");
++		return -ENOMEM;
++	}
++
++	return 0;
++}
++
++static void img_hostport_pltfr_memmap_rollback(void)
++{
++	module->vmtx_int_en = module->vbase = 0;
++}
++
++static int img_hostport_pltfr_memsetup(void)
++{
++	int i;
++
++	module = kzalloc(sizeof(struct img_hostport), GFP_KERNEL);
++
++	if (IS_ERR_OR_NULL(module))
++		return PTR_ERR(module);
++
++	for (i = 0; i < MAX_ENDPOINTS; i++)
++		spin_lock_init(module->endpoints.in_use + i);
++	return 0;
++}
++
++static void img_hostport_pltfr_memsetup_rollback(void)
++{
++	kfree(module);
++}
++
++static int img_hostport_pltfr_probe(struct platform_device *pdev)
++{
++	int result = 0;
++
++	result = img_hostport_pltfr_memsetup();
++	if (result) {
++		err("Memory setup failed");
++		goto memsetup_failed;
++	}
++
++	result = img_hostport_pltfr_dtsetup(pdev);
++	if (result) {
++		err("DT setup failed");
++		goto dtsetup_failed;
++	}
++
++	result = img_hostport_pltfr_memmap(pdev);
++	if (result) {
++		errn("Memory remapping failed");
++		goto memmap_failed;
++	}
++
++	/* Register irq handler, irq_line comes from dtsetup */
++	result = img_hostport_pltfr_irqregist(module->irq_line);
++	if (result) {
++		err("Unable to register IRQ handler\n");
++		goto irqsetup_failed;
++	}
++
++	dbg("activating hostport interrupt");
++	img_hostport_irq_on();
++
++	dbg("hostport driver registration completed");
++	return result;
++
++irqsetup_failed:
++	img_hostport_pltfr_memmap_rollback();
++memmap_failed:
++	img_hostport_pltfr_dtsetup_rollback();
++dtsetup_failed:
++	img_hostport_pltfr_memsetup_rollback();
++memsetup_failed:
++	return result;
++}
++
++static int img_hostport_pltfr_remove(struct platform_device *pdev)
++{
++	img_hostport_irq_off();
++	img_hostport_pltfr_irqregist_rollback(module->irq_line);
++	img_hostport_pltfr_memmap_rollback();
++	img_hostport_pltfr_dtsetup_rollback();
++	img_hostport_pltfr_memsetup_rollback();
++
++	return 0;
++}
++
++static const struct of_device_id img_hostport_dt_ids[] = {
++	{ .compatible = "img,pistachio-uccp-hostport" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, img_hostport_dt_ids);
++
++struct platform_driver img_uccp_driver = {
++	.probe = img_hostport_pltfr_probe,
++	.remove = img_hostport_pltfr_remove,
++	.driver = {
++		.name     = "uccp420",
++		.of_match_table = of_match_ptr(img_hostport_dt_ids),
++	},
++};
++
++static void __exit img_hostport_leave(void)
++{
++	platform_driver_unregister(&img_uccp_driver);
++}
++
++static int __init img_hostport_entry(void)
++{
++	return platform_driver_probe(&img_uccp_driver,
++					img_hostport_pltfr_probe);
++}
++
++module_init(img_hostport_entry);
++module_exit(img_hostport_leave);
++
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Bartosz Flis <bartosz.flis@imgtec.com>");
++MODULE_DESCRIPTION("Imagination Technologies Host Port driver - www.imgtec.com");
+diff --git a/drivers/soc/img/connectivity/img-hostport.h b/drivers/soc/img/connectivity/img-hostport.h
+new file mode 100644
+index 0000000..2b8f724
+--- /dev/null
++++ b/drivers/soc/img/connectivity/img-hostport.h
+@@ -0,0 +1,83 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-hostport-main.h
++ ***
++ *** File Description:
++ *** This file contains private definitions specific to Host Port comms
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++#ifndef _IMGBT_HOSTPORT_H_
++#define _IMGBT_HOSTPORT_H_
++
++/* Include files */
++#include <linux/types.h>
++
++#include <soc/img/img-transport.h>
++
++#define MAX_ENDPOINTS 3
++#define MAX_ENDPOINT_ID (MAX_ENDPOINTS - 1)
++
++struct img_hostport_endpoints {
++	img_transport_handler f[MAX_ENDPOINTS];
++	spinlock_t in_use[MAX_ENDPOINTS];
++};
++
++struct img_hostport {
++	struct img_hostport_endpoints endpoints;
++	/* RPU system bus remapped addresses */
++	void __iomem *vbase;
++	void __iomem *vmtx_int_en;
++	void __iomem *vmtx_irq_en;
++	/* DTS entries */
++	struct resource *base;
++	struct resource *mtx_int_en;
++	struct resource *mtx_irq_en;
++	unsigned int irq_line;
++};
++
++/* Register H2C_CMD */
++#define H2C_CMD 0x0
++#define H2C_CMD_ADDR(base) ((base) + H2C_CMD)
++#define C_HOST_INT_SHIFT 31
++
++/* Register C2H_CMD */
++#define C2H_CMD 0x4
++#define C2H_CMD_ADDR(base) ((base) + C2H_CMD)
++
++/* Register H2C_ACK */
++#define H2C_ACK 0x8
++#define H2C_ACK_ADDR(base) ((base) + H2C_ACK)
++#define C_INT_CLR_SHIFT 31
++
++/* Register C2H_ACK */
++#define C2H_ACK 0xC
++#define C2H_ACK_ADDR(base) ((base) + C2H_ACK)
++
++/* Register C_INT_ENABLE */
++#define C_INT_EN_SHIFT 31
++#define C_IRQ_EN_SHIFT 15
++
++#endif
++
++/* EOF */
+diff --git a/include/soc/img/img-connectivity.h b/include/soc/img/img-connectivity.h
+new file mode 100644
+index 0000000..16e8fa7
+--- /dev/null
++++ b/include/soc/img/img-connectivity.h
+@@ -0,0 +1,39 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-connectivity.h
++ ***
++ *** File Description:
++ *** This file contains public definitions specific to UCCP base driver
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++#ifndef __IMG_CONNECTIVITY_H
++#define __IMG_CONNECTIVITY_H 1
++
++struct img_version_info {
++	int bt;
++	int wlan;
++};
++
++struct img_version_info img_connectivity_version(void);
++
++#endif /* __IMG_CONNECTIVITY_H */
+diff --git a/include/soc/img/img-transport.h b/include/soc/img/img-transport.h
+new file mode 100644
+index 0000000..cd29e65
+--- /dev/null
++++ b/include/soc/img/img-transport.h
+@@ -0,0 +1,78 @@
++/*HEADER**********************************************************************
++ ******************************************************************************
++ ***
++ *** Copyright (c) 2011, 2012, 2013, 2014 Imagination Technologies Ltd.
++ *** All rights reserved
++ ***
++ *** This program is free software; you can redistribute it and/or
++ *** modify it under the terms of the GNU General Public License
++ *** as published by the Free Software Foundation; either version 2
++ *** of the License, or (at your option) any later version.
++ ***
++ *** This program is distributed in the hope that it will be useful,
++ *** but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *** GNU General Public License for more details.
++ ***
++ *** You should have received a copy of the GNU General Public License
++ *** along with this program; if not, write to the Free Software
++ *** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
++ *** USA.
++ ***
++ *** File Name  : img-transport.h
++ ***
++ *** File Description:
++ *** This file contains interface definition of the low level IMG transport
++ *** mechanism.
++ ***
++ ******************************************************************************
++ *END**************************************************************************/
++
++
++#ifndef __IMG_TRANSPORT_H__
++#define __IMG_TRANSPORT_H__
++
++#include <linux/types.h>
++
++/*
++ * Note that this procedure is going to be executed
++ * in the interrupt context, so it has to be as lean
++ * as possible and should preferably defer all heavy
++ * lifting.
++ */
++typedef void (*img_transport_handler)(u16 user_data);
++
++/*
++ * Note that this function may sleep forever when,
++ * for example, RPU is unable to respond.
++ *
++ * Possible return values:
++ * 0		: RPU has been notified
++ */
++void img_transport_notify(u16 user_data, int user_id);
++
++/*
++ * Possible return values:
++ * @ -ETIME	: request timed out
++ * @ 0		: RPU has been notified
++ */
++int __must_check img_transport_notify_timeout(u16 user_data,
++					int user_id,
++					long jiffies_timeout);
++
++/*
++ * Possible return values:
++ *  @ -EBADSLT	: id unavailable
++ *  @  0	: callback registered
++ */
++int img_transport_register_callback(img_transport_handler,
++					unsigned int client_id);
++
++/*
++ * Possible return values:
++ *  @ -EBADSLT	: client id not found
++ *  @  0	: callback removed
++ */
++int img_transport_remove_callback(unsigned int client_id);
++
++#endif
+-- 
+1.9.1
+

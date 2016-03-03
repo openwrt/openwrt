@@ -1,0 +1,34 @@
+From 43bd1299a3c49cb98758da6724df6f36a9336334 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Thu, 3 Sep 2015 16:38:39 +0530
+Subject: [PATCH 063/153] marduk_dts: enable vbus drive for usb_phy
+
+marduk USB power is controlled by USB_PWR_ON(mfio86), enable option in
+usb phy driver to control this pin from USB block
+
+Change-Id: Ia6661d25414f7659a7621f30d3744b0ec7fae38e
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index ab7b1ee..633b8f8 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -195,6 +195,12 @@
+ 	status = "okay";
+ };
+ 
++&usb_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&usb_pwr_on_pins>;
++	enable-vbus-drive;
++};
++
+ &enet {
+ 	status = "okay";
+ 
+-- 
+1.9.1
+

@@ -1,0 +1,69 @@
+From 5223bde8330c600e505b017d1363e7fba6f4ecd9 Mon Sep 17 00:00:00 2001
+From: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
+Date: Wed, 4 Nov 2015 17:39:06 +0530
+Subject: [PATCH 096/153] spi-nand, spi-nor: allow use of linux,mtd-name from
+ OF
+
+Change-Id: I93c79b097d65029c5068df920f5cf66020776aac
+Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
+---
+ drivers/mtd/spi-nand/spi-nand-base.c | 9 ++++++++-
+ drivers/mtd/spi-nor/spi-nor.c        | 8 +++++++-
+ 2 files changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/spi-nand/spi-nand-base.c b/drivers/mtd/spi-nand/spi-nand-base.c
+index 3012645..4710280 100644
+--- a/drivers/mtd/spi-nand/spi-nand-base.c
++++ b/drivers/mtd/spi-nand/spi-nand-base.c
+@@ -438,6 +438,7 @@ int spi_nand_register(struct spi_nand *snand, struct nand_flash_dev *flash_ids)
+ 	struct mtd_part_parser_data ppdata = {};
+ 	struct mtd_info *mtd = &snand->mtd;
+ 	struct device_node *np = snand->dev->of_node;
++	const char __maybe_unused *of_mtd_name = NULL;
+ 	int ret;
+ 
+ 	/* Let's check all the hooks are in-place so we don't panic later */
+@@ -462,7 +463,13 @@ int spi_nand_register(struct spi_nand *snand, struct nand_flash_dev *flash_ids)
+ 	if (of_get_nand_on_flash_bbt(np))
+ 		chip->bbt_options |= NAND_BBT_USE_FLASH | NAND_BBT_NO_OOB;
+ 
+-	mtd->name = snand->name;
++#ifdef CONFIG_MTD_OF_PARTS
++	of_property_read_string(np, "linux,mtd-name", &of_mtd_name);
++#endif
++	if (of_mtd_name)
++		mtd->name = of_mtd_name;
++	else
++		mtd->name = snand->name;
+ 	mtd->owner = THIS_MODULE;
+ 	mtd->priv = chip;
+ 
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index 14a5d23..1194f33 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -996,6 +996,7 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
+ 	struct device *dev = nor->dev;
+ 	struct mtd_info *mtd = nor->mtd;
+ 	struct device_node *np = dev->of_node;
++	const char __maybe_unused *of_mtd_name = NULL;
+ 	int ret;
+ 	int i;
+ 
+@@ -1052,7 +1053,12 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
+ 		write_sr(nor, 0);
+ 	}
+ 
+-	if (!mtd->name)
++#ifdef CONFIG_MTD_OF_PARTS
++	of_property_read_string(np, "linux,mtd-name", &of_mtd_name);
++#endif
++	if (of_mtd_name)
++		mtd->name = of_mtd_name;
++	else if (!mtd->name)
+ 		mtd->name = dev_name(dev);
+ 	mtd->type = MTD_NORFLASH;
+ 	mtd->writesize = 1;
+-- 
+1.9.1
+
