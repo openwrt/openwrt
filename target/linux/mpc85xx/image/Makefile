@@ -32,7 +32,9 @@ endef
 
 define Image/BuildKernel/Initramfs
 	cp $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-initramfs-zImage
+ifeq ($(SUBTARGET),generic)
 	cp $(KDIR)/cuImage.tl-wdr4900-v1-initramfs $(BIN_DIR)/$(IMG_PREFIX)-tl-wdr4900-v1-initramfs.uImage
+endif
 endef
 
 define Image/Build/TPLINK
