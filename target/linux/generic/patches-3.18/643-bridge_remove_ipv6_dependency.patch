@@ -35,7 +35,7 @@
  obj-$(CONFIG_NET_UDP_TUNNEL) += ip6_udp_tunnel.o
 --- a/net/ipv6/addrconf.c
 +++ b/net/ipv6/addrconf.c
-@@ -1317,7 +1317,7 @@ out:
+@@ -1318,7 +1318,7 @@ out:
  	return ret;
  }
  
@@ -44,7 +44,7 @@
  		       const struct in6_addr *daddr, unsigned int prefs,
  		       struct in6_addr *saddr)
  {
-@@ -1442,7 +1442,6 @@ try_nextdev:
+@@ -1443,7 +1443,6 @@ try_nextdev:
  	in6_ifa_put(hiscore->ifa);
  	return 0;
  }
@@ -52,7 +52,7 @@
  
  int __ipv6_get_lladdr(struct inet6_dev *idev, struct in6_addr *addr,
  		      u32 banned_flags)
-@@ -5451,6 +5450,9 @@ int __init addrconf_init(void)
+@@ -5467,6 +5466,9 @@ int __init addrconf_init(void)
  
  	ipv6_addr_label_rtnl_register();
  
@@ -62,7 +62,7 @@
  	return 0;
  errout:
  	rtnl_af_unregister(&inet6_ops);
-@@ -5470,6 +5472,9 @@ void addrconf_cleanup(void)
+@@ -5486,6 +5488,9 @@ void addrconf_cleanup(void)
  	struct net_device *dev;
  	int i;
  

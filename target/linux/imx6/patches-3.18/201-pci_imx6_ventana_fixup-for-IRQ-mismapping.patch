@@ -19,7 +19,7 @@ Date:   Thu Feb 27 00:59:53 2014 -0800
 
 --- a/drivers/pci/host/pci-imx6.c
 +++ b/drivers/pci/host/pci-imx6.c
-@@ -553,6 +553,39 @@ static int __init imx6_add_pcie_port(str
+@@ -554,6 +554,39 @@ static int __init imx6_add_pcie_port(str
  	return 0;
  }
  
@@ -59,7 +59,7 @@ Date:   Thu Feb 27 00:59:53 2014 -0800
  static int __init imx6_pcie_probe(struct platform_device *pdev)
  {
  	struct imx6_pcie *imx6_pcie;
-@@ -618,6 +651,9 @@ static int __init imx6_pcie_probe(struct
+@@ -619,6 +652,9 @@ static int __init imx6_pcie_probe(struct
  		return PTR_ERR(imx6_pcie->iomuxc_gpr);
  	}
  

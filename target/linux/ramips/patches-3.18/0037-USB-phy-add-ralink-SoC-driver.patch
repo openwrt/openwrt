@@ -1,6 +1,6 @@
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -239,6 +239,11 @@
+@@ -239,6 +239,11 @@ config PHY_XGENE
  	help
  	  This option enables support for APM X-Gene SoC multi-purpose PHY.
  
@@ -14,7 +14,7 @@
  	depends on RESET_CONTROLLER
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -31,3 +31,4 @@
+@@ -31,3 +31,4 @@ obj-$(CONFIG_PHY_ST_SPEAR1340_MIPHY)	+=
  obj-$(CONFIG_PHY_XGENE)			+= phy-xgene.o
  obj-$(CONFIG_PHY_STIH407_USB)		+= phy-stih407-usb.o
  obj-$(CONFIG_PHY_STIH41X_USB)		+= phy-stih41x-usb.o

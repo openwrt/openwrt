@@ -15,7 +15,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
-@@ -465,6 +465,10 @@ static void pppoe_unbind_sock_work(struc
+@@ -464,6 +464,10 @@ static void pppoe_unbind_sock_work(struc
  	struct sock *sk = sk_pppox(po);
  
  	lock_sock(sk);

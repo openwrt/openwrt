@@ -10,7 +10,7 @@ Hub overcurrent messages are more serious than "debug". Increase loglevel.
 
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -4907,7 +4907,7 @@ static void port_event(struct usb_hub *h
+@@ -4928,7 +4928,7 @@ static void port_event(struct usb_hub *h
  	if (portchange & USB_PORT_STAT_C_OVERCURRENT) {
  		u16 status = 0, unused;
  

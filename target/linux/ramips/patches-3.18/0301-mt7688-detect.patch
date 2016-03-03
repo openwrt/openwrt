@@ -94,7 +94,7 @@
  
 --- a/drivers/net/ethernet/ralink/esw_rt3052.c
 +++ b/drivers/net/ethernet/ralink/esw_rt3052.c
-@@ -611,7 +611,7 @@ static void esw_hw_init(struct rt305x_es
+@@ -618,7 +618,7 @@ static void esw_hw_init(struct rt305x_es
  		rt305x_mii_write(esw, 0, 29, 0x598b);
  		/* select local register */
  		rt305x_mii_write(esw, 0, 31, 0x8000);
@@ -103,7 +103,7 @@
  		int i;
  //		u32 phy_val;
  		u32 val;
-@@ -1042,7 +1042,7 @@ esw_get_port_tr_badgood(struct switch_de
+@@ -1049,7 +1049,7 @@ esw_get_port_tr_badgood(struct switch_de
  	int shift = attr->id == RT5350_ESW_ATTR_PORT_TR_GOOD ? 0 : 16;
  	u32 reg;
  
