@@ -179,14 +179,21 @@ image_check(int imagefd, const char *mtd)
 {
 	uint32_t magic;
 	int ret = 1;
+	int bufread;
+
+	while (buflen < sizeof(magic)) {
+		bufread = read(imagefd, buf + buflen, sizeof(magic) - buflen);
+		if (bufread < 1)
+			break;
+
+		buflen += bufread;
+	}
 
 	if (buflen < sizeof(magic)) {
-		buflen += read(imagefd, buf + buflen, sizeof(magic) - buflen);
-		if (buflen < sizeof(magic)) {
-			fprintf(stdout, "Could not get image magic\n");
-			return 0;
-		}
+		fprintf(stdout, "Could not get image magic\n");
+		return 0;
 	}
+
 	magic = ((uint32_t *)buf)[0];
 
 	if (be32_to_cpu(magic) == TRX_MAGIC)
