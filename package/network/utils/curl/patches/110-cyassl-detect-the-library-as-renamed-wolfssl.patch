@@ -1,0 +1,101 @@
+From 7868dc7103b40484d177985bb04270250a50e262 Mon Sep 17 00:00:00 2001
+From: Dan Fandrich <dan@coneharvesters.com>
+Date: Thu, 19 Mar 2015 23:41:10 +0100
+Subject: [PATCH] cyassl: detect the library as renamed wolfssl
+
+This change was made in CyaSSL/WolfSSL ver. 3.4.0
+---
+ configure.ac | 60 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 57 insertions(+), 3 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -1578,8 +1578,10 @@ if test "$curl_ssl_msg" = "$init_ssl_msg
+                 AC_CHECK_FUNCS( ENGINE_load_builtin_engines )
+               ])
+ 
+-    dnl these can only exist if openssl exists
+-    dnl yassl doesn't have SSL_get_shutdown
++    dnl These can only exist if OpenSSL exists
++    dnl Older versions of Cyassl (some time before 2.9.4) don't have
++    dnl SSL_get_shutdown (but this check won't actually detect it there
++    dnl as it's a macro that needs the header files be included)
+ 
+     AC_CHECK_FUNCS( RAND_status \
+                     RAND_screen \
+@@ -1943,6 +1945,10 @@ if test "$curl_ssl_msg" = "$init_ssl_msg
+       OPT_CYASSL=""
+     fi
+ 
++    dnl This should be reworked to use pkg-config instead
++
++    cyassllibname=cyassl
++
+     if test -z "$OPT_CYASSL" ; then
+       dnl check for lib in system default first
+ 
+@@ -1984,7 +1990,55 @@ if test "$curl_ssl_msg" = "$init_ssl_msg
+        [
+          CPPFLAGS=$_cppflags
+          LDFLAGS=$_ldflags
++         cyassllib=""
++       ])
++    fi
++
++    addld=""
++    addlib=""
++    addcflags=""
++
++    if test "x$USE_CYASSL" != "xyes"; then
++      dnl libcyassl renamed to libwolfssl as of 3.4.0
++      addld=-L$OPT_CYASSL/lib$libsuff
++      addcflags=-I$OPT_CYASSL/include
++      cyassllib=$OPT_CYASSL/lib$libsuff
++
++      LDFLAGS="$LDFLAGS $addld"
++      if test "$addcflags" != "-I/usr/include"; then
++         CPPFLAGS="$CPPFLAGS $addcflags"
++      fi
++
++      cyassllibname=wolfssl
++      my_ac_save_LIBS="$LIBS"
++      LIBS="-l$cyassllibname -lm $LIBS"
++
++      AC_MSG_CHECKING([for CyaSSL_Init in -lwolfssl])
++      AC_LINK_IFELSE([
++	AC_LANG_PROGRAM([[
++/* These aren't needed for detection and confuse WolfSSL.
++   They are set up properly later if it is detected.  */
++#undef SIZEOF_LONG
++#undef SIZEOF_LONG_LONG
++#include <cyassl/ssl.h>
++	]],[[
++	  return CyaSSL_Init();
++	]])
++      ],[
++         AC_MSG_RESULT(yes)
++         AC_DEFINE(USE_CYASSL, 1, [if CyaSSL is enabled])
++         AC_SUBST(USE_CYASSL, [1])
++         CYASSL_ENABLED=1
++         USE_CYASSL="yes"
++         curl_ssl_msg="enabled (CyaSSL)"
++       ],
++       [
++         AC_MSG_RESULT(no)
++         CPPFLAGS=$_cppflags
++         LDFLAGS=$_ldflags
++         cyassllib=""
+        ])
++      LIBS="$my_ac_save_LIBS"
+     fi
+ 
+     if test "x$USE_CYASSL" = "xyes"; then
+@@ -1996,7 +2050,7 @@ if test "$curl_ssl_msg" = "$init_ssl_msg
+       dnl Versions since at least 2.9.4 renamed error.h to error-ssl.h
+       AC_CHECK_HEADERS(cyassl/error-ssl.h)
+ 
+-      LIBS="-lcyassl -lm $LIBS"
++      LIBS="-l$cyassllibname -lm $LIBS"
+ 
+       if test -n "$cyassllib"; then
+         dnl when shared libs were found in a path that the run-time
