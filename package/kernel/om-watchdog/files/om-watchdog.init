@@ -4,33 +4,49 @@
 #
 
 START=11
+STOP=11
 
-SERVICE_DAEMONIZE=1
+USE_PROCD=1
+NAME=om-watchdog
+PROG=/sbin/om-watchdog
 
-boot() {
+get_gpio() {
 	if [ -r /lib/ar71xx.sh ]; then
 		. /lib/ar71xx.sh
 		local board=$(ar71xx_board_name)
 
 		case "$board" in
 			"om2p"|"om2p-hs"|"om2p-hsv2")
-				service_start /sbin/om-watchdog 12
+				return 12
 				;;
 			"om2pv2"|"om2p-lc")
-				service_start /sbin/om-watchdog 26
+				return 26
 				;;
 			"om5p"|"om5p-an")
-				service_start /sbin/om-watchdog 11
+				return 11
 				;;
 			"mr600v2")
-				service_start /sbin/om-watchdog 15
+				return 15
 				;;
 			"mr900"|"mr900v2"|"mr1750")
-				service_start /sbin/om-watchdog 16
+				return 16
 				;;
 		esac
 	else
 		#we assume it is om1p in this case
-		service_start /sbin/om-watchdog 3
+		return 3
 	fi
+
+	return 255
+}
+
+start_service() {
+	get_gpio
+	gpio="$?"
+	[ "$gpio" != "255" ] || return
+
+	procd_open_instance
+	procd_set_param command "${PROG}" "${gpio}"
+	procd_set_param respawn
+	procd_close_instance
 }
