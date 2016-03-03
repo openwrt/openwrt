@@ -13,6 +13,19 @@ package/feeds/.
 
 Use "make menuconfig" to configure your image.
 
+To run openwrt on Imagination's Creator (Ci40) Marduk platform based upon Pistachio SoC:
+
+Run the menu configuration for OpenWRT:
+
+# make menuconfig
+
+Then select the following menu options:
+
+ 1. Change the Target system to pistachio:
+
+ Target System (Atheros AR7xxx/AR9xxx) --->
+ (X) IMG MIPS Pistachio
+
 Simply running "make" will build your firmware.
 It will download all sources, build the cross-compile toolchain, 
 the kernel and all choosen applications.
