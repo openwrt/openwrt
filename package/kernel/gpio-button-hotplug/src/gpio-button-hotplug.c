@@ -563,7 +563,7 @@ static int gpio_keys_probe(struct platform_device *pdev)
 		}
 
 		ret = devm_request_threaded_irq(&pdev->dev, button->irq, NULL, button_handle_irq,
-						IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+						IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
 						dev_name(&pdev->dev), bdata);
 		if (ret < 0)
 			dev_err(&pdev->dev, "failed to request irq:%d for gpio:%d\n", button->irq, button->gpio);
