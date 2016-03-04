@@ -1317,6 +1317,31 @@ unlock:
 	return ret;
 }
 
+static void
+ar8xxx_byte_to_str(char *buf, int len, u64 byte)
+{
+	unsigned long b;
+	const char *unit;
+
+	if (byte >= 0x40000000) { /* 1 GiB */
+		b = byte * 10 / 0x40000000;
+		unit = "GiB";
+	} else if (byte >= 0x100000) { /* 1 MiB */
+		b = byte * 10 / 0x100000;
+		unit = "MiB";
+	} else if (byte >= 0x400) { /* 1 KiB */
+		b = byte * 10 / 0x400;
+		unit = "KiB";
+	} else {
+		b = byte;
+		unit = "Byte";
+	}
+	if (strcmp(unit, "Byte"))
+		snprintf(buf, len, "%lu.%lu %s", b / 10, b % 10, unit);
+	else
+		snprintf(buf, len, "%lu %s", b, unit);
+}
+
 int
 ar8xxx_sw_get_port_mib(struct switch_dev *dev,
 		       const struct switch_attr *attr,
@@ -1324,10 +1349,12 @@ ar8xxx_sw_get_port_mib(struct switch_dev *dev,
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	const struct ar8xxx_chip *chip = priv->chip;
-	u64 *mib_stats;
+	u64 *mib_stats, mib_data;
 	int port;
 	int ret;
 	char *buf = priv->buf;
+	char buf1[64];
+	const char *mib_name;
 	int i, len = 0;
 	bool mib_stats_empty = true;
 
@@ -1351,11 +1378,19 @@ ar8xxx_sw_get_port_mib(struct switch_dev *dev,
 
 	mib_stats = &priv->mib_stats[port * chip->num_mibs];
 	for (i = 0; i < chip->num_mibs; i++) {
+		mib_name = chip->mib_decs[i].name;
+		mib_data = mib_stats[i];
 		len += snprintf(buf + len, sizeof(priv->buf) - len,
-				"%-12s: %llu\n",
-				chip->mib_decs[i].name,
-				mib_stats[i]);
-		if (mib_stats_empty && mib_stats[i])
+				"%-12s: %llu\n", mib_name, mib_data);
+		if ((!strcmp(mib_name, "TxByte") ||
+		    !strcmp(mib_name, "RxGoodByte")) &&
+		    mib_data >= 1024) {
+			ar8xxx_byte_to_str(buf1, sizeof(buf1), mib_data);
+			--len; /* discard newline at the end of buf */
+			len += snprintf(buf + len, sizeof(priv->buf) - len,
+					" (%s)\n", buf1);
+		}
+		if (mib_stats_empty && mib_data)
 			mib_stats_empty = false;
 	}
 
