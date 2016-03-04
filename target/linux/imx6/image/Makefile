@@ -79,6 +79,7 @@ define Device/Default
 	KERNEL_INSTALL := 1
 	KERNEL_SUFFIX := -uImage
 	KERNEL_NAME := zImage
+	KERNEL_PREFIX := $$(IMAGE_PREFIX)
 	KERNEL := kernel-bin | uImage none
 	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
 	IMAGES :=
