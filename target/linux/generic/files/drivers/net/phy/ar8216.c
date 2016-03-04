@@ -1076,10 +1076,25 @@ ar8216_set_mirror_regs(struct ar8xxx_priv *priv)
 			   AR8216_PORT_CTRL_MIRROR_TX);
 }
 
+static inline u32
+ar8xxx_age_time_val(int age_time)
+{
+	return (age_time + AR8XXX_REG_ARL_CTRL_AGE_TIME_SECS / 2) /
+	       AR8XXX_REG_ARL_CTRL_AGE_TIME_SECS;
+}
+
+static inline void
+ar8xxx_set_age_time(struct ar8xxx_priv *priv, int reg)
+{
+	u32 age_time = ar8xxx_age_time_val(priv->arl_age_time);
+	ar8xxx_rmw(priv, reg, AR8216_ATU_CTRL_AGE_TIME, age_time << AR8216_ATU_CTRL_AGE_TIME_S);
+}
+
 int
 ar8xxx_sw_hw_apply(struct switch_dev *dev)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	const struct ar8xxx_chip *chip = priv->chip;
 	u8 portmask[AR8X16_MAX_PORTS];
 	int i, j;
 
@@ -1103,8 +1118,8 @@ ar8xxx_sw_hw_apply(struct switch_dev *dev)
 					portmask[i] |= vp & ~mask;
 			}
 
-			priv->chip->vtu_load_vlan(priv, priv->vlan_id[j],
-						 priv->vlan_table[j]);
+			chip->vtu_load_vlan(priv, priv->vlan_id[j],
+					    priv->vlan_table[j]);
 		}
 	} else {
 		/* vlan disabled:
@@ -1120,10 +1135,14 @@ ar8xxx_sw_hw_apply(struct switch_dev *dev)
 
 	/* update the port destination mask registers and tag settings */
 	for (i = 0; i < dev->ports; i++) {
-		priv->chip->setup_port(priv, i, portmask[i]);
+		chip->setup_port(priv, i, portmask[i]);
 	}
 
-	priv->chip->set_mirror_regs(priv);
+	chip->set_mirror_regs(priv);
+
+	/* set age time */
+	if (chip->reg_arl_ctrl)
+		ar8xxx_set_age_time(priv, chip->reg_arl_ctrl);
 
 	mutex_unlock(&priv->reg_mutex);
 	return 0;
@@ -1151,6 +1170,7 @@ ar8xxx_sw_reset_switch(struct switch_dev *dev)
 	priv->mirror_tx = false;
 	priv->source_port = 0;
 	priv->monitor_port = 0;
+	priv->arl_age_time = AR8XXX_DEFAULT_ARL_AGE_TIME;
 
 	chip->init_globals(priv);
 
@@ -1407,6 +1427,34 @@ unlock:
 }
 
 int
+ar8xxx_sw_set_arl_age_time(struct switch_dev *dev, const struct switch_attr *attr,
+			   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int age_time = val->value.i;
+	u32 age_time_val;
+
+	if (age_time < 0)
+		return -EINVAL;
+
+	age_time_val = ar8xxx_age_time_val(age_time);
+	if (age_time_val == 0 || age_time_val > 0xffff)
+		return -EINVAL;
+
+	priv->arl_age_time = age_time;
+	return 0;
+}
+
+int
+ar8xxx_sw_get_arl_age_time(struct switch_dev *dev, const struct switch_attr *attr,
+                   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	val->value.i = priv->arl_age_time;
+	return 0;
+}
+
+int
 ar8xxx_sw_get_arl_table(struct switch_dev *dev,
 			const struct switch_attr *attr,
 			struct switch_val *val)
@@ -1633,6 +1681,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 
 	.reg_port_stats_start = 0x19000,
 	.reg_port_stats_length = 0xa0,
+	.reg_arl_ctrl = AR8216_REG_ATU_CTRL,
 
 	.name = "Atheros AR8216",
 	.ports = AR8216_NUM_PORTS,
@@ -1662,6 +1711,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 
 	.reg_port_stats_start = 0x20000,
 	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8216_REG_ATU_CTRL,
 
 	.name = "Atheros AR8236",
 	.ports = AR8216_NUM_PORTS,
@@ -1691,6 +1741,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 
 	.reg_port_stats_start = 0x20000,
 	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8216_REG_ATU_CTRL,
 
 	.name = "Atheros AR8316",
 	.ports = AR8216_NUM_PORTS,

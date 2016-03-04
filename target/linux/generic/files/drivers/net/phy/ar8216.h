@@ -33,6 +33,9 @@
 #define AR8X16_PROBE_RETRIES	10
 #define AR8X16_MAX_PORTS	8
 
+#define AR8XXX_REG_ARL_CTRL_AGE_TIME_SECS	7
+#define AR8XXX_DEFAULT_ARL_AGE_TIME		300
+
 /* Atheros specific MII registers */
 #define MII_ATH_MMD_ADDR		0x0d
 #define MII_ATH_MMD_DATA		0x0e
@@ -384,6 +387,8 @@ struct ar8xxx_chip {
 	unsigned reg_port_stats_start;
 	unsigned reg_port_stats_length;
 
+	unsigned reg_arl_ctrl;
+
 	int (*hw_init)(struct ar8xxx_priv *priv);
 	void (*cleanup)(struct ar8xxx_priv *priv);
 
@@ -449,6 +454,7 @@ struct ar8xxx_priv {
 	u8 vlan_table[AR8X16_MAX_VLANS];
 	u8 vlan_tagged;
 	u16 pvid[AR8X16_MAX_PORTS];
+	int arl_age_time;
 
 	/* mirroring */
 	bool mirror_rx;
@@ -538,6 +544,14 @@ int
 ar8xxx_sw_get_port_mib(struct switch_dev *dev,
                        const struct switch_attr *attr,
                        struct switch_val *val);
+int
+ar8xxx_sw_get_arl_age_time(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val);
+int
+ar8xxx_sw_set_arl_age_time(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val);
 int
 ar8xxx_sw_get_arl_table(struct switch_dev *dev,
 			const struct switch_attr *attr,

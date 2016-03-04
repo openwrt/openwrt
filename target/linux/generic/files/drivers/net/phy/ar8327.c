@@ -1275,6 +1275,13 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.max = AR8327_NUM_PORTS - 1
  	},
 	{
+		.type = SWITCH_TYPE_INT,
+		.name = "arl_age_time",
+		.description = "ARL age time (secs)",
+		.set = ar8xxx_sw_set_arl_age_time,
+		.get = ar8xxx_sw_get_arl_age_time,
+	},
+	{
 		.type = SWITCH_TYPE_STRING,
 		.name = "arl_table",
 		.description = "Get ARL table",
@@ -1377,6 +1384,7 @@ const struct ar8xxx_chip ar8327_chip = {
 
 	.reg_port_stats_start = 0x1000,
 	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8327_REG_ARL_CTRL,
 
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
@@ -1411,6 +1419,7 @@ const struct ar8xxx_chip ar8337_chip = {
 
 	.reg_port_stats_start = 0x1000,
 	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8327_REG_ARL_CTRL,
 
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
