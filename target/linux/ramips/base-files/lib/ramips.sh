@@ -202,6 +202,15 @@ ramips_board_detect() {
 	*"IP2202")
 		name="ip2202"
 		;;
+	*"JHR-N805R")
+		name="jhr-n805r"
+		;;
+	*"JHR-N825R")
+		name="jhr-n825r"
+		;;
+	*"JHR-N926R")
+		name="jhr-n926r"
+		;;
 	*"M3")
 		name="m3"
 		;;
