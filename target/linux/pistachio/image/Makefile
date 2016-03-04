@@ -17,6 +17,7 @@ define MkDTB
 	$(CPP) -E -Wp,-MD,$(DTS_DIR)/.$(1).pre.tmp -nostdinc -I$(LINUX_DIR)/arch/mips/boot/dts/include -undef -D__DTS__  -x assembler-with-cpp -o $(DTS_DIR)/.$(1).tmp $(DTS_DIR)/$(1).dts
 	$(LINUX_DIR)/scripts/dtc/dtc -I dts -o $(DTS_DIR)/$(1).dtb -O dtb -b 0 -i $(LINUX_DIR)/arch/mips/boot/dts -d $(DTS_DIR)/.$(1).dtc.tmp $(DTS_DIR)/.$(1).tmp
 	$(CP) $(DTS_DIR)/$(1).dtb $(BIN_DIR)/$(1).dtb
+	$(CP) $(DTS_DIR)/$(1).dtb $(KDIR)/$(1).dtb
 endef
 
 define MkImageGzip
@@ -39,6 +40,33 @@ endef
 define Image/BuildKernel
 	$(call MkDTB,pistachio_$(BOARDNAME))
 	$(call Image/BuildKernel/uImage,$(BOARDNAME))
+endef
+
+define Image/InstallKernel/copy
+#UImage and DTB must always be in FS
+#ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+
+#ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage $(TARGET_DIR)/boot/
+	ln -sf boot/$(IMG_PREFIX)-$(1)-uImage $(TARGET_DIR)/uImage
+#endif
+
+#endif
+
+#ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+
+ifneq ($(1),)
+	$(CP) $(KDIR)/pistachio_$(1).dtb $(TARGET_DIR)/boot/
+	ln -sf boot/pistachio_$(1).dtb $(TARGET_DIR)/pistachio_$(1).dtb
+endif
+#endif
+
+endef
+
+define Image/InstallKernel
+        $(call Image/InstallKernel/copy,$(BOARDNAME))
 endef
 
 $(eval $(call BuildImage))
