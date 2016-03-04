@@ -1373,8 +1373,7 @@ ar8xxx_sw_get_port_mib(struct switch_dev *dev,
 	ar8xxx_mib_fetch_port_stat(priv, port, false);
 
 	len += snprintf(buf + len, sizeof(priv->buf) - len,
-			"Port %d MIB counters\n",
-			port);
+			"MIB counters\n");
 
 	mib_stats = &priv->mib_stats[port * chip->num_mibs];
 	for (i = 0; i < chip->num_mibs; i++) {
