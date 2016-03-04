@@ -1115,9 +1115,10 @@ define Device/wf-2881
   DTS := WF-2881
   BLOCKSIZE := 128KiB
   PAGESIZE := 2048
-  KERNEL_SIZE := 2097152
   FILESYSTEMS := squashfs
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE_SIZE := 132382720
+  KERNEL := $(KERNEL_DTB) | pad-offset 131072 64 | uImage lzma
+  IMAGE/sysupgrade.bin := append-kernel | append-ubi | check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/ubnt-erx
