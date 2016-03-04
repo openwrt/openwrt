@@ -519,6 +519,20 @@ Image/Build/Profile/CARAMBOLA=$(call BuildFirmware/Default8M/$(1),$(1),carambola
 
 Image/Build/Profile/D105=$(call BuildFirmware/Default4M/$(1),$(1),d105,D105)
 
+define BuildFirmware/JCG/squashfs
+	$(call BuildFirmware/Default4M/$(1),$(1),$(2),$(3))
+	-jcgimage -o $(call imgname,$(1),$(2))-factory.bin \
+		-u $(call sysupname,$(1),$(2)) -v $(4)
+endef
+Image/Build/Profile/JHR-N805R=$(call BuildFirmware/JCG/$(1),$(1),jhr-n805r,JHR-N805R,29.24)
+Image/Build/Profile/JHR-N825R=$(call BuildFirmware/JCG/$(1),$(1),jhr-n825r,JHR-N825R,23.24)
+Image/Build/Profile/JHR-N926R=$(call BuildFirmware/JCG/$(1),$(1),jhr-n926r,JHR-N926R,25.24)
+define Image/Build/Profile/JCG
+	$(call Image/Build/Profile/JHR-N805R,$(1))
+	$(call Image/Build/Profile/JHR-N825R,$(1))
+	$(call Image/Build/Profile/JHR-N926R,$(1))
+endef
+
 define BuildFirmware/DIR300B1/squashfs
 	$(call BuildFirmware/Default4M/$(1),$(1),$(2),$(3))
 	-mkwrgimg -s $(4) -d /dev/mtdblock/2 \
@@ -792,6 +806,9 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/HT-TM02,$(1))
 	$(call Image/Build/Profile/HW550-3G,$(1))
 	$(call Image/Build/Profile/IP2202,$(1))
+	$(call Image/Build/Profile/JHR-N805R,$(1))
+	$(call Image/Build/Profile/JHR-N825R,$(1))
+	$(call Image/Build/Profile/JHR-N926R,$(1))
 	$(call Image/Build/Profile/M2M,$(1))
 	$(call Image/Build/Profile/M3,$(1))
 	$(call Image/Build/Profile/M4,$(1))
