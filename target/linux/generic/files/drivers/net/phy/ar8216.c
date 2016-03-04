@@ -308,25 +308,33 @@ ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
 	mutex_unlock(&bus->mdio_lock);
 }
 
+static inline void
+ar8xxx_phy_mmd_prep(struct mii_bus *bus, int phy_addr, u16 addr, u16 reg)
+{
+	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr);
+	bus->write(bus, phy_addr, MII_ATH_MMD_DATA, reg);
+	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr | 0x4000);
+}
+
 void
-ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data)
+ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 reg, u16 data)
 {
 	struct mii_bus *bus = priv->mii_bus;
 
 	mutex_lock(&bus->mdio_lock);
-	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr);
+	ar8xxx_phy_mmd_prep(bus, phy_addr, addr, reg);
 	bus->write(bus, phy_addr, MII_ATH_MMD_DATA, data);
 	mutex_unlock(&bus->mdio_lock);
 }
 
 u16
-ar8xxx_phy_mmd_read(struct ar8xxx_priv *priv, int phy_addr, u16 addr)
+ar8xxx_phy_mmd_read(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 reg)
 {
 	struct mii_bus *bus = priv->mii_bus;
 	u16 data;
 
 	mutex_lock(&bus->mdio_lock);
-	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr);
+	ar8xxx_phy_mmd_prep(bus, phy_addr, addr, reg);
 	data = bus->read(bus, phy_addr, MII_ATH_MMD_DATA);
 	mutex_unlock(&bus->mdio_lock);
 

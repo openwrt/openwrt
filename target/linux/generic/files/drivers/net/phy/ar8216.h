@@ -478,9 +478,9 @@ void
 ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
 		     u16 dbg_addr, u16 dbg_data);
 void
-ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data);
+ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 reg, u16 data);
 u16
-ar8xxx_phy_mmd_read(struct ar8xxx_priv *priv, int phy_addr, u16 addr);
+ar8xxx_phy_mmd_read(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 reg);
 void
 ar8xxx_phy_init(struct ar8xxx_priv *priv);
 int
