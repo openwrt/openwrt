@@ -63,6 +63,9 @@ platform_check_image() {
 	ht-tm02|\
 	hw550-3g|\
 	ip2202|\
+	jhr-n805r|\
+	jhr-n825r|\
+	jhr-n926r|\
 	linkits7688|\
 	linkits7688d|\
 	m2m|\
