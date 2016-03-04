@@ -1329,6 +1329,7 @@ ar8xxx_sw_get_port_mib(struct switch_dev *dev,
 	int ret;
 	char *buf = priv->buf;
 	int i, len = 0;
+	bool mib_stats_empty = true;
 
 	if (!ar8xxx_has_mib_counters(priv))
 		return -EOPNOTSUPP;
@@ -1349,11 +1350,17 @@ ar8xxx_sw_get_port_mib(struct switch_dev *dev,
 			port);
 
 	mib_stats = &priv->mib_stats[port * chip->num_mibs];
-	for (i = 0; i < chip->num_mibs; i++)
+	for (i = 0; i < chip->num_mibs; i++) {
 		len += snprintf(buf + len, sizeof(priv->buf) - len,
 				"%-12s: %llu\n",
 				chip->mib_decs[i].name,
 				mib_stats[i]);
+		if (mib_stats_empty && mib_stats[i])
+			mib_stats_empty = false;
+	}
+
+	if (mib_stats_empty)
+		len = snprintf(buf, sizeof(priv->buf), "No MIB data");
 
 	val->value.s = buf;
 	val->len = len;
