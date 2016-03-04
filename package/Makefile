@@ -20,8 +20,11 @@ ifneq ($(IGNORE_ERRORS),)
   package-n-filter := $(filter-out $(package-y) $(package-m),$(package-))
   package-ignore-errors := $(filter n m y,$(IGNORE_ERRORS))
   package-ignore-errors := $(if $(package-ignore-errors),$(package-ignore-errors),n m)
-  $(curdir)/builddirs-ignore-download := $(foreach m,$(package-ignore-errors),$(package-$(m)-filter))
-  $(curdir)/builddirs-ignore-compile := $(foreach m,$(package-ignore-errors),$(package-$(m)-filter))
+  package-ignore-subdirs := $(sort $(foreach m,$(package-ignore-errors),$(package-$(m)-filter)))
+  $(curdir)/builddirs-ignore-download := $(package-ignore-subdirs)
+  $(curdir)/builddirs-ignore-compile := $(package-ignore-subdirs)
+  $(curdir)/builddirs-ignore-host-download := $(package-ignore-subdirs)
+  $(curdir)/builddirs-ignore-host-compile := $(package-ignore-subdirs)
 endif
 
 ifdef CONFIG_USE_MKLIBS
