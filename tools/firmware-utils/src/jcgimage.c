@@ -96,22 +96,22 @@
 /*
  * JCG Firmware image header
  */
-#define JH_MAGIC 0x59535a4a    /* "YSZJ" */
+#define JH_MAGIC 0x59535a4a        /* "YSZJ" */
 struct jcg_header {
-    uint32_t jh_magic;
-    uint8_t  jh_version[32];   /* Firmware version string. Fill with
-				  zeros to avoid encryption */
-    uint32_t jh_type;          /* must be 1 */
-    uint8_t  jh_info[64];      /* Firmware info string. Fill with
-				  zeros to avoid encryption */
-    uint32_t jh_time;          /* Image creation time in seconds since
-				* the Epoch. Does not seem to be used
-				* by the stock firmware. */
-    uint16_t jh_major;         /* Major fimware version */
-    uint16_t jh_minor;         /* Minor fimrmware version */
-    uint8_t  jh_unknown[392];  /* Apparently unused and all zeros */
-    uint32_t jh_dcrc;          /* CRC checksum of the payload */
-    uint32_t jh_hcrc;          /* CRC checksum of the header */
+	uint32_t jh_magic;
+	uint8_t  jh_version[32];   /* Firmware version string.
+				      Fill with zeros to avoid encryption  */
+	uint32_t jh_type;          /* must be 1                            */
+	uint8_t  jh_info[64];      /* Firmware info string. Fill with
+				      zeros to avoid encryption            */
+	uint32_t jh_time;          /* Image creation time in seconds since
+				    * the Epoch. Does not seem to be used
+				    * by the stock firmware.               */
+	uint16_t jh_major;         /* Major fimware version                */
+	uint16_t jh_minor;         /* Minor fimrmware version              */
+	uint8_t  jh_unknown[392];  /* Apparently unused and all zeros      */
+	uint32_t jh_dcrc;          /* CRC checksum of the payload          */
+	uint32_t jh_hcrc;          /* CRC checksum of the header           */
 };
 
 /*
@@ -122,19 +122,21 @@ struct jcg_header {
 #define IH_NMLEN    28            /* Image Name Length      */
 
 struct uimage_header {
-    uint32_t    ih_magic;         /* Image Header Magic Number */
-    uint32_t    ih_hcrc;          /* Image Header CRC Checksum */
-    uint32_t    ih_time;          /* Image Creation Timestamp  */
-    uint32_t    ih_size;          /* Image Data Size           */
-    uint32_t    ih_load;          /* Data     Load  Address    */
-    uint32_t    ih_ep;            /* Entry Point Address       */
-    uint32_t    ih_dcrc;          /* Image Data CRC Checksum   */
-    uint8_t     ih_os;            /* Operating System          */
-    uint8_t     ih_arch;          /* CPU architecture          */
-    uint8_t     ih_type;          /* Image Type                */
-    uint8_t     ih_comp;          /* Compression Type          */
-    uint8_t     ih_name[IH_NMLEN];/* Image Name                */
-    uint32_t    ih_fsoff;         /* Offset of the file system partition */
+	uint32_t    ih_magic;         /* Image Header Magic Number   */
+	uint32_t    ih_hcrc;          /* Image Header CRC Checksum   */
+	uint32_t    ih_time;          /* Image Creation Timestamp    */
+	uint32_t    ih_size;          /* Image Data Size             */
+	uint32_t    ih_load;          /* Data     Load  Address      */
+	uint32_t    ih_ep;            /* Entry Point Address         */
+	uint32_t    ih_dcrc;          /* Image Data CRC Checksum     */
+	uint8_t     ih_os;            /* Operating System            */
+	uint8_t     ih_arch;          /* CPU architecture            */
+	uint8_t     ih_type;          /* Image Type                  */
+	uint8_t     ih_comp;          /* Compression Type            */
+	uint8_t     ih_name[IH_NMLEN];/* Image Name                  */
+	uint32_t    ih_fsoff;         /* Offset of the file system
+					 partition from the start of
+					 the header                  */
 };
 
 /*
@@ -144,16 +146,16 @@ struct uimage_header {
 int
 opensize(char *name, size_t *size)
 {
-    struct stat s;
-    int fd = open(name, O_RDONLY);
-    if (fd < 0) {
-	err(1, "cannot open \"%s\"", name);
-    }
-    if (fstat(fd, &s) == -1) {
-	err(1, "cannot stat \"%s\"", name);
-    }
-    *size = s.st_size;
-    return fd;
+	struct stat s;
+	int fd = open(name, O_RDONLY);
+	if (fd < 0) {
+		err(1, "cannot open \"%s\"", name);
+	}
+	if (fstat(fd, &s) == -1) {
+		err(1, "cannot stat \"%s\"", name);
+	}
+	*size = s.st_size;
+	return fd;
 }
 
 /*
@@ -162,32 +164,32 @@ opensize(char *name, size_t *size)
 void
 mkjcgheader(struct jcg_header *h, size_t psize, char *version)
 {
-    uLong crc;
-    uint16_t major = 0, minor = 0;
-    void *payload = (void *)h + sizeof(*h);
+	uLong crc;
+	uint16_t major = 0, minor = 0;
+	void *payload = (void *)h + sizeof(*h);
 
-    if (version != NULL) {
-	if (sscanf(version, "%hu.%hu", &major, &minor) != 2) {
-	    err(1, "cannot parse version \"%s\"", version);
+	if (version != NULL) {
+		if (sscanf(version, "%hu.%hu", &major, &minor) != 2) {
+			err(1, "cannot parse version \"%s\"", version);
+		}
 	}
-    }
 
-    memset(h, 0, sizeof(*h));
-    h->jh_magic = htonl(JH_MAGIC);
-    h->jh_type  = htonl(1);
-    h->jh_time  = htonl(time(NULL));
-    h->jh_major = htons(major);
-    h->jh_minor = htons(minor);
+	memset(h, 0, sizeof(*h));
+	h->jh_magic = htonl(JH_MAGIC);
+	h->jh_type  = htonl(1);
+	h->jh_time  = htonl(time(NULL));
+	h->jh_major = htons(major);
+	h->jh_minor = htons(minor);
 
-    /* CRC over JCG payload (uImage) */
-    crc = crc32(0L, Z_NULL, 0);
-    crc = crc32(crc, payload, psize);
-    h->jh_dcrc  = htonl(crc);
+	/* CRC over JCG payload (uImage) */
+	crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, payload, psize);
+	h->jh_dcrc  = htonl(crc);
 
-    /* CRC over JCG header */
-    crc = crc32(0L, Z_NULL, 0);
-    crc = crc32(crc, (void *)h, sizeof(*h));
-    h->jh_hcrc  = htonl(crc);
+	/* CRC over JCG header */
+	crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, (void *)h, sizeof(*h));
+	h->jh_hcrc  = htonl(crc);
 }
 
 /*
@@ -196,34 +198,34 @@ mkjcgheader(struct jcg_header *h, size_t psize, char *version)
 void
 mkuheader(struct uimage_header *h, size_t ksize, size_t fsize)
 {
-    uLong crc;
-    void *payload = (void *)h + sizeof(*h);
+	uLong crc;
+	void *payload = (void *)h + sizeof(*h);
 
-    // printf("mkuheader: %p, %zd, %zd\n", h, ksize, fsize);
-    memset(h, 0, sizeof(*h));
-    h->ih_magic = htonl(IH_MAGIC);
-    h->ih_time  = htonl(time(NULL));
-    h->ih_size  = htonl(ksize + fsize);
-    h->ih_load  = htonl(0x80000000);
-    h->ih_ep    = htonl(0x80292000);
-    h->ih_os    = 0x05;
-    h->ih_arch  = 0x05;
-    h->ih_type  = 0x02;
-    h->ih_comp  = 0x03;
-    h->ih_fsoff = htonl(sizeof(*h) + ksize);
-    strcpy((char *)h->ih_name, "Linux Kernel Image");
+	// printf("mkuheader: %p, %zd, %zd\n", h, ksize, fsize);
+	memset(h, 0, sizeof(*h));
+	h->ih_magic = htonl(IH_MAGIC);
+	h->ih_time  = htonl(time(NULL));
+	h->ih_size  = htonl(ksize + fsize);
+	h->ih_load  = htonl(0x80000000);
+	h->ih_ep    = htonl(0x80292000);
+	h->ih_os    = 0x05;
+	h->ih_arch  = 0x05;
+	h->ih_type  = 0x02;
+	h->ih_comp  = 0x03;
+	h->ih_fsoff = htonl(sizeof(*h) + ksize);
+	strcpy((char *)h->ih_name, "Linux Kernel Image");
 
-    /* CRC over uImage payload (kernel and file system) */
-    crc = crc32(0L, Z_NULL, 0);
-    crc = crc32(crc, payload, ntohl(h->ih_size));
-    h->ih_dcrc  = htonl(crc);
-    printf("CRC1: %08lx\n", crc);
+	/* CRC over uImage payload (kernel and file system) */
+	crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, payload, ntohl(h->ih_size));
+	h->ih_dcrc  = htonl(crc);
+	printf("CRC1: %08lx\n", crc);
 
-    /* CRC over uImage header */
-    crc = crc32(0L, Z_NULL, 0);
-    crc = crc32(crc, (void *)h, sizeof(*h));
-    h->ih_hcrc  = htonl(crc);
-    printf("CRC2: %08lx\n", crc);
+	/* CRC over uImage header */
+	crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, (void *)h, sizeof(*h));
+	h->ih_hcrc  = htonl(crc);
+	printf("CRC2: %08lx\n", crc);
 }
 
 /*
@@ -237,42 +239,43 @@ mkuheader(struct uimage_header *h, size_t ksize, size_t fsize)
 void
 craftcrc(uint32_t dcrc, uint8_t *buf, size_t len)
 {
-    int i;
-    uint32_t a;
-    uint32_t patch = 0;
-    uint32_t crc = crc32(0L, Z_NULL, 0);
+	int i;
+	uint32_t a;
+	uint32_t patch = 0;
+	uint32_t crc = crc32(0L, Z_NULL, 0);
 
-    a = ~dcrc;
-    for (i = 0; i < 32; i++) {
-	if (patch & 1) {
-	    patch = (patch >> 1) ^ 0xedb88320L;
-	} else {
-	    patch >>= 1;
+	a = ~dcrc;
+	for (i = 0; i < 32; i++) {
+		if (patch & 1) {
+			patch = (patch >> 1) ^ 0xedb88320L;
+		} else {
+			patch >>= 1;
+		}
+		if (a & 1) {
+			patch ^= 0x5b358fd3L;
+		}
+		a >>= 1;
 	}
-	if (a & 1) {
-	    patch ^= 0x5b358fd3L;
+	patch ^= ~crc32(crc, buf, len - 4);
+	for (i = 0; i < 4; i++) {
+		buf[len - 4 + i] = patch & 0xff;
+		patch >>= 8;
 	}
-	a >>= 1;
-    }
-    patch ^= ~crc32(crc, buf, len - 4);
-    for (i = 0; i < 4; i++) {
-	buf[len - 4 + i] = patch & 0xff;
-	patch >>= 8;
-    }
-    /* Verify that we actually get the desired result */
-    crc = crc32(0L, Z_NULL, 0);
-    crc = crc32(crc, buf, len);
-    if (crc != dcrc) {
-	errx(1, "CRC patching is broken: wanted %08x, but got %08x.", dcrc, crc);
-    }
+	/* Verify that we actually get the desired result */
+	crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, buf, len);
+	if (crc != dcrc) {
+		errx(1, "CRC patching is broken: wanted %08x, but got %08x.",
+		     dcrc, crc);
+	}
 }
 
 void
 usage() {
-    fprintf(stderr, "Usage:\n"
-	    "   jcgimage -o outputfile -u uImage [-v version]\n"
-	    "   jcgimage -o outputfile -k kernel -f rootfs [-v version]\n");
-    exit(1);
+	fprintf(stderr, "Usage:\n"
+		"jcgimage -o outfile -u uImage [-v version]\n"
+		"jcgimage -o outfile -k kernel -f rootfs [-v version]\n");
+	exit(1);
 }
 
 #define MODE_UNKNOWN 0
@@ -285,108 +288,116 @@ usage() {
 int
 main(int argc, char **argv)
 {
-    struct jcg_header *jh;
-    struct uimage_header *uh;
-    int c;
-    char *imagefile = NULL;
-    char *file1 = NULL;
-    char *file2 = NULL;
-    char *version = NULL;
-    int mode = MODE_UNKNOWN;
-    int fdo, fd1, fd2;
-    size_t size1, size2, sizeu, sizeo, off1, off2;
-    void *map;
+	struct jcg_header *jh;
+	struct uimage_header *uh;
+	int c;
+	char *imagefile = NULL;
+	char *file1 = NULL;
+	char *file2 = NULL;
+	char *version = NULL;
+	int mode = MODE_UNKNOWN;
+	int fdo, fd1, fd2;
+	size_t size1, size2, sizeu, sizeo, off1, off2;
+	void *map;
 
-    /* Make sure the headers have the right size */
-    assert(sizeof(struct jcg_header) == 512);
-    assert(sizeof(struct uimage_header) == 64);
+	/* Make sure the headers have the right size */
+	assert(sizeof(struct jcg_header) == 512);
+	assert(sizeof(struct uimage_header) == 64);
 
-    while ((c = getopt(argc, argv, "o:k:f:u:v:h")) != -1) {
-	switch (c) {
-	case 'o':
-	    imagefile = optarg;
-	    break;
-	case 'k':
-	    if (mode == MODE_UIMAGE)
-		errx(1,"-k cannot be combined with -u");
-	    mode = MODE_KR;
-	    file1 = optarg;
-	    break;
-	case 'f':
-	    if (mode == MODE_UIMAGE)
-		errx(1,"-f cannot be combined with -u");
-	    mode = MODE_KR;
-	    file2 = optarg;
-	    break;
-	case 'u':
-	    if (mode == MODE_KR)
-		errx(1,"-u cannot be combined with -k and -r");
-	    mode = MODE_UIMAGE;
-	    file1 = optarg;
-	    break;
-	case 'v':
-	    version = optarg;
-	    break;
-	case 'h':
-	default:
-	    usage();
+	while ((c = getopt(argc, argv, "o:k:f:u:v:h")) != -1) {
+		switch (c) {
+		case 'o':
+			imagefile = optarg;
+			break;
+		case 'k':
+			if (mode == MODE_UIMAGE) {
+				errx(1,"-k cannot be combined with -u");
+			}
+			mode = MODE_KR;
+			file1 = optarg;
+			break;
+		case 'f':
+			if (mode == MODE_UIMAGE) {
+				errx(1,"-f cannot be combined with -u");
+			}
+			mode = MODE_KR;
+			file2 = optarg;
+			break;
+		case 'u':
+			if (mode == MODE_KR) {
+				errx(1,"-u cannot be combined with -k and -r");
+			}
+			mode = MODE_UIMAGE;
+			file1 = optarg;
+			break;
+		case 'v':
+			version = optarg;
+			break;
+		case 'h':
+		default:
+			usage();
+		}
 	}
-    }
-    if (optind != argc) {
-	errx(1, "illegal arg \"%s\"", argv[optind]);
-    }
-    if (imagefile == NULL) {
-	errx(1, "no output file specified");
-    }
-    if (mode == MODE_UNKNOWN)
-	errx(1, "specify either -u or -k and -r");
-    if (mode == MODE_KR) {
-	if (file1 == NULL || file2 == NULL)
-	    errx(1,"need -k and -r");
-	fd2 = opensize(file2, &size2);
-    }
-    fd1 = opensize(file1, &size1);
-    if (mode == MODE_UIMAGE) {
-	off1 = sizeof(*jh);
-	sizeu = size1 + 4;
-	sizeo = sizeof(*jh) + sizeu;
-    } else {
-	off1 = sizeof(*jh) + sizeof(*uh);
-	off2 = sizeof(*jh) + sizeof(*uh) + size1;
-	sizeu = sizeof(*uh) + size1 + size2;
-	sizeo = sizeof(*jh) + sizeu;
-    }
+	if (optind != argc) {
+		errx(1, "illegal arg \"%s\"", argv[optind]);
+	}
+	if (imagefile == NULL) {
+		errx(1, "no output file specified");
+	}
+	if (mode == MODE_UNKNOWN) {
+		errx(1, "specify either -u or -k and -r");
+	}
+	if (mode == MODE_KR) {
+		if (file1 == NULL || file2 == NULL) {
+			errx(1,"need -k and -r");
+		}
+		fd2 = opensize(file2, &size2);
+	}
+	fd1 = opensize(file1, &size1);
+	if (mode == MODE_UIMAGE) {
+		off1 = sizeof(*jh);
+		sizeu = size1 + 4;
+		sizeo = sizeof(*jh) + sizeu;
+	} else {
+		off1 = sizeof(*jh) + sizeof(*uh);
+		off2 = sizeof(*jh) + sizeof(*uh) + size1;
+		sizeu = sizeof(*uh) + size1 + size2;
+		sizeo = sizeof(*jh) + sizeu;
+	}
 
-    if (sizeo > MAXSIZE)
-	errx(1,"payload too large: %zd > %zd\n", sizeo, MAXSIZE);
+	if (sizeo > MAXSIZE) {
+		errx(1,"payload too large: %zd > %zd\n", sizeo, MAXSIZE);
+	}
 
-    fdo = open(imagefile, O_RDWR | O_CREAT | O_TRUNC, 00644);
-    if (fdo < 0)
-	err(1, "cannot open \"%s\"", imagefile);
+	fdo = open(imagefile, O_RDWR | O_CREAT | O_TRUNC, 00644);
+	if (fdo < 0) {
+		err(1, "cannot open \"%s\"", imagefile);
+	}
 
-    if (ftruncate(fdo, sizeo) == -1) {
-	err(1, "cannot grow \"%s\" to %zd bytes", imagefile, sizeo);
-    }
-    map = mmap(NULL, sizeo, PROT_READ|PROT_WRITE, MAP_SHARED, fdo, 0);
-    uh = map + sizeof(*jh);
-    if (map == MAP_FAILED) {
-	err(1, "cannot mmap \"%s\"", imagefile);
-    }
+	if (ftruncate(fdo, sizeo) == -1) {
+		err(1, "cannot grow \"%s\" to %zd bytes", imagefile, sizeo);
+	}
+	map = mmap(NULL, sizeo, PROT_READ|PROT_WRITE, MAP_SHARED, fdo, 0);
+	uh = map + sizeof(*jh);
+	if (map == MAP_FAILED) {
+		err(1, "cannot mmap \"%s\"", imagefile);
+	}
 
-    if (read(fd1, map + off1, size1) != size1)
-	err(1, "cannot copy %s", file1);
+	if (read(fd1, map + off1, size1) != size1) {
+		err(1, "cannot copy %s", file1);
+	}
 
-    if (mode == MODE_KR) {
-	if (read(fd2, map+off2, size2) != size2)
-	    err(1, "cannot copy %s", file2);
-	mkuheader(uh, size1, size2);
-    } else if (mode == MODE_UIMAGE) {
-	craftcrc(ntohl(uh->ih_dcrc), (void*)uh + sizeof(*uh),
-		 sizeu - sizeof(*uh));
-    }
-    mkjcgheader(map, sizeu, version);
-    munmap(map, sizeo);
-    close(fdo);
-    return 0;
+	if (mode == MODE_KR) {
+		if (read(fd2, map+off2, size2) != size2) {
+			err(1, "cannot copy %s", file2);
+		}
+		mkuheader(uh, size1, size2);
+	} else if (mode == MODE_UIMAGE) {
+		craftcrc(ntohl(uh->ih_dcrc), (void*)uh + sizeof(*uh),
+			 sizeu - sizeof(*uh));
+	}
+	mkjcgheader(map, sizeu, version);
+	munmap(map, sizeo);
+	close(fdo);
+	return 0;
 }
-
