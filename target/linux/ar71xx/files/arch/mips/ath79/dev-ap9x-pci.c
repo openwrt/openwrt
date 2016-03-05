@@ -93,6 +93,20 @@ __init void ap9x_pci_setup_wmac_leds(unsigned wmac, struct gpio_led *leds,
 	}
 }
 
+__init void ap9x_pci_setup_wmac_btns(unsigned wmac,
+				     struct gpio_keys_button *btns,
+				     unsigned num_btns, unsigned poll_interval)
+{
+	struct ath9k_platform_data *ap9x_wmac_data;
+
+	if (!(ap9x_wmac_data = ap9x_pci_get_wmac_data(wmac)))
+		return;
+
+	ap9x_wmac_data->btns = btns;
+	ap9x_wmac_data->num_btns = num_btns;
+	ap9x_wmac_data->btn_poll_interval = poll_interval;
+}
+
 static int ap91_pci_plat_dev_init(struct pci_dev *dev)
 {
 	switch (PCI_SLOT(dev->devfn)) {

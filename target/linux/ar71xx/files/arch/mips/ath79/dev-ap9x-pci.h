@@ -12,6 +12,7 @@
 #define _ATH79_DEV_AP9X_PCI_H
 
 struct gpio_led;
+struct gpio_keys_button;
 struct ath9k_platform_data;
 
 #if defined(CONFIG_ATH79_DEV_AP9X_PCI)
@@ -20,6 +21,8 @@ void ap9x_pci_setup_wmac_gpio(unsigned wmac, u32 mask, u32 val);
 void ap9x_pci_setup_wmac_leds(unsigned wmac, struct gpio_led *leds,
 			      int num_leds);
 void ap9x_pci_setup_wmac_led_name(unsigned wmac, const char *led_name);
+void ap9x_pci_setup_wmac_btns(unsigned wmac, struct gpio_keys_button *btns,
+			      unsigned num_btns, unsigned poll_interval);
 struct ath9k_platform_data *ap9x_pci_get_wmac_data(unsigned wmac);
 
 void ap91_pci_init(u8 *cal_data, u8 *mac_addr);
@@ -36,6 +39,10 @@ static inline void ap9x_pci_setup_wmac_leds(unsigned wmac,
 					    int num_leds) {}
 static inline void ap9x_pci_setup_wmac_led_name(unsigned wmac,
 						const char *led_name) {}
+static inline void ap9x_pci_setup_wmac_btns(unsigned wmac,
+					    struct gpio_keys_button *btns,
+					    unsigned num_btns,
+					    unsigned poll_interval) {}
 static inline struct ath9k_platform_data *ap9x_pci_get_wmac_data(unsigned wmac)
 {
 	return NULL;
