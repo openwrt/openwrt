@@ -369,6 +369,7 @@ get_status_led() {
 	wndr3700v4 | \
 	wndr4300 | \
 	wnr2000 | \
+	wnr2000-v3 |\
 	wnr2200 |\
 	wnr612-v2 |\
 	wnr1000-v2 |\
