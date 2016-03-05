@@ -214,7 +214,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -778,10 +779,10 @@ static void tcp_v6_send_response(const s
+@@ -779,10 +780,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -241,7 +241,7 @@
   */
 --- a/net/ipv6/datagram.c
 +++ b/net/ipv6/datagram.c
-@@ -426,7 +426,7 @@ int ipv6_recv_error(struct sock *sk, str
+@@ -429,7 +429,7 @@ int ipv6_recv_error(struct sock *sk, str
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
  		} else {
@@ -250,7 +250,7 @@
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -763,12 +763,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -766,12 +766,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -359,7 +359,7 @@
  	for (p = *head; p; p = p->next) {
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -457,7 +457,7 @@ static struct neighbour *ipv4_neigh_look
+@@ -458,7 +458,7 @@ static struct neighbour *ipv4_neigh_look
  	else if (skb)
  		pkey = &ip_hdr(skb)->daddr;
  
