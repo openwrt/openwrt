@@ -46,6 +46,10 @@ struct ath9k_platform_data {
 	int num_leds;
 	const struct gpio_led *leds;
 	const char *led_name;
+
+	unsigned num_btns;
+	const struct gpio_keys_button *btns;
+	unsigned btn_poll_interval;
 };
 
 #endif /* _LINUX_ATH9K_PLATFORM_H */
