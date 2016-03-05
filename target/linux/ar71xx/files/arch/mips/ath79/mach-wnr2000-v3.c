@@ -49,7 +49,15 @@
 #define WNR2000V3_GPIO_WMAC_BTN_RESET		8
 #define WNR2000V3_GPIO_WMAC_BTN_RFKILL		9
 
-#define WNR612V2_GPIO_LED_PWR_GREEN	11
+/* WNR612v2 - connected through AR7241 */
+#define WNR612V2_GPIO_LED_POWER_GREEN	11
+#define WNR612V2_GPIO_LED_LAN1_GREEN	13
+#define WNR612V2_GPIO_LED_LAN2_GREEN	14
+#define WNR612V2_GPIO_LED_WAN_GREEN	17
+
+/* WNR612v2 - connected through AR9285 */
+#define WNR612V2_GPIO_WMAC_LED_WLAN_GREEN	1
+#define WNR612V2_GPIO_WMAC_BTN_RESET		7
 
 #define WNR1000V2_GPIO_LED_PWR_AMBER	1
 #define WNR1000V2_GPIO_LED_PWR_GREEN	11
@@ -152,10 +160,24 @@ static const char *wnr2000v3_wmac_led_name = "netgear:blue:wlan";
 static struct gpio_led wnr612v2_leds_gpio[] __initdata = {
 	{
 		.name		= "netgear:green:power",
-		.gpio		= WNR612V2_GPIO_LED_PWR_GREEN,
+		.gpio		= WNR612V2_GPIO_LED_POWER_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan1",
+		.gpio		= WNR612V2_GPIO_LED_LAN1_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan2",
+		.gpio		= WNR612V2_GPIO_LED_LAN2_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:wan",
+		.gpio		= WNR612V2_GPIO_LED_WAN_GREEN,
 		.active_low	= 1,
 	}
 };
+
+static const char *wnr612v2_wmac_led_name = "netgear:green:wlan";
 
 static struct gpio_led wnr1000v2_leds_gpio[] __initdata = {
 	{
@@ -270,6 +292,17 @@ static struct gpio_keys_button wnr2000v3_wmac_keys_gpio[] = {
 	}
 };
 
+static struct gpio_keys_button wnr612v2_wmac_keys_gpio[] = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= WNR612V2_GPIO_WMAC_BTN_RESET,
+		.active_low	= 1,
+	}
+};
+
 /*
  * For WNR2000v3 ART flash area used for WLAN MAC is usually empty (0xff)
  * so ath9k driver uses random MAC instead each time module is loaded.
@@ -375,6 +408,25 @@ static void __init wnr612v2_setup(void)
 {
 	u8 wlan_mac_addr[6];
 
+	/*
+	 * Disable JTAG and CLKs. Allow OS to control all link LEDs.
+	 * Note: U-Boot for WNR612v2 sets undocumented bit 15 but
+	 * we leave it for now.
+	 */
+	ath79_gpio_function_setup(AR724X_GPIO_FUNC_JTAG_DISABLE |
+				  AR724X_GPIO_FUNC_UART_EN,
+				  AR724X_GPIO_FUNC_CLK_OBS1_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS2_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS3_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS4_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS5_EN |
+				  AR724X_GPIO_FUNC_GE0_MII_CLK_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
+
 	wnr_get_wmac(wlan_mac_addr, WNR2000V3_MAC0_OFFSET,
 		     WNR2000V3_MAC1_OFFSET, WNR2000V3_WMAC_OFFSET);
 
@@ -382,6 +434,19 @@ static void __init wnr612v2_setup(void)
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr612v2_leds_gpio),
 				 wnr612v2_leds_gpio);
+
+	/*
+	 * This device has no buttons on AR7241 GPIO and no extra LEDs
+	 * connected to AR9285 so setup is simpler than for WNR2000v3.
+	 */
+	ap9x_pci_setup_wmac_led_pin(0, WNR612V2_GPIO_WMAC_LED_WLAN_GREEN);
+	ap9x_pci_setup_wmac_led_name(0, wnr612v2_wmac_led_name);
+
+	ap9x_pci_setup_wmac_leds(0, NULL, 0);
+
+	ap9x_pci_setup_wmac_btns(0, wnr612v2_wmac_keys_gpio,
+				 ARRAY_SIZE(wnr612v2_wmac_keys_gpio),
+				 WNR2000V3_KEYS_POLL_INTERVAL);
 }
 
 MIPS_MACHINE(ATH79_MACH_WNR612_V2, "WNR612V2", "NETGEAR WNR612 V2", wnr612v2_setup);
