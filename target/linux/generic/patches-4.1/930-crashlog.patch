@@ -121,7 +121,7 @@
 +#endif
 +
 +#ifdef CONFIG_HAVE_MEMBLOCK
-+void __meminit crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
++void __init_memblock crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
 +{
 +	if (crashlog_addr)
 +		return;
