@@ -109,7 +109,7 @@ static void spi_gpio_custom_cleanup(void)
 			platform_device_unregister(devices[i]);
 }
 
-static int spi_gpio_custom_get_slave_mode(unsigned int id,
+static int __init spi_gpio_custom_get_slave_mode(unsigned int id,
 					  unsigned int *params,
 					  int slave_index)
 {
@@ -121,7 +121,7 @@ static int spi_gpio_custom_get_slave_mode(unsigned int id,
 
 	return params[param_index];
 }
-static int spi_gpio_custom_get_slave_maxfreq(unsigned int id,
+static int __init spi_gpio_custom_get_slave_maxfreq(unsigned int id,
 					     unsigned int *params,
 					     int slave_index)
 {
@@ -133,7 +133,7 @@ static int spi_gpio_custom_get_slave_maxfreq(unsigned int id,
 
 	return params[param_index];
 }
-static int spi_gpio_custom_get_slave_cs(unsigned int id,
+static int __init spi_gpio_custom_get_slave_cs(unsigned int id,
 					unsigned int *params,
 					int slave_index)
 {
@@ -148,7 +148,7 @@ static int spi_gpio_custom_get_slave_cs(unsigned int id,
 	return params[param_index];
 }
 
-static int spi_gpio_custom_check_params(unsigned int id, unsigned int *params)
+static int __init spi_gpio_custom_check_params(unsigned int id, unsigned int *params)
 {
 	int i;
 	struct spi_master *master;
