@@ -15,6 +15,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/kernel.h> /* for max() macro */
+#include <linux/platform_device.h> /* PLATFORM_DEVID_AUTO is defined here */
 
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h> /* needed to disable switch LEDs */
@@ -27,11 +28,26 @@
 #include "dev-m25p80.h"
 #include "machtypes.h"
 
+/* WNR2000v3 - connected through AR7241 */
 #define WNR2000V3_GPIO_LED_WAN_GREEN	0
 #define WNR2000V3_GPIO_LED_LAN1_AMBER	1
-#define WNR2000V3_GPIO_LED_LAN4_AMBER	12
-#define WNR2000V3_GPIO_LED_PWR_GREEN	14
+#define WNR2000V3_GPIO_LED_LAN2_AMBER	6
+#define WNR2000V3_GPIO_LED_WPS_GREEN	7
+#define WNR2000V3_GPIO_LED_LAN3_AMBER	8
 #define WNR2000V3_GPIO_BTN_WPS		11
+#define WNR2000V3_GPIO_LED_LAN4_AMBER	12
+#define WNR2000V3_GPIO_LED_LAN1_GREEN	13
+#define WNR2000V3_GPIO_LED_LAN2_GREEN	14
+#define WNR2000V3_GPIO_LED_LAN3_GREEN	15
+#define WNR2000V3_GPIO_LED_LAN4_GREEN	16
+#define WNR2000V3_GPIO_LED_WAN_AMBER	17
+
+/* WNR2000v3 - connected through AR9287 */
+#define WNR2000V3_GPIO_WMAC_LED_WLAN_BLUE	1
+#define WNR2000V3_GPIO_WMAC_LED_TEST_AMBER	2
+#define WNR2000V3_GPIO_WMAC_LED_POWER_GREEN	3
+#define WNR2000V3_GPIO_WMAC_BTN_RESET		8
+#define WNR2000V3_GPIO_WMAC_BTN_RFKILL		9
 
 #define WNR612V2_GPIO_LED_PWR_GREEN	11
 
@@ -72,15 +88,66 @@
 
 static struct gpio_led wnr2000v3_leds_gpio[] __initdata = {
 	{
-		.name		= "wnr2000v3:green:power",
-		.gpio		= WNR2000V3_GPIO_LED_PWR_GREEN,
+		.name		= "netgear:green:wan",
+		.gpio		= WNR2000V3_GPIO_LED_WAN_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2000v3:green:wan",
-		.gpio		= WNR2000V3_GPIO_LED_WAN_GREEN,
+		.name		= "netgear:amber:lan1",
+		.gpio		= WNR2000V3_GPIO_LED_LAN1_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:amber:lan2",
+		.gpio		= WNR2000V3_GPIO_LED_LAN2_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:amber:lan3",
+		.gpio		= WNR2000V3_GPIO_LED_LAN3_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:amber:lan4",
+		.gpio		= WNR2000V3_GPIO_LED_LAN4_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:wps",
+		.gpio		= WNR2000V3_GPIO_LED_WPS_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan1",
+		.gpio		= WNR2000V3_GPIO_LED_LAN1_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan2",
+		.gpio		= WNR2000V3_GPIO_LED_LAN2_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan3",
+		.gpio		= WNR2000V3_GPIO_LED_LAN3_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan4",
+		.gpio		= WNR2000V3_GPIO_LED_LAN4_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:amber:wan",
+		.gpio		= WNR2000V3_GPIO_LED_WAN_AMBER,
 		.active_low	= 1,
 	}
 };
+
+static struct gpio_led wnr2000v3_wmac_leds_gpio[] = {
+	{
+		.name		= "netgear:green:power",
+		.gpio		= WNR2000V3_GPIO_WMAC_LED_POWER_GREEN,
+		.active_low	= 1,
+		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+	}, {
+		.name		= "netgear:amber:test",
+		.gpio		= WNR2000V3_GPIO_WMAC_LED_TEST_AMBER,
+		.active_low	= 1,
+	}
+};
+
+static const char *wnr2000v3_wmac_led_name = "netgear:blue:wlan";
 
 static struct gpio_led wnr612v2_leds_gpio[] __initdata = {
 	{
@@ -174,13 +241,32 @@ static struct gpio_led wpn824n_wmac_leds_gpio[] = {
 	}
 };
 
-static struct gpio_keys_button wnr2000v3_gpio_keys[] __initdata = {
+static struct gpio_keys_button wnr2000v3_keys_gpio[] __initdata = {
 	{
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNR2000V3_GPIO_BTN_WPS,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_keys_button wnr2000v3_wmac_keys_gpio[] = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= WNR2000V3_GPIO_WMAC_BTN_RESET,
+		.active_low	= 1,
+	}, {
+		.desc		= "rfkill",
+		.type		= EV_KEY,
+		.code		= KEY_RFKILL,
+		.debounce_interval = WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= WNR2000V3_GPIO_WMAC_BTN_RFKILL,
+		.active_low	= 1,
 	}
 };
 
@@ -238,6 +324,26 @@ static void __init wnr2000v3_setup(void)
 {
 	u8 wlan_mac_addr[6];
 
+	/*
+	 * Disable JTAG to use all AR724X GPIO LEDs.
+	 * Also disable CLKs and bit 20 as u-boot does.
+	 * Finally, allow OS to control all link LEDs.
+	 */
+	ath79_gpio_function_setup(AR724X_GPIO_FUNC_JTAG_DISABLE |
+				  AR724X_GPIO_FUNC_UART_EN,
+				  AR724X_GPIO_FUNC_CLK_OBS1_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS2_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS3_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS4_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS5_EN |
+				  AR724X_GPIO_FUNC_GE0_MII_CLK_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN |
+				  BIT(20));
+
 	wnr_get_wmac(wlan_mac_addr, WNR2000V3_MAC0_OFFSET,
 		     WNR2000V3_MAC1_OFFSET, WNR2000V3_WMAC_OFFSET);
 
@@ -246,9 +352,21 @@ static void __init wnr2000v3_setup(void)
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr2000v3_leds_gpio),
 				 wnr2000v3_leds_gpio);
 
-	ath79_register_gpio_keys_polled(-1, WNR2000V3_KEYS_POLL_INTERVAL,
-					ARRAY_SIZE(wnr2000v3_gpio_keys),
-					wnr2000v3_gpio_keys);
+	/* Do not use id=-1, we can have more GPIO key-polled devices */
+	ath79_register_gpio_keys_polled(PLATFORM_DEVID_AUTO,
+					WNR2000V3_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(wnr2000v3_keys_gpio),
+					wnr2000v3_keys_gpio);
+
+	ap9x_pci_setup_wmac_led_pin(0, WNR2000V3_GPIO_WMAC_LED_WLAN_BLUE);
+	ap9x_pci_setup_wmac_led_name(0, wnr2000v3_wmac_led_name);
+
+	ap9x_pci_setup_wmac_leds(0, wnr2000v3_wmac_leds_gpio,
+				 ARRAY_SIZE(wnr2000v3_wmac_leds_gpio));
+
+	ap9x_pci_setup_wmac_btns(0, wnr2000v3_wmac_keys_gpio,
+				 ARRAY_SIZE(wnr2000v3_wmac_keys_gpio),
+				 WNR2000V3_KEYS_POLL_INTERVAL);
 }
 
 MIPS_MACHINE(ATH79_MACH_WNR2000_V3, "WNR2000V3", "NETGEAR WNR2000 V3", wnr2000v3_setup);
