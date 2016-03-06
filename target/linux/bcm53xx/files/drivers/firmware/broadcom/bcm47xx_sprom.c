@@ -26,20 +26,11 @@
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <linux/types.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/string.h>
-#include <linux/of_address.h>
-#include <linux/device.h>
-#include <linux/platform_device.h>
-#include <linux/of_platform.h>
-#include <linux/io.h>
-#include <linux/ssb/ssb.h>
-#include <linux/bcma/bcma.h>
 #include <linux/bcm47xx_nvram.h>
-#include <linux/if_ether.h>
+#include <linux/bcma/bcma.h>
 #include <linux/etherdevice.h>
+#include <linux/if_ether.h>
+#include <linux/ssb/ssb.h>
 
 static void create_key(const char *prefix, const char *postfix,
 		       const char *name, char *buf, int len)
@@ -71,9 +62,9 @@ static int get_nvram_var(const char *prefix, const char *postfix,
 }
 
 #define NVRAM_READ_VAL(type)						\
-static void nvram_read_ ## type (const char *prefix,			\
-				 const char *postfix, const char *name, \
-				 type *val, type allset, bool fallback) \
+static void nvram_read_ ## type(const char *prefix,			\
+				const char *postfix, const char *name,	\
+				type *val, type allset, bool fallback)	\
 {									\
 	char buf[100];							\
 	int err;							\
@@ -433,7 +424,10 @@ static void bcm47xx_fill_sprom_path_r4589(struct ssb_sprom *sprom,
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(sprom->core_pwr_info); i++) {
-		struct ssb_sprom_core_pwr_info *pwr_info = &sprom->core_pwr_info[i];
+		struct ssb_sprom_core_pwr_info *pwr_info;
+
+		pwr_info = &sprom->core_pwr_info[i];
+
 		snprintf(postfix, sizeof(postfix), "%i", i);
 		nvram_read_u8(prefix, postfix, "maxp2ga",
 			      &pwr_info->maxpwr_2g, 0, fallback);
@@ -481,7 +475,10 @@ static void bcm47xx_fill_sprom_path_r45(struct ssb_sprom *sprom,
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(sprom->core_pwr_info); i++) {
-		struct ssb_sprom_core_pwr_info *pwr_info = &sprom->core_pwr_info[i];
+		struct ssb_sprom_core_pwr_info *pwr_info;
+
+		pwr_info = &sprom->core_pwr_info[i];
+
 		snprintf(postfix, sizeof(postfix), "%i", i);
 		nvram_read_u16(prefix, postfix, "pa2gw3a",
 			       &pwr_info->pa_2g[3], 0, fallback);
@@ -546,10 +543,11 @@ static void bcm47xx_fill_sprom_ethernet(struct ssb_sprom *sprom,
 	nvram_read_macaddr(prefix, "il0macaddr", sprom->il0mac, fallback);
 
 	/* The address prefix 00:90:4C is used by Broadcom in their initial
-	   configuration. When a mac address with the prefix 00:90:4C is used
-	   all devices from the same series are sharing the same mac address.
-	   To prevent mac address collisions we replace them with a mac address
-	   based on the base address. */
+	 * configuration. When a mac address with the prefix 00:90:4C is used
+	 * all devices from the same series are sharing the same mac address.
+	 * To prevent mac address collisions we replace them with a mac address
+	 * based on the base address.
+	 */
 	if (!bcm47xx_is_valid_mac(sprom->il0mac)) {
 		u8 mac[6];
 
@@ -603,6 +601,30 @@ void bcm47xx_fill_sprom(struct ssb_sprom *sprom, const char *prefix,
 	bcm47xx_sprom_fill_auto(sprom, prefix, fallback);
 }
 
+#if defined(CONFIG_SSB_SPROM)
+static int bcm47xx_get_sprom_ssb(struct ssb_bus *bus, struct ssb_sprom *out)
+{
+	char prefix[10];
+
+	switch (bus->bustype) {
+	case SSB_BUSTYPE_SSB:
+		bcm47xx_fill_sprom(out, NULL, false);
+		return 0;
+	case SSB_BUSTYPE_PCI:
+		memset(out, 0, sizeof(struct ssb_sprom));
+		snprintf(prefix, sizeof(prefix), "pci/%u/%u/",
+			 bus->host_pci->bus->number + 1,
+			 PCI_SLOT(bus->host_pci->devfn));
+		bcm47xx_fill_sprom(out, prefix, false);
+		return 0;
+	default:
+		pr_warn("Unable to fill SPROM for given bustype.\n");
+		return -EINVAL;
+	}
+}
+#endif
+
+#if defined(CONFIG_BCMA)
 /*
  * Having many NVRAM entries for PCI devices led to repeating prefixes like
  * pci/1/1/ all the time and wasting flash space. So at some point Broadcom
@@ -618,6 +640,7 @@ static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_size)
 	char buf[20];
 	int i;
 
+	/* Passed prefix has to end with a slash */
 	if (prefix_len <= 0 || prefix[prefix_len - 1] != '/')
 		return;
 
@@ -634,58 +657,81 @@ static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_size)
 	}
 }
 
-/*
- * This function has to be called in a very precise moment. It has to be done:
- * 1) After bcma registers flash cores, so we can read NVRAM.
- * 2) Before any code needs SPROM content.
- *
- * This can be achieved only by using bcma callback.
- */
-static int bcm47xx_sprom_init(struct bcma_bus *bus, struct ssb_sprom *out)
+static int bcm47xx_get_sprom_bcma(struct bcma_bus *bus, struct ssb_sprom *out)
 {
-	char prefix[20];
+	struct bcma_boardinfo *binfo = &bus->boardinfo;
+	struct bcma_device *core;
+	char buf[10];
+	char *prefix;
+	bool fallback = false;
 
 	switch (bus->hosttype) {
 	case BCMA_HOSTTYPE_PCI:
-		snprintf(prefix, sizeof(prefix), "pci/%u/%u/",
-			 pci_domain_nr(bus->host_pci->bus) + 1,
-			 bus->host_pci->bus->number);
-		bcm47xx_sprom_apply_prefix_alias(prefix, sizeof(prefix));
-		bcm47xx_fill_sprom(out, prefix, false);
+		memset(out, 0, sizeof(struct ssb_sprom));
+		/* On BCM47XX all PCI buses share the same domain */
+		if (config_enabled(CONFIG_BCM47XX))
+			snprintf(buf, sizeof(buf), "pci/%u/%u/",
+				 bus->host_pci->bus->number + 1,
+				 PCI_SLOT(bus->host_pci->devfn));
+		else
+			snprintf(buf, sizeof(buf), "pci/%u/%u/",
+				 pci_domain_nr(bus->host_pci->bus) + 1,
+				 bus->host_pci->bus->number);
+		bcm47xx_sprom_apply_prefix_alias(buf, sizeof(buf));
+		prefix = buf;
 		break;
 	case BCMA_HOSTTYPE_SOC:
-		bcm47xx_fill_sprom(out, NULL, false);
+		memset(out, 0, sizeof(struct ssb_sprom));
+		core = bcma_find_core(bus, BCMA_CORE_80211);
+		if (core) {
+			snprintf(buf, sizeof(buf), "sb/%u/",
+				 core->core_index);
+			prefix = buf;
+			fallback = true;
+		} else {
+			prefix = NULL;
+		}
 		break;
 	default:
-		pr_err("Unable to fill SPROM for given hosttype.\n");
+		pr_warn("Unable to fill SPROM for given bustype.\n");
 		return -EINVAL;
 	}
 
-	return 0;
-};
+	nvram_read_u16(prefix, NULL, "boardvendor", &binfo->vendor, 0, true);
+	if (!binfo->vendor)
+		binfo->vendor = SSB_BOARDVENDOR_BCM;
+	nvram_read_u16(prefix, NULL, "boardtype", &binfo->type, 0, true);
 
-static int bcm47xx_sprom_probe(struct platform_device *pdev)
+	bcm47xx_fill_sprom(out, prefix, fallback);
+
+	return 0;
+}
+#endif
+
+static unsigned int bcm47xx_sprom_registered;
+
+/*
+ * On bcm47xx we need to register SPROM fallback handler very early, so we can't
+ * use anything like platform device / driver for this.
+ */
+int bcm47xx_sprom_register_fallbacks(void)
 {
-	return bcma_arch_register_fallback_sprom(&bcm47xx_sprom_init);
+	if (bcm47xx_sprom_registered)
+		return 0;
+
+#if defined(CONFIG_SSB_SPROM)
+	if (ssb_arch_register_fallback_sprom(&bcm47xx_get_sprom_ssb))
+		pr_warn("Failed to registered ssb SPROM handler\n");
+#endif
+
+#if defined(CONFIG_BCMA)
+	if (bcma_arch_register_fallback_sprom(&bcm47xx_get_sprom_bcma))
+		pr_warn("Failed to registered bcma SPROM handler\n");
+#endif
+
+	bcm47xx_sprom_registered = 1;
+
+	return 0;
 }
 
-static const struct of_device_id bcm47xx_sprom_of_match_table[] = {
-	{ .compatible = "brcm,bcm47xx-sprom", },
-	{},
-};
-MODULE_DEVICE_TABLE(of, bcm47xx_sprom_of_match_table);
-
-static struct platform_driver bcm47xx_sprom_driver = {
-	.driver = {
-		.owner = THIS_MODULE,
-		.name = "bcm47xx-sprom",
-		.of_match_table = bcm47xx_sprom_of_match_table,
-		/* driver unloading/unbinding currently not supported */
-		.suppress_bind_attrs = true,
-	},
-	.probe = bcm47xx_sprom_probe,
-};
-module_platform_driver(bcm47xx_sprom_driver);
-
-MODULE_AUTHOR("Hauke Mehrtens <hauke@hauke-m.de>");
-MODULE_LICENSE("GPL v2");
+fs_initcall(bcm47xx_sprom_register_fallbacks);
