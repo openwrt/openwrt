@@ -75,7 +75,8 @@ $(eval $(call Profile,WNR1000V2))
 
 
 define Profile/WNR2200
-	NAME:=NETGEAR WNR2200
+  NAME:=NETGEAR WNR2200
+  PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/WNR2200/Description
