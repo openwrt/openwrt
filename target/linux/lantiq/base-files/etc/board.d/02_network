@@ -144,7 +144,7 @@ fi
 
 if grep -qE "system type.*: (VR9|xRX200)" /proc/cpuinfo; then
 	interface_wan="ptm0"
-	ucidef_add_vdsl_modem "$annex" "/lib/firmware/vdsl.bin" "av" "ptm"
+	ucidef_add_vdsl_modem "$annex" "av" "ptm"
 else
 	interface_wan="nas0"
 	ucidef_add_adsl_modem "$annex" "/lib/firmware/adsl.bin"
