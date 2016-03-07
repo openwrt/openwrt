@@ -271,6 +271,7 @@ void __init ath79_register_mdio(unsigned int id, u32 phy_mask)
 	case ATH79_SOC_QCA956X:
 		if (id == 1)
 			mdio_data->builtin_switch = 1;
+		mdio_data->is_ar934x = 1;
 		break;
 
 	default:
@@ -1123,16 +1124,25 @@ void __init ath79_register_eth(unsigned int id)
 		if (id == 0) {
 			pdata->reset_bit = QCA955X_RESET_GE0_MAC |
 					   QCA955X_RESET_GE0_MDIO;
+
 			if (pdata->phy_if_mode == PHY_INTERFACE_MODE_SGMII)
 				pdata->set_speed = qca956x_set_speed_sgmii;
 			else
-				/* FIXME */
-				pdata->set_speed = ath79_set_speed_dummy;
+				pdata->set_speed = ath79_set_speed_ge0;
 		} else {
 			pdata->reset_bit = QCA955X_RESET_GE1_MAC |
 					   QCA955X_RESET_GE1_MDIO;
-			/* FIXME */
+
 			pdata->set_speed = ath79_set_speed_dummy;
+
+			pdata->switch_data = &ath79_switch_data;
+
+			pdata->speed = SPEED_1000;
+			pdata->duplex = DUPLEX_FULL;
+
+			/* reset the built-in switch */
+			ath79_device_reset_set(AR934X_RESET_ETH_SWITCH);
+			ath79_device_reset_clear(AR934X_RESET_ETH_SWITCH);
 		}
 
 		pdata->ddr_flush = ath79_ddr_no_flush;
@@ -1194,6 +1204,11 @@ void __init ath79_register_eth(unsigned int id)
 		case ATH79_SOC_QCA9556:
 		case ATH79_SOC_QCA9558:
 			/* don't assign any MDIO device by default */
+			break;
+
+		case ATH79_SOC_QCA956X:
+			if (pdata->phy_if_mode != PHY_INTERFACE_MODE_SGMII)
+				pdata->mii_bus_dev = &ath79_mdio1_device.dev;
 			break;
 
 		default:
