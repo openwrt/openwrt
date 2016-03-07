@@ -153,6 +153,48 @@ start_service() {
 		;;
 	esac
 
+	if [ -z "${firmware}" ]; then
+		# search for the firmware provided by dsl-vrx200-firmware-xdsl-*
+		if grep -qE "system type.*: (VR9|xRX200)" /proc/cpuinfo; then
+			case "${annex}" in
+			a|l|m)
+				if [ -f "/lib/firmware/lantiq-vrx200-a.bin" ]; then
+					firmware="/lib/firmware/lantiq-vrx200-a.bin"
+				elif [ -f "/tmp/lantiq-vrx200-a.bin" ]; then
+					firmware="/tmp/lantiq-vrx200-a.bin"
+				elif [ -f "/lib/firmware/lantiq-vrx200-b.bin" ] && [ -f "/lib/firmware/lantiq-vrx200-b-to-a.bspatch" ]; then
+					bspatch /lib/firmware/lantiq-vrx200-b.bin \
+						/tmp/lantiq-vrx200-a.bin \
+						/lib/firmware/lantiq-vrx200-b-to-a.bspatch
+					firmware="/tmp/lantiq-vrx200-a.bin"
+				else
+					echo "firmware for annex a not found"
+					return 1
+				fi
+				;;
+			b|j)
+				if [ -f "/lib/firmware/lantiq-vrx200-b.bin" ]; then
+					firmware="/lib/firmware/lantiq-vrx200-b.bin"
+				elif [ -f "/tmp/lantiq-vrx200-b.bin" ]; then
+					firmware="/tmp/lantiq-vrx200-b.bin"
+				elif [ -f "/lib/firmware/lantiq-vrx200-a.bin" ] && [ -f "/lib/firmware/lantiq-vrx200-a-to-b.bspatch" ]; then
+					bspatch /lib/firmware/lantiq-vrx200-a.bin \
+						/tmp/lantiq-vrx200-b.bin \
+						/lib/firmware/lantiq-vrx200-a-to-b.bspatch
+					firmware="/tmp/lantiq-vrx200-b.bin"
+				else
+					echo "firmware for annex b not found"
+					return 1
+				fi
+				;;
+			*)
+				echo "annex type not supported use a or b"
+				return 1
+				;;
+			esac
+		fi
+	fi
+
 	[ -z "${firmware}" ] && firmware=/lib/firmware/vdsl.bin
 	[ -f "${firmware}" ] || {
 		echo failed to find $firmware
