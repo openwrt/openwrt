@@ -16,11 +16,12 @@ EXTRA_HELP="	status  Get DSL status information
 # ITU-T G.997.1 Amendment 2 (04/2013) - Section 2.1 - (Vectoring mode enable (VECTORMODE_ENABLE))
 #
 # G.992.1 Annex A
+# G.992.2 Annex A
 # G.992.3 Annex A / L-US1 / L_US-2 / M
 # G.992.5 Annex A / M
 # G.993.2 Annex A/B/C
 # G.993.5 Annex A/B/C
-xtse_xdsl_a="05_00_04_00_4C_01_04_0F"
+xtse_xdsl_a="05_01_04_00_4C_01_04_0F"
 
 # G.992.1 Annex B
 # G.992.3 Annex B
@@ -37,6 +38,43 @@ xtse_xdsl_b="10_00_10_00_00_04_00_0F"
 # G.993.2 Annex A/B/C
 # G.993.5 Annex A/B/C
 xtse_xdsl_j="10_00_10_40_00_04_01_0F"
+
+# G.992.1 Annex B
+xtse_xdsl_bdmt="10_00_00_00_00_00_00_00"
+
+# G.992.3 Annex B
+xtse_xdsl_b2="00_00_10_00_00_00_00_00"
+
+# G.992.5 Annex B
+xtse_xdsl_b2p="00_00_00_00_00_04_00_00"
+
+# ANSI T1.413
+xtse_xdsl_at1="01_00_00_00_00_00_00_00"
+
+# G.992.2 Annex A
+xtse_xdsl_alite="00_01_00_00_00_00_00_00"
+
+# G.992.1 Annex A
+xtse_xdsl_admt="04_00_00_00_00_00_00_00"
+
+# G.992.3 Annex A
+xtse_xdsl_a2="00_00_04_00_00_00_00_00"
+
+# G.992.5 Annex A
+xtse_xdsl_a2p="00_00_00_00_00_01_00_00"
+
+# G.992.3 Annex L
+xtse_xdsl_l="00_00_00_00_0C_00_00_00"
+
+# G.992.3 Annex M
+# G.992.5 Annex M
+xtse_xdsl_m="00_00_00_00_40_00_04_00"
+
+# G.992.3 Annex M
+xtse_xdsl_m2="00_00_00_00_40_00_00_00"
+
+# G.992.5 Annex M
+xtse_xdsl_m2p="00_00_00_00_00_00_04_00"
 
 #
 # ITU-T G.994.1 (06/2012) - Table 2 (Mandatory carrier sets)
@@ -157,7 +195,7 @@ start_service() {
 		# search for the firmware provided by dsl-vrx200-firmware-xdsl-*
 		if grep -qE "system type.*: (VR9|xRX200)" /proc/cpuinfo; then
 			case "${annex}" in
-			a|l|m)
+			a*|l*|m*)
 				if [ -f "/lib/firmware/lantiq-vrx200-a.bin" ]; then
 					firmware="/lib/firmware/lantiq-vrx200-a.bin"
 				elif [ -f "/tmp/lantiq-vrx200-a.bin" ]; then
@@ -172,7 +210,7 @@ start_service() {
 					return 1
 				fi
 				;;
-			b|j)
+			b*|j*)
 				if [ -f "/lib/firmware/lantiq-vrx200-b.bin" ]; then
 					firmware="/lib/firmware/lantiq-vrx200-b.bin"
 				elif [ -f "/tmp/lantiq-vrx200-b.bin" ]; then
