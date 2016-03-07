@@ -9,8 +9,37 @@
  static inline u32 bcma_cc_write32_masked(struct bcma_drv_cc *cc, u16 offset,
  					 u32 mask, u32 value)
  {
-@@ -115,6 +117,8 @@ int bcma_chipco_watchdog_register(struct
+@@ -113,8 +115,37 @@ int bcma_chipco_watchdog_register(struct
+ 	return 0;
+ }
  
++static void bcma_core_chipcommon_flash_detect(struct bcma_drv_cc *cc)
++{
++	struct bcma_bus *bus = cc->core->bus;
++
++	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
++	case BCMA_CC_FLASHT_STSER:
++	case BCMA_CC_FLASHT_ATSER:
++		bcma_debug(bus, "Found serial flash\n");
++		bcma_sflash_init(cc);
++		break;
++	case BCMA_CC_FLASHT_PARA:
++		bcma_debug(bus, "Found parallel flash\n");
++		bcma_pflash_init(cc);
++		break;
++	default:
++		bcma_err(bus, "Flash type not supported\n");
++	}
++
++	if (cc->core->id.rev == 38 ||
++	    bus->chipinfo.id == BCMA_CHIP_ID_BCM4706) {
++		if (cc->capabilities & BCMA_CC_CAP_NFLASH) {
++			bcma_debug(bus, "Found NAND flash\n");
++			bcma_nflash_init(cc);
++		}
++	}
++}
++
  void bcma_core_chipcommon_early_init(struct bcma_drv_cc *cc)
  {
 +	struct bcma_bus *bus = cc->core->bus;
@@ -18,17 +47,20 @@
  	if (cc->early_setup_done)
  		return;
  
-@@ -129,6 +133,9 @@ void bcma_core_chipcommon_early_init(str
+@@ -129,6 +160,12 @@ void bcma_core_chipcommon_early_init(str
  	if (cc->capabilities & BCMA_CC_CAP_PMU)
  		bcma_pmu_early_init(cc);
  
 +	if (IS_BUILTIN(CONFIG_BCM47XX) && bus->hosttype == BCMA_HOSTTYPE_SOC)
 +		bcma_chipco_serial_init(cc);
 +
++	if (bus->hosttype == BCMA_HOSTTYPE_SOC)
++		bcma_core_chipcommon_flash_detect(cc);
++
  	cc->early_setup_done = true;
  }
  
-@@ -185,11 +192,12 @@ u32 bcma_chipco_watchdog_timer_set(struc
+@@ -185,11 +222,12 @@ u32 bcma_chipco_watchdog_timer_set(struc
  			ticks = 2;
  		else if (ticks > maxt)
  			ticks = maxt;
@@ -42,7 +74,7 @@
  		    bus->chipinfo.id != BCMA_CHIP_ID_BCM53018)
  			bcma_core_set_clockmode(cc->core,
  						ticks ? BCMA_CLKMODE_FAST : BCMA_CLKMODE_DYNAMIC);
-@@ -314,9 +322,9 @@ u32 bcma_chipco_gpio_pulldown(struct bcm
+@@ -314,9 +352,9 @@ u32 bcma_chipco_gpio_pulldown(struct bcm
  	return res;
  }
  
@@ -54,7 +86,7 @@
  	unsigned int irq;
  	u32 baud_base;
  	u32 i;
-@@ -358,5 +366,5 @@ void bcma_chipco_serial_init(struct bcma
+@@ -358,5 +396,5 @@ void bcma_chipco_serial_init(struct bcma
  		ports[i].baud_base = baud_base;
  		ports[i].reg_shift = 0;
  	}
@@ -368,7 +400,7 @@
  #define BCMA_CC_PMU_STRAPOPT		0x0668 /* (corerev >= 28) */
  #define BCMA_CC_PMU_XTAL_FREQ		0x066C /* (pmurev >= 10) */
  #define  BCMA_CC_PMU_XTAL_FREQ_ILPCTL_MASK	0x00001FFF
-@@ -566,6 +571,7 @@
+@@ -566,17 +571,16 @@
   * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
   */
  struct bcma_chipcommon_pmu {
@@ -376,7 +408,47 @@
  	u8 rev;			/* PMU revision */
  	u32 crystalfreq;	/* The active crystal frequency (in kHz) */
  };
-@@ -662,6 +668,19 @@ struct bcma_drv_cc_b {
+ 
+-#ifdef CONFIG_BCMA_DRIVER_MIPS
++#ifdef CONFIG_BCMA_PFLASH
+ struct bcma_pflash {
+ 	bool present;
+-	u8 buswidth;
+-	u32 window;
+-	u32 window_size;
+ };
++#endif
+ 
+ #ifdef CONFIG_BCMA_SFLASH
+ struct bcma_sflash {
+@@ -602,6 +606,7 @@ struct bcma_nflash {
+ };
+ #endif
+ 
++#ifdef CONFIG_BCMA_DRIVER_MIPS
+ struct bcma_serial_port {
+ 	void *regs;
+ 	unsigned long clockspeed;
+@@ -621,8 +626,9 @@ struct bcma_drv_cc {
+ 	/* Fast Powerup Delay constant */
+ 	u16 fast_pwrup_delay;
+ 	struct bcma_chipcommon_pmu pmu;
+-#ifdef CONFIG_BCMA_DRIVER_MIPS
++#ifdef CONFIG_BCMA_PFLASH
+ 	struct bcma_pflash pflash;
++#endif
+ #ifdef CONFIG_BCMA_SFLASH
+ 	struct bcma_sflash sflash;
+ #endif
+@@ -630,6 +636,7 @@ struct bcma_drv_cc {
+ 	struct bcma_nflash nflash;
+ #endif
+ 
++#ifdef CONFIG_BCMA_DRIVER_MIPS
+ 	int nr_serial_ports;
+ 	struct bcma_serial_port serial_ports[4];
+ #endif /* CONFIG_BCMA_DRIVER_MIPS */
+@@ -662,6 +669,19 @@ struct bcma_drv_cc_b {
  #define bcma_cc_maskset32(cc, offset, mask, set) \
  	bcma_cc_write32(cc, offset, (bcma_cc_read32(cc, offset) & (mask)) | (set))
  
@@ -398,14 +470,39 @@
  extern u32 bcma_chipco_get_alp_clock(struct bcma_drv_cc *cc);
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -48,7 +48,6 @@ void bcma_core_chipcommon_early_init(str
+@@ -47,10 +47,6 @@ int bcma_sprom_get(struct bcma_bus *bus)
+ void bcma_core_chipcommon_early_init(struct bcma_drv_cc *cc);
  void bcma_core_chipcommon_init(struct bcma_drv_cc *cc);
  void bcma_chipco_bcm4331_ext_pa_lines_ctl(struct bcma_drv_cc *cc, bool enable);
- #ifdef CONFIG_BCMA_DRIVER_MIPS
+-#ifdef CONFIG_BCMA_DRIVER_MIPS
 -void bcma_chipco_serial_init(struct bcma_drv_cc *cc);
- extern struct platform_device bcma_pflash_dev;
- #endif /* CONFIG_BCMA_DRIVER_MIPS */
+-extern struct platform_device bcma_pflash_dev;
+-#endif /* CONFIG_BCMA_DRIVER_MIPS */
  
+ /* driver_chipcommon_b.c */
+ int bcma_core_chipcommon_b_init(struct bcma_drv_cc_b *ccb);
+@@ -62,6 +58,21 @@ void bcma_pmu_init(struct bcma_drv_cc *c
+ u32 bcma_pmu_get_alp_clock(struct bcma_drv_cc *cc);
+ u32 bcma_pmu_get_cpu_clock(struct bcma_drv_cc *cc);
+ 
++/**************************************************
++ * driver_chipcommon_sflash.c
++ **************************************************/
++
++#ifdef CONFIG_BCMA_PFLASH
++extern struct platform_device bcma_pflash_dev;
++int bcma_pflash_init(struct bcma_drv_cc *cc);
++#else
++static inline int bcma_pflash_init(struct bcma_drv_cc *cc)
++{
++	bcma_err(cc->core->bus, "Parallel flash not supported\n");
++	return 0;
++}
++#endif /* CONFIG_BCMA_PFLASH */
++
+ #ifdef CONFIG_BCMA_SFLASH
+ /* driver_chipcommon_sflash.c */
+ int bcma_sflash_init(struct bcma_drv_cc *cc);
 --- a/drivers/bcma/driver_gpio.c
 +++ b/drivers/bcma/driver_gpio.c
 @@ -197,6 +197,7 @@ int bcma_gpio_init(struct bcma_drv_cc *c
@@ -418,7 +515,93 @@
  	default:
 --- a/drivers/bcma/driver_mips.c
 +++ b/drivers/bcma/driver_mips.c
-@@ -337,12 +337,9 @@ static void bcma_core_mips_flash_detect(
+@@ -14,8 +14,6 @@
+ 
+ #include <linux/bcma/bcma.h>
+ 
+-#include <linux/mtd/physmap.h>
+-#include <linux/platform_device.h>
+ #include <linux/serial.h>
+ #include <linux/serial_core.h>
+ #include <linux/serial_reg.h>
+@@ -32,26 +30,6 @@ enum bcma_boot_dev {
+ 	BCMA_BOOT_DEV_NAND,
+ };
+ 
+-static const char * const part_probes[] = { "bcm47xxpart", NULL };
+-
+-static struct physmap_flash_data bcma_pflash_data = {
+-	.part_probe_types	= part_probes,
+-};
+-
+-static struct resource bcma_pflash_resource = {
+-	.name	= "bcma_pflash",
+-	.flags  = IORESOURCE_MEM,
+-};
+-
+-struct platform_device bcma_pflash_dev = {
+-	.name		= "physmap-flash",
+-	.dev		= {
+-		.platform_data  = &bcma_pflash_data,
+-	},
+-	.resource	= &bcma_pflash_resource,
+-	.num_resources	= 1,
+-};
+-
+ /* The 47162a0 hangs when reading MIPS DMP registers registers */
+ static inline bool bcma_core_mips_bcm47162a0_quirk(struct bcma_device *dev)
+ {
+@@ -272,48 +250,11 @@ static enum bcma_boot_dev bcma_boot_dev(
+ 	return BCMA_BOOT_DEV_SERIAL;
+ }
+ 
+-static void bcma_core_mips_flash_detect(struct bcma_drv_mips *mcore)
++static void bcma_core_mips_nvram_init(struct bcma_drv_mips *mcore)
+ {
+ 	struct bcma_bus *bus = mcore->core->bus;
+-	struct bcma_drv_cc *cc = &bus->drv_cc;
+-	struct bcma_pflash *pflash = &cc->pflash;
+ 	enum bcma_boot_dev boot_dev;
+ 
+-	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
+-	case BCMA_CC_FLASHT_STSER:
+-	case BCMA_CC_FLASHT_ATSER:
+-		bcma_debug(bus, "Found serial flash\n");
+-		bcma_sflash_init(cc);
+-		break;
+-	case BCMA_CC_FLASHT_PARA:
+-		bcma_debug(bus, "Found parallel flash\n");
+-		pflash->present = true;
+-		pflash->window = BCMA_SOC_FLASH2;
+-		pflash->window_size = BCMA_SOC_FLASH2_SZ;
+-
+-		if ((bcma_read32(cc->core, BCMA_CC_FLASH_CFG) &
+-		     BCMA_CC_FLASH_CFG_DS) == 0)
+-			pflash->buswidth = 1;
+-		else
+-			pflash->buswidth = 2;
+-
+-		bcma_pflash_data.width = pflash->buswidth;
+-		bcma_pflash_resource.start = pflash->window;
+-		bcma_pflash_resource.end = pflash->window + pflash->window_size;
+-
+-		break;
+-	default:
+-		bcma_err(bus, "Flash type not supported\n");
+-	}
+-
+-	if (cc->core->id.rev == 38 ||
+-	    bus->chipinfo.id == BCMA_CHIP_ID_BCM4706) {
+-		if (cc->capabilities & BCMA_CC_CAP_NFLASH) {
+-			bcma_debug(bus, "Found NAND flash\n");
+-			bcma_nflash_init(cc);
+-		}
+-	}
+-
+ 	/* Determine flash type this SoC boots from */
+ 	boot_dev = bcma_boot_dev(bus);
+ 	switch (boot_dev) {
+@@ -337,13 +278,10 @@ static void bcma_core_mips_flash_detect(
  
  void bcma_core_mips_early_init(struct bcma_drv_mips *mcore)
  {
@@ -428,9 +611,11 @@
  		return;
  
 -	bcma_chipco_serial_init(&bus->drv_cc);
- 	bcma_core_mips_flash_detect(mcore);
+-	bcma_core_mips_flash_detect(mcore);
++	bcma_core_mips_nvram_init(mcore);
  
  	mcore->early_setup_done = true;
+ }
 --- a/drivers/bcma/host_pci.c
 +++ b/drivers/bcma/host_pci.c
 @@ -294,7 +294,7 @@ static const struct pci_device_id bcma_p
@@ -442,3 +627,90 @@
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a0) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
+--- a/drivers/bcma/Kconfig
++++ b/drivers/bcma/Kconfig
+@@ -70,6 +70,11 @@ config BCMA_DRIVER_MIPS
+ 
+ 	  If unsure, say N
+ 
++config BCMA_PFLASH
++	bool
++	depends on BCMA_DRIVER_MIPS
++	default y
++
+ config BCMA_SFLASH
+ 	bool
+ 	depends on BCMA_DRIVER_MIPS
+--- a/drivers/bcma/Makefile
++++ b/drivers/bcma/Makefile
+@@ -1,6 +1,7 @@
+ bcma-y					+= main.o scan.o core.o sprom.o
+ bcma-y					+= driver_chipcommon.o driver_chipcommon_pmu.o
+ bcma-y					+= driver_chipcommon_b.o
++bcma-$(CONFIG_BCMA_PFLASH)		+= driver_chipcommon_pflash.o
+ bcma-$(CONFIG_BCMA_SFLASH)		+= driver_chipcommon_sflash.o
+ bcma-$(CONFIG_BCMA_NFLASH)		+= driver_chipcommon_nflash.o
+ bcma-$(CONFIG_BCMA_DRIVER_PCI)		+= driver_pci.o
+--- /dev/null
++++ b/drivers/bcma/driver_chipcommon_pflash.c
+@@ -0,0 +1,49 @@
++/*
++ * Broadcom specific AMBA
++ * ChipCommon parallel flash
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include "bcma_private.h"
++
++#include <linux/bcma/bcma.h>
++#include <linux/mtd/physmap.h>
++#include <linux/platform_device.h>
++
++static const char * const part_probes[] = { "bcm47xxpart", NULL };
++
++static struct physmap_flash_data bcma_pflash_data = {
++	.part_probe_types	= part_probes,
++};
++
++static struct resource bcma_pflash_resource = {
++	.name	= "bcma_pflash",
++	.flags  = IORESOURCE_MEM,
++};
++
++struct platform_device bcma_pflash_dev = {
++	.name		= "physmap-flash",
++	.dev		= {
++		.platform_data  = &bcma_pflash_data,
++	},
++	.resource	= &bcma_pflash_resource,
++	.num_resources	= 1,
++};
++
++int bcma_pflash_init(struct bcma_drv_cc *cc)
++{
++	struct bcma_pflash *pflash = &cc->pflash;
++
++	pflash->present = true;
++
++	if (!(bcma_read32(cc->core, BCMA_CC_FLASH_CFG) & BCMA_CC_FLASH_CFG_DS))
++		bcma_pflash_data.width = 1;
++	else
++		bcma_pflash_data.width = 2;
++
++	bcma_pflash_resource.start = BCMA_SOC_FLASH2;
++	bcma_pflash_resource.end = BCMA_SOC_FLASH2 + BCMA_SOC_FLASH2_SZ;
++
++	return 0;
++}
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -350,7 +350,7 @@ static int bcma_register_devices(struct
+ 		bcma_register_core(bus, core);
+ 	}
+ 
+-#ifdef CONFIG_BCMA_DRIVER_MIPS
++#ifdef CONFIG_BCMA_PFLASH
+ 	if (bus->drv_cc.pflash.present) {
+ 		err = platform_device_register(&bcma_pflash_dev);
+ 		if (err)
