@@ -248,8 +248,12 @@
 	xhci@1E1C0000 {
 		status = "okay";
 
-		compatible = "xhci-platform";
-		reg = <0x1E1C0000 4000>;
+		compatible = "mediatek,mt8173-xhci";
+		reg = <0x1e1c0000 0x1000
+		       0x1e1d0700 0x0100>;
+
+		clocks = <&sysclock>;
+		clock-names = "sys_ck";
 
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;

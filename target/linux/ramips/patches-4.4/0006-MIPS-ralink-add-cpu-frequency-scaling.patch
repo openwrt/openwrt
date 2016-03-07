@@ -1,0 +1,93 @@
+From bd30f19a006fb52bac80c6463c49dd2f4159f4ac Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 28 Jul 2013 16:26:41 +0200
+Subject: [PATCH 06/53] MIPS: ralink: add cpu frequency scaling
+
+This feature will break udelay() and cause the delay loop to have longer delays
+when the frequency is scaled causing a performance hit.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/cevt-rt3352.c |   38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+--- a/arch/mips/ralink/cevt-rt3352.c
++++ b/arch/mips/ralink/cevt-rt3352.c
+@@ -29,6 +29,10 @@
+ /* enable the counter */
+ #define CFG_CNT_EN		0x1
+ 
++/* mt7620 frequency scaling defines */
++#define CLK_LUT_CFG	0x40
++#define SLEEP_EN	BIT(31)
++
+ struct systick_device {
+ 	void __iomem *membase;
+ 	struct clock_event_device dev;
+@@ -36,9 +40,26 @@ struct systick_device {
+ 	int freq_scale;
+ };
+ 
++static void (*systick_freq_scaling)(struct systick_device *sdev, int status);
++
+ static int systick_set_oneshot(struct clock_event_device *evt);
+ static int systick_shutdown(struct clock_event_device *evt);
+ 
++static inline void mt7620_freq_scaling(struct systick_device *sdev, int status)
++{
++	if (sdev->freq_scale == status)
++		return;
++
++	sdev->freq_scale = status;
++
++	pr_info("%s: %s autosleep mode\n", systick.dev.name,
++			(status) ? ("enable") : ("disable"));
++	if (status)
++		rt_sysc_w32(rt_sysc_r32(CLK_LUT_CFG) | SLEEP_EN, CLK_LUT_CFG);
++	else
++		rt_sysc_w32(rt_sysc_r32(CLK_LUT_CFG) & ~SLEEP_EN, CLK_LUT_CFG);
++}
++
+ static int systick_next_event(unsigned long delta,
+ 				struct clock_event_device *evt)
+ {
+@@ -99,6 +120,9 @@ static int systick_shutdown(struct clock
+ 	sdev->irq_requested = 0;
+ 	iowrite32(0, systick.membase + SYSTICK_CONFIG);
+ 
++	if (systick_freq_scaling)
++		systick_freq_scaling(sdev, 0);
++
+ 	return 0;
+ }
+ 
+@@ -114,15 +138,29 @@ static int systick_set_oneshot(struct cl
+ 	iowrite32(CFG_EXT_STK_EN | CFG_CNT_EN,
+ 		  systick.membase + SYSTICK_CONFIG);
+ 
++	if (systick_freq_scaling)
++		systick_freq_scaling(sdev, 1);
++
+ 	return 0;
+ }
+ 
++static const struct of_device_id systick_match[] = {
++	{ .compatible = "ralink,mt7620-systick", .data = mt7620_freq_scaling},
++	{},
++};
++
+ static void __init ralink_systick_init(struct device_node *np)
+ {
++	const struct of_device_id *match;
++
+ 	systick.membase = of_iomap(np, 0);
+ 	if (!systick.membase)
+ 		return;
+ 
++	match = of_match_node(systick_match, np);
++	if (match)
++		systick_freq_scaling = match->data;
++
+ 	systick_irqaction.name = np->name;
+ 	systick.dev.name = np->name;
+ 	clockevents_calc_mult_shift(&systick.dev, SYSTICK_FREQ, 60);
