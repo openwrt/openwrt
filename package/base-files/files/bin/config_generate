@@ -42,7 +42,7 @@ generate_static_network() {
 					json_get_vars type annex firmware tone xfer_mode
 					uci -q batch <<-EOF
 						delete network.dsl
-						set network.dsl='$type'
+						set network.dsl='dsl'
 						set network.dsl.annex='$annex'
 						set network.dsl.firmware='$firmware'
 						set network.dsl.tone='$tone'
