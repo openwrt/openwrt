@@ -1,0 +1,398 @@
+From 723b8beaabf3c3c4b1ce69480141f1e926f3f3b2 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 27 Jul 2014 09:52:56 +0100
+Subject: [PATCH 44/53] i2c: MIPS: adds ralink I2C driver
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ .../devicetree/bindings/i2c/i2c-ralink.txt         |   27 ++
+ drivers/i2c/busses/Kconfig                         |    4 +
+ drivers/i2c/busses/Makefile                        |    1 +
+ drivers/i2c/busses/i2c-ralink.c                    |  327 ++++++++++++++++++++
+ 4 files changed, 359 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/i2c/i2c-ralink.txt
+ create mode 100644 drivers/i2c/busses/i2c-ralink.c
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
+@@ -0,0 +1,27 @@
++I2C for Ralink platforms
++
++Required properties :
++- compatible : Must be "link,rt3052-i2c"
++- reg: physical base address of the controller and length of memory mapped
++     region.
++- #address-cells = <1>;
++- #size-cells = <0>;
++
++Optional properties:
++- Child nodes conforming to i2c bus binding
++
++Example :
++
++palmbus@10000000 {
++	i2c@900 {
++		compatible = "link,rt3052-i2c";
++		reg = <0x900 0x100>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		hwmon@4b {
++			compatible = "national,lm92";
++			reg = <0x4b>;
++		};
++	};
++};
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -806,6 +806,10 @@ config I2C_RK3X
+ 	  This driver can also be built as a module. If so, the module will
+ 	  be called i2c-rk3x.
+ 
++config I2C_RALINK
++	tristate "Ralink I2C Controller"
++	select OF_I2C
++
+ config HAVE_S3C2410_I2C
+ 	bool
+ 	help
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -75,6 +75,7 @@ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
+ obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
+ obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
+ obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
++obj-$(CONFIG_I2C_RALINK)	+= i2c-ralink.o
+ obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
+ obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
+ obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
+--- /dev/null
++++ b/drivers/i2c/busses/i2c-ralink.c
+@@ -0,0 +1,327 @@
++/*
++ * drivers/i2c/busses/i2c-ralink.c
++ *
++ * Copyright (C) 2013 Steven Liu <steven_liu@mediatek.com>
++ *
++ * Improve driver for i2cdetect from i2c-tools to detect i2c devices on the bus.
++ * (C) 2014 Sittisak <sittisaks@hotmail.com>
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/interrupt.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/reset.h>
++#include <linux/delay.h>
++#include <linux/slab.h>
++#include <linux/init.h>
++#include <linux/errno.h>
++#include <linux/platform_device.h>
++#include <linux/of_platform.h>
++#include <linux/i2c.h>
++#include <linux/io.h>
++#include <linux/err.h>
++
++#include <asm/mach-ralink/ralink_regs.h>
++
++#define REG_CONFIG_REG		0x00
++#define REG_CLKDIV_REG		0x04
++#define REG_DEVADDR_REG		0x08
++#define REG_ADDR_REG		0x0C
++#define REG_DATAOUT_REG		0x10
++#define REG_DATAIN_REG		0x14
++#define REG_STATUS_REG		0x18
++#define REG_STARTXFR_REG	0x1C
++#define REG_BYTECNT_REG		0x20
++#define REG_SM0CFG2		0x28
++#define REG_SM0CTL0		0x40
++
++#define I2C_STARTERR		BIT(4)
++#define I2C_ACKERR		BIT(3)
++#define I2C_DATARDY		BIT(2)
++#define I2C_SDOEMPTY		BIT(1)
++#define I2C_BUSY		BIT(0)
++
++#define I2C_DEVADLEN_7		(6 << 2)
++#define I2C_ADDRDIS		BIT(1)
++
++#define CLKDIV_VALUE		200 // clock rate is 40M, 40M / (200*2) = 100k (standard i2c bus rate).
++//#define CLKDIV_VALUE		50 // clock rate is 40M, 40M / (50*2) = 400k (fast i2c bus rate).
++
++#define READ_CMD		0x01
++#define WRITE_CMD		0x00
++#define READ_BLOCK              64
++
++#define SM0CTL0_OD		BIT(31)
++#define SM0CTL0_VTRIG		BIT(28)
++#define SM0CTL0_OUTHI		BIT(6)
++#define SM0CTL0_STRETCH		BIT(1)
++#define SM0CTL0_DEFAULT		(SM0CTL0_OD | SM0CTL0_VTRIG | SM0CTL0_OUTHI | SM0CTL0_STRETCH)
++
++/* timeout waiting for I2C devices to respond (clock streching) */
++#define RT_I2C_TIMEOUT (msecs_to_jiffies(1000))
++
++enum {
++	I2C_TYPE_RALINK,
++	I2C_TYPE_MEDIATEK,
++};
++
++static void __iomem *membase;
++static struct i2c_adapter *adapter;
++static int hw_type;
++
++static void rt_i2c_w32(u32 val, unsigned reg)
++{
++	iowrite32(val, membase + reg);
++}
++
++static u32 rt_i2c_r32(unsigned reg)
++{
++	return ioread32(membase + reg);
++}
++
++static inline int rt_i2c_get_ack(void)
++{
++        return (rt_i2c_r32(REG_STATUS_REG) & I2C_ACKERR) ? -EIO : 0;
++}
++
++static inline int rt_i2c_wait_rx_done(void)
++{
++	unsigned long timeout;
++
++	timeout = jiffies + RT_I2C_TIMEOUT;
++
++	do {
++		if (time_after(jiffies, timeout))
++			return (-ETIMEDOUT);
++
++	} while (!(rt_i2c_r32(REG_STATUS_REG) & I2C_DATARDY));
++
++	return 0;
++}
++
++static inline int rt_i2c_wait_idle(void)
++{
++	unsigned long timeout;
++
++	timeout = jiffies + RT_I2C_TIMEOUT;
++
++	do {
++		if (time_after(jiffies, timeout)) {
++			printk("i2c-read line busy\n");
++			return 1;
++		}
++	} while (rt_i2c_r32(REG_STATUS_REG) & I2C_BUSY);
++
++	return 0;
++}
++
++static inline int rt_i2c_wait_tx_done(void)
++{
++	unsigned long timeout;
++
++	timeout = jiffies + RT_I2C_TIMEOUT;
++
++	do {
++		if (time_after(jiffies, timeout))
++			return (-ETIMEDOUT);
++
++	} while (!(rt_i2c_r32(REG_STATUS_REG) & I2C_SDOEMPTY));
++
++	return 0;
++}
++
++static int rt_i2c_handle_msg(struct i2c_adapter *a, struct i2c_msg* msg)
++{
++	int i = 0, j = 0, pos = 0;
++	int nblock = msg->len / READ_BLOCK;
++        int rem = msg->len % READ_BLOCK;
++	int ret = 0;
++
++	if (msg->flags & I2C_M_TEN) {
++		printk("10 bits addr not supported\n");
++		return -EINVAL;
++	}
++
++	if (msg->flags & I2C_M_RD) {
++		for (i = 0; i < nblock; i++) {
++	                if (rt_i2c_wait_idle())
++				return -ETIMEDOUT;
++			rt_i2c_w32(READ_BLOCK - 1, REG_BYTECNT_REG);
++			rt_i2c_w32(READ_CMD, REG_STARTXFR_REG);
++			for (j = 0; j < READ_BLOCK; j++) {
++				if (rt_i2c_wait_rx_done() < 0)
++					ret = rt_i2c_wait_rx_done();
++                                if (rt_i2c_get_ack() < 0)
++					ret = rt_i2c_get_ack();
++				msg->buf[pos++] = rt_i2c_r32(REG_DATAIN_REG);
++			}
++		}
++
++		if (rt_i2c_wait_idle())
++			return -ETIMEDOUT;
++		if (rem) {
++			rt_i2c_w32(rem - 1, REG_BYTECNT_REG);
++			rt_i2c_w32(READ_CMD, REG_STARTXFR_REG);
++		}
++		for (i = 0; i < rem; i++) {
++			if (rt_i2c_wait_rx_done() < 0)
++				ret = rt_i2c_wait_rx_done();
++                        if (rt_i2c_get_ack() < 0)
++				ret = rt_i2c_get_ack();
++
++			msg->buf[pos++] = rt_i2c_r32(REG_DATAIN_REG);
++		}
++	} else {
++		if (rt_i2c_wait_idle())
++			return -ETIMEDOUT;
++		rt_i2c_w32(msg->len - 1, REG_BYTECNT_REG);
++		for (i = 0; i < msg->len; i++) {
++			rt_i2c_w32(msg->buf[i], REG_DATAOUT_REG);
++			rt_i2c_w32(WRITE_CMD, REG_STARTXFR_REG);
++
++			if (rt_i2c_wait_tx_done() < 0)
++				ret = rt_i2c_wait_tx_done();
++                        if (rt_i2c_get_ack() < 0)
++				ret = rt_i2c_get_ack();
++		}
++	}
++
++	return ret;
++}
++
++static int rt_i2c_master_xfer(struct i2c_adapter *a, struct i2c_msg *m, int n)
++{
++	int i = 0;
++	int ret = 0;
++
++	if (rt_i2c_wait_idle())
++		return -ETIMEDOUT;
++
++	device_reset(a->dev.parent);
++
++	rt_i2c_w32(m->addr, REG_DEVADDR_REG);
++	rt_i2c_w32(I2C_DEVADLEN_7 | I2C_ADDRDIS, REG_CONFIG_REG);
++	if (hw_type == I2C_TYPE_RALINK) {
++		rt_i2c_w32(CLKDIV_VALUE, REG_CLKDIV_REG);
++	} else {
++		rt_i2c_w32((CLKDIV_VALUE << 16) | SM0CTL0_DEFAULT, REG_SM0CTL0);
++		rt_i2c_w32(1, REG_SM0CFG2);
++	}
++
++	for (i = 0; i < n && !ret; i++) {
++		ret = rt_i2c_handle_msg(a, &m[i]);
++
++		if (ret < 0) {
++			return ret;
++		}
++	}
++
++	return n;
++}
++
++static u32 rt_i2c_func(struct i2c_adapter *a)
++{
++	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
++}
++
++static const struct i2c_algorithm rt_i2c_algo = {
++	.master_xfer	= rt_i2c_master_xfer,
++	.functionality	= rt_i2c_func,
++};
++
++static const struct of_device_id i2c_rt_dt_ids[] = {
++	{ .compatible = "ralink,rt2880-i2c", .data = (void *) I2C_TYPE_RALINK },
++	{ .compatible = "mediatek,mt7628-i2c", .data = (void *) I2C_TYPE_MEDIATEK },
++	{ /* sentinel */ }
++};
++
++MODULE_DEVICE_TABLE(of, i2c_rt_dt_ids);
++
++static int rt_i2c_probe(struct platform_device *pdev)
++{
++	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	const struct of_device_id *match;
++	int ret;
++
++	match = of_match_device(i2c_rt_dt_ids, &pdev->dev);
++	hw_type = (int) match->data;
++
++	if (!res) {
++		dev_err(&pdev->dev, "no memory resource found\n");
++		return -ENODEV;
++	}
++
++	adapter = devm_kzalloc(&pdev->dev, sizeof(struct i2c_adapter), GFP_KERNEL);
++	if (!adapter) {
++		dev_err(&pdev->dev, "failed to allocate i2c_adapter\n");
++		return -ENOMEM;
++	}
++
++	membase = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(membase))
++		return PTR_ERR(membase);
++
++	strlcpy(adapter->name, dev_name(&pdev->dev), sizeof(adapter->name));
++	adapter->owner = THIS_MODULE;
++	adapter->nr = pdev->id;
++	adapter->timeout = HZ;
++	adapter->algo = &rt_i2c_algo;
++	adapter->class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
++	adapter->dev.parent = &pdev->dev;
++	adapter->dev.of_node = pdev->dev.of_node;
++
++	ret = i2c_add_numbered_adapter(adapter);
++	if (ret)
++		return ret;
++
++	platform_set_drvdata(pdev, adapter);
++
++	dev_info(&pdev->dev, "loaded\n");
++
++	return 0;
++}
++
++static int rt_i2c_remove(struct platform_device *pdev)
++{
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++static struct platform_driver rt_i2c_driver = {
++	.probe		= rt_i2c_probe,
++	.remove		= rt_i2c_remove,
++	.driver		= {
++		.owner	= THIS_MODULE,
++		.name	= "i2c-ralink",
++		.of_match_table = i2c_rt_dt_ids,
++	},
++};
++
++static int __init i2c_rt_init (void)
++{
++	return platform_driver_register(&rt_i2c_driver);
++}
++subsys_initcall(i2c_rt_init);
++
++static void __exit i2c_rt_exit (void)
++{
++	platform_driver_unregister(&rt_i2c_driver);
++}
++
++module_exit (i2c_rt_exit);
++
++MODULE_AUTHOR("Steven Liu <steven_liu@mediatek.com>");
++MODULE_DESCRIPTION("Ralink I2c host driver");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:Ralink-I2C");
