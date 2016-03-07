@@ -722,6 +722,7 @@ profile() {
 
 	if [ "$action" = "lucistat" ]; then
 		echo "dsl.profile=${profile:-nil}"
+		echo "dsl.profile_s=\"${s}\""
 	else
 		echo "Profile:                                  $s"
 	fi
