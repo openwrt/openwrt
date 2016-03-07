@@ -162,6 +162,8 @@ start_service() {
 	local tone_adsl
 	local tone_vdsl
 	local xtse
+	local xfer_mode
+	local line_mode
 	local mode
 	local lowlevel
 
@@ -170,6 +172,7 @@ start_service() {
 	config_get annex dsl annex
 	config_get firmware dsl firmware
 	config_get xfer_mode dsl xfer_mode
+	config_get line_mode dsl line_mode
 
 	eval "xtse=\"\${xtse_xdsl_$annex}\""
 
@@ -179,14 +182,27 @@ start_service() {
 	atm)
 		LOAD=ltq_atm_vr9
 		UNLOAD=ltq_ptm_vr9
+
+		# in most cases atm is used on top of adsl
+		[ -z "${line_mode}" ] && line_mode=adsl
+		;;
+	*)
+		LOAD=ltq_ptm_vr9
+		UNLOAD=ltq_atm_vr9
+
+		# in most cases ptm is used on top of vdsl
+		[ -z "${line_mode}" ] && line_mode=vdsl
+		;;
+	esac
+
+	case "${line_mode}" in
+	adsl)
 		mode=1
 
 		# mask out VDSL bits when ATM is requested
 		xtse="${xtse%_*}_00"
 		;;
 	*)
-		LOAD=ltq_ptm_vr9
-		UNLOAD=ltq_atm_vr9
 		mode=2
 		;;
 	esac
