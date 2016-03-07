@@ -6,73 +6,30 @@ Key poller is activated for attached platform buttons.
 Requires ath9k GPIO chip access.
 
 Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
- drivers/net/wireless/ath/ath9k/ath9k.h |   16 ++++++
- drivers/net/wireless/ath/ath9k/gpio.c  |   77 +++++++++++++++++++++++++++++++++
- drivers/net/wireless/ath/ath9k/init.c  |    2 
- include/linux/ath9k_platform.h         |    4 +
- 4 files changed, 99 insertions(+)
-
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -825,6 +825,13 @@ int ath_create_gpio_led(struct ath_softc
- void ath9k_register_gpio_chip(struct ath_softc *sc);
- void ath9k_unregister_gpio_chip(struct ath_softc *sc);
- 
-+/******************/
-+/*  GPIO Buttons  */
-+/******************/
-+
-+void ath9k_init_buttons(struct ath_softc *sc);
-+void ath9k_deinit_buttons(struct ath_softc *sc);
-+
- #else
- static inline void ath_init_leds(struct ath_softc *sc)
- {
-@@ -844,6 +851,14 @@ static inline void ath9k_register_gpio_c
- static inline void ath9k_unregister_gpio_chip(struct ath_softc *sc)
- {
- }
-+
-+static inline void ath9k_init_buttons(struct ath_softc *sc)
-+{
-+}
-+
-+static inline void ath9k_deinit_buttons(struct ath_softc *sc)
-+{
-+}
- #endif
- 
- /************************/
-@@ -1040,6 +1055,7 @@ struct ath_softc {
- 	const char *led_default_trigger;
+@@ -1028,6 +1028,7 @@ struct ath_softc {
  	struct list_head leds;
+ #ifdef CONFIG_GPIOLIB
  	struct ath9k_gpio_chip *gpiochip;
 +	struct platform_device *btnpdev;	/* gpio-keys-polled */
  #endif
+ #endif
  
- #ifdef CPTCFG_ATH9K_DEBUGFS
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -24,6 +24,8 @@
- #ifdef CPTCFG_MAC80211_LEDS
- 
- #include <asm-generic/gpio.h>
+@@ -17,6 +17,8 @@
+ #include "ath9k.h"
+ #include <linux/ath9k_platform.h>
+ #include <linux/gpio.h>
 +#include <linux/platform_device.h>
 +#include <linux/gpio_keys.h>
  
- static void ath_led_brightness(struct led_classdev *led_cdev,
- 			       enum led_brightness brightness)
-@@ -159,7 +161,7 @@ void ath_init_leds(struct ath_softc *sc)
- 	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger,
- 			    !sc->sc_ah->config.led_active_high);
+ #ifdef CPTCFG_MAC80211_LEDS
  
--	if (!pdata)
-+	if (!pdata || !pdata->leds || !pdata->num_leds)
- 		return;
- 
- 	for (i = 0; i < pdata->num_leds; i++)
-@@ -307,6 +309,63 @@ void ath9k_unregister_gpio_chip(struct a
+@@ -132,6 +134,63 @@ static void ath9k_unregister_gpio_chip(s
  	sc->gpiochip = NULL;
  }
  
@@ -81,7 +38,7 @@ Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
 +/******************/
 +
 +/* add GPIO buttons */
-+void ath9k_init_buttons(struct ath_softc *sc)
++static void ath9k_init_buttons(struct ath_softc *sc)
 +{
 +	struct ath9k_platform_data *pdata = sc->dev->platform_data;
 +	struct platform_device *pdev;
@@ -123,7 +80,7 @@ Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
 +}
 +
 +/* remove GPIO buttons */
-+void ath9k_deinit_buttons(struct ath_softc *sc)
++static void ath9k_deinit_buttons(struct ath_softc *sc)
 +{
 +	if (!sc->gpiochip || !sc->btnpdev)
 +		return;
@@ -133,27 +90,49 @@ Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
 +	sc->btnpdev = NULL;
 +}
 +
- #endif
+ #else /* CONFIG_GPIOLIB */
  
- /*******************/
---- a/drivers/net/wireless/ath/ath9k/init.c
-+++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -977,6 +977,7 @@ int ath9k_init_device(u16 devid, struct
+ static inline void ath9k_register_gpio_chip(struct ath_softc *sc)
+@@ -142,6 +201,14 @@ static inline void ath9k_unregister_gpio
+ {
+ }
+ 
++static inline void ath9k_init_buttons(struct ath_softc *sc)
++{
++}
++
++static inline void ath9k_deinit_buttons(struct ath_softc *sc)
++{
++}
++
+ #endif /* CONFIG_GPIOLIB */
+ 
+ /********************************/
+@@ -246,6 +313,7 @@ void ath_deinit_leds(struct ath_softc *s
+ {
+ 	struct ath_led *led;
+ 
++	ath9k_deinit_buttons(sc);
+ 	while (!list_empty(&sc->leds)) {
+ 		led = list_first_entry(&sc->leds, struct ath_led, list);
+ #ifdef CONFIG_GPIOLIB
+@@ -274,6 +342,7 @@ void ath_init_leds(struct ath_softc *sc)
+ 		return;
  
  	ath9k_register_gpio_chip(sc);
- 	ath_init_leds(sc);
 +	ath9k_init_buttons(sc);
- 	ath_start_rfkill_poll(sc);
  
- 	return 0;
-@@ -1022,6 +1023,7 @@ void ath9k_deinit_device(struct ath_soft
- 	ath9k_ps_wakeup(sc);
+ 	if (pdata && pdata->led_name)
+ 		strncpy(led_name, pdata->led_name, sizeof(led_name));
+@@ -289,7 +358,7 @@ void ath_init_leds(struct ath_softc *sc)
+ 	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger,
+ 			    !sc->sc_ah->config.led_active_high);
  
- 	wiphy_rfkill_stop_polling(sc->hw->wiphy);
-+	ath9k_deinit_buttons(sc);
- 	ath_deinit_leds(sc);
- 	ath9k_unregister_gpio_chip(sc);
+-	if (!pdata)
++	if (!pdata || !pdata->leds || !pdata->num_leds)
+ 		return;
  
+ 	for (i = 0; i < pdata->num_leds; i++)
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
 @@ -46,6 +46,10 @@ struct ath9k_platform_data {
