@@ -1,0 +1,214 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 17 Feb 2016 11:26:53 +0100
+Subject: [PATCH] brcmfmac: Configure country code using device specific
+ settings
+
+Country code configuration in a device is a device specific
+operation. For this the country code as specified by reg notifier
+(iso3166 alpha2) needs to be translated to a device specific
+country locale and revision number. This patch adds this
+translation and puts a placeholder in the device specific settings
+where the translation table can be stored. Additional patches will
+be needed to read these tables from for example device platform
+data.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -6405,28 +6405,85 @@ int brcmf_cfg80211_wait_vif_event(struct
+ 				  vif_event_equals(event, action), timeout);
+ }
+ 
++static s32 brcmf_translate_country_code(struct brcmf_pub *drvr, char alpha2[2],
++					struct brcmf_fil_country_le *ccreq)
++{
++	struct cc_translate *country_codes;
++	struct cc_entry *cc;
++	s32 found_index;
++	int i;
++
++	country_codes = drvr->settings->country_codes;
++	if (!country_codes) {
++		brcmf_dbg(TRACE, "No country codes configured for device\n");
++		return -EINVAL;
++	}
++
++	if ((alpha2[0] == ccreq->country_abbrev[0]) &&
++	    (alpha2[1] == ccreq->country_abbrev[1])) {
++		brcmf_dbg(TRACE, "Country code already set\n");
++		return -EAGAIN;
++	}
++
++	found_index = -1;
++	for (i = 0; i < country_codes->table_size; i++) {
++		cc = &country_codes->table[i];
++		if ((cc->iso3166[0] == '\0') && (found_index == -1))
++			found_index = i;
++		if ((cc->iso3166[0] == alpha2[0]) &&
++		    (cc->iso3166[1] == alpha2[1])) {
++			found_index = i;
++			break;
++		}
++	}
++	if (found_index == -1) {
++		brcmf_dbg(TRACE, "No country code match found\n");
++		return -EINVAL;
++	}
++	memset(ccreq, 0, sizeof(*ccreq));
++	ccreq->rev = cpu_to_le32(country_codes->table[found_index].rev);
++	memcpy(ccreq->ccode, country_codes->table[found_index].cc,
++	       BRCMF_COUNTRY_BUF_SZ);
++	ccreq->country_abbrev[0] = alpha2[0];
++	ccreq->country_abbrev[1] = alpha2[1];
++	ccreq->country_abbrev[2] = 0;
++
++	return 0;
++}
++
+ static void brcmf_cfg80211_reg_notifier(struct wiphy *wiphy,
+ 					struct regulatory_request *req)
+ {
+ 	struct brcmf_cfg80211_info *cfg = wiphy_priv(wiphy);
+ 	struct brcmf_if *ifp = netdev_priv(cfg_to_ndev(cfg));
+ 	struct brcmf_fil_country_le ccreq;
++	s32 err;
+ 	int i;
+ 
+-	brcmf_dbg(TRACE, "enter: initiator=%d, alpha=%c%c\n", req->initiator,
+-		  req->alpha2[0], req->alpha2[1]);
+-
+ 	/* ignore non-ISO3166 country codes */
+ 	for (i = 0; i < sizeof(req->alpha2); i++)
+ 		if (req->alpha2[i] < 'A' || req->alpha2[i] > 'Z') {
+-			brcmf_err("not a ISO3166 code\n");
++			brcmf_err("not a ISO3166 code (0x%02x 0x%02x)\n",
++				  req->alpha2[0], req->alpha2[1]);
+ 			return;
+ 		}
+-	memset(&ccreq, 0, sizeof(ccreq));
+-	ccreq.rev = cpu_to_le32(-1);
+-	memcpy(ccreq.ccode, req->alpha2, sizeof(req->alpha2));
+-	if (brcmf_fil_iovar_data_set(ifp, "country", &ccreq, sizeof(ccreq))) {
+-		brcmf_err("firmware rejected country setting\n");
++
++	brcmf_dbg(TRACE, "Enter: initiator=%d, alpha=%c%c\n", req->initiator,
++		  req->alpha2[0], req->alpha2[1]);
++
++	err = brcmf_fil_iovar_data_get(ifp, "country", &ccreq, sizeof(ccreq));
++	if (err) {
++		brcmf_err("Country code iovar returned err = %d\n", err);
++		return;
++	}
++
++	err = brcmf_translate_country_code(ifp->drvr, req->alpha2, &ccreq);
++	if (err)
++		return;
++
++	err = brcmf_fil_iovar_data_set(ifp, "country", &ccreq, sizeof(ccreq));
++	if (err) {
++		brcmf_err("Firmware rejected country setting\n");
+ 		return;
+ 	}
+ 	brcmf_setup_wiphybands(wiphy);
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
+@@ -230,10 +230,8 @@ void brcmf_mp_attach(void)
+ int brcmf_mp_device_attach(struct brcmf_pub *drvr)
+ {
+ 	drvr->settings = kzalloc(sizeof(*drvr->settings), GFP_ATOMIC);
+-	if (!drvr->settings) {
+-		brcmf_err("Failed to alloca storage space for settings\n");
++	if (!drvr->settings)
+ 		return -ENOMEM;
+-	}
+ 
+ 	drvr->settings->sdiod_txglomsz = brcmf_sdiod_txglomsz;
+ 	drvr->settings->p2p_enable = !!brcmf_p2p_enable;
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h
+@@ -15,6 +15,8 @@
+ #ifndef BRCMFMAC_COMMON_H
+ #define BRCMFMAC_COMMON_H
+ 
++#include "fwil_types.h"
++
+ extern const u8 ALLFFMAC[ETH_ALEN];
+ 
+ #define BRCMF_FW_ALTPATH_LEN			256
+@@ -39,6 +41,33 @@ struct brcmf_mp_global_t {
+ extern struct brcmf_mp_global_t brcmf_mp_global;
+ 
+ /**
++ * struct cc_entry - Struct for translating user space country code (iso3166) to
++ *		     firmware country code and revision.
++ *
++ * @iso3166: iso3166 alpha 2 country code string.
++ * @cc: firmware country code string.
++ * @rev: firmware country code revision.
++ */
++struct cc_entry {
++	char	iso3166[BRCMF_COUNTRY_BUF_SZ];
++	char	cc[BRCMF_COUNTRY_BUF_SZ];
++	s32	rev;
++};
++
++/**
++ * struct cc_translate - Struct for translating country codes as set by user
++ *			 space to a country code and rev which can be used by
++ *			 firmware.
++ *
++ * @table_size: number of entries in table (> 0)
++ * @table: dynamic array of 1 or more elements with translation information.
++ */
++struct cc_translate {
++	int	table_size;
++	struct cc_entry table[0];
++};
++
++/**
+  * struct brcmf_mp_device - Device module paramaters.
+  *
+  * @sdiod_txglomsz: SDIO txglom size.
+@@ -47,6 +76,7 @@ extern struct brcmf_mp_global_t brcmf_mp
+  * @feature_disable: Feature_disable bitmask.
+  * @fcmode: FWS flow control.
+  * @roamoff: Firmware roaming off?
++ * @country_codes: If available, pointer to struct for translating country codes
+  */
+ struct brcmf_mp_device {
+ 	int	sdiod_txglomsz;
+@@ -56,6 +86,7 @@ struct brcmf_mp_device {
+ 	int	fcmode;
+ 	bool	roamoff;
+ 	bool	ignore_probe_fail;
++	struct cc_translate *country_codes;
+ };
+ 
+ void brcmf_mp_attach(void);
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwil_types.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwil_types.h
+@@ -134,6 +134,8 @@
+ #define BRCMF_PFN_MAC_OUI_ONLY		BIT(0)
+ #define BRCMF_PFN_SET_MAC_UNASSOC	BIT(1)
+ 
++#define BRCMF_MCSSET_LEN		16
++
+ /* join preference types for join_pref iovar */
+ enum brcmf_join_pref_types {
+ 	BRCMF_JOIN_PREF_RSSI = 1,
+@@ -279,7 +281,7 @@ struct brcmf_bss_info_le {
+ 	__le32 reserved32[1];	/* Reserved for expansion of BSS properties */
+ 	u8 flags;		/* flags */
+ 	u8 reserved[3];	/* Reserved for expansion of BSS properties */
+-	u8 basic_mcs[MCSSET_LEN];	/* 802.11N BSS required MCS set */
++	u8 basic_mcs[BRCMF_MCSSET_LEN];	/* 802.11N BSS required MCS set */
+ 
+ 	__le16 ie_offset;	/* offset at which IEs start, from beginning */
+ 	__le32 ie_length;	/* byte length of Information Elements */
