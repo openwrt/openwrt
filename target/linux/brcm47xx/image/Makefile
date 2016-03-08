@@ -54,20 +54,6 @@ define Image/Build/CyberTANHead
 	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(3) -v v$(4) -i /dev/null -o $(KDIR)/$(IMG_PREFIX)-$(2)-header.bin $(if $(6),-s $(6))
 endef
 
-define Image/Build/USR
-	$(STAGING_DIR_HOST)/bin/trx2usr $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3).bin
-endef
-
-define Image/Build/Edi
-	$(STAGING_DIR_HOST)/bin/trx2edips $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3).bin
-endef
-
-define Image/Build/Huawei
-	dd if=/dev/zero of=$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-gz.bin bs=92 count=1
-	echo -ne 'HDR0\x08\x00\x00\x00' >> $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-gz.bin
-	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx >> $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-gz.bin
-endef
-
 # $(1): filesystem type.
 # $(2): device model (used for output file).
 # $(3): board_id (device specific magic).
@@ -112,8 +98,28 @@ define Build/trx-with-loader
 		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
 endef
 
+define Build/trx-without-loader
+	$(STAGING_DIR_HOST)/bin/trx \
+		-m 33554432 \
+		-o $@ \
+		-f $(word 1,$^) \
+		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
+endef
+
 define Build/asus-trx
 	$(STAGING_DIR_HOST)/bin/asustrx -p "$(PRODUCTID)" -i $@ -o $@.new
+	mv $@.new $@
+endef
+
+define Build/edimax-bin
+	$(STAGING_DIR_HOST)/bin/trx2edips $@ $@.new
+	mv $@.new $@
+endef
+
+define Build/huawei-bin
+	dd if=/dev/zero of=$@.new bs=92 count=1
+	echo -ne 'HDR0\x08\x00\x00\x00' >> $@.new
+	cat $@ >> $@.new
 	mv $@.new $@
 endef
 
@@ -129,6 +135,11 @@ endef
 
 define Build/tailed-bin
 	echo $(BIN_TAIL) >> $@
+endef
+
+define Build/usrobotics-bin
+	$(STAGING_DIR_HOST)/bin/trx2usr $@ $@.new
+	mv $@.new $@
 endef
 
 #################################################
@@ -231,25 +242,12 @@ define Image/Build/legacy/devices-with-128k-blocks
 endef
 
 # $(1): filesystem type.
-define Image/Build/legacy/devices-with-64k-blocks
-	$(call Image/Build/Edi,$(1),ps1208mfg,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Huawei,$(1),e970,$(1))
-	$(call Image/Build/USR,$(1),usr5461,$(1))
-endef
-
-# $(1): filesystem type.
-define Image/Build/legacy/jffs2-64k
-	$(call Image/Build/legacy/devices-with-64k-blocks,$(1))
-endef
-
-# $(1): filesystem type.
 define Image/Build/legacy/jffs2-128k
 	$(call Image/Build/legacy/devices-with-128k-blocks,$(1))
 endef
 
 # $(1): filesystem type.
 define Image/Build/legacy/squashfs
-	$(call Image/Build/legacy/devices-with-64k-blocks,$(1))
 	$(call Image/Build/legacy/devices-with-128k-blocks,$(1))
 endef
 
@@ -257,6 +255,17 @@ define Device/dlink-dwl-3150
 	IMAGES := bin
 	IMAGE/bin := trx-with-loader | tailed-bin
 	BIN_TAIL := BCM-5352-2050-0000000-01
+endef
+
+define Device/edimax-ps1208-mfg
+	IMAGES := bin
+	IMAGE/bin := trx-with-loader | edimax-bin
+endef
+
+define Device/huawei-e970
+	KERNEL_NAME = vmlinux.gz
+	IMAGES := bin
+	IMAGE/bin := trx-without-loader | huawei-bin
 endef
 
 define Device/linksys-wrt54gs
@@ -273,11 +282,19 @@ define Device/linksys-wrtsl54gs
 	VERSION := 2.08.1
 endef
 
+define Device/usrobotics-usr5461
+	IMAGES := bin
+	IMAGE/bin := trx-with-loader | usrobotics-bin
+endef
+
 ifeq ($(SUBTARGET),legacy)
   TARGET_DEVICES += \
 	dlink-dwl-3150 \
+	edimax-ps1208-mfg \
+	huawei-e970 \
 	linksys-wrt54gs \
-	linksys-wrtsl54gs
+	linksys-wrtsl54gs \
+	usrobotics-usr5461
 
   $(eval $(call AsusDevice,wl-300g,WL300g      ))
   $(eval $(call AsusDevice,wl-320gp,WL320gP     ))
