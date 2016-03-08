@@ -1,0 +1,49 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 8 Mar 2016 07:52:18 +0100
+Subject: [PATCH] bcm47xx_sprom: Fix compilation with ssb/bcma as module
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It was failing due to unknown ssb_arch_register_fallback_sprom or
+bcma_arch_register_fallback_sprom with CONFIG_SSB=m or CONFIG_BCMA=m
+
+Fixes: e8a46c88b516 ("MIPS: BCM47xx: Move SPROM driver to drivers/firmware/¨)
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+
+--- a/drivers/firmware/broadcom/bcm47xx_sprom.c
++++ b/drivers/firmware/broadcom/bcm47xx_sprom.c
+@@ -601,7 +601,7 @@ void bcm47xx_fill_sprom(struct ssb_sprom
+ 	bcm47xx_sprom_fill_auto(sprom, prefix, fallback);
+ }
+ 
+-#if defined(CONFIG_SSB_SPROM)
++#if IS_BUILTIN(CONFIG_SSB) && IS_ENABLED(CONFIG_SSB_SPROM)
+ static int bcm47xx_get_sprom_ssb(struct ssb_bus *bus, struct ssb_sprom *out)
+ {
+ 	char prefix[10];
+@@ -624,7 +624,7 @@ static int bcm47xx_get_sprom_ssb(struct
+ }
+ #endif
+ 
+-#if defined(CONFIG_BCMA)
++#if IS_BUILTIN(CONFIG_BCMA)
+ /*
+  * Having many NVRAM entries for PCI devices led to repeating prefixes like
+  * pci/1/1/ all the time and wasting flash space. So at some point Broadcom
+@@ -719,12 +719,12 @@ int bcm47xx_sprom_register_fallbacks(voi
+ 	if (bcm47xx_sprom_registered)
+ 		return 0;
+ 
+-#if defined(CONFIG_SSB_SPROM)
++#if IS_BUILTIN(CONFIG_SSB) && IS_ENABLED(CONFIG_SSB_SPROM)
+ 	if (ssb_arch_register_fallback_sprom(&bcm47xx_get_sprom_ssb))
+ 		pr_warn("Failed to registered ssb SPROM handler\n");
+ #endif
+ 
+-#if defined(CONFIG_BCMA)
++#if IS_BUILTIN(CONFIG_BCMA)
+ 	if (bcma_arch_register_fallback_sprom(&bcm47xx_get_sprom_bcma))
+ 		pr_warn("Failed to registered bcma SPROM handler\n");
+ #endif
