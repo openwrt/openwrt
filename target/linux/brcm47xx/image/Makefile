@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -37,11 +37,6 @@ endef
 define Image/Build/wgt634u
 	dd if=$(KDIR)/loader.elf of=$(BIN_DIR)/$(IMG_PREFIX)-wgt634u-$(2).bin bs=131072 conv=sync
 	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx >> $(BIN_DIR)/$(IMG_PREFIX)-wgt634u-$(2).bin
-endef
-
-define Image/Build/dwl3150
-	cp $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/$(IMG_PREFIX)-dwl3150-$(2).bin
-	echo "BCM-5352-2050-0000000-01" >> $(BIN_DIR)/$(IMG_PREFIX)-dwl3150-$(2).bin
 endef
 
 # $(1): filesystem type.
@@ -131,6 +126,10 @@ define Build/linksys-bin
 	mv $@.new $@
 endef
 
+define Build/tailed-bin
+	echo $(BIN_TAIL) >> $@
+endef
+
 #################################################
 # Devices
 #################################################
@@ -138,6 +137,7 @@ endef
 DEVICE_VARS += PRODUCTID
 DEVICE_VARS += DEVICE_ID VERSION
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
+DEVICE_VARS += BIN_TAIL
 
 define Device/Default
 	KERNEL := kernel-bin
@@ -217,7 +217,6 @@ endef
 
 # $(1): filesystem type.
 define Image/Build/legacy/devices-with-64k-blocks
-	$(call Image/Build/dwl3150,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Edi,$(1),ps1208mfg,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Huawei,$(1),e970,$(1))
 	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
@@ -242,6 +241,12 @@ define Image/Build/legacy/squashfs
 	$(call Image/Build/legacy/devices-with-128k-blocks,$(1))
 endef
 
+define Device/dlink-dwl-3150
+	IMAGES := bin
+	IMAGE/bin := trx-with-loader | tailed-bin
+	BIN_TAIL := BCM-5352-2050-0000000-01
+endef
+
 define Device/linksys-wrt54gs
 	$(Device/linksys)
 	FILESYSTEMS := $(FS_128K)
@@ -258,6 +263,7 @@ endef
 
 ifeq ($(SUBTARGET),legacy)
   TARGET_DEVICES += \
+	dlink-dwl-3150 \
 	linksys-wrt54gs \
 	linksys-wrtsl54gs
 
