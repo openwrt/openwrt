@@ -1,0 +1,22 @@
+From 5af831a3f879c89c8c0b39c8f88e7600bdc3a765 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 19 Feb 2016 12:04:48 +0000
+Subject: [PATCH 157/170] bcm2835-sdhost: Downgrade log message status
+
+---
+ drivers/mmc/host/bcm2835-sdhost.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -232,8 +232,8 @@ static void log_init(u32 bus_to_phys)
+ 	sdhost_log_buf = dma_zalloc_coherent(NULL, LOG_SIZE, &sdhost_log_addr,
+ 					     GFP_KERNEL);
+ 	if (sdhost_log_buf) {
+-		pr_err("sdhost: log_buf @ %p (%x)\n",
+-		       sdhost_log_buf, sdhost_log_addr);
++		pr_info("sdhost: log_buf @ %p (%x)\n",
++			sdhost_log_buf, sdhost_log_addr);
+ 		timer_base = ioremap_nocache(bus_to_phys + 0x7e003000, SZ_4K);
+ 		if (!timer_base)
+ 			pr_err("sdhost: failed to remap timer\n");

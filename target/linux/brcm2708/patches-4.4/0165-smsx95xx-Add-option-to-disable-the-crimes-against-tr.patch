@@ -1,0 +1,44 @@
+From 18674a7da1c3d50d9c957a8f88aaea2aa653d223 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 20 Jan 2016 17:50:09 +0000
+Subject: [PATCH 165/170] smsx95xx: Add option to disable the crimes against
+ truesize fix
+
+It may improve iperf numbers on Pi 1, but may generate dmesg warnings and possibly cause network issues
+See issue 1248.
+---
+ drivers/net/usb/smsc95xx.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+ mode change 100755 => 100644 drivers/net/usb/smsc95xx.c
+
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
+@@ -75,6 +75,10 @@ static bool turbo_mode = false;
+ module_param(turbo_mode, bool, 0644);
+ MODULE_PARM_DESC(turbo_mode, "Enable multiple frames per Rx transaction");
+ 
++static bool truesize_mode = false;
++module_param(truesize_mode, bool, 0644);
++MODULE_PARM_DESC(truesize_mode, "Report larger truesize value");
++
+ static char *macaddr = ":";
+ module_param(macaddr, charp, 0);
+ MODULE_PARM_DESC(macaddr, "MAC address");
+@@ -1841,6 +1845,8 @@ static int smsc95xx_rx_fixup(struct usbn
+ 				if (dev->net->features & NETIF_F_RXCSUM)
+ 					smsc95xx_rx_csum_offload(skb);
+ 				skb_trim(skb, skb->len - 4); /* remove fcs */
++				if (truesize_mode)
++					skb->truesize = size + sizeof(struct sk_buff);
+ 
+ 				return 1;
+ 			}
+@@ -1858,6 +1864,8 @@ static int smsc95xx_rx_fixup(struct usbn
+ 			if (dev->net->features & NETIF_F_RXCSUM)
+ 				smsc95xx_rx_csum_offload(ax_skb);
+ 			skb_trim(ax_skb, ax_skb->len - 4); /* remove fcs */
++			if (truesize_mode)
++				ax_skb->truesize = size + sizeof(struct sk_buff);
+ 
+ 			usbnet_skb_return(dev, ax_skb);
+ 		}

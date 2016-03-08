@@ -1,0 +1,23 @@
+From c5cbb66686e7e289e8a7aff49a954f86893e628d Mon Sep 17 00:00:00 2001
+From: Dhiraj Goel <dhiraj.goel@gmail.com>
+Date: Thu, 3 Mar 2016 21:10:50 -0800
+Subject: [PATCH 170/170] bcm2835-camera: fix a bug in computation of frame
+ timestamp
+
+Fixes #1318
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -360,8 +360,7 @@ static void buffer_cb(struct vchiq_mmal_
+ 				div =
+ 				    div_u64_rem(runtime_us, USEC_PER_SEC, &rem);
+ 				buf->vb.timestamp.tv_sec =
+-				    dev->capture.kernel_start_ts.tv_sec - 1 +
+-				    div;
++				    dev->capture.kernel_start_ts.tv_sec + div;
+ 				buf->vb.timestamp.tv_usec =
+ 				    dev->capture.kernel_start_ts.tv_usec + rem;
+ 

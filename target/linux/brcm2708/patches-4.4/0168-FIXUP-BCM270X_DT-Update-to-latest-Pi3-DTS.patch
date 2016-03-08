@@ -1,0 +1,82 @@
+From 52015bd5f0bb4d64ca51c5f8539cf2552dfb8a42 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 21 Jan 2016 17:57:49 +0000
+Subject: [PATCH 168/170] FIXUP: BCM270X_DT: Update to latest Pi3 DTS
+
+---
+ arch/arm/boot/dts/bcm2710-rpi-3-b.dts | 34 ++++++++++++++++++++++++++--------
+ 1 file changed, 26 insertions(+), 8 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
+@@ -45,16 +45,21 @@
+ 	};
+ 
+ 	bt_pins: bt_pins {
+-		brcm,pins =     <28 29 30 31 14 15 43>;
+-		brcm,function = <6 6 6 6 2 2 4>;
+-			// alt2:PCM alt5:UART1 alt0:GPCLK2
+-		brcm,pull =     <0 0 0 0 0 2 0>;
++		brcm,pins =     <28 29 30 31 43>;
++		brcm,function = <6 6 6 6 4>;   /* alt2:PCM alt0:GPCLK2 */
++		brcm,pull =     <0 0 0 0 0>;
+ 	};
+ 
+-	uart1_pins: uart1_pins {
++	uart0_pins: uart0_pins {
+ 		brcm,pins = <32 33>;
+ 		brcm,function = <7>; /* alt3=UART0 */
+-		brcm,pull = <0>;
++		brcm,pull = <0 0>;
++	};
++
++	uart1_pins: uart1_pins {
++		brcm,pins = <14 15>;
++		brcm,function = <2>; /* alt5=UART1 */
++		brcm,pull = <0 0>;
+ 	};
+ };
+ 
+@@ -71,6 +76,17 @@
+ 	non-removable;
+ 	bus-width = <4>;
+ 	status = "okay";
++	brcm,overclock-50 = <0>;
++};
++
++&soc {
++	virtgpio: virtgpio {
++		compatible = "brcm,bcm2835-virtgpio";
++		gpio-controller;
++		#gpio-cells = <2>;
++		firmware = <&firmware>;
++		status = "okay";
++	};
+ };
+ 
+ &fb {
+@@ -78,12 +94,14 @@
+ };
+ 
+ &uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pins &bt_pins>;
+ 	status = "okay";
+ };
+ 
+ &uart1 {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&uart1_pins &bt_pins>;
++	pinctrl-0 = <&uart1_pins>;
+ 	status = "okay";
+ };
+ 
+@@ -139,7 +157,7 @@
+ 	act_led: act {
+ 		label = "led0";
+ 		linux,default-trigger = "mmc0";
+-		gpios = <&gpio 47 0>;
++		gpios = <&virtgpio 0 0>;
+ 	};
+ };
+ 
