@@ -1,7 +1,7 @@
-From fe77db4395ed0fbceb058f7b49dc3b3db57c2868 Mon Sep 17 00:00:00 2001
+From 522e6f9cc4376fe49e8b41b40e7ddb98cf385a9e Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Fri, 17 Jul 2015 13:15:50 -0700
-Subject: [PATCH 117/156] drm/vc4: Add support for MSAA rendering.
+Subject: [PATCH 117/170] drm/vc4: Add support for MSAA rendering.
 
 For MSAA, you set a bit in the binner that halves the size of tiles in
 each direction, so you can pack 4 samples per pixel in the tile

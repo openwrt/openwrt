@@ -1,0 +1,700 @@
+From 43477e669f736f6da34afbd8a96683b239b1fd1f Mon Sep 17 00:00:00 2001
+From: Fraser <github@frasersdev.net>
+Date: Tue, 23 Feb 2016 10:04:37 +1100
+Subject: [PATCH 163/170] Aux SPI 1&2 implementation
+
+Adds aux spi 1 & 2 devices to compatible raspberry PIs.
+* Minor config of the driver build environment to ensure they get built
+for CONFIG_ARCH_BCM2708 & CONFIG_ARCH_BCM2709 devices.
+* Adds the aux spi driver into the defconfigs as a module.
+* Adds the auxiliary and spi1/2 devices into the device tree in a
+disabled state
+* Provides decide tree overlays which enables the devices and gives
+users a degree of control over how they are setup.
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi           | 34 ++++++++-
+ arch/arm/boot/dts/overlays/Makefile             |  6 ++
+ arch/arm/boot/dts/overlays/README               | 99 +++++++++++++++++++++++++
+ arch/arm/boot/dts/overlays/spi1-1cs-overlay.dts | 57 ++++++++++++++
+ arch/arm/boot/dts/overlays/spi1-2cs-overlay.dts | 69 +++++++++++++++++
+ arch/arm/boot/dts/overlays/spi1-3cs-overlay.dts | 81 ++++++++++++++++++++
+ arch/arm/boot/dts/overlays/spi2-1cs-overlay.dts | 57 ++++++++++++++
+ arch/arm/boot/dts/overlays/spi2-2cs-overlay.dts | 69 +++++++++++++++++
+ arch/arm/boot/dts/overlays/spi2-3cs-overlay.dts | 81 ++++++++++++++++++++
+ arch/arm/configs/bcm2709_defconfig              |  1 +
+ arch/arm/configs/bcmrpi_defconfig               |  1 +
+ drivers/clk/bcm/Makefile                        |  2 +-
+ drivers/spi/Kconfig                             |  2 +-
+ 13 files changed, 556 insertions(+), 3 deletions(-)
+ create mode 100644 arch/arm/boot/dts/overlays/spi1-1cs-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/spi1-2cs-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/spi1-3cs-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/spi2-1cs-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/spi2-2cs-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/spi2-3cs-overlay.dts
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -1,3 +1,4 @@
++#include <dt-bindings/clock/bcm2835-aux.h>
+ #include "skeleton.dtsi"
+ 
+ / {
+@@ -5,6 +6,7 @@
+ 
+ 	aliases {
+ 		audio = &audio;
++		aux = &aux;
+ 		sound = &sound;
+ 		soc = &soc;
+ 		dma = &dma;
+@@ -19,6 +21,8 @@
+ 		spi0 = &spi0;
+ 		i2c0 = &i2c0;
+ 		uart1 = &uart1;
++		spi1 = &spi1;
++		spi2 = &spi2;
+ 		mmc = &mmc;
+ 		i2c1 = &i2c1;
+ 		i2c2 = &i2c2;
+@@ -186,6 +190,14 @@
+ 			status = "disabled";
+ 		};
+ 
++		aux: aux@0x7e215004 {
++			compatible = "brcm,bcm2835-aux";
++			#clock-cells = <1>;
++			reg = <0x7e215000 0x8>;
++			clocks = <&clk_core>;
++			status = "disabled";
++		};
++
+ 		uart1: uart@7e215040 {
+ 			compatible = "brcm,bcm2835-aux-uart", "ns16550";
+ 			reg = <0x7e215040 0x40>;
+@@ -194,7 +206,27 @@
+ 			reg-shift = <2>;
+ 			no-loopback-test;
+ 			status = "disabled";
+-	        };
++		};
++
++		spi1: spi@7e215080 {
++			compatible = "brcm,bcm2835-aux-spi";
++			reg = <0x7e215080 0x40>, <0x7e215000 0x8>;
++			interrupts = <1 29>;
++			clocks = <&aux BCM2835_AUX_CLOCK_SPI1>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		spi2: spi@7e2150C0 {
++			compatible = "brcm,bcm2835-aux-spi";
++			reg = <0x7e2150C0 0x40>, <0x7e215000 0x8>;
++			interrupts = <1 29>;
++			clocks = <&aux BCM2835_AUX_CLOCK_SPI2>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
+ 
+ 		mmc: mmc@7e300000 {
+ 			compatible = "brcm,bcm2835-mmc";
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -57,6 +57,12 @@ dtb-$(RPI_DT_OVERLAYS) += sdtweak-overla
+ dtb-$(RPI_DT_OVERLAYS) += smi-dev-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += smi-nand-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += smi-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += spi1-1cs-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += spi1-2cs-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += spi1-3cs-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += spi2-1cs-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += spi2-2cs-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += spi2-3cs-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += spi-gpio35-39-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += tinylcd35-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += uart1-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -713,6 +713,105 @@ Load:   dtoverlay=spi-gpio35-39
+ Params: <None>
+ 
+ 
++Name:   spi1-1cs
++Info:   Enables spi1 with a single chip select (CS) line and associated spidev
++        dev node. The gpio pin number for the CS line and spidev device node
++        creation are configurable.
++        N.B.: spi1 is only accessible on devices with a 40pin header, eg:
++              A+, B+, Zero and PI2 B; as well as the Compute Module.
++Load:   dtoverlay=spi1-1cs,<param>=<val>
++Params: cs0_pin                 GPIO pin for CS0 (default 18 - BCM SPI1_CE0).
++        cs0_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev1.0 (default
++                                is 'okay' or enabled).
++
++
++Name:   spi1-2cs
++Info:   Enables spi1 with two chip select (CS) lines and associated spidev
++        dev nodes. The gpio pin numbers for the CS lines and spidev device node
++        creation are configurable.
++        N.B.: spi1 is only accessible on devices with a 40pin header, eg:
++              A+, B+, Zero and PI2 B; as well as the Compute Module.
++Load:   dtoverlay=spi1-2cs,<param>=<val>
++Params: cs0_pin                 GPIO pin for CS0 (default 18 - BCM SPI1_CE0).
++        cs1_pin                 GPIO pin for CS1 (default 17 - BCM SPI1_CE1).
++        cs0_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev1.0 (default
++                                is 'okay' or enabled).
++        cs1_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev1.1 (default
++                                is 'okay' or enabled).
++
++
++Name:   spi1-3cs
++Info:   Enables spi1 with three chip select (CS) lines and associated spidev
++        dev nodes. The gpio pin numbers for the CS lines and spidev device node
++        creation are configurable.
++        N.B.: spi1 is only accessible on devices with a 40pin header, eg:
++              A+, B+, Zero and PI2 B; as well as the Compute Module.
++Load:   dtoverlay=spi1-3cs,<param>=<val>
++Params: cs0_pin                 GPIO pin for CS0 (default 18 - BCM SPI1_CE0).
++        cs1_pin                 GPIO pin for CS1 (default 17 - BCM SPI1_CE1).
++        cs2_pin                 GPIO pin for CS2 (default 16 - BCM SPI1_CE2).
++        cs0_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev1.0 (default
++                                is 'okay' or enabled).
++        cs1_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev1.1 (default
++                                is 'okay' or enabled).
++        cs2_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev1.2 (default
++                                is 'okay' or enabled).
++
++
++Name:   spi2-1cs
++Info:   Enables spi2 with a single chip select (CS) line and associated spidev
++        dev node. The gpio pin number for the CS line and spidev device node
++        creation are configurable.
++        N.B.: spi2 is only accessible with the Compute Module.
++Load:   dtoverlay=spi2-1cs,<param>=<val>
++Params: cs0_pin                 GPIO pin for CS0 (default 43 - BCM SPI2_CE0).
++        cs0_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev2.0 (default
++                                is 'okay' or enabled).
++
++
++Name:   spi2-2cs
++Info:   Enables spi2 with two chip select (CS) lines and associated spidev
++        dev nodes. The gpio pin numbers for the CS lines and spidev device node
++        creation are configurable.
++        N.B.: spi2 is only accessible with the Compute Module.
++Load:   dtoverlay=spi2-2cs,<param>=<val>
++Params: cs0_pin                 GPIO pin for CS0 (default 43 - BCM SPI2_CE0).
++        cs1_pin                 GPIO pin for CS1 (default 44 - BCM SPI2_CE1).
++        cs0_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev2.0 (default
++                                is 'okay' or enabled).
++        cs1_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev2.1 (default
++                                is 'okay' or enabled).
++
++
++Name:   spi2-3cs
++Info:   Enables spi2 with three chip select (CS) lines and associated spidev
++        dev nodes. The gpio pin numbers for the CS lines and spidev device node
++        creation are configurable.
++        N.B.: spi2 is only accessible with the Compute Module.
++Load:   dtoverlay=spi2-3cs,<param>=<val>
++Params: cs0_pin                 GPIO pin for CS0 (default 43 - BCM SPI2_CE0).
++        cs1_pin                 GPIO pin for CS1 (default 44 - BCM SPI2_CE1).
++        cs2_pin                 GPIO pin for CS2 (default 45 - BCM SPI2_CE2).
++        cs0_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev2.0 (default
++                                is 'okay' or enabled).
++        cs1_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev2.1 (default
++                                is 'okay' or enabled).
++        cs2_spidev              Set to 'disabled' to stop the creation of a
++                                userspace device node /dev/spidev2.2 (default
++                                is 'okay' or enabled).
++
++
+ Name:   tinylcd35
+ Info:   3.5" Color TFT Display by www.tinylcd.com
+         Options: Touch, RTC, keypad
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi1-1cs-overlay.dts
+@@ -0,0 +1,57 @@
++/dts-v1/;
++/plugin/;
++
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			spi1_pins: spi1_pins {
++				brcm,pins = <19 20 21>;
++				brcm,function = <3>; /* alt4 */
++			};
++
++			spi1_cs_pins: spi1_cs_pins {
++				brcm,pins = <18>;
++				brcm,function = <1>; /* output */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&spi1>;
++		frag1: __overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi1_pins &spi1_cs_pins>;
++			cs-gpios = <&gpio 18 1>;
++			status = "okay";
++
++			spidev1_0: spidev@0 {
++				compatible = "spidev";
++				reg = <0>;      /* CE0 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&aux>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		cs0_pin  = <&spi1_cs_pins>,"brcm,pins:0",
++			   <&frag1>,"cs-gpios:4";
++		cs0_spidev = <&spidev1_0>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi1-2cs-overlay.dts
+@@ -0,0 +1,69 @@
++/dts-v1/;
++/plugin/;
++
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			spi1_pins: spi1_pins {
++				brcm,pins = <19 20 21>;
++				brcm,function = <3>; /* alt4 */
++			};
++
++			spi1_cs_pins: spi1_cs_pins {
++				brcm,pins = <18 17>;
++				brcm,function = <1>; /* output */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&spi1>;
++		frag1: __overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi1_pins &spi1_cs_pins>;
++			cs-gpios = <&gpio 18 1>, <&gpio 17 1>;
++			status = "okay";
++
++			spidev1_0: spidev@0 {
++				compatible = "spidev";
++				reg = <0>;      /* CE0 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++
++			spidev1_1: spidev@1 {
++				compatible = "spidev";
++				reg = <1>;      /* CE1 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&aux>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		cs0_pin  = <&spi1_cs_pins>,"brcm,pins:0",
++			   <&frag1>,"cs-gpios:4";
++		cs1_pin  = <&spi1_cs_pins>,"brcm,pins:4",
++			   <&frag1>,"cs-gpios:16";
++		cs0_spidev = <&spidev1_0>,"status";
++		cs1_spidev = <&spidev1_1>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi1-3cs-overlay.dts
+@@ -0,0 +1,81 @@
++/dts-v1/;
++/plugin/;
++
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			spi1_pins: spi1_pins {
++				brcm,pins = <19 20 21>;
++				brcm,function = <3>; /* alt4 */
++			};
++
++			spi1_cs_pins: spi1_cs_pins {
++				brcm,pins = <18 17 16>;
++				brcm,function = <1>; /* output */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&spi1>;
++		frag1: __overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi1_pins &spi1_cs_pins>;
++			cs-gpios = <&gpio 18 1>, <&gpio 17 1>, <&gpio 16 1>;
++			status = "okay";
++
++			spidev1_0: spidev@0 {
++				compatible = "spidev";
++				reg = <0>;      /* CE0 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++
++			spidev1_1: spidev@1 {
++				compatible = "spidev";
++				reg = <1>;      /* CE1 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++
++			spidev1_2: spidev@2 {
++				compatible = "spidev";
++				reg = <2>;      /* CE2 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&aux>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		cs0_pin  = <&spi1_cs_pins>,"brcm,pins:0",
++			   <&frag1>,"cs-gpios:4";
++		cs1_pin  = <&spi1_cs_pins>,"brcm,pins:4",
++			   <&frag1>,"cs-gpios:16";
++		cs2_pin  = <&spi1_cs_pins>,"brcm,pins:8",
++			   <&frag1>,"cs-gpios:28";
++		cs0_spidev = <&spidev1_0>,"status";
++		cs1_spidev = <&spidev1_1>,"status";
++		cs2_spidev = <&spidev1_2>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi2-1cs-overlay.dts
+@@ -0,0 +1,57 @@
++/dts-v1/;
++/plugin/;
++
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			spi2_pins: spi2_pins {
++				brcm,pins = <40 41 42>;
++				brcm,function = <3>; /* alt4 */
++			};
++
++			spi2_cs_pins: spi2_cs_pins {
++				brcm,pins = <43>;
++				brcm,function = <1>; /* output */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&spi2>;
++		frag1: __overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi2_pins &spi2_cs_pins>;
++			cs-gpios = <&gpio 43 1>;
++			status = "okay";
++
++			spidev2_0: spidev@0 {
++				compatible = "spidev";
++				reg = <0>;      /* CE0 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&aux>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		cs0_pin  = <&spi2_cs_pins>,"brcm,pins:0",
++			   <&frag1>,"cs-gpios:4";
++		cs0_spidev = <&spidev2_0>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi2-2cs-overlay.dts
+@@ -0,0 +1,69 @@
++/dts-v1/;
++/plugin/;
++
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			spi2_pins: spi2_pins {
++				brcm,pins = <40 41 42>;
++				brcm,function = <3>; /* alt4 */
++			};
++
++			spi2_cs_pins: spi2_cs_pins {
++				brcm,pins = <43 44>;
++				brcm,function = <1>; /* output */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&spi2>;
++		frag1: __overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi2_pins &spi2_cs_pins>;
++			cs-gpios = <&gpio 43 1>, <&gpio 44 1>;
++			status = "okay";
++
++			spidev2_0: spidev@0 {
++				compatible = "spidev";
++				reg = <0>;      /* CE0 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++
++			spidev2_1: spidev@1 {
++				compatible = "spidev";
++				reg = <1>;      /* CE1 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&aux>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		cs0_pin  = <&spi2_cs_pins>,"brcm,pins:0",
++			   <&frag1>,"cs-gpios:4";
++		cs1_pin  = <&spi2_cs_pins>,"brcm,pins:4",
++			   <&frag1>,"cs-gpios:16";
++		cs0_spidev = <&spidev2_0>,"status";
++		cs1_spidev = <&spidev2_1>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi2-3cs-overlay.dts
+@@ -0,0 +1,81 @@
++/dts-v1/;
++/plugin/;
++
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			spi2_pins: spi2_pins {
++				brcm,pins = <40 41 42>;
++				brcm,function = <3>; /* alt4 */
++			};
++
++			spi2_cs_pins: spi2_cs_pins {
++				brcm,pins = <43 44 45>;
++				brcm,function = <1>; /* output */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&spi2>;
++		frag1: __overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi2_pins &spi2_cs_pins>;
++			cs-gpios = <&gpio 43 1>, <&gpio 44 1>, <&gpio 45 1>;
++			status = "okay";
++
++			spidev2_0: spidev@0 {
++				compatible = "spidev";
++				reg = <0>;      /* CE0 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++
++			spidev2_1: spidev@1 {
++				compatible = "spidev";
++				reg = <1>;      /* CE1 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++
++			spidev2_2: spidev@2 {
++				compatible = "spidev";
++				reg = <2>;      /* CE2 */
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&aux>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		cs0_pin  = <&spi2_cs_pins>,"brcm,pins:0",
++			   <&frag1>,"cs-gpios:4";
++		cs1_pin  = <&spi2_cs_pins>,"brcm,pins:4",
++			   <&frag1>,"cs-gpios:16";
++		cs2_pin  = <&spi2_cs_pins>,"brcm,pins:8",
++			   <&frag1>,"cs-gpios:28";
++		cs0_spidev = <&spidev2_0>,"status";
++		cs1_spidev = <&spidev2_1>,"status";
++		cs2_spidev = <&spidev2_2>,"status";
++	};
++};
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -601,6 +601,7 @@ CONFIG_I2C_BCM2708=m
+ CONFIG_I2C_GPIO=m
+ CONFIG_SPI=y
+ CONFIG_SPI_BCM2835=m
++CONFIG_SPI_BCM2835AUX=m
+ CONFIG_SPI_SPIDEV=y
+ CONFIG_PPS=m
+ CONFIG_PPS_CLIENT_LDISC=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -593,6 +593,7 @@ CONFIG_I2C_BCM2708=m
+ CONFIG_I2C_GPIO=m
+ CONFIG_SPI=y
+ CONFIG_SPI_BCM2835=m
++CONFIG_SPI_BCM2835AUX=m
+ CONFIG_SPI_SPIDEV=y
+ CONFIG_PPS=m
+ CONFIG_PPS_CLIENT_LDISC=m
+--- a/drivers/clk/bcm/Makefile
++++ b/drivers/clk/bcm/Makefile
+@@ -4,7 +4,7 @@ obj-$(CONFIG_CLK_BCM_KONA)	+= clk-bcm281
+ obj-$(CONFIG_CLK_BCM_KONA)	+= clk-bcm21664.o
+ obj-$(CONFIG_COMMON_CLK_IPROC)	+= clk-iproc-armpll.o clk-iproc-pll.o clk-iproc-asiu.o
+ obj-$(CONFIG_ARCH_BCM2835)$(CONFIG_ARCH_BCM2708)$(CONFIG_ARCH_BCM2709)	+= clk-bcm2835.o
+-obj-$(CONFIG_ARCH_BCM2835)	+= clk-bcm2835-aux.o
++obj-$(CONFIG_ARCH_BCM2835)$(CONFIG_ARCH_BCM2708)$(CONFIG_ARCH_BCM2709)	+= clk-bcm2835-aux.o
+ obj-$(CONFIG_COMMON_CLK_IPROC)	+= clk-ns2.o
+ obj-$(CONFIG_ARCH_BCM_CYGNUS)	+= clk-cygnus.o
+ obj-$(CONFIG_ARCH_BCM_NSP)	+= clk-nsp.o
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -90,7 +90,7 @@ config SPI_BCM2835
+ 
+ config SPI_BCM2835AUX
+ 	tristate "BCM2835 SPI auxiliary controller"
+-	depends on ARCH_BCM2835 || COMPILE_TEST
++	depends on ARCH_BCM2835 || ARCH_BCM2708 || ARCH_BCM2709 || COMPILE_TEST
+ 	depends on GPIOLIB
+ 	help
+ 	  This selects a driver for the Broadcom BCM2835 SPI aux master.

@@ -1,0 +1,134 @@
+From 310f5af54ca26b68795f0376c67b41e2bb18a0e0 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <6by9@users.noreply.github.com>
+Date: Mon, 8 Feb 2016 23:49:41 +0000
+Subject: [PATCH 169/170] DT: Add overlays to configure I2C pins
+
+Lifted from
+https://www.raspberrypi.org/forums/viewtopic.php?f=107&t=120938&p=825883
+so not claiming this to be my own work.
+Adds overlays i2c0-bcm2708 and i2c1-bcm2708 that allow the pin
+allocations for i2c-0 and i2c-1 to be changed.
+---
+ arch/arm/boot/dts/overlays/Makefile                |  2 ++
+ arch/arm/boot/dts/overlays/README                  | 16 ++++++++++
+ .../arm/boot/dts/overlays/i2c0-bcm2708-overlay.dts | 36 +++++++++++++++++++++
+ .../arm/boot/dts/overlays/i2c1-bcm2708-overlay.dts | 37 ++++++++++++++++++++++
+ 4 files changed, 91 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/i2c0-bcm2708-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/i2c1-bcm2708-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -29,6 +29,8 @@ dtb-$(RPI_DT_OVERLAYS) += hy28a-overlay.
+ dtb-$(RPI_DT_OVERLAYS) += hy28b-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += i2c-rtc-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += i2c-gpio-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += i2c0-bcm2708-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += i2c1-bcm2708-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += i2s-mmap-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += iqaudio-dac-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += iqaudio-dacplus-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -371,6 +371,22 @@ Params: ds1307                  Select t
+         pcf8563                 Select the PCF8563 device
+ 
+ 
++Name:   i2c0-bcm2708
++Info:   Enable the i2c_bcm2708 driver for the i2c0 bus
++Load:   dtoverlay=i2c0-bcm2708,<param>=<val>
++Params: sda0_pin                GPIO pin for SDA0 (0, 28 [or 44] - default 0)
++        scl0_pin                GPIO pin for SCL0 (1, 29 [or 45] - default 1)
++
++
++Name:   i2c1-bcm2708
++Info:   Enable the i2c_bcm2708 driver for the i2c1 bus
++Load:   dtoverlay=i2c1-bcm2708,<param>=<val>
++Params: sda1_pin                GPIO pin for SDA1 (2 or 44 - default 2)
++        scl1_pin                GPIO pin for SCL1 (3 or 45 - default 3)
++        pin_func                Alternative pin function (4 (alt0), 6 (alt2) -
++                                default 4)
++
++
+ Name:   i2s-mmap
+ Info:   Enables mmap support in the bcm2708-i2s driver
+ Load:   dtoverlay=i2s-mmap
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/i2c0-bcm2708-overlay.dts
+@@ -0,0 +1,36 @@
++/*
++ * Device tree overlay for i2c_bcm2708, i2c0 bus
++ *
++ * Compile:
++ * dtc -@ -I dts -O dtb -o i2c0-bcm2708-overlay.dtb i2c0-bcm2708-overlay.dts
++ */
++
++/dts-v1/;
++/plugin/;
++
++/{
++   compatible = "brcm,bcm2708";
++
++   fragment@0 {
++      target = <&i2c0>;
++      __overlay__ {
++         pinctrl-0 = <&i2c0_pins>;
++         status = "okay";
++      };
++   };
++
++   fragment@1 {
++      target = <&gpio>;
++      __overlay__ {
++         i2c0_pins: i2c0 {
++            brcm,pins = <0 1>;
++            brcm,function = <4>; /* alt0 */
++         };
++      };
++   };
++
++   __overrides__ {
++      sda0_pin = <&i2c0_pins>,"brcm,pins:0";
++      scl0_pin = <&i2c0_pins>,"brcm,pins:4";
++   };
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/i2c1-bcm2708-overlay.dts
+@@ -0,0 +1,37 @@
++/*
++ * Device tree overlay for i2c_bcm2708, i2c1 bus
++ *
++ * Compile:
++ * dtc -@ -I dts -O dtb -o i2c1-bcm2708-overlay.dtb i2c1-bcm2708-overlay.dts
++ */
++
++/dts-v1/;
++/plugin/;
++
++/{
++   compatible = "brcm,bcm2708";
++
++   fragment@0 {
++      target = <&i2c1>;
++      __overlay__ {
++         pinctrl-0 = <&i2c1_pins>;
++         status = "okay";
++      };
++   };
++
++   fragment@1 {
++      target = <&gpio>;
++      __overlay__ {
++         i2c1_pins: i2c1 {
++            brcm,pins = <2 3>;
++            brcm,function = <4>; /* alt0 */
++         };
++      };
++   };
++
++   __overrides__ {
++      sda1_pin = <&i2c1_pins>,"brcm,pins:0";
++      scl1_pin = <&i2c1_pins>,"brcm,pins:4";
++      pin_func = <&i2c1_pins>,"brcm,function:0";
++   };
++};

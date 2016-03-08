@@ -1,0 +1,33 @@
+From e08f6b3aad073d8130d2ec0f8398f55983c0eac8 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 15 Jan 2016 16:48:27 +0000
+Subject: [PATCH 158/170] config: Enable HCI over UARTs
+
+---
+ arch/arm/configs/bcm2709_defconfig | 3 +++
+ arch/arm/configs/bcmrpi_defconfig  | 2 ++
+ 2 files changed, 5 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -376,6 +376,9 @@ CONFIG_BT_BNEP_PROTO_FILTER=y
+ CONFIG_BT_HIDP=m
+ CONFIG_BT_6LOWPAN=m
+ CONFIG_BT_HCIBTUSB=m
++CONFIG_BT_HCIUART=m
++CONFIG_BT_HCIUART_3WIRE=y
++CONFIG_BT_HCIUART_BCM=y
+ CONFIG_BT_HCIBCM203X=m
+ CONFIG_BT_HCIBPA10X=m
+ CONFIG_BT_HCIBFUSB=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -370,6 +370,8 @@ CONFIG_BT_HIDP=m
+ CONFIG_BT_6LOWPAN=m
+ CONFIG_BT_HCIBTUSB=m
+ CONFIG_BT_HCIUART=m
++CONFIG_BT_HCIUART_3WIRE=y
++CONFIG_BT_HCIUART_BCM=y
+ CONFIG_BT_HCIBCM203X=m
+ CONFIG_BT_HCIBPA10X=m
+ CONFIG_BT_HCIBFUSB=m
