@@ -34,11 +34,6 @@ endif
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
 
-define Image/Build/wgt634u
-	dd if=$(KDIR)/loader.elf of=$(BIN_DIR)/$(IMG_PREFIX)-wgt634u-$(2).bin bs=131072 conv=sync
-	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx >> $(BIN_DIR)/$(IMG_PREFIX)-wgt634u-$(2).bin
-endef
-
 # $(1): filesystem type.
 # $(2): device model (used for output file).
 # $(3): pattern (device specific magic).
@@ -131,6 +126,12 @@ endef
 define Build/motorola-bin
 	$(STAGING_DIR_HOST)/bin/motorola-bin -$(MOTOROLA_DEVICE) $@ $@.new
 	mv $@.new $@
+endef
+
+define Build/prepend-with-elf
+	mv $@ $@.old
+	dd if=$(KDIR)/loader.elf of=$@ bs=131072 conv=sync
+	cat $@.old >> $@
 endef
 
 define Build/tailed-bin
@@ -238,7 +239,6 @@ endif
 # $(1): filesystem type.
 define Image/Build/legacy/devices-with-128k-blocks
 	$(call Image/Build/trxV2,$(1),wrt54g3gv2-vf,3G2V,3.00.24,$(patsubst jffs2-%,jffs2,$(1)),6)
-	$(call Image/Build/wgt634u,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 endef
 
 # $(1): filesystem type.
@@ -282,6 +282,12 @@ define Device/linksys-wrtsl54gs
 	VERSION := 2.08.1
 endef
 
+define Device/netgear-wgt634u
+	FILESYSTEMS := $(FS_128K)
+	IMAGES := bin
+	IMAGE/bin := trx-with-loader | prepend-with-elf
+endef
+
 define Device/usrobotics-usr5461
 	IMAGES := bin
 	IMAGE/bin := trx-with-loader | usrobotics-bin
@@ -294,6 +300,7 @@ ifeq ($(SUBTARGET),legacy)
 	huawei-e970 \
 	linksys-wrt54gs \
 	linksys-wrtsl54gs \
+	netgear-wgt634u \
 	usrobotics-usr5461
 
   $(eval $(call AsusDevice,wl-300g,WL300g      ))
