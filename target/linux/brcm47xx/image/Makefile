@@ -54,10 +54,6 @@ define Image/Build/CyberTANHead
 	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(3) -v v$(4) -i /dev/null -o $(KDIR)/$(IMG_PREFIX)-$(2)-header.bin $(if $(6),-s $(6))
 endef
 
-define Image/Build/Motorola
-	$(STAGING_DIR_HOST)/bin/motorola-bin -$(3) $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(4).bin
-endef
-
 define Image/Build/USR
 	$(STAGING_DIR_HOST)/bin/trx2usr $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3).bin
 endef
@@ -126,6 +122,11 @@ define Build/linksys-bin
 	mv $@.new $@
 endef
 
+define Build/motorola-bin
+	$(STAGING_DIR_HOST)/bin/motorola-bin -$(MOTOROLA_DEVICE) $@ $@.new
+	mv $@.new $@
+endef
+
 define Build/tailed-bin
 	echo $(BIN_TAIL) >> $@
 endef
@@ -137,6 +138,7 @@ endef
 DEVICE_VARS += PRODUCTID
 DEVICE_VARS += DEVICE_ID VERSION
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
+DEVICE_VARS += MOTOROLA_DEVICE
 DEVICE_VARS += BIN_TAIL
 
 define Device/Default
@@ -173,6 +175,19 @@ define LinksysDevice
 	VERSION := $(3)
   endef
   TARGET_DEVICES += linksys-$(1)
+endef
+
+define Device/motorola
+	IMAGES := bin
+	IMAGE/bin := trx-with-loader | motorola-bin
+endef
+
+define MotorolaDevice
+  define Device/motorola-$(1)
+	$$(Device/motorola)
+	MOTOROLA_DEVICE := $(2)
+  endef
+  TARGET_DEVICES += motorola-$(1)
 endef
 
 define Device/netgear
@@ -219,9 +234,6 @@ endef
 define Image/Build/legacy/devices-with-64k-blocks
 	$(call Image/Build/Edi,$(1),ps1208mfg,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Huawei,$(1),e970,$(1))
-	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Motorola,$(1),we800g,3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
 	$(call Image/Build/USR,$(1),usr5461,$(1))
 endef
 
@@ -283,6 +295,9 @@ ifeq ($(SUBTARGET),legacy)
   $(eval $(call LinksysDevice,wrt150n,N150,1.51.3))
   $(eval $(call LinksysDevice,wrt160n-v1,N150,1.50.1))
   $(eval $(call LinksysDevice,wrt300n-v1,EWCB,1.03.6))
+  $(eval $(call MotorolaDevice,wa840g,2))
+  $(eval $(call MotorolaDevice,we800g,3))
+  $(eval $(call MotorolaDevice,wr850g,1))
   $(eval $(call NetgearDevice,wgr614-v8,U12H072T00_NETGEAR,2))
   $(eval $(call NetgearDevice,wndr3300-v1,U12H093T00_NETGEAR,2))
   $(eval $(call NetgearDevice,wnr834b-v2,U12H081T00_NETGEAR,2))
