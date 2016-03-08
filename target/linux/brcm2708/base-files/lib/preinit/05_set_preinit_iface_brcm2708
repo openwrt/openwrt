@@ -1,7 +1,5 @@
 #!/bin/sh
-#
-# Copyright (C) 2015 OpenWrt.org
-#
+# Copyright (C) 2015-2016 OpenWrt.org
 
 . /lib/brcm2708.sh
 
@@ -9,7 +7,8 @@ set_preinit_iface() {
 	case "$(brcm2708_board_name)" in
 	rpi-b |\
 	rpi-b-plus |\
-	rpi-2-b)
+	rpi-2-b |\
+	rpi-3-b)
 		ifname=eth0
 		;;
 	esac
