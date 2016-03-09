@@ -1,0 +1,23 @@
+#!/bin/sh
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/functions/pistachio.sh
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(pistachio_board_name)
+
+case "$board" in
+marduk)
+        ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x2000" "0x1000" "1"
+        ;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0
+
