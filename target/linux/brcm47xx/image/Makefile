@@ -34,15 +34,6 @@ endif
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
 
-# $(1): filesystem type.
-# $(2): device model (used for output file).
-# $(3): board_id (device specific magic).
-# $(4): region.
-# $(5): simplified filesystem type (without block size).
-define Image/Build/Chk
-	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).chk -k $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -b $(3) -r $(4)
-endef
-
 define trxalign/jffs2-128k
 -a 0x20000 -f $(KDIR)/root.$(1)
 endef
@@ -357,6 +348,7 @@ ifeq ($(SUBTARGET),mips74k)
   $(eval $(call NetgearDevice,wndr3400-v2,U12H187T00_NETGEAR,2))
   $(eval $(call NetgearDevice,wndr3400-v3,U12H208T00_NETGEAR,1))
   $(eval $(call NetgearDevice,wndr3700-v3,U12H194T00_NETGEAR,2))
+#  $(eval $(call NetgearDevice,wndr3400-vcna,U12H155T01_NETGEAR,2))
   $(eval $(call NetgearDevice,wndr4000,U12H181T00_NETGEAR,2))
   $(eval $(call NetgearDevice,wnr1000-v3,U12H139T00_NETGEAR,2))
   $(eval $(call NetgearDevice,wnr2000v2,U12H114T00_NETGEAR,2))
@@ -364,7 +356,9 @@ ifeq ($(SUBTARGET),mips74k)
   $(eval $(call NetgearDevice,wnr3500l-v1-north-america,U12H136T99_NETGEAR,2))
   $(eval $(call NetgearDevice,wnr3500l-v1-other-regions,U12H136T99_NETGEAR,1))
   $(eval $(call NetgearDevice,wnr3500l-v2,U12H172T00_NETGEAR,1))
+#  $(eval $(call NetgearDevice,wnr3500u,U12H136T00_NETGEAR,2))
   $(eval $(call NetgearDevice,wnr3500-v2,U12H127T00_NETGEAR,2))
+#  $(eval $(call NetgearDevice,wnr3500-v2-vc,U12H127T70_NETGEAR,2))
 endif
 
 #################################################
@@ -400,10 +394,6 @@ define Image/Build
 		-o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx \
 		-f $(KDIR)/vmlinux.gz \
 		$(call trxalign/$(1),$(1))
-#	$(call Image/Build/Chk,$(1),wgr614_v9,U12H094T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-#	$(call Image/Build/Chk,$(1),wndr3400_vcna,U12H155T01_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-#	$(call Image/Build/Chk,$(1),wnr3500U,U12H136T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-#	$(call Image/Build/Chk,$(1),wnr3500v2_VC,U12H127T70_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/Build/Initramfs)
 endif
