@@ -36,21 +36,6 @@ endef
 
 # $(1): filesystem type.
 # $(2): device model (used for output file).
-# $(3): pattern (device specific magic).
-# $(4): version.
-# $(5): simplified filesystem type (without block size).
-define Image/Build/CyberTAN
-	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).bin $(if $(6),-s $(6))
-endef
-define Image/Build/CyberTAN2
-	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).noheader.bin -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).bin $(if $(6),-s $(6))
-endef
-define Image/Build/CyberTANHead
-	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(3) -v v$(4) -i /dev/null -o $(KDIR)/$(IMG_PREFIX)-$(2)-header.bin $(if $(6),-s $(6))
-endef
-
-# $(1): filesystem type.
-# $(2): device model (used for output file).
 # $(3): board_id (device specific magic).
 # $(4): region.
 # $(5): simplified filesystem type (without block size).
@@ -68,18 +53,6 @@ define trxalign/squashfs
 -a 1024 -f $(KDIR)/root.$(1) $(if $(2),-f $(2)) -a 0x10000 -A $(KDIR)/fs_mark
 endef
 
-define Image/Build/trxV2
-	$(call Image/Build/CyberTANHead,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
-	$(STAGING_DIR_HOST)/bin/trx \
-		-m 33554432 \
-		-2 \
-		-o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).noheader.bin \
-		-f $(KDIR)/loader.gz \
-		-f $(KDIR)/vmlinux.lzma \
-		$(call trxalign/$(1),$(1),$(KDIR)/$(IMG_PREFIX)-$(2)-header.bin)
-	$(call Image/Build/CyberTAN2,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
-endef
-
 #################################################
 # Images
 #################################################
@@ -91,6 +64,17 @@ define Build/trx-with-loader
 		-f $(KDIR)/loader.gz \
 		-f $(word 1,$^) \
 		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
+endef
+
+define Build/trx-v2-with-loader
+	$(STAGING_DIR_HOST)/bin/trx \
+		-2 \
+		-m 33554432 \
+		-o $@.new \
+		-f $(KDIR)/loader.gz \
+		-f $(KDIR)/vmlinux.lzma \
+		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM),$@)
+	mv $@.new $@
 endef
 
 define Build/trx-without-loader
@@ -119,8 +103,12 @@ define Build/huawei-bin
 endef
 
 define Build/linksys-bin
-	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(DEVICE_ID) -v v$(VERSION) -i $@ -o $@.new
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(DEVICE_ID) -v v$(VERSION) $(if $(SERIAL),-s $(SERIAL)) -i $@ -o $@.new
 	mv $@.new $@
+endef
+
+define Build/linksys-pattern-partition
+	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(DEVICE_ID) -v v$(VERSION) $(if $(SERIAL),-s $(SERIAL)) -i /dev/null -o $@
 endef
 
 define Build/motorola-bin
@@ -148,7 +136,7 @@ endef
 #################################################
 
 DEVICE_VARS += PRODUCTID
-DEVICE_VARS += DEVICE_ID VERSION
+DEVICE_VARS += DEVICE_ID VERSION SERIAL
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
 DEVICE_VARS += MOTOROLA_DEVICE
 DEVICE_VARS += BIN_TAIL
@@ -236,21 +224,6 @@ endif
 # Subtarget legacy
 #################################################
 
-# $(1): filesystem type.
-define Image/Build/legacy/devices-with-128k-blocks
-	$(call Image/Build/trxV2,$(1),wrt54g3gv2-vf,3G2V,3.00.24,$(patsubst jffs2-%,jffs2,$(1)),6)
-endef
-
-# $(1): filesystem type.
-define Image/Build/legacy/jffs2-128k
-	$(call Image/Build/legacy/devices-with-128k-blocks,$(1))
-endef
-
-# $(1): filesystem type.
-define Image/Build/legacy/squashfs
-	$(call Image/Build/legacy/devices-with-128k-blocks,$(1))
-endef
-
 define Device/dlink-dwl-3150
 	IMAGES := bin
 	IMAGE/bin := trx-with-loader | tailed-bin
@@ -266,6 +239,16 @@ define Device/huawei-e970
 	KERNEL_NAME = vmlinux.gz
 	IMAGES := bin
 	IMAGE/bin := trx-without-loader | huawei-bin
+endef
+
+define Device/linksys-wrt54g3gv2-vf
+	FILESYSTEMS := $(FS_128K)
+	IMAGES := noheader.bin bin
+	IMAGE/noheader.bin := linksys-pattern-partition | trx-v2-with-loader
+	IMAGE/bin := linksys-pattern-partition | trx-v2-with-loader | linksys-bin
+	DEVICE_ID := 3G2V
+	VERSION := 3.00.24
+	SERIAL := 6
 endef
 
 define Device/linksys-wrt54gs
@@ -298,6 +281,7 @@ ifeq ($(SUBTARGET),legacy)
 	dlink-dwl-3150 \
 	edimax-ps1208-mfg \
 	huawei-e970 \
+	linksys-wrt54g3gv2-vf \
 	linksys-wrt54gs \
 	linksys-wrtsl54gs \
 	netgear-wgt634u \
@@ -416,7 +400,6 @@ define Image/Build
 		-o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx \
 		-f $(KDIR)/vmlinux.gz \
 		$(call trxalign/$(1),$(1))
-	$(call Image/Build/$(SUBTARGET)/$(1),$(1))
 #	$(call Image/Build/Chk,$(1),wgr614_v9,U12H094T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wndr3400_vcna,U12H155T01_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 #	$(call Image/Build/Chk,$(1),wnr3500U,U12H136T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
