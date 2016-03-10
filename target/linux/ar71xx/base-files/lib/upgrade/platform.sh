@@ -336,6 +336,7 @@ platform_check_image() {
 	onion-omega | \
 	oolite | \
 	smart-300 | \
+	tellstick-znet-lite | \
 	tl-mr10u | \
 	tl-mr11u | \
 	tl-mr12u | \

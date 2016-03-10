@@ -130,6 +130,7 @@ obj-$(CONFIG_ATH79_MACH_RB2011)		+= mach-rb2011.o
 obj-$(CONFIG_ATH79_MACH_RBSXTLITE)	+= mach-rbsxtlite.o
 obj-$(CONFIG_ATH79_MACH_RW2458N)	+= mach-rw2458n.o
 obj-$(CONFIG_ATH79_MACH_SMART_300)	+= mach-smart-300.o
+obj-$(CONFIG_ATH79_MACH_TELLSTICK_ZNET_LITE)	+= mach-tellstick-znet-lite.o
 obj-$(CONFIG_ATH79_MACH_TEW_632BRP)	+= mach-tew-632brp.o
 obj-$(CONFIG_ATH79_MACH_TEW_673GRU)	+= mach-tew-673gru.o
 obj-$(CONFIG_ATH79_MACH_TEW_712BR)	+= mach-tew-712br.o

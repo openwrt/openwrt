@@ -263,6 +263,9 @@ get_status_led() {
 	qihoo-c301)
 		status_led="qihoo:green:status"
 		;;
+	tellstick-znet-lite)
+		status_led="tellstick:white:system"
+		;;
 	tew-632brp)
 		status_led="tew-632brp:green:status"
 		;;
