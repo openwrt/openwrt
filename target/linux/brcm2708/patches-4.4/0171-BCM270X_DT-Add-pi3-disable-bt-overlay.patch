@@ -1,0 +1,96 @@
+From 42a9bb566fe376a1add4b3780c1b830f64500faa Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 2 Mar 2016 10:59:05 +0000
+Subject: [PATCH 171/180] BCM270X_DT: Add pi3-disable-bt overlay
+
+Disable Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15. To disable
+the systemd service that initialises the modem so it doesn't use the UART:
+
+       sudo systemctl disable hciuart
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/Makefile                |  1 +
+ arch/arm/boot/dts/overlays/README                  |  8 ++++
+ .../boot/dts/overlays/pi3-disable-bt-overlay.dts   | 48 ++++++++++++++++++++++
+ 3 files changed, 57 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/pi3-disable-bt-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -39,6 +39,7 @@ dtb-$(RPI_DT_OVERLAYS) += mcp2515-can0-o
+ dtb-$(RPI_DT_OVERLAYS) += mcp2515-can1-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += mmc-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += mz61581-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += pi3-disable-bt-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += piscreen-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += piscreen2r-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += pitft28-capacitive-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -496,6 +496,14 @@ Params: speed                   Display
+ [ The pcf8563-rtc overlay has been deleted. See i2c-rtc. ]
+ 
+ 
++Name:   pi3-disable-bt
++Info:   Disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15
++        N.B. To disable the systemd service that initialises the modem so it
++        doesn't use the UART, use 'sudo systemctl disable hciuart'.
++Load:   dtoverlay=pi3-disable-bt
++Params: <None>
++
++
+ Name:   piscreen
+ Info:   PiScreen display by OzzMaker.com
+ Load:   dtoverlay=piscreen,<param>=<val>
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/pi3-disable-bt-overlay.dts
+@@ -0,0 +1,48 @@
++/dts-v1/;
++/plugin/;
++
++/* Disable Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15.
++   To disable the systemd service that initialises the modem so it doesn't use
++   the UART:
++
++       sudo systemctl disable hciuart
++*/
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&uart1>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
++
++	fragment@1 {
++		target = <&uart0>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart0_pins>;
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target = <&gpio>;
++		__overlay__ {
++			uart0_pins: uart0_pins {
++				brcm,pins = <14 15>;
++				brcm,function = <4>; /* alt0 */
++				brcm,pull = <0 2>;
++			};
++		};
++	};
++
++	fragment@3 {
++		target-path = "/aliases";
++		__overlay__ {
++			serial0 = "/soc/uart@7e201000";
++			serial1 = "/soc/uart@7e215040";
++		};
++	};
++};

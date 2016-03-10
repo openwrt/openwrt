@@ -1,0 +1,25 @@
+From c8b56d0359160d2aec2ab3168ef9d7c080ae9841 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 7 Mar 2016 13:38:39 +0000
+Subject: [PATCH 173/180] Pi3 DT: Add dtparams for the SD interface
+
+Add new base dtparams sd_overclock, sd_force_pio, sd_pio_limit
+and sd_debug. These were missed out of the initial Pi3 DTB.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2710-rpi-3-b.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
+@@ -188,5 +188,9 @@
+ 		audio = <&audio>,"status";
+ 		watchdog = <&watchdog>,"status";
+ 		random = <&random>,"status";
++		sd_overclock = <&sdhost>,"brcm,overclock-50:0";
++		sd_force_pio = <&sdhost>,"brcm,force-pio?";
++		sd_pio_limit = <&sdhost>,"brcm,pio-limit:0";
++		sd_debug     = <&sdhost>,"brcm,debug";
+ 	};
+ };

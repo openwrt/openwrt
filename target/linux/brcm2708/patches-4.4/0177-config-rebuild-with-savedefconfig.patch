@@ -1,0 +1,28 @@
+From 0b65dbd40ad6b3d7cc979e8b7817f74b823f66ef Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 8 Mar 2016 17:08:39 +0000
+Subject: [PATCH 177/180] config: rebuild with savedefconfig
+
+---
+ arch/arm/configs/bcm2709_defconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -593,7 +593,6 @@ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y
+-CONFIG_HW_RANDOM_BCM2835=y
+ CONFIG_RAW_DRIVER=y
+ CONFIG_I2C=y
+ CONFIG_I2C_CHARDEV=m
+@@ -1112,7 +1111,7 @@ CONFIG_EXTCON=m
+ CONFIG_EXTCON_ARIZONA=m
+ CONFIG_IIO=m
+ CONFIG_IIO_BUFFER=y
+-CONFIG_IIO_BUFFER_CB=y
++CONFIG_IIO_BUFFER_CB=m
+ CONFIG_IIO_KFIFO_BUF=m
+ CONFIG_MCP320X=m
+ CONFIG_DHT11=m
