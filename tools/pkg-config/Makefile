@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2015 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pkg-config
-PKG_VERSION:=0.29
+PKG_VERSION:=0.29.1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://pkgconfig.freedesktop.org/releases/
-PKG_MD5SUM:=77f27dce7ef88d0634d0d6f90e03a77f
+PKG_SOURCE_URL:=https://pkgconfig.freedesktop.org/releases/
+PKG_MD5SUM:=f739a28cae4e0ca291f82d1d41ef107d
 
 HOST_BUILD_PARALLEL:=1
 
