@@ -14,3 +14,14 @@ define Profile/GL-MT300A/Description
 	Support for gl-mt300a Router
 endef
 $(eval $(call Profile,GL-MT300A))
+
+define Profile/GL-MT300N
+	NAME:=GL-MT300N
+	PACKAGES:=kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci kmod-mt76
+endef
+
+define Profile/GL-MT300N/Description
+	Support for gl-mt300n Router
+endef
+$(eval $(call Profile,GL-MT300N))
+

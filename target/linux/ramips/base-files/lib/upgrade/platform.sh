@@ -57,6 +57,7 @@ platform_check_image() {
 	fonera20n|\
 	freestation5|\
 	gl-mt300a|\
+	gl-mt300n|\
 	hc5*61|\
 	hg255d|\
 	hlk-rm04|\
