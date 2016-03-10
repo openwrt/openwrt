@@ -19,6 +19,7 @@
 #     netdev: bound network device (detects ifindex changes)
 #     limits: resource limits (passed to the process)
 #     user info: array with 1 values $username
+#     pidfile: file name to write pid into
 #
 #   No space separation is done for arrays/tables - use one function argument per command line argument
 #
@@ -195,7 +196,7 @@ _procd_set_param() {
 		nice)
 			json_add_int "$type" "$1"
 		;;
-		user|seccomp|capabilities)
+		pidfile|user|seccomp|capabilities)
 			json_add_string "$type" "$1"
 		;;
 		stdout|stderr|no_new_privs)
