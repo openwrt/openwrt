@@ -16,11 +16,11 @@ PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils
 PKG_MD5SUM:=d318829bfd2ed62714817f0d25706825
 GDB_DIR:=binutils-$(PKG_NAME)-$(PKG_VERSION)
 else
-PKG_VERSION:=7.10.1
+PKG_VERSION:=7.11
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gdb
-PKG_MD5SUM:=39e654460c9cdd80200a29ac020cfe11
+PKG_MD5SUM:=b5c784685e1cde65ba135feea86b6d75
 GDB_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 endif
 
