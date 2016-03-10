@@ -54,7 +54,7 @@
 
 		periph_intc: interrupt-controller@fff8c00c {
 			compatible = "brcm,bcm6345-periph-intc";
-			reg = <0xfffe000c 0x8>;
+			reg = <0xfff8c00c 0x8>;
 
 			interrupt-controller;
 			#interrupt-cells = <1>;
@@ -65,7 +65,7 @@
 
 		ext_intc0: interrupt-controller@fff8c014 {
 			compatible = "brcm,bcm6345-ext-intc";
-			reg = <0xfffe0014 0x4>;
+			reg = <0xfff8c014 0x4>;
 
 			interrupt-controller;
 			#interrupt-cells = <2>;
