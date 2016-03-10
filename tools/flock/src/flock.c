@@ -39,6 +39,7 @@
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #define PACKAGE_STRING "util-linux-ng 2.18"
 #define _(x) (x)
