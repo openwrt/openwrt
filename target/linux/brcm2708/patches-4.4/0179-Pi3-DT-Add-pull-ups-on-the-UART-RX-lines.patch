@@ -1,0 +1,40 @@
+From e064caf725672cb95cc8327f4dc55d3de257cd74 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 8 Mar 2016 16:18:57 +0000
+Subject: [PATCH 179/180] Pi3 DT: Add pull-ups on the UART RX lines
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2710-rpi-3-b.dts                  | 4 ++--
+ arch/arm/boot/dts/overlays/pi3-miniuart-bt-overlay.dts | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
+@@ -53,13 +53,13 @@
+ 	uart0_pins: uart0_pins {
+ 		brcm,pins = <32 33>;
+ 		brcm,function = <7>; /* alt3=UART0 */
+-		brcm,pull = <0 0>;
++		brcm,pull = <0 2>;
+ 	};
+ 
+ 	uart1_pins: uart1_pins {
+ 		brcm,pins = <14 15>;
+ 		brcm,function = <2>; /* alt5=UART1 */
+-		brcm,pull = <0 0>;
++		brcm,pull = <0 2>;
+ 	};
+ };
+ 
+--- a/arch/arm/boot/dts/overlays/pi3-miniuart-bt-overlay.dts
++++ b/arch/arm/boot/dts/overlays/pi3-miniuart-bt-overlay.dts
+@@ -46,7 +46,7 @@
+ 			uart1_pins: uart1_pins {
+ 				brcm,pins = <32 33>;
+ 				brcm,function = <2>; /* alt5=UART1 */
+-				brcm,pull = <0 0>;
++				brcm,pull = <0 2>;
+ 			};
+ 		};
+ 	};

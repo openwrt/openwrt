@@ -1,0 +1,11 @@
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
+@@ -42,7 +42,7 @@
+ #define LAN95XX_EEPROM_MAGIC		(0x9500)
+ #define EEPROM_MAC_OFFSET		(0x01)
+ #define DEFAULT_TX_CSUM_ENABLE		(true)
+-#define DEFAULT_RX_CSUM_ENABLE		(true)
++#define DEFAULT_RX_CSUM_ENABLE		(false)
+ #define SMSC95XX_INTERNAL_PHY_ID	(1)
+ #define SMSC95XX_TX_OVERHEAD		(8)
+ #define SMSC95XX_TX_OVERHEAD_CSUM	(12)
