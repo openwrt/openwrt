@@ -318,6 +318,7 @@ _procd_append_param() {
 
 _procd_close_instance() {
 	local respawn_vals
+	_json_no_warning=1
 	if json_select respawn ; then
 		json_get_values respawn_vals
 		if [ -z "$respawn_vals" ]; then
