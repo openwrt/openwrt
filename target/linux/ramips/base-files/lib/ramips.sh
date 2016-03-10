@@ -175,6 +175,9 @@ ramips_board_detect() {
 	*"FreeStation5")
 		name="freestation5"
 		;;
+	*"GL-MT300A")
+		name="gl-mt300a"
+		;;
 	*"HC5661")
 		name="hc5661"
 		;;
