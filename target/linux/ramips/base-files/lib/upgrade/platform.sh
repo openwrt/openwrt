@@ -58,6 +58,7 @@ platform_check_image() {
 	freestation5|\
 	gl-mt300a|\
 	gl-mt300n|\
+	gl-mt750|\
 	hc5*61|\
 	hg255d|\
 	hlk-rm04|\
