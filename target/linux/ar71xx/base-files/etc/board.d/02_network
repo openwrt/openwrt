@@ -192,6 +192,11 @@ el-m150)
 		"0:lan" "1:lan" "3@eth1" # XXX: confirm!
 	;;
 
+tellstick-znet-lite)
+	ucidef_set_interface_wan "eth0" "dhcp"
+	ucidef_set_interface_raw "wlan" "wlan0" "dhcp"
+	;;
+
 tl-wdr4300|\
 tl-wr1041n-v2)
 	ucidef_add_switch "switch0" \

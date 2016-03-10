@@ -407,6 +407,11 @@ smart-300)
 	ucidef_set_led_wlan "wlan" "WLAN" "nc-link:green:wlan" "phy0tpt"
 	;;
 
+tellstick-znet-lite)
+	ucidef_set_led_netdev "lan_act" "LANACT" "tellstick:green:lan" "eth0" "tx rx"
+	ucidef_set_led_netdev "lan_link" "LANLINK" "tellstick:orange:lan" "eth0" "link"
+	;;
+
 tew-712br)
 	ucidef_set_led_netdev "wan" "WAN" "trendnet:green:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "trendnet:green:lan1" "switch0" "0x02"

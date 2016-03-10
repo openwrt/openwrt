@@ -754,6 +754,16 @@ config ATH79_MACH_SMART_300
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_TELLSTICK_ZNET_LITE
+	bool "TellStick ZNet Lite"
+	select SOC_AR933X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_WNDAP360
 	bool "NETGEAR WNDAP360 board support"
 	select SOC_AR71XX

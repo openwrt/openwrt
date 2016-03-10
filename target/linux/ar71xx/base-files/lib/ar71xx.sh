@@ -120,6 +120,9 @@ tplink_board_detect() {
 	"120000"*)
 		model="MERCURY MAC1200R"
 		;;
+	"007260"*)
+		model="TellStick ZNet Lite"
+		;;
 	"3C0001"*)
 		model="OOLITE"
 		;;
@@ -748,6 +751,9 @@ ar71xx_board_detect() {
 		;;
 	"Smart Electronics Black Swift board"*)
 		name="bsb"
+		;;
+	*"Telldus TellStick ZNet Lite")
+		name="tellstick-znet-lite"
 		;;
 	*TEW-632BRP)
 		name="tew-632brp"

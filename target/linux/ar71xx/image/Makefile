@@ -1061,6 +1061,15 @@ define Device/smart-300
 endef
 TARGET_DEVICES += smart-300
 
+define Device/tellstick-znet-lite
+    $(Device/tplink-16mlzma)
+    BOARDNAME := TELLSTICK-ZNET-LITE
+    DEVICE_PROFILE := TELLSTICKZNETLITE
+    TPLINK_HWID := 0x00726001
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += tellstick-znet-lite
+
 define Device/oolite
     $(Device/tplink-16mlzma)
     BOARDNAME := GS-OOLITE
