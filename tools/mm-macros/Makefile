@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2015 OpenWrt.org
+# Copyright (C) 2010-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mm-macros
-PKG_VERSION:=0.9.9
+PKG_VERSION:=0.9.10
 
 PKG_SOURCE_URL:=@GNOME/mm-common/0.9
 PKG_SOURCE:=mm-common-$(PKG_VERSION).tar.xz
-PKG_MD5SUM:=c9d8c016a99b639d66115cbe1d892402
+PKG_MD5SUM:=49dc47af8c89ce5b3c768306b9a0f922
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/mm-common-$(PKG_VERSION)
 
