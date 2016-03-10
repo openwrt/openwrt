@@ -270,6 +270,60 @@ define KernelPackage/ipt-ipset
 endef
 $(eval $(call KernelPackage,ipt-ipset))
 
+IPVS_MODULES:= \
+	ip_vs \
+	ip_vs_lc \
+	ip_vs_wlc \
+	ip_vs_rr \
+	ip_vs_wrr \
+	ip_vs_lblc \
+	ip_vs_lblcr \
+	ip_vs_dh \
+	ip_vs_sh \
+	ip_vs_fo \
+	ip_vs_nq \
+	ip_vs_sed
+
+define KernelPackage/nf-ipvs
+  SUBMENU:=Netfilter Extensions
+  TITLE:=IP Virtual Server modules
+  DEPENDS:=+kmod-lib-crc32c
+  KCONFIG:= \
+	CONFIG_IP_VS \
+	CONFIG_IP_VS_IPV6=y \
+	CONFIG_IP_VS_DEBUG=n \
+	CONFIG_IP_VS_PROTO_TCP=y \
+	CONFIG_IP_VS_PROTO_UDP=y \
+	CONFIG_IP_VS_PROTO_AH_ESP=y \
+	CONFIG_IP_VS_PROTO_ESP=y \
+	CONFIG_IP_VS_PROTO_AH=y \
+	CONFIG_IP_VS_PROTO_SCTP=y \
+	CONFIG_IP_VS_TAB_BITS=12 \
+	CONFIG_IP_VS_RR \
+	CONFIG_IP_VS_WRR \
+	CONFIG_IP_VS_LC \
+	CONFIG_IP_VS_WLC \
+	CONFIG_IP_VS_FO \
+	CONFIG_IP_VS_OVF \
+	CONFIG_IP_VS_LBLC \
+	CONFIG_IP_VS_LBLCR \
+	CONFIG_IP_VS_DH \
+	CONFIG_IP_VS_SH \
+	CONFIG_IP_VS_SED \
+	CONFIG_IP_VS_NQ \
+	CONFIG_IP_VS_SH_TAB_BITS=8 \
+	CONFIG_IP_VS_NFCT=n \
+	CONFIG_NETFILTER_XT_MATCH_IPVS=n
+
+  FILES:=$(foreach mod,$(IPVS_MODULES),$(LINUX_DIR)/net/netfilter/ipvs/$(mod).ko)
+  $(call AddDepends/ipt,+kmod-ipt-conntrack)
+endef
+$(eval $(call KernelPackage,nf-ipvs))
+
+define KernelPackage/nf-ipvs/description
+ IPVS (IP Virtual Server) implements transport-layer load balancing inside the Linux kernel
+ so called Layer-4 switching.
+endef
 
 define KernelPackage/ipt-nat
   TITLE:=Basic NAT targets
