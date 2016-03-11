@@ -141,6 +141,19 @@ define Device/Default
 	IMAGE/trx := trx-with-loader
 endef
 
+define Device/standard
+endef
+
+define Device/standard-noloader-gz
+	KERNEL_NAME = vmlinux.gz
+	IMAGE/trx := trx-without-loader
+endef
+
+define Device/standard-noloader-nodictionarylzma
+	KERNEL_NAME = vmlinux-nodictionary.lzma
+	IMAGE/trx := trx-without-loader
+endef
+
 define Device/asus
 	IMAGES := trx
 	IMAGE/trx := trx-with-loader | asus-trx
@@ -209,6 +222,8 @@ ifeq ($(SUBTARGET),generic)
   # BCMA SoC with SSB WiFi
   $(eval $(call LinksysDevice,wrt610n-v2,610N,2.0.0))
   $(eval $(call LinksysDevice,e3000-v1,61XN,1.0.3))
+
+  TARGET_DEVICES += standard
 endif
 
 #################################################
@@ -300,6 +315,8 @@ ifeq ($(SUBTARGET),legacy)
   $(eval $(call NetgearDevice,wgr614-v8,U12H072T00_NETGEAR,2))
   $(eval $(call NetgearDevice,wndr3300-v1,U12H093T00_NETGEAR,2))
   $(eval $(call NetgearDevice,wnr834b-v2,U12H081T00_NETGEAR,2))
+
+  TARGET_DEVICES += standard standard-noloader-gz
 endif
 
 #################################################
@@ -359,6 +376,8 @@ ifeq ($(SUBTARGET),mips74k)
 #  $(eval $(call NetgearDevice,wnr3500u,U12H136T00_NETGEAR,2))
   $(eval $(call NetgearDevice,wnr3500-v2,U12H127T00_NETGEAR,2))
 #  $(eval $(call NetgearDevice,wnr3500-v2-vc,U12H127T70_NETGEAR,2))
+
+  TARGET_DEVICES += standard standard-noloader-nodictionarylzma
 endif
 
 #################################################
@@ -379,21 +398,7 @@ endef
 
 # $(1): filesystem type.
 define Image/Build
-	$(STAGING_DIR_HOST)/bin/trx \
-		-m 33554432 \
-		-o $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx \
-		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
-		$(call trxalign/$(1),$(1))
-	$(STAGING_DIR_HOST)/bin/trx \
-		-m 33554432 \
-		-o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-noloader-nodictionary.trx \
-		-f $(KDIR)/vmlinux-nodictionary.lzma \
-		$(call trxalign/$(1),$(1))
-	$(STAGING_DIR_HOST)/bin/trx \
-		-m 33554432 \
-		-o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx \
-		-f $(KDIR)/vmlinux.gz \
-		$(call trxalign/$(1),$(1))
+	# TODO: Move it to Device/*
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/Build/Initramfs)
 endif
