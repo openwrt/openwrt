@@ -1,0 +1,73 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 17 Feb 2016 11:26:57 +0100
+Subject: [PATCH] brcmfmac: use device memsize config from fw if defined
+
+Newer type pcie devices have memory which get shared between fw and
+hw. The division of this memory is done firmware compile time. As a
+result the ramsize as used by driver needs to be adjusted for this.
+This is done by reading the memory size from the firmware.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
+@@ -207,6 +207,10 @@ static struct brcmf_firmware_mapping brc
+ #define BRCMF_PCIE_CFGREG_REG_BAR3_CONFIG	0x4F4
+ #define BRCMF_PCIE_LINK_STATUS_CTRL_ASPM_ENAB	3
+ 
++/* Magic number at a magic location to find RAM size */
++#define BRCMF_RAMSIZE_MAGIC			0x534d4152	/* SMAR */
++#define BRCMF_RAMSIZE_OFFSET			0x6c
++
+ 
+ struct brcmf_pcie_console {
+ 	u32 base_addr;
+@@ -1412,6 +1416,28 @@ static const struct brcmf_bus_ops brcmf_
+ };
+ 
+ 
++static void
++brcmf_pcie_adjust_ramsize(struct brcmf_pciedev_info *devinfo, u8 *data,
++			  u32 data_len)
++{
++	__le32 *field;
++	u32 newsize;
++
++	if (data_len < BRCMF_RAMSIZE_OFFSET + 8)
++		return;
++
++	field = (__le32 *)&data[BRCMF_RAMSIZE_OFFSET];
++	if (le32_to_cpup(field) != BRCMF_RAMSIZE_MAGIC)
++		return;
++	field++;
++	newsize = le32_to_cpup(field);
++
++	brcmf_dbg(PCIE, "Found ramsize info in FW, adjusting to 0x%x\n",
++		  newsize);
++	devinfo->ci->ramsize = newsize;
++}
++
++
+ static int
+ brcmf_pcie_init_share_ram_info(struct brcmf_pciedev_info *devinfo,
+ 			       u32 sharedram_addr)
+@@ -1694,6 +1720,13 @@ static void brcmf_pcie_setup(struct devi
+ 
+ 	brcmf_pcie_attach(devinfo);
+ 
++	/* Some of the firmwares have the size of the memory of the device
++	 * defined inside the firmware. This is because part of the memory in
++	 * the device is shared and the devision is determined by FW. Parse
++	 * the firmware and adjust the chip memory size now.
++	 */
++	brcmf_pcie_adjust_ramsize(devinfo, (u8 *)fw->data, fw->size);
++
+ 	ret = brcmf_pcie_download_fw_nvram(devinfo, fw, nvram, nvram_len);
+ 	if (ret)
+ 		goto fail;

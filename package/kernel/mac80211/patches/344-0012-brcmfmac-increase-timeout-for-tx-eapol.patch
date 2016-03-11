@@ -1,0 +1,30 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 17 Feb 2016 11:27:01 +0100
+Subject: [PATCH] brcmfmac: increase timeout for tx eapol
+
+When keys get set and updated this has to happen after eapol got
+transmitted (without key or old key) before the key can be updated.
+To make sure the order of sending eapol and configuring key is done
+correctly a timeout for tx of eapol is applied. This timeout is set
+to 50 msec, which is not always enough. Especially in AP mode and
+key updates the timeout may need to be much longer because client(s)
+can be in powersave. Increase the timeout from 50 to 950 msec.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -40,7 +40,7 @@ MODULE_AUTHOR("Broadcom Corporation");
+ MODULE_DESCRIPTION("Broadcom 802.11 wireless LAN fullmac driver.");
+ MODULE_LICENSE("Dual BSD/GPL");
+ 
+-#define MAX_WAIT_FOR_8021X_TX			msecs_to_jiffies(50)
++#define MAX_WAIT_FOR_8021X_TX			msecs_to_jiffies(950)
+ 
+ /* AMPDU rx reordering definitions */
+ #define BRCMF_RXREORDER_FLOWID_OFFSET		0
