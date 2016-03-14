@@ -10,7 +10,7 @@ NAND_BLOCKSIZE := 2048-128k
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE
+DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE KERNEL_IN_UBI
 KERNEL_LOADADDR:=0x8000
 TARGET_DEVICES = linksys-audi linksys-viper
 
@@ -18,6 +18,21 @@ define Device/Default
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL := kernel-bin | append-dtb | uImage none
   KERNEL_NAME := zImage
+  KERNEL_IN_UBI :=
+endef
+
+define Device/dockstar
+  DEVICE_DTS := kirkwood-dockstar
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  BLOCKSIZE := 128KiB
+  FILESYSTEMS := squashfs
+  PROFILES := Generic DOCKSTAR
+  IMAGES := factory.bin sysupgrade.tar
+  IMAGE/factory.bin := append-ubi
+  IMAGE/sysupgrade.tar := sysupgrade-nand
+  KERNEL_IN_UBI := 1
+  KERNEL := kernel-bin | append-dtb
 endef
 
 define Device/linksys-audi
