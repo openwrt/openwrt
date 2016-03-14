@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/image.mk
 
 DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE KERNEL_IN_UBI
 KERNEL_LOADADDR:=0x8000
-TARGET_DEVICES = linksys-audi linksys-viper dockstar
+TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome
 
 define Device/Default
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -33,6 +33,18 @@ define Device/dockstar
   IMAGE/sysupgrade.tar := sysupgrade-nand
   KERNEL_IN_UBI := 1
   KERNEL := kernel-bin | append-dtb
+endef
+
+define Device/goflexnet
+$(Device/dockstar)
+  PROFILES := Generic GOFLEXNET
+  DEVICE_DTS := kirkwood-goflexnet
+endef
+
+define Device/goflexhome
+$(Device/dockstar)
+  PROFILES := Generic GOFLEXHOME
+  DEVICE_DTS := kirkwood-goflexhome
 endef
 
 define Device/linksys-audi
@@ -160,12 +172,6 @@ endef
 
 Image/BuildKernel/Template/Generic=$(call Image/BuildKernel/Template)
 Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
-
-Image/BuildKernel/Template/GOFLEXHOME=$(call Image/BuildKernel/Template,goflexhome)
-Image/InstallKernel/Template/GOFLEXHOME=$(call Image/InstallKernel/Template,goflexhome)
-
-Image/BuildKernel/Template/GOFLEXNET=$(call Image/BuildKernel/Template,goflexnet)
-Image/InstallKernel/Template/GOFLEXNET=$(call Image/InstallKernel/Template,goflexnet)
 
 Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
 Image/InstallKernel/Template/IB62X0=$(call Image/InstallKernel/Template,ib62x0)
