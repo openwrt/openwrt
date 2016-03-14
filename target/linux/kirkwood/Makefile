@@ -13,7 +13,7 @@ FEATURES:=targz usb jffs2_nand nand ubifs squashfs dt
 CPU_TYPE:=xscale
 MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
