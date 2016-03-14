@@ -32,7 +32,7 @@
  #include <config_cmd_default.h>
  #define CONFIG_CMD_DHCP
  #define CONFIG_CMD_ENV
-@@ -38,55 +43,58 @@
+@@ -38,55 +43,52 @@
  #define CONFIG_CMD_NAND
  #define CONFIG_CMD_PING
  #define CONFIG_CMD_USB
@@ -83,20 +83,16 @@
 -	"bootm 0x800000 0x1100000"
 -
 -#define CONFIG_MTDPARTS		"mtdparts=orion_nand:1m(uboot),-(root)\0"
-+	"ubi part root; "						\
-+	"ubifsmount ubi:rootfs; "					\
-+	"ubifsload 0x800000 ${kernel}; "				\
-+	"ubifsload 0x700000 ${fdt}; "					\
-+	"ubifsumount; "							\
-+	"fdt addr 0x700000; fdt resize; fdt chosen; "			\
-+	"bootz 0x800000 - 0x700000"
++	"ubi part ubi; "						\
++	"ubi read 0x800000 kernel; "				\
++	"bootz 0x800000"
 +
 +#define CONFIG_MTDPARTS \
 +	"mtdparts=orion_nand:"				\
 +	"0xe0000@0x0(uboot),"				\
 +	"0x20000@0xe0000(uboot_env),"			\
 +	"0x100000@0x100000(second_stage_uboot),"	\
-+	"-@0x200000(root)\0"
++	"-@0x200000(ubi)\0"
  
  #define CONFIG_EXTRA_ENV_SETTINGS \
 -	"console=console=ttyS0,115200\0" \
@@ -108,9 +104,7 @@
 +	"console=console=ttyS0,115200\0"	\
 +	"mtdids=nand0=orion_nand\0"		\
 +	"mtdparts="CONFIG_MTDPARTS		\
-+	"kernel=/boot/zImage\0"			\
-+	"fdt=/boot/dockstar.dtb\0"		\
-+	"bootargs_root=ubi.mtd=3 root=ubi0:rootfs rootfstype=ubifs rw\0"
++	"bootargs_root=\0"
  
  /*
 - * Ethernet Driver configuration
