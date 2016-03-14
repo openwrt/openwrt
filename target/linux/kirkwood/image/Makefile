@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/image.mk
 
 DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE KERNEL_IN_UBI
 KERNEL_LOADADDR:=0x8000
-TARGET_DEVICES = linksys-audi linksys-viper
+TARGET_DEVICES = linksys-audi linksys-viper dockstar
 
 define Device/Default
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -160,9 +160,6 @@ endef
 
 Image/BuildKernel/Template/Generic=$(call Image/BuildKernel/Template)
 Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
-
-Image/BuildKernel/Template/DOCKSTAR=$(call Image/BuildKernel/Template,dockstar)
-Image/InstallKernel/Template/DOCKSTAR=$(call Image/InstallKernel/Template,dockstar)
 
 Image/BuildKernel/Template/GOFLEXHOME=$(call Image/BuildKernel/Template,goflexhome)
 Image/InstallKernel/Template/GOFLEXHOME=$(call Image/InstallKernel/Template,goflexhome)
