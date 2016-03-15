@@ -1,0 +1,10 @@
+sudo: false
+language: c
+
+install:
+    - echo "CONFIG_TARGET_pistachio=y" > ./.config
+    - echo "CONFIG_TARGET_pistachio_marduk=y" >> ./.config
+
+script:
+    - make defconfig
+    - make -j 20
