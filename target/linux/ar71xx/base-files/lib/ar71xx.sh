@@ -123,6 +123,9 @@ tplink_board_detect() {
 	"007260"*)
 		model="TellStick ZNet Lite"
 		;;
+	"066602"*)
+		model="OMYlink OMY-X1"
+		;;
 	"3C0001"*)
 		model="OOLITE"
 		;;
@@ -631,6 +634,9 @@ ar71xx_board_detect() {
 		;;
 	*"OM5P AN")
 		name="om5p-an"
+		;;
+	*"OMY-X1")
+		name="omy-x1"
 		;;
 	*"Onion Omega")
 		name="onion-omega"
