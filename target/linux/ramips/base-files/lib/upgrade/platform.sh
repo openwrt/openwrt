@@ -78,6 +78,7 @@ platform_check_image() {
 	miniembplug|\
 	miniembwifi|\
 	miwifi-mini|\
+	miwifi-nano|\
 	mlw221|\
 	mlwg2|\
 	mofi3500-3gn|\
