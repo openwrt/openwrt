@@ -114,6 +114,7 @@ enum ath79_mach_type {
 	ATH79_MACH_OM2P,		/* OpenMesh OM2P */
 	ATH79_MACH_OM5P_AN,		/* OpenMesh OM5P-AN */
 	ATH79_MACH_OM5P,		/* OpenMesh OM5P */
+	ATH79_MACH_OMY_X1,		/* OMYlink OMY-X1 */
 	ATH79_MACH_ONION_OMEGA,		/* ONION OMEGA */
 	ATH79_MACH_PB42,		/* Atheros PB42 */
 	ATH79_MACH_PB92,		/* Atheros PB92 */

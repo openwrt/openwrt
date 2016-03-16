@@ -214,6 +214,9 @@ get_status_led() {
 	om5p-an)
 		status_led="om5p:blue:power"
 		;;
+	omy-x1)
+		status_led="omy:green:power"
+		;;
 	onion-omega)
 		status_led="onion:amber:system"
 		;;
