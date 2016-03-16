@@ -113,7 +113,7 @@ static void __init mr1750_setup(void)
 	ath79_register_wmac(art + MR1750_WMAC_CALDATA_OFFSET, mac);
 	ath79_register_pci();
 
-	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0, 0);
 	ath79_register_mdio(0, 0x0);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, art + MR1750_MAC0_OFFSET, 0);

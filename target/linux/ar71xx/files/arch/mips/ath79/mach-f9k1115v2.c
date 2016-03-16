@@ -152,7 +152,7 @@ static void __init f9k1115v2_setup(void)
 	mdiobus_register_board_info(f9k1115v2_mdio0_info,
 				    ARRAY_SIZE(f9k1115v2_mdio0_info));
 
-	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0, 0);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr,
 		       art + F9K1115V2_WAN_MAC_OFFSET, 0);

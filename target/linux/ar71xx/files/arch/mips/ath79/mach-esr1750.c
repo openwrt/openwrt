@@ -148,7 +148,7 @@ static void __init esr1750_setup(void)
 
 	ath79_register_usb();
 
-	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0, 0);
 
 	ath79_register_mdio(0, 0x0);
 

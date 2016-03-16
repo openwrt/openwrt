@@ -287,7 +287,7 @@ static void __init nbg6716_common_setup(u32 leds_num, struct gpio_led* leds,
 
 	ath79_register_wmac(art + NBG6716_WMAC_CALDATA_OFFSET, tmpmac);
 
-	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0, 0);
 
 	ath79_register_mdio(0, 0x0);
 
