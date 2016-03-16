@@ -152,7 +152,7 @@ static void __init wlr8100_common_setup(void)
 
 	ath79_register_wmac(art + WLR8100_WMAC_CALDATA_OFFSET, NULL);
 
-	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0, 0);
 
 	ath79_register_mdio(0, 0x0);
 

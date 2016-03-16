@@ -253,9 +253,8 @@ static void __init mr18_setup(void)
 	res = mr18_extract_sgmii_res_cal();
 	if (res >= 0) {
 		/* Setup SoC Eth Config */
-		ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN |
-			(3 << QCA955X_ETH_CFG_RXD_DELAY_SHIFT) |
-			(3 << QCA955X_ETH_CFG_RDV_DELAY_SHIFT));
+		ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0,
+					    0);
 
 		/* MDIO Interface */
 		ath79_register_mdio(0, 0x0);

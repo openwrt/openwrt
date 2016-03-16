@@ -156,7 +156,7 @@ static void __init wpj558_setup(void)
 	ath79_init_mac(ath79_eth0_data.mac_addr, art + WPJ558_MAC_OFFSET, 0);
 	ath79_init_mac(ath79_eth1_data.mac_addr, art + WPJ558_MAC_OFFSET, 0);
 
-	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0, 0);
 
 	/* GMAC0 is connected to an AR8327 switch */
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;

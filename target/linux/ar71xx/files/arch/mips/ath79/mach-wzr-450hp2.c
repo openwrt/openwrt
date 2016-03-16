@@ -193,7 +193,7 @@ static void __init wzr_450hp2_setup(void)
 				    ARRAY_SIZE(wzr_450hp2_mdio0_info));
 	ath79_register_mdio(0, 0x0);
 
-	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0, 0);
 
 	/* GMAC0 is connected to the RMGII interface */
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
