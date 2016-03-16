@@ -673,6 +673,7 @@ define KernelPackage/brcmfmac/config
 
 	config BRCMFMAC_SDIO
 		bool "Enable SDIO bus interface support"
+		default y if TARGET_brcm2708
 		default n
 		help
 		  Enable support for cards attached to an SDIO bus.
