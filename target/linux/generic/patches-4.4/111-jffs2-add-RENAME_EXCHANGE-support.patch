@@ -47,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	else
  		/* Unlink the original */
  		ret = jffs2_do_unlink(c, JFFS2_INODE_INFO(old_dir_i),
-@@ -877,7 +883,7 @@ static int jffs2_rename (struct inode *o
+@@ -882,7 +888,7 @@ static int jffs2_rename (struct inode *o
  		return ret;
  	}
  
