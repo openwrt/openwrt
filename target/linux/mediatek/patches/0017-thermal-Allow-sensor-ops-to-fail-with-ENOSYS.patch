@@ -22,7 +22,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -413,13 +413,16 @@ static void handle_thermal_trip(struct t
+@@ -416,13 +416,16 @@ static void handle_thermal_trip(struct t
   */
  int thermal_zone_get_temp(struct thermal_zone_device *tz, int *temp)
  {
@@ -42,7 +42,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  
  	mutex_lock(&tz->lock);
  
-@@ -445,7 +448,7 @@ int thermal_zone_get_temp(struct thermal
+@@ -448,7 +451,7 @@ int thermal_zone_get_temp(struct thermal
  	}
   
  	mutex_unlock(&tz->lock);
@@ -51,9 +51,9 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	return ret;
  }
  EXPORT_SYMBOL_GPL(thermal_zone_get_temp);
-@@ -454,10 +457,11 @@ void thermal_zone_device_update(struct t
- {
- 	int temp, ret, count;
+@@ -460,10 +463,11 @@ void thermal_zone_device_update(struct t
+ 	if (atomic_read(&in_suspend))
+ 		return;
  
 -	if (!tz->ops->get_temp)
 +	ret = thermal_zone_get_temp(tz, &temp);
@@ -65,7 +65,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	if (ret) {
  		if (ret != -EAGAIN)
  			dev_warn(&tz->device,
-@@ -783,10 +787,16 @@ emul_temp_store(struct device *dev, stru
+@@ -803,10 +807,16 @@ emul_temp_store(struct device *dev, stru
  	if (kstrtoul(buf, 10, &temperature))
  		return -EINVAL;
  

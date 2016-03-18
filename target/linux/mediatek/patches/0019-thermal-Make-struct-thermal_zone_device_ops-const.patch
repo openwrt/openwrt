@@ -220,7 +220,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	.get_trip_temp	= st_thermal_get_trip_temp,
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -1451,7 +1451,7 @@ static void remove_trip_attrs(struct the
+@@ -1479,7 +1479,7 @@ static void remove_trip_attrs(struct the
   */
  struct thermal_zone_device *thermal_zone_device_register(const char *type,
  	int trips, int mask, void *devdata,
@@ -253,16 +253,16 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	.get_trip_type = sys_get_trip_type,
 --- a/include/linux/thermal.h
 +++ b/include/linux/thermal.h
-@@ -181,7 +181,7 @@ struct thermal_zone_device {
- 	int emul_temperature;
+@@ -186,7 +186,7 @@ struct thermal_zone_device {
  	int passive;
  	unsigned int forced_passive;
+ 	atomic_t need_update;
 -	struct thermal_zone_device_ops *ops;
 +	const struct thermal_zone_device_ops *ops;
  	const struct thermal_zone_params *tzp;
  	struct thermal_governor *governor;
  	struct list_head thermal_instances;
-@@ -313,7 +313,7 @@ void thermal_zone_of_sensor_unregister(s
+@@ -318,7 +318,7 @@ void thermal_zone_of_sensor_unregister(s
  
  #if IS_ENABLED(CONFIG_THERMAL)
  struct thermal_zone_device *thermal_zone_device_register(const char *, int, int,
@@ -271,7 +271,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  		const struct thermal_zone_params *, int, int);
  void thermal_zone_device_unregister(struct thermal_zone_device *);
  
-@@ -341,7 +341,7 @@ void thermal_notify_framework(struct the
+@@ -346,7 +346,7 @@ void thermal_notify_framework(struct the
  #else
  static inline struct thermal_zone_device *thermal_zone_device_register(
  	const char *type, int trips, int mask, void *devdata,

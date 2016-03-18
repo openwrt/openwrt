@@ -17,13 +17,13 @@ Acked-by: Eduardo Valentin <edubezval@gmail.com>
 
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -1571,9 +1571,6 @@ struct thermal_zone_device *thermal_zone
+@@ -1601,9 +1601,6 @@ struct thermal_zone_device *thermal_zone
  
  	INIT_DELAYED_WORK(&(tz->poll_queue), thermal_zone_device_check);
  
 -	if (!tz->ops->get_temp)
 -		thermal_zone_device_set_polling(tz, 0);
 -
- 	thermal_zone_device_update(tz);
- 
- 	return tz;
+ 	thermal_zone_device_reset(tz);
+ 	/* Update the new thermal zone and mark it as already updated. */
+ 	if (atomic_cmpxchg(&tz->need_update, 1, 0))

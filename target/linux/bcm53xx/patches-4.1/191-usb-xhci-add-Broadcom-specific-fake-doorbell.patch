@@ -115,11 +115,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /*
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1568,6 +1568,7 @@ struct xhci_hcd {
- /* For controllers with a broken beyond repair streams implementation */
+@@ -1571,6 +1571,7 @@ struct xhci_hcd {
  #define XHCI_BROKEN_STREAMS	(1 << 19)
  #define XHCI_PME_STUCK_QUIRK	(1 << 20)
-+#define XHCI_FAKE_DOORBELL	(1 << 21)
+ #define XHCI_SSIC_PORT_UNUSED	(1 << 22)
++#define XHCI_FAKE_DOORBELL	(1 << 23)
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
  	/* There are two roothubs to keep track of bus suspend info for */

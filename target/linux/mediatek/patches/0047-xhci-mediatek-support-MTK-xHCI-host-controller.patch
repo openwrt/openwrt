@@ -709,71 +709,42 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  
  /*
   * Returns zero if the TRB isn't in this segment, otherwise it returns the DMA
-@@ -3173,9 +3174,14 @@ static int queue_bulk_sg_tx(struct xhci_
+@@ -3026,17 +3027,22 @@ static u32 xhci_td_remainder(struct xhci
+ {
+ 	u32 maxp, total_packet_count;
  
- 		/* Set the TRB length, TD size, and interrupter fields. */
- 		if (xhci->hci_version < 0x100) {
--			remainder = xhci_td_remainder(
-+			if (xhci->quirks & XHCI_MTK_HOST) {
-+				remainder = xhci_mtk_td_remainder_quirk(
-+					running_total, trb_buff_len, urb);
-+			} else {
-+				remainder = xhci_td_remainder(
- 					urb->transfer_buffer_length -
- 					running_total);
-+			}
- 		} else {
- 			remainder = xhci_v1_0_td_remainder(running_total,
- 					trb_buff_len, total_packet_count, urb,
-@@ -3346,9 +3352,14 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
+-	if (xhci->hci_version < 0x100)
++	/* MTK xHCI is mostly 0.97 but contains some features from 1.0 */
++	if (xhci->hci_version < 0x100 && !(xhci->quirks & XHCI_MTK_HOST))
+ 		return ((td_total_len - transferred) >> 10);
  
- 		/* Set the TRB length, TD size, and interrupter fields. */
- 		if (xhci->hci_version < 0x100) {
--			remainder = xhci_td_remainder(
-+			if (xhci->quirks & XHCI_MTK_HOST) {
-+				remainder = xhci_mtk_td_remainder_quirk(
-+					running_total, trb_buff_len, urb);
-+			} else {
-+				remainder = xhci_td_remainder(
- 					urb->transfer_buffer_length -
- 					running_total);
-+			}
- 		} else {
- 			remainder = xhci_v1_0_td_remainder(running_total,
- 					trb_buff_len, total_packet_count, urb,
-@@ -3467,8 +3478,14 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
- 		field = TRB_TYPE(TRB_DATA);
+-	maxp = GET_MAX_PACKET(usb_endpoint_maxp(&urb->ep->desc));
+-	total_packet_count = DIV_ROUND_UP(td_total_len, maxp);
+-
+ 	/* One TRB with a zero-length data packet. */
+ 	if (num_trbs_left == 0 || (transferred == 0 && trb_buff_len == 0) ||
+ 	    trb_buff_len == td_total_len)
+ 		return 0;
  
- 	length_field = TRB_LEN(urb->transfer_buffer_length) |
--		xhci_td_remainder(urb->transfer_buffer_length) |
- 		TRB_INTR_TARGET(0);
-+
++	/* for MTK xHCI, TD size doesn't include this TRB */
 +	if (xhci->quirks & XHCI_MTK_HOST)
-+		length_field |= xhci_mtk_td_remainder_quirk(0,
-+				urb->transfer_buffer_length, urb);
-+	else
-+		length_field |= xhci_td_remainder(urb->transfer_buffer_length);
++		trb_buff_len = 0;
 +
- 	if (urb->transfer_buffer_length > 0) {
- 		if (setup->bRequestType & USB_DIR_IN)
- 			field |= TRB_DIR_IN;
-@@ -3692,8 +3709,14 @@ static int xhci_queue_isoc_tx(struct xhc
++	maxp = GET_MAX_PACKET(usb_endpoint_maxp(&urb->ep->desc));
++	total_packet_count = DIV_ROUND_UP(td_total_len, maxp);
++
+ 	/* Queueing functions don't count the current TRB into transferred */
+ 	return (total_packet_count - ((transferred + trb_buff_len) / maxp));
+ }
+@@ -3424,7 +3430,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
+ 		field |= 0x1;
  
- 			/* Set the TRB length, TD size, & interrupter fields. */
- 			if (xhci->hci_version < 0x100) {
--				remainder = xhci_td_remainder(
--						td_len - running_total);
-+				if (xhci->quirks & XHCI_MTK_HOST) {
-+					remainder = xhci_mtk_td_remainder_quirk(
-+						running_total, trb_buff_len,
-+						urb);
-+				} else {
-+					remainder = xhci_td_remainder(
-+							td_len - running_total);
-+				}
- 			} else {
- 				remainder = xhci_v1_0_td_remainder(
- 						running_total, trb_buff_len,
+ 	/* xHCI 1.0/1.1 6.4.1.2.1: Transfer Type field */
+-	if (xhci->hci_version >= 0x100) {
++	if ((xhci->hci_version >= 0x100) || (xhci->quirks & XHCI_MTK_HOST)) {
+ 		if (urb->transfer_buffer_length > 0) {
+ 			if (setup->bRequestType & USB_DIR_IN)
+ 				field |= TRB_TX_TYPE(TRB_DATA_IN);
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
 @@ -31,6 +31,7 @@
@@ -797,7 +768,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -1708,6 +1713,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1710,6 +1715,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -807,7 +778,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1803,6 +1811,12 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1805,6 +1813,12 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  
@@ -822,11 +793,11 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1568,6 +1568,7 @@ struct xhci_hcd {
+@@ -1570,6 +1570,7 @@ struct xhci_hcd {
  /* For controllers with a broken beyond repair streams implementation */
  #define XHCI_BROKEN_STREAMS	(1 << 19)
  #define XHCI_PME_STUCK_QUIRK	(1 << 20)
 +#define XHCI_MTK_HOST		(1 << 21)
+ #define XHCI_SSIC_PORT_UNUSED	(1 << 22)
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
- 	/* There are two roothubs to keep track of bus suspend info for */
