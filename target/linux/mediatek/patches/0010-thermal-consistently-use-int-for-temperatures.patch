@@ -746,7 +746,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	struct device *dev = sensor->dev;
 --- a/drivers/thermal/step_wise.c
 +++ b/drivers/thermal/step_wise.c
-@@ -113,7 +113,7 @@ static void update_passive_instance(stru
+@@ -126,7 +126,7 @@ static void update_passive_instance(stru
  
  static void thermal_zone_trip_update(struct thermal_zone_device *tz, int trip)
  {
@@ -755,7 +755,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	enum thermal_trip_type trip_type;
  	enum thermal_trend trend;
  	struct thermal_instance *instance;
-@@ -135,7 +135,7 @@ static void thermal_zone_trip_update(str
+@@ -148,7 +148,7 @@ static void thermal_zone_trip_update(str
  		trace_thermal_zone_trip(tz, trip, trip_type);
  	}
  
@@ -786,7 +786,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	u32 val;
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -363,7 +363,7 @@ static void handle_non_critical_trips(st
+@@ -366,7 +366,7 @@ static void handle_non_critical_trips(st
  static void handle_critical_trips(struct thermal_zone_device *tz,
  				int trip, enum thermal_trip_type trip_type)
  {
@@ -795,7 +795,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  
  	tz->ops->get_trip_temp(tz, trip, &trip_temp);
  
-@@ -411,12 +411,12 @@ static void handle_thermal_trip(struct t
+@@ -414,12 +414,12 @@ static void handle_thermal_trip(struct t
   *
   * Return: On success returns 0, an error code otherwise
   */
@@ -810,7 +810,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	enum thermal_trip_type type;
  #endif
  
-@@ -453,8 +453,7 @@ EXPORT_SYMBOL_GPL(thermal_zone_get_temp)
+@@ -456,8 +456,7 @@ EXPORT_SYMBOL_GPL(thermal_zone_get_temp)
  
  static void update_temperature(struct thermal_zone_device *tz)
  {
@@ -820,7 +820,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  
  	ret = thermal_zone_get_temp(tz, &temp);
  	if (ret) {
-@@ -514,15 +513,14 @@ static ssize_t
+@@ -534,15 +533,14 @@ static ssize_t
  temp_show(struct device *dev, struct device_attribute *attr, char *buf)
  {
  	struct thermal_zone_device *tz = to_thermal_zone(dev);
@@ -838,7 +838,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  }
  
  static ssize_t
-@@ -626,7 +624,7 @@ trip_point_temp_show(struct device *dev,
+@@ -646,7 +644,7 @@ trip_point_temp_show(struct device *dev,
  {
  	struct thermal_zone_device *tz = to_thermal_zone(dev);
  	int trip, ret;
@@ -847,7 +847,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  
  	if (!tz->ops->get_trip_temp)
  		return -EPERM;
-@@ -639,7 +637,7 @@ trip_point_temp_show(struct device *dev,
+@@ -659,7 +657,7 @@ trip_point_temp_show(struct device *dev,
  	if (ret)
  		return ret;
  
@@ -856,7 +856,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  }
  
  static ssize_t
-@@ -648,7 +646,7 @@ trip_point_hyst_store(struct device *dev
+@@ -668,7 +666,7 @@ trip_point_hyst_store(struct device *dev
  {
  	struct thermal_zone_device *tz = to_thermal_zone(dev);
  	int trip, ret;
@@ -865,7 +865,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  
  	if (!tz->ops->set_trip_hyst)
  		return -EPERM;
-@@ -656,7 +654,7 @@ trip_point_hyst_store(struct device *dev
+@@ -676,7 +674,7 @@ trip_point_hyst_store(struct device *dev
  	if (!sscanf(attr->attr.name, "trip_point_%d_hyst", &trip))
  		return -EINVAL;
  
@@ -874,7 +874,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  		return -EINVAL;
  
  	/*
-@@ -675,7 +673,7 @@ trip_point_hyst_show(struct device *dev,
+@@ -695,7 +693,7 @@ trip_point_hyst_show(struct device *dev,
  {
  	struct thermal_zone_device *tz = to_thermal_zone(dev);
  	int trip, ret;
@@ -883,7 +883,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  
  	if (!tz->ops->get_trip_hyst)
  		return -EPERM;
-@@ -685,7 +683,7 @@ trip_point_hyst_show(struct device *dev,
+@@ -705,7 +703,7 @@ trip_point_hyst_show(struct device *dev,
  
  	ret = tz->ops->get_trip_hyst(tz, trip, &temperature);
  
@@ -1031,7 +1031,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	struct phy_dev_entry *phy_dev_entry;
 --- a/include/linux/thermal.h
 +++ b/include/linux/thermal.h
-@@ -86,23 +86,19 @@ struct thermal_zone_device_ops {
+@@ -89,23 +89,19 @@ struct thermal_zone_device_ops {
  		     struct thermal_cooling_device *);
  	int (*unbind) (struct thermal_zone_device *,
  		       struct thermal_cooling_device *);
@@ -1062,7 +1062,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	int (*get_trend) (struct thermal_zone_device *, int,
  			  enum thermal_trend *);
  	int (*notify) (struct thermal_zone_device *, int,
-@@ -272,9 +268,9 @@ struct thermal_genl_event {
+@@ -277,9 +273,9 @@ struct thermal_genl_event {
   *		   temperature.
   */
  struct thermal_zone_of_device_ops {
@@ -1074,7 +1074,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  };
  
  /**
-@@ -335,7 +331,7 @@ thermal_of_cooling_device_register(struc
+@@ -340,7 +336,7 @@ thermal_of_cooling_device_register(struc
  				   const struct thermal_cooling_device_ops *);
  void thermal_cooling_device_unregister(struct thermal_cooling_device *);
  struct thermal_zone_device *thermal_zone_get_zone_by_name(const char *name);
@@ -1083,7 +1083,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  
  int get_tz_trend(struct thermal_zone_device *, int);
  struct thermal_instance *get_thermal_instance(struct thermal_zone_device *,
-@@ -378,7 +374,7 @@ static inline struct thermal_zone_device
+@@ -383,7 +379,7 @@ static inline struct thermal_zone_device
  		const char *name)
  { return ERR_PTR(-ENODEV); }
  static inline int thermal_zone_get_temp(

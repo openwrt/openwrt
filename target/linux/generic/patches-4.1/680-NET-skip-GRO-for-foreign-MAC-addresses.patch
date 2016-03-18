@@ -17,7 +17,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4036,6 +4036,9 @@ static enum gro_result dev_gro_receive(s
+@@ -4041,6 +4041,9 @@ static enum gro_result dev_gro_receive(s
  	enum gro_result ret;
  	int grow;
  
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (!(skb->dev->features & NETIF_F_GRO))
  		goto normal;
  
-@@ -5185,6 +5188,48 @@ static void __netdev_adjacent_dev_unlink
+@@ -5190,6 +5193,48 @@ static void __netdev_adjacent_dev_unlink
  					   &upper_dev->adj_list.lower);
  }
  
@@ -76,7 +76,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static int __netdev_upper_dev_link(struct net_device *dev,
  				   struct net_device *upper_dev, bool master,
  				   void *private)
-@@ -5245,6 +5290,7 @@ static int __netdev_upper_dev_link(struc
+@@ -5250,6 +5295,7 @@ static int __netdev_upper_dev_link(struc
  			goto rollback_lower_mesh;
  	}
  
@@ -84,7 +84,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	call_netdevice_notifiers(NETDEV_CHANGEUPPER, dev);
  	return 0;
  
-@@ -5362,6 +5408,7 @@ void netdev_upper_dev_unlink(struct net_
+@@ -5367,6 +5413,7 @@ void netdev_upper_dev_unlink(struct net_
  	list_for_each_entry(i, &upper_dev->all_adj_list.upper, list)
  		__netdev_adjacent_dev_unlink(dev, i->dev);
  
@@ -92,7 +92,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	call_netdevice_notifiers(NETDEV_CHANGEUPPER, dev);
  }
  EXPORT_SYMBOL(netdev_upper_dev_unlink);
-@@ -5901,6 +5948,7 @@ int dev_set_mac_address(struct net_devic
+@@ -5906,6 +5953,7 @@ int dev_set_mac_address(struct net_devic
  	if (err)
  		return err;
  	dev->addr_assign_type = NET_ADDR_SET;
@@ -113,7 +113,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -615,7 +615,8 @@ struct sk_buff {
+@@ -616,7 +616,8 @@ struct sk_buff {
  	__u8			ipvs_property:1;
  	__u8			inner_protocol_type:1;
  	__u8			remcsum_offload:1;

@@ -14,7 +14,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -414,11 +414,9 @@ static void handle_thermal_trip(struct t
+@@ -417,11 +417,9 @@ static void handle_thermal_trip(struct t
  int thermal_zone_get_temp(struct thermal_zone_device *tz, int *temp)
  {
  	int ret = -EINVAL;
@@ -26,7 +26,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  
  	if (!tz || IS_ERR(tz) || !tz->ops->get_temp)
  		goto exit;
-@@ -426,25 +424,21 @@ int thermal_zone_get_temp(struct thermal
+@@ -429,25 +427,21 @@ int thermal_zone_get_temp(struct thermal
  	mutex_lock(&tz->lock);
  
  	ret = tz->ops->get_temp(tz, temp);
@@ -65,7 +65,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	mutex_unlock(&tz->lock);
  exit:
  	return ret;
-@@ -780,7 +774,6 @@ policy_show(struct device *dev, struct d
+@@ -800,7 +794,6 @@ policy_show(struct device *dev, struct d
  	return sprintf(buf, "%s\n", tz->governor->name);
  }
  
@@ -73,7 +73,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  static ssize_t
  emul_temp_store(struct device *dev, struct device_attribute *attr,
  		     const char *buf, size_t count)
-@@ -806,7 +799,6 @@ emul_temp_store(struct device *dev, stru
+@@ -826,7 +819,6 @@ emul_temp_store(struct device *dev, stru
  	return ret ? ret : count;
  }
  static DEVICE_ATTR(emul_temp, S_IWUSR, NULL, emul_temp_store);
@@ -81,7 +81,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  
  static DEVICE_ATTR(type, 0444, type_show, NULL);
  static DEVICE_ATTR(temp, 0444, temp_show, NULL);
-@@ -1536,11 +1528,12 @@ struct thermal_zone_device *thermal_zone
+@@ -1566,11 +1558,12 @@ struct thermal_zone_device *thermal_zone
  			goto unregister;
  	}
  

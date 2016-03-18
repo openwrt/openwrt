@@ -214,7 +214,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -774,10 +775,10 @@ static void tcp_v6_send_response(struct
+@@ -776,10 +777,10 @@ static void tcp_v6_send_response(struct
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -241,7 +241,7 @@
   */
 --- a/net/ipv6/datagram.c
 +++ b/net/ipv6/datagram.c
-@@ -426,7 +426,7 @@ int ipv6_recv_error(struct sock *sk, str
+@@ -429,7 +429,7 @@ int ipv6_recv_error(struct sock *sk, str
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
  		} else {
@@ -250,7 +250,7 @@
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -763,12 +763,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -766,12 +766,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -359,7 +359,7 @@
  	for (p = *head; p; p = p->next) {
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -453,7 +453,7 @@ static struct neighbour *ipv4_neigh_look
+@@ -454,7 +454,7 @@ static struct neighbour *ipv4_neigh_look
  	else if (skb)
  		pkey = &ip_hdr(skb)->daddr;
  
@@ -632,14 +632,19 @@
  #include <linux/netdevice.h>
 --- a/include/net/inet_ecn.h
 +++ b/include/net/inet_ecn.h
-@@ -115,13 +115,13 @@ static inline int IP6_ECN_set_ce(struct
- {
+@@ -124,9 +124,9 @@ static inline int IP6_ECN_set_ce(struct
  	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
  		return 0;
--	*(__be32*)iph |= htonl(INET_ECN_CE << 20);
-+	net_hdr_word(iph) |= htonl(INET_ECN_CE << 20);
+ 
+-	from = *(__be32 *)iph;
++	from = net_hdr_word(iph);
+ 	to = from | htonl(INET_ECN_CE << 20);
+-	*(__be32 *)iph = to;
++	net_hdr_word(iph) = to;
+ 	if (skb->ip_summed == CHECKSUM_COMPLETE)
+ 		skb->csum = csum_add(csum_sub(skb->csum, from), to);
  	return 1;
- }
+@@ -134,7 +134,7 @@ static inline int IP6_ECN_set_ce(struct
  
  static inline void IP6_ECN_clear(struct ipv6hdr *iph)
  {

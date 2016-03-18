@@ -32,7 +32,7 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
 
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -453,6 +453,45 @@ int thermal_zone_get_temp(struct thermal
+@@ -456,6 +456,45 @@ int thermal_zone_get_temp(struct thermal
  }
  EXPORT_SYMBOL_GPL(thermal_zone_get_temp);
  
@@ -78,27 +78,27 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  void thermal_zone_device_update(struct thermal_zone_device *tz)
  {
  	int temp, ret, count;
-@@ -479,6 +518,8 @@ void thermal_zone_device_update(struct t
- 	dev_dbg(&tz->device, "last_temperature=%d, current_temperature=%d\n",
- 				tz->last_temperature, tz->temperature);
+@@ -489,6 +528,8 @@ void thermal_zone_device_update(struct t
+ 		dev_dbg(&tz->device, "last_temperature=%d, current_temperature=%d\n",
+ 			tz->last_temperature, tz->temperature);
  
 +	thermal_zone_set_trips(tz);
 +
  	for (count = 0; count < tz->trips; count++)
  		handle_thermal_trip(tz, count);
  }
-@@ -1494,6 +1535,8 @@ struct thermal_zone_device *thermal_zone
+@@ -1522,6 +1563,8 @@ struct thermal_zone_device *thermal_zone
  	tz->trips = trips;
  	tz->passive_delay = passive_delay;
  	tz->polling_delay = polling_delay;
 +	tz->prev_low_trip = INT_MAX;
 +	tz->prev_high_trip = -INT_MAX;
+ 	/* A new thermal zone needs to be updated anyway. */
+ 	atomic_set(&tz->need_update, 1);
  
- 	dev_set_name(&tz->device, "thermal_zone%d", tz->id);
- 	result = device_register(&tz->device);
 --- a/include/linux/thermal.h
 +++ b/include/linux/thermal.h
-@@ -87,6 +87,7 @@ struct thermal_zone_device_ops {
+@@ -90,6 +90,7 @@ struct thermal_zone_device_ops {
  	int (*unbind) (struct thermal_zone_device *,
  		       struct thermal_cooling_device *);
  	int (*get_temp) (struct thermal_zone_device *, int *);
@@ -106,12 +106,12 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  	int (*get_mode) (struct thermal_zone_device *,
  			 enum thermal_device_mode *);
  	int (*set_mode) (struct thermal_zone_device *,
-@@ -180,6 +181,8 @@ struct thermal_zone_device {
+@@ -184,6 +185,8 @@ struct thermal_zone_device {
  	int last_temperature;
  	int emul_temperature;
  	int passive;
 +	int prev_low_trip;
 +	int prev_high_trip;
  	unsigned int forced_passive;
+ 	atomic_t need_update;
  	const struct thermal_zone_device_ops *ops;
- 	const struct thermal_zone_params *tzp;

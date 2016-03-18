@@ -14,7 +14,7 @@ Reviewed-by: Mikko Perttunen <mperttunen@nvidia.com>
 
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -450,9 +450,12 @@ exit:
+@@ -453,9 +453,15 @@ exit:
  }
  EXPORT_SYMBOL_GPL(thermal_zone_get_temp);
  
@@ -24,25 +24,47 @@ Reviewed-by: Mikko Perttunen <mperttunen@nvidia.com>
 -	int temp, ret;
 +	int temp, ret, count;
 +
++	if (atomic_read(&in_suspend))
++		return;
++
 +	if (!tz->ops->get_temp)
 +		return;
  
  	ret = thermal_zone_get_temp(tz, &temp);
  	if (ret) {
-@@ -471,16 +474,6 @@ static void update_temperature(struct th
- 	trace_thermal_temperature(tz);
- 	dev_dbg(&tz->device, "last_temperature=%d, current_temperature=%d\n",
- 				tz->last_temperature, tz->temperature);
--}
--
+@@ -478,7 +484,11 @@ static void update_temperature(struct th
+ 	else
+ 		dev_dbg(&tz->device, "last_temperature=%d, current_temperature=%d\n",
+ 			tz->last_temperature, tz->temperature);
++
++	for (count = 0; count < tz->trips; count++)
++		handle_thermal_trip(tz, count);
+ }
++EXPORT_SYMBOL_GPL(thermal_zone_device_update);
+ 
+ static void thermal_zone_device_reset(struct thermal_zone_device *tz)
+ {
+@@ -490,23 +500,6 @@ static void thermal_zone_device_reset(st
+ 		pos->initialized = false;
+ }
+ 
 -void thermal_zone_device_update(struct thermal_zone_device *tz)
 -{
 -	int count;
+-
+-	if (atomic_read(&in_suspend))
+-		return;
 -
 -	if (!tz->ops->get_temp)
 -		return;
 -
 -	update_temperature(tz);
- 
- 	for (count = 0; count < tz->trips; count++)
- 		handle_thermal_trip(tz, count);
+-
+-	for (count = 0; count < tz->trips; count++)
+-		handle_thermal_trip(tz, count);
+-}
+-EXPORT_SYMBOL_GPL(thermal_zone_device_update);
+-
+ static void thermal_zone_device_check(struct work_struct *work)
+ {
+ 	struct thermal_zone_device *tz = container_of(work, struct

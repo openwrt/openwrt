@@ -47,7 +47,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/usb/cdc_ncm.c
 +++ b/drivers/net/usb/cdc_ncm.c
-@@ -684,10 +684,12 @@ static void cdc_ncm_free(struct cdc_ncm_
+@@ -685,6 +685,8 @@ static void cdc_ncm_free(struct cdc_ncm_
  		ctx->tx_curr_skb = NULL;
  	}
  
@@ -56,12 +56,16 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	kfree(ctx);
  }
  
+@@ -715,7 +717,7 @@ static const struct net_device_ops cdc_n
+ 	.ndo_validate_addr   = eth_validate_addr,
+ };
+ 
 -int cdc_ncm_bind_common(struct usbnet *dev, struct usb_interface *intf, u8 data_altsetting)
 +int cdc_ncm_bind_common(struct usbnet *dev, struct usb_interface *intf, u8 data_altsetting, int drvflags)
  {
  	const struct usb_cdc_union_desc *union_desc = NULL;
  	struct cdc_ncm_ctx *ctx;
-@@ -855,6 +857,17 @@ advance:
+@@ -883,6 +885,17 @@ advance:
  	/* finish setting up the device specific data */
  	cdc_ncm_setup(dev);
  
@@ -79,7 +83,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* override ethtool_ops */
  	dev->net->ethtool_ops = &cdc_ncm_ethtool_ops;
  
-@@ -954,8 +967,11 @@ static int cdc_ncm_bind(struct usbnet *d
+@@ -985,8 +998,11 @@ static int cdc_ncm_bind(struct usbnet *d
  	if (cdc_ncm_select_altsetting(intf) != CDC_NCM_COMM_ALTSETTING_NCM)
  		return -ENODEV;
  
@@ -93,7 +97,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/*
  	 * We should get an event when network connection is "connected" or
-@@ -986,6 +1002,14 @@ static struct usb_cdc_ncm_ndp16 *cdc_ncm
+@@ -1017,6 +1033,14 @@ static struct usb_cdc_ncm_ndp16 *cdc_ncm
  	struct usb_cdc_ncm_nth16 *nth16 = (void *)skb->data;
  	size_t ndpoffset = le16_to_cpu(nth16->wNdpIndex);
  
@@ -108,7 +112,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* follow the chain of NDPs, looking for a match */
  	while (ndpoffset) {
  		ndp16 = (struct usb_cdc_ncm_ndp16 *)(skb->data + ndpoffset);
-@@ -995,7 +1019,8 @@ static struct usb_cdc_ncm_ndp16 *cdc_ncm
+@@ -1026,7 +1050,8 @@ static struct usb_cdc_ncm_ndp16 *cdc_ncm
  	}
  
  	/* align new NDP */
@@ -118,7 +122,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* verify that there is room for the NDP and the datagram (reserve) */
  	if ((ctx->tx_max - skb->len - reserve) < ctx->max_ndp_size)
-@@ -1008,7 +1033,11 @@ static struct usb_cdc_ncm_ndp16 *cdc_ncm
+@@ -1039,7 +1064,11 @@ static struct usb_cdc_ncm_ndp16 *cdc_ncm
  		nth16->wNdpIndex = cpu_to_le16(skb->len);
  
  	/* push a new empty NDP */
@@ -131,7 +135,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	ndp16->dwSignature = sign;
  	ndp16->wLength = cpu_to_le16(sizeof(struct usb_cdc_ncm_ndp16) + sizeof(struct usb_cdc_ncm_dpe16));
  	return ndp16;
-@@ -1023,6 +1052,15 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev
+@@ -1054,6 +1083,15 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev
  	struct sk_buff *skb_out;
  	u16 n = 0, index, ndplen;
  	u8 ready2send = 0;
@@ -147,7 +151,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* if there is a remaining skb, it gets priority */
  	if (skb != NULL) {
-@@ -1077,7 +1115,7 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev
+@@ -1108,7 +1146,7 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev
  		cdc_ncm_align_tail(skb_out,  ctx->tx_modulus, ctx->tx_remainder, ctx->tx_max);
  
  		/* check if we had enough room left for both NDP and frame */
@@ -156,7 +160,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			if (n == 0) {
  				/* won't fit, MTU problem? */
  				dev_kfree_skb_any(skb);
-@@ -1150,6 +1188,17 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev
+@@ -1181,6 +1219,17 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev
  		/* variables will be reset at next call */
  	}
  
@@ -217,10 +221,10 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	u32 tx_timer_pending;
  	u32 tx_curr_frame_num;
-@@ -133,7 +138,7 @@ struct cdc_ncm_ctx {
- };
+@@ -134,7 +139,7 @@ struct cdc_ncm_ctx {
  
  u8 cdc_ncm_select_altsetting(struct usb_interface *intf);
+ int cdc_ncm_change_mtu(struct net_device *net, int new_mtu);
 -int cdc_ncm_bind_common(struct usbnet *dev, struct usb_interface *intf, u8 data_altsetting);
 +int cdc_ncm_bind_common(struct usbnet *dev, struct usb_interface *intf, u8 data_altsetting, int drvflags);
  void cdc_ncm_unbind(struct usbnet *dev, struct usb_interface *intf);
