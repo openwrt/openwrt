@@ -35,9 +35,9 @@ define Package/rt61-pci-firmware/install
 endef
 $(eval $(call BuildPackage,rt61-pci-firmware))
 
-Package/rt73-pci-firmware = $(call Package/firmware-default,Ralink RT2573 firmware)
+Package/rt73-usb-firmware = $(call Package/firmware-default,Ralink RT2573 firmware)
 define Package/rt73-usb-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt73.bin $(1)/lib/firmware/
 endef
-$(eval $(call BuildPackage,rt73-pci-firmware))
+$(eval $(call BuildPackage,rt73-usb-firmware))
