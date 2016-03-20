@@ -1154,6 +1154,7 @@ Image/Build/Profile/WRTNODE2P=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode2
 
 ifeq ($(SUBTARGET),mt7628)
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/MIWIFI-NANO,$(1))
 	$(call Image/Build/Profile/MT7628,$(1))
 	$(call Image/Build/Profile/WRTNODE2P,$(1))
 endef
