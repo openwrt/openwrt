@@ -152,12 +152,12 @@ void ox820_assert_system_reset(enum reboot_mode mode, const char *cmd)
 	writel(0, SYS_CTRL_ALTERNATIVE_SEL);
 	writel(0, SYS_CTRL_PULLUP_SEL);
 
-	writel(0, SYS_CTRL_SECONDARY_SEL);
-	writel(0, SYS_CTRL_TERTIARY_SEL);
-	writel(0, SYS_CTRL_QUATERNARY_SEL);
-	writel(0, SYS_CTRL_DEBUG_SEL);
-	writel(0, SYS_CTRL_ALTERNATIVE_SEL);
-	writel(0, SYS_CTRL_PULLUP_SEL);
+	writel(0, SEC_CTRL_SECONDARY_SEL);
+	writel(0, SEC_CTRL_TERTIARY_SEL);
+	writel(0, SEC_CTRL_QUATERNARY_SEL);
+	writel(0, SEC_CTRL_DEBUG_SEL);
+	writel(0, SEC_CTRL_ALTERNATIVE_SEL);
+	writel(0, SEC_CTRL_PULLUP_SEL);
 
 	/* No need to save any state, as the ROM loader can determine whether
 	 * reset is due to power cycling or programatic action, just hit the
