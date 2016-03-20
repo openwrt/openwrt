@@ -24,6 +24,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 PKG_DRIVERS = \
 	adm8211 \
+	airo \
 	ath ath5k ath9k ath9k-common ath9k-htc ath10k \
 	b43 b43legacy \
 	carl9170 \
@@ -136,6 +137,18 @@ define KernelPackage/adm8211
   DEPENDS+=@PCI_SUPPORT +kmod-mac80211 +kmod-eeprom-93cx6
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/admtek/adm8211.ko
   AUTOLOAD:=$(call AutoProbe,adm8211)
+endef
+
+define KernelPackage/airo
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Cisco Aironet driver
+  DEPENDS+=@PCI_SUPPORT +@DRIVER_WEXT_SUPPORT +kmod-cfg80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/cisco/airo.ko
+  AUTOLOAD:=$(call AutoProbe,airo)
+endef
+
+define KernelPackage/airo/description
+ Kernel support for Cisco Aironet cards
 endef
 
 define KernelPackage/ath/config
@@ -1454,6 +1467,7 @@ config-y:= \
 	WLAN_VENDOR_ATH \
 	WLAN_VENDOR_ATMEL \
 	WLAN_VENDOR_BROADCOM \
+	WLAN_VENDOR_CISCO \
 	WLAN_VENDOR_INTEL \
 	WLAN_VENDOR_INTERSIL \
 	WLAN_VENDOR_MARVELL \
@@ -1491,6 +1505,8 @@ ifdef CONFIG_PACKAGE_MAC80211_TRACING
 endif
 
 config-$(call config_package,lib80211) += LIB80211 LIB80211_CRYPT_WEP LIB80211_CRYPT_CCMP LIB80211_CRYPT_TKIP
+
+config-$(call config_package,airo) += AIRO
 
 config-$(call config_package,ath) += ATH_CARDS ATH_COMMON
 config-$(CONFIG_PACKAGE_ATH_DEBUG) += ATH_DEBUG ATH10K_DEBUG
@@ -1765,6 +1781,7 @@ endef
 
 
 $(eval $(call KernelPackage,adm8211))
+$(eval $(call KernelPackage,airo))
 $(eval $(call KernelPackage,ath))
 $(eval $(call KernelPackage,ath10k))
 $(eval $(call KernelPackage,ath5k))
