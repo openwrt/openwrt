@@ -379,6 +379,7 @@ endef
 
 define Build/append-ubi
 	sh $(TOPDIR)/scripts/ubinize-image.sh \
+		$(if $(UBOOTENV_IN_UBI),--uboot-env) \
 		$(if $(KERNEL_IN_UBI),--kernel $(word 1,$^)) \
 		$(word 2,$^) \
 		$@.tmp \
