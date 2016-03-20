@@ -14,7 +14,6 @@
 
 #include <asm/cp15.h>
 #include <asm/smp_plat.h>
-#include <mach/smp.h>
 
 static inline void cpu_enter_lowpower(void)
 {
@@ -41,7 +40,7 @@ static inline void cpu_leave_lowpower(void)
 {
 	unsigned int v;
 
-	asm volatile("mrc	p15, 0, %0, c1, c0, 0\n"
+	asm volatile(	"mrc	p15, 0, %0, c1, c0, 0\n"
 	"	orr	%0, %0, %1\n"
 	"	mcr	p15, 0, %0, c1, c0, 0\n"
 	"	mrc	p15, 0, %0, c1, c0, 1\n"
@@ -68,7 +67,7 @@ static inline void platform_do_lowpower(unsigned int cpu, int *spurious)
 		    :
 		    : "memory", "cc");
 
-		if (read_pen_release() == cpu_logical_map(cpu)) {
+		if (pen_release == cpu_logical_map(cpu)) {
 			/*
 			 * OK, proper wakeup, we're done
 			 */
@@ -91,7 +90,7 @@ static inline void platform_do_lowpower(unsigned int cpu, int *spurious)
  *
  * Called with IRQs disabled
  */
-void __ref ox820_cpu_die(unsigned int cpu)
+void ox820_cpu_die(unsigned int cpu)
 {
 	int spurious = 0;
 
