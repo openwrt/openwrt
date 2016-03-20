@@ -18,38 +18,30 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "gpio";
+				ralink,group = "refclk", "wled", "gpio";
 				ralink,function = "gpio";
 			};
 		};
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
+	gpio-leds {
+		compatible = "gpio-leds";
 
-		gpio11 {
-			/* blue led */
-			gpio-export,name = "gpio11";
-			gpio-export,direction_may_change = <1>;
-			gpio-export,output = <1>;
-			gpios = <&gpio0 11 0>;
+		wifi {
+			label = "miwifi-nano:blue:wifi";
+			gpios = <&gpio0 11 1>;
+			default-state = "1";
 		};
-
-		gpio37 {
-			/* red led */
-			gpio-export,name = "gpio37";
-			gpio-export,direction_may_change = <1>;
-			gpio-export,output = <1>;
-			gpios = <&gpio1 5 0>;
+		status {
+			label = "miwifi-nano:red:status";
+			gpios = <&gpio1 5 1>;
+			default-state = "on";
 		};
+		radio {
+			label = "miwifi-nano:amber:radio";
+			gpios = <&gpio1 12 1>;
+			default-state = "1";
 
-		gpio44 {
-			/* yellow led */
-			gpio-export,name = "gpio44";
-			gpio-export,direction_may_change = <1>;
-			gpio-export,output = <1>;
-			gpios = <&gpio1 12 0>;
 		};
 	};
 
