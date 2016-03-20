@@ -7,22 +7,6 @@
 
 WIRELESS_MENU:=Wireless Drivers
 
-define KernelPackage/net-airo
-  SUBMENU:=$(WIRELESS_MENU)
-  TITLE:=Cisco Aironet driver
-  DEPENDS:=@PCI_SUPPORT +@DRIVER_WEXT_SUPPORT
-  KCONFIG:=CONFIG_AIRO
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/airo.ko
-  AUTOLOAD:=$(call AutoProbe,airo)
-endef
-
-define KernelPackage/net-airo/description
- Kernel support for Cisco Aironet cards
-endef
-
-$(eval $(call KernelPackage,net-airo))
-
-
 define KernelPackage/net-prism54
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intersil Prism54 support
