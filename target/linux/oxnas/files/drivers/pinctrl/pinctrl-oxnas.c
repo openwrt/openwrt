@@ -26,6 +26,7 @@
 #include <linux/pinctrl/pinmux.h>
 /* Since we request GPIOs from ourself */
 #include <linux/pinctrl/consumer.h>
+#include <linux/spinlock.h>
 #include <linux/version.h>
 
 #include "core.h"
@@ -41,6 +42,7 @@ struct oxnas_gpio_chip {
 	void __iomem		*regbase;  /* GPIOA/B virtual address */
 	void __iomem		*ctrlbase; /* SYS/SEC_CTRL virtual address */
 	struct irq_domain	*domain;   /* associated irq domain */
+	spinlock_t		lock;
 };
 
 #define to_oxnas_gpio_chip(c) container_of(c, struct oxnas_gpio_chip, chip)
@@ -1145,12 +1147,17 @@ static void gpio_irq_mask(struct irq_data *d)
 	void __iomem	*pio = oxnas_gpio->regbase;
 	unsigned	mask = 1 << d->hwirq;
 	unsigned	type = irqd_get_trigger_type(d);
+	unsigned long	flags;
 
-	/* FIXME: need proper lock */
+	if (!(type & IRQ_TYPE_EDGE_BOTH))
+		return;
+
+	spin_lock_irqsave(&oxnas_gpio->lock, flags);
 	if (type & IRQ_TYPE_EDGE_RISING)
 		oxnas_register_clear_mask(pio + RE_IRQ_ENABLE, mask);
 	if (type & IRQ_TYPE_EDGE_FALLING)
 		oxnas_register_clear_mask(pio + FE_IRQ_ENABLE, mask);
+	spin_unlock_irqrestore(&oxnas_gpio->lock, flags);
 }
 
 static void gpio_irq_unmask(struct irq_data *d)
@@ -1159,12 +1166,17 @@ static void gpio_irq_unmask(struct irq_data *d)
 	void __iomem	*pio = oxnas_gpio->regbase;
 	unsigned	mask = 1 << d->hwirq;
 	unsigned	type = irqd_get_trigger_type(d);
+	unsigned long	flags;
 
-	/* FIXME: need proper lock */
+	if (!(type & IRQ_TYPE_EDGE_BOTH))
+		return;
+
+	spin_lock_irqsave(&oxnas_gpio->lock, flags);
 	if (type & IRQ_TYPE_EDGE_RISING)
 		oxnas_register_set_mask(pio + RE_IRQ_ENABLE, mask);
 	if (type & IRQ_TYPE_EDGE_FALLING)
 		oxnas_register_set_mask(pio + FE_IRQ_ENABLE, mask);
+	spin_unlock_irqrestore(&oxnas_gpio->lock, flags);
 }
 
 
@@ -1358,6 +1370,8 @@ static int oxnas_gpio_probe(struct platform_device *pdev)
 	}
 
 	oxnas_chip->chip = oxnas_gpio_template;
+
+	spin_lock_init(&oxnas_chip->lock);
 
 	chip = &oxnas_chip->chip;
 	chip->of_node = np;
