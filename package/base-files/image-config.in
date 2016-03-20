@@ -170,7 +170,7 @@ if VERSIONOPT
 	config VERSION_REPO
 		string
 		prompt "Release repository"
-		default "http://downloads.openwrt.org/snapshots/trunk/%S/packages"
+		default "http://downloads.openwrt.org/%n/%v/%S/packages"
 		help
 			This is the repository address embedded in the image, it defaults
 			to the trunk snapshot repo; the url may contain the following placeholders:

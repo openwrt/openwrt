@@ -21,7 +21,7 @@ qstrip_escape=$(subst ','\'',$(call qstrip,$(1)))
 #'
 
 VERSION_NUMBER:=$(call qstrip_escape,$(CONFIG_VERSION_NUMBER))
-VERSION_NUMBER:=$(if $(VERSION_NUMBER),$(VERSION_NUMBER),15.05)
+VERSION_NUMBER:=$(if $(VERSION_NUMBER),$(VERSION_NUMBER),15.05.1)
 
 VERSION_CODE:=$(call qstrip_escape,$(CONFIG_VERSION_NUMBER))
 VERSION_CODE:=$(if $(VERSION_CODE),$(VERSION_CODE),Chaos Calmer)
