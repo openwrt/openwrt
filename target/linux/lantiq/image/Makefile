@@ -32,8 +32,8 @@ endef
 define PatchKernelLzma
 	cp $(KDIR)/vmlinux$(2) $(KDIR)/vmlinux$(2)-$(1)
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(KDIR)/$(1).dtb ../dts/$(1).dts
-	$(STAGING_DIR_HOST)/bin/patch-dtb $(KDIR)/vmlinux$(2)-$(1) $(KDIR)/$(1).dtb
-	$(call CompressLzma,$(KDIR)/vmlinux$(2)-$(1),$(KDIR)/vmlinux$(2)-$(1).lzma)
+	cat $(KDIR)/vmlinux$(2)-$(1) $(KDIR)/$(1).dtb > $(KDIR)/vmlinux$(2)-$(1).tmp
+	$(call CompressLzma,$(KDIR)/vmlinux$(2)-$(1).tmp,$(KDIR)/vmlinux$(2)-$(1).lzma)
 endef
 
 define MkBrnImage
