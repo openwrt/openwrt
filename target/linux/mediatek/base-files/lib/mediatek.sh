@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2015 OpenWrt.org
+# Copyright (C) 2016 OpenWrt.org
 #
 
 mediatek_board_detect() {
@@ -10,7 +10,7 @@ mediatek_board_detect() {
 	machine=$(cat /proc/device-tree/model)
 
 	case "$machine" in
-	"MediaTek MT7623 Evaluation Board")
+	"MediaTek MT7623 evaluation board")
 		name="mt7623_evb"
 		;;
 	esac

@@ -1,0 +1,54 @@
+From 294cf90337d70ad74edf147180bbeef837298bd0 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 6 Jan 2016 20:06:49 +0100
+Subject: [PATCH 17/53] clk: add hifsys reset
+
+Hi,
+
+small patch to add hifsys reset bits. Maybe you could add it to the next
+version of your patch series. i have teste scpsys and clk on mt7623 today
+and it works well.
+
+thanks,
+	John
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/clk/mediatek/clk-mt2701.c                    |    2 ++
+ include/dt-bindings/reset-controller/mt2701-resets.h |    9 +++++++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
+index 39472e4..0e40bb8 100644
+--- a/drivers/clk/mediatek/clk-mt2701.c
++++ b/drivers/clk/mediatek/clk-mt2701.c
+@@ -1000,6 +1000,8 @@ static void __init mtk_hifsys_init(struct device_node *node)
+ 	if (r)
+ 		pr_err("%s(): could not register clock provider: %d\n",
+ 			__func__, r);
++
++	mtk_register_reset_controller(node, 1, 0x34);
+ }
+ CLK_OF_DECLARE(mtk_hifsys, "mediatek,mt2701-hifsys", mtk_hifsys_init);
+ 
+diff --git a/include/dt-bindings/reset-controller/mt2701-resets.h b/include/dt-bindings/reset-controller/mt2701-resets.h
+index 00efeb0..aaf0305 100644
+--- a/include/dt-bindings/reset-controller/mt2701-resets.h
++++ b/include/dt-bindings/reset-controller/mt2701-resets.h
+@@ -71,4 +71,13 @@
+ #define MT2701_TOPRGU_CONN_MCU_RST		12
+ #define MT2701_TOPRGU_BDP_DISP_RST		13
+ 
++/* HIFSYS resets */
++#define MT2701_HIFSYS_UHOST0_RST		3
++#define MT2701_HIFSYS_UHOST1_RST		4
++#define MT2701_HIFSYS_UPHY0_RST			21
++#define MT2701_HIFSYS_UPHY1_RST			22
++#define MT2701_HIFSYS_PCIE0_RST			24
++#define MT2701_HIFSYS_PCIE1_RST			25
++#define MT2701_HIFSYS_PCIE2_RST			26
++
+ #endif  /* _DT_BINDINGS_RESET_CONTROLLER_MT2701 */
+-- 
+1.7.10.4
+
