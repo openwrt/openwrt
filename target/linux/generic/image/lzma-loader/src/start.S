@@ -30,7 +30,7 @@
 #define Index_Writeback_Inv_D   0x01
 
 LEAF(_start)
-	
+
 	.set	mips32
 	.set noreorder
 
@@ -39,7 +39,7 @@ LEAF(_start)
 	move t5, a1
 	move t6, a2
 	move t7, a3
-	
+
 	/* set up stack */
 	li	sp, RAMSTART + RAMSIZE - 16
 
@@ -100,10 +100,10 @@ $L1:
 1:	cache	Index_Writeback_Inv_D,0(t0)
 	bne	t0,t1,1b
 	addu	t0,s1
-	
+
 nodc:
 	/* Now we get to do it all again for the I$ */
-	
+
 	move	s3,zero			/* just in case there is no icache */
 	move	s4,zero
 
