@@ -56,7 +56,7 @@
 LEAF(startup)
 	.set noreorder
 	.set mips32
-	
+
 	mtc0	zero, C0_WATCHLO	# clear watch registers
 	mtc0	zero, C0_WATCHHI
 
