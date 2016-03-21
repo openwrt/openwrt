@@ -1,0 +1,11 @@
+--- a/mt7603_mac.c
++++ b/mt7603_mac.c
+@@ -474,7 +474,7 @@
+ 	bool stbc = false;
+ 	int n_rates = sta->n_rates;
+ 	u8 bw, bw_prev, bw_idx = 0;
+-	u16 val[8];
++	u16 val[8] = { 0 };
+ 	u32 w9 = mt76_rr(dev, addr + 9 * 4);
+ 	int count;
+ 	int i;
