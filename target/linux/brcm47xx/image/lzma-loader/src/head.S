@@ -150,11 +150,11 @@ nodc:
 	addu	t0,s3
 
 noic:
-	move	a0,s3			/* icache line size */
-	move	a1,s4			/* icache size */
-	move	a2,s1			/* dcache line size */
+	move	a0,s4			/* icache size */
+	move	a1,s3			/* icache line size */
+	move	a2,s2			/* dcache size */
 	jal	t2
-	move	a3,s2			/* dcache size */
+	move	a3,s1			/* dcache line size */
 
 	.set reorder
 	END(startup)
