@@ -1,0 +1,34 @@
+From 3180cf4f325411f796468e12d524fe6354ded274 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 2 Mar 2016 04:34:04 +0100
+Subject: [PATCH 51/53] net-next: mediatek: add an entry to MAINTAINERS
+
+Add myself and Felix as the Maintainers for the MediaTek ethernet driver.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ MAINTAINERS |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 156e1d3..7737042 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -6908,6 +6908,13 @@ F:	include/uapi/linux/meye.h
+ F:	include/uapi/linux/ivtv*
+ F:	include/uapi/linux/uvcvideo.h
+ 
++MEDIATEK ETHERNET DRIVER
++M:	Felix Fietkau <nbd@openwrt.org>
++M:	John Crispin <blogic@openwrt.org>
++L:	netdev@vger.kernel.org
++S:	Maintained
++F:	drivers/net/ethernet/mediatek/
++
+ MEDIATEK MT7601U WIRELESS LAN DRIVER
+ M:	Jakub Kicinski <kubakici@wp.pl>
+ L:	linux-wireless@vger.kernel.org
+-- 
+1.7.10.4
+

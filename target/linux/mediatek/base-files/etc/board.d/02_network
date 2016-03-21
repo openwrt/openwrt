@@ -1,0 +1,26 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/mediatek.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+mediatek_setup_interfaces()
+{
+	local board="$1"
+
+	case $board in
+	mt7623_evb)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth1" "6@eth0"
+		;;
+	esac
+}
+
+board_config_update
+board=$(mediatek_board_name)
+mediatek_setup_interfaces $board
+board_config_flush
+
+exit 0
