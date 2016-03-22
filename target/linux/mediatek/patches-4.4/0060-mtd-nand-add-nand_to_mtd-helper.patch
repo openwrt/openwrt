@@ -1,0 +1,32 @@
+From 8c32f64172fbf43d23c99dc4d32f5a1cb5eb08ae Mon Sep 17 00:00:00 2001
+From: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Date: Tue, 1 Dec 2015 12:03:07 +0100
+Subject: [PATCH 60/66] mtd: nand: add nand_to_mtd() helper
+
+Add a new helper to retrieve the MTD device attached to a NAND chip.
+
+Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ include/linux/mtd/nand.h |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index a4839b3..c75424f 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -724,6 +724,11 @@ static inline struct nand_chip *mtd_to_nand(struct mtd_info *mtd)
+ 	return mtd->priv;
+ }
+ 
++static inline struct mtd_info *nand_to_mtd(struct nand_chip *chip)
++{
++	return &chip->mtd;
++}
++
+ /*
+  * NAND Flash Manufacturer ID Codes
+  */
+-- 
+1.7.10.4
+

@@ -1,7 +1,7 @@
-From 242801fc94db9ceb1e3e2a8b19fb2c57122e53f3 Mon Sep 17 00:00:00 2001
+From cee958b55f35f953481c2ddf9609dbd018ef5979 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Mon, 21 Mar 2016 16:36:22 +0100
-Subject: [PATCH] net: out of tree fixes
+Subject: [PATCH 57/66] net: mediatek: out of tree fixes
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
@@ -9,13 +9,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/arm/boot/dts/mt7623.dtsi               |   40 +-
  drivers/net/ethernet/mediatek/Makefile      |    2 +-
  drivers/net/ethernet/mediatek/gsw_mt7620.h  |  250 +++++++
- drivers/net/ethernet/mediatek/gsw_mt7623.c  |  966 +++++++++++++++++++++++++++
- drivers/net/ethernet/mediatek/mt7530.c      |  808 ++++++++++++++++++++++
+ drivers/net/ethernet/mediatek/gsw_mt7623.c  | 1058 +++++++++++++++++++++++++++
+ drivers/net/ethernet/mediatek/mt7530.c      |  808 ++++++++++++++++++++
  drivers/net/ethernet/mediatek/mt7530.h      |   20 +
- drivers/net/ethernet/mediatek/mtk_eth_soc.c |   59 +-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |   41 +-
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |    5 +
- lib/dynamic_queue_limits.c                  |    6 +-
- 10 files changed, 2110 insertions(+), 47 deletions(-)
+ 9 files changed, 2202 insertions(+), 23 deletions(-)
  create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7620.h
  create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7623.c
  create mode 100644 drivers/net/ethernet/mediatek/mt7530.c
@@ -34,10 +33,10 @@ index 5e9381d..bc2b3f1 100644
  };
  
 diff --git a/arch/arm/boot/dts/mt7623.dtsi b/arch/arm/boot/dts/mt7623.dtsi
-index 1ba7790..5926e14 100644
+index ec19283..0c65045 100644
 --- a/arch/arm/boot/dts/mt7623.dtsi
 +++ b/arch/arm/boot/dts/mt7623.dtsi
-@@ -440,23 +440,30 @@
+@@ -452,23 +452,30 @@
  	};
  
  	ethsys: syscon@1b000000 {
@@ -73,7 +72,7 @@ index 1ba7790..5926e14 100644
  		mediatek,switch = <&gsw>;
  
  		#address-cells = <1>;
-@@ -468,6 +475,8 @@
+@@ -480,6 +487,8 @@
  			compatible = "mediatek,eth-mac";
  			reg = <0>;
  
@@ -82,7 +81,7 @@ index 1ba7790..5926e14 100644
  			status = "disabled";
  		};
  
-@@ -475,6 +484,7 @@
+@@ -487,6 +496,7 @@
  			compatible = "mediatek,eth-mac";
  			reg = <1>;
  
@@ -90,7 +89,7 @@ index 1ba7790..5926e14 100644
  			status = "disabled";
  		};
  	
-@@ -482,6 +492,16 @@
+@@ -494,6 +504,16 @@
  			#address-cells = <1>;
  			#size-cells = <0>;
  
@@ -107,7 +106,7 @@ index 1ba7790..5926e14 100644
  			phy1f: ethernet-phy@1f {
  				reg = <0x1f>;
  				phy-mode = "rgmii";
-@@ -491,14 +511,12 @@
+@@ -503,14 +523,12 @@
  
  	gsw: switch@1b100000 {
  		compatible = "mediatek,mt7623-gsw";
@@ -394,10 +393,10 @@ index 0000000..7013803
 +#endif
 diff --git a/drivers/net/ethernet/mediatek/gsw_mt7623.c b/drivers/net/ethernet/mediatek/gsw_mt7623.c
 new file mode 100644
-index 0000000..78c36c7
+index 0000000..4e486af
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/gsw_mt7623.c
-@@ -0,0 +1,966 @@
+@@ -0,0 +1,1058 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
 + *   the Free Software Foundation; version 2 of the License
@@ -437,6 +436,9 @@ index 0000000..78c36c7
 +#include "mtk_eth_soc.h"
 +#include "gsw_mt7620.h"
 +#include "mt7530.h"
++
++#define ETHSYS_CLKCFG0			0x2c
++#define ETHSYS_TRGMII_CLK_SEL362_5	BIT(11)
 +
 +void mt7530_mdio_w32(struct mt7620_gsw *gsw, u32 reg, u32 val)
 +{
@@ -485,29 +487,39 @@ index 0000000..78c36c7
 +	mtk_switch_w32(gsw, val, reg);
 +}
 +
++int mt7623_gsw_config(struct mtk_eth *eth)
++{
++	if (eth->mii_bus && eth->mii_bus->phy_map[0x1f])
++		mt7530_probe(eth->dev, NULL, eth->mii_bus, 1);
++
++	return 0;
++}
++
 +static irqreturn_t gsw_interrupt_mt7623(int irq, void *_eth)
 +{
 +	struct mtk_eth *eth = (struct mtk_eth *)_eth;
 +	struct mt7620_gsw *gsw = (struct mt7620_gsw *)eth->sw_priv;
 +	u32 reg, i;
 +
-+	reg = mt7530_mdio_r32(gsw, MT7530_SYS_INT_STS);
++	reg = mt7530_mdio_r32(gsw, 0x700c);
 +
-+	for (i = 0; i < 5; i++) {
-+		unsigned int link;
++	for (i = 0; i < 5; i++)
++		if (reg & BIT(i)) {
++			unsigned int link;
 +
-+		if ((reg & BIT(i)) == 0)
-+			continue;
++			link = mt7530_mdio_r32(gsw,
++					       0x3008 + (i * 0x100)) & 0x1;
 +
-+		link = mt7530_mdio_r32(gsw, MT7530_PMSR_P(i)) & 0x1;
++			if (link)
++				dev_info(gsw->dev,
++					 "port %d link up\n", i);
++			else
++				dev_info(gsw->dev,
++					 "port %d link down\n", i);
++		}
 +
-+		if (link)
-+			dev_info(gsw->dev, "port %d link up\n", i);
-+		else
-+			dev_info(gsw->dev, "port %d link down\n", i);
-+	}
-+
-+	mt7530_mdio_w32(gsw, MT7530_SYS_INT_STS, 0x1f);
++//	mt7620_handle_carrier(eth);
++	mt7530_mdio_w32(gsw, 0x700c, 0x1f);
 +
 +	return IRQ_HANDLED;
 +}
@@ -519,14 +531,6 @@ index 0000000..78c36c7
 +
 +	for (i = 0; i < 320; i = i + 1)
 +		read_data = mtk_switch_r32(gsw, 0x610);
-+}
-+
-+int mt7623_gsw_config(struct mtk_eth *eth)
-+{
-+	if (eth->mii_bus && eth->mii_bus->phy_map[0x1f])
-+		mt7530_probe(eth->dev, NULL, eth->mii_bus, 1);
-+
-+	return 0;
 +}
 +
 +static void trgmii_calibration_7623(struct mt7620_gsw *gsw)
@@ -579,16 +583,18 @@ index 0000000..78c36c7
 +	for (i = 0; i < 5; i++)
 +		mtk_switch_m32(gsw, 0, 0x80000000, TRGMII_7623_RD_0 + i * 8);
 +
-+	/* Enable Training Mode in MT7530 */
-+	mt7530_mdio_m32(gsw, 0, 0xC0000000, 0x7A40);
-+
-+	/* Adjust RXC delay in MT7623 */
-+	read_data = 0x0;
++	pr_err("Enable Training Mode in MT7530\n");
++	read_data = mt7530_mdio_r32(gsw, 0x7A40);
++	read_data |= 0xC0000000;
++	mt7530_mdio_w32(gsw, 0x7A40, read_data);	/* Enable Training Mode in MT7530 */
 +	err_total_flag = 0;
++	pr_err("Adjust RXC delay in MT7623\n");
++	read_data = 0x0;
 +	while (err_total_flag == 0 && read_data != 0x68) {
++		pr_err("2nd Enable EDGE CHK in MT7623\n");
 +		/* Enable EDGE CHK in MT7623 */
 +		for (i = 0; i < 5; i++)
-+			mtk_switch_m32(gsw, 0x4fffffff, 0x40000000, TRGMII_7623_RD_0 + i * 8);
++			    mtk_switch_m32(gsw, 0x4fffffff, 0x40000000, TRGMII_7623_RD_0 + i * 8);
 +
 +		wait_loop(gsw);
 +		err_total_flag = 1;
@@ -749,6 +755,7 @@ index 0000000..78c36c7
 +	u32 TRGMII_RCK_CTRL;
 +	u32 TRGMII_7530_base;
 +	u32 TRGMII_7530_TX_base;
++	u32 val;
 +
 +	TRGMII_7623_base = 0x300;
 +	TRGMII_7530_base = 0x7A00;
@@ -761,81 +768,113 @@ index 0000000..78c36c7
 +
 +	TRGMII_7530_TX_base = TRGMII_7530_base + 0x50;
 +
-+	/* Calibration begin */
-+	mtk_switch_m32(gsw, 0, 0x80000000, TRGMII_7623_base + 0x40);
++	/* pr_err("Calibration begin ........\n"); */
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x40) | 0x80000000;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x40);
++	read_data = mt7530_mdio_r32(gsw, 0x7a10);
++	/* pr_err("TRGMII_7530_RD_0 is %x\n", read_data); */
 +
-+	/* RX clock gating in MT7530 */
-+	mt7530_mdio_m32(gsw, 0x3fffffff, 0, TRGMII_7530_base + 0x04);
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base + 0x04);
++	read_data &= 0x3fffffff;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base + 0x04, read_data);	/* RX clock gating in MT7530 */
 +
-+	/* Set TX OE edge in  MT7530 */
-+	mt7530_mdio_m32(gsw, 0, 0x2000, TRGMII_7530_base + 0x78);
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base + 0x78);
++	read_data |= 0x00002000;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base + 0x78, read_data);	/* Set TX OE edge in  MT7530 */
 +
-+	/* Assert RX  reset in MT7530 */
-+	mt7530_mdio_m32(gsw, 0, 0x80000000, TRGMII_7530_base);
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
++	read_data |= 0x80000000;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base, read_data);	/* Assert RX  reset in MT7530 */
 +
-+	/* Release RX reset in MT7530 */
-+	mt7530_mdio_m32(gsw, 0x7fffffff, 0, TRGMII_7530_base);
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
++	read_data &= 0x7fffffff;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base, read_data);	/* Release RX reset in MT7530 */
 +
-+	/* Disable RX clock gating in MT7530 */
-+	mt7530_mdio_m32(gsw, 0, 0xC0000000, TRGMII_7530_base + 0x04);
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base + 0x04);
++	read_data |= 0xC0000000;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base + 0x04, read_data);	/* Disable RX clock gating in MT7530 */
 +
-+	/* Enable Training Mode in MT7623 */
-+	mtk_switch_m32(gsw, 0, 0x80000000, TRGMII_7623_base + 0x40);
-+	if (gsw->trgmii_force == 2000)
-+		mtk_switch_m32(gsw, 0, 0xC0000000, TRGMII_7623_base + 0x40);
-+	else
-+		mtk_switch_m32(gsw, 0, 0x80000000, TRGMII_7623_base + 0x40);
-+	mtk_switch_m32(gsw, 0xfffff0ff, 0, TRGMII_7623_base + 0x078);
-+	mtk_switch_m32(gsw, 0xfffff0ff, 0, TRGMII_7623_base + 0x50);
-+	mtk_switch_m32(gsw, 0xfffff0ff, 0, TRGMII_7623_base + 0x58);
-+	mtk_switch_m32(gsw, 0xfffff0ff, 0, TRGMII_7623_base + 0x60);
-+	mtk_switch_m32(gsw, 0xfffff0ff, 0, TRGMII_7623_base + 0x68);
-+	mtk_switch_m32(gsw, 0xfffff0ff, 0, TRGMII_7623_base + 0x70);
-+	mtk_switch_m32(gsw, 0x00000800, 0, TRGMII_7623_base + 0x78);
-+
-+	/* Adjust RXC delay in MT7530 */
++	/* pr_err("Enable Training Mode in MT7623\n"); */
++	/*Enable Training Mode in MT7623 */
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x40) | 0x80000000;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x40);
++	if (gsw->trgmii_force == 2000) {
++		val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x40) | 0xC0000000;
++		mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x40);
++	} else {
++		val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x40) | 0x80000000;
++		mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x40);
++	}
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x078) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x078);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x50) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x50);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x58) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x58);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x60) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x60);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x68) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x68);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x70) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x70);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x78) & 0x00000800;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x78);
 +	err_total_flag = 0;
++	/* pr_err("Adjust RXC delay in MT7530\n"); */
 +	read_data = 0x0;
 +	while (err_total_flag == 0 && (read_data != 0x68)) {
++		/* pr_err("2nd Enable EDGE CHK in MT7530\n"); */
 +		/* Enable EDGE CHK in MT7530 */
 +		for (i = 0; i < 5; i++) {
-+			mt7530_mdio_m32(gsw, 0x4fffffff, 0x40000000,
-+					TRGMII_7530_RD_0 + i * 8);
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			read_data |= 0x40000000;
++			read_data &= 0x4fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++					read_data);
 +			wait_loop(gsw);
-+
-+			/* 2nd Disable EDGE CHK in MT7530 */
-+			err_cnt[i] = mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			/* pr_err("2nd Disable EDGE CHK in MT7530\n"); */
++			err_cnt[i] =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			/* pr_err("***** MT7530 %dth bit ERR_CNT =%x\n",i, err_cnt[i]); */
++			/* pr_err("MT7530 %dth bit ERR_CNT =%x\n",i, err_cnt[i]); */
 +			err_cnt[i] >>= 8;
 +			err_cnt[i] &= 0x0000ff0f;
-+
 +			rd_wd = err_cnt[i] >> 8;
 +			rd_wd &= 0x000000ff;
-+
 +			err_cnt[i] &= 0x0000000f;
-+			if (err_cnt[i] != 0)
++			/* read_data = mt7530_mdio_r32(gsw,0x7a10,&read_data); */
++			if (err_cnt[i] != 0) {
 +				err_flag[i] = 1;
-+			else if (rd_wd != 0x55)
++			} else if (rd_wd != 0x55) {
 +				err_flag[i] = 1;
-+			else
++			} else {
 +				err_flag[i] = 0;
-+			if (i == 0)
++			}
++			if (i == 0) {
 +				err_total_flag = err_flag[i];
-+			else
++			} else {
 +				err_total_flag = err_flag[i] & err_total_flag;
-+
++			}
 +			/* Disable EDGE CHK in MT7530 */
-+			mt7530_mdio_m32(gsw, 0x4fffffff, 0x40000000,
-+					TRGMII_7530_RD_0 + i * 8);
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			read_data |= 0x40000000;
++			read_data &= 0x4fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++					read_data);
 +			wait_loop(gsw);
 +		}
-+
-+		/* Adjust RXC delay */
++		/*Adjust RXC delay */
 +		if (err_total_flag == 0) {
-+			/* Assert RX reset in MT7530 */
-+			mt7530_mdio_m32(gsw, 0, 0x80000000, TRGMII_7530_base);
++			read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
++			read_data |= 0x80000000;
++			mt7530_mdio_w32(gsw, TRGMII_7530_base, read_data);	/* Assert RX  reset in MT7530 */
 +
-+			/* RX clock gating in MT7530 */
-+			mt7530_mdio_m32(gsw, 0x3fffffff, 0, TRGMII_7530_base + 0x04);
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_base + 0x04);
++			read_data &= 0x3fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_base + 0x04, read_data);	/* RX clock gating in MT7530 */
 +
 +			read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
 +			tmp = read_data;
@@ -945,7 +984,9 @@ index 0000000..78c36c7
 +		}
 +		tap_b[i] = rd_tap;	/* - rxd_step_size; */
 +		pr_err("MT7530 %dth bit  Tap_b = %d\n", i, tap_b[i]);
++		/* Calculate RXD delay = (TAP_A + TAP_B)/2 */
 +		final_tap[i] = (tap_a[i] + tap_b[i]) / 2;	
++		/* pr_err("########****** MT7530 %dth bit Final Tap = %d\n", i, final_tap[i]); */
 +
 +		read_data = (read_data & 0xffffff80) | final_tap[i];
 +		mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8, read_data);
@@ -960,6 +1001,9 @@ index 0000000..78c36c7
 +
 +static void mt7530_trgmii_clock_setting(struct mt7620_gsw *gsw, u32 xtal_mode)
 +{
++
++	u32 regValue;
++
 +	/* TRGMII Clock */
 +	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
 +	_mtk_mdio_write(gsw->eth, 0, 14, 0x410);
@@ -1034,14 +1078,26 @@ index 0000000..78c36c7
 +	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
 +	_mtk_mdio_write(gsw->eth, 0, 14, 0xa038);
 +
++//	udelay(120);		/* for MT7623 bring up test */
++
 +	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
 +	_mtk_mdio_write(gsw->eth, 0, 14, 0x410);
 +	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
 +	_mtk_mdio_write(gsw->eth, 0, 14, 0x3);
 +
-+	mt7530_mdio_m32(gsw, 0xfffffffc, 0x1, 0x7830);
-+	mt7530_mdio_m32(gsw, 0xcfffffff, 0, 0x7a40);
++	regValue = mt7530_mdio_r32(gsw, 0x7830);
++	regValue &= 0xFFFFFFFC;
++	regValue |= 0x00000001;
++	mt7530_mdio_w32(gsw, 0x7830, regValue);
++
++	regValue = mt7530_mdio_r32(gsw, 0x7a40);
++	regValue &= ~(0x1 << 30);
++	regValue &= ~(0x1 << 28);
++	mt7530_mdio_w32(gsw, 0x7a40, regValue);
++
 +	mt7530_mdio_w32(gsw, 0x7a78, 0x55);
++//	udelay(100);		/* for mt7623 bring up test */
++
 +	mtk_switch_m32(gsw, 0x7fffffff, 0, 0x300);
 +
 +	trgmii_calibration_7623(gsw);
@@ -1050,20 +1106,21 @@ index 0000000..78c36c7
 +	mtk_switch_m32(gsw, 0, 0x80000000, 0x300);
 +	mtk_switch_m32(gsw, 0, 0x7fffffff, 0x300);
 +
-+	/* MT7530 RXC reset */
-+	mt7530_mdio_m32(gsw, 0, BIT(31), 0x7a00);
++	/*MT7530 RXC reset */
++	regValue = mt7530_mdio_r32(gsw, 0x7a00);
++	regValue |= (0x1 << 31);
++	mt7530_mdio_w32(gsw, 0x7a00, regValue);
 +	mdelay(1);
-+
-+	mt7530_mdio_m32(gsw, ~BIT(31), 0, 0x7a00);
++	regValue &= ~(0x1 << 31);
++	mt7530_mdio_w32(gsw, 0x7a00, regValue);
 +	mdelay(100);
 +}
 +
-+static void mt7623_hw_init(struct mtk_eth *eth, struct mt7620_gsw *gsw,
-+			   struct device_node *np)
++static void mt7623_hw_init(struct mtk_eth *eth, struct mt7620_gsw *gsw, struct device_node *np)
 +{
-+	u32 i;
-+	u32 val;
-+	u32 xtal_mode;
++       u32     i;
++       u32     val;
++       u32     xtal_mode;
 +
 +	regmap_update_bits(gsw->ethsys, ETHSYS_CLKCFG0,
 +			   ETHSYS_TRGMII_CLK_SEL362_5,
@@ -1074,8 +1131,7 @@ index 0000000..78c36c7
 +	mtk_switch_m32(gsw, 0, TRGMII_RCK_CTRL_RX_RST, GSW_TRGMII_RCK_CTRL);
 +
 +	/* Hardware reset Switch */
-+	//device_reset(eth->dev);
-+	printk("%s:%s[%d]reset_switch\n", __FILE__, __func__, __LINE__);
++	device_reset(eth->dev);
 +
 +	/* Wait for Switch Reset Completed*/
 +	for (i = 0; i < 100; i++) {
@@ -1118,10 +1174,16 @@ index 0000000..78c36c7
 +	val |= MHWTRAP_MANUAL;
 +	mt7530_mdio_w32(gsw, MT7530_MHWTRAP, val);
 +
-+	xtal_mode = mt7530_mdio_r32(gsw, MT7530_HWTRAP);
-+	xtal_mode >>= HWTRAP_XTAL_SHIFT;
-+	xtal_mode &= HWTRAP_XTAL_MASK;
-+	if (xtal_mode == MT7623_XTAL_40) {
++	val = mt7530_mdio_r32(gsw, 0x7800);
++	val = (val >> 9) & 0x3;
++	pr_err("!!%s: Mhz value= %d\n", __func__, val);
++	if (val == 0x3) {
++		xtal_mode = 1;
++		/* 25Mhz Xtal - do nothing */
++	} else if (val == 0x2) {
++		/* 40Mhz */
++		xtal_mode = 2;
++
 +		/* disable MT7530 core clock */
 +		_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
 +		_mtk_mdio_write(gsw->eth, 0, 14, 0x410);
@@ -1152,38 +1214,58 @@ index 0000000..78c36c7
 +		_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
 +		_mtk_mdio_write(gsw->eth, 0, 14, 0x410);
 +		_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	} else {
++		xtal_mode = 3;
++		/* 20Mhz Xtal - TODO */
 +	}
 +
 +	/* RGMII */
 +	_mtk_mdio_write(gsw->eth, 0, 14, 0x1);
 +
 +	/* set MT7530 central align */
-+	mt7530_mdio_m32(gsw, ~BIT(0), BIT(1), MT7530_P6ECR);
-+	mt7530_mdio_m32(gsw, ~BIT(30), 0, MT7530_TRGMII_TXCTRL);
-+	mt7530_mdio_w32(gsw, MT7530_TRGMII_TCK_CTRL, 0x855);
++	val = mt7530_mdio_r32(gsw, 0x7830);
++	val &= ~1;
++	val |= 1<<1;
++	mt7530_mdio_w32(gsw, 0x7830, val);
++
++	val = mt7530_mdio_r32(gsw, 0x7a40);
++	val &= ~(1<<30);
++	mt7530_mdio_w32(gsw, 0x7a40, val);
++
++	mt7530_mdio_w32(gsw, 0x7a78, 0x855);
 +
 +	/* delay setting for 10/1000M */
-+	mt7530_mdio_w32(gsw, MT7530_P5RGMIIRXCR, 0x104);
-+	mt7530_mdio_w32(gsw, MT7530_P5RGMIITXCR, 0x10);
++	mt7530_mdio_w32(gsw, 0x7b00, 0x104);
++	mt7530_mdio_w32(gsw, 0x7b04, 0x10);
 +
 +	/* lower Tx Driving */
-+	mt7530_mdio_w32(gsw, MT7530_TRGMII_TD0_ODT, 0x88);
-+	mt7530_mdio_w32(gsw, MT7530_TRGMII_TD1_ODT, 0x88);
-+	mt7530_mdio_w32(gsw, MT7530_TRGMII_TD2_ODT, 0x88);
-+	mt7530_mdio_w32(gsw, MT7530_TRGMII_TD3_ODT, 0x88);
-+	mt7530_mdio_w32(gsw, MT7530_TRGMII_TD4_ODT, 0x88);
-+	mt7530_mdio_w32(gsw, MT7530_TRGMII_TD5_ODT, 0x88);
-+	mt7530_mdio_w32(gsw, MT7530_IO_DRV_CR, 0x11);
++	mt7530_mdio_w32(gsw, 0x7a54, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a5c, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a64, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a6c, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a74, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a7c, 0x88);
++	mt7530_mdio_w32(gsw, 0x7810, 0x11);
 +
 +	/* Set MT7623/MT7683 TX Driving */
-+	mtk_switch_w32(gsw, 0x88, GSW_TRGMII_TD0_ODT);
-+	mtk_switch_w32(gsw, 0x88, GSW_TRGMII_TD0_ODT);
-+	mtk_switch_w32(gsw, 0x88, GSW_TRGMII_TD0_ODT);
-+	mtk_switch_w32(gsw, 0x88, GSW_TRGMII_TD0_ODT);
-+	mtk_switch_w32(gsw, 0x88, GSW_TRGMII_TXCTL_ODT);
-+	mtk_switch_w32(gsw, 0x88, GSW_TRGMII_TCK_ODT);
++	mtk_switch_w32(gsw, 0x88, 0x354);
++	mtk_switch_w32(gsw, 0x88, 0x35c);
++	mtk_switch_w32(gsw, 0x88, 0x364);
++	mtk_switch_w32(gsw, 0x88, 0x36c);
++	mtk_switch_w32(gsw, 0x88, 0x374);
++	mtk_switch_w32(gsw, 0x88, 0x37c);
 +
-+//	mt7530_trgmii_clock_setting(gsw, xtal_mode);
++#if defined (CONFIG_GE2_RGMII_AN)
++//        *(volatile u_long *)(0xf0005f00) = 0xe00; //Set GE2 driving and slew rate
++#else
++  //      *(volatile u_long *)(0xf0005f00) = 0xa00; //Set GE2 driving and slew rate
++#endif
++    //   *(volatile u_long *)(0xf00054c0) = 0x5;   //set GE2 TDSEL
++  //      *(volatile u_long *)(0xf0005ed0) = 0;     //set GE2 TUNE
++
++	mt7530_trgmii_clock_setting(gsw, xtal_mode);
++
++	//LANWANPartition(gsw);
 +
 +	/* disable EEE */
 +	for (i = 0; i <= 4; i++) {
@@ -1217,7 +1299,7 @@ index 0000000..78c36c7
 +		/* Disable HW auto downshift*/
 +		_mtk_mdio_write(gsw->eth, i, 31, 0x1);
 +		val = _mtk_mdio_read(gsw->eth, i, 0x14);
-+		val &= ~BIT(4);
++		val &= ~(1<<4);
 +		_mtk_mdio_write(gsw->eth, i, 0x14, val);
 +	}
 +
@@ -1253,14 +1335,14 @@ index 0000000..78c36c7
 +	gsw = platform_get_drvdata(pdev);
 +	if (!gsw)
 +		return -ENODEV;
-+	eth->sw_priv = gsw;
 +	gsw->eth = eth;
++	eth->sw_priv = gsw;
 +
 +	mt7623_hw_init(eth, gsw, np);
 +
 +	request_threaded_irq(gsw->irq, gsw_interrupt_mt7623, NULL, 0,
-+			     "gsw", eth);
-+	mt7530_mdio_w32(gsw, MT7530_SYS_INT_EN, 0x1f);
++			    "gsw", eth);
++	mt7530_mdio_w32(gsw, 0x7008, 0x1f);
 +
 +	return 0;
 +}
@@ -1278,6 +1360,7 @@ index 0000000..78c36c7
 +		return -ENOMEM;
 +
 +	gsw->dev = &pdev->dev;
++	gsw->trgmii_force = 2000;
 +	gsw->irq = irq_of_parse_and_map(np, 0);
 +	if (gsw->irq < 0)
 +		return -EINVAL;
@@ -1303,6 +1386,7 @@ index 0000000..78c36c7
 +		return ret;
 +
 +	gsw->clk_trgpll = devm_clk_get(&pdev->dev, "trgpll");
++
 +	if (IS_ERR(gsw->clk_trgpll))
 +		return -ENODEV;
 +
@@ -1330,6 +1414,13 @@ index 0000000..78c36c7
 +	gpio_set_value(reset_pin, 1);
 +	mdelay(100);
 +
++	/* Set GE2 driving and slew rate */
++	regmap_write(gsw->pctl, 0xF00, 0xa00);
++	/* set GE2 TDSEL */
++	regmap_write(gsw->pctl, 0x4C0, 0x5);
++	/* set GE2 TUNE */
++	regmap_write(gsw->pctl, 0xED0, 0x0);
++
 +	platform_set_drvdata(pdev, gsw);
 +
 +	return 0;
@@ -1342,7 +1433,7 @@ index 0000000..78c36c7
 +	clk_disable_unprepare(gsw->clk_trgpll);
 +
 +	pm_runtime_put_sync(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
++        pm_runtime_disable(&pdev->dev);
 +
 +	platform_set_drvdata(pdev, NULL);
 +
@@ -2205,7 +2296,7 @@ index 0000000..1fc8c62
 +
 +#endif
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index ba3afa5..62058a2 100644
+index 7f2126b..dd7f6e3 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -24,6 +24,9 @@
@@ -2227,51 +2318,37 @@ index ba3afa5..62058a2 100644
  	}
  
  	dev_err(eth->dev, "mdio: MDIO timeout\n");
-@@ -132,36 +135,20 @@ static int mtk_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
- 
- static void mtk_phy_link_adjust(struct net_device *dev)
- {
-+	return;
-+
- 	struct mtk_mac *mac = netdev_priv(dev);
- 	u32 mcr = MAC_MCR_MAX_RX_1536 | MAC_MCR_IPG_CFG |
- 		  MAC_MCR_FORCE_MODE | MAC_MCR_TX_EN |
+@@ -138,6 +141,15 @@ static void mtk_phy_link_adjust(struct net_device *dev)
  		  MAC_MCR_RX_EN | MAC_MCR_BACKOFF_EN |
  		  MAC_MCR_BACKPR_EN;
  
--	switch (mac->phy_dev->speed) {
--	case SPEED_1000:
--		mcr |= MAC_MCR_SPEED_1000;
--		break;
--	case SPEED_100:
--		mcr |= MAC_MCR_SPEED_100;
--		break;
--	};
--
--	if (mac->phy_dev->link)
--		mcr |= MAC_MCR_FORCE_LINK;
--
--	if (mac->phy_dev->duplex)
--		mcr |= MAC_MCR_FORCE_DPX;
--
--	if (mac->phy_dev->pause)
--		mcr |= MAC_MCR_FORCE_RX_FC | MAC_MCR_FORCE_TX_FC;
--
-+	mcr |= MAC_MCR_SPEED_1000;
-+	mcr |= MAC_MCR_FORCE_LINK;
-+	mcr |= MAC_MCR_FORCE_DPX;
-+	mcr |= MAC_MCR_FORCE_RX_FC | MAC_MCR_FORCE_TX_FC;
++	if (!mac->id) {
++		mcr |= MAC_MCR_SPEED_1000;
++		mcr |= MAC_MCR_FORCE_LINK;
++		mcr |= MAC_MCR_FORCE_DPX;
++		mcr |= MAC_MCR_FORCE_RX_FC | MAC_MCR_FORCE_TX_FC;
++		mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
++		return;
++	}
++
+ 	switch (mac->phy_dev->speed) {
+ 	case SPEED_1000:
+ 		mcr |= MAC_MCR_SPEED_1000;
+@@ -157,11 +169,12 @@ static void mtk_phy_link_adjust(struct net_device *dev)
+ 		mcr |= MAC_MCR_FORCE_RX_FC | MAC_MCR_FORCE_TX_FC;
+ 
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
 -
--	if (mac->phy_dev->link)
--		netif_carrier_on(dev);
--	else
--		netif_carrier_off(dev);
+ 	if (mac->phy_dev->link)
+ 		netif_carrier_on(dev);
+ 	else
+ 		netif_carrier_off(dev);
++
 +	return;
  }
  
  static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
-@@ -193,7 +180,7 @@ static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
+@@ -193,7 +206,7 @@ static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
  
  	dev_info(eth->dev,
  		 "connected mac %d to PHY at %s [uid=%08x, driver=%s]\n",
@@ -2280,7 +2357,7 @@ index ba3afa5..62058a2 100644
  		 phydev->drv->name);
  
  	mac->phy_dev = phydev;
-@@ -634,7 +621,6 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+@@ -634,7 +647,6 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
  
  	spin_unlock_irqrestore(&eth->page_lock, flags);
  
@@ -2288,7 +2365,7 @@ index ba3afa5..62058a2 100644
  	skb_tx_timestamp(skb);
  
  	ring->next_free = mtk_qdma_phys_to_virt(ring, txd->txd2);
-@@ -882,7 +868,6 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -884,7 +896,6 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
  	for (i = 0; i < MTK_MAC_COUNT; i++) {
  		if (!eth->netdev[i] || !done[i])
  			continue;
@@ -2296,7 +2373,7 @@ index ba3afa5..62058a2 100644
  		total += done[i];
  	}
  
-@@ -1249,6 +1234,8 @@ static int mtk_open(struct net_device *dev)
+@@ -1251,6 +1262,8 @@ static int mtk_open(struct net_device *dev)
  	phy_start(mac->phy_dev);
  	netif_start_queue(dev);
  
@@ -2305,7 +2382,7 @@ index ba3afa5..62058a2 100644
  	return 0;
  }
  
-@@ -1281,6 +1268,7 @@ static int mtk_stop(struct net_device *dev)
+@@ -1283,6 +1296,7 @@ static int mtk_stop(struct net_device *dev)
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
  
@@ -2313,7 +2390,7 @@ index ba3afa5..62058a2 100644
  	netif_tx_disable(dev);
  	phy_stop(mac->phy_dev);
  
-@@ -1326,6 +1314,7 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1328,6 +1342,7 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
  
@@ -2321,7 +2398,7 @@ index ba3afa5..62058a2 100644
  	err = devm_request_irq(eth->dev, eth->irq, mtk_handle_irq, 0,
  			       dev_name(eth->dev), eth);
  	if (err)
-@@ -1358,6 +1347,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1360,6 +1375,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
  		mtk_w32(eth, val, MTK_GDMA_FWD_CFG(i));
  	}
  
@@ -2330,7 +2407,7 @@ index ba3afa5..62058a2 100644
  	return 0;
  }
  
-@@ -1464,11 +1455,13 @@ static int mtk_set_settings(struct net_device *dev,
+@@ -1466,11 +1483,13 @@ static int mtk_set_settings(struct net_device *dev,
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  
@@ -2348,7 +2425,7 @@ index ba3afa5..62058a2 100644
  	}
  
  	return phy_ethtool_sset(mac->phy_dev, cmd);
-@@ -1561,7 +1554,6 @@ static void mtk_get_ethtool_stats(struct net_device *dev,
+@@ -1563,7 +1582,6 @@ static void mtk_get_ethtool_stats(struct net_device *dev,
  		data_src = (u64*)hwstats;
  		data_dst = data;
  		start = u64_stats_fetch_begin_irq(&hwstats->syncp);
@@ -2356,7 +2433,7 @@ index ba3afa5..62058a2 100644
  		for (i = 0; i < ARRAY_SIZE(mtk_ethtool_stats); i++)
  			*data_dst++ = *(data_src + mtk_ethtool_stats[i].offset);
  	} while (u64_stats_fetch_retry_irq(&hwstats->syncp, start));
-@@ -1733,6 +1725,9 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1734,6 +1752,9 @@ static int mtk_probe(struct platform_device *pdev)
  	clk_prepare_enable(eth->clk_gp1);
  	clk_prepare_enable(eth->clk_gp2);
  
@@ -2387,23 +2464,6 @@ index 48a5292..d737d61 100644
 +int mt7623_gsw_config(struct mtk_eth *eth);
 +
  #endif /* MTK_ETH_H */
-diff --git a/lib/dynamic_queue_limits.c b/lib/dynamic_queue_limits.c
-index f346715..b04f8e6 100644
---- a/lib/dynamic_queue_limits.c
-+++ b/lib/dynamic_queue_limits.c
-@@ -23,8 +23,10 @@ void dql_completed(struct dql *dql, unsigned int count)
- 	num_queued = ACCESS_ONCE(dql->num_queued);
- 
- 	/* Can't complete more than what's in queue */
--	BUG_ON(count > num_queued - dql->num_completed);
--
-+	if (count > num_queued - dql->num_completed) {
-+		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		count = 0;
-+	}
- 	completed = dql->num_completed + count;
- 	limit = dql->limit;
- 	ovlimit = POSDIFF(num_queued - dql->num_completed, limit);
 -- 
 1.7.10.4
 

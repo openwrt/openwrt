@@ -1,0 +1,29 @@
+From a2559aaca7c4a9b80699147390efda51df20ac96 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Tue, 15 Mar 2016 10:19:04 +0300
+Subject: [PATCH 53/66] net: mediatek: unlock on error in mtk_tx_map()
+
+There was a missing unlock on the error path.
+
+Fixes: 656e705243fd ('net-next: mediatek: add support for MT7623 ethernet')
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index 9759fe5..c2c2e206 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -661,6 +661,8 @@ err_dma:
+ 		itxd = mtk_qdma_phys_to_virt(ring, itxd->txd2);
+ 	} while (itxd != txd);
+ 
++	spin_unlock_irqrestore(&eth->page_lock, flags);
++
+ 	return -ENOMEM;
+ }
+ 
+-- 
+1.7.10.4
+
