@@ -1,12 +1,13 @@
-From 5b51a1e93ccaaec4cd90b73ee20cea219af2f151 Mon Sep 17 00:00:00 2001
+From 2ff725af8a512481d68ebd7f8ad122b1c98f3fad Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 6 Jan 2016 21:55:10 +0100
-Subject: [PATCH 24/53] dt-bindings: add MediaTek PCIe binding documentation
+Subject: [PATCH 24/66] dt-bindings: add MediaTek PCIe binding documentation
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  .../devicetree/bindings/pci/mediatek-pcie.txt      |  140 ++++++++++++++++++++
- 1 file changed, 140 insertions(+)
+ arch/arm/boot/dts/mt7623.dtsi                      |   12 ++
+ 2 files changed, 152 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/pci/mediatek-pcie.txt
 
 diff --git a/Documentation/devicetree/bindings/pci/mediatek-pcie.txt b/Documentation/devicetree/bindings/pci/mediatek-pcie.txt
@@ -155,6 +156,29 @@ index 0000000..8fea3ed
 +			status = "okay";
 +		};
 +	};
+diff --git a/arch/arm/boot/dts/mt7623.dtsi b/arch/arm/boot/dts/mt7623.dtsi
+index 1ba7790..ec19283 100644
+--- a/arch/arm/boot/dts/mt7623.dtsi
++++ b/arch/arm/boot/dts/mt7623.dtsi
+@@ -291,6 +291,18 @@
+ 		status = "disabled";
+ 	};
+ 
++	nand: nfi@1100d000 {
++		compatible = "mediatek,mt2701-nfc";
++		reg = <0 0x1100d000 0 0x1000>, <0 0x1100e000 0 0x1000>;
++		interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL_LOW>,
++			     <GIC_SPI 55 IRQ_TYPE_LEVEL_LOW>;
++		clocks = <&pericfg CLK_PERI_NFI>, <&pericfg CLK_PERI_NFI_ECC>,
++			 <&pericfg CLK_PERI_NFI_PAD>;
++		clock-names = "nfi_clk", "nfiecc_clk", "pad_clk";
++		nand-on-flash-bbt;
++		status = "disabled";
++	};
++
+ 	mmc0: mmc@11230000 {
+ 		compatible = "mediatek,mt7623-mmc",
+ 			     "mediatek,mt8135-mmc";
 -- 
 1.7.10.4
 

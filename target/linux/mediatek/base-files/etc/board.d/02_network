@@ -11,9 +11,9 @@ mediatek_setup_interfaces()
 
 	case $board in
 	mt7623_evb)
-		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth1" "6@eth0"
+			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0" "5@eth1"
 		;;
 	esac
 }

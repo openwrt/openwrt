@@ -1,0 +1,35 @@
+From 179937ef20beb9d4af4807f3540d4dfc4d48516a Mon Sep 17 00:00:00 2001
+From: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Date: Mon, 16 Nov 2015 14:37:35 +0100
+Subject: [PATCH 59/66] mtd: nand: add an mtd_to_nand() helper
+
+Some drivers are retrieving the nand_chip pointer using the container_of
+macro on a struct wrapping both the nand_chip and the mtd_info struct while
+the standard way of retrieving this pointer is through mtd->priv.
+Provide an helper to do that.
+
+Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ include/linux/mtd/nand.h |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 5a9d1d4..a4839b3 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -719,6 +719,11 @@ struct nand_chip {
+ 	void *priv;
+ };
+ 
++static inline struct nand_chip *mtd_to_nand(struct mtd_info *mtd)
++{
++	return mtd->priv;
++}
++
+ /*
+  * NAND Flash Manufacturer ID Codes
+  */
+-- 
+1.7.10.4
+

@@ -1,0 +1,31 @@
+From a160c7846e1f81b5cd6c5d0fbe5c1f8757e8884b Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 22 Mar 2016 04:42:27 +0100
+Subject: [PATCH 66/66] net-next: mediatek: mtk_cal_txd_req() returns bad
+ value
+
+The code used to also support the PDMA engine, which had 2 packet pointers
+per descriptor. Because of this we have to divide the result by 2 and round
+it up. This is no longer needed as the code only supports QDMA.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index dd7f6e3..da9968ae 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -693,7 +693,7 @@ static inline int mtk_cal_txd_req(struct sk_buff *skb)
+ 		nfrags += skb_shinfo(skb)->nr_frags;
+ 	}
+ 
+-	return DIV_ROUND_UP(nfrags, 2);
++	return nfrags;
+ }
+ 
+ static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
+-- 
+1.7.10.4
+

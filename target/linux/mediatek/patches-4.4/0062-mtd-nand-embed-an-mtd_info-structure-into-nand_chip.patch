@@ -1,0 +1,42 @@
+From 088bf341472e8da8595d49f15af9becf3a4b52e7 Mon Sep 17 00:00:00 2001
+From: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Date: Tue, 1 Dec 2015 12:03:06 +0100
+Subject: [PATCH 62/66] mtd: nand: embed an mtd_info structure into nand_chip
+
+Currently all NAND controller drivers are providing both the mtd_info and
+nand_chip struct and then let the NAND subsystem to initialize a few
+things before registering the mtd instance to the MTD layer.
+Embed an mtd_info field into nand_chip to add some consistency to all NAND
+controller drivers.
+This change will also help factorizing boilerplate code copied in all NAND
+drivers.
+
+Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ include/linux/mtd/nand.h |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 345f864..1ded588 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -540,6 +540,7 @@ struct nand_buffers {
+ 
+ /**
+  * struct nand_chip - NAND Private Flash Chip Data
++ * @mtd:		MTD device registered to the MTD framework
+  * @IO_ADDR_R:		[BOARDSPECIFIC] address to read the 8 I/O lines of the
+  *			flash device
+  * @IO_ADDR_W:		[BOARDSPECIFIC] address to write the 8 I/O lines of the
+@@ -640,6 +641,7 @@ struct nand_buffers {
+  */
+ 
+ struct nand_chip {
++	struct mtd_info mtd;
+ 	void __iomem *IO_ADDR_R;
+ 	void __iomem *IO_ADDR_W;
+ 
+-- 
+1.7.10.4
+
