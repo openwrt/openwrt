@@ -32,13 +32,13 @@ define Image/boot-imgs
 
 	# create FIT image with rootfs
 	./mkits.sh \
-		-D $(1) -o $(KDIR)/fit-$(1).its -k $(KDIR)/zImage \
+		-D $(DEVICE_LC) -o $(KDIR)/fit-$(DEVICE_LC).its -k $(KDIR)/zImage \
 		-d $(BIN_DIR)/$(IMG_PREFIX)-system.dtb \
 		-C none -a $(KERNEL_LOADADDR) -e $(KERNEL_ENTRY_POINT) \
 		-A $(ARCH) -v $(LINUX_VERSION) \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz -z gzip
-	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/fit-$(1).its $(KDIR)/fit-$(1).itb
-	$(CP) $(KDIR)/fit-$(1).itb $(BIN_DIR)/$(IMG_PREFIX)-fit.itb
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/fit-$(DEVICE_LC).its $(KDIR)/fit-$(DEVICE_LC).itb
+	$(CP) $(KDIR)/fit-$(DEVICE_LC).itb $(BIN_DIR)/$(IMG_PREFIX)-fit.itb
 	ln -fs $(IMG_PREFIX)-fit.itb $(BIN_DIR)/fit.itb
 
 endef
@@ -57,19 +57,23 @@ define Device/Default
 	DEVICE_DTS :=
 	PROFILE_SANITIZED :=
 endef
-
 DEVICE_VARS += DEVICE_DTS
+
+define Device/DefaultConfig
+	DEVICE_LC = $(1)
+	IMG_PREFIX = zynq-$(1)
+	DEVICE_DTS = zynq-$(1)
+endef
 
 ### ZC702 ###
 define Device/ZC702
-	DEVICE_DTS := zynq-zc702
+	$(call Device/DefaultConfig,zc702)
 endef
 
-Image/boot-imgs/ZC702=$(call Image/boot-imgs,zc702)
 
 define Image/BuildKernel
 	$(eval $(call Device/$(PROFILE)))
-	$(call Image/boot-imgs/$(PROFILE))
+	$(call Image/boot-imgs)
 endef
 
 $(eval $(call BuildImage))
