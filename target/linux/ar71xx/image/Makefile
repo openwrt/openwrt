@@ -73,6 +73,18 @@ define Build/mktplinkfw-initramfs
 	@mv $@.new $@
 endef
 
+define Build/tplink-safeloader
+       -$(STAGING_DIR_HOST)/bin/tplink-safeloader \
+               -B $(TPLINK_BOARD_NAME) \
+               -V $(REVISION) \
+               -k $(word 1,$^) \
+               -r $@ \
+               -o $@.new \
+               $2 \
+               -j \
+               $(if $(findstring sysupgrade,$1),-S) && mv $@.new $@ || rm -f $@
+endef
+
 define Build/loader-common
 	rm -rf $@.src
 	$(MAKE) -C lzma-loader \
@@ -107,7 +119,7 @@ define Build/copy-file
 	cat "$(1)" > "$@"
 endef
 
-DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION
+DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION TPLINK_BOARD_NAME
 
 # UBNT_BOARD e.g. one of (XS2, XS5, RS, XM)
 # UBNT_TYPE e.g. one of (BZ, XM, XW)
@@ -314,6 +326,19 @@ $(Device/tplink)
   TPLINK_FLASHLAYOUT := 16Mlzma
   IMAGE_SIZE := 15872k
 endef
+
+define Device/cpe210-220-510-520
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),6144k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
+  IMAGE_SIZE := 7680k
+  BOARDNAME := CPE510
+  TPLINK_BOARD_NAME := CPE510
+  LOADER_TYPE := elf
+  KERNEL := kernel-bin | patch-cmdline | lzma | loader-kernel
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+TARGET_DEVICES += cpe210-220-510-520
 
 define Device/tl-wdr4300-v1
 $(Device/tplink-8mlzma)
@@ -1513,28 +1538,6 @@ define Image/BuildLoader
 endef
 
 #
-# Embed patched lzma-compressed kernel inside lzma-loader.
-#
-# Specifying the command line via the lzma-loader doesn't work with some
-# models (like the TP-LINK CPE series), so this version first patches the
-# command line in the image and then builds the loader around it.
-#
-# $(1), suffix of output filename, e.g. generic, lowercase board name, etc.
-# $(2), suffix of target file to build, e.g. bin, gz, elf
-# $(3), kernel command line to pass from lzma-loader to kernel
-# $(4), unused here
-# $(5), suffix of kernel filename, e.g. -initramfs, or empty
-define Image/BuildLoaderPatched
-	$(call PatchKernelLzma,$(1),$(3))
-	-rm -rf $(KDIR)/lzma-loader
-	$(LOADER_MAKE) LOADER=loader-$(1).$(2) \
-		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
-		LOADER_DATA="$(KDIR_TMP)/vmlinux-$(1)$(5).bin.lzma" BOARD="$(1)" \
-		compile loader.$(2)
-	-$(CP) $(KDIR)/loader-$(1).$(2) $(KDIR)/loader-$(1)$(5).$(2)
-endef
-
-#
 # Build lzma-loader alone which will search for lzma-compressed kernel identified by
 # uImage header with magic "OKLI" at boot time.
 #
@@ -1583,7 +1586,6 @@ cameo_ap123_mtdlayout_4M=mtdparts=spi0.0:64k(u-boot)ro,64k(nvram)ro,3712k(firmwa
 cameo_db120_mtdlayout=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,15936k(firmware),192k(lang)ro,64k(mac)ro,64k(art)ro
 cameo_db120_mtdlayout_8M=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,7872k(firmware),128k(lang)ro,64k(art)ro
 cap4200ag_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe),64k(art),13632k@0xa0000(firmware)
-cpe510_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),6144k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
 eap300v2_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),320k(custom),13632k(firmware),2048k(failsafe),64k(art)ro
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 dgl_5500_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,15296k(firmware),192k(lang)ro,512k(my-dlink)ro,64k(mac)ro,64k(art)ro
@@ -2041,28 +2043,6 @@ define Image/Build/Senao
 		$(call sysupname,$(1),$(2))
 endef
 
-Image/Build/TPLINK-SAFELOADER/loader = $(call Image/BuildLoaderPatched,$(1),elf,$(2) $(3))
-
-define Image/Build/TPLINK-SAFELOADER
-	[ -e "$(KDIR)/loader-$(2).elf" ]
-
-	-$(STAGING_DIR_HOST)/bin/tplink-safeloader \
-		-B $(5) \
-		-k $(KDIR)/loader-$(2).elf \
-		-r $(KDIR)/root.$(1) \
-		-V $(REVISION) \
-		-j \
-		-o $(call factoryname,$(1),$(2))
-	-$(STAGING_DIR_HOST)/bin/tplink-safeloader \
-		-B $(5) \
-		-k $(KDIR)/loader-$(2).elf \
-		-r $(KDIR)/root.$(1) \
-		-V $(REVISION) \
-		-j -S \
-		-o $(call sysupname,$(1),$(2))
-endef
-
-
 define Image/Build/CyberTAN
 	echo -n '' > $(KDIR_TMP)/empty.bin
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp \
@@ -2502,8 +2482,6 @@ $(eval $(call SingleProfile,Seama,64k,MYNETN750,mynet-n750,MYNET-N750,ttyS0,1152
 $(eval $(call SingleProfile,Seama,64k,QIHOO360,qihoo-c301,QIHOO-C301,ttyS0,115200,$$(qihoo_c301_mtdlayout),wrgac26_qihoo360_360rg,65536,16121856))
 
 $(eval $(call SingleProfile,Senao,squashfs-only,EAP300V2,eap300v2,EAP300V2,ttyS0,115200,$$(eap300v2_mtdlayout)))
-
-$(eval $(call SingleProfile,TPLINK-SAFELOADER,64kraw,CPE510,cpe210-220-510-520,CPE510,ttyS0,115200,$$(cpe510_mtdlayout),CPE510))
 
 $(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRG301N,whr-g301n,WHR-G301N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-G301N))
 $(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRHPG300N,whr-hp-g300n,WHR-HP-G300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-G300N))
