@@ -149,7 +149,7 @@
 +
 +	ath79_register_wmac(art + AP136_WMAC_CALDATA_OFFSET, NULL);
 +
-+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0, 0);
++	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
  
 -static int ap136_pci_plat_dev_init(struct pci_dev *dev)
 +	ath79_register_mdio(0, 0x0);

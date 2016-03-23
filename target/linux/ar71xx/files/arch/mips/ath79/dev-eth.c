@@ -830,9 +830,7 @@ void __init ath79_setup_ar934x_eth_rx_delay(unsigned int rxd,
 	iounmap(base);
 }
 
-void __init ath79_setup_qca955x_eth_cfg(u32 mask,
-					unsigned int rxd, unsigned int rxdv,
-					unsigned int txd, unsigned int txe)
+void __init ath79_setup_qca955x_eth_cfg(u32 mask)
 {
 	void __iomem *base;
 	u32 t, m;
@@ -847,10 +845,6 @@ void __init ath79_setup_qca955x_eth_cfg(u32 mask,
 	    QCA955X_ETH_CFG_RMII_GE0 |
 	    QCA955X_ETH_CFG_MII_CNTL_SPEED |
 	    QCA955X_ETH_CFG_RMII_GE0_MASTER;
-	m |= QCA955X_ETH_CFG_RXD_DELAY_MASK << QCA955X_ETH_CFG_RXD_DELAY_SHIFT;
-	m |= QCA955X_ETH_CFG_RDV_DELAY_MASK << QCA955X_ETH_CFG_RDV_DELAY_SHIFT;
-	m |= QCA955X_ETH_CFG_TXD_DELAY_MASK << QCA955X_ETH_CFG_TXD_DELAY_SHIFT;
-	m |= QCA955X_ETH_CFG_TXE_DELAY_MASK << QCA955X_ETH_CFG_TXE_DELAY_SHIFT;
 
 	base = ioremap(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
 
@@ -858,10 +852,6 @@ void __init ath79_setup_qca955x_eth_cfg(u32 mask,
 
 	t &= ~m;
 	t |= mask;
-	t |= rxd << QCA955X_ETH_CFG_RXD_DELAY_SHIFT;
-	t |= rxdv << QCA955X_ETH_CFG_RDV_DELAY_SHIFT;
-	t |= txd << QCA955X_ETH_CFG_TXD_DELAY_SHIFT;
-	t |= txe << QCA955X_ETH_CFG_TXE_DELAY_SHIFT;
 
 	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
 

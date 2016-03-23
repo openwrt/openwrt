@@ -155,7 +155,7 @@ static void __init tew_823dru_setup(void)
 			ARRAY_SIZE(tew_823dru_mdio0_info));
 	ath79_register_mdio(0, 0x0);
 
-	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN, 3, 3, 0, 0);
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
 
 	/* GMAC0 is connected to the RMGII interface */
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
