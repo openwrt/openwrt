@@ -17,6 +17,18 @@ endef
 $(eval $(call Profile,ALFAAP96))
 
 
+define Profile/ALFAAP120C
+	NAME:=ALFA Network AP120C board
+	PACKAGES:=uboot-envtools
+endef
+
+define Profile/ALFAAP120C/Description
+	Package set optimized for the ALFA Network AP120C board.
+endef
+
+$(eval $(call Profile,ALFAAP120C))
+
+
 define Profile/HORNETUB
 	NAME:=ALFA Network Hornet-UB board (8MB flash, 32MB ram)
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev

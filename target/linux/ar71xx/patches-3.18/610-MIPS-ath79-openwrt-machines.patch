@@ -1,10 +1,11 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,22 +16,198 @@
+@@ -16,22 +16,199 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
 +	ATH79_MACH_ALFA_AP96,		/* ALFA Network AP96 board */
++	ATH79_MACH_ALFA_AP120C,		/* ALFA Network AP120C board */
 +	ATH79_MACH_ALFA_NX,		/* ALFA Network N2/N5 board */
 +	ATH79_MACH_ALL0258N,		/* Allnet ALL0258N */
 +	ATH79_MACH_ALL0305,		/* Allnet ALL0305 */
@@ -201,7 +202,7 @@
  #endif /* _ATH79_MACHTYPE_H */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -2,6 +2,70 @@ if ATH79
+@@ -2,6 +2,79 @@ if ATH79
  
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
  
@@ -212,6 +213,15 @@
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
++
++config ATH79_MACH_ALFA_AP120C
++	bool "ALFA Network AP120C board support"
++	select SOC_AR71XX
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_HORNET_UB
 +	bool "ALFA Network Hornet-UB board support"
@@ -272,7 +282,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -11,62 +75,1050 @@ config ATH79_MACH_AP121
+@@ -11,62 +84,1050 @@ config ATH79_MACH_AP121
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
@@ -1351,7 +1361,7 @@
  
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
-@@ -83,6 +1135,106 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +1144,106 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -1458,7 +1468,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -124,7 +1276,10 @@ config ATH79_DEV_DSA
+@@ -124,7 +1285,10 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -1470,7 +1480,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -154,6 +1309,11 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -154,6 +1318,11 @@ config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
  config ATH79_ROUTERBOOT
@@ -1484,11 +1494,12 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,127 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,128 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
 +obj-$(CONFIG_ATH79_MACH_ALFA_AP96)	+= mach-alfa-ap96.o
++obj-$(CONFIG_ATH79_MACH_ALFA_AP120C)	+= mach-alfa-ap120c.o
 +obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach-alfa-nx.o
 +obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
 +obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o
