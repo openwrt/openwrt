@@ -6,6 +6,14 @@ config ATH79_MACH_ALFA_AP96
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_USB
 
+config ATH79_MACH_ALFA_AP120C
+	bool "ALFA Network AP120C board support"
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_HORNET_UB
 	bool "ALFA Network Hornet-UB board support"
 	select SOC_AR933X
