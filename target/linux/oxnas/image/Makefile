@@ -8,6 +8,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+Default_UBIFS_OPTS = -m 2048 -e 126KiB -c 4096
 STG212_UBIFS_OPTS = -m 2048 -e 126KiB -c 4096
 KD20_UBIFS_OPTS = -m 2048 -e 126KiB -c 4096
 POGOPLUG_PRO_UBIFS_OPTS = -m 2048 -e 126KiB -c 4096
