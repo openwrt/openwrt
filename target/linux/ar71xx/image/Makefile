@@ -14,7 +14,7 @@ IMAGE_PROFILE:=$(if $(PROFILE),$(PROFILE),Default)
 
 KERNEL_LOADADDR = 0x80060000
 
-DEVICE_VARS += NETGEAR_KERNEL_MAGIC NETGEAR_BOARD_ID NETGEAR_HW_ID CMDLINE CONSOLE IMAGE_SIZE BOARDNAME LOADER_FLASH_OFFS
+DEVICE_VARS += NETGEAR_KERNEL_MAGIC NETGEAR_BOARD_ID NETGEAR_HW_ID CMDLINE CONSOLE IMAGE_SIZE BOARDNAME LOADER_FLASH_OFFS LOADER_TYPE
 
 define Build/netgear-squashfs
 	rm -rf $@.fs $@.squashfs
@@ -80,8 +80,8 @@ define Build/loader-common
 		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
 		KERNEL_CMDLINE="$(CMDLINE)" BOARD="$(BOARDNAME)" \
 		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
-		$(1) compile loader.gz
-	mv "$@.gz" "$@"
+		$(1) compile loader.$(LOADER_TYPE)
+	mv "$@.$(LOADER_TYPE)" "$@"
 	rm -rf $@.src
 endef
 
@@ -264,6 +264,7 @@ TARGET_DEVICES += wndr3700 wndr3700v2 wndr3800 wndr3800ch wndrmac wndrmacv2
 define Device/tplink
   TPLINK_HWREV := 0x1
   TPLINK_HEADER_VERSION := 1
+  LOADER_TYPE := gz
   KERNEL := kernel-bin | patch-cmdline | lzma
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | mktplinkfw-initramfs
   IMAGES := sysupgrade.bin factory.bin
