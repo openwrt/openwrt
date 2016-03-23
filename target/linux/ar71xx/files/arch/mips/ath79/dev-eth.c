@@ -833,24 +833,14 @@ void __init ath79_setup_ar934x_eth_rx_delay(unsigned int rxd,
 void __init ath79_setup_qca955x_eth_cfg(u32 mask)
 {
 	void __iomem *base;
-	u32 t, m;
-
-	m = QCA955X_ETH_CFG_RGMII_EN |
-	    QCA955X_ETH_CFG_MII_GE0 |
-	    QCA955X_ETH_CFG_GMII_GE0 |
-	    QCA955X_ETH_CFG_MII_GE0_MASTER |
-	    QCA955X_ETH_CFG_MII_GE0_SLAVE |
-	    QCA955X_ETH_CFG_GE0_ERR_EN |
-	    QCA955X_ETH_CFG_GE0_SGMII |
-	    QCA955X_ETH_CFG_RMII_GE0 |
-	    QCA955X_ETH_CFG_MII_CNTL_SPEED |
-	    QCA955X_ETH_CFG_RMII_GE0_MASTER;
+	u32 t;
 
 	base = ioremap(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
 
 	t = __raw_readl(base + QCA955X_GMAC_REG_ETH_CFG);
 
-	t &= ~m;
+	t &= ~(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII);
+
 	t |= mask;
 
 	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
