@@ -1,6 +1,14 @@
 --- a/arch/mips/ath79/gpio.c
 +++ b/arch/mips/ath79/gpio.c
-@@ -223,15 +223,30 @@ void __init ath79_gpio_output_select(uns
+@@ -186,6 +186,7 @@ static void __iomem *ath79_gpio_get_func
+ 		reg = AR71XX_GPIO_REG_FUNC;
+ 	else if (soc_is_ar934x() ||
+ 		 soc_is_qca953x() ||
++		 soc_is_qca955x() ||
+ 		 soc_is_qca956x() ||
+ 		 soc_is_tp9343())
+ 		reg = AR934X_GPIO_REG_FUNC;
+@@ -223,15 +224,30 @@ void __init ath79_gpio_output_select(uns
  {
  	void __iomem *base = ath79_gpio_base;
  	unsigned long flags;
