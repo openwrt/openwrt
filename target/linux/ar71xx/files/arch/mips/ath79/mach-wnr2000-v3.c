@@ -59,8 +59,26 @@
 #define WNR612V2_GPIO_WMAC_LED_WLAN_GREEN	1
 #define WNR612V2_GPIO_WMAC_BTN_RESET		7
 
-#define WNR1000V2_GPIO_LED_PWR_AMBER	1
-#define WNR1000V2_GPIO_LED_PWR_GREEN	11
+/* WNR1000v2 - connected through AR7240 */
+#define WNR1000V2_GPIO_LED_WAN_AMBER	0
+#define WNR1000V2_GPIO_LED_TEST_AMBER	1
+#define WNR1000V2_GPIO_LED_LAN1_AMBER	6 /* AR724X_GPIO_FUNC_JTAG_DISABLE */
+#define WNR1000V2_GPIO_LED_LAN2_AMBER	7 /* AR724X_GPIO_FUNC_JTAG_DISABLE */
+#define WNR1000V2_GPIO_LED_LAN3_AMBER	8 /* AR724X_GPIO_FUNC_JTAG_DISABLE */
+#define WNR1000V2_GPIO_LED_POWER_GREEN	11
+#define WNR1000V2_GPIO_LED_LAN4_AMBER	12
+#define WNR1000V2_GPIO_LED_LAN1_GREEN	13 /* AR724X_..._ETH_SWITCH_LED0 */
+#define WNR1000V2_GPIO_LED_LAN2_GREEN	14 /* AR724X_..._ETH_SWITCH_LED1 */
+#define WNR1000V2_GPIO_LED_LAN3_GREEN	15 /* AR724X_..._ETH_SWITCH_LED2 */
+#define WNR1000V2_GPIO_LED_LAN4_GREEN	16 /* AR724X_..._ETH_SWITCH_LED3 */
+#define WNR1000V2_GPIO_LED_WAN_GREEN	17 /* AR724X_..._ETH_SWITCH_LED4 */
+
+/* WNR1000v2 - connected through AR9285 */
+#define WNR1000V2_GPIO_WMAC_LED_WLAN_BLUE	1
+#define WNR1000V2_GPIO_WMAC_LED_WPS_GREEN	5
+#define WNR1000V2_GPIO_WMAC_BTN_WPS		6
+#define WNR1000V2_GPIO_WMAC_BTN_RESET		7
+#define WNR1000V2_GPIO_WMAC_BTN_RFKILL		8
 
 /* Connected through AR7240 */
 #define WPN824N_GPIO_LED_WAN_AMBER	0
@@ -155,6 +173,7 @@ static struct gpio_led wnr2000v3_wmac_leds_gpio[] = {
 	}
 };
 
+/* Blue WLAN LED for: WNR2000v3, WNR1000v2 */
 static const char *wnr2000v3_wmac_led_name = "netgear:blue:wlan";
 
 static struct gpio_led wnr612v2_leds_gpio[] __initdata = {
@@ -181,12 +200,60 @@ static const char *wnr612v2_wmac_led_name = "netgear:green:wlan";
 
 static struct gpio_led wnr1000v2_leds_gpio[] __initdata = {
 	{
-		.name		= "netgear:green:power",
-		.gpio		= WNR1000V2_GPIO_LED_PWR_GREEN,
+		.name		= "netgear:amber:lan1",
+		.gpio		= WNR1000V2_GPIO_LED_LAN1_AMBER,
 		.active_low	= 1,
 	}, {
-		.name		= "netgear:amber:power",
-		.gpio		= WNR1000V2_GPIO_LED_PWR_AMBER,
+		.name		= "netgear:amber:lan2",
+		.gpio		= WNR1000V2_GPIO_LED_LAN2_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:amber:lan3",
+		.gpio		= WNR1000V2_GPIO_LED_LAN3_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:amber:lan4",
+		.gpio		= WNR1000V2_GPIO_LED_LAN4_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:amber:test",
+		.gpio		= WNR1000V2_GPIO_LED_TEST_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:amber:wan",
+		.gpio		= WNR1000V2_GPIO_LED_WAN_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan1",
+		.gpio		= WNR1000V2_GPIO_LED_LAN1_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan2",
+		.gpio		= WNR1000V2_GPIO_LED_LAN2_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan3",
+		.gpio		= WNR1000V2_GPIO_LED_LAN3_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan4",
+		.gpio		= WNR1000V2_GPIO_LED_LAN4_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:power",
+		.gpio		= WNR1000V2_GPIO_LED_POWER_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:wan",
+		.gpio		= WNR1000V2_GPIO_LED_WAN_GREEN,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_led wnr1000v2_wmac_leds_gpio[] = {
+	{
+		.name		= "netgear:green:wps",
+		.gpio		= WNR1000V2_GPIO_WMAC_LED_WPS_GREEN,
 		.active_low	= 1,
 	}
 };
@@ -299,6 +366,31 @@ static struct gpio_keys_button wnr612v2_wmac_keys_gpio[] = {
 		.code		= KEY_RESTART,
 		.debounce_interval = WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNR612V2_GPIO_WMAC_BTN_RESET,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_keys_button wnr1000v2_wmac_keys_gpio[] = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= WNR1000V2_GPIO_WMAC_BTN_RESET,
+		.active_low	= 1,
+	}, {
+		.desc		= "rfkill",
+		.type		= EV_KEY,
+		.code		= KEY_RFKILL,
+		.debounce_interval = WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= WNR1000V2_GPIO_WMAC_BTN_RFKILL,
+		.active_low	= 1,
+	}, {
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= KEY_WPS_BUTTON,
+		.debounce_interval = WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= WNR1000V2_GPIO_WMAC_BTN_WPS,
 		.active_low	= 1,
 	}
 };
@@ -455,6 +547,25 @@ static void __init wnr1000v2_setup(void)
 {
 	u8 wlan_mac_addr[6];
 
+	/*
+	 * Disable JTAG and CLKs. Allow OS to control all link LEDs.
+	 * Note: U-Boot for WNR1000v2 sets undocumented bit 15 but
+	 * we leave it for now.
+	 */
+	ath79_gpio_function_setup(AR724X_GPIO_FUNC_JTAG_DISABLE |
+				  AR724X_GPIO_FUNC_UART_EN,
+				  AR724X_GPIO_FUNC_CLK_OBS1_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS2_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS3_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS4_EN |
+				  AR724X_GPIO_FUNC_CLK_OBS5_EN |
+				  AR724X_GPIO_FUNC_GE0_MII_CLK_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				  AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
+
 	wnr_get_wmac(wlan_mac_addr, WNR2000V3_MAC0_OFFSET,
 		     WNR2000V3_MAC1_OFFSET, WNR2000V3_WMAC_OFFSET);
 
@@ -462,6 +573,17 @@ static void __init wnr1000v2_setup(void)
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr1000v2_leds_gpio),
 				 wnr1000v2_leds_gpio);
+
+	ap9x_pci_setup_wmac_led_pin(0, WNR1000V2_GPIO_WMAC_LED_WLAN_BLUE);
+	ap9x_pci_setup_wmac_led_name(0, wnr2000v3_wmac_led_name);
+
+	ap9x_pci_setup_wmac_leds(0, wnr1000v2_wmac_leds_gpio,
+				 ARRAY_SIZE(wnr1000v2_wmac_leds_gpio));
+
+	/* All 3 buttons are connected to wireless chip */
+	ap9x_pci_setup_wmac_btns(0, wnr1000v2_wmac_keys_gpio,
+				 ARRAY_SIZE(wnr1000v2_wmac_keys_gpio),
+				 WNR2000V3_KEYS_POLL_INTERVAL);
 }
 
 MIPS_MACHINE(ATH79_MACH_WNR1000_V2, "WNR1000V2", "NETGEAR WNR1000 V2", wnr1000v2_setup);
