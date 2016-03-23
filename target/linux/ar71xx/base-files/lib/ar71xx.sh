@@ -351,6 +351,9 @@ ar71xx_board_detect() {
 	*"ALFA Network AP96")
 		name="alfa-ap96"
 		;;
+	*"ALFA Network AP120C")
+		name="alfa-ap120c"
+		;;
 	*"ALFA Network N2/N5")
 		name="alfa-nx"
 		;;

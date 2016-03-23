@@ -1,9 +1,21 @@
 #
-# Copyright (C) 2011-2013 OpenWrt.org
+# Copyright (C) 2011-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+define Profile/ALFAAP120C
+	NAME:=ALFA Network AP120C board
+	PACKAGES:=uboot-envtools
+endef
+
+define Profile/ALFAAP120C/Description
+	Package set optimized for the ALFA Network AP120C board
+endef
+
+$(eval $(call Profile,ALFAAP120C))
+
 
 define Profile/ALFAAP96
 	NAME:=ALFA Network AP96 board
