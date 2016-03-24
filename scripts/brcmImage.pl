@@ -33,7 +33,7 @@ use Compress::Zlib;
 my $version = "0.1";
 my %arg = (
 	o => 'bcm963xx_fs_kernel',
-	b => 'OpenWrt',
+	b => 'LEDE',
 	c => '6348',
 	s => 64,
 	f => 0xbfc00000,

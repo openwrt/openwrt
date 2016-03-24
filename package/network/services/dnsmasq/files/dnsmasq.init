@@ -625,7 +625,7 @@ start_service() {
 	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && {
 		local lanaddr lanaddr6
 		local ulaprefix="$(uci_get network @globals[0] ula_prefix)"
-		local hostname="$(uci_get system @system[0] hostname OpenWrt)"
+		local hostname="$(uci_get system @system[0] hostname Lede)"
 
 		network_get_ipaddr lanaddr "lan" && {
 			dhcp_domain_add "" "$hostname" "$lanaddr"

@@ -39,7 +39,7 @@ define Build/ubi-boot-overlay
 			$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))/$(dts).dtb; \
 	)
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
-		-n '$(DEVICE_ID) OpenWrt bootscript' \
+		-n '$(DEVICE_ID) LEDE bootscript' \
 		-d ./bootscript-$(DEVICE_NAME) \
 		$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))/6x_bootscript-$(DEVICE_NAME)
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \

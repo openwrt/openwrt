@@ -147,7 +147,7 @@ if VERSIONOPT
 	config VERSION_DIST
 		string
 		prompt "Release distribution"
-		default "OpenWrt"
+		default "Lede"
 		help
 			This is the name of the release distribution.
 			If unspecified, it defaults to OpenWrt.
@@ -170,23 +170,23 @@ if VERSIONOPT
 	config VERSION_REPO
 		string
 		prompt "Release repository"
-		default "http://downloads.openwrt.org/snapshots/trunk/%S/packages"
+		default "http://downloads.lede-project.org/snapshots/trunk/%S/packages"
 		help
 			This is the repository address embedded in the image, it defaults
 			to the trunk snapshot repo; the url may contain the following placeholders:
 			 %R .. Revision number
 			 %V .. Release version or revision number, uppercase
 			 %v .. Release version or revision number, lowercase
-			 %C .. Release version or "Bleeding Edge", uppercase
-			 %c .. Release version or "bleeding_edge", lowercase
+			 %C .. Release version or "HEAD", uppercase
+			 %c .. Release version or "head", lowercase
 			 %N .. Release name, uppercase
 			 %n .. Release name, lowercase
-			 %D .. Distribution name or "OpenWrt", uppercase
-			 %d .. Distribution name or "openwrt", lowercase
+			 %D .. Distribution name or "Lede", uppercase
+			 %d .. Distribution name or "lede", lowercase
 			 %T .. Target name
 			 %S .. Target/Subtarget name
 			 %t .. Build taint flags, e.g. "no-all busybox"
-			 %M .. Manufacturer name or "OpenWrt"
+			 %M .. Manufacturer name or "Lede"
 			 %P .. Product name or "Generic"
 			 %h .. Hardware revision or "v0"
 

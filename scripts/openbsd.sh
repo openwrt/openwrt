@@ -1,7 +1,7 @@
 #!/bin/sh
 ver=$(uname -r)
 arch=$(uname -m)
-echo "Preparing OpenBSD $arch $ver for OpenWrt"
+echo "Preparing OpenBSD $arch $ver for LEDE"
 PKG_PATH="http://ftp.openbsd.org/pub/OpenBSD/${ver}/packages/${arch}/"
 export PKG_PATH
 pkg_add -v gmake

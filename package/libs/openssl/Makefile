@@ -121,16 +121,16 @@ ifndef CONFIG_OPENSSL_HARDWARE_SUPPORT
 endif
 
 ifeq ($(CONFIG_x86_64),y)
-  OPENSSL_TARGET:=linux-x86_64-openwrt
+  OPENSSL_TARGET:=linux-x86_64-lede
   OPENSSL_MAKEFLAGS += LIBDIR=lib
 else
   OPENSSL_OPTIONS+=no-sse2
   ifeq ($(CONFIG_mips)$(CONFIG_mipsel),y)
-    OPENSSL_TARGET:=linux-mips-openwrt
+    OPENSSL_TARGET:=linux-mips-lede
 #  else ifeq ($(CONFIG_arm)$(CONFIG_armeb),y)
 #    OPENSSL_TARGET:=linux-armv4-openwrt
   else
-    OPENSSL_TARGET:=linux-generic-openwrt
+    OPENSSL_TARGET:=linux-generic-lede
     OPENSSL_OPTIONS+=no-perlasm
   endif
 endif

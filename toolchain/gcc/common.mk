@@ -44,11 +44,11 @@ endif
 
 PATCH_DIR=../patches/$(GCC_VERSION)
 
-BUGURL=https://dev.openwrt.org/
+BUGURL=http://www.lede-project.org/bugs/
 ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
-  PKGVERSION=OpenWrt/Linaro GCC $(PKG_REV) $(REVISION)
+  PKGVERSION=LEDE/Linaro GCC $(PKG_REV) $(REVISION)
 else
-  PKGVERSION=OpenWrt GCC $(PKG_VERSION) $(REVISION)
+  PKGVERSION=LEDE GCC $(PKG_VERSION) $(REVISION)
 endif
 
 HOST_BUILD_PARALLEL:=1

@@ -14,7 +14,7 @@ find_release_info()
 	[ -z "$DISTRIB_DESCRIPTION" ] && [ -s /etc/openwrt_version ] && \
 		DISTRIB_DESCRIPTION="$(cat /etc/openwrt_version)"
 
-	echo "${DISTRIB_DESCRIPTION:-Unknown OpenWrt release} @ $(cat /proc/sys/kernel/hostname)"
+	echo "${DISTRIB_DESCRIPTION:-Unknown Lede release} @ $(cat /proc/sys/kernel/hostname)"
 }
 
 start_service() {

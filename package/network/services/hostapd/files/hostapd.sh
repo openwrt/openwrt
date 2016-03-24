@@ -195,8 +195,8 @@ hostapd_set_bss_options() {
 
 	[ -n "$wps_possible" -a -n "$config_methods" ] && {
 		config_get device_type "$vif" wps_device_type "6-0050F204-1"
-		config_get device_name "$vif" wps_device_name "OpenWrt AP"
-		config_get manufacturer "$vif" wps_manufacturer "openwrt.org"
+		config_get device_name "$vif" wps_device_name "Lede AP"
+		config_get manufacturer "$vif" wps_manufacturer "www.lede-project.org"
 		config_get wps_pin "$vif" wps_pin
 
 		config_get_bool ext_registrar "$vif" ext_registrar 0
