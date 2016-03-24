@@ -9,17 +9,9 @@ try_version() {
 	[ -n "$REV" ]
 }
 
-try_svn() {
-	[ -d .svn ] || return 1
-	REV="$(svn info | awk '/^Last Changed Rev:/ { print $4 }')"
-	REV="${REV:+r$REV}"
-	[ -n "$REV" ]
-}
-
 try_git() {
 	git rev-parse --git-dir >/dev/null 2>&1 || return 1
-	REV="$(git log | grep -m 1 git-svn-id | awk '{ gsub(/.*@/, "", $0); print $1 }')"
-	REV="${REV:+r$REV}"
+	REV="$(git describe | sed "s/reboot-\([0-9]*\)-.*/\1/g")"
 	[ -n "$REV" ]
 }
 
@@ -30,5 +22,5 @@ try_hg() {
 	[ -n "$REV" ]
 }
 
-try_version || try_svn || try_git || try_hg || REV="unknown"
+try_version || try_git || try_hg || REV="unknown"
 echo "$REV"
