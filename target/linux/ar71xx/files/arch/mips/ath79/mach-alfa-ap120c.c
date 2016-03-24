@@ -101,13 +101,13 @@ static void __init alfa_ap120c_init(void)
 	struct ath9k_platform_data *pdata;
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(alfa_ap120c_leds_gpio),
-								alfa_ap120c_leds_gpio);
+							 alfa_ap120c_leds_gpio);
 	ath79_register_gpio_keys_polled(-1, ALFA_AP120C_KEYS_POLL_INTERVAL,
 									ARRAY_SIZE(alfa_ap120c_gpio_keys),
 									alfa_ap120c_gpio_keys);
 
 	ath79_gpio_function_enable(AR71XX_GPIO_FUNC_SPI_CS1_EN |
-								AR71XX_GPIO_FUNC_SPI_CS2_EN);
+							   AR71XX_GPIO_FUNC_SPI_CS2_EN);
 
 	ath79_register_m25p80_multi(&flash);
 
@@ -124,7 +124,7 @@ static void __init alfa_ap120c_init(void)
 	pdata->use_eeprom = true;
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
-								BIT(15) | BIT(17) | BIT(19) | BIT(21));
+							   BIT(15) | BIT(17) | BIT(19) | BIT(21));
 
 	ath79_register_mdio(0, 0x0);
 
@@ -144,4 +144,4 @@ static void __init alfa_ap120c_init(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_ALFA_AP120C, "ALFA-AP120C", "ALFA Network AP120C",
-			alfa_ap120c_init);
+			 alfa_ap120c_init);
