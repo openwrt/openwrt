@@ -4,8 +4,8 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
-+	ATH79_MACH_ALFA_AP96,		/* ALFA Network AP96 board */
 +	ATH79_MACH_ALFA_AP120C,		/* ALFA Network AP120C board */
++	ATH79_MACH_ALFA_AP96,		/* ALFA Network AP96 board */
 +	ATH79_MACH_ALFA_NX,		/* ALFA Network N2/N5 board */
 +	ATH79_MACH_ALL0258N,		/* Allnet ALL0258N */
 +	ATH79_MACH_ALL0305,		/* Allnet ALL0305 */
@@ -206,14 +206,6 @@
  
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
  
-+config ATH79_MACH_ALFA_AP96
-+	bool "ALFA Network AP96 board support"
-+	select SOC_AR71XX
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_M25P80
-+	select ATH79_DEV_USB
-+
 +config ATH79_MACH_ALFA_AP120C
 +	bool "ALFA Network AP120C board support"
 +	select SOC_AR71XX
@@ -222,6 +214,14 @@
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_WMAC
++
++config ATH79_MACH_ALFA_AP96
++	bool "ALFA Network AP96 board support"
++	select SOC_AR71XX
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
 +
 +config ATH79_MACH_HORNET_UB
 +	bool "ALFA Network Hornet-UB board support"
@@ -1498,8 +1498,8 @@
  #
  # Machines
  #
-+obj-$(CONFIG_ATH79_MACH_ALFA_AP96)	+= mach-alfa-ap96.o
 +obj-$(CONFIG_ATH79_MACH_ALFA_AP120C)	+= mach-alfa-ap120c.o
++obj-$(CONFIG_ATH79_MACH_ALFA_AP96)	+= mach-alfa-ap96.o
 +obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach-alfa-nx.o
 +obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
 +obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o
