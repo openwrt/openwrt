@@ -1,0 +1,32 @@
+From 45cb04fd85d788a37367a5385e5e90dd98a0a991 Mon Sep 17 00:00:00 2001
+From: Jo-Philipp Wich <jow@openwrt.org>
+Date: Thu, 14 Jan 2016 13:51:36 +0100
+Subject: [PATCH] Align early init PATH with system wide OpenWrt path value
+
+Changeset r47080 globally unified the executable search path in OpenWrt,
+now update procd to use the same path value.
+
+This fixes diverging path values observed in programs launched by netifd
+which inherits the early path value from procd.
+
+Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+---
+ initd/early.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/initd/early.c b/initd/early.c
+index e87774f..5821c58 100644
+--- a/initd/early.c
++++ b/initd/early.c
+@@ -90,7 +90,7 @@ early_mounts(void)
+ static void
+ early_env(void)
+ {
+-	setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin", 1);
++	setenv("PATH", "/usr/sbin:/usr/bin:/sbin:/bin", 1);
+ }
+ 
+ void
+-- 
+2.1.4
+

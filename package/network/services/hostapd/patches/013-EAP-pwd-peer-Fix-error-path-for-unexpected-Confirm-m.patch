@@ -1,0 +1,34 @@
+From 95577884ca4fa76be91344ff7a8d5d1e6dc3da61 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Sun, 1 Nov 2015 19:35:44 +0200
+Subject: [PATCH] EAP-pwd peer: Fix error path for unexpected Confirm message
+
+If the Confirm message is received from the server before the Identity
+exchange has been completed, the group has not yet been determined and
+data->grp is NULL. The error path in eap_pwd_perform_confirm_exchange()
+did not take this corner case into account and could end up
+dereferencing a NULL pointer and terminating the process if invalid
+message sequence is received. (CVE-2015-5316)
+
+Signed-off-by: Jouni Malinen <j@w1.fi>
+---
+ src/eap_peer/eap_pwd.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/eap_peer/eap_pwd.c b/src/eap_peer/eap_pwd.c
+index 75ceef1..892b590 100644
+--- a/src/eap_peer/eap_pwd.c
++++ b/src/eap_peer/eap_pwd.c
+@@ -774,7 +774,8 @@ eap_pwd_perform_confirm_exchange(struct eap_sm *sm, struct eap_pwd_data *data,
+ 	wpabuf_put_data(data->outbuf, conf, SHA256_MAC_LEN);
+ 
+ fin:
+-	bin_clear_free(cruft, BN_num_bytes(data->grp->prime));
++	if (data->grp)
++		bin_clear_free(cruft, BN_num_bytes(data->grp->prime));
+ 	BN_clear_free(x);
+ 	BN_clear_free(y);
+ 	if (data->outbuf == NULL) {
+-- 
+1.9.1
+

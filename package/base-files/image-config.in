@@ -99,7 +99,7 @@ menuconfig INITOPT
 	config TARGET_INIT_PATH
 		string
 		prompt "PATH for regular boot" if INITOPT
-		default "/bin:/sbin:/usr/bin:/usr/sbin"
+		default "/usr/sbin:/usr/bin:/sbin:/bin"
 		help
 			Default PATH used during normal operation
 

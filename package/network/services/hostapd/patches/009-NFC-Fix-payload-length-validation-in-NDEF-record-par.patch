@@ -1,0 +1,61 @@
+From df9079e72760ceb7ebe7fb11538200c516bdd886 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Tue, 7 Jul 2015 21:57:28 +0300
+Subject: [PATCH] NFC: Fix payload length validation in NDEF record parser
+
+It was possible for the 32-bit record->total_length value to end up
+wrapping around due to integer overflow if the longer form of payload
+length field is used and record->payload_length gets a value close to
+2^32. This could result in ndef_parse_record() accepting a too large
+payload length value and the record type filter reading up to about 20
+bytes beyond the end of the buffer and potentially killing the process.
+This could also result in an attempt to allocate close to 2^32 bytes of
+heap memory and if that were to succeed, a buffer read overflow of the
+same length which would most likely result in the process termination.
+In case of record->total_length ending up getting the value 0, there
+would be no buffer read overflow, but record parsing would result in an
+infinite loop in ndef_parse_records().
+
+Any of these error cases could potentially be used for denial of service
+attacks over NFC by using a malformed NDEF record on an NFC Tag or
+sending them during NFC connection handover if the application providing
+the NDEF message to hostapd/wpa_supplicant did no validation of the
+received records. While such validation is likely done in the NFC stack
+that needs to parse the NFC messages before further processing,
+hostapd/wpa_supplicant better be prepared for any data being included
+here.
+
+Fix this by validating record->payload_length value in a way that
+detects integer overflow. (CID 122668)
+
+Signed-off-by: Jouni Malinen <j@w1.fi>
+---
+ src/wps/ndef.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/wps/ndef.c b/src/wps/ndef.c
+index 5604b0a..50d018f 100644
+--- a/src/wps/ndef.c
++++ b/src/wps/ndef.c
+@@ -48,6 +48,8 @@ static int ndef_parse_record(const u8 *data, u32 size,
+ 		if (size < 6)
+ 			return -1;
+ 		record->payload_length = ntohl(*(u32 *)pos);
++		if (record->payload_length > size - 6)
++			return -1;
+ 		pos += sizeof(u32);
+ 	}
+ 
+@@ -68,7 +70,8 @@ static int ndef_parse_record(const u8 *data, u32 size,
+ 	pos += record->payload_length;
+ 
+ 	record->total_length = pos - data;
+-	if (record->total_length > size)
++	if (record->total_length > size ||
++	    record->total_length < record->payload_length)
+ 		return -1;
+ 	return 0;
+ }
+-- 
+1.9.1
+

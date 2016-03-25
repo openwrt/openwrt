@@ -1,0 +1,26 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:09 +0200
+Subject: [PATCH] brcmfmac: Fix bug in flowring management.
+
+The hash index stored in the flowrings is of type u16 but gets
+stored in u8. This can result in incorrect indexing and possibly
+result in crashes. This patch fixes the type.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/flowring.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/flowring.h
+@@ -34,7 +34,7 @@ enum ring_status {
+ };
+ 
+ struct brcmf_flowring_ring {
+-	u8 hash_id;
++	u16 hash_id;
+ 	bool blocked;
+ 	enum ring_status status;
+ 	struct sk_buff_head skblist;

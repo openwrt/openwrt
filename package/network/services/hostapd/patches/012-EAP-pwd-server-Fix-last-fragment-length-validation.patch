@@ -1,0 +1,51 @@
+From bef802ece03f9ae9d52a21f0cf4f1bc2c5a1f8aa Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Sun, 1 Nov 2015 18:24:16 +0200
+Subject: [PATCH] EAP-pwd server: Fix last fragment length validation
+
+All but the last fragment had their length checked against the remaining
+room in the reassembly buffer. This allowed a suitably constructed last
+fragment frame to try to add extra data that would go beyond the buffer.
+The length validation code in wpabuf_put_data() prevents an actual
+buffer write overflow from occurring, but this results in process
+termination. (CVE-2015-5314)
+
+Signed-off-by: Jouni Malinen <j@w1.fi>
+---
+ src/eap_server/eap_server_pwd.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/eap_server/eap_server_pwd.c b/src/eap_server/eap_server_pwd.c
+index cb83ff7..9f787ab 100644
+--- a/src/eap_server/eap_server_pwd.c
++++ b/src/eap_server/eap_server_pwd.c
+@@ -970,7 +970,7 @@ static void eap_pwd_process(struct eap_sm *sm, void *priv,
+ 	/*
+ 	 * the first and all intermediate fragments have the M bit set
+ 	 */
+-	if (EAP_PWD_GET_MORE_BIT(lm_exch)) {
++	if (EAP_PWD_GET_MORE_BIT(lm_exch) || data->in_frag_pos) {
+ 		if ((data->in_frag_pos + len) > wpabuf_size(data->inbuf)) {
+ 			wpa_printf(MSG_DEBUG, "EAP-pwd: Buffer overflow "
+ 				   "attack detected! (%d+%d > %d)",
+@@ -981,6 +981,8 @@ static void eap_pwd_process(struct eap_sm *sm, void *priv,
+ 		}
+ 		wpabuf_put_data(data->inbuf, pos, len);
+ 		data->in_frag_pos += len;
++	}
++	if (EAP_PWD_GET_MORE_BIT(lm_exch)) {
+ 		wpa_printf(MSG_DEBUG, "EAP-pwd: Got a %d byte fragment",
+ 			   (int) len);
+ 		return;
+@@ -990,8 +992,6 @@ static void eap_pwd_process(struct eap_sm *sm, void *priv,
+ 	 * buffering fragments so that's how we know it's the last)
+ 	 */
+ 	if (data->in_frag_pos) {
+-		wpabuf_put_data(data->inbuf, pos, len);
+-		data->in_frag_pos += len;
+ 		pos = wpabuf_head_u8(data->inbuf);
+ 		len = data->in_frag_pos;
+ 		wpa_printf(MSG_DEBUG, "EAP-pwd: Last fragment, %d bytes",
+-- 
+1.9.1
+

@@ -1,0 +1,26 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Thu, 29 Oct 2015 20:33:15 +0100
+Subject: [PATCH] brcmfmac: Disable runtime pm for USB.
+
+Currently runtime pm is enabled for USB, but it is not properly
+supported by driver. This patch disables the runtime PM support
+completely for USB, as it currently can result in problems on
+some systems.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/usb.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/usb.c
+@@ -1504,7 +1504,6 @@ static struct usb_driver brcmf_usbdrvr =
+ 	.suspend = brcmf_usb_suspend,
+ 	.resume = brcmf_usb_resume,
+ 	.reset_resume = brcmf_usb_reset_resume,
+-	.supports_autosuspend = 1,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0))
+ 	.disable_hub_initiated_lpm = 1,
+ #endif

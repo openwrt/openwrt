@@ -1,0 +1,23 @@
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 19 Sep 2015 12:47:20 +0200
+Subject: [PATCH] brcmfmac: include linux/atomic.h
+
+brcmfmac uses atomic_or() and other atomic_* functions, but does not
+include linux/atomic.h. This file gets included by some other header
+file so this normally does not cause problems.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Acked-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
+@@ -15,6 +15,7 @@
+  */
+ 
+ #include <linux/types.h>
++#include <linux/atomic.h>
+ #include <linux/kernel.h>
+ #include <linux/kthread.h>
+ #include <linux/printk.h>

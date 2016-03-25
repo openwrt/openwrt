@@ -2,7 +2,7 @@
 [ -f /etc/banner ] && cat /etc/banner
 [ -e /tmp/.failsafe ] && cat /etc/banner.failsafe
 
-export PATH=/usr/bin:/usr/sbin:/bin:/sbin
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export HOME=$(grep -e "^${USER:-root}:" /etc/passwd | cut -d ":" -f 6)
 export HOME=${HOME:-/root}
 export PS1='\u@\h:\w\$ '

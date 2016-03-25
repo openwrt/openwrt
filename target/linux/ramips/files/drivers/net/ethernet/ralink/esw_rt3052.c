@@ -233,6 +233,7 @@ struct rt305x_esw {
 	spinlock_t		reg_rw_lock;
 
 	unsigned char		port_map;
+	unsigned char		port_disable;
 	unsigned int		reg_initval_fct2;
 	unsigned int		reg_initval_fpa2;
 	unsigned int		reg_led_polarity;
@@ -457,7 +458,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		      (RT305X_ESW_PORTS_ALL << RT305X_ESW_PFC1_EN_VLAN_S),
 		      RT305X_ESW_REG_PFC1);
 
-	/* Enable Back Pressure, and Flow Control */
+	/* Enable all ports, Back Pressure and Flow Control */
 	esw_w32(esw,
 		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_BP_S) |
 		       (RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_FC_S)),
@@ -504,8 +505,14 @@ static void esw_hw_init(struct rt305x_esw *esw)
 	esw_w32(esw, 0x00000005, RT305X_ESW_REG_P3LED);
 	esw_w32(esw, 0x00000005, RT305X_ESW_REG_P4LED);
 
-	/* Copy disabled port configuration from bootloader setup */
-	port_disable = esw_get_port_disable(esw);
+	/* Copy disabled port configuration from device tree setup */
+	port_disable = esw->port_disable;
+
+	/* Disable nonexistent ports by reading the switch config
+	 * after having enabled all possible ports above
+	 */
+	port_disable |= esw_get_port_disable(esw);
+
 	for (i = 0; i < 6; i++)
 		esw->ports[i].disable = (port_disable & (1 << i)) != 0;
 
@@ -1373,7 +1380,7 @@ static int esw_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
 	const struct rt305x_esw_platform_data *pdata;
-	const __be32 *port_map, *reg_init;
+	const __be32 *port_map, *port_disable, *reg_init;
 	struct rt305x_esw *esw;
 	struct switch_dev *swdev;
 	struct resource *res, *irq;
@@ -1417,19 +1424,23 @@ static int esw_probe(struct platform_device *pdev)
 	}
 
 	port_map = of_get_property(np, "ralink,portmap", NULL);
-        if (port_map)
+	if (port_map)
 		esw->port_map = be32_to_cpu(*port_map);
 
+	port_disable = of_get_property(np, "ralink,portdisable", NULL);
+	if (port_disable)
+		esw->port_disable = be32_to_cpu(*port_disable);
+
 	reg_init = of_get_property(np, "ralink,fct2", NULL);
-        if (reg_init)
+	if (reg_init)
 		esw->reg_initval_fct2 = be32_to_cpu(*reg_init);
 
 	reg_init = of_get_property(np, "ralink,fpa2", NULL);
-        if (reg_init)
+	if (reg_init)
 		esw->reg_initval_fpa2 = be32_to_cpu(*reg_init);
 
 	reg_init = of_get_property(np, "ralink,led_polarity", NULL);
-        if (reg_init)
+	if (reg_init)
 		esw->reg_led_polarity = be32_to_cpu(*reg_init);
 
 	swdev = &esw->swdev;

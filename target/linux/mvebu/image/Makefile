@@ -100,6 +100,26 @@ define NORProfile
 endef
 
 # $(1): Profile Name
+# $(2): DTB Name
+define MMCProfile
+  define Image/BuildKernel/Profile/$(1)
+	$(call Image/Build/DTB,$(2))
+	cp $(KDIR)/zImage-$(2) $(BIN_DIR)/zImage-$(1);
+	cp $(DTS_DIR)/$(2).dtb $(BIN_DIR)/$(1).dtb;
+    ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call Image/Build/Profile,$(1)/Initramfs)
+    endif
+  endef
+
+  define Image/Build/Profile/$(1)/Initramfs
+	$(call Image/Build/DTB,$(2),-initramfs)
+	cp $(KDIR)/uImage-initramfs-$(2) $(BIN_DIR)/$(IMG_PREFIX)-$(2)-initramfs
+  endef
+
+  PROFILES_LIST += $(1)
+endef
+
+# $(1): Profile Name
 # $(2): Sub Profiles list
 define MultiProfile
   define Image/BuildKernel/Profile/$(1)
@@ -142,6 +162,8 @@ $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB)
 
 # Boards with small NOR, where UBI doesn't make sense
 $(eval $(call NORProfile,385-RD,armada-385-rd,256KiB))
+
+$(eval $(call MMCProfile,Solidrun-Clearfog-A1,armada-388-clearfog))
 
 ###
 ### Linksys

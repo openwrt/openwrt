@@ -1,0 +1,29 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:10 +0200
+Subject: [PATCH] brcmfmac: Make p2pon module param always available.
+
+p2pon module param is currently under define BRCMDBG. Though it is
+a needed option for older versions of the wpa_supplicant which do not
+support the P2P_DEVICE interface.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/core.c
+@@ -62,10 +62,8 @@ MODULE_PARM_DESC(debug, "level of debug
+ 
+ /* P2P0 enable */
+ static int brcmf_p2p_enable;
+-#ifdef CPTCFG_BRCMDBG
+ module_param_named(p2pon, brcmf_p2p_enable, int, 0);
+-MODULE_PARM_DESC(p2pon, "enable p2p management functionality");
+-#endif
++MODULE_PARM_DESC(p2pon, "enable legacy p2p management functionality");
+ 
+ char *brcmf_ifname(struct brcmf_pub *drvr, int ifidx)
+ {

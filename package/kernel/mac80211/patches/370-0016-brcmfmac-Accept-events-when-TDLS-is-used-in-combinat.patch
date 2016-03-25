@@ -1,0 +1,29 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:19 +0200
+Subject: [PATCH] brcmfmac: Accept events when TDLS is used in combination with
+ p2p.
+
+TDLS events are mapped back to primary interface but when p2p is in
+use then this fails because the check was incorrect by checking
+bsscfg number. Which can be different when a p2p device has been
+created.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/fweh.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/fweh.c
+@@ -300,8 +300,7 @@ static void brcmf_fweh_event_worker(stru
+ 			goto event_free;
+ 		}
+ 
+-		if ((event->code == BRCMF_E_TDLS_PEER_EVENT) &&
+-		    (emsg.bsscfgidx == 1))
++		if (event->code == BRCMF_E_TDLS_PEER_EVENT)
+ 			ifp = drvr->iflist[0];
+ 		else
+ 			ifp = drvr->iflist[emsg.bsscfgidx];

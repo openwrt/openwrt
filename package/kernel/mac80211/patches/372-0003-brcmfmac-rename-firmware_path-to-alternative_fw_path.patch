@@ -1,0 +1,28 @@
+From: Franky Lin <frankyl@broadcom.com>
+Date: Thu, 8 Oct 2015 20:33:13 +0200
+Subject: [PATCH] brcmfmac: rename firmware_path to alternative_fw_path
+
+In brcmfmac the module parameter "firmware_path" is used as an
+alternative relative path under the search path used by firmware_class
+or ueventhelper. Rename the parameter to alternative_fw_path to avoid
+confusion.
+
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Franky Lin <frankyl@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
+@@ -28,7 +28,7 @@
+ #define BRCMF_FW_NVRAM_PCIEDEV_LEN		10	/* pcie/1/4/ + \0 */
+ 
+ char brcmf_firmware_path[BRCMF_FW_PATH_LEN];
+-module_param_string(firmware_path, brcmf_firmware_path,
++module_param_string(alternative_fw_path, brcmf_firmware_path,
+ 		    BRCMF_FW_PATH_LEN, 0440);
+ 
+ enum nvram_parser_state {

@@ -1,0 +1,54 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:15 +0200
+Subject: [PATCH] brcmfmac: Add module parameter to disable features.
+
+For debugging purpose it is very handy to be able to disable
+features. It has happened a few times that new features turned
+out not always being properly detected for all devices/firmwares.
+Making it possible to disable the feature with a module parameter
+will make testing/debugging easier.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/feature.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/feature.c
+@@ -15,6 +15,7 @@
+  */
+ 
+ #include <linux/netdevice.h>
++#include <linux/module.h>
+ 
+ #include <brcm_hw_ids.h>
+ #include "core.h"
+@@ -23,6 +24,12 @@
+ #include "fwil.h"
+ #include "feature.h"
+ 
++
++/* Module param feature_disable (global for all devices) */
++static int brcmf_feature_disable;
++module_param_named(feature_disable, brcmf_feature_disable, int, 0);
++MODULE_PARM_DESC(feature_disable, "Disable features");
++
+ /*
+  * expand feature list to array of feature strings.
+  */
+@@ -131,6 +138,12 @@ void brcmf_feat_attach(struct brcmf_pub
+ 		brcmf_feat_iovar_int_set(ifp, BRCMF_FEAT_MBSS, "mbss", 0);
+ 	brcmf_feat_iovar_int_get(ifp, BRCMF_FEAT_P2P, "p2p");
+ 
++	if (brcmf_feature_disable) {
++		brcmf_dbg(INFO, "Features: 0x%02x, disable: 0x%02x\n",
++			  ifp->drvr->feat_flags, brcmf_feature_disable);
++		ifp->drvr->feat_flags &= ~brcmf_feature_disable;
++	}
++
+ 	/* set chip related quirks */
+ 	switch (drvr->bus_if->chip) {
+ 	case BRCM_CC_43236_CHIP_ID:

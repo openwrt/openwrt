@@ -337,12 +337,13 @@
 		#reset-cells = <1>;
 	};
 
-	usbphy: usbphy {
+	usbphy: usbphy@10120000 {
 		compatible = "ralink,mt7628an-usbphy", "ralink,mt7620a-usbphy";
+		reg = <0x10120000 1000>;
 		#phy-cells = <1>;
 
-		resets = <&rstctrl 22>;
-		reset-names = "host";
+		resets = <&rstctrl 22 &rstctrl 25>;
+		reset-names = "host", "device";
 	};
 
 	sdhci@10130000 {

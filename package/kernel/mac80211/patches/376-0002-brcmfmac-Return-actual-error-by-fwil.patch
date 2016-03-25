@@ -1,0 +1,31 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 25 Nov 2015 11:32:38 +0100
+Subject: [PATCH] brcmfmac: Return actual error by fwil.
+
+FWIL is always mapping back errors to EBADE. This is not very
+conventient when trying to understand problems by reading logs.
+Some callers print the error code, but that is quite useless
+when the exact error code is not returned. It also makes it
+impossible to differentiate based on error code. This patch
+changes the return of EBADE into the actual error code.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/fwil.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/fwil.c
+@@ -126,7 +126,8 @@ brcmf_fil_cmd_data(struct brcmf_if *ifp,
+ 
+ 	brcmf_dbg(FIL, "Failed: %s (%d)\n",
+ 		  brcmf_fil_get_errstr((u32)(-err)), err);
+-	return -EBADE;
++
++	return err;
+ }
+ 
+ s32

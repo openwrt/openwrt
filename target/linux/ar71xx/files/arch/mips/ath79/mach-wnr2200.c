@@ -121,7 +121,8 @@ static void __init wnr2200_setup(void)
 	ath79_register_eth(1);
 
 	ath79_register_m25p80(NULL);
-	ap91_pci_init(art + WNR2200_PCIE_CALDATA_OFFSET, NULL);
+	ap91_pci_init(art + WNR2200_PCIE_CALDATA_OFFSET,
+		      art + WNR2200_MAC1_OFFSET);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr2200_leds_gpio),
 					wnr2200_leds_gpio);

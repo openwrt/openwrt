@@ -5,6 +5,7 @@
 SUBTARGET:=rt288x
 BOARDNAME:=RT288x based boards
 CPU_TYPE:=mips32r2
+FEATURES:=squashfs gpio
 
 DEFAULT_PACKAGES += kmod-rt2800-soc
 

@@ -538,7 +538,8 @@ static void ag71xx_hw_start(struct ag71xx *ag)
 	netif_wake_queue(ag->dev);
 }
 
-void ag71xx_link_adjust(struct ag71xx *ag)
+static void
+__ag71xx_link_adjust(struct ag71xx *ag, bool update)
 {
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	u32 cfg2;
@@ -546,7 +547,7 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 	u32 fifo5;
 	u32 fifo3;
 
-	if (!ag->link) {
+	if (!ag->link && update) {
 		ag71xx_hw_stop(ag);
 		netif_carrier_off(ag->dev);
 		if (netif_msg_link(ag))
@@ -598,7 +599,7 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, fifo3);
 
-	if (pdata->set_speed)
+	if (update && pdata->set_speed)
 		pdata->set_speed(ag->speed);
 
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
@@ -607,7 +608,7 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 	ag71xx_hw_start(ag);
 
 	netif_carrier_on(ag->dev);
-	if (netif_msg_link(ag))
+	if (update && netif_msg_link(ag))
 		pr_info("%s: link up (%sMbps/%s duplex)\n",
 			ag->dev->name,
 			ag71xx_speed_str(ag),
@@ -631,33 +632,65 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 		ag71xx_rr(ag, AG71XX_REG_MAC_IFCTL));
 }
 
+void ag71xx_link_adjust(struct ag71xx *ag)
+{
+	__ag71xx_link_adjust(ag, true);
+}
+
+static int ag71xx_hw_enable(struct ag71xx *ag)
+{
+	int ret;
+
+	ret = ag71xx_rings_init(ag);
+	if (ret)
+		return ret;
+
+	napi_enable(&ag->napi);
+	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->tx_ring.descs_dma);
+	ag71xx_wr(ag, AG71XX_REG_RX_DESC, ag->rx_ring.descs_dma);
+	netif_start_queue(ag->dev);
+
+	return 0;
+}
+
+static void ag71xx_hw_disable(struct ag71xx *ag)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&ag->lock, flags);
+
+	netif_stop_queue(ag->dev);
+
+	ag71xx_hw_stop(ag);
+	ag71xx_dma_reset(ag);
+
+	napi_disable(&ag->napi);
+	del_timer_sync(&ag->oom_timer);
+
+	spin_unlock_irqrestore(&ag->lock, flags);
+
+	ag71xx_rings_cleanup(ag);
+}
+
 static int ag71xx_open(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
 	unsigned int max_frame_len;
 	int ret;
 
+	netif_carrier_off(dev);
 	max_frame_len = ag71xx_max_frame_len(dev->mtu);
 	ag->rx_buf_size = max_frame_len + NET_SKB_PAD + NET_IP_ALIGN;
 
 	/* setup max frame length */
 	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, max_frame_len);
+	ag71xx_hw_set_macaddr(ag, dev->dev_addr);
 
-	ret = ag71xx_rings_init(ag);
+	ret = ag71xx_hw_enable(ag);
 	if (ret)
 		goto err;
 
-	napi_enable(&ag->napi);
-
-	netif_carrier_off(dev);
 	ag71xx_phy_start(ag);
-
-	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->tx_ring.descs_dma);
-	ag71xx_wr(ag, AG71XX_REG_RX_DESC, ag->rx_ring.descs_dma);
-
-	ag71xx_hw_set_macaddr(ag, dev->dev_addr);
-
-	netif_start_queue(dev);
 
 	return 0;
 
@@ -669,24 +702,10 @@ err:
 static int ag71xx_stop(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
-	unsigned long flags;
 
 	netif_carrier_off(dev);
 	ag71xx_phy_stop(ag);
-
-	spin_lock_irqsave(&ag->lock, flags);
-
-	netif_stop_queue(dev);
-
-	ag71xx_hw_stop(ag);
-	ag71xx_dma_reset(ag);
-
-	napi_disable(&ag->napi);
-	del_timer_sync(&ag->oom_timer);
-
-	spin_unlock_irqrestore(&ag->lock, flags);
-
-	ag71xx_rings_cleanup(ag);
+	ag71xx_hw_disable(ag);
 
 	return 0;
 }
@@ -870,14 +889,12 @@ static void ag71xx_restart_work_func(struct work_struct *work)
 {
 	struct ag71xx *ag = container_of(work, struct ag71xx, restart_work);
 
-	if (ag71xx_get_pdata(ag)->is_ar724x) {
-		ag->link = 0;
-		ag71xx_link_adjust(ag);
-		return;
-	}
-
-	ag71xx_stop(ag->dev);
-	ag71xx_open(ag->dev);
+	rtnl_lock();
+	ag71xx_hw_disable(ag);
+	ag71xx_hw_enable(ag);
+	if (ag->link)
+		__ag71xx_link_adjust(ag, false);
+	rtnl_unlock();
 }
 
 static bool ag71xx_check_dma_stuck(struct ag71xx *ag, unsigned long timestamp)
@@ -919,7 +936,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag, bool flush)
 		struct sk_buff *skb = ring->buf[i].skb;
 
 		if (!flush && !ag71xx_desc_empty(desc)) {
-			if (pdata->is_ar7240 &&
+			if (pdata->is_ar724x &&
 			    ag71xx_check_dma_stuck(ag, ring->buf[i].timestamp))
 				schedule_work(&ag->restart_work);
 			break;
