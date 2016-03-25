@@ -13,9 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 Documentation/devicetree/bindings/i2c/i2c-ralink.txt
  create mode 100644 drivers/i2c/busses/i2c-ralink.c
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c-ralink.txt b/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
-new file mode 100644
-index 0000000..8fa8ac3
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
 @@ -0,0 +1,27 @@
@@ -46,8 +43,6 @@ index 0000000..8fa8ac3
 +		};
 +	};
 +};
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index 08b8617..53d565b 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -803,6 +803,10 @@ config I2C_RK3X
@@ -61,8 +56,6 @@ index 08b8617..53d565b 100644
  config HAVE_S3C2410_I2C
  	bool
  	help
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index 6df3b30..2edd32c 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
 @@ -75,6 +75,7 @@ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
@@ -73,9 +66,6 @@ index 6df3b30..2edd32c 100644
  obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
  obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
  obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
-diff --git a/drivers/i2c/busses/i2c-ralink.c b/drivers/i2c/busses/i2c-ralink.c
-new file mode 100644
-index 0000000..debfb18
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-ralink.c
 @@ -0,0 +1,327 @@
@@ -406,6 +396,3 @@ index 0000000..debfb18
 +MODULE_DESCRIPTION("Ralink I2c host driver");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:Ralink-I2C");
--- 
-1.7.10.4
-

@@ -15,11 +15,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/mediatek/mt7530.c
  create mode 100644 drivers/net/ethernet/mediatek/mt7530.h
 
-diff --git a/drivers/net/ethernet/mediatek/Makefile b/drivers/net/ethernet/mediatek/Makefile
-index c4d2dfb..07ba4c2 100644
 --- a/drivers/net/ethernet/mediatek/Makefile
 +++ b/drivers/net/ethernet/mediatek/Makefile
-@@ -15,6 +15,6 @@ mtk-eth-soc-$(CONFIG_NET_MEDIATEK_MT7620)	+= soc_mt7620.o
+@@ -15,6 +15,6 @@ mtk-eth-soc-$(CONFIG_NET_MEDIATEK_MT7620
  mtk-eth-soc-$(CONFIG_NET_MEDIATEK_MT7621)	+= soc_mt7621.o
  
  obj-$(CONFIG_NET_MEDIATEK_ESW_RT3050)		+= esw_rt3050.o
@@ -28,9 +26,6 @@ index c4d2dfb..07ba4c2 100644
 +obj-$(CONFIG_NET_MEDIATEK_GSW_MT7620)		+= gsw_mt7620.o mt7530.o
 +obj-$(CONFIG_NET_MEDIATEK_GSW_MT7621)		+= gsw_mt7621.o mt7530.o
  obj-$(CONFIG_NET_MEDIATEK_SOC)			+= mtk-eth-soc.o
-diff --git a/drivers/net/ethernet/mediatek/mt7530.c b/drivers/net/ethernet/mediatek/mt7530.c
-new file mode 100644
-index 0000000..4d9980d
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mt7530.c
 @@ -0,0 +1,804 @@
@@ -838,9 +833,6 @@ index 0000000..4d9980d
 +
 +	return 0;
 +}
-diff --git a/drivers/net/ethernet/mediatek/mt7530.h b/drivers/net/ethernet/mediatek/mt7530.h
-new file mode 100644
-index 0000000..1fc8c62
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mt7530.h
 @@ -0,0 +1,20 @@
@@ -864,11 +856,9 @@ index 0000000..1fc8c62
 +int mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vlan);
 +
 +#endif
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index dae7147..6299f87 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1308,8 +1308,13 @@ static int __init fe_init(struct net_device *dev)
+@@ -1308,8 +1308,13 @@ static int __init fe_init(struct net_dev
  	}
  
  	err = fe_hw_init(dev);
@@ -884,8 +874,6 @@ index dae7147..6299f87 100644
  
  err_phy_disconnect:
  	if (priv->phy)
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index ba5ba07..d5f8b87 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -383,6 +383,7 @@ struct fe_soc_data {
@@ -896,11 +884,9 @@ index ba5ba07..d5f8b87 100644
  	void (*port_init)(struct fe_priv *priv, struct device_node *port);
  	int (*has_carrier)(struct fe_priv *priv);
  	int (*mdio_init)(struct fe_priv *priv);
-diff --git a/drivers/net/ethernet/mediatek/soc_mt7620.c b/drivers/net/ethernet/mediatek/soc_mt7620.c
-index 9ad6bc9..740dd90 100644
 --- a/drivers/net/ethernet/mediatek/soc_mt7620.c
 +++ b/drivers/net/ethernet/mediatek/soc_mt7620.c
-@@ -313,6 +313,7 @@ static struct fe_soc_data mt7620_data = {
+@@ -313,6 +313,7 @@ static struct fe_soc_data mt7620_data =
  	.fwd_config = mt7620_fwd_config,
  	.tx_dma = mt7620_tx_dma,
  	.switch_init = mtk_gsw_init,
@@ -908,6 +894,3 @@ index 9ad6bc9..740dd90 100644
  	.port_init = mt7620_port_init,
  	.reg_table = mt7620_reg_table,
  	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS,
--- 
-1.7.10.4
-

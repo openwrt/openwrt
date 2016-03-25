@@ -16,15 +16,15 @@
 include /lib/network
 scan_interfaces
 
-local default
+local led
 config_load system
-config_get default led_adsl default
-if [ "$default" != 1 ]; then
+config_get led led_dsl sysfs
+if [ -n "$led" ]; then
 	case "$DSL_INTERFACE_STATUS" in
-	  "HANDSHAKE")  led_timer dsl 500 500;;
-	  "TRAINING")   led_timer dsl 200 200;;
-	  "UP")		led_on dsl;;
-	  *)		led_off dsl
+	  "HANDSHAKE")  led_timer $led 500 500;;
+	  "TRAINING")   led_timer $led 200 200;;
+	  "UP")		led_on $led;;
+	  *)		led_off $led
 	esac
 fi
 

@@ -72,6 +72,16 @@ config ATH79_MACH_ANTMINER_S3
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_ANTROUTER_R1
+	bool "Bitmain Antrouter R1 support"
+	select SOC_AR933X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_ARDUINO_YUN
 	bool "Arduino Yun"
 	select SOC_AR933X
@@ -784,7 +794,7 @@ config ATH79_MACH_WNR2000
 	select ATH79_DEV_WMAC
 
 config ATH79_MACH_WNR2000_V3
-	bool "NETGEAR WNR2000 V3/WNR612 v2/WNR1000 v2 board support"
+	bool "NETGEAR WNR2000 V3/WNR612 v2/WNR1000 v2/WPN824N board support"
 	select SOC_AR724X
 	select ATH79_DEV_AP9X_PCI if PCI
 	select ATH79_DEV_ETH
@@ -1080,7 +1090,14 @@ config ATH79_MACH_TL_WA7210N_V2
        select ATH79_DEV_GPIO_BUTTONS
        select ATH79_DEV_M25P80
        select ATH79_DEV_WMAC
-
+config ATH79_MACH_TL_WA801ND_V3
+       bool "TP-LINK TL-WA801ND v3 support"
+       select SOC_QCA953X
+       select ATH79_DEV_ETH
+       select ATH79_DEV_GPIO_BUTTONS
+       select ATH79_DEV_LEDS_GPIO
+       select ATH79_DEV_M25P80
+       select ATH79_DEV_WMAC
 config ATH79_MACH_TL_WA830RE_V2
 	bool "TP-LINK TL-WA830RE v2 support"
 	select SOC_AR934X
@@ -1338,6 +1355,16 @@ config ATH79_MACH_UBNT
 	select ATH79_DEV_LEDS_GPIO
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_USB
+
+config ATH79_MACH_UBNT_UNIFIAC
+	bool "Ubiquiti UniFi AC (LITE) support"
+	select SOC_QCA956X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
 
 config ATH79_MACH_WEIO
 	bool "WeIO board"

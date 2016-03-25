@@ -73,10 +73,12 @@
 		reg = <0x10000000 0xEF00000>;
 
 		spi@E100800 {
-			compatible = "lantiq,spi-xway";
+			compatible = "lantiq,ase-spi";
 			reg = <0xE100800 0x100>;
 			interrupt-parent = <&icu0>;
 			interrupts = <24 25 26>;
+			interrupt-names = "spi_rx", "spi_tx", "spi_err",
+					"spi_frm";
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
@@ -90,7 +92,7 @@
 		};
 
 		gpio: pinmux@E100B10 {
-			compatible = "lantiq,pinctrl-ase";
+			compatible = "lantiq,ase-pinctrl";
 			#gpio-cells = <2>;
 			gpio-controller;
 			reg = <0xE100B10 0xA0>;

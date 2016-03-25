@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/rt305x.c                       |   12 +++++-------
  5 files changed, 29 insertions(+), 31 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-ralink/mt7620.h b/arch/mips/include/asm/mach-ralink/mt7620.h
-index 72e64fa..0ef882b 100644
 --- a/arch/mips/include/asm/mach-ralink/mt7620.h
 +++ b/arch/mips/include/asm/mach-ralink/mt7620.h
 @@ -13,14 +13,6 @@
@@ -31,8 +29,6 @@ index 72e64fa..0ef882b 100644
  #define MT7620_SYSC_BASE		0x10000000
  
  #define SYSC_REG_CHIP_NAME0		0x00
-diff --git a/arch/mips/include/asm/mach-ralink/ralink_regs.h b/arch/mips/include/asm/mach-ralink/ralink_regs.h
-index bd93014..8fcbd0f 100644
 --- a/arch/mips/include/asm/mach-ralink/ralink_regs.h
 +++ b/arch/mips/include/asm/mach-ralink/ralink_regs.h
 @@ -13,6 +13,20 @@
@@ -56,8 +52,6 @@ index bd93014..8fcbd0f 100644
  extern __iomem void *rt_sysc_membase;
  extern __iomem void *rt_memc_membase;
  
-diff --git a/arch/mips/include/asm/mach-ralink/rt305x.h b/arch/mips/include/asm/mach-ralink/rt305x.h
-index 96f731b..2eea793 100644
 --- a/arch/mips/include/asm/mach-ralink/rt305x.h
 +++ b/arch/mips/include/asm/mach-ralink/rt305x.h
 @@ -13,25 +13,16 @@
@@ -110,8 +104,6 @@ index 96f731b..2eea793 100644
  }
  
  #define RT305X_SYSC_BASE		0x10000000
-diff --git a/arch/mips/ralink/prom.c b/arch/mips/ralink/prom.c
-index 09419f6..d0978d5 100644
 --- a/arch/mips/ralink/prom.c
 +++ b/arch/mips/ralink/prom.c
 @@ -15,10 +15,13 @@
@@ -129,8 +121,6 @@ index 09419f6..d0978d5 100644
  
  const char *get_system_type(void)
  {
-diff --git a/arch/mips/ralink/rt305x.c b/arch/mips/ralink/rt305x.c
-index eeb747a..51f33a5 100644
 --- a/arch/mips/ralink/rt305x.c
 +++ b/arch/mips/ralink/rt305x.c
 @@ -21,8 +21,6 @@
@@ -142,7 +132,7 @@ index eeb747a..51f33a5 100644
  static struct rt2880_pmx_func i2c_func[] =  { FUNC("i2c", 0, 1, 2) };
  static struct rt2880_pmx_func spi_func[] = { FUNC("spi", 0, 3, 4) };
  static struct rt2880_pmx_func uartf_func[] = {
-@@ -236,24 +234,24 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -236,24 +234,24 @@ void prom_soc_init(struct ralink_soc_inf
  
  		icache_sets = (read_c0_config1() >> 22) & 7;
  		if (icache_sets == 1) {
@@ -172,6 +162,3 @@ index eeb747a..51f33a5 100644
  		name = "RT5350";
  		soc_info->compatible = "ralink,rt5350-soc";
  	} else {
--- 
-1.7.10.4
-

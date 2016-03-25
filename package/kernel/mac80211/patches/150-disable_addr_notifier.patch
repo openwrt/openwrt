@@ -1,6 +1,6 @@
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -285,7 +285,7 @@ void ieee80211_restart_hw(struct ieee802
+@@ -291,7 +291,7 @@ void ieee80211_restart_hw(struct ieee802
  }
  EXPORT_SYMBOL(ieee80211_restart_hw);
  
@@ -9,7 +9,7 @@
  static int ieee80211_ifa_changed(struct notifier_block *nb,
  				 unsigned long data, void *arg)
  {
-@@ -344,7 +344,7 @@ static int ieee80211_ifa_changed(struct
+@@ -350,7 +350,7 @@ static int ieee80211_ifa_changed(struct
  }
  #endif
  
@@ -18,7 +18,7 @@
  static int ieee80211_ifa6_changed(struct notifier_block *nb,
  				  unsigned long data, void *arg)
  {
-@@ -1081,14 +1081,14 @@ int ieee80211_register_hw(struct ieee802
+@@ -1087,14 +1087,14 @@ int ieee80211_register_hw(struct ieee802
  
  	rtnl_unlock();
  
@@ -35,7 +35,7 @@
  	local->ifa6_notifier.notifier_call = ieee80211_ifa6_changed;
  	result = register_inet6addr_notifier(&local->ifa6_notifier);
  	if (result)
-@@ -1097,13 +1097,13 @@ int ieee80211_register_hw(struct ieee802
+@@ -1103,13 +1103,13 @@ int ieee80211_register_hw(struct ieee802
  
  	return 0;
  
@@ -52,7 +52,7 @@
   fail_ifa:
  #endif
  	rtnl_lock();
-@@ -1131,10 +1131,10 @@ void ieee80211_unregister_hw(struct ieee
+@@ -1137,10 +1137,10 @@ void ieee80211_unregister_hw(struct ieee
  	tasklet_kill(&local->tx_pending_tasklet);
  	tasklet_kill(&local->tasklet);
  

@@ -154,6 +154,9 @@ ramips_board_detect() {
 	*"ESR-9753")
 		name="esr-9753"
 		;;
+	*"EX2700")
+		name="ex2700";
+		;;
 	*"F5D8235 v1")
 		name="f5d8235-v1"
 		;;
@@ -288,6 +291,9 @@ ramips_board_detect() {
 		;;
 	*"PBR-M1")
 		name="pbr-m1"
+		;;
+	*"PSG1208")
+		name="psg1208"
 		;;
 	*"PSR-680W"*)
 		name="psr-680w"
@@ -432,6 +438,12 @@ ramips_board_detect() {
 		;;
 	*"WRTNODE")
 		name="wrtnode"
+		;;
+	*"WRTnode2R")
+		name="wrtnode2r"
+		;;
+	*"WRTnode2P")
+		name="wrtnode2p"
 		;;
 	*"WSR-1166DHP")
 		name="wsr-1166"

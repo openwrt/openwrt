@@ -1,0 +1,38 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 21 Jan 2016 16:28:44 +0100
+Subject: [PATCH] ath9k_hw: ignore eeprom magic mismatch on flash based devices
+
+Many AR913x based devices (maybe others too) do not have a valid EEPROM
+magic in their calibration data partition.
+
+Fixes: 6fa658fd5ab2 ("ath9k: Simplify and fix eeprom endianness swapping")
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom.c
+@@ -150,18 +150,18 @@ int ath9k_hw_nvram_swap_data(struct ath_
+ 		return -EIO;
+ 	}
+ 
+-	if (magic == AR5416_EEPROM_MAGIC) {
+-		*swap_needed = false;
+-	} else if (swab16(magic) == AR5416_EEPROM_MAGIC) {
++	*swap_needed = false;
++	if (swab16(magic) == AR5416_EEPROM_MAGIC) {
+ 		if (ah->ah_flags & AH_NO_EEP_SWAP) {
+ 			ath_info(common,
+ 				 "Ignoring endianness difference in EEPROM magic bytes.\n");
+-
+-			*swap_needed = false;
+ 		} else {
+ 			*swap_needed = true;
+ 		}
+-	} else {
++	} else if (magic != AR5416_EEPROM_MAGIC) {
++		if (ath9k_hw_use_flash(ah))
++			return 0;
++
+ 		ath_err(common,
+ 			"Invalid EEPROM Magic (0x%04x).\n", magic);
+ 		return -EINVAL;

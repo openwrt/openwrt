@@ -22,7 +22,9 @@ define Build/netgear-squashfs
 	cp $@ $@.fs/image/uImage
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
 		$@.fs $@.squashfs \
-		-noappend -root-owned -be -b 65536
+		-noappend -root-owned -be -b 65536 \
+		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
+
 	dd if=/dev/zero bs=1k count=1 >> $@.squashfs
 	mkimage \
 		-A mips -O linux -T filesystem -C none \
@@ -461,6 +463,14 @@ define Device/antminer-s3
     CONSOLE := ttyATH0,115200
 endef
 
+define Device/antrouter-r1
+    $(Device/tplink-8mlzma)
+    BOARDNAME := ANTROUTER-R1
+    DEVICE_PROFILE := ANTROUTERR1
+    TPLINK_HWID := 0x44440101
+    CONSOLE := ttyATH0,115200
+endef
+
 define Device/el-m150
     $(Device/tplink-8mlzma)
     BOARDNAME := EL-M150
@@ -476,7 +486,7 @@ define Device/el-mini
     TPLINK_HWID := 0x01530001
     CONSOLE := ttyATH0,115200
 endef
-TARGET_DEVICES += antminer-s1 antminer-s3 el-m150 el-mini
+TARGET_DEVICES += antminer-s1 antminer-s3 antrouter-r1 el-m150 el-mini
 
 define Device/gl-inet-6408A-v1
     $(Device/tplink-8mlzma)
@@ -976,6 +986,13 @@ define Device/tl-wa801nd-v2
     TPLINK_HWID := 0x08010002
 endef
 
+define Device/tl-wa801nd-v3
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA801ND-v3
+    DEVICE_PROFILE := TLWA801
+    TPLINK_HWID := 0x08010003
+endef
+
 define Device/tl-wa830re-v1
     $(Device/tplink-4m)
     BOARDNAME := TL-WA901ND
@@ -1003,7 +1020,7 @@ define Device/tl-wa860re-v1
     DEVICE_PROFILE := TLWA860
     TPLINK_HWID := 0x08600001
 endef
-TARGET_DEVICES += tl-wa801nd-v1 tl-wa801nd-v2 tl-wa830re-v1 tl-wa830re-v2 tl-wa850re-v1 tl-wa860re-v1
+TARGET_DEVICES += tl-wa801nd-v1 tl-wa801nd-v2 tl-wa801nd-v3 tl-wa830re-v1 tl-wa830re-v2 tl-wa850re-v1 tl-wa860re-v1
 
 define Device/tl-wa901nd-v1
     $(Device/tplink-4m)
@@ -1131,12 +1148,21 @@ define Device/ubnt-unifi
   DEVICE_PROFILE := UBNT UBNTUNIFI
 endef
 
+define Device/ubnt-unifiac
+  DEVICE_PROFILE := UBNT UBNTUNIFIAC
+  IMAGE_SIZE := 7744k
+  MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  BOARDNAME := UBNT-UF-AC
+endef
+
 define Device/ubnt-unifi-outdoor
   $(Device/ubnt-bz)
   BOARDNAME := UBNT-U20
   DEVICE_PROFILE := UBNT UBNTUNIFIOUTDOOR
 endef
-TARGET_DEVICES += ubnt-unifi ubnt-unifi-outdoor
+TARGET_DEVICES += ubnt-unifi ubnt-unifiac ubnt-unifi-outdoor
 
 define Device/ubnt-nano-m-xw
   $(Device/ubnt-xw)
@@ -2063,7 +2089,8 @@ define Image/Build/Netgear/buildkernel
 	cat $(KDIR_TMP)/vmlinux-$(2).uImage > $(KDIR_TMP)/$(2)/image/uImage
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
 		$(KDIR_TMP)/$(2) $(KDIR_TMP)/vmlinux-$(2).uImage.squashfs.tmp1 \
-		-noappend -root-owned -be -b 65536
+		-noappend -root-owned -be -b 65536 \
+		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
 	( \
 		cat $(KDIR_TMP)/vmlinux-$(2).uImage.squashfs.tmp1; \
 		dd if=/dev/zero bs=1k count=1 \
@@ -2430,11 +2457,12 @@ $(eval $(call SingleProfile,MyLoader,64k,WPE72_16M,wpe72,,ttyS0,115200,0x1000000
 
 $(eval $(call SingleProfile,Netgear,64kraw,WNR2000V3,wnr2000v3,WNR2000V3,ttyS0,115200,$$(wnr2000v3_mtdlayout),0x32303033,WNR2000V3,"" NA,-H 29763551+04+32))
 $(eval $(call SingleProfile,NetgearLzma,64kraw,WNR2000V4,wnr2000v4,WNR2000V4,ttyS0,115200,$$(wnr2000v4_mtdlayout),0x32303034,WNR2000V4,"" NA,))
-$(eval $(call SingleProfile,Netgear,64kraw,WNR2200,wnr2200,WNR2200,ttyS0,115200,$$(wnr2200_mtdlayout),0x32323030,WNR2200,"" NA,))
+$(eval $(call SingleProfile,Netgear,64kraw,WNR2200,wnr2200,WNR2200,ttyS0,115200,$$(wnr2200_mtdlayout),0x32323030,wnr2200,"" NA,))
 $(eval $(call SingleProfile,Netgear,64kraw,REALWNR612V2,wnr612v2,WNR612V2,ttyS0,115200,$$(wnr2000v3_mtdlayout),0x32303631,WNR612V2,"",))
 $(eval $(call SingleProfile,Netgear,64kraw,N150R,n150r,WNR612V2,ttyS0,115200,$$(wnr2000v3_mtdlayout),0x32303631,N150R,"",))
 $(eval $(call SingleProfile,Netgear,64kraw,REALWNR1000V2,wnr1000v2,WNR1000V2,ttyS0,115200,$$(wnr2000v3_mtdlayout),0x31303031,WNR1000V2,"",))
 $(eval $(call SingleProfile,Netgear,64kraw,WNR1000V2_VC,wnr1000v2-vc,WNR1000V2,ttyS0,115200,$$(wnr2000v3_mtdlayout),0x31303030,WNR1000V2-VC,"",))
+$(eval $(call SingleProfile,Netgear,64kraw,WPN824N,wpn824n,WPN824N,ttyS0,115200,$$(wnr2000v3_mtdlayout),0x31313030,WPN824N,"" NA,))
 
 $(eval $(call SingleProfile,OpenMesh,squashfs-only,OM2P,om2p,,,,OM2P))
 $(eval $(call SingleProfile,OpenMesh,squashfs-only,OM5P,om5p,,,,OM5P))

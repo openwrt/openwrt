@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/Makefile |    1 +
  3 files changed, 3 insertions(+)
 
-diff --git a/arch/mips/ralink/rt305x.c b/arch/mips/ralink/rt305x.c
-index 51f33a5..d7c4ba4 100644
 --- a/arch/mips/ralink/rt305x.c
 +++ b/arch/mips/ralink/rt305x.c
 @@ -199,6 +199,7 @@ void __init ralink_clk_init(void)
@@ -24,6 +22,3 @@ index 51f33a5..d7c4ba4 100644
  	ralink_clk_add("10000b00.spi", sys_rate);
  	ralink_clk_add("10000b40.spi", sys_rate);
  	ralink_clk_add("10000100.timer", wdt_rate);
--- 
-1.7.10.4
-

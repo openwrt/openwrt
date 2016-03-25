@@ -1,0 +1,61 @@
+commit 3371600cc36d2a6c19cc985660a21c6830f7e7cd
+Author: Tim Harvey <tharvey@gateworks.com>
+Date:   Thu Jan 7 09:03:03 2016 -0800
+
+    ARM: dts: imx: ventana: fix PWM pinmux for Ventana boards
+    
+    Fix some invalid pwm pinmux configurations.
+    
+    Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+
+--- a/arch/arm/boot/dts/imx6qdl-gw51xx.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-gw51xx.dtsi
+@@ -320,13 +320,13 @@
+ 
+ 		pinctrl_pwm3: pwm3grp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_SD4_DAT1__PWM3_OUT		0x1b0b1
++				MX6QDL_PAD_SD1_DAT1__PWM3_OUT		0x1b0b1
+ 			>;
+ 		};
+ 
+ 		pinctrl_pwm4: pwm4grp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_SD4_DAT2__PWM4_OUT		0x1b0b1
++				MX6QDL_PAD_SD1_CMD__PWM4_OUT		0x1b0b1
+ 			>;
+ 		};
+ 
+--- a/arch/arm/boot/dts/imx6qdl-gw52xx.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-gw52xx.dtsi
+@@ -473,7 +473,7 @@
+ 
+ 		pinctrl_pwm3: pwm3grp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_SD4_DAT1__PWM3_OUT		0x1b0b1
++				MX6QDL_PAD_SD1_DAT1__PWM3_OUT		0x1b0b1
+ 			>;
+ 		};
+ 
+--- a/arch/arm/boot/dts/imx6qdl-gw53xx.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-gw53xx.dtsi
+@@ -462,7 +462,7 @@
+ 
+ 		pinctrl_pwm3: pwm3grp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_SD4_DAT1__PWM3_OUT		0x1b0b1
++				MX6QDL_PAD_SD1_DAT1__PWM3_OUT		0x1b0b1
+ 			>;
+ 		};
+ 
+--- a/arch/arm/boot/dts/imx6qdl-gw552x.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-gw552x.dtsi
+@@ -262,7 +262,7 @@
+ 
+ 		pinctrl_pwm3: pwm3grp {
+ 			fsl,pins = <
+-				MX6QDL_PAD_SD4_DAT1__PWM3_OUT		0x1b0b1
++				MX6QDL_PAD_SD1_DAT1__PWM3_OUT		0x1b0b1
+ 			>;
+ 		};
+ 

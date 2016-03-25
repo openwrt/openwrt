@@ -1,19 +1,32 @@
 #
-# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
 
+
+MD5SUM_2.19 = 42dad4edd3bcb38006d13b5640b00b38
+REVISION_2.19 = 25243
+
+MD5SUM_2.21 = 76050a65c444d58b5c4aa0d6034736ed
+REVISION_2.21 = 16d0a0c
+
+MD5SUM_2.22 = b575850e77b37d70f96472285290b391
+REVISION_2.22 = b995d95
+
+
 PKG_NAME:=glibc
 PKG_VERSION:=$(call qstrip,$(CONFIG_GLIBC_VERSION))
-PKG_REVISION:=$(call qstrip,$(CONFIG_GLIBC_REVISION))
+
+PKG_REVISION:=$(REVISION_$(PKG_VERSION))
+PKG_MIRROR_MD5SUM:=$(MD5SUM_$(PKG_VERSION))
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://sourceware.org/git/glibc.git
 PKG_SOURCE_VERSION:=$(PKG_REVISION)
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)-r$(PKG_REVISION)
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_REVISION)
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.bz2
 
 GLIBC_PATH:=
@@ -72,10 +85,10 @@ export HOST_CFLAGS := $(HOST_CFLAGS) -idirafter $(CURDIR)/$(PATH_PREFIX)/include
 
 define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
-ifneq ($(CONFIG_GLIBC_VERSION_2_21),)
-	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.gnu.org/software/libc/,' $(TOOLCHAIN_DIR)/info.mk
-else
+ifneq ($(CONFIG_EGLIBC_VERSION_2_19),)
 	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.eglibc.org/,' $(TOOLCHAIN_DIR)/info.mk
+else
+	$(SED) 's,^\(LIBC_URL\)=.*,\1=http://www.gnu.org/software/libc/,' $(TOOLCHAIN_DIR)/info.mk
 endif
 	$(SED) 's,^\(LIBC_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
 	$(SED) 's,^\(LIBC_SO_VERSION\)=.*,\1=$(PKG_VERSION),' $(TOOLCHAIN_DIR)/info.mk
@@ -97,7 +110,7 @@ endef
 define Host/Prepare
 	$(call Host/Prepare/Default)
 	ln -snf $(PKG_SOURCE_SUBDIR) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
-ifeq ($(CONFIG_GLIBC_VERSION_2_21),)
+ifneq ($(CONFIG_EGLIBC_VERSION_2_19),)
 	$(SED) 's,y,n,' $(HOST_BUILD_DIR)/libc/option-groups.defaults
 endif
 endef

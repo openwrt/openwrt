@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00mac.c
-@@ -632,12 +632,8 @@ void rt2x00mac_bss_info_changed(struct i
+@@ -627,12 +627,8 @@ void rt2x00mac_bss_info_changed(struct i
  		} else if (bss_conf->enable_beacon && !intf->enable_beacon) {
  			rt2x00dev->intf_beaconing++;
  			intf->enable_beacon = true;

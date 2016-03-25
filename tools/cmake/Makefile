@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2015 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cmake
-PKG_VERSION:=3.4.0
+PKG_VERSION:=3.4.3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.cmake.org/files/v3.4/ \
+PKG_SOURCE_URL:=https://cmake.org/files/v3.4/ \
 		https://fossies.org/linux/misc/
-PKG_MD5SUM:=cd3034e0a44256a0917e254167217fc8
+PKG_MD5SUM:=4cb3ff35b2472aae70f542116d616e63
 
 HOST_BUILD_PARALLEL:=1
 HOST_CONFIGURE_PARALLEL:=1

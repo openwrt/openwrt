@@ -56,7 +56,12 @@ echo "BOARD=${board}" > "${tmpdir}/sysupgrade-${board}/CONTROL"
 [ -z "${rootfs}" ] || cp "${rootfs}" "${tmpdir}/sysupgrade-${board}/root"
 [ -z "${kernel}" ] || cp "${kernel}" "${tmpdir}/sysupgrade-${board}/kernel"
 
-(cd "$tmpdir"; tar cvf sysupgrade.tar sysupgrade-${board})
+mtime=""
+if [ -n "$SOURCE_DATE_EPOCH" ]; then
+	mtime="--mtime=@${SOURCE_DATE_EPOCH}"
+fi
+
+(cd "$tmpdir"; tar cvf sysupgrade.tar sysupgrade-${board} ${mtime})
 err="$?"
 if [ -e "$tmpdir/sysupgrade.tar" ]; then
 	cp "$tmpdir/sysupgrade.tar" "$outfile"

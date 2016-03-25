@@ -1,0 +1,25 @@
+From 54be0f057825b886af008d8d43a97802e5537ab6 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Fri, 22 Jan 2016 14:55:47 +0100
+Subject: [PATCH] sunxi: Bananapro: Set LDO4 to 2.5V
+
+According to the Bananapro schematic VDD25-SATA either comes from a
+dedicated WL2003E25-5 LTO, or it is connected to LDO4 via a
+0 Ohm resistor.
+
+In practice it seems that LDO4 is used, so enable it and set it to 2.5V.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ configs/Bananapro_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configs/Bananapro_defconfig b/configs/Bananapro_defconfig
+index 40588b9..4f4a07b 100644
+--- a/configs/Bananapro_defconfig
++++ b/configs/Bananapro_defconfig
+@@ -17,3 +17,4 @@ CONFIG_CMD_GPIO=y
+ CONFIG_NETCONSOLE=y
+ CONFIG_ETH_DESIGNWARE=y
+ CONFIG_USB_EHCI_HCD=y
++CONFIG_AXP_ALDO4_VOLT=2500

@@ -7,6 +7,15 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power_orange;
+			failsafe = &power_red;
+			running = &power_blue;
+
+			internet = &broadband_blue;
+			wifi = &wireless_blue;
+		};
 	};
 
 	memory@0 {				  /* RAM: Samsung K4H511638F-LC 64MB */
@@ -227,54 +236,54 @@
 		compatible = "gpio-leds";
 
 		upgrading-orange {
-			label = "soc:orange:upgrading";
+			label = "bthomehubv2b:orange:upgrading";
 			gpios = <&stp0 5 0>;
 		};
 
 		phone-orange {
-			label = "soc:orange:phone";
+			label = "bthomehubv2b:orange:phone";
 			gpios = <&stp0 6 0>;
 		};
 		phone-blue {
-			label = "soc:blue:phone";
+			label = "bthomehubv2b:blue:phone";
 			gpios = <&stp0 7 0>;
 		};
 
 		wireless-orange {
-			label = "soc:orange:wireless";
+			label = "bthomehubv2b:orange:wireless";
 			gpios = <&stp0 8 0>;
 		};
-		wireless-blue {
-			label = "soc:blue:wireless";
+		wireless_blue: wireless-blue {
+			label = "bthomehubv2b:blue:wireless";
 			gpios = <&stp0 9 0>;
 		};
 
 		broadband-red {
-			label = "soc:red:broadband";
+			label = "bthomehubv2b:red:broadband";
 			gpios = <&stp0 10 0>;
 		};
 		broadband-orange {
-			label = "soc:orange:broadband";
+			label = "bthomehubv2b:orange:broadband";
 			gpios = <&stp0 11 0>;
 		};
-		broadband-blue {
-			label = "soc:blue:broadband";
+		broadband_blue: broadband-blue {
+			label = "bthomehubv2b:blue:broadband";
 			gpios = <&stp0 12 0>;
 		};
 
-		power-red {
-			label = "soc:red:power";
+		power_red: power-red {
+			label = "bthomehubv2b:red:power";
 			gpios = <&stp0 13 0>;
 		};
-		power-orange {
-			label = "soc:orange:power";
+		power_orange: power-orange {
+			label = "bthomehubv2b:orange:power";
 			gpios = <&stp0 14 0>;
+			default-state = "keep";
 		};
-		power-blue {
-			label = "soc:blue:power";
+		power_blue: power-blue {
+			label = "bthomehubv2b:blue:power";
 			gpios = <&stp0 15 0>;
 		};
 	};
-
 };
 

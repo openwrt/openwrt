@@ -148,11 +148,24 @@ endef
 $(eval $(call KernelPackage,gw16083))
 
 
+define KernelPackage/phylib-broadcom
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Broadcom Ethernet PHY library
+   KCONFIG:=CONFIG_BCM_NET_PHYLIB
+   HIDDEN:=1
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/bcm-phy-lib.ko
+   AUTOLOAD:=$(call AutoLoad,17,bcm-phy-lib)
+endef
+
+$(eval $(call KernelPackage,phylib-broadcom))
+
+
 define KernelPackage/phy-broadcom
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=Broadcom Ethernet PHY driver
    KCONFIG:=CONFIG_BROADCOM_PHY
-   DEPENDS:=+kmod-libphy
+   DEPENDS:=+kmod-libphy +kmod-phylib-broadcom
    FILES:=$(LINUX_DIR)/drivers/net/phy/broadcom.ko
    AUTOLOAD:=$(call AutoLoad,18,broadcom)
 endef

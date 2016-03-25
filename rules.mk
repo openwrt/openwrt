@@ -26,6 +26,11 @@ merge=$(subst $(space),,$(1))
 confvar=$(call merge,$(foreach v,$(1),$(if $($(v)),y,n)))
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
 
+paren_left = (
+paren_right = )
+chars_lower = a b c d e f g h i j k l m n o p q r s t u v w x y z
+chars_upper = A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
 define sep
 
 endef
@@ -35,17 +40,29 @@ define newline
 
 endef
 
+__tr_list = $(join $(join $(1),$(foreach char,$(1),$(comma))),$(2))
+__tr_head_stripped = $(subst $(space),,$(foreach cv,$(call __tr_list,$(1),$(2)),$$$(paren_left)subst$(cv)$(comma)))
+__tr_head = $(subst $(paren_left)subst,$(paren_left)subst$(space),$(__tr_head_stripped))
+__tr_tail = $(subst $(space),,$(foreach cv,$(1),$(paren_right)))
+__tr_template = $(__tr_head)$$(1)$(__tr_tail)
+
+$(eval toupper = $(call __tr_template,$(chars_lower),$(chars_upper)))
+$(eval tolower = $(call __tr_template,$(chars_upper),$(chars_lower)))
+
 _SINGLE=export MAKEFLAGS=$(space);
 CFLAGS:=
 ARCH:=$(subst i486,i386,$(subst i586,i386,$(subst i686,i386,$(call qstrip,$(CONFIG_ARCH)))))
 ARCH_PACKAGES:=$(call qstrip,$(CONFIG_TARGET_ARCH_PACKAGES))
 BOARD:=$(call qstrip,$(CONFIG_TARGET_BOARD))
 TARGET_OPTIMIZATION:=$(call qstrip,$(CONFIG_TARGET_OPTIMIZATION))
-export EXTRA_OPTIMIZATION:=$(call qstrip,$(CONFIG_EXTRA_OPTIMIZATION))
+export EXTRA_OPTIMIZATION:=$(filter-out -fno-plt,$(call qstrip,$(CONFIG_EXTRA_OPTIMIZATION)))
 TARGET_SUFFIX=$(call qstrip,$(CONFIG_TARGET_SUFFIX))
 BUILD_SUFFIX:=$(call qstrip,$(CONFIG_BUILD_SUFFIX))
 SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
+BUILD_SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
 export SHELL:=/usr/bin/env bash
+
+IS_PACKAGE_BUILD := $(if $(filter package/%,$(BUILD_SUBDIR)),1)
 
 OPTIMIZE_FOR_CPU=$(subst i386,i486,$(ARCH))
 
@@ -80,8 +97,6 @@ BIN_DIR:=$(if $(call qstrip,$(CONFIG_BINARY_FOLDER)),$(call qstrip,$(CONFIG_BINA
 INCLUDE_DIR:=$(TOPDIR)/include
 SCRIPT_DIR:=$(TOPDIR)/scripts
 BUILD_DIR_BASE:=$(TOPDIR)/build_dir
-BUILD_DIR_HOST:=$(BUILD_DIR_BASE)/host
-STAGING_DIR_HOST:=$(TOPDIR)/staging_dir/host
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   GCCV:=$(call qstrip,$(CONFIG_GCC_VERSION))
   LIBC:=$(call qstrip,$(CONFIG_LIBC))
@@ -103,6 +118,10 @@ else
   TOOLCHAIN_DIR_NAME:=toolchain-$(GNU_TARGET_NAME)
 endif
 
+ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_GCC_VERSION_4_8),$(CONFIG_TARGET_uml)),)
+  iremap = -iremap $(1):$(2)
+endif
+
 PACKAGE_DIR:=$(BIN_DIR)/packages
 BUILD_DIR:=$(BUILD_DIR_BASE)/$(TARGET_DIR_NAME)
 STAGING_DIR:=$(TOPDIR)/staging_dir/$(TARGET_DIR_NAME)
@@ -116,8 +135,13 @@ STAGING_DIR_ROOT:=$(STAGING_DIR)/root-$(BOARD)
 BUILD_LOG_DIR:=$(TOPDIR)/logs
 PKG_INFO_DIR := $(STAGING_DIR)/pkginfo
 
+BUILD_DIR_HOST:=$(if $(IS_PACKAGE_BUILD),$(BUILD_DIR)/host,$(BUILD_DIR_BASE)/host)
+STAGING_DIR_HOST:=$(TOPDIR)/staging_dir/host
+
 TARGET_PATH:=$(subst $(space),:,$(filter-out .,$(filter-out ./,$(subst :,$(space),$(PATH)))))
-TARGET_CFLAGS:=$(TARGET_OPTIMIZATION)$(if $(CONFIG_DEBUG), -g3) $(EXTRA_OPTIMIZATION)
+TARGET_INIT_PATH:=$(call qstrip,$(CONFIG_TARGET_INIT_PATH))
+TARGET_INIT_PATH:=$(if $(TARGET_INIT_PATH),$(TARGET_INIT_PATH),/usr/sbin:/sbin:/usr/bin:/bin)
+TARGET_CFLAGS:=$(TARGET_OPTIMIZATION)$(if $(CONFIG_DEBUG), -g3) $(call qstrip,$(CONFIG_EXTRA_OPTIMIZATION))
 TARGET_CXXFLAGS = $(TARGET_CFLAGS)
 TARGET_ASFLAGS_DEFAULT = $(TARGET_CFLAGS)
 TARGET_ASFLAGS = $(TARGET_ASFLAGS_DEFAULT)
@@ -197,9 +221,9 @@ export PKG_CONFIG
 
 HOSTCC:=gcc
 HOSTCXX:=g++
-HOST_CPPFLAGS:=-I$(STAGING_DIR_HOST)/include -I$(STAGING_DIR_HOST)/usr/include
+HOST_CPPFLAGS:=-I$(STAGING_DIR_HOST)/include -I$(STAGING_DIR_HOST)/usr/include $(if $(IS_PACKAGE_BUILD),-I$(STAGING_DIR)/host/include)
 HOST_CFLAGS:=-O2 $(HOST_CPPFLAGS)
-HOST_LDFLAGS:=-L$(STAGING_DIR_HOST)/lib -L$(STAGING_DIR_HOST)/usr/lib
+HOST_LDFLAGS:=-L$(STAGING_DIR_HOST)/lib -L$(STAGING_DIR_HOST)/usr/lib $(if $(IS_PACKAGE_BUILD),-L$(STAGING_DIR)/host/lib)
 
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   TARGET_AR:=$(TARGET_CROSS)gcc-ar
@@ -315,12 +339,16 @@ endef
 # Execute commands under flock
 # $(1) => The shell expression.
 # $(2) => The lock name. If not given, the global lock will be used.
-define locked
+ifneq ($(wildcard $(STAGING_DIR_HOST)/bin/flock),)
+  define locked
 	SHELL= \
-	$(STAGING_DIR_HOST)/bin/flock \
+	flock \
 		$(TMP_DIR)/.$(if $(2),$(strip $(2)),global).flock \
 		-c '$(subst ','\'',$(1))'
-endef
+  endef
+else
+  locked=$(1)
+endif
 
 # Recursively copy paths into another directory, purge dangling
 # symlinks before.

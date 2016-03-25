@@ -1,0 +1,27 @@
+From: Sergei Trofimovich <siarheit@google.com>
+Date: Sun, 19 Jul 2015 10:30:05 +0100
+Subject: [PATCH] perf tools: Fix makefile generation under dash
+
+Under dash 'echo -n' yields '-n' to stdout.  Use printf "" instead.
+
+Signed-off-by: Sergei Trofimovich <siarheit@google.com>
+Acked-by: Ingo Molnar <mingo@kernel.org>
+Acked-by: Jiri Olsa <jolsa@kernel.org>
+Cc: Adrian Hunter <adrian.hunter@intel.com>
+Cc: Namhyung Kim <namhyung@kernel.org>
+Cc: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Link: http://lkml.kernel.org/r/1437298205-29305-1-git-send-email-siarheit@google.com
+Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
+---
+
+--- a/tools/perf/config/Makefile
++++ b/tools/perf/config/Makefile
+@@ -11,7 +11,7 @@ ifneq ($(obj-perf),)
+ obj-perf := $(abspath $(obj-perf))/
+ endif
+ 
+-$(shell echo -n > $(OUTPUT).config-detected)
++$(shell printf "" > $(OUTPUT).config-detected)
+ detected     = $(shell echo "$(1)=y"       >> $(OUTPUT).config-detected)
+ detected_var = $(shell echo "$(1)=$($(1))" >> $(OUTPUT).config-detected)
+ 

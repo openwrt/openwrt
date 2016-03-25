@@ -6,7 +6,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net/packet/af_packet.c
 +++ b/net/packet/af_packet.c
-@@ -2323,7 +2323,7 @@ static void tpacket_destruct_skb(struct
+@@ -2329,7 +2329,7 @@ static void tpacket_destruct_skb(struct
  static bool ll_header_truncated(const struct net_device *dev, int len)
  {
  	/* net device doesn't like empty head */

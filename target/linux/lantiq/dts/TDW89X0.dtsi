@@ -3,6 +3,17 @@
 / {
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			/* the power led can't be controlled, use the wps led instead */
+			boot = &wps;
+			failsafe = &wps;
+
+			dsl = &dsl;
+			internet = &internet;
+			usb = &usb0;
+			usb2 = &usb2;
+		};
 	};
 
 	memory@0 {
@@ -10,46 +21,6 @@
 	};
 
 	fpi@10000000 {
-		spi@E100800 {
-			compatible = "lantiq,spi-xway";
-			reg = <0xE100800 0x100>;
-			interrupt-parent = <&icu0>;
-			interrupts = <22 23 24>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "jedec,spi-nor";
-				reg = <3 0>;
-				spi-max-frequency = <33250000>;
-				m25p,fast-read;
-
-				partition@0 {
-					reg = <0x0 0x20000>;
-					label = "u-boot";
-					read-only;
-				};
-
-				partition@20000 {
-					reg = <0x20000 0x7a0000>;
-					label = "firmware";
-				};
-
-				partition@7c0000 {
-					reg = <0x7c0000 0x10000>;
-					label = "config";
-					read-only;
-				};
-
-				ath9k_cal: partition@7d0000 {
-					reg = <0x7d0000 0x30000>;
-					label = "boardconfig";
-					read-only;
-				};
-			};
-		};
-
 		gpio: pinmux@E100B10 {
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
@@ -72,84 +43,22 @@
 					lantiq,open-drain = <0>;
 					lantiq,output = <1>;
 				};
-				spi {
-					lantiq,groups = "spi", "spi_cs4";
-					lantiq,function = "spi";
-				};
 				pcie-rst {
 					lantiq,pins = "io38";
 					lantiq,pull = <0>;
 					lantiq,output = <1>;
 				};
 			};
-		};
-
-		eth@E108000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "lantiq,xrx200-net";
-			reg = <	0xE108000 0x3000 /* switch */
-				0xE10B100 0x70 /* mdio */
-				0xE10B1D8 0x30 /* mii */
-				0xE10B308 0x30 /* pmac */
-			>;
-			interrupt-parent = <&icu0>;
-			interrupts = <73 72>;
-
-			lan: interface@0 {
-				compatible = "lantiq,xrx200-pdi";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <0>;
-				mtd-mac-address = <&ath9k_cal 0xf100>;
-				lantiq,switch;
-
-				ethernet@0 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <0>;
-					phy-mode = "rgmii";
-					phy-handle = <&phy0>;
-					// gpios = <&gpio 42 1>;
+			pins_spi_default: pins_spi_default {
+				spi_in {
+					lantiq,groups = "spi_di";
+					lantiq,function = "spi";
 				};
-				ethernet@5 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <5>;
-					phy-mode = "rgmii";
-					phy-handle = <&phy5>;
-				};
-				ethernet@2 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <2>;
-					phy-mode = "gmii";
-					phy-handle = <&phy11>;
-				};
-				ethernet@3 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <4>;
-					phy-mode = "gmii";
-					phy-handle = <&phy13>;
-				};
-			};
-
-			mdio@0 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				compatible = "lantiq,xrx200-mdio";
-				phy0: ethernet-phy@0 {
-					reg = <0x0>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-				phy5: ethernet-phy@5 {
-					reg = <0x5>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-				phy11: ethernet-phy@11 {
-					reg = <0x11>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-				phy13: ethernet-phy@13 {
-					reg = <0x13>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+				spi_out {
+					lantiq,groups = "spi_do", "spi_clk",
+						"spi_cs4";
+					lantiq,function = "spi";
+					lantiq,output = <1>;
 				};
 			};
 		};
@@ -170,10 +79,6 @@
 		compatible = "lantiq,phy-xrx200";
 		firmware = "lantiq/vr9_phy11g_a2x.bin";
 		phys = [ 00 01 ];
-	};
-
-	pcie {
-		compatible = "lantiq,pcie-xway";
 	};
 
 	ath9k_eep {
@@ -213,26 +118,126 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-
-		dsl {
-			label = "dsl";
+		/*
+			power is not controllable via gpio
+        */
+		dsl: dsl {
+			label = "tdw89x0:green:dsl";
 			gpios = <&gpio 4 0>;
 		};
-		internet {
-			label = "internet";
+		internet: internet {
+			label = "tdw89x0:green:internet";
 			gpios = <&gpio 5 0>;
 		};
-		usb0 {
-			label = "usb";
+		usb0: usb0 {
+			label = "tdw89x0:green:usb";
 			gpios = <&gpio 19 0>;
 		};
-		usb2 {
-			label = "usb2";
+		usb2: usb2 {
+			label = "tdw89x0:green:usb2";
 			gpios = <&gpio 20 0>;
 		};
-		wps {
-			label = "wps";
+		wps: wps {
+			label = "tdw89x0:green:wps";
 			gpios = <&gpio 37 0>;
+		};
+	};
+};
+
+&spi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pins_spi_default>;
+
+	status = "ok";
+
+	m25p80@4 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <4 0>;
+		spi-max-frequency = <33250000>;
+		m25p,fast-read;
+
+		partition@0 {
+			reg = <0x0 0x20000>;
+			label = "u-boot";
+			read-only;
+		};
+
+		partition@20000 {
+			reg = <0x20000 0x7a0000>;
+			label = "firmware";
+		};
+
+		partition@7c0000 {
+			reg = <0x7c0000 0x10000>;
+			label = "config";
+			read-only;
+		};
+
+		ath9k_cal: partition@7d0000 {
+			reg = <0x7d0000 0x30000>;
+			label = "boardconfig";
+			read-only;
+		};
+	};
+};
+
+&eth0 {
+	lan: interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		mtd-mac-address = <&ath9k_cal 0xf100>;
+		lantiq,switch;
+
+		ethernet@0 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <0>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy0>;
+			// gpios = <&gpio 42 1>;
+		};
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy5>;
+		};
+		ethernet@2 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <2>;
+			phy-mode = "gmii";
+			phy-handle = <&phy11>;
+		};
+		ethernet@3 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "gmii";
+			phy-handle = <&phy13>;
+		};
+	};
+
+	mdio@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "lantiq,xrx200-mdio";
+		phy0: ethernet-phy@0 {
+			reg = <0x0>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy5: ethernet-phy@5 {
+			reg = <0x5>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy11: ethernet-phy@11 {
+			reg = <0x11>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
 };

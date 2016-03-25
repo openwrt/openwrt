@@ -23,14 +23,14 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
     endif
   endif
 endif
-ifneq ($(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_kmod-b43legacy)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
+ifneq ($(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmware)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
   BUILD_B43_TOOLS = y
 endif
 
 tools-$(BUILD_TOOLCHAIN) += gmp mpfr mpc libelf expat
 tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
 tools-y += sstrip make-ext4fs e2fsprogs mtd-utils mkimage
-tools-y += firmware-utils patch-image patch quilt yaffs2 flock padjffs2
+tools-y += firmware-utils patch-image patch quilt yaffs2 padjffs2
 tools-y += mm-macros missing-macros xz cmake scons bc findutils gengetopt patchelf
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_powerpc) += upx
@@ -89,6 +89,9 @@ $(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(
 
 $(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(curdir)/tar/install))
 tools-y += tar
+
+$(curdir)/tar/compile := $(curdir)/flock/install
+tools-y += flock
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
 $(curdir)/builddirs-default := $(tools-y)

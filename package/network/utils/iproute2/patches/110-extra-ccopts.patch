@@ -1,9 +1,9 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -29,7 +29,7 @@ ADDLIB+=ipx_ntop.o ipx_pton.o
- CC = gcc
- HOSTCC = gcc
+@@ -34,7 +34,7 @@ HOSTCC = gcc
  DEFINES += -D_GNU_SOURCE
+ # Turn on transparent support for LFS
+ DEFINES += -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE
 -CCOPTS = -O2
 +CCOPTS = -O2 $(EXTRA_CCOPTS)
  WFLAGS := -Wall -Wstrict-prototypes  -Wmissing-prototypes

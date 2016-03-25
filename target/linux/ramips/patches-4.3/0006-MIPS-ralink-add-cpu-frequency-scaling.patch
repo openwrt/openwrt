@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/cevt-rt3352.c |   38 ++++++++++++++++++++++++++++++++++++++
  1 file changed, 38 insertions(+)
 
-diff --git a/arch/mips/ralink/cevt-rt3352.c b/arch/mips/ralink/cevt-rt3352.c
-index a8e70a9..b36888c 100644
 --- a/arch/mips/ralink/cevt-rt3352.c
 +++ b/arch/mips/ralink/cevt-rt3352.c
 @@ -29,6 +29,10 @@
@@ -53,7 +51,7 @@ index a8e70a9..b36888c 100644
  static int systick_next_event(unsigned long delta,
  				struct clock_event_device *evt)
  {
-@@ -99,6 +120,9 @@ static int systick_shutdown(struct clock_event_device *evt)
+@@ -99,6 +120,9 @@ static int systick_shutdown(struct clock
  	sdev->irq_requested = 0;
  	iowrite32(0, systick.membase + SYSTICK_CONFIG);
  
@@ -63,7 +61,7 @@ index a8e70a9..b36888c 100644
  	return 0;
  }
  
-@@ -114,15 +138,29 @@ static int systick_set_oneshot(struct clock_event_device *evt)
+@@ -114,15 +138,29 @@ static int systick_set_oneshot(struct cl
  	iowrite32(CFG_EXT_STK_EN | CFG_CNT_EN,
  		  systick.membase + SYSTICK_CONFIG);
  
@@ -93,6 +91,3 @@ index a8e70a9..b36888c 100644
  	systick_irqaction.name = np->name;
  	systick.dev.name = np->name;
  	clockevents_calc_mult_shift(&systick.dev, SYSTICK_FREQ, 60);
--- 
-1.7.10.4
-

@@ -19,9 +19,8 @@
 #include "machtypes.h"
 #include <asm/mach-ath79/ar71xx_regs.h>
 #include <asm/mach-ath79/ath79.h>
+#include <linux/gpio.h>
 #include "common.h"
-#include "gpio.h"
-#include "linux/gpio.h"
 
 // Uncomment to have reset on gpio18 instead of gipo7
 #define DS2_B

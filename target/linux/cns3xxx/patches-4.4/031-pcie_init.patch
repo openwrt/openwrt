@@ -1,0 +1,33 @@
+--- a/arch/arm/mach-cns3xxx/laguna.c
++++ b/arch/arm/mach-cns3xxx/laguna.c
+@@ -849,7 +849,6 @@ static struct map_desc laguna_io_desc[]
+ static void __init laguna_map_io(void)
+ {
+ 	cns3xxx_map_io();
+-	cns3xxx_pcie_iotable_init();
+ 	iotable_init(ARRAY_AND_SIZE(laguna_io_desc));
+ 	laguna_early_serial_setup();
+ }
+@@ -873,15 +872,6 @@ static int laguna_register_gpio(struct g
+ 	return ret;
+ }
+ 
+-static int __init laguna_pcie_init(void)
+-{
+-	if (!machine_is_gw2388())
+-		return 0;
+-
+-	return cns3xxx_pcie_init();
+-}
+-subsys_initcall(laguna_pcie_init);
+-
+ static int __init laguna_model_setup(void)
+ {
+ 	u32 __iomem *mem;
+@@ -1077,5 +1067,6 @@ MACHINE_START(GW2388, "Gateworks Corpora
+ 	.init_irq	= cns3xxx_init_irq,
+ 	.init_time	= cns3xxx_timer_init,
+ 	.init_machine	= laguna_init,
++	.init_late      = cns3xxx_pcie_init_late,
+ 	.restart	= cns3xxx_restart,
+ MACHINE_END

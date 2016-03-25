@@ -19,9 +19,6 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
  create mode 100644 drivers/net/ethernet/mediatek/mdio_rt2880.h
  create mode 100644 drivers/net/ethernet/mediatek/soc_rt2880.c
 
-diff --git a/drivers/net/ethernet/mediatek/mdio_rt2880.c b/drivers/net/ethernet/mediatek/mdio_rt2880.c
-new file mode 100644
-index 0000000..eb9df6e
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mdio_rt2880.c
 @@ -0,0 +1,222 @@
@@ -247,9 +244,6 @@ index 0000000..eb9df6e
 +	if (priv->phy->phy_node[0] && priv->mii_bus->phy_map[0])
 +		fe_connect_phy_node(priv, priv->phy->phy_node[0]);
 +}
-diff --git a/drivers/net/ethernet/mediatek/mdio_rt2880.h b/drivers/net/ethernet/mediatek/mdio_rt2880.h
-new file mode 100644
-index 0000000..6884894
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mdio_rt2880.h
 @@ -0,0 +1,23 @@
@@ -276,9 +270,6 @@ index 0000000..6884894
 +void rt2880_port_init(struct fe_priv *priv, struct device_node *np);
 +
 +#endif
-diff --git a/drivers/net/ethernet/mediatek/soc_rt2880.c b/drivers/net/ethernet/mediatek/soc_rt2880.c
-new file mode 100644
-index 0000000..0792dab
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/soc_rt2880.c
 @@ -0,0 +1,76 @@
@@ -358,6 +349,3 @@ index 0000000..0792dab
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
--- 
-1.7.10.4
-

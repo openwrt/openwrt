@@ -11,16 +11,23 @@ EXTRA_HELP="	status  Get DSL status information
 
 [ -f /lib/functions/lantiq_dsl.sh ] && . /lib/functions/lantiq_dsl.sh
 
+#
+# ITU-T G.997.1 (06/2012) - Section 7.3.1.1.1 (xTU transmission system enabling (XTSE))
+# ITU-T G.997.1 Amendment 2 (04/2013) - Section 2.1 - (Vectoring mode enable (VECTORMODE_ENABLE))
+#
 # G.992.1 Annex A
 # G.992.3 Annex A / L-US1 / L_US-2 / M
 # G.992.5 Annex A / M
-xtse_adsl_a="04 00 04 00 4C 01 04 00"
+# G.993.2 Annex A/B/C
+# G.993.5 Annex A/B/C
+xtse_xdsl_a="04_00_04_00_4C_01_04_0F"
 
 # G.992.1 Annex B
 # G.992.3 Annex B
 # G.992.5 Annex B
 # G.993.2 Annex A/B/C
-xtse_adsl_b="10 00 10 00 00 04 00 00"
+# G.993.5 Annex A/B/C
+xtse_xdsl_b="10_00_10_00_00_04_00_0F"
 
 # G.992.1 Annex B
 # G.992.3 Annex B
@@ -28,9 +35,83 @@ xtse_adsl_b="10 00 10 00 00 04 00 00"
 # G.992.5 Annex B
 # G.992.5 Annex J
 # G.993.2 Annex A/B/C
-xtse_adsl_j="10 00 10 40 00 04 01 00"
+# G.993.5 Annex A/B/C
+xtse_xdsl_j="10_00_10_40_00_04_01_0F"
 
-xtse_vdsl="00 00 00 00 00 00 00 07"
+#
+# ITU-T G.994.1 (06/2012) - Table 2 (Mandatory carrier sets)
+#
+
+# A43
+tone_adsl_a="0x142" # A43C + J43 + A43
+tone_vdsl_a="0x142" # A43C + J43 + A43
+
+# A43 + V43
+tone_adsl_av="0x142" # A43C + J43 + A43
+tone_vdsl_av="0x146" # A43C + J43 + A43 + V43
+
+# B43
+tone_adsl_b="0x81" # B43 + B43c
+tone_vdsl_b="0x1" # B43
+
+# B43 + V43
+tone_adsl_bv="0x81" # B43 + B43c
+tone_vdsl_bv="0x5" # B43 + V43
+
+lowlevel_cfg() {
+	echo "# VRX Low Level Configuration File
+#
+# Parameters must be separated by tabs or spaces.
+# Empty lines and comments will be ignored.
+#
+
+# nFilter
+#
+# NA     = -1
+# OFF    = 0
+# ISDN   = 1
+# POTS   = 2
+# POTS_2 = 3
+# POTS_3 = 4
+#
+#  (dec)
+    -1
+
+# nHsToneGroupMode nHsToneGroup_A       nHsToneGroup_V    nHsToneGroup_AV
+#
+# NA     = -1      NA         = -1      see               see
+# AUTO   = 0       VDSL2_B43  = 0x0001  nHsToneGroup_A    nHsToneGroup_A
+# MANUAL = 1       VDSL2_A43  = 0x0002
+#                  VDSL2_V43  = 0x0004
+#                  VDSL1_V43P = 0x0008
+#                  VDSL1_V43I = 0x0010
+#                  ADSL1_C43  = 0x0020
+#                  ADSL2_J43  = 0x0040
+#                  ADSL2_B43C = 0x0080
+#                  ADSL2_A43C = 0x0100
+#
+#  (dec)           (hex)                (hex)             (hex)
+     1             $1			$2		 0x0
+
+#   nBaseAddr     nIrqNum
+#
+#     (hex)        (dec)
+    0x1e116000      63
+
+# nUtopiaPhyAdr   nUtopiaBusWidth      nPosPhyParity
+#                 default(16b) = 0     NA   = -1
+#                 8-bit        = 1     ODD  = 0
+#                 16-bit       = 2
+#
+#
+#    (hex)            (dec)                (dec)
+      0xFF              0                    0
+
+# bNtrEnable
+#
+#  (dec)
+    0" > /tmp/lowlevel.cfg
+}
 
 service_triggers() {
 	procd_add_reload_trigger network
@@ -39,14 +120,20 @@ service_triggers() {
 start_service() {
 	local annex
 	local firmware
+	local tone
+	local tone_adsl
+	local tone_vdsl
 	local xtse
-	local xtse_adsl
 	local mode
+	local lowlevel
 
 	config_load network
+	config_get tone dsl tone
 	config_get annex dsl annex
 	config_get firmware dsl firmware
 	config_get xfer_mode dsl xfer_mode
+
+	eval "xtse=\"\${xtse_xdsl_$annex}\""
 
 	[ -z "${xfer_mode}" ] && xfer_mode=ptm
 
@@ -55,6 +142,9 @@ start_service() {
 		LOAD=ltq_atm_vr9
 		UNLOAD=ltq_ptm_vr9
 		mode=1
+
+		# mask out VDSL bits when ATM is requested
+		xtse="${xtse%_*}_00"
 		;;
 	*)
 		LOAD=ltq_ptm_vr9
@@ -63,24 +153,25 @@ start_service() {
 		;;
 	esac
 
-	eval "xtse_adsl=\"\${xtse_adsl_$annex}\""
-	if [ "${xtse_adsl}" ]; then
-		xtse=$xtse_adsl
-	else
-		xtse=$xtse_vdsl
-	fi
-
 	[ -z "${firmware}" ] && firmware=/lib/firmware/vdsl.bin
 	[ -f "${firmware}" ] || {
 		echo failed to find $firmware
 		return 1
 	}
 
+	eval "tone_adsl=\"\${tone_adsl_$tone}\""
+	eval "tone_vdsl=\"\${tone_vdsl_$tone}\""
+	[ -n "${tone_adsl}" ] && [ -n "${tone_vdsl}" ] && {
+		lowlevel_cfg "${tone_adsl}" "${tone_vdsl}"
+		lowlevel="-l /tmp/lowlevel.cfg"
+	}
+
 	procd_open_instance
 	procd_set_param command /sbin/vdsl_cpe_control_wrapper \
-			-i`echo $xtse | sed "s/ /_/g"` \
+			-i$xtse \
 			-n /sbin/dsl_notify.sh \
 			-f ${firmware} \
+			$lowlevel \
 			-M ${mode}
 	procd_append_param env "LOAD=$LOAD" "UNLOAD=$UNLOAD"
 	procd_close_instance

@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 487 insertions(+)
  create mode 100644 drivers/spi/spi-mt7621.c
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 7c592ce..2f05c85 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -463,6 +463,12 @@ config SPI_RT2880
+@@ -472,6 +472,12 @@ config SPI_RT2880
  	help
  	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
  
@@ -28,11 +26,9 @@ index 7c592ce..2f05c85 100644
  config SPI_S3C24XX
  	tristate "Samsung S3C24XX series SPI"
  	depends on ARCH_S3C24XX
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 3d690ef..5389710 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -49,6 +49,7 @@ obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mpc512x-psc.o
+@@ -50,6 +50,7 @@ obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mp
  obj-$(CONFIG_SPI_MPC52xx_PSC)		+= spi-mpc52xx-psc.o
  obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52xx.o
  obj-$(CONFIG_SPI_MT65XX)                += spi-mt65xx.o
@@ -40,9 +36,6 @@ index 3d690ef..5389710 100644
  obj-$(CONFIG_SPI_MXS)			+= spi-mxs.o
  obj-$(CONFIG_SPI_NUC900)		+= spi-nuc900.o
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
-diff --git a/drivers/spi/spi-mt7621.c b/drivers/spi/spi-mt7621.c
-new file mode 100644
-index 0000000..dedf4a1
 --- /dev/null
 +++ b/drivers/spi/spi-mt7621.c
 @@ -0,0 +1,480 @@
@@ -526,6 +519,3 @@ index 0000000..dedf4a1
 +MODULE_DESCRIPTION("MT7621 SPI driver");
 +MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
 +MODULE_LICENSE("GPL");
--- 
-1.7.10.4
-

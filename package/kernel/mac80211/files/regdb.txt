@@ -2,7 +2,7 @@
 country 00:
 	(2402 - 2472 @ 40), (20)
 	# Channel 12 - 13.
-	(2457 - 2482 @ 40), (20), NO-IR
+	(2457 - 2482 @ 20), (20), NO-IR, AUTO-BW
 	# Channel 14. Only JP enables this and for 802.11b only
 	(2474 - 2494 @ 20), (20), NO-IR, NO-OFDM
 	# Channel 36 - 48
@@ -396,10 +396,10 @@ country ET: DFS-ETSI
 	(5490 - 5710 @ 160), (27), DFS
 
 country FI: DFS-ETSI
-	(2402 - 2482 @ 40), (20)
-	(5170 - 5250 @ 80), (20), AUTO-BW
-	(5250 - 5330 @ 80), (20), DFS, AUTO-BW
-	(5490 - 5710 @ 160), (27), DFS
+	(2400 - 2483.5 @ 40), (20)
+	(5150 - 5250 @ 80), (23), NO-OUTDOOR, AUTO-BW
+	(5250 - 5350 @ 80), (20), NO-OUTDOOR, DFS, AUTO-BW
+	(5470 - 5725 @ 160), (27), DFS
 	# 60 GHz band channels 1-4, ref: Etsi En 302 567
 	(57000 - 66000 @ 2160), (40)
 

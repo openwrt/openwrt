@@ -7,6 +7,17 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
+
+			dsl = &dsl;
+			internet = &online_green;
+			usb = &usb;
+			wifi = &wifi;
+		};
 	};
 
 	memory@0 {
@@ -127,40 +138,41 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
-			label = "power";
+		power_green: power {
+			label = "wbmr:green:power";
 			gpios = <&gpio 1 1>;
+			default-state = "keep";
 		};
-		power2 {
-			label = "power2";
+		power_red: power2 {
+			label = "wbmr:red:power";
 			gpios = <&gpio 5 1>;
 		};
 		security {
-			label = "security";
+			label = "wbmr:yellow:security";
 			gpios = <&gpio 14 1>;
 		};
-		wifi {
-			label = "wifi";
+		wifi: wifi {
+			label = "wbmr:green:wireless";
 			gpios = <&gpio 15 1>;
 		};
-		dsl {
-			label = "dsl";
+		dsl: dsl {
+			label = "wbmr:green:dsl";
 			gpios = <&gpio 16 1>;
 		};
-		online {
-			label = "online";
+		online_green: online {
+			label = "wbmr:green:internet";
 			gpios = <&gpio 17 1>;
 		};
 		online2 {
-			label = "online2";
+			label = "wbmr:red:internet";
 			gpios = <&gpio 18 1>;
 		};
 		movie {
-			label = "movie";
+			label = "wbmr:blue:movie";
 			gpios = <&gpio 20 1>;
 		};
-		usb {
-			label = "usb";
+		usb: usb {
+			label = "wbmr:green:usb";
 			gpios = <&gpio 28 1>;
 			default-state = "on";
 		};

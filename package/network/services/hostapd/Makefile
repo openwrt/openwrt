@@ -7,9 +7,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_VERSION:=2015-03-25
+PKG_VERSION:=2016-01-15
 PKG_RELEASE:=2
-PKG_REV:=8278138e679174b1ec8af7f169c2810a8888e202
+PKG_REV:=e15dcf6d1bc2725388555523effca75b1ffab735
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=git://w1.fi/srv/git/hostap.git
@@ -40,15 +40,15 @@ LOCAL_TYPE=$(strip \
 		hostapd \
 	)))
 LOCAL_VARIANT=$(patsubst wpad-%,%,$(patsubst supplicant-%,%,$(BUILD_VARIANT)))
+CONFIG_VARIANT:=$(LOCAL_VARIANT)
+ifeq ($(LOCAL_VARIANT),mesh)
+  CONFIG_VARIANT:=full
+endif
 
 ifeq ($(LOCAL_TYPE),supplicant)
   ifeq ($(LOCAL_VARIANT),full)
     PKG_CONFIG_DEPENDS += \
 		CONFIG_WPA_SUPPLICANT_INTERNAL \
-		CONFIG_WPA_SUPPLICANT_OPENSSL
-  endif
-  ifeq ($(LOCAL_VARIANT),mesh)
-    PKG_CONFIG_DEPENDS += \
 		CONFIG_WPA_SUPPLICANT_OPENSSL
   endif
 endif
@@ -82,7 +82,7 @@ ifneq ($(LOCAL_TYPE),hostapd)
     endif
   endif
   ifeq ($(LOCAL_VARIANT),mesh)
-    DRIVER_MAKEOPTS += CONFIG_TLS=openssl
+    DRIVER_MAKEOPTS += CONFIG_TLS=openssl CONFIG_AP=y CONFIG_SAE=y CONFIG_MESH=y
     TARGET_LDFLAGS += -lcrypto -lssl
   endif
   ifdef CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK
@@ -177,8 +177,7 @@ endef
 define Package/wpad-mesh
 $(call Package/wpad/Default)
   TITLE+= (with 802.11s mesh and SAE support)
-  DEPENDS:=$(DRV_DEPENDS) +libubus +PACKAGE_wpad-mesh:libopenssl +@CONFIG_WPA_SUPPLICANT_OPENSSL @(!TARGET_uml||BROKEN)
-  CONFLICTS:=@WPA_SUPPLICANT_INTERNAL
+  DEPENDS:=$(DRV_DEPENDS) +libubus +PACKAGE_wpad-mesh:libopenssl @(!TARGET_uml||BROKEN)
   VARIANT:=wpad-mesh
 endef
 
@@ -284,10 +283,10 @@ endif
 
 define Build/Configure
 	$(Build/Configure/rebuild)
-	$(if $(wildcard ./files/hostapd-$(LOCAL_VARIANT).config), \
-		$(CP) ./files/hostapd-$(LOCAL_VARIANT).config $(PKG_BUILD_DIR)/hostapd/.config \
+	$(if $(wildcard ./files/hostapd-$(CONFIG_VARIANT).config), \
+		$(CP) ./files/hostapd-$(CONFIG_VARIANT).config $(PKG_BUILD_DIR)/hostapd/.config \
 	)
-	$(CP) ./files/wpa_supplicant-$(LOCAL_VARIANT).config $(PKG_BUILD_DIR)/wpa_supplicant/.config
+	$(CP) ./files/wpa_supplicant-$(CONFIG_VARIANT).config $(PKG_BUILD_DIR)/wpa_supplicant/.config
 endef
 
 TARGET_CPPFLAGS := \

@@ -1,0 +1,27 @@
+From b00c4415fb231f276221c634a47ce7328df9aae5 Mon Sep 17 00:00:00 2001
+From: Ray Jui <rjui@broadcom.com>
+Date: Mon, 27 Jul 2015 15:42:19 -0700
+Subject: [PATCH 2/4] PCI: iproc: Fix ARM64 dependency in Kconfig
+
+Allow Broadcom iProc PCIe core driver to be compiled for ARM64
+
+Signed-off-by: Ray Jui <rjui@broadcom.com>
+Reviewed-by: Vikram Prakash <vikramp@broadcom.com>
+Reviewed-by: Scott Branden <sbranden@broadcom.com>
+Acked-by: Bjorn Helgaas <bhelgaas@google.com>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ drivers/pci/host/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pci/host/Kconfig
++++ b/drivers/pci/host/Kconfig
+@@ -108,7 +108,7 @@ config PCI_VERSATILE
+ 
+ config PCIE_IPROC
+ 	tristate "Broadcom iProc PCIe controller"
+-	depends on OF && ARM
++	depends on OF && (ARM || ARM64)
+ 	default n
+ 	help
+ 	  This enables the iProc PCIe core controller support for Broadcom's

@@ -26,3 +26,28 @@
 +#define W_STOPCODE(sig) ((sig) << 8 | 0x7f)
 +#endif
 +
+--- a/gdb/nat/ppc-linux.h
++++ b/gdb/nat/ppc-linux.h
+@@ -18,7 +18,10 @@
+ #ifndef PPC_LINUX_H
+ #define PPC_LINUX_H 1
+ 
++#define pt_regs __pt_regs
+ #include <asm/ptrace.h>
++#undef pt_regs
++
+ #include <asm/cputable.h>
+ 
+ /* This sometimes isn't defined.  */
+--- a/gdb/gdbserver/linux-ppc-low.c
++++ b/gdb/gdbserver/linux-ppc-low.c
+@@ -21,7 +21,9 @@
+ #include "linux-low.h"
+ 
+ #include <elf.h>
++#define pt_regs __pt_regs
+ #include <asm/ptrace.h>
++#undef pt_regs
+ 
+ #include "nat/ppc-linux.h"
+ 

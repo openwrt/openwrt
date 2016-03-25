@@ -7,6 +7,16 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power;
+			failsafe = &power2;
+			running = &power;
+
+			dsl = &dsl;
+			internet = &online;
+			wifi = &wifi;
+		};
 	};
 
 	memory@0 {
@@ -108,7 +118,7 @@
 			lantiq,external-clock;
 			gpio-reset = <&gpio 21 0>;
 			req-mask = <0xf>;
-		};    
+		};
 	};
 
 	ralink_eep {
@@ -136,16 +146,16 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power {
+		power: power {
 			label = "power";
 			gpios = <&gpio 2 1>;
-			default-state = "off";
+			default-state = "keep";
 		};
-		power2 {
+		power2: power2 {
 			label = "power2";
 			gpios = <&gpio 14 1>;
 		};
-		online {
+		online: online {
 			label = "online";
 			gpios = <&gpio 3 1>;
 		};
@@ -153,7 +163,7 @@
 			label = "online2";
 			gpios = <&gpio 30 1>;
 		};
-		wifi {
+		wifi: wifi {
 			label = "wifi";
 			gpios = <&gpio 12 1>;
 		};
@@ -181,7 +191,7 @@
 			label = "wps3";
 			gpios = <&gpio 23 1>;
 		};
-		dsl {
+		dsl: dsl {
 			label = "dsl";
 			gpios = <&gpio 4 1>;
 		};

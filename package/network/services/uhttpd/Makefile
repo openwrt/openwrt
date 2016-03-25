@@ -12,7 +12,7 @@ PKG_VERSION:=2015-11-08
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://nbd.name/uhttpd2.git
+PKG_SOURCE_URL=$(OPENWRT_GIT)/project/uhttpd.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=fe01ef3f52adae9da38ef47926cd50974af5d6b7
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
@@ -54,6 +54,7 @@ define Package/uhttpd-mod-tls
   TITLE+= (TLS plugin)
   DEPENDS:=uhttpd \
 	+PACKAGE_uhttpd-mod-tls_polarssl:libustream-polarssl \
+	+PACKAGE_uhttpd-mod-tls_mbedtls:libustream-mbedtls \
 	+PACKAGE_uhttpd-mod-tls_cyassl:libustream-cyassl \
 	+PACKAGE_uhttpd-mod-tls_openssl:libustream-openssl
 endef
@@ -67,6 +68,9 @@ define Package/uhttpd-mod-tls/config
     depends on PACKAGE_uhttpd-mod-tls
     prompt "TLS Provider"
     default PACKAGE_uhttpd-mod-tls_polarssl
+
+    config PACKAGE_uhttpd-mod-tls_mbedtls
+      bool "mbedTLS"
 
     config PACKAGE_uhttpd-mod-tls_polarssl
       bool "PolarSSL"

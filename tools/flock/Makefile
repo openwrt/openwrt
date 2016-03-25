@@ -10,6 +10,9 @@ PKG_NAME := flock
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOSTCC := $(HOSTCC_NOCACHE)
+HOSTCXX := $(HOSTCXX_NOCACHE)
+
 define Host/Compile
 	mkdir -p $(HOST_BUILD_DIR)
 	$(HOSTCC) $(HOST_CFLAGS) -o $(HOST_BUILD_DIR)/flock src/flock.c

@@ -60,18 +60,9 @@ start_daemon() {
 	procd_set_param command \
 		/usr/sbin/br2684ctl_wrap "nas$unit" \
 		-c "$unit" -e "$encaps" -p "$payload" \
-		-a "$circuit" ${qos:+-q "$qos"} ${sendsize:+-s "$sendsize"}
+		-a "$circuit" ${qos:+-q "$qos"} ${sendsize:+-s "$sendsize"} \
+		-S /lib/netifd/br2684-up
 	procd_close_instance
-}
-
-service_running() {
-	. /lib/functions/network.sh
-
-	sleep 1
-	for path in /sys/class/net/nas*; do
-		dev="${path##*/}"
-		network_ready_device "$dev"
-	done
 }
 
 service_triggers() {

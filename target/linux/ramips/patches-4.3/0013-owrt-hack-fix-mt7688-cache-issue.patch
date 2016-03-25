@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/kernel/setup.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/mips/kernel/setup.c b/arch/mips/kernel/setup.c
-index 4795151..75bde36 100644
 --- a/arch/mips/kernel/setup.c
 +++ b/arch/mips/kernel/setup.c
-@@ -681,7 +681,6 @@ static void __init arch_mem_init(char **cmdline_p)
+@@ -681,7 +681,6 @@ static void __init arch_mem_init(char **
  				crashk_res.end - crashk_res.start + 1,
  				BOOTMEM_DEFAULT);
  #endif
@@ -28,6 +26,3 @@ index 4795151..75bde36 100644
  }
  
  unsigned long kernelsp[NR_CPUS];
--- 
-1.7.10.4
-

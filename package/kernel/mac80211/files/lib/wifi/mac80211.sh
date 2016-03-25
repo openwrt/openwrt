@@ -9,11 +9,10 @@ lookup_phy() {
 	local devpath
 	config_get devpath "$device" path
 	[ -n "$devpath" ] && {
-		for _phy in /sys/devices/$devpath/ieee80211/phy*; do
-			[ -e "$_phy" ] && {
-				phy="${_phy##*/}"
-				return
-			}
+		for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
+			case "$(readlink -f /sys/class/ieee80211/$phy/device)" in
+				*$devpath) return;;
+			esac
 		done
 	}
 
@@ -102,6 +101,9 @@ detect_mac80211() {
 		fi
 		if [ -n "$path" ]; then
 			path="${path##/sys/devices/}"
+			case "$path" in
+				platform*/pci*) path="${path##platform/}";;
+			esac
 			dev_id="	option path	'$path'"
 		else
 			dev_id="	option macaddr	$(cat /sys/class/ieee80211/${dev}/macaddress)"

@@ -26,6 +26,7 @@ struct seama_header {
 	__be16	reserved;	/* reserved for  */
 	__be16	metasize;	/* size of the META data */
 	__be32	size;		/* size of the image */
+	u8	md5[16];	/* digest */
 };
 
 static int mtdsplit_parse_seama(struct mtd_info *master,
@@ -33,9 +34,10 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 				struct mtd_part_parser_data *data)
 {
 	struct seama_header hdr;
-	size_t hdr_len, retlen, kernel_size;
+	size_t hdr_len, retlen, kernel_ent_size;
 	size_t rootfs_offset;
 	struct mtd_partition *parts;
+	enum mtdsplit_part_type type;
 	int err;
 
 	hdr_len = sizeof(hdr);
@@ -50,22 +52,24 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 	if (be32_to_cpu(hdr.magic) != SEAMA_MAGIC)
 		return -EINVAL;
 
-	kernel_size = hdr_len + be32_to_cpu(hdr.size) +
-		      be16_to_cpu(hdr.metasize);
-	if (kernel_size > master->size)
+	kernel_ent_size = hdr_len + be32_to_cpu(hdr.size) +
+			  be16_to_cpu(hdr.metasize);
+	if (kernel_ent_size > master->size)
 		return -EINVAL;
 
-	/* Find the rootfs after the kernel. */
-	err = mtd_check_rootfs_magic(master, kernel_size);
+	/* Check for the rootfs right after Seama entity with a kernel. */
+	err = mtd_check_rootfs_magic(master, kernel_ent_size, &type);
 	if (!err) {
-		rootfs_offset = kernel_size;
+		rootfs_offset = kernel_ent_size;
 	} else {
 		/*
-		 * The size in the header might cover the rootfs as well.
+		 * On some devices firmware entity might contain both: kernel
+		 * and rootfs. We can't determine kernel size so we just have to
+		 * look for rootfs magic.
 		 * Start the search from an arbitrary offset.
 		 */
 		err = mtd_find_rootfs_from(master, SEAMA_MIN_ROOTFS_OFFS,
-					   master->size, &rootfs_offset);
+					   master->size, &rootfs_offset, &type);
 		if (err)
 			return err;
 	}
@@ -78,7 +82,10 @@ static int mtdsplit_parse_seama(struct mtd_info *master,
 	parts[0].offset = 0;
 	parts[0].size = rootfs_offset;
 
-	parts[1].name = ROOTFS_PART_NAME;
+	if (type == MTDSPLIT_PART_TYPE_UBI)
+		parts[1].name = UBI_PART_NAME;
+	else
+		parts[1].name = ROOTFS_PART_NAME;
 	parts[1].offset = rootfs_offset;
 	parts[1].size = master->size - rootfs_offset;
 

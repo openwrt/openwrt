@@ -1,0 +1,15 @@
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -137,10 +137,12 @@ static int m25p80_read(struct spi_nor *n
+ 	flash->command[0] = nor->read_opcode;
+ 	m25p_addr2cmd(nor, from, flash->command);
+ 
++	t[0].type = SPI_TRANSFER_FLASH_READ_CMD;
+ 	t[0].tx_buf = flash->command;
+ 	t[0].len = m25p_cmdsz(nor) + dummy;
+ 	spi_message_add_tail(&t[0], &m);
+ 
++	t[1].type = SPI_TRANSFER_FLASH_READ_DATA;
+ 	t[1].rx_buf = buf;
+ 	t[1].rx_nbits = m25p80_rx_nbits(nor);
+ 	t[1].len = len;

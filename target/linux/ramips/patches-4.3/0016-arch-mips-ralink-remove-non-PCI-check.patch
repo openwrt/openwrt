@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/mt7620.c |    3 ---
  1 file changed, 3 deletions(-)
 
-diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
-index 0ba49a1..794a7c7 100644
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
-@@ -526,9 +526,6 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -526,9 +526,6 @@ void prom_soc_init(struct ralink_soc_inf
  			mt762x_soc = MT762X_SOC_MT7620N;
  			name = "MT7620N";
  			soc_info->compatible = "ralink,mt7620n-soc";
@@ -22,6 +20,3 @@ index 0ba49a1..794a7c7 100644
  		}
  	} else if (n0 == MT7620_CHIP_NAME0 && n1 == MT7628_CHIP_NAME1) {
  		mt762x_soc = MT762X_SOC_MT7628AN;
--- 
-1.7.10.4
-

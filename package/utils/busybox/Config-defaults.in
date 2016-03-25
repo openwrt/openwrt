@@ -1968,7 +1968,7 @@ config BUSYBOX_DEFAULT_FEATURE_FANCY_PING
 	default y
 config BUSYBOX_DEFAULT_WGET
 	bool
-	default y
+	default n
 config BUSYBOX_DEFAULT_FEATURE_WGET_STATUSBAR
 	bool
 	default y
@@ -2172,7 +2172,7 @@ config BUSYBOX_DEFAULT_FEATURE_IP_ROUTE
 	default y
 config BUSYBOX_DEFAULT_FEATURE_IP_ROUTE_DIR
 	string
-	default "n"
+	default "/etc/iproute2"
 config BUSYBOX_DEFAULT_FEATURE_IP_TUNNEL
 	bool
 	default n

@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 193 insertions(+)
  create mode 100644 drivers/watchdog/mt7621_wdt.c
 
-diff --git a/drivers/watchdog/Kconfig b/drivers/watchdog/Kconfig
-index 79e1aa1..0710aa1 100644
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1337,6 +1337,13 @@ config RALINK_WDT
+@@ -1346,6 +1346,13 @@ config RALINK_WDT
  	help
  	  Hardware driver for the Ralink SoC Watchdog Timer.
  
@@ -29,11 +27,9 @@ index 79e1aa1..0710aa1 100644
  # PARISC Architecture
  
  # POWERPC Architecture
-diff --git a/drivers/watchdog/Makefile b/drivers/watchdog/Makefile
-index 0c616e3..4d3b4b1 100644
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -68,6 +68,7 @@ obj-$(CONFIG_MESON_WATCHDOG) += meson_wdt.o
+@@ -68,6 +68,7 @@ obj-$(CONFIG_MESON_WATCHDOG) += meson_wd
  obj-$(CONFIG_MEDIATEK_WATCHDOG) += mtk_wdt.o
  obj-$(CONFIG_DIGICOLOR_WATCHDOG) += digicolor_wdt.o
  obj-$(CONFIG_LPC18XX_WATCHDOG) += lpc18xx_wdt.o
@@ -41,9 +37,6 @@ index 0c616e3..4d3b4b1 100644
  
  # AVR32 Architecture
  obj-$(CONFIG_AT32AP700X_WDT) += at32ap700x_wdt.o
-diff --git a/drivers/watchdog/mt7621_wdt.c b/drivers/watchdog/mt7621_wdt.c
-new file mode 100644
-index 0000000..ec2c897
 --- /dev/null
 +++ b/drivers/watchdog/mt7621_wdt.c
 @@ -0,0 +1,185 @@
@@ -232,6 +225,3 @@ index 0000000..ec2c897
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS_MISCDEV(WATCHDOG_MINOR);
--- 
-1.7.10.4
-

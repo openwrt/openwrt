@@ -184,6 +184,7 @@ platform_check_image() {
 	ap136-020 | \
 	ap135-020 | \
 	ap147-010 | \
+	ap152 | \
 	ap96 | \
 	bxu2000n-2-a1 | \
 	db120 | \
@@ -262,6 +263,7 @@ platform_check_image() {
 	wlae-ag300n | \
 	nbg460n_550n_550nh | \
 	unifi | \
+	unifiac | \
 	unifi-outdoor | \
 	carambola2 | \
 	weio )
@@ -323,6 +325,7 @@ platform_check_image() {
 
 	antminer-s1 | \
 	antminer-s3 | \
+	antrouter-r1 | \
 	archer-c5 | \
 	archer-c7 | \
 	el-m150 | \
@@ -430,7 +433,8 @@ platform_check_image() {
 	wndr3700 | \
 	wnr2000-v3 | \
 	wnr612-v2 | \
-	wnr1000-v2)
+	wnr1000-v2 | \
+	wpn824n)
 		local hw_magic
 
 		hw_magic="$(ar71xx_get_mtd_part_magic firmware)"

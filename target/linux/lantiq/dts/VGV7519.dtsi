@@ -6,6 +6,16 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
+
+			dsl = &broadband_green;
+			internet = &internet_green;
+			wifi = &wireless_green;
+		};
 	};
 
 	memory@0 {
@@ -29,7 +39,7 @@
 			compatible = "lantiq,pinctrl-xr9";
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
-			
+
 			interrupt-parent = <&icu0>;
 			interrupts = <166 135 66 40 41 42 38>;
 
@@ -43,7 +53,7 @@
 					lantiq,function = "stp";
 				};
 				spi {
-					lantiq,groups = "spi";
+					lantiq,groups = "spi_di", "spi_do", "spi_clk";
 					lantiq,function = "spi";
 				};
 				mdio {
@@ -73,98 +83,6 @@
 					lantiq,open-drain = <0>;
 					lantiq,pull = <0>;
 					lantiq,output = <1>;
-				};
-			};
-		};
-
-		eth@E108000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "lantiq,xrx200-net";
-			reg = <	0xE108000 0x3000 /* switch */
-				0xE10B100 0x70 /* mdio */
-				0xE10B1D8 0x30 /* mii */
-				0xE10B308 0x30 /* pmac */
-			>;
-			interrupt-parent = <&icu0>;
-			interrupts = <73 72>;
-
-			lan: interface@0 {
-				compatible = "lantiq,xrx200-pdi";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <0>;
-				mac-address = [ 00 11 22 33 44 55 ];
-
-				ethernet@0 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <0>;
-					phy-mode = "rgmii";
-					phy-handle = <&phy0>;
-				};
-				ethernet@1 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <1>;
-					phy-mode = "rgmii";
-					phy-handle = <&phy1>;
-				};
-				ethernet@2 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <2>;
-					phy-mode = "gmii";
-					phy-handle = <&phy11>;
-				};
-				ethernet@4 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <4>;
-					phy-mode = "gmii";
-					phy-handle = <&phy13>;
-				};
-			};
-
-			wan: interface@1 {
-				compatible = "lantiq,xrx200-pdi";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <1>;
-				mac-address = [ 00 11 22 33 44 56 ];
-				lantiq,wan;
-				ethernet@5 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <5>;
-					phy-mode = "rgmii";
-					phy-handle = <&phy5>;
-				};
-			};
-
-			mdio@0 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				compatible = "lantiq,xrx200-mdio";
-				phy0: ethernet-phy@0 {
-					reg = <0x0>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
-				};
-				phy1: ethernet-phy@1 {
-					reg = <0x1>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
-				};
-				phy5: ethernet-phy@5 {
-					reg = <0x5>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
-				};
-				phy11: ethernet-phy@11 {
-					reg = <0x11>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
-				};
-				phy13: ethernet-phy@13 {
-					reg = <0x13>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
 				};
 			};
 		};
@@ -259,62 +177,143 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		eco {					/* blue */
-			label = "eco";
+		eco {
+			label = "vgv7519:blue:eco";
 			gpios = <&stp 2 1>;
 		};
-		wps_red {				/* red */
-			label = "wps_red";
+		wps_red {
+			label = "vgv7519:red:wps";
 			gpios = <&stp 3 1>;
 		};
-		wps_yellow {				/* yellow */
-			label = "wps_yellow";
+		wps_green {
+			label = "vgv7519:green:wps";
 			gpios = <&stp 4 1>;
 		};
-		upgrade {				/* blue */
-			label = "upgrade";
+		upgrade {
+			label = "vgv7519:blue:upgrade";
 			gpios = <&stp 5 1>;
 		};
-		tv {					/* yellow */
-			label = "tv";
+		tv {
+			label = "vgv7519:green:tv";
 			gpios = <&stp 6 1>;
 		};
-		internet_yellow {			/* yellow */
-			label = "internet_yellow";
+		internet_green: internet_green {
+			label = "vgv7519:green:internet";
 			gpios = <&stp 7 1>;
 		};
-		internet_red {				/* red */
-			label = "internet_red";
+		internet_red {
+			label = "vgv7519:red:internet";
 			gpios = <&stp 8 1>;
 		};
-		broadband_red {				/* red */
-			label = "broadband_red";
+		broadband_red {
+			label = "vgv7519:red:broadband";
 			gpios = <&stp 9 1>;
 		};
-		broadband_yellow {			/* yellow */
-			label = "broadband_yellow";
+		broadband_green: broadband_green {
+			label = "vgv7519:green:broadband";
 			gpios = <&stp 10 1>;
 		};
-		voice {					/* yellow */
-			label = "voice";
+		voice {
+			label = "vgv7519:green:voice";
 			gpios = <&stp 11 1>;
 		};
-		wireless_red {				/* red */
-			label = "wireless_red";
+		wireless_red {
+			label = "vgv7519:red:wireless";
 			gpios = <&stp 12 1>;
 		};
-		wireless_yellow {			/* yellow */
-			label = "wireless_yellow";
+		wireless_green: wireless_green {
+			label = "vgv7519:green:wireless";
 			gpios = <&stp 13 1>;
 		};
-		power2 {				/* yellow */
-			label = "power2";
+		power_green: power2 {
+			label = "vgv7519:green:power";
 			gpios = <&stp 14 1>;
+			default-state = "keep";
 		};
-		power {					/* red */
-			label = "power";
+		power_red: power {
+			label = "vgv7519:red:power";
 			gpios = <&stp 15 1>;
-			default-state = "on";
+		};
+	};
+};
+
+&eth0 {
+	lan: interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		mac-address = [ 00 11 22 33 44 55 ];
+
+		ethernet@0 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <0>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy0>;
+		};
+		ethernet@1 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <1>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy1>;
+		};
+		ethernet@2 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <2>;
+			phy-mode = "gmii";
+			phy-handle = <&phy11>;
+		};
+		ethernet@4 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "gmii";
+			phy-handle = <&phy13>;
+		};
+	};
+
+	wan: interface@1 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		mac-address = [ 00 11 22 33 44 56 ];
+		lantiq,wan;
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy5>;
+		};
+	};
+
+	mdio@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "lantiq,xrx200-mdio";
+		phy0: ethernet-phy@0 {
+			reg = <0x0>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			lantiq,c45-reg-init = <1 0 0 0>;
+		};
+		phy1: ethernet-phy@1 {
+			reg = <0x1>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			lantiq,c45-reg-init = <1 0 0 0>;
+		};
+		phy5: ethernet-phy@5 {
+			reg = <0x5>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			lantiq,c45-reg-init = <1 0 0 0>;
+		};
+		phy11: ethernet-phy@11 {
+			reg = <0x11>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			lantiq,c45-reg-init = <1 0 0 0>;
+		};
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			lantiq,c45-reg-init = <1 0 0 0>;
 		};
 	};
 };

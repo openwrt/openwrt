@@ -143,7 +143,7 @@ menu "Global build settings"
 	choice
 		prompt "Binary stripping method"
 		default USE_STRIP   if EXTERNAL_TOOLCHAIN
-		default USE_STRIP   if USE_GLIBC || USE_MUSL
+		default USE_STRIP   if USE_GLIBC
 		default USE_SSTRIP
 		help
 		  Select the binary stripping method you wish to use.
@@ -152,7 +152,7 @@ menu "Global build settings"
 			bool "none"
 			help
 			  This will install unstripped binaries (useful for native
-		 	  compiling/debugging).
+			  compiling/debugging).
 
 		config USE_STRIP
 			bool "strip"
@@ -162,7 +162,6 @@ menu "Global build settings"
 
 		config USE_SSTRIP
 			bool "sstrip"
-			depends on !DEBUG
 			depends on !USE_GLIBC
 			help
 			  This will install binaries stripped using sstrip.

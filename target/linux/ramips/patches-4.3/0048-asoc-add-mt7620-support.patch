@@ -18,8 +18,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 sound/soc/ralink/mt7620-i2s.c
  create mode 100644 sound/soc/ralink/mt7620-wm8960.c
 
-diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
-index da85bbf..371baa5 100644
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
 @@ -15,6 +15,7 @@
@@ -38,8 +36,6 @@ index da85bbf..371baa5 100644
  __iomem void *rt_memc_membase;
  
  __iomem void *plat_of_remap_node(const char *node)
-diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
-index 225bfda..76ce95c 100644
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
 @@ -53,6 +53,7 @@ source "sound/soc/mxs/Kconfig"
@@ -50,8 +46,6 @@ index 225bfda..76ce95c 100644
  source "sound/soc/samsung/Kconfig"
  source "sound/soc/sh/Kconfig"
  source "sound/soc/sirf/Kconfig"
-diff --git a/sound/soc/Makefile b/sound/soc/Makefile
-index 134aca1..e9d8e0e 100644
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
 @@ -35,6 +35,7 @@ obj-$(CONFIG_SND_SOC)	+= kirkwood/
@@ -62,9 +56,6 @@ index 134aca1..e9d8e0e 100644
  obj-$(CONFIG_SND_SOC)	+= samsung/
  obj-$(CONFIG_SND_SOC)	+= sh/
  obj-$(CONFIG_SND_SOC)	+= sirf/
-diff --git a/sound/soc/ralink/Kconfig b/sound/soc/ralink/Kconfig
-new file mode 100644
-index 0000000..d462622
 --- /dev/null
 +++ b/sound/soc/ralink/Kconfig
 @@ -0,0 +1,15 @@
@@ -83,9 +74,6 @@ index 0000000..d462622
 +	help
 +	  Say Y if you want to add support for ASoC audio on the Qi LB60 board
 +	  a.k.a Qi Ben NanoNote.
-diff --git a/sound/soc/ralink/Makefile b/sound/soc/ralink/Makefile
-new file mode 100644
-index 0000000..3d79980
 --- /dev/null
 +++ b/sound/soc/ralink/Makefile
 @@ -0,0 +1,11 @@
@@ -100,9 +88,6 @@ index 0000000..3d79980
 +snd-soc-mt7620-wm8960-objs := mt7620-wm8960.o
 +
 +obj-$(CONFIG_SND_MT7620_SOC_WM8960) += snd-soc-mt7620-wm8960.o
-diff --git a/sound/soc/ralink/mt7620-i2s.c b/sound/soc/ralink/mt7620-i2s.c
-new file mode 100644
-index 0000000..2ce9b21
 --- /dev/null
 +++ b/sound/soc/ralink/mt7620-i2s.c
 @@ -0,0 +1,436 @@
@@ -542,9 +527,6 @@ index 0000000..2ce9b21
 +MODULE_DESCRIPTION("Ingenic JZ4740 SoC I2S driver");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:mt7620-i2s");
-diff --git a/sound/soc/ralink/mt7620-wm8960.c b/sound/soc/ralink/mt7620-wm8960.c
-new file mode 100644
-index 0000000..3389988
 --- /dev/null
 +++ b/sound/soc/ralink/mt7620-wm8960.c
 @@ -0,0 +1,233 @@
@@ -781,6 +763,3 @@ index 0000000..3389988
 +MODULE_DESCRIPTION("Freescale i.MX WM8962 ASoC machine driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:mt7620-wm8962");
--- 
-1.7.10.4
-

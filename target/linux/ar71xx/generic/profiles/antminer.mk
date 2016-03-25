@@ -26,3 +26,14 @@ define Profile/ANTMINERS3/Description
 	Package set optimized for the Bitmain Antminer S3.
 endef
 $(eval $(call Profile,ANTMINERS3))
+
+define Profile/ANTROUTERR1
+	NAME:=Antrouter-R1
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+
+
+define Profile/ANTROUTERR1/Description
+	Package set optimized for the Bitmain Antrouter R1.
+endef
+$(eval $(call Profile,ANTROUTERR1))

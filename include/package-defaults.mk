@@ -17,6 +17,7 @@ define Package/Default
   CONFIGFILE:=
   SECTION:=opt
   CATEGORY:=Extra packages
+  PACKAGE_SUBDIR:=$(FEED)
   DEPENDS:=
   MDEPENDS:=
   CONFLICTS:=

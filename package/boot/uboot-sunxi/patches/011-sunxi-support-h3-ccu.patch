@@ -1,0 +1,83 @@
+diff --git a/arch/arm/cpu/armv7/sunxi/clock.c b/arch/arm/cpu/armv7/sunxi/clock.c
+index 47fb70f..5cc5d25 100644
+--- a/arch/arm/cpu/armv7/sunxi/clock.c
++++ b/arch/arm/cpu/armv7/sunxi/clock.c
+@@ -14,12 +14,17 @@
+ #include <asm/arch/gpio.h>
+ #include <asm/arch/sys_proto.h>
+ 
++__weak void clock_init_sec(void)
++{
++}
++
+ int clock_init(void)
+ {
+ #ifdef CONFIG_SPL_BUILD
+ 	clock_init_safe();
+ #endif
+ 	clock_init_uart();
++	clock_init_sec();
+ 
+ 	return 0;
+ }
+diff --git a/arch/arm/cpu/armv7/sunxi/clock_sun6i.c b/arch/arm/cpu/armv7/sunxi/clock_sun6i.c
+index 4501884..d0085e8 100644
+--- a/arch/arm/cpu/armv7/sunxi/clock_sun6i.c
++++ b/arch/arm/cpu/armv7/sunxi/clock_sun6i.c
+@@ -45,6 +45,19 @@ void clock_init_safe(void)
+ }
+ #endif
+ 
++void clock_init_sec(void)
++{
++	struct sunxi_ccm_reg * const ccm =
++		(struct sunxi_ccm_reg *)SUNXI_CCM_BASE;
++
++#ifdef CONFIG_MACH_SUN8I_H3
++	setbits_le32(&ccm->ccu_sec_switch,
++		     CCM_SEC_SWITCH_MBUS_NONSEC |
++		     CCM_SEC_SWITCH_BUS_NONSEC |
++		     CCM_SEC_SWITCH_PLL_NONSEC);
++#endif
++}
++
+ void clock_init_uart(void)
+ {
+ #if CONFIG_CONS_INDEX < 5
+diff --git a/arch/arm/include/asm/arch-sunxi/clock.h b/arch/arm/include/asm/arch-sunxi/clock.h
+index 8ca58ae..6c0573f 100644
+--- a/arch/arm/include/asm/arch-sunxi/clock.h
++++ b/arch/arm/include/asm/arch-sunxi/clock.h
+@@ -30,6 +30,7 @@ int clock_init(void);
+ int clock_twi_onoff(int port, int state);
+ void clock_set_de_mod_clock(u32 *clk_cfg, unsigned int hz);
+ void clock_init_safe(void);
++void clock_init_sec(void);
+ void clock_init_uart(void);
+ #endif
+ 
+diff --git a/arch/arm/include/asm/arch-sunxi/clock_sun6i.h b/arch/arm/include/asm/arch-sunxi/clock_sun6i.h
+index 5c76275..554d858 100644
+--- a/arch/arm/include/asm/arch-sunxi/clock_sun6i.h
++++ b/arch/arm/include/asm/arch-sunxi/clock_sun6i.h
+@@ -137,6 +137,8 @@ struct sunxi_ccm_reg {
+ 	u32 apb1_reset_cfg;	/* 0x2d0 APB1 Reset config */
+ 	u32 reserved24;
+ 	u32 apb2_reset_cfg;	/* 0x2d8 APB2 Reset config */
++	u32 reserved25[5];
++	u32 ccu_sec_switch;	/* 0x2f0 CCU Security Switch, H3 only */
+ };
+ 
+ /* apb2 bit field */
+@@ -375,6 +377,11 @@ struct sunxi_ccm_reg {
+ #define CCM_DE_CTRL_PLL10		(5 << 24)
+ #define CCM_DE_CTRL_GATE		(1 << 31)
+ 
++/* CCU security switch, H3 only */
++#define CCM_SEC_SWITCH_MBUS_NONSEC	(1 << 2)
++#define CCM_SEC_SWITCH_BUS_NONSEC	(1 << 1)
++#define CCM_SEC_SWITCH_PLL_NONSEC	(1 << 0)
++
+ #ifndef __ASSEMBLY__
+ void clock_set_pll1(unsigned int hz);
+ void clock_set_pll3(unsigned int hz);

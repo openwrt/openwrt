@@ -2,11 +2,7 @@
 # Copyright (C) 2014 OpenWrt.org
 
 move_config() {
-	. /lib/functions/octeon.sh
-
-	local board="$(octeon_board_name)"
-
-	case "$board" in
+	case "$(cat /tmp/sysinfo/board_name)" in
 		erlite)
 			mount -t vfat /dev/sda1 /mnt
 			mv -f /mnt/sysupgrade.tgz /

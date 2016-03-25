@@ -1,0 +1,31 @@
+From bdb8a1844f3113ec08915d1e8e3fd5686fb2fb78 Mon Sep 17 00:00:00 2001
+From: Ray Jui <rjui@broadcom.com>
+Date: Tue, 15 Sep 2015 17:39:17 -0700
+Subject: [PATCH 3/7] PCI: iproc: Call pci_fixup_irqs() for ARM64 as well as
+ ARM
+
+After 459a07721c11 ("PCI: Build setup-irq.o for arm64"), we build
+setup-irq.o for arm64, so we can use pci_fixup_irqs() on both arm and
+arm64.
+
+Remove the "#ifdef CONFIG_ARM" around the call to pci_fixup_irqs().
+
+[bhelgaas: changelog]
+Signed-off-by: Ray Jui <rjui@broadcom.com>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+---
+ drivers/pci/host/pcie-iproc.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/pci/host/pcie-iproc.c
++++ b/drivers/pci/host/pcie-iproc.c
+@@ -237,9 +237,7 @@ int iproc_pcie_setup(struct iproc_pcie *
+ 
+ 	pci_scan_child_bus(bus);
+ 	pci_assign_unassigned_bus_resources(bus);
+-#ifdef CONFIG_ARM
+ 	pci_fixup_irqs(pci_common_swizzle, pcie->map_irq);
+-#endif
+ 	pci_bus_add_devices(bus);
+ 
+ 	return 0;

@@ -7,6 +7,17 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
+
+			dsl = &dsl;
+			internet = &online_green;
+			usb = &usb;
+			wifi = &wifi;
+		};
 	};
 
 	memory@0 {
@@ -158,60 +169,61 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power {
-			label = "power";
+		power_green: power {
+			label = "arv7518pw:green:power";
 			gpios = <&gpio 2 1>;
+			default-state = "keep";
 		};
-		dsl {
-			label = "dsl";
+		dsl: dsl {
+			label = "arv7518pw:green:dsl";
 			gpios = <&gpio 4 1>;
 		};
-		online {
-			label = "online";
+		online_green: online {
+			label = "arv7518pw:green:internet";
 			gpios = <&gpio 5 1>;
 		};
-		wifi {
-			label = "wifi";
+		wifi: wifi {
+			label = "arv7518pw:green:wlan";
 			gpios = <&gpio 6 1>;
 		};
-		power2 {
-			label = "power2";
+		power_red: power2 {
+			label = "arv7518pw:red:power";
 			gpios = <&gpio 7 1>;
 		};
 		online2 {
-			label = "online2";
+			label = "arv7518pw:red:internet";
 			gpios = <&gpio 8 1>;
 		};
-		usb {
-			label = "usb";
+		usb: usb {
+			label = "arv7518pw:green:usb";
 			gpios = <&gpio 19 1>;
 		};
 		voice {
-			label = "voice";
+			label = "arv7518pw:green:voip";
 			gpios = <&gpiomm 0 1>;
 		};
 		fxs1 {
-			label = "fxs1";
+			label = "arv7518pw:green:phone1";
 			gpios = <&gpiomm 1 1>;
 		};
 		fxs2 {
-			label = "fxs2";
+			label = "arv7518pw:green:phone2";
 			gpios = <&gpiomm 2 1>;
 		};
-		fxo {
-			label = "fxo";
+		unlabeled {
+			label = "arv7518pw:amber:unlabeled";
 			gpios = <&gpiomm 3 1>;
 		};
 		wps {
-			label = "wps";
+			label = "arv7518pw:amber:wps";
 			gpios = <&gpiomm 4 1>;
 		};
 		wps2 {
-			label = "wps2";
+			label = "arv7518pw:green:wps";
 			gpios = <&gpiomm 5 1>;
 		};
 		wps3 {
-			label = "wps3";
+			label = "arv7518pw:red:wps";
 			gpios = <&gpiomm 6 1>;
 		};
 	};

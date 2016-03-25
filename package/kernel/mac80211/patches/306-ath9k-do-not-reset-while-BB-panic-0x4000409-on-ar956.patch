@@ -1,0 +1,31 @@
+From: Miaoqing Pan <miaoqing@codeaurora.org>
+Date: Fri, 15 Jan 2016 18:17:19 +0800
+Subject: [PATCH] ath9k: do not reset while BB panic(0x4000409) on ar9561
+
+BB panic(0x4000409) observed while AP enabling/disabling
+bursting.
+
+Signed-off-by: Miaoqing Pan <miaoqing@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -2071,7 +2071,8 @@ void ar9003_hw_attach_phy_ops(struct ath
+  *             to be disabled.
+  *
+  * 0x04000409: Packet stuck on receive.
+- *             Full chip reset is required for all chips except AR9340.
++ *             Full chip reset is required for all chips except
++ *	       AR9340, AR9531 and AR9561.
+  */
+ 
+ /*
+@@ -2100,7 +2101,7 @@ bool ar9003_hw_bb_watchdog_check(struct
+ 	case 0x04000b09:
+ 		return true;
+ 	case 0x04000409:
+-		if (AR_SREV_9340(ah) || AR_SREV_9531(ah))
++		if (AR_SREV_9340(ah) || AR_SREV_9531(ah) || AR_SREV_9561(ah))
+ 			return false;
+ 		else
+ 			return true;

@@ -7,6 +7,16 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power_blue;
+			failsafe = &power_red;
+			running = &power_blue;
+
+			internet = &dsl_blue;
+			usb = &usb;
+			wifi = &wifi;
+		};
 	};
 
 	memory@0 {
@@ -155,64 +165,69 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power0 {
-			label = "power0";
+		power_blue: power0 {
+			label = "arv452cqw:blue:power";
 			gpios = <&gpio 3 1>;
+			default-state = "keep";
 		};
-		dsl {
-			label = "dsl";
+		dsl_blue: dsl {
+			label = "arv452cqw:blue:dsl";
 			gpios = <&gpio 4 1>;
 		};
 		isdn {
-			label = "isdn";
+			label = "arv452cqw:blue:isdn";
 			gpios = <&gpio 5 1>;
 		};
-		power1 {
-			label = "power1";
+		power_red: power1 {
+			label = "arv452cqw:red:power";
 			gpios = <&gpio 6 1>;
 		};
 		wps {
-			label = "wps";
+			label = "arv452cqw:blue:wps";
 			gpios = <&gpio 7 1>;
 		};
 		wps1 {
-			label = "wps1";
+			label = "arv452cqw:yellow:wps";
 			gpios = <&gpio 9 1>;
 		};
 		fxs1 {
-			label = "fxs1";
+			label = "arv452cqw:blue:telefon1";
 			gpios = <&gpiomm 0 1>;
 		};
 		fxs2 {
-			label = "fxs2";
+			label = "arv452cqw:blue:telefon2";
 			gpios = <&gpiomm 1 1>;
 		};
 		wps2 {
-			label = "wps2";
+			label = "arv452cqw:red:wps";
 			gpios = <&gpiomm 2 1>;
 		};
 		fxo {
-			label = "fxo";
+			label = "arv452cqw:blue:line";
 			gpios = <&gpiomm 3 1>;
 		};
 		voice {
-			label = "voice";
+			label = "arv452cqw:blue:sprache";
 			gpios = <&gpiomm 4  1>;
 		};
-		usb {
-			label = "usb";
+		usb: usb {
+			label = "arv452cqw:blue:usb";
 			gpios = <&gpiomm 5 1>;
 		};
-		wifi {
-			label = "wifi";
+		wifi: wifi {
+			label = "arv452cqw:blue:wlan";
 			gpios = <&gpiomm 6 1>;
 		};
+		/*
+			internet blue and internet red are missing
+			dsl2 and dsl3 are not referenced in manual
+		*/
 		dsl2 {
-			label = "dsl2";
+			label = "arv452cqw:yellow:dsl";
 			gpios = <&gpiomm 8 1>;
 		};
 		dsl3 {
-			label = "dsl3";
+			label = "arv452cqw:red:dsl";
 			gpios = <&gpiomm 9 1>;
 		};
 	};

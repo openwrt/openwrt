@@ -3,6 +3,17 @@
 / {
 	chosen {
 		bootargs-append = "root= console=ttyLTQ0,115200";
+
+		leds {
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
+
+			dsl = &dsl;
+			internet = &internet;
+			usb = &usb;
+			wifi = &wifi;
+		};
 	};
 
 	memory@0 {
@@ -34,15 +45,17 @@
 					lantiq,output = <1>;
 					lantiq,pull = <0>;
 				};
-				spi-in {
-					lantiq,pins = "io16";
-					lantiq,open-drain = <1>;
-					lantiq,pull = <2>;
+			};
+			pins_spi_default: pins_spi_default {
+				spi_in {
+					lantiq,groups = "spi_di";
+					lantiq,function = "spi";
 				};
-				spi-out {
-					lantiq,pins = "io10", "io17", "io18", "io21";
-					lantiq,open-drain = <0>;
-					lantiq,pull = <2>;
+				spi_out {
+					lantiq,groups = "spi_do", "spi_clk",
+						"spi_cs4";
+					lantiq,function = "spi";
+					lantiq,output = <1>;
 				};
 			};
 		};
@@ -64,50 +77,6 @@
 			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
 			gpio-reset = <&gpio 21 0>;
 			req-mask = <0x1>; /* GNT1 */
-		};
-	};
-
-	spi {
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		compatible = "spi-gpio";
-
-		gpio-miso = <&gpio 16 0>;
-		gpio-mosi = <&gpio 17 0>;
-		gpio-sck = <&gpio 18 0>;
-		num-chipselects = <1>;
-		cs-gpios = <&gpio 10 1>;
-
-		m25p80@0 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			compatible = "jedec,spi-nor";
-			reg = <0 0>;
-			spi-max-frequency = <1000000>;
-
-			partition@0 {
-				reg = <0x0 0x10000>;
-				label = "uboot";
-				read-only;
-			};
-
-			partition@10000 {
-				reg = <0x10000 0x10000>;
-				label = "uboot-env";
-				read-only;
-			};
-
-			ath9k_cal: partition@20000 {
-				reg = <0x20000 0x10000>;
-				label = "calibration";
-				read-only;
-			};
-
-			partition@50000 {
-				reg = <0x50000 0xfa0000>;
-				label = "firmware";
-			};
 		};
 	};
 
@@ -150,33 +119,78 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		internet {
-			label = "internet";
+		internet: internet {
+			label = "dgn3500:green:internet";
 			gpios = <&gpio 2 1>;
 		};
-		dsl {
-			label = "dsl";
+		/*
+			internet red is missing
+		*/
+		dsl: dsl {
+			label = "dgn3500:green:dsl";
 			gpios = <&gpio 4 1>;
 		};
-		usb {
-			label = "usb";
+		usb: usb {
+			label = "dgn3500:green:usb";
 			gpios = <&gpio 22 1>;
 		};
-		power {
-			label = "power";
+		power_green: power {
+			label = "dgn3500:green:power";
 			gpios = <&gpio 34 1>;
+			default-state = "keep";
 		};
-		power2 {
-			label = "power2";
+		power_red: power2 {
+			label = "dgn3500:red:power";
 			gpios = <&gpio 39 1>;
 		};
-		wifi {
-			label = "wifi";
+        /*
+			power amber is missing
+		*/
+		wifi: wifi {
+			label = "dgn3500:blue:wireless";
 			gpios = <&gpio 51 1>;
 		};
 		wps {
-			label = "wps";
+			label = "dgn3500:green:wps";
 			gpios = <&gpio 52 1>;
+		};
+	};
+};
+
+&spi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pins_spi_default>;
+
+	status = "ok";
+
+	m25p80@4 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <4 0>;
+		spi-max-frequency = <1000000>;
+
+		partition@0 {
+			reg = <0x0 0x10000>;
+			label = "uboot";
+			read-only;
+		};
+
+		partition@10000 {
+			reg = <0x10000 0x10000>;
+			label = "uboot-env";
+			read-only;
+		};
+
+		ath9k_cal: partition@20000 {
+			reg = <0x20000 0x10000>;
+			label = "calibration";
+			read-only;
+		};
+
+		partition@50000 {
+			reg = <0x50000 0xfa0000>;
+			label = "firmware";
 		};
 	};
 };

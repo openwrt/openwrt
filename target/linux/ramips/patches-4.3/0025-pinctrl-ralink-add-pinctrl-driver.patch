@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 482 insertions(+)
  create mode 100644 drivers/pinctrl/pinctrl-rt2880.c
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index e3aa5b0..0098bff 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -557,6 +557,8 @@ config RALINK
@@ -25,8 +23,6 @@ index e3aa5b0..0098bff 100644
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-diff --git a/drivers/pinctrl/Kconfig b/drivers/pinctrl/Kconfig
-index 84dd2ed..d016935 100644
 --- a/drivers/pinctrl/Kconfig
 +++ b/drivers/pinctrl/Kconfig
 @@ -103,6 +103,11 @@ config PINCTRL_LPC18XX
@@ -41,8 +37,6 @@ index 84dd2ed..d016935 100644
  config PINCTRL_FALCON
  	bool
  	depends on SOC_FALCON
-diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
-index cad077c..0c86632 100644
 --- a/drivers/pinctrl/Makefile
 +++ b/drivers/pinctrl/Makefile
 @@ -19,6 +19,7 @@ obj-$(CONFIG_PINCTRL_MESON)	+= meson/
@@ -53,9 +47,6 @@ index cad077c..0c86632 100644
  obj-$(CONFIG_PINCTRL_SINGLE)	+= pinctrl-single.o
  obj-$(CONFIG_PINCTRL_SIRF)	+= sirf/
  obj-$(CONFIG_PINCTRL_TEGRA)	+= pinctrl-tegra.o
-diff --git a/drivers/pinctrl/pinctrl-rt2880.c b/drivers/pinctrl/pinctrl-rt2880.c
-new file mode 100644
-index 0000000..fe0af77
 --- /dev/null
 +++ b/drivers/pinctrl/pinctrl-rt2880.c
 @@ -0,0 +1,474 @@
@@ -533,6 +524,3 @@ index 0000000..fe0af77
 +}
 +
 +core_initcall_sync(rt2880_pinmux_init);
--- 
-1.7.10.4
-

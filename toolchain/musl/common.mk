@@ -11,7 +11,7 @@ PKG_NAME:=musl
 PKG_VERSION:=$(call qstrip,$(CONFIG_MUSL_VERSION))
 PKG_RELEASE=1
 
-PKG_MD5SUM:=48be0777e32f374d387e9cf85e36ec4d
+PKG_MD5SUM:=42875e0c111aa1cb9d08663f8d42c799
 
 PKG_SOURCE_URL:=http://www.musl-libc.org/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -37,12 +37,8 @@ MUSL_CONFIGURE:= \
 		--prefix=/ \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
-		--disable-gcc-wrapper
-
-ifeq ($(CONFIG_MUSL_ENABLE_DEBUG),y)
-MUSL_CONFIGURE+= \
-	--enable-debug
-endif
+		--disable-gcc-wrapper \
+		--enable-debug
 
 define Host/Prepare
 	$(call Host/Prepare/Default)

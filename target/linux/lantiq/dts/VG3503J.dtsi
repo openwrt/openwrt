@@ -5,6 +5,14 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
+
+			internet = &dsl;
+		};
 	};
 
 	memory@0 {
@@ -83,54 +91,6 @@
 				};
 			};
 		};
-
-		eth@E108000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "lantiq,xrx200-net";
-			reg = <	0xE108000 0x3000 /* switch */
-				0xE10B100 0x70 /* mdio */
-				0xE10B1D8 0x30 /* mii */
-				0xE10B308 0x30 /* pmac */
-			>;
-			interrupt-parent = <&icu0>;
-			interrupts = <73 72>;
-
-			interface@0 {
-				compatible = "lantiq,xrx200-pdi";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <0>;
-				mac-address = [ 00 11 22 33 44 55 ];
-				lantiq,switch;
-				ethernet@2 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <2>;
-					phy-mode = "mii";
-					phy-handle = <&phy11>;
-				};
-				ethernet@4 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <4>;
-					phy-mode = "mii";
-					phy-handle = <&phy13>;
-				};
-			};
-
-			mdio@0 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				compatible = "lantiq,xrx200-mdio";
-				phy11: ethernet-phy@11 {
-					reg = <0x11>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-				phy13: ethernet-phy@13 {
-					reg = <0x13>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-			};
-		};
 	};
 
 	gpio-keys-polled {
@@ -148,17 +108,55 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power2 {
-			label = "power2";
+		power_red: power2 {
+			label = "vg3503j:red:power";
 			gpios = <&gpio 14 1>;
 		};
-		dsl {
-			label = "bt:green:dsl";
+		dsl: dsl {
+			label = "vg3503j:green:dsl";
 			gpios = <&gpio 19 1>;
 		};
-		power {
-			label = "power";
+		power_green: power {
+			label = "vg3503j:green:power";
 			gpios = <&gpio 28 1>;
+			default-state = "keep";
+		};
+	};
+};
+
+&eth0 {
+	interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		mac-address = [ 00 11 22 33 44 55 ];
+		lantiq,switch;
+		ethernet@2 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <2>;
+			phy-mode = "mii";
+			phy-handle = <&phy11>;
+		};
+		ethernet@4 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "mii";
+			phy-handle = <&phy13>;
+		};
+	};
+
+	mdio@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "lantiq,xrx200-mdio";
+		phy11: ethernet-phy@11 {
+			reg = <0x11>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
 };

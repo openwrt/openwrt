@@ -555,20 +555,17 @@ static int gpio_keys_probe(struct platform_device *pdev)
 		struct gpio_keys_button *button = &pdata->buttons[i];
 		struct gpio_keys_button_data *bdata = &bdev->data[i];
 
-		if (bdata->can_sleep) {
-			dev_err(&pdev->dev, "skipping gpio:%d, it can sleep\n", button->gpio);
-			continue;
-		}
 		if (!button->irq)
 			button->irq = gpio_to_irq(button->gpio);
 		if (button->irq < 0) {
 			dev_err(&pdev->dev, "failed to get irq for gpio:%d\n", button->gpio);
 			continue;
 		}
-		ret = devm_request_irq(&pdev->dev, button->irq, button_handle_irq,
-					IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
-					dev_name(&pdev->dev), bdata);
-		if (ret)
+
+		ret = devm_request_threaded_irq(&pdev->dev, button->irq, NULL, button_handle_irq,
+						IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+						dev_name(&pdev->dev), bdata);
+		if (ret < 0)
 			dev_err(&pdev->dev, "failed to request irq:%d for gpio:%d\n", button->irq, button->gpio);
 		else
 			dev_dbg(&pdev->dev, "gpio:%d has irq:%d\n", button->gpio, button->irq);

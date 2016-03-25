@@ -7,6 +7,16 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power;
+			failsafe = &power;
+			running = &power;
+
+			internet = &info_green;
+			dsl = &power;
+			wifi = &wlan;
+		};
 	};
 
 	memory@0 {
@@ -110,28 +120,29 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power {
-			label = "power";
+		power: power {
+			label = "fritz7320:green:power";
 			gpios = <&gpio 44 1>;
+			default-state = "keep";
 		};
 		voice {
-			label = "voice";
+			label = "fritz7320:green:fon";
 			gpios = <&gpio 47 1>;
 		};
 		dect {
-			label = "dect";
+			label = "fritz7320:green:dect";
 			gpios = <&gpio 38 1>;
 		};
-		wlan {
-			label = "wlan";
+		wlan: wlan {
+			label = "fritz7320:green:wlan";
 			gpios = <&gpio 37 1>;
 		};
-		online {
-			label = "online";
+		info_green: info_green {
+			label = "fritz7320:green:info";
 			gpios = <&gpio 35 1>;
 		};
-		online2 {
-			label = "online2";
+		info_red {
+			label = "fritz7320:red:info";
 			gpios = <&gpio 45 1>;
 		};
 	};

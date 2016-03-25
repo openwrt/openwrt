@@ -265,18 +265,20 @@ static int netdev_trig_notify(struct notifier_block *nb,
 	struct net_device *dev = netdev_notifier_info_to_dev((struct netdev_notifier_info *) dv);
 	struct led_netdev_data *trigger_data = container_of(nb, struct led_netdev_data, notifier);
 
-	if (evt != NETDEV_UP && evt != NETDEV_DOWN && evt != NETDEV_CHANGE && evt != NETDEV_REGISTER && evt != NETDEV_UNREGISTER)
+	if (evt != NETDEV_UP && evt != NETDEV_DOWN && evt != NETDEV_CHANGE && evt != NETDEV_REGISTER && evt != NETDEV_UNREGISTER && evt != NETDEV_CHANGENAME)
 		return NOTIFY_DONE;
 
 	spin_lock_bh(&trigger_data->lock);
-	del_timer_sync(&trigger_data->timer);
 
 	if (strcmp(dev->name, trigger_data->device_name))
 		goto done;
 
-	if (evt == NETDEV_REGISTER) {
+	del_timer_sync(&trigger_data->timer);
+
+	if (evt == NETDEV_REGISTER || evt == NETDEV_CHANGENAME) {
 		if (trigger_data->net_dev != NULL)
 			dev_put(trigger_data->net_dev);
+
 		dev_hold(dev);
 		trigger_data->net_dev = dev;
 		trigger_data->link_up = 0;

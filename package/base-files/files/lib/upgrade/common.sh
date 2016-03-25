@@ -48,13 +48,14 @@ supivot() { # <new_root> <old_root>
 
 run_ramfs() { # <command> [...]
 	install_bin /bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount	\
-		/sbin/pivot_root /usr/bin/wget /sbin/reboot /bin/sync /bin/dd	\
-		/bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/["	\
-		/bin/dd /bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump	\
+		/sbin/pivot_root /sbin/reboot /bin/sync /bin/dd	/bin/grep       \
+		/bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/[" /bin/dd	\
+		/bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump		\
 		/bin/sleep /bin/zcat /usr/bin/bzcat /usr/bin/printf /usr/bin/wc \
 		/bin/cut /usr/bin/printf /bin/sync /bin/mkdir /bin/rmdir	\
 		/bin/rm /usr/bin/basename /bin/kill /bin/chmod
 
+	install_bin /bin/uclient-fetch /bin/wget
 	install_bin /sbin/mtd
 	install_bin /sbin/mount_root
 	install_bin /sbin/snapshot
@@ -67,6 +68,7 @@ run_ramfs() { # <command> [...]
 	install_bin /usr/sbin/ubirsvol
 	install_bin /usr/sbin/ubirmvol
 	install_bin /usr/sbin/ubimkvol
+	install_bin /usr/sbin/partx
 	for file in $RAMFS_COPY_BIN; do
 		install_bin ${file//:/ }
 	done

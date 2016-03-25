@@ -12,11 +12,10 @@ include $(INCLUDE_DIR)/version.mk
 
 override MAKEFLAGS=
 
-SDK_NAME:=OpenWrt-SDK-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))_gcc-$(GCCV)$(DIR_SUFFIX).$(HOST_OS)-$(HOST_ARCH)
+SDK_NAME:=$(VERSION_DIST)-SDK-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))$(if $(GCCV),_gcc-$(GCCV))$(DIR_SUFFIX).$(HOST_OS)-$(HOST_ARCH)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 
 STAGING_SUBDIR_HOST := staging_dir/host
-STAGING_SUBDIR_TARGET := staging_dir/target-$(ARCH)$(ARCH_SUFFIX)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi)
 STAGING_SUBDIR_TOOLCHAIN := staging_dir/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi)
 
 EXCLUDE_DIRS:=*/ccache \
@@ -33,12 +32,12 @@ EXCLUDE_DIRS:=*/ccache \
 
 SDK_DIRS = \
 		$(STAGING_SUBDIR_HOST) \
-		$(STAGING_SUBDIR_TARGET) \
 		$(STAGING_SUBDIR_TOOLCHAIN)
 
 BASE_FEED:=$(shell git config --get remote.origin.url 2>/dev/null | sed -ne 's/^/src-git base /p')
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C git svn info 2>/dev/null | sed -ne 's/^URL: /src-gitsvn base /p'))
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C svn info 2>/dev/null | sed -ne 's/^URL: /src-svn base /p'))
+BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git base https://git.openwrt.org/$(filter-out unknown/ r%/,$(subst $(space),.,$(wordlist 1,2,$(subst .,$(space),$(VERSION_NUMBER))))/)openwrt.git)
 
 KDIR_BASE = $(patsubst $(TOPDIR)/%,%,$(LINUX_DIR))
 
@@ -58,6 +57,7 @@ KERNEL_FILES_BASE := \
 	scripts \
 	include \
 	Module.symvers \
+	modules.builtin \
 	$(addprefix arch/$(LINUX_KARCH)/,$(KERNEL_FILES_ARCH))
 
 KERNEL_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(KERNEL_FILES_BASE))))
@@ -68,6 +68,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	mkdir -p $(SDK_BUILD_DIR)/dl $(SDK_BUILD_DIR)/package
 	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) \
+		`cd $(TOPDIR); find $(KDIR_BASE) -name \*.ko` \
 		$(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
 		$(SDK_DIRS) $(KERNEL_FILES) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)

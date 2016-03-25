@@ -27,3 +27,19 @@ lantiq_board_name() {
 
 	echo "$name"
 }
+
+lantiq_is_dt_led_chosen() {
+	[ -f "/sys/firmware/devicetree/base/chosen/leds/$1" ] && echo "true"
+}
+
+lantiq_get_dt_led_chosen() {
+	local label
+	local nodepath
+	local basepath="/sys/firmware/devicetree/base"
+	local chosenpath="$basepath/chosen/leds/$1"
+
+	[ -f "$chosenpath" ] && nodepath=$(cat "$chosenpath")
+	[ -n "$nodepath" ] && label=$(cat "$basepath$nodepath/label")
+
+	echo "$label"
+}

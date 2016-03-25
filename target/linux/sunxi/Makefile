@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2014 OpenWrt.org
+# Copyright (C) 2013-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -15,7 +15,7 @@ CPU_TYPE:=cortex-a8
 CPU_SUBTYPE:=vfpv3
 MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
-KERNEL_PATCHVER:=4.1
+KERNEL_PATCHVER:=4.4
 KERNELNAME:=zImage dtbs
 
 # A10: Cortex-A8

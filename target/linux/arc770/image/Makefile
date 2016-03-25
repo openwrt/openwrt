@@ -15,6 +15,7 @@ endef
 # Shared device definition: applies to every defined device
 define Device/Default
   PROFILES = Default $$(DEVICE_PROFILE)
+  KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   KERNEL_SUFFIX := .elf
   KERNEL_INITRAMFS := kernel-bin | patch-dtb
   KERNEL_INITRAMFS_NAME = $$(KERNEL_NAME)-initramfs.elf

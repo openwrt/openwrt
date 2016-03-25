@@ -16,6 +16,7 @@ encaps="llc"
 payload="bridged"
 lan_mac=""
 wan_mac=""
+interface_wan=""
 
 board=$(lantiq_board_name)
 
@@ -95,6 +96,13 @@ TDW8970|TDW8980)
 		"0:lan:1" "2:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
 	;;
 
+VR200v)
+	lan_mac=$(mtd_get_mac_binary romfile 61696)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_add_switch "switch0" \
+		"0:lan:1" "2:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
+	;;
+
 ARV7519RW22)
 	lan_mac=$(mtd_get_mac_binary boardconfig 22)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
@@ -132,14 +140,17 @@ esac
 
 if [ -n "$(ls /lib/modules/`uname -r`/ltq_atm*)" ]; then
 	ucidef_add_atm_bridge "$vpi" "$vci" "$encaps" "$payload"
-	ucidef_set_interface_wan "nas0" "pppoe"
 fi
 
-if [ -n "$(grep "system type.*: VR9" /proc/cpuinfo)" ]; then
+if grep -qE "system type.*: (VR9|xRX200)" /proc/cpuinfo; then
+	interface_wan="ptm0"
 	ucidef_add_vdsl_modem "$annex" "/lib/firmware/vdsl.bin" "av" "ptm"
 else
+	interface_wan="nas0"
 	ucidef_add_adsl_modem "$annex" "/lib/firmware/adsl.bin"
 fi
+
+ucidef_set_interface_wan "$interface_wan" "pppoe"
 
 [ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan "$lan_mac"
 [ -n "$wan_mac" ] && ucidef_set_interface_macaddr wan "$wan_mac"

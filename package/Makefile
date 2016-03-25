@@ -117,6 +117,7 @@ $(curdir)/install: $(TMP_DIR)/.build $(curdir)/system/opkg/host/install
 			IPKG_INSTROOT=$(TARGET_DIR) $$(which bash) ./etc/rc.common $$script enable; \
 		done || true \
 	)
+	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(TARGET_DIR)/usr/lib/opkg/status)
 	@-find $(TARGET_DIR) -name CVS   | $(XARGS) rm -rf
 	@-find $(TARGET_DIR) -name .svn  | $(XARGS) rm -rf
 	@-find $(TARGET_DIR) -name '.#*' | $(XARGS) rm -f
@@ -137,9 +138,9 @@ endif
 PACKAGE_SUBDIRS=.
 ifneq ($(CONFIG_PER_FEED_REPO),)
   ifneq ($(CONFIG_PER_FEED_REPO_ADD_DISABLED),)
-    PACKAGE_SUBDIRS=base $(FEEDS_AVAILABLE)
+    PACKAGE_SUBDIRS=base kernel $(FEEDS_AVAILABLE)
   else
-    PACKAGE_SUBDIRS=base $(FEEDS_ENABLED)
+    PACKAGE_SUBDIRS=base kernel $(FEEDS_ENABLED)
   endif
 endif
 

@@ -24,6 +24,7 @@ export RELEASE
 export REVISION
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
 export MAKE_JOBSERVER=$(filter --jobserver%,$(MAKEFLAGS))
+export SOURCE_DATE_EPOCH:=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh)
 
 # prevent perforce from messing with the patch utility
 unexport P4PORT P4USER P4CONFIG P4CLIENT
@@ -38,6 +39,14 @@ unexport LPATH
 
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
+export LDFLAGS=
+
+empty:=
+space:= $(empty) $(empty)
+path:=$(subst :,$(space),$(PATH))
+path:=$(filter-out .%,$(path))
+path:=$(subst $(space),:,$(path))
+export PATH:=$(path)
 
 unexport TAR_OPTIONS
 
@@ -61,6 +70,12 @@ ULIMIT_FIX=_limit=`ulimit -n`; [ "$$_limit" = "unlimited" -o "$$_limit" -ge 1024
 
 prepare-mk: FORCE ;
 
+ifdef SDK
+  IGNORE_PACKAGES = linux
+endif
+
+_ignore = $(foreach p,$(IGNORE_PACKAGES),--ignore $(p))
+
 prepare-tmpinfo: FORCE
 	@+$(MAKE) -r -s staging_dir/host/.prereq-build $(PREP_MK)
 	mkdir -p tmp/info
@@ -68,11 +83,11 @@ prepare-tmpinfo: FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPS="profiles/*.mk $(TOPDIR)/include/kernel*.mk $(TOPDIR)/include/target.mk" SCAN_DEPTH=2 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1"
 	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
-		[ "$$t" -nt "$$f" ] || ./scripts/metadata.pl $${type}_config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
+		[ "$$t" -nt "$$f" ] || ./scripts/metadata.pl $(_ignore) $${type}_config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
 	done
-	[ tmp/.config-feeds.in -nt tmp/.packagefeeds ] || ./scripts/feeds feed_config > tmp/.config-feeds.in
+	[ tmp/.config-feeds.in -nt tmp/.packagesubdirs ] || ./scripts/feeds feed_config > tmp/.config-feeds.in
 	./scripts/metadata.pl package_mk tmp/.packageinfo > tmp/.packagedeps || { rm -f tmp/.packagedeps; false; }
-	./scripts/metadata.pl package_feeds tmp/.packageinfo > tmp/.packagefeeds || { rm -f tmp/.packagefeeds; false; }
+	./scripts/metadata.pl package_subdirs tmp/.packageinfo > tmp/.packagesubdirs || { rm -f tmp/.packagesubdirs; false; }
 	touch $(TOPDIR)/tmp/.build
 
 .config: ./scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo)

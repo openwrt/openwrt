@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 399 insertions(+)
  create mode 100644 arch/mips/pci/pci-mt7620.c
 
-diff --git a/arch/mips/include/asm/mach-ralink/mt7620.h b/arch/mips/include/asm/mach-ralink/mt7620.h
-index 1976fb8..72e64fa 100644
 --- a/arch/mips/include/asm/mach-ralink/mt7620.h
 +++ b/arch/mips/include/asm/mach-ralink/mt7620.h
 @@ -19,6 +19,7 @@ enum mt762x_soc_type {
@@ -24,11 +22,9 @@ index 1976fb8..72e64fa 100644
  
  #define MT7620_SYSC_BASE		0x10000000
  
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index 04e61c3..ccbdc90 100644
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -43,6 +43,7 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1480.o pci-bcm1480ht.o
+@@ -43,6 +43,7 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1
  obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -36,9 +32,6 @@ index 04e61c3..ccbdc90 100644
  obj-$(CONFIG_SOC_MT7621)	+= pci-mt7621.o
  obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
-diff --git a/arch/mips/pci/pci-mt7620.c b/arch/mips/pci/pci-mt7620.c
-new file mode 100644
-index 0000000..780e4e9
 --- /dev/null
 +++ b/arch/mips/pci/pci-mt7620.c
 @@ -0,0 +1,396 @@
@@ -438,8 +431,6 @@ index 0000000..780e4e9
 +}
 +
 +arch_initcall(mt7620_pci_init);
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index c2778f2..2aa5e42 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -43,6 +43,7 @@ choice
@@ -450,6 +441,3 @@ index c2778f2..2aa5e42 100644
  
  	config SOC_MT7621
  		bool "MT7621"
--- 
-1.7.10.4
-

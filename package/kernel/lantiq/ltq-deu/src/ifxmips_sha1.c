@@ -48,7 +48,7 @@
 #include <crypto/sha.h>
 #include <crypto/internal/hash.h>
 #include <linux/types.h>
-#include <asm/scatterlist.h>
+#include <linux/scatterlist.h>
 #include <asm/byteorder.h>
 
 #if defined(CONFIG_DANUBE)

@@ -42,7 +42,7 @@ endef
 define Package/grev6
 $(call Package/gre/Default)
   TITLE:=Generic Routing Encapsulation (IPv6) config support
-  DEPENDS:=@(PACKAGE_gre) @IPV6 +kmod-ip6-gre
+  DEPENDS:=@(PACKAGE_gre) @IPV6 +kmod-gre6
 endef
 
 define Package/grev6/description

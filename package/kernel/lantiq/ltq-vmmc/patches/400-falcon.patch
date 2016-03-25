@@ -783,7 +783,7 @@
 +++ b/src/mps/drv_mps_vmmc_device.h
 @@ -22,7 +22,12 @@
  #  include <lantiq_soc.h>
- #  include <gpio.h>
+ #  include <linux/gpio.h>
  #define IFXMIPS_MPS_SRAM		((u32 *)(KSEG1 + 0x1F200000))
 +#if defined(SYSTEM_FALCON)
 +#define IFXMIPS_MPS_BASE_ADDR		(KSEG1 + 0x1D004000)

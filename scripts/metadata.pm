@@ -2,7 +2,7 @@ package metadata;
 use base 'Exporter';
 use strict;
 use warnings;
-our @EXPORT = qw(%package %srcpackage %category %subdir %preconfig %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline);
+our @EXPORT = qw(%package %srcpackage %category %subdir %preconfig %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore);
 
 our %package;
 our %preconfig;
@@ -11,6 +11,7 @@ our %category;
 our %subdir;
 our %features;
 our %overrides;
+our @ignore;
 
 sub get_multiline {
 	my $fh = shift;
@@ -130,6 +131,7 @@ sub parse_package_metadata($) {
 	my $subdir;
 	my $src;
 	my $override;
+	my %ignore = map { $_ => 1 } @ignore;
 
 	open FILE, "<$file" or do {
 		warn "Cannot open '$file': $!\n";
@@ -152,6 +154,7 @@ sub parse_package_metadata($) {
 			$overrides{$src} = 1;
 		};
 		next unless $src;
+		next if $ignore{$src};
 		/^Package:\s*(.+?)\s*$/ and do {
 			undef $feature;
 			$pkg = {};
@@ -219,7 +222,7 @@ sub parse_package_metadata($) {
 		/^Build-Depends: \s*(.+)\s*$/ and $pkg->{builddepends} = [ split /\s+/, $1 ];
 		/^Build-Depends\/(\w+): \s*(.+)\s*$/ and $pkg->{"builddepends/$1"} = [ split /\s+/, $2 ];
 		/^Build-Types:\s*(.+)\s*$/ and $pkg->{buildtypes} = [ split /\s+/, $1 ];
-		/^Feed:\s*(.+?)\s*$/ and $pkg->{feed} = $1;
+		/^Package-Subdir:\s*(.+?)\s*$/ and $pkg->{package_subdir} = $1;
 		/^Category: \s*(.+)\s*$/ and do {
 			$pkg->{category} = $1;
 			defined $category{$1} or $category{$1} = {};

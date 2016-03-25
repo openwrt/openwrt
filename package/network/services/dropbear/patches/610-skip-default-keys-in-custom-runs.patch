@@ -1,6 +1,6 @@
 --- a/svr-runopts.c
 +++ b/svr-runopts.c
-@@ -475,6 +475,7 @@ void load_all_hostkeys() {
+@@ -488,6 +488,7 @@ void load_all_hostkeys() {
  		m_free(hostkey_file);
  	}
  
@@ -8,7 +8,7 @@
  #ifdef DROPBEAR_RSA
  	loadhostkey(RSA_PRIV_FILENAME, 0);
  #endif
-@@ -486,6 +487,7 @@ void load_all_hostkeys() {
+@@ -499,6 +500,7 @@ void load_all_hostkeys() {
  #ifdef DROPBEAR_ECDSA
  	loadhostkey(ECDSA_PRIV_FILENAME, 0);
  #endif

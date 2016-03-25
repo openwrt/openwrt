@@ -4,6 +4,22 @@
 # See /LICENSE for more information.
 #
 
+config KERNEL_BUILD_USER
+	string "Custom Kernel Build User Name"
+	default ""
+	help
+	  Sets the Kernel build user string, which for example will be returned
+	  by 'uname -a' on running systems.
+	  If not set, uses system user at build time.
+
+config KERNEL_BUILD_DOMAIN
+	string "Custom Kernel Build Domain Name"
+	default ""
+	help
+	  Sets the Kernel build domain string, which for example will be
+	  returned by 'uname -a' on running systems.
+	  If not set, uses system hostname at build time.
+
 config KERNEL_PRINTK
 	bool "Enable support for printk"
 	default y
@@ -551,3 +567,60 @@ config KERNEL_SECCOMP
 		default n
 		help
 		  Build kernel with support for seccomp.
+
+#
+# IPv6 configuration
+#
+
+config KERNEL_IPV6
+	def_bool IPV6
+
+if KERNEL_IPV6
+
+	config KERNEL_IPV6_MULTIPLE_TABLES
+		def_bool y
+
+	config KERNEL_IPV6_SUBTREES
+		def_bool y
+
+	config KERNEL_IPV6_MROUTE
+		def_bool y
+
+	config KERNEL_IPV6_PIMSM_V2
+		def_bool n
+
+endif
+
+#
+# NFS related symbols
+#
+config KERNEL_IP_PNP
+	bool "Compile the kernel with rootfs on NFS"
+	help
+	   If you want to make your kernel boot off a NFS server as root
+	   filesystem, select Y here.
+
+if KERNEL_IP_PNP
+
+	config KERNEL_IP_PNP_DHCP
+		def_bool y
+
+	config KERNEL_IP_PNP_BOOTP
+		def_bool n
+
+	config KERNEL_IP_PNP_RARP
+		def_bool n
+
+	config KERNEL_NFS_FS
+		def_bool y
+
+	config KERNEL_NFS_V2
+		def_bool y
+
+	config KERNEL_NFS_V3
+		def_bool y
+
+	config KERNEL_ROOT_NFS
+		def_bool y
+
+endif

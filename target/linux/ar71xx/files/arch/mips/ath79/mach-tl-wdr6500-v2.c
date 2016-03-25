@@ -100,13 +100,14 @@ static void __init tl_ap151_setup(void)
 
 	ath79_setup_ar933x_phy4_switch(false, false);
 
-	ath79_register_mdio(0, 0x0);
+	ath79_register_mdio(1, 0x0);
 
 	/* WAN */
 	ath79_switch_data.phy4_mii_en = 1;
 	ath79_switch_data.phy_poll_mask = BIT(4);
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ath79_eth0_data.phy_mask = BIT(4);
+	ath79_eth0_data.mii_bus_dev = &ath79_mdio1_device.dev;
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 1);
 	ath79_register_eth(0);
 

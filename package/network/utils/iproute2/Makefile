@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=4.0.0
-PKG_RELEASE:=3
+PKG_VERSION:=4.4.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://kernel.org/pub/linux/utils/net/iproute2/
-PKG_MD5SUM:=3adc263ade4ee76c35032e8f50b54108
+PKG_MD5SUM:=d762653ec3e1ab0d4a9689e169ca184f
 PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0
 
@@ -38,10 +38,6 @@ $(call Package/iproute2/Default,tiny,Minimal)
 endef
 
 Package/ip-full=$(call Package/iproute2/Default,full,Full)
-
-define Package/ip-$(BUILD_VARIANT)/conffiles
-$(Package/ip/conffiles)
-endef
 
 define Package/tc
 $(call Package/iproute2/Default)

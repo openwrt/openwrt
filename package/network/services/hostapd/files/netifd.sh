@@ -536,9 +536,15 @@ wpa_supplicant_prepare_interface() {
 		_w_modestr="mode=1"
 	}
 
+	local country_str=
+	[ -n "$country" ] && {
+		country_str="country=$country"
+	}
+
 	wpa_supplicant_teardown_interface "$ifname"
 	cat > "$_config" <<EOF
 $ap_scan
+$country_str
 EOF
 	return 0
 }
@@ -627,11 +633,32 @@ wpa_supplicant_add_network() {
 					append network_data "private_key=\"$priv_key\"" "$N$T"
 					append network_data "private_key_passwd=\"$priv_key_pwd\"" "$N$T"
 				;;
-				peap|ttls)
-					json_get_vars auth password
+				fast|peap|ttls)
+					json_get_vars auth password ca_cert2 client_cert2 priv_key2 priv_key2_pwd
 					set_default auth MSCHAPV2
-					append network_data "phase2=\"$auth\"" "$N$T"
-					append network_data "password=\"$password\"" "$N$T"
+
+					if [ "$auth" = "EAP-TLS" ]; then
+						[ -n "$ca_cert2" ] &&
+							append network_data "ca_cert2=\"$ca_cert2\"" "$N$T"
+						append network_data "client_cert2=\"$client_cert2\"" "$N$T"
+						append network_data "private_key2=\"$priv_key2\"" "$N$T"
+						append network_data "private_key2_passwd=\"$priv_key2_pwd\"" "$N$T"
+					else
+						append network_data "password=\"$password\"" "$N$T"
+					fi
+
+					phase2proto="auth="
+					case "$auth" in
+						"auth"*)
+							phase2proto=""
+						;;
+						"EAP-"*)
+							auth="$(echo $auth | cut -b 5- )"
+							[ "$eap_type" = "ttls" ] &&
+								phase2proto="autheap="
+						;;
+					esac
+					append network_data "phase2=\"$phase2proto$auth\"" "$N$T"
 				;;
 			esac
 			append network_data "eap=$(echo $eap_type | tr 'a-z' 'A-Z')" "$N$T"

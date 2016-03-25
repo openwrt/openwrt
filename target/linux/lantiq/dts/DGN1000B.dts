@@ -7,6 +7,15 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power;
+			failsafe = &power;
+			running = &power;
+
+			dsl = &dsl;
+			internet = &online_green;
+		};
 	};
 
 	memory@0 {
@@ -19,10 +28,6 @@
 			pinctrl-0 = <&state_default>;
 
 			state_default: pinmux {
-				spi {
-					lantiq,groups = "spi", "spi_cs1";
-					lantiq,function = "spi";
-				};
 				asc {
 					lantiq,groups = "asc";
 					lantiq,function = "asc";
@@ -33,6 +38,18 @@
 					lantiq,open-drain = <1>;
 				};
 			};
+			pins_spi_default: pins_spi_default {
+				spi_in {
+					lantiq,groups = "spi_di";
+					lantiq,function = "spi";
+				};
+				spi_out {
+					lantiq,groups = "spi_do", "spi_clk",
+						"spi_cs1";
+					lantiq,function = "spi";
+					lantiq,output = <1>;
+				};
+			};
 		};
 
 		etop@E180000 {
@@ -41,11 +58,14 @@
 		};
 
 		spi@E100800 {
-			m25p80@0 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&pins_spi_default>;
+
+			m25p80@1 {
 				#address-cells = <1>;
 				#size-cells = <1>;
 				compatible = "jedec,spi-nor";
-				reg = <0 0>;
+				reg = <1 0>;
 				spi-max-frequency = <5000000>;
 
 				partition@0 {
@@ -107,31 +127,34 @@
 	};
 
 	gpio-leds {
-		cmpatible = "gpio-leds";
-		dsl {
-			label = "dsl";
+		compatible = "gpio-leds";
+		dsl: dsl {
+			label = "dgn1000b:green:dsl";
 			gpios = <&gpio 1 1>;
 			default-state = "on";
 		};
-		online {
-			label = "online";
+		online_green: online {
+			label = "dgn1000b:green:online";
 			gpios = <&gpio 2 1>;
 			default-state = "on";
 		};
 		online2 {
-			label = "online2";
+			label = "dgn1000b:red:online";
 			gpios = <&gpio 3 1>;
 			default-state = "on";
 		};
 		wps {
-			label = "wps";
+			label = "dgn1000b:green:wps";
 			gpios = <&gpio 4 1>;
 			default-state = "on";
 		};
-		power {
-			label = "power";
+		power: power {
+			label = "dgn1000b:green:power";
 			gpios = <&gpio 13 1>;
-			default-state = "on";
+			default-state = "keep";
 		};
+		/*
+			power red is missing
+		*/
 	};
 };

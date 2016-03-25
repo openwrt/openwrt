@@ -51,6 +51,7 @@ platform_check_image() {
 	dir-810l|\
 	e1700|\
 	esr-9753|\
+	ex2700|\
 	f7c027|\
 	firewrt|\
 	fonera20n|\
@@ -83,6 +84,7 @@ platform_check_image() {
 	nw718|\
 	oy-0001|\
 	pbr-m1|\
+	psg1208|\
 	psr-680w|\
 	px-4885|\
 	re6500|\
@@ -125,6 +127,8 @@ platform_check_image() {
 	wr512-3gn|\
 	wr6202|\
 	wrtnode|\
+	wrtnode2r |\
+	wrtnode2p |\
 	wsr-600|\
 	wt1520|\
 	wt3020|\

@@ -18,6 +18,9 @@ get_status_led() {
 	antminer-s3)
 		status_led="antminer-s3:green:system"
 		;;
+	antminer-r1)
+		status_led="antminer-r1:green:system"
+		;;
 	ap132)
 		status_led="ap132:green:status"
 		;;
@@ -337,7 +340,8 @@ get_status_led() {
 	unifi)
 		status_led="ubnt:green:dome"
 		;;
-	uap-pro)
+	uap-pro | \
+	unifiac)
 		status_led="ubnt:white:dome"
 		;;
 	unifi-outdoor-plus)
@@ -368,7 +372,8 @@ get_status_led() {
 	wnr2000 | \
 	wnr2200 |\
 	wnr612-v2 |\
-	wnr1000-v2)
+	wnr1000-v2 |\
+	wpn824n)
 		status_led="netgear:green:power"
 		;;
 	wp543)

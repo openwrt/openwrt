@@ -1,0 +1,32 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sun, 31 Jan 2016 12:14:34 +0100
+Subject: [PATCH] brcmfmac: treat NULL character in NVRAM as separator
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Platform NVRAM (stored on a flash partition) has entries separated by a
+NULL (\0) char. Our parsing code switches from VALUE state to IDLE
+whenever it meets a NULL (\0). When that happens our IDLE handler should
+simply consume it and analyze whatever is placed ahead.
+
+This fixes harmless warnings spamming debugging output:
+[  155.165624] brcmfmac: brcmf_nvram_handle_idle warning: ln=1:col=20: ignoring invalid character
+[  155.180806] brcmfmac: brcmf_nvram_handle_idle warning: ln=1:col=44: ignoring invalid character
+[  155.195971] brcmfmac: brcmf_nvram_handle_idle warning: ln=1:col=63: ignoring invalid character
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/firmware.c
+@@ -93,7 +93,7 @@ static enum nvram_parser_state brcmf_nvr
+ 	c = nvp->data[nvp->pos];
+ 	if (c == '\n')
+ 		return COMMENT;
+-	if (is_whitespace(c))
++	if (is_whitespace(c) || c == '\0')
+ 		goto proceed;
+ 	if (c == '#')
+ 		return COMMENT;

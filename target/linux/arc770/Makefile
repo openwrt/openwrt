@@ -9,11 +9,10 @@ include $(TOPDIR)/rules.mk
 ARCH:=arc
 BOARD:=arc770
 BOARDNAME:=Synopsys DesignWare ARC 770D
-CFLAGS:=-Os -pipe -fno-caller-saves -matomic
 MAINTAINER:=Alexey Brodkin <abrodkin@synopsys.com>
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=4.3
+KERNEL_PATCHVER:=4.4
 
 DEVICE_TYPE:=developerboard
 

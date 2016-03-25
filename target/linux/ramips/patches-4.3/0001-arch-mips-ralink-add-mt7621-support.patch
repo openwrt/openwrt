@@ -36,7 +36,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/mt7621.h
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,42 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -51,6 +51,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#ifndef _MT7621_REGS_H_
 +#define _MT7621_REGS_H_
++
++#define MT7621_PALMBUS_BASE		0x1C000000
++#define MT7621_PALMBUS_SIZE		0x03FFFFFF
 +
 +#define MT7621_SYSC_BASE		0x1E000000
 +
@@ -76,26 +79,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define MIPS_GIC_IRQ_BASE           (MIPS_CPU_IRQ_BASE + 8)
 +
 +#endif
---- a/arch/mips/kernel/mips-cm.c
-+++ b/arch/mips/kernel/mips-cm.c
-@@ -232,7 +232,7 @@ int mips_cm_probe(void)
- 	write_gcr_base(base_reg);
- 
- 	/* disable CM regions */
--	write_gcr_reg0_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
-+/*	write_gcr_reg0_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
- 	write_gcr_reg0_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
- 	write_gcr_reg1_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
- 	write_gcr_reg1_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
-@@ -240,7 +240,7 @@ int mips_cm_probe(void)
- 	write_gcr_reg2_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
- 	write_gcr_reg3_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
- 	write_gcr_reg3_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
--
-+*/
- 	/* probe for an L2-only sync region */
- 	mips_cm_probe_l2sync();
- 
 --- a/arch/mips/kernel/vmlinux.lds.S
 +++ b/arch/mips/kernel/vmlinux.lds.S
 @@ -51,6 +51,7 @@ SECTIONS
@@ -120,7 +103,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  choice
  	prompt "Ralink SoC selection"
  	default SOC_RT305X
-@@ -34,6 +39,14 @@ choice
+@@ -34,6 +39,16 @@ choice
  	config SOC_MT7620
  		bool "MT7620/8"
  
@@ -131,11 +114,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		select SYS_SUPPORTS_SMP
 +		select SYS_SUPPORTS_MIPS_CPS
 +		select MIPS_GIC
++		select COMMON_CLK
++		select CLKSRC_MIPS_GIC
 +		select HW_HAS_PCI
  endchoice
  
  choice
-@@ -65,6 +78,10 @@ choice
+@@ -65,6 +80,10 @@ choice
  		depends on SOC_MT7620
  		select BUILTIN_DTB
  
@@ -148,19 +133,23 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  endif
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
-@@ -6,16 +6,20 @@
+@@ -6,16 +6,24 @@
  # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
  
 -obj-y := prom.o of.o reset.o clk.o irq.o timer.o
-+obj-y := prom.o of.o reset.o clk.o timer.o
++obj-y := prom.o of.o reset.o
++
++ifndef CONFIG_MIPS_GIC
++	obj-y += clk.o timer.o
++endif
  
  obj-$(CONFIG_CLKEVT_RT3352) += cevt-rt3352.o
  
  obj-$(CONFIG_RALINK_ILL_ACC) += ill_acc.o
  
 +obj-$(CONFIG_IRQ_INTC) += irq.o
-+obj-$(CONFIG_MIPS_GIC) += irq-gic.o
++obj-$(CONFIG_MIPS_GIC) += irq-gic.o timer-gic.o
 +
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
@@ -188,13 +177,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#include <linux/of.h>
 +#include <linux/irqchip.h>
-+
 +#include <linux/irqchip/mips-gic.h>
 +
-+unsigned int get_c0_compare_int(void)
++int get_c0_perfcount_int(void)
 +{
-+	return gic_get_c0_compare_int();
++	return gic_get_c0_perfcount_int();
 +}
++EXPORT_SYMBOL_GPL(get_c0_perfcount_int);
 +
 +void __init
 +arch_init_irq(void)
@@ -204,7 +193,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/arch/mips/ralink/mt7621.c
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,223 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -359,11 +348,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		}
 +		break;
 +	}
-+	cpu_clk = 880000000;
-+	ralink_clk_add("cpu", cpu_clk);
-+	ralink_clk_add("1e000b00.spi", 50000000);
-+	ralink_clk_add("1e000c00.uartlite", 50000000);
-+	ralink_clk_add("1e000d00.uart", 50000000);
 +}
 +
 +void __init ralink_of_remap(void)
@@ -411,10 +395,43 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	mips_cm_probe();
 +	mips_cpc_probe();
 +
++	if (mips_cm_numiocu()) {
++		/* mips_cm_probe() wipes out bootloader
++		   config for CM regions and we have to configure them
++		   again. This SoC cannot talk to pamlbus devices
++		   witout proper iocu region set up.
++
++		   FIXME: it would be better to do this with values
++		   from DT, but we need this very early because
++		   without this we cannot talk to pretty much anything
++		   including serial.
++		*/
++		write_gcr_reg0_base(MT7621_PALMBUS_BASE);
++		write_gcr_reg0_mask(~MT7621_PALMBUS_SIZE | CM_GCR_REGn_MASK_CMTGT_IOCU0);
++	}
++
 +	if (!register_cps_smp_ops())
 +		return;
 +	if (!register_cmp_smp_ops())
 +		return;
 +	if (!register_vsmp_smp_ops())
 +		return;
++}
+--- /dev/null
++++ b/arch/mips/ralink/timer-gic.c
+@@ -0,0 +1,15 @@
++#include <linux/init.h>
++
++#include <linux/of.h>
++#include <linux/clk-provider.h>
++#include <linux/clocksource.h>
++
++#include "common.h"
++
++void __init plat_time_init(void)
++{
++	ralink_of_remap();
++
++	of_clk_init(NULL);
++	clocksource_of_init();
 +}

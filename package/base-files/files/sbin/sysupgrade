@@ -10,6 +10,7 @@ export INTERACTIVE=0
 export VERBOSE=1
 export SAVE_CONFIG=1
 export SAVE_OVERLAY=0
+export SAVE_PARTITIONS=1
 export DELAY=
 export CONF_IMAGE=
 export CONF_BACKUP_LIST=0
@@ -29,6 +30,7 @@ while [ -n "$1" ]; do
 		-q) export VERBOSE="$(($VERBOSE - 1))";;
 		-n) export SAVE_CONFIG=0;;
 		-c) export SAVE_OVERLAY=1;;
+		-p) export SAVE_PARTITIONS=0;;
 		-b|--create-backup) export CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
 		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
 		-l|--list-backup) export CONF_BACKUP_LIST=1; break;;
@@ -62,6 +64,7 @@ upgrade-option:
 	-i           interactive mode
 	-c           attempt to preserve all changed files in /etc/
 	-n           do not save configuration over reflash
+	-p           do not attempt to restore the partition table after flash.
 	-T | --test
 	             Verify image and config .tar.gz but do not actually flash.
 	-F | --force
@@ -115,6 +118,7 @@ add_overlayfiles() {
 		local overlaydir="/overlay"
 	fi
 	find $overlaydir/etc/ -type f -o -type l | sed \
+		-e 's,^/overlay\/upper/,/,' \
 		-e 's,^/overlay/,/,' \
 		-e '\,/META_[a-zA-Z0-9]*$,d' \
 		-e '\,/functions.sh$,d' \

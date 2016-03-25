@@ -1,6 +1,6 @@
 --- a/include/mbedtls/config.h
 +++ b/include/mbedtls/config.h
-@@ -184,7 +184,7 @@
+@@ -183,7 +183,7 @@
   *
   * Uncomment to get errors on using deprecated functions.
   */
@@ -9,7 +9,7 @@
  
  /* \} name SECTION: System support */
  
-@@ -323,7 +323,7 @@
+@@ -322,7 +322,7 @@
   *
   * Enable Cipher Feedback mode (CFB) for symmetric ciphers.
   */
@@ -89,8 +89,8 @@
 +//#define MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
  
  /**
-  * \def MBEDTLS_PK_PARSE_EC_EXTENDED
-@@ -813,7 +813,7 @@
+  * \def MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+@@ -832,7 +832,7 @@
   *
   * Comment this macro to disable support for external private RSA keys.
   */
@@ -99,7 +99,7 @@
  
  /**
   * \def MBEDTLS_PKCS1_V15
-@@ -845,14 +845,14 @@
+@@ -864,14 +864,14 @@
   * Uncomment this macro to disable the use of CRT in RSA.
   *
   */
@@ -116,7 +116,7 @@
  
  /**
   * \def MBEDTLS_SHA256_SMALLER
-@@ -868,7 +868,7 @@
+@@ -887,7 +887,7 @@
   *
   * Uncomment to enable the smaller implementation of SHA256.
   */
@@ -125,7 +125,7 @@
  
  /**
   * \def MBEDTLS_SSL_AEAD_RANDOM_IV
-@@ -1041,7 +1041,7 @@
+@@ -1060,7 +1060,7 @@
   *
   * Comment this macro to disable support for SSL 3.0
   */
@@ -134,7 +134,7 @@
  
  /**
   * \def MBEDTLS_SSL_PROTO_TLS1
-@@ -1195,7 +1195,7 @@
+@@ -1224,7 +1224,7 @@
   *
   * Comment this macro to disable support for truncated HMAC in SSL
   */
@@ -143,7 +143,7 @@
  
  /**
   * \def MBEDTLS_THREADING_ALT
-@@ -1431,7 +1431,7 @@
+@@ -1460,7 +1460,7 @@
   *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
   *      MBEDTLS_TLS_PSK_WITH_RC4_128_SHA
   */
@@ -152,7 +152,7 @@
  
  /**
   * \def MBEDTLS_ASN1_PARSE_C
-@@ -1496,7 +1496,7 @@
+@@ -1525,7 +1525,7 @@
   *
   * Module:  library/blowfish.c
   */
@@ -161,7 +161,7 @@
  
  /**
   * \def MBEDTLS_CAMELLIA_C
-@@ -1551,7 +1551,7 @@
+@@ -1580,7 +1580,7 @@
   *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
   *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
   */
@@ -170,7 +170,7 @@
  
  /**
   * \def MBEDTLS_CCM_C
-@@ -1565,7 +1565,7 @@
+@@ -1594,7 +1594,7 @@
   * This module enables the AES-CCM ciphersuites, if other requisites are
   * enabled as well.
   */
@@ -179,7 +179,7 @@
  
  /**
   * \def MBEDTLS_CERTS_C
-@@ -1577,7 +1577,7 @@
+@@ -1606,7 +1606,7 @@
   *
   * This module is used for testing (ssl_client/server).
   */
@@ -188,7 +188,7 @@
  
  /**
   * \def MBEDTLS_CIPHER_C
-@@ -1617,7 +1617,7 @@
+@@ -1646,7 +1646,7 @@
   *
   * This module provides debugging functions.
   */
@@ -197,7 +197,7 @@
  
  /**
   * \def MBEDTLS_DES_C
-@@ -1657,7 +1657,7 @@
+@@ -1686,7 +1686,7 @@
   * This module is used by the following key exchanges:
   *      DHE-RSA, DHE-PSK
   */
@@ -206,7 +206,7 @@
  
  /**
   * \def MBEDTLS_ECDH_C
-@@ -2047,7 +2047,7 @@
+@@ -2096,7 +2096,7 @@
   * Caller:  library/mbedtls_md.c
   *
   */
@@ -215,7 +215,7 @@
  
  /**
   * \def MBEDTLS_RSA_C
-@@ -2345,7 +2345,7 @@
+@@ -2394,7 +2394,7 @@
   * Module:  library/xtea.c
   * Caller:
   */

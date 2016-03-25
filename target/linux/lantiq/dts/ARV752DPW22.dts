@@ -7,6 +7,15 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power_red;
+			failsafe = &power_blue;
+			running = &power_red;
+
+			internet = &internet_red;
+			wifi = &wifi;
+		};
 	};
 
 	memory@0 {
@@ -174,80 +183,70 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power {
-			label = "power";
+		power_blue: power1 {
+			label = "arv752dpw22:blue:power";
 			gpios = <&gpio 3 1>;
-			default-state = "on";
+		};
+		internet_red: internet {
+			label = "arv752dpw22:red:internet";
+			gpios = <&gpio 4 1>;
 		};
 		message {
-			label = "message";
+			label = "arv752dpw22:red:message";
 			gpios = <&gpio 5 1>;
-			default-state = "on";
 		};
-		power1 {
-			label = "power1";
+		power_red: power {
+			label = "arv752dpw22:red:power";
 			gpios = <&gpio 6 1>;
-			default-state = "on";
+			default-state = "keep";
 		};
 		voice1 {
-			label = "voice1";
+			label = "arv752dpw22:red:voice";
 			gpios = <&gpio 8 1>;
-			default-state = "on";
 		};
 		microphone {
-			label = "microphone";
+			label = "arv752dpw22:red:umts";
 			gpios = <&gpiomm 3 1>;
-			default-state = "on";
 		};
-		wifi {
-			label = "wifi_rt";
+		wifi: wifi {
+			label = "arv752dpw22:red:wifi";
 			gpios = <&gpiomm 4 1>;
-			default-state = "on";
 		};
 		fxs1 {
-			label = "fxs1";
+			label = "arv752dpw22:green:tae-n";
 			gpios = <&gpiomm 5 1>;
-			default-state = "on";
 		};
 		fxs2 {
-			label = "fxs2";
+			label = "arv752dpw22:green:tae-u";
 			gpios = <&gpiomm 6 1>;
-			default-state = "on";
 		};
 		fxo {
-			label = "fxo";
+			label = "arv752dpw22:green:isdn";
 			gpios = <&gpiomm 7 1>;
-			default-state = "on";
 		};
-		dsl {
-			label = "dsl";
+		internet2 {
+			label = "arv752dpw22:blue:internet";
 			gpios = <&gpiomm 8 1>;
-			default-state = "on";
 		};
 		voice2 {
-			label = "voice2";
+			label = "arv752dpw22:blue:voice";
 			gpios = <&gpiomm 9 1>;
-			default-state = "on";
 		};
 		eth1 {
-			 label = "eth1";
+			 label = "arv752dpw22:green:lan1";
 			 gpios = <&gpiomm 11 1>;
-			 default-state = "on";
 		};
 		eth2 {
-			label = "eth2";
+			label = "arv752dpw22:green:lan2";
 			gpios = <&gpiomm 12 1>;
-			default-state = "on";
 		};
 		eth3 {
-			label = "eth3";
+			label = "arv752dpw22:green:lan3";
 			gpios = <&gpiomm 13 1>;
-			default-state = "on";
 		};
 		eth4 {
-			label = "eth4";
+			label = "arv752dpw22:green:lan4";
 			gpios = <&gpiomm 14 1>;
-			default-state = "on";
 		};
 	};
 };

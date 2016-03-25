@@ -75,6 +75,11 @@
 			interrupt-parent = <&icu0>;
 			interrupts = <115>;
 		};
+
+		xbar0: xbar@400000 {
+			compatible = "lantiq,xbar-xway";
+			reg = <0x400000 0x1000>;
+		};
 	};
 
 	fpi@10000000 {
@@ -107,8 +112,20 @@
 			status = "disabled";
 		};
 
+		spi: spi@E100800 {
+			compatible = "lantiq,xrx200-spi";
+			reg = <0xE100800 0x100>;
+			interrupt-parent = <&icu0>;
+			interrupts = <22 23 24>;
+			interrupt-names = "spi_rx", "spi_tx", "spi_err",
+					"spi_frm";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
 		gpio: pinmux@E100B10 {
-			compatible = "lantiq,pinctrl-xr9";
+			compatible = "lantiq,xrx200-pinctrl";
 			#gpio-cells = <2>;
 			gpio-controller;
 			reg = <0xE100B10 0xA0>;
@@ -153,6 +170,19 @@
 			interrupts = <91>;
 		};
 
+		eth0: eth@E108000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "lantiq,xrx200-net";
+			reg = <	0xE108000 0x3000 /* switch */
+				0xE10B100 0x70 /* mdio */
+				0xE10B1D8 0x30 /* mii */
+				0xE10B308 0x30 /* pmac */
+			>;
+			interrupt-parent = <&icu0>;
+			interrupts = <73 72>;
+		};
+
 		mei@E116000 {
 			compatible = "lantiq,mei-xrx200";
 			reg = <0xE116000 0x9c>;
@@ -170,6 +200,7 @@
 			interrupt-parent = <&icu0>;
 			interrupts = <161 144>;
 			compatible = "lantiq,pcie-xrx200";
+			gpio-reset = <&gpio 38 0>;
 		};
 
 		pci0: pci@E105400 {
@@ -184,7 +215,6 @@
 				0xE105400 0x400>;       /* pci bridge */
 			status = "disabled";
 		};
-
 	};
 
 	vdsl {

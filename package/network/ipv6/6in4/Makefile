@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/6in4
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=@IPV6 +kmod-sit
+  DEPENDS:=@IPV6 +kmod-sit +uclient-fetch
   TITLE:=IPv6-in-IPv4 configuration support
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
   PKGARCH:=all

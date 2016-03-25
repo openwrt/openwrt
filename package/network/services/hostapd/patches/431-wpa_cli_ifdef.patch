@@ -1,13 +1,12 @@
 --- a/wpa_supplicant/wpa_cli.c
 +++ b/wpa_supplicant/wpa_cli.c
-@@ -26,6 +26,10 @@
+@@ -25,6 +25,9 @@
+ #include <cutils/properties.h>
  #endif /* ANDROID */
- 
  
 +#ifndef CONFIG_P2P
 +#define CONFIG_P2P
 +#endif
-+
- static const char *wpa_cli_version =
+ 
+ static const char *const wpa_cli_version =
  "wpa_cli v" VERSION_STR "\n"
- "Copyright (c) 2004-2015, Jouni Malinen <j@w1.fi> and contributors";

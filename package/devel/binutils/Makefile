@@ -26,13 +26,14 @@ PKG_LICENSE:=GPL-3.0+
 PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
 
+include $(INCLUDE_DIR)/nls.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libbfd
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=libbfd
-  DEPENDS:=+zlib
+  DEPENDS:=+zlib $(ICONV_DEPENDS) $(INTL_DEPENDS)
 endef
 
 define Package/libopcodes

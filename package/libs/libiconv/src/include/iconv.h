@@ -1,5 +1,5 @@
-#ifndef _ICONV_H
-#define _ICONV_H 1
+#ifndef _LIBICONV_H
+#define _LIBICONV_H 1
 
 #define _LIBICONV_VERSION 0x010B    /* version number: (major<<8) + minor */
 
@@ -12,6 +12,10 @@ extern "C" {
 extern int _libiconv_version; /* Likewise */
 
 typedef long iconv_t;
+
+#define iconv_open libiconv_open
+#define iconv libiconv
+#define iconv_close libiconv_close
 
 extern iconv_t
 iconv_open(const char *tocode, const char *fromcode);
@@ -29,4 +33,4 @@ iconv_close(iconv_t cd);
 }
 #endif
 
-#endif /* _ICONV_H */
+#endif /* _LIBICONV_H */

@@ -60,8 +60,13 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "jtag";
+				ralink,group = "i2c", "jtag";
 				ralink,function = "gpio";
+			};
+
+			uartf_gpio {
+				ralink,group = "uartf";
+				ralink,function = "gpio uartf";
 			};
 		};
 	};
@@ -82,25 +87,39 @@
 		status = "okay";
 	};
 
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		/* I2C */
+		gpio1 {
+			/* I2C_I2C_SD */
+			gpio-export,name = "hlk-rm04:gpio0";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 1 0>;
+		};
+		gpio2 {
+			/* I2C_I2C_SCLK */
+			gpio-export,name = "hlk-rm04:gpio1";
+			gpio-export,direction_may_change = <1>;
+			gpios = <&gpio0 2 0>;
+		};
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
-
-		wps {
+		reset {
 			label = "reset";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 0 1>;
 			linux,code = <0x198>;
 		};
-	};
-
-	gpio-leds {
-		compatible = "gpio-leds";
-
-		power {
-			label = "hlk-rm04:red:power";
-			gpios = <&gpio0 0 1>;
+		wps {
+			label = "wps";
+			gpios = <&gpio0 14 1>;
+			linux,code = <0x211>;
 		};
 	};
 };

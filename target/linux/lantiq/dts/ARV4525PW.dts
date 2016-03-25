@@ -5,6 +5,18 @@
 / {
 	model = "ARV4525PW - Speedport W501V Typ A";
 
+	chosen {
+		leds {
+			/* we dont have a power led, lets use the online led */
+			boot = &online;
+			failsafe = &online;
+
+			dsl = &dsl;
+			internet = &online;
+			wifi = &wifi;
+		};
+	};
+
 	memory@0 {
 		reg = <0x0 0x2000000>;
 	};
@@ -129,24 +141,23 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 		fxo {
-			label = "fxo";
+			label = "arv4525pw:green:festnetz";
 			gpios = <&gpio 4 1>;
 		};
 		fxs {
-			label = "fxs";
+			label = "arv4525pw:green:internet";
 			gpios = <&gpio 5 1>;
 		};
-		dsl {
-			label = "dsl";
+		dsl: dsl {
+			label = "arv4525pw:green:t-dsl";
 			gpios = <&gpio 6 1>;
 		};
-		wifi {
-			label = "wifi";
+		wifi: wifi {
+			label = "arv4525pw:green:wlan";
 			gpios = <&gpio 8 1>;
 		};
-		online {
-			/*label = "online"; - we dont have a power led, lets use this one */
-			label = "power";
+		online: online {
+			label = "arv4525pw:green:online";
 			gpios = <&gpio 9 1>;
 		};
 	};

@@ -1,0 +1,127 @@
+From: Gabor Juhos <juhosg@openwrt.org>
+Subject: spi-fsl-espi: avoid frequent high order allocations
+
+The driver allocates 64KiB of memory fro a local buffer before
+each transfer and releases that afterwards. When the memory is
+fragmented this allocation often fails and causes a warning like
+this:
+
+  kworker/u2:2: page allocation failure: order:4, mode:0x10c0d0
+  CPU: 0 PID: 7011 Comm: kworker/u2:2 Not tainted 3.10.24 #1
+  Workqueue: ffe07000.spi mpc8xxx_spi_work
+  Call Trace:
+  [c1c6dcf0] [c0006914] show_stack+0x50/0x170 (unreliable)
+  [c1c6dd30] [c0259858] dump_stack+0x24/0x34
+  [c1c6dd40] [c00672e8] warn_alloc_failed+0x120/0x13c
+  [c1c6dd90] [c0069920] __alloc_pages_nodemask+0x574/0x5c8
+  [c1c6de20] [c0069990] __get_free_pages+0x1c/0x4c
+  [c1c6de30] [c0185174] fsl_espi_do_one_msg+0x128/0x2a0
+  [c1c6de90] [c0184290] mpc8xxx_spi_work+0x50/0x7c
+  [c1c6dea0] [c0037af8] process_one_work+0x208/0x30c
+  [c1c6dec0] [c00387a0] worker_thread+0x20c/0x308
+  [c1c6def0] [c003de60] kthread+0xa4/0xa8
+  [c1c6df40] [c000c4bc] ret_from_kernel_thread+0x5c/0x64
+
+  m25p80 spi0.0: error -12 reading SR
+  end_request: I/O error, dev mtdblock3, sector 680
+  SQUASHFS error: squashfs_read_data failed to read block 0x54a4a
+  SQUASHFS error: Unable to read data cache entry [54a4a]
+
+Preallocate the buffer from the probe routine to avoid
+this.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+ drivers/spi/spi-fsl-espi.c | 34 ++++++++++++++++------------------
+ drivers/spi/spi-fsl-lib.h  |  1 +
+ 2 files changed, 17 insertions(+), 18 deletions(-)
+
+--- a/drivers/spi/spi-fsl-espi.c
++++ b/drivers/spi/spi-fsl-espi.c
+@@ -332,17 +332,13 @@ static void fsl_espi_do_trans(struct spi
+ static void fsl_espi_cmd_trans(struct spi_message *m,
+ 				struct fsl_espi_transfer *trans, u8 *rx_buff)
+ {
++	struct spi_device *spi = m->spi;
++	struct mpc8xxx_spi *mspi = spi_master_get_devdata(spi->master);
+ 	struct spi_transfer *t;
+-	u8 *local_buf;
++	u8 *local_buf = mspi->local_buf;
+ 	int i = 0;
+ 	struct fsl_espi_transfer *espi_trans = trans;
+ 
+-	local_buf = kzalloc(SPCOM_TRANLEN_MAX, GFP_KERNEL);
+-	if (!local_buf) {
+-		espi_trans->status = -ENOMEM;
+-		return;
+-	}
+-
+ 	list_for_each_entry(t, &m->transfers, transfer_list) {
+ 		if (t->tx_buf) {
+ 			memcpy(local_buf + i, t->tx_buf, t->len);
+@@ -355,16 +351,17 @@ static void fsl_espi_cmd_trans(struct sp
+ 	fsl_espi_do_trans(m, espi_trans);
+ 
+ 	espi_trans->actual_length = espi_trans->len;
+-	kfree(local_buf);
+ }
+ 
+ static void fsl_espi_rw_trans(struct spi_message *m,
+ 				struct fsl_espi_transfer *trans, u8 *rx_buff)
+ {
++	struct spi_device *spi = m->spi;
++	struct mpc8xxx_spi *mspi = spi_master_get_devdata(spi->master);
+ 	struct fsl_espi_transfer *espi_trans = trans;
+ 	unsigned int total_len = espi_trans->len;
+ 	struct spi_transfer *t;
+-	u8 *local_buf;
++	u8 *local_buf = mspi->local_buf;
+ 	u8 *rx_buf = rx_buff;
+ 	unsigned int trans_len;
+ 	unsigned int addr;
+@@ -373,12 +370,6 @@ static void fsl_espi_rw_trans(struct spi
+ 	unsigned int pos;
+ 	int i, loop;
+ 
+-	local_buf = kzalloc(SPCOM_TRANLEN_MAX, GFP_KERNEL);
+-	if (!local_buf) {
+-		espi_trans->status = -ENOMEM;
+-		return;
+-	}
+-
+ 	for (pos = 0, loop = 0; pos < total_len; pos += trans_len, loop++) {
+ 		trans_len = total_len - pos;
+ 
+@@ -424,8 +415,6 @@ static void fsl_espi_rw_trans(struct spi
+ 		else
+ 			espi_trans->actual_length += espi_trans->len;
+ 	}
+-
+-	kfree(local_buf);
+ }
+ 
+ static int fsl_espi_do_one_msg(struct spi_master *master,
+@@ -673,6 +662,12 @@ static struct spi_master * fsl_espi_prob
+ 
+ 	mpc8xxx_spi = spi_master_get_devdata(master);
+ 
++	mpc8xxx_spi->local_buf = devm_kzalloc(dev, SPCOM_TRANLEN_MAX, GFP_KERNEL);
++	if (!mpc8xxx_spi->local_buf) {
++		ret = -ENOMEM;
++		goto err_probe;
++	}
++
+ 	mpc8xxx_spi->reg_base = devm_ioremap_resource(dev, mem);
+ 	if (IS_ERR(mpc8xxx_spi->reg_base)) {
+ 		ret = PTR_ERR(mpc8xxx_spi->reg_base);
+--- a/drivers/spi/spi-fsl-lib.h
++++ b/drivers/spi/spi-fsl-lib.h
+@@ -30,6 +30,7 @@ struct mpc8xxx_spi {
+ 	void *rx;
+ #if IS_ENABLED(CONFIG_SPI_FSL_ESPI)
+ 	int len;
++	u8 *local_buf;
+ #endif
+ 
+ 	int subblock;

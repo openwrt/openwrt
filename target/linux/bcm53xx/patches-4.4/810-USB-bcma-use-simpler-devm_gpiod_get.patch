@@ -1,0 +1,24 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sat, 2 Jan 2016 11:26:28 +0100
+Subject: [PATCH] USB: bcma: use simpler devm_gpiod_get
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ drivers/usb/host/bcma-hcd.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -568,8 +568,7 @@ static int bcma_hcd_probe(struct bcma_de
+ 	usb_dev->core = core;
+ 
+ 	if (core->dev.of_node)
+-		usb_dev->gpio_desc = devm_get_gpiod_from_child(&core->dev, "vcc",
+-							       &core->dev.of_node->fwnode);
++		usb_dev->gpio_desc = devm_gpiod_get(&core->dev, "vcc", 0);
+ 	if (!IS_ERR_OR_NULL(usb_dev->gpio_desc))
+ 		gpiod_direction_output(usb_dev->gpio_desc, 1);
+ 

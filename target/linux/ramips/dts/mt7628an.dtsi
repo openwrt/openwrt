@@ -340,12 +340,13 @@
 		#reset-cells = <1>;
 	};
 
-	usbphy: usbphy {
-		compatible = "ralink,mt7628an-usbphy", "ralink,mt7620a-usbphy";
+	usbphy: usbphy@10120000 {
+		compatible = "ralink,mt7628an-usbphy", "mediatek,mt7620-usbphy";
+		reg = <0x10120000 4000>;
 		#phy-cells = <1>;
 
-		resets = <&rstctrl 22>;
-		reset-names = "host";
+		resets = <&rstctrl 22 &rstctrl 25>;
+		reset-names = "host", "device";
 	};
 
 	sdhci@10130000 {
@@ -362,7 +363,7 @@
 	};
 
 	ehci@101c0000 {
-		compatible = "ralink,rt3xxx-ehci";
+		compatible = "generic-ehci";
 		reg = <0x101c0000 0x1000>;
 
 		phys = <&usbphy 1>;
@@ -373,7 +374,7 @@
 	};
 
 	ohci@101c1000 {
-		compatible = "ralink,rt3xxx-ohci";
+		compatible = "generic-ohci";
 		reg = <0x101c1000 0x1000>;
 
 		phys = <&usbphy 1>;

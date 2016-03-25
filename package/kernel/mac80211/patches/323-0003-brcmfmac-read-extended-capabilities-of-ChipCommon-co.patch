@@ -1,0 +1,43 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 26 Jan 2016 17:57:03 +0100
+Subject: [PATCH] brcmfmac: read extended capabilities of ChipCommon core
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This is an extra bitfield with info about some present hardware.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.c
+@@ -1025,6 +1025,9 @@ static int brcmf_chip_setup(struct brcmf
+ 	/* get chipcommon capabilites */
+ 	pub->cc_caps = chip->ops->read32(chip->ctx,
+ 					 CORE_CC_REG(base, capabilities));
++	pub->cc_caps_ext = chip->ops->read32(chip->ctx,
++					     CORE_CC_REG(base,
++							 capabilities_ext));
+ 
+ 	/* get pmu caps & rev */
+ 	if (pub->cc_caps & CC_CAP_PMU) {
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/chip.h
+@@ -27,6 +27,7 @@
+  * @chip: chip identifier.
+  * @chiprev: chip revision.
+  * @cc_caps: chipcommon core capabilities.
++ * @cc_caps_ext: chipcommon core extended capabilities.
+  * @pmucaps: PMU capabilities.
+  * @pmurev: PMU revision.
+  * @rambase: RAM base address (only applicable for ARM CR4 chips).
+@@ -38,6 +39,7 @@ struct brcmf_chip {
+ 	u32 chip;
+ 	u32 chiprev;
+ 	u32 cc_caps;
++	u32 cc_caps_ext;
+ 	u32 pmucaps;
+ 	u32 pmurev;
+ 	u32 rambase;

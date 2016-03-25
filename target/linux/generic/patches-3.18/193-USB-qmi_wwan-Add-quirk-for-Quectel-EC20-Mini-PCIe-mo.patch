@@ -46,11 +46,9 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  drivers/net/usb/qmi_wwan.c |   21 +++++++++++++++++++++
  1 file changed, 21 insertions(+)
 
-diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
-index 2a7c1be..b81a32c 100644
 --- a/drivers/net/usb/qmi_wwan.c
 +++ b/drivers/net/usb/qmi_wwan.c
-@@ -822,6 +822,7 @@ static const struct usb_device_id products[] = {
+@@ -819,6 +819,7 @@ static const struct usb_device_id produc
  	{QMI_GOBI_DEVICE(0x05c6, 0x9245)},	/* Samsung Gobi 2000 Modem device (VL176) */
  	{QMI_GOBI_DEVICE(0x03f0, 0x251d)},	/* HP Gobi 2000 Modem device (VP412) */
  	{QMI_GOBI_DEVICE(0x05c6, 0x9215)},	/* Acer Gobi 2000 Modem device (VP413) */
@@ -58,7 +56,7 @@ index 2a7c1be..b81a32c 100644
  	{QMI_GOBI_DEVICE(0x05c6, 0x9265)},	/* Asus Gobi 2000 Modem device (VR305) */
  	{QMI_GOBI_DEVICE(0x05c6, 0x9235)},	/* Top Global Gobi 2000 Modem device (VR306) */
  	{QMI_GOBI_DEVICE(0x05c6, 0x9275)},	/* iRex Technologies Gobi 2000 Modem device (VR307) */
-@@ -853,10 +854,24 @@ static const struct usb_device_id products[] = {
+@@ -850,10 +851,24 @@ static const struct usb_device_id produc
  };
  MODULE_DEVICE_TABLE(usb, products);
  
@@ -83,7 +81,7 @@ index 2a7c1be..b81a32c 100644
  
  	/* Workaround to enable dynamic IDs.  This disables usbnet
  	 * blacklisting functionality.  Which, if required, can be
-@@ -868,6 +883,12 @@ static int qmi_wwan_probe(struct usb_interface *intf,
+@@ -865,6 +880,12 @@ static int qmi_wwan_probe(struct usb_int
  		id->driver_info = (unsigned long)&qmi_wwan_info;
  	}
  
@@ -96,6 +94,3 @@ index 2a7c1be..b81a32c 100644
  	return usbnet_probe(intf, id);
  }
  
--- 
-1.7.9.5
-

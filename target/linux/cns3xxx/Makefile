@@ -14,7 +14,7 @@ CPU_TYPE:=mpcore
 CPU_SUBTYPE:=vfp
 MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 

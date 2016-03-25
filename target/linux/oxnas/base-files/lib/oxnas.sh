@@ -20,10 +20,10 @@ oxnas_board_detect() {
 		name="kd20"
 		;;
 	*"Pogoplug Pro"*)
-		name="pogoplugpro"
+		name="pogoplug-pro"
 		;;
 	*"Pogoplug V3"*)
-		name="pogoplugv3"
+		name="pogoplug-v3"
 		;;
 	esac
 

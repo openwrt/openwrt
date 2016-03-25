@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gettext-full
 PKG_VERSION:=0.19.6
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=gettext-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gettext
@@ -37,7 +37,7 @@ endef
 
 TARGET_CFLAGS += $(FPIC)
 ifneq ($(HOST_OS),Linux)
-  TARGET_CFLAGS += -I$(STAGING_DIR_HOST)/include
+  TARGET_CFLAGS += -I$(STAGING_DIR)/host/include
 endif
 ifdef CONFIG_USE_MUSL
   TARGET_CFLAGS += -D__UCLIBC__

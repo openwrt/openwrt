@@ -112,10 +112,12 @@ trx_check(int imagefd, const char *mtd, char *buf, int *len)
 	if (strcmp(mtd, "firmware") != 0)
 		return 1;
 
-	*len = read(imagefd, buf, 32);
 	if (*len < 32) {
-		fprintf(stdout, "Could not get image header, file too small (%d bytes)\n", *len);
-		return 0;
+		*len += read(imagefd, buf + *len, 32 - *len);
+		if (*len < 32) {
+			fprintf(stdout, "Could not get image header, file too small (%d bytes)\n", *len);
+			return 0;
+		}
 	}
 
 	if (trx->magic != TRX_MAGIC || trx->len < sizeof(struct trx_header)) {

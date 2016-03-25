@@ -42,6 +42,7 @@ endef
 
 define Device/Default
 	PROFILES := Default
+	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
 	DEVICE_DTS :=
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
@@ -103,6 +104,17 @@ define Device/AP148-legacy
 	BOARD_NAME := ap148
 endef
 
+define Device/D7800
+	$(call Device/DniImage)
+	DEVICE_DTS := qcom-ipq8064-d7800
+	KERNEL_SIZE := 2097152
+	NETGEAR_BOARD_ID := D7800
+	NETGEAR_HW_ID := 29764958+0+128+512+4x4+4x4
+	BLOCKSIZE := 128KiB
+	PAGESIZE := 2048
+	BOARD_NAME := d7800
+endef
+
 define Device/DB149
 	$(call Device/FitImage)
 	DEVICE_DTS := qcom-ipq8064-db149
@@ -121,6 +133,6 @@ define Device/R7500
 	BOARD_NAME := r7500
 endef
 
-TARGET_DEVICES += AP148 AP148-legacy DB149 R7500
+TARGET_DEVICES += AP148 AP148-legacy D7800 DB149 R7500
 
 $(eval $(call BuildImage))

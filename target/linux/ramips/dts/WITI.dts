@@ -50,7 +50,6 @@
 				factory: partition@40000 {
 					label = "factory";
 					reg = <0x40000 0x10000>;
-					read-only;
 				};
 
 				partition@50000 {
@@ -86,6 +85,7 @@
 				device_type = "pci";
 				mediatek,mtd-eeprom = <&factory 0x8000>;
 				mediatek,2ghz = <0>;
+				mtd-mac-address = <&factory 0xe000>;
 			};
 		};
 
@@ -95,31 +95,13 @@
 				device_type = "pci";
 				mediatek,mtd-eeprom = <&factory 0x0000>;
 				mediatek,5ghz = <0>;
+				mtd-mac-address = <&factory 0xe000>;
 			};
 		};
 	};
 
 	ethernet@1e100000 {
 		mtd-mac-address = <&factory 0xe000>;
-	};
-
-	gpio-leds {
-		compatible = "gpio-leds";
-
-		power {
-			label = "witi:green:power";
-			gpios = <&gpio0 25 1>;
-		};
-
-		sys {
-			label = "witi:green:sys";
-			gpios = <&gpio0 24 1>;
-		};
-
-		internet {
-			label = "witi:green:internet";
-			gpios = <&gpio0 23 1>;
-		};
 	};
 
 	gpio-keys-polled {

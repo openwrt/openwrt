@@ -168,6 +168,7 @@ endef
 # Shared device definition: applies to every defined device
 define Device/Default
   PROFILES = Default $$(DEVICE_PROFILE)
+  KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_IMAGE = $$(KERNEL_INITRAMFS_PREFIX).elf
   DEVICE_PROFILE :=
   DEVICE_DTS :=
@@ -574,6 +575,8 @@ $(eval $(call bcm63xxCfe,HG553,HG553,hg553,HW553,6358,--rsa-signature "EchoLife_
 $(eval $(call bcm63xxCfe,HG556a_AB,HG556a_A,hg556a-a,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x10000 --tag-version 8))
 $(eval $(call bcm63xxCfe,HG556a_AB,HG556a_B,hg556a-b,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
 $(eval $(call bcm63xxCfe,HG556a_C,HG556a_C,hg556a-c,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+# Huawei HG622
+$(eval $(call bcm63xxCfe,HG622,HG622,hg622,96368MVWG_hg622,6368,--image-offset 0x20000 --block-size 0x20000 --tag-version 7 --pad 8))
 # Huawei HG655b
 $(eval $(call bcm63xxCfe,HG655b,HG655b,hg655b,HW65x,6368,--image-offset 0x20000 --tag-version 7 --pad 4))
 # Inteno VG50

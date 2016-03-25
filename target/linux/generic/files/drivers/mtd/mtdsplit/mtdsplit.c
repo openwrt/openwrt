@@ -22,6 +22,8 @@
 
 #include "mtdsplit.h"
 
+#define UBI_EC_MAGIC			0x55424923	/* UBI# */
+
 struct squashfs_super_block {
 	__le32 s_magic;
 	__le32 pad0[9];
@@ -70,7 +72,8 @@ static ssize_t mtd_next_eb(struct mtd_info *mtd, size_t offset)
 	return mtd_rounddown_to_eb(offset, mtd) + mtd->erasesize;
 }
 
-int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset)
+int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset,
+			   enum mtdsplit_part_type *type)
 {
 	u32 magic;
 	size_t retlen;
@@ -84,25 +87,36 @@ int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset)
 	if (retlen != sizeof(magic))
 		return -EIO;
 
-	if (le32_to_cpu(magic) != SQUASHFS_MAGIC &&
-	    magic != 0x19852003)
-		return -EINVAL;
+	if (le32_to_cpu(magic) == SQUASHFS_MAGIC) {
+		if (type)
+			*type = MTDSPLIT_PART_TYPE_SQUASHFS;
+		return 0;
+	} else if (magic == 0x19852003) {
+		if (type)
+			*type = MTDSPLIT_PART_TYPE_JFFS2;
+		return 0;
+	} else if (be32_to_cpu(magic) == UBI_EC_MAGIC) {
+		if (type)
+			*type = MTDSPLIT_PART_TYPE_UBI;
+		return 0;
+	}
 
-	return 0;
+	return -EINVAL;
 }
 EXPORT_SYMBOL_GPL(mtd_check_rootfs_magic);
 
 int mtd_find_rootfs_from(struct mtd_info *mtd,
 			 size_t from,
 			 size_t limit,
-			 size_t *ret_offset)
+			 size_t *ret_offset,
+			 enum mtdsplit_part_type *type)
 {
 	size_t offset;
 	int err;
 
 	for (offset = from; offset < limit;
 	     offset = mtd_next_eb(mtd, offset)) {
-		err = mtd_check_rootfs_magic(mtd, offset);
+		err = mtd_check_rootfs_magic(mtd, offset, type);
 		if (err)
 			continue;
 

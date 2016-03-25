@@ -7,6 +7,15 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_blue;
+
+			internet = &broadband_blue;
+			wifi = &wireless_blue;
+		};
 	};
 
 	memory@0 {
@@ -19,7 +28,7 @@
 				compatible = "gen_nand", "lantiq,nand-xway";
 				lantiq,cs = <1>;
 				bank-width = <2>;
-				reg = <0 0x0 0x2000000>;
+				reg = <0x1 0x0 0x2000000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 
@@ -93,96 +102,6 @@
 			};
 		};
 
-		eth@E108000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "lantiq,xrx200-net";
-			reg = < 0xE108000 0x3000	/* switch */
-				0xE10B100 0x70		/* mdio */
-				0xE10B1D8 0x30		/* mii */
-				0xE10B308 0x30 >;	/* pmac */
-			interrupt-parent = <&icu0>;
-			interrupts = <73 72>;
-
-			lan: interface@0 {
-				compatible = "lantiq,xrx200-pdi";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <0>;
-				mtd-mac-address = <&caldata 0x110c>;
-				lantiq,switch;
-
-				ethernet@0 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <0>;
-					phy-mode = "rgmii";
-					phy-handle = <&phy0>;
-				};
-				ethernet@1 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <1>;
-					phy-mode = "rgmii";
-					phy-handle = <&phy1>;
-				};
-				ethernet@2 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <2>;
-					phy-mode = "gmii";
-					phy-handle = <&phy11>;
-				};
-				ethernet@4 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <4>;
-					phy-mode = "gmii";
-					phy-handle = <&phy13>;
-				};
-			};
-
-			wan: interface@1 {
-				compatible = "lantiq,xrx200-pdi";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <1>;
-				mtd-mac-address = <&caldata 0x110c>;
-				mtd-mac-address-increment = <4>;
-				lantiq,wan;
-
-				ethernet@5 {
-					compatible = "lantiq,xrx200-pdi-port";
-					reg = <5>;
-					phy-mode = "rgmii";
-					phy-handle = <&phy5>;
-				};
-			};
-
-			mdio@0 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				compatible = "lantiq,xrx200-mdio";
-
-				phy0: ethernet-phy@0 {
-					reg = <0x0>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-				phy1: ethernet-phy@1 {
-					reg = <0x1>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-				phy5: ethernet-phy@5 {
-					reg = <0x5>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-				phy11: ethernet-phy@11 {
-					reg = <0x11>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-				phy13: ethernet-phy@13 {
-					reg = <0x13>;
-					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-				};
-			};
-		};
-
 		ifxhcd@E101000 {
 			status = "okay";
 			gpios = <&gpio 33 0>;
@@ -240,48 +159,132 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
+		/* broadband-* is a single RGB led */
 		broadband-red {
-			label = "soc:red:broadband";
+			label = "bthomehubv5a:red:broadband";
 			gpios = <&gpio 0 1>;
 		};
 		broadband-green {
-			label = "soc:green:broadband";
+			label = "bthomehubv5a:green:broadband";
 			gpios = <&gpio 3 1>;
 		};
-		broadband-blue {
-			label = "soc:blue:broadband";
+		broadband_blue: broadband-blue {
+			label = "bthomehubv5a:blue:broadband";
 			gpios = <&gpio 8 1>;
 		};
 
+		/* wireless-* is a single RGB led */
 		wireless-red {
-			label = "soc:red:wireless";
+			label = "bthomehubv5a:red:wireless";
 			gpios = <&gpio 9 1>;
 		};
 		wireless-green {
-			label = "soc:green:wireless";
+			label = "bthomehubv5a:green:wireless";
 			gpios = <&gpio 10 1>;
 		};
-		wireless-blue {
-			label = "soc:blue:wireless";
+		wireless_blue: wireless-blue {
+			label = "bthomehubv5a:blue:wireless";
 			gpios = <&gpio 11 1>;
 		};
 
-		power-red {
-			label = "soc:red:power";
+		/* power-* is a single RGB led */
+		power_red: power-red {
+			label = "bthomehubv5a:red:power";
 			gpios = <&gpio 12 1>;
 		};
-		power-green {
-			label = "soc:green:power";
+		power_green: power-green {
+			label = "bthomehubv5a:green:power";
 			gpios = <&gpio 14 1>;
+			default-state = "keep";
 		};
-		power-blue {
-			label = "soc:blue:power";
+		power_blue: power-blue {
+			label = "bthomehubv5a:blue:power";
 			gpios = <&gpio 15 1>;
 		};
 
 		dimmed {
 			label = "dimmed";
 			gpios = <&gpio 19 0>;
+		};
+	};
+};
+
+&eth0 {
+	lan: interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		mtd-mac-address = <&caldata 0x110c>;
+		lantiq,switch;
+
+		ethernet@0 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <0>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy0>;
+		};
+		ethernet@1 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <1>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy1>;
+		};
+		ethernet@2 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <2>;
+			phy-mode = "gmii";
+			phy-handle = <&phy11>;
+		};
+		ethernet@4 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "gmii";
+			phy-handle = <&phy13>;
+		};
+	};
+
+	wan: interface@1 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		mtd-mac-address = <&caldata 0x110c>;
+		mtd-mac-address-increment = <4>;
+		lantiq,wan;
+
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy5>;
+		};
+	};
+
+	mdio@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "lantiq,xrx200-mdio";
+
+		phy0: ethernet-phy@0 {
+			reg = <0x0>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy1: ethernet-phy@1 {
+			reg = <0x1>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy5: ethernet-phy@5 {
+			reg = <0x5>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy11: ethernet-phy@11 {
+			reg = <0x11>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
 };

@@ -74,6 +74,7 @@ ramips_setup_interfaces()
 	mzk-w300nh2|\
 	oy-0001|\
 	pbr-m1|\
+	psg1208|\
 	sap-g3200u3|\
 	wf-2881|\
 	whr-300hp2|\
@@ -117,6 +118,8 @@ ramips_setup_interfaces()
 	ubnt-erx|\
 	ur-326n4g|\
 	wrtnode|\
+	wrtnode2p | \
+	wrtnode2r | \
 	wt3020|\
 	zbt-wa05)
 		ucidef_add_switch "switch0" \
@@ -139,7 +142,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
 		;;
-	cf-wr800n)
+	cf-wr800n|\
+	ex2700)
 		ucidef_add_switch "switch0" \
 			"4:lan" "6t@eth0"
 		;;

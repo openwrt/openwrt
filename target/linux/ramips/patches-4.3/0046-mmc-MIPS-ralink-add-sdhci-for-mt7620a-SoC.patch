@@ -23,18 +23,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/mmc/host/mtk-mmc/mt6575_sd.h
  create mode 100644 drivers/mmc/host/mtk-mmc/sd.c
 
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 8a1e349..47833d1 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -793,3 +793,5 @@ config MMC_MTK
+@@ -818,3 +818,5 @@ config MMC_MTK
  	  If you have a machine with a integrated SD/MMC card reader, say Y or M here.
  	  This is needed if support for any SD/SDIO/MMC devices is required.
  	  If unsure, say N.
 +
 +source "drivers/mmc/host/mtk-mmc/Kconfig"
-diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
-index 4f3452a..69dd05f 100644
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
 @@ -2,6 +2,7 @@
@@ -45,9 +41,6 @@ index 4f3452a..69dd05f 100644
  obj-$(CONFIG_MMC_ARMMMCI)	+= mmci.o
  obj-$(CONFIG_MMC_QCOM_DML)	+= mmci_qcom_dml.o
  obj-$(CONFIG_MMC_PXA)		+= pxamci.o
-diff --git a/drivers/mmc/host/mtk-mmc/Kconfig b/drivers/mmc/host/mtk-mmc/Kconfig
-new file mode 100644
-index 0000000..a58b0f3
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/Kconfig
 @@ -0,0 +1,16 @@
@@ -67,9 +60,6 @@ index 0000000..a58b0f3
 +	bool "eMMC 8-bit support"
 +	depends on MTK_MMC && RALINK_MT7628
 +
-diff --git a/drivers/mmc/host/mtk-mmc/Makefile b/drivers/mmc/host/mtk-mmc/Makefile
-new file mode 100644
-index 0000000..caead0b
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/Makefile
 @@ -0,0 +1,42 @@
@@ -115,9 +105,6 @@ index 0000000..caead0b
 +
 +clean:
 +	@rm -f *.o modules.order .*.cmd
-diff --git a/drivers/mmc/host/mtk-mmc/board.h b/drivers/mmc/host/mtk-mmc/board.h
-new file mode 100644
-index 0000000..33bfc7b
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/board.h
 @@ -0,0 +1,137 @@
@@ -258,9 +245,6 @@ index 0000000..33bfc7b
 +
 +#endif /* __ARCH_ARM_MACH_BOARD_H */
 +
-diff --git a/drivers/mmc/host/mtk-mmc/dbg.c b/drivers/mmc/host/mtk-mmc/dbg.c
-new file mode 100644
-index 0000000..4dc115b
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/dbg.c
 @@ -0,0 +1,347 @@
@@ -611,9 +595,6 @@ index 0000000..4dc115b
 +}
 +EXPORT_SYMBOL_GPL(msdc_debug_proc_init);
 +#endif
-diff --git a/drivers/mmc/host/mtk-mmc/dbg.h b/drivers/mmc/host/mtk-mmc/dbg.h
-new file mode 100644
-index 0000000..e58c431
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/dbg.h
 @@ -0,0 +1,156 @@
@@ -773,9 +754,6 @@ index 0000000..e58c431
 +void msdc_performance(u32 opcode, u32 sizes, u32 bRx, u32 ticks);   
 +
 +#endif
-diff --git a/drivers/mmc/host/mtk-mmc/mt6575_sd.h b/drivers/mmc/host/mtk-mmc/mt6575_sd.h
-new file mode 100644
-index 0000000..e90c4f1
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/mt6575_sd.h
 @@ -0,0 +1,1001 @@
@@ -1780,9 +1758,6 @@ index 0000000..e90c4f1
 +
 +#endif
 +
-diff --git a/drivers/mmc/host/mtk-mmc/sd.c b/drivers/mmc/host/mtk-mmc/sd.c
-new file mode 100644
-index 0000000..d240b46
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/sd.c
 @@ -0,0 +1,3060 @@
@@ -4846,6 +4821,3 @@ index 0000000..d240b46
 +MODULE_AUTHOR("Infinity Chen <infinity.chen@mediatek.com>");
 +
 +EXPORT_SYMBOL(msdc_6575_host);
--- 
-1.7.10.4
-

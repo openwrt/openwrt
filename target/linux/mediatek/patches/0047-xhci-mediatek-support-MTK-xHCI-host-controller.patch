@@ -784,7 +784,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  
  #define DRIVER_AUTHOR "Sarah Sharp"
  #define DRIVER_DESC "'eXtensible' Host Controller (xHC) Driver"
-@@ -624,7 +625,11 @@ int xhci_run(struct usb_hcd *hcd)
+@@ -634,7 +635,11 @@ int xhci_run(struct usb_hcd *hcd)
  			"// Set the interrupt modulation register");
  	temp = readl(&xhci->ir_set->irq_control);
  	temp &= ~ER_IRQ_INTERVAL_MASK;
@@ -797,7 +797,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -1698,6 +1703,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1708,6 +1713,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -807,7 +807,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1793,6 +1801,12 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1803,6 +1811,12 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  

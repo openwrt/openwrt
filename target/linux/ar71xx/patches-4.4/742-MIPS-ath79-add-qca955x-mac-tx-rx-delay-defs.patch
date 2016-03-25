@@ -1,0 +1,14 @@
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -1105,5 +1105,11 @@
+ 
+ #define QCA955X_ETH_CFG_RGMII_EN	BIT(0)
+ #define QCA955X_ETH_CFG_GE0_SGMII	BIT(6)
++#define QCA955X_ETH_CFG_RXD_DELAY	BIT(14)
++#define QCA955X_ETH_CFG_RXD_DELAY_MASK	0x3
++#define QCA955X_ETH_CFG_RXD_DELAY_SHIFT	14
++#define QCA955X_ETH_CFG_RDV_DELAY	BIT(16)
++#define QCA955X_ETH_CFG_RDV_DELAY_MASK	0x3
++#define QCA955X_ETH_CFG_RDV_DELAY_SHIFT	16
+ 
+ #endif /* __ASM_MACH_AR71XX_REGS_H */

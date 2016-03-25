@@ -1,0 +1,23 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Mon, 18 Jan 2016 12:03:45 +0100
+Subject: [PATCH] networking: fix uninitialized memory when displaying IPv6
+ addresses
+
+After commit 8e74adab0107658e3dc04ed342206272a284f43e
+("libbb: make INET[6]_rresolve use sockaddr2{host,dotted}_noport")
+INET_sprint6 uses more than just sin6_addr, it also tries to display the
+scope id, which is uninitialized when called from ife_print6.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/networking/interface.c
++++ b/networking/interface.c
+@@ -881,6 +881,7 @@ static void ife_print6(struct interface
+ 			sprintf(addr6, "%s:%s:%s:%s:%s:%s:%s:%s",
+ 					addr6p[0], addr6p[1], addr6p[2], addr6p[3],
+ 					addr6p[4], addr6p[5], addr6p[6], addr6p[7]);
++			memset(&sap, 0, sizeof(sap));
+ 			inet_pton(AF_INET6, addr6,
+ 					  (struct sockaddr *) &sap.sin6_addr);
+ 			sap.sin6_family = AF_INET6;
