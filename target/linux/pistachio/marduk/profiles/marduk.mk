@@ -25,17 +25,12 @@
 
 define Profile/marduk
     NAME:=Basic platform profile for Marduk
-    PACKAGES:=kmod-i2c kmod-usb-dwc2 kmod-marduk-cc2520 wpan-tools tcpdump uhttpd uboot-envtools
+    PACKAGES:=kmod-i2c wpan-tools tcpdump uhttpd alsa-lib alsa-utils alsa-utils-tests
 endef
 
 define Profile/marduk/Description
         Package set for basic platform support profile for Marduk
         board
 endef
-
-marduk_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
-marduk_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
-
-Image/Build/Profile/marduk=$(call Image/BuildNAND/$(1),$(1),marduk)
 
 $(eval $(call Profile,marduk))
