@@ -1,0 +1,28 @@
+From 78d5fab8e345b1273ec8c22d06f1a1d27670b518 Mon Sep 17 00:00:00 2001
+From: Philipp Tomsich <philipp.tomsich@theobroma-systems.com>
+Date: Tue, 16 Jun 2015 10:59:38 +0200
+Subject: ARM: sunxi: Make CONS_INDEX configurable
+
+
+diff --git a/board/sunxi/Kconfig b/board/sunxi/Kconfig
+index 2a1cd3c..e155c4c 100644
+--- a/board/sunxi/Kconfig
++++ b/board/sunxi/Kconfig
+@@ -209,6 +209,14 @@ config SYS_BOARD
+ config SYS_SOC
+ 	default "sunxi"
+ 
++config CONS_INDEX
++        int "UART used for console"
++        range 1 5
++        default 1
++        ---help---
++        Defines the UART port used for serial output. It starts at 1 so UART0 is 1,
++        UART1 is 2 and so on.
++
+ config UART0_PORT_F
+ 	bool "UART0 on MicroSD breakout board"
+ 	default n
+-- 
+cgit v0.10.2
+
