@@ -21,7 +21,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	struct gpio_desc *gpio_desc;
  };
  
-@@ -338,6 +339,164 @@ err_unregister_ohci_dev:
+@@ -338,6 +339,166 @@ err_unregister_ohci_dev:
  	return err;
  }
  
@@ -55,6 +55,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	u32 cru_straps_ctrl;
 +
 +	if (chipinfo->id != BCMA_CHIP_ID_BCM4707 &&
++	    chipinfo->id != BCMA_CHIP_ID_BCM47094 &&
 +	    chipinfo->id != BCMA_CHIP_ID_BCM53018)
 +		return;
 +
@@ -79,7 +80,8 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	udelay(2);
 +
 +	if (chipinfo->id == BCMA_CHIP_ID_BCM53018 ||
-+	    chipinfo->id == BCMA_CHIP_ID_BCM4707 && chipinfo->rev == 4) {
++	    (chipinfo->id == BCMA_CHIP_ID_BCM4707 && (chipinfo->rev == 4 || chipinfo->rev == 6)) ||
++	    chipinfo->id == BCMA_CHIP_ID_BCM47094) {
 +			/* For NS-B0, USB3 PLL Block */
 +			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
 +			iowrite32(0x587e8000, ccb->mii + 0x004);
@@ -186,7 +188,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  static int bcma_hcd_probe(struct bcma_device *dev)
  {
  	int err;
-@@ -364,6 +523,11 @@ static int bcma_hcd_probe(struct bcma_de
+@@ -364,6 +525,11 @@ static int bcma_hcd_probe(struct bcma_de
  		if (err)
  			return err;
  		break;
@@ -198,7 +200,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	default:
  		return -ENODEV;
  	}
-@@ -377,11 +541,14 @@ static void bcma_hcd_remove(struct bcma_
+@@ -377,11 +543,14 @@ static void bcma_hcd_remove(struct bcma_
  	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
  	struct platform_device *ohci_dev = usb_dev->ohci_dev;
  	struct platform_device *ehci_dev = usb_dev->ehci_dev;
@@ -213,7 +215,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	bcma_core_disable(dev, 0);
  }
-@@ -418,6 +585,7 @@ static int bcma_hcd_resume(struct bcma_d
+@@ -418,6 +587,7 @@ static int bcma_hcd_resume(struct bcma_d
  static const struct bcma_device_id bcma_hcd_table[] = {
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_USB20_HOST, BCMA_ANY_REV, BCMA_ANY_CLASS),
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_NS_USB20, BCMA_ANY_REV, BCMA_ANY_CLASS),
