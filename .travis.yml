@@ -7,4 +7,4 @@ install:
 
 script:
     - make defconfig
-    - make -j 20 & PID=$!; while kill -0 $PID >/dev/null 2>&1 ; do sleep 300; echo "MARK" >&2 ; done
+    - ./.travis.sh
