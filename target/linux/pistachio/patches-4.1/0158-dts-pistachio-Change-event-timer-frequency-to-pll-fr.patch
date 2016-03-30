@@ -1,0 +1,32 @@
+From 1923bbcde0bdb5cd896adb0957a787b786ff3791 Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Wed, 15 Jul 2015 15:49:37 +0100
+Subject: [PATCH 158/160] dts: pistachio: Change event timer frequency to pll
+ frequency
+
+Change the event timer frequency to match the pll frequency. This
+is required as the streamsync code does not take the dividers into
+account at present.
+
+Change-Id: I57a68a8282b1b47c7a49bcccabaf7413f9aae078
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index f032c99..b18340a 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -362,7 +362,7 @@
+ 			 <&clk_core CLK_AUDIO_PLL>;
+ 		clock-names = "sys","ref0","ref1","pll";
+ 		img,clk-select = <1>;
+-		img,clk-rate = <12288000>;
++		img,clk-rate = <147456000>;
+ 	};
+ 
+ 	spfi0: spi@18100f00 {
+-- 
+1.9.1
+

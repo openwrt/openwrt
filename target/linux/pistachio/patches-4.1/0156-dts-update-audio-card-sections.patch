@@ -1,0 +1,29 @@
+From 16e212b36d8e3b42ef2d91776519906bcf6076e3 Mon Sep 17 00:00:00 2001
+From: Matin Momin <Matin.Momin@imgtec.com>
+Date: Wed, 25 Nov 2015 15:25:59 +0530
+Subject: [PATCH 156/160] dts: update audio card sections
+
+Updated audio card sections for beetle, beetle_boardtest, concerto, marduk
+to reflect changes required after alsa driver cleanup/update
+
+Change-Id: I6626297bd16baf7ee84dccb84225caa8647baf94
+Signed-off-by: Matin Momin <Matin.Momin@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio_marduk.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+index 33991d4..fe216c6 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
++++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
+@@ -49,6 +49,7 @@
+ 			clock-names = "audio_pll", "i2s_mclk", "dac_clk";
+ 
+ 			img,cr-periph = <&cr_periph>;
++			img,event-timer = <&event_timer>;
+ 
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&dac_clk_pin>, <&i2s_mclk_pin>;
+-- 
+1.9.1
+

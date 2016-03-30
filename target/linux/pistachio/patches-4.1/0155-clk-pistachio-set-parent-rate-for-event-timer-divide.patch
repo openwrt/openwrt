@@ -1,0 +1,55 @@
+From 7614f9cc5943267ddc58dcdf7a2d01b77a57246f Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Mon, 13 Jul 2015 16:25:54 +0100
+Subject: [PATCH 155/160] clk: pistachio: set parent rate for event timer
+ dividers
+
+The event timer path contains two dividers. Allow set parent
+rate on the second divider to enable these to be calculated
+automatically by the clock framework
+
+Change-Id: I35f9b5184e12b6b0dd9d4e8071cc53db7626818f
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+Signed-off-by: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 8 +++++++-
+ drivers/clk/pistachio/clk-pistachio.c       | 4 ++--
+ 2 files changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index b6f3f3d..09d66b6 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -355,7 +355,13 @@
+ 			     <GIC_SHARED 56 IRQ_TYPE_EDGE_RISING>,
+ 			     <GIC_SHARED 57 IRQ_TYPE_EDGE_RISING>;
+ 
+-		#sound-dai-cells = <0>;
++		#clock-cells = <0>;
++		clocks = <&cr_periph SYS_CLK_EVENT_TIMER>,
++			 <&clk_core CLK_AUDIO>,
++			 <&clk_core CLK_EVENT_TIMER>;
++		clock-names = "sys","ref0","ref1";
++		img,clk-select = <1>;
++		img,clk-rate = <12288000>;
+ 	};
+ 
+ 	spfi0: spi@18100f00 {
+diff --git a/drivers/clk/pistachio/clk-pistachio.c b/drivers/clk/pistachio/clk-pistachio.c
+index 6451c6d6a..7271c4e 100644
+--- a/drivers/clk/pistachio/clk-pistachio.c
++++ b/drivers/clk/pistachio/clk-pistachio.c
+@@ -93,8 +93,8 @@ static struct pistachio_div pistachio_divs[] __initdata = {
+ 	DIV(CLK_SPI1_DIV, "spi1_div", "spi1_internal_div", 0x254, 7),
+ 	DIV(CLK_EVENT_TIMER_INTERNAL_DIV, "event_timer_internal_div",
+ 	    "event_timer_mux", 0x258, 3),
+-	DIV(CLK_EVENT_TIMER_DIV, "event_timer_div", "event_timer_internal_div",
+-	    0x25c, 12),
++	DIV_F(CLK_EVENT_TIMER_DIV, "event_timer_div", "event_timer_internal_div",
++	    0x25c, 12, CLK_SET_RATE_PARENT, 0),
+ 	DIV(CLK_AUX_ADC_INTERNAL_DIV, "aux_adc_internal_div",
+ 	    "aux_adc_internal", 0x260, 3),
+ 	DIV(CLK_AUX_ADC_DIV, "aux_adc_div", "aux_adc_internal_div", 0x264, 10),
+-- 
+1.9.1
+

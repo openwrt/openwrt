@@ -1,0 +1,52 @@
+From 65230f024c0268d036105e9c99f4952ca2eed7b4 Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Fri, 10 Jul 2015 15:42:04 +0100
+Subject: [PATCH 157/160] ASoC: img: Include audio pll in event_timer
+
+Attempt to acquire a reference to the audio pll from the
+device tree during event timer probe and pass this to
+the atu init function if it exists.
+
+Includes the addition of this reference to pistachio.dtsi
+
+Change-Id: I3f2623d967e385b9fc32ef24ef2cedc93fa87bde
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ .../devicetree/bindings/sound/img,pistachio-event-timer.txt          | 4 ++++
+ arch/mips/boot/dts/pistachio/pistachio.dtsi                          | 5 +++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/img,pistachio-event-timer.txt b/Documentation/devicetree/bindings/sound/img,pistachio-event-timer.txt
+index 2e5e493..5ecac91 100644
+--- a/Documentation/devicetree/bindings/sound/img,pistachio-event-timer.txt
++++ b/Documentation/devicetree/bindings/sound/img,pistachio-event-timer.txt
+@@ -26,6 +26,10 @@ Required properties:
+ 	"ref1"	Reference clock 1
+ 	"pll"	Audio PLL
+ 
++		If ATU (in adjustable pll mode) is to be used, the
++		following is required:
++	"pll"	Audio PLL
++
+   - img,clk-select : Reference select
+ 
+   - img,cr-periph : phandle of the peripheral control syscon node which
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index 09d66b6..f032c99 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -358,8 +358,9 @@
+ 		#clock-cells = <0>;
+ 		clocks = <&cr_periph SYS_CLK_EVENT_TIMER>,
+ 			 <&clk_core CLK_AUDIO>,
+-			 <&clk_core CLK_EVENT_TIMER>;
+-		clock-names = "sys","ref0","ref1";
++			 <&clk_core CLK_EVENT_TIMER>,
++			 <&clk_core CLK_AUDIO_PLL>;
++		clock-names = "sys","ref0","ref1","pll";
+ 		img,clk-select = <1>;
+ 		img,clk-rate = <12288000>;
+ 	};
+-- 
+1.9.1
+

@@ -1,0 +1,30 @@
+From 8a313077f20b287498e10f97557431771847d453 Mon Sep 17 00:00:00 2001
+From: Matin Momin <Matin.Momin@imgtec.com>
+Date: Wed, 25 Nov 2015 15:08:27 +0530
+Subject: [PATCH 159/160] dts: fix event timer section after changeset c2340b0
+
+Changeset c2340b0 is revert of e53081b, which wrongly contained this pistachio.dtsi change.
+This change should ideally be in card driver and event timer rewrite.
+
+Change-Id: I5840714738eb06eef98b1c33bed7efc785263d16
+Signed-off-by: Matin Momin <Matin.Momin@imgtec.com>
+---
+ arch/mips/boot/dts/pistachio/pistachio.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/mips/boot/dts/pistachio/pistachio.dtsi b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+index b18340a..1c20583 100644
+--- a/arch/mips/boot/dts/pistachio/pistachio.dtsi
++++ b/arch/mips/boot/dts/pistachio/pistachio.dtsi
+@@ -363,6 +363,8 @@
+ 		clock-names = "sys","ref0","ref1","pll";
+ 		img,clk-select = <1>;
+ 		img,clk-rate = <147456000>;
++		img,cr-periph = <&cr_periph>;
++		img,ext-src-bank = <4>;
+ 	};
+ 
+ 	spfi0: spi@18100f00 {
+-- 
+1.9.1
+
