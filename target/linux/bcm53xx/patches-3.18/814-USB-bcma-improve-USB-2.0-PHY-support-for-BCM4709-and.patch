@@ -1,0 +1,122 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Subject: [PATCH] USB: bcma: improve USB 2.0 PHY support for BCM4709 and
+ BCM47094
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -30,6 +30,17 @@
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ 
++/* DMU (Device Management Unit) */
++#define BCMA_DMU_CRU_USB2_CONTROL			0x0164
++#define  BCMA_DMU_CRU_USB2_CONTROL_USB_PLL_NDIV_MASK	0x00000FFC
++#define  BCMA_DMU_CRU_USB2_CONTROL_USB_PLL_NDIV_SHIFT	2
++#define  BCMA_DMU_CRU_USB2_CONTROL_USB_PLL_PDIV_MASK	0x00007000
++#define  BCMA_DMU_CRU_USB2_CONTROL_USB_PLL_PDIV_SHIFT	12
++#define BCMA_DMU_CRU_CLKSET_KEY				0x0180
++#define BCMA_DMU_CRU_STRAPS_CTRL			0x02A0
++#define  BCMA_DMU_CRU_STRAPS_CTRL_USB3			0x00000010
++#define  BCMA_DMU_CRU_STRAPS_CTRL_4BYTE			0x00008000
++
+ MODULE_AUTHOR("Hauke Mehrtens");
+ MODULE_DESCRIPTION("Common USB driver for BCMA Bus");
+ MODULE_LICENSE("GPL");
+@@ -166,10 +177,35 @@ static void bcma_hcd_init_chip_mips(stru
+ 	}
+ }
+ 
++static u32 bcma_hcd_usb_ref_clk_get_rate(void __iomem *dmu)
++{
++	u32 val, ndiv, pdiv, ch2_mdiv, ch2_freq;
++
++	/* get divider integer from the cru_genpll_control5 */
++	val = ioread32(dmu + 0x154);
++	ndiv = (val >> 20) & 0x3ff;
++	if (ndiv == 0)
++		ndiv = 1 << 10;
++
++	/* get pdiv and ch2_mdiv from the cru_genpll_control6 */
++	val = ioread32(dmu + 0x158);
++	pdiv = (val >> 24) & 0x7;
++	pdiv = (pdiv == 0) ? (1 << 3) : pdiv;
++
++	ch2_mdiv = val & 0xff;
++	ch2_mdiv = (ch2_mdiv == 0) ? (1 << 8) : ch2_mdiv;
++
++	/* calculate ch2_freq based on 25MHz reference clock */
++	ch2_freq = (25000000 / (pdiv * ch2_mdiv)) * ndiv;
++
++	return ch2_freq;
++}
++
+ static void bcma_hcd_init_chip_arm_phy(struct bcma_device *dev)
+ {
+ 	struct bcma_device *arm_core;
+ 	void __iomem *dmu;
++	u32 ref_clk_rate, usb2ctl, usb_pll_ndiv, usb_pll_pdiv;
+ 
+ 	arm_core = bcma_find_core(dev->bus, BCMA_CORE_ARMCA9);
+ 	if (!arm_core) {
+@@ -183,14 +219,29 @@ static void bcma_hcd_init_chip_arm_phy(s
+ 		return;
+ 	}
+ 
++	ref_clk_rate = bcma_hcd_usb_ref_clk_get_rate(dmu);
++
++	usb2ctl = ioread32(dmu + BCMA_DMU_CRU_USB2_CONTROL);
++
++	usb_pll_pdiv = usb2ctl;
++	usb_pll_pdiv &= BCMA_DMU_CRU_USB2_CONTROL_USB_PLL_PDIV_MASK;
++	usb_pll_pdiv >>= BCMA_DMU_CRU_USB2_CONTROL_USB_PLL_PDIV_SHIFT;
++	if (!usb_pll_pdiv)
++		usb_pll_pdiv = 1 << 3;
++
++	/* Calculate ndiv based on a solid 1920 MHz that is for USB2 PHY */
++	usb_pll_ndiv = (1920000000 * usb_pll_pdiv) / ref_clk_rate;
++
+ 	/* Unlock DMU PLL settings */
+-	iowrite32(0x0000ea68, dmu + 0x180);
++	iowrite32(0x0000ea68, dmu + BCMA_DMU_CRU_CLKSET_KEY);
+ 
+ 	/* Write USB 2.0 PLL control setting */
+-	iowrite32(0x00dd10c3, dmu + 0x164);
++	usb2ctl &= ~BCMA_DMU_CRU_USB2_CONTROL_USB_PLL_NDIV_MASK;
++	usb2ctl |= usb_pll_ndiv << BCMA_DMU_CRU_USB2_CONTROL_USB_PLL_NDIV_SHIFT;
++	iowrite32(usb2ctl, dmu + BCMA_DMU_CRU_USB2_CONTROL);
+ 
+ 	/* Lock DMU PLL settings */
+-	iowrite32(0x00000000, dmu + 0x180);
++	iowrite32(0x00000000, dmu + BCMA_DMU_CRU_CLKSET_KEY);
+ 
+ 	iounmap(dmu);
+ }
+@@ -218,15 +269,17 @@ static void bcma_hcd_init_chip_arm_hc(st
+ 
+ static void bcma_hcd_init_chip_arm(struct bcma_device *dev)
+ {
++	struct bcma_chipinfo *chipinfo = &dev->bus->chipinfo;
++
+ 	bcma_core_enable(dev, 0);
+ 
+-	if (dev->bus->chipinfo.id == BCMA_CHIP_ID_BCM4707 ||
+-	    dev->bus->chipinfo.id == BCMA_CHIP_ID_BCM53018) {
+-		if (dev->bus->chipinfo.pkg == BCMA_PKG_ID_BCM4707 ||
+-		    dev->bus->chipinfo.pkg == BCMA_PKG_ID_BCM4708)
+-			bcma_hcd_init_chip_arm_phy(dev);
++	if (chipinfo->id == BCMA_CHIP_ID_BCM4707 ||
++	    chipinfo->id == BCMA_CHIP_ID_BCM47094 ||
++	    chipinfo->id == BCMA_CHIP_ID_BCM53018) {
++		bcma_hcd_init_chip_arm_phy(dev);
+ 
+-		bcma_hcd_init_chip_arm_hc(dev);
++		if (1) /* TODO: Exclude BCM53573 */
++			bcma_hcd_init_chip_arm_hc(dev);
+ 	}
+ }
+ 
