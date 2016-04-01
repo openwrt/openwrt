@@ -99,7 +99,7 @@ tplink_board_detect() {
 	hwid=$(tplink_get_hwid)
 	mid=$(tplink_get_mid)
 	hwver=${hwid:6:2}
-	hwver="v${hwver#0}"
+	hwver=" v${hwver#0}"
 
 	case "$hwid" in
 	"015000"*)
@@ -171,8 +171,8 @@ tplink_board_detect() {
 	"083000"*)
 		model="TP-Link TL-WA830RE"
 
-		if [ "$hwver" = 'v10' ]; then
-			hwver='v1'
+		if [ "$hwver" = ' v10' ]; then
+			hwver=' v1'
 		fi
 		;;
 	"084100"*)
@@ -277,7 +277,7 @@ tplink_board_detect() {
 		;;
 	esac
 
-	AR71XX_MODEL="$model $hwver"
+	AR71XX_MODEL="$model$hwver"
 }
 
 tplink_pharos_get_model_string() {
