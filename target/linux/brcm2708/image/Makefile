@@ -1,5 +1,6 @@
 # 
 # Copyright (C) 2012-2015 OpenWrt.org
+# Copyright (C) 2016 LEDE project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -20,8 +21,8 @@ endef
 define Build/boot-img
 	rm -f $@.boot
 	mkfs.fat -C $@.boot $(FAT32_BLOCKS)
+	mcopy -i $@.boot $(LINUX_DIR)/COPYING ::COPYING.linux
 	mcopy -i $@.boot $(KDIR)/bootcode.bin ::
-	mcopy -i $@.boot $(KDIR)/COPYING.linux ::
 	mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::
 	mcopy -i $@.boot $(KDIR)/start.elf ::
 	mcopy -i $@.boot $(KDIR)/start_cd.elf ::
