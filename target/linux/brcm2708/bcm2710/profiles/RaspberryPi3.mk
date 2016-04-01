@@ -7,7 +7,7 @@
 
 define Profile/RaspberryPi_3
   NAME:=Raspberry Pi 3 Model B
-  PACKAGES:=kmod-brcmfmac wpad-mini
+  PACKAGES:=brcmfmac43430-firmware-sdio kmod-brcmfmac wpad-mini
 endef
 define Profile/RaspberryPi_3/Description
   Raspberry Pi 3 Model B
