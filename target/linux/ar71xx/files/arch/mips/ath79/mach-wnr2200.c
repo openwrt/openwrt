@@ -12,6 +12,7 @@
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/kernel.h> /* for max() macro */
 
 #include <asm/mach-ath79/ath79.h>
 
@@ -45,6 +46,7 @@
 #define WNR2200_MAC0_OFFSET		0
 #define WNR2200_MAC1_OFFSET		6
 #define WNR2200_PCIE_CALDATA_OFFSET	0x1000
+#define WNR2200_WMAC_OFFSET		0x108c	/* wireless MAC is inside ART */
 
 static struct gpio_led wnr2200_leds_gpio[] __initdata = {
 	{
@@ -102,9 +104,40 @@ static struct gpio_led wnr2200_leds_gpio[] __initdata = {
 	}
 };
 
+/*
+ * For WNR2200 ART flash area used for WLAN MAC is usually empty (0xff)
+ * so ath9k driver uses random MAC instead each time module is loaded.
+ * OpenWrt's original fix was to copy eth1 address to WLAN interface.
+ * New solution does not duplicate hardware addresses and is taken from
+ * WNR2000v3 code. It assigns permanent WLAN MAC equal to ethN's MAC
+ * plus 1, so network interfaces get sequential addresses.
+ * If ART wireless MAC address field has been filled by user, use it.
+ */
+static void __init wnr2200_get_wmac(u8 *wmac_gen_addr, int mac0_art_offset,
+				    int mac1_art_offset, int wmac_art_offset)
+{
+	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+	u8 *eth0_mac_addr = (u8 *) (art + mac0_art_offset);
+	u8 *eth1_mac_addr = (u8 *) (art + mac1_art_offset);
+	u8 *wlan_mac_addr = (u8 *) (art + wmac_art_offset);
+
+	/* only 0xff if all bits are set - address is invalid, empty area */
+	if ((wlan_mac_addr[0] & wlan_mac_addr[1] & wlan_mac_addr[2] &
+	     wlan_mac_addr[3] & wlan_mac_addr[4] & wlan_mac_addr[5]) == 0xff) {
+		memcpy(wmac_gen_addr, eth0_mac_addr, 5);
+		wmac_gen_addr[5] = max(eth0_mac_addr[5], eth1_mac_addr[5]) + 1;
+
+		/* Avoid potential conflict in case max(0xff,0x00)+1==0x00 */
+		if (!wmac_gen_addr[5])
+			wmac_gen_addr[5] = 1;
+	} else
+		memcpy(wmac_gen_addr, wlan_mac_addr, 6);
+}
+
 static void __init wnr2200_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+	u8 wlan_mac_addr[6];
 
 	ath79_register_mdio(0, 0x0);
 
@@ -121,8 +154,10 @@ static void __init wnr2200_setup(void)
 	ath79_register_eth(1);
 
 	ath79_register_m25p80(NULL);
-	ap91_pci_init(art + WNR2200_PCIE_CALDATA_OFFSET,
-		      art + WNR2200_MAC1_OFFSET);
+
+	wnr2200_get_wmac(wlan_mac_addr, WNR2200_MAC0_OFFSET,
+			 WNR2200_MAC1_OFFSET, WNR2200_WMAC_OFFSET);
+	ap91_pci_init(art + WNR2200_PCIE_CALDATA_OFFSET, wlan_mac_addr);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr2200_leds_gpio),
 					wnr2200_leds_gpio);
