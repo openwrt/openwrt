@@ -1,7 +1,7 @@
-From 179937ef20beb9d4af4807f3540d4dfc4d48516a Mon Sep 17 00:00:00 2001
+From 17b9724cf84aa32f15334c23d5df34ad3cb885f3 Mon Sep 17 00:00:00 2001
 From: Boris BREZILLON <boris.brezillon@free-electrons.com>
 Date: Mon, 16 Nov 2015 14:37:35 +0100
-Subject: [PATCH 59/66] mtd: nand: add an mtd_to_nand() helper
+Subject: [PATCH 52/78] mtd: nand: add an mtd_to_nand() helper
 
 Some drivers are retrieving the nand_chip pointer using the container_of
 macro on a struct wrapping both the nand_chip and the mtd_info struct while
