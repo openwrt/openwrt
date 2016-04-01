@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2013 OpenWrt.org
+# Copyright (C) 2010-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libusb
-PKG_VERSION:=1.0.19
+PKG_VERSION:=1.0.20
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=f9e2bb5879968467e5ca756cb4e1fa7e
+PKG_MD5SUM:=1d4eb194eaaa2bcfbba28102768c7dbf
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
