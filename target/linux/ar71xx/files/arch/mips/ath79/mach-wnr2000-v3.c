@@ -80,7 +80,7 @@
 #define WNR1000V2_GPIO_WMAC_BTN_RESET		7
 #define WNR1000V2_GPIO_WMAC_BTN_RFKILL		8
 
-/* Connected through AR7240 */
+/* WPN824N - connected through AR7240 */
 #define WPN824N_GPIO_LED_WAN_AMBER	0
 #define WPN824N_GPIO_LED_STATUS_AMBER	1
 #define WPN824N_GPIO_LED_LAN1_AMBER	6 /* AR724X_GPIO_FUNC_JTAG_DISABLE */
@@ -93,15 +93,15 @@
 #define WPN824N_GPIO_LED_LAN4_GREEN	16
 #define WPN824N_GPIO_LED_WAN_GREEN	17
 
-/* Connected through AR9285 */
+/* WPN824N - connected through AR9285 */
 #define WPN824N_WGPIO_LED_PWR_GREEN	0
 #define WPN824N_WGPIO_LED_WLAN_BLUE	1
 #define WPN824N_WGPIO_LED_WPS1_BLUE	5
 #define WPN824N_WGPIO_LED_WPS2_BLUE	9
 #define WPN824N_WGPIO_LED_TEST_AMBER	10
-#define WPN824N_WGPIO_BTN_PUSH		6	/* currently unused */
-#define WPN824N_WGPIO_BTN_RESET		7	/* currently unused */
-#define WPN824N_WGPIO_BTN_WLAN		8	/* currently unused */
+#define WPN824N_WGPIO_BTN_WPS		6
+#define WPN824N_WGPIO_BTN_RESET		7
+#define WPN824N_WGPIO_BTN_WLAN		8
 
 #define WNR2000V3_KEYS_POLL_INTERVAL	20	/* msecs */
 #define WNR2000V3_KEYS_DEBOUNCE_INTERVAL	(3 * WNR2000V3_KEYS_POLL_INTERVAL)
@@ -391,6 +391,31 @@ static struct gpio_keys_button wnr1000v2_wmac_keys_gpio[] = {
 	}
 };
 
+static struct gpio_keys_button wpn824n_wmac_keys_gpio[] = {
+	{
+		.desc			= "reset",
+		.type			= EV_KEY,
+		.code			= KEY_RESTART,
+		.debounce_interval	= WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio			= WPN824N_WGPIO_BTN_RESET,
+		.active_low		= 1,
+	}, {
+		.desc			= "rfkill",
+		.type			= EV_KEY,
+		.code			= KEY_RFKILL,
+		.debounce_interval	= WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio			= WPN824N_WGPIO_BTN_WLAN,
+		.active_low		= 1,
+	}, {
+		.desc			= "wps",
+		.type			= EV_KEY,
+		.code			= KEY_WPS_BUTTON,
+		.debounce_interval	= WNR2000V3_KEYS_DEBOUNCE_INTERVAL,
+		.gpio			= WPN824N_WGPIO_BTN_WPS,
+		.active_low		= 1,
+	}
+};
+
 /*
  * For WNR2000v3 ART flash area used for WLAN MAC is usually empty (0xff)
  * so ath9k driver uses random MAC instead each time module is loaded.
@@ -603,6 +628,9 @@ static void __init wpn824n_setup(void)
 	ap9x_pci_setup_wmac_led_name(0, wnr2000v3_wmac_led_name);
 	ap9x_pci_setup_wmac_leds(0, wpn824n_wmac_leds_gpio,
 				 ARRAY_SIZE(wpn824n_wmac_leds_gpio));
+	ap9x_pci_setup_wmac_btns(0, wpn824n_wmac_keys_gpio,
+				 ARRAY_SIZE(wpn824n_wmac_keys_gpio),
+				 WNR2000V3_KEYS_POLL_INTERVAL);
 }
 
 MIPS_MACHINE(ATH79_MACH_WPN824N, "WPN824N", "NETGEAR WPN824N", wpn824n_setup);
