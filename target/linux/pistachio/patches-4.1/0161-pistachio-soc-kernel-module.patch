@@ -1,0 +1,46 @@
+Index: linux-4.1.13/sound/soc/img/Makefile
+===================================================================
+--- linux-4.1.13.orig/sound/soc/img/Makefile
++++ linux-4.1.13/sound/soc/img/Makefile
+@@ -4,9 +4,15 @@ obj-$(CONFIG_SND_SOC_IMG_PARALLEL_OUT) +
+ obj-$(CONFIG_SND_SOC_IMG_SPDIF_IN) += img-spdif-in.o
+ obj-$(CONFIG_SND_SOC_IMG_SPDIF_OUT) += img-spdif-out.o
+ 
+-obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER) += pistachio-event-timer.o
+-obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER_ATU) += pistachio-event-timer-atu.o
+-obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER_LOCAL) += pistachio-event-timer-local.o
+-obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_INTERNAL_DAC) += pistachio-internal-dac.o
++obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER) += pistachio-event-timer-module.o
++
++ifneq ($(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER_LOCAL),)
++pistachio-event-timer-module-objs := pistachio-event-timer.o pistachio-event-timer-local.o
++endif
+ 
++ifneq ($(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER_ATU),)
++pistachio-event-timer-module-objs := pistachio-event-timer.o pistachio-event-timer-atu.o
++endif
++
++obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_INTERNAL_DAC) += pistachio-internal-dac.o
+ obj-$(CONFIG_SND_SOC_IMG_PISTACHIO) += pistachio.o
+Index: linux-4.1.13/kernel/time/clocksource.c
+===================================================================
+--- linux-4.1.13.orig/kernel/time/clocksource.c
++++ linux-4.1.13/kernel/time/clocksource.c
+@@ -87,6 +87,7 @@ clocks_calc_mult_shift(u32 *mult, u32 *s
+ 	*mult = tmp;
+ 	*shift = sft;
+ }
++EXPORT_SYMBOL(clocks_calc_mult_shift);
+ 
+ /*[Clocksource internal variables]---------
+  * curr_clocksource:
+Index: linux-4.1.13/sound/soc/img/Kconfig
+===================================================================
+--- linux-4.1.13.orig/sound/soc/img/Kconfig
++++ linux-4.1.13/sound/soc/img/Kconfig
+@@ -90,4 +90,5 @@ config SND_SOC_IMG_PISTACHIO
+ 	select SND_SOC_IMG_SPDIF_OUT
+ 	select SND_SOC_IMG_PISTACHIO_EVENT_TIMER
+ 	select SND_SOC_IMG_PISTACHIO_INTERNAL_DAC
++	select SND_SOC_TPA6130A2
+ 

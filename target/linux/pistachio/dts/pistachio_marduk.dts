@@ -49,6 +49,7 @@
 			clock-names = "audio_pll", "i2s_mclk", "dac_clk";
 
 			img,cr-periph = <&cr_periph>;
+			img,event-timer = <&event_timer>;
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&dac_clk_pin>, <&i2s_mclk_pin>;

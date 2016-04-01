@@ -355,7 +355,16 @@
 			     <GIC_SHARED 56 IRQ_TYPE_EDGE_RISING>,
 			     <GIC_SHARED 57 IRQ_TYPE_EDGE_RISING>;
 
-		#sound-dai-cells = <0>;
+		#clock-cells = <0>;
+		clocks = <&cr_periph SYS_CLK_EVENT_TIMER>,
+			 <&clk_core CLK_AUDIO>,
+			 <&clk_core CLK_EVENT_TIMER>,
+			 <&clk_core CLK_AUDIO_PLL>;
+		clock-names = "sys","ref0","ref1","pll";
+		img,clk-select = <1>;
+		img,clk-rate = <147456000>;
+		img,cr-periph = <&cr_periph>;
+		img,ext-src-bank = <4>;
 	};
 
 	spfi0: spi@18100f00 {
