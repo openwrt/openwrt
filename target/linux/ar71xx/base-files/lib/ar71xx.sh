@@ -137,6 +137,10 @@ tplink_board_detect() {
 		;;
 	"071000"*)
 		model="TP-Link TL-WR710N"
+
+		if [ "$hwid" = '07100002' -a "$mid" = '00000002' ]; then
+			hwver=' v2.1'
+		fi
 		;;
 	"072001"*)
 		model="TP-Link TL-WR720N"
@@ -177,6 +181,10 @@ tplink_board_detect() {
 		;;
 	"084100"*)
 		model="TP-Link TL-WR841N/ND"
+
+		if [ "$hwid" = '08410002' -a "$mid" = '00000002' ]; then
+			hwver=' v1.5'
+		fi
 		;;
 	"084200"*)
 		model="TP-Link TL-WR842N/ND"
