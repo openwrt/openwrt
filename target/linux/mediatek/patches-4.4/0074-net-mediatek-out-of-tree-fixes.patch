@@ -1,7 +1,7 @@
-From cee958b55f35f953481c2ddf9609dbd018ef5979 Mon Sep 17 00:00:00 2001
+From 42fa01d00a7d14b4db1ff1e5176469d349e03d8a Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Mon, 21 Mar 2016 16:36:22 +0100
-Subject: [PATCH 57/66] net: mediatek: out of tree fixes
+Subject: [PATCH 74/78] net: mediatek: out of tree fixes
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
@@ -9,12 +9,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/arm/boot/dts/mt7623.dtsi               |   40 +-
  drivers/net/ethernet/mediatek/Makefile      |    2 +-
  drivers/net/ethernet/mediatek/gsw_mt7620.h  |  250 +++++++
- drivers/net/ethernet/mediatek/gsw_mt7623.c  | 1058 +++++++++++++++++++++++++++
+ drivers/net/ethernet/mediatek/gsw_mt7623.c  | 1070 +++++++++++++++++++++++++++
  drivers/net/ethernet/mediatek/mt7530.c      |  808 ++++++++++++++++++++
  drivers/net/ethernet/mediatek/mt7530.h      |   20 +
- drivers/net/ethernet/mediatek/mtk_eth_soc.c |   41 +-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |  107 ++-
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |    5 +
- 9 files changed, 2202 insertions(+), 23 deletions(-)
+ 9 files changed, 2230 insertions(+), 73 deletions(-)
  create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7620.h
  create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7623.c
  create mode 100644 drivers/net/ethernet/mediatek/mt7530.c
@@ -33,10 +33,10 @@ index 5e9381d..bc2b3f1 100644
  };
  
 diff --git a/arch/arm/boot/dts/mt7623.dtsi b/arch/arm/boot/dts/mt7623.dtsi
-index ec19283..0c65045 100644
+index c8c802d..f405ec7 100644
 --- a/arch/arm/boot/dts/mt7623.dtsi
 +++ b/arch/arm/boot/dts/mt7623.dtsi
-@@ -452,23 +452,30 @@
+@@ -453,25 +453,32 @@
  	};
  
  	ethsys: syscon@1b000000 {
@@ -60,7 +60,9 @@ index ec19283..0c65045 100644
 +			 <&ethsys CLK_ETHSYS_GP2>,
 +			 <&ethsys CLK_ETHSYS_GP1>;
 +		clock-names = "ethif", "esw", "gp2", "gp1";
- 		interrupts = <GIC_SPI 200 IRQ_TYPE_LEVEL_LOW>;
+ 		interrupts = <GIC_SPI 200 IRQ_TYPE_LEVEL_LOW
+ 			      GIC_SPI 199 IRQ_TYPE_LEVEL_LOW
+ 			      GIC_SPI 198 IRQ_TYPE_LEVEL_LOW>;
  		power-domains = <&scpsys MT2701_POWER_DOMAIN_ETH>;
  
 +		resets = <&ethsys 6>;
@@ -72,16 +74,16 @@ index ec19283..0c65045 100644
  		mediatek,switch = <&gsw>;
  
  		#address-cells = <1>;
-@@ -480,6 +487,8 @@
+@@ -482,7 +489,7 @@
+ 		gmac1: mac@0 {
  			compatible = "mediatek,eth-mac";
  			reg = <0>;
- 
-+			phy-handle = <&phy4>;
-+
+-
++			
  			status = "disabled";
  		};
  
-@@ -487,6 +496,7 @@
+@@ -490,6 +497,7 @@
  			compatible = "mediatek,eth-mac";
  			reg = <1>;
  
@@ -89,7 +91,7 @@ index ec19283..0c65045 100644
  			status = "disabled";
  		};
  	
-@@ -494,6 +504,16 @@
+@@ -497,6 +505,16 @@
  			#address-cells = <1>;
  			#size-cells = <0>;
  
@@ -106,7 +108,7 @@ index ec19283..0c65045 100644
  			phy1f: ethernet-phy@1f {
  				reg = <0x1f>;
  				phy-mode = "rgmii";
-@@ -503,14 +523,12 @@
+@@ -506,14 +524,12 @@
  
  	gsw: switch@1b100000 {
  		compatible = "mediatek,mt7623-gsw";
@@ -393,10 +395,10 @@ index 0000000..7013803
 +#endif
 diff --git a/drivers/net/ethernet/mediatek/gsw_mt7623.c b/drivers/net/ethernet/mediatek/gsw_mt7623.c
 new file mode 100644
-index 0000000..4e486af
+index 0000000..873a525
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/gsw_mt7623.c
-@@ -0,0 +1,1058 @@
+@@ -0,0 +1,1070 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
 + *   the Free Software Foundation; version 2 of the License
@@ -1170,6 +1172,7 @@ index 0000000..4e486af
 +	val |= MHWTRAP_P5_RGMII_MODE;
 +	/* Set MT7530 phy direct access mode**/
 +	val &= ~MHWTRAP_PHY_ACCESS;
++	val |= MHWTRAP_PHY_ACCESS;
 +	/* manual override of HW-Trap */
 +	val |= MHWTRAP_MANUAL;
 +	mt7530_mdio_w32(gsw, MT7530_MHWTRAP, val);
@@ -1255,13 +1258,13 @@ index 0000000..4e486af
 +	mtk_switch_w32(gsw, 0x88, 0x374);
 +	mtk_switch_w32(gsw, 0x88, 0x37c);
 +
-+#if defined (CONFIG_GE2_RGMII_AN)
-+//        *(volatile u_long *)(0xf0005f00) = 0xe00; //Set GE2 driving and slew rate
-+#else
-+  //      *(volatile u_long *)(0xf0005f00) = 0xa00; //Set GE2 driving and slew rate
-+#endif
-+    //   *(volatile u_long *)(0xf00054c0) = 0x5;   //set GE2 TDSEL
-+  //      *(volatile u_long *)(0xf0005ed0) = 0;     //set GE2 TUNE
++	/* Set GE2 driving and slew rate */
++	regmap_write(gsw->pctl, 0xF00, 0xe00);
++	/* set GE2 TDSEL */
++	regmap_write(gsw->pctl, 0x4C0, 0x5);
++	/* set GE2 TUNE */
++	regmap_write(gsw->pctl, 0xED0, 0x0);
++
 +
 +	mt7530_trgmii_clock_setting(gsw, xtal_mode);
 +
@@ -1312,6 +1315,24 @@ index 0000000..4e486af
 +
 +	/* enable irq */
 +	mt7530_mdio_m32(gsw, 0, TOP_SIG_CTRL_NORMAL, MT7530_TOP_SIG_CTRL);
++
++	/* enable autopolling */
++	if (gsw->eth->mac[1] && gsw->eth->mac[1]->phy_dev) {
++		val = mtk_switch_r32(gsw, 0);
++		val |= (1<<31);
++		val &= ~(0x1f);
++		val &= ~(0x1f<<8);
++		val |= 4;
++		val |= 5 << 8;
++		mtk_switch_w32(gsw, val, 0);
++
++		val = _mtk_mdio_read(gsw->eth, 5, 4);
++		val |= BIT(10);
++		_mtk_mdio_write(gsw->eth, 5, 4, val);
++		val = _mtk_mdio_read(gsw->eth, 5, 0);
++		val |= BIT(9);
++		_mtk_mdio_write(gsw->eth, 5, 0, val);
++	}
 +}
 +
 +static const struct of_device_id mediatek_gsw_match[] = {
@@ -1413,13 +1434,6 @@ index 0000000..4e486af
 +	udelay(1000);
 +	gpio_set_value(reset_pin, 1);
 +	mdelay(100);
-+
-+	/* Set GE2 driving and slew rate */
-+	regmap_write(gsw->pctl, 0xF00, 0xa00);
-+	/* set GE2 TDSEL */
-+	regmap_write(gsw->pctl, 0x4C0, 0x5);
-+	/* set GE2 TUNE */
-+	regmap_write(gsw->pctl, 0xED0, 0x0);
 +
 +	platform_set_drvdata(pdev, gsw);
 +
@@ -2296,7 +2310,7 @@ index 0000000..1fc8c62
 +
 +#endif
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 7f2126b..dd7f6e3 100644
+index 2097ae1..ca7e961 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -24,6 +24,9 @@
@@ -2318,37 +2332,46 @@ index 7f2126b..dd7f6e3 100644
  	}
  
  	dev_err(eth->dev, "mdio: MDIO timeout\n");
-@@ -138,6 +141,15 @@ static void mtk_phy_link_adjust(struct net_device *dev)
- 		  MAC_MCR_RX_EN | MAC_MCR_BACKOFF_EN |
- 		  MAC_MCR_BACKPR_EN;
+@@ -132,36 +135,8 @@ static int mtk_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
  
-+	if (!mac->id) {
-+		mcr |= MAC_MCR_SPEED_1000;
-+		mcr |= MAC_MCR_FORCE_LINK;
-+		mcr |= MAC_MCR_FORCE_DPX;
-+		mcr |= MAC_MCR_FORCE_RX_FC | MAC_MCR_FORCE_TX_FC;
-+		mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
-+		return;
-+	}
-+
- 	switch (mac->phy_dev->speed) {
- 	case SPEED_1000:
- 		mcr |= MAC_MCR_SPEED_1000;
-@@ -157,11 +169,12 @@ static void mtk_phy_link_adjust(struct net_device *dev)
- 		mcr |= MAC_MCR_FORCE_RX_FC | MAC_MCR_FORCE_TX_FC;
- 
- 	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
+ static void mtk_phy_link_adjust(struct net_device *dev)
+ {
+-	struct mtk_mac *mac = netdev_priv(dev);
+-	u32 mcr = MAC_MCR_MAX_RX_1536 | MAC_MCR_IPG_CFG |
+-		  MAC_MCR_FORCE_MODE | MAC_MCR_TX_EN |
+-		  MAC_MCR_RX_EN | MAC_MCR_BACKOFF_EN |
+-		  MAC_MCR_BACKPR_EN;
 -
- 	if (mac->phy_dev->link)
- 		netif_carrier_on(dev);
- 	else
- 		netif_carrier_off(dev);
-+
+-	switch (mac->phy_dev->speed) {
+-	case SPEED_1000:
+-		mcr |= MAC_MCR_SPEED_1000;
+-		break;
+-	case SPEED_100:
+-		mcr |= MAC_MCR_SPEED_100;
+-		break;
+-	};
+-
+-	if (mac->phy_dev->link)
+-		mcr |= MAC_MCR_FORCE_LINK;
+-
+-	if (mac->phy_dev->duplex)
+-		mcr |= MAC_MCR_FORCE_DPX;
+-
+-	if (mac->phy_dev->pause)
+-		mcr |= MAC_MCR_FORCE_RX_FC | MAC_MCR_FORCE_TX_FC;
+-
+-	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
+-
+-	if (mac->phy_dev->link)
+-		netif_carrier_on(dev);
+-	else
+-		netif_carrier_off(dev);
++	netif_carrier_on(dev);
 +	return;
  }
  
  static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
-@@ -193,7 +206,7 @@ static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
+@@ -193,7 +168,7 @@ static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
  
  	dev_info(eth->dev,
  		 "connected mac %d to PHY at %s [uid=%08x, driver=%s]\n",
@@ -2357,15 +2380,34 @@ index 7f2126b..dd7f6e3 100644
  		 phydev->drv->name);
  
  	mac->phy_dev = phydev;
-@@ -634,7 +647,6 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+@@ -209,7 +184,7 @@ static int mtk_phy_connect(struct mtk_mac *mac)
  
- 	spin_unlock_irqrestore(&eth->page_lock, flags);
+ 	np = of_parse_phandle(mac->of_node, "phy-handle", 0);
+ 	if (!np)
+-		return -ENODEV;
++		return 0;
+ 
+ 	switch (of_get_phy_mode(np)) {
+ 	case PHY_INTERFACE_MODE_RGMII:
+@@ -239,7 +214,8 @@ static int mtk_phy_connect(struct mtk_mac *mac)
+ 	mac->phy_dev->supported &= PHY_BASIC_FEATURES;
+ 	mac->phy_dev->advertising = mac->phy_dev->supported |
+ 				    ADVERTISED_Autoneg;
+-	phy_start_aneg(mac->phy_dev);
++	if (mac->phy_dev)
++		phy_start_aneg(mac->phy_dev);
+ 
+ 	return 0;
+ }
+@@ -626,7 +602,6 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+ 	WRITE_ONCE(itxd->txd3, (TX_DMA_SWC | TX_DMA_PLEN0(skb_headlen(skb)) |
+ 				(!nr_frags * TX_DMA_LS0)));
  
 -	netdev_sent_queue(dev, skb->len);
  	skb_tx_timestamp(skb);
  
  	ring->next_free = mtk_qdma_phys_to_virt(ring, txd->txd2);
-@@ -884,7 +896,6 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -906,7 +881,6 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget)
  	for (i = 0; i < MTK_MAC_COUNT; i++) {
  		if (!eth->netdev[i] || !done[i])
  			continue;
@@ -2373,8 +2415,13 @@ index 7f2126b..dd7f6e3 100644
  		total += done[i];
  	}
  
-@@ -1251,6 +1262,8 @@ static int mtk_open(struct net_device *dev)
- 	phy_start(mac->phy_dev);
+@@ -1284,9 +1258,12 @@ static int mtk_open(struct net_device *dev)
+ 	}
+ 	atomic_inc(&eth->dma_refcnt);
+ 
+-	phy_start(mac->phy_dev);
++	if (mac->phy_dev)
++		phy_start(mac->phy_dev);
  	netif_start_queue(dev);
  
 +	netif_carrier_on(dev);
@@ -2382,23 +2429,52 @@ index 7f2126b..dd7f6e3 100644
  	return 0;
  }
  
-@@ -1283,6 +1296,7 @@ static int mtk_stop(struct net_device *dev)
+@@ -1319,8 +1296,10 @@ static int mtk_stop(struct net_device *dev)
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
  
 +	netif_carrier_off(dev);
  	netif_tx_disable(dev);
- 	phy_stop(mac->phy_dev);
+-	phy_stop(mac->phy_dev);
++	if (mac->phy_dev)
++		phy_stop(mac->phy_dev);
  
-@@ -1328,6 +1342,7 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+ 	/* only shutdown DMA if this is the last user */
+ 	if (!atomic_dec_and_test(&eth->dma_refcnt))
+@@ -1346,20 +1325,11 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+ 	reset_control_deassert(eth->rstc);
+ 	usleep_range(10, 20);
+ 
+-	/* Set GE2 driving and slew rate */
+-	regmap_write(eth->pctl, GPIO_DRV_SEL10, 0xa00);
+-
+-	/* set GE2 TDSEL */
+-	regmap_write(eth->pctl, GPIO_OD33_CTRL8, 0x5);
+-
+-	/* set GE2 TUNE */
+-	regmap_write(eth->pctl, GPIO_BIAS_CTRL, 0x0);
+-
+ 	/* GE1, Force 1000M/FD, FC ON */
+-	mtk_w32(eth, MAC_MCR_FIXED_LINK, MTK_MAC_MCR(0));
++	mtk_w32(eth, 0x0105e33b, MTK_MAC_MCR(0));
+ 
+-	/* GE2, Force 1000M/FD, FC ON */
+-	mtk_w32(eth, MAC_MCR_FIXED_LINK, MTK_MAC_MCR(1));
++	/* GE2, use autopolling */
++	mtk_w32(eth, 0x01056300, MTK_MAC_MCR(1));
+ 
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
+@@ -1377,6 +1347,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+ 	if (err)
+ 		return err;
  
 +	mtk_gsw_init(eth);
- 	err = devm_request_irq(eth->dev, eth->irq, mtk_handle_irq, 0,
- 			       dev_name(eth->dev), eth);
- 	if (err)
-@@ -1360,6 +1375,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
++
+ 	/* disable delay and normal interrupt */
+ 	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
+ 	mtk_irq_disable(eth, MTK_TX_DONE_INT | MTK_RX_DONE_INT);
+@@ -1404,6 +1376,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
  		mtk_w32(eth, val, MTK_GDMA_FWD_CFG(i));
  	}
  
@@ -2407,7 +2483,39 @@ index 7f2126b..dd7f6e3 100644
  	return 0;
  }
  
-@@ -1466,11 +1483,13 @@ static int mtk_set_settings(struct net_device *dev,
+@@ -1433,7 +1407,8 @@ static void mtk_uninit(struct net_device *dev)
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 	struct mtk_eth *eth = mac->hw;
+ 
+-	phy_disconnect(mac->phy_dev);
++	if (mac->phy_dev)
++		phy_disconnect(mac->phy_dev);
+ 	mtk_mdio_cleanup(eth);
+ 	mtk_irq_disable(eth, ~0);
+ 	free_irq(eth->irq[0], dev);
+@@ -1445,7 +1420,7 @@ static int mtk_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+ {
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 
+-	switch (cmd) {
++	if (mac->phy_dev) switch (cmd) {
+ 	case SIOCGMIIPHY:
+ 	case SIOCGMIIREG:
+ 	case SIOCSMIIREG:
+@@ -1508,9 +1483,10 @@ static int mtk_get_settings(struct net_device *dev,
+ 			    struct ethtool_cmd *cmd)
+ {
+ 	struct mtk_mac *mac = netdev_priv(dev);
+-	int err;
++	int err = -1;
+ 
+-	err = phy_read_status(mac->phy_dev);
++	if (mac->phy_dev)
++		err = phy_read_status(mac->phy_dev);
+ 	if (err)
+ 		return -ENODEV;
+ 
+@@ -1522,11 +1498,16 @@ static int mtk_set_settings(struct net_device *dev,
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  
@@ -2415,6 +2523,9 @@ index 7f2126b..dd7f6e3 100644
 -		mac->phy_dev = mdiobus_get_phy(mac->hw->mii_bus,
 -					       cmd->phy_address);
 -		if (!mac->phy_dev)
++	if (!mac->phy_dev)
++		return -ENODEV;
++
 +	if (cmd->phy_address != mac->phy_dev->addr) {
 +		if (mac->hw->mii_bus->phy_map[cmd->phy_address]) {
 +			mac->phy_dev =
@@ -2425,7 +2536,27 @@ index 7f2126b..dd7f6e3 100644
  	}
  
  	return phy_ethtool_sset(mac->phy_dev, cmd);
-@@ -1563,7 +1582,6 @@ static void mtk_get_ethtool_stats(struct net_device *dev,
+@@ -1560,6 +1541,9 @@ static int mtk_nway_reset(struct net_device *dev)
+ {
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 
++	if (!mac->phy_dev)
++		return -ENODEV;
++
+ 	return genphy_restart_aneg(mac->phy_dev);
+ }
+ 
+@@ -1568,6 +1552,9 @@ static u32 mtk_get_link(struct net_device *dev)
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 	int err;
+ 
++	if (!mac->phy_dev)
++		return -ENODEV;
++
+ 	err = genphy_update_link(mac->phy_dev);
+ 	if (err)
+ 		return ethtool_op_get_link(dev);
+@@ -1619,7 +1606,6 @@ static void mtk_get_ethtool_stats(struct net_device *dev,
  		data_src = (u64*)hwstats;
  		data_dst = data;
  		start = u64_stats_fetch_begin_irq(&hwstats->syncp);
@@ -2433,7 +2564,7 @@ index 7f2126b..dd7f6e3 100644
  		for (i = 0; i < ARRAY_SIZE(mtk_ethtool_stats); i++)
  			*data_dst++ = *(data_src + mtk_ethtool_stats[i].offset);
  	} while (u64_stats_fetch_retry_irq(&hwstats->syncp, start));
-@@ -1734,6 +1752,9 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1789,6 +1775,9 @@ static int mtk_probe(struct platform_device *pdev)
  	clk_prepare_enable(eth->clk_gp1);
  	clk_prepare_enable(eth->clk_gp2);
  
@@ -2442,22 +2573,22 @@ index 7f2126b..dd7f6e3 100644
 +
  	eth->dev = &pdev->dev;
  	eth->msg_enable = netif_msg_init(mtk_msg_level, MTK_DEFAULT_MSG_ENABLE);
- 
+ 	INIT_WORK(&eth->pending_work, mtk_pending_work);
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index 48a5292..d737d61 100644
+index 4cfb40c..bbe0346 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -389,6 +389,9 @@ struct mtk_eth {
- 	struct clk			*clk_gp1;
- 	struct clk			*clk_gp2;
+@@ -401,6 +401,9 @@ struct mtk_eth {
  	struct mii_bus			*mii_bus;
+ 	struct work_struct		pending_work;
+ 	struct tasklet_struct		tx_clean_tasklet;
 +
 +	struct device_node		*switch_np;
 +	void				*sw_priv;
  };
  
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
-@@ -418,4 +421,6 @@ void mtk_stats_update_mac(struct mtk_mac *mac);
+@@ -428,4 +431,6 @@ void mtk_stats_update_mac(struct mtk_mac *mac);
  void mtk_w32(struct mtk_eth *eth, u32 val, unsigned reg);
  u32 mtk_r32(struct mtk_eth *eth, unsigned reg);
  
