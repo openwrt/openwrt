@@ -173,7 +173,7 @@ static struct gpio_led wnr2000v3_wmac_leds_gpio[] = {
 	}
 };
 
-/* Blue WLAN LED for: WNR2000v3, WNR1000v2 */
+/* Blue WLAN LED for: WNR2000v3, WNR1000v2, WPN824N */
 static const char *wnr2000v3_wmac_led_name = "netgear:blue:wlan";
 
 static struct gpio_led wnr612v2_leds_gpio[] __initdata = {
@@ -310,10 +310,6 @@ static struct gpio_led wpn824n_wmac_leds_gpio[] = {
 	{
 		.name		= "netgear:green:power",
 		.gpio		= WPN824N_WGPIO_LED_PWR_GREEN,
-		.active_low	= 1,
-	}, {
-		.name		= "netgear:blue:wlan",
-		.gpio		= WPN824N_WGPIO_LED_WLAN_BLUE,
 		.active_low	= 1,
 	}, {
 		.name		= "netgear:blue:wps1",
@@ -604,6 +600,7 @@ static void __init wpn824n_setup(void)
 				 wpn824n_leds_gpio);
 
 	ap9x_pci_setup_wmac_led_pin(0, WPN824N_WGPIO_LED_WLAN_BLUE);
+	ap9x_pci_setup_wmac_led_name(0, wnr2000v3_wmac_led_name);
 	ap9x_pci_setup_wmac_leds(0, wpn824n_wmac_leds_gpio,
 				 ARRAY_SIZE(wpn824n_wmac_leds_gpio));
 }
