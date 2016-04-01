@@ -1,26 +1,36 @@
-From c43e4b52cbf2267047f67c9f65de18ee1ab8bfa2 Mon Sep 17 00:00:00 2001
+From 46560388c476c8471fde7712c10f9fad8d0d1875 Mon Sep 17 00:00:00 2001
 From: Ray Jui <rjui@broadcom.com>
 Date: Wed, 27 Jan 2016 16:52:24 -0600
-Subject: [PATCH] PCI: iproc: Fix BCMA PCIe bus scanning regression
+Subject: [PATCH] PCI: iproc: Allow multiple devices except on PAXC
 
-Commit 943ebae781f5 ("PCI: iproc: Add PAXC interface support") causes
-regression on EP device detection on BCMA based platforms.
+Commit 943ebae781f5 ("PCI: iproc: Add PAXC interface support") only allowed
+device 0, which is a regression on BCMA-based platforms.
 
-Fix the issue by allowing multiple devices to be configured on the same
-bus, for all PAXB based child buses.  In addition, add a check to prevent
-non-zero function from being used on bus 0 (root bus).
+All systems support only one device, a Root Port at 00:00.0, on the root
+bus.  PAXC-based systems support only the Root Port (00:00.0) and a single
+device (with multiple functions) below it, e.g., 01:00.0, 01:00.1, etc.
+Non-PAXC systems support arbitrary devices below the Root Port.
 
+[bhelgaas: changelog, fold in removal of MAX_NUM_PAXC_PF check]
 Fixes: 943ebae781f5 ("PCI: iproc: Add PAXC interface support")
 Reported-by: Rafal Milecki <zajec5@gmail.com>
 Signed-off-by: Ray Jui <rjui@broadcom.com>
 Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 ---
- drivers/pci/host/pcie-iproc.c | 28 +++++++++++-----------------
- 1 file changed, 11 insertions(+), 17 deletions(-)
+ drivers/pci/host/pcie-iproc.c | 29 +++++++++++------------------
+ 1 file changed, 11 insertions(+), 18 deletions(-)
 
 --- a/drivers/pci/host/pcie-iproc.c
 +++ b/drivers/pci/host/pcie-iproc.c
-@@ -170,20 +170,6 @@ static inline void iproc_pcie_ob_write(s
+@@ -64,7 +64,6 @@
+ #define OARR_SIZE_CFG                BIT(OARR_SIZE_CFG_SHIFT)
+ 
+ #define MAX_NUM_OB_WINDOWS           2
+-#define MAX_NUM_PAXC_PF              4
+ 
+ #define IPROC_PCIE_REG_INVALID 0xffff
+ 
+@@ -170,20 +169,6 @@ static inline void iproc_pcie_ob_write(struct iproc_pcie *pcie,
  	writel(val, pcie->base + offset + (window * 8));
  }
  
@@ -41,7 +51,7 @@ Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
  /**
   * Note access to the configuration registers are protected at the higher layer
   * by 'pci_lock' in drivers/pci/access.c
-@@ -199,11 +185,11 @@ static void __iomem *iproc_pcie_map_cfg_
+@@ -199,11 +184,11 @@ static void __iomem *iproc_pcie_map_cfg_bus(struct pci_bus *bus,
  	u32 val;
  	u16 offset;
  
@@ -56,16 +66,16 @@ Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
  		iproc_pcie_write_reg(pcie, IPROC_PCIE_CFG_IND_ADDR,
  				     where & CFG_IND_ADDR_MASK);
  		offset = iproc_pcie_reg_offset(pcie, IPROC_PCIE_CFG_IND_DATA);
-@@ -213,6 +199,14 @@ static void __iomem *iproc_pcie_map_cfg_
+@@ -213,6 +198,14 @@ static void __iomem *iproc_pcie_map_cfg_bus(struct pci_bus *bus,
  			return (pcie->base + offset);
  	}
  
 +	/*
 +	 * PAXC is connected to an internally emulated EP within the SoC.  It
-+	 * allows only one device and supports a limited number of functions.
++	 * allows only one device.
 +	 */
 +	if (pcie->type == IPROC_PCIE_PAXC)
-+		if (slot > 0 || fn >= MAX_NUM_PAXC_PF)
++		if (slot > 0)
 +			return NULL;
 +
  	/* EP device access */
