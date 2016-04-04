@@ -1,0 +1,30 @@
+From 6c8c58b38f17e92691dd648c0e3b66f1a6942433 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 19 Sep 2015 13:25:54 +0200
+Subject: [PATCH] ARM: BCM5301X: Netgear R6250 add USB GPIO
+
+Add GPIO number which is needed to activate the USB power supply.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -34,6 +34,17 @@
+ 		};
+ 	};
+ 
++	axi@18000000 {
++		usb3@23000 {
++			reg = <0x00023000 0x1000>;
++
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			vcc-gpio = <&chipcommon 0 GPIO_ACTIVE_HIGH>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
