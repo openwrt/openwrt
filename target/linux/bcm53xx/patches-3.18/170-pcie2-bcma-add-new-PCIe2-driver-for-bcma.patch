@@ -72,7 +72,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_PCI_BCM5301X) += pci-host-bcm5301x.o
 --- /dev/null
 +++ b/drivers/pci/host/pci-host-bcm5301x.c
-@@ -0,0 +1,460 @@
+@@ -0,0 +1,461 @@
 +/*
 + * Northstar PCI-Express driver
 + * Only supports Root-Complex (RC) mode
@@ -221,6 +221,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +}
 +DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_BROADCOM, 0x8011, bcma_pcie2_fixup_class);
 +DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_BROADCOM, 0x8012, bcma_pcie2_fixup_class);
++DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_BROADCOM, 0xd612, bcma_pcie2_fixup_class);
 +
 +/*
 + * Check link status, return 0 if link is up in RC mode,
