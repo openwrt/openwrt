@@ -19,7 +19,7 @@ $ make menuconfig
 ```
 
 Simply running "make" will build your firmware. It will download all sources, build the cross-compile toolchain, 
-the kernel and all choosen applications.
+the kernel and all choosen applications. **Note: Please make sure you can access google, cause some source files need to be downloaded (翻翻翻）**
 ```
 $ make
 ```
