@@ -13,6 +13,8 @@ $ ./scripts/feeds install -a
 ```
 Use "make menuconfig" to configure your image.
 ```
+$ make defconfig & make prereq
+$ cp intorobot-default.config .config
 $ make menuconfig
 ```
 
