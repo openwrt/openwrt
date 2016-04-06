@@ -1,0 +1,8 @@
+#!/bin/sh /etc/rc.common
+
+START=48
+
+start(){
+	source /usr/bin/set_io_num
+	/usr/bin/gpio-init
+}
