@@ -23,21 +23,41 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-define Profile/marduk
+define Profile/marduk_cc2520
     NAME:=Basic platform profile for Marduk
     PACKAGES:=kmod-i2c kmod-marduk-cc2520 kmod-sound-pistachio-soc \
 		wpan-tools tcpdump uhttpd uboot-envtools \
 		alsa-lib alsa-utils alsa-utils-tests
 endef
 
-define Profile/marduk/Description
+define Profile/marduk_cc2520/Description
         Package set for basic platform support profile for Marduk
         board
 endef
 
-marduk_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
-marduk_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
+marduk_cc2520_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
+marduk_cc2520__UBI_OPTS:="-m 4096 -p 262144 -s 4096"
 
-Image/Build/Profile/marduk=$(call Image/BuildNAND/$(1),$(1),marduk)
+Image/Build/Profile/marduk_cc2520=$(call Image/BuildNAND/$(1),$(1),marduk_cc2520)
 
-$(eval $(call Profile,marduk))
+$(eval $(call Profile,marduk_cc2520))
+
+
+define Profile/marduk_cascoda
+    NAME:=Cascoda platform profile for Marduk
+    PACKAGES:=kmod-i2c kmod-usb-dwc2 kmod-cascoda \
+              wpan-tools tcpdump uboot-envtools
+endef
+
+define Profile/marduk_cascoda/Description
+        Package set for Cascoda platform support profile for Marduk
+        board
+endef
+
+marduk_cascoda_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
+marduk_cascoda_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
+
+Image/Build/Profile/marduk_cascoda=$(call Image/BuildNAND/$(1),$(1),marduk_cascoda)
+
+$(eval $(call Profile,marduk_cascoda))
+
