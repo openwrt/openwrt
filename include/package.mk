@@ -294,7 +294,7 @@ Build/DistCheck=$(call Build/DistCheck/Default,)
 prepare-package-install:
 	@mkdir -p $(PKG_INFO_DIR)
 	@touch $(PKG_INSTALL_STAMP).clean
-	@echo "$(filter-out essential,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
+	@echo "$(filter-out essential nonshared,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
 
 $(PACKAGE_DIR):
 	mkdir -p $@

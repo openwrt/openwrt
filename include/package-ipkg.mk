@@ -88,7 +88,7 @@ _endef=endef
 
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
-    PDIR_$(1):=$(call FeedPackageDir,$(1))
+    PDIR_$(1):=$(call FeedPackageDir,$(1),$(PKG_FLAGS),$(SECTION))
     IPKG_$(1):=$$(PDIR_$(1))/$(1)_$(VERSION)_$(PKGARCH).ipk
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
