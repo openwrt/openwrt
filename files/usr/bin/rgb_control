@@ -1,0 +1,32 @@
+#!/bin/sh
+
+if [ $# == 0 ];then
+echo "------------------------------------------------------------"
+echo "usage:   $0 [kill color blink] [red green blue] [period]"
+echo "example: $0 breath 255 255 255 2000"
+echo "------------------------------------------------------------"
+exit 1
+fi
+
+case "$1" in
+"kill")
+set_led_kill
+;;
+
+"color")
+set_led_kill
+set_led_color $2 $3 $4 
+;;
+
+"blink")
+set_led_kill
+set_led_blink $2 $3 $4 $5 &
+;;
+
+*)
+echo "------------------------------------------------------------" 
+echo "usage:   $0 [kill color blink] [red green blue] [period]"
+echo "example: $0 breath 255 255 255 2000"
+echo "------------------------------------------------------------" 
+;;
+esac

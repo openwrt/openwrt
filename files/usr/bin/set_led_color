@@ -1,0 +1,44 @@
+#!/bin/sh
+## Author: HY Chen
+## Modification Date: 10 Dec. ${blue}015
+## Brief: set the leb color
+#  Red:   gpio#17
+#  Green: gpio#21
+#  blue:  gpio#2
+
+source /usr/bin/set_io_num
+
+if [ "$1" = "" ]; then                              
+  let "duty_red=1"                              
+else
+  if [ "$1" -ge 1 ]; then                                        
+    let "duty_red=1"                              
+  else
+    let "duty_red=0"                              
+  fi
+fi
+
+if [ "$2" = "" ]; then                              
+  let "duty_green=1"                              
+else
+  if [ "$2" -ge 1 ]; then                                        
+    let "duty_green=1"                              
+  else
+    let "duty_green=0"                              
+  fi
+fi
+
+if [ "$3" = "" ]; then                              
+  let "duty_blue=1"                              
+else
+  if [ "$3" -ge 1 ]; then                                        
+    let "duty_blue=1"                              
+  else
+    let "duty_blue=0"                              
+  fi
+fi
+
+echo $duty_red > /sys/class/gpio/gpio${red}/value
+echo $duty_green > /sys/class/gpio/gpio${green}/value
+echo $duty_blue > /sys/class/gpio/gpio${blue}/value
+
