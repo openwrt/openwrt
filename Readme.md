@@ -1,6 +1,6 @@
 This is the buildsystem for the OpenWrt Linux distribution.
 
-You need to have installed
+You need to have installed the following tools
 ```
 $ sudo apt-get install gcc binutils bzip2 flex python perl 
 $ sudo apt-get isntall make findutils grep diffutils unzip gawk subversion zlib1g-dev build-essential
@@ -11,7 +11,7 @@ package/feeds/.
 $ ./scripts/feeds update -a
 $ ./scripts/feeds install -a 
 ```
-Use "make menuconfig" to configure your image.
+Use "make menuconfig" to configure your image. 'intorobot-default.config' is provided for you reference
 ```
 $ make defconfig & make prereq
 $ cp intorobot-default.config .config
