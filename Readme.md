@@ -24,7 +24,9 @@ the kernel and all choosen applications. **Note: Please make sure you can access
 $ make
 ```
 
+
 ** If you have difficulty to download files, please tell us  (chy at molmc dot com) **
+
 You can use "scripts/flashing/flash.sh" for remotely updating your embedded
 system via tftp.
 
