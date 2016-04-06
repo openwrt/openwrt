@@ -1,0 +1,128 @@
+/dts-v1/;
+
+/include/ "mt7620n.dtsi"
+
+/ {
+	compatible = "atom", "ralink,mt7620n-soc";
+	model = "ATOM";
+
+	palmbus@10000000 {
+		gpio1: gpio@638 {
+			status = "okay";
+		};
+		gpio2: gpio@660 {
+			status = "okay";
+		};
+
+		gpio3: gpio@688 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l12805d";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "w25q128";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+          read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+          read-only;
+				};
+
+				Factory: partition@40000 {
+					label = "Factory";
+					reg = <0x40000 0x10000>;
+#read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0xfb0000>;
+				};
+			};
+		};
+	};
+
+	ehci@101c0000 {
+		status = "okay";
+	};
+
+	ohci@101c1000 {
+		status = "okay";
+	};
+
+	ethernet@10100000 {
+		mtd-mac-address = <&Factory 0x4>;
+		ralink,port-map = "wllll";
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&Factory 0>;
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			default {
+				ralink,group = "ephy", "wled", "pa", "i2c", "wdt", "uartf" ,"spi refclk";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		/*Color LED-B*/
+		gpio2 {
+      gpio-export,name = "gpio2";
+			gpio-export,output = <0>;
+      gpio-export,direction_may_change = <1>;
+			/*<&gpio0 2 0> gpio0 denotesthe name of gpio group, 
+				2 denotes pin number in the group, 1 denotes the value of active_low*/
+      gpios = <&gpio0 2 1>;
+		};
+
+		/*Color LED-G*/
+		gpio21 {
+      gpio-export,name = "gpio21";
+			gpio-export,output = <0>;
+      gpio-export,direction_may_change = <1>;
+      gpios = <&gpio0 21 1>;
+		};
+		
+		/*Color LED-R*/
+		gpio17 {
+      gpio-export,name = "gpio17";
+			gpio-export,output = <1>;
+      gpio-export,direction_may_change = <1>;
+      gpios = <&gpio0 17 1>;
+		};
+	};
+
+	gpio-keys-polled {
+  	 compatible = "gpio-keys-polled";
+  	 #address-cells = <1>;
+		 #size-cells = <0>;
+   	 poll-interval = <20>;
+    
+		 reset {
+      	label = "reset";
+      	gpios = <&gpio3 0 1>;
+      	linux,code = <0x198>;
+    	};
+  };
+
+};

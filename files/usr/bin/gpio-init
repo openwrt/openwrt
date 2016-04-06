@@ -1,0 +1,12 @@
+#!/bin/sh
+#Initialize stm32 boot and reset gpios 
+#If you want to change the output value of the gpio, just echo different value to /sys/class/gpio/gpioN/value
+
+source /usr/bin/set_io_num
+
+echo ${pin_boot0} > /sys/class/gpio/export
+echo ${pin_reset} > /sys/class/gpio/export
+
+echo low > /sys/class/gpio/gpio${pin_boot0}/direction
+echo high > /sys/class/gpio/gpio${pin_reset}/direction
+

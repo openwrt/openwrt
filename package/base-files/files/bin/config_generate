@@ -42,7 +42,7 @@ generate_static_network() {
 					json_get_vars type annex firmware tone xfer_mode
 					uci -q batch <<-EOF
 						delete network.dsl
-						set network.dsl='dsl'
+						set network.dsl='$type'
 						set network.dsl.annex='$annex'
 						set network.dsl.firmware='$firmware'
 						set network.dsl.tone='$tone'
@@ -90,7 +90,7 @@ generate_network() {
 		static)
 			local ipaddr
 			case "$1" in
-				lan) ipaddr="192.168.1.1" ;;
+				lan) ipaddr="192.168.8.1" ;;
 				*) ipaddr="192.168.$((addr_offset++)).1" ;;
 			esac
 
@@ -263,11 +263,11 @@ generate_led() {
 		;;
 
 		netdev)
-			local device mode
-			json_get_vars device mode
+			local device
+			json_get_vars device
 			uci -q batch <<-EOF
 				set system.$cfg.trigger='netdev'
-				set system.$cfg.mode='$mode'
+				set system.$cfg.mode='link tx rx'
 				set system.$cfg.dev='$device'
 			EOF
 		;;
@@ -296,19 +296,18 @@ generate_led() {
 		;;
 
 		switch)
-			local port_mask speed_mask
-			json_get_vars port_mask speed_mask
+			local port_mask
+			json_get_vars port_mask
 			uci -q batch <<-EOF
 				set system.$cfg.port_mask='$port_mask'
-				set system.$cfg.speed_mask='$speed_mask'
 			EOF
 		;;
 
-		timer|oneshot)
+		timer)
 			local delayon delayoff
 			json_get_vars delayon delayoff
 			uci -q batch <<-EOF
-				set system.$cfg.trigger='$type'
+				set system.$cfg.trigger='timer'
 				set system.$cfg.delayon='$delayon'
 				set system.$cfg.delayoff='$delayoff'
 			EOF

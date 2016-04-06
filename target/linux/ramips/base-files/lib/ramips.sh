@@ -175,15 +175,6 @@ ramips_board_detect() {
 	*"FreeStation5")
 		name="freestation5"
 		;;
-	*"GL-MT300A")
-		name="gl-mt300a"
-		;;
-	*"GL-MT300N")
-		name="gl-mt300n"
-		;;
-	*"GL-MT750")
-		name="gl-mt750"
-		;;
 	*"HC5661")
 		name="hc5661"
 		;;
@@ -210,15 +201,6 @@ ramips_board_detect() {
 		;;
 	*"IP2202")
 		name="ip2202"
-		;;
-	*"JHR-N805R")
-		name="jhr-n805r"
-		;;
-	*"JHR-N825R")
-		name="jhr-n825r"
-		;;
-	*"JHR-N926R")
-		name="jhr-n926r"
 		;;
 	*"M3")
 		name="m3"
@@ -249,9 +231,6 @@ ramips_board_detect() {
 		;;
 	*"MiWiFi Mini")
 		name="miwifi-mini"
-		;;
-	*"MiWiFi Nano")
-		name="miwifi-nano"
 		;;
 	*"MLW221")
 		name="mlw221"
@@ -294,9 +273,6 @@ ramips_board_detect() {
 		;;
 	*"MZK-W300NH2"*)
 		name="mzk-w300nh2"
-		;;
-	*"MZK-WDPR"*)
-		name="mzk-wdpr"
 		;;
 	*"NA930")
 		name="na930"
@@ -463,6 +439,9 @@ ramips_board_detect() {
 	*"WRTNODE")
 		name="wrtnode"
 		;;
+	*"ATOM")
+		name="atom"
+		;;
 	*"WRTnode2R")
 		name="wrtnode2r"
 		;;
@@ -498,9 +477,6 @@ ramips_board_detect() {
 		;;
 	*"ZBT-WA05")
 		name="zbt-wa05"
-		;;
-	*"ZBT-WE826")
-		name="zbt-we826"
 		;;
 	*"ZBT-WG2626")
 		name="zbt-wg2626"
