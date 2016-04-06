@@ -86,8 +86,8 @@ endif
 endef
 
 define Image/BuildKernel
-	$(call MkDTB,pistachio_$(BOARDNAME))
-	$(call Image/BuildKernel/uImage,$(BOARDNAME))
+	$(call MkDTB,pistachio_$(PROFILE))
+	$(call Image/BuildKernel/uImage,$(PROFILE))
 endef
 
 define Image/InstallKernel/copy
@@ -107,14 +107,14 @@ define Image/InstallKernel/copy
 
 ifneq ($(1),)
 	$(CP) $(KDIR)/pistachio_$(1).dtb $(TARGET_DIR)/boot/
-	ln -sf boot/pistachio_$(1).dtb $(TARGET_DIR)/pistachio_$(1).dtb
+	ln -sf boot/pistachio_$(1).dtb $(TARGET_DIR)/pistachio_$(BOARDNAME).dtb
 endif
 #endif
 
 endef
 
 define Image/InstallKernel
-        $(call Image/InstallKernel/copy,$(BOARDNAME))
+        $(call Image/InstallKernel/copy,$(PROFILE))
 endef
 
 $(eval $(call BuildImage))
