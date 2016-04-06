@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2016 LEDE Project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -280,7 +281,7 @@ define BuildTargets/DumpCurrent
 	 echo 'Target-Name: $(BOARDNAME)$(if $(SUBTARGETS),$(if $(SUBTARGET),))'; \
 	 echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'; \
 	 echo 'Target-Arch: $(ARCH)'; \
-	 echo 'Target-Arch-Packages: $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD))'; \
+	 echo 'Target-Arch-Packages: $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(if $(CPU_TYPE),$(CPU_TYPE),$(ARCH)))'; \
 	 echo 'Target-Features: $(FEATURES)'; \
 	 echo 'Target-Depends: $(DEPENDS)'; \
 	 echo 'Target-Optimization: $(if $(CFLAGS),$(CFLAGS),$(DEFAULT_CFLAGS))'; \
