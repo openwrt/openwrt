@@ -12,6 +12,7 @@ include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=base-files
 PKG_RELEASE:=168
+PKG_FLAGS:=nonshared
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
 PKG_BUILD_DEPENDS:=usign/host

@@ -139,7 +139,7 @@ define Package/libc/Default
   VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
   DEPENDS:=+libgcc
   URL:=$(LIBC_URL)
-  PKG_FLAGS:=hold essential
+  PKG_FLAGS:=hold essential nonshared
 endef
 
 
