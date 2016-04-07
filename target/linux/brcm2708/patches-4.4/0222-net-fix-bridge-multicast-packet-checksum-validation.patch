@@ -1,0 +1,75 @@
+From 966e306c7690f118bedf2f5de94e22e487bd39ec Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Wed, 24 Feb 2016 04:21:42 +0100
+Subject: [PATCH 222/232] net: fix bridge multicast packet checksum validation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We need to update the skb->csum after pulling the skb, otherwise
+an unnecessary checksum (re)computation can ocure for IGMP/MLD packets
+in the bridge code. Additionally this fixes the following splats for
+network devices / bridge ports with support for and enabled RX checksum
+offloading:
+
+[...]
+[   43.986968] eth0: hw csum failure
+[   43.990344] CPU: 3 PID: 0 Comm: swapper/3 Not tainted 4.4.0 #2
+[   43.996193] Hardware name: BCM2709
+[   43.999647] [<800204e0>] (unwind_backtrace) from [<8001cf14>] (show_stack+0x10/0x14)
+[   44.007432] [<8001cf14>] (show_stack) from [<801ab614>] (dump_stack+0x80/0x90)
+[   44.014695] [<801ab614>] (dump_stack) from [<802e4548>] (__skb_checksum_complete+0x6c/0xac)
+[   44.023090] [<802e4548>] (__skb_checksum_complete) from [<803a055c>] (ipv6_mc_validate_checksum+0x104/0x178)
+[   44.032959] [<803a055c>] (ipv6_mc_validate_checksum) from [<802e111c>] (skb_checksum_trimmed+0x130/0x188)
+[   44.042565] [<802e111c>] (skb_checksum_trimmed) from [<803a06e8>] (ipv6_mc_check_mld+0x118/0x338)
+[   44.051501] [<803a06e8>] (ipv6_mc_check_mld) from [<803b2c98>] (br_multicast_rcv+0x5dc/0xd00)
+[   44.060077] [<803b2c98>] (br_multicast_rcv) from [<803aa510>] (br_handle_frame_finish+0xac/0x51c)
+[...]
+
+Fixes: 9afd85c9e455 ("net: Export IGMP/MLD message validation code")
+Reported-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ net/core/skbuff.c | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -2965,6 +2965,24 @@ int skb_append_pagefrags(struct sk_buff
+ EXPORT_SYMBOL_GPL(skb_append_pagefrags);
+ 
+ /**
++ *	skb_push_rcsum - push skb and update receive checksum
++ *	@skb: buffer to update
++ *	@len: length of data pulled
++ *
++ *	This function performs an skb_push on the packet and updates
++ *	the CHECKSUM_COMPLETE checksum.  It should be used on
++ *	receive path processing instead of skb_push unless you know
++ *	that the checksum difference is zero (e.g., a valid IP header)
++ *	or you are setting ip_summed to CHECKSUM_NONE.
++ */
++static unsigned char *skb_push_rcsum(struct sk_buff *skb, unsigned len)
++{
++	skb_push(skb, len);
++	skb_postpush_rcsum(skb, skb->data, len);
++	return skb->data;
++}
++
++/**
+  *	skb_pull_rcsum - pull skb and update receive checksum
+  *	@skb: buffer to update
+  *	@len: length of data pulled
+@@ -4101,9 +4119,9 @@ struct sk_buff *skb_checksum_trimmed(str
+ 	if (!pskb_may_pull(skb_chk, offset))
+ 		goto err;
+ 
+-	__skb_pull(skb_chk, offset);
++	skb_pull_rcsum(skb_chk, offset);
+ 	ret = skb_chkf(skb_chk);
+-	__skb_push(skb_chk, offset);
++	skb_push_rcsum(skb_chk, offset);
+ 
+ 	if (ret)
+ 		goto err;

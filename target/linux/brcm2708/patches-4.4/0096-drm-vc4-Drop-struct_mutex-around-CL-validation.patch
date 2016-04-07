@@ -1,63 +1,74 @@
-From 4dc15a296586679d5b014011e44a093cf962123e Mon Sep 17 00:00:00 2001
+From 69aa18660bbe1ee6524c8220beb2af711146bc7f Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 19 Oct 2015 08:44:35 -0700
-Subject: [PATCH 096/170] drm/vc4: Drop struct_mutex around CL validation.
+Subject: [PATCH 096/232] drm/vc4: Drop struct_mutex around CL validation.
 
 We were using it so that we could make sure that shader validation
 state didn't change while we were validating, but now shader
 validation state is immutable.  The bcl/rcl generation doesn't do any
 other BO dereferencing, and seems to have no other global state
-dependency not covered by job_lock / bo_lock.
+dependency not covered by job_lock / bo_lock.  We only need to hold
+struct_mutex for object unreferencing.
 
 Fixes a lock order reversal between mmap_sem and struct_mutex.
 
 Signed-off-by: Eric Anholt <eric@anholt.net>
 ---
- drivers/gpu/drm/vc4/vc4_gem.c | 12 ++++--------
- 1 file changed, 4 insertions(+), 8 deletions(-)
+ drivers/gpu/drm/vc4/vc4_gem.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
 
 --- a/drivers/gpu/drm/vc4/vc4_gem.c
 +++ b/drivers/gpu/drm/vc4/vc4_gem.c
-@@ -244,13 +244,15 @@ static void
- vc4_queue_submit(struct drm_device *dev, struct vc4_exec_info *exec)
+@@ -439,10 +439,12 @@ fail:
+ }
+ 
+ static void
+-vc4_complete_exec(struct vc4_exec_info *exec)
++vc4_complete_exec(struct drm_device *dev, struct vc4_exec_info *exec)
  {
- 	struct vc4_dev *vc4 = to_vc4_dev(dev);
--	uint64_t seqno = ++vc4->emit_seqno;
-+	uint64_t seqno;
- 	unsigned long irqflags;
+ 	unsigned i;
  
-+	spin_lock_irqsave(&vc4->job_lock, irqflags);
-+
-+	seqno = ++vc4->emit_seqno;
- 	exec->seqno = seqno;
- 	vc4_update_bo_seqnos(exec, seqno);
++	/* Need the struct lock for drm_gem_object_unreference(). */
++	mutex_lock(&dev->struct_mutex);
+ 	if (exec->bo) {
+ 		for (i = 0; i < exec->bo_count; i++)
+ 			drm_gem_object_unreference(&exec->bo[i].bo->base);
+@@ -455,6 +457,7 @@ vc4_complete_exec(struct vc4_exec_info *
+ 		list_del(&bo->unref_head);
+ 		drm_gem_object_unreference(&bo->base.base);
+ 	}
++	mutex_unlock(&dev->struct_mutex);
  
--	spin_lock_irqsave(&vc4->job_lock, irqflags);
- 	list_add_tail(&exec->head, &vc4->job_list);
+ 	kfree(exec);
+ }
+@@ -473,7 +476,7 @@ vc4_job_handle_completed(struct vc4_dev
+ 		list_del(&exec->head);
  
- 	/* If no job was executing, kick ours off.  Otherwise, it'll
-@@ -608,8 +610,6 @@ vc4_submit_cl_ioctl(struct drm_device *d
- 	exec->args = args;
- 	INIT_LIST_HEAD(&exec->unref_list);
+ 		spin_unlock_irqrestore(&vc4->job_lock, irqflags);
+-		vc4_complete_exec(exec);
++		vc4_complete_exec(vc4->dev, exec);
+ 		spin_lock_irqsave(&vc4->job_lock, irqflags);
+ 	}
  
+@@ -525,12 +528,8 @@ vc4_job_done_work(struct work_struct *wo
+ {
+ 	struct vc4_dev *vc4 =
+ 		container_of(work, struct vc4_dev, job_done_work);
+-	struct drm_device *dev = vc4->dev;
+ 
+-	/* Need the struct lock for drm_gem_object_unreference(). */
 -	mutex_lock(&dev->struct_mutex);
--
- 	ret = vc4_cl_lookup_bos(dev, file_priv, exec);
- 	if (ret)
- 		goto fail;
-@@ -636,15 +636,11 @@ vc4_submit_cl_ioctl(struct drm_device *d
- 	/* Return the seqno for our job. */
- 	args->seqno = vc4->emit_seqno;
- 
+ 	vc4_job_handle_completed(vc4);
 -	mutex_unlock(&dev->struct_mutex);
--
+ }
+ 
+ static int
+@@ -639,7 +638,7 @@ vc4_submit_cl_ioctl(struct drm_device *d
  	return 0;
  
  fail:
- 	vc4_complete_exec(exec);
+-	vc4_complete_exec(exec);
++	vc4_complete_exec(vc4->dev, exec);
  
--	mutex_unlock(&dev->struct_mutex);
--
  	return ret;
  }
- 
