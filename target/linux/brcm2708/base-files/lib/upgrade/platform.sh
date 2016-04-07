@@ -1,5 +1,19 @@
+get_magic_at() {
+	local file="$1"
+	local pos="$2"
+	get_image "$file" | dd bs=1 count=2 skip="$pos" 2>/dev/null | hexdump -v -n 2 -e '1/1 "%02x"'
+}
+
 platform_check_image() {
-	# i know no way to verify the image
+	local file="$1"
+	local magic
+
+	magic=$(get_magic_at "$file" 510)
+	[ "$magic" != "55aa" ] && {
+		echo "Failed to verify MBR boot signature."
+		return 1
+	}
+
 	return 0;
 }
 
