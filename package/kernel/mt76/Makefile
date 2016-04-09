@@ -55,7 +55,7 @@ endef
 define KernelPackage/mt76/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	cp \
-		$(if $(CONFIG_TARGET_ramips_mt7628), \
+		$(if $(CONFIG_TARGET_ramips_mt7628) || $(CONFIG_TARGET_ramips_mt7688), \
 			$(PKG_BUILD_DIR)/firmware/mt7628_e1.bin \
 			$(PKG_BUILD_DIR)/firmware/mt7628_e2.bin \
 		) \
