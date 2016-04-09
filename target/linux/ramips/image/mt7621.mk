@@ -11,49 +11,26 @@ define Build/seama-seal
 	$(call Build/seama,-s $@.seama $(1))
 endef
 
-define Build/ubnt-erx-factory-compat
-	echo '21001:6' > $@.compat
-	$(TAR) -cf $@ --transform='s/^.*/compat/' $@.compat
-	$(RM) $@.compat
-endef
-
-define Build/ubnt-erx-factory-kernel
+define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) ]; then \
-		$(TAR) -rf $@ --transform='s/^.*/vmlinux.tmp/' $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE); \
+		echo '21001:6' > $(1).compat; \
+		$(TAR) -cf $(1) --transform='s/^.*/compat/' $(1).compat; \
 		\
-		md5sum --binary $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) | awk '{print $$1}'> $@.md5; \
-		$(TAR) -rf $@ --transform='s/^.*/vmlinux.tmp.md5/' $@.md5; \
-		$(RM) $@.md5; \
+		$(TAR) -rf $(1) --transform='s/^.*/vmlinux.tmp/' $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE); \
+		md5sum --binary $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) | awk '{print $$1}'> $(1).md5; \
+		$(TAR) -rf $(1) --transform='s/^.*/vmlinux.tmp.md5/' $(1).md5; \
+		\
+		echo "dummy" > $(1).rootfs; \
+		$(TAR) -rf $(1) --transform='s/^.*/squashfs.tmp/' $(1).rootfs; \
+		\
+		md5sum --binary $(1).rootfs | awk '{print $$1}'> $(1).md5; \
+		$(TAR) -rf $(1) --transform='s/^.*/squashfs.tmp.md5/' $(1).md5; \
+		\
+		echo '$(BOARD) $(VERSION_CODE) $(VERSION_NUMBER)' > $(1).version; \
+		$(TAR) -rf $(1) --transform='s/^.*/version.tmp/' $(1).version; \
+		\
+		$(CP) $(1) $(BIN_DIR)/; \
 	fi
-endef
-
-define Build/ubnt-erx-factory-rootfs
-	echo "dummy" > $@.rootfs
-	$(TAR) -rf $@ --transform='s/^.*/squashfs.tmp/' $@.rootfs
-
-	md5sum --binary $@.rootfs | awk '{print $$1}'> $@.md5
-	$(TAR) -rf $@ --transform='s/^.*/squashfs.tmp.md5/' $@.md5
-	$(RM) $@.md5
-	$(RM) $@.rootfs
-endef
-
-define Build/ubnt-erx-factory-version
-	echo '$(BOARD) $(VERSION_CODE) $(VERSION_NUMBER)' > $@.version
-	$(TAR) -rf $@ --transform='s/^.*/version.tmp/' $@.version
-	$(RM) $@.version
-endef
-
-# We need kernel+initrams fit into kernel partition
-define Build/ubnt-erx-factory-check-size
-	@[ $$(($(subst k,* 1024,$(subst m, * 1024k,$(1))))) -ge "$$($(TAR) -xf $@ vmlinux.tmp -O | wc -c)" ] || { \
-		echo "WARNING: Initramfs kernel for image $@ is too big (kernel size: $$($(TAR) -xf $@ vmlinux.tmp -O | wc -c), max size $(1))" >&2; \
-		$(RM) -f $@; \
-	}
-
-	@[ "$$($(TAR) -xf $@ vmlinux.tmp -O | wc -c)" -gt 0 ] || { \
-		echo "WARNING: Kernel for image $@ not found" >&2; \
-		$(RM) -f $@; \
-	}
 endef
 
 ifeq ($(SUBTARGET),mt7621)
@@ -134,12 +111,9 @@ define Device/ubnt-erx
   FILESYSTEMS := squashfs
   KERNEL_SIZE := 3145728
   KERNEL := $(KERNEL_DTB) | uImage lzma
-  IMAGES := sysupgrade.tar $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),factory-initramfs.tar)
-  IMAGE/factory-initramfs.tar := ubnt-erx-factory-compat | \
-				 ubnt-erx-factory-kernel | \
-				 ubnt-erx-factory-rootfs | \
-				 ubnt-erx-factory-version | \
-				 ubnt-erx-factory-check-size $$(KERNEL_SIZE)
+  IMAGES := sysupgrade.tar
+  KERNEL_INITRAMFS := $$(KERNEL) | check-size $$(KERNEL_SIZE) | \
+			ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
   IMAGE/sysupgrade.tar := sysupgrade-nand
 endef
 
