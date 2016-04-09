@@ -1,7 +1,7 @@
 From 6f8bfdfe2984467177d2a88982517659ec09ab5d Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 29 Mar 2016 16:41:07 +0200
-Subject: [PATCH 69/78] net: mediatek: fix stop and wakeup of queue
+Subject: [PATCH 69/81] net: mediatek: fix stop and wakeup of queue
 
 The driver supports 2 MACs. Both run on the same DMA ring. If we go
 above/below the TX rings thershold value, we always need to wake/stop

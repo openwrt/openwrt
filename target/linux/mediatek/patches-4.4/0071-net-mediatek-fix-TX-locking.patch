@@ -1,7 +1,7 @@
 From b9df14f712866925856c0ffb2d899511c21e1b8a Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 29 Mar 2016 17:20:01 +0200
-Subject: [PATCH 71/78] net: mediatek: fix TX locking
+Subject: [PATCH 71/81] net: mediatek: fix TX locking
 
 Inside the TX path there is a lock inside the tx_map function. This is
 however too late. The patch moves the lock to the start of the xmit
