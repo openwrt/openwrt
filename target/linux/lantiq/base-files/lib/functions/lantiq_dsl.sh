@@ -639,7 +639,7 @@ line_data() {
 		echo "Line Attenuation (LATN):                  Down: ${latnd}dB / Up: ${latnu}dB"
 		echo "Signal Attenuation (SATN):                Down: ${satnd}dB / Up: ${satnu}dB"
 		echo "Noise Margin (SNR):                       Down: ${snrd}dB / Up: ${snru}dB"
-		echo "Aggregate Transmit Power(ACTATP):         Down: ${actatpd}dB / Up: ${actatpu}dB"
+		echo "Aggregate Transmit Power (ACTATP):        Down: ${actatpd}dB / Up: ${actatpu}dB"
 		echo "Max. Attainable Data Rate (ATTNDR):       Down: ${sattndrd}/s / Up: ${sattndru}/s"
 	fi
 }
