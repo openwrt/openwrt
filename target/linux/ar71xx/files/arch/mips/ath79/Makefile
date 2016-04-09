@@ -151,6 +151,7 @@ obj-$(CONFIG_ATH79_MACH_TL_WA830RE_V2)	+= mach-tl-wa830re-v2.o
 obj-$(CONFIG_ATH79_MACH_TL_WA801ND_V3)  += mach-tl-wa801nd-v3.o
 obj-$(CONFIG_ATH79_MACH_TL_WA901ND)	+= mach-tl-wa901nd.o
 obj-$(CONFIG_ATH79_MACH_TL_WA901ND_V2)	+= mach-tl-wa901nd-v2.o
+obj-$(CONFIG_ATH79_MACH_TL_WA901ND_V4)	+= mach-tl-wa901nd-v4.o
 obj-$(CONFIG_ATH79_MACH_TL_WDR3320_V2)  += mach-tl-wdr3320-v2.o
 obj-$(CONFIG_ATH79_MACH_TL_WDR3500)     += mach-tl-wdr3500.o
 obj-$(CONFIG_ATH79_MACH_TL_WDR4300)     += mach-tl-wdr4300.o
