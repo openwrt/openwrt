@@ -21,12 +21,14 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  #include "b53_regs.h"
  #include "b53_priv.h"
-@@ -1370,6 +1371,20 @@ static int b53_switch_init(struct b53_de
+@@ -1370,6 +1371,23 @@ static int b53_switch_init(struct b53_de
  			sw_dev->cpu_port = 5;
  	}
  
 +	if (of_machine_is_compatible("asus,rt-ac87u"))
 +		sw_dev->cpu_port = 7;
++	else if (of_machine_is_compatible("netgear,r7900"))
++		sw_dev->cpu_port = 8;
 +	else if (of_machine_is_compatible("netgear,r8000"))
 +		sw_dev->cpu_port = 8;
 +	else if (of_machine_is_compatible("netgear,r8500"))
@@ -36,7 +38,8 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	 * Workaround for devices using port 8 (connected to the 3rd iface).
 +	 * For some reason it doesn't work (no packets on eth2).
 +	 */
-+	if (of_machine_is_compatible("netgear,r8000"))
++	if (of_machine_is_compatible("netgear,r7900") ||
++	    of_machine_is_compatible("netgear,r8000"))
 +		sw_dev->cpu_port = 5;
 +
  	/* cpu port is always last */

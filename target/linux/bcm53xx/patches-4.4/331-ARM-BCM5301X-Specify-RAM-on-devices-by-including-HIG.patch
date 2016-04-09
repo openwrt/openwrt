@@ -195,3 +195,15 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	};
  
  	leds {
+--- a/arch/arm/boot/dts/bcm4709-netgear-r7900.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r7900.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	axi@18000000 {
