@@ -12,9 +12,10 @@ case "$board" in
 asus,rt-ac87u)
 	ifname=eth1
 	;;
-netgear,r7900)
-netgear,r8000)
+netgear,r7900 | \
+netgear,r8000 | \
 netgear,r8500)
+
 	ifname=eth2
 	;;
 *)
@@ -24,7 +25,7 @@ esac
 
 # Workaround for devices using eth2 connected to (CPU) switch port 8
 case "$board" in
-netgear,r7900)
+netgear,r7900 | \
 netgear,r8000)
 	ifname=eth0
 	ucidef_add_switch "switch0" \
