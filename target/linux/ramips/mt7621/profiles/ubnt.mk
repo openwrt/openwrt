@@ -8,7 +8,8 @@
 define Profile/UBNT-ERX
 	NAME:=Ubiquiti EdgeRouter X
 	FEATURES+=nand -usb
-	PACKAGES:=-kmod-mt76 -wpad-mini -kmod-cfg80211
+	PACKAGES:=-kmod-mt76 -kmod-rt2800-pci -kmod-cfg80211 \
+			-wpad-mini -iwinfo
 endef
 
 define Profile/UBNT-ERX/Description
