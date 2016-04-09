@@ -33,29 +33,29 @@ define Build/ubnt-erx-factory-image
 	fi
 endef
 
-ifeq ($(SUBTARGET),mt7621)
-  TARGET_DEVICES += mt7621 wsr-600 wsr-1166 dir-860l-b1 firewrt pbr-m1 re6500 sap-g3200u3 ubnt-erx witi wf-2881 zbt-wg2626
-endif
-
 define Device/mt7621
   DTS := MT7621
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
 endef
+TARGET_DEVICES += mt7621
 
 define Device/wsr-600
   DTS := WSR-600
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
 endef
+TARGET_DEVICES += wsr-600
 
 define Device/re6500
   DTS := RE6500
 endef
+TARGET_DEVICES += re6500
 
 define Device/wsr-1166
   DTS := WSR-1166
   IMAGE/sysupgrade.bin := trx | pad-rootfs
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
 endef
+TARGET_DEVICES += wsr-1166
 
 define Device/dir-860l-b1
   DTS := DIR-860L-B1
@@ -71,30 +71,36 @@ define Device/dir-860l-b1
 	seama-seal -m "signature=wrgac13_dlink.2013gui_dir860lb" | \
 	check-size $$$$(IMAGE_SIZE)
 endef
+TARGET_DEVICES += dir-860l-b1
 
 define Device/firewrt
   DTS := FIREWRT
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
 endef
+TARGET_DEVICES += firewrt
 
 define Device/pbr-m1
   DTS := PBR-M1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
 endef
+TARGET_DEVICES += pbr-m1
 
 define Device/sap-g3200u3
   DTS := SAP-G3200U3
 endef
+TARGET_DEVICES += sap-g3200u3
 
 define Device/witi
   DTS := WITI
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
 endef
+TARGET_DEVICES += witi
 
 define Device/zbt-wg2626
   DTS := ZBT-WG2626
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
 endef
+TARGET_DEVICES += zbt-wg2626
 
 define Device/wf-2881
   DTS := WF-2881
@@ -105,6 +111,7 @@ define Device/wf-2881
   KERNEL := $(KERNEL_DTB) | pad-offset 131072 64 | uImage lzma
   IMAGE/sysupgrade.bin := append-kernel | append-ubi | check-size $$$$(IMAGE_SIZE)
 endef
+TARGET_DEVICES += wf-2881
 
 define Device/ubnt-erx
   DTS := UBNT-ERX
@@ -116,6 +123,7 @@ define Device/ubnt-erx
 			ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
   IMAGE/sysupgrade.tar := sysupgrade-nand
 endef
+TARGET_DEVICES += ubnt-erx
 
 # FIXME: is this still needed?
 define Image/Prepare
