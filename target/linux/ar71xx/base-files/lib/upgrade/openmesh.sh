@@ -72,6 +72,11 @@ platform_check_image_openmesh()
 			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
 			return 1
 			;;
+		OM5PAC)
+			[ "$board" = "om5p-ac" ] && break
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
 		MR1750)
 			[ "$board" = "mr1750" ] && break
 			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
@@ -162,7 +167,7 @@ platform_do_upgrade_openmesh()
 			kernel_start_addr1=0x9f1c0000
 			kernel_start_addr2=0x9f8c0000
 			;;
-		OM5P|MR600|MR900|MR1750)
+		OM5P|OM5PAC|MR600|MR900|MR1750)
 			block_size=$((64 * 1024))
 			total_size=7995392
 			kernel_start_addr1=0x9f0b0000
