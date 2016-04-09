@@ -11,7 +11,7 @@ PKG_RELEASE:=1
 include $(INCLUDE_DIR)/package.mk
 
 BRCMFMAC43430_SDIO_REV:=54bab3d6a6d43239c71d26464e6e10e5067ffea7
-BRCMFMAC43430_SDIO_URL:=https://raw.githubusercontent.com/RPi-Distro/firmware-nonfree/$(BRCMFMAC43430_SDIO_REV)/brcm80211/brcm/
+BRCMFMAC43430_SDIO_URL:=@GITHUB/RPi-Distro/firmware-nonfree/$(BRCMFMAC43430_SDIO_REV)/brcm80211/brcm/
 BRCMFMAC43430_SDIO_FILE:=brcmfmac43430-sdio-$(BRCMFMAC43430_SDIO_REV)
 
 define Download/brcmfmac43430_sdio_bin
