@@ -870,6 +870,16 @@ config ATH79_MACH_OM5P_AC
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_OM5P_ACv2
+	bool "OpenMesh OM5P-ACv2 board support"
+	select SOC_QCA955X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_OMY_X1
 	bool "OMYlink OMY X1 support"
 	select SOC_AR934X
