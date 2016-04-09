@@ -12,6 +12,7 @@ case "$board" in
 asus,rt-ac87u)
 	ifname=eth1
 	;;
+dlink,dir-885l | \
 netgear,r7900 | \
 netgear,r8000 | \
 netgear,r8500)
@@ -25,8 +26,10 @@ esac
 
 # Workaround for devices using eth2 connected to (CPU) switch port 8
 case "$board" in
+dlink,dir-885l | \
 netgear,r7900 | \
-netgear,r8000)
+netgear,r8000 | \
+netgear,r8500)
 	ifname=eth0
 	ucidef_add_switch "switch0" \
 		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5t@$ifname"
