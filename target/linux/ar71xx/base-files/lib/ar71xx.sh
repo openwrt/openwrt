@@ -646,6 +646,9 @@ ar71xx_board_detect() {
 	*"OM5P AN")
 		name="om5p-an"
 		;;
+	*"OM5P AC")
+		name="om5p-ac"
+		;;
 	*"OMY-X1")
 		name="omy-x1"
 		;;
