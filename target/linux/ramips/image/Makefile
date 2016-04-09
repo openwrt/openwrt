@@ -260,6 +260,101 @@ ifeq ($(SUBTARGET),mt7621)
 include mt7621.mk
 endif
 
+<<<<<<< HEAD
+=======
+define Device/mt7621
+  DTS := MT7621
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+endef
+
+define Device/wsr-600
+  DTS := WSR-600
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+
+define Device/re6500
+  DTS := RE6500
+endef
+
+define Device/wsr-1166
+  DTS := WSR-1166
+  IMAGE/sysupgrade.bin := trx | pad-rootfs
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+
+define Device/dir-860l-b1
+  DTS := DIR-860L-B1
+  IMAGES += factory.bin
+  KERNEL := kernel-bin | patch-dtb | relocate-kernel | lzma | uImage lzma
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE/sysupgrade.bin := \
+	append-kernel | pad-offset 65536 64 | append-rootfs | \
+	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
+	pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := \
+	append-kernel | pad-offset 65536 64 | append-rootfs | pad-rootfs -x 64 | \
+	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
+	seama-seal -m "signature=wrgac13_dlink.2013gui_dir860lb" | \
+	check-size $$$$(IMAGE_SIZE)
+endef
+
+define Device/firewrt
+  DTS := FIREWRT
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+
+define Device/pbr-m1
+  DTS := PBR-M1
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+
+define Device/sap-g3200u3
+  DTS := SAP-G3200U3
+endef
+
+define Device/witi
+  DTS := WITI
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+
+define Device/zbt-wg2626
+  DTS := ZBT-WG2626
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+
+define Device/wf-2881
+  DTS := WF-2881
+  BLOCKSIZE := 128KiB
+  PAGESIZE := 2048
+  FILESYSTEMS := squashfs
+  IMAGE_SIZE := 132382720
+  KERNEL := $(KERNEL_DTB) | pad-offset 131072 64 | uImage lzma
+  IMAGE/sysupgrade.bin := append-kernel | append-ubi | check-size $$$$(IMAGE_SIZE)
+endef
+
+define Device/ubnt-erx
+  DTS := UBNT-ERX
+  FILESYSTEMS := squashfs
+  KERNEL_SIZE := 3145728
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGES := sysupgrade.tar $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),factory-initramfs.tar)
+  IMAGE/factory-initramfs.tar := ubnt-erx-factory-compat | \
+				 ubnt-erx-factory-kernel | \
+				 ubnt-erx-factory-rootfs | \
+				 ubnt-erx-factory-version | \
+				 ubnt-erx-factory-check-size $$(KERNEL_SIZE)
+  IMAGE/sysupgrade.tar := sysupgrade-nand
+endef
+
+#
+# MT7628 Profiles
+#
+
+Image/Build/Profile/MIWIFI-NANO=$(call BuildFirmware/Default16M/$(1),$(1),miwifi-nano,MIWIFI-NANO)
+Image/Build/Profile/MT7628=$(call BuildFirmware/Default4M/$(1),$(1),mt7628,MT7628)
+Image/Build/Profile/WRTNODE2P=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode2p,WRTNODE2P)
+
+>>>>>>> Adjust image size limit for the D-Link DIR-860L B1
 ifeq ($(SUBTARGET),mt7628)
 include mt7628.mk
 endif
