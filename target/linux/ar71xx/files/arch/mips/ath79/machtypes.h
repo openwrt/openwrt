@@ -239,6 +239,7 @@ enum ath79_mach_type {
 	ATH79_MACH_WPN824N,		/* NETGEAR WPN824N */
 	ATH79_MACH_WP543,		/* Compex WP543 */
 	ATH79_MACH_WPE72,		/* Compex WPE72 */
+	ATH79_MACH_WPJ342,		/* Compex WPJ342 */
 	ATH79_MACH_WPJ344,		/* Compex WPJ344 */
 	ATH79_MACH_WPJ531,		/* Compex WPJ531 */
 	ATH79_MACH_WPJ558,		/* Compex WPJ558 */

@@ -967,6 +967,9 @@ ar71xx_board_detect() {
 	*WPE72)
 		name="wpe72"
 		;;
+	*WPJ342)
+		name="wpj342"
+		;;
 	*WPJ344)
 		name="wpj344"
 		;;
