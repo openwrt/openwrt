@@ -430,8 +430,8 @@ latency_delay() {
 	sidd=$(scale_latency $idd)
 
 	if [ "$action" = "lucistat" ]; then
-		echo "dsl.latency_num_down=\"$sidu\""
-		echo "dsl.latency_num_up=\"$sidd\""
+		echo "dsl.latency_num_down=\"$sidd\""
+		echo "dsl.latency_num_up=\"$sidu\""
 		echo "dsl.latency_s_down=\"$idd_s\""
 		echo "dsl.latency_s_up=\"$idu_s\""
 	else
