@@ -255,6 +255,7 @@ platform_check_image() {
 	rw2458n | \
 	wpj531 | \
 	wndap360 | \
+	wpj342 | \
 	wpj344 | \
 	wzr-hp-g300nh2 | \
 	wzr-hp-g300nh | \
