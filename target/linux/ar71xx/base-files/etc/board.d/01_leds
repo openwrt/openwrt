@@ -394,6 +394,11 @@ om5p-an)
 	ucidef_set_led_netdev "port2" "port2" "om5p:blue:lan" "eth1"
 	;;
 
+om5p-ac)
+	ucidef_set_led_netdev "port1" "port1" "om5pac:blue:lan" "eth0"
+	ucidef_set_led_netdev "port2" "port2" "om5pac:blue:wan" "eth1"
+	;;
+
 omy-x1)
 	ucidef_set_led_default "power" "POWER" "omy:green:power" "1"
 	ucidef_set_led_default "wan" "WAN" "omy:green:wan" "eth0"

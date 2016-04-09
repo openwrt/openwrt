@@ -214,6 +214,9 @@ get_status_led() {
 	om5p-an)
 		status_led="om5p:blue:power"
 		;;
+	om5p-ac)
+		status_led="om5pac:blue:power"
+		;;
 	omy-x1)
 		status_led="omy:green:power"
 		;;
