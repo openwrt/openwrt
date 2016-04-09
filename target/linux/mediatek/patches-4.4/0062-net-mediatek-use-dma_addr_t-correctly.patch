@@ -1,7 +1,7 @@
 From 26c749e825e87e8be46498be7ac425e83b0f22c6 Mon Sep 17 00:00:00 2001
 From: Arnd Bergmann <arnd@arndb.de>
 Date: Mon, 14 Mar 2016 15:07:10 +0100
-Subject: [PATCH 62/78] net: mediatek: use dma_addr_t correctly
+Subject: [PATCH 62/81] net: mediatek: use dma_addr_t correctly
 
 dma_alloc_coherent() expects a dma_addr_t pointer as its argument,
 not an 'unsigned int', and gcc correctly warns about broken

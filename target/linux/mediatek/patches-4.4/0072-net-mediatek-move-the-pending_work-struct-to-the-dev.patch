@@ -1,7 +1,7 @@
 From 147dab4408adcccf702f8c5143e9c6b91f746790 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 29 Mar 2016 17:24:24 +0200
-Subject: [PATCH 72/78] net: mediatek: move the pending_work struct to the
+Subject: [PATCH 72/81] net: mediatek: move the pending_work struct to the
  device generic struct
 
 The worker always touches both netdevs. It is ethernet core and not MAC

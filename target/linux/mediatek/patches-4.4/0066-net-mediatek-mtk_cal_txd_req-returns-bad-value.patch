@@ -1,7 +1,7 @@
 From 1212704e8270f0e673e10a49960318ade0096cf9 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 22 Mar 2016 04:42:27 +0100
-Subject: [PATCH 66/78] net: mediatek: mtk_cal_txd_req() returns bad value
+Subject: [PATCH 66/81] net: mediatek: mtk_cal_txd_req() returns bad value
 
 The code used to also support the PDMA engine, which had 2 packet pointers
 per descriptor. Because of this we have to divide the result by 2 and round

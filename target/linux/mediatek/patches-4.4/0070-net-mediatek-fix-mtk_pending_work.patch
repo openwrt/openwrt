@@ -1,7 +1,7 @@
 From a2dfb33c8a0dc03fe2ec2121490df2b9352febef Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 29 Mar 2016 17:00:47 +0200
-Subject: [PATCH 70/78] net: mediatek: fix mtk_pending_work
+Subject: [PATCH 70/81] net: mediatek: fix mtk_pending_work
 
 The driver supports 2 MACs. Both run on the same DMA ring. If we hit a TX
 timeout we need to stop both netdevs before retarting them again. If we
