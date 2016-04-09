@@ -73,4 +73,14 @@
 	otg@101c0000 {
 		status = "okay";
 	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		lcd_ctrl1 {
+			gpio-export,name = "lcd_ctrl1";
+			gpio-export,output = <0>;
+			gpios = <&gpio0 1 0>;
+		};
+	};
 };
