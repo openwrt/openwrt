@@ -25,7 +25,7 @@
 
 define Profile/marduk
     NAME:=Basic platform profile for Marduk
-    PACKAGES:=kmod-i2c kmod-usb-dwc2 kmod-marduk-cc2520 kmod-sound-pistachio-soc \
+    PACKAGES:=kmod-i2c kmod-marduk-cc2520 kmod-sound-pistachio-soc \
 		wpan-tools tcpdump uhttpd uboot-envtools \
 		alsa-lib alsa-utils alsa-utils-tests
 endef
