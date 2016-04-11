@@ -41,23 +41,3 @@ marduk_cc2520__UBI_OPTS:="-m 4096 -p 262144 -s 4096"
 Image/Build/Profile/marduk_cc2520=$(call Image/BuildNAND/$(1),$(1),marduk_cc2520)
 
 $(eval $(call Profile,marduk_cc2520))
-
-
-define Profile/marduk_cascoda
-    NAME:=Cascoda platform profile for Marduk
-    PACKAGES:=kmod-i2c kmod-usb-dwc2 kmod-cascoda \
-              wpan-tools tcpdump uboot-envtools
-endef
-
-define Profile/marduk_cascoda/Description
-        Package set for Cascoda platform support profile for Marduk
-        board
-endef
-
-marduk_cascoda_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
-marduk_cascoda_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
-
-Image/Build/Profile/marduk_cascoda=$(call Image/BuildNAND/$(1),$(1),marduk_cascoda)
-
-$(eval $(call Profile,marduk_cascoda))
-
