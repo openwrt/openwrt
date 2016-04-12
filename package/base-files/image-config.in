@@ -170,7 +170,7 @@ if VERSIONOPT
 	config VERSION_REPO
 		string
 		prompt "Release repository"
-		default "http://downloads.lede-project.org/snapshots/trunk/%S/packages"
+		default "http://downloads.lede-project.org/snapshots"
 		help
 			This is the repository address embedded in the image, it defaults
 			to the trunk snapshot repo; the url may contain the following placeholders:
@@ -185,6 +185,7 @@ if VERSIONOPT
 			 %d .. Distribution name or "lede", lowercase
 			 %T .. Target name
 			 %S .. Target/Subtarget name
+			 %A .. Package architecture
 			 %t .. Build taint flags, e.g. "no-all busybox"
 			 %M .. Manufacturer name or "Lede"
 			 %P .. Product name or "Generic"
