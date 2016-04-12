@@ -53,7 +53,8 @@ ifeq ($(CONFIG_IB_STANDALONE),)
 			cp "$(PACKAGE_DIR)/$$path" "$(PKG_BUILD_DIR)/packages/$$path"; \
 		done
 else
-	$(CP) $(PACKAGE_DIR) $(PKG_BUILD_DIR)/packages
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/packages
+	find $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.ipk' -exec $(CP) {} $(PKG_BUILD_DIR)/packages/ \;
 endif
 
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
