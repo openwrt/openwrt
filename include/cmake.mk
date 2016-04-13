@@ -1,3 +1,5 @@
+cmake_bool = $(patsubst %,-D%:BOOL=$(if $($(1)),ON,OFF),$(2))
+
 PKG_INSTALL:=1
 
 ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
