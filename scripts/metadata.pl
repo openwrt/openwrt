@@ -849,8 +849,8 @@ sub gen_package_subdirs() {
 	parse_package_metadata($ARGV[0]) or exit 1;
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
 		my $pkg = $package{$name};
-		if ($pkg->{name} && $pkg->{package_subdir}) {
-			print "Package/$name/subdir = $pkg->{package_subdir}\n";
+		if ($pkg->{name} && $pkg->{repository}) {
+			print "Package/$name/subdir = $pkg->{repository}\n";
 		}
 	}
 }
