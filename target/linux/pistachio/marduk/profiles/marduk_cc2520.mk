@@ -36,7 +36,7 @@ define Profile/marduk_cc2520/Description
 endef
 
 marduk_cc2520_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
-marduk_cc2520__UBI_OPTS:="-m 4096 -p 262144 -s 4096"
+marduk_cc2520_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
 
 Image/Build/Profile/marduk_cc2520=$(call Image/BuildNAND/$(1),$(1),marduk_cc2520)
 
