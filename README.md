@@ -35,8 +35,8 @@ there are some key paths where IMG have added solutions:
 | :----               				| :----                                                							|
 | target/linux/pistachio			| IMG pistachio SoC based board configs and makefiles   						|
 | target/linux/pistachio/config-4.1		| IMG pistachio SoC specific kernel config							        |
-| target/linux/pistachio/creator-platform.config| IMG creator marduk platform specific openwrt config							| target/linux/pistachio/marduk/profiles/maruk.mk	| IMG pistachio SoC based Marduk platform profile			|
-
+| target/linux/pistachio/marduk/profiles/marduk_cc2520.mk	| IMG Marduk platform profile with TI cc2520		|
+| target/linux/pistachio/marduk/profiles/marduk_ca8210.mk	| IMG Marduk platform profile with cascoda ca8210  |
 ## Getting started
 
 Firstly, to obtain a copy of the (Ci40) Marduk platform supported OpenWrt source code:
@@ -60,25 +60,28 @@ Load Marduk platform specific openwrt configuration for Pistachio.
 
 1. Select the "Target System" as IMG MIPS Pistachio
 
-    Target System (Atheros AR7xxx/AR9xxx) --->(X) IMG MIPS Pistachio
+        Target System (Atheros AR7xxx/AR9xxx) --->(X) IMG MIPS Pistachio
 
 2. Check the "Target Profile" is set to Basic platform profile for Marduk
 
-    Target Profile (Basic platform profile for Marduk)  ---> (X) Basic platform profile for Marduk
+        Target Profile (Basic platform profile for Marduk)  ---> (X) Basic platform profile for Marduk
+                                                                 ( ) Cascoda ca8210 platform profile for Marduk
 
-You can also load Marduk platform specific openwrt configuration for Pistachio by pre-defined config.
+You can also load Marduk platform specific openwrt configuration for Pistachio by adding following into .config.
 
-    $ cat target/linux/pistachio/creator-platform.config > .config
+    $ echo "CONFIG_TARGET_pistachio=y" > .config
+    $ echo "CONFIG_TARGET_pistachio_marduk_marduk_cc2520=y" >> .config
+
 
 Now build OpenWrt in standard way:
 
     $ make V=s -j1
 
-Once the build is completed, you will find the resulting output i.e. images, dtbs and rootfs at "bin/pistachio".
-- openwrt-pistachio-pistachio_marduk-uImage
-- openwrt-pistachio-pistachio_marduk-uImage-initramfs
-- openwrt-pistachio-marduk-marduk-rootfs.tar.gz
-- pistachio_marduk.dtb
+Once the build is completed, you will find the resulting output i.e. images, dtbs and rootfs at "bin/pistachio", depending upon the selected profile.
+- openwrt-pistachio-pistachio_marduk_cc2520-uImage
+- openwrt-pistachio-pistachio_marduk_cc2520-uImage-initramfs
+- openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz
+- pistachio_marduk_cc2520.dtb
 
 ## Customising your OpenWrt
 You can configure OpenWrt from scratch but it's best to start from a base profile
@@ -86,13 +89,16 @@ e.g. the one for the IMG pistachio board as it has some useful defaults.
 
 Simply select the package you need and add into the marduk profile:
 
-    $ vi target/linux/pistachio/marduk/profiles/marduk.mk
+    $ vi target/linux/pistachio/marduk/profiles/marduk_cc2520.mk
 
 If you want to add new package, then simply add package name in the list of packages:
 
     define Profile/marduk
-    NAME:=Basic platform profile for Marduk
-    PACKAGES:=kmod-i2c wpan-tools tcpdump uhttpd
+    NAME:=Basic platform profile for Marduk?
+    PACKAGES:=kmod-i2c kmod-marduk-cc2520 kmod-sound-pistachio-soc \
+                wpan-tools tcpdump uhttpd uboot-envtools \
+                alsa-lib alsa-utils alsa-utils-tests
+
     endef
 
 
@@ -159,12 +165,12 @@ Mount the usb drive:
 
     $ sudo mount /dev/sdx1 /mnt/
 
-To put filesystem on USB you will need 'openwrt-pistachio-marduk-marduk-rootfs.tar.gz' which is available at "openwrt/bin/pistachio"
+To put filesystem on USB you will need 'openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz' which is available at "openwrt/bin/pistachio"
 
-Extract the openwrt-pistachio-marduk-marduk-rootfs.tar.gz onto the partition you just created
+Extract the openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz onto the partition you just created
 
     # sudo rm -rf /mnt/*
-    # sudo tar -xf bin/pistachio/openwrt-pistachio-marduk-marduk-rootfs.tar.gz -C /mnt/
+    # sudo tar -xf bin/pistachio/openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz -C /mnt/
     # sudo umount /mnt/
 
 
@@ -208,12 +214,12 @@ Mount the SD media:
 
     $ sudo mount /dev/sdc1 /mnt/
 
-To put filesystem on SD you will need 'openwrt-pistachio-marduk-marduk-rootfs.tar.gz' which is available at "openwrt/bin/pistachio"
+To put filesystem on SD you will need 'openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz' which is available at "openwrt/bin/pistachio"
 
-Extract the openwrt-pistachio-marduk-marduk-rootfs.tar.gz onto the partition you just created
+Extract the openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz onto the partition you just created
 
     # sudo rm -rf /mnt/*
-    # sudo tar -xf bin/pistachio/openwrt-pistachio-marduk-marduk-rootfs.tar.gz -C /mnt/
+    # sudo tar -xf bin/pistachio/openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz -C /mnt/
     # sudo umount /mnt/
 
 Run "sync" command to synchronize the data properly on the SD card.
@@ -234,8 +240,8 @@ Type following command to boot from SD.
 For TFTP boot, we need TFTP server serving kernel image (uImage), dtb (*.dtb)
 and initramfs filesystem.
 
-    openwrt$ sudo cp bin/pistachio/openwrt-pistachio-pistachio_marduk-uImage-initramfs /tftpboot/uImage
-    openwrt$ sudo cp bin/pistachio/pistachio_marduk.dtb /tftpboot
+    openwrt$ sudo cp bin/pistachio/openwrt-pistachio-pistachio_marduk_cc2520-uImage-initramfs /tftpboot/uImage
+    openwrt$ sudo cp bin/pistachio/pistachio_marduk_cc2520.dtb /tftpboot
 
 ### Setting up TFTP Server
 
