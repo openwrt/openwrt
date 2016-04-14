@@ -64,8 +64,8 @@ Load Marduk platform specific openwrt configuration for Pistachio.
 
 2. Check the "Target Profile" is set to Basic platform profile for Marduk
 
-        Target Profile (Basic platform profile for Marduk)  ---> (X) Basic platform profile for Marduk
-                                                                 ( ) Cascoda ca8210 platform profile for Marduk
+        Target Profile (Basic platform profile for Marduk)  ---> (X) Basic platform profile for Marduk with TI cc2520
+                                                                 ( ) Basic platform profile for Marduk with Cascoda ca8210
 
 You can also load Marduk platform specific openwrt configuration for Pistachio by adding following into .config.
 
