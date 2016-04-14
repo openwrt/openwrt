@@ -24,7 +24,7 @@
 #
 
 define Profile/marduk_cc2520
-    NAME:=Basic platform profile for Marduk
+    NAME:=Basic platform profile for Marduk with TI cc2520
     PACKAGES:=kmod-i2c kmod-marduk-cc2520 kmod-sound-pistachio-soc \
 		wpan-tools tcpdump uhttpd uboot-envtools \
 		alsa-lib alsa-utils alsa-utils-tests \
@@ -32,7 +32,7 @@ define Profile/marduk_cc2520
 endef
 
 define Profile/marduk_cc2520/Description
-        Package set for basic platform support profile for Marduk
+        Package set for basic platform support profile for Marduk with TI cc2520
         board
 endef
 
