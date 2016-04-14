@@ -1,0 +1,11 @@
+config wifi-device  radio0
+        option type     mac80211
+        option channel  36
+        option hwmode   11a
+        option path     'virtual/uccp420/uccwlan'
+        option htmode   VHT80
+
+config wifi-iface
+        option device   radio0
+        option network  sta
+        option mode     sta
