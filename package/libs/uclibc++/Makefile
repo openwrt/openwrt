@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (c) 2016 LEDE project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uclibc++
 PKG_VERSION:=0.2.4
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=uClibc++-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://cxx.uclibc.org/src/
@@ -65,6 +66,12 @@ MAKE_FLAGS:= \
 	check_as_needed=
 
 # check_as_needed overrides dependency on libgcc_s
+
+define Build/Prepare
+	$(PKG_UNPACK)
+	$(SED) 's/\r$$$$//' $(PKG_BUILD_DIR)/include/unwind-cxx.h
+	$(Build/Patch)
+endef
 
 define Build/Configure
 	if [ -f ./files/config.$(UCLIBC_TARGET_ARCH) ]; then \
