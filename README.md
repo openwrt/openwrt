@@ -169,14 +169,14 @@ To put filesystem on USB you will need 'openwrt-pistachio-marduk-marduk_cc2520-r
 
 Extract the openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz onto the partition you just created
 
-    # sudo rm -rf /mnt/*
-    # sudo tar -xf bin/pistachio/openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz -C /mnt/
-    # sudo umount /mnt/
+    $ sudo rm -rf /mnt/*
+    $ sudo tar -xf bin/pistachio/openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz -C /mnt/
+    $ sudo umount /mnt/
 
 
 Run "sync" command to synchronize the data properly on the USB drive.
 
-    # sync
+    $ sync
 
 
 Connect the USB drive and power on the board.
@@ -218,13 +218,13 @@ To put filesystem on SD you will need 'openwrt-pistachio-marduk-marduk_cc2520-ro
 
 Extract the openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz onto the partition you just created
 
-    # sudo rm -rf /mnt/*
-    # sudo tar -xf bin/pistachio/openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz -C /mnt/
-    # sudo umount /mnt/
+    $ sudo rm -rf /mnt/*
+    $ sudo tar -xf bin/pistachio/openwrt-pistachio-marduk-marduk_cc2520-rootfs.tar.gz -C /mnt/
+    $ sudo umount /mnt/
 
 Run "sync" command to synchronize the data properly on the SD card.
 
-    # sync
+    $ sync
 
 Connect the SD card in the slot and power on the board.
 
@@ -240,8 +240,8 @@ Type following command to boot from SD.
 For TFTP boot, we need TFTP server serving kernel image (uImage), dtb (*.dtb)
 and initramfs filesystem.
 
-    openwrt$ sudo cp bin/pistachio/openwrt-pistachio-pistachio_marduk_cc2520-uImage-initramfs /tftpboot/uImage
-    openwrt$ sudo cp bin/pistachio/pistachio_marduk_cc2520.dtb /tftpboot
+    $ sudo cp bin/pistachio/openwrt-pistachio-pistachio_marduk_cc2520-uImage-initramfs /tftpboot/uImage
+    $ sudo cp bin/pistachio/pistachio_marduk_cc2520.dtb /tftpboot
 
 ### Setting up TFTP Server
 
@@ -273,7 +273,7 @@ Now use Serial Console to connect device to host PC. Switch on device and press 
 
 To use tftp boot, set following environment variables.
 
-    # setenv ethaddr <xx:xx:xx:xx:xx:xx> # Set mac address for Ethernet
+    $ pistachio # setenv ethaddr <xx:xx:xx:xx:xx:xx> # Set mac address for Ethernet
 (To generate mac address use command 
 
     "echo "e2:"`od /dev/random -N5 -t x1 -An | sed 's/ /:/g' | cut -c1 --complement`"
@@ -281,14 +281,14 @@ To use tftp boot, set following environment variables.
  on host machine)
 However beware of running out of IP addresses if we keep on switching the mac addresses.
 
-    # setenv serverip <server_ip> # Server IP address where TFTP and an NFS server is running
-    # saveenv # Save environment variables
+    $ pistachio # setenv serverip <server_ip> # Server IP address where TFTP and an NFS server is running
+    $ pistachio # saveenv # Save environment variables
 
 _note: No need to set these environment variables for next boot since these are already saved._
 
 Now start tftp boot:
 
-    # run ethboot
+    $ pistachio # run ethboot
 
 
 You should see the logs on the console as below:
