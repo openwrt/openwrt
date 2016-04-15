@@ -1,0 +1,85 @@
+From 0dfc7f687917a93175d469a2dc1254fd2f77fb63 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 29 Jun 2015 07:22:16 +0200
+Subject: [PATCH] ARM: BCM5301X: Enable UART0 on tested devices
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+There are two possible UARTs so we have (both of) them disabled by
+default. Override uart0 status on devices that were verified to use it.
+In case of Netgear R6250 also drop an old (and invalid) overwrite. It
+doesn't have uart1 connected.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+
+--- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -135,3 +135,7 @@
+ 		};
+ 	};
+ };
++
++&uart0 {
++	status = "okay";
++};
+--- a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
++++ b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
+@@ -55,3 +55,7 @@
+ 		};
+ 	};
+ };
++
++&uart0 {
++	status = "okay";
++};
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -24,16 +24,6 @@
+ 		reg = <0x00000000 0x08000000>;
+ 	};
+ 
+-	chipcommonA {
+-		uart0: serial@0300 {
+-			status = "okay";
+-		};
+-
+-		uart1: serial@0400 {
+-			status = "okay";
+-		};
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -92,3 +82,7 @@
+ 		};
+ 	};
+ };
++
++&uart0 {
++	status = "okay";
++};
+--- a/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
++++ b/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
+@@ -118,3 +118,7 @@
+ 		};
+ 	};
+ };
++
++&uart0 {
++	status = "okay";
++};
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+@@ -122,3 +122,7 @@
+ 		};
+ 	};
+ };
++
++&uart0 {
++	status = "okay";
++};
