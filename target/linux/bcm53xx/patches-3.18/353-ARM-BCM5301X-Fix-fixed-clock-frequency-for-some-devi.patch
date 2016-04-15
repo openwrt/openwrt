@@ -24,9 +24,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +		};
 +	};
 +
- 	axi@18000000 {
- 		usb2@21000 {
- 			reg = <0x00021000 0x1000>;
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
 --- a/arch/arm/boot/dts/bcm47094-netgear-r8500.dts
 +++ b/arch/arm/boot/dts/bcm47094-netgear-r8500.dts
 @@ -25,6 +25,12 @@
