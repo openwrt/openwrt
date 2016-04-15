@@ -338,10 +338,43 @@ You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loW
 
         $root@OpenWrt:/# /etc/init.d/network restart
 
+##Writing UBIFS image to Flash
+
+For setting up a tftp server on your development machine, refer **TFTP Boot** section above :-
+
+1. Init flash device on given SPI bus and chip select
+
+        sf probe 1:0
+
+2. Obtain an IP address
+
+        dhcp
+
+3. Define flash/nand partitions
+
+        mtdpart default
+
+4. Erase partition
+
+        nand erase.part firmware0
+
+5. Set serverip as ip address of tftp server and initialize tftpboot
+
+        setenv serverip <development_PC_IP> && tftpboot 0xe000000
+
+6. Initialize write to nand device
+
+        nand write 0xe000000 firmware0 ${filesize};
+
+7. Save ubifs boot environment variables
+
+        setenv nandroot "ubi.mtd=firmware0 root=ubi0:rootfs rootfstype=ubifs"
+        setenv bootcmd 'run nandboot'
+        saveenv
+
 ### Known Issues:
 
 - Cleaned up kernel patches will be upstreamed soon.
-- Booting from flash is not included.
 - OPKG support is not implemented.
 
 
