@@ -27,7 +27,7 @@ define Profile/marduk_cc2520
     NAME:=Basic platform profile for Marduk with TI cc2520
     PACKAGES:=kmod-i2c kmod-marduk-cc2520 kmod-sound-pistachio-soc \
 		wpan-tools tcpdump uhttpd uboot-envtools \
-		alsa-lib alsa-utils alsa-utils-tests \
+		alsa-lib alsa-utils alsa-utils-tests i2c-tools \
 		iw hostapd wpa-supplicant kmod-uccp420wlan kmod-cfg80211
 endef
 
