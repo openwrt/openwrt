@@ -314,17 +314,33 @@ $root@OpenWrt:/#
 $root@OpenWrt:/#
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can check "ifconfig -a" to check list of interfaces. Ethernet and 6loWPAN should be up, but WiFi is not yet configured.
-Note that 6loWPAN IP has been hardcoded to 2001:1418:0100::1/48.
-You can change that by editing /etc/config/network script and restarting it.
 
-    $ /etc/init.d/network restart
+You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loWPAN should be up.
 
+####Note:
+
+1. 6loWPAN IP has been hardcoded to 2001:1418:0100::1/48. You can change that by editing /etc/config/network script and restarting it.
+
+        $root@OpenWrt:/# /etc/init.d/network restart
+
+2. You can set ssid and password for WiFi either at compile time from file target/linux/pistachio/base-files/etc/uci-defaults/config/wireless
+
+
+        config wifi-iface
+            option device       radio0
+            option network      sta
+            option mode         sta
+            option ssid         <XYZ>
+            option encryption   psk2
+            option key          <Password>
+
+    OR after booting update /etc/config/wireless as above and restart the network by running following command from CLI.
+
+        $root@OpenWrt:/# /etc/init.d/network restart
 
 ### Known Issues:
 
 - Cleaned up kernel patches will be upstreamed soon.
-- WiFi is not configured in this build.
 - Booting from flash is not included.
 - OPKG support is not implemented.
 
