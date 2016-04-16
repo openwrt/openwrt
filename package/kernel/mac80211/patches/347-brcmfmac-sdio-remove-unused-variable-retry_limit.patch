@@ -1,0 +1,24 @@
+From: Colin Ian King <colin.king@canonical.com>
+Date: Sun, 20 Mar 2016 17:34:52 +0000
+Subject: [PATCH] brcmfmac: sdio: remove unused variable retry_limit
+
+retry_limit has never been used during the life of this driver, so
+we may as well remove it as it is redundant.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Reviewed-by: Julian Calaby <julian.calaby@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -535,9 +535,6 @@ static int qcount[NUMPRIO];
+ 
+ #define RETRYCHAN(chan) ((chan) == SDPCM_EVENT_CHANNEL)
+ 
+-/* Retry count for register access failures */
+-static const uint retry_limit = 2;
+-
+ /* Limit on rounding up frames */
+ static const uint max_roundup = 512;
+ 

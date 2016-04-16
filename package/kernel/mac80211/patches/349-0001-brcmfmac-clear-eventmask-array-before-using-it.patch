@@ -1,0 +1,27 @@
+From: Hante Meuleman <hante.meuleman@broadcom.com>
+Date: Mon, 11 Apr 2016 11:35:21 +0200
+Subject: [PATCH] brcmfmac: clear eventmask array before using it
+
+When the event_msgs iovar is set an array is used to configure the
+enabled events. This arrays needs to nulled before configuring
+otherwise unhandled events will be enabled. This solves a problem
+where in case of wowl the host got woken by an incorrectly enabled
+event.
+
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Signed-off-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c
+@@ -371,6 +371,7 @@ int brcmf_fweh_activate_events(struct br
+ 	int i, err;
+ 	s8 eventmask[BRCMF_EVENTING_MASK_LEN];
+ 
++	memset(eventmask, 0, sizeof(eventmask));
+ 	for (i = 0; i < BRCMF_E_LAST; i++) {
+ 		if (ifp->drvr->fweh.evt_handler[i]) {
+ 			brcmf_dbg(EVENT, "enable event %s\n",
