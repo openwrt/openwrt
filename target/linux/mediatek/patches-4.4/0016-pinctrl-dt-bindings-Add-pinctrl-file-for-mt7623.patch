@@ -17,8 +17,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-mt7623.c
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-mtk-mt7623.h
 
-diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
-index 13e9939..78654a8 100644
 --- a/drivers/pinctrl/mediatek/Kconfig
 +++ b/drivers/pinctrl/mediatek/Kconfig
 @@ -15,6 +15,12 @@ config PINCTRL_MT2701
@@ -34,11 +32,9 @@ index 13e9939..78654a8 100644
  config PINCTRL_MT8135
  	bool "Mediatek MT8135 pin control" if COMPILE_TEST && !MACH_MT8135
  	depends on OF
-diff --git a/drivers/pinctrl/mediatek/Makefile b/drivers/pinctrl/mediatek/Makefile
-index da30314..1be2f3f 100644
 --- a/drivers/pinctrl/mediatek/Makefile
 +++ b/drivers/pinctrl/mediatek/Makefile
-@@ -3,6 +3,7 @@ obj-$(CONFIG_PINCTRL_MTK_COMMON)	+= pinctrl-mtk-common.o
+@@ -3,6 +3,7 @@ obj-$(CONFIG_PINCTRL_MTK_COMMON)	+= pinc
  
  # SoC Drivers
  obj-$(CONFIG_PINCTRL_MT2701)		+= pinctrl-mt2701.o
@@ -46,9 +42,6 @@ index da30314..1be2f3f 100644
  obj-$(CONFIG_PINCTRL_MT8135)		+= pinctrl-mt8135.o
  obj-$(CONFIG_PINCTRL_MT8127)		+= pinctrl-mt8127.o
  obj-$(CONFIG_PINCTRL_MT8173)		+= pinctrl-mt8173.o
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mt7623.c b/drivers/pinctrl/mediatek/pinctrl-mt7623.c
-new file mode 100644
-index 0000000..bf0d05b
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-mt7623.c
 @@ -0,0 +1,380 @@
@@ -432,9 +425,6 @@ index 0000000..bf0d05b
 +}
 +
 +arch_initcall(mtk_pinctrl_init);
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-mt7623.h b/drivers/pinctrl/mediatek/pinctrl-mtk-mt7623.h
-new file mode 100644
-index 0000000..fb63c01
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-mtk-mt7623.h
 @@ -0,0 +1,1937 @@
@@ -2375,8 +2365,6 @@ index 0000000..fb63c01
 +};
 +
 +#endif /* __PINCTRL_MTK_MT7623_H */
-diff --git a/include/dt-bindings/pinctrl/mt7623-pinfunc.h b/include/dt-bindings/pinctrl/mt7623-pinfunc.h
-index 891b173..eeb2380 100644
 --- a/include/dt-bindings/pinctrl/mt7623-pinfunc.h
 +++ b/include/dt-bindings/pinctrl/mt7623-pinfunc.h
 @@ -505,6 +505,9 @@
@@ -2389,6 +2377,3 @@ index 891b173..eeb2380 100644
  #define MT7623_PIN_274_G2_RXDV_FUNC_GPIO274 (MTK_PIN_NO(274) | 0)
  #define MT7623_PIN_274_G2_RXDV_FUNC_G2_RXDV (MTK_PIN_NO(274) | 1)
  
--- 
-1.7.10.4
-

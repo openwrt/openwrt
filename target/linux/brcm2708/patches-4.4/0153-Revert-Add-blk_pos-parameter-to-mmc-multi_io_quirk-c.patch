@@ -17,7 +17,7 @@ The bcm2835-sdhost driver no longer needs this patch.
 
 --- a/drivers/mmc/card/block.c
 +++ b/drivers/mmc/card/block.c
-@@ -1510,7 +1510,6 @@ static void mmc_blk_rw_rq_prep(struct mm
+@@ -1518,7 +1518,6 @@ static void mmc_blk_rw_rq_prep(struct mm
  			brq->data.blocks = card->host->ops->multi_io_quirk(card,
  						(rq_data_dir(req) == READ) ?
  						MMC_DATA_READ : MMC_DATA_WRITE,

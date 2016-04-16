@@ -18,11 +18,9 @@ Signed-off-by: Arnd Bergmann <arnd@arndb.de>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index fcd4ed7..7f2126b 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1678,7 +1678,9 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1678,7 +1678,9 @@ static int mtk_probe(struct platform_dev
  	struct mtk_eth *eth;
  	int err;
  
@@ -33,6 +31,3 @@ index fcd4ed7..7f2126b 100644
  
  	match = of_match_device(of_mtk_match, &pdev->dev);
  	soc = (struct mtk_soc_data *)match->data;
--- 
-1.7.10.4
-

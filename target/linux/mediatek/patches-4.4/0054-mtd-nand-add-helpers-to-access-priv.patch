@@ -13,11 +13,9 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  include/linux/mtd/nand.h |   10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index c75424f..345f864 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -729,6 +729,16 @@ static inline struct mtd_info *nand_to_mtd(struct nand_chip *chip)
+@@ -729,6 +729,16 @@ static inline struct mtd_info *nand_to_m
  	return &chip->mtd;
  }
  
@@ -34,6 +32,3 @@ index c75424f..345f864 100644
  /*
   * NAND Flash Manufacturer ID Codes
   */
--- 
-1.7.10.4
-

@@ -18,11 +18,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/regulator/mt6323-regulator.c
  create mode 100644 include/linux/regulator/mt6323-regulator.h
 
-diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
-index 8df0b0e..4aec931 100644
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
-@@ -452,6 +452,15 @@ config REGULATOR_MT6311
+@@ -453,6 +453,15 @@ config REGULATOR_MT6311
  	  This driver supports the control of different power rails of device
  	  through regulator interface.
  
@@ -38,11 +36,9 @@ index 8df0b0e..4aec931 100644
  config REGULATOR_MT6397
  	tristate "MediaTek MT6397 PMIC"
  	depends on MFD_MT6397
-diff --git a/drivers/regulator/Makefile b/drivers/regulator/Makefile
-index 0f81749..b42a84e 100644
 --- a/drivers/regulator/Makefile
 +++ b/drivers/regulator/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_REGULATOR_MC13783) += mc13783-regulator.o
+@@ -60,6 +60,7 @@ obj-$(CONFIG_REGULATOR_MC13783) += mc137
  obj-$(CONFIG_REGULATOR_MC13892) += mc13892-regulator.o
  obj-$(CONFIG_REGULATOR_MC13XXX_CORE) +=  mc13xxx-regulator-core.o
  obj-$(CONFIG_REGULATOR_MT6311) += mt6311-regulator.o
@@ -50,9 +46,6 @@ index 0f81749..b42a84e 100644
  obj-$(CONFIG_REGULATOR_MT6397)	+= mt6397-regulator.o
  obj-$(CONFIG_REGULATOR_QCOM_RPM) += qcom_rpm-regulator.o
  obj-$(CONFIG_REGULATOR_QCOM_SMD_RPM) += qcom_smd-regulator.o
-diff --git a/drivers/regulator/mt6323-regulator.c b/drivers/regulator/mt6323-regulator.c
-new file mode 100644
-index 0000000..28ebbda
 --- /dev/null
 +++ b/drivers/regulator/mt6323-regulator.c
 @@ -0,0 +1,432 @@
@@ -488,9 +481,6 @@ index 0000000..28ebbda
 +MODULE_AUTHOR("Chen Zhong <chen.zhong@mediatek.com>");
 +MODULE_DESCRIPTION("Regulator Driver for MediaTek MT6397 PMIC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/include/linux/regulator/mt6323-regulator.h b/include/linux/regulator/mt6323-regulator.h
-new file mode 100644
-index 0000000..67011cd
 --- /dev/null
 +++ b/include/linux/regulator/mt6323-regulator.h
 @@ -0,0 +1,52 @@
@@ -546,6 +536,3 @@ index 0000000..67011cd
 +#define MT6323_MAX_REGULATOR	MT6323_ID_RG_MAX
 +
 +#endif /* __LINUX_REGULATOR_MT6323_H */
--- 
-1.7.10.4
-

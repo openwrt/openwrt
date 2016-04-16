@@ -10,9 +10,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 152 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/pci/mediatek-pcie.txt
 
-diff --git a/Documentation/devicetree/bindings/pci/mediatek-pcie.txt b/Documentation/devicetree/bindings/pci/mediatek-pcie.txt
-new file mode 100644
-index 0000000..8fea3ed
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/pci/mediatek-pcie.txt
 @@ -0,0 +1,140 @@
@@ -156,8 +153,6 @@ index 0000000..8fea3ed
 +			status = "okay";
 +		};
 +	};
-diff --git a/arch/arm/boot/dts/mt7623.dtsi b/arch/arm/boot/dts/mt7623.dtsi
-index c53c10d..c8c802d 100644
 --- a/arch/arm/boot/dts/mt7623.dtsi
 +++ b/arch/arm/boot/dts/mt7623.dtsi
 @@ -292,6 +292,18 @@
@@ -179,6 +174,3 @@ index c53c10d..c8c802d 100644
  	mmc0: mmc@11230000 {
  		compatible = "mediatek,mt7623-mmc",
  			     "mediatek,mt8135-mmc";
--- 
-1.7.10.4
-

@@ -17,8 +17,6 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  create mode 100644 drivers/soc/mediatek/mtk-scpsys-mt8173.c
  create mode 100644 drivers/soc/mediatek/mtk-scpsys.h
 
-diff --git a/drivers/soc/mediatek/Kconfig b/drivers/soc/mediatek/Kconfig
-index 0a4ea80..eca6fb7 100644
 --- a/drivers/soc/mediatek/Kconfig
 +++ b/drivers/soc/mediatek/Kconfig
 @@ -22,11 +22,20 @@ config MTK_PMIC_WRAP
@@ -44,8 +42,6 @@ index 0a4ea80..eca6fb7 100644
 +	  driver.
 +	  The System Control Processor System (SCPSYS) has several power
 +	  management related tasks in the system.
-diff --git a/drivers/soc/mediatek/Makefile b/drivers/soc/mediatek/Makefile
-index 12998b0..3b22baa 100644
 --- a/drivers/soc/mediatek/Makefile
 +++ b/drivers/soc/mediatek/Makefile
 @@ -1,3 +1,4 @@
@@ -53,9 +49,6 @@ index 12998b0..3b22baa 100644
  obj-$(CONFIG_MTK_PMIC_WRAP) += mtk-pmic-wrap.o
  obj-$(CONFIG_MTK_SCPSYS) += mtk-scpsys.o
 +obj-$(CONFIG_MTK_SCPSYS_MT8173) += mtk-scpsys-mt8173.o
-diff --git a/drivers/soc/mediatek/mtk-scpsys-mt8173.c b/drivers/soc/mediatek/mtk-scpsys-mt8173.c
-new file mode 100644
-index 0000000..3c7b569
 --- /dev/null
 +++ b/drivers/soc/mediatek/mtk-scpsys-mt8173.c
 @@ -0,0 +1,179 @@
@@ -238,8 +231,6 @@ index 0000000..3c7b569
 +};
 +
 +module_platform_driver_probe(scpsys_drv, scpsys_probe);
-diff --git a/drivers/soc/mediatek/mtk-scpsys.c b/drivers/soc/mediatek/mtk-scpsys.c
-index 4d4203c..a0943c5 100644
 --- a/drivers/soc/mediatek/mtk-scpsys.c
 +++ b/drivers/soc/mediatek/mtk-scpsys.c
 @@ -11,28 +11,14 @@
@@ -257,7 +248,7 @@ index 4d4203c..a0943c5 100644
 -#include <linux/regmap.h>
  #include <linux/soc/mediatek/infracfg.h>
 -#include <dt-bindings/power/mt8173-power.h>
--
+ 
 -#define SPM_VDE_PWR_CON			0x0210
 -#define SPM_MFG_PWR_CON			0x0214
 -#define SPM_VEN_PWR_CON			0x0230
@@ -268,7 +259,6 @@ index 4d4203c..a0943c5 100644
 -#define SPM_MFG_2D_PWR_CON		0x02c0
 -#define SPM_MFG_ASYNC_PWR_CON		0x02c4
 -#define SPM_USB_PWR_CON			0x02cc
-+
 +#include "mtk-scpsys.h"
 +
  #define SPM_PWR_STATUS			0x060c
@@ -428,7 +418,7 @@ index 4d4203c..a0943c5 100644
  static int scpsys_domain_is_on(struct scp_domain *scpd)
  {
  	struct scp *scp = scpd->scp;
-@@ -398,63 +237,89 @@ static bool scpsys_active_wakeup(struct device *dev)
+@@ -398,63 +237,89 @@ static bool scpsys_active_wakeup(struct
  	return scpd->active_wakeup;
  }
  
@@ -518,13 +508,13 @@ index 4d4203c..a0943c5 100644
 +		return ERR_PTR(-ENOMEM);
 +
 +	pd_data = &scp->pd_data;
-+
+ 
+-	for (i = 0; i < NUM_DOMAINS; i++) {
 +	pd_data->domains = devm_kzalloc(&pdev->dev,
 +			sizeof(*pd_data->domains) * num, GFP_KERNEL);
 +	if (!pd_data->domains)
 +		return ERR_PTR(-ENOMEM);
- 
--	for (i = 0; i < NUM_DOMAINS; i++) {
++
 +	pd_data->num_domains = num;
 +
 +	init_clks(pdev, clk);
@@ -549,7 +539,7 @@ index 4d4203c..a0943c5 100644
  		pd_data->domains[i] = genpd;
  		scpd->scp = scp;
  
-@@ -464,13 +329,25 @@ static int __init scpsys_probe(struct platform_device *pdev)
+@@ -464,13 +329,25 @@ static int __init scpsys_probe(struct pl
  		scpd->sram_pdn_ack_bits = data->sram_pdn_ack_bits;
  		scpd->bus_prot_mask = data->bus_prot_mask;
  		scpd->active_wakeup = data->active_wakeup;
@@ -577,7 +567,7 @@ index 4d4203c..a0943c5 100644
  
  		/*
  		 * Initially turn on all domains to make the domains usable
-@@ -489,37 +366,9 @@ static int __init scpsys_probe(struct platform_device *pdev)
+@@ -489,37 +366,9 @@ static int __init scpsys_probe(struct pl
  	 * valid.
  	 */
  
@@ -616,9 +606,6 @@ index 4d4203c..a0943c5 100644
 -};
 -
 -module_platform_driver_probe(scpsys_drv, scpsys_probe);
-diff --git a/drivers/soc/mediatek/mtk-scpsys.h b/drivers/soc/mediatek/mtk-scpsys.h
-new file mode 100644
-index 0000000..466728d
 --- /dev/null
 +++ b/drivers/soc/mediatek/mtk-scpsys.h
 @@ -0,0 +1,54 @@
@@ -676,6 +663,3 @@ index 0000000..466728d
 +				struct scp *scp, int num);
 +
 +#endif /* __DRV_SOC_MTK_H */
--- 
-1.7.10.4
-

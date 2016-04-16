@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |   43 ++++++++++++++++++++++++++++++++++
  1 file changed, 43 insertions(+)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index bcc841e..0e4ebb8 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -93,6 +93,27 @@ enum dew_regs {
@@ -51,7 +49,7 @@ index bcc841e..0e4ebb8 100644
  	PMIC_MT6397,
  };
  
-@@ -661,6 +683,19 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
+@@ -661,6 +683,19 @@ static int pwrap_init_cipher(struct pmic
  	pwrap_write(wrp, wrp->slave->dew_regs[PWRAP_DEW_CIPHER_LOAD], 0x1);
  	pwrap_write(wrp, wrp->slave->dew_regs[PWRAP_DEW_CIPHER_START], 0x1);
  
@@ -71,7 +69,7 @@ index bcc841e..0e4ebb8 100644
  	/* wait for cipher data ready@AP */
  	ret = pwrap_wait_for_state(wrp, pwrap_is_cipher_ready);
  	if (ret) {
-@@ -858,6 +893,11 @@ static const struct regmap_config pwrap_regmap_config = {
+@@ -858,6 +893,11 @@ static const struct regmap_config pwrap_
  	.max_register = 0xffff,
  };
  
@@ -83,7 +81,7 @@ index bcc841e..0e4ebb8 100644
  static const struct pwrap_slv_type pmic_mt6397 = {
  	.dew_regs = mt6397_regs,
  	.type = PMIC_MT6397,
-@@ -865,6 +905,9 @@ static const struct pwrap_slv_type pmic_mt6397 = {
+@@ -865,6 +905,9 @@ static const struct pwrap_slv_type pmic_
  
  static const struct of_device_id of_slave_match_tbl[] = {
  	{
@@ -93,6 +91,3 @@ index bcc841e..0e4ebb8 100644
  		.compatible = "mediatek,mt6397",
  		.data = &pmic_mt6397,
  	}, {
--- 
-1.7.10.4
-

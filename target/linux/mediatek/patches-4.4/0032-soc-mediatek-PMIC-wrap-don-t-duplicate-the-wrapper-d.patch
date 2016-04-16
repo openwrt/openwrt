@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |   22 ++++++++--------------
  1 file changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index 0d9b19a..340c4b5 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -376,9 +376,7 @@ struct pmic_wrapper {
@@ -55,7 +53,7 @@ index 0d9b19a..340c4b5 100644
  }
  
  static bool pwrap_is_fsm_idle(struct pmic_wrapper *wrp)
-@@ -697,7 +695,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -697,7 +695,7 @@ static int pwrap_init(struct pmic_wrappe
  
  	pwrap_writel(wrp, 1, PWRAP_WRAP_EN);
  
@@ -64,7 +62,7 @@ index 0d9b19a..340c4b5 100644
  
  	pwrap_writel(wrp, 1, PWRAP_WACS2_EN);
  
-@@ -742,7 +740,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -742,7 +740,7 @@ static int pwrap_init(struct pmic_wrappe
  	pwrap_writel(wrp, 0x1, PWRAP_CRC_EN);
  	pwrap_writel(wrp, 0x0, PWRAP_SIG_MODE);
  	pwrap_writel(wrp, PWRAP_DEW_CRC_VAL, PWRAP_SIG_ADR);
@@ -73,7 +71,7 @@ index 0d9b19a..340c4b5 100644
  
  	if (pwrap_is_mt8135(wrp))
  		pwrap_writel(wrp, 0x7, PWRAP_RRARB_EN);
-@@ -836,7 +834,6 @@ static int pwrap_probe(struct platform_device *pdev)
+@@ -836,7 +834,6 @@ static int pwrap_probe(struct platform_d
  	struct device_node *np = pdev->dev.of_node;
  	const struct of_device_id *of_id =
  		of_match_device(of_pwrap_match_tbl, &pdev->dev);
@@ -81,7 +79,7 @@ index 0d9b19a..340c4b5 100644
  	struct resource *res;
  
  	wrp = devm_kzalloc(&pdev->dev, sizeof(*wrp), GFP_KERNEL);
-@@ -845,10 +842,7 @@ static int pwrap_probe(struct platform_device *pdev)
+@@ -845,10 +842,7 @@ static int pwrap_probe(struct platform_d
  
  	platform_set_drvdata(pdev, wrp);
  
@@ -93,6 +91,3 @@ index 0d9b19a..340c4b5 100644
  	wrp->dev = &pdev->dev;
  
  	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "pwrap");
--- 
-1.7.10.4
-

@@ -12,11 +12,9 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  drivers/soc/mediatek/mtk-scpsys-mt8173.c |   13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/soc/mediatek/mtk-scpsys-mt8173.c b/drivers/soc/mediatek/mtk-scpsys-mt8173.c
-index 3c7b569..827e696 100644
 --- a/drivers/soc/mediatek/mtk-scpsys-mt8173.c
 +++ b/drivers/soc/mediatek/mtk-scpsys-mt8173.c
-@@ -176,4 +176,15 @@ static struct platform_driver scpsys_drv = {
+@@ -176,4 +176,15 @@ static struct platform_driver scpsys_drv
  	},
  };
  
@@ -33,6 +31,3 @@ index 3c7b569..827e696 100644
 +
 +subsys_initcall(scpsys_drv_init);
 +module_exit(scpsys_drv_exit);
--- 
-1.7.10.4
-
