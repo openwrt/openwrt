@@ -9,15 +9,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=brcm2708-gpu-fw
-PKG_REV:=0a96f63b75d23567320e74767d3ce11002397af7
-PKG_RELEASE:=2
+PKG_VERSION:=2016-04-16
+PKG_RELEASE:=0a96f63b75d23567320e74767d3ce11002397af7
 
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_REV)
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_RELEASE)
 
 include $(INCLUDE_DIR)/package.mk
 
-RPI_FIRMWARE_URL:=@GITHUB/raspberrypi/firmware/$(PKG_REV)/boot/
-RPI_FIRMWARE_FILE:=rpi-firmware-$(PKG_REV)
+RPI_FIRMWARE_URL:=@GITHUB/raspberrypi/firmware/$(PKG_RELEASE)/boot/
+RPI_FIRMWARE_FILE:=rpi-firmware-$(PKG_RELEASE)
 
 define Download/LICENCE_broadcom
   FILE:=$(RPI_FIRMWARE_FILE)-LICENCE.broadcom
