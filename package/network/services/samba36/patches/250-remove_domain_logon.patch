@@ -183,3 +183,31 @@
  
          /*
  	 * Force a log file check.
+--- a/source3/rpc_server/srv_pipe.c
++++ b/source3/rpc_server/srv_pipe.c
+@@ -421,10 +421,12 @@ static bool check_bind_req(struct pipes_
+ 	if (ok) {
+ 		context_fns->allow_connect = false;
+ 	}
++#ifdef NETLOGON_SUPPORT
+ 	ok = ndr_syntax_id_equal(abstract, &ndr_table_netlogon.syntax_id);
+ 	if (ok) {
+ 		context_fns->allow_connect = false;
+ 	}
++#endif
+ 	/*
+ 	 * for the epmapper and echo interfaces we allow "connect"
+ 	 * auth_level by default.
+--- a/source3/rpc_client/cli_pipe.c
++++ b/source3/rpc_client/cli_pipe.c
+@@ -2221,6 +2221,10 @@ static void rpc_pipe_bind_step_two_trigg
+ 				      struct schannel_state);
+ 	struct tevent_req *subreq;
+ 
++#ifndef NETLOGON_SUPPORT
++	tevent_req_nterror(req, NT_STATUS_UNSUCCESSFUL);
++	return;
++#endif
+ 	if (schannel_auth == NULL ||
+ 	    !ndr_syntax_id_equal(&state->cli->abstract_syntax,
+ 				 &ndr_table_netlogon.syntax_id)) {

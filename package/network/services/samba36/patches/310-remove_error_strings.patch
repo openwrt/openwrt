@@ -65,7 +65,7 @@
  }
 --- a/librpc/ndr/libndr.h
 +++ b/librpc/ndr/libndr.h
-@@ -604,4 +604,20 @@ _PUBLIC_ enum ndr_err_code ndr_push_enum
+@@ -663,4 +663,20 @@ _PUBLIC_ enum ndr_err_code ndr_push_enum
  
  _PUBLIC_ void ndr_print_bool(struct ndr_print *ndr, const char *name, const bool b);
  
@@ -251,3 +251,87 @@
  	print "	       return;";
  	print "       }";
  	print "";
+--- a/source3/rpc_client/cli_pipe.c
++++ b/source3/rpc_client/cli_pipe.c
+@@ -445,7 +445,6 @@ static NTSTATUS cli_pipe_validate_curren
+ 				  rpccli_pipe_txt(talloc_tos(), cli),
+ 				  pkt->ptype, expected_pkt_type,
+ 				  nt_errstr(ret)));
+-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 			return ret;
+ 		}
+ 
+@@ -466,7 +465,6 @@ static NTSTATUS cli_pipe_validate_curren
+ 				  rpccli_pipe_txt(talloc_tos(), cli),
+ 				  pkt->ptype, expected_pkt_type,
+ 				  nt_errstr(ret)));
+-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 			return ret;
+ 		}
+ 
+@@ -486,7 +484,6 @@ static NTSTATUS cli_pipe_validate_curren
+ 				  rpccli_pipe_txt(talloc_tos(), cli),
+ 				  pkt->ptype, expected_pkt_type,
+ 				  nt_errstr(ret)));
+-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 			return ret;
+ 		}
+ 
+@@ -508,7 +505,6 @@ static NTSTATUS cli_pipe_validate_curren
+ 				  rpccli_pipe_txt(talloc_tos(), cli),
+ 				  pkt->ptype, expected_pkt_type,
+ 				  nt_errstr(ret)));
+-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 			return ret;
+ 		}
+ 
+@@ -526,7 +522,6 @@ static NTSTATUS cli_pipe_validate_curren
+ 				  rpccli_pipe_txt(talloc_tos(), cli),
+ 				  pkt->ptype, expected_pkt_type,
+ 				  nt_errstr(ret)));
+-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 			return ret;
+ 		}
+ 
+@@ -570,7 +565,6 @@ static NTSTATUS cli_pipe_validate_curren
+ 				  rpccli_pipe_txt(talloc_tos(), cli),
+ 				  pkt->ptype, expected_pkt_type,
+ 				  nt_errstr(ret)));
+-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 			return ret;
+ 		}
+ 
+--- a/source3/rpc_server/srv_pipe.c
++++ b/source3/rpc_server/srv_pipe.c
+@@ -991,7 +991,6 @@ static bool api_pipe_bind_req(struct pip
+ 	if (!NT_STATUS_IS_OK(status)) {
+ 		DEBUG(1, ("api_pipe_bind_req: invalid pdu: %s\n",
+ 			  nt_errstr(status)));
+-		NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 		goto err_exit;
+ 	}
+ 
+@@ -1325,7 +1324,6 @@ bool api_pipe_bind_auth3(struct pipes_st
+ 	if (!NT_STATUS_IS_OK(status)) {
+ 		DEBUG(1, ("api_pipe_bind_auth3: invalid pdu: %s\n",
+ 			  nt_errstr(status)));
+-		NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 		goto err;
+ 	}
+ 
+@@ -1483,7 +1481,6 @@ static bool api_pipe_alter_context(struc
+ 	if (!NT_STATUS_IS_OK(status)) {
+ 		DEBUG(1, ("api_pipe_alter_context: invalid pdu: %s\n",
+ 			  nt_errstr(status)));
+-		NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 		goto err_exit;
+ 	}
+ 
+@@ -2057,7 +2054,6 @@ static bool process_request_pdu(struct p
+ 	if (!NT_STATUS_IS_OK(status)) {
+ 		DEBUG(1, ("process_request_pdu: invalid pdu: %s\n",
+ 			  nt_errstr(status)));
+-		NDR_PRINT_DEBUG(ncacn_packet, pkt);
+ 		set_incoming_fault(p);
+ 		return false;
+ 	}
