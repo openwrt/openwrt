@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |  154 ++++++++++++++++++++++++++++++++++
  1 file changed, 154 insertions(+)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index 0e4ebb8..3c3e56d 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -52,6 +52,7 @@
@@ -138,7 +136,7 @@ index 0e4ebb8..3c3e56d 100644
  	PWRAP_MT8135,
  	PWRAP_MT8173,
  };
-@@ -637,6 +732,31 @@ static int pwrap_mt8173_init_reg_clock(struct pmic_wrapper *wrp)
+@@ -637,6 +732,31 @@ static int pwrap_mt8173_init_reg_clock(s
  	return 0;
  }
  
@@ -170,7 +168,7 @@ index 0e4ebb8..3c3e56d 100644
  static bool pwrap_is_cipher_ready(struct pmic_wrapper *wrp)
  {
  	return pwrap_readl(wrp, PWRAP_CIPHER_RDY) & 1;
-@@ -670,6 +790,7 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
+@@ -670,6 +790,7 @@ static int pwrap_init_cipher(struct pmic
  		pwrap_writel(wrp, 1, PWRAP_CIPHER_LOAD);
  		pwrap_writel(wrp, 1, PWRAP_CIPHER_START);
  		break;
@@ -178,7 +176,7 @@ index 0e4ebb8..3c3e56d 100644
  	case PWRAP_MT8173:
  		pwrap_writel(wrp, 1, PWRAP_CIPHER_EN);
  		break;
-@@ -772,6 +893,24 @@ static int pwrap_mt8173_init_soc_specific(struct pmic_wrapper *wrp)
+@@ -772,6 +893,24 @@ static int pwrap_mt8173_init_soc_specifi
  	return 0;
  }
  
@@ -203,7 +201,7 @@ index 0e4ebb8..3c3e56d 100644
  static int pwrap_init(struct pmic_wrapper *wrp)
  {
  	int ret;
-@@ -916,6 +1055,18 @@ static const struct of_device_id of_slave_match_tbl[] = {
+@@ -916,6 +1055,18 @@ static const struct of_device_id of_slav
  };
  MODULE_DEVICE_TABLE(of, of_slave_match_tbl);
  
@@ -222,7 +220,7 @@ index 0e4ebb8..3c3e56d 100644
  static struct pmic_wrapper_type pwrap_mt8135 = {
  	.regs = mt8135_regs,
  	.type = PWRAP_MT8135,
-@@ -942,6 +1093,9 @@ static struct pmic_wrapper_type pwrap_mt8173 = {
+@@ -942,6 +1093,9 @@ static struct pmic_wrapper_type pwrap_mt
  
  static struct of_device_id of_pwrap_match_tbl[] = {
  	{
@@ -232,6 +230,3 @@ index 0e4ebb8..3c3e56d 100644
  		.compatible = "mediatek,mt8135-pwrap",
  		.data = &pwrap_mt8135,
  	}, {
--- 
-1.7.10.4
-

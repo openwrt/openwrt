@@ -38,7 +38,7 @@
  #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
 --- a/scripts/kconfig/Makefile
 +++ b/scripts/kconfig/Makefile
-@@ -159,6 +159,9 @@ check-lxdialog  := $(srctree)/$(src)/lxd
+@@ -161,6 +161,9 @@ check-lxdialog  := $(srctree)/$(src)/lxd
  # we really need to do so. (Do not call gcc as part of make mrproper)
  HOST_EXTRACFLAGS += $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags) \
                      -DLOCALE

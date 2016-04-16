@@ -15,11 +15,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   20 ++++++++++----------
  1 file changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 26eeb1a..67b18f9 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -536,7 +536,6 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+@@ -536,7 +536,6 @@ static int mtk_tx_map(struct sk_buff *sk
  	struct mtk_eth *eth = mac->hw;
  	struct mtk_tx_dma *itxd, *txd;
  	struct mtk_tx_buf *tx_buf;
@@ -27,7 +25,7 @@ index 26eeb1a..67b18f9 100644
  	dma_addr_t mapped_addr;
  	unsigned int nr_frags;
  	int i, n_desc = 1;
-@@ -568,11 +567,6 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+@@ -568,11 +567,6 @@ static int mtk_tx_map(struct sk_buff *sk
  	if (unlikely(dma_mapping_error(&dev->dev, mapped_addr)))
  		return -ENOMEM;
  
@@ -39,7 +37,7 @@ index 26eeb1a..67b18f9 100644
  	WRITE_ONCE(itxd->txd1, mapped_addr);
  	tx_buf->flags |= MTK_TX_FLAGS_SINGLE0;
  	dma_unmap_addr_set(tx_buf, dma_addr0, mapped_addr);
-@@ -632,8 +626,6 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+@@ -632,8 +626,6 @@ static int mtk_tx_map(struct sk_buff *sk
  	WRITE_ONCE(itxd->txd3, (TX_DMA_SWC | TX_DMA_PLEN0(skb_headlen(skb)) |
  				(!nr_frags * TX_DMA_LS0)));
  
@@ -57,7 +55,7 @@ index 26eeb1a..67b18f9 100644
  	return -ENOMEM;
  }
  
-@@ -712,14 +702,22 @@ static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -712,14 +702,22 @@ static int mtk_start_xmit(struct sk_buff
  	struct mtk_eth *eth = mac->hw;
  	struct mtk_tx_ring *ring = &eth->tx_ring;
  	struct net_device_stats *stats = &dev->stats;
@@ -80,7 +78,7 @@ index 26eeb1a..67b18f9 100644
  		return NETDEV_TX_BUSY;
  	}
  
-@@ -747,10 +745,12 @@ static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -747,10 +745,12 @@ static int mtk_start_xmit(struct sk_buff
  			     ring->thresh))
  			mtk_wake_queue(eth);
  	}
@@ -93,6 +91,3 @@ index 26eeb1a..67b18f9 100644
  	stats->tx_dropped++;
  	dev_kfree_skb(skb);
  	return NETDEV_TX_OK;
--- 
-1.7.10.4
-

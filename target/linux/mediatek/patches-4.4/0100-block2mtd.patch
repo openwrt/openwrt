@@ -9,7 +9,7 @@
  /* Info for the block device */
  struct block2mtd_dev {
  	struct list_head list;
-@@ -227,6 +229,7 @@
+@@ -227,6 +229,7 @@ static struct block2mtd_dev *add_device(
  #endif
  	const fmode_t mode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
  	struct block_device *bdev = ERR_PTR(-ENODEV);
@@ -17,7 +17,7 @@
  	struct block2mtd_dev *dev;
  	struct mtd_partition *part;
  	char *name;
-@@ -307,11 +310,7 @@
+@@ -307,11 +310,7 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
  

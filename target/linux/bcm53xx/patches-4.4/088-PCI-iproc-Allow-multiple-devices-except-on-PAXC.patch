@@ -30,7 +30,7 @@ Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
  
  #define IPROC_PCIE_REG_INVALID 0xffff
  
-@@ -170,20 +169,6 @@ static inline void iproc_pcie_ob_write(struct iproc_pcie *pcie,
+@@ -170,20 +169,6 @@ static inline void iproc_pcie_ob_write(s
  	writel(val, pcie->base + offset + (window * 8));
  }
  
@@ -51,7 +51,7 @@ Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
  /**
   * Note access to the configuration registers are protected at the higher layer
   * by 'pci_lock' in drivers/pci/access.c
-@@ -199,11 +184,11 @@ static void __iomem *iproc_pcie_map_cfg_bus(struct pci_bus *bus,
+@@ -199,11 +184,11 @@ static void __iomem *iproc_pcie_map_cfg_
  	u32 val;
  	u16 offset;
  
@@ -66,7 +66,7 @@ Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
  		iproc_pcie_write_reg(pcie, IPROC_PCIE_CFG_IND_ADDR,
  				     where & CFG_IND_ADDR_MASK);
  		offset = iproc_pcie_reg_offset(pcie, IPROC_PCIE_CFG_IND_DATA);
-@@ -213,6 +198,14 @@ static void __iomem *iproc_pcie_map_cfg_bus(struct pci_bus *bus,
+@@ -213,6 +198,14 @@ static void __iomem *iproc_pcie_map_cfg_
  			return (pcie->base + offset);
  	}
  

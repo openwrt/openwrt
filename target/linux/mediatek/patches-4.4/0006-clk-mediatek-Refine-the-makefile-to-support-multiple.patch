@@ -16,8 +16,6 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  3 files changed, 27 insertions(+), 3 deletions(-)
  create mode 100644 drivers/clk/mediatek/Kconfig
 
-diff --git a/drivers/clk/Kconfig b/drivers/clk/Kconfig
-index c3e3a02..b7a37dc 100644
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
 @@ -198,3 +198,4 @@ source "drivers/clk/mvebu/Kconfig"
@@ -25,9 +23,6 @@ index c3e3a02..b7a37dc 100644
  source "drivers/clk/samsung/Kconfig"
  source "drivers/clk/tegra/Kconfig"
 +source "drivers/clk/mediatek/Kconfig"
-diff --git a/drivers/clk/mediatek/Kconfig b/drivers/clk/mediatek/Kconfig
-new file mode 100644
-index 0000000..dc224e6
 --- /dev/null
 +++ b/drivers/clk/mediatek/Kconfig
 @@ -0,0 +1,23 @@
@@ -54,8 +49,6 @@ index 0000000..dc224e6
 +	default ARCH_MEDIATEK
 +	---help---
 +	  This driver supports Mediatek MT8173 clocks.
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index 95fdfac..32e7222 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
 @@ -1,4 +1,4 @@
@@ -66,6 +59,3 @@ index 95fdfac..32e7222 100644
 -obj-y += clk-mt8173.o
 +obj-$(CONFIG_COMMON_CLK_MT8135) += clk-mt8135.o
 +obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
--- 
-1.7.10.4
-

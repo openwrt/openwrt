@@ -27,11 +27,9 @@ Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
  arch/mips/ath79/early_printk.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/ath79/early_printk.c b/arch/mips/ath79/early_printk.c
-index b955faf..d1adc59 100644
 --- a/arch/mips/ath79/early_printk.c
 +++ b/arch/mips/ath79/early_printk.c
-@@ -31,13 +31,15 @@ static inline void prom_putchar_wait(void __iomem *reg, u32 mask, u32 val)
+@@ -31,13 +31,15 @@ static inline void prom_putchar_wait(voi
  	} while (1);
  }
  
@@ -49,6 +47,3 @@ index b955faf..d1adc59 100644
  }
  
  static void prom_putchar_ar933x(unsigned char ch)
--- 
-2.7.4
-

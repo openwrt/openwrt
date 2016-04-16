@@ -11,8 +11,6 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  arch/arm64/boot/dts/mediatek/mt8173.dtsi    |   42 +++++++++++++++++++++++++++
  2 files changed, 58 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/mediatek/mt8173-evb.dts b/arch/arm64/boot/dts/mediatek/mt8173-evb.dts
-index 811cb76..9b1482a 100644
 --- a/arch/arm64/boot/dts/mediatek/mt8173-evb.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt8173-evb.dts
 @@ -13,6 +13,7 @@
@@ -49,8 +47,6 @@ index 811cb76..9b1482a 100644
 +	vbus-supply = <&usb_p1_vbus>;
 +	mediatek,wakeup-src = <1>;
 +};
-diff --git a/arch/arm64/boot/dts/mediatek/mt8173.dtsi b/arch/arm64/boot/dts/mediatek/mt8173.dtsi
-index 4dd5f93..c1fd275 100644
 --- a/arch/arm64/boot/dts/mediatek/mt8173.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt8173.dtsi
 @@ -14,6 +14,7 @@
@@ -109,6 +105,3 @@ index 4dd5f93..c1fd275 100644
  		mmsys: clock-controller@14000000 {
  			compatible = "mediatek,mt8173-mmsys", "syscon";
  			reg = <0 0x14000000 0 0x1000>;
--- 
-1.7.10.4
-

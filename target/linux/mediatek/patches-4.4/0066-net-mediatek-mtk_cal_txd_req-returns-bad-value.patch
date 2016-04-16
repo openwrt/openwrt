@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 7e6d2e2..4d8d0a3 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -681,7 +681,7 @@ static inline int mtk_cal_txd_req(struct sk_buff *skb)
+@@ -681,7 +681,7 @@ static inline int mtk_cal_txd_req(struct
  		nfrags += skb_shinfo(skb)->nr_frags;
  	}
  
@@ -25,6 +23,3 @@ index 7e6d2e2..4d8d0a3 100644
  }
  
  static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
--- 
-1.7.10.4
-
