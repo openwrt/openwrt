@@ -24,3 +24,18 @@
  	epmapper_commands,
  	shutdown_commands,
   	test_commands,
+--- a/source3/rpc_server/srv_pipe.c
++++ b/source3/rpc_server/srv_pipe.c
+@@ -433,10 +433,12 @@ static bool check_bind_req(struct pipes_
+ 	if (ok) {
+ 		context_fns->allow_connect = true;
+ 	}
++#ifdef DEVELOPER
+ 	ok = ndr_syntax_id_equal(abstract, &ndr_table_rpcecho.syntax_id);
+ 	if (ok) {
+ 		context_fns->allow_connect = true;
+ 	}
++#endif
+ 	/*
+ 	 * every interface can be modified to allow "connect" auth_level by
+ 	 * using a parametric option like:
