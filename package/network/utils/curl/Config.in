@@ -154,4 +154,9 @@ config LIBCURL_VERBOSE
 	bool "Enable verbose error strings"
 	default n
 
+config LIBCURL_NTLM
+	bool "Enable NTLM support"
+	depends LIBCURL_CRYPTO_AUTH && !LIBCURL_NOSSL
+	default n
+
 endif
