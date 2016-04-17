@@ -1,5 +1,4 @@
 ARCH:=mipsel
-ARCH_PACKAGES:=adm5120_mipsel
 SUBTARGET:=router_le
 BOARDNAME:=Little Endian
 FEATURES+=squashfs tgz

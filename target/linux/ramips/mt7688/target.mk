@@ -4,7 +4,6 @@
 
 SUBTARGET:=mt7688
 BOARDNAME:=MT7688 based boards
-ARCH_PACKAGES:=ramips_24kec
 FEATURES+=usb
 CPU_TYPE:=24kec
 CPU_SUBTYPE:=dsp
