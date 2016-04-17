@@ -10,7 +10,7 @@
  endif # BUILD_LIBUUID
 --- a/configure.ac
 +++ b/configure.ac
-@@ -1802,15 +1802,19 @@ AC_CONFIG_HEADERS([config.h])
+@@ -2122,18 +2122,23 @@ AC_CONFIG_HEADERS([config.h])
  #
  AC_CONFIG_FILES([
  Makefile
@@ -18,6 +18,10 @@
  libblkid/docs/Makefile
  libblkid/docs/version.xml
  libblkid/src/blkid.h
++libfdisk/fdisk.pc
+ libfdisk/docs/Makefile
+ libfdisk/docs/version.xml
+ libfdisk/src/libfdisk.h
 +libmount/mount.pc
  libmount/docs/Makefile
  libmount/docs/version.xml
@@ -52,7 +56,7 @@
  endif # BUILD_LIBMOUNT
 --- a/libsmartcols/Makemodule.am
 +++ b/libsmartcols/Makemodule.am
-@@ -8,7 +8,6 @@ SUBDIRS += libsmartcols/docs
+@@ -9,7 +9,6 @@ SUBDIRS += libsmartcols/docs
  endif
  
  pkgconfig_DATA += libsmartcols/smartcols.pc
@@ -60,3 +64,13 @@
  EXTRA_DIST     += libsmartcols/COPYING
  
  endif # BUILD_LIBSMARTCOLS
+--- a/libfdisk/Makemodule.am
++++ b/libfdisk/Makemodule.am
+@@ -8,7 +8,6 @@ SUBDIRS += libfdisk/docs
+ endif
+ 
+ pkgconfig_DATA += libfdisk/fdisk.pc
+-PATHFILES      += libfdisk/fdisk.pc
+ EXTRA_DIST     += libfdisk/COPYING
+ 
+ endif # BUILD_LIBFDISK

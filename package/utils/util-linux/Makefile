@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.25.2
-PKG_RELEASE:=4
+PKG_VERSION:=2.28
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.25
-PKG_MD5SUM:=cab3d7be354000f629bc601238b629b3
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.28
+PKG_MD5SUM:=e534e6ccc49107e5d31c329af798ef7d
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING getopt/COPYING libblkid/COPYING libmount/COPYING Documentation/licenses/COPYING.GPLv2 Documentation/licenses/COPYING.LGPLv2.1 libuuid/COPYING Documentation/licenses/COPYING.BSD-3
@@ -41,6 +41,7 @@ CONFIGURE_ARGS += \
 	--disable-sulogin	\
 	--without-python	\
 	--without-udev		\
+	--without-readline	\
 	$(if $(CONFIG_PACKAGE_cal)$(CONFIG_PACKAGE_cfdisk)$(CONFIG_PACKAGE_setterm),--with-ncurses,--without-ncurses)
 
 TARGET_CFLAGS += $(FPIC) -std=gnu99
@@ -53,12 +54,15 @@ define Build/InstallDev
 
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_BUILD_DIR)/libblkid/blkid.pc $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_BUILD_DIR)/libfdisk/fdisk.pc $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_BUILD_DIR)/libmount/mount.pc $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_BUILD_DIR)/libsmartcols/smartcols.pc $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_BUILD_DIR)/libuuid/uuid.pc $(1)/usr/lib/pkgconfig
 
 	$(INSTALL_DIR) $(1)/usr/include/blkid
 	$(CP) $(PKG_BUILD_DIR)/libblkid/src/blkid.h $(1)/usr/include/blkid
+	$(INSTALL_DIR) $(1)/usr/include/fdisk
+	$(CP) $(PKG_BUILD_DIR)/libfdisk/src/libfdisk.h $(1)/usr/include/fdisk
 	$(INSTALL_DIR) $(1)/usr/include/libmount
 	$(CP) $(PKG_BUILD_DIR)/libmount/src/libmount.h $(1)/usr/include/libmount
 	$(INSTALL_DIR) $(1)/usr/include/uuid
@@ -68,6 +72,7 @@ define Build/InstallDev
 
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/.libs/libblkid.{a,so*} $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/.libs/libfdisk.{a,so*} $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/.libs/libmount.{a,so*} $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/.libs/libuuid.{a,so*} $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/.libs/libsmartcols.{a,so*} $(1)/usr/lib
@@ -86,6 +91,18 @@ define Package/libblkid/description
  content (e.g. filesystem type, partitions) as well as extracting additional
  information such as filesystem labels/volume names, partitions, unique
  identifiers/serial numbers...
+endef
+
+define Package/libfdisk
+$(call Package/util-linux/Default)
+  DEPENDS:=+libuuid +libblkid
+  TITLE:=partition manipulating library
+  SECTION:=libs
+  CATEGORY:=Libraries
+endef
+
+define Package/libfdisk/description
+  The libfdisk library is used for manipulating with partition tables. 
 endef
 
 define Package/libmount
@@ -174,7 +191,7 @@ endef
 define Package/cfdisk
 $(call Package/util-linux/Default)
   TITLE:=display or manipulate disk partition table
-  DEPENDS:= +libblkid +libncurses +libsmartcols
+  DEPENDS:= +libblkid +libncurses +libsmartcols +libfdisk +libmount
   SUBMENU:=disc
 endef
 
@@ -195,7 +212,7 @@ endef
 define Package/fdisk
 $(call Package/util-linux/Default)
   TITLE:=manipulate disk partition table
-  DEPENDS:= +libblkid +libsmartcols
+  DEPENDS:= +libblkid +libsmartcols +libfdisk
   SUBMENU=disc
 endef
 
@@ -449,6 +466,11 @@ define Package/wipefs/description
  libblkid.
 endef
 
+define Package/libfdisk/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/.libs/libfdisk.so* $(1)/usr/lib/
+endef
+
 define Package/libblkid/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/.libs/libblkid.so* $(1)/usr/lib/
@@ -626,6 +648,7 @@ define Package/wipefs/install
 endef
 
 $(eval $(call BuildPackage,libblkid))
+$(eval $(call BuildPackage,libfdisk))
 $(eval $(call BuildPackage,libmount))
 $(eval $(call BuildPackage,libsmartcols))
 $(eval $(call BuildPackage,libuuid))
