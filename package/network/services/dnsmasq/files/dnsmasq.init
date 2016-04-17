@@ -316,6 +316,9 @@ dhcp_host_add() {
 	config_get networkid "$cfg" networkid
 	[ -n "$networkid" ] && dhcp_option_add "$cfg" "$networkid" "$force"
 
+	config_get_bool enable "$cfg" enable 1
+	[ "$enable" = "0" ] && return 0
+
 	config_get name "$cfg" name
 	config_get ip "$cfg" ip
 	[ -n "$ip" -o -n "$name" ] || return 0
