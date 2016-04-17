@@ -123,6 +123,7 @@ $(curdir)/install: $(TMP_DIR)/.build $(curdir)/system/opkg/host/install
 	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(TARGET_DIR)/usr/lib/opkg/status)
 	@-find $(TARGET_DIR) -name CVS   | $(XARGS) rm -rf
 	@-find $(TARGET_DIR) -name .svn  | $(XARGS) rm -rf
+	@-find $(TARGET_DIR) -name .git  | $(XARGS) rm -rf
 	@-find $(TARGET_DIR) -name '.#*' | $(XARGS) rm -f
 	rm -f $(TARGET_DIR)/usr/lib/opkg/info/*.postinst*
 	rm -f $(TARGET_DIR)/usr/lib/opkg/info/*.prerm*
