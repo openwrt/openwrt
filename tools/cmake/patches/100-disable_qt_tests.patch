@@ -1,6 +1,6 @@
 --- a/Tests/RunCMake/CMakeLists.txt
 +++ b/Tests/RunCMake/CMakeLists.txt
-@@ -216,15 +216,6 @@
+@@ -217,15 +217,6 @@ add_RunCMake_test(interface_library)
  add_RunCMake_test(no_install_prefix)
  add_RunCMake_test(configure_file)
  
@@ -18,7 +18,7 @@
    add_RunCMake_test(FindPkgConfig)
 --- a/Tests/CMakeLists.txt
 +++ b/Tests/CMakeLists.txt
-@@ -390,10 +390,6 @@
+@@ -389,10 +389,6 @@ if(BUILD_TESTING)
  
    list(APPEND TEST_BUILD_DIRS ${CMake_TEST_INSTALL_PREFIX})
  
