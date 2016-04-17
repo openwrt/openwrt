@@ -71,7 +71,7 @@
  #endif
 --- a/source3/rpc_client/cli_pipe.c
 +++ b/source3/rpc_client/cli_pipe.c
-@@ -2904,12 +2904,14 @@ NTSTATUS cli_rpc_pipe_open_noauth_transp
+@@ -3391,12 +3391,14 @@ NTSTATUS cli_rpc_pipe_open_noauth_transp
  	status = rpc_pipe_bind(result, auth);
  	if (!NT_STATUS_IS_OK(status)) {
  		int lvl = 0;

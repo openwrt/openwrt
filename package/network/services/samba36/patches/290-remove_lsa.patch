@@ -71,3 +71,18 @@
  }
  
  size_t num_pipe_handles(struct pipes_struct *p)
+--- a/source3/rpc_server/srv_pipe.c
++++ b/source3/rpc_server/srv_pipe.c
+@@ -419,10 +419,12 @@ static bool check_bind_req(struct pipes_
+ 		context_fns->allow_connect = false;
+ 	}
+ #endif
++#ifdef LSA_SUPPORT
+ 	ok = ndr_syntax_id_equal(abstract, &ndr_table_lsarpc.syntax_id);
+ 	if (ok) {
+ 		context_fns->allow_connect = false;
+ 	}
++#endif
+ #ifdef NETLOGON_SUPPORT
+ 	ok = ndr_syntax_id_equal(abstract, &ndr_table_netlogon.syntax_id);
+ 	if (ok) {
