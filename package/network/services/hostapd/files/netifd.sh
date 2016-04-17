@@ -139,7 +139,7 @@ hostapd_common_add_bss_config() {
 	config_add_string nasid
 	config_add_string ownip
 	config_add_string iapp_interface
-	config_add_string eap_type ca_cert client_cert identity auth priv_key priv_key_pwd
+	config_add_string eap_type ca_cert client_cert identity anonymous_identity auth priv_key priv_key_pwd
 
 	config_add_int dynamic_vlan vlan_naming
 	config_add_string vlan_tagged_interface vlan_bridge
@@ -623,9 +623,10 @@ wpa_supplicant_add_network() {
 			key_mgmt='WPA-EAP'
 		        [ "$ieee80211r" -gt 0 ] && key_mgmt="FT-EAP $key_mgmt"
 
-			json_get_vars eap_type identity ca_cert
+			json_get_vars eap_type identity anonymous_identity ca_cert
 			[ -n "$ca_cert" ] && append network_data "ca_cert=\"$ca_cert\"" "$N$T"
 			[ -n "$identity" ] && append network_data "identity=\"$identity\"" "$N$T"
+			[ -n "$anonymous_identity" ] && append network_data "anonymous_identity=\"$anonymous_identity\"" "$N$T"
 			case "$eap_type" in
 				tls)
 					json_get_vars client_cert priv_key priv_key_pwd
