@@ -56,11 +56,11 @@ generate_static_network() {
 
 addr_offset=2
 generate_network() {
-	local ifname macaddr protocol type
+	local ifname macaddr protocol type ipaddr netmask
 
 	json_select network
 		json_select "$1"
-			json_get_vars ifname macaddr protocol
+			json_get_vars ifname macaddr protocol ipaddr netmask
 		json_select ..
 	json_select ..
 
@@ -88,16 +88,18 @@ generate_network() {
 
 	case "$protocol" in
 		static)
-			local ipaddr
+			local ipad
 			case "$1" in
-				lan) ipaddr="192.168.1.1" ;;
-				*) ipaddr="192.168.$((addr_offset++)).1" ;;
+				lan) ipad=${ipaddr:-"192.168.1.1"} ;;
+				*) ipad=${ipaddr:-"192.168.$((addr_offset++)).1"} ;;
 			esac
+
+			netm=${netmask:-"255.255.255.0"}
 
 			uci -q batch <<-EOF
 				set network.$1.proto='static'
-				set network.$1.ipaddr='$ipaddr'
-				set network.$1.netmask='255.255.255.0'
+				set network.$1.ipaddr='$ipad'
+				set network.$1.netmask='$netm'
 				set network.$1.ip6assign='60'
 			EOF
 		;;
