@@ -11,6 +11,7 @@
 
 #include <linux/platform_device.h>
 #include <linux/irq.h>
+#include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
 #include <linux/mdio-gpio.h>
 #else
