@@ -156,7 +156,7 @@ config LIBCURL_VERBOSE
 
 config LIBCURL_NTLM
 	bool "Enable NTLM support"
-	depends LIBCURL_CRYPTO_AUTH && !LIBCURL_NOSSL
+	depends on LIBCURL_CRYPTO_AUTH && !LIBCURL_NOSSL
 	default n
 
 endif
