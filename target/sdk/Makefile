@@ -1,5 +1,6 @@
 # 
 # Copyright (C) 2006-2014 OpenWrt.org
+# Copyright (C) 2016 LEDE Project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -18,7 +19,7 @@ SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 STAGING_SUBDIR_HOST := staging_dir/host
 STAGING_SUBDIR_TOOLCHAIN := staging_dir/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi)
 
-EXCLUDE_DIRS:=*/ccache \
+EXCLUDE_DIRS:=*/ccache/* \
 	*/stamp \
 	*/stampfiles \
 	*/man \
