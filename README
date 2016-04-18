@@ -3,7 +3,8 @@ This is the buildsystem for the OpenWrt Linux distribution.
 Please use "make menuconfig" to configure your appreciated
 configuration for the toolchain and firmware.
 
-Ensure you have the required dependencies to build this project before starting, including git which is required to clone the repository. Run "sudo apt-get update" followed by "sudo apt-get -y install g++ gcc binutils bzip2 flex python perl make libncurses5-dev libssl-dev grep unzip gawk subversion zlib1g-dev git" to install the required dependencies with their default options.
+You need to have installed gcc, binutils, bzip2, flex, python, perl, make,
+find, grep, diff, unzip, gawk, getopt, subversion, libz-dev and libc headers.
 
 Run "./scripts/feeds update -a" to get all the latest package definitions
 defined in feeds.conf / feeds.conf.default respectively
@@ -12,25 +13,9 @@ package/feeds/.
 
 Use "make menuconfig" to configure your image.
 
-To run openwrt on Imagination's Creator (Ci40) Marduk platform based upon Pistachio SoC:
-
-Run the menu configuration for OpenWRT:
-
-# make menuconfig
-
-Then select the following menu options:
-
- 1. Change the Target system to pistachio:
-
- Target System (Atheros AR7xxx/AR9xxx) --->
- (X) IMG MIPS Pistachio
-
 Simply running "make" will build your firmware.
-It will download all sources, build the cross-compile toolchain,
+It will download all sources, build the cross-compile toolchain, 
 the kernel and all choosen applications.
-
-For more details please refer [How to build and run OpenWrt on (Ci40) Marduk Platform,
-(https://github.com/CreatorKit/creator-docs/blob/master/OPENWRT.md)
 
 You can use "scripts/flashing/flash.sh" for remotely updating your embedded
 system via tftp.
@@ -46,4 +31,5 @@ the lack of case sensitiveness in the file system.
 Sunshine!
 	Your OpenWrt Project
 	http://openwrt.org
+
 

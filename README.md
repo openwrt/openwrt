@@ -45,7 +45,7 @@ Firstly, to obtain a copy of the (Ci40) Marduk platform supported OpenWrt source
 
  * Install Git:  ```` sudo apt-get install git ````
 
- * Clone the repository: ```` git clone https://github.com/FlowM2M/openwrt.git ````
+ * Clone the repository: ```` git clone https://github.com/IMGCreator/openwrt.git ````
 
 To simply make a build based on the IMG default config run the following commands:
 
@@ -250,7 +250,7 @@ and initramfs filesystem.
     $ sudo apt-get install tftpd
 
 Create /etc/xinetd.d/tftp with following contents:
-    
+
     service tftp
     {
      protocol        = udp
@@ -274,7 +274,7 @@ Now use Serial Console to connect device to host PC. Switch on device and press 
 To use tftp boot, set following environment variables.
 
     $ pistachio # setenv ethaddr <xx:xx:xx:xx:xx:xx> # Set mac address for Ethernet
-(To generate mac address use command 
+(To generate mac address use command
 
     "echo "e2:"`od /dev/random -N5 -t x1 -An | sed 's/ /:/g' | cut -c1 --complement`"
 
