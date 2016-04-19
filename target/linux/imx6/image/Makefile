@@ -67,6 +67,34 @@ define Build/ubi-boot-overlay
 	)
 endef
 
+define Build/bootfs.tar.gz
+	# boot filesystem
+	rm -rf $(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)
+	mkdir -p $(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)
+	$(CP) $< $(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)/$(IMG_PREFIX)-uImage
+	ln -sf $(IMG_PREFIX)-uImage \
+		$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)/uImage
+	$(foreach dts,$(shell echo $(DEVICE_DTS)), \
+		$(CP) $(LINUX_DIR)/arch/$(ARCH)/boot/dts/$(dts).dtb \
+			$(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb; \
+		$(CP) $(LINUX_DIR)/arch/$(ARCH)/boot/dts/$(dts).dtb \
+			$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)/$(IMG_PREFIX)-$(dts).dtb; \
+		ln -sf $(IMG_PREFIX)-$(dts).dtb \
+			$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)/$(dts).dtb; \
+	)
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
+		-n '$(DEVICE_ID) OpenWrt bootscript' \
+		-d ./bootscript-$(DEVICE_NAME) \
+		$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)/6x_bootscript-$(DEVICE_NAME)
+
+	# tar and zip
+	( \
+		cd $(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME); \
+		$(TAR) --numeric-owner --owner=0 --group=0 --transform "s,./,./boot/," \
+			-czvf $(BIN_DIR)/$(IMG_PREFIX)-$(DEVICE_NAME)-bootfs.tar.gz . ; \
+	)
+endef
+
 #################################################
 # Devices
 #################################################
@@ -103,9 +131,10 @@ define Device/ventana
 		imx6q-gw5400-a \
 		imx6q-gw551x \
 		imx6q-gw552x
-	IMAGES := nand_normal.ubi nand_large.ubi
+	IMAGES := nand_normal.ubi nand_large.ubi bootfs.tar.gz
 	IMAGE/nand_normal.ubi := ubi-boot-overlay normal 2048 124KiB 128KiB 8124
 	IMAGE/nand_large.ubi := ubi-boot-overlay large 4096 248KiB 256KiB 8124
+	IMAGE/bootfs.tar.gz := bootfs.tar.gz
 	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1)-$$(2)
 endef
 
