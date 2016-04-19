@@ -362,7 +362,7 @@ You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loW
 
         $root@OpenWrt:/# /etc/init.d/network restart
 
-2. You can enable wifi by default by following below steps :-
+2. You can enable WiFi by default by following below steps :-
     - set ssid and password for WiFi either at compile time from file target/linux/pistachio/base-files/etc/uci-defaults/config/wireless
 
 
@@ -378,7 +378,7 @@ You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loW
 
             $root@OpenWrt:/# /etc/init.d/network restart
 
-   - set defaultroute in target/linux/pistachio/base-files/etc/uci-defaults/config/network as
+   - set default route for WiFi in target/linux/pistachio/base-files/etc/uci-defaults/config/network as
 
             option 'defaultroute' '1'
 
