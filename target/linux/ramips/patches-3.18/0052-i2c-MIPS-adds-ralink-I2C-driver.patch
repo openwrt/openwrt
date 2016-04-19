@@ -45,7 +45,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -711,6 +711,10 @@ config I2C_RK3X
+@@ -711,6 +711,10 @@
  	  This driver can also be built as a module. If so, the module will
  	  be called i2c-rk3x.
  
@@ -58,7 +58,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	help
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -66,6 +66,7 @@ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
+@@ -66,6 +66,7 @@
  obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
  obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
  obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
@@ -68,7 +68,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-ralink.c
-@@ -0,0 +1,327 @@
+@@ -0,0 +1,308 @@
 +/*
 + * drivers/i2c/busses/i2c-ralink.c
 + *
@@ -113,9 +113,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define REG_STATUS_REG		0x18
 +#define REG_STARTXFR_REG	0x1C
 +#define REG_BYTECNT_REG		0x20
-+#define REG_SM0CFG2		0x28
-+#define REG_SM0CTL0		0x40
++#define REG_SM0CFG2			0x28
++#define REG_SM0CTL0			0x40
 +
++#define SYSC_REG_RESET_CTRL	0x34
++
++#define I2C_RST			(1<<16)
 +#define I2C_STARTERR		BIT(4)
 +#define I2C_ACKERR		BIT(3)
 +#define I2C_DATARDY		BIT(2)
@@ -125,8 +128,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define I2C_DEVADLEN_7		(6 << 2)
 +#define I2C_ADDRDIS		BIT(1)
 +
-+#define CLKDIV_VALUE		200 // clock rate is 40M, 40M / (200*2) = 100k (standard i2c bus rate).
-+//#define CLKDIV_VALUE		50 // clock rate is 40M, 40M / (50*2) = 400k (fast i2c bus rate).
++#define CLKDIV_VALUE		200
 +
 +#define READ_CMD		0x01
 +#define WRITE_CMD		0x00
@@ -138,8 +140,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define SM0CTL0_STRETCH		BIT(1)
 +#define SM0CTL0_DEFAULT		(SM0CTL0_OD | SM0CTL0_VTRIG | SM0CTL0_OUTHI | SM0CTL0_STRETCH)
 +
-+/* timeout waiting for I2C devices to respond (clock streching) */
-+#define RT_I2C_TIMEOUT (msecs_to_jiffies(1000))
++#define MAX_SIZE			63
 +
 +enum {
 +	I2C_TYPE_RALINK,
@@ -160,54 +161,50 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return ioread32(membase + reg);
 +}
 +
-+static inline int rt_i2c_get_ack(void)
++static void rt_i2c_default_speed(void)
 +{
-+        return (rt_i2c_r32(REG_STATUS_REG) & I2C_ACKERR) ? -EIO : 0;
++	if (hw_type == I2C_TYPE_RALINK) {
++		rt_i2c_w32(CLKDIV_VALUE, REG_CLKDIV_REG);
++	} else {
++		rt_i2c_w32((CLKDIV_VALUE << 16) | SM0CTL0_DEFAULT, REG_SM0CTL0);
++		rt_i2c_w32(1, REG_SM0CFG2);
++	}
++}
++
++static void rt_i2c_init(struct i2c_adapter *a)
++{/*
++	u32 val;
++	
++	val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
++	val |= I2C_RST;
++	rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
++	
++	val &= ~I2C_RST;
++	rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
++*/
++	device_reset(a->dev.parent);
++	
++	udelay(500);
++	rt_i2c_w32(I2C_DEVADLEN_7 | I2C_ADDRDIS, REG_CONFIG_REG);
++	
++	rt_i2c_default_speed();
 +}
 +
 +static inline int rt_i2c_wait_rx_done(void)
 +{
-+	unsigned long timeout;
-+
-+	timeout = jiffies + RT_I2C_TIMEOUT;
-+
-+	do {
-+		if (time_after(jiffies, timeout))
-+			return (-ETIMEDOUT);
-+
-+	} while (!(rt_i2c_r32(REG_STATUS_REG) & I2C_DATARDY));
-+
++	while (!(rt_i2c_r32(REG_STATUS_REG) & I2C_DATARDY));
 +	return 0;
 +}
 +
 +static inline int rt_i2c_wait_idle(void)
 +{
-+	unsigned long timeout;
-+
-+	timeout = jiffies + RT_I2C_TIMEOUT;
-+
-+	do {
-+		if (time_after(jiffies, timeout)) {
-+			printk("i2c-read line busy\n");
-+			return 1;
-+		}
-+	} while (rt_i2c_r32(REG_STATUS_REG) & I2C_BUSY);
-+
++	while (rt_i2c_r32(REG_STATUS_REG) & I2C_BUSY);
 +	return 0;
 +}
 +
 +static inline int rt_i2c_wait_tx_done(void)
 +{
-+	unsigned long timeout;
-+
-+	timeout = jiffies + RT_I2C_TIMEOUT;
-+
-+	do {
-+		if (time_after(jiffies, timeout))
-+			return (-ETIMEDOUT);
-+
-+	} while (!(rt_i2c_r32(REG_STATUS_REG) & I2C_SDOEMPTY));
-+
++	while (!(rt_i2c_r32(REG_STATUS_REG) & I2C_SDOEMPTY));
 +	return 0;
 +}
 +
@@ -215,7 +212,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	int i = 0, j = 0, pos = 0;
 +	int nblock = msg->len / READ_BLOCK;
-+        int rem = msg->len % READ_BLOCK;
++	int rem = msg->len % READ_BLOCK;
 +	int ret = 0;
 +
 +	if (msg->flags & I2C_M_TEN) {
@@ -223,48 +220,41 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		return -EINVAL;
 +	}
 +
++	if (msg->len > MAX_SIZE) {
++		printk("Notice! The FIFO data length is 64 Byte\n");
++		return -EINVAL;
++	}
++
 +	if (msg->flags & I2C_M_RD) {
 +		for (i = 0; i < nblock; i++) {
-+	                if (rt_i2c_wait_idle())
-+				return -ETIMEDOUT;
++			rt_i2c_wait_idle();
 +			rt_i2c_w32(READ_BLOCK - 1, REG_BYTECNT_REG);
 +			rt_i2c_w32(READ_CMD, REG_STARTXFR_REG);
 +			for (j = 0; j < READ_BLOCK; j++) {
-+				if (rt_i2c_wait_rx_done() < 0)
-+					ret = rt_i2c_wait_rx_done();
-+                                if (rt_i2c_get_ack() < 0)
-+					ret = rt_i2c_get_ack();
++				rt_i2c_wait_rx_done();
 +				msg->buf[pos++] = rt_i2c_r32(REG_DATAIN_REG);
 +			}
 +		}
 +
-+		if (rt_i2c_wait_idle())
-+			return -ETIMEDOUT;
++		rt_i2c_wait_idle();
 +		if (rem) {
 +			rt_i2c_w32(rem - 1, REG_BYTECNT_REG);
 +			rt_i2c_w32(READ_CMD, REG_STARTXFR_REG);
 +		}
 +		for (i = 0; i < rem; i++) {
-+			if (rt_i2c_wait_rx_done() < 0)
-+				ret = rt_i2c_wait_rx_done();
-+                        if (rt_i2c_get_ack() < 0)
-+				ret = rt_i2c_get_ack();
-+
++			rt_i2c_wait_rx_done();
 +			msg->buf[pos++] = rt_i2c_r32(REG_DATAIN_REG);
 +		}
 +	} else {
-+		if (rt_i2c_wait_idle())
-+			return -ETIMEDOUT;
++		rt_i2c_wait_idle();
 +		rt_i2c_w32(msg->len - 1, REG_BYTECNT_REG);
 +		for (i = 0; i < msg->len; i++) {
 +			rt_i2c_w32(msg->buf[i], REG_DATAOUT_REG);
-+			rt_i2c_w32(WRITE_CMD, REG_STARTXFR_REG);
-+
-+			if (rt_i2c_wait_tx_done() < 0)
-+				ret = rt_i2c_wait_tx_done();
-+                        if (rt_i2c_get_ack() < 0)
-+				ret = rt_i2c_get_ack();
++			if (i == 0)
++				rt_i2c_w32(WRITE_CMD, REG_STARTXFR_REG);
++			rt_i2c_wait_tx_done();
 +		}
++		//mdelay(2);
 +	}
 +
 +	return ret;
@@ -275,21 +265,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	int i = 0;
 +	int ret = 0;
 +
-+	if (rt_i2c_wait_idle())
-+		return -ETIMEDOUT;
-+
-+	device_reset(a->dev.parent);
-+
 +	rt_i2c_w32(m->addr, REG_DEVADDR_REG);
-+	rt_i2c_w32(I2C_DEVADLEN_7 | I2C_ADDRDIS, REG_CONFIG_REG);
-+	if (hw_type == I2C_TYPE_RALINK) {
-+		rt_i2c_w32(CLKDIV_VALUE, REG_CLKDIV_REG);
-+	} else {
-+		rt_i2c_w32((CLKDIV_VALUE << 16) | SM0CTL0_DEFAULT, REG_SM0CTL0);
-+		rt_i2c_w32(1, REG_SM0CFG2);
-+	}
++	rt_i2c_w32(0, REG_ADDR_REG);
 +
-+	for (i = 0; i < n && !ret; i++) {
++	for (i = 0; ret == 0 && i !=n; i++) {
 +		ret = rt_i2c_handle_msg(a, &m[i]);
 +
 +		if (ret < 0) {
@@ -297,7 +276,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		}
 +	}
 +
-+	return n;
++	return i;
 +}
 +
 +static u32 rt_i2c_func(struct i2c_adapter *a)
@@ -356,6 +335,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		return ret;
 +
 +	platform_set_drvdata(pdev, adapter);
++
++	rt_i2c_init(adapter);
 +
 +	dev_info(&pdev->dev, "loaded\n");
 +
