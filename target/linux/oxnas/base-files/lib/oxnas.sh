@@ -13,6 +13,9 @@ oxnas_board_detect() {
 	machine=$(cat /proc/device-tree/model)
 
 	case "$machine" in
+	*"Akitio MyCloud mini"*)
+		name="akitio"
+		;;
 	*"MitraStar Technology Corp. STG-212"*)
 		name="stg212"
 		;;

@@ -18,7 +18,7 @@ DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE
 DEVICE_VARS += KERNEL_IN_UBI UBOOTENV_IN_UBI UBIFS_OPTS
 
 KERNEL_LOADADDR := 0x60008000
-TARGET_DEVICES = kd20 pogoplug-pro pogoplug-v3 stg212
+TARGET_DEVICES = akitio kd20 pogoplug-pro pogoplug-v3 stg212
 
 define Device/Default
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -38,6 +38,10 @@ define Device/Default
   UBOOTENV_IN_UBI := 1
 endef
 
+define Device/akitio
+  PROFILES := Default AKITIO
+  DEVICE_DTS := ox820-akitio
+endef
 
 define Device/kd20
   PROFILES := Default KD20

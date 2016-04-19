@@ -7,6 +7,9 @@ board=$(oxnas_board_name)
 board_config_update
 
 case $board in
+	akitio)
+		ucidef_set_led_default "status" "status" "akitio:red:status" "0"
+		;;
 	stg212)
 		ucidef_set_led_default "power" "power" "zyxel:blue:status" "1"
 		ucidef_set_led_usbdev "usb" "USB" "zyxel:orange:copy" "1-1"
