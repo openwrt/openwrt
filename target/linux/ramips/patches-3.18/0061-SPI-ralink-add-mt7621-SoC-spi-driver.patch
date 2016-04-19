@@ -1,6 +1,6 @@
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -439,6 +439,12 @@ config SPI_RT2880
+@@ -439,6 +439,12 @@
  	help
  	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
  
@@ -15,7 +15,7 @@
  	depends on ARCH_S3C24XX
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -46,6 +46,7 @@ obj-$(CONFIG_SPI_LM70_LLP)		+= spi-lm70l
+@@ -46,6 +46,7 @@
  obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mpc512x-psc.o
  obj-$(CONFIG_SPI_MPC52xx_PSC)		+= spi-mpc52xx-psc.o
  obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52xx.o
@@ -25,7 +25,7 @@
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
 --- /dev/null
 +++ b/drivers/spi/spi-mt7621.c
-@@ -0,0 +1,480 @@
+@@ -0,0 +1,390 @@
 +/*
 + * spi-mt7621.c -- MediaTek MT7621 SPI controller driver
 + *
@@ -113,16 +113,13 @@
 +	iowrite32(val, rs->base + reg);
 +}
 +
-+static void mt7621_spi_reset(struct mt7621_spi *rs, int duplex)
++static void mt7621_spi_reset(struct mt7621_spi *rs)
 +{
 +	u32 master = mt7621_spi_read(rs, MT7621_SPI_MASTER);
 +
 +	master |= 7 << 29;
 +	master |= 1 << 2;
-+	if (duplex)
-+		master |= 1 << 10;
-+	else
-+		master &= ~(1 << 10);
++	master &= ~(1 << 10);
 +
 +	mt7621_spi_write(rs, MT7621_SPI_MASTER, master);
 +}
@@ -133,7 +130,7 @@
 +	int cs = spi->chip_select;
 +	u32 polar = 0;
 +
-+        mt7621_spi_reset(rs, cs);
++        mt7621_spi_reset(rs);
 +	if (enable)
 +		polar = BIT(cs);
 +	mt7621_spi_write(rs, MT7621_SPI_POLAR, polar);
@@ -291,99 +288,12 @@
 +	return 0;
 +}
 +
-+static int mt7621_spi_transfer_full_duplex(struct spi_master *master,
-+					   struct spi_message *m)
-+{
-+	struct mt7621_spi *rs = spi_master_get_devdata(master);
-+	struct spi_device *spi = m->spi;
-+	unsigned int speed = spi->max_speed_hz;
-+	struct spi_transfer *t = NULL;
-+	int status = 0;
-+	int i, len = 0;
-+	int rx_len = 0;
-+	u32 data[9] = { 0 };
-+	u32 val = 0;
-+
-+	mt7621_spi_wait_till_ready(spi);
-+
-+	list_for_each_entry(t, &m->transfers, transfer_list) {
-+		const u8 *buf = t->tx_buf;
-+
-+		if (t->rx_buf)
-+			rx_len += t->len;
-+
-+		if (!buf)
-+			continue;
-+
-+		if (WARN_ON(len + t->len > 16)) {
-+			status = -EIO;
-+			goto msg_done;
-+		}
-+
-+		for (i = 0; i < t->len; i++, len++)
-+			data[len / 4] |= buf[i] << (8 * (len & 3));
-+		if (speed > t->speed_hz)
-+			speed = t->speed_hz;
-+	}
-+
-+	if (WARN_ON(rx_len > 16)) {
-+		status = -EIO;
-+		goto msg_done;
-+	}
-+
-+	if (mt7621_spi_prepare(spi, speed)) {
-+		status = -EIO;
-+		goto msg_done;
-+	}
-+
-+	for (i = 0; i < len; i += 4)
-+		mt7621_spi_write(rs, MT7621_SPI_DATA0 + i, data[i / 4]);
-+
-+	val |= len * 8;
-+	val |= (rx_len * 8) << 12;
-+	mt7621_spi_write(rs, MT7621_SPI_MOREBUF, val);
-+
-+	mt7621_spi_set_cs(spi, 1);
-+
-+	val = mt7621_spi_read(rs, MT7621_SPI_TRANS);
-+	val |= SPI_CTL_START;
-+	mt7621_spi_write(rs, MT7621_SPI_TRANS, val);
-+
-+	mt7621_spi_wait_till_ready(spi);
-+
-+	mt7621_spi_set_cs(spi, 0);
-+
-+	for (i = 0; i < rx_len; i += 4)
-+		data[i / 4] = mt7621_spi_read(rs, MT7621_SPI_DATA4 + i);
-+
-+	m->actual_length = rx_len;
-+
-+	len = 0;
-+	list_for_each_entry(t, &m->transfers, transfer_list) {
-+		u8 *buf = t->rx_buf;
-+
-+		if (!buf)
-+			continue;
-+
-+		for (i = 0; i < t->len; i++, len++)
-+			buf[i] = data[len / 4] >> (8 * (len & 3));
-+	}
-+
-+msg_done:
-+	m->status = status;
-+	spi_finalize_current_message(master);
-+
-+	return 0;
-+}
-+
 +static int mt7621_spi_transfer_one_message(struct spi_master *master,
 +					   struct spi_message *m)
 +{
 +	struct spi_device *spi = m->spi;
 +	int cs = spi->chip_select;
 +
-+	if (cs)
-+		return mt7621_spi_transfer_full_duplex(master, m);
 +	return mt7621_spi_transfer_half_duplex(master, m);
 +}
 +
@@ -470,7 +380,7 @@
 +
 +	device_reset(&pdev->dev);
 +
-+	mt7621_spi_reset(rs, 0);
++	mt7621_spi_reset(rs);
 +
 +	return spi_register_master(master);
 +}
