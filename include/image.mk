@@ -574,11 +574,11 @@ define BuildImage
 		$(call Build/Clean)
 
     image_prepare: compile
-		mkdir -p $(KDIR)/tmp
+		mkdir -p $(BIN_DIR) $(KDIR)/tmp
 		$(call Image/Prepare)
   else
     image_prepare:
-		mkdir -p $(KDIR)/tmp
+		mkdir -p $(BIN_DIR) $(KDIR)/tmp
   endif
 
   mkfs_prepare: image_prepare
