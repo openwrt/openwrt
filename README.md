@@ -362,24 +362,28 @@ You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loW
 
         $root@OpenWrt:/# /etc/init.d/network restart
 
-2. You can set ssid and password for WiFi either at compile time from file target/linux/pistachio/base-files/etc/uci-defaults/config/wireless
+2. You can enable wifi by default by following below steps :-
+    - set ssid and password for WiFi either at compile time from file target/linux/pistachio/base-files/etc/uci-defaults/config/wireless
 
 
-        config wifi-iface
-            option device       radio0
-            option network      sta
-            option mode         sta
-            option ssid         <XYZ>
-            option encryption   psk2
-            option key          <Password>
+            config wifi-iface
+                option device       radio0
+                option network      sta
+                option mode         sta
+                option ssid         <XYZ>
+                option encryption   psk2
+                option key          <Password>
 
-    OR after booting update /etc/config/wireless as above and restart the network by running following command from CLI.
+        OR after booting update /etc/config/wireless as above and restart the network by running following command from CLI.
 
-        $root@OpenWrt:/# /etc/init.d/network restart
+            $root@OpenWrt:/# /etc/init.d/network restart
+
+   - set defaultroute in target/linux/pistachio/base-files/etc/uci-defaults/config/network as
+
+            option 'defaultroute' '1'
 
 ### Known Issues:
 
 - Cleaned up kernel patches will be upstreamed soon.
 - OPKG support is not implemented.
-
 
