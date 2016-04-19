@@ -5,20 +5,20 @@
 #
 
 define Profile/POGOPLUG_PRO
-  NAME:=PogoPlug Pro
+  NAME:=Cloud Engines Pogoplug Pro
 endef
 
 define Profile/POGOPLUG_PRO/Description
- Profile with built-in ox820 PogoPlug Pro device-tree
+ Profile with built-in ox820 Pogoplug Pro device-tree
  (board with miniPCIe slot)
 endef
 
 define Profile/POGOPLUG_V3
-  NAME:=PogoPlug V3
+  NAME:=Cloud Engines Pogoplug V3
 endef
 
 define Profile/POGOPLUG_V3/Description
- Profile with built-in ox820 PogoPlug V3 device-tree
+ Profile with built-in ox820 Pogoplug V3 device-tree
  (board without miniPCIe slot)
 endef
 
