@@ -6,6 +6,9 @@
 
 get_status_led() {
 	case $(oxnas_board_name) in
+	akitio)
+		status_led="akitio:red:status"
+		;;
 	stg212)
 		status_led="zyxel:blue:status"
 		;;
