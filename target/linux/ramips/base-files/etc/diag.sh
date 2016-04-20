@@ -21,6 +21,7 @@ get_status_led() {
 	br-6475nd|\
 	e1700|\
 	fonera20n|\
+	mzk-750dhp|\
 	mzk-dp150n|\
 	mzk-w300nh2|\
 	nbg-419n|\
