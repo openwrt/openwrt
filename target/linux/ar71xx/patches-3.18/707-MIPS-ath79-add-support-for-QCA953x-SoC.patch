@@ -22,7 +22,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
 
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -1257,6 +1257,10 @@ config SOC_AR934X
+@@ -1266,6 +1266,10 @@ config SOC_AR934X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -33,7 +33,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  config SOC_QCA955X
  	select HW_HAS_PCI
  	select PCI_AR724X if PCI
-@@ -1299,7 +1303,7 @@ config ATH79_DEV_USB
+@@ -1308,7 +1312,7 @@ config ATH79_DEV_USB
  	def_bool n
  
  config ATH79_DEV_WMAC
@@ -275,7 +275,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  	else
 --- a/arch/mips/ath79/early_printk.c
 +++ b/arch/mips/ath79/early_printk.c
-@@ -114,6 +114,8 @@ static void prom_putchar_init(void)
+@@ -116,6 +116,8 @@ static void prom_putchar_init(void)
  	case REV_ID_MAJOR_AR9341:
  	case REV_ID_MAJOR_AR9342:
  	case REV_ID_MAJOR_AR9344:

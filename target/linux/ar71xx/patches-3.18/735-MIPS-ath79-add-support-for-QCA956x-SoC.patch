@@ -211,7 +211,7 @@
  
 --- a/arch/mips/ath79/early_printk.c
 +++ b/arch/mips/ath79/early_printk.c
-@@ -118,6 +118,8 @@ static void prom_putchar_init(void)
+@@ -120,6 +120,8 @@ static void prom_putchar_init(void)
  	case REV_ID_MAJOR_QCA9533_V2:
  	case REV_ID_MAJOR_QCA9556:
  	case REV_ID_MAJOR_QCA9558:
@@ -378,7 +378,7 @@
  }
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -1277,6 +1277,12 @@ config SOC_QCA955X
+@@ -1286,6 +1286,12 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -391,7 +391,7 @@
  config ATH79_DEV_M25P80
  	select ATH79_DEV_SPI
  	def_bool n
-@@ -1314,7 +1320,7 @@ config ATH79_DEV_USB
+@@ -1323,7 +1329,7 @@ config ATH79_DEV_USB
  	def_bool n
  
  config ATH79_DEV_WMAC

@@ -1,0 +1,49 @@
+From f1ba020af5076172c9d29006a747ccf40027fedc Mon Sep 17 00:00:00 2001
+Message-Id: <f1ba020af5076172c9d29006a747ccf40027fedc.1458840219.git.mschiffer@universe-factory.net>
+From: Matthias Schiffer <mschiffer@universe-factory.net>
+Date: Thu, 24 Mar 2016 15:34:05 +0100
+Subject: [PATCH] MIPS: ath79: make bootconsole wait for both THRE and TEMT
+
+This makes the ath79 bootconsole behave the same way as the generic 8250
+bootconsole.
+
+Also waiting for TEMT (transmit buffer is empty) instead of just THRE
+(transmit buffer is not full) ensures that all characters have been
+transmitted before the real serial driver starts reconfiguring the serial
+controller (which would sometimes result in garbage being transmitted.)
+This change does not cause a visible performance loss.
+
+In addition, this seems to fix a hang observed in certain configurations on
+many AR7xxx/AR9xxx SoCs during autoconfig of the real serial driver.
+
+A more complete follow-up patch will disable 8250 autoconfig for ath79
+altogether (the serial controller is detected as a 16550A, which is not
+fully compatible with the ath79 serial, and the autoconfig may lead to
+undefined behavior on ath79.)
+
+Cc: <stable@vger.kernel.org>
+Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
+---
+ arch/mips/ath79/early_printk.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/ath79/early_printk.c
++++ b/arch/mips/ath79/early_printk.c
+@@ -31,13 +31,15 @@ static inline void prom_putchar_wait(voi
+ 	} while (1);
+ }
+ 
++#define BOTH_EMPTY (UART_LSR_TEMT | UART_LSR_THRE)
++
+ static void prom_putchar_ar71xx(unsigned char ch)
+ {
+ 	void __iomem *base = (void __iomem *)(KSEG1ADDR(AR71XX_UART_BASE));
+ 
+-	prom_putchar_wait(base + UART_LSR * 4, UART_LSR_THRE, UART_LSR_THRE);
++	prom_putchar_wait(base + UART_LSR * 4, BOTH_EMPTY, BOTH_EMPTY);
+ 	__raw_writel(ch, base + UART_TX * 4);
+-	prom_putchar_wait(base + UART_LSR * 4, UART_LSR_THRE, UART_LSR_THRE);
++	prom_putchar_wait(base + UART_LSR * 4, BOTH_EMPTY, BOTH_EMPTY);
+ }
+ 
+ static void prom_putchar_ar933x(unsigned char ch)
