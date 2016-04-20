@@ -25,7 +25,7 @@
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
 --- /dev/null
 +++ b/drivers/spi/spi-mt7621.c
-@@ -0,0 +1,390 @@
+@@ -0,0 +1,391 @@
 +/*
 + * spi-mt7621.c -- MediaTek MT7621 SPI controller driver
 + *
@@ -217,19 +217,20 @@
 +
 +	list_for_each_entry(t, &m->transfers, transfer_list) {
 +		const u8 *buf = t->tx_buf;
++		int rlen = t->len;
 +
 +		if (t->rx_buf)
-+			rx_len += t->len;
++			rx_len += rlen;
 +
 +		if (!buf)
 +			continue;
 +
-+		if (WARN_ON(len + t->len > 36)) {
++		if (WARN_ON(len + rlen > 36)) {
 +			status = -EIO;
 +			goto msg_done;
 +		}
 +
-+		for (i = 0; i < t->len; i++, len++)
++		for (i = 0; i < rlen; i++, len++)
 +			data[len / 4] |= buf[i] << (8 * (len & 3));
 +	}
 +
@@ -363,7 +364,7 @@
 +
 +	master->setup = mt7621_spi_setup;
 +	master->transfer_one_message = mt7621_spi_transfer_one_message;
-+	master->bits_per_word_mask = SPI_BPW_MASK(8);
++	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(8, 16);
 +	master->dev.of_node = pdev->dev.of_node;
 +	master->num_chipselect = 2;
 +
