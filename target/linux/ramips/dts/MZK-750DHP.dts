@@ -11,6 +11,10 @@
 			status = "okay";
 		};
 
+		gpio2: gpio@660 {
+			status = "okay";
+		};
+
 		spi@b00 {
 			status = "okay";
 
@@ -51,7 +55,7 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "i2c", "spi refclk", "rgmii1";
+				ralink,group = "i2c", "spi refclk", "rgmii1", "nd_sd";
 				ralink,function = "gpio";
 			};
 		};
@@ -74,6 +78,15 @@
 
 	pcie@10140000 {
 		status = "okay";
+
+		pcie-bridge {
+			mt76@0,0 {
+				reg = <0x0000 0 0 0 0>;
+				device_type = "pci";
+				mediatek,mtd-eeprom = <&factory 0x8000>;
+				mediatek,2ghz = <0>;
+			};
+		};
 	};
 	
 	gpio-leds {
@@ -81,12 +94,17 @@
 
 		wps {
 			label = "mzk-750dhp:green:wps";
-			gpios = <&gpio1 11 1>;
+			gpios = <&gpio2 15 1>;
 		};
 
 		power {
 			label = "mzk-750dhp:green:power";
 			gpios = <&gpio1 15 1>;
+		};
+
+		wlan5g {
+			label = "mzk-750dhp:green:wlan5g";
+			gpios = <&gpio1 14 1>;
 		};
 	};
 
@@ -99,12 +117,12 @@
 		s1 {
 			label = "reset";
 			gpios = <&gpio0 1 1>;
-			linux,code = <0x100>;
+			linux,code = <0x198>;
 		};
 
 		s2 {
 			label = "wps";
-			gpios = <&gpio0 2 1>;
+			gpios = <&gpio2 19 1>;
 			linux,code = <0x211>;
 		};
 	};
