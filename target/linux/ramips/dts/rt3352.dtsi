@@ -252,8 +252,9 @@
 		interrupts = <17>;
 	};
 
-	usbphy {
+	usbphy: usbphy {
 		compatible = "ralink,rt3352-usbphy";
+		#phy-cells = <1>;
 
 		resets = <&rstctrl 22 &rstctrl 25>;
 		reset-names = "host", "device";
@@ -273,6 +274,9 @@
 		compatible = "generic-ehci";
 		reg = <0x101c0000 0x1000>;
 
+		phys = <&usbphy 1>;
+		phy-names = "usb";
+
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
 
@@ -282,6 +286,9 @@
 	ohci@101c1000 {
 		compatible = "generic-ohci";
 		reg = <0x101c1000 0x1000>;
+
+		phys = <&usbphy 1>;
+		phy-names = "usb";
 
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
