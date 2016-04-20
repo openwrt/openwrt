@@ -37,6 +37,7 @@ endef
 define Build/trx-serial
 	$(STAGING_DIR_HOST)/bin/trx \
 		-o $@ \
+		-m 33554432 \
 		-f $(word 1,$^) -a 1024 \
 		-f $(KDIR)/root.squashfs -a 0x10000 -A $(KDIR)/fs_mark
 endef
