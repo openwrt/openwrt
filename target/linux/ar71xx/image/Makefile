@@ -49,14 +49,15 @@ endef
 # -X reserve <size> bytes in the firmware image (hexval prefixed with 0x)
 define Build/mktplinkfw
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) $2 \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) \
 		-m $(TPLINK_HEADER_VERSION) \
 		-k $(word 1,$^) \
 		-r $@ \
 		-o $@.new \
 		-j -X 0x40000 \
 		-a $(call rootfs_align,$(FILESYSTEM)) \
-		$(if $(findstring sysupgrade,$1),-s) && mv $@.new $@ || rm -f $@
+		$(wordlist 2,$(words $(1)),$(1)) \
+		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && mv $@.new $@ || rm -f $@
 endef
 
 # mktplinkfw-initramfs <optional extra arguments to mktplinkfw binary>
@@ -64,7 +65,7 @@ endef
 # -c combined image
 define Build/mktplinkfw-initramfs
 	$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) $2 \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) $(1) \
 		-m $(TPLINK_HEADER_VERSION) \
 		-k $@ \
 		-o $@.new \
@@ -75,14 +76,14 @@ endef
 
 define Build/tplink-safeloader
        -$(STAGING_DIR_HOST)/bin/tplink-safeloader \
-               -B $(TPLINK_BOARD_NAME) \
-               -V $(REVISION) \
-               -k $(word 1,$^) \
-               -r $@ \
-               -o $@.new \
-               $2 \
-               -j \
-               $(if $(findstring sysupgrade,$1),-S) && mv $@.new $@ || rm -f $@
+		-B $(TPLINK_BOARD_NAME) \
+		-V $(REVISION) \
+		-k $(word 1,$^) \
+		-r $@ \
+		-o $@.new \
+		-j \
+		$(wordlist 2,$(words $(1)),$(1)) \
+		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && mv $@.new $@ || rm -f $@
 endef
 
 define Build/loader-common
@@ -967,8 +968,8 @@ define Device/tl-wr2543-v1
     BOARDNAME := TL-WR2543N
     DEVICE_PROFILE := TLWR2543
     TPLINK_HWID := 0x25430001
-    IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade "-v 3.13.99"
-    IMAGE/factory.bin := append-rootfs | mktplinkfw factory "-v 3.13.99"
+    IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade -v 3.13.99
+    IMAGE/factory.bin := append-rootfs | mktplinkfw factory -v 3.13.99
 endef
 TARGET_DEVICES += tl-wr2543-v1
 
