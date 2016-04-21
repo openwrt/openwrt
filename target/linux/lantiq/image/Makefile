@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2012 OpenWrt.org
+# Copyright (C) 2010-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,6 +9,9 @@
 #EASY50712 ARV3527P
 
 JFFS2_BLOCKSIZE = 64k 128k 256k
+
+KERNEL_LOADADDR = 0x80002000
+KERNEL_ENTRY = 0x80a00000
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
@@ -269,21 +272,76 @@ endif
 endef
 
 
+### Kernel scripts ###
+define Build/append-dtb
+	$(call Image/BuildDTB,../dts/$(DEVICE_DTS).dts,$@.dtb)
+	cat $@.dtb >> $@
+endef
+
+define Build/tplink-fw
+	mktplinkfw2 -c -B $(BOARD_ID) -s \
+		-k $@ -o $@.new
+	mv $@.new $@
+endef
+
+define Build/mktplinkfw2
+	mktplinkfw2 -B $(BOARD_ID) -s -a 0x4 -j \
+		-k $(word 1,$^) -r $(word 2,$^) \
+		-o $@
+endef
+
+
+# Shared device definition: applies to every defined device
+define Device/Default
+  PROFILES = Default $$(DEVICE_PROFILE)
+  KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
+  KERNEL_INITRAMFS_NAME = $$(KERNEL_NAME)-initramfs
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  FILESYSTEMS := squashfs
+  DEVICE_PROFILE :=
+  DEVICE_DTS :=
+endef
+DEVICE_VARS += BOARD_ID DEVICE_PROFILE DEVICE_DTS
+
+define Device/lantiqTpLink
+  KERNEL := kernel-bin | append-dtb | lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | tplink-fw
+  IMAGES := tplink
+  IMAGE/tplink := mktplinkfw2
+endef
+
+define lantiqTpLink
+  define Device/$(1)
+    $$(Device/lantiqTpLink)
+    DEVICE_PROFILE := $(1)
+    DEVICE_DTS := $(1)
+    BOARD_ID := $(2)
+  endef
+  TARGET_DEVICES += $(1)
+endef
+
+define lantiqImage
+  define Device/$(1)
+    $$(Device/lantiqImage)
+    DEVICE_PROFILE := $(1)
+    DEVICE_DTS := $(1)
+  endef
+  TARGET_DEVICES += $(1)
+endef
+
+
 ifeq ($(CONFIG_TARGET_lantiq_falcon),y)
 
-Image/BuildKernel/Profile/EASY98000NOR=$(call Image/BuildKernel/Template,EASY98000NOR)
-Image/Build/Profile/EASY98000NOR=$(call Image/Build/$(1),$(1),EASY98000NOR)
-
-Image/BuildKernel/Profile/EASY98000SFLASH=$(call Image/BuildKernel/Template,EASY98000SFLASH)
-Image/Build/Profile/EASY98000SFLASH=$(call Image/Build/$(1),$(1),EASY98000SFLASH)
+$(eval $(call lantiqImage,EASY98000NOR))
+$(eval $(call lantiqImage,EASY98000SFLASH))
 
 endif
 
 
 ifeq ($(CONFIG_TARGET_lantiq_ase),y)
 
-Image/BuildKernel/Profile/DGN1000B=$(call Image/BuildKernel/Template,DGN1000B)
-Image/Build/Profile/DGN1000B=$(call Image/Build/$(1),$(1),DGN1000B)
+$(eval $(call lantiqImage,DGN1000B))
 
 endif
 
@@ -294,56 +352,23 @@ ifeq ($(CONFIG_TARGET_lantiq_xway),y)
 Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
 Image/Build/Profile/BTHOMEHUBV2B=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV2B)
 
-Image/BuildKernel/Profile/EASY50712=$(call Image/BuildKernel/Template,EASY50712)
-Image/Build/Profile/EASY50712=$(call Image/Build/$(1),$(1),EASY50712)
-
-Image/BuildKernel/Profile/ACMP252=$(call Image/BuildKernel/Template,ACMP252)
-Image/Build/Profile/ACMP252=$(call Image/Build/$(1),$(1),ACMP252)
-
-Image/BuildKernel/Profile/ARV4510PW=$(call Image/BuildKernel/Template,ARV4510PW)
-Image/Build/Profile/ARV4510PW=$(call Image/Build/$(1),$(1),ARV4510PW)
-
-Image/BuildKernel/Profile/ARV4525PW=$(call Image/BuildKernel/Template,ARV4525PW)
-Image/Build/Profile/ARV4525PW=$(call Image/Build/$(1),$(1),ARV4525PW)
-
-Image/BuildKernel/Profile/ARV7525PW=$(call Image/BuildKernel/Template,ARV7525PW)
-Image/Build/Profile/ARV7525PW=$(call Image/Build/$(1),$(1),ARV7525PW)
-
-Image/BuildKernel/Profile/ARV4518PWR01=$(call Image/BuildKernel/Template,ARV4518PWR01)
-Image/Build/Profile/ARV4518PWR01=$(call Image/Build/$(1),$(1),ARV4518PWR01)
-
-Image/BuildKernel/Profile/ARV4518PWR01A=$(call Image/BuildKernel/Template,ARV4518PWR01A)
-Image/Build/Profile/ARV4518PWR01A=$(call Image/Build/$(1),$(1),ARV4518PWR01A)
-
-Image/BuildKernel/Profile/ARV4519PW=$(call Image/BuildKernel/Template,ARV4519PW)
-Image/Build/Profile/ARV4519PW=$(call Image/Build/$(1),$(1),ARV4519PW)
-
-Image/BuildKernel/Profile/ARV4520PW=$(call Image/BuildKernel/Template,ARV4520PW)
-Image/Build/Profile/ARV4520PW=$(call Image/Build/$(1),$(1),ARV4520PW)
-
-Image/BuildKernel/Profile/ARV452CQW=$(call Image/BuildKernel/Template,ARV452CQW)
-Image/Build/Profile/ARV452CQW=$(call Image/Build/$(1),$(1),ARV452CQW)
-
-Image/BuildKernel/Profile/ARV7510PW22=$(call Image/BuildKernel/Template,ARV7510PW22)
-Image/Build/Profile/ARV7510PW22=$(call Image/Build/$(1),$(1),ARV7510PW22)
-
-Image/BuildKernel/Profile/ARV7518PW=$(call Image/BuildKernel/Template,ARV7518PW)
-Image/Build/Profile/ARV7518PW=$(call Image/Build/$(1),$(1),ARV7518PW)
-
-Image/BuildKernel/Profile/ARV7519PW=$(call Image/BuildKernel/Template,ARV7519PW)
-Image/Build/Profile/ARV7519PW=$(call Image/Build/$(1),$(1),ARV7519PW)
-
-Image/BuildKernel/Profile/ARV752DPW=$(call Image/BuildKernel/Template,ARV752DPW)
-Image/Build/Profile/ARV752DPW=$(call Image/Build/$(1),$(1),ARV752DPW)
-
-Image/BuildKernel/Profile/ARV752DPW22=$(call Image/BuildKernel/Template,ARV752DPW22)
-Image/Build/Profile/ARV752DPW22=$(call Image/Build/$(1),$(1),ARV752DPW22)
-
-Image/BuildKernel/Profile/ARV8539PW22=$(call Image/BuildKernel/Template,ARV8539PW22)
-Image/Build/Profile/ARV8539PW22=$(call Image/Build/$(1),$(1),ARV8539PW22)
-
-Image/BuildKernel/Profile/GIGASX76X=$(call Image/BuildKernel/Template,GIGASX76X)
-Image/Build/Profile/GIGASX76X=$(call Image/Build/$(1),$(1),GIGASX76X)
+$(eval $(call lantiqImage,EASY50712))
+$(eval $(call lantiqImage,ACMP252))
+$(eval $(call lantiqImage,ARV4510PW))
+$(eval $(call lantiqImage,ARV4525PW))
+$(eval $(call lantiqImage,ARV7525PW))
+$(eval $(call lantiqImage,ARV4518PWR01))
+$(eval $(call lantiqImage,ARV4518PWR01A))
+$(eval $(call lantiqImage,ARV4519PW))
+$(eval $(call lantiqImage,ARV4520PW))
+$(eval $(call lantiqImage,ARV452CQW))
+$(eval $(call lantiqImage,ARV7510PW22))
+$(eval $(call lantiqImage,ARV7518PW))
+$(eval $(call lantiqImage,ARV7519PW))
+$(eval $(call lantiqImage,ARV752DPW))
+$(eval $(call lantiqImage,ARV752DPW22))
+$(eval $(call lantiqImage,ARV8539PW22))
+$(eval $(call lantiqImage,GIGASX76X))
 
 
 # AR9
@@ -356,23 +381,15 @@ Image/Build/Profile/DGN3500=$(call Image/BuildDGN3500/$(1),$(1),DGN3500)
 Image/BuildKernel/Profile/DGN3500B=$(call Image/BuildKernel/Template,DGN3500B)
 Image/Build/Profile/DGN3500B=$(call Image/BuildDGN3500B/$(1),$(1),DGN3500B)
 
-Image/BuildKernel/Profile/WBMRA=$(call Image/BuildKernel/Template,WBMR)
-Image/Build/Profile/WBMRA=$(call Image/Build/$(1),$(1),WBMR)
-
-Image/BuildKernel/Profile/WBMRB=$(call Image/BuildKernel/Template,WBMR)
-Image/Build/Profile/WBMRB=$(call Image/Build/$(1),$(1),WBMR)
+$(eval $(call lantiqImage,WBMRA))
+$(eval $(call lantiqImage,WBMRB))
 
 Image/BuildKernel/Profile/FRITZ7320=$(call Image/BuildKernelEVA/Template,FRITZ7320)
 Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
 
-Image/BuildKernel/Profile/GR7000=$(call Image/BuildKernel/Template,GR7000)
-Image/Build/Profile/GR7000=$(call Image/Build/$(1),$(1),GR7000)
-
-Image/BuildKernel/Profile/H201L=$(call Image/BuildKernel/Template,H201L)
-Image/Build/Profile/H201L=$(call Image/Build/$(1),$(1),H201L)
-
-Image/BuildKernel/Profile/P2601HNFX=$(call Image/BuildKernel/Template,P2601HNFX)
-Image/Build/Profile/P2601HNFX=$(call Image/Build/$(1),$(1),P2601HNFX)
+$(eval $(call lantiqImage,GR7000))
+$(eval $(call lantiqImage,H201L))
+$(eval $(call lantiqImage,P2601HNFX))
 
 endif
 
@@ -386,17 +403,13 @@ Image/Build/Profile/P2812HNUF1=$(call Image/BuildNAND/$(1),$(1),P2812HNUF1)
 Image/BuildKernel/Profile/P2812HNUF3=$(call Image/BuildKernel/Template,P2812HNUF3)
 Image/Build/Profile/P2812HNUF3=$(call Image/BuildNAND/$(1),$(1),P2812HNUF3)
 
-Image/BuildKernel/Profile/ARV7519RW22=$(call Image/BuildKernel/Template,ARV7519RW22,$(1))
-Image/Build/Profile/ARV7519RW22=$(call Image/Build/$(1),$(1),ARV7519RW22)
+$(eval $(call lantiqImage,ARV7519RW22))
 
 Image/BuildKernel/Profile/BTHOMEHUBV5A=$(call Image/BuildKernel/Template,BTHOMEHUBV5A)
 Image/Build/Profile/BTHOMEHUBV5A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV5A)
 
-Image/BuildKernel/Profile/EASY80920NAND=$(call Image/BuildKernel/Template,EASY80920NAND)
-Image/Build/Profile/EASY80920NAND=$(call Image/Build/$(1),$(1),EASY80920NAND)
-
-Image/BuildKernel/Profile/EASY80920NOR=$(call Image/BuildKernel/Template,EASY80920NOR)
-Image/Build/Profile/EASY80920NOR=$(call Image/Build/$(1),$(1),EASY80920NOR)
+$(eval $(call lantiqImage,EASY80920NAND))
+$(eval $(call lantiqImage,EASY80920NOR))
 
 Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
 Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
@@ -407,23 +420,15 @@ Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 Image/BuildKernel/Profile/VG3503J_V2=$(call Image/BuildKernelLoader/Template,VG3503J_V2)
 Image/Build/Profile/VG3503J_V2=$(call Image/BuildLoader/$(1),$(1),VG3503J_V2)
 
-Image/BuildKernel/Profile/TDW8970=$(call Image/BuildKernelTPLink/Template,TDW8970,TD-W8970v1,$(1))
-Image/Build/Profile/TDW8970=$(call Image/BuildTPLink/$(1),$(1),TDW8970,TD-W8970v1)
-
-Image/BuildKernel/Profile/TDW8980=$(call Image/BuildKernelTPLink/Template,TDW8980,TD-W8980v1,$(1))
-Image/Build/Profile/TDW8980=$(call Image/BuildTPLink/$(1),$(1),TDW8980,TD-W8980v1)
-
-Image/BuildKernel/Profile/VR200v=$(call Image/BuildKernelTPLink/Template,VR200v,ArcherVR200V,$(1))
-Image/Build/Profile/VR200v=$(call Image/BuildTPLink/$(1),$(1),VR200v,ArcherVR200V)
-
-Image/BuildKernel/Profile/VGV7510KW22NOR=$(call Image/BuildKernel/Template,VGV7510KW22NOR,$(1))
-Image/Build/Profile/VGV7510KW22NOR=$(call Image/Build/$(1),$(1),VGV7510KW22NOR)
+$(eval $(call lantiqTpLink,TDW8970,TD-W8970v1))
+$(eval $(call lantiqTpLink,TDW8980,TD-W8980v1))
+$(eval $(call lantiqTpLink,VR200v,ArcherVR200V))
+$(eval $(call lantiqImage,VGV7510KW22NOR))
 
 Image/BuildKernel/Profile/VGV7510KW22BRN=$(call Image/BuildKernel/Template,VGV7510KW22BRN,$(1))
 Image/Build/Profile/VGV7510KW22BRN=$(call Image/Build/$(1),$(1),VGV7510KW22BRN,BRNDA6431,0x12345678,0x04c11db7,$(1))
 
-Image/BuildKernel/Profile/VGV7519NOR=$(call Image/BuildKernel/Template,VGV7519NOR,$(1))
-Image/Build/Profile/VGV7519NOR=$(call Image/Build/$(1),$(1),VGV7519NOR)
+$(eval $(call lantiqImage,VGV7519NOR))
 
 Image/BuildKernel/Profile/VGV7519BRN=$(call Image/BuildKernel/Template,VGV7519BRN,$(1))
 Image/Build/Profile/VGV7519BRN=$(call Image/Build/$(1),$(1),VGV7519BRN,5D00008000,0x12345678,0x2083b8ed,$(1))
