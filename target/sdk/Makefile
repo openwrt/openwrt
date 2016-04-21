@@ -70,6 +70,8 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) \
 		`cd $(TOPDIR); find $(KDIR_BASE) -name \*.ko` \
+		`cd $(TOPDIR); find $(KDIR_BASE)/firmware/ -newer $(KDIR_BASE)/firmware/Makefile \
+			-type f -name '*.bin' -or -name '*.cis' -or -name '*.csp' -or -name '*.dsp' -or -name '*.fw'` \
 		$(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
 		$(SDK_DIRS) $(KERNEL_FILES) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
