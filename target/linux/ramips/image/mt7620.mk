@@ -64,6 +64,19 @@ endef
 BuildFirmware/Tplink/squashfs=$(call BuildFirmware/OF/tplink,$(1),$(2),$(3),$(4))
 BuildFirmware/Tplink/initramfs=$(call BuildFirmware/OF/tplink/initramfs,$(1),$(2),$(3),$(4))
 
+define BuildFirmware/WRH-300CR/squashfs
+	$(call BuildFirmware/Default16M/squashfs,$(1),$(2),$(3))
+	cp $(call sysupname,$(1),$(2)) $(KDIR)/v_0.0.0.bin
+	( \
+		$(STAGING_DIR_HOST)/bin/md5sum $(KDIR)/v_0.0.0.bin | \
+			sed 's/ .*//' && \
+		echo 458 \
+	) | $(STAGING_DIR_HOST)/bin/md5sum | \
+		sed 's/ .*//' > $(KDIR)/v_0.0.0.md5
+	$(STAGING_DIR_HOST)/bin/tar -cf $(call imgname,$(1),$(2))-factory.bin -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
+endef
+BuildFirmware/WRH-300CR/initramfs=$(call BuildFirmware/Default16M/initramfs,$(1),$(2),$(3))
+
 
 Image/Build/Profile/E1700=$(call BuildFirmware/UMedia/$(1),$(1),e1700,E1700,0x013326)
 ex2700_mtd_size=3866624
@@ -98,6 +111,7 @@ Image/Build/Profile/MLW221=$(call BuildFirmware/Default16M/$(1),$(1),mlw221,MLW2
 Image/Build/Profile/MLWG2=$(call BuildFirmware/Default16M/$(1),$(1),mlwg2,MLWG2)
 Image/Build/Profile/WMR-300=$(call BuildFirmware/Default8M/$(1),$(1),wmr-300,WMR-300)
 Image/Build/Profile/RT-N14U=$(call BuildFirmware/Default8M/$(1),$(1),rt-n14u,RT-N14U)
+Image/Build/Profile/WRH-300CR=$(call BuildFirmware/WRH-300CR/$(1),$(1),wrh-300cr,WRH-300CR)
 Image/Build/Profile/WRTNODE=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode,WRTNODE)
 Image/Build/Profile/WT3020=$(call BuildFirmware/PorayDualSize/$(1),$(1),wt3020,WT3020)
 Image/Build/Profile/MIWIFI-MINI=$(call BuildFirmware/Default16M/$(1),$(1),miwifi-mini,MIWIFI-MINI)
@@ -143,6 +157,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/MLWG2,$(1))
 	$(call Image/Build/Profile/WMR-300,$(1))
 	$(call Image/Build/Profile/RT-N14U,$(1))
+	$(call Image/Build/Profile/WRH-300CR,$(1))
 	$(call Image/Build/Profile/WRTNODE,$(1))
 	$(call Image/Build/Profile/WT3020,$(1))
 	$(call Image/Build/Profile/MIWIFI-MINI,$(1))

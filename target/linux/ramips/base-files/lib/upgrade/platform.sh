@@ -136,6 +136,7 @@ platform_check_image() {
 	wnce2001|\
 	wr512-3gn|\
 	wr6202|\
+	wrh-300cr|\
 	wrtnode|\
 	wrtnode2r |\
 	wrtnode2p |\

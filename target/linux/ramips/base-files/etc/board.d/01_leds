@@ -265,6 +265,10 @@ whr-600d)
 wnce2001)
 	set_wifi_led "$board:green:wlan"
 	;;
+wrh-300cr)
+	set_wifi_led "$board:green:wlan"
+	ucidef_set_led_netdev "lan" "lan" "$board:green:ethernet" "eth0"
+	;;
 wt3020)
 	ucidef_set_led_default "power" "power" "$board:blue:power" "0"
 	;;
