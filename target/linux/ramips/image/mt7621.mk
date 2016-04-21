@@ -103,6 +103,12 @@ define Device/zbt-wg2626
 endef
 TARGET_DEVICES += zbt-wg2626
 
+define Device/zbt-wg3526
+  DTS := ZBT-WG3526
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+TARGET_DEVICES += zbt-wg3526
+
 define Device/wf-2881
   DTS := WF-2881
   BLOCKSIZE := 128KiB
