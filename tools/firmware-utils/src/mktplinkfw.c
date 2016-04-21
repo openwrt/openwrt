@@ -31,52 +31,6 @@
 
 #define HEADER_VERSION_V1	0x01000000
 #define HEADER_VERSION_V2	0x02000000
-#define HWID_ANTMINER_S1	0x04440101
-#define HWID_ANTMINER_S3	0x04440301
-#define HWID_GL_INET_V1		0x08000001
-#define HWID_GS_OOLITE_V1	0x3C000101
-#define HWID_OMY_X1			0x06660201
-#define HWID_ONION_OMEGA	0x04700001
-#define HWID_TL_MR10U_V1	0x00100101
-#define HWID_TL_MR13U_V1	0x00130101
-#define HWID_TL_MR3020_V1	0x30200001
-#define HWID_TL_MR3220_V1	0x32200001
-#define HWID_TL_MR3220_V2	0x32200002
-#define HWID_TL_MR3420_V1	0x34200001
-#define HWID_TL_MR3420_V2	0x34200002
-#define HWID_TL_WA701N_V1	0x07010001
-#define HWID_TL_WA701N_V2	0x07010002
-#define HWID_TL_WA7210N_V2	0x72100002
-#define HWID_TL_WA7510N_V1	0x75100001
-#define HWID_TL_WA801ND_V1	0x08010001
-#define HWID_TL_WA830RE_V1	0x08300010
-#define HWID_TL_WA830RE_V2	0x08300002
-#define HWID_TL_WA801ND_V2	0x08010002
-#define HWID_TL_WA801ND_V3	0x08010003
-#define HWID_TL_WA901ND_V1	0x09010001
-#define HWID_TL_WA901ND_V2	0x09010002
-#define HWID_TL_WA901ND_V4	0x09010004
-#define HWID_TL_WDR4300_V1_IL	0x43008001
-#define HWID_TL_WDR4900_V1	0x49000001
-#define HWID_TL_WR703N_V1	0x07030101
-#define HWID_TL_WR720N_V3	0x07200103
-#define HWID_TL_WR720N_V4	0x07200104
-#define HWID_TL_WR741ND_V1	0x07410001
-#define HWID_TL_WR741ND_V4	0x07410004
-#define HWID_TL_WR740N_V1	0x07400001
-#define HWID_TL_WR740N_V3	0x07400003
-#define HWID_TL_WR743ND_V1	0x07430001
-#define HWID_TL_WR743ND_V2	0x07430002
-#define HWID_TL_WR841N_V1_5	0x08410002
-#define HWID_TL_WR841ND_V3	0x08410003
-#define HWID_TL_WR841ND_V5	0x08410005
-#define HWID_TL_WR841ND_V7	0x08410007
-#define HWID_TL_WR941ND_V2	0x09410002
-#define HWID_TL_WR941ND_V4	0x09410004
-#define HWID_TL_WR1043ND_V1	0x10430001
-#define HWID_TL_WR1043ND_V2	0x10430002
-#define HWID_TL_WR1041N_V2	0x10410002
-#define HWID_TL_WR2543N_V1	0x25430001
 
 #define MD5SUM_LEN	16
 
@@ -119,13 +73,6 @@ struct flash_layout {
 	uint32_t	rootfs_ofs;
 };
 
-struct board_info {
-	char		*id;
-	uint32_t	hw_id;
-	uint32_t	hw_rev;
-	char		*layout_id;
-};
-
 /*
  * Globals
  */
@@ -136,8 +83,6 @@ static char *version = "ver. 1.0";
 static char *fw_ver = "0.0.0";
 static uint32_t hdr_ver = HEADER_VERSION_V1;
 
-static char *board_id;
-static struct board_info *board;
 static char *layout_id;
 static struct flash_layout *layout;
 static char *opt_hw_id;
@@ -167,12 +112,12 @@ static uint32_t reserved_space;
 static struct file_info inspect_info;
 static int extract = 0;
 
-char md5salt_normal[MD5SUM_LEN] = {
+static const char md5salt_normal[MD5SUM_LEN] = {
 	0xdc, 0xd7, 0x3a, 0xa5, 0xc3, 0x95, 0x98, 0xfb,
 	0xdd, 0xf9, 0xe7, 0xf4, 0x0e, 0xae, 0x47, 0x38,
 };
 
-char md5salt_boot[MD5SUM_LEN] = {
+static const char md5salt_boot[MD5SUM_LEN] = {
 	0x8c, 0xef, 0x33, 0x5b, 0xd5, 0xc5, 0xce, 0xfa,
 	0xa7, 0x9c, 0x28, 0xda, 0xb2, 0xe9, 0x0f, 0x42,
 };
@@ -217,245 +162,9 @@ static struct flash_layout layouts[] = {
 	}, {
 		.id		= "16Mppc",
 		.fw_max_len	= 0xf80000,
-		.kernel_la	= 0x00000000,
+		.kernel_la	= 0x00000000 ,
 		.kernel_ep	= 0xc0000000,
 		.rootfs_ofs	= 0x2a0000,
-	}, {
-		/* terminating entry */
-	}
-};
-
-static struct board_info boards[] = {
-	{
-		.id		= "TL-MR10Uv1",
-		.hw_id		= HWID_TL_MR10U_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-MR13Uv1",
-		.hw_id		= HWID_TL_MR13U_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-MR3020v1",
-		.hw_id		= HWID_TL_MR3020_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-MR3220v1",
-		.hw_id		= HWID_TL_MR3220_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-MR3220v2",
-		.hw_id		= HWID_TL_MR3220_V2,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-MR3420v1",
-		.hw_id		= HWID_TL_MR3420_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-MR3420v2",
-		.hw_id		= HWID_TL_MR3420_V2,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-WA701Nv1",
-		.hw_id		= HWID_TL_WA701N_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WA701Nv2",
-		.hw_id		= HWID_TL_WA701N_V2,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-WA7210N",
-		.hw_id		= HWID_TL_WA7210N_V2,
-		.hw_rev		= 2,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-WA7510N",
-		.hw_id		= HWID_TL_WA7510N_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WA801NDv1",
-		.hw_id		= HWID_TL_WA801ND_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WA830REv1",
-		.hw_id		= HWID_TL_WA830RE_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WA830REv2",
-		.hw_id		= HWID_TL_WA830RE_V2,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id             = "TL-WA801NDv2",
-		.hw_id          = HWID_TL_WA801ND_V2,
-		.hw_rev         = 1,
-		.layout_id	= "4Mlzma",
-	},{
-		.id							= "TL-WA801NDv3",
-		.hw_id          = HWID_TL_WA801ND_V3,
-		.hw_rev         = 1,
-		.layout_id  = "4Mlzma",
-	}, {
-		.id		= "TL-WA901NDv1",
-		.hw_id		= HWID_TL_WA901ND_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id             = "TL-WA901NDv2",
-		.hw_id          = HWID_TL_WA901ND_V2,
-		.hw_rev         = 1,
-		.layout_id	= "4M",
-	}, {
-		.id             = "TL-WA901NDv4",
-		.hw_id          = HWID_TL_WA901ND_V4,
-		.hw_rev         = 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id             = "TL-WDR4300v1",
-		.hw_id          = HWID_TL_WDR4300_V1_IL,
-		.hw_rev         = 1,
-		.layout_id	= "8Mlzma",
-	}, {
-		.id             = "TL-WDR4900v1",
-		.hw_id          = HWID_TL_WDR4900_V1,
-		.hw_rev         = 1,
-		.layout_id	= "16Mppc",
-	}, {
-		.id		= "TL-WR741NDv1",
-		.hw_id		= HWID_TL_WR741ND_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR741NDv4",
-		.hw_id		= HWID_TL_WR741ND_V4,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-WR740Nv1",
-		.hw_id		= HWID_TL_WR740N_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR740Nv3",
-		.hw_id		= HWID_TL_WR740N_V3,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR743NDv1",
-		.hw_id		= HWID_TL_WR743ND_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR743NDv2",
-		.hw_id		= HWID_TL_WR743ND_V2,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-WR841Nv1.5",
-		.hw_id		= HWID_TL_WR841N_V1_5,
-		.hw_rev		= 2,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR841NDv3",
-		.hw_id		= HWID_TL_WR841ND_V3,
-		.hw_rev		= 3,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR841NDv5",
-		.hw_id		= HWID_TL_WR841ND_V5,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR841NDv7",
-		.hw_id		= HWID_TL_WR841ND_V7,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR941NDv2",
-		.hw_id		= HWID_TL_WR941ND_V2,
-		.hw_rev		= 2,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR941NDv4",
-		.hw_id		= HWID_TL_WR941ND_V4,
-		.hw_rev		= 1,
-		.layout_id	= "4M",
-	}, {
-		.id		= "TL-WR1041Nv2",
-		.hw_id		= HWID_TL_WR1041N_V2,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-WR1043NDv1",
-		.hw_id		= HWID_TL_WR1043ND_V1,
-		.hw_rev		= 1,
-		.layout_id	= "8M",
-	}, {
-		.id		= "TL-WR1043NDv2",
-		.hw_id		= HWID_TL_WR1043ND_V2,
-		.hw_rev		= 1,
-		.layout_id	= "8Mlzma",
-	}, {
-		.id		= "TL-WR2543Nv1",
-		.hw_id		= HWID_TL_WR2543N_V1,
-		.hw_rev		= 1,
-		.layout_id	= "8Mlzma",
-	}, {
-		.id		= "TL-WR703Nv1",
-		.hw_id		= HWID_TL_WR703N_V1,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-WR720Nv3",
-		.hw_id		= HWID_TL_WR720N_V3,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "TL-WR720Nv4",
-		.hw_id		= HWID_TL_WR720N_V4,
-		.hw_rev		= 1,
-		.layout_id	= "4Mlzma",
-	}, {
-		.id		= "GL-INETv1",
-		.hw_id		= HWID_GL_INET_V1,
-		.hw_rev		= 1,
-		.layout_id	= "8Mlzma",
-	}, {
-		.id		= "GS-OOLITEv1",
-		.hw_id		= HWID_GS_OOLITE_V1,
-		.hw_rev		= 1,
-		.layout_id	= "16Mlzma",
-	}, {
-		.id		= "OMY-X1",
-		.hw_id		= HWID_OMY_X1,
-		.hw_rev		= 1,
-		.layout_id	= "8Mlzma",
-	}, {
-		.id		= "ONION-OMEGA",
-		.hw_id		= HWID_ONION_OMEGA,
-		.hw_rev		= 1,
-		.layout_id	= "16Mlzma",
-	}, {
-		.id		= "ANTMINER-S1",
-		.hw_id		= HWID_ANTMINER_S1,
-		.hw_rev		= 1,
-		.layout_id	= "8Mlzma",
-	}, {
-		.id		= "ANTMINER-S3",
-		.hw_id		= HWID_ANTMINER_S3,
-		.hw_rev		= 1,
-		.layout_id	= "8Mlzma",
 	}, {
 		/* terminating entry */
 	}
@@ -481,35 +190,7 @@ static struct board_info boards[] = {
 	fprintf(stderr, "[%s] " fmt "\n", progname, ## __VA_ARGS__ ); \
 } while (0)
 
-static struct board_info *find_board(char *id)
-{
-	struct board_info *ret;
-	struct board_info *board;
-
-	ret = NULL;
-	for (board = boards; board->id != NULL; board++){
-		if (strcasecmp(id, board->id) == 0) {
-			ret = board;
-			break;
-		}
-	};
-
-	return ret;
-}
-
-static struct board_info *find_board_by_hwid(uint32_t hw_id)
-{
-	struct board_info *board;
-
-	for (board = boards; board->id != NULL; board++) {
-		if (hw_id == board->hw_id)
-			return board;
-	};
-
-	return NULL;
-}
-
-static struct flash_layout *find_layout(char *id)
+static struct flash_layout *find_layout(const char *id)
 {
 	struct flash_layout *ret;
 	struct flash_layout *l;
@@ -527,14 +208,10 @@ static struct flash_layout *find_layout(char *id)
 
 static void usage(int status)
 {
-	FILE *stream = (status != EXIT_SUCCESS) ? stderr : stdout;
-	struct board_info *board;
-
-	fprintf(stream, "Usage: %s [OPTIONS...]\n", progname);
-	fprintf(stream,
+	fprintf(stderr, "Usage: %s [OPTIONS...]\n", progname);
+	fprintf(stderr,
 "\n"
 "Options:\n"
-"  -B <board>      create image for the board specified with <board>\n"
 "  -c              use combined kernel image\n"
 "  -E <ep>         overwrite kernel entry point with <ep> (hexval prefixed with 0x)\n"
 "  -L <la>         overwrite kernel load address with <la> (hexval prefixed with 0x)\n"
@@ -562,7 +239,7 @@ static void usage(int status)
 	exit(status);
 }
 
-static int get_md5(char *data, int size, char *md5)
+static void get_md5(const char *data, int size, uint8_t *md5)
 {
 	MD5_CTX ctx;
 
@@ -589,7 +266,7 @@ static int get_file_stat(struct file_info *fdata)
 	return 0;
 }
 
-static int read_to_buf(struct file_info *fdata, char *buf)
+static int read_to_buf(const struct file_info *fdata, char *buf)
 {
 	FILE *f;
 	int ret = EXIT_FAILURE;
@@ -631,34 +308,21 @@ static int check_options(void)
 		return -1;
 	}
 
-	if (board_id == NULL && opt_hw_id == NULL) {
-		ERR("either board or hardware id must be specified");
+	if (opt_hw_id == NULL) {
+		ERR("hardware id not specified");
+		return -1;
+	}
+	hw_id = strtoul(opt_hw_id, NULL, 0);
+
+	if (layout_id == NULL) {
+		ERR("flash layout is not specified");
 		return -1;
 	}
 
-	if (board_id) {
-		board = find_board(board_id);
-		if (board == NULL) {
-			ERR("unknown/unsupported board id \"%s\"", board_id);
-			return -1;
-		}
-		if (layout_id == NULL)
-			layout_id = board->layout_id;
-
-		hw_id = board->hw_id;
-		hw_rev = board->hw_rev;
-	} else {
-		if (layout_id == NULL) {
-			ERR("flash layout is not specified");
-			return -1;
-		}
-		hw_id = strtoul(opt_hw_id, NULL, 0);
-
-		if (opt_hw_rev)
-			hw_rev = strtoul(opt_hw_rev, NULL, 0);
-		else
-			hw_rev = 1;
-	}
+	if (opt_hw_rev)
+		hw_rev = strtoul(opt_hw_rev, NULL, 0);
+	else
+		hw_rev = 1;
 
 	layout = find_layout(layout_id);
 	if (layout == NULL) {
@@ -830,7 +494,7 @@ static int pad_jffs2(char *buf, int currlen)
 	return len;
 }
 
-static int write_fw(char *data, int len)
+static int write_fw(const char *data, int len)
 {
 	FILE *f;
 	int ret = EXIT_FAILURE;
@@ -922,61 +586,27 @@ static int build_fw(void)
 }
 
 /* Helper functions to inspect_fw() representing different output formats */
-static inline void inspect_fw_pstr(char *label, char *str)
+static inline void inspect_fw_pstr(const char *label, const char *str)
 {
 	printf("%-23s: %s\n", label, str);
 }
 
-static inline void inspect_fw_phex(char *label, uint32_t val)
+static inline void inspect_fw_phex(const char *label, uint32_t val)
 {
 	printf("%-23s: 0x%08x\n", label, val);
 }
 
-static inline void inspect_fw_phexpost(char *label,
-                                       uint32_t val, char *post)
+static inline void inspect_fw_phexpost(const char *label, uint32_t val, const char *post)
 {
 	printf("%-23s: 0x%08x (%s)\n", label, val, post);
 }
 
-static inline void inspect_fw_phexdef(char *label,
-                                      uint32_t val, uint32_t defval)
-{
-	printf("%-23s: 0x%08x                  ", label, val);
-
-	if (val == defval)
-		printf("(== OpenWrt default)\n");
-	else
-		printf("(OpenWrt default: 0x%08x)\n", defval);
-}
-
-static inline void inspect_fw_phexexp(char *label,
-                                      uint32_t val, uint32_t expval)
-{
-	printf("%-23s: 0x%08x ", label, val);
-
-	if (val == expval)
-		printf("(ok)\n");
-	else
-		printf("(expected: 0x%08x)\n", expval);
-}
-
-static inline void inspect_fw_phexdec(char *label, uint32_t val)
+static inline void inspect_fw_phexdec(const char *label, uint32_t val)
 {
 	printf("%-23s: 0x%08x / %8u bytes\n", label, val, val);
 }
 
-static inline void inspect_fw_phexdecdef(char *label,
-                                         uint32_t val, uint32_t defval)
-{
-	printf("%-23s: 0x%08x / %8u bytes ", label, val, val);
-
-	if (val == defval)
-		printf("(== OpenWrt default)\n");
-	else
-		printf("(OpenWrt default: 0x%08x)\n", defval);
-}
-
-static inline void inspect_fw_pmd5sum(char *label, uint8_t *val, char *text)
+static inline void inspect_fw_pmd5sum(const char *label, const uint8_t *val, const char *text)
 {
 	int i;
 
@@ -991,7 +621,6 @@ static int inspect_fw(void)
 	char *buf;
 	struct fw_header *hdr;
 	uint8_t md5sum[MD5SUM_LEN];
-	struct board_info *board;
 	int ret = EXIT_FAILURE;
 
 	buf = malloc(inspect_info.file_size);
@@ -1043,19 +672,8 @@ static int inspect_fw(void)
 
 	inspect_fw_pstr("Vendor name", hdr->vendor_name);
 	inspect_fw_pstr("Firmware version", hdr->fw_version);
-	board = find_board_by_hwid(ntohl(hdr->hw_id));
-	if (board) {
-		layout = find_layout(board->layout_id);
-		inspect_fw_phexpost("Hardware ID",
-		                    ntohl(hdr->hw_id), board->id);
-		inspect_fw_phexexp("Hardware Revision",
-		                   ntohl(hdr->hw_rev), board->hw_rev);
-	} else {
-		inspect_fw_phexpost("Hardware ID",
-		                    ntohl(hdr->hw_id), "unknown");
-		inspect_fw_phex("Hardware Revision",
-		                ntohl(hdr->hw_rev));
-	}
+	inspect_fw_phex("Hardware ID", ntohl(hdr->hw_id));
+	inspect_fw_phex("Hardware Revision", ntohl(hdr->hw_rev));
 
 	printf("\n");
 
@@ -1063,24 +681,12 @@ static int inspect_fw(void)
 	                   ntohl(hdr->kernel_ofs));
 	inspect_fw_phexdec("Kernel data length",
 	                   ntohl(hdr->kernel_len));
-	if (board) {
-		inspect_fw_phexdef("Kernel load address",
-		                   ntohl(hdr->kernel_la),
-		                   layout ? layout->kernel_la : 0xffffffff);
-		inspect_fw_phexdef("Kernel entry point",
-		                   ntohl(hdr->kernel_ep),
-		                   layout ? layout->kernel_ep : 0xffffffff);
-		inspect_fw_phexdecdef("Rootfs data offset",
-		                      ntohl(hdr->rootfs_ofs),
-		                      layout ? layout->rootfs_ofs : 0xffffffff);
-	} else {
-		inspect_fw_phex("Kernel load address",
-		                ntohl(hdr->kernel_la));
-		inspect_fw_phex("Kernel entry point",
-		                ntohl(hdr->kernel_ep));
-		inspect_fw_phexdec("Rootfs data offset",
-		                   ntohl(hdr->rootfs_ofs));
-	}
+	inspect_fw_phex("Kernel load address",
+	                ntohl(hdr->kernel_la));
+	inspect_fw_phex("Kernel entry point",
+	                ntohl(hdr->kernel_ep));
+	inspect_fw_phexdec("Rootfs data offset",
+	                   ntohl(hdr->rootfs_ofs));
 	inspect_fw_phexdec("Rootfs data length",
 	                   ntohl(hdr->rootfs_len));
 	inspect_fw_phexdec("Boot loader data offset",
@@ -1136,25 +742,19 @@ static int inspect_fw(void)
 int main(int argc, char *argv[])
 {
 	int ret = EXIT_FAILURE;
-	int err;
-
-	FILE *outfile;
 
 	progname = basename(argv[0]);
 
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:B:H:E:F:L:m:V:N:W:ci:k:r:R:o:xX:hsSjv:");
+		c = getopt(argc, argv, "a:H:E:F:L:m:V:N:W:ci:k:r:R:o:xX:hsSjv:");
 		if (c == -1)
 			break;
 
 		switch (c) {
 		case 'a':
 			sscanf(optarg, "0x%x", &rootfs_align);
-			break;
-		case 'B':
-			board_id = optarg;
 			break;
 		case 'H':
 			opt_hw_id = optarg;
