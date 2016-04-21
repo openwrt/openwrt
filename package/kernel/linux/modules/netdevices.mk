@@ -464,9 +464,9 @@ endef
 
 define KernelPackage/e100/install
 	$(INSTALL_DIR) $(1)/lib/firmware/e100
-	$(foreach file,d101m_ucode.bin d101s_ucode.bin d102e_ucode.bin, \
-		$(TARGET_CROSS)objcopy -Iihex -Obinary $(LINUX_DIR)/firmware/e100/$(file).ihex $(1)/lib/firmware/e100/$(file); \
-	)
+	$(INSTALL_DATA) $(LINUX_DIR)/firmware/e100/d101m_ucode.bin $(1)/lib/firmware/e100/
+	$(INSTALL_DATA) $(LINUX_DIR)/firmware/e100/d101s_ucode.bin $(1)/lib/firmware/e100/
+	$(INSTALL_DATA) $(LINUX_DIR)/firmware/e100/d102e_ucode.bin $(1)/lib/firmware/e100/
 endef
 
 $(eval $(call KernelPackage,e100))
