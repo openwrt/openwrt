@@ -32,9 +32,10 @@ define CompressGzip
 endef
 
 define MkDTB
-	$(call Image/BuildDTB,../dts/$(1).dts,$@.dtb)
-	$(CP) $@.dtb $(BIN_DIR)/$(1).dtb
-	$(CP) $@.dtb $(KDIR)/$(1).dtb
+	$(call Image/BuildDTB,../dts/$(1).dts,$(1).dtb)
+	$(CP) $(1).dtb $(BIN_DIR)/$(1).dtb
+	$(CP) $(1).dtb $(KDIR)/$(1).dtb
+	$(RM) $(1).dtb
 endef
 
 define MkImageGzip
