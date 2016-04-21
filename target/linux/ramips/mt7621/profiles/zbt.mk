@@ -16,3 +16,16 @@ define Profile/ZBT-WG2626/Description
 	Package set for ZBT-WG2626 device
 endef
 $(eval $(call Profile,ZBT-WG2626))
+
+
+define Profile/ZBT-WG3526
+	NAME:=ZBT-WG3526 Device
+	PACKAGES:=\
+		kmod-usb-core kmod-usb3 \
+		kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci
+endef
+
+define Profile/ZBT-WG3526/Description
+	Package set for ZBT-WG3526 device
+endef
+$(eval $(call Profile,ZBT-WG3526))
