@@ -40,7 +40,7 @@ define Host/Compile
 	$(call cc,encode_crc)
 	$(call cc,nand_ecc)
 	$(call cc,mkplanexfw sha1)
-	$(call cc,mktplinkfw md5)
+	$(call cc,mktplinkfw md5, -Wall)
 	$(call cc,mktplinkfw2 md5)
 	$(call cc,tplink-safeloader md5, -Wall)
 	$(call cc,pc1crypt)
