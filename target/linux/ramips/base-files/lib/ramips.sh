@@ -460,6 +460,9 @@ ramips_board_detect() {
 	*"WR6202")
 		name="wr6202"
 		;;
+	*"WRH-300CR")
+		name="wrh-300cr"
+		;;
 	*"WRTNODE")
 		name="wrtnode"
 		;;
