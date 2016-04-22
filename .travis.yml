@@ -5,6 +5,8 @@ before_install:
     - export CXXFLAGS="$CXXFLAGS -fPIC"
 
 install:
+    - ./scripts/feeds update -a
+    - ./scripts/feeds install -a
     - echo "CONFIG_TARGET_pistachio=y" > ./.config
     - echo "CONFIG_TARGET_pistachio_marduk_marduk_cc2520=y" >> ./.config
 
