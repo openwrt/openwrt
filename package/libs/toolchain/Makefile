@@ -12,6 +12,8 @@ PKG_RELEASE:=1
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=GPL-3.0-with-GCC-exception
 
+PKG_FLAGS:=hold essential nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 ifneq ($(DUMP),1)
@@ -139,7 +141,6 @@ define Package/libc/Default
   VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
   DEPENDS:=+libgcc
   URL:=$(LIBC_URL)
-  PKG_FLAGS:=hold essential nonshared
 endef
 
 
