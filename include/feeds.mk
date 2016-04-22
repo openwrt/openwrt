@@ -30,8 +30,6 @@ PKG_CONFIG_DEPENDS += \
 	$(foreach feed,$(FEEDS_INSTALLED),CONFIG_FEED_$(feed))
 
 # 1: package name
-# 2: flags
-# 3: section
 define FeedPackageDir
 $(strip $(if $(CONFIG_PER_FEED_REPO), \
   $(if $(Package/$(1)/subdir), \
