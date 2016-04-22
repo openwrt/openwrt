@@ -23,23 +23,24 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-define Profile/marduk_cc2520
-    NAME:=Basic platform profile for Marduk with TI cc2520
+define Profile/marduk_cc2520_wifi
+    NAME:=Wifi testing profile for Marduk with TI cc2520
     PACKAGES:=kmod-i2c kmod-marduk-cc2520 kmod-sound-pistachio-soc \
-		wpan-tools tcpdump uhttpd uboot-envtools \
-		alsa-lib alsa-utils alsa-utils-tests i2c-tools \
-		iw hostapd wpa-supplicant kmod-uccp420wlan kmod-cfg80211
+        wpan-tools tcpdump uhttpd uboot-envtools \
+        alsa-lib alsa-utils alsa-utils-tests i2c-tools \
+        iw hostapd wpa-supplicant wpa-cli iperf fping \
+        kmod-uccp420wlan kmod-cfg80211
     DEVICE_DTS:=marduk_cc2520
 endef
 
-define Profile/marduk_cc2520/Description
-        Package set for basic platform support profile for Marduk with TI cc2520
+define Profile/marduk_cc2520_wifi/Description
+        Wifi test for platform support profile for Marduk with TI cc2520
         board
 endef
 
-marduk_cc2520_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
-marduk_cc2520_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
+marduk_cc2520_wifi_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
+marduk_cc2520_wifi_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
 
-Image/Build/Profile/marduk_cc2520=$(call Image/BuildNAND/$(1),$(1),marduk_cc2520)
+Image/Build/Profile/marduk_cc2520_wifi=$(call Image/BuildNAND/$(1),$(1),marduk_cc2520_wifi)
 
-$(eval $(call Profile,marduk_cc2520))
+$(eval $(call Profile,marduk_cc2520_wifi))
