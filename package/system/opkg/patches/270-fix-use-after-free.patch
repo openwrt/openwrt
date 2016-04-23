@@ -1,0 +1,11 @@
+--- a/libopkg/opkg_download.c
++++ b/libopkg/opkg_download.c
+@@ -335,7 +335,7 @@ opkg_prepare_url_for_install(const char
+      hash_insert_pkg(pkg, 1);
+ 
+      if (namep) {
+-	  *namep = pkg->name;
++	  *namep = xstrdup(pkg->name);
+      }
+      return 0;
+ }
