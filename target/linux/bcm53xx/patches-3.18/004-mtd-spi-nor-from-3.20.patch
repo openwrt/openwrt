@@ -1,14 +1,6 @@
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -538,6 +538,7 @@ static const struct spi_device_id spi_no
- 	/* GigaDevice */
- 	{ "gd25q32", INFO(0xc84016, 0, 64 * 1024,  64, SECT_4K) },
- 	{ "gd25q64", INFO(0xc84017, 0, 64 * 1024, 128, SECT_4K) },
-+	{ "gd25q128", INFO(0xc84018, 0, 64 * 1024, 256, SECT_4K) },
- 
- 	/* Intel/Numonyx -- xxxs33b */
- 	{ "160s33b",  INFO(0x898911, 0, 64 * 1024,  32, 0) },
-@@ -564,14 +565,14 @@ static const struct spi_device_id spi_no
+@@ -565,14 +565,14 @@ static const struct spi_device_id spi_no
  	{ "mx66l1g55g",  INFO(0xc2261b, 0, 64 * 1024, 2048, SPI_NOR_QUAD_READ) },
  
  	/* Micron */
@@ -31,7 +23,7 @@
  
  	/* PMC */
  	{ "pm25lv512",   INFO(0,        0, 32 * 1024,    2, SECT_4K_PMC) },
-@@ -895,6 +896,45 @@ static int spansion_quad_enable(struct s
+@@ -896,6 +896,45 @@ static int spansion_quad_enable(struct s
  	return 0;
  }
  
@@ -77,7 +69,7 @@
  static int set_quad_mode(struct spi_nor *nor, struct flash_info *info)
  {
  	int status;
-@@ -907,6 +947,13 @@ static int set_quad_mode(struct spi_nor
+@@ -908,6 +947,13 @@ static int set_quad_mode(struct spi_nor
  			return -EINVAL;
  		}
  		return status;

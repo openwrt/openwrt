@@ -1,6 +1,6 @@
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -962,6 +962,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -963,6 +963,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	if (JEDEC_MFR(info->jedec_id) == CFI_MFR_ATMEL ||
  	    JEDEC_MFR(info->jedec_id) == CFI_MFR_INTEL ||
