@@ -11,8 +11,8 @@ Implement optinal multicast->unicast conversion for igmp snooping
  #define BR_ISOLATE_MODE	BIT(11)
 +#define BR_MULTICAST_TO_UCAST	BIT(12)
  
- /* values as per ieee8021QBridgeFdbAgingTime */
- #define BR_MIN_AGEING_TIME	(10 * HZ)
+ #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
+ 
 --- a/net/bridge/br_multicast.c
 +++ b/net/bridge/br_multicast.c
 @@ -42,12 +42,13 @@ static void br_multicast_add_router(stru
