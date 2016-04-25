@@ -82,3 +82,13 @@ define Profile/WNR2200/Description
 endef
 
 $(eval $(call Profile,WNR2200))
+
+define Profile/WPN824N
+	NAME:=NETGEAR WPN824N
+endef
+
+define Profile/WPN824N/Description
+	Package set optimized for the NETGEAR WPN824N
+endef
+
+$(eval $(call Profile,WPN824N))

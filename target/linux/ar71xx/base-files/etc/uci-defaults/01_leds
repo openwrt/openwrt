@@ -577,7 +577,25 @@ wnr2000-v4)
 	ucidef_set_led_switch "lan3" "LAN3" "netgear:amber:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "netgear:amber:lan4" "switch0" "0x10"
 	ucidef_set_led_usbdev "usb" "USB" "netgear:amber:status" "1-1"
-    ;;
+	;;
+
+wpn824n)
+	ucidef_set_led_netdev "wan-amber" "WAN (amber)" "netgear:amber:wan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "netgear:blue:wlan" "phy0tpt"
+	ucidef_set_led_switch "lan1amber" "LAN1 (amber)" "netgear:amber:lan1" "switch0" "0x02"
+	ucidef_set_led_switch "lan2amber" "LAN2 (amber)" "netgear:amber:lan2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3amber" "LAN3 (amber)" "netgear:amber:lan3" "switch0" "0x08"
+	ucidef_set_led_switch "lan4amber" "LAN4 (amber)" "netgear:amber:lan4" "switch0" "0x10"
+	ucidef_set_led_default "lan1green" "LAN1 (green)" "netgear:green:lan1" "0"
+	ucidef_set_led_default "lan2green" "LAN2 (green)" "netgear:green:lan2" "0"
+	ucidef_set_led_default "lan3green" "LAN3 (green)" "netgear:green:lan3" "0"
+	ucidef_set_led_default "lan4green" "LAN4 (green)" "netgear:green:lan4" "0"
+	ucidef_set_led_default "wan-green" "WAN (green)" "netgear:green:wan" "0"
+	ucidef_set_led_default "wps1" "WPS1" "netgear:blue:wps1" "0"
+	ucidef_set_led_default "wps2" "WPS2" "netgear:blue:wps2" "0"
+	ucidef_set_led_default "status" "STATUS" "netgear:amber:status" "0"
+	ucidef_set_led_default "test" "TEST" "netgear:amber:test" "0"
+	;;
 
 wzr-hp-ag300h)
 	ucidef_set_led_default "diag" "DIAG" "buffalo:red:diag" "0"

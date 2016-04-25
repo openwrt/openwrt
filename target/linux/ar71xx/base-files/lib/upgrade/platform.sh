@@ -403,7 +403,8 @@ platform_check_image() {
 	wndr3700 | \
 	wnr2000-v3 | \
 	wnr612-v2 | \
-	wnr1000-v2)
+	wnr1000-v2 | \
+	wpn824n)
 		local hw_magic
 
 		hw_magic="$(ar71xx_get_mtd_part_magic firmware)"

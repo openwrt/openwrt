@@ -326,7 +326,8 @@ get_status_led() {
 	wnr2000 | \
 	wnr2200 |\
 	wnr612-v2 |\
-	wnr1000-v2)
+	wnr1000-v2 |\
+	wpn824n)
 		status_led="netgear:green:power"
 		;;
 	wp543)
