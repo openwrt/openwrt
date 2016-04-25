@@ -52,6 +52,7 @@
 #define HWID_TL_WA801ND_V2	0x08010002
 #define HWID_TL_WA901ND_V1	0x09010001
 #define HWID_TL_WA901ND_V2	0x09010002
+#define HWID_TL_WA901ND_V4	0x09010004
 #define HWID_TL_WDR4300_V1_IL	0x43008001
 #define HWID_TL_WDR4900_V1	0x49000001
 #define HWID_TL_WR703N_V1	0x07030101
@@ -305,6 +306,11 @@ static struct board_info boards[] = {
 		.hw_id          = HWID_TL_WA901ND_V2,
 		.hw_rev         = 1,
 		.layout_id	= "4M",
+	}, {
+		.id             = "TL-WA901NDv4",
+		.hw_id          = HWID_TL_WA901ND_V4,
+		.hw_rev         = 1,
+		.layout_id	= "4Mlzma",
 	}, {
 		.id             = "TL-WDR4300v1",
 		.hw_id          = HWID_TL_WDR4300_V1_IL,
