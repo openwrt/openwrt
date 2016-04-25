@@ -18,6 +18,7 @@ ARCH:=$(shell uname -m | sed \
 	-e 's/sh[234]/sh/' \
 	-e 's/armeb/arm/' \
 )
+ARCH_PACKAGES:=uml
 BOARD:=uml
 BOARDNAME:=User Mode Linux
 FEATURES:=ext4 audio
