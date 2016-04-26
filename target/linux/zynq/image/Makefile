@@ -74,6 +74,10 @@ define Device/ZED
 	$(call Device/DefaultConfig,zed)
 endef
 
+define Device/ZYBO
+	$(call Device/DefaultConfig,zybo)
+endef
+
 define Image/BuildKernel
 	$(eval $(call Device/$(PROFILE)))
 	$(call Image/boot-imgs)
