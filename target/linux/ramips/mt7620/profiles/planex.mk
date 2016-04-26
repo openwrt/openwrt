@@ -28,3 +28,14 @@ define Profile/MZK-750DHP/Description
 	Package set optimized for the Planex MZK-750DHP.
 endef
 $(eval $(call Profile,MZK-750DHP))
+
+
+define Profile/MZK-EX300NP
+	NAME:=Planex MZK-EX300NP
+	PACKAGES:=
+endef
+
+define Profile/MZK-EX300NP/Description
+	Package set optimized for the Planex MZK-EX300NP.
+endef
+$(eval $(call Profile,MZK-EX300NP))

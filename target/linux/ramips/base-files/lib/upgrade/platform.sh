@@ -89,6 +89,7 @@ platform_check_image() {
 	mt7628|\
 	mzk-750dhp|\
 	mzk-dp150n|\
+	mzk-ex300np|\
 	mzk-w300nh2|\
 	mzk-wdpr|\
 	nbg-419n|\

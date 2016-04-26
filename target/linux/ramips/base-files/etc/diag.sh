@@ -155,6 +155,7 @@ get_status_led() {
 	whr-600d)
 		status_led="$board:orange:wifi"
 		;;
+	mzk-ex300np|\
 	rt-n10-plus|\
 	tew-691gr|\
 	tew-692gr|\
