@@ -9,6 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=otrx
 PKG_RELEASE:=1
+PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 
