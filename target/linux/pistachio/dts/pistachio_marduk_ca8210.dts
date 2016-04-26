@@ -159,17 +159,16 @@
 	cs-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>, <&gpio0 2 GPIO_ACTIVE_HIGH>,
 			<&gpio1 12 GPIO_ACTIVE_HIGH>, <&gpio1 13 GPIO_ACTIVE_HIGH>;
 
-	/* TODO: add this back when sc16is752 has clock source */
-/*	sc16is752: sc16is752@1 {
+	sc16is752: sc16is752@1 {
 		compatible = "nxp,sc16is752";
 		reg = <1>;
-		clocks = <&cc2520 0>;
+		clocks = <&ca821x 0>;
 		spi-max-frequency = <4000000>;
 		interrupt-parent = <&gpio0>;
 		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
 		gpio-controller;
 		#gpio-cells = <2>;
-	};*/
+	};
 
 	spidev@2 {
 		compatible = "img,click-interface";
@@ -185,6 +184,8 @@
 		spi-cpol;
 		reset-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		irq-gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		#clock-cells = <0>;
+		extclock-freq = <16000000>;
 	};
 };
 
