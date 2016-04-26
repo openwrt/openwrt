@@ -37,8 +37,13 @@ define uboot/zc706
 	TITLE:=U-Boot $(PKG_VERSION) for Xilinx ZC706 Dev Board
 endef
 
+define uboot/zed
+	TITLE:=U-Boot $(PKG_VERSION) for Avnet Digilent ZedBoard Dev Board
+endef
+
 UBOOTS := \
 	zc702 \
+	zed \
 
 define Package/uboot/template
 define Package/uboot-zynq-$(1)
