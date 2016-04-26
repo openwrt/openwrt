@@ -34,6 +34,7 @@ platform_check_image() {
 	broadway|\
 	carambola|\
 	cf-wr800n|\
+	cs-qr10|\
 	d105|\
 	dap-1350|\
 	db-wrt01|\

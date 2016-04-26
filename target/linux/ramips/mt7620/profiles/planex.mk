@@ -5,6 +5,20 @@
 # See /LICENSE for more information.
 #
 
+define Profile/CS-QR10
+	NAME:=Planex CS-QR10
+	PACKAGES:=\
+		kmod-usb-core kmod-usb2 kmod-usb-ohci \
+		i2c-core kmod-i2c-ralink kmod-sound-core kmod-sound-mtk \
+		kmod-sdhci-mt7620
+endef
+
+define Profile/CS-QR10/Description
+	Package set optimized for the Planex CS-QR10.
+endef
+$(eval $(call Profile,CS-QR10))
+
+
 define Profile/MZK-750DHP
 	NAME:=Planex MZK-750DHP
 	PACKAGES:= kmod-mt76 kmod-mt7610e
