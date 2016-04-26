@@ -563,13 +563,20 @@ define Device/minibox-v1
 endef
 TARGET_DEVICES += minibox-v1
 
+define Device/omy-g1
+    $(Device/tplink-16mlzma)
+    BOARDNAME := OMY-G1
+    DEVICE_PROFILE := OMYG1
+    TPLINK_HWID := 0x06660101
+endef
+
 define Device/omy-x1
     $(Device/tplink-8mlzma)
     BOARDNAME := OMY-X1
     DEVICE_PROFILE := OMYX1
     TPLINK_HWID := 0x06660201
 endef
-TARGET_DEVICES += omy-x1
+TARGET_DEVICES += omy-g1 omy-x1
 
 define Device/onion-omega
     $(Device/tplink-16mlzma)
