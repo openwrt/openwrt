@@ -24,7 +24,7 @@ define Profile/BTHOMEHUBV3A
 	kmod-ltq-deu-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ath9k wpad-mini \
-	swconfig
+	swconfig uboot-envtools
 endef
 
 BTHOMEHUBV3A_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
