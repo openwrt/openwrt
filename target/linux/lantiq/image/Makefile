@@ -39,12 +39,6 @@ define PatchKernelLzma
 	$(call CompressLzma,$(KDIR)/vmlinux$(2)-$(1).tmp,$(KDIR)/vmlinux$(2)-$(1).lzma)
 endef
 
-define MkBrnImage
-	mkbrncmdline -i $(KDIR)/vmlinux-$(5) -o $(KDIR)/vmlinux-$(5)-brn BRN-BOOT $(7)
-	$(call CompressLzma,$(KDIR)/vmlinux-$(5)-brn,$(KDIR)/vmlinux-$(5)-brn.lzma)
-	mkbrnimg -s $(1) -m $(2) -p $(3) -o $(4) $(KDIR)/vmlinux-$(5)-brn.lzma $(KDIR)/root.$(6)
-endef
-
 define MkImageLzma
 	mkimage -A mips -O linux -T kernel -a 0x80002000 -C lzma \
 		-e 0x80002000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
@@ -61,7 +55,6 @@ endef
 define Image/Build/squashfs
 	cat $(KDIR)/uImage-$(2) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
-	$(if $(3),$(call MkBrnImage,$(3),$(4),$(5),$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-brnImage,$(2),$(1),$(6)))
 endef
 
 define Image/BuildNAND/squashfs
@@ -268,6 +261,14 @@ define Build/mktplinkfw2
 		-o $@
 endef
 
+define Build/mkbrncmdline
+   mkbrncmdline -i $@ -o $@.new BRN-BOOT
+   mv $@.new $@
+endef
+
+define Build/mkbrnimg
+   mkbrnimg -s $(SIGNATURE) -m $(MAGIC) -p $(CRC32_POLY) -o $@ $(word 1,$^) $(word 2,$^)
+endef
 
 # Shared device definition: applies to every defined device
 define Device/Default
@@ -291,6 +292,13 @@ define Device/lantiqTpLink
   IMAGE/tplink := mktplinkfw2
 endef
 
+define Device/lantiqBrnImage
+  KERNEL := kernel-bin | append-dtb | mkbrncmdline | lzma-no-dict
+  IMAGES := factory.bin
+  IMAGE/factory.bin := mkbrnimg
+endef
+DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY
+
 define lantiqTpLink
   define Device/$(1)
     $$(Device/lantiqTpLink)
@@ -310,6 +318,17 @@ define lantiqImage
   TARGET_DEVICES += $(1)
 endef
 
+define lantiqBrnImage
+  define Device/$(1)
+    $$(Device/lantiqBrnImage)
+    DEVICE_PROFILE := $(1)
+    DEVICE_DTS := $(1)
+    SIGNATURE := $(2)
+    MAGIC := $(3)
+    CRC32_POLY := $(4)
+  endef
+  TARGET_DEVICES += $(1)
+endef
 
 ifeq ($(CONFIG_TARGET_lantiq_falcon),y)
 
@@ -404,14 +423,9 @@ $(eval $(call lantiqTpLink,TDW8970,TD-W8970v1))
 $(eval $(call lantiqTpLink,TDW8980,TD-W8980v1))
 $(eval $(call lantiqTpLink,VR200v,ArcherVR200V))
 $(eval $(call lantiqImage,VGV7510KW22NOR))
-
-Image/BuildKernel/Profile/VGV7510KW22BRN=$(call Image/BuildKernel/Template,VGV7510KW22BRN,$(1))
-Image/Build/Profile/VGV7510KW22BRN=$(call Image/Build/$(1),$(1),VGV7510KW22BRN,BRNDA6431,0x12345678,0x04c11db7,$(1))
-
+$(eval $(call lantiqBrnImage,VGV7510KW22BRN,BRNDA6431,0x12345678,0x04c11db7))
 $(eval $(call lantiqImage,VGV7519NOR))
-
-Image/BuildKernel/Profile/VGV7519BRN=$(call Image/BuildKernel/Template,VGV7519BRN,$(1))
-Image/Build/Profile/VGV7519BRN=$(call Image/Build/$(1),$(1),VGV7519BRN,5D00008000,0x12345678,0x2083b8ed,$(1))
+$(eval $(call lantiqBrnImage,VGV7519BRN,5D00008000,0x12345678,0x2083b8ed))
 
 define Image/Prepare
 	$(call Image/Prepare/Profile,$(PROFILE))
