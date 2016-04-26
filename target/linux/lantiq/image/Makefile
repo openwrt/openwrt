@@ -301,6 +301,8 @@ define Device/Default
   FILESYSTEMS := squashfs
   DEVICE_PROFILE :=
   DEVICE_DTS :=
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs
 endef
 DEVICE_VARS += BOARD_ID DEVICE_PROFILE DEVICE_DTS
 
