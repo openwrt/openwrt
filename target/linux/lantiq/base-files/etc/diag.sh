@@ -25,7 +25,7 @@ set_state() {
 		;;
 	done)
 		status_led_off
-		[ -n "$running" ] & {
+		[ -n "$running" ] && {
 			status_led="$running"
 			status_led_on
 		}
