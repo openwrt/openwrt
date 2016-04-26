@@ -5,6 +5,16 @@
 # See /LICENSE for more information.
 #
 
+define Profile/OMYG1
+	NAME:=OMYlink OMY-G1
+	PACKAGES:= kmod-usb-core kmod-usb2
+endef
+
+define Profile/OMYX1/Description
+	Package set optimized for the OMYlink OMY-G1.
+endef
+$(eval $(call Profile,OMYG1))
+
 define Profile/OMYX1
 	NAME:=OMYlink OMY-X1
 	PACKAGES:=

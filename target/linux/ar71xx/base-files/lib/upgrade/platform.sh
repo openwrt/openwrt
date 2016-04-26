@@ -340,6 +340,7 @@ platform_check_image() {
 	gl-inet | \
 	mc-mac1200r | \
 	minibox-v1 |\
+	omy-g1 |\
 	omy-x1 |\
 	onion-omega | \
 	oolite | \
