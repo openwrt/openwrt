@@ -1,7 +1,7 @@
-From ca10b32de369729b8e7947fe1945e8e393d803cd Mon Sep 17 00:00:00 2001
+From ad8a96526816abfa75b19998bbf41857f9bae6cc Mon Sep 17 00:00:00 2001
 From: Boris BREZILLON <boris.brezillon@free-electrons.com>
 Date: Thu, 10 Dec 2015 09:00:39 +0100
-Subject: [PATCH 54/81] mtd: nand: add helpers to access ->priv
+Subject: [PATCH 54/91] mtd: nand: add helpers to access ->priv
 
 Add two helpers to access the field reserved for private controller data.
 This makes it clearer what this field is reserved for and ease future
@@ -13,9 +13,11 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  include/linux/mtd/nand.h |   10 ++++++++++
  1 file changed, 10 insertions(+)
 
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index c75424f..345f864 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -729,6 +729,16 @@ static inline struct mtd_info *nand_to_m
+@@ -729,6 +729,16 @@ static inline struct mtd_info *nand_to_mtd(struct nand_chip *chip)
  	return &chip->mtd;
  }
  
@@ -32,3 +34,6 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  /*
   * NAND Flash Manufacturer ID Codes
   */
+-- 
+1.7.10.4
+

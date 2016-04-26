@@ -1,7 +1,7 @@
 From 31a22fbd0d3b187be61c4c5d22b19c95abb327c3 Mon Sep 17 00:00:00 2001
 From: "chunfeng.yun@mediatek.com" <chunfeng.yun@mediatek.com>
 Date: Tue, 17 Nov 2015 17:18:41 +0800
-Subject: [PATCH 20/81] arm64: dts: mediatek: add xHCI & usb phy for mt8173
+Subject: [PATCH 20/91] arm64: dts: mediatek: add xHCI & usb phy for mt8173
 
 add xHCI and phy drivers for MT8173-EVB
 
@@ -11,6 +11,8 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  arch/arm64/boot/dts/mediatek/mt8173.dtsi    |   42 +++++++++++++++++++++++++++
  2 files changed, 58 insertions(+)
 
+diff --git a/arch/arm64/boot/dts/mediatek/mt8173-evb.dts b/arch/arm64/boot/dts/mediatek/mt8173-evb.dts
+index 811cb76..9b1482a 100644
 --- a/arch/arm64/boot/dts/mediatek/mt8173-evb.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt8173-evb.dts
 @@ -13,6 +13,7 @@
@@ -47,6 +49,8 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
 +	vbus-supply = <&usb_p1_vbus>;
 +	mediatek,wakeup-src = <1>;
 +};
+diff --git a/arch/arm64/boot/dts/mediatek/mt8173.dtsi b/arch/arm64/boot/dts/mediatek/mt8173.dtsi
+index 4dd5f93..c1fd275 100644
 --- a/arch/arm64/boot/dts/mediatek/mt8173.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt8173.dtsi
 @@ -14,6 +14,7 @@
@@ -105,3 +109,6 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  		mmsys: clock-controller@14000000 {
  			compatible = "mediatek,mt8173-mmsys", "syscon";
  			reg = <0 0x14000000 0 0x1000>;
+-- 
+1.7.10.4
+

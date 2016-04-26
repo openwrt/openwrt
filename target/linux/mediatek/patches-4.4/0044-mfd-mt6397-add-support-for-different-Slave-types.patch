@@ -1,13 +1,15 @@
-From 1ef53a11f0c282008aa572eb7c97fa1e79621ea3 Mon Sep 17 00:00:00 2001
+From bd51286bc2a310bc1ba2297e97e862bbdb102183 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 8 Jan 2016 08:41:52 +0100
-Subject: [PATCH 44/81] mfd: mt6397: add support for different Slave types
+Subject: [PATCH 44/91] mfd: mt6397: add support for different Slave types
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  drivers/mfd/mt6397-core.c |   58 ++++++++++++++++++++++++++++++++-------------
  1 file changed, 41 insertions(+), 17 deletions(-)
 
+diff --git a/drivers/mfd/mt6397-core.c b/drivers/mfd/mt6397-core.c
+index 75ad0fe..aa91606 100644
 --- a/drivers/mfd/mt6397-core.c
 +++ b/drivers/mfd/mt6397-core.c
 @@ -24,6 +24,9 @@
@@ -20,7 +22,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static const struct resource mt6397_rtc_resources[] = {
  	{
  		.start = MT6397_RTC_BASE,
-@@ -232,39 +235,60 @@ static SIMPLE_DEV_PM_OPS(mt6397_pm_ops,
+@@ -232,39 +235,60 @@ static SIMPLE_DEV_PM_OPS(mt6397_pm_ops, mt6397_irq_suspend,
  static int mt6397_probe(struct platform_device *pdev)
  {
  	int ret;
@@ -98,3 +100,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return ret;
  }
+-- 
+1.7.10.4
+

@@ -1,7 +1,7 @@
-From 542f2cd3287fb955efcc5ceca14b690ba19f8c57 Mon Sep 17 00:00:00 2001
+From e2b8f38b1a794b7a0912d0bbaa1454055b5cbac2 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 20 Jan 2016 06:42:01 +0100
-Subject: [PATCH 32/81] soc: mediatek: PMIC wrap: don't duplicate the wrapper
+Subject: [PATCH 32/91] soc: mediatek: PMIC wrap: don't duplicate the wrapper
  data
 
 As we add support for more devices struct pmic_wrapper_type will grow and
@@ -13,6 +13,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |   22 ++++++++--------------
  1 file changed, 8 insertions(+), 14 deletions(-)
 
+diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
+index 0d9b19a..340c4b5 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -376,9 +376,7 @@ struct pmic_wrapper {
@@ -53,7 +55,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  }
  
  static bool pwrap_is_fsm_idle(struct pmic_wrapper *wrp)
-@@ -697,7 +695,7 @@ static int pwrap_init(struct pmic_wrappe
+@@ -697,7 +695,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
  
  	pwrap_writel(wrp, 1, PWRAP_WRAP_EN);
  
@@ -62,7 +64,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	pwrap_writel(wrp, 1, PWRAP_WACS2_EN);
  
-@@ -742,7 +740,7 @@ static int pwrap_init(struct pmic_wrappe
+@@ -742,7 +740,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
  	pwrap_writel(wrp, 0x1, PWRAP_CRC_EN);
  	pwrap_writel(wrp, 0x0, PWRAP_SIG_MODE);
  	pwrap_writel(wrp, PWRAP_DEW_CRC_VAL, PWRAP_SIG_ADR);
@@ -71,7 +73,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	if (pwrap_is_mt8135(wrp))
  		pwrap_writel(wrp, 0x7, PWRAP_RRARB_EN);
-@@ -836,7 +834,6 @@ static int pwrap_probe(struct platform_d
+@@ -836,7 +834,6 @@ static int pwrap_probe(struct platform_device *pdev)
  	struct device_node *np = pdev->dev.of_node;
  	const struct of_device_id *of_id =
  		of_match_device(of_pwrap_match_tbl, &pdev->dev);
@@ -79,7 +81,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	struct resource *res;
  
  	wrp = devm_kzalloc(&pdev->dev, sizeof(*wrp), GFP_KERNEL);
-@@ -845,10 +842,7 @@ static int pwrap_probe(struct platform_d
+@@ -845,10 +842,7 @@ static int pwrap_probe(struct platform_device *pdev)
  
  	platform_set_drvdata(pdev, wrp);
  
@@ -91,3 +93,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	wrp->dev = &pdev->dev;
  
  	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "pwrap");
+-- 
+1.7.10.4
+

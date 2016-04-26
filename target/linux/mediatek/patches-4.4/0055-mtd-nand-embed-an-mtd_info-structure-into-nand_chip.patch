@@ -1,7 +1,7 @@
-From b4a93bff70545d73337e2cae7209fd1ae4d9d8e8 Mon Sep 17 00:00:00 2001
+From addd0678f84712ac6f70b8e6cda84e11c5d348f4 Mon Sep 17 00:00:00 2001
 From: Boris BREZILLON <boris.brezillon@free-electrons.com>
 Date: Tue, 1 Dec 2015 12:03:06 +0100
-Subject: [PATCH 55/81] mtd: nand: embed an mtd_info structure into nand_chip
+Subject: [PATCH 55/91] mtd: nand: embed an mtd_info structure into nand_chip
 
 Currently all NAND controller drivers are providing both the mtd_info and
 nand_chip struct and then let the NAND subsystem to initialize a few
@@ -17,6 +17,8 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  include/linux/mtd/nand.h |    2 ++
  1 file changed, 2 insertions(+)
 
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 345f864..1ded588 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
 @@ -540,6 +540,7 @@ struct nand_buffers {
@@ -35,3 +37,6 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  	void __iomem *IO_ADDR_R;
  	void __iomem *IO_ADDR_W;
  
+-- 
+1.7.10.4
+

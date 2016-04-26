@@ -1,7 +1,7 @@
-From fe8fd85507870bf3aa5ff257944f15b50888d17c Mon Sep 17 00:00:00 2001
+From e56caadcf189eafcd2c7a9e22f22c0b67e89df75 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 21 Feb 2016 13:52:12 +0100
-Subject: [PATCH 26/81] scpsys: various fixes
+Subject: [PATCH 26/91] scpsys: various fixes
 
 ---
  drivers/clk/mediatek/clk-mt2701.c        |    2 ++
@@ -9,9 +9,11 @@ Subject: [PATCH 26/81] scpsys: various fixes
  include/dt-bindings/power/mt2701-power.h |    4 ++--
  3 files changed, 4 insertions(+), 10 deletions(-)
 
+diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
+index 0e40bb8..812b347 100644
 --- a/drivers/clk/mediatek/clk-mt2701.c
 +++ b/drivers/clk/mediatek/clk-mt2701.c
-@@ -1043,6 +1043,8 @@ static void __init mtk_ethsys_init(struc
+@@ -1043,6 +1043,8 @@ static void __init mtk_ethsys_init(struct device_node *node)
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);
@@ -20,9 +22,11 @@ Subject: [PATCH 26/81] scpsys: various fixes
  }
  CLK_OF_DECLARE(mtk_ethsys, "mediatek,mt2701-ethsys", mtk_ethsys_init);
  
+diff --git a/drivers/soc/mediatek/mtk-scpsys-mt2701.c b/drivers/soc/mediatek/mtk-scpsys-mt2701.c
+index 3a31946..19489bc 100644
 --- a/drivers/soc/mediatek/mtk-scpsys-mt2701.c
 +++ b/drivers/soc/mediatek/mtk-scpsys-mt2701.c
-@@ -61,14 +61,6 @@ static const struct scp_domain_data scp_
+@@ -61,14 +61,6 @@ static const struct scp_domain_data scp_domain_data[] = {
  		.bus_prot_mask = MT2701_TOP_AXI_PROT_EN_DISP,
  		.active_wakeup = true,
  	},
@@ -37,6 +41,8 @@ Subject: [PATCH 26/81] scpsys: various fixes
  	[MT2701_POWER_DOMAIN_VDEC] = {
  		.name = "vdec",
  		.sta_mask = VDE_PWR_STA_MASK,
+diff --git a/include/dt-bindings/power/mt2701-power.h b/include/dt-bindings/power/mt2701-power.h
+index 64cc826..c168597 100644
 --- a/include/dt-bindings/power/mt2701-power.h
 +++ b/include/dt-bindings/power/mt2701-power.h
 @@ -16,12 +16,12 @@
@@ -54,3 +60,6 @@ Subject: [PATCH 26/81] scpsys: various fixes
 +#define MT2701_POWER_DOMAIN_IFR_MSC	2
  
  #endif /* _DT_BINDINGS_POWER_MT2701_POWER_H */
+-- 
+1.7.10.4
+

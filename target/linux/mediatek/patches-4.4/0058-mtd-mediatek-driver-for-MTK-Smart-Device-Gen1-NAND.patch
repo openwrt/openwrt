@@ -1,7 +1,7 @@
-From cc1959d5bc9a709729fcd02d78f4c27394393109 Mon Sep 17 00:00:00 2001
+From a97e38f34b59d18d9ca3626c2611c63cc6c6b48a Mon Sep 17 00:00:00 2001
 From: Jorge Ramirez-Ortiz <jorge.ramirez-ortiz@linaro.org>
 Date: Wed, 2 Mar 2016 12:00:12 -0500
-Subject: [PATCH 58/81] mtd: mediatek: driver for MTK Smart Device Gen1 NAND
+Subject: [PATCH 58/91] mtd: mediatek: driver for MTK Smart Device Gen1 NAND
 
 This patch adds support for mediatek's SDG1 NFC nand controller
 embedded in SoC 2701.
@@ -20,6 +20,8 @@ Signed-off-by: Jorge Ramirez-Ortiz <jorge.ramirez-ortiz@linaro.org>
  create mode 100644 drivers/mtd/nand/mtksdg1_nand_ecc.h
  create mode 100644 drivers/mtd/nand/mtksdg1_nand_nfi.h
 
+diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
+index 2896640..5ec072a 100644
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
 @@ -546,4 +546,10 @@ config MTD_NAND_HISI504
@@ -33,15 +35,20 @@ Signed-off-by: Jorge Ramirez-Ortiz <jorge.ramirez-ortiz@linaro.org>
 +	Enables support for NAND controller on MTK Smart Device SoCs.
 +
  endif # MTD_NAND
+diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
+index 2c7f014..2a2620c 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -55,5 +55,6 @@ obj-$(CONFIG_MTD_NAND_BCM47XXNFLASH)	+=
+@@ -55,5 +55,6 @@ obj-$(CONFIG_MTD_NAND_BCM47XXNFLASH)	+= bcm47xxnflash/
  obj-$(CONFIG_MTD_NAND_SUNXI)		+= sunxi_nand.o
  obj-$(CONFIG_MTD_NAND_HISI504)	        += hisi504_nand.o
  obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand/
 +obj-$(CONFIG_MTD_NAND_MTKSDG1)		+= mtksdg1_nand.o
  
  nand-objs := nand_base.o nand_bbt.o nand_timings.o
+diff --git a/drivers/mtd/nand/mtksdg1_nand.c b/drivers/mtd/nand/mtksdg1_nand.c
+new file mode 100644
+index 0000000..55dd17d
 --- /dev/null
 +++ b/drivers/mtd/nand/mtksdg1_nand.c
 @@ -0,0 +1,1535 @@
@@ -1580,6 +1587,9 @@ Signed-off-by: Jorge Ramirez-Ortiz <jorge.ramirez-ortiz@linaro.org>
 +MODULE_AUTHOR("Xiaolei Li <xiaolei.li@mediatek.com>");
 +MODULE_DESCRIPTION("MTK Nand Flash Controller Driver");
 +
+diff --git a/drivers/mtd/nand/mtksdg1_nand_ecc.h b/drivers/mtd/nand/mtksdg1_nand_ecc.h
+new file mode 100644
+index 0000000..d90b196
 --- /dev/null
 +++ b/drivers/mtd/nand/mtksdg1_nand_ecc.h
 @@ -0,0 +1,75 @@
@@ -1658,6 +1668,9 @@ Signed-off-by: Jorge Ramirez-Ortiz <jorge.ramirez-ortiz@linaro.org>
 +#define		DECFSM_MASK		(0x7f0f0f0f)
 +#define		DECFSM_IDLE		(0x01010101)
 +#endif
+diff --git a/drivers/mtd/nand/mtksdg1_nand_nfi.h b/drivers/mtd/nand/mtksdg1_nand_nfi.h
+new file mode 100644
+index 0000000..a9aa6f6
 --- /dev/null
 +++ b/drivers/mtd/nand/mtksdg1_nand_nfi.h
 @@ -0,0 +1,119 @@
@@ -1780,3 +1793,6 @@ Signed-off-by: Jorge Ramirez-Ortiz <jorge.ramirez-ortiz@linaro.org>
 +
 +#endif
 +
+-- 
+1.7.10.4
+

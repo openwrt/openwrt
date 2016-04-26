@@ -1,7 +1,7 @@
-From 09351f7c59e08d9c259546e03af3af05c10d644c Mon Sep 17 00:00:00 2001
+From ec6ad56b62c6cd769b5a35e7009518d99bbbb7b6 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 20 Jan 2016 12:09:14 +0100
-Subject: [PATCH 41/81] soc: mediatek: PMIC wrap: add MT2701/7623 support
+Subject: [PATCH 41/91] soc: mediatek: PMIC wrap: add MT2701/7623 support
 
 Add the registers, callbacks and data structures required to make the
 wrapper work on MT2701 and MT7623.
@@ -11,6 +11,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |  154 ++++++++++++++++++++++++++++++++++
  1 file changed, 154 insertions(+)
 
+diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
+index 0e4ebb8..3c3e56d 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -52,6 +52,7 @@
@@ -136,7 +138,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	PWRAP_MT8135,
  	PWRAP_MT8173,
  };
-@@ -637,6 +732,31 @@ static int pwrap_mt8173_init_reg_clock(s
+@@ -637,6 +732,31 @@ static int pwrap_mt8173_init_reg_clock(struct pmic_wrapper *wrp)
  	return 0;
  }
  
@@ -168,7 +170,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static bool pwrap_is_cipher_ready(struct pmic_wrapper *wrp)
  {
  	return pwrap_readl(wrp, PWRAP_CIPHER_RDY) & 1;
-@@ -670,6 +790,7 @@ static int pwrap_init_cipher(struct pmic
+@@ -670,6 +790,7 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
  		pwrap_writel(wrp, 1, PWRAP_CIPHER_LOAD);
  		pwrap_writel(wrp, 1, PWRAP_CIPHER_START);
  		break;
@@ -176,7 +178,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	case PWRAP_MT8173:
  		pwrap_writel(wrp, 1, PWRAP_CIPHER_EN);
  		break;
-@@ -772,6 +893,24 @@ static int pwrap_mt8173_init_soc_specifi
+@@ -772,6 +893,24 @@ static int pwrap_mt8173_init_soc_specific(struct pmic_wrapper *wrp)
  	return 0;
  }
  
@@ -201,7 +203,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int pwrap_init(struct pmic_wrapper *wrp)
  {
  	int ret;
-@@ -916,6 +1055,18 @@ static const struct of_device_id of_slav
+@@ -916,6 +1055,18 @@ static const struct of_device_id of_slave_match_tbl[] = {
  };
  MODULE_DEVICE_TABLE(of, of_slave_match_tbl);
  
@@ -220,7 +222,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static struct pmic_wrapper_type pwrap_mt8135 = {
  	.regs = mt8135_regs,
  	.type = PWRAP_MT8135,
-@@ -942,6 +1093,9 @@ static struct pmic_wrapper_type pwrap_mt
+@@ -942,6 +1093,9 @@ static struct pmic_wrapper_type pwrap_mt8173 = {
  
  static struct of_device_id of_pwrap_match_tbl[] = {
  	{
@@ -230,3 +232,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		.compatible = "mediatek,mt8135-pwrap",
  		.data = &pwrap_mt8135,
  	}, {
+-- 
+1.7.10.4
+

@@ -1,7 +1,7 @@
-From 2fc7dd0f48d9c2096d76562a1960b78b064701f7 Mon Sep 17 00:00:00 2001
+From 036862011a5d13e8c54d9d0f9fe838fea986df89 Mon Sep 17 00:00:00 2001
 From: Henry Chen <henryc.chen@mediatek.com>
 Date: Mon, 4 Jan 2016 20:02:52 +0800
-Subject: [PATCH 27/81] soc: mediatek: PMIC wrap: Clear the vldclr if state
+Subject: [PATCH 27/91] soc: mediatek: PMIC wrap: Clear the vldclr if state
  machine stay on FSM_VLDCLR state.
 
 Sometimes PMIC is too busy to send data in time to cause pmic wrap timeout,
@@ -20,9 +20,11 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  drivers/soc/mediatek/mtk-pmic-wrap.c |   22 ++++++++++++++++++++--
  1 file changed, 20 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
+index 105597a..696071b 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
-@@ -412,6 +412,20 @@ static bool pwrap_is_fsm_vldclr(struct p
+@@ -412,6 +412,20 @@ static bool pwrap_is_fsm_vldclr(struct pmic_wrapper *wrp)
  	return PWRAP_GET_WACS_FSM(val) == PWRAP_WACS_FSM_WFVLDCLR;
  }
  
@@ -43,7 +45,7 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  static bool pwrap_is_sync_idle(struct pmic_wrapper *wrp)
  {
  	return pwrap_readl(wrp, PWRAP_WACS2_RDATA) & PWRAP_STATE_SYNC_IDLE0;
-@@ -445,8 +459,10 @@ static int pwrap_write(struct pmic_wrapp
+@@ -445,8 +459,10 @@ static int pwrap_write(struct pmic_wrapper *wrp, u32 adr, u32 wdata)
  	int ret;
  
  	ret = pwrap_wait_for_state(wrp, pwrap_is_fsm_idle);
@@ -55,7 +57,7 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  
  	pwrap_writel(wrp, (1 << 31) | ((adr >> 1) << 16) | wdata,
  			PWRAP_WACS2_CMD);
-@@ -459,8 +475,10 @@ static int pwrap_read(struct pmic_wrappe
+@@ -459,8 +475,10 @@ static int pwrap_read(struct pmic_wrapper *wrp, u32 adr, u32 *rdata)
  	int ret;
  
  	ret = pwrap_wait_for_state(wrp, pwrap_is_fsm_idle);
@@ -67,3 +69,6 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  
  	pwrap_writel(wrp, (adr >> 1) << 16, PWRAP_WACS2_CMD);
  
+-- 
+1.7.10.4
+

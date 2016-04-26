@@ -1,0 +1,74 @@
+From 8aa53beda6ad6c8154e4f7b8a7ca9815412fa95a Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 20 Apr 2016 16:18:07 +0200
+Subject: [PATCH 87/91] net-next: mediatek: add IRQ locking
+
+The code that enables and disables IRQs is missing proper locking. After
+adding the IRQ separation patch and routing the putting the RX and TX IRQs
+on different cores we experienced IRQ stalls. Fix this by adding proper
+locking. We use a dedicated lock to reduce the latency if the IRQ code.
+Otherwise it might wait for bottom code to finish before reenabling or
+disabling IRQs.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    7 +++++++
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |    1 +
+ 2 files changed, 8 insertions(+)
+
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index 679cefd..f821820 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -316,22 +316,28 @@ static void mtk_mdio_cleanup(struct mtk_eth *eth)
+ 
+ static inline void mtk_irq_disable(struct mtk_eth *eth, u32 mask)
+ {
++	unsigned long flags;
+ 	u32 val;
+ 
++	spin_lock_irqsave(&eth->irq_lock, flags);
+ 	val = mtk_r32(eth, MTK_QDMA_INT_MASK);
+ 	mtk_w32(eth, val & ~mask, MTK_QDMA_INT_MASK);
+ 	/* flush write */
+ 	mtk_r32(eth, MTK_QDMA_INT_MASK);
++	spin_unlock_irqrestore(&eth->irq_lock, flags);
+ }
+ 
+ static inline void mtk_irq_enable(struct mtk_eth *eth, u32 mask)
+ {
++	unsigned long flags;
+ 	u32 val;
+ 
++	spin_lock_irqsave(&eth->irq_lock, flags);
+ 	val = mtk_r32(eth, MTK_QDMA_INT_MASK);
+ 	mtk_w32(eth, val | mask, MTK_QDMA_INT_MASK);
+ 	/* flush write */
+ 	mtk_r32(eth, MTK_QDMA_INT_MASK);
++	spin_unlock_irqrestore(&eth->irq_lock, flags);
+ }
+ 
+ static int mtk_set_mac_address(struct net_device *dev, void *p)
+@@ -1750,6 +1756,7 @@ static int mtk_probe(struct platform_device *pdev)
+ 		return -EADDRNOTAVAIL;
+ 
+ 	spin_lock_init(&eth->page_lock);
++	spin_lock_init(&eth->irq_lock);
+ 
+ 	eth->ethsys = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
+ 						      "mediatek,ethsys");
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+index 57f7e8a..8220275 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -372,6 +372,7 @@ struct mtk_eth {
+ 	void __iomem			*base;
+ 	struct reset_control		*rstc;
+ 	spinlock_t			page_lock;
++	spinlock_t			irq_lock;
+ 	struct net_device		dummy_dev;
+ 	struct net_device		*netdev[MTK_MAX_DEVS];
+ 	struct mtk_mac			*mac[MTK_MAX_DEVS];
+-- 
+1.7.10.4
+

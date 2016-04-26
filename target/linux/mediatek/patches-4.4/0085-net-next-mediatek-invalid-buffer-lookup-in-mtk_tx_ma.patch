@@ -1,0 +1,30 @@
+From e58c3912f08f71d9c3e2b09548c96dca8f6ea9d8 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 23 Apr 2016 09:25:00 +0200
+Subject: [PATCH 85/91] net-next: mediatek: invalid buffer lookup in
+ mtk_tx_map()
+
+The lookup of the tx_buffer in the error path inside mtk_tx_map() uses the
+wrong descriptor pointer. This looks like a copy & paste error.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index 6896d17..2a4bbbb 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -670,7 +670,7 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+ 
+ err_dma:
+ 	do {
+-		tx_buf = mtk_desc_to_tx_buf(ring, txd);
++		tx_buf = mtk_desc_to_tx_buf(ring, itxd);
+ 
+ 		/* unmap dma */
+ 		mtk_tx_unmap(&dev->dev, tx_buf);
+-- 
+1.7.10.4
+

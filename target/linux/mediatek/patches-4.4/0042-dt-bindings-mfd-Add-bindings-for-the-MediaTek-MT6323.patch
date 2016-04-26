@@ -1,7 +1,7 @@
-From 94f7b9dabcd073bf629268514f87e5dbd2cafd13 Mon Sep 17 00:00:00 2001
+From 51deb5b355f0a26cc5f2a5e4a83e904f5c4c34df Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 10 Jan 2016 17:12:37 +0100
-Subject: [PATCH 42/81] dt-bindings: mfd: Add bindings for the MediaTek MT6323
+Subject: [PATCH 42/91] dt-bindings: mfd: Add bindings for the MediaTek MT6323
  PMIC
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
@@ -11,6 +11,8 @@ Cc: devicetree@vger.kernel.org
  Documentation/devicetree/bindings/mfd/mt6397.txt |   10 ++++++----
  1 file changed, 6 insertions(+), 4 deletions(-)
 
+diff --git a/Documentation/devicetree/bindings/mfd/mt6397.txt b/Documentation/devicetree/bindings/mfd/mt6397.txt
+index 15043e6..949c85f 100644
 --- a/Documentation/devicetree/bindings/mfd/mt6397.txt
 +++ b/Documentation/devicetree/bindings/mfd/mt6397.txt
 @@ -1,6 +1,6 @@
@@ -22,7 +24,7 @@ Cc: devicetree@vger.kernel.org
  - Regulator
  - RTC
  - Audio codec
-@@ -8,14 +8,14 @@ MT6397 is a multifunction device with th
+@@ -8,14 +8,14 @@ MT6397 is a multifunction device with the following sub modules:
  - Clock
  
  It is interfaced to host controller using SPI interface by a proprietary hardware
@@ -48,3 +50,6 @@ Cc: devicetree@vger.kernel.org
  - codec
  	Required properties:
  		- compatible: "mediatek,mt6397-codec"
+-- 
+1.7.10.4
+
