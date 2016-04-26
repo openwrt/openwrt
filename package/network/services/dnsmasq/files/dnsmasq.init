@@ -218,6 +218,8 @@ dnsmasq() {
 	mkdir -p /tmp/hosts /tmp/dnsmasq.d
 	xappend "--addn-hosts=/tmp/hosts"
 	xappend "--conf-dir=/tmp/dnsmasq.d"
+	xappend "--user=dnsmasq"
+	xappend "--group=dnsmasq"
 
 	echo >> $CONFIGFILE
 
@@ -592,7 +594,7 @@ start_service() {
 
 	if [ ! -f "$TIMESTAMPFILE" ]; then
 		touch "$TIMESTAMPFILE"
-		chown nobody.nogroup "$TIMESTAMPFILE"
+		chown dnsmasq.dnsmasq "$TIMESTAMPFILE"
 	fi
 
 	echo "# auto-generated config file from /etc/config/dhcp" > $CONFIGFILE

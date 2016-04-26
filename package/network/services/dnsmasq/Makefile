@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
 PKG_VERSION:=2.75
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
@@ -34,6 +34,7 @@ define Package/dnsmasq/Default
   CATEGORY:=Base system
   TITLE:=DNS and DHCP server
   URL:=http://www.thekelleys.org.uk/dnsmasq/
+  USERID:=dnsmasq=453:dnsmasq=453
 endef
 
 define Package/dnsmasq
