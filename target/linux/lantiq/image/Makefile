@@ -51,11 +51,6 @@ define MkImageLzma
 		-d $(KDIR)/vmlinux$(2)-$(1).lzma $(KDIR)/uImage-$(1)$(2)
 endef
 
-define TPLinkImageLzma
-	mktplinkfw2 -c -B $(2) -s \
-		-k $(KDIR)/vmlinux$(3)-$(1).lzma -o $(KDIR)/uImage-$(1)$(3)
-endef
-
 define MkImageEVA
 	lzma2eva 0x80002000 0x80002000 $(KDIR)/vmlinux$(2)-$(1).lzma $(KDIR)/$(1)$(2).eva.prealign
 	dd if=$(KDIR)/$(1)$(2).eva.prealign of=$(KDIR)/$(1)$(2).eva.align.64k bs=64k conv=sync
@@ -114,12 +109,6 @@ define Image/BuildDGN3500B/squashfs
 	dgn3500sum $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1)-sysupgrade.image $(DGN3500_SKERNEL) DE
 endef
 
-
-define Image/BuildTPLink/squashfs
-	mktplinkfw2 -B $(3) -s -a 0x4 -j \
-		-k $(KDIR)/vmlinux-$(2).lzma -r $(KDIR)/root.$(1) \
-		-o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-sysupgrade.image
-endef
 
 define Image/BuildEVA/squashfs
 	cat $(KDIR)/$(2).eva.align.64k $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva
@@ -244,17 +233,6 @@ define Image/Prepare/Profile
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call PatchKernelLzma,$(1),-initramfs)
 	$(call Image/BuildLoader/Template,$(1),-initramfs)
-endif
-endef
-
-define Image/BuildKernelTPLink/Template
-	$(call PatchKernelLzma,$(1))
-	$(call TPLinkImageLzma,$(1),$(2))
-	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(call PatchKernelLzma,$(1),-initramfs)
-	$(call TPLinkImageLzma,$(1),$(2),-initramfs)
-	$(CP) $(KDIR)/uImage-$(1)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage-initramfs
 endif
 endef
 
