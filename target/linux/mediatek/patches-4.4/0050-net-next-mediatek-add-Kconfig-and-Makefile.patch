@@ -1,7 +1,7 @@
-From 0189b71d0ce9feef1c3fac7d9c3eb7dae57dabdf Mon Sep 17 00:00:00 2001
+From 80d88cdd398bf0c33ca5e655ded3bb62339b9565 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 2 Mar 2016 04:32:43 +0100
-Subject: [PATCH 50/81] net-next: mediatek: add Kconfig and Makefile
+Subject: [PATCH 50/91] net-next: mediatek: add Kconfig and Makefile
 
 This patch adds the Makefile and Kconfig required to make the driver build.
 
@@ -15,6 +15,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/mediatek/Kconfig
  create mode 100644 drivers/net/ethernet/mediatek/Makefile
 
+diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
+index 31c5e47..cd28b95 100644
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
 @@ -106,6 +106,7 @@ config LANTIQ_ETOP
@@ -25,6 +27,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  source "drivers/net/ethernet/mellanox/Kconfig"
  source "drivers/net/ethernet/micrel/Kconfig"
  source "drivers/net/ethernet/microchip/Kconfig"
+diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
+index 071f84e..c62191f 100644
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
 @@ -46,6 +46,7 @@ obj-$(CONFIG_JME) += jme.o
@@ -35,6 +39,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_NET_VENDOR_MELLANOX) += mellanox/
  obj-$(CONFIG_NET_VENDOR_MICREL) += micrel/
  obj-$(CONFIG_NET_VENDOR_MICROCHIP) += microchip/
+diff --git a/drivers/net/ethernet/mediatek/Kconfig b/drivers/net/ethernet/mediatek/Kconfig
+new file mode 100644
+index 0000000..b0229f4
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/Kconfig
 @@ -0,0 +1,17 @@
@@ -55,6 +62,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	  MediaTek MT2701/MT7623 chipset family.
 +
 +endif #NET_VENDOR_MEDIATEK
+diff --git a/drivers/net/ethernet/mediatek/Makefile b/drivers/net/ethernet/mediatek/Makefile
+new file mode 100644
+index 0000000..aa3f1c8
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/Makefile
 @@ -0,0 +1,5 @@
@@ -63,3 +73,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#
 +
 +obj-$(CONFIG_NET_MEDIATEK_SOC)			+= mtk_eth_soc.o
+-- 
+1.7.10.4
+

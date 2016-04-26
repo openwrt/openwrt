@@ -1,7 +1,7 @@
-From 17b9724cf84aa32f15334c23d5df34ad3cb885f3 Mon Sep 17 00:00:00 2001
+From 3126b17c9123daf9f96f513d53f08c06f4d08a7c Mon Sep 17 00:00:00 2001
 From: Boris BREZILLON <boris.brezillon@free-electrons.com>
 Date: Mon, 16 Nov 2015 14:37:35 +0100
-Subject: [PATCH 52/81] mtd: nand: add an mtd_to_nand() helper
+Subject: [PATCH 52/91] mtd: nand: add an mtd_to_nand() helper
 
 Some drivers are retrieving the nand_chip pointer using the container_of
 macro on a struct wrapping both the nand_chip and the mtd_info struct while
@@ -14,6 +14,8 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  include/linux/mtd/nand.h |    5 +++++
  1 file changed, 5 insertions(+)
 
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 5a9d1d4..a4839b3 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
 @@ -719,6 +719,11 @@ struct nand_chip {
@@ -28,3 +30,6 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  /*
   * NAND Flash Manufacturer ID Codes
   */
+-- 
+1.7.10.4
+

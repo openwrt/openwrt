@@ -1,0 +1,77 @@
+From 65f0d87a26f7cec860b89b40eebc48a4eb71acf8 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 11 Apr 2016 06:00:23 +0200
+Subject: [PATCH 90/91] net: mediatek: v4.4 backports
+
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |   23 ++++++++++++++---------
+ 1 file changed, 14 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index eee4324a..b466f45 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -207,7 +207,7 @@ static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
+ 
+ 	dev_info(eth->dev,
+ 		 "connected mac %d to PHY at %s [uid=%08x, driver=%s]\n",
+-		 mac->id, phydev_name(phydev), phydev->phy_id,
++		 mac->id, dev_name(&phydev->dev), phydev->phy_id,
+ 		 phydev->drv->name);
+ 
+ 	mac->phy_dev = phydev;
+@@ -1267,9 +1267,10 @@ static irqreturn_t mtk_handle_irq_rx(int irq, void *_eth)
+ 		return IRQ_NONE;
+ 
+ 	if (status & MTK_RX_DONE_INT) {
+-		if (likely(napi_schedule_prep(&eth->rx_napi)))
++		if (likely(napi_schedule_prep(&eth->rx_napi))) {
++			mtk_irq_disable(eth, MTK_RX_DONE_INT);
+ 			__napi_schedule(&eth->rx_napi);
+-		mtk_irq_disable(eth, MTK_RX_DONE_INT);
++		}
+ 	}
+ 	mtk_w32(eth, status, MTK_QMTK_INT_STATUS);
+ 
+@@ -1288,9 +1289,10 @@ static irqreturn_t mtk_handle_irq_tx(int irq, void *_eth)
+ 		return IRQ_NONE;
+ 
+ 	if (status & MTK_TX_DONE_INT) {
+-		if (likely(napi_schedule_prep(&eth->tx_napi)))
++		if (likely(napi_schedule_prep(&eth->tx_napi))) {
++			mtk_irq_disable(eth, MTK_TX_DONE_INT);
+ 			__napi_schedule(&eth->tx_napi);
+-		mtk_irq_disable(eth, MTK_TX_DONE_INT);
++		}
+ 	}
+ 	mtk_w32(eth, status, MTK_QMTK_INT_STATUS);
+ 
+@@ -1382,6 +1384,7 @@ static int mtk_stop(struct net_device *dev)
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 	struct mtk_eth *eth = mac->hw;
+ 
++	netif_carrier_off(dev);
+ 	netif_tx_disable(dev);
+ 	phy_stop(mac->phy_dev);
+ 
+@@ -1581,11 +1584,13 @@ static int mtk_set_settings(struct net_device *dev,
+ {
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 
+-	if (cmd->phy_address != mac->phy_dev->mdio.addr) {
+-		mac->phy_dev = mdiobus_get_phy(mac->hw->mii_bus,
+-					       cmd->phy_address);
+-		if (!mac->phy_dev)
++	if (cmd->phy_address != mac->phy_dev->addr) {
++		if (mac->hw->mii_bus->phy_map[cmd->phy_address]) {
++			mac->phy_dev =
++				mac->hw->mii_bus->phy_map[cmd->phy_address];
++		} else {
+ 			return -ENODEV;
++		}
+ 	}
+ 
+ 	return phy_ethtool_sset(mac->phy_dev, cmd);
+-- 
+1.7.10.4
+

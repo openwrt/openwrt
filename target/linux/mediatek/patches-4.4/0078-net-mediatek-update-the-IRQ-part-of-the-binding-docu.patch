@@ -1,7 +1,7 @@
-From 429b5becfb1e4aacf392c4b246a17b83faad3072 Mon Sep 17 00:00:00 2001
+From 9dd4e96d415d1e1910ec42058729380cddb22f9d Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 29 Mar 2016 14:32:07 +0200
-Subject: [PATCH 67/81] net: mediatek: update the IRQ part of the binding
+Subject: [PATCH 78/91] net: mediatek: update the IRQ part of the binding
  document
 
 The current binding document only describes a single interrupt. Update the
@@ -13,21 +13,24 @@ to using IRQ grouping to split TX and RX onto separate GIC irqs.
 Signed-off-by: John Crispin <blogic@openwrt.org>
  Acked-by: Rob Herring <robh@kernel.org>
 ---
- Documentation/devicetree/bindings/net/mediatek-net.txt |    6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ Documentation/devicetree/bindings/net/mediatek-net.txt |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
+diff --git a/Documentation/devicetree/bindings/net/mediatek-net.txt b/Documentation/devicetree/bindings/net/mediatek-net.txt
+index 5ca7929..32eaaca 100644
 --- a/Documentation/devicetree/bindings/net/mediatek-net.txt
 +++ b/Documentation/devicetree/bindings/net/mediatek-net.txt
-@@ -9,7 +9,7 @@ have dual GMAC each represented by a chi
+@@ -9,7 +9,8 @@ have dual GMAC each represented by a child node..
  Required properties:
  - compatible: Should be "mediatek,mt7623-eth"
  - reg: Address and length of the register set for the device
 -- interrupts: Should contain the frame engines interrupt
-+- interrupts: Should contain the three frame engines interrupts
++- interrupts: Should contain the three frame engines interrupts in numeric
++	order. These are fe_int0, fe_int1 and fe_int2.
  - clocks: the clock used by the core
  - clock-names: the names of the clock listed in the clocks property. These are
  	"ethif", "esw", "gp2", "gp1"
-@@ -42,7 +42,9 @@ eth: ethernet@1b100000 {
+@@ -42,7 +43,9 @@ eth: ethernet@1b100000 {
  		 <&ethsys CLK_ETHSYS_GP2>,
  		 <&ethsys CLK_ETHSYS_GP1>;
  	clock-names = "ethif", "esw", "gp2", "gp1";
@@ -38,3 +41,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	power-domains = <&scpsys MT2701_POWER_DOMAIN_ETH>;
  	resets = <&ethsys MT2701_ETHSYS_ETH_RST>;
  	reset-names = "eth";
+-- 
+1.7.10.4
+

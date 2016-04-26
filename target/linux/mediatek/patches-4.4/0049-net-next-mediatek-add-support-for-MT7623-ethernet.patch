@@ -1,7 +1,7 @@
-From 999621b6bfff903d16691799a23bfccac91c31df Mon Sep 17 00:00:00 2001
+From 15f1cb9603c22910f1cd6a8c63fd279a6d5acfd4 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 2 Mar 2016 04:27:10 +0100
-Subject: [PATCH 49/81] net-next: mediatek: add support for MT7623 ethernet
+Subject: [PATCH 49/91] net-next: mediatek: add support for MT7623 ethernet
 
 Add ethernet support for MediaTek SoCs from the MT7623 family. These have
 dual GMAC. Depending on the exact version, there might be a built-in
@@ -26,6 +26,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/mediatek/mtk_eth_soc.c
  create mode 100644 drivers/net/ethernet/mediatek/mtk_eth_soc.h
 
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+new file mode 100644
+index 0000000..ba3afa5
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -0,0 +1,1807 @@
@@ -1836,6 +1839,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Ethernet driver for MediaTek SoC");
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+new file mode 100644
+index 0000000..48a5292
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -0,0 +1,421 @@
@@ -2260,3 +2266,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +u32 mtk_r32(struct mtk_eth *eth, unsigned reg);
 +
 +#endif /* MTK_ETH_H */
+-- 
+1.7.10.4
+

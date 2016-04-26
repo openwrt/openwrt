@@ -1,7 +1,7 @@
-From c657573d75d71076fef8294f9d4f7f9a0e6f7a9e Mon Sep 17 00:00:00 2001
+From 56b33ebf188a59d8307c3b748eccf8cda1062981 Mon Sep 17 00:00:00 2001
 From: Dan Carpenter <dan.carpenter@oracle.com>
 Date: Tue, 15 Mar 2016 10:18:49 +0300
-Subject: [PATCH 60/81] net: mediatek: checking for IS_ERR() instead of NULL
+Subject: [PATCH 65/91] net: mediatek: checking for IS_ERR() instead of NULL
 
 of_phy_connect() returns NULL on error, it never returns error pointers.
 
@@ -11,9 +11,11 @@ Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index ba3afa5..9759fe5 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -186,9 +186,9 @@ static int mtk_phy_connect_node(struct m
+@@ -186,9 +186,9 @@ static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
  
  	phydev = of_phy_connect(eth->netdev[mac->id], phy_node,
  				mtk_phy_link_adjust, 0, phy_mode);
@@ -25,3 +27,6 @@ Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
  	}
  
  	dev_info(eth->dev,
+-- 
+1.7.10.4
+

@@ -1,0 +1,29 @@
+From a4271fcf69eae0b10353600f75618ed760fad05b Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 22 Apr 2016 11:08:43 +0200
+Subject: [PATCH 82/91] net-next: mediatek: add RX delay support
+
+If an external Gigabit PHY is connected to either of the MACs we need to
+tell the to use a RX delay. Not doing so will result in heavy packet loss
+and/or data corruption of RX traffic.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index 92c7886..674e8e3 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -226,6 +226,7 @@ static int mtk_phy_connect(struct mtk_mac *mac)
+ 		return -ENODEV;
+ 
+ 	switch (of_get_phy_mode(np)) {
++	case PHY_INTERFACE_MODE_RGMII_RXID:
+ 	case PHY_INTERFACE_MODE_RGMII:
+ 		ge_mode = 0;
+ 		break;
+-- 
+1.7.10.4
+

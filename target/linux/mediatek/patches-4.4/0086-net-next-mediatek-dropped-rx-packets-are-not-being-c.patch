@@ -1,0 +1,38 @@
+From 78579ebd671ebdffdaa4691a0e91acd36f691575 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 23 Apr 2016 09:28:25 +0200
+Subject: [PATCH 86/91] net-next: mediatek: dropped rx packets are not being
+ counted properly
+
+There are 2 places inside mtk_poll_rx where rx_dropped is not being
+incremented properly. Fix this by adding the missing code to increment
+the counter.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index 2a4bbbb..679cefd 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -825,6 +825,7 @@ static int mtk_poll_rx(struct napi_struct *napi, int budget,
+ 					  DMA_FROM_DEVICE);
+ 		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr))) {
+ 			skb_free_frag(new_data);
++			netdev->stats.rx_dropped++;
+ 			goto release_desc;
+ 		}
+ 
+@@ -832,6 +833,7 @@ static int mtk_poll_rx(struct napi_struct *napi, int budget,
+ 		skb = build_skb(data, ring->frag_size);
+ 		if (unlikely(!skb)) {
+ 			put_page(virt_to_head_page(new_data));
++			netdev->stats.rx_dropped++;
+ 			goto release_desc;
+ 		}
+ 		skb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);
+-- 
+1.7.10.4
+

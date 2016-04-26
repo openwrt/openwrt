@@ -1,15 +1,17 @@
-From 96ec6b2ee8a19799835209d0a6753519b96277f8 Mon Sep 17 00:00:00 2001
+From bb79410956e03e7c775c38338c5826f8591378a9 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Thu, 31 Mar 2016 02:28:08 +0200
-Subject: [PATCH 59/81] mtd: nand: backport fixes
+Subject: [PATCH 59/91] mtd: nand: backport fixes
 
 ---
  drivers/mtd/nand/mtksdg1_nand.c |    9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/mtd/nand/mtksdg1_nand.c b/drivers/mtd/nand/mtksdg1_nand.c
+index 55dd17d..f92b949 100644
 --- a/drivers/mtd/nand/mtksdg1_nand.c
 +++ b/drivers/mtd/nand/mtksdg1_nand.c
-@@ -107,6 +107,9 @@ static struct nand_ecclayout nand_4k_128
+@@ -107,6 +107,9 @@ static struct nand_ecclayout nand_4k_128 = {
  	.oobfree = { {0, 32} },
  };
  
@@ -19,7 +21,7 @@ Subject: [PATCH 59/81] mtd: nand: backport fixes
  /* NFI register access */
  static inline void mtk_nfi_writel(struct mtk_nfc_host *host, u32 val, u32 reg)
  {
-@@ -1298,6 +1301,7 @@ static int mtk_nfc_probe(struct platform
+@@ -1298,6 +1301,7 @@ static int mtk_nfc_probe(struct platform_device *pdev)
  
  	chip = &host->chip;
  	mtd = nand_to_mtd(chip);
@@ -27,7 +29,7 @@ Subject: [PATCH 59/81] mtd: nand: backport fixes
  	host->dev = dev;
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-@@ -1428,7 +1432,10 @@ static int mtk_nfc_probe(struct platform
+@@ -1428,7 +1432,10 @@ static int mtk_nfc_probe(struct platform_device *pdev)
  	}
  	host->switch_oob = false;
  
@@ -39,3 +41,6 @@ Subject: [PATCH 59/81] mtd: nand: backport fixes
  	if (ret) {
  		dev_err(dev, "mtd parse partition error\n");
  		goto nand_free;
+-- 
+1.7.10.4
+

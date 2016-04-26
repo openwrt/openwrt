@@ -1,7 +1,7 @@
-From 672ed0995e4ebf3f14bb58d08d6ba4c78337b90b Mon Sep 17 00:00:00 2001
+From 4203a164bbf1785b649bc8d7a94ede53a33ad92a Mon Sep 17 00:00:00 2001
 From: Louis Yu <louis.yu@mediatek.com>
 Date: Thu, 7 Jan 2016 20:09:43 +0800
-Subject: [PATCH 30/81] ARM: mediatek: add mt2701 smp bringup code
+Subject: [PATCH 30/91] ARM: mediatek: add mt2701 smp bringup code
 
 Add support for booting secondary CPUs on mt2701.
 
@@ -11,9 +11,11 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  arch/arm/mach-mediatek/platsmp.c |    1 +
  1 file changed, 1 insertion(+)
 
+diff --git a/arch/arm/mach-mediatek/platsmp.c b/arch/arm/mach-mediatek/platsmp.c
+index 8151400..2078f92d5 100644
 --- a/arch/arm/mach-mediatek/platsmp.c
 +++ b/arch/arm/mach-mediatek/platsmp.c
-@@ -53,6 +53,7 @@ static const struct mtk_smp_boot_info mt
+@@ -53,6 +53,7 @@ static const struct mtk_smp_boot_info mtk_mt7623_boot = {
  static const struct of_device_id mtk_tz_smp_boot_infos[] __initconst = {
  	{ .compatible   = "mediatek,mt8135", .data = &mtk_mt8135_tz_boot },
  	{ .compatible   = "mediatek,mt8127", .data = &mtk_mt8135_tz_boot },
@@ -21,3 +23,6 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  };
  
  static const struct of_device_id mtk_smp_boot_infos[] __initconst = {
+-- 
+1.7.10.4
+

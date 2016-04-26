@@ -1,7 +1,7 @@
-From 6f8bfdfe2984467177d2a88982517659ec09ab5d Mon Sep 17 00:00:00 2001
+From 283001c04f395f32e55345632d8129f5395cde33 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 29 Mar 2016 16:41:07 +0200
-Subject: [PATCH 69/81] net: mediatek: fix stop and wakeup of queue
+Subject: [PATCH 73/91] net: mediatek: fix stop and wakeup of queue
 
 The driver supports 2 MACs. Both run on the same DMA ring. If we go
 above/below the TX rings thershold value, we always need to wake/stop
@@ -13,9 +13,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   37 +++++++++++++++++++--------
  1 file changed, 27 insertions(+), 10 deletions(-)
 
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index 293ea59..04bdb9d 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -684,6 +684,28 @@ static inline int mtk_cal_txd_req(struct
+@@ -684,6 +684,28 @@ static inline int mtk_cal_txd_req(struct sk_buff *skb)
  	return nfrags;
  }
  
@@ -44,7 +46,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
-@@ -695,7 +717,7 @@ static int mtk_start_xmit(struct sk_buff
+@@ -695,7 +717,7 @@ static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
  
  	tx_num = mtk_cal_txd_req(skb);
  	if (unlikely(atomic_read(&ring->free_count) <= tx_num)) {
@@ -53,7 +55,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		netif_err(eth, tx_queued, dev,
  			  "Tx Ring full when queue awake!\n");
  		return NETDEV_TX_BUSY;
-@@ -720,10 +742,10 @@ static int mtk_start_xmit(struct sk_buff
+@@ -720,10 +742,10 @@ static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
  		goto drop;
  
  	if (unlikely(atomic_read(&ring->free_count) <= ring->thresh)) {
@@ -66,7 +68,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	}
  
  	return NETDEV_TX_OK;
-@@ -897,13 +919,8 @@ static int mtk_poll_tx(struct mtk_eth *e
+@@ -897,13 +919,8 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
  	if (!total)
  		return 0;
  
@@ -82,3 +84,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return total;
  }
+-- 
+1.7.10.4
+
