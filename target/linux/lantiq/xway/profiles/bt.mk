@@ -18,7 +18,7 @@ $(eval $(call Profile,BTHOMEHUBV2B))
 
 define Profile/BTHOMEHUBV3A
   NAME:=BT Home Hub 3A
-  PACKAGES:=kmod-ltq-hcd-ar9 kmod-ledtrig-usbdev \
+  PACKAGES:=kmod-usb-dwc2 kmod-ledtrig-usbdev \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
 	kmod-ltq-deu-ar9 \

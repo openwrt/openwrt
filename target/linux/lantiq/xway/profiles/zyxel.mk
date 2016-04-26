@@ -4,7 +4,7 @@ define Profile/P2601HNFX
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoe \
-	kmod-ltq-deu-ar9 kmod-ltq-hcd-ar9 \
+	kmod-ltq-deu-ar9 kmod-usb-dwc2 \
 	swconfig
 endef
 $(eval $(call Profile,P2601HNFX))
