@@ -41,9 +41,14 @@ define uboot/zed
 	TITLE:=U-Boot $(PKG_VERSION) for Avnet Digilent ZedBoard Dev Board
 endef
 
+define uboot/zybo
+	TITLE:=U-Boot $(PKG_VERSION) for Digilent Zybo Dev Board
+endef
+
 UBOOTS := \
 	zc702 \
 	zed \
+	zybo \
 
 define Package/uboot/template
 define Package/uboot-zynq-$(1)
