@@ -14,6 +14,8 @@ PKG_RELEASE:=ea9087f2e0a3d155763dd5d04dd5c0bf95d63a05
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_RELEASE)
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 RPI_FIRMWARE_URL:=@GITHUB/raspberrypi/firmware/$(PKG_RELEASE)/boot/

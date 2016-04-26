@@ -19,6 +19,8 @@ PKG_LICENSE:=BSD-2-Clause
 
 PKG_BUILD_DEPENDS:=kmod-ltq-vdsl-vr9
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ltq-vdsl-app

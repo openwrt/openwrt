@@ -17,6 +17,8 @@ PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=4700a36b66b955b4c5544227267356f4
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/kmod-ltq-adsl-fw-template

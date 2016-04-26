@@ -17,6 +17,8 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/vsc73x5-ucode
 
 PKG_MD5SUM:=b32e3debcd118f263c79199a7b5afa68
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/vsc73x5-defaults

@@ -11,6 +11,8 @@ PKG_NAME:=otrx
 PKG_RELEASE:=1
 PKG_FLAGS:=nonshared
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/otrx

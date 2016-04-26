@@ -14,6 +14,8 @@ PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=4c8d9ca68dda88d3cfc0ca0fb946a63e
 PKG_BUILD_DEPENDS:=bsdiff/host
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 PKG_B_NAME:=dsl_vr9_firmware_xdsl
