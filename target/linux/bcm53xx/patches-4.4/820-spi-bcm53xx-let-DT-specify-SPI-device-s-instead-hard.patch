@@ -1,0 +1,41 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Subject: [PATCH] spi: bcm53xx: let DT specify SPI device(s) instead hardcoding
+ them
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+
+--- a/drivers/spi/spi-bcm53xx.c
++++ b/drivers/spi/spi-bcm53xx.c
+@@ -275,10 +275,6 @@ static int bcm53xxspi_flash_read(struct spi_device *spi,
+  * BCMA
+  **************************************************/
+ 
+-static struct spi_board_info bcm53xx_info = {
+-	.modalias	= "bcm53xxspiflash",
+-};
+-
+ static const struct bcma_device_id bcm53xxspi_bcma_tbl[] = {
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_NS_QSPI, BCMA_ANY_REV, BCMA_ANY_CLASS),
+ 	{},
+@@ -300,6 +296,7 @@ static int bcm53xxspi_bcma_probe(struct bcma_device *core)
+ 	master = spi_alloc_master(dev, sizeof(*b53spi));
+ 	if (!master)
+ 		return -ENOMEM;
++	master->dev.of_node = dev->of_node;
+ 
+ 	b53spi = spi_master_get_devdata(master);
+ 	b53spi->master = master;
+@@ -324,9 +321,6 @@ static int bcm53xxspi_bcma_probe(struct bcma_device *core)
+ 		return err;
+ 	}
+ 
+-	/* Broadcom SoCs (at least with the CC rev 42) use SPI for flash only */
+-	spi_new_device(master, &bcm53xx_info);
+-
+ 	return 0;
+ }
+ 
