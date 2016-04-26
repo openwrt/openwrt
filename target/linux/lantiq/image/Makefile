@@ -313,7 +313,7 @@ define lantiqImage
   define Device/$(1)
     $$(Device/lantiqImage)
     DEVICE_PROFILE := $(1)
-    DEVICE_DTS := $(1)
+    DEVICE_DTS := $(if $(2),$(2),$(1))
   endef
   TARGET_DEVICES += $(1)
 endef
@@ -380,8 +380,8 @@ Image/Build/Profile/DGN3500=$(call Image/BuildDGN3500/$(1),$(1),DGN3500)
 Image/BuildKernel/Profile/DGN3500B=$(call Image/BuildKernel/Template,DGN3500B)
 Image/Build/Profile/DGN3500B=$(call Image/BuildDGN3500B/$(1),$(1),DGN3500B)
 
-$(eval $(call lantiqImage,WBMRA))
-$(eval $(call lantiqImage,WBMRB))
+$(eval $(call lantiqImage,WBMRA,WBMR))
+$(eval $(call lantiqImage,WBMRB,WBMR))
 
 Image/BuildKernel/Profile/FRITZ7320=$(call Image/BuildKernelEVA/Template,FRITZ7320)
 Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
