@@ -460,6 +460,9 @@ ramips_board_detect() {
 	*"WNCE2001")
 		name="wnce2001"
 		;;
+	*"WNDR3700v5")
+		name="wndr3700v5"
+		;;
 	*"WR512-3GN-like"*)
 		name="wr512-3gn"
 		;;

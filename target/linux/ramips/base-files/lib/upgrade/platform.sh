@@ -136,6 +136,7 @@ platform_check_image() {
 	wli-tx4-ag300n|\
 	wmr-300|\
 	wnce2001|\
+	wndr3700v5|\
 	wr512-3gn|\
 	wr6202|\
 	wrh-300cr|\
