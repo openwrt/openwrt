@@ -33,6 +33,7 @@ get_status_led() {
 		status_led="$board:green:power"
 		;;
 	a5-v11|\
+	cs-qr10|\
 	d105|\
 	dcs-930l-b1|\
 	ex2700|\

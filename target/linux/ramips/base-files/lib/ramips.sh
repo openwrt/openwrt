@@ -88,6 +88,9 @@ ramips_board_detect() {
 	*"CF-WR800N")
 		name="cf-wr800n"
 		;;
+	*"CS-QR10")
+		name="cs-qr10"
+		;;
 	*"CY-SWR1100")
 		name="cy-swr1100"
 		;;
