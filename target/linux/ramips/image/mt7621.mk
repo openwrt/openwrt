@@ -97,6 +97,12 @@ define Device/witi
 endef
 TARGET_DEVICES += witi
 
+define Device/wndr3700v5
+  DTS := WNDR3700V5
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+TARGET_DEVICES += wndr3700v5
+
 define Device/zbt-wg2626
   DTS := ZBT-WG2626
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
