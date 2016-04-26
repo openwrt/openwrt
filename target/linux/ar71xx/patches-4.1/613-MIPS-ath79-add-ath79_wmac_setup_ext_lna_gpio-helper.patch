@@ -18,12 +18,12 @@
  
 +static int ath79_request_ext_lna_gpio(unsigned chain, int gpio)
 +{
-+	char buf[32];
 +	char *label;
 +	int err;
 +
-+	scnprintf(buf, sizeof(buf), "external LNA%u", chain);
-+	label = kstrdup(buf, GFP_KERNEL);
++	label = kasprintf(GFP_KERNEL, "external LNA%u", chain);
++	if (!label)
++		return -ENOMEM;
 +
 +	err = gpio_request_one(gpio, GPIOF_DIR_OUT | GPIOF_INIT_LOW, label);
 +	if (err) {
