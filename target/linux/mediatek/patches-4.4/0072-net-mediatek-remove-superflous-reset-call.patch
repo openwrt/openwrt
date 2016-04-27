@@ -1,7 +1,7 @@
 From dd061dc7eacb22853981978fa94205292444fa49 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 25 Mar 2016 04:24:27 +0100
-Subject: [PATCH 72/91] net: mediatek: remove superflous reset call
+Subject: [PATCH 72/90] net: mediatek: remove superflous reset call
 
 HW reset is triggered int he mtk_hw_init() function. There is no need to
 reset the core during probe.

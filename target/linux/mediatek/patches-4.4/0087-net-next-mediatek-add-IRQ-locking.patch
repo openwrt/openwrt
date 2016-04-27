@@ -1,7 +1,7 @@
-From 8aa53beda6ad6c8154e4f7b8a7ca9815412fa95a Mon Sep 17 00:00:00 2001
+From f74d752da12c1b63bf2bbfa220aab5e2dd644157 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 20 Apr 2016 16:18:07 +0200
-Subject: [PATCH 87/91] net-next: mediatek: add IRQ locking
+Subject: [PATCH 87/90] net-next: mediatek: add IRQ locking
 
 The code that enables and disables IRQs is missing proper locking. After
 adding the IRQ separation patch and routing the putting the RX and TX IRQs
@@ -17,7 +17,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 8 insertions(+)
 
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 679cefd..f821820 100644
+index 24a4179..f86d551 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -316,22 +316,28 @@ static void mtk_mdio_cleanup(struct mtk_eth *eth)
@@ -49,7 +49,7 @@ index 679cefd..f821820 100644
  }
  
  static int mtk_set_mac_address(struct net_device *dev, void *p)
-@@ -1750,6 +1756,7 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1752,6 +1758,7 @@ static int mtk_probe(struct platform_device *pdev)
  		return -EADDRNOTAVAIL;
  
  	spin_lock_init(&eth->page_lock);

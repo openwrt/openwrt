@@ -1,7 +1,7 @@
-From 5207debf8825a8b6f2934b7d39ef76c163dfd794 Mon Sep 17 00:00:00 2001
+From 77c5d1b00214c9e42b9bd5f0f7fc0ec14807d117 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sat, 23 Apr 2016 09:18:28 +0200
-Subject: [PATCH 84/91] net-next: mediatek: fix missing free of scratch memory
+Subject: [PATCH 84/90] net-next: mediatek: fix missing free of scratch memory
 
 Scratch memory gets allocated in mtk_init_fq_dma() but the corresponding
 code to free it is missing inside mtk_dma_free() causing a memory leak.
@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 15 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 37e9260..6896d17 100644
+index e58a634..06b9094 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -469,14 +469,14 @@ static inline void mtk_rx_get_desc(struct mtk_rx_dma *rxd,
@@ -56,7 +56,7 @@ index 37e9260..6896d17 100644
  	mtk_w32(eth, phy_ring_tail, MTK_QDMA_FQ_TAIL);
  	mtk_w32(eth, (cnt << 16) | cnt, MTK_QDMA_FQ_CNT);
  	mtk_w32(eth, MTK_QDMA_PAGE_SIZE << 16, MTK_QDMA_FQ_BLEN);
-@@ -1203,6 +1203,14 @@ static void mtk_dma_free(struct mtk_eth *eth)
+@@ -1205,6 +1205,14 @@ static void mtk_dma_free(struct mtk_eth *eth)
  	for (i = 0; i < MTK_MAC_COUNT; i++)
  		if (eth->netdev[i])
  			netdev_reset_queue(eth->netdev[i]);

@@ -1,7 +1,7 @@
-From 3950bdb0a4e6fe45611e75fa4c92f3114e6729fd Mon Sep 17 00:00:00 2001
+From dbf02af61ecac8b8a2d651128379e54244f0c68a Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 22 Apr 2016 11:06:03 +0200
-Subject: [PATCH 81/91] net-next: mediatek: add fixed-phy support
+Subject: [PATCH 81/90] net-next: mediatek: add fixed-phy support
 
 The MT7623 SoC has a builtin gigabit switch. If we want to use it, GMAC1
 needs to be configured using a fixed link speed and flow control settings.
@@ -14,7 +14,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  1 file changed, 3 insertions(+)
 
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 959d2cb..92c7886 100644
+index 204d927..f4d8519 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -219,6 +219,9 @@ static int mtk_phy_connect(struct mtk_mac *mac)

@@ -1,7 +1,7 @@
 From 592d94e0e580341fdcce975a97bebb90e71b38fc Mon Sep 17 00:00:00 2001
 From: Arnd Bergmann <arnd@arndb.de>
 Date: Mon, 14 Mar 2016 15:07:12 +0100
-Subject: [PATCH 69/91] net: mediatek: check device_reset return code
+Subject: [PATCH 69/90] net: mediatek: check device_reset return code
 
 The device_reset() function may fail, so we have to check
 its return value, e.g. to make deferred probing work correctly.

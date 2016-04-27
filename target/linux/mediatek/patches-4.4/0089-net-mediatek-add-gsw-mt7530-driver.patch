@@ -1,18 +1,18 @@
-From 4c23129f65d9bac10d9cf88c45fced58597400e6 Mon Sep 17 00:00:00 2001
+From bb14507c0624e088da231b6b20fd6add032e9226 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Mon, 11 Apr 2016 03:11:54 +0200
-Subject: [PATCH 89/91] net: mediatek add gsw/mt7530 driver
+Subject: [PATCH 89/90] net: mediatek add gsw/mt7530 driver
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  drivers/net/ethernet/mediatek/Makefile      |    2 +-
  drivers/net/ethernet/mediatek/gsw_mt7620.h  |  251 +++++++
- drivers/net/ethernet/mediatek/gsw_mt7623.c  | 1081 +++++++++++++++++++++++++++
+ drivers/net/ethernet/mediatek/gsw_mt7623.c  | 1084 +++++++++++++++++++++++++++
  drivers/net/ethernet/mediatek/mt7530.c      |  808 ++++++++++++++++++++
  drivers/net/ethernet/mediatek/mt7530.h      |   20 +
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   59 +-
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |    4 +
- 7 files changed, 2195 insertions(+), 30 deletions(-)
+ 7 files changed, 2198 insertions(+), 30 deletions(-)
  create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7620.h
  create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7623.c
  create mode 100644 drivers/net/ethernet/mediatek/mt7530.c
@@ -287,10 +287,10 @@ index 0000000..6fca8f2
 +#endif
 diff --git a/drivers/net/ethernet/mediatek/gsw_mt7623.c b/drivers/net/ethernet/mediatek/gsw_mt7623.c
 new file mode 100644
-index 0000000..28df15a
+index 0000000..0c6b8a6
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/gsw_mt7623.c
-@@ -0,0 +1,1081 @@
+@@ -0,0 +1,1084 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
 + *   the Free Software Foundation; version 2 of the License
@@ -1331,6 +1331,9 @@ index 0000000..28df15a
 +	if (ret)
 +		return ret;
 +
++	regmap_write(gsw->ethsys, 0x34, 0x800000);
++	regmap_write(gsw->ethsys, 0x34, 0x0);
++
 +	clk_prepare_enable(gsw->clk_trgpll);
 +
 +	gpio_direction_output(reset_pin, 0);
@@ -2213,7 +2216,7 @@ index 0000000..1fc8c62
 +
 +#endif
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index b5e364c..eee4324a 100644
+index 6557026..bb62b91 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -24,6 +24,9 @@
@@ -2235,7 +2238,7 @@ index b5e364c..eee4324a 100644
  	}
  
  	dev_err(eth->dev, "mdio: MDIO timeout\n");
-@@ -1407,15 +1410,6 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1408,15 +1411,6 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
  	reset_control_deassert(eth->rstc);
  	usleep_range(10, 20);
  
@@ -2251,7 +2254,7 @@ index b5e364c..eee4324a 100644
  	/* GE1, Force 1000M/FD, FC ON */
  	mtk_w32(eth, MAC_MCR_FIXED_LINK, MTK_MAC_MCR(0));
  
-@@ -1438,6 +1432,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1439,6 +1433,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
  	if (err)
  		return err;
  
@@ -2260,7 +2263,7 @@ index b5e364c..eee4324a 100644
  	/* disable delay and normal interrupt */
  	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
  	mtk_irq_disable(eth, MTK_TX_DONE_INT | MTK_RX_DONE_INT);
-@@ -1465,6 +1461,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1466,6 +1462,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
  		mtk_w32(eth, val, MTK_GDMA_FWD_CFG(i));
  	}
  
@@ -2269,7 +2272,7 @@ index b5e364c..eee4324a 100644
  	return 0;
  }
  
-@@ -1720,7 +1718,7 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1721,7 +1719,7 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
  {
  	struct mtk_mac *mac;
  	const __be32 *_id = of_get_property(np, "reg", NULL);
@@ -2278,7 +2281,7 @@ index b5e364c..eee4324a 100644
  
  	if (!_id) {
  		dev_err(eth->dev, "missing mac id\n");
-@@ -1754,8 +1752,8 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1755,8 +1753,8 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
  				     GFP_KERNEL);
  	if (!mac->hw_stats) {
  		dev_err(eth->dev, "failed to allocate counter memory\n");
@@ -2289,7 +2292,7 @@ index b5e364c..eee4324a 100644
  	}
  	spin_lock_init(&mac->hw_stats->stats_lock);
  	mac->hw_stats->reg_offset = id * MTK_STAT_OFFSET;
-@@ -1769,21 +1767,9 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1770,21 +1768,9 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
  	eth->netdev[id]->features |= MTK_HW_FEATURES;
  	eth->netdev[id]->ethtool_ops = &mtk_ethtool_ops;
  
@@ -2311,7 +2314,7 @@ index b5e364c..eee4324a 100644
  }
  
  static int mtk_probe(struct platform_device *pdev)
-@@ -1851,14 +1837,13 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1852,14 +1838,13 @@ static int mtk_probe(struct platform_device *pdev)
  	clk_prepare_enable(eth->clk_gp1);
  	clk_prepare_enable(eth->clk_gp2);
  
@@ -2329,7 +2332,7 @@ index b5e364c..eee4324a 100644
  	for_each_child_of_node(pdev->dev.of_node, mac_np) {
  		if (!of_device_is_compatible(mac_np,
  					     "mediatek,eth-mac"))
-@@ -1872,6 +1857,22 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1873,6 +1858,22 @@ static int mtk_probe(struct platform_device *pdev)
  			goto err_free_dev;
  	}
  
