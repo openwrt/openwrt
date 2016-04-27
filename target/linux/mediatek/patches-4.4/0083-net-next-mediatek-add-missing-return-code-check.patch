@@ -1,7 +1,7 @@
-From 2206de729d8a873898b983f5ff7633a2489aa71c Mon Sep 17 00:00:00 2001
+From 436659829b38d5babc2d590676f5b74bfc17568a Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sat, 23 Apr 2016 09:06:05 +0200
-Subject: [PATCH 83/91] net-next: mediatek: add missing return code check
+Subject: [PATCH 83/90] net-next: mediatek: add missing return code check
 
 The code fails to check if the scratch memory was properly allocated. Add
 this check and return with an error if the allocation failed.
@@ -12,7 +12,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  1 file changed, 3 insertions(+)
 
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 674e8e3..37e9260 100644
+index aa25788..e58a634 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -483,6 +483,9 @@ static int mtk_init_fq_dma(struct mtk_eth *eth)

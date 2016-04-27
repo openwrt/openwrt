@@ -1,7 +1,7 @@
-From 46bfe9068a6e1594affeab30c206d2bd05c1e8f3 Mon Sep 17 00:00:00 2001
+From 121287dee1454be0ebc0e5b8c7b5b85e16570551 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 22 Apr 2016 11:05:23 +0200
-Subject: [PATCH 80/91] net-next: mediatek: fix gigabit and flow control
+Subject: [PATCH 80/90] net-next: mediatek: fix gigabit and flow control
  advertisement
 
 The current code will not setup the PHYs advertisement features correctly.
@@ -14,7 +14,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  1 file changed, 14 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index ded09bc..959d2cb 100644
+index 9928a79..204d927 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -133,6 +133,8 @@ static int mtk_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
