@@ -60,6 +60,11 @@ $(call Package/iproute2/Default)
   TITLE:=Socket statistics utility
 endef
 
+define Package/nstat
+$(call Package/iproute2/Default)
+  TITLE:=Network statistics utility
+endef
+
 ifeq ($(BUILD_VARIANT),tiny)
   IP_CONFIG_TINY:=y
 endif
@@ -128,9 +133,15 @@ define Package/ss/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc/ss $(1)/usr/sbin/
 endef
 
+define Package/nstat/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc/nstat $(1)/usr/sbin/
+endef
+
 $(eval $(call BuildPackage,ip))
 $(eval $(call BuildPackage,ip-full))
 $(eval $(call BuildPackage,tc))
 $(eval $(call BuildPackage,genl))
 $(eval $(call BuildPackage,ip-bridge))
 $(eval $(call BuildPackage,ss))
+$(eval $(call BuildPackage,nstat))
