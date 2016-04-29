@@ -1,7 +1,7 @@
-From f74d752da12c1b63bf2bbfa220aab5e2dd644157 Mon Sep 17 00:00:00 2001
+From 4ff9304355036d4a00bdf0e47e869fc770ba1cc5 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 20 Apr 2016 16:18:07 +0200
-Subject: [PATCH 87/90] net-next: mediatek: add IRQ locking
+Subject: [PATCH 87/91] net-next: mediatek: add IRQ locking
 
 The code that enables and disables IRQs is missing proper locking. After
 adding the IRQ separation patch and routing the putting the RX and TX IRQs

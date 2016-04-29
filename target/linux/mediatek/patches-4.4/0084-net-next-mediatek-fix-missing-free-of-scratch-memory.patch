@@ -1,7 +1,7 @@
-From 77c5d1b00214c9e42b9bd5f0f7fc0ec14807d117 Mon Sep 17 00:00:00 2001
+From 2d22628561299e1c7d71e16262131127de3c4216 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sat, 23 Apr 2016 09:18:28 +0200
-Subject: [PATCH 84/90] net-next: mediatek: fix missing free of scratch memory
+Subject: [PATCH 84/91] net-next: mediatek: fix missing free of scratch memory
 
 Scratch memory gets allocated in mtk_init_fq_dma() but the corresponding
 code to free it is missing inside mtk_dma_free() causing a memory leak.

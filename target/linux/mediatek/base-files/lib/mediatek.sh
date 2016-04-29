@@ -10,6 +10,9 @@ mediatek_board_detect() {
 	machine=$(cat /proc/device-tree/model)
 
 	case "$machine" in
+	"MediaTek MT7623 evaluation board")
+		name="mt7623_evb"
+		;;
 	"MediaTek MT7623 eMMC evaluation board")
 		name="eMMC"
 		;;

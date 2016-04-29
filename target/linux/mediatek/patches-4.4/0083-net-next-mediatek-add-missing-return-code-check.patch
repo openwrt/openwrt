@@ -1,7 +1,7 @@
-From 436659829b38d5babc2d590676f5b74bfc17568a Mon Sep 17 00:00:00 2001
+From d20b45f50d6b3352aa7be76eb7a28cffcfe379da Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sat, 23 Apr 2016 09:06:05 +0200
-Subject: [PATCH 83/90] net-next: mediatek: add missing return code check
+Subject: [PATCH 83/91] net-next: mediatek: add missing return code check
 
 The code fails to check if the scratch memory was properly allocated. Add
 this check and return with an error if the allocation failed.

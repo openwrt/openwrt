@@ -1,7 +1,7 @@
-From 6cf7d8453b9ef0a1e51144969141a92dade6b540 Mon Sep 17 00:00:00 2001
+From 8b6bb80616460eda2e70e358c5fb70c0f4d4d02f Mon Sep 17 00:00:00 2001
 From: Arnd Bergmann <arnd@arndb.de>
 Date: Mon, 14 Mar 2016 15:07:11 +0100
-Subject: [PATCH 68/90] net: mediatek: remove incorrect dma_mask assignment
+Subject: [PATCH 68/91] net: mediatek: remove incorrect dma_mask assignment
 
 Device drivers should not mess with the DMA mask directly,
 but instead call dma_set_mask() etc if needed.
