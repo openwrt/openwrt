@@ -20,7 +20,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +config LANTIQ_PHY
 +	tristate "Driver for Lantiq PHYs"
 +	---help---
-+	  Supports the 11G and 22E PHYs.
++	  Supports the 11G and 22F PHYs.
 +
  config FIXED_PHY
  	tristate "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
@@ -378,7 +378,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +=========================================
 +
 +Field	Bits	Type	Description
-+FBC	7:6	RW	Fast Blink Frequency
++FBF	7:6	RW	Fast Blink Frequency
 +			---
 +			0x0 (00b) F02HZ 2 Hz blinking frequency
 +			0x1 (01b) F04HZ 4 Hz blinking frequency
