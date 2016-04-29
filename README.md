@@ -290,15 +290,14 @@ To use tftp boot, set the following environment variables
 
 ####Boot from Flash
 
-This is the default boot method set on Marduk platform. It requires TFTP server installed on your development PC. To set up TFTP server, refer to [Setting up TFTP Server](#setting-up-tftp-server) section.
-
-Once tftp server is set up, follow the instructions given below:
+This is the default boot method set on Marduk platform. Either you can copy the openwrt-pistachio-marduk-marduk_cc2520-ubifs.img on the USB drive or you can place the same on TFTP server.
+To set up TFTP server on your development PC, refer to [Setting up TFTP Server](#setting-up-tftp-server) section.
 
 1. Init flash device on given SPI bus and chip select:
 
         pistachio # sf probe 1:0
 
-2. Obtain an IP address:
+2. Obtain an IP address (only needed if you are using TFTP server to load the image):
 
         pistachio # dhcp
 
@@ -310,9 +309,15 @@ Once tftp server is set up, follow the instructions given below:
 
         pistachio # nand erase.part firmware0
 
-5. Set serverip as ip address of tftp server and initialize tftpboot:
+5. Loading the ubifs image
 
-        pistachio # setenv serverip <development_PC_IP> && tftpboot 0xe000000
+    Copy the openwrt-pistachio-marduk-marduk_cc2520-ubifs.img to TFTP server (/tftproot) and load from TFTP server:
+
+        pistachio # setenv serverip <development_PC_IP> && tftpboot 0xe000000 openwrt-pistachio-marduk-marduk_cc2520-ubifs.img
+OR
+    Copy the openwrt-pistachio-marduk-marduk_cc2520-ubifs.img to (ext4 formatted) USB drive and load from USB drive:
+
+        pistachio # usb start && ext4load usb 0 0x0E000000 openwrt-pistachio-marduk-marduk_cc2520-ubifs.img
 
 6. Initialize write to nand device:
 
