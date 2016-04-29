@@ -206,6 +206,10 @@ mr-102n)
 	set_wifi_led "$board:green:wlan"
 	set_usb_led "$board:green:usb"
 	;;
+mzk-ex750np)
+	ucidef_set_led_default "power" "power" "$board:red:power" "1"
+	set_wifi_led "$board:red:wifi"
+	;;
 na930)
 	set_usb_led "$board:blue:status"
 	;;

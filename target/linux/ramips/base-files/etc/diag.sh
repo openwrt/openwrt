@@ -41,7 +41,8 @@ get_status_led() {
 	hlk-rm04|\
 	jhr-n825r|\
 	mpr-a1|\
-	mpr-a2)
+	mpr-a2|\
+	mzk-ex750np)
 		status_led="$board:red:power"
 		;;
 	ai-br100|\

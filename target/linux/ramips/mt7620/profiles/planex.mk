@@ -39,3 +39,14 @@ define Profile/MZK-EX300NP/Description
 	Package set optimized for the Planex MZK-EX300NP.
 endef
 $(eval $(call Profile,MZK-EX300NP))
+
+
+define Profile/MZK-EX750NP
+	NAME:=Planex MZK-EX750NP
+	PACKAGES:= kmod-mt76 kmod-mt7610e
+endef
+
+define Profile/MZK-EX750NP/Description
+	Package set optimized for the Planex MZK-EX750NP.
+endef
+$(eval $(call Profile,MZK-EX750NP))

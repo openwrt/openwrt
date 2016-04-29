@@ -90,6 +90,7 @@ platform_check_image() {
 	mzk-750dhp|\
 	mzk-dp150n|\
 	mzk-ex300np|\
+	mzk-ex750np|\
 	mzk-w300nh2|\
 	mzk-wdpr|\
 	nbg-419n|\
