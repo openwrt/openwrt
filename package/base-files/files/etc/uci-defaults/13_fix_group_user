@@ -1,0 +1,11 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+for file in `grep Require-User /usr/lib/opkg/info/*.control | cut -d: -f1`; do
+	file="${file##*/}"
+	file="${file%.control}"
+	add_group_and_user "${file}"
+done
+
+exit 0
