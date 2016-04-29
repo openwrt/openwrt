@@ -12,13 +12,14 @@ try_version() {
 try_git() {
 	git rev-parse --git-dir >/dev/null 2>&1 || return 1
 	REV="$(git describe --match reboot | sed "s/reboot-\([0-9]*\)-.*/\1/g")"
+	REV="${REV:+r$REV}"
 	[ -n "$REV" ]
 }
 
 try_hg() {
 	[ -d .hg ] || return 1
 	REV="$(hg log -r-1 --template '{desc}' | awk '{print $2}' | sed 's/\].*//')"
-	REV="${REV:+$REV}"
+	REV="${REV:+r$REV}"
 	[ -n "$REV" ]
 }
 
