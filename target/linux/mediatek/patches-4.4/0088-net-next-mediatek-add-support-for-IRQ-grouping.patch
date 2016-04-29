@@ -1,7 +1,7 @@
-From 781eb70655d4f25af51aafcc010851918d49b2d7 Mon Sep 17 00:00:00 2001
+From 41b4500871ab5b1ef27c6fb49ffd8aac8c7e5009 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 23 Mar 2016 18:31:48 +0100
-Subject: [PATCH 88/90] net-next: mediatek: add support for IRQ grouping
+Subject: [PATCH 88/91] net-next: mediatek: add support for IRQ grouping
 
 The ethernet core has 3 IRQs. using the IRQ grouping registers we are able
 to separate TX and RX IRQs, which allows us to service them on separate

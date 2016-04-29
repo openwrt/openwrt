@@ -1,18 +1,18 @@
-From 5536a546755527a862cb2494814c5244d3d8e30a Mon Sep 17 00:00:00 2001
+From 83ef9fb21a896ac03c3a78bc3ae0b21f3b0a43a3 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 5 Jan 2016 12:16:17 +0100
-Subject: [PATCH 23/90] ARM: dts: mediatek: add MT7623 basic support
+Subject: [PATCH 23/91] ARM: dts: mediatek: add MT7623 basic support
 
 This adds basic chip support for Mediatek MT7623.
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/arm/boot/dts/Makefile        |    1 +
- arch/arm/boot/dts/mt7623-evb.dts  |  474 ++++++++++++++++++++++++++++++
- arch/arm/boot/dts/mt7623.dtsi     |  583 +++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/mt7623-evb.dts  |  474 +++++++++++++++++++++++++++++
+ arch/arm/boot/dts/mt7623.dtsi     |  593 +++++++++++++++++++++++++++++++++++++
  arch/arm/mach-mediatek/Kconfig    |    4 +
  arch/arm/mach-mediatek/mediatek.c |    1 +
- 5 files changed, 1063 insertions(+)
+ 5 files changed, 1073 insertions(+)
  create mode 100644 arch/arm/boot/dts/mt7623-evb.dts
  create mode 100644 arch/arm/boot/dts/mt7623.dtsi
 
@@ -510,10 +510,10 @@ index 0000000..70b92a4
 +};
 diff --git a/arch/arm/boot/dts/mt7623.dtsi b/arch/arm/boot/dts/mt7623.dtsi
 new file mode 100644
-index 0000000..0536b2c
+index 0000000..80c1ab8
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623.dtsi
-@@ -0,0 +1,583 @@
+@@ -0,0 +1,593 @@
 +/*
 + * Copyright (c) 2016 MediaTek Inc.
 + * Author: John Crispin <blogic@openwrt.org>
@@ -850,15 +850,25 @@ index 0000000..0536b2c
 +		status = "disabled";
 +	};
 +
-+	nand: nfi@1100d000 {
++	nandc: nfi@1100d000 {
 +		compatible = "mediatek,mt2701-nfc";
-+		reg = <0 0x1100d000 0 0x1000>, <0 0x1100e000 0 0x1000>;
-+		interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL_LOW>,
-+			     <GIC_SPI 55 IRQ_TYPE_LEVEL_LOW>;
-+		clocks = <&pericfg CLK_PERI_NFI>, <&pericfg CLK_PERI_NFI_ECC>,
++		reg = <0 0x1100d000 0 0x1000>;
++		interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL_LOW>;
++		clocks = <&pericfg CLK_PERI_NFI>,
 +			 <&pericfg CLK_PERI_NFI_PAD>;
-+		clock-names = "nfi_clk", "nfiecc_clk", "pad_clk";
-+	//	nand-on-flash-bbt;
++		clock-names = "nfi_clk", "pad_clk";
++		status = "disabled";
++		ecc-engine = <&bch>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
++
++	bch: ecc@1100e000 {
++		compatible = "mediatek,mt2701-ecc";
++		reg = <0 0x1100e000 0 0x1000>;
++		interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL_LOW>;
++		clocks = <&pericfg CLK_PERI_NFI_ECC>;
++		clock-names = "nfiecc_clk";
 +		status = "disabled";
 +	};
 +
