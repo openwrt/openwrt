@@ -220,6 +220,17 @@ default_postinst() {
 		ret=$?
 	fi
 
+	if [ -z "$root" ] && grep -q -s "^/etc/uci-defaults/" "/usr/lib/opkg/info/${pkgname}.list"; then
+		. /lib/functions/system.sh
+		[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
+		cd /etc/uci-defaults
+		for i in $(grep -s "^/etc/uci-defaults/" "/usr/lib/opkg/info/${pkgname}.list"); do
+			( . "./$(basename $i)" ) && rm -f "$i"
+		done
+		uci commit
+		cd $OLDPWD
+	fi
+
 	[ -n "$root" ] || rm -f /tmp/luci-indexcache 2>/dev/null
 
 	if [ "$PKG_UPGRADE" != "1" ]; then
