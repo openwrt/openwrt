@@ -24,14 +24,14 @@ do_config_unpack() {
 }
 
 do_snapshot_push() {
-	cd /volatile
+	cd /volatile/upper
 	tar czf /tmp/snapshot.tar.gz *
 	snapshot_tool write
 	reboot
 }
 
 do_config_push() {
-	cd /volatile
+	cd /volatile/upper
 	tar czf /tmp/config.tar.gz *
 	snapshot_tool config_write
 }
@@ -66,7 +66,7 @@ do_convert() {
 	. /lib/upgrade/common.sh
 	ubus call system upgrade
 	touch /tmp/sysupgrade
-	cd /overlay
+	cd /overlay/upper
 	tar czf /tmp/snapshot.tar.gz *
 	kill_remaining TERM
 	sleep 3
@@ -82,7 +82,7 @@ convert)
 esac
 }
 
-[ -d /volatile ] && {
+[ -d /volatile/upper ] && {
 case $1 in
 push)
 	do_snapshot_push
