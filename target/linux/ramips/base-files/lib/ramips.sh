@@ -298,6 +298,9 @@ ramips_board_detect() {
 	*"MZK-EX300NP")
 		name="mzk-ex300np"
 		;;
+	*"MZK-EX750NP")
+		name="mzk-ex750np"
+		;;
 	*"MZK-W300NH2"*)
 		name="mzk-w300nh2"
 		;;
