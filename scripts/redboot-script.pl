@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Script for generating redboot configs, based on brcmImage.pl
 #
