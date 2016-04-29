@@ -165,14 +165,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	vr9_gphy_mmd_write(phydev, 0x1e0, 0xc5);
 +	vr9_gphy_mmd_write(phydev, 0x1e1, 0x67);
-+	vr9_gphy_mmd_write(phydev, 0x1e2, 0x42);
-+	vr9_gphy_mmd_write(phydev, 0x1e3, 0x10);
++	vr9_gphy_mmd_write(phydev, 0x1e2, 0x70);
++	vr9_gphy_mmd_write(phydev, 0x1e3, 0x03);
 +	vr9_gphy_mmd_write(phydev, 0x1e4, 0x70);
 +	vr9_gphy_mmd_write(phydev, 0x1e5, 0x03);
-+	vr9_gphy_mmd_write(phydev, 0x1e6, 0x20);
-+	vr9_gphy_mmd_write(phydev, 0x1e7, 0x00);
-+	vr9_gphy_mmd_write(phydev, 0x1e8, 0x40);
-+	vr9_gphy_mmd_write(phydev, 0x1e9, 0x20);
++	vr9_gphy_mmd_write(phydev, 0x1e6, 0x70);
++	vr9_gphy_mmd_write(phydev, 0x1e7, 0x03);
++	vr9_gphy_mmd_write(phydev, 0x1e8, 0x70);
++	vr9_gphy_mmd_write(phydev, 0x1e9, 0x03);
 +
 +	vr9_gphy_of_reg_init(phydev);
 +
