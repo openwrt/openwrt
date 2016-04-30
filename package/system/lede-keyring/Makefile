@@ -1,17 +1,16 @@
-# Copyright (C) 2009-2012 OpenWrt.org
-# All rights reserved.
+# Copyright (C) 2016 LEDE project
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lede-keyring
-PKG_VERSION:=2016-04-27
+PKG_VERSION:=2016-04-30
 
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(LEDE_GIT)/keyring.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=deb70780cc8aea8258db16af4dbebf4d8dcc7a7c
+PKG_SOURCE_VERSION:=5c7857eed3fa06a9005f96b9b029388c7f316e83
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
