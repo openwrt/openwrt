@@ -1,0 +1,24 @@
+From: Vittorio Gambaletta <openwrt@vittgam.net>
+Date: Fri, 01 Jan 2016 00:00:01 +0100
+Subject: [PATCH 2/3] net: mediatek: Fix comment in rt3050 ethernet switch driver.
+
+Line 444 is actually enabling all switch ports by setting the disable bits
+to 0. This needs to be done because the bootloader sets all ports to disabled
+by default (which is the case for at least one router based on RT5350).
+
+So, this patch fixes the comment in line 443.
+
+Signed-off-by: Vittorio Gambaletta <openwrt@vittgam.net>
+---
+
+--- a/drivers/net/ethernet/mediatek/esw_rt3050.c
++++ b/drivers/net/ethernet/mediatek/esw_rt3050.c
+@@ -440,7 +440,7 @@ static void esw_hw_init(struct rt305x_es
+ 		     (RT305X_ESW_PORTS_ALL << RT305X_ESW_PFC1_EN_VLAN_S),
+ 		RT305X_ESW_REG_PFC1);
+ 
+-	/* Enable Back Pressure, and Flow Control */
++	/* Enable all ports, Back Pressure and Flow Control */
+ 	esw_w32(esw, ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_BP_S) |
+ 		      (RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_FC_S)),
+ 		RT305X_ESW_REG_POC0);
