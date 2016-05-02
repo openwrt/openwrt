@@ -928,6 +928,9 @@ ar71xx_board_detect() {
 	*"TL-WR720N"*)
 		name="tl-wr720n-v3"
 		;;
+	*"TL-WR810N")
+		name="tl-wr810n"
+		;;
 	*"TL-MR10U")
 		name="tl-mr10u"
 		;;

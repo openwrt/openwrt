@@ -799,6 +799,14 @@ define Device/tl-wr741nd-v5
     CONSOLE := ttyATH0,115200
 endef
 
+define Device/tl-wr810n
+    $(Device/tplink-8mlzma)
+    BOARDNAME := TL-WR810N
+    DEVICE_PROFILE := TLWR810
+    TPLINK_HWID := 0x08100001
+endef
+TARGET_DEVICES += tl-wr810n
+
 define Device/tl-wr743nd-v1
     $(Device/tplink-4m)
     BOARDNAME := TL-WR741ND
