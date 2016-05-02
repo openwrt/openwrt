@@ -3,6 +3,12 @@
 /include/ "VGV7510KW22.dtsi"
 
 / {
+	sram@1F000000 {
+		cgu@103000 {
+			lantiq,phy-clk-src = <0x2>;
+		};
+	};
+
 	fpi@10000000 {
 		localbus@0 {
 			nor-boot@0 {
