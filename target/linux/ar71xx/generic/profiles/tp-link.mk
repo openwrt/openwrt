@@ -332,6 +332,17 @@ endef
 $(eval $(call Profile,TLWR743))
 
 
+define Profile/TLWR810
+	NAME:=TP-Link TL-WR810N
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+
+define Profile/TLWR810/Description
+	Package set optimized for the TP-LINK TL-WR810N.
+endef
+$(eval $(call Profile,TLWR810))
+
+
 define Profile/TLWR841
 	NAME:=TP-LINK TL-WR841N/ND
 	PACKAGES:=
