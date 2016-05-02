@@ -84,6 +84,7 @@ static void __init ubnt_unifiac_setup(void)
 		       eeprom + UNIFIAC_MAC0_OFFSET, 0);
 
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
 	ath79_eth0_data.phy_mask = BIT(4);
 	ath79_eth0_pll_data.pll_10 = 0x00001313;
 
