@@ -283,14 +283,15 @@ define Device/Default
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs
 endef
-DEVICE_VARS += BOARD_ID DEVICE_PROFILE DEVICE_DTS
+DEVICE_VARS += DEVICE_PROFILE DEVICE_DTS
 
 define Device/lantiqTpLink
   KERNEL := kernel-bin | append-dtb | lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | tplink-fw
-  IMAGES := tplink
-  IMAGE/tplink := mktplinkfw2
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := mktplinkfw2
 endef
+DEVICE_VARS += BOARD_ID
 
 define Device/lantiqBrnImage
   KERNEL := kernel-bin | append-dtb | mkbrncmdline | lzma-no-dict
