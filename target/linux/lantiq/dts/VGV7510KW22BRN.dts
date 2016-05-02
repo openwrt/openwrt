@@ -32,20 +32,23 @@
 					};
 
 					partition@c0000 {
+						compatible = "brnboot,root-selector";
 						label = "Primary_Setting";
 						reg = <0xc0000 0x20000>;
 						read-only;
 					};
 
 					partition@e0000 {
-						label = "firmware"; /* "Code Image 0" in OFW */
+						label = "Code_Image_0";
 						reg = <0xe0000 0x780000>;
+						brnboot,root-id = <0x00>;
 						read-only;
 					};
 
 					partition@860000 {
 						label = "Code_Image_1";
 						reg = <0x860000 0x780000>;
+						brnboot,root-id = <0x01>;
 						read-only;
 					};
 				};
