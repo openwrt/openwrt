@@ -31,21 +31,27 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				partition@0 {
-					label = "uboot";
-					reg = <0x0 0x20000>;
-					read-only;
-				};
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				partition@20000 {
-					label = "uboot_env";
-					reg = <0x20000 0x10000>;
-					read-only;
-				};
+					partition@0 {
+						label = "uboot";
+						reg = <0x0 0x20000>;
+						read-only;
+					};
 
-				partition@30000 {
-					label = "firmware";
-					reg = <0x30000 0x7d0000>;
+					partition@20000 {
+						label = "uboot_env";
+						reg = <0x20000 0x10000>;
+						read-only;
+					};
+
+					partition@30000 {
+						label = "firmware";
+						reg = <0x30000 0x7d0000>;
+					};
 				};
 			};
 		};

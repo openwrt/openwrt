@@ -32,31 +32,37 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				partition@0 {
-					label = "kernel";
-					reg = <0x0 0x400000>;
-				};
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				partition@400000 {
-					label = "rootfs_ubi";
-					reg = <0x400000 0x3000000>;
-				};
+					partition@0 {
+						label = "kernel";
+						reg = <0x0 0x400000>;
+					};
 
-				partition@3400000 {
-					label = "vr9_firmware";
-					reg = <0x3400000 0x400000>;
-				};
-				partition@3800000 {
-					label = "reserved";
-					reg = <0x3800000 0x3000000>;
-				};
-				partition@6800000 {
-					label = "config";
-					reg = <0x6800000 0x200000>;
-				};
-				partition@6a00000 {
-					label = "nand-filesystem";
-					reg = <0x6a00000 0x1600000>;
+					partition@400000 {
+						label = "rootfs_ubi";
+						reg = <0x400000 0x3000000>;
+					};
+
+					partition@3400000 {
+						label = "vr9_firmware";
+						reg = <0x3400000 0x400000>;
+					};
+					partition@3800000 {
+						label = "reserved";
+						reg = <0x3800000 0x3000000>;
+					};
+					partition@6800000 {
+						label = "config";
+						reg = <0x6800000 0x200000>;
+					};
+					partition@6a00000 {
+						label = "nand-filesystem";
+						reg = <0x6a00000 0x1600000>;
+					};
 				};
 			};
 		};

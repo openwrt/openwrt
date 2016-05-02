@@ -14,18 +14,24 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				partition@0 {
-					label = "uboot";
-					reg = <0x0 0x50000>;
-					read-only;
-				};
-				partition@50000 {
-					label = "uboot-env";
-					reg = <0x50000 0x10000>;
-				};
-				partition@60000 {
-					label = "unused";
-					reg = <0x60000 0x7a0000>;
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						label = "uboot";
+						reg = <0x0 0x50000>;
+						read-only;
+					};
+					partition@50000 {
+						label = "uboot-env";
+						reg = <0x50000 0x10000>;
+					};
+					partition@60000 {
+						label = "unused";
+						reg = <0x60000 0x7a0000>;
+					};
 				};
 			};
 

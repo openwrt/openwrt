@@ -166,45 +166,51 @@
 		spi-max-frequency = <33250000>;
 		m25p,fast-read;
 
-		partition@0 {
-			reg = <0x0 0x20000>;
-			label = "u-boot";
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@20000 {
-			reg = <0x20000 0xf90000>;
-			label = "firmware";
-		};
+			partition@0 {
+				reg = <0x0 0x20000>;
+				label = "u-boot";
+				read-only;
+			};
 
-		partition@fb0000 {
-			reg = <0xfb0000 0x10000>;
-			label = "radioDECT";
-			read-only;
-		};
+			partition@20000 {
+				reg = <0x20000 0xf90000>;
+				label = "firmware";
+			};
 
-		partition@fc0000 {
-			reg = <0xfc0000 0x10000>;
-			label = "config";
-			read-only;
-		};
+			partition@fb0000 {
+				reg = <0xfb0000 0x10000>;
+				label = "radioDECT";
+				read-only;
+			};
 
-		romfile: partition@fd0000 {
-			reg = <0xfd0000 0x10000>;
-			label = "romfile";
-			read-only;
-		};
+			partition@fc0000 {
+				reg = <0xfc0000 0x10000>;
+				label = "config";
+				read-only;
+			};
 
-		partition@fe0000 {
-			reg = <0xfe0000 0x10000>;
-			label = "rom";
-			read-only;
-		};
+			romfile: partition@fd0000 {
+				reg = <0xfd0000 0x10000>;
+				label = "romfile";
+				read-only;
+			};
 
-		partition@ff0000 {
-			reg = <0xff0000 0x10000>;
-			label = "radio";
-			read-only;
+			partition@fe0000 {
+				reg = <0xfe0000 0x10000>;
+				label = "rom";
+				read-only;
+			};
+
+			partition@ff0000 {
+				reg = <0xff0000 0x10000>;
+				label = "radio";
+				read-only;
+			};
 		};
 	};
 };

@@ -30,10 +30,16 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				boardconfig: partition@fe0000 {
-					label = "board_config";
-					reg = <0xfe0000 0x20000>;
-					read-only;
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					boardconfig: partition@fe0000 {
+						label = "board_config";
+						reg = <0xfe0000 0x20000>;
+						read-only;
+					};
 				};
 			};
 		};

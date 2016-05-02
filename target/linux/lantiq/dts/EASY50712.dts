@@ -28,24 +28,30 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				partition@0 {
-					label = "uboot";
-					reg = <0x00000 0x10000>; /* 64 KB */
-				};
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				partition@10000 {
-					label = "uboot_env";
-					reg = <0x10000 0x10000>; /* 64 KB */
-				};
+					partition@0 {
+						label = "uboot";
+						reg = <0x00000 0x10000>; /* 64 KB */
+					};
 
-				partition@20000 {
-					label = "firmware";
-					reg = <0x20000 0x3d0000>;
-				};
+					partition@10000 {
+						label = "uboot_env";
+						reg = <0x10000 0x10000>; /* 64 KB */
+					};
 
-				partition@400000 {
-					label = "rootfs";
-					reg = <0x400000 0x400000>;
+					partition@20000 {
+						label = "firmware";
+						reg = <0x20000 0x3d0000>;
+					};
+
+					partition@400000 {
+						label = "rootfs";
+						reg = <0x400000 0x400000>;
+					};
 				};
 			};
 		};
