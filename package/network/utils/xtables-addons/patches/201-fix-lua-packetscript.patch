@@ -82,17 +82,20 @@
  #define ltable_c
 --- a/extensions/LUA/lua/luaconf.h
 +++ b/extensions/LUA/lua/luaconf.h
-@@ -13,6 +13,10 @@
+@@ -13,8 +13,12 @@
  #if !defined(__KERNEL__)
  #include <limits.h>
  #else
++#include <linux/kernel.h>
++
 +#undef UCHAR_MAX
-+#undef SHRT_MAX
 +#undef BUFSIZ
 +#undef NO_FPU
  #define UCHAR_MAX	255
- #define SHRT_MAX        32767
+-#define SHRT_MAX        32767
  #define BUFSIZ 		8192
+ #define NO_FPU
+ #endif
 @@ -637,6 +641,8 @@ union luai_Cast { double l_d; long l_l;
  */
  #if defined(__KERNEL__)
