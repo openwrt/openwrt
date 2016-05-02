@@ -6,43 +6,24 @@
 . /lib/ramips.sh
 
 ramips_set_preinit_iface() {
-	RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350|MT7628|MT7688)"`
-	MT762X=`cat /proc/cpuinfo | egrep "MT7620"`
+	RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350|MT7628|MT7688|MT7620)"`
 
 	if [ -n "${RT3X5X}" ]; then
-		swconfig dev rt305x set reset 1
-	elif [ -n "${MT762X}" ]; then
-		# The mt7530 switch driver enables VLAN by default, but
+		# The ethernet switch driver enables VLAN by default, but
 		# failsafe uses eth0, making the device unreachable:
 		# https://dev.openwrt.org/ticket/18768
-		case "${MT762X}" in
+		ralink_switchdev=rt305x
+		case "${RT3X5X}" in
 		*MT7620*)
-			mt762x_switchdev=mt7620
+			ralink_switchdev=mt7620
 			;;
 		esac
-		swconfig dev $mt762x_switchdev set reset 1
-		swconfig dev $mt762x_switchdev set enable_vlan 0
-		swconfig dev $mt762x_switchdev set apply 1
+		swconfig dev $ralink_switchdev set reset 1
+		swconfig dev $ralink_switchdev set enable_vlan 0
+		swconfig dev $ralink_switchdev set apply 1
 	fi
 
-	if echo $RT3X5X | egrep -q "(RT5350|MT7628|MT7688)"; then
-		# This is a dirty hack to get by while the switch
-		# problem is investigated. When VLAN is disabled, ICMP
-		# pings work as expected, but TCP connections time
-		# out, so telnetting in failsafe is impossible. The
-		# likely reason is TCP checksumming hardware getting
-		# disabled:
-		# https://www.mail-archive.com/openwrt-devel@lists.openwrt.org/msg19870.html
-		swconfig dev rt305x set enable_vlan 1
-		swconfig dev rt305x vlan 1 set ports "0 6"
-		swconfig dev rt305x port 6 set untag 0
-		swconfig dev rt305x set apply 1
-		ip link add link eth0 name eth0.1 type vlan id 1
-		ip link set eth0 up
-		ifname=eth0.1
-	else
-		ifname=eth0
-	fi
+	ifname=eth0
 }
 
 boot_hook_add preinit_main ramips_set_preinit_iface
