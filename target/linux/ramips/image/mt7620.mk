@@ -41,6 +41,15 @@ define Build/elecom-header
 	$(STAGING_DIR_HOST)/bin/tar -cf $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
+define Build/seama
+	$(STAGING_DIR_HOST)/bin/seama -i $@ $(1)
+	mv $@.seama $@
+endef
+
+define Build/seama-seal
+	$(call Build/seama,-s $@.seama $(1))
+endef
+
 define Device/ArcherC20i
   DTS := ArcherC20i
   KERNEL := $(KERNEL_DTB)
@@ -413,3 +422,22 @@ define Device/tiny-ac
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += tiny-ac
+
+dch_m225_mtd_size=7012352
+define Device/dch-m225
+  DTS := DCH-M225
+  IMAGES += factory.bin
+  IMAGE_SIZE := $(dch_m225_mtd_size)
+  IMAGE/sysupgrade.bin := \
+	append-kernel | pad-offset 65536 64 | append-rootfs | \
+	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
+	pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := \
+	append-kernel | pad-offset 65536 64 | append-rootfs | pad-rootfs -x 64 | \
+	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
+	seama-seal -m "signature=wapn22_dlink.2013gui_dap1320b" | \
+	check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := D-Link DCH-M225
+  DEVICE_PACKAGES := kmod-mt76
+endef
+TARGET_DEVICES += dch-m225

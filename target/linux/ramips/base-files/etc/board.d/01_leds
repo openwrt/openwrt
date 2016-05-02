@@ -100,6 +100,10 @@ d105)
 db-wrt01)
 	ucidef_set_led_default "power" "power" "$board:orange:power" "1"
 	;;
+dch-m225)
+	ucidef_set_led_default "power" "POWER" "$board:geeen:power" "1"
+	ucidef_set_led_default "status" "STATUS" "$board:red:status" "0"
+	;;
 dcs-930l-b1)
 	ucidef_set_led_default "power" "POWER" "$board:red:power" "1"
 	ucidef_set_led_netdev "wifi" "WiFi" "$board:blue:wps"

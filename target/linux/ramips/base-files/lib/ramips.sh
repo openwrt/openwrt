@@ -106,6 +106,9 @@ ramips_board_detect() {
 	*"DB-WRT01")
 		name="db-wrt01"
 		;;
+	*"DCH-M225")
+		name="dch-m225"
+		;;
 	*"DCS-930")
 		name="dcs-930"
 		;;
