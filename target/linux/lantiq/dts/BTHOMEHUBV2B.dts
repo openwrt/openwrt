@@ -47,29 +47,35 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				partition@0 {
-					label = "uboot";
-					reg = <0x00000 0x40000>; /* 256KB */
-				};
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				partition@40000 {
-					label = "uboot_env";
-					reg = <0x40000 0x10000>; /* 64KB */
-				};
+					partition@0 {
+						label = "uboot";
+						reg = <0x00000 0x40000>; /* 256KB */
+					};
 
-				partition@50000 {
-					label = "rg_conf_1";
-					reg = <0x50000 0x10000>;
-				};
+					partition@40000 {
+						label = "uboot_env";
+						reg = <0x40000 0x10000>; /* 64KB */
+					};
 
-				partition@60000 {
-					label = "rg_conf_2";
-					reg = <0x60000 0x10000>;
-				};
+					partition@50000 {
+						label = "rg_conf_1";
+						reg = <0x50000 0x10000>;
+					};
 
-				partition@70000 {
-					label = "rg_conf_factory";
-					reg = <0x70000 0x10000>;
+					partition@60000 {
+						label = "rg_conf_2";
+						reg = <0x60000 0x10000>;
+					};
+
+					partition@70000 {
+						label = "rg_conf_factory";
+						reg = <0x70000 0x10000>;
+					};
 				};
 			};
 
@@ -82,22 +88,27 @@
 				#size-cells = <1>;
 				req-mask = <0x1>;  /* PCI request lines to mask during NAND access */
 
-				ath9k_cal: partition@0 {
-					label = "art";	   /* Atheros 9160 wifi b/g/n radio EEPROM */
-					reg = <0x00000 0x4000>;
-					read-only;
-				};
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				partition@4000 {
-					label = "kernel";
-					reg = <0x4000 0x200000>;
-				};
+					ath9k_cal: partition@0 {
+						label = "art";	   /* Atheros 9160 wifi b/g/n radio EEPROM */
+						reg = <0x00000 0x4000>;
+						read-only;
+					};
 
-				partition@164000 {
-					label = "ubi";
-					reg = <0x204000 0x1DFC000>;
-				};
+					partition@4000 {
+						label = "kernel";
+						reg = <0x4000 0x200000>;
+					};
 
+					partition@164000 {
+						label = "ubi";
+						reg = <0x204000 0x1DFC000>;
+					};
+				};
 			};
 
 

@@ -48,31 +48,37 @@
 				#size-cells = <1>;
 				req-mask = <0x1>;  /* PCI request lines to mask during NAND access */
 
-				partition@0 {
-					label = "preboot";
-					reg = <0x00000 0x8000>;
-					read-only;
-				};
-				partition@8000 {
-					label = "u-boot";
-					reg = <0x8000 0x05c000>;
-					read-only;
-				};
-				partition@64000 {
-					label = "uboot-config";
-					reg = <0x64000 0x004000>;
-				};
-				ath9k_cal: partition@68000 {
-					label = "art-copy";
-					reg = <0x68000 0x004000>;
-				};
-				partition@6c000 {
-					label = "kernel";
-					reg = <0x6c000 0x200000>;
-				};
-				partition@26c000 {
-					label = "ubi";
-					reg = <0x26c000 0x1d94000>;
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						label = "preboot";
+						reg = <0x00000 0x8000>;
+						read-only;
+					};
+					partition@8000 {
+						label = "u-boot";
+						reg = <0x8000 0x05c000>;
+						read-only;
+					};
+					partition@64000 {
+						label = "uboot-config";
+						reg = <0x64000 0x004000>;
+					};
+					ath9k_cal: partition@68000 {
+						label = "art-copy";
+						reg = <0x68000 0x004000>;
+					};
+					partition@6c000 {
+						label = "kernel";
+						reg = <0x6c000 0x200000>;
+					};
+					partition@26c000 {
+						label = "ubi";
+						reg = <0x26c000 0x1d94000>;
+					};
 				};
 			};
 

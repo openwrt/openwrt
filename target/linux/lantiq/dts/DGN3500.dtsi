@@ -170,27 +170,33 @@
 		reg = <4 0>;
 		spi-max-frequency = <1000000>;
 
-		partition@0 {
-			reg = <0x0 0x10000>;
-			label = "uboot";
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@10000 {
-			reg = <0x10000 0x10000>;
-			label = "uboot-env";
-			read-only;
-		};
+			partition@0 {
+				reg = <0x0 0x10000>;
+				label = "uboot";
+				read-only;
+			};
 
-		ath9k_cal: partition@20000 {
-			reg = <0x20000 0x10000>;
-			label = "calibration";
-			read-only;
-		};
+			partition@10000 {
+				reg = <0x10000 0x10000>;
+				label = "uboot-env";
+				read-only;
+			};
 
-		partition@50000 {
-			reg = <0x50000 0xfa0000>;
-			label = "firmware";
+			ath9k_cal: partition@20000 {
+				reg = <0x20000 0x10000>;
+				label = "calibration";
+				read-only;
+			};
+
+			partition@50000 {
+				reg = <0x50000 0xfa0000>;
+				label = "firmware";
+			};
 		};
 	};
 };

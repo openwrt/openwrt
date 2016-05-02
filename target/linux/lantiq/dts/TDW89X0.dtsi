@@ -158,27 +158,33 @@
 		spi-max-frequency = <33250000>;
 		m25p,fast-read;
 
-		partition@0 {
-			reg = <0x0 0x20000>;
-			label = "u-boot";
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@20000 {
-			reg = <0x20000 0x7a0000>;
-			label = "firmware";
-		};
+			partition@0 {
+				reg = <0x0 0x20000>;
+				label = "u-boot";
+				read-only;
+			};
 
-		partition@7c0000 {
-			reg = <0x7c0000 0x10000>;
-			label = "config";
-			read-only;
-		};
+			partition@20000 {
+				reg = <0x20000 0x7a0000>;
+				label = "firmware";
+			};
 
-		ath9k_cal: partition@7d0000 {
-			reg = <0x7d0000 0x30000>;
-			label = "boardconfig";
-			read-only;
+			partition@7c0000 {
+				reg = <0x7c0000 0x10000>;
+				label = "config";
+				read-only;
+			};
+
+			ath9k_cal: partition@7d0000 {
+				reg = <0x7d0000 0x30000>;
+				label = "boardconfig";
+				read-only;
+			};
 		};
 	};
 };

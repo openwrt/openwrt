@@ -22,21 +22,27 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				partition@0 {
-					label = "uboot";
-					reg = <0x00000 0x40000>;
-				};
-				partition@40000 {
-					label = "uboot-env";
-					reg = <0x40000 0x20000>;
-				};
-				partition@60000 {
-					label = "kernel";
-					reg = <0x60000 0x200000>;
-				};
-				partition@260000 {
-					label = "ubi";
-					reg = <0x260000 0x7da0000>;
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						label = "uboot";
+						reg = <0x00000 0x40000>;
+					};
+					partition@40000 {
+						label = "uboot-env";
+						reg = <0x40000 0x20000>;
+					};
+					partition@60000 {
+						label = "kernel";
+						reg = <0x60000 0x200000>;
+					};
+					partition@260000 {
+						label = "ubi";
+						reg = <0x260000 0x7da0000>;
+					};
 				};
 			};
 		};
