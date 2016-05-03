@@ -1,7 +1,7 @@
 #!/bin/sh
 
 pistachio_board_detect() {
-        name=`grep "^machine" /proc/cpuinfo | sed "s/machine.*: \(.*\)/\1/g" | sed "s/\(.*\) - .*/\1/g"`
+        name=`grep "^machine" /proc/cpuinfo | sed "s/machine.*: IMG \(.*\)/\1/g" | sed "s/\(.*\) - .*/\1/g"`
         model=`grep "^machine" /proc/cpuinfo | sed "s/machine.*: \(.*\)/\1/g" | sed "s/.* - \(.*\)/\1/g"`
         [ -z "$name" ] && name="unknown"
         [ -z "$model" ] && model="unknown"
