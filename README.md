@@ -236,7 +236,7 @@ For TFTP boot, you will need TFTP server serving kernel image (uImage), dtb (*.d
 and initramfs filesystem.
 
     $ sudo cp bin/pistachio/openwrt-pistachio-pistachio_marduk_cc2520-uImage-initramfs /tftpboot/uImage
-    $ sudo cp bin/pistachio/pistachio_marduk_cc2520.dtb /tftpboot
+    $ sudo cp bin/pistachio/pistachio_marduk_cc2520.dtb /tftpboot/pistachio_marduk.dtb
 
 ### Setting up TFTP Server
 
@@ -288,9 +288,26 @@ To use tftp boot, set the following environment variables
 
         pistachio # run ethboot
 
-####Boot from Flash
+##Boot from Flash
 
-This is the default boot method set on Marduk platform. Either you can copy the openwrt-pistachio-marduk-marduk_cc2520-ubifs.img on the USB drive or you can place the same on TFTP server.
+###Flash Partitions
+
+    root@OpenWrt:/# cat /proc/mtd
+    dev:    size   erasesize  name
+    mtd0: 00180000 00001000 "uboot"
+    mtd1: 00002000 00001000 "data-ro"
+    mtd2: 00002000 00001000 "uEnv"
+    mtd3: 0007c000 00001000 "data-rw"
+    mtd4: 10000000 00040000 "firmware0"
+    mtd5: 10000000 00040000 "firmware1"
+
+There are two nand paritions `/dev/mtd4, /dev/mtd5` available for NAND boot.
+"Dual nandboot" is the default boot method set on Marduk platform. 
+
+There are mutliple ways of flash the ubifs image on one of the NAND parition.
+
+##### Flashing on uboot prompt
+Either you can copy the openwrt-pistachio-marduk-marduk_cc2520-ubifs.img on the USB drive or you can place the same on TFTP server.
 To set up TFTP server on your development PC, refer to [Setting up TFTP Server](#setting-up-tftp-server) section.
 
 1. Init flash device on given SPI bus and chip select:
@@ -307,7 +324,8 @@ To set up TFTP server on your development PC, refer to [Setting up TFTP Server](
 
 4. Erase partition:
 
-        pistachio # nand erase.part firmware0
+        pistachio # nand erase.part firmwareX
+_firmwareX needs to be replaced with firmware0 or firmware1._
 
 5. Loading the ubifs image
 
@@ -321,41 +339,105 @@ OR
 
 6. Initialize write to nand device:
 
-        pistachio # nand write 0xe000000 firmware0 ${filesize};
+        pistachio # nand write 0xe000000 firmwareX ${filesize};
+_firmwareX needs to be replaced with firmware0 or firmware1._
 
-7. Save nand boot environment variables
+7. Select the NAND parition to boot from.
 
-        pistachio # setenv nandroot "ubi.mtd=firmware0 root=ubi0:rootfs rootfstype=ubifs"
-        pistachio # setenv bootcmd 'run nandboot'
+        pistachio # setenv boot_partition X
+_X needs to be replaced with 0 or 1 depending upon firmware0 or firmware1 respectively._
+
+8. Save dual nand boot environment variables and reboot.
+
         pistachio # saveenv
 
+##### Flashing on OpenWrt prompt
 
-####Configure Network
+You can use ubiformat utility to flash the ubifs image when system is booted up and running. *However extra care needs to be taken to select the appropriate mtd partition, as selecting a wrong partition may erase your bootloader completely.*
+
+1. Check the boot partition from which system is booted from.
+
+        root@OpenWrt:/# fw_printenv boot_partition
+_If boot_partition is 0, then booted from firmware0 and if 1, then booted from firmware1._
+
+2. Flash the ubifs image on other partition.
+
+        root@OpenWrt:/# ubiformat /dev/mtdX -y -f openwrt-pistachio-marduk-marduk_cc2520-ubifs.img
+_Replace X with 0 or 1 depending upon firmware0 or firmware1 respectively._
+
+3. Select the NAND partition to boot from and reboot.
+
+        root@OpenWrt:/# fw_setenv boot_partition X
+_X needs to be replaced with 0 or 1 depending upon firmware0 or firmware1 respectively._
+
+##System upgrade
+
+You can download the ubifs image from webserver using wget or copy from USB drive.But the image must be put into /tmp as OpenWRT switches to a ramfs to do upgrade.
+
+###Downloading ubifs image from webserver
+
+    root@OpenWrt:/# cd /tmp
+    root@OpenWrt:/# wget http://webserver/openwrt-pistachio-marduk-marduk_cc2520-ubifs.img
+
+###Copying ubifs image from USB drive
+
+    root@OpenWrt:/# mount /dev/sda1 /mnt/
+    root@OpenWrt:/# cp /mnt/openwrt-pistachio-marduk-marduk_cc2520-ubifs.img /tmp
+
+The image will be flashed onto the mtd partition that is not in use (firmware0 or firmware1) then uboot is updated to boot from that partition. 
+
+Pre-requisite :
+U-boot environment variables should be set to default as follows:
+
+    pistachio # env default -a
+    pistachio # saveenv
+
+###Fallback mechanism
+If image fails to boot in 5 successive attempts, then bootloader will try to boot image from alternate partition.
+Uboot variable bootcount is reset after successful boot.
+
+###Upgrading the flash image
+Sysupgrade can now be used to flash ubifs images from within OpenWrt:
+
+    root@OpenWrt:/# sysupgrade -v /tmp/openwrt-pistachio-marduk-marduk_cc2520-ubifs.img
 
 You should see the logs on the console as below:
 
+    root@OpenWrt:/# sysupgrade /tmp/openwrt-pistachio-marduk-marduk_cc2520-ubifs.img
+    Saving config files...
+    Sending TERM to remaining processes ... logd rpcd netifd odhcpd uhttpd dnsmasq awa_bootstrapd awa_clientd awa_serverd ntpd button_gateway_ button_gateway_ device_manager_ sleep ubusd
+    Sending KILL to remaining processes ... device_manager_
+    Switching to ramdisk...
+    [  612.202026] UBIFS (ubi0:0): background thread "ubifs_bgt0_0" stops
+    Performing system upgrade...
+    Current boot partiton  1
+    Writing image to  firmware0
+    .
+    .
+    sysupgrade successful
+    [  631.064624] reboot: Restarting system
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
-  BusyBox v1.24.1 (2016-03-04 17:43:09 IST) built-in shell (ash)
+On successful, it will restart the system and you should following logs on the console:
 
-  _______                     ________        __
- |       |.-----.-----.-----.|  |  |  |.----.|  |_
- |   -   ||  _  |  -__|     ||  |  |  ||   _||   _|
- |_______||   __|_____|__|__||________||__|  |____|
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    BusyBox v1.24.1 (2016-05-02 10:15:17 IST) built-in shell (ash)
+    _______                     ________        __
+    |       |.-----.-----.-----.|  |  |  |.----.|  |_
+    |   -   ||  _  |  -__|     ||  |  |  ||   _||   _|
+    |_______||   __|_____|__|__||________||__|  |____|
           |__| W I R E L E S S   F R E E D O M
- -----------------------------------------------------
- DESIGNATED DRIVER (Bleeding Edge, r48138)
- -----------------------------------------------------
-  * 2 oz. Orange Juice         Combine all juices in a
-  * 2 oz. Pineapple Juice      tall glass filled with
-  * 2 oz. Grapefruit Juice     ice, stir well.
-  * 2 oz. Cranberry Juice
+    -----------------------------------------------------
+    DESIGNATED DRIVER (Bleeding Edge, r48138)
+    -----------------------------------------------------
+    * 2 oz. Orange Juice         Combine all juices in a
+    * 2 oz. Pineapple Juice      tall glass filled with
+    * 2 oz. Grapefruit Juice     ice, stir well.
+    * 2 oz. Cranberry Juice
+    $root@OpenWrt:/#
+    $root@OpenWrt:/#
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-$root@OpenWrt:/#
-$root@OpenWrt:/#
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
+##Configure Network
 You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loWPAN should be up.
 
 **Note:**
