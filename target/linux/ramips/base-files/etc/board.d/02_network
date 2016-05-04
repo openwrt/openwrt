@@ -35,6 +35,7 @@ ramips_setup_interfaces()
 	case $board in
 	3g150b|\
 	3g300m|\
+	a5-v11|\
 	all0256n|\
 	all5002|\
 	all5003|\
@@ -92,10 +93,6 @@ ramips_setup_interfaces()
 	youku-yk1)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
-		;;
-	a5-v11)
-		ucidef_add_switch "switch0" \
-			"0:lan" "6t@eth0"
 		;;
 	ar670w|\
 	ar725w|\
@@ -242,7 +239,6 @@ ramips_setup_macs()
 	local wan_mac=""
 
 	case $board in
-	a5-v11|\
 	bc2|\
 	broadway|\
 	d105|\
@@ -286,6 +282,7 @@ ramips_setup_macs()
 		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
+	a5-v11|\
 	ht-tm02)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		;;
