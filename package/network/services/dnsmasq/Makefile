@@ -151,6 +151,8 @@ $(call Package/dnsmasq/install,$(1))
 ifneq ($(CONFIG_PACKAGE_dnsmasq_full_dnssec),)
 	$(INSTALL_DIR) $(1)/usr/share/dnsmasq
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/trust-anchors.conf $(1)/usr/share/dnsmasq
+	$(INSTALL_DIR) $(1)/lib/upgrade
+	$(INSTALL_BIN) ./files/dnsmasqsec-add-conffiles.sh $(1)/lib/upgrade
 endif
 endef
 
