@@ -28,7 +28,8 @@ define Profile/marduk_cc2520
     PACKAGES:=kmod-i2c kmod-marduk-cc2520 kmod-sound-pistachio-soc \
 		wpan-tools tcpdump uhttpd uboot-envtools \
 		alsa-lib alsa-utils alsa-utils-tests i2c-tools \
-		iw hostapd wpa-supplicant kmod-uccp420wlan kmod-cfg80211
+		iw hostapd wpa-supplicant kmod-uccp420wlan kmod-cfg80211 \
+		kmod-leds-gpio
     DEVICE_DTS:=marduk_cc2520
 endef
 

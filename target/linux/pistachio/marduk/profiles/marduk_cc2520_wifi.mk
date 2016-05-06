@@ -29,7 +29,8 @@ define Profile/marduk_cc2520_wifi
         wpan-tools tcpdump uhttpd uboot-envtools \
         alsa-lib alsa-utils alsa-utils-tests i2c-tools \
         iw hostapd wpa-supplicant wpa-cli iperf fping \
-        kmod-uccp420wlan kmod-cfg80211
+        kmod-uccp420wlan kmod-cfg80211 \
+        kmod-leds-gpio
     DEVICE_DTS:=marduk_cc2520
 endef
 
