@@ -143,55 +143,59 @@ generate_switch_vlans_ports() {
 	# autogenerate vlans
 	#
 
-	json_get_keys roles roles
-	json_select roles
+	if json_is_a roles array; then
+		json_get_keys roles roles
+		json_select roles
 
-	for role in $roles; do
-		json_select "$role"
-			json_get_vars ports
+		for role in $roles; do
+			json_select "$role"
+				json_get_vars ports
+			json_select ..
+
+			uci -q batch <<-EOF
+				add network switch_vlan
+				set network.@switch_vlan[-1].device='$switch'
+				set network.@switch_vlan[-1].vlan='$role'
+				set network.@switch_vlan[-1].ports='$ports'
+			EOF
+		done
+
 		json_select ..
-
-		uci -q batch <<-EOF
-			add network switch_vlan
-			set network.@switch_vlan[-1].device='$switch'
-			set network.@switch_vlan[-1].vlan='$role'
-			set network.@switch_vlan[-1].ports='$ports'
-		EOF
-	done
-
-	json_select ..
+	fi
 
 
 	#
 	# write port specific settings
 	#
 
-	json_get_keys ports ports
-	json_select ports
+	if json_is_a ports array; then
+		json_get_keys ports ports
+		json_select ports
 
-	for port in $ports; do
-		json_select "$port"
-			json_get_vars num
+		for port in $ports; do
+			json_select "$port"
+				json_get_vars num
 
-			if json_is_a attr object; then
-				json_get_keys attr attr
-				json_select attr
-					uci -q batch <<-EOF
-						add network switch_port
-						set network.@switch_port[-1].device='$switch'
-						set network.@switch_port[-1].port=$num
-					EOF
+				if json_is_a attr object; then
+					json_get_keys attr attr
+					json_select attr
+						uci -q batch <<-EOF
+							add network switch_port
+							set network.@switch_port[-1].device='$switch'
+							set network.@switch_port[-1].port=$num
+						EOF
 
-					for attr in $attr; do
-						json_get_var val "$attr"
-						uci -q set network.@switch_port[-1].$attr="$val"
-					done
-				json_select ..
-			fi
+						for attr in $attr; do
+							json_get_var val "$attr"
+							uci -q set network.@switch_port[-1].$attr="$val"
+						done
+					json_select ..
+				fi
+			json_select ..
+		done
+
 		json_select ..
-	done
-
-	json_select ..
+	fi
 }
 
 generate_switch() {
