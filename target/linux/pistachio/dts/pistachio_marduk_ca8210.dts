@@ -85,14 +85,13 @@
 			};
 		};
 
-	/* TODO: add clock from ca8210 to sc16is752 */
-	/* EXT clock from cc2520 is fed to sc16is752 */
-/*	cc2520_ext_clk: cc2520-ext-clk {
+	/* EXT clock from ca821x is fed to sc16is752 */
+	ca821x_ext_clk: ca821x-ext-clk {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
 		clock-frequency = <16000000>;
-		clock-output-names = "cc2520_ext_clock";
-	};*/
+		clock-output-names = "ca821x_ext_clock";
+	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
@@ -108,8 +107,7 @@
 		};
 	};
 
-	/* TODO: add this back when sc16is752 has clock source */
-/*	gpio_leds {
+	gpio_leds {
 		compatible = "gpio-leds";
 		user1 {
 			label = "marduk:red:user1";
@@ -144,7 +142,7 @@
 			gpios = <&gpio4 12 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "heartbeat";
 		};
-	}; */
+	};
 };
 
 &spim0_clk {
@@ -162,7 +160,7 @@
 	sc16is752: sc16is752@1 {
 		compatible = "nxp,sc16is752";
 		reg = <1>;
-		clocks = <&ca821x 0>;
+		clocks = <&ca821x_ext_clk>;
 		spi-max-frequency = <4000000>;
 		interrupt-parent = <&gpio0>;
 		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
