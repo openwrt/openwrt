@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=ipq806x
 BOARDNAME:=Qualcomm Atheros IPQ806X
-FEATURES:=squashfs nand ubifs
+FEATURES:=squashfs nand ubifs fpu
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=neon-vfpv4
 MAINTAINER:=John Crispin <blogic@openwrt.org>
