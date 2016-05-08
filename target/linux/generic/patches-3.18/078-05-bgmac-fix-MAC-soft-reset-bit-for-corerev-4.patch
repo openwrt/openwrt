@@ -1,11 +1,23 @@
+From c02bc350f9dbce7d637c394a6e1c4d29dc5b28b2 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@openwrt.org>
-Date: Mon, 13 Apr 2015 15:54:04 +0200
+Date: Tue, 12 Apr 2016 18:27:29 +0200
 Subject: [PATCH] bgmac: fix MAC soft-reset bit for corerev > 4
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-Only core revisions older than 4 use BGMAC_CMDCFG_SR_REV0
+Only core revisions older than 4 use BGMAC_CMDCFG_SR_REV0. This mainly
+fixes support for BCM4708A0KF SoCs with Ethernet core rev 5 (it means
+only some devices as most of BCM4708A0KF-s got core rev 4).
+This was tested for regressions on BCM47094 which doesn't seem to care
+which bit gets used.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/broadcom/bgmac.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
