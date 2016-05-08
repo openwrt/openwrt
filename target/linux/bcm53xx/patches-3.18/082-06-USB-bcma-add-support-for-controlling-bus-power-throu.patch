@@ -1,4 +1,4 @@
-From f3cf44a313b3687efd55ba091558e20a4d218c31 Mon Sep 17 00:00:00 2001
+From eb4861c3cef7f745df0d2a26b0f4287da0190424 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Thu, 11 Jun 2015 22:57:40 +0200
 Subject: [PATCH] USB: bcma: add support for controlling bus power through GPIO
@@ -8,6 +8,7 @@ possible to specify such a GPIO in device tree.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/usb/host/bcma-hcd.c | 24 ++++++++++++++++++++++++
  1 file changed, 24 insertions(+)

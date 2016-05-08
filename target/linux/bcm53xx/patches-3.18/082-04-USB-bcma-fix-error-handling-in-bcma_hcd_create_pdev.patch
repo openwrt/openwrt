@@ -1,4 +1,4 @@
-From 232996d1ba3002e7e80b18075e2838fc86f21412 Mon Sep 17 00:00:00 2001
+From ab2de5793080dfb9f191ca71068b9f476a55a0f4 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Thu, 11 Jun 2015 22:57:38 +0200
 Subject: [PATCH] USB: bcma: fix error handling in bcma_hcd_create_pdev()
@@ -7,6 +7,7 @@ This patch makes bcma_hcd_create_pdev() not return NULL, but a prober
 error code in case of an error.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/usb/host/bcma-hcd.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)

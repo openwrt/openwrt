@@ -1,15 +1,19 @@
-From 5b4fed9fc917cc2bfc5297eeab03aeba5d340618 Mon Sep 17 00:00:00 2001
+From 352d9e2ee85b43170388599a17cd7b219f270163 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Tue, 16 Jun 2015 12:33:46 +0200
+Date: Sat, 5 Dec 2015 13:15:06 +0100
 Subject: [PATCH] USB: bcma: make helper creating platform dev more generic
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Having "bool ohci" argument bounded us to two cases only and didn't
-allow re-using this code for XHCI.
+Having "bool ohci" argument in bcma_hcd_create_pdev function limited it
+to support two cases only (OHCI and EHCI) and put too much logic in it.
+Lets make caller pass all required data. This adds few extra arguments
+to the function call but will allow us to reuse this code and handle
+more cases in the future (e.g. add XHCI support).
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/usb/host/bcma-hcd.c | 24 +++++++++++++-----------
  1 file changed, 13 insertions(+), 11 deletions(-)

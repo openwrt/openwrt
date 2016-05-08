@@ -1,4 +1,4 @@
-From 93724affb195149df6f7630901d878f6e273fa02 Mon Sep 17 00:00:00 2001
+From c27da2b22b558390acc515e71e47b1b307f85d5a Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Thu, 11 Jun 2015 22:57:37 +0200
 Subject: [PATCH] USB: bcma: use devm_kzalloc
@@ -7,6 +7,7 @@ Instead of manually handling the frees use devm. There was also a free
 missing in the unregister call which is not needed with devm.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/usb/host/bcma-hcd.c | 11 ++++-------
  1 file changed, 4 insertions(+), 7 deletions(-)

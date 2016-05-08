@@ -185,10 +185,10 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	return 0;
 +}
 +
- static int bcma_hcd_probe(struct bcma_device *dev)
+ static int bcma_hcd_probe(struct bcma_device *core)
  {
  	int err;
-@@ -364,6 +525,11 @@ static int bcma_hcd_probe(struct bcma_de
+@@ -362,6 +523,11 @@ static int bcma_hcd_probe(struct bcma_de
  		if (err)
  			return err;
  		break;
@@ -200,7 +200,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	default:
  		return -ENODEV;
  	}
-@@ -377,11 +543,14 @@ static void bcma_hcd_remove(struct bcma_
+@@ -375,11 +541,14 @@ static void bcma_hcd_remove(struct bcma_
  	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
  	struct platform_device *ohci_dev = usb_dev->ohci_dev;
  	struct platform_device *ehci_dev = usb_dev->ehci_dev;
@@ -215,7 +215,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	bcma_core_disable(dev, 0);
  }
-@@ -418,6 +587,7 @@ static int bcma_hcd_resume(struct bcma_d
+@@ -416,6 +585,7 @@ static int bcma_hcd_resume(struct bcma_d
  static const struct bcma_device_id bcma_hcd_table[] = {
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_USB20_HOST, BCMA_ANY_REV, BCMA_ANY_CLASS),
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_NS_USB20, BCMA_ANY_REV, BCMA_ANY_CLASS),

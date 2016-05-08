@@ -1,4 +1,4 @@
-From baf3d128e5bdf9d322539609133a15b493b0c2ef Mon Sep 17 00:00:00 2001
+From 7e4a4da67255d92620ba59b461b5bc295db28dae Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Thu, 11 Jun 2015 22:57:35 +0200
 Subject: [PATCH] USB: bcma: remove chip id check
@@ -9,6 +9,7 @@ Some SoC have IDs with 47XX and 53XX in decimal form which would be
 rejected by this check. Instead of fixing this check just remove it.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/usb/host/bcma-hcd.c | 5 -----
  1 file changed, 5 deletions(-)
