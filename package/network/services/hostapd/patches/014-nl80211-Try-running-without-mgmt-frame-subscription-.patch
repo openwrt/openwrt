@@ -1,0 +1,48 @@
+From f4830bed661f4adff51f50a0d37c64ceb748e780 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 25 Apr 2016 17:10:47 +0200
+Subject: [PATCH] nl80211: Try running without mgmt frame subscription (driver
+ AP SME)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+One of supported code paths already allows this scenario. It is used if
+driver doesn't report NL80211_ATTR_DEVICE_AP_SME and doesn't support
+monitor interface. In such situation:
+1) We don't quit if subscribing for WLAN_FC_STYPE_PROBE_REQ fails
+2) We don't try subscribing for WLAN_FC_STYPE_ACTION
+3) We fallback to AP SME mode after failing to create monitor interface
+4) We don't quit if subscribing for WLAN_FC_STYPE_PROBE_REQ fails
+Above scenario is used, e.g., with brcmfmac. As you can see - thanks to
+events provided by cfg80211 - it's not really required to receive Probe
+Request or action frames.
+
+However, the previous implementation did not allow using hostapd with
+drivers that:
+1) Report NL80211_ATTR_DEVICE_AP_SME
+2) Don't support subscribing for PROBE_REQ and/or ACTION frames
+In case of using such a driver hostapd will cancel setup after failing
+to subscribe for WLAN_FC_STYPE_ACTION. I noticed it after setting flag
+WIPHY_FLAG_HAVE_AP_SME in brcmfmac driver for my experiments.
+
+This patch allows working with such drivers with just a small warning
+printed as debug message.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ src/drivers/driver_nl80211.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4108,7 +4108,8 @@ static int nl80211_setup_ap(struct i802_
+ 
+ 	if (drv->device_ap_sme && !drv->use_monitor)
+ 		if (nl80211_mgmt_subscribe_ap_dev_sme(bss))
+-			return -1;
++			wpa_printf(MSG_DEBUG,
++				   "nl80211: Failed to subscribe for mgmt frames from SME driver - trying to run without it");
+ 
+ 	if (!drv->device_ap_sme && drv->use_monitor &&
+ 	    nl80211_create_monitor_interface(drv) &&
