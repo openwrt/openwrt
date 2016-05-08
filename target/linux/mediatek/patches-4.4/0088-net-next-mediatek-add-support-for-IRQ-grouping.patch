@@ -15,8 +15,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |   16 ++-
  2 files changed, 124 insertions(+), 56 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index f86d551..6557026 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -790,7 +790,7 @@ drop:
@@ -51,7 +49,7 @@ index f86d551..6557026 100644
  	u32 cpu, dma;
  	static int condition;
  	int i;
-@@ -944,63 +943,80 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -944,63 +943,80 @@ static int mtk_poll_tx(struct mtk_eth *e
  	}
  
  	/* read hw index again make sure no new tx packet */
@@ -101,7 +99,7 @@ index f86d551..6557026 100644
  		mtk_w32(eth, status_intr, MTK_INT_STATUS2);
  	}
 +}
- 
++
 +static int mtk_napi_tx(struct napi_struct *napi, int budget)
 +{
 +	struct mtk_eth *eth = container_of(napi, struct mtk_eth, tx_napi);
@@ -109,7 +107,7 @@ index f86d551..6557026 100644
 +	int tx_done = 0;
 +
 +	mtk_handle_status_irq(eth);
-+
+ 
 +	status = mtk_r32(eth, MTK_QMTK_INT_STATUS);
 +	tx_done = mtk_poll_tx(eth, budget);
  	if (unlikely(netif_msg_intr(eth))) {
@@ -165,7 +163,7 @@ index f86d551..6557026 100644
  
  	return rx_done;
  }
-@@ -1237,22 +1253,44 @@ static void mtk_tx_timeout(struct net_device *dev)
+@@ -1237,22 +1253,44 @@ static void mtk_tx_timeout(struct net_de
  	schedule_work(&eth->pending_work);
  }
  
@@ -188,7 +186,8 @@ index f86d551..6557026 100644
 -	} else {
 -		mtk_w32(eth, status, MTK_QMTK_INT_STATUS);
 +		mtk_irq_disable(eth, MTK_RX_DONE_INT);
-+	}
+ 	}
+-	mtk_irq_disable(eth, (MTK_RX_DONE_INT | MTK_TX_DONE_INT));
 +	mtk_w32(eth, status, MTK_QMTK_INT_STATUS);
 +
 +	return IRQ_HANDLED;
@@ -209,13 +208,12 @@ index f86d551..6557026 100644
 +		if (likely(napi_schedule_prep(&eth->tx_napi)))
 +			__napi_schedule(&eth->tx_napi);
 +		mtk_irq_disable(eth, MTK_TX_DONE_INT);
- 	}
--	mtk_irq_disable(eth, (MTK_RX_DONE_INT | MTK_TX_DONE_INT));
++	}
 +	mtk_w32(eth, status, MTK_QMTK_INT_STATUS);
  
  	return IRQ_HANDLED;
  }
-@@ -1265,7 +1303,7 @@ static void mtk_poll_controller(struct net_device *dev)
+@@ -1265,7 +1303,7 @@ static void mtk_poll_controller(struct n
  	u32 int_mask = MTK_TX_DONE_INT | MTK_RX_DONE_INT;
  
  	mtk_irq_disable(eth, int_mask);
@@ -224,7 +222,7 @@ index f86d551..6557026 100644
  	mtk_irq_enable(eth, int_mask);
  }
  #endif
-@@ -1301,6 +1339,7 @@ static int mtk_open(struct net_device *dev)
+@@ -1301,6 +1339,7 @@ static int mtk_open(struct net_device *d
  		if (err)
  			return err;
  
@@ -232,7 +230,7 @@ index f86d551..6557026 100644
  		napi_enable(&eth->rx_napi);
  		mtk_irq_enable(eth, MTK_TX_DONE_INT | MTK_RX_DONE_INT);
  	}
-@@ -1349,6 +1388,7 @@ static int mtk_stop(struct net_device *dev)
+@@ -1349,6 +1388,7 @@ static int mtk_stop(struct net_device *d
  		return 0;
  
  	mtk_irq_disable(eth, MTK_TX_DONE_INT | MTK_RX_DONE_INT);
@@ -240,7 +238,7 @@ index f86d551..6557026 100644
  	napi_disable(&eth->rx_napi);
  
  	mtk_stop_dma(eth, MTK_QDMA_GLO_CFG);
-@@ -1386,7 +1426,11 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1386,7 +1426,11 @@ static int __init mtk_hw_init(struct mtk
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
  
@@ -253,7 +251,7 @@ index f86d551..6557026 100644
  			       dev_name(eth->dev), eth);
  	if (err)
  		return err;
-@@ -1402,7 +1446,11 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1402,7 +1446,11 @@ static int __init mtk_hw_init(struct mtk
  	mtk_w32(eth, 0, MTK_RST_GL);
  
  	/* FE int grouping */
@@ -266,7 +264,7 @@ index f86d551..6557026 100644
  
  	for (i = 0; i < 2; i++) {
  		u32 val = mtk_r32(eth, MTK_GDMA_FWD_CFG(i));
-@@ -1450,7 +1498,9 @@ static void mtk_uninit(struct net_device *dev)
+@@ -1450,7 +1498,9 @@ static void mtk_uninit(struct net_device
  	phy_disconnect(mac->phy_dev);
  	mtk_mdio_cleanup(eth);
  	mtk_irq_disable(eth, ~0);
@@ -277,7 +275,7 @@ index f86d551..6557026 100644
  }
  
  static int mtk_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
-@@ -1725,10 +1775,10 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1725,10 +1775,10 @@ static int mtk_add_mac(struct mtk_eth *e
  		dev_err(eth->dev, "error bringing up device\n");
  		goto free_netdev;
  	}
@@ -290,7 +288,7 @@ index f86d551..6557026 100644
  
  	return 0;
  
-@@ -1745,6 +1795,7 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1745,6 +1795,7 @@ static int mtk_probe(struct platform_dev
  	struct mtk_soc_data *soc;
  	struct mtk_eth *eth;
  	int err;
@@ -298,7 +296,7 @@ index f86d551..6557026 100644
  
  	match = of_match_device(of_mtk_match, &pdev->dev);
  	soc = (struct mtk_soc_data *)match->data;
-@@ -1780,10 +1831,12 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1780,10 +1831,12 @@ static int mtk_probe(struct platform_dev
  		return PTR_ERR(eth->rstc);
  	}
  
@@ -315,7 +313,7 @@ index f86d551..6557026 100644
  	}
  
  	eth->clk_ethif = devm_clk_get(&pdev->dev, "ethif");
-@@ -1824,7 +1877,9 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1824,7 +1877,9 @@ static int mtk_probe(struct platform_dev
  	 * for NAPI to work
  	 */
  	init_dummy_netdev(&eth->dummy_dev);
@@ -326,7 +324,7 @@ index f86d551..6557026 100644
  		       MTK_NAPI_WEIGHT);
  
  	platform_set_drvdata(pdev, eth);
-@@ -1845,6 +1900,7 @@ static int mtk_remove(struct platform_device *pdev)
+@@ -1845,6 +1900,7 @@ static int mtk_remove(struct platform_de
  	clk_disable_unprepare(eth->clk_gp1);
  	clk_disable_unprepare(eth->clk_gp2);
  
@@ -334,8 +332,6 @@ index f86d551..6557026 100644
  	netif_napi_del(&eth->rx_napi);
  	mtk_cleanup(eth);
  	platform_set_drvdata(pdev, NULL);
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index 8220275..bf158f8 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -68,6 +68,10 @@
@@ -396,6 +392,3 @@ index 8220275..bf158f8 100644
  };
  
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
--- 
-1.7.10.4
-

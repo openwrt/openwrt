@@ -34,7 +34,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  };
  
  static inline u32 bcm53xxspi_read(struct bcm53xxspi *b53spi, u16 offset)
-@@ -32,6 +35,50 @@ static inline void bcm53xxspi_write(struct bcm53xxspi *b53spi, u16 offset,
+@@ -32,6 +35,50 @@ static inline void bcm53xxspi_write(stru
  	bcma_write32(b53spi->core, offset, value);
  }
  
@@ -85,7 +85,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  static inline unsigned int bcm53xxspi_calc_timeout(size_t len)
  {
  	/* Do some magic calculation based on length and buad. Add 10% and 1. */
-@@ -176,6 +223,8 @@ static int bcm53xxspi_transfer_one(struct spi_master *master,
+@@ -176,6 +223,8 @@ static int bcm53xxspi_transfer_one(struc
  	u8 *buf;
  	size_t left;
  
@@ -94,7 +94,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	if (t->tx_buf) {
  		buf = (u8 *)t->tx_buf;
  		left = t->len;
-@@ -206,6 +255,22 @@ static int bcm53xxspi_transfer_one(struct spi_master *master,
+@@ -206,6 +255,22 @@ static int bcm53xxspi_transfer_one(struc
  	return 0;
  }
  
@@ -117,7 +117,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  /**************************************************
   * BCMA
   **************************************************/
-@@ -222,6 +287,7 @@ MODULE_DEVICE_TABLE(bcma, bcm53xxspi_bcma_tbl);
+@@ -222,6 +287,7 @@ MODULE_DEVICE_TABLE(bcma, bcm53xxspi_bcm
  
  static int bcm53xxspi_bcma_probe(struct bcma_device *core)
  {
@@ -125,7 +125,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	struct bcm53xxspi *b53spi;
  	struct spi_master *master;
  	int err;
-@@ -231,7 +297,7 @@ static int bcm53xxspi_bcma_probe(struct bcma_device *core)
+@@ -231,7 +297,7 @@ static int bcm53xxspi_bcma_probe(struct
  		return -ENOTSUPP;
  	}
  
@@ -134,7 +134,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	if (!master)
  		return -ENOMEM;
  
-@@ -239,11 +305,19 @@ static int bcm53xxspi_bcma_probe(struct bcma_device *core)
+@@ -239,11 +305,19 @@ static int bcm53xxspi_bcma_probe(struct
  	b53spi->master = master;
  	b53spi->core = core;
  

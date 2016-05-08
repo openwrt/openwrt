@@ -11,11 +11,9 @@ Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index ba3afa5..9759fe5 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -186,9 +186,9 @@ static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
+@@ -186,9 +186,9 @@ static int mtk_phy_connect_node(struct m
  
  	phydev = of_phy_connect(eth->netdev[mac->id], phy_node,
  				mtk_phy_link_adjust, 0, phy_mode);
@@ -27,6 +25,3 @@ index ba3afa5..9759fe5 100644
  	}
  
  	dev_info(eth->dev,
--- 
-1.7.10.4
-

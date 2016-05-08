@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   16 ++++++++++++++--
  1 file changed, 14 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 9928a79..204d927 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -133,6 +133,8 @@ static int mtk_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
+@@ -133,6 +133,8 @@ static int mtk_mdio_read(struct mii_bus
  static void mtk_phy_link_adjust(struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
@@ -26,7 +24,7 @@ index 9928a79..204d927 100644
  	u32 mcr = MAC_MCR_MAX_RX_1536 | MAC_MCR_IPG_CFG |
  		  MAC_MCR_FORCE_MODE | MAC_MCR_TX_EN |
  		  MAC_MCR_RX_EN | MAC_MCR_BACKOFF_EN |
-@@ -154,7 +156,16 @@ static void mtk_phy_link_adjust(struct net_device *dev)
+@@ -154,7 +156,16 @@ static void mtk_phy_link_adjust(struct n
  		mcr |= MAC_MCR_FORCE_DPX;
  
  	if (mac->phy_dev->pause)
@@ -44,7 +42,7 @@ index 9928a79..204d927 100644
  
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
  
-@@ -236,7 +247,8 @@ static int mtk_phy_connect(struct mtk_mac *mac)
+@@ -236,7 +247,8 @@ static int mtk_phy_connect(struct mtk_ma
  	mac->phy_dev->autoneg = AUTONEG_ENABLE;
  	mac->phy_dev->speed = 0;
  	mac->phy_dev->duplex = 0;
@@ -54,6 +52,3 @@ index 9928a79..204d927 100644
  	mac->phy_dev->advertising = mac->phy_dev->supported |
  				    ADVERTISED_Autoneg;
  	phy_start_aneg(mac->phy_dev);
--- 
-1.7.10.4
-

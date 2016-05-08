@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   30 +++++++++++++++++++--------
  1 file changed, 21 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 04bdb9d..26eeb1a 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1430,19 +1430,31 @@ static int mtk_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+@@ -1430,19 +1430,31 @@ static int mtk_do_ioctl(struct net_devic
  
  static void mtk_pending_work(struct work_struct *work)
  {
@@ -58,6 +56,3 @@ index 04bdb9d..26eeb1a 100644
  	}
  	rtnl_unlock();
  }
--- 
-1.7.10.4
-

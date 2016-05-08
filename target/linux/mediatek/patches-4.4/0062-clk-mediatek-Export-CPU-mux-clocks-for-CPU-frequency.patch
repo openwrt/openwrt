@@ -20,8 +20,6 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  create mode 100644 drivers/clk/mediatek/clk-cpumux.c
  create mode 100644 drivers/clk/mediatek/clk-cpumux.h
 
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index 5b2b91b..76bfab6 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
 @@ -1,4 +1,4 @@
@@ -30,9 +28,6 @@ index 5b2b91b..76bfab6 100644
  obj-$(CONFIG_RESET_CONTROLLER) += reset.o
  obj-$(CONFIG_COMMON_CLK_MT2701) += clk-mt2701.o
  obj-$(CONFIG_COMMON_CLK_MT8135) += clk-mt8135.o
-diff --git a/drivers/clk/mediatek/clk-cpumux.c b/drivers/clk/mediatek/clk-cpumux.c
-new file mode 100644
-index 0000000..91b5238
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-cpumux.c
 @@ -0,0 +1,127 @@
@@ -163,9 +158,6 @@ index 0000000..91b5238
 +
 +	return 0;
 +}
-diff --git a/drivers/clk/mediatek/clk-cpumux.h b/drivers/clk/mediatek/clk-cpumux.h
-new file mode 100644
-index 0000000..52c769f
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-cpumux.h
 @@ -0,0 +1,22 @@
@@ -191,8 +183,6 @@ index 0000000..52c769f
 +			      struct clk_onecell_data *clk_data);
 +
 +#endif /* __DRV_CLK_CPUMUX_H */
-diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
-index 1634288..5c37fcb 100644
 --- a/drivers/clk/mediatek/clk-mt2701.c
 +++ b/drivers/clk/mediatek/clk-mt2701.c
 @@ -18,6 +18,7 @@
@@ -203,7 +193,7 @@ index 1634288..5c37fcb 100644
  
  #include <dt-bindings/clock/mt2701-clk.h>
  
-@@ -465,6 +466,10 @@ static const char * const cpu_parents[] __initconst = {
+@@ -465,6 +466,10 @@ static const char * const cpu_parents[]
  	"mmpll"
  };
  
@@ -214,7 +204,7 @@ index 1634288..5c37fcb 100644
  static const struct mtk_composite top_muxes[] __initconst = {
  	MUX_GATE(CLK_TOP_AXI_SEL, "axi_sel", axi_parents,
  		0x0040, 0, 3, INVALID_MUX_GATE_BIT),
-@@ -677,6 +682,9 @@ static void __init mtk_infrasys_init(struct device_node *node)
+@@ -677,6 +682,9 @@ static void __init mtk_infrasys_init(str
  	mtk_clk_register_factors(infra_fixed_divs, ARRAY_SIZE(infra_fixed_divs),
  						clk_data);
  
@@ -224,8 +214,6 @@ index 1634288..5c37fcb 100644
  	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
-diff --git a/drivers/clk/mediatek/clk-mt8173.c b/drivers/clk/mediatek/clk-mt8173.c
-index 227e356..b82c0e2 100644
 --- a/drivers/clk/mediatek/clk-mt8173.c
 +++ b/drivers/clk/mediatek/clk-mt8173.c
 @@ -18,6 +18,7 @@
@@ -236,7 +224,7 @@ index 227e356..b82c0e2 100644
  
  #include <dt-bindings/clock/mt8173-clk.h>
  
-@@ -526,6 +527,25 @@ static const char * const i2s3_b_ck_parents[] __initconst = {
+@@ -526,6 +527,25 @@ static const char * const i2s3_b_ck_pare
  	"apll2_div5"
  };
  
@@ -262,7 +250,7 @@ index 227e356..b82c0e2 100644
  static const struct mtk_composite top_muxes[] __initconst = {
  	/* CLK_CFG_0 */
  	MUX(CLK_TOP_AXI_SEL, "axi_sel", axi_parents, 0x0040, 0, 3),
-@@ -945,6 +965,9 @@ static void __init mtk_infrasys_init(struct device_node *node)
+@@ -945,6 +965,9 @@ static void __init mtk_infrasys_init(str
  						clk_data);
  	mtk_clk_register_factors(infra_divs, ARRAY_SIZE(infra_divs), clk_data);
  
@@ -272,8 +260,6 @@ index 227e356..b82c0e2 100644
  	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
-diff --git a/include/dt-bindings/clock/mt2701-clk.h b/include/dt-bindings/clock/mt2701-clk.h
-index 50972d1..a6c63b8 100644
 --- a/include/dt-bindings/clock/mt2701-clk.h
 +++ b/include/dt-bindings/clock/mt2701-clk.h
 @@ -217,7 +217,8 @@
@@ -286,8 +272,6 @@ index 50972d1..a6c63b8 100644
  
  /* PERICFG */
  
-diff --git a/include/dt-bindings/clock/mt8173-clk.h b/include/dt-bindings/clock/mt8173-clk.h
-index 7956ba1..c82ed7c 100644
 --- a/include/dt-bindings/clock/mt8173-clk.h
 +++ b/include/dt-bindings/clock/mt8173-clk.h
 @@ -192,7 +192,9 @@
@@ -301,6 +285,3 @@ index 7956ba1..c82ed7c 100644
  
  /* PERI_SYS */
  
--- 
-1.7.10.4
-

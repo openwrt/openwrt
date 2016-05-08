@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   33 ++++++++++++++++-----------
  1 file changed, 20 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index bab5d45..9928a79 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -625,7 +625,16 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+@@ -625,7 +625,16 @@ static int mtk_tx_map(struct sk_buff *sk
  	WRITE_ONCE(itxd->txd3, (TX_DMA_SWC | TX_DMA_PLEN0(skb_headlen(skb)) |
  				(!nr_frags * TX_DMA_LS0)));
  
@@ -30,7 +28,7 @@ index bab5d45..9928a79 100644
  	skb_tx_timestamp(skb);
  
  	ring->next_free = mtk_qdma_phys_to_virt(ring, txd->txd2);
-@@ -853,21 +862,18 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -853,21 +862,18 @@ static int mtk_poll_tx(struct mtk_eth *e
  	struct mtk_tx_dma *desc;
  	struct sk_buff *skb;
  	struct mtk_tx_buf *tx_buf;
@@ -55,7 +53,7 @@ index bab5d45..9928a79 100644
  		u32 next_cpu = desc->txd2;
  		int mac;
  
-@@ -887,9 +893,8 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -887,9 +893,8 @@ static int mtk_poll_tx(struct mtk_eth *e
  		}
  
  		if (skb != (struct sk_buff *)MTK_DMA_DUMMY_DESC) {
@@ -67,7 +65,7 @@ index bab5d45..9928a79 100644
  		}
  		mtk_tx_unmap(eth->dev, tx_buf);
  
-@@ -902,11 +907,13 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -902,11 +907,13 @@ static int mtk_poll_tx(struct mtk_eth *e
  
  	mtk_w32(eth, cpu, MTK_QTX_CRX_PTR);
  
@@ -84,6 +82,3 @@ index bab5d45..9928a79 100644
  	}
  
  	/* read hw index again make sure no new tx packet */
--- 
-1.7.10.4
-
