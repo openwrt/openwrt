@@ -897,16 +897,16 @@ int main (int argc, char **argv)
 			mtd_write_jffs2(device, imagefile, jffs2dir);
 			break;
 		case CMD_FIXTRX:
-		    if (mtd_fixtrx) {
-			    mtd_fixtrx(device, offset);
-            }
+			if (mtd_fixtrx) {
+				mtd_fixtrx(device, offset);
+			}
 		case CMD_RESETBC:
-		    if (mtd_resetbc) {
-			    mtd_resetbc(device);
-            }
+			if (mtd_resetbc) {
+				mtd_resetbc(device);
+			}
 		case CMD_FIXSEAMA:
 			if (mtd_fixseama)
-			    mtd_fixseama(device, 0);
+				mtd_fixseama(device, 0);
 			break;
 	}
 
