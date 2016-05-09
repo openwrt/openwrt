@@ -439,6 +439,9 @@ endef
 define Device/Init
   PROFILES := $(PROFILE)
   DEVICE_NAME := $(1)
+  DEVICE_TITLE :=
+  DEVICE_PACKAGES :=
+  DEVICE_DESCRIPTION = Build firmware images for $$(DEVICE_TITLE)
   KERNEL:=
   KERNEL_INITRAMFS = $$(KERNEL)
   KERNEL_SIZE:=
@@ -548,16 +551,36 @@ define Device/Build
       $$(call Device/Build/image,$$(fs),$$(image),$(1)))))
 endef
 
+define Device/DumpInfo
+Target-Profile: DEVICE_$(1)
+Target-Profile-Name: $(DEVICE_TITLE)
+Target-Profile-Packages: $(DEVICE_PACKAGES)
+Target-Profile-Description:
+$(DEVICE_DESCRIPTION)
+@@
+
+endef
+
+define Device/Dump
+$$(eval $$(if $$(DEVICE_TITLE),$$(info $$(call Device/DumpInfo,$(1)))))
+endef
+
 define Device
   $(call Device/Init,$(1))
   $(call Device/Default,$(1))
   $(call Device/Check,$(1))
   $(call Device/$(1),$(1))
-  $(call Device/Build,$(1))
+  $(call Device/$(if $(DUMP),Dump,Build),$(1))
 
 endef
 
 define BuildImage
+
+  ifneq ($(DUMP),)
+    all: dumpinfo
+    dumpinfo: FORCE
+	@true
+  endif
 
   download:
   prepare:
