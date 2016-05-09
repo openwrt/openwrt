@@ -51,9 +51,8 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
 int
-seama_fix_md5(char *buf, size_t len)
+seama_fix_md5(struct seama_entity_header *shdr, char *buf, size_t len)
 {
-	struct seama_entity_header *shdr = (struct seama_entity_header *) buf;
 	char *data;
 	size_t msize;
 	size_t isize;
@@ -163,7 +162,7 @@ mtd_fixseama(const char *mtd, size_t offset)
 		exit(1);
 	}
 
-	if (seama_fix_md5(buf, mtdsize))
+	if (seama_fix_md5(shdr, buf, mtdsize))
 		goto out;
 
 	if (mtd_erase_block(fd, block_offset)) {
@@ -175,7 +174,7 @@ mtd_fixseama(const char *mtd, size_t offset)
 	if (quiet < 2)
 		fprintf(stderr, "Rewriting block at 0x%x\n", block_offset);
 
-	if (pwrite(fd, buf, erasesize, block_offset) != erasesize) {
+	if (pwrite(fd, first_block, erasesize, block_offset) != erasesize) {
 		fprintf(stderr, "Error writing block (%s)\n", strerror(errno));
 		exit(1);
 	}
