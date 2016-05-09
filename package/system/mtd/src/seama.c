@@ -53,7 +53,7 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 int
 seama_fix_md5(char *buf, size_t len)
 {
-	struct seama_hdr *shdr;
+	struct seama_hdr *shdr = (struct seama_hdr *) buf;
 	char *data;
 	size_t msize;
 	size_t isize;
@@ -63,12 +63,6 @@ seama_fix_md5(char *buf, size_t len)
 
 	if (len < sizeof(struct seama_hdr))
 		return -1;
-
-	shdr = (struct seama_hdr *) buf;
-	if (shdr->magic != htonl(SEAMA_MAGIC)) {
-		fprintf(stderr, "no SEAMA header found\n");
-		return -1;
-	}
 
 	isize = ntohl(shdr->size);
 	msize = ntohs(shdr->metasize);
@@ -115,9 +109,11 @@ int
 mtd_fixseama(const char *mtd, size_t offset)
 {
 	int fd;
+	char *first_block;
 	char *buf;
 	ssize_t res;
 	size_t block_offset;
+	struct seama_hdr *shdr;
 
 	if (quiet < 2)
 		fprintf(stderr, "Trying to fix SEAMA header in %s at 0x%x...\n",
@@ -136,6 +132,24 @@ mtd_fixseama(const char *mtd, size_t offset)
 		fprintf(stderr, "Offset too large, device size 0x%x\n",
 			mtdsize);
 		exit(1);
+	}
+
+	first_block = malloc(erasesize);
+	if (!first_block) {
+		perror("malloc");
+		exit(1);
+	}
+
+	res = pread(fd, first_block, erasesize, block_offset);
+	if (res != erasesize) {
+		perror("pread");
+		exit(1);
+	}
+
+	shdr = (struct seama_hdr *)first_block;
+	if (shdr->magic != htonl(SEAMA_MAGIC)) {
+		fprintf(stderr, "No SEAMA header found\n");
+		return -1;
 	}
 
 	buf = malloc(mtdsize);
