@@ -51,17 +51,33 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 
 int
-seama_fix_md5(struct seama_entity_header *shdr, char *buf, size_t len)
+seama_fix_md5(struct seama_entity_header *shdr, int fd, size_t len, size_t block_offset)
 {
+	char *buf;
 	char *data;
+	ssize_t res;
 	size_t msize;
 	size_t isize;
 	MD5_CTX ctx;
 	unsigned char digest[16];
 	int i;
+	int err = 0;
 
 	if (len < sizeof(struct seama_entity_header))
 		return -1;
+
+	buf = malloc(len);
+	if (!buf) {
+		err = -ENOMEM;
+		goto err_out;
+	}
+
+	res = pread(fd, buf, len, block_offset);
+	if (res != len) {
+		perror("pread");
+		err = -EIO;
+		goto err_free;
+	}
 
 	isize = ntohl(shdr->size);
 	msize = ntohs(shdr->metasize);
@@ -100,7 +116,10 @@ seama_fix_md5(struct seama_entity_header *shdr, char *buf, size_t len)
 	/* update the checksum in the image */
 	memcpy(shdr->md5, digest, sizeof(digest));
 
-	return 0;
+err_free:
+	free(buf);
+err_out:
+	return err;
 }
 
 int
@@ -108,7 +127,6 @@ mtd_fixseama(const char *mtd, size_t offset)
 {
 	int fd;
 	char *first_block;
-	char *buf;
 	ssize_t res;
 	size_t block_offset;
 	struct seama_entity_header *shdr;
@@ -150,19 +168,7 @@ mtd_fixseama(const char *mtd, size_t offset)
 		return -1;
 	}
 
-	buf = malloc(mtdsize);
-	if (!buf) {
-		perror("malloc");
-		exit(1);
-	}
-
-	res = pread(fd, buf, mtdsize, block_offset);
-	if (res != mtdsize) {
-		perror("pread");
-		exit(1);
-	}
-
-	if (seama_fix_md5(shdr, buf, mtdsize))
+	if (seama_fix_md5(shdr, fd, mtdsize, block_offset))
 		goto out;
 
 	if (mtd_erase_block(fd, block_offset)) {
