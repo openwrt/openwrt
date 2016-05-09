@@ -94,14 +94,14 @@
  *	| image size                |
  *  +-------------+-------------+
  */
+
 /* seama header */
-typedef struct seama_hdr	seamahdr_t;
-struct seama_hdr
-{
+struct seama_entity_header {
 	uint32_t	magic;			/* should always be SEAMA_MAGIC. */
 	uint16_t	reserved;		/* reserved for  */
 	uint16_t	metasize;		/* size of the META data */
 	uint32_t	size;			/* size of the image */
+	uint8_t		md5[16];
 } __attribute__ ((packed));
 
 

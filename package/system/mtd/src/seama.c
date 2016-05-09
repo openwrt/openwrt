@@ -53,7 +53,7 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
 int
 seama_fix_md5(char *buf, size_t len)
 {
-	struct seama_hdr *shdr = (struct seama_hdr *) buf;
+	struct seama_entity_header *shdr = (struct seama_entity_header *) buf;
 	char *data;
 	size_t msize;
 	size_t isize;
@@ -61,7 +61,7 @@ seama_fix_md5(char *buf, size_t len)
 	unsigned char digest[16];
 	int i;
 
-	if (len < sizeof(struct seama_hdr))
+	if (len < sizeof(struct seama_entity_header))
 		return -1;
 
 	isize = ntohl(shdr->size);
@@ -71,17 +71,17 @@ seama_fix_md5(char *buf, size_t len)
 		return -1;
 	}
 
-	len -= sizeof(struct seama_hdr) + sizeof(digest) + msize;
+	len -= sizeof(struct seama_entity_header) + msize;
 	if (isize > len)
 		isize = len;
 
-	data = buf + sizeof(struct seama_hdr) + sizeof(digest) + msize;
+	data = buf + sizeof(struct seama_entity_header) + msize;
 
 	MD5_Init(&ctx);
 	MD5_Update(&ctx, data, isize);
 	MD5_Final(digest, &ctx);
 
-	if (!memcmp(digest, &buf[sizeof(struct seama_hdr)], sizeof(digest))) {
+	if (!memcmp(digest, shdr->md5, sizeof(digest))) {
 		if (quiet < 2)
 			fprintf(stderr, "the header is fixed already\n");
 		return -1;
@@ -99,8 +99,7 @@ seama_fix_md5(char *buf, size_t len)
 	shdr->size = htonl(isize);
 
 	/* update the checksum in the image */
-	for (i = 0; i < sizeof(digest); i++)
-		buf[sizeof(struct seama_hdr) + i] = digest[i];
+	memcpy(shdr->md5, digest, sizeof(digest));
 
 	return 0;
 }
@@ -113,7 +112,7 @@ mtd_fixseama(const char *mtd, size_t offset)
 	char *buf;
 	ssize_t res;
 	size_t block_offset;
-	struct seama_hdr *shdr;
+	struct seama_entity_header *shdr;
 
 	if (quiet < 2)
 		fprintf(stderr, "Trying to fix SEAMA header in %s at 0x%x...\n",
@@ -146,7 +145,7 @@ mtd_fixseama(const char *mtd, size_t offset)
 		exit(1);
 	}
 
-	shdr = (struct seama_hdr *)first_block;
+	shdr = (struct seama_entity_header *)first_block;
 	if (shdr->magic != htonl(SEAMA_MAGIC)) {
 		fprintf(stderr, "No SEAMA header found\n");
 		return -1;
