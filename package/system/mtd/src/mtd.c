@@ -737,6 +737,8 @@ static void usage(void)
 	if (mtd_fixtrx) {
 	    fprintf(stderr,
 	"        -o offset               offset of the image header in the partition(for fixtrx)\n");
+		fprintf(stderr,
+	"        -c datasize             amount of data to be used for checksum calculation (for fixtrx)\n");
 	}
 	fprintf(stderr,
 #ifdef FIS_SUPPORT
@@ -769,7 +771,7 @@ int main (int argc, char **argv)
 	int ch, i, boot, imagefd = 0, force, unlocked;
 	char *erase[MAX_ARGS], *device = NULL;
 	char *fis_layout = NULL;
-	size_t offset = 0, part_offset = 0, dump_len = 0;
+	size_t offset = 0, data_size = 0, part_offset = 0, dump_len = 0;
 	enum {
 		CMD_ERASE,
 		CMD_WRITE,
@@ -793,7 +795,7 @@ int main (int argc, char **argv)
 #ifdef FIS_SUPPORT
 			"F:"
 #endif
-			"frnqe:d:s:j:p:o:l:")) != -1)
+			"frnqe:d:s:j:p:o:c:l:")) != -1)
 		switch (ch) {
 			case 'f':
 				force = 1;
@@ -850,6 +852,14 @@ int main (int argc, char **argv)
 				offset = strtoul(optarg, 0, 0);
 				if (errno) {
 					fprintf(stderr, "-o: illegal numeric string\n");
+					usage();
+				}
+				break;
+			case 'c':
+				errno = 0;
+				data_size = strtoul(optarg, 0, 0);
+				if (errno) {
+					fprintf(stderr, "-d: illegal numeric string\n");
 					usage();
 				}
 				break;
@@ -967,7 +977,7 @@ int main (int argc, char **argv)
 			break;
 		case CMD_FIXTRX:
 			if (mtd_fixtrx) {
-				mtd_fixtrx(device, offset);
+				mtd_fixtrx(device, offset, data_size);
 			}
 			break;
 		case CMD_RESETBC:
