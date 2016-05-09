@@ -16,6 +16,7 @@
 	aliases {
 		spi0 = &spi0;
 		spi1 = &spi1;
+		serial0 = &uartlite;
 	};
 
 	cpuintc: cpuintc@0 {
@@ -195,7 +196,7 @@
 			status = "disabled";
 		};
 
-		uartlite@c00 {
+		uartlite: uartlite@c00 {
 			compatible = "ralink,rt3883-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 

@@ -22,6 +22,10 @@
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
+	aliases {
+		serial0 = &uartlite;
+	};
+
 	cpuclock: cpuclock@0 {
 		#clock-cells = <0>;
 		compatible = "fixed-clock";
@@ -100,7 +104,7 @@
 			    reg = <0x1fbf8000 0x8000>;
  		};
 
-		uartlite@c00 {
+		uartlite: uartlite@c00 {
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
