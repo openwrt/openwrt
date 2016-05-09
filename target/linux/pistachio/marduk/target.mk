@@ -25,6 +25,27 @@
 
 BOARDNAME:=marduk
 
+DEFAULT_PACKAGES+=kmod-leds-gpio kmod-i2c i2c-tools \
+                  kmod-sound-pistachio-soc alsa-lib alsa-utils alsa-utils-test \
+                  kmod-uccp420wlan kmod-cfg80211 iw hostapd wpa-supplicant \
+                  uhttpd uboot-envtools tcpdump 
+
+define Profile/marduk/default
+	$(1)_DEVICE_DTS:=$(2)
+ifeq ($(3),)
+        $(1)_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
+else
+	$(1)_UBIFS_OPTS:=$(3)
+endif
+ifeq ($(4),)
+        $(1)_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
+else
+	$(1)_UBI_OPTS:=$(4)
+endif
+	$(eval $(call Profile,$(1)))
+endef
+
+
 define Target/Description
         Marduk
 endef

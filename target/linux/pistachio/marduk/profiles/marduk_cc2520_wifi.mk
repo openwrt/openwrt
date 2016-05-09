@@ -25,13 +25,7 @@
 
 define Profile/marduk_cc2520_wifi
     NAME:=Wifi testing profile for Marduk with TI cc2520
-    PACKAGES:=kmod-i2c kmod-marduk-cc2520 kmod-sound-pistachio-soc \
-        wpan-tools tcpdump uhttpd uboot-envtools \
-        alsa-lib alsa-utils alsa-utils-tests i2c-tools \
-        iw hostapd wpa-supplicant wpa-cli iperf fping \
-        kmod-uccp420wlan kmod-cfg80211 \
-        kmod-leds-gpio
-    DEVICE_DTS:=marduk_cc2520
+    PACKAGES:=kmod-marduk-cc2520 wpan-tools wpa-cli iperf fping
 endef
 
 define Profile/marduk_cc2520_wifi/Description
@@ -39,9 +33,4 @@ define Profile/marduk_cc2520_wifi/Description
         board
 endef
 
-marduk_cc2520_wifi_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
-marduk_cc2520_wifi_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
-
-Image/Build/Profile/marduk_cc2520_wifi=$(call Image/BuildNAND/$(1),$(1),marduk_cc2520_wifi)
-
-$(eval $(call Profile,marduk_cc2520_wifi))
+$(eval $(call Profile/marduk/default,marduk_cc2520_wifi,pistachio_marduk_cc2520))

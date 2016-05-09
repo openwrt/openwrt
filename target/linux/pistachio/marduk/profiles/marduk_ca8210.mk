@@ -25,12 +25,7 @@
 
 define Profile/marduk_ca8210
     NAME:=Basic platform profile for Marduk with Cascoda ca8210
-    PACKAGES:=kmod-i2c kmod-cascoda kmod-sound-pistachio-soc \
-              wpan-tools tcpdump uhttpd uboot-envtools \
-              alsa-lib alsa-utils alsa-utils-tests i2c-tools \
-              iw hostapd wpa-supplicant kmod-uccp420wlan kmod-cfg80211 \
-              kmod-leds-gpio
-    DEVICE_DTS:=marduk_ca8210
+    PACKAGES:=kmod-cascoda wpan-tools
 endef
 
 define Profile/marduk_ca8210/Description
@@ -38,9 +33,4 @@ define Profile/marduk_ca8210/Description
         board
 endef
 
-marduk_ca8210_UBIFS_OPTS:="-m 4096 -e 253952 -c 1580"
-marduk_ca8210_UBI_OPTS:="-m 4096 -p 262144 -s 4096"
-
-Image/Build/Profile/marduk_ca8210=$(call Image/BuildNAND/$(1),$(1),marduk_ca8210)
-
-$(eval $(call Profile,marduk_ca8210))
+$(eval $(call Profile/marduk/default,marduk_ca8210,pistachio_marduk_ca8210))
