@@ -457,27 +457,37 @@ sub mconf_depends {
 			$depend = $2;
 		}
 		next if $package{$depend} and $package{$depend}->{buildonly};
-		if ($vdep = $package{$depend}->{vdepends}) {
-			$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
-		} else {
-			$flags =~ /\+/ and do {
-				# Menuconfig will not treat 'select FOO' as a real dependency
-				# thus if FOO depends on other config options, these dependencies
-				# will not be checked. To fix this, we simply emit all of FOO's
-				# depends here as well.
-				$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $condition ];
-
-				$m = "select";
-				next if $only_dep;
-			};
-			$flags =~ /@/ or $depend = "PACKAGE_$depend";
-			if ($condition) {
-				if ($m =~ /select/) {
-					next if $depend eq $condition;
-					$depend = "$depend if $condition";
-				} else {
-					$depend = "!($condition) || $depend" unless $dep->{$condition} eq 'select';
+		if ($flags =~ /\+/) {
+			if ($vdep = $package{$depend}->{vdepends}) {
+				my @vdeps = @$vdep;
+				$depend = shift @vdeps;
+				if (@vdeps > 1) {
+					$condition = '!('.join("||", map { "PACKAGE_".$_ } @vdeps).')';
+				} elsif (@vdeps > 0) {
+					$condition = '!PACKAGE_'.$vdeps[0];
 				}
+			}
+
+			# Menuconfig will not treat 'select FOO' as a real dependency
+			# thus if FOO depends on other config options, these dependencies
+			# will not be checked. To fix this, we simply emit all of FOO's
+			# depends here as well.
+			$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $condition ];
+
+			$m = "select";
+			next if $only_dep;
+		} else {
+			if ($vdep = $package{$depend}->{vdepends}) {
+				$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
+			}
+		}
+		$flags =~ /@/ or $depend = "PACKAGE_$depend";
+		if ($condition) {
+			if ($m =~ /select/) {
+				next if $depend eq $condition;
+				$depend = "$depend if $condition";
+			} else {
+				$depend = "!($condition) || $depend" unless $dep->{$condition} eq 'select';
 			}
 		}
 		$dep->{$depend} =~ /select/ or $dep->{$depend} = $m;
