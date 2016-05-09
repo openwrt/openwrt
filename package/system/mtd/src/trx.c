@@ -152,6 +152,7 @@ mtd_fixtrx(const char *mtd, size_t offset)
 {
 	int fd;
 	struct trx_header *trx;
+	char *first_block;
 	char *buf;
 	ssize_t res;
 	size_t block_offset;
@@ -173,19 +174,19 @@ mtd_fixtrx(const char *mtd, size_t offset)
 		exit(1);
 	}
 
-	buf = malloc(erasesize);
-	if (!buf) {
+	first_block = malloc(erasesize);
+	if (!first_block) {
 		perror("malloc");
 		exit(1);
 	}
 
-	res = pread(fd, buf, erasesize, block_offset);
+	res = pread(fd, first_block, erasesize, block_offset);
 	if (res != erasesize) {
 		perror("pread");
 		exit(1);
 	}
 
-	trx = (struct trx_header *) (buf + offset);
+	trx = (struct trx_header *)(first_block + offset);
 	if (trx->magic != STORE32_LE(0x30524448)) {
 		fprintf(stderr, "No trx magic found\n");
 		exit(1);
@@ -196,6 +197,18 @@ mtd_fixtrx(const char *mtd, size_t offset)
 			fprintf(stderr, "Header already fixed, exiting\n");
 		close(fd);
 		return 0;
+	}
+
+	buf = malloc(erasesize);
+	if (!buf) {
+		perror("malloc");
+		exit(1);
+	}
+
+	res = pread(fd, buf, erasesize, block_offset);
+	if (res != erasesize) {
+		perror("pread");
+		exit(1);
 	}
 
 	trx->len = STORE32_LE(erasesize - offset);
@@ -209,7 +222,7 @@ mtd_fixtrx(const char *mtd, size_t offset)
 	if (quiet < 2)
 		fprintf(stderr, "New crc32: 0x%x, rewriting block\n", trx->crc32);
 
-	if (pwrite(fd, buf, erasesize, block_offset) != erasesize) {
+	if (pwrite(fd, first_block, erasesize, block_offset) != erasesize) {
 		fprintf(stderr, "Error writing block (%s)\n", strerror(errno));
 		exit(1);
 	}
