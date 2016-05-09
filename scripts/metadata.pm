@@ -68,7 +68,6 @@ sub parse_target_metadata($) {
 			}
 		};
 		/^Target-Name:\s*(.+)\s*$/ and $target->{name} = $1;
-		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
 		/^Target-Arch:\s*(.+)\s*$/ and $target->{arch} = $1;
 		/^Target-Arch-Packages:\s*(.+)\s*$/ and $target->{arch_packages} = $1;
 		/^Target-Features:\s*(.+)\s*$/ and $target->{features} = [ split(/\s+/, $1) ];
