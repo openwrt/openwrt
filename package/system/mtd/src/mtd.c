@@ -900,10 +900,12 @@ int main (int argc, char **argv)
 			if (mtd_fixtrx) {
 				mtd_fixtrx(device, offset);
 			}
+			break;
 		case CMD_RESETBC:
 			if (mtd_resetbc) {
 				mtd_resetbc(device);
 			}
+			break;
 		case CMD_FIXSEAMA:
 			if (mtd_fixseama)
 				mtd_fixseama(device, 0);
