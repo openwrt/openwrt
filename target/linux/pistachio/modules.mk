@@ -3,12 +3,14 @@ define KernelPackage/serial-sc16is7xx
   TITLE:= SC16IS7xx Serial driver
   SUBMENU:=$(OTHER_MENU)
   KCONFIG:= \
+    CONFIG_SPI=y \
+    CONFIG_SPI_MASTER=y \
     CONFIG_SERIAL_SC16IS7XX \
     CONFIG_SERIAL_SC16IS7XX_CORE \
     CONFIG_SERIAL_SC16IS7XX_SPI=y
   FILES:= $(LINUX_DIR)/drivers/tty/serial/sc16is7xx.ko
   AUTOLOAD:= $(call AutoProbe, sc16is7xx.ko)
-  DEPENDS:=@TARGET_pistachio_marduk +kmod-spi
+  DEPENDS:=@TARGET_pistachio_marduk
   $(call AddDepends/serial)
 endef
 
