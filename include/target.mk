@@ -272,6 +272,11 @@ ifeq ($(DUMP),1)
   DEFAULT_CFLAGS=$(strip $(CPU_CFLAGS) $(CPU_CFLAGS_$(CPU_TYPE)) $(CPU_CFLAGS_$(CPU_SUBTYPE)))
 endif
 
+CUR_SUBTARGET:=$(SUBTARGET)
+ifeq ($(SUBTARGETS),)
+  CUR_SUBTARGET ?= default
+endif
+
 define BuildTargets/DumpCurrent
   .PHONY: dumpinfo
   dumpinfo : export DESCRIPTION=$$(Target/Description)
@@ -294,6 +299,7 @@ define BuildTargets/DumpCurrent
 	 echo '@@'; \
 	 echo 'Default-Packages: $(DEFAULT_PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES))'; \
 	 $(DUMPINFO)
+	$(if $(CUR_SUBTARGET),$(SUBMAKE) -r --no-print-directory -C image -s DUMP=1 SUBTARGET=$(CUR_SUBTARGET))
 	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) -s DUMP=1 SUBTARGET=$(SUBTARGET); ))
 endef
 
