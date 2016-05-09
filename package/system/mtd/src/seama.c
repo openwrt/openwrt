@@ -148,7 +148,7 @@ mtd_fixseama(const char *mtd, size_t offset)
 	shdr = (struct seama_entity_header *)(first_block + offset);
 	if (shdr->magic != htonl(SEAMA_MAGIC)) {
 		fprintf(stderr, "No SEAMA header found\n");
-		return -1;
+		exit(1);
 	} else if (!ntohl(shdr->size)) {
 		fprintf(stderr, "Seama entity with empty image\n");
 		exit(1);
