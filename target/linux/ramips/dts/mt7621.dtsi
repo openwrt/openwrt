@@ -243,7 +243,7 @@
 
 	sdhci@1E130000 {
 		compatible = "ralink,mt7620-sdhci";
-		reg = <0x1E130000 4000>;
+		reg = <0x1E130000 0x4000>;
 
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 20 IRQ_TYPE_LEVEL_HIGH>;
@@ -292,7 +292,7 @@
 
 	ethernet@1e100000 {
 		compatible = "mediatek,mt7621-eth";
-		reg = <0x1e100000 10000>;
+		reg = <0x1e100000 0x10000>;
 
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -318,7 +318,7 @@
 
 	gsw: gsw@1e110000 {
 		compatible = "mediatek,mt7621-gsw";
-		reg = <0x1e110000 8000>;
+		reg = <0x1e110000 0x8000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
 	};

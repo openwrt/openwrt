@@ -160,7 +160,7 @@
 
 	ethernet@400000 {
 		compatible = "ralink,rt2880-eth";
-		reg = <0x00400000 10000>;
+		reg = <0x00400000 0x10000>;
 
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -188,7 +188,7 @@
 
 	wmac@480000 {
 		compatible = "ralink,rt2880-wmac";
-		reg = <0x480000 40000>;
+		reg = <0x480000 0x40000>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

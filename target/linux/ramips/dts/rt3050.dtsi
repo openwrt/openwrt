@@ -217,7 +217,7 @@
 
 	ethernet@10100000 {
 		compatible = "ralink,rt3050-eth";
-		reg = <0x10100000 10000>;
+		reg = <0x10100000 0x10000>;
 
 		resets = <&rstctrl 21>;
 		reset-names = "fe";
@@ -230,7 +230,7 @@
 
 	esw: esw@10110000 {
 		compatible = "ralink,rt3050-esw";
-		reg = <0x10110000 8000>;
+		reg = <0x10110000 0x8000>;
 
 		resets = <&rstctrl 23>;
 		reset-names = "esw";
@@ -241,7 +241,7 @@
 
 	wmac@10180000 {
 		compatible = "ralink,rt3050-wmac", "ralink,rt2880-wmac";
-		reg = <0x10180000 40000>;
+		reg = <0x10180000 0x40000>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;
@@ -251,7 +251,7 @@
 
 	otg@101c0000 {
 		compatible = "ralink,rt3050-otg", "snps,dwc2";
-		reg = <0x101c0000 40000>;
+		reg = <0x101c0000 0x40000>;
 
 		interrupt-parent = <&intc>;
 		interrupts = <18>;

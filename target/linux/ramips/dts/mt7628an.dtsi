@@ -346,7 +346,7 @@
 
 	usbphy: usbphy@10120000 {
 		compatible = "ralink,mt7628an-usbphy", "mediatek,mt7620-usbphy";
-		reg = <0x10120000 4000>;
+		reg = <0x10120000 0x4000>;
 		#phy-cells = <1>;
 
 		resets = <&rstctrl 22 &rstctrl 25>;
@@ -355,7 +355,7 @@
 
 	sdhci@10130000 {
 		compatible = "ralink,mt7620-sdhci";
-		reg = <0x10130000 4000>;
+		reg = <0x10130000 0x4000>;
 
 		interrupt-parent = <&intc>;
 		interrupts = <14>;
@@ -390,7 +390,7 @@
 
 	ethernet@10100000 {
 		compatible = "ralink,rt5350-eth";
-		reg = <0x10100000 10000>;
+		reg = <0x10100000 0x10000>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
@@ -403,7 +403,7 @@
 
 	esw: esw@10110000 {
 		compatible = "ralink,rt3050-esw";
-		reg = <0x10110000 8000>;
+		reg = <0x10110000 0x8000>;
 
 		resets = <&rstctrl 23>;
 		reset-names = "esw";
@@ -448,7 +448,7 @@
 
 	wmac: wmac@10300000 {
 		compatible = "mediatek,mt7628-wmac";
-		reg = <0x10300000 100000>;
+		reg = <0x10300000 0x100000>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

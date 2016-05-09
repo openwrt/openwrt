@@ -246,7 +246,7 @@
 
 	ethernet@10100000 {
 		compatible = "ralink,rt3883-eth";
-		reg = <0x10100000 10000>;
+		reg = <0x10100000 0x10000>;
 
 		resets = <&rstctrl 21>;
 		reset-names = "fe";
@@ -368,7 +368,7 @@
 
 	wmac@10180000 {
 		compatible = "ralink,rt3883-wmac", "ralink,rt2880-wmac";
-		reg = <0x10180000 40000>;
+		reg = <0x10180000 0x40000>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;
