@@ -321,6 +321,18 @@ EOF
 		$target->{subtarget} or	print "\t\tdefault \"".$target->{board}."\" if TARGET_".$target->{conf}."\n";
 	}
 	print <<EOF;
+config TARGET_SUBTARGET
+	string
+	default "generic" if !HAS_SUBTARGETS
+
+EOF
+
+	foreach my $target (@target) {
+		foreach my $subtarget (@{$target->{subtargets}}) {
+			print "\t\tdefault \"$subtarget\" if TARGET_".$target->{conf}."_$subtarget\n";
+		}
+	}
+	print <<EOF;
 config TARGET_ARCH_PACKAGES
 	string
 	
