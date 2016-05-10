@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iperf
-PKG_VERSION:=2.0.5
+PKG_VERSION:=2.0.8
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=44b5536b67719f4250faed632a3cd016
+PKG_SOURCE_URL:=@SF/iperf2
+PKG_MD5SUM:=e5887f799d8dc64a974c6c2f2e5cc339
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=BSD-3-Clause
@@ -29,7 +29,7 @@ define Package/iperf/Default
   CATEGORY:=Network
   DEPENDS:= $(CXX_DEPENDS)
   TITLE:=Internet Protocol bandwidth measuring tool
-  URL:=http://sourceforge.net/projects/iperf/
+  URL:=http://sourceforge.net/projects/iperf2/
 endef
 
 define Package/iperf/Default/description
@@ -61,14 +61,11 @@ $(call Package/iperf/Default/description)
  This package is built with multithread support.
 endef
 
+TARGET_CFLAGS += -D_GNU_SOURCE
 CONFIGURE_ARGS += --disable-multicast
-CONFIGURE_VARS += ac_cv_func_malloc_0_nonnull=yes
 
 ifeq ($(BUILD_VARIANT),single)
   CONFIGURE_ARGS += --disable-threads
-else
-  CONFIGURE_ARGS += --enable-threads=posix
-  CONFIGURE_VARS += ac_cv_func_pthread_cancel=no
 endif
 
 CONFIGURE_VARS += CXXFLAGS="$$$$CXXFLAGS -fno-rtti"
