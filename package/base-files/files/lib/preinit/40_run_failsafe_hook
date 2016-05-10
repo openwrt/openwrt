@@ -3,6 +3,7 @@
 # Copyright (C) 2010 Vertical Communications
 
 run_failsafe_hook() {
+    [ "$pi_preinit_no_failsafe" = "y" ] && return
     if [ "$FAILSAFE" = "true" ]; then
 	boot_run_hook failsafe
 	lock -w /tmp/.failsafe

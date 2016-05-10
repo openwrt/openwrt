@@ -39,7 +39,7 @@ fs_wait_for_key () {
 		rm -f $keypress_wait
 	} &
 
-	echo "Press the [$1] key and hit [enter] $2"
+	[ "$pi_preinit_no_failsafe" != "y" ] && echo "Press the [$1] key and hit [enter] $2"
 	echo "Press the [1], [2], [3] or [4] key and hit [enter] to select the debug level"
 	# if we're on the console we wait for input
 	{
@@ -82,6 +82,10 @@ fs_wait_for_key () {
 
 failsafe_wait() {
 	FAILSAFE=
+	[ "$pi_preinit_no_failsafe" == "y" ] && {
+		fs_wait_for_key "" "" $fs_failsafe_wait_timeout
+		return
+	}
 	grep -q 'failsafe=' /proc/cmdline && FAILSAFE=true && export FAILSAFE
 	if [ "$FAILSAFE" != "true" ]; then
 		pi_failsafe_net_message=true

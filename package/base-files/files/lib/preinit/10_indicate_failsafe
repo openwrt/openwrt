@@ -9,6 +9,7 @@ indicate_failsafe_led () {
 }
 
 indicate_failsafe() {
+	[ "$pi_preinit_no_failsafe" = "y" ] && return
 	echo "- failsafe -"
 	preinit_net_echo "Entering Failsafe!\n"
 	indicate_failsafe_led
