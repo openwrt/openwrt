@@ -51,6 +51,7 @@ CONFIGURE_ARGS += \
 	--disable-java \
 	--disable-native-java \
 	--disable-openmp \
+	--disable-curses \
 	--with-included-gettext \
 	--without-libintl-prefix \
 	--without-libexpat-prefix \
