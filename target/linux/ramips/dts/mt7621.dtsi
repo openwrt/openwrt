@@ -42,7 +42,7 @@
 		clock-frequency = <50000000>;
 	};
 
-	palmbus@1E000000 {
+	palmbus: palmbus@1E000000 {
 		compatible = "palmbus";
 		reg = <0x1E000000 0x100000>;
 		ranges = <0x0 0x1E000000 0x0FFFFF>;
@@ -50,12 +50,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sysc@0 {
+		sysc: sysc@0 {
 			compatible = "mtk,mt7621-sysc";
 			reg = <0x0 0x100>;
 		};
 
-		wdt@100 {
+		wdt: wdt@100 {
 			compatible = "mtk,mt7621-wdt";
 			reg = <0x100 0x100>;
 		};
@@ -89,17 +89,17 @@
 			};
 		};
 
-		memc@5000 {
+		memc: memc@5000 {
 			compatible = "mtk,mt7621-memc";
 			reg = <0x300 0x100>;
 		};
 
-		cpc@1fbf0000 {
+		cpc: cpc@1fbf0000 {
 			     compatible = "mtk,mt7621-cpc";
 			     reg = <0x1fbf0000 0x8000>;
 		};
 
-		mc@1fbf8000 {
+		mc: mc@1fbf8000 {
 			    compatible = "mtk,mt7621-mc";
 			    reg = <0x1fbf8000 0x8000>;
  		};
@@ -118,7 +118,7 @@
 			no-loopback-test;
 		};
 
-		spi@b00 {
+		spi0: spi@b00 {
 			status = "okay";
 
 			compatible = "ralink,mt7621-spi";
@@ -145,7 +145,7 @@
 		};
 	};
 
-	pinctrl {
+	pinctrl: pinctrl {
 		compatible = "ralink,rt2880-pinmux";
 		pinctrl-names = "default";
 		pinctrl-0 = <&state_default>;
@@ -241,7 +241,7 @@
 		#reset-cells = <1>;
 	};
 
-	sdhci@1E130000 {
+	sdhci: sdhci@1E130000 {
 		compatible = "ralink,mt7620-sdhci";
 		reg = <0x1E130000 0x4000>;
 
@@ -249,7 +249,7 @@
 		interrupts = <GIC_SHARED 20 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
-	xhci@1E1C0000 {
+	xhci: xhci@1E1C0000 {
 		status = "okay";
 
 		compatible = "mediatek,mt8173-xhci";
@@ -279,7 +279,7 @@
 		};
 	};
 
-	nand@1e003000 {
+	nand: nand@1e003000 {
 		status = "disabled";
 
 		compatible = "mtk,mt7621-nand";
@@ -290,7 +290,7 @@
 		#size-cells = <1>;
 	};
 
-	ethernet@1e100000 {
+	ethernet: ethernet@1e100000 {
 		compatible = "mediatek,mt7621-eth";
 		reg = <0x1e100000 0x10000>;
 
@@ -323,7 +323,7 @@
 		interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
-	pcie@1e140000 {
+	pcie: pcie@1e140000 {
 		compatible = "mediatek,mt7621-pci";
 		reg = <0x1e140000 0x100
 			0x1e142000 0x100>;

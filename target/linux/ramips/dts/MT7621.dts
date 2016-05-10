@@ -15,23 +15,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	sdhci@10130000 {
-		status = "okay";
-	};
-
-	xhci@1E1C0000 {
-		status = "okay";
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "uart2", "uart3", "rgmii2", "sdhci";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	nand@1e003000 {
 		partition@0 {
 			label = "uboot";
@@ -51,6 +34,23 @@
 		partition@140000 {
 			label = "rootfs";
 			reg = <0x140000 0xec0000>;
+		};
+	};
+};
+
+&sdhci {
+	status = "okay";
+};
+
+&xhci {
+	status = "okay";
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "uart2", "uart3", "rgmii2", "sdhci";
+			ralink,function = "gpio";
 		};
 	};
 };

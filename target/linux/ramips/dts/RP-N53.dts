@@ -6,89 +6,6 @@
 	compatible = "asus,rp-n53", "ralink,mt7620a-soc";
 	model = "Asus RP-N53";
 
-	palmbus@10000000 {
-		gpio1: gpio@638 {
-			status = "okay";
-		};
-
-		i2c@900 {
-			status = "okay";
-		};
-
-		i2s@a00 {
-			status = "okay";
-			pinctrl-names = "default";
-			pinctrl-0 = <&pcm_i2s_pins>;
-		};
-
-		spi@b00 {
-			status = "okay";
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "jedec,spi-nor";
-				reg = <0 0>;
-				linux,modalias = "m25p80";
-				spi-max-frequency = <10000000>;
-
-				partition@0 {
-					label = "u-boot";
-					reg = <0x0 0x30000>;
-					read-only;
-				};
-
-				partition@30000 {
-					label = "u-boot-env";
-					reg = <0x30000 0x10000>;
-					read-only;
-				};
-
-				factory: partition@40000 {
-					label = "factory";
-					reg = <0x40000 0x10000>;
-					read-only;
-				};
-
-				partition@50000 {
-					label = "firmware";
-					reg = <0x50000 0x7b0000>;
-				};
-			};
-		};
-
-		pcm@2000 {
-			status = "okay";
-		};
-
-		gdma@2800 {
-			status = "okay";
-		};
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "mdio", "rgmii1";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
-	gsw@10110000 {
-		mediatek,port4 = "ephy";
-		pinctrl-names = "default";
-		pinctrl-0 = <&ephy_pins>;
-	};
-
-	pcie@10140000 {
-		status = "okay";
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -163,4 +80,85 @@
 			gpios = <&gpio1 11 1>;
 		};
 	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c {
+	status = "okay";
+};
+
+&i2s {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcm_i2s_pins>;
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0 0>;
+		linux,modalias = "m25p80";
+		spi-max-frequency = <10000000>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		factory: partition@40000 {
+			label = "factory";
+			reg = <0x40000 0x10000>;
+			read-only;
+		};
+
+		partition@50000 {
+			label = "firmware";
+			reg = <0x50000 0x7b0000>;
+		};
+	};
+};
+
+&pcm {
+	status = "okay";
+};
+
+&gdma {
+	status = "okay";
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "mdio", "rgmii1";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&gsw {
+	mediatek,port4 = "ephy";
+	pinctrl-names = "default";
+	pinctrl-0 = <&ephy_pins>;
+};
+
+&pcie {
+	status = "okay";
 };

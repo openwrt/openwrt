@@ -6,64 +6,6 @@
 	compatible = "ralink,mt7620a-eval-board", "ralink,mt7620a-soc";
 	model = "Ralink MT7620a V22SG High Power evaluation board";
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "uartf", "spi";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
-	ethernet@10100000 {
-		status = "okay";
-		pinctrl-names = "default";
-		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-		mediatek,portmap = "llllw";
-
-		port@4 {
-			status = "okay";
-			phy-handle = <&phy4>;
-			phy-mode = "rgmii";
-		};
-
-		port@5 {
-			status = "okay";
-			phy-handle = <&phy5>;
-			phy-mode = "rgmii";
-		};
-
-		mdio-bus {
-			status = "okay";
-
-			phy4: ethernet-phy@4 {
-				reg = <4>;
-				phy-mode = "rgmii";
-			};
-
-			phy5: ethernet-phy@5 {
-				reg = <5>;
-				phy-mode = "rgmii";
-			};
-		};
-	};
-
-	gsw@10110000 {
-		mediatek,port4 = "gmac";
-	};
-
-	pcie@10140000 {
-		status = "okay";
-	};
-
-	ehci@101c0000 {
-		status = "okay";
-	};
-
-	ohci@101c1000 {
-		status = "okay";
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -111,4 +53,62 @@
 			reg = <0x80000 0x7f80000>;
 		};
 	};
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "uartf", "spi";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+	mediatek,portmap = "llllw";
+
+	port@4 {
+		status = "okay";
+		phy-handle = <&phy4>;
+		phy-mode = "rgmii";
+	};
+
+	port@5 {
+		status = "okay";
+		phy-handle = <&phy5>;
+		phy-mode = "rgmii";
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy4: ethernet-phy@4 {
+			reg = <4>;
+			phy-mode = "rgmii";
+		};
+
+		phy5: ethernet-phy@5 {
+			reg = <5>;
+			phy-mode = "rgmii";
+		};
+	};
+};
+
+&gsw {
+	mediatek,port4 = "gmac";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
 };

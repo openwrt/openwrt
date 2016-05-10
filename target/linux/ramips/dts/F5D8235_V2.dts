@@ -6,15 +6,6 @@
 	compatible = "F5D8235_V2", "ralink,rt3052-soc";
 	model = "Belkin F5D8235 v2";
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -43,22 +34,6 @@
 			label = "factory";
 			reg = <0x7f0000 0x10000>;
 		};
-	};
-
-	ethernet@10100000 {
-		mtd-mac-address = <&uboot 0x40004>;
-	};
-
-	esw@10110000 {
-		mediatek,portmap = <0x3f>;
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&uboot 0x40000>;
-	};
-
-	otg@101c0000 {
-		status = "okay";
 	};
 
 	rtl8366rb {
@@ -115,4 +90,29 @@
 			gpios = <&gpio0 12 1>;
 		};
 	};
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&uboot 0x40004>;
+};
+
+&esw {
+	mediatek,portmap = <0x3f>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&uboot 0x40000>;
+};
+
+&otg {
+	status = "okay";
 };

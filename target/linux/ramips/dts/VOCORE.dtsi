@@ -4,45 +4,6 @@
 	compatible = "VoCore", "ralink,rt5350-soc";
 	model = "VoCore";
 
-	palmbus@10000000 {
-		gpio1: gpio@660 {
-			status = "okay";
-		};
-
-		i2c@900 {
-			status = "okay";
-		};
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "jtag", "uartf", "led";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4>;
-	};
-
-	esw@10110000 {
-		mediatek,portmap = <0x17>;
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-
-	ehci@101c0000 {
-		status = "okay";
-	};
-
-	ohci@101c1000 {
-		status = "okay";
-	};
-
 	gpio-export {
 		compatible = "gpio-export";
 		#size-cells = <0>;
@@ -184,6 +145,43 @@
 			gpios = <&gpio0 11 0>;
 		};
 	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c {
+	status = "okay";
+};
+
+&pinctrl {
+	state_default {
+		gpio {
+			ralink,group = "jtag", "uartf", "led";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x4>;
+};
+
+&esw {
+	mediatek,portmap = <0x17>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
 };
 
 &spi1 {

@@ -6,44 +6,6 @@
 	compatible = "HC5861", "ralink,mt7620a-soc";
 	model = "HiWiFi HC5861";
 
-	ethernet@10100000 {
-		status = "okay";
-		mtd-mac-address = <&factory 0x4>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-		mediatek,portmap = "wllll";
-
-		port@4 {
-			status = "okay";
-			phy-handle = <&phy4>;
-			phy-mode = "rgmii";
-		};
-
-		port@5 {
-			status = "okay";
-			phy-handle = <&phy5>;
-			phy-mode = "rgmii";
-		};
-
-		mdio-bus {
-			status = "okay";
-
-			phy4: ethernet-phy@4 {
-				reg = <4>;
-				phy-mode = "rgmii";
-			};
-
-			phy5: ethernet-phy@5 {
-				reg = <5>;
-				phy-mode = "rgmii";
-			};
-		};
-	};
-
-	gsw@10110000 {
-		mediatek,port4 = "gmac";
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -89,4 +51,42 @@
 			gpios = <&gpio0 8 0>;
 		};
 	};
+};
+
+&ethernet {
+	status = "okay";
+	mtd-mac-address = <&factory 0x4>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+	mediatek,portmap = "wllll";
+
+	port@4 {
+		status = "okay";
+		phy-handle = <&phy4>;
+		phy-mode = "rgmii";
+	};
+
+	port@5 {
+		status = "okay";
+		phy-handle = <&phy5>;
+		phy-mode = "rgmii";
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy4: ethernet-phy@4 {
+			reg = <4>;
+			phy-mode = "rgmii";
+		};
+
+		phy5: ethernet-phy@5 {
+			reg = <5>;
+			phy-mode = "rgmii";
+		};
+	};
+};
+
+&gsw {
+	mediatek,port4 = "gmac";
 };

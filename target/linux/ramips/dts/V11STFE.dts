@@ -6,21 +6,7 @@
 	compatible = "V11ST-FE", "ralink,rt2880-soc";
 	model = "Ralink V11ST-FE";
 
-	palmbus@300000 {
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-	};
-
-	ethernet@400000 {
-		status = "okay";
-	};
-
-	wmac@480000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-
-	pci@10140000 {
+	pci@440000 {
 		status = "okay";
 
 		host-bridge {
@@ -82,4 +68,16 @@
 			gpios = <&gpio0 12 1>;
 		};
 	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
 };

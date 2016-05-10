@@ -10,120 +10,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	palmbus@10000000 {
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-
-		gpio2: gpio@660 {
-			status = "okay";
-		};
-
-		gpio3: gpio@688 {
-			status = "okay";
-		};
-
-		spi@b00 {
-			status = "okay";
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "jedec,spi-nor";
-				reg = <0 0>;
-				linux,modalias = "m25p80", "mx25l6405d";
-				spi-max-frequency = <10000000>;
-
-				partition@0 {
-					label = "u-boot";
-					reg = <0x0 0x30000>;
-					read-only;
-				};
-
-				partition@30000 {
-					label = "u-boot-env";
-					reg = <0x30000 0x10000>;
-					read-only;
-				};
-
-				factory: partition@40000 {
-					label = "factory";
-					reg = <0x40000 0x10000>;
-					read-only;
-				};
-
-				partition@50000 {
-					label = "firmware";
-					reg = <0x50000 0x7b0000>;
-				};
-			};
-		};
-	};
-
-	ehci@101c0000 {
-		status = "okay";
-	};
-
-	ohci@101c1000 {
-		status = "okay";
-	};
-
-	ethernet@10100000 {
-		status = "okay";
-		pinctrl-names = "default";
-		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-		mediatek,portmap = "llllw";
-
-		port@4 {
-			status = "okay";
-			phy-mode = "rgmii";
-			phy-handle = <&phy4>;
-		};
-
-		port@5 {
-			status = "okay";
-			phy-mode = "rgmii";
-			phy-handle = <&phy5>;
-		};
-
-		mdio-bus {
-			status = "okay";
-
-			phy4: ethernet-phy@4 {
-				reg = <4>;
-				phy-mode = "rgmii";
-			};
-
-			phy5: ethernet-phy@5 {
-				reg = <5>;
-				phy-mode = "rgmii";
-			};
-		};
-	};
-
-	gsw@10110000 {
-		mediatek,port4 = "gmac";
-		mediatek,mt7530 = <1>;
-
-	};
-
-	wmac@10180000 {
-		ralink,eeprom = "rt2x00pci_1_0.eeprom";
-	};
-
-	pcie@10140000 {
-		status = "okay";
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "uartf", "nd_sd", "wled";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -161,6 +47,117 @@
 			gpio-export,name = "usbpower";
 			gpio-export,output = <1>;
 			gpios = <&gpio2 5 0>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0 0>;
+		linux,modalias = "m25p80", "mx25l6405d";
+		spi-max-frequency = <10000000>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		factory: partition@40000 {
+			label = "factory";
+			reg = <0x40000 0x10000>;
+			read-only;
+		};
+
+		partition@50000 {
+			label = "firmware";
+			reg = <0x50000 0x7b0000>;
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+	mediatek,portmap = "llllw";
+
+	port@4 {
+		status = "okay";
+		phy-mode = "rgmii";
+		phy-handle = <&phy4>;
+	};
+
+	port@5 {
+		status = "okay";
+		phy-mode = "rgmii";
+		phy-handle = <&phy5>;
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy4: ethernet-phy@4 {
+			reg = <4>;
+			phy-mode = "rgmii";
+		};
+
+		phy5: ethernet-phy@5 {
+			reg = <5>;
+			phy-mode = "rgmii";
+		};
+	};
+};
+
+&gsw {
+	mediatek,port4 = "gmac";
+	mediatek,mt7530 = <1>;
+};
+
+&wmac {
+	ralink,eeprom = "rt2x00pci_1_0.eeprom";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "uartf", "nd_sd", "wled";
+			ralink,function = "gpio";
 		};
 	};
 };

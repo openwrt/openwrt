@@ -6,15 +6,6 @@
 	compatible = "WL-351", "ralink,rt3052-soc";
 	model = "Sitecom WL-351 v1 002";
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -45,30 +36,6 @@
 			label = "firmware";
 			reg = <0x50000 0x3b0000>;
 		};
-	};
-
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4>;
-	};
-
-	esw@10110000 {
-		mediatek,portmap = <0x3f>;
-		ralink,fct2 = <0x0002500c>;
-		/*
-		 * ext phy base addr 31, rx/tx clock skew 0,
-		 * turbo mii off, rgmi 3.3v off, port 5 polling off
-		 * port5: enabled, gige, full-duplex, rx/tx-flow-control
-		 * port6: enabled, gige, full-duplex, rx/tx-flow-control
-		*/
-		ralink,fpa2 = <0x1f003fff>;
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-
-	otg@101c0000 {
-		status = "okay";
 	};
 
 	gpio-leds {
@@ -114,4 +81,37 @@
 		gpio-sda = <&gpio0 1 0>;
 		gpio-sck = <&gpio0 2 0>;
 	};
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x4>;
+};
+
+&esw {
+	mediatek,portmap = <0x3f>;
+	ralink,fct2 = <0x0002500c>;
+	/*
+	 * ext phy base addr 31, rx/tx clock skew 0,
+	 * turbo mii off, rgmi 3.3v off, port 5 polling off
+	 * port5: enabled, gige, full-duplex, rx/tx-flow-control
+	 * port6: enabled, gige, full-duplex, rx/tx-flow-control
+	*/
+	ralink,fpa2 = <0x1f003fff>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
+
+&otg {
+	status = "okay";
 };

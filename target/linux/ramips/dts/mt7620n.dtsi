@@ -26,7 +26,7 @@
 		serial0 = &uartlite;
 	};
 
-	palmbus@10000000 {
+	palmbus: palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
 		ranges = <0x0 0x10000000 0x1FFFFF>;
@@ -34,12 +34,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sysc@0 {
+		sysc: sysc@0 {
 			compatible = "ralink,mt7620a-sysc", "ralink,rt3050-sysc";
 			reg = <0x0 0x100>;
 		};
 
-		timer@100 {
+		timer: timer@100 {
 			compatible = "ralink,mt7620a-timer", "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
@@ -47,7 +47,7 @@
 			interrupts = <1>;
 		};
 
-		watchdog@120 {
+		watchdog: watchdog@120 {
 			compatible = "ralink,mt7620a-wdt", "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
@@ -72,7 +72,7 @@
 			interrupts = <2>;
 		};
 
-		memc@300 {
+		memc: memc@300 {
 			compatible = "ralink,mt7620a-memc", "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
 
@@ -208,7 +208,7 @@
 			pinctrl-0 = <&uartlite_pins>;
 		};
 
-		systick@d00 {
+		systick: systick@d00 {
 			compatible = "ralink,mt7620a-systick", "ralink,cevt-systick";
 			reg = <0xd00 0x10>;
 
@@ -220,7 +220,7 @@
 		};
 	};
 
-	pinctrl {
+	pinctrl: pinctrl {
 		compatible = "ralink,rt2880-pinmux";
 		pinctrl-names = "default";
 		pinctrl-0 = <&state_default>;
@@ -263,7 +263,7 @@
 		reset-names = "host", "device";
 	};
 
-	ethernet@10100000 {
+	ethernet: ethernet@10100000 {
 		compatible = "mediatek,mt7620-eth";
 		reg = <0x10100000 0x10000>;
 
@@ -298,7 +298,7 @@
 		mediatek,port4 = "gmac";
 	};
 
-	ehci@101c0000 {
+	ehci: ehci@101c0000 {
 		compatible = "generic-ehci";
 		reg = <0x101c0000 0x1000>;
 
@@ -311,7 +311,7 @@
 		status = "disabled";
 	};
 
-	ohci@101c1000 {
+	ohci: ohci@101c1000 {
 		compatible = "generic-ohci";
 		reg = <0x101c1000 0x1000>;
 
@@ -324,7 +324,7 @@
 		status = "disabled";
 	};
 
-	wmac@10180000 {
+	wmac: wmac@10180000 {
 		compatible = "ralink,rt7620-wmac", "ralink,rt2880-wmac";
 		reg = <0x10180000 0x40000>;
 

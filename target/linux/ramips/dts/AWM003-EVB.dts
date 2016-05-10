@@ -11,23 +11,6 @@
 		reg = <0x0 0x4000000>;
 	};
 
-	palmbus@10000000 {
-		spi@b00 {
-			m25p80@0 {
-				compatible = "jedec,spi-nor";
-				linux,modalias = "m25p80", "mx25l6405d";
-			};
-		};
-	};
-
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x28>;
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -65,4 +48,17 @@
 			linux,code = <0x32>;
 		};
 	};
+};
+
+&m25p80 {
+	compatible = "jedec,spi-nor";
+	linux,modalias = "m25p80", "mx25l6405d";
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
 };
