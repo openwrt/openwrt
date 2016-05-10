@@ -12,6 +12,7 @@ proto_dhcp_init_config() {
 	proto_config_add_string clientid
 	proto_config_add_string vendorid
 	proto_config_add_boolean 'broadcast:bool'
+	proto_config_add_boolean 'release:bool'
 	proto_config_add_string 'reqopts:list(string)'
 	proto_config_add_string iface6rd
 	proto_config_add_string sendopts
@@ -26,8 +27,8 @@ proto_dhcp_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local ipaddr hostname clientid vendorid broadcast reqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes
-	json_get_vars ipaddr hostname clientid vendorid broadcast reqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes
+	local ipaddr hostname clientid vendorid broadcast release reqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes
+	json_get_vars ipaddr hostname clientid vendorid broadcast release reqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes
 
 	local opt dhcpopts
 	for opt in $reqopts; do
@@ -39,6 +40,7 @@ proto_dhcp_setup() {
 	done
 
 	[ "$broadcast" = 1 ] && broadcast="-B" || broadcast=
+	[ "$release" = 1 ] && release="-R" || release=
 	[ -n "$clientid" ] && clientid="-x 0x3d:${clientid//:/}" || clientid="-C"
 	[ -n "$iface6rd" ] && proto_export "IFACE6RD=$iface6rd"
 	[ "$iface6rd" != 0 -a -f /lib/netifd/proto/6rd.sh ] && append dhcpopts "-O 212"
@@ -56,7 +58,7 @@ proto_dhcp_setup() {
 		${ipaddr:+-r $ipaddr} \
 		${hostname:+-H $hostname} \
 		${vendorid:+-V $vendorid} \
-		$clientid $broadcast $dhcpopts
+		$clientid $broadcast $release $dhcpopts
 }
 
 proto_dhcp_renew() {
