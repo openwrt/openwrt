@@ -406,7 +406,7 @@
 
 	ethernet@10100000 {
 		compatible = "mediatek,mt7620-eth";
-		reg = <0x10100000 10000>;
+		reg = <0x10100000 0x10000>;
 
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -443,7 +443,7 @@
 
 	gsw: gsw@10110000 {
 		compatible = "mediatek,mt7620-gsw";
-		reg = <0x10110000 8000>;
+		reg = <0x10110000 0x8000>;
 
 		resets = <&rstctrl 23>;
 		reset-names = "esw";
@@ -454,7 +454,7 @@
 
 	sdhci@10130000 {
 		compatible = "ralink,mt7620-sdhci";
-		reg = <0x10130000 4000>;
+		reg = <0x10130000 0x4000>;
 
 		interrupt-parent = <&intc>;
 		interrupts = <14>;
@@ -527,7 +527,7 @@
 
 	wmac@10180000 {
 		compatible = "ralink,rt7620-wmac", "ralink,rt2880-wmac";
-		reg = <0x10180000 40000>;
+		reg = <0x10180000 0x40000>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;
