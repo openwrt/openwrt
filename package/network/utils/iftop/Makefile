@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iftop
-PKG_VERSION:=1.0pre2
+PKG_VERSION:=1.0pre4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.ex-parrot.com/~pdw/iftop/download
-PKG_MD5SUM:=fef521a49ec0122458d02c64212af3c5
+PKG_MD5SUM:=7e6decb4958e8a4890cccac335239f24
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=GPL-2.0
