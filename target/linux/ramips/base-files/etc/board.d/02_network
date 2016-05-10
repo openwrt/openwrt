@@ -44,13 +44,14 @@ ramips_setup_interfaces()
 	ht-tm02|\
 	linkits7688 | \
 	linkits7688d | \
+	m2m|\
 	microwrt|\
 	ncs601w|\
 	w150m|\
 	wnce2001|\
 	zte-q7)
 		ucidef_add_switch "switch0"
-		ucidef_add_switch_attr "switch0" "reset" "false"
+		ucidef_add_switch_attr "switch0" "enable" "false"
 		ucidef_set_interface_lan "eth0"
 		;;
 	3g-6200nl|\
@@ -180,11 +181,6 @@ ramips_setup_interfaces()
 	y1s)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "0:wan" "6@eth0"
-		;;
-	m2m)
-		ucidef_add_switch "switch0"
-		ucidef_add_switch_attr "switch0" "reset" "false"
-		ucidef_set_interface_lan "eth0"
 		;;
 	mlwg2|\
 	wizard8800|\
