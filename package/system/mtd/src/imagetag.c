@@ -288,7 +288,7 @@ trx_check(int imagefd, const char *mtd, char *buf, int *len)
 }
 
 int
-mtd_fixtrx(const char *mtd, size_t offset)
+mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)
 {
 	int fd;
 	struct bcm_tag *tag;
@@ -298,6 +298,9 @@ mtd_fixtrx(const char *mtd, size_t offset)
 	uint32_t cfelen, imagelen, imagestart, rootfslen;
 	uint32_t imagecrc, rootfscrc, headercrc;
 	cfelen = imagelen = imagestart = imagecrc = rootfscrc = headercrc = rootfslen = 0;
+
+	if (data_size)
+		fprintf(stderr, "Specifying data size in unsupported for imagetag\n");
 
 	if (quiet < 2)
 		fprintf(stderr, "Trying to fix trx header in %s at 0x%x...\n", mtd, offset);
