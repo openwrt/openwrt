@@ -17,7 +17,8 @@ platform_export_bootpart() {
 			PARTUUID=[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-02)
 				uuid="${disk#PARTUUID=}"
 				uuid="${uuid%-02}"
-				for disk in /dev/[hsv]d[a-z] /dev/xvd[a-z]; do
+				for disk in /dev/*; do
+					[ -b "$disk" ] || continue
 					set -- $(dd if=$disk bs=1 skip=440 count=4 2>/dev/null | hexdump -v -e '4/1 "%02x "')
 					if [ "$4$3$2$1" = "$uuid" ]; then
 						export BOOTPART="${disk}1"
