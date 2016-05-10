@@ -61,7 +61,27 @@ get_partitions() { # <device> <filename>
 
 	if [ -b "$disk" -o -f "$disk" ]; then
 		echo "Reading partition table from $filename..."
-		partx -r "$disk" -gbo NR,START,SECTORS > "/tmp/partx.$filename"
+
+		local magic="$(hexdump -v -n 2 -s 0x1FE -e '1/2 "0x%04X"' "$disk")"
+		if [ "$magic" != 0xAA55 ]; then
+			echo "Invalid partition table on $disk"
+			exit
+		fi
+
+		rm -f "/tmp/partmap.$filename"
+
+		local part
+		for part in 1 2 3 4; do
+			set -- $(hexdump -v -n 12 -s "$((0x1B2 + $part * 16))" -e '3/4 "0x%08X "' "$disk")
+
+			local type="$(($1 % 256))"
+			local lba="$(($2))"
+			local num="$(($3))"
+
+			[ $type -gt 0 ] || continue
+
+			printf "%2d %5d %7d\n" $part $lba $num >> "/tmp/partmap.$filename"
+		done
 	fi
 }
 
@@ -76,9 +96,11 @@ platform_do_upgrade() {
 
 
 			#get block size
-			sectors="$(partx -r $disk -gbo SECTORS --nr 1:1)"
-			size="$(partx -r $disk -gbo SIZE --nr 1:1)"
-			ibs="$(($size / $sectors))"
+			if [ -f "/sys/block/${disk##*/}/queue/physical_block_size" ]; then
+				ibs="$(cat "/sys/block/${disk##*/}/queue/physical_block_size")"
+			else
+				ibs=512
+			fi
 
 			#extract the boot sector from the image
 			get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b
@@ -86,7 +108,7 @@ platform_do_upgrade() {
 			get_partitions /tmp/image.bs image
 
 			#compare tables
-			diff="$(grep -F -x -v -f /tmp/partx.bootdisk /tmp/partx.image)"
+			diff="$(grep -F -x -v -f /tmp/partmap.bootdisk /tmp/partmap.image)"
 			if [ -n "$diff" ]; then
 				echo "Partition layout is changed.  Full image will be written."
 				ask_bool 0 "Abort" && exit
@@ -99,7 +121,7 @@ platform_do_upgrade() {
 			while read part start size; do
 			echo "Writing image to $disk$part..."
 				get_image "$@" | dd of="$disk$part" ibs="$ibs" obs=1M skip="$start" count="$size" conv=fsync
-			done < /tmp/partx.image
+			done < /tmp/partmap.image
 
 			#copy partition uuid
 			echo "Writing new UUID to $disk$part..."
