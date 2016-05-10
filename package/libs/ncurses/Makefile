@@ -61,6 +61,7 @@ CONFIGURE_ARGS += \
 	--disable-home-terminfo \
 	--with-normal \
 	--with-shared \
+	--with-termlib \
 	--with-terminfo-dirs=/usr/share/terminfo \
 	--with-default-terminfo-dir=/usr/share/terminfo \
 	--enable-widec \
@@ -116,7 +117,7 @@ endef
 
 define Package/libncursesw/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	for lib in ncurses panel menu form; do \
+	for lib in ncurses panel menu form tinfo; do \
 		$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib$$$${lib}w.so* $(1)/usr/lib/; \
 		ln -s lib$$$${lib}w.so $(1)/usr/lib/lib$$$${lib}.so; \
 	done
@@ -124,7 +125,7 @@ endef
 
 define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)
-	for lib in ncurses panel menu form; do \
+	for lib in ncurses panel menu form tinfo; do \
 		ln -s lib$$$${lib}w.so $(1)/usr/lib/lib$$$${lib}.so; \
 	done
 	$(INSTALL_DIR) $(2)/bin
