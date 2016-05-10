@@ -116,11 +116,17 @@ endef
 
 define Package/libncursesw/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu,form}w.so* $(1)/usr/lib/
+	for lib in ncurses panel menu form; do \
+		$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib$$$${lib}w.so* $(1)/usr/lib/; \
+		ln -s lib$$$${lib}w.so $(1)/usr/lib/lib$$$${lib}.so; \
+	done
 endef
 
 define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)
+	for lib in ncurses panel menu form; do \
+		ln -s lib$$$${lib}w.so $(1)/usr/lib/lib$$$${lib}.so; \
+	done
 	$(INSTALL_DIR) $(2)/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ncursesw5-config $(2)/bin/
 	$(SED) 's,^\(prefix\|exec_prefix\)=.*,\1=$(STAGING_DIR)/usr,g' -e 's/$$$$INCS //g' \
