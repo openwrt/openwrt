@@ -13,6 +13,21 @@
  {
  	uint32_t  verdict;
  	lua_packet_segment *p;
+@@ -88,11 +88,11 @@ lua_tg(struct sk_buff *pskb, const struc
+ 	/* push the lua_packet_segment as a parameter */
+ 	p = (lua_packet_segment *)lua_newuserdata(L, sizeof(lua_packet_segment));
+ 	if (pskb->mac_header)
+-		p->start = pskb->mac_header;
++		p->start = skb_mac_header(pskb);
+ 	else if (pskb->network_header)
+-		p->start = pskb->network_header;
++		p->start = skb_network_header(pskb);
+ 	else if (pskb->transport_header)
+-		p->start = pskb->transport_header;
++		p->start = skb_transport_header(pskb);
+ 	p->offset = 0;
+ 	p->length = (unsigned long)pskb->tail - (unsigned long)p->start;
+ 	p->changes = NULL;
 @@ -208,16 +208,16 @@ static bool load_script_into_state(uint3
   * some workqueue initialization. So far this is done each time this function
   * is called, subject to change.
