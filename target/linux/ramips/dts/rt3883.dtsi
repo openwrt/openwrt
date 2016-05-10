@@ -272,6 +272,11 @@
 		#reset-cells = <1>;
 	};
 
+	clkctrl: clkctrl {
+		compatible = "ralink,rt2880-clock";
+		#clock-cells = <1>;
+	};
+
 	pci: pci@10140000 {
 		compatible = "ralink,rt3883-pci";
 		reg = <0x10140000 0x20000>;
@@ -364,6 +369,8 @@
 
 		resets = <&rstctrl 22 &rstctrl 25>;
 		reset-names = "host", "device";
+		clocks = <&clkctrl 22 &clkctrl 25>;
+		clock-names = "host", "device";
 	};
 
 	wmac: wmac@10180000 {

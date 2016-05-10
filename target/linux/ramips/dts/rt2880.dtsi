@@ -158,6 +158,11 @@
 		#reset-cells = <1>;
 	};
 
+	clkctrl: clkctrl {
+		compatible = "ralink,rt2880-clock";
+		#clock-cells = <1>;
+	};
+
 	ethernet: ethernet@400000 {
 		compatible = "ralink,rt2880-eth";
 		reg = <0x00400000 0x10000>;

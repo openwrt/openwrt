@@ -215,6 +215,19 @@
 		#reset-cells = <1>;
 	};
 
+	clkctrl: clkctrl {
+		compatible = "ralink,rt2880-clock";
+		#clock-cells = <1>;
+	};
+
+	usbphy: usbphy {
+		compatible = "ralink,rt3050-usbphy";
+		resets = <&rstctrl 22>;
+		reset-names = "host";
+		clocks = <&clkctrl 18>;
+		clock-names = "host";
+	};
+
 	ethernet: ethernet@10100000 {
 		compatible = "ralink,rt3050-eth";
 		reg = <0x10100000 0x10000>;
