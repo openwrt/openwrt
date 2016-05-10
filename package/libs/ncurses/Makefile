@@ -49,6 +49,7 @@ CONFIGURE_ARGS += \
 	--enable-echo \
 	--enable-const \
 	--enable-overwrite \
+	--enable-pc-files \
 	--disable-rpath \
 	--without-ada \
 	--without-debug \
@@ -85,6 +86,7 @@ MAKE_FLAGS += \
 	BUILD_CC="$(HOSTCC)" \
 	HOSTCC="$(HOSTCC)" \
 	HOSTCCFLAGS="" \
+	PKG_CONFIG_LIBDIR=/usr/lib/pkgconfig \
 	libs
 
 define Build/Install/Default
@@ -118,13 +120,8 @@ define Package/libncursesw/install
 endef
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/*.h $(1)/usr/include/
-
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu,form}w.{a,so*} $(1)/usr/lib/
-
-	$(INSTALL_DIR) $(1)/usr/bin $(2)/bin
+	$(CP) $(PKG_INSTALL_DIR)/* $(1)
+	$(INSTALL_DIR) $(2)/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ncursesw5-config $(2)/bin/
 	$(SED) 's,^\(prefix\|exec_prefix\)=.*,\1=$(STAGING_DIR)/usr,g' -e 's/$$$$INCS //g' \
 		$(2)/bin/ncursesw5-config
