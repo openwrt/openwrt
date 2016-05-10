@@ -23,6 +23,7 @@
 	aliases {
 		spi0 = &spi0;
 		spi1 = &spi1;
+		serial0 = &uartlite;
 	};
 
 	palmbus@10000000 {
@@ -191,7 +192,7 @@
 			pinctrl-0 = <&spi_cs1>;
 		};
 
-		uartlite@c00 {
+		uartlite: uartlite@c00 {
 			compatible = "ralink,mt7620a-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 

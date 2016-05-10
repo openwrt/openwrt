@@ -13,6 +13,10 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
+	aliases {
+		serial0 = &uartlite;
+	};
+
 	cpuintc: cpuintc@0 {
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
@@ -154,7 +158,7 @@
 			status = "disabled";
 		};
 
-		uartlite@c00 {
+		uartlite: uartlite@c00 {
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
@@ -192,7 +196,7 @@
 			status = "disabled";
 		};
 
-		uart2@e00 {
+		uart2: uart2@e00 {
 			compatible = "ns16550a";
 			reg = <0xe00 0x100>;
 
