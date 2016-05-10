@@ -84,11 +84,16 @@ sub parse_target_metadata($) {
 			$profile = {
 				id => $1,
 				name => $1,
+				priority => 999,
 				packages => []
 			};
 			push @{$target->{profiles}}, $profile;
 		};
-		/^Target-Profile-Name:\s*(.+)\s*$/ and $profile->{name} = $1;
+		/^Target-Profile-Name:\s*(.+)\s*$/ and do {
+			$target->{sort} = 1;
+			$profile->{name} = $1;
+		};
+		/^Target-Profile-Priority:\s*(\d+)\s*$/ and $profile->{priority} = $1;
 		/^Target-Profile-Packages:\s*(.*)\s*$/ and $profile->{packages} = [ split(/\s+/, $1) ];
 		/^Target-Profile-Description:\s*(.*)\s*/ and $profile->{desc} = get_multiline(*FILE);
 		/^Target-Profile-Config:/ and $profile->{config} = get_multiline(*FILE, "\t");

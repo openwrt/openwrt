@@ -282,6 +282,10 @@ EOF
 
 	foreach my $target (@target) {
 		my $profiles = $target->{profiles};
+		$target->{sort} and @$profiles = sort {
+			$a->{priority} <=> $b->{priority} or
+			$a->{name} cmp $b->{name};
+		} @$profiles;
 
 		foreach my $profile (@$profiles) {
 			print <<EOF;

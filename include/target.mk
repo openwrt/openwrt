@@ -59,6 +59,7 @@ extra_packages = $(if $(filter wpad-mini wpad nas,$(1)),iwinfo)
 
 define ProfileDefault
   NAME:=
+  PRIORITY:=
   PACKAGES:=
 endef
 
@@ -70,6 +71,7 @@ define Profile
   dumpinfo : $(call shexport,Profile/$(1)/Description)
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
+	$(if $(PRIORITY), echo "Target-Profile-Priority: $(PRIORITY)"; ) \
 	echo "Target-Profile-Name: $(NAME)"; \
 	echo "Target-Profile-Packages: $(PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES) $(PACKAGES))"; \
 	if [ -f ./config/profile-$(1) ]; then \
