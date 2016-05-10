@@ -297,6 +297,24 @@ endef
 $(eval $(call KernelPackage,usb-mass-storage-gadget))
 
 
+define KernelPackage/usb-storage-gadget
+  TITLE:=USB Mass Storage Gadget support
+  KCONFIG:=CONFIG_USB_F_MASS_STORAGE
+  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_mass_storage.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_storage.ko
+  AUTOLOAD:=$(call AutoLoad,52,usb_f_mass_storage g_storage)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-storage-gadget/description
+  Kernel support for USB Mass Storage Gadget.
+endef
+
+$(eval $(call KernelPackage,usb-storage-gadget))
+
+
 define KernelPackage/usb-uhci
   TITLE:=Support for UHCI controllers
   KCONFIG:= \
