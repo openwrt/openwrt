@@ -376,6 +376,9 @@ ramips_board_detect() {
 	*"RUT5XX")
 		name="rut5xx"
 		;;
+	*"SamKnows Whitebox 8")
+		name="sk-wb8"
+		;;
 	*"SAP-G3200U3")
 		name="sap-g3200u3"
 		;;

@@ -79,6 +79,7 @@ get_status_led() {
 		;;
 	awapn2403|\
 	dir-645|\
+	sk-wb8|\
 	wrh-300cr)
 		status_led="$board:green:wps"
 		;;
