@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/image.mk
 
 DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE KERNEL_IN_UBI
 KERNEL_LOADADDR:=0x8000
-TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome
+TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome iconnect
 
 define Device/Default
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -45,6 +45,12 @@ define Device/goflexhome
 $(Device/dockstar)
   PROFILES := Generic GOFLEXHOME
   DEVICE_DTS := kirkwood-goflexhome
+endef
+
+define Device/iconnect
+$(Device/dockstar)
+  PROFILES := Generic ICONNECT
+  DEVICE_DTS := kirkwood-iconnect
 endef
 
 define Device/linksys-audi
@@ -175,9 +181,6 @@ Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
 
 Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
 Image/InstallKernel/Template/IB62X0=$(call Image/InstallKernel/Template,ib62x0)
-
-Image/BuildKernel/Template/ICONNECT=$(call Image/BuildKernel/Template,iconnect)
-Image/InstallKernel/Template/ICONNECT=$(call Image/InstallKernel/Template,iconnect)
 
 Image/BuildKernel/Template/IOMEGA_IX2_200=$(call Image/BuildKernel/Template,iomega_ix2_200)
 Image/InstallKernel/Template/IOMEGA_IX2_200=$(call Image/InstallKernel/Template,iomega_ix2_200)

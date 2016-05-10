@@ -14,7 +14,8 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	"dockstar")
+	"dockstar"|\
+	"iconnect")
 		nand_do_platform_check $board $1
 		return $?
 		;;
@@ -39,7 +40,8 @@ platform_pre_upgrade() {
 	local board=$(kirkwood_board_name)
 
 	case "$board" in
-	"dockstar")
+	"dockstar"|\
+	"iconnect")
 		nand_do_upgrade $1
 		;;
 	esac
