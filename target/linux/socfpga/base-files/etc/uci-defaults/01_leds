@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/socfpga.sh
+
+board=$(socfpga_board_name)
+
+case "$board" in
+"socfpga-sockit")
+	ucidef_set_led_netdev  "lan"    "LAN"    "hps:blue:led0" "eth0"
+	ucidef_set_led_mmc     "mmc"    "MMC"    "hps:blue:led1" "mmc0"
+	ucidef_set_led_default "health" "health" "hps:blue:led2" "1"
+	ucidef_set_led_default "fault"  "fault"  "hps:blue:led3" "1"
+	;;
+esac
+
+ucidef_commit_leds
+
+exit 0

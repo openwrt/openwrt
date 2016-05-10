@@ -1,0 +1,101 @@
+From 04a4c90fee75c95130af1e40880c0927d56b0b61 Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marex@denx.de>
+Date: Sun, 3 Apr 2016 19:11:12 +0200
+Subject: [PATCH 1/2] arm: socfpga: Drop space after 'loadaddr=' in extra env
+
+There is an incorrect space after loadaddr= in the extra environment,
+so drop it.
+
+Signed-off-by: Marek Vasut <marex@denx.de>
+Cc: Dinh Nguyen <dinguyen@opensource.altera.com>
+Cc: Chin Liang See <clsee@altera.com>
+---
+ include/configs/socfpga_arria5_socdk.h   | 2 +-
+ include/configs/socfpga_cyclone5_socdk.h | 2 +-
+ include/configs/socfpga_de0_nano_soc.h   | 2 +-
+ include/configs/socfpga_sockit.h         | 2 +-
+ include/configs/socfpga_socrates.h       | 2 +-
+ include/configs/socfpga_sr1500.h         | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/include/configs/socfpga_arria5_socdk.h b/include/configs/socfpga_arria5_socdk.h
+index a0161bc..153f9f8 100644
+--- a/include/configs/socfpga_arria5_socdk.h
++++ b/include/configs/socfpga_arria5_socdk.h
+@@ -56,7 +56,7 @@
+ /* Extra Environment */
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	"verify=n\0" \
+-	"loadaddr= " __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
++	"loadaddr=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
+ 	"ramboot=setenv bootargs " CONFIG_BOOTARGS ";" \
+ 		"bootm ${loadaddr} - ${fdt_addr}\0" \
+ 	"bootimage=zImage\0" \
+diff --git a/include/configs/socfpga_cyclone5_socdk.h b/include/configs/socfpga_cyclone5_socdk.h
+index c4c4ecb..d7c339e 100644
+--- a/include/configs/socfpga_cyclone5_socdk.h
++++ b/include/configs/socfpga_cyclone5_socdk.h
+@@ -56,7 +56,7 @@
+ /* Extra Environment */
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	"verify=n\0" \
+-	"loadaddr= " __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
++	"loadaddr=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
+ 	"ramboot=setenv bootargs " CONFIG_BOOTARGS ";" \
+ 		"bootm ${loadaddr} - ${fdt_addr}\0" \
+ 	"bootimage=zImage\0" \
+diff --git a/include/configs/socfpga_de0_nano_soc.h b/include/configs/socfpga_de0_nano_soc.h
+index cbc7396..314b9bf 100644
+--- a/include/configs/socfpga_de0_nano_soc.h
++++ b/include/configs/socfpga_de0_nano_soc.h
+@@ -51,7 +51,7 @@
+ 
+ /* Extra Environment */
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+-	"loadaddr= " __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
++	"loadaddr=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
+ 	"ramboot=setenv bootargs " CONFIG_BOOTARGS ";" \
+ 		"bootm ${loadaddr} - ${fdt_addr}\0" \
+ 	"bootimage=zImage\0" \
+diff --git a/include/configs/socfpga_sockit.h b/include/configs/socfpga_sockit.h
+index 95e7ba6..07cfcbf 100644
+--- a/include/configs/socfpga_sockit.h
++++ b/include/configs/socfpga_sockit.h
+@@ -52,7 +52,7 @@
+ /* Extra Environment */
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	"verify=n\0" \
+-	"loadaddr= " __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
++	"loadaddr=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
+ 	"ramboot=setenv bootargs " CONFIG_BOOTARGS ";" \
+ 		"bootm ${loadaddr} - ${fdt_addr}\0" \
+ 	"bootimage=zImage\0" \
+diff --git a/include/configs/socfpga_socrates.h b/include/configs/socfpga_socrates.h
+index c32a40a..02ea0c5 100644
+--- a/include/configs/socfpga_socrates.h
++++ b/include/configs/socfpga_socrates.h
+@@ -52,7 +52,7 @@
+ /* Extra Environment */
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	"verify=n\0" \
+-	"loadaddr= " __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
++	"loadaddr=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
+ 	"ramboot=setenv bootargs " CONFIG_BOOTARGS ";" \
+ 		"bootm ${loadaddr} - ${fdt_addr}\0" \
+ 	"bootimage=zImage\0" \
+diff --git a/include/configs/socfpga_sr1500.h b/include/configs/socfpga_sr1500.h
+index 6414eeb..e43b5cf 100644
+--- a/include/configs/socfpga_sr1500.h
++++ b/include/configs/socfpga_sr1500.h
+@@ -55,7 +55,7 @@
+ 
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+ 	"verify=n\0" \
+-	"loadaddr= " __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
++	"loadaddr=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
+ 	"ramboot=setenv bootargs " CONFIG_BOOTARGS ";" \
+ 		"bootm ${loadaddr} - ${fdt_addr}\0" \
+ 	"bootimage=zImage\0" \
+-- 
+2.8.0.rc3
+

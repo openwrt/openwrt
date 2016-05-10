@@ -1,0 +1,18 @@
+#!/bin/sh
+# Copyright (C) 2015 OpenWrt.org
+
+move_config() {
+	. /lib/socfpga.sh
+	. /lib/upgrade/sockit.sh
+
+	local board=$(socfpga_board_name)
+
+	# Restore configuration
+	if [ "${board}" = "socfpga-sockit" ] ; then
+		mount -o rw,noatime "$CFGPART" /mnt
+		[ -e "/mnt/sysupgrade.tgz" ] && mv -f /mnt/sysupgrade.tgz /
+		umount /mnt
+	fi
+}
+
+boot_hook_add preinit_mount_root move_config

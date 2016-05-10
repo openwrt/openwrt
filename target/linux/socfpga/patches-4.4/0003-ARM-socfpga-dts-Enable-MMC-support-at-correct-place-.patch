@@ -1,0 +1,90 @@
+From 6b8c64eb90e5d958f32524ff2d0571b3b6ac92df Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marex@denx.de>
+Date: Mon, 21 Dec 2015 00:42:01 -0600
+Subject: [PATCH 3/5] ARM: socfpga: dts: Enable MMC support at correct place in
+ the DT
+
+The socfpga.dtsi explicitly enabled MMC support, but not all boards are
+equiped with an MMC card. There are setups which only have QSPI NOR.
+Therefore, disable the MMC support on socfpga.dtsi level and enable it
+on per-board basis.
+
+Signed-off-by: Marek Vasut <marex@denx.de>
+Cc: Alan Tull <atull@altera.com>
+Cc: Dinh Nguyen <dinguyen@opensource.altera.com>
+Cc: Marek Vasut <marex@denx.de>
+Cc: Olof Johansson <olof@lixom.net>
+Cc: Thor Thayer <tthayer@altera.com>
+Cc: Vince Bridgers <vbridgers2013@gmail.com>
+Signed-off-by: Dinh Nguyen <dinguyen@opensource.altera.com>
+---
+ arch/arm/boot/dts/socfpga.dtsi                    | 1 +
+ arch/arm/boot/dts/socfpga_arria5_socdk.dts        | 1 +
+ arch/arm/boot/dts/socfpga_cyclone5_de0_sockit.dts | 1 +
+ arch/arm/boot/dts/socfpga_cyclone5_socdk.dts      | 1 +
+ arch/arm/boot/dts/socfpga_cyclone5_sockit.dts     | 1 +
+ 5 files changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/socfpga.dtsi b/arch/arm/boot/dts/socfpga.dtsi
+index 39c470e..3ed4abd 100644
+--- a/arch/arm/boot/dts/socfpga.dtsi
++++ b/arch/arm/boot/dts/socfpga.dtsi
+@@ -677,6 +677,7 @@
+ 			#size-cells = <0>;
+ 			clocks = <&l4_mp_clk>, <&sdmmc_clk_divided>;
+ 			clock-names = "biu", "ciu";
++			status = "disabled";
+ 		};
+ 
+ 		ocram: sram@ffff0000 {
+diff --git a/arch/arm/boot/dts/socfpga_arria5_socdk.dts b/arch/arm/boot/dts/socfpga_arria5_socdk.dts
+index a75a666..3c88678 100644
+--- a/arch/arm/boot/dts/socfpga_arria5_socdk.dts
++++ b/arch/arm/boot/dts/socfpga_arria5_socdk.dts
+@@ -79,6 +79,7 @@
+ &mmc0 {
+ 	vmmc-supply = <&regulator_3_3v>;
+ 	vqmmc-supply = <&regulator_3_3v>;
++	status = "okay";
+ };
+ 
+ &usb1 {
+diff --git a/arch/arm/boot/dts/socfpga_cyclone5_de0_sockit.dts b/arch/arm/boot/dts/socfpga_cyclone5_de0_sockit.dts
+index 555e9ca..afea364 100644
+--- a/arch/arm/boot/dts/socfpga_cyclone5_de0_sockit.dts
++++ b/arch/arm/boot/dts/socfpga_cyclone5_de0_sockit.dts
+@@ -100,6 +100,7 @@
+ &mmc0 {
+ 	vmmc-supply = <&regulator_3_3v>;
+ 	vqmmc-supply = <&regulator_3_3v>;
++	status = "okay";
+ };
+ 
+ &uart0 {
+diff --git a/arch/arm/boot/dts/socfpga_cyclone5_socdk.dts b/arch/arm/boot/dts/socfpga_cyclone5_socdk.dts
+index d4d0a28..15e43f4 100644
+--- a/arch/arm/boot/dts/socfpga_cyclone5_socdk.dts
++++ b/arch/arm/boot/dts/socfpga_cyclone5_socdk.dts
+@@ -84,6 +84,7 @@
+ 	cd-gpios = <&portb 18 0>;
+ 	vmmc-supply = <&regulator_3_3v>;
+ 	vqmmc-supply = <&regulator_3_3v>;
++	status = "okay";
+ };
+ 
+ &usb1 {
+diff --git a/arch/arm/boot/dts/socfpga_cyclone5_sockit.dts b/arch/arm/boot/dts/socfpga_cyclone5_sockit.dts
+index 48bf651..b61f22f 100644
+--- a/arch/arm/boot/dts/socfpga_cyclone5_sockit.dts
++++ b/arch/arm/boot/dts/socfpga_cyclone5_sockit.dts
+@@ -80,6 +80,7 @@
+ &mmc0 {
+ 	vmmc-supply = <&regulator_3_3v>;
+ 	vqmmc-supply = <&regulator_3_3v>;
++	status = "okay";
+ };
+ 
+ &usb1 {
+-- 
+2.7.0
+

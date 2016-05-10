@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+start() {
+	. /lib/socfpga.sh
+
+	local board=$(socfpga_board_name)
+
+	# Print something nice on the VTcon (the SPI LCD)
+	if [ "${board}" = "socfpga-sockit" ] ; then
+		echo "OpenWRT" > /dev/tty0
+		uci show network.lan.ipaddr > /dev/tty0
+	fi
+}
