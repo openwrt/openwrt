@@ -145,7 +145,8 @@ get_status_led() {
 		status_led="$board:amber:cpu"
 		;;
 	oy-0001|\
-	sl-r7205)
+	sl-r7205|\
+	zbt-we826)
 		status_led="$board:green:wifi"
 		;;
 	psr-680w)
