@@ -127,6 +127,7 @@ define Build/InstallDev
 	for lib in ncurses panel menu form; do \
 		ln -s lib$$$${lib}w.so $(1)/usr/lib/lib$$$${lib}.so; \
 	done
+	ln -s . $(1)/usr/include/ncursesw
 	$(TARGET_CROSS)ar rc $(1)/usr/lib/libtinfo.a
 	$(INSTALL_DIR) $(2)/bin
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ncursesw5-config $(2)/bin/
