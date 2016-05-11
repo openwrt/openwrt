@@ -2,180 +2,401 @@
 # MT7620A Profiles
 #
 
-# sign trednet / UMedia images
-define BuildFirmware/UMedia/squashfs
-	$(call BuildFirmware/Default8M/$(1),$(1),$(2),$(3))
-	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		fix-u-media-header -T 0x46 -B $(4) \
-			-i $(call sysupname,$(1),$(2)) \
-			-o $(call imgname,$(1),$(2))-factory.bin; \
-	fi
-endef
-BuildFirmware/UMedia/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
-
-# $(1): (ignored)
-# $(2): lowercase board name
-# $(3): uppercase board name (must match DTS filename w/o extension)
-# $(4): erase block size
-# $(5): hardware id for mkdniimg
-# $(6): maximum image size
-define BuildFirmware/Netgear/squashfs
-	$(call PatchKernelLzmaDtb,$(2),$(3))
-	# Pad kernel to eraseblock boundary, minus 2 uImage headers (=128 bytes):
-	# bs = (eraseblock * (1 + (128 + kernelsize)/eraseblock)) - 128
-	dd if=$(KDIR)/vmlinux-$(2).bin.lzma \
-		of=$(KDIR)/vmlinux-$(2).bin.lzma.tmp \
-		bs=`expr \( $(4) \* \( 1 + \( 128 + \`wc -c < $(KDIR)/vmlinux-$(2).bin.lzma\` \) / $(4) \) \) - 128` \
-		count=1 conv=sync
-
-	$(call MkImage,lzma,$(KDIR)/vmlinux-$(2).bin.lzma.tmp,$(KDIR)/vmlinux-$(2).uImage)
-	cat ex2700-fakeroot.uImage >> $(KDIR)/vmlinux-$(2).uImage
-	$(call MkImageSysupgrade/squashfs,squashfs,$(2),$(6))
-
-	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(3) -H $(5) -v OpenWrt \
-		-i $(call imgname,squashfs,$(2))-sysupgrade.bin \
-		-o $(call imgname,squashfs,$(2))-factory.bin
+define Build/tplink-header
+	$(STAGING_DIR_HOST)/bin/mktplinkfw2 -V "ver. 2.0" -B $(1) \
+		-o $@.new -k $@  && mv $@.new $@
 endef
 
-define MkImageTpl/squashfs
-	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1)-$(if $(4),$(4),sysupgrade).bin)
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw2 -V "ver. 2.0" -B "$(2)" -j \
-		-o $(KDIR)/$(output_name) \
-		-k $(KDIR)/vmlinux-$(1)$(4).bin.lzma \
-		-r $(KDIR)/root.$(1) && \
-		$(CP) $(KDIR)/$(output_name) $(BIN_DIR)/$(output_name)
+define Build/pad-ex2700
+  cat ex2700-fakeroot.uImage >> $@; cat ex2700-fakeroot.uImage >> $@;
+  dd if=$@ of=$@.new bs=64k conv=sync && truncate -s 128 $@.new && mv $@.new $@
 endef
-define MkImageTpl/initramfs
-	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1).bin)
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw2 -V "ver. 2.0" -B "$(2)" -c \
-		-o $(KDIR)/$(output_name) \
-		-k $(KDIR)/vmlinux-$(1).bin.lzma && \
-		$(CP) $(KDIR)/$(output_name) $(BIN_DIR)/$(output_name)
-endef
-define BuildFirmware/OF/tplink
-	$(call PatchKernelLzmaDtb,$(1),$(2),$(4))
-	$(call MkImageTpl/$(1),$(1),$(2),$(4),$(5))
-endef
-define BuildFirmware/OF/tplink/initramfs
-	$(call PatchKernelLzmaDtb,$(2),$(3),-initramfs)
-	$(call MkImageTpl/$(1),$(1),$(2),$(4),$(5))
-endef
-BuildFirmware/Tplink/squashfs=$(call BuildFirmware/OF/tplink,$(1),$(2),$(3),$(4))
-BuildFirmware/Tplink/initramfs=$(call BuildFirmware/OF/tplink/initramfs,$(1),$(2),$(3),$(4))
 
-define BuildFirmware/WRH-300CR/squashfs
-	$(call BuildFirmware/Default16M/squashfs,$(1),$(2),$(3))
-	cp $(call sysupname,$(1),$(2)) $(KDIR)/v_0.0.0.bin
+define Build/append-ex2700
+  cat ex2700-fakeroot.uImage >> $@
+endef
+
+define Build/netgear-header
+  $(STAGING_DIR_HOST)/bin/mkdniimg \
+	$(1) -v OpenWrt -i $@ \
+	-o $@.new && mv $@.new $@
+endef
+
+define Build/poray-header
+	mkporayfw $(1) \
+		-f $@ \
+		-o $@.new; \
+		mv $@.new $@
+endef
+
+define Build/umedia-header
+  fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
+endef
+
+define Build/elecom-header
+	cp $@ $(KDIR)/v_0.0.0.bin
 	( \
 		$(STAGING_DIR_HOST)/bin/md5sum $(KDIR)/v_0.0.0.bin | \
 			sed 's/ .*//' && \
 		echo 458 \
 	) | $(STAGING_DIR_HOST)/bin/md5sum | \
 		sed 's/ .*//' > $(KDIR)/v_0.0.0.md5
-	$(STAGING_DIR_HOST)/bin/tar -cf $(call imgname,$(1),$(2))-factory.bin -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
+	$(STAGING_DIR_HOST)/bin/tar -cf $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
-BuildFirmware/WRH-300CR/initramfs=$(call BuildFirmware/Default16M/initramfs,$(1),$(2),$(3))
 
+define Device/ArcherC20i
+  DTS := ArcherC20i
+  IMAGES += factory.bin
+  KERNEL := $(KERNEL_DTB)
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC20i -c
+  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC20i -j -r $(KDIR)/root.squashfs
+  DEVICE_TITLE := TP-Link ArcherC20i
+endef
+TARGET_DEVICES += ArcherC20i
 
-Image/Build/Profile/E1700=$(call BuildFirmware/UMedia/$(1),$(1),e1700,E1700,0x013326)
 ex2700_mtd_size=3866624
-Image/Build/Profile/EX2700=$(call BuildFirmware/Netgear/$(1),$(1),ex2700,EX2700,65536,29764623+4+0+32+2x2+0,$(ex2700_mtd_size))
-Image/Build/Profile/MT7620a=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a,MT7620a)
-Image/Build/Profile/MT7620a_MT7610e=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a_mt7610e,MT7620a_MT7610e)
-Image/Build/Profile/MT7620a_MT7530=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a_mt7530,MT7620a_MT7530)
-Image/Build/Profile/MT7620a_V22SG=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a_v22sg,MT7620a_V22SG)
-br100_mtd_size=8126464
-Image/Build/Profile/AI-BR100=$(call BuildFirmware/CustomFlash/$(1),$(1),ai-br100,AI-BR100,$(br100_mtd_size),Ai-BR)
-Image/Build/Profile/RP-N53=$(call BuildFirmware/Default8M/$(1),$(1),rp-n53,RP-N53)
-whr_300hp2_mtd_size=7012352
-Image/Build/Profile/WHR300HP2=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-300hp2,WHR-300HP2,$(whr_300hp2_mtd_size))
-Image/Build/Profile/WHR600D=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-600d,WHR-600D,$(whr_300hp2_mtd_size))
-whr_1166d_mtd_size=15400960
-Image/Build/Profile/WHR1166D=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-1166d,WHR-1166D,$(whr_1166d_mtd_size))
-dlink810l_mtd_size=6881280
-Image/Build/Profile/CF-WR800N=$(call BuildFirmware/Default8M/$(1),$(1),cf-wr800n,CF-WR800N)
-Image/Build/Profile/CS-QR10=$(call BuildFirmware/Default8M/$(1),$(1),cs-qr10,CS-QR10)
-Image/Build/Profile/DIR-810L=$(call BuildFirmware/CustomFlash/$(1),$(1),dir-810l,DIR-810L,$(dlink810l_mtd_size))
-na930_mtd_size=20971520
-Image/Build/Profile/NA930=$(call BuildFirmware/CustomFlash/$(1),$(1),na930,NA930,$(na930_mtd_size))
-Image/Build/Profile/DB-WRT01=$(call BuildFirmware/Default8M/$(1),$(1),db-wrt01,DB-WRT01)
-Image/Build/Profile/MZK-750DHP=$(call BuildFirmware/Default8M/$(1),$(1),mzk-750dhp,MZK-750DHP)
-Image/Build/Profile/MZK-EX300NP=$(call BuildFirmware/Default8M/$(1),$(1),mzk-ex300np,MZK-EX300NP)
-Image/Build/Profile/MZK-EX750NP=$(call BuildFirmware/Default8M/$(1),$(1),mzk-ex750np,MZK-EX750NP)
-Image/Build/Profile/HC5661=$(call BuildFirmware/Default16M/$(1),$(1),hc5661,HC5661)
-Image/Build/Profile/HC5761=$(call BuildFirmware/Default16M/$(1),$(1),hc5761,HC5761)
-Image/Build/Profile/HC5861=$(call BuildFirmware/Default16M/$(1),$(1),hc5861,HC5861)
-Image/Build/Profile/OY-0001=$(call BuildFirmware/Default16M/$(1),$(1),oy-0001,OY-0001)
-Image/Build/Profile/PSG1208=$(call BuildFirmware/Default8M/$(1),$(1),psg1208,PSG1208)
-Image/Build/Profile/Y1=$(call BuildFirmware/Default16M/$(1),$(1),y1,Y1)
-Image/Build/Profile/Y1S=$(call BuildFirmware/Default16M/$(1),$(1),y1s,Y1S)
-Image/Build/Profile/MLW221=$(call BuildFirmware/Default16M/$(1),$(1),mlw221,MLW221)
-Image/Build/Profile/MLWG2=$(call BuildFirmware/Default16M/$(1),$(1),mlwg2,MLWG2)
-Image/Build/Profile/WMR-300=$(call BuildFirmware/Default8M/$(1),$(1),wmr-300,WMR-300)
-Image/Build/Profile/RT-N14U=$(call BuildFirmware/Default8M/$(1),$(1),rt-n14u,RT-N14U)
-Image/Build/Profile/WRH-300CR=$(call BuildFirmware/WRH-300CR/$(1),$(1),wrh-300cr,WRH-300CR)
-Image/Build/Profile/WRTNODE=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode,WRTNODE)
-Image/Build/Profile/WT3020=$(call BuildFirmware/PorayDualSize/$(1),$(1),wt3020,WT3020)
-Image/Build/Profile/MIWIFI-MINI=$(call BuildFirmware/Default16M/$(1),$(1),miwifi-mini,MIWIFI-MINI)
-Image/Build/Profile/GL-MT300A=$(call BuildFirmware/Default16M/$(1),$(1),gl-mt300a,GL-MT300A)
-Image/Build/Profile/GL-MT300N=$(call BuildFirmware/Default16M/$(1),$(1),gl-mt300n,GL-MT300N)
-Image/Build/Profile/GL-MT750=$(call BuildFirmware/Default16M/$(1),$(1),gl-mt750,GL-MT750)
-Image/Build/Profile/ZTE-Q7=$(call BuildFirmware/Default8M/$(1),$(1),zte-q7,ZTE-Q7)
-Image/Build/Profile/YOUKU-YK1=$(call BuildFirmware/Default16M/$(1),$(1),youku-yk1,YOUKU-YK1)
-Image/Build/Profile/ZBT-WA05=$(call BuildFirmware/Default8M/$(1),$(1),zbt-wa05,ZBT-WA05)
-Image/Build/Profile/ZBT-WE826=$(call BuildFirmware/Default16M/$(1),$(1),zbt-we826,ZBT-WE826)
-Image/Build/Profile/ZBT-WR8305RT=$(call BuildFirmware/Default8M/$(1),$(1),zbt-wr8305rt,ZBT-WR8305RT)
-Image/Build/Profile/ArcherC20i=$(call BuildFirmware/Tplink/$(1),$(1),ArcherC20i,ArcherC20i)
-microwrt_mtd_size=16515072
-Image/Build/Profile/MicroWRT=$(call BuildFirmware/CustomFlash/$(1),$(1),microwrt,MicroWRT,$(microwrt_mtd_size))
-Image/Build/Profile/TINY-AC=$(call BuildFirmware/Default8M/$(1),$(1),tiny-ac,TINY-AC)
-
-
-define Image/Build/Profile/Default
-	$(call Image/Build/Profile/E1700,$(1))
-	$(call Image/Build/Profile/EX2700,$(1))
-	$(call Image/Build/Profile/MT7620a,$(1))
-	$(call Image/Build/Profile/MT7620a_MT7610e,$(1))
-	$(call Image/Build/Profile/MT7620a_MT7530,$(1))
-	$(call Image/Build/Profile/MT7620a_V22SG,$(1))
-	$(call Image/Build/Profile/AI-BR100,$(1))
-	$(call Image/Build/Profile/CF-WR800N,$(1))
-	$(call Image/Build/Profile/CS-QR10,$(1))
-	$(call Image/Build/Profile/RP-N53,$(1))
-	$(call Image/Build/Profile/DIR-810L,$(1))
-	$(call Image/Build/Profile/WHR300HP2,$(1))
-	$(call Image/Build/Profile/WHR600D,$(1))
-	$(call Image/Build/Profile/WHR1166D,$(1))
-	$(call Image/Build/Profile/DB-WRT01,$(1))
-	$(call Image/Build/Profile/MZK-750DHP,$(1))
-	$(call Image/Build/Profile/MZK-EX300NP,$(1))
-	$(call Image/Build/Profile/MZK-EX750NP,$(1))
-	$(call Image/Build/Profile/NA930,$(1))
-	$(call Image/Build/Profile/HC5661,$(1))
-	$(call Image/Build/Profile/HC5761,$(1))
-	$(call Image/Build/Profile/HC5861,$(1))
-	$(call Image/Build/Profile/OY-0001,$(1))
-	$(call Image/Build/Profile/PSG1208,$(1))
-	$(call Image/Build/Profile/Y1,$(1))
-	$(call Image/Build/Profile/Y1S,$(1))
-	$(call Image/Build/Profile/MLW221,$(1))
-	$(call Image/Build/Profile/MLWG2,$(1))
-	$(call Image/Build/Profile/WMR-300,$(1))
-	$(call Image/Build/Profile/RT-N14U,$(1))
-	$(call Image/Build/Profile/WRH-300CR,$(1))
-	$(call Image/Build/Profile/WRTNODE,$(1))
-	$(call Image/Build/Profile/WT3020,$(1))
-	$(call Image/Build/Profile/MIWIFI-MINI,$(1))
-	$(call Image/Build/Profile/GL-MT300A,$(1))
-	$(call Image/Build/Profile/GL-MT300N,$(1))
-	$(call Image/Build/Profile/GL-MT750,$(1))
-	$(call Image/Build/Profile/ZTE-Q7,$(1))
-	$(call Image/Build/Profile/YOUKU-YK1,$(1))
-	$(call Image/Build/Profile/ZBT-WA05,$(1))
-	$(call Image/Build/Profile/ZBT-WE826,$(1))
-	$(call Image/Build/Profile/ZBT-WR8305RT,$(1))
-	$(call Image/Build/Profile/ArcherC20i,$(1))
-	$(call Image/Build/Profile/MicroWRT,$(1))
-	$(call Image/Build/Profile/TINY-AC,$(1))
+define Device/ex2700
+  DTS := EX2700
+  IMAGE_SIZE := $(ex2700_mtd_size)
+  IMAGES += factory.bin
+  KERNEL := $(KERNEL_DTB) | pad-ex2700 | uImage lzma | append-ex2700
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | netgear-header -B EX2700 -H 29764623+4+0+32+2x2+0
+  DEVICE_TITLE := Netgear EX2700
 endef
+TARGET_DEVICES += ex2700
+
+define Device/wt3020-4M
+  DTS := WT3020-4M
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | poray-header -B WT3020 -F 4M
+  DEVICE_TITLE := Nexx WT3020 (4MB)
+endef
+TARGET_DEVICES += wt3020-4M
+
+define Device/wt3020-8M
+  DTS := WT3020-8M
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | poray-header -B WT3020 -F 4M
+  DEVICE_TITLE := Nexx WT3020 (8MB)
+endef
+TARGET_DEVICES += wt3020-8M
+
+define Device/wrh-300cr
+  DTS := WRH-300CR
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | elecom-header
+  DEVICE_TITLE := Elecom WRH-300CR 
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += wrh-300cr
+
+define Device/e1700
+  DTS := E1700
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | umedia-header 0x013326
+  DEVICE_TITLE := Linksys E1700
+endef
+TARGET_DEVICES += e1700
+
+br100_mtd_size=8126464
+define Device/ai-br100
+  DTS := AI-BR100
+  IMAGE_SIZE := $(br100_mtd_size)
+  DEVICE_TITLE := Aigale Ai-BR100
+  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += ai-br100
+
+whr_300hp2_mtd_size=7012352
+define Device/whr-300hp2
+  DTS := WHR-300HP2
+  IMAGE_SIZE := $(whr_300hp2_mtd_size)
+  DEVICE_TITLE := Buffalo WHR-300HP2
+endef
+TARGET_DEVICES += whr-300hp2
+
+define Device/whr-600d
+  DTS := WHR-600D
+  IMAGE_SIZE := $(whr_300hp2_mtd_size)
+  DEVICE_TITLE := Buffalo WHR-600D
+endef
+TARGET_DEVICES += whr-600d
+
+whr_1166d_mtd_size=15400960
+define Device/whr-1166d
+  DTS := WHR-1166D
+  IMAGE_SIZE := $(whr_1166d_mtd_size)
+  DEVICE_TITLE := Buffalo WHR-1166D
+endef
+TARGET_DEVICES += whr-1166d
+
+dlink810l_mtd_size=6881280
+define Device/dir-810l
+  DTS := DIR-810L
+  IMAGE_SIZE := $(dlink810l_mtd_size)
+  DEVICE_TITLE := D-Link DIR-810L
+endef
+TARGET_DEVICES += dir-810l
+
+na930_mtd_size=20971520
+define Device/na930
+  DTS := NA930
+  IMAGE_SIZE := $(na930_mtd_size)
+  DEVICE_TITLE := Sercomm NA930
+endef
+TARGET_DEVICES += na930
+
+microwrt_mtd_size=16515072
+define Device/microwrt
+  DTS := MicroWRT
+  IMAGE_SIZE := $(microwrt_mtd_size)
+  DEVICE_TITLE := Microduino MicroWRT
+endef
+TARGET_DEVICES += microwrt
+
+define Device/mt7620a
+  DTS := MT7620a
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := MediaTek MT7620a EVB
+endef
+TARGET_DEVICES += mt7620a
+
+define Device/mt7620a_mt7610e
+  DTS := MT7620a_MT7610e
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := MediaTek MT7620a + MT7610e EVB
+endef
+TARGET_DEVICES += mt7620a_mt7610e
+
+define Device/mt7620a_mt7530
+  DTS := MT7620a_MT7530
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := MediaTek MT7620a + MT7530 EVB
+endef
+TARGET_DEVICES += mt7620a_mt7530
+
+define Device/mt7620a_v22sg
+  DTS := MT7620a_V22SG
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := MediaTek MT7620a V22SG
+endef
+TARGET_DEVICES += mt7620a_v22sg
+
+define Device/rp-n53
+  DTS := RP-N53
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Asus RP-N53
+endef
+TARGET_DEVICES += rp-n53
+
+define Device/cf-wr800n
+  DTS := CF-WR800N
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Comfast CF-WR800N
+endef
+TARGET_DEVICES += cf-wr800n
+
+define Device/cs-qr10
+  DTS := CS-QR10
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Planex CS-QR10
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-i2c-core kmod-i2c-ralink kmod-sound-core kmod-sound-mtk kmod-sdhci-mt7620
+endef
+TARGET_DEVICES += cs-qr10
+
+define Device/db-wrt01
+  DTS := DB-WRT01
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Planex DB-WRT01
+endef
+TARGET_DEVICES += db-wrt01
+
+define Device/mzk-750dhp
+  DTS := MZK-750DHP
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Planex MZK-750DHP
+  DEVICE_PACKAGES := kmod-mt76
+endef
+TARGET_DEVICES += mzk-750dhp
+
+define Device/mzk-ex300np
+  DTS := MZK-EX300NP
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Planex MZK-EX300NP
+endef
+TARGET_DEVICES += mzk-ex300np
+
+define Device/mzk-ex750np
+  DTS := MZK-EX750NP
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Planex MZK-EX750NP
+  DEVICE_PACKAGES := kmod-mt76
+endef
+TARGET_DEVICES += mzk-ex750np
+
+define Device/hc5661
+  DTS := HC5661
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := HiWiFi HC5661
+  DEVICE_PACKAGES := kmod-usb2 kmod-sdhci kmod-sdhci-mt7620 kmod-ledtrig-usbdev
+endef
+TARGET_DEVICES += hc5661
+
+define Device/hc5761
+  DTS := HC5761
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := HiWiFi HC5761 
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci kmod-sdhci-mt7620 kmod-ledtrig-usbdev
+endef
+TARGET_DEVICES += hc5761
+
+define Device/hc5861
+  DTS := HC5861
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := HiWiFi HC5861
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci kmod-sdhci-mt7620 kmod-ledtrig-usbdev
+endef
+TARGET_DEVICES += hc5861
+
+define Device/oy-0001
+  DTS := OY-0001
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Oh Yeah OY-0001
+endef
+TARGET_DEVICES += oy-0001
+
+define Device/psg1208
+  DTS := PSG1208
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Phicomm PSG1208
+  DEVICE_PACKAGES := kmod-mt76
+endef
+TARGET_DEVICES += psg1208
+
+define Device/y1
+  DTS := Y1
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Lenovo Y1
+endef
+TARGET_DEVICES += y1
+
+define Device/y1s
+  DTS := Y1S
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Lenovo Y1S
+endef
+TARGET_DEVICES += y1s
+
+define Device/mlw221
+  DTS := MLW221
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Kingston MLW221
+endef
+TARGET_DEVICES += mlw221
+
+define Device/mlwg2
+  DTS := MLWG2
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Kingston MLWG2
+endef
+TARGET_DEVICES += mlwg2
+
+define Device/wmr-300
+  DTS := WMR-300
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Buffalo WMR-300
+endef
+TARGET_DEVICES += wmr-300
+
+define Device/rt-n14u
+  DTS := RT-N14U
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Asus RT-N14u
+endef
+TARGET_DEVICES += rt-n14u
+
+define Device/wrtnode
+  DTS := WRTNODE
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := WRTNode
+endef
+TARGET_DEVICES += wrtnode
+
+define Device/miwifi-mini
+  DTS := MIWIFI-MINI
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Xiaomi MiWiFi Mini
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += miwifi-mini
+
+define Device/gl-mt300a
+  DTS := GL-MT300A
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := GL-Inet GL-MT300A
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76
+endef
+TARGET_DEVICES += gl-mt300a
+
+define Device/gl-mt300n
+  DTS := GL-MT300N
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := GL-Inet GL-MT300N
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76
+endef
+TARGET_DEVICES += gl-mt300n
+
+define Device/gl-mt750
+  DTS := GL-MT750
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := GL-Inet GL-MT750
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76
+endef
+TARGET_DEVICES += gl-mt750
+
+define Device/zte-q7
+  DTS := ZTE-Q7
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := ZTE Q7
+endef
+TARGET_DEVICES += zte-q7
+
+define Device/youku-yk1
+  DTS := YOUKU-YK1
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := YOUKU YK1
+endef
+TARGET_DEVICES += youku-yk1
+
+define Device/zbt-wa05
+  DTS := ZBT-WA05
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Zbtlink ZBT-WA05
+endef
+TARGET_DEVICES += zbt-wa05
+
+define Device/zbt-we826
+  DTS := ZBT-WE826
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Zbtlink ZBT-WE826
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76 kmod-sdhci-mt7620 
+endef
+TARGET_DEVICES += zbt-we826
+
+define Device/zbt-wr8305rt
+  DTS := ZBT-WR8305RT
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Zbtlink ZBT-WR8305RT
+endef
+TARGET_DEVICES += zbt-wr8305rt
+
+define Device/tiny-ac
+  DTS := TINY-AC
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Dovado Tiny AC
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += tiny-ac
