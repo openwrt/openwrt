@@ -4,7 +4,7 @@
 
 SUBTARGET:=mt7621
 BOARDNAME:=MT7621 based boards
-FEATURES+=usb
+FEATURES+=usb rtc
 CPU_TYPE:=1004kc
 CPU_SUBTYPE:=dsp
 CFLAGS:=-Os -pipe -mmt -mips32r2 -mtune=1004kc
