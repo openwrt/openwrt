@@ -84,9 +84,6 @@ define Profile
 	echo "$$$$$$$$$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \
 	echo;
-  ifeq ($(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(if $(SUBTARGET),$(SUBTARGET)_))$(1)),y)
-    PROFILE=$(1)
-  endif
 endef
 endif
 
@@ -101,10 +98,10 @@ else
   endef
 endif
 
+PROFILE:=$(call qstrip,$(CONFIG_TARGET_PROFILE))
+
 ifeq ($(TARGET_BUILD),1)
-  $(eval $(call IncludeProfiles))
-else
-  ifeq ($(DUMP),)
+  ifneq ($(DUMP),)
     $(eval $(call IncludeProfiles))
   endif
 endif
