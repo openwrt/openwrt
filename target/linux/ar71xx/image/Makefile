@@ -1195,6 +1195,14 @@ define Device/ubnt-bz
   IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 
+define Device/ubnt-unifiac
+  DEVICE_PROFILE := UBNT
+  IMAGE_SIZE := 7744k
+  MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+endef
+
 define Device/rw2458n
   $(Device/ubnt-xm)
   BOARDNAME := RW2458N
@@ -1227,13 +1235,10 @@ define Device/ubnt-unifi
   DEVICE_PROFILE := UBNT UBNTUNIFI
 endef
 
-define Device/ubnt-unifiac
-  DEVICE_PROFILE := UBNT UBNTUNIFIAC
-  IMAGE_SIZE := 7744k
-  MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
-  BOARDNAME := UBNT-UF-AC
+define Device/ubnt-unifiac-lite
+  $(Device/ubnt-unifiac)
+  DEVICE_PROFILE := UBNT UBNTUNIFIACLITE
+  BOARDNAME := UBNT-UF-AC-LITE
 endef
 
 define Device/ubnt-unifi-outdoor
@@ -1241,7 +1246,7 @@ define Device/ubnt-unifi-outdoor
   BOARDNAME := UBNT-U20
   DEVICE_PROFILE := UBNT UBNTUNIFIOUTDOOR
 endef
-TARGET_DEVICES += ubnt-unifi ubnt-unifiac ubnt-unifi-outdoor
+TARGET_DEVICES += ubnt-unifi ubnt-unifiac-lite ubnt-unifi-outdoor
 
 define Device/ubnt-nano-m-xw
   $(Device/ubnt-xw)

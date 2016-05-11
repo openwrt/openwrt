@@ -355,7 +355,7 @@ get_status_led() {
 		status_led="ubnt:green:dome"
 		;;
 	uap-pro | \
-	unifiac)
+	unifiac-lite)
 		status_led="ubnt:white:dome"
 		;;
 	unifi-outdoor-plus)

@@ -219,7 +219,7 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_RS,		/* Ubiquiti RouterStation */
 	ATH79_MACH_UBNT_UAP_PRO,	/* Ubiquiti UniFi AP Pro */
 	ATH79_MACH_UBNT_UNIFI, 		/* Ubiquiti Unifi */
-	ATH79_MACH_UBNT_UNIFIAC,	/* Ubiquiti Unifi AC */
+	ATH79_MACH_UBNT_UNIFIAC_LITE,	/* Ubiquiti Unifi AC LITE/LR */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR,	/* Ubiquiti UnifiAP Outdoor */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR_PLUS, /* Ubiquiti UnifiAP Outdoor+ */
 	ATH79_MACH_UBNT_XM,		/* Ubiquiti Networks XM board rev 1.0 */

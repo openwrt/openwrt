@@ -268,7 +268,7 @@ platform_check_image() {
 	wlae-ag300n | \
 	nbg460n_550n_550nh | \
 	unifi | \
-	unifiac | \
+	unifiac-lite | \
 	unifi-outdoor | \
 	carambola2 | \
 	weio )
