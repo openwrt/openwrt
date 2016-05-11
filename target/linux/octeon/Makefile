@@ -12,7 +12,7 @@ BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs jffs2 ext4 initramfs pci usb
 CPU_TYPE:=octeon
 CPU_CFLAGS_octeon:=-march=octeon -mabi=64
-MAINTAINER:=John Crispin <blogic@openwrt.org>
+MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.4
 

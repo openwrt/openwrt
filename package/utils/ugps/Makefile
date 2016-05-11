@@ -17,7 +17,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=971e6703eb9bed936cc62cd335105bd2acca14ef
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.bz2
 
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_LICENSE:=GPL-2.0+
 
 include $(INCLUDE_DIR)/package.mk

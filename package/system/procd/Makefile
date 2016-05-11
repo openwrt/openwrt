@@ -22,7 +22,7 @@ CMAKE_INSTALL:=1
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=
 
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 PKG_FLAGS:=nonshared
 

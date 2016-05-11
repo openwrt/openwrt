@@ -17,7 +17,7 @@ PKG_SOURCE_URL=$(OPENWRT_GIT)/project/mdnsd.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=ae8773477c31b741ba8b47f8898e4c0a1c834b85
 
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_LICENSE:=LGPL-2.1
 
 include $(INCLUDE_DIR)/package-seccomp.mk

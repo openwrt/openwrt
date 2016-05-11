@@ -8,7 +8,7 @@ BOARDNAME:=Qualcomm Atheros IPQ806X
 FEATURES:=squashfs nand ubifs fpu
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=neon-vfpv4
-MAINTAINER:=John Crispin <blogic@openwrt.org>
+MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=3.18
 

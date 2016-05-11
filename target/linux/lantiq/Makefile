@@ -10,7 +10,7 @@ BOARD:=lantiq
 BOARDNAME:=Lantiq
 FEATURES:=squashfs
 SUBTARGETS=xway xrx200
-MAINTAINER:=John Crispin <blogic@openwrt.org>
+MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.4
 

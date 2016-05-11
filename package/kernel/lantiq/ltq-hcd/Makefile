@@ -12,7 +12,7 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/ltq-hcd-$(BUILD_VARIANT)
 
 PKG_USE_MIPS16:=0
 
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 include $(INCLUDE_DIR)/package.mk
 

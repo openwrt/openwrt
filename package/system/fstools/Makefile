@@ -24,7 +24,7 @@ PKG_LICENSE_FILES:=
 
 PKG_USE_MIPS16:=0
 
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk

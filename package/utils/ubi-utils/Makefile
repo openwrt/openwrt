@@ -26,7 +26,7 @@ PKG_BUILD_DEPENDS:=util-linux liblzo zlib
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 include $(INCLUDE_DIR)/package.mk
 

@@ -19,7 +19,7 @@ PKG_MD5SUM:=5b15a866bb1939c333d30a1b7f9e7856
 
 PKG_USE_MIPS16:=0
 
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 include $(INCLUDE_DIR)/package.mk
 

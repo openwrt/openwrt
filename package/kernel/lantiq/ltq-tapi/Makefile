@@ -15,7 +15,7 @@ PKG_RELEASE:=3
 PKG_SOURCE:=drv_tapi-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=edb43b494832c540cc035493d18db58f
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 PKG_USE_MIPS16:=0
 PKG_CHECK_FORMAT_SECURITY:=0
