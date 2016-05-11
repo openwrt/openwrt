@@ -952,6 +952,9 @@ ar71xx_board_detect() {
 	*"UniFi-AC-LITE")
 		name="unifiac-lite"
 		;;
+	*"UniFi-AC-PRO")
+		name="unifiac-pro"
+		;;
 	*"UniFi AP Pro")
 		name="uap-pro"
 		;;

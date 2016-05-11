@@ -418,6 +418,11 @@ wpj344)
 		"0@eth0" "3:lan" "2:wan"
 	;;
 
+unifiac-pro)
+	ucidef_add_switch "switch0" \
+		"0@eth0" "2:lan" "3:wan"
+	;;
+
 wpj531)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;

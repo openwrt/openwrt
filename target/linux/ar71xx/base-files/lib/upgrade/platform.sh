@@ -269,6 +269,7 @@ platform_check_image() {
 	nbg460n_550n_550nh | \
 	unifi | \
 	unifiac-lite | \
+	unifiac-pro | \
 	unifi-outdoor | \
 	carambola2 | \
 	weio )

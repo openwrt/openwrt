@@ -1241,12 +1241,18 @@ define Device/ubnt-unifiac-lite
   BOARDNAME := UBNT-UF-AC-LITE
 endef
 
+define Device/ubnt-unifiac-pro
+  $(Device/ubnt-unifiac)
+  DEVICE_PROFILE := UBNT UBNTUNIFIACPRO
+  BOARDNAME := UBNT-UF-AC-PRO
+endef
+
 define Device/ubnt-unifi-outdoor
   $(Device/ubnt-bz)
   BOARDNAME := UBNT-U20
   DEVICE_PROFILE := UBNT UBNTUNIFIOUTDOOR
 endef
-TARGET_DEVICES += ubnt-unifi ubnt-unifiac-lite ubnt-unifi-outdoor
+TARGET_DEVICES += ubnt-unifi ubnt-unifiac-lite ubnt-unifiac-pro ubnt-unifi-outdoor
 
 define Device/ubnt-nano-m-xw
   $(Device/ubnt-xw)
