@@ -475,8 +475,8 @@ define Device/Export
 endef
 
 define Device/Check
-  _TARGET = $$(if $$(and $$(filter $(SUBTARGET),$$(SUBTARGETS)),$$(filter $(PROFILE),$$(PROFILES))),install,install-disabled)
-  _COMPILE_TARGET = $$(if $(if $(IB),,$(CONFIG_IB)$$(filter $(PROFILE),$$(PROFILES))),compile,compile-disabled)
+  _TARGET = $$(if $$(and $$(filter $(SUBTARGET),$$(SUBTARGETS)),$$(filter $(PROFILE),$$(PROFILES) DEVICE_$(1))),install,install-disabled)
+  _COMPILE_TARGET = $$(if $(if $(IB),,$(CONFIG_IB)$$(filter $(PROFILE),$$(PROFILES) DEVICE_$(1))),compile,compile-disabled)
 endef
 
 ifndef IB
