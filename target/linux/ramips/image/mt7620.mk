@@ -8,18 +8,18 @@ define Build/tplink-header
 endef
 
 define Build/pad-ex2700
-  cat ex2700-fakeroot.uImage >> $@; cat ex2700-fakeroot.uImage >> $@;
-  dd if=$@ of=$@.new bs=64k conv=sync && truncate -s 128 $@.new && mv $@.new $@
+	cat ex2700-fakeroot.uImage >> $@; cat ex2700-fakeroot.uImage >> $@;
+	dd if=$@ of=$@.new bs=64k conv=sync && truncate -s 128 $@.new && mv $@.new $@
 endef
 
 define Build/append-ex2700
-  cat ex2700-fakeroot.uImage >> $@
+	cat ex2700-fakeroot.uImage >> $@
 endef
 
 define Build/netgear-header
-  $(STAGING_DIR_HOST)/bin/mkdniimg \
-	$(1) -v OpenWrt -i $@ \
-	-o $@.new && mv $@.new $@
+	$(STAGING_DIR_HOST)/bin/mkdniimg \
+		$(1) -v OpenWrt -i $@ \
+		-o $@.new && mv $@.new $@
 endef
 
 define Build/poray-header
@@ -30,7 +30,7 @@ define Build/poray-header
 endef
 
 define Build/umedia-header
-  fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
+	fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
 endef
 
 define Build/elecom-header
