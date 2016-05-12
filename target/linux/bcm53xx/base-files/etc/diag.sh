@@ -1,5 +1,4 @@
 #!/bin/sh
-# Copyright (C) 2014 OpenWrt.org
 
 . /lib/functions/leds.sh
 
