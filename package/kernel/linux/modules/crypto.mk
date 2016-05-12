@@ -631,54 +631,6 @@ endif
 $(eval $(call KernelPackage,crypto-misc))
 
 
-define KernelPackage/crypto-ocf
-  TITLE:=OCF modules
-  DEPENDS:=+@OPENSSL_ENGINE_CRYPTO @!TARGET_uml +kmod-crypto-manager
-  KCONFIG:= \
-	CONFIG_OCF_OCF \
-	CONFIG_OCF_CRYPTODEV \
-	CONFIG_OCF_CRYPTOSOFT \
-	CONFIG_OCF_FIPS=y \
-	CONFIG_OCF_RANDOMHARVEST=y
-  FILES:= \
-	$(LINUX_DIR)/crypto/ocf/ocf.ko \
-	$(LINUX_DIR)/crypto/ocf/cryptodev.ko \
-	$(LINUX_DIR)/crypto/ocf/cryptosoft.ko
-  AUTOLOAD:=$(call AutoLoad,09, \
-	ocf \
-	cryptodev \
-	cryptosoft \
-  )
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-ocf))
-
-
-define KernelPackage/crypto-ocf-hifn7751
-  TITLE:=OCF support for Hifn 6500/7751/7811/795x, Invertex AEON and NetSec 7751 devices
-  DEPENDS:=+@OPENSSL_ENGINE_CRYPTO @PCI_SUPPORT @!TARGET_uml kmod-crypto-ocf
-  KCONFIG:=CONFIG_OCF_HIFN
-  FILES:=$(LINUX_DIR)/crypto/ocf/hifn/hifn7751.ko
-  AUTOLOAD:=$(call AutoLoad,10,hifn7751)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-ocf-hifn7751))
-
-
-define KernelPackage/crypto-ocf-hifnhipp
-  TITLE:=OCF support for Hifn 7855/8155 devices
-  DEPENDS:=+@OPENSSL_ENGINE_CRYPTO @PCI_SUPPORT @!TARGET_uml kmod-crypto-ocf
-  KCONFIG:=CONFIG_OCF_HIFNHIPP
-  FILES:=$(LINUX_DIR)/crypto/ocf/hifn/hifnHIPP.ko
-  AUTOLOAD:=$(call AutoLoad,10,hifnHIPP)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-ocf-hifnhipp))
-
-
 define KernelPackage/crypto-null
   TITLE:=Null CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_NULL

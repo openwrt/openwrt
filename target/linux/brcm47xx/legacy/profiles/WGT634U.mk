@@ -7,7 +7,7 @@
 
 define Profile/WGT634U
   NAME:=Netgear WGT634U
-  PACKAGES:=kmod-ath5k kmod-usb-core kmod-usb2 kmod-ocf-ubsec-ssb
+  PACKAGES:=kmod-ath5k kmod-usb-core kmod-usb2
 endef
 
 define Profile/WGT634U/Description
