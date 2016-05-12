@@ -1,6 +1,6 @@
 --- a/net/sched/sch_fq_codel.c
 +++ b/net/sched/sch_fq_codel.c
-@@ -410,8 +410,8 @@ static int fq_codel_init(struct Qdisc *s
+@@ -440,8 +440,8 @@ static int fq_codel_init(struct Qdisc *s
  	struct fq_codel_sched_data *q = qdisc_priv(sch);
  	int i;
  
@@ -8,6 +8,6 @@
 -	q->flows_cnt = 1024;
 +	sch->limit = 1024;
 +	q->flows_cnt = 128;
+ 	q->drop_batch_size = 64;
  	q->quantum = psched_mtu(qdisc_dev(sch));
  	q->perturbation = prandom_u32();
- 	INIT_LIST_HEAD(&q->new_flows);
