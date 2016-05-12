@@ -25,7 +25,6 @@ define Host/Compile
 	$(call cc,mksenaofw md5)
 	$(call cc,trx2usr)
 	$(call cc,ptgen)
-	$(call cc,airlink)
 	$(call cc,srec2bin)
 	$(call cc,mkmylofw)
 	$(call cc,mkcsysimg)
