@@ -181,30 +181,6 @@ define Image/BuildKernel
   endif
 endef
 
-define Image/Build/Profile/ar525w
-	cp $(KDIR)/bzImage $(KDIR)/bzImage.tmp
-	$(SCRIPT_DIR)/pad_image $(1) $(KDIR)/bzImage.tmp $(KDIR)/root.$(1) 32
-	$(STAGING_DIR_HOST)/bin/airlink -b 1 $(KDIR)/bzImage.tmp $(KDIR)/root.$(1) \
-		$(BIN_DIR)/$(IMG_PREFIX)-$(1)-ar525w.img
-	$(STAGING_DIR_HOST)/bin/airlink -e -b 1 $(KDIR)/bzImage.tmp $(KDIR)/root.$(1) \
-		$(BIN_DIR)/$(IMG_PREFIX)-$(1)-ar525w-web.img
-endef
-
-define Image/Build/Profile/sitecom
-	cp $(KDIR)/bzImage $(KDIR)/bzImage.tmp
-	#32k config data + 20 bytes header + 2 bytes checksum after kernel image
-	$(SCRIPT_DIR)/pad_image $(1) $(KDIR)/bzImage.tmp $(KDIR)/root.$(1) 32790
-	$(TOPDIR)/target/linux/rdc/image/mkimg_sitecom.pl $(KDIR)/bzImage.tmp > $(KDIR)/tmp.img
-	cat $(KDIR)/root.$(1) >> $(KDIR)/tmp.img
-	cp $(KDIR)/tmp.img $(BIN_DIR)/$(IMG_PREFIX)-$(1)-sitecom.img
-	rm $(KDIR)/tmp.img $(KDIR)/bzImage.tmp
-endef
-
-define Image/Build/Profile/bifferboard
-	$(TOPDIR)/target/linux/rdc/image/mkimg_bifferboard.py $(KDIR)/bzImage $(KDIR)/root.$(1) \
-		$(BIN_DIR)/$(IMG_PREFIX)-$(1)-bifferboard.img
-endef
-
 define Image/Prepare
 	$(call Image/Prepare/grub2)
 endef
