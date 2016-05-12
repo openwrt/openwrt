@@ -43,45 +43,36 @@ define Build/sdcard-img
 	$(if $(CONFIG_TARGET_IMAGES_GZIP),gzip -9n -c $@ > $(BIN_DIR)/$(notdir $@).gz)
 endef
 
-### Device macros ###
+### Devices ###
 define Device/Default
   FILESYSTEMS := ext4
-  PROFILES = Default $$(DEVICE_PROFILE)
   KERNEL := kernel-bin | kernel-img
   IMAGES := sdcard.img
   IMAGE/sdcard.img := boot-img | sdcard-img
-  DEVICE_PROFILE :=
   DEVICE_DTS :=
 endef
-DEVICE_VARS += DEVICE_PROFILE DEVICE_DTS
+DEVICE_VARS += DEVICE_DTS
 
-# $(1) = profile
-# $(2) = image name
-# $(3) = dts
-define bcm27xx
-  define Device/$(2)
-    DEVICE_PROFILE := $(1)
-    DEVICE_DTS := $(3)
-  endef
-  TARGET_DEVICES += $(2)
+define Device/rpi
+  SUBTARGETS := bcm2708
+  DEVICE_TITLE := Raspberry Pi B/B+/CM
+  DEVICE_DTS := bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm
 endef
+TARGET_DEVICES += rpi
 
-### BCM2708/BCM2835 ###
-ifeq ($(SUBTARGET),bcm2708)
-  # Raspberry Pi Models B/B+/CM
-  $(eval $(call bcm27xx,RaspberryPi,rpi,bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm))
-endif
+define Device/rpi-2
+  SUBTARGETS := bcm2709
+  DEVICE_TITLE := Raspberry Pi 2 B
+  DEVICE_DTS := bcm2709-rpi-2-b
+endef
+TARGET_DEVICES += rpi-2
 
-### BCM2709/BCM2836 ###
-ifeq ($(SUBTARGET),bcm2709)
-  # Raspberry Pi 2 Model B
-  $(eval $(call bcm27xx,RaspberryPi_2,rpi-2,bcm2709-rpi-2-b))
-endif
-
-### BCM2710/BCM2837 ###
-ifeq ($(SUBTARGET),bcm2710)
-  # Raspberry Pi 3 Model B
-  $(eval $(call bcm27xx,RaspberryPi_3,rpi-3,bcm2710-rpi-3-b))
-endif
+define Device/rpi-3
+  SUBTARGETS := bcm2710
+  DEVICE_TITLE := Raspberry Pi 3 B
+  DEVICE_DTS := bcm2710-rpi-3-b
+  DEVICE_PACKAGES := brcmfmac43430-firmware-sdio kmod-brcmfmac wpad-mini
+endef
+TARGET_DEVICES += rpi-3
 
 $(eval $(call BuildImage))
