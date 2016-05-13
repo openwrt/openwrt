@@ -49,7 +49,7 @@ define Device/ArcherC20i
   IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC20i -c
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC20i -j -r $(KDIR)/root.squashfs
+  IMAGE/sysupgrade.bin := $(KERNEL_DTB) | tplink-header ArcherC20i -j -r $(KDIR)/root.squashfs
   DEVICE_TITLE := TP-Link ArcherC20i
 endef
 TARGET_DEVICES += ArcherC20i
