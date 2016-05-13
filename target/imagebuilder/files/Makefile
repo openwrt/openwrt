@@ -72,20 +72,16 @@ OPKG:= \
 	--add-arch all:100 \
 	--add-arch $(ARCH_PACKAGES):200
 
-define Profile
-  $(eval $(call Profile/Default))
-  $(eval $(call Profile/$(1)))
-  ifeq ($(USER_PROFILE),)
-    USER_PROFILE:=$(1)
-  endif
-  $(1)_NAME:=$(NAME)
-  $(1)_PACKAGES:=$(PACKAGES)
-  PROFILE_NAMES += $(1)
-  PROFILE_LIST += \
-  	echo '$(1):'; [ -z '$(NAME)' ] || echo '	$(NAME)'; echo '	Packages: $(PACKAGES)';
-endef
-
 include $(INCLUDE_DIR)/target.mk
+-include .profiles.mk
+
+USER_PROFILE ?= $(firstword $(PROFILE_NAMES))
+PROFILE_LIST = $(foreach p,$(PROFILE_NAMES), \
+	echo '$(p):'; $(if $($(p)_NAME),echo '    $($(p)_NAME)'; ) echo '    Packages: $($(p)_PACKAGES)'; \
+)
+
+.profiles.mk: .targetinfo
+	$(SCRIPT_DIR)/metadata.pl profile_mk $< '$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))' > $@
 
 staging_dir/host/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp
