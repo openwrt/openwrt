@@ -282,12 +282,7 @@ EOF
 
 	foreach my $target (@target) {
 		my $profiles = $target->{profiles};
-		$target->{sort} and @$profiles = sort {
-			$a->{priority} <=> $b->{priority} or
-			$a->{name} cmp $b->{name};
-		} @$profiles;
-
-		foreach my $profile (@$profiles) {
+		foreach my $profile (@{$target->{profiles}}) {
 			print <<EOF;
 config TARGET_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
@@ -912,11 +907,26 @@ sub gen_version_filtered_list() {
 	}
 }
 
+sub gen_profile_mk() {
+	my $file = shift @ARGV;
+	my $target = shift @ARGV;
+	my @targets = parse_target_metadata($file);
+	foreach my $cur (@targets) {
+		next unless $cur->{id} eq $target;
+		print "PROFILE_NAMES = ".join(" ", map { $_->{id} } @{$cur->{profiles}})."\n";
+		foreach my $profile (@{$cur->{profiles}}) {
+			print $profile->{id}.'_NAME:='.$profile->{name}."\n";
+			print $profile->{id}.'_PACKAGES:='.join(' ', @{$profile->{packages}})."\n";
+		}
+	}
+}
+
 sub parse_command() {
 	GetOptions("ignore=s", \@ignore);
 	my $cmd = shift @ARGV;
 	for ($cmd) {
 		/^target_config$/ and return gen_target_config();
+		/^profile_mk$/ and return gen_profile_mk();
 		/^package_mk$/ and return gen_package_mk();
 		/^package_config$/ and return gen_package_config();
 		/^kconfig/ and return gen_kconfig_overrides();
@@ -929,6 +939,7 @@ sub parse_command() {
 	print <<EOF
 Available Commands:
 	$0 target_config [file] 		Target metadata in Kconfig format
+	$0 profile_mk [file] [target]		Profile metadata in makefile format
 	$0 package_mk [file]			Package metadata in makefile format
 	$0 package_config [file] 		Package metadata in Kconfig format
 	$0 kconfig [file] [config] [patchver]	Kernel config overrides

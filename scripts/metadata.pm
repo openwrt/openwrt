@@ -112,6 +112,11 @@ sub parse_target_metadata($) {
 				packages => []
 			}
 		];
+
+		$target->{sort} and @{$target->{profiles}} = sort {
+			$a->{priority} <=> $b->{priority} or
+			$a->{name} cmp $b->{name};
+		} @{$target->{profiles}};
 	}
 	return @target;
 }
