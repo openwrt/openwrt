@@ -1,8 +1,6 @@
-diff --git a/main.c b/main.c
-index bfec856..3c482d9 100644
 --- a/main.c
 +++ b/main.c
-@@ -497,7 +497,7 @@ int acx_free_mechanics(acx_device_t *adev)
+@@ -497,7 +497,7 @@ int acx_free_mechanics(acx_device_t *ade
  
  int acx_init_ieee80211(acx_device_t *adev, struct ieee80211_hw *hw)
  {
@@ -11,7 +9,7 @@ index bfec856..3c482d9 100644
  	hw->queues = 1;
  	hw->wiphy->max_scan_ssids = 1;
  
-@@ -525,7 +525,7 @@ int acx_init_ieee80211(acx_device_t *adev, struct ieee80211_hw *hw)
+@@ -525,14 +525,14 @@ int acx_init_ieee80211(acx_device_t *ade
  	/* We base signal quality on winlevel approach of previous driver
  	 * TODO OW 20100615 This should into a common init code
  	 */
@@ -20,7 +18,16 @@ index bfec856..3c482d9 100644
  	hw->max_signal = 100;
  
  	if (IS_ACX100(adev)) {
-@@ -945,8 +945,8 @@ void acx_op_configure_filter(struct ieee80211_hw *hw,
+-		adev->hw->wiphy->bands[IEEE80211_BAND_2GHZ] =
++		adev->hw->wiphy->bands[NL80211_BAND_2GHZ] =
+ 			&acx100_band_2GHz;
+ 	} else if (IS_ACX111(adev))
+-		adev->hw->wiphy->bands[IEEE80211_BAND_2GHZ] =
++		adev->hw->wiphy->bands[NL80211_BAND_2GHZ] =
+ 			&acx111_band_2GHz;
+ 	else {
+ 		log(L_ANY, "Error: Unknown device");
+@@ -945,8 +945,8 @@ void acx_op_configure_filter(struct ieee
  		changed_flags, *total_flags);
  
  	/* OWI TODO: Set also FIF_PROBE_REQ ? */
@@ -31,7 +38,7 @@ index bfec856..3c482d9 100644
  
  	logf1(L_DEBUG, "2: *total_flags=0x%08x\n", *total_flags);
  
-@@ -1045,9 +1045,10 @@ void acx_op_tx(struct ieee80211_hw *hw, struct ieee80211_tx_control *control,
+@@ -1045,9 +1045,10 @@ void acx_op_tx(struct ieee80211_hw *hw,
  }
  
  int acx_op_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
@@ -43,7 +50,7 @@ index bfec856..3c482d9 100644
  	struct sk_buff *skb;
  	size_t ssid_len = 0;
  	u8 *ssid = NULL;
-@@ -1082,7 +1083,7 @@ int acx_op_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+@@ -1082,7 +1083,7 @@ int acx_op_hw_scan(struct ieee80211_hw *
  		goto out;
  	}
  #else
@@ -52,11 +59,9 @@ index bfec856..3c482d9 100644
  		req->ie_len);
  	if (!skb) {
  		ret = -ENOMEM;
-diff --git a/main.h b/main.h
-index 293f5c8..84ecb9a 100644
 --- a/main.h
 +++ b/main.h
-@@ -62,7 +62,7 @@ void acx_op_tx(struct ieee80211_hw *hw, struct ieee80211_tx_control *control,
+@@ -62,7 +62,7 @@ void acx_op_tx(struct ieee80211_hw *hw,
  #endif
  
  int acx_op_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
@@ -64,4 +69,15 @@ index 293f5c8..84ecb9a 100644
 +                   struct ieee80211_scan_request *req);
  
  int acx_recover_hw(acx_device_t *adev);
+ 
+--- a/cardsetting.c
++++ b/cardsetting.c
+@@ -159,7 +159,7 @@ int acx_set_channel(acx_device_t *adev,
+ 	int res = 0;
+ 
+ 	adev->rx_status.freq = freq;
+-	adev->rx_status.band = IEEE80211_BAND_2GHZ;
++	adev->rx_status.band = NL80211_BAND_2GHZ;
+ 
+ 	adev->channel = channel;
  

@@ -1184,7 +1184,7 @@
  		break;
  	default:
  		rt2x00_err(rt2x00dev, "Invalid RF chipset 0x%04x detected\n",
-@@ -8423,6 +9363,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8427,6 +9367,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5372:
  	case RF5390:
  	case RF5392:
@@ -1192,7 +1192,7 @@
  		spec->num_channels = 14;
  		if (spec->clk_is_20mhz)
  			spec->channels = rf_vals_xtal20mhz_3x;
-@@ -8563,6 +9504,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8567,6 +9508,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5372:
  	case RF5390:
  	case RF5392:

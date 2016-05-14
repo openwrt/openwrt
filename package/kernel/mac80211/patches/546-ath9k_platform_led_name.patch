@@ -13,9 +13,9 @@ Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
 
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -132,15 +132,19 @@ void ath_init_leds(struct ath_softc *sc)
- 	if (AR_SREV_9100(sc->sc_ah))
- 		return;
+@@ -155,8 +155,11 @@ void ath_init_leds(struct ath_softc *sc)
+ 
+ 	ath_fill_led_pin(sc);
  
 -	snprintf(led_name, sizeof(led_name), "ath9k-%s",
 -		 wiphy_name(sc->hw->wiphy));
@@ -23,22 +23,13 @@ Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
 +		strncpy(led_name, pdata->led_name, sizeof(led_name));
 +	else
 +		snprintf(led_name, sizeof(led_name), "ath9k-%s",
-+		 	 wiphy_name(sc->hw->wiphy));
++			 wiphy_name(sc->hw->wiphy));
  
  	if (ath9k_led_blink)
  		trigger = sc->led_default_trigger;
- 	else
- 		trigger = ieee80211_get_radio_led_name(sc->hw);
- 
--	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger, !sc->sc_ah->config.led_active_high);
-+	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger,
-+			    !sc->sc_ah->config.led_active_high);
- 
- 	if (!pdata)
- 		return;
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
-@@ -45,6 +45,7 @@ struct ath9k_platform_data {
+@@ -49,6 +49,7 @@ struct ath9k_platform_data {
  
  	int num_leds;
  	const struct gpio_led *leds;

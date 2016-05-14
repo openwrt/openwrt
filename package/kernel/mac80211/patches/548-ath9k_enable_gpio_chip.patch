@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  #include "common.h"
  #include "debug.h"
-@@ -963,6 +964,14 @@ struct ath_led {
+@@ -959,6 +960,14 @@ struct ath_led {
  	struct led_classdev cdev;
  };
  
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -1017,6 +1026,9 @@ struct ath_softc {
+@@ -1013,6 +1022,9 @@ struct ath_softc {
  #ifdef CPTCFG_MAC80211_LEDS
  	const char *led_default_trigger;
  	struct list_head leds;
@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #ifdef CPTCFG_ATH9K_DEBUGFS
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -16,12 +16,138 @@
+@@ -16,13 +16,138 @@
  
  #include "ath9k.h"
  #include <linux/ath9k_platform.h>
@@ -65,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	struct ath9k_gpio_chip *gc = container_of(chip, struct ath9k_gpio_chip,
 +						  gchip);
 +
-+	ath9k_hw_cfg_gpio_input(gc->sc->sc_ah, offset);
++	ath9k_hw_gpio_request_in(gc->sc->sc_ah, offset, "ath9k-gpio");
 +
 +	return 0;
 +}
@@ -77,8 +77,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	struct ath9k_gpio_chip *gc = container_of(chip, struct ath9k_gpio_chip,
 +						  gchip);
 +
-+	ath9k_hw_cfg_output(gc->sc->sc_ah, offset,
-+			    AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
++	ath9k_hw_gpio_request_out(gc->sc->sc_ah, offset, "ath9k-gpio",
++				  AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
 +	ath9k_hw_set_gpio(gc->sc->sc_ah, offset, value);
 +
 +	return 0;
@@ -182,10 +182,11 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  /********************************/
  
 -#ifdef CPTCFG_MAC80211_LEDS
- static void ath_led_brightness(struct led_classdev *led_cdev,
- 			       enum led_brightness brightness)
+-
+ static void ath_fill_led_pin(struct ath_softc *sc)
  {
-@@ -60,6 +186,12 @@ static int ath_add_led(struct ath_softc
+ 	struct ath_hw *ah = sc->sc_ah;
+@@ -80,6 +205,12 @@ static int ath_add_led(struct ath_softc
  	else
  		ath9k_hw_set_gpio(sc->sc_ah, gpio->gpio, gpio->active_low);
  
@@ -198,7 +199,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return 0;
  }
  
-@@ -116,11 +248,17 @@ void ath_deinit_leds(struct ath_softc *s
+@@ -136,12 +267,18 @@ void ath_deinit_leds(struct ath_softc *s
  
  	while (!list_empty(&sc->leds)) {
  		led = list_first_entry(&sc->leds, struct ath_led, list);
@@ -210,24 +211,25 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		list_del(&led->list);
  		ath_led_brightness(&led->cdev, LED_OFF);
  		led_classdev_unregister(&led->cdev);
+ 		ath9k_hw_gpio_free(sc->sc_ah, led->gpio->gpio);
  		kfree(led);
  	}
 +	ath9k_unregister_gpio_chip(sc);
  }
  
  void ath_init_leds(struct ath_softc *sc)
-@@ -135,6 +273,8 @@ void ath_init_leds(struct ath_softc *sc)
- 	if (AR_SREV_9100(sc->sc_ah))
- 		return;
+@@ -158,6 +295,8 @@ void ath_init_leds(struct ath_softc *sc)
+ 
+ 	ath_fill_led_pin(sc);
  
 +	ath9k_register_gpio_chip(sc);
 +
  	if (pdata && pdata->led_name)
  		strncpy(led_name, pdata->led_name, sizeof(led_name));
  	else
-@@ -186,6 +326,7 @@ void ath_fill_led_pin(struct ath_softc *
- 	/* LED off, active low */
- 	ath9k_hw_set_gpio(ah, ah->led_pin, (ah->config.led_active_high) ? 0 : 1);
+@@ -178,6 +317,7 @@ void ath_init_leds(struct ath_softc *sc)
+ 	for (i = 0; i < pdata->num_leds; i++)
+ 		ath_create_platform_led(sc, &pdata->leds[i]);
  }
 +
  #endif

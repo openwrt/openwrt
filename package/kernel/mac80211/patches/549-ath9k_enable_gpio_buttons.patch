@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -1028,6 +1028,7 @@ struct ath_softc {
+@@ -1024,6 +1024,7 @@ struct ath_softc {
  	struct list_head leds;
  #ifdef CONFIG_GPIOLIB
  	struct ath9k_gpio_chip *gpiochip;
@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  #ifdef CPTCFG_MAC80211_LEDS
  
-@@ -132,6 +134,63 @@ static void ath9k_unregister_gpio_chip(s
+@@ -132,6 +134,64 @@ static void ath9k_unregister_gpio_chip(s
  	sc->gpiochip = NULL;
  }
  
@@ -59,7 +59,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +		return;
 +
 +	for (i = 0; i < pdata->num_btns; i++) {
-+		ath9k_hw_cfg_gpio_input(sc->sc_ah, pdata->btns[i].gpio);
++		ath9k_hw_gpio_request_in(sc->sc_ah, pdata->btns[i].gpio,
++					 "ath9k-gpio");
 +		bt[i].gpio = sc->gpiochip->gchip.base + pdata->btns[i].gpio;
 +	}
 +
@@ -93,7 +94,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #else /* CONFIG_GPIOLIB */
  
  static inline void ath9k_register_gpio_chip(struct ath_softc *sc)
-@@ -142,6 +201,14 @@ static inline void ath9k_unregister_gpio
+@@ -142,6 +202,14 @@ static inline void ath9k_unregister_gpio
  {
  }
  
@@ -108,7 +109,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #endif /* CONFIG_GPIOLIB */
  
  /********************************/
-@@ -246,6 +313,7 @@ void ath_deinit_leds(struct ath_softc *s
+@@ -265,6 +333,7 @@ void ath_deinit_leds(struct ath_softc *s
  {
  	struct ath_led *led;
  
@@ -116,17 +117,17 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	while (!list_empty(&sc->leds)) {
  		led = list_first_entry(&sc->leds, struct ath_led, list);
  #ifdef CONFIG_GPIOLIB
-@@ -274,6 +342,7 @@ void ath_init_leds(struct ath_softc *sc)
- 		return;
+@@ -296,6 +365,7 @@ void ath_init_leds(struct ath_softc *sc)
+ 	ath_fill_led_pin(sc);
  
  	ath9k_register_gpio_chip(sc);
 +	ath9k_init_buttons(sc);
  
  	if (pdata && pdata->led_name)
  		strncpy(led_name, pdata->led_name, sizeof(led_name));
-@@ -289,7 +358,7 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -311,7 +381,7 @@ void ath_init_leds(struct ath_softc *sc)
  	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger,
- 			    !sc->sc_ah->config.led_active_high);
+ 			   !sc->sc_ah->config.led_active_high);
  
 -	if (!pdata)
 +	if (!pdata || !pdata->leds || !pdata->num_leds)
@@ -135,7 +136,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	for (i = 0; i < pdata->num_leds; i++)
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
-@@ -46,6 +46,10 @@ struct ath9k_platform_data {
+@@ -50,6 +50,10 @@ struct ath9k_platform_data {
  	int num_leds;
  	const struct gpio_led *leds;
  	const char *led_name;
