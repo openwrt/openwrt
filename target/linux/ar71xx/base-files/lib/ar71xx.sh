@@ -910,6 +910,9 @@ ar71xx_board_detect() {
 	*"TL-WR842N/ND v2")
 		name="tl-wr842n-v2"
 		;;
+	*"TL-WR842N/ND v3")
+		name="tl-wr842n-v3"
+		;;
 	*TL-WR941ND)
 		name="tl-wr941nd"
 		;;
