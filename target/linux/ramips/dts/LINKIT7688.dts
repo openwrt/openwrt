@@ -115,7 +115,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
-		reg = <0 0>;
+		reg = <0>;
 		linux,modalias = "m25p80", "mx25l25635e";
 		spi-max-frequency = <40000000>;
 		m25p,chunked-io = <31>;
@@ -147,7 +147,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "spidev";
-		reg = <1 0>;
+		reg = <1>;
 		spi-max-frequency = <40000000>;
 	};
 };
