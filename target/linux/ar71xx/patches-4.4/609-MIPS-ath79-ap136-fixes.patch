@@ -135,7 +135,8 @@
 +static void __init ap136_common_setup(void)
 +{
 +	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
-+
+ 
+-static int ap136_pci_plat_dev_init(struct pci_dev *dev)
 +	ath79_register_m25p80(NULL);
 +
 +	ath79_register_leds_gpio(-1, ARRAY_SIZE(ap136_leds_gpio),
@@ -150,8 +151,7 @@
 +	ath79_register_wmac(art + AP136_WMAC_CALDATA_OFFSET, NULL);
 +
 +	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
- 
--static int ap136_pci_plat_dev_init(struct pci_dev *dev)
++
 +	ath79_register_mdio(0, 0x0);
 +	ath79_init_mac(ath79_eth0_data.mac_addr, art + AP136_MAC0_OFFSET, 0);
 +
@@ -211,16 +211,16 @@
 +	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
 +	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
 +	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
-+
+ 
+-	ath79_pci_set_plat_dev_init(ap136_pci_plat_dev_init);
+-	ath79_register_pci();
 +	/* GMAC6 of the AR8327 switch is connected to GMAC0 via RGMII */
 +	ap136_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_RGMII;
 +	ap136_ar8327_pad6_cfg.txclk_delay_en = true;
 +	ap136_ar8327_pad6_cfg.rxclk_delay_en = true;
 +	ap136_ar8327_pad6_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
 +	ap136_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
- 
--	ath79_pci_set_plat_dev_init(ap136_pci_plat_dev_init);
--	ath79_register_pci();
++
 +	ath79_eth0_pll_data.pll_1000 = 0x56000000;
 +	ath79_eth1_pll_data.pll_1000 = 0x03000101;
 +
