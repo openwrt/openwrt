@@ -14,8 +14,6 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  ibss.c | 49 +++++++++++++++++++++++++++++++++++++++++--------
  1 file changed, 41 insertions(+), 8 deletions(-)
 
-diff --git a/ibss.c b/ibss.c
-index 7a0b707..a99a262 100644
 --- a/ibss.c
 +++ b/ibss.c
 @@ -16,6 +16,39 @@
@@ -58,7 +56,7 @@ index 7a0b707..a99a262 100644
  static int join_ibss(struct nl80211_state *state,
  		     struct nl_msg *msg,
  		     int argc, char **argv,
-@@ -30,12 +63,8 @@ static int join_ibss(struct nl80211_state *state,
+@@ -30,12 +63,8 @@ static int join_ibss(struct nl80211_stat
  	int bintval;
  	int i;
  	unsigned long freq;
@@ -73,7 +71,7 @@ index 7a0b707..a99a262 100644
  		{ .name = "HT20",
  		  .width = NL80211_CHAN_WIDTH_20,
  		  .freq1_diff = 0,
-@@ -60,6 +89,10 @@ static int join_ibss(struct nl80211_state *state,
+@@ -60,6 +89,10 @@ static int join_ibss(struct nl80211_stat
  		  .width = NL80211_CHAN_WIDTH_10,
  		  .freq1_diff = 0,
  		  .chantype = -1 },
@@ -84,7 +82,7 @@ index 7a0b707..a99a262 100644
  	};
  
  	if (argc < 2)
-@@ -90,7 +123,7 @@ static int join_ibss(struct nl80211_state *state,
+@@ -90,7 +123,7 @@ static int join_ibss(struct nl80211_stat
  			NLA_PUT_U32(msg, NL80211_ATTR_CHANNEL_WIDTH,
  				    chanmode_selected->width);
  			NLA_PUT_U32(msg, NL80211_ATTR_CENTER_FREQ1,
