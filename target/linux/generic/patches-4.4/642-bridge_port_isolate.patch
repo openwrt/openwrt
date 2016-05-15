@@ -24,7 +24,7 @@ Isolating individual bridge ports
 +	int isolate_mode = (p->flags & BR_ISOLATE_MODE) ? 1 : 0;
 +	return sprintf(buf, "%d\n", isolate_mode);
 +}
-+static ssize_t store_isolate_mode(struct net_bridge_port *p, unsigned long v)
++static int store_isolate_mode(struct net_bridge_port *p, unsigned long v)
 +{
 +	if (v)
 +		p->flags |= BR_ISOLATE_MODE;
