@@ -274,7 +274,7 @@ endif
 
 CUR_SUBTARGET:=$(SUBTARGET)
 ifeq ($(SUBTARGETS),)
-  CUR_SUBTARGET ?= default
+  CUR_SUBTARGET := default
 endif
 
 define BuildTargets/DumpCurrent
