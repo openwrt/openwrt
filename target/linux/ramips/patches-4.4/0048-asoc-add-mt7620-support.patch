@@ -58,41 +58,30 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SND_SOC)	+= sirf/
 --- /dev/null
 +++ b/sound/soc/ralink/Kconfig
-@@ -0,0 +1,15 @@
-+config SND_MT7620_SOC_I2S
-+	depends on SOC_MT7620 && SND_SOC
+@@ -0,0 +1,8 @@
++config SND_RALINK_SOC_I2S
++	depends on RALINK && SND_SOC && !SOC_RT288X
 +	select SND_SOC_GENERIC_DMAENGINE_PCM
-+	tristate "SoC Audio (I2S protocol) for Ralink MT7620 SoC"
++	select REGMAP_MMIO
++	tristate "SoC Audio (I2S protocol) for Ralink SoC"
 +	help
-+	  Say Y if you want to use I2S protocol and I2S codec on Ingenic MT7620
++	  Say Y if you want to use I2S protocol and I2S codec on Ralink/MediaTek
 +	  based boards.
-+
-+config SND_MT7620_SOC_WM8960
-+	tristate "SoC Audio support for Ralink WM8960"
-+	select SND_MT7620_SOC_I2S
-+	select SND_SOC_WM8960
-+	help
-+	  Say Y if you want to add support for ASoC audio on the Qi LB60 board
-+	  a.k.a Qi Ben NanoNote.
 --- /dev/null
 +++ b/sound/soc/ralink/Makefile
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,6 @@
 +#
-+# Jz4740 Platform Support
++# Ralink/MediaTek Platform Support
 +#
-+snd-soc-mt7620-i2s-objs := mt7620-i2s.o
++snd-soc-ralink-i2s-objs := ralink-i2s.o
 +
-+obj-$(CONFIG_SND_MT7620_SOC_I2S) += snd-soc-mt7620-i2s.o
-+
-+# Jz4740 Machine Support
-+snd-soc-mt7620-wm8960-objs := mt7620-wm8960.o
-+
-+obj-$(CONFIG_SND_MT7620_SOC_WM8960) += snd-soc-mt7620-wm8960.o
++obj-$(CONFIG_SND_RALINK_SOC_I2S) += snd-soc-ralink-i2s.o
 --- /dev/null
-+++ b/sound/soc/ralink/mt7620-i2s.c
-@@ -0,0 +1,436 @@
++++ b/sound/soc/ralink/ralink-i2s.c
+@@ -0,0 +1,965 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
++ *  Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
 + *
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under  the terms of the GNU General  Public License as published by the
@@ -105,27 +94,31 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 + *
 + */
 +
-+#include <linux/init.h>
-+#include <linux/io.h>
-+#include <linux/kernel.h>
 +#include <linux/module.h>
 +#include <linux/platform_device.h>
-+#include <linux/slab.h>
-+
-+#include <linux/delay.h>
-+
-+#include <linux/dma-mapping.h>
-+
-+#include <sound/core.h>
-+#include <sound/pcm.h>
++#include <linux/clk.h>
++#include <linux/regmap.h>
++#include <linux/reset.h>
++#include <linux/debugfs.h>
++#include <linux/of_device.h>
 +#include <sound/pcm_params.h>
-+#include <sound/soc.h>
-+#include <sound/initval.h>
 +#include <sound/dmaengine_pcm.h>
 +
-+#include <ralink_regs.h>
++#include <asm/mach-ralink/ralink_regs.h>
++
++#define DRV_NAME "ralink-i2s"
 +
 +#define I2S_REG_CFG0		0x00
++#define I2S_REG_INT_STATUS	0x04
++#define I2S_REG_INT_EN		0x08
++#define I2S_REG_FF_STATUS	0x0c
++#define I2S_REG_WREG		0x10
++#define I2S_REG_RREG		0x14
++#define I2S_REG_CFG1		0x18
++#define I2S_REG_DIVCMP		0x20
++#define I2S_REG_DIVINT		0x24
++
++/* I2S_REG_CFG0 */
 +#define I2S_REG_CFG0_EN		BIT(31)
 +#define I2S_REG_CFG0_DMA_EN	BIT(30)
 +#define I2S_REG_CFG0_BYTE_SWAP	BIT(28)
@@ -134,143 +127,235 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define I2S_REG_CFG0_SLAVE	BIT(16)
 +#define I2S_REG_CFG0_RX_THRES	12
 +#define I2S_REG_CFG0_TX_THRES	4
++#define I2S_REG_CFG0_THRES_MASK	(0xf << I2S_REG_CFG0_RX_THRES) | \
++	(4 << I2S_REG_CFG0_TX_THRES)
 +#define I2S_REG_CFG0_DFT_THRES	(4 << I2S_REG_CFG0_RX_THRES) | \
-+					(4 << I2S_REG_CFG0_TX_THRES)
++	(4 << I2S_REG_CFG0_TX_THRES)
++/* RT305x */
++#define I2S_REG_CFG0_CLK_DIS	BIT(8)
++#define I2S_REG_CFG0_TXCH_SWAP	BIT(3)
++#define I2S_REG_CFG0_TXCH1_OFF	BIT(2)
++#define I2S_REG_CFG0_TXCH0_OFF	BIT(1)
++#define I2S_REG_CFG0_SLAVE_EN	BIT(0)
++/* RT3883 */
++#define I2S_REG_CFG0_RXCH_SWAP	BIT(11)
++#define I2S_REG_CFG0_RXCH1_OFF	BIT(10)
++#define I2S_REG_CFG0_RXCH0_OFF	BIT(9)
++#define I2S_REG_CFG0_WS_INV	BIT(0)
++/* MT7628 */
++#define I2S_REG_CFG0_FMT_LE	BIT(29)
++#define I2S_REG_CFG0_SYS_BE	BIT(28)
++#define I2S_REG_CFG0_NORM_24	BIT(18)
++#define I2S_REG_CFG0_DATA_24	BIT(17)
 +
-+#define I2S_REG_INT_STATUS	0x04
-+#define I2S_REG_INT_EN		0x08
-+#define I2S_REG_FF_STATUS	0x0c
-+#define I2S_REG_WREG		0x10
-+#define I2S_REG_RREG		0x14
-+#define I2S_REG_CFG1		0x18
++/* I2S_REG_INT_STATUS */
++#define I2S_REG_INT_RX_FAULT	BIT(7)
++#define I2S_REG_INT_RX_OVRUN	BIT(6)
++#define I2S_REG_INT_RX_UNRUN	BIT(5)
++#define I2S_REG_INT_RX_THRES	BIT(4)
++#define I2S_REG_INT_TX_FAULT	BIT(3)
++#define I2S_REG_INT_TX_OVRUN	BIT(2)
++#define I2S_REG_INT_TX_UNRUN	BIT(1)
++#define I2S_REG_INT_TX_THRES	BIT(0)
++#define I2S_REG_INT_TX_MASK	0xf
++#define I2S_REG_INT_RX_MASK	0xf0
 +
-+#define I2S_REG_DIVCMP		0x20
-+#define I2S_REG_DIVINT		0x24
-+#define I2S_REG_CLK_EN		BIT(31)
++/* I2S_REG_INT_STATUS */
++#define I2S_RX_AVCNT(x)		((x >> 4) & 0xf)
++#define I2S_TX_AVCNT(x)		(x & 0xf)
++/* MT7628 */
++#define MT7628_I2S_RX_AVCNT(x)	((x >> 8) & 0x1f)
++#define MT7628_I2S_TX_AVCNT(x)	(x & 0x1f)
 +
-+struct mt7620_i2s {
-+	struct resource *mem;
-+	void __iomem *base;
-+	dma_addr_t phys_base;
++/* I2S_REG_CFG1 */
++#define I2S_REG_CFG1_LBK	BIT(31)
++#define I2S_REG_CFG1_EXTLBK	BIT(30)
++/* RT3883 */
++#define I2S_REG_CFG1_LEFT_J	BIT(0)
++#define I2S_REG_CFG1_RIGHT_J	BIT(1)
++#define I2S_REG_CFG1_FMT_MASK	0x3
++
++/* I2S_REG_DIVCMP */
++#define I2S_REG_DIVCMP_CLKEN	BIT(31)
++#define I2S_REG_DIVCMP_DIVCOMP_MASK	0x1ff
++
++/* I2S_REG_DIVINT */
++#define I2S_REG_DIVINT_MASK	0x3ff
++
++/* BCLK dividers */
++#define RALINK_I2S_DIVCMP	0
++#define RALINK_I2S_DIVINT	1
++
++/* FIFO */
++#define RALINK_I2S_FIFO_SIZE	32
++
++/* feature flags */
++#define RALINK_FLAGS_TXONLY	BIT(0)
++#define RALINK_FLAGS_LEFT_J	BIT(1)
++#define RALINK_FLAGS_RIGHT_J	BIT(2)
++#define RALINK_FLAGS_ENDIAN	BIT(3)
++#define RALINK_FLAGS_24BIT	BIT(4)
++
++#define RALINK_I2S_INT_EN	0
++
++struct ralink_i2s_stats {
++	u32 dmafault;
++	u32 overrun;
++	u32 underrun;
++	u32 belowthres;
++};
++
++struct ralink_i2s {
++	struct device *dev;
++	void __iomem *regs;
++	struct clk *clk;
++	struct regmap *regmap;
++	u32 flags;
++	unsigned int fmt;
++	u16 txdma_req;
++	u16 rxdma_req;
 +
 +	struct snd_dmaengine_dai_dma_data playback_dma_data;
 +	struct snd_dmaengine_dai_dma_data capture_dma_data;
++
++	struct dentry *dbg_dir;
++        struct dentry *dbg_stats;
++	struct ralink_i2s_stats txstats;
++	struct ralink_i2s_stats rxstats;
 +};
 +
-+static inline uint32_t mt7620_i2s_read(const struct mt7620_i2s *i2s,
-+	unsigned int reg)
++static void ralink_i2s_dump_regs(struct ralink_i2s *i2s)
 +{
-+	return readl(i2s->base + reg);
++	u32 buf[10];
++	int ret;
++
++	ret = regmap_bulk_read(i2s->regmap, I2S_REG_CFG0,
++			buf, ARRAY_SIZE(buf));
++
++	dev_dbg(i2s->dev, "CFG0: %08x, INTSTAT: %08x, INTEN: %08x, " \
++			"FFSTAT: %08x, WREG: %08x, RREG: %08x, " \
++			"CFG1: %08x, DIVCMP: %08x, DIVINT: %08x\n",
++			buf[0], buf[1], buf[2], buf[3], buf[4],
++			buf[5], buf[6], buf[8], buf[9]);
 +}
 +
-+static inline void mt7620_i2s_write(const struct mt7620_i2s *i2s,
-+	unsigned int reg, uint32_t value)
++static int ralink_i2s_set_sysclk(struct snd_soc_dai *dai,
++                              int clk_id, unsigned int freq, int dir)
 +{
-+	//printk("i2s --> %p = 0x%08X\n", i2s->base + reg, value);
-+	writel(value, i2s->base + reg);
++	return 0;
 +}
 +
-+static int mt7620_i2s_startup(struct snd_pcm_substream *substream,
-+	struct snd_soc_dai *dai)
++static int ralink_i2s_set_sys_bclk(struct snd_soc_dai *dai, int width, int rate)
 +{
-+	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
-+	uint32_t cfg;
++	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	unsigned long clk = clk_get_rate(i2s->clk);
++	int div;
++	uint32_t data;
 +
-+	if (dai->active)
++	/* disable clock at slave mode */
++	if ((i2s->fmt & SND_SOC_DAIFMT_MASTER_MASK) ==
++			SND_SOC_DAIFMT_CBM_CFM) {
++		regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++				I2S_REG_CFG0_CLK_DIS,
++				I2S_REG_CFG0_CLK_DIS);
 +		return 0;
-+
-+	cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
-+	cfg |= I2S_REG_CFG0_EN;
-+	mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
-+
-+	return 0;
-+}
-+
-+static void mt7620_i2s_shutdown(struct snd_pcm_substream *substream,
-+	struct snd_soc_dai *dai)
-+{
-+	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
-+	uint32_t cfg;
-+
-+	if (dai->active)
-+		return;
-+
-+	cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
-+	cfg &= ~I2S_REG_CFG0_EN;
-+	mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
-+}
-+
-+static int mt7620_i2s_trigger(struct snd_pcm_substream *substream, int cmd,
-+	struct snd_soc_dai *dai)
-+{
-+	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
-+
-+	uint32_t cfg;
-+	uint32_t mask;
-+
-+	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-+		mask = I2S_REG_CFG0_TX_EN;
-+	else
-+		mask = I2S_REG_CFG0_RX_EN;
-+
-+	cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
-+
-+	switch (cmd) {
-+	case SNDRV_PCM_TRIGGER_START:
-+	case SNDRV_PCM_TRIGGER_RESUME:
-+	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
-+		cfg |= mask;
-+		break;
-+	case SNDRV_PCM_TRIGGER_STOP:
-+	case SNDRV_PCM_TRIGGER_SUSPEND:
-+	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
-+		cfg &= ~mask;
-+		break;
-+	default:
-+		return -EINVAL;
 +	}
 +
-+	if (cfg & (I2S_REG_CFG0_TX_EN | I2S_REG_CFG0_RX_EN))
-+		cfg |= I2S_REG_CFG0_DMA_EN;
-+	else
-+		cfg &= ~I2S_REG_CFG0_DMA_EN;
++	/* FREQOUT = FREQIN / (I2S_CLK_DIV + 1) */
++	div = (clk / rate ) - 1;
 +
-+	mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
++	data = rt_sysc_r32(0x30);
++	data &= (0xff << 8);
++	data |= (0x1 << 15) | (div << 8);
++	rt_sysc_w32(data, 0x30);
++
++	/* enable clock */
++	regmap_update_bits(i2s->regmap, I2S_REG_CFG0, I2S_REG_CFG0_CLK_DIS, 0);
++
++	dev_dbg(i2s->dev, "clk: %lu, rate: %u, div: %d\n",
++			clk, rate, div);
 +
 +	return 0;
 +}
 +
-+static int mt7620_i2s_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
++static int ralink_i2s_set_bclk(struct snd_soc_dai *dai, int width, int rate)
 +{
-+	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
-+	uint32_t cfg;
++	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	unsigned long clk = clk_get_rate(i2s->clk);
++	int divint, divcomp;
 +
-+	cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
++	/* disable clock at slave mode */
++	if ((i2s->fmt & SND_SOC_DAIFMT_MASTER_MASK) ==
++			SND_SOC_DAIFMT_CBM_CFM) {
++		regmap_update_bits(i2s->regmap, I2S_REG_DIVCMP,
++				I2S_REG_DIVCMP_CLKEN, 0);
++		return 0;
++	}
 +
++	/* FREQOUT = FREQIN * (1/2) * (1/(DIVINT + DIVCOMP/512)) */
++	clk = clk / (2 * 2 * width);
++	divint = clk / rate;
++	divcomp = ((clk % rate) * 512) / rate;
++
++	if ((divint > I2S_REG_DIVINT_MASK) ||
++			(divcomp > I2S_REG_DIVCMP_DIVCOMP_MASK))
++		return -EINVAL;
++
++	regmap_update_bits(i2s->regmap, I2S_REG_DIVINT,
++			I2S_REG_DIVINT_MASK, divint);
++	regmap_update_bits(i2s->regmap, I2S_REG_DIVCMP,
++			I2S_REG_DIVCMP_DIVCOMP_MASK, divcomp);
++
++	/* enable clock */
++	regmap_update_bits(i2s->regmap, I2S_REG_DIVCMP, I2S_REG_DIVCMP_CLKEN,
++			I2S_REG_DIVCMP_CLKEN);
++
++	dev_dbg(i2s->dev, "clk: %lu, rate: %u, int: %d, comp: %d\n",
++			clk_get_rate(i2s->clk), rate, divint, divcomp);
++
++	return 0;
++}
++
++static int ralink_i2s_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
++{
++	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	unsigned int cfg0 = 0, cfg1 = 0;
++
++	/* set master/slave audio interface */
 +	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
-+	case SND_SOC_DAIFMT_CBS_CFS:
-+		cfg |= I2S_REG_CFG0_SLAVE;
-+		break;
 +	case SND_SOC_DAIFMT_CBM_CFM:
-+		cfg &= ~I2S_REG_CFG0_SLAVE;
++		if (i2s->flags & RALINK_FLAGS_TXONLY)
++			cfg0 |= I2S_REG_CFG0_SLAVE_EN;
++		else
++			cfg0 |= I2S_REG_CFG0_SLAVE;
 +		break;
-+	case SND_SOC_DAIFMT_CBM_CFS:
++	case SND_SOC_DAIFMT_CBS_CFS:
++		break;
 +	default:
 +		return -EINVAL;
 +	}
 +
++	/* interface format */
 +	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
 +	case SND_SOC_DAIFMT_I2S:
-+	case SND_SOC_DAIFMT_MSB:
-+		cfg &= ~I2S_REG_CFG0_BYTE_SWAP;
 +		break;
-+	case SND_SOC_DAIFMT_LSB:
-+		cfg |= I2S_REG_CFG0_BYTE_SWAP;
-+		break;
++	case SND_SOC_DAIFMT_RIGHT_J:
++		if (i2s->flags & RALINK_FLAGS_RIGHT_J) {
++			cfg1 |= I2S_REG_CFG1_RIGHT_J;
++			break;
++		}
++		return -EINVAL;
++	case SND_SOC_DAIFMT_LEFT_J:
++		if (i2s->flags & RALINK_FLAGS_LEFT_J) {
++			cfg1 |= I2S_REG_CFG1_LEFT_J;
++			break;
++		}
++		return -EINVAL;
 +	default:
 +		return -EINVAL;
 +	}
 +
++	/* clock inversion */
 +	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
 +	case SND_SOC_DAIFMT_NB_NF:
 +		break;
@@ -278,488 +363,684 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		return -EINVAL;
 +	}
 +
-+	mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
++	if (i2s->flags & RALINK_FLAGS_TXONLY) {
++		regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++				I2S_REG_CFG0_SLAVE_EN, cfg0);
++	} else {
++		regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++				I2S_REG_CFG0_SLAVE, cfg0);
++	}
++	regmap_update_bits(i2s->regmap, I2S_REG_CFG1,
++			I2S_REG_CFG1_FMT_MASK, cfg1);
++	i2s->fmt = fmt;
 +
 +	return 0;
 +}
 +
-+static int mt7620_i2s_hw_params(struct snd_pcm_substream *substream,
-+	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++static int ralink_i2s_startup(struct snd_pcm_substream *substream,
++		struct snd_soc_dai *dai)
 +{
++	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++
++	if (dai->active)
++		return 0;
++
++	/* setup status interrupt */
++#if (RALINK_I2S_INT_EN)
++	regmap_write(i2s->regmap, I2S_REG_INT_EN, 0xff);
++#else
++	regmap_write(i2s->regmap, I2S_REG_INT_EN, 0x0);
++#endif
++
++	/* enable */
++	regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++			I2S_REG_CFG0_EN | I2S_REG_CFG0_DMA_EN |
++			I2S_REG_CFG0_THRES_MASK,
++			I2S_REG_CFG0_EN | I2S_REG_CFG0_DMA_EN |
++			I2S_REG_CFG0_DFT_THRES);
 +
 +	return 0;
 +}
 +
-+unsigned long i2sMaster_inclk_int[11] = {
-+	78,     56,     52,     39,     28,     26,     19,     14,     13,     9,      6};
-+unsigned long i2sMaster_inclk_comp[11] = {
-+	64,     352,    42,     32,     176,    21,     272,    88,     10,     455,    261};
-+
-+
-+static int mt7620_i2s_set_sysclk(struct snd_soc_dai *dai, int clk_id,
-+	unsigned int freq, int dir)
++static void ralink_i2s_shutdown(struct snd_pcm_substream *substream,
++		struct snd_soc_dai *dai)
 +{
-+        struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
 +
-+	printk("Internal REFCLK with fractional division\n");
++	/* If both streams are stopped, disable module and clock */
++	if (dai->active)
++		return;
 +
-+	mt7620_i2s_write(i2s, I2S_REG_DIVINT, i2sMaster_inclk_int[7]);
-+	mt7620_i2s_write(i2s, I2S_REG_DIVCMP,
-+		i2sMaster_inclk_comp[7] | I2S_REG_CLK_EN);
++	/*
++	 * datasheet mention when disable all control regs are cleared
++	 * to initial values. need reinit at startup.
++	 */
++	regmap_update_bits(i2s->regmap, I2S_REG_CFG0, I2S_REG_CFG0_EN, 0);
++}
 +
-+/*	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
-+	struct clk *parent;
-+	int ret = 0;
++static int ralink_i2s_hw_params(struct snd_pcm_substream *substream,
++		struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	int width;
++	int ret;
 +
-+	switch (clk_id) {
-+	case JZ4740_I2S_CLKSRC_EXT:
-+		parent = clk_get(NULL, "ext");
-+		clk_set_parent(i2s->clk_i2s, parent);
++	width = params_width(params);
++	switch (width) {
++	case 16:
++		if (i2s->flags & RALINK_FLAGS_24BIT)
++			regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++					I2S_REG_CFG0_DATA_24, 0);
 +		break;
-+	case JZ4740_I2S_CLKSRC_PLL:
-+		parent = clk_get(NULL, "pll half");
-+		clk_set_parent(i2s->clk_i2s, parent);
-+		ret = clk_set_rate(i2s->clk_i2s, freq);
++	case 24:
++		if (i2s->flags & RALINK_FLAGS_24BIT) {
++			regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++					I2S_REG_CFG0_DATA_24,
++					I2S_REG_CFG0_DATA_24);
++			break;
++		}
++		return -EINVAL;
++	default:
++		return -EINVAL;
++	}
++
++	switch (params_channels(params)) {
++	case 2:
 +		break;
 +	default:
 +		return -EINVAL;
 +	}
-+	clk_put(parent);
 +
-+	return ret;*/
++	if (i2s->flags & RALINK_FLAGS_ENDIAN) {
++		/* system endian */
++#ifdef SNDRV_LITTLE_ENDIAN
++		regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++				I2S_REG_CFG0_SYS_BE, 0);
++#else
++		regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++				I2S_REG_CFG0_SYS_BE,
++				I2S_REG_CFG0_SYS_BE);
++#endif
++
++		/* data endian */
++		switch (params_format(params)) {
++		case SNDRV_PCM_FORMAT_S16_LE:
++		case SNDRV_PCM_FORMAT_S24_LE:
++			regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++					I2S_REG_CFG0_FMT_LE,
++					I2S_REG_CFG0_FMT_LE);
++			break;
++		case SNDRV_PCM_FORMAT_S16_BE:
++		case SNDRV_PCM_FORMAT_S24_BE:
++			regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
++					I2S_REG_CFG0_FMT_LE, 0);
++			break;
++		default:
++			return -EINVAL;
++		}
++	}
++
++	/* setup bclk rate */
++	if (i2s->flags & RALINK_FLAGS_TXONLY)
++		ret = ralink_i2s_set_sys_bclk(dai, width, params_rate(params));
++	else
++		ret = ralink_i2s_set_bclk(dai, width, params_rate(params));
++
++	return ret;
++}
++
++static int ralink_i2s_trigger(struct snd_pcm_substream *substream, int cmd,
++		struct snd_soc_dai *dai)
++{
++	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	unsigned int mask, val;
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		mask = I2S_REG_CFG0_TX_EN;
++	else
++		mask = I2S_REG_CFG0_RX_EN;
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		val = mask;
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		val = 0;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	regmap_update_bits(i2s->regmap, I2S_REG_CFG0, mask, val);
++
 +	return 0;
 +}
 +
-+static void mt7620_i2c_init_pcm_config(struct mt7620_i2s *i2s)
++static void ralink_i2s_init_dma_data(struct ralink_i2s *i2s,
++		struct resource *res)
 +{
 +	struct snd_dmaengine_dai_dma_data *dma_data;
 +
 +	/* Playback */
 +	dma_data = &i2s->playback_dma_data;
-+	dma_data->maxburst = 16;
-+	dma_data->slave_id = 2; //JZ4740_DMA_TYPE_AIC_TRANSMIT;
-+	dma_data->addr = i2s->phys_base + I2S_REG_WREG;
++	dma_data->addr = res->start + I2S_REG_WREG;
++	dma_data->addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
++	dma_data->maxburst = 1;
++	dma_data->slave_id = i2s->txdma_req;
++
++	if (i2s->flags & RALINK_FLAGS_TXONLY)
++		return;
 +
 +	/* Capture */
 +	dma_data = &i2s->capture_dma_data;
-+	dma_data->maxburst = 16;
-+	dma_data->slave_id = 3; //JZ4740_DMA_TYPE_AIC_RECEIVE;
-+	dma_data->addr = i2s->phys_base + I2S_REG_RREG;
++	dma_data->addr = res->start + I2S_REG_RREG;
++	dma_data->addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
++	dma_data->maxburst = 1;
++	dma_data->slave_id = i2s->rxdma_req;
 +}
 +
-+static int mt7620_i2s_dai_probe(struct snd_soc_dai *dai)
++static int ralink_i2s_dai_probe(struct snd_soc_dai *dai)
 +{
-+	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
-+	uint32_t data;
++	struct ralink_i2s *i2s = snd_soc_dai_get_drvdata(dai);
 +
-+	mt7620_i2c_init_pcm_config(i2s);
-+	dai->playback_dma_data = &i2s->playback_dma_data;
-+	dai->capture_dma_data = &i2s->capture_dma_data;
-+
-+	/* set share pins to i2s/gpio mode and i2c mode */
-+	data = rt_sysc_r32(0x60);
-+	data &= 0xFFFFFFE2;
-+	data |= 0x00000018;
-+	rt_sysc_w32(data, 0x60);
-+
-+	printk("Internal REFCLK with fractional division\n");
-+
-+	mt7620_i2s_write(i2s, I2S_REG_CFG0, I2S_REG_CFG0_DFT_THRES);
-+	mt7620_i2s_write(i2s, I2S_REG_CFG1, 0);
-+	mt7620_i2s_write(i2s, I2S_REG_INT_EN, 0);
-+
-+	mt7620_i2s_write(i2s, I2S_REG_DIVINT, i2sMaster_inclk_int[7]);
-+	mt7620_i2s_write(i2s, I2S_REG_DIVCMP,
-+		i2sMaster_inclk_comp[7] | I2S_REG_CLK_EN);
++	snd_soc_dai_init_dma_data(dai, &i2s->playback_dma_data,
++			&i2s->capture_dma_data);
 +
 +	return 0;
 +}
 +
-+static int mt7620_i2s_dai_remove(struct snd_soc_dai *dai)
++static int ralink_i2s_dai_remove(struct snd_soc_dai *dai)
 +{
 +	return 0;
 +}
 +
-+static const struct snd_soc_dai_ops mt7620_i2s_dai_ops = {
-+	.startup = mt7620_i2s_startup,
-+	.shutdown = mt7620_i2s_shutdown,
-+	.trigger = mt7620_i2s_trigger,
-+	.hw_params = mt7620_i2s_hw_params,
-+	.set_fmt = mt7620_i2s_set_fmt,
-+	.set_sysclk = mt7620_i2s_set_sysclk,
++static const struct snd_soc_dai_ops ralink_i2s_dai_ops = {
++	.set_sysclk = ralink_i2s_set_sysclk,
++	.set_fmt = ralink_i2s_set_fmt,
++	.startup = ralink_i2s_startup,
++	.shutdown = ralink_i2s_shutdown,
++	.hw_params = ralink_i2s_hw_params,
++	.trigger = ralink_i2s_trigger,
 +};
 +
-+#define JZ4740_I2S_FMTS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | \
-+			 SNDRV_PCM_FMTBIT_S24_LE)
-+
-+static struct snd_soc_dai_driver mt7620_i2s_dai = {
-+	.probe = mt7620_i2s_dai_probe,
-+	.remove = mt7620_i2s_dai_remove,
-+	.playback = {
-+		.channels_min = 1,
-+		.channels_max = 2,
-+		.rates = SNDRV_PCM_RATE_8000_48000,
-+		.formats = JZ4740_I2S_FMTS,
-+	},
++static struct snd_soc_dai_driver ralink_i2s_dai = {
++	.name = DRV_NAME,
++	.probe = ralink_i2s_dai_probe,
++	.remove = ralink_i2s_dai_remove,
++	.ops = &ralink_i2s_dai_ops,
 +	.capture = {
++		.stream_name = "I2S Capture",
 +		.channels_min = 2,
 +		.channels_max = 2,
-+		.rates = SNDRV_PCM_RATE_8000_48000,
-+		.formats = JZ4740_I2S_FMTS,
++		.rate_min = 5512,
++		.rate_max = 192000,
++		.rates = SNDRV_PCM_RATE_CONTINUOUS,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE,
++	},
++	.playback = {
++		.stream_name = "I2S Playback",
++		.channels_min = 2,
++		.channels_max = 2,
++		.rate_min = 5512,
++		.rate_max = 192000,
++		.rates = SNDRV_PCM_RATE_CONTINUOUS,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 +	},
 +	.symmetric_rates = 1,
-+	.ops = &mt7620_i2s_dai_ops,
 +};
 +
-+static const struct snd_pcm_hardware mt7620_pcm_hardware = {
++static struct snd_pcm_hardware ralink_pcm_hardware = {
 +	.info = SNDRV_PCM_INFO_MMAP |
 +		SNDRV_PCM_INFO_MMAP_VALID |
 +		SNDRV_PCM_INFO_INTERLEAVED |
 +		SNDRV_PCM_INFO_BLOCK_TRANSFER,
-+	.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S8,
++	.formats = SNDRV_PCM_FMTBIT_S16_LE,
++	.channels_min		= 2,
++	.channels_max		= 2,
 +	.period_bytes_min	= PAGE_SIZE,
-+	.period_bytes_max	= 64 * 1024,
++	.period_bytes_max	= PAGE_SIZE * 2,
 +	.periods_min		= 2,
 +	.periods_max		= 128,
 +	.buffer_bytes_max	= 128 * 1024,
-+	.fifo_size		= 32,
++	.fifo_size		= RALINK_I2S_FIFO_SIZE,
 +};
 +
-+static const struct snd_dmaengine_pcm_config mt7620_dmaengine_pcm_config = {
++static const struct snd_dmaengine_pcm_config ralink_dmaengine_pcm_config = {
 +	.prepare_slave_config = snd_dmaengine_pcm_prepare_slave_config,
-+	.pcm_hardware = &mt7620_pcm_hardware,
++	.pcm_hardware = &ralink_pcm_hardware,
 +	.prealloc_buffer_size = 256 * PAGE_SIZE,
 +};
 +
-+static const struct snd_soc_component_driver mt7620_i2s_component = {
-+	.name = "mt7620-i2s",
++static const struct snd_soc_component_driver ralink_i2s_component = {
++	.name = DRV_NAME,
 +};
 +
-+static int mt7620_i2s_dev_probe(struct platform_device *pdev)
++static bool ralink_i2s_readable_reg(struct device *dev, unsigned int reg)
 +{
-+	struct mt7620_i2s *i2s;
-+	int ret;
++	return true;
++}
 +
-+	snd_dmaengine_pcm_register(&pdev->dev,
-+		&mt7620_dmaengine_pcm_config,
-+		SND_DMAENGINE_PCM_FLAG_COMPAT);
++static bool ralink_i2s_volatile_reg(struct device *dev, unsigned int reg)
++{
++	switch (reg) {
++	case I2S_REG_INT_STATUS:
++	case I2S_REG_FF_STATUS:
++		return true;
++	}
++	return false;
++}
 +
-+	i2s = kzalloc(sizeof(*i2s), GFP_KERNEL);
++static bool ralink_i2s_writeable_reg(struct device *dev, unsigned int reg)
++{
++	switch (reg) {
++	case I2S_REG_FF_STATUS:
++	case I2S_REG_RREG:
++		return false;
++	}
++	return true;
++}
++
++static const struct regmap_config ralink_i2s_regmap_config = {
++	.reg_bits = 32,
++	.reg_stride = 4,
++	.val_bits = 32,
++	.writeable_reg = ralink_i2s_writeable_reg,
++	.readable_reg = ralink_i2s_readable_reg,
++	.volatile_reg = ralink_i2s_volatile_reg,
++	.max_register = I2S_REG_DIVINT,
++};
++
++#if (RALINK_I2S_INT_EN)
++static irqreturn_t ralink_i2s_irq(int irq, void *devid)
++{
++	struct ralink_i2s *i2s = devid;
++	u32 status;
++
++	regmap_read(i2s->regmap, I2S_REG_INT_STATUS, &status);
++	if (unlikely(!status))
++		return IRQ_NONE;
++
++	/* tx stats */
++	if (status & I2S_REG_INT_TX_MASK) {
++		if (status & I2S_REG_INT_TX_THRES)
++			i2s->txstats.belowthres++;
++		if (status & I2S_REG_INT_TX_UNRUN)
++			i2s->txstats.underrun++;
++		if (status & I2S_REG_INT_TX_OVRUN)
++			i2s->txstats.overrun++;
++		if (status & I2S_REG_INT_TX_FAULT)
++			i2s->txstats.dmafault++;
++	}
++
++	/* rx stats */
++	if (status & I2S_REG_INT_RX_MASK) {
++		if (status & I2S_REG_INT_RX_THRES)
++			i2s->rxstats.belowthres++;
++		if (status & I2S_REG_INT_RX_UNRUN)
++			i2s->rxstats.underrun++;
++		if (status & I2S_REG_INT_RX_OVRUN)
++			i2s->rxstats.overrun++;
++		if (status & I2S_REG_INT_RX_FAULT)
++			i2s->rxstats.dmafault++;
++	}
++
++	/* clean status bits */
++	regmap_write(i2s->regmap, I2S_REG_INT_STATUS, status);
++
++	return IRQ_HANDLED;
++}
++#endif
++
++#if IS_ENABLED(CONFIG_DEBUG_FS)
++static int ralink_i2s_stats_show(struct seq_file *s, void *unused)
++{
++        struct ralink_i2s *i2s = s->private;
++
++	seq_printf(s, "tx stats\n");
++	seq_printf(s, "\tbelow threshold\t%u\n", i2s->txstats.belowthres);
++	seq_printf(s, "\tunder run\t%u\n", i2s->txstats.underrun);
++	seq_printf(s, "\tover run\t%u\n", i2s->txstats.overrun);
++	seq_printf(s, "\tdma fault\t%u\n", i2s->txstats.dmafault);
++
++	seq_printf(s, "rx stats\n");
++	seq_printf(s, "\tbelow threshold\t%u\n", i2s->rxstats.belowthres);
++	seq_printf(s, "\tunder run\t%u\n", i2s->rxstats.underrun);
++	seq_printf(s, "\tover run\t%u\n", i2s->rxstats.overrun);
++	seq_printf(s, "\tdma fault\t%u\n", i2s->rxstats.dmafault);
++
++	ralink_i2s_dump_regs(i2s);
++
++	return 0;
++}
++
++static int ralink_i2s_stats_open(struct inode *inode, struct file *file)
++{
++        return single_open(file, ralink_i2s_stats_show, inode->i_private);
++}
++
++static const struct file_operations ralink_i2s_stats_ops = {
++        .open = ralink_i2s_stats_open,
++        .read = seq_read,
++        .llseek = seq_lseek,
++        .release = single_release,
++};
++
++static inline int ralink_i2s_debugfs_create(struct ralink_i2s *i2s)
++{
++        i2s->dbg_dir = debugfs_create_dir(dev_name(i2s->dev), NULL);
++        if (!i2s->dbg_dir)
++                return -ENOMEM;
++
++        i2s->dbg_stats = debugfs_create_file("stats", S_IRUGO,
++                        i2s->dbg_dir, i2s, &ralink_i2s_stats_ops);
++        if (!i2s->dbg_stats) {
++                debugfs_remove(i2s->dbg_dir);
++                return -ENOMEM;
++        }
++
++        return 0;
++}
++
++static inline void ralink_i2s_debugfs_remove(struct ralink_i2s *i2s)
++{
++	debugfs_remove(i2s->dbg_stats);
++	debugfs_remove(i2s->dbg_dir);
++}
++#else
++static inline int ralink_i2s_debugfs_create(struct ralink_i2s *i2s)
++{
++	return 0;
++}
++
++static inline void ralink_i2s_debugfs_remove(struct fsl_ssi_dbg *ssi_dbg)
++{
++}
++#endif
++
++/*
++ * TODO: these refclk setup functions should use
++ * clock framework instead. hardcode it now.
++ */
++static void rt3350_refclk_setup(void)
++{
++	uint32_t data;
++
++	/* set refclk output 12Mhz clock */
++	data = rt_sysc_r32(0x2c);
++	data |= (0x1 << 8);
++	rt_sysc_w32(data, 0x2c);
++}
++
++static void rt3883_refclk_setup(void)
++{
++	uint32_t data;
++
++	/* set refclk output 12Mhz clock */
++	data = rt_sysc_r32(0x2c);
++	data &= ~(0x3 << 13);
++	data |= (0x1 << 13);
++	rt_sysc_w32(data, 0x2c);
++}
++
++static void rt3552_refclk_setup(void)
++{
++	uint32_t data;
++
++	/* set refclk output 12Mhz clock */
++	data = rt_sysc_r32(0x2c);
++	data &= ~(0xf << 8);
++	data |= (0x3 << 8);
++	rt_sysc_w32(data, 0x2c);
++}
++
++static void mt7620_refclk_setup(void)
++{
++	uint32_t data;
++
++	/* set refclk output 12Mhz clock */
++	data = rt_sysc_r32(0x2c);
++	data &= ~(0x7 << 9);
++	data |= 0x1 << 9;
++	rt_sysc_w32(data, 0x2c);
++}
++
++static void mt7621_refclk_setup(void)
++{
++	uint32_t data;
++
++	/* set refclk output 12Mhz clock */
++	data = rt_sysc_r32(0x2c);
++	data &= ~(0x1f << 18);
++	data |= (0x19 << 18);
++	data &= ~(0x1f << 12);
++	data |= (0x1 << 12);
++	data &= ~(0x7 << 9);
++	data |= (0x5 << 9);
++	rt_sysc_w32(data, 0x2c);
++}
++
++static void mt7628_refclk_setup(void)
++{
++	uint32_t data;
++
++	/* set i2s and refclk digital pad */
++	data = rt_sysc_r32(0x3c);
++	data |= 0x1f;
++	rt_sysc_w32(data, 0x3c);
++
++	/* Adjust REFCLK0's driving strength */
++	data = rt_sysc_r32(0x1354);
++	data &= ~(0x1 << 5);
++	rt_sysc_w32(data, 0x1354);
++	data = rt_sysc_r32(0x1364);
++	data |= ~(0x1 << 5);
++	rt_sysc_w32(data, 0x1364);
++
++	/* set refclk output 12Mhz clock */
++	data = rt_sysc_r32(0x2c);
++	data &= ~(0x7 << 9);
++	data |= 0x1 << 9;
++	rt_sysc_w32(data, 0x2c);
++}
++
++struct rt_i2s_data {
++	u32 flags;
++	void (*refclk_setup)(void);
++};
++
++struct rt_i2s_data rt3050_i2s_data = { .flags = RALINK_FLAGS_TXONLY };
++struct rt_i2s_data rt3350_i2s_data = { .flags = RALINK_FLAGS_TXONLY,
++	.refclk_setup = rt3350_refclk_setup };
++struct rt_i2s_data rt3883_i2s_data = {
++	.flags = (RALINK_FLAGS_LEFT_J | RALINK_FLAGS_RIGHT_J),
++	.refclk_setup = rt3883_refclk_setup };
++struct rt_i2s_data rt3352_i2s_data = { .refclk_setup = rt3552_refclk_setup};
++struct rt_i2s_data mt7620_i2s_data = { .refclk_setup = mt7620_refclk_setup};
++struct rt_i2s_data mt7621_i2s_data = { .refclk_setup = mt7621_refclk_setup};
++struct rt_i2s_data mt7628_i2s_data = {
++	.flags = (RALINK_FLAGS_ENDIAN | RALINK_FLAGS_24BIT |
++			RALINK_FLAGS_LEFT_J),
++	.refclk_setup = mt7628_refclk_setup};
++
++static const struct of_device_id ralink_i2s_match_table[] = {
++	{ .compatible = "ralink,rt3050-i2s",
++		.data = (void *)&rt3050_i2s_data },
++	{ .compatible = "ralink,rt3350-i2s",
++		.data = (void *)&rt3350_i2s_data },
++	{ .compatible = "ralink,rt3883-i2s",
++		.data = (void *)&rt3883_i2s_data },
++	{ .compatible = "ralink,rt3352-i2s",
++		.data = (void *)&rt3352_i2s_data },
++	{ .compatible = "mediatek,mt7620-i2s",
++		.data = (void *)&mt7620_i2s_data },
++	{ .compatible = "mediatek,mt7621-i2s",
++		.data = (void *)&mt7621_i2s_data },
++	{ .compatible = "mediatek,mt7628-i2s",
++		.data = (void *)&mt7628_i2s_data },
++};
++MODULE_DEVICE_TABLE(of, ralink_i2s_match_table);
++
++static int ralink_i2s_probe(struct platform_device *pdev)
++{
++	const struct of_device_id *match;
++	struct device_node *np = pdev->dev.of_node;
++	struct ralink_i2s *i2s;
++	struct resource *res;
++	int irq, ret;
++	u32 dma_req;
++	struct rt_i2s_data *data;
++
++	i2s = devm_kzalloc(&pdev->dev, sizeof(*i2s), GFP_KERNEL);
 +	if (!i2s)
 +		return -ENOMEM;
 +
-+	i2s->mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	if (!i2s->mem) {
-+		ret = -ENOENT;
-+		goto err_free;
-+	}
-+
-+	i2s->mem = request_mem_region(i2s->mem->start, resource_size(i2s->mem),
-+				pdev->name);
-+	if (!i2s->mem) {
-+		ret = -EBUSY;
-+		goto err_free;
-+	}
-+
-+	i2s->base = ioremap_nocache(i2s->mem->start, resource_size(i2s->mem));
-+	if (!i2s->base) {
-+		ret = -EBUSY;
-+		goto err_release_mem_region;
-+	}
-+
-+	i2s->phys_base = i2s->mem->start;
-+
 +	platform_set_drvdata(pdev, i2s);
-+	ret = snd_soc_register_component(&pdev->dev, &mt7620_i2s_component,
-+					 &mt7620_i2s_dai, 1);
++	i2s->dev = &pdev->dev;
 +
-+	if (!ret) {
-+		dev_err(&pdev->dev, "loaded\n");
++	match = of_match_device(ralink_i2s_match_table, &pdev->dev);
++	if (!match)
++		return -EINVAL;
++	data = (struct rt_i2s_data *)match->data;
++	i2s->flags = data->flags;
++	/* setup out 12Mhz refclk to codec as mclk */
++	if (data->refclk_setup)
++		data->refclk_setup();
++
++	if (of_property_read_u32(np, "txdma-req", &dma_req)) {
++		dev_err(&pdev->dev, "no txdma-req define\n");
++		return -EINVAL;
++	}
++	i2s->txdma_req = (u16)dma_req;
++	if (!(i2s->flags & RALINK_FLAGS_TXONLY)) {
++		if (of_property_read_u32(np, "rxdma-req", &dma_req)) {
++			dev_err(&pdev->dev, "no rxdma-req define\n");
++			return -EINVAL;
++		}
++		i2s->rxdma_req = (u16)dma_req;
++	}
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	i2s->regs = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(i2s->regs))
++		return PTR_ERR(i2s->regs);
++
++	i2s->regmap = devm_regmap_init_mmio(&pdev->dev, i2s->regs,
++			&ralink_i2s_regmap_config);
++	if (IS_ERR(i2s->regmap)) {
++		dev_err(&pdev->dev, "regmap init failed\n");
++		return PTR_ERR(i2s->regmap);
++	}
++
++        irq = platform_get_irq(pdev, 0);
++        if (irq < 0) {
++                dev_err(&pdev->dev, "failed to get irq\n");
++                return -EINVAL;
++        }
++
++#if (RALINK_I2S_INT_EN)
++	ret = devm_request_irq(&pdev->dev, irq, ralink_i2s_irq,
++			0, dev_name(&pdev->dev), i2s);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to request irq\n");
 +		return ret;
 +	}
++#endif
 +
-+	dev_err(&pdev->dev, "Failed to register DAI\n");
-+	iounmap(i2s->base);
++	i2s->clk = devm_clk_get(&pdev->dev, NULL);
++	if (IS_ERR(i2s->clk)) {
++		dev_err(&pdev->dev, "no clock defined\n");
++		return PTR_ERR(i2s->clk);
++	}
 +
-+err_release_mem_region:
-+	release_mem_region(i2s->mem->start, resource_size(i2s->mem));
-+err_free:
-+	kfree(i2s);
++	ret = clk_prepare_enable(i2s->clk);
++	if (ret)
++		return ret;
++
++	ralink_i2s_init_dma_data(i2s, res);
++
++	device_reset(&pdev->dev);
++
++	ret = ralink_i2s_debugfs_create(i2s);
++	if (ret) {
++		dev_err(&pdev->dev, "create debugfs failed\n");
++		goto err_clk_disable;
++	}
++
++	/* enable 24bits support */
++	if (i2s->flags & RALINK_FLAGS_24BIT) {
++		ralink_i2s_dai.capture.formats |= SNDRV_PCM_FMTBIT_S24_LE;
++		ralink_i2s_dai.playback.formats |= SNDRV_PCM_FMTBIT_S24_LE;
++	}
++
++	/* enable big endian support */
++	if (i2s->flags & RALINK_FLAGS_ENDIAN) {
++		ralink_i2s_dai.capture.formats |= SNDRV_PCM_FMTBIT_S16_BE;
++		ralink_i2s_dai.playback.formats |= SNDRV_PCM_FMTBIT_S16_BE;
++		ralink_pcm_hardware.formats |= SNDRV_PCM_FMTBIT_S16_BE;
++		if (i2s->flags & RALINK_FLAGS_24BIT) {
++			ralink_i2s_dai.capture.formats |=
++				SNDRV_PCM_FMTBIT_S24_BE;
++			ralink_i2s_dai.playback.formats |=
++				SNDRV_PCM_FMTBIT_S24_BE;
++			ralink_pcm_hardware.formats |=
++				SNDRV_PCM_FMTBIT_S24_BE;
++		}
++	}
++
++	/* disable capture support */
++	if (i2s->flags & RALINK_FLAGS_TXONLY)
++		memset(&ralink_i2s_dai.capture, sizeof(ralink_i2s_dai.capture),
++				0);
++
++	ret = devm_snd_soc_register_component(&pdev->dev, &ralink_i2s_component,
++			&ralink_i2s_dai, 1);
++	if (ret)
++		goto err_debugfs;
++
++	ret = devm_snd_dmaengine_pcm_register(&pdev->dev,
++			&ralink_dmaengine_pcm_config,
++			SND_DMAENGINE_PCM_FLAG_COMPAT);
++	if (ret)
++		goto err_debugfs;
++
++	dev_info(i2s->dev, "mclk %luKHz\n", clk_get_rate(i2s->clk) / 1000000);
++
++	return 0;
++
++err_debugfs:
++	ralink_i2s_debugfs_remove(i2s);
++
++err_clk_disable:
++	clk_disable_unprepare(i2s->clk);
 +
 +	return ret;
 +}
 +
-+static int mt7620_i2s_dev_remove(struct platform_device *pdev)
++static int ralink_i2s_remove(struct platform_device *pdev)
 +{
-+	struct mt7620_i2s *i2s = platform_get_drvdata(pdev);
++	struct ralink_i2s *i2s = platform_get_drvdata(pdev);
 +
-+	snd_soc_unregister_component(&pdev->dev);
-+
-+	iounmap(i2s->base);
-+	release_mem_region(i2s->mem->start, resource_size(i2s->mem));
-+
-+	kfree(i2s);
-+
-+	snd_dmaengine_pcm_unregister(&pdev->dev);
++	ralink_i2s_debugfs_remove(i2s);
++	clk_disable_unprepare(i2s->clk);
 +
 +	return 0;
 +}
 +
-+static const struct of_device_id mt7620_i2s_match[] = {
-+	{ .compatible = "ralink,mt7620a-i2s" },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, mt7620_i2s_match);
-+
-+static struct platform_driver mt7620_i2s_driver = {
-+	.probe = mt7620_i2s_dev_probe,
-+	.remove = mt7620_i2s_dev_remove,
++static struct platform_driver ralink_i2s_driver = {
++	.probe = ralink_i2s_probe,
++	.remove = ralink_i2s_remove,
 +	.driver = {
-+		.name = "mt7620-i2s",
-+		.owner = THIS_MODULE,
-+		.of_match_table = mt7620_i2s_match,
++		.name = DRV_NAME,
++		.of_match_table = ralink_i2s_match_table,
 +	},
 +};
-+
-+module_platform_driver(mt7620_i2s_driver);
++module_platform_driver(ralink_i2s_driver);
 +
 +MODULE_AUTHOR("Lars-Peter Clausen, <lars@metafoo.de>");
-+MODULE_DESCRIPTION("Ingenic JZ4740 SoC I2S driver");
++MODULE_DESCRIPTION("Ralink/MediaTek I2S driver");
 +MODULE_LICENSE("GPL");
-+MODULE_ALIAS("platform:mt7620-i2s");
---- /dev/null
-+++ b/sound/soc/ralink/mt7620-wm8960.c
-@@ -0,0 +1,233 @@
-+/*
-+ * Copyright 2013 Freescale Semiconductor, Inc.
-+ *
-+ * Based on mt7620-sgtl5000.c
-+ * Copyright 2012 Freescale Semiconductor, Inc.
-+ * Copyright 2012 Linaro Ltd.
-+ *
-+ * The code contained herein is licensed under the GNU General Public
-+ * License. You may obtain a copy of the GNU General Public License
-+ * Version 2 or later at the following locations:
-+ *
-+ * http://www.opensource.org/licenses/gpl-license.html
-+ * http://www.gnu.org/copyleft/gpl.html
-+ */
-+
-+#include <linux/module.h>
-+#include <linux/of_platform.h>
-+#include <linux/i2c.h>
-+#include <linux/slab.h>
-+#include <sound/soc.h>
-+#include <sound/pcm_params.h>
-+#include <sound/soc-dapm.h>
-+#include <linux/pinctrl/consumer.h>
-+
-+#include "../codecs/wm8960.h"
-+
-+#define DAI_NAME_SIZE	32
-+
-+struct mt7620_wm8960_data {
-+	struct snd_soc_dai_link dai;
-+	struct snd_soc_card card;
-+	char codec_dai_name[DAI_NAME_SIZE];
-+	char platform_name[DAI_NAME_SIZE];
-+	unsigned int clk_frequency;
-+};
-+
-+struct mt7620_priv {
-+	struct platform_device *pdev;
-+};
-+static struct mt7620_priv card_priv;
-+
-+static const struct snd_soc_dapm_widget mt7620_wm8960_dapm_widgets[] = {
-+	SND_SOC_DAPM_HP("Headphone Jack", NULL),
-+	SND_SOC_DAPM_SPK("Ext Spk", NULL),
-+	SND_SOC_DAPM_MIC("AMIC", NULL),
-+	SND_SOC_DAPM_MIC("DMIC", NULL),
-+};
-+
-+static int sample_rate = 44100;
-+static snd_pcm_format_t sample_format = SNDRV_PCM_FORMAT_S16_LE;
-+
-+static int mt7620_hifi_hw_params(struct snd_pcm_substream *substream,
-+		struct snd_pcm_hw_params *params)
-+{
-+	sample_rate = params_rate(params);
-+	sample_format = params_format(params);
-+
-+	return 0;
-+}
-+
-+static struct snd_soc_ops mt7620_hifi_ops = {
-+	.hw_params = mt7620_hifi_hw_params,
-+};
-+
-+static int mt7620_wm8960_set_bias_level(struct snd_soc_card *card,
-+					struct snd_soc_dapm_context *dapm,
-+					enum snd_soc_bias_level level)
-+{
-+	struct snd_soc_dai *codec_dai = card->rtd[0].codec_dai;
-+	struct mt7620_priv *priv = &card_priv;
-+	struct mt7620_wm8960_data *data = snd_soc_card_get_drvdata(card);
-+	struct device *dev = &priv->pdev->dev;
-+	int ret;
-+
-+	if (dapm->dev != codec_dai->dev)
-+		return 0;
-+
-+	switch (level) {
-+	case SND_SOC_BIAS_PREPARE:
-+		if (dapm->bias_level == SND_SOC_BIAS_STANDBY) {
-+		}
-+		break;
-+
-+	case SND_SOC_BIAS_STANDBY:
-+		if (dapm->bias_level == SND_SOC_BIAS_PREPARE) {
-+			ret = snd_soc_dai_set_sysclk(codec_dai,
-+					WM8960_SYSCLK_MCLK, data->clk_frequency,
-+					SND_SOC_CLOCK_IN);
-+			if (ret < 0) {
-+				dev_err(dev,
-+					"failed to switch away from FLL: %d\n",
-+					ret);
-+				return ret;
-+			}
-+		}
-+		break;
-+
-+	default:
-+		break;
-+	}
-+
-+	return 0;
-+}
-+
-+static int mt7620_wm8960_late_probe(struct snd_soc_card *card)
-+{
-+	struct snd_soc_dai *codec_dai = card->rtd[0].codec_dai;
-+	struct mt7620_priv *priv = &card_priv;
-+	struct mt7620_wm8960_data *data = snd_soc_card_get_drvdata(card);
-+	struct device *dev = &priv->pdev->dev;
-+	int ret;
-+
-+	ret = snd_soc_dai_set_sysclk(codec_dai, WM8960_SYSCLK_MCLK,
-+			data->clk_frequency, SND_SOC_CLOCK_IN);
-+	if (ret < 0)
-+		dev_err(dev, "failed to set sysclk in %s\n", __func__);
-+
-+	return ret;
-+}
-+
-+static int mt7620_wm8960_probe(struct platform_device *pdev)
-+{
-+	struct device_node *i2s_np, *codec_np;
-+	struct platform_device *i2s_pdev;
-+	struct mt7620_priv *priv = &card_priv;
-+	struct i2c_client *codec_dev;
-+	struct mt7620_wm8960_data *data;
-+	int ret;
-+
-+	priv->pdev = pdev;
-+
-+	i2s_np = of_parse_phandle(pdev->dev.of_node, "i2s-controller", 0);
-+	codec_np = of_parse_phandle(pdev->dev.of_node, "audio-codec", 0);
-+	if (!i2s_np || !codec_np) {
-+		dev_err(&pdev->dev, "phandle missing or invalid\n");
-+		ret = -EINVAL;
-+		goto fail;
-+	}
-+
-+	i2s_pdev = of_find_device_by_node(i2s_np);
-+	if (!i2s_pdev) {
-+		dev_err(&pdev->dev, "failed to find SSI platform device\n");
-+		ret = -EINVAL;
-+		goto fail;
-+	}
-+	codec_dev = of_find_i2c_device_by_node(codec_np);
-+	if (!codec_dev || !codec_dev->dev.driver) {
-+		dev_err(&pdev->dev, "failed to find codec platform device\n");
-+		ret = -EINVAL;
-+		goto fail;
-+	}
-+
-+	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
-+	if (!data) {
-+		ret = -ENOMEM;
-+		goto fail;
-+	}
-+
-+	data->clk_frequency = 12000000;
-+	data->dai.name = "HiFi";
-+	data->dai.stream_name = "HiFi";
-+	data->dai.codec_dai_name = "wm8960-hifi";
-+	data->dai.codec_of_node = codec_np;
-+	data->dai.cpu_dai_name = dev_name(&i2s_pdev->dev);
-+	data->dai.platform_of_node = i2s_np;
-+	data->dai.ops = &mt7620_hifi_ops;
-+	data->dai.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
-+			    SND_SOC_DAIFMT_CBM_CFM;
-+
-+	data->card.dev = &pdev->dev;
-+	ret = snd_soc_of_parse_card_name(&data->card, "model");
-+	if (ret)
-+		goto fail;
-+	ret = snd_soc_of_parse_audio_routing(&data->card, "audio-routing");
-+	if (ret)
-+		goto fail;
-+	data->card.num_links = 1;
-+	data->card.dai_link = &data->dai;
-+	data->card.dapm_widgets = mt7620_wm8960_dapm_widgets;
-+	data->card.num_dapm_widgets = ARRAY_SIZE(mt7620_wm8960_dapm_widgets);
-+
-+	data->card.late_probe = mt7620_wm8960_late_probe;
-+	data->card.set_bias_level = mt7620_wm8960_set_bias_level;
-+
-+	platform_set_drvdata(pdev, &data->card);
-+	snd_soc_card_set_drvdata(&data->card, data);
-+
-+	ret = devm_snd_soc_register_card(&pdev->dev, &data->card);
-+	if (ret) {
-+		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n", ret);
-+		goto fail;
-+	}
-+
-+	of_node_put(i2s_np);
-+	of_node_put(codec_np);
-+
-+	return 0;
-+fail:
-+	if (i2s_np)
-+		of_node_put(i2s_np);
-+	if (codec_np)
-+		of_node_put(codec_np);
-+
-+	return ret;
-+}
-+
-+static int mt7620_wm8960_remove(struct platform_device *pdev)
-+{
-+	return 0;
-+}
-+
-+static const struct of_device_id mt7620_wm8960_dt_ids[] = {
-+	{ .compatible = "mediatek,mt7620-audio-wm8960", },
-+	{ /* sentinel */ }
-+};
-+MODULE_DEVICE_TABLE(of, mt7620_wm8960_dt_ids);
-+
-+static struct platform_driver mt7620_wm8960_driver = {
-+	.driver = {
-+		.name = "mt7620-wm8960",
-+		.owner = THIS_MODULE,
-+		.pm = &snd_soc_pm_ops,
-+		.of_match_table = mt7620_wm8960_dt_ids,
-+	},
-+	.probe = mt7620_wm8960_probe,
-+	.remove = mt7620_wm8960_remove,
-+};
-+module_platform_driver(mt7620_wm8960_driver);
-+
-+MODULE_AUTHOR("Freescale Semiconductor, Inc.");
-+MODULE_DESCRIPTION("Freescale i.MX WM8962 ASoC machine driver");
-+MODULE_LICENSE("GPL v2");
-+MODULE_ALIAS("platform:mt7620-wm8962");
++MODULE_ALIAS("platform:" DRV_NAME);
