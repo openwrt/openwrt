@@ -28,7 +28,7 @@ endef
 $(eval $(call Profile,JA76PF2))
 
 define Profile/JWAP003
-	NAME:=jjPlus JWAP0003
+	NAME:=jjPlus JWAP003
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
