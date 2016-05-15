@@ -287,9 +287,7 @@ EOF
 config TARGET_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
 	depends on TARGET_$target->{conf}
-$profile->{config}
 EOF
-			$profile->{kconfig} and print "\tselect PROFILE_KCONFIG\n";
 			my @pkglist = merge_package_lists($target->{packages}, $profile->{packages});
 			foreach my $pkg (@pkglist) {
 				print "\tselect DEFAULT_$pkg\n";

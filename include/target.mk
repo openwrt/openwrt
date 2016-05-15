@@ -67,19 +67,12 @@ ifndef Profile
 define Profile
   $(eval $(call ProfileDefault))
   $(eval $(call Profile/$(1)))
-  dumpinfo : $(call shexport,Profile/$(1)/Config)
   dumpinfo : $(call shexport,Profile/$(1)/Description)
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
 	$(if $(PRIORITY), echo "Target-Profile-Priority: $(PRIORITY)"; ) \
 	echo "Target-Profile-Name: $(NAME)"; \
 	echo "Target-Profile-Packages: $(PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES) $(PACKAGES))"; \
-	if [ -f ./config/profile-$(1) ]; then \
-		echo "Target-Profile-Kconfig: yes"; \
-	fi; \
-	echo "Target-Profile-Config: "; \
-	echo "$$$$$$$$$(call shvar,Profile/$(1)/Config)"; \
-	echo "@@"; \
 	echo "Target-Profile-Description:"; \
 	echo "$$$$$$$$$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \

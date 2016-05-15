@@ -96,8 +96,6 @@ sub parse_target_metadata($) {
 		};
 		/^Target-Profile-Packages:\s*(.*)\s*$/ and $profile->{packages} = [ split(/\s+/, $1) ];
 		/^Target-Profile-Description:\s*(.*)\s*/ and $profile->{desc} = get_multiline(*FILE);
-		/^Target-Profile-Config:/ and $profile->{config} = get_multiline(*FILE, "\t");
-		/^Target-Profile-Kconfig:/ and $profile->{kconfig} = 1;
 	}
 	close FILE;
 	foreach my $target (@target) {
