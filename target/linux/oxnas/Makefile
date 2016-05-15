@@ -21,8 +21,9 @@ include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
 	kmod-ata-core kmod-ata-oxnas-sata kmod-button-hotplug \
-	kmod-input-gpio-keys-polled kmod-leds-gpio kmod-usb2-oxnas \
-	uboot-envtools uboot-oxnas-ox820
+	kmod-input-gpio-keys-polled kmod-ledtrig-usbdev kmod-leds-gpio \
+	kmod-usb2-oxnas kmod-usb-storage uboot-envtools \
+	uboot-oxnas-ox820
 
 KERNELNAME:=zImage dtbs
 
