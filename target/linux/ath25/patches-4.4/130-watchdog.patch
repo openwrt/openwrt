@@ -174,7 +174,7 @@
 +		return PTR_ERR(wdt_base);
 +
 +	ret = devm_request_irq(&dev->dev, irq_res->start, ar2315_wdt_interrupt,
-+			       IRQF_DISABLED, DRIVER_NAME, dev);
++			       0, DRIVER_NAME, dev);
 +	if (ret) {
 +		dev_err(&dev->dev, "failed to register inetrrupt\n");
 +		goto out;
@@ -212,7 +212,7 @@
 +MODULE_ALIAS("platform:" DRIVER_NAME);
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1257,6 +1257,13 @@ config RALINK_WDT
+@@ -1345,6 +1345,13 @@ config RALINK_WDT
  	help
  	  Hardware driver for the Ralink SoC Watchdog Timer.
  
@@ -228,7 +228,7 @@
  # POWERPC Architecture
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -138,6 +138,7 @@ obj-$(CONFIG_GPIO_WDT) += old_gpio_wdt.o
+@@ -143,6 +143,7 @@ obj-$(CONFIG_WDT_MTX1) += mtx-1_wdt.o
  obj-$(CONFIG_PNX833X_WDT) += pnx833x_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o

@@ -52,9 +52,9 @@
  		if (!ath25_board.radio)
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -112,6 +112,13 @@ config GPIO_MAX730X
- 
- comment "Memory mapped GPIO drivers:"
+@@ -141,6 +141,13 @@ config GPIO_BRCMSTB
+ 	help
+ 	  Say yes here to enable GPIO support for Broadcom STB (BCM7XXX) SoCs.
  
 +config GPIO_AR5312
 +	bool "AR5312 SoC GPIO support"
@@ -68,14 +68,14 @@
  	depends on ARCH_CLPS711X || COMPILE_TEST
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_GPIO_ADNP)		+= gpio-adnp.o
- obj-$(CONFIG_GPIO_ADP5520)	+= gpio-adp5520.o
- obj-$(CONFIG_GPIO_ADP5588)	+= gpio-adp5588.o
+@@ -21,6 +21,7 @@ obj-$(CONFIG_GPIO_ADP5588)	+= gpio-adp55
+ obj-$(CONFIG_GPIO_ALTERA)  	+= gpio-altera.o
  obj-$(CONFIG_GPIO_AMD8111)	+= gpio-amd8111.o
+ obj-$(CONFIG_GPIO_AMDPT)	+= gpio-amdpt.o
 +obj-$(CONFIG_GPIO_AR5312)	+= gpio-ar5312.o
  obj-$(CONFIG_GPIO_ARIZONA)	+= gpio-arizona.o
+ obj-$(CONFIG_ATH79)		+= gpio-ath79.o
  obj-$(CONFIG_GPIO_BCM_KONA)	+= gpio-bcm-kona.o
- obj-$(CONFIG_GPIO_BT8XX)	+= gpio-bt8xx.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-ar5312.c
 @@ -0,0 +1,121 @@
@@ -202,7 +202,7 @@
 +subsys_initcall(ar5312_gpio_init);
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -107,6 +107,7 @@ config ATH25
+@@ -117,6 +117,7 @@ config ATH25
  	select SYS_SUPPORTS_BIG_ENDIAN
  	select SYS_SUPPORTS_32BIT_KERNEL
  	select SYS_HAS_EARLY_PRINTK
