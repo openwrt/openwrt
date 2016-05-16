@@ -165,11 +165,14 @@ staging_dir/host/.prereq-build: include/prereq-build.mk
 printdb: FORCE
 	@$(_SINGLE)$(NO_TRACE_MAKE) -p $@ V=99 DUMP_TARGET_DB=1 2>&1
 
+ifndef SDK
+  DOWNLOAD_DIRS = tools/download toolchain/download package/download target/download
+else
+  DOWNLOAD_DIRS = package/download
+endif
+
 download: .config FORCE
-	@+$(SUBMAKE) tools/download
-	@+$(SUBMAKE) toolchain/download
-	@+$(SUBMAKE) package/download
-	@+$(SUBMAKE) target/download
+	@+$(foreach dir,$(DOWNLOAD_DIRS),$(SUBMAKE) $(dir);)
 
 clean dirclean: .config
 	@+$(SUBMAKE) -r $@
