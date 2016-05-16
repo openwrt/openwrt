@@ -1,0 +1,138 @@
+--- linux-4.1.13.orig/drivers/usb/dwc2/Makefile	2016-05-05 14:07:57.313569243 +0530
++++ linux-4.1.13/drivers/usb/dwc2/Makefile	2016-05-05 14:11:49.189568753 +0530
+@@ -2,7 +2,7 @@
+ ccflags-$(CONFIG_USB_DWC2_VERBOSE)	+= -DVERBOSE_DEBUG
+ 
+ obj-$(CONFIG_USB_DWC2)			+= dwc2.o
+-dwc2-y					:= core.o core_intr.o platform.o
++dwc2-y					:= core.o core_intr.o
+ 
+ ifneq ($(filter y,$(CONFIG_USB_DWC2_HOST) $(CONFIG_USB_DWC2_DUAL_ROLE)),)
+ 	dwc2-y				+= hcd.o hcd_intr.o
+@@ -25,3 +25,6 @@
+ 
+ obj-$(CONFIG_USB_DWC2_PCI)		+= dwc2_pci.o
+ dwc2_pci-y				:= pci.o
++
++obj-$(CONFIG_USB_DWC2_PLATFORM)		+= dwc2_platform.o
++dwc2_platform-y			:= platform.o
+--- linux-4.1.13.orig/drivers/usb/dwc2/Kconfig	2016-05-05 14:08:24.817569185 +0530
++++ linux-4.1.13/drivers/usb/dwc2/Kconfig	2016-05-05 14:10:29.973568921 +0530
+@@ -50,10 +50,18 @@
+ 	  option requires USB_GADGET to be enabled.
+ endchoice
+ 
++config USB_DWC2_PLATFORM
++	tristate "DWC2 Platform"
++	default USB_DWC2_HOST || USB_DWC2_PERIPHERAL
++	help
++		The Designware USB2.0 platform interface module for
++		controllers directly connected to the CPU.
++
+ config USB_DWC2_PCI
+ 	tristate "DWC2 PCI"
+ 	depends on PCI
+ 	default n
++	select USB_DWC2_PLATFORM
+ 	select NOP_USB_XCEIV
+ 	help
+ 	  The Designware USB2.0 PCI interface module for controllers
+diff -u linux-4.1.13.orig/drivers/usb/dwc2/core.c linux-4.1.13/drivers/usb/dwc2/core.c
+--- linux-4.1.13.orig/drivers/usb/dwc2/core.c	2016-05-06 14:43:53.199806864 +0530
++++ linux-4.1.13/drivers/usb/dwc2/core.c	2016-05-06 14:50:45.795805993 +0530
+@@ -3068,6 +3068,7 @@
+ 	dwc2_set_param_external_id_pin_ctl(hsotg, params->external_id_pin_ctl);
+ 	dwc2_set_param_hibernation(hsotg, params->hibernation);
+ }
++EXPORT_SYMBOL_GPL(dwc2_set_parameters);
+ 
+ /**
+  * During device initialization, read various hardware configuration
+@@ -3234,6 +3235,7 @@
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL_GPL(dwc2_get_hwparams);
+ 
+ /*
+  * Sets all parameters to the given value.
+@@ -3249,7 +3251,7 @@
+ 	for (i = 0; i < size; i++)
+ 		p[i] = value;
+ }
+-
++EXPORT_SYMBOL_GPL(dwc2_set_all_params);
+ 
+ u16 dwc2_get_otg_version(struct dwc2_hsotg *hsotg)
+ {
+diff -u linux-4.1.13.orig/drivers/usb/dwc2/core_intr.c linux-4.1.13/drivers/usb/dwc2/core_intr.c
+--- linux-4.1.13.orig/drivers/usb/dwc2/core_intr.c	2016-05-06 14:43:53.199806864 +0530
++++ linux-4.1.13/drivers/usb/dwc2/core_intr.c	2016-05-06 14:48:57.523806221 +0530
+@@ -560,3 +560,4 @@
+ 	spin_unlock(&hsotg->lock);
+ 	return retval;
+ }
++EXPORT_SYMBOL_GPL(dwc2_handle_common_intr);
+diff -u linux-4.1.13.orig/drivers/usb/dwc2/debugfs.c linux-4.1.13/drivers/usb/dwc2/debugfs.c
+--- linux-4.1.13.orig/drivers/usb/dwc2/debugfs.c	2016-05-06 14:43:53.199806864 +0530
++++ linux-4.1.13/drivers/usb/dwc2/debugfs.c	2016-05-06 14:47:15.095806438 +0530
+@@ -763,9 +763,11 @@
+ err0:
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(dwc2_debugfs_init);
+ 
+ void dwc2_debugfs_exit(struct dwc2_hsotg *hsotg)
+ {
+ 	debugfs_remove_recursive(hsotg->debug_root);
+ 	hsotg->debug_root = NULL;
+ }
++EXPORT_SYMBOL_GPL(dwc2_debugfs_exit);
+diff -u linux-4.1.13.orig/drivers/usb/dwc2/gadget.c linux-4.1.13/drivers/usb/dwc2/gadget.c
+--- linux-4.1.13.orig/drivers/usb/dwc2/gadget.c	2016-05-06 14:43:53.199806864 +0530
++++ linux-4.1.13/drivers/usb/dwc2/gadget.c	2016-05-06 14:51:36.743805885 +0530
+@@ -3665,6 +3665,7 @@
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(dwc2_gadget_init);
+ 
+ /**
+  * s3c_hsotg_remove - remove function for hsotg driver
+@@ -3677,6 +3678,7 @@
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL_GPL(s3c_hsotg_remove);
+ 
+ int s3c_hsotg_suspend(struct dwc2_hsotg *hsotg)
+ {
+@@ -3719,6 +3721,7 @@
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(s3c_hsotg_suspend);
+ 
+ int s3c_hsotg_resume(struct dwc2_hsotg *hsotg)
+ {
+@@ -3750,3 +3753,4 @@
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(s3c_hsotg_resume);
+diff -u linux-4.1.13.orig/drivers/usb/dwc2/hcd.c linux-4.1.13/drivers/usb/dwc2/hcd.c
+--- linux-4.1.13.orig/drivers/usb/dwc2/hcd.c	2016-05-06 14:43:53.199806864 +0530
++++ linux-4.1.13/drivers/usb/dwc2/hcd.c	2016-05-06 14:51:13.287805934 +0530
+@@ -2983,6 +2983,7 @@
+ 	dev_err(hsotg->dev, "%s() FAILED, returning %d\n", __func__, retval);
+ 	return retval;
+ }
++EXPORT_SYMBOL_GPL(dwc2_hcd_init);
+ 
+ /*
+  * Removes the HCD.
+@@ -3016,3 +3017,4 @@
+ 	kfree(hsotg->frame_num_array);
+ #endif
+ }
++EXPORT_SYMBOL_GPL(dwc2_hcd_remove);
