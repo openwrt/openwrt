@@ -503,23 +503,6 @@ endef
 $(eval $(call KernelPackage,usb-dwc2))
 
 
-define KernelPackage/usb2-oxnas
-  TITLE:=OXNAS USB controller driver
-  DEPENDS:=@TARGET_oxnas +kmod-usb2
-  KCONFIG:=CONFIG_USB_EHCI_OXNAS
-  FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-oxnas.ko
-  AUTOLOAD:=$(call AutoLoad,55,ehci-oxnas,1)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb2-oxnas/description
- This driver provides USB Device Controller support for the
- EHCI USB host built-in to the PLXTECH NAS782x SoC
-endef
-
-$(eval $(call KernelPackage,usb2-oxnas))
-
-
 define KernelPackage/usb-dwc3
   TITLE:=DWC3 USB controller driver
   KCONFIG:= \
