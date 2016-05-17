@@ -108,7 +108,7 @@ platform_check_image_openmesh()
 
 	platform_check_image_target_openmesh "$img_board_target" || return 1
 
-	[ $img_num_files -ne 3 ] && {
+	[ $img_num_files -lt 3 ] && {
 		echo "Invalid number of embedded images ($img_num_files). Use the correct image for this platform"
 		return 1
 	}
