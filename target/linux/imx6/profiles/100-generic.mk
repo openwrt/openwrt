@@ -6,6 +6,7 @@
 #
 
 define Profile/Generic
+  PRIORITY:=1
   NAME:=Generic (default)
   PACKAGES:= \
 	kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy
