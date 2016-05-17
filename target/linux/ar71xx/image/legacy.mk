@@ -906,6 +906,7 @@ endef
 
 
 Image/Build/OpenMesh/buildkernel=$(call MkuImageLzma,$(2))
+Image/Build/OpenMesh/initramfs=$(call MkuImageLzma/initramfs,$(2),)
 
 define Image/Build/OpenMesh
 	-sh $(TOPDIR)/scripts/om-fwupgradecfg-gen.sh \
