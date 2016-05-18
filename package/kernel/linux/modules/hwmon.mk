@@ -108,6 +108,20 @@ endef
 $(eval $(call KernelPackage,hwmon-ina2xx))
 
 
+define KernelPackage/hwmon-it87
+  TITLE:=IT87 monitoring support
+  KCONFIG:=CONFIG_SENSORS_IT87
+  FILES:=$(LINUX_DIR)/drivers/hwmon/it87.ko
+  AUTOLOAD:=$(call AutoProbe,it87)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid +PACKAGE_kmod-thermal:kmod-thermal)
+endef
+
+define KernelPackage/hwmon-it87/description
+ Kernel module for it87 thermal and voltage monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-it87))
+
 define KernelPackage/hwmon-lm63
   TITLE:=LM63/64 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM63
