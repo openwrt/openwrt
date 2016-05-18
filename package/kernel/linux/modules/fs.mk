@@ -85,6 +85,7 @@ define KernelPackage/fs-cifs
   TITLE:=CIFS support
   KCONFIG:= \
 	CONFIG_CIFS \
+	CONFIG_CIFS_XATTR=y \
 	CONFIG_CIFS_DFS_UPCALL=n \
 	CONFIG_CIFS_UPCALL=n
   FILES:=$(LINUX_DIR)/fs/cifs/cifs.ko
@@ -387,7 +388,8 @@ $(eval $(call KernelPackage,fs-ntfs))
 define KernelPackage/fs-reiserfs
   SUBMENU:=$(FS_MENU)
   TITLE:=ReiserFS filesystem support
-  KCONFIG:=CONFIG_REISERFS_FS
+  KCONFIG:=CONFIG_REISERFS_FS \
+	CONFIG_REISERFS_FS_XATTR=y
   FILES:=$(LINUX_DIR)/fs/reiserfs/reiserfs.ko
   AUTOLOAD:=$(call AutoLoad,30,reiserfs,1)
 endef
