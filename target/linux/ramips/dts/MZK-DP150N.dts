@@ -67,11 +67,13 @@
 			reg = <0x50000 0x3b0000>;
 		};
 	};
+};
 
-	spidev@1 {
+&spi1 {
+	spidev@0 {
 		compatible = "linux,spidev";
 		spi-max-frequency = <10000000>;
-		reg = <1>;
+		reg = <0>;
 	};
 };
 
