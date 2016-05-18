@@ -54,25 +54,28 @@ endef
 DEVICE_VARS += DEVICE_DTS
 
 define Device/rpi
-  SUBTARGETS := bcm2708
   DEVICE_TITLE := Raspberry Pi B/B+/CM
   DEVICE_DTS := bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm
 endef
-TARGET_DEVICES += rpi
+ifeq ($(SUBTARGET),bcm2708)
+  TARGET_DEVICES += rpi
+endif
 
 define Device/rpi-2
-  SUBTARGETS := bcm2709
   DEVICE_TITLE := Raspberry Pi 2 B
   DEVICE_DTS := bcm2709-rpi-2-b
 endef
-TARGET_DEVICES += rpi-2
+ifeq ($(SUBTARGET),bcm2708)
+  TARGET_DEVICES += rpi-2
+endif
 
 define Device/rpi-3
-  SUBTARGETS := bcm2710
   DEVICE_TITLE := Raspberry Pi 3 B
   DEVICE_DTS := bcm2710-rpi-3-b
   DEVICE_PACKAGES := brcmfmac43430-firmware-sdio kmod-brcmfmac wpad-mini
 endef
-TARGET_DEVICES += rpi-3
+ifeq ($(SUBTARGET),bcm2708)
+  TARGET_DEVICES += rpi-3
+endif
 
 $(eval $(call BuildImage))
