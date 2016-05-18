@@ -471,9 +471,14 @@ define Device/Export
   $(1) : FILESYSTEM:=$(2)
 endef
 
+DEVICE_CHECK_PROFILE = $(CONFIG_TARGET_$(call target_conf,$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET)))_$(1))
+
 define Device/Check
-  _TARGET = $$(if $$(and $(if $(SUBTARGET),,1)$$(filter $(SUBTARGET),$$(SUBTARGETS)),$$(filter $(PROFILE),$$(PROFILES) DEVICE_$(1))),install,install-disabled)
-  _COMPILE_TARGET = $$(if $(if $(IB),,$(CONFIG_IB)$$(filter $(PROFILE),$$(PROFILES) DEVICE_$(1))),compile,compile-disabled)
+  _PROFILE_SET = $$(strip $$(foreach profile,$$(PROFILES) DEVICE_$(1),$$(call DEVICE_CHECK_PROFILE,$$(profile))))
+  _TARGET := $$(if $$(_PROFILE_SET),install,install-disabled)
+  ifndef IB
+    _COMPILE_TARGET := $$(if $(CONFIG_IB)$$(_PROFILE_SET),compile,compile-disabled)
+  endif
 endef
 
 ifndef IB
@@ -560,10 +565,8 @@ $(DEVICE_DESCRIPTION)
 
 endef
 
-DEVICE_PROFILE_CHECK=$(and $(DEVICE_TITLE),$(if $(SUBTARGET),,1)$(filter $(SUBTARGET),$(SUBTARGETS)))
-
 define Device/Dump
-$$(eval $$(if $$(DEVICE_PROFILE_CHECK),$$(info $$(call Device/DumpInfo,$(1)))))
+$$(eval $$(if $$(DEVICE_TITLE),$$(info $$(call Device/DumpInfo,$(1)))))
 endef
 
 define Device
