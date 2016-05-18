@@ -1071,7 +1071,7 @@
 		status = "disabled";
 		compatible = "img,pistachio-uccp";
 		reg = <0x18480000 0x38000>, <0x184BC000 0x2800>, <0x1a000000 0x00066cc0>;
-		reg-names = "uccp_core_base", "uccp_slave_base" , "uccp_pkd_gram_base";
+		reg-names = "uccp_sysbus_base", "uccp_perip_base" , "uccp_pkd_gram_base";
 		interrupts = <GIC_SHARED 67 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "uccpirq";
 		clocks = <&clk_core CLK_RPU_CORE>,
