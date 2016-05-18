@@ -148,10 +148,10 @@ menuconfig VERSIONOPT
 	default n
 	help
 		These options allow to override the version information embedded in
-		the /etc/openwrt_version, /etc/openwrt_release, /etc/banner and
-		/etc/opkg.conf files. Usually there is no need to set these, but
-		they're useful for release builds or custom OpenWrt redistributions
-		that should carry custom version tags.
+		the /etc/openwrt_version, /etc/openwrt_release, /etc/banner,
+		/etc/opkg.conf, and /etc/os-release files. Usually there is no need
+		to set these, but they're useful for release builds or custom OpenWrt
+		redistributions that should carry custom version tags.
 
 if VERSIONOPT
 
@@ -215,6 +215,18 @@ if VERSIONOPT
 		help
 			This is an URL to the manufacturer's website embedded in /etc/device_info
 			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_BUG_URL
+		string
+		prompt "Bug reporting URL"
+		help
+			This is an URL to provide users for providing bug reports
+
+	config VERSION_SUPPORT_URL
+		string
+		prompt "Support URL"
+		help
+			This an URL to provide users seeking support
 
 	config VERSION_PRODUCT
 		string
