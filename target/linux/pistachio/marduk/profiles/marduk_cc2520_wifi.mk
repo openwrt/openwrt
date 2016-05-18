@@ -25,7 +25,7 @@
 
 define Profile/marduk_cc2520_wifi
     NAME:=Wifi testing profile for Marduk with TI cc2520
-    PACKAGES:=kmod-marduk-cc2520 wpan-tools wpa-cli iperf fping
+    PACKAGES:=kmod-marduk-cc2520 wpan-tools wpa-cli iperf3 fping
 endef
 
 define Profile/marduk_cc2520_wifi/Description
