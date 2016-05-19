@@ -17,9 +17,6 @@ define Profile/SHEEVAPLUG/Description
  Package set compatible with Globalscale Technologies SheevaPlug board.
 endef
 
-SHEEVAPLUG_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-SHEEVAPLUG_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 $(eval $(call Profile,SHEEVAPLUG))
 
 define Profile/SHEEVAPLUGSATA
@@ -33,9 +30,6 @@ endef
 define Profile/SHEEVAPLUGSATA/Description
  Package set compatible with Globalscale Technologies eSATA SheevaPlug board.
 endef
-
-SHEEVAPLUGSATA_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-SHEEVAPLUGSATA_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,SHEEVAPLUGSATA))
 
@@ -53,9 +47,6 @@ define Profile/GuruplugServerPlus/Description
  Package set compatible with Globalscale Technologies Guruplug Server Plus board.
 endef
 
-GuruplugServerPlus_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-GuruplugServerPlus_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 $(eval $(call Profile,GuruplugServerPlus))
 
 define Profile/Topkick1281P2
@@ -69,8 +60,5 @@ endef
 define Profile/Topkick1281P2/Description
  Package set compatible with Univeral Scientific Industrial Co. Topkick-1281P2 board.
 endef
-
-Topkick1281P2_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-Topkick1281P2_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,Topkick1281P2))

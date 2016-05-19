@@ -15,9 +15,6 @@ define Profile/DOCKSTAR/Description
  Package set compatible with Seagate FreeAgent Dockstar board.
 endef
 
-DOCKSTAR_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-DOCKSTAR_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 $(eval $(call Profile,DOCKSTAR))
 
 define Profile/GOFLEXHOME
@@ -32,9 +29,6 @@ define Profile/GOFLEXHOME/Description
  Package set compatible with Seagate GoFlexHome
 endef
 
-GOFLEXHOME_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-GOFLEXHOME_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 $(eval $(call Profile,GOFLEXHOME))
 
 define Profile/GOFLEXNET
@@ -47,9 +41,6 @@ endef
 define Profile/GOFLEXNET/Description
  Package set compatible with Seagate GoFlexNet
 endef
-
-GOFLEXNET_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-GOFLEXNET_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,GOFLEXNET))
 
@@ -64,9 +55,6 @@ define Profile/IB62X0/Description
  Package set compatible with RaidSonic ICY BOX IB-NAS62x0 board.
 endef
 
-IB62X0_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-IB62X0_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 $(eval $(call Profile,IB62X0))
 
 define Profile/ICONNECT
@@ -78,9 +66,6 @@ endef
 define Profile/ICONNECT/Description
  Package set compatible with Iomega Iconnect board.
 endef
-
-ICONNECT_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-ICONNECT_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,ICONNECT))
 
@@ -95,9 +80,6 @@ define Profile/IOMEGA_IX2_200/Description
  Package set compatible with Iomega StorCenter ix2-200 board.
 endef
 
-IOMEGA_IX2_200_UBIFS_OPTS:="-m 512 -e 15872 -c 2048"
-IOMEGA_IX2_200_UBI_OPTS:="-m 512 -p 16384 -s 256"
-
 $(eval $(call Profile,IOMEGA_IX2_200))
 
 define Profile/NSA310S
@@ -111,9 +93,6 @@ define Profile/NSA310S/Description
  Package set compatible with ZyXEL NSA310S board.
 endef
 
-NSA310S_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-NSA310S_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 $(eval $(call Profile,NSA310S))
 
 define Profile/POGOE02
@@ -125,8 +104,5 @@ endef
 define Profile/POGOE02/Description
  Package set compatible with Cloud Engines Pogoplug E02 board.
 endef
-
-POGOE02_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-POGOE02_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,POGOE02))
