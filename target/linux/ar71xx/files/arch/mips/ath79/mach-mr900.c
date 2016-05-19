@@ -94,24 +94,6 @@ static struct gpio_keys_button mr900_gpio_keys[] __initdata = {
 	},
 };
 
-
-static void __init mr900_gmac_setup(void)
-{
-	void __iomem *base;
-	u32 t;
-
-	base = ioremap(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
-
-	t = __raw_readl(base + QCA955X_GMAC_REG_ETH_CFG);
-
-	t &= ~(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII);
-	t |= QCA955X_ETH_CFG_RGMII_EN;
-
-	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
-
-	iounmap(base);
-}
-
 static void __init mr900_setup(void)
 {
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff0000);
@@ -141,8 +123,7 @@ static void __init mr900_setup(void)
 	}
 	pdata->use_eeprom = true;
 
-	mr900_gmac_setup();
-
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
 	ath79_register_mdio(0, 0x0);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, art + MR900_MAC0_OFFSET, 0);
