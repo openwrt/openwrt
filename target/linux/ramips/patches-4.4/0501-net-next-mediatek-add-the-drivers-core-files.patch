@@ -600,7 +600,7 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
 +#endif
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -0,0 +1,1607 @@
+@@ -0,0 +1,1587 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
 + *   the Free Software Foundation; version 2 of the License
@@ -1400,20 +1400,6 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
 +	return NETDEV_TX_OK;
 +}
 +
-+static inline void fe_rx_vlan(struct sk_buff *skb)
-+{
-+	struct ethhdr *ehdr;
-+	u16 vlanid;
-+
-+	if (!__vlan_get_tag(skb, &vlanid)) {
-+		/* pop the vlan tag */
-+		ehdr = (struct ethhdr *)skb->data;
-+		memmove(skb->data + VLAN_HLEN, ehdr, ETH_ALEN * 2);
-+		skb_pull(skb, VLAN_HLEN);
-+		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlanid);
-+	}
-+}
-+
 +static int fe_poll_rx(struct napi_struct *napi, int budget,
 +		      struct fe_priv *priv, u32 rx_intr)
 +{
@@ -1427,7 +1413,6 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
 +	u8 *data, *new_data;
 +	struct fe_rx_dma *rxd, trxd;
 +	int done = 0, pad;
-+	bool rx_vlan = netdev->features & NETIF_F_HW_VLAN_CTAG_RX;
 +
 +	if (netdev->features & NETIF_F_RXCSUM)
 +		checksum_bit = soc->checksum_bit;
@@ -1483,8 +1468,6 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
 +			skb->ip_summed = CHECKSUM_UNNECESSARY;
 +		else
 +			skb_checksum_none_assert(skb);
-+		if (rx_vlan)
-+			fe_rx_vlan(skb);
 +		skb->protocol = eth_type_trans(skb, netdev);
 +
 +		stats->rx_packets++;
@@ -2098,10 +2081,7 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
 +
 +	if (soc->init_data)
 +		soc->init_data(soc, netdev);
-+	/* fake NETIF_F_HW_VLAN_CTAG_RX for good GRO performance */
-+	netdev->hw_features |= NETIF_F_HW_VLAN_CTAG_RX;
-+	netdev->vlan_features = netdev->hw_features &
-+		~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
++	netdev->vlan_features = netdev->hw_features & ~NETIF_F_HW_VLAN_CTAG_TX;
 +	netdev->features |= netdev->hw_features;
 +
 +	/* fake rx vlan filter func. to support tx vlan offload func */

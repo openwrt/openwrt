@@ -21,7 +21,7 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
 
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/soc_mt7621.c
-@@ -0,0 +1,186 @@
+@@ -0,0 +1,185 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
 + *   the Free Software Foundation; version 2 of the License
@@ -146,8 +146,7 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
 +
 +	/* mt7621 doesn't have txcsum config */
 +	mt7621_rxcsum_config((dev->features & NETIF_F_RXCSUM));
-+	mt7621_rxvlan_config((dev->features & NETIF_F_HW_VLAN_CTAG_RX) &&
-+			     (priv->flags & FE_FLAG_RX_VLAN_CTAG));
++	mt7621_rxvlan_config(priv->flags & FE_FLAG_RX_VLAN_CTAG);
 +
 +	return 0;
 +}
