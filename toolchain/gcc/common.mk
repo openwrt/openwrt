@@ -33,11 +33,11 @@ ifeq ($(PKG_VERSION),5.3.0)
 endif
 
 ifneq ($(CONFIG_GCC_VERSION_4_8_ARC),)
-    PKG_VERSION:=4.8.4
-    PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/gcc/archive/arc-2015.06
+    PKG_VERSION:=4.8.5
+    PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/gcc/archive/arc-2016.03
     PKG_SOURCE:=$(PKG_NAME)-$(GCC_VERSION).tar.gz
-    PKG_MD5SUM:=25007ebb02a5f6c32532b103bb5984a0
-    PKG_REV:=2015.06
+    PKG_MD5SUM:=ca59c8140d6efd07b97a18869bddbb53
+    PKG_REV:=2016.03
     GCC_DIR:=gcc-arc-$(PKG_REV)
     HOST_BUILD_DIR = $(BUILD_DIR_HOST)/$(PKG_NAME)-$(GCC_VERSION)
 endif
