@@ -1,0 +1,60 @@
+--- a/arch/mips/ath79/gpio.c
++++ b/arch/mips/ath79/gpio.c
+@@ -185,15 +185,27 @@ void __init ath79_gpio_output_select(uns
+ {
+ 	void __iomem *base = ath79_gpio_base;
+ 	unsigned long flags;
+-	unsigned int reg;
++	unsigned int reg, reg_base;
++	unsigned long gpio_count;
+ 	u32 t, s;
+ 
+-	BUG_ON(!soc_is_ar934x() && !soc_is_qca953x());
++	if (soc_is_ar934x()) {
++		gpio_count = AR934X_GPIO_COUNT;
++		reg_base = AR934X_GPIO_REG_OUT_FUNC0;
++	} else if (soc_is_qca953x()) {
++		gpio_count = QCA953X_GPIO_COUNT;
++		reg_base = QCA953X_GPIO_REG_OUT_FUNC0;
++	} else if (soc_is_qca955x()) {
++		gpio_count = QCA955X_GPIO_COUNT;
++		reg_base = QCA955X_GPIO_REG_OUT_FUNC0;
++	} else {
++		BUG();
++	}
+ 
+-	if (gpio >= AR934X_GPIO_COUNT)
++	if (gpio >= gpio_count)
+ 		return;
+ 
+-	reg = AR934X_GPIO_REG_OUT_FUNC0 + 4 * (gpio / 4);
++	reg = reg_base + 4 * (gpio / 4);
+ 	s = 8 * (gpio % 4);
+ 
+ 	spin_lock_irqsave(&ath79_gpio_lock, flags);
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -868,6 +868,14 @@
+ #define QCA953X_GPIO_OUT_MUX_LED_LINK4		44
+ #define QCA953X_GPIO_OUT_MUX_LED_LINK5		45
+ 
++#define QCA955X_GPIO_REG_OUT_FUNC0	0x2c
++#define QCA955X_GPIO_REG_OUT_FUNC1	0x30
++#define QCA955X_GPIO_REG_OUT_FUNC2	0x34
++#define QCA955X_GPIO_REG_OUT_FUNC3	0x38
++#define QCA955X_GPIO_REG_OUT_FUNC4	0x3c
++#define QCA955X_GPIO_REG_OUT_FUNC5	0x40
++#define QCA955X_GPIO_REG_FUNC		0x6c
++
+ #define QCA956X_GPIO_REG_OUT_FUNC0	0x2c
+ #define QCA956X_GPIO_REG_OUT_FUNC1	0x30
+ #define QCA956X_GPIO_REG_OUT_FUNC2	0x34
+@@ -1007,6 +1015,8 @@
+ #define AR934X_GPIO_OUT_EXT_LNA0	46
+ #define AR934X_GPIO_OUT_EXT_LNA1	47
+ 
++#define QCA955X_GPIO_OUT_GPIO		0
++
+ /*
+  * MII_CTRL block
+  */
