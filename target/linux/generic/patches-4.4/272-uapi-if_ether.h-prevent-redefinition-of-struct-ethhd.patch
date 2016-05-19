@@ -40,9 +40,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #endif /* _UAPI_LINUX_IF_ETHER_H */
 --- a/include/uapi/linux/libc-compat.h
 +++ b/include/uapi/linux/libc-compat.h
-@@ -51,6 +51,14 @@
- /* We have included libc headers... */
- #if !defined(__KERNEL__)
+@@ -85,6 +85,14 @@
+ 
+ #endif /* _NET_IF_H */
  
 +/* musl defines the ethhdr struct itself in its netinet/if_ether.h.
 + * Glibc just includes the kernel header and uses a different guard. */
@@ -55,9 +55,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  /* Coordinate with libc netinet/in.h header. */
  #if defined(_NETINET_IN_H)
  
-@@ -117,6 +125,9 @@
-  * that we need. */
- #else /* defined(__KERNEL__) */
+@@ -161,6 +169,9 @@
+ /* For the future if glibc adds IFF_LOWER_UP, IFF_DORMANT and IFF_ECHO */
+ #define __UAPI_DEF_IF_NET_DEVICE_FLAGS_LOWER_UP_DORMANT_ECHO 1
  
 +/* Definitions for if_ether.h */
 +#define __UAPI_DEF_ETHHDR 		1

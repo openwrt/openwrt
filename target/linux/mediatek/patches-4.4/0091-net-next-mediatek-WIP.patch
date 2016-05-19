@@ -9,11 +9,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |    5 +-
  2 files changed, 44 insertions(+), 50 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 5d33053..2e05920 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -326,7 +326,7 @@ static inline void mtk_irq_disable(struct mtk_eth *eth, u32 mask)
+@@ -326,7 +326,7 @@ static inline void mtk_irq_disable(struc
  	val = mtk_r32(eth, MTK_QDMA_INT_MASK);
  	mtk_w32(eth, val & ~mask, MTK_QDMA_INT_MASK);
  	/* flush write */
@@ -22,7 +20,7 @@ index 5d33053..2e05920 100644
  	spin_unlock_irqrestore(&eth->irq_lock, flags);
  }
  
-@@ -339,7 +339,7 @@ static inline void mtk_irq_enable(struct mtk_eth *eth, u32 mask)
+@@ -339,7 +339,7 @@ static inline void mtk_irq_enable(struct
  	val = mtk_r32(eth, MTK_QDMA_INT_MASK);
  	mtk_w32(eth, val | mask, MTK_QDMA_INT_MASK);
  	/* flush write */
@@ -31,7 +29,7 @@ index 5d33053..2e05920 100644
  	spin_unlock_irqrestore(&eth->irq_lock, flags);
  }
  
-@@ -710,10 +710,26 @@ static inline int mtk_cal_txd_req(struct sk_buff *skb)
+@@ -710,10 +710,26 @@ static inline int mtk_cal_txd_req(struct
  	return nfrags;
  }
  
@@ -58,7 +56,7 @@ index 5d33053..2e05920 100644
  	for (i = 0; i < MTK_MAC_COUNT; i++) {
  		if (!eth->netdev[i])
  			continue;
-@@ -725,6 +741,7 @@ static void mtk_stop_queue(struct mtk_eth *eth)
+@@ -725,6 +741,7 @@ static void mtk_stop_queue(struct mtk_et
  {
  	int i;
  
@@ -66,7 +64,7 @@ index 5d33053..2e05920 100644
  	for (i = 0; i < MTK_MAC_COUNT; i++) {
  		if (!eth->netdev[i])
  			continue;
-@@ -775,12 +792,9 @@ static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -775,12 +792,9 @@ static int mtk_start_xmit(struct sk_buff
  	if (mtk_tx_map(skb, dev, tx_num, ring, gso) < 0)
  		goto drop;
  
@@ -81,7 +79,7 @@ index 5d33053..2e05920 100644
  	spin_unlock_irqrestore(&eth->page_lock, flags);
  
  	return NETDEV_TX_OK;
-@@ -927,7 +941,6 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget)
+@@ -927,7 +941,6 @@ static int mtk_poll_tx(struct mtk_eth *e
  		}
  		mtk_tx_unmap(eth->dev, tx_buf);
  
@@ -89,7 +87,7 @@ index 5d33053..2e05920 100644
  		ring->last_free = desc;
  		atomic_inc(&ring->free_count);
  
-@@ -945,11 +958,8 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget)
+@@ -945,11 +958,8 @@ static int mtk_poll_tx(struct mtk_eth *e
  		netdev_completed_queue(eth->netdev[i], done, bytes);
  	}
  
@@ -103,7 +101,7 @@ index 5d33053..2e05920 100644
  		mtk_wake_queue(eth);
  
  	return done;
-@@ -973,10 +983,11 @@ static int mtk_napi_tx(struct napi_struct *napi, int budget)
+@@ -973,10 +983,11 @@ static int mtk_napi_tx(struct napi_struc
  	int tx_done = 0;
  
  	mtk_handle_status_irq(eth);
@@ -117,7 +115,7 @@ index 5d33053..2e05920 100644
  		mask = mtk_r32(eth, MTK_QDMA_INT_MASK);
  		dev_info(eth->dev,
  			 "done tx %d, intr 0x%08x/0x%x\n",
-@@ -1002,9 +1013,12 @@ static int mtk_napi_rx(struct napi_struct *napi, int budget)
+@@ -1002,9 +1013,12 @@ static int mtk_napi_rx(struct napi_struc
  	u32 status, mask;
  	int rx_done = 0;
  
@@ -131,7 +129,7 @@ index 5d33053..2e05920 100644
  		mask = mtk_r32(eth, MTK_QDMA_INT_MASK);
  		dev_info(eth->dev,
  			 "done rx %d, intr 0x%08x/0x%x\n",
-@@ -1052,9 +1066,8 @@ static int mtk_tx_alloc(struct mtk_eth *eth)
+@@ -1052,9 +1066,8 @@ static int mtk_tx_alloc(struct mtk_eth *
  
  	atomic_set(&ring->free_count, MTK_DMA_SIZE - 2);
  	ring->next_free = &ring->dma[0];
@@ -143,7 +141,7 @@ index 5d33053..2e05920 100644
  
  	/* make sure that all changes to the dma ring are flushed before we
  	 * continue
-@@ -1259,21 +1272,11 @@ static void mtk_tx_timeout(struct net_device *dev)
+@@ -1259,21 +1272,11 @@ static void mtk_tx_timeout(struct net_de
  static irqreturn_t mtk_handle_irq_rx(int irq, void *_eth)
  {
  	struct mtk_eth *eth = _eth;
@@ -168,7 +166,7 @@ index 5d33053..2e05920 100644
  
  	return IRQ_HANDLED;
  }
-@@ -1281,21 +1284,11 @@ static irqreturn_t mtk_handle_irq_rx(int irq, void *_eth)
+@@ -1281,21 +1284,11 @@ static irqreturn_t mtk_handle_irq_rx(int
  static irqreturn_t mtk_handle_irq_tx(int irq, void *_eth)
  {
  	struct mtk_eth *eth = _eth;
@@ -193,7 +191,7 @@ index 5d33053..2e05920 100644
  
  	return IRQ_HANDLED;
  }
-@@ -1326,7 +1319,7 @@ static int mtk_start_dma(struct mtk_eth *eth)
+@@ -1326,7 +1319,7 @@ static int mtk_start_dma(struct mtk_eth
  	mtk_w32(eth,
  		MTK_TX_WB_DDONE | MTK_RX_DMA_EN | MTK_TX_DMA_EN |
  		MTK_RX_2B_OFFSET | MTK_DMA_SIZE_16DWORDS |
@@ -202,7 +200,7 @@ index 5d33053..2e05920 100644
  		MTK_QDMA_GLO_CFG);
  
  	return 0;
-@@ -1440,7 +1433,7 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1440,7 +1433,7 @@ static int __init mtk_hw_init(struct mtk
  
  	/* disable delay and normal interrupt */
  	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
@@ -211,7 +209,7 @@ index 5d33053..2e05920 100644
  	mtk_w32(eth, RST_GL_PSE, MTK_RST_GL);
  	mtk_w32(eth, 0, MTK_RST_GL);
  
-@@ -1765,7 +1758,7 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1765,7 +1758,7 @@ static int mtk_add_mac(struct mtk_eth *e
  	mac->hw_stats->reg_offset = id * MTK_STAT_OFFSET;
  
  	SET_NETDEV_DEV(eth->netdev[id], eth->dev);
@@ -220,8 +218,6 @@ index 5d33053..2e05920 100644
  	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
  	eth->netdev[id]->base_addr = (unsigned long)eth->base;
  	eth->netdev[id]->vlan_features = MTK_HW_FEATURES &
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index 5093518..6b22445 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -18,9 +18,9 @@
@@ -244,6 +240,3 @@ index 5093518..6b22445 100644
  #define MTK_TX_WB_DDONE		BIT(6)
  #define MTK_DMA_SIZE_16DWORDS	(2 << 4)
  #define MTK_RX_DMA_BUSY		BIT(3)
--- 
-1.7.10.4
-
