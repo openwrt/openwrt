@@ -15,6 +15,11 @@ config OPENSSL_WITH_SSL3
 	default n
 	prompt "Enable sslv3 support"
 
+config OPENSSL_WITH_DEPRECATED
+	bool
+	default y
+	prompt "Include deprecated APIs"
+
 config OPENSSL_ENGINE_DIGEST
 	bool
 	depends on OPENSSL_ENGINE_CRYPTO
