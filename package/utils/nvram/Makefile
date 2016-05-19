@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nvram
-PKG_RELEASE:=9
+PKG_RELEASE:=10
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
@@ -45,10 +45,12 @@ define Build/Compile
 endef
 
 define Package/nvram/install
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/nvram.init $(1)/etc/init.d/nvram
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/nvram $(1)/usr/sbin/
+ifneq ($(CONFIG_TARGET_brcm47xx),)
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/nvram.init $(1)/etc/init.d/nvram
+endif
 endef
 
 $(eval $(call BuildPackage,nvram))
