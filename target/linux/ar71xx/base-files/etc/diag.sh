@@ -143,6 +143,9 @@ get_status_led() {
 	mr600v2)
 		status_led="mr600:blue:power"
 		;;
+	mr1750)
+		status_led="mr1750:blue:power"
+		;;
 	mr900 | \
 	mr900v2)
 		status_led="mr900:blue:power"

@@ -518,6 +518,9 @@ ar71xx_board_detect() {
 	*MR600v2)
 		name="mr600v2"
 		;;
+	*MR1750)
+		name="mr1750"
+		;;
 	*MR600)
 		name="mr600"
 		;;
