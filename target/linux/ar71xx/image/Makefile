@@ -1847,6 +1847,9 @@ define Image/Build/OpenMesh
 		"$(BUILD_DIR)/fwupgrade.cfg-$(4)" "fwupgrade.cfg" \
 		"$(KDIR_TMP)/vmlinux-$(2).uImage" "kernel" \
 		"$(KDIR)/root.$(1)" "rootfs"
+	if [ -e "$(call factoryname,$(1),$(2))" ]; then \
+		cp "$(call factoryname,$(1),$(2))" "$(call sysupname,$(1),$(2))"; \
+	fi
 endef
 
 
