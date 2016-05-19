@@ -1,0 +1,39 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -808,6 +808,16 @@ config ATH79_MACH_OM5P_AC
+ 	select ATH79_DEV_M25P80
+ 	select ATH79_DEV_WMAC
+ 
++config ATH79_MACH_OM5P_ACv2
++	bool "OpenMesh OM5P-ACv2 board support"
++	select SOC_QCA955X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_ONION_OMEGA
+ 	bool "ONION OMEGA support"
+ 	select SOC_AR933X
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -101,6 +101,7 @@ obj-$(CONFIG_ATH79_MACH_NBG460N)	+= mach
+ obj-$(CONFIG_ATH79_MACH_OM2P)		+= mach-om2p.o
+ obj-$(CONFIG_ATH79_MACH_OM5P)		+= mach-om5p.o
+ obj-$(CONFIG_ATH79_MACH_OM5P_AC)	+= mach-om5pac.o
++obj-$(CONFIG_ATH79_MACH_OM5P_ACv2)	+= mach-om5pacv2.o
+ obj-$(CONFIG_ATH79_MACH_ONION_OMEGA)	+= mach-onion-omega.o
+ obj-$(CONFIG_ATH79_MACH_PB42)		+= mach-pb42.o
+ obj-$(CONFIG_ATH79_MACH_PB44)		+= mach-pb44.o
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -96,6 +96,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_OM2Pv2,		/* OpenMesh OM2Pv2 */
+ 	ATH79_MACH_OM2P,		/* OpenMesh OM2P */
+ 	ATH79_MACH_OM5P_AC,		/* OpenMesh OM5P-AC */
++	ATH79_MACH_OM5P_ACv2,		/* OpenMesh OM5P-ACv2 */
+ 	ATH79_MACH_OM5P_AN,		/* OpenMesh OM5P-AN */
+ 	ATH79_MACH_OM5P,		/* OpenMesh OM5P */
+ 	ATH79_MACH_ONION_OMEGA,		/* ONION OMEGA */
