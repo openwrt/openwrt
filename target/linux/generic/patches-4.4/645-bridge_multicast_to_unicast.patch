@@ -300,17 +300,17 @@ Implement optinal multicast->unicast conversion for igmp snooping
  
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -158,6 +158,9 @@ struct net_bridge_port_group {
+@@ -157,7 +157,9 @@ struct net_bridge_port_group {
+ 	struct rcu_head			rcu;
  	struct timer_list		timer;
  	struct br_ip			addr;
- 	unsigned char			state;
-+
 +	unsigned char			eth_addr[ETH_ALEN];
+ 	unsigned char			state;
 +	bool				unicast;
  };
  
  struct net_bridge_mdb_entry
-@@ -554,7 +557,8 @@ void br_multicast_free_pg(struct rcu_hea
+@@ -554,7 +556,8 @@ void br_multicast_free_pg(struct rcu_hea
  struct net_bridge_port_group *
  br_multicast_new_port_group(struct net_bridge_port *port, struct br_ip *group,
  			    struct net_bridge_port_group __rcu *next,
