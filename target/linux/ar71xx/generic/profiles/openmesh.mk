@@ -28,12 +28,12 @@ endef
 $(eval $(call Profile,OM5P))
 
 define Profile/OM5PAC
-	NAME:=OpenMesh OM5P-AC
+	NAME:=OpenMesh OM5P-AC/OM5P-ACv2
 	PACKAGES:=kmod-ath9k kmod-ath10k om-watchdog ath10k-firmware-qca988x
 endef
 
 define Profile/OM5PAC/Description
-	Package set optimized for the OpenMesh OM5P-AC.
+	Package set optimized for the OpenMesh OM5P-AC/OM5P-ACv2.
 endef
 
 $(eval $(call Profile,OM5PAC))
