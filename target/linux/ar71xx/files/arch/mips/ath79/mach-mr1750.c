@@ -22,6 +22,7 @@
 #include <linux/ar8216_platform.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
+#include <linux/platform_data/phy-at803x.h>
 
 #include "common.h"
 #include "dev-ap9x-pci.h"
@@ -92,14 +93,29 @@ static struct gpio_keys_button mr1750_gpio_keys[] __initdata = {
 	},
 };
 
+static struct at803x_platform_data mr1750_at803x_data = {
+	.disable_smarteee = 1,
+	.enable_rgmii_rx_delay = 1,
+	.enable_rgmii_tx_delay = 0,
+	.fixup_rgmii_tx_delay = 1,
+};
+
+static struct mdio_board_info mr1750_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 5,
+		.platform_data = &mr1750_at803x_data,
+	},
+};
+
 static void __init mr1750_setup(void)
 {
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff0000);
 	u8 mac[6];
 
-	ath79_eth0_pll_data.pll_1000 = 0xbe000101;
-	ath79_eth0_pll_data.pll_100 = 0x80000101;
-	ath79_eth0_pll_data.pll_10 = 0x80001313;
+	ath79_eth0_pll_data.pll_1000 = 0xae000000;
+	ath79_eth0_pll_data.pll_100 = 0xa0000101;
+	ath79_eth0_pll_data.pll_10 = 0xa0001313;
 
 	ath79_register_m25p80(NULL);
 
@@ -115,6 +131,9 @@ static void __init mr1750_setup(void)
 
 	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
 	ath79_register_mdio(0, 0x0);
+
+	mdiobus_register_board_info(mr1750_mdio0_info,
+				    ARRAY_SIZE(mr1750_mdio0_info));
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, art + MR1750_MAC0_OFFSET, 0);
 
