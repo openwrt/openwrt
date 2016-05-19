@@ -304,6 +304,11 @@ om5p-an)
 	ucidef_set_led_netdev "port2" "port2" "om5p:blue:lan" "eth1"
 	;;
 
+om5p-ac)
+	ucidef_set_led_netdev "port1" "port1" "om5pac:blue:lan" "eth0"
+	ucidef_set_led_netdev "port2" "port2" "om5pac:blue:wan" "eth1"
+	;;
+
 qihoo-c301)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "qihoo:red:status" "phy1tpt"
 	;;

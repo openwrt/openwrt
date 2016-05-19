@@ -572,6 +572,9 @@ ar71xx_board_detect() {
 	*"OM5P AN")
 		name="om5p-an"
 		;;
+	*"OM5P AC")
+		name="om5p-ac"
+		;;
 	*"Onion Omega")
 		name="onion-omega"
 		;;
