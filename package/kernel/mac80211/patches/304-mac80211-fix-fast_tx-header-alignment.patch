@@ -1,0 +1,25 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 19 May 2016 17:32:13 +0200
+Subject: [PATCH] mac80211: fix fast_tx header alignment
+
+The header field is defined as u8[] but also accessed as struct
+ieee80211_hdr. Enforce an alignment of 2 to prevent unnecessary
+unaligned accesses, which can be very harmful for performance on many
+platforms.
+
+Fixes: e495c24731a2 ("mac80211: extend fast-xmit for more ciphers")
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -280,7 +280,7 @@ struct ieee80211_fast_tx {
+ 	u8 sa_offs, da_offs, pn_offs;
+ 	u8 band;
+ 	u8 hdr[30 + 2 + IEEE80211_FAST_XMIT_MAX_IV +
+-	       sizeof(rfc1042_header)];
++	       sizeof(rfc1042_header)] __aligned(2);
+ 
+ 	struct rcu_head rcu_head;
+ };
