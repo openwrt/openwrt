@@ -20,6 +20,11 @@ config OPENSSL_WITH_DEPRECATED
 	default y
 	prompt "Include deprecated APIs"
 
+config OPENSSL_WITH_COMPRESSION
+	bool
+	default n
+	prompt "Enable compression support"
+
 config OPENSSL_ENGINE_DIGEST
 	bool
 	depends on OPENSSL_ENGINE_CRYPTO

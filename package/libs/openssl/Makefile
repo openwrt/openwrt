@@ -33,7 +33,8 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_OPENSSL_WITH_EC2M \
 	CONFIG_OPENSSL_WITH_SSL3 \
 	CONFIG_OPENSSL_HARDWARE_SUPPORT \
-	CONFIG_OPENSSL_WITH_DEPRECATED
+	CONFIG_OPENSSL_WITH_DEPRECATED \
+	CONFIG_OPENSSL_WITH_COMPRESSION
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -63,7 +64,7 @@ $(call Package/openssl/Default)
   SECTION:=libs
   SUBMENU:=SSL
   CATEGORY:=Libraries
-  DEPENDS:=+zlib
+  DEPENDS:=+OPENSSL_WITH_COMPRESSION:zlib
   TITLE+= (libraries)
   ABI_VERSION:=$(PKG_VERSION)
   MENU:=1
@@ -93,7 +94,7 @@ endef
 
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-camellia no-krb5
-OPENSSL_OPTIONS:= shared no-err zlib-dynamic no-sse2 no-ssl2
+OPENSSL_OPTIONS:= shared no-err no-sse2 no-ssl2
 
 ifdef CONFIG_OPENSSL_ENGINE_CRYPTO
   OPENSSL_OPTIONS += -DHAVE_CRYPTODEV
@@ -122,6 +123,12 @@ endif
 
 ifndef CONFIG_OPENSSL_WITH_DEPRECATED
   OPENSSL_OPTIONS += no-deprecated
+endif
+
+ifdef CONFIG_OPENSSL_WITH_COMPRESSION
+  OPENSSL_OPTIONS += zlib-dynamic
+else
+  OPENSSL_OPTIONS += no-comp
 endif
 
 ifeq ($(CONFIG_x86_64),y)
