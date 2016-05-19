@@ -569,8 +569,8 @@ endef
 define Device
   $(call Device/Init,$(1))
   $(call Device/Default,$(1))
-  $(call Device/Check,$(1))
   $(call Device/$(1),$(1))
+  $(call Device/Check,$(1))
   $(call Device/$(if $(DUMP),Dump,Build),$(1))
 
 endef
