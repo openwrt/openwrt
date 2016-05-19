@@ -178,7 +178,8 @@ get_status_led() {
 	om5p-an)
 		status_led="om5p:blue:power"
 		;;
-	om5p-ac)
+	om5p-ac | \
+	om5p-acv2)
 		status_led="om5pac:blue:power"
 		;;
 	onion-omega)
