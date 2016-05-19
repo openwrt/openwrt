@@ -42,29 +42,3 @@
  	s = 8 * (gpio % 4);
  
  	spin_lock_irqsave(&ath79_gpio_lock, flags);
---- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-+++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-@@ -868,6 +868,14 @@
- #define QCA953X_GPIO_OUT_MUX_LED_LINK4		44
- #define QCA953X_GPIO_OUT_MUX_LED_LINK5		45
- 
-+#define QCA955X_GPIO_REG_OUT_FUNC0	0x2c
-+#define QCA955X_GPIO_REG_OUT_FUNC1	0x30
-+#define QCA955X_GPIO_REG_OUT_FUNC2	0x34
-+#define QCA955X_GPIO_REG_OUT_FUNC3	0x38
-+#define QCA955X_GPIO_REG_OUT_FUNC4	0x3c
-+#define QCA955X_GPIO_REG_OUT_FUNC5	0x40
-+#define QCA955X_GPIO_REG_FUNC		0x6c
-+
- #define QCA956X_GPIO_REG_OUT_FUNC0	0x2c
- #define QCA956X_GPIO_REG_OUT_FUNC1	0x30
- #define QCA956X_GPIO_REG_OUT_FUNC2	0x34
-@@ -1007,6 +1015,8 @@
- #define AR934X_GPIO_OUT_EXT_LNA0	46
- #define AR934X_GPIO_OUT_EXT_LNA1	47
- 
-+#define QCA955X_GPIO_OUT_GPIO		0
-+
- /*
-  * MII_CTRL block
-  */
