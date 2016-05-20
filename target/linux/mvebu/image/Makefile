@@ -89,8 +89,8 @@ define NORProfile
 
   define Image/Build/Profile/$(1)/squashfs
 	( \
-		dd if=$(KDIR)/uImage-$(2) bs=$(3) conv=sync; \
-		dd if=$(KDIR)/root.squashfs bs=$(3) conv=sync; \
+		dd if=$(KDIR)/uImage-$(2) bs=$(patsubst %KiB,%k,$(3)) conv=sync; \
+		dd if=$(KDIR)/root.squashfs bs=$(patsubst %KiB,%k,$(3)) conv=sync; \
 	) > $$(BIN_DIR)/$$(IMG_PREFIX)-$(2)-squashfs-firmware.bin
   endef
 
@@ -171,7 +171,7 @@ $(eval $(call MMCProfile,Solidrun-Clearfog-A1,armada-388-clearfog))
 define Image/Build/Profile/Caiman/squashfs
 	$(call Image/Build/UbinizeImage,armada-385-linksys-caiman,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
 	( \
-		dd if=$(KDIR)/uImage-armada-385-linksys-caiman bs=6M conv=sync; \
+		dd if=$(KDIR)/uImage-armada-385-linksys-caiman bs=6144k conv=sync; \
 		dd if=$(KDIR)/$(IMG_PREFIX)-armada-385-linksys-caiman-squashfs-ubinized.bin \
 		bs=2048 conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-385-linksys-caiman-squashfs-factory.img
@@ -181,7 +181,7 @@ endef
 define Image/Build/Profile/Cobra/squashfs
 	$(call Image/Build/UbinizeImage,armada-385-linksys-cobra,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
 	( \
-		dd if=$(KDIR)/uImage-armada-385-linksys-cobra bs=6M conv=sync; \
+		dd if=$(KDIR)/uImage-armada-385-linksys-cobra bs=6144k conv=sync; \
 		dd if=$(KDIR)/$(IMG_PREFIX)-armada-385-linksys-cobra-squashfs-ubinized.bin \
 		bs=2048 conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-385-linksys-cobra-squashfs-factory.img
@@ -201,7 +201,7 @@ endef
 define Image/Build/Profile/Shelby/squashfs
 	$(call Image/Build/UbinizeImage,armada-385-linksys-shelby,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
 	( \
-		dd if=$(KDIR)/uImage-armada-385-linksys-shelby bs=6M conv=sync; \
+		dd if=$(KDIR)/uImage-armada-385-linksys-shelby bs=6144k conv=sync; \
 		dd if=$(KDIR)/$(IMG_PREFIX)-armada-385-linksys-shelby-squashfs-ubinized.bin \
 		bs=2048 conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-385-linksys-shelby-squashfs-factory.img
