@@ -900,6 +900,7 @@ define KernelPackage/thermal
   KCONFIG:= \
 	CONFIG_THERMAL \
 	CONFIG_THERMAL_OF=y \
+	CONFIG_CPU_THERMAL=y \
 	CONFIG_THERMAL_DEFAULT_GOV_STEP_WISE=y \
 	CONFIG_THERMAL_DEFAULT_GOV_FAIR_SHARE=n \
 	CONFIG_THERMAL_DEFAULT_GOV_USER_SPACE=n \
@@ -943,7 +944,6 @@ define KernelPackage/thermal-imx
   TITLE:=Temperature sensor driver for Freescale i.MX SoCs
   DEPENDS:=@TARGET_imx6 +kmod-thermal
   KCONFIG:= \
-	CONFIG_CPU_THERMAL=y \
 	CONFIG_IMX_THERMAL
   FILES:=$(LINUX_DIR)/drivers/thermal/imx_thermal.ko
   AUTOLOAD:=$(call AutoProbe,imx_thermal)
