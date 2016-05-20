@@ -1,0 +1,24 @@
+--- a/crypto/asn1/ameth_lib.c
++++ b/crypto/asn1/ameth_lib.c
+@@ -93,7 +93,9 @@ static const EVP_PKEY_ASN1_METHOD *stand
+     &eckey_asn1_meth,
+ #endif
+     &hmac_asn1_meth,
++#ifndef OPENSSL_NO_CMAC
+     &cmac_asn1_meth,
++#endif
+ #ifndef OPENSSL_NO_DH
+     &dhx_asn1_meth
+ #endif
+--- a/crypto/evp/pmeth_lib.c
++++ b/crypto/evp/pmeth_lib.c
+@@ -91,7 +91,9 @@ static const EVP_PKEY_METHOD *standard_m
+     &ec_pkey_meth,
+ #endif
+     &hmac_pkey_meth,
++#ifndef OPENSSL_NO_CMAC
+     &cmac_pkey_meth,
++#endif
+ #ifndef OPENSSL_NO_DH
+     &dhx_pkey_meth
+ #endif

@@ -95,8 +95,9 @@ This package contains the OpenSSL command-line utility.
 endef
 
 
-OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-camellia no-krb5
-OPENSSL_OPTIONS:= shared no-err no-sse2 no-ssl2
+OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-camellia no-krb5 \
+ no-whrlpool no-whirlpool no-ripemd no-seed no-cast no-cmac
+OPENSSL_OPTIONS:= shared no-err no-sse2 no-ssl2 no-ssl2-method no-heartbeats
 
 ifdef CONFIG_OPENSSL_ENGINE_CRYPTO
   OPENSSL_OPTIONS += -DHAVE_CRYPTODEV
@@ -116,7 +117,7 @@ ifndef CONFIG_OPENSSL_WITH_EC2M
 endif
 
 ifndef CONFIG_OPENSSL_WITH_SSL3
-  OPENSSL_OPTIONS += no-ssl3
+  OPENSSL_OPTIONS += no-ssl3 no-ssl3-method
 endif
 
 ifndef CONFIG_OPENSSL_HARDWARE_SUPPORT
