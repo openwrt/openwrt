@@ -65,6 +65,7 @@ platform_check_image_target_openmesh()
 			;;
 		MR1750)
 			[ "$board" = "mr1750" ] && return 0
+			[ "$board" = "mr1750v2" ] && return 0
 			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
 			return 1
 			;;
