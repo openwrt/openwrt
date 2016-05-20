@@ -25,6 +25,11 @@ config OPENSSL_WITH_COMPRESSION
 	default n
 	prompt "Enable compression support"
 
+config OPENSSL_WITH_NPN
+	bool
+	default n
+	prompt "Enable NPN support"
+
 config OPENSSL_ENGINE_DIGEST
 	bool
 	depends on OPENSSL_ENGINE_CRYPTO

@@ -1,0 +1,12 @@
+--- a/ssl/t1_ext.c
++++ b/ssl/t1_ext.c
+@@ -275,7 +275,9 @@ int SSL_extension_supported(unsigned int
+     case TLSEXT_TYPE_ec_point_formats:
+     case TLSEXT_TYPE_elliptic_curves:
+     case TLSEXT_TYPE_heartbeat:
++# ifndef OPENSSL_NO_NEXTPROTONEG
+     case TLSEXT_TYPE_next_proto_neg:
++# endif
+     case TLSEXT_TYPE_padding:
+     case TLSEXT_TYPE_renegotiate:
+     case TLSEXT_TYPE_server_name:
