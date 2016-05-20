@@ -47,6 +47,7 @@ platform_check_image_target_openmesh()
 			[ "$board" = "om2p-lc" ] && return 0
 			[ "$board" = "om2p-hs" ] && return 0
 			[ "$board" = "om2p-hsv2" ] && return 0
+			[ "$board" = "om2p-hsv3" ] && return 0
 			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
 			return 1
 			;;
