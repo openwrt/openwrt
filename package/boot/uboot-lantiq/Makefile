@@ -214,6 +214,13 @@ define uboot/acmp252_nor
   DEPS:=@TARGET_lantiq_xway
 endef
 
+define uboot/bthomehubv5a_ram
+  TITLE:=U-Boot for BT Home Hub 5A (RAM)
+  SOC:=vr9
+  DDR_SETTINGS:=board/bt/bthomehubv5a/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xrx200
+endef
+
 define uboot/easy50712_ram
   TITLE:=U-Boot for Lantiq EASY50712 (RAM)
   SOC:=danube
@@ -342,6 +349,7 @@ UBOOTS:= \
 	arv752dpw_ram arv752dpw_nor arv752dpw_brn \
 	arv752dpw22_ram arv752dpw22_nor arv752dpw22_brn \
 	arv8539pw22_brn arv8539pw22_nor arv8539pw22_ram \
+	bthomehubv5a_ram \
 	gigasx76x_ram gigasx76x_nor \
 	acmp252_ram acmp252_nor \
 	easy50712_ram easy50712_nor easy50712_norspl \
