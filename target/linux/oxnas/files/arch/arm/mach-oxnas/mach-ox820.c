@@ -8,7 +8,6 @@
 #include <linux/slab.h>
 #include <linux/gfp.h>
 #include <linux/reset.h>
-#include <linux/version.h>
 #include <asm/mach-types.h>
 #include <asm/mach/map.h>
 #include <asm/mach/arch.h>
@@ -74,11 +73,7 @@ static void __init ox820_dt_init(void)
 static void __init ox820_timer_init(void)
 {
 	of_clk_init(NULL);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,3,0)
-	clocksource_of_init();
-#else
 	clocksource_probe();
-#endif
 }
 
 void ox820_init_early(void)
