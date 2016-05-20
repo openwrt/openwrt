@@ -65,7 +65,7 @@ define Device/rpi-2
   DEVICE_TITLE := Raspberry Pi 2 B
   DEVICE_DTS := bcm2709-rpi-2-b
 endef
-ifeq ($(SUBTARGET),bcm2708)
+ifeq ($(SUBTARGET),bcm2709)
   TARGET_DEVICES += rpi-2
 endif
 
@@ -74,7 +74,7 @@ define Device/rpi-3
   DEVICE_DTS := bcm2710-rpi-3-b
   DEVICE_PACKAGES := brcmfmac43430-firmware-sdio kmod-brcmfmac wpad-mini
 endef
-ifeq ($(SUBTARGET),bcm2708)
+ifeq ($(SUBTARGET),bcm2710)
   TARGET_DEVICES += rpi-3
 endif
 
