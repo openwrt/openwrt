@@ -501,7 +501,7 @@ $(eval $(call KernelPackage,wdt-omap))
 define KernelPackage/wdt-orion
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell Orion Watchdog timer
-  DEPENDS:=@TARGET_orion||TARGET_kirkwood||TARGET_mvebu
+  DEPENDS:=@TARGET_orion||TARGET_kirkwood
   KCONFIG:=CONFIG_ORION_WATCHDOG
   FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/orion_wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,orion_wdt,1)
@@ -585,7 +585,7 @@ $(eval $(call KernelPackage,rtc-isl1208))
 define KernelPackage/rtc-marvell
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell SoC built-in RTC support
-  DEPENDS:=@RTC_SUPPORT @TARGET_kirkwood||TARGET_orion||TARGET_mvebu
+  DEPENDS:=@RTC_SUPPORT @TARGET_kirkwood||TARGET_orion
   KCONFIG:=CONFIG_RTC_DRV_MV \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
@@ -597,23 +597,6 @@ define KernelPackage/rtc-marvell/description
 endef
 
 $(eval $(call KernelPackage,rtc-marvell))
-
-
-define KernelPackage/rtc-armada38x
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Marvell Armada 38x SoC built-in RTC support
-  DEPENDS:=@RTC_SUPPORT @TARGET_mvebu
-  KCONFIG:=CONFIG_RTC_DRV_ARMADA38X \
-	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-armada38x.ko
-  AUTOLOAD:=$(call AutoProbe,rtc-armada38x)
-endef
-
-define KernelPackage/rtc-armada38x/description
- Kernel module for Marvell Armada 38x SoC built-in RTC.
-endef
-
-$(eval $(call KernelPackage,rtc-armada38x))
 
 
 define KernelPackage/rtc-pcf8563
@@ -794,7 +777,7 @@ $(eval $(call KernelPackage,zram))
 define KernelPackage/mvsdio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell SDIO support
-  DEPENDS:=@TARGET_orion||TARGET_kirkwood||TARGET_mvebu +kmod-mmc
+  DEPENDS:=@TARGET_orion||TARGET_kirkwood +kmod-mmc
   KCONFIG:=CONFIG_MMC_MVSDIO
   FILES:=$(LINUX_DIR)/drivers/mmc/host/mvsdio.ko
   AUTOLOAD:=$(call AutoProbe,mvsdio)
@@ -920,23 +903,6 @@ define KernelPackage/thermal/description
 endef
 
 $(eval $(call KernelPackage,thermal))
-
-
-define KernelPackage/thermal-armada
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Armada 370/XP thermal management
-  DEPENDS:=@TARGET_mvebu +kmod-thermal
-  KCONFIG:=CONFIG_ARMADA_THERMAL
-  FILES:=$(LINUX_DIR)/drivers/thermal/armada_thermal.ko
-  AUTOLOAD:=$(call AutoProbe,armada_thermal)
-endef
-
-define KernelPackage/thermal-armada/description
- Enable this module if you want to have support for thermal management
- controller present in Armada 370 and Armada XP SoC.
-endef
-
-$(eval $(call KernelPackage,thermal-armada))
 
 
 define KernelPackage/thermal-imx
