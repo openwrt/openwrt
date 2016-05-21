@@ -30,9 +30,18 @@ endef
 define Build/Prepare
 endef
 
+# requires 214-spidev_h_portability.patch
+# or linux/ioctl.h include on musl
 define Build/Compile
+
+ifneq ($(CONFIG_LINUX_3_18)$(CONFIG_LINUX_4_1)$(CONFIG_LINUX_4_4),y)
+	$(TARGET_CC) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/spidev_test \
+		$(LINUX_DIR)/tools/spi/spidev_test.c
+else
 	$(TARGET_CC) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/spidev_test \
 		$(LINUX_DIR)/Documentation/spi/spidev_test.c
+endif
+
 endef
 
 define Package/spidev-test/install
