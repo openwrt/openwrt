@@ -1,13 +1,13 @@
-From fbdbf2ddf2b34d675d53de679c179788b0604c1a Mon Sep 17 00:00:00 2001
+From 09f411b4d10f10a62f147264121bb853b4649c3e Mon Sep 17 00:00:00 2001
 From: Oliver Muth <dr.o.muth@gmx.de>
 Date: Sat, 12 Oct 2013 16:49:53 +0200
-Subject: MIPS: add board support for Arcadyan ARV752DPW
+Subject: MIPS: add board support for Arcadyan ARV752DPW22
 
 Signed-off-by: Oliver Muth <dr.o.muth@gmx.de>
 Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
 --- /dev/null
-+++ b/board/arcadyan/arv752dpw/Makefile
++++ b/board/arcadyan/arv752dpw22/Makefile
 @@ -0,0 +1,27 @@
 +#
 +# Copyright (C) 2000-2011 Wolfgang Denk, DENX Software Engineering, wd@denx.de
@@ -37,8 +37,8 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +
 +#########################################################################
 --- /dev/null
-+++ b/board/arcadyan/arv752dpw/arv752dpw.c
-@@ -0,0 +1,51 @@
++++ b/board/arcadyan/arv752dpw22/arv752dpw22.c
+@@ -0,0 +1,52 @@
 +/*
 + * Copyright (C) 2012 Luka Perkov <luka@openwrt.org>
 + * Copyright (C) 2013 Oliver Muth <dr.o.muth@gmx.de>
@@ -67,8 +67,8 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +}
 +
 +static const struct ltq_eth_port_config eth_port_config[] = {
-+	/* MAC0: Realtek rtl8306 switch */
-+	{ 0, 0x0, LTQ_ETH_PORT_SWITCH, PHY_INTERFACE_MODE_RMII },
++	/* MAC0: Atheros ar8216 switch */
++	{ 0, 0x0, LTQ_ETH_PORT_SWITCH, PHY_INTERFACE_MODE_MII },
 +};
 +
 +static const struct ltq_eth_board_config eth_board_config = {
@@ -80,18 +80,19 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +{
 +	return ltq_eth_initialize(&eth_board_config);
 +}
-+static struct switch_device rtl8306_dev = {
-+	.name = "rtl8306",
-+	.cpu_port = 5,
++
++static struct switch_device ar8216_dev = {
++	.name = "ar8216",
++	.cpu_port = 0,
 +	.port_mask = 0xF,
 +};
 +
 +int board_switch_init(void)
 +{
-+	return switch_device_register(&rtl8306_dev);
++	return switch_device_register(&ar8216_dev);
 +}
 --- /dev/null
-+++ b/board/arcadyan/arv752dpw/config.mk
++++ b/board/arcadyan/arv752dpw22/config.mk
 @@ -0,0 +1,7 @@
 +#
 +# Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
@@ -101,7 +102,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +
 +PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
 --- /dev/null
-+++ b/board/arcadyan/arv752dpw/ddr_settings.h
++++ b/board/arcadyan/arv752dpw22/ddr_settings.h
 @@ -0,0 +1,55 @@
 +/*
 + * Copyright (C) 2011-2013 Luka Perkov <luka@openwrt.org>
@@ -160,19 +161,19 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#define MC_DC46_VALUE	0x0
 --- a/boards.cfg
 +++ b/boards.cfg
-@@ -518,6 +518,9 @@ Active  mips        mips32         danub
- Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_brn                        arv7518pw:SYS_BOOT_BRN                                                                                                            Luka Perkov <luka@openwrt.org>
- Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_nor                        arv7518pw:SYS_BOOT_NOR                                                                                                            Luka Perkov <luka@openwrt.org>
- Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_ram                        arv7518pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
-+Active  mips        mips32         danube      arcadyan        arv752dpw           arv752dpw_brn                        arv752dpw:SYS_BOOT_BRN                                                                                                            -
-+Active  mips        mips32         danube      arcadyan        arv752dpw           arv752dpw_nor                        arv752dpw:SYS_BOOT_NOR                                                                                                            -
-+Active  mips        mips32         danube      arcadyan        arv752dpw           arv752dpw_ram                        arv752dpw:SYS_BOOT_RAM                                                                                                            -
+@@ -511,6 +511,9 @@ Active  mips        mips32         danub
+ Active  mips        mips32         danube      arcadyan        arv752dpw           arv752dpw_brn                        arv752dpw:SYS_BOOT_BRN                                                                                                            -
+ Active  mips        mips32         danube      arcadyan        arv752dpw           arv752dpw_nor                        arv752dpw:SYS_BOOT_NOR                                                                                                            -
+ Active  mips        mips32         danube      arcadyan        arv752dpw           arv752dpw_ram                        arv752dpw:SYS_BOOT_RAM                                                                                                            -
++Active  mips        mips32         danube      arcadyan        arv752dpw22         arv752dpw22_brn                      arv752dpw22:SYS_BOOT_BRN                                                                                                          -
++Active  mips        mips32         danube      arcadyan        arv752dpw22         arv752dpw22_nor                      arv752dpw22:SYS_BOOT_NOR                                                                                                          -
++Active  mips        mips32         danube      arcadyan        arv752dpw22         arv752dpw22_ram                      arv752dpw22:SYS_BOOT_RAM                                                                                                          -
  Active  mips        mips32         danube      audiocodes      acmp252             acmp252_nor                          acmp252:SYS_BOOT_NOR                                                                                                              Daniel Golle <daniel.golle@gmail.com>
  Active  mips        mips32         danube      audiocodes      acmp252             acmp252_ram                          acmp252:SYS_BOOT_RAM                                                                                                              Daniel Golle <daniel.golle@gmail.com>
  Active  mips        mips32         danube      gigaset         sx76x               gigasx76x_nor                        sx76x:SYS_BOOT_NOR                                                                                                                Luka Perkov <luka@openwrt.org>
 --- /dev/null
-+++ b/include/configs/arv752dpw.h
-@@ -0,0 +1,67 @@
++++ b/include/configs/arv752dpw22.h
+@@ -0,0 +1,68 @@
 +/*
 + * Copyright (C) 2012-2013 Luka Perkov <luka@openwrt.org>
 + *
@@ -182,9 +183,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#ifndef __CONFIG_H
 +#define __CONFIG_H
 +
-+#define CONFIG_MACH_TYPE	"ARV752DPW"
++#define CONFIG_MACH_TYPE	"ARV752DPW22"
 +#define CONFIG_IDENT_STRING	" "CONFIG_MACH_TYPE
-+#define CONFIG_BOARD_NAME	"Arcadyan ARV752DPW"
++#define CONFIG_BOARD_NAME	"Arcadyan ARV752DPW22"
 +
 +/* Configure SoC */
 +#define CONFIG_LTQ_SUPPORT_UART		/* Enable ASC and UART */
@@ -195,7 +196,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +
 +/* Switch devices */
 +#define CONFIG_SWITCH_MULTI
-+#define CONFIG_SWITCH_RTL8206
++#define CONFIG_SWITCH_AR8216
 +
 +/* Environment */
 +#if defined(CONFIG_SYS_BOOT_NOR)
@@ -210,13 +211,14 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#define CONFIG_ENV_SIZE			(8 * 1024)
 +#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
 +
-+/* Brnboot loadable image */
++/* Burnboot loadable image */
 +#if defined(CONFIG_SYS_BOOT_BRN)
 +#define CONFIG_SYS_TEXT_BASE		0x80002000
 +#define CONFIG_SKIP_LOWLEVEL_INIT
 +#define CONFIG_SYS_DISABLE_CACHE
 +#define CONFIG_ENV_OVERWRITE 1
 +#endif
++
 +
 +/* Console */
 +#define CONFIG_LTQ_ADVANCED_CONSOLE

@@ -12,11 +12,9 @@ Acked-by: Simon Glass <sjg@chromium.org>
  common/main.c | 3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/common/main.c b/common/main.c
-index 32618f1..2979fbe 100644
 --- a/common/main.c
 +++ b/common/main.c
-@@ -17,8 +17,7 @@ DECLARE_GLOBAL_DATA_PTR;
+@@ -27,8 +27,7 @@ DECLARE_GLOBAL_DATA_PTR;
  /*
   * Board-specific Platform code can reimplement show_boot_progress () if needed
   */
@@ -24,5 +22,5 @@ index 32618f1..2979fbe 100644
 -void show_boot_progress (int val) __attribute__((weak, alias("__show_boot_progress")));
 +__weak void show_boot_progress(int val) {}
  
- static void modem_init(void)
- {
+ #define MAX_DELAY_STOP_STR 32
+ 

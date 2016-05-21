@@ -95,8 +95,8 @@ On Tue, 2015-01-20 at 00:39 +0100, Ben Mulvihill wrote:
 Some of the bitshifting in arch/mips/cpu/mips32/arx100/cgu.c is 1
 out. A patch along these lines should fix it:
 
---- a/arch/mips/cpu/mips32/arx100/cgu.c	2015-01-20 11:57:22.000000000 +0100
-+++ b/arch/mips/cpu/mips32/arx100/cgu.c	2015-01-20 12:00:15.000000000 +0100
+--- a/arch/mips/cpu/mips32/arx100/cgu.c
++++ b/arch/mips/cpu/mips32/arx100/cgu.c
 @@ -10,12 +10,17 @@
  #include <asm/lantiq/clk.h>
  #include <asm/lantiq/io.h>
