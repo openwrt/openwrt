@@ -30,7 +30,7 @@
 +#########################################################################
 --- /dev/null
 +++ b/board/arcadyan/vgv7510kw22/vgv7510kw22.c
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,98 @@
 +/*
 + * Copyright (C) 2015 Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 + *
@@ -38,7 +38,6 @@
 + */
 +
 +#include <common.h>
-+#include <spi.h>
 +#include <asm/gpio.h>
 +#include <asm/lantiq/eth.h>
 +#include <asm/lantiq/chipid.h>
@@ -67,12 +66,8 @@
 +
 +static void gpio_init(void)
 +{
-+	/* SPI CS 0.4 to serial flash */
-+	gpio_direction_output(10, 1);
-+
 +	/* Turn on the green power LED */
 +	gpio_direction_output(GPIO_POWER_GREEN, 0);
-+	gpio_set_value(GPIO_POWER_GREEN, 0);
 +}
 +
 +int board_early_init_f(void)
@@ -133,39 +128,6 @@
 +	ltq_rcu_gphy_boot(1, fw_addr);
 +
 +	return ltq_eth_initialize(&eth_board_config);
-+}
-+
-+int spi_cs_is_valid(unsigned int bus, unsigned int cs)
-+{
-+	if (bus)
-+		return 0;
-+
-+	if (cs == 4)
-+		return 1;
-+
-+	return 0;
-+}
-+
-+void spi_cs_activate(struct spi_slave *slave)
-+{
-+	switch (slave->cs) {
-+	case 4:
-+		gpio_set_value(10, 0);
-+		break;
-+	default:
-+		break;
-+	}
-+}
-+
-+void spi_cs_deactivate(struct spi_slave *slave)
-+{
-+	switch (slave->cs) {
-+	case 4:
-+		gpio_set_value(10, 1);
-+		break;
-+	default:
-+		break;
-+	}
 +}
 --- /dev/null
 +++ b/board/arcadyan/vgv7510kw22/config.mk
@@ -265,7 +227,7 @@
  Active  mips        mips32         vrx200      avm             fb3370              fb3370_sfspl                         fb3370:SYS_BOOT_SFSPL                                                                                                             Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 --- /dev/null
 +++ b/include/configs/vgv7510kw22.h
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,59 @@
 +/*
 + * Copyright (C) 2015 Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 + *
@@ -286,33 +248,14 @@
 +
 +#define CONFIG_LTQ_SUPPORT_NOR_FLASH		/* Have a parallel NOR flash */
 +
-+#define CONFIG_LTQ_SUPPORT_SPI_FLASH
-+#define CONFIG_SPI_FLASH_MACRONIX		/* Have a MX29GL128EL parallel flash */
-+
-+#define CONFIG_LTQ_SUPPORT_SPL_SPI_FLASH	/* Build SPI flash SPL */
-+#define CONFIG_LTQ_SPL_COMP_LZO			/* Compress SPL with LZO */
-+#define CONFIG_LTQ_SPL_CONSOLE			/* Enable SPL console */
-+
-+#define CONFIG_SPL_SPI_BUS		0
-+#define CONFIG_SPL_SPI_CS		4
-+#define CONFIG_SPL_SPI_MAX_HZ		25000000
-+#define CONFIG_SPL_SPI_MODE		0
-+
-+#define CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH		/* Build NOR flash SPL */
-+
 +#define CONFIG_SYS_BOOTM_LEN		0x1000000	/* 16 MB */
-+
-+/* Environment */
-+#define CONFIG_ENV_SPI_BUS		CONFIG_SPL_SPI_BUS
-+#define CONFIG_ENV_SPI_CS		CONFIG_SPL_SPI_CS
-+#define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SPL_SPI_MAX_HZ
-+#define CONFIG_ENV_SPI_MODE		CONFIG_SPL_SPI_MODE
 +
 +#if defined(CONFIG_SYS_BOOT_BRN)
 +#define CONFIG_SYS_TEXT_BASE		0x80002000
 +#define CONFIG_SKIP_LOWLEVEL_INIT
 +#define CONFIG_SYS_DISABLE_CACHE
 +#define CONFIG_ENV_IS_NOWHERE
++#define CONFIG_ENV_OVERWRITE		1
 +#elif defined(CONFIG_SYS_BOOT_NOR)
 +#define CONFIG_ENV_IS_IN_FLASH
 +#define CONFIG_ENV_OVERWRITE
