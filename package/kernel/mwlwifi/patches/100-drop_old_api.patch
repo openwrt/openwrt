@@ -1,6 +1,6 @@
 --- a/main.c
 +++ b/main.c
-@@ -418,11 +418,7 @@ static void mwl_set_ht_caps(struct mwl_p
+@@ -423,11 +423,7 @@ static void mwl_set_ht_caps(struct mwl_p
  	band->ht_cap.cap |= IEEE80211_HT_CAP_SGI_20;
  	band->ht_cap.cap |= IEEE80211_HT_CAP_SGI_40;
  
@@ -12,7 +12,7 @@
  	band->ht_cap.ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
  	band->ht_cap.ampdu_density = IEEE80211_HT_MPDU_DENSITY_4;
  
-@@ -524,29 +520,16 @@ static int mwl_wl_init(struct mwl_priv *
+@@ -563,29 +559,16 @@ static int mwl_wl_init(struct mwl_priv *
  	hw->queues = SYSADPT_TX_WMM_QUEUES;
  
  	/* Set rssi values to dBm */
@@ -41,10 +41,10 @@
 -#endif
  
  	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
- 
+ 	hw->wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
 --- a/dev.h
 +++ b/dev.h
-@@ -484,10 +484,6 @@ static inline struct mwl_sta *mwl_dev_ge
+@@ -506,10 +506,6 @@ static inline struct mwl_sta *mwl_dev_ge
  	return (struct mwl_sta *)&sta->drv_priv;
  }
  
@@ -57,7 +57,7 @@
  
 --- a/mac80211.c
 +++ b/mac80211.c
-@@ -572,19 +572,11 @@ static int mwl_mac80211_get_survey(struc
+@@ -598,19 +598,11 @@ static int mwl_mac80211_get_survey(struc
  	return 0;
  }
  
