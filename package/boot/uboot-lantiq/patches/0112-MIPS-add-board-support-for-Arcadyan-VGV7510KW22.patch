@@ -30,7 +30,7 @@
 +#########################################################################
 --- /dev/null
 +++ b/board/arcadyan/vgv7510kw22/vgv7510kw22.c
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,120 @@
 +/*
 + * Copyright (C) 2015 Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 + *
@@ -63,11 +63,15 @@
 +#endif
 +
 +#define GPIO_POWER_GREEN	14
++#define GPIO_POWER_RED	28
 +
 +static void gpio_init(void)
 +{
 +	/* Turn on the green power LED */
 +	gpio_direction_output(GPIO_POWER_GREEN, 0);
++
++	/* Turn off the red power LED */
++	gpio_direction_output(GPIO_POWER_RED, 1);
 +}
 +
 +int board_early_init_f(void)
@@ -88,6 +92,24 @@
 +{
 +	puts("Board: " CONFIG_BOARD_NAME "\n");
 +	ltq_chip_print_info();
++
++	return 0;
++}
++
++void show_boot_progress(int arg)
++{
++	if (!do_gpio_init)
++		return 0;
++
++	if (arg >= 0) {
++		/* Success - turn off the red power LED and turn on the green power LED */
++		gpio_set_value(GPIO_POWER_RED, 1);
++		gpio_set_value(GPIO_POWER_GREEN, 0);
++	} else {
++		/* Failure - turn off green power LED and turn on red power LED */
++		gpio_set_value(GPIO_POWER_GREEN, 1);
++		gpio_set_value(GPIO_POWER_RED, 0);
++	}
 +
 +	return 0;
 +}
