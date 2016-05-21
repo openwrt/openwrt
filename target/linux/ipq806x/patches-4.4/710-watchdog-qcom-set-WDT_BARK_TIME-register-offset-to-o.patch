@@ -1,0 +1,43 @@
+From abc9f55079169806bcc31f29ec27f7df11c6184c Mon Sep 17 00:00:00 2001
+From: Ram Chandra Jangir <rjangi@codeaurora.org>
+Date: Thu, 4 Feb 2016 12:41:56 +0530
+Subject: [PATCH 2/2] watchdog: qcom: set WDT_BARK_TIME register offset to one
+ second less of bite time
+
+Currently WDT_BARK_TIME register offset is not configured with bark
+timeout during wdt_start,and it is taking bark timeout's default value.
+For some versions of TZ (secure mode) will consider a BARK the same
+as BITE and reset the board.
+
+So instead let's just configure the BARK time to be less than a second
+of the bite timeout so the board does not reset in this scenario
+
+Change-Id: Ie09850ad7e0470ed721e6924911ca2a81fd9ff8a
+Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
+---
+ drivers/watchdog/qcom-wdt.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/watchdog/qcom-wdt.c b/drivers/watchdog/qcom-wdt.c
+index 773dcfa..002274a 100644
+--- a/drivers/watchdog/qcom-wdt.c
++++ b/drivers/watchdog/qcom-wdt.c
+@@ -22,6 +22,7 @@
+ 
+ #define WDT_RST		0x38
+ #define WDT_EN		0x40
++#define WDT_BARK_TIME	0x4C
+ #define WDT_BITE_TIME	0x5C
+ 
+ struct qcom_wdt {
+@@ -44,6 +45,7 @@ static int qcom_wdt_start(struct watchdog_device *wdd)
+ 
+ 	writel(0, wdt->base + WDT_EN);
+ 	writel(1, wdt->base + WDT_RST);
++	writel((wdd->timeout - 1) * wdt->rate, wdt->base + WDT_BARK_TIME);
+ 	writel(wdd->timeout * wdt->rate, wdt->base + WDT_BITE_TIME);
+ 	writel(1, wdt->base + WDT_EN);
+ 	return 0;
+-- 
+2.7.2
+

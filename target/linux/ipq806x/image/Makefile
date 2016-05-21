@@ -93,6 +93,7 @@ define Device/AP148
 	BLOCKSIZE := 128KiB
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
+	DEVICE_TITLE := Qualcom AP148
 endef
 
 define Device/AP148-legacy
@@ -102,6 +103,7 @@ define Device/AP148-legacy
 	BLOCKSIZE := 128KiB
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
+	DEVICE_TITLE := Qualcom AP148 (legacy)
 endef
 
 define Device/D7800
@@ -113,6 +115,7 @@ define Device/D7800
 	BLOCKSIZE := 128KiB
 	PAGESIZE := 2048
 	BOARD_NAME := d7800
+	DEVICE_TITLE := Netgear Nighthawk X4 D7800
 endef
 
 define Device/DB149
@@ -120,6 +123,7 @@ define Device/DB149
 	DEVICE_DTS := qcom-ipq8064-db149
 	KERNEL_INSTALL := 1
 	BOARD_NAME := db149
+	DEVICE_TITLE := Qualcom DB149
 endef
 
 define Device/R7500
@@ -131,6 +135,7 @@ define Device/R7500
 	BLOCKSIZE := 128KiB
 	PAGESIZE := 2048
 	BOARD_NAME := r7500
+	DEVICE_TITLE := Netgear Nighthawk X4 R7500
 endef
 
 TARGET_DEVICES += AP148 AP148-legacy D7800 DB149 R7500
