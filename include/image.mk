@@ -18,7 +18,7 @@ KDIR=$(KERNEL_BUILD_DIR)
 KDIR_TMP=$(KDIR)/tmp
 DTS_DIR:=$(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/dts
 
-sanitize = $(call tolower,$(subst _,-,$(1)))
+sanitize = $(call tolower,$(subst _,-,$(subst $(space),-,$(1))))
 
 DIST_SANITIZED:=$(call sanitize,$(VERSION_DIST))
 EXTRA_NAME_SANITIZED=$(call sanitize,$(EXTRA_IMAGE_NAME))
