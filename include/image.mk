@@ -471,7 +471,11 @@ define Device/Export
   $(1) : FILESYSTEM:=$(2)
 endef
 
-DEVICE_CHECK_PROFILE = $(CONFIG_TARGET_$(call target_conf,$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET)))_$(1))
+ifdef IB
+  DEVICE_CHECK_PROFILE = $(filter $(1),$(PROFILE))
+else
+  DEVICE_CHECK_PROFILE = $(CONFIG_TARGET_$(call target_conf,$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET)))_$(1))
+endif
 
 define Device/Check
   _PROFILE_SET = $$(strip $$(foreach profile,$$(PROFILES) DEVICE_$(1),$$(call DEVICE_CHECK_PROFILE,$$(profile))))
