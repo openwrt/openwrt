@@ -6,7 +6,6 @@
 # See /LICENSE for more information.
 #
 
-RELEASE:=Designated Driver
 PREP_MK= OPENWRT_BUILD= QUIET=0
 
 export IS_TTY=$(shell tty -s && echo 1 || echo 0)
@@ -20,7 +19,6 @@ else
 endif
 
 HOSTCC ?= $(CC)
-export RELEASE
 export REVISION
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
 export MAKE_JOBSERVER=$(filter --jobserver%,$(MAKEFLAGS))

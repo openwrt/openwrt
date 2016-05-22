@@ -9,6 +9,8 @@
 # Substituted by SDK, do not remove
 # REVISION:=x
 
+RELEASE:=Reboot
+
 PKG_CONFIG_DEPENDS += \
 	CONFIG_VERSION_NUMBER \
 	CONFIG_VERSION_NICK \
