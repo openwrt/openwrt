@@ -102,6 +102,9 @@ EOF
 		if ($target->{arch} =~ /\w/) {
 			$confstr .= "\tselect $target->{arch}\n";
 		}
+		if ($target->{has_devices}) {
+			$confstr .= "\tselect HAS_DEVICES\n";
+		}
 	}
 
 	foreach my $dep (@{$target->{depends}}) {
@@ -187,6 +190,21 @@ choice
 	prompt "Target Profile"
 
 EOF
+	foreach my $target (@target) {
+		my $profile = $target->{profiles}->[0];
+		$profile or next;
+		print <<EOF;
+	default TARGET_$target->{conf}_$profile->{id} if TARGET_$target->{conf}
+EOF
+	}
+
+	print <<EOF;
+
+config TARGET_MULTI_PROFILE
+	bool "Multiple devices"
+	depends on HAS_DEVICES
+
+EOF
 
 	foreach my $target (@target) {
 		my $profiles = $target->{profiles};
@@ -215,7 +233,35 @@ EOF
 	print <<EOF;
 endchoice
 
+menu "Target Devices"
+	depends on TARGET_MULTI_PROFILE
+
+EOF
+	foreach my $target (@target) {
+		my $profiles = $target->{profiles};
+		foreach my $profile (@{$target->{profiles}}) {
+			next unless $profile->{id} =~ /^DEVICE_/;
+			print <<EOF;
+config TARGET_DEVICE_$target->{conf}_$profile->{id}
+	bool "$profile->{name}"
+	depends on TARGET_$target->{conf}
+EOF
+			my @pkglist = merge_package_lists($target->{packages}, $profile->{packages});
+			foreach my $pkg (@pkglist) {
+				print "\tselect DEFAULT_$pkg\n";
+				$defaults{$pkg} = 1;
+			}
+		}
+	}
+
+	print <<EOF;
+
+endmenu
+
 config HAS_SUBTARGETS
+	bool
+
+config HAS_DEVICES
 	bool
 
 config TARGET_BOARD

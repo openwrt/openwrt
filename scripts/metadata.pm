@@ -87,6 +87,7 @@ sub parse_target_metadata($) {
 				priority => 999,
 				packages => []
 			};
+			$1 =~ /^DEVICE_/ and $target->{has_devices} = 1;
 			push @{$target->{profiles}}, $profile;
 		};
 		/^Target-Profile-Name:\s*(.+)\s*$/ and $profile->{name} = $1;
