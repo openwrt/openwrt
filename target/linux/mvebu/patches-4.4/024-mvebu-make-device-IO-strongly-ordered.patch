@@ -1,0 +1,47 @@
+On Cortex-A9 based Marvell SoCs, when HW I/O coherency is enabled, all
+non-RAM space needs to be mapped strongly ordered.
+In upstream this was added for PCIe I/O only, this change expands it
+to cover all device memory. Fixes issues with CESA.
+Based on patch from Thomas Petazzoni.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/arch/arm/mach-mvebu/coherency.c
++++ b/arch/arm/mach-mvebu/coherency.c
+@@ -162,22 +162,16 @@ exit:
+ }
+ 
+ /*
+- * This ioremap hook is used on Armada 375/38x to ensure that PCIe
++ * This ioremap hook is used on Armada 375/38x to ensure that all non-RAM
+  * memory areas are mapped as MT_UNCACHED instead of MT_DEVICE. This
+- * is needed as a workaround for a deadlock issue between the PCIe
++ * is needed as a workaround for a deadlock issue between the bus
+  * interface and the cache controller.
+  */
+ static void __iomem *
+-armada_pcie_wa_ioremap_caller(phys_addr_t phys_addr, size_t size,
+-			      unsigned int mtype, void *caller)
++armada_wa_ioremap_caller(phys_addr_t phys_addr, size_t size,
++			 unsigned int mtype, void *caller)
+ {
+-	struct resource pcie_mem;
+-
+-	mvebu_mbus_get_pcie_mem_aperture(&pcie_mem);
+-
+-	if (pcie_mem.start <= phys_addr && (phys_addr + size) <= pcie_mem.end)
+-		mtype = MT_UNCACHED;
+-
++	mtype = MT_UNCACHED;
+ 	return __arm_ioremap_caller(phys_addr, size, mtype, caller);
+ }
+ 
+@@ -186,7 +180,7 @@ static void __init armada_375_380_cohere
+ 	struct device_node *cache_dn;
+ 
+ 	coherency_cpu_base = of_iomap(np, 0);
+-	arch_ioremap_caller = armada_pcie_wa_ioremap_caller;
++	arch_ioremap_caller = armada_wa_ioremap_caller;
+ 
+ 	/*
+ 	 * We should switch the PL310 to I/O coherency mode only if
