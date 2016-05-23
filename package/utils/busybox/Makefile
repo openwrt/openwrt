@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.24.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -42,7 +42,7 @@ define Package/busybox
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
-  DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc +BUSYBOX_CONFIG_PAM:libpam
+  DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc +BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
   MENU:=1
 endef
 
