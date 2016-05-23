@@ -294,12 +294,15 @@ define BuildImage/mkfs
 
 endef
 
-define Device/Init
+define Device/InitProfile
   PROFILES := $(PROFILE)
-  DEVICE_NAME := $(1)
   DEVICE_TITLE :=
   DEVICE_PACKAGES :=
   DEVICE_DESCRIPTION = Build firmware images for $$(DEVICE_TITLE)
+endef
+
+define Device/Init
+  DEVICE_NAME := $(1)
   KERNEL:=
   KERNEL_INITRAMFS = $$(KERNEL)
   KERNEL_SIZE:=
@@ -339,7 +342,7 @@ endif
 
 define Device/Check
   _PROFILE_SET = $$(strip $$(foreach profile,$$(PROFILES) DEVICE_$(1),$$(call DEVICE_CHECK_PROFILE,$$(profile))))
-  _TARGET := $$(if $$(_PROFILE_SET),install,install-disabled)
+  _TARGET := $$(if $$(_PROFILE_SET),install-images,install-disabled)
   ifndef IB
     _COMPILE_TARGET := $$(if $(CONFIG_IB)$$(_PROFILE_SET),compile,compile-disabled)
   endif
@@ -432,14 +435,52 @@ endef
 define Device/Dump
 $$(eval $$(if $$(DEVICE_TITLE),$$(info $$(call Device/DumpInfo,$(1)))))
 endef
+LegacyDevice/Dump = $(Device/Dump)
 
 define Device
+  $(call Device/InitProfile,$(1))
   $(call Device/Init,$(1))
   $(call Device/Default,$(1))
   $(call Device/$(1),$(1))
   $(call Device/Check,$(1))
   $(call Device/$(if $(DUMP),Dump,Build),$(1))
 
+endef
+
+define LegacyDevice/Check
+  _PROFILE_SET = $$(strip $$(foreach profile,$$(PROFILES) DEVICE_$(1),$$(call DEVICE_CHECK_PROFILE,$$(profile))))
+  _TARGET_PREPARE := $$(if $$(_PROFILE_SET),legacy-images-prepare,prepare-disabled)
+  _TARGET := $$(if $$(_PROFILE_SET),legacy-images,install-disabled)
+  $$(if $$(_PROFILE_SET),install: legacy-images-make)
+  ifndef IB
+    $$(if $$(_PROFILE_SET),compile: legacy-images-prepare-make)
+  endif
+endef
+
+define LegacyDevice/Build
+  $$(_TARGET): legacy-image-$(1)
+  $$(_TARGET_PREPARE): legacy-image-prepare-$(1)
+  .PHONY: legacy-image-prepare-$(1) legacy-image-$(1)
+
+  legacy-image-prepare-$(1):
+	$(foreach fs,$(TARGET_FILESYSTEMS),
+		$$(call Image/Prepare/Profile,$(1),$(fs))
+	)
+
+  legacy-image-$(1):
+	$(foreach fs,$(TARGET_FILESYSTEMS),
+		$$(call Image/Build/Profile,$(1),$(fs))
+	)
+
+endef
+
+define LegacyDevice
+  $(call Device/InitProfile,$(1))
+  $(call Device/Default,$(1))
+  $(call LegacyDevice/Default,$(1))
+  $(call LegacyDevice/$(1),$(1))
+  $(call LegacyDevice/Check,$(1))
+  $(call LegacyDevice/$(if $(DUMP),Dump,Build),$(1))
 endef
 
 define BuildImage
@@ -454,10 +495,12 @@ define BuildImage
   prepare:
   compile:
   clean:
+  legacy-images-prepare:
+  legacy-images:
   image_prepare:
 
   ifeq ($(IB),)
-    .PHONY: download prepare compile clean image_prepare mkfs_prepare kernel_prepare install
+    .PHONY: download prepare compile clean image_prepare mkfs_prepare kernel_prepare install install-images
     compile:
 		$(call Build/Compile)
 
@@ -467,6 +510,10 @@ define BuildImage
     image_prepare: compile
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
 		$(call Image/Prepare)
+
+    legacy-images-prepare-make: image_prepare
+		$(MAKE) legacy-images-prepare
+
   else
     image_prepare:
 		mkdir -p $(BIN_DIR) $(KDIR)/tmp
@@ -481,13 +528,19 @@ define BuildImage
 	$(call Image/InstallKernel)
 
   $(foreach device,$(TARGET_DEVICES),$(call Device,$(device)))
+  $(foreach device,$(LEGACY_DEVICES),$(call LegacyDevice,$(device)))
   $(foreach fs,$(TARGET_FILESYSTEMS) $(fs-subtypes-y),$(call BuildImage/mkfs,$(fs)))
 
-  install: kernel_prepare
+  install-images: kernel_prepare
 	$(foreach fs,$(TARGET_FILESYSTEMS),
 		$(call Image/Build,$(fs))
 	)
 	$(call Image/mkfs/ubifs)
+
+  legacy-images-make: install-images
+	$(MAKE) legacy-images
+
+  install: install-images
 	$(call Image/Checksum,md5sum --binary,md5sums)
 	$(call Image/Checksum,openssl dgst -sha256,sha256sums)
 
