@@ -25,8 +25,11 @@ define Device/Default
   KERNEL_DEPENDS = $$(wildcard $$(DTS_DIR)/ox820-$$(DTS).dts)
   KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/ox820-$$(DTS).dtb
   KERNEL_NAME := zImage
+  KERNEL_SUFFIX := -uImage
+  KERNEL_INSTALL := 1
   KERNEL_INITRAMFS = kernel-bin | lzma | fit lzma $$(DTS_DIR)/ox820-$$(DTS).dtb | ubootable
   KERNEL_INITRAMFS_PREFIX = $$(IMAGE_PREFIX)-u-boot-initramfs
+  KERNEL_INITRAMFS_SUFFIX := .bin
   BLOCKSIZE := 128KiB
   PAGESIZE := 2048
   SUBPAGESIZE := 512
