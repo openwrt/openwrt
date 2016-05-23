@@ -1164,6 +1164,12 @@ $(eval $(call MultiProfile,Yun,YUN_16M YUN_8M))
 $(eval $(call MultiProfile,Minimal,$(SINGLE_PROFILES)))
 $(eval $(call MultiProfile,Madwifi,EAP7660D WP543))
 
+define LegacyDevice/OM2P
+  DEVICE_TITLE := OpenMesh OM2P/OM2Pv2/OM2P-HS/OM2P-HSv2/OM2P-HSv3/OM2P-LC
+  DEVICE_PACKAGES := kmod-ath9k om-watchdog
+endef
+LEGACY_DEVICES += OM2P
+
 endif # ifeq ($(SUBTARGET),generic)
 
 ifeq ($(SUBTARGET),nand)
@@ -1207,6 +1213,15 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 	$(call Image/BuildLoader,generic,elf)
 	$(call Image/Build/Profile/$(if $(CONFIG_IB),Default,$(IMAGE_PROFILE)),loader)
+endef
+
+define Image/Prepare/Profile
+	$(call Image/Build/Profile/$(1),loader)
+endef
+
+define Image/Build/Profile
+	$(call Image/Build/Profile/$(1),buildkernel)
+	$(call Image/Build/Profile/$(1),$(2))
 endef
 
 # $(1): filesystem type.
