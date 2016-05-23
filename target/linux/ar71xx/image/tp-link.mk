@@ -97,18 +97,24 @@ $(Device/tplink)
   IMAGE_SIZE := 15872k
 endef
 
-define Device/cpe210-220-510-520
+define Device/cpe210-220
   MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),6144k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
   IMAGE_SIZE := 7680k
-  BOARDNAME := CPE510
+  BOARDNAME := CPE210
   TPLINK_BOARD_NAME := CPE510
+  DEVICE_PROFILE := CPE510
   LOADER_TYPE := elf
   KERNEL := kernel-bin | patch-cmdline | lzma | loader-kernel
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
-TARGET_DEVICES += cpe210-220-510-520
+
+define Device/cpe510-520
+$(Device/cpe210-220)
+  BOARDNAME := CPE510
+endef
+TARGET_DEVICES += cpe210-220 cpe510-520
 
 define Device/tl-wdr4300-v1
 $(Device/tplink-8mlzma)

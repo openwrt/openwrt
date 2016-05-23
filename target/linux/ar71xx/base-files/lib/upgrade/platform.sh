@@ -280,6 +280,7 @@ platform_check_image() {
 		return 0
 		;;
 
+	cpe210|\
 	cpe510)
 		tplink_pharos_check_image "$1" && return 0
 		return 1
