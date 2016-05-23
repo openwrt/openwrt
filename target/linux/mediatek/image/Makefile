@@ -17,7 +17,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 	mkdir -p "$(KDIR_TMP)/sysupgrade-$(1)/"
 	echo "BOARD=$(1)" > "$(KDIR_TMP)/sysupgrade-$(1)/CONTROL"
-	$(CP) "$(KDIR)/root.squashfs" "$(KDIR_TMP)/sysupgrade-$(1)/root"
+	$(CP) "$(KDIR)/root.$(2)" "$(KDIR_TMP)/sysupgrade-$(1)/root"
 	$(CP) "$(KDIR)/uImage-$(1)" "$(KDIR_TMP)/sysupgrade-$(1)/kernel"
 	(cd "$(KDIR_TMP)"; $(TAR) cvf \
 		"$(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade.tar" sysupgrade-$(1) \
@@ -29,8 +29,13 @@ define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	$(CP) $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs
 
-	$(call Image/Build/SysupgradeCombined,eMMC)
-	$(call Image/Build/SysupgradeCombined,NAND)
+	$(call Image/Build/SysupgradeCombined,eMMC,squashfs)
+endef
+
+define Image/Build/jffs2-128k
+	$(CP) $(KDIR)/root.jffs2-128k $(BIN_DIR)/$(IMG_PREFIX)-root.jffs2
+
+	$(call Image/Build/SysupgradeCombined,NAND,jffs2-128k)
 endef
 
 define Image/Build

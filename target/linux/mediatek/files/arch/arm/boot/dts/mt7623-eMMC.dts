@@ -14,7 +14,7 @@
 
 /dts-v1/;
 
-#include "mt7623.dtsi"
+#include "_mt7623.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -436,6 +436,16 @@
 			output-low;
 		};
 	};
+
+	pwm_pins: pwm {
+		pins_pwm1 {
+			pinmux = <MT7623_PIN_204_PWM1_FUNC_PWM1>;
+		};
+
+		pins_pwm2 {
+			pinmux = <MT7623_PIN_205_PWM2_FUNC_PWM2>;
+		};
+	};
 };
 
 &usb1 {
@@ -464,11 +474,18 @@
 &gmac2 {
 	mac-address = [00 11 22 33 44 55];
 	status = "okay";
+	phy-handle = <&phy5>;
 };
 
 &gsw {
 	pinctrl-names = "default";
 	pinctrl-0 = <&eth_default>;
 	mediatek,reset-pin = <&pio 15 0>;
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_pins>;
 	status = "okay";
 };
