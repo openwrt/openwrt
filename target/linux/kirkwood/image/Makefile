@@ -18,6 +18,8 @@ define Device/Default
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL := kernel-bin | append-dtb | uImage none
   KERNEL_NAME := zImage
+  KERNEL_SUFFIX  := -uImage
+  KERNEL_INSTALL := 1
   KERNEL_IN_UBI :=
 endef
 
