@@ -12,7 +12,7 @@ PKG_VERSION:=4.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=https://www.kernel.org/pub/software/network/iw
+PKG_SOURCE_URL:=@KERNEL/software/network/iw
 PKG_MD5SUM:=7adec72e91ebdd9c55429fa34a23a6f5
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
