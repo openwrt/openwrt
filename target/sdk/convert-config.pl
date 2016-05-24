@@ -1,13 +1,6 @@
 #!/usr/bin/env perl
 use strict;
 
-print <<EOF;
-config ALL
-	bool
-	default y
-
-EOF
-
 while (<>) {
 	chomp;
 	next if /^CONFIG_SIGNED_PACKAGES/;
