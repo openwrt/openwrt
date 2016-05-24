@@ -99,7 +99,6 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	$(CP) -L \
 		$(TOPDIR)/LICENSE \
 		$(TOPDIR)/rules.mk \
-		$(TOPDIR)/.config \
 		./files/Config.in \
 		./files/Makefile \
 		./files/include/prepare.mk \
