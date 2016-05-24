@@ -12,7 +12,7 @@ PKG_VERSION:=4.4.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=http://kernel.org/pub/linux/utils/net/iproute2/
+PKG_SOURCE_URL:=@KERNEL/linux/utils/net/iproute2
 PKG_MD5SUM:=d762653ec3e1ab0d4a9689e169ca184f
 PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0
