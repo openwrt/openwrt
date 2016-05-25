@@ -77,6 +77,11 @@ $(curdir)/bc/compile := $(curdir)/bison/install
 $(curdir)/findutils/compile := $(curdir)/bison/install
 $(curdir)/gengetopt/compile := $(curdir)/libtool/install
 $(curdir)/patchelf/compile := $(curdir)/libtool/install
+ifeq ($(HOST_OS),Darwin)
+tools-y += libressl
+$(curdir)/mkimage/compile += $(curdir)/libressl/install
+$(curdir)/firmware-utils/compile += $(curdir)/libressl/install
+endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
 $(foreach tool, $(filter-out patch,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/install))
