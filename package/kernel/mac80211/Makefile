@@ -161,6 +161,7 @@ define KernelPackage/ath/config
   if PACKAGE_kmod-ath
 	config ATH_USER_REGD
 		bool "Force Atheros drivers to respect the user's regdomain settings"
+		default y
 		help
 		  Atheros' idea of regulatory handling is that the EEPROM of the card defines
 		  the regulatory limits and the user is only allowed to restrict the settings
