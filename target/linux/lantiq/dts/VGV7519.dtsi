@@ -97,6 +97,11 @@
 			lantiq,portmask = <0x3>;
 		};
 
+		ifxhcd@E106000 {
+			status = "okay";
+			gpios = <&gpio 32 0>;
+		};
+
 		pci@E105400 {
 			status = "okay";
 			lantiq,bus-clock = <33333333>;
