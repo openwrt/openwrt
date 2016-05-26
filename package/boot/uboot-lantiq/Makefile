@@ -330,18 +330,19 @@ define BuildUBootPackage
 	$(call Package/uboot/template,$(1),$(TITLE),$(DEPS))
 endef
 
-define CopyVR9Firmware
-	$(CP) $(FIRMWARE_LANTIQ_SOURCE)/vr9_phy$(1)_a$(2)x.bin \
+define CompressVR9Firmware
+	$(STAGING_DIR_HOST)/bin/lzma e \
+		$(FIRMWARE_LANTIQ_SOURCE)/vr9_phy$(1)_a$(2)x.bin \
 		$(PKG_BUILD_DIR)/arch/mips/cpu/mips32/vrx200/fw_phy$(1)_a$(2)x.blob
 endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	mkdir -p $(PKG_BUILD_DIR)/arch/mips/cpu/mips32/vrx200/
-	$(call CopyVR9Firmware,11g,1)
-	$(call CopyVR9Firmware,11g,2)
-	$(call CopyVR9Firmware,22f,1)
-	$(call CopyVR9Firmware,22f,2)
+	$(call CompressVR9Firmware,11g,1)
+	$(call CompressVR9Firmware,11g,2)
+	$(call CompressVR9Firmware,22f,1)
+	$(call CompressVR9Firmware,22f,2)
 endef
 
 define Build/Configure
