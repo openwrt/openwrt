@@ -55,18 +55,11 @@
 					lantiq,pull = <1>;
 				};
 				gphy-leds {
-					lantiq,groups = "gphy0 led1",
+					lantiq,groups = "gphy0 led0", "gphy0 led1",
 							"gphy1 led0", "gphy1 led1";
 					lantiq,function = "gphy";
 					lantiq,open-drain = <0>;
-					lantiq,pull = <0>;
-					lantiq,output = <1>;
-				};
-				stp {
-					lantiq,groups = "stp";
-					lantiq,function = "stp";
 					lantiq,pull = <2>;
-					lantiq,open-drain = <0>;
 					lantiq,output = <1>;
 				};
 				mdio {
@@ -79,24 +72,7 @@
 					lantiq,pull = <0>;
 					lantiq,output = <1>;
 				};
-				spi {
-					lantiq,groups = "spi_di", "spi_do", "spi_clk";
-					lantiq,function = "spi";
-				};
 			};
-		};
-
-		stp: stp@E100BB0 {
-			compatible = "lantiq,gpio-stp-xway";
-			reg = <0xE100BB0 0x40>;
-			#gpio-cells = <2>;
-			gpio-controller;
-
-			lantiq,shadow = <0xff>;
-			lantiq,groups = <0x1>;
-			lantiq,dsl = <0x0>;
-			lantiq,phy1 = <0x7>;
-			lantiq,phy2 = <0x7>; /* enable gphy0 led2 = LAN2 LED */
 		};
 
 		ifxhcd@E101000 {
