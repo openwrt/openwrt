@@ -295,6 +295,25 @@ define uboot/vgv7510kw22_ram
   DEPS:=@TARGET_lantiq_xrx200_VGV7510KW22NOR||@TARGET_lantiq_xrx200_VGV7510KW22BRN
 endef
 
+define uboot/vgv7519_brn
+  TITLE:=U-Boot for Arcadyan VGV7519 (BRN)
+  SOC:=vr9
+  DEPS:=@TARGET_lantiq_xrx200_VGV7519NOR||@TARGET_lantiq_xrx200_VGV7519BRN
+endef
+
+define uboot/vgv7519_nor
+  TITLE:=U-Boot for Arcadyan VGV7519 (NOR)
+  SOC:=vr9
+  DEPS:=@TARGET_lantiq_xrx200_VGV7519NOR||@TARGET_lantiq_xrx200_VGV7519BRN
+endef
+
+define uboot/vgv7519_ram
+  TITLE:=U-Boot for Arcadyan VGV7519 (RAM)
+  SOC:=vr9
+  DDR_SETTINGS:=board/arcadyan/vgv7519/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xrx200_VGV7519NOR||@TARGET_lantiq_xrx200_VGV7519BRN
+endef
+
 UBOOTS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
 	arv7510pw_ram arv7510pw_nor arv7510pw_brn \
@@ -309,7 +328,8 @@ UBOOTS:= \
 	easy80920_ram easy80920_nor easy80920_norspl easy80920_sfspl \
 	fb3370_eva fb3370_ram fb3370_sfspl \
 	p2812hnufx_ram p2812hnufx_nandspl \
-	vgv7510kw22_brn vgv7510kw22_nor vgv7510kw22_ram
+	vgv7510kw22_brn vgv7510kw22_nor vgv7510kw22_ram \
+	vgv7519_brn vgv7519_nor vgv7519_ram
 
 define Package/uboot/template
 define Package/uboot-lantiq-$(1)
