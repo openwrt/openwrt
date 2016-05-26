@@ -6,23 +6,8 @@
 / {
 	fpi@10000000 {
 		localbus@0 {
-			nor-flash@0 {
-				compatible = "lantiq,nor", "cfi-flash";
-				bank-width = <2>;
-				reg = <0 0x0 0x800000>, <1 0x800000 0x800000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
+			nor-boot@0 {
 				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					partition@40000 {
-						label = "board_config";
-						reg = <0x40000 0x10000>;
-						read-only;
-					};
 					partition@80000 {
 						label = "firmware";
 						reg = <0x80000 0x780000>;
