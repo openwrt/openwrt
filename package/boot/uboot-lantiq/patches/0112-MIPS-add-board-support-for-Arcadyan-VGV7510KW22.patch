@@ -30,7 +30,7 @@
 +#########################################################################
 --- /dev/null
 +++ b/board/arcadyan/vgv7510kw22/vgv7510kw22.c
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,116 @@
 +/*
 + * Copyright (C) 2015 Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 + *
@@ -44,11 +44,7 @@
 +#include <asm/lantiq/cpu.h>
 +#include <asm/arch/gphy.h>
 +
-+#if defined(CONFIG_SPL_BUILD)
-+#define do_gpio_init	1
-+#define do_pll_init	1
-+#define do_dcdc_init	0
-+#elif defined(CONFIG_SYS_BOOT_RAM)
++#if defined(CONFIG_SYS_BOOT_RAM)
 +#define do_gpio_init	1
 +#define do_pll_init	0
 +#define do_dcdc_init	1
