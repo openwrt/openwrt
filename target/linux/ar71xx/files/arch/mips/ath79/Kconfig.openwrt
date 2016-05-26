@@ -1325,6 +1325,16 @@ config ATH79_MACH_RE450
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_RME_EG200
+	bool "eTactica EG200 board supprt"
+	select SOC_AR933X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_RUT9XX
 	bool "Teltonika RUT900 series support"
 	select SOC_AR934X

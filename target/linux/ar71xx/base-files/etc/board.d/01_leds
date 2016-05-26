@@ -623,6 +623,12 @@ re450)
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "$board:blue:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "$board:blue:wlan5g" "phy0tpt"
 	;;
+rme-eg200)
+        ucidef_set_led_netdev "wan" "WAN" "eg200:red:eth0" "eth0"
+        ucidef_set_led_wlan "wlan" "WLAN" "eg200:red:wlan" "phy0tpt"
+        ucidef_set_led_oneshot "modbus" "Modbus" "eg200:red:modbus" "100" "33"
+        ucidef_set_led_default "etactica" "etactica" "eg200:red:etactica" "ignore"
+        ;;
 rocket-m-ti)
 	ucidef_set_led_rssi "rssiverylow" "RSSIVERYLOW" "ubnt:green:link1" "wlan0" "1" "100" "0" "13"
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "ubnt:green:link2" "wlan0" "26" "100" "-25" "13"
