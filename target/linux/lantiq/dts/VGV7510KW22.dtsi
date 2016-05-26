@@ -49,11 +49,6 @@
 			pinctrl-0 = <&state_default>;
 
 			state_default: pinmux {
-				ip101a-rst {
-					lantiq,pins = "io46";
-					lantiq,output = <0>;
-					lantiq,pull = <1>;
-				};
 				gphy-leds {
 					lantiq,groups = "gphy0 led0", "gphy0 led1",
 							"gphy1 led0", "gphy1 led1";
@@ -213,10 +208,32 @@
 		};
 	};
 
+	wan: interface@1 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <1>;
+		mtd-mac-address = <&boardconfig 0x16>;
+		mtd-mac-address-increment = <2>;
+		lantiq,wan;
+
+		ethernet@0 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <0>;
+			phy-mode = "mii";
+			phy-handle = <&phy1>;
+		};
+	};
+
 	mdio@0 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "lantiq,xrx200-mdio";
+
+		phy1: ethernet-phy@1 {
+			reg = <0x1>;
+			compatible = "ethernet-phy-id0243.0c54", "ethernet-phy-ieee802.3-c22";
+		};
 
 		phy11: ethernet-phy@11 {
 			reg = <0x11>;
