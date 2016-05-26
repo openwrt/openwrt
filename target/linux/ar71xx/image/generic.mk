@@ -310,6 +310,19 @@ define Device/ew-dorin-router
 endef
 TARGET_DEVICES += ew-dorin-router
 
+define Device/rme-eg200
+  DEVICE_TITLE := eTactica EG-200
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-oneshot \
+	kmod-usb-serial kmod-usb-serial-ftdi \
+	kmod-usb-storage \
+	kmod-fs-ext4
+  BOARDNAME = RME-EG200
+  IMAGE_SIZE = 16000k
+  CONSOLE = ttyATH0,115200
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += rme-eg200
+
 define Device/weio
   DEVICE_TITLE := WeIO
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

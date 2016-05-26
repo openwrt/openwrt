@@ -262,6 +262,7 @@ platform_check_image() {
 	pqi-air-pen|\
 	r36a|\
 	r602n|\
+	rme-eg200|\
 	rocket-m|\
 	rocket-m-ti|\
 	rocket-m-xw|\
