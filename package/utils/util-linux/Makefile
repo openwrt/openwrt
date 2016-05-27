@@ -16,9 +16,16 @@ PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.28
 PKG_MD5SUM:=e534e6ccc49107e5d31c329af798ef7d
 
 PKG_LICENSE:=GPL-2.0
-PKG_LICENSE_FILES:=COPYING getopt/COPYING libblkid/COPYING libmount/COPYING Documentation/licenses/COPYING.GPLv2 Documentation/licenses/COPYING.LGPLv2.1 libuuid/COPYING Documentation/licenses/COPYING.BSD-3
+PKG_LICENSE_FILES:=	COPYING					\
+			getopt/COPYING				\
+			libblkid/COPYING			\
+			libmount/COPYING			\
+			Documentation/licenses/COPYING.GPLv2	\
+			Documentation/licenses/COPYING.LGPLv2.1	\
+			libuuid/COPYING				\
+			Documentation/licenses/COPYING.BSD-3
 
-PKG_BUILD_PARALLEL:=1
+PKG_BUILD_PARALLEL:=0
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_cal \
@@ -457,37 +464,48 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/libsmartcols/libsmartcols.h $(1)/usr/include/libsmartcols
 
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libblkid.{a,so*} $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libfdisk.{a,so*} $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libmount.{a,so*} $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libuuid.{a,so*} $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsmartcols.{a,so*} $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/lib/libblkid.so* $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/lib/libfdisk.so* $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/lib/libmount.so* $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/lib/libuuid.so* $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/lib/libsmartcols.so* $(1)/usr/lib
+
+	$(LN) libblkid.so.1 $(1)/usr/lib/libblkid.so
+	$(LN) libfdisk.so.1 $(1)/usr/lib/libfdisk.so
+	$(LN) libmount.so.1 $(1)/usr/lib/libmount.so
+	$(LN) libuuid.so.1 $(1)/usr/lib/libuuid.so
+	$(LN) libsmartcols.so.1 $(1)/usr/lib/libsmartcols.so
 endef
 
 
 define Package/libfdisk/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/lib/libfdisk.so* $(1)/usr/lib/
+	$(LN) libfdisk.so.1 $(1)/usr/lib/libfdisk.so
 endef
 
 define Package/libblkid/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/lib/libblkid.so* $(1)/usr/lib/
+	$(LN) libblkid.so.1 $(1)/usr/lib/libblkid.so
 endef
 
 define Package/libmount/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/lib/libmount.so* $(1)/usr/lib/
+	$(LN) libmount.so.1 $(1)/usr/lib/libmount.so
 endef
 
 define Package/libsmartcols/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/lib/libsmartcols.so* $(1)/usr/lib/
+	$(LN) libsmartcols.so.1 $(1)/usr/lib/libsmartcols.so
 endef
 
 define Package/libuuid/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/lib/libuuid.so* $(1)/usr/lib/
+	$(LN) libuuid.so.1 $(1)/usr/lib/libuuid.so
 endef
 
 define Package/agetty/install
