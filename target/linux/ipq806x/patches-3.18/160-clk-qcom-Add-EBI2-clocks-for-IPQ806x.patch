@@ -1,0 +1,74 @@
+From 4c385b25fab119144bffb255ad77712fe586ac10 Mon Sep 17 00:00:00 2001
+From: Archit Taneja <architt@codeaurora.org>
+Date: Thu, 2 Apr 2015 11:20:41 +0530
+Subject: [PATCH] clk: qcom: Add EBI2 clocks for IPQ806x
+
+The NAND controller within EBI2 requires EBI2_CLK and
+EBI2_ALWAYS_ON_CLK clocks.  Create structs for these clocks so
+that they can be used by the NAND controller driver. Add an entry
+for EBI2_AON_CLK in the gcc-ipq806x DT binding document.
+
+Signed-off-by: Archit Taneja <architt@codeaurora.org>
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+---
+ drivers/clk/qcom/gcc-ipq806x.c               | 32 ++++++++++++++++++++++++++++
+ include/dt-bindings/clock/qcom,gcc-ipq806x.h |  1 +
+ 2 files changed, 33 insertions(+)
+
+--- a/drivers/clk/qcom/gcc-ipq806x.c
++++ b/drivers/clk/qcom/gcc-ipq806x.c
+@@ -2239,6 +2239,36 @@ static struct clk_branch usb_fs1_h_clk =
+ 	},
+ };
+ 
++static struct clk_branch ebi2_clk = {
++	.hwcg_reg = 0x3b00,
++	.hwcg_bit = 6,
++	.halt_reg = 0x2fcc,
++	.halt_bit = 1,
++	.clkr = {
++		.enable_reg = 0x3b00,
++		.enable_mask = BIT(4),
++		.hw.init = &(struct clk_init_data){
++			.name = "ebi2_clk",
++			.ops = &clk_branch_ops,
++			.flags = CLK_IS_ROOT,
++		},
++	},
++};
++
++static struct clk_branch ebi2_aon_clk = {
++	.halt_reg = 0x2fcc,
++	.halt_bit = 0,
++	.clkr = {
++		.enable_reg = 0x3b00,
++		.enable_mask = BIT(8),
++		.hw.init = &(struct clk_init_data){
++			.name = "ebi2_always_on_clk",
++			.ops = &clk_branch_ops,
++			.flags = CLK_IS_ROOT,
++		},
++	},
++};
++
+ static struct clk_regmap *gcc_ipq806x_clks[] = {
+ 	[PLL0] = &pll0.clkr,
+ 	[PLL0_VOTE] = &pll0_vote,
+@@ -2341,6 +2371,8 @@ static struct clk_regmap *gcc_ipq806x_cl
+ 	[USB_FS1_XCVR_SRC] = &usb_fs1_xcvr_clk_src.clkr,
+ 	[USB_FS1_XCVR_CLK] = &usb_fs1_xcvr_clk.clkr,
+ 	[USB_FS1_SYSTEM_CLK] = &usb_fs1_sys_clk.clkr,
++	[EBI2_CLK] = &ebi2_clk.clkr,
++	[EBI2_AON_CLK] = &ebi2_aon_clk.clkr,
+ 	[PLL9] = &hfpll0.clkr,
+ 	[PLL10] = &hfpll1.clkr,
+ 	[PLL12] = &hfpll_l2.clkr,
+--- a/include/dt-bindings/clock/qcom,gcc-ipq806x.h
++++ b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
+@@ -289,5 +289,6 @@
+ #define UBI32_CORE2_CLK_SRC			278
+ #define UBI32_CORE1_CLK				279
+ #define UBI32_CORE2_CLK				280
++#define EBI2_AON_CLK				281
+ 
+ #endif

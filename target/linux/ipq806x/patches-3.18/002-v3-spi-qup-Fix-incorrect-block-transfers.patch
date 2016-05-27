@@ -1,0 +1,376 @@
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [v3] spi: qup: Fix incorrect block transfers
+From: Andy Gross <agross@codeaurora.org>
+X-Patchwork-Id: 5007321
+Message-Id: <1412112088-25928-1-git-send-email-agross@codeaurora.org>
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org, linux-arm-msm@vger.kernel.org,
+	"Ivan T. Ivanov" <iivanov@mm-sol.com>,
+	Bjorn Andersson <bjorn.andersson@sonymobile.com>,
+	Kumar Gala <galak@codeaurora.org>, Andy Gross <agross@codeaurora.org>
+Date: Tue, 30 Sep 2014 16:21:28 -0500
+
+This patch fixes a number of errors with the QUP block transfer mode.  Errors
+manifested themselves as input underruns, output overruns, and timed out
+transactions.
+
+The block mode does not require the priming that occurs in FIFO mode.  At the
+moment that the QUP is placed into the RUN state, the QUP will immediately raise
+an interrupt if the request is a write.  Therefore, there is no need to prime
+the pump.
+
+In addition, the block transfers require that whole blocks of data are
+read/written at a time.  The last block of data that completes a transaction may
+contain less than a full blocks worth of data.
+
+Each block of data results in an input/output service interrupt accompanied with
+a input/output block flag set.  Additional block reads/writes require clearing
+of the service flag.  It is ok to check for additional blocks of data in the
+ISR, but you have to ack every block you transfer.  Imbalanced acks result in
+early return from complete transactions with pending interrupts that still have
+to be ack'd.  The next transaction can be affected by these interrupts.
+Transactions are deemed complete when the MAX_INPUT or MAX_OUTPUT flag are set.
+
+Changes from v2:
+- Added in additional completion check so that transaction done is not
+  prematurely signaled.
+- Fixed various review comments.
+
+Changes from v1:
+- Split out read/write block function.
+- Removed extraneous checks for transfer length
+
+Signed-off-by: Andy Gross <agross@codeaurora.org>
+
+---
+drivers/spi/spi-qup.c |  201 ++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 148 insertions(+), 53 deletions(-)
+
+--- a/drivers/spi/spi-qup.c
++++ b/drivers/spi/spi-qup.c
+@@ -82,6 +82,8 @@
+ #define QUP_IO_M_MODE_BAM		3
+ 
+ /* QUP_OPERATIONAL fields */
++#define QUP_OP_IN_BLOCK_READ_REQ	BIT(13)
++#define QUP_OP_OUT_BLOCK_WRITE_REQ	BIT(12)
+ #define QUP_OP_MAX_INPUT_DONE_FLAG	BIT(11)
+ #define QUP_OP_MAX_OUTPUT_DONE_FLAG	BIT(10)
+ #define QUP_OP_IN_SERVICE_FLAG		BIT(9)
+@@ -147,6 +149,7 @@ struct spi_qup {
+ 	int			tx_bytes;
+ 	int			rx_bytes;
+ 	int			qup_v1;
++	int			mode;
+ 
+ 	int			use_dma;
+ 
+@@ -213,30 +216,14 @@ static int spi_qup_set_state(struct spi_
+ 	return 0;
+ }
+ 
+-
+-static void spi_qup_fifo_read(struct spi_qup *controller,
+-			    struct spi_transfer *xfer)
++static void spi_qup_fill_read_buffer(struct spi_qup *controller,
++	struct spi_transfer *xfer, u32 data)
+ {
+ 	u8 *rx_buf = xfer->rx_buf;
+-	u32 word, state;
+-	int idx, shift, w_size;
+-
+-	w_size = controller->w_size;
+-
+-	while (controller->rx_bytes < xfer->len) {
+-
+-		state = readl_relaxed(controller->base + QUP_OPERATIONAL);
+-		if (0 == (state & QUP_OP_IN_FIFO_NOT_EMPTY))
+-			break;
+-
+-		word = readl_relaxed(controller->base + QUP_INPUT_FIFO);
+-
+-		if (!rx_buf) {
+-			controller->rx_bytes += w_size;
+-			continue;
+-		}
++	int idx, shift;
+ 
+-		for (idx = 0; idx < w_size; idx++, controller->rx_bytes++) {
++	if (rx_buf)
++		for (idx = 0; idx < controller->w_size; idx++) {
+ 			/*
+ 			 * The data format depends on bytes per SPI word:
+ 			 *  4 bytes: 0x12345678
+@@ -244,41 +231,139 @@ static void spi_qup_fifo_read(struct spi
+ 			 *  1 byte : 0x00000012
+ 			 */
+ 			shift = BITS_PER_BYTE;
+-			shift *= (w_size - idx - 1);
+-			rx_buf[controller->rx_bytes] = word >> shift;
++			shift *= (controller->w_size - idx - 1);
++			rx_buf[controller->rx_bytes + idx] = data >> shift;
++		}
++
++	controller->rx_bytes += controller->w_size;
++}
++
++static void spi_qup_prepare_write_data(struct spi_qup *controller,
++	struct spi_transfer *xfer, u32 *data)
++{
++	const u8 *tx_buf = xfer->tx_buf;
++	u32 val;
++	int idx;
++
++	*data = 0;
++
++	if (tx_buf)
++		for (idx = 0; idx < controller->w_size; idx++) {
++			val = tx_buf[controller->tx_bytes + idx];
++			*data |= val << (BITS_PER_BYTE * (3 - idx));
+ 		}
++
++	controller->tx_bytes += controller->w_size;
++}
++
++static void spi_qup_fifo_read(struct spi_qup *controller,
++			    struct spi_transfer *xfer)
++{
++	u32 data;
++
++	/* clear service request */
++	writel_relaxed(QUP_OP_IN_SERVICE_FLAG,
++			controller->base + QUP_OPERATIONAL);
++
++	while (controller->rx_bytes < xfer->len) {
++		if (!(readl_relaxed(controller->base + QUP_OPERATIONAL) &
++		    QUP_OP_IN_FIFO_NOT_EMPTY))
++			break;
++
++		data = readl_relaxed(controller->base + QUP_INPUT_FIFO);
++
++		spi_qup_fill_read_buffer(controller, xfer, data);
+ 	}
+ }
+ 
+ static void spi_qup_fifo_write(struct spi_qup *controller,
+-			    struct spi_transfer *xfer)
++	struct spi_transfer *xfer)
+ {
+-	const u8 *tx_buf = xfer->tx_buf;
+-	u32 word, state, data;
+-	int idx, w_size;
++	u32 data;
+ 
+-	w_size = controller->w_size;
++	/* clear service request */
++	writel_relaxed(QUP_OP_OUT_SERVICE_FLAG,
++		controller->base + QUP_OPERATIONAL);
+ 
+ 	while (controller->tx_bytes < xfer->len) {
+ 
+-		state = readl_relaxed(controller->base + QUP_OPERATIONAL);
+-		if (state & QUP_OP_OUT_FIFO_FULL)
++		if (readl_relaxed(controller->base + QUP_OPERATIONAL) &
++				QUP_OP_OUT_FIFO_FULL)
+ 			break;
+ 
+-		word = 0;
+-		for (idx = 0; idx < w_size; idx++, controller->tx_bytes++) {
++		spi_qup_prepare_write_data(controller, xfer, &data);
++		writel_relaxed(data, controller->base + QUP_OUTPUT_FIFO);
+ 
+-			if (!tx_buf) {
+-				controller->tx_bytes += w_size;
+-				break;
+-			}
++	}
++}
+ 
+-			data = tx_buf[controller->tx_bytes];
+-			word |= data << (BITS_PER_BYTE * (3 - idx));
+-		}
++static void spi_qup_block_read(struct spi_qup *controller,
++	struct spi_transfer *xfer)
++{
++	u32 data;
++	u32 reads_per_blk = controller->in_blk_sz >> 2;
++	u32 num_words = (xfer->len - controller->rx_bytes) / controller->w_size;
++	int i;
++
++	do {
++		/* ACK by clearing service flag */
++		writel_relaxed(QUP_OP_IN_SERVICE_FLAG,
++			controller->base + QUP_OPERATIONAL);
++
++		/* transfer up to a block size of data in a single pass */
++		for (i = 0; num_words && i < reads_per_blk; i++, num_words--) {
++
++			/* read data and fill up rx buffer */
++			data = readl_relaxed(controller->base + QUP_INPUT_FIFO);
++			spi_qup_fill_read_buffer(controller, xfer, data);
++		}
++
++		/* check to see if next block is ready */
++		if (!(readl_relaxed(controller->base + QUP_OPERATIONAL) &
++			QUP_OP_IN_BLOCK_READ_REQ))
++			break;
+ 
+-		writel_relaxed(word, controller->base + QUP_OUTPUT_FIFO);
+-	}
++	} while (num_words);
++
++	/*
++	 * Due to extra stickiness of the QUP_OP_IN_SERVICE_FLAG during block
++	 * reads, it has to be cleared again at the very end
++	 */
++	if (readl_relaxed(controller->base + QUP_OPERATIONAL) &
++		QUP_OP_MAX_INPUT_DONE_FLAG)
++		writel_relaxed(QUP_OP_IN_SERVICE_FLAG,
++			controller->base + QUP_OPERATIONAL);
++
++}
++
++static void spi_qup_block_write(struct spi_qup *controller,
++	struct spi_transfer *xfer)
++{
++	u32 data;
++	u32 writes_per_blk = controller->out_blk_sz >> 2;
++	u32 num_words = (xfer->len - controller->tx_bytes) / controller->w_size;
++	int i;
++
++	do {
++		/* ACK by clearing service flag */
++		writel_relaxed(QUP_OP_OUT_SERVICE_FLAG,
++			controller->base + QUP_OPERATIONAL);
++
++		/* transfer up to a block size of data in a single pass */
++		for (i = 0; num_words && i < writes_per_blk; i++, num_words--) {
++
++			/* swizzle the bytes for output and write out */
++			spi_qup_prepare_write_data(controller, xfer, &data);
++			writel_relaxed(data,
++				controller->base + QUP_OUTPUT_FIFO);
++		}
++
++		/* check to see if next block is ready */
++		if (!(readl_relaxed(controller->base + QUP_OPERATIONAL) &
++			QUP_OP_OUT_BLOCK_WRITE_REQ))
++			break;
++
++	} while (num_words);
+ }
+ 
+ static void qup_dma_callback(void *data)
+@@ -515,9 +600,9 @@ static irqreturn_t spi_qup_qup_irq(int i
+ 
+ 	writel_relaxed(qup_err, controller->base + QUP_ERROR_FLAGS);
+ 	writel_relaxed(spi_err, controller->base + SPI_ERROR_FLAGS);
+-	writel_relaxed(opflags, controller->base + QUP_OPERATIONAL);
+ 
+ 	if (!xfer) {
++		writel_relaxed(opflags, controller->base + QUP_OPERATIONAL);
+ 		dev_err_ratelimited(controller->dev, "unexpected irq %08x %08x %08x\n",
+ 				    qup_err, spi_err, opflags);
+ 		return IRQ_HANDLED;
+@@ -546,11 +631,19 @@ static irqreturn_t spi_qup_qup_irq(int i
+ 	}
+ 
+ 	if (!controller->use_dma) {
+-		if (opflags & QUP_OP_IN_SERVICE_FLAG)
+-			spi_qup_fifo_read(controller, xfer);
++		if (opflags & QUP_OP_IN_SERVICE_FLAG) {
++			if (opflags & QUP_OP_IN_BLOCK_READ_REQ)
++				spi_qup_block_read(controller, xfer);
++			else
++				spi_qup_fifo_read(controller, xfer);
++		}
+ 
+-		if (opflags & QUP_OP_OUT_SERVICE_FLAG)
+-			spi_qup_fifo_write(controller, xfer);
++		if (opflags & QUP_OP_OUT_SERVICE_FLAG) {
++			if (opflags & QUP_OP_OUT_BLOCK_WRITE_REQ)
++				spi_qup_block_write(controller, xfer);
++			else
++				spi_qup_fifo_write(controller, xfer);
++		}
+ 	}
+ 
+ 	spin_lock_irqsave(&controller->lock, flags);
+@@ -558,7 +651,8 @@ static irqreturn_t spi_qup_qup_irq(int i
+ 	controller->xfer = xfer;
+ 	spin_unlock_irqrestore(&controller->lock, flags);
+ 
+-	if (controller->rx_bytes == xfer->len || error)
++	if ((controller->rx_bytes == xfer->len &&
++		(opflags & QUP_OP_MAX_INPUT_DONE_FLAG)) || error)
+ 		complete(&controller->done);
+ 
+ 	return IRQ_HANDLED;
+@@ -569,7 +663,7 @@ static irqreturn_t spi_qup_qup_irq(int i
+ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+ {
+ 	struct spi_qup *controller = spi_master_get_devdata(spi->master);
+-	u32 config, iomode, mode;
++	u32 config, iomode;
+ 	int ret, n_words, w_size;
+ 	size_t dma_align = dma_get_cache_alignment();
+ 	u32 dma_available = 0;
+@@ -607,7 +701,7 @@ static int spi_qup_io_config(struct spi_
+ 		dma_available = 1;
+ 
+ 	if (n_words <= (controller->in_fifo_sz / sizeof(u32))) {
+-		mode = QUP_IO_M_MODE_FIFO;
++		controller->mode = QUP_IO_M_MODE_FIFO;
+ 		writel_relaxed(n_words, controller->base + QUP_MX_READ_CNT);
+ 		writel_relaxed(n_words, controller->base + QUP_MX_WRITE_CNT);
+ 		/* must be zero for FIFO */
+@@ -615,7 +709,7 @@ static int spi_qup_io_config(struct spi_
+ 		writel_relaxed(0, controller->base + QUP_MX_OUTPUT_CNT);
+ 		controller->use_dma = 0;
+ 	} else if (!dma_available) {
+-		mode = QUP_IO_M_MODE_BLOCK;
++		controller->mode = QUP_IO_M_MODE_BLOCK;
+ 		writel_relaxed(n_words, controller->base + QUP_MX_INPUT_CNT);
+ 		writel_relaxed(n_words, controller->base + QUP_MX_OUTPUT_CNT);
+ 		/* must be zero for BLOCK and BAM */
+@@ -623,7 +717,7 @@ static int spi_qup_io_config(struct spi_
+ 		writel_relaxed(0, controller->base + QUP_MX_WRITE_CNT);
+ 		controller->use_dma = 0;
+ 	} else {
+-		mode = QUP_IO_M_MODE_DMOV;
++		controller->mode = QUP_IO_M_MODE_DMOV;
+ 		writel_relaxed(0, controller->base + QUP_MX_READ_CNT);
+ 		writel_relaxed(0, controller->base + QUP_MX_WRITE_CNT);
+ 		controller->use_dma = 1;
+@@ -638,8 +732,8 @@ static int spi_qup_io_config(struct spi_
+ 	else
+ 		iomode |= QUP_IO_M_PACK_EN | QUP_IO_M_UNPACK_EN;
+ 
+-	iomode |= (mode << QUP_IO_M_OUTPUT_MODE_MASK_SHIFT);
+-	iomode |= (mode << QUP_IO_M_INPUT_MODE_MASK_SHIFT);
++	iomode |= (controller->mode << QUP_IO_M_OUTPUT_MODE_MASK_SHIFT);
++	iomode |= (controller->mode << QUP_IO_M_INPUT_MODE_MASK_SHIFT);
+ 
+ 	writel_relaxed(iomode, controller->base + QUP_IO_M_MODES);
+ 
+@@ -724,7 +818,8 @@ static int spi_qup_transfer_one(struct s
+ 			goto exit;
+ 		}
+ 
+-		spi_qup_fifo_write(controller, xfer);
++		if (controller->mode == QUP_IO_M_MODE_FIFO)
++			spi_qup_fifo_write(controller, xfer);
+ 
+ 		if (spi_qup_set_state(controller, QUP_STATE_RUN)) {
+ 			dev_warn(controller->dev, "cannot set EXECUTE state\n");
+@@ -741,6 +836,7 @@ exit:
+ 	if (!ret)
+ 		ret = controller->error;
+ 	spin_unlock_irqrestore(&controller->lock, flags);
++
+ 	return ret;
+ }
+ 

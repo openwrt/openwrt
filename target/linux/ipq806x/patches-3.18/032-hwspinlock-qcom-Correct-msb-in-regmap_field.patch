@@ -1,0 +1,26 @@
+From bd5717a4632cdecafe82d03de7dcb3b1876e2828 Mon Sep 17 00:00:00 2001
+From: Bjorn Andersson <bjorn.andersson@sonymobile.com>
+Date: Fri, 26 Jun 2015 14:47:21 -0700
+Subject: [PATCH] hwspinlock: qcom: Correct msb in regmap_field
+
+msb of the regmap_field was mistakenly given the value 32, to set all bits
+in the regmap update mask; although incorrect this worked until 921cc294,
+where the mask calculation was corrected.
+
+Signed-off-by: Bjorn Andersson <bjorn.andersson@sonymobile.com>
+Signed-off-by: Ohad Ben-Cohen <ohad@wizery.com>
+---
+ drivers/hwspinlock/qcom_hwspinlock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/hwspinlock/qcom_hwspinlock.c
++++ b/drivers/hwspinlock/qcom_hwspinlock.c
+@@ -123,7 +123,7 @@ static int qcom_hwspinlock_probe(struct
+ 	for (i = 0; i < QCOM_MUTEX_NUM_LOCKS; i++) {
+ 		field.reg = base + i * stride;
+ 		field.lsb = 0;
+-		field.msb = 32;
++		field.msb = 31;
+ 
+ 		bank->lock[i].priv = devm_regmap_field_alloc(&pdev->dev,
+ 							     regmap, field);

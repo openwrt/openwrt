@@ -1,0 +1,31 @@
+From 5bf2dabde1fa3af0c9082b42b6847ef3fd198b13 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sun, 9 Aug 2015 12:53:55 +0200
+Subject: [PATCH] stmac: platform: add support for retreiving mac from mtd
+
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+@@ -116,6 +116,19 @@ stmmac_probe_config_dt(struct platform_d
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	*mac = of_get_mac_address(np);
++	if (!*mac) {
++		u8 mtd_mac[ETH_ALEN];
++		int ret;
++
++		ret = of_get_mac_address_mtd(np, mtd_mac);
++		if (ret == -EPROBE_DEFER)
++			return ERR_PTR(ret);
++
++		if (is_valid_ether_addr(mtd_mac))
++			*mac = devm_kmemdup(&pdev->dev, mtd_mac, ETH_ALEN,
++					    GFP_KERNEL);
++	}
++
+ 	plat->interface = of_get_phy_mode(np);
+ 
+ 	/* Get max speed of operation from device tree */

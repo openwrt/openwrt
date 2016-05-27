@@ -1,0 +1,115 @@
+From 4e3c021fb995bcbb5d1f814d00584cb80eb904a8 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Date: Mon, 5 Jan 2015 10:52:40 +0100
+Subject: [PATCH] clk: Add clk_unregister_{divider, gate, mux} to close memory
+ leak
+
+The common clk_register_{divider,gate,mux} functions allocated memory
+for internal data which wasn't freed anywhere. Drivers using these
+helpers could only unregister clocks but the memory would still leak.
+
+Add corresponding unregister functions which will release all resources.
+
+Signed-off-by: Krzysztof Kozlowski <k.kozlowski@samsung.com>
+Reviewed-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Michael Turquette <mturquette@linaro.org>
+---
+ drivers/clk/clk-divider.c    | 16 ++++++++++++++++
+ drivers/clk/clk-gate.c       | 16 ++++++++++++++++
+ drivers/clk/clk-mux.c        | 16 ++++++++++++++++
+ include/linux/clk-provider.h |  4 ++++
+ 4 files changed, 52 insertions(+)
+
+--- a/drivers/clk/clk-divider.c
++++ b/drivers/clk/clk-divider.c
+@@ -461,3 +461,19 @@ struct clk *clk_register_divider_table(s
+ 			width, clk_divider_flags, table, lock);
+ }
+ EXPORT_SYMBOL_GPL(clk_register_divider_table);
++
++void clk_unregister_divider(struct clk *clk)
++{
++	struct clk_divider *div;
++	struct clk_hw *hw;
++
++	hw = __clk_get_hw(clk);
++	if (!hw)
++		return;
++
++	div = to_clk_divider(hw);
++
++	clk_unregister(clk);
++	kfree(div);
++}
++EXPORT_SYMBOL_GPL(clk_unregister_divider);
+--- a/drivers/clk/clk-gate.c
++++ b/drivers/clk/clk-gate.c
+@@ -162,3 +162,19 @@ struct clk *clk_register_gate(struct dev
+ 	return clk;
+ }
+ EXPORT_SYMBOL_GPL(clk_register_gate);
++
++void clk_unregister_gate(struct clk *clk)
++{
++	struct clk_gate *gate;
++	struct clk_hw *hw;
++
++	hw = __clk_get_hw(clk);
++	if (!hw)
++		return;
++
++	gate = to_clk_gate(hw);
++
++	clk_unregister(clk);
++	kfree(gate);
++}
++EXPORT_SYMBOL_GPL(clk_unregister_gate);
+--- a/drivers/clk/clk-mux.c
++++ b/drivers/clk/clk-mux.c
+@@ -177,3 +177,19 @@ struct clk *clk_register_mux(struct devi
+ 				      NULL, lock);
+ }
+ EXPORT_SYMBOL_GPL(clk_register_mux);
++
++void clk_unregister_mux(struct clk *clk)
++{
++	struct clk_mux *mux;
++	struct clk_hw *hw;
++
++	hw = __clk_get_hw(clk);
++	if (!hw)
++		return;
++
++	mux = to_clk_mux(hw);
++
++	clk_unregister(clk);
++	kfree(mux);
++}
++EXPORT_SYMBOL_GPL(clk_unregister_mux);
+--- a/include/linux/clk-provider.h
++++ b/include/linux/clk-provider.h
+@@ -294,6 +294,7 @@ struct clk *clk_register_gate(struct dev
+ 		const char *parent_name, unsigned long flags,
+ 		void __iomem *reg, u8 bit_idx,
+ 		u8 clk_gate_flags, spinlock_t *lock);
++void clk_unregister_gate(struct clk *clk);
+ 
+ struct clk_div_table {
+ 	unsigned int	val;
+@@ -361,6 +362,7 @@ struct clk *clk_register_divider_table(s
+ 		void __iomem *reg, u8 shift, u8 width,
+ 		u8 clk_divider_flags, const struct clk_div_table *table,
+ 		spinlock_t *lock);
++void clk_unregister_divider(struct clk *clk);
+ 
+ /**
+  * struct clk_mux - multiplexer clock
+@@ -414,6 +416,8 @@ struct clk *clk_register_mux_table(struc
+ 		void __iomem *reg, u8 shift, u32 mask,
+ 		u8 clk_mux_flags, u32 *table, spinlock_t *lock);
+ 
++void clk_unregister_mux(struct clk *clk);
++
+ void of_fixed_factor_clk_setup(struct device_node *node);
+ 
+ /**
