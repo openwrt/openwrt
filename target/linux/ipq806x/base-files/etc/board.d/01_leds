@@ -11,6 +11,13 @@ board_config_update
 board=$(ipq806x_board_name)
 
 case "$board" in
+c2600)
+	ucidef_set_led_usbdev "usb1" "USB 1" "usb_2:blue" "2-1"
+	ucidef_set_led_usbdev "usb2" "USB 2" "usb_4:blue" "4-1"
+	ucidef_set_led_netdev "wan" "WAN" "wan:blue" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "lan:blue" "br-lan"
+	ucidef_set_led_default "general" "general" "ledgnr:blue" "1"
+	;;
 d7800 |\
 r7500)
 	ucidef_set_led_usbdev "usb1" "USB 1" "r7500:white:usb1" "1-1"
