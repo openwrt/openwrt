@@ -15,7 +15,7 @@ CPU_SUBTYPE:=vfpv3
 
 KERNEL_PATCHVER:=3.18
 
-MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
+MAINTAINER:=Alexander Couzens <lynxis@fe80.eu>
 
 KERNELNAME:=zImage dtbs
 
