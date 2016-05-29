@@ -32,7 +32,6 @@
 			label = "miwifi-nano:amber:radio";
 			gpios = <&gpio1 12 1>;
 			default-state = "1";
-
 		};
 	};
 };
@@ -40,7 +39,7 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "refclk", "wled", "gpio";
+			ralink,group = "refclk", "wled_an", "gpio";
 			ralink,function = "gpio";
 		};
 	};
