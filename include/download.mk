@@ -7,7 +7,7 @@
 #
 
 OPENWRT_GIT = http://git.openwrt.org
-LEDE_GIT = http://git.lede-project.org
+LEDE_GIT = https://git.lede-project.org
 
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
