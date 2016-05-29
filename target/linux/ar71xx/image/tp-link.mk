@@ -101,6 +101,7 @@ endef
 define Device/cpe210-220
 $(Device/cpe510-520)
   BOARDNAME := CPE210
+  TPLINK_BOARD_NAME := CPE210
 endef
 TARGET_DEVICES += cpe210-220 cpe510-520
 
