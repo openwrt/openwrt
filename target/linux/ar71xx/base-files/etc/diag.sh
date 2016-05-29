@@ -278,6 +278,9 @@ get_status_led() {
 	tellstick-znet-lite)
 		status_led="tellstick:white:system"
 		;;
+	som9331)
+		status_led="som9331:green:system"
+		;;
 	tew-632brp)
 		status_led="tew-632brp:green:status"
 		;;

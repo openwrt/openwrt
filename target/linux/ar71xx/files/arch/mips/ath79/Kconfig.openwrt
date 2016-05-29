@@ -249,6 +249,16 @@ config ATH79_MACH_ESR1750
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_SOM9331
+	bool "SOM9331 support"
+	select SOC_AR933X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_WHR_HP_G300N
 	bool "Buffalo WHR-HP-G300N board support"
 	select SOC_AR724X
