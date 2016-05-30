@@ -249,18 +249,6 @@ define Build/append-dtb
 	cat $@.dtb >> $@
 endef
 
-define Build/tplink-fw
-	mktplinkfw2 -c -B $(BOARD_ID) -s \
-		-k $@ -o $@.new
-	mv $@.new $@
-endef
-
-define Build/mktplinkfw2
-	mktplinkfw2 -B $(BOARD_ID) -s -a 0x4 -j \
-		-k $(word 1,$^) -r $(word 2,$^) \
-		-o $@
-endef
-
 define Build/mkbrncmdline
    mkbrncmdline -i $@ -o $@.new BRN-BOOT
    mv $@.new $@
@@ -285,14 +273,6 @@ define Device/Default
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 DEVICE_VARS += DEVICE_PROFILE DEVICE_DTS IMAGE_SIZE
-
-define Device/lantiqTpLink
-  KERNEL := kernel-bin | append-dtb | lzma
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | tplink-fw
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := mktplinkfw2 | check-size $$$$(IMAGE_SIZE)
-endef
-DEVICE_VARS += BOARD_ID
 
 define Device/lantiqBrnImage
   KERNEL := kernel-bin | append-dtb | mkbrncmdline | lzma-no-dict
@@ -428,30 +408,7 @@ Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
-define Device/TDW8970
-  $(Device/lantiqTpLink)
-  DEVICE_PROFILE := TDW8970
-  DEVICE_DTS = $(DEVICE_PROFILE)
-  BOARD_ID := TD-W8970v1
-  IMAGE_SIZE := 7680k
-endef
-
-define Device/TDW8980
-  $(Device/lantiqTpLink)
-  DEVICE_PROFILE := TDW8980
-  DEVICE_DTS = $(DEVICE_PROFILE)
-  BOARD_ID := TD-W8980v1
-  IMAGE_SIZE := 7680k
-endef
-
-define Device/VR200v
-  $(Device/lantiqTpLink)
-  DEVICE_PROFILE := VR200v
-  DEVICE_DTS = $(DEVICE_PROFILE)
-  BOARD_ID := ArcherVR200V
-  IMAGE_SIZE := 15808k
-endef
-TARGET_DEVICES += TDW8970 TDW8980 VR200v
+include tp-link.mk
 
 $(eval $(call lantiqImage,VGV7510KW22NOR,15232k))
 $(eval $(call lantiqBrnImage,VGV7510KW22BRN,6784k,BRNDA6431,0x12345678,0x04c11db7))
