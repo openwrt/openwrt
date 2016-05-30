@@ -301,17 +301,6 @@ define Device/lantiqBrnImage
 endef
 DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY
 
-define lantiqTpLink
-  define Device/$(1)
-    $$(Device/lantiqTpLink)
-    DEVICE_PROFILE := $(1)
-    DEVICE_DTS := $(1)
-    IMAGE_SIZE := $(2)
-    BOARD_ID := $(3)
-  endef
-  TARGET_DEVICES += $(1)
-endef
-
 define lantiqImage
   define Device/$(1)
     $$(Device/lantiqImage)
@@ -439,9 +428,31 @@ Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
-$(eval $(call lantiqTpLink,TDW8970,7680k,TD-W8970v1))
-$(eval $(call lantiqTpLink,TDW8980,7680k,TD-W8980v1))
-$(eval $(call lantiqTpLink,VR200v,15808k,ArcherVR200V))
+define Device/TDW8970
+  $(Device/lantiqTpLink)
+  DEVICE_PROFILE := TDW8970
+  DEVICE_DTS = $(DEVICE_PROFILE)
+  BOARD_ID := TD-W8970v1
+  IMAGE_SIZE := 7680k
+endef
+
+define Device/TDW8980
+  $(Device/lantiqTpLink)
+  DEVICE_PROFILE := TDW8980
+  DEVICE_DTS = $(DEVICE_PROFILE)
+  BOARD_ID := TD-W8980v1
+  IMAGE_SIZE := 7680k
+endef
+
+define Device/VR200v
+  $(Device/lantiqTpLink)
+  DEVICE_PROFILE := VR200v
+  DEVICE_DTS = $(DEVICE_PROFILE)
+  BOARD_ID := ArcherVR200V
+  IMAGE_SIZE := 15808k
+endef
+TARGET_DEVICES += TDW8970 TDW8980 VR200v
+
 $(eval $(call lantiqImage,VGV7510KW22NOR,15232k))
 $(eval $(call lantiqBrnImage,VGV7510KW22BRN,6784k,BRNDA6431,0x12345678,0x04c11db7))
 $(eval $(call lantiqImage,VGV7519NOR,15360k))
