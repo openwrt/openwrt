@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gettext-full
 PKG_VERSION:=0.19.6
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=gettext-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gettext
@@ -17,7 +17,7 @@ PKG_MD5SUM:=69d79254ee3b41df23f41c2f4fd720d9
 PKG_BUILD_DIR:=$(BUILD_DIR)/gettext-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/gettext-$(PKG_VERSION)
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-3.0+
 
 PKG_FIXUP:=autoreconf
@@ -59,6 +59,9 @@ CONFIGURE_ARGS += \
 
 HOST_CONFIGURE_ARGS += \
 	--with-included-libxml --without-libxml2-prefix --with-included-libcroco
+
+HOST_CONFIGURE_VARS += \
+	EMACS="no"
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib/libintl-full/include
