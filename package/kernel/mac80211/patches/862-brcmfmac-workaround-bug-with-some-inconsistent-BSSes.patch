@@ -42,7 +42,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	dev = dev_get_by_name(&init_net, name);
 +	if (dev) {
 +		dev_put(dev);
-+		return ERR_PTR(-EEXIST);
++		return ERR_PTR(-ENFILE);
 +	}
 +
  	brcmf_dbg(TRACE, "enter: %s type %d\n", name, type);
