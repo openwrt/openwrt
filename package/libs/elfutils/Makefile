@@ -65,7 +65,6 @@ CONFIGURE_VARS += \
 endif
 
 CONFIGURE_ARGS += \
-	--disable-werror \
 	--without-lzma
 
 define Build/InstallDev
