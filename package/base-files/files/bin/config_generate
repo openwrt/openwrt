@@ -5,6 +5,7 @@ CFG=/etc/board.json
 . /usr/share/libubox/jshn.sh
 
 [ -f $CFG ] || exit 1
+[ -f /etc/config/network -a -f /etc/config/system ] && exit 0
 
 generate_static_network() {
 	uci -q batch <<-EOF
@@ -398,24 +399,27 @@ generate_gpioswitch() {
 json_init
 json_load "$(cat ${CFG})"
 
-generate_static_network
+if [ ! -f /etc/config/network ]; then
+	touch /etc/config/network
+	generate_static_network
 
-json_get_keys keys network
-for key in $keys; do generate_network $key; done
+	json_get_keys keys network
+	for key in $keys; do generate_network $key; done
 
-json_get_keys keys switch
-for key in $keys; do generate_switch $key; done
+	json_get_keys keys switch
+	for key in $keys; do generate_switch $key; done
+fi
 
+if [ ! -f /etc/config/system ]; then
+	touch /etc/config/system
+	generate_static_system
 
-generate_static_system
+	json_get_keys keys rssimon
+	for key in $keys; do generate_rssimon $key; done
 
-json_get_keys keys rssimon
-for key in $keys; do generate_rssimon $key; done
+	json_get_keys keys gpioswitch
+	for key in $keys; do generate_gpioswitch $key; done
 
-json_get_keys keys gpioswitch
-for key in $keys; do generate_gpioswitch $key; done
-
-json_get_keys keys led
-for key in $keys; do generate_led $key; done
-
+	json_get_keys keys led
+	for key in $keys; do generate_led $key; done
 uci commit
