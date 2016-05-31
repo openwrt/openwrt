@@ -8,7 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=px5g
-PKG_RELEASE:=3
+PKG_RELEASE:=4
+PKG_LICENSE:=LGPL-2.1
 
 PKG_USE_MIPS16:=0
 
