@@ -354,6 +354,14 @@ generate_led() {
 			EOF
 		;;
 
+		portstate)
+			local port_state
+			json_get_vars port_state
+			uci -q batch <<-EOF
+				set system.$cfg.port_state='$port_state'
+			EOF
+		;;
+
 		timer|oneshot)
 			local delayon delayoff
 			json_get_vars delayon delayoff
