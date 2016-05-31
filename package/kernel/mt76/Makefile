@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/mt76
   SUBMENU:=Wireless Drivers
   TITLE:=MediaTek MT76x2/MT7603 wireless driver
-  DEPENDS:=+kmod-mac80211 +@DRIVER_11N_SUPPORT @PCI_SUPPORT
+  DEPENDS:=+kmod-mac80211 +@DRIVER_11N_SUPPORT @PCI_SUPPORT @!LINUX_3_18
   FILES:=\
 	$(PKG_BUILD_DIR)/mt76.ko \
 	$(PKG_BUILD_DIR)/mt76x2e.ko \
