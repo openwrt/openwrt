@@ -611,7 +611,7 @@ $(eval $(call bcm63xxCfe,FAST2604,F@ST2604,fast2604,F@ST2604,6348))
 # Sagem F@ST2704N V1 / Plusnet F@ST2704N V1
 $(eval $(call bcm63xxCfe,FAST2704N,FAST2704N,fast2704n,F@ST2704N,6318,--pad 4))
 # Sagem F@ST2704V2
-$(eval $(call bcm63xxCfe,FAST2704V2,F@ST2704V2,fast2704v2,F@ST2704V2,6328))
+$(eval $(call bcm63xxCfe,FAST2704V2,F@ST2704V2,fast2704v2,F@ST2704V2,6328,--pad 4))
 # SFR Neufbox 4
 $(eval $(call bcm63xxCfe,Neufbox4,NEUFBOX4-SER,nb4-ser-r0,96358VW,6358,--rsa-signature "OpenWRT-$(REVISION)"))
 $(eval $(call bcm63xxCfe,Neufbox4,NEUFBOX4-FXC,nb4-fxc-r1,96358VW,6358,--rsa-signature "OpenWRT-$(REVISION)"))
