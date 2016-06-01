@@ -24,6 +24,8 @@ define Device/TDW8970
   DEVICE_DTS = $(DEVICE_PROFILE)
   BOARD_ID := TD-W8970v1
   IMAGE_SIZE := 7680k
+  DEVICE_TITLE := TP-LINK TD-W8970
+  DEVICE_PACKAGES:= kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-ledtrig-usbdev
 endef
 
 define Device/TDW8980
@@ -32,6 +34,8 @@ define Device/TDW8980
   DEVICE_DTS = $(DEVICE_PROFILE)
   BOARD_ID := TD-W8980v1
   IMAGE_SIZE := 7680k
+  DEVICE_TITLE := TP-LINK TD-W8980
+  DEVICE_PACKAGES:= kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-ledtrig-usbdev
 endef
 
 define Device/VR200v
@@ -40,6 +44,8 @@ define Device/VR200v
   DEVICE_DTS = $(DEVICE_PROFILE)
   BOARD_ID := ArcherVR200V
   IMAGE_SIZE := 15808k
+  DEVICE_TITLE := TP-LINK Archer VR200v
+  DEVICE_PACKAGES:= kmod-usb-dwc2 kmod-ledtrig-usbdev
 endef
 TARGET_DEVICES += TDW8970 TDW8980 VR200v
 
