@@ -7,11 +7,9 @@ Subject: [PATCH 102/102] net: mediatek: v4.4 backports
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   13 ++++++++-----
  1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 7788ba6..22caad3 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -217,7 +217,7 @@ static int mtk_phy_connect_node(struct mtk_eth *eth, struct mtk_mac *mac,
+@@ -217,7 +217,7 @@ static int mtk_phy_connect_node(struct m
  
  	dev_info(eth->dev,
  		 "connected mac %d to PHY at %s [uid=%08x, driver=%s]\n",
@@ -20,7 +18,7 @@ index 7788ba6..22caad3 100644
  		 phydev->drv->name);
  
  	mac->phy_dev = phydev;
-@@ -1396,6 +1396,7 @@ static int mtk_stop(struct net_device *dev)
+@@ -1396,6 +1396,7 @@ static int mtk_stop(struct net_device *d
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
  
@@ -28,7 +26,7 @@ index 7788ba6..22caad3 100644
  	netif_tx_disable(dev);
  	phy_stop(mac->phy_dev);
  
-@@ -1595,11 +1596,13 @@ static int mtk_set_settings(struct net_device *dev,
+@@ -1595,11 +1596,13 @@ static int mtk_set_settings(struct net_d
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  
@@ -46,6 +44,3 @@ index 7788ba6..22caad3 100644
  	}
  
  	return phy_ethtool_sset(mac->phy_dev, cmd);
--- 
-1.7.10.4
-

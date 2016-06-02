@@ -33,7 +33,7 @@ Signed-off-by: Michael Turquette <mturquette@baylibre.com>
  struct bcm2835_pll {
  	struct clk_hw hw;
  	struct bcm2835_cprman *cprman;
-@@ -1586,6 +1596,9 @@ static int bcm2835_clk_probe(struct plat
+@@ -1590,6 +1600,9 @@ static int bcm2835_clk_probe(struct plat
  				  cprman->regs + CM_PERIICTL, CM_GATE_BIT,
  				  0, &cprman->regs_lock);
  

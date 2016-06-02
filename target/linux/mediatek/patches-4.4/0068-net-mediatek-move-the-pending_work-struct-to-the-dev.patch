@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |    4 ++--
  2 files changed, 6 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 67b18f9..bbcd607 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1193,7 +1193,7 @@ static void mtk_tx_timeout(struct net_device *dev)
+@@ -1193,7 +1193,7 @@ static void mtk_tx_timeout(struct net_de
  	eth->netdev[mac->id]->stats.tx_errors++;
  	netif_err(eth, tx_err, dev,
  		  "transmit timed out\n");
@@ -26,7 +24,7 @@ index 67b18f9..bbcd607 100644
  }
  
  static irqreturn_t mtk_handle_irq(int irq, void *_eth)
-@@ -1438,7 +1438,7 @@ static void mtk_pending_work(struct work_struct *work)
+@@ -1438,7 +1438,7 @@ static void mtk_pending_work(struct work
  
  	/* stop all devices to make sure that dma is properly shut down */
  	for (i = 0; i < MTK_MAC_COUNT; i++) {
@@ -35,7 +33,7 @@ index 67b18f9..bbcd607 100644
  			continue;
  		mtk_stop(eth->netdev[i]);
  		__set_bit(i, &restart);
-@@ -1464,15 +1464,13 @@ static int mtk_cleanup(struct mtk_eth *eth)
+@@ -1464,15 +1464,13 @@ static int mtk_cleanup(struct mtk_eth *e
  	int i;
  
  	for (i = 0; i < MTK_MAC_COUNT; i++) {
@@ -52,7 +50,7 @@ index 67b18f9..bbcd607 100644
  
  	return 0;
  }
-@@ -1660,7 +1658,6 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1660,7 +1658,6 @@ static int mtk_add_mac(struct mtk_eth *e
  	mac->id = id;
  	mac->hw = eth;
  	mac->of_node = np;
@@ -60,7 +58,7 @@ index 67b18f9..bbcd607 100644
  
  	mac->hw_stats = devm_kzalloc(eth->dev,
  				     sizeof(*mac->hw_stats),
-@@ -1762,6 +1759,7 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1762,6 +1759,7 @@ static int mtk_probe(struct platform_dev
  
  	eth->dev = &pdev->dev;
  	eth->msg_enable = netif_msg_init(mtk_msg_level, MTK_DEFAULT_MSG_ENABLE);
@@ -68,8 +66,6 @@ index 67b18f9..bbcd607 100644
  
  	err = mtk_hw_init(eth);
  	if (err)
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index 48a5292..eed626d 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -363,6 +363,7 @@ struct mtk_rx_ring {
@@ -104,6 +100,3 @@ index 48a5292..eed626d 100644
  };
  
  /* the struct describing the SoC. these are declared in the soc_xyz.c files */
--- 
-1.7.10.4
-

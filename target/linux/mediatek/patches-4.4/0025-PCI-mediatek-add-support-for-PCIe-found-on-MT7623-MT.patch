@@ -17,8 +17,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 654 insertions(+)
  create mode 100644 drivers/pci/host/pcie-mediatek.c
 
-diff --git a/arch/arm/mach-mediatek/Kconfig b/arch/arm/mach-mediatek/Kconfig
-index 7fb605e..a7fef77 100644
 --- a/arch/arm/mach-mediatek/Kconfig
 +++ b/arch/arm/mach-mediatek/Kconfig
 @@ -24,6 +24,7 @@ config MACH_MT6592
@@ -29,11 +27,9 @@ index 7fb605e..a7fef77 100644
  
  config MACH_MT8127
  	bool "MediaTek MT8127 SoCs support"
-diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
-index f131ba9..912f0e1 100644
 --- a/drivers/pci/host/Kconfig
 +++ b/drivers/pci/host/Kconfig
-@@ -172,4 +172,15 @@ config PCI_HISI
+@@ -173,4 +173,15 @@ config PCI_HISI
  	help
  	  Say Y here if you want PCIe controller support on HiSilicon HIP05 SoC
  
@@ -49,18 +45,13 @@ index f131ba9..912f0e1 100644
 +	  PCIe include one Host/PCI bridge and 3 PCIe MAC.
 +
  endmenu
-diff --git a/drivers/pci/host/Makefile b/drivers/pci/host/Makefile
-index 9d4d3c6..3b53374 100644
 --- a/drivers/pci/host/Makefile
 +++ b/drivers/pci/host/Makefile
-@@ -20,3 +20,4 @@ obj-$(CONFIG_PCIE_IPROC_BCMA) += pcie-iproc-bcma.o
+@@ -20,3 +20,4 @@ obj-$(CONFIG_PCIE_IPROC_BCMA) += pcie-ip
  obj-$(CONFIG_PCIE_ALTERA) += pcie-altera.o
  obj-$(CONFIG_PCIE_ALTERA_MSI) += pcie-altera-msi.o
  obj-$(CONFIG_PCI_HISI) += pcie-hisi.o
 +obj-$(CONFIG_PCIE_MTK) += pcie-mediatek.o
-diff --git a/drivers/pci/host/pcie-mediatek.c b/drivers/pci/host/pcie-mediatek.c
-new file mode 100644
-index 0000000..ef03952
 --- /dev/null
 +++ b/drivers/pci/host/pcie-mediatek.c
 @@ -0,0 +1,641 @@
@@ -705,6 +696,3 @@ index 0000000..ef03952
 +}
 +
 +module_init(mtk_pcie_init);
--- 
-1.7.10.4
-

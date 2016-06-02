@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/mfd/mt6397-core.c |   58 ++++++++++++++++++++++++++++++++-------------
  1 file changed, 41 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/mfd/mt6397-core.c b/drivers/mfd/mt6397-core.c
-index 75ad0fe..aa91606 100644
 --- a/drivers/mfd/mt6397-core.c
 +++ b/drivers/mfd/mt6397-core.c
 @@ -24,6 +24,9 @@
@@ -22,7 +20,7 @@ index 75ad0fe..aa91606 100644
  static const struct resource mt6397_rtc_resources[] = {
  	{
  		.start = MT6397_RTC_BASE,
-@@ -232,39 +235,60 @@ static SIMPLE_DEV_PM_OPS(mt6397_pm_ops, mt6397_irq_suspend,
+@@ -232,39 +235,60 @@ static SIMPLE_DEV_PM_OPS(mt6397_pm_ops,
  static int mt6397_probe(struct platform_device *pdev)
  {
  	int ret;
@@ -100,6 +98,3 @@ index 75ad0fe..aa91606 100644
  
  	return ret;
  }
--- 
-1.7.10.4
-

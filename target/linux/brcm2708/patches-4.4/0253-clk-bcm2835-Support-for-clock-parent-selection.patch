@@ -24,7 +24,7 @@ Signed-off-by: Michael Turquette <mturquette@baylibre.com>
 
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1201,16 +1201,6 @@ static long bcm2835_clock_rate_from_divi
+@@ -1205,16 +1205,6 @@ static long bcm2835_clock_rate_from_divi
  	return temp;
  }
  
@@ -41,7 +41,7 @@ Signed-off-by: Michael Turquette <mturquette@baylibre.com>
  static unsigned long bcm2835_clock_get_rate(struct clk_hw *hw,
  					    unsigned long parent_rate)
  {
-@@ -1282,13 +1272,75 @@ static int bcm2835_clock_set_rate(struct
+@@ -1286,13 +1276,75 @@ static int bcm2835_clock_set_rate(struct
  	return 0;
  }
  
@@ -118,7 +118,7 @@ Signed-off-by: Michael Turquette <mturquette@baylibre.com>
  };
  
  static int bcm2835_vpu_clock_is_on(struct clk_hw *hw)
-@@ -1304,7 +1356,9 @@ static const struct clk_ops bcm2835_vpu_
+@@ -1308,7 +1360,9 @@ static const struct clk_ops bcm2835_vpu_
  	.is_prepared = bcm2835_vpu_clock_is_on,
  	.recalc_rate = bcm2835_clock_get_rate,
  	.set_rate = bcm2835_clock_set_rate,
@@ -129,7 +129,7 @@ Signed-off-by: Michael Turquette <mturquette@baylibre.com>
  };
  
  static struct clk *bcm2835_register_pll(struct bcm2835_cprman *cprman,
-@@ -1398,45 +1452,23 @@ static struct clk *bcm2835_register_cloc
+@@ -1402,45 +1456,23 @@ static struct clk *bcm2835_register_cloc
  {
  	struct bcm2835_clock *clock;
  	struct clk_init_data init;

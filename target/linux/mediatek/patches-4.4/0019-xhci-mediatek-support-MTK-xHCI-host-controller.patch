@@ -31,8 +31,6 @@ Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
  create mode 100644 drivers/usb/host/xhci-mtk.c
  create mode 100644 drivers/usb/host/xhci-mtk.h
 
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index 3bb0887..daa563f 100644
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -41,6 +41,15 @@ config USB_XHCI_PLATFORM
@@ -51,8 +49,6 @@ index 3bb0887..daa563f 100644
  config USB_XHCI_MVEBU
  	tristate "xHCI support for Marvell Armada 375/38x"
  	select USB_XHCI_PLATFORM
-diff --git a/drivers/usb/host/Makefile b/drivers/usb/host/Makefile
-index e7558ab..65a06b4 100644
 --- a/drivers/usb/host/Makefile
 +++ b/drivers/usb/host/Makefile
 @@ -13,6 +13,9 @@ fhci-$(CONFIG_FHCI_DEBUG) += fhci-dbg.o
@@ -73,9 +69,6 @@ index e7558ab..65a06b4 100644
  obj-$(CONFIG_USB_SL811_HCD)	+= sl811-hcd.o
  obj-$(CONFIG_USB_SL811_CS)	+= sl811_cs.o
  obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
-diff --git a/drivers/usb/host/xhci-mtk-sch.c b/drivers/usb/host/xhci-mtk-sch.c
-new file mode 100644
-index 0000000..c30de7c
 --- /dev/null
 +++ b/drivers/usb/host/xhci-mtk-sch.c
 @@ -0,0 +1,415 @@
@@ -494,9 +487,6 @@ index 0000000..c30de7c
 +	}
 +}
 +EXPORT_SYMBOL_GPL(xhci_mtk_drop_ep_quirk);
-diff --git a/drivers/usb/host/xhci-mtk.c b/drivers/usb/host/xhci-mtk.c
-new file mode 100644
-index 0000000..c9ab6a4
 --- /dev/null
 +++ b/drivers/usb/host/xhci-mtk.c
 @@ -0,0 +1,763 @@
@@ -1263,9 +1253,6 @@ index 0000000..c9ab6a4
 +MODULE_AUTHOR("Chunfeng Yun <chunfeng.yun@mediatek.com>");
 +MODULE_DESCRIPTION("MediaTek xHCI Host Controller Driver");
 +MODULE_LICENSE("GPL v2");
-diff --git a/drivers/usb/host/xhci-mtk.h b/drivers/usb/host/xhci-mtk.h
-new file mode 100644
-index 0000000..7da677c
 --- /dev/null
 +++ b/drivers/usb/host/xhci-mtk.h
 @@ -0,0 +1,162 @@
@@ -1431,8 +1418,6 @@ index 0000000..7da677c
 +#endif
 +
 +#endif		/* _XHCI_MTK_H_ */
-diff --git a/drivers/usb/host/xhci-ring.c b/drivers/usb/host/xhci-ring.c
-index eeaa6c6..f1c21c4 100644
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
 @@ -68,6 +68,7 @@
@@ -1443,7 +1428,7 @@ index eeaa6c6..f1c21c4 100644
  
  /*
   * Returns zero if the TRB isn't in this segment, otherwise it returns the DMA
-@@ -3075,17 +3076,22 @@ static u32 xhci_td_remainder(struct xhci_hcd *xhci, int transferred,
+@@ -3065,17 +3066,22 @@ static u32 xhci_td_remainder(struct xhci
  {
  	u32 maxp, total_packet_count;
  
@@ -1470,7 +1455,7 @@ index eeaa6c6..f1c21c4 100644
  	/* Queueing functions don't count the current TRB into transferred */
  	return (total_packet_count - ((transferred + trb_buff_len) / maxp));
  }
-@@ -3473,7 +3479,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
+@@ -3463,7 +3469,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
  		field |= 0x1;
  
  	/* xHCI 1.0/1.1 6.4.1.2.1: Transfer Type field */
@@ -1479,8 +1464,6 @@ index eeaa6c6..f1c21c4 100644
  		if (urb->transfer_buffer_length > 0) {
  			if (setup->bRequestType & USB_DIR_IN)
  				field |= TRB_TX_TYPE(TRB_DATA_IN);
-diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
-index 3f91270..15fedb2 100644
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
 @@ -31,6 +31,7 @@
@@ -1491,7 +1474,7 @@ index 3f91270..15fedb2 100644
  
  #define DRIVER_AUTHOR "Sarah Sharp"
  #define DRIVER_DESC "'eXtensible' Host Controller (xHC) Driver"
-@@ -634,7 +635,11 @@ int xhci_run(struct usb_hcd *hcd)
+@@ -635,7 +636,11 @@ int xhci_run(struct usb_hcd *hcd)
  			"// Set the interrupt modulation register");
  	temp = readl(&xhci->ir_set->irq_control);
  	temp &= ~ER_IRQ_INTERVAL_MASK;
@@ -1504,7 +1487,7 @@ index 3f91270..15fedb2 100644
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -1698,6 +1703,9 @@ int xhci_drop_endpoint(struct usb_hcd *hcd, struct usb_device *udev,
+@@ -1701,6 +1706,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -1514,7 +1497,7 @@ index 3f91270..15fedb2 100644
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1793,6 +1801,15 @@ int xhci_add_endpoint(struct usb_hcd *hcd, struct usb_device *udev,
+@@ -1796,6 +1804,15 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  
@@ -1530,11 +1513,9 @@ index 3f91270..15fedb2 100644
  	ctrl_ctx->add_flags |= cpu_to_le32(added_ctxs);
  	new_add_flags = le32_to_cpu(ctrl_ctx->add_flags);
  
-diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
-index 0b94512..40cf36e 100644
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1630,6 +1630,7 @@ struct xhci_hcd {
+@@ -1631,6 +1631,7 @@ struct xhci_hcd {
  /* For controllers with a broken beyond repair streams implementation */
  #define XHCI_BROKEN_STREAMS	(1 << 19)
  #define XHCI_PME_STUCK_QUIRK	(1 << 20)
@@ -1542,6 +1523,3 @@ index 0b94512..40cf36e 100644
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
  	/* There are two roothubs to keep track of bus suspend info for */
--- 
-1.7.10.4
-

@@ -18,8 +18,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/mediatek/mt7530.c
  create mode 100644 drivers/net/ethernet/mediatek/mt7530.h
 
-diff --git a/drivers/net/ethernet/mediatek/Makefile b/drivers/net/ethernet/mediatek/Makefile
-index aa3f1c8..82001c4 100644
 --- a/drivers/net/ethernet/mediatek/Makefile
 +++ b/drivers/net/ethernet/mediatek/Makefile
 @@ -2,4 +2,4 @@
@@ -28,9 +26,6 @@ index aa3f1c8..82001c4 100644
  
 -obj-$(CONFIG_NET_MEDIATEK_SOC)			+= mtk_eth_soc.o
 +obj-$(CONFIG_NET_MEDIATEK_SOC)			+= mt7530.o gsw_mt7623.o mtk_eth_soc.o
-diff --git a/drivers/net/ethernet/mediatek/gsw_mt7620.h b/drivers/net/ethernet/mediatek/gsw_mt7620.h
-new file mode 100644
-index 0000000..6fca8f2
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/gsw_mt7620.h
 @@ -0,0 +1,251 @@
@@ -285,9 +280,6 @@ index 0000000..6fca8f2
 +void mt7620_handle_carrier(struct mtk_eth *eth);
 +
 +#endif
-diff --git a/drivers/net/ethernet/mediatek/gsw_mt7623.c b/drivers/net/ethernet/mediatek/gsw_mt7623.c
-new file mode 100644
-index 0000000..0c6b8a6
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/gsw_mt7623.c
 @@ -0,0 +1,1084 @@
@@ -1375,9 +1367,6 @@ index 0000000..0c6b8a6
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("GBit switch driver for Mediatek MT7623 SoC");
-diff --git a/drivers/net/ethernet/mediatek/mt7530.c b/drivers/net/ethernet/mediatek/mt7530.c
-new file mode 100644
-index 0000000..2e9d280
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mt7530.c
 @@ -0,0 +1,808 @@
@@ -2189,9 +2178,6 @@ index 0000000..2e9d280
 +
 +	return 0;
 +}
-diff --git a/drivers/net/ethernet/mediatek/mt7530.h b/drivers/net/ethernet/mediatek/mt7530.h
-new file mode 100644
-index 0000000..1fc8c62
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mt7530.h
 @@ -0,0 +1,20 @@
@@ -2215,8 +2201,6 @@ index 0000000..1fc8c62
 +int mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vlan);
 +
 +#endif
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 70e961c..7788ba6 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -24,6 +24,9 @@
@@ -2229,7 +2213,7 @@ index 70e961c..7788ba6 100644
  static int mtk_msg_level = -1;
  module_param_named(msg_level, mtk_msg_level, int, 0);
  MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
-@@ -69,7 +72,7 @@ static int mtk_mdio_busy_wait(struct mtk_eth *eth)
+@@ -69,7 +72,7 @@ static int mtk_mdio_busy_wait(struct mtk
  			return 0;
  		if (time_after(jiffies, t_start + PHY_IAC_TIMEOUT))
  			break;
@@ -2238,7 +2222,7 @@ index 70e961c..7788ba6 100644
  	}
  
  	dev_err(eth->dev, "mdio: MDIO timeout\n");
-@@ -1421,15 +1424,6 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1421,15 +1424,6 @@ static int __init mtk_hw_init(struct mtk
  	reset_control_deassert(eth->rstc);
  	usleep_range(10, 20);
  
@@ -2254,7 +2238,7 @@ index 70e961c..7788ba6 100644
  	/* GE1, Force 1000M/FD, FC ON */
  	mtk_w32(eth, MAC_MCR_FIXED_LINK, MTK_MAC_MCR(0));
  
-@@ -1452,6 +1446,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1452,6 +1446,8 @@ static int __init mtk_hw_init(struct mtk
  	if (err)
  		return err;
  
@@ -2263,7 +2247,7 @@ index 70e961c..7788ba6 100644
  	/* disable delay and normal interrupt */
  	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
  	mtk_irq_disable(eth, ~0);
-@@ -1479,6 +1475,8 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1479,6 +1475,8 @@ static int __init mtk_hw_init(struct mtk
  		mtk_w32(eth, val, MTK_GDMA_FWD_CFG(i));
  	}
  
@@ -2272,7 +2256,7 @@ index 70e961c..7788ba6 100644
  	return 0;
  }
  
-@@ -1734,7 +1732,7 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1734,7 +1732,7 @@ static int mtk_add_mac(struct mtk_eth *e
  {
  	struct mtk_mac *mac;
  	const __be32 *_id = of_get_property(np, "reg", NULL);
@@ -2281,7 +2265,7 @@ index 70e961c..7788ba6 100644
  
  	if (!_id) {
  		dev_err(eth->dev, "missing mac id\n");
-@@ -1768,8 +1766,8 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1768,8 +1766,8 @@ static int mtk_add_mac(struct mtk_eth *e
  				     GFP_KERNEL);
  	if (!mac->hw_stats) {
  		dev_err(eth->dev, "failed to allocate counter memory\n");
@@ -2292,7 +2276,7 @@ index 70e961c..7788ba6 100644
  	}
  	spin_lock_init(&mac->hw_stats->stats_lock);
  	mac->hw_stats->reg_offset = id * MTK_STAT_OFFSET;
-@@ -1783,21 +1781,9 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1783,21 +1781,9 @@ static int mtk_add_mac(struct mtk_eth *e
  	eth->netdev[id]->features |= MTK_HW_FEATURES;
  	eth->netdev[id]->ethtool_ops = &mtk_ethtool_ops;
  
@@ -2314,7 +2298,7 @@ index 70e961c..7788ba6 100644
  }
  
  static int mtk_probe(struct platform_device *pdev)
-@@ -1865,14 +1851,13 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1865,14 +1851,13 @@ static int mtk_probe(struct platform_dev
  	clk_prepare_enable(eth->clk_gp1);
  	clk_prepare_enable(eth->clk_gp2);
  
@@ -2332,7 +2316,7 @@ index 70e961c..7788ba6 100644
  	for_each_child_of_node(pdev->dev.of_node, mac_np) {
  		if (!of_device_is_compatible(mac_np,
  					     "mediatek,eth-mac"))
-@@ -1886,6 +1871,22 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1886,6 +1871,22 @@ static int mtk_probe(struct platform_dev
  			goto err_free_dev;
  	}
  
@@ -2355,8 +2339,6 @@ index 70e961c..7788ba6 100644
  	/* we run 2 devices on the same DMA ring so we need a dummy device
  	 * for NAPI to work
  	 */
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index e39da72..75692cc 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -407,6 +407,9 @@ struct mtk_eth {
@@ -2369,13 +2351,10 @@ index e39da72..75692cc 100644
  };
  
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
-@@ -434,4 +437,6 @@ void mtk_stats_update_mac(struct mtk_mac *mac);
+@@ -434,4 +437,6 @@ void mtk_stats_update_mac(struct mtk_mac
  void mtk_w32(struct mtk_eth *eth, u32 val, unsigned reg);
  u32 mtk_r32(struct mtk_eth *eth, unsigned reg);
  
 +int mt7623_gsw_config(struct mtk_eth *eth);
 +
  #endif /* MTK_ETH_H */
--- 
-1.7.10.4
-

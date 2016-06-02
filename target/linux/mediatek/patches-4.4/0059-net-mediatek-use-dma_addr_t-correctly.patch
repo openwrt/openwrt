@@ -17,11 +17,9 @@ Signed-off-by: Arnd Bergmann <arnd@arndb.de>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index c2c2e206..a005bc4 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -453,7 +453,7 @@ static inline void mtk_rx_get_desc(struct mtk_rx_dma *rxd,
+@@ -453,7 +453,7 @@ static inline void mtk_rx_get_desc(struc
  /* the qdma core needs scratch memory to be setup */
  static int mtk_init_fq_dma(struct mtk_eth *eth)
  {
@@ -30,6 +28,3 @@ index c2c2e206..a005bc4 100644
  	int cnt = MTK_DMA_SIZE;
  	dma_addr_t dma_addr;
  	int i;
--- 
-1.7.10.4
-

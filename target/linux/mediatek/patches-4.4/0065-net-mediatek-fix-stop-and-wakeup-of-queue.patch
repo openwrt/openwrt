@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   37 +++++++++++++++++++--------
  1 file changed, 27 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 293ea59..04bdb9d 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -684,6 +684,28 @@ static inline int mtk_cal_txd_req(struct sk_buff *skb)
+@@ -684,6 +684,28 @@ static inline int mtk_cal_txd_req(struct
  	return nfrags;
  }
  
@@ -46,7 +44,7 @@ index 293ea59..04bdb9d 100644
  static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
-@@ -695,7 +717,7 @@ static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -695,7 +717,7 @@ static int mtk_start_xmit(struct sk_buff
  
  	tx_num = mtk_cal_txd_req(skb);
  	if (unlikely(atomic_read(&ring->free_count) <= tx_num)) {
@@ -55,7 +53,7 @@ index 293ea59..04bdb9d 100644
  		netif_err(eth, tx_queued, dev,
  			  "Tx Ring full when queue awake!\n");
  		return NETDEV_TX_BUSY;
-@@ -720,10 +742,10 @@ static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -720,10 +742,10 @@ static int mtk_start_xmit(struct sk_buff
  		goto drop;
  
  	if (unlikely(atomic_read(&ring->free_count) <= ring->thresh)) {
@@ -68,7 +66,7 @@ index 293ea59..04bdb9d 100644
  	}
  
  	return NETDEV_TX_OK;
-@@ -897,13 +919,8 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -897,13 +919,8 @@ static int mtk_poll_tx(struct mtk_eth *e
  	if (!total)
  		return 0;
  
@@ -84,6 +82,3 @@ index 293ea59..04bdb9d 100644
  
  	return total;
  }
--- 
-1.7.10.4
-

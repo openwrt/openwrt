@@ -17,11 +17,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |    1 +
  2 files changed, 8 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 13ee15f..c869064 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -331,18 +331,24 @@ static void mtk_mdio_cleanup(struct mtk_eth *eth)
+@@ -331,18 +331,24 @@ static void mtk_mdio_cleanup(struct mtk_
  
  static inline void mtk_irq_disable(struct mtk_eth *eth, u32 mask)
  {
@@ -46,7 +44,7 @@ index 13ee15f..c869064 100644
  }
  
  static int mtk_set_mac_address(struct net_device *dev, void *p)
-@@ -1771,6 +1777,7 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1771,6 +1777,7 @@ static int mtk_probe(struct platform_dev
  		return -EADDRNOTAVAIL;
  
  	spin_lock_init(&eth->page_lock);
@@ -54,8 +52,6 @@ index 13ee15f..c869064 100644
  
  	eth->ethsys = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
  						      "mediatek,ethsys");
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index a5eb7c6..3159d2a 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -373,6 +373,7 @@ struct mtk_eth {
@@ -66,6 +62,3 @@ index a5eb7c6..3159d2a 100644
  	struct net_device		dummy_dev;
  	struct net_device		*netdev[MTK_MAX_DEVS];
  	struct mtk_mac			*mac[MTK_MAX_DEVS];
--- 
-1.7.10.4
-

@@ -9,11 +9,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  include/linux/phy.h   |    1 +
  2 files changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/net/phy/phy.c b/drivers/net/phy/phy.c
-index 47cd306d..f69d12f 100644
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -844,7 +844,8 @@ void phy_state_machine(struct work_struct *work)
+@@ -888,7 +888,8 @@ void phy_state_machine(struct work_struc
  		/* If the link is down, give up on negotiation for now */
  		if (!phydev->link) {
  			phydev->state = PHY_NOLINK;
@@ -23,7 +21,7 @@ index 47cd306d..f69d12f 100644
  			phydev->adjust_link(phydev->attached_dev);
  			break;
  		}
-@@ -927,7 +928,8 @@ void phy_state_machine(struct work_struct *work)
+@@ -971,7 +972,8 @@ void phy_state_machine(struct work_struc
  			netif_carrier_on(phydev->attached_dev);
  		} else {
  			phydev->state = PHY_NOLINK;
@@ -33,7 +31,7 @@ index 47cd306d..f69d12f 100644
  		}
  
  		phydev->adjust_link(phydev->attached_dev);
-@@ -939,7 +941,8 @@ void phy_state_machine(struct work_struct *work)
+@@ -983,7 +985,8 @@ void phy_state_machine(struct work_struc
  	case PHY_HALTED:
  		if (phydev->link) {
  			phydev->link = 0;
@@ -43,8 +41,6 @@ index 47cd306d..f69d12f 100644
  			phydev->adjust_link(phydev->attached_dev);
  			do_suspend = true;
  		}
-diff --git a/include/linux/phy.h b/include/linux/phy.h
-index 05fde31..276ab8a 100644
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
 @@ -377,6 +377,7 @@ struct phy_device {
@@ -55,6 +51,3 @@ index 05fde31..276ab8a 100644
  
  	enum phy_state state;
  
--- 
-1.7.10.4
-

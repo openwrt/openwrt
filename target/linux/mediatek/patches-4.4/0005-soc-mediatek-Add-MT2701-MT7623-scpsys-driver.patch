@@ -14,8 +14,6 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  3 files changed, 173 insertions(+)
  create mode 100644 drivers/soc/mediatek/mtk-scpsys-mt2701.c
 
-diff --git a/drivers/soc/mediatek/Kconfig b/drivers/soc/mediatek/Kconfig
-index eca6fb7..92cf838 100644
 --- a/drivers/soc/mediatek/Kconfig
 +++ b/drivers/soc/mediatek/Kconfig
 @@ -39,3 +39,14 @@ config MTK_SCPSYS_MT8173
@@ -33,18 +31,13 @@ index eca6fb7..92cf838 100644
 +	  domain driver.
 +	  The System Control Processor System (SCPSYS) has several power
 +	  management related tasks in the system.
-diff --git a/drivers/soc/mediatek/Makefile b/drivers/soc/mediatek/Makefile
-index 3b22baa..822986d 100644
 --- a/drivers/soc/mediatek/Makefile
 +++ b/drivers/soc/mediatek/Makefile
-@@ -2,3 +2,4 @@ obj-$(CONFIG_MTK_INFRACFG) += mtk-infracfg.o
+@@ -2,3 +2,4 @@ obj-$(CONFIG_MTK_INFRACFG) += mtk-infrac
  obj-$(CONFIG_MTK_PMIC_WRAP) += mtk-pmic-wrap.o
  obj-$(CONFIG_MTK_SCPSYS) += mtk-scpsys.o
  obj-$(CONFIG_MTK_SCPSYS_MT8173) += mtk-scpsys-mt8173.o
 +obj-$(CONFIG_MTK_SCPSYS_MT2701) += mtk-scpsys-mt2701.o
-diff --git a/drivers/soc/mediatek/mtk-scpsys-mt2701.c b/drivers/soc/mediatek/mtk-scpsys-mt2701.c
-new file mode 100644
-index 0000000..339d5b8
 --- /dev/null
 +++ b/drivers/soc/mediatek/mtk-scpsys-mt2701.c
 @@ -0,0 +1,161 @@
@@ -209,6 +202,3 @@ index 0000000..339d5b8
 +
 +MODULE_DESCRIPTION("MediaTek MT2701 scpsys driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

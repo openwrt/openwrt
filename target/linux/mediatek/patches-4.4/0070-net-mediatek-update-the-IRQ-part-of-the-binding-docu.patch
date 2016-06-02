@@ -16,11 +16,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  Documentation/devicetree/bindings/net/mediatek-net.txt |    7 +++++--
  1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/net/mediatek-net.txt b/Documentation/devicetree/bindings/net/mediatek-net.txt
-index 5ca7929..32eaaca 100644
 --- a/Documentation/devicetree/bindings/net/mediatek-net.txt
 +++ b/Documentation/devicetree/bindings/net/mediatek-net.txt
-@@ -9,7 +9,8 @@ have dual GMAC each represented by a child node..
+@@ -9,7 +9,8 @@ have dual GMAC each represented by a chi
  Required properties:
  - compatible: Should be "mediatek,mt7623-eth"
  - reg: Address and length of the register set for the device
@@ -41,6 +39,3 @@ index 5ca7929..32eaaca 100644
  	power-domains = <&scpsys MT2701_POWER_DOMAIN_ETH>;
  	resets = <&ethsys MT2701_ETHSYS_ETH_RST>;
  	reset-names = "eth";
--- 
-1.7.10.4
-

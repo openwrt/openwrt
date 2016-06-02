@@ -1,6 +1,6 @@
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -1008,6 +1008,66 @@ write_err:
+@@ -1009,6 +1009,66 @@ write_err:
  	return ret;
  }
  
@@ -67,7 +67,7 @@
  static int macronix_quad_enable(struct spi_nor *nor)
  {
  	int ret, val;
-@@ -1186,10 +1246,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1187,10 +1247,12 @@ int spi_nor_scan(struct spi_nor *nor, co
  	}
  
  	/* sst nor chips use AAI word program */
@@ -82,7 +82,7 @@
  
  	if (info->flags & USE_FSR)
  		nor->flags |= SNOR_F_USE_FSR;
-@@ -1217,11 +1279,20 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1218,11 +1280,20 @@ int spi_nor_scan(struct spi_nor *nor, co
  	mtd->writebufsize = nor->page_size;
  
  	if (np) {

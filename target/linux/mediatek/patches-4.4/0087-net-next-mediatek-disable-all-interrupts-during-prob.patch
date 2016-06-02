@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 72908b2..ec6140f 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1406,7 +1406,7 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1406,7 +1406,7 @@ static int __init mtk_hw_init(struct mtk
  
  	/* disable delay and normal interrupt */
  	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
@@ -26,6 +24,3 @@ index 72908b2..ec6140f 100644
  	mtk_w32(eth, RST_GL_PSE, MTK_RST_GL);
  	mtk_w32(eth, 0, MTK_RST_GL);
  
--- 
-1.7.10.4
-

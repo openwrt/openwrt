@@ -15,8 +15,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   22 ++++++++++------------
  1 file changed, 10 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 6a9fbde..13ee15f 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -806,7 +806,7 @@ drop:
@@ -37,7 +35,7 @@ index 6a9fbde..13ee15f 100644
  
  	return done;
  }
-@@ -977,28 +977,26 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -977,28 +977,26 @@ static int mtk_poll_tx(struct mtk_eth *e
  static int mtk_poll(struct napi_struct *napi, int budget)
  {
  	struct mtk_eth *eth = container_of(napi, struct mtk_eth, rx_napi);
@@ -73,7 +71,7 @@ index 6a9fbde..13ee15f 100644
  	}
  
  	if (unlikely(netif_msg_intr(eth))) {
-@@ -1016,7 +1014,7 @@ static int mtk_poll(struct napi_struct *napi, int budget)
+@@ -1016,7 +1014,7 @@ static int mtk_poll(struct napi_struct *
  		return budget;
  
  	napi_complete(napi);
@@ -82,6 +80,3 @@ index 6a9fbde..13ee15f 100644
  
  	return rx_done;
  }
--- 
-1.7.10.4
-

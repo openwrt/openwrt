@@ -9,11 +9,9 @@ Subject: [PATCH 026/102] scpsys: various fixes
  include/dt-bindings/power/mt2701-power.h |    4 ++--
  3 files changed, 4 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
-index 0e40bb8..812b347 100644
 --- a/drivers/clk/mediatek/clk-mt2701.c
 +++ b/drivers/clk/mediatek/clk-mt2701.c
-@@ -1043,6 +1043,8 @@ static void __init mtk_ethsys_init(struct device_node *node)
+@@ -1043,6 +1043,8 @@ static void __init mtk_ethsys_init(struc
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);
@@ -22,11 +20,9 @@ index 0e40bb8..812b347 100644
  }
  CLK_OF_DECLARE(mtk_ethsys, "mediatek,mt2701-ethsys", mtk_ethsys_init);
  
-diff --git a/drivers/soc/mediatek/mtk-scpsys-mt2701.c b/drivers/soc/mediatek/mtk-scpsys-mt2701.c
-index 3a31946..19489bc 100644
 --- a/drivers/soc/mediatek/mtk-scpsys-mt2701.c
 +++ b/drivers/soc/mediatek/mtk-scpsys-mt2701.c
-@@ -61,14 +61,6 @@ static const struct scp_domain_data scp_domain_data[] = {
+@@ -61,14 +61,6 @@ static const struct scp_domain_data scp_
  		.bus_prot_mask = MT2701_TOP_AXI_PROT_EN_DISP,
  		.active_wakeup = true,
  	},
@@ -41,8 +37,6 @@ index 3a31946..19489bc 100644
  	[MT2701_POWER_DOMAIN_VDEC] = {
  		.name = "vdec",
  		.sta_mask = VDE_PWR_STA_MASK,
-diff --git a/include/dt-bindings/power/mt2701-power.h b/include/dt-bindings/power/mt2701-power.h
-index 64cc826..c168597 100644
 --- a/include/dt-bindings/power/mt2701-power.h
 +++ b/include/dt-bindings/power/mt2701-power.h
 @@ -16,12 +16,12 @@
@@ -60,6 +54,3 @@ index 64cc826..c168597 100644
 +#define MT2701_POWER_DOMAIN_IFR_MSC	2
  
  #endif /* _DT_BINDINGS_POWER_MT2701_POWER_H */
--- 
-1.7.10.4
-
