@@ -60,10 +60,12 @@ platform_check_image_openmesh()
 		OM2P)
 			[ "$board" = "om2p" ] && break
 			[ "$board" = "om2pv2" ] && break
+			[ "$board" = "om2pv4" ] && break
 			[ "$board" = "om2p-lc" ] && break
 			[ "$board" = "om2p-hs" ] && break
 			[ "$board" = "om2p-hsv2" ] && break
 			[ "$board" = "om2p-hsv3" ] && break
+			[ "$board" = "om2p-hsv4" ] && break
 			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
 			return 1
 			;;
