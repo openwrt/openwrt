@@ -325,9 +325,11 @@ platform_check_image() {
 	mr900v2 | \
 	om2p | \
 	om2pv2 | \
+	om2pv4 | \
 	om2p-hs | \
 	om2p-hsv2 | \
 	om2p-hsv3 | \
+	om2p-hsv4 | \
 	om2p-lc | \
 	om5p | \
 	om5p-an | \
@@ -588,9 +590,11 @@ platform_do_upgrade() {
 	mr900v2 | \
 	om2p | \
 	om2pv2 | \
+	om2pv4 | \
 	om2p-hs | \
 	om2p-hsv2 | \
 	om2p-hsv3 | \
+	om2p-hsv4 | \
 	om2p-lc | \
 	om5p | \
 	om5p-an | \
