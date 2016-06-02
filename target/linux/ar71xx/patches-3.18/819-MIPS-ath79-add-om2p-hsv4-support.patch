@@ -1,0 +1,24 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -773,6 +773,7 @@ config ATH79_MACH_OM2P
+ 	bool "OpenMesh OM2P board support"
+ 	select SOC_AR724X
+ 	select SOC_AR933X
++	select SOC_QCA953X
+ 	select ATH79_DEV_AP9X_PCI if PCI
+ 	select ATH79_DEV_ETH
+ 	select ATH79_DEV_GPIO_BUTTONS
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -90,9 +90,11 @@ enum ath79_mach_type {
+ 	ATH79_MACH_NBG6716,		/* Zyxel NBG6716 */
+ 	ATH79_MACH_OM2P_HSv2,		/* OpenMesh OM2P-HSv2 */
+ 	ATH79_MACH_OM2P_HSv3,		/* OpenMesh OM2P-HSv3 */
++	ATH79_MACH_OM2P_HSv4,		/* OpenMesh OM2P-HSv4 */
+ 	ATH79_MACH_OM2P_HS,		/* OpenMesh OM2P-HS */
+ 	ATH79_MACH_OM2P_LC,		/* OpenMesh OM2P-LC */
+ 	ATH79_MACH_OM2Pv2,		/* OpenMesh OM2Pv2 */
++	ATH79_MACH_OM2Pv4,		/* OpenMesh OM2Pv4 */
+ 	ATH79_MACH_OM2P,		/* OpenMesh OM2P */
+ 	ATH79_MACH_OM5P_AC,		/* OpenMesh OM5P-AC */
+ 	ATH79_MACH_OM5P_ACv2,		/* OpenMesh OM5P-ACv2 */
