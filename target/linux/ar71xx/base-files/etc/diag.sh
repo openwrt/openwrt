@@ -242,9 +242,11 @@ get_status_led() {
 		;;
 	om2p|\
 	om2pv2|\
+	om2pv4|\
 	om2p-hs|\
 	om2p-hsv2|\
 	om2p-hsv3|\
+	om2p-hsv4|\
 	om2p-lc)
 		status_led="om2p:blue:power"
 		;;

@@ -742,6 +742,9 @@ ar71xx_board_detect() {
 	*OM2Pv2)
 		name="om2pv2"
 		;;
+	*OM2Pv4)
+		name="om2pv4"
+		;;
 	*"OM2P HS")
 		name="om2p-hs"
 		;;
@@ -750,6 +753,9 @@ ar71xx_board_detect() {
 		;;
 	*"OM2P HSv3")
 		name="om2p-hsv3"
+		;;
+	*"OM2P HSv4")
+		name="om2p-hsv4"
 		;;
 	*"OM2P LC")
 		name="om2p-lc"
