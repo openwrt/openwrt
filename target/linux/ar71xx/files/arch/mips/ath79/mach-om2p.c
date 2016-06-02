@@ -46,6 +46,16 @@
 #define OM2P_LC_GPIO_LED_WAN	17
 #define OM2P_LC_GPIO_BTN_RESET	12
 
+#define OM2Pv4_GPIO_LED_POWER	0
+#define OM2Pv4_GPIO_LED_GREEN	2
+#define OM2Pv4_GPIO_LED_RED	4
+#define OM2Pv4_GPIO_LED_YELLOW	3
+#define OM2Pv4_GPIO_LED_LAN	14
+#define OM2Pv4_GPIO_LED_WAN	13
+#define OM2Pv4_GPIO_BTN_RESET	1
+
+#define OM2P_WMAC_CALDATA_OFFSET	0x1000
+
 static struct flash_platform_data om2p_flash_data = {
 	.type = "s25sl12800",
 	.name = "ar7240-nor0",
@@ -224,3 +234,87 @@ static void __init om2p_hs_setup(void)
 MIPS_MACHINE(ATH79_MACH_OM2P_HS, "OM2P-HS", "OpenMesh OM2P HS", om2p_hs_setup);
 MIPS_MACHINE(ATH79_MACH_OM2P_HSv2, "OM2P-HSv2", "OpenMesh OM2P HSv2", om2p_hs_setup);
 MIPS_MACHINE(ATH79_MACH_OM2P_HSv3, "OM2P-HSv3", "OpenMesh OM2P HSv3", om2p_hs_setup);
+
+static struct flash_platform_data om2pv4_flash_data = {
+	.type = "s25sl12800",
+};
+
+static struct gpio_led om2pv4_leds_gpio[] __initdata = {
+	{
+		.name		= "om2p:blue:power",
+		.gpio		= OM2Pv4_GPIO_LED_POWER,
+		.active_low	= 1,
+	}, {
+		.name		= "om2p:red:wifi",
+		.gpio		= OM2Pv4_GPIO_LED_RED,
+		.active_low	= 1,
+	}, {
+		.name		= "om2p:yellow:wifi",
+		.gpio		= OM2Pv4_GPIO_LED_YELLOW,
+		.active_low	= 1,
+	}, {
+		.name		= "om2p:green:wifi",
+		.gpio		= OM2Pv4_GPIO_LED_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "om2p:blue:lan",
+		.gpio		= OM2Pv4_GPIO_LED_LAN,
+		.active_low	= 1,
+	}, {
+		.name		= "om2p:blue:wan",
+		.gpio		= OM2Pv4_GPIO_LED_WAN,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_keys_button om2pv4_gpio_keys[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = OM2P_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= OM2Pv4_GPIO_BTN_RESET,
+		.active_low	= 1,
+	}
+};
+
+static void __init om2pv4_setup(void)
+{
+	u8 *mac1 = (u8 *)KSEG1ADDR(0x1ffc0000);
+	u8 *mac2 = (u8 *)KSEG1ADDR(0x1ffc0000 + ETH_ALEN);
+	u8 *art = (u8 *)KSEG1ADDR(0x1ffc0000);
+	u8 wmac[6];
+
+	ath79_register_m25p80(&om2pv4_flash_data);
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(om2pv4_leds_gpio),
+				 om2pv4_leds_gpio);
+	ath79_register_gpio_keys_polled(-1, OM2P_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(om2pv4_gpio_keys),
+					om2pv4_gpio_keys);
+
+	ath79_init_mac(wmac, art, 0x02);
+	ath79_register_wmac(art + OM2P_WMAC_CALDATA_OFFSET, wmac);
+
+	ath79_setup_ar933x_phy4_switch(false, false);
+
+	ath79_register_mdio(0, 0x0);
+
+	/* LAN */
+	ath79_switch_data.phy4_mii_en = 1;
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ath79_eth0_data.duplex = DUPLEX_FULL;
+	ath79_eth0_data.speed = SPEED_100;
+	ath79_eth0_data.phy_mask = BIT(4);
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac2, 0);
+	ath79_register_eth(0);
+
+	/* WAN */
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ath79_eth1_data.duplex = DUPLEX_FULL;
+	ath79_switch_data.phy_poll_mask |= BIT(4);
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac1, 0);
+	ath79_register_eth(1);
+}
+
+MIPS_MACHINE(ATH79_MACH_OM2Pv4, "OM2Pv4", "OpenMesh OM2Pv4", om2pv4_setup);
+MIPS_MACHINE(ATH79_MACH_OM2P_HSv4, "OM2P-HSv4", "OpenMesh OM2P HSv4", om2pv4_setup);
