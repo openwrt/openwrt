@@ -1148,7 +1148,7 @@ $(eval $(call MultiProfile,Minimal,$(SINGLE_PROFILES)))
 $(eval $(call MultiProfile,Madwifi,EAP7660D WP543))
 
 define LegacyDevice/OM2P
-  DEVICE_TITLE := OpenMesh OM2P/OM2Pv2/OM2P-HS/OM2P-HSv2/OM2P-HSv3/OM2P-LC
+  DEVICE_TITLE := OpenMesh OM2P/OM2P-HS/OM2P-LC
   DEVICE_PACKAGES := kmod-ath9k om-watchdog
 endef
 LEGACY_DEVICES += OM2P
