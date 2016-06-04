@@ -300,6 +300,7 @@ define KernelPackage/ipsec/description
  Kernel modules for IPsec support in both IPv4 and IPv6.
  Includes:
  - af_key
+ - xfrm_algo
  - xfrm_ipcomp
  - xfrm_user
 endef
