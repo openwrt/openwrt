@@ -11,7 +11,7 @@ ARCH:=arm
 BOARD:=brcm2708
 BOARDNAME:=Broadcom BCM27xx
 FEATURES:=ext4 audio usb usbgadget display gpio fpu
-MAINTAINER:=Florian Fainelli <florian@openwrt.org>
+MAINTAINER:=Álvaro Fernández Rojas <noltari@gmail.com>
 SUBTARGETS:=bcm2708 bcm2709 bcm2710
 
 KERNEL_PATCHVER:=4.4
