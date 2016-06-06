@@ -1,0 +1,335 @@
+/*
+ * Copyright (C) 2015 Imagination Technologies Ltd.
+ * Copyright (C) 2015 Google, Inc.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+#include "pistachio.dtsi"
+#include <dt-bindings/sound/pistachio-audio.h>
+#include "pistachio_board_uboot.dtsi"
+
+/ {
+	compatible = "img,pistachio-marduk", "img,pistachio";
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+		ethernet0 = &enet;
+		spi0 = &spfi0;
+		spi1 = &spfi1;
+	};
+
+	chosen {
+		bootargs = "console=ttyS1,115200n8 earlycon=uart8250,mmio32,0x18101500,115200 root=/dev/sda1 rootwait ro";
+	};
+
+	memory {
+		device_type = "memory";
+		reg =  <0x00000000 0x08000000>;
+	};
+
+	reg_1v8: fixed-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "aux_adc_vref";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+	};
+
+	internal_dac_supply: internal_dac_supply {
+		compatible = "regulator-fixed";
+		regulator-name = "internal_dac_supply";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	pistachio_audio_card {
+		compatible = "img,pistachio-audio";
+
+		clocks = <&clk_core CLK_AUDIO_PLL>,
+			 <&clk_core CLK_I2S>,
+			 <&clk_core CLK_AUDIO>;
+		clock-names = "audio_pll", "i2s_mclk", "dac_clk";
+
+		img,cr-periph = <&cr_periph>;
+		img,event-timer = <&event_timer>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2s_mclk_pin>;
+
+		spdif-out {
+			cpu-dai = <&spdif_out>;
+		};
+
+		spdif-in {
+			cpu-dai = <&spdif_in>;
+		};
+
+		parallel-out {
+			cpu-dai = <&parallel_out>;
+			sound-dai = <&internal_dac>;
+		};
+
+		i2s-out {
+			cpu-dai = <&i2s_out>;
+			format = "i2s";
+		};
+
+		i2s-in {
+			cpu-dai = <&i2s_in>;
+			format = "i2s";
+
+			ak5720vt {
+				mclk = <PISTACHIO_MCLK_I2S>;
+				mclk-fs = <256>;
+				mclk-min-freq = <8192000>;
+				mclk-max-freq = <24576000>;
+			};
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		switch1: switch@1 {
+			label = "SWITCH 1";
+			linux,code = <0x101>; /* BTN_1 */
+			gpios = <&gpio2 13 GPIO_ACTIVE_LOW>;
+		};
+		switch@2 {
+			label = "SWITCH 2";
+			linux,code = <0x102>; /* BTN_2 */
+			gpios = <&gpio2 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_leds {
+		compatible = "gpio-leds";
+		user1 {
+			label = "marduk:red:user1";
+			gpios = <&sc16is752 0 GPIO_ACTIVE_LOW>;
+		};
+		user2 {
+			label = "marduk:red:user2";
+			gpios = <&sc16is752 1 GPIO_ACTIVE_LOW>;
+		};
+		user3 {
+			label = "marduk:red:user3";
+			gpios = <&sc16is752 2 GPIO_ACTIVE_LOW>;
+		};
+		user4 {
+			label = "marduk:red:user4";
+			gpios = <&sc16is752 3 GPIO_ACTIVE_LOW>;
+		};
+		user5 {
+			label = "marduk:red:user5";
+			gpios = <&sc16is752 4 GPIO_ACTIVE_LOW>;
+		};
+		user6 {
+			label = "marduk:red:user6";
+			gpios = <&sc16is752 5 GPIO_ACTIVE_LOW>;
+		};
+		user7 {
+			label = "marduk:red:user7";
+			gpios = <&sc16is752 6 GPIO_ACTIVE_LOW>;
+		};
+		heartbeat {
+			label = "marduk:red:heartbeat";
+			gpios = <&gpio4 12 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "timer";
+		};
+	};
+};
+
+&internal_dac {
+	VDD-supply = <&internal_dac_supply>;
+};
+
+&spim0_clk {
+	drive-strength = <2>;
+};
+
+&spfi0 {
+	status = "okay";
+	pinctrl-0 = <&spim0_pins>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>, <&gpio0 2 GPIO_ACTIVE_HIGH>,
+			<&gpio1 12 GPIO_ACTIVE_HIGH>, <&gpio1 13 GPIO_ACTIVE_HIGH>;
+
+	sc16is752: sc16is752@1 {
+		compatible = "nxp,sc16is752";
+		reg = <1>;
+		spi-max-frequency = <4000000>;
+		interrupt-parent = <&gpio0>;
+		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	spidev@2 {
+		compatible = "img,click-interface";
+		reg = <2>;
+		spi-max-frequency = <2000000>;
+	};
+
+	spidev@3 {
+		compatible = "img,click-interface";
+		reg = <3>;
+		spi-max-frequency = <2000000>;
+	};
+};
+
+&spfi1 {
+	status = "okay";
+
+	pinctrl-0 = <&spim1_pins>, <&spim1_quad_pins>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>, <&gpio0 1 GPIO_ACTIVE_HIGH>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		linux,mtd-name = "spi-nor";
+	};
+
+	flash@1 {
+		compatible = "gigadevice,gd5f";
+		reg = <1>;
+		spi-max-frequency = <50000000>;
+		nand-on-flash-bbt;
+		spi-rx-bus-width = <2>;
+		spi-tx-bus-width = <4>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		linux,mtd-name = "spi-nand";
+	};
+};
+
+&uccpsystem {
+	status = "okay";
+};
+
+&uccphostport {
+	status = "okay";
+};
+
+&uccpbthp {
+	status = "okay";
+};
+
+&uccpdummyhp {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	assigned-clock-rates = <114278400>, <1843200>;
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	pinctrl-names = "default";
+	pinctrl-0 = <&usb_pwr_on_pins>;
+	enable-vbus-drive;
+};
+
+&enet {
+	status = "okay";
+
+	mac-address = [0123456789AB];
+};
+
+&pin_enet_phy_clk {
+	drive-strength = <2>;
+};
+
+&sdhost {
+	status = "okay";
+	bus-width = <4>;
+	disable-wp;
+};
+
+&ir {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+
+	pinctrl-0 = <&pwmpdm0_pin>, <&pwmpdm1_pin>, <&pwmpdm2_pin>,
+		    <&pwmpdm3_pin>;
+	pinctrl-names = "default";
+};
+
+&adc {
+	status = "okay";
+	vref-supply = <&reg_1v8>;
+	adc-reserved-channels = <0x10>;
+};
+
+&i2c2 {
+	status = "okay";
+	clock-frequency = <400000>;
+};
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = <400000>;
+};
+
+&wifi {
+       status = "okay";
+       rf-params = [101F24292E33383C4045484D5157595D6164676B6E71292D3135393c41454a4d50535557595B5D5F6265682A3136393D4043474A4D5154575A5D606366686B6F24282C3134373C4144484D52555A5E62666A6F747923282C31363A3E4245494E51575B5F63666B71767A22262A3035393C4044474A4D5155595C5F62666a72292D33373A3E4246494C4F5356595C6064686D7277282B3136393D4044474B5155585B5D606467696c72292D3034383B3F43474A4E5155595D6165696D7274252A2F33383C4043474C4F53585E6165696D73787C121212121212121212121212111010101010101010101010100F121212121212110F0D0A0A1010101010100F0D0B08080F0F0F0F0F0F0E0C0A0707121212121212110F0D0A0A1010101010100F0D0B08080F0F0F0F0F0F0E0C0A0707121212121212110F0D0A0A1010101010100F0D0B08080F0F0F0F0F0F0E0C0A0707121212121212110F0D0A0A1010101010100F0D0B08080F0F0F0F0F0F0E0C0A0707];
+       num_streams = [02];
+};
+
+
+&i2s_out {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s_out_pins>;
+};
+
+&i2s_in {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2s_in_pins>;
+};
+
+&i2s_out_pins {
+	i2s-out {
+		pins = "mfio37", "mfio38", "mfio39",
+		       "mfio40", "mfio41";
+		function = "i2s_out";
+	};
+};
+
+&i2s_in_pins {
+	i2s-in {
+		pins = "mfio47", "mfio48", "mfio49",
+		       "mfio50", "mfio51";
+		function = "i2s_in";
+	};
+};
+
+&spdif_out {
+	status = "okay";
+};
+
+&spdif_in {
+	status = "okay";
+};
+
+&parallel_out {
+	status = "okay";
+};
