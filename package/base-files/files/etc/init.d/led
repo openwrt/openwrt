@@ -103,6 +103,12 @@ load_led() {
 
 start() {
 	[ -e /sys/class/leds/ ] && {
+		local led
+		for led in /sys/class/leds/*; do
+			[ -e "$led/trigger" ] && echo "none" > "$led/trigger"
+			[ -e "$led/brightness" ] && echo "0" > "$led/brightness"
+		done
+
 		config_load system
 		config_foreach load_led led
 	}
