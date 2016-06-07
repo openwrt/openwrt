@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2008 Patrick Horn <patrick.horn@gmail.com>
  * Copyright (C) 2008, 2010 Martin Mares <mj@ucw.cz>
- * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1402,7 +1402,7 @@ void __exit ip17xx_exit(void)
 }
 
 MODULE_AUTHOR("Patrick Horn <patrick.horn@gmail.com>");
-MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
+MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
 MODULE_AUTHOR("Martin Mares <mj@ucw.cz>");
 MODULE_LICENSE("GPL");
 

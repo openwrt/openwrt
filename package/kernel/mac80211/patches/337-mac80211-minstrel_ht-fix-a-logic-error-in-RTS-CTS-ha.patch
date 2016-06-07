@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Wed, 24 Feb 2016 12:03:13 +0100
 Subject: [PATCH] mac80211: minstrel_ht: fix a logic error in RTS/CTS handling
 MIME-Version: 1.0
@@ -10,7 +10,7 @@ a dual-stream rate and the sta is in dynamic SMPS mode.
 
 Fixes: a3ebb4e1b763 ("mac80211: minstrel_ht: handle peers in dynamic SMPS")
 Reported-by: Matías Richart <mrichart@fing.edu.uy>
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/net/mac80211/rc80211_minstrel_ht.c

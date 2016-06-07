@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2010 Scott Nicholas <neutronscott@scottn.us>
- *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+ *  Copyright (C) 2006 Felix Fietkau <nbd@nbd.name>
  *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
  *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
  *

@@ -18,7 +18,7 @@ PKG_MD5SUM:=b6ee0ce2b3ef844bad7cac2803a90634
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=LGPL-2.1+
 
 include $(INCLUDE_DIR)/package.mk

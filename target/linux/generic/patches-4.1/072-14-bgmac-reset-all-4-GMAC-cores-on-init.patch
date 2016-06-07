@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Mon, 13 Apr 2015 15:56:26 +0200
 Subject: [PATCH] bgmac: reset all 4 GMAC cores on init
 
@@ -7,7 +7,7 @@ probe time, but only become usable after a full reset.
 Disable cores before re-enabling them to ensure that they are properly
 reset.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c

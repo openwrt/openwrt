@@ -1,6 +1,6 @@
 /* 
  * ptgen - partition table generator
- * Copyright (C) 2006 by Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2006 by Felix Fietkau <nbd@nbd.name>
  *
  * uses parts of afdisk
  * Copyright (C) 2002 by David Roetzel <david@roetzel.de>

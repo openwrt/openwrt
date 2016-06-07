@@ -1,7 +1,7 @@
 /*
  *  Atheros PB92 board support
  *
- *  Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
+ *  Copyright (C) 2010 Felix Fietkau <nbd@nbd.name>
  *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *

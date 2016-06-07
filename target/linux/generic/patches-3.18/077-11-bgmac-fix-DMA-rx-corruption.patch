@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 12 Apr 2015 11:59:47 +0200
 Subject: [PATCH] bgmac: fix DMA rx corruption
 
@@ -12,7 +12,7 @@ which slots are initialized.
 
 To fix this issue, always mark the last filled rx slot as invalid.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c

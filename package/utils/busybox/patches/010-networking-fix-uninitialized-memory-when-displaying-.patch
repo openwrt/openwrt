@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Mon, 18 Jan 2016 12:03:45 +0100
 Subject: [PATCH] networking: fix uninitialized memory when displaying IPv6
  addresses
@@ -8,7 +8,7 @@ After commit 8e74adab0107658e3dc04ed342206272a284f43e
 INET_sprint6 uses more than just sin6_addr, it also tries to display the
 scope id, which is uninitialized when called from ife_print6.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/networking/interface.c

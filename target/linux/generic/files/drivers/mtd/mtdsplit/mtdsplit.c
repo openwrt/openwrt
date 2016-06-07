@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2013 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2009-2013 Felix Fietkau <nbd@nbd.name>
  * Copyright (C) 2009-2013 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2012 Jonas Gorski <jogo@openwrt.org>
  * Copyright (C) 2013 Hauke Mehrtens <hauke@hauke-m.de>

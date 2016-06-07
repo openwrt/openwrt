@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Mon, 8 Feb 2016 14:24:36 +0100
 Subject: [PATCH] cfg80211: fix faulty variable initialization in
  ieee80211_amsdu_to_8023s
@@ -6,7 +6,7 @@ Subject: [PATCH] cfg80211: fix faulty variable initialization in
 reuse_skb is set to true if the code decides to use the last segment.
 Fixes a memory leak
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/net/wireless/util.c

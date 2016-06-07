@@ -1,10 +1,10 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Mon, 8 Feb 2016 14:33:19 +0100
 Subject: [PATCH] cfg80211: reuse existing page fragments in A-MSDU rx
 
 This massively reduces data copying and thus improves rx performance
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/net/wireless/util.c

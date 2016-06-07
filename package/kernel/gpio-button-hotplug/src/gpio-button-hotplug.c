@@ -1,12 +1,12 @@
 /*
  *  GPIO Button Hotplug driver
  *
- *  Copyright (C) 2012 Felix Fietkau <nbd@openwrt.org>
+ *  Copyright (C) 2012 Felix Fietkau <nbd@nbd.name>
  *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  Based on the diag.c - GPIO interface driver for Broadcom boards
  *    Copyright (C) 2006 Mike Baker <mbm@openwrt.org>,
- *    Copyright (C) 2006-2007 Felix Fietkau <nbd@openwrt.org>
+ *    Copyright (C) 2006-2007 Felix Fietkau <nbd@nbd.name>
  *    Copyright (C) 2008 Andy Boyett <agb@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -661,7 +661,7 @@ module_init(gpio_button_init);
 module_exit(gpio_button_exit);
 
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
-MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
+MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
 MODULE_DESCRIPTION("Polled GPIO Buttons hotplug driver");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:" DRV_NAME);

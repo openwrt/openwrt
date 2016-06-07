@@ -14,7 +14,7 @@ CMAKE_INSTALL:=1
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_DATA_VERSION:=20150115
 PKG_DATA_URL:=http://www.draisberghof.de/usb_modeswitch

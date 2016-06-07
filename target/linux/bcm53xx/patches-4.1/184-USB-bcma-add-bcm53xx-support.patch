@@ -7,7 +7,7 @@ The Broadcom ARM SoCs with this usb core need a different
 initialization and they have a different core id. This patch adds
 support for these USB 2.0 core.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/usb/host/bcma-hcd.c | 81 +++++++++++++++++++++++++++++++++++++++++++--
@@ -21,7 +21,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
   *
 - * Copyright 2011-2012 Hauke Mehrtens <hauke@hauke-m.de>
 + * Copyright 2011-2015 Hauke Mehrtens <hauke@hauke-m.de>
-+ * Copyright 2015 Felix Fietkau <nbd@openwrt.org>
++ * Copyright 2015 Felix Fietkau <nbd@nbd.name>
   *
   * Based on ssb-ohci driver
   * Copyright 2007 Michael Buesch <m@bues.ch>

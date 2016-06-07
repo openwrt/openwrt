@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 12 Apr 2015 09:58:56 +0200
 Subject: [PATCH] bgmac: simplify tx ring index handling
 
@@ -6,7 +6,7 @@ Keep incrementing ring->start and ring->end instead of pointing it to
 the actual ring slot entry. This simplifies the calculation of the
 number of free slots.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c

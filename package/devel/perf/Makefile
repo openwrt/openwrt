@@ -14,7 +14,7 @@ PKG_RELEASE:=2
 
 PKG_USE_MIPS16:=0
 PKG_BUILD_PARALLEL:=1
-PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 # Perf's makefile and headers are not relocatable and must be built from the
 # Linux sources directory

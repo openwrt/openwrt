@@ -2,7 +2,7 @@
  * BCM947xx nvram variable access
  *
  * Copyright (C) 2005 Broadcom Corporation
- * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2006 Felix Fietkau <nbd@nbd.name>
  * Copyright (C) 2010-2012 Hauke Mehrtens <hauke@hauke-m.de>
  *
  * This program is free software; you can redistribute	it and/or modify it

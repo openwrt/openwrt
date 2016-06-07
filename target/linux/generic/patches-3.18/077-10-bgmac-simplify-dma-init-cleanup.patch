@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 12 Apr 2015 23:19:32 +0200
 Subject: [PATCH] bgmac: simplify dma init/cleanup
 
@@ -6,7 +6,7 @@ Instead of allocating buffers at device init time and initializing
 descriptors at device open, do both at the same time (during open).
 Free all buffers when closing the device.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c

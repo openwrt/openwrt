@@ -1,11 +1,11 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 
 use -ffunction-sections, -fdata-sections and --gc-sections
 
 In combination with kernel symbol export stripping this significantly reduces
 the kernel image size. Used on both ARM and MIPS architectures.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---

@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Thu, 26 Nov 2015 17:03:46 +0100
 Subject: [PATCH] Revert "mtd: spi-nor: disable protection for Winbond flash at
  startup"
@@ -10,7 +10,7 @@ possibly other Spansion flash chips.
 
 Any mtd read seems to succeed, but simply returns a zero-filled buffer.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/mtd/spi-nor/spi-nor.c

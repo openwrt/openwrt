@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Wed, 2 Mar 2016 15:51:40 +0100
 Subject: [PATCH] mac80211: do not pass injected frames without a valid rate to
  the driver
@@ -6,7 +6,7 @@ Subject: [PATCH] mac80211: do not pass injected frames without a valid rate to
 Fall back to rate control if the requested bitrate was not found.
 
 Fixes: dfdfc2beb0dd ("mac80211: Parse legacy and HT rate in injected frames")
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/net/mac80211/tx.c

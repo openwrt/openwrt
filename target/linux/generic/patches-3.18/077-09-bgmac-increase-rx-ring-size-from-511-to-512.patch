@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 12 Apr 2015 22:36:16 +0200
 Subject: [PATCH] bgmac: increase rx ring size from 511 to 512
 
@@ -7,7 +7,7 @@ empty to allow the hardware to stop processing a buffer that has not
 been prepared yet. However, this doesn't work because this affects the
 total ring size as well
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.h

@@ -1,7 +1,7 @@
 /*
  * patch-dtb.c - patch a dtb into an image
  *
- * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2006 Felix Fietkau <nbd@nbd.name>
  * Copyright (C) 2012 John Crispin <blogic@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or

@@ -1,11 +1,11 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 12 Apr 2015 10:13:28 +0200
 Subject: [PATCH] bgmac: set received skb headroom to NET_SKB_PAD
 
 A packet buffer offset of 30 bytes is inefficient, because the first 2
 bytes end up in a different cacheline.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
