@@ -453,7 +453,7 @@ define LegacyDevice/Check
   _TARGET := $$(if $$(_PROFILE_SET),legacy-images,install-disabled)
   $$(if $$(_PROFILE_SET),install: legacy-images-make)
   ifndef IB
-    $$(if $$(_PROFILE_SET),compile: legacy-images-prepare-make)
+    $$(if $$(_PROFILE_SET),mkfs_prepare: legacy-images-prepare-make)
   endif
 endef
 
