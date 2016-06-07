@@ -1,7 +1,7 @@
 /*
  * owipcalc - OpenWrt IP Calculator
  *
- *   Copyright (C) 2012 Jo-Philipp Wich <jow@openwrt.org>
+ *   Copyright (C) 2012 Jo-Philipp Wich <jo@mein.io>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.

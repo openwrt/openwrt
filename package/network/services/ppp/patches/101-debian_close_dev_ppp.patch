@@ -8,7 +8,7 @@ descriptors are always reported as ready by select().
 This patch closes the descriptor if it is already open when establishing a
 new connection. It originated from the Debian project.
 
-Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c

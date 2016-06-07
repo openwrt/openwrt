@@ -11,7 +11,7 @@ PKG_SOURCE_VERSION:=7151885df6ac2554c07cc6047dde7c4eb253ce87
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
 include $(INCLUDE_DIR)/package.mk

@@ -1,7 +1,7 @@
 /*
  * iwcap.c - A simply radiotap capture utility outputting pcap dumps
  *
- *    Copyright 2012 Jo-Philipp Wich <jow@openwrt.org>
+ *    Copyright 2012 Jo-Philipp Wich <jo@mein.io>
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.

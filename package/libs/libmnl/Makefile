@@ -17,7 +17,7 @@ PKG_SOURCE_URL:= \
 	ftp://ftp.netfilter.org/pub/libmnl
 PKG_MD5SUM:=7d95fc3bea3365bc03c48e484224f65f
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1

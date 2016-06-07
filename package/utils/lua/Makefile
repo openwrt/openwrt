@@ -33,7 +33,7 @@ define Package/lua/Default
   CATEGORY:=Languages
   TITLE:=Lua programming language
   URL:=http://www.lua.org/
-  MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+  MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 endef
 
 define Package/lua/Default/description

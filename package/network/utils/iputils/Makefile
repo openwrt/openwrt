@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-s$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.skbuff.net/iputils
 PKG_MD5SUM:=a36c25e9ec17e48be514dc0485e7376c
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0+
 
 PKG_BUILD_DEPENDS:=sysfsutils

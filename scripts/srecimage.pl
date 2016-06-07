@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # srecimage.pl - script to convert a binary image into srec
-# Copyright (c) 2015 - Jo-Philipp Wich <jow@openwrt.org>
+# Copyright (c) 2015 - Jo-Philipp Wich <jo@mein.io>
 #
 # This script is in the public domain.
 

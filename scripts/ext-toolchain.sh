@@ -3,7 +3,7 @@
 #   Script for various external toolchain tasks, refer to
 #   the --help output for more information.
 #
-#   Copyright (C) 2012 Jo-Philipp Wich <jow@openwrt.org>
+#   Copyright (C) 2012 Jo-Philipp Wich <jo@mein.io>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by

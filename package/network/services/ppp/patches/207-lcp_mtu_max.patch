@@ -4,7 +4,7 @@ This patchs caps the calculated MTU value in lcp.c to the user specified "mru"
 option value. Without this patch pppd would advertise a different MTU value
 compared to what is set on the local interface in some cases.
 
-Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/lcp.c
 +++ b/pppd/lcp.c

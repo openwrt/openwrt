@@ -1,6 +1,6 @@
 /*
  * wl_glue.c: Broadcom WL support module providing a unified SSB/BCMA handling.
- * Copyright (C) 2011 Jo-Philipp Wich <jow@openwrt.org>
+ * Copyright (C) 2011 Jo-Philipp Wich <jo@mein.io>
  */
 
 #include "wl_glue.h"
@@ -21,7 +21,7 @@
 #include <linux/bcma/bcma.h>
 #endif
 
-MODULE_AUTHOR("Jo-Philipp Wich (jow@openwrt.org)");
+MODULE_AUTHOR("Jo-Philipp Wich (jo@mein.io)");
 MODULE_DESCRIPTION("Broadcom WL SSB/BCMA compatibility layer");
 MODULE_LICENSE("GPL");
 

@@ -1,6 +1,6 @@
 /*
  * Based on code found at https://dev.openwrt.org/ticket/4876 .
- * Extended by Jo-Philipp Wich <jow@openwrt.org> for use in OpenWrt.
+ * Extended by Jo-Philipp Wich <jo@mein.io> for use in OpenWrt.
  *
  * You may use this program under the terms of the GPLv2 license.
  */

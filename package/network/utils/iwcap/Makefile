@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012 Jo-Philipp Wich <jow@openwrt.org>
+# Copyright (C) 2012 Jo-Philipp Wich <jo@mein.io>
 #
 # This is free software, licensed under the Apache 2 license.
 #
@@ -17,7 +17,7 @@ define Package/iwcap
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Simple radiotap capture utility
-  MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+  MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 endef
 
 define Package/iwcap/description

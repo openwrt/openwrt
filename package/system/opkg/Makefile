@@ -27,7 +27,7 @@ PKG_REMOVE_FILES = autogen.sh aclocal.m4
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 
 PKG_FLAGS := nonshared
 PKG_CONFIG_DEPENDS := CONFIG_SIGNED_PACKAGES

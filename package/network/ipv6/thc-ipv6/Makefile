@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://freeworld.thc.org/releases/
 PKG_MD5SUM:=2975dd54be35b68c140eb2a6b8ef5e59
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 
 include $(INCLUDE_DIR)/package.mk
 
