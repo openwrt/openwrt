@@ -284,7 +284,7 @@ define Image/Checksum
 endef
 
 define BuildImage/mkfs
-  install: mkfs-$(1)
+  install-images: mkfs-$(1)
   .PHONY: mkfs-$(1)
   mkfs-$(1): kernel_prepare
 	$(Image/mkfs/$(1))
