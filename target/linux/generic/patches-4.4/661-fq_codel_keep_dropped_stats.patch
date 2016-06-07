@@ -1,6 +1,6 @@
 --- a/net/sched/sch_fq_codel.c
 +++ b/net/sched/sch_fq_codel.c
-@@ -218,7 +218,6 @@ static int fq_codel_enqueue(struct sk_bu
+@@ -219,7 +219,6 @@ static int fq_codel_enqueue(struct sk_bu
  		list_add_tail(&flow->flowchain, &q->new_flows);
  		q->new_flow_count++;
  		flow->deficit = q->quantum;
