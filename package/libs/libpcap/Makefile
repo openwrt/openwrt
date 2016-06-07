@@ -16,7 +16,7 @@ PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_MD5SUM:=b2e13142bbaba857ab1c6894aedaf547
 PKG_FIXUP:=patch-libtool
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1

@@ -3,7 +3,7 @@
  *
  * swconfig interface based on ar8216.c
  *
- * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (c) 2008 Felix Fietkau <nbd@nbd.name>
  * VLAN support Copyright (c) 2010, 2011 Peter Lebbing <peter@digitalbrains.com>
  * Copyright (c) 2013 Hauke Mehrtens <hauke@hauke-m.de>
  * Copyright (c) 2014 Matti Laakso <malaakso@elisanet.fi>

@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 7 Jun 2015 13:53:35 +0200
 Subject: [PATCH] ath9k: force rx_clear when disabling rx
 
@@ -6,7 +6,7 @@ This makes stopping Rx more reliable and should reduce the frequency of
 Rx related DMA stop warnings. Don't use rx_clear in TX99 mode.
 
 Cc: stable@vger.kernel.org
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 Signed-off-by: Helmut Schaa <helmut.schaa@googlemail.com>
 ---
 

@@ -1,7 +1,7 @@
 /*
  * swconfig.c: Switch configuration API
  *
- * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2008 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@
 
 #include "swconfig_leds.c"
 
-MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
+MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
 MODULE_LICENSE("GPL");
 
 static int swdev_id;

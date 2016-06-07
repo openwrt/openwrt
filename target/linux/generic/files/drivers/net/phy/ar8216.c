@@ -1,7 +1,7 @@
 /*
  * ar8216.c: AR8216 switch driver
  *
- * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
  * Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or

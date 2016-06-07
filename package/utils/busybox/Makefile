@@ -39,7 +39,7 @@ endif
 define Package/busybox
   SECTION:=base
   CATEGORY:=Base system
-  MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+  MAINTAINER:=Felix Fietkau <nbd@nbd.name>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
   DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc +BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter

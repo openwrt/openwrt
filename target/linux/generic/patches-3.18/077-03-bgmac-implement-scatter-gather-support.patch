@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Mon, 23 Mar 2015 02:42:26 +0100
 Subject: [PATCH] bgmac: implement scatter/gather support
 
@@ -6,7 +6,7 @@ Always use software checksumming, since the hardware does not have any
 checksum offload support.
 This significantly improves local TCP tx performance.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c

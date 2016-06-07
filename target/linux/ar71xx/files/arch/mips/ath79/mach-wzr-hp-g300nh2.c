@@ -1,7 +1,7 @@
 /*
  *  Buffalo WZR-HP-G300NH2 board support
  *
- *  Copyright (C) 2011 Felix Fietkau <nbd@openwrt.org>
+ *  Copyright (C) 2011 Felix Fietkau <nbd@nbd.name>
  *  Copyright (C) 2011 Mark Deneen <mdeneen@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it

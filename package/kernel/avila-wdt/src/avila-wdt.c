@@ -1,6 +1,6 @@
 /*
  * avila-wdt.c 
- * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
  *
  * based on:
  * drivers/char/watchdog/ixp4xx_wdt.c
@@ -217,7 +217,7 @@ static void __exit avila_wdt_exit(void)
 module_init(avila_wdt_init);
 module_exit(avila_wdt_exit);
 
-MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
+MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
 MODULE_DESCRIPTION("Gateworks Avila Hardware Watchdog");
 
 module_param(heartbeat, int, 0);

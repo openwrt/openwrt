@@ -2,7 +2,7 @@
  * px5g - Embedded x509 key and certificate generator based on PolarSSL
  *
  *   Copyright (C) 2009 Steven Barth <steven@midlink.org>
- *   Copyright (C) 2014 Felix Fietkau <nbd@openwrt.org>
+ *   Copyright (C) 2014 Felix Fietkau <nbd@nbd.name>
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public

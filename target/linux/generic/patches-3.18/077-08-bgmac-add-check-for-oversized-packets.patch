@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 12 Apr 2015 22:28:20 +0200
 Subject: [PATCH] bgmac: add check for oversized packets
 
@@ -6,7 +6,7 @@ In very rare cases, the MAC can catch an internal buffer that is bigger
 than it's supposed to be. Instead of crashing the kernel, simply pass
 the buffer back to the hardware
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c

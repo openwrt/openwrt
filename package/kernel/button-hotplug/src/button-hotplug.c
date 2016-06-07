@@ -5,7 +5,7 @@
  *
  *  Based on the diag.c - GPIO interface driver for Broadcom boards
  *    Copyright (C) 2006 Mike Baker <mbm@openwrt.org>,
- *    Copyright (C) 2006-2007 Felix Fietkau <nbd@openwrt.org>
+ *    Copyright (C) 2006-2007 Felix Fietkau <nbd@nbd.name>
  *    Copyright (C) 2008 Andy Boyett <agb@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it

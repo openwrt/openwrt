@@ -21,7 +21,7 @@ PKG_LIBTOOL_PATHS:=. gas bfd opcodes gprof binutils ld libiberty gold intl
 PKG_REMOVE_FILES:=libtool.m4
 PKG_INSTALL:=1
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-3.0+
 PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0

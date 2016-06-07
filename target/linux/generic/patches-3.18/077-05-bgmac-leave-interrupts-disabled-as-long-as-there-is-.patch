@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 12 Apr 2015 10:08:04 +0200
 Subject: [PATCH] bgmac: leave interrupts disabled as long as there is work
  to do
@@ -10,7 +10,7 @@ In my tests this makes bridging/routing throughput under heavy load more
 stable and ensures that no new IRQs arrive as long as bgmac_poll uses up
 the entire budget.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c

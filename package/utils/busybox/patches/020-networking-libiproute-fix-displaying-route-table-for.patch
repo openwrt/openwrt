@@ -1,11 +1,11 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 7 Feb 2016 21:11:21 +0100
 Subject: [PATCH] networking/libiproute: fix displaying route table for rules
 
 r->rtm_table only supports a 8 bit table id, prefer RTA_TABLE if
 present.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/networking/libiproute/iprule.c

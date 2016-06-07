@@ -1,11 +1,11 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 12 Apr 2015 23:28:38 +0200
 Subject: [PATCH] bgmac: drop ring->num_slots
 
 The ring size is always known at compile time, so make the code a bit
 more efficient
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c

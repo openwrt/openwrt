@@ -1,7 +1,7 @@
 /*
  *  Buffalo WZR-HP-G450G board support
  *
- *  Copyright (C) 2011 Felix Fietkau <nbd@openwrt.org>
+ *  Copyright (C) 2011 Felix Fietkau <nbd@nbd.name>
  *  Copyright (C) 2008-2012 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *

@@ -2,7 +2,7 @@
  * mtd - simple memory technology device manipulation tool
  *
  * Copyright (C) 2005      Waldemar Brodkorb <wbx@dass-it.de>,
- * Copyright (C) 2005-2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2005-2009 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License v2

@@ -1,5 +1,5 @@
 From 2c58080407554e1bac8fd50d23cb02420524caed Mon Sep 17 00:00:00 2001
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Mon, 12 Aug 2013 12:50:22 +0200
 Subject: [PATCH] MIPS: partially inline dma ops
 
@@ -10,7 +10,7 @@ unnecessary code.
 Inlining visibly improves network performance in my tests (on a 24Kc
 based system), and also slightly reduces code size of a few drivers.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
  arch/mips/Kconfig                   |   4 +
  arch/mips/include/asm/dma-mapping.h | 360 +++++++++++++++++++++++++++++++++++-

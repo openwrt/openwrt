@@ -1,7 +1,7 @@
 /*
  * jffs2 on-disk structure generator for mtd
  *
- * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2008 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License v2

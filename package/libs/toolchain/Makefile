@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=toolchain
 PKG_RELEASE:=1
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-3.0-with-GCC-exception
 
 PKG_FLAGS:=hold essential nonshared

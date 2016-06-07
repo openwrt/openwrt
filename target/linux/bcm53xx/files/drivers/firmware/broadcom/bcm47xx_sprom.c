@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2004 Florian Schirmer <jolt@tuxbox.org>
- *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+ *  Copyright (C) 2006 Felix Fietkau <nbd@nbd.name>
  *  Copyright (C) 2006 Michael Buesch <m@bues.ch>
  *  Copyright (C) 2010 Waldemar Brodkorb <wbx@openadk.org>
  *  Copyright (C) 2010-2012 Hauke Mehrtens <hauke@hauke-m.de>

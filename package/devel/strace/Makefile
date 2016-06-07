@@ -20,7 +20,7 @@ PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 PKG_LICENSE:=BSD-3c
 PKG_LICENSE_FILES:=COPYRIGHT
 
-PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1

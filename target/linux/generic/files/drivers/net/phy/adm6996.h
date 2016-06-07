@@ -1,7 +1,7 @@
 /*
  * ADM6996 switch driver
  *
- * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (c) 2008 Felix Fietkau <nbd@nbd.name>
  * Copyright (c) 2010,2011 Peter Lebbing <peter@digitalbrains.com>
  *
  * This program is free software; you can redistribute  it and/or modify it

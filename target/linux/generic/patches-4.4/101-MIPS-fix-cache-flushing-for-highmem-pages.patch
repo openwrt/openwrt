@@ -1,4 +1,4 @@
-From: Felix Fietkau <nbd@openwrt.org>
+From: Felix Fietkau <nbd@nbd.name>
 Date: Sun, 24 Jan 2016 01:03:51 +0100
 Subject: [PATCH] MIPS: fix cache flushing for highmem pages
 
@@ -10,7 +10,7 @@ Fix this by always flushing highmem pages using kmap/kunmap_atomic
 around the actual cache flush. This might be a bit inefficient, but at
 least it's stable.
 
-Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 
 --- a/arch/mips/mm/cache.c
