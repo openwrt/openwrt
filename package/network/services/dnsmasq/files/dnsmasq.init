@@ -149,6 +149,7 @@ dnsmasq() {
 	append_parm "$cfg" dhcpleasemax "--dhcp-lease-max"
 	append_parm "$cfg" "queryport" "--query-port"
 	append_parm "$cfg" "minport" "--min-port"
+	append_parm "$cfg" "maxport" "--max-port"
 	append_parm "$cfg" "domain" "--domain"
 	append_parm "$cfg" "local" "--server"
 	config_list_foreach "$cfg" "server" append_server
