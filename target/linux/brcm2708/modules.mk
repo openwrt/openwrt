@@ -48,11 +48,14 @@ define KernelPackage/sound-soc-adau1977-adc
   TITLE:=Support for ADAU1977 ADC
   KCONFIG:= \
 	CONFIG_SND_BCM2708_SOC_ADAU1977_ADC \
+	CONFIG_SND_SOC_ADAU1977 \
 	CONFIG_SND_SOC_ADAU1977_I2C
   FILES:= \
 	$(LINUX_DIR)/sound/soc/bcm/snd-soc-adau1977-adc.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-adau1977.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-adau1977-i2c.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-adau1977-i2c snd-soc-adau1977-adc)
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-adau1977 snd-soc-adau1977-i2c \
+	snd-soc-adau1977-adc)
   DEPENDS:= \
 	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
