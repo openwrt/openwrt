@@ -1,7 +1,7 @@
-From d01147893a87ead6e3f129a36f61bcdf34fc588a Mon Sep 17 00:00:00 2001
+From e5be45c39298a4e3a26bafd04f6fb2f88473465c Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Thu, 17 Dec 2015 13:37:07 +0000
-Subject: [PATCH 152/304] hci_h5: Don't send conf_req when ACTIVE
+Subject: [PATCH 152/381] hci_h5: Don't send conf_req when ACTIVE
 
 Without this patch, a modem and kernel can continuously bombard each
 other with conf_req and conf_rsp messages, in a demented game of tag.

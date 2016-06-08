@@ -1,0 +1,68 @@
+From 3f11e310d0e877d26958afe83975a5157e500ebe Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 12 May 2016 09:04:20 +0100
+Subject: [PATCH 347/381] BCM270X_DT: Fix the tinylcd35 overlay RTC support
+
+Now that overlay parameters are applied before the merge (a requirement
+for kernel runtime overlays) it is illegal for parameters/overrides to
+target nodes in the base DTB. Solve the problem of only enabling I2C
+when an RTC option is used by making the RTC fragments conditional,
+and including the required status="okay" within the fragments.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/tinylcd35-overlay.dts | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
++++ b/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
+@@ -132,28 +132,32 @@
+ 
+ 	fragment@5 {
+ 		target = <&i2c1>;
+-		__overlay__ {
++		__dormant__ {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 
++			status = "okay";
++
+ 			pcf8563: pcf8563@51 {
+ 				compatible = "nxp,pcf8563";
+ 				reg = <0x51>;
+-				status = "disabled";
++				status = "okay";
+ 			};
+ 		};
+ 	};
+ 
+ 	fragment@6 {
+ 		target = <&i2c1>;
+-		__overlay__ {
++		__dormant__ {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 
++			status = "okay";
++
+ 			ds1307: ds1307@68 {
+ 				compatible = "maxim,ds1307";
+ 				reg = <0x68>;
+-				status = "disabled";
++				status = "okay";
+ 			};
+ 		};
+ 	};
+@@ -213,10 +217,8 @@
+ 			     <&tinylcd35_ts>,"interrupts:0",
+ 			     <&tinylcd35_ts>,"pendown-gpio:4";
+ 		xohms =      <&tinylcd35_ts>,"ti,x-plate-ohms;0";
+-		rtc-pcf =    <&i2c1>,"status",
+-			     <&pcf8563>,"status";
+-		rtc-ds =     <&i2c1>,"status",
+-			     <&ds1307>,"status";
++		rtc-pcf =    <0>,"=5";
++		rtc-ds =     <0>,"=6";
+ 		keypad =     <&keypad>,"status";
+ 	};
+ };

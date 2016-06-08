@@ -1,0 +1,24 @@
+From 2f684276a677eb2133a9ec0c9fdc294a62a5d6dd Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 12 Feb 2016 15:16:56 -0800
+Subject: [PATCH 289/381] drm/vc4: Add another reg to HDMI debug dumping.
+
+This is also involved in the HDMI setup sequence so it's nice to see
+it.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 936f1a53f32148cc6164fad7c9a26ebf144e5ffb)
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -95,6 +95,7 @@ static const struct {
+ 	HDMI_REG(VC4_HDMI_SW_RESET_CONTROL),
+ 	HDMI_REG(VC4_HDMI_HOTPLUG_INT),
+ 	HDMI_REG(VC4_HDMI_HOTPLUG),
++	HDMI_REG(VC4_HDMI_RAM_PACKET_CONFIG),
+ 	HDMI_REG(VC4_HDMI_HORZA),
+ 	HDMI_REG(VC4_HDMI_HORZB),
+ 	HDMI_REG(VC4_HDMI_FIFO_CTL),

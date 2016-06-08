@@ -1,0 +1,29 @@
+From 9cdbf88aabf547503f85cc5b815b7b0dec444b3f Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 19 Apr 2016 14:40:08 -0700
+Subject: [PATCH 273/381] bcm2708: Reference the HDMI power domain for the HDMI
+ driver.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
+@@ -6,6 +6,7 @@
+ /plugin/;
+ 
+ #include "dt-bindings/clock/bcm2835.h"
++#include "dt-bindings/power/raspberrypi-power.h"
+ #include "dt-bindings/gpio/gpio.h"
+ 
+ / {
+@@ -72,6 +73,7 @@
+ 				clocks = <&cprman BCM2835_PLLH_PIX>,
+ 					 <&cprman BCM2835_CLOCK_HSM>;
+ 				clock-names = "pixel", "hdmi";
++				power-domains = <&power RPI_POWER_DOMAIN_HDMI>;
+ 			};
+ 
+ 			v3d@7ec00000 {

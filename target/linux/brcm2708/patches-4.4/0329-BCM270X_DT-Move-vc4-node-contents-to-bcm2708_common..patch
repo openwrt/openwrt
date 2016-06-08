@@ -1,0 +1,325 @@
+From 4cb8cf8c6ce47b652c93bae2b4b480bd7ea7f940 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 6 May 2016 11:48:35 -0700
+Subject: [PATCH 329/381] BCM270X_DT: Move vc4 node contents to
+ bcm2708_common.dtsi.
+
+This should clarify what's going on with the overlay: The hardware is
+always present, we're just enabling the DT node so that the vc4 driver
+probes.
+
+The interrupts are left in the overlay, because the firmware doesn't
+check node status before masking out the vc4 interrupts.
+
+By having the nodes in the common file, we'll be able to correctly
+connect the HDMI HPD GPIO so that we can detect whether an HDMI
+monitor is connected.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi              |  51 +++++++
+ arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts | 160 ++++++++++-----------
+ 2 files changed, 129 insertions(+), 82 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -1,4 +1,7 @@
++#include "dt-bindings/clock/bcm2835.h"
+ #include <dt-bindings/clock/bcm2835-aux.h>
++#include "dt-bindings/power/raspberrypi-power.h"
++#include "dt-bindings/gpio/gpio.h"
+ #include "skeleton.dtsi"
+ 
+ / {
+@@ -170,6 +173,18 @@
+ 			status = "disabled";
+ 		};
+ 
++		pixelvalve0: pixelvalve@7e206000 {
++			compatible = "brcm,bcm2835-pixelvalve0";
++			reg = <0x7e206000 0x100>;
++			status = "disabled";
++		};
++
++		pixelvalve1: pixelvalve@7e207000 {
++			compatible = "brcm,bcm2835-pixelvalve1";
++			reg = <0x7e207000 0x100>;
++			status = "disabled";
++		};
++
+ 		pwm: pwm@7e20c000 {
+ 			compatible = "brcm,bcm2835-pwm";
+ 			reg = <0x7e20c000 0x28>;
+@@ -227,6 +242,12 @@
+ 			status = "disabled";
+ 		};
+ 
++		hvs: hvs@7e400000 {
++			compatible = "brcm,bcm2835-hvs";
++			reg = <0x7e400000 0x6000>;
++			status = "disabled";
++		};
++
+ 		i2c1: i2c@7e804000 {
+ 			compatible = "brcm,bcm2708-i2c";
+ 			reg = <0x7e804000 0x1000>;
+@@ -261,6 +282,25 @@
+ 			status = "disabled";
+ 		};
+ 
++		pixelvalve2: pixelvalve@7e807000 {
++			compatible = "brcm,bcm2835-pixelvalve2";
++			reg = <0x7e807000 0x100>;
++			status = "disabled";
++		};
++
++		hdmi: hdmi@7e902000 {
++			compatible = "brcm,bcm2835-hdmi";
++			reg = <0x7e902000 0x600>,
++			      <0x7e808000 0x100>;
++			ddc = <&i2c2>;
++			hpd-gpios = <&gpio 46 GPIO_ACTIVE_HIGH>;
++			clocks = <&cprman BCM2835_PLLH_PIX>,
++				 <&cprman BCM2835_CLOCK_HSM>;
++			clock-names = "pixel", "hdmi";
++			power-domains = <&power RPI_POWER_DOMAIN_HDMI>;
++			status = "disabled";
++		};
++
+ 		usb: usb@7e980000 {
+ 			compatible = "brcm,bcm2708-usb";
+ 			reg = <0x7e980000 0x10000>,
+@@ -269,6 +309,12 @@
+ 				     <1 9>;
+ 		};
+ 
++		v3d: v3d@7ec00000 {
++			compatible = "brcm,vc4-v3d";
++			reg = <0x7ec00000 0x1000>;
++			status = "disabled";
++		};
++
+ 		firmware: firmware {
+ 			compatible = "raspberrypi,bcm2835-firmware";
+ 			mboxes = <&mailbox>;
+@@ -303,6 +349,11 @@
+ 			firmware = <&firmware>;
+ 		};
+ 
++		gpu: gpu {
++			compatible = "brcm,bcm2835-vc4";
++			status = "disabled";
++		};
++
+ 		/* Onboard audio */
+ 		audio: audio {
+ 			compatible = "brcm,bcm2835-audio";
+--- a/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
+@@ -5,129 +5,125 @@
+ /dts-v1/;
+ /plugin/;
+ 
+-#include "dt-bindings/clock/bcm2835.h"
+-#include "dt-bindings/power/raspberrypi-power.h"
+-#include "dt-bindings/gpio/gpio.h"
+-
+ / {
+ 	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
+ 
+ 	fragment@0 {
++		target-path = "/chosen";
++		__overlay__ {
++			bootargs = "cma=256M@256M";
++		};
++	};
++
++	fragment@1 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=192M@256M";
++		};
++	};
++
++	fragment@2 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=128M@128M";
++		};
++	};
++
++	fragment@3 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=96M@128M";
++		};
++	};
++
++	fragment@4 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=64M@64M";
++		};
++	};
++
++	fragment@5 {
+ 		target = <&i2c2>;
+ 		__overlay__  {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@6 {
+ 		target = <&cprman>;
+ 		__overlay__  {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@7 {
+ 		target = <&fb>;
+ 		__overlay__  {
+ 			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@3 {
+-		target = <&soc>;
++	fragment@8 {
++		target = <&pixelvalve0>;
+ 		__overlay__  {
+-			#address-cells = <1>;
+-			#size-cells = <1>;
++			interrupts = <2 13>; /* pwa0 */
++			status = "okay";
++		};
++	};
+ 
+-			pixelvalve@7e206000 {
+-				compatible = "brcm,bcm2835-pixelvalve0";
+-				reg = <0x7e206000 0x100>;
+-				interrupts = <2 13>; /* pwa0 */
+-			};
+-
+-			pixelvalve@7e207000 {
+-				compatible = "brcm,bcm2835-pixelvalve1";
+-				reg = <0x7e207000 0x100>;
+-				interrupts = <2 14>; /* pwa1 */
+-			};
+-
+-			hvs@7e400000 {
+-				compatible = "brcm,bcm2835-hvs";
+-				reg = <0x7e400000 0x6000>;
+-				interrupts = <2 1>;
+-			};
+-
+-			pixelvalve@7e807000 {
+-				compatible = "brcm,bcm2835-pixelvalve2";
+-				reg = <0x7e807000 0x100>;
+-				interrupts = <2 10>; /* pixelvalve */
+-			};
+-
+-			hdmi@7e902000 {
+-				compatible = "brcm,bcm2835-hdmi";
+-				reg = <0x7e902000 0x600>,
+-				      <0x7e808000 0x100>;
+-				interrupts = <2 8>, <2 9>;
+-				ddc = <&i2c2>;
+-				hpd-gpios = <&gpio 46 GPIO_ACTIVE_HIGH>;
+-				clocks = <&cprman BCM2835_PLLH_PIX>,
+-					 <&cprman BCM2835_CLOCK_HSM>;
+-				clock-names = "pixel", "hdmi";
+-				power-domains = <&power RPI_POWER_DOMAIN_HDMI>;
+-			};
+-
+-			v3d@7ec00000 {
+-				compatible = "brcm,vc4-v3d";
+-				reg = <0x7ec00000 0x1000>;
+-				interrupts = <1 10>;
+-			};
+-
+-			gpu@7e4c0000 {
+-				compatible = "brcm,bcm2835-vc4";
+-			};
++	fragment@9 {
++		target = <&pixelvalve1>;
++		__overlay__  {
++			interrupts = <2 14>; /* pwa1 */
++			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@4 {
+-		target-path = "/chosen";
+-		__overlay__ {
+-			bootargs = "cma=256M@256M";
++	fragment@10 {
++		target = <&pixelvalve2>;
++		__overlay__  {
++			interrupts = <2 10>; /* pixelvalve */
++			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@5 {
+-		target-path = "/chosen";
+-		__dormant__ {
+-			bootargs = "cma=192M@256M";
++	fragment@11 {
++		target = <&hvs>;
++		__overlay__  {
++			interrupts = <2 1>;
++			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@6 {
+-		target-path = "/chosen";
+-		__dormant__ {
+-			bootargs = "cma=128M@128M";
++	fragment@12 {
++		target = <&hdmi>;
++		__overlay__  {
++			interrupts = <2 8>, <2 9>;
++			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@7 {
+-		target-path = "/chosen";
+-		__dormant__ {
+-			bootargs = "cma=96M@128M";
++	fragment@13 {
++		target = <&v3d>;
++		__overlay__  {
++			interrupts = <1 10>;
++			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@8 {
+-		target-path = "/chosen";
+-		__dormant__ {
+-			bootargs = "cma=64M@64M";
++	fragment@14 {
++		target = <&gpu>;
++		__overlay__  {
++			status = "okay";
+ 		};
+ 	};
+ 
+ 	__overrides__ {
+-		cma-256 = <0>,"+4-5-6-7-8";
+-		cma-192 = <0>,"-4+5-6-7-8";
+-		cma-128 = <0>,"-4-5+6-7-8";
+-		cma-96  = <0>,"-4-5-6+7-8";
+-		cma-64  = <0>,"-4-5-6-7+8";
++		cma-256 = <0>,"+0-1-2-3-4";
++		cma-192 = <0>,"-0+1-2-3-4";
++		cma-128 = <0>,"-0-1+2-3-4";
++		cma-96  = <0>,"-0-1-2+3-4";
++		cma-64  = <0>,"-0-1-2-3+4";
+ 	};
+ };

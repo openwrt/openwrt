@@ -1,0 +1,33 @@
+From 57a400e810c8486b4e80392fffb1faedf0cdb447 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 6 May 2016 12:59:27 -0700
+Subject: [PATCH 332/381] BCM270X: Include DRM_PANEL_SIMPLE in the defconfigs.
+
+This is going to be required for the Adafruit DPI panel support.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -817,6 +817,7 @@ CONFIG_VIDEO_MT9V011=m
+ CONFIG_DRM=m
+ CONFIG_DRM_LOAD_EDID_FIRMWARE=y
+ CONFIG_DRM_UDL=m
++CONFIG_DRM_PANEL_SIMPLE=m
+ CONFIG_DRM_VC4=m
+ CONFIG_FB=y
+ CONFIG_FB_BCM2708=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -809,6 +809,7 @@ CONFIG_VIDEO_MT9V011=m
+ CONFIG_DRM=m
+ CONFIG_DRM_LOAD_EDID_FIRMWARE=y
+ CONFIG_DRM_UDL=m
++CONFIG_DRM_PANEL_SIMPLE=m
+ CONFIG_DRM_VC4=m
+ CONFIG_FB=y
+ CONFIG_FB_BCM2708=y

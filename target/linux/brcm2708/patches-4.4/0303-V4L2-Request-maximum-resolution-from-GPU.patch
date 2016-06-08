@@ -1,0 +1,193 @@
+From 5646e586e0494722d5d0783b573819b6d238c71b Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <6by9@users.noreply.github.com>
+Date: Sat, 16 Apr 2016 23:09:54 +0100
+Subject: [PATCH 303/381] V4L2: Request maximum resolution from GPU
+
+Get resolution information about the sensors from the GPU
+and advertise it correctly.
+
+Signed-off-by: Dave Stevenson <6by9@users.noreply.github.com>
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 59 +++++++++++++++++--------
+ drivers/media/platform/bcm2835/bcm2835-camera.h |  3 +-
+ 2 files changed, 43 insertions(+), 19 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -38,8 +38,6 @@
+ #define BM2835_MMAL_MODULE_NAME "bcm2835-v4l2"
+ #define MIN_WIDTH 16
+ #define MIN_HEIGHT 16
+-#define MAX_WIDTH 2592
+-#define MAX_HEIGHT 1944
+ #define MIN_BUFFER_SIZE (80*1024)
+ 
+ #define MAX_VIDEO_MODE_WIDTH 1280
+@@ -729,11 +727,11 @@ static int vidioc_try_fmt_vid_overlay(st
+ 	f->fmt.win.clipcount = 0;
+ 	f->fmt.win.bitmap = NULL;
+ 
+-	v4l_bound_align_image(&f->fmt.win.w.width, MIN_WIDTH, MAX_WIDTH, 1,
+-			      &f->fmt.win.w.height, MIN_HEIGHT, MAX_HEIGHT,
++	v4l_bound_align_image(&f->fmt.win.w.width, MIN_WIDTH, dev->max_width, 1,
++			      &f->fmt.win.w.height, MIN_HEIGHT, dev->max_height,
+ 			      1, 0);
+-	v4l_bound_align_image(&f->fmt.win.w.left, MIN_WIDTH, MAX_WIDTH, 1,
+-			      &f->fmt.win.w.top, MIN_HEIGHT, MAX_HEIGHT,
++	v4l_bound_align_image(&f->fmt.win.w.left, MIN_WIDTH, dev->max_width, 1,
++			      &f->fmt.win.w.top, MIN_HEIGHT, dev->max_height,
+ 			      1, 0);
+ 
+ 	v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
+@@ -961,8 +959,9 @@ static int vidioc_try_fmt_vid_cap(struct
+ 		"Clipping/aligning %dx%d format %08X\n",
+ 		f->fmt.pix.width, f->fmt.pix.height, f->fmt.pix.pixelformat);
+ 
+-	v4l_bound_align_image(&f->fmt.pix.width, MIN_WIDTH, MAX_WIDTH, 1,
+-			      &f->fmt.pix.height, MIN_HEIGHT, MAX_HEIGHT, 1, 0);
++	v4l_bound_align_image(&f->fmt.pix.width, MIN_WIDTH, dev->max_width, 1,
++			      &f->fmt.pix.height, MIN_HEIGHT, dev->max_height,
++			      1, 0);
+ 	f->fmt.pix.bytesperline = f->fmt.pix.width * mfmt->ybbp;
+ 
+ 	/* Image buffer has to be padded to allow for alignment, even though
+@@ -1301,9 +1300,10 @@ static int vidioc_s_fmt_vid_cap(struct f
+ int vidioc_enum_framesizes(struct file *file, void *fh,
+ 			   struct v4l2_frmsizeenum *fsize)
+ {
++	struct bm2835_mmal_dev *dev = video_drvdata(file);
+ 	static const struct v4l2_frmsize_stepwise sizes = {
+-		MIN_WIDTH, MAX_WIDTH, 2,
+-		MIN_HEIGHT, MAX_HEIGHT, 2
++		MIN_WIDTH, 0, 2,
++		MIN_HEIGHT, 0, 2
+ 	};
+ 	int i;
+ 
+@@ -1316,6 +1316,8 @@ int vidioc_enum_framesizes(struct file *
+ 		return -EINVAL;
+ 	fsize->type = V4L2_FRMSIZE_TYPE_STEPWISE;
+ 	fsize->stepwise = sizes;
++	fsize->stepwise.max_width = dev->max_width;
++	fsize->stepwise.max_height = dev->max_height;
+ 	return 0;
+ }
+ 
+@@ -1323,6 +1325,7 @@ int vidioc_enum_framesizes(struct file *
+ static int vidioc_enum_frameintervals(struct file *file, void *priv,
+ 					     struct v4l2_frmivalenum *fival)
+ {
++	struct bm2835_mmal_dev *dev = video_drvdata(file);
+ 	int i;
+ 
+ 	if (fival->index)
+@@ -1335,8 +1338,8 @@ static int vidioc_enum_frameintervals(st
+ 		return -EINVAL;
+ 
+ 	/* regarding width & height - we support any within range */
+-	if (fival->width < MIN_WIDTH || fival->width > MAX_WIDTH ||
+-	    fival->height < MIN_HEIGHT || fival->height > MAX_HEIGHT)
++	if (fival->width < MIN_WIDTH || fival->width > dev->max_width ||
++	    fival->height < MIN_HEIGHT || fival->height > dev->max_height)
+ 		return -EINVAL;
+ 
+ 	fival->type = V4L2_FRMIVAL_TYPE_CONTINUOUS;
+@@ -1499,12 +1502,17 @@ static struct video_device vdev_template
+ 	.release = video_device_release_empty,
+ };
+ 
+-static int get_num_cameras(struct vchiq_mmal_instance *instance)
++/* Returns the number of cameras, and also the max resolution supported
++ * by those cameras.
++ */
++static int get_num_cameras(struct vchiq_mmal_instance *instance,
++	unsigned int resolutions[][2], int num_resolutions)
+ {
+ 	int ret;
+ 	struct vchiq_mmal_component  *cam_info_component;
+ 	struct mmal_parameter_camera_info_t cam_info = {0};
+ 	int param_size = sizeof(cam_info);
++	int i;
+ 
+ 	/* create a camera_info component */
+ 	ret = vchiq_mmal_component_init(instance, "camera_info",
+@@ -1520,6 +1528,14 @@ static int get_num_cameras(struct vchiq_
+ 					  &param_size)) {
+ 		pr_info("Failed to get camera info\n");
+ 	}
++	for (i = 0;
++	     i < (cam_info.num_cameras > num_resolutions ?
++			cam_info.num_cameras :
++			num_resolutions);
++	     i++) {
++		resolutions[i][0] = cam_info.cameras[i].max_width;
++		resolutions[i][1] = cam_info.cameras[i].max_height;
++	}
+ 
+ 	vchiq_mmal_component_finalise(instance,
+ 				      cam_info_component);
+@@ -1528,12 +1544,13 @@ static int get_num_cameras(struct vchiq_
+ }
+ 
+ static int set_camera_parameters(struct vchiq_mmal_instance *instance,
+-				 struct vchiq_mmal_component *camera)
++				 struct vchiq_mmal_component *camera,
++				 struct bm2835_mmal_dev *dev)
+ {
+ 	int ret;
+ 	struct mmal_parameter_camera_config cam_config = {
+-		.max_stills_w = MAX_WIDTH,
+-		.max_stills_h = MAX_HEIGHT,
++		.max_stills_w = dev->max_width,
++		.max_stills_h = dev->max_height,
+ 		.stills_yuv422 = 1,
+ 		.one_shot_stills = 1,
+ 		.max_preview_video_w = (max_video_width > 1920) ?
+@@ -1576,7 +1593,8 @@ static int __init mmal_init(struct bm283
+ 	}
+ 
+ 	ret = set_camera_parameters(dev->instance,
+-				    dev->component[MMAL_COMPONENT_CAMERA]);
++				    dev->component[MMAL_COMPONENT_CAMERA],
++				    dev);
+ 	if (ret < 0)
+ 		goto unreg_camera;
+ 
+@@ -1838,12 +1856,15 @@ static int __init bm2835_mmal_init(void)
+ 	int camera;
+ 	unsigned int num_cameras;
+ 	struct vchiq_mmal_instance *instance;
++	unsigned int resolutions[MAX_BCM2835_CAMERAS][2];
+ 
+ 	ret = vchiq_mmal_init(&instance);
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	num_cameras = get_num_cameras(instance);
++	num_cameras = get_num_cameras(instance,
++				      resolutions,
++				      MAX_BCM2835_CAMERAS);
+ 	if (num_cameras > MAX_BCM2835_CAMERAS)
+ 		num_cameras = MAX_BCM2835_CAMERAS;
+ 
+@@ -1853,6 +1874,8 @@ static int __init bm2835_mmal_init(void)
+ 			return -ENOMEM;
+ 
+ 		dev->camera_num = camera;
++		dev->max_width = resolutions[camera][0];
++		dev->max_height = resolutions[camera][1];
+ 
+ 		/* setup device defaults */
+ 		dev->overlay.w.left = 150;
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.h
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.h
+@@ -107,7 +107,8 @@ struct bm2835_mmal_dev {
+ 	} capture;
+ 
+ 	unsigned int camera_num;
+-
++	unsigned int max_width;
++	unsigned int max_height;
+ };
+ 
+ int bm2835_mmal_init_controls(

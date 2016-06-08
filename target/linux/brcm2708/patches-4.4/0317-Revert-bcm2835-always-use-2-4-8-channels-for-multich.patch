@@ -1,0 +1,135 @@
+From 6a35e00dde80fc9c6007d8cec6a1113aafdabd1c Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 29 Apr 2016 17:28:08 +0100
+Subject: [PATCH 317/381] Revert "bcm2835: always use 2/4/8 channels for
+ multichannel layouts"
+
+This reverts commit 06931f74092d86087144f070b06a4444df8b444b.
+---
+ sound/arm/bcm2835-ctl.c | 89 ++++++++++++++++++++++++-------------------------
+ 1 file changed, 44 insertions(+), 45 deletions(-)
+
+--- a/sound/arm/bcm2835-ctl.c
++++ b/sound/arm/bcm2835-ctl.c
+@@ -349,7 +349,6 @@ struct cea_channel_speaker_allocation {
+ #define FRW	SNDRV_CHMAP_FRW
+ #define TC	SNDRV_CHMAP_TC
+ #define FCH	SNDRV_CHMAP_TFC
+-#define NA	SNDRV_CHMAP_NA
+ 
+ /*
+  * CEA-861 channel maps
+@@ -357,69 +356,69 @@ struct cea_channel_speaker_allocation {
+  * Stolen from sound/pci/hda/patch_hdmi.c
+  * (unlike the source, this uses SNDRV_* constants directly, as by the
+  *  map_tables array in patch_hdmi.c)
+- * Entries which do not have a physical output channel use 0. Entries which
+- * require userspace to output silence use NA (SNDRV_CHMAP_NA).
++ * Unknown entries use 0, which unfortunately is SNDRV_CHMAP_UNKNOWN instead
++ * of SNDRV_CHMAP_NA.
+  */
+ static struct cea_channel_speaker_allocation channel_allocations[] = {
+ /*			  channel:   7     6    5    4    3     2    1    0  */
+ { .ca_index = 0x00,  .speakers = {   0,    0,   0,   0,   0,    0,  FR,  FL } },
+ 				 /* 2.1 */
+-{ .ca_index = 0x01,  .speakers = {   0,    0,   0,   0,  NA,  LFE,  FR,  FL } },
++{ .ca_index = 0x01,  .speakers = {   0,    0,   0,   0,   0,  LFE,  FR,  FL } },
+ 				 /* Dolby Surround */
+-{ .ca_index = 0x02,  .speakers = {   0,    0,   0,   0,  FC,   NA,  FR,  FL } },
++{ .ca_index = 0x02,  .speakers = {   0,    0,   0,   0,  FC,    0,  FR,  FL } },
+ 				 /* surround40 */
+-{ .ca_index = 0x08,  .speakers = {  NA,   NA,  RR,  RL,  NA,   NA,  FR,  FL } },
++{ .ca_index = 0x08,  .speakers = {   0,    0,  RR,  RL,   0,    0,  FR,  FL } },
+ 				 /* surround41 */
+-{ .ca_index = 0x09,  .speakers = {  NA,   NA,  RR,  RL,  NA,  LFE,  FR,  FL } },
++{ .ca_index = 0x09,  .speakers = {   0,    0,  RR,  RL,   0,  LFE,  FR,  FL } },
+ 				 /* surround50 */
+-{ .ca_index = 0x0a,  .speakers = {  NA,   NA,  RR,  RL,  FC,   NA,  FR,  FL } },
++{ .ca_index = 0x0a,  .speakers = {   0,    0,  RR,  RL,  FC,    0,  FR,  FL } },
+ 				 /* surround51 */
+-{ .ca_index = 0x0b,  .speakers = {  NA,   NA,  RR,  RL,  FC,  LFE,  FR,  FL } },
++{ .ca_index = 0x0b,  .speakers = {   0,    0,  RR,  RL,  FC,  LFE,  FR,  FL } },
+ 				 /* 6.1 */
+-{ .ca_index = 0x0f,  .speakers = {  NA,   RC,  RR,  RL,  FC,  LFE,  FR,  FL } },
++{ .ca_index = 0x0f,  .speakers = {   0,   RC,  RR,  RL,  FC,  LFE,  FR,  FL } },
+ 				 /* surround71 */
+ { .ca_index = 0x13,  .speakers = { RRC,  RLC,  RR,  RL,  FC,  LFE,  FR,  FL } },
+ 
+-{ .ca_index = 0x03,  .speakers = {  NA,   NA,  NA,  NA,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x04,  .speakers = {  NA,   NA,  NA,  RC,  NA,   NA,  FR,  FL } },
+-{ .ca_index = 0x05,  .speakers = {  NA,   NA,  NA,  RC,  NA,  LFE,  FR,  FL } },
+-{ .ca_index = 0x06,  .speakers = {  NA,   NA,  NA,  RC,  FC,   NA,  FR,  FL } },
+-{ .ca_index = 0x07,  .speakers = {  NA,   NA,  NA,  RC,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x0c,  .speakers = {  NA,   RC,  RR,  RL,  NA,   NA,  FR,  FL } },
+-{ .ca_index = 0x0d,  .speakers = {  NA,   RC,  RR,  RL,  NA,  LFE,  FR,  FL } },
+-{ .ca_index = 0x0e,  .speakers = {  NA,   RC,  RR,  RL,  FC,   NA,  FR,  FL } },
+-{ .ca_index = 0x10,  .speakers = { RRC,  RLC,  RR,  RL,  NA,   NA,  FR,  FL } },
+-{ .ca_index = 0x11,  .speakers = { RRC,  RLC,  RR,  RL,  NA,  LFE,  FR,  FL } },
+-{ .ca_index = 0x12,  .speakers = { RRC,  RLC,  RR,  RL,  FC,   NA,  FR,  FL } },
+-{ .ca_index = 0x14,  .speakers = { FRC,  FLC,  NA,  NA,  NA,   NA,  FR,  FL } },
+-{ .ca_index = 0x15,  .speakers = { FRC,  FLC,  NA,  NA,  NA,  LFE,  FR,  FL } },
+-{ .ca_index = 0x16,  .speakers = { FRC,  FLC,  NA,  NA,  FC,   NA,  FR,  FL } },
+-{ .ca_index = 0x17,  .speakers = { FRC,  FLC,  NA,  NA,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x18,  .speakers = { FRC,  FLC,  NA,  RC,  NA,   NA,  FR,  FL } },
+-{ .ca_index = 0x19,  .speakers = { FRC,  FLC,  NA,  RC,  NA,  LFE,  FR,  FL } },
+-{ .ca_index = 0x1a,  .speakers = { FRC,  FLC,  NA,  RC,  FC,   NA,  FR,  FL } },
+-{ .ca_index = 0x1b,  .speakers = { FRC,  FLC,  NA,  RC,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x1c,  .speakers = { FRC,  FLC,  RR,  RL,  NA,   NA,  FR,  FL } },
+-{ .ca_index = 0x1d,  .speakers = { FRC,  FLC,  RR,  RL,  NA,  LFE,  FR,  FL } },
+-{ .ca_index = 0x1e,  .speakers = { FRC,  FLC,  RR,  RL,  FC,   NA,  FR,  FL } },
++{ .ca_index = 0x03,  .speakers = {   0,    0,   0,   0,  FC,  LFE,  FR,  FL } },
++{ .ca_index = 0x04,  .speakers = {   0,    0,   0,  RC,   0,    0,  FR,  FL } },
++{ .ca_index = 0x05,  .speakers = {   0,    0,   0,  RC,   0,  LFE,  FR,  FL } },
++{ .ca_index = 0x06,  .speakers = {   0,    0,   0,  RC,  FC,    0,  FR,  FL } },
++{ .ca_index = 0x07,  .speakers = {   0,    0,   0,  RC,  FC,  LFE,  FR,  FL } },
++{ .ca_index = 0x0c,  .speakers = {   0,   RC,  RR,  RL,   0,    0,  FR,  FL } },
++{ .ca_index = 0x0d,  .speakers = {   0,   RC,  RR,  RL,   0,  LFE,  FR,  FL } },
++{ .ca_index = 0x0e,  .speakers = {   0,   RC,  RR,  RL,  FC,    0,  FR,  FL } },
++{ .ca_index = 0x10,  .speakers = { RRC,  RLC,  RR,  RL,   0,    0,  FR,  FL } },
++{ .ca_index = 0x11,  .speakers = { RRC,  RLC,  RR,  RL,   0,  LFE,  FR,  FL } },
++{ .ca_index = 0x12,  .speakers = { RRC,  RLC,  RR,  RL,  FC,    0,  FR,  FL } },
++{ .ca_index = 0x14,  .speakers = { FRC,  FLC,   0,   0,   0,    0,  FR,  FL } },
++{ .ca_index = 0x15,  .speakers = { FRC,  FLC,   0,   0,   0,  LFE,  FR,  FL } },
++{ .ca_index = 0x16,  .speakers = { FRC,  FLC,   0,   0,  FC,    0,  FR,  FL } },
++{ .ca_index = 0x17,  .speakers = { FRC,  FLC,   0,   0,  FC,  LFE,  FR,  FL } },
++{ .ca_index = 0x18,  .speakers = { FRC,  FLC,   0,  RC,   0,    0,  FR,  FL } },
++{ .ca_index = 0x19,  .speakers = { FRC,  FLC,   0,  RC,   0,  LFE,  FR,  FL } },
++{ .ca_index = 0x1a,  .speakers = { FRC,  FLC,   0,  RC,  FC,    0,  FR,  FL } },
++{ .ca_index = 0x1b,  .speakers = { FRC,  FLC,   0,  RC,  FC,  LFE,  FR,  FL } },
++{ .ca_index = 0x1c,  .speakers = { FRC,  FLC,  RR,  RL,   0,    0,  FR,  FL } },
++{ .ca_index = 0x1d,  .speakers = { FRC,  FLC,  RR,  RL,   0,  LFE,  FR,  FL } },
++{ .ca_index = 0x1e,  .speakers = { FRC,  FLC,  RR,  RL,  FC,    0,  FR,  FL } },
+ { .ca_index = 0x1f,  .speakers = { FRC,  FLC,  RR,  RL,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x20,  .speakers = {  NA,  FCH,  RR,  RL,  FC,   NA,  FR,  FL } },
+-{ .ca_index = 0x21,  .speakers = {  NA,  FCH,  RR,  RL,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x22,  .speakers = {  TC,   NA,  RR,  RL,  FC,   NA,  FR,  FL } },
+-{ .ca_index = 0x23,  .speakers = {  TC,   NA,  RR,  RL,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x24,  .speakers = { FRH,  FLH,  RR,  RL,  NA,   NA,  FR,  FL } },
+-{ .ca_index = 0x25,  .speakers = { FRH,  FLH,  RR,  RL,  NA,  LFE,  FR,  FL } },
+-{ .ca_index = 0x26,  .speakers = { FRW,  FLW,  RR,  RL,  NA,   NA,  FR,  FL } },
+-{ .ca_index = 0x27,  .speakers = { FRW,  FLW,  RR,  RL,  NA,  LFE,  FR,  FL } },
+-{ .ca_index = 0x28,  .speakers = {  TC,   RC,  RR,  RL,  FC,   NA,  FR,  FL } },
++{ .ca_index = 0x20,  .speakers = {   0,  FCH,  RR,  RL,  FC,    0,  FR,  FL } },
++{ .ca_index = 0x21,  .speakers = {   0,  FCH,  RR,  RL,  FC,  LFE,  FR,  FL } },
++{ .ca_index = 0x22,  .speakers = {  TC,    0,  RR,  RL,  FC,    0,  FR,  FL } },
++{ .ca_index = 0x23,  .speakers = {  TC,    0,  RR,  RL,  FC,  LFE,  FR,  FL } },
++{ .ca_index = 0x24,  .speakers = { FRH,  FLH,  RR,  RL,   0,    0,  FR,  FL } },
++{ .ca_index = 0x25,  .speakers = { FRH,  FLH,  RR,  RL,   0,  LFE,  FR,  FL } },
++{ .ca_index = 0x26,  .speakers = { FRW,  FLW,  RR,  RL,   0,    0,  FR,  FL } },
++{ .ca_index = 0x27,  .speakers = { FRW,  FLW,  RR,  RL,   0,  LFE,  FR,  FL } },
++{ .ca_index = 0x28,  .speakers = {  TC,   RC,  RR,  RL,  FC,    0,  FR,  FL } },
+ { .ca_index = 0x29,  .speakers = {  TC,   RC,  RR,  RL,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x2a,  .speakers = { FCH,   RC,  RR,  RL,  FC,   NA,  FR,  FL } },
++{ .ca_index = 0x2a,  .speakers = { FCH,   RC,  RR,  RL,  FC,    0,  FR,  FL } },
+ { .ca_index = 0x2b,  .speakers = { FCH,   RC,  RR,  RL,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x2c,  .speakers = {  TC,  FCH,  RR,  RL,  FC,   NA,  FR,  FL } },
++{ .ca_index = 0x2c,  .speakers = {  TC,  FCH,  RR,  RL,  FC,    0,  FR,  FL } },
+ { .ca_index = 0x2d,  .speakers = {  TC,  FCH,  RR,  RL,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x2e,  .speakers = { FRH,  FLH,  RR,  RL,  FC,   NA,  FR,  FL } },
++{ .ca_index = 0x2e,  .speakers = { FRH,  FLH,  RR,  RL,  FC,    0,  FR,  FL } },
+ { .ca_index = 0x2f,  .speakers = { FRH,  FLH,  RR,  RL,  FC,  LFE,  FR,  FL } },
+-{ .ca_index = 0x30,  .speakers = { FRW,  FLW,  RR,  RL,  FC,   NA,  FR,  FL } },
++{ .ca_index = 0x30,  .speakers = { FRW,  FLW,  RR,  RL,  FC,    0,  FR,  FL } },
+ { .ca_index = 0x31,  .speakers = { FRW,  FLW,  RR,  RL,  FC,  LFE,  FR,  FL } },
+ };
+ 

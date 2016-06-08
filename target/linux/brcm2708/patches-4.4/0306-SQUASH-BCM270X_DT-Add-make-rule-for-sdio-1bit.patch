@@ -1,0 +1,22 @@
+From 3fc5b9e6d4ec9ed6dc6e6165099e3e5e552eb446 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 25 Apr 2016 10:43:36 +0100
+Subject: [PATCH 306/381] SQUASH: BCM270X_DT: Add make rule for sdio-1bit
+
+See: https://github.com/raspberrypi/linux/pull/1301
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -66,6 +66,7 @@ dtbo-$(RPI_DT_OVERLAYS) += rpi-proto.dtb
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-sense.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdhost.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdio.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += sdio-1bit.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdtweak.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += smi-dev.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += smi-nand.dtbo

@@ -1,0 +1,33 @@
+From 90ec918fe0427b1b8c9d761a12f8ebcd888ab6e7 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 1 Dec 2015 16:49:12 -0800
+Subject: [PATCH 267/381] ARM: bcm2835: Define two new packets from the latest
+ firmware.
+
+These packets give us direct access to the firmware's power management
+code, as opposed to GET/SET_POWER_STATE packets that only had a couple
+of domains implemented.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Reviewed-by: Kevin Hilman <khilman@linaro.org>
+(cherry picked from commit 60d56333e869be6ad6926cdba3ba974512b2183b)
+---
+ include/soc/bcm2835/raspberrypi-firmware.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/include/soc/bcm2835/raspberrypi-firmware.h
++++ b/include/soc/bcm2835/raspberrypi-firmware.h
+@@ -74,11 +74,13 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_GET_DISPMANX_RESOURCE_MEM_HANDLE =       0x00030014,
+ 	RPI_FIRMWARE_GET_EDID_BLOCK =                         0x00030020,
+ 	RPI_FIRMWARE_GET_CUSTOMER_OTP =                       0x00030021,
++	RPI_FIRMWARE_GET_DOMAIN_STATE =                       0x00030030,
+ 	RPI_FIRMWARE_SET_CLOCK_STATE =                        0x00038001,
+ 	RPI_FIRMWARE_SET_CLOCK_RATE =                         0x00038002,
+ 	RPI_FIRMWARE_SET_VOLTAGE =                            0x00038003,
+ 	RPI_FIRMWARE_SET_TURBO =                              0x00038009,
+ 	RPI_FIRMWARE_SET_CUSTOMER_OTP =                       0x00038021,
++	RPI_FIRMWARE_SET_DOMAIN_STATE =                       0x00038030,
+ 	RPI_FIRMWARE_SET_SDHOST_CLOCK =                       0x00038042,
+ 
+ 	/* Dispmanx TAGS */

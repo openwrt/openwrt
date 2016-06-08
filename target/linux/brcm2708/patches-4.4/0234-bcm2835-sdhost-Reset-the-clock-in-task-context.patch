@@ -1,7 +1,7 @@
-From 6a5e76800cf6d16d01b8e186806decc047590e46 Mon Sep 17 00:00:00 2001
+From 3ef58b428e66c86b2e36dbb0a17d561088688578 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Mon, 11 Apr 2016 12:50:58 +0100
-Subject: [PATCH 234/304] bcm2835-sdhost: Reset the clock in task context
+Subject: [PATCH 234/381] bcm2835-sdhost: Reset the clock in task context
 
 Since reprogramming the clock can now involve a round-trip to the
 firmware it must not be done at atomic context, and a tasklet

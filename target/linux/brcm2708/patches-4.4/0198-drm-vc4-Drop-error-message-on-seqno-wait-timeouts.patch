@@ -1,7 +1,7 @@
-From ed499ca6841fc64d564d100cb31b30aba9b4d40f Mon Sep 17 00:00:00 2001
+From e9096f6a422bb37a87dd41bc2c01163946e1bc10 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 25 Jan 2016 14:33:50 -0800
-Subject: [PATCH 198/304] drm/vc4: Drop error message on seqno wait timeouts.
+Subject: [PATCH 198/381] drm/vc4: Drop error message on seqno wait timeouts.
 
 These ioctls end up getting exposed to userspace, and having normal
 user requests print DRM errors is obviously wrong.  The message was

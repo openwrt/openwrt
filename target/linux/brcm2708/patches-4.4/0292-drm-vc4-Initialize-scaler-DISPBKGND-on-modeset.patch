@@ -1,0 +1,68 @@
+From b7c76f75bc8e373d185a222bf7fa0ceb5f9d6d0a Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 16 Feb 2016 10:24:08 -0800
+Subject: [PATCH 292/381] drm/vc4: Initialize scaler DISPBKGND on modeset.
+
+We weren't updating the interlaced bit, so we'd scan out incorrectly
+if the firmware had brought up the TV encoder and we were switching to
+HDMI.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 6a609209865247cc748e90158c99f374f79b494c)
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c |  6 ++++++
+ drivers/gpu/drm/vc4/vc4_regs.h | 14 ++++++++++++++
+ 2 files changed, 20 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -188,6 +188,8 @@ static int vc4_get_clock_select(struct d
+ 
+ static void vc4_crtc_mode_set_nofb(struct drm_crtc *crtc)
+ {
++	struct drm_device *dev = crtc->dev;
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
+ 	struct drm_crtc_state *state = crtc->state;
+ 	struct drm_display_mode *mode = &state->adjusted_mode;
+@@ -256,6 +258,10 @@ static void vc4_crtc_mode_set_nofb(struc
+ 		   PV_CONTROL_FIFO_CLR |
+ 		   PV_CONTROL_EN);
+ 
++	HVS_WRITE(SCALER_DISPBKGNDX(vc4_crtc->channel),
++		  SCALER_DISPBKGND_AUTOHS |
++		  (interlace ? SCALER_DISPBKGND_INTERLACE : 0));
++
+ 	if (debug_dump_regs) {
+ 		DRM_INFO("CRTC %d regs after:\n", drm_crtc_index(crtc));
+ 		vc4_crtc_dump_regs(vc4_crtc);
+--- a/drivers/gpu/drm/vc4/vc4_regs.h
++++ b/drivers/gpu/drm/vc4/vc4_regs.h
+@@ -350,6 +350,17 @@
+ # define SCALER_DISPCTRLX_HEIGHT_SHIFT		0
+ 
+ #define SCALER_DISPBKGND0                       0x00000044
++# define SCALER_DISPBKGND_AUTOHS		BIT(31)
++# define SCALER_DISPBKGND_INTERLACE		BIT(30)
++# define SCALER_DISPBKGND_GAMMA			BIT(29)
++# define SCALER_DISPBKGND_TESTMODE_MASK		VC4_MASK(28, 25)
++# define SCALER_DISPBKGND_TESTMODE_SHIFT	25
++/* Enables filling the scaler line with the RGB value in the low 24
++ * bits before compositing.  Costs cycles, so should be skipped if
++ * opaque display planes will cover everything.
++ */
++# define SCALER_DISPBKGND_FILL			BIT(24)
++
+ #define SCALER_DISPSTAT0                        0x00000048
+ #define SCALER_DISPBASE0                        0x0000004c
+ # define SCALER_DISPSTATX_MODE_MASK		VC4_MASK(31, 30)
+@@ -362,6 +373,9 @@
+ # define SCALER_DISPSTATX_EMPTY			BIT(28)
+ #define SCALER_DISPCTRL1                        0x00000050
+ #define SCALER_DISPBKGND1                       0x00000054
++#define SCALER_DISPBKGNDX(x)			(SCALER_DISPBKGND0 +        \
++						 (x) * (SCALER_DISPBKGND1 - \
++							SCALER_DISPBKGND0))
+ #define SCALER_DISPSTAT1                        0x00000058
+ #define SCALER_DISPSTATX(x)			(SCALER_DISPSTAT0 +        \
+ 						 (x) * (SCALER_DISPSTAT1 - \

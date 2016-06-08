@@ -1,0 +1,99 @@
+From c451203424a277e522ea5227cefa84658615f442 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 6 May 2016 12:53:16 +0100
+Subject: [PATCH 322/381] BCM270X_DT: i2c0-bcm2708 - pin group params
+
+Add parameters to set pin groups as a unit, setting the pin function
+appropriately. The parameters are:
+  pins_0_1
+  pins_28_29
+  pins_44_45
+  pins_46_47
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/README                  | 11 ++++--
+ .../arm/boot/dts/overlays/i2c0-bcm2708-overlay.dts | 43 +++++++++++++++++-----
+ 2 files changed, 42 insertions(+), 12 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -449,10 +449,15 @@ Params: ds1307                  Select t
+ 
+ 
+ Name:   i2c0-bcm2708
+-Info:   Enable the i2c_bcm2708 driver for the i2c0 bus
++Info:   Enable the i2c_bcm2708 driver for the i2c0 bus. Not all pin combinations
++        are usable on all platforms.
+ Load:   dtoverlay=i2c0-bcm2708,<param>=<val>
+-Params: sda0_pin                GPIO pin for SDA0 (0, 28 [or 44] - default 0)
+-        scl0_pin                GPIO pin for SCL0 (1, 29 [or 45] - default 1)
++Params: sda0_pin                GPIO pin for SDA0 (deprecated - use pins_*)
++        scl0_pin                GPIO pin for SCL0 (deprecated - use pins_*)
++        pins_0_1                Use pins 0 and 1 (default)
++        pins_28_29              Use pins 28 and 29
++        pins_44_45              Use pins 44 and 45
++        pins_46_47              Use pins 46 and 47
+ 
+ 
+ Name:   i2c1-bcm2708
+--- a/arch/arm/boot/dts/overlays/i2c0-bcm2708-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c0-bcm2708-overlay.dts
+@@ -14,23 +14,48 @@
+    fragment@0 {
+       target = <&i2c0>;
+       __overlay__ {
+-         pinctrl-0 = <&i2c0_pins>;
+          status = "okay";
+       };
+    };
+ 
+    fragment@1 {
+-      target = <&gpio>;
+-      __overlay__ {
+-         i2c0_pins: i2c0 {
+-            brcm,pins = <0 1>;
+-            brcm,function = <4>; /* alt0 */
+-         };
++      target = <&i2c0_pins>;
++      frag1: __overlay__ {
++         brcm,pins = <0 1>;
++         brcm,function = <4>; /* alt0 */
++      };
++   };
++
++   fragment@2 {
++      target = <&i2c0_pins>;
++      __dormant__ {
++         brcm,pins = <28 29>;
++         brcm,function = <4>; /* alt0 */
++      };
++   };
++
++   fragment@3 {
++      target = <&i2c0_pins>;
++      __dormant__ {
++         brcm,pins = <44 45>;
++         brcm,function = <5>; /* alt1 */
++      };
++   };
++
++   fragment@4 {
++      target = <&i2c0_pins>;
++      __dormant__ {
++         brcm,pins = <46 47>;
++         brcm,function = <4>; /* alt0 */
+       };
+    };
+ 
+    __overrides__ {
+-      sda0_pin = <&i2c0_pins>,"brcm,pins:0";
+-      scl0_pin = <&i2c0_pins>,"brcm,pins:4";
++      sda0_pin = <&frag1>,"brcm,pins:0";
++      scl0_pin = <&frag1>,"brcm,pins:4";
++      pins_0_1   = <0>,"+1-2-3-4";
++      pins_28_29 = <0>,"-1+2-3-4";
++      pins_44_45 = <0>,"-1-2+3-4";
++      pins_46_47 = <0>,"-1-2-3+4";
+    };
+ };

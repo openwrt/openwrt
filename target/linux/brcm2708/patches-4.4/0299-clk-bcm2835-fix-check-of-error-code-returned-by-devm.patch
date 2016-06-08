@@ -1,0 +1,33 @@
+From f083d686ec57e2b856f12a52978b594d719cddfc Mon Sep 17 00:00:00 2001
+From: Vladimir Zapolskiy <vz@mleia.com>
+Date: Sun, 6 Mar 2016 03:21:35 +0200
+Subject: [PATCH 299/381] clk: bcm2835: fix check of error code returned by
+ devm_ioremap_resource()
+
+The change fixes potential oops while accessing iomem on invalid
+address, if devm_ioremap_resource() fails due to some reason.
+
+The devm_ioremap_resource() function returns ERR_PTR() and never
+returns NULL, which makes useless a following check for NULL.
+
+Signed-off-by: Vladimir Zapolskiy <vz@mleia.com>
+Fixes: 5e63dcc74b30 ("clk: bcm2835: Add a driver for the auxiliary peripheral clock gates")
+Reviewed-by: Eric Anholt <eric@anholt.net>
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+---
+ drivers/clk/bcm/clk-bcm2835-aux.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/clk/bcm/clk-bcm2835-aux.c
++++ b/drivers/clk/bcm/clk-bcm2835-aux.c
+@@ -38,8 +38,8 @@ static int bcm2835_aux_clk_probe(struct
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	reg = devm_ioremap_resource(dev, res);
+-	if (!reg)
+-		return -ENODEV;
++	if (IS_ERR(reg))
++		return PTR_ERR(reg);
+ 
+ 	onecell = devm_kmalloc(dev, sizeof(*onecell), GFP_KERNEL);
+ 	if (!onecell)

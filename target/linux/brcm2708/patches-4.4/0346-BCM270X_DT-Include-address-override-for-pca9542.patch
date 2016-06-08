@@ -1,0 +1,24 @@
+From 8753ff77e0c42682d80135d8c3519b7a5772bd9e Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 12 May 2016 08:52:06 +0100
+Subject: [PATCH 346/381] BCM270X_DT: Include address override for pca9542
+
+Omitted from "BCM270X_DT: Add umbrella I2C Mux overlay i2c-mux".
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/i2c-mux-overlay.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/i2c-mux-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c-mux-overlay.dts
+@@ -132,7 +132,8 @@
+ 		pca9545 = <0>, "+1";
+ 		pca9548 = <0>, "+2";
+ 
+-		addr =  <&pca9545>,"reg:0",
++		addr =  <&pca9542>,"reg:0",
++			<&pca9545>,"reg:0",
+ 			<&pca9548>,"reg:0";
+ 	};
+ };

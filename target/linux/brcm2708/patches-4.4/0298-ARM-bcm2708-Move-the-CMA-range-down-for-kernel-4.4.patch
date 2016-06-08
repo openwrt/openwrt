@@ -1,0 +1,24 @@
+From 94f13d08b80c3470b57b7997766049f2860f22ba Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 19 Apr 2016 17:21:06 -0700
+Subject: [PATCH 298/381] ARM: bcm2708: Move the CMA range down for kernel 4.4.
+
+The previous area no longer works, for reasons I haven't investigated.
+Just move it somewhere that works.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
+@@ -91,7 +91,7 @@
+ 	fragment@4 {
+ 		target-path = "/chosen";
+ 		__overlay__ {
+-			bootargs = "cma=256M@512M";
++			bootargs = "cma=256M@256M";
+ 		};
+ 	};
+ };

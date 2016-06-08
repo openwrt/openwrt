@@ -1,0 +1,45 @@
+From cc94958e3c07a50d65b45ea654fa498ef4d4b493 Mon Sep 17 00:00:00 2001
+From: Maarten Lankhorst <maarten.lankhorst@linux.intel.com>
+Date: Tue, 26 Apr 2016 16:11:44 +0200
+Subject: [PATCH 338/381] drm/vc4: Rename async to nonblock.
+
+The async name is deprecated and should be changed to nonblocking.
+
+Cc: Eric Anholt <eric@anholt.net>
+Signed-off-by: Maarten Lankhorst <maarten.lankhorst@linux.intel.com>
+Signed-off-by: Daniel Vetter <daniel.vetter@ffwll.ch>
+Link: http://patchwork.freedesktop.org/patch/msgid/1461679905-30177-12-git-send-email-maarten.lankhorst@linux.intel.com
+(cherry picked from commit eb63961ba52ba545f5b7ebeeeefe1c98704e1a79)
+---
+ drivers/gpu/drm/vc4/vc4_kms.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_kms.c
++++ b/drivers/gpu/drm/vc4/vc4_kms.c
+@@ -93,7 +93,7 @@ static struct vc4_commit *commit_init(st
+  * vc4_atomic_commit - commit validated state object
+  * @dev: DRM device
+  * @state: the driver state object
+- * @async: asynchronous commit
++ * @nonblock: nonblocking commit
+  *
+  * This function commits a with drm_atomic_helper_check() pre-validated state
+  * object. This can still fail when e.g. the framebuffer reservation fails. For
+@@ -104,7 +104,7 @@ static struct vc4_commit *commit_init(st
+  */
+ static int vc4_atomic_commit(struct drm_device *dev,
+ 			     struct drm_atomic_state *state,
+-			     bool async)
++			     bool nonblock)
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	int ret;
+@@ -170,7 +170,7 @@ static int vc4_atomic_commit(struct drm_
+ 	 * current layout.
+ 	 */
+ 
+-	if (async) {
++	if (nonblock) {
+ 		vc4_queue_seqno_cb(dev, &c->cb, wait_seqno,
+ 				   vc4_atomic_complete_commit_seqno_cb);
+ 	} else {

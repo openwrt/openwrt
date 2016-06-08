@@ -1,0 +1,36 @@
+From 9cfa49abaf59e6f41da47f37caae6075741ca876 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 31 Dec 2015 23:39:14 +0100
+Subject: [PATCH 269/381] ARM: bcm2835: clarify RASPBERRYPI_FIRMWARE dependency
+
+The firmware driver can be a loadable module, but the power domain
+can only be built-in, so we get a build error in an allmodconfig
+kernel:
+
+:(.text+0x17e59c): undefined reference to `rpi_firmware_property'
+:(.text+0x17e51c): undefined reference to `rpi_firmware_get'
+:(.text+0x17e244): undefined reference to `rpi_firmware_property'
+
+This changes the dependency to only allow the power domain code
+to be enabled when the firmware driver is built-in. Other users
+of the firmware driver may still be loadable modules and not
+everyone needs the power domains, so we don't change the firmware
+code.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+(cherry picked from commit 22a5b1ddd83b991b96cb635898e011cce48bf6f8)
+---
+ drivers/soc/bcm/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/soc/bcm/Kconfig
++++ b/drivers/soc/bcm/Kconfig
+@@ -1,7 +1,7 @@
+ config RASPBERRYPI_POWER
+ 	bool "Raspberry Pi power domain driver"
+ 	depends on ARCH_BCM2835 || COMPILE_TEST
+-	depends on RASPBERRYPI_FIRMWARE
++	depends on RASPBERRYPI_FIRMWARE=y
+ 	select PM_GENERIC_DOMAINS if PM
+ 	select PM_GENERIC_DOMAINS_OF if PM
+ 	help

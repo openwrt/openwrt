@@ -1,0 +1,75 @@
+From 937dd48dd631d45dbee39853dcb1cd98220bb1e5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Sun, 24 Apr 2016 17:28:15 +0100
+Subject: [PATCH 305/381] drm/vc4: Add DT parameters to control CMA usage
+
+Example: dtoverlay=vc4-kms-v3d,cma-128
+
+See: https://github.com/raspberrypi/linux/pull/1431
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/README                  |  8 +++--
+ arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts | 36 ++++++++++++++++++++++
+ 2 files changed, 42 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -1023,8 +1023,12 @@ Name:   vc4-kms-v3d
+ Info:   Enable Eric Anholt's DRM VC4 HDMI/HVS/V3D driver. Running startx or
+         booting to GUI while this overlay is in use will cause interesting
+         lockups.
+-Load:   dtoverlay=vc4-kms-v3d
+-Params: <None>
++Load:   dtoverlay=vc4-kms-v3d,<param>
++Params: cma-256                 CMA is 256MB, 256MB-aligned (needs 1GB)
++        cma-192                 CMA is 192MB, 256MB-aligned (needs 1GB)
++        cma-128                 CMA is 128MB, 128MB-aligned
++        cma-96                  CMA is 96MB, 128MB-aligned
++        cma-64                  CMA is 64MB, 64MB-aligned
+ 
+ 
+ Name:   vga666
+--- a/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
+@@ -94,4 +94,40 @@
+ 			bootargs = "cma=256M@256M";
+ 		};
+ 	};
++
++	fragment@5 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=192M@256M";
++		};
++	};
++
++	fragment@6 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=128M@128M";
++		};
++	};
++
++	fragment@7 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=96M@128M";
++		};
++	};
++
++	fragment@8 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=64M@64M";
++		};
++	};
++
++	__overrides__ {
++		cma-256 = <0>,"+4-5-6-7-8";
++		cma-192 = <0>,"-4+5-6-7-8";
++		cma-128 = <0>,"-4-5+6-7-8";
++		cma-96  = <0>,"-4-5-6+7-8";
++		cma-64  = <0>,"-4-5-6-7+8";
++	};
+ };

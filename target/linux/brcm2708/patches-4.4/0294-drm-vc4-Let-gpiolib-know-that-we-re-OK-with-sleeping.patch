@@ -1,0 +1,27 @@
+From 5967aea469c030c3bc258b52b9f3704fd9873e63 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 29 Feb 2016 17:53:00 -0800
+Subject: [PATCH 294/381] drm/vc4: Let gpiolib know that we're OK with sleeping
+ for HPD.
+
+Fixes an error thrown every few seconds when we poll HPD when it's on
+a I2C to GPIO expander.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Tested-by: Daniel Stone <daniels@collabora.com>
+(cherry picked from commit 0e60eab57557bc06bb3a5ef8d5d6dcd9ddd47aff)
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -168,7 +168,7 @@ vc4_hdmi_connector_detect(struct drm_con
+ 	return connector_status_connected;
+ 
+ 	if (vc4->hdmi->hpd_gpio) {
+-		if (gpio_get_value(vc4->hdmi->hpd_gpio))
++		if (gpio_get_value_cansleep(vc4->hdmi->hpd_gpio))
+ 			return connector_status_connected;
+ 		else
+ 			return connector_status_disconnected;

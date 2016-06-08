@@ -1,0 +1,86 @@
+From 33b3868f0ec0b813153b977b08087fa4e4d5a5d3 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 24 Mar 2016 17:23:48 -0700
+Subject: [PATCH 341/381] drm/panel: simple: Add the 7" DPI panel from Adafruit
+
+This is a basic TFT panel with a 40-pin FPC connector on it.  The
+specification doesn't define timings, but the Adafruit instructions
+were setting up 800x480 CVT.
+
+v2: Add .bus_format and vsync/hsync flags.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Acked-by: Rob Herring <robh@kernel.org>
+[treding@nvidia.com: keep entries properly sorted]
+Signed-off-by: Thierry Reding <treding@nvidia.com>
+
+(cherry picked from commit 8070fdbd024727c752f815b18e5339c681a01bbe)
+---
+ .../bindings/display/panel/ontat,yx700wv03.txt     |  7 ++++
+ drivers/gpu/drm/panel/panel-simple.c               | 37 ++++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/display/panel/ontat,yx700wv03.txt
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/display/panel/ontat,yx700wv03.txt
+@@ -0,0 +1,7 @@
++On Tat Industrial Company 7" DPI TFT panel.
++
++Required properties:
++- compatible: should be "ontat,yx700wv03"
++
++This binding is compatible with the simple-panel binding, which is specified
++in simple-panel.txt in this directory.
+--- a/drivers/gpu/drm/panel/panel-simple.c
++++ b/drivers/gpu/drm/panel/panel-simple.c
+@@ -1003,6 +1003,40 @@ static const struct panel_desc okaya_rs8
+ 	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
+ };
+ 
++/*
++ * 800x480 CVT. The panel appears to be quite accepting, at least as far as
++ * pixel clocks, but this is the timing that was being used in the Adafruit
++ * installation instructions.
++ */
++static const struct drm_display_mode ontat_yx700wv03_mode = {
++	.clock = 29500,
++	.hdisplay = 800,
++	.hsync_start = 824,
++	.hsync_end = 896,
++	.htotal = 992,
++	.vdisplay = 480,
++	.vsync_start = 483,
++	.vsync_end = 493,
++	.vtotal = 500,
++	.vrefresh = 60,
++	.flags = DRM_MODE_FLAG_NVSYNC | DRM_MODE_FLAG_NHSYNC,
++};
++
++/*
++ * Specification at:
++ * https://www.adafruit.com/images/product-files/2406/c3163.pdf
++ */
++static const struct panel_desc ontat_yx700wv03 = {
++	.modes = &ontat_yx700wv03_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 154,
++		.height = 83,
++	},
++	.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
++};
++
+ static const struct drm_display_mode ortustech_com43h4m85ulc_mode  = {
+ 	.clock = 25000,
+ 	.hdisplay = 480,
+@@ -1179,6 +1213,9 @@ static const struct of_device_id platfor
+ 		.compatible = "okaya,rs800480t-7x0gp",
+ 		.data = &okaya_rs800480t_7x0gp,
+ 	}, {
++		.compatible = "ontat,yx700wv03",
++		.data = &ontat_yx700wv03,
++	}, {
+ 		.compatible = "ortustech,com43h4m85ulc",
+ 		.data = &ortustech_com43h4m85ulc,
+ 	}, {

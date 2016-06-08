@@ -1,7 +1,7 @@
-From ade651419c0a60756b12bde37270de3aaede1545 Mon Sep 17 00:00:00 2001
+From a42056ad2e3f74569611dd4f15ca698ccd9d7bea Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Tue, 8 Mar 2016 09:49:16 +0000
-Subject: [PATCH 168/304] bcm2835-mmc: Only claim one DMA channel
+Subject: [PATCH 168/381] bcm2835-mmc: Only claim one DMA channel
 
 With both MMC controllers enabled there are few DMA channels left. The
 bcm2835-mmc driver only uses DMA in one direction at a time, so it

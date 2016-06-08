@@ -44,47 +44,72 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-bcm2835-i2s))
 
-define KernelPackage/sound-soc-boomberry-dac
-  TITLE:=Support for BoomBerry DAC
+define KernelPackage/sound-soc-adau1977-adc
+  TITLE:=Support for ADAU1977 ADC
   KCONFIG:= \
-	CONFIG_SND_BCM2708_SOC_BOOMBERRY_DAC \
-	CONFIG_SND_SOC_PCM512x
+	CONFIG_SND_BCM2708_SOC_ADAU1977_ADC \
+	CONFIG_SND_SOC_ADAU1977_I2C
   FILES:= \
-	$(LINUX_DIR)/sound/soc/bcm/snd-soc-boomberry-dac.ko \
-	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-boomberry-dac)
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-adau1977-adc.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-adau1977-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-adau1977-i2c snd-soc-adau1977-adc)
   DEPENDS:= \
 	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
 
-define KernelPackage/sound-soc-boomberry-dac/description
-  This package contains support for BoomBerry DAC
+define KernelPackage/sound-soc-adau1977-adc/description
+  This package contains support for ADAU1977 ADC
 endef
 
-$(eval $(call KernelPackage,sound-soc-boomberry-dac))
+$(eval $(call KernelPackage,sound-soc-adau1977-adc))
 
-define KernelPackage/sound-soc-boomberry-digi
-  TITLE:=Support for BoomBerry Digi
+define KernelPackage/sound-soc-audioinjector-pi-soundcard
+  TITLE:=Support for AudioInjector Pi soundcard
   KCONFIG:= \
-	CONFIG_SND_BCM2708_SOC_BOOMBERRY_DIGI \
-	CONFIG_SND_SOC_WM8804
+        CONFIG_SND_AUDIOINJECTOR_PI_SOUNDCARD \
+        CONFIG_SND_SOC_WM8731
   FILES:= \
-	$(LINUX_DIR)/sound/soc/bcm/snd-soc-boomberry-digi.ko \
-	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804 snd-soc-boomberry-digi)
+        $(LINUX_DIR)/sound/soc/bcm/snd-soc-audioinjector-pi-soundcard.ko \
+        $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8731.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8731 \
+	snd-soc-audioinjector-pi-soundcard)
+  DEPENDS:= \
+        kmod-sound-soc-bcm2835-i2s \
+        +kmod-i2c-bcm2708
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-audioinjector-pi-soundcard/description
+  This package contains support for AudioInjector Pi soundcard
+endef
+
+$(eval $(call KernelPackage,sound-soc-audioinjector-pi-soundcard))
+
+define KernelPackage/sound-soc-digidac1-soundcard
+  TITLE:=Support for RRA DigiDAC1
+  KCONFIG:= \
+	CONFIG_SND_DIGIDAC1_SOUNDCARD \
+	CONFIG_SND_SOC_WM8741 \
+	CONFIG_SND_SOC_WM8804_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-digidac1-soundcard.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8741.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-snd-soc-wm8741 \
+	snd-soc-snd-soc-wm8804-i2c snd-soc-digidac1-soundcard)
   DEPENDS:= \
 	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
 
-define KernelPackage/sound-soc-boomberry-digi/description
-  This package contains support for BoomBerry Digi
+define KernelPackage/sound-soc-digidac1-soundcard/description
+  This package contains support for RRA DigiDAC1
 endef
 
-$(eval $(call KernelPackage,sound-soc-boomberry-digi))
+$(eval $(call KernelPackage,sound-soc-digidac1-soundcard))
 
 define KernelPackage/sound-soc-hifiberry-dac
   TITLE:=Support for HifiBerry DAC
@@ -116,7 +141,8 @@ define KernelPackage/sound-soc-hifiberry-dacplus
 	$(LINUX_DIR)/drivers/clk/clk-hifiberry-dacpro.ko \
 	$(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplus.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko
-  AUTOLOAD:=$(call AutoLoad,68,clk-hifiberry-dacpro snd-soc-pcm512x snd-soc-hifiberry-dacplus)
+  AUTOLOAD:=$(call AutoLoad,68,clk-hifiberry-dacpro snd-soc-pcm512x \
+	snd-soc-hifiberry-dacplus)
   DEPENDS:= \
 	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
@@ -171,6 +197,98 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-hifiberry-amp))
 
+define KernelPackage/sound-soc-iqaudio-dac
+  TITLE:=Support for IQaudIO-DAC
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC \
+	CONFIG_SND_SOC_PCM512x \
+	CONFIG_SND_SOC_PCM512x_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-iqaudio-dac.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c \
+	snd-soc-iqaudio-dac)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s \
+	+kmod-i2c-bcm2708
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-iqaudio-dac/description
+  This package contains support for IQaudIO-DAC
+endef
+
+$(eval $(call KernelPackage,sound-soc-iqaudio-dac))
+
+define KernelPackage/sound-soc-justboom-dac
+  TITLE:=Support for JustBoom DAC
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_JUSTBOOM_DAC \
+	CONFIG_SND_SOC_PCM512x
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-justboom-dac.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-justboom-dac)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s \
+	+kmod-i2c-bcm2708
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-justboom-dac/description
+  This package contains support for JustBoom DAC
+endef
+
+$(eval $(call KernelPackage,sound-soc-justboom-dac))
+
+define KernelPackage/sound-soc-justboom-digi
+  TITLE:=Support for JustBoom Digi
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_JUSTBOOM_DIGI \
+	CONFIG_SND_SOC_WM8804
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-justboom-digi.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804 snd-soc-justboom-digi)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s \
+	+kmod-i2c-bcm2708
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-justboom-digi/description
+  This package contains support for JustBoom Digi
+endef
+
+$(eval $(call KernelPackage,sound-soc-justboom-digi))
+
+define KernelPackage/sound-soc-raspidac3
+  TITLE:=Support for RaspiDAC Rev.3x
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_RASPIDAC3 \
+	CONFIG_SND_SOC_PCM512x \
+	CONFIG_SND_SOC_PCM512x_I2C \
+	CONFIG_SND_SOC_TPA6130A2
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-raspidac3.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-tpa6130a2.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c \
+	snd-soc-tpa6130a2 snd-soc-raspidac3)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s \
+	+kmod-i2c-bcm2708
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-raspidac3/description
+  This package contains support for RaspiDAC Rev.3x
+endef
+
+$(eval $(call KernelPackage,sound-soc-raspidac3))
+
 define KernelPackage/sound-soc-rpi-dac
   TITLE:=Support for RPi-DAC
   KCONFIG:= \
@@ -212,54 +330,6 @@ define KernelPackage/sound-soc-rpi-proto/description
 endef
 
 $(eval $(call KernelPackage,sound-soc-rpi-proto))
-
-define KernelPackage/sound-soc-iqaudio-dac
-  TITLE:=Support for IQaudIO-DAC
-  KCONFIG:= \
-	CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC \
-	CONFIG_SND_SOC_PCM512x \
-	CONFIG_SND_SOC_PCM512x_I2C
-  FILES:= \
-	$(LINUX_DIR)/sound/soc/bcm/snd-soc-iqaudio-dac.ko \
-	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c snd-soc-iqaudio-dac)
-  DEPENDS:= \
-	kmod-sound-soc-bcm2835-i2s \
-	+kmod-i2c-bcm2708
-  $(call AddDepends/sound)
-endef
-
-define KernelPackage/sound-soc-iqaudio-dac/description
-  This package contains support for IQaudIO-DAC
-endef
-
-$(eval $(call KernelPackage,sound-soc-iqaudio-dac))
-
-define KernelPackage/sound-soc-raspidac3
-  TITLE:=Support for RaspiDAC Rev.3x
-  KCONFIG:= \
-	CONFIG_SND_BCM2708_SOC_RASPIDAC3 \
-	CONFIG_SND_SOC_PCM512x \
-	CONFIG_SND_SOC_PCM512x_I2C \
-	CONFIG_SND_SOC_TPA6130A2
-  FILES:= \
-	$(LINUX_DIR)/sound/soc/bcm/snd-soc-raspidac3.ko \
-	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko \
-	$(LINUX_DIR)/sound/soc/codecs/snd-soc-tpa6130a2.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c snd-soc-tpa6130a2 snd-soc-raspidac3)
-  DEPENDS:= \
-	kmod-sound-soc-bcm2835-i2s \
-	+kmod-i2c-bcm2708
-  $(call AddDepends/sound)
-endef
-
-define KernelPackage/sound-soc-raspidac3/description
-  This package contains support for RaspiDAC Rev.3x
-endef
-
-$(eval $(call KernelPackage,sound-soc-raspidac3))
 
 
 define KernelPackage/random-bcm2835

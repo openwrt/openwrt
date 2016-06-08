@@ -1,0 +1,56 @@
+From 8479891a91161b13f8d63b7d8aa6614cb03e3442 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 11 May 2016 12:50:33 +0100
+Subject: [PATCH 352/381] mmc: Add MMC_QUIRK_ERASE_BROKEN for some cards
+
+Some SD cards have been found that corrupt data when small blocks
+are erased. Add a quirk to indicate that ERASE should not be used,
+and set it for cards of that type.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/mmc/card/block.c | 7 +++++++
+ drivers/mmc/core/core.c  | 3 ++-
+ include/linux/mmc/card.h | 3 +++
+ 3 files changed, 12 insertions(+), 1 deletion(-)
+
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -2552,6 +2552,13 @@ static const struct mmc_fixup blk_fixups
+ 	MMC_FIXUP("V10016", CID_MANFID_KINGSTON, CID_OEMID_ANY, add_quirk_mmc,
+ 		  MMC_QUIRK_TRIM_BROKEN),
+ 
++	/*
++	 *  On some Kingston SD cards, multiple erases of less than 64
++	 *  sectors can cause corruption.
++	 */
++	MMC_FIXUP("SD16G", 0x41, 0x3432, add_quirk_mmc,
++		  MMC_QUIRK_ERASE_BROKEN),
++
+ 	END_FIXUP
+ };
+ 
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -2253,7 +2253,8 @@ EXPORT_SYMBOL(mmc_erase);
+ int mmc_can_erase(struct mmc_card *card)
+ {
+ 	if ((card->host->caps & MMC_CAP_ERASE) &&
+-	    (card->csd.cmdclass & CCC_ERASE) && card->erase_size)
++	    (card->csd.cmdclass & CCC_ERASE) && card->erase_size &&
++	    !(card->quirks & MMC_QUIRK_ERASE_BROKEN))
+ 		return 1;
+ 	return 0;
+ }
+--- a/include/linux/mmc/card.h
++++ b/include/linux/mmc/card.h
+@@ -281,6 +281,9 @@ struct mmc_card {
+ #define MMC_QUIRK_TRIM_BROKEN	(1<<12)		/* Skip trim */
+ 
+ 
++#define MMC_QUIRK_ERASE_BROKEN	(1<<31)		/* Skip erase */
++
++
+ 	unsigned int		erase_size;	/* erase size in sectors */
+  	unsigned int		erase_shift;	/* if erase unit is power 2 */
+  	unsigned int		pref_erase;	/* in sectors */

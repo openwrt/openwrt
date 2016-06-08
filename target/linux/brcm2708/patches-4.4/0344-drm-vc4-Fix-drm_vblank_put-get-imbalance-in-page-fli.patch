@@ -1,0 +1,48 @@
+From c4f773a1aa2d372d152138952cf7058ce93f8952 Mon Sep 17 00:00:00 2001
+From: Mario Kleiner <mario.kleiner.de@gmail.com>
+Date: Fri, 6 May 2016 19:26:06 +0200
+Subject: [PATCH 344/381] drm/vc4: Fix drm_vblank_put/get imbalance in page
+ flip path.
+
+The async page flip path was missing drm_crtc_vblank_get/put
+completely. The sync flip path was missing a vblank put, so async
+flips only reported proper pageflip completion events by chance,
+and vblank irq's never turned off after a first vsync'ed page flip
+until system reboot.
+
+Tested against Raspian kernel 4.4.8 tree on RPi 2B.
+
+Signed-off-by: Mario Kleiner <mario.kleiner.de@gmail.com>
+Cc: Eric Anholt <eric@anholt.net>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -506,6 +506,7 @@ static void vc4_crtc_handle_page_flip(st
+ 	if (vc4_crtc->event) {
+ 		drm_crtc_send_vblank_event(crtc, vc4_crtc->event);
+ 		vc4_crtc->event = NULL;
++		drm_crtc_vblank_put(crtc);
+ 	}
+ 	spin_unlock_irqrestore(&dev->event_lock, flags);
+ }
+@@ -556,6 +557,7 @@ vc4_async_page_flip_complete(struct vc4_
+ 		spin_unlock_irqrestore(&dev->event_lock, flags);
+ 	}
+ 
++	drm_crtc_vblank_put(crtc);
+ 	drm_framebuffer_unreference(flip_state->fb);
+ 	kfree(flip_state);
+ 
+@@ -598,6 +600,8 @@ static int vc4_async_page_flip(struct dr
+ 		return ret;
+ 	}
+ 
++	WARN_ON(drm_crtc_vblank_get(crtc) != 0);
++
+ 	/* Immediately update the plane's legacy fb pointer, so that later
+ 	 * modeset prep sees the state that will be present when the semaphore
+ 	 * is released.
