@@ -95,13 +95,16 @@ define KernelPackage/sound-soc-digidac1-soundcard
   KCONFIG:= \
 	CONFIG_SND_DIGIDAC1_SOUNDCARD \
 	CONFIG_SND_SOC_WM8741 \
+	CONFIG_SND_SOC_WM8804 \
 	CONFIG_SND_SOC_WM8804_I2C
   FILES:= \
 	$(LINUX_DIR)/sound/soc/bcm/snd-soc-digidac1-soundcard.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8741.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-snd-soc-wm8741 \
-	snd-soc-snd-soc-wm8804-i2c snd-soc-digidac1-soundcard)
+	snd-soc-snd-soc-wm8804 snd-soc-snd-soc-wm8804-i2c \
+	snd-soc-digidac1-soundcard)
   DEPENDS:= \
 	kmod-sound-soc-bcm2835-i2s \
 	+kmod-i2c-bcm2708
