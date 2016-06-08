@@ -229,6 +229,7 @@ generate_static_system() {
 		set system.@system[-1].hostname='lede'
 		set system.@system[-1].timezone='UTC'
 		set system.@system[-1].ttylogin='0'
+		set system.@system[-1].log_size='64'
 
 		delete system.ntp
 		set system.ntp='timeserver'
