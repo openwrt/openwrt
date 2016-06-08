@@ -37,6 +37,12 @@ load_led() {
 	[ -e /sys/class/leds/${sysfs}/brightness ] && {
 		echo "setting up led ${name}"
 
+		printf "%s %s %d\n" \
+			"$sysfs" \
+			"$(sed -ne 's/^.*\[\(.*\)\].*$/\1/p' /sys/class/leds/${sysfs}/trigger)" \
+			"$(cat /sys/class/leds/${sysfs}/brightness)" \
+				>> /var/run/led.state
+
 		[ "$default" = 0 ] &&
 			echo 0 >/sys/class/leds/${sysfs}/brightness
 
@@ -103,11 +109,17 @@ load_led() {
 
 start() {
 	[ -e /sys/class/leds/ ] && {
-		local led
-		for led in /sys/class/leds/*; do
-			[ -e "$led/trigger" ] && echo "none" > "$led/trigger"
-			[ -e "$led/brightness" ] && echo "0" > "$led/brightness"
-		done
+		[ -s /var/run/led.state ] && {
+			local led trigger brightness
+			while read led trigger brightness; do
+				[ -e "/sys/class/leds/$led/trigger" ] && \
+					echo "$trigger" > "/sys/class/leds/$led/trigger"
+
+				[ -e "/sys/class/leds/$led/brightness" ] && \
+					echo "$brightness" > "/sys/class/leds/$led/brightness"
+			done < /var/run/led.state
+			rm /var/run/led.state
+		}
 
 		config_load system
 		config_foreach load_led led
