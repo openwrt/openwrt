@@ -422,4 +422,5 @@ if [ ! -f /etc/config/system ]; then
 
 	json_get_keys keys led
 	for key in $keys; do generate_led $key; done
+fi
 uci commit
