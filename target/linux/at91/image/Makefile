@@ -51,6 +51,12 @@ define Device/evaluation-dtb
   IMAGE/dtb := install-dtb
 endef
 
+define Device/evaluation-fit
+  $(Device/evaluation)
+  KERNEL_SUFFIX := -fit-uImage.itb
+  KERNEL := kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+endef
+
 define Device/production
   UBINIZE_OPTS := -E 5
   IMAGES := factory.bin

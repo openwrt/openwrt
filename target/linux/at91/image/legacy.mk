@@ -116,3 +116,18 @@ define Device/at91-q5xr5
   KERNEL_SIZE := 2048k
 endef
 TARGET_DEVICES += at91-q5xr5
+
+define Device/wb45n
+  $(Device/evaluation-fit)
+  DEVICE_TITLE := Laird WB45N
+  DEVICE_PACKAGES := \
+	kmod-mmc-at91 kmod-ath6kl-sdio ath6k-firmware \
+	kmod-usb-storage kmod-fs-vfat kmod-fs-msdos \
+	kmod-leds-gpio
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 2048
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB -c 955
+endef
+TARGET_DEVICES += wb45n
+
