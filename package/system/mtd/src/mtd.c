@@ -859,7 +859,7 @@ int main (int argc, char **argv)
 				errno = 0;
 				data_size = strtoul(optarg, 0, 0);
 				if (errno) {
-					fprintf(stderr, "-d: illegal numeric string\n");
+					fprintf(stderr, "-c: illegal numeric string\n");
 					usage();
 				}
 				break;
