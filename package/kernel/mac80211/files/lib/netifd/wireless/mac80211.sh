@@ -220,7 +220,6 @@ mac80211_hostapd_setup_base() {
 			vht_max_a_mpdu_len_exp:7 \
 			vht_max_mpdu:11454 \
 			rx_stbc:4 \
-			tx_stbc:4 \
 			vht_link_adapt:3 \
 			vht160:2
 
@@ -232,13 +231,13 @@ mac80211_hostapd_setup_base() {
 
 		cap_rx_stbc=$((($vht_cap >> 8) & 7))
 		[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
-		ht_cap_mask="$(( ($vht_cap & ~(0x700)) | ($cap_rx_stbc << 8) ))"
+		vht_cap="$(( ($vht_cap & ~(0x700)) | ($cap_rx_stbc << 8) ))"
 
 		mac80211_add_capabilities vht_capab $vht_cap \
 			RXLDPC:0x10::$rxldpc \
 			SHORT-GI-80:0x20::$short_gi_80 \
 			SHORT-GI-160:0x40::$short_gi_160 \
-			TX-STBC-2BY1:0x80::$tx_stbc \
+			TX-STBC-2BY1:0x80::$tx_stbc_2by1 \
 			SU-BEAMFORMER:0x800::$su_beamformer \
 			SU-BEAMFORMEE:0x1000::$su_beamformee \
 			MU-BEAMFORMER:0x80000::$mu_beamformer \
@@ -247,10 +246,10 @@ mac80211_hostapd_setup_base() {
 			HTC-VHT:0x400000::$htc_vht \
 			RX-ANTENNA-PATTERN:0x10000000::$rx_antenna_pattern \
 			TX-ANTENNA-PATTERN:0x20000000::$tx_antenna_pattern \
-			RX-STBC1:0x700:0x100:1 \
-			RX-STBC12:0x700:0x200:1 \
-			RX-STBC123:0x700:0x300:1 \
-			RX-STBC1234:0x700:0x400:1 \
+			RX-STBC-1:0x700:0x100:1 \
+			RX-STBC-12:0x700:0x200:1 \
+			RX-STBC-123:0x700:0x300:1 \
+			RX-STBC-1234:0x700:0x400:1 \
 
 		# supported Channel widths
 		vht160_hw=0
