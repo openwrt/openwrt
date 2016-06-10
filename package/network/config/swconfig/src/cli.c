@@ -335,10 +335,10 @@ int main(int argc, char **argv)
 		if(cvlan > -1)
 			cport = cvlan;
 
-		if(swlib_set_attr_string(dev, a, cport, cvalue) < 0)
+		retval = swlib_set_attr_string(dev, a, cport, cvalue);
+		if (retval < 0)
 		{
-			fprintf(stderr, "failed\n");
-			retval = -1;
+			nl_perror(-retval, "Failed to set attribute");
 			goto out;
 		}
 		break;
@@ -347,10 +347,10 @@ int main(int argc, char **argv)
 			val.port_vlan = cvlan;
 		if(cport > -1)
 			val.port_vlan = cport;
-		if(swlib_get_attr(dev, a, &val) < 0)
+		retval = swlib_get_attr(dev, a, &val);
+		if (retval < 0)
 		{
-			fprintf(stderr, "failed\n");
-			retval = -1;
+			nl_perror(-retval, "Failed to get attribute");
 			goto out;
 		}
 		print_attr_val(a, &val);
