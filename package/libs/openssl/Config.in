@@ -35,6 +35,11 @@ config OPENSSL_WITH_PSK
 	default y
 	prompt "Enable PSK support"
 
+config OPENSSL_WITH_SRP
+	bool
+	default y
+	prompt "Enable SRP support"
+
 config OPENSSL_ENGINE_DIGEST
 	bool
 	depends on OPENSSL_ENGINE_CRYPTO
