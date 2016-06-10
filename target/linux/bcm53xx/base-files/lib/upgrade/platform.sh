@@ -132,22 +132,12 @@ platform_check_image() {
 	return $error
 }
 
-platform_pre_upgrade() {
-	export RAMFS_COPY_BIN="${RAMFS_COPY_BIN} /usr/bin/oseama /bin/sed"
-
-	local file_type=$(platform_identify "$1")
+# $(1): image for upgrade (with possible extra header)
+# $(2): offset of trx in image
+platform_pre_upgrade_trx() {
 	local dir="/tmp/sysupgrade-bcm53xx"
 	local trx="$1"
-	local offset
-
-	[ "$(platform_flash_type)" != "nand" ] && return
-
-	# Find trx offset
-	case "$file_type" in
-		"chk")		offset=$((0x$(get_magic_long_at "$1" 4)));;
-		"cybertan")	offset=32;;
-		"seama")	return;;
-	esac
+	local offset="$2"
 
 	# Extract partitions from trx
 	rm -fR $dir
@@ -205,6 +195,22 @@ platform_pre_upgrade() {
 	# Flash
 	mtd write /tmp/kernel.trx firmware
 	nand_do_upgrade /tmp/root.ubi
+}
+
+platform_pre_upgrade() {
+	export RAMFS_COPY_BIN="${RAMFS_COPY_BIN} /usr/bin/oseama /bin/sed"
+
+	local file_type=$(platform_identify "$1")
+
+	[ "$(platform_flash_type)" != "nand" ] && return
+
+	# Find trx offset
+	case "$file_type" in
+		"chk")		platform_pre_upgrade_trx "$1" $((0x$(get_magic_long_at "$1" 4)));;
+		"cybertan")	platform_pre_upgrade_trx "$1" 32;;
+		"seama")	return;;
+		"trx")		platform_pre_upgrade_trx "$1";;
+	esac
 }
 
 platform_trx_from_chk_cmd() {
