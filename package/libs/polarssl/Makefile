@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=polarssl
 SRC_PKG_NAME:=mbedtls
 PKG_VERSION:=1.3.16
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(SRC_PKG_NAME)-$(PKG_VERSION)-gpl.tgz
