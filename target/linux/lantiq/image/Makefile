@@ -642,6 +642,9 @@ FRITZ3370_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
 Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
 
+Image/BuildKernel/Profile/FRITZ7360SL=$(call Image/BuildKernelEVA/Template,FRITZ7360SL)
+Image/Build/Profile/FRITZ7360SL=$(call Image/BuildEVA/$(1),$(1),FRITZ7360SL)
+
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
