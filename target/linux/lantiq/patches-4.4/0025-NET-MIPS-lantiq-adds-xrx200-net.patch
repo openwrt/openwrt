@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1802 @@
+@@ -0,0 +1,1810 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -1421,13 +1421,18 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +static void xrx200_mdio_link(struct net_device *dev)
 +{
 +	struct xrx200_priv *priv = netdev_priv(dev);
++	bool changed = false, link = false;
 +	int i;
 +
 +	for (i = 0; i < priv->num_port; i++) {
 +		if (!priv->port[i].phydev)
 +			continue;
 +
++		if (priv->port[i].phydev->link)
++			link = true;
++
 +		if (priv->port[i].link != priv->port[i].phydev->link) {
++			changed = true;
 +			xrx200_gmac_update(&priv->port[i]);
 +			priv->port[i].link = priv->port[i].phydev->link;
 +			netdev_info(dev, "port %d %s link\n",
@@ -1435,6 +1440,8 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +				(priv->port[i].link)?("got"):("lost"));
 +		}
 +	}
++	if (changed && !link)
++		netif_carrier_off(dev);
 +}
 +
 +static inline int xrx200_mdio_poll(struct mii_bus *bus)
@@ -1512,6 +1519,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +			| SUPPORTED_TP);
 +	phydev->advertising = phydev->supported;
 +	port->phydev = phydev;
++	phydev->no_auto_carrier_off = true;
 +
 +	pr_info("%s: attached PHY [%s] (phy_addr=%s, irq=%d)\n",
 +		dev->name, phydev->drv->name,
