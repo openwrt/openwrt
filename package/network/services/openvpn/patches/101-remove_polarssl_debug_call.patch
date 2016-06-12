@@ -1,0 +1,21 @@
+openvpn: remove call to PolarSSL debug function
+
+OpenVPN >=2.3.11 uses PolarSSL debug functions for improved logging.
+This requires that PolarSSL is built with POLARSSL_DEBUG_C, which increases
+its size significantly.
+
+This change does not impact OpenVPN operation, see:
+https://sourceforge.net/p/openvpn/mailman/message/35153943/
+
+Signed-off-by: Magnus Kroken <mkroken@gmail.com>
+
+--- a/src/openvpn/ssl_polarssl.c
++++ b/src/openvpn/ssl_polarssl.c
+@@ -742,7 +742,7 @@ void key_state_ssl_init(struct key_state
+   if (polar_ok(ssl_init(ks_ssl->ctx)))
+     {
+       /* Initialise SSL context */
+-      debug_set_threshold(3);
++      /*debug_set_threshold(3);*/
+       ssl_set_dbg (ks_ssl->ctx, my_debug, NULL);
+       ssl_set_endpoint (ks_ssl->ctx, ssl_ctx->endpoint);
