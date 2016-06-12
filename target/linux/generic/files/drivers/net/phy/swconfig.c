@@ -1025,16 +1025,19 @@ static struct genl_ops swconfig_ops[] = {
 	},
 	{
 		.cmd = SWITCH_CMD_SET_GLOBAL,
+		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
 		.policy = switch_policy,
 	},
 	{
 		.cmd = SWITCH_CMD_SET_VLAN,
+		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
 		.policy = switch_policy,
 	},
 	{
 		.cmd = SWITCH_CMD_SET_PORT,
+		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
 		.policy = switch_policy,
 	},
