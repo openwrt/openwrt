@@ -50,6 +50,15 @@ define Device/ArcherC20i
 endef
 TARGET_DEVICES += ArcherC20i
 
+define Device/ArcherC50
+  DTS := ArcherC50
+  KERNEL := $(KERNEL_DTB)
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC50 -c
+  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC50 -j -r $(KDIR)/root.squashfs
+  DEVICE_TITLE := TP-Link ArcherC50
+endef
+TARGET_DEVICES += ArcherC50
+
 ex2700_mtd_size=3866624
 define Device/ex2700
   DTS := EX2700
