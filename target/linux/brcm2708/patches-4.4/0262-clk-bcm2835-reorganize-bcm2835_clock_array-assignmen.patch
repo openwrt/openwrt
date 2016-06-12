@@ -474,7 +474,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  struct bcm2835_pll {
  	struct clk_hw hw;
  	struct bcm2835_cprman *cprman;
-@@ -1590,7 +1173,7 @@ bcm2835_register_pll_divider(struct bcm2
+@@ -1594,7 +1177,7 @@ bcm2835_register_pll_divider(struct bcm2
  
  	memset(&init, 0, sizeof(init));
  
@@ -483,7 +483,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  	init.num_parents = 1;
  	init.name = divider_name;
  	init.ops = &bcm2835_pll_divider_clk_ops;
-@@ -1689,50 +1272,401 @@ struct bcm2835_clk_desc {
+@@ -1693,50 +1276,401 @@ struct bcm2835_clk_desc {
  	const void *data;
  };
  

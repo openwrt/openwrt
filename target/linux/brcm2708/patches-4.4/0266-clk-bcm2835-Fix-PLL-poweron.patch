@@ -19,9 +19,9 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -557,6 +557,10 @@ static int bcm2835_pll_on(struct clk_hw
- 	const struct bcm2835_pll_data *data = pll->data;
- 	ktime_t timeout;
+@@ -561,6 +561,10 @@ static int bcm2835_pll_on(struct clk_hw
+ 		     cprman_read(cprman, data->a2w_ctrl_reg) &
+ 		     ~A2W_PLL_CTRL_PWRDN);
  
 +	cprman_write(cprman, data->a2w_ctrl_reg,
 +		     cprman_read(cprman, data->a2w_ctrl_reg) &
