@@ -30,7 +30,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif /* _PCI_ATH_FIXUP */
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-@@ -104,5 +104,8 @@ int xrx200_gphy_boot(struct device *dev,
+@@ -104,5 +104,8 @@
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
  
@@ -41,7 +41,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #endif /* _LTQ_XWAY_H__ */
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -2,4 +2,7 @@ obj-y := prom.o sysctrl.o clk.o reset.o
+@@ -2,4 +2,7 @@
  
  obj-y += vmmc.o tffs.o
  
@@ -51,7 +51,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,298 @@
+@@ -0,0 +1,307 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -104,6 +104,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	const __be32 *list;
 +	const char *part;
 +	phandle phandle;
++	u16 dev_ids[2] = { 0 };
 +
 +	if ((list = of_get_property(np, "ath,eep-flash", &i)) && i == 2 *
 +			sizeof(*list) && (phandle = be32_to_cpup(list++)) &&
@@ -186,6 +187,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +                                pci_fixup_device(pci_fixup_early, d);
 +                }
 +
++	}
++
++	if (!of_property_read_u16_array(np, "ath,device-id", dev_ids, 2)) {
++		struct pci_dev *d = NULL;
++
++		while ((d = pci_get_device(PCI_VENDOR_ID_ATHEROS,
++					   dev_ids[0], d)) != NULL)
++		        d->device = dev_ids[1];
 +	}
 +
 +	if (!of_property_read_u32(np, "ath,led-pin", &led_pin)) {
@@ -615,7 +624,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +device_initcall(of_ralink_eeprom_init);
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
-@@ -840,7 +840,11 @@ ltq_etop_init(struct net_device *dev)
+@@ -840,7 +840,11 @@
  	if (err)
  		goto err_hw;
  
