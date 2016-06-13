@@ -50,6 +50,13 @@ define Package/fstools/config
 			This option makes it possible to use extroot functionality if the root filesystem resides on an UBIFS partition
 endef
 
+define Package/snapshot-tool
+  SECTION:=base
+  CATEGORY:=Base system
+  TITLE:=rootfs snapshoting tool
+  DEPENDS:=+libubox
+endef
+
 define Package/block-mount
   SECTION:=base
   CATEGORY:=Base system
@@ -60,10 +67,16 @@ endef
 define Package/fstools/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/lib
 
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{mount_root,jffs2reset,snapshot_tool} $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{mount_root,jffs2reset} $(1)/sbin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libfstools.so $(1)/lib/
-	$(INSTALL_BIN) ./files/snapshot $(1)/sbin/
 	$(LN) jffs2reset $(1)/sbin/jffs2mark
+endef
+
+define Package/snapshot-tool/install
+	$(INSTALL_DIR) $(1)/sbin
+
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/snapshot_tool $(1)/sbin/
+	$(INSTALL_BIN) ./files/snapshot $(1)/sbin/
 endef
 
 define Package/block-mount/install
@@ -88,4 +101,5 @@ define Build/InstallDev
 endef
 
 $(eval $(call BuildPackage,fstools))
+$(eval $(call BuildPackage,snapshot-tool))
 $(eval $(call BuildPackage,block-mount))
