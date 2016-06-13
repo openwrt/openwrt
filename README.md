@@ -133,6 +133,24 @@ If you change any option you need and then save & quit GUI, the changed configur
 
 For more details please refer to [OpenWrt Build System]("http://wiki.openwrt.org/doc/howto/build")
 
+## Adding Linux Kernel patches
+Linux kernel patches are added at :-
+
+    target/linux/pistachio/patches-<kernel_version>/
+
+* All kernel patches are created from the linux kernel hosted [here](https://github.com/IMGCreator/linux).
+* Kernel patches for specific kernel version used in OpenWrt are prepared from corresponding branches in [linux](https://github.com/IMGCreator/linux) repo. e.g.
+
+        target/linux/pistachio/patches-4.1/
+
+contains patches created from [openwrt-4.1.13](https://github.com/IMGCreator/linux/tree/openwrt-4.1.13) branch.
+* For adding the kernel patch in OpenWrt, create a PR in [linux](https://github.com/IMGCreator/linux) with the change, and also create a PR with the patch of the change in OpenWrt repository.
+* Following command can be used for creating the kernel patch :-
+
+        git format-patch <commit_id> --keep-subject --start-number <number>
+
+*NOTE :* Number should the next one from the last patch already added in OpenWrt.
+
 ## Serial Console
 Connect the Marduk board to development computer over serial port. Open a serial console on host PC.
 
