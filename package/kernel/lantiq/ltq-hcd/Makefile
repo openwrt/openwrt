@@ -23,14 +23,14 @@ define KernelPackage/ltq-hcd-template
   TITLE:=USB driver for $(1)
   URL:=http://www.lantiq.com/
   VARIANT:=$(1)
-  DEPENDS:=@TARGET_lantiq_$(2) +kmod-usb-core
+  DEPENDS:=@$(2) +kmod-usb-core
   FILES:=$(PKG_BUILD_DIR)/ltq_hcd_$(1).ko
   AUTOLOAD:=$(call AutoProbe,ltq_hcd_$(1),1)
 endef
 
-KernelPackage/ltq-hcd-ase=$(call KernelPackage/ltq-hcd-template,ase,ase)
-KernelPackage/ltq-hcd-danube=$(call KernelPackage/ltq-hcd-template,danube,xway)
-KernelPackage/ltq-hcd-ar9=$(call KernelPackage/ltq-hcd-template,ar9,xway)
+KernelPackage/ltq-hcd-ase=$(call KernelPackage/ltq-hcd-template,ase,TARGET_lantiq_ase)
+KernelPackage/ltq-hcd-danube=$(call KernelPackage/ltq-hcd-template,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy))
+KernelPackage/ltq-hcd-ar9=$(call KernelPackage/ltq-hcd-template,ar9,TARGET_lantiq_xway)
 
 define Build/Prepare
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)

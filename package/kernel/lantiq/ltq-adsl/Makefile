@@ -30,14 +30,14 @@ define KernelPackage/ltq-adsl-template
   TITLE:=adsl driver for $(1)
   URL:=http://www.lantiq.com/
   VARIANT:=$(1)
-  DEPENDS:=@TARGET_lantiq_$(2) +kmod-ltq-adsl-$(1)-mei
+  DEPENDS:=@$(2) +kmod-ltq-adsl-$(1)-mei
   FILES:=$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.ko
   AUTOLOAD:=$(call AutoLoad,51,drv_dsl_cpe_api)
 endef
 
-KernelPackage/ltq-adsl-danube=$(call KernelPackage/ltq-adsl-template,danube,xway)
-KernelPackage/ltq-adsl-ar9=$(call KernelPackage/ltq-adsl-template,ar9,xway)
-KernelPackage/ltq-adsl-ase=$(call KernelPackage/ltq-adsl-template,ase,ase)
+KernelPackage/ltq-adsl-danube=$(call KernelPackage/ltq-adsl-template,danube,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy))
+KernelPackage/ltq-adsl-ar9=$(call KernelPackage/ltq-adsl-template,ar9,TARGET_lantiq_xway)
+KernelPackage/ltq-adsl-ase=$(call KernelPackage/ltq-adsl-template,ase,TARGET_lantiq_ase)
 
 define KernelPackage/ltq-dsl/config
 	source "$(SOURCE)/Config.in"
