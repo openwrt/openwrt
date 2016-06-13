@@ -281,6 +281,73 @@ define Device/lantiqBrnImage
 endef
 DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY
 
+ifeq ($(SUBTARGET),xway_legacy)
+
+define Device/ARV4520PW
+  DEVICE_PROFILE := ARV4520PW
+  IMAGE_SIZE := 3648k
+  DEVICE_TITLE := Easybox 800, WAV-281 - ARV4520PW
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube \
+	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-rt61-pci wpad-mini \
+	swconfig
+endef
+TARGET_DEVICES += ARV4520PW
+
+define Device/ARV4525PW
+  DEVICE_PROFILE := ARV4525PW
+  IMAGE_SIZE := 3776k
+  DEVICE_TITLE := Speedport W502V Typ A - ARV4525PW
+  DEVICE_PACKAGES := kmod-ath5k wpad-mini \
+	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+	ltq-adsl-app ppp-mod-pppoa
+endef
+TARGET_DEVICES += ARV4525PW
+
+define Device/ARV452CQW
+  DEVICE_PROFILE := ARV452CQW
+  IMAGE_SIZE := 3776k
+  DEVICE_TITLE := Easybox 801 - ARV452CQW
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube \
+	kmod-ath5k wpad-mini \
+	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+	ltq-adsl-app ppp-mod-pppoa \
+	swconfig
+endef
+TARGET_DEVICES += ARV452CQW
+
+define Device/ARV4518PWR01
+  DEVICE_PROFILE := ARV4518PWR01
+  IMAGE_SIZE := 3776k
+  DEVICE_TITLE := ARV4518PWR01
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-ath5k wpad-mini \
+	swconfig
+endef
+TARGET_DEVICES += ARV4518PWR01
+
+define Device/ARV4518PWR01A
+  DEVICE_PROFILE := ARV4518PWR01A
+  IMAGE_SIZE := 3776k
+  DEVICE_TITLE := ARV4518PWR01A
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-ath5k wpad-mini \
+	swconfig
+endef
+TARGET_DEVICES += ARV4518PWR01A
+
+endif
+
 ifeq ($(SUBTARGET),xway)
 
 # Danube
@@ -322,17 +389,6 @@ define Device/ARV4510PW
 endef
 TARGET_DEVICES += ARV4510PW
 
-define Device/ARV4525PW
-  DEVICE_PROFILE := ARV4525PW
-  IMAGE_SIZE := 3776k
-  DEVICE_TITLE := Speedport W502V Typ A - ARV4525PW
-  DEVICE_PACKAGES := kmod-ath5k wpad-mini \
-	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
-	ltq-adsl-app ppp-mod-pppoa
-endef
-TARGET_DEVICES += ARV4525PW
-
 define Device/ARV7525PW
   DEVICE_PROFILE := ARV7525PW
   IMAGE_SIZE := 3776k
@@ -343,32 +399,6 @@ define Device/ARV7525PW
 	ltq-adsl-app ppp-mod-pppoa
 endef
 TARGET_DEVICES += ARV7525PW
-
-define Device/ARV4518PWR01
-  DEVICE_PROFILE := ARV4518PWR01
-  IMAGE_SIZE := 3776k
-  DEVICE_TITLE := ARV4518PWR01
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
-	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
-	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath5k wpad-mini \
-	swconfig
-endef
-TARGET_DEVICES += ARV4518PWR01
-
-define Device/ARV4518PWR01A
-  DEVICE_PROFILE := ARV4518PWR01A
-  IMAGE_SIZE := 3776k
-  DEVICE_TITLE := ARV4518PWR01A
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
-	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
-	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath5k wpad-mini \
-	swconfig
-endef
-TARGET_DEVICES += ARV4518PWR01A
 
 define Device/ARV4519PW
   DEVICE_PROFILE := ARV4519PW
@@ -381,32 +411,6 @@ define Device/ARV4519PW
 	swconfig
 endef
 TARGET_DEVICES += ARV4519PW
-
-define Device/ARV4520PW
-  DEVICE_PROFILE := ARV4520PW
-  IMAGE_SIZE := 3648k
-  DEVICE_TITLE := Easybox 800, WAV-281 - ARV4520PW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
-	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
-	ltq-adsl-app ppp-mod-pppoa \
-	kmod-rt61-pci wpad-mini \
-	swconfig
-endef
-TARGET_DEVICES += ARV4520PW
-
-define Device/ARV452CQW
-  DEVICE_PROFILE := ARV452CQW
-  IMAGE_SIZE := 3776k
-  DEVICE_TITLE := Easybox 801 - ARV452CQW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
-	kmod-ath5k wpad-mini \
-	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
-	ltq-adsl-app ppp-mod-pppoa \
-	swconfig
-endef
-TARGET_DEVICES += ARV452CQW
 
 define Device/ARV7510PW22
   DEVICE_PROFILE := ARV7510PW22
