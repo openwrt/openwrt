@@ -1,8 +1,7 @@
-From fa6ad90d261101fbcfc0c08158a58cc5dab9fb05 Mon Sep 17 00:00:00 2001
+From 5cb11e846318334bd472abbffebed51b785e6687 Mon Sep 17 00:00:00 2001
 From: Bartosz Flis <bartosz.flis@imgtec.com>
 Date: Tue, 13 Oct 2015 11:31:29 +0100
-Subject: [PATCH 136/153] pistachio: hostport: avoid printk in speed-critical
- code
+Subject: pistachio: hostport: avoid printk in speed-critical code
 
 Several subroutines run in the interrupt context made calls
 to printk. Use the kernel trace buffer (trace_printk) instead.

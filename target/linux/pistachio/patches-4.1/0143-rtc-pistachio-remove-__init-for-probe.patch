@@ -1,7 +1,7 @@
-From 2a4003e9589faa9da0136160acbf203a717735f8 Mon Sep 17 00:00:00 2001
+From 9b16b3aa113f491253ddd2d4421bfdf425765cf2 Mon Sep 17 00:00:00 2001
 From: Govindraj Raja <Govindraj.Raja@imgtec.com>
 Date: Mon, 8 Feb 2016 16:38:53 +0000
-Subject: [PATCH 143/153] rtc: pistachio: remove __init for probe
+Subject: rtc: pistachio: remove __init for probe
 
 __init should be used for module init not for probe
 this will cause section mismatch warning since probe is

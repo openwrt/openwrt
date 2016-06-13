@@ -1,8 +1,7 @@
-From 791efec78373248926a542d30013639bc0cf580a Mon Sep 17 00:00:00 2001
+From 8af6fdf11ea9d2675258eb39544c9b4a70cc7d6d Mon Sep 17 00:00:00 2001
 From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
 Date: Wed, 23 Dec 2015 11:57:39 +0530
-Subject: [PATCH 132/153] pistacho_marduk.dts: add sc16is752 clk dependency on
- cc2520
+Subject: pistacho_marduk.dts: add sc16is752 clk dependency on cc2520
 
 As cc2520 extclk is now a clk provider, add dependancy of sc16is752
 on cc2520 so that sc16is752 driver is initalized after cc2520.

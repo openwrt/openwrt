@@ -1,7 +1,7 @@
-From 24ddd63f63303a9c6f9890dadc7272cf19378719 Mon Sep 17 00:00:00 2001
+From 2a7ad2e066f1dc68927aa4d1636055a3bab69f86 Mon Sep 17 00:00:00 2001
 From: Abhishek Singh <Abhishek.Singh@imgtec.com>
 Date: Mon, 23 Nov 2015 14:57:04 +0530
-Subject: [PATCH 108/153] spidev: fix spidev warning at boot time
+Subject: spidev: fix spidev warning at boot time
 
 Recently warning was added to spidev if it is instantiated as a DT node
 without an ID in the match table. To fix this add "img,click-interface" to the list

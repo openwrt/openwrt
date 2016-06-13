@@ -1,8 +1,7 @@
-From 760ad60e983c7643d68d512c1b0aa1abb52515fc Mon Sep 17 00:00:00 2001
+From f767edfcadab24d5b4b10a3a09adcf8a72685301 Mon Sep 17 00:00:00 2001
 From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
 Date: Thu, 21 May 2015 18:06:17 -0300
-Subject: [PATCH 014/153] clocksource: Add Pistachio clocksource-only driver
- and enable it
+Subject: clocksource: Add Pistachio clocksource-only driver and enable it
 
 The Pistachio SoC provides four general purpose timers, and allow
 to implement a clocksource driver.
@@ -129,7 +128,7 @@ index 0000000..97731ea
 +
 +	  If you don't want to enable CPUFreq, you can leave this disabled.
 diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
-index 51d7865f..faa16ae 100644
+index 51d7865..faa16ae 100644
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
 @@ -106,6 +106,10 @@ config CLKSRC_EFM32

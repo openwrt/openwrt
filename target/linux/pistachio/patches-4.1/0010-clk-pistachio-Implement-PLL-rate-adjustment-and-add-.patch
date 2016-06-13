@@ -1,8 +1,8 @@
-From eec7d5667a9f1514d091ad2661cd26964cba27c0 Mon Sep 17 00:00:00 2001
+From 5244d244930cfe18d316ffbed9706abdf012cb62 Mon Sep 17 00:00:00 2001
 From: Kevin Cernekee <cernekee@chromium.org>
 Date: Wed, 1 Apr 2015 15:53:39 -0700
-Subject: [PATCH 010/153] clk: pistachio: Implement PLL rate adjustment and add
- sanity checks on PLL configuration
+Subject: clk: pistachio: Implement PLL rate adjustment and add sanity checks
+ on PLL configuration
 
 This commit implements small rate changes to the fractional PLL.
 This is done using the PLL frac parameter. The .set_rate function

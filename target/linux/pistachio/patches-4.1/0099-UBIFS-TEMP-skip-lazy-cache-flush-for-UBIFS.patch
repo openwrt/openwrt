@@ -1,7 +1,7 @@
-From 8e1a18bf727bb91e3de3f706efe84a82dce3c892 Mon Sep 17 00:00:00 2001
+From cdddc53b837f25f449567b1b79ea446db9298e76 Mon Sep 17 00:00:00 2001
 From: Ionela Voinescu <ionela.voinescu@imgtec.com>
 Date: Fri, 6 Nov 2015 13:07:17 +0000
-Subject: [PATCH 099/153] UBIFS: TEMP: skip lazy cache flush for UBIFS
+Subject: UBIFS: TEMP: skip lazy cache flush for UBIFS
 
 When flush_dcache_page in called in do_readpage in UBIFS
 for executable mappings, the data cache is not actually flushed,

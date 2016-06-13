@@ -1,23 +1,13 @@
-From 07738f32144ef9de16c424234e4b4978f6883cf9 Mon Sep 17 00:00:00 2001
+From 18f129a83a63c945d3ba3ac3d5e3381b5bb32b37 Mon Sep 17 00:00:00 2001
 From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
 Date: Fri, 7 Aug 2015 16:55:12 +0100
-Subject: [PATCH 150/153] ASoC: img: Card driver and event timer rewrite
+Subject: ASoC: img: Card driver and event timer rewrite
 
 Card driver and event timer driver rewritten to support
 the range of Pistachio boards that now exist.
 
 Change-Id: I3d079bd75456e548fb65433fe1e6680c10322d3d
 Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
-
-Conflicts:
-	Documentation/devicetree/bindings/sound/img,pistachio-bub-audio.txt
-	Documentation/devicetree/bindings/sound/img,pistachio-event-timer.txt
-	arch/mips/boot/dts/pistachio/pistachio.dtsi
-	include/dt-bindings/sound/pistachio-bub-audio.h
-	sound/soc/img/Kconfig
-	sound/soc/img/Makefile
-	sound/soc/img/pistachio-bub.c
-	sound/soc/img/pistachio-event-timer.c
 ---
  .../bindings/sound/img,pistachio-event-timer.txt   |  63 ++
  arch/mips/boot/dts/pistachio/pistachio.dtsi        |  23 +
@@ -224,7 +214,7 @@ index fd5ba12..f5c8bbc 100644
 -obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER) += pistachio-event-timer.o
 diff --git a/sound/soc/img/pistachio-event-timer-atu.c b/sound/soc/img/pistachio-event-timer-atu.c
 new file mode 100644
-index 0000000..698b6ec9
+index 0000000..698b6ec
 --- /dev/null
 +++ b/sound/soc/img/pistachio-event-timer-atu.c
 @@ -0,0 +1,68 @@

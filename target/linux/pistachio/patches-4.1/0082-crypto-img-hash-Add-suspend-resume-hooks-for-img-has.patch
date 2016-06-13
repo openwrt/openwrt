@@ -1,8 +1,7 @@
-From 2d93f2bf4088968165ad0c4b696cfbd77716b30a Mon Sep 17 00:00:00 2001
+From 136474dd9d6b554ec06690defe3046451ab1f5ca Mon Sep 17 00:00:00 2001
 From: Govindraj Raja <Govindraj.Raja@imgtec.com>
 Date: Fri, 23 Oct 2015 15:05:03 +0100
-Subject: [PATCH 082/153] crypto: img-hash - Add suspend resume hooks for img
- hash
+Subject: crypto: img-hash - Add suspend resume hooks for img hash
 
 Current img hash claims sys and periph gate clocks
 and this can be gated in system suspend scenarios.

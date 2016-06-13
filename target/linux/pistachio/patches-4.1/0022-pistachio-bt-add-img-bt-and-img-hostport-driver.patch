@@ -1,7 +1,7 @@
-From 854b8736a4667497032dea577397b7434f62de58 Mon Sep 17 00:00:00 2001
+From 33f974ed0ae3da5dc8876aba951cd6299abbe385 Mon Sep 17 00:00:00 2001
 From: Bartosz Flis <bartosz.flis@imgtec.com>
 Date: Wed, 27 May 2015 17:28:36 +0100
-Subject: [PATCH 022/153] pistachio: bt: add img-bt and img-hostport driver
+Subject: pistachio: bt: add img-bt and img-hostport driver
 
 Patch adds a bluetooth driver and tty based
 hostport support for the pistachio platform.
@@ -99,7 +99,7 @@ index 40eb931..a5a68e6 100644
  		compatible = "img,scb-i2c";
  		reg = <0x18100000 0x200>;
 diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
-index 793c86b4..347ab9e 100644
+index 793c86b..347ab9e 100644
 --- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
 +++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
 @@ -61,6 +61,14 @@

@@ -1,7 +1,7 @@
-From 863b42671b01c28a4dd6b4c4b53f3a331bd6f6b3 Mon Sep 17 00:00:00 2001
+From 609a3eb9d23772ace4c04ebc1842e6ec2e59ae21 Mon Sep 17 00:00:00 2001
 From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
 Date: Mon, 13 Jul 2015 16:17:09 +0100
-Subject: [PATCH 154/160] clk: pistachio: Add audio pll rates
+Subject: clk: pistachio: Add audio pll rates
 
 Change the audio pll to variable and create an audio pll
 rate table with two entries
@@ -13,7 +13,7 @@ Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
  1 file changed, 26 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/clk/pistachio/clk-pistachio.c b/drivers/clk/pistachio/clk-pistachio.c
-index 866b6d6..6451c6d6a 100644
+index 866b6d6..6451c6d 100644
 --- a/drivers/clk/pistachio/clk-pistachio.c
 +++ b/drivers/clk/pistachio/clk-pistachio.c
 @@ -177,11 +177,35 @@ static struct pistachio_pll_rate_table wifi_pll_rates[] = {

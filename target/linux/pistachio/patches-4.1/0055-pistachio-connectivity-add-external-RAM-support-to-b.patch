@@ -1,8 +1,7 @@
-From 4152cc796eb9c97dbaaf498ee2b203a97e60784e Mon Sep 17 00:00:00 2001
+From bcc1913e532f134c4441c05110c51a4da297aac4 Mon Sep 17 00:00:00 2001
 From: Bartosz Flis <bartosz.flis@imgtec.com>
 Date: Mon, 27 Jul 2015 15:05:27 +0100
-Subject: [PATCH 055/153] pistachio: connectivity: add external RAM support to
- bootloader
+Subject: pistachio: connectivity: add external RAM support to bootloader
 
 Bootloader is now able to load code & data to addresses in external
 RAM using META slave port.
@@ -217,7 +216,7 @@ index 0000000..37a54da
 +
 +#include "img-connectivity-pistachio.h"
 diff --git a/drivers/soc/img/connectivity/img-fwldr.c b/drivers/soc/img/connectivity/img-fwldr.c
-index 3aba9136..543666a 100644
+index 3aba913..543666a 100644
 --- a/drivers/soc/img/connectivity/img-fwldr.c
 +++ b/drivers/soc/img/connectivity/img-fwldr.c
 @@ -30,9 +30,17 @@

@@ -1,14 +1,13 @@
-From 0cbf301602900456199537cb6d951c535aa77691 Mon Sep 17 00:00:00 2001
+From be67a8e07b3c466ee5c195219d70c551fc1a95d5 Mon Sep 17 00:00:00 2001
 From: Bartosz Flis <bartosz.flis@imgtec.com>
 Date: Wed, 9 Sep 2015 09:58:39 +0100
-Subject: [PATCH 073/153] pistachio: bt: fix backlog processing and fix for
- destroying workqueue
+Subject: pistachio: bt: fix backlog processing and fix for destroying
+ workqueue
 
 This include following fixes :-
 1. Having backlog processing as a separate job drains work depot very
 quickly. It was always executed in fixed spots anyway, so there is no
 need for it to be a job.
-
 2. Workqueue has to be destroyed first, because doing so executes all the
 pending jobs. Those in turn need the module to be fully functional.
 

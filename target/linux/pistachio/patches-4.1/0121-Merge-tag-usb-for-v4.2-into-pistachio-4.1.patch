@@ -1,7 +1,7 @@
-From 44aae2f06adde693cd6f4789d5cc0213a4a9d4e4 Mon Sep 17 00:00:00 2001
+From 5586569384c243ea91958483137b5575e385cd6a Mon Sep 17 00:00:00 2001
 From: Govindraj Raja <Govindraj.Raja@imgtec.com>
 Date: Tue, 15 Dec 2015 18:27:18 +0000
-Subject: [PATCH 121/153] Merge tag 'usb-for-v4.2' into pistachio-4.1
+Subject: Merge tag 'usb-for-v4.2' into pistachio-4.1
 
 usb: patches for v4.2 merge window
 
@@ -295,7 +295,7 @@ index 75a37dc..d27d9c4 100644
  obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o
 +obj-$(CONFIG_PHY_TUSB1210)		+= phy-tusb1210.o
 diff --git a/drivers/phy/phy-sun4i-usb.c b/drivers/phy/phy-sun4i-usb.c
-index a2b08f3c..e17c539 100644
+index a2b08f3..e17c539 100644
 --- a/drivers/phy/phy-sun4i-usb.c
 +++ b/drivers/phy/phy-sun4i-usb.c
 @@ -30,6 +30,7 @@
@@ -6228,7 +6228,7 @@ index dcac5e7..67325ec 100644
  	.disable	= dsps_musb_disable,
  
 diff --git a/drivers/usb/musb/musb_gadget.c b/drivers/usb/musb/musb_gadget.c
-index 4c481cd..625d482f 100644
+index 4c481cd..625d482 100644
 --- a/drivers/usb/musb/musb_gadget.c
 +++ b/drivers/usb/musb/musb_gadget.c
 @@ -366,7 +366,7 @@ static void txstate(struct musb *musb, struct musb_request *req)
@@ -7397,7 +7397,7 @@ index e93845c..d0b6a1c 100644
  }
 +EXPORT_SYMBOL_GPL(ux500_dma_controller_create);
 diff --git a/drivers/usb/phy/Kconfig b/drivers/usb/phy/Kconfig
-index 2175678..869c0cfcad 100644
+index 2175678..869c0cf 100644
 --- a/drivers/usb/phy/Kconfig
 +++ b/drivers/usb/phy/Kconfig
 @@ -91,7 +91,7 @@ config TWL6030_USB

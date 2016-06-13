@@ -1,7 +1,7 @@
-From 6f3dc7ca11d448dc5dd7496c23c4fdf22203c9d7 Mon Sep 17 00:00:00 2001
+From aa96960cd65a7a0f25b4a0fe44aa8d8915b76f6d Mon Sep 17 00:00:00 2001
 From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
 Date: Thu, 30 Apr 2015 17:16:57 +0100
-Subject: [PATCH 152/153] ALSA: Add ALSA StartAt
+Subject: ALSA: Add ALSA StartAt
 
 - Implement START_AT ioctl
 - Implement start_at for system (posix) clocks using hi-res timers
@@ -865,7 +865,7 @@ index c9917ca..2521426 100644
  
  static const struct snd_soc_platform_driver dmaengine_pcm_platform = {
 diff --git a/sound/soc/soc-pcm.c b/sound/soc/soc-pcm.c
-index 35fe58f4..7ceb2ba 100644
+index 35fe58f..7ceb2ba 100644
 --- a/sound/soc/soc-pcm.c
 +++ b/sound/soc/soc-pcm.c
 @@ -1025,6 +1025,91 @@ static int soc_pcm_bespoke_trigger(struct snd_pcm_substream *substream,

@@ -1,8 +1,7 @@
-From 3e213462af52371ac94290f522e0194e500b839d Mon Sep 17 00:00:00 2001
+From 7c0d3d7f341965bd3f7a56e21a1a2c69e717f295 Mon Sep 17 00:00:00 2001
 From: Abhishek Singh <Abhishek.Singh@imgtec.com>
 Date: Thu, 4 Feb 2016 14:44:49 +0530
-Subject: [PATCH 140/153] pistachio_defconfig: change vfat to kernel built-in
- module
+Subject: pistachio_defconfig: change vfat to kernel built-in module
 
 vfat was not built-in, so mounting of fat based pendrive was not working
 in auto mode. So make it a built-in module.

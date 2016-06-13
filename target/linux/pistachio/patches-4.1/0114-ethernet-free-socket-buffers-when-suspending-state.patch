@@ -1,7 +1,7 @@
-From 876c6bbdf258e0d83c899564eafda95e630903a8 Mon Sep 17 00:00:00 2001
+From 283f680a6fecf486bf8a4eead75fc53d6ced1923 Mon Sep 17 00:00:00 2001
 From: Ionela Voinescu <ionela.voinescu@imgtec.com>
 Date: Fri, 27 Nov 2015 10:41:31 +0000
-Subject: [PATCH 114/153] ethernet: free socket buffers when suspending state.
+Subject: ethernet: free socket buffers when suspending state.
 
 When opening the device and resuming state, TX/RX buffers
 are allocated and re-allocated which results in memory

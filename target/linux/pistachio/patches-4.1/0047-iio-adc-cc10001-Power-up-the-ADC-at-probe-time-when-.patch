@@ -1,8 +1,7 @@
-From 63872931bfcd16c2249682b79506128e03529d5d Mon Sep 17 00:00:00 2001
+From 2eca749715d30c57bcd45caf9afe68577561053e Mon Sep 17 00:00:00 2001
 From: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
 Date: Thu, 30 Jul 2015 14:47:01 +0530
-Subject: [PATCH 047/153] iio: adc: cc10001: Power-up the ADC at probe time
- when used remotely
+Subject: iio: adc: cc10001: Power-up the ADC at probe time when used remotely
 
 The ADC is typically shared with remote CPUs not running Linux.
 However, there is only one register to power-up/power-down. Remote CPUs

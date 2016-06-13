@@ -1,7 +1,7 @@
-From 9129496b43e9a6d0e916a0f8ff09febdf695c1e5 Mon Sep 17 00:00:00 2001
+From 917f7238fda0bdad15d2d67c40b7e0ca41a42a64 Mon Sep 17 00:00:00 2001
 From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
 Date: Mon, 19 Oct 2015 14:26:45 +0100
-Subject: [PATCH 153/153] ALSA: start_at: improve locking and cleanup
+Subject: ALSA: start_at: improve locking and cleanup
 
 Fix existing deadlock issues and race conditions between
 start_at, start_at_abort and stream release
@@ -69,7 +69,7 @@ index 99fffbc..f5cc5db 100644
  
  int snd_pcm_limit_hw_rates(struct snd_pcm_runtime *runtime);
 diff --git a/include/uapi/sound/asound.h b/include/uapi/sound/asound.h
-index feb2da3..627c97a2 100644
+index feb2da3..627c97a 100644
 --- a/include/uapi/sound/asound.h
 +++ b/include/uapi/sound/asound.h
 @@ -508,14 +508,6 @@ enum {

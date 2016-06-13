@@ -1,8 +1,7 @@
-From 6ffeddb40392881d7633d92442baab8dfabe94a6 Mon Sep 17 00:00:00 2001
+From 3c09b75925dbd62189390b066d6d4bbad2d0585f Mon Sep 17 00:00:00 2001
 From: sridhar nuvusetty <Sridhar.Nuvusetty@imgtec.com>
 Date: Fri, 5 Jun 2015 15:49:22 +0530
-Subject: [PATCH 020/153] add uccp420wlan wifi driver and enable it for
- pistachio
+Subject: add uccp420wlan wifi driver and enable it for pistachio
 
 Also add wifi_pll rate table in clk-pistachio
 
@@ -118,7 +117,7 @@ index ee7f61f..40eb931 100644
 +	};
  };
 diff --git a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
-index bd15b68..793c86b4 100644
+index bd15b68..793c86b 100644
 --- a/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
 +++ b/arch/mips/boot/dts/pistachio/pistachio_marduk.dts
 @@ -121,3 +121,12 @@
@@ -202,7 +201,7 @@ index 16604bd..8791e05 100644
  
  endif # WLAN
 diff --git a/drivers/net/wireless/Makefile b/drivers/net/wireless/Makefile
-index 0c88916..2fd06c6e 100644
+index 0c88916..2fd06c6 100644
 --- a/drivers/net/wireless/Makefile
 +++ b/drivers/net/wireless/Makefile
 @@ -60,3 +60,4 @@ obj-$(CONFIG_BRCMSMAC)	+= brcm80211/

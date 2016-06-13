@@ -1,8 +1,7 @@
-From dab0459a298056141ee9d4f23f3dd7b45dd94849 Mon Sep 17 00:00:00 2001
+From bcca6f7a6dd3d4ae3354bd09a30641e4ce6230f8 Mon Sep 17 00:00:00 2001
 From: Marcin Nowakowski <marcin.nowakowski@imgtec.com>
 Date: Mon, 8 Feb 2016 14:12:48 +0100
-Subject: [PATCH 142/153] MIPS: kernel: scall: Always run the seccomp syscall
- filters
+Subject: MIPS: kernel: scall: Always run the seccomp syscall filters
 
 The MIPS syscall handler code used to return -ENOSYS on invalid
 syscalls. Whilst this is expected, it caused problems for seccomp

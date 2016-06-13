@@ -1,8 +1,8 @@
-From d536e1c73025d21bf42abb23b1228d92c4c03409 Mon Sep 17 00:00:00 2001
+From 08ce02a976fdaa422b3057e697a1bfb70c9263b5 Mon Sep 17 00:00:00 2001
 From: Bartosz Flis <bartosz.flis@imgtec.com>
 Date: Thu, 9 Jul 2015 10:58:06 +0100
-Subject: [PATCH 041/153] pistachio: connectivity: add bootloader and hostport
- dependency on img-connectivity
+Subject: pistachio: connectivity: add bootloader and hostport dependency on
+ img-connectivity
 
 Generic bootloader for META and MCP on the RPU. It lacks support for
 placing code & data in the external RAM.
@@ -1052,7 +1052,7 @@ index 0000000..ec1d915
 +#endif /* _FWLDR_H_ */
 diff --git a/drivers/soc/img/connectivity/img-fwldr.c b/drivers/soc/img/connectivity/img-fwldr.c
 new file mode 100644
-index 0000000..3aba9136
+index 0000000..3aba913
 --- /dev/null
 +++ b/drivers/soc/img/connectivity/img-fwldr.c
 @@ -0,0 +1,1197 @@

@@ -1,8 +1,7 @@
-From 850453fa175c39d0e0466f8c4dfb1094d06eb4f5 Mon Sep 17 00:00:00 2001
+From fc08c235a874ba09701285c4a08a8b3926f016e1 Mon Sep 17 00:00:00 2001
 From: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
 Date: Fri, 18 Sep 2015 15:46:52 +0530
-Subject: [PATCH 070/153] pistachio: connectivity: fix kernel Oops on module
- load
+Subject: pistachio: connectivity: fix kernel Oops on module load
 
 Change #1139 introduced the use of uninitialized pointer, which caused
 kernel Oops when the user attempted to load the module.

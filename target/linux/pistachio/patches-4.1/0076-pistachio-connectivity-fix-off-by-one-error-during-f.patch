@@ -1,8 +1,7 @@
-From f6796b1029b73d4c30b3addf38aa31ed2ef13932 Mon Sep 17 00:00:00 2001
+From 93954ab3f5cf844fa523cc7792685b7f3b0ff704 Mon Sep 17 00:00:00 2001
 From: Bartosz Flis <bartosz.flis@imgtec.com>
 Date: Thu, 8 Oct 2015 14:13:42 +0100
-Subject: [PATCH 076/153] pistachio: connectivity: fix off-by-one error during
- fw load
+Subject: pistachio: connectivity: fix off-by-one error during fw load
 
 When something has gone wrong and the firmware has not written its
 execution signature in memory, the module fails to load.

@@ -1,8 +1,7 @@
-From 897203679e378625f7b932f36dbe3defbae91a02 Mon Sep 17 00:00:00 2001
+From cf54c85b316ff3813d6133ddb158c0829875babd Mon Sep 17 00:00:00 2001
 From: Govindraj Raja <Govindraj.Raja@imgtec.com>
 Date: Thu, 26 Nov 2015 17:29:39 +0000
-Subject: [PATCH 118/153] clocksource: pistachio: remove clock-source as valid
- in suspend path
+Subject: clocksource: pistachio: remove clock-source as valid in suspend path
 
 The clock source from timer0 is advertising that it is valid in the
 suspend path, but it is not as it could overflow.
