@@ -1,0 +1,14 @@
+#!/bin/sh
+
+TIMEVALIDFILE="/var/state/dnsmasqsec"
+
+[ "$ACTION" = stratum ] || exit 0
+
+[ -f "$TIMEVALIDFILE" ] || {
+	echo "ntpd says time is valid" >$TIMEVALIDFILE
+	/etc/init.d/dnsmasq enabled && {
+		pid=$(pidof dnsmasq)
+		[ "$(readlink /proc/$pid/exe)" = "/usr/sbin/dnsmasq" ] && kill -SIGHUP $pid \
+		|| /etc/init.d/dnsmasq restart
+	}
+}
