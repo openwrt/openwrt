@@ -24,6 +24,12 @@ config dhcp 'lan'
         option dhcpv6 'server'
         option ra 'server'
 
+config dhcp 'ap'
+        option interface 'ap'
+        option start '100'
+        option limit '150'
+        option leasetime '12h'
+
 config dhcp 'wan'
         option interface 'wan'
         option ignore '1'
