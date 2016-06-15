@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += KERNEL_PREFIX
+DEVICE_VARS += KERNEL_PREFIX FILESYSTEMS
 
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
