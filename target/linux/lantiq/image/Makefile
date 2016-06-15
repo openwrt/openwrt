@@ -357,6 +357,18 @@ BTHOMEHUBV2B_UBI_OPTS:="-m 512 -p 16KiB -s 256"
 Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
 Image/Build/Profile/BTHOMEHUBV2B=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV2B)
 
+define LegacyDevice/BTHOMEHUBV2B
+  DEVICE_TITLE := BT Home Hub 2B
+  DEVICE_PACKAGES :=  kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
+	kmod-ltq-deu-danube \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-ath9k wpad-mini \
+	swconfig
+endef
+LEGACY_DEVICES += BTHOMEHUBV2B
+
 define Device/EASY50712
   DEVICE_PROFILE := EASY50712
   IMAGE_SIZE := 3776k
@@ -516,11 +528,45 @@ BTHOMEHUBV3A_UBI_OPTS:="-m 512 -p 16KiB -s 256"
 Image/BuildKernel/Profile/BTHOMEHUBV3A=$(call Image/BuildKernel/Template,BTHOMEHUBV3A)
 Image/Build/Profile/BTHOMEHUBV3A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV3A)
 
+define LegacyDevice/BTHOMEHUBV3A
+  DEVICE_TITLE := BT Home Hub 3A
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev \
+	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
+	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
+	kmod-ltq-deu-ar9 \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-ath9k wpad-mini \
+	swconfig uboot-envtools
+endef
+LEGACY_DEVICES += BTHOMEHUBV3AB
+
 Image/BuildKernel/Profile/DGN3500=$(call Image/BuildKernel/Template,DGN3500)
 Image/Build/Profile/DGN3500=$(call Image/BuildDGN3500/$(1),$(1),DGN3500)
 
+define LegacyDevice/DGN3500
+  DEVICE_TITLE := Netgear DGN3500
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev \
+	kmod-ath9k wpad-mini \
+	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
+	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-ltq-deu-ar9 swconfig
+endef
+LEGACY_DEVICES += DGN3500
+
 Image/BuildKernel/Profile/DGN3500B=$(call Image/BuildKernel/Template,DGN3500B)
 Image/Build/Profile/DGN3500B=$(call Image/BuildDGN3500B/$(1),$(1),DGN3500B)
+
+define LegacyDevice/DGN3500B
+  DEVICE_TITLE := Netgear DGN3500B
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev \
+	kmod-ath9k wpad-mini \
+	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
+	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-ltq-deu-ar9 swconfig
+endef
+LEGACY_DEVICES += DGN3500B
 
 define Device/WBMRA
   DEVICE_PROFILE := WBMRA
@@ -550,9 +596,19 @@ define Device/WBMRB
 endef
 TARGET_DEVICES += WBMRB
 
-
 Image/BuildKernel/Profile/FRITZ7320=$(call Image/BuildKernelEVA/Template,FRITZ7320)
 Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
+
+define LegacyDevice/FRITZ7320
+  DEVICE_TITLE := 1&1 HomeServer - FRITZ7320
+  DEVICE_PACKAGES := kmod-ath9k wpad-mini \
+	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
+	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-ltq-deu-ar9 kmod-usb-dwc2 \
+	kmod-ath9k wpad-mini
+endef
+LEGACY_DEVICES += FRITZ7320
 
 define Device/GR7000
   DEVICE_PROFILE := GR7000
@@ -602,11 +658,23 @@ P2812HNUF1_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 Image/BuildKernel/Profile/P2812HNUF1=$(call Image/BuildKernel/Template,P2812HNUF1)
 Image/Build/Profile/P2812HNUF1=$(call Image/BuildNAND/$(1),$(1),P2812HNUF1)
 
+define LegacyDevice/P2812HNUF1
+  DEVICE_TITLE := ZyXEL P-2812HNU-F1
+  DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
+endef
+LEGACY_DEVICES += P2812HNUF1
+
 P2812HNUF3_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
 P2812HNUF3_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/P2812HNUF3=$(call Image/BuildKernel/Template,P2812HNUF3)
 Image/Build/Profile/P2812HNUF3=$(call Image/BuildNAND/$(1),$(1),P2812HNUF3)
+
+define LegacyDevice/P2812HNUF3
+  DEVICE_TITLE := ZyXEL P-2812HNU-F3
+  DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
+endef
+LEGACY_DEVICES += P2812HNUF3
 
 define Device/ARV7519RW22
   DEVICE_PROFILE := ARV7519RW22
@@ -622,6 +690,12 @@ BTHOMEHUBV5A_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/BTHOMEHUBV5A=$(call Image/BuildKernel/Template,BTHOMEHUBV5A)
 Image/Build/Profile/BTHOMEHUBV5A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV5A)
+
+define LegacyDevice/BTHOMEHUBV5A
+  DEVICE_TITLE := BT Home Hub 5A
+  DEVICE_PACKAGES := kmod-ath9k kmod-ath10k wpad-mini kmod-usb-dwc2
+endef
+LEGACY_DEVICES += BTHOMEHUBV5A
 
 define Device/EASY80920NAND
   DEVICE_PROFILE := EASY80920NAND
@@ -646,11 +720,28 @@ FRITZ3370_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
 Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
 
+define LegacyDevice/FRITZ3370
+  DEVICE_TITLE := Fritz!Box WLan - FRITZ3370
+  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2
+endef
+LEGACY_DEVICES += FRITZ3370
+
 Image/BuildKernel/Profile/FRITZ7360SL=$(call Image/BuildKernelEVA/Template,FRITZ7360SL)
 Image/Build/Profile/FRITZ7360SL=$(call Image/BuildEVA/$(1),$(1),FRITZ7360SL)
 
+define LegacyDevice/FRITZ7360SL
+  DEVICE_TITLE := 1&1 HomeServer - FRITZ7360SL
+  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2
+endef
+LEGACY_DEVICES += FRITZ7360L
+
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
+
+define LegacyDevice/VG3503J
+  DEVICE_TITLE := BT Openreak - ECI VDSL Modem
+endef
+LEGACY_DEVICES += VG3503J
 
 include tp-link.mk
 
@@ -701,6 +792,15 @@ define Device/VGV7519BRN
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
 endef
 TARGET_DEVICES += VGV7519BRN
+
+define Image/Prepare/Profile
+	$(call Image/Build/Profile/$(1),loader)
+endef
+
+define Image/Build/Profile
+	$(call Image/Build/Profile/$(1),buildkernel)
+	$(call Image/Build/Profile/$(1),$(2))
+endef
 
 define Image/Prepare
 	$(call Image/Prepare/Profile,VG3503J)
