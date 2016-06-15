@@ -1,0 +1,44 @@
+From d94d9cdb1e8212e0c90276414b66610586921f96 Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Tue, 1 Mar 2016 10:15:50 +0000
+Subject: MIPS: Handle highmem pages in __update_cache
+
+The following patch will expose __update_cache to highmem pages. Handle
+them by mapping them in for the duration of the cache maintenance, just
+like in __flush_dcache_page. The code for that isn't shared because we
+need the page address in __update_cache so sharing became messy. Given
+that the entirity is an extra 5 lines, just duplicate it.
+
+Change-Id: I4715e93eab46a0ba48be629e68f77f2de5b1feb3
+Signed-off-by: Paul Burton <paul.burton@imgtec.com>
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ arch/mips/mm/cache.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
+index 7bb4ab4..45fa0ff 100644
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -150,9 +150,17 @@ void __update_cache(struct vm_area_struct *vma, unsigned long address,
+ 		return;
+ 	page = pfn_to_page(pfn);
+ 	if (page_mapping(page) && Page_dcache_dirty(page)) {
+-		addr = (unsigned long) page_address(page);
++		if (PageHighMem(page))
++			addr = (unsigned long)kmap_atomic(page);
++		else
++			addr = (unsigned long)page_address(page);
++
+ 		if (exec || pages_do_alias(addr, address & PAGE_MASK))
+ 			flush_data_cache_page(addr);
++
++		if (PageHighMem(page))
++			__kunmap_atomic((void *)addr);
++
+ 		ClearPageDcacheDirty(page);
+ 	}
+ }
+-- 
+2.1.0
+

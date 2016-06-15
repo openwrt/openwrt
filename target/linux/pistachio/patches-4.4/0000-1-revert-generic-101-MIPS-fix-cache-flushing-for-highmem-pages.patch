@@ -1,0 +1,88 @@
+diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
+index 191a1bc..cca34e9 100644
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -14,7 +14,6 @@
+ #include <linux/sched.h>
+ #include <linux/syscalls.h>
+ #include <linux/mm.h>
+-#include <linux/highmem.h>
+ 
+ #include <asm/cacheflush.h>
+ #include <asm/processor.h>
+@@ -80,29 +79,18 @@ SYSCALL_DEFINE3(cacheflush, unsigned long, addr, unsigned long, bytes,
+ 	return 0;
+ }
+ 
+-static void
+-flush_highmem_page(struct page *page)
+-{
+-	void *addr = kmap_atomic(page);
+-	flush_data_cache_page((unsigned long)addr);
+-	kunmap_atomic(addr);
+-}
+-
+ void __flush_dcache_page(struct page *page)
+ {
+ 	struct address_space *mapping = page_mapping(page);
+ 	unsigned long addr;
+ 
++	if (PageHighMem(page))
++		return;
+ 	if (mapping && !mapping_mapped(mapping)) {
+ 		SetPageDcacheDirty(page);
+ 		return;
+ 	}
+ 
+-	if (PageHighMem(page)) {
+-		flush_highmem_page(page);
+-		return;
+-	}
+-
+ 	/*
+ 	 * We could delay the flush for the !page_mapping case too.  But that
+ 	 * case is for exec env/arg pages and those are %99 certainly going to
+@@ -118,11 +106,6 @@ void __flush_anon_page(struct page *page, unsigned long vmaddr)
+ {
+ 	unsigned long addr = (unsigned long) page_address(page);
+ 
+-	if (PageHighMem(page)) {
+-		flush_highmem_page(page);
+-		return;
+-	}
+-
+ 	if (pages_do_alias(addr, vmaddr)) {
+ 		if (page_mapped(page) && !Page_dcache_dirty(page)) {
+ 			void *kaddr;
+@@ -141,10 +124,8 @@ void __flush_icache_page(struct vm_area_struct *vma, struct page *page)
+ {
+ 	unsigned long addr;
+ 
+-	if (PageHighMem(page)) {
+-		flush_highmem_page(page);
++	if (PageHighMem(page))
+ 		return;
+-	}
+ 
+ 	addr = (unsigned long) page_address(page);
+ 	flush_data_cache_page(addr);
+@@ -162,17 +143,12 @@ void __update_cache(struct vm_area_struct *vma, unsigned long address,
+ 	if (unlikely(!pfn_valid(pfn)))
+ 		return;
+ 	page = pfn_to_page(pfn);
+-	if (!Page_dcache_dirty(page) || !page_mapping(page))
+-		return;
+-
+-	if (PageHighMem(page)) {
+-		flush_highmem_page(page);
+-	} else {
++	if (page_mapping(page) && Page_dcache_dirty(page)) {
+ 		addr = (unsigned long) page_address(page);
+ 		if (exec || pages_do_alias(addr, address & PAGE_MASK))
+ 			flush_data_cache_page(addr);
++		ClearPageDcacheDirty(page);
+ 	}
+-	ClearPageDcacheDirty(page);
+ }
+ 
+ unsigned long _page_cachable_default;

@@ -1,0 +1,65 @@
+From 0230ec4b11aedcfc41197210f3134c7a8faba24c Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Tue, 1 Mar 2016 10:13:46 +0000
+Subject: MIPS: Flush highmem pages in __flush_dcache_page
+
+When flush_dcache_page is called on an executable page, that page is
+about to be provided to userland & we can presume that the icache
+contains no valid entries for its address range. However if the icache
+does not fill from the dcache then we cannot presume that the pages
+content has been written back as far as the memories that the dcache
+will fill from (ie. L2 or further out).
+
+This was being done for lowmem pages, but not for highmem which can lead
+to icache corruption. Fix this by mapping highmem pages & flushing their
+content from the dcache in __flush_dcache_page before providing the page
+to userland, just as is done for lowmem pages.
+
+Change-Id: Ibf2e3ab9fa9b96e5f7507be02d6b0b55e7b42e9d
+Signed-off-by: Paul Burton <paul.burton@imgtec.com>
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ arch/mips/mm/cache.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
+index cca34e9..7bb4ab4 100644
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -16,6 +16,7 @@
+ #include <linux/mm.h>
+ 
+ #include <asm/cacheflush.h>
++#include <asm/highmem.h>
+ #include <asm/processor.h>
+ #include <asm/cpu.h>
+ #include <asm/cpu-features.h>
+@@ -84,8 +85,6 @@ void __flush_dcache_page(struct page *page)
+ 	struct address_space *mapping = page_mapping(page);
+ 	unsigned long addr;
+ 
+-	if (PageHighMem(page))
+-		return;
+ 	if (mapping && !mapping_mapped(mapping)) {
+ 		SetPageDcacheDirty(page);
+ 		return;
+@@ -96,8 +95,15 @@ void __flush_dcache_page(struct page *page)
+ 	 * case is for exec env/arg pages and those are %99 certainly going to
+ 	 * get faulted into the tlb (and thus flushed) anyways.
+ 	 */
+-	addr = (unsigned long) page_address(page);
++	if (PageHighMem(page))
++		addr = (unsigned long)kmap_atomic(page);
++	else
++		addr = (unsigned long)page_address(page);
++
+ 	flush_data_cache_page(addr);
++
++	if (PageHighMem(page))
++		__kunmap_atomic((void *)addr);
+ }
+ 
+ EXPORT_SYMBOL(__flush_dcache_page);
+-- 
+2.1.0
+
