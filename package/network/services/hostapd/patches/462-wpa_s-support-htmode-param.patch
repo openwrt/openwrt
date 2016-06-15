@@ -18,7 +18,7 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
 +++ b/src/drivers/driver.h
 @@ -590,6 +590,8 @@ struct wpa_driver_associate_params {
  
- 	unsigned char rates[NL80211_MAX_SUPP_RATES];
+ 	unsigned char rates[WLAN_SUPP_RATES_MAX];
  	int mcast_rate;
 +	int ht_set;
 +	unsigned int htmode;
@@ -134,9 +134,9 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
  #endif /* CONFIG_MACSEC */
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
-@@ -714,6 +714,8 @@ struct wpa_ssid {
+@@ -715,6 +715,8 @@ struct wpa_ssid {
  
- 	unsigned char rates[NL80211_MAX_SUPP_RATES];
+ 	unsigned char rates[WLAN_SUPP_RATES_MAX];
  	double mcast_rate;
 +	int ht_set;
 +	unsigned int htmode;
