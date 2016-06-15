@@ -31,7 +31,7 @@ BOARDNAME:=IMG MIPS Pistachio
 FEATURES:=targz nand ubifs audio ramdisk
 SUBTARGETS=marduk
 
-KERNEL_PATCHVER:=4.1
+KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
