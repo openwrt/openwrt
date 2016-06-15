@@ -82,6 +82,7 @@
 -	if (!ltq_mtd->res) {
 -		dev_err(&pdev->dev, "failed to get memory resource\n");
 -		return -ENOENT;
+-	}
 +	for (i = 0; i < pdev->num_resources; i++) {
 +		printk(KERN_NOTICE "lantiq nor flash device: %.8llx at %.8llx\n",
 +		       (unsigned long long)resource_size(&pdev->resource[i]),
@@ -94,14 +95,27 @@
 +			dev_err(&pdev->dev, "Could not reserve memory region\n");
 +			return -ENOMEM;
 +		}
-+
+ 
+-	ltq_mtd->map = devm_kzalloc(&pdev->dev, sizeof(struct map_info),
+-				    GFP_KERNEL);
+-	if (!ltq_mtd->map)
+-		return -ENOMEM;
 +		ltq_mtd->map[i].name = ltq_map_name;
 +		ltq_mtd->map[i].bankwidth = 2;
 +		ltq_mtd->map[i].read = ltq_read16;
 +		ltq_mtd->map[i].write = ltq_write16;
 +		ltq_mtd->map[i].copy_from = ltq_copy_from;
 +		ltq_mtd->map[i].copy_to = ltq_copy_to;
-+
+ 
+-	if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
+-		ltq_mtd->map->phys = NO_XIP;
+-	else
+-		ltq_mtd->map->phys = ltq_mtd->res->start;
+-	ltq_mtd->res->start;
+-	ltq_mtd->map->size = resource_size(ltq_mtd->res);
+-	ltq_mtd->map->virt = devm_ioremap_resource(&pdev->dev, ltq_mtd->res);
+-	if (IS_ERR(ltq_mtd->map->virt))
+-		return PTR_ERR(ltq_mtd->map->virt);
 +		if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
 +			ltq_mtd->map[i].phys = NO_XIP;
 +		else
@@ -111,18 +125,30 @@
 +						 ltq_mtd->map[i].size);
 +		if (IS_ERR(ltq_mtd->map[i].virt))
 +			return PTR_ERR(ltq_mtd->map[i].virt);
-+
+ 
+-	ltq_mtd->map->name = ltq_map_name;
+-	ltq_mtd->map->bankwidth = 2;
+-	ltq_mtd->map->read = ltq_read16;
+-	ltq_mtd->map->write = ltq_write16;
+-	ltq_mtd->map->copy_from = ltq_copy_from;
+-	ltq_mtd->map->copy_to = ltq_copy_to;
 +		if (ltq_mtd->map[i].virt == NULL) {
 +			dev_err(&pdev->dev, "Failed to ioremap flash region\n");
 +			err = PTR_ERR(ltq_mtd->map[i].virt);
 +			goto err_out;
 +		}
-+
+ 
+-	ltq_mtd->map->map_priv_1 = LTQ_NOR_PROBING;
+-	ltq_mtd->mtd = do_map_probe("cfi_probe", ltq_mtd->map);
+-	ltq_mtd->map->map_priv_1 = LTQ_NOR_NORMAL;
 +		ltq_mtd->map[i].map_priv_1 = LTQ_NOR_PROBING;
 +		for (type = rom_probe_types; !ltq_mtd->mtd[i] && *type; type++)
 +			ltq_mtd->mtd[i] = do_map_probe(*type, &ltq_mtd->map[i]);
 +		ltq_mtd->map[i].map_priv_1 = LTQ_NOR_NORMAL;
-+
+ 
+-	if (!ltq_mtd->mtd) {
+-		dev_err(&pdev->dev, "probing failed\n");
+-		return -ENXIO;
 +		if (!ltq_mtd->mtd[i]) {
 +			dev_err(&pdev->dev, "probing failed\n");
 +			return -ENXIO;
@@ -138,10 +164,7 @@
 +		cfi->addr_unlock2 ^= 1;
  	}
  
--	ltq_mtd->map = devm_kzalloc(&pdev->dev, sizeof(struct map_info),
--				    GFP_KERNEL);
--	if (!ltq_mtd->map)
--		return -ENOMEM;
+-	ltq_mtd->mtd->dev.parent = &pdev->dev;
 +	if (devices_found == 1) {
 +		ltq_mtd->cmtd = ltq_mtd->mtd[0];
 +	} else if (devices_found > 1) {
@@ -153,34 +176,6 @@
 +			err = -ENXIO;
 +	}
  
--	if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
--		ltq_mtd->map->phys = NO_XIP;
--	else
--		ltq_mtd->map->phys = ltq_mtd->res->start;
--	ltq_mtd->res->start;
--	ltq_mtd->map->size = resource_size(ltq_mtd->res);
--	ltq_mtd->map->virt = devm_ioremap_resource(&pdev->dev, ltq_mtd->res);
--	if (IS_ERR(ltq_mtd->map->virt))
--		return PTR_ERR(ltq_mtd->map->virt);
--
--	ltq_mtd->map->name = ltq_map_name;
--	ltq_mtd->map->bankwidth = 2;
--	ltq_mtd->map->read = ltq_read16;
--	ltq_mtd->map->write = ltq_write16;
--	ltq_mtd->map->copy_from = ltq_copy_from;
--	ltq_mtd->map->copy_to = ltq_copy_to;
--
--	ltq_mtd->map->map_priv_1 = LTQ_NOR_PROBING;
--	ltq_mtd->mtd = do_map_probe("cfi_probe", ltq_mtd->map);
--	ltq_mtd->map->map_priv_1 = LTQ_NOR_NORMAL;
--
--	if (!ltq_mtd->mtd) {
--		dev_err(&pdev->dev, "probing failed\n");
--		return -ENXIO;
--	}
--
--	ltq_mtd->mtd->dev.parent = &pdev->dev;
--
 -	cfi = ltq_mtd->map->fldrv_priv;
 -	cfi->addr_unlock1 ^= 1;
 -	cfi->addr_unlock2 ^= 1;
