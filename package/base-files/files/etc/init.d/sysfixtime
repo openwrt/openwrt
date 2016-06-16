@@ -27,7 +27,7 @@ stop() {
 maxtime() {
 	local file newest
 
-	for file in $( find /etc -type f ! -path /etc/dnsmasq.time ) ; do
+	for file in $( find /etc -type f ) ; do
 		[ -z "$newest" -o "$newest" -ot "$file" ] && newest=$file
 	done
 	[ "$newest" ] && date -r "$newest" +%s
