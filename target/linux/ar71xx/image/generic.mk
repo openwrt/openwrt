@@ -67,6 +67,15 @@ define Device/gl-domino
 endef
 TARGET_DEVICES += gl-domino
 
+define Device/dr531
+  DEVICE_TITLE := Wallys DR531
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = DR531
+  IMAGE_SIZE = 7808k
+  MTDPARTS = spi0.0:192k(u-boot)ro,64k(u-boot-env),64k(partition-table)ro,7808k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += dr531
+
 define Device/wndr3700
   DEVICE_TITLE := NETGEAR WNDR3700
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev kmod-leds-wndr3700-usb

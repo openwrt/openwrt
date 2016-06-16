@@ -156,6 +156,11 @@ db120)
 	ucidef_set_led_usbdev "usb" "USB" "db120:green:usb" "1-1"
 	;;
 
+dr531)
+	ucidef_set_led_netdev "lan" "LAN" "dr531:green:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "dr531:green:wan" "eth1"
+	;;
+
 dragino2)
 	ucidef_set_led_wlan "wlan" "WLAN" "dragino2:red:wlan" "phy0tpt"
 	ucidef_set_led_netdev "lan" "LAN" "dragino2:red:lan" "eth0"

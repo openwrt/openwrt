@@ -113,6 +113,9 @@ get_status_led() {
 	dr344)
 		status_led="dr344:green:status"
 		;;
+	dr531)
+		status_led="dr531:green:sig4"
+		;;
 	dragino2)
 		status_led="dragino2:red:system"
 		;;

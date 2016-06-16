@@ -224,6 +224,7 @@ platform_check_image() {
 	dlan-hotspot | \
 	dlan-pro-500-wp | \
 	dlan-pro-1200-ac | \
+	dr531 | \
 	dragino2 | \
 	epg5000 | \
 	esr1750 | \
