@@ -169,7 +169,7 @@ define Package/base-files/install
 	rm -f $(1)/var
 	$(LN) /tmp $(1)/var
 	mkdir -p $(1)/etc
-	$(LN) /tmp/resolv.conf /tmp/fstab /tmp/TZ /tmp/localtime $(1)/etc/
+	$(LN) /tmp/resolv.conf /tmp/TZ /tmp/localtime $(1)/etc/
 
 	chmod 0600 $(1)/etc/shadow
 	chmod 1777 $(1)/tmp
