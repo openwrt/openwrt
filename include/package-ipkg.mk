@@ -5,7 +5,9 @@
 # See /LICENSE for more information.
 #
 
-include $(INCLUDE_DIR)/feeds.mk
+ifndef DUMP
+  include $(INCLUDE_DIR)/feeds.mk
+endif
 
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
