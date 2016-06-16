@@ -25,7 +25,7 @@
 
 define Profile/marduk_ca8210
     NAME:=Basic platform profile for Marduk with Cascoda ca8210
-    PACKAGES:=kmod-cascoda wpan-tools
+    PACKAGES:=kmod-ca8210 wpan-tools
 endef
 
 define Profile/marduk_ca8210/Description
