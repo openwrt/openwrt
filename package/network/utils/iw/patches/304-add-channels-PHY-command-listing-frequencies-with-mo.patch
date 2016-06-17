@@ -1,0 +1,234 @@
+From db9d4050d7dff994a43fa954ff47ac94a898f728 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 1 Jun 2016 07:51:14 +0200
+Subject: [PATCH] add "channels" PHY command listing frequencies with more
+ details
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Channels (frequencies) are getting more details that users may want to
+know about. E.g. it's important to know which frequencies allow using
+40/80/160 MHz channels to setup AP properly.
+
+We list channels in "info" command output but it's already quite big and
+it was agreed to introduce new command rather than expand the old one.
+
+This patch adds "channels" command printing what was already available
+in the "info" plus details about supported channel widths. It also
+removes DFS info from the "info" output.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ info.c |  30 -------------
+ phy.c  | 152 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 152 insertions(+), 30 deletions(-)
+
+--- a/info.c
++++ b/info.c
+@@ -49,20 +49,6 @@ static char *cipher_name(__u32 c)
+ 	}
+ }
+ 
+-static char *dfs_state_name(enum nl80211_dfs_state state)
+-{
+-	switch (state) {
+-	case NL80211_DFS_USABLE:
+-		return "usable";
+-	case NL80211_DFS_AVAILABLE:
+-		return "available";
+-	case NL80211_DFS_UNAVAILABLE:
+-		return "unavailable";
+-	default:
+-		return "unknown";
+-	}
+-}
+-
+ static int ext_feature_isset(const unsigned char *ext_features, int ext_features_len,
+ 			     enum nl80211_ext_feature_index ftidx)
+ {
+@@ -200,22 +186,6 @@ next:
+ 					if (open)
+ 						printf(")");
+ 					printf("\n");
+-
+-					if (!tb_freq[NL80211_FREQUENCY_ATTR_DISABLED] && tb_freq[NL80211_FREQUENCY_ATTR_DFS_STATE]) {
+-						enum nl80211_dfs_state state = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_DFS_STATE]);
+-						unsigned long time;
+-
+-						printf("\t\t\t  DFS state: %s", dfs_state_name(state));
+-						if (tb_freq[NL80211_FREQUENCY_ATTR_DFS_TIME]) {
+-							time = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_DFS_TIME]);
+-							printf(" (for %lu sec)", time/1000);
+-						}
+-						printf("\n");
+-						if (tb_freq[NL80211_FREQUENCY_ATTR_DFS_CAC_TIME])
+-							printf("\t\t\t  DFS CAC time: %u ms\n",
+-							       nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_DFS_CAC_TIME]));
+-					}
+-
+ 				}
+ 			}
+ 
+--- a/phy.c
++++ b/phy.c
+@@ -15,6 +15,158 @@
+ #include "nl80211.h"
+ #include "iw.h"
+ 
++struct channels_ctx {
++	int last_band;
++	bool width_40;
++	bool width_80;
++	bool width_160;
++};
++
++static char *dfs_state_name(enum nl80211_dfs_state state)
++{
++	switch (state) {
++	case NL80211_DFS_USABLE:
++		return "usable";
++	case NL80211_DFS_AVAILABLE:
++		return "available";
++	case NL80211_DFS_UNAVAILABLE:
++		return "unavailable";
++	default:
++		return "unknown";
++	}
++}
++
++static int print_channels_handler(struct nl_msg *msg, void *arg)
++{
++	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
++	struct channels_ctx *ctx = arg;
++	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
++	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
++	struct nlattr *tb_freq[NL80211_FREQUENCY_ATTR_MAX + 1];
++	struct nlattr *nl_band;
++	struct nlattr *nl_freq;
++	int rem_band, rem_freq;
++
++	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
++
++	if (tb_msg[NL80211_ATTR_WIPHY_BANDS]) {
++		nla_for_each_nested(nl_band, tb_msg[NL80211_ATTR_WIPHY_BANDS], rem_band) {
++			if (ctx->last_band != nl_band->nla_type) {
++				printf("Band %d:\n", nl_band->nla_type + 1);
++				ctx->width_40 = false;
++				ctx->width_80 = false;
++				ctx->width_160 = false;
++				ctx->last_band = nl_band->nla_type;
++			}
++
++			nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(nl_band), nla_len(nl_band), NULL);
++
++			if (tb_band[NL80211_BAND_ATTR_HT_CAPA]) {
++				__u16 cap = nla_get_u16(tb_band[NL80211_BAND_ATTR_HT_CAPA]);
++
++				if (cap & BIT(1))
++					ctx->width_40 = true;
++			}
++
++			if (tb_band[NL80211_BAND_ATTR_VHT_CAPA]) {
++				__u32 capa;
++
++				ctx->width_80 = true;
++
++				capa = nla_get_u32(tb_band[NL80211_BAND_ATTR_VHT_CAPA]);
++				switch ((capa >> 2) & 3) {
++				case 2:
++					/* width_80p80 = true; */
++					/* fall through */
++				case 1:
++					ctx->width_160 = true;
++				break;
++				}
++			}
++
++			if (tb_band[NL80211_BAND_ATTR_FREQS]) {
++				nla_for_each_nested(nl_freq, tb_band[NL80211_BAND_ATTR_FREQS], rem_freq) {
++					uint32_t freq;
++
++					nla_parse(tb_freq, NL80211_FREQUENCY_ATTR_MAX, nla_data(nl_freq), nla_len(nl_freq), NULL);
++
++					if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
++						continue;
++					freq = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
++					printf("\t* %d MHz [%d] ", freq, ieee80211_frequency_to_channel(freq));
++
++					if (tb_freq[NL80211_FREQUENCY_ATTR_DISABLED]) {
++						printf("(disabled)\n");
++						continue;
++					}
++					printf("\n");
++
++					if (tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER])
++						printf("\t  Maximum TX power: %.1f dBm\n", 0.01 * nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]));
++
++					/* If both flags are set assume an new kernel */
++					if (tb_freq[NL80211_FREQUENCY_ATTR_NO_IR] && tb_freq[__NL80211_FREQUENCY_ATTR_NO_IBSS]) {
++						printf("\t  No IR\n");
++					} else if (tb_freq[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN]) {
++						printf("\t  Passive scan\n");
++					} else if (tb_freq[__NL80211_FREQUENCY_ATTR_NO_IBSS]){
++						printf("\t  No IBSS\n");
++					}
++
++					if (tb_freq[NL80211_FREQUENCY_ATTR_RADAR])
++						printf("\t  Radar detection\n");
++
++					printf("\t  Channel widths:");
++					if (!tb_freq[NL80211_FREQUENCY_ATTR_NO_20MHZ])
++						printf(" 20MHz");
++					if (ctx->width_40 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_HT40_MINUS])
++						printf(" HT40-");
++					if (ctx->width_40 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_HT40_PLUS])
++						printf(" HT40+");
++					if (ctx->width_80 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_80MHZ])
++						printf(" VHT80");
++					if (ctx->width_160 && !tb_freq[NL80211_FREQUENCY_ATTR_NO_160MHZ])
++						printf(" VHT160");
++					printf("\n");
++
++					if (!tb_freq[NL80211_FREQUENCY_ATTR_DISABLED] && tb_freq[NL80211_FREQUENCY_ATTR_DFS_STATE]) {
++						enum nl80211_dfs_state state = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_DFS_STATE]);
++						unsigned long time;
++
++						printf("\t  DFS state: %s", dfs_state_name(state));
++						if (tb_freq[NL80211_FREQUENCY_ATTR_DFS_TIME]) {
++							time = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_DFS_TIME]);
++							printf(" (for %lu sec)", time / 1000);
++						}
++						printf("\n");
++						if (tb_freq[NL80211_FREQUENCY_ATTR_DFS_CAC_TIME])
++							printf("\t  DFS CAC time: %u ms\n",
++							       nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_DFS_CAC_TIME]));
++					}
++				}
++			}
++		}
++	}
++
++	return NL_SKIP;
++}
++
++static int handle_channels(struct nl80211_state *state, struct nl_msg *msg,
++			   int argc, char **argv, enum id_input id)
++{
++	static struct channels_ctx ctx = {
++		.last_band = -1,
++	};
++
++	nla_put_flag(msg, NL80211_ATTR_SPLIT_WIPHY_DUMP);
++	nlmsg_hdr(msg)->nlmsg_flags |= NLM_F_DUMP;
++
++	register_handler(print_channels_handler, &ctx);
++
++	return 0;
++}
++TOPLEVEL(channels, NULL, NL80211_CMD_GET_WIPHY, 0, CIB_PHY, handle_channels, "Show available channels.");
++
+ static int handle_name(struct nl80211_state *state,
+ 		       struct nl_msg *msg,
+ 		       int argc, char **argv,
