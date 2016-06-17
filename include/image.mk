@@ -481,6 +481,7 @@ define LegacyDevice
   $(call LegacyDevice/$(1),$(1))
   $(call LegacyDevice/Check,$(1))
   $(call LegacyDevice/$(if $(DUMP),Dump,Build),$(1))
+
 endef
 
 define BuildImage
