@@ -1,0 +1,28 @@
+From: Hante Meuleman <hante.meuleman@broadcom.com>
+Date: Fri, 3 Jun 2016 23:31:07 +0200
+Subject: [PATCH] brcmfmac: fix skb priority handling
+
+SKBs can come with a prioriy. Currently a priority of 0..7 is
+assumed. But this assumption is incorrect. To fix this any
+priority of 0 or higher then 7 will be adjusted by calling
+cfg80211_classify8021d
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Signed-off-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
+@@ -2101,7 +2101,7 @@ int brcmf_fws_process_skb(struct brcmf_i
+ 
+ 	brcmf_dbg(DATA, "tx proto=0x%X\n", ntohs(eh->h_proto));
+ 	/* determine the priority */
+-	if (!skb->priority)
++	if ((skb->priority == 0) || (skb->priority > 7))
+ 		skb->priority = cfg80211_classify8021d(skb, NULL);
+ 
+ 	drvr->tx_multicast += !!multicast;

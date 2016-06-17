@@ -1,0 +1,27 @@
+From: Wright Feng <wright.feng@broadcom.com>
+Date: Fri, 3 Jun 2016 23:31:08 +0200
+Subject: [PATCH] brcmfmac: revise SDIO error message in
+ brcmf_sdio_drivestrengthinit
+
+The error message is given for something that is not an error here as
+the drive strength configuration may not be applicable for specific
+devices. Therefor the error message is rephrased and changed to a
+debug message.
+
+Signed-off-by: Wright Feng <wright.feng@broadcom.com>
+[arend@broadcom.com: rephrase commit message]
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -3664,7 +3664,7 @@ brcmf_sdio_drivestrengthinit(struct brcm
+ 		str_shift = 11;
+ 		break;
+ 	default:
+-		brcmf_err("No SDIO Drive strength init done for chip %s rev %d pmurev %d\n",
++		brcmf_dbg(INFO, "No SDIO driver strength init needed for chip %s rev %d pmurev %d\n",
+ 			  ci->name, ci->chiprev, ci->pmurev);
+ 		break;
+ 	}

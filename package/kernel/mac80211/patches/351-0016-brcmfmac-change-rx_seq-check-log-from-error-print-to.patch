@@ -1,0 +1,30 @@
+From: Wright Feng <wright.feng@broadcom.com>
+Date: Fri, 3 Jun 2016 23:31:11 +0200
+Subject: [PATCH] brcmfmac: change rx_seq check log from error print to debug
+ print
+
+The bus rx sequence is not in order because that control and event
+frames always cause immediate send, but data frames may be held
+for glomming in firmware side. It is not actually an error as the
+packets are still processed even if the RX sequence is not in order.
+Therefor the error message is rephrased and changed to a debug
+message.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Signed-off-by: Wright Feng <wright.feng@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -1382,8 +1382,7 @@ static int brcmf_sdio_hdparse(struct brc
+ 		return -ENXIO;
+ 	}
+ 	if (rd->seq_num != rx_seq) {
+-		brcmf_err("seq %d: sequence number error, expect %d\n",
+-			  rx_seq, rd->seq_num);
++		brcmf_dbg(SDIO, "seq %d, expected %d\n", rx_seq, rd->seq_num);
+ 		bus->sdcnt.rx_badseq++;
+ 		rd->seq_num = rx_seq;
+ 	}
