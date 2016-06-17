@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=mediatek
 BOARDNAME:=MediaTek Ralink ARM
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs nand ubifs
 CPU_TYPE:=cortex-a7
 MAINTAINER:=John Crispin <john@phrozen.org>
 
