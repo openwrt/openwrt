@@ -1,0 +1,60 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 30 May 2016 06:40:54 +0200
+Subject: [PATCH] brcmfmac: don't remove interface on link down firmware event
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+There are two firmware events we handle similarly in brcmfmac:
+BRCMF_E_LINK and BRCMF_E_IF. The difference from firmware point of view
+is that the first one means BSS remains present in the firmware. Trying
+to (re)create it (e.g. when adding new virtual interface) will result in
+an error.
+
+Current code treats both events in a similar way. It removes Linux
+interface for each of them. It works OK with e.g. BCM43602. Its firmware
+generates both events for each interface. It means we get BRCMF_E_LINK
+and remove interface. That is soon followed by BRCMF_E_IF which means
+BSS was also removed in a firmware. The only downside of this is a
+harmless error like:
+[  208.643180] brcmfmac: brcmf_fweh_call_event_handler: no interface object
+
+Unfortunately BCM4366 firmware doesn't automatically remove BSS and so
+it doesn't generate BRCMF_E_IF. In such case we incorrectly remove Linux
+interface on BRCMF_E_LINK as BSS is still present in the firmware. It
+results in an error when trying to re-create virtual interface, e.g.:
+> iw phy phy1 interface add wlan1-1 type __ap
+[ 3602.929199] brcmfmac: brcmf_ap_add_vif: timeout occurred
+command failed: I/O error (-5)
+
+With this patch we don't remove Linux interface while firmware keeps
+BSS. Thanks to this we keep a consistent states of host driver and
+device firmware.
+
+Further improvement should be to mark BSS as disabled and remove
+interface on BRCMF_E_LINK. Then we should add support for reusing
+BSS-es.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -5388,7 +5388,6 @@ brcmf_notify_connect_status_ap(struct br
+ 			       struct net_device *ndev,
+ 			       const struct brcmf_event_msg *e, void *data)
+ {
+-	struct brcmf_if *ifp = netdev_priv(ndev);
+ 	static int generation;
+ 	u32 event = e->event_code;
+ 	u32 reason = e->reason;
+@@ -5399,8 +5398,6 @@ brcmf_notify_connect_status_ap(struct br
+ 	    ndev != cfg_to_ndev(cfg)) {
+ 		brcmf_dbg(CONN, "AP mode link down\n");
+ 		complete(&cfg->vif_disabled);
+-		if (ifp->vif->mbss)
+-			brcmf_remove_interface(ifp);
+ 		return 0;
+ 	}
+ 
