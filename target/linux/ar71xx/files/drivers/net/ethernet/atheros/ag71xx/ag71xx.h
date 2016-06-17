@@ -174,7 +174,7 @@ struct ag71xx {
 	unsigned int		desc_pktlen_mask;
 	unsigned int		rx_buf_size;
 
-	struct work_struct	restart_work;
+	struct delayed_work	restart_work;
 	struct delayed_work	link_work;
 	struct timer_list	oom_timer;
 
