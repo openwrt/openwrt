@@ -463,9 +463,7 @@ define LegacyDevice/Build
   .PHONY: legacy-image-prepare-$(1) legacy-image-$(1)
 
   legacy-image-prepare-$(1):
-	$(foreach fs,$(TARGET_FILESYSTEMS),
-		$$(call Image/Prepare/Profile,$(1),$(fs))
-	)
+	$$(call Image/Prepare/Profile,$(1))
 
   legacy-image-$(1):
 	$(foreach fs,$(TARGET_FILESYSTEMS),
