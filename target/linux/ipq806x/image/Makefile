@@ -32,10 +32,6 @@ define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1)-root.img bs=2k conv=sync
 endef
 
-define Build/append-dtb
-	cat $(DTS_DIR)/$(DEVICE_DTS).dtb >> $@
-endef
-
 define Build/append-file
 	cat $(1) >> $@
 endef

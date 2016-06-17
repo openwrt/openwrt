@@ -8,8 +8,6 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/Prepare
-	$(CP) $(DTS_DIR)/*.dtb $(KDIR)/
-
 	rm -f $(KDIR)/fs_mark
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/fs_mark
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
@@ -19,10 +17,6 @@ define Image/Prepare
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
 
 	$(CP) ./ubinize.cfg $(KDIR)
-endef
-
-define Build/append-dtb
-	cat $(KDIR)/$(DT).dtb >> $@
 endef
 
 define Build/lzma-d16
@@ -78,14 +72,14 @@ define Build/seama-nand
 		-i $@.entity
 endef
 
-DEVICE_VARS += DT PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION
+DEVICE_VARS += DEVICE_DTS PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION
 
 define Device/Default
   # .dtb files are prefixed by SoC type, e.g. bcm4708- which is not included in device/image names
   # extract the full dtb name based on the device info
-  DT := $(patsubst %.dtb,%,$(notdir $(wildcard $(if $(IB),$(KDIR),$(DTS_DIR))/*-$(1).dtb)))
+  DEVICE_DTS := $(patsubst %.dtb,%,$(notdir $(wildcard $(if $(IB),$(KDIR),$(DTS_DIR))/*-$(1).dtb)))
   KERNEL := kernel-bin | append-dtb | lzma-d16
-  KERNEL_DEPENDS = $$(wildcard $(KDIR)/$$(DT).dts)
+  KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   FILESYSTEMS := squashfs
   KERNEL_NAME := zImage
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
