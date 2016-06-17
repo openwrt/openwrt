@@ -167,6 +167,7 @@ define Build/redboot-bin
 endef
 
 define Device/Default
+  PROFILES = Default $$(DEVICE_NAME)
   KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_SUFFIX := .elf
   DEVICE_DTS :=
