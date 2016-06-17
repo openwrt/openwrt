@@ -466,6 +466,7 @@ define LegacyDevice/Build
 	$$(call Image/Prepare/Profile,$(1))
 
   legacy-image-$(1):
+	$$(call Image/BuildKernel/Profile,$(1))
 	$(foreach fs,$(TARGET_FILESYSTEMS),
 		$$(call Image/Build/Profile,$(1),$(fs))
 	)
