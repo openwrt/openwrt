@@ -57,14 +57,13 @@ define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
 endef
 
-define Image/BuildNAND/squashfs
-
 ifneq ($($(PROFILE)_UBI_OPTS),)
+  define Image/BuildNAND/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
 	$(call Image/Build/UbinizeImage,$(PROFILE),,squashfs,$($(PROFILE)_UBI_OPTS))
 	$(call Image/Build/SysupgradeNAND,$(PROFILE),$(1),$(KDIR)/uImage-$(PROFILE))
+  endef
 endif
-endef
 
 DGN3500_SKERNEL=0x50000
 DGN3500_SKERNEL_DECIMAL=327680
@@ -108,20 +107,18 @@ define Image/BuildEVA/squashfs
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva)
 endef
 
-define Image/BuildEVA/ubifs
-
 ifneq ($($(PROFILE)_UBIFS_OPTS),)
+  define Image/BuildEVA/ubifs
 	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubifs
+  endef
 endif
-endef
-
-define Image/BuildEVA/ubi
 
 ifneq ($($(PROFILE)_UBI_OPTS),)
+  define Image/BuildEVA/ubi
 	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubi
 	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs-overlay.ubi
+  endef
 endif
-endef
 
 define Image/BuildLoader/squashfs
 	dd if=$(KDIR)/loader-$(2).bin of=$(KDIR)/loader-$(2).bin.padded bs=3072k conv=sync
@@ -148,60 +145,69 @@ define Image/Build/jffs2-256k
 	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 endef
 
-define Image/Build/ubifs
-
 ifneq ($($(PROFILE)_UBIFS_OPTS),)
+  define Image/Build/ubifs
 	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubifs
+  endef
 endif
-endef
-
-define Image/Build/ubi
 
 ifneq ($($(PROFILE)_UBI_OPTS),)
+  define Image/Build/ubi
 	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubi
 	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs-overlay.ubi
+  endef
 endif
-endef
 
-
-define Image/BuildNAND/ubifs
 
 ifneq ($($(PROFILE)_UBIFS_OPTS),)
 ifneq ($($(PROFILE)_UBI_OPTS),)
+  define Image/BuildNAND/ubifs
 	$(call Image/Build/UbinizeImage,$(PROFILE),,ubifs,$($(PROFILE)_UBI_OPTS))
 	$(call Image/Build/SysupgradeNAND,$(PROFILE),$(1),$(KDIR)/uImage-$(PROFILE))
+  endef
 endif
 endif
-endef
 
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  define Image/BuildKernel/InitramfsTemplate
+	$(call PatchKernelLzma,$(1),-initramfs)
+	$(call MkImageLzma,$(1),-initramfs)
+	$(CP) $(KDIR)/uImage-$(1)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage-initramfs
+  endef
+endif
 
 define Image/BuildKernel/Template
 	$(call PatchKernelLzma,$(1))
 	$(call MkImageLzma,$(1))
 	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(call PatchKernelLzma,$(1),-initramfs)
-	$(call MkImageLzma,$(1),-initramfs)
-	$(CP) $(KDIR)/uImage-$(1)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage-initramfs
-endif
+	$(Image/BuildKernel/InitramfsTemplate)
 endef
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  define Image/BuildKernelLoader/InitramfsTemplate
+	$(CP) $(KDIR)/loader-initramfs-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs-loader
+	$(CP) $(KDIR)/vmlinux-initramfs-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs
+  endef
+endif
 
 define Image/BuildKernelLoader/Template
 	$(CP) $(KDIR)/loader-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-loader
 	$(CP) $(KDIR)/vmlinux-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(CP) $(KDIR)/loader-initramfs-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs-loader
-	$(CP) $(KDIR)/vmlinux-initramfs-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs
-endif
+	$(Image/BuildKernelLoader/InitramfsTemplate)
 endef
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  define Image/Prepare/InitramfsTemplate
+	$(call PatchKernelLzma,$(1),-initramfs)
+	$(call Image/BuildLoader/Template,$(1),-initramfs)
+  endef
+endif
 
 define Image/Prepare/Kernel
 	$(call PatchKernelLzma,$(1))
 	$(call Image/BuildLoader/Template,$(1))
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(call PatchKernelLzma,$(1),-initramfs)
-	$(call Image/BuildLoader/Template,$(1),-initramfs)
-endif
+	$(Image/Prepare/InitramfsTemplate)
 endef
 
 define Image/BuildKernelEVA/Template
@@ -209,12 +215,6 @@ define Image/BuildKernelEVA/Template
 	$(call MkImageEVA,$(1))
 	$(CP) $(KDIR)/$(1).eva.align.64k $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva.align.64k
 	$(CP) $(KDIR)/$(1).eva.align.128k $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva.align.128k
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(call PatchKernelLzma,$(1),-initramfs)
-	$(call MkImageEVA,$(1),-initramfs)
-	$(CP) $(KDIR)/$(1)-initramfs.eva.align.64k $(BIN_DIR)/$(IMG_PREFIX)-$(1)-initramfs.eva.align.64k
-	$(CP) $(KDIR)/$(1)-initramfs.eva.align.128k $(BIN_DIR)/$(IMG_PREFIX)-$(1)-initramfs.eva.align.128k
-endif
 endef
 
 
