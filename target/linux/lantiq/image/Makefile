@@ -175,31 +175,6 @@ endif
 endef
 
 
-define Image/InstallKernel/Template
-
-ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
-	$(INSTALL_DIR) $(TARGET_DIR)/boot
-
-ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
-	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage $(TARGET_DIR)/boot/
-	ln -sf $(IMG_PREFIX)-$(1)-uImage $(TARGET_DIR)/boot/uImage
-endif
-
-ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE),)
-	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-zImage $(TARGET_DIR)/boot/
-	ln -sf $(IMG_PREFIX)-$(1)-zImage $(TARGET_DIR)/boot/zImage
-endif
-endif
-
-ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
-	$(INSTALL_DIR) $(TARGET_DIR)/boot
-
-ifneq ($(1),)
-	$(CP) $(KDIR)/$(1).dtb $(TARGET_DIR)/boot/
-endif
-endif
-endef
-
 define Image/BuildKernel/Template
 	$(call PatchKernelLzma,$(1))
 	$(call MkImageLzma,$(1))
@@ -220,7 +195,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endef
 
-define Image/Prepare/Profile
+define Image/Prepare/Kernel
 	$(call PatchKernelLzma,$(1))
 	$(call Image/BuildLoader/Template,$(1))
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
@@ -793,6 +768,12 @@ define Device/VGV7519BRN
 endef
 TARGET_DEVICES += VGV7519BRN
 
+define Image/Prepare
+	$(call Image/Prepare/Kernel,VG3503J)
+endef
+
+endif
+
 define Image/Prepare/Profile
 	$(call Image/Build/Profile/$(1),loader)
 endef
@@ -802,18 +783,8 @@ define Image/Build/Profile
 	$(call Image/Build/Profile/$(1),$(2))
 endef
 
-define Image/Prepare
-	$(call Image/Prepare/Profile,VG3503J)
-endef
-
-endif
-
 define Image/BuildKernel
 	$(call Image/BuildKernel/Profile/$(PROFILE))
-endef
-
-define Image/InstallKernel
-	$(call Image/InstallKernel/Template/$(PROFILE))
 endef
 
 define Image/Build
