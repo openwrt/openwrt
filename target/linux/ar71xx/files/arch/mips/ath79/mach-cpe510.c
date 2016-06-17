@@ -117,7 +117,7 @@ static void __init cpe210_setup(void)
 static void __init cpe510_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f830008);
-	u8 *ee = (u8 *) KSEG1ADDR(0x1fff5000);
+	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	cpe_setup(mac);
 
