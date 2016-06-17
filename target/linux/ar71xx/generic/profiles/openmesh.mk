@@ -61,12 +61,12 @@ endef
 $(eval $(call Profile,MR900))
 
 define Profile/MR1750
-        NAME:=OpenMesh MR1750
+        NAME:=OpenMesh MR1750/MR1750v2
         PACKAGES:=kmod-ath9k kmod-ath10k ath10k-firmware-qca988x
 endef
 
 define Profile/MR1750/Description
-        Package set optimized for the OpenMesh MR1750.
+        Package set optimized for the OpenMesh MR1750/MR1750v2.
 endef
 
 $(eval $(call Profile,MR1750))
