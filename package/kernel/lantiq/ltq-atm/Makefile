@@ -31,7 +31,7 @@ KernelPackage/ltq-atm-ar9=$(call KernelPackage/ltq-atm-template,ar9,TARGET_lanti
 KernelPackage/ltq-atm-ase=$(call KernelPackage/ltq-atm-template,ase,TARGET_lantiq_ase)
 
 define KernelPackage/ltq-atm-vr9
-  $(call KernelPackage/ltq-atm-template,vr9,xrx200)
+  $(call KernelPackage/ltq-atm-template,vr9,TARGET_lantiq_xrx200)
   AUTOLOAD:=
 endef
 
