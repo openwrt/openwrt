@@ -54,7 +54,7 @@ define Package/snapshot-tool
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=rootfs snapshoting tool
-  DEPENDS:=+libubox
+  DEPENDS:=+libubox +fstools
 endef
 
 define Package/block-mount
