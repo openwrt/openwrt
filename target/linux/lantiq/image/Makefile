@@ -57,14 +57,6 @@ define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
 endef
 
-ifneq ($($(PROFILE)_UBI_OPTS),)
-  define Image/BuildNAND/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
-	$(call Image/Build/UbinizeImage,$(PROFILE),,squashfs,$($(PROFILE)_UBI_OPTS))
-	$(call Image/Build/SysupgradeNAND,$(PROFILE),$(1),$(KDIR)/uImage-$(PROFILE))
-  endef
-endif
-
 DGN3500_SKERNEL=0x50000
 DGN3500_SKERNEL_DECIMAL=327680
 define Image/BuildDGN3500/squashfs
@@ -107,19 +99,6 @@ define Image/BuildEVA/squashfs
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva)
 endef
 
-ifneq ($($(PROFILE)_UBIFS_OPTS),)
-  define Image/BuildEVA/ubifs
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubifs
-  endef
-endif
-
-ifneq ($($(PROFILE)_UBI_OPTS),)
-  define Image/BuildEVA/ubi
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubi
-	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs-overlay.ubi
-  endef
-endif
-
 define Image/BuildLoader/squashfs
 	dd if=$(KDIR)/loader-$(2).bin of=$(KDIR)/loader-$(2).bin.padded bs=3072k conv=sync
 	cat $(KDIR)/loader-$(2).bin.padded $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
@@ -144,30 +123,6 @@ define Image/Build/jffs2-256k
 	dd if=$(KDIR)/uImage-$(2) of=$(KDIR)/uImage-$(2)-$(1) bs=256k conv=sync
 	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 endef
-
-ifneq ($($(PROFILE)_UBIFS_OPTS),)
-  define Image/Build/ubifs
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubifs
-  endef
-endif
-
-ifneq ($($(PROFILE)_UBI_OPTS),)
-  define Image/Build/ubi
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubi
-	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs-overlay.ubi
-  endef
-endif
-
-
-ifneq ($($(PROFILE)_UBIFS_OPTS),)
-ifneq ($($(PROFILE)_UBI_OPTS),)
-  define Image/BuildNAND/ubifs
-	$(call Image/Build/UbinizeImage,$(PROFILE),,ubifs,$($(PROFILE)_UBI_OPTS))
-	$(call Image/Build/SysupgradeNAND,$(PROFILE),$(1),$(KDIR)/uImage-$(PROFILE))
-  endef
-endif
-endif
-
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   define Image/BuildKernel/InitramfsTemplate
@@ -326,8 +281,8 @@ endif
 ifeq ($(SUBTARGET),xway)
 
 # Danube
-BTHOMEHUBV2B_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
-BTHOMEHUBV2B_UBI_OPTS:="-m 512 -p 16KiB -s 256"
+DEVICE_BTHOMEHUBV2B_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
+DEVICE_BTHOMEHUBV2B_UBI_OPTS:="-m 512 -p 16KiB -s 256"
 
 Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
 Image/Build/Profile/BTHOMEHUBV2B=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV2B)
@@ -497,8 +452,8 @@ TARGET_DEVICES += GIGASX76X
 
 
 # AR9
-BTHOMEHUBV3A_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
-BTHOMEHUBV3A_UBI_OPTS:="-m 512 -p 16KiB -s 256"
+DEVICE_BTHOMEHUBV3A_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
+DEVICE_BTHOMEHUBV3A_UBI_OPTS:="-m 512 -p 16KiB -s 256"
 
 Image/BuildKernel/Profile/BTHOMEHUBV3A=$(call Image/BuildKernel/Template,BTHOMEHUBV3A)
 Image/Build/Profile/BTHOMEHUBV3A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV3A)
@@ -627,8 +582,8 @@ endif
 ifeq ($(SUBTARGET),xrx200)
 
 # VR9
-P2812HNUF1_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-P2812HNUF1_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+DEVICE_P2812HNUF1_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+DEVICE_P2812HNUF1_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/P2812HNUF1=$(call Image/BuildKernel/Template,P2812HNUF1)
 Image/Build/Profile/P2812HNUF1=$(call Image/BuildNAND/$(1),$(1),P2812HNUF1)
@@ -639,8 +594,8 @@ define LegacyDevice/P2812HNUF1
 endef
 LEGACY_DEVICES += P2812HNUF1
 
-P2812HNUF3_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-P2812HNUF3_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+DEVICE_P2812HNUF3_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+DEVICE_P2812HNUF3_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/P2812HNUF3=$(call Image/BuildKernel/Template,P2812HNUF3)
 Image/Build/Profile/P2812HNUF3=$(call Image/BuildNAND/$(1),$(1),P2812HNUF3)
@@ -660,8 +615,8 @@ endef
 TARGET_DEVICES += ARV7519RW22
 
 
-BTHOMEHUBV5A_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-BTHOMEHUBV5A_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+DEVICE_BTHOMEHUBV5A_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+DEVICE_BTHOMEHUBV5A_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/BTHOMEHUBV5A=$(call Image/BuildKernel/Template,BTHOMEHUBV5A)
 Image/Build/Profile/BTHOMEHUBV5A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV5A)
@@ -689,8 +644,8 @@ endef
 TARGET_DEVICES += EASY80920NOR
 
 
-FRITZ3370_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-FRITZ3370_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+DEVICE_FRITZ3370_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+DEVICE_FRITZ3370_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
 Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
@@ -769,6 +724,39 @@ define Device/VGV7519BRN
 endef
 TARGET_DEVICES += VGV7519BRN
 
+endif
+
+ifneq ($($(PROFILE)_UBI_OPTS),)
+  define Image/BuildNAND/squashfs
+	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
+	$(call Image/Build/UbinizeImage,$(2),,squashfs,$($(PROFILE)_UBI_OPTS))
+	$(call Image/Build/SysupgradeNAND,$(2),$(1),$(KDIR)/uImage-$(2))
+  endef
+
+  define Image/Build/ubifs
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubifs
+  endef
+
+  define Image/Build/ubi
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubi
+	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs-overlay.ubi
+  endef
+
+  define Image/BuildEVA/ubi
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubi
+	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs-overlay.ubi
+  endef
+
+ifneq ($($(PROFILE)_UBIFS_OPTS),)
+  define Image/BuildNAND/ubifs
+	$(call Image/Build/UbinizeImage,$(2),,ubifs,$($(PROFILE)_UBI_OPTS))
+	$(call Image/Build/SysupgradeNAND,$(2),$(1),$(KDIR)/uImage-$(2))
+  endef
+
+  define Image/BuildEVA/ubifs
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubifs
+  endef
+endif
 endif
 
 define Image/Prepare/Profile
