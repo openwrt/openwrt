@@ -17,6 +17,10 @@ set_state() {
 		;;
 	failsafe)
 		status_led_off
+		[ -n "$running" ] && {
+			status_led="$running"
+			status_led_off
+		}
 		status_led="$failsafe"
 		status_led_blink_failsafe
 		;;
