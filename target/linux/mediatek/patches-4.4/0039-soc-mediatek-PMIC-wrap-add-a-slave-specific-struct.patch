@@ -1,7 +1,8 @@
-From daa4d054bb0557799c8b324d7aa5f0a3a4a7b078 Mon Sep 17 00:00:00 2001
+From 21bdcd324f769545b1765fe391d939a1edd07cbb Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 20 Jan 2016 09:55:08 +0100
-Subject: [PATCH 39/91] soc: mediatek: PMIC wrap: add a slave specific struct
+Subject: [PATCH 039/102] soc: mediatek: PMIC wrap: add a slave specific
+ struct
 
 This patch adds a new struct pwrap_slv_type that we use to store the slave
 specific data. The patch adds 2 new helper functions to access the dew
@@ -12,6 +13,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |  159 ++++++++++++++++++++++++----------
  1 file changed, 112 insertions(+), 47 deletions(-)
 
+diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
+index a2bacda..bcc841e 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -69,33 +69,54 @@
@@ -123,7 +126,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	struct clk *clk_spi;
  	struct clk *clk_wrap;
  	struct reset_control *rstc;
-@@ -544,7 +575,8 @@ static int pwrap_init_sidly(struct pmic_
+@@ -544,7 +575,8 @@ static int pwrap_init_sidly(struct pmic_wrapper *wrp)
  
  	for (i = 0; i < 4; i++) {
  		pwrap_writel(wrp, i, PWRAP_SIDLY);
@@ -133,7 +136,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		if (rdata == PWRAP_DEW_READ_TEST_VAL) {
  			dev_dbg(wrp->dev, "[Read Test] pass, SIDLY=%x\n", i);
  			pass |= 1 << i;
-@@ -593,7 +625,8 @@ static bool pwrap_is_pmic_cipher_ready(s
+@@ -593,7 +625,8 @@ static bool pwrap_is_pmic_cipher_ready(struct pmic_wrapper *wrp)
  	u32 rdata;
  	int ret;
  
@@ -143,7 +146,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (ret)
  		return 0;
  
-@@ -621,12 +654,12 @@ static int pwrap_init_cipher(struct pmic
+@@ -621,12 +654,12 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
  	}
  
  	/* Config cipher mode @PMIC */
@@ -162,7 +165,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	/* wait for cipher data ready@AP */
  	ret = pwrap_wait_for_state(wrp, pwrap_is_cipher_ready);
-@@ -643,7 +676,7 @@ static int pwrap_init_cipher(struct pmic
+@@ -643,7 +676,7 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
  	}
  
  	/* wait for cipher mode idle */
@@ -171,7 +174,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	ret = pwrap_wait_for_state(wrp, pwrap_is_fsm_idle_and_sync_idle);
  	if (ret) {
  		dev_err(wrp->dev, "cipher mode idle fail, ret=%d\n", ret);
-@@ -653,9 +686,11 @@ static int pwrap_init_cipher(struct pmic
+@@ -653,9 +686,11 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
  	pwrap_writel(wrp, 1, PWRAP_CIPHER_MODE);
  
  	/* Write Test */
@@ -186,7 +189,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		dev_err(wrp->dev, "rdata=0x%04X\n", rdata);
  		return -EFAULT;
  	}
-@@ -677,8 +712,10 @@ static int pwrap_mt8135_init_soc_specifi
+@@ -677,8 +712,10 @@ static int pwrap_mt8135_init_soc_specific(struct pmic_wrapper *wrp)
  	writel(0x7ff, wrp->bridge_base + PWRAP_MT8135_BRIDGE_INT_EN);
  
  	/* enable PMIC event out and sources */
@@ -199,7 +202,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		dev_err(wrp->dev, "enable dewrap fail\n");
  		return -EFAULT;
  	}
-@@ -689,8 +726,10 @@ static int pwrap_mt8135_init_soc_specifi
+@@ -689,8 +726,10 @@ static int pwrap_mt8135_init_soc_specific(struct pmic_wrapper *wrp)
  static int pwrap_mt8173_init_soc_specific(struct pmic_wrapper *wrp)
  {
  	/* PMIC_DEWRAP enables */
@@ -212,7 +215,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		dev_err(wrp->dev, "enable dewrap fail\n");
  		return -EFAULT;
  	}
-@@ -734,7 +773,7 @@ static int pwrap_init(struct pmic_wrappe
+@@ -734,7 +773,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
  		return ret;
  
  	/* Enable dual IO mode */
@@ -221,7 +224,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	/* Check IDLE & INIT_DONE in advance */
  	ret = pwrap_wait_for_state(wrp, pwrap_is_fsm_idle_and_sync_idle);
-@@ -746,7 +785,7 @@ static int pwrap_init(struct pmic_wrappe
+@@ -746,7 +785,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
  	pwrap_writel(wrp, 1, PWRAP_DIO_EN);
  
  	/* Read Test */
@@ -230,7 +233,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (rdata != PWRAP_DEW_READ_TEST_VAL) {
  		dev_err(wrp->dev, "Read test failed after switch to DIO mode: 0x%04x != 0x%04x\n",
  				PWRAP_DEW_READ_TEST_VAL, rdata);
-@@ -759,12 +798,13 @@ static int pwrap_init(struct pmic_wrappe
+@@ -759,12 +798,13 @@ static int pwrap_init(struct pmic_wrapper *wrp)
  		return ret;
  
  	/* Signature checking - using CRC */
@@ -246,7 +249,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	pwrap_writel(wrp, wrp->master->arb_en_all, PWRAP_HIPRIO_ARB_EN);
  
  	if (wrp->master->type == PWRAP_MT8135)
-@@ -818,6 +858,21 @@ static const struct regmap_config pwrap_
+@@ -818,6 +858,21 @@ static const struct regmap_config pwrap_regmap_config = {
  	.max_register = 0xffff,
  };
  
@@ -268,7 +271,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static struct pmic_wrapper_type pwrap_mt8135 = {
  	.regs = mt8135_regs,
  	.type = PWRAP_MT8135,
-@@ -862,8 +917,17 @@ static int pwrap_probe(struct platform_d
+@@ -862,8 +917,17 @@ static int pwrap_probe(struct platform_device *pdev)
  	struct device_node *np = pdev->dev.of_node;
  	const struct of_device_id *of_id =
  		of_match_device(of_pwrap_match_tbl, &pdev->dev);
@@ -286,7 +289,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	wrp = devm_kzalloc(&pdev->dev, sizeof(*wrp), GFP_KERNEL);
  	if (!wrp)
  		return -ENOMEM;
-@@ -871,6 +935,7 @@ static int pwrap_probe(struct platform_d
+@@ -871,6 +935,7 @@ static int pwrap_probe(struct platform_device *pdev)
  	platform_set_drvdata(pdev, wrp);
  
  	wrp->master = of_id->data;
@@ -294,3 +297,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	wrp->dev = &pdev->dev;
  
  	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "pwrap");
+-- 
+1.7.10.4
+

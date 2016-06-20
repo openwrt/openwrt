@@ -1,7 +1,7 @@
-From 2a1c7879d8c3eac4313abc011adbefbc50fd5f92 Mon Sep 17 00:00:00 2001
+From 0ae7153c9f00361c3e6dac9da0c2d994557953f5 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 8 Jan 2016 04:09:43 +0100
-Subject: [PATCH 45/91] mfd: mt6397: add MT6323 support to MT6397 driver
+Subject: [PATCH 045/102] mfd: mt6397: add MT6323 support to MT6397 driver
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
@@ -12,6 +12,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 include/linux/mfd/mt6323/core.h
  create mode 100644 include/linux/mfd/mt6323/registers.h
 
+diff --git a/drivers/mfd/mt6397-core.c b/drivers/mfd/mt6397-core.c
+index aa91606..8234cd3 100644
 --- a/drivers/mfd/mt6397-core.c
 +++ b/drivers/mfd/mt6397-core.c
 @@ -19,11 +19,14 @@
@@ -29,7 +31,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #define MT6391_CID_CODE		0x91
  #define MT6397_CID_CODE		0x97
  
-@@ -40,6 +43,13 @@ static const struct resource mt6397_rtc_
+@@ -40,6 +43,13 @@ static const struct resource mt6397_rtc_resources[] = {
  	},
  };
  
@@ -43,7 +45,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static const struct mfd_cell mt6397_devs[] = {
  	{
  		.name = "mt6397-rtc",
-@@ -261,6 +271,15 @@ static int mt6397_probe(struct platform_
+@@ -261,6 +271,15 @@ static int mt6397_probe(struct platform_device *pdev)
  	}
  
  	switch (id & 0xff) {
@@ -59,7 +61,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	case MT6397_CID_CODE:
  	case MT6391_CID_CODE:
  		pmic->int_con[0] = MT6397_INT_CON0;
-@@ -302,6 +321,7 @@ static int mt6397_remove(struct platform
+@@ -302,6 +321,7 @@ static int mt6397_remove(struct platform_device *pdev)
  
  static const struct of_device_id mt6397_of_match[] = {
  	{ .compatible = "mediatek,mt6397" },
@@ -67,6 +69,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	{ }
  };
  MODULE_DEVICE_TABLE(of, mt6397_of_match);
+diff --git a/include/linux/mfd/mt6323/core.h b/include/linux/mfd/mt6323/core.h
+new file mode 100644
+index 0000000..06d0ec3
 --- /dev/null
 +++ b/include/linux/mfd/mt6323/core.h
 @@ -0,0 +1,36 @@
@@ -106,6 +111,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +#endif /* __MFD_MT6323_CORE_H__ */
+diff --git a/include/linux/mfd/mt6323/registers.h b/include/linux/mfd/mt6323/registers.h
+new file mode 100644
+index 0000000..160f3c0
 --- /dev/null
 +++ b/include/linux/mfd/mt6323/registers.h
 @@ -0,0 +1,408 @@
@@ -517,3 +525,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define MT6323_ACCDET_CON16       0x079A
 +
 +#endif /* __MFD_MT6323_REGISTERS_H__ */
+-- 
+1.7.10.4
+

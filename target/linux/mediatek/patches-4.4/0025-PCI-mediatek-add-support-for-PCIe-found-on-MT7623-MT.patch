@@ -1,7 +1,7 @@
-From 5571cc63036daf0e0a05f07b0137fee86d58acb0 Mon Sep 17 00:00:00 2001
+From 8ab1d4e0a9a68e03f472dee1c036a01d0198c20c Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 5 Jan 2016 20:20:04 +0100
-Subject: [PATCH 25/91] PCI: mediatek: add support for PCIe found on
+Subject: [PATCH 025/102] PCI: mediatek: add support for PCIe found on
  MT7623/MT2701
 
 Add PCIe controller support on MediaTek MT2701/MT7623. The driver supports
@@ -17,6 +17,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 654 insertions(+)
  create mode 100644 drivers/pci/host/pcie-mediatek.c
 
+diff --git a/arch/arm/mach-mediatek/Kconfig b/arch/arm/mach-mediatek/Kconfig
+index 7fb605e..a7fef77 100644
 --- a/arch/arm/mach-mediatek/Kconfig
 +++ b/arch/arm/mach-mediatek/Kconfig
 @@ -24,6 +24,7 @@ config MACH_MT6592
@@ -27,9 +29,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  config MACH_MT8127
  	bool "MediaTek MT8127 SoCs support"
+diff --git a/drivers/pci/host/Kconfig b/drivers/pci/host/Kconfig
+index f131ba9..912f0e1 100644
 --- a/drivers/pci/host/Kconfig
 +++ b/drivers/pci/host/Kconfig
-@@ -173,4 +173,15 @@ config PCI_HISI
+@@ -172,4 +172,15 @@ config PCI_HISI
  	help
  	  Say Y here if you want PCIe controller support on HiSilicon HIP05 SoC
  
@@ -45,13 +49,18 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	  PCIe include one Host/PCI bridge and 3 PCIe MAC.
 +
  endmenu
+diff --git a/drivers/pci/host/Makefile b/drivers/pci/host/Makefile
+index 9d4d3c6..3b53374 100644
 --- a/drivers/pci/host/Makefile
 +++ b/drivers/pci/host/Makefile
-@@ -20,3 +20,4 @@ obj-$(CONFIG_PCIE_IPROC_BCMA) += pcie-ip
+@@ -20,3 +20,4 @@ obj-$(CONFIG_PCIE_IPROC_BCMA) += pcie-iproc-bcma.o
  obj-$(CONFIG_PCIE_ALTERA) += pcie-altera.o
  obj-$(CONFIG_PCIE_ALTERA_MSI) += pcie-altera-msi.o
  obj-$(CONFIG_PCI_HISI) += pcie-hisi.o
 +obj-$(CONFIG_PCIE_MTK) += pcie-mediatek.o
+diff --git a/drivers/pci/host/pcie-mediatek.c b/drivers/pci/host/pcie-mediatek.c
+new file mode 100644
+index 0000000..ef03952
 --- /dev/null
 +++ b/drivers/pci/host/pcie-mediatek.c
 @@ -0,0 +1,641 @@
@@ -696,3 +705,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
 +module_init(mtk_pcie_init);
+-- 
+1.7.10.4
+

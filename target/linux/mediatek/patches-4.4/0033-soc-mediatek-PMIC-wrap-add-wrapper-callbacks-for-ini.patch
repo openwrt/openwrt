@@ -1,7 +1,7 @@
-From 35d879d80437cc6ed811538903e115dbcda777ac Mon Sep 17 00:00:00 2001
+From 756b919b7874cc241a276b4fc5bbec5b3fb4bca8 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 20 Jan 2016 05:27:17 +0100
-Subject: [PATCH 33/91] soc: mediatek: PMIC wrap: add wrapper callbacks for
+Subject: [PATCH 033/102] soc: mediatek: PMIC wrap: add wrapper callbacks for
  init_reg_clock
 
 Split init_reg_clock up into SoC specific callbacks. The patch also
@@ -12,6 +12,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |   70 ++++++++++++++++++----------------
  1 file changed, 38 insertions(+), 32 deletions(-)
 
+diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
+index 340c4b5..b22b664 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -354,24 +354,6 @@ enum pwrap_type {
@@ -53,7 +55,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static inline int pwrap_is_mt8135(struct pmic_wrapper *wrp)
  {
  	return wrp->master->type == PWRAP_MT8135;
-@@ -578,20 +567,23 @@ static int pwrap_init_sidly(struct pmic_
+@@ -578,20 +567,23 @@ static int pwrap_init_sidly(struct pmic_wrapper *wrp)
  	return 0;
  }
  
@@ -90,7 +92,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return 0;
  }
-@@ -699,7 +691,7 @@ static int pwrap_init(struct pmic_wrappe
+@@ -699,7 +691,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
  
  	pwrap_writel(wrp, 1, PWRAP_WACS2_EN);
  
@@ -99,7 +101,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (ret)
  		return ret;
  
-@@ -814,6 +806,20 @@ static const struct regmap_config pwrap_
+@@ -814,6 +806,20 @@ static const struct regmap_config pwrap_regmap_config = {
  	.max_register = 0xffff,
  };
  
@@ -120,3 +122,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static struct of_device_id of_pwrap_match_tbl[] = {
  	{
  		.compatible = "mediatek,mt8135-pwrap",
+-- 
+1.7.10.4
+

@@ -5,9 +5,9 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=mediatek
 BOARDNAME:=Mediatek Ralink ARM
-FEATURES:=squashfs
+FEATURES:=squashfs jffs2
 CPU_TYPE:=cortex-a7
-MAINTAINER:=John Crispin <blogic@openwrt.org>
+MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.4
 
