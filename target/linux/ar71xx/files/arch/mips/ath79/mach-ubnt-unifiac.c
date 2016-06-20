@@ -73,7 +73,7 @@ static struct gpio_keys_button ubnt_unifiac_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init ubnt_unifiac_setup(void)
+static void __init ubnt_unifiac_lite_setup(void)
 {
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff0000);
 
@@ -81,7 +81,7 @@ static void __init ubnt_unifiac_setup(void)
 
 
 	ath79_init_mac(ath79_eth0_data.mac_addr,
-		       eeprom + UNIFIAC_MAC0_OFFSET, 0);
+	               eeprom + UNIFIAC_MAC0_OFFSET, 0);
 
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
@@ -99,12 +99,12 @@ static void __init ubnt_unifiac_setup(void)
 
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(ubnt_unifiac_leds_gpio),
-				 ubnt_unifiac_leds_gpio);
+	                         ubnt_unifiac_leds_gpio);
 
 	ath79_register_gpio_keys_polled(-1, UNIFIAC_KEYS_POLL_INTERVAL,
-                                        ARRAY_SIZE(ubnt_unifiac_gpio_keys),
-                                        ubnt_unifiac_gpio_keys);
+	                                ARRAY_SIZE(ubnt_unifiac_gpio_keys),
+	                                ubnt_unifiac_gpio_keys);
 }
 
-MIPS_MACHINE(ATH79_MACH_UBNT_UNIFIAC, "UBNT-UF-AC", "Ubiquiti UniFi-AC",
-	     ubnt_unifiac_setup);
+MIPS_MACHINE(ATH79_MACH_UBNT_UNIFIAC_LITE, "UBNT-UF-AC-LITE", "Ubiquiti UniFi-AC-LITE",
+	     ubnt_unifiac_lite_setup);
