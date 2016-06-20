@@ -1,6 +1,6 @@
 --- a/include/linux/spi/spi.h
 +++ b/include/linux/spi/spi.h
-@@ -578,6 +578,12 @@ extern struct spi_master *spi_busnum_to_
+@@ -583,6 +583,12 @@ extern struct spi_master *spi_busnum_to_
  
  /*---------------------------------------------------------------------------*/
  
@@ -13,7 +13,7 @@
  /*
   * I/O INTERFACE between SPI controller and protocol drivers
   *
-@@ -698,6 +704,7 @@ struct spi_transfer {
+@@ -703,6 +709,7 @@ struct spi_transfer {
  	u8		bits_per_word;
  	u16		delay_usecs;
  	u32		speed_hz;
