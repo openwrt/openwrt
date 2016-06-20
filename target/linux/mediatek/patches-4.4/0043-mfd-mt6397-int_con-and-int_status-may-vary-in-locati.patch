@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  include/linux/mfd/mt6397/core.h |    2 ++
  2 files changed, 19 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/mfd/mt6397-core.c b/drivers/mfd/mt6397-core.c
-index 1749c1c..75ad0fe 100644
 --- a/drivers/mfd/mt6397-core.c
 +++ b/drivers/mfd/mt6397-core.c
-@@ -69,8 +69,10 @@ static void mt6397_irq_sync_unlock(struct irq_data *data)
+@@ -69,8 +69,10 @@ static void mt6397_irq_sync_unlock(struc
  {
  	struct mt6397_chip *mt6397 = irq_data_get_irq_chip_data(data);
  
@@ -30,7 +28,7 @@ index 1749c1c..75ad0fe 100644
  
  	mutex_unlock(&mt6397->irqlock);
  }
-@@ -147,8 +149,8 @@ static irqreturn_t mt6397_irq_thread(int irq, void *data)
+@@ -147,8 +149,8 @@ static irqreturn_t mt6397_irq_thread(int
  {
  	struct mt6397_chip *mt6397 = data;
  
@@ -41,7 +39,7 @@ index 1749c1c..75ad0fe 100644
  
  	return IRQ_HANDLED;
  }
-@@ -177,8 +179,8 @@ static int mt6397_irq_init(struct mt6397_chip *mt6397)
+@@ -177,8 +179,8 @@ static int mt6397_irq_init(struct mt6397
  	mutex_init(&mt6397->irqlock);
  
  	/* Mask all interrupt sources */
@@ -52,7 +50,7 @@ index 1749c1c..75ad0fe 100644
  
  	mt6397->irq_domain = irq_domain_add_linear(mt6397->dev->of_node,
  		MT6397_IRQ_NR, &mt6397_irq_domain_ops, mt6397);
-@@ -203,8 +205,8 @@ static int mt6397_irq_suspend(struct device *dev)
+@@ -203,8 +205,8 @@ static int mt6397_irq_suspend(struct dev
  {
  	struct mt6397_chip *chip = dev_get_drvdata(dev);
  
@@ -63,7 +61,7 @@ index 1749c1c..75ad0fe 100644
  
  	enable_irq_wake(chip->irq);
  
-@@ -215,8 +217,8 @@ static int mt6397_irq_resume(struct device *dev)
+@@ -215,8 +217,8 @@ static int mt6397_irq_resume(struct devi
  {
  	struct mt6397_chip *chip = dev_get_drvdata(dev);
  
@@ -74,7 +72,7 @@ index 1749c1c..75ad0fe 100644
  
  	disable_irq_wake(chip->irq);
  
-@@ -237,6 +239,11 @@ static int mt6397_probe(struct platform_device *pdev)
+@@ -237,6 +239,11 @@ static int mt6397_probe(struct platform_
  		return -ENOMEM;
  
  	mt6397->dev = &pdev->dev;
@@ -86,8 +84,6 @@ index 1749c1c..75ad0fe 100644
  	/*
  	 * mt6397 MFD is child device of soc pmic wrapper.
  	 * Regmap is set from its parent.
-diff --git a/include/linux/mfd/mt6397/core.h b/include/linux/mfd/mt6397/core.h
-index 45b8e8a..d678f52 100644
 --- a/include/linux/mfd/mt6397/core.h
 +++ b/include/linux/mfd/mt6397/core.h
 @@ -60,6 +60,8 @@ struct mt6397_chip {
@@ -99,6 +95,3 @@ index 45b8e8a..d678f52 100644
  };
  
  #endif /* __MFD_MT6397_CORE_H__ */
--- 
-1.7.10.4
-

@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 06b9094..63e1da4 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -671,7 +671,7 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+@@ -671,7 +671,7 @@ static int mtk_tx_map(struct sk_buff *sk
  
  err_dma:
  	do {
@@ -25,6 +23,3 @@ index 06b9094..63e1da4 100644
  
  		/* unmap dma */
  		mtk_tx_unmap(&dev->dev, tx_buf);
--- 
-1.7.10.4
-

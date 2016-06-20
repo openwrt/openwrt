@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |    5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index 22c89e9..9df1135 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -371,6 +371,7 @@ struct pmic_wrapper_type {
@@ -23,7 +21,7 @@ index 22c89e9..9df1135 100644
  	int (*init_reg_clock)(struct pmic_wrapper *wrp);
  	int (*init_soc_specific)(struct pmic_wrapper *wrp);
  };
-@@ -825,6 +826,7 @@ static struct pmic_wrapper_type pwrap_mt8135 = {
+@@ -825,6 +826,7 @@ static struct pmic_wrapper_type pwrap_mt
  	.regs = mt8135_regs,
  	.type = PWRAP_MT8135,
  	.arb_en_all = 0x1ff,
@@ -31,7 +29,7 @@ index 22c89e9..9df1135 100644
  	.init_reg_clock = pwrap_mt8135_init_reg_clock,
  	.init_soc_specific = pwrap_mt8135_init_soc_specific,
  };
-@@ -833,6 +835,7 @@ static struct pmic_wrapper_type pwrap_mt8173 = {
+@@ -833,6 +835,7 @@ static struct pmic_wrapper_type pwrap_mt
  	.regs = mt8173_regs,
  	.type = PWRAP_MT8173,
  	.arb_en_all = 0x3f,
@@ -39,7 +37,7 @@ index 22c89e9..9df1135 100644
  	.init_reg_clock = pwrap_mt8173_init_reg_clock,
  	.init_soc_specific = pwrap_mt8173_init_soc_specific,
  };
-@@ -946,7 +949,7 @@ static int pwrap_probe(struct platform_device *pdev)
+@@ -946,7 +949,7 @@ static int pwrap_probe(struct platform_d
  			PWRAP_WDT_SRC_MASK_NO_STAUPD : PWRAP_WDT_SRC_MASK_ALL;
  	pwrap_writel(wrp, wdt_src, PWRAP_WDT_SRC_EN);
  	pwrap_writel(wrp, 0x1, PWRAP_TIMER_EN);
@@ -48,6 +46,3 @@ index 22c89e9..9df1135 100644
  
  	irq = platform_get_irq(pdev, 0);
  	ret = devm_request_irq(wrp->dev, irq, pwrap_interrupt, IRQF_TRIGGER_HIGH,
--- 
-1.7.10.4
-

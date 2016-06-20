@@ -11,11 +11,9 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  arch/arm/mach-mediatek/platsmp.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-mediatek/platsmp.c b/arch/arm/mach-mediatek/platsmp.c
-index 8151400..2078f92d5 100644
 --- a/arch/arm/mach-mediatek/platsmp.c
 +++ b/arch/arm/mach-mediatek/platsmp.c
-@@ -53,6 +53,7 @@ static const struct mtk_smp_boot_info mtk_mt7623_boot = {
+@@ -53,6 +53,7 @@ static const struct mtk_smp_boot_info mt
  static const struct of_device_id mtk_tz_smp_boot_infos[] __initconst = {
  	{ .compatible   = "mediatek,mt8135", .data = &mtk_mt8135_tz_boot },
  	{ .compatible   = "mediatek,mt8127", .data = &mtk_mt8135_tz_boot },
@@ -23,6 +21,3 @@ index 8151400..2078f92d5 100644
  };
  
  static const struct of_device_id mtk_smp_boot_infos[] __initconst = {
--- 
-1.7.10.4
-

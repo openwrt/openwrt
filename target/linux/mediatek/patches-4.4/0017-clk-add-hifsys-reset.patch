@@ -18,11 +18,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  include/dt-bindings/reset-controller/mt2701-resets.h |    9 +++++++++
  2 files changed, 11 insertions(+)
 
-diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
-index 39472e4..0e40bb8 100644
 --- a/drivers/clk/mediatek/clk-mt2701.c
 +++ b/drivers/clk/mediatek/clk-mt2701.c
-@@ -1000,6 +1000,8 @@ static void __init mtk_hifsys_init(struct device_node *node)
+@@ -1000,6 +1000,8 @@ static void __init mtk_hifsys_init(struc
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);
@@ -31,8 +29,6 @@ index 39472e4..0e40bb8 100644
  }
  CLK_OF_DECLARE(mtk_hifsys, "mediatek,mt2701-hifsys", mtk_hifsys_init);
  
-diff --git a/include/dt-bindings/reset-controller/mt2701-resets.h b/include/dt-bindings/reset-controller/mt2701-resets.h
-index 00efeb0..aaf0305 100644
 --- a/include/dt-bindings/reset-controller/mt2701-resets.h
 +++ b/include/dt-bindings/reset-controller/mt2701-resets.h
 @@ -71,4 +71,13 @@
@@ -49,6 +45,3 @@ index 00efeb0..aaf0305 100644
 +#define MT2701_HIFSYS_PCIE2_RST			26
 +
  #endif  /* _DT_BINDINGS_RESET_CONTROLLER_MT2701 */
--- 
-1.7.10.4
-

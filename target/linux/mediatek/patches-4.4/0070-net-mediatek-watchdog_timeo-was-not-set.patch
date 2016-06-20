@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 7f2126b..7e6d2e2 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1645,6 +1645,7 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1645,6 +1645,7 @@ static int mtk_add_mac(struct mtk_eth *e
  	mac->hw_stats->reg_offset = id * MTK_STAT_OFFSET;
  
  	SET_NETDEV_DEV(eth->netdev[id], eth->dev);
@@ -23,6 +21,3 @@ index 7f2126b..7e6d2e2 100644
  	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
  	eth->netdev[id]->base_addr = (unsigned long)eth->base;
  	eth->netdev[id]->vlan_features = MTK_HW_FEATURES &
--- 
-1.7.10.4
-

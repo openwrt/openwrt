@@ -7,11 +7,9 @@ Subject: [PATCH 59/91] mtd: nand: backport fixes
  drivers/mtd/nand/mtksdg1_nand.c |    9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/nand/mtksdg1_nand.c b/drivers/mtd/nand/mtksdg1_nand.c
-index 55dd17d..f92b949 100644
 --- a/drivers/mtd/nand/mtksdg1_nand.c
 +++ b/drivers/mtd/nand/mtksdg1_nand.c
-@@ -107,6 +107,9 @@ static struct nand_ecclayout nand_4k_128 = {
+@@ -107,6 +107,9 @@ static struct nand_ecclayout nand_4k_128
  	.oobfree = { {0, 32} },
  };
  
@@ -21,7 +19,7 @@ index 55dd17d..f92b949 100644
  /* NFI register access */
  static inline void mtk_nfi_writel(struct mtk_nfc_host *host, u32 val, u32 reg)
  {
-@@ -1298,6 +1301,7 @@ static int mtk_nfc_probe(struct platform_device *pdev)
+@@ -1298,6 +1301,7 @@ static int mtk_nfc_probe(struct platform
  
  	chip = &host->chip;
  	mtd = nand_to_mtd(chip);
@@ -29,7 +27,7 @@ index 55dd17d..f92b949 100644
  	host->dev = dev;
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-@@ -1428,7 +1432,10 @@ static int mtk_nfc_probe(struct platform_device *pdev)
+@@ -1428,7 +1432,10 @@ static int mtk_nfc_probe(struct platform
  	}
  	host->switch_oob = false;
  
@@ -41,6 +39,3 @@ index 55dd17d..f92b949 100644
  	if (ret) {
  		dev_err(dev, "mtd parse partition error\n");
  		goto nand_free;
--- 
-1.7.10.4
-

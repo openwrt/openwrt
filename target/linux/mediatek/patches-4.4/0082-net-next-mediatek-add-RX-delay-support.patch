@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index f4d8519..aa25788 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -226,6 +226,7 @@ static int mtk_phy_connect(struct mtk_mac *mac)
+@@ -226,6 +226,7 @@ static int mtk_phy_connect(struct mtk_ma
  		return -ENODEV;
  
  	switch (of_get_phy_mode(np)) {
@@ -24,6 +22,3 @@ index f4d8519..aa25788 100644
  	case PHY_INTERFACE_MODE_RGMII:
  		ge_mode = 0;
  		break;
--- 
-1.7.10.4
-

@@ -18,11 +18,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index bbcd607..bab5d45 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -603,8 +603,7 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+@@ -603,8 +603,7 @@ static int mtk_tx_map(struct sk_buff *sk
  			WRITE_ONCE(txd->txd1, mapped_addr);
  			WRITE_ONCE(txd->txd3, (TX_DMA_SWC |
  					       TX_DMA_PLEN0(frag_map_size) |
@@ -32,6 +30,3 @@ index bbcd607..bab5d45 100644
  			WRITE_ONCE(txd->txd4, 0);
  
  			tx_buf->skb = (struct sk_buff *)MTK_DMA_DUMMY_DESC;
--- 
-1.7.10.4
-

@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 204d927..f4d8519 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -219,6 +219,9 @@ static int mtk_phy_connect(struct mtk_mac *mac)
+@@ -219,6 +219,9 @@ static int mtk_phy_connect(struct mtk_ma
  	u32 val, ge_mode;
  
  	np = of_parse_phandle(mac->of_node, "phy-handle", 0);
@@ -27,6 +25,3 @@ index 204d927..f4d8519 100644
  	if (!np)
  		return -ENODEV;
  
--- 
-1.7.10.4
-

@@ -16,11 +16,9 @@ Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  include/linux/mtd/spi-nor.h |   11 +++++++++++
  3 files changed, 33 insertions(+)
 
-diff --git a/include/linux/mtd/mtd.h b/include/linux/mtd/mtd.h
-index f17fa75..cc84923 100644
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -254,6 +254,17 @@ struct mtd_info {
+@@ -258,6 +258,17 @@ struct mtd_info {
  	int usecount;
  };
  
@@ -38,11 +36,9 @@ index f17fa75..cc84923 100644
  int mtd_erase(struct mtd_info *mtd, struct erase_info *instr);
  int mtd_point(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
  	      void **virt, resource_size_t *phys);
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index 1ded588..3c34ca4 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -741,6 +741,17 @@ static inline void nand_set_controller_data(struct nand_chip *chip, void *priv)
+@@ -741,6 +741,17 @@ static inline void nand_set_controller_d
  	chip->priv = priv;
  }
  
@@ -60,11 +56,9 @@ index 1ded588..3c34ca4 100644
  /*
   * NAND Flash Manufacturer ID Codes
   */
-diff --git a/include/linux/mtd/spi-nor.h b/include/linux/mtd/spi-nor.h
-index c8723b6..6d991df 100644
 --- a/include/linux/mtd/spi-nor.h
 +++ b/include/linux/mtd/spi-nor.h
-@@ -185,6 +185,17 @@ struct spi_nor {
+@@ -184,6 +184,17 @@ struct spi_nor {
  	void *priv;
  };
  
@@ -82,6 +76,3 @@ index c8723b6..6d991df 100644
  /**
   * spi_nor_scan() - scan the SPI NOR
   * @nor:	the spi_nor structure
--- 
-1.7.10.4
-

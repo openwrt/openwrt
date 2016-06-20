@@ -14,8 +14,6 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  drivers/soc/mediatek/mtk-pmic-wrap.c |   19 +++++++++++++++++--
  1 file changed, 17 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index 696071b..0d9b19a 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -60,6 +60,15 @@
@@ -34,7 +32,7 @@ index 696071b..0d9b19a 100644
  /* macro for slave device wrapper registers */
  #define PWRAP_DEW_BASE			0xbc00
  #define PWRAP_DEW_EVENT_OUT_EN		(PWRAP_DEW_BASE + 0x0)
-@@ -822,7 +831,7 @@ MODULE_DEVICE_TABLE(of, of_pwrap_match_tbl);
+@@ -822,7 +831,7 @@ MODULE_DEVICE_TABLE(of, of_pwrap_match_t
  
  static int pwrap_probe(struct platform_device *pdev)
  {
@@ -43,7 +41,7 @@ index 696071b..0d9b19a 100644
  	struct pmic_wrapper *wrp;
  	struct device_node *np = pdev->dev.of_node;
  	const struct of_device_id *of_id =
-@@ -912,7 +921,13 @@ static int pwrap_probe(struct platform_device *pdev)
+@@ -912,7 +921,13 @@ static int pwrap_probe(struct platform_d
  
  	/* Initialize watchdog, may not be done by the bootloader */
  	pwrap_writel(wrp, 0xf, PWRAP_WDT_UNIT);
@@ -58,6 +56,3 @@ index 696071b..0d9b19a 100644
  	pwrap_writel(wrp, 0x1, PWRAP_TIMER_EN);
  	pwrap_writel(wrp, ~((1 << 31) | (1 << 1)), PWRAP_INT_EN);
  
--- 
-1.7.10.4
-
