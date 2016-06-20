@@ -1,0 +1,159 @@
+/dts-v1/;
+
+/include/ "danube.dtsi"
+
+/ {
+	model = "ARV7506PW11 - Alice/O2 IAD 4421";
+
+	chosen {
+		leds {
+			boot = &power;
+			failsafe = &power_red;
+			running = &power;
+
+			dsl = &dsl;
+			internet = &internet;
+			wifi = &wlan;
+		};
+	};
+
+	memory@0 {
+		reg = <0x0 0x4000000>;
+	};
+
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x800000>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						label = "uboot";
+						reg = <0x00000 0x40000>;
+						read-only;
+					};
+
+					partition@40000 {
+						label = "uboot_env";
+						reg = <0x40000 0x10000>;
+						read-only;
+					};
+
+					partition@50000 {
+						label = "firmware";
+						reg = <0x50000 0x7a0000>;
+					};
+
+					partition@7f0000 {
+						label = "board_config";
+						reg = <0x7f0000 0x10000>;
+						read-only;
+					};
+				};
+			};
+
+			mac_addr {
+				compatible = "lantiq,eth-mac";
+				reg = <0 0x7f0016 0x6>;
+			};
+		};
+
+		gpio: pinmux@E100B10 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			state_default: pinmux {
+				pci {
+					lantiq,groups = "gnt1";
+					lantiq,function = "pci";
+					lantiq,output = <1>;
+				};
+				pci_rst {
+					lantiq,pins = "io21";
+					lantiq,pull = <2>;
+					lantiq,output = <1>;
+				};
+			};
+		};
+
+		/* GPIO 19: switch reset */
+		etop@E180000 {
+			phy-mode = "rmii";
+		};
+
+		pci@E105400 {
+			status = "okay";
+			gpio-reset = <&gpio 21 0>;
+		};
+	};
+
+	ralink_eep {
+		compatible = "ralink,eeprom";
+		ralink,eeprom = "RT2860.eeprom";
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 11 1>;
+			linux,code = <0xf7>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio 30 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		wlan: wlan {
+			label = "arv7506pw11:green:wlan";
+			gpios = <&gpio 2 1>;
+		};
+		power: power {
+			label = "arv7506pw11:green:power";
+			gpios = <&gpio 3 1>;
+			default-state = "keep";
+		};
+		dsl: dsl {
+			label = "arv7506pw11:green:dsl";
+			gpios = <&gpio 4 1>;
+		};
+		internet: internet {
+			label = "arv7506pw11:green:internet";
+			gpios = <&gpio 5 1>;
+		};
+		power_red: power_red {
+			label = "arv7506pw11:red:power";
+			gpios = <&gpio 6 1>;
+		};
+		internet_red {
+			label = "arv7506pw11:red:internet";
+			gpios = <&gpio 7 1>;
+		};
+		info {
+			label = "arv7506pw11:green:info";
+			gpios = <&gpio 8 1>;
+		};
+		telefon {
+			label = "arv7506pw11:green:telefon";
+			gpios = <&gpio 9 1>;
+		};
+		info_red {
+			label = "arv7506pw11:red:info";
+			gpios = <&gpio 20 1>;
+		};
+	};
+};

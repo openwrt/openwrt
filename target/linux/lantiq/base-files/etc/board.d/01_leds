@@ -27,6 +27,9 @@ board_config_update
 board=$(lantiq_board_name)
 
 case "$board" in
+ARV7506PW11)
+	ucidef_set_led_wlan "wifi" "wifi" "arv7506pw11:green:wlan" "phy0radio"
+	;;
 BTHOMEHUBV5A)
 	ucidef_set_led_default "dimmed" "dimmed" "dimmed" "0"
 	;;

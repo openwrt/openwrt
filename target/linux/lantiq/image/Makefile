@@ -371,6 +371,18 @@ define Device/ARV4519PW
 endef
 TARGET_DEVICES += ARV4519PW
 
+define Device/ARV7506PW11
+  DEVICE_PROFILE := ARV7506PW11
+  IMAGE_SIZE := 7808k
+  DEVICE_TITLE := Alice/O2 IAD 4421 - ARV7506PW11
+  DEVICE_PACKAGES := kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+	ltq-adsl-app ppp-mod-pppoa \
+	kmod-rt2800-pci wpad-mini \
+	swconfig
+endef
+TARGET_DEVICES += ARV7506PW11
+
 define Device/ARV7510PW22
   DEVICE_PROFILE := ARV7510PW22
   IMAGE_SIZE := 31232k
