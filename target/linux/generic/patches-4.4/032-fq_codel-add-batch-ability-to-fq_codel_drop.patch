@@ -138,12 +138,12 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -	if (fq_codel_drop(sch) == idx)
 -		return NET_XMIT_CN;
 +	ret = fq_codel_drop(sch, q->drop_batch_size);
++
++	q->drop_overlimit += prev_qlen - sch->q.qlen;
  
 -	/* As we dropped a packet, better let upper stack know this */
 -	qdisc_tree_reduce_backlog(sch, 1, prev_backlog - sch->qstats.backlog);
 -	return NET_XMIT_SUCCESS;
-+	q->drop_overlimit += prev_qlen - sch->q.qlen;
-+
 +	/* As we dropped packet(s), better let upper stack know this */
 +	qdisc_tree_reduce_backlog(sch, prev_qlen - sch->q.qlen,
 +				  prev_backlog - sch->qstats.backlog);
