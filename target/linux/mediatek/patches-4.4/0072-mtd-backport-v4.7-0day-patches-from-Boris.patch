@@ -483,7 +483,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	}
  
 -	ret = mtd_add_device_partitions(mtd, real_parts, ret);
-+	ret = mtd_add_device_partitions(mtd, ret);
++	ret = mtd_add_device_partitions(mtd, &parsed);
  	if (ret)
  		goto out;
  
@@ -4313,7 +4313,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	{ "mx25u6435f",  INFO(0xc22537, 0, 64 * 1024, 128, SECT_4K) },
  	{ "mx25l12805d", INFO(0xc22018, 0, 64 * 1024, 256, 0) },
  	{ "mx25l12855e", INFO(0xc22618, 0, 64 * 1024, 256, 0) },
-@@ -731,8 +864,8 @@
+@@ -732,8 +865,8 @@
  	{ "n25q032a",	 INFO(0x20bb16, 0, 64 * 1024,   64, SPI_NOR_QUAD_READ) },
  	{ "n25q064",     INFO(0x20ba17, 0, 64 * 1024,  128, SECT_4K | SPI_NOR_QUAD_READ) },
  	{ "n25q064a",    INFO(0x20bb17, 0, 64 * 1024,  128, SECT_4K | SPI_NOR_QUAD_READ) },
@@ -4324,7 +4324,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	{ "n25q256a",    INFO(0x20ba19, 0, 64 * 1024,  512, SECT_4K | SPI_NOR_QUAD_READ) },
  	{ "n25q512a",    INFO(0x20bb20, 0, 64 * 1024, 1024, SECT_4K | USE_FSR | SPI_NOR_QUAD_READ) },
  	{ "n25q512ax3",  INFO(0x20ba20, 0, 64 * 1024, 1024, SECT_4K | USE_FSR | SPI_NOR_QUAD_READ) },
-@@ -766,6 +899,7 @@
+@@ -767,6 +900,7 @@
  	{ "s25fl008k",  INFO(0xef4014,      0,  64 * 1024,  16, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
  	{ "s25fl016k",  INFO(0xef4015,      0,  64 * 1024,  32, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
  	{ "s25fl064k",  INFO(0xef4017,      0,  64 * 1024, 128, SECT_4K) },
@@ -4332,7 +4332,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	{ "s25fl132k",  INFO(0x014016,      0,  64 * 1024,  64, SECT_4K) },
  	{ "s25fl164k",  INFO(0x014017,      0,  64 * 1024, 128, SECT_4K) },
  	{ "s25fl204k",  INFO(0x014013,      0,  64 * 1024,   8, SECT_4K | SPI_NOR_DUAL_READ) },
-@@ -829,11 +963,23 @@
+@@ -830,11 +964,23 @@
  	{ "w25x16", INFO(0xef3015, 0, 64 * 1024,  32, SECT_4K) },
  	{ "w25x32", INFO(0xef3016, 0, 64 * 1024,  64, SECT_4K) },
  	{ "w25q32", INFO(0xef4016, 0, 64 * 1024,  64, SECT_4K) },
@@ -4359,7 +4359,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	{ "w25q80", INFO(0xef5014, 0, 64 * 1024,  16, SECT_4K) },
  	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024,  16, SECT_4K) },
  	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
-@@ -856,7 +1002,7 @@
+@@ -857,7 +1003,7 @@
  
  	tmp = nor->read_reg(nor, SPINOR_OP_RDID, id, SPI_NOR_MAX_ID_LEN);
  	if (tmp < 0) {
@@ -4368,7 +4368,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		return ERR_PTR(tmp);
  	}
  
-@@ -867,7 +1013,7 @@
+@@ -868,7 +1014,7 @@
  				return &spi_nor_ids[tmp];
  		}
  	}
@@ -4377,7 +4377,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		id[0], id[1], id[2]);
  	return ERR_PTR(-ENODEV);
  }
-@@ -1013,6 +1159,8 @@
+@@ -1014,6 +1160,8 @@
  	int ret, val;
  
  	val = read_sr(nor);
@@ -4386,7 +4386,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	write_enable(nor);
  
  	write_sr(nor, val | SR_QUAD_EN_MX);
-@@ -1094,7 +1242,7 @@
+@@ -1095,7 +1243,7 @@
  static int spi_nor_check(struct spi_nor *nor)
  {
  	if (!nor->dev || !nor->read || !nor->write ||
@@ -4395,7 +4395,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		pr_err("spi-nor: please fill all the necessary fields!\n");
  		return -EINVAL;
  	}
-@@ -1107,7 +1255,7 @@
+@@ -1108,7 +1256,7 @@
  	const struct flash_info *info = NULL;
  	struct device *dev = nor->dev;
  	struct mtd_info *mtd = &nor->mtd;
@@ -4404,7 +4404,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	int ret;
  	int i;
  
-@@ -1157,9 +1305,11 @@
+@@ -1158,9 +1306,11 @@
  	if (JEDEC_MFR(info) == SNOR_MFR_ATMEL ||
  	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||
  	    JEDEC_MFR(info) == SNOR_MFR_MACRONIX ||
@@ -4417,7 +4417,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	}
  
  	if (!mtd->name)
-@@ -1173,7 +1323,8 @@
+@@ -1174,7 +1324,8 @@
  	mtd->_read = spi_nor_read;
  
  	/* NOR protection support for STmicro/Micron chips and similar */
@@ -4427,7 +4427,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		nor->flash_lock = stm_lock;
  		nor->flash_unlock = stm_unlock;
  		nor->flash_is_locked = stm_is_locked;
-@@ -1193,6 +1344,8 @@
+@@ -1194,6 +1345,8 @@
  
  	if (info->flags & USE_FSR)
  		nor->flags |= SNOR_F_USE_FSR;
@@ -4436,7 +4436,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
  	/* prefer "small sector" erase if possible */
-@@ -1295,6 +1448,12 @@
+@@ -1296,6 +1449,12 @@
  		nor->addr_width = 3;
  	}
  
@@ -5391,6 +5391,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	__u32 eccbytes;
 --- a/fs/jffs2/wbuf.c
 +++ b/fs/jffs2/wbuf.c
+@@ -1153,7 +1153,7 @@
+ {
+ 	struct delayed_work *dwork;
+ 
+-	dwork = container_of(work, struct delayed_work, work);
++	dwork = to_delayed_work(work);
+ 	return container_of(dwork, struct jffs2_sb_info, wbuf_dwork);
+ }
+ 
 @@ -1183,22 +1183,20 @@
  
  int jffs2_nand_flash_setup(struct jffs2_sb_info *c)
@@ -5404,7 +5413,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	c->cleanmarker_size = 0;
  
 -	if (!oinfo || oinfo->oobavail == 0) {
-+	if (c->oobavail == 0) {
++	if (c->mtd->oobavail == 0) {
  		pr_err("inconsistent device description\n");
  		return -EINVAL;
  	}

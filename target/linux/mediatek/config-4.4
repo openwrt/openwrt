@@ -59,7 +59,7 @@ CONFIG_CLKSRC_MMIO=y
 CONFIG_CLKSRC_OF=y
 CONFIG_CLKSRC_PROBE=y
 CONFIG_CLONE_BACKWARDS=y
-CONFIG_CMDLINE="earlyprintk console=ttyS0,115200 block2mtd.block2mtd=/dev/mmcblk0,65536,eMMC,5 mtdparts=eMMC:256k(mbr)ro,512k(uboot)ro,256k(config)ro,256k(factory)ro,32M(kernel),32M(recovery),1024M(rootfs),2048M(usrdata),-(bmtpool)"
+CONFIG_CMDLINE="earlyprintk console=ttyS0,115200 block2mtd.block2mtd=/dev/mmcblk0,65536,eMMC,5 mtdparts=eMMC:256k(mbr)ro,512k(uboot)ro,256k(config)ro,256k(factory)ro,32M(kernel),32M(recovery),1024M(rootfs),2048M(usrdata),-(bmtpool) rootfstype=squashfs,jffs2"
 CONFIG_CMDLINE_FORCE=y
 CONFIG_COMMON_CLK=y
 CONFIG_COMMON_CLK_MEDIATEK=y
