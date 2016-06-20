@@ -17,11 +17,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index ab61789..76ecb1b 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -236,6 +236,9 @@ static int mtk_phy_connect(struct mtk_mac *mac)
+@@ -236,6 +236,9 @@ static int mtk_phy_connect(struct mtk_ma
  		return -ENODEV;
  
  	switch (of_get_phy_mode(np)) {
@@ -31,6 +29,3 @@ index ab61789..76ecb1b 100644
  	case PHY_INTERFACE_MODE_RGMII:
  		ge_mode = 0;
  		break;
--- 
-1.7.10.4
-

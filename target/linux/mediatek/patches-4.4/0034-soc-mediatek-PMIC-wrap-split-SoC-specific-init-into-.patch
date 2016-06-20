@@ -16,8 +16,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |   67 +++++++++++++++++++++-------------
  1 file changed, 42 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index b22b664..22c89e9 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -372,6 +372,7 @@ struct pmic_wrapper_type {
@@ -28,7 +26,7 @@ index b22b664..22c89e9 100644
  };
  
  static inline int pwrap_is_mt8135(struct pmic_wrapper *wrp)
-@@ -665,6 +666,41 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
+@@ -665,6 +666,41 @@ static int pwrap_init_cipher(struct pmic
  	return 0;
  }
  
@@ -70,7 +68,7 @@ index b22b664..22c89e9 100644
  static int pwrap_init(struct pmic_wrapper *wrp)
  {
  	int ret;
-@@ -743,31 +779,10 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -743,31 +779,10 @@ static int pwrap_init(struct pmic_wrappe
  	pwrap_writel(wrp, 0x5, PWRAP_STAUPD_PRD);
  	pwrap_writel(wrp, 0xff, PWRAP_STAUPD_GRPEN);
  
@@ -106,7 +104,7 @@ index b22b664..22c89e9 100644
  	}
  
  	/* Setup the init done registers */
-@@ -811,6 +826,7 @@ static struct pmic_wrapper_type pwrap_mt8135 = {
+@@ -811,6 +826,7 @@ static struct pmic_wrapper_type pwrap_mt
  	.type = PWRAP_MT8135,
  	.arb_en_all = 0x1ff,
  	.init_reg_clock = pwrap_mt8135_init_reg_clock,
@@ -114,7 +112,7 @@ index b22b664..22c89e9 100644
  };
  
  static struct pmic_wrapper_type pwrap_mt8173 = {
-@@ -818,6 +834,7 @@ static struct pmic_wrapper_type pwrap_mt8173 = {
+@@ -818,6 +834,7 @@ static struct pmic_wrapper_type pwrap_mt
  	.type = PWRAP_MT8173,
  	.arb_en_all = 0x3f,
  	.init_reg_clock = pwrap_mt8173_init_reg_clock,
@@ -122,6 +120,3 @@ index b22b664..22c89e9 100644
  };
  
  static struct of_device_id of_pwrap_match_tbl[] = {
--- 
-1.7.10.4
-

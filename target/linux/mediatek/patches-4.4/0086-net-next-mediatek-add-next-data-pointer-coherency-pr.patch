@@ -16,11 +16,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |    1 +
  2 files changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index aadd748..72908b2 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1292,7 +1292,7 @@ static int mtk_start_dma(struct mtk_eth *eth)
+@@ -1292,7 +1292,7 @@ static int mtk_start_dma(struct mtk_eth
  	mtk_w32(eth,
  		MTK_TX_WB_DDONE | MTK_RX_DMA_EN | MTK_TX_DMA_EN |
  		MTK_RX_2B_OFFSET | MTK_DMA_SIZE_16DWORDS |
@@ -29,8 +27,6 @@ index aadd748..72908b2 100644
  		MTK_QDMA_GLO_CFG);
  
  	return 0;
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index 57f7e8a..a5eb7c6 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -91,6 +91,7 @@
@@ -41,6 +37,3 @@ index 57f7e8a..a5eb7c6 100644
  #define MTK_TX_WB_DDONE		BIT(6)
  #define MTK_DMA_SIZE_16DWORDS	(2 << 4)
  #define MTK_RX_DMA_BUSY		BIT(3)
--- 
-1.7.10.4
-

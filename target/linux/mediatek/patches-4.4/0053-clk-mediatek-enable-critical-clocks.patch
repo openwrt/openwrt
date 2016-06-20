@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/clk/mediatek/clk-mt2701.c |   22 ++++++++++++++++++++--
  1 file changed, 20 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
-index 812b347..1634288 100644
 --- a/drivers/clk/mediatek/clk-mt2701.c
 +++ b/drivers/clk/mediatek/clk-mt2701.c
-@@ -573,6 +573,20 @@ static const struct mtk_gate top_clks[] __initconst = {
+@@ -573,6 +573,20 @@ static const struct mtk_gate top_clks[]
  	GATE_TOP_AUD(CLK_TOP_AUD_I2S6_MCLK, "aud_i2s6_mclk", "aud_k6_src_div", 28),
  };
  
@@ -33,7 +31,7 @@ index 812b347..1634288 100644
  static void __init mtk_topckgen_init(struct device_node *node)
  {
  	struct clk_onecell_data *clk_data;
-@@ -585,7 +599,7 @@ static void __init mtk_topckgen_init(struct device_node *node)
+@@ -585,7 +599,7 @@ static void __init mtk_topckgen_init(str
  		return;
  	}
  
@@ -42,7 +40,7 @@ index 812b347..1634288 100644
  
  	mtk_clk_register_fixed_clks(top_fixed_clks, ARRAY_SIZE(top_fixed_clks),
  								clk_data);
-@@ -606,6 +620,8 @@ static void __init mtk_topckgen_init(struct device_node *node)
+@@ -606,6 +620,8 @@ static void __init mtk_topckgen_init(str
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);
@@ -51,7 +49,7 @@ index 812b347..1634288 100644
  }
  CLK_OF_DECLARE(mtk_topckgen, "mediatek,mt2701-topckgen", mtk_topckgen_init);
  
-@@ -1202,7 +1218,7 @@ static void __init mtk_apmixedsys_init(struct device_node *node)
+@@ -1202,7 +1218,7 @@ static void __init mtk_apmixedsys_init(s
  	struct clk_onecell_data *clk_data;
  	int r;
  
@@ -60,7 +58,7 @@ index 812b347..1634288 100644
  	if (!clk_data)
  		return;
  
-@@ -1213,6 +1229,8 @@ static void __init mtk_apmixedsys_init(struct device_node *node)
+@@ -1213,6 +1229,8 @@ static void __init mtk_apmixedsys_init(s
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);
@@ -69,6 +67,3 @@ index 812b347..1634288 100644
  }
  CLK_OF_DECLARE(mtk_apmixedsys, "mediatek,mt2701-apmixedsys",
  							mtk_apmixedsys_init);
--- 
-1.7.10.4
-

@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
  3 files changed, 399 insertions(+)
  create mode 100644 drivers/cpufreq/mt7623-cpufreq.c
 
-diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
-index b1f8a73..baf945e 100644
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
 @@ -81,6 +81,15 @@ config ARM_KIRKWOOD_CPUFREQ
@@ -31,11 +29,9 @@ index b1f8a73..baf945e 100644
  config ARM_MT8173_CPUFREQ
  	bool "Mediatek MT8173 CPUFreq support"
  	depends on ARCH_MEDIATEK && REGULATOR
-diff --git a/drivers/cpufreq/Makefile b/drivers/cpufreq/Makefile
-index c0af1a1..e198752 100644
 --- a/drivers/cpufreq/Makefile
 +++ b/drivers/cpufreq/Makefile
-@@ -57,6 +57,7 @@ obj-$(CONFIG_ARM_HISI_ACPU_CPUFREQ)	+= hisi-acpu-cpufreq.o
+@@ -57,6 +57,7 @@ obj-$(CONFIG_ARM_HISI_ACPU_CPUFREQ)	+= h
  obj-$(CONFIG_ARM_IMX6Q_CPUFREQ)		+= imx6q-cpufreq.o
  obj-$(CONFIG_ARM_INTEGRATOR)		+= integrator-cpufreq.o
  obj-$(CONFIG_ARM_KIRKWOOD_CPUFREQ)	+= kirkwood-cpufreq.o
@@ -43,9 +39,6 @@ index c0af1a1..e198752 100644
  obj-$(CONFIG_ARM_MT8173_CPUFREQ)	+= mt8173-cpufreq.o
  obj-$(CONFIG_ARM_OMAP2PLUS_CPUFREQ)	+= omap-cpufreq.o
  obj-$(CONFIG_ARM_PXA2xx_CPUFREQ)	+= pxa2xx-cpufreq.o
-diff --git a/drivers/cpufreq/mt7623-cpufreq.c b/drivers/cpufreq/mt7623-cpufreq.c
-new file mode 100644
-index 0000000..8d154ce
 --- /dev/null
 +++ b/drivers/cpufreq/mt7623-cpufreq.c
 @@ -0,0 +1,389 @@
@@ -438,6 +431,3 @@ index 0000000..8d154ce
 +	return 0;
 +}
 +device_initcall(mt7623_cpufreq_driver_init);
--- 
-1.7.10.4
-

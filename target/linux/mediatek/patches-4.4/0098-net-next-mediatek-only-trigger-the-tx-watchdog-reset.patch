@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |    1 +
  2 files changed, 13 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index bced659..70e961c 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1267,11 +1267,21 @@ static void mtk_tx_timeout(struct net_device *dev)
+@@ -1267,11 +1267,21 @@ static void mtk_tx_timeout(struct net_de
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
@@ -38,7 +36,7 @@ index bced659..70e961c 100644
  }
  
  static irqreturn_t mtk_handle_irq_rx(int irq, void *_eth)
-@@ -1765,7 +1775,7 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1765,7 +1775,7 @@ static int mtk_add_mac(struct mtk_eth *e
  	mac->hw_stats->reg_offset = id * MTK_STAT_OFFSET;
  
  	SET_NETDEV_DEV(eth->netdev[id], eth->dev);
@@ -47,8 +45,6 @@ index bced659..70e961c 100644
  	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
  	eth->netdev[id]->base_addr = (unsigned long)eth->base;
  	eth->netdev[id]->vlan_features = MTK_HW_FEATURES &
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index f82e3ac..e39da72 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -15,6 +15,7 @@
@@ -59,6 +55,3 @@ index f82e3ac..e39da72 100644
  #define MTK_QDMA_PAGE_SIZE	2048
  #define	MTK_MAX_RX_LENGTH	1536
  #define MTK_TX_DMA_BUF_LEN	0x3fff
--- 
-1.7.10.4
-

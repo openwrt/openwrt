@@ -16,8 +16,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/arm/boot/dts/mt7623-evb.dts
  create mode 100644 arch/arm/boot/dts/mt7623.dtsi
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 30bbc37..2bce370 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -774,6 +774,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
@@ -28,9 +26,6 @@ index 30bbc37..2bce370 100644
  	mt8127-moose.dtb \
  	mt8135-evbp1.dtb
  dtb-$(CONFIG_ARCH_ZX) += zx296702-ad1.dtb
-diff --git a/arch/arm/boot/dts/mt7623-evb.dts b/arch/arm/boot/dts/mt7623-evb.dts
-new file mode 100644
-index 0000000..5ad1448
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623-evb.dts
 @@ -0,0 +1,421 @@
@@ -455,9 +450,6 @@ index 0000000..5ad1448
 +	mediatek,reset-pin = <&pio 15 0>;
 +	status = "okay";
 +};
-diff --git a/arch/arm/boot/dts/mt7623.dtsi b/arch/arm/boot/dts/mt7623.dtsi
-new file mode 100644
-index 0000000..cbbdf16
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt7623.dtsi
 @@ -0,0 +1,601 @@
@@ -1062,8 +1054,6 @@ index 0000000..cbbdf16
 +		status = "disabled";
 +	};
 +};
-diff --git a/arch/arm/mach-mediatek/Kconfig b/arch/arm/mach-mediatek/Kconfig
-index 37dd438..7fb605e 100644
 --- a/arch/arm/mach-mediatek/Kconfig
 +++ b/arch/arm/mach-mediatek/Kconfig
 @@ -21,6 +21,10 @@ config MACH_MT6592
@@ -1077,11 +1067,9 @@ index 37dd438..7fb605e 100644
  config MACH_MT8127
  	bool "MediaTek MT8127 SoCs support"
  	default ARCH_MEDIATEK
-diff --git a/arch/arm/mach-mediatek/mediatek.c b/arch/arm/mach-mediatek/mediatek.c
-index d019a08..bcfca37 100644
 --- a/arch/arm/mach-mediatek/mediatek.c
 +++ b/arch/arm/mach-mediatek/mediatek.c
-@@ -46,6 +46,7 @@ static void __init mediatek_timer_init(void)
+@@ -46,6 +46,7 @@ static void __init mediatek_timer_init(v
  static const char * const mediatek_board_dt_compat[] = {
  	"mediatek,mt6589",
  	"mediatek,mt6592",
@@ -1089,6 +1077,3 @@ index d019a08..bcfca37 100644
  	"mediatek,mt8127",
  	"mediatek,mt8135",
  	NULL,
--- 
-1.7.10.4
-

@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index feedd5a..fefbf16 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -498,6 +498,9 @@ static int mtk_init_fq_dma(struct mtk_eth *eth)
+@@ -498,6 +498,9 @@ static int mtk_init_fq_dma(struct mtk_et
  
  	eth->scratch_head = kcalloc(cnt, MTK_QDMA_PAGE_SIZE,
  				    GFP_KERNEL);
@@ -26,6 +24,3 @@ index feedd5a..fefbf16 100644
  	dma_addr = dma_map_single(eth->dev,
  				  eth->scratch_head, cnt * MTK_QDMA_PAGE_SIZE,
  				  DMA_FROM_DEVICE);
--- 
-1.7.10.4
-

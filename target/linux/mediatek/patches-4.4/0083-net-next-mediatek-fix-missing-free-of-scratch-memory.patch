@@ -15,11 +15,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |    2 ++
  2 files changed, 15 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index fefbf16..d9664e5 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -484,14 +484,14 @@ static inline void mtk_rx_get_desc(struct mtk_rx_dma *rxd,
+@@ -484,14 +484,14 @@ static inline void mtk_rx_get_desc(struc
  /* the qdma core needs scratch memory to be setup */
  static int mtk_init_fq_dma(struct mtk_eth *eth)
  {
@@ -36,7 +34,7 @@ index fefbf16..d9664e5 100644
  					       GFP_ATOMIC | __GFP_ZERO);
  	if (unlikely(!eth->scratch_ring))
  		return -ENOMEM;
-@@ -508,19 +508,19 @@ static int mtk_init_fq_dma(struct mtk_eth *eth)
+@@ -508,19 +508,19 @@ static int mtk_init_fq_dma(struct mtk_et
  		return -ENOMEM;
  
  	memset(eth->scratch_ring, 0x0, sizeof(struct mtk_tx_dma) * cnt);
@@ -59,7 +57,7 @@ index fefbf16..d9664e5 100644
  	mtk_w32(eth, phy_ring_tail, MTK_QDMA_FQ_TAIL);
  	mtk_w32(eth, (cnt << 16) | cnt, MTK_QDMA_FQ_CNT);
  	mtk_w32(eth, MTK_QDMA_PAGE_SIZE << 16, MTK_QDMA_FQ_BLEN);
-@@ -1220,6 +1220,14 @@ static void mtk_dma_free(struct mtk_eth *eth)
+@@ -1220,6 +1220,14 @@ static void mtk_dma_free(struct mtk_eth
  	for (i = 0; i < MTK_MAC_COUNT; i++)
  		if (eth->netdev[i])
  			netdev_reset_queue(eth->netdev[i]);
@@ -74,8 +72,6 @@ index fefbf16..d9664e5 100644
  	mtk_tx_clean(eth);
  	mtk_rx_clean(eth);
  	kfree(eth->scratch_head);
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index eed626d..57f7e8a 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -357,6 +357,7 @@ struct mtk_rx_ring {
@@ -94,6 +90,3 @@ index eed626d..57f7e8a 100644
  	void				*scratch_head;
  	struct clk			*clk_ethif;
  	struct clk			*clk_esw;
--- 
-1.7.10.4
-

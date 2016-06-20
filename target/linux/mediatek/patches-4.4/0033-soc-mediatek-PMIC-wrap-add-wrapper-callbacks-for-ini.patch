@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |   70 ++++++++++++++++++----------------
  1 file changed, 38 insertions(+), 32 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index 340c4b5..b22b664 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -354,24 +354,6 @@ enum pwrap_type {
@@ -55,7 +53,7 @@ index 340c4b5..b22b664 100644
  static inline int pwrap_is_mt8135(struct pmic_wrapper *wrp)
  {
  	return wrp->master->type == PWRAP_MT8135;
-@@ -578,20 +567,23 @@ static int pwrap_init_sidly(struct pmic_wrapper *wrp)
+@@ -578,20 +567,23 @@ static int pwrap_init_sidly(struct pmic_
  	return 0;
  }
  
@@ -92,7 +90,7 @@ index 340c4b5..b22b664 100644
  
  	return 0;
  }
-@@ -699,7 +691,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -699,7 +691,7 @@ static int pwrap_init(struct pmic_wrappe
  
  	pwrap_writel(wrp, 1, PWRAP_WACS2_EN);
  
@@ -101,7 +99,7 @@ index 340c4b5..b22b664 100644
  	if (ret)
  		return ret;
  
-@@ -814,6 +806,20 @@ static const struct regmap_config pwrap_regmap_config = {
+@@ -814,6 +806,20 @@ static const struct regmap_config pwrap_
  	.max_register = 0xffff,
  };
  
@@ -122,6 +120,3 @@ index 340c4b5..b22b664 100644
  static struct of_device_id of_pwrap_match_tbl[] = {
  	{
  		.compatible = "mediatek,mt8135-pwrap",
--- 
-1.7.10.4
-

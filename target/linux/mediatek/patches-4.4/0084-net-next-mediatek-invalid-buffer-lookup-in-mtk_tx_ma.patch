@@ -14,11 +14,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index d9664e5..17ca1c1 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -686,7 +686,7 @@ static int mtk_tx_map(struct sk_buff *skb, struct net_device *dev,
+@@ -686,7 +686,7 @@ static int mtk_tx_map(struct sk_buff *sk
  
  err_dma:
  	do {
@@ -27,6 +25,3 @@ index d9664e5..17ca1c1 100644
  
  		/* unmap dma */
  		mtk_tx_unmap(&dev->dev, tx_buf);
--- 
-1.7.10.4
-

@@ -26,9 +26,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/mediatek/mtk_eth_soc.c
  create mode 100644 drivers/net/ethernet/mediatek/mtk_eth_soc.h
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-new file mode 100644
-index 0000000..ba3afa5
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -0,0 +1,1807 @@
@@ -1839,9 +1836,6 @@ index 0000000..ba3afa5
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Ethernet driver for MediaTek SoC");
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-new file mode 100644
-index 0000000..48a5292
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -0,0 +1,421 @@
@@ -2266,6 +2260,3 @@ index 0000000..48a5292
 +u32 mtk_r32(struct mtk_eth *eth, unsigned reg);
 +
 +#endif /* MTK_ETH_H */
--- 
-1.7.10.4
-

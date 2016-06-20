@@ -15,8 +15,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |   15 ++-
  2 files changed, 111 insertions(+), 60 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index c869064..718cbb2 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -905,14 +905,13 @@ release_desc:
@@ -36,7 +34,7 @@ index c869064..718cbb2 100644
  	u32 cpu, dma;
  	static int condition;
  	int i;
-@@ -964,63 +963,82 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -964,63 +963,82 @@ static int mtk_poll_tx(struct mtk_eth *e
  		netdev_completed_queue(eth->netdev[i], done, bytes);
  	}
  
@@ -94,23 +92,29 @@ index c869064..718cbb2 100644
 +	mtk_handle_status_irq(eth);
 +	mtk_w32(eth, MTK_TX_DONE_INT, MTK_QMTK_INT_STATUS);
 +	tx_done = mtk_poll_tx(eth, budget);
-+
-+	if (unlikely(netif_msg_intr(eth))) {
+ 
+ 	if (unlikely(netif_msg_intr(eth))) {
 +		status = mtk_r32(eth, MTK_QMTK_INT_STATUS);
-+		mask = mtk_r32(eth, MTK_QDMA_INT_MASK);
+ 		mask = mtk_r32(eth, MTK_QDMA_INT_MASK);
+-		netdev_info(eth->netdev[0],
+-			    "done tx %d, rx %d, intr 0x%08x/0x%x\n",
+-			    tx_done, rx_done, status, mask);
 +		dev_info(eth->dev,
 +			 "done tx %d, intr 0x%08x/0x%x\n",
 +			 tx_done, status, mask);
-+	}
-+
+ 	}
+ 
+-	if (tx_again || rx_done == budget)
 +	if (tx_done == budget)
-+		return budget;
-+
-+	status = mtk_r32(eth, MTK_QMTK_INT_STATUS);
+ 		return budget;
+ 
+ 	status = mtk_r32(eth, MTK_QMTK_INT_STATUS);
+-	if (status & (tx_intr | rx_intr))
 +	if (status & MTK_TX_DONE_INT)
-+		return budget;
-+
-+	napi_complete(napi);
+ 		return budget;
+ 
+ 	napi_complete(napi);
+-	mtk_irq_enable(eth, MTK_RX_DONE_INT | MTK_RX_DONE_INT);
 +	mtk_irq_enable(eth, MTK_TX_DONE_INT);
 +
 +	return tx_done;
@@ -125,34 +129,28 @@ index c869064..718cbb2 100644
 +	mtk_handle_status_irq(eth);
 +	mtk_w32(eth, MTK_RX_DONE_INT, MTK_QMTK_INT_STATUS);
 +	rx_done = mtk_poll_rx(napi, budget, eth);
- 
- 	if (unlikely(netif_msg_intr(eth))) {
++
++	if (unlikely(netif_msg_intr(eth))) {
 +		status = mtk_r32(eth, MTK_QMTK_INT_STATUS);
- 		mask = mtk_r32(eth, MTK_QDMA_INT_MASK);
--		netdev_info(eth->netdev[0],
--			    "done tx %d, rx %d, intr 0x%08x/0x%x\n",
--			    tx_done, rx_done, status, mask);
++		mask = mtk_r32(eth, MTK_QDMA_INT_MASK);
 +		dev_info(eth->dev,
 +			 "done rx %d, intr 0x%08x/0x%x\n",
 +			 rx_done, status, mask);
- 	}
- 
--	if (tx_again || rx_done == budget)
++	}
++
 +	if (rx_done == budget)
- 		return budget;
- 
- 	status = mtk_r32(eth, MTK_QMTK_INT_STATUS);
--	if (status & (tx_intr | rx_intr))
++		return budget;
++
++	status = mtk_r32(eth, MTK_QMTK_INT_STATUS);
 +	if (status & MTK_RX_DONE_INT)
- 		return budget;
- 
- 	napi_complete(napi);
--	mtk_irq_enable(eth, MTK_RX_DONE_INT | MTK_RX_DONE_INT);
++		return budget;
++
++	napi_complete(napi);
 +	mtk_irq_enable(eth, MTK_RX_DONE_INT);
  
  	return rx_done;
  }
-@@ -1256,22 +1274,26 @@ static void mtk_tx_timeout(struct net_device *dev)
+@@ -1256,22 +1274,26 @@ static void mtk_tx_timeout(struct net_de
  	schedule_work(&eth->pending_work);
  }
  
@@ -190,7 +188,7 @@ index c869064..718cbb2 100644
  
  	return IRQ_HANDLED;
  }
-@@ -1284,7 +1306,7 @@ static void mtk_poll_controller(struct net_device *dev)
+@@ -1284,7 +1306,7 @@ static void mtk_poll_controller(struct n
  	u32 int_mask = MTK_TX_DONE_INT | MTK_RX_DONE_INT;
  
  	mtk_irq_disable(eth, int_mask);
@@ -199,7 +197,7 @@ index c869064..718cbb2 100644
  	mtk_irq_enable(eth, int_mask);
  }
  #endif
-@@ -1320,6 +1342,7 @@ static int mtk_open(struct net_device *dev)
+@@ -1320,6 +1342,7 @@ static int mtk_open(struct net_device *d
  		if (err)
  			return err;
  
@@ -207,7 +205,7 @@ index c869064..718cbb2 100644
  		napi_enable(&eth->rx_napi);
  		mtk_irq_enable(eth, MTK_TX_DONE_INT | MTK_RX_DONE_INT);
  	}
-@@ -1368,6 +1391,7 @@ static int mtk_stop(struct net_device *dev)
+@@ -1368,6 +1391,7 @@ static int mtk_stop(struct net_device *d
  		return 0;
  
  	mtk_irq_disable(eth, MTK_TX_DONE_INT | MTK_RX_DONE_INT);
@@ -215,7 +213,7 @@ index c869064..718cbb2 100644
  	napi_disable(&eth->rx_napi);
  
  	mtk_stop_dma(eth, MTK_QDMA_GLO_CFG);
-@@ -1405,7 +1429,11 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1405,7 +1429,11 @@ static int __init mtk_hw_init(struct mtk
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
  
@@ -228,7 +226,7 @@ index c869064..718cbb2 100644
  			       dev_name(eth->dev), eth);
  	if (err)
  		return err;
-@@ -1421,7 +1449,11 @@ static int __init mtk_hw_init(struct mtk_eth *eth)
+@@ -1421,7 +1449,11 @@ static int __init mtk_hw_init(struct mtk
  	mtk_w32(eth, 0, MTK_RST_GL);
  
  	/* FE int grouping */
@@ -241,7 +239,7 @@ index c869064..718cbb2 100644
  
  	for (i = 0; i < 2; i++) {
  		u32 val = mtk_r32(eth, MTK_GDMA_FWD_CFG(i));
-@@ -1469,7 +1501,9 @@ static void mtk_uninit(struct net_device *dev)
+@@ -1469,7 +1501,9 @@ static void mtk_uninit(struct net_device
  	phy_disconnect(mac->phy_dev);
  	mtk_mdio_cleanup(eth);
  	mtk_irq_disable(eth, ~0);
@@ -252,7 +250,7 @@ index c869064..718cbb2 100644
  }
  
  static int mtk_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
-@@ -1744,10 +1778,10 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -1744,10 +1778,10 @@ static int mtk_add_mac(struct mtk_eth *e
  		dev_err(eth->dev, "error bringing up device\n");
  		goto free_netdev;
  	}
@@ -265,7 +263,7 @@ index c869064..718cbb2 100644
  
  	return 0;
  
-@@ -1764,6 +1798,7 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1764,6 +1798,7 @@ static int mtk_probe(struct platform_dev
  	struct mtk_soc_data *soc;
  	struct mtk_eth *eth;
  	int err;
@@ -273,7 +271,7 @@ index c869064..718cbb2 100644
  
  	match = of_match_device(of_mtk_match, &pdev->dev);
  	soc = (struct mtk_soc_data *)match->data;
-@@ -1799,10 +1834,12 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1799,10 +1834,12 @@ static int mtk_probe(struct platform_dev
  		return PTR_ERR(eth->rstc);
  	}
  
@@ -290,7 +288,7 @@ index c869064..718cbb2 100644
  	}
  
  	eth->clk_ethif = devm_clk_get(&pdev->dev, "ethif");
-@@ -1843,7 +1880,9 @@ static int mtk_probe(struct platform_device *pdev)
+@@ -1843,7 +1880,9 @@ static int mtk_probe(struct platform_dev
  	 * for NAPI to work
  	 */
  	init_dummy_netdev(&eth->dummy_dev);
@@ -301,7 +299,7 @@ index c869064..718cbb2 100644
  		       MTK_NAPI_WEIGHT);
  
  	platform_set_drvdata(pdev, eth);
-@@ -1864,6 +1903,7 @@ static int mtk_remove(struct platform_device *pdev)
+@@ -1864,6 +1903,7 @@ static int mtk_remove(struct platform_de
  	clk_disable_unprepare(eth->clk_gp1);
  	clk_disable_unprepare(eth->clk_gp2);
  
@@ -309,8 +307,6 @@ index c869064..718cbb2 100644
  	netif_napi_del(&eth->rx_napi);
  	mtk_cleanup(eth);
  	platform_set_drvdata(pdev, NULL);
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index 3159d2a..f82e3ac 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -68,6 +68,10 @@
@@ -363,6 +359,3 @@ index 3159d2a..f82e3ac 100644
  	struct napi_struct		rx_napi;
  	struct mtk_tx_dma		*scratch_ring;
  	dma_addr_t			phy_scratch_ring;
--- 
-1.7.10.4
-

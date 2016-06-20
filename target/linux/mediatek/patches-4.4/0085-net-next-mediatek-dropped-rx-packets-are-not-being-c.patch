@@ -14,11 +14,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 17ca1c1..aadd748 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -841,6 +841,7 @@ static int mtk_poll_rx(struct napi_struct *napi, int budget,
+@@ -841,6 +841,7 @@ static int mtk_poll_rx(struct napi_struc
  					  DMA_FROM_DEVICE);
  		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr))) {
  			skb_free_frag(new_data);
@@ -26,7 +24,7 @@ index 17ca1c1..aadd748 100644
  			goto release_desc;
  		}
  
-@@ -848,6 +849,7 @@ static int mtk_poll_rx(struct napi_struct *napi, int budget,
+@@ -848,6 +849,7 @@ static int mtk_poll_rx(struct napi_struc
  		skb = build_skb(data, ring->frag_size);
  		if (unlikely(!skb)) {
  			put_page(virt_to_head_page(new_data));
@@ -34,6 +32,3 @@ index 17ca1c1..aadd748 100644
  			goto release_desc;
  		}
  		skb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);
--- 
-1.7.10.4
-

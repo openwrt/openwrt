@@ -21,9 +21,6 @@ Acked-by: Linus Walleij <linus.walleij@linaro.org>
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-mt2701.c
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-mtk-mt2701.h
 
-diff --git a/arch/arm/boot/dts/mt2701-pinfunc.h b/arch/arm/boot/dts/mt2701-pinfunc.h
-new file mode 100644
-index 0000000..e24ebc8
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt2701-pinfunc.h
 @@ -0,0 +1,735 @@
@@ -762,8 +759,6 @@ index 0000000..e24ebc8
 +#define MT2701_PIN_278_JTAG_RESET__FUNC_JTAG_RESET (MTK_PIN_NO(278) | 1)
 +
 +#endif /* __DTS_MT2701_PINFUNC_H */
-diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
-index 02f6f92..13e9939 100644
 --- a/drivers/pinctrl/mediatek/Kconfig
 +++ b/drivers/pinctrl/mediatek/Kconfig
 @@ -9,6 +9,12 @@ config PINCTRL_MTK_COMMON
@@ -779,8 +774,6 @@ index 02f6f92..13e9939 100644
  config PINCTRL_MT8135
  	bool "Mediatek MT8135 pin control" if COMPILE_TEST && !MACH_MT8135
  	depends on OF
-diff --git a/drivers/pinctrl/mediatek/Makefile b/drivers/pinctrl/mediatek/Makefile
-index eb923d6..da30314 100644
 --- a/drivers/pinctrl/mediatek/Makefile
 +++ b/drivers/pinctrl/mediatek/Makefile
 @@ -2,6 +2,7 @@
@@ -791,9 +784,6 @@ index eb923d6..da30314 100644
  obj-$(CONFIG_PINCTRL_MT8135)		+= pinctrl-mt8135.o
  obj-$(CONFIG_PINCTRL_MT8127)		+= pinctrl-mt8127.o
  obj-$(CONFIG_PINCTRL_MT8173)		+= pinctrl-mt8173.o
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mt2701.c b/drivers/pinctrl/mediatek/pinctrl-mt2701.c
-new file mode 100644
-index 0000000..4861b5d
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-mt2701.c
 @@ -0,0 +1,586 @@
@@ -1383,8 +1373,6 @@ index 0000000..4861b5d
 +}
 +
 +arch_initcall(mtk_pinctrl_init);
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-common.c b/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
-index 5c71727..05ba7a8 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
 @@ -47,6 +47,8 @@
@@ -1396,7 +1384,7 @@ index 5c71727..05ba7a8 100644
  };
  
  /*
-@@ -81,6 +83,9 @@ static int mtk_pmx_gpio_set_direction(struct pinctrl_dev *pctldev,
+@@ -81,6 +83,9 @@ static int mtk_pmx_gpio_set_direction(st
  	reg_addr = mtk_get_port(pctl, offset) + pctl->devdata->dir_offset;
  	bit = BIT(offset & 0xf);
  
@@ -1406,7 +1394,7 @@ index 5c71727..05ba7a8 100644
  	if (input)
  		/* Different SoC has different alignment offset. */
  		reg_addr = CLR_ADDR(reg_addr, pctl);
-@@ -347,6 +352,7 @@ static int mtk_pconf_parse_conf(struct pinctrl_dev *pctldev,
+@@ -347,6 +352,7 @@ static int mtk_pconf_parse_conf(struct p
  		ret = mtk_pconf_set_pull_select(pctl, pin, true, false, arg);
  		break;
  	case PIN_CONFIG_INPUT_ENABLE:
@@ -1414,7 +1402,7 @@ index 5c71727..05ba7a8 100644
  		ret = mtk_pconf_set_ies_smt(pctl, pin, arg, param);
  		break;
  	case PIN_CONFIG_OUTPUT:
-@@ -354,6 +360,7 @@ static int mtk_pconf_parse_conf(struct pinctrl_dev *pctldev,
+@@ -354,6 +360,7 @@ static int mtk_pconf_parse_conf(struct p
  		ret = mtk_pmx_gpio_set_direction(pctldev, NULL, pin, false);
  		break;
  	case PIN_CONFIG_INPUT_SCHMITT_ENABLE:
@@ -1422,7 +1410,7 @@ index 5c71727..05ba7a8 100644
  		ret = mtk_pconf_set_ies_smt(pctl, pin, arg, param);
  		break;
  	case PIN_CONFIG_DRIVE_STRENGTH:
-@@ -667,9 +674,14 @@ static int mtk_pmx_set_mode(struct pinctrl_dev *pctldev,
+@@ -667,9 +674,14 @@ static int mtk_pmx_set_mode(struct pinct
  	unsigned int mask = (1L << GPIO_MODE_BITS) - 1;
  	struct mtk_pinctrl *pctl = pinctrl_dev_get_drvdata(pctldev);
  
@@ -1437,7 +1425,7 @@ index 5c71727..05ba7a8 100644
  	bit = pin % MAX_GPIO_MODE_PER_REG;
  	mask <<= (GPIO_MODE_BITS * bit);
  	val = (mode << (GPIO_MODE_BITS * bit));
-@@ -746,6 +758,10 @@ static int mtk_gpio_get_direction(struct gpio_chip *chip, unsigned offset)
+@@ -746,6 +758,10 @@ static int mtk_gpio_get_direction(struct
  
  	reg_addr =  mtk_get_port(pctl, offset) + pctl->devdata->dir_offset;
  	bit = BIT(offset & 0xf);
@@ -1448,8 +1436,6 @@ index 5c71727..05ba7a8 100644
  	regmap_read(pctl->regmap1, reg_addr, &read_val);
  	return !(read_val & bit);
  }
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-common.h b/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
-index 55a5343..8543bc4 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
 +++ b/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
 @@ -209,7 +209,14 @@ struct mtk_eint_offsets {
@@ -1478,9 +1464,6 @@ index 55a5343..8543bc4 100644
  	unsigned int dir_offset;
  	unsigned int ies_offset;
  	unsigned int smt_offset;
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-mt2701.h b/drivers/pinctrl/mediatek/pinctrl-mtk-mt2701.h
-new file mode 100644
-index 0000000..f906420
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-mtk-mt2701.h
 @@ -0,0 +1,2323 @@
@@ -3807,6 +3790,3 @@ index 0000000..f906420
 +};
 +
 +#endif /* __PINCTRL_MTK_MT2701_H */
--- 
-1.7.10.4
-

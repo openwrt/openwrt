@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |   17 ++++++++++++++++-
  1 file changed, 16 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 87b48c0..9da533e 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -716,6 +716,20 @@ static inline int mtk_cal_txd_req(struct sk_buff *skb)
+@@ -716,6 +716,20 @@ static inline int mtk_cal_txd_req(struct
  	return nfrags;
  }
  
@@ -38,7 +36,7 @@ index 87b48c0..9da533e 100644
  static void mtk_wake_queue(struct mtk_eth *eth)
  {
  	int i;
-@@ -960,7 +974,8 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -960,7 +974,8 @@ static int mtk_poll_tx(struct mtk_eth *e
  	if (!total)
  		return 0;
  
@@ -48,6 +46,3 @@ index 87b48c0..9da533e 100644
  		mtk_wake_queue(eth);
  
  	return total;
--- 
-1.7.10.4
-

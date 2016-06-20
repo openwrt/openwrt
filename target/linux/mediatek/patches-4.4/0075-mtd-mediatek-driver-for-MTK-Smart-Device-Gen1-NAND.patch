@@ -18,8 +18,6 @@ Signed-off-by: Jorge Ramirez-Ortiz <jorge.ramirez-ortiz@linaro.org>
  create mode 100644 drivers/mtd/nand/mtk_ecc.h
  create mode 100644 drivers/mtd/nand/mtk_nand.c
 
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index f05e0e9..3c26e89 100644
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
 @@ -563,4 +563,11 @@ config MTD_NAND_QCOM
@@ -34,20 +32,15 @@ index f05e0e9..3c26e89 100644
 +	  This controller is found on mt27xx, mt81xx, mt65xx SoCs.
 +
  endif # MTD_NAND
-diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
-index f553353..cafde6f 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -57,5 +57,6 @@ obj-$(CONFIG_MTD_NAND_SUNXI)		+= sunxi_nand.o
+@@ -57,5 +57,6 @@ obj-$(CONFIG_MTD_NAND_SUNXI)		+= sunxi_n
  obj-$(CONFIG_MTD_NAND_HISI504)	        += hisi504_nand.o
  obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand/
  obj-$(CONFIG_MTD_NAND_QCOM)		+= qcom_nandc.o
 +obj-$(CONFIG_MTD_NAND_MTK)		+= mtk_nand.o mtk_ecc.o
  
  nand-objs := nand_base.o nand_bbt.o nand_timings.o
-diff --git a/drivers/mtd/nand/mtk_ecc.c b/drivers/mtd/nand/mtk_ecc.c
-new file mode 100644
-index 0000000..28769f1
 --- /dev/null
 +++ b/drivers/mtd/nand/mtk_ecc.c
 @@ -0,0 +1,527 @@
@@ -578,9 +571,6 @@ index 0000000..28769f1
 +MODULE_AUTHOR("Jorge Ramirez-Ortiz <jorge.ramirez-ortiz@linaro.org>");
 +MODULE_DESCRIPTION("MTK Nand ECC Driver");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/mtd/nand/mtk_ecc.h b/drivers/mtd/nand/mtk_ecc.h
-new file mode 100644
-index 0000000..434826f
 --- /dev/null
 +++ b/drivers/mtd/nand/mtk_ecc.h
 @@ -0,0 +1,53 @@
@@ -637,9 +627,6 @@ index 0000000..434826f
 +void mtk_ecc_release(struct mtk_ecc *);
 +
 +#endif
-diff --git a/drivers/mtd/nand/mtk_nand.c b/drivers/mtd/nand/mtk_nand.c
-new file mode 100644
-index 0000000..907b90c
 --- /dev/null
 +++ b/drivers/mtd/nand/mtk_nand.c
 @@ -0,0 +1,1432 @@
@@ -2075,6 +2062,3 @@ index 0000000..907b90c
 +MODULE_AUTHOR("Xiaolei Li <xiaolei.li@mediatek.com>");
 +MODULE_AUTHOR("Jorge Ramirez-Ortiz <jorge.ramirez-ortiz@linaro.org>");
 +MODULE_DESCRIPTION("MTK Nand Flash Controller Driver");
--- 
-1.7.10.4
-

@@ -15,11 +15,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    4 ----
  1 file changed, 4 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index a569c32..6a9fbde 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -335,8 +335,6 @@ static inline void mtk_irq_disable(struct mtk_eth *eth, u32 mask)
+@@ -335,8 +335,6 @@ static inline void mtk_irq_disable(struc
  
  	val = mtk_r32(eth, MTK_QDMA_INT_MASK);
  	mtk_w32(eth, val & ~mask, MTK_QDMA_INT_MASK);
@@ -28,7 +26,7 @@ index a569c32..6a9fbde 100644
  }
  
  static inline void mtk_irq_enable(struct mtk_eth *eth, u32 mask)
-@@ -345,8 +343,6 @@ static inline void mtk_irq_enable(struct mtk_eth *eth, u32 mask)
+@@ -345,8 +343,6 @@ static inline void mtk_irq_enable(struct
  
  	val = mtk_r32(eth, MTK_QDMA_INT_MASK);
  	mtk_w32(eth, val | mask, MTK_QDMA_INT_MASK);
@@ -37,6 +35,3 @@ index a569c32..6a9fbde 100644
  }
  
  static int mtk_set_mac_address(struct net_device *dev, void *p)
--- 
-1.7.10.4
-

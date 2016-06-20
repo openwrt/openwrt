@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/mtd/nand/mtk_nand.c |   13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/nand/mtk_nand.c b/drivers/mtd/nand/mtk_nand.c
-index 907b90c..bde1a1d 100644
 --- a/drivers/mtd/nand/mtk_nand.c
 +++ b/drivers/mtd/nand/mtk_nand.c
 @@ -16,6 +16,7 @@
@@ -28,7 +26,7 @@ index 907b90c..bde1a1d 100644
  
  #define MTK_NAME		"mtk-nand"
  #define KB(x)			((x) * 1024UL)
-@@ -539,6 +541,8 @@ static void mtk_nfc_bad_mark_swap(struct mtd_info *mtd, uint8_t *buf, int raw)
+@@ -539,6 +541,8 @@ static void mtk_nfc_bad_mark_swap(struct
  	struct mtk_nfc_nand_chip *nand = to_mtk_nand(chip);
  	u32 bad_pos = nand->bad_mark.pos;
  
@@ -37,7 +35,7 @@ index 907b90c..bde1a1d 100644
  	if (raw)
  		bad_pos += nand->bad_mark.sec * mtk_data_len(chip);
  	else
-@@ -946,7 +950,8 @@ static int mtk_nfc_read_oob_std(struct mtd_info *mtd, struct nand_chip *chip,
+@@ -946,7 +950,8 @@ static int mtk_nfc_read_oob_std(struct m
  
  static inline void mtk_nfc_hw_init(struct mtk_nfc *nfc)
  {
@@ -47,7 +45,7 @@ index 907b90c..bde1a1d 100644
  	nfi_writew(nfc, 0xf1, NFI_CNRNB);
  	nfi_writew(nfc, PAGEFMT_8K_16K, NFI_PAGEFMT);
  
-@@ -1328,6 +1333,9 @@ static int mtk_nfc_probe(struct platform_device *pdev)
+@@ -1328,6 +1333,9 @@ static int mtk_nfc_probe(struct platform
  		goto clk_disable;
  	}
  
@@ -57,7 +55,7 @@ index 907b90c..bde1a1d 100644
  	platform_set_drvdata(pdev, nfc);
  
  	ret = mtk_nfc_nand_chips_init(dev, nfc);
-@@ -1362,6 +1370,9 @@ static int mtk_nfc_remove(struct platform_device *pdev)
+@@ -1362,6 +1370,9 @@ static int mtk_nfc_remove(struct platfor
  	mtk_ecc_release(nfc->ecc);
  	mtk_nfc_disable_clk(&nfc->clk);
  
@@ -67,6 +65,3 @@ index 907b90c..bde1a1d 100644
  	return 0;
  }
  
--- 
-1.7.10.4
-

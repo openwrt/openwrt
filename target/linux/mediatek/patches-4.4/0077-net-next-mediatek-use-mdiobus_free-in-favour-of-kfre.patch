@@ -14,11 +14,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index bab5d45..0c8d369 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -280,7 +280,7 @@ static int mtk_mdio_init(struct mtk_eth *eth)
+@@ -280,7 +280,7 @@ static int mtk_mdio_init(struct mtk_eth
  	return 0;
  
  err_free_bus:
@@ -27,7 +25,7 @@ index bab5d45..0c8d369 100644
  
  err_put_node:
  	of_node_put(mii_np);
-@@ -295,7 +295,7 @@ static void mtk_mdio_cleanup(struct mtk_eth *eth)
+@@ -295,7 +295,7 @@ static void mtk_mdio_cleanup(struct mtk_
  
  	mdiobus_unregister(eth->mii_bus);
  	of_node_put(eth->mii_bus->dev.of_node);
@@ -36,6 +34,3 @@ index bab5d45..0c8d369 100644
  }
  
  static inline void mtk_irq_disable(struct mtk_eth *eth, u32 mask)
--- 
-1.7.10.4
-

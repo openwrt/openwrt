@@ -17,11 +17,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    7 ++-----
  1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 9da533e..a569c32 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -795,12 +795,9 @@ static int mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -795,12 +795,9 @@ static int mtk_start_xmit(struct sk_buff
  	if (mtk_tx_map(skb, dev, tx_num, ring, gso) < 0)
  		goto drop;
  
@@ -36,6 +34,3 @@ index 9da533e..a569c32 100644
  	spin_unlock_irqrestore(&eth->page_lock, flags);
  
  	return NETDEV_TX_OK;
--- 
-1.7.10.4
-

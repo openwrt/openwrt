@@ -15,11 +15,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 52cdb3a..87b48c0 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -934,7 +934,6 @@ static int mtk_poll_tx(struct mtk_eth *eth, int budget, bool *tx_again)
+@@ -934,7 +934,6 @@ static int mtk_poll_tx(struct mtk_eth *e
  		}
  		mtk_tx_unmap(eth->dev, tx_buf);
  
@@ -27,7 +25,7 @@ index 52cdb3a..87b48c0 100644
  		ring->last_free = desc;
  		atomic_inc(&ring->free_count);
  
-@@ -1042,7 +1041,7 @@ static int mtk_tx_alloc(struct mtk_eth *eth)
+@@ -1042,7 +1041,7 @@ static int mtk_tx_alloc(struct mtk_eth *
  
  	atomic_set(&ring->free_count, MTK_DMA_SIZE - 2);
  	ring->next_free = &ring->dma[0];
@@ -36,6 +34,3 @@ index 52cdb3a..87b48c0 100644
  	ring->thresh = MAX_SKB_FRAGS;
  
  	/* make sure that all changes to the dma ring are flushed before we
--- 
-1.7.10.4
-
