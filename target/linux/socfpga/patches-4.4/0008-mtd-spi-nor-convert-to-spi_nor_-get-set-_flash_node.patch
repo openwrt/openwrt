@@ -1,0 +1,91 @@
+From bf8554bc3b6b699e9c5b990f63b286b31cf7e80b Mon Sep 17 00:00:00 2001
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Fri, 30 Oct 2015 20:33:24 -0700
+Subject: [PATCH 08/33] mtd: spi-nor: convert to spi_nor_{get,
+ set}_flash_node()
+
+Used semantic patch with 'make coccicheck MODE=patch COCCI=script.cocci':
+
+---8<----
+virtual patch
+
+@@
+struct spi_nor b;
+struct spi_nor *c;
+expression d;
+@@
+(
+-(b).flash_node = (d)
++spi_nor_set_flash_node(&b, d)
+|
+-(c)->flash_node = (d)
++spi_nor_set_flash_node(c, d)
+)
+---8<----
+
+And a manual conversion for the one use of spi_nor_get_flash_node().
+
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+---
+ drivers/mtd/devices/m25p80.c      | 2 +-
+ drivers/mtd/spi-nor/fsl-quadspi.c | 2 +-
+ drivers/mtd/spi-nor/nxp-spifi.c   | 2 +-
+ drivers/mtd/spi-nor/spi-nor.c     | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index fe9ceb7..bc7a802 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -199,7 +199,7 @@ static int m25p_probe(struct spi_device *spi)
+ 	nor->read_reg = m25p80_read_reg;
+ 
+ 	nor->dev = &spi->dev;
+-	nor->flash_node = spi->dev.of_node;
++	spi_nor_set_flash_node(nor, spi->dev.of_node);
+ 	nor->priv = flash;
+ 
+ 	spi_set_drvdata(spi, flash);
+diff --git a/drivers/mtd/spi-nor/fsl-quadspi.c b/drivers/mtd/spi-nor/fsl-quadspi.c
+index 7b10ed4..8f4d920 100644
+--- a/drivers/mtd/spi-nor/fsl-quadspi.c
++++ b/drivers/mtd/spi-nor/fsl-quadspi.c
+@@ -1013,7 +1013,7 @@ static int fsl_qspi_probe(struct platform_device *pdev)
+ 		mtd = &nor->mtd;
+ 
+ 		nor->dev = dev;
+-		nor->flash_node = np;
++		spi_nor_set_flash_node(nor, np);
+ 		nor->priv = q;
+ 
+ 		/* fill the hooks */
+diff --git a/drivers/mtd/spi-nor/nxp-spifi.c b/drivers/mtd/spi-nor/nxp-spifi.c
+index 9e82098..4524b28 100644
+--- a/drivers/mtd/spi-nor/nxp-spifi.c
++++ b/drivers/mtd/spi-nor/nxp-spifi.c
+@@ -330,7 +330,7 @@ static int nxp_spifi_setup_flash(struct nxp_spifi *spifi,
+ 	writel(ctrl, spifi->io_base + SPIFI_CTRL);
+ 
+ 	spifi->nor.dev   = spifi->dev;
+-	spifi->nor.flash_node = np;
++	spi_nor_set_flash_node(&spifi->nor, np);
+ 	spifi->nor.priv  = spifi;
+ 	spifi->nor.read  = nxp_spifi_read;
+ 	spifi->nor.write = nxp_spifi_write;
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index 24ad373..b76090e 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1151,7 +1151,7 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
+ 	const struct flash_info *info = NULL;
+ 	struct device *dev = nor->dev;
+ 	struct mtd_info *mtd = &nor->mtd;
+-	struct device_node *np = nor->flash_node;
++	struct device_node *np = spi_nor_get_flash_node(nor);
+ 	int ret;
+ 	int i;
+ 
+-- 
+2.8.1
+

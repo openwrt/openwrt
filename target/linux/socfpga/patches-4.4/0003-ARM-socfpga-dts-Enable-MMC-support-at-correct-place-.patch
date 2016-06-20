@@ -1,8 +1,8 @@
-From 6b8c64eb90e5d958f32524ff2d0571b3b6ac92df Mon Sep 17 00:00:00 2001
+From 23d14e4479c925904bc7620a55c66eb8babacbb9 Mon Sep 17 00:00:00 2001
 From: Marek Vasut <marex@denx.de>
 Date: Mon, 21 Dec 2015 00:42:01 -0600
-Subject: [PATCH 3/5] ARM: socfpga: dts: Enable MMC support at correct place in
- the DT
+Subject: [PATCH 03/33] ARM: socfpga: dts: Enable MMC support at correct place
+ in the DT
 
 The socfpga.dtsi explicitly enabled MMC support, but not all boards are
 equiped with an MMC card. There are setups which only have QSPI NOR.
@@ -86,5 +86,5 @@ index 48bf651..b61f22f 100644
  
  &usb1 {
 -- 
-2.7.0
+2.8.1
 

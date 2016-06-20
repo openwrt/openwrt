@@ -1,7 +1,7 @@
-From e5cbd23e4f40181c907a1abc136b17de8cb86809 Mon Sep 17 00:00:00 2001
+From f7697963e1b0fc1496709f84c00da5cb144a58a3 Mon Sep 17 00:00:00 2001
 From: Marek Vasut <marex@denx.de>
 Date: Thu, 17 Dec 2015 23:42:35 +0100
-Subject: [PATCH 2/5] usb: dwc2: gadget: Repair DSTS register decoding
+Subject: [PATCH 02/33] usb: dwc2: gadget: Repair DSTS register decoding
 
 The "enumspd" field is located in register DSTS[2:1], but the code
 which checks the bitfield does not shift the value accordingly. This
@@ -32,5 +32,5 @@ index 0abf73c..48e47c1 100644
  	case DSTS_ENUMSPD_FS48:
  		hsotg->gadget.speed = USB_SPEED_FULL;
 -- 
-2.7.0
+2.8.1
 

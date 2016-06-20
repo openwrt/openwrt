@@ -1,0 +1,116 @@
+From 4774693a681539f1e890164acc2d99fede2aa35e Mon Sep 17 00:00:00 2001
+From: Cyrille Pitchen <cyrille.pitchen@atmel.com>
+Date: Fri, 8 Jan 2016 17:02:19 +0100
+Subject: [PATCH 22/33] mtd: spi-nor: fix support of Spansion memories
+
+This patch is only a transitional one. It concludes the series of patches
+to select op codes and protocols by manufacturer.
+
+Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
+---
+ drivers/mtd/spi-nor/spi-nor.c | 53 ++++++++++++++++++++++++++++++-------------
+ 1 file changed, 37 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index ae2cbac..8a042ab 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1458,10 +1458,35 @@ static int micron_set_single_mode(struct spi_nor *nor)
+ 	return 0;
+ }
+ 
+-static int set_quad_mode(struct spi_nor *nor, const struct flash_info *info)
++static int spansion_set_quad_mode(struct spi_nor *nor)
+ {
+ 	int status;
+ 
++	status = spansion_quad_enable(nor);
++	if (status) {
++		dev_err(nor->dev, "Spansion quad-read not enabled\n");
++		return -EINVAL;
++	}
++	nor->read_proto = SNOR_PROTO_1_1_4;
++	nor->read_opcode = SPINOR_OP_READ_1_1_4;
++	return 0;
++}
++
++static int spansion_set_dual_mode(struct spi_nor *nor)
++{
++	nor->read_proto = SNOR_PROTO_1_1_2;
++	nor->read_opcode = SPINOR_OP_READ_1_1_2;
++	return 0;
++}
++
++static int spansion_set_single_mode(struct spi_nor *nor)
++{
++	nor->read_proto = SNOR_PROTO_1_1_1;
++	return 0;
++}
++
++static int set_quad_mode(struct spi_nor *nor, const struct flash_info *info)
++{
+ 	switch (JEDEC_MFR(info)) {
+ 	case SNOR_MFR_MACRONIX:
+ 		return macronix_set_quad_mode(nor);
+@@ -1473,20 +1498,13 @@ static int set_quad_mode(struct spi_nor *nor, const struct flash_info *info)
+ 		return micron_set_quad_mode(nor);
+ 
+ 	case SNOR_MFR_SPANSION:
+-		status = spansion_quad_enable(nor);
+-		if (status) {
+-			dev_err(nor->dev, "Spansion quad-read not enabled\n");
+-			return -EINVAL;
+-		}
+-		nor->read_proto = SNOR_PROTO_1_1_4;
+-		break;
++		return spansion_set_quad_mode(nor);
+ 
+ 	default:
+-		return -EINVAL;
++		break;
+ 	}
+ 
+-	nor->read_opcode = SPINOR_OP_READ_1_1_4;
+-	return 0;
++	return -EINVAL;
+ }
+ 
+ static int set_dual_mode(struct spi_nor *nor, const struct flash_info *info)
+@@ -1501,13 +1519,14 @@ static int set_dual_mode(struct spi_nor *nor, const struct flash_info *info)
+ 	case SNOR_MFR_MICRON:
+ 		return micron_set_dual_mode(nor);
+ 
++	case SNOR_MFR_SPANSION:
++		return spansion_set_dual_mode(nor);
++
+ 	default:
+-		nor->read_proto = SNOR_PROTO_1_1_2;
+ 		break;
+ 	}
+ 
+-	nor->read_opcode = SPINOR_OP_READ_1_1_2;
+-	return 0;
++	return -EINVAL;
+ }
+ 
+ static int set_single_mode(struct spi_nor *nor, const struct flash_info *info)
+@@ -1522,12 +1541,14 @@ static int set_single_mode(struct spi_nor *nor, const struct flash_info *info)
+ 	case SNOR_MFR_MICRON:
+ 		return micron_set_single_mode(nor);
+ 
++	case SNOR_MFR_SPANSION:
++		return spansion_set_single_mode(nor);
++
+ 	default:
+-		nor->read_proto = SNOR_PROTO_1_1_1;
+ 		break;
+ 	}
+ 
+-	return 0;
++	return -EINVAL;
+ }
+ 
+ static int spi_nor_check(struct spi_nor *nor)
+-- 
+2.8.1
+

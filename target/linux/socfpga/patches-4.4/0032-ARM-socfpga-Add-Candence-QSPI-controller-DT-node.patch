@@ -1,0 +1,42 @@
+From 8abee0bfd7bc652e028e51e2b95cbb3bf42fc152 Mon Sep 17 00:00:00 2001
+From: Stefan Roese <sr@denx.de>
+Date: Wed, 20 May 2015 10:32:03 +0200
+Subject: [PATCH 32/33] ARM: socfpga: Add Candence QSPI controller DT node
+
+Now that the device driver is available, lets add the controller node
+to the socfpga dtsi. So that the SPI NOR flash can be used.
+
+Signed-off-by: Stefan Roese <sr@denx.de>
+Signed-off-by: Marek Vasut <marex@denx.de>
+---
+ arch/arm/boot/dts/socfpga.dtsi | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm/boot/dts/socfpga.dtsi b/arch/arm/boot/dts/socfpga.dtsi
+index 3ed4abd..ebcd081 100644
+--- a/arch/arm/boot/dts/socfpga.dtsi
++++ b/arch/arm/boot/dts/socfpga.dtsi
+@@ -685,6 +685,20 @@
+ 			reg = <0xffff0000 0x10000>;
+ 		};
+ 
++		qspi: spi@ff705000 {
++			compatible = "cdns,qspi-nor";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0xff705000 0x1000>,
++			      <0xffa00000 0x1000>;
++			interrupts = <0 151 4>;
++			clocks = <&qspi_clk>;
++			cdns,fifo-depth = <128>;
++			cdns,fifo-width = <4>;
++			cdns,trigger-address = <0x00000000>;
++			status = "disabled";
++		};
++
+ 		rst: rstmgr@ffd05000 {
+ 			#reset-cells = <1>;
+ 			compatible = "altr,rst-mgr";
+-- 
+2.8.1
+
