@@ -1,0 +1,28 @@
+From f1640c3ddeec12804bc9a21feee85fc15aca95f6 Mon Sep 17 00:00:00 2001
+From: wangweidong <wangweidong1@huawei.com>
+Date: Wed, 13 Jan 2016 11:06:41 +0800
+Subject: [PATCH] bgmac: fix a missing check for build_skb
+
+when build_skb failed, it may occure a NULL pointer.
+So add a 'NULL check' for it.
+
+Signed-off-by: Weidong Wang <wangweidong1@huawei.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/broadcom/bgmac.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -466,6 +466,11 @@ static int bgmac_dma_rx_read(struct bgma
+ 			len -= ETH_FCS_LEN;
+ 
+ 			skb = build_skb(buf, BGMAC_RX_ALLOC_SIZE);
++			if (unlikely(skb)) {
++				bgmac_err(bgmac, "build_skb failed\n");
++				put_page(virt_to_head_page(buf));
++				break;
++			}
+ 			skb_put(skb, BGMAC_RX_FRAME_OFFSET +
+ 				BGMAC_RX_BUF_OFFSET + len);
+ 			skb_pull(skb, BGMAC_RX_FRAME_OFFSET +
