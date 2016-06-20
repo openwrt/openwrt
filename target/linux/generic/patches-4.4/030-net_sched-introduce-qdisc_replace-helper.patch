@@ -1,0 +1,237 @@
+From: WANG Cong <xiyou.wangcong@gmail.com>
+Date: Thu, 25 Feb 2016 14:55:00 -0800
+Subject: [PATCH] net_sched: introduce qdisc_replace() helper
+
+Remove nearly duplicated code and prepare for the following patch.
+
+Cc: Jamal Hadi Salim <jhs@mojatatu.com>
+Acked-by: Jamal Hadi Salim <jhs@mojatatu.com>
+Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
+--- a/include/net/sch_generic.h
++++ b/include/net/sch_generic.h
+@@ -698,6 +698,23 @@ static inline void qdisc_reset_queue(str
+ 	sch->qstats.backlog = 0;
+ }
+ 
++static inline struct Qdisc *qdisc_replace(struct Qdisc *sch, struct Qdisc *new,
++					  struct Qdisc **pold)
++{
++	struct Qdisc *old;
++
++	sch_tree_lock(sch);
++	old = *pold;
++	*pold = new;
++	if (old != NULL) {
++		qdisc_tree_decrease_qlen(old, old->q.qlen);
++		qdisc_reset(old);
++	}
++	sch_tree_unlock(sch);
++
++	return old;
++}
++
+ static inline unsigned int __qdisc_queue_drop(struct Qdisc *sch,
+ 					      struct sk_buff_head *list)
+ {
+--- a/net/sched/sch_cbq.c
++++ b/net/sched/sch_cbq.c
+@@ -1624,13 +1624,8 @@ static int cbq_graft(struct Qdisc *sch,
+ 			new->reshape_fail = cbq_reshape_fail;
+ #endif
+ 	}
+-	sch_tree_lock(sch);
+-	*old = cl->q;
+-	cl->q = new;
+-	qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
+-	qdisc_reset(*old);
+-	sch_tree_unlock(sch);
+ 
++	*old = qdisc_replace(sch, new, &cl->q);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_drr.c
++++ b/net/sched/sch_drr.c
+@@ -226,11 +226,7 @@ static int drr_graft_class(struct Qdisc
+ 			new = &noop_qdisc;
+ 	}
+ 
+-	sch_tree_lock(sch);
+-	drr_purge_queue(cl);
+-	*old = cl->qdisc;
+-	cl->qdisc = new;
+-	sch_tree_unlock(sch);
++	*old = qdisc_replace(sch, new, &cl->qdisc);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_dsmark.c
++++ b/net/sched/sch_dsmark.c
+@@ -73,13 +73,7 @@ static int dsmark_graft(struct Qdisc *sc
+ 			new = &noop_qdisc;
+ 	}
+ 
+-	sch_tree_lock(sch);
+-	*old = p->q;
+-	p->q = new;
+-	qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
+-	qdisc_reset(*old);
+-	sch_tree_unlock(sch);
+-
++	*old = qdisc_replace(sch, new, &p->q);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_hfsc.c
++++ b/net/sched/sch_hfsc.c
+@@ -1215,11 +1215,7 @@ hfsc_graft_class(struct Qdisc *sch, unsi
+ 			new = &noop_qdisc;
+ 	}
+ 
+-	sch_tree_lock(sch);
+-	hfsc_purge_queue(sch, cl);
+-	*old = cl->qdisc;
+-	cl->qdisc = new;
+-	sch_tree_unlock(sch);
++	*old = qdisc_replace(sch, new, &cl->qdisc);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_htb.c
++++ b/net/sched/sch_htb.c
+@@ -1163,14 +1163,7 @@ static int htb_graft(struct Qdisc *sch,
+ 				     cl->common.classid)) == NULL)
+ 		return -ENOBUFS;
+ 
+-	sch_tree_lock(sch);
+-	*old = cl->un.leaf.q;
+-	cl->un.leaf.q = new;
+-	if (*old != NULL) {
+-		qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
+-		qdisc_reset(*old);
+-	}
+-	sch_tree_unlock(sch);
++	*old = qdisc_replace(sch, new, &cl->un.leaf.q);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_multiq.c
++++ b/net/sched/sch_multiq.c
+@@ -303,13 +303,7 @@ static int multiq_graft(struct Qdisc *sc
+ 	if (new == NULL)
+ 		new = &noop_qdisc;
+ 
+-	sch_tree_lock(sch);
+-	*old = q->queues[band];
+-	q->queues[band] = new;
+-	qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
+-	qdisc_reset(*old);
+-	sch_tree_unlock(sch);
+-
++	*old = qdisc_replace(sch, new, &q->queues[band]);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_netem.c
++++ b/net/sched/sch_netem.c
+@@ -1037,15 +1037,7 @@ static int netem_graft(struct Qdisc *sch
+ {
+ 	struct netem_sched_data *q = qdisc_priv(sch);
+ 
+-	sch_tree_lock(sch);
+-	*old = q->qdisc;
+-	q->qdisc = new;
+-	if (*old) {
+-		qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
+-		qdisc_reset(*old);
+-	}
+-	sch_tree_unlock(sch);
+-
++	*old = qdisc_replace(sch, new, &q->qdisc);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_prio.c
++++ b/net/sched/sch_prio.c
+@@ -268,13 +268,7 @@ static int prio_graft(struct Qdisc *sch,
+ 	if (new == NULL)
+ 		new = &noop_qdisc;
+ 
+-	sch_tree_lock(sch);
+-	*old = q->queues[band];
+-	q->queues[band] = new;
+-	qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
+-	qdisc_reset(*old);
+-	sch_tree_unlock(sch);
+-
++	*old = qdisc_replace(sch, new, &q->queues[band]);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_qfq.c
++++ b/net/sched/sch_qfq.c
+@@ -617,11 +617,7 @@ static int qfq_graft_class(struct Qdisc
+ 			new = &noop_qdisc;
+ 	}
+ 
+-	sch_tree_lock(sch);
+-	qfq_purge_queue(cl);
+-	*old = cl->qdisc;
+-	cl->qdisc = new;
+-	sch_tree_unlock(sch);
++	*old = qdisc_replace(sch, new, &cl->qdisc);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_red.c
++++ b/net/sched/sch_red.c
+@@ -313,12 +313,7 @@ static int red_graft(struct Qdisc *sch,
+ 	if (new == NULL)
+ 		new = &noop_qdisc;
+ 
+-	sch_tree_lock(sch);
+-	*old = q->qdisc;
+-	q->qdisc = new;
+-	qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
+-	qdisc_reset(*old);
+-	sch_tree_unlock(sch);
++	*old = qdisc_replace(sch, new, &q->qdisc);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_sfb.c
++++ b/net/sched/sch_sfb.c
+@@ -606,12 +606,7 @@ static int sfb_graft(struct Qdisc *sch,
+ 	if (new == NULL)
+ 		new = &noop_qdisc;
+ 
+-	sch_tree_lock(sch);
+-	*old = q->qdisc;
+-	q->qdisc = new;
+-	qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
+-	qdisc_reset(*old);
+-	sch_tree_unlock(sch);
++	*old = qdisc_replace(sch, new, &q->qdisc);
+ 	return 0;
+ }
+ 
+--- a/net/sched/sch_tbf.c
++++ b/net/sched/sch_tbf.c
+@@ -502,13 +502,7 @@ static int tbf_graft(struct Qdisc *sch,
+ 	if (new == NULL)
+ 		new = &noop_qdisc;
+ 
+-	sch_tree_lock(sch);
+-	*old = q->qdisc;
+-	q->qdisc = new;
+-	qdisc_tree_decrease_qlen(*old, (*old)->q.qlen);
+-	qdisc_reset(*old);
+-	sch_tree_unlock(sch);
+-
++	*old = qdisc_replace(sch, new, &q->qdisc);
+ 	return 0;
+ }
+ 
