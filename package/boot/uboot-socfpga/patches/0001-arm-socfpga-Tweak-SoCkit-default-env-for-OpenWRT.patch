@@ -1,7 +1,7 @@
-From 3a0e4875b00e9e487b0081116a81ed17cfd5143f Mon Sep 17 00:00:00 2001
+From f17c641b74fa067c07295e20c4392664388ef7ac Mon Sep 17 00:00:00 2001
 From: Marek Vasut <marex@denx.de>
 Date: Sun, 3 Apr 2016 19:27:23 +0200
-Subject: [PATCH 2/2] arm: socfpga: Tweak SoCkit default env for OpenWRT
+Subject: [PATCH] arm: socfpga: Tweak SoCkit default env for OpenWRT
 
 Tweak the default environment on SoCFPGA SoCkit to match OpenWRT.
 This means switching to fitImage, which is already available, but
@@ -14,10 +14,10 @@ Signed-off-by: Marek Vasut <marex@denx.de>
  1 file changed, 6 insertions(+), 14 deletions(-)
 
 diff --git a/include/configs/socfpga_sockit.h b/include/configs/socfpga_sockit.h
-index 07cfcbf..5a90105 100644
+index 675f5d1..3111e46 100644
 --- a/include/configs/socfpga_sockit.h
 +++ b/include/configs/socfpga_sockit.h
-@@ -35,7 +35,7 @@
+@@ -19,7 +19,7 @@
  
  /* Booting Linux */
  #define CONFIG_BOOTDELAY	3
@@ -26,7 +26,7 @@ index 07cfcbf..5a90105 100644
  #define CONFIG_BOOTARGS		"console=ttyS0," __stringify(CONFIG_BAUDRATE)
  #define CONFIG_BOOTCOMMAND	"run mmcload; run mmcboot"
  #define CONFIG_LOADADDR		0x01000000
-@@ -51,28 +51,20 @@
+@@ -35,28 +35,20 @@
  
  /* Extra Environment */
  #define CONFIG_EXTRA_ENV_SETTINGS \
@@ -61,5 +61,5 @@ index 07cfcbf..5a90105 100644
  /* The rest of the configuration is shared */
  #include <configs/socfpga_common.h>
 -- 
-2.8.0.rc3
+2.8.1
 
