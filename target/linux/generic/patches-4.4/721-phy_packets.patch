@@ -1,6 +1,6 @@
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1297,6 +1297,7 @@ enum netdev_priv_flags {
+@@ -1298,6 +1298,7 @@ enum netdev_priv_flags {
  	IFF_NO_QUEUE			= 1<<21,
  	IFF_OPENVSWITCH			= 1<<22,
  	IFF_L3MDEV_SLAVE		= 1<<23,
@@ -8,7 +8,7 @@
  };
  
  #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
-@@ -1323,6 +1324,7 @@ enum netdev_priv_flags {
+@@ -1324,6 +1325,7 @@ enum netdev_priv_flags {
  #define IFF_NO_QUEUE			IFF_NO_QUEUE
  #define IFF_OPENVSWITCH			IFF_OPENVSWITCH
  #define IFF_L3MDEV_SLAVE		IFF_L3MDEV_SLAVE
@@ -41,7 +41,7 @@
   */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -2186,6 +2186,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -2210,6 +2210,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -52,7 +52,7 @@
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -2308,16 +2312,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -2332,16 +2336,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  

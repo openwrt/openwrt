@@ -11,8 +11,8 @@ Isolating individual bridge ports
  #define BR_PROXYARP_WIFI	BIT(10)
 +#define BR_ISOLATE_MODE	BIT(11)
  
- /* values as per ieee8021QBridgeFdbAgingTime */
- #define BR_MIN_AGEING_TIME	(10 * HZ)
+ #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
+ 
 --- a/net/bridge/br_sysfs_if.c
 +++ b/net/bridge/br_sysfs_if.c
 @@ -173,6 +173,22 @@ BRPORT_ATTR_FLAG(unicast_flood, BR_FLOOD
