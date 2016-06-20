@@ -55,6 +55,25 @@ define uboot/arv4519pw_brn
   DEPS:=@TARGET_lantiq_xway
 endef
 
+define uboot/arv7506pw11_ram
+  TITLE:=U-Boot for Arcadyan ARV7506PW11 (RAM)
+  SOC:=danube
+  DDR_SETTINGS:=board/arcadyan/arv7506pw11/ddr_settings.h
+  DEPS:=@TARGET_lantiq_xway
+endef
+
+define uboot/arv7506pw11_nor
+  TITLE:=U-Boot for Arcadyan ARV7506PW11 (NOR)
+  SOC:=danube
+  DEPS:=@TARGET_lantiq_xway
+endef
+
+define uboot/arv7506pw11_brn
+  TITLE:=U-Boot for Arcadyan ARV7506PW11 (BRN)
+  SOC:=danube
+  DEPS:=@TARGET_lantiq_xway
+endef
+
 define uboot/arv7510pw_ram
   TITLE:=U-Boot for Arcadyan arv7510pw (RAM)
   SOC:=danube
@@ -316,6 +335,7 @@ endef
 
 UBOOTS:= \
 	arv4519pw_ram arv4519pw_nor arv4519pw_brn \
+	arv7506pw11_ram arv7506pw11_nor arv7506pw11_brn \
 	arv7510pw_ram arv7510pw_nor arv7510pw_brn \
 	arv7510pw22_ram arv7510pw22_nor arv7510pw22_brn \
 	arv7518pw_ram arv7518pw_nor arv7518pw_brn \
