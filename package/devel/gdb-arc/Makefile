@@ -7,13 +7,15 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=gdb
-PKG_VERSION:=7.11
+PKG_NAME:=gdb-arc
+PKG_VERSION:=arc-2016.03-gdb
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@GNU/gdb
-PKG_MD5SUM:=b5c784685e1cde65ba135feea86b6d75
+PKG_SOURCE:=gdb-arc-2016.03-gdb.tar.gz
+PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/$(PKG_VERSION)
+PKG_MD5SUM:=775caaf6385c16f20b6f53c0a2b95f79
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/binutils-gdb-arc-2016.03-gdb
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -21,31 +23,31 @@ PKG_LICENSE:=GPL-3.0+
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/gdb/Default
+define Package/gdb-arc/Default
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:=+!USE_MUSL:libthread-db +PACKAGE_zlib:zlib @!arc
+  DEPENDS:=+!USE_MUSL:libthread-db +PACKAGE_zlib:zlib @arc
   URL:=http://www.gnu.org/software/gdb/
 endef
 
-define Package/gdb
-$(call Package/gdb/Default)
-  TITLE:=GNU Debugger
+define Package/gdb-arc
+$(call Package/gdb-arc/Default)
+  TITLE:=GNU Debugger for ARC
   DEPENDS+=+libreadline +libncurses +zlib
 endef
 
-define Package/gdb/description
+define Package/gdb-arc/description
 GDB, the GNU Project debugger, allows you to see what is going on `inside'
 another program while it executes -- or what another program was doing at the
 moment it crashed.
 endef
 
-define Package/gdbserver
-$(call Package/gdb/Default)
+define Package/gdbserver-arc
+$(call Package/gdb-arc/Default)
   TITLE:=Remote server for GNU Debugger
 endef
 
-define Package/gdbserver/description
+define Package/gdbserver-arc/description
 GDBSERVER is a program that allows you to run GDB on a different machine than the
 one which is running the program being debugged.
 endef
@@ -55,7 +57,11 @@ CONFIGURE_ARGS+= \
 	--with-system-readline \
 	--without-expat \
 	--without-lzma \
-	--disable-werror
+	--disable-werror \
+	--disable-binutils \
+	--disable-ld \
+	--disable-gas \
+	--disable-sim
 
 CONFIGURE_VARS+= \
 	ac_cv_search_tgetent="$(TARGET_LDFLAGS) -lncurses -lreadline"
@@ -74,15 +80,15 @@ define Build/Install
 		install-gdb
 endef
 
-define Package/gdb/install
+define Package/gdb-arc/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/gdb $(1)/usr/bin/
 endef
 
-define Package/gdbserver/install
+define Package/gdbserver-arc/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/gdbserver $(1)/usr/bin/
 endef
 
-$(eval $(call BuildPackage,gdb))
-$(eval $(call BuildPackage,gdbserver))
+$(eval $(call BuildPackage,gdb-arc))
+$(eval $(call BuildPackage,gdbserver-arc))
