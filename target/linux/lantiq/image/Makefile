@@ -561,14 +561,6 @@ define LegacyDevice/FRITZ7320
 endef
 LEGACY_DEVICES += FRITZ7320
 
-define Device/GR7000
-  DEVICE_PROFILE := GR7000
-  IMAGE_SIZE := 7808k
-  DEVICE_TITLE := Aztech GR7000
-  DEVICE_PACKAGES := kmod-ltq-deu-ar9 kmod-usb-dwc2 swconfig
-endef
-TARGET_DEVICES += GR7000
-
 define Device/H201L
   DEVICE_PROFILE := H201L
   IMAGE_SIZE := 7808k
