@@ -107,6 +107,7 @@ define Device/AP148
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
 	DEVICE_TITLE := Qualcom AP148
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
 define Device/AP148-legacy
@@ -117,6 +118,7 @@ define Device/AP148-legacy
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
 	DEVICE_TITLE := Qualcom AP148 (legacy)
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
 define Device/C2600
@@ -127,6 +129,7 @@ define Device/C2600
 	BOARD_NAME := c2600
 	TPLINK_BOARD_NAME := C2600
 	DEVICE_TITLE := TP-Link Archer C2600
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
 define Device/D7800
@@ -139,6 +142,7 @@ define Device/D7800
 	PAGESIZE := 2048
 	BOARD_NAME := d7800
 	DEVICE_TITLE := Netgear Nighthawk X4 D7800
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
 define Device/DB149
@@ -147,6 +151,7 @@ define Device/DB149
 	KERNEL_INSTALL := 1
 	BOARD_NAME := db149
 	DEVICE_TITLE := Qualcom DB149
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
 define Device/EA8500
@@ -164,6 +169,7 @@ define Device/EA8500
 	IMAGE/sysupgrade.tar := sysupgrade-nand
 	DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE
 	DEVICE_TITLE := Linksys EA8500
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
 define Device/R7500
@@ -176,6 +182,7 @@ define Device/R7500
 	PAGESIZE := 2048
 	BOARD_NAME := r7500
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
 TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 R7500
