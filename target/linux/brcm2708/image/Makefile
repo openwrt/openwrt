@@ -54,7 +54,7 @@ endef
 DEVICE_VARS += DEVICE_DTS
 
 define Device/rpi
-  DEVICE_TITLE := Raspberry Pi B/B+/CM
+  DEVICE_TITLE := Raspberry Pi B/B+/CM/Zero
   DEVICE_DTS := bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm
 endef
 ifeq ($(SUBTARGET),bcm2708)
