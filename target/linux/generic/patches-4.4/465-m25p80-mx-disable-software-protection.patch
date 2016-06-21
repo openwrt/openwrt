@@ -1,0 +1,14 @@
+Disable software protection bits for Macronix flashes.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1156,6 +1156,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 
+ 	if (JEDEC_MFR(info) == SNOR_MFR_ATMEL ||
+ 	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||
++	    JEDEC_MFR(info) == SNOR_MFR_MACRONIX ||
+ 	    JEDEC_MFR(info) == SNOR_MFR_SST) {
+ 		write_enable(nor);
+ 		write_sr(nor, 0);
