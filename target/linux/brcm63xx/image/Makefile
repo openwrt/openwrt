@@ -129,7 +129,7 @@ define Build/cfe-spw303v-bin
 		--output $@ --boardid $(CFE_BOARD_ID) --chipid $(CFE_CHIP_ID) \
 		--entry $(LOADER_ENTRY) --load-addr $(LOADER_ENTRY) \
 		$(call rootfspad/$(call Image/FileSystemStrip,$(word 2,$^))) \
-		$(CFE_EXTRAS)
+		$(CFE_EXTRAS) $(1)
 endef
 
 define Build/spw303v-bin

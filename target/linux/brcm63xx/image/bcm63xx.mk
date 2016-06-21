@@ -16,23 +16,25 @@ define Device/bcm63xx
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | lzma-cfe
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma elf
   IMAGES := cfe.bin
-  IMAGE/cfe.bin := cfe-bin
+  IMAGE/cfe.bin := cfe-bin --pad $$$$(shell expr $$$$(FLASH_MB) / 2)
   IMAGE/cfe-4M.bin := cfe-bin --pad 2
   IMAGE/cfe-8M.bin := cfe-bin --pad 4
   IMAGE/cfe-16M.bin := cfe-bin --pad 8
   IMAGE/cfe-bc221.bin := cfe-bin --layoutver 5
   IMAGE/cfe-old.bin := cfe-old-bin
+  IMAGE/sysupgrade.bin := cfe-bin
+  FLASH_MB := 4
   CFE_BOARD_ID :=
   CFE_CHIP_ID :=
   CFE_EXTRAS :=
 endef
+DEVICE_VARS += FLASH_MB
 DEVICE_VARS += CFE_BOARD_ID CFE_CHIP_ID CFE_EXTRAS
 
 define Device/bcm63xx_netgear
   $(Device/bcm63xx)
   IMAGES := factory.chk sysupgrade.bin
   IMAGE/factory.chk := cfe-bin | netgear-chk
-  IMAGE/sysupgrade.bin := cfe-bin
   NETGEAR_BOARD_ID :=
   NETGEAR_REGION :=
 endef
@@ -177,7 +179,7 @@ define Device/A4001N
   DEVICE_DTS := a4001n
   CFE_BOARD_ID := 96328dg2x2
   CFE_CHIP_ID := 6328
-  CFE_EXTRAS := --pad 4
+  FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES) $(B43_PACKAGES)
 endef
@@ -185,11 +187,12 @@ TARGET_DEVICES += A4001N
 
 define Device/A4001N1
   $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
   DEVICE_TITLE := ADB P.DG A4001N1
   DEVICE_DTS := a4001n1
   CFE_BOARD_ID := 963281T_TEF
   CFE_CHIP_ID := 6328
-  CFE_EXTRAS := --pad 8
+  FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(USB2_PACKAGES) $(B43_PACKAGES)
 endef
@@ -326,11 +329,12 @@ TARGET_DEVICES += BTV2500V
 ### Comtrend ###
 define Device/AR5381u
   $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
   DEVICE_TITLE := Comtrend AR-5381u
   DEVICE_DTS := ar-5381u
   CFE_BOARD_ID := 96328A-1241N
   CFE_CHIP_ID := 6328
-  CFE_EXTRAS := --pad 8
+  FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -338,11 +342,12 @@ TARGET_DEVICES += AR5381u
 
 define Device/AR5387un
   $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
   DEVICE_TITLE := Comtrend AR-5387un
   DEVICE_DTS := ar-5387un
   CFE_BOARD_ID := 96328A-1441N1
   CFE_CHIP_ID := 6328
-  CFE_EXTRAS := --pad 8
+  FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -383,11 +388,13 @@ TARGET_DEVICES += CT-6373
 
 define Device/VR-3025u
   $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
   DEVICE_TITLE := Comtrend VR-3025u
   DEVICE_DTS := vr-3025u
   CFE_BOARD_ID := 96368M-1541N
   CFE_CHIP_ID := 6368
-  CFE_EXTRAS := --pad 16 --image-offset 0x20000 --block-size 0x20000
+  CFE_EXTRAS := --image-offset 0x20000 --block-size 0x20000
+  FLASH_MB := 32
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -399,7 +406,7 @@ define Device/VR-3025un
   DEVICE_DTS := vr-3025un
   CFE_BOARD_ID := 96368M-1341N
   CFE_CHIP_ID := 6368
-  CFE_EXTRAS := --pad 4
+  FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -411,7 +418,7 @@ define Device/VR-3026e
   DEVICE_DTS := vr-3026e
   CFE_BOARD_ID := 96368MT-1341N1
   CFE_CHIP_ID := 6368
-  CFE_EXTRAS := --pad 4
+  FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
@@ -423,7 +430,7 @@ define Device/WAP-5813n
   DEVICE_DTS := wap-5813n
   CFE_BOARD_ID := 96369R-1231N
   CFE_CHIP_ID := 6368
-  CFE_EXTRAS := --pad 4
+  FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -505,7 +512,7 @@ define Device/DSL275XB-D1
   DEVICE_DTS := dsl-275xb-d
   CFE_BOARD_ID := AW5200B
   CFE_CHIP_ID := 6318
-  CFE_EXTRAS := --pad 4
+  FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -650,11 +657,13 @@ TARGET_DEVICES += HG556a-C
 
 define Device/HG622
   $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
   DEVICE_TITLE := Huawei EchoLife HG622
   DEVICE_DTS := hg622
   CFE_BOARD_ID := 96368MVWG_hg622
   CFE_CHIP_ID := 6368
-  CFE_EXTRAS := --image-offset 0x20000 --block-size 0x20000 --tag-version 7 --pad 8
+  CFE_EXTRAS := --image-offset 0x20000 --block-size 0x20000 --tag-version 7
+  FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(RT28_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -666,7 +675,8 @@ define Device/HG655b
   DEVICE_DTS := hg655b
   CFE_BOARD_ID := HW65x
   CFE_CHIP_ID := 6368
-  CFE_EXTRAS := --image-offset 0x20000 --tag-version 7 --pad 4
+  CFE_EXTRAS := --image-offset 0x20000 --tag-version 7
+  FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(RT28_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -777,11 +787,12 @@ TARGET_DEVICES += EVG2000
 ### NuCom ###
 define Device/R5010UNv2
   $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
   DEVICE_TITLE := NuCom R5010UN v2
   DEVICE_DTS := r5010unv2
   CFE_BOARD_ID := 96328ang
   CFE_CHIP_ID := 6328
-  CFE_EXTRAS := --pad 8
+  FLASH_MB := 16
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
@@ -876,7 +887,7 @@ define Device/FAST2704N
   DEVICE_DTS := fast2704n
   CFE_BOARD_ID := F@ST2704N
   CFE_CHIP_ID := 6318
-  CFE_EXTRAS := --pad 4
+  FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -888,7 +899,7 @@ define Device/FAST2704V2
   DEVICE_DTS := fast2704v2
   CFE_BOARD_ID := F@ST2704V2
   CFE_CHIP_ID := 6328
-  CFE_EXTRAS := --pad 4
+  FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(B43_PACKAGES) $(USB2_PACKAGES)
 endef
@@ -935,13 +946,12 @@ TARGET_DEVICES += NEUFBOX6
 define Device/SPW303V
   $(Device/bcm63xx)
   IMAGES := factory.bin sysupgrade.bin
-  IMAGE/factory.bin := cfe-spw303v-bin | spw303v-bin | xor-image
+  IMAGE/factory.bin := cfe-spw303v-bin --pad 4 | spw303v-bin | xor-image
   IMAGE/sysupgrade.bin := cfe-spw303v-bin | spw303v-bin
   DEVICE_TITLE := T-Com Speedport W 303V
   DEVICE_DTS := spw303v
   CFE_BOARD_ID := 96358-502V
   CFE_CHIP_ID := 6358
-  CFE_EXTRAS := --pad 4
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
@@ -1002,7 +1012,8 @@ define Device/CPA-ZNTE60T
   DEVICE_DTS := cpva642
   CFE_BOARD_ID := CPVA642
   CFE_CHIP_ID := 6358
-  CFE_EXTRAS := --signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0" --pad 4
+  CFE_EXTRAS := --signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0"
+  FLASH_MB := 8
   DEVICE_PACKAGES := \
     $(RT63_PACKAGES) $(USB2_PACKAGES)
 endef
