@@ -5,7 +5,7 @@ PKG_VERSION:=v2.4.2
 PKG_RELEASE=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/trace-cmd.git
+PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/rostedt/trace-cmd.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=01f8e669cb035aa911f1ee0e3f94d535cbcca78f
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz

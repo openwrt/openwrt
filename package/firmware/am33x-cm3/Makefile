@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=git://arago-project.org/git/projects/am33x-cm3.git
+PKG_SOURCE_URL:=http://arago-project.org/git/projects/am33x-cm3.git
 PKG_SOURCE_VERSION:=32cf44e25b5828b87af6dceebc3a49fed5d858ac
 PKG_MD5SUM:=40a6b7edae5e5cfff99bebde2bf20b97
 

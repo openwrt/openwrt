@@ -13,7 +13,7 @@ PKG_VERSION:=2011.08.25
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://github.com/ashcharles/verdex-uboot.git
+PKG_SOURCE_URL:=https://github.com/ashcharles/verdex-uboot.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=ca6bf3ef6ac5f5132a359b43dfa31e07076b74b7
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
