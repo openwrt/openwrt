@@ -1,7 +1,7 @@
-From e4a5c39f75a11ecb78d1243b19b929af54f888fa Mon Sep 17 00:00:00 2001
+From d088a94afc768683a881b627b6737442158e7db6 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 5 Jan 2016 17:24:28 +0100
-Subject: [PATCH 28/91] ARM: mediatek: add MT7623 smp bringup code
+Subject: [PATCH 028/102] ARM: mediatek: add MT7623 smp bringup code
 
 Add support for booting secondary CPUs on MT7623.
 
@@ -11,11 +11,9 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  arch/arm/mach-mediatek/platsmp.c |    7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/arch/arm/mach-mediatek/platsmp.c b/arch/arm/mach-mediatek/platsmp.c
-index 8141f3f..8151400 100644
 --- a/arch/arm/mach-mediatek/platsmp.c
 +++ b/arch/arm/mach-mediatek/platsmp.c
-@@ -44,6 +44,12 @@ static const struct mtk_smp_boot_info mtk_mt6589_boot = {
+@@ -44,6 +44,12 @@ static const struct mtk_smp_boot_info mt
  	{ 0x38, 0x3c, 0x40 },
  };
  
@@ -28,7 +26,7 @@ index 8141f3f..8151400 100644
  static const struct of_device_id mtk_tz_smp_boot_infos[] __initconst = {
  	{ .compatible   = "mediatek,mt8135", .data = &mtk_mt8135_tz_boot },
  	{ .compatible   = "mediatek,mt8127", .data = &mtk_mt8135_tz_boot },
-@@ -51,6 +57,7 @@ static const struct of_device_id mtk_tz_smp_boot_infos[] __initconst = {
+@@ -51,6 +57,7 @@ static const struct of_device_id mtk_tz_
  
  static const struct of_device_id mtk_smp_boot_infos[] __initconst = {
  	{ .compatible   = "mediatek,mt6589", .data = &mtk_mt6589_boot },
@@ -36,6 +34,3 @@ index 8141f3f..8151400 100644
  };
  
  static void __iomem *mtk_smp_base;
--- 
-1.7.10.4
-

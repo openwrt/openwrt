@@ -368,7 +368,7 @@ tl-wa901nd-v3 |\
 tl-wa901nd-v4 |\
 tl-wr703n |\
 tube2h |\
-unifiac |\
+unifiac-lite |\
 wndap360 |\
 mynet-rext |\
 wp543)
@@ -418,6 +418,11 @@ wpj344)
 		"0@eth0" "3:lan" "2:wan"
 	;;
 
+unifiac-pro)
+	ucidef_add_switch "switch0" \
+		"0@eth0" "2:lan" "3:wan"
+	;;
+
 wpj531)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;
@@ -456,6 +461,7 @@ tl-wr741nd |\
 tl-wr741nd-v4 |\
 tl-wr841n-v7 |\
 tl-wr841n-v9 |\
+tl-wr842n-v3 |\
 whr-g301n |\
 whr-hp-g300n |\
 whr-hp-gn |\

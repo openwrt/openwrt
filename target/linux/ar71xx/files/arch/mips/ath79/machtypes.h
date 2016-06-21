@@ -42,6 +42,7 @@ enum ath79_mach_type {
 	ATH79_MACH_AP96,		/* Atheros AP96 */
 	ATH79_MACH_ARCHER_C5,		/* TP-LINK Archer C5 board */
 	ATH79_MACH_ARCHER_C7,		/* TP-LINK Archer C7 board */
+	ATH79_MACH_ARCHER_C7_V2,	/* TP-LINK Archer C7 V2 board */
 	ATH79_MACH_AW_NR580,		/* AzureWave AW-NR580 */
 	ATH79_MACH_BHU_BXU2000N2_A1,	/* BHU BXU2000n-2 A1 */
 	ATH79_MACH_BSB,			/* Smart Electronics Black Swift board */
@@ -199,6 +200,7 @@ enum ath79_mach_type {
 	ATH79_MACH_TL_WR841N_V8,	/* TP-LINK TL-WR841N/ND v8 */
 	ATH79_MACH_TL_WR841N_V9,	/* TP-LINK TL-WR841N/ND v9 */
 	ATH79_MACH_TL_WR842N_V2,	/* TP-LINK TL-WR842N/ND v2 */
+	ATH79_MACH_TL_WR842N_V3,	/* TP-LINK TL-WR842N/ND v3 */
 	ATH79_MACH_TL_WR941ND,		/* TP-LINK TL-WR941ND */
 	ATH79_MACH_TL_WR941ND_V5,	/* TP-LINK TL-WR941ND v5 */
 	ATH79_MACH_TL_WR941ND_V6,	/* TP-LINK TL-WR941ND v6 */
@@ -219,7 +221,8 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_RS,		/* Ubiquiti RouterStation */
 	ATH79_MACH_UBNT_UAP_PRO,	/* Ubiquiti UniFi AP Pro */
 	ATH79_MACH_UBNT_UNIFI, 		/* Ubiquiti Unifi */
-	ATH79_MACH_UBNT_UNIFIAC,	/* Ubiquiti Unifi AC */
+	ATH79_MACH_UBNT_UNIFIAC_LITE,	/* Ubiquiti Unifi AC LITE/LR */
+	ATH79_MACH_UBNT_UNIFIAC_PRO,	/* Ubiquiti Unifi AC PRO */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR,	/* Ubiquiti UnifiAP Outdoor */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR_PLUS, /* Ubiquiti UnifiAP Outdoor+ */
 	ATH79_MACH_UBNT_XM,		/* Ubiquiti Networks XM board rev 1.0 */

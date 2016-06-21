@@ -1,0 +1,30 @@
+From a572747434b6153e75812c5466c0557e5ed69284 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 14 Mar 2016 15:07:10 +0100
+Subject: [PATCH 059/102] net: mediatek: use dma_addr_t correctly
+
+dma_alloc_coherent() expects a dma_addr_t pointer as its argument,
+not an 'unsigned int', and gcc correctly warns about broken
+code in the mtk_init_fq_dma function:
+
+drivers/net/ethernet/mediatek/mtk_eth_soc.c: In function 'mtk_init_fq_dma':
+drivers/net/ethernet/mediatek/mtk_eth_soc.c:463:13: error: passing argument 3 of 'dma_alloc_coherent' from incompatible pointer type [-Werror=incompatible-pointer-types]
+
+This changes the type of the local variable to dma_addr_t.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -453,7 +453,7 @@ static inline void mtk_rx_get_desc(struc
+ /* the qdma core needs scratch memory to be setup */
+ static int mtk_init_fq_dma(struct mtk_eth *eth)
+ {
+-	unsigned int phy_ring_head, phy_ring_tail;
++	dma_addr_t phy_ring_head, phy_ring_tail;
+ 	int cnt = MTK_DMA_SIZE;
+ 	dma_addr_t dma_addr;
+ 	int i;

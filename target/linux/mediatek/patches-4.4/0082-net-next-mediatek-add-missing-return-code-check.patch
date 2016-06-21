@@ -1,0 +1,26 @@
+From 51ca1e9f141499fd7c95bff5401215b706656754 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Sat, 23 Apr 2016 09:06:05 +0200
+Subject: [PATCH 082/102] net-next: mediatek: add missing return code check
+
+The code fails to check if the scratch memory was properly allocated. Add
+this check and return with an error if the allocation failed.
+
+Signed-off-by: Sean Wang <keyhaede@gmail.com>
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -498,6 +498,9 @@ static int mtk_init_fq_dma(struct mtk_et
+ 
+ 	eth->scratch_head = kcalloc(cnt, MTK_QDMA_PAGE_SIZE,
+ 				    GFP_KERNEL);
++	if (unlikely(!eth->scratch_head))
++		return -ENOMEM;
++
+ 	dma_addr = dma_map_single(eth->dev,
+ 				  eth->scratch_head, cnt * MTK_QDMA_PAGE_SIZE,
+ 				  DMA_FROM_DEVICE);

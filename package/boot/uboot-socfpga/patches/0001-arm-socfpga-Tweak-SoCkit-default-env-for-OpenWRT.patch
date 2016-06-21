@@ -1,0 +1,65 @@
+From f17c641b74fa067c07295e20c4392664388ef7ac Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marex@denx.de>
+Date: Sun, 3 Apr 2016 19:27:23 +0200
+Subject: [PATCH] arm: socfpga: Tweak SoCkit default env for OpenWRT
+
+Tweak the default environment on SoCFPGA SoCkit to match OpenWRT.
+This means switching to fitImage, which is already available, but
+not used by the environment and weeding out completely dysfunctional
+pieces of the environment.
+
+Signed-off-by: Marek Vasut <marex@denx.de>
+---
+ include/configs/socfpga_sockit.h | 20 ++++++--------------
+ 1 file changed, 6 insertions(+), 14 deletions(-)
+
+diff --git a/include/configs/socfpga_sockit.h b/include/configs/socfpga_sockit.h
+index 675f5d1..3111e46 100644
+--- a/include/configs/socfpga_sockit.h
++++ b/include/configs/socfpga_sockit.h
+@@ -19,7 +19,7 @@
+ 
+ /* Booting Linux */
+ #define CONFIG_BOOTDELAY	3
+-#define CONFIG_BOOTFILE		"fitImage"
++#define CONFIG_BOOTFILE		"openwrt-socfpga-socfpga_cyclone5_sockit-fit-uImage.itb"
+ #define CONFIG_BOOTARGS		"console=ttyS0," __stringify(CONFIG_BAUDRATE)
+ #define CONFIG_BOOTCOMMAND	"run mmcload; run mmcboot"
+ #define CONFIG_LOADADDR		0x01000000
+@@ -35,28 +35,20 @@
+ 
+ /* Extra Environment */
+ #define CONFIG_EXTRA_ENV_SETTINGS \
+-	"verify=n\0" \
+ 	"loadaddr=" __stringify(CONFIG_SYS_LOAD_ADDR) "\0" \
+ 	"ramboot=setenv bootargs " CONFIG_BOOTARGS ";" \
+-		"bootm ${loadaddr} - ${fdt_addr}\0" \
+-	"bootimage=zImage\0" \
+-	"fdt_addr=100\0" \
+-	"fdtimage=socfpga.dtb\0" \
+-	"bootm ${loadaddr} - ${fdt_addr}\0" \
++		"bootm ${loadaddr}\0" \
+ 	"mmcroot=/dev/mmcblk0p2\0" \
+ 	"mmcboot=setenv bootargs " CONFIG_BOOTARGS \
+ 		" root=${mmcroot} rw rootwait;" \
+-		"bootz ${loadaddr} - ${fdt_addr}\0" \
+-	"mmcload=mmc rescan;" \
+-		"load mmc 0:1 ${loadaddr} ${bootimage};" \
+-		"load mmc 0:1 ${fdt_addr} ${fdtimage}\0" \
++		"bootm ${loadaddr}\0" \
++	"mmcload=mmc rescan && load mmc 0:2 ${loadaddr} /boot/${bootfile}\0" \
+ 	"qspiload=sf probe && mtdparts default && run ubiload\0" \
+ 	"qspiboot=setenv bootargs " CONFIG_BOOTARGS \
+ 		" ubi.mtd=1,64 root=ubi0:rootfs rw rootfstype=ubifs;"\
+-		"bootz ${loadaddr} - ${fdt_addr}\0" \
++		"bootz ${loadaddr}\0" \
+ 	"ubiload=ubi part UBI && ubifsmount ubi0 && " \
+-		"ubifsload ${loadaddr} /boot/${bootimage} && " \
+-		"ubifsload ${fdt_addr} /boot/${fdtimage}\0"
++		"ubifsload ${loadaddr} /boot/${bootfile}\0"
+ 
+ /* The rest of the configuration is shared */
+ #include <configs/socfpga_common.h>
+-- 
+2.8.1
+

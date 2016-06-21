@@ -1,7 +1,7 @@
-From 1a254735cad9db5c8605c972b0f16b3929dc0d6e Mon Sep 17 00:00:00 2001
+From afcbed6f51e8c3a9195952b27c8aad047c314ed0 Mon Sep 17 00:00:00 2001
 From: Biao Huang <biao.huang@mediatek.com>
 Date: Mon, 28 Dec 2015 15:09:03 +0800
-Subject: [PATCH 13/91] dt-bindings: mediatek: Modify pinctrl bindings for
+Subject: [PATCH 013/102] dt-bindings: mediatek: Modify pinctrl bindings for
  mt2701
 
 Signed-off-by: Biao Huang <biao.huang@mediatek.com>
@@ -11,11 +11,9 @@ Reviewed-by: Mathias Brugger <matthias.bgg@gmail.com>
  Documentation/devicetree/bindings/pinctrl/pinctrl-mt65xx.txt |    9 +++++----
  1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/pinctrl/pinctrl-mt65xx.txt b/Documentation/devicetree/bindings/pinctrl/pinctrl-mt65xx.txt
-index 0480bc3..9ffb0b2 100644
 --- a/Documentation/devicetree/bindings/pinctrl/pinctrl-mt65xx.txt
 +++ b/Documentation/devicetree/bindings/pinctrl/pinctrl-mt65xx.txt
-@@ -4,10 +4,11 @@ The Mediatek's Pin controller is used to control SoC pins.
+@@ -4,10 +4,11 @@ The Mediatek's Pin controller is used to
  
  Required properties:
  - compatible: value should be one of the following.
@@ -31,6 +29,3 @@ index 0480bc3..9ffb0b2 100644
  - pins-are-numbered: Specify the subnodes are using numbered pinmux to
    specify pins.
  - gpio-controller : Marks the device node as a gpio controller.
--- 
-1.7.10.4
-

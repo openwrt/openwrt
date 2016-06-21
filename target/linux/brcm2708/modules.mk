@@ -44,6 +44,48 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-bcm2835-i2s))
 
+define KernelPackage/sound-soc-boomberry-dac
+  TITLE:=Support for BoomBerry DAC
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_BOOMBERRY_DAC \
+	CONFIG_SND_SOC_PCM512x
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-boomberry-dac.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-boomberry-dac)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s \
+	+kmod-i2c-bcm2708
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-boomberry-dac/description
+  This package contains support for BoomBerry DAC
+endef
+
+$(eval $(call KernelPackage,sound-soc-boomberry-dac))
+
+define KernelPackage/sound-soc-boomberry-digi
+  TITLE:=Support for BoomBerry Digi
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_BOOMBERRY_DIGI \
+	CONFIG_SND_SOC_WM8804
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-boomberry-digi.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804 snd-soc-boomberry-digi)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s \
+	+kmod-i2c-bcm2708
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-boomberry-digi/description
+  This package contains support for BoomBerry Digi
+endef
+
+$(eval $(call KernelPackage,sound-soc-boomberry-digi))
+
 define KernelPackage/sound-soc-hifiberry-dac
   TITLE:=Support for HifiBerry DAC
   KCONFIG:= \

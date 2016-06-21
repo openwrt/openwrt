@@ -1,8 +1,8 @@
-From 3b5df542d52b13a1b20d25311fa4c4029a3b83af Mon Sep 17 00:00:00 2001
+From 32fa899c6ab79953e4f470fb23c38bcc40edc5c8 Mon Sep 17 00:00:00 2001
 From: Erin Lo <erin.lo@mediatek.com>
 Date: Mon, 28 Dec 2015 15:09:02 +0800
-Subject: [PATCH 12/91] ARM: mediatek: Add MT2701 config options for mediatek
- SoCs.
+Subject: [PATCH 012/102] ARM: mediatek: Add MT2701 config options for
+ mediatek SoCs.
 
 The upcoming MTK pinctrl driver have a big pin table for each SoC
 and we don't want to bloat the kernel binary if we don't need it.
@@ -14,8 +14,6 @@ Acked-by: Linus Walleij <linus.walleij@linaro.org>
  arch/arm/mach-mediatek/Kconfig |    4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-mediatek/Kconfig b/arch/arm/mach-mediatek/Kconfig
-index aeece17..37dd438 100644
 --- a/arch/arm/mach-mediatek/Kconfig
 +++ b/arch/arm/mach-mediatek/Kconfig
 @@ -9,6 +9,10 @@ menuconfig ARCH_MEDIATEK
@@ -29,6 +27,3 @@ index aeece17..37dd438 100644
  config MACH_MT6589
  	bool "MediaTek MT6589 SoCs support"
  	default ARCH_MEDIATEK
--- 
-1.7.10.4
-

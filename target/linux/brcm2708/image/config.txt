@@ -476,7 +476,14 @@
 ##     Stop start.elf from filling in ATAGS (memory from 0x100) before
 ##     launching kernel
 ##
-disable_commandline_tags=2
+#disable_commandline_tags=2
+
+## enable_uart
+##     Enables or disables uart pin multiplexing
+##     Raspberry Pi 1/2: if unset, uart is enabled by default
+##     Raspberry Pi 3: if unset uart is disabled by default
+##
+enable_uart=1
 
 ## cmdline (string)
 ##     Command line parameters. Can be used instead of cmdline.txt file
@@ -491,7 +498,7 @@ disable_commandline_tags=2
 ## kernel_address
 ##     Address to load kernel.img file at
 ##
-kernel_address=0x8000
+#kernel_address=0x8000
 
 ## ramfsfile (string)
 ##     ramfs file to load
@@ -515,21 +522,21 @@ kernel_address=0x8000
 ## device_tree_address
 ##     Address to load device_tree at
 ##
-device_tree_address=0x100
+#device_tree_address=0x100
 
 ## init_uart_baud
 ##     Initial uart baud rate.
 ##
 ##     Default 115200
 ##
-init_uart_baud=115200
+#init_uart_baud=115200
 
 ## init_uart_clock
 ##     Initial uart clock.
 ##
 ##     Default 3000000 (3MHz)
 ##
-init_uart_clock=3000000
+#init_uart_clock=3000000
 
 ## init_emmc_clock
 ##     Initial emmc clock, increasing this can speedup your SD-card.

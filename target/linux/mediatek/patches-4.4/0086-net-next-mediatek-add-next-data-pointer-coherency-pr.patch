@@ -1,0 +1,39 @@
+From 5077ac38a86023124ebbe24cd1b7ecbd0f8edaff Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 3 May 2016 03:06:59 +0200
+Subject: [PATCH 086/102] net-next: mediatek: add next data pointer coherency
+ protection
+
+The QDMA engine can fail to update the register pointing to the next TX
+descriptor if this bit does not get set in the QDMA configuration register.
+Not setting this bit can result in invalid values inside the TX rings
+registers which will causes TX stalls.
+
+Signed-off-by: Sean Wang <keyhaede@gmail.com>
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |    1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1292,7 +1292,7 @@ static int mtk_start_dma(struct mtk_eth
+ 	mtk_w32(eth,
+ 		MTK_TX_WB_DDONE | MTK_RX_DMA_EN | MTK_TX_DMA_EN |
+ 		MTK_RX_2B_OFFSET | MTK_DMA_SIZE_16DWORDS |
+-		MTK_RX_BT_32DWORDS,
++		MTK_RX_BT_32DWORDS | MTK_NDP_CO_PRO,
+ 		MTK_QDMA_GLO_CFG);
+ 
+ 	return 0;
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -91,6 +91,7 @@
+ #define MTK_QDMA_GLO_CFG	0x1A04
+ #define MTK_RX_2B_OFFSET	BIT(31)
+ #define MTK_RX_BT_32DWORDS	(3 << 11)
++#define MTK_NDP_CO_PRO		BIT(10)
+ #define MTK_TX_WB_DDONE		BIT(6)
+ #define MTK_DMA_SIZE_16DWORDS	(2 << 4)
+ #define MTK_RX_DMA_BUSY		BIT(3)

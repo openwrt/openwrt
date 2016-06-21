@@ -1,0 +1,48 @@
+From 1473b4cce85760c0202a08e6a48ec51867dc1bf7 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 3 May 2016 04:01:38 +0200
+Subject: [PATCH 091/102] net-next: mediatek: only wake the queue if it is
+ stopped
+
+The current code unconditionally wakes up the queue at the end of each
+tx_poll action. Change the code to only wake up the queues if any of
+them have actually been stopped before.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |   17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -716,6 +716,20 @@ static inline int mtk_cal_txd_req(struct
+ 	return nfrags;
+ }
+ 
++static int mtk_queue_stopped(struct mtk_eth *eth)
++{
++	int i;
++
++	for (i = 0; i < MTK_MAC_COUNT; i++) {
++		if (!eth->netdev[i])
++			continue;
++		if (netif_queue_stopped(eth->netdev[i]))
++			return 1;
++	}
++
++	return 0;
++}
++
+ static void mtk_wake_queue(struct mtk_eth *eth)
+ {
+ 	int i;
+@@ -960,7 +974,8 @@ static int mtk_poll_tx(struct mtk_eth *e
+ 	if (!total)
+ 		return 0;
+ 
+-	if (atomic_read(&ring->free_count) > ring->thresh)
++	if (mtk_queue_stopped(eth) &&
++	    (atomic_read(&ring->free_count) > ring->thresh))
+ 		mtk_wake_queue(eth);
+ 
+ 	return total;

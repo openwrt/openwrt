@@ -1,0 +1,33 @@
+From 99159791184752ece724b741f9fa6334fdc67123 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 14 Mar 2016 15:07:12 +0100
+Subject: [PATCH 061/102] net: mediatek: check device_reset return code
+
+The device_reset() function may fail, so we have to check
+its return value, e.g. to make deferred probing work correctly.
+gcc warns about it because of the warn_unused_result attribute:
+
+drivers/net/ethernet/mediatek/mtk_eth_soc.c: In function 'mtk_probe':
+drivers/net/ethernet/mediatek/mtk_eth_soc.c:1679:2: error: ignoring return value of 'device_reset', declared with attribute warn_unused_result [-Werror=unused-result]
+
+This adds the trivial error check to propagate the return value
+to the generic platform device probe code.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1678,7 +1678,9 @@ static int mtk_probe(struct platform_dev
+ 	struct mtk_eth *eth;
+ 	int err;
+ 
+-	device_reset(&pdev->dev);
++	err = device_reset(&pdev->dev);
++	if (err)
++		return err;
+ 
+ 	match = of_match_device(of_mtk_match, &pdev->dev);
+ 	soc = (struct mtk_soc_data *)match->data;

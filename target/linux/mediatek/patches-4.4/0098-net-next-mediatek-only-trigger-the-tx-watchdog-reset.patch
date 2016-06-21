@@ -1,0 +1,57 @@
+From cd1343c14328a5de1a58c47b81b8a2febb31d542 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 10 May 2016 11:16:30 +0200
+Subject: [PATCH 098/102] net-next: mediatek: only trigger the tx watchdog
+ reset when all devices are stalled
+
+Signed-off-by: Sean Wang <keyhaede@gmail.com>
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |   14 ++++++++++++--
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |    1 +
+ 2 files changed, 13 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1267,11 +1267,21 @@ static void mtk_tx_timeout(struct net_de
+ {
+ 	struct mtk_mac *mac = netdev_priv(dev);
+ 	struct mtk_eth *eth = mac->hw;
++	int i, reset = 0;
+ 
+ 	eth->netdev[mac->id]->stats.tx_errors++;
+ 	netif_err(eth, tx_err, dev,
+ 		  "transmit timed out\n");
+-	schedule_work(&eth->pending_work);
++
++	for (i = 0; i < MTK_MAC_COUNT; i++) {
++		if (!eth->netdev[i] ||
++		    time_after(jiffies, dev_trans_start(eth->netdev[i]) +
++							MTK_WDT_TIMEOUT))
++			reset++;
++	}
++
++	if (reset == MTK_MAC_COUNT)
++		schedule_work(&eth->pending_work);
+ }
+ 
+ static irqreturn_t mtk_handle_irq_rx(int irq, void *_eth)
+@@ -1765,7 +1775,7 @@ static int mtk_add_mac(struct mtk_eth *e
+ 	mac->hw_stats->reg_offset = id * MTK_STAT_OFFSET;
+ 
+ 	SET_NETDEV_DEV(eth->netdev[id], eth->dev);
+-	eth->netdev[id]->watchdog_timeo = 5 * HZ;
++	eth->netdev[id]->watchdog_timeo = MTK_WDT_TIMEOUT;
+ 	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
+ 	eth->netdev[id]->base_addr = (unsigned long)eth->base;
+ 	eth->netdev[id]->vlan_features = MTK_HW_FEATURES &
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -15,6 +15,7 @@
+ #ifndef MTK_ETH_H
+ #define MTK_ETH_H
+ 
++#define MTK_WDT_TIMEOUT		(4 * HZ)
+ #define MTK_QDMA_PAGE_SIZE	2048
+ #define	MTK_MAX_RX_LENGTH	1536
+ #define MTK_TX_DMA_BUF_LEN	0x3fff

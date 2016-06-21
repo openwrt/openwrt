@@ -3,8 +3,8 @@
 @@ -150,7 +150,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP)
  bin_SCRIPTS = curl-config
  
- SUBDIRS = lib src include scripts
--DIST_SUBDIRS = $(SUBDIRS) tests packages docs
+ SUBDIRS = lib src include
+-DIST_SUBDIRS = $(SUBDIRS) tests packages docs scripts
 +DIST_SUBDIRS = $(SUBDIRS) packages
  
  pkgconfigdir = $(libdir)/pkgconfig
@@ -14,9 +14,9 @@
 @@ -611,7 +611,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP)
  
  bin_SCRIPTS = curl-config
- SUBDIRS = lib src include scripts
--DIST_SUBDIRS = $(SUBDIRS) tests packages docs
+ SUBDIRS = lib src include
+-DIST_SUBDIRS = $(SUBDIRS) tests packages docs scripts
 +DIST_SUBDIRS = $(SUBDIRS) packages
  pkgconfigdir = $(libdir)/pkgconfig
  pkgconfig_DATA = libcurl.pc
- LIB_VTLS_CFILES = vtls/openssl.c vtls/gtls.c vtls/vtls.c vtls/nss.c     \
+ LIB_VAUTH_CFILES = vauth/vauth.c vauth/cleartext.c vauth/cram.c         \

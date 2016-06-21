@@ -42,9 +42,15 @@ config KERNEL_DEBUG_FS
 	  write to these files. Many common debugging facilities, such as
 	  ftrace, require the existence of debugfs.
 
+config KERNEL_ARM_PMU
+	bool
+	default n
+	depends on (arm || arm64)
+
 config KERNEL_PERF_EVENTS
 	bool
 	default n
+	select KERNEL_ARM_PMU if (arm || arm64)
 
 config KERNEL_PROFILING
 	bool "Compile the kernel with profiling enabled"

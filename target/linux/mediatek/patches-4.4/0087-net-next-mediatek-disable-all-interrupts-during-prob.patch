@@ -1,0 +1,26 @@
+From f9a08e142fd87c72a7803203ce4ecc94806046ca Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 3 May 2016 03:14:07 +0200
+Subject: [PATCH 087/102] net-next: mediatek: disable all interrupts during
+ probe
+
+The current code only disables those IRQs that we will later use. To
+ensure that we have a predefined state, we really want to disable all IRQs.
+Change the code to disable all IRQs to achieve this.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1406,7 +1406,7 @@ static int __init mtk_hw_init(struct mtk
+ 
+ 	/* disable delay and normal interrupt */
+ 	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
+-	mtk_irq_disable(eth, MTK_TX_DONE_INT | MTK_RX_DONE_INT);
++	mtk_irq_disable(eth, ~0);
+ 	mtk_w32(eth, RST_GL_PSE, MTK_RST_GL);
+ 	mtk_w32(eth, 0, MTK_RST_GL);
+ 

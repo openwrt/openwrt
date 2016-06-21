@@ -51,6 +51,7 @@
 #define ARCHER_C7_GPIO_LED_USB2		19
 
 #define ARCHER_C7_GPIO_BTN_RFKILL	13
+#define ARCHER_C7_V2_GPIO_BTN_RFKILL	23
 #define ARCHER_C7_GPIO_BTN_RESET	16
 
 #define ARCHER_C7_GPIO_USB1_POWER	22
@@ -119,6 +120,24 @@ static struct gpio_keys_button archer_c7_gpio_keys[] __initdata = {
 		.code		= KEY_RFKILL,
 		.debounce_interval = ARCHER_C7_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= ARCHER_C7_GPIO_BTN_RFKILL,
+	},
+};
+
+static struct gpio_keys_button archer_c7_v2_gpio_keys[] __initdata = {
+	{
+		.desc		= "Reset button",
+		.type		= EV_KEY,
+		.code		= KEY_WPS_BUTTON,
+		.debounce_interval = ARCHER_C7_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= ARCHER_C7_GPIO_BTN_RESET,
+		.active_low	= 1,
+	},
+	{
+		.desc		= "RFKILL switch",
+		.type		= EV_SW,
+		.code		= KEY_RFKILL,
+		.debounce_interval = ARCHER_C7_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= ARCHER_C7_V2_GPIO_BTN_RFKILL,
 	},
 };
 
@@ -192,9 +211,6 @@ static void __init common_setup(bool pcie_slot)
 	ath79_register_m25p80(&archer_c7_flash_data);
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(archer_c7_leds_gpio),
 				 archer_c7_leds_gpio);
-	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
-					ARRAY_SIZE(archer_c7_gpio_keys),
-					archer_c7_gpio_keys);
 
 	ath79_init_mac(tmpmac, mac, -1);
 	ath79_register_wmac(art + ARCHER_C7_WMAC_CALDATA_OFFSET, tmpmac);
@@ -242,6 +258,9 @@ static void __init common_setup(bool pcie_slot)
 
 static void __init archer_c5_setup(void)
 {
+	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(archer_c7_gpio_keys),
+					archer_c7_gpio_keys);
 	common_setup(true);
 }
 
@@ -250,14 +269,31 @@ MIPS_MACHINE(ATH79_MACH_ARCHER_C5, "ARCHER-C5", "TP-LINK Archer C5",
 
 static void __init archer_c7_setup(void)
 {
+	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(archer_c7_gpio_keys),
+					archer_c7_gpio_keys);
 	common_setup(true);
 }
 
 MIPS_MACHINE(ATH79_MACH_ARCHER_C7, "ARCHER-C7", "TP-LINK Archer C7",
 	     archer_c7_setup);
 
+static void __init archer_c7_v2_setup(void)
+{
+	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(archer_c7_v2_gpio_keys),
+					archer_c7_v2_gpio_keys);
+	common_setup(true);
+}
+
+MIPS_MACHINE(ATH79_MACH_ARCHER_C7_V2, "ARCHER-C7-V2", "TP-LINK Archer C7",
+	     archer_c7_v2_setup);
+
 static void __init tl_wdr4900_v2_setup(void)
 {
+	ath79_register_gpio_keys_polled(-1, ARCHER_C7_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(archer_c7_gpio_keys),
+					archer_c7_gpio_keys);
 	common_setup(false);
 }
 

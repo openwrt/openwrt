@@ -1,0 +1,32 @@
+From f8c5645dd28440380622c2ad3744de0b55bd0bdf Mon Sep 17 00:00:00 2001
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Fri, 30 Oct 2015 12:56:22 -0700
+Subject: [PATCH 10/33] mtd: spi-nor: remove unnecessary leading space from dbg
+ print
+
+As Cyrille noted [1], this line is wrong.
+
+[1] http://lists.infradead.org/pipermail/linux-mtd/2015-September/061725.html
+
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Cc: Cyrille Pitchen <cyrille.pitchen@atmel.com>
+---
+ drivers/mtd/spi-nor/spi-nor.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index 3e06d5b..107571e 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -856,7 +856,7 @@ static const struct flash_info *spi_nor_read_id(struct spi_nor *nor)
+ 
+ 	tmp = nor->read_reg(nor, SPINOR_OP_RDID, id, SPI_NOR_MAX_ID_LEN);
+ 	if (tmp < 0) {
+-		dev_dbg(nor->dev, " error %d reading JEDEC ID\n", tmp);
++		dev_dbg(nor->dev, "error %d reading JEDEC ID\n", tmp);
+ 		return ERR_PTR(tmp);
+ 	}
+ 
+-- 
+2.8.1
+

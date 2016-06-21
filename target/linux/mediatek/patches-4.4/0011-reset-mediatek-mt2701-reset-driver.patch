@@ -1,7 +1,7 @@
-From b86d3303db25a8296e4c3de46ee1470f60f71b0c Mon Sep 17 00:00:00 2001
+From 3ba0020ea70ffb5503eff1823be7fa5ceda38286 Mon Sep 17 00:00:00 2001
 From: Shunli Wang <shunli.wang@mediatek.com>
 Date: Tue, 5 Jan 2016 14:30:22 +0800
-Subject: [PATCH 11/91] reset: mediatek: mt2701 reset driver
+Subject: [PATCH 011/102] reset: mediatek: mt2701 reset driver
 
 In infrasys and perifsys, there are many reset
 control bits for kinds of modules. These bits are
@@ -14,11 +14,9 @@ Acked-by: Philipp Zabel <p.zabel@pengutronix.de>
  drivers/clk/mediatek/clk-mt2701.c |    4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
-index 2f521f4..39472e4 100644
 --- a/drivers/clk/mediatek/clk-mt2701.c
 +++ b/drivers/clk/mediatek/clk-mt2701.c
-@@ -665,6 +665,8 @@ static void __init mtk_infrasys_init(struct device_node *node)
+@@ -665,6 +665,8 @@ static void __init mtk_infrasys_init(str
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);
@@ -27,7 +25,7 @@ index 2f521f4..39472e4 100644
  }
  CLK_OF_DECLARE(mtk_infrasys, "mediatek,mt2701-infracfg", mtk_infrasys_init);
  
-@@ -782,6 +784,8 @@ static void __init mtk_pericfg_init(struct device_node *node)
+@@ -782,6 +784,8 @@ static void __init mtk_pericfg_init(stru
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);
@@ -36,6 +34,3 @@ index 2f521f4..39472e4 100644
  }
  CLK_OF_DECLARE(mtk_pericfg, "mediatek,mt2701-pericfg", mtk_pericfg_init);
  
--- 
-1.7.10.4
-

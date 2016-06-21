@@ -74,7 +74,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /*
   * Set the run bit and wait for the host to be running.
   */
-@@ -567,10 +600,25 @@ int xhci_init(struct usb_hcd *hcd)
+@@ -568,10 +601,25 @@ int xhci_init(struct usb_hcd *hcd)
  
  static int xhci_run_finished(struct xhci_hcd *xhci)
  {
@@ -103,7 +103,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	xhci->shared_hcd->state = HC_STATE_RUNNING;
  	xhci->cmd_ring_state = CMD_RING_STATE_RUNNING;
  
-@@ -580,6 +628,9 @@ static int xhci_run_finished(struct xhci
+@@ -581,6 +629,9 @@ static int xhci_run_finished(struct xhci
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  			"Finished xhci_run for USB3 roothub");
  	return 0;
@@ -115,7 +115,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /*
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1630,6 +1630,7 @@ struct xhci_hcd {
+@@ -1631,6 +1631,7 @@ struct xhci_hcd {
  /* For controllers with a broken beyond repair streams implementation */
  #define XHCI_BROKEN_STREAMS	(1 << 19)
  #define XHCI_PME_STUCK_QUIRK	(1 << 20)

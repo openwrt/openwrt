@@ -411,7 +411,7 @@ endef
 
 define Device/archer-c7-v2
     $(Device/tplink-16mlzma)
-    BOARDNAME := ARCHER-C7
+    BOARDNAME := ARCHER-C7-V2
     DEVICE_PROFILE := ARCHERC7
     TPLINK_HWID := 0xc7000002
     IMAGE/factory.bin := append-rootfs | mktplinkfw factory -C US
@@ -895,6 +895,13 @@ define Device/tl-wr842n-v2
     TPLINK_HWID := 0x8420002
 endef
 
+define Device/tl-wr842n-v3
+    $(Device/tplink-16mlzma)
+    BOARDNAME := TL-WR842N-v3
+    DEVICE_PROFILE := TLWR842
+    TPLINK_HWID := 0x08420003
+endef
+
 define Device/tl-wr843nd-v1
     $(Device/tplink-4mlzma)
     BOARDNAME := TL-WR841N-v8
@@ -908,7 +915,7 @@ define Device/tl-wr847n-v8
     DEVICE_PROFILE := TLWR841
     TPLINK_HWID := 0x08470008
 endef
-TARGET_DEVICES += tl-wr841-v1.5 tl-wr841-v3 tl-wr841-v5 tl-wr841-v7 tl-wr841-v8 tl-wr841-v9 tl-wr841-v10 tl-wr841-v11 tl-wr842n-v1 tl-wr842n-v2 tl-wr843nd-v1 tl-wr847n-v8
+TARGET_DEVICES += tl-wr841-v1.5 tl-wr841-v3 tl-wr841-v5 tl-wr841-v7 tl-wr841-v8 tl-wr841-v9 tl-wr841-v10 tl-wr841-v11 tl-wr842n-v1 tl-wr842n-v2 tl-wr842n-v3 tl-wr843nd-v1 tl-wr847n-v8
 
 define Device/tl-wr941nd-v2
     $(Device/tplink-4m)
@@ -1195,6 +1202,14 @@ define Device/ubnt-bz
   IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 
+define Device/ubnt-unifiac
+  DEVICE_PROFILE := UBNT
+  IMAGE_SIZE := 7744k
+  MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+endef
+
 define Device/rw2458n
   $(Device/ubnt-xm)
   BOARDNAME := RW2458N
@@ -1227,13 +1242,16 @@ define Device/ubnt-unifi
   DEVICE_PROFILE := UBNT UBNTUNIFI
 endef
 
-define Device/ubnt-unifiac
-  DEVICE_PROFILE := UBNT UBNTUNIFIAC
-  IMAGE_SIZE := 7744k
-  MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
-  IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
-  BOARDNAME := UBNT-UF-AC
+define Device/ubnt-unifiac-lite
+  $(Device/ubnt-unifiac)
+  DEVICE_PROFILE := UBNT UBNTUNIFIACLITE
+  BOARDNAME := UBNT-UF-AC-LITE
+endef
+
+define Device/ubnt-unifiac-pro
+  $(Device/ubnt-unifiac)
+  DEVICE_PROFILE := UBNT UBNTUNIFIACPRO
+  BOARDNAME := UBNT-UF-AC-PRO
 endef
 
 define Device/ubnt-unifi-outdoor
@@ -1241,7 +1259,7 @@ define Device/ubnt-unifi-outdoor
   BOARDNAME := UBNT-U20
   DEVICE_PROFILE := UBNT UBNTUNIFIOUTDOOR
 endef
-TARGET_DEVICES += ubnt-unifi ubnt-unifiac ubnt-unifi-outdoor
+TARGET_DEVICES += ubnt-unifi ubnt-unifiac-lite ubnt-unifiac-pro ubnt-unifi-outdoor
 
 define Device/ubnt-nano-m-xw
   $(Device/ubnt-xw)
