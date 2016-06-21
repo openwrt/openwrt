@@ -30,6 +30,9 @@
 #define CPE510_GPIO_LED_L3	15
 #define CPE510_GPIO_LED_L4	16
 
+#define CPE510_GPIO_EXTERNAL_LNA0	18
+#define CPE510_GPIO_EXTERNAL_LNA1	19
+
 #define CPE510_GPIO_BTN_RESET	4
 
 #define CPE510_KEYS_POLL_INTERVAL	20 /* msecs */
@@ -92,6 +95,9 @@ static void __init cpe510_setup(void)
 	ath79_register_gpio_keys_polled(1, CPE510_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(cpe510_gpio_keys),
 					cpe510_gpio_keys);
+
+	ath79_wmac_set_ext_lna_gpio(0, CPE510_GPIO_EXTERNAL_LNA0);
+	ath79_wmac_set_ext_lna_gpio(1, CPE510_GPIO_EXTERNAL_LNA1);
 
 	ath79_register_m25p80(NULL);
 
