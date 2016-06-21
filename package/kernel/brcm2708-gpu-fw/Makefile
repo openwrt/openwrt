@@ -18,6 +18,8 @@ PKG_MD5SUM:=5707f4d9ffd8d10018c68ecb8b363308
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_REV)
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/brcm2708-gpu-fw

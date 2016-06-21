@@ -20,6 +20,7 @@ PKG_MD5SUM.mips:=f8de63debc75333d6b4e28193eb051ff
 PKG_MD5SUM:=$(PKG_MD5SUM.$(ARCH))
 
 PKG_USE_MIPS16:=0
+PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 
