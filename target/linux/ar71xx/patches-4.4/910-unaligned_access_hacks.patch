@@ -910,3 +910,22 @@
  
  /* Values for "flag" field in struct arpt_ip (general arp structure).
   * No flags defined yet.
+--- a/net/core/utils.c
++++ b/net/core/utils.c
+@@ -321,8 +321,14 @@ void inet_proto_csum_replace16(__sum16 *
+ 			       bool pseudohdr)
+ {
+ 	__be32 diff[] = {
+-		~from[0], ~from[1], ~from[2], ~from[3],
+-		to[0], to[1], to[2], to[3],
++		~net_hdr_word(&from[0]),
++		~net_hdr_word(&from[1]),
++		~net_hdr_word(&from[2]),
++		~net_hdr_word(&from[3]),
++		net_hdr_word(&to[0]),
++		net_hdr_word(&to[1]),
++		net_hdr_word(&to[2]),
++		net_hdr_word(&to[3]),
+ 	};
+ 	if (skb->ip_summed != CHECKSUM_PARTIAL) {
+ 		*sum = csum_fold(csum_partial(diff, sizeof(diff),
