@@ -1,6 +1,6 @@
 --- a/lib/blkid/getsize.c
 +++ b/lib/blkid/getsize.c
-@@ -25,6 +25,9 @@
+@@ -29,6 +29,9 @@
  #include <fcntl.h>
  #ifdef HAVE_SYS_IOCTL_H
  #include <sys/ioctl.h>
@@ -10,13 +10,3 @@
  #endif
  #ifdef HAVE_LINUX_FD_H
  #include <linux/fd.h>
---- a/lib/quota/mkquota.c
-+++ b/lib/quota/mkquota.c
-@@ -8,6 +8,7 @@
- #include <sys/stat.h>
- #include <unistd.h>
- #include <errno.h>
-+#include <stdint.h>
- #include <string.h>
- #include <fcntl.h>
- 
