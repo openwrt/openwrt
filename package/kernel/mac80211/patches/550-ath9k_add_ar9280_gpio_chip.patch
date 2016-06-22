@@ -21,7 +21,7 @@ Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
  	else if (AR_SREV_9285(sc->sc_ah))
  		ng = AR9285_NUM_GPIO;
 +	else if (AR_SREV_9280(sc->sc_ah))
-+		ng = AR928X_NUM_GPIO;
++		ng = AR9280_NUM_GPIO;
  	else
  		return;
  

@@ -41,7 +41,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		rt2800_clear_beacon_register(rt2x00dev, i);
  
  	if (rt2x00_is_usb(rt2x00dev)) {
-@@ -7827,6 +7828,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -7831,6 +7832,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	if (rt2x00_rt(rt2x00dev, RT3593))
  		__set_bit(RT2800_HAS_HIGH_SHARED_MEM, &drv_data->rt2800_flags);
  

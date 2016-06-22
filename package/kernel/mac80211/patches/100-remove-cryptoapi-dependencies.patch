@@ -34,12 +34,9 @@
  #include "aes_ccm.h"
  
 -void ieee80211_aes_ccm_encrypt(struct crypto_aead *tfm, u8 *b_0, u8 *aad,
--			       u8 *data, size_t data_len, u8 *mic,
--			       size_t mic_len)
 +static void aes_ccm_prepare(struct crypto_cipher *tfm, u8 *b_0, u8 *aad, u8 *s_0,
 +			    u8 *a, u8 *b)
- {
--	struct scatterlist sg[3];
++{
 +	int i;
 +
 +	crypto_cipher_encrypt_one(tfm, b, b_0);
@@ -54,55 +51,56 @@
 +	for (i = 0; i < AES_BLOCK_SIZE; i++)
 +		aad[i] ^= b[i];
 +	crypto_cipher_encrypt_one(tfm, a, aad);
- 
--	char aead_req_data[sizeof(struct aead_request) +
--			   crypto_aead_reqsize(tfm)]
--		__aligned(__alignof__(struct aead_request));
--	struct aead_request *aead_req = (void *) aead_req_data;
++
 +	/* Mask out bits from auth-only-b_0 */
 +	b_0[0] &= 0x07;
- 
--	memset(aead_req, 0, sizeof(aead_req_data));
++
 +	/* S_0 is used to encrypt T (= MIC) */
 +	b_0[14] = 0;
 +	b_0[15] = 0;
 +	crypto_cipher_encrypt_one(tfm, s_0, b_0);
 +}
- 
--	sg_init_table(sg, 3);
--	sg_set_buf(&sg[0], &aad[2], be16_to_cpup((__be16 *)aad));
--	sg_set_buf(&sg[1], data, data_len);
--	sg_set_buf(&sg[2], mic, mic_len);
- 
--	aead_request_set_tfm(aead_req, tfm);
--	aead_request_set_crypt(aead_req, sg, sg, data_len, b_0);
--	aead_request_set_ad(aead_req, sg[0].length);
++
++
 +void ieee80211_aes_ccm_encrypt(struct crypto_cipher *tfm, u8 *b_0, u8 *aad,
-+			       u8 *data, size_t data_len, u8 *mic,
-+			       size_t mic_len)
-+{
+ 			       u8 *data, size_t data_len, u8 *mic,
+ 			       size_t mic_len)
+ {
+-	struct scatterlist sg[3];
 +	int i, j, last_len, num_blocks;
 +	u8 b[AES_BLOCK_SIZE];
 +	u8 s_0[AES_BLOCK_SIZE];
 +	u8 e[AES_BLOCK_SIZE];
 +	u8 *pos, *cpos;
-+
+ 
+-	char aead_req_data[sizeof(struct aead_request) +
+-			   crypto_aead_reqsize(tfm)]
+-		__aligned(__alignof__(struct aead_request));
+-	struct aead_request *aead_req = (void *) aead_req_data;
 +	num_blocks = DIV_ROUND_UP(data_len, AES_BLOCK_SIZE);
 +	last_len = data_len % AES_BLOCK_SIZE;
 +	aes_ccm_prepare(tfm, b_0, aad, s_0, b, b);
-+
+ 
+-	memset(aead_req, 0, sizeof(aead_req_data));
 +	/* Process payload blocks */
 +	pos = data;
 +	cpos = data;
 +	for (j = 1; j <= num_blocks; j++) {
 +		int blen = (j == num_blocks && last_len) ?
 +			last_len : AES_BLOCK_SIZE;
-+
+ 
+-	sg_init_table(sg, 3);
+-	sg_set_buf(&sg[0], &aad[2], be16_to_cpup((__be16 *)aad));
+-	sg_set_buf(&sg[1], data, data_len);
+-	sg_set_buf(&sg[2], mic, mic_len);
 +		/* Authentication followed by encryption */
 +		for (i = 0; i < blen; i++)
 +			b[i] ^= pos[i];
 +		crypto_cipher_encrypt_one(tfm, b, b);
-+
+ 
+-	aead_request_set_tfm(aead_req, tfm);
+-	aead_request_set_crypt(aead_req, sg, sg, data_len, b_0);
+-	aead_request_set_ad(aead_req, sg[0].length);
 +		b_0[14] = (j >> 8) & 0xff;
 +		b_0[15] = j & 0xff;
 +		crypto_cipher_encrypt_one(tfm, e, b_0);
@@ -125,37 +123,30 @@
 -			   crypto_aead_reqsize(tfm)]
 -		__aligned(__alignof__(struct aead_request));
 -	struct aead_request *aead_req = (void *) aead_req_data;
--
--	if (data_len == 0)
--		return -EINVAL;
--
--	memset(aead_req, 0, sizeof(aead_req_data));
--
--	sg_init_table(sg, 3);
--	sg_set_buf(&sg[0], &aad[2], be16_to_cpup((__be16 *)aad));
--	sg_set_buf(&sg[1], data, data_len);
--	sg_set_buf(&sg[2], mic, mic_len);
--
--	aead_request_set_tfm(aead_req, tfm);
--	aead_request_set_crypt(aead_req, sg, sg, data_len + mic_len, b_0);
--	aead_request_set_ad(aead_req, sg[0].length);
 +	int i, j, last_len, num_blocks;
 +	u8 *pos, *cpos;
 +	u8 a[AES_BLOCK_SIZE];
 +	u8 b[AES_BLOCK_SIZE];
 +	u8 s_0[AES_BLOCK_SIZE];
-+
+ 
+-	if (data_len == 0)
+-		return -EINVAL;
 +	num_blocks = DIV_ROUND_UP(data_len, AES_BLOCK_SIZE);
 +	last_len = data_len % AES_BLOCK_SIZE;
 +	aes_ccm_prepare(tfm, b_0, aad, s_0, a, b);
-+
+ 
+-	memset(aead_req, 0, sizeof(aead_req_data));
 +	/* Process payload blocks */
 +	cpos = data;
 +	pos = data;
 +	for (j = 1; j <= num_blocks; j++) {
 +		int blen = (j == num_blocks && last_len) ?
 +			last_len : AES_BLOCK_SIZE;
-+
+ 
+-	sg_init_table(sg, 3);
+-	sg_set_buf(&sg[0], &aad[2], be16_to_cpup((__be16 *)aad));
+-	sg_set_buf(&sg[1], data, data_len);
+-	sg_set_buf(&sg[2], mic, mic_len);
 +		/* Decryption followed by authentication */
 +		b_0[14] = (j >> 8) & 0xff;
 +		b_0[15] = j & 0xff;
@@ -166,7 +157,10 @@
 +		}
 +		crypto_cipher_encrypt_one(tfm, a, a);
 +	}
-+
+ 
+-	aead_request_set_tfm(aead_req, tfm);
+-	aead_request_set_crypt(aead_req, sg, sg, data_len + mic_len, b_0);
+-	aead_request_set_ad(aead_req, sg[0].length);
 +	for (i = 0; i < mic_len; i++) {
 +		if ((mic[i] ^ s_0[i]) != a[i])
 +			return -1;
@@ -185,12 +179,12 @@
  {
 -	struct crypto_aead *tfm;
 -	int err;
-+	struct crypto_cipher *tfm;
- 
+-
 -	tfm = crypto_alloc_aead("ccm(aes)", 0, CRYPTO_ALG_ASYNC);
 -	if (IS_ERR(tfm))
 -		return tfm;
--
++	struct crypto_cipher *tfm;
+ 
 -	err = crypto_aead_setkey(tfm, key, key_len);
 -	if (err)
 -		goto free_aead;
@@ -309,7 +303,7 @@
  #endif /* AES_GMAC_H */
 --- a/net/mac80211/key.h
 +++ b/net/mac80211/key.h
-@@ -84,7 +84,7 @@ struct ieee80211_key {
+@@ -88,7 +88,7 @@ struct ieee80211_key {
  			 * Management frames.
  			 */
  			u8 rx_pn[IEEE80211_NUM_TIDS + 1][IEEE80211_CCMP_PN_LEN];
@@ -320,7 +314,7 @@
  		struct {
 --- a/net/mac80211/wpa.c
 +++ b/net/mac80211/wpa.c
-@@ -307,7 +307,8 @@ ieee80211_crypto_tkip_decrypt(struct iee
+@@ -304,7 +304,8 @@ ieee80211_crypto_tkip_decrypt(struct iee
  }
  
  
@@ -330,7 +324,7 @@
  {
  	__le16 mask_fc;
  	int a4_included, mgmt;
-@@ -337,14 +338,8 @@ static void ccmp_special_blocks(struct s
+@@ -334,14 +335,8 @@ static void ccmp_special_blocks(struct s
  	else
  		qos_tid = 0;
  
@@ -347,7 +341,7 @@
  
  	/* Nonce: Nonce Flags | A2 | PN
  	 * Nonce Flags: Priority (b0..b3) | Management (b4) | Reserved (b5..b7)
-@@ -352,6 +347,8 @@ static void ccmp_special_blocks(struct s
+@@ -349,6 +344,8 @@ static void ccmp_special_blocks(struct s
  	b_0[1] = qos_tid | (mgmt << 4);
  	memcpy(&b_0[2], hdr->addr2, ETH_ALEN);
  	memcpy(&b_0[8], pn, IEEE80211_CCMP_PN_LEN);
@@ -356,7 +350,7 @@
  
  	/* AAD (extra authenticate-only data) / masked 802.11 header
  	 * FC | A1 | A2 | A3 | SC | [A4] | [QC] */
-@@ -463,7 +460,7 @@ static int ccmp_encrypt_skb(struct ieee8
+@@ -460,7 +457,7 @@ static int ccmp_encrypt_skb(struct ieee8
  		return 0;
  
  	pos += IEEE80211_CCMP_HDR_LEN;
@@ -365,7 +359,7 @@
  	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, b_0, aad, pos, len,
  				  skb_put(skb, mic_len), mic_len);
  
-@@ -534,7 +531,7 @@ ieee80211_crypto_ccmp_decrypt(struct iee
+@@ -537,7 +534,7 @@ ieee80211_crypto_ccmp_decrypt(struct iee
  			u8 aad[2 * AES_BLOCK_SIZE];
  			u8 b_0[AES_BLOCK_SIZE];
  			/* hardware didn't decrypt/verify MIC */
