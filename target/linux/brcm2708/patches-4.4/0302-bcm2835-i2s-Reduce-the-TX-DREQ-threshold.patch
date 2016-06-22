@@ -1,0 +1,48 @@
+From 0d3f33f6f76201d8468a4da376b1b0e84740cecb Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 21 Apr 2016 15:44:14 +0100
+Subject: [PATCH 302/381] bcm2835-i2s: Reduce the TX DREQ threshold
+
+TX FIFO overrun is thought to be the cause of channel swapping, so
+reducing the DREQ threshold seems reasonable and appears to be
+effective.
+
+See: https://github.com/raspberrypi/linux/issues/1417
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ sound/soc/bcm/bcm2835-i2s.c | 21 ++++++++++++++-------
+ 1 file changed, 14 insertions(+), 7 deletions(-)
+
+--- a/sound/soc/bcm/bcm2835-i2s.c
++++ b/sound/soc/bcm/bcm2835-i2s.c
+@@ -555,15 +555,22 @@ static int bcm2835_i2s_hw_params(struct
+ 
+ 	/* Setup the DMA parameters */
+ 	regmap_update_bits(dev->i2s_regmap, BCM2835_I2S_CS_A_REG,
+-			BCM2835_I2S_RXTHR(1)
+-			| BCM2835_I2S_TXTHR(1)
+-			| BCM2835_I2S_DMAEN, 0xffffffff);
++			   BCM2835_I2S_RXTHR(3)
++			   | BCM2835_I2S_TXTHR(3)
++			   | BCM2835_I2S_DMAEN,
++			   BCM2835_I2S_RXTHR(1)
++			   | BCM2835_I2S_TXTHR(1)
++			   | BCM2835_I2S_DMAEN);
+ 
+ 	regmap_update_bits(dev->i2s_regmap, BCM2835_I2S_DREQ_A_REG,
+-			  BCM2835_I2S_TX_PANIC(0x10)
+-			| BCM2835_I2S_RX_PANIC(0x30)
+-			| BCM2835_I2S_TX(0x30)
+-			| BCM2835_I2S_RX(0x20), 0xffffffff);
++			   BCM2835_I2S_TX_PANIC(0x7f)
++			   | BCM2835_I2S_RX_PANIC(0x7f)
++			   | BCM2835_I2S_TX(0x7f)
++			   | BCM2835_I2S_RX(0x7f),
++			   BCM2835_I2S_TX_PANIC(0x10)
++			   | BCM2835_I2S_RX_PANIC(0x30)
++			   | BCM2835_I2S_TX(0x20)
++			   | BCM2835_I2S_RX(0x20));
+ 
+ 	/* Clear FIFOs */
+ 	bcm2835_i2s_clear_fifos(dev, true, true);

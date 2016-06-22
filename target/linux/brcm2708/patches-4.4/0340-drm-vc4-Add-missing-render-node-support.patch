@@ -1,0 +1,26 @@
+From af5a17532c46fe8035fea72ba7d9409b7c9795f9 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 14 Apr 2016 23:16:05 -0700
+Subject: [PATCH 340/381] drm/vc4: Add missing render node support
+
+There shouldn't be any other driver support necessary, since none of
+the driver-specific ioctls ever required auth, and none of them deal
+with modesetting.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Reviewed-by: Daniel Vetter <daniel.vetter@ffwll.ch>
+(cherry picked from commit 0cd3e27476620176c19e346f82576c6e139b85a9)
+---
+ drivers/gpu/drm/vc4/vc4_drv.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -90,6 +90,7 @@ static struct drm_driver vc4_drm_driver
+ 			    DRIVER_ATOMIC |
+ 			    DRIVER_GEM |
+ 			    DRIVER_HAVE_IRQ |
++			    DRIVER_RENDER |
+ 			    DRIVER_PRIME),
+ 	.lastclose = vc4_lastclose,
+ 	.preclose = vc4_drm_preclose,

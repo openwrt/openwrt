@@ -1,0 +1,36 @@
+From ca25ba22f36a3e55b94f650e402564d830843edb Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Tue, 8 Mar 2016 15:09:41 +0300
+Subject: [PATCH 296/381] drm/vc4: Return -EFAULT on copy_from_user() failure
+
+The copy_from_user() function returns the number of bytes not copied but
+we want to return a negative error code.
+
+Fixes: 463873d57014 ('drm/vc4: Add an API for creating GPU shaders in GEM BOs.')
+Cc: stable@vger.kernel.org
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 585cb132a48190b554aecda2ebc3e2911fcbb665)
+---
+ drivers/gpu/drm/vc4/vc4_bo.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_bo.c
++++ b/drivers/gpu/drm/vc4/vc4_bo.c
+@@ -519,11 +519,12 @@ vc4_create_shader_bo_ioctl(struct drm_de
+ 	if (IS_ERR(bo))
+ 		return PTR_ERR(bo);
+ 
+-	ret = copy_from_user(bo->base.vaddr,
++	if (copy_from_user(bo->base.vaddr,
+ 			     (void __user *)(uintptr_t)args->data,
+-			     args->size);
+-	if (ret != 0)
++			     args->size)) {
++		ret = -EFAULT;
+ 		goto fail;
++	}
+ 	/* Clear the rest of the memory from allocating from the BO
+ 	 * cache.
+ 	 */

@@ -1,7 +1,7 @@
-From 93aae11e6e1bcd5178685f85938e7c339d91a95e Mon Sep 17 00:00:00 2001
+From c8fda14cc4b13b9a3612ecc5c3c7456a57e2029b Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Mon, 13 Oct 2014 11:47:53 +0100
-Subject: [PATCH 079/304] Improve __copy_to_user and __copy_from_user
+Subject: [PATCH 079/381] Improve __copy_to_user and __copy_from_user
  performance
 
 Provide a __copy_from_user that uses memcpy. On BCM2708, use

@@ -1,0 +1,27 @@
+From c33b2893076c1ff4decffd300f84aaa2cc10d1a4 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Thu, 17 Dec 2015 15:39:08 +0300
+Subject: [PATCH 275/381] drm/vc4: allocate enough memory in
+ vc4_save_hang_state()
+
+"state" is smaller than "kernel_state" so we end up corrupting memory.
+
+Fixes: 214613656b51 ('drm/vc4: Add an interface for capturing the GPU state after a hang.')
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 7e5082fbc00cc157e57a70cdb6b9bbb21289afb1)
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -159,7 +159,7 @@ vc4_save_hang_state(struct drm_device *d
+ 	unsigned long irqflags;
+ 	unsigned int i, unref_list_count;
+ 
+-	kernel_state = kcalloc(1, sizeof(*state), GFP_KERNEL);
++	kernel_state = kcalloc(1, sizeof(*kernel_state), GFP_KERNEL);
+ 	if (!kernel_state)
+ 		return;
+ 

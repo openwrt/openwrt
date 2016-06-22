@@ -1,7 +1,7 @@
-From 966f44478d6ccb55bfd20b1249cb20a729519190 Mon Sep 17 00:00:00 2001
+From c3634a10a0b792baedf12691a83598c89976830c Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Fri, 23 Oct 2015 12:31:56 +0100
-Subject: [PATCH 098/304] drm/vc4: No need to stop the stopped threads.
+Subject: [PATCH 098/381] drm/vc4: No need to stop the stopped threads.
 
 This was leftover debug code from the hackdriver.  We never submit
 unless the thread is already idle.

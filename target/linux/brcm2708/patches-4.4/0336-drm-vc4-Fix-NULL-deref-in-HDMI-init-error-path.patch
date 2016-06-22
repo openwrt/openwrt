@@ -1,0 +1,25 @@
+From 00dc0773c1af03a24f76c53223ab0c3d1fc7debb Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 4 Apr 2016 14:25:59 -0700
+Subject: [PATCH 336/381] drm/vc4: Fix NULL deref in HDMI init error path
+
+If you make it here other than through err_destroy_encoder, vc4->hdmi
+is still NULL.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 5883980313af70aec0ceebaef6ef0709726e5e63)
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -573,7 +573,7 @@ err_unprepare_hsm:
+ err_unprepare_pix:
+ 	clk_disable_unprepare(hdmi->pixel_clock);
+ err_put_i2c:
+-	put_device(&vc4->hdmi->ddc->dev);
++	put_device(&hdmi->ddc->dev);
+ 
+ 	return ret;
+ }

@@ -1,0 +1,123 @@
+From 56fa6791fbd2021cec1eeb45462b2ad3d1631a05 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petter=20Mab=C3=A4cker?= <petter@technux.se>
+Date: Fri, 8 Jan 2016 09:02:44 +0100
+Subject: [PATCH 307/381] dts: add overlay for pitft22
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add the pitft22 overlay from adafruit Adafruit-Pi-Kernel-o-Matic repo:
+https://github.com/adafruit/Adafruit-Pi-Kernel-o-Matic
+
+Signed-off-by: Petter MabÃ¤cker <petter@technux.se>
+Signed-off-by: Andrei Gherzan <andrei@resin.io>
+---
+ arch/arm/boot/dts/overlays/Makefile            |  1 +
+ arch/arm/boot/dts/overlays/README              | 12 +++++
+ arch/arm/boot/dts/overlays/pitft22-overlay.dts | 69 ++++++++++++++++++++++++++
+ 3 files changed, 82 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/pitft22-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -51,6 +51,7 @@ dtbo-$(RPI_DT_OVERLAYS) += pi3-disable-b
+ dtbo-$(RPI_DT_OVERLAYS) += pi3-miniuart-bt.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += piscreen.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += piscreen2r.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += pitft22.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += pitft28-capacitive.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += pitft28-resistive.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += pps-gpio.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -644,6 +644,18 @@ Params: speed                   Display
+         xohms                   Touchpanel sensitivity (X-plate resistance)
+ 
+ 
++Name:   pitft22
++Info:   Adafruit PiTFT 2.2" screen
++Load:   dtoverlay=pitft22,<param>=<val>
++Params: speed                   Display SPI bus speed
++
++        rotate                  Display rotation {0,90,180,270}
++
++        fps                     Delay between frame updates
++
++        debug                   Debug output level {0-7}
++
++
+ Name:   pitft28-capacitive
+ Info:   Adafruit PiTFT 2.8" capacitive touch screen
+ Load:   dtoverlay=pitft28-capacitive,<param>=<val>
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/pitft22-overlay.dts
+@@ -0,0 +1,69 @@
++/*
++ * Device Tree overlay for pitft by Adafruit
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++        compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++        fragment@0 {
++                target = <&spi0>;
++                __overlay__ {
++                        status = "okay";
++
++                        spidev@0{
++                                status = "disabled";
++                        };
++
++                        spidev@1{
++                                status = "disabled";
++                        };
++                };
++        };
++
++        fragment@1 {
++                target = <&gpio>;
++                __overlay__ {
++                        pitft_pins: pitft_pins {
++                                brcm,pins = <25>;
++                                brcm,function = <1>; /* out */
++                                brcm,pull = <0>; /* none */
++                        };
++                };
++        };
++
++        fragment@2 {
++                target = <&spi0>;
++                __overlay__ {
++                        /* needed to avoid dtc warning */
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++
++                        pitft: pitft@0{
++                                compatible = "ilitek,ili9340";
++                                reg = <0>;
++                                pinctrl-names = "default";
++                                pinctrl-0 = <&pitft_pins>;
++
++                                spi-max-frequency = <32000000>;
++                                rotate = <90>;
++                                fps = <25>;
++                                bgr;
++                                buswidth = <8>;
++                                dc-gpios = <&gpio 25 0>;
++                                debug = <0>;
++                        };
++
++                };
++        };
++
++        __overrides__ {
++                speed =   <&pitft>,"spi-max-frequency:0";
++                rotate =  <&pitft>,"rotate:0";
++                fps =     <&pitft>,"fps:0";
++                debug =   <&pitft>,"debug:0";
++        };
++};

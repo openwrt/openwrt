@@ -1,0 +1,31 @@
+From 2faa3a4eb01cdd6c372c235900139a96ed5e81f7 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 6 May 2016 17:21:58 +0100
+Subject: [PATCH 325/381] Revert "config: Add CONFIG_DRM_LOAD_EDID_FIRMWARE"
+
+This reverts commit 417aed4cb35a479e001c8389fd8d97c3ea612999.
+---
+ arch/arm/configs/bcm2709_defconfig | 1 -
+ arch/arm/configs/bcmrpi_defconfig  | 1 -
+ 2 files changed, 2 deletions(-)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -815,7 +815,6 @@ CONFIG_VIDEO_TW9906=m
+ CONFIG_VIDEO_OV7640=m
+ CONFIG_VIDEO_MT9V011=m
+ CONFIG_DRM=m
+-CONFIG_DRM_LOAD_EDID_FIRMWARE=y
+ CONFIG_DRM_UDL=m
+ CONFIG_DRM_VC4=m
+ CONFIG_FB=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -807,7 +807,6 @@ CONFIG_VIDEO_TW9906=m
+ CONFIG_VIDEO_OV7640=m
+ CONFIG_VIDEO_MT9V011=m
+ CONFIG_DRM=m
+-CONFIG_DRM_LOAD_EDID_FIRMWARE=y
+ CONFIG_DRM_UDL=m
+ CONFIG_DRM_VC4=m
+ CONFIG_FB=y

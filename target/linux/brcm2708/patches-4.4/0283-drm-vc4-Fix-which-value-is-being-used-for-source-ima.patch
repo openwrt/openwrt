@@ -1,0 +1,77 @@
+From b5b8069d79586dd9ff61b7e71fa0754a211dd0a8 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 28 Dec 2015 14:45:25 -0800
+Subject: [PATCH 283/381] drm/vc4: Fix which value is being used for source
+ image size.
+
+This doesn't matter yet since we only allow 1:1 scaling, but the
+comment clearly says we should be using the source size.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit f863e356013d628fa65b1cd89aa298eed26fc936)
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 23 ++++++++++++++---------
+ 1 file changed, 14 insertions(+), 9 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -47,6 +47,8 @@ struct vc4_plane_state {
+ 
+ 	/* Clipped coordinates of the plane on the display. */
+ 	int crtc_x, crtc_y, crtc_w, crtc_h;
++	/* Clipped size of the area scanned from in the FB. */
++	u32 src_w, src_h;
+ 
+ 	/* Offset to start scanning out from the start of the plane's
+ 	 * BO.
+@@ -186,11 +188,6 @@ static int vc4_plane_setup_clipping_and_
+ 
+ 	vc4_state->offset = fb->offsets[0];
+ 
+-	vc4_state->crtc_x = state->crtc_x;
+-	vc4_state->crtc_y = state->crtc_y;
+-	vc4_state->crtc_w = state->crtc_w;
+-	vc4_state->crtc_h = state->crtc_h;
+-
+ 	if (state->crtc_w << 16 != state->src_w ||
+ 	    state->crtc_h << 16 != state->src_h) {
+ 		/* We don't support scaling yet, which involves
+@@ -201,17 +198,25 @@ static int vc4_plane_setup_clipping_and_
+ 		return -EINVAL;
+ 	}
+ 
++	vc4_state->src_w = state->src_w >> 16;
++	vc4_state->src_h = state->src_h >> 16;
++
++	vc4_state->crtc_x = state->crtc_x;
++	vc4_state->crtc_y = state->crtc_y;
++	vc4_state->crtc_w = state->crtc_w;
++	vc4_state->crtc_h = state->crtc_h;
++
+ 	if (vc4_state->crtc_x < 0) {
+ 		vc4_state->offset += (drm_format_plane_cpp(fb->pixel_format,
+ 							   0) *
+ 				      -vc4_state->crtc_x);
+-		vc4_state->crtc_w += vc4_state->crtc_x;
++		vc4_state->src_w += vc4_state->crtc_x;
+ 		vc4_state->crtc_x = 0;
+ 	}
+ 
+ 	if (vc4_state->crtc_y < 0) {
+ 		vc4_state->offset += fb->pitches[0] * -vc4_state->crtc_y;
+-		vc4_state->crtc_h += vc4_state->crtc_y;
++		vc4_state->src_h += vc4_state->crtc_y;
+ 		vc4_state->crtc_y = 0;
+ 	}
+ 
+@@ -260,8 +265,8 @@ static int vc4_plane_mode_set(struct drm
+ 				      SCALER_POS2_ALPHA_MODE_PIPELINE :
+ 				      SCALER_POS2_ALPHA_MODE_FIXED,
+ 				      SCALER_POS2_ALPHA_MODE) |
+-			VC4_SET_FIELD(vc4_state->crtc_w, SCALER_POS2_WIDTH) |
+-			VC4_SET_FIELD(vc4_state->crtc_h, SCALER_POS2_HEIGHT));
++			VC4_SET_FIELD(vc4_state->src_w, SCALER_POS2_WIDTH) |
++			VC4_SET_FIELD(vc4_state->src_h, SCALER_POS2_HEIGHT));
+ 
+ 	/* Position Word 3: Context.  Written by the HVS. */
+ 	vc4_dlist_write(vc4_state, 0xc0c0c0c0);

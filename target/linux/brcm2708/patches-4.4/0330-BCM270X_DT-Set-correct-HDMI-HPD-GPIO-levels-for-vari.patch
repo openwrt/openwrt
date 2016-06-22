@@ -1,0 +1,69 @@
+From 018d3d118011d7022f336f3b0d0db5aef5cbb31d Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 6 May 2016 12:42:26 -0700
+Subject: [PATCH 330/381] BCM270X_DT: Set correct HDMI HPD GPIO levels for
+ various boards.
+
+The CM is left out, because I haven't found a source for how the CM's
+HPD is connected.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts | 4 ++++
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      | 4 ++++
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts    | 4 ++++
+ arch/arm/boot/dts/bcm2710-rpi-3-b.dts    | 4 ++++
+ 4 files changed, 16 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -116,6 +116,10 @@
+ 	};
+ };
+ 
++&hdmi {
++	hpd-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
++};
++
+ / {
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -110,6 +110,10 @@
+ 	};
+ };
+ 
++&hdmi {
++	hpd-gpios = <&gpio 46 GPIO_ACTIVE_HIGH>;
++};
++
+ / {
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -116,6 +116,10 @@
+ 	};
+ };
+ 
++&hdmi {
++	hpd-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
++};
++
+ / {
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+--- a/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
+@@ -161,6 +161,10 @@
+ 	};
+ };
+ 
++&hdmi {
++	hpd-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
++};
++
+ / {
+ 	chosen {
+ 		bootargs = "8250.nr_uarts=1";

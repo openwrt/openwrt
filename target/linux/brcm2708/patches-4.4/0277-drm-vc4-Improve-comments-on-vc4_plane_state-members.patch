@@ -1,0 +1,36 @@
+From 0580ea4ba574d30d1725649a28ab3466904599ea Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 28 Dec 2015 14:14:09 -0800
+Subject: [PATCH 277/381] drm/vc4: Improve comments on vc4_plane_state members.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit f427fb16cf756548c39256b569cf083f39bcc4e9)
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -26,16 +26,19 @@
+ 
+ struct vc4_plane_state {
+ 	struct drm_plane_state base;
++	/* System memory copy of the display list for this element, computed
++	 * at atomic_check time.
++	 */
+ 	u32 *dlist;
+-	u32 dlist_size; /* Number of dwords in allocated for the display list */
++	u32 dlist_size; /* Number of dwords allocated for the display list */
+ 	u32 dlist_count; /* Number of used dwords in the display list. */
+ 
+ 	/* Offset in the dlist to pointer word 0. */
+ 	u32 pw0_offset;
+ 
+ 	/* Offset where the plane's dlist was last stored in the
+-	   hardware at vc4_crtc_atomic_flush() time.
+-	*/
++	 * hardware at vc4_crtc_atomic_flush() time.
++	 */
+ 	u32 *hw_dlist;
+ };
+ 

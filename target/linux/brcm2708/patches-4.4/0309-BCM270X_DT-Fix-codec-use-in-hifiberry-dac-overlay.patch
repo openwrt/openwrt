@@ -1,0 +1,21 @@
+From b2be61827d995cd83f5453f3be0967e954095906 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 27 Apr 2016 12:01:41 +0100
+Subject: [PATCH 309/381] BCM270X_DT: Fix codec use in hifiberry-dac overlay
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts
++++ b/arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts
+@@ -13,7 +13,7 @@
+ 	};
+ 
+ 	fragment@1 {
+-		target = <&soc>;
++		target-path = "/";
+ 		__overlay__ {
+ 			pcm5102a-codec {
+ 				#sound-dai-cells = <0>;

@@ -1,0 +1,49 @@
+From 9d56f11061a9d2598dd0c7a20886e3d5f76fa7a0 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 29 Apr 2016 17:28:06 +0100
+Subject: [PATCH 316/381] Revert "bcm2835: only allow stereo if analogue jack
+ is selected"
+
+This reverts commit 5f7049894f47b3836838cd68e29ee883179c80b3.
+---
+ sound/arm/bcm2835-ctl.c | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+--- a/sound/arm/bcm2835-ctl.c
++++ b/sound/arm/bcm2835-ctl.c
+@@ -423,16 +423,9 @@ static struct cea_channel_speaker_alloca
+ { .ca_index = 0x31,  .speakers = { FRW,  FLW,  RR,  RL,  FC,  LFE,  FR,  FL } },
+ };
+ 
+-static int uses_analogue(bcm2835_chip_t *chip)
+-{
+-	return chip->dest == 1;
+-}
+-
+ static int snd_bcm2835_chmap_ctl_tlv(struct snd_kcontrol *kcontrol, int op_flag,
+ 				     unsigned int size, unsigned int __user *tlv)
+ {
+-	struct snd_pcm_chmap *info = snd_kcontrol_chip(kcontrol);
+-	bcm2835_chip_t *chip = info->private_data;
+ 	unsigned int __user *dst;
+ 	int count = 0;
+ 	int i;
+@@ -449,9 +442,6 @@ static int snd_bcm2835_chmap_ctl_tlv(str
+ 		int chs_bytes;
+ 		int c;
+ 
+-		if (i > 0 && uses_analogue(chip))
+-			break;
+-
+ 		for (c = 0; c < 8; c++) {
+ 			if (ch->speakers[c])
+ 				num_chs++;
+@@ -562,8 +552,6 @@ static int snd_bcm2835_chmap_ctl_put(str
+ 		int matches = 1;
+ 		int cur = 0;
+ 		int x;
+-		if (i > 0 && uses_analogue(chip))
+-			break;
+ 		memset(remap, 0, sizeof(remap));
+ 		for (x = 0; x < substream->runtime->channels; x++) {
+ 			int sp = ucontrol->value.integer.value[x];

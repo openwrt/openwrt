@@ -1,0 +1,50 @@
+From 0d2dc82a9fe4a2325df235180812065bcb47c3a6 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 19 Apr 2016 14:23:30 -0700
+Subject: [PATCH 271/381] bcm2708: Add RASPBERRYPI_POWER to the defconfigs.
+
+This will be used by the GPU driver for powering on HDMI at boot time
+and for 3D hang reset.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/configs/bcm2709_defconfig | 2 ++
+ arch/arm/configs/bcmrpi_defconfig  | 2 ++
+ 2 files changed, 4 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -71,6 +71,7 @@ CONFIG_NEON=y
+ CONFIG_KERNEL_MODE_NEON=y
+ CONFIG_BINFMT_MISC=m
+ # CONFIG_SUSPEND is not set
++CONFIG_PM=y
+ CONFIG_NET=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
+@@ -1116,6 +1117,7 @@ CONFIG_FB_TFT_FBTFT_DEVICE=m
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2835_MBOX=y
+ # CONFIG_IOMMU_SUPPORT is not set
++CONFIG_RASPBERRYPI_POWER=y
+ CONFIG_EXTCON=m
+ CONFIG_EXTCON_ARIZONA=m
+ CONFIG_IIO=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -64,6 +64,7 @@ CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+ CONFIG_VFP=y
+ CONFIG_BINFMT_MISC=m
+ # CONFIG_SUSPEND is not set
++CONFIG_PM=y
+ CONFIG_NET=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
+@@ -1123,6 +1124,7 @@ CONFIG_FB_TFT_FBTFT_DEVICE=m
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2835_MBOX=y
+ # CONFIG_IOMMU_SUPPORT is not set
++CONFIG_RASPBERRYPI_POWER=y
+ CONFIG_EXTCON=m
+ CONFIG_EXTCON_ARIZONA=m
+ CONFIG_IIO=m

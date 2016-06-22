@@ -1,0 +1,62 @@
+From 791046d531f798944715a214748387449ae9c4b8 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Sat, 23 Apr 2016 15:21:41 +0000
+Subject: [PATCH 304/381] ARM: bcm2835: add i2s-gpio28-31 for cm
+
+Add i2s-gpio28-31 overlay for compute module
+so that i2s is using gpio28-31
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+---
+ arch/arm/boot/dts/overlays/Makefile                  |  1 +
+ arch/arm/boot/dts/overlays/README                    |  6 ++++++
+ arch/arm/boot/dts/overlays/i2s-gpio28-31-overlay.dts | 18 ++++++++++++++++++
+ 3 files changed, 25 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/i2s-gpio28-31-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -37,6 +37,7 @@ dtbo-$(RPI_DT_OVERLAYS) += i2c-mux-pca95
+ dtbo-$(RPI_DT_OVERLAYS) += i2c-pwm-pca9685a.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c0-bcm2708.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c1-bcm2708.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += i2s-gpio28-31.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2s-mmap.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += iqaudio-dac.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += iqaudio-dacplus.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -464,6 +464,12 @@ Params: sda1_pin                GPIO pin
+                                 default 4)
+ 
+ 
++Name:   i2s-gpio28-31
++Info:   move I2S function block to GPIO 28 to 31
++Load:   dtoverlay=i2s-gpio28-31
++Params: <None>
++
++
+ Name:   i2s-mmap
+ Info:   Enables mmap support in the bcm2708-i2s driver
+ Load:   dtoverlay=i2s-mmap
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/i2s-gpio28-31-overlay.dts
+@@ -0,0 +1,18 @@
++/*
++ * Device tree overlay to move i2s to gpio 28 to 31 on CM
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2836", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&i2s_pins>;
++		__overlay__ {
++			brcm,pins = <28 29 30 31>;
++			brcm,function = <6>; /* alt2 */
++		};
++	};
++};

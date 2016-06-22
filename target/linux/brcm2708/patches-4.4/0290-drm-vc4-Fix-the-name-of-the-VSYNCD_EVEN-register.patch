@@ -1,0 +1,36 @@
+From 659c32d3344952ef9c49a18d512318e5dca9eff3 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 15 Feb 2016 17:06:02 -0800
+Subject: [PATCH 290/381] drm/vc4: Fix the name of the VSYNCD_EVEN register.
+
+It's used for delaying vsync in interlaced mode.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit c31806fbdda910d337b60896040afa708bdfa2bd)
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 2 +-
+ drivers/gpu/drm/vc4/vc4_regs.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -88,7 +88,7 @@ static const struct {
+ } crtc_regs[] = {
+ 	CRTC_REG(PV_CONTROL),
+ 	CRTC_REG(PV_V_CONTROL),
+-	CRTC_REG(PV_VSYNCD),
++	CRTC_REG(PV_VSYNCD_EVEN),
+ 	CRTC_REG(PV_HORZA),
+ 	CRTC_REG(PV_HORZB),
+ 	CRTC_REG(PV_VERTA),
+--- a/drivers/gpu/drm/vc4/vc4_regs.h
++++ b/drivers/gpu/drm/vc4/vc4_regs.h
+@@ -187,7 +187,7 @@
+ # define PV_VCONTROL_CONTINUOUS			BIT(1)
+ # define PV_VCONTROL_VIDEN			BIT(0)
+ 
+-#define PV_VSYNCD				0x08
++#define PV_VSYNCD_EVEN				0x08
+ 
+ #define PV_HORZA				0x0c
+ # define PV_HORZA_HBP_MASK			VC4_MASK(31, 16)

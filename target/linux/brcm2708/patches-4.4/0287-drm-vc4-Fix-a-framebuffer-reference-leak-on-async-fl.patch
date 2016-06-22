@@ -1,0 +1,26 @@
+From 73902ea67be85e6a5d440fed2c53e5364125c4e1 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 5 Feb 2016 15:06:15 -0800
+Subject: [PATCH 287/381] drm/vc4: Fix a framebuffer reference leak on async
+ flip interrupt.
+
+We'd need X to queue up an async pageflip while another is
+outstanding, and then take a SIGIO.  I think X actually avoids sending
+out the next pageflip while one's already queued, but I'm not sure.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 48627eb8dc55c60d35794105f6f79fb627347dbd)
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -527,6 +527,7 @@ static int vc4_async_page_flip(struct dr
+ 	/* Make sure all other async modesetes have landed. */
+ 	ret = down_interruptible(&vc4->async_modeset);
+ 	if (ret) {
++		drm_framebuffer_unreference(fb);
+ 		kfree(flip_state);
+ 		return ret;
+ 	}

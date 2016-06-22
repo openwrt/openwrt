@@ -1,0 +1,72 @@
+From b90794bb85c90b4276fea302cf75251021134e7a Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 12 Feb 2016 14:15:14 -0800
+Subject: [PATCH 288/381] drm/vc4: Bring HDMI up from power off if necessary.
+
+If the firmware hadn't brought up HDMI for us, we need to do its
+power-on reset sequence (reset HD and and clear its STANDBY bits,
+reset HDMI, and leave the PHY disabled).
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 851479ad5927b7b1aa141ca9dedb897a7bce2b1d)
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 29 ++++++++++++++++++++++++++++-
+ drivers/gpu/drm/vc4/vc4_regs.h |  2 ++
+ 2 files changed, 30 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -497,6 +497,16 @@ static int vc4_hdmi_bind(struct device *
+ 		goto err_put_i2c;
+ 	}
+ 
++	/* This is the rate that is set by the firmware.  The number
++	 * needs to be a bit higher than the pixel clock rate
++	 * (generally 148.5Mhz).
++	 */
++	ret = clk_set_rate(hdmi->hsm_clock, 163682864);
++	if (ret) {
++		DRM_ERROR("Failed to set HSM clock rate: %d\n", ret);
++		goto err_unprepare_pix;
++	}
++
+ 	ret = clk_prepare_enable(hdmi->hsm_clock);
+ 	if (ret) {
+ 		DRM_ERROR("Failed to turn on HDMI state machine clock: %d\n",
+@@ -518,7 +528,24 @@ static int vc4_hdmi_bind(struct device *
+ 	vc4->hdmi = hdmi;
+ 
+ 	/* HDMI core must be enabled. */
+-	WARN_ON_ONCE((HD_READ(VC4_HD_M_CTL) & VC4_HD_M_ENABLE) == 0);
++	if (!(HD_READ(VC4_HD_M_CTL) & VC4_HD_M_ENABLE)) {
++		HD_WRITE(VC4_HD_M_CTL, VC4_HD_M_SW_RST);
++		udelay(1);
++		HD_WRITE(VC4_HD_M_CTL, 0);
++
++		HD_WRITE(VC4_HD_M_CTL, VC4_HD_M_ENABLE);
++
++		HDMI_WRITE(VC4_HDMI_SW_RESET_CONTROL,
++			   VC4_HDMI_SW_RESET_HDMI |
++			   VC4_HDMI_SW_RESET_FORMAT_DETECT);
++
++		HDMI_WRITE(VC4_HDMI_SW_RESET_CONTROL, 0);
++
++		/* PHY should be in reset, like
++		 * vc4_hdmi_encoder_disable() does.
++		 */
++		HDMI_WRITE(VC4_HDMI_TX_PHY_RESET_CTL, 0xf << 16);
++	}
+ 
+ 	drm_encoder_init(drm, hdmi->encoder, &vc4_hdmi_encoder_funcs,
+ 			 DRM_MODE_ENCODER_TMDS);
+--- a/drivers/gpu/drm/vc4/vc4_regs.h
++++ b/drivers/gpu/drm/vc4/vc4_regs.h
+@@ -456,6 +456,8 @@
+ #define VC4_HDMI_TX_PHY_RESET_CTL		0x2c0
+ 
+ #define VC4_HD_M_CTL				0x00c
++# define VC4_HD_M_REGISTER_FILE_STANDBY		(3 << 6)
++# define VC4_HD_M_RAM_STANDBY			(3 << 4)
+ # define VC4_HD_M_SW_RST			BIT(2)
+ # define VC4_HD_M_ENABLE			BIT(0)
+ 

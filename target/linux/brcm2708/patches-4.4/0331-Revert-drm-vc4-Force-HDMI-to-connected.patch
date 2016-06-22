@@ -1,0 +1,26 @@
+From 98d4a368d5cfb455ed91cf4dbdef16be4fc25349 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 6 May 2016 12:43:25 -0700
+Subject: [PATCH 331/381] Revert "drm/vc4: Force HDMI to connected."
+
+Now that we have the HDMI HPD GPIOs correctly identified in the DT, we
+should be able to successfully detect HDMI.
+
+This reverts commit fbec01e2d17b924d91850e17eeecf975e74c9ebf.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -166,8 +166,6 @@ vc4_hdmi_connector_detect(struct drm_con
+ 	struct drm_device *dev = connector->dev;
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 
+-	return connector_status_connected;
+-
+ 	if (vc4->hdmi->hpd_gpio) {
+ 		if (gpio_get_value_cansleep(vc4->hdmi->hpd_gpio) ^
+ 		    vc4->hdmi->hpd_active_low)
