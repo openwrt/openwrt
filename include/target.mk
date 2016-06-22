@@ -257,6 +257,9 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_RTC_CLASS),)
       FEATURES += rtc
     endif
+    ifneq ($(CONFIG_VIRTIO),)
+      FEATURES += virtio
+    endif
     FEATURES += $(foreach v,6 7,$(if $(CONFIG_CPU_V$(v)),arm_v$(v)))
 
     # remove duplicates

@@ -39,6 +39,7 @@ sub target_config_features(@) {
 		/low_mem/ and $ret .= "\tselect LOW_MEMORY_FOOTPRINT\n";
 		/small_flash/ and $ret .= "\tselect SMALL_FLASH\n";
 		/nand/ and $ret .= "\tselect NAND_SUPPORT\n";
+		/virtio/ and $ret .= "\tselect VIRTIO_SUPPORT\n";
 	}
 	return $ret;
 }

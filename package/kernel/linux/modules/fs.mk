@@ -26,6 +26,24 @@ endef
 
 $(eval $(call KernelPackage,fs-fscache))
 
+define KernelPackage/fs-9p
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Plan 9 Resource Sharing Support
+  DEPENDS:=+kmod-9pnet
+  KCONFIG:=\
+	CONFIG_9P_FS \
+	CONFIG_9P_FS_POSIX_ACL=n \
+	CONFIG_9P_FS_SECURITY=n
+  FILES:=$(LINUX_DIR)/fs/9p/9p.ko
+  AUTOLOAD:=$(call AutoLoad,30,9p)
+endef
+
+define KernelPackage/fs-9p/description
+  Kernel module for Plan 9 Resource Sharing Support support
+endef
+
+$(eval $(call KernelPackage,fs-9p))
+
 define KernelPackage/fs-afs
   SUBMENU:=$(FS_MENU)
   TITLE:=Andrew FileSystem client

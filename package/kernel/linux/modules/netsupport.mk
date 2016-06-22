@@ -1015,3 +1015,24 @@ define KernelPackage/mpls/description
 endef
 
 $(eval $(call KernelPackage,mpls))
+
+define KernelPackage/9pnet
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Plan 9 Resource Sharing Support (9P2000)
+  DEPENDS:=@VIRTIO_SUPPORT
+  KCONFIG:= \
+	CONFIG_NET_9P \
+	CONFIG_NET_9P_DEBUG=n \
+	CONFIG_NET_9P_VIRTIO
+  FILES:= \
+	$(LINUX_DIR)/net/9p/9pnet.ko \
+	$(LINUX_DIR)/net/9p/9pnet_virtio.ko
+  AUTOLOAD:=$(call AutoLoad,29,9pnet 9pnet_virtio)
+endef
+
+define KernelPackage/9pnet/description
+  Kernel support support for
+  Plan 9 resource sharing via the 9P2000 protocol.
+endef
+
+$(eval $(call KernelPackage,9pnet))
