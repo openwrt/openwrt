@@ -75,9 +75,9 @@
  	 * workaround. Attempt to jump to the mips reset location -
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -112,6 +112,13 @@ config GPIO_MAX730X
- 
- comment "Memory mapped GPIO drivers:"
+@@ -141,6 +141,13 @@ config GPIO_BRCMSTB
+ 	help
+ 	  Say yes here to enable GPIO support for Broadcom STB (BCM7XXX) SoCs.
  
 +config GPIO_AR2315
 +	bool "AR2315 SoC GPIO support"
@@ -91,14 +91,14 @@
  	default y if SOC_AR5312
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_GPIO_ADNP)		+= gpio-adnp.o
- obj-$(CONFIG_GPIO_ADP5520)	+= gpio-adp5520.o
- obj-$(CONFIG_GPIO_ADP5588)	+= gpio-adp5588.o
+@@ -21,6 +21,7 @@ obj-$(CONFIG_GPIO_ADP5588)	+= gpio-adp55
+ obj-$(CONFIG_GPIO_ALTERA)  	+= gpio-altera.o
  obj-$(CONFIG_GPIO_AMD8111)	+= gpio-amd8111.o
+ obj-$(CONFIG_GPIO_AMDPT)	+= gpio-amdpt.o
 +obj-$(CONFIG_GPIO_AR2315)	+= gpio-ar2315.o
  obj-$(CONFIG_GPIO_AR5312)	+= gpio-ar5312.o
  obj-$(CONFIG_GPIO_ARIZONA)	+= gpio-arizona.o
- obj-$(CONFIG_GPIO_BCM_KONA)	+= gpio-bcm-kona.o
+ obj-$(CONFIG_ATH79)		+= gpio-ath79.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-ar2315.c
 @@ -0,0 +1,233 @@
@@ -162,7 +162,7 @@
 +	ar2315_gpio_reg_write(reg, (ar2315_gpio_reg_read(reg) & ~mask) | val);
 +}
 +
-+static void ar2315_gpio_irq_handler(unsigned irq, struct irq_desc *desc)
++static void ar2315_gpio_irq_handler(struct irq_desc *desc)
 +{
 +	u32 pend;
 +	int bit = -1;
