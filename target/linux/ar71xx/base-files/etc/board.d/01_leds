@@ -426,6 +426,14 @@ smart-300)
 	ucidef_set_led_wlan "wlan" "WLAN" "nc-link:green:wlan" "phy0tpt"
 	;;
 
+som9331)
+	ucidef_set_led_netdev "wan" "WAN" "som9331:orange:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "som9331:orange:lan1" "switch0" "0x08"
+	ucidef_set_led_switch "lan2" "LAN2" "som9331:orange:lan2" "switch0" "0x02"
+	ucidef_set_led_wlan "wlan" "WLAN" "som9331:red:wlan" "phy0tpt"
+	ucidef_set_led_usbdev "usb" "USB" "som9331:green:system" "1-1"
+	;;
+
 tellstick-znet-lite)
 	ucidef_set_led_netdev "lan_act" "LANACT" "tellstick:green:lan" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LANLINK" "tellstick:orange:lan" "eth0" "link"

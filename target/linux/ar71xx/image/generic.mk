@@ -271,6 +271,15 @@ define Device/smart-300
 endef
 TARGET_DEVICES += smart-300
 
+define Device/som9331
+    $(Device/tplink-8mlzma)
+    BOARDNAME := SOM9331
+    DEVICE_PROFILE := SOM9331
+    TPLINK_HWID := 0x04800054
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += som9331
+
 define Device/tellstick-znet-lite
     $(Device/tplink-16mlzma)
     BOARDNAME := TELLSTICK-ZNET-LITE
