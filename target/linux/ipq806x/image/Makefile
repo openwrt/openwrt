@@ -102,7 +102,7 @@ define Device/AP148
 	BLOCKSIZE := 128KiB
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
-	DEVICE_TITLE := Qualcom AP148
+	DEVICE_TITLE := Qualcomm AP148
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
@@ -113,7 +113,7 @@ define Device/AP148-legacy
 	BLOCKSIZE := 128KiB
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
-	DEVICE_TITLE := Qualcom AP148 (legacy)
+	DEVICE_TITLE := Qualcomm AP148 (legacy)
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
@@ -146,7 +146,7 @@ define Device/DB149
 	DEVICE_DTS := qcom-ipq8064-db149
 	KERNEL_INSTALL := 1
 	BOARD_NAME := db149
-	DEVICE_TITLE := Qualcom DB149
+	DEVICE_TITLE := Qualcomm DB149
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
