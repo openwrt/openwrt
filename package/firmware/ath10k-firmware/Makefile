@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath10k-firmware
-PKG_SOURCE_VERSION:=77f72b5f7dd940386d9e619a17904987759b7186
+PKG_SOURCE_VERSION:=b00eb8d30fbebb6a5047ccacefa8c37e072fca9c
 PKG_VERSION:=2014-11-13-$(PKG_SOURCE_VERSION)
 PKG_RELEASE:=1
 
@@ -100,6 +100,11 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4.3 firmware for QCA99x0 devices
 endef
 
+define Package/ath10k-firmware-qca9984
+$(Package/ath10k-firmware-default)
+  TITLE:=ath10k firmware for QCA9984 devices
+endef
+
 define Package/ath10k-firmware-qca6174
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k firmware for QCA6174 devices
@@ -171,9 +176,20 @@ define Package/ath10k-firmware-qca99x0-ct/install
 		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/firmware-5.bin
 endef
 
+define Package/ath10k-firmware-qca9984/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA9984/hw1.0
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/QCA9984/hw1.0/board-2.bin \
+		$(1)/lib/firmware/ath10k/QCA9984/hw1.0/board-2.bin
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/QCA9984/hw1.0/firmware-5.bin_10.4-3.2-00072 \
+		$(1)/lib/firmware/ath10k/QCA9984/hw1.0/firmware-5.bin
+endef
+
 $(eval $(call BuildPackage,ath10k-firmware-qca988x))
 $(eval $(call BuildPackage,ath10k-firmware-qca99x0))
 $(eval $(call BuildPackage,ath10k-firmware-qca6174))
+$(eval $(call BuildPackage,ath10k-firmware-qca9984))
 
 $(eval $(call BuildPackage,ath10k-firmware-qca988x-ct))
 $(eval $(call BuildPackage,ath10k-firmware-qca99x0-ct))
