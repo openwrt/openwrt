@@ -8,6 +8,7 @@
 define Profile/DefaultNoWifi
 	NAME:=Default Profile (no WiFi)
 	PACKAGES:=
+	PRIORITY := 2
 endef
 
 define Profile/DefaultNoWifi/Description

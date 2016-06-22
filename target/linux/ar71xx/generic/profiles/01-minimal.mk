@@ -8,6 +8,7 @@
 define Profile/Minimal
 	NAME:=Minimal Profile (no drivers)
 	PACKAGES:=-kmod-ath9k -wpad-mini
+	PRIORITY := 2
 endef
 
 define Profile/Minimal/Description

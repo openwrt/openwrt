@@ -1,0 +1,18 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 14 May 2016 16:44:57 +0200
+Subject: [PATCH] compat: bump rhashtable backport version due to API changes
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/compat/Kconfig
++++ b/compat/Kconfig
+@@ -139,7 +139,7 @@ config BPAUTO_BUILD_WANT_DEV_COREDUMP
+ config BPAUTO_RHASHTABLE
+ 	bool
+ 	# current API of rhashtable was introduced in version 4.1
+-	depends on KERNEL_4_1
++	depends on KERNEL_4_7
+ 	# not very nice - but better than always having it
+ 	default y if MAC80211
+ 	#h-file linux/rhashtable.h
