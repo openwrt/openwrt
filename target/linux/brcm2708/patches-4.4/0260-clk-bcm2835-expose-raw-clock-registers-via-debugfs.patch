@@ -58,7 +58,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  /*
   * These are fixed clocks. They're probably not all root clocks and it may
   * be possible to turn them on and off but until this is mapped out better
-@@ -1040,6 +1062,36 @@ static int bcm2835_pll_set_rate(struct c
+@@ -1044,6 +1066,36 @@ static int bcm2835_pll_set_rate(struct c
  	return 0;
  }
  
@@ -95,7 +95,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  static const struct clk_ops bcm2835_pll_clk_ops = {
  	.is_prepared = bcm2835_pll_is_on,
  	.prepare = bcm2835_pll_on,
-@@ -1047,6 +1099,7 @@ static const struct clk_ops bcm2835_pll_
+@@ -1051,6 +1103,7 @@ static const struct clk_ops bcm2835_pll_
  	.recalc_rate = bcm2835_pll_get_rate,
  	.set_rate = bcm2835_pll_set_rate,
  	.round_rate = bcm2835_pll_round_rate,
@@ -103,7 +103,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  };
  
  struct bcm2835_pll_divider {
-@@ -1147,6 +1200,26 @@ static int bcm2835_pll_divider_set_rate(
+@@ -1151,6 +1204,26 @@ static int bcm2835_pll_divider_set_rate(
  	return 0;
  }
  
@@ -130,7 +130,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  static const struct clk_ops bcm2835_pll_divider_clk_ops = {
  	.is_prepared = bcm2835_pll_divider_is_on,
  	.prepare = bcm2835_pll_divider_on,
-@@ -1154,6 +1227,7 @@ static const struct clk_ops bcm2835_pll_
+@@ -1158,6 +1231,7 @@ static const struct clk_ops bcm2835_pll_
  	.recalc_rate = bcm2835_pll_divider_get_rate,
  	.set_rate = bcm2835_pll_divider_set_rate,
  	.round_rate = bcm2835_pll_divider_round_rate,
@@ -138,7 +138,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  };
  
  /*
-@@ -1395,6 +1469,31 @@ static u8 bcm2835_clock_get_parent(struc
+@@ -1399,6 +1473,31 @@ static u8 bcm2835_clock_get_parent(struc
  	return (src & CM_SRC_MASK) >> CM_SRC_SHIFT;
  }
  
@@ -170,7 +170,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  static const struct clk_ops bcm2835_clock_clk_ops = {
  	.is_prepared = bcm2835_clock_is_on,
  	.prepare = bcm2835_clock_on,
-@@ -1404,6 +1503,7 @@ static const struct clk_ops bcm2835_cloc
+@@ -1408,6 +1507,7 @@ static const struct clk_ops bcm2835_cloc
  	.determine_rate = bcm2835_clock_determine_rate,
  	.set_parent = bcm2835_clock_set_parent,
  	.get_parent = bcm2835_clock_get_parent,
@@ -178,7 +178,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  };
  
  static int bcm2835_vpu_clock_is_on(struct clk_hw *hw)
-@@ -1422,6 +1522,7 @@ static const struct clk_ops bcm2835_vpu_
+@@ -1426,6 +1526,7 @@ static const struct clk_ops bcm2835_vpu_
  	.determine_rate = bcm2835_clock_determine_rate,
  	.set_parent = bcm2835_clock_set_parent,
  	.get_parent = bcm2835_clock_get_parent,
