@@ -7,7 +7,8 @@
 set_state() {
 	case "$(brcm2708_board_name)" in
 	rpi-b |\
-	rpi-cm)
+	rpi-cm |\
+	rpi-zero)
 		status_led="led0"
 		;;
 	rpi-b-plus |\
