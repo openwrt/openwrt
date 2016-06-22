@@ -194,6 +194,7 @@ obj-$(CONFIG_ATH79_MACH_WPJ531)	+= mach-wpj531.o
 obj-$(CONFIG_ATH79_MACH_WPJ558)	+= mach-wpj558.o
 obj-$(CONFIG_ATH79_MACH_WRT160NL)	+= mach-wrt160nl.o
 obj-$(CONFIG_ATH79_MACH_WRT400N)	+= mach-wrt400n.o
+obj-$(CONFIG_ATH79_MACH_WRTNODE2Q)	+= mach-wrtnode2q.o
 obj-$(CONFIG_ATH79_MACH_WZR_HP_G300NH)	+= mach-wzr-hp-g300nh.o
 obj-$(CONFIG_ATH79_MACH_WZR_HP_G300NH2)	+= mach-wzr-hp-g300nh2.o
 obj-$(CONFIG_ATH79_MACH_WZR_HP_AG300H)	+= mach-wzr-hp-ag300h.o

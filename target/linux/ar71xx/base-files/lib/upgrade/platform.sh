@@ -272,7 +272,8 @@ platform_check_image() {
 	unifiac-pro | \
 	unifi-outdoor | \
 	carambola2 | \
-	weio )
+	weio | \
+	wrtnode2q)
 		[ "$magic" != "2705" ] && {
 			echo "Invalid image type."
 			return 1
