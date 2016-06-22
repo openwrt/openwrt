@@ -10,7 +10,7 @@ WIRELESS_MENU:=Wireless Drivers
 define KernelPackage/net-prism54
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intersil Prism54 support
-  DEPENDS:=@PCI_SUPPORT +@DRIVER_WEXT_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +@DRIVER_WEXT_SUPPORT +prism54-firmware
   KCONFIG:=CONFIG_PRISM54
   FILES:= \
 	$(LINUX_DIR)/drivers/net/wireless/prism54/prism54.ko@lt4.5 \
@@ -22,21 +22,6 @@ define KernelPackage/net-prism54/description
  Kernel modules for Intersil Prism54 support
 endef
 
-# Prism54 FullMAC firmware (jbnore.free.fr seems to be rather slow, so we use daemonizer.de)
-PRISM54_FW:=1.0.4.3.arm
-
-define Download/net-prism54
-  FILE:=$(PRISM54_FW)
-  URL:=http://daemonizer.de/prism54/prism54-fw/fw-fullmac/
-  MD5SUM:=8bd4310971772a486b9784c77f8a6df9
-endef
-
-define KernelPackage/net-prism54/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(PRISM54_FW) $(1)/lib/firmware/isl3890
-endef
-
-$(eval $(call Download,net-prism54))
 $(eval $(call KernelPackage,net-prism54))
 
 
