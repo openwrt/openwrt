@@ -7,8 +7,7 @@ before_install:
 install:
     - ./scripts/feeds update -a
     - ./scripts/feeds install -a
-    - echo "CONFIG_TARGET_pistachio=y" > ./.config
-    - echo "CONFIG_TARGET_pistachio_marduk_marduk_cc2520=y" >> ./.config
+    - cat target/linux/pistachio/creator-platform-default.config > ./.config
 
 script:
     - make defconfig
