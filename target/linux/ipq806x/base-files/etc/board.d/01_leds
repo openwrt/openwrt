@@ -27,6 +27,10 @@ r7500)
 	ucidef_set_led_default "wps" "WPS" "r7500:white:wps" "0"
 	ucidef_set_led_default "rfkill" "rfkill" "r7500:white:rfkill" "0"
 	;;
+ea8500)
+	ucidef_set_led_wlan "wifi" "WIFI" "ea8500:green:wifi" "phy0radio"
+	ucidef_set_led_default "wps" "WPS" "ea8500:green:wps" "0"
+	;;
 *)
 	;;
 esac

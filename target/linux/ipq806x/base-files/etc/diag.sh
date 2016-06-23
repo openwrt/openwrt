@@ -8,6 +8,9 @@ get_status_led() {
 	c2600)
 		status_led="status:blue"
 		;;
+	ea8500)
+		status_led="ea8500:white:power"
+		;;
 	esac
 }
 
