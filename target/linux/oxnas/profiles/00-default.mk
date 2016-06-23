@@ -7,11 +7,11 @@
 
 define Profile/Default
 	NAME:=Default Profile
+	PRIORITY:=1
 	PACKAGES:=\
-		kmod-usb-core kmod-usb3 kmod-ledtrig-usbdev \
-		kmod-usb-storage \
-		kmod-i2c-gpio kmod-rtc-pcf8563 kmod-rtc-ds1307 \
-		kmod-gpio-beeper kmod-hwmon-core kmod-hwmon-gpiofan
+		kmod-i2c-gpio kmod-gpio-beeper kmod-hwmon-core \
+		kmod-hwmon-gpiofan kmod-rtc-pcf8563 kmod-rtc-ds1307 \
+		kmod-usb3
 endef
 
 define Profile/Default/Description
