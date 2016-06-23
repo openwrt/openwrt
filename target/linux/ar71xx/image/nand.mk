@@ -7,8 +7,6 @@ define Build/MerakiNAND
 endef
 
 define Device/mr18
-  DEVICE_TITLE := Meraki MR18
-  DEVICE_PACKAGES := kmod-spi-gpio kmod-ath9k
   BOARDNAME = MR18
   BLOCKSIZE := 64k
   CONSOLE = ttyS0,115200

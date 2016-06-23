@@ -39,7 +39,6 @@ DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE
 # UBNT_TYPE e.g. one of (BZ, XM, XW)
 # UBNT_CHIP e.g. one of (ar7240, ar933x, ar934x)
 define Device/ubnt-xm
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7552k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
@@ -52,7 +51,6 @@ define Device/ubnt-xm
 endef
 
 define Device/ubnt-xw
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7552k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
@@ -65,7 +63,6 @@ define Device/ubnt-xw
 endef
 
 define Device/ubnt-bz
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7552k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
@@ -78,7 +75,6 @@ define Device/ubnt-bz
 endef
 
 define Device/ubnt-unifiac
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7744k
   MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
@@ -88,61 +84,50 @@ endef
 
 define Device/rw2458n
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti RW2458N
   BOARDNAME := RW2458N
 endef
 
 define Device/ubnt-airrouter
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti AirRouter
   BOARDNAME := UBNT-AR
 endef
 
 define Device/ubnt-bullet-m
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti Bullet-M
   BOARDNAME := UBNT-BM
 endef
 
 define Device/ubnt-rocket-m
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti Rocket-M
   BOARDNAME := UBNT-RM
 endef
 
 define Device/ubnt-nano-m
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti Nano-M
   BOARDNAME := UBNT-NM
 endef
 TARGET_DEVICES += rw2458n ubnt-airrouter ubnt-bullet-m ubnt-rocket-m ubnt-nano-m
 
 define Device/ubnt-unifi
   $(Device/ubnt-bz)
-  DEVICE_TITLE := Ubiquiti UniFi
   BOARDNAME := UBNT-UF
   DEVICE_PROFILE := UBNT UBNTUNIFI
 endef
 
 define Device/ubnt-unifiac-lite
   $(Device/ubnt-unifiac)
-  DEVICE_TITLE := Ubiquiti UniFi AC-Lite
-  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   DEVICE_PROFILE := UBNT UBNTUNIFIACLITE
   BOARDNAME := UBNT-UF-AC-LITE
 endef
 
 define Device/ubnt-unifiac-pro
   $(Device/ubnt-unifiac)
-  DEVICE_TITLE := Ubiquiti UniFi AC-Pro
-  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x kmod-usb-core kmod-usb-ohci kmod-usb2
   DEVICE_PROFILE := UBNT UBNTUNIFIACPRO
   BOARDNAME := UBNT-UF-AC-PRO
 endef
 
 define Device/ubnt-unifi-outdoor
   $(Device/ubnt-bz)
-  DEVICE_TITLE := Ubiquiti UniFi Outdoor
   BOARDNAME := UBNT-U20
   DEVICE_PROFILE := UBNT UBNTUNIFIOUTDOOR
 endef
@@ -150,25 +135,21 @@ TARGET_DEVICES += ubnt-unifi ubnt-unifiac-lite ubnt-unifiac-pro ubnt-unifi-outdo
 
 define Device/ubnt-nano-m-xw
   $(Device/ubnt-xw)
-  DEVICE_TITLE := Ubiquiti Nano M XW
   BOARDNAME := UBNT-NM-XW
 endef
 
 define Device/ubnt-loco-m-xw
   $(Device/ubnt-xw)
-  DEVICE_TITLE := Ubiquiti Loco XW
   BOARDNAME := UBNT-LOCO-XW
 endef
 
 define Device/ubnt-rocket-m-xw
   $(Device/ubnt-xw)
-  DEVICE_TITLE := Ubiquiti Rocket M XW
   BOARDNAME := UBNT-RM-XW
 endef
 
 define Device/ubnt-rocket-m-ti
   $(Device/ubnt-xw)
-  DEVICE_TITLE := Ubiquiti Rocket M TI
   BOARDNAME := UBNT-RM-TI
   UBNT_TYPE := TI
   UBNT_BOARD := XM
@@ -177,7 +158,6 @@ TARGET_DEVICES += ubnt-nano-m-xw ubnt-loco-m-xw ubnt-rocket-m-xw ubnt-rocket-m-t
 
 define Device/ubnt-air-gateway
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti Air Gateway
   BOARDNAME := UBNT-AGW
   UBNT_BOARD := XM
   UBNT_TYPE := AirGW
@@ -188,7 +168,6 @@ TARGET_DEVICES += ubnt-air-gateway
 
 define Device/ubnt-air-gateway-pro
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti Air Gateway Pro
   BOARDNAME := UBNT-AGWP
   UBNT_TYPE := AirGWP
   UBNT_CHIP := ar934x
@@ -198,7 +177,6 @@ TARGET_DEVICES += ubnt-air-gateway-pro
 
 define Device/ubdev01
   $(Device/ubnt-xm)
-  DEVICE_TITLE := Ubiquiti ubDEV01
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7488k(firmware),64k(certs),256k(cfg)ro,64k(EEPROM)ro
   BOARDNAME := UBNT-UF
   UBNT_BOARD := UBDEV01
@@ -209,8 +187,6 @@ endef
 TARGET_DEVICES += ubdev01
 
 define Device/ubnt-routerstation
-  DEVICE_TITLE := Ubiquiti RouterStation
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
   IMAGE_SIZE := 16128k
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin = append-rootfs | pad-rootfs | mkubntimage
@@ -220,7 +196,6 @@ endef
 
 define Device/ubnt-rs
 $(Device/ubnt-routerstation)
-  DEVICE_TITLE := Ubiquiti RouterStation
   BOARDNAME := UBNT-RS
   DEVICE_PROFILE := Madwifi UBNT UBNTRS
   UBNT_BOARD := RS
@@ -230,7 +205,6 @@ endef
 
 define Device/ubnt-rspro
 $(Device/ubnt-routerstation)
-  DEVICE_TITLE := Ubiquiti RouterStation Pro
   BOARDNAME := UBNT-RSPRO
   DEVICE_PROFILE := Madwifi UBNT UBNTRSPRO
   UBNT_BOARD := RSPRO
@@ -240,7 +214,6 @@ endef
 
 define Device/ubnt-ls-sr71
 $(Device/ubnt-routerstation)
-  DEVICE_TITLE := Ubiquiti LS-SR71
   BOARDNAME := UBNT-LS-SR71
   DEVICE_PROFILE := Madwifi UBNT
   UBNT_BOARD := LS-SR71
@@ -251,7 +224,6 @@ endef
 TARGET_DEVICES += ubnt-rs ubnt-rspro ubnt-ls-sr71
 
 define Device/ubnt-uap-pro
-  DEVICE_TITLE := Ubiquiti UAP Pro
   KERNEL_SIZE := 1536k
   IMAGE_SIZE := 15744k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1536k(kernel),14208k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
@@ -267,7 +239,6 @@ endef
 
 define Device/ubnt-unifi-outdoor-plus
 $(Device/ubnt-uap-pro)
-  DEVICE_TITLE := Ubiquiti UniFi Outdoor Pro
   UBNT_CHIP := ar7240
   BOARDNAME := UBNT-UOP
   DEVICE_PROFILE := UBNT
