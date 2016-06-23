@@ -1,0 +1,270 @@
+From e87ddfc18bbca9beae107b274b317fb86420b0a5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 31 Mar 2016 15:44:53 +0100
+Subject: [PATCH 222/381] bcm2835-sdhost: Precalc divisors and overclocks
+
+Recalculating the clock divisors when the core clock changes is wasteful
+and makes it harder to manage the overclock settings. Instead,
+precalculate them and only report significant changes.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/mmc/host/bcm2835-sdhost.c | 152 ++++++++++++++++++++++----------------
+ 1 file changed, 88 insertions(+), 64 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -154,12 +154,15 @@ struct bcm2835_host {
+ 	u32			pio_timeout;	/* In jiffies */
+ 
+ 	int			clock;		/* Current clock speed */
++	int			clocks[2];
+ 
+ 	bool			slow_card;	/* Force 11-bit divisor */
+ 
+ 	unsigned int		max_clk;	/* Max src clock freq */
+-	unsigned int		min_clk;	/* Min src clock freq */
+-	unsigned int		cur_clk;	/* Current src clock freq */
++	unsigned int		src_clks[2];	/* Min/max src clock freqs */
++	unsigned int		cur_clk_idx;	/* Index of current clock */
++	unsigned int		next_clk_idx;	/* Next clock index */
++	unsigned int		cdivs[2];
+ 
+ 	struct tasklet_struct	finish_tasklet;	/* Tasklet structures */
+ 
+@@ -213,7 +216,7 @@ struct bcm2835_host {
+ 	u32				delay_after_stop; /* minimum time between stop and subsequent data transfer */
+ 	u32				delay_after_this_stop; /* minimum time between this stop and subsequent data transfer */
+ 	u32				overclock_50;	/* frequency to use when 50MHz is requested (in MHz) */
+-	u32				overclock;	/* Current frequency if overclocked, else zero */
++	u32				prev_overclock_50;
+ 	u32				pio_limit;	/* Maximum block count for PIO (0 = always DMA) */
+ 
+ 	u32				sectors;	/* Cached card size in sectors */
+@@ -1509,10 +1512,35 @@ static irqreturn_t bcm2835_sdhost_irq(in
+ 	return result;
+ }
+ 
++static void bcm2835_sdhost_select_clock(struct bcm2835_host *host, int idx)
++{
++	unsigned int clock = host->clocks[idx];
++	unsigned int cdiv = host->cdivs[idx];
++
++	host->mmc->actual_clock = clock;
++	host->ns_per_fifo_word = (1000000000/clock) *
++		((host->mmc->caps & MMC_CAP_4_BIT_DATA) ? 8 : 32);
++
++	host->cdiv = cdiv;
++	bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
++
++	/* Set the timeout to 500ms */
++	bcm2835_sdhost_write(host, clock/2, SDTOUT);
++
++	host->cur_clk_idx = host->next_clk_idx = idx;
++
++	if (host->debug)
++		pr_info("%s: clock=%d -> src_clk=%d, cdiv=%x (actual %d)\n",
++			mmc_hostname(host->mmc), host->clock,
++			host->src_clks[idx], host->cdiv,
++			host->mmc->actual_clock);
++}
++
+ void bcm2835_sdhost_set_clock(struct bcm2835_host *host)
+ {
+ 	int div = 0; /* Initialized for compiler warning */
+ 	unsigned int clock = host->clock;
++	int clk_idx;
+ 
+ 	if (host->debug)
+ 		pr_info("%s: set_clock(%d)\n", mmc_hostname(host->mmc), clock);
+@@ -1553,53 +1581,45 @@ void bcm2835_sdhost_set_clock(struct bcm
+ 	    return;
+ 	}
+ 
+-	div = host->cur_clk / clock;
+-	if (div < 2)
+-		div = 2;
+-	if ((host->cur_clk / div) > clock)
+-		div++;
+-	div -= 2;
+-
+-	if (div > SDCDIV_MAX_CDIV)
+-	    div = SDCDIV_MAX_CDIV;
+-
+-	clock = host->cur_clk / (div + 2);
+-	host->mmc->actual_clock = clock;
+-
+-	/* Calibrate some delays */
+-
+-	host->ns_per_fifo_word = (1000000000/clock) *
+-		((host->mmc->caps & MMC_CAP_4_BIT_DATA) ? 8 : 32);
++	/* Calculate the clock divisors */
++	for (clk_idx = 0; clk_idx <= host->variable_clock; clk_idx++)
++	{
++		unsigned int cur_clk = host->src_clks[clk_idx];
++		unsigned int actual_clock;
+ 
+-	if (clock > host->clock) {
+-		/* Save the closest value, to make it easier
+-		   to reduce in the event of error */
+-		host->overclock_50 = (clock/MHZ);
+-
+-		if (clock != host->overclock) {
+-			pr_warn("%s: overclocking to %dHz\n",
+-				mmc_hostname(host->mmc), clock);
+-			host->overclock = clock;
++		div = cur_clk / clock;
++		if (div < 2)
++			div = 2;
++		if ((cur_clk / div) > clock)
++			div++;
++		div -= 2;
++
++		if (div > SDCDIV_MAX_CDIV)
++			div = SDCDIV_MAX_CDIV;
++		actual_clock = cur_clk / (div + 2);
++
++		host->cdivs[clk_idx] = div;
++		host->clocks[clk_idx] = actual_clock;
++
++		if (host->overclock_50 != host->prev_overclock_50) {
++			const char *clk_name = "";
++			if (host->variable_clock)
++				clk_name = clk_idx ? " (turbo)" : " (normal)";
++			if (actual_clock > host->clock)
++				pr_info("%s: overclocking to %dHz%s\n",
++					mmc_hostname(host->mmc),
++					actual_clock, clk_name);
++			else if ((host->overclock_50 < 50) && (clk_idx == 0))
++				pr_info("%s: cancelling overclock%s\n",
++					mmc_hostname(host->mmc),
++					host->variable_clock ? "s" : "");
+ 		}
+ 	}
+-	else if (host->overclock)
+-	{
+-		host->overclock = 0;
+-		if (clock == 50 * MHZ)
+-			pr_warn("%s: cancelling overclock\n",
+-				mmc_hostname(host->mmc));
+-	}
+ 
+-	host->cdiv = div;
+-	bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
++	if (host->clock == 50*MHZ)
++		host->prev_overclock_50 = host->overclock_50;
+ 
+-	/* Set the timeout to 500ms */
+-	bcm2835_sdhost_write(host, host->mmc->actual_clock/2, SDTOUT);
+-
+-	if (host->debug)
+-		pr_info("%s: clock=%d -> cur_clk=%d, cdiv=%x (actual clock %d)\n",
+-			mmc_hostname(host->mmc), host->clock,
+-			host->cur_clk, host->cdiv, host->mmc->actual_clock);
++	bcm2835_sdhost_select_clock(host, host->cur_clk_idx);
+ }
+ 
+ static void bcm2835_sdhost_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -1657,6 +1677,9 @@ static void bcm2835_sdhost_request(struc
+ 
+ 	spin_lock_irqsave(&host->lock, flags);
+ 
++	if (host->next_clk_idx != host->cur_clk_idx)
++		bcm2835_sdhost_select_clock(host, host->next_clk_idx);
++
+ 	WARN_ON(host->mrq != NULL);
+ 	host->mrq = mrq;
+ 
+@@ -1719,11 +1742,7 @@ static int bcm2835_sdhost_cpufreq_callba
+ 				return NOTIFY_BAD;
+ 			break;
+ 		case CPUFREQ_POSTCHANGE:
+-			if (freq->new > freq->old)
+-				host->cur_clk = host->max_clk;
+-			else
+-				host->cur_clk = host->min_clk;
+-			bcm2835_sdhost_set_clock(host);
++			host->next_clk_idx = (freq->new > freq->old);
+ 			up(&host->cpufreq_semaphore);
+ 			break;
+ 		default:
+@@ -1763,8 +1782,11 @@ static void bcm2835_sdhost_set_ios(struc
+ 			ios->clock, ios->power_mode, ios->bus_width,
+ 			ios->timing, ios->signal_voltage, ios->drv_type);
+ 
+-	if (ios->clock && !host->cur_clk)
+-		host->cur_clk = get_core_clock(RPI_FIRMWARE_GET_CLOCK_RATE);
++	if (ios->clock && (host->cur_clk_idx == -1)) {
++		unsigned int cur_clk =
++			get_core_clock(RPI_FIRMWARE_GET_CLOCK_RATE);
++		host->cur_clk_idx = (cur_clk == host->src_clks[0]) ? 0 : 1;
++	}
+ 
+ 	spin_lock_irqsave(&host->lock, flags);
+ 
+@@ -1854,11 +1876,12 @@ static void bcm2835_sdhost_tasklet_finis
+ 
+ 	/* Drop the overclock after any data corruption, or after any
+ 	   error overclocked */
+-	if (host->overclock) {
++	if (host->clock > 50*MHZ) {
+ 		if ((mrq->cmd && mrq->cmd->error) ||
+ 		    (mrq->data && mrq->data->error) ||
+ 		    (mrq->stop && mrq->stop->error)) {
+-			host->overclock_50--;
++			host->overclock_50 = (host->clock/MHZ) - 1;
++
+ 			pr_warn("%s: reducing overclock due to errors\n",
+ 				mmc_hostname(host->mmc));
+ 			bcm2835_sdhost_set_clock(host);
+@@ -2022,7 +2045,7 @@ static int bcm2835_sdhost_probe(struct p
+ 	struct bcm2835_host *host;
+ 	struct mmc_host *mmc;
+ 	const __be32 *addr;
+-	unsigned int max_clk;
++	unsigned int max_clk, min_clk;
+ 	int ret;
+ 
+ 	pr_debug("bcm2835_sdhost_probe\n");
+@@ -2128,12 +2151,8 @@ static int bcm2835_sdhost_probe(struct p
+ 	else
+ 		mmc->caps |= MMC_CAP_4_BIT_DATA;
+ 
+-	ret = bcm2835_sdhost_add_host(host);
+-	if (ret)
+-		goto err;
+-
+ 	/* Query the core clock frequencies */
+-	host->min_clk = get_core_clock(RPI_FIRMWARE_GET_MIN_CLOCK_RATE);
++	min_clk = get_core_clock(RPI_FIRMWARE_GET_MIN_CLOCK_RATE);
+ 	max_clk = get_core_clock(RPI_FIRMWARE_GET_MAX_CLOCK_RATE);
+ 	if (max_clk != host->max_clk) {
+ 		pr_warn("%s: Expected max clock %d, found %d\n",
+@@ -2141,19 +2160,24 @@ static int bcm2835_sdhost_probe(struct p
+ 		host->max_clk = max_clk;
+ 	}
+ 
+-	if (host->min_clk != host->max_clk) {
++	host->src_clks[0] = min_clk;
++	host->cur_clk_idx = -1;
++	if (max_clk != min_clk) {
++		host->src_clks[1] = max_clk;
+ 		host->cpufreq_nb.notifier_call =
+ 			bcm2835_sdhost_cpufreq_callback;
+ 		sema_init(&host->cpufreq_semaphore, 1);
+ 		cpufreq_register_notifier(&host->cpufreq_nb,
+ 					  CPUFREQ_TRANSITION_NOTIFIER);
+ 		host->variable_clock = 1;
+-		host->cur_clk = 0; /* Get this later */
+ 	} else {
+ 		host->variable_clock = 0;
+-		host->cur_clk = host->max_clk;
+ 	}
+ 
++	ret = bcm2835_sdhost_add_host(host);
++	if (ret)
++		goto err;
++
+ 	platform_set_drvdata(pdev, host);
+ 
+ 	pr_debug("bcm2835_sdhost_probe -> OK\n");

@@ -1,0 +1,30 @@
+From 61b0ef34ce5c2b75fdab896e50877be6becd267c Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Thu, 31 Mar 2016 16:49:52 +0100
+Subject: [PATCH 227/381] config: Enabled IPV6_SUBTREES
+
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -106,6 +106,7 @@ CONFIG_INET6_ESP=m
+ CONFIG_INET6_IPCOMP=m
+ CONFIG_IPV6_TUNNEL=m
+ CONFIG_IPV6_MULTIPLE_TABLES=y
++CONFIG_IPV6_SUBTREES=y
+ CONFIG_IPV6_MROUTE=y
+ CONFIG_IPV6_MROUTE_MULTIPLE_TABLES=y
+ CONFIG_IPV6_PIMSM_V2=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -73,6 +73,7 @@ CONFIG_INET=y
+ CONFIG_IP_MULTICAST=y
+ CONFIG_IP_ADVANCED_ROUTER=y
+ CONFIG_IP_MULTIPLE_TABLES=y
++CONFIG_IPV6_SUBTREES=y
+ CONFIG_IP_ROUTE_MULTIPATH=y
+ CONFIG_IP_ROUTE_VERBOSE=y
+ CONFIG_IP_PNP=y

@@ -1,0 +1,247 @@
+From 5e591b39b106e20e3f8128cbd46a20d01eedb185 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 11 Nov 2015 11:38:59 +0000
+Subject: [PATCH 089/381] scripts: Multi-platform support for mkknlimg and
+ knlinfo
+
+The firmware uses tags in the kernel trailer to choose which dtb file
+to load. Current firmware loads bcm2835-*.dtb if the '283x' tag is true,
+otherwise it loads bcm270*.dtb. This scheme breaks if an image supports
+multiple platforms.
+
+This patch adds '270X' and '283X' tags to indicate support for RPi and
+upstream platforms, respectively. '283x' (note lower case 'x') is left
+for old firmware, and is only set if the image only supports upstream
+builds.
+---
+ scripts/knlinfo  |   2 +
+ scripts/mkknlimg | 136 +++++++++++++++++++++++++++++++------------------------
+ 2 files changed, 80 insertions(+), 58 deletions(-)
+
+--- a/scripts/knlinfo
++++ b/scripts/knlinfo
+@@ -18,6 +18,8 @@ my %atom_formats =
+ (
+     'DTOK' => \&format_bool,
+     'KVer' => \&format_string,
++    '270X' => \&format_bool,
++    '283X' => \&format_bool,
+     '283x' => \&format_bool,
+ );
+ 
+--- a/scripts/mkknlimg
++++ b/scripts/mkknlimg
+@@ -13,12 +13,20 @@ use strict;
+ use warnings;
+ use integer;
+ 
++use constant FLAG_PI   => 0x01;
++use constant FLAG_DTOK => 0x02;
++use constant FLAG_DDTK => 0x04;
++use constant FLAG_270X => 0x08;
++use constant FLAG_283X => 0x10;
++
+ my $trailer_magic = 'RPTL';
+ 
+ my $tmpfile1 = "/tmp/mkknlimg_$$.1";
+ my $tmpfile2 = "/tmp/mkknlimg_$$.2";
+ 
+ my $dtok = 0;
++my $ddtk = 0;
++my $is_270x = 0;
+ my $is_283x = 0;
+ 
+ while (@ARGV && ($ARGV[0] =~ /^-/))
+@@ -28,6 +36,14 @@ while (@ARGV && ($ARGV[0] =~ /^-/))
+     {
+ 	$dtok = 1;
+     }
++    elsif ($arg eq '--ddtk')
++    {
++	$ddtk = 1;
++    }
++    elsif ($arg eq '--270x')
++    {
++	$is_270x = 1;
++    }
+     elsif ($arg eq '--283x')
+     {
+ 	$is_283x = 1;
+@@ -50,30 +66,33 @@ if (! -r $kernel_file)
+     usage();
+ }
+ 
+-my @wanted_strings =
+-(
+-	'bcm2708_fb',
+-	'brcm,bcm2835-mmc',
+-	'brcm,bcm2835-sdhost',
+-	'brcm,bcm2708-pinctrl',
+-	'brcm,bcm2835-gpio',
+-	'brcm,bcm2835',
+-	'brcm,bcm2836'
+-);
++my $wanted_strings =
++{
++	'bcm2708_fb' => FLAG_PI,
++	'brcm,bcm2835-mmc' => FLAG_PI,
++	'brcm,bcm2835-sdhost' => FLAG_PI,
++	'brcm,bcm2708-pinctrl' => FLAG_PI | FLAG_DTOK,
++	'brcm,bcm2835-gpio' => FLAG_PI | FLAG_DTOK,
++	'brcm,bcm2708' => FLAG_PI | FLAG_DTOK | FLAG_270X,
++	'brcm,bcm2709' => FLAG_PI | FLAG_DTOK | FLAG_270X,
++	'brcm,bcm2835' => FLAG_PI | FLAG_DTOK | FLAG_283X,
++	'brcm,bcm2836' => FLAG_PI | FLAG_DTOK | FLAG_283X,
++	'of_overlay_apply' => FLAG_DTOK | FLAG_DDTK,
++};
+ 
+ my $res = try_extract($kernel_file, $tmpfile1);
+-$res = try_decompress('\037\213\010', 'xy',    'gunzip', 0,
+-		      $kernel_file, $tmpfile1, $tmpfile2) if (!$res);
+-$res = try_decompress('\3757zXZ\000', 'abcde', 'unxz --single-stream', -1,
+-		      $kernel_file, $tmpfile1, $tmpfile2) if (!$res);
+-$res = try_decompress('BZh',          'xy',    'bunzip2', 0,
+-		      $kernel_file, $tmpfile1, $tmpfile2) if (!$res);
+-$res = try_decompress('\135\0\0\0',   'xxx',   'unlzma', 0,
+-		      $kernel_file, $tmpfile1, $tmpfile2) if (!$res);
+-$res = try_decompress('\211\114\132', 'xy',    'lzop -d', 0,
+-		      $kernel_file, $tmpfile1, $tmpfile2) if (!$res);
+-$res = try_decompress('\002\041\114\030', 'xy',    'lz4 -d', 1,
+-		      $kernel_file, $tmpfile1, $tmpfile2) if (!$res);
++$res ||= try_decompress('\037\213\010', 'xy',    'gunzip', 0,
++			$kernel_file, $tmpfile1, $tmpfile2);
++$res ||= try_decompress('\3757zXZ\000', 'abcde', 'unxz --single-stream', -1,
++			$kernel_file, $tmpfile1, $tmpfile2);
++$res ||= try_decompress('BZh',          'xy',    'bunzip2', 0,
++			$kernel_file, $tmpfile1, $tmpfile2);
++$res ||= try_decompress('\135\0\0\0',   'xxx',   'unlzma', 0,
++			$kernel_file, $tmpfile1, $tmpfile2);
++$res ||= try_decompress('\211\114\132', 'xy',    'lzop -d', 0,
++			$kernel_file, $tmpfile1, $tmpfile2);
++$res ||= try_decompress('\002\041\114\030', 'xy',    'lz4 -d', 1,
++			$kernel_file, $tmpfile1, $tmpfile2);
+ 
+ my $append_trailer;
+ my $trailer;
+@@ -83,27 +102,21 @@ $append_trailer = $dtok;
+ 
+ if ($res)
+ {
+-    $kver = $res->{''} || '?';
++    $kver = $res->{'kver'} || '?';
++    my $flags = $res->{'flags'};
+     print("Version: $kver\n");
+ 
+-    $append_trailer = $dtok;
+-    if (!$dtok)
++    if ($flags & FLAG_PI)
+     {
+-	if (config_bool($res, 'bcm2708_fb') ||
+-	    config_bool($res, 'brcm,bcm2835-mmc') ||
+-	    config_bool($res, 'brcm,bcm2835-sdhost'))
+-	{
+-	    $dtok ||= config_bool($res, 'brcm,bcm2708-pinctrl');
+-	    $dtok ||= config_bool($res, 'brcm,bcm2835-gpio');
+-	    $is_283x ||= config_bool($res, 'brcm,bcm2835');
+-	    $is_283x ||= config_bool($res, 'brcm,bcm2836');
+-	    $dtok ||= $is_283x;
+-	    $append_trailer = 1;
+-	}
+-	else
+-	{
+-	    print ("* This doesn't look like a Raspberry Pi kernel. In pass-through mode.\n");
+-	}
++	$append_trailer = 1;
++	$dtok ||= ($flags & FLAG_DTOK) != 0;
++	$is_270x ||= ($flags & FLAG_270X) != 0;
++	$is_283x ||= ($flags & FLAG_283X) != 0;
++	$ddtk ||= ($flags & FLAG_DDTK) != 0;
++    }
++    else
++    {
++	print ("* This doesn't look like a Raspberry Pi kernel. In pass-through mode.\n");
+     }
+ }
+ elsif (!$dtok)
+@@ -114,6 +127,8 @@ elsif (!$dtok)
+ if ($append_trailer)
+ {
+     printf("DT: %s\n", $dtok ? "y" : "n");
++    printf("DDT: %s\n", $ddtk ? "y" : "n") if ($ddtk);
++    printf("270x: %s\n", $is_270x ? "y" : "n");
+     printf("283x: %s\n", $is_283x ? "y" : "n");
+ 
+     my @atoms;
+@@ -121,7 +136,10 @@ if ($append_trailer)
+     push @atoms, [ $trailer_magic, pack('V', 0) ];
+     push @atoms, [ 'KVer', $kver ];
+     push @atoms, [ 'DTOK', pack('V', $dtok) ];
+-    push @atoms, [ '283x', pack('V', $is_283x) ];
++    push @atoms, [ 'DDTK', pack('V', $ddtk) ] if ($ddtk);
++    push @atoms, [ '270X', pack('V', $is_270x) ];
++    push @atoms, [ '283X', pack('V', $is_283x) ];
++    push @atoms, [ '283x', pack('V', $is_283x && !$is_270x) ];
+ 
+     $trailer = pack_trailer(\@atoms);
+     $atoms[0]->[1] = pack('V', length($trailer));
+@@ -175,7 +193,7 @@ END {
+ 
+ sub usage
+ {
+-	print ("Usage: mkknlimg [--dtok] [--283x] <vmlinux|zImage|bzImage> <outfile>\n");
++	print ("Usage: mkknlimg [--dtok] [--270x] [--283x] <vmlinux|zImage|bzImage> <outfile>\n");
+ 	exit(1);
+ }
+ 
+@@ -189,15 +207,8 @@ sub try_extract
+ 
+ 	chomp($ver);
+ 
+-	my $res = { ''=>$ver };
+-	my $string_pattern = '^('.join('|', @wanted_strings).')$';
+-
+-	my @matches = `strings \"$knl\" | grep -E \"$string_pattern\"`;
+-	foreach my $match (@matches)
+-	{
+-	    chomp($match);
+-	    $res->{$match} = 1;
+-	}
++	my $res = { 'kver'=>$ver };
++	$res->{'flags'} = strings_to_flags($knl, $wanted_strings);
+ 
+ 	return $res;
+ }
+@@ -224,6 +235,22 @@ sub try_decompress
+ 	return undef;
+ }
+ 
++sub strings_to_flags
++{
++	my ($knl, $strings) = @_;
++	my $string_pattern = '^('.join('|', keys(%$strings)).')$';
++	my $flags = 0;
++
++	my @matches = `strings \"$knl\" | grep -E \"$string_pattern\"`;
++	foreach my $match (@matches)
++	{
++	    chomp($match);
++	    $flags |= $strings->{$match};
++	}
++
++	return $flags;
++}
++
+ sub pack_trailer
+ {
+ 	my ($atoms) = @_;
+@@ -235,10 +262,3 @@ sub pack_trailer
+ 	}
+ 	return $trailer;
+ }
+-
+-sub config_bool
+-{
+-	my ($configs, $wanted) = @_;
+-	my $val = $configs->{$wanted} || 'n';
+-	return (($val eq 'y') || ($val eq '1'));
+-}

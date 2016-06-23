@@ -1,0 +1,36 @@
+From a7261327b85789623ba20744f44150308d15fb94 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 8 Apr 2016 17:43:27 +0100
+Subject: [PATCH 232/381] BCM270X_DT: Don't generate "linux,phandle" props
+
+The EPAPR standard says to use "phandle" properties to store phandles,
+rather than the deprecated "linux,phandle" version. By default, dtc
+generates both, but adding "-H epapr" causes it to only generate
+"phandle"s, saving some space and clutter.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/Makefile | 2 +-
+ scripts/Makefile.lib       | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -813,5 +813,5 @@ clean-files	:= *.dtb
+ 
+ # Enable fixups to support overlays on BCM2708 platforms
+ ifeq ($(RPI_DT_OVERLAYS),y)
+-	DTC_FLAGS ?= -@
++	DTC_FLAGS ?= -@ -H epapr
+ endif
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -294,7 +294,7 @@ $(obj)/%.dtb: $(src)/%.dts FORCE
+ 
+ quiet_cmd_dtco = DTCO    $@
+ cmd_dtco = $(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
+-	$(objtree)/scripts/dtc/dtc -@ -O dtb -o $@ -b 0 \
++	$(objtree)/scripts/dtc/dtc -@ -H epapr -O dtb -o $@ -b 0 \
+ 		-i $(dir $<) $(DTC_FLAGS) \
+ 		-d $(depfile).dtc.tmp $(dtc-tmp) ; \
+ 	cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)

@@ -1,0 +1,54 @@
+From e7530cfb655bb473d5c99e27bb44a15f1c921441 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 19 Oct 2015 08:32:24 -0700
+Subject: [PATCH 094/381] drm/vc4: Use job_lock to protect seqno_cb_list.
+
+We're (mostly) not supposed to be using struct_mutex in drivers these
+days.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -474,7 +474,6 @@ vc4_job_handle_completed(struct vc4_dev
+ 		vc4_complete_exec(exec);
+ 		spin_lock_irqsave(&vc4->job_lock, irqflags);
+ 	}
+-	spin_unlock_irqrestore(&vc4->job_lock, irqflags);
+ 
+ 	list_for_each_entry_safe(cb, cb_temp, &vc4->seqno_cb_list, work.entry) {
+ 		if (cb->seqno <= vc4->finished_seqno) {
+@@ -482,6 +481,8 @@ vc4_job_handle_completed(struct vc4_dev
+ 			schedule_work(&cb->work);
+ 		}
+ 	}
++
++	spin_unlock_irqrestore(&vc4->job_lock, irqflags);
+ }
+ 
+ static void vc4_seqno_cb_work(struct work_struct *work)
+@@ -496,18 +497,19 @@ int vc4_queue_seqno_cb(struct drm_device
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	int ret = 0;
++	unsigned long irqflags;
+ 
+ 	cb->func = func;
+ 	INIT_WORK(&cb->work, vc4_seqno_cb_work);
+ 
+-	mutex_lock(&dev->struct_mutex);
++	spin_lock_irqsave(&vc4->job_lock, irqflags);
+ 	if (seqno > vc4->finished_seqno) {
+ 		cb->seqno = seqno;
+ 		list_add_tail(&cb->work.entry, &vc4->seqno_cb_list);
+ 	} else {
+ 		schedule_work(&cb->work);
+ 	}
+-	mutex_unlock(&dev->struct_mutex);
++	spin_unlock_irqrestore(&vc4->job_lock, irqflags);
+ 
+ 	return ret;
+ }

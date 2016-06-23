@@ -1,0 +1,36 @@
+From 71f287127dd0aafa0346f198c5eef0c4aac7a5f6 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 18 Feb 2016 15:28:14 +0000
+Subject: [PATCH 149/381] BCM270X_DT: at86rf233 overlay - drop to 3MHz
+
+The consensus is that 6MHz is too fast, but that 3MHz is OK.
+
+See: https://github.com/raspberrypi/linux/issues/1294
+     https://github.com/raspberrypi/linux/issues/1151
+---
+ arch/arm/boot/dts/overlays/README                | 2 +-
+ arch/arm/boot/dts/overlays/at86rf233-overlay.dts | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -188,7 +188,7 @@ Load:   dtoverlay=at86rf233,<param>=<val
+ Params: interrupt               GPIO used for INT (default 23)
+         reset                   GPIO used for Reset (default 24)
+         sleep                   GPIO used for Sleep (default 25)
+-        speed                   SPI bus speed in Hz (default 6000000)
++        speed                   SPI bus speed in Hz (default 3000000)
+         trim                    Fine tuning of the internal capacitance
+                                 arrays (0=+0pF, 15=+4.5pF, default 15)
+ 
+--- a/arch/arm/boot/dts/overlays/at86rf233-overlay.dts
++++ b/arch/arm/boot/dts/overlays/at86rf233-overlay.dts
+@@ -25,7 +25,7 @@
+ 				interrupts = <23 4>; /* active high */
+ 				reset-gpio = <&gpio 24 1>;
+ 				sleep-gpio = <&gpio 25 1>;
+-				spi-max-frequency = <6000000>;
++				spi-max-frequency = <3000000>;
+ 				xtal-trim = /bits/ 8 <0xf>;
+ 			};
+ 		};

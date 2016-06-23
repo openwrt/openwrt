@@ -1,0 +1,134 @@
+From 926cfaabf67bd4a1d2b7e0153e56805066b5c8c5 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Mon, 29 Feb 2016 11:39:21 +0000
+Subject: [PATCH 258/381] clk: bcm2835: correctly enable fractional clock
+ support
+
+The current driver calculates the clock divider with
+fractional support enabled.
+
+But it does not enable fractional support in the
+control register itself resulting in an integer only divider,
+but in clk_set_rate responds back the fractionally divided
+clock frequency.
+
+This patch enables fractional support in the control register
+whenever there is a fractional bit set in the requested clock divider.
+
+Mash clock limits are are also handled for the PWM clock
+applying the correct divider limits (2 and max_int) applicable to
+basic fractional divider support (mash order of 1).
+
+It also adds locking to protect the read/modify/write cycle of
+the register modification.
+
+Fixes: 41691b8862e2 ("clk: bcm2835: Add support for programming the
+audio domain clocks")
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 959ca92a3235fc4b17c1e18483fc390b3d612254)
+---
+ drivers/clk/bcm/clk-bcm2835.c | 45 +++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 39 insertions(+), 6 deletions(-)
+
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -51,6 +51,7 @@
+ #define CM_GNRICCTL		0x000
+ #define CM_GNRICDIV		0x004
+ # define CM_DIV_FRAC_BITS	12
++# define CM_DIV_FRAC_MASK	GENMASK(CM_DIV_FRAC_BITS - 1, 0)
+ 
+ #define CM_VPUCTL		0x008
+ #define CM_VPUDIV		0x00c
+@@ -128,6 +129,7 @@
+ # define CM_GATE			BIT(CM_GATE_BIT)
+ # define CM_BUSY			BIT(7)
+ # define CM_BUSYD			BIT(8)
++# define CM_FRAC			BIT(9)
+ # define CM_SRC_SHIFT			0
+ # define CM_SRC_BITS			4
+ # define CM_SRC_MASK			0xf
+@@ -647,6 +649,7 @@ struct bcm2835_clock_data {
+ 	u32 frac_bits;
+ 
+ 	bool is_vpu_clock;
++	bool is_mash_clock;
+ };
+ 
+ static const char *const bcm2835_clock_per_parents[] = {
+@@ -828,6 +831,7 @@ static const struct bcm2835_clock_data b
+ 	.div_reg = CM_PWMDIV,
+ 	.int_bits = 12,
+ 	.frac_bits = 12,
++	.is_mash_clock = true,
+ };
+ 
+ struct bcm2835_pll {
+@@ -1196,7 +1200,7 @@ static u32 bcm2835_clock_choose_div(stru
+ 		GENMASK(CM_DIV_FRAC_BITS - data->frac_bits, 0) >> 1;
+ 	u64 temp = (u64)parent_rate << CM_DIV_FRAC_BITS;
+ 	u64 rem;
+-	u32 div;
++	u32 div, mindiv, maxdiv;
+ 
+ 	rem = do_div(temp, rate);
+ 	div = temp;
+@@ -1206,11 +1210,23 @@ static u32 bcm2835_clock_choose_div(stru
+ 		div += unused_frac_mask + 1;
+ 	div &= ~unused_frac_mask;
+ 
+-	/* clamp to min divider of 1 */
+-	div = max_t(u32, div, 1 << CM_DIV_FRAC_BITS);
+-	/* clamp to the highest possible fractional divider */
+-	div = min_t(u32, div, GENMASK(data->int_bits + CM_DIV_FRAC_BITS - 1,
+-				      CM_DIV_FRAC_BITS - data->frac_bits));
++	/* different clamping limits apply for a mash clock */
++	if (data->is_mash_clock) {
++		/* clamp to min divider of 2 */
++		mindiv = 2 << CM_DIV_FRAC_BITS;
++		/* clamp to the highest possible integer divider */
++		maxdiv = (BIT(data->int_bits) - 1) << CM_DIV_FRAC_BITS;
++	} else {
++		/* clamp to min divider of 1 */
++		mindiv = 1 << CM_DIV_FRAC_BITS;
++		/* clamp to the highest possible fractional divider */
++		maxdiv = GENMASK(data->int_bits + CM_DIV_FRAC_BITS - 1,
++				 CM_DIV_FRAC_BITS - data->frac_bits);
++	}
++
++	/* apply the clamping  limits */
++	div = max_t(u32, div, mindiv);
++	div = min_t(u32, div, maxdiv);
+ 
+ 	return div;
+ }
+@@ -1304,9 +1320,26 @@ static int bcm2835_clock_set_rate(struct
+ 	struct bcm2835_cprman *cprman = clock->cprman;
+ 	const struct bcm2835_clock_data *data = clock->data;
+ 	u32 div = bcm2835_clock_choose_div(hw, rate, parent_rate, false);
++	u32 ctl;
++
++	spin_lock(&cprman->regs_lock);
++
++	/*
++	 * Setting up frac support
++	 *
++	 * In principle it is recommended to stop/start the clock first,
++	 * but as we set CLK_SET_RATE_GATE during registration of the
++	 * clock this requirement should be take care of by the
++	 * clk-framework.
++	 */
++	ctl = cprman_read(cprman, data->ctl_reg) & ~CM_FRAC;
++	ctl |= (div & CM_DIV_FRAC_MASK) ? CM_FRAC : 0;
++	cprman_write(cprman, data->ctl_reg, ctl);
+ 
+ 	cprman_write(cprman, data->div_reg, div);
+ 
++	spin_unlock(&cprman->regs_lock);
++
+ 	return 0;
+ }
+ 

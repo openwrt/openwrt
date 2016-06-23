@@ -1,0 +1,42 @@
+From 4ea24183d081b6bf9d6a89de906543719b82ed54 Mon Sep 17 00:00:00 2001
+From: Andrew Litt <ajlitt@splunge.net>
+Date: Mon, 11 Jan 2016 07:55:54 +0000
+Subject: [PATCH 125/381] SDIO-overlay: add bus_width parameter
+
+Allow setting of the SDIO bus width capability of the bcm2835-mmc
+host.  This is helpful when only a 1 bit wide bus is connected
+between host and device but both host and device advertise 4 bit
+mode.
+---
+ arch/arm/boot/dts/overlays/README           | 2 ++
+ arch/arm/boot/dts/overlays/sdio-overlay.dts | 2 ++
+ 2 files changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -634,6 +634,8 @@ Params: overclock_50             Clock (
+         poll_once                Disable SDIO-device polling every second
+                                  (default on: polling once at boot-time)
+ 
++        bus_width                Set the SDIO host bus width (default 4 bits)
++
+ 
+ Name:   sdtweak
+ Info:   Tunes the bcm2835-sdhost SD/MMC driver
+--- a/arch/arm/boot/dts/overlays/sdio-overlay.dts
++++ b/arch/arm/boot/dts/overlays/sdio-overlay.dts
+@@ -11,6 +11,7 @@
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&sdio_pins>;
+ 			non-removable;
++			bus-width = <4>;
+ 			status = "okay";
+ 		};
+ 	};
+@@ -28,5 +29,6 @@
+ 
+ 	__overrides__ {
+ 		poll_once = <&sdio_mmc>,"non-removable?";
++		bus_width = <&sdio_mmc>,"bus-width:0";
+ 	};
+ };

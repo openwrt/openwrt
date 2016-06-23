@@ -1,0 +1,87 @@
+From cb0416f4be60979f3fd3e99a9baff17ac9b8381f Mon Sep 17 00:00:00 2001
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Fri, 30 Oct 2015 20:33:20 -0700
+Subject: [PATCH 06/33] mtd: add get/set of_node/flash_node helpers
+
+We are going to begin using the mtd->dev.of_node field for MTD device
+nodes, so let's add helpers for it. Also, we'll be making some
+conversions on spi_nor (and nand_chip eventually) too, so get that ready
+with their own helpers.
+
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+---
+ include/linux/mtd/mtd.h     | 11 +++++++++++
+ include/linux/mtd/nand.h    | 11 +++++++++++
+ include/linux/mtd/spi-nor.h | 11 +++++++++++
+ 3 files changed, 33 insertions(+)
+
+diff --git a/include/linux/mtd/mtd.h b/include/linux/mtd/mtd.h
+index f17fa75..cc84923 100644
+--- a/include/linux/mtd/mtd.h
++++ b/include/linux/mtd/mtd.h
+@@ -254,6 +254,17 @@ struct mtd_info {
+ 	int usecount;
+ };
+ 
++static inline void mtd_set_of_node(struct mtd_info *mtd,
++				   struct device_node *np)
++{
++	mtd->dev.of_node = np;
++}
++
++static inline struct device_node *mtd_get_of_node(struct mtd_info *mtd)
++{
++	return mtd->dev.of_node;
++}
++
+ int mtd_erase(struct mtd_info *mtd, struct erase_info *instr);
+ int mtd_point(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
+ 	      void **virt, resource_size_t *phys);
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 5a9d1d4..4f7c9b9 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -719,6 +719,17 @@ struct nand_chip {
+ 	void *priv;
+ };
+ 
++static inline void nand_set_flash_node(struct nand_chip *chip,
++				       struct device_node *np)
++{
++	chip->flash_node = np;
++}
++
++static inline struct device_node *nand_get_flash_node(struct nand_chip *chip)
++{
++	return chip->flash_node;
++}
++
+ /*
+  * NAND Flash Manufacturer ID Codes
+  */
+diff --git a/include/linux/mtd/spi-nor.h b/include/linux/mtd/spi-nor.h
+index 12a4611..823c5381 100644
+--- a/include/linux/mtd/spi-nor.h
++++ b/include/linux/mtd/spi-nor.h
+@@ -184,6 +184,17 @@ struct spi_nor {
+ 	void *priv;
+ };
+ 
++static inline void spi_nor_set_flash_node(struct spi_nor *nor,
++					  struct device_node *np)
++{
++	nor->flash_node = np;
++}
++
++static inline struct device_node *spi_nor_get_flash_node(struct spi_nor *nor)
++{
++	return nor->flash_node;
++}
++
+ /**
+  * spi_nor_scan() - scan the SPI NOR
+  * @nor:	the spi_nor structure
+-- 
+2.8.1
+

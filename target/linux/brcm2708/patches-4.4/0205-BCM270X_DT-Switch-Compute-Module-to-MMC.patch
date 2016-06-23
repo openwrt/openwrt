@@ -1,0 +1,53 @@
+From 4212b2d0cd9638f926162efb7a4b3c477cfb212c Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 18 Mar 2016 13:06:29 +0000
+Subject: [PATCH 205/381] BCM270X_DT: Switch Compute Module to MMC
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2708-rpi-cm.dtsi | 17 ++++++++---------
+ 1 file changed, 8 insertions(+), 9 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
+@@ -8,9 +8,9 @@
+ };
+ 
+ &gpio {
+-	sdhost_pins: sdhost_pins {
++	mmc_pins: mmc_pins {
+ 		brcm,pins = <48 49 50 51 52 53>;
+-		brcm,function = <4>; /* alt0 */
++		brcm,function = <7>; /* alt3 */
+ 	};
+ };
+ 
+@@ -22,12 +22,14 @@
+ 	};
+ };
+ 
+-&sdhost {
++
++&mmc {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&sdhost_pins>;
+-	bus-width = <4>;
++	pinctrl-0 = <&mmc_pins>;
+ 	non-removable;
++	bus-width = <4>;
+ 	status = "okay";
++	brcm,overclock-50 = <0>;
+ };
+ 
+ &fb {
+@@ -45,9 +47,6 @@
+ 		audio = <&audio>,"status";
+ 		watchdog = <&watchdog>,"status";
+ 		random = <&random>,"status";
+-		sd_overclock = <&sdhost>,"brcm,overclock-50:0";
+-		sd_force_pio = <&sdhost>,"brcm,force-pio?";
+-		sd_pio_limit = <&sdhost>,"brcm,pio-limit:0";
+-		sd_debug     = <&sdhost>,"brcm,debug";
++		sd_overclock = <&mmc>,"brcm,overclock-50:0";
+ 	};
+ };

@@ -1,0 +1,51 @@
+From 367f4ce11d5588d680ae50c405b1a9afa591a550 Mon Sep 17 00:00:00 2001
+From: wm4 <wm4@nowhere>
+Date: Tue, 19 Apr 2016 16:08:35 +0200
+Subject: [PATCH 249/381] bcm2835: do not require substream for accessing chmap
+ ctl
+
+Fixes alsasctl store/restore operation.
+---
+ sound/arm/bcm2835-ctl.c | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+--- a/sound/arm/bcm2835-ctl.c
++++ b/sound/arm/bcm2835-ctl.c
+@@ -489,8 +489,6 @@ static int snd_bcm2835_chmap_ctl_get(str
+ {
+ 	struct snd_pcm_chmap *info = snd_kcontrol_chip(kcontrol);
+ 	bcm2835_chip_t *chip = info->private_data;
+-	unsigned int idx = snd_ctl_get_ioffidx(kcontrol, &ucontrol->id);
+-	struct snd_pcm_substream *substream = snd_pcm_chmap_substream(info, idx);
+ 	struct cea_channel_speaker_allocation *ch = NULL;
+ 	int res = 0;
+ 	int cur = 0;
+@@ -499,11 +497,6 @@ static int snd_bcm2835_chmap_ctl_get(str
+ 	if (mutex_lock_interruptible(&chip->audio_mutex))
+ 		return -EINTR;
+ 
+-	if (!substream || !substream->runtime) {
+-		res = -ENODEV;
+-		goto unlock;
+-	}
+-
+ 	for (i = 0; i < ARRAY_SIZE(channel_allocations); i++) {
+ 		if (channel_allocations[i].ca_index == chip->cea_chmap)
+ 			ch = &channel_allocations[i];
+@@ -521,7 +514,6 @@ static int snd_bcm2835_chmap_ctl_get(str
+ 	while (cur < 8)
+ 		ucontrol->value.integer.value[cur++] = SNDRV_CHMAP_NA;
+ 
+-unlock:
+ 	mutex_unlock(&chip->audio_mutex);
+ 	return res;
+ }
+@@ -541,7 +533,7 @@ static int snd_bcm2835_chmap_ctl_put(str
+ 		return -EINTR;
+ 
+ 	if (!substream || !substream->runtime) {
+-		res = -ENODEV;
++		/* ignore and return success for the sake of alsactl */
+ 		goto unlock;
+ 	}
+ 

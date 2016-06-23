@@ -1,0 +1,40 @@
+From ec7710516621d3131c7e025a73ab8354ec21f7f8 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 29 May 2015 11:48:59 +0100
+Subject: [PATCH 182/381] Enable Dynamic Device Tree for bcmrpi_defconfig and
+ bcm2709_defconfig
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/configs/bcm2709_defconfig | 2 +-
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -403,6 +403,7 @@ CONFIG_MTD=m
+ CONFIG_MTD_BLOCK=m
+ CONFIG_MTD_NAND=m
+ CONFIG_MTD_UBI=m
++CONFIG_OF_CONFIGFS=y
+ CONFIG_ZRAM=m
+ CONFIG_ZRAM_LZ4_COMPRESS=y
+ CONFIG_BLK_DEV_LOOP=y
+@@ -1161,7 +1162,6 @@ CONFIG_NTFS_FS=m
+ CONFIG_NTFS_RW=y
+ CONFIG_TMPFS=y
+ CONFIG_TMPFS_POSIX_ACL=y
+-CONFIG_CONFIGFS_FS=y
+ CONFIG_ECRYPT_FS=m
+ CONFIG_HFS_FS=m
+ CONFIG_HFSPLUS_FS=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -396,6 +396,7 @@ CONFIG_MTD=m
+ CONFIG_MTD_BLOCK=m
+ CONFIG_MTD_NAND=m
+ CONFIG_MTD_UBI=m
++CONFIG_OF_OVERLAY=y
+ CONFIG_ZRAM=m
+ CONFIG_ZRAM_LZ4_COMPRESS=y
+ CONFIG_BLK_DEV_LOOP=y

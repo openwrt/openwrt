@@ -1,0 +1,26 @@
+From 7512663c7fc8117e3a57f0feef53de88fb8a2c89 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 30 Mar 2016 20:18:38 +0100
+Subject: [PATCH 219/381] Revert "cpufreq: Temporarily ignore io_is_busy=1"
+
+This reverts commit 2af1218a8a0220fec526f64d03977b8451afb4c8.
+---
+ drivers/cpufreq/cpufreq_ondemand.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+--- a/drivers/cpufreq/cpufreq_ondemand.c
++++ b/drivers/cpufreq/cpufreq_ondemand.c
+@@ -307,12 +307,7 @@ static ssize_t store_io_is_busy(struct d
+ 	ret = sscanf(buf, "%u", &input);
+ 	if (ret != 1)
+ 		return -EINVAL;
+-	// XXX temporary hack
+-	if (input > 1)
+-		input = 1;
+-	else
+-		input = 0;
+-	od_tuners->io_is_busy = input;
++	od_tuners->io_is_busy = !!input;
+ 
+ 	/* we need to re-evaluate prev_cpu_idle */
+ 	for_each_online_cpu(j) {

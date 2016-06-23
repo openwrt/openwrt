@@ -1,0 +1,237 @@
+From 16a8daf3e66584f5c1bd3b113675d3fc3b44adc1 Mon Sep 17 00:00:00 2001
+From: wm4 <wm4@nowhere>
+Date: Wed, 13 Jan 2016 19:43:35 +0100
+Subject: [PATCH 130/381] bcm2835: access controls under the audio mutex
+
+I don't think the ALSA framework provides any kind of automatic
+synchronization within the control callbacks. We most likely need
+to ensure this manually, so add locking around all access to shared
+mutable data. In particular, bcm2835_audio_set_ctls() should
+probably always be called under our own audio lock.
+---
+ sound/arm/bcm2835-ctl.c | 74 +++++++++++++++++++++++++++++++++++++++++--------
+ sound/arm/bcm2835-pcm.c |  4 +++
+ 2 files changed, 66 insertions(+), 12 deletions(-)
+
+--- a/sound/arm/bcm2835-ctl.c
++++ b/sound/arm/bcm2835-ctl.c
+@@ -94,6 +94,9 @@ static int snd_bcm2835_ctl_get(struct sn
+ {
+ 	struct bcm2835_chip *chip = snd_kcontrol_chip(kcontrol);
+ 
++	if (mutex_lock_interruptible(&chip->audio_mutex))
++		return -EINTR;
++
+ 	BUG_ON(!chip && !(chip->avail_substreams & AVAIL_SUBSTREAMS_MASK));
+ 
+ 	if (kcontrol->private_value == PCM_PLAYBACK_VOLUME)
+@@ -103,6 +106,7 @@ static int snd_bcm2835_ctl_get(struct sn
+ 	else if (kcontrol->private_value == PCM_PLAYBACK_DEVICE)
+ 		ucontrol->value.integer.value[0] = chip->dest;
+ 
++	mutex_unlock(&chip->audio_mutex);
+ 	return 0;
+ }
+ 
+@@ -112,11 +116,15 @@ static int snd_bcm2835_ctl_put(struct sn
+ 	struct bcm2835_chip *chip = snd_kcontrol_chip(kcontrol);
+ 	int changed = 0;
+ 
++	if (mutex_lock_interruptible(&chip->audio_mutex))
++		return -EINTR;
++
+ 	if (kcontrol->private_value == PCM_PLAYBACK_VOLUME) {
+ 		audio_info("Volume change attempted.. volume = %d new_volume = %d\n", chip->volume, (int)ucontrol->value.integer.value[0]);
+ 		if (chip->mute == CTRL_VOL_MUTE) {
+ 			/* changed = toggle_mute(chip, CTRL_VOL_UNMUTE); */
+-			return 1; /* should return 0 to signify no change but the mixer takes this as the opposite sign (no idea why) */
++			changed = 1; /* should return 0 to signify no change but the mixer takes this as the opposite sign (no idea why) */
++			goto unlock;
+ 		}
+ 		if (changed
+ 		    || (ucontrol->value.integer.value[0] != chip2alsa(chip->volume))) {
+@@ -142,6 +150,8 @@ static int snd_bcm2835_ctl_put(struct sn
+ 			printk(KERN_ERR "Failed to set ALSA controls..\n");
+ 	}
+ 
++unlock:
++	mutex_unlock(&chip->audio_mutex);
+ 	return changed;
+ }
+ 
+@@ -198,10 +208,14 @@ static int snd_bcm2835_spdif_default_get
+ 	struct bcm2835_chip *chip = snd_kcontrol_chip(kcontrol);
+ 	int i;
+ 
++	if (mutex_lock_interruptible(&chip->audio_mutex))
++		return -EINTR;
++
+ 	for (i = 0; i < 4; i++)
+ 		ucontrol->value.iec958.status[i] =
+ 			(chip->spdif_status >> (i * 8)) && 0xff;
+ 
++	mutex_unlock(&chip->audio_mutex);
+ 	return 0;
+ }
+ 
+@@ -212,12 +226,16 @@ static int snd_bcm2835_spdif_default_put
+ 	unsigned int val = 0;
+ 	int i, change;
+ 
++	if (mutex_lock_interruptible(&chip->audio_mutex))
++		return -EINTR;
++
+ 	for (i = 0; i < 4; i++)
+ 		val |= (unsigned int)ucontrol->value.iec958.status[i] << (i * 8);
+ 
+ 	change = val != chip->spdif_status;
+ 	chip->spdif_status = val;
+ 
++	mutex_unlock(&chip->audio_mutex);
+ 	return change;
+ }
+ 
+@@ -253,9 +271,14 @@ static int snd_bcm2835_spdif_stream_get(
+ 	struct bcm2835_chip *chip = snd_kcontrol_chip(kcontrol);
+ 	int i;
+ 
++	if (mutex_lock_interruptible(&chip->audio_mutex))
++		return -EINTR;
++
+ 	for (i = 0; i < 4; i++)
+ 		ucontrol->value.iec958.status[i] =
+ 			(chip->spdif_status >> (i * 8)) & 0xff;
++
++	mutex_unlock(&chip->audio_mutex);
+ 	return 0;
+ }
+ 
+@@ -266,11 +289,15 @@ static int snd_bcm2835_spdif_stream_put(
+ 	unsigned int val = 0;
+ 	int i, change;
+ 
++	if (mutex_lock_interruptible(&chip->audio_mutex))
++		return -EINTR;
++
+ 	for (i = 0; i < 4; i++)
+ 		val |= (unsigned int)ucontrol->value.iec958.status[i] << (i * 8);
+ 	change = val != chip->spdif_status;
+ 	chip->spdif_status = val;
+ 
++	mutex_unlock(&chip->audio_mutex);
+ 	return change;
+ }
+ 
+@@ -454,11 +481,17 @@ static int snd_bcm2835_chmap_ctl_get(str
+ 	unsigned int idx = snd_ctl_get_ioffidx(kcontrol, &ucontrol->id);
+ 	struct snd_pcm_substream *substream = snd_pcm_chmap_substream(info, idx);
+ 	struct cea_channel_speaker_allocation *ch = NULL;
++	int res = 0;
+ 	int cur = 0;
+ 	int i;
+ 
+-	if (!substream || !substream->runtime)
+-		return -ENODEV;
++	if (mutex_lock_interruptible(&chip->audio_mutex))
++		return -EINTR;
++
++	if (!substream || !substream->runtime) {
++		res = -ENODEV;
++		goto unlock;
++	}
+ 
+ 	for (i = 0; i < ARRAY_SIZE(channel_allocations); i++) {
+ 		if (channel_allocations[i].ca_index == chip->cea_chmap)
+@@ -476,7 +509,10 @@ static int snd_bcm2835_chmap_ctl_get(str
+ 	}
+ 	while (cur < 8)
+ 		ucontrol->value.integer.value[cur++] = SNDRV_CHMAP_NA;
+-	return 0;
++
++unlock:
++	mutex_unlock(&chip->audio_mutex);
++	return res;
+ }
+ 
+ static int snd_bcm2835_chmap_ctl_put(struct snd_kcontrol *kcontrol,
+@@ -487,10 +523,16 @@ static int snd_bcm2835_chmap_ctl_put(str
+ 	unsigned int idx = snd_ctl_get_ioffidx(kcontrol, &ucontrol->id);
+ 	struct snd_pcm_substream *substream = snd_pcm_chmap_substream(info, idx);
+ 	int i, prepared = 0, cea_chmap = -1;
++	int res = 0;
+ 	int remap[8];
+ 
+-	if (!substream || !substream->runtime)
+-		return -ENODEV;
++	if (mutex_lock_interruptible(&chip->audio_mutex))
++		return -EINTR;
++
++	if (!substream || !substream->runtime) {
++		res = -ENODEV;
++		goto unlock;
++	}
+ 
+ 	switch (substream->runtime->status->state) {
+ 	case SNDRV_PCM_STATE_OPEN:
+@@ -500,7 +542,8 @@ static int snd_bcm2835_chmap_ctl_put(str
+ 		prepared = 1;
+ 		break;
+ 	default:
+-		return -EBUSY;
++		res = -EBUSY;
++		goto unlock;
+ 	}
+ 
+ 	for (i = 0; i < ARRAY_SIZE(channel_allocations); i++) {
+@@ -538,19 +581,26 @@ static int snd_bcm2835_chmap_ctl_put(str
+ 		}
+ 	}
+ 
+-	if (cea_chmap < 0)
+-		return -EINVAL;
++	if (cea_chmap < 0) {
++		res = -EINVAL;
++		goto unlock;
++	}
+ 
+ 	/* don't change the layout if another substream is active */
+-	if (chip->opened != (1 << substream->number) && chip->cea_chmap != cea_chmap)
+-		return -EBUSY; /* unsure whether this is a good error code */
++	if (chip->opened != (1 << substream->number) && chip->cea_chmap != cea_chmap) {
++		res = -EBUSY; /* unsure whether this is a good error code */
++		goto unlock;
++	}
+ 
+ 	chip->cea_chmap = cea_chmap;
+ 	for (i = 0; i < 8; i++)
+ 		chip->map_channels[i] = remap[i];
+ 	if (prepared)
+ 		snd_bcm2835_pcm_prepare_again(substream);
+-	return 0;
++
++unlock:
++	mutex_unlock(&chip->audio_mutex);
++	return res;
+ }
+ 
+ static int snd_bcm2835_add_chmap_ctl(bcm2835_chip_t * chip)
+--- a/sound/arm/bcm2835-pcm.c
++++ b/sound/arm/bcm2835-pcm.c
+@@ -379,6 +379,9 @@ static int snd_bcm2835_pcm_prepare(struc
+ 
+ 	audio_info(" .. IN\n");
+ 
++	if (mutex_lock_interruptible(&chip->audio_mutex))
++		return -EINTR;
++
+ 	snd_bcm2835_pcm_prepare_again(substream);
+ 
+ 	bcm2835_audio_setup(alsa_stream);
+@@ -401,6 +404,7 @@ static int snd_bcm2835_pcm_prepare(struc
+ 		      alsa_stream->buffer_size, alsa_stream->period_size,
+ 		      alsa_stream->pos, runtime->frame_bits);
+ 
++	mutex_unlock(&chip->audio_mutex);
+ 	audio_info(" .. OUT\n");
+ 	return 0;
+ }

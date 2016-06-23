@@ -1,0 +1,33 @@
+From b750beb58d214d6a5ed458eb5b2e7a304685a587 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 23 Oct 2015 14:57:22 +0100
+Subject: [PATCH 100/381] drm/vc4: Fix a typo in a V3D debug register.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_regs.h | 2 +-
+ drivers/gpu/drm/vc4/vc4_v3d.c  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_regs.h
++++ b/drivers/gpu/drm/vc4/vc4_regs.h
+@@ -154,7 +154,7 @@
+ #define V3D_PCTRS14  0x006f4
+ #define V3D_PCTR15   0x006f8
+ #define V3D_PCTRS15  0x006fc
+-#define V3D_BGE      0x00f00
++#define V3D_DBGE     0x00f00
+ #define V3D_FDBGO    0x00f04
+ #define V3D_FDBGB    0x00f08
+ #define V3D_FDBGR    0x00f0c
+--- a/drivers/gpu/drm/vc4/vc4_v3d.c
++++ b/drivers/gpu/drm/vc4/vc4_v3d.c
+@@ -99,7 +99,7 @@ static const struct {
+ 	REGDEF(V3D_PCTRS14),
+ 	REGDEF(V3D_PCTR15),
+ 	REGDEF(V3D_PCTRS15),
+-	REGDEF(V3D_BGE),
++	REGDEF(V3D_DBGE),
+ 	REGDEF(V3D_FDBGO),
+ 	REGDEF(V3D_FDBGB),
+ 	REGDEF(V3D_FDBGR),

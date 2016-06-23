@@ -1,0 +1,40 @@
+From 51c3910db1015b46ce2a3973cf10ba8e61514821 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Wed, 19 Nov 2014 12:06:38 -0800
+Subject: [PATCH 112/381] drm: Put an optional field in the driver struct for
+ GEM obj struct size.
+
+This allows a driver to derive from the CMA object without copying all
+of the code.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/drm_gem_cma_helper.c | 5 ++++-
+ include/drm/drmP.h                   | 1 +
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/drm_gem_cma_helper.c
++++ b/drivers/gpu/drm/drm_gem_cma_helper.c
+@@ -58,8 +58,11 @@ __drm_gem_cma_create(struct drm_device *
+ 	struct drm_gem_cma_object *cma_obj;
+ 	struct drm_gem_object *gem_obj;
+ 	int ret;
++	size_t obj_size = (drm->driver->gem_obj_size ?
++			   drm->driver->gem_obj_size :
++			   sizeof(*cma_obj));
+ 
+-	cma_obj = kzalloc(sizeof(*cma_obj), GFP_KERNEL);
++	cma_obj = kzalloc(obj_size, GFP_KERNEL);
+ 	if (!cma_obj)
+ 		return ERR_PTR(-ENOMEM);
+ 
+--- a/include/drm/drmP.h
++++ b/include/drm/drmP.h
+@@ -639,6 +639,7 @@ struct drm_driver {
+ 
+ 	u32 driver_features;
+ 	int dev_priv_size;
++	size_t gem_obj_size;
+ 	const struct drm_ioctl_desc *ioctls;
+ 	int num_ioctls;
+ 	const struct file_operations *fops;

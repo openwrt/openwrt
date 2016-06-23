@@ -34,6 +34,8 @@ endif
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE).tar.bz2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/sangam-atm/Default

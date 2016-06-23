@@ -1,0 +1,22 @@
+From df922ac1dfc712933c25f68d31107d96cde7c549 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 12 Oct 2015 11:23:34 -0700
+Subject: [PATCH 104/381] clk: bcm2835: Also build the driver for downstream
+ kernels.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/clk/bcm/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/bcm/Makefile
++++ b/drivers/clk/bcm/Makefile
+@@ -3,7 +3,7 @@ obj-$(CONFIG_CLK_BCM_KONA)	+= clk-kona-s
+ obj-$(CONFIG_CLK_BCM_KONA)	+= clk-bcm281xx.o
+ obj-$(CONFIG_CLK_BCM_KONA)	+= clk-bcm21664.o
+ obj-$(CONFIG_COMMON_CLK_IPROC)	+= clk-iproc-armpll.o clk-iproc-pll.o clk-iproc-asiu.o
+-obj-$(CONFIG_ARCH_BCM2835)	+= clk-bcm2835.o
++obj-$(CONFIG_ARCH_BCM2835)$(CONFIG_ARCH_BCM2708)$(CONFIG_ARCH_BCM2709)	+= clk-bcm2835.o
+ obj-$(CONFIG_COMMON_CLK_IPROC)	+= clk-ns2.o
+ obj-$(CONFIG_ARCH_BCM_CYGNUS)	+= clk-cygnus.o
+ obj-$(CONFIG_ARCH_BCM_NSP)	+= clk-nsp.o

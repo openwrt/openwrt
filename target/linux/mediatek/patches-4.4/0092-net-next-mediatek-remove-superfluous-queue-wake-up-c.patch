@@ -1,0 +1,36 @@
+From 538020913db04d199ce4d7e845444880e8200b5f Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 3 May 2016 05:40:38 +0200
+Subject: [PATCH 092/102] net-next: mediatek: remove superfluous queue wake up
+ call
+
+The code checks if the queue should be stopped because we are below the
+threshold of free descriptors only to check if it should be started again.
+If we do end up in a state where we are at the threshold limit, it makes
+more sense to just stop the queue and wait for the next IRQ to trigger the
+TX housekeeping again. There is no rush in enqueuing the next packet, it
+needs to wait for all the others in the queue to be dispatched first
+anyway.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -795,12 +795,9 @@ static int mtk_start_xmit(struct sk_buff
+ 	if (mtk_tx_map(skb, dev, tx_num, ring, gso) < 0)
+ 		goto drop;
+ 
+-	if (unlikely(atomic_read(&ring->free_count) <= ring->thresh)) {
++	if (unlikely(atomic_read(&ring->free_count) <= ring->thresh))
+ 		mtk_stop_queue(eth);
+-		if (unlikely(atomic_read(&ring->free_count) >
+-			     ring->thresh))
+-			mtk_wake_queue(eth);
+-	}
++
+ 	spin_unlock_irqrestore(&eth->page_lock, flags);
+ 
+ 	return NETDEV_TX_OK;

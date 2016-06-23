@@ -15,7 +15,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -131,6 +131,28 @@ static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
+@@ -131,6 +131,28 @@ static int m25p80_read(struct spi_nor *n
  	/* convert the dummy cycles to the number of bytes */
  	dummy /= 8;
  

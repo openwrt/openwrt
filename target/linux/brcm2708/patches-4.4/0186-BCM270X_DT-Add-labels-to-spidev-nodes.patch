@@ -1,0 +1,114 @@
+From a5b8204a864f7f9a5a30c6b673e735138c3bdba3 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 15 Mar 2016 15:49:16 +0000
+Subject: [PATCH 186/381] BCM270X_DT: Add labels to spidev nodes
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts | 4 ++--
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      | 4 ++--
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts     | 4 ++--
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts    | 4 ++--
+ arch/arm/boot/dts/bcm2710-rpi-3-b.dts    | 4 ++--
+ 5 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -59,7 +59,7 @@
+ 	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
+ 	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
+ 
+-	spidev@0{
++	spidev0: spidev@0{
+ 		compatible = "spidev";
+ 		reg = <0>;	/* CE0 */
+ 		#address-cells = <1>;
+@@ -67,7 +67,7 @@
+ 		spi-max-frequency = <500000>;
+ 	};
+ 
+-	spidev@1{
++	spidev1: spidev@1{
+ 		compatible = "spidev";
+ 		reg = <1>;	/* CE1 */
+ 		#address-cells = <1>;
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -59,7 +59,7 @@
+ 	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
+ 	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
+ 
+-	spidev@0{
++	spidev0: spidev@0{
+ 		compatible = "spidev";
+ 		reg = <0>;	/* CE0 */
+ 		#address-cells = <1>;
+@@ -67,7 +67,7 @@
+ 		spi-max-frequency = <500000>;
+ 	};
+ 
+-	spidev@1{
++	spidev1: spidev@1{
+ 		compatible = "spidev";
+ 		reg = <1>;	/* CE1 */
+ 		#address-cells = <1>;
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -42,7 +42,7 @@
+ 	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
+ 	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
+ 
+-	spidev@0{
++	spidev0: spidev@0{
+ 		compatible = "spidev";
+ 		reg = <0>;	/* CE0 */
+ 		#address-cells = <1>;
+@@ -50,7 +50,7 @@
+ 		spi-max-frequency = <500000>;
+ 	};
+ 
+-	spidev@1{
++	spidev1: spidev@1{
+ 		compatible = "spidev";
+ 		reg = <1>;	/* CE1 */
+ 		#address-cells = <1>;
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -59,7 +59,7 @@
+ 	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
+ 	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
+ 
+-	spidev@0{
++	spidev0: spidev@0{
+ 		compatible = "spidev";
+ 		reg = <0>;	/* CE0 */
+ 		#address-cells = <1>;
+@@ -67,7 +67,7 @@
+ 		spi-max-frequency = <500000>;
+ 	};
+ 
+-	spidev@1{
++	spidev1: spidev@1{
+ 		compatible = "spidev";
+ 		reg = <1>;	/* CE1 */
+ 		#address-cells = <1>;
+--- a/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
+@@ -110,7 +110,7 @@
+ 	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
+ 	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
+ 
+-	spidev@0{
++	spidev0: spidev@0{
+ 		compatible = "spidev";
+ 		reg = <0>;	/* CE0 */
+ 		#address-cells = <1>;
+@@ -118,7 +118,7 @@
+ 		spi-max-frequency = <500000>;
+ 	};
+ 
+-	spidev@1{
++	spidev1: spidev@1{
+ 		compatible = "spidev";
+ 		reg = <1>;	/* CE1 */
+ 		#address-cells = <1>;

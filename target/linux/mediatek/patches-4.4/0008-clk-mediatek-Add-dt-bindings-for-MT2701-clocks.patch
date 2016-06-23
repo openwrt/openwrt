@@ -1,7 +1,7 @@
-From 2fcbc15da2f13164e0851b9c7fae290249f0b44d Mon Sep 17 00:00:00 2001
+From 190696e3995be38fa01490e4ab88ea2c859829c9 Mon Sep 17 00:00:00 2001
 From: Shunli Wang <shunli.wang@mediatek.com>
 Date: Tue, 5 Jan 2016 14:30:19 +0800
-Subject: [PATCH 08/91] clk: mediatek: Add dt-bindings for MT2701 clocks
+Subject: [PATCH 008/102] clk: mediatek: Add dt-bindings for MT2701 clocks
 
 Add MT2701 clock dt-bindings, include topckgen, apmixedsys,
 infracfg, pericfg and subsystem clocks.
@@ -13,9 +13,6 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  1 file changed, 481 insertions(+)
  create mode 100644 include/dt-bindings/clock/mt2701-clk.h
 
-diff --git a/include/dt-bindings/clock/mt2701-clk.h b/include/dt-bindings/clock/mt2701-clk.h
-new file mode 100644
-index 0000000..50972d1
 --- /dev/null
 +++ b/include/dt-bindings/clock/mt2701-clk.h
 @@ -0,0 +1,481 @@
@@ -500,6 +497,3 @@ index 0000000..50972d1
 +#define CLK_BDP_NR				50
 +
 +#endif /* _DT_BINDINGS_CLK_MT2701_H */
--- 
-1.7.10.4
-

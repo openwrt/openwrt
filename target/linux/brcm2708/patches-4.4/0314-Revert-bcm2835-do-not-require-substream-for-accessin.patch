@@ -1,0 +1,51 @@
+From a557a6f30f553f24626a409333cb281405ef4086 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 29 Apr 2016 17:27:36 +0100
+Subject: [PATCH 314/381] Revert "bcm2835: do not require substream for
+ accessing chmap ctl"
+
+This reverts commit a05b4815196018c329ea98c24205bc6fa9c097e0.
+---
+ sound/arm/bcm2835-ctl.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/sound/arm/bcm2835-ctl.c
++++ b/sound/arm/bcm2835-ctl.c
+@@ -489,6 +489,8 @@ static int snd_bcm2835_chmap_ctl_get(str
+ {
+ 	struct snd_pcm_chmap *info = snd_kcontrol_chip(kcontrol);
+ 	bcm2835_chip_t *chip = info->private_data;
++	unsigned int idx = snd_ctl_get_ioffidx(kcontrol, &ucontrol->id);
++	struct snd_pcm_substream *substream = snd_pcm_chmap_substream(info, idx);
+ 	struct cea_channel_speaker_allocation *ch = NULL;
+ 	int res = 0;
+ 	int cur = 0;
+@@ -497,6 +499,11 @@ static int snd_bcm2835_chmap_ctl_get(str
+ 	if (mutex_lock_interruptible(&chip->audio_mutex))
+ 		return -EINTR;
+ 
++	if (!substream || !substream->runtime) {
++		res = -ENODEV;
++		goto unlock;
++	}
++
+ 	for (i = 0; i < ARRAY_SIZE(channel_allocations); i++) {
+ 		if (channel_allocations[i].ca_index == chip->cea_chmap)
+ 			ch = &channel_allocations[i];
+@@ -514,6 +521,7 @@ static int snd_bcm2835_chmap_ctl_get(str
+ 	while (cur < 8)
+ 		ucontrol->value.integer.value[cur++] = SNDRV_CHMAP_NA;
+ 
++unlock:
+ 	mutex_unlock(&chip->audio_mutex);
+ 	return res;
+ }
+@@ -533,7 +541,7 @@ static int snd_bcm2835_chmap_ctl_put(str
+ 		return -EINTR;
+ 
+ 	if (!substream || !substream->runtime) {
+-		/* ignore and return success for the sake of alsactl */
++		res = -ENODEV;
+ 		goto unlock;
+ 	}
+ 

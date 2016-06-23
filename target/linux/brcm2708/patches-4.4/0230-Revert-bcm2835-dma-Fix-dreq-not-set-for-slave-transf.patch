@@ -1,0 +1,32 @@
+From 73667a3e1442c254de183d53492264b19fbe239f Mon Sep 17 00:00:00 2001
+From: HiassofT <github@hias.horus.com>
+Date: Wed, 6 Apr 2016 21:45:01 +0200
+Subject: [PATCH 230/381] Revert "bcm2835-dma: Fix dreq not set for slave
+ transfers"
+
+This reverts commit 8ad957e866a1fe1450f663f2b00a57d7de44904c.
+
+
+
+DMA channels are set in devicetree, thus dreq will be set,
+
+and this commit is no longer needed.
+
+
+
+Signed-off-by: Matthias Reichl <hias@horus.com>
+---
+ drivers/dma/bcm2835-dma.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/dma/bcm2835-dma.c
++++ b/drivers/dma/bcm2835-dma.c
+@@ -679,8 +679,6 @@ static int bcm2835_dma_slave_config(stru
+ 	}
+ 
+ 	c->cfg = *cfg;
+-	if (!c->dreq)
+-		c->dreq = cfg->slave_id;
+ 
+ 	return 0;
+ }

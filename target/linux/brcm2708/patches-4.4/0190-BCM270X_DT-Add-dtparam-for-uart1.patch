@@ -1,0 +1,77 @@
+From 1f72100e701440d4c65e4eeaed3fcfdc553d69f5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 16 Mar 2016 08:35:06 +0000
+Subject: [PATCH 190/381] BCM270X_DT: Add dtparam for uart1
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts | 1 +
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      | 1 +
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts     | 1 +
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts    | 1 +
+ arch/arm/boot/dts/bcm2710-rpi-3-b.dts    | 1 +
+ arch/arm/boot/dts/overlays/README        | 3 +++
+ 6 files changed, 8 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -120,6 +120,7 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1 = <&uart1>,"status";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -114,6 +114,7 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1 = <&uart1>,"status";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -89,6 +89,7 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1 = <&uart1>,"status";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -120,6 +120,7 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1 = <&uart1>,"status";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
+@@ -171,6 +171,7 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1 = <&uart1>,"status";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -124,6 +124,9 @@ Params:
+ 
+         uart0                   Set to "off" to disable uart0 (default "on")
+ 
++        uart1                   Set to "on" or "off" to enable or disable uart1
++                                (default varies)
++
+         watchdog                Set to "on" to enable the hardware watchdog
+                                 (default "off")
+ 

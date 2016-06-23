@@ -1,0 +1,269 @@
+From eaa6e5f8a581aa8c71c245ecfc882819c7090a06 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 11 May 2016 15:38:04 +0100
+Subject: [PATCH 345/381] BCM270X_DT: Add umbrella I2C Mux overlay i2c-mux
+
+This overlay supports a range of I2C multiplexers - PCA9542 (2 ports),
+PCA9545 (4 ports) and PCA9548 (8 ports).
+
+Also remove the dedicated i2c-mux-9548a overlays since it is no longer
+needed.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/Makefile                |   2 +-
+ arch/arm/boot/dts/overlays/README                  |  17 ++-
+ arch/arm/boot/dts/overlays/i2c-mux-overlay.dts     | 138 +++++++++++++++++++++
+ .../boot/dts/overlays/i2c-mux-pca9548a-overlay.dts |  67 ----------
+ 4 files changed, 152 insertions(+), 72 deletions(-)
+ create mode 100644 arch/arm/boot/dts/overlays/i2c-mux-overlay.dts
+ delete mode 100644 arch/arm/boot/dts/overlays/i2c-mux-pca9548a-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -34,7 +34,7 @@ dtbo-$(RPI_DT_OVERLAYS) += hy28a.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += hy28b.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c-rtc.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c-gpio.dtbo
+-dtbo-$(RPI_DT_OVERLAYS) += i2c-mux-pca9548a.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += i2c-mux.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c-pwm-pca9685a.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c0-bcm2708.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c1-bcm2708.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -421,10 +421,19 @@ Params: i2c_gpio_sda            GPIO use
+                                 (default "2" = ~100kHz)
+ 
+ 
+-Name:   i2c-mux-pca9548a
+-Info:   Adds support for an NXP PCA9548A I2C multiplexer on i2c_arm
+-Load:   dtoverlay=i2c-mux-pca9548a,<param>=<val>
+-Params: addr                    I2C address of PCA9548A (default 0x70)
++Name:   i2c-mux
++Info:   Adds support for a number of I2C bus multiplexers on i2c_arm
++Load:   dtoverlay=i2c-mux,<param>=<val>
++Params: pca9542                 Select the NXP PCA9542 device
++
++        pca9545                 Select the NXP PCA9545 device
++
++        pca9548                 Select the NXP PCA9548 device
++
++        addr                    Change I2C address of the device (default 0x70)
++
++
++[ The i2c-mux-pca9548a overlay has been deleted. See i2c-mux. ]
+ 
+ 
+ Name:   i2c-pwm-pca9685a
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/i2c-mux-overlay.dts
+@@ -0,0 +1,138 @@
++// Umbrella I2C Mux overlay
++
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&i2c_arm>;
++		__dormant__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pca9542: mux@70 {
++				compatible = "nxp,pca9542";
++				reg = <0x70>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				i2c@0 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <0>;
++				};
++				i2c@1 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <1>;
++				};
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c_arm>;
++		__dormant__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pca9545: mux@70 {
++				compatible = "nxp,pca9545";
++				reg = <0x70>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				i2c@0 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <0>;
++				};
++				i2c@1 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <1>;
++				};
++				i2c@2 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <2>;
++				};
++				i2c@3 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <3>;
++				};
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c_arm>;
++		__dormant__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pca9548: mux@70 {
++				compatible = "nxp,pca9548";
++				reg = <0x70>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				i2c@0 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <0>;
++				};
++				i2c@1 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <1>;
++				};
++				i2c@2 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <2>;
++				};
++				i2c@3 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <3>;
++				};
++				i2c@4 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <4>;
++				};
++				i2c@5 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <5>;
++				};
++				i2c@6 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <6>;
++				};
++				i2c@7 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <7>;
++				};
++			};
++		};
++	};
++
++	__overrides__ {
++		pca9542 = <0>, "+0";
++		pca9545 = <0>, "+1";
++		pca9548 = <0>, "+2";
++
++		addr =  <&pca9545>,"reg:0",
++			<&pca9548>,"reg:0";
++	};
++};
+--- a/arch/arm/boot/dts/overlays/i2c-mux-pca9548a-overlay.dts
++++ /dev/null
+@@ -1,67 +0,0 @@
+-// Definitions for NXP PCA9548A I2C mux on ARM I2C bus.
+-/dts-v1/;
+-/plugin/;
+-
+-/{
+-	compatible = "brcm,bcm2708";
+-
+-	fragment@0 {
+-		target = <&i2c_arm>;
+-		__overlay__ {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			status = "okay";
+-
+-			i2cmux: mux@70 {
+-				compatible = "nxp,pca9548";
+-				reg = <0x70>;
+-				#address-cells = <1>;
+-				#size-cells = <0>;
+-
+-				i2c@0 {
+-					#address-cells = <1>;
+-					#size-cells = <0>;
+-					reg = <0>;
+-				};
+-				i2c@1 {
+-					#address-cells = <1>;
+-					#size-cells = <0>;
+-					reg = <1>;
+-				};
+-				i2c@2 {
+-					#address-cells = <1>;
+-					#size-cells = <0>;
+-					reg = <2>;
+-				};
+-				i2c@3 {
+-					#address-cells = <1>;
+-					#size-cells = <0>;
+-					reg = <3>;
+-				};
+-				i2c@4 {
+-					#address-cells = <1>;
+-					#size-cells = <0>;
+-					reg = <4>;
+-				};
+-				i2c@5 {
+-					#address-cells = <1>;
+-					#size-cells = <0>;
+-					reg = <5>;
+-				};
+-				i2c@6 {
+-					#address-cells = <1>;
+-					#size-cells = <0>;
+-					reg = <6>;
+-				};
+-				i2c@7 {
+-					#address-cells = <1>;
+-					#size-cells = <0>;
+-					reg = <7>;
+-				};
+-			};
+-		};
+-	};
+-	__overrides__ {
+-		addr = <&i2cmux>,"reg:0";
+-	};
+-};

@@ -1,0 +1,26 @@
+From 2597d2cedba62b2a3fdca9c044187705f98a0372 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 25 Mar 2016 04:24:27 +0100
+Subject: [PATCH 064/102] net: mediatek: remove superflous reset call
+
+HW reset is triggered int he mtk_hw_init() function. There is no need to
+reset the core during probe.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    4 ----
+ 1 file changed, 4 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -1679,10 +1679,6 @@ static int mtk_probe(struct platform_dev
+ 	struct mtk_eth *eth;
+ 	int err;
+ 
+-	err = device_reset(&pdev->dev);
+-	if (err)
+-		return err;
+-
+ 	match = of_match_device(of_mtk_match, &pdev->dev);
+ 	soc = (struct mtk_soc_data *)match->data;
+ 

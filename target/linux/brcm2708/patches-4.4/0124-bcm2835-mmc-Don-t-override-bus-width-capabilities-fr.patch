@@ -1,0 +1,24 @@
+From a41f23a2a756f274f1ddc67d6cccc36fa4624f88 Mon Sep 17 00:00:00 2001
+From: Andrew Litt <ajlitt@splunge.net>
+Date: Mon, 11 Jan 2016 07:54:21 +0000
+Subject: [PATCH 124/381] bcm2835-mmc: Don't override bus width capabilities
+ from devicetree
+
+Take out the force setting of the MMC_CAP_4_BIT_DATA host capability
+so that the result read from devicetree via mmc_of_parse() is
+preserved.
+---
+ drivers/mmc/host/bcm2835-mmc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mmc/host/bcm2835-mmc.c
++++ b/drivers/mmc/host/bcm2835-mmc.c
+@@ -1305,7 +1305,7 @@ static int bcm2835_mmc_add_host(struct b
+ 	/* host controller capabilities */
+ 	mmc->caps |= MMC_CAP_CMD23 | MMC_CAP_ERASE | MMC_CAP_NEEDS_POLL |
+ 		MMC_CAP_SDIO_IRQ | MMC_CAP_SD_HIGHSPEED |
+-		MMC_CAP_MMC_HIGHSPEED | MMC_CAP_4_BIT_DATA;
++		MMC_CAP_MMC_HIGHSPEED;
+ 
+ 	mmc->caps2 |= MMC_CAP2_SDIO_IRQ_NOTHREAD;
+ 

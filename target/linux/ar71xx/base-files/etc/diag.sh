@@ -176,7 +176,8 @@ get_status_led() {
 	mr600v2)
 		status_led="mr600:blue:power"
 		;;
-	mr1750)
+	mr1750 | \
+	mr1750v2)
 		status_led="mr1750:blue:power"
 		;;
 	mr900 | \
@@ -207,6 +208,7 @@ get_status_led() {
 	om2pv2 | \
 	om2p-hs | \
 	om2p-hsv2 | \
+	om2p-hsv3 | \
 	om2p-lc)
 		status_led="om2p:blue:power"
 		;;
@@ -276,6 +278,9 @@ get_status_led() {
 	tellstick-znet-lite)
 		status_led="tellstick:white:system"
 		;;
+	som9331)
+		status_led="som9331:green:system"
+		;;
 	tew-632brp)
 		status_led="tew-632brp:green:status"
 		;;
@@ -319,8 +324,10 @@ get_status_led() {
 	tl-wr841n-v1 | \
 	tl-wr841n-v7 | \
 	tl-wr841n-v8 | \
+	tl-wr841n-v11 | \
 	tl-wa830re-v2 | \
 	tl-wr842n-v2 | \
+	tl-wr842n-v3 | \
 	tl-wr941nd | \
 	tl-wr941nd-v5)
 		status_led="tp-link:green:system"
@@ -355,7 +362,8 @@ get_status_led() {
 		status_led="ubnt:green:dome"
 		;;
 	uap-pro | \
-	unifiac)
+	unifiac-lite | \
+	unifiac-pro)
 		status_led="ubnt:white:dome"
 		;;
 	unifi-outdoor-plus)

@@ -1,0 +1,41 @@
+From f0f6dd227bbb171ad6b0dbe1d394de71d78eae21 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 17 Mar 2016 10:16:16 +0000
+Subject: [PATCH 203/381] pi3-miniuart-bt-overlay: Correct and clarify info
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/README                      | 6 ++++--
+ arch/arm/boot/dts/overlays/pi3-miniuart-bt-overlay.dts | 6 ++++--
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -511,8 +511,10 @@ Name:   pi3-miniuart-bt
+ Info:   Switch Pi3 Bluetooth function to use the mini-UART (ttyS0) and restore
+         UART0/ttyAMA0 over GPIOs 14 & 15. Note that this may reduce the maximum
+         usable baudrate.
+-        N.B. It is also necessary to edit /lib/systemd/system/hciuart.server
+-        and replace ttyAMA0 with ttyS0.
++        N.B. It is also necessary to edit /lib/systemd/system/hciuart.service
++        and replace ttyAMA0 with ttyS0, unless you have a system with udev rules
++        that create /dev/serial0 and /dev/serial1, in which case use
++        /dev/serial1 instead because it will always be correct.
+ Load:   dtoverlay=pi3-miniuart-bt
+ Params: <None>
+ 
+--- a/arch/arm/boot/dts/overlays/pi3-miniuart-bt-overlay.dts
++++ b/arch/arm/boot/dts/overlays/pi3-miniuart-bt-overlay.dts
+@@ -5,8 +5,10 @@
+    UART0/ttyAMA0 over GPIOs 14 & 15. Note that this may reduce the maximum
+    usable baudrate.
+ 
+-   It is also necessary to edit /lib/systemd/system/hciuart.server and
+-   replace ttyAMA0 with ttyS0.
++   It is also necessary to edit /lib/systemd/system/hciuart.service and
++   replace ttyAMA0 with ttyS0, unless you have a system with udev rules
++   that create /dev/serial0 and /dev/serial1, in which case use /dev/serial1
++   instead because it will always be correct.
+ 
+    If cmdline.txt uses the alias serial0 to refer to the user-accessable port
+    then the firmware will replace with the appropriate port whether or not

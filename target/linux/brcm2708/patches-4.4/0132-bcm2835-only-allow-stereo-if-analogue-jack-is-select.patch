@@ -1,0 +1,62 @@
+From 1a2d7c95e3ee81f352345ecf1f65944739c7cf53 Mon Sep 17 00:00:00 2001
+From: wm4 <wm4@nowhere>
+Date: Wed, 13 Jan 2016 19:44:24 +0100
+Subject: [PATCH 132/381] bcm2835: only allow stereo if analogue jack is
+ selected
+
+Sending more than 2 channels to videocore while outputting to analogue
+mysteriously outputs heavy artifacts. So just paint it over with a
+hack: if analogue is explicitly selected as destination, do not
+reporting support for anything other than stereo.
+
+I'm not sure how to deal with the auto case (destination 0). There's
+probably way to retrieve this and even to listen to plug events, but
+I didn't find one yet, and it's probably not worth the trouble. Just
+don't use this setting, I guess. Unless you like noise.
+
+Changing the setting while an audio stream is active also doesn't
+work properly. We could probably interrupt running streams by
+returning ENODEV or using kernel hotplug stuff (maybe), but that
+also doesn't seem worth the trouble.
+---
+ sound/arm/bcm2835-ctl.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/sound/arm/bcm2835-ctl.c
++++ b/sound/arm/bcm2835-ctl.c
+@@ -423,9 +423,16 @@ static struct cea_channel_speaker_alloca
+ { .ca_index = 0x31,  .speakers = { FRW,  FLW,  RR,  RL,  FC,  LFE,  FR,  FL } },
+ };
+ 
++static int uses_analogue(bcm2835_chip_t *chip)
++{
++	return chip->dest == 1;
++}
++
+ static int snd_bcm2835_chmap_ctl_tlv(struct snd_kcontrol *kcontrol, int op_flag,
+ 				     unsigned int size, unsigned int __user *tlv)
+ {
++	struct snd_pcm_chmap *info = snd_kcontrol_chip(kcontrol);
++	bcm2835_chip_t *chip = info->private_data;
+ 	unsigned int __user *dst;
+ 	int count = 0;
+ 	int i;
+@@ -442,6 +449,9 @@ static int snd_bcm2835_chmap_ctl_tlv(str
+ 		int chs_bytes;
+ 		int c;
+ 
++		if (i > 0 && uses_analogue(chip))
++			break;
++
+ 		for (c = 0; c < 8; c++) {
+ 			if (ch->speakers[c])
+ 				num_chs++;
+@@ -552,6 +562,8 @@ static int snd_bcm2835_chmap_ctl_put(str
+ 		int matches = 1;
+ 		int cur = 0;
+ 		int x;
++		if (i > 0 && uses_analogue(chip))
++			break;
+ 		memset(remap, 0, sizeof(remap));
+ 		for (x = 0; x < substream->runtime->channels; x++) {
+ 			int sp = ucontrol->value.integer.value[x];

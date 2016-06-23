@@ -1,0 +1,32 @@
+From a0554ab8b841b57b9bba5acb16b24763dfbf02e0 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 25 Jan 2016 14:32:41 -0800
+Subject: [PATCH 197/381] drm/vc4: Fix -ERESTARTSYS error return from BO waits.
+
+This caused the wait ioctls to claim that waiting had completed when
+we actually got interrupted by a signal before it was done.  Fixes
+broken rendering throttling that produced serious lag in X window
+dragging.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -352,12 +352,10 @@ vc4_wait_for_seqno(struct drm_device *de
+ 	finish_wait(&vc4->job_wait_queue, &wait);
+ 	trace_vc4_wait_for_seqno_end(dev, seqno);
+ 
+-	if (ret && ret != -ERESTARTSYS) {
++	if (ret && ret != -ERESTARTSYS)
+ 		DRM_ERROR("timeout waiting for render thread idle\n");
+-		return ret;
+-	}
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ static void

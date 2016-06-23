@@ -42,6 +42,7 @@ enum ath79_mach_type {
 	ATH79_MACH_AP96,		/* Atheros AP96 */
 	ATH79_MACH_ARCHER_C5,		/* TP-LINK Archer C5 board */
 	ATH79_MACH_ARCHER_C7,		/* TP-LINK Archer C7 board */
+	ATH79_MACH_ARCHER_C7_V2,	/* TP-LINK Archer C7 V2 board */
 	ATH79_MACH_AW_NR580,		/* AzureWave AW-NR580 */
 	ATH79_MACH_BHU_BXU2000N2_A1,	/* BHU BXU2000n-2 A1 */
 	ATH79_MACH_BSB,			/* Smart Electronics Black Swift board */
@@ -50,6 +51,7 @@ enum ath79_mach_type {
 	ATH79_MACH_CAP4200AG,		/* Senao CAP4200AG */
 	ATH79_MACH_CARAMBOLA2,		/* 8devices Carambola2 */
 	ATH79_MACH_CF_E316N_V2,		/* COMFAST CF-E316N v2 */
+	ATH79_MACH_CPE210,		/* TP-LINK CPE210 */
 	ATH79_MACH_CPE510,		/* TP-LINK CPE510 */
 	ATH79_MACH_CR3000,		/* PowerCloud CR3000 */
 	ATH79_MACH_CR5000,		/* PowerCloud CR5000 */
@@ -96,6 +98,7 @@ enum ath79_mach_type {
 	ATH79_MACH_MR16,		/* Cisco Meraki MR16 */
 	ATH79_MACH_MR18,		/* Cisco Meraki MR18 */
 	ATH79_MACH_MR1750,		/* OpenMesh MR1750 */
+	ATH79_MACH_MR1750V2,		/* OpenMesh MR1750v2 */
 	ATH79_MACH_MR600V2,		/* OpenMesh MR600v2 */
 	ATH79_MACH_MR600,		/* OpenMesh MR600 */
 	ATH79_MACH_MR900,		/* OpenMesh MR900 */
@@ -109,6 +112,7 @@ enum ath79_mach_type {
 	ATH79_MACH_NBG6616,		/* Zyxel NBG6616 */
 	ATH79_MACH_NBG6716,		/* Zyxel NBG6716 */
 	ATH79_MACH_OM2P_HSv2,		/* OpenMesh OM2P-HSv2 */
+	ATH79_MACH_OM2P_HSv3,		/* OpenMesh OM2P-HSv3 */
 	ATH79_MACH_OM2P_HS,		/* OpenMesh OM2P-HS */
 	ATH79_MACH_OM2P_LC,		/* OpenMesh OM2P-LC */
 	ATH79_MACH_OM2Pv2,		/* OpenMesh OM2Pv2 */
@@ -149,6 +153,7 @@ enum ath79_mach_type {
 	ATH79_MACH_RB_SXTLITE5ND,	/* Mikrotik RouterBOARD SXT Lite 5nD */
 	ATH79_MACH_RW2458N,		/* Redwave RW2458N */
 	ATH79_MACH_SMART_300,		/* NC-LINK SMART-300 */
+	ATH79_MACH_SOM9331,		/* OpenEmbed SOM9331 */
 	ATH79_MACH_TELLSTICK_ZNET_LITE,	/* TellStick ZNet Lite */
 	ATH79_MACH_TEW_632BRP,		/* TRENDnet TEW-632BRP */
 	ATH79_MACH_TEW_673GRU,		/* TRENDnet TEW-673GRU */
@@ -198,7 +203,9 @@ enum ath79_mach_type {
 	ATH79_MACH_TL_WR841N_V7,	/* TP-LINK TL-WR841N/ND v7 */
 	ATH79_MACH_TL_WR841N_V8,	/* TP-LINK TL-WR841N/ND v8 */
 	ATH79_MACH_TL_WR841N_V9,	/* TP-LINK TL-WR841N/ND v9 */
+	ATH79_MACH_TL_WR841N_V11,	/* TP-LINK TL-WR841N/ND v11 */
 	ATH79_MACH_TL_WR842N_V2,	/* TP-LINK TL-WR842N/ND v2 */
+	ATH79_MACH_TL_WR842N_V3,	/* TP-LINK TL-WR842N/ND v3 */
 	ATH79_MACH_TL_WR941ND,		/* TP-LINK TL-WR941ND */
 	ATH79_MACH_TL_WR941ND_V5,	/* TP-LINK TL-WR941ND v5 */
 	ATH79_MACH_TL_WR941ND_V6,	/* TP-LINK TL-WR941ND v6 */
@@ -219,7 +226,8 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_RS,		/* Ubiquiti RouterStation */
 	ATH79_MACH_UBNT_UAP_PRO,	/* Ubiquiti UniFi AP Pro */
 	ATH79_MACH_UBNT_UNIFI, 		/* Ubiquiti Unifi */
-	ATH79_MACH_UBNT_UNIFIAC,	/* Ubiquiti Unifi AC */
+	ATH79_MACH_UBNT_UNIFIAC_LITE,	/* Ubiquiti Unifi AC LITE/LR */
+	ATH79_MACH_UBNT_UNIFIAC_PRO,	/* Ubiquiti Unifi AC PRO */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR,	/* Ubiquiti UnifiAP Outdoor */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR_PLUS, /* Ubiquiti UnifiAP Outdoor+ */
 	ATH79_MACH_UBNT_XM,		/* Ubiquiti Networks XM board rev 1.0 */
@@ -248,6 +256,7 @@ enum ath79_mach_type {
 	ATH79_MACH_WPJ558,		/* Compex WPJ558 */
 	ATH79_MACH_WRT160NL,		/* Linksys WRT160NL */
 	ATH79_MACH_WRT400N,		/* Linksys WRT400N */
+	ATH79_MACH_WRTNODE2Q,		/* WRTnode2Q */
 	ATH79_MACH_WZR_HP_AG300H,	/* Buffalo WZR-HP-AG300H */
 	ATH79_MACH_WZR_HP_G300NH,	/* Buffalo WZR-HP-G300NH */
 	ATH79_MACH_WZR_HP_G300NH2,	/* Buffalo WZR-HP-G300NH2 */

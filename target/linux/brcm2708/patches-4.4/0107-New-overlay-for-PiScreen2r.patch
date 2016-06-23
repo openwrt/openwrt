@@ -1,0 +1,148 @@
+From 2f5387400fcd2aff2120e945dc0b8050c5ae5dbf Mon Sep 17 00:00:00 2001
+From: mwilliams03 <mark.mwilliams@gmail.com>
+Date: Sun, 18 Oct 2015 17:07:24 -0700
+Subject: [PATCH 107/381] New overlay for PiScreen2r
+
+---
+ arch/arm/boot/dts/overlays/Makefile               |   1 +
+ arch/arm/boot/dts/overlays/README                 |  14 +++
+ arch/arm/boot/dts/overlays/piscreen2r-overlay.dts | 100 ++++++++++++++++++++++
+ 3 files changed, 115 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/piscreen2r-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -35,6 +35,7 @@ dtb-$(RPI_DT_OVERLAYS) += mcp2515-can1-o
+ dtb-$(RPI_DT_OVERLAYS) += mmc-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += mz61581-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += piscreen-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += piscreen2r-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += pitft28-resistive-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += pps-gpio-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += pwm-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -425,6 +425,20 @@ Params: speed                    Display
+         xohms                    Touchpanel sensitivity (X-plate resistance)
+ 
+ 
++Name:   piscreen2r
++Info:   PiScreen 2 with resistive TP display by OzzMaker.com
++Load:   dtoverlay=piscreen2r,<param>=<val>
++Params: speed                    Display SPI bus speed
++
++        rotate                   Display rotation {0,90,180,270}
++
++        fps                      Delay between frame updates
++
++        debug                    Debug output level {0-7}
++
++        xohms                    Touchpanel sensitivity (X-plate resistance)
++
++
+ Name:   pitft28-resistive
+ Info:   Adafruit PiTFT 2.8" resistive touch screen
+ Load:   dtoverlay=pitft28-resistive,<param>=<val>
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/piscreen2r-overlay.dts
+@@ -0,0 +1,100 @@
++ /*
++ * Device Tree overlay for PiScreen2 3.5" TFT with resistive touch  by Ozzmaker.com
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			spidev@1{
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			piscreen2_pins: piscreen2_pins {
++				brcm,pins = <17 25 24 22>;
++				brcm,function = <0 1 1 1>; /* in out out out */
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			piscreen2: piscreen2@0{
++				compatible = "ilitek,ili9486";
++				reg = <0>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&piscreen2_pins>;
++				bgr;
++				spi-max-frequency = <64000000>;
++				rotate = <90>;
++				fps = <30>;
++				buswidth = <8>;
++				regwidth = <16>;
++				txbuflen = <32768>;
++				reset-gpios = <&gpio 25 0>;
++				dc-gpios = <&gpio 24 0>;
++				led-gpios = <&gpio 22 1>;
++				debug = <0>;
++
++                                init = <0x10000b0 0x00
++                                        0x1000011
++                                        0x20000ff
++                                        0x100003a 0x55
++                                        0x1000036 0x28
++                                        0x10000c0 0x11 0x09
++                                        0x10000c1 0x41
++                                        0x10000c5 0x00 0x00 0x00 0x00
++                                        0x10000b6 0x00 0x02
++                                        0x10000f7 0xa9 0x51 0x2c 0x2
++                                        0x10000be 0x00 0x04
++                                        0x10000e9 0x00
++                                        0x1000011
++                                        0x1000029>;
++
++			};
++
++			piscreen2_ts: piscreen2-ts@1 {
++				compatible = "ti,ads7846";
++				reg = <1>;
++
++				spi-max-frequency = <2000000>;
++				interrupts = <17 2>; /* high-to-low edge triggered */
++				interrupt-parent = <&gpio>;
++				pendown-gpio = <&gpio 17 0>;
++				ti,swap-xy;
++				ti,x-plate-ohms = /bits/ 16 <100>;
++				ti,pressure-max = /bits/ 16 <255>;
++			};
++		};
++	};
++	__overrides__ {
++		speed =		<&piscreen2>,"spi-max-frequency:0";
++		rotate =	<&piscreen2>,"rotate:0";
++		fps =		<&piscreen2>,"fps:0";
++		debug =		<&piscreen2>,"debug:0";
++		xohms =		<&piscreen2_ts>,"ti,x-plate-ohms;0";
++	};
++};
++

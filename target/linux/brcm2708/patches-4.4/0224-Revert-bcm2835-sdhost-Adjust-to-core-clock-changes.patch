@@ -1,0 +1,327 @@
+From 14c3f0b3a4fd51c2bb98146b3395ddc69a2b50ab Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 4 Apr 2016 12:35:51 +0100
+Subject: [PATCH 224/381] Revert "bcm2835-sdhost: Adjust to core clock changes"
+
+This reverts commit 4b89d07fd299a0f4e25321920cb74416ba2e638e.
+---
+ drivers/mmc/host/Kconfig          |   1 -
+ drivers/mmc/host/bcm2835-sdhost.c | 140 ++++++--------------------------------
+ 2 files changed, 22 insertions(+), 119 deletions(-)
+
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -36,7 +36,6 @@ config MMC_BCM2835_PIO_DMA_BARRIER
+ config MMC_BCM2835_SDHOST
+ 	tristate "Support for the SDHost controller on BCM2708/9"
+ 	depends on MACH_BCM2708 || MACH_BCM2709 || ARCH_BCM2835
+-	depends on RASPBERRYPI_FIRMWARE
+ 	help
+ 	  This selects the SDHost controller on BCM2835/6.
+ 
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -50,10 +50,6 @@
+ #include <linux/of_dma.h>
+ #include <linux/time.h>
+ #include <linux/workqueue.h>
+-#include <linux/cpufreq.h>
+-#include <linux/semaphore.h>
+-#include <soc/bcm2835/raspberrypi-firmware.h>
+-
+ 
+ #define DRIVER_NAME "sdhost-bcm2835"
+ 
+@@ -140,8 +136,6 @@
+ 
+ #define MHZ 1000000
+ 
+-#define RPI_FIRMWARE_CLOCK_CORE  4
+-
+ 
+ struct bcm2835_host {
+ 	spinlock_t		lock;
+@@ -157,9 +151,7 @@ struct bcm2835_host {
+ 
+ 	bool			slow_card;	/* Force 11-bit divisor */
+ 
+-	unsigned int		max_clk;	/* Max src clock freq */
+-	unsigned int		min_clk;	/* Min src clock freq */
+-	unsigned int		cur_clk;	/* Current src clock freq */
++	unsigned int		max_clk;	/* Max possible freq */
+ 
+ 	struct tasklet_struct	finish_tasklet;	/* Tasklet structures */
+ 
+@@ -191,7 +183,6 @@ struct bcm2835_host {
+ 	unsigned int			use_sbc:1;		/* Send CMD23 */
+ 
+ 	unsigned int			debug:1;		/* Enable debug output */
+-	unsigned int			variable_clock:1;	/* The core clock may change */
+ 
+ 	/*DMA part*/
+ 	struct dma_chan			*dma_chan_rxtx;		/* DMA channel for reads and writes */
+@@ -217,9 +208,6 @@ struct bcm2835_host {
+ 	u32				pio_limit;	/* Maximum block count for PIO (0 = always DMA) */
+ 
+ 	u32				sectors;	/* Cached card size in sectors */
+-
+-	struct notifier_block		cpufreq_nb;	/* The cpufreq callback list item */
+-	struct semaphore		cpufreq_semaphore; /* Interlock between SD activity and cpufreq changes */
+ };
+ 
+ #if ENABLE_LOG
+@@ -239,10 +227,6 @@ static u32 sdhost_log_idx;
+ static spinlock_t log_lock;
+ static void __iomem *timer_base;
+ 
+-static int bcm2835_sdhost_cpufreq_callback(struct notifier_block *nb,
+-					   unsigned long action, void *data);
+-static unsigned int get_core_clock(unsigned int mode);
+-
+ #define LOG_ENTRIES (256*1)
+ #define LOG_SIZE (sizeof(LOG_ENTRY_T)*LOG_ENTRIES)
+ 
+@@ -464,14 +448,20 @@ static void bcm2835_sdhost_reset(struct
+ 
+ static void bcm2835_sdhost_set_ios(struct mmc_host *mmc, struct mmc_ios *ios);
+ 
+-static void bcm2835_sdhost_init(struct bcm2835_host *host)
++static void bcm2835_sdhost_init(struct bcm2835_host *host, int soft)
+ {
+-	pr_debug("bcm2835_sdhost_init()\n");
++	pr_debug("bcm2835_sdhost_init(%d)\n", soft);
+ 
+ 	/* Set interrupt enables */
+ 	host->hcfg = SDHCFG_BUSY_IRPT_EN;
+ 
+ 	bcm2835_sdhost_reset_internal(host);
++
++	if (soft) {
++		/* force clock reconfiguration */
++		host->clock = 0;
++		bcm2835_sdhost_set_ios(host->mmc, &host->mmc->ios);
++	}
+ }
+ 
+ static void bcm2835_sdhost_wait_transfer_complete(struct bcm2835_host *host)
+@@ -1509,10 +1499,10 @@ static irqreturn_t bcm2835_sdhost_irq(in
+ 	return result;
+ }
+ 
+-void bcm2835_sdhost_set_clock(struct bcm2835_host *host)
++void bcm2835_sdhost_set_clock(struct bcm2835_host *host, unsigned int clock)
+ {
+ 	int div = 0; /* Initialized for compiler warning */
+-	unsigned int clock = host->clock;
++	unsigned int input_clock = clock;
+ 
+ 	if (host->debug)
+ 		pr_info("%s: set_clock(%d)\n", mmc_hostname(host->mmc), clock);
+@@ -1553,17 +1543,17 @@ void bcm2835_sdhost_set_clock(struct bcm
+ 	    return;
+ 	}
+ 
+-	div = host->cur_clk / clock;
++	div = host->max_clk / clock;
+ 	if (div < 2)
+ 		div = 2;
+-	if ((host->cur_clk / div) > clock)
++	if ((host->max_clk / div) > clock)
+ 		div++;
+ 	div -= 2;
+ 
+ 	if (div > SDCDIV_MAX_CDIV)
+ 	    div = SDCDIV_MAX_CDIV;
+ 
+-	clock = host->cur_clk / (div + 2);
++	clock = host->max_clk / (div + 2);
+ 	host->mmc->actual_clock = clock;
+ 
+ 	/* Calibrate some delays */
+@@ -1571,7 +1561,7 @@ void bcm2835_sdhost_set_clock(struct bcm
+ 	host->ns_per_fifo_word = (1000000000/clock) *
+ 		((host->mmc->caps & MMC_CAP_4_BIT_DATA) ? 8 : 32);
+ 
+-	if (clock > host->clock) {
++	if (clock > input_clock) {
+ 		/* Save the closest value, to make it easier
+ 		   to reduce in the event of error */
+ 		host->overclock_50 = (clock/MHZ);
+@@ -1597,9 +1587,9 @@ void bcm2835_sdhost_set_clock(struct bcm
+ 	bcm2835_sdhost_write(host, host->mmc->actual_clock/2, SDTOUT);
+ 
+ 	if (host->debug)
+-		pr_info("%s: clock=%d -> cur_clk=%d, cdiv=%x (actual clock %d)\n",
+-			mmc_hostname(host->mmc), host->clock,
+-			host->cur_clk, host->cdiv, host->mmc->actual_clock);
++		pr_info("%s: clock=%d -> max_clk=%d, cdiv=%x (actual clock %d)\n",
++			mmc_hostname(host->mmc), input_clock,
++			host->max_clk, host->cdiv, host->mmc->actual_clock);
+ }
+ 
+ static void bcm2835_sdhost_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -1648,13 +1638,6 @@ static void bcm2835_sdhost_request(struc
+ 	    (mrq->data->blocks > host->pio_limit))
+ 		bcm2835_sdhost_prepare_dma(host, mrq->data);
+ 
+-	if (host->variable_clock &&
+-	    (down_killable(&host->cpufreq_semaphore) != 0)) {
+-		mrq->cmd->error = -EINTR;
+-		mmc_request_done(mmc, mrq);
+-		return;
+-	}
+-
+ 	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	WARN_ON(host->mrq != NULL);
+@@ -1704,52 +1687,6 @@ static void bcm2835_sdhost_request(struc
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+-static int bcm2835_sdhost_cpufreq_callback(struct notifier_block *nb,
+-					   unsigned long action, void *data)
+-{
+-	struct cpufreq_freqs *freq = data;
+-	struct bcm2835_host *host;
+-
+-	host = container_of(nb, struct bcm2835_host, cpufreq_nb);
+-
+-	if (freq->cpu == 0) {
+-		switch (action) {
+-		case CPUFREQ_PRECHANGE:
+-			if (down_killable(&host->cpufreq_semaphore) != 0)
+-				return NOTIFY_BAD;
+-			break;
+-		case CPUFREQ_POSTCHANGE:
+-			if (freq->new > freq->old)
+-				host->cur_clk = host->max_clk;
+-			else
+-				host->cur_clk = host->min_clk;
+-			bcm2835_sdhost_set_clock(host);
+-			up(&host->cpufreq_semaphore);
+-			break;
+-		default:
+-			break;
+-		}
+-	}
+-	return NOTIFY_OK;
+-}
+-
+-static unsigned int get_core_clock(unsigned int mode)
+-{
+-	struct rpi_firmware *fw = rpi_firmware_get(NULL);
+-	struct {
+-		u32 id;
+-		u32 val;
+-	} packet;
+-	int ret;
+-
+-	packet.id = RPI_FIRMWARE_CLOCK_CORE;
+-	ret = rpi_firmware_property(fw, mode, &packet, sizeof(packet));
+-	if (ret)
+-		return 0;
+-
+-	return packet.val;
+-}
+-
+ static void bcm2835_sdhost_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 
+@@ -1763,16 +1700,13 @@ static void bcm2835_sdhost_set_ios(struc
+ 			ios->clock, ios->power_mode, ios->bus_width,
+ 			ios->timing, ios->signal_voltage, ios->drv_type);
+ 
+-	if (ios->clock && !host->cur_clk)
+-		host->cur_clk = get_core_clock(RPI_FIRMWARE_GET_CLOCK_RATE);
+-
+ 	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	log_event("IOS<", ios->clock, 0);
+ 
+ 	if (!ios->clock || ios->clock != host->clock) {
++		bcm2835_sdhost_set_clock(host, ios->clock);
+ 		host->clock = ios->clock;
+-		bcm2835_sdhost_set_clock(host);
+ 	}
+ 
+ 	/* set bus width */
+@@ -1861,7 +1795,7 @@ static void bcm2835_sdhost_tasklet_finis
+ 			host->overclock_50--;
+ 			pr_warn("%s: reducing overclock due to errors\n",
+ 				mmc_hostname(host->mmc));
+-			bcm2835_sdhost_set_clock(host);
++			bcm2835_sdhost_set_clock(host,50*MHZ);
+ 			mrq->cmd->error = -EILSEQ;
+ 			mrq->cmd->retries = 1;
+ 		}
+@@ -1879,9 +1813,6 @@ static void bcm2835_sdhost_tasklet_finis
+ 
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ 
+-	if (host->variable_clock)
+-		up(&host->cpufreq_semaphore);
+-
+ 	if (terminate_chan)
+ 	{
+ 		int err = dmaengine_terminate_all(terminate_chan);
+@@ -1984,10 +1915,10 @@ int bcm2835_sdhost_add_host(struct bcm28
+ 	setup_timer(&host->timer, bcm2835_sdhost_timeout,
+ 		    (unsigned long)host);
+ 
+-	bcm2835_sdhost_init(host);
++	bcm2835_sdhost_init(host, 0);
+ 
+ 	ret = request_irq(host->irq, bcm2835_sdhost_irq, 0 /*IRQF_SHARED*/,
+-			  mmc_hostname(mmc), host);
++				  mmc_hostname(mmc), host);
+ 	if (ret) {
+ 		pr_err("%s: failed to request IRQ %d: %d\n",
+ 		       mmc_hostname(mmc), host->irq, ret);
+@@ -2022,7 +1953,6 @@ static int bcm2835_sdhost_probe(struct p
+ 	struct bcm2835_host *host;
+ 	struct mmc_host *mmc;
+ 	const __be32 *addr;
+-	unsigned int max_clk;
+ 	int ret;
+ 
+ 	pr_debug("bcm2835_sdhost_probe\n");
+@@ -2132,28 +2062,6 @@ static int bcm2835_sdhost_probe(struct p
+ 	if (ret)
+ 		goto err;
+ 
+-	/* Query the core clock frequencies */
+-	host->min_clk = get_core_clock(RPI_FIRMWARE_GET_MIN_CLOCK_RATE);
+-	max_clk = get_core_clock(RPI_FIRMWARE_GET_MAX_CLOCK_RATE);
+-	if (max_clk != host->max_clk) {
+-		pr_warn("%s: Expected max clock %d, found %d\n",
+-			mmc_hostname(mmc), host->max_clk, max_clk);
+-		host->max_clk = max_clk;
+-	}
+-
+-	if (host->min_clk != host->max_clk) {
+-		host->cpufreq_nb.notifier_call =
+-			bcm2835_sdhost_cpufreq_callback;
+-		sema_init(&host->cpufreq_semaphore, 1);
+-		cpufreq_register_notifier(&host->cpufreq_nb,
+-					  CPUFREQ_TRANSITION_NOTIFIER);
+-		host->variable_clock = 1;
+-		host->cur_clk = 0; /* Get this later */
+-	} else {
+-		host->variable_clock = 0;
+-		host->cur_clk = host->max_clk;
+-	}
+-
+ 	platform_set_drvdata(pdev, host);
+ 
+ 	pr_debug("bcm2835_sdhost_probe -> OK\n");
+@@ -2173,10 +2081,6 @@ static int bcm2835_sdhost_remove(struct
+ 
+ 	pr_debug("bcm2835_sdhost_remove\n");
+ 
+-	if (host->variable_clock)
+-		cpufreq_unregister_notifier(&host->cpufreq_nb,
+-					    CPUFREQ_TRANSITION_NOTIFIER);
+-
+ 	mmc_remove_host(host->mmc);
+ 
+ 	bcm2835_sdhost_set_power(host, false);

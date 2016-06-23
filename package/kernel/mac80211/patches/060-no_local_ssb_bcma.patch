@@ -1,6 +1,6 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -476,44 +476,6 @@ USB_IPHETH=
+@@ -481,45 +481,6 @@ USB_IPHETH=
  USB_SIERRA_NET=
  USB_VL600=
  USB_NET_CH9200=
@@ -37,6 +37,7 @@
 -BCMA_DRIVER_PCI=
 -BCMA_DRIVER_PCI_HOSTMODE=
 -BCMA_DRIVER_MIPS=
+-BCMA_PFLASH=
 -BCMA_SFLASH=
 -BCMA_NFLASH=
 -BCMA_DRIVER_GMAC_CMN=
@@ -56,7 +57,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4903,7 +4903,7 @@ static int b43_wireless_core_init(struct
+@@ -4901,7 +4901,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */

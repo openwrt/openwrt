@@ -1,0 +1,31 @@
+From 6d7bc67f5af641afffc88fdc55940ccf53831f00 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 29 May 2015 11:18:58 +0100
+Subject: [PATCH 181/381] scripts/knlinfo: Decode DDTK atom
+
+Show the DDTK atom as being a boolean.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ scripts/knlinfo | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/scripts/knlinfo
++++ b/scripts/knlinfo
+@@ -16,6 +16,7 @@ my $trailer_magic = 'RPTL';
+ 
+ my %atom_formats =
+ (
++    'DDTK' => \&format_bool,
+     'DTOK' => \&format_bool,
+     'KVer' => \&format_string,
+     '270X' => \&format_bool,
+@@ -148,7 +149,7 @@ sub format_atom
+ sub format_bool
+ {
+     my ($data) = @_;
+-    return unpack('V', $data) ? 'true' : 'false';
++    return unpack('V', $data) ? 'y' : 'n';
+ }
+ 
+ sub format_int

@@ -1,0 +1,21 @@
+From 5238c5d1d38661955ed3b52f45c46e00bfc9eb6e Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 7 Apr 2016 07:18:35 +0200
+Subject: [PATCH 052/102] clk: dont disable unused clocks
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/clk/clk.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -233,7 +233,7 @@ unlock_out:
+ 	clk_enable_unlock(flags);
+ }
+ 
+-static bool clk_ignore_unused;
++static bool clk_ignore_unused = true;
+ static int __init clk_ignore_unused_setup(char *__unused)
+ {
+ 	clk_ignore_unused = true;

@@ -1,0 +1,32 @@
+From 903b74d1a831985eced17d72de1634143031a077 Mon Sep 17 00:00:00 2001
+From: Dave Airlie <airlied@redhat.com>
+Date: Mon, 18 Jan 2016 09:10:42 +1000
+Subject: [PATCH 276/381] drm/vc4: fix warning in validate printf.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This just fixes a warning on 64-bit builds:
+
+  drivers/gpu/drm/vc4/vc4_validate.c: In function âvalidate_gl_shader_recâ:
+  drivers/gpu/drm/vc4/vc4_validate.c:864:12: warning: format â%dâ expects argument of type âintâ, but argument 4 has type âsize_t {aka long unsigned int}â [-Wformat=]
+
+Reported-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Dave Airlie <airlied@redhat.com>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+(cherry picked from commit c671e1e30259da587d7a0162895200601979ee65)
+---
+ drivers/gpu/drm/vc4/vc4_validate.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_validate.c
++++ b/drivers/gpu/drm/vc4/vc4_validate.c
+@@ -861,7 +861,7 @@ validate_gl_shader_rec(struct drm_device
+ 
+ 		if (vbo->base.size < offset ||
+ 		    vbo->base.size - offset < attr_size) {
+-			DRM_ERROR("BO offset overflow (%d + %d > %d)\n",
++			DRM_ERROR("BO offset overflow (%d + %d > %zu)\n",
+ 				  offset, attr_size, vbo->base.size);
+ 			return -EINVAL;
+ 		}

@@ -1,0 +1,235 @@
+From 6b9beded9c5f2c6d834a51e64cca92fafbc65fbf Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 12 Feb 2016 15:38:00 +0000
+Subject: [PATCH 144/381] BCM270X_DT: Add dtparams for the SD interface
+
+Add new base dtparams sd_overclock, sd_force_pio, sd_pio_limit
+and sd_debug.
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts       |  4 ++++
+ arch/arm/boot/dts/bcm2708-rpi-b.dts            |  4 ++++
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts           |  1 -
+ arch/arm/boot/dts/bcm2708-rpi-cm.dtsi          | 13 +++++++++++++
+ arch/arm/boot/dts/bcm2708_common.dtsi          |  2 ++
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts          |  4 ++++
+ arch/arm/boot/dts/overlays/README              | 11 ++++++++++-
+ arch/arm/boot/dts/overlays/mmc-overlay.dts     |  1 -
+ arch/arm/boot/dts/overlays/sdhost-overlay.dts  | 27 +++++++++++++-------------
+ arch/arm/boot/dts/overlays/sdtweak-overlay.dts | 14 ++++++-------
+ 10 files changed, 58 insertions(+), 23 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -141,5 +141,9 @@
+ 		audio = <&audio>,"status";
+ 		watchdog = <&watchdog>,"status";
+ 		random = <&random>,"status";
++		sd_overclock = <&sdhost>,"brcm,overclock-50:0";
++		sd_force_pio = <&sdhost>,"brcm,force-pio?";
++		sd_pio_limit = <&sdhost>,"brcm,pio-limit:0";
++		sd_debug     = <&sdhost>,"brcm,debug";
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -131,5 +131,9 @@
+ 		audio = <&audio>,"status";
+ 		watchdog = <&watchdog>,"status";
+ 		random = <&random>,"status";
++		sd_overclock = <&sdhost>,"brcm,overclock-50:0";
++		sd_force_pio = <&sdhost>,"brcm,force-pio?";
++		sd_pio_limit = <&sdhost>,"brcm,pio-limit:0";
++		sd_debug     = <&sdhost>,"brcm,debug";
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -97,6 +97,5 @@
+ 		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
+ 		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
+ 		i2c2_baudrate = <&i2c2>,"clock-frequency:0";
+-		core_freq = <&clk_core>,"clock-frequency:0";
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
+@@ -7,6 +7,13 @@
+ 	};
+ };
+ 
++&gpio {
++	sdhost_pins: sdhost_pins {
++		brcm,pins = <48 49 50 51 52 53>;
++		brcm,function = <4>; /* alt0 */
++	};
++};
++
+ &leds {
+ 	act_led: act {
+ 		label = "led0";
+@@ -29,6 +36,8 @@
+ 
+ / {
+ 	__overrides__ {
++		core_freq = <&clk_core>,"clock-frequency:0";
++
+ 		act_led_gpio = <&act_led>,"gpios:4";
+ 		act_led_activelow = <&act_led>,"gpios:8";
+ 		act_led_trigger = <&act_led>,"linux,default-trigger";
+@@ -36,5 +45,9 @@
+ 		audio = <&audio>,"status";
+ 		watchdog = <&watchdog>,"status";
+ 		random = <&random>,"status";
++		sd_overclock = <&sdhost>,"brcm,overclock-50:0";
++		sd_force_pio = <&sdhost>,"brcm,force-pio?";
++		sd_pio_limit = <&sdhost>,"brcm,pio-limit:0";
++		sd_debug     = <&sdhost>,"brcm,debug";
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -135,6 +135,7 @@
+ 			dmas = <&dma 13>,
+ 			       <&dma 13>;
+ 			dma-names = "tx", "rx";
++			brcm,overclock-50 = <0>;
+ 			brcm,pio-limit = <1>;
+ 			status = "disabled";
+ 		};
+@@ -203,6 +204,7 @@
+ 			dmas = <&dma 11>,
+ 			       <&dma 11>;
+ 			dma-names = "tx", "rx";
++			brcm,overclock-50 = <0>;
+ 			status = "disabled";
+ 		};
+ 
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -141,5 +141,9 @@
+ 		audio = <&audio>,"status";
+ 		watchdog = <&watchdog>,"status";
+ 		random = <&random>,"status";
++		sd_overclock = <&sdhost>,"brcm,overclock-50:0";
++		sd_force_pio = <&sdhost>,"brcm,force-pio?";
++		sd_pio_limit = <&sdhost>,"brcm,pio-limit:0";
++		sd_debug     = <&sdhost>,"brcm,debug";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -112,6 +112,16 @@ Params:
+         random                  Set to "on" to enable the hardware random
+                                 number generator (default "on")
+ 
++        sd_overclock            Clock (in MHz) to use when the MMC framework
++                                requests 50MHz
++
++        sd_force_pio            Disable DMA support for SD driver (default off)
++
++        sd_pio_limit            Number of blocks above which to use DMA for
++                                SD card (default 1)
++
++        sd_debug                Enable debug output from SD driver (default off)
++
+         uart0                   Set to "off" to disable uart0 (default "on")
+ 
+         watchdog                Set to "on" to enable the hardware watchdog
+@@ -443,7 +453,6 @@ Info:   Selects the bcm2835-mmc SD/MMC d
+ Load:   dtoverlay=mmc,<param>=<val>
+ Params: overclock_50            Clock (in MHz) to use when the MMC framework
+                                 requests 50MHz
+-        force_pio               Disable DMA support
+ 
+ 
+ Name:   mz61581
+--- a/arch/arm/boot/dts/overlays/mmc-overlay.dts
++++ b/arch/arm/boot/dts/overlays/mmc-overlay.dts
+@@ -34,6 +34,5 @@
+ 
+ 	__overrides__ {
+ 		overclock_50     = <&frag0>,"brcm,overclock-50:0";
+-		force_pio        = <&frag0>,"brcm,force-pio?";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/sdhost-overlay.dts
++++ b/arch/arm/boot/dts/overlays/sdhost-overlay.dts
+@@ -1,19 +1,14 @@
+ /dts-v1/;
+ /plugin/;
+ 
++/* Provide backwards compatible aliases for the old sdhost dtparams. */
++
+ /{
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&mmc>;
+-		__overlay__ {
+-			status = "disabled";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&sdhost>;
+-		frag1: __overlay__ {
++		frag0: __overlay__ {
+ 			brcm,overclock-50 = <0>;
+ 			brcm,pio-limit = <1>;
+ 			brcm,debug-flags = <0>;
+@@ -21,11 +16,17 @@
+ 		};
+ 	};
+ 
++	fragment@1 {
++		target = <&mmc>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
++
+ 	__overrides__ {
+-		overclock_50     = <&frag1>,"brcm,overclock-50:0";
+-		force_pio        = <&frag1>,"brcm,force-pio?";
+-		pio_limit        = <&frag1>,"brcm,pio-limit:0";
+-		debug            = <&frag1>,"brcm,debug?";
+-		debug_flags      = <&frag1>,"brcm,debug-flags:0";
++		overclock_50     = <&frag0>,"brcm,overclock-50:0";
++		force_pio        = <&frag0>,"brcm,force-pio?";
++		pio_limit        = <&frag0>,"brcm,pio-limit:0";
++		debug            = <&frag0>,"brcm,debug?";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/sdtweak-overlay.dts
++++ b/arch/arm/boot/dts/overlays/sdtweak-overlay.dts
+@@ -1,23 +1,23 @@
+ /dts-v1/;
+ /plugin/;
+ 
++/* Provide backwards compatible aliases for the old sdhost dtparams. */
++
+ /{
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+ 		target = <&sdhost>;
+-		frag1: __overlay__ {
++		frag0: __overlay__ {
+ 			brcm,overclock-50 = <0>;
+ 			brcm,pio-limit = <1>;
+-			brcm,debug-flags = <0>;
+ 		};
+ 	};
+ 
+ 	__overrides__ {
+-		overclock_50     = <&frag1>,"brcm,overclock-50:0";
+-		force_pio        = <&frag1>,"brcm,force-pio?";
+-		pio_limit        = <&frag1>,"brcm,pio-limit:0";
+-		debug            = <&frag1>,"brcm,debug?";
+-		debug_flags      = <&frag1>,"brcm,debug-flags:0";
++		overclock_50     = <&frag0>,"brcm,overclock-50:0";
++		force_pio        = <&frag0>,"brcm,force-pio?";
++		pio_limit        = <&frag0>,"brcm,pio-limit:0";
++		debug            = <&frag0>,"brcm,debug?";
+ 	};
+ };

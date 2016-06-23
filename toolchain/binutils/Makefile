@@ -26,11 +26,11 @@ ifeq ($(findstring linaro, $(CONFIG_BINUTILS_VERSION)),linaro)
   HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
 endif
 
-ifneq ($(CONFIG_BINUTILS_VERSION_2_23_ARC),)
-  PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/arc-2015.06/
-  PKG_REV:=2015.06
+ifneq ($(CONFIG_BINUTILS_VERSION_2_26_ARC),)
+  PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/arc-2016.03/
+  PKG_REV:=2016.03
   PKG_SOURCE:=$(PKG_NAME)-arc-$(PKG_REV).tar.gz
-  PKG_MD5SUM:=961a3564de857238c255c381f8e4360b
+  PKG_MD5SUM:=d4387bab089df77a8049c81980b9fa12
   BINUTILS_DIR:=$(PKG_NAME)-gdb-arc-$(PKG_REV)
   HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
 endif

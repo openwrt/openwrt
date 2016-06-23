@@ -1,0 +1,35 @@
+From e66d9d6665362899e85d666a5d7b6279747a7273 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Sun, 17 Apr 2016 04:44:47 -0700
+Subject: [PATCH 245/381] vmcs: Remove unused sm_cache_map_vector definition
+ (#1411)
+
+The code using it also ifdef'ed with 0, anyyd gcc 6
+complains
+
+error: 'sm_cache_map_vector' defined but not used
+
+The code using it also ifdef'ed out
+
+Signed-off-by: Khem Raj <raj.khem@gmail.com>
+---
+ drivers/char/broadcom/vc_sm/vmcs_sm.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/char/broadcom/vc_sm/vmcs_sm.c
++++ b/drivers/char/broadcom/vc_sm/vmcs_sm.c
+@@ -197,12 +197,14 @@ struct SM_STATE_T {
+ static struct SM_STATE_T *sm_state;
+ static int sm_inited;
+ 
++#if 0
+ static const char *const sm_cache_map_vector[] = {
+ 	"(null)",
+ 	"host",
+ 	"videocore",
+ 	"host+videocore",
+ };
++#endif
+ 
+ /* ---- Private Function Prototypes -------------------------------------- */
+ 

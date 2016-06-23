@@ -1,0 +1,49 @@
+From 27950dc12923e0679a177ae7d17779a77d9500af Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 18 Dec 2013 22:16:19 +0000
+Subject: [PATCH 061/381] config: Enable CONFIG_MEMCG, but leave it disabled
+ (due to memory cost). Enable with cgroup_enable=memory.
+
+---
+ kernel/cgroup.c | 23 ++++++++++++++++++++++-
+ 1 file changed, 22 insertions(+), 1 deletion(-)
+
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -5306,7 +5306,7 @@ int __init cgroup_init_early(void)
+ 	return 0;
+ }
+ 
+-static unsigned long cgroup_disable_mask __initdata;
++static unsigned long cgroup_disable_mask __initdata = 1<<0;
+ 
+ /**
+  * cgroup_init - cgroup initialization
+@@ -5802,6 +5802,27 @@ static int __init cgroup_disable(char *s
+ }
+ __setup("cgroup_disable=", cgroup_disable);
+ 
++static int __init cgroup_enable(char *str)
++{
++	struct cgroup_subsys *ss;
++	char *token;
++	int i;
++
++	while ((token = strsep(&str, ",")) != NULL) {
++		if (!*token)
++			continue;
++
++		for_each_subsys(ss, i) {
++			if (strcmp(token, ss->name) &&
++			    strcmp(token, ss->legacy_name))
++				continue;
++			cgroup_disable_mask &= ~(1 << i);
++		}
++	}
++	return 1;
++}
++__setup("cgroup_enable=", cgroup_enable);
++
+ /**
+  * css_tryget_online_from_dir - get corresponding css from a cgroup dentry
+  * @dentry: directory dentry of interest

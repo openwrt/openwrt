@@ -20,6 +20,8 @@ PKG_MD5SUM:=40a6b7edae5e5cfff99bebde2bf20b97
 
 PKG_MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/am33x-cm3

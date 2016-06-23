@@ -1,0 +1,43 @@
+From 21b5809ad5be5bd18608c9258ff5f571065f8ff9 Mon Sep 17 00:00:00 2001
+From: Aaron Shaw <shawaj@gmail.com>
+Date: Fri, 8 Apr 2016 00:06:00 +0100
+Subject: [PATCH 242/381] Add support for mcp7940x family of RTC
+
+---
+ arch/arm/boot/dts/overlays/README              | 2 ++
+ arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts | 6 ++++++
+ 2 files changed, 8 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -435,6 +435,8 @@ Params: ds1307                  Select t
+ 
+         ds3231                  Select the DS3231 device
+ 
++        mcp7940x                Select the MCP7940x device
++
+         mcp7941x                Select the MCP7941x device
+ 
+         pcf2127                 Select the PCF2127 device
+--- a/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
+@@ -23,6 +23,11 @@
+ 				reg = <0x68>;
+ 				status = "disable";
+ 			};
++			mcp7940x: mcp7940x@6f {
++				compatible = "microchip,mcp7940x";
++				reg = <0x6f>;
++				status = "disable";
++			};
+ 			mcp7941x: mcp7941x@6f {
+ 				compatible = "microchip,mcp7941x";
+ 				reg = <0x6f>;
+@@ -54,6 +59,7 @@
+ 		ds1307 = <&ds1307>,"status";
+ 		ds1339 = <&ds1339>,"status";
+ 		ds3231 = <&ds3231>,"status";
++		mcp7940x = <&mcp7940x>,"status";
+ 		mcp7941x = <&mcp7941x>,"status";
+ 		pcf2127 = <&pcf2127>,"status";
+ 		pcf8523 = <&pcf8523>,"status";

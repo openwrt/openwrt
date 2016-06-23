@@ -1,0 +1,31 @@
+From cc64a36830bcae96e5df48d69f69057a8df539f2 Mon Sep 17 00:00:00 2001
+From: Mario Kleiner <mario.kleiner.de@gmail.com>
+Date: Fri, 6 May 2016 19:26:05 +0200
+Subject: [PATCH 343/381] drm/vc4: Fix get_vblank_counter with proper no-op for
+ Linux 4.4+
+
+get_vblank_counter hooked up to drm_vblank_count() which alway was
+non-sensical but didn't hurt in the past. Since Linux 4.4 it
+triggers a WARN_ON_ONCE in drm_update_vblank_count on first vblank
+irq disable, so fix it by hooking to drm_vblank_no_hw_counter().
+
+Tested against Raspian kernel 4.4.8 tree on RPi 2B.
+
+Signed-off-by: Mario Kleiner <mario.kleiner.de@gmail.com>
+Cc: Eric Anholt <eric@anholt.net>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_drv.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -102,7 +102,7 @@ static struct drm_driver vc4_drm_driver
+ 
+ 	.enable_vblank = vc4_enable_vblank,
+ 	.disable_vblank = vc4_disable_vblank,
+-	.get_vblank_counter = drm_vblank_count,
++	.get_vblank_counter = drm_vblank_no_hw_counter,
+ 
+ #if defined(CONFIG_DEBUG_FS)
+ 	.debugfs_init = vc4_debugfs_init,

@@ -1,0 +1,127 @@
+From ff63e16281a582d4ead28c797b10167515fd9898 Mon Sep 17 00:00:00 2001
+From: Michael Heimpold <michael.heimpold@i2se.com>
+Date: Fri, 29 Jan 2016 12:00:37 +0100
+Subject: [PATCH 201/381] Add overlay and enable support for QCA7000 board
+
+This adds a device tree overlay for the QCA7000 which can be used
+when attaching an I2SE's PLC Stamp micro EVK to the Raspberry Pi.
+
+This Evaluation Board embeds a QCA7000 chip, a Homeplug Green PHY
+powerline chip from Qualcomm/Atheros for the Internet of Things.
+
+This patch also enables the required QCA7000 driver module
+in the default configurations.
+
+Signed-off-by: Stefan Wahren <stefan.wahren@i2se.com>
+Signed-off-by: Michael Heimpold <michael.heimpold@i2se.com>
+---
+ arch/arm/boot/dts/overlays/Makefile            |  1 +
+ arch/arm/boot/dts/overlays/README              |  8 ++++
+ arch/arm/boot/dts/overlays/qca7000-overlay.dts | 52 ++++++++++++++++++++++++++
+ arch/arm/configs/bcm2709_defconfig             |  1 +
+ arch/arm/configs/bcmrpi_defconfig              |  1 +
+ 5 files changed, 63 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/qca7000-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -48,6 +48,7 @@ dtbo-$(RPI_DT_OVERLAYS) += pitft28-resis
+ dtbo-$(RPI_DT_OVERLAYS) += pps-gpio.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += pwm.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += pwm-2chan.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += qca7000.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += raspidac3.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-backlight.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-dac.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -625,6 +625,14 @@ Params: pin                     Output p
+         clock                   PWM clock frequency (informational)
+ 
+ 
++Name:   qca7000
++Info:   I2SE's Evaluation Board for PLC Stamp micro
++Load:   dtoverlay=qca7000,<param>=<val>
++Params: int_pin                 GPIO pin for interrupt signal (default 23)
++
++        speed                   SPI bus speed (default 12 MHz)
++
++
+ Name:   raspidac3
+ Info:   Configures the RaspiDAV Rev.3x audio card
+ Load:   dtoverlay=raspidac3
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/qca7000-overlay.dts
+@@ -0,0 +1,52 @@
++// Overlay for the Qualcomm Atheros QCA7000 on I2SE's PLC Stamp micro EVK
++// Visit: https://www.i2se.com/product/plc-stamp-micro-evk for details
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "okay";
++
++			spidev@0 {
++				status = "disabled";
++			};
++
++			eth1: qca7000@0 {
++				compatible = "qca,qca7000";
++				reg = <0>; /* CE0 */
++				pinctrl-names = "default";
++				pinctrl-0 = <&eth1_pins>;
++				interrupt-parent = <&gpio>;
++				interrupts = <23 0x1>; /* rising edge */
++				spi-max-frequency = <12000000>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			eth1_pins: eth1_pins {
++				brcm,pins = <23>;
++				brcm,function = <0>; /* in */
++				brcm,pull = <0>; /* none */
++			};
++		};
++	};
++
++	__overrides__ {
++		int_pin = <&eth1>, "interrupts:0",
++		          <&eth1_pins>, "brcm,pins:0";
++		speed   = <&eth1>, "spi-max-frequency:0";
++	};
++};
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -446,6 +446,7 @@ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
+ CONFIG_ENC28J60=m
++CONFIG_QCA7000=m
+ CONFIG_MDIO_BITBANG=m
+ CONFIG_PPP=m
+ CONFIG_PPP_BSDCOMP=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -439,6 +439,7 @@ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
+ CONFIG_ENC28J60=m
++CONFIG_QCA7000=m
+ CONFIG_MDIO_BITBANG=m
+ CONFIG_PPP=m
+ CONFIG_PPP_BSDCOMP=m

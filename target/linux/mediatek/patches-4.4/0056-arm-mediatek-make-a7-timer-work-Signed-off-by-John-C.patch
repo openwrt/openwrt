@@ -1,0 +1,31 @@
+From f8cda0bc698706413b5dd6fde827f9a2601ac61b Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 31 Mar 2016 06:07:01 +0200
+Subject: [PATCH 056/102] arm: mediatek: make a7 timer work Signed-off-by:
+ John Crispin <blogic@openwrt.org>
+
+---
+ arch/arm/mach-mediatek/Kconfig    |    1 +
+ arch/arm/mach-mediatek/mediatek.c |    1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/mach-mediatek/Kconfig
++++ b/arch/arm/mach-mediatek/Kconfig
+@@ -24,6 +24,7 @@ config MACH_MT6592
+ config MACH_MT7623
+ 	bool "MediaTek MT7623 SoCs support"
+ 	default ARCH_MEDIATEK
++	select HAVE_ARM_ARCH_TIMER
+ 	select MIGHT_HAVE_PCI
+ 
+ config MACH_MT8127
+--- a/arch/arm/mach-mediatek/mediatek.c
++++ b/arch/arm/mach-mediatek/mediatek.c
+@@ -29,6 +29,7 @@ static void __init mediatek_timer_init(v
+ 	void __iomem *gpt_base;
+ 
+ 	if (of_machine_is_compatible("mediatek,mt6589") ||
++	    of_machine_is_compatible("mediatek,mt7623") ||
+ 	    of_machine_is_compatible("mediatek,mt8135") ||
+ 	    of_machine_is_compatible("mediatek,mt8127")) {
+ 		/* turn on GPT6 which ungates arch timer clocks */

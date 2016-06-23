@@ -1,0 +1,104 @@
+From 95a5908e69f5b3040ee0eedb2a3aceac662464ae Mon Sep 17 00:00:00 2001
+From: Holger Steinhaus <hsteinhaus@gmx.de>
+Date: Sat, 14 Nov 2015 18:37:43 +0100
+Subject: [PATCH 105/381] dts: Added overlay for gpio_ir_recv driver
+
+---
+ arch/arm/boot/dts/overlays/Makefile            |  1 +
+ arch/arm/boot/dts/overlays/README              | 18 ++++++++++-
+ arch/arm/boot/dts/overlays/gpio-ir-overlay.dts | 45 ++++++++++++++++++++++++++
+ 3 files changed, 63 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/overlays/gpio-ir-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -16,6 +16,7 @@ dtb-$(RPI_DT_OVERLAYS) += ads7846-overla
+ dtb-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += dht11-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += enc28j60-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += gpio-ir-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += gpio-poweroff-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += hifiberry-amp-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += hifiberry-dac-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -196,6 +196,22 @@ Params: int_pin                  GPIO us
+         speed                    SPI bus speed (default 12000000)
+ 
+ 
++Name:   gpio-ir
++Info:   Use GPIO pin as rc-core style infrared receiver input. The rc-core-
++        based gpio_ir_recv driver maps received keys directly to a
++        /dev/input/event* device, all decoding is done by the kernel - LIRC is
++        not required! The key mapping and other decoding parameters can be
++        configured by "ir-keytable" tool.
++Load:   dtoverlay=gpio-ir,<param>=<val>
++Params: gpio_pin                 Input pin number. Default is 18.
++
++        gpio_pull                Desired pull-up/down state (off, down, up)
++                                 Default is "down".
++
++        rc-map-name              Default rc keymap (can also be changed by
++                                 ir-keytable), defaults to "rc-rc6-mce"
++
++
+ Name:   gpio-poweroff
+ Info:   Drives a GPIO high or low on reboot
+ Load:   dtoverlay=gpio-poweroff,<param>=<val>
+@@ -308,7 +324,7 @@ Params: <None>
+ Name:   lirc-rpi
+ Info:   Configures lirc-rpi (Linux Infrared Remote Control for Raspberry Pi)
+         Consult the module documentation for more details.
+-Load:   dtoverlay=lirc-rpi,<param>=<val>,...
++Load:   dtoverlay=lirc-rpi,<param>=<val>
+ Params: gpio_out_pin             GPIO for output (default "17")
+ 
+         gpio_in_pin              GPIO for input (default "18")
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/gpio-ir-overlay.dts
+@@ -0,0 +1,45 @@
++// Definitions for ir-gpio module
++/dts-v1/;
++/plugin/;
++
++/ {
++        compatible = "brcm,bcm2708";
++
++        fragment@0 {
++                target-path = "/";
++                __overlay__ {
++                        gpio_ir: ir-receiver {
++                                compatible = "gpio-ir-receiver";
++
++                                // pin number, high or low
++                                gpios = <&gpio 18 1>;
++
++                                // parameter for keymap name
++                                linux,rc-map-name = "rc-rc6-mce";
++
++                                status = "okay";
++                        };
++                };
++        };
++
++        fragment@1 {
++                target = <&gpio>;
++                __overlay__ {
++                        gpio_ir_pins: gpio_ir_pins {
++                                brcm,pins = <18>;                       // pin 18
++                                brcm,function = <0>;                    // in
++                                brcm,pull = <1>;                        // down
++                        };
++                };
++        };
++
++        __overrides__ {
++                // parameters
++                gpio_pin =      <&gpio_ir>,"gpios:4",
++                                        <&gpio_ir_pins>,"brcm,pins:0",
++                                        <&gpio_ir_pins>,"brcm,pull:0";  // pin number
++                gpio_pull = <&gpio_ir_pins>,"brcm,pull:0";              // pull-up/down state
++
++                rc-map-name = <&gpio_ir>,"linux,rc-map-name";           // default rc map
++        };
++};

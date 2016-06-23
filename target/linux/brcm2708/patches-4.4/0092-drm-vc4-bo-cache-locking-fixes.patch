@@ -1,0 +1,147 @@
+From 9d9f602905f1d7de7b0d93d8293ed144f7af0e21 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 19 Oct 2015 08:23:18 -0700
+Subject: [PATCH 092/381] drm/vc4: bo cache locking fixes.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_bo.c  | 32 ++++++++++++++++++--------------
+ drivers/gpu/drm/vc4/vc4_drv.h |  2 +-
+ 2 files changed, 19 insertions(+), 15 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_bo.c
++++ b/drivers/gpu/drm/vc4/vc4_bo.c
+@@ -112,14 +112,14 @@ void vc4_bo_cache_purge(struct drm_devic
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 
+-	spin_lock(&vc4->bo_lock);
++	mutex_lock(&vc4->bo_lock);
+ 	while (!list_empty(&vc4->bo_cache.time_list)) {
+ 		struct vc4_bo *bo = list_last_entry(&vc4->bo_cache.time_list,
+ 						    struct vc4_bo, unref_head);
+ 		vc4_bo_remove_from_cache(bo);
+ 		vc4_bo_destroy(bo);
+ 	}
+-	spin_unlock(&vc4->bo_lock);
++	mutex_unlock(&vc4->bo_lock);
+ }
+ 
+ struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t unaligned_size)
+@@ -134,18 +134,18 @@ struct vc4_bo *vc4_bo_create(struct drm_
+ 		return NULL;
+ 
+ 	/* First, try to get a vc4_bo from the kernel BO cache. */
+-	spin_lock(&vc4->bo_lock);
++	mutex_lock(&vc4->bo_lock);
+ 	if (page_index < vc4->bo_cache.size_list_size &&
+ 	    !list_empty(&vc4->bo_cache.size_list[page_index])) {
+ 		struct vc4_bo *bo =
+ 			list_first_entry(&vc4->bo_cache.size_list[page_index],
+ 					 struct vc4_bo, size_head);
+ 		vc4_bo_remove_from_cache(bo);
+-		spin_unlock(&vc4->bo_lock);
++		mutex_unlock(&vc4->bo_lock);
+ 		kref_init(&bo->base.base.refcount);
+ 		return bo;
+ 	}
+-	spin_unlock(&vc4->bo_lock);
++	mutex_unlock(&vc4->bo_lock);
+ 
+ 	/* Otherwise, make a new BO. */
+ 	for (pass = 0; ; pass++) {
+@@ -215,7 +215,7 @@ vc4_bo_cache_free_old(struct drm_device
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	unsigned long expire_time = jiffies - msecs_to_jiffies(1000);
+ 
+-	spin_lock(&vc4->bo_lock);
++	mutex_lock(&vc4->bo_lock);
+ 	while (!list_empty(&vc4->bo_cache.time_list)) {
+ 		struct vc4_bo *bo = list_last_entry(&vc4->bo_cache.time_list,
+ 						    struct vc4_bo, unref_head);
+@@ -223,14 +223,14 @@ vc4_bo_cache_free_old(struct drm_device
+ 			mod_timer(&vc4->bo_cache.time_timer,
+ 				  round_jiffies_up(jiffies +
+ 						   msecs_to_jiffies(1000)));
+-			spin_unlock(&vc4->bo_lock);
++			mutex_unlock(&vc4->bo_lock);
+ 			return;
+ 		}
+ 
+ 		vc4_bo_remove_from_cache(bo);
+ 		vc4_bo_destroy(bo);
+ 	}
+-	spin_unlock(&vc4->bo_lock);
++	mutex_unlock(&vc4->bo_lock);
+ }
+ 
+ /* Called on the last userspace/kernel unreference of the BO.  Returns
+@@ -248,21 +248,25 @@ void vc4_free_object(struct drm_gem_obje
+ 	/* If the object references someone else's memory, we can't cache it.
+ 	 */
+ 	if (gem_bo->import_attach) {
++		mutex_lock(&vc4->bo_lock);
+ 		vc4_bo_destroy(bo);
++		mutex_unlock(&vc4->bo_lock);
+ 		return;
+ 	}
+ 
+ 	/* Don't cache if it was publicly named. */
+ 	if (gem_bo->name) {
++		mutex_lock(&vc4->bo_lock);
+ 		vc4_bo_destroy(bo);
++		mutex_unlock(&vc4->bo_lock);
+ 		return;
+ 	}
+ 
+-	spin_lock(&vc4->bo_lock);
++	mutex_lock(&vc4->bo_lock);
+ 	cache_list = vc4_get_cache_list_for_size(dev, gem_bo->size);
+ 	if (!cache_list) {
+ 		vc4_bo_destroy(bo);
+-		spin_unlock(&vc4->bo_lock);
++		mutex_unlock(&vc4->bo_lock);
+ 		return;
+ 	}
+ 
+@@ -278,7 +282,7 @@ void vc4_free_object(struct drm_gem_obje
+ 
+ 	vc4->bo_stats.num_cached++;
+ 	vc4->bo_stats.size_cached += gem_bo->size;
+-	spin_unlock(&vc4->bo_lock);
++	mutex_unlock(&vc4->bo_lock);
+ 
+ 	vc4_bo_cache_free_old(dev);
+ }
+@@ -465,7 +469,7 @@ void vc4_bo_cache_init(struct drm_device
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 
+-	spin_lock_init(&vc4->bo_lock);
++	mutex_init(&vc4->bo_lock);
+ 
+ 	INIT_LIST_HEAD(&vc4->bo_cache.time_list);
+ 
+@@ -498,9 +502,9 @@ int vc4_bo_stats_debugfs(struct seq_file
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	struct vc4_bo_stats stats;
+ 
+-	spin_lock(&vc4->bo_lock);
++	mutex_lock(&vc4->bo_lock);
+ 	stats = vc4->bo_stats;
+-	spin_unlock(&vc4->bo_lock);
++	mutex_unlock(&vc4->bo_lock);
+ 
+ 	seq_printf(m, "num bos allocated: %d\n", stats.num_allocated);
+ 	seq_printf(m, "size bos allocated: %dkb\n", stats.size_allocated / 1024);
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -49,7 +49,7 @@ struct vc4_dev {
+ 	} bo_stats;
+ 
+ 	/* Protects bo_cache and the BO stats. */
+-	spinlock_t bo_lock;
++	struct mutex bo_lock;
+ 
+ 	/* Sequence number for the last job queued in job_list.
+ 	 * Starts at 0 (no jobs emitted).

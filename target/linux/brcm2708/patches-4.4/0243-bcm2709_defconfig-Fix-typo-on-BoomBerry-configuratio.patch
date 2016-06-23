@@ -1,0 +1,22 @@
+From 56fb67d4ce06ff6140da52559e3e256e46e9ce56 Mon Sep 17 00:00:00 2001
+From: Jeremy McDermond <nh6z@nh6z.net>
+Date: Thu, 14 Apr 2016 09:39:20 -0700
+Subject: [PATCH 243/381] bcm2709_defconfig:  Fix typo on BoomBerry
+ configuration directive
+
+The BoomBerry configuration directive in bcm2709_defconfig has a typo.
+---
+ arch/arm/configs/bcm2709_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -854,7 +854,7 @@ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP=m
+ CONFIG_SND_BCM2708_SOC_BOOMBERRY_DAC=m
+-CONFIG_SNG_BCM2708_SOC_BOOMBERRY_DIGI=m
++CONFIG_SND_BCM2708_SOC_BOOMBERRY_DIGI=m
+ CONFIG_SND_BCM2708_SOC_RPI_DAC=m
+ CONFIG_SND_BCM2708_SOC_RPI_PROTO=m
+ CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC=m

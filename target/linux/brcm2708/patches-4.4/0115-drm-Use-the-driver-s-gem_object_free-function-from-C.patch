@@ -1,0 +1,59 @@
+From 3f01cb691c249a57394e64523ba979aaf181f999 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 11 Dec 2015 19:45:03 -0800
+Subject: [PATCH 115/381] drm: Use the driver's gem_object_free function from
+ CMA helpers.
+
+VC4 wraps the CMA objects in its own structures, so it needs to do its
+own teardown (waiting for GPU to finish, updating bo_stats tracking).
+The other CMA drivers are using drm_gem_cma_free_object as their
+gem_free_object, so this should be a no-op for them.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/drm_fb_cma_helper.c  | 6 +++---
+ drivers/gpu/drm/drm_gem_cma_helper.c | 4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/gpu/drm/drm_fb_cma_helper.c
++++ b/drivers/gpu/drm/drm_fb_cma_helper.c
+@@ -266,7 +266,7 @@ static int drm_fbdev_cma_create(struct d
+ 	fbi = drm_fb_helper_alloc_fbi(helper);
+ 	if (IS_ERR(fbi)) {
+ 		ret = PTR_ERR(fbi);
+-		goto err_drm_gem_cma_free_object;
++		goto err_gem_free_object;
+ 	}
+ 
+ 	fbdev_cma->fb = drm_fb_cma_alloc(dev, &mode_cmd, &obj, 1);
+@@ -299,8 +299,8 @@ static int drm_fbdev_cma_create(struct d
+ 
+ err_fb_info_destroy:
+ 	drm_fb_helper_release_fbi(helper);
+-err_drm_gem_cma_free_object:
+-	drm_gem_cma_free_object(&obj->base);
++err_gem_free_object:
++	dev->driver->gem_free_object(&obj->base);
+ 	return ret;
+ }
+ 
+--- a/drivers/gpu/drm/drm_gem_cma_helper.c
++++ b/drivers/gpu/drm/drm_gem_cma_helper.c
+@@ -121,7 +121,7 @@ struct drm_gem_cma_object *drm_gem_cma_c
+ 	return cma_obj;
+ 
+ error:
+-	drm_gem_cma_free_object(&cma_obj->base);
++	drm->driver->gem_free_object(&cma_obj->base);
+ 	return ERR_PTR(ret);
+ }
+ EXPORT_SYMBOL_GPL(drm_gem_cma_create);
+@@ -171,7 +171,7 @@ drm_gem_cma_create_with_handle(struct dr
+ 	return cma_obj;
+ 
+ err_handle_create:
+-	drm_gem_cma_free_object(gem_obj);
++	drm->driver->gem_free_object(gem_obj);
+ 
+ 	return ERR_PTR(ret);
+ }

@@ -1,0 +1,29 @@
+From 47f46fe81c376e006950445ca739f48aad4432e5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Sun, 13 Mar 2016 16:14:44 +0000
+Subject: [PATCH 183/381] SQUASH: Add CONFIG_OF_CONFIGFS to bcmrpi_defconfig
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/configs/bcmrpi_defconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -396,7 +396,7 @@ CONFIG_MTD=m
+ CONFIG_MTD_BLOCK=m
+ CONFIG_MTD_NAND=m
+ CONFIG_MTD_UBI=m
+-CONFIG_OF_OVERLAY=y
++CONFIG_OF_CONFIGFS=y
+ CONFIG_ZRAM=m
+ CONFIG_ZRAM_LZ4_COMPRESS=y
+ CONFIG_BLK_DEV_LOOP=y
+@@ -1169,7 +1169,6 @@ CONFIG_NTFS_FS=m
+ CONFIG_NTFS_RW=y
+ CONFIG_TMPFS=y
+ CONFIG_TMPFS_POSIX_ACL=y
+-CONFIG_CONFIGFS_FS=y
+ CONFIG_ECRYPT_FS=m
+ CONFIG_HFS_FS=m
+ CONFIG_HFSPLUS_FS=m

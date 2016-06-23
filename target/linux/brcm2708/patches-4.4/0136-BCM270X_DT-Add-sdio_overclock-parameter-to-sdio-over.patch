@@ -1,0 +1,69 @@
+From 263629c941a7da06b8cce7f73fe8d8d20d1357b7 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 25 Jan 2016 09:12:06 +0000
+Subject: [PATCH 136/381] BCM270X_DT: Add sdio_overclock parameter to sdio
+ overlay
+
+The sdio_overclock parameter is like the overclock_50 parameter, i.e.
+it sets an alternate frequency (in MHz) to use when the MMC framework
+requests 50MHz, except that it applies to the SDIO bus.
+
+Be aware that the actual frequencies achievable are limited to even integer
+divisions of 250MHz, and that the driver will round up to include fractions
+(e.g. 62 will include 62.5) but then round down to the nearest frequency.
+In other words, the chosen frequency is the highest possible that is less than
+the parameter value + 1. In practise this means that 62 is the only sensible
+value.
+
+Examples:
+  250MHz/4 = 62.5MHz (sdio_overclock=62)
+  250MHz/2 = 125MHz (sdio_overclock=125) # Too fast
+---
+ arch/arm/boot/dts/overlays/README           | 9 ++++++---
+ arch/arm/boot/dts/overlays/sdio-overlay.dts | 2 ++
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -53,8 +53,8 @@ have its contents deleted (or commented
+ Using Overlays
+ ==============
+ 
+-Overlays are loaded using the "dtoverlay" directive. As an example, consider the
+-popular lirc-rpi module, the Linux Infrared Remote Control driver. In the
++Overlays are loaded using the "dtoverlay" directive. As an example, consider
++the popular lirc-rpi module, the Linux Infrared Remote Control driver. In the
+ pre-DT world this would be loaded from /etc/modules, with an explicit
+ "modprobe lirc-rpi" command, or programmatically by lircd. With DT enabled,
+ this becomes a line in config.txt:
+@@ -621,9 +621,12 @@ Name:   sdio
+ Info:   Selects the bcm2835-sdhost SD/MMC driver, optionally with overclock,
+         and enables SDIO via GPIOs 22-27.
+ Load:   dtoverlay=sdio,<param>=<val>
+-Params: overclock_50             Clock (in MHz) to use when the MMC framework
++Params: overclock_50             SD Clock (in MHz) to use when the MMC framework
+                                  requests 50MHz
+ 
++        sdio_overclock           SDIO Clock (in MHz) to use when the MMC
++                                 framework requests 50MHz
++
+         force_pio                Disable DMA support (default off)
+ 
+         pio_limit                Number of blocks above which to use DMA
+--- a/arch/arm/boot/dts/overlays/sdio-overlay.dts
++++ b/arch/arm/boot/dts/overlays/sdio-overlay.dts
+@@ -12,6 +12,7 @@
+ 			pinctrl-0 = <&sdio_pins>;
+ 			non-removable;
+ 			bus-width = <4>;
++			brcm,overclock-50 = <0>;
+ 			status = "okay";
+ 		};
+ 	};
+@@ -30,5 +31,6 @@
+ 	__overrides__ {
+ 		poll_once = <&sdio_mmc>,"non-removable?";
+ 		bus_width = <&sdio_mmc>,"bus-width:0";
++		sdio_overclock = <&sdio_mmc>,"brcm,overclock-50:0";
+ 	};
+ };

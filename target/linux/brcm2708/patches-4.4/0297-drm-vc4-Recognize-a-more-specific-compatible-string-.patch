@@ -1,0 +1,29 @@
+From 73ecaa8211e2751d37bffc316cea700927b228b7 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 4 Mar 2016 12:32:07 -0800
+Subject: [PATCH 297/381] drm/vc4: Recognize a more specific compatible string
+ for V3D.
+
+The Raspberry Pi Foundation's firmware updates are shipping device
+trees using the old string, so we'll keep recognizing that as this rev
+of V3D.  Still, we should use a more specific name in the upstream DT
+to clarify which board is being supported, in case we do other revs of
+V3D in the future.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Acked-by: Stephen Warren <swarren@wwwdotorg.org>
+(cherry picked from commit 90d7116061f86c1f8ea460806a0414addea7b58b)
+---
+ drivers/gpu/drm/vc4/vc4_v3d.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_v3d.c
++++ b/drivers/gpu/drm/vc4/vc4_v3d.c
+@@ -256,6 +256,7 @@ static int vc4_v3d_dev_remove(struct pla
+ }
+ 
+ static const struct of_device_id vc4_v3d_dt_match[] = {
++	{ .compatible = "brcm,bcm2835-v3d" },
+ 	{ .compatible = "brcm,vc4-v3d" },
+ 	{}
+ };

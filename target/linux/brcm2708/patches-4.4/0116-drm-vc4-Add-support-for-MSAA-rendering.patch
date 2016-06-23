@@ -1,0 +1,518 @@
+From 5405b6f75f7021db041e2dd0bb8720baf6d3122b Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 17 Jul 2015 13:15:50 -0700
+Subject: [PATCH 116/381] drm/vc4: Add support for MSAA rendering.
+
+For MSAA, you set a bit in the binner that halves the size of tiles in
+each direction, so you can pack 4 samples per pixel in the tile
+buffer.  During rendering, you can load and store raw tile buffer
+contents (to save the per-sample MSAA contents), or you can load/store
+resolved tile buffer contents (loads spam the pixel value to all 4
+samples, and stores either average the 4 color samples, or store the
+first sample for Z/S).
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_packet.h    |  23 ++-
+ drivers/gpu/drm/vc4/vc4_render_cl.c | 274 ++++++++++++++++++++++++++++++------
+ drivers/gpu/drm/vc4/vc4_validate.c  |   5 +-
+ include/uapi/drm/vc4_drm.h          |  11 +-
+ 4 files changed, 258 insertions(+), 55 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_packet.h
++++ b/drivers/gpu/drm/vc4/vc4_packet.h
+@@ -123,6 +123,11 @@ enum vc4_packet {
+ #define VC4_PACKET_TILE_COORDINATES_SIZE				3
+ #define VC4_PACKET_GEM_HANDLES_SIZE					9
+ 
++/* Number of multisamples supported. */
++#define VC4_MAX_SAMPLES							4
++/* Size of a full resolution color or Z tile buffer load/store. */
++#define VC4_TILE_BUFFER_SIZE			(64 * 64 * 4)
++
+ /** @{
+  * Bits used by packets like VC4_PACKET_STORE_TILE_BUFFER_GENERAL and
+  * VC4_PACKET_TILE_RENDERING_MODE_CONFIG.
+@@ -137,10 +142,20 @@ enum vc4_packet {
+  * low bits of VC4_PACKET_STORE_FULL_RES_TILE_BUFFER and
+  * VC4_PACKET_LOAD_FULL_RES_TILE_BUFFER.
+  */
+-#define VC4_LOADSTORE_FULL_RES_EOF                     (1 << 3)
+-#define VC4_LOADSTORE_FULL_RES_DISABLE_CLEAR_ALL       (1 << 2)
+-#define VC4_LOADSTORE_FULL_RES_DISABLE_ZS              (1 << 1)
+-#define VC4_LOADSTORE_FULL_RES_DISABLE_COLOR           (1 << 0)
++#define VC4_LOADSTORE_FULL_RES_EOF                     BIT(3)
++#define VC4_LOADSTORE_FULL_RES_DISABLE_CLEAR_ALL       BIT(2)
++#define VC4_LOADSTORE_FULL_RES_DISABLE_ZS              BIT(1)
++#define VC4_LOADSTORE_FULL_RES_DISABLE_COLOR           BIT(0)
++
++/** @{
++ *
++ * low bits of VC4_PACKET_STORE_FULL_RES_TILE_BUFFER and
++ * VC4_PACKET_LOAD_FULL_RES_TILE_BUFFER.
++ */
++#define VC4_LOADSTORE_FULL_RES_EOF                     BIT(3)
++#define VC4_LOADSTORE_FULL_RES_DISABLE_CLEAR_ALL       BIT(2)
++#define VC4_LOADSTORE_FULL_RES_DISABLE_ZS              BIT(1)
++#define VC4_LOADSTORE_FULL_RES_DISABLE_COLOR           BIT(0)
+ 
+ /** @{
+  *
+--- a/drivers/gpu/drm/vc4/vc4_render_cl.c
++++ b/drivers/gpu/drm/vc4/vc4_render_cl.c
+@@ -37,9 +37,11 @@
+ 
+ struct vc4_rcl_setup {
+ 	struct drm_gem_cma_object *color_read;
+-	struct drm_gem_cma_object *color_ms_write;
++	struct drm_gem_cma_object *color_write;
+ 	struct drm_gem_cma_object *zs_read;
+ 	struct drm_gem_cma_object *zs_write;
++	struct drm_gem_cma_object *msaa_color_write;
++	struct drm_gem_cma_object *msaa_zs_write;
+ 
+ 	struct drm_gem_cma_object *rcl;
+ 	u32 next_offset;
+@@ -82,6 +84,22 @@ static void vc4_store_before_load(struct
+ }
+ 
+ /*
++ * Calculates the physical address of the start of a tile in a RCL surface.
++ *
++ * Unlike the other load/store packets,
++ * VC4_PACKET_LOAD/STORE_FULL_RES_TILE_BUFFER don't look at the tile
++ * coordinates packet, and instead just store to the address given.
++ */
++static uint32_t vc4_full_res_offset(struct vc4_exec_info *exec,
++				    struct drm_gem_cma_object *bo,
++				    struct drm_vc4_submit_rcl_surface *surf,
++				    uint8_t x, uint8_t y)
++{
++	return bo->paddr + surf->offset + VC4_TILE_BUFFER_SIZE *
++		(DIV_ROUND_UP(exec->args->width, 32) * y + x);
++}
++
++/*
+  * Emits a PACKET_TILE_COORDINATES if one isn't already pending.
+  *
+  * The tile coordinates packet triggers a pending load if there is one, are
+@@ -108,22 +126,41 @@ static void emit_tile(struct vc4_exec_in
+ 	 * may be outstanding at a time.
+ 	 */
+ 	if (setup->color_read) {
+-		rcl_u8(setup, VC4_PACKET_LOAD_TILE_BUFFER_GENERAL);
+-		rcl_u16(setup, args->color_read.bits);
+-		rcl_u32(setup,
+-			setup->color_read->paddr + args->color_read.offset);
++		if (args->color_read.flags &
++		    VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES) {
++			rcl_u8(setup, VC4_PACKET_LOAD_FULL_RES_TILE_BUFFER);
++			rcl_u32(setup,
++				vc4_full_res_offset(exec, setup->color_read,
++						    &args->color_read, x, y) |
++				VC4_LOADSTORE_FULL_RES_DISABLE_ZS);
++		} else {
++			rcl_u8(setup, VC4_PACKET_LOAD_TILE_BUFFER_GENERAL);
++			rcl_u16(setup, args->color_read.bits);
++			rcl_u32(setup, setup->color_read->paddr +
++				args->color_read.offset);
++		}
+ 	}
+ 
+ 	if (setup->zs_read) {
+-		if (setup->color_read) {
+-			/* Exec previous load. */
+-			vc4_tile_coordinates(setup, x, y);
+-			vc4_store_before_load(setup);
++		if (args->zs_read.flags &
++		    VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES) {
++			rcl_u8(setup, VC4_PACKET_LOAD_FULL_RES_TILE_BUFFER);
++			rcl_u32(setup,
++				vc4_full_res_offset(exec, setup->zs_read,
++						    &args->zs_read, x, y) |
++				VC4_LOADSTORE_FULL_RES_DISABLE_COLOR);
++		} else {
++			if (setup->color_read) {
++				/* Exec previous load. */
++				vc4_tile_coordinates(setup, x, y);
++				vc4_store_before_load(setup);
++			}
++
++			rcl_u8(setup, VC4_PACKET_LOAD_TILE_BUFFER_GENERAL);
++			rcl_u16(setup, args->zs_read.bits);
++			rcl_u32(setup, setup->zs_read->paddr +
++				args->zs_read.offset);
+ 		}
+-
+-		rcl_u8(setup, VC4_PACKET_LOAD_TILE_BUFFER_GENERAL);
+-		rcl_u16(setup, args->zs_read.bits);
+-		rcl_u32(setup, setup->zs_read->paddr + args->zs_read.offset);
+ 	}
+ 
+ 	/* Clipping depends on tile coordinates having been
+@@ -144,20 +181,60 @@ static void emit_tile(struct vc4_exec_in
+ 				(y * exec->bin_tiles_x + x) * 32));
+ 	}
+ 
++	if (setup->msaa_color_write) {
++		bool last_tile_write = (!setup->msaa_zs_write &&
++					!setup->zs_write &&
++					!setup->color_write);
++		uint32_t bits = VC4_LOADSTORE_FULL_RES_DISABLE_ZS;
++
++		if (!last_tile_write)
++			bits |= VC4_LOADSTORE_FULL_RES_DISABLE_CLEAR_ALL;
++		else if (last)
++			bits |= VC4_LOADSTORE_FULL_RES_EOF;
++		rcl_u8(setup, VC4_PACKET_STORE_FULL_RES_TILE_BUFFER);
++		rcl_u32(setup,
++			vc4_full_res_offset(exec, setup->msaa_color_write,
++					    &args->msaa_color_write, x, y) |
++			bits);
++	}
++
++	if (setup->msaa_zs_write) {
++		bool last_tile_write = (!setup->zs_write &&
++					!setup->color_write);
++		uint32_t bits = VC4_LOADSTORE_FULL_RES_DISABLE_COLOR;
++
++		if (setup->msaa_color_write)
++			vc4_tile_coordinates(setup, x, y);
++		if (!last_tile_write)
++			bits |= VC4_LOADSTORE_FULL_RES_DISABLE_CLEAR_ALL;
++		else if (last)
++			bits |= VC4_LOADSTORE_FULL_RES_EOF;
++		rcl_u8(setup, VC4_PACKET_STORE_FULL_RES_TILE_BUFFER);
++		rcl_u32(setup,
++			vc4_full_res_offset(exec, setup->msaa_zs_write,
++					    &args->msaa_zs_write, x, y) |
++			bits);
++	}
++
+ 	if (setup->zs_write) {
++		bool last_tile_write = !setup->color_write;
++
++		if (setup->msaa_color_write || setup->msaa_zs_write)
++			vc4_tile_coordinates(setup, x, y);
++
+ 		rcl_u8(setup, VC4_PACKET_STORE_TILE_BUFFER_GENERAL);
+ 		rcl_u16(setup, args->zs_write.bits |
+-			(setup->color_ms_write ?
+-			 VC4_STORE_TILE_BUFFER_DISABLE_COLOR_CLEAR : 0));
++			(last_tile_write ?
++			 0 : VC4_STORE_TILE_BUFFER_DISABLE_COLOR_CLEAR));
+ 		rcl_u32(setup,
+ 			(setup->zs_write->paddr + args->zs_write.offset) |
+-			((last && !setup->color_ms_write) ?
++			((last && last_tile_write) ?
+ 			 VC4_LOADSTORE_TILE_BUFFER_EOF : 0));
+ 	}
+ 
+-	if (setup->color_ms_write) {
+-		if (setup->zs_write) {
+-			/* Reset after previous store */
++	if (setup->color_write) {
++		if (setup->msaa_color_write || setup->msaa_zs_write ||
++		    setup->zs_write) {
+ 			vc4_tile_coordinates(setup, x, y);
+ 		}
+ 
+@@ -192,14 +269,26 @@ static int vc4_create_rcl_bo(struct drm_
+ 	}
+ 
+ 	if (setup->color_read) {
+-		loop_body_size += (VC4_PACKET_LOAD_TILE_BUFFER_GENERAL_SIZE);
++		if (args->color_read.flags &
++		    VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES) {
++			loop_body_size += VC4_PACKET_LOAD_FULL_RES_TILE_BUFFER_SIZE;
++		} else {
++			loop_body_size += VC4_PACKET_LOAD_TILE_BUFFER_GENERAL_SIZE;
++		}
+ 	}
+ 	if (setup->zs_read) {
+-		if (setup->color_read) {
+-			loop_body_size += VC4_PACKET_TILE_COORDINATES_SIZE;
+-			loop_body_size += VC4_PACKET_STORE_TILE_BUFFER_GENERAL_SIZE;
++		if (args->zs_read.flags &
++		    VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES) {
++			loop_body_size += VC4_PACKET_LOAD_FULL_RES_TILE_BUFFER_SIZE;
++		} else {
++			if (setup->color_read &&
++			    !(args->color_read.flags &
++			      VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES)) {
++				loop_body_size += VC4_PACKET_TILE_COORDINATES_SIZE;
++				loop_body_size += VC4_PACKET_STORE_TILE_BUFFER_GENERAL_SIZE;
++			}
++			loop_body_size += VC4_PACKET_LOAD_TILE_BUFFER_GENERAL_SIZE;
+ 		}
+-		loop_body_size += VC4_PACKET_LOAD_TILE_BUFFER_GENERAL_SIZE;
+ 	}
+ 
+ 	if (has_bin) {
+@@ -207,13 +296,23 @@ static int vc4_create_rcl_bo(struct drm_
+ 		loop_body_size += VC4_PACKET_BRANCH_TO_SUB_LIST_SIZE;
+ 	}
+ 
++	if (setup->msaa_color_write)
++		loop_body_size += VC4_PACKET_STORE_FULL_RES_TILE_BUFFER_SIZE;
++	if (setup->msaa_zs_write)
++		loop_body_size += VC4_PACKET_STORE_FULL_RES_TILE_BUFFER_SIZE;
++
+ 	if (setup->zs_write)
+ 		loop_body_size += VC4_PACKET_STORE_TILE_BUFFER_GENERAL_SIZE;
+-	if (setup->color_ms_write) {
+-		if (setup->zs_write)
+-			loop_body_size += VC4_PACKET_TILE_COORDINATES_SIZE;
++	if (setup->color_write)
+ 		loop_body_size += VC4_PACKET_STORE_MS_TILE_BUFFER_SIZE;
+-	}
++
++	/* We need a VC4_PACKET_TILE_COORDINATES in between each store. */
++	loop_body_size += VC4_PACKET_TILE_COORDINATES_SIZE *
++		((setup->msaa_color_write != NULL) +
++		 (setup->msaa_zs_write != NULL) +
++		 (setup->color_write != NULL) +
++		 (setup->zs_write != NULL) - 1);
++
+ 	size += xtiles * ytiles * loop_body_size;
+ 
+ 	setup->rcl = &vc4_bo_create(dev, size, true)->base;
+@@ -224,13 +323,12 @@ static int vc4_create_rcl_bo(struct drm_
+ 
+ 	rcl_u8(setup, VC4_PACKET_TILE_RENDERING_MODE_CONFIG);
+ 	rcl_u32(setup,
+-		(setup->color_ms_write ?
+-		 (setup->color_ms_write->paddr +
+-		  args->color_ms_write.offset) :
++		(setup->color_write ? (setup->color_write->paddr +
++				       args->color_write.offset) :
+ 		 0));
+ 	rcl_u16(setup, args->width);
+ 	rcl_u16(setup, args->height);
+-	rcl_u16(setup, args->color_ms_write.bits);
++	rcl_u16(setup, args->color_write.bits);
+ 
+ 	/* The tile buffer gets cleared when the previous tile is stored.  If
+ 	 * the clear values changed between frames, then the tile buffer has
+@@ -267,6 +365,56 @@ static int vc4_create_rcl_bo(struct drm_
+ 	return 0;
+ }
+ 
++static int vc4_full_res_bounds_check(struct vc4_exec_info *exec,
++				     struct drm_gem_cma_object *obj,
++				     struct drm_vc4_submit_rcl_surface *surf)
++{
++	struct drm_vc4_submit_cl *args = exec->args;
++	u32 render_tiles_stride = DIV_ROUND_UP(exec->args->width, 32);
++
++	if (surf->offset > obj->base.size) {
++		DRM_ERROR("surface offset %d > BO size %zd\n",
++			  surf->offset, obj->base.size);
++		return -EINVAL;
++	}
++
++	if ((obj->base.size - surf->offset) / VC4_TILE_BUFFER_SIZE <
++	    render_tiles_stride * args->max_y_tile + args->max_x_tile) {
++		DRM_ERROR("MSAA tile %d, %d out of bounds "
++			  "(bo size %zd, offset %d).\n",
++			  args->max_x_tile, args->max_y_tile,
++			  obj->base.size,
++			  surf->offset);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int vc4_rcl_msaa_surface_setup(struct vc4_exec_info *exec,
++				      struct drm_gem_cma_object **obj,
++				      struct drm_vc4_submit_rcl_surface *surf)
++{
++	if (surf->flags != 0 || surf->bits != 0) {
++		DRM_ERROR("MSAA surface had nonzero flags/bits\n");
++		return -EINVAL;
++	}
++
++	if (surf->hindex == ~0)
++		return 0;
++
++	*obj = vc4_use_bo(exec, surf->hindex);
++	if (!*obj)
++		return -EINVAL;
++
++	if (surf->offset & 0xf) {
++		DRM_ERROR("MSAA write must be 16b aligned.\n");
++		return -EINVAL;
++	}
++
++	return vc4_full_res_bounds_check(exec, *obj, surf);
++}
++
+ static int vc4_rcl_surface_setup(struct vc4_exec_info *exec,
+ 				 struct drm_gem_cma_object **obj,
+ 				 struct drm_vc4_submit_rcl_surface *surf)
+@@ -278,9 +426,10 @@ static int vc4_rcl_surface_setup(struct
+ 	uint8_t format = VC4_GET_FIELD(surf->bits,
+ 				       VC4_LOADSTORE_TILE_BUFFER_FORMAT);
+ 	int cpp;
++	int ret;
+ 
+-	if (surf->pad != 0) {
+-		DRM_ERROR("Padding unset\n");
++	if (surf->flags & ~VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES) {
++		DRM_ERROR("Extra flags set\n");
+ 		return -EINVAL;
+ 	}
+ 
+@@ -290,6 +439,25 @@ static int vc4_rcl_surface_setup(struct
+ 	if (!vc4_use_bo(exec, surf->hindex, VC4_MODE_RENDER, obj))
+ 		return -EINVAL;
+ 
++	if (surf->flags & VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES) {
++		if (surf == &exec->args->zs_write) {
++			DRM_ERROR("general zs write may not be a full-res.\n");
++			return -EINVAL;
++		}
++
++		if (surf->bits != 0) {
++			DRM_ERROR("load/store general bits set with "
++				  "full res load/store.\n");
++			return -EINVAL;
++		}
++
++		ret = vc4_full_res_bounds_check(exec, *obj, surf);
++		if (!ret)
++			return ret;
++
++		return 0;
++	}
++
+ 	if (surf->bits & ~(VC4_LOADSTORE_TILE_BUFFER_TILING_MASK |
+ 			   VC4_LOADSTORE_TILE_BUFFER_BUFFER_MASK |
+ 			   VC4_LOADSTORE_TILE_BUFFER_FORMAT_MASK)) {
+@@ -341,9 +509,10 @@ static int vc4_rcl_surface_setup(struct
+ }
+ 
+ static int
+-vc4_rcl_ms_surface_setup(struct vc4_exec_info *exec,
+-			 struct drm_gem_cma_object **obj,
+-			 struct drm_vc4_submit_rcl_surface *surf)
++vc4_rcl_render_config_surface_setup(struct vc4_exec_info *exec,
++				    struct vc4_rcl_setup *setup,
++				    struct drm_gem_cma_object **obj,
++				    struct drm_vc4_submit_rcl_surface *surf)
+ {
+ 	uint8_t tiling = VC4_GET_FIELD(surf->bits,
+ 				       VC4_RENDER_CONFIG_MEMORY_FORMAT);
+@@ -351,13 +520,15 @@ vc4_rcl_ms_surface_setup(struct vc4_exec
+ 				       VC4_RENDER_CONFIG_FORMAT);
+ 	int cpp;
+ 
+-	if (surf->pad != 0) {
+-		DRM_ERROR("Padding unset\n");
++	if (surf->flags != 0) {
++		DRM_ERROR("No flags supported on render config.\n");
+ 		return -EINVAL;
+ 	}
+ 
+ 	if (surf->bits & ~(VC4_RENDER_CONFIG_MEMORY_FORMAT_MASK |
+-			   VC4_RENDER_CONFIG_FORMAT_MASK)) {
++			   VC4_RENDER_CONFIG_FORMAT_MASK |
++			   VC4_RENDER_CONFIG_MS_MODE_4X |
++			   VC4_RENDER_CONFIG_DECIMATE_MODE_4X)) {
+ 		DRM_ERROR("Unknown bits in render config: 0x%04x\n",
+ 			  surf->bits);
+ 		return -EINVAL;
+@@ -413,18 +584,20 @@ int vc4_get_rcl(struct drm_device *dev,
+ 	if (has_bin &&
+ 	    (args->max_x_tile > exec->bin_tiles_x ||
+ 	     args->max_y_tile > exec->bin_tiles_y)) {
+-		DRM_ERROR("Render tiles (%d,%d) outside of bin config (%d,%d)\n",
++		DRM_ERROR("Render tiles (%d,%d) outside of bin config "
++			  "(%d,%d)\n",
+ 			  args->max_x_tile, args->max_y_tile,
+ 			  exec->bin_tiles_x, exec->bin_tiles_y);
+ 		return -EINVAL;
+ 	}
+ 
+-	ret = vc4_rcl_surface_setup(exec, &setup.color_read, &args->color_read);
++	ret = vc4_rcl_render_config_surface_setup(exec, &setup,
++						  &setup.color_write,
++						  &args->color_write);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = vc4_rcl_ms_surface_setup(exec, &setup.color_ms_write,
+-				       &args->color_ms_write);
++	ret = vc4_rcl_surface_setup(exec, &setup.color_read, &args->color_read);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -436,10 +609,21 @@ int vc4_get_rcl(struct drm_device *dev,
+ 	if (ret)
+ 		return ret;
+ 
++	ret = vc4_rcl_msaa_surface_setup(exec, &setup.msaa_color_write,
++					 &args->msaa_color_write);
++	if (ret)
++		return ret;
++
++	ret = vc4_rcl_msaa_surface_setup(exec, &setup.msaa_zs_write,
++					 &args->msaa_zs_write);
++	if (ret)
++		return ret;
++
+ 	/* We shouldn't even have the job submitted to us if there's no
+ 	 * surface to write out.
+ 	 */
+-	if (!setup.color_ms_write && !setup.zs_write) {
++	if (!setup.color_write && !setup.zs_write &&
++	    !setup.msaa_color_write && !setup.msaa_zs_write) {
+ 		DRM_ERROR("RCL requires color or Z/S write\n");
+ 		return -EINVAL;
+ 	}
+--- a/drivers/gpu/drm/vc4/vc4_validate.c
++++ b/drivers/gpu/drm/vc4/vc4_validate.c
+@@ -400,9 +400,8 @@ validate_tile_binning_config(VALIDATE_AR
+ 	}
+ 
+ 	if (flags & (VC4_BIN_CONFIG_DB_NON_MS |
+-		     VC4_BIN_CONFIG_TILE_BUFFER_64BIT |
+-		     VC4_BIN_CONFIG_MS_MODE_4X)) {
+-		DRM_ERROR("unsupported bining config flags 0x%02x\n", flags);
++		     VC4_BIN_CONFIG_TILE_BUFFER_64BIT)) {
++		DRM_ERROR("unsupported binning config flags 0x%02x\n", flags);
+ 		return -EINVAL;
+ 	}
+ 
+--- a/include/uapi/drm/vc4_drm.h
++++ b/include/uapi/drm/vc4_drm.h
+@@ -46,10 +46,13 @@ struct drm_vc4_submit_rcl_surface {
+ 	uint32_t hindex; /* Handle index, or ~0 if not present. */
+ 	uint32_t offset; /* Offset to start of buffer. */
+ 	/*
+-         * Bits for either render config (color_ms_write) or load/store packet.
++         * Bits for either render config (color_write) or load/store packet.
++         * Bits should all be 0 for MSAA load/stores.
+ 	 */
+ 	uint16_t bits;
+-	uint16_t pad;
++
++#define VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES		(1 << 0)
++	uint16_t flags;
+ };
+ 
+ /**
+@@ -128,9 +131,11 @@ struct drm_vc4_submit_cl {
+ 	uint8_t max_x_tile;
+ 	uint8_t max_y_tile;
+ 	struct drm_vc4_submit_rcl_surface color_read;
+-	struct drm_vc4_submit_rcl_surface color_ms_write;
++	struct drm_vc4_submit_rcl_surface color_write;
+ 	struct drm_vc4_submit_rcl_surface zs_read;
+ 	struct drm_vc4_submit_rcl_surface zs_write;
++	struct drm_vc4_submit_rcl_surface msaa_color_write;
++	struct drm_vc4_submit_rcl_surface msaa_zs_write;
+ 	uint32_t clear_color[2];
+ 	uint32_t clear_z;
+ 	uint8_t clear_s;

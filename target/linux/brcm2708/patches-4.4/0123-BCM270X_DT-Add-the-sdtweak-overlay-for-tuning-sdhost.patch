@@ -1,0 +1,74 @@
+From e1d87aa570e5a036160f35d7b95f6a2c10f96bed Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 4 Jan 2016 14:42:17 +0000
+Subject: [PATCH 123/381] BCM270X_DT: Add the sdtweak overlay, for tuning
+ sdhost
+
+The sdhost overlay declares the sdhost interface and allows parameters
+to be set. This is overkill for situations where the user just wants to
+tweak the parameters of a pre-declared sdhost interface, so create an
+sdtweak overlay that does just that.
+---
+ arch/arm/boot/dts/overlays/Makefile            |  1 +
+ arch/arm/boot/dts/overlays/README              | 14 ++++++++++++++
+ arch/arm/boot/dts/overlays/sdtweak-overlay.dts | 21 +++++++++++++++++++++
+ 3 files changed, 36 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/sdtweak-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -53,6 +53,7 @@ dtb-$(RPI_DT_OVERLAYS) += rpi-proto-over
+ dtb-$(RPI_DT_OVERLAYS) += rpi-sense-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += sdhost-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += sdio-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += sdtweak-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += smi-dev-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += smi-nand-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += smi-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -635,6 +635,20 @@ Params: overclock_50             Clock (
+                                  (default on: polling once at boot-time)
+ 
+ 
++Name:   sdtweak
++Info:   Tunes the bcm2835-sdhost SD/MMC driver
++Load:   dtoverlay=sdtweak,<param>=<val>
++Params: overclock_50             Clock (in MHz) to use when the MMC framework
++                                 requests 50MHz
++
++        force_pio                Disable DMA support (default off)
++
++        pio_limit                Number of blocks above which to use DMA
++                                 (default 1)
++
++        debug                    Enable debug output (default off)
++
++
+ Name:   smi
+ Info:   Enables the Secondary Memory Interface peripheral. Uses GPIOs 2-25!
+ Load:   dtoverlay=smi
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/sdtweak-overlay.dts
+@@ -0,0 +1,21 @@
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&sdhost>;
++		frag1: __overlay__ {
++			brcm,overclock-50 = <0>;
++			brcm,pio-limit = <1>;
++		};
++	};
++
++	__overrides__ {
++		overclock_50     = <&frag1>,"brcm,overclock-50:0";
++		force_pio        = <&frag1>,"brcm,force-pio?";
++		pio_limit        = <&frag1>,"brcm,pio-limit:0";
++		debug            = <&frag1>,"brcm,debug?";
++	};
++};

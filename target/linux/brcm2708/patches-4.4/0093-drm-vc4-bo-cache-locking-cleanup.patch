@@ -1,0 +1,92 @@
+From 2520f46f0d6e44f5ecfa534fb5a5f1a11302c83c Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 19 Oct 2015 08:29:41 -0700
+Subject: [PATCH 093/381] drm/vc4: bo cache locking cleanup.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_bo.c | 22 +++++++++-------------
+ 1 file changed, 9 insertions(+), 13 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_bo.c
++++ b/drivers/gpu/drm/vc4/vc4_bo.c
+@@ -215,7 +215,6 @@ vc4_bo_cache_free_old(struct drm_device
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	unsigned long expire_time = jiffies - msecs_to_jiffies(1000);
+ 
+-	mutex_lock(&vc4->bo_lock);
+ 	while (!list_empty(&vc4->bo_cache.time_list)) {
+ 		struct vc4_bo *bo = list_last_entry(&vc4->bo_cache.time_list,
+ 						    struct vc4_bo, unref_head);
+@@ -223,14 +222,12 @@ vc4_bo_cache_free_old(struct drm_device
+ 			mod_timer(&vc4->bo_cache.time_timer,
+ 				  round_jiffies_up(jiffies +
+ 						   msecs_to_jiffies(1000)));
+-			mutex_unlock(&vc4->bo_lock);
+ 			return;
+ 		}
+ 
+ 		vc4_bo_remove_from_cache(bo);
+ 		vc4_bo_destroy(bo);
+ 	}
+-	mutex_unlock(&vc4->bo_lock);
+ }
+ 
+ /* Called on the last userspace/kernel unreference of the BO.  Returns
+@@ -245,29 +242,24 @@ void vc4_free_object(struct drm_gem_obje
+ 	struct vc4_bo *bo = to_vc4_bo(gem_bo);
+ 	struct list_head *cache_list;
+ 
++	mutex_lock(&vc4->bo_lock);
+ 	/* If the object references someone else's memory, we can't cache it.
+ 	 */
+ 	if (gem_bo->import_attach) {
+-		mutex_lock(&vc4->bo_lock);
+ 		vc4_bo_destroy(bo);
+-		mutex_unlock(&vc4->bo_lock);
+-		return;
++		goto out;
+ 	}
+ 
+ 	/* Don't cache if it was publicly named. */
+ 	if (gem_bo->name) {
+-		mutex_lock(&vc4->bo_lock);
+ 		vc4_bo_destroy(bo);
+-		mutex_unlock(&vc4->bo_lock);
+-		return;
++		goto out;
+ 	}
+ 
+-	mutex_lock(&vc4->bo_lock);
+ 	cache_list = vc4_get_cache_list_for_size(dev, gem_bo->size);
+ 	if (!cache_list) {
+ 		vc4_bo_destroy(bo);
+-		mutex_unlock(&vc4->bo_lock);
+-		return;
++		goto out;
+ 	}
+ 
+ 	if (bo->validated_shader) {
+@@ -282,9 +274,11 @@ void vc4_free_object(struct drm_gem_obje
+ 
+ 	vc4->bo_stats.num_cached++;
+ 	vc4->bo_stats.size_cached += gem_bo->size;
+-	mutex_unlock(&vc4->bo_lock);
+ 
+ 	vc4_bo_cache_free_old(dev);
++
++out:
++	mutex_unlock(&vc4->bo_lock);
+ }
+ 
+ static void vc4_bo_cache_time_work(struct work_struct *work)
+@@ -293,7 +287,9 @@ static void vc4_bo_cache_time_work(struc
+ 		container_of(work, struct vc4_dev, bo_cache.time_work);
+ 	struct drm_device *dev = vc4->dev;
+ 
++	mutex_lock(&vc4->bo_lock);
+ 	vc4_bo_cache_free_old(dev);
++	mutex_unlock(&vc4->bo_lock);
+ }
+ 
+ static void vc4_bo_cache_time_timer(unsigned long data)

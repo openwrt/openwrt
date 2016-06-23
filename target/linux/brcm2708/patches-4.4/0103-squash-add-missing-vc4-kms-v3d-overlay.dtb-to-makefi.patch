@@ -1,0 +1,20 @@
+From b72cb75fa858d098d497ed5404b06f1603015ce9 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 18 Nov 2015 20:26:03 +0000
+Subject: [PATCH 103/381] squash: add missing vc4-kms-v3d-overlay.dtb to
+ makefile
+
+---
+ arch/arm/boot/dts/overlays/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -52,6 +52,7 @@ dtb-$(RPI_DT_OVERLAYS) += smi-overlay.dt
+ dtb-$(RPI_DT_OVERLAYS) += spi-gpio35-39-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += tinylcd35-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += uart1-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += vc4-kms-v3d-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += vga666-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += w1-gpio-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += w1-gpio-pullup-overlay.dtb

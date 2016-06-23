@@ -23,7 +23,7 @@ This should be very helpful for ppl adding new devices support.
 
 --- a/drivers/mtd/nand/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/brcmnand/brcmnand.c
-@@ -613,6 +613,17 @@ static inline u32 brcmnand_ecc_level_mas
+@@ -645,6 +645,17 @@ static inline u32 brcmnand_ecc_level_mas
  	return mask << NAND_ACC_CONTROL_ECC_SHIFT;
  }
  
@@ -41,7 +41,7 @@ This should be very helpful for ppl adding new devices support.
  static void brcmnand_set_ecc_enabled(struct brcmnand_host *host, int en)
  {
  	struct brcmnand_controller *ctrl = host->ctrl;
-@@ -1965,6 +1976,9 @@ static int brcmnand_init_cs(struct brcmn
+@@ -1997,6 +2008,9 @@ static int brcmnand_init_cs(struct brcmn
  	nand_writereg(ctrl, cfg_offs,
  		      nand_readreg(ctrl, cfg_offs) & ~CFG_BUS_WIDTH);
  

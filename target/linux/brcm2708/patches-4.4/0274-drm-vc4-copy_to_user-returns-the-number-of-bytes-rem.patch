@@ -1,0 +1,87 @@
+From 2a995481084f14aa22c1f141d6494d87cb100703 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Thu, 17 Dec 2015 15:36:28 +0300
+Subject: [PATCH 274/381] drm/vc4: copy_to_user() returns the number of bytes
+ remaining
+
+The copy_to/from_user() functions return the number of bytes remaining
+to be copied.  We want to return error codes here.
+
+Also it's a bad idea to print an error message if a copy from user fails
+because users can use that to spam /var/log/messages which is annoying
+so I removed those.
+
+Fixes: 214613656b51 ('drm/vc4: Add an interface for capturing the GPU state after a hang.')
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 65c4777de54a39b2722a4b1ff3306d044014d511)
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 37 ++++++++++++++++++-------------------
+ 1 file changed, 18 insertions(+), 19 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -85,7 +85,7 @@ vc4_get_hang_state_ioctl(struct drm_devi
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	unsigned long irqflags;
+ 	u32 i;
+-	int ret;
++	int ret = 0;
+ 
+ 	spin_lock_irqsave(&vc4->job_lock, irqflags);
+ 	kernel_state = vc4->hang_state;
+@@ -133,9 +133,11 @@ vc4_get_hang_state_ioctl(struct drm_devi
+ 		bo_state[i].size = vc4_bo->base.base.size;
+ 	}
+ 
+-	ret = copy_to_user((void __user *)(uintptr_t)get_state->bo,
+-			   bo_state,
+-			   state->bo_count * sizeof(*bo_state));
++	if (copy_to_user((void __user *)(uintptr_t)get_state->bo,
++			 bo_state,
++			 state->bo_count * sizeof(*bo_state)))
++		ret = -EFAULT;
++
+ 	kfree(bo_state);
+ 
+ err_free:
+@@ -563,27 +565,24 @@ vc4_get_bcl(struct drm_device *dev, stru
+ 	exec->shader_state = temp + exec_size;
+ 	exec->shader_state_size = args->shader_rec_count;
+ 
+-	ret = copy_from_user(bin,
+-			     (void __user *)(uintptr_t)args->bin_cl,
+-			     args->bin_cl_size);
+-	if (ret) {
+-		DRM_ERROR("Failed to copy in bin cl\n");
++	if (copy_from_user(bin,
++			   (void __user *)(uintptr_t)args->bin_cl,
++			   args->bin_cl_size)) {
++		ret = -EFAULT;
+ 		goto fail;
+ 	}
+ 
+-	ret = copy_from_user(exec->shader_rec_u,
+-			     (void __user *)(uintptr_t)args->shader_rec,
+-			     args->shader_rec_size);
+-	if (ret) {
+-		DRM_ERROR("Failed to copy in shader recs\n");
++	if (copy_from_user(exec->shader_rec_u,
++			   (void __user *)(uintptr_t)args->shader_rec,
++			   args->shader_rec_size)) {
++		ret = -EFAULT;
+ 		goto fail;
+ 	}
+ 
+-	ret = copy_from_user(exec->uniforms_u,
+-			     (void __user *)(uintptr_t)args->uniforms,
+-			     args->uniforms_size);
+-	if (ret) {
+-		DRM_ERROR("Failed to copy in uniforms cl\n");
++	if (copy_from_user(exec->uniforms_u,
++			   (void __user *)(uintptr_t)args->uniforms,
++			   args->uniforms_size)) {
++		ret = -EFAULT;
+ 		goto fail;
+ 	}
+ 

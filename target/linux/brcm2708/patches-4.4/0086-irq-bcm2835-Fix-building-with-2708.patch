@@ -1,0 +1,28 @@
+From 5f1f5e7db749eeaa307b0ba384e29d99b10e3290 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Mon, 28 Sep 2015 23:38:59 +0100
+Subject: [PATCH 086/381] irq-bcm2835: Fix building with 2708
+
+---
+ drivers/irqchip/irq-bcm2835.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/irqchip/irq-bcm2835.c
++++ b/drivers/irqchip/irq-bcm2835.c
+@@ -82,6 +82,7 @@
+ #define NR_BANKS		3
+ #define IRQS_PER_BANK		32
+ #define NUMBER_IRQS		MAKE_HWIRQ(NR_BANKS, 0)
++#undef FIQ_START
+ #define FIQ_START		(NR_IRQS_BANK0 + MAKE_HWIRQ(NR_BANKS - 1, 0))
+ 
+ static const int reg_pending[] __initconst = { 0x00, 0x04, 0x08 };
+@@ -256,7 +257,7 @@ static int __init armctrl_of_init(struct
+ 					MAKE_HWIRQ(b, i) + NUMBER_IRQS);
+ 			BUG_ON(irq <= 0);
+ 			irq_set_chip(irq, &armctrl_chip);
+-			set_irq_flags(irq, IRQF_VALID | IRQF_PROBE);
++			irq_set_probe(irq);
+ 		}
+ 	}
+ 	init_FIQ(FIQ_START);

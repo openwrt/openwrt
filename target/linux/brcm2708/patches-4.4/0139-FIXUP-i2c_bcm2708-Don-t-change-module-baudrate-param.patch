@@ -1,0 +1,99 @@
+From 2df3762d6b10aab005679b549ccb656577d788fc Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 19 Jan 2016 16:28:05 +0000
+Subject: [PATCH 139/381] FIXUP i2c_bcm2708: Don't change module baudrate
+ parameter
+
+Overwriting the baudrate module parameter creates an apparent
+forced baudrate for i2c busses after the first. Not only does this
+override the baudrate from DT it also prevents the bus ID from
+being initialised.
+
+Also fix whitespace errors.
+---
+ drivers/i2c/busses/i2c-bcm2708.c | 48 +++++++++++++++++++++-------------------
+ 1 file changed, 25 insertions(+), 23 deletions(-)
+
+--- a/drivers/i2c/busses/i2c-bcm2708.c
++++ b/drivers/i2c/busses/i2c-bcm2708.c
+@@ -71,7 +71,6 @@
+ 
+ #define DRV_NAME		"bcm2708_i2c"
+ 
+-static unsigned int baudrate_default = CONFIG_I2C_BCM2708_BAUDRATE;
+ static unsigned int baudrate;
+ module_param(baudrate, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+ MODULE_PARM_DESC(baudrate, "The I2C baudrate");
+@@ -317,25 +316,28 @@ static int bcm2708_i2c_probe(struct plat
+ 	struct i2c_adapter *adap;
+ 	unsigned long bus_hz;
+ 	u32 cdiv, clk_tout;
+-	
+-	if (!baudrate) {
+-		baudrate = baudrate_default;
+-		if (pdev->dev.of_node) {
+-			u32 bus_clk_rate;
+-			pdev->id = of_alias_get_id(pdev->dev.of_node, "i2c");
+-			if (pdev->id < 0) {
+-				dev_err(&pdev->dev, "alias is missing\n");
+-				return -EINVAL;
+-			}
+-			if (!of_property_read_u32(pdev->dev.of_node,
+-						"clock-frequency", &bus_clk_rate))
+-				baudrate = bus_clk_rate;
+-			else
+-				dev_warn(&pdev->dev,
+-					"Could not read clock-frequency property\n");
++	u32 baud;
++
++	baud = CONFIG_I2C_BCM2708_BAUDRATE;
++
++	if (pdev->dev.of_node) {
++		u32 bus_clk_rate;
++		pdev->id = of_alias_get_id(pdev->dev.of_node, "i2c");
++		if (pdev->id < 0) {
++			dev_err(&pdev->dev, "alias is missing\n");
++			return -EINVAL;
+ 		}
++		if (!of_property_read_u32(pdev->dev.of_node,
++					"clock-frequency", &bus_clk_rate))
++			baud = bus_clk_rate;
++		else
++			dev_warn(&pdev->dev,
++				"Could not read clock-frequency property\n");
+ 	}
+ 
++	if (baudrate)
++		baud = baudrate;
++
+ 	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!regs) {
+ 		dev_err(&pdev->dev, "could not get IO memory\n");
+@@ -419,21 +421,21 @@ static int bcm2708_i2c_probe(struct plat
+ 	}
+ 
+ 	bus_hz = clk_get_rate(bi->clk);
+-	cdiv = bus_hz / baudrate;
++	cdiv = bus_hz / baud;
+ 	if (cdiv > 0xffff) {
+ 		cdiv = 0xffff;
+-		baudrate = bus_hz / cdiv;
++		baud = bus_hz / cdiv;
+ 	}
+-	
+- 	clk_tout = 35/1000*baudrate; //35ms timeout as per SMBus specs.
+- 	if (clk_tout > 0xffff)
++
++	clk_tout = 35/1000*baud; //35ms timeout as per SMBus specs.
++	if (clk_tout > 0xffff)
+ 		clk_tout = 0xffff;
+ 	
+ 	bi->cdiv = cdiv;
+ 	bi->clk_tout = clk_tout;
+ 
+ 	dev_info(&pdev->dev, "BSC%d Controller at 0x%08lx (irq %d) (baudrate %d)\n",
+-		pdev->id, (unsigned long)regs->start, irq, baudrate);
++		pdev->id, (unsigned long)regs->start, irq, baud);
+ 
+ 	return 0;
+ 

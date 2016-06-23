@@ -1,0 +1,515 @@
+From 5869509197e8b3b6080f212a22e7d10310fc0a9b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Sat, 15 Aug 2015 20:47:07 +0200
+Subject: [PATCH 052/381] bcm2835: Match with BCM2708 Device Trees
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ arch/arm/boot/dts/bcm2835-rpi-b-plus.dts | 132 ++++++++++++++++++---
+ arch/arm/boot/dts/bcm2835-rpi-b.dts      | 115 ++++++++++++++++--
+ arch/arm/boot/dts/bcm2835.dtsi           | 195 +++----------------------------
+ 3 files changed, 237 insertions(+), 205 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2835-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2835-rpi-b-plus.dts
+@@ -1,30 +1,128 @@
+ /dts-v1/;
+-#include "bcm2835-rpi.dtsi"
++#include "bcm2835.dtsi"
+ 
+ / {
+ 	compatible = "raspberrypi,model-b-plus", "brcm,bcm2835";
+ 	model = "Raspberry Pi Model B+";
+-
+-	leds {
+-		act {
+-			gpios = <&gpio 47 0>;
+-		};
+-
+-		pwr {
+-			label = "PWR";
+-			gpios = <&gpio 35 0>;
+-			default-state = "keep";
+-			linux,default-trigger = "default-on";
+-		};
+-	};
+ };
+ 
+ &gpio {
+-	pinctrl-0 = <&gpioout &alt0 &i2s_alt0 &alt3>;
++	spi0_pins: spi0_pins {
++		brcm,pins = <7 8 9 10 11>;
++		brcm,function = <4>; /* alt0 */
++	};
++
++	i2c0_pins: i2c0 {
++		brcm,pins = <0 1>;
++		brcm,function = <4>;
++	};
+ 
+-	/* I2S interface */
+-	i2s_alt0: i2s_alt0 {
++	i2c1_pins: i2c1 {
++		brcm,pins = <2 3>;
++		brcm,function = <4>;
++	};
++
++	i2s_pins: i2s {
+ 		brcm,pins = <18 19 20 21>;
+-		brcm,function = <BCM2835_FSEL_ALT0>;
++		brcm,function = <4>; /* alt0 */
++	};
++};
++
++&mmc {
++	status = "okay";
++	bus-width = <4>;
++};
++
++&fb {
++	status = "okay";
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++
++	spidev@0{
++		compatible = "spidev";
++		reg = <0>;	/* CE0 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++
++	spidev@1{
++		compatible = "spidev";
++		reg = <1>;	/* CE1 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2c2 {
++	clock-frequency = <100000>;
++};
++
++&i2s {
++	#sound-dai-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_pins>;
++};
++
++&leds {
++	act_led: act {
++		label = "led0";
++		linux,default-trigger = "mmc0";
++		gpios = <&gpio 47 0>;
++	};
++
++	pwr_led: pwr {
++		label = "led1";
++		linux,default-trigger = "input";
++		gpios = <&gpio 35 0>;
++	};
++};
++
++/ {
++	__overrides__ {
++		uart0 = <&uart0>,"status";
++		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1_clkrate = <&uart1>,"clock-frequency:0";
++		i2s = <&i2s>,"status";
++		spi = <&spi0>,"status";
++		i2c0 = <&i2c0>,"status";
++		i2c1 = <&i2c1>,"status";
++		i2c2_iknowwhatimdoing = <&i2c2>,"status";
++		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
++		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		i2c2_baudrate = <&i2c2>,"clock-frequency:0";
++		core_freq = <&clk_core>,"clock-frequency:0";
++
++		act_led_gpio = <&act_led>,"gpios:4";
++		act_led_activelow = <&act_led>,"gpios:8";
++		act_led_trigger = <&act_led>,"linux,default-trigger";
++
++		pwr_led_gpio = <&pwr_led>,"gpios:4";
++		pwr_led_activelow = <&pwr_led>,"gpios:8";
++		pwr_led_trigger = <&pwr_led>,"linux,default-trigger";
++
++		audio = <&audio>,"status";
++		watchdog = <&watchdog>,"status";
++		random = <&random>,"status";
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm2835-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2835-rpi-b.dts
+@@ -1,17 +1,118 @@
+ /dts-v1/;
+-#include "bcm2835-rpi.dtsi"
++#include "bcm2835.dtsi"
+ 
+ / {
+ 	compatible = "raspberrypi,model-b", "brcm,bcm2835";
+ 	model = "Raspberry Pi Model B";
++};
+ 
+-	leds {
+-		act {
+-			gpios = <&gpio 16 1>;
+-		};
++&gpio {
++	spi0_pins: spi0_pins {
++		brcm,pins = <7 8 9 10 11>;
++		brcm,function = <4>; /* alt0 */
++	};
++
++	i2c0_pins: i2c0 {
++		brcm,pins = <0 1>;
++		brcm,function = <4>;
++	};
++
++	i2c1_pins: i2c1 {
++		brcm,pins = <2 3>;
++		brcm,function = <4>;
++	};
++
++	i2s_pins: i2s {
++		brcm,pins = <28 29 30 31>;
++		brcm,function = <6>; /* alt2 */
+ 	};
+ };
+ 
+-&gpio {
+-	pinctrl-0 = <&gpioout &alt0 &alt3>;
++&mmc {
++	status = "okay";
++	bus-width = <4>;
++};
++
++&fb {
++	status = "okay";
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++
++	spidev@0{
++		compatible = "spidev";
++		reg = <0>;	/* CE0 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++
++	spidev@1{
++		compatible = "spidev";
++		reg = <1>;	/* CE1 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2c2 {
++	clock-frequency = <100000>;
++};
++
++&i2s {
++	#sound-dai-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_pins>;
++};
++
++&leds {
++	act_led: act {
++		label = "led0";
++		linux,default-trigger = "mmc0";
++		gpios = <&gpio 16 1>;
++	};
++};
++
++/ {
++	__overrides__ {
++		uart0 = <&uart0>,"status";
++		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1_clkrate = <&uart1>,"clock-frequency:0";
++		i2s = <&i2s>,"status";
++		spi = <&spi0>,"status";
++		i2c0 = <&i2c0>,"status";
++		i2c1 = <&i2c1>,"status";
++		i2c2_iknowwhatimdoing = <&i2c2>,"status";
++		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
++		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		i2c2_baudrate = <&i2c2>,"clock-frequency:0";
++		core_freq = <&clk_core>,"clock-frequency:0";
++
++		act_led_gpio = <&act_led>,"gpios:4";
++		act_led_activelow = <&act_led>,"gpios:8";
++		act_led_trigger = <&act_led>,"linux,default-trigger";
++
++		audio = <&audio>,"status";
++		watchdog = <&watchdog>,"status";
++		random = <&random>,"status";
++	};
+ };
+--- a/arch/arm/boot/dts/bcm2835.dtsi
++++ b/arch/arm/boot/dts/bcm2835.dtsi
+@@ -1,206 +1,39 @@
+-#include <dt-bindings/pinctrl/bcm2835.h>
+-#include <dt-bindings/clock/bcm2835.h>
+-#include "skeleton.dtsi"
++#include "bcm2708_common.dtsi"
+ 
+ / {
+ 	compatible = "brcm,bcm2835";
+ 	model = "BCM2835";
+-	interrupt-parent = <&intc>;
+ 
+ 	chosen {
+-		bootargs = "earlyprintk console=ttyAMA0";
++		bootargs = "";
+ 	};
+ 
+ 	soc {
+-		compatible = "simple-bus";
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-		ranges = <0x7e000000 0x20000000 0x02000000>;
++		ranges = <0x7e000000 0x20000000 0x01000000>;
+ 		dma-ranges = <0x40000000 0x00000000 0x20000000>;
+ 
+ 		timer@7e003000 {
+ 			compatible = "brcm,bcm2835-system-timer";
+ 			reg = <0x7e003000 0x1000>;
+ 			interrupts = <1 0>, <1 1>, <1 2>, <1 3>;
+-			/* This could be a reference to BCM2835_CLOCK_TIMER,
+-			 * but we don't have the driver using the common clock
+-			 * support yet.
+-			 */
+ 			clock-frequency = <1000000>;
+ 		};
+ 
+-		dma: dma@7e007000 {
+-			compatible = "brcm,bcm2835-dma";
+-			reg = <0x7e007000 0xf00>;
+-			interrupts = <1 16>,
+-				     <1 17>,
+-				     <1 18>,
+-				     <1 19>,
+-				     <1 20>,
+-				     <1 21>,
+-				     <1 22>,
+-				     <1 23>,
+-				     <1 24>,
+-				     <1 25>,
+-				     <1 26>,
+-				     <1 27>,
+-				     <1 28>;
+-
+-			#dma-cells = <1>;
+-			brcm,dma-channel-mask = <0x7f35>;
+-		};
+-
+-		intc: interrupt-controller@7e00b200 {
+-			compatible = "brcm,bcm2835-armctrl-ic";
+-			reg = <0x7e00b200 0x200>;
+-			interrupt-controller;
+-			#interrupt-cells = <2>;
+-		};
+-
+-		watchdog@7e100000 {
+-			compatible = "brcm,bcm2835-pm-wdt";
+-			reg = <0x7e100000 0x28>;
+-		};
+-
+-		clocks: cprman@7e101000 {
+-			compatible = "brcm,bcm2835-cprman";
+-			#clock-cells = <1>;
+-			reg = <0x7e101000 0x2000>;
+-
+-			/* CPRMAN derives everything from the platform's
+-			 * oscillator.
+-			 */
+-			clocks = <&clk_osc>;
+-		};
+-
+-		rng@7e104000 {
+-			compatible = "brcm,bcm2835-rng";
+-			reg = <0x7e104000 0x10>;
+-		};
+-
+-		mailbox: mailbox@7e00b800 {
+-			compatible = "brcm,bcm2835-mbox";
+-			reg = <0x7e00b880 0x40>;
+-			interrupts = <0 1>;
+-			#mbox-cells = <0>;
+-		};
+-
+-		gpio: gpio@7e200000 {
+-			compatible = "brcm,bcm2835-gpio";
+-			reg = <0x7e200000 0xb4>;
+-			/*
+-			 * The GPIO IP block is designed for 3 banks of GPIOs.
+-			 * Each bank has a GPIO interrupt for itself.
+-			 * There is an overall "any bank" interrupt.
+-			 * In order, these are GIC interrupts 17, 18, 19, 20.
+-			 * Since the BCM2835 only has 2 banks, the 2nd bank
+-			 * interrupt output appears to be mirrored onto the
+-			 * 3rd bank's interrupt signal.
+-			 * So, a bank0 interrupt shows up on 17, 20, and
+-			 * a bank1 interrupt shows up on 18, 19, 20!
+-			 */
+-			interrupts = <2 17>, <2 18>, <2 19>, <2 20>;
+-
+-			gpio-controller;
+-			#gpio-cells = <2>;
+-
+-			interrupt-controller;
+-			#interrupt-cells = <2>;
+-		};
+-
+-		uart0: uart@7e201000 {
+-			compatible = "brcm,bcm2835-pl011", "arm,pl011", "arm,primecell";
+-			reg = <0x7e201000 0x1000>;
+-			interrupts = <2 25>;
+-			clocks = <&clocks BCM2835_CLOCK_UART>,
+-				 <&clocks BCM2835_CLOCK_VPU>;
+-			clock-names = "uartclk", "apb_pclk";
+-			arm,primecell-periphid = <0x00241011>;
+-		};
+-
+-		i2s: i2s@7e203000 {
+-			compatible = "brcm,bcm2835-i2s";
+-			reg = <0x7e203000 0x24>,
+-			      <0x7e101098 0x08>;
+-
+-			dmas = <&dma 2>,
+-			       <&dma 3>;
+-			dma-names = "tx", "rx";
+-			status = "disabled";
+-		};
+-
+-		spi: spi@7e204000 {
+-			compatible = "brcm,bcm2835-spi";
+-			reg = <0x7e204000 0x1000>;
+-			interrupts = <2 22>;
+-			clocks = <&clocks BCM2835_CLOCK_VPU>;
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			status = "disabled";
+-		};
+-
+-		i2c0: i2c@7e205000 {
+-			compatible = "brcm,bcm2835-i2c";
+-			reg = <0x7e205000 0x1000>;
+-			interrupts = <2 21>;
+-			clocks = <&clocks BCM2835_CLOCK_VPU>;
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			status = "disabled";
+-		};
+-
+-		sdhci: sdhci@7e300000 {
+-			compatible = "brcm,bcm2835-sdhci";
+-			reg = <0x7e300000 0x100>;
+-			interrupts = <2 30>;
+-			clocks = <&clocks BCM2835_CLOCK_EMMC>;
+-			status = "disabled";
+-		};
+-
+-		i2c1: i2c@7e804000 {
+-			compatible = "brcm,bcm2835-i2c";
+-			reg = <0x7e804000 0x1000>;
+-			interrupts = <2 21>;
+-			clocks = <&clocks BCM2835_CLOCK_VPU>;
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			status = "disabled";
+-		};
+-
+-		i2c2: i2c@7e805000 {
+-			compatible = "brcm,bcm2835-i2c";
+-			reg = <0x7e805000 0x1000>;
+-			interrupts = <2 21>;
+-			clocks = <&clocks BCM2835_CLOCK_VPU>;
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			status = "disabled";
+-		};
+-
+-		usb@7e980000 {
+-			compatible = "brcm,bcm2835-usb";
+-			reg = <0x7e980000 0x10000>;
+-			interrupts = <1 9>;
+-		};
+-
+ 		arm-pmu {
+ 			compatible = "arm,arm1176-pmu";
+ 		};
+-	};
+ 
+-	clocks {
+-		compatible = "simple-bus";
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		/* The oscillator is the root of the clock tree. */
+-		clk_osc: clock@3 {
+-			compatible = "fixed-clock";
+-			reg = <3>;
+-			#clock-cells = <0>;
+-			clock-output-names = "osc";
+-			clock-frequency = <19200000>;
++		aux_enable: aux_enable@0x7e215004 {
++			compatible = "bcrm,bcm2835-aux-enable";
++			reg = <0x7e215004 0x04>;
+ 		};
+-
+ 	};
+ };
++
++&intc {
++	compatible = "brcm,bcm2835-armctrl-ic";
++};
++
++&watchdog {
++	status = "okay";
++};

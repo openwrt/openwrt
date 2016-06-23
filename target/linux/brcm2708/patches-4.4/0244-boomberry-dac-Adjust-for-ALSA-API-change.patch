@@ -1,0 +1,26 @@
+From 1fc5799ca5f6f2cc31f5b076d780e111de011cc3 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 15 Apr 2016 10:48:39 +0100
+Subject: [PATCH 244/381] boomberry-dac: Adjust for ALSA API change
+
+As of 4.4, snd_soc_limit_volume now takes a struct snd_soc_card *
+rather than a struct snd_soc_codec *.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ sound/soc/bcm/boomberry-dac.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/sound/soc/bcm/boomberry-dac.c
++++ b/sound/soc/bcm/boomberry-dac.c
+@@ -40,9 +40,8 @@ static int snd_rpi_boomberry_dac_init(st
+ 	{
+ 		int ret;
+ 		struct snd_soc_card *card = rtd->card;
+-		struct snd_soc_codec *codec = rtd->codec;
+ 
+-		ret = snd_soc_limit_volume(codec, "Digital Playback Volume", 207);
++		ret = snd_soc_limit_volume(card, "Digital Playback Volume", 207);
+ 		if (ret < 0)
+ 			dev_warn(card->dev, "Failed to set volume limit: %d\n", ret);
+ 	}

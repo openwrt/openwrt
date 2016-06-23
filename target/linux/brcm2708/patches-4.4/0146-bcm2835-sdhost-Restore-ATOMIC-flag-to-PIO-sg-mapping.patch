@@ -1,0 +1,32 @@
+From 681233bfac9474a1defb720fddf90a3087cd1ef4 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 15 Feb 2016 10:00:27 +0000
+Subject: [PATCH 146/381] bcm2835-sdhost: Restore ATOMIC flag to PIO sg mapping
+
+Allocation problems have been seen in a wireless driver, and
+this is the only change which might have been responsible.
+---
+ drivers/mmc/host/bcm2835-sdhost.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -874,15 +874,14 @@ static void bcm2835_sdhost_prepare_data(
+ 	host->flush_fifo = 0;
+ 	host->data->bytes_xfered = 0;
+ 
+-
+ 	if (!host->dma_desc) {
+ 		/* Use PIO */
+-		int flags;
++		int flags = SG_MITER_ATOMIC;
+ 
+ 		if (data->flags & MMC_DATA_READ)
+-			flags = SG_MITER_TO_SG;
++			flags |= SG_MITER_TO_SG;
+ 		else
+-			flags = SG_MITER_FROM_SG;
++			flags |= SG_MITER_FROM_SG;
+ 		sg_miter_start(&host->sg_miter, data->sg, data->sg_len, flags);
+ 		host->blocks = data->blocks;
+ 	}

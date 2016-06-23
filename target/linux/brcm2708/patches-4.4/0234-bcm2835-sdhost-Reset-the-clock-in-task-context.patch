@@ -1,0 +1,107 @@
+From 3ef58b428e66c86b2e36dbb0a17d561088688578 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 11 Apr 2016 12:50:58 +0100
+Subject: [PATCH 234/381] bcm2835-sdhost: Reset the clock in task context
+
+Since reprogramming the clock can now involve a round-trip to the
+firmware it must not be done at atomic context, and a tasklet
+is not a task.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/mmc/host/bcm2835-sdhost.c | 25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -185,6 +185,7 @@ struct bcm2835_host {
+ 
+ 	unsigned int			debug:1;		/* Enable debug output */
+ 	unsigned int			firmware_sets_cdiv:1;	/* Let the firmware manage the clock */
++	unsigned int			reset_clock:1;		/* Reset the clock fore the next request */
+ 
+ 	/*DMA part*/
+ 	struct dma_chan			*dma_chan_rxtx;		/* DMA channel for reads and writes */
+@@ -1505,6 +1506,7 @@ void bcm2835_sdhost_set_clock(struct bcm
+ {
+ 	int div = 0; /* Initialized for compiler warning */
+ 	unsigned int input_clock = clock;
++	unsigned long flags;
+ 
+ 	if (host->debug)
+ 		pr_info("%s: set_clock(%d)\n", mmc_hostname(host->mmc), clock);
+@@ -1544,13 +1546,17 @@ void bcm2835_sdhost_set_clock(struct bcm
+ 				      &msg, sizeof(msg));
+ 
+ 		clock = max(msg[1], msg[2]);
++		spin_lock_irqsave(&host->lock, flags);
+ 	} else {
++		spin_lock_irqsave(&host->lock, flags);
+ 		if (clock < 100000) {
+ 			/* Can't stop the clock, but make it as slow as
+ 			 * possible to show willing
+ 			 */
+ 			host->cdiv = SDCDIV_MAX_CDIV;
+ 			bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
++			mmiowb();
++			spin_unlock_irqrestore(&host->lock, flags);
+ 			return;
+ 		}
+ 
+@@ -1605,6 +1611,11 @@ void bcm2835_sdhost_set_clock(struct bcm
+ 	bcm2835_sdhost_write(host, clock/2, SDTOUT);
+ 
+ 	host->mmc->actual_clock = clock;
++	host->clock = input_clock;
++	host->reset_clock = 0;
++
++	mmiowb();
++	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
+ static void bcm2835_sdhost_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -1653,6 +1664,9 @@ static void bcm2835_sdhost_request(struc
+ 	    (mrq->data->blocks > host->pio_limit))
+ 		bcm2835_sdhost_prepare_dma(host, mrq->data);
+ 
++	if (host->reset_clock)
++	    bcm2835_sdhost_set_clock(host, host->clock);
++
+ 	spin_lock_irqsave(&host->lock, flags);
+ 
+ 	WARN_ON(host->mrq != NULL);
+@@ -1731,14 +1745,12 @@ static void bcm2835_sdhost_set_ios(struc
+ 
+ 	bcm2835_sdhost_write(host, host->hcfg, SDHCFG);
+ 
+-	if (!ios->clock || ios->clock != host->clock) {
+-		bcm2835_sdhost_set_clock(host, ios->clock);
+-		host->clock = ios->clock;
+-	}
+-
+ 	mmiowb();
+ 
+ 	spin_unlock_irqrestore(&host->lock, flags);
++
++	if (!ios->clock || ios->clock != host->clock)
++		bcm2835_sdhost_set_clock(host, ios->clock);
+ }
+ 
+ static struct mmc_host_ops bcm2835_sdhost_ops = {
+@@ -1810,7 +1822,7 @@ static void bcm2835_sdhost_tasklet_finis
+ 			host->overclock_50--;
+ 			pr_warn("%s: reducing overclock due to errors\n",
+ 				mmc_hostname(host->mmc));
+-			bcm2835_sdhost_set_clock(host,50*MHZ);
++			host->reset_clock = 1;
+ 			mrq->cmd->error = -EILSEQ;
+ 			mrq->cmd->retries = 1;
+ 		}
+@@ -1979,7 +1991,6 @@ static int bcm2835_sdhost_probe(struct p
+ 	mmc->ops = &bcm2835_sdhost_ops;
+ 	host = mmc_priv(mmc);
+ 	host->mmc = mmc;
+-	host->cmd_quick_poll_retries = 0;
+ 	host->pio_timeout = msecs_to_jiffies(500);
+ 	host->pio_limit = 1;
+ 	host->max_delay = 1; /* Warn if over 1ms */

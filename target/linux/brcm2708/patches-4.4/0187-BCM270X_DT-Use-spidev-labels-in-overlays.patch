@@ -1,0 +1,628 @@
+From 9bdfa67fd35978aed2d711821302bc30a3aa2667 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 15 Mar 2016 16:27:26 +0000
+Subject: [PATCH 187/381] BCM270X_DT: Use spidev labels in overlays
+
+---
+ arch/arm/boot/dts/overlays/ads7846-overlay.dts     | 22 ++++++++++-------
+ arch/arm/boot/dts/overlays/at86rf233-overlay.dts   | 11 +++++----
+ arch/arm/boot/dts/overlays/enc28j60-overlay.dts    | 11 +++++----
+ arch/arm/boot/dts/overlays/hy28a-overlay.dts       | 22 ++++++++++-------
+ arch/arm/boot/dts/overlays/hy28b-overlay.dts       | 22 ++++++++++-------
+ .../arm/boot/dts/overlays/mcp2515-can0-overlay.dts | 16 ++++++++-----
+ .../arm/boot/dts/overlays/mcp2515-can1-overlay.dts | 16 ++++++++-----
+ arch/arm/boot/dts/overlays/mz61581-overlay.dts     | 22 ++++++++++-------
+ arch/arm/boot/dts/overlays/piscreen-overlay.dts    | 22 ++++++++++-------
+ arch/arm/boot/dts/overlays/piscreen2r-overlay.dts  | 22 ++++++++++-------
+ .../dts/overlays/pitft28-capacitive-overlay.dts    | 17 +++++++------
+ .../dts/overlays/pitft28-resistive-overlay.dts     | 24 ++++++++++++-------
+ arch/arm/boot/dts/overlays/rpi-display-overlay.dts | 22 ++++++++++-------
+ arch/arm/boot/dts/overlays/tinylcd35-overlay.dts   | 28 +++++++++++++---------
+ 14 files changed, 174 insertions(+), 103 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/ads7846-overlay.dts
++++ b/arch/arm/boot/dts/overlays/ads7846-overlay.dts
+@@ -13,18 +13,24 @@
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
++		};
++	};
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
+ 
+-			spidev@1{
+-				status = "disabled";
+-			};
++	fragment@2 {
++		target = <&spidev1>;
++		__overlay__ {
++			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@3 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			ads7846_pins: ads7846_pins {
+@@ -35,7 +41,7 @@
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/at86rf233-overlay.dts
++++ b/arch/arm/boot/dts/overlays/at86rf233-overlay.dts
+@@ -14,10 +14,6 @@
+ 
+ 			status = "okay";
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
+-
+ 			lowpan0: at86rf233@0 {
+ 				compatible = "atmel,at86rf233";
+ 				reg = <0>;
+@@ -32,6 +28,13 @@
+ 	};
+ 
+ 	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
++
++	fragment@2 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			lowpan0_pins: lowpan0_pins {
+--- a/arch/arm/boot/dts/overlays/enc28j60-overlay.dts
++++ b/arch/arm/boot/dts/overlays/enc28j60-overlay.dts
+@@ -14,10 +14,6 @@
+ 
+ 			status = "okay";
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
+-
+ 			eth1: enc28j60@0{
+ 				compatible = "microchip,enc28j60";
+ 				reg = <0>; /* CE0 */
+@@ -32,6 +28,13 @@
+ 	};
+ 
+ 	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
++
++	fragment@2 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			eth1_pins: eth1_pins {
+--- a/arch/arm/boot/dts/overlays/hy28a-overlay.dts
++++ b/arch/arm/boot/dts/overlays/hy28a-overlay.dts
+@@ -13,18 +13,24 @@
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
++		};
++	};
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
+ 
+-			spidev@1{
+-				status = "disabled";
+-			};
++	fragment@2 {
++		target = <&spidev1>;
++		__overlay__ {
++			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@3 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			hy28a_pins: hy28a_pins {
+@@ -34,7 +40,7 @@
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/hy28b-overlay.dts
++++ b/arch/arm/boot/dts/overlays/hy28b-overlay.dts
+@@ -13,18 +13,24 @@
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
++		};
++	};
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
+ 
+-			spidev@1{
+-				status = "disabled";
+-			};
++	fragment@2 {
++		target = <&spidev1>;
++		__overlay__ {
++			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@3 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			hy28b_pins: hy28b_pins {
+@@ -34,7 +40,7 @@
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/mcp2515-can0-overlay.dts
++++ b/arch/arm/boot/dts/overlays/mcp2515-can0-overlay.dts
+@@ -12,14 +12,18 @@
+         target = <&spi0>;
+         __overlay__ {
+             status = "okay";
+-            spidev@0{
+-                status = "disabled";
+-            };
+         };
+     };
+ 
+-    /* the interrupt pin of the can-controller */
+     fragment@1 {
++	target = <&spidev0>;
++	__overlay__ {
++	    status = "disabled";
++	};
++    };
++
++    /* the interrupt pin of the can-controller */
++    fragment@2 {
+         target = <&gpio>;
+         __overlay__ {
+             can0_pins: can0_pins {
+@@ -30,7 +34,7 @@
+     };
+ 
+     /* the clock/oscillator of the can-controller */
+-    fragment@2 {
++    fragment@3 {
+         target-path = "/clocks";
+         __overlay__ {
+             /* external oscillator of mcp2515 on SPI0.0 */
+@@ -43,7 +47,7 @@
+     };
+ 
+     /* the spi config of the can-controller itself binding everything together */
+-    fragment@3 {
++    fragment@4 {
+         target = <&spi0>;
+         __overlay__ {
+             /* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/mcp2515-can1-overlay.dts
++++ b/arch/arm/boot/dts/overlays/mcp2515-can1-overlay.dts
+@@ -12,14 +12,18 @@
+         target = <&spi0>;
+         __overlay__ {
+             status = "okay";
+-            spidev@1{
+-                status = "disabled";
+-            };
+         };
+     };
+ 
+-    /* the interrupt pin of the can-controller */
+     fragment@1 {
++	target = <&spidev1>;
++	__overlay__ {
++	    status = "disabled";
++	};
++    };
++
++    /* the interrupt pin of the can-controller */
++    fragment@2 {
+         target = <&gpio>;
+         __overlay__ {
+             can1_pins: can1_pins {
+@@ -30,7 +34,7 @@
+     };
+ 
+     /* the clock/oscillator of the can-controller */
+-    fragment@2 {
++    fragment@3 {
+         target-path = "/clocks";
+         __overlay__ {
+             /* external oscillator of mcp2515 on spi0.1 */
+@@ -43,7 +47,7 @@
+     };
+ 
+     /* the spi config of the can-controller itself binding everything together */
+-    fragment@3 {
++    fragment@4 {
+         target = <&spi0>;
+         __overlay__ {
+             /* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/mz61581-overlay.dts
++++ b/arch/arm/boot/dts/overlays/mz61581-overlay.dts
+@@ -13,18 +13,24 @@
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
++		};
++	};
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
+ 
+-			spidev@1{
+-				status = "disabled";
+-			};
++	fragment@2 {
++		target = <&spidev1>;
++		__overlay__ {
++			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@3 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			mz61581_pins: mz61581_pins {
+@@ -34,7 +40,7 @@
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/piscreen-overlay.dts
++++ b/arch/arm/boot/dts/overlays/piscreen-overlay.dts
+@@ -13,18 +13,24 @@
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
++		};
++	};
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
+ 
+-			spidev@1{
+-				status = "disabled";
+-			};
++	fragment@2 {
++		target = <&spidev1>;
++		__overlay__ {
++			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@3 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			piscreen_pins: piscreen_pins {
+@@ -34,7 +40,7 @@
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/piscreen2r-overlay.dts
++++ b/arch/arm/boot/dts/overlays/piscreen2r-overlay.dts
+@@ -13,18 +13,24 @@
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
++		};
++	};
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
+ 
+-			spidev@1{
+-				status = "disabled";
+-			};
++	fragment@2 {
++		target = <&spidev1>;
++		__overlay__ {
++			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@3 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			piscreen2_pins: piscreen2_pins {
+@@ -34,7 +40,7 @@
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/pitft28-capacitive-overlay.dts
++++ b/arch/arm/boot/dts/overlays/pitft28-capacitive-overlay.dts
+@@ -13,14 +13,17 @@
+                 target = <&spi0>;
+                 __overlay__ {
+                         status = "okay";
+-
+-                        spidev@0{
+-                                status = "disabled";
+-                        };
+                 };
+         };
+ 
+-        fragment@1 {
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
++
++        fragment@2 {
+                 target = <&gpio>;
+                 __overlay__ {
+                         pitft_pins: pitft_pins {
+@@ -31,7 +34,7 @@
+                 };
+         };
+ 
+-        fragment@2 {
++        fragment@3 {
+                 target = <&spi0>;
+                 __overlay__ {
+                         /* needed to avoid dtc warning */
+@@ -55,7 +58,7 @@
+                 };
+         };
+ 
+-        fragment@3 {
++        fragment@4 {
+                 target = <&i2c1>;
+                 __overlay__ {
+                         /* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/pitft28-resistive-overlay.dts
++++ b/arch/arm/boot/dts/overlays/pitft28-resistive-overlay.dts
+@@ -13,18 +13,24 @@
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
++		};
++	};
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
+ 
+-			spidev@1{
+-				status = "disabled";
+-			};
++	fragment@2 {
++		target = <&spidev1>;
++		__overlay__ {
++			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@3 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			pitft_pins: pitft_pins {
+@@ -35,7 +41,7 @@
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+@@ -95,7 +101,7 @@
+ 		};
+ 	};
+ 
+-	fragment@3 {
++	fragment@5 {
+ 		target-path = "/soc";
+ 		__overlay__ {
+ 			backlight {
+--- a/arch/arm/boot/dts/overlays/rpi-display-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rpi-display-overlay.dts
+@@ -13,18 +13,24 @@
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
++		};
++	};
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
+ 
+-			spidev@1{
+-				status = "disabled";
+-			};
++	fragment@2 {
++		target = <&spidev1>;
++		__overlay__ {
++			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@3 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			rpi_display_pins: rpi_display_pins {
+@@ -35,7 +41,7 @@
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+--- a/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
++++ b/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
+@@ -30,18 +30,24 @@
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			status = "okay";
++		};
++	};
+ 
+-			spidev@0{
+-				status = "disabled";
+-			};
++	fragment@1 {
++		target = <&spidev0>;
++		__overlay__ {
++			status = "disabled";
++		};
++	};
+ 
+-			spidev@1{
+-				status = "disabled";
+-			};
++	fragment@2 {
++		target = <&spidev1>;
++		__overlay__ {
++			status = "disabled";
+ 		};
+ 	};
+ 
+-	fragment@1 {
++	fragment@3 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			tinylcd35_pins: tinylcd35_pins {
+@@ -60,7 +66,7 @@
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			/* needed to avoid dtc warning */
+@@ -124,7 +130,7 @@
+ 
+ 	/*  RTC    */
+ 
+-	fragment@3 {
++	fragment@5 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -138,7 +144,7 @@
+ 		};
+ 	};
+ 
+-	fragment@4 {
++	fragment@6 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -156,7 +162,7 @@
+ 	 * Values for input event code is found under the
+ 	 * 'Keys and buttons' heading in include/uapi/linux/input.h
+ 	 */
+-	fragment@5 {
++	fragment@7 {
+ 		target-path = "/soc";
+ 		__overlay__ {
+ 			keypad: keypad {

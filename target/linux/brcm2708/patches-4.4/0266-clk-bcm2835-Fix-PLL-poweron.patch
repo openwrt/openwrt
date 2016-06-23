@@ -1,0 +1,32 @@
+From 2ecc0a11eb0e77a75c2ae468d656c773877f3997 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Wed, 13 Apr 2016 13:05:03 -0700
+Subject: [PATCH 266/381] clk: bcm2835: Fix PLL poweron
+
+In poweroff, we set the reset bit and the power down bit, but only
+managed to unset the reset bit for poweron.  This meant that if HDMI
+did -EPROBE_DEFER after it had grabbed its clocks, we'd power down the
+PLLH (that had been on at boot time) and never recover.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Fixes: 41691b8862e2 ("clk: bcm2835: Add support for programming the audio domain clocks")
+Cc: stable@vger.kernel.org
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+(cherry picked from commit d794a7b18350b7538e64248adf639f2cb8da5fb7)
+---
+ drivers/clk/bcm/clk-bcm2835.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -561,6 +561,10 @@ static int bcm2835_pll_on(struct clk_hw
+ 		     cprman_read(cprman, data->a2w_ctrl_reg) &
+ 		     ~A2W_PLL_CTRL_PWRDN);
+ 
++	cprman_write(cprman, data->a2w_ctrl_reg,
++		     cprman_read(cprman, data->a2w_ctrl_reg) &
++		     ~A2W_PLL_CTRL_PWRDN);
++
+ 	/* Take the PLL out of reset. */
+ 	cprman_write(cprman, data->cm_ctrl_reg,
+ 		     cprman_read(cprman, data->cm_ctrl_reg) & ~CM_PLL_ANARST);

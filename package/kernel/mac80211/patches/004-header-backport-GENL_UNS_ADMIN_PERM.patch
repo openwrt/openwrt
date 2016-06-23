@@ -1,0 +1,21 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 14 May 2016 16:39:35 +0200
+Subject: [PATCH] header: backport GENL_UNS_ADMIN_PERM
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ create mode 100644 backport-include/uapi/linux/genetlink.h
+
+--- /dev/null
++++ b/backport-include/uapi/linux/genetlink.h
+@@ -0,0 +1,10 @@
++#ifndef __COMPAT_UAPI_LINUX_GENETLINK_H
++#define __COMPAT_UAPI_LINUX_GENETLINK_H
++
++#include_next <uapi/linux/genetlink.h>
++
++#ifndef GENL_UNS_ADMIN_PERM
++#define GENL_UNS_ADMIN_PERM GENL_ADMIN_PERM
++#endif
++
++#endif

@@ -1,0 +1,50 @@
+From 32afb8961b9c5f51dc8e88832f47b8ef197acf32 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 15 Mar 2016 16:41:37 +0000
+Subject: [PATCH 188/381] BCM270X_DT: Build and document the wittypi overlay
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/Makefile            | 1 +
+ arch/arm/boot/dts/overlays/README              | 8 ++++++++
+ arch/arm/boot/dts/overlays/wittypi-overlay.dts | 2 +-
+ 3 files changed, 10 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -74,6 +74,7 @@ dtbo-$(RPI_DT_OVERLAYS) += vc4-kms-v3d.d
+ dtbo-$(RPI_DT_OVERLAYS) += vga666.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += w1-gpio.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += w1-gpio-pullup.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += wittypi.dtbo
+ 
+ targets += dtbs dtbs_install
+ targets += $(dtbo-y)
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -920,6 +920,14 @@ Params: gpiopin                 GPIO for
+         extpullup               GPIO for external pullup (default "5")
+ 
+ 
++Name:   wittypi
++Info:   Configures the wittypi RTC module.
++Load:   dtoverlay=wittypi,<param>=<val>
++Params: led_gpio                GPIO for LED (default "17")
++        led_trigger             Choose which activity the LED tracks (default
++                                "default-on")
++
++
+ Troubleshooting
+ ===============
+ 
+--- a/arch/arm/boot/dts/overlays/wittypi-overlay.dts
++++ b/arch/arm/boot/dts/overlays/wittypi-overlay.dts
+@@ -37,7 +37,7 @@
+ 	};
+ 
+ 	__overrides__ {
+-		led_gpio =		<&wittypi_led>,"gpios:4";
++		led_gpio =	<&wittypi_led>,"gpios:4";
+ 		led_trigger =	<&wittypi_led>,"linux,default-trigger";
+ 	};
+ 

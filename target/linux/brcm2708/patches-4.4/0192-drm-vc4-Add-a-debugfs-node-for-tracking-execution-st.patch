@@ -1,0 +1,56 @@
+From fe67c3546abaaab10d826626fdd3dd147f6bd693 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 22 Jan 2016 13:06:39 -0800
+Subject: [PATCH 192/381] drm/vc4: Add a debugfs node for tracking execution
+ state.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_debugfs.c |  1 +
+ drivers/gpu/drm/vc4/vc4_drv.h     |  1 +
+ drivers/gpu/drm/vc4/vc4_gem.c     | 14 ++++++++++++++
+ 3 files changed, 16 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_debugfs.c
++++ b/drivers/gpu/drm/vc4/vc4_debugfs.c
+@@ -17,6 +17,7 @@
+ 
+ static const struct drm_info_list vc4_debugfs_list[] = {
+ 	{"bo_stats", vc4_bo_stats_debugfs, 0},
++	{"gem_exec", vc4_gem_exec_debugfs, 0},
+ 	{"hdmi_regs", vc4_hdmi_debugfs_regs, 0},
+ 	{"hvs_regs", vc4_hvs_debugfs_regs, 0},
+ 	{"crtc0_regs", vc4_crtc_debugfs_regs, 0, (void *)(uintptr_t)0},
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -403,6 +403,7 @@ void vc4_job_handle_completed(struct vc4
+ int vc4_queue_seqno_cb(struct drm_device *dev,
+ 		       struct vc4_seqno_cb *cb, uint64_t seqno,
+ 		       void (*func)(struct vc4_seqno_cb *cb));
++int vc4_gem_exec_debugfs(struct seq_file *m, void *arg);
+ 
+ /* vc4_hdmi.c */
+ extern struct platform_driver vc4_hdmi_driver;
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -31,6 +31,20 @@
+ #include "vc4_regs.h"
+ #include "vc4_trace.h"
+ 
++#ifdef CONFIG_DEBUG_FS
++int vc4_gem_exec_debugfs(struct seq_file *m, void *unused)
++{
++	struct drm_info_node *node = (struct drm_info_node *)m->private;
++	struct drm_device *dev = node->minor->dev;
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
++
++	seq_printf(m, "Emitted  seqno:   0x%016llx\n", vc4->emit_seqno);
++	seq_printf(m, "Finished seqno:   0x%016llx\n", vc4->finished_seqno);
++
++	return 0;
++}
++#endif /* CONFIG_DEBUG_FS */
++
+ static void
+ vc4_queue_hangcheck(struct drm_device *dev)
+ {

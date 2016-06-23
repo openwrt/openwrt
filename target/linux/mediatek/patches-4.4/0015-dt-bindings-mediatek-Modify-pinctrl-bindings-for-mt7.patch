@@ -1,7 +1,7 @@
-From ddc72b659b3642d0496dee4e1ee39416ca008053 Mon Sep 17 00:00:00 2001
+From 3800e5c33e5becbb56c6694008d1f3435fd78707 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Thu, 7 Jan 2016 23:42:06 +0100
-Subject: [PATCH 15/91] dt-bindings: mediatek: Modify pinctrl bindings for
+Subject: [PATCH 015/102] dt-bindings: mediatek: Modify pinctrl bindings for
  mt7623
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 522 insertions(+)
  create mode 100644 include/dt-bindings/pinctrl/mt7623-pinfunc.h
 
-diff --git a/Documentation/devicetree/bindings/pinctrl/pinctrl-mt65xx.txt b/Documentation/devicetree/bindings/pinctrl/pinctrl-mt65xx.txt
-index 9ffb0b2..17631d0 100644
 --- a/Documentation/devicetree/bindings/pinctrl/pinctrl-mt65xx.txt
 +++ b/Documentation/devicetree/bindings/pinctrl/pinctrl-mt65xx.txt
 @@ -6,6 +6,7 @@ Required properties:
@@ -23,9 +21,6 @@ index 9ffb0b2..17631d0 100644
  	"mediatek,mt8127-pinctrl", compatible with mt8127 pinctrl.
  	"mediatek,mt8135-pinctrl", compatible with mt8135 pinctrl.
  	"mediatek,mt8173-pinctrl", compatible with mt8173 pinctrl.
-diff --git a/include/dt-bindings/pinctrl/mt7623-pinfunc.h b/include/dt-bindings/pinctrl/mt7623-pinfunc.h
-new file mode 100644
-index 0000000..891b173
 --- /dev/null
 +++ b/include/dt-bindings/pinctrl/mt7623-pinfunc.h
 @@ -0,0 +1,521 @@
@@ -550,6 +545,3 @@ index 0000000..891b173
 +
 +#endif /* __DTS_MT7623_PINFUNC_H */
 +
--- 
-1.7.10.4
-

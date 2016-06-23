@@ -1,0 +1,43 @@
+From bdbaa2432c1a111c5a2fd492bb1751e4a355b16d Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 18 Nov 2015 18:29:58 +0000
+Subject: [PATCH 102/381] squash: fixups
+
+---
+ drivers/gpu/drm/vc4/Kconfig   | 2 +-
+ drivers/gpu/drm/vc4/vc4_drv.c | 2 +-
+ drivers/gpu/drm/vc4/vc4_kms.c | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/Kconfig
++++ b/drivers/gpu/drm/vc4/Kconfig
+@@ -1,6 +1,6 @@
+ config DRM_VC4
+ 	tristate "Broadcom VC4 Graphics"
+-	depends on ARCH_BCM2835 || COMPILE_TEST
++	depends on ARCH_BCM2835 || ARCH_BCM2708 || ARCH_BCM2709 || COMPILE_TEST
+ 	depends on DRM && HAVE_DMA_ATTRS
+ 	select DRM_KMS_HELPER
+ 	select DRM_KMS_CMA_HELPER
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -127,7 +127,7 @@ static struct drm_driver vc4_drm_driver
+ 	.num_ioctls = ARRAY_SIZE(vc4_drm_ioctls),
+ 	.fops = &vc4_drm_fops,
+ 
+-	.gem_obj_size = sizeof(struct vc4_bo),
++	//.gem_obj_size = sizeof(struct vc4_bo),
+ 
+ 	.name = DRIVER_NAME,
+ 	.desc = DRIVER_DESC,
+--- a/drivers/gpu/drm/vc4/vc4_kms.c
++++ b/drivers/gpu/drm/vc4/vc4_kms.c
+@@ -45,7 +45,7 @@ vc4_atomic_complete_commit(struct vc4_co
+ 
+ 	drm_atomic_helper_commit_modeset_disables(dev, state);
+ 
+-	drm_atomic_helper_commit_planes(dev, state);
++	drm_atomic_helper_commit_planes(dev, state, false);
+ 
+ 	drm_atomic_helper_commit_modeset_enables(dev, state);
+ 

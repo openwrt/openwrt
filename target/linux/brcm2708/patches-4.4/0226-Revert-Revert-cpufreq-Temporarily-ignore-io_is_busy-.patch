@@ -1,0 +1,27 @@
+From 846df5e9c9f2510a68c26922eb6a04b76c576357 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Mon, 4 Apr 2016 19:52:27 +0100
+Subject: [PATCH 226/381] Revert "Revert "cpufreq: Temporarily ignore
+ io_is_busy=1""
+
+This reverts commit c353af0f83220068c10f6593b1767576b9b6cc18.
+---
+ drivers/cpufreq/cpufreq_ondemand.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/cpufreq/cpufreq_ondemand.c
++++ b/drivers/cpufreq/cpufreq_ondemand.c
+@@ -307,7 +307,12 @@ static ssize_t store_io_is_busy(struct d
+ 	ret = sscanf(buf, "%u", &input);
+ 	if (ret != 1)
+ 		return -EINVAL;
+-	od_tuners->io_is_busy = !!input;
++	// XXX temporary hack
++	if (input > 1)
++		input = 1;
++	else
++		input = 0;
++	od_tuners->io_is_busy = input;
+ 
+ 	/* we need to re-evaluate prev_cpu_idle */
+ 	for_each_online_cpu(j) {

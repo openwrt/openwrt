@@ -1,7 +1,7 @@
-From 8d134cbe750b59d15c591622d81e2e9daa09f0c4 Mon Sep 17 00:00:00 2001
+From 8bf0f2a1e8ff082de3f650211abd985ef68abe1b Mon Sep 17 00:00:00 2001
 From: Shunli Wang <shunli.wang@mediatek.com>
 Date: Tue, 5 Jan 2016 14:30:21 +0800
-Subject: [PATCH 10/91] reset: mediatek: mt2701 reset controller dt-binding
+Subject: [PATCH 010/102] reset: mediatek: mt2701 reset controller dt-binding
  file
 
 Dt-binding file about reset controller is used to provide
@@ -14,9 +14,6 @@ Signed-off-by: Shunli Wang <shunli.wang@mediatek.com>
  1 file changed, 74 insertions(+)
  create mode 100644 include/dt-bindings/reset-controller/mt2701-resets.h
 
-diff --git a/include/dt-bindings/reset-controller/mt2701-resets.h b/include/dt-bindings/reset-controller/mt2701-resets.h
-new file mode 100644
-index 0000000..00efeb0
 --- /dev/null
 +++ b/include/dt-bindings/reset-controller/mt2701-resets.h
 @@ -0,0 +1,74 @@
@@ -94,6 +91,3 @@ index 0000000..00efeb0
 +#define MT2701_TOPRGU_BDP_DISP_RST		13
 +
 +#endif  /* _DT_BINDINGS_RESET_CONTROLLER_MT2701 */
--- 
-1.7.10.4
-

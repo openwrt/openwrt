@@ -1,0 +1,98 @@
+From 6e6173c6faef9a7188ea8d397e339ca5881a6f3a Mon Sep 17 00:00:00 2001
+From: Digital Dreamtime <clive.messer@digitaldreamtime.co.uk>
+Date: Thu, 4 Feb 2016 20:04:00 +0000
+Subject: [PATCH 141/381] Limit PCM512x "Digital" gain to 0dB by default with
+ HiFiBerry DAC+
+
+24db_digital_gain DT param can be used to specify that PCM512x
+codec "Digital" volume control should not be limited to 0dB gain,
+and if specified will allow the full 24dB gain.
+---
+ arch/arm/boot/dts/overlays/README                       | 17 +++++++++++++++--
+ .../arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts |  6 +++++-
+ sound/soc/bcm/hifiberry_dacplus.c                       | 14 ++++++++++++++
+ 3 files changed, 34 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -273,8 +273,21 @@ Params: <None>
+ 
+ Name:   hifiberry-dacplus
+ Info:   Configures the HifiBerry DAC+ audio card
+-Load:   dtoverlay=hifiberry-dacplus
+-Params: <None>
++Load:   dtoverlay=hifiberry-dacplus,<param>=<val>
++Params: 24db_digital_gain       Allow gain to be applied via the PCM512x codec
++                                Digital volume control. Enable with
++                                "dtoverlay=hifiberry-dacplus,24db_digital_gain"
++                                (The default behaviour is that the Digital
++                                volume control is limited to a maximum of
++                                0dB. ie. it can attenuate but not provide
++                                gain. For most users, this will be desired
++                                as it will prevent clipping. By appending
++                                the 24dB_digital_gain parameter, the Digital
++                                volume control will allow up to 24dB of
++                                gain. If this parameter is enabled, it is the
++                                responsibility of the user to ensure that
++                                the Digital volume control is set to a value
++                                that does not result in clipping/distortion!)
+ 
+ 
+ Name:   hifiberry-digi
+--- a/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
++++ b/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
+@@ -17,7 +17,7 @@
+ 
+ 	fragment@1 {
+ 		target = <&sound>;
+-		__overlay__ {
++		frag1: __overlay__ {
+ 			compatible = "hifiberry,hifiberry-dacplus";
+ 			i2s-controller = <&i2s>;
+ 			status = "okay";
+@@ -47,4 +47,8 @@
+ 			};
+ 		};
+ 	};
++
++	__overrides__ {
++		24db_digital_gain = <&frag1>,"hifiberry,24db_digital_gain?";
++	};
+ };
+--- a/sound/soc/bcm/hifiberry_dacplus.c
++++ b/sound/soc/bcm/hifiberry_dacplus.c
+@@ -48,6 +48,7 @@ struct pcm512x_priv {
+ #define CLK_48EN_RATE 24576000UL
+ 
+ static bool snd_rpi_hifiberry_is_dacpro;
++static bool digital_gain_0db_limit = true;
+ 
+ static void snd_rpi_hifiberry_dacplus_select_clk(struct snd_soc_codec *codec,
+ 	int clk_id)
+@@ -167,6 +168,16 @@ static int snd_rpi_hifiberry_dacplus_ini
+ 	snd_soc_update_bits(codec, PCM512x_GPIO_OUTPUT_4, 0x0f, 0x02);
+ 	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08, 0x08);
+ 
++	if (digital_gain_0db_limit)
++	{
++		int ret;
++		struct snd_soc_card *card = rtd->card;
++
++		ret = snd_soc_limit_volume(card, "Digital Playback Volume", 207);
++		if (ret < 0)
++			dev_warn(card->dev, "Failed to set volume limit: %d\n", ret);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -299,6 +310,9 @@ static int snd_rpi_hifiberry_dacplus_pro
+ 			dai->platform_name = NULL;
+ 			dai->platform_of_node = i2s_node;
+ 		}
++
++		digital_gain_0db_limit = !of_property_read_bool(
++			pdev->dev.of_node, "hifiberry,24db_digital_gain");
+ 	}
+ 
+ 	ret = snd_soc_register_card(&snd_rpi_hifiberry_dacplus);

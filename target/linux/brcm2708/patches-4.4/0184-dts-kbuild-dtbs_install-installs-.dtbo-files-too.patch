@@ -1,0 +1,42 @@
+From b05ecd40ad5513486d9e38752a1f64f48be20839 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 14 Mar 2016 16:56:54 +0000
+Subject: [PATCH 184/381] dts, kbuild: dtbs_install installs .dtbo files too
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ scripts/Makefile.dtbinst | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+--- a/scripts/Makefile.dtbinst
++++ b/scripts/Makefile.dtbinst
+@@ -29,6 +29,7 @@ ifeq ("$(dtbinst-root)", "$(obj)")
+ endif
+ 
+ dtbinst-files	:= $(dtb-y)
++dtboinst-files	:= $(dtbo-y)
+ dtbinst-dirs	:= $(dts-dirs)
+ 
+ # Helper targets for Installing DTBs into the boot directory
+@@ -37,15 +38,18 @@ quiet_cmd_dtb_install =	INSTALL $<
+ 
+ install-dir = $(patsubst $(dtbinst-root)%,$(INSTALL_DTBS_PATH)%,$(obj))
+ 
+-$(dtbinst-files) $(dtbinst-dirs): | __dtbs_install_prep
++$(dtbinst-files) $(dtboinst-files) $(dtbinst-dirs): | __dtbs_install_prep
+ 
+ $(dtbinst-files): %.dtb: $(obj)/%.dtb
+ 	$(call cmd,dtb_install,$(install-dir))
+ 
++$(dtboinst-files): %.dtbo: $(obj)/%.dtbo
++	$(call cmd,dtb_install,$(install-dir))
++
+ $(dtbinst-dirs):
+ 	$(Q)$(MAKE) $(dtbinst)=$(obj)/$@
+ 
+-PHONY += $(dtbinst-files) $(dtbinst-dirs)
+-__dtbs_install: $(dtbinst-files) $(dtbinst-dirs)
++PHONY += $(dtbinst-files) $(dtboinst-files) $(dtbinst-dirs)
++__dtbs_install: $(dtbinst-files) $(dtboinst-files) $(dtbinst-dirs)
+ 
+ .PHONY: $(PHONY)

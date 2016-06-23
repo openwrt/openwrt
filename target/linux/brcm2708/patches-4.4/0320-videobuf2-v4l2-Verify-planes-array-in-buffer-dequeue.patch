@@ -1,0 +1,53 @@
+From 2d8ae9f2f45a2f5b777088cbab6e5ea15744d1d5 Mon Sep 17 00:00:00 2001
+From: Sakari Ailus <sakari.ailus@linux.intel.com>
+Date: Sun, 3 Apr 2016 16:31:03 -0300
+Subject: [PATCH 320/381] videobuf2-v4l2: Verify planes array in buffer
+ dequeueing
+
+commit 2c1f6951a8a82e6de0d82b1158b5e493fc6c54ab upstream.
+
+When a buffer is being dequeued using VIDIOC_DQBUF IOCTL, the exact buffer
+which will be dequeued is not known until the buffer has been removed from
+the queue. The number of planes is specific to a buffer, not to the queue.
+
+This does lead to the situation where multi-plane buffers may be requested
+and queued with n planes, but VIDIOC_DQBUF IOCTL may be passed an argument
+struct with fewer planes.
+
+__fill_v4l2_buffer() however uses the number of planes from the dequeued
+videobuf2 buffer, overwriting kernel memory (the m.planes array allocated
+in video_usercopy() in v4l2-ioctl.c)  if the user provided fewer
+planes than the dequeued buffer had. Oops!
+
+Fixes: b0e0e1f83de3 ("[media] media: videobuf2: Prepare to divide videobuf2")
+
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Acked-by: Hans Verkuil <hans.verkuil@cisco.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/media/v4l2-core/videobuf2-v4l2.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/media/v4l2-core/videobuf2-v4l2.c
++++ b/drivers/media/v4l2-core/videobuf2-v4l2.c
+@@ -67,6 +67,11 @@ static int __verify_planes_array(struct
+ 	return 0;
+ }
+ 
++static int __verify_planes_array_core(struct vb2_buffer *vb, const void *pb)
++{
++	return __verify_planes_array(vb, pb);
++}
++
+ /**
+  * __verify_length() - Verify that the bytesused value for each plane fits in
+  * the plane length and that the data offset doesn't exceed the bytesused value.
+@@ -432,6 +437,7 @@ static int __fill_vb2_buffer(struct vb2_
+ }
+ 
+ static const struct vb2_buf_ops v4l2_buf_ops = {
++	.verify_planes_array	= __verify_planes_array_core,
+ 	.fill_user_buffer	= __fill_v4l2_buffer,
+ 	.fill_vb2_buffer	= __fill_vb2_buffer,
+ 	.set_timestamp		= __set_timestamp,

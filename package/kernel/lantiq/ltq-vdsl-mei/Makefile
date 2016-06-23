@@ -17,6 +17,7 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=78bf61dbc3421123c6716b874a930759
 PKG_FIXUP:=autoreconf
+PKG_FLAGS:=nonshared
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 PKG_USE_MIPS16:=0
 

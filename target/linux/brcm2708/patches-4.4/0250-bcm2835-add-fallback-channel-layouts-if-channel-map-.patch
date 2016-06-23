@@ -1,0 +1,41 @@
+From a9d3c50f084d4d6d1063969c04bc8233fe1437c1 Mon Sep 17 00:00:00 2001
+From: wm4 <wm4@nowhere>
+Date: Tue, 19 Apr 2016 16:29:41 +0200
+Subject: [PATCH 250/381] bcm2835: add fallback channel layouts if channel map
+ API is not used
+
+Should be more useful than just forcing stereo.
+
+We can't match the exact legacy ALSA channel layouts, so this is a
+"best effort" hack.
+
+I'm not sure what happens if the application requests channel counts
+that are not power-of-2s. The channel map API hopefully forces
+applications which use the channel map API to request the correct
+count by adding padding channels, but the bare API enforces
+nothing. Possibly this could be added to rate_hw_constraint_channels
+at a later point.
+---
+ sound/arm/bcm2835-vchiq.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+--- a/sound/arm/bcm2835-vchiq.c
++++ b/sound/arm/bcm2835-vchiq.c
+@@ -598,7 +598,16 @@ int bcm2835_audio_set_params(bcm2835_als
+ 	if (alsa_stream->chip->cea_chmap >= 0) {
+ 		chmap_value = (unsigned)alsa_stream->chip->cea_chmap << 24;
+ 	} else {
+-		chmap_value = 0; /* force stereo */
++		/* fallback layouts for applications which do not use chmap API */
++		chmap_value = 0x00;
++		switch (channels) {
++		case 3: chmap_value = 0x01; break;
++		case 4: chmap_value = 0x03; break;
++		case 5: chmap_value = 0x07; break;
++		case 6: chmap_value = 0x0b; break;
++		case 7: chmap_value = 0x0f; break;
++		case 8: chmap_value = 0x13; break;
++		}
+ 		for (i = 0; i < 8; i++)
+ 			alsa_stream->chip->map_channels[i] = i;
+ 	}

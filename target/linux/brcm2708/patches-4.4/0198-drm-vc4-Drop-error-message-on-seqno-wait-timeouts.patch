@@ -1,0 +1,27 @@
+From e9096f6a422bb37a87dd41bc2c01163946e1bc10 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 25 Jan 2016 14:33:50 -0800
+Subject: [PATCH 198/381] drm/vc4: Drop error message on seqno wait timeouts.
+
+These ioctls end up getting exposed to userspace, and having normal
+user requests print DRM errors is obviously wrong.  The message was
+originally to give us some idea of what happened when a hang occurred,
+but we have a DRM_INFO from reset for that.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -352,9 +352,6 @@ vc4_wait_for_seqno(struct drm_device *de
+ 	finish_wait(&vc4->job_wait_queue, &wait);
+ 	trace_vc4_wait_for_seqno_end(dev, seqno);
+ 
+-	if (ret && ret != -ERESTARTSYS)
+-		DRM_ERROR("timeout waiting for render thread idle\n");
+-
+ 	return ret;
+ }
+ 

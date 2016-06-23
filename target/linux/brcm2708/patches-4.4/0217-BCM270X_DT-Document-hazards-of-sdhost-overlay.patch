@@ -1,0 +1,34 @@
+From 8cbaec5167f764d2c7b88c2f465970fd08c55582 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 30 Mar 2016 17:07:15 +0100
+Subject: [PATCH 217/381] BCM270X_DT: Document hazards of sdhost overlay
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/README | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -712,7 +712,11 @@ Params: <None>
+ 
+ 
+ Name:   sdhost
+-Info:   Selects the bcm2835-sdhost SD/MMC driver, optionally with overclock
++Info:   Selects the bcm2835-sdhost SD/MMC driver, optionally with overclock.
++        N.B. This overlay is designed for situations where the mmc driver is
++        the default, so it disables the other (mmc) interface - this will kill
++        WiFi on a Pi3. If this isn't what you want, either use the sdtweak
++        overlay or the new sd_* dtparams of the base DTBs.
+ Load:   dtoverlay=sdhost,<param>=<val>
+ Params: overclock_50            Clock (in MHz) to use when the MMC framework
+                                 requests 50MHz
+@@ -771,6 +775,8 @@ Params: overclock_50            SD Clock
+ 
+ Name:   sdtweak
+ Info:   Tunes the bcm2835-sdhost SD/MMC driver
++        N.B. This functionality is now available via the sd_* dtparams in the
++        base DTB.
+ Load:   dtoverlay=sdtweak,<param>=<val>
+ Params: overclock_50            Clock (in MHz) to use when the MMC framework
+                                 requests 50MHz

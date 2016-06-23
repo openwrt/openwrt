@@ -1,0 +1,40 @@
+From 54ed8266a3502b38b9c23e4fe08a21f666c9dc52 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Mon, 29 Feb 2016 12:51:43 +0000
+Subject: [PATCH 263/381] clk: bcm2835: enable management of PCM clock
+
+Enable the PCM clock in the SOC, which is used by the
+bcm2835-i2s driver.
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 33b689600f43094a9316a1b582f2286d17bc737b)
+---
+ drivers/clk/bcm/clk-bcm2835.c       | 7 +++++++
+ include/dt-bindings/clock/bcm2835.h | 1 +
+ 2 files changed, 8 insertions(+)
+
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -1638,6 +1638,13 @@ static const struct bcm2835_clk_desc clk
+ 		.div_reg = CM_HSMDIV,
+ 		.int_bits = 4,
+ 		.frac_bits = 8),
++	[BCM2835_CLOCK_PCM]	= REGISTER_PER_CLK(
++		.name = "pcm",
++		.ctl_reg = CM_PCMCTL,
++		.div_reg = CM_PCMDIV,
++		.int_bits = 12,
++		.frac_bits = 12,
++		.is_mash_clock = true),
+ 	[BCM2835_CLOCK_PWM]	= REGISTER_PER_CLK(
+ 		.name = "pwm",
+ 		.ctl_reg = CM_PWMCTL,
+--- a/include/dt-bindings/clock/bcm2835.h
++++ b/include/dt-bindings/clock/bcm2835.h
+@@ -44,3 +44,4 @@
+ #define BCM2835_CLOCK_EMMC		28
+ #define BCM2835_CLOCK_PERI_IMAGE	29
+ #define BCM2835_CLOCK_PWM		30
++#define BCM2835_CLOCK_PCM		31

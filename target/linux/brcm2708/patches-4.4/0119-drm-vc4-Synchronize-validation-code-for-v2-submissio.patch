@@ -1,0 +1,612 @@
+From 2181b6ab6f7cddcd5ca908007a14fde90cc8d2b1 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 7 Dec 2015 12:35:01 -0800
+Subject: [PATCH 119/381] drm/vc4: Synchronize validation code for v2
+ submission upstream.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_drv.h       |  24 +--
+ drivers/gpu/drm/vc4/vc4_gem.c       |  14 +-
+ drivers/gpu/drm/vc4/vc4_render_cl.c |   6 +-
+ drivers/gpu/drm/vc4/vc4_validate.c  | 287 +++++++++++++++---------------------
+ 4 files changed, 135 insertions(+), 196 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -189,17 +189,6 @@ to_vc4_encoder(struct drm_encoder *encod
+ #define HVS_READ(offset) readl(vc4->hvs->regs + offset)
+ #define HVS_WRITE(offset, val) writel(val, vc4->hvs->regs + offset)
+ 
+-enum vc4_bo_mode {
+-	VC4_MODE_UNDECIDED,
+-	VC4_MODE_RENDER,
+-	VC4_MODE_SHADER,
+-};
+-
+-struct vc4_bo_exec_state {
+-	struct drm_gem_cma_object *bo;
+-	enum vc4_bo_mode mode;
+-};
+-
+ struct vc4_exec_info {
+ 	/* Sequence number for this bin/render job. */
+ 	uint64_t seqno;
+@@ -210,7 +199,7 @@ struct vc4_exec_info {
+ 	/* This is the array of BOs that were looked up at the start of exec.
+ 	 * Command validation will use indices into this array.
+ 	 */
+-	struct vc4_bo_exec_state *bo;
++	struct drm_gem_cma_object **bo;
+ 	uint32_t bo_count;
+ 
+ 	/* Pointers for our position in vc4->job_list */
+@@ -238,7 +227,6 @@ struct vc4_exec_info {
+ 	 * command lists.
+ 	 */
+ 	struct vc4_shader_state {
+-		uint8_t packet;
+ 		uint32_t addr;
+ 		/* Maximum vertex index referenced by any primitive using this
+ 		 * shader state.
+@@ -254,6 +242,7 @@ struct vc4_exec_info {
+ 	bool found_tile_binning_mode_config_packet;
+ 	bool found_start_tile_binning_packet;
+ 	bool found_increment_semaphore_packet;
++	bool found_flush;
+ 	uint8_t bin_tiles_x, bin_tiles_y;
+ 	struct drm_gem_cma_object *tile_bo;
+ 	uint32_t tile_alloc_offset;
+@@ -265,6 +254,9 @@ struct vc4_exec_info {
+ 	uint32_t ct0ca, ct0ea;
+ 	uint32_t ct1ca, ct1ea;
+ 
++	/* Pointer to the unvalidated bin CL (if present). */
++	void *bin_u;
++
+ 	/* Pointers to the shader recs.  These paddr gets incremented as CL
+ 	 * packets are relocated in validate_gl_shader_state, and the vaddrs
+ 	 * (u and v) get incremented and size decremented as the shader recs
+@@ -455,10 +447,8 @@ vc4_validate_bin_cl(struct drm_device *d
+ int
+ vc4_validate_shader_recs(struct drm_device *dev, struct vc4_exec_info *exec);
+ 
+-bool vc4_use_bo(struct vc4_exec_info *exec,
+-		uint32_t hindex,
+-		enum vc4_bo_mode mode,
+-		struct drm_gem_cma_object **obj);
++struct drm_gem_cma_object *vc4_use_bo(struct vc4_exec_info *exec,
++				      uint32_t hindex);
+ 
+ int vc4_get_rcl(struct drm_device *dev, struct vc4_exec_info *exec);
+ 
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -169,8 +169,8 @@ vc4_save_hang_state(struct drm_device *d
+ 	}
+ 
+ 	for (i = 0; i < exec->bo_count; i++) {
+-		drm_gem_object_reference(&exec->bo[i].bo->base);
+-		kernel_state->bo[i] = &exec->bo[i].bo->base;
++		drm_gem_object_reference(&exec->bo[i]->base);
++		kernel_state->bo[i] = &exec->bo[i]->base;
+ 	}
+ 
+ 	list_for_each_entry(bo, &exec->unref_list, unref_head) {
+@@ -397,7 +397,7 @@ vc4_update_bo_seqnos(struct vc4_exec_inf
+ 	unsigned i;
+ 
+ 	for (i = 0; i < exec->bo_count; i++) {
+-		bo = to_vc4_bo(&exec->bo[i].bo->base);
++		bo = to_vc4_bo(&exec->bo[i]->base);
+ 		bo->seqno = seqno;
+ 	}
+ 
+@@ -467,7 +467,7 @@ vc4_cl_lookup_bos(struct drm_device *dev
+ 		return -EINVAL;
+ 	}
+ 
+-	exec->bo = kcalloc(exec->bo_count, sizeof(struct vc4_bo_exec_state),
++	exec->bo = kcalloc(exec->bo_count, sizeof(struct drm_gem_cma_object *),
+ 			   GFP_KERNEL);
+ 	if (!exec->bo) {
+ 		DRM_ERROR("Failed to allocate validated BO pointers\n");
+@@ -500,7 +500,7 @@ vc4_cl_lookup_bos(struct drm_device *dev
+ 			goto fail;
+ 		}
+ 		drm_gem_object_reference(bo);
+-		exec->bo[i].bo = (struct drm_gem_cma_object *)bo;
++		exec->bo[i] = (struct drm_gem_cma_object *)bo;
+ 	}
+ 	spin_unlock(&file_priv->table_lock);
+ 
+@@ -591,6 +591,8 @@ vc4_get_bcl(struct drm_device *dev, stru
+ 
+ 	exec->ct0ca = exec->exec_bo->paddr + bin_offset;
+ 
++	exec->bin_u = bin;
++
+ 	exec->shader_rec_v = exec->exec_bo->vaddr + shader_rec_offset;
+ 	exec->shader_rec_p = exec->exec_bo->paddr + shader_rec_offset;
+ 	exec->shader_rec_size = args->shader_rec_size;
+@@ -622,7 +624,7 @@ vc4_complete_exec(struct drm_device *dev
+ 	mutex_lock(&dev->struct_mutex);
+ 	if (exec->bo) {
+ 		for (i = 0; i < exec->bo_count; i++)
+-			drm_gem_object_unreference(&exec->bo[i].bo->base);
++			drm_gem_object_unreference(&exec->bo[i]->base);
+ 		kfree(exec->bo);
+ 	}
+ 
+--- a/drivers/gpu/drm/vc4/vc4_render_cl.c
++++ b/drivers/gpu/drm/vc4/vc4_render_cl.c
+@@ -436,7 +436,8 @@ static int vc4_rcl_surface_setup(struct
+ 	if (surf->hindex == ~0)
+ 		return 0;
+ 
+-	if (!vc4_use_bo(exec, surf->hindex, VC4_MODE_RENDER, obj))
++	*obj = vc4_use_bo(exec, surf->hindex);
++	if (!*obj)
+ 		return -EINVAL;
+ 
+ 	if (surf->flags & VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES) {
+@@ -537,7 +538,8 @@ vc4_rcl_render_config_surface_setup(stru
+ 	if (surf->hindex == ~0)
+ 		return 0;
+ 
+-	if (!vc4_use_bo(exec, surf->hindex, VC4_MODE_RENDER, obj))
++	*obj = vc4_use_bo(exec, surf->hindex);
++	if (!*obj)
+ 		return -EINVAL;
+ 
+ 	if (tiling > VC4_TILING_FORMAT_LT) {
+--- a/drivers/gpu/drm/vc4/vc4_validate.c
++++ b/drivers/gpu/drm/vc4/vc4_validate.c
+@@ -94,42 +94,42 @@ size_is_lt(uint32_t width, uint32_t heig
+ 		height <= 4 * utile_height(cpp));
+ }
+ 
+-bool
+-vc4_use_bo(struct vc4_exec_info *exec,
+-	   uint32_t hindex,
+-	   enum vc4_bo_mode mode,
+-	   struct drm_gem_cma_object **obj)
++struct drm_gem_cma_object *
++vc4_use_bo(struct vc4_exec_info *exec, uint32_t hindex)
+ {
+-	*obj = NULL;
++	struct drm_gem_cma_object *obj;
++	struct vc4_bo *bo;
+ 
+ 	if (hindex >= exec->bo_count) {
+ 		DRM_ERROR("BO index %d greater than BO count %d\n",
+ 			  hindex, exec->bo_count);
+-		return false;
++		return NULL;
+ 	}
++	obj = exec->bo[hindex];
++	bo = to_vc4_bo(&obj->base);
+ 
+-	if (exec->bo[hindex].mode != mode) {
+-		if (exec->bo[hindex].mode == VC4_MODE_UNDECIDED) {
+-			exec->bo[hindex].mode = mode;
+-		} else {
+-			DRM_ERROR("BO index %d reused with mode %d vs %d\n",
+-				  hindex, exec->bo[hindex].mode, mode);
+-			return false;
+-		}
++	if (bo->validated_shader) {
++		DRM_ERROR("Trying to use shader BO as something other than "
++			  "a shader\n");
++		return NULL;
+ 	}
+ 
+-	*obj = exec->bo[hindex].bo;
+-	return true;
++	return obj;
++}
++
++static struct drm_gem_cma_object *
++vc4_use_handle(struct vc4_exec_info *exec, uint32_t gem_handles_packet_index)
++{
++	return vc4_use_bo(exec, exec->bo_index[gem_handles_packet_index]);
+ }
+ 
+ static bool
+-vc4_use_handle(struct vc4_exec_info *exec,
+-	       uint32_t gem_handles_packet_index,
+-	       enum vc4_bo_mode mode,
+-	       struct drm_gem_cma_object **obj)
++validate_bin_pos(struct vc4_exec_info *exec, void *untrusted, uint32_t pos)
+ {
+-	return vc4_use_bo(exec, exec->bo_index[gem_handles_packet_index],
+-			  mode, obj);
++	/* Note that the untrusted pointer passed to these functions is
++	 * incremented past the packet byte.
++	 */
++	return (untrusted - 1 == exec->bin_u + pos);
+ }
+ 
+ static uint32_t
+@@ -202,13 +202,13 @@ vc4_check_tex_size(struct vc4_exec_info
+ }
+ 
+ static int
+-validate_flush_all(VALIDATE_ARGS)
++validate_flush(VALIDATE_ARGS)
+ {
+-	if (exec->found_increment_semaphore_packet) {
+-		DRM_ERROR("VC4_PACKET_FLUSH_ALL after "
+-			  "VC4_PACKET_INCREMENT_SEMAPHORE\n");
++	if (!validate_bin_pos(exec, untrusted, exec->args->bin_cl_size - 1)) {
++		DRM_ERROR("Bin CL must end with VC4_PACKET_FLUSH\n");
+ 		return -EINVAL;
+ 	}
++	exec->found_flush = true;
+ 
+ 	return 0;
+ }
+@@ -233,17 +233,13 @@ validate_start_tile_binning(VALIDATE_ARG
+ static int
+ validate_increment_semaphore(VALIDATE_ARGS)
+ {
+-	if (exec->found_increment_semaphore_packet) {
+-		DRM_ERROR("Duplicate VC4_PACKET_INCREMENT_SEMAPHORE\n");
++	if (!validate_bin_pos(exec, untrusted, exec->args->bin_cl_size - 2)) {
++		DRM_ERROR("Bin CL must end with "
++			  "VC4_PACKET_INCREMENT_SEMAPHORE\n");
+ 		return -EINVAL;
+ 	}
+ 	exec->found_increment_semaphore_packet = true;
+ 
+-	/* Once we've found the semaphore increment, there should be one FLUSH
+-	 * then the end of the command list.  The FLUSH actually triggers the
+-	 * increment, so we only need to make sure there
+-	 */
+-
+ 	return 0;
+ }
+ 
+@@ -257,11 +253,6 @@ validate_indexed_prim_list(VALIDATE_ARGS
+ 	uint32_t index_size = (*(uint8_t *)(untrusted + 0) >> 4) ? 2 : 1;
+ 	struct vc4_shader_state *shader_state;
+ 
+-	if (exec->found_increment_semaphore_packet) {
+-		DRM_ERROR("Drawing after VC4_PACKET_INCREMENT_SEMAPHORE\n");
+-		return -EINVAL;
+-	}
+-
+ 	/* Check overflow condition */
+ 	if (exec->shader_state_count == 0) {
+ 		DRM_ERROR("shader state must precede primitives\n");
+@@ -272,7 +263,8 @@ validate_indexed_prim_list(VALIDATE_ARGS
+ 	if (max_index > shader_state->max_index)
+ 		shader_state->max_index = max_index;
+ 
+-	if (!vc4_use_handle(exec, 0, VC4_MODE_RENDER, &ib))
++	ib = vc4_use_handle(exec, 0);
++	if (!ib)
+ 		return -EINVAL;
+ 
+ 	if (offset > ib->base.size ||
+@@ -295,11 +287,6 @@ validate_gl_array_primitive(VALIDATE_ARG
+ 	uint32_t max_index;
+ 	struct vc4_shader_state *shader_state;
+ 
+-	if (exec->found_increment_semaphore_packet) {
+-		DRM_ERROR("Drawing after VC4_PACKET_INCREMENT_SEMAPHORE\n");
+-		return -EINVAL;
+-	}
+-
+ 	/* Check overflow condition */
+ 	if (exec->shader_state_count == 0) {
+ 		DRM_ERROR("shader state must precede primitives\n");
+@@ -329,7 +316,6 @@ validate_gl_shader_state(VALIDATE_ARGS)
+ 		return -EINVAL;
+ 	}
+ 
+-	exec->shader_state[i].packet = VC4_PACKET_GL_SHADER_STATE;
+ 	exec->shader_state[i].addr = *(uint32_t *)untrusted;
+ 	exec->shader_state[i].max_index = 0;
+ 
+@@ -348,31 +334,6 @@ validate_gl_shader_state(VALIDATE_ARGS)
+ }
+ 
+ static int
+-validate_nv_shader_state(VALIDATE_ARGS)
+-{
+-	uint32_t i = exec->shader_state_count++;
+-
+-	if (i >= exec->shader_state_size) {
+-		DRM_ERROR("More requests for shader states than declared\n");
+-		return -EINVAL;
+-	}
+-
+-	exec->shader_state[i].packet = VC4_PACKET_NV_SHADER_STATE;
+-	exec->shader_state[i].addr = *(uint32_t *)untrusted;
+-
+-	if (exec->shader_state[i].addr & 15) {
+-		DRM_ERROR("NV shader state address 0x%08x misaligned\n",
+-			  exec->shader_state[i].addr);
+-		return -EINVAL;
+-	}
+-
+-	*(uint32_t *)validated = (exec->shader_state[i].addr +
+-				  exec->shader_rec_p);
+-
+-	return 0;
+-}
+-
+-static int
+ validate_tile_binning_config(VALIDATE_ARGS)
+ {
+ 	struct drm_device *dev = exec->exec_bo->base.dev;
+@@ -473,8 +434,8 @@ static const struct cmd_info {
+ } cmd_info[] = {
+ 	VC4_DEFINE_PACKET(VC4_PACKET_HALT, NULL),
+ 	VC4_DEFINE_PACKET(VC4_PACKET_NOP, NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_FLUSH, NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_FLUSH_ALL, validate_flush_all),
++	VC4_DEFINE_PACKET(VC4_PACKET_FLUSH, validate_flush),
++	VC4_DEFINE_PACKET(VC4_PACKET_FLUSH_ALL, NULL),
+ 	VC4_DEFINE_PACKET(VC4_PACKET_START_TILE_BINNING,
+ 			  validate_start_tile_binning),
+ 	VC4_DEFINE_PACKET(VC4_PACKET_INCREMENT_SEMAPHORE,
+@@ -488,7 +449,6 @@ static const struct cmd_info {
+ 	VC4_DEFINE_PACKET(VC4_PACKET_PRIMITIVE_LIST_FORMAT, NULL),
+ 
+ 	VC4_DEFINE_PACKET(VC4_PACKET_GL_SHADER_STATE, validate_gl_shader_state),
+-	VC4_DEFINE_PACKET(VC4_PACKET_NV_SHADER_STATE, validate_nv_shader_state),
+ 
+ 	VC4_DEFINE_PACKET(VC4_PACKET_CONFIGURATION_BITS, NULL),
+ 	VC4_DEFINE_PACKET(VC4_PACKET_FLAT_SHADE_FLAGS, NULL),
+@@ -575,8 +535,16 @@ vc4_validate_bin_cl(struct drm_device *d
+ 		return -EINVAL;
+ 	}
+ 
+-	if (!exec->found_increment_semaphore_packet) {
+-		DRM_ERROR("Bin CL missing VC4_PACKET_INCREMENT_SEMAPHORE\n");
++	/* The bin CL must be ended with INCREMENT_SEMAPHORE and FLUSH.  The
++	 * semaphore is used to trigger the render CL to start up, and the
++	 * FLUSH is what caps the bin lists with
++	 * VC4_PACKET_RETURN_FROM_SUB_LIST (so they jump back to the main
++	 * render CL when they get called to) and actually triggers the queued
++	 * semaphore increment.
++	 */
++	if (!exec->found_increment_semaphore_packet || !exec->found_flush) {
++		DRM_ERROR("Bin CL missing VC4_PACKET_INCREMENT_SEMAPHORE + "
++			  "VC4_PACKET_FLUSH\n");
+ 		return -EINVAL;
+ 	}
+ 
+@@ -607,7 +575,8 @@ reloc_tex(struct vc4_exec_info *exec,
+ 	uint32_t cube_map_stride = 0;
+ 	enum vc4_texture_data_type type;
+ 
+-	if (!vc4_use_bo(exec, texture_handle_index, VC4_MODE_RENDER, &tex))
++	tex = vc4_use_bo(exec, texture_handle_index);
++	if (!tex)
+ 		return false;
+ 
+ 	if (sample->is_direct) {
+@@ -755,51 +724,28 @@ reloc_tex(struct vc4_exec_info *exec,
+ }
+ 
+ static int
+-validate_shader_rec(struct drm_device *dev,
+-		    struct vc4_exec_info *exec,
+-		    struct vc4_shader_state *state)
++validate_gl_shader_rec(struct drm_device *dev,
++		       struct vc4_exec_info *exec,
++		       struct vc4_shader_state *state)
+ {
+ 	uint32_t *src_handles;
+ 	void *pkt_u, *pkt_v;
+-	enum shader_rec_reloc_type {
+-		RELOC_CODE,
+-		RELOC_VBO,
+-	};
+-	struct shader_rec_reloc {
+-		enum shader_rec_reloc_type type;
+-		uint32_t offset;
+-	};
+-	static const struct shader_rec_reloc gl_relocs[] = {
+-		{ RELOC_CODE, 4 },  /* fs */
+-		{ RELOC_CODE, 16 }, /* vs */
+-		{ RELOC_CODE, 28 }, /* cs */
+-	};
+-	static const struct shader_rec_reloc nv_relocs[] = {
+-		{ RELOC_CODE, 4 }, /* fs */
+-		{ RELOC_VBO, 12 }
++	static const uint32_t shader_reloc_offsets[] = {
++		4, /* fs */
++		16, /* vs */
++		28, /* cs */
+ 	};
+-	const struct shader_rec_reloc *relocs;
+-	struct drm_gem_cma_object *bo[ARRAY_SIZE(gl_relocs) + 8];
+-	uint32_t nr_attributes = 0, nr_fixed_relocs, nr_relocs, packet_size;
++	uint32_t shader_reloc_count = ARRAY_SIZE(shader_reloc_offsets);
++	struct drm_gem_cma_object *bo[shader_reloc_count + 8];
++	uint32_t nr_attributes, nr_relocs, packet_size;
+ 	int i;
+-	struct vc4_validated_shader_info *shader;
+ 
+-	if (state->packet == VC4_PACKET_NV_SHADER_STATE) {
+-		relocs = nv_relocs;
+-		nr_fixed_relocs = ARRAY_SIZE(nv_relocs);
+-
+-		packet_size = 16;
+-	} else {
+-		relocs = gl_relocs;
+-		nr_fixed_relocs = ARRAY_SIZE(gl_relocs);
+-
+-		nr_attributes = state->addr & 0x7;
+-		if (nr_attributes == 0)
+-			nr_attributes = 8;
+-		packet_size = gl_shader_rec_size(state->addr);
+-	}
+-	nr_relocs = nr_fixed_relocs + nr_attributes;
++	nr_attributes = state->addr & 0x7;
++	if (nr_attributes == 0)
++		nr_attributes = 8;
++	packet_size = gl_shader_rec_size(state->addr);
+ 
++	nr_relocs = ARRAY_SIZE(shader_reloc_offsets) + nr_attributes;
+ 	if (nr_relocs * 4 > exec->shader_rec_size) {
+ 		DRM_ERROR("overflowed shader recs reading %d handles "
+ 			  "from %d bytes left\n",
+@@ -829,21 +775,30 @@ validate_shader_rec(struct drm_device *d
+ 	exec->shader_rec_v += roundup(packet_size, 16);
+ 	exec->shader_rec_size -= packet_size;
+ 
+-	for (i = 0; i < nr_relocs; i++) {
+-		enum vc4_bo_mode mode;
++	if (!(*(uint16_t *)pkt_u & VC4_SHADER_FLAG_FS_SINGLE_THREAD)) {
++		DRM_ERROR("Multi-threaded fragment shaders not supported.\n");
++		return -EINVAL;
++	}
+ 
+-		if (i < nr_fixed_relocs && relocs[i].type == RELOC_CODE)
+-			mode = VC4_MODE_SHADER;
+-		else
+-			mode = VC4_MODE_RENDER;
++	for (i = 0; i < shader_reloc_count; i++) {
++		if (src_handles[i] > exec->bo_count) {
++			DRM_ERROR("Shader handle %d too big\n", src_handles[i]);
++			return -EINVAL;
++		}
+ 
+-		if (!vc4_use_bo(exec, src_handles[i], mode, &bo[i]))
+-			return false;
++		bo[i] = exec->bo[src_handles[i]];
++		if (!bo[i])
++			return -EINVAL;
++	}
++	for (i = shader_reloc_count; i < nr_relocs; i++) {
++		bo[i] = vc4_use_bo(exec, src_handles[i]);
++		if (!bo[i])
++			return -EINVAL;
+ 	}
+ 
+-	for (i = 0; i < nr_fixed_relocs; i++) {
+-		struct vc4_bo *vc4_bo;
+-		uint32_t o = relocs[i].offset;
++	for (i = 0; i < shader_reloc_count; i++) {
++		struct vc4_validated_shader_info *validated_shader;
++		uint32_t o = shader_reloc_offsets[i];
+ 		uint32_t src_offset = *(uint32_t *)(pkt_u + o);
+ 		uint32_t *texture_handles_u;
+ 		void *uniform_data_u;
+@@ -851,57 +806,50 @@ validate_shader_rec(struct drm_device *d
+ 
+ 		*(uint32_t *)(pkt_v + o) = bo[i]->paddr + src_offset;
+ 
+-		switch (relocs[i].type) {
+-		case RELOC_CODE:
+-			if (src_offset != 0) {
+-				DRM_ERROR("Shaders must be at offset 0 "
+-					  "of the BO.\n");
+-				goto fail;
+-			}
++		if (src_offset != 0) {
++			DRM_ERROR("Shaders must be at offset 0 of "
++				  "the BO.\n");
++			return -EINVAL;
++		}
+ 
+-			vc4_bo = to_vc4_bo(&bo[i]->base);
+-			shader = vc4_bo->validated_shader;
+-			if (!shader)
+-				goto fail;
++		validated_shader = to_vc4_bo(&bo[i]->base)->validated_shader;
++		if (!validated_shader)
++			return -EINVAL;
+ 
+-			if (shader->uniforms_src_size > exec->uniforms_size) {
+-				DRM_ERROR("Uniforms src buffer overflow\n");
+-				goto fail;
+-			}
++		if (validated_shader->uniforms_src_size >
++		    exec->uniforms_size) {
++			DRM_ERROR("Uniforms src buffer overflow\n");
++			return -EINVAL;
++		}
+ 
+-			texture_handles_u = exec->uniforms_u;
+-			uniform_data_u = (texture_handles_u +
+-					  shader->num_texture_samples);
+-
+-			memcpy(exec->uniforms_v, uniform_data_u,
+-			       shader->uniforms_size);
+-
+-			for (tex = 0;
+-			     tex < shader->num_texture_samples;
+-			     tex++) {
+-				if (!reloc_tex(exec,
+-					       uniform_data_u,
+-					       &shader->texture_samples[tex],
+-					       texture_handles_u[tex])) {
+-					goto fail;
+-				}
++		texture_handles_u = exec->uniforms_u;
++		uniform_data_u = (texture_handles_u +
++				  validated_shader->num_texture_samples);
++
++		memcpy(exec->uniforms_v, uniform_data_u,
++		       validated_shader->uniforms_size);
++
++		for (tex = 0;
++		     tex < validated_shader->num_texture_samples;
++		     tex++) {
++			if (!reloc_tex(exec,
++				       uniform_data_u,
++				       &validated_shader->texture_samples[tex],
++				       texture_handles_u[tex])) {
++				return -EINVAL;
+ 			}
++		}
+ 
+-			*(uint32_t *)(pkt_v + o + 4) = exec->uniforms_p;
+-
+-			exec->uniforms_u += shader->uniforms_src_size;
+-			exec->uniforms_v += shader->uniforms_size;
+-			exec->uniforms_p += shader->uniforms_size;
+-
+-			break;
++		*(uint32_t *)(pkt_v + o + 4) = exec->uniforms_p;
+ 
+-		case RELOC_VBO:
+-			break;
+-		}
++		exec->uniforms_u += validated_shader->uniforms_src_size;
++		exec->uniforms_v += validated_shader->uniforms_size;
++		exec->uniforms_p += validated_shader->uniforms_size;
+ 	}
+ 
+ 	for (i = 0; i < nr_attributes; i++) {
+-		struct drm_gem_cma_object *vbo = bo[nr_fixed_relocs + i];
++		struct drm_gem_cma_object *vbo =
++			bo[ARRAY_SIZE(shader_reloc_offsets) + i];
+ 		uint32_t o = 36 + i * 8;
+ 		uint32_t offset = *(uint32_t *)(pkt_u + o + 0);
+ 		uint32_t attr_size = *(uint8_t *)(pkt_u + o + 4) + 1;
+@@ -933,9 +881,6 @@ validate_shader_rec(struct drm_device *d
+ 	}
+ 
+ 	return 0;
+-
+-fail:
+-	return -EINVAL;
+ }
+ 
+ int
+@@ -946,7 +891,7 @@ vc4_validate_shader_recs(struct drm_devi
+ 	int ret = 0;
+ 
+ 	for (i = 0; i < exec->shader_state_count; i++) {
+-		ret = validate_shader_rec(dev, exec, &exec->shader_state[i]);
++		ret = validate_gl_shader_rec(dev, exec, &exec->shader_state[i]);
+ 		if (ret)
+ 			return ret;
+ 	}

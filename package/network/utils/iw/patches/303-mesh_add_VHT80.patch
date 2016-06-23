@@ -15,8 +15,6 @@ Signed-off-by: Sven Eckelmann <sven@open-mesh.com>
  util.c | 26 ++++++++++++++++++++++++++
  4 files changed, 43 insertions(+), 41 deletions(-)
 
-diff --git a/ibss.c b/ibss.c
-index 23bda70..ac06fc5 100644
 --- a/ibss.c
 +++ b/ibss.c
 @@ -16,39 +16,6 @@
@@ -59,8 +57,6 @@ index 23bda70..ac06fc5 100644
  static int join_ibss(struct nl80211_state *state,
  		     struct nl_msg *msg,
  		     int argc, char **argv,
-diff --git a/iw.h b/iw.h
-index cef9da8..8e1a37a 100644
 --- a/iw.h
 +++ b/iw.h
 @@ -59,6 +59,13 @@ struct cmd {
@@ -77,7 +73,7 @@ index cef9da8..8e1a37a 100644
  #define ARRAY_SIZE(ar) (sizeof(ar)/sizeof(ar[0]))
  #define DIV_ROUND_UP(x, y) (((x) + (y - 1)) / (y))
  
-@@ -174,6 +181,8 @@ void print_ies(unsigned char *ie, int ielen, bool unknown,
+@@ -174,6 +181,8 @@ void print_ies(unsigned char *ie, int ie
  void parse_bitrate(struct nlattr *bitrate_attr, char *buf, int buflen);
  void iw_hexdump(const char *prefix, const __u8 *data, size_t len);
  
@@ -86,11 +82,9 @@ index cef9da8..8e1a37a 100644
  #define SCHED_SCAN_OPTIONS "interval <in_msecs> [delay <in_secs>] " \
  	"[freqs <freq>+] [matches [ssid <ssid>]+]] [active [ssid <ssid>]+|passive] [randomise[=<addr>/<mask>]]"
  int parse_sched_scan(struct nl_msg *msg, int *argc, char ***argv);
-diff --git a/mesh.c b/mesh.c
-index 0090530..930d58f 100644
 --- a/mesh.c
 +++ b/mesh.c
-@@ -439,12 +439,8 @@ static int join_mesh(struct nl80211_state *state,
+@@ -439,12 +439,8 @@ static int join_mesh(struct nl80211_stat
  	int bintval, dtim_period, i, n_rates = 0;
  	char *end, *value = NULL, *sptr = NULL;
  	unsigned long freq = 0;
@@ -105,7 +99,7 @@ index 0090530..930d58f 100644
  		{ .name = "HT20",
  		  .width = NL80211_CHAN_WIDTH_20,
  		  .freq1_diff = 0,
-@@ -461,6 +457,10 @@ static int join_mesh(struct nl80211_state *state,
+@@ -461,6 +457,10 @@ static int join_mesh(struct nl80211_stat
  		  .width = NL80211_CHAN_WIDTH_20_NOHT,
  		  .freq1_diff = 0,
  		  .chantype = NL80211_CHAN_NO_HT },
@@ -116,7 +110,7 @@ index 0090530..930d58f 100644
  	};
  
  	if (argc < 1)
-@@ -497,7 +497,7 @@ static int join_mesh(struct nl80211_state *state,
+@@ -497,7 +497,7 @@ static int join_mesh(struct nl80211_stat
  			NLA_PUT_U32(msg, NL80211_ATTR_CHANNEL_WIDTH,
  				    chanmode_selected->width);
  			NLA_PUT_U32(msg, NL80211_ATTR_CENTER_FREQ1,
@@ -125,7 +119,7 @@ index 0090530..930d58f 100644
  			if (chanmode_selected->chantype != -1)
  				NLA_PUT_U32(msg,
  					    NL80211_ATTR_WIPHY_CHANNEL_TYPE,
-@@ -599,7 +599,7 @@ static int join_mesh(struct nl80211_state *state,
+@@ -599,7 +599,7 @@ static int join_mesh(struct nl80211_stat
   nla_put_failure:
  	return -ENOBUFS;
  }
@@ -134,11 +128,9 @@ index 0090530..930d58f 100644
  	" [basic-rates <rate in Mbps,rate2,...>]], [mcast-rate <rate in Mbps>]"
  	" [beacon-interval <time in TUs>] [dtim-period <value>]"
  	" [vendor_sync on|off] [<param>=<value>]*",
-diff --git a/util.c b/util.c
-index 4efc4c8..d75ffe0 100644
 --- a/util.c
 +++ b/util.c
-@@ -728,3 +728,29 @@ void iw_hexdump(const char *prefix, const __u8 *buf, size_t size)
+@@ -728,3 +728,29 @@ void iw_hexdump(const char *prefix, cons
  	}
  	printf("\n\n");
  }

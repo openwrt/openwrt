@@ -1,0 +1,153 @@
+From 932891dd324ddfc1f8dc2e064a3504f3e120f874 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 2 Nov 2015 17:07:33 +0000
+Subject: [PATCH 101/381] drm/vc4: Enable VC4 modules, and increase CMA size
+ with overlay
+
+If using the overlay, be careful not to boot to GUI or run startx,
+or the Pi will almost hang, reporting stalls in kernel threads.
+---
+ arch/arm/boot/dts/overlays/README                  |  8 ++
+ arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts | 95 ++++++++++++++++++++++
+ arch/arm/configs/bcm2709_defconfig                 |  2 +
+ arch/arm/configs/bcmrpi_defconfig                  |  2 +
+ 4 files changed, 107 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -601,6 +601,14 @@ Params: txd1_pin                 GPIO pi
+         rxd1_pin                 GPIO pin for RXD1 (15, 33 or 41 - default 15)
+ 
+ 
++Name:   vc4-kms-v3d
++Info:   Enable Eric Anholt's DRM VC4 HDMI/HVS/V3D driver. Running startx or
++        booting to GUI while this overlay is in use will cause interesting
++        lockups.
++Load:   dtoverlay=vc4-kms-v3d
++Params: <None>
++
++
+ Name:   vga666
+ Info:   Overlay for the Fen Logic VGA666 board
+         This uses GPIOs 2-21 (so no I2C), and activates the output 2-3 seconds
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
+@@ -0,0 +1,95 @@
++/*
++ * vc4-kms-v3d-overlay.dts
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include "dt-bindings/clock/bcm2835.h"
++#include "dt-bindings/gpio/gpio.h"
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&i2c2>;
++		__overlay__  {
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&cprman>;
++		__overlay__  {
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target = <&fb>;
++		__overlay__  {
++			status = "disabled";
++		};
++	};
++
++	fragment@3 {
++		target = <&soc>;
++		__overlay__  {
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			pixelvalve@7e206000 {
++				compatible = "brcm,bcm2835-pixelvalve0";
++				reg = <0x7e206000 0x100>;
++				interrupts = <2 13>; /* pwa0 */
++			};
++
++			pixelvalve@7e207000 {
++				compatible = "brcm,bcm2835-pixelvalve1";
++				reg = <0x7e207000 0x100>;
++				interrupts = <2 14>; /* pwa1 */
++			};
++
++			hvs@7e400000 {
++				compatible = "brcm,bcm2835-hvs";
++				reg = <0x7e400000 0x6000>;
++				interrupts = <2 1>;
++			};
++
++			pixelvalve@7e807000 {
++				compatible = "brcm,bcm2835-pixelvalve2";
++				reg = <0x7e807000 0x100>;
++				interrupts = <2 10>; /* pixelvalve */
++			};
++
++			hdmi@7e902000 {
++				compatible = "brcm,bcm2835-hdmi";
++				reg = <0x7e902000 0x600>,
++				      <0x7e808000 0x100>;
++				interrupts = <2 8>, <2 9>;
++				ddc = <&i2c2>;
++				hpd-gpio = <&gpio 46 GPIO_ACTIVE_HIGH>;
++				clocks = <&cprman BCM2835_PLLH_PIX>,
++					 <&cprman BCM2835_CLOCK_HSM>;
++				clock-names = "pixel", "hdmi";
++			};
++
++			v3d@7ec00000 {
++				compatible = "brcm,vc4-v3d";
++				reg = <0x7ec00000 0x1000>;
++				interrupts = <1 10>;
++			};
++
++			gpu@7e4c0000 {
++				compatible = "brcm,bcm2835-vc4";
++			};
++		};
++	};
++
++	fragment@4 {
++		target-path = "/chosen";
++		__overlay__ {
++			bootargs = "cma=256M@512M";
++		};
++	};
++};
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -802,6 +802,8 @@ CONFIG_VIDEO_TW9903=m
+ CONFIG_VIDEO_TW9906=m
+ CONFIG_VIDEO_OV7640=m
+ CONFIG_VIDEO_MT9V011=m
++CONFIG_DRM=m
++CONFIG_DRM_VC4=m
+ CONFIG_FB=y
+ CONFIG_FB_BCM2708=y
+ CONFIG_FB_UDL=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -795,6 +795,8 @@ CONFIG_VIDEO_TW9903=m
+ CONFIG_VIDEO_TW9906=m
+ CONFIG_VIDEO_OV7640=m
+ CONFIG_VIDEO_MT9V011=m
++CONFIG_DRM=m
++CONFIG_DRM_VC4=m
+ CONFIG_FB=y
+ CONFIG_FB_BCM2708=y
+ CONFIG_FB_UDL=m

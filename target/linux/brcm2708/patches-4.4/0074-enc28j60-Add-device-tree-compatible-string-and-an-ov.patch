@@ -1,0 +1,29 @@
+From 3a1b6b5d57c7f92e98338172dec58c8cd3f2141f Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 27 Feb 2015 15:10:24 +0000
+Subject: [PATCH 074/381] enc28j60: Add device tree compatible string and an
+ overlay
+
+---
+ drivers/net/ethernet/microchip/enc28j60.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/net/ethernet/microchip/enc28j60.c
++++ b/drivers/net/ethernet/microchip/enc28j60.c
+@@ -1630,9 +1630,16 @@ static int enc28j60_remove(struct spi_de
+ 	return 0;
+ }
+ 
++static const struct of_device_id enc28j60_of_match[] = {
++	{ .compatible = "microchip,enc28j60", },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, enc28j60_of_match);
++
+ static struct spi_driver enc28j60_driver = {
+ 	.driver = {
+ 		   .name = DRV_NAME,
++		   .of_match_table = enc28j60_of_match,
+ 	 },
+ 	.probe = enc28j60_probe,
+ 	.remove = enc28j60_remove,

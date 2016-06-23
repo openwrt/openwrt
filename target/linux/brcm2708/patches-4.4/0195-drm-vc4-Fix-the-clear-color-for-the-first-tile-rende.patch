@@ -1,0 +1,49 @@
+From ae56f926164bc10a43c6a1b1cb6576d59a96893c Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 25 Jan 2016 13:52:41 -0800
+Subject: [PATCH 195/381] drm/vc4: Fix the clear color for the first tile
+ rendered.
+
+Apparently in hardware (as opposed to simulation), the clear colors
+need to be uploaded before the render config, otherwise they won't
+take effect.  Fixes igt's vc4_wait_bo/used-bo-* subtests.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_render_cl.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_render_cl.c
++++ b/drivers/gpu/drm/vc4/vc4_render_cl.c
+@@ -321,15 +321,6 @@ static int vc4_create_rcl_bo(struct drm_
+ 	list_add_tail(&to_vc4_bo(&setup->rcl->base)->unref_head,
+ 		      &exec->unref_list);
+ 
+-	rcl_u8(setup, VC4_PACKET_TILE_RENDERING_MODE_CONFIG);
+-	rcl_u32(setup,
+-		(setup->color_write ? (setup->color_write->paddr +
+-				       args->color_write.offset) :
+-		 0));
+-	rcl_u16(setup, args->width);
+-	rcl_u16(setup, args->height);
+-	rcl_u16(setup, args->color_write.bits);
+-
+ 	/* The tile buffer gets cleared when the previous tile is stored.  If
+ 	 * the clear values changed between frames, then the tile buffer has
+ 	 * stale clear values in it, so we have to do a store in None mode (no
+@@ -349,6 +340,15 @@ static int vc4_create_rcl_bo(struct drm_
+ 		rcl_u32(setup, 0); /* no address, since we're in None mode */
+ 	}
+ 
++	rcl_u8(setup, VC4_PACKET_TILE_RENDERING_MODE_CONFIG);
++	rcl_u32(setup,
++		(setup->color_write ? (setup->color_write->paddr +
++				       args->color_write.offset) :
++		 0));
++	rcl_u16(setup, args->width);
++	rcl_u16(setup, args->height);
++	rcl_u16(setup, args->color_write.bits);
++
+ 	for (y = min_y_tile; y <= max_y_tile; y++) {
+ 		for (x = min_x_tile; x <= max_x_tile; x++) {
+ 			bool first = (x == min_x_tile && y == min_y_tile);

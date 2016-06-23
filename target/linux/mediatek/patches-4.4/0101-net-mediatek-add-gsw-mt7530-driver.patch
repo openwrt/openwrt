@@ -1,0 +1,2360 @@
+From 6b8a7257e7bcb56782c3f8048311670fe6a80209 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 11 Apr 2016 03:11:54 +0200
+Subject: [PATCH 101/102] net: mediatek add gsw/mt7530 driver
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/ethernet/mediatek/Makefile      |    2 +-
+ drivers/net/ethernet/mediatek/gsw_mt7620.h  |  251 +++++++
+ drivers/net/ethernet/mediatek/gsw_mt7623.c  | 1084 +++++++++++++++++++++++++++
+ drivers/net/ethernet/mediatek/mt7530.c      |  808 ++++++++++++++++++++
+ drivers/net/ethernet/mediatek/mt7530.h      |   20 +
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |   59 +-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |    5 +
+ 7 files changed, 2199 insertions(+), 30 deletions(-)
+ create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7620.h
+ create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7623.c
+ create mode 100644 drivers/net/ethernet/mediatek/mt7530.c
+ create mode 100644 drivers/net/ethernet/mediatek/mt7530.h
+
+--- a/drivers/net/ethernet/mediatek/Makefile
++++ b/drivers/net/ethernet/mediatek/Makefile
+@@ -2,4 +2,4 @@
+ # Makefile for the Mediatek SoCs built-in ethernet macs
+ #
+ 
+-obj-$(CONFIG_NET_MEDIATEK_SOC)			+= mtk_eth_soc.o
++obj-$(CONFIG_NET_MEDIATEK_SOC)			+= mt7530.o gsw_mt7623.o mtk_eth_soc.o
+--- /dev/null
++++ b/drivers/net/ethernet/mediatek/gsw_mt7620.h
+@@ -0,0 +1,251 @@
++/*   This program is free software; you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; version 2 of the License
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *   GNU General Public License for more details.
++ *
++ *   Copyright (C) 2009-2016 John Crispin <blogic@openwrt.org>
++ *   Copyright (C) 2009-2016 Felix Fietkau <nbd@nbd.name>
++ *   Copyright (C) 2013-2016 Michael Lee <igvtee@gmail.com>
++ */
++
++#ifndef _RALINK_GSW_MT7620_H__
++#define _RALINK_GSW_MT7620_H__
++
++#define GSW_REG_PHY_TIMEOUT	(5 * HZ)
++
++#define MT7620_GSW_REG_PIAC	0x0004
++
++#define GSW_NUM_VLANS		16
++#define GSW_NUM_VIDS		4096
++#define GSW_NUM_PORTS		7
++#define GSW_PORT6		6
++
++#define GSW_MDIO_ACCESS		BIT(31)
++#define GSW_MDIO_READ		BIT(19)
++#define GSW_MDIO_WRITE		BIT(18)
++#define GSW_MDIO_START		BIT(16)
++#define GSW_MDIO_ADDR_SHIFT	20
++#define GSW_MDIO_REG_SHIFT	25
++
++#define GSW_REG_PORT_PMCR(x)	(0x3000 + (x * 0x100))
++#define GSW_REG_PORT_STATUS(x)	(0x3008 + (x * 0x100))
++#define GSW_REG_SMACCR0		0x3fE4
++#define GSW_REG_SMACCR1		0x3fE8
++#define GSW_REG_CKGCR		0x3ff0
++
++#define GSW_REG_IMR		0x7008
++#define GSW_REG_ISR		0x700c
++#define GSW_REG_GPC1		0x7014
++
++#define SYSC_REG_CHIP_REV_ID	0x0c
++#define SYSC_REG_CFG		0x10
++#define SYSC_REG_CFG1		0x14
++#define RST_CTRL_MCM		BIT(2)
++#define SYSC_PAD_RGMII2_MDIO	0x58
++#define SYSC_GPIO_MODE		0x60
++
++#define PORT_IRQ_ST_CHG		0x7f
++
++#define MT7621_ESW_PHY_POLLING	0x0000
++#define MT7620_ESW_PHY_POLLING	0x7000
++
++#define	PMCR_IPG		BIT(18)
++#define	PMCR_MAC_MODE		BIT(16)
++#define	PMCR_FORCE		BIT(15)
++#define	PMCR_TX_EN		BIT(14)
++#define	PMCR_RX_EN		BIT(13)
++#define	PMCR_BACKOFF		BIT(9)
++#define	PMCR_BACKPRES		BIT(8)
++#define	PMCR_RX_FC		BIT(5)
++#define	PMCR_TX_FC		BIT(4)
++#define	PMCR_SPEED(_x)		(_x << 2)
++#define	PMCR_DUPLEX		BIT(1)
++#define	PMCR_LINK		BIT(0)
++
++#define PHY_AN_EN		BIT(31)
++#define PHY_PRE_EN		BIT(30)
++#define PMY_MDC_CONF(_x)	((_x & 0x3f) << 24)
++
++/* ethernet subsystem config register */
++#define ETHSYS_SYSCFG0		0x14
++/* ethernet subsystem clock register */
++#define ETHSYS_CLKCFG0		0x2c
++#define ETHSYS_TRGMII_CLK_SEL362_5	BIT(11)
++
++/* p5 RGMII wrapper TX clock control register */
++#define MT7530_P5RGMIITXCR	0x7b04
++/* p5 RGMII wrapper RX clock control register */
++#define MT7530_P5RGMIIRXCR	0x7b00
++/* TRGMII TDX ODT registers */
++#define MT7530_TRGMII_TD0_ODT	0x7a54
++#define MT7530_TRGMII_TD1_ODT	0x7a5c
++#define MT7530_TRGMII_TD2_ODT	0x7a64
++#define MT7530_TRGMII_TD3_ODT	0x7a6c
++#define MT7530_TRGMII_TD4_ODT	0x7a74
++#define MT7530_TRGMII_TD5_ODT	0x7a7c
++/* TRGMII TCK ctrl register */
++#define MT7530_TRGMII_TCK_CTRL	0x7a78
++/* TRGMII Tx ctrl register */
++#define MT7530_TRGMII_TXCTRL	0x7a40
++/* port 6 extended control register */
++#define MT7530_P6ECR            0x7830
++/* IO driver control register */
++#define MT7530_IO_DRV_CR	0x7810
++/* top signal control register */
++#define MT7530_TOP_SIG_CTRL	0x7808
++/* modified hwtrap register */
++#define MT7530_MHWTRAP		0x7804
++/* hwtrap status register */
++#define MT7530_HWTRAP		0x7800
++/* status interrupt register */
++#define MT7530_SYS_INT_STS	0x700c
++/* system nterrupt register */
++#define MT7530_SYS_INT_EN	0x7008
++/* system control register */
++#define MT7530_SYS_CTRL		0x7000
++/* port MAC status register */
++#define MT7530_PMSR_P(x)	(0x3008 + (x * 0x100))
++/* port MAC control register */
++#define MT7530_PMCR_P(x)	(0x3000 + (x * 0x100))
++
++#define MT7621_XTAL_SHIFT	6
++#define MT7621_XTAL_MASK	0x7
++#define MT7621_XTAL_25		6
++#define MT7621_XTAL_40		3
++#define MT7621_MDIO_DRV_MASK	(3 << 4)
++#define MT7621_GE1_MODE_MASK	(3 << 12)
++
++#define TRGMII_TXCTRL_TXC_INV	BIT(30)
++#define P6ECR_INTF_MODE_RGMII	BIT(1)
++#define P5RGMIIRXCR_C_ALIGN	BIT(8)
++#define P5RGMIIRXCR_DELAY_2	BIT(1)
++#define P5RGMIITXCR_DELAY_2	(BIT(8) | BIT(2))
++
++/* TOP_SIG_CTRL bits */
++#define TOP_SIG_CTRL_NORMAL	(BIT(17) | BIT(16))
++
++/* MHWTRAP bits */
++#define MHWTRAP_MANUAL		BIT(16)
++#define MHWTRAP_P5_MAC_SEL	BIT(13)
++#define MHWTRAP_P6_DIS		BIT(8)
++#define MHWTRAP_P5_RGMII_MODE	BIT(7)
++#define MHWTRAP_P5_DIS		BIT(6)
++#define MHWTRAP_PHY_ACCESS	BIT(5)
++
++/* HWTRAP bits */
++#define HWTRAP_XTAL_SHIFT	9
++#define HWTRAP_XTAL_MASK	0x3
++
++/* SYS_CTRL bits */
++#define SYS_CTRL_SW_RST		BIT(1)
++#define SYS_CTRL_REG_RST	BIT(0)
++
++/* PMCR bits */
++#define PMCR_IFG_XMIT_96	BIT(18)
++#define PMCR_MAC_MODE		BIT(16)
++#define PMCR_FORCE_MODE		BIT(15)
++#define PMCR_TX_EN		BIT(14)
++#define PMCR_RX_EN		BIT(13)
++#define PMCR_BACK_PRES_EN	BIT(9)
++#define PMCR_BACKOFF_EN		BIT(8)
++#define PMCR_TX_FC_EN		BIT(5)
++#define PMCR_RX_FC_EN		BIT(4)
++#define PMCR_FORCE_SPEED_1000	BIT(3)
++#define PMCR_FORCE_FDX		BIT(1)
++#define PMCR_FORCE_LNK		BIT(0)
++#define PMCR_FIXED_LINK		(PMCR_IFG_XMIT_96 | PMCR_MAC_MODE | \
++				 PMCR_FORCE_MODE | PMCR_TX_EN | PMCR_RX_EN | \
++				 PMCR_BACK_PRES_EN | PMCR_BACKOFF_EN | \
++				 PMCR_FORCE_SPEED_1000 | PMCR_FORCE_FDX | \
++				 PMCR_FORCE_LNK)
++
++#define PMCR_FIXED_LINK_FC	(PMCR_FIXED_LINK | \
++				 PMCR_TX_FC_EN | PMCR_RX_FC_EN)
++
++/* TRGMII control registers */
++#define GSW_INTF_MODE		0x390
++#define GSW_TRGMII_TD0_ODT	0x354
++#define GSW_TRGMII_TD1_ODT	0x35c
++#define GSW_TRGMII_TD2_ODT	0x364
++#define GSW_TRGMII_TD3_ODT	0x36c
++#define GSW_TRGMII_TXCTL_ODT	0x374
++#define GSW_TRGMII_TCK_ODT	0x37c
++#define GSW_TRGMII_RCK_CTRL	0x300
++
++#define INTF_MODE_TRGMII	BIT(1)
++#define TRGMII_RCK_CTRL_RX_RST	BIT(31)
++
++
++/* possible XTAL speed */
++#define	MT7623_XTAL_40		0
++#define MT7623_XTAL_20		1
++#define MT7623_XTAL_25		3
++
++/* GPIO port control registers */
++#define	GPIO_OD33_CTRL8		0x4c0
++#define	GPIO_BIAS_CTRL		0xed0
++#define GPIO_DRV_SEL10		0xf00
++
++/* on MT7620 the functio of port 4 can be software configured */
++enum {
++	PORT4_EPHY = 0,
++	PORT4_EXT,
++};
++
++/* struct mt7620_gsw -	the structure that holds the SoC specific data
++ * @dev:		The Device struct
++ * @base:		The base address
++ * @piac_offset:	The PIAC base may change depending on SoC
++ * @irq:		The IRQ we are using
++ * @port4:		The port4 mode on MT7620
++ * @autopoll:		Is MDIO autopolling enabled
++ * @ethsys:		The ethsys register map
++ * @pctl:		The pin control register map
++ * @clk_trgpll:		The trgmii pll clock
++ */
++struct mt7620_gsw {
++	struct mtk_eth		*eth;
++	struct device		*dev;
++	void __iomem		*base;
++	u32			piac_offset;
++	int			irq;
++	int			port4;
++	unsigned long int	autopoll;
++
++	struct regmap		*ethsys;
++	struct regmap		*pctl;
++
++	struct clk		*clk_trgpll;
++
++	int			trgmii_force;
++	bool			wllll;
++};
++
++/* switch register I/O wrappers */
++void mtk_switch_w32(struct mt7620_gsw *gsw, u32 val, unsigned reg);
++u32 mtk_switch_r32(struct mt7620_gsw *gsw, unsigned reg);
++
++/* the callback used by the driver core to bringup the switch */
++int mtk_gsw_init(struct mtk_eth *eth);
++
++/* MDIO access wrappers */
++int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val);
++int mt7620_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg);
++void mt7620_mdio_link_adjust(struct mtk_eth *eth, int port);
++int mt7620_has_carrier(struct mtk_eth *eth);
++void mt7620_print_link_state(struct mtk_eth *eth, int port, int link,
++			     int speed, int duplex);
++void mt7530_mdio_w32(struct mt7620_gsw *gsw, u32 reg, u32 val);
++u32 mt7530_mdio_r32(struct mt7620_gsw *gsw, u32 reg);
++void mt7530_mdio_m32(struct mt7620_gsw *gsw, u32 mask, u32 set, u32 reg);
++
++u32 _mtk_mdio_write(struct mtk_eth *eth, u32 phy_addr,
++		      u32 phy_register, u32 write_data);
++u32 _mtk_mdio_read(struct mtk_eth *eth, int phy_addr, int phy_reg);
++void mt7620_handle_carrier(struct mtk_eth *eth);
++
++#endif
+--- /dev/null
++++ b/drivers/net/ethernet/mediatek/gsw_mt7623.c
+@@ -0,0 +1,1084 @@
++/*   This program is free software; you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; version 2 of the License
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *   GNU General Public License for more details.
++ *
++ *   Copyright (C) 2009-2016 John Crispin <blogic@openwrt.org>
++ *   Copyright (C) 2009-2016 Felix Fietkau <nbd@nbd.name>
++ *   Copyright (C) 2013-2016 Michael Lee <igvtee@gmail.com>
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/types.h>
++#include <linux/platform_device.h>
++#include <linux/of_device.h>
++#include <linux/of_irq.h>
++#include <linux/of_gpio.h>
++#include <linux/of_mdio.h>
++#include <linux/clk.h>
++#include <linux/mfd/syscon.h>
++#include <linux/regulator/consumer.h>
++#include <linux/pm_runtime.h>
++#include <linux/regmap.h>
++#include <linux/reset.h>
++#include <linux/mii.h>
++#include <linux/interrupt.h>
++#include <linux/netdevice.h>
++#include <linux/dma-mapping.h>
++#include <linux/phy.h>
++#include <linux/ethtool.h>
++#include <linux/version.h>
++#include <linux/atomic.h>
++
++#include "mtk_eth_soc.h"
++#include "gsw_mt7620.h"
++#include "mt7530.h"
++
++#define ETHSYS_CLKCFG0			0x2c
++#define ETHSYS_TRGMII_CLK_SEL362_5	BIT(11)
++
++void mt7530_mdio_w32(struct mt7620_gsw *gsw, u32 reg, u32 val)
++{
++	_mtk_mdio_write(gsw->eth, 0x1f, 0x1f, (reg >> 6) & 0x3ff);
++	_mtk_mdio_write(gsw->eth, 0x1f, (reg >> 2) & 0xf,  val & 0xffff);
++	_mtk_mdio_write(gsw->eth, 0x1f, 0x10, val >> 16);
++}
++
++u32 mt7530_mdio_r32(struct mt7620_gsw *gsw, u32 reg)
++{
++	u16 high, low;
++
++	_mtk_mdio_write(gsw->eth, 0x1f, 0x1f, (reg >> 6) & 0x3ff);
++	low = _mtk_mdio_read(gsw->eth, 0x1f, (reg >> 2) & 0xf);
++	high = _mtk_mdio_read(gsw->eth, 0x1f, 0x10);
++
++	return (high << 16) | (low & 0xffff);
++}
++
++void mt7530_mdio_m32(struct mt7620_gsw *gsw, u32 mask, u32 set, u32 reg)
++{
++	u32 val = mt7530_mdio_r32(gsw, reg);
++
++	val &= mask;
++	val |= set;
++	mt7530_mdio_w32(gsw, reg, val);
++}
++
++void mtk_switch_w32(struct mt7620_gsw *gsw, u32 val, unsigned reg)
++{
++	mtk_w32(gsw->eth, val, reg + 0x10000);
++}
++
++u32 mtk_switch_r32(struct mt7620_gsw *gsw, unsigned reg)
++{
++	return mtk_r32(gsw->eth, reg + 0x10000);
++}
++
++void mtk_switch_m32(struct mt7620_gsw *gsw, u32 mask, u32 set, unsigned reg)
++{
++	u32 val = mtk_switch_r32(gsw, reg);
++
++	val &= mask;
++	val |= set;
++
++	mtk_switch_w32(gsw, val, reg);
++}
++
++int mt7623_gsw_config(struct mtk_eth *eth)
++{
++	if (eth->mii_bus && eth->mii_bus->phy_map[0x1f])
++		mt7530_probe(eth->dev, NULL, eth->mii_bus, 1);
++
++	return 0;
++}
++
++static irqreturn_t gsw_interrupt_mt7623(int irq, void *_eth)
++{
++	struct mtk_eth *eth = (struct mtk_eth *)_eth;
++	struct mt7620_gsw *gsw = (struct mt7620_gsw *)eth->sw_priv;
++	u32 reg, i;
++
++	reg = mt7530_mdio_r32(gsw, 0x700c);
++
++	for (i = 0; i < 5; i++)
++		if (reg & BIT(i)) {
++			unsigned int link;
++
++			link = mt7530_mdio_r32(gsw,
++					       0x3008 + (i * 0x100)) & 0x1;
++
++			if (link)
++				dev_info(gsw->dev,
++					 "port %d link up\n", i);
++			else
++				dev_info(gsw->dev,
++					 "port %d link down\n", i);
++		}
++
++//	mt7620_handle_carrier(eth);
++	mt7530_mdio_w32(gsw, 0x700c, 0x1f);
++
++	return IRQ_HANDLED;
++}
++
++static void wait_loop(struct mt7620_gsw *gsw)
++{
++	int i;
++	int read_data;
++
++	for (i = 0; i < 320; i = i + 1)
++		read_data = mtk_switch_r32(gsw, 0x610);
++}
++
++static void trgmii_calibration_7623(struct mt7620_gsw *gsw)
++{
++
++	unsigned int tap_a[5] = { 0, 0, 0, 0, 0 };	/* minumum delay for all correct */
++	unsigned int tap_b[5] = { 0, 0, 0, 0, 0 };	/* maximum delay for all correct */
++	unsigned int final_tap[5];
++	unsigned int rxc_step_size;
++	unsigned int rxd_step_size;
++	unsigned int read_data;
++	unsigned int tmp;
++	unsigned int rd_wd;
++	int i;
++	unsigned int err_cnt[5];
++	unsigned int init_toggle_data;
++	unsigned int err_flag[5];
++	unsigned int err_total_flag;
++	unsigned int training_word;
++	unsigned int rd_tap;
++	u32 val;
++
++	u32 TRGMII_7623_base;
++	u32 TRGMII_7623_RD_0;
++	u32 TRGMII_RCK_CTRL;
++
++	TRGMII_7623_base = 0x300;	/* 0xFB110300 */
++	TRGMII_7623_RD_0 = TRGMII_7623_base + 0x10;
++	TRGMII_RCK_CTRL = TRGMII_7623_base;
++	rxd_step_size = 0x1;
++	rxc_step_size = 0x4;
++	init_toggle_data = 0x00000055;
++	training_word = 0x000000AC;
++
++	/* RX clock gating in MT7623 */
++	mtk_switch_m32(gsw, 0x3fffffff, 0, TRGMII_7623_base + 0x04);
++
++	/* Assert RX  reset in MT7623 */
++	mtk_switch_m32(gsw, 0, 0x80000000, TRGMII_7623_base + 0x00);
++
++	/* Set TX OE edge in  MT7623 */
++	mtk_switch_m32(gsw, 0, 0x00002000, TRGMII_7623_base + 0x78);
++
++	/* Disable RX clock gating in MT7623 */
++	mtk_switch_m32(gsw, 0, 0xC0000000, TRGMII_7623_base + 0x04);
++
++	/* Release RX reset in MT7623 */
++	mtk_switch_m32(gsw, 0x7fffffff, 0, TRGMII_7623_base);
++
++	for (i = 0; i < 5; i++)
++		mtk_switch_m32(gsw, 0, 0x80000000, TRGMII_7623_RD_0 + i * 8);
++
++	pr_err("Enable Training Mode in MT7530\n");
++	read_data = mt7530_mdio_r32(gsw, 0x7A40);
++	read_data |= 0xC0000000;
++	mt7530_mdio_w32(gsw, 0x7A40, read_data);	/* Enable Training Mode in MT7530 */
++	err_total_flag = 0;
++	pr_err("Adjust RXC delay in MT7623\n");
++	read_data = 0x0;
++	while (err_total_flag == 0 && read_data != 0x68) {
++		pr_err("2nd Enable EDGE CHK in MT7623\n");
++		/* Enable EDGE CHK in MT7623 */
++		for (i = 0; i < 5; i++)
++			    mtk_switch_m32(gsw, 0x4fffffff, 0x40000000, TRGMII_7623_RD_0 + i * 8);
++
++		wait_loop(gsw);
++		err_total_flag = 1;
++		for (i = 0; i < 5; i++) {
++			err_cnt[i] =
++			    mtk_switch_r32(gsw, TRGMII_7623_RD_0 + i * 8) >> 8;
++			err_cnt[i] &= 0x0000000f;
++			rd_wd = mtk_switch_r32(gsw, TRGMII_7623_RD_0 + i * 8) >> 16;
++			rd_wd &= 0x000000ff;
++			val = mtk_switch_r32(gsw, TRGMII_7623_RD_0 + i * 8);
++			pr_err("ERR_CNT = %d, RD_WD =%x, TRGMII_7623_RD_0=%x\n",
++			       err_cnt[i], rd_wd, val);
++			if (err_cnt[i] != 0) {
++				err_flag[i] = 1;
++			} else if (rd_wd != 0x55) {
++				err_flag[i] = 1;
++			} else {
++				err_flag[i] = 0;
++			}
++			err_total_flag = err_flag[i] & err_total_flag;
++		}
++
++		pr_err("2nd Disable EDGE CHK in MT7623\n");
++		/* Disable EDGE CHK in MT7623 */
++		for (i = 0; i < 5; i++)
++			    mtk_switch_m32(gsw, 0x4fffffff, 0x40000000, TRGMII_7623_RD_0 + i * 8);
++		wait_loop(gsw);
++		pr_err("2nd Disable EDGE CHK in MT7623\n");
++		/* Adjust RXC delay */
++		/* RX clock gating in MT7623 */
++		mtk_switch_m32(gsw, 0x3fffffff, 0, TRGMII_7623_base + 0x04);
++		read_data = mtk_switch_r32(gsw, TRGMII_7623_base);
++		if (err_total_flag == 0) {
++			tmp = (read_data & 0x0000007f) + rxc_step_size;
++			pr_err(" RXC delay = %d\n", tmp); 
++			read_data >>= 8;
++			read_data &= 0xffffff80;
++			read_data |= tmp;
++			read_data <<= 8;
++			read_data &= 0xffffff80;
++			read_data |= tmp;
++			mtk_switch_w32(gsw, read_data, TRGMII_7623_base);
++		} else {
++			tmp = (read_data & 0x0000007f) + 16;
++			pr_err(" RXC delay = %d\n", tmp); 
++			read_data >>= 8;
++			read_data &= 0xffffff80;
++			read_data |= tmp;
++			read_data <<= 8;
++			read_data &= 0xffffff80;
++			read_data |= tmp;
++			mtk_switch_w32(gsw, read_data, TRGMII_7623_base);
++		}
++		read_data &= 0x000000ff;
++
++		/* Disable RX clock gating in MT7623 */
++		mtk_switch_m32(gsw, 0, 0xC0000000, TRGMII_7623_base + 0x04);
++		for (i = 0; i < 5; i++)
++			mtk_switch_m32(gsw, 0, 0x80000000, TRGMII_7623_RD_0 + i * 8);
++	}
++
++	/* Read RD_WD MT7623 */
++	for (i = 0; i < 5; i++) {
++		rd_tap = 0;
++		while (err_flag[i] != 0 && rd_tap != 128) {
++			/* Enable EDGE CHK in MT7623 */
++			mtk_switch_m32(gsw, 0x4fffffff, 0x40000000, TRGMII_7623_RD_0 + i * 8);
++			wait_loop(gsw);
++
++			read_data = mtk_switch_r32(gsw, TRGMII_7623_RD_0 + i * 8);
++			err_cnt[i] = (read_data >> 8) & 0x0000000f;	/* Read MT7623 Errcnt */
++			rd_wd = (read_data >> 16) & 0x000000ff;
++			if (err_cnt[i] != 0 || rd_wd != 0x55) {
++				err_flag[i] = 1;
++			} else {
++				err_flag[i] = 0;
++			}
++			/* Disable EDGE CHK in MT7623 */
++			mtk_switch_m32(gsw, 0x4fffffff, 0x40000000, TRGMII_7623_RD_0 + i * 8);
++			wait_loop(gsw);
++			if (err_flag[i] != 0) {
++				rd_tap = (read_data & 0x0000007f) + rxd_step_size;	/* Add RXD delay in MT7623 */
++				read_data = (read_data & 0xffffff80) | rd_tap;
++				mtk_switch_w32(gsw, read_data,
++					TRGMII_7623_RD_0 + i * 8);
++				tap_a[i] = rd_tap;
++			} else {
++				rd_tap = (read_data & 0x0000007f) + 48;
++				read_data = (read_data & 0xffffff80) | rd_tap;
++				mtk_switch_w32(gsw, read_data,
++					TRGMII_7623_RD_0 + i * 8);
++			}
++
++		}
++		pr_err("MT7623 %dth bit  Tap_a = %d\n", i, tap_a[i]);
++	}
++	/* pr_err("Last While Loop\n"); */
++	for (i = 0; i < 5; i++) {
++		while ((err_flag[i] == 0) && (rd_tap != 128)) {
++			read_data = mtk_switch_r32(gsw, TRGMII_7623_RD_0 + i * 8);
++			rd_tap = (read_data & 0x0000007f) + rxd_step_size;	/* Add RXD delay in MT7623 */
++			read_data = (read_data & 0xffffff80) | rd_tap;
++			mtk_switch_w32(gsw, read_data, TRGMII_7623_RD_0 + i * 8);
++			/* Enable EDGE CHK in MT7623 */
++			val =
++			    mtk_switch_r32(gsw, TRGMII_7623_RD_0 + i * 8) | 0x40000000;
++			val &= 0x4fffffff;
++			mtk_switch_w32(gsw, val, TRGMII_7623_RD_0 + i * 8);
++			wait_loop(gsw);
++			read_data = mtk_switch_r32(gsw, TRGMII_7623_RD_0 + i * 8);
++			err_cnt[i] = (read_data >> 8) & 0x0000000f;	/* Read MT7623 Errcnt */
++			rd_wd = (read_data >> 16) & 0x000000ff;
++			if (err_cnt[i] != 0 || rd_wd != 0x55) {
++				err_flag[i] = 1;
++			} else {
++				err_flag[i] = 0;
++			}
++
++			/* Disable EDGE CHK in MT7623 */
++			mtk_switch_m32(gsw, 0x4fffffff, 0x40000000, TRGMII_7623_RD_0 + i * 8);
++			wait_loop(gsw);
++
++		}
++
++		tap_b[i] = rd_tap;	/* -rxd_step_size; */
++		pr_err("MT7623 %dth bit  Tap_b = %d\n", i, tap_b[i]);
++		final_tap[i] = (tap_a[i] + tap_b[i]) / 2;	/* Calculate RXD delay = (TAP_A + TAP_B)/2 */
++		read_data = (read_data & 0xffffff80) | final_tap[i];
++		mtk_switch_w32(gsw, read_data, TRGMII_7623_RD_0 + i * 8);
++	}
++
++	read_data = mt7530_mdio_r32(gsw, 0x7A40);
++	read_data &= 0x3fffffff;
++	mt7530_mdio_w32(gsw, 0x7A40, read_data);
++}
++
++static void trgmii_calibration_7530(struct mt7620_gsw *gsw)
++{
++
++	unsigned int tap_a[5] = { 0, 0, 0, 0, 0 };
++	unsigned int tap_b[5] = { 0, 0, 0, 0, 0 };
++	unsigned int final_tap[5];
++	unsigned int rxc_step_size;
++	unsigned int rxd_step_size;
++	unsigned int read_data;
++	unsigned int tmp = 0;
++	int i;
++	unsigned int err_cnt[5];
++	unsigned int rd_wd;
++	unsigned int init_toggle_data;
++	unsigned int err_flag[5];
++	unsigned int err_total_flag;
++	unsigned int training_word;
++	unsigned int rd_tap;
++
++	u32 TRGMII_7623_base;
++	u32 TRGMII_7530_RD_0;
++	u32 TRGMII_RCK_CTRL;
++	u32 TRGMII_7530_base;
++	u32 TRGMII_7530_TX_base;
++	u32 val;
++
++	TRGMII_7623_base = 0x300;
++	TRGMII_7530_base = 0x7A00;
++	TRGMII_7530_RD_0 = TRGMII_7530_base + 0x10;
++	TRGMII_RCK_CTRL = TRGMII_7623_base;
++	rxd_step_size = 0x1;
++	rxc_step_size = 0x8;
++	init_toggle_data = 0x00000055;
++	training_word = 0x000000AC;
++
++	TRGMII_7530_TX_base = TRGMII_7530_base + 0x50;
++
++	/* pr_err("Calibration begin ........\n"); */
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x40) | 0x80000000;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x40);
++	read_data = mt7530_mdio_r32(gsw, 0x7a10);
++	/* pr_err("TRGMII_7530_RD_0 is %x\n", read_data); */
++
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base + 0x04);
++	read_data &= 0x3fffffff;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base + 0x04, read_data);	/* RX clock gating in MT7530 */
++
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base + 0x78);
++	read_data |= 0x00002000;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base + 0x78, read_data);	/* Set TX OE edge in  MT7530 */
++
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
++	read_data |= 0x80000000;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base, read_data);	/* Assert RX  reset in MT7530 */
++
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
++	read_data &= 0x7fffffff;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base, read_data);	/* Release RX reset in MT7530 */
++
++	read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base + 0x04);
++	read_data |= 0xC0000000;
++	mt7530_mdio_w32(gsw, TRGMII_7530_base + 0x04, read_data);	/* Disable RX clock gating in MT7530 */
++
++	/* pr_err("Enable Training Mode in MT7623\n"); */
++	/*Enable Training Mode in MT7623 */
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x40) | 0x80000000;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x40);
++	if (gsw->trgmii_force == 2000) {
++		val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x40) | 0xC0000000;
++		mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x40);
++	} else {
++		val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x40) | 0x80000000;
++		mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x40);
++	}
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x078) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x078);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x50) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x50);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x58) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x58);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x60) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x60);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x68) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x68);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x70) & 0xfffff0ff;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x70);
++	val = mtk_switch_r32(gsw, TRGMII_7623_base + 0x78) & 0x00000800;
++	mtk_switch_w32(gsw, val, TRGMII_7623_base + 0x78);
++	err_total_flag = 0;
++	/* pr_err("Adjust RXC delay in MT7530\n"); */
++	read_data = 0x0;
++	while (err_total_flag == 0 && (read_data != 0x68)) {
++		/* pr_err("2nd Enable EDGE CHK in MT7530\n"); */
++		/* Enable EDGE CHK in MT7530 */
++		for (i = 0; i < 5; i++) {
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			read_data |= 0x40000000;
++			read_data &= 0x4fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++					read_data);
++			wait_loop(gsw);
++			/* pr_err("2nd Disable EDGE CHK in MT7530\n"); */
++			err_cnt[i] =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			/* pr_err("***** MT7530 %dth bit ERR_CNT =%x\n",i, err_cnt[i]); */
++			/* pr_err("MT7530 %dth bit ERR_CNT =%x\n",i, err_cnt[i]); */
++			err_cnt[i] >>= 8;
++			err_cnt[i] &= 0x0000ff0f;
++			rd_wd = err_cnt[i] >> 8;
++			rd_wd &= 0x000000ff;
++			err_cnt[i] &= 0x0000000f;
++			/* read_data = mt7530_mdio_r32(gsw,0x7a10,&read_data); */
++			if (err_cnt[i] != 0) {
++				err_flag[i] = 1;
++			} else if (rd_wd != 0x55) {
++				err_flag[i] = 1;
++			} else {
++				err_flag[i] = 0;
++			}
++			if (i == 0) {
++				err_total_flag = err_flag[i];
++			} else {
++				err_total_flag = err_flag[i] & err_total_flag;
++			}
++			/* Disable EDGE CHK in MT7530 */
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			read_data |= 0x40000000;
++			read_data &= 0x4fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++					read_data);
++			wait_loop(gsw);
++		}
++		/*Adjust RXC delay */
++		if (err_total_flag == 0) {
++			read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
++			read_data |= 0x80000000;
++			mt7530_mdio_w32(gsw, TRGMII_7530_base, read_data);	/* Assert RX  reset in MT7530 */
++
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_base + 0x04);
++			read_data &= 0x3fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_base + 0x04, read_data);	/* RX clock gating in MT7530 */
++
++			read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
++			tmp = read_data;
++			tmp &= 0x0000007f;
++			tmp += rxc_step_size;
++			/* pr_err("Current rxc delay = %d\n", tmp); */
++			read_data &= 0xffffff80;
++			read_data |= tmp;
++			mt7530_mdio_w32(gsw, TRGMII_7530_base, read_data);
++			read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
++			/* pr_err("Current RXC delay = %x\n", read_data); */
++
++			read_data = mt7530_mdio_r32(gsw, TRGMII_7530_base);
++			read_data &= 0x7fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_base, read_data);	/* Release RX reset in MT7530 */
++
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_base + 0x04);
++			read_data |= 0xc0000000;
++			mt7530_mdio_w32(gsw, TRGMII_7530_base + 0x04, read_data);	/* Disable RX clock gating in MT7530 */
++			pr_err("####### MT7530 RXC delay is %d\n", tmp);
++		}
++		read_data = tmp;
++	}
++	pr_err("Finish RXC Adjustment while loop\n");
++
++	/* pr_err("Read RD_WD MT7530\n"); */
++	/* Read RD_WD MT7530 */
++	for (i = 0; i < 5; i++) {
++		rd_tap = 0;
++		while (err_flag[i] != 0 && rd_tap != 128) {
++			/* Enable EDGE CHK in MT7530 */
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			read_data |= 0x40000000;
++			read_data &= 0x4fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++					read_data);
++			wait_loop(gsw);
++			err_cnt[i] = (read_data >> 8) & 0x0000000f;
++			rd_wd = (read_data >> 16) & 0x000000ff;
++			if (err_cnt[i] != 0 || rd_wd != 0x55) {
++				err_flag[i] = 1;
++			} else {
++				err_flag[i] = 0;
++			}
++			if (err_flag[i] != 0) {
++				rd_tap = (read_data & 0x0000007f) + rxd_step_size;	/* Add RXD delay in MT7530 */
++				read_data = (read_data & 0xffffff80) | rd_tap;
++				mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++						read_data);
++				tap_a[i] = rd_tap;
++			} else {
++				tap_a[i] = (read_data & 0x0000007f);	/* Record the min delay TAP_A */
++				rd_tap = tap_a[i] + 0x4;
++				read_data = (read_data & 0xffffff80) | rd_tap;
++				mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++						read_data);
++			}
++
++			/* Disable EDGE CHK in MT7530 */
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			read_data |= 0x40000000;
++			read_data &= 0x4fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++					read_data);
++			wait_loop(gsw);
++
++		}
++		pr_err("MT7530 %dth bit  Tap_a = %d\n", i, tap_a[i]);
++	}
++
++	/* pr_err("Last While Loop\n"); */
++	for (i = 0; i < 5; i++) {
++		rd_tap = 0;
++		while (err_flag[i] == 0 && (rd_tap != 128)) {
++			/* Enable EDGE CHK in MT7530 */
++			read_data = mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			read_data |= 0x40000000;
++			read_data &= 0x4fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++					read_data);
++			wait_loop(gsw);
++			err_cnt[i] = (read_data >> 8) & 0x0000000f;
++			rd_wd = (read_data >> 16) & 0x000000ff;
++			if (err_cnt[i] != 0 || rd_wd != 0x55)
++				err_flag[i] = 1;
++			else
++				err_flag[i] = 0;
++
++			if (err_flag[i] == 0 && (rd_tap != 128)) {
++				/* Add RXD delay in MT7530 */
++				rd_tap = (read_data & 0x0000007f) + rxd_step_size;
++				read_data = (read_data & 0xffffff80) | rd_tap;
++				mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++						read_data);
++			}
++			/* Disable EDGE CHK in MT7530 */
++			read_data =
++			    mt7530_mdio_r32(gsw, TRGMII_7530_RD_0 + i * 8);
++			read_data |= 0x40000000;
++			read_data &= 0x4fffffff;
++			mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8,
++					read_data);
++			wait_loop(gsw);
++		}
++		tap_b[i] = rd_tap;	/* - rxd_step_size; */
++		pr_err("MT7530 %dth bit  Tap_b = %d\n", i, tap_b[i]);
++		/* Calculate RXD delay = (TAP_A + TAP_B)/2 */
++		final_tap[i] = (tap_a[i] + tap_b[i]) / 2;	
++		/* pr_err("########****** MT7530 %dth bit Final Tap = %d\n", i, final_tap[i]); */
++
++		read_data = (read_data & 0xffffff80) | final_tap[i];
++		mt7530_mdio_w32(gsw, TRGMII_7530_RD_0 + i * 8, read_data);
++	}
++
++	if (gsw->trgmii_force == 2000)
++		mtk_switch_m32(gsw, 0x7fffffff, 0, TRGMII_7623_base + 0x40);
++	else
++		mtk_switch_m32(gsw, 0x3fffffff, 0, TRGMII_7623_base + 0x40);
++
++}
++
++static void mt7530_trgmii_clock_setting(struct mt7620_gsw *gsw, u32 xtal_mode)
++{
++
++	u32 regValue;
++
++	/* TRGMII Clock */
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x410);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x1);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x404);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++
++	if (xtal_mode == 1) {
++		/* 25MHz */
++		if (gsw->trgmii_force == 2600)
++			/* 325MHz */
++			_mtk_mdio_write(gsw->eth, 0, 14, 0x1a00);
++		else if (gsw->trgmii_force == 2000)
++			/* 250MHz */
++			_mtk_mdio_write(gsw->eth, 0, 14, 0x1400);
++	} else if (xtal_mode == 2) {
++		/* 40MHz */
++		if (gsw->trgmii_force == 2600)
++			/* 325MHz */
++			_mtk_mdio_write(gsw->eth, 0, 14, 0x1040);
++		else if (gsw->trgmii_force == 2000)
++			/* 250MHz */
++			_mtk_mdio_write(gsw->eth, 0, 14, 0x0c80);
++	}
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x405);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x0);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x409);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	if (xtal_mode == 1)
++		/* 25MHz */
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x0057);
++	else
++		/* 40MHz */
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x0087);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x40a);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	if (xtal_mode == 1)
++		/* 25MHz */
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x0057);
++	else
++		/* 40MHz */
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x0087);
++
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x403);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x1800);
++
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x403);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x1c00);
++
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x401);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0xc020);
++
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x406);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0xa030);
++
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x406);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0xa038);
++
++//	udelay(120);		/* for MT7623 bring up test */
++
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x410);
++	_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x3);
++
++	regValue = mt7530_mdio_r32(gsw, 0x7830);
++	regValue &= 0xFFFFFFFC;
++	regValue |= 0x00000001;
++	mt7530_mdio_w32(gsw, 0x7830, regValue);
++
++	regValue = mt7530_mdio_r32(gsw, 0x7a40);
++	regValue &= ~(0x1 << 30);
++	regValue &= ~(0x1 << 28);
++	mt7530_mdio_w32(gsw, 0x7a40, regValue);
++
++	mt7530_mdio_w32(gsw, 0x7a78, 0x55);
++//	udelay(100);		/* for mt7623 bring up test */
++
++	mtk_switch_m32(gsw, 0x7fffffff, 0, 0x300);
++
++	trgmii_calibration_7623(gsw);
++	trgmii_calibration_7530(gsw);
++
++	mtk_switch_m32(gsw, 0, 0x80000000, 0x300);
++	mtk_switch_m32(gsw, 0, 0x7fffffff, 0x300);
++
++	/*MT7530 RXC reset */
++	regValue = mt7530_mdio_r32(gsw, 0x7a00);
++	regValue |= (0x1 << 31);
++	mt7530_mdio_w32(gsw, 0x7a00, regValue);
++	mdelay(1);
++	regValue &= ~(0x1 << 31);
++	mt7530_mdio_w32(gsw, 0x7a00, regValue);
++	mdelay(100);
++}
++
++static void mt7623_hw_init(struct mtk_eth *eth, struct mt7620_gsw *gsw, struct device_node *np)
++{
++       u32     i;
++       u32     val;
++       u32     xtal_mode;
++
++	regmap_update_bits(gsw->ethsys, ETHSYS_CLKCFG0,
++			   ETHSYS_TRGMII_CLK_SEL362_5,
++			   ETHSYS_TRGMII_CLK_SEL362_5);
++
++	/* reset the TRGMII core */
++	mtk_switch_m32(gsw, 0, INTF_MODE_TRGMII, GSW_INTF_MODE);
++	/* Assert MT7623 RXC reset */
++	mtk_switch_m32(gsw, 0, TRGMII_RCK_CTRL_RX_RST, GSW_TRGMII_RCK_CTRL);
++
++	/* Hardware reset Switch */
++	device_reset(eth->dev);
++
++	/* Wait for Switch Reset Completed*/
++	for (i = 0; i < 100; i++) {
++		mdelay(10);
++		if (mt7530_mdio_r32(gsw, MT7530_HWTRAP))
++			break;
++	}
++
++	/* turn off all PHYs */
++	for (i = 0; i <= 4; i++) {
++		val = _mtk_mdio_read(gsw->eth, i, 0x0);
++		val |= BIT(11);
++		_mtk_mdio_write(gsw->eth, i, 0x0, val);
++	}
++
++	/* reset the switch */
++	mt7530_mdio_w32(gsw, MT7530_SYS_CTRL,
++			SYS_CTRL_SW_RST | SYS_CTRL_REG_RST);
++	udelay(100);
++
++	/* GE1, Force 1000M/FD, FC ON */
++	mt7530_mdio_w32(gsw, MT7530_PMCR_P(6), PMCR_FIXED_LINK_FC);
++
++	/* GE2, Force 1000M/FD, FC ON */
++	mt7530_mdio_w32(gsw, MT7530_PMCR_P(5), PMCR_FIXED_LINK_FC);
++
++	/* Enable Port 6, P5 as GMAC5, P5 disable */
++	val = mt7530_mdio_r32(gsw, MT7530_MHWTRAP);
++	if (gsw->eth->mac[0] &&
++	    of_phy_is_fixed_link(gsw->eth->mac[0]->of_node))
++		/* Enable Port 6 */
++		val &= ~MHWTRAP_P6_DIS;
++	else
++		/* Disable Port 6 */
++		val |= MHWTRAP_P6_DIS;
++	if (gsw->eth->mac[1] &&
++	    of_phy_is_fixed_link(gsw->eth->mac[1]->of_node)) {
++		/* Enable Port 5 */
++		val &= ~MHWTRAP_P5_DIS;
++		/* Port 5 as PHY */
++		val &= ~MHWTRAP_P5_MAC_SEL;
++	} else {
++		/* Disable Port 5 */
++		val |= MHWTRAP_P5_DIS;
++		/* Port 5 as GMAC */
++		val |= MHWTRAP_P5_MAC_SEL;
++		val |= BIT(7);
++		mt7530_mdio_w32(gsw, MT7530_PMCR_P(5), 0x8000);
++	}
++	/* gphy to port 0/4 */
++	if (gsw->wllll)
++		val |= BIT(20);
++	else
++		val &= ~BIT(20);
++
++	/* Set MT7530 phy direct access mode**/
++	val &= ~MHWTRAP_PHY_ACCESS;
++	/* manual override of HW-Trap */
++	val |= MHWTRAP_MANUAL;
++	mt7530_mdio_w32(gsw, MT7530_MHWTRAP, val);
++	dev_info(gsw->dev, "Setting MHWTRAP to 0x%08x\n", val);
++
++	val = mt7530_mdio_r32(gsw, 0x7800);
++	val = (val >> 9) & 0x3;
++	if (val == 0x3) {
++		xtal_mode = 1;
++		/* 25Mhz Xtal - do nothing */
++	} else if (val == 0x2) {
++		/* 40Mhz */
++		xtal_mode = 2;
++
++		/* disable MT7530 core clock */
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x410);
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x0);
++
++		/* disable MT7530 PLL */
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x40d);
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x2020);
++
++		/* for MT7530 core clock = 500Mhz */
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x40e);
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x119);
++
++		/* enable MT7530 PLL */
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x40d);
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x2820);
++
++		udelay(20);
++
++		/* enable MT7530 core clock */
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x1f);
++		_mtk_mdio_write(gsw->eth, 0, 14, 0x410);
++		_mtk_mdio_write(gsw->eth, 0, 13, 0x401f);
++	} else {
++		xtal_mode = 3;
++		/* 20Mhz Xtal - TODO */
++	}
++
++	/* RGMII */
++	_mtk_mdio_write(gsw->eth, 0, 14, 0x1);
++
++	/* set MT7530 central align */
++	val = mt7530_mdio_r32(gsw, 0x7830);
++	val &= ~1;
++	val |= 1<<1;
++	mt7530_mdio_w32(gsw, 0x7830, val);
++
++	val = mt7530_mdio_r32(gsw, 0x7a40);
++	val &= ~(1<<30);
++	mt7530_mdio_w32(gsw, 0x7a40, val);
++
++	mt7530_mdio_w32(gsw, 0x7a78, 0x855);
++
++	/* delay setting for 10/1000M */
++	mt7530_mdio_w32(gsw, 0x7b00, 0x104);
++	mt7530_mdio_w32(gsw, 0x7b04, 0x10);
++
++	/* lower Tx Driving */
++	mt7530_mdio_w32(gsw, 0x7a54, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a5c, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a64, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a6c, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a74, 0x88);
++	mt7530_mdio_w32(gsw, 0x7a7c, 0x88);
++	mt7530_mdio_w32(gsw, 0x7810, 0x11);
++
++	/* Set MT7623/MT7683 TX Driving */
++	mtk_switch_w32(gsw, 0x88, 0x354);
++	mtk_switch_w32(gsw, 0x88, 0x35c);
++	mtk_switch_w32(gsw, 0x88, 0x364);
++	mtk_switch_w32(gsw, 0x88, 0x36c);
++	mtk_switch_w32(gsw, 0x88, 0x374);
++	mtk_switch_w32(gsw, 0x88, 0x37c);
++
++	/* Set GE2 driving and slew rate */
++	regmap_write(gsw->pctl, 0xF00, 0xe00);
++	/* set GE2 TDSEL */
++	regmap_write(gsw->pctl, 0x4C0, 0x5);
++	/* set GE2 TUNE */
++	regmap_write(gsw->pctl, 0xED0, 0x0);
++
++	regmap_write(gsw->pctl, 0xb70, 0);
++	regmap_write(gsw->pctl, 0x250, 0xffff);
++	regmap_write(gsw->pctl, 0x260, 0xff);
++	regmap_write(gsw->pctl, 0x380, 0x37);
++	regmap_write(gsw->pctl, 0x390, 0x40);
++
++	mt7530_trgmii_clock_setting(gsw, xtal_mode);
++
++	//LANWANPartition(gsw);
++
++	/* disable EEE */
++	for (i = 0; i <= 4; i++) {
++		_mtk_mdio_write(gsw->eth, i, 13, 0x7);
++		_mtk_mdio_write(gsw->eth, i, 14, 0x3C);
++		_mtk_mdio_write(gsw->eth, i, 13, 0x4007);
++		_mtk_mdio_write(gsw->eth, i, 14, 0x0);
++
++		/* Increase SlvDPSready time */
++		_mtk_mdio_write(gsw->eth, i, 31, 0x52b5);
++		_mtk_mdio_write(gsw->eth, i, 16, 0xafae);
++		_mtk_mdio_write(gsw->eth, i, 18, 0x2f);
++		_mtk_mdio_write(gsw->eth, i, 16, 0x8fae);
++
++		/* Incease post_update_timer */
++		_mtk_mdio_write(gsw->eth, i, 31, 0x3);
++		_mtk_mdio_write(gsw->eth, i, 17, 0x4b);
++
++		/* Adjust 100_mse_threshold */
++		_mtk_mdio_write(gsw->eth, i, 13, 0x1e);
++		_mtk_mdio_write(gsw->eth, i, 14, 0x123);
++		_mtk_mdio_write(gsw->eth, i, 13, 0x401e);
++		_mtk_mdio_write(gsw->eth, i, 14, 0xffff);
++
++		/* Disable mcc */
++		_mtk_mdio_write(gsw->eth, i, 13, 0x1e);
++		_mtk_mdio_write(gsw->eth, i, 14, 0xa6);
++		_mtk_mdio_write(gsw->eth, i, 13, 0x401e);
++		_mtk_mdio_write(gsw->eth, i, 14, 0x300);
++
++		/* Disable HW auto downshift*/
++		_mtk_mdio_write(gsw->eth, i, 31, 0x1);
++		val = _mtk_mdio_read(gsw->eth, i, 0x14);
++		val &= ~(1<<4);
++		_mtk_mdio_write(gsw->eth, i, 0x14, val);
++	}
++
++	/* turn on all PHYs */
++	for (i = 0; i <= 4; i++) {
++		val = _mtk_mdio_read(gsw->eth, i, 0);
++		val &= ~BIT(11);
++		_mtk_mdio_write(gsw->eth, i, 0, val);
++	}
++
++	/* enable irq */
++	mt7530_mdio_m32(gsw, 0, TOP_SIG_CTRL_NORMAL, MT7530_TOP_SIG_CTRL);
++}
++
++static const struct of_device_id mediatek_gsw_match[] = {
++	{ .compatible = "mediatek,mt7623-gsw" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, mediatek_gsw_match);
++
++int mtk_gsw_init(struct mtk_eth *eth)
++{
++	struct device_node *np = eth->switch_np;
++	struct platform_device *pdev = of_find_device_by_node(np);
++	struct mt7620_gsw *gsw;
++
++	if (!pdev)
++		return -ENODEV;
++
++	if (!of_device_is_compatible(np, mediatek_gsw_match->compatible))
++		return -EINVAL;
++
++	gsw = platform_get_drvdata(pdev);
++	if (!gsw)
++		return -ENODEV;
++	gsw->eth = eth;
++	eth->sw_priv = gsw;
++
++	mt7623_hw_init(eth, gsw, np);
++
++	if (request_threaded_irq(gsw->irq, gsw_interrupt_mt7623, NULL, 0,
++				 "gsw", eth))
++		pr_err("fail to request irq\n");
++	mt7530_mdio_w32(gsw, 0x7008, 0x1f);
++
++	return 0;
++}
++
++static int mt7623_gsw_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	struct device_node *pctl;
++	int reset_pin, ret;
++	struct mt7620_gsw *gsw;
++	struct regulator *supply;
++
++	gsw = devm_kzalloc(&pdev->dev, sizeof(struct mt7620_gsw), GFP_KERNEL);
++	if (!gsw)
++		return -ENOMEM;
++
++	gsw->dev = &pdev->dev;
++	gsw->trgmii_force = 2000;
++	gsw->irq = irq_of_parse_and_map(np, 0);
++	if (gsw->irq < 0)
++		return -EINVAL;
++
++	gsw->ethsys = syscon_regmap_lookup_by_phandle(np, "mediatek,ethsys");
++	if (IS_ERR(gsw->ethsys))
++		return PTR_ERR(gsw->ethsys);
++
++	reset_pin = of_get_named_gpio(np, "mediatek,reset-pin", 0);
++	if (reset_pin < 0)
++		return reset_pin;
++
++	pctl = of_parse_phandle(np, "mediatek,pctl-regmap", 0);
++	if (IS_ERR(pctl))
++		return PTR_ERR(pctl);
++
++	gsw->pctl = syscon_node_to_regmap(pctl);
++	if (IS_ERR(pctl))
++		return PTR_ERR(pctl);
++
++	ret = devm_gpio_request(&pdev->dev, reset_pin, "mt7530-reset");
++	if (ret)
++		return ret;
++
++	gsw->clk_trgpll = devm_clk_get(&pdev->dev, "trgpll");
++
++	if (IS_ERR(gsw->clk_trgpll))
++		return -ENODEV;
++
++	supply = devm_regulator_get(&pdev->dev, "mt7530");
++	if (IS_ERR(supply))
++		return PTR_ERR(supply);
++
++	regulator_set_voltage(supply, 1000000, 1000000);
++	ret = regulator_enable(supply);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to enable reg-7530: %d\n", ret);
++		return ret;
++	}
++
++	gsw->wllll = of_property_read_bool(np, "mediatek,wllll");
++
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
++	ret = clk_set_rate(gsw->clk_trgpll, 500000000);
++	if (ret)
++		return ret;
++
++	regmap_write(gsw->ethsys, 0x34, 0x800000);
++	regmap_write(gsw->ethsys, 0x34, 0x0);
++
++	clk_prepare_enable(gsw->clk_trgpll);
++
++	gpio_direction_output(reset_pin, 0);
++	udelay(1000);
++	gpio_set_value(reset_pin, 1);
++	mdelay(100);
++
++	platform_set_drvdata(pdev, gsw);
++
++	return 0;
++}
++
++static int mt7623_gsw_remove(struct platform_device *pdev)
++{
++	struct mt7620_gsw *gsw = platform_get_drvdata(pdev);
++
++	clk_disable_unprepare(gsw->clk_trgpll);
++
++	pm_runtime_put_sync(&pdev->dev);
++        pm_runtime_disable(&pdev->dev);
++
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++static struct platform_driver gsw_driver = {
++	.probe = mt7623_gsw_probe,
++	.remove = mt7623_gsw_remove,
++	.driver = {
++		.name = "mt7623-gsw",
++		.owner = THIS_MODULE,
++		.of_match_table = mediatek_gsw_match,
++	},
++};
++
++module_platform_driver(gsw_driver);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
++MODULE_DESCRIPTION("GBit switch driver for Mediatek MT7623 SoC");
+--- /dev/null
++++ b/drivers/net/ethernet/mediatek/mt7530.c
+@@ -0,0 +1,808 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/if.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/list.h>
++#include <linux/if_ether.h>
++#include <linux/skbuff.h>
++#include <linux/netdevice.h>
++#include <linux/netlink.h>
++#include <linux/bitops.h>
++#include <net/genetlink.h>
++#include <linux/switch.h>
++#include <linux/delay.h>
++#include <linux/phy.h>
++#include <linux/netdevice.h>
++#include <linux/etherdevice.h>
++#include <linux/lockdep.h>
++#include <linux/workqueue.h>
++#include <linux/of_device.h>
++
++#include "mt7530.h"
++
++#define MT7530_CPU_PORT		6
++#define MT7530_NUM_PORTS	8
++#define MT7530_NUM_VLANS	16
++#define MT7530_MAX_VID		4095
++#define MT7530_MIN_VID		0
++
++/* registers */
++#define REG_ESW_VLAN_VTCR		0x90
++#define REG_ESW_VLAN_VAWD1		0x94
++#define REG_ESW_VLAN_VAWD2		0x98
++#define REG_ESW_VLAN_VTIM(x)	(0x100 + 4 * ((x) / 2))
++
++#define REG_ESW_VLAN_VAWD1_IVL_MAC	BIT(30)
++#define REG_ESW_VLAN_VAWD1_VTAG_EN	BIT(28)
++#define REG_ESW_VLAN_VAWD1_VALID	BIT(0)
++
++/* vlan egress mode */
++enum {
++	ETAG_CTRL_UNTAG	= 0,
++	ETAG_CTRL_TAG	= 2,
++	ETAG_CTRL_SWAP	= 1,
++	ETAG_CTRL_STACK	= 3,
++};
++
++#define REG_ESW_PORT_PCR(x)	(0x2004 | ((x) << 8))
++#define REG_ESW_PORT_PVC(x)	(0x2010 | ((x) << 8))
++#define REG_ESW_PORT_PPBV1(x)	(0x2014 | ((x) << 8))
++
++#define REG_HWTRAP		0x7804
++
++#define MIB_DESC(_s , _o, _n)   \
++	{                       \
++		.size = (_s),   \
++		.offset = (_o), \
++		.name = (_n),   \
++	}
++
++struct mt7xxx_mib_desc {
++	unsigned int size;
++	unsigned int offset;
++	const char *name;
++};
++
++#define MT7621_MIB_COUNTER_BASE	0x4000
++#define MT7621_MIB_COUNTER_PORT_OFFSET	0x100
++#define MT7621_STATS_TDPC	0x00
++#define MT7621_STATS_TCRC	0x04
++#define MT7621_STATS_TUPC	0x08
++#define MT7621_STATS_TMPC	0x0C
++#define MT7621_STATS_TBPC	0x10
++#define MT7621_STATS_TCEC	0x14
++#define MT7621_STATS_TSCEC	0x18
++#define MT7621_STATS_TMCEC	0x1C
++#define MT7621_STATS_TDEC	0x20
++#define MT7621_STATS_TLCEC	0x24
++#define MT7621_STATS_TXCEC	0x28
++#define MT7621_STATS_TPPC	0x2C
++#define MT7621_STATS_TL64PC	0x30
++#define MT7621_STATS_TL65PC	0x34
++#define MT7621_STATS_TL128PC	0x38
++#define MT7621_STATS_TL256PC	0x3C
++#define MT7621_STATS_TL512PC	0x40
++#define MT7621_STATS_TL1024PC	0x44
++#define MT7621_STATS_TOC	0x48
++#define MT7621_STATS_RDPC	0x60
++#define MT7621_STATS_RFPC	0x64
++#define MT7621_STATS_RUPC	0x68
++#define MT7621_STATS_RMPC	0x6C
++#define MT7621_STATS_RBPC	0x70
++#define MT7621_STATS_RAEPC	0x74
++#define MT7621_STATS_RCEPC	0x78
++#define MT7621_STATS_RUSPC	0x7C
++#define MT7621_STATS_RFEPC	0x80
++#define MT7621_STATS_ROSPC	0x84
++#define MT7621_STATS_RJEPC	0x88
++#define MT7621_STATS_RPPC	0x8C
++#define MT7621_STATS_RL64PC	0x90
++#define MT7621_STATS_RL65PC	0x94
++#define MT7621_STATS_RL128PC	0x98
++#define MT7621_STATS_RL256PC	0x9C
++#define MT7621_STATS_RL512PC	0xA0
++#define MT7621_STATS_RL1024PC	0xA4
++#define MT7621_STATS_ROC	0xA8
++#define MT7621_STATS_RDPC_CTRL	0xB0
++#define MT7621_STATS_RDPC_ING	0xB4
++#define MT7621_STATS_RDPC_ARL	0xB8
++
++static const struct mt7xxx_mib_desc mt7621_mibs[] = {
++	MIB_DESC(1, MT7621_STATS_TDPC, "TxDrop"),
++	MIB_DESC(1, MT7621_STATS_TCRC, "TxCRC"),
++	MIB_DESC(1, MT7621_STATS_TUPC, "TxUni"),
++	MIB_DESC(1, MT7621_STATS_TMPC, "TxMulti"),
++	MIB_DESC(1, MT7621_STATS_TBPC, "TxBroad"),
++	MIB_DESC(1, MT7621_STATS_TCEC, "TxCollision"),
++	MIB_DESC(1, MT7621_STATS_TSCEC, "TxSingleCol"),
++	MIB_DESC(1, MT7621_STATS_TMCEC, "TxMultiCol"),
++	MIB_DESC(1, MT7621_STATS_TDEC, "TxDefer"),
++	MIB_DESC(1, MT7621_STATS_TLCEC, "TxLateCol"),
++	MIB_DESC(1, MT7621_STATS_TXCEC, "TxExcCol"),
++	MIB_DESC(1, MT7621_STATS_TPPC, "TxPause"),
++	MIB_DESC(1, MT7621_STATS_TL64PC, "Tx64Byte"),
++	MIB_DESC(1, MT7621_STATS_TL65PC, "Tx65Byte"),
++	MIB_DESC(1, MT7621_STATS_TL128PC, "Tx128Byte"),
++	MIB_DESC(1, MT7621_STATS_TL256PC, "Tx256Byte"),
++	MIB_DESC(1, MT7621_STATS_TL512PC, "Tx512Byte"),
++	MIB_DESC(1, MT7621_STATS_TL1024PC, "Tx1024Byte"),
++	MIB_DESC(2, MT7621_STATS_TOC, "TxByte"),
++	MIB_DESC(1, MT7621_STATS_RDPC, "RxDrop"),
++	MIB_DESC(1, MT7621_STATS_RFPC, "RxFiltered"),
++	MIB_DESC(1, MT7621_STATS_RUPC, "RxUni"),
++	MIB_DESC(1, MT7621_STATS_RMPC, "RxMulti"),
++	MIB_DESC(1, MT7621_STATS_RBPC, "RxBroad"),
++	MIB_DESC(1, MT7621_STATS_RAEPC, "RxAlignErr"),
++	MIB_DESC(1, MT7621_STATS_RCEPC, "RxCRC"),
++	MIB_DESC(1, MT7621_STATS_RUSPC, "RxUnderSize"),
++	MIB_DESC(1, MT7621_STATS_RFEPC, "RxFragment"),
++	MIB_DESC(1, MT7621_STATS_ROSPC, "RxOverSize"),
++	MIB_DESC(1, MT7621_STATS_RJEPC, "RxJabber"),
++	MIB_DESC(1, MT7621_STATS_RPPC, "RxPause"),
++	MIB_DESC(1, MT7621_STATS_RL64PC, "Rx64Byte"),
++	MIB_DESC(1, MT7621_STATS_RL65PC, "Rx65Byte"),
++	MIB_DESC(1, MT7621_STATS_RL128PC, "Rx128Byte"),
++	MIB_DESC(1, MT7621_STATS_RL256PC, "Rx256Byte"),
++	MIB_DESC(1, MT7621_STATS_RL512PC, "Rx512Byte"),
++	MIB_DESC(1, MT7621_STATS_RL1024PC, "Rx1024Byte"),
++	MIB_DESC(2, MT7621_STATS_ROC, "RxByte"),
++	MIB_DESC(1, MT7621_STATS_RDPC_CTRL, "RxCtrlDrop"),
++	MIB_DESC(1, MT7621_STATS_RDPC_ING, "RxIngDrop"),
++	MIB_DESC(1, MT7621_STATS_RDPC_ARL, "RxARLDrop")
++};
++
++enum {
++	/* Global attributes. */
++	MT7530_ATTR_ENABLE_VLAN,
++};
++
++struct mt7530_port_entry {
++	u16	pvid;
++};
++
++struct mt7530_vlan_entry {
++	u16	vid;
++	u8	member;
++	u8	etags;
++};
++
++struct mt7530_priv {
++	void __iomem		*base;
++	struct mii_bus		*bus;
++	struct switch_dev	swdev;
++
++	bool			global_vlan_enable;
++	struct mt7530_vlan_entry	vlan_entries[MT7530_NUM_VLANS];
++	struct mt7530_port_entry	port_entries[MT7530_NUM_PORTS];
++};
++
++struct mt7530_mapping {
++	char	*name;
++	u16	pvids[MT7530_NUM_PORTS];
++	u8	members[MT7530_NUM_VLANS];
++	u8	etags[MT7530_NUM_VLANS];
++	u16	vids[MT7530_NUM_VLANS];
++} mt7530_defaults[] = {
++	{
++		.name = "llllw",
++		.pvids = { 1, 1, 1, 1, 2, 1, 1 },
++		.members = { 0, 0x6f, 0x50 },
++		.etags = { 0, 0x40, 0x40 },
++		.vids = { 0, 1, 2 },
++	}, {
++		.name = "wllll",
++		.pvids = { 2, 1, 1, 1, 1, 1, 1 },
++		.members = { 0, 0x7e, 0x41 },
++		.etags = { 0, 0x40, 0x40 },
++		.vids = { 0, 1, 2 },
++	},
++};
++
++struct mt7530_mapping*
++mt7530_find_mapping(struct device_node *np)
++{
++	const char *map;
++	int i;
++
++	if (of_property_read_string(np, "mediatek,portmap", &map))
++		return NULL;
++
++	for (i = 0; i < ARRAY_SIZE(mt7530_defaults); i++)
++		if (!strcmp(map, mt7530_defaults[i].name))
++			return &mt7530_defaults[i];
++
++	return NULL;
++}
++
++static void
++mt7530_apply_mapping(struct mt7530_priv *mt7530, struct mt7530_mapping *map)
++{
++	int i = 0;
++
++	for (i = 0; i < MT7530_NUM_PORTS; i++)
++		mt7530->port_entries[i].pvid = map->pvids[i];
++
++	for (i = 0; i < MT7530_NUM_VLANS; i++) {
++		mt7530->vlan_entries[i].member = map->members[i];
++		mt7530->vlan_entries[i].etags = map->etags[i];
++		mt7530->vlan_entries[i].vid = map->vids[i];
++	}
++}
++
++static int
++mt7530_reset_switch(struct switch_dev *dev)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++	int i;
++
++	memset(eth->port_entries, 0, sizeof(eth->port_entries));
++	memset(eth->vlan_entries, 0, sizeof(eth->vlan_entries));
++
++	/* set default vid of each vlan to the same number of vlan, so the vid
++	 * won't need be set explicitly.
++	 */
++	for (i = 0; i < MT7530_NUM_VLANS; i++) {
++		eth->vlan_entries[i].vid = i;
++	}
++
++	return 0;
++}
++
++static int
++mt7530_get_vlan_enable(struct switch_dev *dev,
++			   const struct switch_attr *attr,
++			   struct switch_val *val)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++
++	val->value.i = eth->global_vlan_enable;
++
++	return 0;
++}
++
++static int
++mt7530_set_vlan_enable(struct switch_dev *dev,
++			   const struct switch_attr *attr,
++			   struct switch_val *val)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++
++	eth->global_vlan_enable = val->value.i != 0;
++
++	return 0;
++}
++
++static u32
++mt7530_r32(struct mt7530_priv *eth, u32 reg)
++{
++	u32 val;
++	if (eth->bus) {
++		u16 high, low;
++
++		mdiobus_write(eth->bus, 0x1f, 0x1f, (reg >> 6) & 0x3ff);
++		low = mdiobus_read(eth->bus, 0x1f, (reg >> 2) & 0xf);
++		high = mdiobus_read(eth->bus, 0x1f, 0x10);
++
++		return (high << 16) | (low & 0xffff);
++	}
++
++	val = ioread32(eth->base + reg);
++	pr_debug("MT7530 MDIO Read [%04x]=%08x\n", reg, val);
++
++	return val;
++}
++
++static void
++mt7530_w32(struct mt7530_priv *eth, u32 reg, u32 val)
++{
++	if (eth->bus) {
++		mdiobus_write(eth->bus, 0x1f, 0x1f, (reg >> 6) & 0x3ff);
++		mdiobus_write(eth->bus, 0x1f, (reg >> 2) & 0xf,  val & 0xffff);
++		mdiobus_write(eth->bus, 0x1f, 0x10, val >> 16);
++		return;
++	}
++
++	pr_debug("MT7530 MDIO Write[%04x]=%08x\n", reg, val);
++	iowrite32(val, eth->base + reg);
++}
++
++static void
++mt7530_vtcr(struct mt7530_priv *eth, u32 cmd, u32 val)
++{
++	int i;
++
++	mt7530_w32(eth, REG_ESW_VLAN_VTCR, BIT(31) | (cmd << 12) | val);
++
++	for (i = 0; i < 20; i++) {
++		u32 val = mt7530_r32(eth, REG_ESW_VLAN_VTCR);
++
++		if ((val & BIT(31)) == 0)
++			break;
++
++		udelay(1000);
++	}
++	if (i == 20)
++		printk("mt7530: vtcr timeout\n");
++}
++
++static int
++mt7530_get_port_pvid(struct switch_dev *dev, int port, int *val)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++
++	if (port >= MT7530_NUM_PORTS)
++		return -EINVAL;
++
++	*val = mt7530_r32(eth, REG_ESW_PORT_PPBV1(port));
++	*val &= 0xfff;
++
++	return 0;
++}
++
++static int
++mt7530_set_port_pvid(struct switch_dev *dev, int port, int pvid)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++
++	if (port >= MT7530_NUM_PORTS)
++		return -EINVAL;
++
++	if (pvid < MT7530_MIN_VID || pvid > MT7530_MAX_VID)
++		return -EINVAL;
++
++	eth->port_entries[port].pvid = pvid;
++
++	return 0;
++}
++
++static int
++mt7530_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++	u32 member;
++	u32 etags;
++	int i;
++
++	val->len = 0;
++
++	if (val->port_vlan < 0 || val->port_vlan >= MT7530_NUM_VLANS)
++		return -EINVAL;
++
++	mt7530_vtcr(eth, 0, val->port_vlan);
++
++	member = mt7530_r32(eth, REG_ESW_VLAN_VAWD1);
++	member >>= 16;
++	member &= 0xff;
++
++	etags = mt7530_r32(eth, REG_ESW_VLAN_VAWD2);
++
++	for (i = 0; i < MT7530_NUM_PORTS; i++) {
++		struct switch_port *p;
++		int etag;
++
++		if (!(member & BIT(i)))
++			continue;
++
++		p = &val->value.ports[val->len++];
++		p->id = i;
++
++		etag = (etags >> (i * 2)) & 0x3;
++
++		if (etag == ETAG_CTRL_TAG)
++			p->flags |= BIT(SWITCH_PORT_FLAG_TAGGED);
++		else if (etag != ETAG_CTRL_UNTAG)
++			printk("vlan egress tag control neither untag nor tag.\n");
++	}
++
++	return 0;
++}
++
++static int
++mt7530_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++	u8 member = 0;
++	u8 etags = 0;
++	int i;
++
++	if (val->port_vlan < 0 || val->port_vlan >= MT7530_NUM_VLANS ||
++			val->len > MT7530_NUM_PORTS)
++		return -EINVAL;
++
++	for (i = 0; i < val->len; i++) {
++		struct switch_port *p = &val->value.ports[i];
++
++		if (p->id >= MT7530_NUM_PORTS)
++			return -EINVAL;
++
++		member |= BIT(p->id);
++
++		if (p->flags & BIT(SWITCH_PORT_FLAG_TAGGED))
++			etags |= BIT(p->id);
++	}
++	eth->vlan_entries[val->port_vlan].member = member;
++	eth->vlan_entries[val->port_vlan].etags = etags;
++
++	return 0;
++}
++
++static int
++mt7530_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
++		struct switch_val *val)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++	int vlan;
++	u16 vid;
++
++	vlan = val->port_vlan;
++	vid = (u16)val->value.i;
++
++	if (vlan < 0 || vlan >= MT7530_NUM_VLANS)
++		return -EINVAL;
++
++	if (vid < MT7530_MIN_VID || vid > MT7530_MAX_VID)
++		return -EINVAL;
++
++	eth->vlan_entries[vlan].vid = vid;
++	return 0;
++}
++
++static int
++mt7530_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
++		struct switch_val *val)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++	u32 vid;
++	int vlan;
++
++	vlan = val->port_vlan;
++
++	vid = mt7530_r32(eth, REG_ESW_VLAN_VTIM(vlan));
++	if (vlan & 1)
++		vid = vid >> 12;
++	vid &= 0xfff;
++
++	val->value.i = vid;
++	return 0;
++}
++
++static int
++mt7530_apply_config(struct switch_dev *dev)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++	int i, j;
++	u8 tag_ports;
++	u8 untag_ports;
++
++	if (!eth->global_vlan_enable) {
++		for (i = 0; i < MT7530_NUM_PORTS; i++)
++			mt7530_w32(eth, REG_ESW_PORT_PCR(i), 0x00ff0000);
++
++		for (i = 0; i < MT7530_NUM_PORTS; i++)
++			mt7530_w32(eth, REG_ESW_PORT_PVC(i), 0x810000c0);
++
++		return 0;
++	}
++
++	/* set all ports as security mode */
++	for (i = 0; i < MT7530_NUM_PORTS; i++)
++		mt7530_w32(eth, REG_ESW_PORT_PCR(i), 0x00ff0003);
++
++	/* check if a port is used in tag/untag vlan egress mode */
++	tag_ports = 0;
++	untag_ports = 0;
++
++	for (i = 0; i < MT7530_NUM_VLANS; i++) {
++		u8 member = eth->vlan_entries[i].member;
++		u8 etags = eth->vlan_entries[i].etags;
++
++		if (!member)
++			continue;
++
++		for (j = 0; j < MT7530_NUM_PORTS; j++) {
++			if (!(member & BIT(j)))
++				continue;
++
++			if (etags & BIT(j))
++				tag_ports |= 1u << j;
++			else
++				untag_ports |= 1u << j;
++		}
++	}
++
++	/* set all untag-only ports as transparent and the rest as user port */
++	for (i = 0; i < MT7530_NUM_PORTS; i++) {
++		u32 pvc_mode = 0x81000000;
++
++		if (untag_ports & BIT(i) && !(tag_ports & BIT(i)))
++			pvc_mode = 0x810000c0;
++
++		mt7530_w32(eth, REG_ESW_PORT_PVC(i), pvc_mode);
++	}
++
++	for (i = 0; i < MT7530_NUM_VLANS; i++) {
++		u16 vid = eth->vlan_entries[i].vid;
++		u8 member = eth->vlan_entries[i].member;
++		u8 etags = eth->vlan_entries[i].etags;
++		u32 val;
++
++		/* vid of vlan */
++		val = mt7530_r32(eth, REG_ESW_VLAN_VTIM(i));
++		if (i % 2 == 0) {
++			val &= 0xfff000;
++			val |= vid;
++		} else {
++			val &= 0xfff;
++			val |= (vid << 12);
++		}
++		mt7530_w32(eth, REG_ESW_VLAN_VTIM(i), val);
++
++		/* vlan port membership */
++		if (member)
++			mt7530_w32(eth, REG_ESW_VLAN_VAWD1, REG_ESW_VLAN_VAWD1_IVL_MAC |
++				REG_ESW_VLAN_VAWD1_VTAG_EN | (member << 16) |
++				REG_ESW_VLAN_VAWD1_VALID);
++		else
++			mt7530_w32(eth, REG_ESW_VLAN_VAWD1, 0);
++
++		/* egress mode */
++		val = 0;
++		for (j = 0; j < MT7530_NUM_PORTS; j++) {
++			if (etags & BIT(j))
++				val |= ETAG_CTRL_TAG << (j * 2);
++			else
++				val |= ETAG_CTRL_UNTAG << (j * 2);
++		}
++		mt7530_w32(eth, REG_ESW_VLAN_VAWD2, val);
++
++		/* write to vlan table */
++		mt7530_vtcr(eth, 1, i);
++	}
++
++	/* Port Default PVID */
++	for (i = 0; i < MT7530_NUM_PORTS; i++) {
++		u32 val;
++		val = mt7530_r32(eth, REG_ESW_PORT_PPBV1(i));
++		val &= ~0xfff;
++		val |= eth->port_entries[i].pvid;
++		mt7530_w32(eth, REG_ESW_PORT_PPBV1(i), val);
++	}
++
++	return 0;
++}
++
++static int
++mt7530_get_port_link(struct switch_dev *dev,  int port,
++			struct switch_port_link *link)
++{
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++	u32 speed, pmsr;
++
++	if (port < 0 || port >= MT7530_NUM_PORTS)
++		return -EINVAL;
++
++	pmsr = mt7530_r32(eth, 0x3008 + (0x100 * port));
++
++	link->link = pmsr & 1;
++	link->duplex = (pmsr >> 1) & 1;
++	speed = (pmsr >> 2) & 3;
++
++	switch (speed) {
++	case 0:
++		link->speed = SWITCH_PORT_SPEED_10;
++		break;
++	case 1:
++		link->speed = SWITCH_PORT_SPEED_100;
++		break;
++	case 2:
++	case 3: /* forced gige speed can be 2 or 3 */
++		link->speed = SWITCH_PORT_SPEED_1000;
++		break;
++	default:
++		link->speed = SWITCH_PORT_SPEED_UNKNOWN;
++		break;
++	}
++
++	return 0;
++}
++
++static const struct switch_attr mt7530_global[] = {
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "enable_vlan",
++		.description = "VLAN mode (1:enabled)",
++		.max = 1,
++		.id = MT7530_ATTR_ENABLE_VLAN,
++		.get = mt7530_get_vlan_enable,
++		.set = mt7530_set_vlan_enable,
++	},
++};
++
++static u64 get_mib_counter(struct mt7530_priv *eth, int i, int port)
++{
++	unsigned int port_base;
++	u64 t;
++
++	port_base = MT7621_MIB_COUNTER_BASE +
++		    MT7621_MIB_COUNTER_PORT_OFFSET * port;
++
++	t = mt7530_r32(eth, port_base + mt7621_mibs[i].offset);
++	if (mt7621_mibs[i].size == 2) {
++		u64 hi;
++
++		hi = mt7530_r32(eth, port_base + mt7621_mibs[i].offset + 4);
++		t |= hi << 32;
++	}
++
++	return t;
++}
++
++static int mt7621_sw_get_port_mib(struct switch_dev *dev,
++				  const struct switch_attr *attr,
++				  struct switch_val *val)
++{
++	static char buf[4096];
++	struct mt7530_priv *eth = container_of(dev, struct mt7530_priv, swdev);
++	int i, len = 0;
++
++	if (val->port_vlan >= MT7530_NUM_PORTS)
++		return -EINVAL;
++
++	len += snprintf(buf + len, sizeof(buf) - len,
++			"Port %d MIB counters\n", val->port_vlan);
++
++	for (i = 0; i < sizeof(mt7621_mibs) / sizeof(*mt7621_mibs); ++i) {
++		u64 counter;
++		len += snprintf(buf + len, sizeof(buf) - len,
++				"%-11s: ", mt7621_mibs[i].name);
++		counter = get_mib_counter(eth, i, val->port_vlan);
++		len += snprintf(buf + len, sizeof(buf) - len, "%llu\n",
++				counter);
++	}
++
++	val->value.s = buf;
++	val->len = len;
++	return 0;
++}
++
++static const struct switch_attr mt7621_port[] = {
++	{
++		.type = SWITCH_TYPE_STRING,
++		.name = "mib",
++		.description = "Get MIB counters for port",
++		.get = mt7621_sw_get_port_mib,
++		.set = NULL,
++	},
++};
++
++static const struct switch_attr mt7530_port[] = {
++};
++
++static const struct switch_attr mt7530_vlan[] = {
++	{
++		.type = SWITCH_TYPE_INT,
++		.name = "vid",
++		.description = "VLAN ID (0-4094)",
++		.set = mt7530_set_vid,
++		.get = mt7530_get_vid,
++		.max = 4094,
++	},
++};
++
++static const struct switch_dev_ops mt7621_ops = {
++	.attr_global = {
++		.attr = mt7530_global,
++		.n_attr = ARRAY_SIZE(mt7530_global),
++	},
++/*	.attr_port = {
++		.attr = mt7621_port,
++		.n_attr = ARRAY_SIZE(mt7621_port),
++	},*/
++	.attr_vlan = {
++		.attr = mt7530_vlan,
++		.n_attr = ARRAY_SIZE(mt7530_vlan),
++	},
++	.get_vlan_ports = mt7530_get_vlan_ports,
++	.set_vlan_ports = mt7530_set_vlan_ports,
++	.get_port_pvid = mt7530_get_port_pvid,
++	.set_port_pvid = mt7530_set_port_pvid,
++	.get_port_link = mt7530_get_port_link,
++	.apply_config = mt7530_apply_config,
++	.reset_switch = mt7530_reset_switch,
++};
++
++static const struct switch_dev_ops mt7530_ops = {
++	.attr_global = {
++		.attr = mt7530_global,
++		.n_attr = ARRAY_SIZE(mt7530_global),
++	},
++	.attr_port = {
++		.attr = mt7530_port,
++		.n_attr = ARRAY_SIZE(mt7530_port),
++	},
++	.attr_vlan = {
++		.attr = mt7530_vlan,
++		.n_attr = ARRAY_SIZE(mt7530_vlan),
++	},
++	.get_vlan_ports = mt7530_get_vlan_ports,
++	.set_vlan_ports = mt7530_set_vlan_ports,
++	.get_port_pvid = mt7530_get_port_pvid,
++	.set_port_pvid = mt7530_set_port_pvid,
++	.get_port_link = mt7530_get_port_link,
++	.apply_config = mt7530_apply_config,
++	.reset_switch = mt7530_reset_switch,
++};
++
++int
++mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vlan)
++{
++	struct switch_dev *swdev;
++	struct mt7530_priv *mt7530;
++	struct mt7530_mapping *map;
++	int ret;
++
++	mt7530 = devm_kzalloc(dev, sizeof(struct mt7530_priv), GFP_KERNEL);
++	if (!mt7530)
++		return -ENOMEM;
++
++	mt7530->base = base;
++	mt7530->bus = bus;
++	mt7530->global_vlan_enable = vlan;
++
++	swdev = &mt7530->swdev;
++	if (bus) {
++		swdev->alias = "mt7530";
++		swdev->name = "mt7530";
++	} else if (IS_ENABLED(CONFIG_MACH_MT7623)) {
++		swdev->alias = "mt7623";
++		swdev->name = "mt7623";
++	} else if (IS_ENABLED(CONFIG_SOC_MT7621)) {
++		swdev->alias = "mt7621";
++		swdev->name = "mt7621";
++	} else {
++		swdev->alias = "mt7620";
++		swdev->name = "mt7620";
++	}
++	swdev->cpu_port = MT7530_CPU_PORT;
++	swdev->ports = MT7530_NUM_PORTS;
++	swdev->vlans = MT7530_NUM_VLANS;
++	if (IS_ENABLED(CONFIG_SOC_MT7621) || IS_ENABLED(CONFIG_MACH_MT7623))
++		swdev->ops = &mt7621_ops;
++	else
++		swdev->ops = &mt7530_ops;
++
++	ret = register_switch(swdev, NULL);
++	if (ret) {
++		dev_err(dev, "failed to register mt7530\n");
++		return ret;
++	}
++
++	mt7530_reset_switch(swdev);
++
++	map = mt7530_find_mapping(dev->of_node);
++	if (map)
++		mt7530_apply_mapping(mt7530, map);
++	mt7530_apply_config(swdev);
++
++	/* magic vodoo */
++	if (!(IS_ENABLED(CONFIG_SOC_MT7621) || IS_ENABLED(CONFIG_MACH_MT7623)) && bus && mt7530_r32(mt7530, REG_HWTRAP) !=  0x1117edf) {
++	        dev_info(dev, "fixing up MHWTRAP register - bootloader probably played with it\n");
++		mt7530_w32(mt7530, REG_HWTRAP, 0x1117edf);
++	}
++	dev_info(dev, "loaded %s driver\n", swdev->name);
++
++	return 0;
++}
+--- /dev/null
++++ b/drivers/net/ethernet/mediatek/mt7530.h
+@@ -0,0 +1,20 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
++ */
++
++#ifndef _MT7530_H__
++#define _MT7530_H__
++
++int mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vlan);
++
++#endif
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -24,6 +24,9 @@
+ 
+ #include "mtk_eth_soc.h"
+ 
++/* the callback used by the driver core to bringup the switch */
++int mtk_gsw_init(struct mtk_eth *eth);
++
+ static int mtk_msg_level = -1;
+ module_param_named(msg_level, mtk_msg_level, int, 0);
+ MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
+@@ -69,7 +72,7 @@ static int mtk_mdio_busy_wait(struct mtk
+ 			return 0;
+ 		if (time_after(jiffies, t_start + PHY_IAC_TIMEOUT))
+ 			break;
+-		usleep_range(10, 20);
++//		usleep_range(10, 20);
+ 	}
+ 
+ 	dev_err(eth->dev, "mdio: MDIO timeout\n");
+@@ -1421,15 +1424,6 @@ static int __init mtk_hw_init(struct mtk
+ 	reset_control_deassert(eth->rstc);
+ 	usleep_range(10, 20);
+ 
+-	/* Set GE2 driving and slew rate */
+-	regmap_write(eth->pctl, GPIO_DRV_SEL10, 0xa00);
+-
+-	/* set GE2 TDSEL */
+-	regmap_write(eth->pctl, GPIO_OD33_CTRL8, 0x5);
+-
+-	/* set GE2 TUNE */
+-	regmap_write(eth->pctl, GPIO_BIAS_CTRL, 0x0);
+-
+ 	/* GE1, Force 1000M/FD, FC ON */
+ 	mtk_w32(eth, MAC_MCR_FIXED_LINK, MTK_MAC_MCR(0));
+ 
+@@ -1452,6 +1446,8 @@ static int __init mtk_hw_init(struct mtk
+ 	if (err)
+ 		return err;
+ 
++	mtk_gsw_init(eth);
++
+ 	/* disable delay and normal interrupt */
+ 	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
+ 	mtk_irq_disable(eth, ~0);
+@@ -1479,6 +1475,8 @@ static int __init mtk_hw_init(struct mtk
+ 		mtk_w32(eth, val, MTK_GDMA_FWD_CFG(i));
+ 	}
+ 
++	mt7623_gsw_config(eth);
++
+ 	return 0;
+ }
+ 
+@@ -1734,7 +1732,7 @@ static int mtk_add_mac(struct mtk_eth *e
+ {
+ 	struct mtk_mac *mac;
+ 	const __be32 *_id = of_get_property(np, "reg", NULL);
+-	int id, err;
++	int id;
+ 
+ 	if (!_id) {
+ 		dev_err(eth->dev, "missing mac id\n");
+@@ -1768,8 +1766,8 @@ static int mtk_add_mac(struct mtk_eth *e
+ 				     GFP_KERNEL);
+ 	if (!mac->hw_stats) {
+ 		dev_err(eth->dev, "failed to allocate counter memory\n");
+-		err = -ENOMEM;
+-		goto free_netdev;
++		free_netdev(eth->netdev[id]);
++		return -ENOMEM;
+ 	}
+ 	spin_lock_init(&mac->hw_stats->stats_lock);
+ 	mac->hw_stats->reg_offset = id * MTK_STAT_OFFSET;
+@@ -1783,21 +1781,9 @@ static int mtk_add_mac(struct mtk_eth *e
+ 	eth->netdev[id]->features |= MTK_HW_FEATURES;
+ 	eth->netdev[id]->ethtool_ops = &mtk_ethtool_ops;
+ 
+-	err = register_netdev(eth->netdev[id]);
+-	if (err) {
+-		dev_err(eth->dev, "error bringing up device\n");
+-		goto free_netdev;
+-	}
+ 	eth->netdev[id]->irq = eth->irq[0];
+-	netif_info(eth, probe, eth->netdev[id],
+-		   "mediatek frame engine at 0x%08lx, irq %d\n",
+-		   eth->netdev[id]->base_addr, eth->irq[0]);
+ 
+ 	return 0;
+-
+-free_netdev:
+-	free_netdev(eth->netdev[id]);
+-	return err;
+ }
+ 
+ static int mtk_probe(struct platform_device *pdev)
+@@ -1865,14 +1851,13 @@ static int mtk_probe(struct platform_dev
+ 	clk_prepare_enable(eth->clk_gp1);
+ 	clk_prepare_enable(eth->clk_gp2);
+ 
++	eth->switch_np = of_parse_phandle(pdev->dev.of_node,
++					  "mediatek,switch", 0);
++
+ 	eth->dev = &pdev->dev;
+ 	eth->msg_enable = netif_msg_init(mtk_msg_level, MTK_DEFAULT_MSG_ENABLE);
+ 	INIT_WORK(&eth->pending_work, mtk_pending_work);
+ 
+-	err = mtk_hw_init(eth);
+-	if (err)
+-		return err;
+-
+ 	for_each_child_of_node(pdev->dev.of_node, mac_np) {
+ 		if (!of_device_is_compatible(mac_np,
+ 					     "mediatek,eth-mac"))
+@@ -1886,6 +1871,22 @@ static int mtk_probe(struct platform_dev
+ 			goto err_free_dev;
+ 	}
+ 
++	err = mtk_hw_init(eth);
++	if (err)
++		return err;
++
++	for (i = 0; i < MTK_MAX_DEVS; i++) {
++		if (!eth->netdev[i])
++			continue;
++		err = register_netdev(eth->netdev[i]);
++		if (err)
++			dev_err(eth->dev, "error bringing up device\n");
++		else
++			netif_info(eth, probe, eth->netdev[i],
++				   "mediatek frame engine at 0x%08lx, irq %d\n",
++				   eth->netdev[i]->base_addr, eth->irq[0]);
++	}
++
+ 	/* we run 2 devices on the same DMA ring so we need a dummy device
+ 	 * for NAPI to work
+ 	 */
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -407,6 +407,9 @@ struct mtk_eth {
+ 	struct clk			*clk_gp2;
+ 	struct mii_bus			*mii_bus;
+ 	struct work_struct		pending_work;
++
++	struct device_node		*switch_np;
++	void				*sw_priv;
+ };
+ 
+ /* struct mtk_mac -	the structure that holds the info about the MACs of the
+@@ -434,4 +437,6 @@ void mtk_stats_update_mac(struct mtk_mac
+ void mtk_w32(struct mtk_eth *eth, u32 val, unsigned reg);
+ u32 mtk_r32(struct mtk_eth *eth, unsigned reg);
+ 
++int mt7623_gsw_config(struct mtk_eth *eth);
++
+ #endif /* MTK_ETH_H */

@@ -1,0 +1,64 @@
+From 5022d46f5e7a63c305c1259e806f0ebf2ba5527e Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 18 Mar 2016 12:34:59 -0700
+Subject: [PATCH 333/381] drm: Add an encoder and connector type enum for DPI.
+
+Right now exynos is exposing DPI as a TMDS encoder and VGA connector,
+which seems rather misleading.  This isn't just an internal detail,
+since xrandr actually exposes "VGA" as the output name.  Define some
+new enums so that vc4's DPI can have a more informative name.
+
+I considered other names for the connector as well.  For VC4, the
+Adafruit DPI kippah takes the 28 GPIO pins and routes them to a
+standard-ish 40-pin FPC connector, but "40-pin FPC" doesn't uniquely
+identify an ordering of pins (apparently some other orderings exist),
+doesn't explain things as well for the user (who, if anything, knows
+their product is a DPI kippah/panel combo), and actually doesn't have
+to exist (one could connect the 28 GPIOs directly to something else).
+Simply "DPI" seems like a good compromise name to distinguish from the
+HDMI, DSI, and TV connectors .
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Reviewed-by: Daniel Vetter <daniel.vetter@ffwll.ch>
+(cherry picked from commit 0b27c02a7f1c697694f2ad6d6517e7dbf9ecfa39)
+---
+ drivers/gpu/drm/drm_crtc.c  | 2 ++
+ include/uapi/drm/drm_mode.h | 2 ++
+ 2 files changed, 4 insertions(+)
+
+--- a/drivers/gpu/drm/drm_crtc.c
++++ b/drivers/gpu/drm/drm_crtc.c
+@@ -168,6 +168,7 @@ static struct drm_conn_prop_enum_list dr
+ 	{ DRM_MODE_CONNECTOR_eDP, "eDP" },
+ 	{ DRM_MODE_CONNECTOR_VIRTUAL, "Virtual" },
+ 	{ DRM_MODE_CONNECTOR_DSI, "DSI" },
++	{ DRM_MODE_CONNECTOR_DPI, "DPI" },
+ };
+ 
+ static const struct drm_prop_enum_list drm_encoder_enum_list[] = {
+@@ -179,6 +180,7 @@ static const struct drm_prop_enum_list d
+ 	{ DRM_MODE_ENCODER_VIRTUAL, "Virtual" },
+ 	{ DRM_MODE_ENCODER_DSI, "DSI" },
+ 	{ DRM_MODE_ENCODER_DPMST, "DP MST" },
++	{ DRM_MODE_ENCODER_DPI, "DPI" },
+ };
+ 
+ static const struct drm_prop_enum_list drm_subpixel_enum_list[] = {
+--- a/include/uapi/drm/drm_mode.h
++++ b/include/uapi/drm/drm_mode.h
+@@ -202,6 +202,7 @@ struct drm_mode_get_plane_res {
+ #define DRM_MODE_ENCODER_VIRTUAL 5
+ #define DRM_MODE_ENCODER_DSI	6
+ #define DRM_MODE_ENCODER_DPMST	7
++#define DRM_MODE_ENCODER_DPI	8
+ 
+ struct drm_mode_get_encoder {
+ 	__u32 encoder_id;
+@@ -241,6 +242,7 @@ struct drm_mode_get_encoder {
+ #define DRM_MODE_CONNECTOR_eDP		14
+ #define DRM_MODE_CONNECTOR_VIRTUAL      15
+ #define DRM_MODE_CONNECTOR_DSI		16
++#define DRM_MODE_CONNECTOR_DPI		17
+ 
+ struct drm_mode_get_connector {
+ 

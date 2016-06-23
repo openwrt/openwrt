@@ -1,0 +1,31 @@
+From bf137324a7f873dc90b9965398de259f5d992f9b Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 30 Mar 2016 17:23:15 +0100
+Subject: [PATCH 218/381] cpufreq: Temporarily ignore io_is_busy=1
+
+To speed testing of the new sdhost driver that adapts to changes in
+core_freq, hack the on-demand governor to treat io_is_busy=1 as
+io_is_busy=0. The io_is_busy feature can still be forced using
+io_is_busy=2.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/cpufreq/cpufreq_ondemand.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/cpufreq/cpufreq_ondemand.c
++++ b/drivers/cpufreq/cpufreq_ondemand.c
+@@ -307,7 +307,12 @@ static ssize_t store_io_is_busy(struct d
+ 	ret = sscanf(buf, "%u", &input);
+ 	if (ret != 1)
+ 		return -EINVAL;
+-	od_tuners->io_is_busy = !!input;
++	// XXX temporary hack
++	if (input > 1)
++		input = 1;
++	else
++		input = 0;
++	od_tuners->io_is_busy = input;
+ 
+ 	/* we need to re-evaluate prev_cpu_idle */
+ 	for_each_online_cpu(j) {

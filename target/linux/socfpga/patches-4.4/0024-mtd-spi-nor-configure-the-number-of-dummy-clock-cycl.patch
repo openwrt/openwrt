@@ -1,0 +1,159 @@
+From 77fee227b15835d03517dc34675f72e8963ae882 Mon Sep 17 00:00:00 2001
+From: Cyrille Pitchen <cyrille.pitchen@atmel.com>
+Date: Fri, 8 Jan 2016 17:02:21 +0100
+Subject: [PATCH 24/33] mtd: spi-nor: configure the number of dummy clock
+ cycles on Micron memories
+
+The spi-nor framework currently expects all Fast Read operations to use 8
+dummy clock cycles. Especially some drivers like m25p80 can only support
+multiple of 8 dummy clock cycles.
+
+On Micron memories, the number of dummy clock cycles to be used by Fast
+Read commands can be safely set to 8 by updating the Volatile
+Configuration Register (VCR).
+
+Also the XIP bit is set at the same time when updating the VCR so the
+Continuous Read mode is disabled: this prevents us from entering it by
+mistake.
+
+Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
+---
+ drivers/mtd/spi-nor/spi-nor.c | 72 ++++++++++++++++++++++++++++++++++++++-----
+ include/linux/mtd/spi-nor.h   |  2 ++
+ 2 files changed, 67 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index ae3e9d8..5232984 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1333,6 +1333,53 @@ static int winbond_set_single_mode(struct spi_nor *nor)
+ 	return 0;
+ }
+ 
++static int micron_set_dummy_cycles(struct spi_nor *nor, u8 read_dummy)
++{
++	u8 vcr, val, mask;
++	int ret;
++
++	/* Set bit3 (XIP) to disable the Continuous Read mode */
++	mask = GENMASK(7, 4) | BIT(3);
++	val = ((read_dummy << 4) | BIT(3)) & mask;
++
++	/* Read the Volatile Configuration Register (VCR). */
++	ret = nor->read_reg(nor, SPINOR_OP_RD_VCR, &vcr, 1);
++	if (ret < 0) {
++		dev_err(nor->dev, "error while reading VCR register\n");
++		return ret;
++	}
++
++	/* Check whether we need to update the number of dummy cycles. */
++	if ((vcr & mask) == val) {
++		nor->read_dummy = read_dummy;
++		return 0;
++	}
++
++	/* Update the number of dummy into the VCR. */
++	write_enable(nor);
++	vcr = (vcr & ~mask) | val;
++	ret = nor->write_reg(nor, SPINOR_OP_WR_VCR, &vcr, 1);
++	if (ret < 0) {
++		dev_err(nor->dev, "error while writing VCR register\n");
++		return ret;
++	}
++
++	ret = spi_nor_wait_till_ready(nor);
++	if (ret)
++		return ret;
++
++	/* Read VCR and check it. */
++	ret = nor->read_reg(nor, SPINOR_OP_RD_VCR, &vcr, 1);
++	if (ret < 0 || (vcr & mask) != val) {
++		dev_err(nor->dev, "Micron VCR dummy cycles not updated\n");
++		return -EINVAL;
++	}
++
++	/* Save the number of dummy cycles to use with Fast Read commands */
++	nor->read_dummy = read_dummy;
++	return 0;
++}
++
+ static int micron_set_protocol(struct spi_nor *nor, u8 mask, u8 val,
+ 			       enum spi_nor_protocol proto)
+ {
+@@ -1417,12 +1464,15 @@ static int micron_set_quad_mode(struct spi_nor *nor)
+ 	/*
+ 	 * Whatever the Quad mode is enabled or not, the
+ 	 * Fast Read Quad Output 1-1-4 (0x6b) op code is supported.
++	 * Force the number of dummy cycles to 8 and disable the Continuous Read
++	 * mode to prevent some drivers from using it by mistake (m25p80).
++	 * We can change these settings safely as we write into a volatile
++	 * register.
+ 	 */
+ 	if (nor->read_proto != SNOR_PROTO_4_4_4)
+ 		nor->read_proto = SNOR_PROTO_1_1_4;
+ 	nor->read_opcode = SPINOR_OP_READ_1_1_4;
+-	nor->read_dummy = 8;
+-	return 0;
++	return micron_set_dummy_cycles(nor, 8);
+ }
+ 
+ static int micron_set_dual_mode(struct spi_nor *nor)
+@@ -1447,12 +1497,15 @@ static int micron_set_dual_mode(struct spi_nor *nor)
+ 	/*
+ 	 * Whatever the Dual mode is enabled or not, the
+ 	 * Fast Read Dual Output 1-1-2 (0x3b) op code is supported.
++	 * Force the number of dummy cycles to 8 and disable the Continuous Read
++	 * mode to prevent some drivers from using it by mistake (m25p80).
++	 * We can change these settings safely as we write into a volatile
++	 * register.
+ 	 */
+ 	if (nor->read_proto != SNOR_PROTO_2_2_2)
+ 		nor->read_proto = SNOR_PROTO_1_1_2;
+ 	nor->read_opcode = SPINOR_OP_READ_1_1_2;
+-	nor->read_dummy = 8;
+-	return 0;
++	return micron_set_dummy_cycles(nor, 8);
+ }
+ 
+ static int micron_set_single_mode(struct spi_nor *nor)
+@@ -1475,7 +1528,13 @@ static int micron_set_single_mode(struct spi_nor *nor)
+ 		nor->read_proto = SNOR_PROTO_1_1_1;
+ 	}
+ 
+-	/* Force the number of dummy cycles to 8 for Fast Read, 0 for Read. */
++	/*
++	 * Force the number of dummy cycles to 8 for Fast Read, 0 for Read
++	 * and disable the Continuous Read mode to prevent some drivers from
++	 * using it by mistake (m25p80).
++	 * We can change these settings safely as we write into a volatile
++	 * register.
++	 */
+ 	switch (nor->read_opcode) {
+ 	case SPINOR_OP_READ:
+ 	case SPINOR_OP_READ4:
+@@ -1486,8 +1545,7 @@ static int micron_set_single_mode(struct spi_nor *nor)
+ 		read_dummy = 8;
+ 		break;
+ 	}
+-	nor->read_dummy = read_dummy;
+-	return 0;
++	return micron_set_dummy_cycles(nor, read_dummy);
+ }
+ 
+ static int spansion_set_quad_mode(struct spi_nor *nor)
+diff --git a/include/linux/mtd/spi-nor.h b/include/linux/mtd/spi-nor.h
+index d0a6f34..2dc0f8b 100644
+--- a/include/linux/mtd/spi-nor.h
++++ b/include/linux/mtd/spi-nor.h
+@@ -86,6 +86,8 @@
+ 
+ /* Used for Micron flashes only. */
+ #define SPINOR_OP_MIO_RDID	0xaf	/* Multiple I/O Read JEDEC ID */
++#define SPINOR_OP_RD_VCR	0x85	/* Read VCR register */
++#define SPINOR_OP_WR_VCR	0x81	/* Write VCR register */
+ #define SPINOR_OP_RD_EVCR	0x65    /* Read EVCR register */
+ #define SPINOR_OP_WD_EVCR	0x61    /* Write EVCR register */
+ 
+-- 
+2.8.1
+

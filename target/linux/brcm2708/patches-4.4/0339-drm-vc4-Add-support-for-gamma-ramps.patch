@@ -1,0 +1,137 @@
+From 6d1609ef815189095a8e44feb38e2c128c3736a5 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 31 Mar 2016 18:38:20 -0700
+Subject: [PATCH 339/381] drm/vc4: Add support for gamma ramps.
+
+We could possibly save a bit of power by not requesting gamma
+conversion when the ramp happens to be 1:1, but at least if all the
+CRTCs are off the SRAM will be disabled.
+
+This should fix brightness sliders in a lot of fullscreen games.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit e582b6c7e7f9d0b1e30e8017e4082d3a9ede3310)
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 58 ++++++++++++++++++++++++++++++++++++++++++
+ drivers/gpu/drm/vc4/vc4_regs.h |  6 +++++
+ 2 files changed, 64 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -49,6 +49,10 @@ struct vc4_crtc {
+ 	/* Which HVS channel we're using for our CRTC. */
+ 	int channel;
+ 
++	u8 lut_r[256];
++	u8 lut_g[256];
++	u8 lut_b[256];
++
+ 	struct drm_pending_vblank_event *event;
+ };
+ 
+@@ -147,6 +151,46 @@ static void vc4_crtc_destroy(struct drm_
+ 	drm_crtc_cleanup(crtc);
+ }
+ 
++static void
++vc4_crtc_lut_load(struct drm_crtc *crtc)
++{
++	struct drm_device *dev = crtc->dev;
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
++	struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
++	u32 i;
++
++	/* The LUT memory is laid out with each HVS channel in order,
++	 * each of which takes 256 writes for R, 256 for G, then 256
++	 * for B.
++	 */
++	HVS_WRITE(SCALER_GAMADDR,
++		  SCALER_GAMADDR_AUTOINC |
++		  (vc4_crtc->channel * 3 * crtc->gamma_size));
++
++	for (i = 0; i < crtc->gamma_size; i++)
++		HVS_WRITE(SCALER_GAMDATA, vc4_crtc->lut_r[i]);
++	for (i = 0; i < crtc->gamma_size; i++)
++		HVS_WRITE(SCALER_GAMDATA, vc4_crtc->lut_g[i]);
++	for (i = 0; i < crtc->gamma_size; i++)
++		HVS_WRITE(SCALER_GAMDATA, vc4_crtc->lut_b[i]);
++}
++
++static void
++vc4_crtc_gamma_set(struct drm_crtc *crtc, u16 *r, u16 *g, u16 *b,
++		   uint32_t start, uint32_t size)
++{
++	struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
++	u32 i;
++
++	for (i = start; i < start + size; i++) {
++		vc4_crtc->lut_r[i] = r[i] >> 8;
++		vc4_crtc->lut_g[i] = g[i] >> 8;
++		vc4_crtc->lut_b[i] = b[i] >> 8;
++	}
++
++	vc4_crtc_lut_load(crtc);
++}
++
+ static u32 vc4_get_fifo_full_level(u32 format)
+ {
+ 	static const u32 fifo_len_bytes = 64;
+@@ -260,8 +304,14 @@ static void vc4_crtc_mode_set_nofb(struc
+ 
+ 	HVS_WRITE(SCALER_DISPBKGNDX(vc4_crtc->channel),
+ 		  SCALER_DISPBKGND_AUTOHS |
++		  SCALER_DISPBKGND_GAMMA |
+ 		  (interlace ? SCALER_DISPBKGND_INTERLACE : 0));
+ 
++	/* Reload the LUT, since the SRAMs would have been disabled if
++	 * all CRTCs had SCALER_DISPBKGND_GAMMA unset at once.
++	 */
++	vc4_crtc_lut_load(crtc);
++
+ 	if (debug_dump_regs) {
+ 		DRM_INFO("CRTC %d regs after:\n", drm_crtc_index(crtc));
+ 		vc4_crtc_dump_regs(vc4_crtc);
+@@ -613,6 +663,7 @@ static const struct drm_crtc_funcs vc4_c
+ 	.reset = drm_atomic_helper_crtc_reset,
+ 	.atomic_duplicate_state = vc4_crtc_duplicate_state,
+ 	.atomic_destroy_state = vc4_crtc_destroy_state,
++	.gamma_set = vc4_crtc_gamma_set,
+ };
+ 
+ static const struct drm_crtc_helper_funcs vc4_crtc_helper_funcs = {
+@@ -731,6 +782,7 @@ static int vc4_crtc_bind(struct device *
+ 	primary_plane->crtc = crtc;
+ 	vc4->crtc[drm_crtc_index(crtc)] = vc4_crtc;
+ 	vc4_crtc->channel = vc4_crtc->data->hvs_channel;
++	drm_mode_crtc_set_gamma_size(crtc, ARRAY_SIZE(vc4_crtc->lut_r));
+ 
+ 	/* Set up some arbitrary number of planes.  We're not limited
+ 	 * by a set number of physical registers, just the space in
+@@ -771,6 +823,12 @@ static int vc4_crtc_bind(struct device *
+ 
+ 	vc4_set_crtc_possible_masks(drm, crtc);
+ 
++	for (i = 0; i < crtc->gamma_size; i++) {
++		vc4_crtc->lut_r[i] = i;
++		vc4_crtc->lut_g[i] = i;
++		vc4_crtc->lut_b[i] = i;
++	}
++
+ 	platform_set_drvdata(pdev, vc4_crtc);
+ 
+ 	return 0;
+--- a/drivers/gpu/drm/vc4/vc4_regs.h
++++ b/drivers/gpu/drm/vc4/vc4_regs.h
+@@ -390,6 +390,12 @@
+ #define SCALER_DISPBASE2                        0x0000006c
+ #define SCALER_DISPALPHA2                       0x00000070
+ #define SCALER_GAMADDR                          0x00000078
++# define SCALER_GAMADDR_AUTOINC			BIT(31)
++/* Enables all gamma ramp SRAMs, not just those of CRTCs with gamma
++ * enabled.
++ */
++# define SCALER_GAMADDR_SRAMENB			BIT(30)
++
+ #define SCALER_GAMDATA                          0x000000e0
+ #define SCALER_DLIST_START                      0x00002000
+ #define SCALER_DLIST_SIZE                       0x00004000

@@ -1,0 +1,226 @@
+From b14e4255f43ccf38b4f9df8f5793c9c4098e0ab9 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 4 Apr 2016 16:03:18 +0100
+Subject: [PATCH 225/381] bcm2835-sdhost: Firmware manages the clock divisor
+
+The bcm2835-sdhost driver hands control of the CDIV clock divisor
+register to matching firmware, allowing it to adjust to a changing
+core clock. This removes the need to use the performance governor or
+to enable io_is_busy on the on-demand governor in order to get the
+best SD performance.
+
+N.B. As SD clocks must be an integer divisor of the core clock, it is
+possible that the SD clock for "turbo" mode can be different (even
+lower) than "normal" mode.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/mmc/host/bcm2835-sdhost.c          | 120 ++++++++++++++++++-----------
+ include/soc/bcm2835/raspberrypi-firmware.h |   1 +
+ 2 files changed, 74 insertions(+), 47 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -50,6 +50,7 @@
+ #include <linux/of_dma.h>
+ #include <linux/time.h>
+ #include <linux/workqueue.h>
++#include <soc/bcm2835/raspberrypi-firmware.h>
+ 
+ #define DRIVER_NAME "sdhost-bcm2835"
+ 
+@@ -183,6 +184,7 @@ struct bcm2835_host {
+ 	unsigned int			use_sbc:1;		/* Send CMD23 */
+ 
+ 	unsigned int			debug:1;		/* Enable debug output */
++	unsigned int			firmware_sets_cdiv:1;	/* Let the firmware manage the clock */
+ 
+ 	/*DMA part*/
+ 	struct dma_chan			*dma_chan_rxtx;		/* DMA channel for reads and writes */
+@@ -430,7 +432,7 @@ static void bcm2835_sdhost_reset_interna
+ 	host->clock = 0;
+ 	host->sectors = 0;
+ 	bcm2835_sdhost_write(host, host->hcfg, SDHCFG);
+-	bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
++	bcm2835_sdhost_write(host, SDCDIV_MAX_CDIV, SDCDIV);
+ 	mmiowb();
+ }
+ 
+@@ -1534,62 +1536,75 @@ void bcm2835_sdhost_set_clock(struct bcm
+ 
+ 	host->mmc->actual_clock = 0;
+ 
+-	if (clock < 100000) {
+-	    /* Can't stop the clock, but make it as slow as possible
+-	     * to show willing
+-	     */
+-	    host->cdiv = SDCDIV_MAX_CDIV;
+-	    bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
+-	    return;
+-	}
+-
+-	div = host->max_clk / clock;
+-	if (div < 2)
+-		div = 2;
+-	if ((host->max_clk / div) > clock)
+-		div++;
+-	div -= 2;
++	if (host->firmware_sets_cdiv) {
++		u32 msg[3] = { clock, 0, 0 };
+ 
+-	if (div > SDCDIV_MAX_CDIV)
+-	    div = SDCDIV_MAX_CDIV;
++		rpi_firmware_property(rpi_firmware_get(NULL),
++				      RPI_FIRMWARE_SET_SDHOST_CLOCK,
++				      &msg, sizeof(msg));
+ 
+-	clock = host->max_clk / (div + 2);
+-	host->mmc->actual_clock = clock;
++		clock = max(msg[1], msg[2]);
++	} else {
++		if (clock < 100000) {
++			/* Can't stop the clock, but make it as slow as
++			 * possible to show willing
++			 */
++			host->cdiv = SDCDIV_MAX_CDIV;
++			bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
++			return;
++		}
++
++		div = host->max_clk / clock;
++		if (div < 2)
++			div = 2;
++		if ((host->max_clk / div) > clock)
++			div++;
++		div -= 2;
++
++		if (div > SDCDIV_MAX_CDIV)
++			div = SDCDIV_MAX_CDIV;
++
++		clock = host->max_clk / (div + 2);
++
++		host->cdiv = div;
++		bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
++
++		if (host->debug)
++			pr_info("%s: clock=%d -> max_clk=%d, cdiv=%x "
++				"(actual clock %d)\n",
++				mmc_hostname(host->mmc), input_clock,
++				host->max_clk, host->cdiv,
++				clock);
++	}
+ 
+ 	/* Calibrate some delays */
+ 
+ 	host->ns_per_fifo_word = (1000000000/clock) *
+ 		((host->mmc->caps & MMC_CAP_4_BIT_DATA) ? 8 : 32);
+ 
+-	if (clock > input_clock) {
+-		/* Save the closest value, to make it easier
+-		   to reduce in the event of error */
+-		host->overclock_50 = (clock/MHZ);
+-
+-		if (clock != host->overclock) {
+-			pr_warn("%s: overclocking to %dHz\n",
+-				mmc_hostname(host->mmc), clock);
+-			host->overclock = clock;
++	if (input_clock == 50 * MHZ) {
++		if (clock > input_clock) {
++			/* Save the closest value, to make it easier
++			   to reduce in the event of error */
++			host->overclock_50 = (clock/MHZ);
++
++			if (clock != host->overclock) {
++				pr_warn("%s: overclocking to %dHz\n",
++					mmc_hostname(host->mmc), clock);
++				host->overclock = clock;
++			}
++		} else if (host->overclock) {
++			host->overclock = 0;
++			if (clock == 50 * MHZ)
++				pr_warn("%s: cancelling overclock\n",
++					mmc_hostname(host->mmc));
+ 		}
+ 	}
+-	else if (host->overclock)
+-	{
+-		host->overclock = 0;
+-		if (clock == 50 * MHZ)
+-			pr_warn("%s: cancelling overclock\n",
+-				mmc_hostname(host->mmc));
+-	}
+-
+-	host->cdiv = div;
+-	bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
+ 
+ 	/* Set the timeout to 500ms */
+-	bcm2835_sdhost_write(host, host->mmc->actual_clock/2, SDTOUT);
++	bcm2835_sdhost_write(host, clock/2, SDTOUT);
+ 
+-	if (host->debug)
+-		pr_info("%s: clock=%d -> max_clk=%d, cdiv=%x (actual clock %d)\n",
+-			mmc_hostname(host->mmc), input_clock,
+-			host->max_clk, host->cdiv, host->mmc->actual_clock);
++	host->mmc->actual_clock = clock;
+ }
+ 
+ static void bcm2835_sdhost_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -1704,11 +1719,6 @@ static void bcm2835_sdhost_set_ios(struc
+ 
+ 	log_event("IOS<", ios->clock, 0);
+ 
+-	if (!ios->clock || ios->clock != host->clock) {
+-		bcm2835_sdhost_set_clock(host, ios->clock);
+-		host->clock = ios->clock;
+-	}
+-
+ 	/* set bus width */
+ 	host->hcfg &= ~SDHCFG_WIDE_EXT_BUS;
+ 	if (ios->bus_width == MMC_BUS_WIDTH_4)
+@@ -1721,6 +1731,11 @@ static void bcm2835_sdhost_set_ios(struc
+ 
+ 	bcm2835_sdhost_write(host, host->hcfg, SDHCFG);
+ 
++	if (!ios->clock || ios->clock != host->clock) {
++		bcm2835_sdhost_set_clock(host, ios->clock);
++		host->clock = ios->clock;
++	}
++
+ 	mmiowb();
+ 
+ 	spin_unlock_irqrestore(&host->lock, flags);
+@@ -1953,6 +1968,7 @@ static int bcm2835_sdhost_probe(struct p
+ 	struct bcm2835_host *host;
+ 	struct mmc_host *mmc;
+ 	const __be32 *addr;
++	u32 msg[3];
+ 	int ret;
+ 
+ 	pr_debug("bcm2835_sdhost_probe\n");
+@@ -2058,6 +2074,16 @@ static int bcm2835_sdhost_probe(struct p
+ 	else
+ 		mmc->caps |= MMC_CAP_4_BIT_DATA;
+ 
++	msg[0] = 0;
++	msg[1] = ~0;
++	msg[2] = ~0;
++
++	rpi_firmware_property(rpi_firmware_get(NULL),
++			      RPI_FIRMWARE_SET_SDHOST_CLOCK,
++			      &msg, sizeof(msg));
++
++	host->firmware_sets_cdiv = (msg[1] != ~0);
++
+ 	ret = bcm2835_sdhost_add_host(host);
+ 	if (ret)
+ 		goto err;
+--- a/include/soc/bcm2835/raspberrypi-firmware.h
++++ b/include/soc/bcm2835/raspberrypi-firmware.h
+@@ -79,6 +79,7 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_SET_VOLTAGE =                            0x00038003,
+ 	RPI_FIRMWARE_SET_TURBO =                              0x00038009,
+ 	RPI_FIRMWARE_SET_CUSTOMER_OTP =                       0x00038021,
++	RPI_FIRMWARE_SET_SDHOST_CLOCK =                       0x00038042,
+ 
+ 	/* Dispmanx TAGS */
+ 	RPI_FIRMWARE_FRAMEBUFFER_ALLOCATE =                   0x00040001,

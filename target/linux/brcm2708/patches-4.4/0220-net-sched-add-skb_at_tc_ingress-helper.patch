@@ -1,0 +1,50 @@
+From 20f13356555bf192a95e2ea77a01746d754e37be Mon Sep 17 00:00:00 2001
+From: Daniel Borkmann <daniel@iogearbox.net>
+Date: Thu, 7 Jan 2016 15:50:22 +0100
+Subject: [PATCH 220/381] net, sched: add skb_at_tc_ingress helper
+
+Add a skb_at_tc_ingress() as this will be needed elsewhere as well and
+can hide the ugly ifdef.
+
+Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+Acked-by: Alexei Starovoitov <ast@kernel.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ include/net/sch_generic.h | 9 +++++++++
+ net/sched/cls_bpf.c       | 6 +-----
+ 2 files changed, 10 insertions(+), 5 deletions(-)
+
+--- a/include/net/sch_generic.h
++++ b/include/net/sch_generic.h
+@@ -409,6 +409,15 @@ bool tcf_destroy(struct tcf_proto *tp, b
+ void tcf_destroy_chain(struct tcf_proto __rcu **fl);
+ int skb_do_redirect(struct sk_buff *);
+ 
++static inline bool skb_at_tc_ingress(const struct sk_buff *skb)
++{
++#ifdef CONFIG_NET_CLS_ACT
++	return G_TC_AT(skb->tc_verd) & AT_INGRESS;
++#else
++	return false;
++#endif
++}
++
+ /* Reset all TX qdiscs greater then index of a device.  */
+ static inline void qdisc_reset_all_tx_gt(struct net_device *dev, unsigned int i)
+ {
+--- a/net/sched/cls_bpf.c
++++ b/net/sched/cls_bpf.c
+@@ -79,12 +79,8 @@ static int cls_bpf_classify(struct sk_bu
+ 			    struct tcf_result *res)
+ {
+ 	struct cls_bpf_head *head = rcu_dereference_bh(tp->root);
++	bool at_ingress = skb_at_tc_ingress(skb);
+ 	struct cls_bpf_prog *prog;
+-#ifdef CONFIG_NET_CLS_ACT
+-	bool at_ingress = G_TC_AT(skb->tc_verd) & AT_INGRESS;
+-#else
+-	bool at_ingress = false;
+-#endif
+ 	int ret = -1;
+ 
+ 	if (unlikely(!skb_mac_header_was_set(skb)))

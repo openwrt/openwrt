@@ -1,0 +1,28 @@
+From e1e24dfafa725d849724cb9bf24c142a5cc8473a Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Mon, 21 Mar 2016 15:38:38 +0000
+Subject: [PATCH 207/381] dwc_otg: Enable the hack for Split Interrupt
+ transactions by default
+
+dwc_otg.fiq_fsm_mask=0xF has long been a suggestion for users with audio stutters or other USB bandwidth issues.
+So far we are aware of many success stories but no failure caused by this setting.
+Make it a default to learn more.
+
+See: https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=70437
+
+Signed-off-by: popcornmix <popcornmix@gmail.com>
+---
+ drivers/usb/host/dwc_otg/dwc_otg_driver.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_driver.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+@@ -247,7 +247,7 @@ bool fiq_fsm_enable = true;
+ //Bulk split-transaction NAK holdoff in microframes
+ uint16_t nak_holdoff = 8;
+ 
+-unsigned short fiq_fsm_mask = 0x07;
++unsigned short fiq_fsm_mask = 0x0F;
+ 
+ /**
+  * This function shows the Driver Version.

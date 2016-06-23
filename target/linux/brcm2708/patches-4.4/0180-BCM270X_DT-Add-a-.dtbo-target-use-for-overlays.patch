@@ -1,0 +1,193 @@
+From 4bc79db3fb0734cc6de0ddfc4b95c2db0f3f8607 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 13 Mar 2015 20:00:21 +0000
+Subject: [PATCH 180/381] BCM270X_DT: Add a .dtbo target, use for overlays
+
+Change the filenames and extensions to keep the pre-DDT style of
+overlay (<name>-overlay.dtb) distinct from new ones that use a
+different style of local fixups (<name>.dtbo), and to match other
+platforms.
+
+The RPi firmware uses the DDTK trailer atom to choose which type of
+overlay to use for each kernel.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/.gitignore            |   2 +-
+ arch/arm/boot/dts/overlays/Makefile | 135 +++++++++++++++++-------------------
+ scripts/Makefile.lib                |  10 +++
+ 3 files changed, 76 insertions(+), 71 deletions(-)
+
+--- a/arch/arm/boot/.gitignore
++++ b/arch/arm/boot/.gitignore
+@@ -3,4 +3,4 @@ zImage
+ xipImage
+ bootpImage
+ uImage
+-*.dtb
++*.dtb*
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -12,78 +12,73 @@ ifeq ($(CONFIG_ARCH_BCM2835),y)
+    RPI_DT_OVERLAYS=y
+ endif
+ 
+-dtb-$(RPI_DT_OVERLAYS) += ads7846-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += at86rf233-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += dwc2-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += dwc-otg-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += dht11-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += enc28j60-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += gpio-ir-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += gpio-poweroff-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += hifiberry-amp-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += hifiberry-dac-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += hifiberry-dacplus-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += hifiberry-digi-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += hy28a-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += hy28b-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += i2c-rtc-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += i2c-gpio-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += i2c0-bcm2708-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += i2c1-bcm2708-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += i2s-mmap-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += iqaudio-dac-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += iqaudio-dacplus-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += lirc-rpi-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += mcp2515-can0-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += mcp2515-can1-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += mmc-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += mz61581-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += pi3-disable-bt-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += pi3-miniuart-bt-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += piscreen-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += piscreen2r-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += pitft28-capacitive-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += pitft28-resistive-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += pps-gpio-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += pwm-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += pwm-2chan-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += raspidac3-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += rpi-backlight-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += rpi-dac-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += rpi-display-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += rpi-ft5406-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += rpi-proto-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += rpi-sense-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += sdhost-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += sdio-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += sdtweak-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += smi-dev-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += smi-nand-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += smi-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += spi1-1cs-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += spi1-2cs-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += spi1-3cs-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += spi2-1cs-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += spi2-2cs-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += spi2-3cs-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += spi-gpio35-39-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += tinylcd35-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += uart1-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += vc4-kms-v3d-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += vga666-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += w1-gpio-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += w1-gpio-pullup-overlay.dtb
++dtbo-$(RPI_DT_OVERLAYS) += ads7846.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += at86rf233.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += dwc2.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += dwc-otg.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += dht11.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += enc28j60.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += gpio-ir.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += gpio-poweroff.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += hifiberry-amp.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += hifiberry-dac.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += hifiberry-dacplus.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += hifiberry-digi.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += hy28a.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += hy28b.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += i2c-rtc.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += i2c-gpio.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += i2c0-bcm2708.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += i2c1-bcm2708.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += i2s-mmap.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += iqaudio-dac.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += iqaudio-dacplus.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += lirc-rpi.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += mcp2515-can0.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += mcp2515-can1.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += mmc.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += mz61581.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += pi3-disable-bt.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += pi3-miniuart-bt.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += piscreen.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += piscreen2r.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += pitft28-capacitive.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += pitft28-resistive.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += pps-gpio.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += pwm.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += pwm-2chan.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += raspidac3.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += rpi-backlight.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += rpi-dac.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += rpi-display.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += rpi-ft5406.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += rpi-proto.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += rpi-sense.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += sdhost.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += sdio.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += sdtweak.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += smi-dev.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += smi-nand.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += smi.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi1-1cs.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi1-2cs.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi1-3cs.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi2-1cs.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi2-2cs.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi2-3cs.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi-gpio35-39.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += tinylcd35.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += uart1.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += vc4-kms-v3d.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += vga666.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += w1-gpio.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += w1-gpio-pullup.dtbo
+ 
+ targets += dtbs dtbs_install
+-targets += $(dtb-y)
++targets += $(dtbo-y)
+ 
+ endif
+ 
+-always		:= $(dtb-y)
+-clean-files	:= *.dtb
+-
+-# Enable fixups to support overlays on BCM2708 platforms
+-ifeq ($(RPI_DT_OVERLAYS),y)
+-	DTC_FLAGS ?= -@
+-endif
++always		:= $(dtbo-y)
++clean-files	:= *.dtbo
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -292,6 +292,16 @@ cmd_dtc = mkdir -p $(dir ${dtc-tmp}) ; \
+ $(obj)/%.dtb: $(src)/%.dts FORCE
+ 	$(call if_changed_dep,dtc)
+ 
++quiet_cmd_dtco = DTCO    $@
++cmd_dtco = $(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
++	$(objtree)/scripts/dtc/dtc -@ -O dtb -o $@ -b 0 \
++		-i $(dir $<) $(DTC_FLAGS) \
++		-d $(depfile).dtc.tmp $(dtc-tmp) ; \
++	cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)
++
++$(obj)/%.dtbo: $(src)/%-overlay.dts FORCE
++	$(call if_changed_dep,dtco)
++
+ dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
+ 
+ # Bzip2

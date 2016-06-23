@@ -1,0 +1,52 @@
+From b04fec7048465650101f83c29080de209a1c6446 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 17 Mar 2016 10:41:56 +0000
+Subject: [PATCH 204/381] pwm overlays: Params must have in-overlay targets
+
+---
+ arch/arm/boot/dts/overlays/pwm-2chan-overlay.dts | 9 ++++++++-
+ arch/arm/boot/dts/overlays/pwm-overlay.dts       | 9 ++++++++-
+ 2 files changed, 16 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/pwm-2chan-overlay.dts
++++ b/arch/arm/boot/dts/overlays/pwm-2chan-overlay.dts
+@@ -36,11 +36,18 @@ N.B.:
+ 		};
+ 	};
+ 
++	fragment@2 {
++		target = <&clk_pwm>;
++		frag2: __overlay__ {
++			clock-frequency = <100000000>;
++		};
++	};
++
+ 	__overrides__ {
+ 		pin   = <&pwm_pins>,"brcm,pins:0";
+ 		pin2  = <&pwm_pins>,"brcm,pins:4";
+ 		func  = <&pwm_pins>,"brcm,function:0";
+ 		func2 = <&pwm_pins>,"brcm,function:4";
+-		clock = <&clk_pwm>,"clock-frequency:0";
++		clock = <&frag2>,"clock-frequency:0";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/pwm-overlay.dts
++++ b/arch/arm/boot/dts/overlays/pwm-overlay.dts
+@@ -34,9 +34,16 @@ N.B.:
+ 		};
+ 	};
+ 
++	fragment@2 {
++		target = <&clk_pwm>;
++		frag2: __overlay__ {
++			clock-frequency = <100000000>;
++		};
++	};
++
+ 	__overrides__ {
+ 		pin   = <&pwm_pins>,"brcm,pins:0";
+ 		func  = <&pwm_pins>,"brcm,function:0";
+-		clock = <&clk_pwm>,"clock-frequency:0";
++		clock = <&frag2>,"clock-frequency:0";
+ 	};
+ };

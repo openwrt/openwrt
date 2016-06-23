@@ -1,0 +1,25 @@
+From a88f349e6b9544d0e37ece0d1d94a7065151f92c Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 25 Jan 2016 13:05:00 -0800
+Subject: [PATCH 194/381] drm/vc4: Validate that WAIT_BO padding is cleared.
+
+This is ABI future-proofing if we ever want to extend the pad to mean
+something.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -761,6 +761,9 @@ vc4_wait_bo_ioctl(struct drm_device *dev
+ 	struct drm_gem_object *gem_obj;
+ 	struct vc4_bo *bo;
+ 
++	if (args->pad != 0)
++		return -EINVAL;
++
+ 	gem_obj = drm_gem_object_lookup(dev, file_priv, args->handle);
+ 	if (!gem_obj) {
+ 		DRM_ERROR("Failed to look up GEM BO %d\n", args->handle);

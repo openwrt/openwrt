@@ -10,7 +10,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/spi/spi-bcm53xx.c
 +++ b/drivers/spi/spi-bcm53xx.c
-@@ -275,10 +275,6 @@ static int bcm53xxspi_flash_read(struct spi_device *spi,
+@@ -275,10 +275,6 @@ static int bcm53xxspi_flash_read(struct
   * BCMA
   **************************************************/
  
@@ -21,7 +21,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  static const struct bcma_device_id bcm53xxspi_bcma_tbl[] = {
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_NS_QSPI, BCMA_ANY_REV, BCMA_ANY_CLASS),
  	{},
-@@ -300,6 +296,7 @@ static int bcm53xxspi_bcma_probe(struct bcma_device *core)
+@@ -300,6 +296,7 @@ static int bcm53xxspi_bcma_probe(struct
  	master = spi_alloc_master(dev, sizeof(*b53spi));
  	if (!master)
  		return -ENOMEM;
@@ -29,7 +29,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	b53spi = spi_master_get_devdata(master);
  	b53spi->master = master;
-@@ -324,9 +321,6 @@ static int bcm53xxspi_bcma_probe(struct bcma_device *core)
+@@ -324,9 +321,6 @@ static int bcm53xxspi_bcma_probe(struct
  		return err;
  	}
  

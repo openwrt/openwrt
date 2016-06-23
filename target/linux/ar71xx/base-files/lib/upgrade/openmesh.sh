@@ -36,6 +36,58 @@ platform_add_ramfs_ubootenv()
 }
 append sysupgrade_pre_upgrade platform_add_ramfs_ubootenv
 
+platform_check_image_target_openmesh()
+{
+	img_board_target="$1"
+
+	case "$img_board_target" in
+		OM2P)
+			[ "$board" = "om2p" ] && return 0
+			[ "$board" = "om2pv2" ] && return 0
+			[ "$board" = "om2p-lc" ] && return 0
+			[ "$board" = "om2p-hs" ] && return 0
+			[ "$board" = "om2p-hsv2" ] && return 0
+			[ "$board" = "om2p-hsv3" ] && return 0
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		OM5P)
+			[ "$board" = "om5p" ] && return 0
+			[ "$board" = "om5p-an" ] && return 0
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		OM5PAC)
+			[ "$board" = "om5p-ac" ] && return 0
+			[ "$board" = "om5p-acv2" ] && return 0
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		MR1750)
+			[ "$board" = "mr1750" ] && return 0
+			[ "$board" = "mr1750v2" ] && return 0
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		MR600)
+			[ "$board" = "mr600" ] && return 0
+			[ "$board" = "mr600v2" ] && return 0
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		MR900)
+			[ "$board" = "mr900" ] && return 0
+			[ "$board" = "mr900v2" ] && return 0
+			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
+			return 1
+			;;
+		*)
+			echo "Invalid board target ($img_board_target). Use the correct image for this platform"
+			return 1
+			;;
+	esac
+}
+
 platform_check_image_openmesh()
 {
 	local img_magic=$1
@@ -56,52 +108,9 @@ platform_check_image_openmesh()
 			;;
 	esac
 
-	case "$img_board_target" in
-		OM2P)
-			[ "$board" = "om2p" ] && break
-			[ "$board" = "om2pv2" ] && break
-			[ "$board" = "om2p-lc" ] && break
-			[ "$board" = "om2p-hs" ] && break
-			[ "$board" = "om2p-hsv2" ] && break
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		OM5P)
-			[ "$board" = "om5p" ] && break
-			[ "$board" = "om5p-an" ] && break
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		OM5PAC)
-			[ "$board" = "om5p-ac" ] && break
-			[ "$board" = "om5p-acv2" ] && break
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		MR1750)
-			[ "$board" = "mr1750" ] && break
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		MR600)
-			[ "$board" = "mr600" ] && break
-			[ "$board" = "mr600v2" ] && break
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		MR900)
-			[ "$board" = "mr900" ] && break
-			[ "$board" = "mr900v2" ] && break
-			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
-			return 1
-			;;
-		*)
-			echo "Invalid board target ($img_board_target). Use the correct image for this platform"
-			return 1
-			;;
-	esac
+	platform_check_image_target_openmesh "$img_board_target" || return 1
 
-	[ $img_num_files -ne 3 ] && {
+	[ $img_num_files -lt 3 ] && {
 		echo "Invalid number of embedded images ($img_num_files). Use the correct image for this platform"
 		return 1
 	}

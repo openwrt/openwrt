@@ -1,0 +1,130 @@
+From 7a9f95c67cbfc0975e1109b904ad03e061fb6877 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 5 Oct 2015 10:47:45 +0100
+Subject: [PATCH 110/381] BCM270X_DT: Add at86rf233 overlay
+
+Add an overlay to support the Atmel AT86RF233 WPAN transceiver on spi0.0.
+
+See: https://github.com/raspberrypi/linux/issues/1151
+---
+ arch/arm/boot/dts/overlays/Makefile              |  1 +
+ arch/arm/boot/dts/overlays/README                | 21 +++++++--
+ arch/arm/boot/dts/overlays/at86rf233-overlay.dts | 54 ++++++++++++++++++++++++
+ 3 files changed, 72 insertions(+), 4 deletions(-)
+ create mode 100644 arch/arm/boot/dts/overlays/at86rf233-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -13,6 +13,7 @@ ifeq ($(CONFIG_ARCH_BCM2835),y)
+ endif
+ 
+ dtb-$(RPI_DT_OVERLAYS) += ads7846-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += at86rf233-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += dht11-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += enc28j60-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -69,13 +69,14 @@ DT parameters:
+ 
+ Parameters always have default values, although in some cases (e.g. "w1-gpio")
+ it is necessary to provided multiple overlays in order to get the desired
+-behaviour. See the list of overlays below for a description of the parameters and their defaults.
++behaviour. See the list of overlays below for a description of the parameters
++and their defaults.
+ 
+ The Overlay and Parameter Reference
+ ===================================
+ 
+-N.B. When editing this file, please preserve the indentation levels to make it simple to parse
+-programmatically. NO HARD TABS.
++N.B. When editing this file, please preserve the indentation levels to make it
++simple to parse programmatically. NO HARD TABS.
+ 
+ 
+ Name:   <The base DTB>
+@@ -149,7 +150,7 @@ Name:   ads7846
+ Info:   ADS7846 Touch controller
+ Load:   dtoverlay=ads7846,<param>=<val>
+ Params: cs                       SPI bus Chip Select (default 1)
+-        speed                    SPI bus speed (default 2Mhz, max 3.25MHz)
++        speed                    SPI bus speed (default 2MHz, max 3.25MHz)
+         penirq                   GPIO used for PENIRQ. REQUIRED
+         penirq_pull              Set GPIO pull (default 0=none, 2=pullup)
+         swapxy                   Swap x and y axis
+@@ -170,6 +171,18 @@ Params: cs                       SPI bus
+         www.kernel.org/doc/Documentation/devicetree/bindings/input/ads7846.txt
+ 
+ 
++Name:   at86rf233
++Info:   Configures the Atmel AT86RF233 802.15.4 low-power WPAN transceiver,
++        connected to spi0.0
++Load:   dtoverlay=at86rf233,<param>=<val>
++Params: interrupt                GPIO used for INT (default 23)
++        reset                    GPIO used for Reset (default 24)
++        sleep                    GPIO used for Sleep (default 25)
++        speed                    SPI bus speed in Hz (default 6000000)
++        trim                     Fine tuning of the internal capacitance
++                                 arrays (0=+0pF, 15=+4.5pF, default 15)
++
++
+ Name:   bmp085_i2c-sensor
+ Info:   Configures the BMP085/BMP180 digital barometric pressure and temperature
+         sensors from Bosch Sensortec
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/at86rf233-overlay.dts
+@@ -0,0 +1,54 @@
++/dts-v1/;
++/plugin/;
++
++/* Overlay for Atmel AT86RF233 IEEE 802.15.4 WPAN transceiver on spi0.0 */
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2836", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			lowpan0: at86rf233@0 {
++				compatible = "atmel,at86rf233";
++				reg = <0>;
++				interrupt-parent = <&gpio>;
++				interrupts = <23 4>; /* active high */
++				reset-gpio = <&gpio 24 1>;
++				sleep-gpio = <&gpio 25 1>;
++				spi-max-frequency = <6000000>;
++				xtal-trim = /bits/ 8 <0xf>;
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			lowpan0_pins: lowpan0_pins {
++				brcm,pins = <23 24 25>;
++				brcm,function = <0 1 1>; /* in out out */
++			};
++		};
++	};
++
++	__overrides__ {
++		interrupt = <&lowpan0>, "interrupts:0",
++			<&lowpan0_pins>, "brcm,pins:0";
++		reset     = <&lowpan0>, "reset-gpio:4",
++			<&lowpan0_pins>, "brcm,pins:4";
++		sleep     = <&lowpan0>, "sleep-gpio:4",
++			<&lowpan0_pins>, "brcm,pins:8";
++		speed     = <&lowpan0>, "spi-max-frequency:0";
++		trim      = <&lowpan0>, "xtal-trim.0";
++	};
++};

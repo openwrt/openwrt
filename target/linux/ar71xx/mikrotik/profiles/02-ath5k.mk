@@ -8,6 +8,7 @@
 define Profile/Ath5k
 	NAME:=Atheros WiFi (ath5k)
 	PACKAGES:=kmod-ath5k -kmod-ath9k
+	PRIORITY := 3
 endef
 
 define Profile/Ath5k/Description

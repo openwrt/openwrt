@@ -18,6 +18,9 @@ brcm2708_detect() {
 	"Raspberry Pi Compute Module Rev"*)
 		board_name="rpi-cm"
 		;;
+	"Raspberry Pi Zero Rev"*)
+		board_name="rpi-zero"
+		;;
 	"Raspberry Pi 2 Model B Rev"*)
 		board_name="rpi-2-b"
 		;;

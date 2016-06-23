@@ -1,0 +1,120 @@
+From 594abef9e9d240d6f97a22e8f6cdc6cf0c272cd7 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 22 Jan 2016 16:03:24 +0000
+Subject: [PATCH 135/381] bcm2835-sdhost: Add debug_flags dtparam
+
+Bit zero disables the single-read-sectors map:
+
+If the default MMC driver is bcm2835-mmc:
+    dtoverlay=sdhost,debug_flags=1
+If the default MMC driver is bcm2835-sdhost:
+    dtoverlay=sdtweak,debug_flags=1
+(although the sdhost overlay may also work, sdtweak is
+less invasive and will work in more circumstances).
+
+Also revert the timeout change, just in case.
+---
+ arch/arm/boot/dts/overlays/sdhost-overlay.dts  |  2 ++
+ arch/arm/boot/dts/overlays/sdtweak-overlay.dts |  2 ++
+ drivers/mmc/host/bcm2835-sdhost.c              | 26 +++++++++++++++++++++-----
+ 3 files changed, 25 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/sdhost-overlay.dts
++++ b/arch/arm/boot/dts/overlays/sdhost-overlay.dts
+@@ -16,6 +16,7 @@
+ 		frag1: __overlay__ {
+ 			brcm,overclock-50 = <0>;
+ 			brcm,pio-limit = <1>;
++			brcm,debug-flags = <0>;
+ 			status = "okay";
+ 		};
+ 	};
+@@ -25,5 +26,6 @@
+ 		force_pio        = <&frag1>,"brcm,force-pio?";
+ 		pio_limit        = <&frag1>,"brcm,pio-limit:0";
+ 		debug            = <&frag1>,"brcm,debug?";
++		debug_flags      = <&frag1>,"brcm,debug-flags:0";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/sdtweak-overlay.dts
++++ b/arch/arm/boot/dts/overlays/sdtweak-overlay.dts
+@@ -9,6 +9,7 @@
+ 		frag1: __overlay__ {
+ 			brcm,overclock-50 = <0>;
+ 			brcm,pio-limit = <1>;
++			brcm,debug-flags = <0>;
+ 		};
+ 	};
+ 
+@@ -17,5 +18,6 @@
+ 		force_pio        = <&frag1>,"brcm,force-pio?";
+ 		pio_limit        = <&frag1>,"brcm,pio-limit:0";
+ 		debug            = <&frag1>,"brcm,debug?";
++		debug_flags      = <&frag1>,"brcm,debug-flags:0";
+ 	};
+ };
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -174,6 +174,8 @@ struct bcm2835_host {
+ 	u32				overclock;	/* Current frequency if overclocked, else zero */
+ 	u32				pio_limit;	/* Maximum block count for PIO (0 = always DMA) */
+ 
++	u32				debug_flags;
++
+ 	u32				sectors;	/* Cached card size in sectors */
+ 	u32				single_read_sectors[8];
+ };
+@@ -682,7 +684,7 @@ static void bcm2835_sdhost_prepare_data(
+ 	host->flush_fifo = 0;
+ 	host->data->bytes_xfered = 0;
+ 
+-	if (!host->sectors && host->mmc->card)
++	if (!host->sectors && host->mmc->card && !(host->debug_flags & 1))
+ 	{
+ 		struct mmc_card *card = host->mmc->card;
+ 		if (!mmc_card_sd(card) && mmc_card_blockaddr(card)) {
+@@ -1486,8 +1488,8 @@ void bcm2835_sdhost_set_clock(struct bcm
+ 	host->cdiv = div;
+ 	bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
+ 
+-	/* Set the timeout to 250ms */
+-	bcm2835_sdhost_write(host, host->mmc->actual_clock/4, SDTOUT);
++	/* Set the timeout to 500ms */
++	bcm2835_sdhost_write(host, host->mmc->actual_clock/2, SDTOUT);
+ 
+ 	if (host->debug)
+ 		pr_info("%s: clock=%d -> max_clk=%d, cdiv=%x (actual clock %d)\n",
+@@ -1606,8 +1608,16 @@ static int bcm2835_sdhost_multi_io_quirk
+ 
+ 	host = mmc_priv(card->host);
+ 
+-	if (direction == MMC_DATA_READ)
+-	{
++	if (!host->sectors) {
++		/* csd.capacity is in weird units - convert to sectors */
++		u32 card_sectors = (card->csd.capacity << (card->csd.read_blkbits - 9));
++		if ((direction == MMC_DATA_READ) &&
++		    ((blk_pos + blk_size) == card_sectors))
++			blk_size--;
++		return blk_size;
++	}
++
++	if (direction == MMC_DATA_READ) {
+ 		int i;
+ 		int sector;
+ 		for (i = 0; blk_pos > (sector = host->single_read_sectors[i]); i++)
+@@ -1838,8 +1848,14 @@ static int bcm2835_sdhost_probe(struct p
+ 		host->allow_dma = ALLOW_DMA &&
+ 			!of_property_read_bool(node, "brcm,force-pio");
+ 		host->debug = of_property_read_bool(node, "brcm,debug");
++		of_property_read_u32(node,
++				     "brcm,debug-flags",
++				     &host->debug_flags);
+ 	}
+ 
++	if (host->debug_flags)
++		dev_err(dev, "debug_flags=%x\n", host->debug_flags);
++
+ 	if (host->allow_dma) {
+ 		if (node) {
+ 			host->dma_chan_tx =

@@ -1,7 +1,7 @@
-From c359272f86805259c5801385d60fdeea9d629cf9 Mon Sep 17 00:00:00 2001
+From 6f87948c3a58f02f6a64eadda719317016739d5e Mon Sep 17 00:00:00 2001
 From: James Liao <jamesjj.liao@mediatek.com>
 Date: Wed, 30 Dec 2015 14:41:44 +0800
-Subject: [PATCH 03/91] soc: mediatek: Init MT8173 scpsys driver earlier
+Subject: [PATCH 003/102] soc: mediatek: Init MT8173 scpsys driver earlier
 
 Some power domain comsumers may init before module_init.
 So the power domain provider (scpsys) need to be initialized
@@ -12,11 +12,9 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  drivers/soc/mediatek/mtk-scpsys-mt8173.c |   13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/soc/mediatek/mtk-scpsys-mt8173.c b/drivers/soc/mediatek/mtk-scpsys-mt8173.c
-index 3c7b569..827e696 100644
 --- a/drivers/soc/mediatek/mtk-scpsys-mt8173.c
 +++ b/drivers/soc/mediatek/mtk-scpsys-mt8173.c
-@@ -176,4 +176,15 @@ static struct platform_driver scpsys_drv = {
+@@ -176,4 +176,15 @@ static struct platform_driver scpsys_drv
  	},
  };
  
@@ -33,6 +31,3 @@ index 3c7b569..827e696 100644
 +
 +subsys_initcall(scpsys_drv_init);
 +module_exit(scpsys_drv_exit);
--- 
-1.7.10.4
-

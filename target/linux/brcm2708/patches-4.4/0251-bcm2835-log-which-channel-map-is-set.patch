@@ -1,0 +1,32 @@
+From c1a1f4c6d4e2d1bdba70de54bc204d2b3a80c0ea Mon Sep 17 00:00:00 2001
+From: wm4 <wm4@nowhere>
+Date: Tue, 19 Apr 2016 16:38:03 +0200
+Subject: [PATCH 251/381] bcm2835: log which channel map is set
+
+---
+ sound/arm/bcm2835-vchiq.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/sound/arm/bcm2835-vchiq.c
++++ b/sound/arm/bcm2835-vchiq.c
+@@ -596,8 +596,11 @@ int bcm2835_audio_set_params(bcm2835_als
+ 	instance->result = -1;
+ 
+ 	if (alsa_stream->chip->cea_chmap >= 0) {
++		LOG_INFO("Using application requested channel map: %d\n",
++			 alsa_stream->chip->cea_chmap);
+ 		chmap_value = (unsigned)alsa_stream->chip->cea_chmap << 24;
+ 	} else {
++		LOG_INFO("Using fallback channel map.\n");
+ 		/* fallback layouts for applications which do not use chmap API */
+ 		chmap_value = 0x00;
+ 		switch (channels) {
+@@ -614,6 +617,8 @@ int bcm2835_audio_set_params(bcm2835_als
+ 	for (i = 0; i < 8; i++)
+ 		chmap_value |= alsa_stream->chip->map_channels[i] << (i * 3);
+ 
++	LOG_INFO("Requesting AUDS channel map: 0x%lx\n", (long)chmap_value);
++
+ 	m.type = VC_AUDIO_MSG_TYPE_CONFIG;
+ 	m.u.config.channels = channels;
+ 	m.u.config.samplerate = samplerate;

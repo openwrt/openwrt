@@ -1,0 +1,34 @@
+From c6f8dd873098c2c41e97606d55b806a8c5965b3e Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 15 Feb 2016 17:31:41 -0800
+Subject: [PATCH 291/381] drm/vc4: Fix setting of vertical timings in the CRTC.
+
+It looks like when I went to add the interlaced bits, I just took the
+existing PV_VERT* block and indented it, instead of copy and pasting
+it first.  Without this, changing resolution never worked.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit a7c5047d1ce178dd2b1fa577fc8909ad663d56d5)
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -217,6 +217,16 @@ static void vc4_crtc_mode_set_nofb(struc
+ 				 PV_HORZB_HFP) |
+ 		   VC4_SET_FIELD(mode->hdisplay, PV_HORZB_HACTIVE));
+ 
++	CRTC_WRITE(PV_VERTA,
++		   VC4_SET_FIELD(mode->vtotal - mode->vsync_end,
++				 PV_VERTA_VBP) |
++		   VC4_SET_FIELD(mode->vsync_end - mode->vsync_start,
++				 PV_VERTA_VSYNC));
++	CRTC_WRITE(PV_VERTB,
++		   VC4_SET_FIELD(mode->vsync_start - mode->vdisplay,
++				 PV_VERTB_VFP) |
++		   VC4_SET_FIELD(vactive, PV_VERTB_VACTIVE));
++
+ 	if (interlace) {
+ 		CRTC_WRITE(PV_VERTA_EVEN,
+ 			   VC4_SET_FIELD(mode->vtotal - mode->vsync_end - 1,

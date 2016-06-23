@@ -1,0 +1,34 @@
+From 0945d95f5b98b323f6a611e2bb96a3400fd91d41 Mon Sep 17 00:00:00 2001
+From: Przemek Rudy <prudy1@o2.pl>
+Date: Fri, 11 Mar 2016 22:41:26 +0100
+Subject: [PATCH 191/381] dwc-overlay: Use label so overrides can apply.
+
+---
+ arch/arm/boot/dts/overlays/dwc2-overlay.dts | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/dwc2-overlay.dts
++++ b/arch/arm/boot/dts/overlays/dwc2-overlay.dts
+@@ -8,7 +8,7 @@
+ 		target = <&usb>;
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		__overlay__ {
++		dwc2_usb: __overlay__ {
+ 			compatible = "brcm,bcm2835-usb";
+ 			reg = <0x7e980000 0x10000>;
+ 			interrupts = <1 9>;
+@@ -21,9 +21,9 @@
+ 	};
+ 
+ 	__overrides__ {
+-		dr_mode = <&usb>, "dr_mode";
+-		g-np-tx-fifo-size = <&usb>,"g-np-tx-fifo-size:0";
+-		g-rx-fifo-size = <&usb>,"g-rx-fifo-size:0";
+-		g-tx-fifo-size = <&usb>,"g-tx-fifo-size:0";
++		dr_mode = <&dwc2_usb>, "dr_mode";
++		g-np-tx-fifo-size = <&dwc2_usb>,"g-np-tx-fifo-size:0";
++		g-rx-fifo-size = <&dwc2_usb>,"g-rx-fifo-size:0";
++		g-tx-fifo-size = <&dwc2_usb>,"g-tx-fifo-size:0";
+ 	};
+ };

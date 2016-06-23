@@ -1,7 +1,7 @@
-From f2c07eaa2df52f9acac9ffc3457d3d81079dd723 Mon Sep 17 00:00:00 2001
+From a4c507d052390b42d7e8c59241e3c336796f730f Mon Sep 17 00:00:00 2001
 From: Shunli Wang <shunli.wang@mediatek.com>
 Date: Tue, 5 Jan 2016 14:30:20 +0800
-Subject: [PATCH 09/91] clk: mediatek: Add MT2701 clock support
+Subject: [PATCH 009/102] clk: mediatek: Add MT2701 clock support
 
 Add MT2701 clock support, include topckgen, apmixedsys,
 infracfg, pericfg and subsystem clocks.
@@ -19,8 +19,6 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  7 files changed, 1334 insertions(+), 3 deletions(-)
  create mode 100644 drivers/clk/mediatek/clk-mt2701.c
 
-diff --git a/drivers/clk/mediatek/Kconfig b/drivers/clk/mediatek/Kconfig
-index dc224e6..6c7cdc0 100644
 --- a/drivers/clk/mediatek/Kconfig
 +++ b/drivers/clk/mediatek/Kconfig
 @@ -6,6 +6,14 @@ config COMMON_CLK_MEDIATEK
@@ -38,8 +36,6 @@ index dc224e6..6c7cdc0 100644
  config COMMON_CLK_MT8135
  	bool "Clock driver for Mediatek MT8135"
  	depends on COMMON_CLK
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index 32e7222..5b2b91b 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
 @@ -1,4 +1,5 @@
@@ -48,11 +44,9 @@ index 32e7222..5b2b91b 100644
 +obj-$(CONFIG_COMMON_CLK_MT2701) += clk-mt2701.o
  obj-$(CONFIG_COMMON_CLK_MT8135) += clk-mt8135.o
  obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
-diff --git a/drivers/clk/mediatek/clk-gate.c b/drivers/clk/mediatek/clk-gate.c
-index 576bdb7..38badb4 100644
 --- a/drivers/clk/mediatek/clk-gate.c
 +++ b/drivers/clk/mediatek/clk-gate.c
-@@ -61,6 +61,26 @@ static void mtk_cg_clr_bit(struct clk_hw *hw)
+@@ -61,6 +61,26 @@ static void mtk_cg_clr_bit(struct clk_hw
  	regmap_write(cg->regmap, cg->clr_ofs, BIT(cg->bit));
  }
  
@@ -79,7 +73,7 @@ index 576bdb7..38badb4 100644
  static int mtk_cg_enable(struct clk_hw *hw)
  {
  	mtk_cg_clr_bit(hw);
-@@ -85,6 +105,30 @@ static void mtk_cg_disable_inv(struct clk_hw *hw)
+@@ -85,6 +105,30 @@ static void mtk_cg_disable_inv(struct cl
  	mtk_cg_clr_bit(hw);
  }
  
@@ -110,7 +104,7 @@ index 576bdb7..38badb4 100644
  const struct clk_ops mtk_clk_gate_ops_setclr = {
  	.is_enabled	= mtk_cg_bit_is_cleared,
  	.enable		= mtk_cg_enable,
-@@ -97,6 +141,18 @@ const struct clk_ops mtk_clk_gate_ops_setclr_inv = {
+@@ -97,6 +141,18 @@ const struct clk_ops mtk_clk_gate_ops_se
  	.disable	= mtk_cg_disable_inv,
  };
  
@@ -129,11 +123,9 @@ index 576bdb7..38badb4 100644
  struct clk * __init mtk_clk_register_gate(
  		const char *name,
  		const char *parent_name,
-diff --git a/drivers/clk/mediatek/clk-gate.h b/drivers/clk/mediatek/clk-gate.h
-index 11e25c9..7f7ef34 100644
 --- a/drivers/clk/mediatek/clk-gate.h
 +++ b/drivers/clk/mediatek/clk-gate.h
-@@ -36,6 +36,8 @@ static inline struct mtk_clk_gate *to_clk_gate(struct clk_hw *hw)
+@@ -36,6 +36,8 @@ static inline struct mtk_clk_gate *to_cl
  
  extern const struct clk_ops mtk_clk_gate_ops_setclr;
  extern const struct clk_ops mtk_clk_gate_ops_setclr_inv;
@@ -142,9 +134,6 @@ index 11e25c9..7f7ef34 100644
  
  struct clk *mtk_clk_register_gate(
  		const char *name,
-diff --git a/drivers/clk/mediatek/clk-mt2701.c b/drivers/clk/mediatek/clk-mt2701.c
-new file mode 100644
-index 0000000..2f521f4
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt2701.c
 @@ -0,0 +1,1210 @@
@@ -1358,11 +1347,9 @@ index 0000000..2f521f4
 +}
 +CLK_OF_DECLARE(mtk_apmixedsys, "mediatek,mt2701-apmixedsys",
 +							mtk_apmixedsys_init);
-diff --git a/drivers/clk/mediatek/clk-mtk.c b/drivers/clk/mediatek/clk-mtk.c
-index cf08db6..be19a41 100644
 --- a/drivers/clk/mediatek/clk-mtk.c
 +++ b/drivers/clk/mediatek/clk-mtk.c
-@@ -242,3 +242,28 @@ void __init mtk_clk_register_composites(const struct mtk_composite *mcs,
+@@ -242,3 +242,28 @@ void __init mtk_clk_register_composites(
  			clk_data->clks[mc->id] = clk;
  	}
  }
@@ -1391,8 +1378,6 @@ index cf08db6..be19a41 100644
 +			clk_data->clks[mcd->id] = clk;
 +	}
 +}
-diff --git a/drivers/clk/mediatek/clk-mtk.h b/drivers/clk/mediatek/clk-mtk.h
-index 32d2e45..60701e8 100644
 --- a/drivers/clk/mediatek/clk-mtk.h
 +++ b/drivers/clk/mediatek/clk-mtk.h
 @@ -110,7 +110,8 @@ struct mtk_composite {
@@ -1444,6 +1429,3 @@ index 32d2e45..60701e8 100644
  
  struct clk_onecell_data *mtk_alloc_clk_data(unsigned int clk_num);
  
--- 
-1.7.10.4
-

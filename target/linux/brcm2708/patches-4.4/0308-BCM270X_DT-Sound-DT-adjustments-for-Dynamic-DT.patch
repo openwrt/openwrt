@@ -1,0 +1,578 @@
+From 7ad6d43eb9631ca8f4bb51f920b6fd2664d1b214 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 26 Apr 2016 10:44:59 +0100
+Subject: [PATCH 308/381] BCM270X_DT: Sound DT adjustments for Dynamic DT
+
+There are a number of issues when loading and unloading overlays for
+sound cards:
+1) The "sound" and "audio" nodes must be children of a bus node, such
+   as "/soc", otherwise the DT changes don't result in platform devices
+   being created and deleted.
+2) The "/sound" node must have a "disabled" status property, otherwise
+   setting the status to "okay" won't be detected.
+3) ALSA doesn't like having components unloaded under its feet, and it
+   is easy to deadlock or crash. Ordering the overlay fragments so that
+   the sound card appears last avoids this problem.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi              | 23 +++++++++---------
+ .../dts/overlays/akkordion-iqdacplus-overlay.dts   | 28 +++++++++++-----------
+ .../boot/dts/overlays/boomberry-dac-overlay.dts    | 22 ++++++++---------
+ .../boot/dts/overlays/boomberry-digi-overlay.dts   | 20 ++++++++--------
+ .../boot/dts/overlays/hifiberry-amp-overlay.dts    | 20 ++++++++--------
+ .../boot/dts/overlays/hifiberry-dac-overlay.dts    | 22 ++++++++---------
+ .../dts/overlays/hifiberry-dacplus-overlay.dts     | 22 ++++++++---------
+ .../boot/dts/overlays/hifiberry-digi-overlay.dts   | 20 ++++++++--------
+ arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts | 20 ++++++++--------
+ .../boot/dts/overlays/iqaudio-dacplus-overlay.dts  | 22 ++++++++---------
+ arch/arm/boot/dts/overlays/raspidac3-overlay.dts   | 20 ++++++++--------
+ arch/arm/boot/dts/overlays/rpi-dac-overlay.dts     | 22 ++++++++---------
+ arch/arm/boot/dts/overlays/rpi-proto-overlay.dts   | 20 ++++++++--------
+ 13 files changed, 141 insertions(+), 140 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -34,17 +34,6 @@
+ 		clocks = &clocks;
+ 	};
+ 
+-	/* Onboard audio */
+-	audio: audio {
+-		compatible = "brcm,bcm2835-audio";
+-		brcm,pwm-channels = <8>;
+-		status = "disabled";
+-	};
+-
+-	/* External sound card */
+-	sound: sound {
+-	};
+-
+ 	soc: soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+@@ -313,6 +302,18 @@
+ 			compatible = "brcm,bcm2835-thermal";
+ 			firmware = <&firmware>;
+ 		};
++
++		/* Onboard audio */
++		audio: audio {
++			compatible = "brcm,bcm2835-audio";
++			brcm,pwm-channels = <8>;
++			status = "disabled";
++		};
++
++		/* External sound card */
++		sound: sound {
++			status = "disabled";
++		};
+ 	};
+ 
+ 	clocks: clocks {
+--- a/arch/arm/boot/dts/overlays/akkordion-iqdacplus-overlay.dts
++++ b/arch/arm/boot/dts/overlays/akkordion-iqdacplus-overlay.dts
+@@ -6,25 +6,13 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		frag0: __overlay__ {
+-			compatible = "iqaudio,iqaudio-dac";
+-			card_name = "Akkordion";
+-			dai_name = "IQaudIO DAC";
+-			dai_stream_name = "IQaudIO DAC HiFi";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -40,7 +28,19 @@
+ 		};
+ 	};
+ 
++	fragment@2 {
++		target = <&sound>;
++		frag2: __overlay__ {
++			compatible = "iqaudio,iqaudio-dac";
++			card_name = "Akkordion";
++			dai_name = "IQaudIO DAC";
++			dai_stream_name = "IQaudIO DAC HiFi";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
+ 	__overrides__ {
+-		24db_digital_gain = <&frag0>,"iqaudio,24db_digital_gain?";
++		24db_digital_gain = <&frag2>,"iqaudio,24db_digital_gain?";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/boomberry-dac-overlay.dts
++++ b/arch/arm/boot/dts/overlays/boomberry-dac-overlay.dts
+@@ -6,22 +6,13 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		frag0: __overlay__ {
+-			compatible = "boomberry,boomberry-dac";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -37,7 +28,16 @@
+ 		};
+ 	};
+ 
++	fragment@2 {
++		target = <&sound>;
++		frag2: __overlay__ {
++			compatible = "boomberry,boomberry-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
+ 	__overrides__ {
+-		24db_digital_gain = <&frag0>,"boomberry,24db_digital_gain?";
++		24db_digital_gain = <&frag2>,"boomberry,24db_digital_gain?";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/boomberry-digi-overlay.dts
++++ b/arch/arm/boot/dts/overlays/boomberry-digi-overlay.dts
+@@ -6,22 +6,13 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "boomberry,boomberry-digi";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -36,4 +27,13 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "boomberry,boomberry-digi";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
+ };
+--- a/arch/arm/boot/dts/overlays/hifiberry-amp-overlay.dts
++++ b/arch/arm/boot/dts/overlays/hifiberry-amp-overlay.dts
+@@ -6,22 +6,13 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "hifiberry,hifiberry-amp";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -36,4 +27,13 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "hifiberry,hifiberry-amp";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
+ };
+--- a/arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts
++++ b/arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts
+@@ -6,23 +6,14 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "hifiberry,hifiberry-dac";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
+-		target-path = "/";
++	fragment@1 {
++		target = <&soc>;
+ 		__overlay__ {
+ 			pcm5102a-codec {
+ 				#sound-dai-cells = <0>;
+@@ -31,4 +22,13 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "hifiberry,hifiberry-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
+ };
+--- a/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
++++ b/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
+@@ -16,22 +16,13 @@
+ 	};
+ 
+ 	fragment@1 {
+-		target = <&sound>;
+-		frag1: __overlay__ {
+-			compatible = "hifiberry,hifiberry-dacplus";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@2 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@3 {
++	fragment@2 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -48,7 +39,16 @@
+ 		};
+ 	};
+ 
++	fragment@3 {
++		target = <&sound>;
++		frag3: __overlay__ {
++			compatible = "hifiberry,hifiberry-dacplus";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
+ 	__overrides__ {
+-		24db_digital_gain = <&frag1>,"hifiberry,24db_digital_gain?";
++		24db_digital_gain = <&frag3>,"hifiberry,24db_digital_gain?";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/hifiberry-digi-overlay.dts
++++ b/arch/arm/boot/dts/overlays/hifiberry-digi-overlay.dts
+@@ -6,22 +6,13 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "hifiberry,hifiberry-digi";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -36,4 +27,13 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "hifiberry,hifiberry-digi";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
+ };
+--- a/arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts
++++ b/arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts
+@@ -6,22 +6,13 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "iqaudio,iqaudio-dac";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -36,4 +27,13 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "iqaudio,iqaudio-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
+ };
+--- a/arch/arm/boot/dts/overlays/iqaudio-dacplus-overlay.dts
++++ b/arch/arm/boot/dts/overlays/iqaudio-dacplus-overlay.dts
+@@ -6,22 +6,13 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		frag0: __overlay__ {
+-			compatible = "iqaudio,iqaudio-dac";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -37,7 +28,16 @@
+ 		};
+ 	};
+ 
++	fragment@2 {
++		target = <&sound>;
++		frag2: __overlay__ {
++			compatible = "iqaudio,iqaudio-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
+ 	__overrides__ {
+-		24db_digital_gain = <&frag0>,"iqaudio,24db_digital_gain?";
++		24db_digital_gain = <&frag2>,"iqaudio,24db_digital_gain?";
+ 	};
+ };
+--- a/arch/arm/boot/dts/overlays/raspidac3-overlay.dts
++++ b/arch/arm/boot/dts/overlays/raspidac3-overlay.dts
+@@ -6,22 +6,13 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "jg,raspidacv3";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -42,4 +33,13 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "jg,raspidacv3";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
+ };
+--- a/arch/arm/boot/dts/overlays/rpi-dac-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rpi-dac-overlay.dts
+@@ -6,23 +6,14 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "rpi,rpi-dac";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
+-		target-path = "/";
++	fragment@1 {
++		target = <&soc>;
+ 		__overlay__ {
+ 			pcm1794a-codec {
+ 				#sound-dai-cells = <0>;
+@@ -31,4 +22,13 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "rpi,rpi-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
+ };
+--- a/arch/arm/boot/dts/overlays/rpi-proto-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rpi-proto-overlay.dts
+@@ -6,22 +6,13 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "rpi,rpi-proto";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@2 {
++	fragment@1 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -36,4 +27,13 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "rpi,rpi-proto";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
+ };

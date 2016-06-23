@@ -1,0 +1,28 @@
+From 35370cf396896477ee7e8cb044779a3ee9257a7e Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 9 Mar 2016 13:28:24 +0000
+Subject: [PATCH 202/381] serial: Take care starting a hung-up tty's port
+
+tty_port_hangup sets a port's tty field to NULL (holding the port lock),
+but uart_tx_stopped, called from __uart_start (with the port lock),
+uses the tty field without checking for NULL.
+
+Change uart_tx_stopped to treat a NULL tty field as another stopped
+indication.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ include/linux/serial_core.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/include/linux/serial_core.h
++++ b/include/linux/serial_core.h
+@@ -397,7 +397,7 @@ int uart_resume_port(struct uart_driver
+ static inline int uart_tx_stopped(struct uart_port *port)
+ {
+ 	struct tty_struct *tty = port->state->port.tty;
+-	if (tty->stopped || port->hw_stopped)
++	if (!tty || tty->stopped || port->hw_stopped)
+ 		return 1;
+ 	return 0;
+ }

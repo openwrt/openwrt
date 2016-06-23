@@ -1,0 +1,729 @@
+From 6f043ba868aaad8a5c7a802baafbba4e43f787e0 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 8 Feb 2016 09:46:33 +0000
+Subject: [PATCH 142/381] BCM270X_DT: Adjust overlay README formatting
+
+---
+ arch/arm/boot/dts/overlays/README | 414 +++++++++++++++++++-------------------
+ 1 file changed, 207 insertions(+), 207 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -83,58 +83,58 @@ Name:   <The base DTB>
+ Info:   Configures the base Raspberry Pi hardware
+ Load:   <loaded automatically>
+ Params:
+-        audio                    Set to "on" to enable the onboard ALSA audio
+-                                 interface (default "off")
++        audio                   Set to "on" to enable the onboard ALSA audio
++                                interface (default "off")
+ 
+-        i2c_arm                  Set to "on" to enable the ARM's i2c interface
+-                                 (default "off")
++        i2c_arm                 Set to "on" to enable the ARM's i2c interface
++                                (default "off")
+ 
+-        i2c_vc                   Set to "on" to enable the i2c interface
+-                                 usually reserved for the VideoCore processor
+-                                 (default "off")
++        i2c_vc                  Set to "on" to enable the i2c interface
++                                usually reserved for the VideoCore processor
++                                (default "off")
+ 
+-        i2c                      An alias for i2c_arm
++        i2c                     An alias for i2c_arm
+ 
+-        i2c_arm_baudrate         Set the baudrate of the ARM's i2c interface
+-                                 (default "100000")
++        i2c_arm_baudrate        Set the baudrate of the ARM's i2c interface
++                                (default "100000")
+ 
+-        i2c_vc_baudrate          Set the baudrate of the VideoCore i2c interface
+-                                 (default "100000")
++        i2c_vc_baudrate         Set the baudrate of the VideoCore i2c interface
++                                (default "100000")
+ 
+-        i2c_baudrate             An alias for i2c_arm_baudrate
++        i2c_baudrate            An alias for i2c_arm_baudrate
+ 
+-        i2s                      Set to "on" to enable the i2s interface
+-                                 (default "off")
++        i2s                     Set to "on" to enable the i2s interface
++                                (default "off")
+ 
+-        spi                      Set to "on" to enable the spi interfaces
+-                                 (default "off")
++        spi                     Set to "on" to enable the spi interfaces
++                                (default "off")
+ 
+-        random                   Set to "on" to enable the hardware random
+-                                 number generator (default "on")
++        random                  Set to "on" to enable the hardware random
++                                number generator (default "on")
+ 
+-        uart0                    Set to "off" to disable uart0 (default "on")
++        uart0                   Set to "off" to disable uart0 (default "on")
+ 
+-        watchdog                 Set to "on" to enable the hardware watchdog
+-                                 (default "off")
++        watchdog                Set to "on" to enable the hardware watchdog
++                                (default "off")
+ 
+-        act_led_trigger          Choose which activity the LED tracks.
+-                                 Use "heartbeat" for a nice load indicator.
+-                                 (default "mmc")
++        act_led_trigger         Choose which activity the LED tracks.
++                                Use "heartbeat" for a nice load indicator.
++                                (default "mmc")
+ 
+-        act_led_activelow        Set to "on" to invert the sense of the LED
+-                                 (default "off")
++        act_led_activelow       Set to "on" to invert the sense of the LED
++                                (default "off")
+ 
+-        act_led_gpio             Set which GPIO to use for the activity LED
+-                                 (in case you want to connect it to an external
+-                                 device)
+-                                 (default "16" on a non-Plus board, "47" on a
+-                                 Plus or Pi 2)
++        act_led_gpio            Set which GPIO to use for the activity LED
++                                (in case you want to connect it to an external
++                                device)
++                                (default "16" on a non-Plus board, "47" on a
++                                Plus or Pi 2)
+ 
+         pwr_led_trigger
+         pwr_led_activelow
+         pwr_led_gpio
+-                                 As for act_led_*, but using the PWR LED.
+-                                 Not available on Model A/B boards.
++                                As for act_led_*, but using the PWR LED.
++                                Not available on Model A/B boards.
+ 
+         N.B. It is recommended to only enable those interfaces that are needed.
+         Leaving all interfaces enabled can lead to unwanted behaviour (i2c_vc
+@@ -149,19 +149,19 @@ Params:
+ Name:   ads7846
+ Info:   ADS7846 Touch controller
+ Load:   dtoverlay=ads7846,<param>=<val>
+-Params: cs                       SPI bus Chip Select (default 1)
+-        speed                    SPI bus speed (default 2MHz, max 3.25MHz)
+-        penirq                   GPIO used for PENIRQ. REQUIRED
+-        penirq_pull              Set GPIO pull (default 0=none, 2=pullup)
+-        swapxy                   Swap x and y axis
+-        xmin                     Minimum value on the X axis (default 0)
+-        ymin                     Minimum value on the Y axis (default 0)
+-        xmax                     Maximum value on the X axis (default 4095)
+-        ymax                     Maximum value on the Y axis (default 4095)
+-        pmin                     Minimum reported pressure value (default 0)
+-        pmax                     Maximum reported pressure value (default 65535)
+-        xohms                    Touchpanel sensitivity (X-plate resistance)
+-                                 (default 400)
++Params: cs                      SPI bus Chip Select (default 1)
++        speed                   SPI bus speed (default 2MHz, max 3.25MHz)
++        penirq                  GPIO used for PENIRQ. REQUIRED
++        penirq_pull             Set GPIO pull (default 0=none, 2=pullup)
++        swapxy                  Swap x and y axis
++        xmin                    Minimum value on the X axis (default 0)
++        ymin                    Minimum value on the Y axis (default 0)
++        xmax                    Maximum value on the X axis (default 4095)
++        ymax                    Maximum value on the Y axis (default 4095)
++        pmin                    Minimum reported pressure value (default 0)
++        pmax                    Maximum reported pressure value (default 65535)
++        xohms                   Touchpanel sensitivity (X-plate resistance)
++                                (default 400)
+ 
+         penirq is required and usually xohms (60-100) has to be set as well.
+         Apart from that, pmax (255) and swapxy are also common.
+@@ -175,12 +175,12 @@ Name:   at86rf233
+ Info:   Configures the Atmel AT86RF233 802.15.4 low-power WPAN transceiver,
+         connected to spi0.0
+ Load:   dtoverlay=at86rf233,<param>=<val>
+-Params: interrupt                GPIO used for INT (default 23)
+-        reset                    GPIO used for Reset (default 24)
+-        sleep                    GPIO used for Sleep (default 25)
+-        speed                    SPI bus speed in Hz (default 6000000)
+-        trim                     Fine tuning of the internal capacitance
+-                                 arrays (0=+0pF, 15=+4.5pF, default 15)
++Params: interrupt               GPIO used for INT (default 23)
++        reset                   GPIO used for Reset (default 24)
++        sleep                   GPIO used for Sleep (default 25)
++        speed                   SPI bus speed in Hz (default 6000000)
++        trim                    Fine tuning of the internal capacitance
++                                arrays (0=+0pF, 15=+4.5pF, default 15)
+ 
+ 
+ Name:   bmp085_i2c-sensor
+@@ -194,8 +194,8 @@ Name:   dht11
+ Info:   Overlay for the DHT11/DHT21/DHT22 humidity/temperature sensors
+         Also sometimes found with the part number(s) AM230x.
+ Load:   dtoverlay=dht11,<param>=<val>
+-Params: gpiopin                  GPIO connected to the sensor's DATA output.
+-                                 (default 4)
++Params: gpiopin                 GPIO connected to the sensor's DATA output.
++                                (default 4)
+ 
+ 
+ Name:   dwc-otg
+@@ -208,15 +208,15 @@ Params: <None>
+ Name:   dwc2
+ Info:   Selects the dwc2 USB controller driver
+ Load:   dtoverlay=dwc2,<param>=<val>
+-Params: dr_mode                  Dual role mode: "host", "peripheral" or "otg"
++Params: dr_mode                 Dual role mode: "host", "peripheral" or "otg"
+ 
+-        g-rx-fifo-size           Size of rx fifo size in gadget mode
++        g-rx-fifo-size          Size of rx fifo size in gadget mode
+ 
+-        g-np-tx-fifo-size        Size of non-periodic tx fifo size in gadget
+-                                 mode
++        g-np-tx-fifo-size       Size of non-periodic tx fifo size in gadget
++                                mode
+ 
+-        g-tx-fifo-size           Size of periodic tx fifo per endpoint
+-                                 (except ep0) in gadget mode
++        g-tx-fifo-size          Size of periodic tx fifo per endpoint
++                                (except ep0) in gadget mode
+ 
+ 
+ [ The ds1307-rtc overlay has been deleted. See i2c-rtc. ]
+@@ -225,9 +225,9 @@ Params: dr_mode                  Dual ro
+ Name:   enc28j60
+ Info:   Overlay for the Microchip ENC28J60 Ethernet Controller (SPI)
+ Load:   dtoverlay=enc28j60,<param>=<val>
+-Params: int_pin                  GPIO used for INT (default 25)
++Params: int_pin                 GPIO used for INT (default 25)
+ 
+-        speed                    SPI bus speed (default 12000000)
++        speed                   SPI bus speed (default 12000000)
+ 
+ 
+ Name:   gpio-ir
+@@ -237,26 +237,26 @@ Info:   Use GPIO pin as rc-core style in
+         not required! The key mapping and other decoding parameters can be
+         configured by "ir-keytable" tool.
+ Load:   dtoverlay=gpio-ir,<param>=<val>
+-Params: gpio_pin                 Input pin number. Default is 18.
++Params: gpio_pin                Input pin number. Default is 18.
+ 
+-        gpio_pull                Desired pull-up/down state (off, down, up)
+-                                 Default is "down".
++        gpio_pull               Desired pull-up/down state (off, down, up)
++                                Default is "down".
+ 
+-        rc-map-name              Default rc keymap (can also be changed by
+-                                 ir-keytable), defaults to "rc-rc6-mce"
++        rc-map-name             Default rc keymap (can also be changed by
++                                ir-keytable), defaults to "rc-rc6-mce"
+ 
+ 
+ Name:   gpio-poweroff
+ Info:   Drives a GPIO high or low on reboot
+ Load:   dtoverlay=gpio-poweroff,<param>=<val>
+-Params: gpiopin                  GPIO for signalling (default 26)
++Params: gpiopin                 GPIO for signalling (default 26)
+ 
+-        active_low               Set if the power control device requires a
+-                                 high->low transition to trigger a power-down.
+-                                 Note that this will require the support of a
+-                                 custom dt-blob.bin to prevent a power-down
+-                                 during the boot process, and that a reboot
+-                                 will also cause the pin to go low.
++        active_low              Set if the power control device requires a
++                                high->low transition to trigger a power-down.
++                                Note that this will require the support of a
++                                custom dt-blob.bin to prevent a power-down
++                                during the boot process, and that a reboot
++                                will also cause the pin to go low.
+ 
+ 
+ Name:   hifiberry-amp
+@@ -300,65 +300,65 @@ Name:   hy28a
+ Info:   HY28A - 2.8" TFT LCD Display Module by HAOYU Electronics
+         Default values match Texy's display shield
+ Load:   dtoverlay=hy28a,<param>=<val>
+-Params: speed                    Display SPI bus speed
++Params: speed                   Display SPI bus speed
+ 
+-        rotate                   Display rotation {0,90,180,270}
++        rotate                  Display rotation {0,90,180,270}
+ 
+-        fps                      Delay between frame updates
++        fps                     Delay between frame updates
+ 
+-        debug                    Debug output level {0-7}
++        debug                   Debug output level {0-7}
+ 
+-        xohms                    Touchpanel sensitivity (X-plate resistance)
++        xohms                   Touchpanel sensitivity (X-plate resistance)
+ 
+-        resetgpio                GPIO used to reset controller
++        resetgpio               GPIO used to reset controller
+ 
+-        ledgpio                  GPIO used to control backlight
++        ledgpio                 GPIO used to control backlight
+ 
+ 
+ Name:   hy28b
+ Info:   HY28B - 2.8" TFT LCD Display Module by HAOYU Electronics
+         Default values match Texy's display shield
+ Load:   dtoverlay=hy28b,<param>=<val>
+-Params: speed                    Display SPI bus speed
++Params: speed                   Display SPI bus speed
+ 
+-        rotate                   Display rotation {0,90,180,270}
++        rotate                  Display rotation {0,90,180,270}
+ 
+-        fps                      Delay between frame updates
++        fps                     Delay between frame updates
+ 
+-        debug                    Debug output level {0-7}
++        debug                   Debug output level {0-7}
+ 
+-        xohms                    Touchpanel sensitivity (X-plate resistance)
++        xohms                   Touchpanel sensitivity (X-plate resistance)
+ 
+-        resetgpio                GPIO used to reset controller
++        resetgpio               GPIO used to reset controller
+ 
+-        ledgpio                  GPIO used to control backlight
++        ledgpio                 GPIO used to control backlight
+ 
+ 
+ Name:   i2c-gpio
+ Info:   Adds support for software i2c controller on gpio pins
+ Load:   dtoverlay=i2c-gpio,<param>=<val>
+-Params: i2c_gpio_sda             GPIO used for I2C data (default "23")
++Params: i2c_gpio_sda            GPIO used for I2C data (default "23")
+ 
+-        i2c_gpio_scl             GPIO used for I2C clock (default "24")
++        i2c_gpio_scl            GPIO used for I2C clock (default "24")
+ 
+-        i2c_gpio_delay_us        Clock delay in microseconds
+-                                 (default "2" = ~100kHz)
++        i2c_gpio_delay_us       Clock delay in microseconds
++                                (default "2" = ~100kHz)
+ 
+ 
+ Name:   i2c-rtc
+ Info:   Adds support for a number of I2C Real Time Clock devices
+ Load:   dtoverlay=i2c-rtc,<param>=<val>
+-Params: ds1307                   Select the DS1307 device
++Params: ds1307                  Select the DS1307 device
+ 
+-        ds3231                   Select the DS3231 device
++        ds3231                  Select the DS3231 device
+ 
+-        mcp7941x                 Select the MCP7941x device
++        mcp7941x                Select the MCP7941x device
+ 
+-        pcf2127                  Select the PCF2127 device
++        pcf2127                 Select the PCF2127 device
+ 
+-        pcf8523                  Select the PCF8523 device
++        pcf8523                 Select the PCF8523 device
+ 
+-        pcf8563                  Select the PCF8563 device
++        pcf8563                 Select the PCF8563 device
+ 
+ 
+ Name:   i2s-mmap
+@@ -396,70 +396,70 @@ Name:   lirc-rpi
+ Info:   Configures lirc-rpi (Linux Infrared Remote Control for Raspberry Pi)
+         Consult the module documentation for more details.
+ Load:   dtoverlay=lirc-rpi,<param>=<val>
+-Params: gpio_out_pin             GPIO for output (default "17")
++Params: gpio_out_pin            GPIO for output (default "17")
+ 
+-        gpio_in_pin              GPIO for input (default "18")
++        gpio_in_pin             GPIO for input (default "18")
+ 
+-        gpio_in_pull             Pull up/down/off on the input pin
+-                                 (default "down")
++        gpio_in_pull            Pull up/down/off on the input pin
++                                (default "down")
+ 
+-        sense                    Override the IR receive auto-detection logic:
+-                                   "0" = force active-high
+-                                   "1" = force active-low
+-                                   "-1" = use auto-detection
+-                                 (default "-1")
++        sense                   Override the IR receive auto-detection logic:
++                                 "0" = force active-high
++                                 "1" = force active-low
++                                 "-1" = use auto-detection
++                                (default "-1")
+ 
+-        softcarrier              Turn the software carrier "on" or "off"
+-                                 (default "on")
++        softcarrier             Turn the software carrier "on" or "off"
++                                (default "on")
+ 
+-        invert                   "on" = invert the output pin (default "off")
++        invert                  "on" = invert the output pin (default "off")
+ 
+-        debug                    "on" = enable additional debug messages
+-                                 (default "off")
++        debug                   "on" = enable additional debug messages
++                                (default "off")
+ 
+ 
+ Name:   mcp2515-can0
+ Info:   Configures the MCP2515 CAN controller on spi0.0
+ Load:   dtoverlay=mcp2515-can0,<param>=<val>
+-Params: oscillator               Clock frequency for the CAN controller (Hz)
++Params: oscillator              Clock frequency for the CAN controller (Hz)
+ 
+-        spimaxfrequency          Maximum SPI frequence (Hz)
++        spimaxfrequency         Maximum SPI frequence (Hz)
+ 
+-        interrupt                GPIO for interrupt signal
++        interrupt               GPIO for interrupt signal
+ 
+ 
+ Name:   mcp2515-can1
+ Info:   Configures the MCP2515 CAN controller on spi0.1
+ Load:   dtoverlay=mcp2515-can1,<param>=<val>
+-Params: oscillator               Clock frequency for the CAN controller (Hz)
++Params: oscillator              Clock frequency for the CAN controller (Hz)
+ 
+-        spimaxfrequency          Maximum SPI frequence (Hz)
++        spimaxfrequency         Maximum SPI frequence (Hz)
+ 
+-        interrupt                GPIO for interrupt signal
++        interrupt               GPIO for interrupt signal
+ 
+ 
+ Name:   mmc
+ Info:   Selects the bcm2835-mmc SD/MMC driver, optionally with overclock
+ Load:   dtoverlay=mmc,<param>=<val>
+-Params: overclock_50             Clock (in MHz) to use when the MMC framework
+-                                 requests 50MHz
+-        force_pio                Disable DMA support
++Params: overclock_50            Clock (in MHz) to use when the MMC framework
++                                requests 50MHz
++        force_pio               Disable DMA support
+ 
+ 
+ Name:   mz61581
+ Info:   MZ61581 display by Tontec
+ Load:   dtoverlay=mz61581,<param>=<val>
+-Params: speed                    Display SPI bus speed
++Params: speed                   Display SPI bus speed
+ 
+-        rotate                   Display rotation {0,90,180,270}
++        rotate                  Display rotation {0,90,180,270}
+ 
+-        fps                      Delay between frame updates
++        fps                     Delay between frame updates
+ 
+-        txbuflen                 Transmit buffer length (default 32768)
++        txbuflen                Transmit buffer length (default 32768)
+ 
+-        debug                    Debug output level {0-7}
++        debug                   Debug output level {0-7}
+ 
+-        xohms                    Touchpanel sensitivity (X-plate resistance)
++        xohms                   Touchpanel sensitivity (X-plate resistance)
+ 
+ 
+ [ The pcf2127-rtc overlay has been deleted. See i2c-rtc. ]
+@@ -474,69 +474,69 @@ Params: speed                    Display
+ Name:   piscreen
+ Info:   PiScreen display by OzzMaker.com
+ Load:   dtoverlay=piscreen,<param>=<val>
+-Params: speed                    Display SPI bus speed
++Params: speed                   Display SPI bus speed
+ 
+-        rotate                   Display rotation {0,90,180,270}
++        rotate                  Display rotation {0,90,180,270}
+ 
+-        fps                      Delay between frame updates
++        fps                     Delay between frame updates
+ 
+-        debug                    Debug output level {0-7}
++        debug                   Debug output level {0-7}
+ 
+-        xohms                    Touchpanel sensitivity (X-plate resistance)
++        xohms                   Touchpanel sensitivity (X-plate resistance)
+ 
+ 
+ Name:   piscreen2r
+ Info:   PiScreen 2 with resistive TP display by OzzMaker.com
+ Load:   dtoverlay=piscreen2r,<param>=<val>
+-Params: speed                    Display SPI bus speed
++Params: speed                   Display SPI bus speed
+ 
+-        rotate                   Display rotation {0,90,180,270}
++        rotate                  Display rotation {0,90,180,270}
+ 
+-        fps                      Delay between frame updates
++        fps                     Delay between frame updates
+ 
+-        debug                    Debug output level {0-7}
++        debug                   Debug output level {0-7}
+ 
+-        xohms                    Touchpanel sensitivity (X-plate resistance)
++        xohms                   Touchpanel sensitivity (X-plate resistance)
+ 
+ 
+ Name:   pitft28-capacitive
+ Info:   Adafruit PiTFT 2.8" capacitive touch screen
+ Load:   dtoverlay=pitft28-capacitive,<param>=<val>
+-Params: speed                    Display SPI bus speed
++Params: speed                   Display SPI bus speed
+ 
+-        rotate                   Display rotation {0,90,180,270}
++        rotate                  Display rotation {0,90,180,270}
+ 
+-        fps                      Delay between frame updates
++        fps                     Delay between frame updates
+ 
+-        debug                    Debug output level {0-7}
++        debug                   Debug output level {0-7}
+ 
+-        touch-sizex              Touchscreen size x (default 240)
++        touch-sizex             Touchscreen size x (default 240)
+ 
+-        touch-sizey              Touchscreen size y (default 320)
++        touch-sizey             Touchscreen size y (default 320)
+ 
+-        touch-invx               Touchscreen inverted x axis
++        touch-invx              Touchscreen inverted x axis
+ 
+-        touch-invy               Touchscreen inverted y axis
++        touch-invy              Touchscreen inverted y axis
+ 
+-        touch-swapxy             Touchscreen swapped x y axis
++        touch-swapxy            Touchscreen swapped x y axis
+ 
+ 
+ Name:   pitft28-resistive
+ Info:   Adafruit PiTFT 2.8" resistive touch screen
+ Load:   dtoverlay=pitft28-resistive,<param>=<val>
+-Params: speed                    Display SPI bus speed
++Params: speed                   Display SPI bus speed
+ 
+-        rotate                   Display rotation {0,90,180,270}
++        rotate                  Display rotation {0,90,180,270}
+ 
+-        fps                      Delay between frame updates
++        fps                     Delay between frame updates
+ 
+-        debug                    Debug output level {0-7}
++        debug                   Debug output level {0-7}
+ 
+ 
+ Name:   pps-gpio
+ Info:   Configures the pps-gpio (pulse-per-second time signal via GPIO).
+ Load:   dtoverlay=pps-gpio,<param>=<val>
+-Params: gpiopin                  Input GPIO (default "18")
++Params: gpiopin                 Input GPIO (default "18")
+ 
+ 
+ Name:   pwm
+@@ -553,9 +553,9 @@ Info:   Configures a single PWM channel
+           4) Currently the clock must have been enabled and configured
+              by other means.
+ Load:   dtoverlay=pwm,<param>=<val>
+-Params: pin                      Output pin (default 18) - see table
+-        func                     Pin function (default 2 = Alt5) - see above
+-        clock                    PWM clock frequency (informational)
++Params: pin                     Output pin (default 18) - see table
++        func                    Pin function (default 2 = Alt5) - see above
++        clock                   PWM clock frequency (informational)
+ 
+ 
+ Name:   pwm-2chan
+@@ -572,11 +572,11 @@ Info:   Configures both PWM channels
+           4) Currently the clock must have been enabled and configured
+              by other means.
+ Load:   dtoverlay=pwm-2chan,<param>=<val>
+-Params: pin                      Output pin (default 18) - see table
+-        pin2                     Output pin for other channel (default 19)
+-        func                     Pin function (default 2 = Alt5) - see above
+-        func2                    Function for pin2 (default 2 = Alt5)
+-        clock                    PWM clock frequency (informational)
++Params: pin                     Output pin (default 18) - see table
++        pin2                    Output pin for other channel (default 19)
++        func                    Pin function (default 2 = Alt5) - see above
++        func2                   Function for pin2 (default 2 = Alt5)
++        clock                   PWM clock frequency (informational)
+ 
+ 
+ Name:   raspidac3
+@@ -600,15 +600,15 @@ Params: <None>
+ Name:   rpi-display
+ Info:   RPi-Display - 2.8" Touch Display by Watterott
+ Load:   dtoverlay=rpi-display,<param>=<val>
+-Params: speed                    Display SPI bus speed
++Params: speed                   Display SPI bus speed
+ 
+-        rotate                   Display rotation {0,90,180,270}
++        rotate                  Display rotation {0,90,180,270}
+ 
+-        fps                      Delay between frame updates
++        fps                     Delay between frame updates
+ 
+-        debug                    Debug output level {0-7}
++        debug                   Debug output level {0-7}
+ 
+-        xohms                    Touchpanel sensitivity (X-plate resistance)
++        xohms                   Touchpanel sensitivity (X-plate resistance)
+ 
+ 
+ Name:   rpi-ft5406
+@@ -632,52 +632,52 @@ Params: <None>
+ Name:   sdhost
+ Info:   Selects the bcm2835-sdhost SD/MMC driver, optionally with overclock
+ Load:   dtoverlay=sdhost,<param>=<val>
+-Params: overclock_50             Clock (in MHz) to use when the MMC framework
+-                                 requests 50MHz
++Params: overclock_50            Clock (in MHz) to use when the MMC framework
++                                requests 50MHz
+ 
+-        force_pio                Disable DMA support (default off)
++        force_pio               Disable DMA support (default off)
+ 
+-        pio_limit                Number of blocks above which to use DMA
+-                                 (default 1)
++        pio_limit               Number of blocks above which to use DMA
++                                (default 1)
+ 
+-        debug                    Enable debug output (default off)
++        debug                   Enable debug output (default off)
+ 
+ 
+ Name:   sdio
+ Info:   Selects the bcm2835-sdhost SD/MMC driver, optionally with overclock,
+         and enables SDIO via GPIOs 22-27.
+ Load:   dtoverlay=sdio,<param>=<val>
+-Params: overclock_50             SD Clock (in MHz) to use when the MMC framework
+-                                 requests 50MHz
++Params: overclock_50            SD Clock (in MHz) to use when the MMC framework
++                                requests 50MHz
+ 
+-        sdio_overclock           SDIO Clock (in MHz) to use when the MMC
+-                                 framework requests 50MHz
++        sdio_overclock          SDIO Clock (in MHz) to use when the MMC
++                                framework requests 50MHz
+ 
+-        force_pio                Disable DMA support (default off)
++        force_pio               Disable DMA support (default off)
+ 
+-        pio_limit                Number of blocks above which to use DMA
+-                                 (default 1)
++        pio_limit               Number of blocks above which to use DMA
++                                (default 1)
+ 
+-        debug                    Enable debug output (default off)
++        debug                   Enable debug output (default off)
+ 
+-        poll_once                Disable SDIO-device polling every second
+-                                 (default on: polling once at boot-time)
++        poll_once               Disable SDIO-device polling every second
++                                (default on: polling once at boot-time)
+ 
+-        bus_width                Set the SDIO host bus width (default 4 bits)
++        bus_width               Set the SDIO host bus width (default 4 bits)
+ 
+ 
+ Name:   sdtweak
+ Info:   Tunes the bcm2835-sdhost SD/MMC driver
+ Load:   dtoverlay=sdtweak,<param>=<val>
+-Params: overclock_50             Clock (in MHz) to use when the MMC framework
+-                                 requests 50MHz
++Params: overclock_50            Clock (in MHz) to use when the MMC framework
++                                requests 50MHz
+ 
+-        force_pio                Disable DMA support (default off)
++        force_pio               Disable DMA support (default off)
+ 
+-        pio_limit                Number of blocks above which to use DMA
+-                                 (default 1)
++        pio_limit               Number of blocks above which to use DMA
++                                (default 1)
+ 
+-        debug                    Enable debug output (default off)
++        debug                   Enable debug output (default off)
+ 
+ 
+ Name:   smi
+@@ -708,25 +708,25 @@ Name:   tinylcd35
+ Info:   3.5" Color TFT Display by www.tinylcd.com
+         Options: Touch, RTC, keypad
+ Load:   dtoverlay=tinylcd35,<param>=<val>
+-Params: speed                    Display SPI bus speed
++Params: speed                   Display SPI bus speed
+ 
+-        rotate                   Display rotation {0,90,180,270}
++        rotate                  Display rotation {0,90,180,270}
+ 
+-        fps                      Delay between frame updates
++        fps                     Delay between frame updates
+ 
+-        debug                    Debug output level {0-7}
++        debug                   Debug output level {0-7}
+ 
+-        touch                    Enable touch panel
++        touch                   Enable touch panel
+ 
+-        touchgpio                Touch controller IRQ GPIO
++        touchgpio               Touch controller IRQ GPIO
+ 
+-        xohms                    Touchpanel: Resistance of X-plate in ohms
++        xohms                   Touchpanel: Resistance of X-plate in ohms
+ 
+-        rtc-pcf                  PCF8563 Real Time Clock
++        rtc-pcf                 PCF8563 Real Time Clock
+ 
+-        rtc-ds                   DS1307 Real Time Clock
++        rtc-ds                  DS1307 Real Time Clock
+ 
+-        keypad                   Enable keypad
++        keypad                  Enable keypad
+ 
+         Examples:
+             Display with touchpanel, PCF8563 RTC and keypad:
+@@ -738,9 +738,9 @@ Params: speed                    Display
+ Name:   uart1
+ Info:   Enable uart1 in place of uart0
+ Load:   dtoverlay=uart1,<param>=<val>
+-Params: txd1_pin                 GPIO pin for TXD1 (14, 32 or 40 - default 14)
++Params: txd1_pin                GPIO pin for TXD1 (14, 32 or 40 - default 14)
+ 
+-        rxd1_pin                 GPIO pin for RXD1 (15, 33 or 41 - default 15)
++        rxd1_pin                GPIO pin for RXD1 (15, 33 or 41 - default 15)
+ 
+ 
+ Name:   vc4-kms-v3d
+@@ -763,22 +763,22 @@ Name:   w1-gpio
+ Info:   Configures the w1-gpio Onewire interface module.
+         Use this overlay if you *don't* need a GPIO to drive an external pullup.
+ Load:   dtoverlay=w1-gpio,<param>=<val>
+-Params: gpiopin                  GPIO for I/O (default "4")
++Params: gpiopin                 GPIO for I/O (default "4")
+ 
+-        pullup                   Non-zero, "on", or "y" to enable the parasitic
+-                                 power (2-wire, power-on-data) feature
++        pullup                  Non-zero, "on", or "y" to enable the parasitic
++                                power (2-wire, power-on-data) feature
+ 
+ 
+ Name:   w1-gpio-pullup
+ Info:   Configures the w1-gpio Onewire interface module.
+         Use this overlay if you *do* need a GPIO to drive an external pullup.
+ Load:   dtoverlay=w1-gpio-pullup,<param>=<val>
+-Params: gpiopin                  GPIO for I/O (default "4")
++Params: gpiopin                 GPIO for I/O (default "4")
+ 
+-        pullup                   Non-zero, "on", or "y" to enable the parasitic
+-                                 power (2-wire, power-on-data) feature
++        pullup                  Non-zero, "on", or "y" to enable the parasitic
++                                power (2-wire, power-on-data) feature
+ 
+-        extpullup                GPIO for external pullup (default "5")
++        extpullup               GPIO for external pullup (default "5")
+ 
+ 
+ Troubleshooting

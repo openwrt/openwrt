@@ -1,0 +1,31 @@
+From 585b22b783df4649751b4ce40074b77ad0cc959b Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 17 Feb 2016 19:02:31 +0000
+Subject: [PATCH 148/381] dcw_otg: Make trimming messages less noisy
+
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -738,7 +738,8 @@ static int update_urb_state_xfer_comp(dw
+ 					     &short_read);
+ 
+ 	if (urb->actual_length + xfer_length > urb->length) {
+-		DWC_WARN("%s(): trimming xfer length\n", __func__);
++		printk_once(KERN_DEBUG "dwc_otg: DEVICE:%03d : %s:%d:trimming xfer length\n",
++			hc->dev_addr, __func__, __LINE__);
+ 		xfer_length = urb->length - urb->actual_length;
+ 	}
+ 
+@@ -1430,7 +1431,8 @@ static void update_urb_state_xfer_intr(d
+ 							    halt_status, NULL);
+ 
+ 	if (urb->actual_length + bytes_transferred > urb->length) {
+-		DWC_WARN("%s(): trimming xfer length\n", __func__);
++		printk_once(KERN_DEBUG "dwc_otg: DEVICE:%03d : %s:%d:trimming xfer length\n",
++			hc->dev_addr, __func__, __LINE__);
+ 		bytes_transferred = urb->length - urb->actual_length;
+ 	}
+ 

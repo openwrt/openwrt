@@ -30,6 +30,9 @@
 #define CPE510_GPIO_LED_L3	15
 #define CPE510_GPIO_LED_L4	16
 
+#define CPE510_GPIO_EXTERNAL_LNA0	18
+#define CPE510_GPIO_EXTERNAL_LNA1	19
+
 #define CPE510_GPIO_BTN_RESET	4
 
 #define CPE510_KEYS_POLL_INTERVAL	20 /* msecs */
@@ -75,12 +78,8 @@ static struct gpio_keys_button cpe510_gpio_keys[] __initdata = {
 	}
 };
 
-
-static void __init cpe510_setup(void)
+static void __init cpe_setup(u8 *mac)
 {
-	u8 *mac = (u8 *) KSEG1ADDR(0x1f830008);
-	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
-
 	/* Disable JTAG, enabling GPIOs 0-3 */
 	/* Configure OBS4 line, for GPIO 4*/
 	ath79_gpio_function_setup(AR934X_GPIO_FUNC_JTAG_DISABLE,
@@ -93,15 +92,40 @@ static void __init cpe510_setup(void)
 					ARRAY_SIZE(cpe510_gpio_keys),
 					cpe510_gpio_keys);
 
+	ath79_wmac_set_ext_lna_gpio(0, CPE510_GPIO_EXTERNAL_LNA0);
+	ath79_wmac_set_ext_lna_gpio(1, CPE510_GPIO_EXTERNAL_LNA1);
+
 	ath79_register_m25p80(NULL);
 
 	ath79_register_mdio(1, 0);
 	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 0);
 	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ath79_register_eth(1);
+}
+
+
+static void __init cpe210_setup(void)
+{
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f830008);
+	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
+
+	cpe_setup(mac);
 
 	ath79_register_wmac(ee, mac);
 }
 
-MIPS_MACHINE(ATH79_MACH_CPE510, "CPE510", "TP-LINK CPE210/220/510/520",
+static void __init cpe510_setup(void)
+{
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f830008);
+	u8 *ee = (u8 *) KSEG1ADDR(0x1fff5000);
+
+	cpe_setup(mac);
+
+	ath79_register_wmac(ee, mac);
+}
+
+MIPS_MACHINE(ATH79_MACH_CPE210, "CPE210", "TP-LINK CPE210/220",
+	     cpe210_setup);
+
+MIPS_MACHINE(ATH79_MACH_CPE510, "CPE510", "TP-LINK CPE510/520",
 	     cpe510_setup);

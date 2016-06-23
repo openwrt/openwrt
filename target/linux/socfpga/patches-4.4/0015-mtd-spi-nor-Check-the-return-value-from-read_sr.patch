@@ -1,0 +1,60 @@
+From 8f5f914b1b6d70d6d7455e0f89df84b3377677f9 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Fri, 20 Nov 2015 16:26:11 -0200
+Subject: [PATCH 15/33] mtd: spi-nor: Check the return value from read_sr()
+
+We should better check the return value from read_sr() and
+propagate it in the case of error.
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/mtd/spi-nor/spi-nor.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index 43e00e2..f8f36d4 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -478,11 +478,13 @@ static int stm_is_locked_sr(struct spi_nor *nor, loff_t ofs, uint64_t len,
+ static int stm_lock(struct spi_nor *nor, loff_t ofs, uint64_t len)
+ {
+ 	struct mtd_info *mtd = &nor->mtd;
+-	u8 status_old, status_new;
++	int status_old, status_new;
+ 	u8 mask = SR_BP2 | SR_BP1 | SR_BP0;
+ 	u8 shift = ffs(mask) - 1, pow, val;
+ 
+ 	status_old = read_sr(nor);
++	if (status_old < 0)
++		return status_old;
+ 
+ 	/* SPI NOR always locks to the end */
+ 	if (ofs + len != mtd->size) {
+@@ -528,11 +530,13 @@ static int stm_lock(struct spi_nor *nor, loff_t ofs, uint64_t len)
+ static int stm_unlock(struct spi_nor *nor, loff_t ofs, uint64_t len)
+ {
+ 	struct mtd_info *mtd = &nor->mtd;
+-	uint8_t status_old, status_new;
++	int status_old, status_new;
+ 	u8 mask = SR_BP2 | SR_BP1 | SR_BP0;
+ 	u8 shift = ffs(mask) - 1, pow, val;
+ 
+ 	status_old = read_sr(nor);
++	if (status_old < 0)
++		return status_old;
+ 
+ 	/* Cannot unlock; would unlock larger region than requested */
+ 	if (stm_is_locked_sr(nor, ofs - mtd->erasesize, mtd->erasesize,
+@@ -1032,6 +1036,8 @@ static int macronix_quad_enable(struct spi_nor *nor)
+ 	int ret, val;
+ 
+ 	val = read_sr(nor);
++	if (val < 0)
++		return val;
+ 	write_enable(nor);
+ 
+ 	write_sr(nor, val | SR_QUAD_EN_MX);
+-- 
+2.8.1
+

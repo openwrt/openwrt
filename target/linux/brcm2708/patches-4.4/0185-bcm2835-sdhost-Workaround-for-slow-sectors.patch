@@ -1,0 +1,118 @@
+From 34269be91afc30ac33e70f37418969b9694f9fad Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 15 Mar 2016 14:10:29 +0000
+Subject: [PATCH 185/381] bcm2835-sdhost: Workaround for "slow" sectors
+
+Some cards have been seen to cause timeouts after certain sectors are
+read. This workaround enforces a minimum delay between the stop after
+reading one of those sectors and a subsequent data command.
+
+Using CMD23 (SET_BLOCK_COUNT) avoids this problem, so good cards will
+not be penalised by this workaround.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/mmc/host/bcm2835-sdhost.c | 50 +++++++++++++++++++++++++++++++++++----
+ 1 file changed, 46 insertions(+), 4 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -202,9 +202,12 @@ struct bcm2835_host {
+ 	int				max_delay;	/* maximum length of time spent waiting */
+ 	struct timeval			stop_time;	/* when the last stop was issued */
+ 	u32				delay_after_stop; /* minimum time between stop and subsequent data transfer */
++	u32				delay_after_this_stop; /* minimum time between this stop and subsequent data transfer */
+ 	u32				overclock_50;	/* frequency to use when 50MHz is requested (in MHz) */
+ 	u32				overclock;	/* Current frequency if overclocked, else zero */
+ 	u32				pio_limit;	/* Maximum block count for PIO (0 = always DMA) */
++
++	u32				sectors;	/* Cached card size in sectors */
+ };
+ 
+ #if ENABLE_LOG
+@@ -425,6 +428,7 @@ static void bcm2835_sdhost_reset_interna
+ 	bcm2835_sdhost_set_power(host, true);
+ 	mdelay(10);
+ 	host->clock = 0;
++	host->sectors = 0;
+ 	bcm2835_sdhost_write(host, host->hcfg, SDHCFG);
+ 	bcm2835_sdhost_write(host, host->cdiv, SDCDIV);
+ 	mmiowb();
+@@ -880,6 +884,24 @@ static void bcm2835_sdhost_prepare_data(
+ 	host->flush_fifo = 0;
+ 	host->data->bytes_xfered = 0;
+ 
++	if (!host->sectors && host->mmc->card) {
++		struct mmc_card *card = host->mmc->card;
++		if (!mmc_card_sd(card) && mmc_card_blockaddr(card)) {
++			/*
++			 * The EXT_CSD sector count is in number of 512 byte
++			 * sectors.
++			 */
++			host->sectors = card->ext_csd.sectors;
++		} else {
++			/*
++			 * The CSD capacity field is in units of read_blkbits.
++			 * set_capacity takes units of 512 bytes.
++			 */
++			host->sectors = card->csd.capacity <<
++				(card->csd.read_blkbits - 9);
++		}
++	}
++
+ 	if (!host->dma_desc) {
+ 		/* Use PIO */
+ 		int flags = SG_MITER_ATOMIC;
+@@ -989,7 +1011,7 @@ bool bcm2835_sdhost_send_command(struct
+ 
+ 	if (cmd->data) {
+ 		log_event("CMDD", cmd->data->blocks, cmd->data->blksz);
+-		if (host->delay_after_stop) {
++		if (host->delay_after_this_stop) {
+ 			struct timeval now;
+ 			int time_since_stop;
+ 			do_gettimeofday(&now);
+@@ -998,12 +1020,32 @@ bool bcm2835_sdhost_send_command(struct
+ 				/* Possibly less than one second */
+ 				time_since_stop = time_since_stop * 1000000 +
+ 					(now.tv_usec - host->stop_time.tv_usec);
+-				if (time_since_stop < host->delay_after_stop)
+-					udelay(host->delay_after_stop -
++				if (time_since_stop <
++				    host->delay_after_this_stop)
++					udelay(host->delay_after_this_stop -
+ 					       time_since_stop);
+ 			}
+ 		}
+ 
++		host->delay_after_this_stop = host->delay_after_stop;
++		if ((cmd->data->flags & MMC_DATA_READ) && !host->use_sbc) {
++			/* See if read crosses one of the hazardous sectors */
++			u32 first_blk, last_blk;
++
++			/* Intentionally include the following sector because
++			   without CMD23/SBC the read may run on. */
++			first_blk = host->mrq->cmd->arg;
++			last_blk = first_blk + cmd->data->blocks;
++
++			if (((last_blk >= (host->sectors - 64)) &&
++			     (first_blk <= (host->sectors - 64))) ||
++			    ((last_blk >= (host->sectors - 32)) &&
++			     (first_blk <= (host->sectors - 32)))) {
++				host->delay_after_this_stop =
++					max(250u, host->delay_after_stop);
++			}
++		}
++
+ 		if (cmd->data->flags & MMC_DATA_WRITE)
+ 			sdcmd |= SDCMD_WRITE_CMD;
+ 		if (cmd->data->flags & MMC_DATA_READ)
+@@ -1078,7 +1120,7 @@ static void bcm2835_sdhost_transfer_comp
+ 			if (!host->use_busy)
+ 				bcm2835_sdhost_finish_command(host, NULL);
+ 
+-			if (host->delay_after_stop)
++			if (host->delay_after_this_stop)
+ 				do_gettimeofday(&host->stop_time);
+ 		}
+ 	} else {

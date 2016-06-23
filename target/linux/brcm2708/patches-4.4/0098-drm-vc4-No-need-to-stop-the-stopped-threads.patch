@@ -1,0 +1,26 @@
+From c3634a10a0b792baedf12691a83598c89976830c Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 23 Oct 2015 12:31:56 +0100
+Subject: [PATCH 098/381] drm/vc4: No need to stop the stopped threads.
+
+This was leftover debug code from the hackdriver.  We never submit
+unless the thread is already idle.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -104,10 +104,6 @@ submit_cl(struct drm_device *dev, uint32
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 
+-	/* Stop any existing thread and set state to "stopped at halt" */
+-	V3D_WRITE(V3D_CTNCS(thread), V3D_CTRUN);
+-	barrier();
+-
+ 	V3D_WRITE(V3D_CTNCA(thread), start);
+ 	barrier();
+ 

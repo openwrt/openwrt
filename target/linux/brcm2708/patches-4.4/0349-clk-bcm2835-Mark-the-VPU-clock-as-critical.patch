@@ -1,0 +1,46 @@
+From 0488240a92abe6fc9fa6f3a3058849b17af2d3e5 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 26 Apr 2016 11:44:59 -0700
+Subject: [PATCH 349/381] clk: bcm2835: Mark the VPU clock as critical
+
+The VPU clock is also the clock for our AXI bus, so we really can't
+disable it.  This might have happened during boot if, for example,
+uart1 (aux_uart clock) probed and was then disabled before the other
+consumers of the VPU clock had probed.
+
+v2: Rewrite to use a .flags in bcm2835_clock_data, since other clocks
+    will need this too.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/clk/bcm/clk-bcm2835.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -446,6 +446,8 @@ struct bcm2835_clock_data {
+ 	/* Number of fractional bits in the divider */
+ 	u32 frac_bits;
+ 
++	u32 flags;
++
+ 	bool is_vpu_clock;
+ 	bool is_mash_clock;
+ };
+@@ -1246,7 +1248,7 @@ static struct clk *bcm2835_register_cloc
+ 	init.parent_names = parents;
+ 	init.num_parents = data->num_mux_parents;
+ 	init.name = data->name;
+-	init.flags = CLK_IGNORE_UNUSED;
++	init.flags = data->flags | CLK_IGNORE_UNUSED;
+ 
+ 	if (data->is_vpu_clock) {
+ 		init.ops = &bcm2835_vpu_clock_clk_ops;
+@@ -1665,6 +1667,7 @@ static const struct bcm2835_clk_desc clk
+ 		.div_reg = CM_VPUDIV,
+ 		.int_bits = 12,
+ 		.frac_bits = 8,
++		.flags = CLK_IS_CRITICAL,
+ 		.is_vpu_clock = true),
+ 
+ 	/* clocks with per parent mux */

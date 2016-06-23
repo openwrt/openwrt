@@ -1,0 +1,40 @@
+From 97c4f995a385631934b1d732271997d44fab0c87 Mon Sep 17 00:00:00 2001
+From: Craig Roberts <cjr@craigroberts.net>
+Date: Tue, 16 Feb 2016 10:03:42 +0000
+Subject: [PATCH 147/381] Updated smsc95xx driver to check for a valid MAC
+ address in eeprom before using smsc95xx.macaddr parameter passed on command
+ line.
+
+The built-in RPi adaptor will still get a MAC address based on the parameter passed on the command line as the RPi hardware does not have an eeprom,
+however usb->ethernet adaptors using the same driver should have an eeprom with MAC address as part of their hardware and therefore will use this
+meaning they don't end up with the same MAC address as the built-in RPi adaptor.
+---
+ drivers/net/usb/smsc95xx.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
+@@ -817,10 +817,6 @@ static int smsc95xx_is_macaddr_param(str
+ 
+ static void smsc95xx_init_mac_address(struct usbnet *dev)
+ {
+-       /* Check module parameters */
+-       if (smsc95xx_is_macaddr_param(dev, dev->net->dev_addr))
+-               return;
+-
+ 	/* try reading mac address from EEPROM */
+ 	if (smsc95xx_read_eeprom(dev, EEPROM_MAC_OFFSET, ETH_ALEN,
+ 			dev->net->dev_addr) == 0) {
+@@ -831,7 +827,11 @@ static void smsc95xx_init_mac_address(st
+ 		}
+ 	}
+ 
+-	/* no eeprom, or eeprom values are invalid. generate random MAC */
++	/* Check module parameters */
++	if (smsc95xx_is_macaddr_param(dev, dev->net->dev_addr))
++		return;
++
++	/* no eeprom, or eeprom values are invalid, and no module parameter specified to set MAC. Generate random MAC */
+ 	eth_hw_addr_random(dev->net);
+ 	netif_dbg(dev, ifup, dev->net, "MAC address set to eth_random_addr\n");
+ }

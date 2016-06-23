@@ -1,0 +1,137 @@
+From 8db21da6d756efe530df2736c7dc99aeeca209ce Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 25 Jan 2016 14:13:12 -0800
+Subject: [PATCH 196/381] drm/vc4: Return an ERR_PTR from BO creation instead
+ of NULL.
+
+Fixes igt vc4_create_bo/create-bo-0 by returning -EINVAL from the
+ioctl instead of -ENOMEM.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_bo.c        | 23 +++++++++++++----------
+ drivers/gpu/drm/vc4/vc4_gem.c       |  4 ++--
+ drivers/gpu/drm/vc4/vc4_irq.c       |  2 +-
+ drivers/gpu/drm/vc4/vc4_render_cl.c |  4 ++--
+ drivers/gpu/drm/vc4/vc4_validate.c  |  4 ++--
+ 5 files changed, 20 insertions(+), 17 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_bo.c
++++ b/drivers/gpu/drm/vc4/vc4_bo.c
+@@ -213,10 +213,10 @@ struct vc4_bo *vc4_bo_create(struct drm_
+ 	size_t size = roundup(unaligned_size, PAGE_SIZE);
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	struct drm_gem_cma_object *cma_obj;
+-	int pass;
++	int pass, ret;
+ 
+ 	if (size == 0)
+-		return NULL;
++		return ERR_PTR(-EINVAL);
+ 
+ 	/* First, try to get a vc4_bo from the kernel BO cache. */
+ 	if (from_cache) {
+@@ -247,14 +247,17 @@ struct vc4_bo *vc4_bo_create(struct drm_
+ 			 * unreferenced BOs to the cache, and then
+ 			 * free the cache.
+ 			 */
+-			vc4_wait_for_seqno(dev, vc4->emit_seqno, ~0ull, true);
++			ret = vc4_wait_for_seqno(dev, vc4->emit_seqno, ~0ull,
++						 true);
++			if (ret)
++				return ERR_PTR(ret);
+ 			vc4_job_handle_completed(vc4);
+ 			vc4_bo_cache_purge(dev);
+ 			break;
+ 		case 3:
+ 			DRM_ERROR("Failed to allocate from CMA:\n");
+ 			vc4_bo_stats_dump(vc4);
+-			return NULL;
++			return ERR_PTR(-ENOMEM);
+ 		}
+ 	}
+ 
+@@ -276,8 +279,8 @@ int vc4_dumb_create(struct drm_file *fil
+ 		args->size = args->pitch * args->height;
+ 
+ 	bo = vc4_bo_create(dev, args->size, false);
+-	if (!bo)
+-		return -ENOMEM;
++	if (IS_ERR(bo))
++		return PTR_ERR(bo);
+ 
+ 	ret = drm_gem_handle_create(file_priv, &bo->base.base, &args->handle);
+ 	drm_gem_object_unreference_unlocked(&bo->base.base);
+@@ -460,8 +463,8 @@ int vc4_create_bo_ioctl(struct drm_devic
+ 	 * get zeroed, and that might leak data between users.
+ 	 */
+ 	bo = vc4_bo_create(dev, args->size, false);
+-	if (!bo)
+-		return -ENOMEM;
++	if (IS_ERR(bo))
++		return PTR_ERR(bo);
+ 
+ 	ret = drm_gem_handle_create(file_priv, &bo->base.base, &args->handle);
+ 	drm_gem_object_unreference_unlocked(&bo->base.base);
+@@ -513,8 +516,8 @@ vc4_create_shader_bo_ioctl(struct drm_de
+ 	}
+ 
+ 	bo = vc4_bo_create(dev, args->size, true);
+-	if (!bo)
+-		return -ENOMEM;
++	if (IS_ERR(bo))
++		return PTR_ERR(bo);
+ 
+ 	ret = copy_from_user(bo->base.vaddr,
+ 			     (void __user *)(uintptr_t)args->data,
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -593,9 +593,9 @@ vc4_get_bcl(struct drm_device *dev, stru
+ 	}
+ 
+ 	bo = vc4_bo_create(dev, exec_size, true);
+-	if (!bo) {
++	if (IS_ERR(bo)) {
+ 		DRM_ERROR("Couldn't allocate BO for binning\n");
+-		ret = PTR_ERR(exec->exec_bo);
++		ret = PTR_ERR(bo);
+ 		goto fail;
+ 	}
+ 	exec->exec_bo = &bo->base;
+--- a/drivers/gpu/drm/vc4/vc4_irq.c
++++ b/drivers/gpu/drm/vc4/vc4_irq.c
+@@ -57,7 +57,7 @@ vc4_overflow_mem_work(struct work_struct
+ 	struct vc4_bo *bo;
+ 
+ 	bo = vc4_bo_create(dev, 256 * 1024, true);
+-	if (!bo) {
++	if (IS_ERR(bo)) {
+ 		DRM_ERROR("Couldn't allocate binner overflow mem\n");
+ 		return;
+ 	}
+--- a/drivers/gpu/drm/vc4/vc4_render_cl.c
++++ b/drivers/gpu/drm/vc4/vc4_render_cl.c
+@@ -316,8 +316,8 @@ static int vc4_create_rcl_bo(struct drm_
+ 	size += xtiles * ytiles * loop_body_size;
+ 
+ 	setup->rcl = &vc4_bo_create(dev, size, true)->base;
+-	if (!setup->rcl)
+-		return -ENOMEM;
++	if (IS_ERR(setup->rcl))
++		return PTR_ERR(setup->rcl);
+ 	list_add_tail(&to_vc4_bo(&setup->rcl->base)->unref_head,
+ 		      &exec->unref_list);
+ 
+--- a/drivers/gpu/drm/vc4/vc4_validate.c
++++ b/drivers/gpu/drm/vc4/vc4_validate.c
+@@ -401,8 +401,8 @@ validate_tile_binning_config(VALIDATE_AR
+ 	tile_bo = vc4_bo_create(dev, exec->tile_alloc_offset + tile_alloc_size,
+ 				true);
+ 	exec->tile_bo = &tile_bo->base;
+-	if (!exec->tile_bo)
+-		return -ENOMEM;
++	if (IS_ERR(exec->tile_bo))
++		return PTR_ERR(exec->tile_bo);
+ 	list_add_tail(&tile_bo->unref_head, &exec->unref_list);
+ 
+ 	/* tile alloc address. */

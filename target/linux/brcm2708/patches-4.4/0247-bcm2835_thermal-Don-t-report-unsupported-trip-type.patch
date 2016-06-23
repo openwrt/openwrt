@@ -1,0 +1,69 @@
+From 6877cb849fe4953be1c9f056a83e218e09948d38 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 19 Apr 2016 12:57:52 +0100
+Subject: [PATCH 247/381] bcm2835_thermal: Don't report unsupported trip type
+
+---
+ drivers/thermal/bcm2835-thermal.c | 34 +---------------------------------
+ 1 file changed, 1 insertion(+), 33 deletions(-)
+
+--- a/drivers/thermal/bcm2835-thermal.c
++++ b/drivers/thermal/bcm2835-thermal.c
+@@ -49,38 +49,8 @@ static int bcm2835_thermal_get_temp(stru
+ 					    RPI_FIRMWARE_GET_TEMPERATURE);
+ }
+ 
+-static int bcm2835_thermal_get_max_temp(struct thermal_zone_device *tz,
+-					int trip, int *temp)
+-{
+-	/*
+-	 * The maximum safe temperature of the SoC.
+-	 * Overclock may be disabled above this temperature.
+-	 */
+-	return bcm2835_thermal_get_property(tz, temp,
+-					    RPI_FIRMWARE_GET_MAX_TEMPERATURE);
+-}
+-
+-static int bcm2835_thermal_get_trip_type(struct thermal_zone_device *tz,
+-					 int trip, enum thermal_trip_type *type)
+-{
+-	*type = THERMAL_TRIP_HOT;
+-
+-	return 0;
+-}
+-
+-static int bcm2835_thermal_get_mode(struct thermal_zone_device *tz,
+-				    enum thermal_device_mode *mode)
+-{
+-	*mode = THERMAL_DEVICE_ENABLED;
+-
+-	return 0;
+-}
+-
+ static struct thermal_zone_device_ops ops  = {
+ 	.get_temp = bcm2835_thermal_get_temp,
+-	.get_trip_temp = bcm2835_thermal_get_max_temp,
+-	.get_trip_type = bcm2835_thermal_get_trip_type,
+-	.get_mode = bcm2835_thermal_get_mode,
+ };
+ 
+ static int bcm2835_thermal_probe(struct platform_device *pdev)
+@@ -90,17 +60,15 @@ static int bcm2835_thermal_probe(struct
+ 	struct thermal_zone_device *tz;
+ 
+ 	fw_np = of_parse_phandle(pdev->dev.of_node, "firmware", 0);
+-/* Remove comment when booting without Device Tree is no longer supported
+ 	if (!fw_np) {
+ 		dev_err(&pdev->dev, "Missing firmware node\n");
+ 		return -ENOENT;
+ 	}
+-*/
+ 	fw = rpi_firmware_get(fw_np);
+ 	if (!fw)
+ 		return -EPROBE_DEFER;
+ 
+-	tz = thermal_zone_device_register("bcm2835_thermal", 1, 0, fw, &ops,
++	tz = thermal_zone_device_register("bcm2835_thermal", 0, 0, fw, &ops,
+ 					  NULL, 0, 0);
+ 	if (IS_ERR(tz)) {
+ 		dev_err(&pdev->dev, "Failed to register the thermal device\n");

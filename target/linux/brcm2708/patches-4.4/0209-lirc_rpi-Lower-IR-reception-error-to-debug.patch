@@ -1,0 +1,21 @@
+From 61675cb7f40c9b93537351b9d225cfeb08968875 Mon Sep 17 00:00:00 2001
+From: Rodrigo Freire <rfreire@rf.usersys.redhat.com>
+Date: Tue, 22 Mar 2016 12:40:33 -0300
+Subject: [PATCH 209/381] lirc_rpi: Lower IR reception error to debug
+
+Lowers a IR reception error condition message to KERNEL_DEBUG
+---
+ drivers/staging/media/lirc/lirc_rpi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/staging/media/lirc/lirc_rpi.c
++++ b/drivers/staging/media/lirc/lirc_rpi.c
+@@ -271,7 +271,7 @@ static irqreturn_t irq_handler(int i, vo
+ 			data = PULSE_MASK; /* really long time */
+ 			if (!(signal^sense)) {
+ 				/* sanity check */
+-				printk(KERN_WARNING LIRC_DRIVER_NAME
++				printk(KERN_DEBUG LIRC_DRIVER_NAME
+ 				       ": AIEEEE: %d %d %lx %lx %lx %lx\n",
+ 				       signal, sense, tv.tv_sec, lasttv.tv_sec,
+ 				       tv.tv_usec, lasttv.tv_usec);

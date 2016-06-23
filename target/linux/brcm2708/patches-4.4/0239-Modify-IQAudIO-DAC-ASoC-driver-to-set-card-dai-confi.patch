@@ -1,0 +1,57 @@
+From fabd181287bd52afc523f10c27a7fd3a10969aa7 Mon Sep 17 00:00:00 2001
+From: DigitalDreamtime <clive.messer@digitaldreamtime.co.uk>
+Date: Thu, 14 Apr 2016 00:57:33 +0100
+Subject: [PATCH 239/381] Modify IQAudIO DAC+ ASoC driver to set card/dai
+ config from dt
+
+Add the ability to set the card name, dai name and dai stream name, from
+dt config.
+
+Signed-off-by: DigitalDreamtime <clive.messer@digitaldreamtime.co.uk>
+---
+ sound/soc/bcm/iqaudio-dac.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+--- a/sound/soc/bcm/iqaudio-dac.c
++++ b/sound/soc/bcm/iqaudio-dac.c
+@@ -61,8 +61,6 @@ static struct snd_soc_ops snd_rpi_iqaudi
+ 
+ static struct snd_soc_dai_link snd_rpi_iqaudio_dac_dai[] = {
+ {
+-	.name		= "IQaudIO DAC",
+-	.stream_name	= "IQaudIO DAC HiFi",
+ 	.cpu_dai_name	= "bcm2708-i2s.0",
+ 	.codec_dai_name	= "pcm512x-hifi",
+ 	.platform_name	= "bcm2708-i2s.0",
+@@ -76,7 +74,6 @@ static struct snd_soc_dai_link snd_rpi_i
+ 
+ /* audio machine driver */
+ static struct snd_soc_card snd_rpi_iqaudio_dac = {
+-	.name         = "IQaudIODAC",
+ 	.owner        = THIS_MODULE,
+ 	.dai_link     = snd_rpi_iqaudio_dac_dai,
+ 	.num_links    = ARRAY_SIZE(snd_rpi_iqaudio_dac_dai),
+@@ -90,6 +87,7 @@ static int snd_rpi_iqaudio_dac_probe(str
+ 
+ 	if (pdev->dev.of_node) {
+ 	    struct device_node *i2s_node;
++	    struct snd_soc_card *card = &snd_rpi_iqaudio_dac;
+ 	    struct snd_soc_dai_link *dai = &snd_rpi_iqaudio_dac_dai[0];
+ 	    i2s_node = of_parse_phandle(pdev->dev.of_node,
+ 					"i2s-controller", 0);
+@@ -103,6 +101,15 @@ static int snd_rpi_iqaudio_dac_probe(str
+ 
+ 	    digital_gain_0db_limit = !of_property_read_bool(pdev->dev.of_node,
+ 					"iqaudio,24db_digital_gain");
++	    if (of_property_read_string(pdev->dev.of_node, "card_name",
++					&card->name))
++		card->name = "IQaudIODAC";
++	    if (of_property_read_string(pdev->dev.of_node, "dai_name",
++					&dai->name))
++		dai->name = "IQaudIO DAC";
++	    if (of_property_read_string(pdev->dev.of_node, "dai_stream_name",
++					&dai->stream_name))
++		dai->stream_name = "IQaudIO DAC HiFi";
+ 	}
+ 
+ 	ret = snd_soc_register_card(&snd_rpi_iqaudio_dac);

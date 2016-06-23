@@ -1,0 +1,110 @@
+From 7883c7188ab1259b74c2442690fedf3d71c534fb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Thu, 31 Dec 2015 16:44:58 +0100
+Subject: [PATCH 122/381] bcm270x_dt: Add dwc2 and dwc-otg overlays
+
+---
+ arch/arm/boot/dts/overlays/Makefile            |  2 ++
+ arch/arm/boot/dts/overlays/README              | 21 +++++++++++++++++++
+ arch/arm/boot/dts/overlays/dwc-otg-overlay.dts | 20 ++++++++++++++++++
+ arch/arm/boot/dts/overlays/dwc2-overlay.dts    | 29 ++++++++++++++++++++++++++
+ 4 files changed, 72 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/dwc-otg-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/dwc2-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -15,6 +15,8 @@ endif
+ dtb-$(RPI_DT_OVERLAYS) += ads7846-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += at86rf233-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += dwc2-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += dwc-otg-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += dht11-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += enc28j60-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += gpio-ir-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -198,6 +198,27 @@ Params: gpiopin                  GPIO co
+                                  (default 4)
+ 
+ 
++Name:   dwc-otg
++Info:   Selects the dwc_otg USB controller driver which has fiq support. This
++        is the default on all except the Pi Zero which defaults to dwc2.
++Load:   dtoverlay=dwc-otg
++Params: <None>
++
++
++Name:   dwc2
++Info:   Selects the dwc2 USB controller driver
++Load:   dtoverlay=dwc2,<param>=<val>
++Params: dr_mode                  Dual role mode: "host", "peripheral" or "otg"
++
++        g-rx-fifo-size           Size of rx fifo size in gadget mode
++
++        g-np-tx-fifo-size        Size of non-periodic tx fifo size in gadget
++                                 mode
++
++        g-tx-fifo-size           Size of periodic tx fifo per endpoint
++                                 (except ep0) in gadget mode
++
++
+ [ The ds1307-rtc overlay has been deleted. See i2c-rtc. ]
+ 
+ 
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/dwc-otg-overlay.dts
+@@ -0,0 +1,20 @@
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&usb>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		__overlay__ {
++			compatible = "brcm,bcm2708-usb";
++			reg = <0x7e980000 0x10000>,
++			      <0x7e006000 0x1000>;
++			interrupts = <2 0>,
++				     <1 9>;
++			status = "okay";
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/dwc2-overlay.dts
+@@ -0,0 +1,29 @@
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&usb>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		__overlay__ {
++			compatible = "brcm,bcm2835-usb";
++			reg = <0x7e980000 0x10000>;
++			interrupts = <1 9>;
++			dr_mode = "otg";
++			g-np-tx-fifo-size = <32>;
++			g-rx-fifo-size = <256>;
++			g-tx-fifo-size = <256 128 128 64 64 64 32>;
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		dr_mode = <&usb>, "dr_mode";
++		g-np-tx-fifo-size = <&usb>,"g-np-tx-fifo-size:0";
++		g-rx-fifo-size = <&usb>,"g-rx-fifo-size:0";
++		g-tx-fifo-size = <&usb>,"g-tx-fifo-size:0";
++	};
++};

@@ -1,0 +1,37 @@
+From f507706440ee0505e7533660f19781ea279355b0 Mon Sep 17 00:00:00 2001
+From: janluca <janluca@zedat.fu-berlin.de>
+Date: Sun, 27 Dec 2015 14:34:04 +0100
+Subject: [PATCH 120/381] MMC: Do not use mmc_debug if CONFIG_MMC_BCM2835 is
+ not set
+
+If CONFIG_MMC_BCM2835 was not set the compiling of the kernel failed
+since mmc_debug was not defined but used in drivers/mmc/core/quirks.c.
+
+This patch add a ifdef-check for CONFIG_MMC_BCM2835 to the change of
+commit 64d395457f793250d2e582eeb38cc3403b1db98c
+---
+ drivers/mmc/core/quirks.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/mmc/core/quirks.c
++++ b/drivers/mmc/core/quirks.c
+@@ -53,7 +53,9 @@ static const struct mmc_fixup mmc_fixup_
+ 
+ void mmc_fixup_device(struct mmc_card *card, const struct mmc_fixup *table)
+ {
++#ifdef CONFIG_MMC_BCM2835
+ 	extern unsigned mmc_debug;
++#endif
+ 	const struct mmc_fixup *f;
+ 	u64 rev = cid_rev_card(card);
+ 
+@@ -81,7 +83,9 @@ void mmc_fixup_device(struct mmc_card *c
+ 	/* SDHCI on BCM2708 - bug causes a certain sequence of CMD23 operations to fail.
+ 	 * Disable this flag for all cards (fall-back to CMD25/CMD18 multi-block transfers).
+ 	 */
++#ifdef CONFIG_MMC_BCM2835
+ 	if (mmc_debug & (1<<13))
+ 	card->quirks |= MMC_QUIRK_BLK_NO_CMD23;
++#endif
+ }
+ EXPORT_SYMBOL(mmc_fixup_device);

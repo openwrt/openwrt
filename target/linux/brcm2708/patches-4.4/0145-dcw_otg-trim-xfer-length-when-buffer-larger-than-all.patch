@@ -1,0 +1,37 @@
+From f61457732dafaccb0804b0d45a4ae751e60e1db4 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 12 Feb 2016 14:50:25 +0000
+Subject: [PATCH 145/381] dcw_otg: trim xfer length when buffer larger than
+ allocated size is received
+
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -737,6 +737,11 @@ static int update_urb_state_xfer_comp(dw
+ 					     DWC_OTG_HC_XFER_COMPLETE,
+ 					     &short_read);
+ 
++	if (urb->actual_length + xfer_length > urb->length) {
++		DWC_WARN("%s(): trimming xfer length\n", __func__);
++		xfer_length = urb->length - urb->actual_length;
++	}
++
+ 	/* non DWORD-aligned buffer case handling. */
+ 	if (hc->align_buff && xfer_length && hc->ep_is_in) {
+ 		dwc_memcpy(urb->buf + urb->actual_length, hc->qh->dw_align_buf,
+@@ -1423,6 +1428,12 @@ static void update_urb_state_xfer_intr(d
+ {
+ 	uint32_t bytes_transferred = get_actual_xfer_length(hc, hc_regs, qtd,
+ 							    halt_status, NULL);
++
++	if (urb->actual_length + bytes_transferred > urb->length) {
++		DWC_WARN("%s(): trimming xfer length\n", __func__);
++		bytes_transferred = urb->length - urb->actual_length;
++	}
++
+ 	/* non DWORD-aligned buffer case handling. */
+ 	if (hc->align_buff && bytes_transferred && hc->ep_is_in) {
+ 		dwc_memcpy(urb->buf + urb->actual_length, hc->qh->dw_align_buf,

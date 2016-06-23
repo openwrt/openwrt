@@ -1,0 +1,33 @@
+From f57845691b2419259210ddc7c18fd54240199567 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 23 Oct 2015 12:33:43 +0100
+Subject: [PATCH 099/381] drm/vc4: Remove extra barrier()s aroudn CTnCA/CTnEA
+ setup.
+
+The writel() that these expand to already does barriers.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -104,14 +104,11 @@ submit_cl(struct drm_device *dev, uint32
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 
+-	V3D_WRITE(V3D_CTNCA(thread), start);
+-	barrier();
+-
+-	/* Set the end address of the control list.  Writing this
+-	 * register is what starts the job.
++	/* Set the current and end address of the control list.
++	 * Writing the end register is what starts the job.
+ 	 */
++	V3D_WRITE(V3D_CTNCA(thread), start);
+ 	V3D_WRITE(V3D_CTNEA(thread), end);
+-	barrier();
+ }
+ 
+ int

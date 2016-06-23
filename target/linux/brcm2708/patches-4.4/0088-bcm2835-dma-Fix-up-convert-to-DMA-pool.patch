@@ -1,0 +1,85 @@
+From 5bb7ea036f5dfa3e3e3e1c674cb3f06e8204743e Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Mon, 16 Nov 2015 14:05:35 +0000
+Subject: [PATCH 088/381] bcm2835-dma: Fix up convert to DMA pool
+
+---
+ drivers/dma/bcm2835-dma.c | 36 ++++++++++++++++++++++++++----------
+ 1 file changed, 26 insertions(+), 10 deletions(-)
+
+--- a/drivers/dma/bcm2835-dma.c
++++ b/drivers/dma/bcm2835-dma.c
+@@ -488,6 +488,17 @@ static struct dma_async_tx_descriptor *b
+ 	c->cyclic = true;
+ 
+ 	return vchan_tx_prep(&c->vc, &d->vd, flags);
++error_cb:
++	i--;
++	for (; i >= 0; i--) {
++		struct bcm2835_cb_entry *cb_entry = &d->cb_list[i];
++
++		dma_pool_free(c->cb_pool, cb_entry->cb, cb_entry->paddr);
++	}
++
++	kfree(d->cb_list);
++	kfree(d);
++	return NULL;
+ }
+ 
+ static struct dma_async_tx_descriptor *
+@@ -534,6 +545,7 @@ bcm2835_dma_prep_slave_sg(struct dma_cha
+ 	if (!d)
+ 		return NULL;
+ 
++	d->c = c;
+ 	d->dir = direction;
+ 
+ 	if (c->ch >= 8) /* LITE channel */
+@@ -553,15 +565,21 @@ bcm2835_dma_prep_slave_sg(struct dma_cha
+ 		d->frames += len / max_size + 1;
+ 	}
+ 
+-	/* Allocate memory for control blocks */
+-	d->control_block_size = d->frames * sizeof(struct bcm2835_dma_cb);
+-	d->control_block_base = dma_zalloc_coherent(chan->device->dev,
+-			d->control_block_size, &d->control_block_base_phys,
+-			GFP_NOWAIT);
+-	if (!d->control_block_base) {
++	d->cb_list = kcalloc(d->frames, sizeof(*d->cb_list), GFP_KERNEL);
++	if (!d->cb_list) {
+ 		kfree(d);
+ 		return NULL;
+ 	}
++	/* Allocate memory for control blocks */
++	for (i = 0; i < d->frames; i++) {
++		struct bcm2835_cb_entry *cb_entry = &d->cb_list[i];
++
++		cb_entry->cb = dma_pool_zalloc(c->cb_pool, GFP_ATOMIC,
++						&cb_entry->paddr);
++
++		if (!cb_entry->cb)
++			goto error_cb;
++	}
+ 
+ 	/*
+ 	 * Iterate over all SG entries, create a control block
+@@ -578,7 +596,7 @@ bcm2835_dma_prep_slave_sg(struct dma_cha
+ 
+ 		for (j = 0; j < len; j += max_size) {
+ 			struct bcm2835_dma_cb *control_block =
+-				&d->control_block_base[i + split_cnt];
++				d->cb_list[i + split_cnt].cb;
+ 
+ 			/* Setup addresses */
+ 			if (d->dir == DMA_DEV_TO_MEM) {
+@@ -620,9 +638,7 @@ bcm2835_dma_prep_slave_sg(struct dma_cha
+ 			if (i < sg_len - 1 || len - j > max_size) {
+ 				/* Next block is the next frame. */
+ 				control_block->next =
+-					d->control_block_base_phys +
+-					sizeof(struct bcm2835_dma_cb) *
+-					(i + split_cnt + 1);
++					d->cb_list[i + split_cnt + 1].paddr;
+ 			} else {
+ 				/* Next block is empty. */
+ 				control_block->next = 0;

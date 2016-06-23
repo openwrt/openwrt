@@ -1,0 +1,58 @@
+From 679482c3c45177399648d096b7336ba3b1894126 Mon Sep 17 00:00:00 2001
+From: Nicolas Boullis <nboullis@debian.org>
+Date: Wed, 23 Mar 2016 23:40:15 +0100
+Subject: [PATCH 214/381] BCM270X_DT: Add DS1339 to i2c-rtc overlay
+
+---
+ arch/arm/boot/dts/overlays/README              | 4 ++++
+ arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts | 8 ++++++++
+ 2 files changed, 12 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -371,6 +371,8 @@ Info:   Adds support for a number of I2C
+ Load:   dtoverlay=i2c-rtc,<param>=<val>
+ Params: ds1307                  Select the DS1307 device
+ 
++        ds1339                  Select the DS1339 device
++
+         ds3231                  Select the DS3231 device
+ 
+         mcp7941x                Select the MCP7941x device
+@@ -381,6 +383,8 @@ Params: ds1307                  Select t
+ 
+         pcf8563                 Select the PCF8563 device
+ 
++        trickle-resistor-ohms   Resistor value for trickle charge (DS1339-only)
++
+ 
+ Name:   i2c0-bcm2708
+ Info:   Enable the i2c_bcm2708 driver for the i2c0 bus
+--- a/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
+@@ -17,6 +17,12 @@
+ 				reg = <0x68>;
+ 				status = "disable";
+ 			};
++			ds1339: ds1339@68 {
++				compatible = "dallas,ds1339";
++				trickle-resistor-ohms = <0>;
++				reg = <0x68>;
++				status = "disable";
++			};
+ 			mcp7941x: mcp7941x@6f {
+ 				compatible = "microchip,mcp7941x";
+ 				reg = <0x6f>;
+@@ -46,10 +52,12 @@
+ 	};
+ 	__overrides__ {
+ 		ds1307 = <&ds1307>,"status";
++		ds1339 = <&ds1339>,"status";
+ 		ds3231 = <&ds3231>,"status";
+ 		mcp7941x = <&mcp7941x>,"status";
+ 		pcf2127 = <&pcf2127>,"status";
+ 		pcf8523 = <&pcf8523>,"status";
+ 		pcf8563 = <&pcf8563>,"status";
++		trickle-resistor-ohms = <&ds1339>,"trickle-resistor-ohms:0";
+ 	};
+ };

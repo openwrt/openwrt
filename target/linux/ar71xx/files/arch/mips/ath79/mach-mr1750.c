@@ -168,3 +168,4 @@ static void __init mr1750_setup(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_MR1750, "MR1750", "OpenMesh MR1750", mr1750_setup);
+MIPS_MACHINE(ATH79_MACH_MR1750V2, "MR1750v2", "OpenMesh MR1750v2", mr1750_setup);

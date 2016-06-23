@@ -36,7 +36,7 @@ endef
 
 define Download/usb_ids
   FILE:=$(USB_IDS_FILE)
-  URL:=https://raw.githubusercontent.com/gentoo/hwids/d9e840aa3d5cedf5637d59ef0dc555c380a0e822
+  URL:=@GITHUB/gentoo/hwids/d9e840aa3d5cedf5637d59ef0dc555c380a0e822
   MD5SUM:=$(USB_IDS_MD5SUM)
 endef
 $(eval $(call Download,usb_ids))

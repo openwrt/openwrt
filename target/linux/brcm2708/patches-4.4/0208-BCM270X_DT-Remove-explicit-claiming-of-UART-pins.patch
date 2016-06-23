@@ -1,0 +1,89 @@
+From 0fc64288fb36e30e77feeccb3fd68901891939f7 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Sat, 19 Mar 2016 16:51:37 +0000
+Subject: [PATCH 208/381] BCM270X_DT: Remove explicit claiming of UART pins
+
+It is convenient to be able to map a different function to the UART
+pins (e.g. DPI for vga666) without having to disable the UART first.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2710-rpi-3-b.dts              |  6 +++---
+ .../boot/dts/overlays/pi3-disable-bt-overlay.dts   | 10 ++++-----
+ .../boot/dts/overlays/pi3-miniuart-bt-overlay.dts  | 25 +++++++++++-----------
+ 3 files changed, 20 insertions(+), 21 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
+@@ -57,9 +57,9 @@
+ 	};
+ 
+ 	uart1_pins: uart1_pins {
+-		brcm,pins = <14 15>;
+-		brcm,function = <2>; /* alt5=UART1 */
+-		brcm,pull = <0 2>;
++		brcm,pins;
++		brcm,function;
++		brcm,pull;
+ 	};
+ };
+ 
+--- a/arch/arm/boot/dts/overlays/pi3-disable-bt-overlay.dts
++++ b/arch/arm/boot/dts/overlays/pi3-disable-bt-overlay.dts
+@@ -28,13 +28,11 @@
+ 	};
+ 
+ 	fragment@2 {
+-		target = <&gpio>;
++		target = <&uart0_pins>;
+ 		__overlay__ {
+-			uart0_pins: uart0_pins {
+-				brcm,pins = <14 15>;
+-				brcm,function = <4>; /* alt0 */
+-				brcm,pull = <0 2>;
+-			};
++			brcm,pins;
++			brcm,function;
++			brcm,pull;
+ 		};
+ 	};
+ 
+--- a/arch/arm/boot/dts/overlays/pi3-miniuart-bt-overlay.dts
++++ b/arch/arm/boot/dts/overlays/pi3-miniuart-bt-overlay.dts
+@@ -37,23 +37,24 @@
+ 	};
+ 
+ 	fragment@2 {
+-		target = <&gpio>;
++		target = <&uart0_pins>;
+ 		__overlay__ {
+-			uart0_pins: uart0_pins {
+-				brcm,pins = <14 15>;
+-				brcm,function = <4>; /* alt0 */
+-				brcm,pull = <0 2>;
+-			};
+-
+-			uart1_pins: uart1_pins {
+-				brcm,pins = <32 33>;
+-				brcm,function = <2>; /* alt5=UART1 */
+-				brcm,pull = <0 2>;
+-			};
++			brcm,pins;
++			brcm,function;
++			brcm,pull;
+ 		};
+ 	};
+ 
+ 	fragment@3 {
++		target = <&uart1_pins>;
++		__overlay__ {
++			brcm,pins = <32 33>;
++			brcm,function = <2>; /* alt5=UART1 */
++			brcm,pull = <0 2>;
++		};
++	};
++
++	fragment@4 {
+ 		target-path = "/aliases";
+ 		__overlay__ {
+ 			serial0 = "/soc/uart@7e201000";

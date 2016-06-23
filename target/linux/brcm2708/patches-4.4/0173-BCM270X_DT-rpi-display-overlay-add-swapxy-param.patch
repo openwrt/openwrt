@@ -1,0 +1,38 @@
+From ba5bc2239693e23712782093d5b2aa31d9e07dff Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 9 Mar 2016 21:28:52 +0000
+Subject: [PATCH 173/381] BCM270X_DT: rpi-display overlay - add swapxy param
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/README                  | 5 +----
+ arch/arm/boot/dts/overlays/rpi-display-overlay.dts | 1 +
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -644,14 +644,11 @@ Name:   rpi-display
+ Info:   RPi-Display - 2.8" Touch Display by Watterott
+ Load:   dtoverlay=rpi-display,<param>=<val>
+ Params: speed                   Display SPI bus speed
+-
+         rotate                  Display rotation {0,90,180,270}
+-
+         fps                     Delay between frame updates
+-
+         debug                   Debug output level {0-7}
+-
+         xohms                   Touchpanel sensitivity (X-plate resistance)
++        swapxy                  Swap x and y axis
+ 
+ 
+ Name:   rpi-ft5406
+--- a/arch/arm/boot/dts/overlays/rpi-display-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rpi-display-overlay.dts
+@@ -78,5 +78,6 @@
+ 		fps =     <&rpidisplay>,"fps:0";
+ 		debug =   <&rpidisplay>,"debug:0";
+ 		xohms =   <&rpidisplay_ts>,"ti,x-plate-ohms;0";
++		swapxy =  <&rpidisplay_ts>,"ti,swap-xy?";
+ 	};
+ };

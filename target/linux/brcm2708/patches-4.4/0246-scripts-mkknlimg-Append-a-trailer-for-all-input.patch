@@ -1,0 +1,63 @@
+From ced7d5ba55445eb116abd68466d6caa1538ff482 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 18 Apr 2016 11:56:53 +0100
+Subject: [PATCH 246/381] scripts/mkknlimg: Append a trailer for all input
+
+Now that the firmware assumes an unsigned kernel is DT-capable, it is
+helpful to be able to mark a kernel as being non-DT-capable.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ scripts/mkknlimg | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+--- a/scripts/mkknlimg
++++ b/scripts/mkknlimg
+@@ -98,7 +98,7 @@ my $append_trailer;
+ my $trailer;
+ my $kver = '?';
+ 
+-$append_trailer = $dtok;
++$append_trailer = 1;
+ 
+ if ($res)
+ {
+@@ -108,7 +108,6 @@ if ($res)
+ 
+     if ($flags & FLAG_PI)
+     {
+-	$append_trailer = 1;
+ 	$dtok ||= ($flags & FLAG_DTOK) != 0;
+ 	$is_270x ||= ($flags & FLAG_270X) != 0;
+ 	$is_283x ||= ($flags & FLAG_283X) != 0;
+@@ -116,18 +115,18 @@ if ($res)
+     }
+     else
+     {
+-	print ("* This doesn't look like a Raspberry Pi kernel. In pass-through mode.\n");
++	print ("* This doesn't look like a Raspberry Pi kernel.\n");
+     }
+ }
+ elsif (!$dtok)
+ {
+-    print ("* Is this a valid kernel? In pass-through mode.\n");
++    print ("* Is this a valid kernel?\n");
+ }
+ 
+ if ($append_trailer)
+ {
+     printf("DT: %s\n", $dtok ? "y" : "n");
+-    printf("DDT: %s\n", $ddtk ? "y" : "n") if ($ddtk);
++    printf("DDT: %s\n", $ddtk ? "y" : "n");
+     printf("270x: %s\n", $is_270x ? "y" : "n");
+     printf("283x: %s\n", $is_283x ? "y" : "n");
+ 
+@@ -136,7 +135,7 @@ if ($append_trailer)
+     push @atoms, [ $trailer_magic, pack('V', 0) ];
+     push @atoms, [ 'KVer', $kver ];
+     push @atoms, [ 'DTOK', pack('V', $dtok) ];
+-    push @atoms, [ 'DDTK', pack('V', $ddtk) ] if ($ddtk);
++    push @atoms, [ 'DDTK', pack('V', $ddtk) ];
+     push @atoms, [ '270X', pack('V', $is_270x) ];
+     push @atoms, [ '283X', pack('V', $is_283x) ];
+     push @atoms, [ '283x', pack('V', $is_283x && !$is_270x) ];

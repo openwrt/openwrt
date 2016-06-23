@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/gdb/Default
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:=+!USE_MUSL:libthread-db +PACKAGE_zlib:zlib
+  DEPENDS:=+!USE_MUSL:libthread-db +PACKAGE_zlib:zlib @!arc
   URL:=http://www.gnu.org/software/gdb/
 endef
 

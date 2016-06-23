@@ -11,6 +11,7 @@ PKG_NAME:=nvram
 PKG_RELEASE:=9
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 

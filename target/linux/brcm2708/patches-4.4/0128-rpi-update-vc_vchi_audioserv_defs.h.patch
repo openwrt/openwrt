@@ -1,0 +1,66 @@
+From cd33640409eb73b99703273192971e0ea874652f Mon Sep 17 00:00:00 2001
+From: wm4 <wm4@nowhere>
+Date: Wed, 13 Jan 2016 19:42:48 +0100
+Subject: [PATCH 128/381] rpi: update vc_vchi_audioserv_defs.h
+
+Add audioserv 3 extensions. The changes were taken from the paste
+linked here:
+
+https://github.com/raspberrypi/linux/pull/1166#issuecomment-151917067
+---
+ sound/arm/vc_vchi_audioserv_defs.h | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+--- a/sound/arm/vc_vchi_audioserv_defs.h
++++ b/sound/arm/vc_vchi_audioserv_defs.h
+@@ -16,7 +16,7 @@
+ #define _VC_AUDIO_DEFS_H_
+ 
+ #define VC_AUDIOSERV_MIN_VER 1
+-#define VC_AUDIOSERV_VER 2
++#define VC_AUDIOSERV_VER 3
+ 
+ // FourCC code used for VCHI connection
+ #define VC_AUDIO_SERVER_NAME  MAKE_FOURCC("AUDS")
+@@ -36,6 +36,7 @@ typedef enum {
+ 	VC_AUDIO_MSG_TYPE_START,	// Configure audio
+ 	VC_AUDIO_MSG_TYPE_STOP,	// Configure audio
+ 	VC_AUDIO_MSG_TYPE_WRITE,	// Configure audio
++	VC_AUDIO_MSG_TYPE_LATENCY,	// request latency in cycles
+ 	VC_AUDIO_MSG_TYPE_MAX
+ } VC_AUDIO_MSG_TYPE;
+ 
+@@ -44,6 +45,7 @@ typedef struct {
+ 	uint32_t channels;
+ 	uint32_t samplerate;
+ 	uint32_t bps;
++	uint32_t channelmap;
+ 
+ } VC_AUDIO_CONFIG_T;
+ 
+@@ -84,6 +86,12 @@ typedef struct {
+ 	uint16_t max_packet;
+ } VC_AUDIO_WRITE_T;
+ 
++// query latency in samples of sink
++typedef struct
++{
++	uint32_t dummy;
++} VC_AUDIO_LATENCY_T;
++
+ // Generic result for a request (VC->HOST)
+ typedef struct {
+ 	int32_t success;	// Success value
+@@ -108,9 +116,10 @@ typedef struct {
+ 		VC_AUDIO_START_T start;
+ 		VC_AUDIO_STOP_T stop;
+ 		VC_AUDIO_WRITE_T write;
++		VC_AUDIO_LATENCY_T latency;
+ 		VC_AUDIO_RESULT_T result;
+ 		VC_AUDIO_COMPLETE_T complete;
+ 	} u;
+ } VC_AUDIO_MSG_T;
+ 
+-#endif // _VC_AUDIO_DEFS_H_
++#endif // _VC_AUDIO_DEFS_H_
+\ No newline at end of file

@@ -1,0 +1,99 @@
+From 3bb2e01fd397f375e54f6fe8a33af25aef1c981f Mon Sep 17 00:00:00 2001
+From: Digital Dreamtime <clive.messer@digitaldreamtime.co.uk>
+Date: Thu, 4 Feb 2016 14:14:44 +0000
+Subject: [PATCH 140/381] Allow up to 24dB digital gain to be applied when
+ using IQAudIO DAC+
+
+24db_digital_gain DT param can be used to specify that PCM512x
+codec "Digital" volume control should not be limited to 0dB gain,
+and if specified will allow the full 24dB gain.
+---
+ arch/arm/boot/dts/overlays/README                    | 17 +++++++++++++++--
+ .../boot/dts/overlays/iqaudio-dacplus-overlay.dts    |  6 +++++-
+ sound/soc/bcm/iqaudio-dac.c                          | 20 ++++++++++++++------
+ 3 files changed, 34 insertions(+), 9 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -362,8 +362,21 @@ Params: <None>
+ 
+ Name:   iqaudio-dacplus
+ Info:   Configures the IQaudio DAC+ audio card
+-Load:   dtoverlay=iqaudio-dacplus
+-Params: <None>
++Load:   dtoverlay=iqaudio-dacplus,<param>=<val>
++Params: 24db_digital_gain       Allow gain to be applied via the PCM512x codec
++                                Digital volume control. Enable with
++                                "dtoverlay=iqaudio-dacplus,24db_digital_gain"
++                                (The default behaviour is that the Digital
++                                volume control is limited to a maximum of
++                                0dB. ie. it can attenuate but not provide
++                                gain. For most users, this will be desired
++                                as it will prevent clipping. By appending
++                                the 24db_digital_gain parameter, the Digital
++                                volume control will allow up to 24dB of
++                                gain. If this parameter is enabled, it is the
++                                responsibility of the user to ensure that
++                                the Digital volume control is set to a value
++                                that does not result in clipping/distortion!)
+ 
+ 
+ Name:   lirc-rpi
+--- a/arch/arm/boot/dts/overlays/iqaudio-dacplus-overlay.dts
++++ b/arch/arm/boot/dts/overlays/iqaudio-dacplus-overlay.dts
+@@ -7,7 +7,7 @@
+ 
+ 	fragment@0 {
+ 		target = <&sound>;
+-		__overlay__ {
++		frag0: __overlay__ {
+ 			compatible = "iqaudio,iqaudio-dac";
+ 			i2s-controller = <&i2s>;
+ 			status = "okay";
+@@ -36,4 +36,8 @@
+ 			};
+ 		};
+ 	};
++
++	__overrides__ {
++		24db_digital_gain = <&frag0>,"iqaudio,24db_digital_gain?";
++	};
+ };
+--- a/sound/soc/bcm/iqaudio-dac.c
++++ b/sound/soc/bcm/iqaudio-dac.c
+@@ -23,14 +23,19 @@
+ #include <sound/soc.h>
+ #include <sound/jack.h>
+ 
++static bool digital_gain_0db_limit = true;
++
+ static int snd_rpi_iqaudio_dac_init(struct snd_soc_pcm_runtime *rtd)
+ {
+-	int ret;
+-	struct snd_soc_card *card = rtd->card;
+-
+-	ret = snd_soc_limit_volume(card, "Digital Playback Volume", 207);
+-	if (ret < 0)
+-		dev_warn(card->dev, "Failed to set volume limit: %d\n", ret);
++	if (digital_gain_0db_limit)
++	{
++		int ret;
++		struct snd_soc_card *card = rtd->card;
++
++		ret = snd_soc_limit_volume(card, "Digital Playback Volume", 207);
++		if (ret < 0)
++			dev_warn(card->dev, "Failed to set volume limit: %d\n", ret);
++	}
+ 
+ 	return 0;
+ }
+@@ -94,6 +99,9 @@ static int snd_rpi_iqaudio_dac_probe(str
+ 		dai->platform_name = NULL;
+ 		dai->platform_of_node = i2s_node;
+ 	    }
++
++	    digital_gain_0db_limit = !of_property_read_bool(pdev->dev.of_node,
++					"iqaudio,24db_digital_gain");
+ 	}
+ 
+ 	ret = snd_soc_register_card(&snd_rpi_iqaudio_dac);

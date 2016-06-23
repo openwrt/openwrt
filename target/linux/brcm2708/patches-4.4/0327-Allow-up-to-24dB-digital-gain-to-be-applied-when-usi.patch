@@ -1,0 +1,60 @@
+From ba4e2749004660d573c0d62f6fec876cd152bd3e Mon Sep 17 00:00:00 2001
+From: DigitalDreamtime <clive.messer@digitaldreamtime.co.uk>
+Date: Fri, 6 May 2016 09:42:55 +0100
+Subject: [PATCH 327/381] Allow up to 24dB digital gain to be applied when
+ using IQAudIO DAC
+
+24db_digital_gain DT param can be used to specify that PCM512x
+codec "Digital" volume control should not be limited to 0dB gain,
+and if specified will allow the full 24dB gain.
+
+Signed-off-by: DigitalDreamtime <clive.messer@digitaldreamtime.co.uk>
+---
+ arch/arm/boot/dts/overlays/README                  | 17 +++++++++++++++--
+ arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts |  6 +++++-
+ 2 files changed, 20 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -490,8 +490,21 @@ Params: <None>
+ 
+ Name:   iqaudio-dac
+ Info:   Configures the IQaudio DAC audio card
+-Load:   dtoverlay=iqaudio-dac
+-Params: <None>
++Load:   dtoverlay=iqaudio-dac,<param>
++Params: 24db_digital_gain       Allow gain to be applied via the PCM512x codec
++                                Digital volume control. Enable with
++                                "dtoverlay=iqaudio-dac,24db_digital_gain"
++                                (The default behaviour is that the Digital
++                                volume control is limited to a maximum of
++                                0dB. ie. it can attenuate but not provide
++                                gain. For most users, this will be desired
++                                as it will prevent clipping. By appending
++                                the 24db_digital_gain parameter, the Digital
++                                volume control will allow up to 24dB of
++                                gain. If this parameter is enabled, it is the
++                                responsibility of the user to ensure that
++                                the Digital volume control is set to a value
++                                that does not result in clipping/distortion!)
+ 
+ 
+ Name:   iqaudio-dacplus
+--- a/arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts
++++ b/arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts
+@@ -30,10 +30,14 @@
+ 
+ 	fragment@2 {
+ 		target = <&sound>;
+-		__overlay__ {
++		frag2: __overlay__ {
+ 			compatible = "iqaudio,iqaudio-dac";
+ 			i2s-controller = <&i2s>;
+ 			status = "okay";
+ 		};
+ 	};
++
++	__overrides__ {
++		24db_digital_gain = <&frag2>,"iqaudio,24db_digital_gain?";
++	};
+ };

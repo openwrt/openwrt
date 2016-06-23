@@ -1,0 +1,21 @@
+From 8cb95ac5aa3d9daebb4265bfac06b70bb3d24559 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 19 Apr 2016 13:55:29 +0100
+Subject: [PATCH 248/381] scripts/dtc: Only emit local fixups for overlays
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ scripts/dtc/checks.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/scripts/dtc/checks.c
++++ b/scripts/dtc/checks.c
+@@ -514,7 +514,7 @@ static void fixup_phandle_references(str
+ 		}
+ 
+ 		/* if it's a local reference, we need to record it */
+-		if (symbol_fixup_support) {
++		if (symbol_fixup_support && dt->is_plugin) {
+ 
+ 			/* allocate a new local fixup entry */
+ 			fe = xmalloc(sizeof(*fe));

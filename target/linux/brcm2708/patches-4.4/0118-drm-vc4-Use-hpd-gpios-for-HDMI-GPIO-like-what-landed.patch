@@ -1,0 +1,22 @@
+From dc02b5bdc0f962c1c9da85d98c11612e858280b3 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 15 Dec 2015 23:46:32 +0000
+Subject: [PATCH 118/381] drm/vc4: Use "hpd-gpios" for HDMI GPIO, like what
+ landed upstream.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
+@@ -68,7 +68,7 @@
+ 				      <0x7e808000 0x100>;
+ 				interrupts = <2 8>, <2 9>;
+ 				ddc = <&i2c2>;
+-				hpd-gpio = <&gpio 46 GPIO_ACTIVE_HIGH>;
++				hpd-gpios = <&gpio 46 GPIO_ACTIVE_HIGH>;
+ 				clocks = <&cprman BCM2835_PLLH_PIX>,
+ 					 <&cprman BCM2835_CLOCK_HSM>;
+ 				clock-names = "pixel", "hdmi";

@@ -1,0 +1,27 @@
+From e3a356dd422147d4d96aa0c9378551363b1a5b99 Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Tue, 15 Mar 2016 21:13:39 +0100
+Subject: [PATCH 189/381] scripts/dtc: Fix UMR causing corrupt dtbo overlay
+ files
+
+struct fixup_entry is allocated from the heap but it's member
+local_fixup_generated was never initialized. This lead to
+corrupted dtbo files.
+
+Fix this by initializing local_fixup_generated to false.
+
+Signed-off-by: Matthias Reichl <hias@horus.com>
+---
+ scripts/dtc/checks.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/scripts/dtc/checks.c
++++ b/scripts/dtc/checks.c
+@@ -523,6 +523,7 @@ static void fixup_phandle_references(str
+ 			fe->prop = prop;
+ 			fe->offset = m->offset;
+ 			fe->next = NULL;
++			fe->local_fixup_generated = false;
+ 
+ 			/* append it to the local fixups */
+ 			fep = &dt->local_fixups;

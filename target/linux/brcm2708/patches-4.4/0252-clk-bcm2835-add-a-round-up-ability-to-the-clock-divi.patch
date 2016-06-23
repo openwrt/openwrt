@@ -1,0 +1,70 @@
+From e9dccf5bbdb8d40477fe5ebedea548cf24407c1c Mon Sep 17 00:00:00 2001
+From: Remi Pommarel <repk@triplefau.lt>
+Date: Sun, 6 Dec 2015 17:22:46 +0100
+Subject: [PATCH 252/381] clk: bcm2835: add a round up ability to the clock
+ divisor
+
+Make bcm2835_clock_choose_div to optionally round up the chosen MASH divisor
+so that the resulting average rate will not be higher than the requested one.
+
+Signed-off-by: Remi Pommarel <repk@triplefau.lt>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+Signed-off-by: Michael Turquette <mturquette@baylibre.com>
+(cherry picked from commit 9c95b32ca09364e4687b72c4e17b78dc1c420026)
+---
+ drivers/clk/bcm/clk-bcm2835.c | 22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
+
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -1164,22 +1164,24 @@ static int bcm2835_clock_is_on(struct cl
+ 
+ static u32 bcm2835_clock_choose_div(struct clk_hw *hw,
+ 				    unsigned long rate,
+-				    unsigned long parent_rate)
++				    unsigned long parent_rate,
++				    bool round_up)
+ {
+ 	struct bcm2835_clock *clock = bcm2835_clock_from_hw(hw);
+ 	const struct bcm2835_clock_data *data = clock->data;
+-	u32 unused_frac_mask = GENMASK(CM_DIV_FRAC_BITS - data->frac_bits, 0);
++	u32 unused_frac_mask =
++		GENMASK(CM_DIV_FRAC_BITS - data->frac_bits, 0) >> 1;
+ 	u64 temp = (u64)parent_rate << CM_DIV_FRAC_BITS;
++	u64 rem;
+ 	u32 div;
+ 
+-	do_div(temp, rate);
++	rem = do_div(temp, rate);
+ 	div = temp;
+ 
+-	/* Round and mask off the unused bits */
+-	if (unused_frac_mask != 0) {
+-		div += unused_frac_mask >> 1;
+-		div &= ~unused_frac_mask;
+-	}
++	/* Round up and mask off the unused bits */
++	if (round_up && ((div & unused_frac_mask) != 0 || rem != 0))
++		div += unused_frac_mask + 1;
++	div &= ~unused_frac_mask;
+ 
+ 	/* clamp to min divider of 1 */
+ 	div = max_t(u32, div, 1 << CM_DIV_FRAC_BITS);
+@@ -1219,7 +1221,7 @@ static long bcm2835_clock_round_rate(str
+ 				     unsigned long *parent_rate)
+ {
+ 	struct bcm2835_clock *clock = bcm2835_clock_from_hw(hw);
+-	u32 div = bcm2835_clock_choose_div(hw, rate, *parent_rate);
++	u32 div = bcm2835_clock_choose_div(hw, rate, *parent_rate, false);
+ 
+ 	return bcm2835_clock_rate_from_divisor(clock, *parent_rate, div);
+ }
+@@ -1288,7 +1290,7 @@ static int bcm2835_clock_set_rate(struct
+ 	struct bcm2835_clock *clock = bcm2835_clock_from_hw(hw);
+ 	struct bcm2835_cprman *cprman = clock->cprman;
+ 	const struct bcm2835_clock_data *data = clock->data;
+-	u32 div = bcm2835_clock_choose_div(hw, rate, parent_rate);
++	u32 div = bcm2835_clock_choose_div(hw, rate, parent_rate, false);
+ 
+ 	cprman_write(cprman, data->div_reg, div);
+ 

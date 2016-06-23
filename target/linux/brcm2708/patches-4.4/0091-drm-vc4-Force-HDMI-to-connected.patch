@@ -1,0 +1,23 @@
+From 92de07785e3ece5672448a5efa7b3b45957059f6 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Wed, 14 Oct 2015 11:32:14 -0700
+Subject: [PATCH 091/381] drm/vc4: Force HDMI to connected.
+
+For some reason on the downstream tree, the HPD GPIO isn't working.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -164,6 +164,8 @@ vc4_hdmi_connector_detect(struct drm_con
+ 	struct drm_device *dev = connector->dev;
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 
++	return connector_status_connected;
++
+ 	if (vc4->hdmi->hpd_gpio) {
+ 		if (gpio_get_value(vc4->hdmi->hpd_gpio))
+ 			return connector_status_connected;

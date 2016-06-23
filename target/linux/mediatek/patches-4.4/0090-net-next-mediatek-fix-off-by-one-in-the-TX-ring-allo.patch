@@ -1,0 +1,36 @@
+From 94425de9ede5ef0eafbfced65140c30e7c0b6c0d Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Tue, 3 May 2016 03:01:13 +0200
+Subject: [PATCH 090/102] net-next: mediatek: fix off by one in the TX ring
+ allocation
+
+The TX ring setup has an off by one error causing it to not utilise all
+descriptors. This has the side effect that we need to reset the next
+pointer at runtime to make it work. Fix the off by one and remove the
+code fixing the ring at runtime.
+
+Signed-off-by: Sean Wang <keyhaede@gmail.com>
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -934,7 +934,6 @@ static int mtk_poll_tx(struct mtk_eth *e
+ 		}
+ 		mtk_tx_unmap(eth->dev, tx_buf);
+ 
+-		ring->last_free->txd2 = next_cpu;
+ 		ring->last_free = desc;
+ 		atomic_inc(&ring->free_count);
+ 
+@@ -1042,7 +1041,7 @@ static int mtk_tx_alloc(struct mtk_eth *
+ 
+ 	atomic_set(&ring->free_count, MTK_DMA_SIZE - 2);
+ 	ring->next_free = &ring->dma[0];
+-	ring->last_free = &ring->dma[MTK_DMA_SIZE - 2];
++	ring->last_free = &ring->dma[MTK_DMA_SIZE - 1];
+ 	ring->thresh = MAX_SKB_FRAGS;
+ 
+ 	/* make sure that all changes to the dma ring are flushed before we

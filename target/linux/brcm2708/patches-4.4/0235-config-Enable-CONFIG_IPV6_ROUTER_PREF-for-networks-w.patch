@@ -1,0 +1,31 @@
+From 8e5424e69f62b365bcb158c6d4b28b7e1c100664 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Thu, 7 Apr 2016 12:44:24 +0100
+Subject: [PATCH 235/381] config: Enable CONFIG_IPV6_ROUTER_PREF for networks
+ with multiple routers
+
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -101,6 +101,7 @@ CONFIG_INET_XFRM_MODE_TUNNEL=m
+ CONFIG_INET_XFRM_MODE_BEET=m
+ CONFIG_INET_LRO=m
+ CONFIG_INET_DIAG=m
++CONFIG_IPV6_ROUTER_PREF=y
+ CONFIG_INET6_AH=m
+ CONFIG_INET6_ESP=m
+ CONFIG_INET6_IPCOMP=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -95,6 +95,7 @@ CONFIG_INET_XFRM_MODE_TUNNEL=m
+ CONFIG_INET_XFRM_MODE_BEET=m
+ CONFIG_INET_LRO=m
+ CONFIG_INET_DIAG=m
++CONFIG_IPV6_ROUTER_PREF=y
+ CONFIG_INET6_AH=m
+ CONFIG_INET6_ESP=m
+ CONFIG_INET6_IPCOMP=m

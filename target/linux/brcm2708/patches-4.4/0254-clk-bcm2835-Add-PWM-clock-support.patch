@@ -1,0 +1,55 @@
+From c1f2dd85b1d53093fdf7af80ece7517ffed00f3a Mon Sep 17 00:00:00 2001
+From: Remi Pommarel <repk@triplefau.lt>
+Date: Sun, 6 Dec 2015 17:22:48 +0100
+Subject: [PATCH 254/381] clk: bcm2835: Add PWM clock support
+
+Register the pwm clock for bcm2835.
+
+Signed-off-by: Remi Pommarel <repk@triplefau.lt>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+Signed-off-by: Michael Turquette <mturquette@baylibre.com>
+(cherry picked from commit cfbab8fbab9c330aca963095a439c451ac97c0dd)
+---
+ drivers/clk/bcm/clk-bcm2835.c       | 13 +++++++++++++
+ include/dt-bindings/clock/bcm2835.h |  3 ++-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -807,6 +807,16 @@ static const struct bcm2835_clock_data b
+ 	.frac_bits = 8,
+ };
+ 
++static const struct bcm2835_clock_data bcm2835_clock_pwm_data = {
++	.name = "pwm",
++	.num_mux_parents = ARRAY_SIZE(bcm2835_clock_per_parents),
++	.parents = bcm2835_clock_per_parents,
++	.ctl_reg = CM_PWMCTL,
++	.div_reg = CM_PWMDIV,
++	.int_bits = 12,
++	.frac_bits = 12,
++};
++
+ struct bcm2835_pll {
+ 	struct clk_hw hw;
+ 	struct bcm2835_cprman *cprman;
+@@ -1601,6 +1611,9 @@ static int bcm2835_clk_probe(struct plat
+ 				  cprman->regs + CM_PERIICTL, CM_GATE_BIT,
+ 				  0, &cprman->regs_lock);
+ 
++	clks[BCM2835_CLOCK_PWM] =
++		bcm2835_register_clock(cprman, &bcm2835_clock_pwm_data);
++
+ 	return of_clk_add_provider(dev->of_node, of_clk_src_onecell_get,
+ 				   &cprman->onecell);
+ }
+--- a/include/dt-bindings/clock/bcm2835.h
++++ b/include/dt-bindings/clock/bcm2835.h
+@@ -43,5 +43,6 @@
+ #define BCM2835_CLOCK_TSENS		27
+ #define BCM2835_CLOCK_EMMC		28
+ #define BCM2835_CLOCK_PERI_IMAGE	29
++#define BCM2835_CLOCK_PWM		30
+ 
+-#define BCM2835_CLOCK_COUNT		30
++#define BCM2835_CLOCK_COUNT		31

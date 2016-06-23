@@ -1,0 +1,81 @@
+From 337a299edf74d3866636363b675f1b48e01cf842 Mon Sep 17 00:00:00 2001
+From: campag <dave-lowe@ntlworld.com>
+Date: Wed, 24 Feb 2016 16:45:42 +0000
+Subject: [PATCH 199/381] BCM270X_DT: Add 1-bit SDIO using minimal pins...
+
+... for that mode: GPIOs 22-25.
+---
+ arch/arm/boot/dts/overlays/README                | 21 ++++++++++++++
+ arch/arm/boot/dts/overlays/sdio-1bit-overlay.dts | 36 ++++++++++++++++++++++++
+ 2 files changed, 57 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/sdio-1bit-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -709,6 +709,27 @@ Params: overclock_50            SD Clock
+         bus_width               Set the SDIO host bus width (default 4 bits)
+ 
+ 
++Name:   sdio-1bit
++Info:   Selects the bcm2835-sdhost SD/MMC driver, optionally with overclock,
++        and enables 1-bit SDIO via GPIOs 22-25.
++Load:   dtoverlay=sdio-1bit,<param>=<val>
++Params: overclock_50            SD Clock (in MHz) to use when the MMC framework
++                                requests 50MHz
++
++        sdio_overclock          SDIO Clock (in MHz) to use when the MMC
++                                framework requests 50MHz
++
++        force_pio               Disable DMA support (default off)
++
++        pio_limit               Number of blocks above which to use DMA
++                                (default 1)
++
++        debug                   Enable debug output (default off)
++
++        poll_once               Disable SDIO-device polling every second
++                                (default on: polling once at boot-time)
++
++
+ Name:   sdtweak
+ Info:   Tunes the bcm2835-sdhost SD/MMC driver
+ Load:   dtoverlay=sdtweak,<param>=<val>
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/sdio-1bit-overlay.dts
+@@ -0,0 +1,36 @@
++/* Enable 1-bit SDIO from MMC interface via GPIOs 22-25. Includes sdhost overlay. */
++
++/include/ "sdhost-overlay.dts"
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@3 {
++		target = <&mmc>;
++		sdio_mmc: __overlay__ {
++			compatible = "brcm,bcm2835-mmc";
++			pinctrl-names = "default";
++			pinctrl-0 = <&sdio_pins>;
++			non-removable;
++			bus-width = <1>;
++			brcm,overclock-50 = <0>;
++			status = "okay";
++		};
++	};
++
++	fragment@4 {
++		target = <&gpio>;
++		__overlay__ {
++			sdio_pins: sdio_pins {
++				brcm,pins = <22 23 24 25>;
++				brcm,function = <7 7 7 7>; /* ALT3 = SD1 */
++				brcm,pull = <0 2 2 2>;
++			};
++		};
++	};
++
++	__overrides__ {
++		poll_once = <&sdio_mmc>,"non-removable?";
++		sdio_overclock = <&sdio_mmc>,"brcm,overclock-50:0";
++	};
++};

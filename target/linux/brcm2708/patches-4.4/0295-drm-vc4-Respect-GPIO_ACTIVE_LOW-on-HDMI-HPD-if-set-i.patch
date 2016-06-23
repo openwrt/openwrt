@@ -1,0 +1,57 @@
+From 2e6c1ee022829aa063838c244dbb94e2a8df04d2 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 29 Feb 2016 17:53:01 -0800
+Subject: [PATCH 295/381] drm/vc4: Respect GPIO_ACTIVE_LOW on HDMI HPD if set
+ in the devicetree.
+
+The original Raspberry Pi had the GPIO active high, but the later
+models are active low.  The DT GPIO bindings allow specifying the
+active flag, except that it doesn't get propagated to the gpiodesc, so
+you have to handle it yourself.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Tested-by: Daniel Stone <daniels@collabora.com>
+(cherry picked from commit 0b06e0a7945130e6a187f7959529cba7725f573a)
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -47,6 +47,7 @@ struct vc4_hdmi {
+ 	void __iomem *hdmicore_regs;
+ 	void __iomem *hd_regs;
+ 	int hpd_gpio;
++	bool hpd_active_low;
+ 
+ 	struct clk *pixel_clock;
+ 	struct clk *hsm_clock;
+@@ -168,7 +169,8 @@ vc4_hdmi_connector_detect(struct drm_con
+ 	return connector_status_connected;
+ 
+ 	if (vc4->hdmi->hpd_gpio) {
+-		if (gpio_get_value_cansleep(vc4->hdmi->hpd_gpio))
++		if (gpio_get_value_cansleep(vc4->hdmi->hpd_gpio) ^
++		    vc4->hdmi->hpd_active_low)
+ 			return connector_status_connected;
+ 		else
+ 			return connector_status_disconnected;
+@@ -519,11 +521,17 @@ static int vc4_hdmi_bind(struct device *
+ 	 * we'll use the HDMI core's register.
+ 	 */
+ 	if (of_find_property(dev->of_node, "hpd-gpios", &value)) {
+-		hdmi->hpd_gpio = of_get_named_gpio(dev->of_node, "hpd-gpios", 0);
++		enum of_gpio_flags hpd_gpio_flags;
++
++		hdmi->hpd_gpio = of_get_named_gpio_flags(dev->of_node,
++							 "hpd-gpios", 0,
++							 &hpd_gpio_flags);
+ 		if (hdmi->hpd_gpio < 0) {
+ 			ret = hdmi->hpd_gpio;
+ 			goto err_unprepare_hsm;
+ 		}
++
++		hdmi->hpd_active_low = hpd_gpio_flags & OF_GPIO_ACTIVE_LOW;
+ 	}
+ 
+ 	vc4->hdmi = hdmi;

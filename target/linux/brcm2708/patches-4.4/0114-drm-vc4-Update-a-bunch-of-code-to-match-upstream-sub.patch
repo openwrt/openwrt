@@ -1,0 +1,1894 @@
+From 75f8451653673c272e11dea1c49522424a6b748c Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 4 Dec 2015 11:35:34 -0800
+Subject: [PATCH 114/381] drm/vc4: Update a bunch of code to match upstream
+ submission.
+
+This gets almost everything matching, except for the MSAA support and
+using generic PM domains.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/drm_gem_cma_helper.c       |  13 +-
+ drivers/gpu/drm/vc4/vc4_bo.c               | 322 +++++++++++++++++------------
+ drivers/gpu/drm/vc4/vc4_crtc.c             |   7 +-
+ drivers/gpu/drm/vc4/vc4_drv.c              |   6 +-
+ drivers/gpu/drm/vc4/vc4_drv.h              |  20 +-
+ drivers/gpu/drm/vc4/vc4_gem.c              |  24 ++-
+ drivers/gpu/drm/vc4/vc4_irq.c              |   5 +-
+ drivers/gpu/drm/vc4/vc4_kms.c              |   1 +
+ drivers/gpu/drm/vc4/vc4_packet.h           | 210 +++++++++----------
+ drivers/gpu/drm/vc4/vc4_qpu_defines.h      | 308 ++++++++++++++-------------
+ drivers/gpu/drm/vc4/vc4_render_cl.c        |   4 +-
+ drivers/gpu/drm/vc4/vc4_v3d.c              |  10 +-
+ drivers/gpu/drm/vc4/vc4_validate.c         | 130 ++++++------
+ drivers/gpu/drm/vc4/vc4_validate_shaders.c |  66 +++---
+ include/drm/drmP.h                         |   8 +-
+ 15 files changed, 598 insertions(+), 536 deletions(-)
+
+--- a/drivers/gpu/drm/drm_gem_cma_helper.c
++++ b/drivers/gpu/drm/drm_gem_cma_helper.c
+@@ -58,15 +58,14 @@ __drm_gem_cma_create(struct drm_device *
+ 	struct drm_gem_cma_object *cma_obj;
+ 	struct drm_gem_object *gem_obj;
+ 	int ret;
+-	size_t obj_size = (drm->driver->gem_obj_size ?
+-			   drm->driver->gem_obj_size :
+-			   sizeof(*cma_obj));
+ 
+-	cma_obj = kzalloc(obj_size, GFP_KERNEL);
+-	if (!cma_obj)
++	if (drm->driver->gem_create_object)
++		gem_obj = drm->driver->gem_create_object(drm, size);
++	else
++		gem_obj = kzalloc(sizeof(*cma_obj), GFP_KERNEL);
++	if (!gem_obj)
+ 		return ERR_PTR(-ENOMEM);
+-
+-	gem_obj = &cma_obj->base;
++	cma_obj = container_of(gem_obj, struct drm_gem_cma_object, base);
+ 
+ 	ret = drm_gem_object_init(drm, gem_obj, size);
+ 	if (ret)
+--- a/drivers/gpu/drm/vc4/vc4_bo.c
++++ b/drivers/gpu/drm/vc4/vc4_bo.c
+@@ -12,6 +12,10 @@
+  * access to system memory with no MMU in between.  To support it, we
+  * use the GEM CMA helper functions to allocate contiguous ranges of
+  * physical memory for our BOs.
++ *
++ * Since the CMA allocator is very slow, we keep a cache of recently
++ * freed BOs around so that the kernel's allocation of objects for 3D
++ * rendering can return quickly.
+  */
+ 
+ #include "vc4_drv.h"
+@@ -34,6 +38,36 @@ static void vc4_bo_stats_dump(struct vc4
+ 		 vc4->bo_stats.size_cached / 1024);
+ }
+ 
++#ifdef CONFIG_DEBUG_FS
++int vc4_bo_stats_debugfs(struct seq_file *m, void *unused)
++{
++	struct drm_info_node *node = (struct drm_info_node *)m->private;
++	struct drm_device *dev = node->minor->dev;
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
++	struct vc4_bo_stats stats;
++
++	/* Take a snapshot of the current stats with the lock held. */
++	mutex_lock(&vc4->bo_lock);
++	stats = vc4->bo_stats;
++	mutex_unlock(&vc4->bo_lock);
++
++	seq_printf(m, "num bos allocated: %d\n",
++		   stats.num_allocated);
++	seq_printf(m, "size bos allocated: %dkb\n",
++		   stats.size_allocated / 1024);
++	seq_printf(m, "num bos used: %d\n",
++		   stats.num_allocated - stats.num_cached);
++	seq_printf(m, "size bos used: %dkb\n",
++		   (stats.size_allocated - stats.size_cached) / 1024);
++	seq_printf(m, "num bos cached: %d\n",
++		   stats.num_cached);
++	seq_printf(m, "size bos cached: %dkb\n",
++		   stats.size_cached / 1024);
++
++	return 0;
++}
++#endif
++
+ static uint32_t bo_page_index(size_t size)
+ {
+ 	return (size / PAGE_SIZE) - 1;
+@@ -81,8 +115,8 @@ static struct list_head *vc4_get_cache_l
+ 		struct list_head *new_list;
+ 		uint32_t i;
+ 
+-		new_list = kmalloc(new_size * sizeof(struct list_head),
+-				   GFP_KERNEL);
++		new_list = kmalloc_array(new_size, sizeof(struct list_head),
++					 GFP_KERNEL);
+ 		if (!new_list)
+ 			return NULL;
+ 
+@@ -90,7 +124,9 @@ static struct list_head *vc4_get_cache_l
+ 		 * head locations.
+ 		 */
+ 		for (i = 0; i < vc4->bo_cache.size_list_size; i++) {
+-			struct list_head *old_list = &vc4->bo_cache.size_list[i];
++			struct list_head *old_list =
++				&vc4->bo_cache.size_list[i];
++
+ 			if (list_empty(old_list))
+ 				INIT_LIST_HEAD(&new_list[i]);
+ 			else
+@@ -122,11 +158,60 @@ void vc4_bo_cache_purge(struct drm_devic
+ 	mutex_unlock(&vc4->bo_lock);
+ }
+ 
+-struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t unaligned_size)
++static struct vc4_bo *vc4_bo_get_from_cache(struct drm_device *dev,
++					    uint32_t size)
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+-	uint32_t size = roundup(unaligned_size, PAGE_SIZE);
+ 	uint32_t page_index = bo_page_index(size);
++	struct vc4_bo *bo = NULL;
++
++	size = roundup(size, PAGE_SIZE);
++
++	mutex_lock(&vc4->bo_lock);
++	if (page_index >= vc4->bo_cache.size_list_size)
++		goto out;
++
++	if (list_empty(&vc4->bo_cache.size_list[page_index]))
++		goto out;
++
++	bo = list_first_entry(&vc4->bo_cache.size_list[page_index],
++			      struct vc4_bo, size_head);
++	vc4_bo_remove_from_cache(bo);
++	kref_init(&bo->base.base.refcount);
++
++out:
++	mutex_unlock(&vc4->bo_lock);
++	return bo;
++}
++
++/**
++ * vc4_gem_create_object - Implementation of driver->gem_create_object.
++ *
++ * This lets the CMA helpers allocate object structs for us, and keep
++ * our BO stats correct.
++ */
++struct drm_gem_object *vc4_create_object(struct drm_device *dev, size_t size)
++{
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
++	struct vc4_bo *bo;
++
++	bo = kzalloc(sizeof(*bo), GFP_KERNEL);
++	if (!bo)
++		return ERR_PTR(-ENOMEM);
++
++	mutex_lock(&vc4->bo_lock);
++	vc4->bo_stats.num_allocated++;
++	vc4->bo_stats.size_allocated += size;
++	mutex_unlock(&vc4->bo_lock);
++
++	return &bo->base.base;
++}
++
++struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t unaligned_size,
++			     bool from_cache)
++{
++	size_t size = roundup(unaligned_size, PAGE_SIZE);
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	struct drm_gem_cma_object *cma_obj;
+ 	int pass;
+ 
+@@ -134,18 +219,12 @@ struct vc4_bo *vc4_bo_create(struct drm_
+ 		return NULL;
+ 
+ 	/* First, try to get a vc4_bo from the kernel BO cache. */
+-	mutex_lock(&vc4->bo_lock);
+-	if (page_index < vc4->bo_cache.size_list_size &&
+-	    !list_empty(&vc4->bo_cache.size_list[page_index])) {
+-		struct vc4_bo *bo =
+-			list_first_entry(&vc4->bo_cache.size_list[page_index],
+-					 struct vc4_bo, size_head);
+-		vc4_bo_remove_from_cache(bo);
+-		mutex_unlock(&vc4->bo_lock);
+-		kref_init(&bo->base.base.refcount);
+-		return bo;
++	if (from_cache) {
++		struct vc4_bo *bo = vc4_bo_get_from_cache(dev, size);
++
++		if (bo)
++			return bo;
+ 	}
+-	mutex_unlock(&vc4->bo_lock);
+ 
+ 	/* Otherwise, make a new BO. */
+ 	for (pass = 0; ; pass++) {
+@@ -179,9 +258,6 @@ struct vc4_bo *vc4_bo_create(struct drm_
+ 		}
+ 	}
+ 
+-	vc4->bo_stats.num_allocated++;
+-	vc4->bo_stats.size_allocated += size;
+-
+ 	return to_vc4_bo(&cma_obj->base);
+ }
+ 
+@@ -199,7 +275,7 @@ int vc4_dumb_create(struct drm_file *fil
+ 	if (args->size < args->pitch * args->height)
+ 		args->size = args->pitch * args->height;
+ 
+-	bo = vc4_bo_create(dev, args->size);
++	bo = vc4_bo_create(dev, args->size, false);
+ 	if (!bo)
+ 		return -ENOMEM;
+ 
+@@ -209,8 +285,8 @@ int vc4_dumb_create(struct drm_file *fil
+ 	return ret;
+ }
+ 
+-static void
+-vc4_bo_cache_free_old(struct drm_device *dev)
++/* Must be called with bo_lock held. */
++static void vc4_bo_cache_free_old(struct drm_device *dev)
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	unsigned long expire_time = jiffies - msecs_to_jiffies(1000);
+@@ -313,15 +389,77 @@ vc4_prime_export(struct drm_device *dev,
+ 	return drm_gem_prime_export(dev, obj, flags);
+ }
+ 
+-int
+-vc4_create_bo_ioctl(struct drm_device *dev, void *data,
+-		    struct drm_file *file_priv)
++int vc4_mmap(struct file *filp, struct vm_area_struct *vma)
++{
++	struct drm_gem_object *gem_obj;
++	struct vc4_bo *bo;
++	int ret;
++
++	ret = drm_gem_mmap(filp, vma);
++	if (ret)
++		return ret;
++
++	gem_obj = vma->vm_private_data;
++	bo = to_vc4_bo(gem_obj);
++
++	if (bo->validated_shader && (vma->vm_flags & VM_WRITE)) {
++		DRM_ERROR("mmaping of shader BOs for writing not allowed.\n");
++		return -EINVAL;
++	}
++
++	/*
++	 * Clear the VM_PFNMAP flag that was set by drm_gem_mmap(), and set the
++	 * vm_pgoff (used as a fake buffer offset by DRM) to 0 as we want to map
++	 * the whole buffer.
++	 */
++	vma->vm_flags &= ~VM_PFNMAP;
++	vma->vm_pgoff = 0;
++
++	ret = dma_mmap_writecombine(bo->base.base.dev->dev, vma,
++				    bo->base.vaddr, bo->base.paddr,
++				    vma->vm_end - vma->vm_start);
++	if (ret)
++		drm_gem_vm_close(vma);
++
++	return ret;
++}
++
++int vc4_prime_mmap(struct drm_gem_object *obj, struct vm_area_struct *vma)
++{
++	struct vc4_bo *bo = to_vc4_bo(obj);
++
++	if (bo->validated_shader && (vma->vm_flags & VM_WRITE)) {
++		DRM_ERROR("mmaping of shader BOs for writing not allowed.\n");
++		return -EINVAL;
++	}
++
++	return drm_gem_cma_prime_mmap(obj, vma);
++}
++
++void *vc4_prime_vmap(struct drm_gem_object *obj)
++{
++	struct vc4_bo *bo = to_vc4_bo(obj);
++
++	if (bo->validated_shader) {
++		DRM_ERROR("mmaping of shader BOs not allowed.\n");
++		return ERR_PTR(-EINVAL);
++	}
++
++	return drm_gem_cma_prime_vmap(obj);
++}
++
++int vc4_create_bo_ioctl(struct drm_device *dev, void *data,
++			struct drm_file *file_priv)
+ {
+ 	struct drm_vc4_create_bo *args = data;
+ 	struct vc4_bo *bo = NULL;
+ 	int ret;
+ 
+-	bo = vc4_bo_create(dev, args->size);
++	/*
++	 * We can't allocate from the BO cache, because the BOs don't
++	 * get zeroed, and that might leak data between users.
++	 */
++	bo = vc4_bo_create(dev, args->size, false);
+ 	if (!bo)
+ 		return -ENOMEM;
+ 
+@@ -331,6 +469,25 @@ vc4_create_bo_ioctl(struct drm_device *d
+ 	return ret;
+ }
+ 
++int vc4_mmap_bo_ioctl(struct drm_device *dev, void *data,
++		      struct drm_file *file_priv)
++{
++	struct drm_vc4_mmap_bo *args = data;
++	struct drm_gem_object *gem_obj;
++
++	gem_obj = drm_gem_object_lookup(dev, file_priv, args->handle);
++	if (!gem_obj) {
++		DRM_ERROR("Failed to look up GEM BO %d\n", args->handle);
++		return -EINVAL;
++	}
++
++	/* The mmap offset was set up at BO allocation time. */
++	args->offset = drm_vma_node_offset_addr(&gem_obj->vma_node);
++
++	drm_gem_object_unreference_unlocked(gem_obj);
++	return 0;
++}
++
+ int
+ vc4_create_shader_bo_ioctl(struct drm_device *dev, void *data,
+ 			   struct drm_file *file_priv)
+@@ -355,7 +512,7 @@ vc4_create_shader_bo_ioctl(struct drm_de
+ 		return -EINVAL;
+ 	}
+ 
+-	bo = vc4_bo_create(dev, args->size);
++	bo = vc4_bo_create(dev, args->size, true);
+ 	if (!bo)
+ 		return -ENOMEM;
+ 
+@@ -364,6 +521,11 @@ vc4_create_shader_bo_ioctl(struct drm_de
+ 			     args->size);
+ 	if (ret != 0)
+ 		goto fail;
++	/* Clear the rest of the memory from allocating from the BO
++	 * cache.
++	 */
++	memset(bo->base.vaddr + args->size, 0,
++	       bo->base.base.size - args->size);
+ 
+ 	bo->validated_shader = vc4_validate_shader(&bo->base);
+ 	if (!bo->validated_shader) {
+@@ -382,85 +544,6 @@ vc4_create_shader_bo_ioctl(struct drm_de
+ 	return ret;
+ }
+ 
+-int
+-vc4_mmap_bo_ioctl(struct drm_device *dev, void *data,
+-		  struct drm_file *file_priv)
+-{
+-	struct drm_vc4_mmap_bo *args = data;
+-	struct drm_gem_object *gem_obj;
+-
+-	gem_obj = drm_gem_object_lookup(dev, file_priv, args->handle);
+-	if (!gem_obj) {
+-		DRM_ERROR("Failed to look up GEM BO %d\n", args->handle);
+-		return -EINVAL;
+-	}
+-
+-	/* The mmap offset was set up at BO allocation time. */
+-	args->offset = drm_vma_node_offset_addr(&gem_obj->vma_node);
+-
+-	drm_gem_object_unreference(gem_obj);
+-	return 0;
+-}
+-
+-int vc4_mmap(struct file *filp, struct vm_area_struct *vma)
+-{
+-	struct drm_gem_object *gem_obj;
+-	struct vc4_bo *bo;
+-	int ret;
+-
+-	ret = drm_gem_mmap(filp, vma);
+-	if (ret)
+-		return ret;
+-
+-	gem_obj = vma->vm_private_data;
+-	bo = to_vc4_bo(gem_obj);
+-
+-	if (bo->validated_shader && (vma->vm_flags & VM_WRITE)) {
+-		DRM_ERROR("mmaping of shader BOs for writing not allowed.\n");
+-		return -EINVAL;
+-	}
+-
+-	/*
+-	 * Clear the VM_PFNMAP flag that was set by drm_gem_mmap(), and set the
+-	 * vm_pgoff (used as a fake buffer offset by DRM) to 0 as we want to map
+-	 * the whole buffer.
+-	 */
+-	vma->vm_flags &= ~VM_PFNMAP;
+-	vma->vm_pgoff = 0;
+-
+-	ret = dma_mmap_writecombine(bo->base.base.dev->dev, vma,
+-				    bo->base.vaddr, bo->base.paddr,
+-				    vma->vm_end - vma->vm_start);
+-	if (ret)
+-		drm_gem_vm_close(vma);
+-
+-	return ret;
+-}
+-
+-int vc4_prime_mmap(struct drm_gem_object *obj, struct vm_area_struct *vma)
+-{
+-	struct vc4_bo *bo = to_vc4_bo(obj);
+-
+-	if (bo->validated_shader) {
+-		DRM_ERROR("mmaping of shader BOs not allowed.\n");
+-		return -EINVAL;
+-	}
+-
+-	return drm_gem_cma_prime_mmap(obj, vma);
+-}
+-
+-void *vc4_prime_vmap(struct drm_gem_object *obj)
+-{
+-	struct vc4_bo *bo = to_vc4_bo(obj);
+-
+-	if (bo->validated_shader) {
+-		DRM_ERROR("mmaping of shader BOs not allowed.\n");
+-		return ERR_PTR(-EINVAL);
+-	}
+-
+-	return drm_gem_cma_prime_vmap(obj);
+-}
+-
+ void vc4_bo_cache_init(struct drm_device *dev)
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+@@ -472,7 +555,7 @@ void vc4_bo_cache_init(struct drm_device
+ 	INIT_WORK(&vc4->bo_cache.time_work, vc4_bo_cache_time_work);
+ 	setup_timer(&vc4->bo_cache.time_timer,
+ 		    vc4_bo_cache_time_timer,
+-		    (unsigned long) dev);
++		    (unsigned long)dev);
+ }
+ 
+ void vc4_bo_cache_destroy(struct drm_device *dev)
+@@ -489,28 +572,3 @@ void vc4_bo_cache_destroy(struct drm_dev
+ 		vc4_bo_stats_dump(vc4);
+ 	}
+ }
+-
+-#ifdef CONFIG_DEBUG_FS
+-int vc4_bo_stats_debugfs(struct seq_file *m, void *unused)
+-{
+-	struct drm_info_node *node = (struct drm_info_node *) m->private;
+-	struct drm_device *dev = node->minor->dev;
+-	struct vc4_dev *vc4 = to_vc4_dev(dev);
+-	struct vc4_bo_stats stats;
+-
+-	mutex_lock(&vc4->bo_lock);
+-	stats = vc4->bo_stats;
+-	mutex_unlock(&vc4->bo_lock);
+-
+-	seq_printf(m, "num bos allocated: %d\n", stats.num_allocated);
+-	seq_printf(m, "size bos allocated: %dkb\n", stats.size_allocated / 1024);
+-	seq_printf(m, "num bos used: %d\n", (stats.num_allocated -
+-					     stats.num_cached));
+-	seq_printf(m, "size bos used: %dkb\n", (stats.size_allocated -
+-						stats.size_cached) / 1024);
+-	seq_printf(m, "num bos cached: %d\n", stats.num_cached);
+-	seq_printf(m, "size bos cached: %dkb\n", stats.size_cached / 1024);
+-
+-	return 0;
+-}
+-#endif
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -501,6 +501,7 @@ vc4_async_page_flip_complete(struct vc4_
+ 	vc4_plane_async_set_fb(plane, flip_state->fb);
+ 	if (flip_state->event) {
+ 		unsigned long flags;
++
+ 		spin_lock_irqsave(&dev->event_lock, flags);
+ 		drm_crtc_send_vblank_event(crtc, flip_state->event);
+ 		spin_unlock_irqrestore(&dev->event_lock, flags);
+@@ -562,9 +563,9 @@ static int vc4_async_page_flip(struct dr
+ }
+ 
+ static int vc4_page_flip(struct drm_crtc *crtc,
+-		  struct drm_framebuffer *fb,
+-		  struct drm_pending_vblank_event *event,
+-		  uint32_t flags)
++			 struct drm_framebuffer *fb,
++			 struct drm_pending_vblank_event *event,
++			 uint32_t flags)
+ {
+ 	if (flags & DRM_MODE_PAGE_FLIP_ASYNC)
+ 		return vc4_async_page_flip(crtc, fb, event, flags);
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -81,7 +81,8 @@ static const struct drm_ioctl_desc vc4_d
+ 	DRM_IOCTL_DEF_DRV(VC4_CREATE_BO, vc4_create_bo_ioctl, 0),
+ 	DRM_IOCTL_DEF_DRV(VC4_MMAP_BO, vc4_mmap_bo_ioctl, 0),
+ 	DRM_IOCTL_DEF_DRV(VC4_CREATE_SHADER_BO, vc4_create_shader_bo_ioctl, 0),
+-	DRM_IOCTL_DEF_DRV(VC4_GET_HANG_STATE, vc4_get_hang_state_ioctl, DRM_ROOT_ONLY),
++	DRM_IOCTL_DEF_DRV(VC4_GET_HANG_STATE, vc4_get_hang_state_ioctl,
++			  DRM_ROOT_ONLY),
+ };
+ 
+ static struct drm_driver vc4_drm_driver = {
+@@ -107,6 +108,7 @@ static struct drm_driver vc4_drm_driver
+ 	.debugfs_cleanup = vc4_debugfs_cleanup,
+ #endif
+ 
++	.gem_create_object = vc4_create_object,
+ 	.gem_free_object = vc4_free_object,
+ 	.gem_vm_ops = &drm_gem_cma_vm_ops,
+ 
+@@ -128,8 +130,6 @@ static struct drm_driver vc4_drm_driver
+ 	.num_ioctls = ARRAY_SIZE(vc4_drm_ioctls),
+ 	.fops = &vc4_drm_fops,
+ 
+-	//.gem_obj_size = sizeof(struct vc4_bo),
+-
+ 	.name = DRIVER_NAME,
+ 	.desc = DRIVER_DESC,
+ 	.date = DRIVER_DATE,
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -72,6 +72,9 @@ struct vc4_dev {
+ 	 * job_done_work.
+ 	 */
+ 	struct list_head job_done_list;
++	/* Spinlock used to synchronize the job_list and seqno
++	 * accesses between the IRQ handler and GEM ioctls.
++	 */
+ 	spinlock_t job_lock;
+ 	wait_queue_head_t job_wait_queue;
+ 	struct work_struct job_done_work;
+@@ -318,8 +321,7 @@ struct vc4_texture_sample_info {
+  * and validate the shader state record's uniforms that define the texture
+  * samples.
+  */
+-struct vc4_validated_shader_info
+-{
++struct vc4_validated_shader_info {
+ 	uint32_t uniforms_size;
+ 	uint32_t uniforms_src_size;
+ 	uint32_t num_texture_samples;
+@@ -355,8 +357,10 @@ struct vc4_validated_shader_info
+ #define wait_for(COND, MS) _wait_for(COND, MS, 1)
+ 
+ /* vc4_bo.c */
++struct drm_gem_object *vc4_create_object(struct drm_device *dev, size_t size);
+ void vc4_free_object(struct drm_gem_object *gem_obj);
+-struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t size);
++struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t size,
++			     bool from_cache);
+ int vc4_dumb_create(struct drm_file *file_priv,
+ 		    struct drm_device *dev,
+ 		    struct drm_mode_create_dumb *args);
+@@ -432,7 +436,8 @@ struct drm_plane *vc4_plane_init(struct
+ 				 enum drm_plane_type type);
+ u32 vc4_plane_write_dlist(struct drm_plane *plane, u32 __iomem *dlist);
+ u32 vc4_plane_dlist_size(struct drm_plane_state *state);
+-void vc4_plane_async_set_fb(struct drm_plane *plane, struct drm_framebuffer *fb);
++void vc4_plane_async_set_fb(struct drm_plane *plane,
++			    struct drm_framebuffer *fb);
+ 
+ /* vc4_v3d.c */
+ extern struct platform_driver vc4_v3d_driver;
+@@ -450,9 +455,6 @@ vc4_validate_bin_cl(struct drm_device *d
+ int
+ vc4_validate_shader_recs(struct drm_device *dev, struct vc4_exec_info *exec);
+ 
+-struct vc4_validated_shader_info *
+-vc4_validate_shader(struct drm_gem_cma_object *shader_obj);
+-
+ bool vc4_use_bo(struct vc4_exec_info *exec,
+ 		uint32_t hindex,
+ 		enum vc4_bo_mode mode,
+@@ -464,3 +466,7 @@ bool vc4_check_tex_size(struct vc4_exec_
+ 			struct drm_gem_cma_object *fbo,
+ 			uint32_t offset, uint8_t tiling_format,
+ 			uint32_t width, uint32_t height, uint8_t cpp);
++
++/* vc4_validate_shader.c */
++struct vc4_validated_shader_info *
++vc4_validate_shader(struct drm_gem_cma_object *shader_obj);
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -53,9 +53,8 @@ vc4_free_hang_state(struct drm_device *d
+ 	unsigned int i;
+ 
+ 	mutex_lock(&dev->struct_mutex);
+-	for (i = 0; i < state->user_state.bo_count; i++) {
++	for (i = 0; i < state->user_state.bo_count; i++)
+ 		drm_gem_object_unreference(state->bo[i]);
+-	}
+ 	mutex_unlock(&dev->struct_mutex);
+ 
+ 	kfree(state);
+@@ -65,10 +64,10 @@ int
+ vc4_get_hang_state_ioctl(struct drm_device *dev, void *data,
+ 			 struct drm_file *file_priv)
+ {
+- 	struct drm_vc4_get_hang_state *get_state = data;
++	struct drm_vc4_get_hang_state *get_state = data;
+ 	struct drm_vc4_get_hang_state_bo *bo_state;
+ 	struct vc4_hang_state *kernel_state;
+- 	struct drm_vc4_get_hang_state *state;
++	struct drm_vc4_get_hang_state *state;
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	unsigned long irqflags;
+ 	u32 i;
+@@ -107,6 +106,7 @@ vc4_get_hang_state_ioctl(struct drm_devi
+ 	for (i = 0; i < state->bo_count; i++) {
+ 		struct vc4_bo *vc4_bo = to_vc4_bo(kernel_state->bo[i]);
+ 		u32 handle;
++
+ 		ret = drm_gem_handle_create(file_priv, kernel_state->bo[i],
+ 					    &handle);
+ 
+@@ -124,7 +124,7 @@ vc4_get_hang_state_ioctl(struct drm_devi
+ 			   state->bo_count * sizeof(*bo_state));
+ 	kfree(bo_state);
+ 
+- err_free:
++err_free:
+ 
+ 	vc4_free_hang_state(dev, kernel_state);
+ 
+@@ -578,7 +578,7 @@ vc4_get_bcl(struct drm_device *dev, stru
+ 		goto fail;
+ 	}
+ 
+-	bo = vc4_bo_create(dev, exec_size);
++	bo = vc4_bo_create(dev, exec_size, true);
+ 	if (!bo) {
+ 		DRM_ERROR("Couldn't allocate BO for binning\n");
+ 		ret = PTR_ERR(exec->exec_bo);
+@@ -668,6 +668,7 @@ vc4_job_handle_completed(struct vc4_dev
+ static void vc4_seqno_cb_work(struct work_struct *work)
+ {
+ 	struct vc4_seqno_cb *cb = container_of(work, struct vc4_seqno_cb, work);
++
+ 	cb->func(cb);
+ }
+ 
+@@ -717,6 +718,7 @@ vc4_wait_for_seqno_ioctl_helper(struct d
+ 
+ 	if ((ret == -EINTR || ret == -ERESTARTSYS) && *timeout_ns != ~0ull) {
+ 		uint64_t delta = jiffies_to_nsecs(jiffies - start);
++
+ 		if (*timeout_ns >= delta)
+ 			*timeout_ns -= delta;
+ 	}
+@@ -750,9 +752,10 @@ vc4_wait_bo_ioctl(struct drm_device *dev
+ 	}
+ 	bo = to_vc4_bo(gem_obj);
+ 
+-	ret = vc4_wait_for_seqno_ioctl_helper(dev, bo->seqno, &args->timeout_ns);
++	ret = vc4_wait_for_seqno_ioctl_helper(dev, bo->seqno,
++					      &args->timeout_ns);
+ 
+-	drm_gem_object_unreference(gem_obj);
++	drm_gem_object_unreference_unlocked(gem_obj);
+ 	return ret;
+ }
+ 
+@@ -793,7 +796,8 @@ vc4_submit_cl_ioctl(struct drm_device *d
+ 		if (ret)
+ 			goto fail;
+ 	} else {
+-		exec->ct0ca = exec->ct0ea = 0;
++		exec->ct0ca = 0;
++		exec->ct0ea = 0;
+ 	}
+ 
+ 	ret = vc4_get_rcl(dev, exec);
+@@ -831,7 +835,7 @@ vc4_gem_init(struct drm_device *dev)
+ 	INIT_WORK(&vc4->hangcheck.reset_work, vc4_reset_work);
+ 	setup_timer(&vc4->hangcheck.timer,
+ 		    vc4_hangcheck_elapsed,
+-		    (unsigned long) dev);
++		    (unsigned long)dev);
+ 
+ 	INIT_WORK(&vc4->job_done_work, vc4_job_done_work);
+ }
+--- a/drivers/gpu/drm/vc4/vc4_irq.c
++++ b/drivers/gpu/drm/vc4/vc4_irq.c
+@@ -56,7 +56,7 @@ vc4_overflow_mem_work(struct work_struct
+ 	struct drm_device *dev = vc4->dev;
+ 	struct vc4_bo *bo;
+ 
+-	bo = vc4_bo_create(dev, 256 * 1024);
++	bo = vc4_bo_create(dev, 256 * 1024, true);
+ 	if (!bo) {
+ 		DRM_ERROR("Couldn't allocate binner overflow mem\n");
+ 		return;
+@@ -87,9 +87,8 @@ vc4_overflow_mem_work(struct work_struct
+ 		spin_unlock_irqrestore(&vc4->job_lock, irqflags);
+ 	}
+ 
+-	if (vc4->overflow_mem) {
++	if (vc4->overflow_mem)
+ 		drm_gem_object_unreference_unlocked(&vc4->overflow_mem->base.base);
+-	}
+ 	vc4->overflow_mem = bo;
+ 
+ 	V3D_WRITE(V3D_BPOA, bo->base.paddr);
+--- a/drivers/gpu/drm/vc4/vc4_kms.c
++++ b/drivers/gpu/drm/vc4/vc4_kms.c
+@@ -132,6 +132,7 @@ static int vc4_atomic_commit(struct drm_
+ 			struct drm_gem_cma_object *cma_bo =
+ 				drm_fb_cma_get_gem_obj(new_state->fb, 0);
+ 			struct vc4_bo *bo = to_vc4_bo(&cma_bo->base);
++
+ 			wait_seqno = max(bo->seqno, wait_seqno);
+ 		}
+ 	}
+--- a/drivers/gpu/drm/vc4/vc4_packet.h
++++ b/drivers/gpu/drm/vc4/vc4_packet.h
+@@ -27,60 +27,60 @@
+ #include "vc4_regs.h" /* for VC4_MASK, VC4_GET_FIELD, VC4_SET_FIELD */
+ 
+ enum vc4_packet {
+-        VC4_PACKET_HALT = 0,
+-        VC4_PACKET_NOP = 1,
++	VC4_PACKET_HALT = 0,
++	VC4_PACKET_NOP = 1,
+ 
+-        VC4_PACKET_FLUSH = 4,
+-        VC4_PACKET_FLUSH_ALL = 5,
+-        VC4_PACKET_START_TILE_BINNING = 6,
+-        VC4_PACKET_INCREMENT_SEMAPHORE = 7,
+-        VC4_PACKET_WAIT_ON_SEMAPHORE = 8,
+-
+-        VC4_PACKET_BRANCH = 16,
+-        VC4_PACKET_BRANCH_TO_SUB_LIST = 17,
+-
+-        VC4_PACKET_STORE_MS_TILE_BUFFER = 24,
+-        VC4_PACKET_STORE_MS_TILE_BUFFER_AND_EOF = 25,
+-        VC4_PACKET_STORE_FULL_RES_TILE_BUFFER = 26,
+-        VC4_PACKET_LOAD_FULL_RES_TILE_BUFFER = 27,
+-        VC4_PACKET_STORE_TILE_BUFFER_GENERAL = 28,
+-        VC4_PACKET_LOAD_TILE_BUFFER_GENERAL = 29,
+-
+-        VC4_PACKET_GL_INDEXED_PRIMITIVE = 32,
+-        VC4_PACKET_GL_ARRAY_PRIMITIVE = 33,
+-
+-        VC4_PACKET_COMPRESSED_PRIMITIVE = 48,
+-        VC4_PACKET_CLIPPED_COMPRESSED_PRIMITIVE = 49,
+-
+-        VC4_PACKET_PRIMITIVE_LIST_FORMAT = 56,
+-
+-        VC4_PACKET_GL_SHADER_STATE = 64,
+-        VC4_PACKET_NV_SHADER_STATE = 65,
+-        VC4_PACKET_VG_SHADER_STATE = 66,
+-
+-        VC4_PACKET_CONFIGURATION_BITS = 96,
+-        VC4_PACKET_FLAT_SHADE_FLAGS = 97,
+-        VC4_PACKET_POINT_SIZE = 98,
+-        VC4_PACKET_LINE_WIDTH = 99,
+-        VC4_PACKET_RHT_X_BOUNDARY = 100,
+-        VC4_PACKET_DEPTH_OFFSET = 101,
+-        VC4_PACKET_CLIP_WINDOW = 102,
+-        VC4_PACKET_VIEWPORT_OFFSET = 103,
+-        VC4_PACKET_Z_CLIPPING = 104,
+-        VC4_PACKET_CLIPPER_XY_SCALING = 105,
+-        VC4_PACKET_CLIPPER_Z_SCALING = 106,
+-
+-        VC4_PACKET_TILE_BINNING_MODE_CONFIG = 112,
+-        VC4_PACKET_TILE_RENDERING_MODE_CONFIG = 113,
+-        VC4_PACKET_CLEAR_COLORS = 114,
+-        VC4_PACKET_TILE_COORDINATES = 115,
+-
+-        /* Not an actual hardware packet -- this is what we use to put
+-         * references to GEM bos in the command stream, since we need the u32
+-         * int the actual address packet in order to store the offset from the
+-         * start of the BO.
+-         */
+-        VC4_PACKET_GEM_HANDLES = 254,
++	VC4_PACKET_FLUSH = 4,
++	VC4_PACKET_FLUSH_ALL = 5,
++	VC4_PACKET_START_TILE_BINNING = 6,
++	VC4_PACKET_INCREMENT_SEMAPHORE = 7,
++	VC4_PACKET_WAIT_ON_SEMAPHORE = 8,
++
++	VC4_PACKET_BRANCH = 16,
++	VC4_PACKET_BRANCH_TO_SUB_LIST = 17,
++
++	VC4_PACKET_STORE_MS_TILE_BUFFER = 24,
++	VC4_PACKET_STORE_MS_TILE_BUFFER_AND_EOF = 25,
++	VC4_PACKET_STORE_FULL_RES_TILE_BUFFER = 26,
++	VC4_PACKET_LOAD_FULL_RES_TILE_BUFFER = 27,
++	VC4_PACKET_STORE_TILE_BUFFER_GENERAL = 28,
++	VC4_PACKET_LOAD_TILE_BUFFER_GENERAL = 29,
++
++	VC4_PACKET_GL_INDEXED_PRIMITIVE = 32,
++	VC4_PACKET_GL_ARRAY_PRIMITIVE = 33,
++
++	VC4_PACKET_COMPRESSED_PRIMITIVE = 48,
++	VC4_PACKET_CLIPPED_COMPRESSED_PRIMITIVE = 49,
++
++	VC4_PACKET_PRIMITIVE_LIST_FORMAT = 56,
++
++	VC4_PACKET_GL_SHADER_STATE = 64,
++	VC4_PACKET_NV_SHADER_STATE = 65,
++	VC4_PACKET_VG_SHADER_STATE = 66,
++
++	VC4_PACKET_CONFIGURATION_BITS = 96,
++	VC4_PACKET_FLAT_SHADE_FLAGS = 97,
++	VC4_PACKET_POINT_SIZE = 98,
++	VC4_PACKET_LINE_WIDTH = 99,
++	VC4_PACKET_RHT_X_BOUNDARY = 100,
++	VC4_PACKET_DEPTH_OFFSET = 101,
++	VC4_PACKET_CLIP_WINDOW = 102,
++	VC4_PACKET_VIEWPORT_OFFSET = 103,
++	VC4_PACKET_Z_CLIPPING = 104,
++	VC4_PACKET_CLIPPER_XY_SCALING = 105,
++	VC4_PACKET_CLIPPER_Z_SCALING = 106,
++
++	VC4_PACKET_TILE_BINNING_MODE_CONFIG = 112,
++	VC4_PACKET_TILE_RENDERING_MODE_CONFIG = 113,
++	VC4_PACKET_CLEAR_COLORS = 114,
++	VC4_PACKET_TILE_COORDINATES = 115,
++
++	/* Not an actual hardware packet -- this is what we use to put
++	 * references to GEM bos in the command stream, since we need the u32
++	 * int the actual address packet in order to store the offset from the
++	 * start of the BO.
++	 */
++	VC4_PACKET_GEM_HANDLES = 254,
+ } __attribute__ ((__packed__));
+ 
+ #define VC4_PACKET_HALT_SIZE						1
+@@ -148,10 +148,10 @@ enum vc4_packet {
+  * VC4_PACKET_LOAD_TILE_BUFFER_GENERAL (low bits of the address)
+  */
+ 
+-#define VC4_LOADSTORE_TILE_BUFFER_EOF                  (1 << 3)
+-#define VC4_LOADSTORE_TILE_BUFFER_DISABLE_FULL_VG_MASK (1 << 2)
+-#define VC4_LOADSTORE_TILE_BUFFER_DISABLE_FULL_ZS      (1 << 1)
+-#define VC4_LOADSTORE_TILE_BUFFER_DISABLE_FULL_COLOR   (1 << 0)
++#define VC4_LOADSTORE_TILE_BUFFER_EOF                  BIT(3)
++#define VC4_LOADSTORE_TILE_BUFFER_DISABLE_FULL_VG_MASK BIT(2)
++#define VC4_LOADSTORE_TILE_BUFFER_DISABLE_FULL_ZS      BIT(1)
++#define VC4_LOADSTORE_TILE_BUFFER_DISABLE_FULL_COLOR   BIT(0)
+ 
+ /** @} */
+ 
+@@ -160,10 +160,10 @@ enum vc4_packet {
+  * byte 0-1 of VC4_PACKET_STORE_TILE_BUFFER_GENERAL and
+  * VC4_PACKET_LOAD_TILE_BUFFER_GENERAL
+  */
+-#define VC4_STORE_TILE_BUFFER_DISABLE_VG_MASK_CLEAR (1 << 15)
+-#define VC4_STORE_TILE_BUFFER_DISABLE_ZS_CLEAR     (1 << 14)
+-#define VC4_STORE_TILE_BUFFER_DISABLE_COLOR_CLEAR  (1 << 13)
+-#define VC4_STORE_TILE_BUFFER_DISABLE_SWAP         (1 << 12)
++#define VC4_STORE_TILE_BUFFER_DISABLE_VG_MASK_CLEAR BIT(15)
++#define VC4_STORE_TILE_BUFFER_DISABLE_ZS_CLEAR     BIT(14)
++#define VC4_STORE_TILE_BUFFER_DISABLE_COLOR_CLEAR  BIT(13)
++#define VC4_STORE_TILE_BUFFER_DISABLE_SWAP         BIT(12)
+ 
+ #define VC4_LOADSTORE_TILE_BUFFER_FORMAT_MASK      VC4_MASK(9, 8)
+ #define VC4_LOADSTORE_TILE_BUFFER_FORMAT_SHIFT     8
+@@ -201,28 +201,28 @@ enum vc4_packet {
+ #define VC4_INDEX_BUFFER_U16                       (1 << 4)
+ 
+ /* This flag is only present in NV shader state. */
+-#define VC4_SHADER_FLAG_SHADED_CLIP_COORDS         (1 << 3)
+-#define VC4_SHADER_FLAG_ENABLE_CLIPPING            (1 << 2)
+-#define VC4_SHADER_FLAG_VS_POINT_SIZE              (1 << 1)
+-#define VC4_SHADER_FLAG_FS_SINGLE_THREAD           (1 << 0)
++#define VC4_SHADER_FLAG_SHADED_CLIP_COORDS         BIT(3)
++#define VC4_SHADER_FLAG_ENABLE_CLIPPING            BIT(2)
++#define VC4_SHADER_FLAG_VS_POINT_SIZE              BIT(1)
++#define VC4_SHADER_FLAG_FS_SINGLE_THREAD           BIT(0)
+ 
+ /** @{ byte 2 of config bits. */
+-#define VC4_CONFIG_BITS_EARLY_Z_UPDATE             (1 << 1)
+-#define VC4_CONFIG_BITS_EARLY_Z                    (1 << 0)
++#define VC4_CONFIG_BITS_EARLY_Z_UPDATE             BIT(1)
++#define VC4_CONFIG_BITS_EARLY_Z                    BIT(0)
+ /** @} */
+ 
+ /** @{ byte 1 of config bits. */
+-#define VC4_CONFIG_BITS_Z_UPDATE                   (1 << 7)
++#define VC4_CONFIG_BITS_Z_UPDATE                   BIT(7)
+ /** same values in this 3-bit field as PIPE_FUNC_* */
+ #define VC4_CONFIG_BITS_DEPTH_FUNC_SHIFT           4
+-#define VC4_CONFIG_BITS_COVERAGE_READ_LEAVE        (1 << 3)
++#define VC4_CONFIG_BITS_COVERAGE_READ_LEAVE        BIT(3)
+ 
+ #define VC4_CONFIG_BITS_COVERAGE_UPDATE_NONZERO    (0 << 1)
+ #define VC4_CONFIG_BITS_COVERAGE_UPDATE_ODD        (1 << 1)
+ #define VC4_CONFIG_BITS_COVERAGE_UPDATE_OR         (2 << 1)
+ #define VC4_CONFIG_BITS_COVERAGE_UPDATE_ZERO       (3 << 1)
+ 
+-#define VC4_CONFIG_BITS_COVERAGE_PIPE_SELECT       (1 << 0)
++#define VC4_CONFIG_BITS_COVERAGE_PIPE_SELECT       BIT(0)
+ /** @} */
+ 
+ /** @{ byte 0 of config bits. */
+@@ -230,15 +230,15 @@ enum vc4_packet {
+ #define VC4_CONFIG_BITS_RASTERIZER_OVERSAMPLE_4X   (1 << 6)
+ #define VC4_CONFIG_BITS_RASTERIZER_OVERSAMPLE_16X  (2 << 6)
+ 
+-#define VC4_CONFIG_BITS_AA_POINTS_AND_LINES        (1 << 4)
+-#define VC4_CONFIG_BITS_ENABLE_DEPTH_OFFSET        (1 << 3)
+-#define VC4_CONFIG_BITS_CW_PRIMITIVES              (1 << 2)
+-#define VC4_CONFIG_BITS_ENABLE_PRIM_BACK           (1 << 1)
+-#define VC4_CONFIG_BITS_ENABLE_PRIM_FRONT          (1 << 0)
++#define VC4_CONFIG_BITS_AA_POINTS_AND_LINES        BIT(4)
++#define VC4_CONFIG_BITS_ENABLE_DEPTH_OFFSET        BIT(3)
++#define VC4_CONFIG_BITS_CW_PRIMITIVES              BIT(2)
++#define VC4_CONFIG_BITS_ENABLE_PRIM_BACK           BIT(1)
++#define VC4_CONFIG_BITS_ENABLE_PRIM_FRONT          BIT(0)
+ /** @} */
+ 
+ /** @{ bits in the last u8 of VC4_PACKET_TILE_BINNING_MODE_CONFIG */
+-#define VC4_BIN_CONFIG_DB_NON_MS                   (1 << 7)
++#define VC4_BIN_CONFIG_DB_NON_MS                   BIT(7)
+ 
+ #define VC4_BIN_CONFIG_ALLOC_BLOCK_SIZE_MASK       VC4_MASK(6, 5)
+ #define VC4_BIN_CONFIG_ALLOC_BLOCK_SIZE_SHIFT      5
+@@ -254,17 +254,17 @@ enum vc4_packet {
+ #define VC4_BIN_CONFIG_ALLOC_INIT_BLOCK_SIZE_128   2
+ #define VC4_BIN_CONFIG_ALLOC_INIT_BLOCK_SIZE_256   3
+ 
+-#define VC4_BIN_CONFIG_AUTO_INIT_TSDA              (1 << 2)
+-#define VC4_BIN_CONFIG_TILE_BUFFER_64BIT           (1 << 1)
+-#define VC4_BIN_CONFIG_MS_MODE_4X                  (1 << 0)
++#define VC4_BIN_CONFIG_AUTO_INIT_TSDA              BIT(2)
++#define VC4_BIN_CONFIG_TILE_BUFFER_64BIT           BIT(1)
++#define VC4_BIN_CONFIG_MS_MODE_4X                  BIT(0)
+ /** @} */
+ 
+ /** @{ bits in the last u16 of VC4_PACKET_TILE_RENDERING_MODE_CONFIG */
+-#define VC4_RENDER_CONFIG_DB_NON_MS                (1 << 12)
+-#define VC4_RENDER_CONFIG_EARLY_Z_COVERAGE_DISABLE (1 << 11)
+-#define VC4_RENDER_CONFIG_EARLY_Z_DIRECTION_G      (1 << 10)
+-#define VC4_RENDER_CONFIG_COVERAGE_MODE            (1 << 9)
+-#define VC4_RENDER_CONFIG_ENABLE_VG_MASK           (1 << 8)
++#define VC4_RENDER_CONFIG_DB_NON_MS                BIT(12)
++#define VC4_RENDER_CONFIG_EARLY_Z_COVERAGE_DISABLE BIT(11)
++#define VC4_RENDER_CONFIG_EARLY_Z_DIRECTION_G      BIT(10)
++#define VC4_RENDER_CONFIG_COVERAGE_MODE            BIT(9)
++#define VC4_RENDER_CONFIG_ENABLE_VG_MASK           BIT(8)
+ 
+ /** The values of the field are VC4_TILING_FORMAT_* */
+ #define VC4_RENDER_CONFIG_MEMORY_FORMAT_MASK       VC4_MASK(7, 6)
+@@ -280,8 +280,8 @@ enum vc4_packet {
+ #define VC4_RENDER_CONFIG_FORMAT_RGBA8888          1
+ #define VC4_RENDER_CONFIG_FORMAT_BGR565            2
+ 
+-#define VC4_RENDER_CONFIG_TILE_BUFFER_64BIT        (1 << 1)
+-#define VC4_RENDER_CONFIG_MS_MODE_4X               (1 << 0)
++#define VC4_RENDER_CONFIG_TILE_BUFFER_64BIT        BIT(1)
++#define VC4_RENDER_CONFIG_MS_MODE_4X               BIT(0)
+ 
+ #define VC4_PRIMITIVE_LIST_FORMAT_16_INDEX         (1 << 4)
+ #define VC4_PRIMITIVE_LIST_FORMAT_32_XY            (3 << 4)
+@@ -291,24 +291,24 @@ enum vc4_packet {
+ #define VC4_PRIMITIVE_LIST_FORMAT_TYPE_RHT         (3 << 0)
+ 
+ enum vc4_texture_data_type {
+-        VC4_TEXTURE_TYPE_RGBA8888 = 0,
+-        VC4_TEXTURE_TYPE_RGBX8888 = 1,
+-        VC4_TEXTURE_TYPE_RGBA4444 = 2,
+-        VC4_TEXTURE_TYPE_RGBA5551 = 3,
+-        VC4_TEXTURE_TYPE_RGB565 = 4,
+-        VC4_TEXTURE_TYPE_LUMINANCE = 5,
+-        VC4_TEXTURE_TYPE_ALPHA = 6,
+-        VC4_TEXTURE_TYPE_LUMALPHA = 7,
+-        VC4_TEXTURE_TYPE_ETC1 = 8,
+-        VC4_TEXTURE_TYPE_S16F = 9,
+-        VC4_TEXTURE_TYPE_S8 = 10,
+-        VC4_TEXTURE_TYPE_S16 = 11,
+-        VC4_TEXTURE_TYPE_BW1 = 12,
+-        VC4_TEXTURE_TYPE_A4 = 13,
+-        VC4_TEXTURE_TYPE_A1 = 14,
+-        VC4_TEXTURE_TYPE_RGBA64 = 15,
+-        VC4_TEXTURE_TYPE_RGBA32R = 16,
+-        VC4_TEXTURE_TYPE_YUV422R = 17,
++	VC4_TEXTURE_TYPE_RGBA8888 = 0,
++	VC4_TEXTURE_TYPE_RGBX8888 = 1,
++	VC4_TEXTURE_TYPE_RGBA4444 = 2,
++	VC4_TEXTURE_TYPE_RGBA5551 = 3,
++	VC4_TEXTURE_TYPE_RGB565 = 4,
++	VC4_TEXTURE_TYPE_LUMINANCE = 5,
++	VC4_TEXTURE_TYPE_ALPHA = 6,
++	VC4_TEXTURE_TYPE_LUMALPHA = 7,
++	VC4_TEXTURE_TYPE_ETC1 = 8,
++	VC4_TEXTURE_TYPE_S16F = 9,
++	VC4_TEXTURE_TYPE_S8 = 10,
++	VC4_TEXTURE_TYPE_S16 = 11,
++	VC4_TEXTURE_TYPE_BW1 = 12,
++	VC4_TEXTURE_TYPE_A4 = 13,
++	VC4_TEXTURE_TYPE_A1 = 14,
++	VC4_TEXTURE_TYPE_RGBA64 = 15,
++	VC4_TEXTURE_TYPE_RGBA32R = 16,
++	VC4_TEXTURE_TYPE_YUV422R = 17,
+ };
+ 
+ #define VC4_TEX_P0_OFFSET_MASK                     VC4_MASK(31, 12)
+--- a/drivers/gpu/drm/vc4/vc4_qpu_defines.h
++++ b/drivers/gpu/drm/vc4/vc4_qpu_defines.h
+@@ -25,194 +25,190 @@
+ #define VC4_QPU_DEFINES_H
+ 
+ enum qpu_op_add {
+-        QPU_A_NOP,
+-        QPU_A_FADD,
+-        QPU_A_FSUB,
+-        QPU_A_FMIN,
+-        QPU_A_FMAX,
+-        QPU_A_FMINABS,
+-        QPU_A_FMAXABS,
+-        QPU_A_FTOI,
+-        QPU_A_ITOF,
+-        QPU_A_ADD = 12,
+-        QPU_A_SUB,
+-        QPU_A_SHR,
+-        QPU_A_ASR,
+-        QPU_A_ROR,
+-        QPU_A_SHL,
+-        QPU_A_MIN,
+-        QPU_A_MAX,
+-        QPU_A_AND,
+-        QPU_A_OR,
+-        QPU_A_XOR,
+-        QPU_A_NOT,
+-        QPU_A_CLZ,
+-        QPU_A_V8ADDS = 30,
+-        QPU_A_V8SUBS = 31,
++	QPU_A_NOP,
++	QPU_A_FADD,
++	QPU_A_FSUB,
++	QPU_A_FMIN,
++	QPU_A_FMAX,
++	QPU_A_FMINABS,
++	QPU_A_FMAXABS,
++	QPU_A_FTOI,
++	QPU_A_ITOF,
++	QPU_A_ADD = 12,
++	QPU_A_SUB,
++	QPU_A_SHR,
++	QPU_A_ASR,
++	QPU_A_ROR,
++	QPU_A_SHL,
++	QPU_A_MIN,
++	QPU_A_MAX,
++	QPU_A_AND,
++	QPU_A_OR,
++	QPU_A_XOR,
++	QPU_A_NOT,
++	QPU_A_CLZ,
++	QPU_A_V8ADDS = 30,
++	QPU_A_V8SUBS = 31,
+ };
+ 
+ enum qpu_op_mul {
+-        QPU_M_NOP,
+-        QPU_M_FMUL,
+-        QPU_M_MUL24,
+-        QPU_M_V8MULD,
+-        QPU_M_V8MIN,
+-        QPU_M_V8MAX,
+-        QPU_M_V8ADDS,
+-        QPU_M_V8SUBS,
++	QPU_M_NOP,
++	QPU_M_FMUL,
++	QPU_M_MUL24,
++	QPU_M_V8MULD,
++	QPU_M_V8MIN,
++	QPU_M_V8MAX,
++	QPU_M_V8ADDS,
++	QPU_M_V8SUBS,
+ };
+ 
+ enum qpu_raddr {
+-        QPU_R_FRAG_PAYLOAD_ZW = 15, /* W for A file, Z for B file */
+-        /* 0-31 are the plain regfile a or b fields */
+-        QPU_R_UNIF = 32,
+-        QPU_R_VARY = 35,
+-        QPU_R_ELEM_QPU = 38,
+-        QPU_R_NOP,
+-        QPU_R_XY_PIXEL_COORD = 41,
+-        QPU_R_MS_REV_FLAGS = 41,
+-        QPU_R_VPM = 48,
+-        QPU_R_VPM_LD_BUSY,
+-        QPU_R_VPM_LD_WAIT,
+-        QPU_R_MUTEX_ACQUIRE,
++	QPU_R_FRAG_PAYLOAD_ZW = 15, /* W for A file, Z for B file */
++	/* 0-31 are the plain regfile a or b fields */
++	QPU_R_UNIF = 32,
++	QPU_R_VARY = 35,
++	QPU_R_ELEM_QPU = 38,
++	QPU_R_NOP,
++	QPU_R_XY_PIXEL_COORD = 41,
++	QPU_R_MS_REV_FLAGS = 41,
++	QPU_R_VPM = 48,
++	QPU_R_VPM_LD_BUSY,
++	QPU_R_VPM_LD_WAIT,
++	QPU_R_MUTEX_ACQUIRE,
+ };
+ 
+ enum qpu_waddr {
+-        /* 0-31 are the plain regfile a or b fields */
+-        QPU_W_ACC0 = 32, /* aka r0 */
+-        QPU_W_ACC1,
+-        QPU_W_ACC2,
+-        QPU_W_ACC3,
+-        QPU_W_TMU_NOSWAP,
+-        QPU_W_ACC5,
+-        QPU_W_HOST_INT,
+-        QPU_W_NOP,
+-        QPU_W_UNIFORMS_ADDRESS,
+-        QPU_W_QUAD_XY, /* X for regfile a, Y for regfile b */
+-        QPU_W_MS_FLAGS = 42,
+-        QPU_W_REV_FLAG = 42,
+-        QPU_W_TLB_STENCIL_SETUP = 43,
+-        QPU_W_TLB_Z,
+-        QPU_W_TLB_COLOR_MS,
+-        QPU_W_TLB_COLOR_ALL,
+-        QPU_W_TLB_ALPHA_MASK,
+-        QPU_W_VPM,
+-        QPU_W_VPMVCD_SETUP, /* LD for regfile a, ST for regfile b */
+-        QPU_W_VPM_ADDR, /* LD for regfile a, ST for regfile b */
+-        QPU_W_MUTEX_RELEASE,
+-        QPU_W_SFU_RECIP,
+-        QPU_W_SFU_RECIPSQRT,
+-        QPU_W_SFU_EXP,
+-        QPU_W_SFU_LOG,
+-        QPU_W_TMU0_S,
+-        QPU_W_TMU0_T,
+-        QPU_W_TMU0_R,
+-        QPU_W_TMU0_B,
+-        QPU_W_TMU1_S,
+-        QPU_W_TMU1_T,
+-        QPU_W_TMU1_R,
+-        QPU_W_TMU1_B,
++	/* 0-31 are the plain regfile a or b fields */
++	QPU_W_ACC0 = 32, /* aka r0 */
++	QPU_W_ACC1,
++	QPU_W_ACC2,
++	QPU_W_ACC3,
++	QPU_W_TMU_NOSWAP,
++	QPU_W_ACC5,
++	QPU_W_HOST_INT,
++	QPU_W_NOP,
++	QPU_W_UNIFORMS_ADDRESS,
++	QPU_W_QUAD_XY, /* X for regfile a, Y for regfile b */
++	QPU_W_MS_FLAGS = 42,
++	QPU_W_REV_FLAG = 42,
++	QPU_W_TLB_STENCIL_SETUP = 43,
++	QPU_W_TLB_Z,
++	QPU_W_TLB_COLOR_MS,
++	QPU_W_TLB_COLOR_ALL,
++	QPU_W_TLB_ALPHA_MASK,
++	QPU_W_VPM,
++	QPU_W_VPMVCD_SETUP, /* LD for regfile a, ST for regfile b */
++	QPU_W_VPM_ADDR, /* LD for regfile a, ST for regfile b */
++	QPU_W_MUTEX_RELEASE,
++	QPU_W_SFU_RECIP,
++	QPU_W_SFU_RECIPSQRT,
++	QPU_W_SFU_EXP,
++	QPU_W_SFU_LOG,
++	QPU_W_TMU0_S,
++	QPU_W_TMU0_T,
++	QPU_W_TMU0_R,
++	QPU_W_TMU0_B,
++	QPU_W_TMU1_S,
++	QPU_W_TMU1_T,
++	QPU_W_TMU1_R,
++	QPU_W_TMU1_B,
+ };
+ 
+ enum qpu_sig_bits {
+-        QPU_SIG_SW_BREAKPOINT,
+-        QPU_SIG_NONE,
+-        QPU_SIG_THREAD_SWITCH,
+-        QPU_SIG_PROG_END,
+-        QPU_SIG_WAIT_FOR_SCOREBOARD,
+-        QPU_SIG_SCOREBOARD_UNLOCK,
+-        QPU_SIG_LAST_THREAD_SWITCH,
+-        QPU_SIG_COVERAGE_LOAD,
+-        QPU_SIG_COLOR_LOAD,
+-        QPU_SIG_COLOR_LOAD_END,
+-        QPU_SIG_LOAD_TMU0,
+-        QPU_SIG_LOAD_TMU1,
+-        QPU_SIG_ALPHA_MASK_LOAD,
+-        QPU_SIG_SMALL_IMM,
+-        QPU_SIG_LOAD_IMM,
+-        QPU_SIG_BRANCH
++	QPU_SIG_SW_BREAKPOINT,
++	QPU_SIG_NONE,
++	QPU_SIG_THREAD_SWITCH,
++	QPU_SIG_PROG_END,
++	QPU_SIG_WAIT_FOR_SCOREBOARD,
++	QPU_SIG_SCOREBOARD_UNLOCK,
++	QPU_SIG_LAST_THREAD_SWITCH,
++	QPU_SIG_COVERAGE_LOAD,
++	QPU_SIG_COLOR_LOAD,
++	QPU_SIG_COLOR_LOAD_END,
++	QPU_SIG_LOAD_TMU0,
++	QPU_SIG_LOAD_TMU1,
++	QPU_SIG_ALPHA_MASK_LOAD,
++	QPU_SIG_SMALL_IMM,
++	QPU_SIG_LOAD_IMM,
++	QPU_SIG_BRANCH
+ };
+ 
+ enum qpu_mux {
+-        /* hardware mux values */
+-        QPU_MUX_R0,
+-        QPU_MUX_R1,
+-        QPU_MUX_R2,
+-        QPU_MUX_R3,
+-        QPU_MUX_R4,
+-        QPU_MUX_R5,
+-        QPU_MUX_A,
+-        QPU_MUX_B,
++	/* hardware mux values */
++	QPU_MUX_R0,
++	QPU_MUX_R1,
++	QPU_MUX_R2,
++	QPU_MUX_R3,
++	QPU_MUX_R4,
++	QPU_MUX_R5,
++	QPU_MUX_A,
++	QPU_MUX_B,
+ 
+-        /* non-hardware mux values */
+-        QPU_MUX_IMM,
++	/* non-hardware mux values */
++	QPU_MUX_IMM,
+ };
+ 
+ enum qpu_cond {
+-        QPU_COND_NEVER,
+-        QPU_COND_ALWAYS,
+-        QPU_COND_ZS,
+-        QPU_COND_ZC,
+-        QPU_COND_NS,
+-        QPU_COND_NC,
+-        QPU_COND_CS,
+-        QPU_COND_CC,
++	QPU_COND_NEVER,
++	QPU_COND_ALWAYS,
++	QPU_COND_ZS,
++	QPU_COND_ZC,
++	QPU_COND_NS,
++	QPU_COND_NC,
++	QPU_COND_CS,
++	QPU_COND_CC,
+ };
+ 
+ enum qpu_pack_mul {
+-        QPU_PACK_MUL_NOP,
+-        QPU_PACK_MUL_8888 = 3, /* replicated to each 8 bits of the 32-bit dst. */
+-        QPU_PACK_MUL_8A,
+-        QPU_PACK_MUL_8B,
+-        QPU_PACK_MUL_8C,
+-        QPU_PACK_MUL_8D,
++	QPU_PACK_MUL_NOP,
++	/* replicated to each 8 bits of the 32-bit dst. */
++	QPU_PACK_MUL_8888 = 3,
++	QPU_PACK_MUL_8A,
++	QPU_PACK_MUL_8B,
++	QPU_PACK_MUL_8C,
++	QPU_PACK_MUL_8D,
+ };
+ 
+ enum qpu_pack_a {
+-        QPU_PACK_A_NOP,
+-        /* convert to 16 bit float if float input, or to int16. */
+-        QPU_PACK_A_16A,
+-        QPU_PACK_A_16B,
+-        /* replicated to each 8 bits of the 32-bit dst. */
+-        QPU_PACK_A_8888,
+-        /* Convert to 8-bit unsigned int. */
+-        QPU_PACK_A_8A,
+-        QPU_PACK_A_8B,
+-        QPU_PACK_A_8C,
+-        QPU_PACK_A_8D,
+-
+-        /* Saturating variants of the previous instructions. */
+-        QPU_PACK_A_32_SAT, /* int-only */
+-        QPU_PACK_A_16A_SAT, /* int or float */
+-        QPU_PACK_A_16B_SAT,
+-        QPU_PACK_A_8888_SAT,
+-        QPU_PACK_A_8A_SAT,
+-        QPU_PACK_A_8B_SAT,
+-        QPU_PACK_A_8C_SAT,
+-        QPU_PACK_A_8D_SAT,
++	QPU_PACK_A_NOP,
++	/* convert to 16 bit float if float input, or to int16. */
++	QPU_PACK_A_16A,
++	QPU_PACK_A_16B,
++	/* replicated to each 8 bits of the 32-bit dst. */
++	QPU_PACK_A_8888,
++	/* Convert to 8-bit unsigned int. */
++	QPU_PACK_A_8A,
++	QPU_PACK_A_8B,
++	QPU_PACK_A_8C,
++	QPU_PACK_A_8D,
++
++	/* Saturating variants of the previous instructions. */
++	QPU_PACK_A_32_SAT, /* int-only */
++	QPU_PACK_A_16A_SAT, /* int or float */
++	QPU_PACK_A_16B_SAT,
++	QPU_PACK_A_8888_SAT,
++	QPU_PACK_A_8A_SAT,
++	QPU_PACK_A_8B_SAT,
++	QPU_PACK_A_8C_SAT,
++	QPU_PACK_A_8D_SAT,
+ };
+ 
+ enum qpu_unpack_r4 {
+-        QPU_UNPACK_R4_NOP,
+-        QPU_UNPACK_R4_F16A_TO_F32,
+-        QPU_UNPACK_R4_F16B_TO_F32,
+-        QPU_UNPACK_R4_8D_REP,
+-        QPU_UNPACK_R4_8A,
+-        QPU_UNPACK_R4_8B,
+-        QPU_UNPACK_R4_8C,
+-        QPU_UNPACK_R4_8D,
+-};
+-
+-#define QPU_MASK(high, low) ((((uint64_t)1<<((high)-(low)+1))-1)<<(low))
+-/* Using the GNU statement expression extension */
+-#define QPU_SET_FIELD(value, field)                                       \
+-        ({                                                                \
+-                uint64_t fieldval = (uint64_t)(value) << field ## _SHIFT; \
+-                assert((fieldval & ~ field ## _MASK) == 0);               \
+-                fieldval & field ## _MASK;                                \
+-         })
++	QPU_UNPACK_R4_NOP,
++	QPU_UNPACK_R4_F16A_TO_F32,
++	QPU_UNPACK_R4_F16B_TO_F32,
++	QPU_UNPACK_R4_8D_REP,
++	QPU_UNPACK_R4_8A,
++	QPU_UNPACK_R4_8B,
++	QPU_UNPACK_R4_8C,
++	QPU_UNPACK_R4_8D,
++};
++
++#define QPU_MASK(high, low) \
++	((((uint64_t)1 << ((high) - (low) + 1)) - 1) << (low))
+ 
+-#define QPU_GET_FIELD(word, field) ((uint32_t)(((word)  & field ## _MASK) >> field ## _SHIFT))
++#define QPU_GET_FIELD(word, field) \
++	((uint32_t)(((word)  & field ## _MASK) >> field ## _SHIFT))
+ 
+ #define QPU_SIG_SHIFT                   60
+ #define QPU_SIG_MASK                    QPU_MASK(63, 60)
+--- a/drivers/gpu/drm/vc4/vc4_render_cl.c
++++ b/drivers/gpu/drm/vc4/vc4_render_cl.c
+@@ -63,7 +63,6 @@ static inline void rcl_u32(struct vc4_rc
+ 	setup->next_offset += 4;
+ }
+ 
+-
+ /*
+  * Emits a no-op STORE_TILE_BUFFER_GENERAL.
+  *
+@@ -217,7 +216,7 @@ static int vc4_create_rcl_bo(struct drm_
+ 	}
+ 	size += xtiles * ytiles * loop_body_size;
+ 
+-	setup->rcl = &vc4_bo_create(dev, size)->base;
++	setup->rcl = &vc4_bo_create(dev, size, true)->base;
+ 	if (!setup->rcl)
+ 		return -ENOMEM;
+ 	list_add_tail(&to_vc4_bo(&setup->rcl->base)->unref_head,
+@@ -256,6 +255,7 @@ static int vc4_create_rcl_bo(struct drm_
+ 		for (x = min_x_tile; x <= max_x_tile; x++) {
+ 			bool first = (x == min_x_tile && y == min_y_tile);
+ 			bool last = (x == max_x_tile && y == max_y_tile);
++
+ 			emit_tile(exec, setup, x, y, first, last);
+ 		}
+ 	}
+--- a/drivers/gpu/drm/vc4/vc4_v3d.c
++++ b/drivers/gpu/drm/vc4/vc4_v3d.c
+@@ -125,7 +125,7 @@ int vc4_v3d_debugfs_regs(struct seq_file
+ 
+ int vc4_v3d_debugfs_ident(struct seq_file *m, void *unused)
+ {
+-	struct drm_info_node *node = (struct drm_info_node *) m->private;
++	struct drm_info_node *node = (struct drm_info_node *)m->private;
+ 	struct drm_device *dev = node->minor->dev;
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	uint32_t ident1 = V3D_READ(V3D_IDENT1);
+@@ -133,11 +133,13 @@ int vc4_v3d_debugfs_ident(struct seq_fil
+ 	uint32_t tups = VC4_GET_FIELD(ident1, V3D_IDENT1_TUPS);
+ 	uint32_t qups = VC4_GET_FIELD(ident1, V3D_IDENT1_QUPS);
+ 
+-	seq_printf(m, "Revision:   %d\n", VC4_GET_FIELD(ident1, V3D_IDENT1_REV));
++	seq_printf(m, "Revision:   %d\n",
++		   VC4_GET_FIELD(ident1, V3D_IDENT1_REV));
+ 	seq_printf(m, "Slices:     %d\n", nslc);
+ 	seq_printf(m, "TMUs:       %d\n", nslc * tups);
+ 	seq_printf(m, "QPUs:       %d\n", nslc * qups);
+-	seq_printf(m, "Semaphores: %d\n", VC4_GET_FIELD(ident1, V3D_IDENT1_NSEM));
++	seq_printf(m, "Semaphores: %d\n",
++		   VC4_GET_FIELD(ident1, V3D_IDENT1_NSEM));
+ 
+ 	return 0;
+ }
+@@ -218,7 +220,7 @@ static int vc4_v3d_bind(struct device *d
+ }
+ 
+ static void vc4_v3d_unbind(struct device *dev, struct device *master,
+-			    void *data)
++			   void *data)
+ {
+ 	struct drm_device *drm = dev_get_drvdata(master);
+ 	struct vc4_dev *vc4 = to_vc4_dev(drm);
+--- a/drivers/gpu/drm/vc4/vc4_validate.c
++++ b/drivers/gpu/drm/vc4/vc4_validate.c
+@@ -48,7 +48,6 @@
+ 	void *validated,				\
+ 	void *untrusted
+ 
+-
+ /** Return the width in pixels of a 64-byte microtile. */
+ static uint32_t
+ utile_width(int cpp)
+@@ -192,7 +191,7 @@ vc4_check_tex_size(struct vc4_exec_info
+ 
+ 	if (size + offset < size ||
+ 	    size + offset > fbo->base.size) {
+-		DRM_ERROR("Overflow in %dx%d (%dx%d) fbo size (%d + %d > %d)\n",
++		DRM_ERROR("Overflow in %dx%d (%dx%d) fbo size (%d + %d > %zd)\n",
+ 			  width, height,
+ 			  aligned_width, aligned_height,
+ 			  size, offset, fbo->base.size);
+@@ -278,7 +277,7 @@ validate_indexed_prim_list(VALIDATE_ARGS
+ 
+ 	if (offset > ib->base.size ||
+ 	    (ib->base.size - offset) / index_size < length) {
+-		DRM_ERROR("IB access overflow (%d + %d*%d > %d)\n",
++		DRM_ERROR("IB access overflow (%d + %d*%d > %zd)\n",
+ 			  offset, length, index_size, ib->base.size);
+ 		return -EINVAL;
+ 	}
+@@ -377,6 +376,7 @@ static int
+ validate_tile_binning_config(VALIDATE_ARGS)
+ {
+ 	struct drm_device *dev = exec->exec_bo->base.dev;
++	struct vc4_bo *tile_bo;
+ 	uint8_t flags;
+ 	uint32_t tile_state_size, tile_alloc_size;
+ 	uint32_t tile_count;
+@@ -438,12 +438,12 @@ validate_tile_binning_config(VALIDATE_AR
+ 	 */
+ 	tile_alloc_size += 1024 * 1024;
+ 
+-	exec->tile_bo = &vc4_bo_create(dev, exec->tile_alloc_offset +
+-				       tile_alloc_size)->base;
++	tile_bo = vc4_bo_create(dev, exec->tile_alloc_offset + tile_alloc_size,
++				true);
++	exec->tile_bo = &tile_bo->base;
+ 	if (!exec->tile_bo)
+ 		return -ENOMEM;
+-	list_add_tail(&to_vc4_bo(&exec->tile_bo->base)->unref_head,
+-		     &exec->unref_list);
++	list_add_tail(&tile_bo->unref_head, &exec->unref_list);
+ 
+ 	/* tile alloc address. */
+ 	*(uint32_t *)(validated + 0) = (exec->tile_bo->paddr +
+@@ -463,8 +463,8 @@ validate_gem_handles(VALIDATE_ARGS)
+ 	return 0;
+ }
+ 
+-#define VC4_DEFINE_PACKET(packet, name, func) \
+-	[packet] = { packet ## _SIZE, name, func }
++#define VC4_DEFINE_PACKET(packet, func) \
++	[packet] = { packet ## _SIZE, #packet, func }
+ 
+ static const struct cmd_info {
+ 	uint16_t len;
+@@ -472,42 +472,43 @@ static const struct cmd_info {
+ 	int (*func)(struct vc4_exec_info *exec, void *validated,
+ 		    void *untrusted);
+ } cmd_info[] = {
+-	VC4_DEFINE_PACKET(VC4_PACKET_HALT, "halt", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_NOP, "nop", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_FLUSH, "flush", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_FLUSH_ALL, "flush all state", validate_flush_all),
+-	VC4_DEFINE_PACKET(VC4_PACKET_START_TILE_BINNING, "start tile binning", validate_start_tile_binning),
+-	VC4_DEFINE_PACKET(VC4_PACKET_INCREMENT_SEMAPHORE, "increment semaphore", validate_increment_semaphore),
+-
+-	VC4_DEFINE_PACKET(VC4_PACKET_GL_INDEXED_PRIMITIVE, "Indexed Primitive List", validate_indexed_prim_list),
+-
+-	VC4_DEFINE_PACKET(VC4_PACKET_GL_ARRAY_PRIMITIVE, "Vertex Array Primitives", validate_gl_array_primitive),
+-
+-	/* This is only used by clipped primitives (packets 48 and 49), which
+-	 * we don't support parsing yet.
+-	 */
+-	VC4_DEFINE_PACKET(VC4_PACKET_PRIMITIVE_LIST_FORMAT, "primitive list format", NULL),
+-
+-	VC4_DEFINE_PACKET(VC4_PACKET_GL_SHADER_STATE, "GL Shader State", validate_gl_shader_state),
+-	VC4_DEFINE_PACKET(VC4_PACKET_NV_SHADER_STATE, "NV Shader State", validate_nv_shader_state),
+-
+-	VC4_DEFINE_PACKET(VC4_PACKET_CONFIGURATION_BITS, "configuration bits", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_FLAT_SHADE_FLAGS, "flat shade flags", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_POINT_SIZE, "point size", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_LINE_WIDTH, "line width", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_RHT_X_BOUNDARY, "RHT X boundary", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_DEPTH_OFFSET, "Depth Offset", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_CLIP_WINDOW, "Clip Window", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_VIEWPORT_OFFSET, "Viewport Offset", NULL),
+-	VC4_DEFINE_PACKET(VC4_PACKET_CLIPPER_XY_SCALING, "Clipper XY Scaling", NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_HALT, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_NOP, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_FLUSH, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_FLUSH_ALL, validate_flush_all),
++	VC4_DEFINE_PACKET(VC4_PACKET_START_TILE_BINNING,
++			  validate_start_tile_binning),
++	VC4_DEFINE_PACKET(VC4_PACKET_INCREMENT_SEMAPHORE,
++			  validate_increment_semaphore),
++
++	VC4_DEFINE_PACKET(VC4_PACKET_GL_INDEXED_PRIMITIVE,
++			  validate_indexed_prim_list),
++	VC4_DEFINE_PACKET(VC4_PACKET_GL_ARRAY_PRIMITIVE,
++			  validate_gl_array_primitive),
++
++	VC4_DEFINE_PACKET(VC4_PACKET_PRIMITIVE_LIST_FORMAT, NULL),
++
++	VC4_DEFINE_PACKET(VC4_PACKET_GL_SHADER_STATE, validate_gl_shader_state),
++	VC4_DEFINE_PACKET(VC4_PACKET_NV_SHADER_STATE, validate_nv_shader_state),
++
++	VC4_DEFINE_PACKET(VC4_PACKET_CONFIGURATION_BITS, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_FLAT_SHADE_FLAGS, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_POINT_SIZE, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_LINE_WIDTH, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_RHT_X_BOUNDARY, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_DEPTH_OFFSET, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_CLIP_WINDOW, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_VIEWPORT_OFFSET, NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_CLIPPER_XY_SCALING, NULL),
+ 	/* Note: The docs say this was also 105, but it was 106 in the
+ 	 * initial userland code drop.
+ 	 */
+-	VC4_DEFINE_PACKET(VC4_PACKET_CLIPPER_Z_SCALING, "Clipper Z Scale and Offset", NULL),
++	VC4_DEFINE_PACKET(VC4_PACKET_CLIPPER_Z_SCALING, NULL),
+ 
+-	VC4_DEFINE_PACKET(VC4_PACKET_TILE_BINNING_MODE_CONFIG, "tile binning configuration", validate_tile_binning_config),
++	VC4_DEFINE_PACKET(VC4_PACKET_TILE_BINNING_MODE_CONFIG,
++			  validate_tile_binning_config),
+ 
+-	VC4_DEFINE_PACKET(VC4_PACKET_GEM_HANDLES, "GEM handles", validate_gem_handles),
++	VC4_DEFINE_PACKET(VC4_PACKET_GEM_HANDLES, validate_gem_handles),
+ };
+ 
+ int
+@@ -526,7 +527,7 @@ vc4_validate_bin_cl(struct drm_device *d
+ 		u8 cmd = *(uint8_t *)src_pkt;
+ 		const struct cmd_info *info;
+ 
+-		if (cmd > ARRAY_SIZE(cmd_info)) {
++		if (cmd >= ARRAY_SIZE(cmd_info)) {
+ 			DRM_ERROR("0x%08x: packet %d out of bounds\n",
+ 				  src_offset, cmd);
+ 			return -EINVAL;
+@@ -539,11 +540,6 @@ vc4_validate_bin_cl(struct drm_device *d
+ 			return -EINVAL;
+ 		}
+ 
+-#if 0
+-		DRM_INFO("0x%08x: packet %d (%s) size %d processing...\n",
+-			 src_offset, cmd, info->name, info->len);
+-#endif
+-
+ 		if (src_offset + info->len > len) {
+ 			DRM_ERROR("0x%08x: packet %d (%s) length 0x%08x "
+ 				  "exceeds bounds (0x%08x)\n",
+@@ -558,8 +554,7 @@ vc4_validate_bin_cl(struct drm_device *d
+ 		if (info->func && info->func(exec,
+ 					     dst_pkt + 1,
+ 					     src_pkt + 1)) {
+-			DRM_ERROR("0x%08x: packet %d (%s) failed to "
+-				  "validate\n",
++			DRM_ERROR("0x%08x: packet %d (%s) failed to validate\n",
+ 				  src_offset, cmd, info->name);
+ 			return -EINVAL;
+ 		}
+@@ -618,12 +613,14 @@ reloc_tex(struct vc4_exec_info *exec,
+ 
+ 	if (sample->is_direct) {
+ 		uint32_t remaining_size = tex->base.size - p0;
++
+ 		if (p0 > tex->base.size - 4) {
+ 			DRM_ERROR("UBO offset greater than UBO size\n");
+ 			goto fail;
+ 		}
+ 		if (p1 > remaining_size - 4) {
+-			DRM_ERROR("UBO clamp would allow reads outside of UBO\n");
++			DRM_ERROR("UBO clamp would allow reads "
++				  "outside of UBO\n");
+ 			goto fail;
+ 		}
+ 		*validated_p0 = tex->paddr + p0;
+@@ -786,7 +783,7 @@ validate_shader_rec(struct drm_device *d
+ 	struct drm_gem_cma_object *bo[ARRAY_SIZE(gl_relocs) + 8];
+ 	uint32_t nr_attributes = 0, nr_fixed_relocs, nr_relocs, packet_size;
+ 	int i;
+-	struct vc4_validated_shader_info *validated_shader;
++	struct vc4_validated_shader_info *shader;
+ 
+ 	if (state->packet == VC4_PACKET_NV_SHADER_STATE) {
+ 		relocs = nv_relocs;
+@@ -841,12 +838,12 @@ validate_shader_rec(struct drm_device *d
+ 		else
+ 			mode = VC4_MODE_RENDER;
+ 
+-		if (!vc4_use_bo(exec, src_handles[i], mode, &bo[i])) {
++		if (!vc4_use_bo(exec, src_handles[i], mode, &bo[i]))
+ 			return false;
+-		}
+ 	}
+ 
+ 	for (i = 0; i < nr_fixed_relocs; i++) {
++		struct vc4_bo *vc4_bo;
+ 		uint32_t o = relocs[i].offset;
+ 		uint32_t src_offset = *(uint32_t *)(pkt_u + o);
+ 		uint32_t *texture_handles_u;
+@@ -858,34 +855,34 @@ validate_shader_rec(struct drm_device *d
+ 		switch (relocs[i].type) {
+ 		case RELOC_CODE:
+ 			if (src_offset != 0) {
+-				DRM_ERROR("Shaders must be at offset 0 of "
+-					  "the BO.\n");
++				DRM_ERROR("Shaders must be at offset 0 "
++					  "of the BO.\n");
+ 				goto fail;
+ 			}
+ 
+-			validated_shader = to_vc4_bo(&bo[i]->base)->validated_shader;
+-			if (!validated_shader)
++			vc4_bo = to_vc4_bo(&bo[i]->base);
++			shader = vc4_bo->validated_shader;
++			if (!shader)
+ 				goto fail;
+ 
+-			if (validated_shader->uniforms_src_size >
+-			    exec->uniforms_size) {
++			if (shader->uniforms_src_size > exec->uniforms_size) {
+ 				DRM_ERROR("Uniforms src buffer overflow\n");
+ 				goto fail;
+ 			}
+ 
+ 			texture_handles_u = exec->uniforms_u;
+ 			uniform_data_u = (texture_handles_u +
+-					  validated_shader->num_texture_samples);
++					  shader->num_texture_samples);
+ 
+ 			memcpy(exec->uniforms_v, uniform_data_u,
+-			       validated_shader->uniforms_size);
++			       shader->uniforms_size);
+ 
+ 			for (tex = 0;
+-			     tex < validated_shader->num_texture_samples;
++			     tex < shader->num_texture_samples;
+ 			     tex++) {
+ 				if (!reloc_tex(exec,
+ 					       uniform_data_u,
+-					       &validated_shader->texture_samples[tex],
++					       &shader->texture_samples[tex],
+ 					       texture_handles_u[tex])) {
+ 					goto fail;
+ 				}
+@@ -893,9 +890,9 @@ validate_shader_rec(struct drm_device *d
+ 
+ 			*(uint32_t *)(pkt_v + o + 4) = exec->uniforms_p;
+ 
+-			exec->uniforms_u += validated_shader->uniforms_src_size;
+-			exec->uniforms_v += validated_shader->uniforms_size;
+-			exec->uniforms_p += validated_shader->uniforms_size;
++			exec->uniforms_u += shader->uniforms_src_size;
++			exec->uniforms_v += shader->uniforms_size;
++			exec->uniforms_p += shader->uniforms_size;
+ 
+ 			break;
+ 
+@@ -926,7 +923,8 @@ validate_shader_rec(struct drm_device *d
+ 			max_index = ((vbo->base.size - offset - attr_size) /
+ 				     stride);
+ 			if (state->max_index > max_index) {
+-				DRM_ERROR("primitives use index %d out of supplied %d\n",
++				DRM_ERROR("primitives use index %d out of "
++					  "supplied %d\n",
+ 					  state->max_index, max_index);
+ 				return -EINVAL;
+ 			}
+--- a/drivers/gpu/drm/vc4/vc4_validate_shaders.c
++++ b/drivers/gpu/drm/vc4/vc4_validate_shaders.c
+@@ -24,24 +24,16 @@
+ /**
+  * DOC: Shader validator for VC4.
+  *
+- * The VC4 has no IOMMU between it and system memory.  So, a user with access
+- * to execute shaders could escalate privilege by overwriting system memory
+- * (using the VPM write address register in the general-purpose DMA mode) or
+- * reading system memory it shouldn't (reading it as a texture, or uniform
+- * data, or vertex data).
++ * The VC4 has no IOMMU between it and system memory, so a user with
++ * access to execute shaders could escalate privilege by overwriting
++ * system memory (using the VPM write address register in the
++ * general-purpose DMA mode) or reading system memory it shouldn't
++ * (reading it as a texture, or uniform data, or vertex data).
+  *
+- * This walks over a shader starting from some offset within a BO, ensuring
+- * that its accesses are appropriately bounded, and recording how many texture
+- * accesses are made and where so that we can do relocations for them in the
++ * This walks over a shader BO, ensuring that its accesses are
++ * appropriately bounded, and recording how many texture accesses are
++ * made and where so that we can do relocations for them in the
+  * uniform stream.
+- *
+- * The kernel API has shaders stored in user-mapped BOs.  The BOs will be
+- * forcibly unmapped from the process before validation, and any cache of
+- * validated state will be flushed if the mapping is faulted back in.
+- *
+- * Storing the shaders in BOs means that the validation process will be slow
+- * due to uncached reads, but since shaders are long-lived and shader BOs are
+- * never actually modified, this shouldn't be a problem.
+  */
+ 
+ #include "vc4_drv.h"
+@@ -70,7 +62,6 @@ waddr_to_live_reg_index(uint32_t waddr,
+ 		else
+ 			return waddr;
+ 	} else if (waddr <= QPU_W_ACC3) {
+-
+ 		return 64 + waddr - QPU_W_ACC0;
+ 	} else {
+ 		return ~0;
+@@ -85,15 +76,14 @@ raddr_add_a_to_live_reg_index(uint64_t i
+ 	uint32_t raddr_a = QPU_GET_FIELD(inst, QPU_RADDR_A);
+ 	uint32_t raddr_b = QPU_GET_FIELD(inst, QPU_RADDR_B);
+ 
+-	if (add_a == QPU_MUX_A) {
++	if (add_a == QPU_MUX_A)
+ 		return raddr_a;
+-	} else if (add_a == QPU_MUX_B && sig != QPU_SIG_SMALL_IMM) {
++	else if (add_a == QPU_MUX_B && sig != QPU_SIG_SMALL_IMM)
+ 		return 32 + raddr_b;
+-	} else if (add_a <= QPU_MUX_R3) {
++	else if (add_a <= QPU_MUX_R3)
+ 		return 64 + add_a;
+-	} else {
++	else
+ 		return ~0;
+-	}
+ }
+ 
+ static bool
+@@ -111,9 +101,9 @@ is_tmu_write(uint32_t waddr)
+ }
+ 
+ static bool
+-record_validated_texture_sample(struct vc4_validated_shader_info *validated_shader,
+-				struct vc4_shader_validation_state *validation_state,
+-				int tmu)
++record_texture_sample(struct vc4_validated_shader_info *validated_shader,
++		      struct vc4_shader_validation_state *validation_state,
++		      int tmu)
+ {
+ 	uint32_t s = validated_shader->num_texture_samples;
+ 	int i;
+@@ -226,8 +216,8 @@ check_tmu_write(uint64_t inst,
+ 		validated_shader->uniforms_size += 4;
+ 
+ 	if (submit) {
+-		if (!record_validated_texture_sample(validated_shader,
+-						     validation_state, tmu)) {
++		if (!record_texture_sample(validated_shader,
++					   validation_state, tmu)) {
+ 			return false;
+ 		}
+ 
+@@ -238,10 +228,10 @@ check_tmu_write(uint64_t inst,
+ }
+ 
+ static bool
+-check_register_write(uint64_t inst,
+-		     struct vc4_validated_shader_info *validated_shader,
+-		     struct vc4_shader_validation_state *validation_state,
+-		     bool is_mul)
++check_reg_write(uint64_t inst,
++		struct vc4_validated_shader_info *validated_shader,
++		struct vc4_shader_validation_state *validation_state,
++		bool is_mul)
+ {
+ 	uint32_t waddr = (is_mul ?
+ 			  QPU_GET_FIELD(inst, QPU_WADDR_MUL) :
+@@ -297,7 +287,7 @@ check_register_write(uint64_t inst,
+ 		return true;
+ 
+ 	case QPU_W_TLB_STENCIL_SETUP:
+-                return true;
++		return true;
+ 	}
+ 
+ 	return true;
+@@ -360,7 +350,7 @@ track_live_clamps(uint64_t inst,
+ 		}
+ 
+ 		validation_state->live_max_clamp_regs[lri_add] = true;
+-	} if (op_add == QPU_A_MIN) {
++	} else if (op_add == QPU_A_MIN) {
+ 		/* Track live clamps of a value clamped to a minimum of 0 and
+ 		 * a maximum of some uniform's offset.
+ 		 */
+@@ -392,8 +382,10 @@ check_instruction_writes(uint64_t inst,
+ 		return false;
+ 	}
+ 
+-	ok = (check_register_write(inst, validated_shader, validation_state, false) &&
+-	      check_register_write(inst, validated_shader, validation_state, true));
++	ok = (check_reg_write(inst, validated_shader, validation_state,
++			      false) &&
++	      check_reg_write(inst, validated_shader, validation_state,
++			      true));
+ 
+ 	track_live_clamps(inst, validated_shader, validation_state);
+ 
+@@ -441,7 +433,7 @@ vc4_validate_shader(struct drm_gem_cma_o
+ 	shader = shader_obj->vaddr;
+ 	max_ip = shader_obj->base.size / sizeof(uint64_t);
+ 
+-	validated_shader = kcalloc(sizeof(*validated_shader), 1, GFP_KERNEL);
++	validated_shader = kcalloc(1, sizeof(*validated_shader), GFP_KERNEL);
+ 	if (!validated_shader)
+ 		return NULL;
+ 
+@@ -497,7 +489,7 @@ vc4_validate_shader(struct drm_gem_cma_o
+ 
+ 	if (ip == max_ip) {
+ 		DRM_ERROR("shader failed to terminate before "
+-			  "shader BO end at %d\n",
++			  "shader BO end at %zd\n",
+ 			  shader_obj->base.size);
+ 		goto fail;
+ 	}
+--- a/include/drm/drmP.h
++++ b/include/drm/drmP.h
+@@ -585,6 +585,13 @@ struct drm_driver {
+ 	int (*gem_open_object) (struct drm_gem_object *, struct drm_file *);
+ 	void (*gem_close_object) (struct drm_gem_object *, struct drm_file *);
+ 
++	/**
++	 * Hook for allocating the GEM object struct, for use by core
++	 * helpers.
++	 */
++	struct drm_gem_object *(*gem_create_object)(struct drm_device *dev,
++						    size_t size);
++
+ 	/* prime: */
+ 	/* export handle -> fd (see drm_gem_prime_handle_to_fd() helper) */
+ 	int (*prime_handle_to_fd)(struct drm_device *dev, struct drm_file *file_priv,
+@@ -639,7 +646,6 @@ struct drm_driver {
+ 
+ 	u32 driver_features;
+ 	int dev_priv_size;
+-	size_t gem_obj_size;
+ 	const struct drm_ioctl_desc *ioctls;
+ 	int num_ioctls;
+ 	const struct file_operations *fops;
