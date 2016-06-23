@@ -56,6 +56,9 @@ case "$FIRMWARE" in
 		hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ath10kcal_extract "art" 4096 12064
 		;;
+         r7800)
+		ath10kcal_extract "art" 4096 12064
+		;;
 	esac
 	;;
 "ath10k/cal-pci-0001:01:00.0.bin")
@@ -66,6 +69,9 @@ case "$FIRMWARE" in
 		;;
 	ea8500)
 		hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		ath10kcal_extract "art" 20480 12064
+		;;
+        r7800)
 		ath10kcal_extract "art" 20480 12064
 		;;
 	esac

@@ -19,13 +19,14 @@ c2600)
 	ucidef_set_led_default "general" "general" "ledgnr:blue" "1"
 	;;
 d7800 |\
-r7500)
-	ucidef_set_led_usbdev "usb1" "USB 1" "r7500:white:usb1" "1-1"
-	ucidef_set_led_usbdev "usb2" "USB 2" "r7500:white:usb3" "3-1"
-	ucidef_set_led_netdev "wan" "WAN" "r7500:white:wan" "eth0"
-	ucidef_set_led_ide "esata" "eSATA" "r7500:amber:esata"
-	ucidef_set_led_default "wps" "WPS" "r7500:white:wps" "0"
-	ucidef_set_led_default "rfkill" "rfkill" "r7500:white:rfkill" "0"
+r7500 |\
+r7800)
+	ucidef_set_led_usbdev "usb1" "USB 1" "${board}:white:usb1" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB 2" "${board}:white:usb3" "3-1"
+	ucidef_set_led_netdev "wan" "WAN" "${board}:white:wan" "eth0"
+	ucidef_set_led_ide "esata" "eSATA" "${board}:amber:esata"
+	ucidef_set_led_default "wps" "WPS" "${board}:white:wps" "0"
+	ucidef_set_led_default "rfkill" "rfkill" "${board}:white:rfkill" "0"
 	;;
 ea8500)
 	ucidef_set_led_wlan "wifi" "WIFI" "ea8500:green:wifi" "phy0radio"
