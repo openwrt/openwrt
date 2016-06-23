@@ -149,6 +149,23 @@ define Device/DB149
 	DEVICE_TITLE := Qualcom DB149
 endef
 
+define Device/EA8500
+	$(call Device/LegacyImage)
+	DEVICE_DTS := qcom-ipq8064-ea8500
+	PAGESIZE := 2048
+	BLOCKSIZE := 128KiB
+	KERNEL_SIZE := 3145728
+	FILESYSTEMS := squashfs
+	KERNEL = kernel-bin | append-dtb | uImage none | append-file $(KDIR)/root.dummy
+	PROFILES += $$(DEVICE_NAME)
+	BOARD_NAME := ea8500
+	IMAGES := factory.bin sysupgrade.tar
+	IMAGE/factory.bin := append-kernel 3145728 | append-ubi
+	IMAGE/sysupgrade.tar := sysupgrade-nand
+	DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE
+	DEVICE_TITLE := Linksys EA8500
+endef
+
 define Device/R7500
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8064-r7500
@@ -161,6 +178,6 @@ define Device/R7500
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500
 endef
 
-TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 R7500
+TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 R7500
 
 $(eval $(call BuildImage))
