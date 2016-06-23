@@ -62,27 +62,25 @@ Load Marduk platform specific OpenWrt configuration for Pistachio.
 
 2. Check the "Target Profile" is set to Basic platform profile for Marduk
 
-        Target Profile (Basic platform profile for Marduk)  ---> 
+        Target Profile (Basic platform profile for Marduk)  --->
             (X) Basic platform profile for Marduk with TI cc2520
             ( ) Basic platform profile for Marduk with Cascoda ca8210
             ( ) Wifi testing profile for Marduk with TI cc2520
 
-Alternatively, you can also load Marduk platform with TI cc2520 specific OpenWrt configuration for IMG Pistachio by adding following into .config file:
+Alternatively, you can use default configuration for Marduk platform with TI cc2520 specific OpenWrt configuration for IMG Pistachio by copying following into .config file:
 
-    $ echo "CONFIG_TARGET_pistachio=y" > .config
-    $ echo "CONFIG_TARGET_pistachio_marduk_marduk_cc2520=y" >> .config
+    $ cat target/linux/pistachio/creator-platform-default.config > .config
 
 Similarly, you can do the same for Marduk platform with Cascoda ca8210 specific OpenWrt configuration:
 
-    $ echo "CONFIG_TARGET_pistachio=y" > .config
-    $ echo "CONFIG_TARGET_pistachio_marduk_marduk_ca8210=y" >> .config
+    $ cat target/linux/pistachio/creator-platform-cascoda-default.config > .config
 
 Now build OpenWrt in standard way:
 
     $ make V=s -j1
 
 Once the build is completed, you will find the resulting output i.e. images, dtbs and rootfs at "bin/pistachio", depending upon the selected profile.
-Where PROFILE can be marduk_cc2520, marduk_ca8210, marduk_cc2520_wifi and VERSION is whatever mentioned in CONFIG_VERSION_NUMBER. By default VERSION is left blank.
+Where PROFILE can be marduk_cc2520, marduk_ca8210, marduk_cc2520_wifi and VERSION is whatever mentioned in CONFIG_VERSION_NUMBER. By default VERSION is master-pistachio in the default config.
 
 - openwrt-$(VERSION)-pistachio-pistachio_$(PROFILE)-uImage
 - openwrt-$(VERSION)-pistachio-pistachio_$(PROFILE)-uImage-initramfs
