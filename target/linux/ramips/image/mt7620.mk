@@ -77,7 +77,7 @@ define Device/wt3020-8M
   DTS := WT3020-8M
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | poray-header -B WT3020 -F 4M
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | poray-header -B WT3020 -F 8M
   DEVICE_TITLE := Nexx WT3020 (8MB)
 endef
 TARGET_DEVICES += wt3020-8M
