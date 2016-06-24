@@ -130,7 +130,8 @@ BTHOMEHUBV5A)
 VGV7519)
 	lan_mac=$(mtd_get_mac_binary board_config 22)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
-	ucidef_set_interface_lan 'eth0'
+	ucidef_add_switch "switch0" \
+		"4:lan:1" "2:lan:2" "1:lan:3" "0:lan:4" "6t@eth0"
 	;;
 
 VGV7510KW22)
