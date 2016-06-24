@@ -9,11 +9,6 @@ define Profile/BTHOMEHUBV2B
 	swconfig
 endef
 
-
-BTHOMEHUBV2B_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
-BTHOMEHUBV2B_UBI_OPTS:="-m 512 -p 16KiB -s 256"
-
-
 $(eval $(call Profile,BTHOMEHUBV2B))
 
 define Profile/BTHOMEHUBV3A
@@ -26,9 +21,5 @@ define Profile/BTHOMEHUBV3A
 	kmod-ath9k wpad-mini \
 	swconfig uboot-envtools
 endef
-
-BTHOMEHUBV3A_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
-BTHOMEHUBV3A_UBI_OPTS:="-m 512 -p 16KiB -s 256"
-
 
 $(eval $(call Profile,BTHOMEHUBV3A))

@@ -349,6 +349,9 @@ endif
 ifeq ($(CONFIG_TARGET_lantiq_xway),y)
 
 # Danube
+BTHOMEHUBV2B_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
+BTHOMEHUBV2B_UBI_OPTS:="-m 512 -p 16KiB -s 256"
+
 Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
 Image/Build/Profile/BTHOMEHUBV2B=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV2B)
 
@@ -372,6 +375,9 @@ $(eval $(call lantiqImage,GIGASX76X))
 
 
 # AR9
+BTHOMEHUBV3A_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
+BTHOMEHUBV3A_UBI_OPTS:="-m 512 -p 16KiB -s 256"
+
 Image/BuildKernel/Profile/BTHOMEHUBV3A=$(call Image/BuildKernel/Template,BTHOMEHUBV3A)
 Image/Build/Profile/BTHOMEHUBV3A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV3A)
 
@@ -397,19 +403,31 @@ endif
 ifeq ($(CONFIG_TARGET_lantiq_xrx200),y)
 
 # VR9
+P2812HNUF1_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+P2812HNUF1_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+
 Image/BuildKernel/Profile/P2812HNUF1=$(call Image/BuildKernel/Template,P2812HNUF1)
 Image/Build/Profile/P2812HNUF1=$(call Image/BuildNAND/$(1),$(1),P2812HNUF1)
+
+P2812HNUF3_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+P2812HNUF3_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/P2812HNUF3=$(call Image/BuildKernel/Template,P2812HNUF3)
 Image/Build/Profile/P2812HNUF3=$(call Image/BuildNAND/$(1),$(1),P2812HNUF3)
 
 $(eval $(call lantiqImage,ARV7519RW22))
 
+BTHOMEHUBV5A_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+BTHOMEHUBV5A_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+
 Image/BuildKernel/Profile/BTHOMEHUBV5A=$(call Image/BuildKernel/Template,BTHOMEHUBV5A)
 Image/Build/Profile/BTHOMEHUBV5A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV5A)
 
 $(eval $(call lantiqImage,EASY80920NAND))
 $(eval $(call lantiqImage,EASY80920NOR))
+
+FRITZ3370_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+FRITZ3370_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
 Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
