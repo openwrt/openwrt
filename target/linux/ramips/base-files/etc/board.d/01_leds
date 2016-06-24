@@ -78,6 +78,13 @@ broadway)
 	set_usb_led "$board:red:diskmounted"
 	set_wifi_led "$board:red:wps_active"
 	;;
+c50)
+	ucidef_set_led_default "power" "power" "tp-link:blue:power" "0"
+	ucidef_set_led_netdev "lan" "lan" "tp-link:blue:lan" "eth0.2"
+	set_usb_led "tp-link:blue:usb"
+	ucidef_set_led_wlan "wlan2g" "wlan2g" "tp-link:blue:wlan2g" "phy1radio"
+	ucidef_set_led_wlan "wlan5g" "wlan5g" "tp-link:blue:wlan5g" "phy0radio"
+	;;
 cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "$board:white:ethernet" eth0.1
 	set_wifi_led "$board:white:wifi"
