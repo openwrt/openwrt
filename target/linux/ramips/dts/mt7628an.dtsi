@@ -166,6 +166,8 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
+			clock-frequency = <40000000>;
+
 			resets = <&rstctrl 12>;
 			reset-names = "uartl";
 
@@ -183,6 +185,8 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			no-loopback-test;
+
+			clock-frequency = <40000000>;
 
 			resets = <&rstctrl 19>;
 			reset-names = "uart1";
@@ -203,6 +207,8 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			no-loopback-test;
+
+			clock-frequency = <40000000>;
 
 			resets = <&rstctrl 20>;
 			reset-names = "uart2";
@@ -344,6 +350,11 @@
 		#reset-cells = <1>;
 	};
 
+	clkctrl: clkctrl {
+		compatible = "ralink,rt2880-clock";
+		#clock-cells = <1>;
+	};
+
 	usbphy: usbphy@10120000 {
 		compatible = "ralink,mt7628an-usbphy", "mediatek,mt7620-usbphy";
 		reg = <0x10120000 0x4000>;
@@ -351,6 +362,8 @@
 
 		resets = <&rstctrl 22 &rstctrl 25>;
 		reset-names = "host", "device";
+		clocks = <&clkctrl 22 &clkctrl 25>;
+		clock-names = "host", "device";
 	};
 
 	sdhci: sdhci@10130000 {
@@ -420,11 +433,13 @@
 		#address-cells = <3>;
 		#size-cells = <2>;
 
-		resets = <&rstctrl 26>;
-		reset-names = "pcie0";
-
 		interrupt-parent = <&cpuintc>;
 		interrupts = <4>;
+
+		resets = <&rstctrl 26 &rstctrl 27>;
+		reset-names = "pcie0", "pcie1";
+		clocks = <&clkctrl 26 &clkctrl 27>;
+		clock-names = "pcie0", "pcie1";
 
 		status = "disabled";
 

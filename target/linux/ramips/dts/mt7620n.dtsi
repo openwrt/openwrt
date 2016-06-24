@@ -255,12 +255,20 @@
 		#reset-cells = <1>;
 	};
 
+	clkctrl: clkctrl {
+		compatible = "ralink,rt2880-clock";
+		#clock-cells = <1>;
+	};
+
 	usbphy: usbphy {
 		compatible = "mediatek,mt7620-usbphy";
 		#phy-cells = <1>;
 
 		resets = <&rstctrl 22 &rstctrl 25>;
 		reset-names = "host", "device";
+
+		clocks = <&clkctrl 22 &clkctrl 25>;
+		clock-names = "host", "device";
 	};
 
 	ethernet: ethernet@10100000 {

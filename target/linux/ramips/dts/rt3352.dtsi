@@ -229,6 +229,11 @@
 		#reset-cells = <1>;
 	};
 
+	clkctrl: clkctrl {
+		compatible = "ralink,rt2880-clock";
+		#clock-cells = <1>;
+	};
+
 	ethernet: ethernet@10100000 {
 		compatible = "ralink,rt3352-eth", "ralink,rt3050-eth";
 		reg = <0x10100000 0x10000>;
@@ -259,6 +264,8 @@
 
 		resets = <&rstctrl 22 &rstctrl 25>;
 		reset-names = "host", "device";
+		clocks = <&clkctrl 18 &clkctrl 20>;
+		clock-names = "host", "device";
 	};
 
 	wmac: wmac@10180000 {
