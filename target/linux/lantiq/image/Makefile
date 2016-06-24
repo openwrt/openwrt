@@ -204,7 +204,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   endef
 endif
 
-define Image/Prepare/Kernel
+define Image/Prepare/Template
 	$(call PatchKernelLzma,$(1))
 	$(call Image/BuildLoader/Template,$(1))
 	$(Image/Prepare/InitramfsTemplate)
@@ -710,6 +710,7 @@ define LegacyDevice/FRITZ7360SL
 endef
 LEGACY_DEVICES += FRITZ7360L
 
+Image/Prepare/Profile/VG3503J=$(call Image/Prepare/Template,VG3503J)
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
@@ -768,27 +769,18 @@ define Device/VGV7519BRN
 endef
 TARGET_DEVICES += VGV7519BRN
 
-define Image/Prepare
-	$(call Image/Prepare/Kernel,VG3503J)
-endef
-
 endif
 
 define Image/Prepare/Profile
-	$(call Image/Build/Profile/$(1),loader)
+	$(call Image/Prepare/Profile/$(1))
+endef
+
+define Image/BuildKernel/Profile
+	$(call Image/BuildKernel/Profile/$(1))
 endef
 
 define Image/Build/Profile
-	$(call Image/Build/Profile/$(1),buildkernel)
 	$(call Image/Build/Profile/$(1),$(2))
-endef
-
-define Image/BuildKernel
-	$(call Image/BuildKernel/Profile/$(PROFILE))
-endef
-
-define Image/Build
-	$(call Image/Build/Profile/$(PROFILE),$(1))
 endef
 
 $(eval $(call BuildImage))
