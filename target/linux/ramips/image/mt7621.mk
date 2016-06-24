@@ -138,6 +138,12 @@ define Device/ubnt-erx
 endef
 TARGET_DEVICES += ubnt-erx
 
+define Device/sk-wb8
+  DTS := SK-WB8
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+TARGET_DEVICES += sk-wb8
+
 # FIXME: is this still needed?
 define Image/Prepare
 #define Build/Compile
