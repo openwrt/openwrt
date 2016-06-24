@@ -2,10 +2,18 @@
 # MT7688 Profiles
 #
 
-Image/Build/Profile/LinkIt7688=$(call BuildFirmware/Default32M/$(1),$(1),LinkIt7688,LINKIT7688)
-Image/Build/Profile/WRTNODE2R=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode2r,WRTNODE2R)
-
-define Image/Build/Profile/Default
-	$(call Image/Build/Profile/LinkIt7688,$(1))
-	$(call Image/Build/Profile/WRTNODE2R,$(1))
+define Device/LinkIt7688
+  DTS := LINKIT7688
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := MediaTek LinkIt Smart 7688
+  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools
 endef
+TARGET_DEVICES += LinkIt7688
+
+define Device/wrtnode2r
+  DTS := WRTNODE2R
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := WRTnode 2R
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += wrtnode2r

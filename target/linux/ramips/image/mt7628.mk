@@ -2,16 +2,26 @@
 # MT7628 Profiles
 #
 
-Image/Build/Profile/MIWIFI-NANO=$(call BuildFirmware/Default16M/$(1),$(1),miwifi-nano,MIWIFI-NANO)
-Image/Build/Profile/MT7628=$(call BuildFirmware/Default4M/$(1),$(1),mt7628,MT7628)
-Image/Build/Profile/WRTNODE2P=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode2p,WRTNODE2P)
-
-define Image/Build/Profile/Default
-	$(call Image/Build/Profile/MIWIFI-NANO,$(1))
-	$(call Image/Build/Profile/MT7628,$(1))
-	$(call Image/Build/Profile/WRTNODE2P,$(1))
+define Device/mt7628
+  DTS := MT7628
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_TITLE := MediaTek MT7628 EVB
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
 endef
+TARGET_DEVICES += mt7628
 
-define Image/Build/Profile/MiwifiNano
-	$(call Image/Build/Profile/MIWIFI-NANO,$(1))
+define Device/miwifi-nano
+  DTS := MIWIFI-NANO
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Xiaomi MiWiFi Nano
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
 endef
+TARGET_DEVICES += miwifi-nano
+
+define Device/wrtnode2p
+  DTS := WRTNODE2P
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := WRTnode 2P
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
+endef
+TARGET_DEVICES += wrtnode2p
