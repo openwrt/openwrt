@@ -435,9 +435,6 @@ Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
-Image/BuildKernel/Profile/VG3503J_V2=$(call Image/BuildKernelLoader/Template,VG3503J_V2)
-Image/Build/Profile/VG3503J_V2=$(call Image/BuildLoader/$(1),$(1),VG3503J_V2)
-
 $(eval $(call lantiqTpLink,TDW8970,TD-W8970v1))
 $(eval $(call lantiqTpLink,TDW8980,TD-W8980v1))
 $(eval $(call lantiqTpLink,VR200v,ArcherVR200V))

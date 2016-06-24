@@ -4,12 +4,6 @@ endef
 
 $(eval $(call Profile,VG3503J))
 
-define Profile/VG3503J_V2
-  NAME:=BT Openreach - ECI VDSL Modem v2
-endef
-
-$(eval $(call Profile,VG3503J_V2))
-
 define Profile/VGV7510KW22NOR
   NAME:=o2 Box 6431 / Arcadyan VGV7510KW22 (NOR)
   PACKAGES:=kmod-rt2800-pci wpad-mini kmod-usb-dwc2
