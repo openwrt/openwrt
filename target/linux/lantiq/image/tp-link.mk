@@ -21,7 +21,6 @@ endef
 define Device/TDW8970
   $(Device/lantiqTpLink)
   DEVICE_PROFILE := TDW8970
-  DEVICE_DTS = $(DEVICE_PROFILE)
   BOARD_ID := TD-W8970v1
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := TP-LINK TD-W8970
@@ -31,7 +30,6 @@ endef
 define Device/TDW8980
   $(Device/lantiqTpLink)
   DEVICE_PROFILE := TDW8980
-  DEVICE_DTS = $(DEVICE_PROFILE)
   BOARD_ID := TD-W8980v1
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := TP-LINK TD-W8980
@@ -41,7 +39,6 @@ endef
 define Device/VR200v
   $(Device/lantiqTpLink)
   DEVICE_PROFILE := VR200v
-  DEVICE_DTS = $(DEVICE_PROFILE)
   BOARD_ID := ArcherVR200V
   IMAGE_SIZE := 15808k
   DEVICE_TITLE := TP-LINK Archer VR200v
