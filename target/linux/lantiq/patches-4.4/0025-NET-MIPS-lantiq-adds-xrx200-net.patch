@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1801 @@
+@@ -0,0 +1,1802 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -1736,6 +1736,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	ltq_switch_w32_mask(0, PCE_INGRESS, PCE_PCTRL_REG(6, 0));
 +	ltq_switch_w32_mask(0, BIT(3), MAC_CTRL_REG(6, 2));
 +	ltq_switch_w32(1518 + 8 + 4 * 2, MAC_FLEN_REG);
++	xrx200sw_write_x(1, XRX200_BM_QUEUE_GCTRL_GL_MOD, 0);
 +}
 +
 +static void xrx200_hw_cleanup(struct xrx200_hw *hw)
@@ -2179,7 +2180,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +//	XRX200_BM_GCTRL_P_SRES,        /* Software Reset for PQM */
 +//	XRX200_BM_GCTRL_F_SRES,        /* Software Reset for FSQM */
 +//	XRX200_BM_QUEUE_GCTRL,         /* Queue Manager GlobalControl Register 0 */
-+//	XRX200_BM_QUEUE_GCTRL_GL_MOD,  /* WRED Mode Signal */
++	XRX200_BM_QUEUE_GCTRL_GL_MOD,  /* WRED Mode Signal */
 +//	XRX200_BM_QUEUE_GCTRL_AQUI,    /* Average Queue Update Interval */
 +//	XRX200_BM_QUEUE_GCTRL_AQWF,    /* Average Queue Weight Factor */
 +//	XRX200_BM_QUEUE_GCTRL_QAVGEN,  /* Queue Average Calculation Enable */
@@ -2835,7 +2836,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +//	{0x0124,	 1,	 1,	0x00}, /* XRX200_BM_GCTRL_P_SRES         Software Reset for PQM */
 +//	{0x0124,	 0,	 1,	0x00}, /* XRX200_BM_GCTRL_F_SRES         Software Reset for FSQM */
 +//	{0x0128,	 0,	16,	0x00}, /* XRX200_BM_QUEUE_GCTRL          Queue Manager GlobalControl Register 0 */
-+//	{0x0128,	10,	 1,	0x00}, /* XRX200_BM_QUEUE_GCTRL_GL_MOD   WRED Mode Signal */
++	{0x0128,	10,	 1,	0x00}, /* XRX200_BM_QUEUE_GCTRL_GL_MOD   WRED Mode Signal */
 +//	{0x0128,	 7,	 3,	0x00}, /* XRX200_BM_QUEUE_GCTRL_AQUI     Average Queue Update Interval */
 +//	{0x0128,	 3,	 4,	0x00}, /* XRX200_BM_QUEUE_GCTRL_AQWF     Average Queue Weight Factor */
 +//	{0x0128,	 2,	 1,	0x00}, /* XRX200_BM_QUEUE_GCTRL_QAVGEN   Queue Average Calculation Enable */
