@@ -67,6 +67,11 @@ ARV4518PWR01*)
         ;;
 
 DGN3500*)
+	eth0_mac=$(mtd_get_mac_ascii uboot-env ethaddr)
+	nas0_mac=$(macaddr_add "$eth0_mac" 1)
+	ifconfig eth0 hw ether "$eth0_mac"
+	ifconfig wlan0 hw ether "$eth0_mac"
+	esi $(echo "$nas0_mac" | tr -d :)
 	ucidef_add_switch "switch0" \
 		"3:lan:1" "2:lan:2" "1:lan:3" "0:lan:4" "5t@eth0"
 	;;
