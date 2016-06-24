@@ -474,7 +474,7 @@ On successful, it will restart the system and you should following logs on the c
     $root@OpenWrt:/#
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-##Configure Network
+##Configure Network using command line
 You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loWPAN should be up.
 
 **Note:**
@@ -502,6 +502,12 @@ You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loW
 - set default route for WiFi in target/linux/pistachio/base-files/etc/uci-defaults/config/network as
 
         option 'defaultroute' '1'
+
+### Configure Network using luci web interface
+Alternatively, you can also configure network interfaces using luci web interface. Please refer [LUCI Essenetials](https://wiki.openwrt.org/doc/howto/luci.essentials) for more details.
+
+Note that luci is not enabled by default, but you should be able to use opkg utility to install luci.
+
 
 ##Using opkg utility
 All the packages built for pistachio-marduk are hosted on [IMGCreator downloads server](https://downloads.imgcreator.io/pistachio/marduk), so it should be possible to 
