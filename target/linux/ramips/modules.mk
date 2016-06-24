@@ -76,15 +76,14 @@ $(eval $(call KernelPackage,i2c-mt7621))
 
 define KernelPackage/sound-mt7620
   TITLE:=MT7620 PCM/I2S Alsa Driver
-  DEPENDS:=@TARGET_ramips_mt7620 +kmod-sound-soc-core +kmod-regmap @BROKEN
+  DEPENDS:=@TARGET_ramips_mt7620 +kmod-sound-soc-core +kmod-regmap @!TARGET_ramips_rt288x
   KCONFIG:= \
-	CONFIG_SND_MT7620_SOC_I2S \
-	CONFIG_SND_MT7620_SOC_WM8960
+	CONFIG_SND_RALINK_SOC_I2S \
+	CONFIG_SND_SOC_WM8960
   FILES:= \
-	$(LINUX_DIR)/sound/soc/ralink/snd-soc-mt7620-i2s.ko \
-	$(LINUX_DIR)/sound/soc/ralink/snd-soc-mt7620-wm8960.ko \
+	$(LINUX_DIR)/sound/soc/ralink/snd-soc-ralink-i2s.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8960.ko
-  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-mt7620-i2s snd-soc-mt7620-wm8960)
+  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-ralink-i2s)
   $(call AddDepends/sound)
 endef
 
