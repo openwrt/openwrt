@@ -468,7 +468,7 @@ define LegacyDevice/BTHOMEHUBV3A
 	kmod-ath9k wpad-mini \
 	swconfig uboot-envtools
 endef
-LEGACY_DEVICES += BTHOMEHUBV3AB
+LEGACY_DEVICES += BTHOMEHUBV3A
 
 Image/BuildKernel/Profile/DGN3500=$(call Image/BuildKernel/Template,DGN3500)
 Image/Build/Profile/DGN3500=$(call Image/BuildDGN3500/$(1),$(1),DGN3500)
