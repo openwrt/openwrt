@@ -4,7 +4,8 @@ define Profile/FRITZ7320
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ltq-deu-ar9 kmod-usb-dwc2
+	kmod-ltq-deu-ar9 kmod-usb-dwc2 \
+	kmod-ath9k wpad-mini
 endef
 
 $(eval $(call Profile,FRITZ7320))
