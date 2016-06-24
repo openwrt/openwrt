@@ -379,7 +379,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	eth_mac_set = mac_pton(str, eth_mac);
 +	return !eth_mac_set;
 +}
-+__setup("ethaddr=", setup_ethaddr);
++early_param("ethaddr", setup_ethaddr);
 +
 +int __init of_eth_mac_probe(struct platform_device *pdev)
 +{
@@ -620,10 +620,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		goto err_hw;
  
 -	memcpy(&mac, &priv->pldata->mac, sizeof(struct sockaddr));
-+	if (priv->mac)
++	memcpy(&mac.sa_data, ltq_get_eth_mac(), ETH_ALEN);
++
++	if (priv->mac && !is_valid_ether_addr(mac.sa_data))
 +		memcpy(&mac.sa_data, priv->mac, ETH_ALEN);
-+	else
-+		memcpy(&mac.sa_data, ltq_get_eth_mac(), ETH_ALEN);
 +
  	if (!is_valid_ether_addr(mac.sa_data)) {
  		pr_warn("etop: invalid MAC, using random\n");
