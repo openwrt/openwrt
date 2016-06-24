@@ -3,7 +3,7 @@
 #
 
 define Build/tplink-header
-	$(STAGING_DIR_HOST)/bin/mktplinkfw2 -V "ver. 2.0" -B $(1) \
+	$(STAGING_DIR_HOST)/bin/mktplinkfw2 -a 0x4 -V "ver. 2.0" -B $(1) \
 		-o $@.new -k $@  && mv $@.new $@
 endef
 
@@ -46,7 +46,6 @@ endef
 
 define Device/ArcherC20i
   DTS := ArcherC20i
-  IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC20i -c
   IMAGE/sysupgrade.bin := $(KERNEL_DTB) | tplink-header ArcherC20i -j -r $(KDIR)/root.squashfs
