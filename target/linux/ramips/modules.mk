@@ -1,11 +1,31 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 OTHER_MENU:=Other modules
+
+define KernelPackage/pwm-mediatek
+  SUBMENU:=Other modules
+  TITLE:=MT7628 PWM
+  DEPENDS:=@(TARGET_ramips_mt7628||TARGET_ramips_mt7688)
+  KCONFIG:= \
+	CONFIG_PWM=y \
+	CONFIG_PWM_MEDIATEK \
+	CONFIG_PWM_SYSFS=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/pwm/pwm-mediatek.ko
+  AUTOLOAD:=$(call AutoProbe,pwm-mediatek)
+endef
+
+define KernelPackage/pwm-mediatek/description
+  Kernel modules for MediaTek Pulse Width Modulator
+endef
+
+$(eval $(call KernelPackage,pwm-mediatek))
+
 define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
   TITLE:=MT7620 SDCI
