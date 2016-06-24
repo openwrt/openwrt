@@ -38,18 +38,6 @@
 		};
 	};
 
-	ethernet@10100000 {
-		mtd-mac-address = <&devconf 0x4>;
-	};
-
-	esw@10110000 {
-		mediatek,portmap = <0x3e>;
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&devconf 0>;
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -77,4 +65,16 @@
 			linux,code = <0x211>;
 		};
 	};
+};
+
+&ethernet {
+	mtd-mac-address = <&devconf 0x4>;
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&devconf 0>;
 };

@@ -6,15 +6,6 @@
 	compatible = "FONERA20N", "ralink,rt3052-soc";
 	model = "La Fonera 2.0N";
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "spi", "jtag", "mdio", "rgmii", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -85,50 +76,59 @@
 			linux,input-type = <5>; /* EV_SW */
 		};
 	};
+};
 
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x28>;
-	};
-
-	esw@10110000 {
-		mediatek,portmap = <0x2f>;
-
-		port@0 {
-			compatible = "swconfig,port";
-			swconfig,segment = "lan";
-			swconfig,portmap = <0 4>;
-		};
-
-		port@1 {
-			compatible = "swconfig,port";
-			swconfig,segment = "lan";
-			swconfig,portmap = <1 3>;
-		};
-
-		port@2 {
-			compatible = "swconfig,port";
-			swconfig,segment = "lan";
-			swconfig,portmap = <2 2>;
-		};
-
-		port@3 {
-			compatible = "swconfig,port";
-			swconfig,segment = "lan";
-			swconfig,portmap = <3 1>;
-		};
-
-		port@4 {
-			compatible = "swconfig,port";
-			swconfig,segment = "wan";
-			swconfig,portmap = <4 0>;
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "spi", "jtag", "mdio", "rgmii", "uartf";
+			ralink,function = "gpio";
 		};
 	};
+};
 
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+};
+
+&esw {
+	mediatek,portmap = <0x2f>;
+
+	port@0 {
+		compatible = "swconfig,port";
+		swconfig,segment = "lan";
+		swconfig,portmap = <0 4>;
 	};
 
-	otg@101c0000 {
-		status = "okay";
+	port@1 {
+		compatible = "swconfig,port";
+		swconfig,segment = "lan";
+		swconfig,portmap = <1 3>;
 	};
+
+	port@2 {
+		compatible = "swconfig,port";
+		swconfig,segment = "lan";
+		swconfig,portmap = <2 2>;
+	};
+
+	port@3 {
+		compatible = "swconfig,port";
+		swconfig,segment = "lan";
+		swconfig,portmap = <3 1>;
+	};
+
+	port@4 {
+		compatible = "swconfig,port";
+		swconfig,segment = "wan";
+		swconfig,portmap = <4 0>;
+	};
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
+
+&otg {
+	status = "okay";
 };

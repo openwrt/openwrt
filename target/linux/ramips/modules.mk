@@ -1,11 +1,31 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 OTHER_MENU:=Other modules
+
+define KernelPackage/pwm-mediatek
+  SUBMENU:=Other modules
+  TITLE:=MT7628 PWM
+  DEPENDS:=@(TARGET_ramips_mt7628||TARGET_ramips_mt7688)
+  KCONFIG:= \
+	CONFIG_PWM=y \
+	CONFIG_PWM_MEDIATEK \
+	CONFIG_PWM_SYSFS=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/pwm/pwm-mediatek.ko
+  AUTOLOAD:=$(call AutoProbe,pwm-mediatek)
+endef
+
+define KernelPackage/pwm-mediatek/description
+  Kernel modules for MediaTek Pulse Width Modulator
+endef
+
+$(eval $(call KernelPackage,pwm-mediatek))
+
 define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
   TITLE:=MT7620 SDCI
@@ -56,15 +76,14 @@ $(eval $(call KernelPackage,i2c-mt7621))
 
 define KernelPackage/sound-mt7620
   TITLE:=MT7620 PCM/I2S Alsa Driver
-  DEPENDS:=@TARGET_ramips_mt7620 +kmod-sound-soc-core +kmod-regmap @BROKEN
+  DEPENDS:=@TARGET_ramips_mt7620 +kmod-sound-soc-core +kmod-regmap @!TARGET_ramips_rt288x
   KCONFIG:= \
-	CONFIG_SND_MT7620_SOC_I2S \
-	CONFIG_SND_MT7620_SOC_WM8960
+	CONFIG_SND_RALINK_SOC_I2S \
+	CONFIG_SND_SOC_WM8960
   FILES:= \
-	$(LINUX_DIR)/sound/soc/ralink/snd-soc-mt7620-i2s.ko \
-	$(LINUX_DIR)/sound/soc/ralink/snd-soc-mt7620-wm8960.ko \
+	$(LINUX_DIR)/sound/soc/ralink/snd-soc-ralink-i2s.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8960.ko
-  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-mt7620-i2s snd-soc-mt7620-wm8960)
+  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-ralink-i2s)
   $(call AddDepends/sound)
 endef
 

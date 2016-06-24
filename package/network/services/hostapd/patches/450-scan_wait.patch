@@ -33,7 +33,7 @@
  	/* Initialize the driver interface */
  	if (!(b[0] | b[1] | b[2] | b[3] | b[4] | b[5]))
  		b = NULL;
-@@ -382,8 +394,6 @@ static void hostapd_global_deinit(const
+@@ -401,8 +413,6 @@ static void hostapd_global_deinit(const
  #endif /* CONFIG_NATIVE_WINDOWS */
  
  	eap_server_unregister_methods();
@@ -42,19 +42,26 @@
  }
  
  
-@@ -409,11 +419,6 @@ static int hostapd_global_run(struct hap
+@@ -428,18 +438,6 @@ static int hostapd_global_run(struct hap
  	}
  #endif /* EAP_SERVER_TNC */
  
--	if (daemonize && os_daemonize(pid_file)) {
--		wpa_printf(MSG_ERROR, "daemon: %s", strerror(errno));
--		return -1;
+-	if (daemonize) {
+-		if (os_daemonize(pid_file)) {
+-			wpa_printf(MSG_ERROR, "daemon: %s", strerror(errno));
+-			return -1;
+-		}
+-		if (eloop_sock_requeue()) {
+-			wpa_printf(MSG_ERROR, "eloop_sock_requeue: %s",
+-				   strerror(errno));
+-			return -1;
+-		}
 -	}
 -
  	eloop_run();
  
  	return 0;
-@@ -566,8 +571,7 @@ int main(int argc, char *argv[])
+@@ -638,8 +636,7 @@ int main(int argc, char *argv[])
  	struct hapd_interfaces interfaces;
  	int ret = 1;
  	size_t i, j;

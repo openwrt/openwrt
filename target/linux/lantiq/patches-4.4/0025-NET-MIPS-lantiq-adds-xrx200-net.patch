@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1801 @@
+@@ -0,0 +1,1830 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -234,6 +234,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +#include <linux/platform_device.h>
 +#include <linux/interrupt.h>
 +#include <linux/clk.h>
++#include <linux/if_vlan.h>
 +#include <asm/delay.h>
 +
 +#include <linux/of_net.h>
@@ -248,14 +249,9 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +#define SW_POLLING
 +#define SW_ROUTING
-+/* #define SW_PORTMAP */
 +
 +#ifdef SW_ROUTING
-+  #ifdef SW_PORTMAP
 +#define XRX200_MAX_DEV		2
-+  #else
-+#define XRX200_MAX_DEV		2
-+  #endif
 +#else
 +#define XRX200_MAX_DEV		1
 +#endif
@@ -435,6 +431,8 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	struct mii_bus *mii_bus;
 +
 +	struct xrx200_chan chan[XRX200_MAX_DMA];
++	u16 vlan_vid[XRX200_MAX_VLAN];
++	u16 vlan_port_map[XRX200_MAX_VLAN];
 +
 +	struct net_device *devs[XRX200_MAX_DEV];
 +	int num_devs;
@@ -735,6 +733,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +static int xrx200sw_set_vlan_vid(struct switch_dev *dev, const struct switch_attr *attr,
 +				 struct switch_val *val)
 +{
++	struct xrx200_hw *hw = container_of(dev, struct xrx200_hw, swdev);
 +	int i;
 +	struct xrx200_pce_table_entry tev;
 +	struct xrx200_pce_table_entry tem;
@@ -748,6 +747,8 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		if (tev.key[0] == val->value.i && i != val->port_vlan)
 +			return -EINVAL;
 +	}
++
++	hw->vlan_vid[val->port_vlan] = val->value.i;
 +
 +	tev.index = val->port_vlan;
 +	xrx200_pce_table_entry_read(&tev);
@@ -780,6 +781,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +static int xrx200sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 +{
++	struct xrx200_hw *hw = container_of(dev, struct xrx200_hw, swdev);
 +	int i, portmap, tagmap, untagged;
 +	struct xrx200_pce_table_entry tem;
 +
@@ -829,6 +831,10 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	tem.val[1] = portmap;
 +	tem.val[2] = tagmap;
 +	xrx200_pce_table_entry_write(&tem);
++
++	ltq_switch_w32_mask(0, portmap, PCE_PMAP2);
++	ltq_switch_w32_mask(0, portmap, PCE_PMAP3);
++	hw->vlan_port_map[val->port_vlan] = portmap;
 +
 +	xrx200sw_fixup_pvids();
 +
@@ -1156,7 +1162,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	if (ret) {
 +		netdev_err(dev,
 +			"failed to allocate new rx buffer\n");
-+		return 0;
++		return;
 +	}
 +
 +	skb_put(skb, len);
@@ -1258,11 +1264,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	u32 byte_offset;
 +	int len;
 +#ifdef SW_ROUTING
-+  #ifdef SW_PORTMAP
-+	u32 special_tag = (SPID_CPU_PORT << SPID_SHIFT) | PORT_MAP_SEL | PORT_MAP_EN | DPID_ENABLE;
-+  #else
 +	u32 special_tag = (SPID_CPU_PORT << SPID_SHIFT) | DPID_ENABLE;
-+  #endif
 +#endif
 +
 +	skb->dev = dev;
@@ -1274,12 +1276,27 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		return NETDEV_TX_BUSY;
 +	}
 +#ifdef SW_ROUTING
-+  #ifdef SW_PORTMAP
++	if (is_multicast_ether_addr(eth_hdr(skb)->h_dest)) {
++		u16 port_map = priv->port_map;
++		special_tag |= PORT_MAP_SEL | PORT_MAP_EN;
++		if (skb->protocol == htons(ETH_P_8021Q)) {
++			u16 vid;
++			int i;
++
++			if (!__vlan_get_tag(skb, &vid)) {
++				for (i = 0; i < XRX200_MAX_VLAN; i++) {
++					if (priv->hw->vlan_vid[i] != vid)
++						continue;
++					port_map = priv->hw->vlan_port_map[i];
++					break;
++				}
++			}
++		}
++		special_tag |= port_map << PORT_MAP_SHIFT;
++	}
 +	special_tag |= priv->port_map << PORT_MAP_SHIFT;
-+  #else
 +	if(priv->id)
 +		special_tag |= (1 << DPID_SHIFT);
-+  #endif
 +	if(skb_headroom(skb) < 4) {
 +		struct sk_buff *tmp = skb_realloc_headroom(skb, 4);
 +		dev_kfree_skb_any(skb);
@@ -1421,13 +1438,18 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +static void xrx200_mdio_link(struct net_device *dev)
 +{
 +	struct xrx200_priv *priv = netdev_priv(dev);
++	bool changed = false, link = false;
 +	int i;
 +
 +	for (i = 0; i < priv->num_port; i++) {
 +		if (!priv->port[i].phydev)
 +			continue;
 +
++		if (priv->port[i].phydev->link)
++			link = true;
++
 +		if (priv->port[i].link != priv->port[i].phydev->link) {
++			changed = true;
 +			xrx200_gmac_update(&priv->port[i]);
 +			priv->port[i].link = priv->port[i].phydev->link;
 +			netdev_info(dev, "port %d %s link\n",
@@ -1435,6 +1457,8 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +				(priv->port[i].link)?("got"):("lost"));
 +		}
 +	}
++	if (changed && !link)
++		netif_carrier_off(dev);
 +}
 +
 +static inline int xrx200_mdio_poll(struct mii_bus *bus)
@@ -1512,6 +1536,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +			| SUPPORTED_TP);
 +	phydev->advertising = phydev->supported;
 +	port->phydev = phydev;
++	phydev->no_auto_carrier_off = true;
 +
 +	pr_info("%s: attached PHY [%s] (phy_addr=%s, irq=%d)\n",
 +		dev->name, phydev->drv->name,
@@ -1694,9 +1719,9 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	xrx200_pci_microcode();
 +
 +	/* Default unknown Broadcat/Multicast/Unicast port maps */
-+	ltq_switch_w32(0x7f, PCE_PMAP1);
-+	ltq_switch_w32(0x7f, PCE_PMAP2);
-+	ltq_switch_w32(0x7f, PCE_PMAP3);
++	ltq_switch_w32(0x40, PCE_PMAP1);
++	ltq_switch_w32(0x40, PCE_PMAP2);
++	ltq_switch_w32(0x40, PCE_PMAP3);
 +
 +	/* RMON Counter Enable for all physical ports */
 +	for (i = 0; i < 7; i++)
@@ -1736,6 +1761,10 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	ltq_switch_w32_mask(0, PCE_INGRESS, PCE_PCTRL_REG(6, 0));
 +	ltq_switch_w32_mask(0, BIT(3), MAC_CTRL_REG(6, 2));
 +	ltq_switch_w32(1518 + 8 + 4 * 2, MAC_FLEN_REG);
++	xrx200sw_write_x(1, XRX200_BM_QUEUE_GCTRL_GL_MOD, 0);
++
++	for (i = 0; i < XRX200_MAX_VLAN; i++)
++		hw->vlan_vid[i] = i;
 +}
 +
 +static void xrx200_hw_cleanup(struct xrx200_hw *hw)
@@ -2179,7 +2208,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +//	XRX200_BM_GCTRL_P_SRES,        /* Software Reset for PQM */
 +//	XRX200_BM_GCTRL_F_SRES,        /* Software Reset for FSQM */
 +//	XRX200_BM_QUEUE_GCTRL,         /* Queue Manager GlobalControl Register 0 */
-+//	XRX200_BM_QUEUE_GCTRL_GL_MOD,  /* WRED Mode Signal */
++	XRX200_BM_QUEUE_GCTRL_GL_MOD,  /* WRED Mode Signal */
 +//	XRX200_BM_QUEUE_GCTRL_AQUI,    /* Average Queue Update Interval */
 +//	XRX200_BM_QUEUE_GCTRL_AQWF,    /* Average Queue Weight Factor */
 +//	XRX200_BM_QUEUE_GCTRL_QAVGEN,  /* Queue Average Calculation Enable */
@@ -2835,7 +2864,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +//	{0x0124,	 1,	 1,	0x00}, /* XRX200_BM_GCTRL_P_SRES         Software Reset for PQM */
 +//	{0x0124,	 0,	 1,	0x00}, /* XRX200_BM_GCTRL_F_SRES         Software Reset for FSQM */
 +//	{0x0128,	 0,	16,	0x00}, /* XRX200_BM_QUEUE_GCTRL          Queue Manager GlobalControl Register 0 */
-+//	{0x0128,	10,	 1,	0x00}, /* XRX200_BM_QUEUE_GCTRL_GL_MOD   WRED Mode Signal */
++	{0x0128,	10,	 1,	0x00}, /* XRX200_BM_QUEUE_GCTRL_GL_MOD   WRED Mode Signal */
 +//	{0x0128,	 7,	 3,	0x00}, /* XRX200_BM_QUEUE_GCTRL_AQUI     Average Queue Update Interval */
 +//	{0x0128,	 3,	 4,	0x00}, /* XRX200_BM_QUEUE_GCTRL_AQWF     Average Queue Weight Factor */
 +//	{0x0128,	 2,	 1,	0x00}, /* XRX200_BM_QUEUE_GCTRL_QAVGEN   Queue Average Calculation Enable */

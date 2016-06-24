@@ -7,6 +7,7 @@
 
 define Profile/Default
 	NAME:=Default Profile
+	PRIORITY:=1
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
 

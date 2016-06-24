@@ -6,15 +6,6 @@
 	compatible = "mediatek,wrtnode2r", "mediatek,mt7628an-soc";
 	model = "WRTnode2R";
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "gpio", "wled_an";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -25,3 +16,11 @@
 	}; 
 };
 
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "gpio", "wled_an";
+			ralink,function = "gpio";
+		};
+	};
+};

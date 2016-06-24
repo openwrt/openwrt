@@ -38,7 +38,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
 --- /dev/null
 +++ b/drivers/spi/spi-mt7621.c
-@@ -0,0 +1,480 @@
+@@ -0,0 +1,483 @@
 +/*
 + * spi-mt7621.c -- MediaTek MT7621 SPI controller driver
 + *
@@ -239,6 +239,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +		if (!buf)
 +			continue;
++
++		if (t->speed_hz < speed)
++			speed = t->speed_hz;
 +
 +		if (WARN_ON(len + t->len > 36)) {
 +			status = -EIO;

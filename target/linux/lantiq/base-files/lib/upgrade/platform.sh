@@ -16,6 +16,8 @@ platform_check_image() {
 	case "$(get_magic_word "$1")" in
 		# uImage
 		2705) return 0;;
+		# AVM
+		8112) return 0;;
 		# tplink
 		0200) return 0;;
 		*)

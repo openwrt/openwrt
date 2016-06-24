@@ -1,5 +1,4 @@
 ARCH:=mipsel
-ARCH_PACKAGES:=adm5120_mipsel
 SUBTARGET:=rb1xx
 BOARDNAME:=MikroTik RB-1xx boards
 FEATURES+=tgz

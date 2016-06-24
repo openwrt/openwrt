@@ -8,21 +8,6 @@
 	compatible = "RT-N15", "ralink,rt2880-soc";
 	model = "Asus RT-N15";
 
-	palmbus@300000 {
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "uartlite", "mdio";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -55,32 +40,10 @@
 		};
 	};
 
-	ethernet@400000 {
-		status = "okay";
-		mtd-mac-address = <&factory 0x4>;
-
-		port@0 {
-			mediatek,fixed-link = <1000 1 1 1>;
-		};
-
-		mdio-bus {
-			status = "okay";
-
-			phy0: ethernet-phy@0 {
-				phy-mode = "mii";
-				reg = <0>;
-			};
-		};
-	};
-
 	rtl8366s {
 		compatible = "realtek,rtl8366s";
 		gpio-sda = <&gpio0 1 0>;
 		gpio-sck = <&gpio0 2 0>;
-	};
-
-	wmac@480000 {
-		ralink,mtd-eeprom = <&factory 0>;
 	};
 
 	gpio-keys-polled {
@@ -110,4 +73,39 @@
 			gpios = <&gpio0 11 1>;
 		};
 	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "uartlite", "mdio";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	status = "okay";
+	mtd-mac-address = <&factory 0x4>;
+
+	port@0 {
+		mediatek,fixed-link = <1000 1 1 1>;
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy0: ethernet-phy@0 {
+			phy-mode = "mii";
+			reg = <0>;
+		};
+	};
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
 };

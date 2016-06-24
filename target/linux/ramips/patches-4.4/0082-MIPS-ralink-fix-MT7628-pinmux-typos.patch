@@ -1,0 +1,32 @@
+From d7146829c9da24e285cb1b1f2156b5b3e2d40c07 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Thu, 19 May 2016 22:07:34 +0200
+Subject: [PATCH] MIPS: ralink: fix MT7628 pinmux typos
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Ãlvaro FernÃ¡ndez Rojas <noltari@gmail.com>
+Cc: john@phrozen.org
+Cc: linux-mips@linux-mips.org
+Cc: linux-kernel@vger.kernel.org
+Patchwork: https://patchwork.linux-mips.org/patch/13306/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ralink/mt7620.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -223,9 +223,9 @@ static struct rt2880_pmx_func wled_an_gr
+ #define MT7628_GPIO_MODE_GPIO		0
+ 
+ static struct rt2880_pmx_group mt7628an_pinmux_data[] = {
+-	GRP_G("pmw1", pwm1_grp_mt7628, MT7628_GPIO_MODE_MASK,
++	GRP_G("pwm1", pwm1_grp_mt7628, MT7628_GPIO_MODE_MASK,
+ 				1, MT7628_GPIO_MODE_PWM1),
+-	GRP_G("pmw0", pwm0_grp_mt7628, MT7628_GPIO_MODE_MASK,
++	GRP_G("pwm0", pwm0_grp_mt7628, MT7628_GPIO_MODE_MASK,
+ 				1, MT7628_GPIO_MODE_PWM0),
+ 	GRP_G("uart2", uart2_grp_mt7628, MT7628_GPIO_MODE_MASK,
+ 				1, MT7628_GPIO_MODE_UART2),

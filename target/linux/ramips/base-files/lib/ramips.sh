@@ -82,6 +82,9 @@ ramips_board_detect() {
 	*"C20i")
 		name="c20i"
 		;;
+	*"C50")
+		name="c50"
+		;;
 	*"Carambola")
 		name="carambola"
 		;;
@@ -150,6 +153,9 @@ ramips_board_detect() {
 		;;
 	*"Dovado Tiny AC")
 		name="tiny-ac"
+		;;
+	*"DuZun DM06")
+		name="duzun-dm06"
 		;;
 	*"E1700")
 		name="e1700"
@@ -376,6 +382,9 @@ ramips_board_detect() {
 	*"RUT5XX")
 		name="rut5xx"
 		;;
+	*"SamKnows Whitebox 8")
+		name="sk-wb8"
+		;;
 	*"SAP-G3200U3")
 		name="sap-g3200u3"
 		;;
@@ -432,6 +441,9 @@ ramips_board_detect() {
 		;;
 	*"WHR-G300N")
 		name="whr-g300n"
+		;;
+	*"Widora-NEO")
+		name="widora-neo"
 		;;
 	*"WiTi")
                 name="witi"
@@ -510,6 +522,9 @@ ramips_board_detect() {
 		;;
 	*"Y1S")
 		name="y1s"
+		;;
+	*"ZBT-APE522II")
+		name="zbt-ape522ii"
 		;;
 	*"ZBT-WA05")
 		name="zbt-wa05"

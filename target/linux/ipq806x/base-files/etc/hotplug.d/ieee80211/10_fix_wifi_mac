@@ -1,0 +1,23 @@
+#!/bin/ash
+
+[ "$ACTION" == "add" ] || exit 0
+
+PHYNBR=${DEVPATH##*/phy}
+
+[ -n $PHYNBR ] || exit 0
+
+. /lib/ipq806x.sh
+. /lib/functions/system.sh
+
+board=$(ipq806x_board_name)
+
+case "$board" in
+	c2600)
+		echo $(macaddr_add $(mtd_get_mac_binary default-mac 8)  $(($PHYNBR - 1)) ) > /sys${DEVPATH}/macaddress
+		;;
+	ea8500)
+		echo $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) $(($PHYNBR + 1)) ) > /sys${DEVPATH}/macaddress
+		;;
+	*)
+		;;
+esac

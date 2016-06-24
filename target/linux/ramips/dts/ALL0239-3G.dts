@@ -6,14 +6,6 @@
 	compatible = "ALL0239-3G", "ralink,rt3052-soc";
 	model = "Allnet ALL0239-3G";
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
 
 	cfi@1f000000 {
 		compatible = "cfi-flash";
@@ -45,19 +37,6 @@
 			label = "firmware";
 			reg = <0x50000 0x7b0000>;
 		};
-	};
-
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x28>;
-	};
-
-	esw@10110000 {
-		status = "okay";
-		mediatek,portmap = <0x3e>;
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
 	};
 
 	gpio-leds {
@@ -108,8 +87,30 @@
 			linux,code = <0x211>;
 		};
 	};
+};
 
-	otg@101c0000 {
-		status = "okay";
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf";
+			ralink,function = "gpio";
+		};
 	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+};
+
+&esw {
+	status = "okay";
+	mediatek,portmap = <0x3e>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
+
+&otg {
+	status = "okay";
 };

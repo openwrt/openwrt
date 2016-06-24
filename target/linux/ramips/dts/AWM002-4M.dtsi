@@ -3,13 +3,9 @@
 / {
 	compatible = "AWM002", "ralink,rt5350-soc";
 	model = "AsiaRF AWM002";
+};
 
-	palmbus@10000000 {
-		spi@b00 {
-			m25p80@0 {
-				compatible = "jedec,spi-nor";
-				linux,modalias = "m25p80", "mx25l3205d";
-			};
-		};
-	};
+&m25p80 {
+	compatible = "jedec,spi-nor";
+	linux,modalias = "m25p80", "mx25l3205d";
 };

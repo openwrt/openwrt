@@ -6,15 +6,6 @@
 	compatible = "MINIEMBWIFI", "ralink,rt3052-soc";
 	model = "Omnima MiniEMBWiFi";
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -73,20 +64,29 @@
 			reg = <0x50000 0x7b0000>;
 		};
 	};
+};
 
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x28>;
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+			ralink,function = "gpio";
+		};
 	};
+};
 
-	esw@10110000 {
-		mediatek,portmap = <0x2f>;
-	};
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+};
 
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
+&esw {
+	mediatek,portmap = <0x2f>;
+};
 
-	otg@101c0000 {
-		status = "okay";
-	};
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
+
+&otg {
+	status = "okay";
 };

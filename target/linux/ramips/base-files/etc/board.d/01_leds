@@ -46,6 +46,7 @@ all0239-3g|\
 hw550-3g|\
 mofi3500-3gn|\
 sap-g3200u3|\
+sk-wb8|\
 wf-2881)
 	set_usb_led "$board:green:usb"
 	;;
@@ -76,6 +77,13 @@ br-6425)
 broadway)
 	set_usb_led "$board:red:diskmounted"
 	set_wifi_led "$board:red:wps_active"
+	;;
+c50)
+	ucidef_set_led_default "power" "power" "tp-link:blue:power" "0"
+	ucidef_set_led_netdev "lan" "lan" "tp-link:blue:lan" "eth0.2"
+	set_usb_led "tp-link:blue:usb"
+	ucidef_set_led_wlan "wlan2g" "wlan2g" "tp-link:blue:wlan2g" "phy1radio"
+	ucidef_set_led_wlan "wlan5g" "wlan5g" "tp-link:blue:wlan5g" "phy0radio"
 	;;
 cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "$board:white:ethernet" eth0.1
@@ -185,7 +193,8 @@ miniembplug)
 	set_wifi_led "$board:red:wlan"
 	set_usb_led "$board:green:mobile"
 	;;
-miwifi-mini)
+miwifi-mini|\
+miwifi-nano)
 	ucidef_set_led_default "power" "power" "$board:red:status" "1"
 	;;
 miwifi-nano)
@@ -286,6 +295,11 @@ y1s)
 	ucidef_set_led_default "power" "power" "$board:blue:power" "1"
 	set_usb_led "$board:blue:usb"
 	set_wifi_led "$board:blue:wifi"
+	;;
+zbt-ape522ii)
+	ucidef_set_led_netdev "wlan2g4" "wlan1-link" "$board:green:wlan2g4" "wlan1"
+	ucidef_set_led_netdev "sys1" "wlan1" "$board:green:sys1" "wlan1" "tx rx"
+	ucidef_set_led_netdev "sys2" "wlan0" "$board:green:sys2" "wlan0" "tx rx"
 	;;
 zbt-wa05)
 	ucidef_set_led_default "power" "power" "$board:blue:power" "1"

@@ -1,5 +1,4 @@
 ARCH:=mips
-ARCH_PACKAGES:=adm5120_mips
 SUBTARGET:=router_be
 BOARDNAME:=Big Endian
 FEATURES+=squashfs

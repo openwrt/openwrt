@@ -30,15 +30,15 @@ define Package/kmod-ltq-adsl-fw-template
   SOC:=$(2)
   ANNEX:=$(1)
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_$(3) +kmod-ltq-adsl-$(2)
+  DEPENDS:=@$(3) +kmod-ltq-adsl-$(2)
 endef
 
-Package/kmod-ltq-adsl-danube-fw-a=$(call Package/kmod-ltq-adsl-fw-template,a,danube,xway)
-Package/kmod-ltq-adsl-danube-fw-b=$(call Package/kmod-ltq-adsl-fw-template,b,danube,xway)
-Package/kmod-ltq-adsl-ar9-fw-a=$(call Package/kmod-ltq-adsl-fw-template,a,ar9,xway)
-Package/kmod-ltq-adsl-ar9-fw-b=$(call Package/kmod-ltq-adsl-fw-template,b,ar9,xway)
-Package/kmod-ltq-adsl-ase-fw-a=$(call Package/kmod-ltq-adsl-fw-template,a,ase,ase)
-Package/kmod-ltq-adsl-ase-fw-b=$(call Package/kmod-ltq-adsl-fw-template,b,ase,ase)
+Package/kmod-ltq-adsl-danube-fw-a=$(call Package/kmod-ltq-adsl-fw-template,a,danube,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy))
+Package/kmod-ltq-adsl-danube-fw-b=$(call Package/kmod-ltq-adsl-fw-template,b,danube,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy))
+Package/kmod-ltq-adsl-ar9-fw-a=$(call Package/kmod-ltq-adsl-fw-template,a,ar9,TARGET_lantiq_xway)
+Package/kmod-ltq-adsl-ar9-fw-b=$(call Package/kmod-ltq-adsl-fw-template,b,ar9,TARGET_lantiq_xway)
+Package/kmod-ltq-adsl-ase-fw-a=$(call Package/kmod-ltq-adsl-fw-template,a,ase,TARGET_lantiq_ase)
+Package/kmod-ltq-adsl-ase-fw-b=$(call Package/kmod-ltq-adsl-fw-template,b,ase,TARGET_lantiq_ase)
 
 define Build/Compile
 endef

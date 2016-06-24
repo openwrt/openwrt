@@ -6,45 +6,6 @@
 	compatible = "AR725W", "ralink,rt2880-soc";
 	model = "Airlink101 AR725W";
 
-	palmbus@300000 {
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "spi", "uartlite";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
-	ethernet@400000 {
-		status = "okay";
-		mtd-mac-address = <&factory 0x4>;
-
-		port@0 {
-			phy-handle = <&phy0>;
-			phy-mode = "mii";
-		};
-
-		mdio-bus {
-			status = "okay";
-
-			phy0: ethernet-phy@0 {
-				phy-mode = "mii";
-				reg = <0>;
-			};
-		};
-	};
-
-	wmac@480000 {
-		status = "okay";
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-
 	cfi@bdc00000 {
 		compatible = "cfi-flash";
 		reg = <0xbc400000 0x800000>;
@@ -112,4 +73,41 @@
 			linux,code = <0x198>;
 		};
 	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "spi", "uartlite";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	status = "okay";
+	mtd-mac-address = <&factory 0x4>;
+
+	port@0 {
+		phy-handle = <&phy0>;
+		phy-mode = "mii";
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy0: ethernet-phy@0 {
+			phy-mode = "mii";
+			reg = <0>;
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+	ralink,mtd-eeprom = <&factory 0>;
 };

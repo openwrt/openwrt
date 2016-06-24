@@ -79,8 +79,12 @@ get_status_led() {
 		;;
 	awapn2403|\
 	dir-645|\
+	sk-wb8|\
 	wrh-300cr)
 		status_led="$board:green:wps"
+		;;
+	c50)
+		status_led="tp-link:blue:power"
 		;;
 	cf-wr800n|\
 	psg1208)
@@ -144,7 +148,8 @@ get_status_led() {
 		status_led="$board:amber:cpu"
 		;;
 	oy-0001|\
-	sl-r7205)
+	sl-r7205|\
+	zbt-we826)
 		status_led="$board:green:wifi"
 		;;
 	psr-680w)
@@ -154,7 +159,8 @@ get_status_led() {
 	re6500|\
 	whr-1166d|\
 	whr-300hp2|\
-	whr-600d)
+	whr-600d|\
+	widora-neo)
 		status_led="$board:orange:wifi"
 		;;
 	mzk-ex300np|\
@@ -191,7 +197,7 @@ get_status_led() {
 		;;
 	wsr-1166|\
 	wsr-600)
-		status_led="$board:orange:diag"
+		status_led="$board:green:power"
 		;;
 	wrtnode2r | \
 	wrtnode2p | \

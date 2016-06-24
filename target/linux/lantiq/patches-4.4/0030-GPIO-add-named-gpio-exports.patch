@@ -22,10 +22,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  
-@@ -450,3 +452,69 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -450,3 +452,73 @@ void of_gpiochip_remove(struct gpio_chip
  	gpiochip_remove_pin_ranges(chip);
  	of_node_put(chip->of_node);
  }
++
++#ifdef CONFIG_GPIO_SYSFS
 +
 +static struct of_device_id gpio_export_ids[] = {
 +	{ .compatible = "gpio-export" },
@@ -92,6 +94,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return platform_driver_probe(&gpio_export_driver, of_gpio_export_probe);
 +}
 +device_initcall(of_gpio_export_init);
++
++#endif
 --- a/include/asm-generic/gpio.h
 +++ b/include/asm-generic/gpio.h
 @@ -122,6 +122,12 @@ static inline int gpio_export(unsigned g

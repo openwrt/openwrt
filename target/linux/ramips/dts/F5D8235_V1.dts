@@ -8,21 +8,6 @@
 	compatible = "F5D8235_V1", "ralink,rt2880-soc";
 	model = "Belkin F5D8235 v1";
 
-	palmbus@300000 {
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -55,21 +40,6 @@
 		};
 	};
 
-	ethernet@400000 {
-		status = "okay";
-		mtd-mac-address = <&factory 0x4>;
-
-		port@0 {
-			mediatek,fixed-link = <1000 1 1 1>;
-		};
-	};
-
-	/* FIXME: no u-boot partition and 0x40000@uboot is out of boundaries */
-/*	wmac@480000 {
-		status = "okay";
-		ralink,mtd-eeprom = <&u-boot 0x40000>;
-	};
-*/
 	rtl8366s {
 		compatible = "realtek,rtl8366s";
 		gpio-sda = <&gpio0 1 0>;
@@ -109,3 +79,33 @@
 		};
 	};
 };
+
+&gpio0 {
+	status = "okay";
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	status = "okay";
+	mtd-mac-address = <&factory 0x4>;
+
+	port@0 {
+		mediatek,fixed-link = <1000 1 1 1>;
+	};
+};
+
+/* FIXME: no u-boot partition and 0x40000@uboot is out of boundaries */
+/*&wmac {
+	status = "okay";
+	ralink,mtd-eeprom = <&u-boot 0x40000>;
+};
+*/
+

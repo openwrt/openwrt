@@ -4,7 +4,6 @@
 
 SUBTARGET:=mt7620
 BOARDNAME:=MT7620 based boards
-ARCH_PACKAGES:=ramips_24kec
 FEATURES+=usb
 CPU_TYPE:=24kec
 CPU_SUBTYPE:=dsp

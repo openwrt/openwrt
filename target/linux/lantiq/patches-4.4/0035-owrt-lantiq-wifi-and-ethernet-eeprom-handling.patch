@@ -51,7 +51,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,298 @@
+@@ -0,0 +1,307 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -104,6 +104,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	const __be32 *list;
 +	const char *part;
 +	phandle phandle;
++	u16 dev_ids[2] = { 0 };
 +
 +	if ((list = of_get_property(np, "ath,eep-flash", &i)) && i == 2 *
 +			sizeof(*list) && (phandle = be32_to_cpup(list++)) &&
@@ -186,6 +187,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +                                pci_fixup_device(pci_fixup_early, d);
 +                }
 +
++	}
++
++	if (!of_property_read_u16_array(np, "ath,device-id", dev_ids, 2)) {
++		struct pci_dev *d = NULL;
++
++		while ((d = pci_get_device(PCI_VENDOR_ID_ATHEROS,
++					   dev_ids[0], d)) != NULL)
++		        d->device = dev_ids[1];
 +	}
 +
 +	if (!of_property_read_u32(np, "ath,led-pin", &led_pin)) {
@@ -379,7 +388,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	eth_mac_set = mac_pton(str, eth_mac);
 +	return !eth_mac_set;
 +}
-+__setup("ethaddr=", setup_ethaddr);
++early_param("ethaddr", setup_ethaddr);
 +
 +int __init of_eth_mac_probe(struct platform_device *pdev)
 +{
@@ -620,10 +629,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		goto err_hw;
  
 -	memcpy(&mac, &priv->pldata->mac, sizeof(struct sockaddr));
-+	if (priv->mac)
++	memcpy(&mac.sa_data, ltq_get_eth_mac(), ETH_ALEN);
++
++	if (priv->mac && !is_valid_ether_addr(mac.sa_data))
 +		memcpy(&mac.sa_data, priv->mac, ETH_ALEN);
-+	else
-+		memcpy(&mac.sa_data, ltq_get_eth_mac(), ETH_ALEN);
 +
  	if (!is_valid_ether_addr(mac.sa_data)) {
  		pr_warn("etop: invalid MAC, using random\n");

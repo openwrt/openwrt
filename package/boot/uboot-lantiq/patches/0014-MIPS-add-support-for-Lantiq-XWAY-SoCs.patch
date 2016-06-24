@@ -2381,7 +2381,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +}
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/ebu.c
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,126 @@
 +/*
 + * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
 + *
@@ -2424,7 +2424,13 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#define ebu_region0_enable		0
 +#endif
 +
-+#if defined(CONFIG_LTQ_SUPPORT_NAND_FLASH)
++#if ((CONFIG_SYS_MAX_FLASH_BANKS == 2) && defined(CONFIG_LTQ_SUPPORT_NOR_FLASH) )
++#define ebu_region0_addrsel_mask	3
++#else
++#define ebu_region0_addrsel_mask	1
++#endif
++
++#if defined(CONFIG_LTQ_SUPPORT_NAND_FLASH) || ((CONFIG_SYS_MAX_FLASH_BANKS == 2) && defined(CONFIG_LTQ_SUPPORT_NOR_FLASH) )
 +#define ebu_region1_enable		1
 +#else
 +#define ebu_region1_enable		0
@@ -2460,7 +2466,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +		 * bank 0.
 +		 */
 +		ltq_writel(&ltq_ebu_regs->addr_sel_0, LTQ_EBU_REGION0_BASE |
-+			EBU_ADDRSEL_MASK(1) | EBU_ADDRSEL_REGEN);
++			EBU_ADDRSEL_MASK(ebu_region0_addrsel_mask) | EBU_ADDRSEL_REGEN);
 +
 +		ltq_writel(&ltq_ebu_regs->con_0, EBU_CON_AGEN_DEMUX |
 +			EBU_CON_WAIT_DIS | EBU_CON_PW_16BIT |
@@ -2474,17 +2480,26 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +	if (ebu_region1_enable) {
 +		/*
 +		 * Map EBU region 1 to range 0x14000000-0x13ffffff and enable
-+		 * region control. This supports NAND flash in bank 1.
++		 * region control. This supports NAND flash in bank 1. (and  NOR flash in bank 2)
 +		 */
 +		ltq_writel(&ltq_ebu_regs->addr_sel_1, LTQ_EBU_REGION1_BASE |
 +			EBU_ADDRSEL_MASK(3) | EBU_ADDRSEL_REGEN);
 +
-+		ltq_writel(&ltq_ebu_regs->con_1, EBU_CON_AGEN_DEMUX |
-+			EBU_CON_SETUP | EBU_CON_WAIT_DIS | EBU_CON_PW_8BIT |
-+			EBU_CON_ALEC(3) | EBU_CON_BCGEN_INTEL |
-+			EBU_CON_WAITWRC(2) | EBU_CON_WAITRDC(2) |
-+			EBU_CON_HOLDC(1) | EBU_CON_RECOVC(1) |
-+			EBU_CON_CMULT_4);
++		if (ebu_region0_addrsel_mask == 1)
++			ltq_writel(&ltq_ebu_regs->con_1, EBU_CON_AGEN_DEMUX |
++				EBU_CON_SETUP | EBU_CON_WAIT_DIS | EBU_CON_PW_8BIT |
++				EBU_CON_ALEC(3) | EBU_CON_BCGEN_INTEL |
++				EBU_CON_WAITWRC(2) | EBU_CON_WAITRDC(2) |
++				EBU_CON_HOLDC(1) | EBU_CON_RECOVC(1) |
++				EBU_CON_CMULT_4);
++
++		if (ebu_region0_addrsel_mask == 3)
++			ltq_writel(&ltq_ebu_regs->con_1, EBU_CON_AGEN_DEMUX |
++				EBU_CON_WAIT_DIS | EBU_CON_PW_16BIT |
++				EBU_CON_ALEC(3) | EBU_CON_BCGEN_INTEL |
++				EBU_CON_WAITWRC(7) | EBU_CON_WAITRDC(3) |
++				EBU_CON_HOLDC(3) | EBU_CON_RECOVC(3) |
++				EBU_CON_CMULT_16);
 +	} else
 +		ltq_clrbits(&ltq_ebu_regs->addr_sel_1, EBU_ADDRSEL_REGEN);
 +}
@@ -2495,7 +2510,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +}
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/gphy.c
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,68 @@
 +/*
 + * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
 + *
@@ -2506,17 +2521,23 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#include <asm/lantiq/io.h>
 +#include <asm/arch/soc.h>
 +#include <asm/arch/gphy.h>
++#include <lzma/LzmaTypes.h>
++#include <lzma/LzmaDec.h>
++#include <lzma/LzmaTools.h>
 +
-+static inline void ltq_gphy_copy(const void *fw_start, const void *fw_end,
++static inline void ltq_gphy_decompress(const void *fw_start, const void *fw_end,
 +				ulong dst_addr)
 +{
 +	const ulong fw_len = (ulong) fw_end - (ulong) fw_start;
 +	const ulong addr = CKSEG1ADDR(dst_addr);
 +
-+	debug("ltq_gphy_copy: addr %08lx, fw_start %p, fw_end %p\n",
++	debug("ltq_gphy_decompress: addr %08lx, fw_start %p, fw_end %p\n",
 +		addr, fw_start, fw_end);
 +
-+	memcpy((void *) addr, fw_start, fw_len);
++	SizeT lzma_len = 65536;
++	int ret = lzmaBuffToBuffDecompress(
++	(unsigned char *)addr, &lzma_len,
++	(unsigned char *)fw_start, fw_len);
 +}
 +
 +void ltq_gphy_phy11g_a1x_load(ulong addr)
@@ -2524,8 +2545,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +	extern ulong __ltq_fw_phy11g_a1x_start;
 +	extern ulong __ltq_fw_phy11g_a1x_end;
 +
-+	ltq_gphy_copy(&__ltq_fw_phy11g_a1x_start, &__ltq_fw_phy11g_a1x_end,
-+			addr);
++	ltq_gphy_decompress(&__ltq_fw_phy11g_a1x_start,
++			    &__ltq_fw_phy11g_a1x_end,
++			    addr);
 +}
 +
 +void ltq_gphy_phy11g_a2x_load(ulong addr)
@@ -2533,8 +2555,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +	extern ulong __ltq_fw_phy11g_a2x_start;
 +	extern ulong __ltq_fw_phy11g_a2x_end;
 +
-+	ltq_gphy_copy(&__ltq_fw_phy11g_a2x_start, &__ltq_fw_phy11g_a2x_end,
-+			addr);
++	ltq_gphy_decompress(&__ltq_fw_phy11g_a2x_start,
++			    &__ltq_fw_phy11g_a2x_end,
++			    addr);
 +}
 +
 +void ltq_gphy_phy22f_a1x_load(ulong addr)
@@ -2542,8 +2565,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +	extern ulong __ltq_fw_phy22f_a1x_start;
 +	extern ulong __ltq_fw_phy22f_a1x_end;
 +
-+	ltq_gphy_copy(&__ltq_fw_phy22f_a1x_start, &__ltq_fw_phy22f_a1x_end,
-+			addr);
++	ltq_gphy_decompress(&__ltq_fw_phy22f_a1x_start,
++			    &__ltq_fw_phy22f_a1x_end,
++			    addr);
 +}
 +
 +void ltq_gphy_phy22f_a2x_load(ulong addr)
@@ -2551,8 +2575,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +	extern ulong __ltq_fw_phy22f_a2x_start;
 +	extern ulong __ltq_fw_phy22f_a2x_end;
 +
-+	ltq_gphy_copy(&__ltq_fw_phy22f_a2x_start, &__ltq_fw_phy22f_a2x_end,
-+			addr);
++	ltq_gphy_decompress(&__ltq_fw_phy22f_a2x_start,
++			    &__ltq_fw_phy22f_a2x_end,
++			    addr);
 +}
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/gphy_fw.S
@@ -3450,7 +3475,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#endif /* __DANUBE_SOC_H__ */
 --- /dev/null
 +++ b/arch/mips/include/asm/arch-vrx200/config.h
-@@ -0,0 +1,184 @@
+@@ -0,0 +1,187 @@
 +/*
 + * Copyright (C) 2010 Lantiq Deutschland GmbH
 + * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
@@ -3538,9 +3563,12 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +
 +/* FLASH driver */
 +#if defined(CONFIG_LTQ_SUPPORT_NOR_FLASH)
++#ifndef CONFIG_SYS_MAX_FLASH_BANKS
 +#define CONFIG_SYS_MAX_FLASH_BANKS	1
++#endif
 +#define CONFIG_SYS_MAX_FLASH_SECT	256
 +#define CONFIG_SYS_FLASH_BASE		0xB0000000
++#define CONFIG_SYS_FLASH2_BASE		0xB4000000
 +#define CONFIG_FLASH_16BIT
 +#define CONFIG_SYS_FLASH_CFI
 +#define CONFIG_FLASH_CFI_DRIVER

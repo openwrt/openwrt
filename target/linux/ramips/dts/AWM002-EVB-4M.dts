@@ -5,14 +5,6 @@
 / {
 	model = "AsiaRF AWM002 EVB";
 
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x28>;
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -50,4 +42,12 @@
 			linux,code = <0x32>;
 		};
 	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
 };

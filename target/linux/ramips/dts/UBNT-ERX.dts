@@ -17,30 +17,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	palmbus@1E000000 {
-		spi@b00 {
-			/* This board has 2Mb spi flash soldered in and visible
-			   from manufacturer's firmware.
-			   But this SoC shares spi and nand pins,
-			   and current driver does't handle this sharing well */
-			status = "disabled";
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "jedec,spi-nor";
-				reg = <1>;
-				linux,modalias = "m25p80";
-				spi-max-frequency = <10000000>;
-
-				partition@0 {
-					label = "spi";
-					reg = <0x0 0x200000>;
-					read-only;
-				};
-			};
-		};
-	};
-
 	nand@1e003000 {
 		status = "okay";
 
@@ -78,27 +54,6 @@
 
 	};
 
-	ethernet@1e100000 {
-		mtd-mac-address = <&factory 0x22>;
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "uart2", "uart3", "i2c", "pcie", "rgmii2", "jtag";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
-	sdhci@1E130000 {
-		status = "disabled";
-	};
-
-	pcie@1e140000 {
-		status = "disabled";
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -109,6 +64,49 @@
 			label = "reset";
 			gpios = <&gpio0 12 1>;
 			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x22>;
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "uart2", "uart3", "i2c", "pcie", "rgmii2", "jtag";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&sdhci {
+	status = "disabled";
+};
+
+&pcie {
+	status = "disabled";
+};
+
+&spi0 {
+	/* This board has 2Mb spi flash soldered in and visible
+	   from manufacturer's firmware.
+	   But this SoC shares spi and nand pins,
+	   and current driver does't handle this sharing well */
+	status = "disabled";
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <1>;
+		linux,modalias = "m25p80";
+		spi-max-frequency = <10000000>;
+
+		partition@0 {
+			label = "spi";
+			reg = <0x0 0x200000>;
+			read-only;
 		};
 	};
 };
