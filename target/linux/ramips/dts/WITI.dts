@@ -15,50 +15,7 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	sdhci@10130000 {
-		status = "okay";
-	};
-
-	xhci@1E1C0000 {
-		status = "okay";
-	};
-
-	palmbus@1E000000 {
-		spi@b00 {
-			status = "okay";
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "jedec,spi-nor";
-				reg = <0 0>;
-				linux,modalias = "m25p80";
-				spi-max-frequency = <10000000>;
-
-				partition@0 {
-					label = "u-boot";
-					reg = <0x0 0x30000>;
-					read-only;
-				};
-
-				partition@30000 {
-					label = "u-boot-env";
-					reg = <0x30000 0x10000>;
-					read-only;
-				};
-
-				factory: partition@40000 {
-					label = "factory";
-					reg = <0x40000 0x10000>;
-				};
-
-				partition@50000 {
-					label = "firmware";
-					reg = <0x50000 0xfb0000>;
-				};
-			};
-		};
-
+	palmbus: palmbus@1E000000 {
 		i2c@900 {
 			compatible = "ralink,i2c-mt7621";
 			reg = <0x900 0x100>;
@@ -76,34 +33,6 @@
 		};
 	};
 
-	pcie@1e140000 {
-		status = "okay";
-
-		pcie0 {
-			mt76@0,0 {
-				reg = <0x0000 0 0 0 0>;
-				device_type = "pci";
-				mediatek,mtd-eeprom = <&factory 0x8000>;
-				mediatek,2ghz = <0>;
-				mtd-mac-address = <&factory 0xe000>;
-			};
-		};
-
-		pcie1 {
-			mt76@1,0 {
-				reg = <0x0000 0 0 0 0>;
-				device_type = "pci";
-				mediatek,mtd-eeprom = <&factory 0x0000>;
-				mediatek,5ghz = <0>;
-				mtd-mac-address = <&factory 0xe000>;
-			};
-		};
-	};
-
-	ethernet@1e100000 {
-		mtd-mac-address = <&factory 0xe000>;
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -116,13 +45,85 @@
 			linux,code = <0x198>;
 		};
 	};
+};
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "wdt", "rgmii2", "jtag", "mdio";
-				ralink,function = "gpio";
-			};
+
+&sdhci {
+	status = "okay";
+};
+
+&xhci {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0 0>;
+		linux,modalias = "m25p80";
+		spi-max-frequency = <10000000>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		factory: partition@40000 {
+			label = "factory";
+			reg = <0x40000 0x10000>;
+		};
+
+		partition@50000 {
+			label = "firmware";
+			reg = <0x50000 0xfb0000>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	pcie0 {
+		mt76@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
+			mediatek,mtd-eeprom = <&factory 0x8000>;
+			mediatek,2ghz = <0>;
+			mtd-mac-address = <&factory 0xe000>;
+		};
+	};
+
+	pcie1 {
+		mt76@1,0 {
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
+			mediatek,mtd-eeprom = <&factory 0x0000>;
+			mediatek,5ghz = <0>;
+			mtd-mac-address = <&factory 0xe000>;
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0xe000>;
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "wdt", "rgmii2", "jtag", "mdio";
+			ralink,function = "gpio";
 		};
 	};
 };

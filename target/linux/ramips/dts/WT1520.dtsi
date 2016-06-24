@@ -12,37 +12,35 @@
 	chosen {
 		bootargs = "console=ttyS1,57600";
 	};
+};
 
-	palmbus@10000000 {
-		uart@500 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&uartf_pins>;
-			status = "okay";
+&uart {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uartf_pins>;
+	status = "okay";
+};
+
+&pinctrl {
+	state_default {
+		gpio {
+			ralink,group = "jtag";
+			ralink,function = "gpio";
 		};
 	};
+};
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "jtag";
-				ralink,function = "gpio";
-			};
-		};
-	};
+&ethernet {
+	mtd-mac-address = <&factory 0x4>;
+};
 
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4>;
-	};
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
 
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
+&ehci {
+	status = "okay";
+};
 
-	ehci@101c0000 {
-		status = "okay";
-	};
-
-	ohci@101c1000 {
-		status = "okay";
-	};
+&ohci {
+	status = "okay";
 };

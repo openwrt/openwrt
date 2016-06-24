@@ -6,96 +6,6 @@
 	compatible = "dlink,dir-810l", "ralink,mt7620a-soc";
 	model = "D-Link DIR-810L";
 
-	palmbus@10000000 {
-		spi@b00 {
-			status = "okay";
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "jedec,spi-nor";
-				reg = <0 0>;
-				linux,modalias = "m25p80";
-				spi-max-frequency = <10000000>;
-
-				partition@0 {
-					label = "u-boot";
-					reg = <0x0 0x30000>;
-					read-only;
-				};
-
-				partition@30000 {
-					label = "u-boot-env";
-					reg = <0x30000 0x10000>;
-					read-only;
-				};
-
-				factory: partition@40000 {
-					label = "factory";
-					reg = <0x40000 0x10000>;
-					read-only;
-				};
-
-				factory5g: partition@50000 {
-					label = "factory5g";
-					reg = <0x50000 0x10000>;
-					read-only;
-				};
-
-				partition@60000 {
-					label = "Wolf_Config";
-					reg = <0x60000 0x10000>;
-					read-only;
-				};
-
-				partition@70000 {
-					label = "MyDlink";
-					reg = <0x70000 0x80000>;
-					read-only;
-				};
-
-				partition@e0000 {
-					label = "Jffs2";
-					reg = <0xe0000 0x80000>;
-					read-only;
-				};
-
-				partition@170000 {
-					label = "firmware";
-					reg = <0x170000 0x690000>;
-				};
-			};
-		};
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "mdio", "rgmii1", "i2c", "wled", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x28>;
-		mediatek,portmap = "llllw";
-	};
-
-	gsw@10110000 {
-		mediatek,port4 = "ephy";
-		pinctrl-names = "default";
-		pinctrl-0 = <&ephy_pins>;
-	};
-
-	pcie@10140000 {
-		status = "okay";
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -133,4 +43,92 @@
 			gpios = <&gpio0 13 0>;
 		};
 	};
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0 0>;
+		linux,modalias = "m25p80";
+		spi-max-frequency = <10000000>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		factory: partition@40000 {
+			label = "factory";
+			reg = <0x40000 0x10000>;
+			read-only;
+		};
+
+		factory5g: partition@50000 {
+			label = "factory5g";
+			reg = <0x50000 0x10000>;
+			read-only;
+		};
+
+		partition@60000 {
+			label = "Wolf_Config";
+			reg = <0x60000 0x10000>;
+			read-only;
+		};
+
+		partition@70000 {
+			label = "MyDlink";
+			reg = <0x70000 0x80000>;
+			read-only;
+		};
+
+		partition@e0000 {
+			label = "Jffs2";
+			reg = <0xe0000 0x80000>;
+			read-only;
+		};
+
+		partition@170000 {
+			label = "firmware";
+			reg = <0x170000 0x690000>;
+		};
+	};
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "mdio", "rgmii1", "i2c", "wled", "uartf";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+	mediatek,portmap = "llllw";
+};
+
+&gsw {
+	mediatek,port4 = "ephy";
+	pinctrl-names = "default";
+	pinctrl-0 = <&ephy_pins>;
+};
+
+&pcie {
+	status = "okay";
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
 };

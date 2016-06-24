@@ -24,7 +24,7 @@
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
-	palmbus@10000000 {
+	palmbus: palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
 		ranges = <0x0 0x10000000 0x1FFFFF>;
@@ -32,12 +32,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sysc@0 {
+		sysc: sysc@0 {
 			compatible = "ralink,mt7620a-sysc";
 			reg = <0x0 0x100>;
 		};
 
-		watchdog@120 {
+		watchdog: watchdog@120 {
 			compatible = "ralink,mt7628an-wdt", "mtk,mt7621-wdt";
 			reg = <0x120 0x10>;
 
@@ -66,7 +66,7 @@
 						 0x80 0x78>;
 		};
 
-		memc@300 {
+		memc: memc@300 {
 			compatible = "ralink,mt7620a-memc", "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
 
@@ -109,7 +109,7 @@
 			};
 		};
 
-		i2c@900 {
+		i2c: i2c@900 {
 			compatible = "mediatek,mt7628-i2c";
 			reg = <0x900 0x100>;
 
@@ -125,7 +125,7 @@
 			pinctrl-0 = <&i2c_pins>;
 		};
 
-		i2s@a00 {
+		i2s: i2s@a00 {
 			compatible = "ralink,mt7620a-i2s";
 			reg = <0xa00 0x100>;
 
@@ -142,7 +142,7 @@
 			status = "disabled";
 		};
 
-		spi@b00 {
+		spi0: spi@b00 {
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
 
@@ -176,7 +176,7 @@
 			pinctrl-0 = <&uart0_pins>;
 		};
 
-		uart1@d00 {
+		uart1: uart1@d00 {
 			compatible = "ns16550a";
 			reg = <0xd00 0x100>;
 
@@ -216,7 +216,7 @@
 			status = "disabled";
 		};
 
-		pwm@5000 {
+		pwm: pwm@5000 {
 			compatible = "mediatek,mt7628-pwm";
 			reg = <0x5000 0x1000>;
 
@@ -229,7 +229,7 @@
 			status = "disabled";
 		};
 
-		pcm@2000 {
+		pcm: pcm@2000 {
 			compatible = "ralink,mt7620a-pcm";
 			reg = <0x2000 0x800>;
 
@@ -260,7 +260,7 @@
 		};
 	};
 
-	pinctrl {
+	pinctrl: pinctrl {
 		compatible = "ralink,rt2880-pinmux";
 		pinctrl-names = "default";
 		pinctrl-0 = <&state_default>;
@@ -353,7 +353,7 @@
 		reset-names = "host", "device";
 	};
 
-	sdhci@10130000 {
+	sdhci: sdhci@10130000 {
 		compatible = "ralink,mt7620-sdhci";
 		reg = <0x10130000 0x4000>;
 
@@ -366,7 +366,7 @@
 		status = "disabled";
 	};
 
-	ehci@101c0000 {
+	ehci: ehci@101c0000 {
 		compatible = "generic-ehci";
 		reg = <0x101c0000 0x1000>;
 
@@ -377,7 +377,7 @@
 		interrupts = <18>;
 	};
 
-	ohci@101c1000 {
+	ohci: ohci@101c1000 {
 		compatible = "generic-ohci";
 		reg = <0x101c1000 0x1000>;
 
@@ -388,7 +388,7 @@
 		interrupts = <18>;
 	};
 
-	ethernet@10100000 {
+	ethernet: ethernet@10100000 {
 		compatible = "ralink,rt5350-eth";
 		reg = <0x10100000 0x10000>;
 
@@ -412,7 +412,7 @@
 		interrupts = <17>;
 	};
 
-	pcie@10140000 {
+	pcie: pcie@10140000 {
 		compatible = "mediatek,mt7620-pci";
 		reg = <0x10140000 0x100
 			0x10142000 0x100>;

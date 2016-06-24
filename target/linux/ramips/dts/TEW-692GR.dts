@@ -6,62 +6,6 @@
 	compatible = "TEW-692GR", "ralink,rt3883-soc";
 	model = "TRENDnet TEW-692GR";
 
-	palmbus@10000000 {
-		gpio1: gpio@638 {
-			status = "okay";
-		};
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "spi", "i2c", "jtag", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
-	ethernet@10100000 {
-		status = "okay";
-		mtd-mac-address = <&factory 0x28>;
-
-		port@0 {
-			phy-handle = <&phy0>;
-			phy-mode = "rgmii";
-		};
-
-		mdio-bus {
-			status = "okay";
-
-			phy0: ethernet-phy@0 {
-				reg = <0>;
-			};
-		};
-	};
-
-	pci@10140000 {
-		status = "okay";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pci_pins>;
-
-		pci_pins: pci {
-			pci {
-				ralink,group = "pci";
-				ralink,function = "pci-fnc";
-			};
-		};
-
-		host-bridge {
-			pci-bridge@1 {
-				status = "okay";
-			};
-		};
-	};
-
-	wmac@10180000 {
-		ralink,5ghz = <0>;
-	};
-
 	nor-flash@1c000000 {
 		compatible = "cfi-flash";
 		reg = <0x1c000000 0x800000>;
@@ -125,4 +69,58 @@
 			gpios = <&gpio1 4 1>;
 		};
 	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "spi", "i2c", "jtag", "uartf";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	status = "okay";
+	mtd-mac-address = <&factory 0x28>;
+
+	port@0 {
+		phy-handle = <&phy0>;
+		phy-mode = "rgmii";
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+		};
+	};
+};
+
+&pci {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pci_pins>;
+
+	pci_pins: pci {
+		pci {
+			ralink,group = "pci";
+			ralink,function = "pci-fnc";
+		};
+	};
+
+	host-bridge {
+		pci-bridge@1 {
+			status = "okay";
+		};
+	};
+};
+
+&wmac {
+	ralink,5ghz = <0>;
 };

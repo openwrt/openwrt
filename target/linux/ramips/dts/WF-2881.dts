@@ -11,12 +11,6 @@
 		reg = <0x0 0x8000000>;
 	};
 
-	palmbus@1E000000 {
-		spi@b00 {
-			status="disabled";
-		};
-	};
-
 	chosen {
 		bootargs = "console=ttyS0,57600";
 	};
@@ -54,32 +48,6 @@
 		};
 	};
 
-	pcie@1e140000 {
-		status = "okay";
-
-		pcie0 {
-			mt76@0,0 {
-				reg = <0x0000 0 0 0 0>;
-				device_type = "pci";
-				mediatek,mtd-eeprom = <&factory 0x8000>;
-				mediatek,2ghz = <0>;
-			};
-		};
-
-		pcie1 {
-			mt76@1,0 {
-				reg = <0x0000 0 0 0 0>;
-				device_type = "pci";
-				mediatek,mtd-eeprom = <&factory 0x0000>;
-				mediatek,5ghz = <0>;
-			};
-		};
-	};
-
-	ethernet@1e100000 {
-		mtd-mac-address = <&factory 0xe006>;
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -106,13 +74,43 @@
 			linux,code = <0x198>;
 		};
 	};
+};
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "uart3", "jtag";
-				ralink,function = "gpio";
-			};
+&spi0 {
+	status="disabled";
+};
+
+&pcie {
+	status = "okay";
+
+	pcie0 {
+		mt76@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
+			mediatek,mtd-eeprom = <&factory 0x8000>;
+			mediatek,2ghz = <0>;
+		};
+	};
+
+	pcie1 {
+		mt76@1,0 {
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
+			mediatek,mtd-eeprom = <&factory 0x0000>;
+			mediatek,5ghz = <0>;
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0xe006>;
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "uart3", "jtag";
+			ralink,function = "gpio";
 		};
 	};
 };

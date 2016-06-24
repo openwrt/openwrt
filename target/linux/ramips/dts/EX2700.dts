@@ -20,73 +20,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	palmbus@10000000 {
-
-		gpio0: gpio@600 {
-			status = "okay";
-		};
-
-		gpio1: gpio@638 {
-			status = "okay";
-		};
-
-		spi@b00 {
-			status = "okay";
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "jedec,spi-nor";
-				reg = <0 0>;
-				linux,modalias = "m25p80", "mx25l3205d";
-				spi-max-frequency = <10000000>;
-
-				partition@0 {
-					label = "u-boot";
-					reg = <0x0 0x30000>;
-					read-only;
-				};
-
-				partition@30000 {
-					label = "u-boot-env";
-					reg = <0x30000 0x10000>;
-					read-only;
-				};
-
-				partition@40000 {
-					label = "firmware";
-					reg = <0x40000 0x3b0000>;
-				};
-
-				art: partition@3f0000 {
-					label = "art";
-					reg = <0x3f0000 0x10000>;
-					read-only;
-				};
-			};
-		};
-	};
-
-	ethernet@10100000 {
-		mtd-mac-address = <&art 0x0>;
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&art 0x1000>;
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			default {
-				//  spi refclk: pins 37, 38, 39
-				//       uartf: pins 8, 9, 10, 11, 12, 13, 14
-				//         i2c: pins 1, 2
-				ralink,group = "i2c", "uartf", "spi refclk";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -143,6 +76,70 @@
 			label = "wps";
 			gpios = <&gpio0 2 1>;
 			linux,code = <0x211>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0 0>;
+		linux,modalias = "m25p80", "mx25l3205d";
+		spi-max-frequency = <10000000>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "firmware";
+			reg = <0x40000 0x3b0000>;
+		};
+
+		art: partition@3f0000 {
+			label = "art";
+			reg = <0x3f0000 0x10000>;
+			read-only;
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&art 0x0>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&art 0x1000>;
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		default {
+			//  spi refclk: pins 37, 38, 39
+			//       uartf: pins 8, 9, 10, 11, 12, 13, 14
+			//         i2c: pins 1, 2
+			ralink,group = "i2c", "uartf", "spi refclk";
+			ralink,function = "gpio";
 		};
 	};
 };

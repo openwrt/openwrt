@@ -6,15 +6,6 @@
 	compatible = "UR-336UN", "ralink,rt3052-soc";
 	model = "UPVEL UR-336UN";
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -24,20 +15,6 @@
 		#size-cells = <1>;
 	};
 
-	/* FIXME: no partitions defined */
-/*	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4004>;
-	};
-*/
-	esw@10110000 {
-		mediatek,portmap = <0x2f>;
-	};
-
-	/* FIXME: no partitions defined */
-/*	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-*/
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -85,8 +62,31 @@
 			linux,code = <0x32>;
 		};
 	};
+};
 
-	otg@101c0000 {
-		status = "okay";
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+			ralink,function = "gpio";
+		};
 	};
+};
+
+/* FIXME: no partitions defined */
+/*&ethernet {
+	mtd-mac-address = <&factory 0x4004>;
+};
+*/
+&esw {
+	mediatek,portmap = <0x2f>;
+};
+
+/* FIXME: no partitions defined */
+/*&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
+};
+*/
+&otg {
+	status = "okay";
 };

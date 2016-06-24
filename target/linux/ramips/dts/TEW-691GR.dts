@@ -6,42 +6,6 @@
 	compatible = "TEW-691GR", "ralink,rt3883-soc";
 	model = "TRENDnet TEW-691GR";
 
-	palmbus@10000000 {
-		gpio1: gpio@638 {
-			status = "okay";
-		};
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "spi", "i2c", "jtag", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x28>;
-
-		port@0 {
-			phy-handle = <&phy0>;
-			phy-mode = "rgmii";
-		};
-
-		mdio-bus {
-			status = "okay";
-
-			phy0: ethernet-phy@0 {
-				reg = <0>;
-			};
-		};
-	};
-
-	wmac@10180000 {
-		ralink,5ghz = <0>;
-	};
-
 	nor-flash@1c000000 {
 		compatible = "cfi-flash";
 		reg = <0x1c000000 0x800000>;
@@ -106,4 +70,38 @@
 			gpios = <&gpio0 9 1>;
 		};
 	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "spi", "i2c", "jtag", "uartf";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+
+	port@0 {
+		phy-handle = <&phy0>;
+		phy-mode = "rgmii";
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+		};
+	};
+};
+
+&wmac {
+	ralink,5ghz = <0>;
 };

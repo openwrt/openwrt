@@ -25,7 +25,7 @@
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
-	palmbus@10000000 {
+	palmbus: palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
 		ranges = <0x0 0x10000000 0x1FFFFF>;
@@ -33,12 +33,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sysc@0 {
+		sysc: sysc@0 {
 			compatible = "ralink,rt3050-sysc";
 			reg = <0x0 0x100>;
 		};
 
-		timer@100 {
+		timer: timer@100 {
 			compatible = "ralink,rt3050-timer", "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
@@ -46,7 +46,7 @@
 			interrupts = <1>;
 		};
 
-		watchdog@120 {
+		watchdog: watchdog@120 {
 			compatible = "ralink,rt3050-wdt", "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
@@ -71,7 +71,7 @@
 			interrupts = <2>;
 		};
 
-		memc@300 {
+		memc: memc@300 {
 			compatible = "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
 
@@ -82,7 +82,7 @@
 			interrupts = <3>;
 		};
 
-		uart@500 {
+		uart: uart@500 {
 			compatible = "ralink,rt3050-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0x500 0x100>;
 
@@ -182,7 +182,7 @@
 		};
 	};
 
-	pinctrl {
+	pinctrl: pinctrl {
 		compatible = "ralink,rt2880-pinmux";
 
 		pinctrl-names = "default";
@@ -215,7 +215,7 @@
 		#reset-cells = <1>;
 	};
 
-	ethernet@10100000 {
+	ethernet: ethernet@10100000 {
 		compatible = "ralink,rt3050-eth";
 		reg = <0x10100000 0x10000>;
 
@@ -239,7 +239,7 @@
 		interrupts = <17>;
 	};
 
-	wmac@10180000 {
+	wmac: wmac@10180000 {
 		compatible = "ralink,rt3050-wmac", "ralink,rt2880-wmac";
 		reg = <0x10180000 0x40000>;
 
@@ -249,7 +249,7 @@
 		ralink,eeprom = "soc_wmac.eeprom";
 	};
 
-	otg@101c0000 {
+	otg: otg@101c0000 {
 		compatible = "ralink,rt3050-otg", "snps,dwc2";
 		reg = <0x101c0000 0x40000>;
 

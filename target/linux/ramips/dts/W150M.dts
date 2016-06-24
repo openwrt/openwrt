@@ -6,15 +6,6 @@
 	compatible = "W150M", "ralink,rt3050-soc";
 	model = "Tenda W150M";
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
@@ -99,16 +90,25 @@
 			linux,code = <0x100>;
 		};
 	};
+};
 
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4>;
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+			ralink,function = "gpio";
+		};
 	};
+};
 
-	esw@10110000 {
-		mediatek,portmap = <0x2f>;
-	};
+&ethernet {
+	mtd-mac-address = <&factory 0x4>;
+};
 
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
+&esw {
+	mediatek,portmap = <0x2f>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
 };

@@ -10,78 +10,6 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
-	palmbus@10000000 {
-		spi@b00 {
-			status = "okay";
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "jedec,spi-nor";
-				reg = <0 0>;
-				linux,modalias = "m25p80", "mx25l3205d";
-				spi-max-frequency = <10000000>;
-
-				partition@0 {
-					label = "u-boot";
-					reg = <0x0 0x30000>;
-					read-only;
-				};
-
-				factory: partition@30000 {
-					label = "factory";
-					reg = <0x30000 0x10000>;
-					read-only;
-				};
-
-				partition@40000 {
-					label = "config";
-					reg = <0x40000 0x20000>;
-					read-only;
-				};
-
-				partition@60000 {
-					label = "language";
-					reg = <0x60000 0x30000>;
-					read-only;
-				};
-
-				partition@90000 {
-					label = "pot";
-					reg = <0x90000 0x10000>;
-					read-only;
-				};
-
-				partition@a0000 {
-					label = "checksum";
-					reg = <0xa0000 0x10000>;
-				};
-
-				partition@b0000 {
-					label = "firmware";
-					reg = <0xb0000 0x350000>;
-				};
-			};
-		};
-	};
-
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf";
-				ralink,function = "gpio";
-			};
-		};
-	};
-
-	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x28>;
-	};
-
-	wmac@10180000 {
-		ralink,mtd-eeprom = <&factory 0>;
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -136,4 +64,74 @@
 			linux,code = <0x101>;
 		};
 	};
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0 0>;
+		linux,modalias = "m25p80", "mx25l3205d";
+		spi-max-frequency = <10000000>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		factory: partition@30000 {
+			label = "factory";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "config";
+			reg = <0x40000 0x20000>;
+			read-only;
+		};
+
+		partition@60000 {
+			label = "language";
+			reg = <0x60000 0x30000>;
+			read-only;
+		};
+
+		partition@90000 {
+			label = "pot";
+			reg = <0x90000 0x10000>;
+			read-only;
+		};
+
+		partition@a0000 {
+			label = "checksum";
+			reg = <0xa0000 0x10000>;
+		};
+
+		partition@b0000 {
+			label = "firmware";
+			reg = <0xb0000 0x350000>;
+		};
+	};
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&ethernet {
+	mtd-mac-address = <&factory 0x28>;
+};
+
+&wmac {
+	ralink,mtd-eeprom = <&factory 0>;
 };
