@@ -376,6 +376,14 @@ define Device/youku-yk1
 endef
 TARGET_DEVICES += youku-yk1
 
+define Device/zbt-ape522ii
+  DTS := ZBT-APE522II
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Zbtlink ZBT-APE522II
+  DEVICE_PACKAGES := kmod-mt76
+endef
+TARGET_DEVICES += zbt-ape522ii
+
 define Device/zbt-wa05
   DTS := ZBT-WA05
   IMAGE_SIZE := $(ralink_default_fw_size_8M)

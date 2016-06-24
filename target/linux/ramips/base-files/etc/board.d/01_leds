@@ -296,6 +296,11 @@ y1s)
 	set_usb_led "$board:blue:usb"
 	set_wifi_led "$board:blue:wifi"
 	;;
+zbt-ape522ii)
+	ucidef_set_led_netdev "wlan2g4" "wlan1-link" "$board:green:wlan2g4" "wlan1"
+	ucidef_set_led_netdev "sys1" "wlan1" "$board:green:sys1" "wlan1" "tx rx"
+	ucidef_set_led_netdev "sys2" "wlan0" "$board:green:sys2" "wlan0" "tx rx"
+	;;
 zbt-wa05)
 	ucidef_set_led_default "power" "power" "$board:blue:power" "1"
 	set_wifi_led "$board:blue:air"

@@ -155,6 +155,7 @@ platform_check_image() {
 	x8|\
 	y1|\
 	y1s|\
+	zbt-ape522ii|\
 	zbt-wa05|\
 	zbt-we826|\
 	zbt-wg2626|\
