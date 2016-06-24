@@ -22,7 +22,7 @@
  
  struct wpa_ctrl_dst;
  struct radius_server_data;
-@@ -117,6 +118,7 @@ struct hostapd_data {
+@@ -118,6 +119,7 @@ struct hostapd_data {
  	struct hostapd_iface *iface;
  	struct hostapd_config *iconf;
  	struct hostapd_bss_config *conf;
@@ -30,7 +30,7 @@
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -322,6 +324,8 @@ struct hostapd_iface {
+@@ -323,6 +325,8 @@ struct hostapd_iface {
  	struct hostapd_config *conf;
  	char phy[16]; /* Name of the PHY (radio) */
  
@@ -661,7 +661,7 @@
 +#endif
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -282,6 +282,7 @@ static void hostapd_free_hapd_data(struc
+@@ -284,6 +284,7 @@ static void hostapd_free_hapd_data(struc
  	hapd->started = 0;
  
  	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
@@ -669,7 +669,7 @@
  	iapp_deinit(hapd->iapp);
  	hapd->iapp = NULL;
  	accounting_deinit(hapd);
-@@ -1137,6 +1138,8 @@ static int hostapd_setup_bss(struct host
+@@ -1139,6 +1140,8 @@ static int hostapd_setup_bss(struct host
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -678,7 +678,7 @@
  	return 0;
  }
  
-@@ -1662,6 +1665,7 @@ static int hostapd_setup_interface_compl
+@@ -1664,6 +1667,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
  
@@ -686,7 +686,7 @@
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->conf->channel) {
  #ifdef NEED_AP_MLME
-@@ -1842,6 +1846,7 @@ dfs_offload:
+@@ -1844,6 +1848,7 @@ dfs_offload:
  
  fail:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -694,7 +694,7 @@
  	hostapd_set_state(iface, HAPD_IFACE_DISABLED);
  	wpa_msg(hapd->msg_ctx, MSG_INFO, AP_EVENT_DISABLED);
  #ifdef CONFIG_FST
-@@ -2268,6 +2273,7 @@ void hostapd_interface_deinit_free(struc
+@@ -2277,6 +2282,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;
@@ -704,7 +704,7 @@
  		   __func__, driver, drv_priv);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -929,7 +929,8 @@ int auth_sae_init_committed(struct hosta
+@@ -980,7 +980,8 @@ int auth_sae_init_committed(struct hosta
  
  
  static void handle_auth(struct hostapd_data *hapd,
@@ -714,7 +714,7 @@
  {
  	u16 auth_alg, auth_transaction, status_code;
  	u16 resp = WLAN_STATUS_SUCCESS;
-@@ -945,6 +946,11 @@ static void handle_auth(struct hostapd_d
+@@ -996,6 +997,11 @@ static void handle_auth(struct hostapd_d
  	char *identity = NULL;
  	char *radius_cui = NULL;
  	u16 seq_ctrl;
@@ -726,7 +726,7 @@
  
  	os_memset(&vlan_id, 0, sizeof(vlan_id));
  
-@@ -1098,6 +1104,14 @@ static void handle_auth(struct hostapd_d
+@@ -1149,6 +1155,14 @@ static void handle_auth(struct hostapd_d
  		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
  		goto fail;
  	}
@@ -741,7 +741,7 @@
  	if (res == HOSTAPD_ACL_PENDING) {
  		wpa_printf(MSG_DEBUG, "Authentication frame from " MACSTR
  			   " waiting for an external authentication",
-@@ -1982,13 +1996,18 @@ static u16 send_assoc_resp(struct hostap
+@@ -2033,13 +2047,18 @@ static u16 send_assoc_resp(struct hostap
  
  static void handle_assoc(struct hostapd_data *hapd,
  			 const struct ieee80211_mgmt *mgmt, size_t len,
@@ -761,7 +761,7 @@
  
  	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_req) :
  				      sizeof(mgmt->u.assoc_req))) {
-@@ -2108,6 +2127,13 @@ static void handle_assoc(struct hostapd_
+@@ -2159,6 +2178,13 @@ static void handle_assoc(struct hostapd_
  	}
  #endif /* CONFIG_MBO */
  
@@ -775,7 +775,7 @@
  	/*
  	 * sta->capability is used in check_assoc_ies() for RRM enabled
  	 * capability element.
-@@ -2588,7 +2614,7 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -2639,7 +2665,7 @@ int ieee802_11_mgmt(struct hostapd_data
  
  
  	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
@@ -784,7 +784,7 @@
  		return 1;
  	}
  
-@@ -2606,17 +2632,17 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -2657,17 +2683,17 @@ int ieee802_11_mgmt(struct hostapd_data
  	switch (stype) {
  	case WLAN_FC_STYPE_AUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::auth");
