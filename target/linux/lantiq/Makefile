@@ -9,8 +9,8 @@ include $(TOPDIR)/rules.mk
 BOARD:=lantiq
 BOARDNAME:=Lantiq
 FEATURES:=squashfs
-SUBTARGETS=xway xrx200
-MAINTAINER:=John Crispin <blogic@openwrt.org>
+SUBTARGETS=xrx200 xway xway_legacy
+MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.4
 
