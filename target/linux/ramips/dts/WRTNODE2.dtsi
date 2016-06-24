@@ -57,9 +57,8 @@
 	spidev@1 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "spidev";
+		compatible = "linux,spidev";
 		reg = <1>;
-		linux,modalias = "spidev", "spidev";
 		spi-max-frequency = <10000000>;
 	};
 };
