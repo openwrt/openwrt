@@ -193,7 +193,7 @@ get_status_led() {
 		;;
 	wsr-1166|\
 	wsr-600)
-		status_led="$board:orange:diag"
+		status_led="$board:green:power"
 		;;
 	wrtnode2r | \
 	wrtnode2p | \
