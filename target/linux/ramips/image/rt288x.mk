@@ -3,14 +3,14 @@
 #
 
 define Build/gemtek-header
-  mkheader_gemtek $@ $@.new $(1) && mv $@.new $@
+	mkheader_gemtek $@ $@.new $(1) && mv $@.new $@
 endef
 
 define Build/airlink-header
-  mkwrgimg -i $@ \
-	-d "/dev/mtdblock/2" \
-	-s "wrgn16a_airlink_ar670w" \
-	-o $@.new && mv $@.new $@
+	mkwrgimg -i $@ \
+		-d "/dev/mtdblock/2" \
+		-s "wrgn16a_airlink_ar670w" \
+		-o $@.new && mv $@.new $@
 endef
 
 define Device/ar670w
