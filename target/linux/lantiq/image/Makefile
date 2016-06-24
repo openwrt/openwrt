@@ -280,23 +280,24 @@ define Device/Default
   FILESYSTEMS := squashfs
   DEVICE_PROFILE :=
   DEVICE_DTS :=
+  IMAGE_SIZE :=
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
-DEVICE_VARS += DEVICE_PROFILE DEVICE_DTS
+DEVICE_VARS += DEVICE_PROFILE DEVICE_DTS IMAGE_SIZE
 
 define Device/lantiqTpLink
   KERNEL := kernel-bin | append-dtb | lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | tplink-fw
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := mktplinkfw2
+  IMAGE/sysupgrade.bin := mktplinkfw2 | check-size $$$$(IMAGE_SIZE)
 endef
 DEVICE_VARS += BOARD_ID
 
 define Device/lantiqBrnImage
   KERNEL := kernel-bin | append-dtb | mkbrncmdline | lzma-no-dict
   IMAGES := factory.bin
-  IMAGE/factory.bin := mkbrnimg
+  IMAGE/factory.bin := mkbrnimg | check-size $$$$(IMAGE_SIZE)
 endef
 DEVICE_VARS += SIGNATURE MAGIC CRC32_POLY
 
@@ -305,7 +306,8 @@ define lantiqTpLink
     $$(Device/lantiqTpLink)
     DEVICE_PROFILE := $(1)
     DEVICE_DTS := $(1)
-    BOARD_ID := $(2)
+    IMAGE_SIZE := $(2)
+    BOARD_ID := $(3)
   endef
   TARGET_DEVICES += $(1)
 endef
@@ -314,7 +316,8 @@ define lantiqImage
   define Device/$(1)
     $$(Device/lantiqImage)
     DEVICE_PROFILE := $(1)
-    DEVICE_DTS := $(if $(2),$(2),$(1))
+    IMAGE_SIZE := $(2)
+    DEVICE_DTS := $(if $(3),$(3),$(1))
   endef
   TARGET_DEVICES += $(1)
 endef
@@ -324,9 +327,10 @@ define lantiqBrnImage
     $$(Device/lantiqBrnImage)
     DEVICE_PROFILE := $(1)
     DEVICE_DTS := $(1)
-    SIGNATURE := $(2)
-    MAGIC := $(3)
-    CRC32_POLY := $(4)
+    IMAGE_SIZE := $(2)
+    SIGNATURE := $(3)
+    MAGIC := $(4)
+    CRC32_POLY := $(5)
   endef
   TARGET_DEVICES += $(1)
 endef
@@ -341,7 +345,7 @@ endif
 
 ifeq ($(CONFIG_TARGET_lantiq_ase),y)
 
-$(eval $(call lantiqImage,DGN1000B))
+$(eval $(call lantiqImage,DGN1000B,3392k))
 
 endif
 
@@ -355,23 +359,23 @@ BTHOMEHUBV2B_UBI_OPTS:="-m 512 -p 16KiB -s 256"
 Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
 Image/Build/Profile/BTHOMEHUBV2B=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV2B)
 
-$(eval $(call lantiqImage,EASY50712))
-$(eval $(call lantiqImage,ACMP252))
-$(eval $(call lantiqImage,ARV4510PW))
-$(eval $(call lantiqImage,ARV4525PW))
-$(eval $(call lantiqImage,ARV7525PW))
-$(eval $(call lantiqImage,ARV4518PWR01))
-$(eval $(call lantiqImage,ARV4518PWR01A))
-$(eval $(call lantiqImage,ARV4519PW))
-$(eval $(call lantiqImage,ARV4520PW))
-$(eval $(call lantiqImage,ARV452CQW))
-$(eval $(call lantiqImage,ARV7510PW22))
-$(eval $(call lantiqImage,ARV7518PW))
-$(eval $(call lantiqImage,ARV7519PW))
-$(eval $(call lantiqImage,ARV752DPW))
-$(eval $(call lantiqImage,ARV752DPW22))
-$(eval $(call lantiqImage,ARV8539PW22))
-$(eval $(call lantiqImage,GIGASX76X))
+$(eval $(call lantiqImage,EASY50712,3776k))
+$(eval $(call lantiqImage,ACMP252,14848k))
+$(eval $(call lantiqImage,ARV4510PW,15616k))
+$(eval $(call lantiqImage,ARV4525PW,3776k))
+$(eval $(call lantiqImage,ARV7525PW,3776k))
+$(eval $(call lantiqImage,ARV4518PWR01,3776k))
+$(eval $(call lantiqImage,ARV4518PWR01A,3776k))
+$(eval $(call lantiqImage,ARV4519PW,3776k))
+$(eval $(call lantiqImage,ARV4520PW,3648k))
+$(eval $(call lantiqImage,ARV452CQW,3776k))
+$(eval $(call lantiqImage,ARV7510PW22,31232k))
+$(eval $(call lantiqImage,ARV7518PW,7872k))
+$(eval $(call lantiqImage,ARV7519PW,15488k))
+$(eval $(call lantiqImage,ARV752DPW,7872k))
+$(eval $(call lantiqImage,ARV752DPW22,7616k))
+$(eval $(call lantiqImage,ARV8539PW22,7616k))
+$(eval $(call lantiqImage,GIGASX76X,7680k))
 
 
 # AR9
@@ -387,15 +391,15 @@ Image/Build/Profile/DGN3500=$(call Image/BuildDGN3500/$(1),$(1),DGN3500)
 Image/BuildKernel/Profile/DGN3500B=$(call Image/BuildKernel/Template,DGN3500B)
 Image/Build/Profile/DGN3500B=$(call Image/BuildDGN3500B/$(1),$(1),DGN3500B)
 
-$(eval $(call lantiqImage,WBMRA,WBMR))
-$(eval $(call lantiqImage,WBMRB,WBMR))
+$(eval $(call lantiqImage,WBMRA,31488k,WBMR))
+$(eval $(call lantiqImage,WBMRB,31488k,WBMR))
 
 Image/BuildKernel/Profile/FRITZ7320=$(call Image/BuildKernelEVA/Template,FRITZ7320)
 Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
 
-$(eval $(call lantiqImage,GR7000))
-$(eval $(call lantiqImage,H201L))
-$(eval $(call lantiqImage,P2601HNFX))
+$(eval $(call lantiqImage,GR7000,7808k))
+$(eval $(call lantiqImage,H201L,7808k))
+$(eval $(call lantiqImage,P2601HNFX,15616k))
 
 endif
 
@@ -415,7 +419,7 @@ P2812HNUF3_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 Image/BuildKernel/Profile/P2812HNUF3=$(call Image/BuildKernel/Template,P2812HNUF3)
 Image/Build/Profile/P2812HNUF3=$(call Image/BuildNAND/$(1),$(1),P2812HNUF3)
 
-$(eval $(call lantiqImage,ARV7519RW22))
+$(eval $(call lantiqImage,ARV7519RW22,31232k))
 
 BTHOMEHUBV5A_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
 BTHOMEHUBV5A_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
@@ -423,8 +427,8 @@ BTHOMEHUBV5A_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 Image/BuildKernel/Profile/BTHOMEHUBV5A=$(call Image/BuildKernel/Template,BTHOMEHUBV5A)
 Image/Build/Profile/BTHOMEHUBV5A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV5A)
 
-$(eval $(call lantiqImage,EASY80920NAND))
-$(eval $(call lantiqImage,EASY80920NOR))
+$(eval $(call lantiqImage,EASY80920NAND,64512k))
+$(eval $(call lantiqImage,EASY80920NOR,7936k))
 
 FRITZ3370_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
 FRITZ3370_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
@@ -435,13 +439,13 @@ Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
-$(eval $(call lantiqTpLink,TDW8970,TD-W8970v1))
-$(eval $(call lantiqTpLink,TDW8980,TD-W8980v1))
-$(eval $(call lantiqTpLink,VR200v,ArcherVR200V))
-$(eval $(call lantiqImage,VGV7510KW22NOR))
-$(eval $(call lantiqBrnImage,VGV7510KW22BRN,BRNDA6431,0x12345678,0x04c11db7))
-$(eval $(call lantiqImage,VGV7519NOR))
-$(eval $(call lantiqBrnImage,VGV7519BRN,5D00008000,0x12345678,0x2083b8ed))
+$(eval $(call lantiqTpLink,TDW8970,7680k,TD-W8970v1))
+$(eval $(call lantiqTpLink,TDW8980,7680k,TD-W8980v1))
+$(eval $(call lantiqTpLink,VR200v,15808k,ArcherVR200V))
+$(eval $(call lantiqImage,VGV7510KW22NOR,15232k))
+$(eval $(call lantiqBrnImage,VGV7510KW22BRN,6784k,BRNDA6431,0x12345678,0x04c11db7))
+$(eval $(call lantiqImage,VGV7519NOR,15360k))
+$(eval $(call lantiqBrnImage,VGV7519BRN,7168k,5D00008000,0x12345678,0x2083b8ed))
 
 define Image/Prepare
 	$(call Image/Prepare/Profile,$(PROFILE))
