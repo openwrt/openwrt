@@ -62,6 +62,10 @@ VG3503J)
 	ucidef_set_interface_lan 'eth0'
 	;;
 
+ARV4518PWR01*)
+        ucidef_set_interface_lan 'eth0'
+        ;;
+
 DGN3500*)
 	ucidef_add_switch "switch0" \
 		"3:lan:1" "2:lan:2" "1:lan:3" "0:lan:4" "5t@eth0"
