@@ -18,7 +18,8 @@ try_svn() {
 
 try_git() {
 	git rev-parse --git-dir >/dev/null 2>&1 || return 1
-	REV="$(git describe --tags | sed "s/trunk-\([0-9]*-.*\)/\1/g")"
+	REV="$(git describe --tags | sed "s/trunk-\([0-9]*\)-.*/\1/g")"
+	REV="$((REV+12009))"
 	[ -n "$REV" ]
 }
 
