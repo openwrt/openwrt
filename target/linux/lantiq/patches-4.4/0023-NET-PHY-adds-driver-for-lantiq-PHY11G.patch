@@ -163,8 +163,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* Clear all pending interrupts */
 +	phy_read(phydev, MII_VR9_11G_ISTAT);
 +
-+	vr9_gphy_mmd_write(phydev, 0x1e0, 0xc5);
-+	vr9_gphy_mmd_write(phydev, 0x1e1, 0x67);
++	vr9_gphy_mmd_write(phydev, 0x1e0, 0xc0);
++	vr9_gphy_mmd_write(phydev, 0x1e1, 0x00);
 +	vr9_gphy_mmd_write(phydev, 0x1e2, 0x70);
 +	vr9_gphy_mmd_write(phydev, 0x1e3, 0x03);
 +	vr9_gphy_mmd_write(phydev, 0x1e4, 0x70);
