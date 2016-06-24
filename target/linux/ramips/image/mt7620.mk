@@ -8,8 +8,9 @@ define Build/tplink-header
 endef
 
 define Build/pad-kernel-ex2700
-	dd if=$@ of=$@.new bs=64k conv=sync && truncate -s -64 $@.new \
-		&& cat ex2700-fakeroot.uImage >> $@.new && mv $@.new $@
+	dd if=/dev/zero of=$@.pad bs=64 count=1 && cat $@ $@.pad \
+		| dd of=$@.new bs=64k conv=sync && truncate -s -64 $@.new \
+		&& cat ex2700-fakeroot.uImage >> $@.new && rm $@.pad && mv $@.new $@
 endef
 
 define Build/netgear-header
