@@ -24,7 +24,7 @@ PKG_CONFIG_DEPENDS:=\
 	CONFIG_LTQ_DSL_ENABLE_SOAP \
 	CONFIG_LTQ_DSL_ENABLE_DSL_EVENT_POLLING
 
-PKG_BUILD_DEPENDS:=TARGET_lantiq_xway:kmod-ltq-adsl-danube TARGET_lantiq_ase:kmod-ltq-adsl-ase
+PKG_BUILD_DEPENDS:=TARGET_lantiq_xway:kmod-ltq-adsl-danube TARGET_lantiq_xway_legacy:kmod-ltq-adsl-danube TARGET_lantiq_ase:kmod-ltq-adsl-ase
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -33,7 +33,7 @@ define Package/ltq-adsl-app
   CATEGORY:=Network
   TITLE:=Lantiq DSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_ase) +libpthread
+  DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy||TARGET_lantiq_ase) +libpthread
   MENU:=1
 endef
 
