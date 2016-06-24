@@ -35,18 +35,6 @@ define Build/mktplinkfw-initramfs
 	@mv $@.new $@
 endef
 
-define Build/tplink-safeloader
-       -$(STAGING_DIR_HOST)/bin/tplink-safeloader \
-		-B $(TPLINK_BOARD_NAME) \
-		-V $(REVISION) \
-		-k $(word 1,$^) \
-		-r $@ \
-		-o $@.new \
-		-j \
-		$(wordlist 2,$(words $(1)),$(1)) \
-		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && mv $@.new $@ || rm -f $@
-endef
-
 define Device/tplink
   TPLINK_HWREV := 0x1
   TPLINK_HEADER_VERSION := 1
