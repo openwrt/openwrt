@@ -146,16 +146,16 @@ endif
 # $(6): padding size.
 define CatFiles
 	if [ $(2) -eq 0 ]; then \
-		filename="$(3)"; fstype=$$$${filename##*\.}; \
-		case "$$$${fstype}" in \
+		filename="$(3)"; fstype=$${filename##*\.}; \
+		case "$${fstype}" in \
 		"jffs2-64k") bs=65536;; \
 		"jffs2-128k") bs=131072;; \
 		"jffs2-256k") bs=262144;; \
 		*) bs=`stat -c%s $(1)`;; \
 		esac; \
-		( dd if=$(1) bs=$$$${bs} conv=sync;  cat $(3) ) > $(5); \
+		( dd if=$(1) bs=$${bs} conv=sync;  cat $(3) ) > $(5); \
 		if [ -n "$(6)" ]; then \
-			case "$$$${fstype}" in \
+			case "$${fstype}" in \
 			squashfs*) \
 				padjffs2 $(5) $(6); \
 				;; \
@@ -357,7 +357,7 @@ endef
 define Image/Build/CameoAP94
 	$(eval fwsize=$(call mtdpartsize,firmware,$(4)))
 	$(eval fwsize_fat=$(call mtdpartsize,firmware,$(5)))
-	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(fwsize)-4*64*1024)),64)
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$(($(fwsize)-4*64*1024)),64)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			dd if=$(call sysupname,$(1),$(2)); \
@@ -372,7 +372,7 @@ define Image/Build/CameoAP94
 			) > $(call factoryname,$(1),$(2)); \
 		fi; \
 	fi
-	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,0,$(KDIR)/root.$(1),$$$$(($(fwsize_fat)-4*64*1024)),$(KDIR_TMP)/$(2)-fat.bin,64)
+	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2)-fat.uImage,0,$(KDIR)/root.$(1),$$(($(fwsize_fat)-4*64*1024)),$(KDIR_TMP)/$(2)-fat.bin,64)
 	if [ -e "$(KDIR_TMP)/$(2)-fat.bin" ]; then \
 		echo -n "" > $(KDIR_TMP)/$(2)-fat.dummy; \
 		sh $(TOPDIR)/scripts/combined-image.sh \
@@ -383,7 +383,7 @@ define Image/Build/CameoAP94
 endef
 
 define Image/Build/WZRHP
-	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(3)-4*$(4)*1024)),$(4))
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$(($(3)-4*$(4)*1024)),$(4))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
@@ -413,7 +413,7 @@ Image/Build/WHRHPG300N/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 
 define Image/Build/WHRHPG300N
 	$(eval fwsize=$(call mtdpartsize,firmware,$(4)))
-	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(fwsize)-4*64*1024)),64)
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$(($(fwsize)-4*64*1024)),64)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
@@ -432,11 +432,11 @@ endef
 
 define Image/Build/Cameo
 	$(eval fwsize=$(call mtdpartsize,firmware,$(4)))
-	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(fwsize)-4*64*1024)),64)
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$(($(fwsize)-4*64*1024)),64)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		factory_size=$$$$(($(fwsize) - $(6))); \
+		factory_size=$$(($(fwsize) - $(6))); \
 		( \
-			dd if=$(call sysupname,$(1),$(2)) bs=$$$${factory_size} conv=sync; \
+			dd if=$(call sysupname,$(1),$(2)) bs=$${factory_size} conv=sync; \
 			echo -n $(5); \
 		) > $(call factoryname,$(1),$(2)); \
 	fi
@@ -472,7 +472,7 @@ Image/Build/CameoDB120_8M/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(ca
 
 define Image/Build/CameoHornet
 	$(eval fwsize=$(call mtdpartsize,firmware,$(4)))
-	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(fwsize)-4*64*1024)),64)
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$(($(fwsize)-4*64*1024)),64)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		for r in $(7); do \
 			[ -n "$$$$r" ] && dashr="-$$$$r" || dashr=; \
@@ -624,7 +624,7 @@ endef
 
 define Image/Build/Planex
 	$(eval fwsize=$(call mtdpartsize,firmware,$(planex_mtdlayout)))
-	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$$$(($(fwsize)-4*64*1024)),64)
+	$(call Sysupgrade/KRuImage,$(1),$(2),0,$$(($(fwsize)-4*64*1024)),64)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkplanexfw \
 			-B $(2) \
@@ -661,7 +661,7 @@ define Image/Build/Seama
 	[ -e "$(KDIR)/loader-$(2).bin" ]
 	$(call CompressLzma,$(KDIR)/loader-$(2).bin,$(KDIR_TMP)/loader-$(2).bin.lzma)
 	-rm -f $(KDIR_TMP)/image-$(2).tmp
-	$(call CatFiles,$(KDIR_TMP)/loader-$(2).bin.lzma,$$$$(($(6) - 64)),$(KDIR)/root.$(1),$(7),$(KDIR_TMP)/image-$(2).tmp)
+	$(call CatFiles,$(KDIR_TMP)/loader-$(2).bin.lzma,$$(($(6) - 64)),$(KDIR)/root.$(1),$(7),$(KDIR_TMP)/image-$(2).tmp)
 	[ -e "$(KDIR_TMP)/image-$(2).tmp" ] && { \
 		head -c -4 "$(KDIR_TMP)/image-$(2).tmp" > "$(KDIR_TMP)/image-$(2).no-jffs2mark.tmp"; \
 		$(STAGING_DIR_HOST)/bin/seama \
@@ -1204,10 +1204,4 @@ endef
 define Image/Build/Profile
 	$(call Image/Build/Profile/$(1),buildkernel)
 	$(call Image/Build/Profile/$(1),$(2))
-endef
-
-# $(1): filesystem type.
-define Image/Build
-	$(call Image/Build/$(call rootfs_type,$(1)),$(1))
-	$(call Image/Build/Profile/$(IMAGE_PROFILE),$(1))
 endef
