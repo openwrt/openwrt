@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -483,6 +483,12 @@ config SPI_RT2880
+@@ -483,6 +483,12 @@
  	help
  	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
  
@@ -28,7 +28,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on ARCH_S3C24XX
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -51,6 +51,7 @@ obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mp
+@@ -51,6 +51,7 @@
  obj-$(CONFIG_SPI_MPC52xx_PSC)		+= spi-mpc52xx-psc.o
  obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52xx.o
  obj-$(CONFIG_SPI_MT65XX)                += spi-mt65xx.o
@@ -38,7 +38,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
 --- /dev/null
 +++ b/drivers/spi/spi-mt7621.c
-@@ -0,0 +1,480 @@
+@@ -0,0 +1,483 @@
 +/*
 + * spi-mt7621.c -- MediaTek MT7621 SPI controller driver
 + *
@@ -239,6 +239,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +		if (!buf)
 +			continue;
++
++		if (t->speed_hz < speed)
++			speed = t->speed_hz;
 +
 +		if (WARN_ON(len + t->len > 36)) {
 +			status = -EIO;
