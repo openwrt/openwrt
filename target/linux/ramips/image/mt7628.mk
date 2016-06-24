@@ -25,3 +25,11 @@ define Device/wrtnode2p
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
 endef
 TARGET_DEVICES += wrtnode2p
+
+define Device/duzun-dm06
+  DTS := DUZUN-DM06
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := DuZun DM06
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
+endef
+TARGET_DEVICES += duzun-dm06

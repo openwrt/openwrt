@@ -172,6 +172,10 @@ ramips_setup_interfaces()
 	wrh-300cr)
 		ucidef_set_interface_lan "eth0"
 		;;
+	duzun-dm06)
+		ucidef_add_switch "switch0" \
+			"1:lan" "0:wan" "6@eth0"
+		;;
 	e1700|\
 	mt7620a_mt7530)
 		ucidef_add_switch "switch1" \
