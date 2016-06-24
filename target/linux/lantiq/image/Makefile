@@ -703,7 +703,7 @@ endef
 TARGET_DEVICES += VGV7519BRN
 
 define Image/Prepare
-	$(if $(Image/Build/Profile/$(PROFILE)),$(call Image/Prepare/Profile,$(PROFILE)))
+	$(call Image/Prepare/Profile,VG3503J)
 endef
 
 endif
