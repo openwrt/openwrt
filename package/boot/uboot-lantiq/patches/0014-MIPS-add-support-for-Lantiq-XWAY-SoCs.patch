@@ -2510,7 +2510,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +}
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/gphy.c
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,68 @@
 +/*
 + * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
 + *
@@ -2521,17 +2521,23 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#include <asm/lantiq/io.h>
 +#include <asm/arch/soc.h>
 +#include <asm/arch/gphy.h>
++#include <lzma/LzmaTypes.h>
++#include <lzma/LzmaDec.h>
++#include <lzma/LzmaTools.h>
 +
-+static inline void ltq_gphy_copy(const void *fw_start, const void *fw_end,
++static inline void ltq_gphy_decompress(const void *fw_start, const void *fw_end,
 +				ulong dst_addr)
 +{
 +	const ulong fw_len = (ulong) fw_end - (ulong) fw_start;
 +	const ulong addr = CKSEG1ADDR(dst_addr);
 +
-+	debug("ltq_gphy_copy: addr %08lx, fw_start %p, fw_end %p\n",
++	debug("ltq_gphy_decompress: addr %08lx, fw_start %p, fw_end %p\n",
 +		addr, fw_start, fw_end);
 +
-+	memcpy((void *) addr, fw_start, fw_len);
++	SizeT lzma_len = 65536;
++	int ret = lzmaBuffToBuffDecompress(
++	(unsigned char *)addr, &lzma_len,
++	(unsigned char *)fw_start, fw_len);
 +}
 +
 +void ltq_gphy_phy11g_a1x_load(ulong addr)
@@ -2539,8 +2545,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +	extern ulong __ltq_fw_phy11g_a1x_start;
 +	extern ulong __ltq_fw_phy11g_a1x_end;
 +
-+	ltq_gphy_copy(&__ltq_fw_phy11g_a1x_start, &__ltq_fw_phy11g_a1x_end,
-+			addr);
++	ltq_gphy_decompress(&__ltq_fw_phy11g_a1x_start,
++			    &__ltq_fw_phy11g_a1x_end,
++			    addr);
 +}
 +
 +void ltq_gphy_phy11g_a2x_load(ulong addr)
@@ -2548,8 +2555,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +	extern ulong __ltq_fw_phy11g_a2x_start;
 +	extern ulong __ltq_fw_phy11g_a2x_end;
 +
-+	ltq_gphy_copy(&__ltq_fw_phy11g_a2x_start, &__ltq_fw_phy11g_a2x_end,
-+			addr);
++	ltq_gphy_decompress(&__ltq_fw_phy11g_a2x_start,
++			    &__ltq_fw_phy11g_a2x_end,
++			    addr);
 +}
 +
 +void ltq_gphy_phy22f_a1x_load(ulong addr)
@@ -2557,8 +2565,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +	extern ulong __ltq_fw_phy22f_a1x_start;
 +	extern ulong __ltq_fw_phy22f_a1x_end;
 +
-+	ltq_gphy_copy(&__ltq_fw_phy22f_a1x_start, &__ltq_fw_phy22f_a1x_end,
-+			addr);
++	ltq_gphy_decompress(&__ltq_fw_phy22f_a1x_start,
++			    &__ltq_fw_phy22f_a1x_end,
++			    addr);
 +}
 +
 +void ltq_gphy_phy22f_a2x_load(ulong addr)
@@ -2566,8 +2575,9 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +	extern ulong __ltq_fw_phy22f_a2x_start;
 +	extern ulong __ltq_fw_phy22f_a2x_end;
 +
-+	ltq_gphy_copy(&__ltq_fw_phy22f_a2x_start, &__ltq_fw_phy22f_a2x_end,
-+			addr);
++	ltq_gphy_decompress(&__ltq_fw_phy22f_a2x_start,
++			    &__ltq_fw_phy22f_a2x_end,
++			    addr);
 +}
 --- /dev/null
 +++ b/arch/mips/cpu/mips32/vrx200/gphy_fw.S
