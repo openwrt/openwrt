@@ -647,6 +647,14 @@ Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
 
 include tp-link.mk
 
+define Device/WBMR300
+  DEVICE_PROFILE := WBMR300
+  IMAGE_SIZE := 15616k
+  DEVICE_TITLE := Buffalo WBMR-300HPD
+  DEVICE_PACKAGES := kmod-mt76 wpad-mini kmod-usb-dwc2
+endef
+TARGET_DEVICES += WBMR300
+
 define Device/VGV7510KW22NOR
   DEVICE_PROFILE := VGV7510KW22NOR
   IMAGE_SIZE := 15232k
