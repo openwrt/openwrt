@@ -23,9 +23,14 @@ try_git() {
 		REV="$(git rev-parse HEAD~$((BASE_REV - GET_REV)))"
 		;;
 	*)
-
+		UPSTREAM_BASE="$(git merge-base $GET_REV origin/master)"
+		UPSTREAM_REV="$(git rev-list reboot..$UPSTREAM_BASE --count)"
 		REV="$(git rev-list reboot..$GET_REV --count)"
-		REV="${REV:+r$REV}"
+		if [ -n "$REV" -a -n "$UPSTREAM_REV" -a "$REV" -gt "$UPSTREAM_REV" ]; then
+			REV="r${UPSTREAM_REV}+$((REV - UPSTREAM_REV))"
+		else
+			REV="${REV:+r$REV}"
+		fi
 		;;
 	esac
 
