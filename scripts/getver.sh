@@ -23,14 +23,23 @@ try_git() {
 		REV="$(git rev-parse HEAD~$((BASE_REV - GET_REV)))"
 		;;
 	*)
-		UPSTREAM_BASE="$(git merge-base $GET_REV origin/master)"
-		UPSTREAM_REV="$(git rev-list reboot..$UPSTREAM_BASE | wc -l | awk '{print $1}')"
+		BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+		ORIGIN="$(git rev-parse --symbolic-full-name ${BRANCH}@{u} 2>/dev/null)"
+		[ -n "$ORIGIN" ] || ORIGIN="$(git rev-parse --symbolic-full-name master@{u} 2>/dev/null)"
 		REV="$(git rev-list reboot..$GET_REV | wc -l | awk '{print $1}')"
-		if [ -n "$REV" -a -n "$UPSTREAM_REV" -a "$REV" -gt "$UPSTREAM_REV" ]; then
-			REV="r${UPSTREAM_REV}+$((REV - UPSTREAM_REV))"
+
+		if [ -n "$ORIGIN" ]; then
+			UPSTREAM_BASE="$(git merge-base $GET_REV $ORIGIN)"
+			UPSTREAM_REV="$(git rev-list reboot..$UPSTREAM_BASE | wc -l | awk '{print $1}')"
 		else
-			REV="${REV:+r$REV}"
+			UPSTREAM_REV=$REV
 		fi
+
+		if [ "$REV" -gt "$UPSTREAM_REV" ]; then
+			REV="${UPSTREAM_REV}+$((REV - UPSTREAM_REV))"
+		fi
+
+		REV="${REV:+r$REV}"
 		;;
 	esac
 
