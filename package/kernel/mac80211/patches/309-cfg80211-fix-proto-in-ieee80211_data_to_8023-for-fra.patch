@@ -1,0 +1,37 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 29 Jun 2016 10:02:32 +0200
+Subject: [PATCH] cfg80211: fix proto in ieee80211_data_to_8023 for frames
+ without LLC header
+
+The PDU length of incoming LLC frames is set to the total skb payload size
+in __ieee80211_data_to_8023() of net/wireless/util.c which incorrectly
+includes the length of the IEEE 802.11 header.
+
+The resulting LLC frame header has a too large PDU length, causing the
+llc_fixup_skb() function of net/llc/llc_input.c to reject the incoming
+skb, effectively breaking STP.
+
+Solve the problem by properly substracting the IEEE 802.11 frame header size
+from the PDU length, allowing the LLC processor to pick up the incoming
+control messages.
+
+Special thanks to Gerry Rozema for tracking down the regression and proposing
+a suitable patch.
+
+Fixes: 2d1c304cb2d5 ("cfg80211: add function for 802.3 conversion with separate output buffer")
+Cc: stable@vger.kernel.org
+Reported-by: Gerry Rozema <gerryr@rozeware.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -509,7 +509,7 @@ static int __ieee80211_data_to_8023(stru
+ 		 * replace EtherType */
+ 		hdrlen += ETH_ALEN + 2;
+ 	else
+-		tmp.h_proto = htons(skb->len);
++		tmp.h_proto = htons(skb->len - hdrlen);
+ 
+ 	pskb_pull(skb, hdrlen);
+ 

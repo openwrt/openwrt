@@ -13,7 +13,7 @@ Signed-off-by: Ben Greear <greearb@candelatech.com>
 
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -773,6 +773,7 @@ static void ath10k_peer_cleanup(struct a
+@@ -802,6 +802,7 @@ static void ath10k_peer_cleanup(struct a
  {
  	struct ath10k_peer *peer, *tmp;
  	int peer_id;
@@ -21,7 +21,7 @@ Signed-off-by: Ben Greear <greearb@candelatech.com>
  
  	lockdep_assert_held(&ar->conf_mutex);
  
-@@ -789,6 +790,17 @@ static void ath10k_peer_cleanup(struct a
+@@ -818,6 +819,17 @@ static void ath10k_peer_cleanup(struct a
  			ar->peer_map[peer_id] = NULL;
  		}
  
@@ -39,7 +39,7 @@ Signed-off-by: Ben Greear <greearb@candelatech.com>
  		list_del(&peer->list);
  		kfree(peer);
  		ar->num_peers--;
-@@ -799,6 +811,7 @@ static void ath10k_peer_cleanup(struct a
+@@ -828,6 +840,7 @@ static void ath10k_peer_cleanup(struct a
  static void ath10k_peer_cleanup_all(struct ath10k *ar)
  {
  	struct ath10k_peer *peer, *tmp;
@@ -47,7 +47,7 @@ Signed-off-by: Ben Greear <greearb@candelatech.com>
  
  	lockdep_assert_held(&ar->conf_mutex);
  
-@@ -807,6 +820,10 @@ static void ath10k_peer_cleanup_all(stru
+@@ -836,6 +849,10 @@ static void ath10k_peer_cleanup_all(stru
  		list_del(&peer->list);
  		kfree(peer);
  	}

@@ -57,7 +57,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4901,7 +4901,7 @@ static int b43_wireless_core_init(struct
+@@ -4883,7 +4883,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */
