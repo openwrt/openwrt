@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.7
-PKG_RELEASE:=9
+PKG_RELEASE:=10
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://download.samba.org/pub/ppp/
@@ -174,7 +174,8 @@ endef
 
 MAKE_FLAGS += COPTS="$(TARGET_CFLAGS)" \
 		PRECOMPILED_FILTER=1 \
-		STAGING_DIR="$(STAGING_DIR)"
+		STAGING_DIR="$(STAGING_DIR)" \
+		TOOLCHAIN_DIR="$(TOOLCHAIN_DIR)"
 
 ifeq ($(BUILD_VARIANT),multilink)
   MAKE_FLAGS += HAVE_MULTILINK=y
@@ -189,6 +190,8 @@ endif
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/include/pppd $(1)/usr/include/
+	$(INSTALL_DIR) $(1)/usr/include/net
+	$(CP) $(PKG_BUILD_DIR)/include/net/ppp_defs.h $(1)/usr/include/net/
 endef
 
 define Package/ppp/script_install
