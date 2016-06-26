@@ -37,11 +37,9 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
  drivers/clk/clk.c | 34 ++++++++++++++++++++++------------
  1 file changed, 22 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index f13c3f4..8404c3c 100644
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -1427,21 +1427,24 @@ static struct clk_core *clk_propagate_rate_change(struct clk_core *core,
+@@ -1427,21 +1427,24 @@ static struct clk_core *clk_propagate_ra
   * walk down a subtree and set the new rates notifying the rate
   * change on the way
   */
@@ -73,7 +71,7 @@ index f13c3f4..8404c3c 100644
  
  	if (core->new_parent && core->new_parent != core->parent) {
  		old_parent = __clk_set_parent_before(core, core->new_parent);
-@@ -1467,7 +1470,7 @@ static void clk_change_rate(struct clk_core *core)
+@@ -1467,7 +1470,7 @@ static void clk_change_rate(struct clk_c
  
  	trace_clk_set_rate_complete(core, core->new_rate);
  
@@ -82,7 +80,7 @@ index f13c3f4..8404c3c 100644
  
  	if (core->notifier_count && old_rate != core->rate)
  		__clk_notify(core, POST_RATE_CHANGE, old_rate, core->rate);
-@@ -1483,12 +1486,13 @@ static void clk_change_rate(struct clk_core *core)
+@@ -1483,12 +1486,13 @@ static void clk_change_rate(struct clk_c
  		/* Skip children who will be reparented to another clock */
  		if (child->new_parent && child->new_parent != core)
  			continue;
@@ -99,7 +97,7 @@ index f13c3f4..8404c3c 100644
  }
  
  static int clk_core_set_rate_nolock(struct clk_core *core,
-@@ -1497,6 +1501,7 @@ static int clk_core_set_rate_nolock(struct clk_core *core,
+@@ -1497,6 +1501,7 @@ static int clk_core_set_rate_nolock(stru
  	struct clk_core *top, *fail_clk;
  	unsigned long rate = req_rate;
  	int ret = 0;
@@ -107,7 +105,7 @@ index f13c3f4..8404c3c 100644
  
  	if (!core)
  		return 0;
-@@ -1522,8 +1527,13 @@ static int clk_core_set_rate_nolock(struct clk_core *core,
+@@ -1522,8 +1527,13 @@ static int clk_core_set_rate_nolock(stru
  		return -EBUSY;
  	}
  
@@ -122,6 +120,3 @@ index f13c3f4..8404c3c 100644
  
  	core->req_rate = req_rate;
  
--- 
-2.7.2
-

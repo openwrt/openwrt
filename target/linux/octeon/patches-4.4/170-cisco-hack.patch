@@ -18,7 +18,7 @@ Signed-off-by: Michał Osowiecki <michal.osowiecki@gmail.com>
 
 --- a/arch/mips/cavium-octeon/setup.c
 +++ b/arch/mips/cavium-octeon/setup.c
-@@ -944,6 +944,10 @@
+@@ -944,6 +944,10 @@ void __init plat_mem_setup(void)
  	if (mem_alloc_size > MAX_MEMORY)
  		mem_alloc_size = MAX_MEMORY;
  

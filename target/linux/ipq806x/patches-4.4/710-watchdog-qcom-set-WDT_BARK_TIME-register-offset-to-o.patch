@@ -18,8 +18,6 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
  drivers/watchdog/qcom-wdt.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/watchdog/qcom-wdt.c b/drivers/watchdog/qcom-wdt.c
-index 773dcfa..002274a 100644
 --- a/drivers/watchdog/qcom-wdt.c
 +++ b/drivers/watchdog/qcom-wdt.c
 @@ -22,6 +22,7 @@
@@ -30,7 +28,7 @@ index 773dcfa..002274a 100644
  #define WDT_BITE_TIME	0x5C
  
  struct qcom_wdt {
-@@ -44,6 +45,7 @@ static int qcom_wdt_start(struct watchdog_device *wdd)
+@@ -44,6 +45,7 @@ static int qcom_wdt_start(struct watchdo
  
  	writel(0, wdt->base + WDT_EN);
  	writel(1, wdt->base + WDT_RST);
@@ -38,6 +36,3 @@ index 773dcfa..002274a 100644
  	writel(wdd->timeout * wdt->rate, wdt->base + WDT_BITE_TIME);
  	writel(1, wdt->base + WDT_EN);
  	return 0;
--- 
-2.7.2
-

@@ -8,8 +8,6 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
  drivers/spi/spi-qup.c | 54 +++++++++++++++++++++++++++++++++++++++++++++++++--
  1 file changed, 52 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index 810a7fa..0808017 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
 @@ -24,6 +24,7 @@
@@ -28,7 +26,7 @@ index 810a7fa..0808017 100644
  };
  
  
-@@ -370,7 +372,8 @@ static int spi_qup_do_pio(struct spi_master *master, struct spi_transfer *xfer)
+@@ -370,7 +372,8 @@ static int spi_qup_do_pio(struct spi_mas
  		return ret;
  	}
  
@@ -38,7 +36,7 @@ index 810a7fa..0808017 100644
  
  	return 0;
  }
-@@ -448,6 +451,7 @@ spi_qup_get_mode(struct spi_master *master, struct spi_transfer *xfer)
+@@ -448,6 +451,7 @@ spi_qup_get_mode(struct spi_master *mast
  {
  	struct spi_qup *qup = spi_master_get_devdata(master);
  	u32 mode;
@@ -46,7 +44,7 @@ index 810a7fa..0808017 100644
  
  	qup->w_size = 4;
  
-@@ -458,6 +462,14 @@ spi_qup_get_mode(struct spi_master *master, struct spi_transfer *xfer)
+@@ -458,6 +462,14 @@ spi_qup_get_mode(struct spi_master *mast
  
  	qup->n_words = xfer->len / qup->w_size;
  
@@ -61,7 +59,7 @@ index 810a7fa..0808017 100644
  	if (qup->n_words <= (qup->in_fifo_sz / sizeof(u32)))
  		mode = QUP_IO_M_MODE_FIFO;
  	else
-@@ -491,7 +503,7 @@ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+@@ -491,7 +503,7 @@ static int spi_qup_io_config(struct spi_
  		return -EIO;
  	}
  
@@ -70,7 +68,7 @@ index 810a7fa..0808017 100644
  	n_words = controller->n_words;
  
  	if (mode == QUP_IO_M_MODE_FIFO) {
-@@ -500,6 +512,7 @@ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+@@ -500,6 +512,7 @@ static int spi_qup_io_config(struct spi_
  		/* must be zero for FIFO */
  		writel_relaxed(0, controller->base + QUP_MX_INPUT_CNT);
  		writel_relaxed(0, controller->base + QUP_MX_OUTPUT_CNT);
@@ -117,7 +115,7 @@ index 810a7fa..0808017 100644
  static int spi_qup_probe(struct platform_device *pdev)
  {
  	struct spi_master *master;
-@@ -846,6 +891,11 @@ static int spi_qup_probe(struct platform_device *pdev)
+@@ -846,6 +891,11 @@ static int spi_qup_probe(struct platform
  	if (of_device_is_compatible(dev->of_node, "qcom,spi-qup-v1.1.1"))
  		controller->qup_v1 = 1;
  
@@ -129,6 +127,3 @@ index 810a7fa..0808017 100644
  	spin_lock_init(&controller->lock);
  	init_completion(&controller->done);
  
--- 
-2.7.2
-

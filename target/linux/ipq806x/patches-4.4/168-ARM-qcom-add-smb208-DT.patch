@@ -11,31 +11,31 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
 -			smb208_s1a: smb208-s1a {
 -				compatible = "qcom,rpm-smb208";
 -				reg = <QCOM_RPM_SMB208_S1a>;
--
--				regulator-min-microvolt = <1050000>;
--				regulator-max-microvolt = <1150000>;
 +			regulators {
 +				compatible = "qcom,rpm-smb208-regulators";
  
--				qcom,switch-mode-frequency = <1200000>;
--
--			};
+-				regulator-min-microvolt = <1050000>;
+-				regulator-max-microvolt = <1150000>;
 +				smb208_s1a: s1a {
 +					regulator-min-microvolt = <1050000>;
 +					regulator-max-microvolt = <1150000>;
  
+-				qcom,switch-mode-frequency = <1200000>;
++					qcom,switch-mode-frequency = <1200000>;
+ 
+-			};
+-
 -			smb208_s1b: smb208-s1b {
 -				compatible = "qcom,rpm-smb208";
 -				reg = <QCOM_RPM_SMB208_S1b>;
-+					qcom,switch-mode-frequency = <1200000>;
- 
+-
 -				regulator-min-microvolt = <1050000>;
 -				regulator-max-microvolt = <1150000>;
--
--				qcom,switch-mode-frequency = <1200000>;
--			};
 +				};
  
+-				qcom,switch-mode-frequency = <1200000>;
+-			};
+-
 -			smb208_s2a: smb208-s2a {
 -				compatible = "qcom,rpm-smb208";
 -				reg = <QCOM_RPM_SMB208_S2a>;
@@ -71,7 +71,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
 +				};
  			};
  		};
-
+ 
 --- a/arch/arm/boot/dts/qcom-ipq8065.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8065.dtsi
 @@ -311,45 +311,37 @@
@@ -81,31 +81,31 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
 -			smb208_s1a: smb208-s1a {
 -				compatible = "qcom,rpm-smb208";
 -				reg = <QCOM_RPM_SMB208_S1a>;
--
--				regulator-min-microvolt = <1050000>;
--				regulator-max-microvolt = <1150000>;
 +			regulators {
 +				compatible = "qcom,rpm-smb208-regulators";
  
--				qcom,switch-mode-frequency = <1200000>;
--
--			};
+-				regulator-min-microvolt = <1050000>;
+-				regulator-max-microvolt = <1150000>;
 +				smb208_s1a: s1a {
 +					regulator-min-microvolt = <1050000>;
 +					regulator-max-microvolt = <1150000>;
  
+-				qcom,switch-mode-frequency = <1200000>;
++					qcom,switch-mode-frequency = <1200000>;
+ 
+-			};
+-
 -			smb208_s1b: smb208-s1b {
 -				compatible = "qcom,rpm-smb208";
 -				reg = <QCOM_RPM_SMB208_S1b>;
-+					qcom,switch-mode-frequency = <1200000>;
- 
+-
 -				regulator-min-microvolt = <1050000>;
 -				regulator-max-microvolt = <1150000>;
--
--				qcom,switch-mode-frequency = <1200000>;
--			};
 +				};
  
+-				qcom,switch-mode-frequency = <1200000>;
+-			};
+-
 -			smb208_s2a: smb208-s2a {
 -				compatible = "qcom,rpm-smb208";
 -				reg = <QCOM_RPM_SMB208_S2a>;
@@ -140,4 +140,5 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
 +					qcom,switch-mode-frequency = <1400000>;
 +				};
  			};
- 		};
+ 
+ 			cxo_clk: cxo-clk {

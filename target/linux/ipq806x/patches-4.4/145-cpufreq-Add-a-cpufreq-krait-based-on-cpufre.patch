@@ -21,7 +21,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 
 --- a/drivers/cpufreq/Kconfig
 +++ b/drivers/cpufreq/Kconfig
-@@ -198,6 +198,19 @@
+@@ -198,6 +198,19 @@ config CPUFREQ_DT
  
  	  If in doubt, say N.
  
@@ -43,7 +43,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  endif
 --- a/drivers/cpufreq/Makefile
 +++ b/drivers/cpufreq/Makefile
-@@ -13,6 +13,7 @@
+@@ -13,6 +13,7 @@ obj-$(CONFIG_CPU_FREQ_GOV_CONSERVATIVE)
  obj-$(CONFIG_CPU_FREQ_GOV_COMMON)		+= cpufreq_governor.o
  
  obj-$(CONFIG_CPUFREQ_DT)		+= cpufreq-dt.o
@@ -446,7 +446,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +MODULE_LICENSE("GPL v2");
 --- a/drivers/cpufreq/qcom-cpufreq.c
 +++ b/drivers/cpufreq/qcom-cpufreq.c
-@@ -168,11 +168,8 @@
+@@ -168,11 +168,8 @@ static int __init qcom_cpufreq_populate_
  
  static int __init qcom_cpufreq_driver_init(void)
  {

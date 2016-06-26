@@ -38,7 +38,7 @@ drivers/mtd/nand/nand_base.c | 6 +++++-
 
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -394,7 +394,11 @@
+@@ -394,7 +394,11 @@ static int nand_default_block_markbad(st
  	} else {
  		ops.len = ops.ooblen = 1;
  	}
@@ -53,7 +53,7 @@ drivers/mtd/nand/nand_base.c | 6 +++++-
  	if (chip->bbt_options & NAND_BBT_SCANLASTPAGE)
 --- a/drivers/mtd/nand/nand_bbt.c
 +++ b/drivers/mtd/nand/nand_bbt.c
-@@ -420,7 +420,11 @@
+@@ -420,7 +420,11 @@ static int scan_block_fast(struct mtd_in
  	ops.oobbuf = buf;
  	ops.ooboffs = 0;
  	ops.datbuf = NULL;
@@ -68,7 +68,7 @@ drivers/mtd/nand/nand_base.c | 6 +++++-
  		/*
 --- a/include/linux/mtd/bbm.h
 +++ b/include/linux/mtd/bbm.h
-@@ -116,6 +116,12 @@
+@@ -116,6 +116,12 @@ struct nand_bbt_descr {
  #define NAND_BBT_NO_OOB_BBM	0x00080000
  
  /*

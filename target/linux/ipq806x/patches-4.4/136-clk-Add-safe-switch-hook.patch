@@ -19,8 +19,6 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
  include/linux/clk-provider.h |  1 +
  2 files changed, 54 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index 8404c3c..a29319a 100644
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
 @@ -51,9 +51,12 @@ struct clk_core {
@@ -46,7 +44,7 @@ index 8404c3c..a29319a 100644
  
  	core->new_rate = new_rate;
  	core->new_parent = new_parent;
-@@ -1281,6 +1285,18 @@ static void clk_calc_subtree(struct clk_core *core, unsigned long new_rate,
+@@ -1281,6 +1285,18 @@ static void clk_calc_subtree(struct clk_
  	if (new_parent && new_parent != core->parent)
  		new_parent->new_child = core;
  
@@ -65,7 +63,7 @@ index 8404c3c..a29319a 100644
  	hlist_for_each_entry(child, &core->children, child_node) {
  		child->new_rate = clk_recalc(child, new_rate);
  		clk_calc_subtree(child, child->new_rate, NULL, 0);
-@@ -1393,14 +1409,43 @@ static struct clk_core *clk_propagate_rate_change(struct clk_core *core,
+@@ -1393,14 +1409,43 @@ static struct clk_core *clk_propagate_ra
  						  unsigned long event)
  {
  	struct clk_core *child, *tmp_clk, *fail_clk = NULL;
@@ -112,7 +110,7 @@ index 8404c3c..a29319a 100644
  			fail_clk = core;
  	}
  
-@@ -1446,7 +1491,8 @@ clk_change_rate(struct clk_core *core, unsigned long best_parent_rate)
+@@ -1446,7 +1491,8 @@ clk_change_rate(struct clk_core *core, u
  
  	old_rate = core->rate;
  
@@ -122,7 +120,7 @@ index 8404c3c..a29319a 100644
  		old_parent = __clk_set_parent_before(core, core->new_parent);
  		trace_clk_set_parent(core, core->new_parent);
  
-@@ -1472,9 +1518,6 @@ clk_change_rate(struct clk_core *core, unsigned long best_parent_rate)
+@@ -1472,9 +1518,6 @@ clk_change_rate(struct clk_core *core, u
  
  	core->rate = core->new_rate;
  
@@ -132,7 +130,7 @@ index 8404c3c..a29319a 100644
  	if (core->flags & CLK_RECALC_NEW_RATES)
  		(void)clk_calc_new_rates(core, core->new_rate);
  
-@@ -1537,6 +1580,8 @@ static int clk_core_set_rate_nolock(struct clk_core *core,
+@@ -1537,6 +1580,8 @@ static int clk_core_set_rate_nolock(stru
  
  	core->req_rate = req_rate;
  
@@ -141,8 +139,6 @@ index 8404c3c..a29319a 100644
  	return ret;
  }
  
-diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
-index b6b17b5..5d49262 100644
 --- a/include/linux/clk-provider.h
 +++ b/include/linux/clk-provider.h
 @@ -202,6 +202,7 @@ struct clk_ops {
@@ -153,6 +149,3 @@ index b6b17b5..5d49262 100644
  	int		(*set_rate)(struct clk_hw *hw, unsigned long rate,
  				    unsigned long parent_rate);
  	int		(*set_rate_and_parent)(struct clk_hw *hw,
--- 
-2.7.2
-

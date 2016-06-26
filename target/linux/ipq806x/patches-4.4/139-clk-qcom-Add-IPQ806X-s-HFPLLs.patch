@@ -29,7 +29,7 @@ drivers/clk/qcom/gcc-ipq806x.c | 83 ++++++++++++++++++++++++++++++++++++++++++
  #include "reset.h"
  
  static struct clk_pll pll0 = {
-@@ -113,6 +114,85 @@
+@@ -113,6 +114,85 @@ static struct clk_regmap pll8_vote = {
  	},
  };
  
@@ -115,7 +115,7 @@ drivers/clk/qcom/gcc-ipq806x.c | 83 ++++++++++++++++++++++++++++++++++++++++++
  static struct clk_pll pll14 = {
  	.l_reg = 0x31c4,
  	.m_reg = 0x31c8,
-@@ -2837,6 +2917,9 @@
+@@ -2837,6 +2917,9 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[UBI32_CORE2_CLK_SRC] = &ubi32_core2_src_clk.clkr,
  	[NSSTCM_CLK_SRC] = &nss_tcm_src.clkr,
  	[NSSTCM_CLK] = &nss_tcm_clk.clkr,

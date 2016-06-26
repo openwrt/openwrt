@@ -276,9 +276,9 @@
 +int bcm4710 = 0;
 +
  /*
-  * Special Variant of smp_call_function for use by cache functions:
+  * Bits describing what cache ops an IPI callback function may perform.
   *
-@@ -157,6 +160,9 @@ static void r4k_blast_dcache_user_page_s
+@@ -202,6 +205,9 @@ static void r4k_blast_dcache_user_page_s
  {
  	unsigned long  dc_lsize = cpu_dcache_line_size();
  
@@ -288,7 +288,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache_user_page = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -175,6 +181,9 @@ static void r4k_blast_dcache_page_indexe
+@@ -220,6 +226,9 @@ static void r4k_blast_dcache_page_indexe
  {
  	unsigned long dc_lsize = cpu_dcache_line_size();
  
@@ -298,7 +298,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache_page_indexed = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -194,6 +203,9 @@ static void r4k_blast_dcache_setup(void)
+@@ -239,6 +248,9 @@ static void r4k_blast_dcache_setup(void)
  {
  	unsigned long dc_lsize = cpu_dcache_line_size();
  
@@ -308,7 +308,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -793,6 +805,8 @@ static void local_r4k_flush_cache_sigtra
+@@ -880,6 +892,8 @@ static void local_r4k_flush_cache_sigtra
  	unsigned long addr = (unsigned long) arg;
  
  	R4600_HIT_CACHEOP_WAR_IMPL;
@@ -317,7 +317,7 @@
  	if (dc_lsize)
  		protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	if (!cpu_icache_snoops_remote_store && scache_size)
-@@ -1602,6 +1616,17 @@ static void coherency_setup(void)
+@@ -1704,6 +1718,17 @@ static void coherency_setup(void)
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
@@ -335,7 +335,7 @@
  	case CPU_R4000PC:
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -1648,6 +1673,15 @@ void r4k_cache_init(void)
+@@ -1750,6 +1775,15 @@ void r4k_cache_init(void)
  	extern void build_copy_page(void);
  	struct cpuinfo_mips *c = &current_cpu_data;
  
@@ -351,7 +351,7 @@
  	probe_pcache();
  	setup_scache();
  
-@@ -1717,7 +1751,15 @@ void r4k_cache_init(void)
+@@ -1819,7 +1853,15 @@ void r4k_cache_init(void)
  	 */
  	local_r4k___flush_cache_all(NULL);
  
