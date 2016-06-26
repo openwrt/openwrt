@@ -53,7 +53,7 @@ run_ramfs() { # <command> [...]
 		/bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump		\
 		/bin/sleep /bin/zcat /usr/bin/bzcat /usr/bin/printf /usr/bin/wc \
 		/bin/cut /usr/bin/printf /bin/sync /bin/mkdir /bin/rmdir	\
-		/bin/rm /usr/bin/basename /bin/kill /bin/chmod
+		/bin/rm /usr/bin/basename /bin/kill /bin/chmod /usr/bin/find
 
 	install_bin /bin/uclient-fetch /bin/wget
 	install_bin /sbin/mtd
