@@ -769,6 +769,21 @@ define Device/DGND3800B
 endef
 TARGET_DEVICES += DGND3800B
 
+define Device/EVG2000
+  $(Device/bcm63xx_netgear)
+  IMAGES := factory.chk sysupgrade.bin
+  DEVICE_TITLE := Netgear EVG2000
+  DEVICE_DTS := evg2000
+  CFE_BOARD_ID := 96369PVG
+  CFE_CHIP_ID := 6368
+  CFE_EXTRAS := --image-offset 0x20000 --block-size 0x20000
+  NETGEAR_BOARD_ID := U12H154T90_NETGEAR
+  NETGEAR_REGION := 1
+  DEVICE_PACKAGES := \
+    $(B43_PACKAGES) $(USB2_PACKAGES)
+endef
+TARGET_DEVICES += EVG2000
+
 ### NuCom ###
 define Device/R5010UNv2
   $(Device/bcm63xx)
