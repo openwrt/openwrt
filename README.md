@@ -508,7 +508,13 @@ use opkg utility to install/upgrade/remove the OpenWrt packages.
 
 1. Check if you have /etc/opkg/distfeeds.conf pointing to [IMGCreator downloads server](https://downloads.imgcreator.io/pistachio/marduk), else for your local development you can edit this to point to your local webserver which has the required packages.
 
-            root@OpenWrt:/# sed -i "s|http://downloads.imgcreator.io/pistachio/marduk/|http://localserver:port/|" /etc/opkg/distfeeds.conf
+        root@OpenWrt:/# sed -i "s|https://downloads.imgcreator.io/pistachio/marduk/|http://localserver:port/|" /etc/opkg/distfeeds.conf
+
+2. If you are using locally built openwrt image and want to update packages from [IMGCreator downloads server](https://downloads.imgcreator.io/pistachio/marduk/) then you may need to remove the signature check.
+
+        root@OpenWrt:/# vi /etc/opkg.conf
+
+   Comment out the line `option check_signature 1`  to `#option check_signature 1`
 
 2. Update the list of available packages from this download server.
 
