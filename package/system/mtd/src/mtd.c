@@ -674,7 +674,7 @@ resume:
 			break;
 		case MTD_IMAGE_FORMAT_SEAMA:
 			if (mtd_fixseama)
-				mtd_fixseama(mtd, 0);
+				mtd_fixseama(mtd, 0, 0);
 			break;
 		default:
 			break;
@@ -737,8 +737,10 @@ static void usage(void)
 	if (mtd_fixtrx) {
 	    fprintf(stderr,
 	"        -o offset               offset of the image header in the partition(for fixtrx)\n");
+	}
+	if (mtd_fixtrx || mtd_fixseama) {
 		fprintf(stderr,
-	"        -c datasize             amount of data to be used for checksum calculation (for fixtrx)\n");
+	"        -c datasize             amount of data to be used for checksum calculation (for fixtrx / fixseama)\n");
 	}
 	fprintf(stderr,
 #ifdef FIS_SUPPORT
@@ -987,7 +989,7 @@ int main (int argc, char **argv)
 			break;
 		case CMD_FIXSEAMA:
 			if (mtd_fixseama)
-				mtd_fixseama(device, 0);
+				mtd_fixseama(device, 0, data_size);
 			break;
 	}
 
