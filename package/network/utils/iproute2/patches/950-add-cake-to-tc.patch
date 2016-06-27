@@ -1,6 +1,6 @@
 --- a/include/linux/pkt_sched.h
 +++ b/include/linux/pkt_sched.h
-@@ -877,4 +877,55 @@ struct tc_pie_xstats {
+@@ -877,4 +877,56 @@ struct tc_pie_xstats {
  	__u32 maxq;             /* maximum queue size */
  	__u32 ecn_mark;         /* packets marked with ecn*/
  };
@@ -29,7 +29,7 @@
 +
 +#define TC_CAKE_MAX_TINS (8)
 +struct tc_cake_xstats {
-+	__u16 version;  /* == 3, increments when struct extended */
++	__u16 version;  /* == 4, increments when struct extended */
 +	__u8  max_tins; /* == TC_CAKE_MAX_TINS */
 +	__u8  tin_cnt;  /* <= TC_CAKE_MAX_TINS */
 +
@@ -48,7 +48,8 @@
 +	__u32 base_delay_us    [TC_CAKE_MAX_TINS]; /* ~= delay to sparse flows */
 +	__u16 sparse_flows     [TC_CAKE_MAX_TINS];
 +	__u16 bulk_flows       [TC_CAKE_MAX_TINS];
-+	__u32 last_skblen      [TC_CAKE_MAX_TINS]; /* skb_headlen */
++	__u16 unresponse_flows [TC_CAKE_MAX_TINS]; /* v4 - was u32 last_len  */
++	__u16 spare            [TC_CAKE_MAX_TINS]; /* v4 - split last_len */
 +	__u32 max_skblen       [TC_CAKE_MAX_TINS];
 +	__u32 capacity_estimate;  /* version 2 */
 +	__u32 memory_limit;       /* version 3 */
@@ -68,7 +69,7 @@
  
 --- /dev/null
 +++ b/tc/q_cake.c
-@@ -0,0 +1,598 @@
+@@ -0,0 +1,600 @@
 +/*
 + * Common Applications Kept Enhanced  --  CAKE
 + *
@@ -557,11 +558,11 @@
 +
 +		switch(stnc->tin_cnt) {
 +		case 4:
-+			fprintf(f, "                 Bulk  Best Effort       Video       Voice\n");
++			fprintf(f, "                 Bulk   Best Effort      Video       Voice\n");
 +			break;
 +
 +		case 5:
-+			fprintf(f, "             Low Loss  Best Effort   Low Delay       Bulk  Net Control\n");
++			fprintf(f, "              Low Loss  Best Effort   Low Delay       Bulk  Net Control\n");
 +			break;
 +
 +		default:
@@ -646,10 +647,12 @@
 +			fprintf(f, "%12u", stnc->bulk_flows[i]);
 +		fprintf(f, "\n");
 +
-+		fprintf(f, "  last_len");
-+		for(i=0; i < stnc->tin_cnt; i++)
-+			fprintf(f, "%12u", stnc->last_skblen[i]);
-+		fprintf(f, "\n");
++		if(stnc->version >= 4) {
++			fprintf(f, "  un_flows");
++			for(i=0; i < stnc->tin_cnt; i++)
++				fprintf(f, "%12u", stnc->unresponse_flows[i]);
++			fprintf(f, "\n");
++		}
 +
 +		fprintf(f, "  max_len ");
 +		for(i=0; i < stnc->tin_cnt; i++)
