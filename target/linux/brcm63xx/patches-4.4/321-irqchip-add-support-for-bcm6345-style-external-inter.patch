@@ -148,7 +148,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +
 +	raw_spin_lock(&priv->lock);
 +	reg = __raw_readl(priv->reg);
-+	reg |= hwirq << (EXTIRQ_CFG_CLEAR * priv->shift);
++	reg |= 1 << (hwirq + EXTIRQ_CFG_CLEAR * priv->shift);
 +	__raw_writel(reg, priv->reg);
 +	raw_spin_unlock(&priv->lock);
 +}
@@ -161,7 +161,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +
 +	raw_spin_lock(&priv->lock);
 +	reg = __raw_readl(priv->reg);
-+	reg &= ~(hwirq << (EXTIRQ_CFG_MASK * priv->shift));
++	reg &= ~(1 << (hwirq + EXTIRQ_CFG_MASK * priv->shift));
 +	__raw_writel(reg, priv->reg);
 +	raw_spin_unlock(&priv->lock);
 +}
@@ -174,7 +174,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +
 +	raw_spin_lock(&priv->lock);
 +	reg = __raw_readl(priv->reg);
-+	reg |= hwirq << (EXTIRQ_CFG_MASK * priv->shift);
++	reg |= 1 << (hwirq + EXTIRQ_CFG_MASK * priv->shift);
 +	__raw_writel(reg, priv->reg);
 +	raw_spin_unlock(&priv->lock);
 +}
@@ -222,17 +222,17 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	reg = __raw_readl(priv->reg);
 +
 +	if (levelsense)
-+		reg |= hwirq << (EXTIRQ_CFG_LEVELSENSE * priv->shift);
++		reg |= 1 << (hwirq + EXTIRQ_CFG_LEVELSENSE * priv->shift);
 +	else
-+		reg &= ~(hwirq << (EXTIRQ_CFG_LEVELSENSE * priv->shift));
++		reg &= ~(1 << (hwirq + EXTIRQ_CFG_LEVELSENSE * priv->shift));
 +	if (sense)
-+		reg |= hwirq << (EXTIRQ_CFG_SENSE * priv->shift);
++		reg |= 1 << (hwirq + EXTIRQ_CFG_SENSE * priv->shift);
 +	else
-+		reg &= ~(hwirq << (EXTIRQ_CFG_SENSE * priv->shift));
++		reg &= ~(1 << (hwirq + EXTIRQ_CFG_SENSE * priv->shift));
 +	if (bothedge)
-+		reg |= hwirq << (EXTIRQ_CFG_BOTHEDGE * priv->shift);
++		reg |= 1 << (hwirq + EXTIRQ_CFG_BOTHEDGE * priv->shift);
 +	else
-+		reg &= ~(hwirq << (EXTIRQ_CFG_BOTHEDGE * priv->shift));
++		reg &= ~(1 << (hwirq + EXTIRQ_CFG_BOTHEDGE * priv->shift));
 +
 +	__raw_writel(reg, priv->reg);
 +	raw_spin_unlock(&priv->lock);
