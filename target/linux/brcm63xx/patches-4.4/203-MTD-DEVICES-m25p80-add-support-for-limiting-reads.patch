@@ -28,7 +28,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  			size_t *retlen, u_char *buf)
  {
  	struct m25p *flash = nor->priv;
-@@ -152,6 +153,29 @@ static int m25p80_read(struct spi_nor *n
+@@ -174,6 +175,29 @@ static int m25p80_read(struct spi_nor *n
  	return 0;
  }
  
@@ -58,7 +58,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static int m25p80_erase(struct spi_nor *nor, loff_t offset)
  {
  	struct m25p *flash = nor->priv;
-@@ -223,6 +247,9 @@ static int m25p_probe(struct spi_device
+@@ -245,6 +269,9 @@ static int m25p_probe(struct spi_device
  	else
  		flash_name = spi->modalias;
  
