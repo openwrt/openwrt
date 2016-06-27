@@ -919,7 +919,7 @@ define Image/Build/Zcomax
 		$(STAGING_DIR_HOST)/bin/mkzcfw \
 			-B $(2) \
 			-k $(KDIR_TMP)/vmlinux-$(2).uImage \
-			-r $(KDIR)/root.$(1) \
+			-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 			-o $(call imgname,$(1),$(2))-factory.img; \
 	fi
 endef
@@ -1204,4 +1204,9 @@ endef
 define Image/Build/Profile
 	$(call Image/Build/Profile/$(1),buildkernel)
 	$(call Image/Build/Profile/$(1),$(2))
+endef
+
+# $(1): filesystem type.
+define Image/Build
+	$(call Image/Build/$(call rootfs_type,$(1)),$(1))
 endef
