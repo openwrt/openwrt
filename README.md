@@ -17,12 +17,6 @@ For users, this means the freedom of full customisation, allowing the use of an 
 Creator is MIPS based platform series from Imagination and Marduk is the latest board under that series. Pistachio is the name of Imagination's SoC based on MIPS.
 This guide helps as a quick start but for full details please see the [OpenWrt project wiki](http://wiki.openwrt.org/doc/start).
 
-## Revision History
-
-| revision  | changes from previous revision |
-|---------- |------------------------------- |
-| 1.0.0     | Initial release                |
-
 ## Package Content
 
 The release distribution is structured as documented in the upstream project however
@@ -65,7 +59,6 @@ Load Marduk platform specific OpenWrt configuration for Pistachio.
         Target Profile (Basic platform profile for Marduk)  --->
             (X) Basic platform profile for Marduk with TI cc2520
             ( ) Basic platform profile for Marduk with Cascoda ca8210
-            ( ) Wifi testing profile for Marduk with TI cc2520
 
 Alternatively, you can use default configuration for Marduk platform with TI cc2520 specific OpenWrt configuration for IMG Pistachio by copying following into .config file:
 
