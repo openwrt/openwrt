@@ -8,6 +8,10 @@
 	model = "Broadcom BCM96318REF reference board";
 	compatible = "brcm,bcm96318ref", "brcm,bcm6318";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;

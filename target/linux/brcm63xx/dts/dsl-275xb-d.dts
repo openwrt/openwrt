@@ -8,6 +8,10 @@
 	model = "D-Link DSL-2750B/DSL-2751 rev D1";
 	compatible = "d-link,dsl-275xb-d", "brcm,bcm6318";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;

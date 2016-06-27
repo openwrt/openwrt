@@ -8,6 +8,10 @@
 	model = "Broadcom bcm963281TAN reference board";
 	compatible = "brcm,bcm963281TAN", "brcm,bcm6328";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
