@@ -456,7 +456,7 @@ static void ag71xx_hw_setup(struct ag71xx *ag)
 	u32 init = MAC_CFG1_INIT;
 
 	/* setup MAC configuration registers */
-	if (pdata->builtin_switch)
+	if (pdata->use_flow_control)
 		init |= MAC_CFG1_TFC | MAC_CFG1_RFC;
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, init);
 
