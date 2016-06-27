@@ -16,7 +16,7 @@ define Device/Default
   KERNEL := kernel-bin | strip-kernel | patch-cmdline
   IMAGES := sysupgrade.tar
   FILESYSTEMS := squashfs
-  IMAGE/sysupgrade.tar := tar-file $$(FILESYSTEMS)
+  IMAGE/sysupgrade.tar := tar-file $$$$(FILESYSTEMS)
 endef
 
 define Build/tar-file
