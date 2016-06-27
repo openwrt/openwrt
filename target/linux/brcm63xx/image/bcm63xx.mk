@@ -485,29 +485,19 @@ define Device/DSL274XB-C3
 endef
 TARGET_DEVICES += DSL274XB-C3
 
-define Device/DSL274XB-F1-AU
+define Device/DSL274XB-F1
   $(Device/bcm63xx)
-  DEVICE_TITLE := D-Link DSL-2740B/DSL-2741B rev F1 (AU)
+  DEVICE_TITLE := D-Link DSL-2740B/DSL-2741B rev F1
   DEVICE_DTS := dsl-274xb-f
   CFE_BOARD_ID := AW4339U
   CFE_CHIP_ID := 6328
-  CFE_EXTRAS := --signature2 "4.06.01.AUF1" --pad 4
+  IMAGES := cfe-EU.bin cfe-AU.bin
+  IMAGE/cfe-AU.bin := cfe-bin --signature2 "4.06.01.AUF1" --pad 4
+  IMAGE/cfe-EU.bin := cfe-bin --signature2 "4.06.01.EUF1" --pad 4
   DEVICE_PACKAGES := \
     $(ATH9K_PACKAGES)
 endef
-TARGET_DEVICES += DSL274XB-F1-AU
-
-define Device/DSL274XB-F1-EU
-  $(Device/bcm63xx)
-  DEVICE_TITLE := D-Link DSL-2740B/DSL-2741B rev F1 (EU)
-  DEVICE_DTS := dsl-274xb-f
-  CFE_BOARD_ID := AW4339U
-  CFE_CHIP_ID := 6328
-  CFE_EXTRAS := --signature2 "4.06.01.EUF1" --pad 4
-  DEVICE_PACKAGES := \
-    $(ATH9K_PACKAGES)
-endef
-TARGET_DEVICES += DSL274XB-F1-EU
+TARGET_DEVICES += DSL274XB-F1
 
 define Device/DSL275XB-D1
   $(Device/bcm63xx)
