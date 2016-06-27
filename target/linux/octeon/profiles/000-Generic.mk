@@ -5,13 +5,13 @@
 # See /LICENSE for more information.
 #
 
-define Profile/generic
-  NAME:=Generic Octeon board
-  PACKAGES:=
+define Profile/Default
+  NAME:=Default Profile
+  PRIORITY:=1
 endef
 
-define Profile/generic/Description
-	Base packages for Octeon boards.
+define Profile/Default/Description
+   Base packages for Octeon boards.
 endef
-$(eval $(call Profile,generic))
 
+$(eval $(call Profile,Default))
