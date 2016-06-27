@@ -648,7 +648,7 @@ TARGET_DEVICES += HG556a-B
 define Device/HG556a-C
   $(Device/bcm63xx)
   DEVICE_TITLE := Huawei EchoLife HG556a rev C
-  DEVICE_DESCRIPTION = Build firmware images for Huawei HG556a version B (Ralink)
+  DEVICE_DESCRIPTION = Build firmware images for Huawei HG556a version C (Ralink)
   DEVICE_DTS := hg556a-c
   CFE_BOARD_ID := HW556
   CFE_CHIP_ID := 6358
