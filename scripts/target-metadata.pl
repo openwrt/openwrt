@@ -27,6 +27,7 @@ sub target_config_features(@) {
 		/ext4/ and $ret .= "\tselect USES_EXT4\n";
 		/targz/ and $ret .= "\tselect USES_TARGZ\n";
 		/cpiogz/ and $ret .= "\tselect USES_CPIOGZ\n";
+		/minor/ and $ret .= "\tselect USES_MINOR\n";
 		/ubifs/ and $ret .= "\tselect USES_UBIFS\n";
 		/fpu/ and $ret .= "\tselect HAS_FPU\n";
 		/spe_fpu/ and $ret .= "\tselect HAS_SPE_FPU\n";
