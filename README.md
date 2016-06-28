@@ -68,12 +68,17 @@ Similarly, you can do the same for Marduk platform with Cascoda ca8210 specific 
 
     $ cat target/linux/pistachio/creator-platform-cascoda-default.config > .config
 
+You can add git revision number as DISTRIB_REVISION in the openwrt image by doing following:
+
+    $ getver.sh . > version
+
 Now build OpenWrt in standard way:
 
     $ make V=s -j1
 
 Once the build is completed, you will find the resulting output i.e. images, dtbs and rootfs at "bin/pistachio", depending upon the selected profile.
-Where PROFILE can be marduk_cc2520, marduk_ca8210, marduk_cc2520_wifi and VERSION is whatever mentioned in CONFIG_VERSION_NUMBER. By default VERSION is master-pistachio in the default config.
+Where PROFILE can be marduk_cc2520, marduk_ca8210, marduk_cc2520_wifi and VERSION is whatever mentioned in CONFIG_VERSION_NUMBER.
+By default VERSION is blank if you do not use the creator-platform-default.config for loading the configuration.
 
 - openwrt-$(VERSION)-pistachio-pistachio_$(PROFILE)-uImage
 - openwrt-$(VERSION)-pistachio-pistachio_$(PROFILE)-uImage-initramfs
@@ -538,6 +543,28 @@ use opkg utility to install/upgrade/remove the OpenWrt packages.
         Removing package fping from root...
 
 6. For more information regarding other opkg options, please refer [OPKG manager](https://wiki.openwrt.org/doc/techref/opkg)
+
+##Check your openwrt version
+You can check your opewrt version and release information by following:
+
+        root@OpenWrt:/# cat /etc/openwrt_release
+        DISTRIB_ID='OpenWrt'
+        DISTRIB_RELEASE='0.9.1'
+        DISTRIB_REVISION='9403ba4'
+        DISTRIB_CODENAME='ci40'
+        DISTRIB_TARGET='pistachio/marduk'
+        DISTRIB_DESCRIPTION='OpenWrt Ci40 0.9.1'
+        DISTRIB_TAINTS='no-all'
+
+Also the device info as follows:
+
+        root@OpenWrt:/# cat /etc/device_info
+        DEVICE_MANUFACTURER='Imagination Technologies'
+        DEVICE_MANUFACTURER_URL='www.imgtec.com'
+        DEVICE_PRODUCT='Creator Ci40(Marduk)'
+        DEVICE_REVISION='Rev4 with CC2520'
+
+Depending upon the config chosen to build, `DEVICE_REVISION` will be `Rev4 with CC2520` or `Rev5 with CA8210`.
 
 ### Known Issues:
 
