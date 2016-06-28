@@ -431,7 +431,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	return ret;
 +}
 +
-+IRQCHIP_DECLARE(bcm6345_periph_intc, "brcm,bcm6345-periph-intc",
++IRQCHIP_DECLARE(bcm6345_periph_intc, "brcm,bcm6345-l1-intc",
 +		bcm6345_periph_of_init);
 +#endif
 --- /dev/null

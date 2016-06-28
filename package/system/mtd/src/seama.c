@@ -104,14 +104,13 @@ err_out:
 }
 
 int
-mtd_fixseama(const char *mtd, size_t offset)
+mtd_fixseama(const char *mtd, size_t offset, size_t data_size)
 {
 	int fd;
 	char *first_block;
 	ssize_t res;
 	size_t block_offset;
 	size_t data_offset;
-	size_t data_size;
 	struct seama_entity_header *shdr;
 
 	if (quiet < 2)
@@ -155,7 +154,8 @@ mtd_fixseama(const char *mtd, size_t offset)
 	}
 
 	data_offset = offset + sizeof(struct seama_entity_header) + ntohs(shdr->metasize);
-	data_size = mtdsize - data_offset;
+	if (!data_size)
+		data_size = mtdsize - data_offset;
 	if (data_size > ntohl(shdr->size))
 		data_size = ntohl(shdr->size);
 	if (seama_fix_md5(shdr, fd, data_offset, data_size))

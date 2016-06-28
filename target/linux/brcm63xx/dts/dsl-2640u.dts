@@ -8,6 +8,10 @@
 	model = "D-Link DSL-2640U/BRU/C";
 	compatible = "d-link,dsl-2640u", "brcm,bcm6338";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 

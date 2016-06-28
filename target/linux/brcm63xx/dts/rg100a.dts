@@ -8,6 +8,10 @@
 	model = "Alcatel RG100A";
 	compatible = "alcatel,rg100a", "brcm,bcm6358";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 

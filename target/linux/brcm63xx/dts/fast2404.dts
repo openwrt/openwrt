@@ -7,6 +7,10 @@
 / {
 	model = "Sagem F@ST2404";
 	compatible = "sagem,f@st2404", "brcm,bcm6348";
+
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
 };
 
 &pflash {

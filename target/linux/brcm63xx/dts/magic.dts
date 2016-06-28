@@ -8,6 +8,10 @@
 	model = "Alice W-Gate";
 	compatible = "telsey,magic", "brcm,bcm6348";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 

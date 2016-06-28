@@ -8,6 +8,10 @@
 	model = "Comtrend CT-5365";
 	compatible = "comtrend,ct-5365", "brcm,bcm6348";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
