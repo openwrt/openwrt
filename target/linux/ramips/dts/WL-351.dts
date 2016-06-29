@@ -86,8 +86,12 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "spi", "i2c", "jtag", "rgmii", "mdio", "uartf";
+			ralink,group = "spi", "i2c", "jtag", "mdio", "uartf";
 			ralink,function = "gpio";
+		};
+		rgmii {
+			ralink,group = "rgmii";
+			ralink,function = "rgmii";
 		};
 	};
 };
@@ -97,6 +101,7 @@
 };
 
 &esw {
+	ralink,rgmii = <1>;
 	mediatek,portmap = <0x3f>;
 	ralink,fct2 = <0x0002500c>;
 	/*
