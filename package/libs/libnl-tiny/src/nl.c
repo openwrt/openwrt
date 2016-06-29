@@ -366,7 +366,7 @@ errout:
  * Receives a netlink message, allocates a buffer in \c *buf and
  * stores the message content. The peer's netlink address is stored
  * in \c *nla. The caller is responsible for freeing the buffer allocated
- * in \c *buf if a positive value is returned.  Interruped system calls
+ * in \c *buf if a positive value is returned.  Interrupted system calls
  * are handled by repeating the read. The input buffer size is determined
  * by peeking before the actual read is done.
  *

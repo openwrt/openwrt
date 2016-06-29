@@ -29,6 +29,9 @@ extern struct genl_family *	genl_ctrl_search_by_name(struct nl_cache *,
 							 const char *);
 extern int			genl_ctrl_resolve(struct nl_sock *,
 						  const char *);
+extern int 			genl_ctrl_resolve_grp(struct nl_sock *sk,
+						      const char *family,
+						      const char *grp);
 
 #ifdef __cplusplus
 }

@@ -69,6 +69,13 @@ struct nl_addr
 #define GENL_OP_HAS_DOIT	2
 #define GENL_OP_HAS_DUMPIT	4
 
+struct genl_family_grp {
+	struct genl_family	*family;	/* private */
+	struct nl_list_head	list;		/* private */
+	char			name[GENL_NAMSIZ];
+	u_int32_t		id;
+};
+
 struct genl_family_op
 {
 	uint32_t		o_id;

@@ -45,11 +45,17 @@ static struct nla_policy ctrl_policy[CTRL_ATTR_MAX+1] = {
 	[CTRL_ATTR_HDRSIZE]	= { .type = NLA_U32 },
 	[CTRL_ATTR_MAXATTR]	= { .type = NLA_U32 },
 	[CTRL_ATTR_OPS]		= { .type = NLA_NESTED },
+	[CTRL_ATTR_MCAST_GROUPS] = { .type = NLA_NESTED },
 };
 
 static struct nla_policy family_op_policy[CTRL_ATTR_OP_MAX+1] = {
 	[CTRL_ATTR_OP_ID]	= { .type = NLA_U32 },
 	[CTRL_ATTR_OP_FLAGS]	= { .type = NLA_U32 },
+};
+
+static struct nla_policy family_grp_policy[CTRL_ATTR_MCAST_GRP_MAX+1] = {
+	[CTRL_ATTR_MCAST_GRP_NAME] = { .type = NLA_STRING },
+	[CTRL_ATTR_MCAST_GRP_ID]   = { .type = NLA_U32 },
 };
 
 static int ctrl_msg_parser(struct nl_cache_ops *ops, struct genl_cmd *cmd,
@@ -125,6 +131,40 @@ static int ctrl_msg_parser(struct nl_cache_ops *ops, struct genl_cmd *cmd,
 				goto errout;
 
 		}
+	}
+
+	if (info->attrs[CTRL_ATTR_MCAST_GROUPS]) {
+		struct nlattr *nla, *nla_grps;
+		int remaining;
+
+		nla_grps = info->attrs[CTRL_ATTR_MCAST_GROUPS];
+		nla_for_each_nested(nla, nla_grps, remaining) {
+			struct nlattr *tb[CTRL_ATTR_MCAST_GRP_MAX+1];
+			int id;
+			const char * name;
+
+			err = nla_parse_nested(tb, CTRL_ATTR_MCAST_GRP_MAX, nla,
+					       family_grp_policy);
+			if (err < 0)
+				goto errout;
+
+			if (tb[CTRL_ATTR_MCAST_GRP_ID] == NULL) {
+				err = -NLE_MISSING_ATTR;
+				goto errout;
+			}
+			id = nla_get_u32(tb[CTRL_ATTR_MCAST_GRP_ID]);
+
+			if (tb[CTRL_ATTR_MCAST_GRP_NAME] == NULL) {
+				err = -NLE_MISSING_ATTR;
+				goto errout;
+			}
+			name = nla_get_string(tb[CTRL_ATTR_MCAST_GRP_NAME]);
+
+			err = genl_family_add_grp(family, id, name);
+			if (err < 0)
+				goto errout;
+		}
+
 	}
 
 	err = pp->pp_cb((struct nl_object *) family, pp);
@@ -235,6 +275,44 @@ int genl_ctrl_resolve(struct nl_sock *sk, const char *name)
 	}
 
 	err = genl_family_get_id(family);
+	genl_family_put(family);
+errout:
+	nl_cache_free(cache);
+
+	return err;
+}
+
+static int genl_ctrl_grp_by_name(const struct genl_family *family,
+				const char *grp_name)
+{
+	struct genl_family_grp *grp;
+
+	nl_list_for_each_entry(grp, &family->gf_mc_grps, list) {
+		if (!strcmp(grp->name, grp_name)) {
+			return grp->id;
+		}
+	}
+
+	return -NLE_OBJ_NOTFOUND;
+}
+
+int genl_ctrl_resolve_grp(struct nl_sock *sk, const char *family_name,
+	const char *grp_name)
+{
+	struct nl_cache *cache;
+	struct genl_family *family;
+	int err;
+
+	if ((err = genl_ctrl_alloc_cache(sk, &cache)) < 0)
+		return err;
+
+	family = genl_ctrl_search_by_name(cache, family_name);
+	if (family == NULL) {
+		err = -NLE_OBJ_NOTFOUND;
+		goto errout;
+	}
+
+	err = genl_ctrl_grp_by_name(family, grp_name);
 	genl_family_put(family);
 errout:
 	nl_cache_free(cache);

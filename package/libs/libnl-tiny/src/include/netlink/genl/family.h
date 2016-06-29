@@ -39,6 +39,7 @@ struct genl_family
 	uint32_t		gf_maxattr;
 
 	struct nl_list_head	gf_ops;
+	struct nl_list_head	gf_mc_grps;
 };
 
 
@@ -47,6 +48,9 @@ extern void			genl_family_put(struct genl_family *);
 
 extern int			genl_family_add_op(struct genl_family *,
 						   int, int);
+extern int 			genl_family_add_grp(struct genl_family *,
+					uint32_t , const char *);
+
 
 /**
  * @name Attributes
