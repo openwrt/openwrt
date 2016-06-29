@@ -1,0 +1,27 @@
+From dc8f9f320eada9b516a347f34e9e02dae93334ca Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Thu, 1 Sep 2016 15:08:57 -0400
+Subject: [PATCH] rtl8xxxu: Reset device on module unload if still attached
+
+If the USB dongle is still attached, reset it on module unload to
+avoid scans failing when reloading the driver.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -6129,6 +6129,11 @@ static void rtl8xxxu_disconnect(struct u
+ 	mutex_destroy(&priv->usb_buf_mutex);
+ 	mutex_destroy(&priv->h2c_mutex);
+ 
++	if (priv->udev->state != USB_STATE_NOTATTACHED) {
++		dev_info(&priv->udev->dev,
++			 "Device still attached, trying to reset\n");
++		usb_reset_device(priv->udev);
++	}
+ 	usb_put_dev(priv->udev);
+ 	ieee80211_free_hw(hw);
+ }

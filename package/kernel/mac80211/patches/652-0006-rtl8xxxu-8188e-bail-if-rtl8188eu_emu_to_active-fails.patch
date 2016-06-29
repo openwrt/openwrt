@@ -1,0 +1,25 @@
+From d4c94e8fc13fdc241b3070476736eefe12726553 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Wed, 29 Jun 2016 10:24:39 -0400
+Subject: [PATCH] rtl8xxxu: 8188e - bail if rtl8188eu_emu_to_active() fails
+
+If emu_to_active() fails, don't try to enable anything else.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
+@@ -166,7 +166,10 @@ static int rtl8188eu_power_on(struct rtl
+ 	int ret;
+ 
+ 	ret = rtl8188e_emu_to_active(priv);
++	if (ret)
++		goto exit;
+ 
++exit:
+ 	return ret;
+ }
+ 

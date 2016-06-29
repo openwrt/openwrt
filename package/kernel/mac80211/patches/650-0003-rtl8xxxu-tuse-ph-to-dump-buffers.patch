@@ -1,0 +1,70 @@
+From da21652f72bbdcec7dd8fe61ae32f28608f90c85 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Date: Thu, 26 May 2016 17:52:19 +0300
+Subject: [PATCH] rtl8xxxu: tuse %*ph to dump buffers
+
+Use %*ph specifier to dump small buffers in hex format instead of doing this
+byte-by-byte.
+
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192c.c | 9 ++-------
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c | 9 ++-------
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c | 9 ++-------
+ 3 files changed, 6 insertions(+), 21 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192c.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192c.c
+@@ -413,13 +413,8 @@ static int rtl8192cu_parse_efuse(struct
+ 		dev_info(&priv->udev->dev,
+ 			 "%s: dumping efuse (0x%02zx bytes):\n",
+ 			 __func__, sizeof(struct rtl8192cu_efuse));
+-		for (i = 0; i < sizeof(struct rtl8192cu_efuse); i += 8) {
+-			dev_info(&priv->udev->dev, "%02x: "
+-				 "%02x %02x %02x %02x %02x %02x %02x %02x\n", i,
+-				 raw[i], raw[i + 1], raw[i + 2],
+-				 raw[i + 3], raw[i + 4], raw[i + 5],
+-				 raw[i + 6], raw[i + 7]);
+-		}
++		for (i = 0; i < sizeof(struct rtl8192cu_efuse); i += 8)
++			dev_info(&priv->udev->dev, "%02x: %8ph\n", i, &raw[i]);
+ 	}
+ 	return 0;
+ }
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c
+@@ -622,13 +622,8 @@ static int rtl8192eu_parse_efuse(struct
+ 		dev_info(&priv->udev->dev,
+ 			 "%s: dumping efuse (0x%02zx bytes):\n",
+ 			 __func__, sizeof(struct rtl8192eu_efuse));
+-		for (i = 0; i < sizeof(struct rtl8192eu_efuse); i += 8) {
+-			dev_info(&priv->udev->dev, "%02x: "
+-				 "%02x %02x %02x %02x %02x %02x %02x %02x\n", i,
+-				 raw[i], raw[i + 1], raw[i + 2],
+-				 raw[i + 3], raw[i + 4], raw[i + 5],
+-				 raw[i + 6], raw[i + 7]);
+-		}
++		for (i = 0; i < sizeof(struct rtl8192eu_efuse); i += 8)
++			dev_info(&priv->udev->dev, "%02x: %8ph\n", i, &raw[i]);
+ 	}
+ 	return 0;
+ }
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c
+@@ -466,13 +466,8 @@ static int rtl8723bu_parse_efuse(struct
+ 		dev_info(&priv->udev->dev,
+ 			 "%s: dumping efuse (0x%02zx bytes):\n",
+ 			 __func__, sizeof(struct rtl8723bu_efuse));
+-		for (i = 0; i < sizeof(struct rtl8723bu_efuse); i += 8) {
+-			dev_info(&priv->udev->dev, "%02x: "
+-				 "%02x %02x %02x %02x %02x %02x %02x %02x\n", i,
+-				 raw[i], raw[i + 1], raw[i + 2],
+-				 raw[i + 3], raw[i + 4], raw[i + 5],
+-				 raw[i + 6], raw[i + 7]);
+-		}
++		for (i = 0; i < sizeof(struct rtl8723bu_efuse); i += 8)
++			dev_info(&priv->udev->dev, "%02x: %8ph\n", i, &raw[i]);
+ 	}
+ 
+ 	return 0;

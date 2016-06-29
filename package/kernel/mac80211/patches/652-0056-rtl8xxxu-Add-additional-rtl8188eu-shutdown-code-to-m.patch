@@ -1,0 +1,30 @@
+From 33b19d32ae77eee805170a5a28220899f76f6ca4 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 29 Aug 2016 14:27:19 -0400
+Subject: [PATCH] rtl8xxxu: Add additional rtl8188eu shutdown code to match
+ vendor driver
+
+This makes the driver match the poweroff sequence of the vendor driver
+further. However it still doesn't work correctly when reloading the
+driver.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
+@@ -1347,6 +1347,12 @@ void rtl8188eu_power_off(struct rtl8xxxu
+ 	 * Referred to as REG_BB_PAD_CTRL in 8188eu vendor driver
+ 	 */
+ 	rtl8xxxu_write32(priv, REG_PAD_CTRL1, 0x00080808);
++
++	rtl8xxxu_write8(priv, REG_RSV_CTRL, 0x00);
++
++	val16 = rtl8xxxu_read16(priv, REG_APS_FSMCO);
++	val16 |= APS_FSMCO_ENABLE_POWERDOWN | APS_FSMCO_HW_POWERDOWN;
++	rtl8xxxu_write16(priv, REG_APS_FSMCO, val16);
+ }
+ 
+ static void rtl8188e_enable_rf(struct rtl8xxxu_priv *priv)

@@ -1,0 +1,24 @@
+From a1967ad244697b2929e462b0579932431387f489 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Tue, 13 Sep 2016 15:13:08 -0400
+Subject: [PATCH] rtl8xxxu: Write correct value to REG_CR in
+ rtl8188eu_active_to_lps()
+
+Stupid bug writing the wrong value to register REG_CR.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
+@@ -1259,7 +1259,7 @@ static int rtl8188eu_active_to_lps(struc
+ 	/* Reset MAC TRX */
+ 	val16 = rtl8xxxu_read16(priv, REG_CR);
+ 	val16 &= ~(CR_MAC_TX_ENABLE | CR_MAC_RX_ENABLE | CR_SECURITY_ENABLE);
+-	rtl8xxxu_write16(priv, REG_CR, val8);
++	rtl8xxxu_write16(priv, REG_CR, val16);
+ 
+ 	val8 = rtl8xxxu_read8(priv, REG_DUAL_TSF_RST);
+ 	val8 |= DUAL_TSF_TX_OK;

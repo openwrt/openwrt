@@ -1,0 +1,47 @@
+From 36bbcb566a806b96e397cb882272373bbbed83c8 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Wed, 20 Jul 2016 15:02:20 -0400
+Subject: [PATCH] rtl8xxxu: Add TX page defines for 8723b
+
+This switches the 8723b driver to use the new
+rtl8xxxu_init_queue_reserved_page() function.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h       | 6 ++++++
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c | 4 ++++
+ 2 files changed, 10 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
+@@ -43,6 +43,7 @@
+ 
+ #define TX_TOTAL_PAGE_NUM		0xf8
+ #define TX_TOTAL_PAGE_NUM_8192E		0xf3
++#define TX_TOTAL_PAGE_NUM_8723B		0xf7
+ /* (HPQ + LPQ + NPQ + PUBQ) = TX_TOTAL_PAGE_NUM */
+ #define TX_PAGE_NUM_PUBQ		0xe7
+ #define TX_PAGE_NUM_HI_PQ		0x0c
+@@ -54,6 +55,11 @@
+ #define TX_PAGE_NUM_LO_PQ_8192E		0x0c
+ #define TX_PAGE_NUM_NORM_PQ_8192E	0x00
+ 
++#define TX_PAGE_NUM_PUBQ_8723B		0xe7
++#define TX_PAGE_NUM_HI_PQ_8723B		0x0c
++#define TX_PAGE_NUM_LO_PQ_8723B		0x02
++#define TX_PAGE_NUM_NORM_PQ_8723B	0x02
++
+ #define RTL_FW_PAGE_SIZE		4096
+ #define RTL8XXXU_FIRMWARE_POLL_MAX	1000
+ 
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c
+@@ -1674,4 +1674,8 @@ struct rtl8xxxu_fileops rtl8723bu_fops =
+ 	.pbp_rx = PBP_PAGE_SIZE_256,
+ 	.pbp_tx = PBP_PAGE_SIZE_256,
+ 	.mactable = rtl8723b_mac_init_table,
++	.total_page_num = TX_TOTAL_PAGE_NUM_8723B,
++	.page_num_hi = TX_PAGE_NUM_HI_PQ_8723B,
++	.page_num_lo = TX_PAGE_NUM_LO_PQ_8723B,
++	.page_num_norm = TX_PAGE_NUM_NORM_PQ_8723B,
+ };

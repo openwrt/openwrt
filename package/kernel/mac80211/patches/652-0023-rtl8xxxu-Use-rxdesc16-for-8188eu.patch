@@ -1,0 +1,27 @@
+From f89604d87636dfd156d3ea417fb0af72c4f51e46 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Thu, 21 Jul 2016 14:52:49 -0400
+Subject: [PATCH] rtl8xxxu: Use rxdesc16 for 8188eu
+
+The RX descriptor format looks like the gen1 RX descriptor format, so
+use that for now. On the other hand the TX descriptor format looks
+like a hybrid.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188e.c
+@@ -520,8 +520,10 @@ struct rtl8xxxu_fileops rtl8188eu_fops =
+ 	.llt_init = rtl8xxxu_auto_llt_table,
+ 	.init_phy_bb = rtl8188eu_init_phy_bb,
+ 	.init_phy_rf = rtl8188eu_init_phy_rf,
++	.parse_rx_desc = rtl8xxxu_parse_rxdesc16,
+ 	.usb_quirks = rtl8188e_usb_quirks,
+ 	.writeN_block_size = 128,
++	.rx_desc_size = sizeof(struct rtl8xxxu_rxdesc16),
+ 	.has_tx_report = 1,
+ 	/*
+ 	 * Use 9K for 8188e normal chip

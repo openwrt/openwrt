@@ -1,0 +1,27 @@
+From 455c72dcc58c79885888c3a45043c5d80c8372d1 Mon Sep 17 00:00:00 2001
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Date: Tue, 12 Jul 2016 14:33:34 +0000
+Subject: [PATCH] rtl8xxxu: gen1: Fix non static symbol warning
+
+Fixes the following sparse warning:
+
+drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c:898:1: warning:
+ symbol 'rtl8xxxu_gen1_h2c_cmd' was not declared. Should it be static?
+
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -894,7 +894,7 @@ int rtl8xxxu_write_rfreg(struct rtl8xxxu
+ 	return retval;
+ }
+ 
+-int
++static int
+ rtl8xxxu_gen1_h2c_cmd(struct rtl8xxxu_priv *priv, struct h2c_cmd *h2c, int len)
+ {
+ 	struct device *dev = &priv->udev->dev;

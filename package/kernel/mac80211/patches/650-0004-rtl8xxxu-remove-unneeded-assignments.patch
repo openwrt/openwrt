@@ -1,0 +1,29 @@
+From 650902b7a7e02064fc295eed9ac4c86cf7435f3b Mon Sep 17 00:00:00 2001
+From: Luis de Bethencourt <luisbg@osg.samsung.com>
+Date: Fri, 10 Jun 2016 14:57:34 +0100
+Subject: [PATCH] rtl8xxxu: remove unneeded assignments
+
+reg_eac and reg_ecc are only used if candidate is bigger than 0, and in
+that case new values will be given to them. Removing the unused
+assignments.
+
+Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c
+@@ -1244,11 +1244,9 @@ static void rtl8192eu_phy_iq_calibrate(s
+ 		reg_e94 = result[i][0];
+ 		reg_e9c = result[i][1];
+ 		reg_ea4 = result[i][2];
+-		reg_eac = result[i][3];
+ 		reg_eb4 = result[i][4];
+ 		reg_ebc = result[i][5];
+ 		reg_ec4 = result[i][6];
+-		reg_ecc = result[i][7];
+ 	}
+ 
+ 	if (candidate >= 0) {

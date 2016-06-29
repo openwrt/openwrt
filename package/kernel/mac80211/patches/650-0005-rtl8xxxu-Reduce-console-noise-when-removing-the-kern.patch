@@ -1,0 +1,25 @@
+From d39e7f8bbab83a2a4145fb8b4701882ef8ba0eeb Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Thu, 23 Jun 2016 12:37:38 -0400
+Subject: [PATCH] rtl8xxxu: Reduce console noise when removing the kernel
+ module
+
+USB urbs will return with a status != 0 when rmmod'ing the driver. No
+need to fill the log with messages from rtl8xxxu_int_complete()
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -5267,7 +5267,7 @@ static void rtl8xxxu_int_complete(struct
+ 		if (ret)
+ 			usb_unanchor_urb(urb);
+ 	} else {
+-		dev_info(dev, "%s: Error %i\n", __func__, urb->status);
++		dev_dbg(dev, "%s: Error %i\n", __func__, urb->status);
+ 	}
+ }
+ 
