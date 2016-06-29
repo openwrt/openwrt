@@ -8,13 +8,8 @@
 				],
 				[
 					[ "if",
-						[ "or",
-							[ "eq", "DEVNAME",
-								[ "null", "full", "ptmx", "zero", "tty", "net", "random", "urandom" ],
-							],
-							[ "regex", "DEVNAME",
-								[ "^gpio", "^hvc" ],
-							],
+						[ "eq", "DEVNAME",
+							[ "null", "full", "ptmx", "zero", "tty", "net", "random", "urandom" ],
 						],
 						[
 							[ "makedev", "/dev/%DEVNAME%", "0666" ],
