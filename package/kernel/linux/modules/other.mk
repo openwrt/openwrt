@@ -825,6 +825,23 @@ endef
 $(eval $(call KernelPackage,pps-gpio))
 
 
+define KernelPackage/pps-ldisc
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PPS line discipline
+  DEPENDS:=+kmod-pps
+  KCONFIG:=CONFIG_PPS_CLIENT_LDISC
+  FILES:=$(LINUX_DIR)/drivers/pps/clients/pps-ldisc.ko
+  AUTOLOAD:=$(call AutoLoad,18,pps-ldisc,1)
+endef
+
+define KernelPackage/pps-ldisc/description
+ Support for a PPS source connected with the CD (Carrier
+ Detect) pin of your serial port.
+endef
+
+$(eval $(call KernelPackage,pps-ldisc))
+
+
 define KernelPackage/ptp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PTP clock support
