@@ -402,6 +402,62 @@ _Replace X with **4** or **5** depending upon firmware0 or firmware1 respectivel
         root@OpenWrt:/# fw_setenv boot_partition X
 _X needs to be replaced with 0 or 1 depending upon firmware0 or firmware1 respectively._
 
+## Building u-boot for pistachio-marduk:
+
+Feed for u-boot is available at [here](https://github.com/Creatordev/openwrt-feeds/tree/master/u-boot)
+You can enable u-boot from menuconfig as follows:
+
+    $ make menuconfig
+        Boot Loaders  --->
+          <*> uboot-pistachio_marduk....................... U-Boot for Pistachio Marduk
+          [ ]   Install U-Boot SPL binary image
+          [ ]   Environment image  ----  
+
+Build as usual
+
+    $ make V=s -j1
+
+Once built successfully you should be able to see `openwrt-pistachio-pistachio_marduk-u-boot-x.y.z.img` at usual bin/pistachio.
+
+_x.y.z is the tag number as per [u-boot releases](https://github.com/Creatordev/u-boot/releases)_
+
+### Flashing u-boot binary:
+
+You can flash the recently built u-boot image or download a pre-built u-boot binary from [Downloads server](https://downloads.creatordev.io/pistachio/marduk).
+
+1. Enable flashcp in OpenWrt menuconfig and build as usual
+
+
+        Base system -> busybox -> Cutomize busybox options -> Miscellaneous Utilities -> flashcp
+ 
+2. Erase and write u-boot image on bootloader partition of Ci40
+
+
+        $ flashcp -v openwrt-pistachio-pistachio_marduk-u-boot-x.y.z.img /dev/mtd0
+
+3. Reboot
+
+
+        $ reboot
+
+	Once restarted the board, you should see the date when you have built the u-boot on the console as follows:
+
+        		U-Boot SPL 2015.07-rc2 (Jun 14 2016 - 19:20:36)
+        		
+        		
+        		U-Boot 2015.07-rc2 (Jun 14 2016 - 19:20:36 +0530)
+        		
+        		MIPS(interAptiv): IMG Pistachio 546MHz.
+        		Model: IMG Marduk
+        		DRAM:  256 MiB
+        		NAND:  512 MiB
+        		MMC:   Synopsys Mobile storage: 0
+        		SF: Detected W25Q16CL with page size 256 Bytes, erase size 4 KiB, total 2 MiB
+
+This means your built u-boot image has been flashed properly on the board!!
+
+_Please be aware that you may brick the board if you flashed a wrong bootloader. Only way to re-cover back the board is to use Dedi-prog SF100 programmer to flash the pre-built bootloader again._
+
 ##System upgrade
 
 You can upgrade your existing OpenWrt image using sysupgrade utility. However please note that sysupgrade cannot be used if openwrt image is not there in flash. In such cases, please refer [Flashing on uboot prompt](#flashing-on-uboot-prompt), to update the ubifs image into nand flash. 
