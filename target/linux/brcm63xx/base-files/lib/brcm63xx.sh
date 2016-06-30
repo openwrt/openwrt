@@ -183,6 +183,9 @@ brcm63xx_dt_detect() {
 	"Netgear DGND3700v1/DGND3800B")
 		board_name="dgnd3700v1_dgnd3800b"
 		;;
+	"Netgear EVG2000")
+		board_name="evg2000"
+		;;
 	"NuCom R5010UN v2")
 		board_name="r5010un_v2"
 		;;

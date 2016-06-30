@@ -8,6 +8,10 @@
 	model = "SFR Neuf Box 4 (Sercomm)";
 	compatible = "sfr,nb4-ser-r0", "brcm,bcm6358";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	spi-gpio {
 		#address-cells = <1>;
 		#size-cells = <1>;

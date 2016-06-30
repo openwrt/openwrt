@@ -7,6 +7,10 @@
 / {
 	model = "Davolink DV-201AMR";
 	compatible = "davolink,dv-201amr", "brcm,bcm6348";
+
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
 };
 
 &pflash {

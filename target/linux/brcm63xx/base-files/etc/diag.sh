@@ -70,6 +70,9 @@ set_state() {
 	dgnd3700v1_dgnd3800b)
 		status_led="DGND3700v1_3800B:green:power"
 		;;
+	evg2000)
+		status_led="EVG2000:green:power"
+		;;
 	fast2504n)
 		status_led="fast2504n:green:ok"
 		;;

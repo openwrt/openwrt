@@ -8,6 +8,10 @@
 	model = "BT Home Hub 2.0 Type A";
 	compatible = "thomson,homehub2a", "brcm,bcm6358";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	spi-gpio {
 		#address-cells = <1>;
 		#size-cells = <1>;

@@ -57,6 +57,7 @@ struct seama_entity_header {
 
 char *seama_path;
 int entity_idx = -1;
+char *out_path;
 
 static inline size_t oseama_min(size_t x, size_t y) {
 	return x < y ? x : y;
@@ -392,6 +393,132 @@ out:
 }
 
 /**************************************************
+ * Extract
+ **************************************************/
+
+static void oseama_extract_parse_options(int argc, char **argv) {
+	int c;
+
+	while ((c = getopt(argc, argv, "e:o:")) != -1) {
+		switch (c) {
+		case 'e':
+			entity_idx = atoi(optarg);
+			break;
+		case 'o':
+			out_path = optarg;
+			break;
+		}
+	}
+}
+
+static int oseama_extract_entity(FILE *seama, FILE *out) {
+	struct seama_entity_header hdr;
+	size_t bytes, metasize, imagesize, length;
+	uint8_t buf[1024];
+	int i = 0;
+	int err = 0;
+
+	while ((bytes = fread(&hdr, 1, sizeof(hdr), seama)) == sizeof(hdr)) {
+		if (be32_to_cpu(hdr.magic) != SEAMA_MAGIC) {
+			fprintf(stderr, "Invalid Seama magic: 0x%08x\n", be32_to_cpu(hdr.magic));
+			err =  -EINVAL;
+			break;
+		}
+		metasize = be16_to_cpu(hdr.metasize);
+		imagesize = be32_to_cpu(hdr.imagesize);
+
+		if (i != entity_idx) {
+			fseek(seama, metasize + imagesize, SEEK_CUR);
+			i++;
+			continue;
+		}
+
+		fseek(seama, -sizeof(hdr), SEEK_CUR);
+
+		length = sizeof(hdr) + metasize + imagesize;
+		while ((bytes = fread(buf, 1, oseama_min(sizeof(buf), length), seama)) > 0) {
+			if (fwrite(buf, 1, bytes, out) != bytes) {
+				fprintf(stderr, "Couldn't write %zu B to %s\n", bytes, out_path);
+				err = -EIO;
+				break;
+			}
+			length -= bytes;
+		}
+
+		if (length) {
+			fprintf(stderr, "Couldn't extract whole entity %d from %s (%zu B left)\n", entity_idx, seama_path, length);
+			err = -EIO;
+			break;
+		}
+
+		break;
+	}
+
+	return err;
+}
+
+static int oseama_extract(int argc, char **argv) {
+	FILE *seama;
+	FILE *out;
+	struct seama_seal_header hdr;
+	size_t bytes;
+	uint16_t metasize;
+	int err = 0;
+
+	if (argc < 3) {
+		fprintf(stderr, "No Seama file passed\n");
+		err = -EINVAL;
+		goto out;
+	}
+	seama_path = argv[2];
+
+	optind = 3;
+	oseama_extract_parse_options(argc, argv);
+	if (entity_idx < 0) {
+		fprintf(stderr, "No entity specified\n");
+		err = -EINVAL;
+		goto out;
+	} else if (!out_path) {
+		fprintf(stderr, "No output file specified\n");
+		err = -EINVAL;
+		goto out;
+	}
+
+	seama = fopen(seama_path, "r");
+	if (!seama) {
+		fprintf(stderr, "Couldn't open %s\n", seama_path);
+		err = -EACCES;
+		goto out;
+	}
+
+	out = fopen(out_path, "w");
+	if (!out) {
+		fprintf(stderr, "Couldn't open %s\n", out_path);
+		err = -EACCES;
+		goto err_close_seama;
+	}
+
+	bytes = fread(&hdr, 1, sizeof(hdr), seama);
+	if (bytes != sizeof(hdr)) {
+		fprintf(stderr, "Couldn't read %s header\n", seama_path);
+		err =  -EIO;
+		goto err_close_out;
+	}
+	metasize = be16_to_cpu(hdr.metasize);
+
+	fseek(seama, metasize, SEEK_CUR);
+
+	oseama_extract_entity(seama, out);
+
+err_close_out:
+	fclose(out);
+err_close_seama:
+	fclose(seama);
+out:
+	return err;
+}
+
+/**************************************************
  * Start
  **************************************************/
 
@@ -407,6 +534,11 @@ static void usage() {
 	printf("\t-m meta\t\t\t\tmeta into to put in header\n");
 	printf("\t-f file\t\t\t\tappend content from file\n");
 	printf("\t-b offset\t\t\tappend zeros till reaching absolute offset\n");
+	printf("\n");
+	printf("Extract from Seama seal (container):\n");
+	printf("\toseama extract <file> [options]\n");
+	printf("\t-e\t\t\t\tindex of entity to extract\n");
+	printf("\t-o file\t\t\t\toutput file\n");
 }
 
 int main(int argc, char **argv) {
@@ -415,6 +547,8 @@ int main(int argc, char **argv) {
 			return oseama_info(argc, argv);
 		else if (!strcmp(argv[1], "entity"))
 			return oseama_entity(argc, argv);
+		else if (!strcmp(argv[1], "extract"))
+			return oseama_extract(argc, argv);
 	}
 
 	usage();
