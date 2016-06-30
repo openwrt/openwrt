@@ -432,3 +432,84 @@ define Device/hiwifi-hc6361
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(bdinfo)ro,16128k(firmware),64k(backup)ro,64k(art)ro
 endef
 TARGET_DEVICES += hiwifi-hc6361
+
+
+# The pre-filled 64 bytes consist of
+# - 28 bytes seama_header
+# - 36 bytes of META data (4-bytes aligned)
+#
+# And as the 4 bytes jffs2 marker will be erased on first boot, they need to
+# be excluded from the calculation of checksum
+define Build/seama-factory
+	( dd if=/dev/zero bs=64 count=1; cat $(word 1,$^) ) >$@.loader.tmp
+	( dd if=$@.loader.tmp bs=64k conv=sync; dd if=$(word 2,$^) ) >$@.tmp.0
+	tail -c +65 $@.tmp.0 >$@.tmp.1
+	head -c -4 $@.tmp.1 >$@.tmp.2
+	$(STAGING_DIR_HOST)/bin/seama \
+		-i $@.tmp.2 \
+		-m "dev=/dev/mtdblock/1" -m "type=firmware"
+	$(STAGING_DIR_HOST)/bin/seama \
+		-s $@ \
+		-m "signature=$(1)" \
+		-i $@.tmp.2.seama
+	tail -c 4 $@.tmp.1 >>$@
+	rm -f $@.loader.tmp $@.tmp.*
+endef
+
+define Build/seama-sysupgrade
+	$(STAGING_DIR_HOST)/bin/seama \
+		-i $(word 1,$^) \
+		-m "dev=/dev/mtdblock/1" -m "type=firmware"
+	( dd if=$(word 1,$^).seama bs=64k conv=sync; dd if=$(word 2,$^) ) >$@
+endef
+
+define Build/seama-initramfs
+	$(STAGING_DIR_HOST)/bin/seama \
+		-i $@ \
+		-m "dev=/dev/mtdblock/1" -m "type=firmware"
+	mv $@.seama $@
+endef
+
+define Device/seama
+  CONSOLE := ttyS0,115200
+  KERNEL := kernel-bin | loader-kernel-cmdline | lzma
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | seama-initramfs
+  KERNEL_INITRAMFS_SUFFIX = $$(KERNEL_SUFFIX).seama
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := seama-sysupgrade $$$$(SEAMA_SIGNATURE) | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := seama-factory $$$$(SEAMA_SIGNATURE) | check-size $$$$(IMAGE_SIZE)
+  SEAMA_SIGNATURE :=
+  DEVICE_VARS := SEAMA_SIGNATURE
+endef
+
+define Device/mynet-n600
+$(Device/seama)
+  DEVICE_TITLE := Western Digital My Net N600
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = MYNET-N600
+  IMAGE_SIZE = 15808k
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(devdata)ro,64k(devconf)ro,15872k(firmware),64k(radiocfg)ro
+  SEAMA_SIGNATURE := wrgnd16_wd_db600
+endef
+
+define Device/mynet-n750
+$(Device/seama)
+  DEVICE_TITLE := Western Digital My Net N750
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = MYNET-N750
+  IMAGE_SIZE = 15808k
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(devdata)ro,64k(devconf)ro,15872k(firmware),64k(radiocfg)ro
+  SEAMA_SIGNATURE := wrgnd13_wd_av
+endef
+
+define Device/qihoo-c301
+$(Device/seama)
+  DEVICE_TITLE := Qihoo C301
+  DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
+  BOARDNAME = QIHOO-C301
+  IMAGE_SIZE = 15744k
+  MTDPARTS = mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(devdata),64k(devconf),15744k(firmware),64k(warm_start),64k(action_image_config),64k(radiocfg)ro;spi0.1:15360k(upgrade2),1024k(privatedata)
+  SEAMA_SIGNATURE := wrgac26_qihoo360_360rg
+endef
+
+TARGET_DEVICES += mynet-n600 mynet-n750 qihoo-c301

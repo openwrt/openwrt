@@ -542,12 +542,6 @@ define LegacyDevice/MZKW300NH
 endef
 LEGACY_DEVICES += MZKW300NH
 
-define LegacyDevice/QIHOO360
-	DEVICE_TITLE := Qihoo 360 C301
-	DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
-endef
-LEGACY_DEVICES += QIHOO360
-
 define LegacyDevice/RW2458N
 	DEVICE_TITLE := Redwave RW2458N
 	DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-ath9k wpad-mini
@@ -607,18 +601,6 @@ define LegacyDevice/DR344
 	DEVICE_TITLE := Wallys DR344
 endef
 LEGACY_DEVICES += DR344
-
-define LegacyDevice/MYNETN600
-	DEVICE_TITLE := WD My Net N600
-	DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-endef
-LEGACY_DEVICES += MYNETN600
-
-define LegacyDevice/MYNETN750
-	DEVICE_TITLE := WD My Net N750
-	DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-endef
-LEGACY_DEVICES += MYNETN750
 
 define LegacyDevice/MYNETREXT
 	DEVICE_TITLE := WD My Net Wi-Fi Range Extender

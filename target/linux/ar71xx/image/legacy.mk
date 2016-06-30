@@ -308,10 +308,8 @@ r6100_mtdlayout=mtdparts=ar934x-nfc:128k(u-boot)ro,256k(caldata),256k(caldata-ba
 tew823dru_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,15296k(firmware),192k(lang)ro,512k(my-dlink)ro,64k(mac)ro,64k(art)ro
 wndr4300_mtdlayout=mtdparts=ar934x-nfc:256k(u-boot)ro,256k(u-boot-env)ro,256k(caldata),512k(pot),2048k(language),512k(config),3072k(traffic_meter),2048k(kernel),23552k(ubi),25600k@0x6c0000(firmware),256k(caldata_backup),-(reserved)
 zcn1523h_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6208k(rootfs),1472k(kernel),64k(configure)ro,64k(mfg)ro,64k(art)ro,7680k@0x50000(firmware)
-mynet_n600_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(devdata)ro,64k(devconf)ro,15872k(firmware),64k(radiocfg)ro
 mynet_rext_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,7808k(firmware),64k(nvram)ro,64k(ART)ro
 zyx_nbg6716_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(env)ro,64k(RFdata)ro,-(nbu);ar934x-nfc:2048k(zyxel_rfsd),2048k(romd),1024k(header),2048k(kernel),-(ubi)
-qihoo_c301_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(devdata),64k(devconf),15744k(firmware),64k(warm_start),64k(action_image_config),64k(radiocfg)ro;spi0.1:15360k(upgrade2),1024k(privatedata)
 yun_mtdlayout_8M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6464k(rootfs),1280k(kernel),64k(nvram),64k(art),7744k@0x50000(firmware)
 yun_mtdlayout_16M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14656k(rootfs),1280k(kernel),64k(nvram),64k(art),15936k@0x50000(firmware)
 wrtnode2q_mtdlayout=mtdparts=spi0.0:192k(u-boot),64k(u-boot-env),64k(art),1472k(kernel),14592k(rootfs),16064k@0x50000(firmware),16384k@0x0(fullflash)
@@ -654,39 +652,6 @@ define Image/Build/ALFA
 	fi
 endef
 
-
-Image/Build/Seama/loader=$(call Image/BuildLoader,$(1),bin,$(2) $(3),0x80060000)
-
-define Image/Build/Seama
-	[ -e "$(KDIR)/loader-$(2).bin" ]
-	$(call CompressLzma,$(KDIR)/loader-$(2).bin,$(KDIR_TMP)/loader-$(2).bin.lzma)
-	-rm -f $(KDIR_TMP)/image-$(2).tmp
-	$(call CatFiles,$(KDIR_TMP)/loader-$(2).bin.lzma,$$(($(6) - 64)),$(KDIR)/root.$(1),$(7),$(KDIR_TMP)/image-$(2).tmp)
-	[ -e "$(KDIR_TMP)/image-$(2).tmp" ] && { \
-		head -c -4 "$(KDIR_TMP)/image-$(2).tmp" > "$(KDIR_TMP)/image-$(2).no-jffs2mark.tmp"; \
-		$(STAGING_DIR_HOST)/bin/seama \
-		-i $(KDIR_TMP)/image-$(2).no-jffs2mark.tmp \
-		-m "dev=/dev/mtdblock/1" -m "type=firmware"; \
-		$(STAGING_DIR_HOST)/bin/seama \
-			-s $(call imgname,$(1),$(2))-factory.bin \
-			-m "signature=$(5)" \
-			-i $(KDIR_TMP)/image-$(2).no-jffs2mark.tmp.seama; \
-		tail -c 4 "$(KDIR_TMP)/image-$(2).tmp" >> $(call imgname,$(1),$(2))-factory.bin; \
-	}
-	cat $(KDIR_TMP)/loader-$(2).bin.lzma > $(KDIR_TMP)/image-$(2)-sysupgrade.tmp
-	$(STAGING_DIR_HOST)/bin/seama \
-		-i $(KDIR_TMP)/image-$(2)-sysupgrade.tmp \
-		-m "dev=/dev/mtdblock/1" -m "type=firmware"
-	$(call CatFiles,$(KDIR_TMP)/image-$(2)-sysupgrade.tmp.seama,$(6),$(KDIR)/root.$(1),$(7),$(call sysupname,$(1),$(2)))
-endef
-
-define Image/Build/Seama/initramfs
-	$(call PatchKernelLzma,$(2),$(3) $(4),,-initramfs)
-	$(STAGING_DIR_HOST)/bin/seama \
-		-i $(KDIR_TMP)/vmlinux-initramfs-$(2).bin.lzma \
-		-m "dev=/dev/mtdblock/1" -m "type=firmware"
-	cat $(KDIR_TMP)/vmlinux-initramfs-$(2).bin.lzma.seama > $(call imgname,initramfs,$(2))-seama.bin
-endef
 
 Image/Build/Senao/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
 Image/Build/Senao/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
@@ -1096,11 +1061,6 @@ $(eval $(call SingleProfile,PB4X,64k,PB44,pb44,PB44,ttyS0,115200))
 
 $(eval $(call SingleProfile,Planex,64kraw,MZKW04NU,mzk-w04nu,MZK-W04NU,ttyS0,115200))
 $(eval $(call SingleProfile,Planex,64kraw,MZKW300NH,mzk-w300nh,MZK-W300NH,ttyS0,115200))
-
-$(eval $(call SingleProfile,Seama,64k,MYNETN600,mynet-n600,MYNET-N600,ttyS0,115200,$$(mynet_n600_mtdlayout),wrgnd16_wd_db600,65536,16187392))
-$(eval $(call SingleProfile,Seama,64k,MYNETN750,mynet-n750,MYNET-N750,ttyS0,115200,$$(mynet_n600_mtdlayout),wrgnd13_wd_av,65536,16187392))
-
-$(eval $(call SingleProfile,Seama,64k,QIHOO360,qihoo-c301,QIHOO-C301,ttyS0,115200,$$(qihoo_c301_mtdlayout),wrgac26_qihoo360_360rg,65536,16121856))
 
 $(eval $(call SingleProfile,Senao,squashfs-only,EAP300V2,eap300v2,EAP300V2,ttyS0,115200,$$(eap300v2_mtdlayout)))
 
