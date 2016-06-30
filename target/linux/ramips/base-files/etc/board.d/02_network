@@ -286,6 +286,10 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii nvram lanmac)
 		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
 		;;
+	dir-860l-b1)
+		lan_mac=$(mtd_get_mac_ascii factory lanmac)
+		wan_mac=$(mtd_get_mac_ascii factory wanmac)
+		;;
 	e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
