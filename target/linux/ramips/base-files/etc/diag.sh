@@ -19,6 +19,7 @@ get_status_led() {
 	asl26555|\
 	br-6425|\
 	br-6475nd|\
+	dir-860l-b1|\
 	e1700|\
 	fonera20n|\
 	mzk-750dhp|\

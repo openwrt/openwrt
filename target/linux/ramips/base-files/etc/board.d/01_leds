@@ -136,6 +136,9 @@ mzk-750dhp|\
 mzk-dp150n)
 	ucidef_set_led_default "power" "power" "$board:green:power" "1"
 	;;
+dir-860l-b1)
+	ucidef_set_led_netdev "wan" "wan" "$board:green:net" "eth0.2"
+	;;
 ex2700)
 	ucidef_set_led_default "power_r" "POWER (red)" "$board:red:power" "0"
 	set_wifi_led "$board:green:router"
