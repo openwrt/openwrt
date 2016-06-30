@@ -401,14 +401,6 @@ define LegacyDevice/EWDORIN
 endef
 LEGACY_DEVICES += EWDORIN
 
-define LegacyDevice/HIWIFI_HC6361
-	DEVICE_TITLE := HiWiFi HC6361
-	DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-usb-storage \
-		kmod-crypto-deflate kmod-fs-ext4 kmod-ledtrig-gpio \
-		kmod-nls-iso8859-1 e2fsprogs
-endef
-LEGACY_DEVICES += HIWIFI_HC6361
-
 define LegacyDevice/JA76PF
 	DEVICE_TITLE := jjPlus JA76PF
 	DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-hwmon-core kmod-i2c-core kmod-hwmon-lm75

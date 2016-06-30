@@ -421,11 +421,14 @@ define Build/uImageHiWiFi
 endef
 
 define Device/hiwifi-hc6361
-    BOARDNAME := HiWiFi-HC6361
-    DEVICE_PROFILE := HIWIFI_HC6361
-    IMAGE_SIZE := 16128k
-    KERNEL := kernel-bin | patch-cmdline | lzma | uImageHiWiFi lzma
-    CONSOLE := ttyATH0,115200
-    MTDPARTS := spi0.0:64k(u-boot)ro,64k(bdinfo)ro,16128k(firmware),64k(backup)ro,64k(art)ro
+  DEVICE_TITLE := HiWiFi HC6361
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage \
+	kmod-fs-ext4 kmod-nls-iso8859-1 e2fsprogs
+  BOARDNAME := HiWiFi-HC6361
+  DEVICE_PROFILE := HIWIFI_HC6361
+  IMAGE_SIZE := 16128k
+  KERNEL := kernel-bin | patch-cmdline | lzma | uImageHiWiFi lzma
+  CONSOLE := ttyATH0,115200
+  MTDPARTS := spi0.0:64k(u-boot)ro,64k(bdinfo)ro,16128k(firmware),64k(backup)ro,64k(art)ro
 endef
 TARGET_DEVICES += hiwifi-hc6361
