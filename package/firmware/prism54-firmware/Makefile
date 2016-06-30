@@ -6,23 +6,26 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=prism54-firmware
-PKG_VERSION:=1.0.4.3
 PKG_RELEASE:=1
 
-PRG_URL:=https://daemonizer.de/prism54/prism54-fw/
-
 # Prism54 FullMAC firmware (jbnore.free.fr seems to be rather slow, so we use daemonizer.de)
-PKG_SOURCE:=$(PKG_VERSION).arm
-PKG_SOURCE_URL:=$(PRG_URL)/fw-fullmac/
-PKG_MD5SUM:=8bd4310971772a486b9784c77f8a6df9
+PRG_URL:=https://daemonizer.de/prism54/prism54-fw/
 
 include $(INCLUDE_DIR)/package.mk
 
 
-# Prism54 drivers
+# PRISM54/P54 firmwares
+PRISM54FW:=1.0.4.3.arm
 P54USBFW:=2.13.24.0.lm87.arm
 P54PCIFW:=2.13.12.0.arm
 P54SPIFW:=2.13.0.0.a.13.14.arm
+
+define Download/prism54-firmware
+  FILE:=$(PRISM54FW)
+  URL:=$(PRG_URL)/fw-fullmac
+  MD5SUM:=8bd4310971772a486b9784c77f8a6df9
+endef
+$(eval $(call Download,prism54-firmware))
 
 define Download/p54-usb-firmware
   FILE:=$(P54USBFW)
@@ -83,7 +86,7 @@ endef
 
 define Package/prism54-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(PKG_SOURCE) $(1)/lib/firmware/isl3890
+	$(INSTALL_DATA) $(DL_DIR)/$(PRISM54FW) $(1)/lib/firmware/isl3890
 endef
 
 define Package/p54-usb-firmware/install
