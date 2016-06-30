@@ -13,7 +13,7 @@ FEATURES:=usb usbgadget ext4 targz fpu audio display nand ubifs
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=vfpv3
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=4.4
 
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
