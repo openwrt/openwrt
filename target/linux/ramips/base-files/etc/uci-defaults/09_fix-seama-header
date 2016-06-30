@@ -6,9 +6,9 @@
 . /lib/ramips.sh
 
 fix_seama_header() {
-	local part=$1
+	local kernel_size=$(sed -n 's/mtd[0-9]*: \([0-9a-f]*\).*"kernel".*/\1/p' /proc/mtd)
 
-	mtd fixseama $part
+	[ "$kernel_size" ] && mtd -c 0x$kernel_size fixseama firmware
 }
 
 board=$(ramips_board_name)
@@ -17,6 +17,6 @@ case "$board" in
 cy-swr1100 | \
 dir-645 | \
 dir-860l-b1)
-	fix_seama_header kernel
+	fix_seama_header
 	;;
 esac
