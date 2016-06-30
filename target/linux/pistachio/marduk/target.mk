@@ -26,9 +26,9 @@
 BOARDNAME:=marduk
 
 DEFAULT_PACKAGES+=kmod-leds-gpio kmod-i2c i2c-tools \
-                  kmod-sound-pistachio-soc alsa-lib alsa-utils alsa-utils-test \
+                  kmod-sound-pistachio-soc alsa-lib alsa-utils alsa-utils-tests \
                   kmod-uccp420wlan kmod-cfg80211 fping iperf3 iw hostapd wpa-cli wpa-supplicant \
-                  uhttpd uboot-envtools tcpdump
+                  uhttpd uboot-envtools tcpdump board-test
 
 define Profile/marduk/default
 	$(1)_DEVICE_DTS:=$(2)
