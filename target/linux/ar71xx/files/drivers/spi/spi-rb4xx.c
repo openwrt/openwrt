@@ -413,7 +413,7 @@ static int rb4xx_spi_probe(struct platform_device *pdev)
 		goto err_put_master;
 	}
 
-	err = clk_enable(rbspi->ahb_clk);
+	err = clk_prepare_enable(rbspi->ahb_clk);
 	if (err)
 		goto err_clk_put;
 
