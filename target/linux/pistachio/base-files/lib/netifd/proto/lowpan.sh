@@ -20,8 +20,7 @@ proto_lowpan_setup() {
         local interface="$cfg$id" # i.e wpan0
 
         generate_mac $WPAN_OTP_REG0
-        local WPAN_MAC=$(cat /etc/config/MAC_$WPAN_OTP_REG0)
-        local WPAN_EUI=$(echo $WPAN_MAC | cut -d: -f1,2,3):ff:fe:$(echo $WPAN_MAC | cut -d: -f4,5,6)
+        local WPAN_EUI=$(echo $MAC | cut -d: -f1,2,3):ff:fe:$(echo $MAC | cut -d: -f4,5,6)
 
         proto_init_update "$ifname" 1
 

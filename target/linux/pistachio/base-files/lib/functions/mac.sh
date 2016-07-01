@@ -14,7 +14,7 @@
 #
 # common shell lib for mac generate functions
 
-#PRODDATA=$(which proddata)
+PRODDATA=$(which proddata)
 FILE=/etc/config/
 WIFI_OTP_REG0=0
 SOFTAP_OTP_REG0=1
@@ -25,7 +25,7 @@ WPAN_OTP_REG0=5
 
 read_otp() {
     local data_field=$1
-    local data_value=$(which proddata read $data_field)
+    local data_value=$($PRODDATA read $data_field)
     if [ -z $data_value ]; then
         return 1
     else
