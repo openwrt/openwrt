@@ -891,6 +891,21 @@ endef
 
 $(eval $(call KernelPackage,random-core))
 
+define KernelPackage/random-omap
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Hardware Random Number Generator OMAP support
+  KCONFIG:=CONFIG_HW_RANDOM_OMAP
+  FILES:=$(LINUX_DIR)/drivers/char/hw_random/omap-rng.ko
+  DEPENDS:=@(TARGET_omap24xx||TARGET_omap) +kmod-random-core
+  AUTOLOAD:=$(call AutoProbe,random-omap)
+endef
+
+define KernelPackage/random-omap/description
+ Kernel module for the OMAP Random Number Generator
+ found on OMAP16xx, OMAP2/3/4/5 and AM33xx/AM43xx multimedia processors.
+endef
+
+$(eval $(call KernelPackage,random-omap))
 
 define KernelPackage/thermal
   SUBMENU:=$(OTHER_MENU)
@@ -1009,3 +1024,51 @@ define KernelPackage/echo/description
 endef
 
 $(eval $(call KernelPackage,echo))
+
+
+define KernelPackage/bmp085
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BMP085/BMP18x pressure sensor
+  DEPENDS:= +kmod-regmap
+  KCONFIG:= CONFIG_BMP085
+  FILES:= $(LINUX_DIR)/drivers/misc/bmp085.ko
+endef
+
+define KernelPackage/bmp085/description
+ This driver adds support for Bosch Sensortec's digital pressure
+ sensors BMP085 and BMP18x.
+endef
+
+$(eval $(call KernelPackage,bmp085))
+
+
+define KernelPackage/bmp085-i2c
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BMP085/BMP18x pressure sensor I2C
+  DEPENDS:= +kmod-bmp085
+  KCONFIG:= CONFIG_BMP085_I2C
+  FILES:= $(LINUX_DIR)/drivers/misc/bmp085-i2c.ko
+  AUTOLOAD:=$(call AutoProbe,bmp085-i2c)
+endef
+define KernelPackage/bmp085-i2c/description
+ This driver adds support for Bosch Sensortec's digital pressure
+ sensor connected via I2C.
+endef
+
+$(eval $(call KernelPackage,bmp085-i2c))
+
+
+define KernelPackage/bmp085-spi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BMP085/BMP18x pressure sensor SPI
+  DEPENDS:= +kmod-bmp085
+  KCONFIG:= CONFIG_BMP085_SPI
+  FILES:= $(LINUX_DIR)/drivers/misc/bmp085-spi.ko
+  AUTOLOAD:=$(call AutoProbe,bm085-spi)
+endef
+define KernelPackage/bmp085-spi/description
+ This driver adds support for Bosch Sensortec's digital pressure
+ sensor connected via SPI.
+endef
+
+$(eval $(call KernelPackage,bmp085-spi))
