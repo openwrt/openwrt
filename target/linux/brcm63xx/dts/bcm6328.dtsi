@@ -4,7 +4,7 @@
 	compatible = "brcm,bcm6328";
 
 	aliases {
-		gpio0 = &gpio0;
+		pinctrl = &pinctrl;
 		spi1 = &hsspi;
 	};
 
@@ -57,9 +57,13 @@
 			interrupts = <2>;
 		};
 
-		gpio0: gpio-controller@10000084 {
-			compatible = "brcm,bcm6345-gpio";
-			reg = <0x10000084 4>, <0x1000008c 4>;
+		pinctrl: pin-controller@10000080 {
+			compatible = "brcm,bcm6328-pinctrl";
+			reg = <0x10000080 0x8>,
+			      <0x10000088 0x8>,
+			      <0x10000098 0x4>,
+			      <0x1000009c 0xc>;
+			reg-names = "dirout", "dat", "mode", "mux";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -68,6 +72,83 @@
 			interrupts = <3 0>, <2 0>, <0 0>, <1 0>;
 			interrupt-names = "gpio12", "gpio15",
 					  "gpio23", "gpio24";
+
+			pinctrl_serial_led: serial_led {
+				pinctrl_serial_led_data: serial_led_data {
+					function = "serial_led_data";
+					pins = "gpio6";
+				};
+
+				pinctrl_serial_led_clk: serial_led_clk {
+					function = "serial_led_clk";
+					pins = "gpio7";
+				};
+			};
+
+			pinctrl_inet_act_led: inet_act_led {
+				function = "inet_act_led";
+				pins = "gpio11";
+			};
+
+			pinctrl_pcie_clkreq: pcie_clkreq {
+				function = "pcie_clkreq";
+				pins = "gpio16";
+			};
+
+			pinctrl_ephy0_spd_led: ephy0_spd_led {
+				function = "led";
+				pins = "gpio17";
+			};
+
+			pinctrl_ephy1_spd_led: ephy1_spd_led {
+				function = "led";
+				pins = "gpio18";
+			};
+
+			pinctrl_ephy2_spd_led: ephy2_spd_led {
+				function = "led";
+				pins = "gpio19";
+			};
+
+			pinctrl_ephy3_spd_led: ephy3_spd_led {
+				function = "led";
+				pins = "gpio20";
+			};
+
+			pinctrl_ephy0_act_led: ephy0_act_led {
+				function = "ephy0_act_led";
+				pins = "gpio25";
+			};
+
+			pinctrl_ephy1_act_led: ephy1_act_led {
+				function = "ephy1_act_led";
+				pins = "gpio26";
+			};
+
+			pinctrl_ephy2_act_led: ephy2_act_led {
+				function = "ephy2_act_led";
+				pins = "gpio27";
+			};
+
+			pinctrl_ephy3_act_led: ephy3_act_led {
+				function = "ephy3_act_led";
+				pins = "gpio28";
+			};
+
+			pinctrl_hsspi_cs1: hsspi_cs1 {
+				function = "hsspi_cs1";
+				pins = "hsspi_cs1";
+			};
+
+			pinctrl_usb_port1_device: usb_port1_device {
+				function = "usb_device_port";
+				pins = "usb_port1";
+			};
+
+			pinctrl_usb_port1_host: usb_port1_host {
+				function = "usb_host_port";
+				pins = "usb_port1";
+			};
 		};
 
 		hsspi: spi@10001000 {

@@ -21,17 +21,17 @@
 
 		wlan {
 			label = "wlan";
-			gpios = <&gpio0 1 0>;
+			gpios = <&pinctrl 1 0>;
 			linux,code = <KEY_WLAN>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio1 1 1>;
+			gpios = <&pinctrl 33 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -41,48 +41,48 @@
 
 		wps_green {
 			label = "F@ST2704N:green:wps";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		lan1_green {
 			label = "F@ST2704N:green:lan1";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 		};
 		lan2_green {
 			label = "F@ST2704N:green:lan2";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 		lan3_green {
 			label = "F@ST2704N:green:lan3";
-			gpios = <&gpio0 6 1>;
+			gpios = <&pinctrl 6 1>;
 		};
 		lan4_green {
 			label = "F@ST2704N:green:lan4";
-			gpios = <&gpio0 7 1>;
+			gpios = <&pinctrl 7 1>;
 		};
 		inet_green {
 			label = "F@ST2704N:green:inet";
-			gpios = <&gpio0 8 1>;
+			gpios = <&pinctrl 8 1>;
 		};
 		inet_red {
 			label = "F@ST2704N:red:inet";
-			gpios = <&gpio0 9 1>;
+			gpios = <&pinctrl 9 1>;
 		};
 		dsl_green {
 			label = "F@ST2704N:green:dsl";
-			gpios = <&gpio0 10 1>;
+			gpios = <&pinctrl 10 1>;
 		};
 		power_red {
 			label = "F@ST2704N:red:power";
-			gpios = <&gpio0 11 1>;
+			gpios = <&pinctrl 11 1>;
 		};
 		power_green {
 			label = "F@ST2704N:green:power";
-			gpios = <&gpio1 15 1>;
+			gpios = <&pinctrl 47 1>;
 			default-state = "on";
 		};
 		usb_green {
 			label = "F@ST2704N:green:usb";
-			gpios = <&gpio1 17 1>;
+			gpios = <&pinctrl 49 1>;
 		};
 	};
 };

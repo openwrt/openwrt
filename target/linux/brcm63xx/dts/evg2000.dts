@@ -21,12 +21,12 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 25 1>;
+			gpios = <&pinctrl 25 1>;
 			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio0 26 1>;
+			gpios = <&pinctrl 26 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
@@ -36,44 +36,44 @@
 
 		voip1_green {
 			label = "EVG2000:green:voip1";
-			gpios = <&gpio0 14 1>;
+			gpios = <&pinctrl 14 1>;
 		};
 		voip2_green {
 			label = "EVG2000:green:voip2";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		inet_red {
 			label = "EVG2000:red:inet";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 		};
 		inet_green {
 			label = "EVG2000:green:inet";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 		usb_green {
 			label = "EVG2000:green:usb";
-			gpios = <&gpio0 15 1>;
+			gpios = <&pinctrl 15 1>;
 		};
 		power_green {
 			label = "EVG2000:green:power";
-			gpios = <&gpio0 22 1>;
+			gpios = <&pinctrl 22 1>;
 			default-state = "on";
 		};
 		power_red {
 			label = "EVG2000:red:power";
-			gpios = <&gpio0 23 1>;
+			gpios = <&pinctrl 23 1>;
 		};
 		lan_green {
 			label = "EVG2000:green:lan";
-			gpios = <&gpio0 24 1>;
+			gpios = <&pinctrl 24 1>;
 		};
 		wireless_green {
 			label = "EVG2000:green:wireless";
-			gpios = <&gpio0 26 1>;
+			gpios = <&pinctrl 26 1>;
 		};
 		wan_green {
 			label = "EVG2000:green:wan";
-			gpios = <&gpio0 27 1>;
+			gpios = <&pinctrl 27 1>;
 		};
 	};
 };
@@ -104,4 +104,9 @@
 		label = "nvram";
 		reg = <0x00fe0000 0x00020000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci>;
 };

@@ -18,7 +18,7 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  
  #include "board_common.h"
  
-@@ -189,6 +190,7 @@ static struct of_device_id of_ids[] = {
+@@ -180,6 +181,7 @@ static struct of_device_id of_ids[] = {
  int __init board_register_devices(void)
  {
  	int usbh_ports = 0;
@@ -26,7 +26,7 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  
  #if CONFIG_OF
  	if (of_have_populated_dt()) {
-@@ -265,6 +267,10 @@ int __init board_register_devices(void)
+@@ -256,6 +258,10 @@ int __init board_register_devices(void)
  					board.ephy_reset_gpio_flags);
  	}
  

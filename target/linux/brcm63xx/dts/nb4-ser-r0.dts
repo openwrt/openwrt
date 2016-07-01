@@ -17,8 +17,8 @@
 		#size-cells = <0>;
 		compatible = "spi-gpio";
 
-		gpio-mosi = <&gpio0 7 0>;
-		gpio-sck = <&gpio0 6 0>;
+		gpio-mosi = <&pinctrl 7 0>;
+		gpio-sck = <&pinctrl 6 0>;
 		num-chipselects = <0>;
 
 		hc595: gpio-spi-controller@0 {
@@ -41,22 +41,22 @@
 
 		service {
 			label = "service";
-			gpios = <&gpio0 27 1>;
+			gpios = <&pinctrl 27 1>;
 			linux,code = <BTN_0>;
 		};
 		clip {
 			label = "clip";
-			gpios = <&gpio0 31 1>;
+			gpios = <&pinctrl 31 1>;
 			linux,code = <BTN_1>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio1 5 1>;
+			gpios = <&pinctrl 37 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
@@ -66,23 +66,23 @@
 
 		traffic_white {
 			label = "NB4-SER-r0:white:traffic";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		service_blue {
 			label = "NB4-SER-r0:blue:service";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 		};
 		wifi_white {
 			label = "NB4-SER-r0:white:wifi";
-			gpios = <&gpio0 15 1>;
+			gpios = <&pinctrl 15 1>;
 		};
 		service_red {
 			label = "NB4-SER-r0:red:service";
-			gpios = <&gpio0 29 1>;
+			gpios = <&pinctrl 29 1>;
 		};
 		service_green {
 			label = "NB4-SER-r0:green:service";
-			gpios = <&gpio0 30 1>;
+			gpios = <&pinctrl 30 1>;
 		};
 		alarm_white {
 			label = "NB4-SER-r0:white:alarm";

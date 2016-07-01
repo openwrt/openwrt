@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -31,24 +31,24 @@
 
 		dsl_green {
 			label = "VR-3025u:green:dsl";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		inet_green {
 			label = "VR-3025u:green:inet";
-			gpios = <&gpio0 5 0>;
+			gpios = <&pinctrl 5 0>;
 		};
 		power_green {
 			label = "VR-3025u:green:power";
-			gpios = <&gpio0 22 0>;
+			gpios = <&pinctrl 22 0>;
 			default-state = "on";
 		};
 		power_red {
 			label = "VR-3025u:red:power";
-			gpios = <&gpio0 24 0>;
+			gpios = <&pinctrl 24 0>;
 		};
 		inet_red {
 			label = "VR-3025u:red:inet";
-			gpios = <&gpio0 31 0>;
+			gpios = <&pinctrl 31 0>;
 		};
 	};
 };
@@ -73,4 +73,10 @@
 		label = "nvram";
 		reg = <0x1fe0000 0x020000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci &pinctrl_ephy0_led &pinctrl_ephy1_led
+		     &pinctrl_ephy2_led &pinctrl_ephy3_led>;
 };

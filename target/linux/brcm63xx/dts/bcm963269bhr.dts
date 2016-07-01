@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 0 0>;
+			gpios = <&pinctrl 32 0>;
 			linux,code = <KEY_RESTART>;
 		};
         };
@@ -31,12 +31,12 @@
 
 		usb1 {
 			label = "963269BHR:green:usb1";
-			gpios = <&gpio0 9 1>;
+			gpios = <&pinctrl 9 1>;
 		};
 
 		usb2 {
 			label = "963269BHR:green:usb2";
-			gpios = <&gpio0 10 1>;
+			gpios = <&pinctrl 10 1>;
 		};
 	};
 };

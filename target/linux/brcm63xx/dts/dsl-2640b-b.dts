@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 7 1>;
+			gpios = <&pinctrl 7 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -31,20 +31,20 @@
 
 		power_green {
 			label = "D-4P-W:green:power";
-			gpios = <&gpio0 0 1>;
+			gpios = <&pinctrl 0 1>;
 			default-state = "on";
 		};
 		status {
 			label = "D-4P-W::status";
-			gpios = <&gpio0 3 1>;
+			gpios = <&pinctrl 3 1>;
 		};
 		inet_green {
 			label = "D-4P-W:green:internet";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 		};
 		inet_red {
 			label = "D-4P-W:red:internet";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 	};
 };
@@ -69,4 +69,9 @@
 		label = "nvram";
 		reg = <0x3f0000 0x010000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci &pinctrl_ext_mii>;
 };

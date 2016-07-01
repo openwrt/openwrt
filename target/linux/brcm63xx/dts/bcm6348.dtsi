@@ -5,8 +5,7 @@
 
 	aliases {
 		pflash = &pflash;
-		gpio0 = &gpio0;
-		gpio1 = &gpio1;
+		pinctrl = &pinctrl;
 		spi0 = &lsspi;
 	};
 
@@ -72,26 +71,59 @@
 			brcm,field-width = <5>;
 		};
 
-		gpio1: gpio-controller@fffe0400 {
-			compatible = "brcm,bcm6345-gpio";
-			reg = <0xfffe0400 4>, <0xfffe0408 4>;
+		pinctrl: pin-controller@fffe0400 {
+			compatible = "brcm,bcm6348-pinctrl";
+			reg = <0xfffe0400 0x8>,
+			      <0xfffe0408 0x8>,
+			      <0xfffe0418 0x4>;
+			reg-names = "dirout", "dat", "mode";
 
 			gpio-controller;
 			#gpio-cells = <2>;
-
-			ngpios = <5>;
 
 			interrupt-parent = <&ext_intc>;
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>;
-			interrupt-names = "gpio0", "gpio1", "gpio2", "gpio3";
-		};
+			interrupt-names = "gpio32", "gpio33", "gpio34", "gpio35";
 
-		gpio0: gpio-controller@fffe0404 {
-			compatible = "brcm,bcm6345-gpio";
-			reg = <0xfffe0404 4>, <0xfffe040c 4>;
+			pinctrl_ext_ephy: ext_ephy {
+				function = "ext_ephy";
+				groups = "group1", "group4";
+			};
 
-			gpio-controller;
-			#gpio-cells = <2>;
+			pinctrl_mii_snoop: mii_snoop {
+				function = "ext_ephy";
+				groups = "group1", "group4";
+			};
+
+			pinctrl_legacy_led: legacy_led {
+				function = "legacy_led";
+				groups = "group4";
+			};
+
+			pinctrl_mii_pccard: mii_pccard {
+				function = "mii_pccard";
+				groups = "group1";
+			};
+
+			pinctrl_pci: pci {
+				function = "pci";
+				groups = "group2";
+			};
+
+			pinctrl_spi_master_uart: spi_master_uart {
+				function = "spi_master_uart";
+				groups = "group1";
+			};
+
+			pinctrl_ext_mii: ext_mii {
+				function = "ext_mii";
+				groups = "group0", "group3";
+			};
+
+			pinctrl_utopia: utopia {
+				function = "utopia";
+				groups = "group0", "group1", "group3";
+			};
 		};
 
 		lsspi: spi@fffe0c00 {

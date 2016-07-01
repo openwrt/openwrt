@@ -21,12 +21,12 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio1 3 1>;
+			gpios = <&pinctrl 35 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
@@ -36,41 +36,41 @@
 
 		dsl_blue {
 			label = "VH4032N:blue:dsl";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		dsl_red {
 			label = "VH4032N:red:dsl";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 		hspa_blue {
 			label = "VH4032N:blue:hspa";
-			gpios = <&gpio0 11 1>;
+			gpios = <&pinctrl 11 1>;
 		};
 		hspa_red {
 			label = "VH4032N:red:hspa";
-			gpios = <&gpio0 12 1>;
+			gpios = <&pinctrl 12 1>;
 		};
 		power_blue {
 			label = "VH4032N:blue:power";
-			gpios = <&gpio0 22 0>;
+			gpios = <&pinctrl 22 0>;
 		};
 		power_red {
 			label = "VH4032N:red:power";
-			gpios = <&gpio0 24 0>;
+			gpios = <&pinctrl 24 0>;
 			default-state = "on";
 		};
 		voice_blue {
 			label = "VH4032N:blue:voice";
-			gpios = <&gpio0 25 1>;
+			gpios = <&pinctrl 25 1>;
 		};
 		voice_red {
 			label = "VH4032N:red:voice";
-			gpios = <&gpio0 26 1>;
+			gpios = <&pinctrl 26 1>;
 		};
 	};
 };
 
-&gpio0 {
+&pinctrl {
 	usb_hub_reset {
 		gpio-hog;
 		gpios = <27 0>;

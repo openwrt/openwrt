@@ -22,12 +22,12 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 23 1>;
+			gpios = <&pinctrl 23 1>;
 			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio0 24 1>;
+			gpios = <&pinctrl 24 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
@@ -37,32 +37,32 @@
 
 		inet_green {
 			label = "R5010UNv2:green:inet";
-			gpios = <&gpio0 1 1>;
+			gpios = <&pinctrl 1 1>;
 		};
 		inet_fail_red {
 			label = "R5010UNv2:red:inet-fail";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		dsl_red {
 			label = "R5010UNv2:green:dsl";
-			gpios = <&gpio0 3 1>;
+			gpios = <&pinctrl 3 1>;
 		};
 		power_green {
 			label = "R5010UNv2:green:power";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 			default-state = "on";
 		};
 		power_fail_red {
 			label = "R5010UNv2:red:power-fail";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 		wps_green {
 			label = "R5010UNv2:green:wps";
-			gpios = <&gpio0 10 1>;
+			gpios = <&pinctrl 10 1>;
 		};
 		usb_green {
 			label = "R5010UNv2:green:usb";
-			gpios = <&gpio0 11 1>;
+			gpios = <&pinctrl 11 1>;
 		};
 	};
 };

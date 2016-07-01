@@ -22,7 +22,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -32,19 +32,19 @@
 
 		dsl_green {
 			label = "HG622:green:dsl";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		inet_green {
 			label = "HG622:green:inet";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 		usb_green {
 			label = "HG622:green:usb";
-			gpios = <&gpio0 11 1>;
+			gpios = <&pinctrl 11 1>;
 		};
 		power_green {
 			label = "HG622:green:power";
-			gpios = <&gpio0 22 1>;
+			gpios = <&pinctrl 22 1>;
 			default-state = "on";
 		};
 	};
@@ -76,4 +76,11 @@
 		label = "nvram";
 		reg = <0xfe0000 0x020000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci_gnt0 &pinctrl_pci_req0
+		     &pinctrl_pci_intb &pinctrl_pci_gnt1
+		     &pinctrl_pci_req1>;
 };

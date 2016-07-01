@@ -21,12 +21,12 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 35 1>;
 			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio1 3 1>;
+			gpios = <&pinctrl 36 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
@@ -36,24 +36,24 @@
 
 		power_green {
 			label = "P870HW-51a:green:power";
-			gpios = <&gpio0 0 0>;
+			gpios = <&pinctrl 0 0>;
 			default-state = "on";
 		};
 		dsl_green {
 			label = "P870HW-51a:green:dsl";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		inet_green {
 			label = "P870HW-51a:green:inet";
-			gpios = <&gpio0 22 1>;
+			gpios = <&pinctrl 22 1>;
 		};
 		wps_orange {
 			label = "P870HW-51a:orange:wps";
-			gpios = <&gpio0 24 1>;
+			gpios = <&pinctrl 24 1>;
 		};
 		inet_red {
 			label = "P870HW-51a:red:inet";
-			gpios = <&gpio1 1 1>;
+			gpios = <&pinctrl 33 1>;
 		};
 	};
 };
@@ -78,4 +78,9 @@
 		label = "nvram";
 		reg = <0x3f0000 0x010000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci>;
 };

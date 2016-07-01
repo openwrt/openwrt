@@ -17,20 +17,20 @@
 
 		stop_green {
 			label = "96358VW2:green:stop";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 		};
 		power_green {
 			label = "96358VW2:green:power";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 			default-state = "on";
 		};
 		adsl_green {
 			label = "96358VW2:green:adsl";
-			gpios = <&gpio0 22 1>;
+			gpios = <&pinctrl 22 1>;
 		};
 		ppp_fail_green {
 			label = "96358VW2:green:ppp-fail";
-			gpios = <&gpio0 23 0>;
+			gpios = <&pinctrl 23 0>;
 		};
 	};
 };

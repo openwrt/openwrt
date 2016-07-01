@@ -17,8 +17,8 @@
 		#size-cells = <0>;
 		compatible = "spi-gpio";
 
-		gpio-mosi = <&gpio0 7 0>;
-		gpio-sck = <&gpio0 6 0>;
+		gpio-mosi = <&pinctrl 7 0>;
+		gpio-sck = <&pinctrl 6 0>;
 		num-chipselects = <0>;
 
 		hc595: gpio-spi-controller@0 {
@@ -41,7 +41,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 3 1>;
+			gpios = <&pinctrl 35 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -51,16 +51,16 @@
 
 		power_green {
 			label = "CT6373-1:green:power";
-			gpios = <&gpio0 0 0>;
+			gpios = <&pinctrl 0 0>;
 			default-state = "on";
 		};
 		usb_green {
 			label = "CT6373-1:green:usb";
-			gpios = <&gpio0 3 1>;
+			gpios = <&pinctrl 3 1>;
 		};
 		wlan_green {
 			label = "CT6373-1:green:wlan";
-			gpios = <&gpio0 9 1>;
+			gpios = <&pinctrl 9 1>;
 		};
 		dsl_green {
 			label = "CT6373-1:green:adsl";

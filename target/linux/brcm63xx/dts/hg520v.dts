@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 5 1>;
+			gpios = <&pinctrl 37 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -31,7 +31,7 @@
 
 		inet_green {
 			label = "HW520:green:net";
-			gpios = <&gpio1 0 1>;
+			gpios = <&pinctrl 32 1>;
 		};
 	};
 };

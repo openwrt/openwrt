@@ -21,12 +21,12 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio1 5 1>;
+			gpios = <&pinctrl 37 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -36,60 +36,60 @@
 
 		power_green {
 			label = "AGPF-S0:green:power";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 			default-state = "on";
 		};
 		power_red {
 			label = "AGPF-S0:red:power";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 		service_green {
 			label = "AGPF-S0:green:service";
-			gpios = <&gpio0 6 1>;
+			gpios = <&pinctrl 6 1>;
 		};
 		service_red {
 			label = "AGPF-S0:red:service";
-			gpios = <&gpio0 7 1>;
+			gpios = <&pinctrl 7 1>;
 		};
 		dsl_green {
 			label = "AGPF-S0:green:adsl";
-			gpios = <&gpio0 9 1>;
+			gpios = <&pinctrl 9 1>;
 		};
 		dsl_red {
 			label = "AGPF-S0:red:adsl";
-			gpios = <&gpio0 10 1>;
+			gpios = <&pinctrl 10 1>;
 		};
 		wifi_green {
 			label = "AGPF-S0:green:wifi";
-			gpios = <&gpio0 22 1>;
+			gpios = <&pinctrl 22 1>;
 		};
 		wifi_red {
 			label = "AGPF-S0:red:wifi";
-			gpios = <&gpio0 23 1>;
+			gpios = <&pinctrl 23 1>;
 		};
 		inet_red {
 			label = "AGPF-S0:red:internet";
-			gpios = <&gpio0 24 1>;
+			gpios = <&pinctrl 24 1>;
 		};
 		inet_green {
 			label = "AGPF-S0:green:internet";
-			gpios = <&gpio0 25 1>;
+			gpios = <&pinctrl 25 1>;
 		};
 		usr1_green {
 			label = "AGPF-S0:green:usr1";
-			gpios = <&gpio0 26 1>;
+			gpios = <&pinctrl 26 1>;
 		};
 		usr1_red {
 			label = "AGPF-S0:red:usr1";
-			gpios = <&gpio0 27 1>;
+			gpios = <&pinctrl 27 1>;
 		};
 		usr2_green {
 			label = "AGPF-S0:green:usr2";
-			gpios = <&gpio0 29 1>;
+			gpios = <&pinctrl 29 1>;
 		};
 		usr2_red {
 			label = "AGPF-S0:red:usr2";
-			gpios = <&gpio0 30 1>;
+			gpios = <&pinctrl 30 1>;
 		};
 	};
 };

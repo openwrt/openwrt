@@ -21,12 +21,12 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 23 1>;
+			gpios = <&pinctrl 23 1>;
 			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wlan";
-			gpios = <&gpio0 24 1>;
+			gpios = <&pinctrl 24 1>;
 			linux,code = <KEY_WLAN>;
 		};
 	};
@@ -36,52 +36,52 @@
 
 		inet_red {
 			label = "A4001N1:red:inet";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		ppp_green {
 			label = "A4001N1:green:ppp";
-			gpios = <&gpio0 3 1>;
+			gpios = <&pinctrl 3 1>;
 		};
 		power_green {
 			label = "A4001N1:green:power";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 			default-state = "on";
 		};
 		ppp_red {
 			label = "A4001N1:red:ppp";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 		usb_green {
 			label = "A4001N1:green:3g";
-			gpios = <&gpio0 6 1>;
+			gpios = <&pinctrl 6 1>;
 		};
 		usb_red {
 			label = "A4001N1:red:3g";
-			gpios = <&gpio0 7 1>;
+			gpios = <&pinctrl 7 1>;
 		};
 		power_red {
 			label = "A4001N1:red:power";
-			gpios = <&gpio0 8 1>;
+			gpios = <&pinctrl 8 1>;
 		};
 		wlan_green {
 			label = "A4001N1:green:wlan";
-			gpios = <&gpio0 9 1>;
+			gpios = <&pinctrl 9 1>;
 		};
 		wlan_red {
 			label = "A4001N1:red:wlan";
-			gpios = <&gpio0 10 1>;
+			gpios = <&pinctrl 10 1>;
 		};
 		inet_green {
 			label = "A4001N1:green:inet";
-			gpios = <&gpio0 11 1>;
+			gpios = <&pinctrl 11 1>;
 		};
 		eth_red {
 			label = "A4001N1:red:eth";
-			gpios = <&gpio0 20 1>;
+			gpios = <&pinctrl 20 1>;
 		};
 		eth_green {
 			label = "A4001N1:green:eth";
-			gpios = <&gpio0 31 1>;
+			gpios = <&pinctrl 31 1>;
 		};
 	};
 };

@@ -21,19 +21,19 @@
 
 		wifi {
 			label = "wifi";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 			linux,code = <KEY_WLAN>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio1 1 1>;
+			gpios = <&pinctrl 33 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -43,39 +43,39 @@
 
 		power_green {
 			label = "dsl-275xb:green:power";
-			gpios = <&gpio0 3 1>;
+			gpios = <&pinctrl 3 1>;
 			default-state = "on";
 		};
 
 		inet_green {
 			label = "dsl-275xb:green:inet";
-			gpios = <&gpio0 8 1>;
+			gpios = <&pinctrl 8 1>;
 		};
 
 		inet_red {
 			label = "dsl-275xb:red:inet-fail";
-			gpios = <&gpio0 9 1>;
+			gpios = <&pinctrl 9 1>;
 		};
 
 		power_red {
 			label = "dsl-275xb:red:post-failed";
-			gpios = <&gpio0 11 1>;
+			gpios = <&pinctrl 11 1>;
 		};
 
 		wps_blue {
 			label = "dsl-275xb:blue:wps";
-			gpios = <&gpio0 16 1>;
+			gpios = <&pinctrl 16 1>;
 		};
 
 		dsl_green {
 			label = "dsl-275xb:green:dsl";
-			gpios = <&gpio0 17 1>;
+			gpios = <&pinctrl 17 1>;
 		};
 
 		usb_green {
 			/* not user controllable? */
 			label = "dsl-275xb:green:usb";
-			gpios = <&gpio1 17 1>;
+			gpios = <&pinctrl 49 1>;
 		};
 	};
 };

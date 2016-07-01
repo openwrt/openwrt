@@ -21,30 +21,30 @@
 
 		service {
 			label = "service";
-			gpios = <&gpio0 10 1>;
+			gpios = <&pinctrl 10 1>;
 			linux,code = <BTN_0>;
 		};
 		wlan {
 			label = "wlan";
-			gpios = <&gpio0 12 1>;
+			gpios = <&pinctrl 12 1>;
 			linux,code = <KEY_WLAN>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio0 24 1>;
+			gpios = <&pinctrl 24 1>;
 			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio0 25 1>;
+			gpios = <&pinctrl 25 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
 	switch {
 		compatible = "realtek,rtl8367";
-		gpio-sda = <&gpio0 18 0>;
-		gpio-sck = <&gpio0 20 0>;
+		gpio-sda = <&pinctrl 18 0>;
+		gpio-sck = <&pinctrl 20 0>;
 
 		realtek,extif0 = <1 5 1 1 1 1 1 1 2>;
 	};

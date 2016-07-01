@@ -17,38 +17,38 @@
 
 		power {
 			label = "MAGIC:green:power";
-			gpios = <&gpio0 0 1>;
+			gpios = <&pinctrl 0 1>;
 			default-state = "on";
 		};
 
 		stop {
 			label = "MAGIC:green:stop";
-			gpios = <&gpio0 1 1>;
+			gpios = <&pinctrl 1 1>;
 		};
 
 		hpna {
 			label = "MAGIC:green:hpna";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 		};
 
 		status {
 			label = "MAGIC:green:adsl";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 
 		voip {
 			label = "MAGIC:green:voip";
-			gpios = <&gpio0 22 1>;
+			gpios = <&pinctrl 22 1>;
 		};
 
 		wifi {
 			label = "MAGIC:green:wifi";
-			gpios = <&gpio0 28 0>;
+			gpios = <&pinctrl 28 0>;
 		};
 
 		usb {
 			label = "MAGIC:green:usb";
-			gpios = <&gpio1 3 1>;
+			gpios = <&pinctrl 35 1>;
 		};
 	};
 };
@@ -73,4 +73,9 @@
 		label = "nvram";
 		reg = <0x3f0000 0x010000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci &pinctrl_ext_mii &pinctrl_mii_pccard>;
 };

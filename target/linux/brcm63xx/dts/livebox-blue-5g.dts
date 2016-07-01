@@ -22,13 +22,13 @@
 
 		button1 {
 			label = "1";
-			gpios = <&gpio1 4 1>;
+			gpios = <&pinctrl 36 1>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		button2 {
 			label = "2";
-			gpios = <&gpio0 7 1>;
+			gpios = <&pinctrl 7 1>;
 			linux,code = <BTN_2>;
 		};
 	};
@@ -38,28 +38,28 @@
 
 		red_adsl_fail {
 			label = "Livebox1:red:adsl-fail-power";
-			gpios = <&gpio0 0 0>;
+			gpios = <&pinctrl 0 0>;
 			default-state = "on";
 		};
 
 		red_adsl {
 			label = "Livebox1:red:adsl";
-			gpios = <&gpio0 1 0>;
+			gpios = <&pinctrl 1 0>;
 		};
 
 		red_traffic {
 			label = "Livebox1:red:traffic";
-			gpios = <&gpio0 2 0>;
+			gpios = <&pinctrl 2 0>;
 		};
 
 		red_phone {
 			label = "Livebox1:red:phone";
-			gpios = <&gpio0 3 0>;
+			gpios = <&pinctrl 3 0>;
 		};
 
 		red_wifi {
 			label = "Livebox1:red:wifi";
-			gpios = <&gpio0 4 0>;
+			gpios = <&pinctrl 4 0>;
 		};
 	};
 };
@@ -69,4 +69,9 @@
 	status = "ok";
 
 	linux,part-probe = "RedBoot";
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci &pinctrl_ext_mii &pinctrl_mii_pccard>;
 };

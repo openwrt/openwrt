@@ -22,7 +22,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_dev_usb_ehci.h>
  #include <bcm63xx_dev_usb_ohci.h>
  #include <bcm63xx_dev_usb_usbd.h>
-@@ -250,10 +248,6 @@ int __init board_register_devices(void)
+@@ -241,10 +239,6 @@ int __init board_register_devices(void)
  	     bcm63xx_register_fallback_sprom(&board.fallback_sprom)))
  		pr_err(PFX "failed to register fallback SPROM\n");
  

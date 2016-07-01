@@ -20,13 +20,14 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static const char * const gpio_chip_labels[] = {
  	"bcm63xx-gpio.0",
  	"bcm63xx-gpio.1",
-@@ -48,8 +50,9 @@ static void __init bcm63xx_gpio_init_one
+@@ -48,8 +50,10 @@ static void __init bcm63xx_gpio_init_one
  	pdata.base = id * 32;
  	pdata.ngpio = ngpio;
  
 -	platform_device_register_resndata(NULL, "bcm63xx-gpio", id, res, 2,
 -					  &pdata, sizeof(pdata));
-+	if (!board_of_device_present("gpio0"))
++	if (!board_of_device_present("gpio0") &&
++	    !board_of_device_present("pinctrl"))
 +		platform_device_register_resndata(NULL, "bcm63xx-gpio", id, res,
 +						  2, &pdata, sizeof(pdata));
  }

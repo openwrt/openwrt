@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 1 1>;
+			gpios = <&pinctrl 33 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -31,23 +31,23 @@
 
 		power_green {
 			label = "V2110:green:power";
-			gpios = <&gpio0 0 1>;
+			gpios = <&pinctrl 0 1>;
 		};
 		power_red {
 			label = "V2110:red:power";
-			gpios = <&gpio0 1 1>;
+			gpios = <&pinctrl 1 1>;
 		};
 		adsl_green {
 			label = "V2110:green:adsl";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		ppp_green {
 			label = "V2110:green:ppp";
-			gpios = <&gpio0 3 1>;
+			gpios = <&pinctrl 3 1>;
 		};
 		wireless_green {
 			label = "V2110:green:wireless";
-			gpios = <&gpio0 6 1>;
+			gpios = <&pinctrl 6 1>;
 		};
 	};
 };
@@ -72,4 +72,9 @@
 		label = "nvram";
 		reg = <0x3f0000 0x010000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci &pinctrl_ext_mii>;
 };

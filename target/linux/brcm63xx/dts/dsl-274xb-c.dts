@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -31,24 +31,24 @@
 
 		inet_green {
 			label = "dsl-274xb:green:internet";
-			gpios = <&gpio0 2 0>;
+			gpios = <&pinctrl 2 0>;
 		};
 		power_red {
 			label = "dsl-274xb:red:power";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 		};
 		power_green {
 			label = "dsl-274xb:green:power";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 			default-state = "on";
 		};
 		dsl_green {
 			label = "dsl-274xb:green:adsl";
-			gpios = <&gpio0 9 1>;
+			gpios = <&pinctrl 9 1>;
 		};
 		inet_red {
 			label = "dsl-274xb:red:internet";
-			gpios = <&gpio0 10 0>;
+			gpios = <&pinctrl 10 0>;
 		};
 	};
 };

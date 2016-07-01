@@ -22,12 +22,12 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 34 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 		wlan {
 			label = "wlan";
-			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 37 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WLAN>;
 		};
 	};
@@ -37,32 +37,32 @@
 
 		power_white {
 			label = "AV4202N:white:power";
-			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		power_red {
 			label = "AV4202N:red:power";
-			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
 		};
 		wan_white {
 			label = "AV4202N:white:wan";
-			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
 		};
 		wan_red {
 			label = "AV4202N:red:wan";
-			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
 		};
 		phone_white {
 			label = "AV4202N:white:phone";
-			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
 		};
 		phone_red {
 			label = "AV4202N:red:phone";
-			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
 		};
 		wifi {
 			label = "AV4202N:blue:wifi";
-			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 22 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

@@ -21,12 +21,12 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 23 1>;
+			gpios = <&pinctrl 23 1>;
 			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio0 24 1>;
+			gpios = <&pinctrl 24 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
@@ -36,24 +36,24 @@
 
 		inet_red {
 			label = "A4001N:red:inet";
-			gpios = <&gpio0 1 0>;
+			gpios = <&pinctrl 1 0>;
 		};
 		power_red {
 			label = "A4001N:red:power";
-			gpios = <&gpio0 4 0>;
+			gpios = <&pinctrl 4 0>;
 		};
 		power_green {
 			label = "A4001N:green:power";
-			gpios = <&gpio0 8 0>;
+			gpios = <&pinctrl 8 0>;
 			default-state = "on";
 		};
 		usb_green {
 			label = "A4001N:green:usb";
-			gpios = <&gpio0 10 1>;
+			gpios = <&pinctrl 10 1>;
 		};
 		dsl_green {
 			label = "A4001N:green:dsl";
-			gpios = <&gpio0 11 1>;
+			gpios = <&pinctrl 11 1>;
 		};
 	};
 };

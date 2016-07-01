@@ -17,24 +17,24 @@
 
 		dsl_green {
 			label = "96368MVNgr:green:adsl";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		inet_fail_green {
 			label = "96368MVNgr:green:inet-fail";
-			gpios = <&gpio0 3 0>;
+			gpios = <&pinctrl 3 0>;
 		};
 		inet_green {
 			label = "96368MVNgr:green:inet";
-			gpios = <&gpio0 5 0>;
+			gpios = <&pinctrl 5 0>;
 		};
 		power_green {
 			label = "96368MVNgr:green:power";
-			gpios = <&gpio0 22 0>;
+			gpios = <&pinctrl 22 0>;
 			default-state = "on";
 		};
 		wps_green {
 			label = "96368MVNgr:green:wps";
-			gpios = <&gpio0 23 1>;
+			gpios = <&pinctrl 23 1>;
 		};
 	};
 };
@@ -43,4 +43,9 @@
 	status = "ok";
 
 	linux,part-probe = "bcm63xxpart";
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci>;
 };

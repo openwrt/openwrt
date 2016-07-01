@@ -17,24 +17,24 @@
 
 		power_green {
 			label = "96348R:green:power";
-			gpios = <&gpio0 0 1>;
+			gpios = <&pinctrl 0 1>;
 			default-state = "on";
 		};
 		stop_green {
 			label = "96348R:green:stop";
-			gpios = <&gpio0 1 1>;
+			gpios = <&pinctrl 1 1>;
 		};
 		adsl_fail_green {
 			label = "96348R:green:adsl-fail";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		ppp_green {
 			label = "96348R:green:ppp";
-			gpios = <&gpio0 3 1>;
+			gpios = <&pinctrl 3 1>;
 		};
 		ppp_fail_green {
 			label = "96348R:green:ppp-fail";
-			gpios = <&gpio0 4 1>;
+			gpios = <&pinctrl 4 1>;
 		};
 	};
 };
@@ -43,4 +43,9 @@
 	status = "ok";
 
 	linux,part-probe = "bcm63xxpart";
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci>;
 };

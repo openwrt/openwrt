@@ -21,12 +21,12 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 11 0>;
+			gpios = <&pinctrl 11 0>;
 			linux,code = <KEY_RESTART>;
 		};
 		ses {
 			label = "ses";
-			gpios = <&gpio1 5 1>;
+			gpios = <&pinctrl 37 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
@@ -36,28 +36,28 @@
 
 		ses_green {
 			label = "spw303v:green:ses";
-			gpios = <&gpio0 0 1>;
+			gpios = <&pinctrl 0 1>;
 		};
 		power_adsl_red {
 			label = "spw303v:red:power+adsl";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		ppp_green {
 			label = "spw303v:green:ppp";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
 		power_adsl_green {
 			label = "spw303v:green:power+adsl";
-			gpios = <&gpio0 22 1>;
+			gpios = <&pinctrl 22 1>;
 			default-state = "on";
 		};
 		voip_green {
 			label = "spw303v:green:voip";
-			gpios = <&gpio0 27 1>;
+			gpios = <&pinctrl 27 1>;
 		};
 		pots_green {
 			label = "spw303v:green:pots";
-			gpios = <&gpio0 31 1>;
+			gpios = <&pinctrl 31 1>;
 		};
 	};
 };

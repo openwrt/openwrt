@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -31,24 +31,24 @@
 
 		voip {
 			label = "DVAG3810BN::voip";
-			gpios = <&gpio0 1 0>;
+			gpios = <&pinctrl 1 0>;
 		};
 		power {
 			label = "DVAG3810BN::power";
-			gpios = <&gpio0 4 0>;
+			gpios = <&pinctrl 4 0>;
 			default-state = "on";
 		};
 		stop {
 			label = "DVAG3810BN::stop";
-			gpios = <&gpio0 5 0>;
+			gpios = <&pinctrl 5 0>;
 		};
 		dsl {
 			label = "DVAG3810BN::dsl";
-			gpios = <&gpio0 22 1>;
+			gpios = <&pinctrl 22 1>;
 		};
 		inet {
 			label = "DVAG3810BN::internet";
-			gpios = <&gpio0 23 1>;
+			gpios = <&pinctrl 23 1>;
 		};
 	};
 };

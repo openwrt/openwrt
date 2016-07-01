@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 1 1>;
+			gpios = <&pinctrl 33 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -31,16 +31,16 @@
 
 		power_green {
 			label = "AR1004G:green:power";
-			gpios = <&gpio0 0 1>;
+			gpios = <&pinctrl 0 1>;
 			default-state = "on";
 		};
 		inet_green {
 			label = "AR1004G:green:inet";
-			gpios = <&gpio0 3 1>;
+			gpios = <&pinctrl 3 1>;
 		};
 		power_red {
 			label = "AR1004G:red:power";
-			gpios = <&gpio0 6 1>;
+			gpios = <&pinctrl 6 1>;
 		};
 	};
 };
@@ -65,4 +65,9 @@
 		label = "nvram";
 		reg = <0x3f0000 0x010000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ext_mii &pinctrl_pci>;
 };

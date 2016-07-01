@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 4 1>;
+			gpios = <&pinctrl 36 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -47,4 +47,9 @@
 		label = "nvram";
 		reg = <0x3f0000 0x010000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci &pinctrl_ext_mii>;
 };

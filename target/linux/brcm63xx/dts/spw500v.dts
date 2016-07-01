@@ -21,7 +21,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 1 1>;
+			gpios = <&pinctrl 33 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -31,24 +31,24 @@
 
 		power_green {
 			label = "SPW500V:green:power";
-			gpios = <&gpio0 0 1>;
+			gpios = <&pinctrl 0 1>;
 			default-state = "on";
 		};
 		power_red {
 			label = "SPW500V:red:power";
-			gpios = <&gpio0 1 1>;
+			gpios = <&pinctrl 1 1>;
 		};
 		ppp_green {
 			label = "SPW500V:green:ppp";
-			gpios = <&gpio0 3 1>;
+			gpios = <&pinctrl 3 1>;
 		};
 		pstn_green {
 			label = "SPW500V:green:pstn";
-			gpios = <&gpio0 28 1>;
+			gpios = <&pinctrl 28 1>;
 		};
 		voip_green {
 			label = "SPW500V:green:voip";
-			gpios = <&gpio1 0 1>;
+			gpios = <&pinctrl 32 1>;
 		};
 	};
 };
@@ -73,4 +73,9 @@
 		label = "nvram";
 		reg = <0x3f0000 0x010000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci>;
 };

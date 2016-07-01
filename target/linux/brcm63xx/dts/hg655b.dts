@@ -21,17 +21,17 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 12 1>;
+			gpios = <&pinctrl 12 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 		wlan {
 			label = "wlan";
-			gpios = <&gpio0 23 1>;
+			gpios = <&pinctrl 23 1>;
 			linux,code = <KEY_WLAN>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -41,28 +41,29 @@
 
 		dsl_green {
 			label = "HW65x:green:dsl";
-			gpios = <&gpio0 2 1>;
+			gpios = <&pinctrl 2 1>;
 		};
 		internet_green {
 			label = "HW65x:green:internet";
-			gpios = <&gpio0 5 1>;
+			gpios = <&pinctrl 5 1>;
 		};
+
 		usb_green {
 			label = "HW65x:green:usb";
-			gpios = <&gpio0 14 1>;
+			gpios = <&pinctrl 14 1>;
 		};
 		power_green {
 			label = "HW65x:green:power";
-			gpios = <&gpio0 22 1>;
+			gpios = <&pinctrl 22 1>;
 			default-state = "on";
 		};
 		voip_green {
 			label = "HW65x:green:voip";
-			gpios = <&gpio0 25 1>;
+			gpios = <&pinctrl 25 1>;
 		};
 		wps_green {
 			label = "HW65x:green:wps";
-			gpios = <&gpio0 27 1>;
+			gpios = <&pinctrl 27 1>;
 		};
 	};
 };
@@ -97,4 +98,10 @@
 		label = "nvram";
 		reg = <0x7e0000 0x020000>;
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pci &pinctrl_ephy0_led &pinctrl_ephy1_led
+		     &pinctrl_ephy2_led &pinctrl_ephy3_led>;
 };

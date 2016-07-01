@@ -21,13 +21,13 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio1 1 1>;
+			gpios = <&pinctrl 33 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&pinctrl 34 1>;
 			linux,code = <KEY_RESTART>;
 		};
         };
@@ -37,22 +37,22 @@
 
 		inet {
 			label = "96318REF_P300:green:inet";
-			gpios = <&gpio0 8 1>;
+			gpios = <&pinctrl 8 1>;
 		};
 
 		inet_fail {
 			label = "96318REF_P300:red:inet-fail";
-			gpios = <&gpio0 9 1>;
+			gpios = <&pinctrl 9 1>;
 		};
 
 		post_failed {
 			label = "96318REF_P300:red:post-failed";
-			gpios = <&gpio0 11 1>;
+			gpios = <&pinctrl 11 1>;
 		};
 
 		usb_pwron {
 			label = "96318REF_P300::usb-pwron";
-			gpios = <&gpio0 13 1>;
+			gpios = <&pinctrl 13 1>;
 			default-state = "on";
 		};
 	};
@@ -73,4 +73,9 @@
 
 		linux,part-probe = "bcm63xxpart";
 	};
+};
+
+&pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usb_pwron>;
 };
