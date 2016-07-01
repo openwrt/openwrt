@@ -539,7 +539,7 @@ You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loW
 
 2. You can enable WiFi by default by following below steps:
 
-- set ssid and password for WiFi either at compile time from file target/linux/pistachio/base-files/etc/uci-defaults/config/wireless
+- Once the board is booted up, you can set ssid, password, mac address for WiFi STA by updating /etc/config/wireless as follows:
 
         config wifi-iface
             option device       radio0
@@ -548,11 +548,14 @@ You can check "ifconfig -a" to check list of interfaces. Ethernet, WiFi and 6loW
             option ssid         <XYZ>
             option encryption   psk2
             option key          <Password>
+            option macaddr      <macaddr>
 
-   OR after booting the board, update /etc/config/wireless as above and restart the network by running following command from serial console.
+    __You can get the `macaddr` using [How to obtain WiFi mac address](#how-to-obtain-wifi-mac-address). For more details about mac address configurations, please refer [MAC Address Scheme](#mac-address-scheme)__
+
+   To reflect these changes, restart the network by using following command:
 
         $root@OpenWrt:/# /etc/init.d/network restart
- 
+
 - set default route for WiFi in target/linux/pistachio/base-files/etc/uci-defaults/config/network as
 
         option 'defaultroute' '1'
@@ -564,7 +567,7 @@ Note that luci is not enabled by default, but you should be able to use opkg uti
 
 
 ##Using opkg utility
-All the packages built for pistachio-marduk are hosted on [CreatorDev downloads server](https://downloads.creatordev.io/pistachio/marduk), so it should be possible to 
+All the packages built for pistachio-marduk are hosted on [CreatorDev downloads server](https://downloads.creatordev.io/pistachio/marduk), so it should be possible to
 use opkg utility to install/upgrade/remove the OpenWrt packages.
 
 1. Check if you have /etc/opkg/distfeeds.conf pointing to [CreatorDev downloads server](https://downloads.creatordev.io/pistachio/marduk), else for your local development you can edit this to point to your local webserver which has the required packages.
@@ -587,7 +590,7 @@ use opkg utility to install/upgrade/remove the OpenWrt packages.
         Installing fping (2.4b2_to-ipv6-1) to root...
         Downloading http://downloads.creatordev.io/pistachio/marduk/packages/img/fping_2.4b2_to-ipv6-1_pistachio.ipk.
         Configuring fping.
- 
+
 4. In case you have the package already on your board, then it will say so.
 
         root@OpenWrt:/# opkg install wpa-supplicant
@@ -621,6 +624,43 @@ Also the device info as follows:
         DEVICE_REVISION='Rev4 with CC2520'
 
 Depending upon the config chosen to build, `DEVICE_REVISION` will be `Rev4 with CC2520` or `Rev5 with CA8210`.
+
+
+###MAC Address Scheme
+
+Proddata package has been used to read/write mac addresses from/to otp.For more details please visit [proddata](https://github.com/CreatorDev/proddata).
+On bootup, board will check for MAC address in the following order of priority:
+1. Check from OTP
+2. Check in /etc/config/MAC_x (in case, it has been generated earlier randomly)
+3. Generate from flash serial number
+4. Generate randomly for each interface and store at /etc/config/MAC_x for the subsequent usage
+
+|Register	|prodata offset|Name			|
+|:----		|:--- 			|
+|MAC_0		|0		|WiFi STA		|
+|MAC_1		|1		|WiFi AP		|
+|MAC_2		|2		|Bluetooth		|
+|MAC_3		|3		|Ethernet		|
+|MAC_4		|4		|Mesh (Unused)		|
+|MAC_5		|5		|6LoWPAN		|
+
+####How to obtain WiFi mac address:
+To obtain mac address for WiFi STA, one can use generate_mac function from shell library as follow:
+
+	root@OpenWrt:/# . /lib/functions/mac.sh
+	root@OpenWrt:/# generate_mac 0
+	E0704 08:46:46.575446  4593 device_data.cc:116] No valid reg version
+	mac source: serial number
+	MAC = e2:0b:8e:7d:41:77
+
+If mac address is stored in OTP, then one can use proddata to read 1st mac address(which is WiFi STA) from otp:
+
+	root@OpenWrt:/# proddata read MAC_0
+
+
+If mac address is stored is generated using random scheme, then it will be stored at `/etc/config/MAC_0`:
+
+	root@OpenWrt:/# cat /etc/config/MAC_0
 
 ### Known Issues:
 
