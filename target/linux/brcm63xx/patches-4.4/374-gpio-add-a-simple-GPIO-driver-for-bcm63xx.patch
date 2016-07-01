@@ -8,7 +8,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
  drivers/gpio/Kconfig        |    8 +++
  drivers/gpio/Makefile       |    1 +
- drivers/gpio/gpio-bcm63xx.c |  122 +++++++++++++++++++++++++++++++++++++++++++
+ drivers/gpio/gpio-bcm63xx.c |  135 +++++++++++++++++++++++++++++++++++++++++++
  3 files changed, 131 insertions(+)
  create mode 100644 drivers/gpio/gpio-bcm63xx.c
 
@@ -40,7 +40,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  obj-$(CONFIG_GPIO_CLPS711X)	+= gpio-clps711x.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-bcm63xx.c
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,135 @@
 +/*
 + * Driver for BCM63XX memory-mapped GPIO controllers, based on
 + * Generic driver for memory-mapped GPIO controllers.
@@ -68,10 +68,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +#include <linux/ioport.h>
 +#include <linux/io.h>
 +#include <linux/gpio.h>
++#include <linux/gpio/driver.h>
 +#include <linux/slab.h>
 +#include <linux/platform_device.h>
 +#include <linux/mod_devicetable.h>
-+#include <linux/basic_mmio_gpio.h>
 +#include <linux/of.h>
 +#include <linux/of_irq.h>
 +#include <linux/of_gpio.h>
@@ -92,7 +92,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	void __iomem *dirout;
 +	unsigned long sz;
 +	int err;
-+	struct bgpio_chip *bgc;
++	struct gpio_chip *gc;
 +	struct bgpio_pdata *pdata = dev_get_platdata(dev);
 +
 +	dirout_r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -113,45 +113,46 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	if (IS_ERR(dirout))
 +		return PTR_ERR(dirout);
 +
-+	bgc = devm_kzalloc(&pdev->dev, sizeof(*bgc), GFP_KERNEL);
-+	if (!bgc)
++	gc = devm_kzalloc(&pdev->dev, sizeof(*gc), GFP_KERNEL);
++	if (!gc)
 +		return -ENOMEM;
 +
-+	err = bgpio_init(bgc, dev, sz, dat, NULL, NULL, dirout, NULL,
++	err = bgpio_init(gc, dev, sz, dat, NULL, NULL, dirout, NULL,
 +			 BGPIOF_BIG_ENDIAN_BYTE_ORDER);
 +	if (err)
 +		return err;
 +
-+	platform_set_drvdata(pdev, bgc);
++	platform_set_drvdata(pdev, gc);
 +
 +	if (dev->of_node) {
 +		int id = of_alias_get_id(dev->of_node, "gpio");
 +		u32 ngpios;
 +
 +		if (id >= 0)
-+			bgc->gc.label = devm_kasprintf(dev, GFP_KERNEL,
-+						       "bcm63xx-gpio.%d", id);
++			gc->label = devm_kasprintf(dev, GFP_KERNEL,
++						   "bcm63xx-gpio.%d", id);
 +
 +		if (!of_property_read_u32(dev->of_node, "ngpios", &ngpios))
-+			bgc->gc.ngpio = ngpios;
++			gc->ngpio = ngpios;
 +
 +		if (of_get_property(dev->of_node, "interrupt-names", NULL))
-+			bgc->gc.to_irq = bcm63xx_gpio_to_irq;
++			gc->to_irq = bcm63xx_gpio_to_irq;
 +
 +	} else if (pdata) {
-+		bgc->gc.base = pdata->base;
++		gc->base = pdata->base;
 +		if (pdata->ngpio > 0)
-+			bgc->gc.ngpio = pdata->ngpio;
++			gc->ngpio = pdata->ngpio;
 +	}
 +
-+	return gpiochip_add(&bgc->gc);
++	return gpiochip_add(gc);
 +}
 +
 +static int bcm63xx_gpio_remove(struct platform_device *pdev)
 +{
-+	struct bgpio_chip *bgc = platform_get_drvdata(pdev);
++	struct gpio_chip *gc = platform_get_drvdata(pdev);
 +
-+	return bgpio_remove(bgc);
++	gpiochip_remove(gc);
++	return 0;
 +}
 +
 +#ifdef CONFIG_OF
