@@ -102,6 +102,7 @@ endef
 KERNEL_LOADADDR=0x10008000
 
 define Device/Default
+  PROFILES := Generic
   DEVICE_DTS :=
   FILESYSTEMS := squashfs ext4
   KERNEL_INSTALL := 1
@@ -116,7 +117,6 @@ endef
 DEVICE_VARS += DEVICE_DTS
 
 define Device/ventana
-  PROFILES := Generic VENTANA
   DEVICE_TITLE := Gateworks Ventana family
   DEVICE_DTS:= \
 	imx6dl-gw51xx \
@@ -146,7 +146,6 @@ define Device/ventana
 endef
 
 define Device/wandboard
-  PROFILES := Generic IMX6DL_WANDBOARD
   DEVICE_TITLE := Wandboard Dual
   DEVICE_DTS := imx6dl-wandboard
   DEVICE_PACKAGES := kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy
