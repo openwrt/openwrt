@@ -142,7 +142,7 @@ define Device/ventana
   IMAGE/nand_normal.ubi := ubi-boot-overlay normal 2048 124KiB 128KiB 8124
   IMAGE/nand_large.ubi := ubi-boot-overlay large 4096 248KiB 256KiB 8124
   IMAGE/bootfs.tar.gz := bootfs.tar.gz
-  IMAGE_NAME := $$(IMAGE_PREFIX)-$$(1)-$$(2)
+  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1)-$$(2)
 endef
 
 define Device/wandboard
