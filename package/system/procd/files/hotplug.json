@@ -17,10 +17,6 @@
 						]
 					],
 					[ "if",
-						[ "eq", "DEVNAME", "kmsg" ],
-						[ "makedev", "/dev/%DEVNAME%", "0644" ],
-					],
-					[ "if",
 						[ "regex", "DEVNAME", "^snd" ],
 						[ "makedev", "/dev/%DEVNAME%", "0660", "audio" ],
 					],
