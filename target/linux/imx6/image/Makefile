@@ -102,54 +102,54 @@ endef
 KERNEL_LOADADDR=0x10008000
 
 define Device/Default
-	DEVICE_DTS :=
-	FILESYSTEMS := squashfs ext4
-	KERNEL_INSTALL := 1
-	KERNEL_SUFFIX := -uImage
-	KERNEL_NAME := zImage
-	KERNEL_PREFIX := $$(IMAGE_PREFIX)
-	KERNEL := kernel-bin | uImage none
-	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
-	IMAGES :=
+  DEVICE_DTS :=
+  FILESYSTEMS := squashfs ext4
+  KERNEL_INSTALL := 1
+  KERNEL_SUFFIX := -uImage
+  KERNEL_NAME := zImage
+  KERNEL_PREFIX := $$(IMAGE_PREFIX)
+  KERNEL := kernel-bin | uImage none
+  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
+  IMAGES :=
 endef
 
 DEVICE_VARS += DEVICE_DTS
 
 define Device/ventana
-	PROFILES := Generic VENTANA
-	DEVICE_TITLE := Gateworks Ventana family
-	DEVICE_DTS:= \
-		imx6dl-gw51xx \
-		imx6dl-gw52xx \
-		imx6dl-gw53xx \
-		imx6dl-gw54xx \
-		imx6dl-gw551x \
-		imx6dl-gw552x \
-		imx6q-gw51xx \
-		imx6q-gw52xx \
-		imx6q-gw53xx \
-		imx6q-gw54xx \
-		imx6q-gw5400-a \
-		imx6q-gw551x \
-		imx6q-gw552x
-	DEVICE_PACKAGES := kmod-thermal-imx kmod-sky2 kmod-usb-chipidea-imx kmod-usb-mxs-phy \
-		kmod-sound-core kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
-		kmod-can kmod-can-flexcan kmod-can-raw \
-		kmod-rtc-ds1672 kmod-gpio-pca953x kmod-hwmon-gsc kmod-eeprom-at24 \
-		kmod-leds-gpio kmod-pps-gpio kmod-gw16083 \
-		kobs-ng
-	IMAGES := nand_normal.ubi nand_large.ubi bootfs.tar.gz
-	IMAGE/nand_normal.ubi := ubi-boot-overlay normal 2048 124KiB 128KiB 8124
-	IMAGE/nand_large.ubi := ubi-boot-overlay large 4096 248KiB 256KiB 8124
-	IMAGE/bootfs.tar.gz := bootfs.tar.gz
-	IMAGE_NAME := $$(IMAGE_PREFIX)-$$(1)-$$(2)
+  PROFILES := Generic VENTANA
+  DEVICE_TITLE := Gateworks Ventana family
+  DEVICE_DTS:= \
+	imx6dl-gw51xx \
+	imx6dl-gw52xx \
+	imx6dl-gw53xx \
+	imx6dl-gw54xx \
+	imx6dl-gw551x \
+	imx6dl-gw552x \
+	imx6q-gw51xx \
+	imx6q-gw52xx \
+	imx6q-gw53xx \
+	imx6q-gw54xx \
+	imx6q-gw5400-a \
+	imx6q-gw551x \
+	imx6q-gw552x
+  DEVICE_PACKAGES := kmod-thermal-imx kmod-sky2 kmod-usb-chipidea-imx kmod-usb-mxs-phy \
+	kmod-sound-core kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
+	kmod-can kmod-can-flexcan kmod-can-raw \
+	kmod-rtc-ds1672 kmod-gpio-pca953x kmod-hwmon-gsc kmod-eeprom-at24 \
+	kmod-leds-gpio kmod-pps-gpio kmod-gw16083 \
+	kobs-ng
+  IMAGES := nand_normal.ubi nand_large.ubi bootfs.tar.gz
+  IMAGE/nand_normal.ubi := ubi-boot-overlay normal 2048 124KiB 128KiB 8124
+  IMAGE/nand_large.ubi := ubi-boot-overlay large 4096 248KiB 256KiB 8124
+  IMAGE/bootfs.tar.gz := bootfs.tar.gz
+  IMAGE_NAME := $$(IMAGE_PREFIX)-$$(1)-$$(2)
 endef
 
 define Device/wandboard
-	PROFILES := Generic IMX6DL_WANDBOARD
-	DEVICE_TITLE := Wandboard Dual
-	DEVICE_DTS := imx6dl-wandboard
-	DEVICE_PACKAGES := kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy
+  PROFILES := Generic IMX6DL_WANDBOARD
+  DEVICE_TITLE := Wandboard Dual
+  DEVICE_DTS := imx6dl-wandboard
+  DEVICE_PACKAGES := kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy
 endef
 
 TARGET_DEVICES += \
