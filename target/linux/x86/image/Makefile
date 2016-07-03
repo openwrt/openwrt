@@ -40,7 +40,7 @@ ifneq ($(GRUB_TERMINALS),)
   GRUB_TERMINAL_CONFIG := terminal_input $(GRUB_TERMINALS); terminal_output $(GRUB_TERMINALS)
 endif
 
-SIGNATURE:=$(shell dd if=/dev/urandom bs=4 count=1 2>/dev/null | hexdump -v -e '"%08x"')
+SIGNATURE:=$(shell perl -e 'printf("%08x", rand(0xFFFFFFFF))')
 ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
 ROOTPART:=$(if $(ROOTPART),$(ROOTPART),PARTUUID=$(SIGNATURE)-02)
 
