@@ -259,12 +259,10 @@ define KernelPackage/pcspkr
   DEPENDS:=@TARGET_x86 +kmod-input-core
   TITLE:=PC speaker support
   KCONFIG:= \
-	CONFIG_INPUT_PCSPKR \
 	CONFIG_SND_PCSP
   FILES:= \
-	$(LINUX_DIR)/drivers/input/misc/pcspkr.ko \
 	$(LINUX_DIR)/sound/drivers/pcsp/snd-pcsp.ko
-  AUTOLOAD:=$(call AutoLoad,50,pcspkr snd-pcsp)
+  AUTOLOAD:=$(call AutoLoad,50,snd-pcsp)
   $(call AddDepends/sound)
 endef
 
