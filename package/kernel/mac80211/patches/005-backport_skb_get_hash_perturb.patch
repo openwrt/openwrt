@@ -1,18 +1,12 @@
 --- a/backport-include/linux/skbuff.h
 +++ b/backport-include/linux/skbuff.h
-@@ -1,6 +1,8 @@
- #ifndef __BACKPORT_SKBUFF_H
- #define __BACKPORT_SKBUFF_H
- #include_next <linux/skbuff.h>
-+#include <net/flow_keys.h>
-+#include <linux/jhash.h>
- #include <linux/version.h>
- #include <generated/utsrelease.h>
- 
-@@ -305,6 +307,16 @@ static inline void skb_free_frag(void *d
+@@ -305,6 +305,19 @@ static inline void skb_free_frag(void *d
  {
  	put_page(virt_to_head_page(data));
  }
++
++#include <net/flow_keys.h>
++#include <linux/jhash.h>
 +
 +static inline u32 skb_get_hash_perturb(struct sk_buff *skb, u32 key)
 +{
