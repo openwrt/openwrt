@@ -16,11 +16,9 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
  3 files changed, 236 insertions(+)
  create mode 100644 drivers/mtd/qcom_smem_part.c
 
-diff --git a/drivers/mtd/Kconfig b/drivers/mtd/Kconfig
-index a03ad29..debc887 100644
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -190,6 +190,13 @@
+@@ -190,6 +190,13 @@ config MTD_MYLOADER_PARTS
  	  You will still need the parsing functions to be called by the driver
  	  for your particular device. It won't happen automatically.
  
@@ -34,11 +32,9 @@ index a03ad29..debc887 100644
  comment "User Modules And Translation Layers"
  
  #
-diff --git a/drivers/mtd/Makefile b/drivers/mtd/Makefile
-index 99bb9a1..2a44a64 100644
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -16,6 +16,7 @@
+@@ -16,6 +16,7 @@ obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
  obj-$(CONFIG_MTD_BCM63XX_PARTS)	+= bcm63xxpart.o
  obj-$(CONFIG_MTD_BCM47XX_PARTS)	+= bcm47xxpart.o
  obj-$(CONFIG_MTD_MYLOADER_PARTS) += myloader.o
@@ -46,9 +42,6 @@ index 99bb9a1..2a44a64 100644
  
  # 'Users' - code which presents functionality to userspace.
  obj-$(CONFIG_MTD_BLKDEVS)	+= mtd_blkdevs.o
-diff --git a/drivers/mtd/qcom_smem_part.c b/drivers/mtd/qcom_smem_part.c
-new file mode 100644
-index 0000000..f9c1bca
 --- /dev/null
 +++ b/drivers/mtd/qcom_smem_part.c
 @@ -0,0 +1,228 @@

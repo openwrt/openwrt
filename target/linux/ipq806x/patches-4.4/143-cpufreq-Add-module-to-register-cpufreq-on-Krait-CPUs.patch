@@ -69,7 +69,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +	};
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
-@@ -95,6 +95,15 @@
+@@ -95,6 +95,15 @@ config ARM_OMAP2PLUS_CPUFREQ
  	depends on ARCH_OMAP2PLUS
  	default ARCH_OMAP2PLUS
  
@@ -87,7 +87,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	help
 --- a/drivers/cpufreq/Makefile
 +++ b/drivers/cpufreq/Makefile
-@@ -61,6 +61,7 @@
+@@ -61,6 +61,7 @@ obj-$(CONFIG_ARM_MT8173_CPUFREQ)	+= mt81
  obj-$(CONFIG_ARM_OMAP2PLUS_CPUFREQ)	+= omap-cpufreq.o
  obj-$(CONFIG_ARM_PXA2xx_CPUFREQ)	+= pxa2xx-cpufreq.o
  obj-$(CONFIG_PXA3xx)			+= pxa3xx-cpufreq.o

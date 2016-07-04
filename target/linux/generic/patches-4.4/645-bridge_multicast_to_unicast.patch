@@ -382,6 +382,8 @@ Implement optinal multicast->unicast conversion for igmp snooping
  
 -		port = (unsigned long)lport > (unsigned long)rport ?
 -		       lport : rport;
+-
+-		prev = maybe_deliver(prev, port, skb, __packet_hook);
 +		if ((unsigned long)lport > (unsigned long)rport) {
 +			port = lport;
 +			addr = p->unicast ? p->eth_addr : NULL;
@@ -389,8 +391,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
 +			port = rport;
 +			addr = NULL;
 +		}
- 
--		prev = maybe_deliver(prev, port, skb, __packet_hook);
++
 +		if (addr)
 +			prev = maybe_deliver_addr(prev, port, skb, addr,
 +						  __packet_hook);

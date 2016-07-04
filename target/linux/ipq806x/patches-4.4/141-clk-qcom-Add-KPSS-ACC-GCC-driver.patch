@@ -31,7 +31,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 
 --- a/Documentation/devicetree/bindings/arm/msm/qcom,kpss-acc.txt
 +++ b/Documentation/devicetree/bindings/arm/msm/qcom,kpss-acc.txt
-@@ -21,10 +21,17 @@
+@@ -21,10 +21,17 @@ PROPERTIES
  		    the register region. An optional second element specifies
  		    the base address and size of the alias register region.
  
@@ -82,7 +82,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +	};
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
-@@ -115,6 +115,14 @@
+@@ -115,6 +115,14 @@ config QCOM_HFPLL
  	  Say Y if you want to support CPU frequency scaling on devices
  	  such as MSM8974, APQ8084, etc.
  
@@ -99,7 +99,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	select KRAIT_L2_ACCESSORS
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -9,6 +9,7 @@
+@@ -9,6 +9,7 @@ clk-qcom-y += clk-branch.o
  clk-qcom-y += clk-regmap-divider.o
  clk-qcom-y += clk-regmap-mux.o
  clk-qcom-$(CONFIG_KRAIT_CLOCKS) += clk-krait.o
