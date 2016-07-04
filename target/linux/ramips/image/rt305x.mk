@@ -379,7 +379,6 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WL-330N,$(1))
 	$(call Image/Build/Profile/WL-330N3G,$(1))
 	$(call Image/Build/Profile/WL-341V3,$(1))
-	$(call Image/Build/Profile/WL-351,$(1))
 	$(call Image/Build/Profile/WNCE2001,$(1))
 	$(call Image/Build/Profile/WR512-3GN,$(1))
 	$(call Image/Build/Profile/WR6202,$(1))
