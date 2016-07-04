@@ -1047,7 +1047,7 @@ define KernelPackage/bmp085-spi
   DEPENDS:= +kmod-bmp085
   KCONFIG:= CONFIG_BMP085_SPI
   FILES:= $(LINUX_DIR)/drivers/misc/bmp085-spi.ko
-  AUTOLOAD:=$(call AutoProbe,bm085-spi)
+  AUTOLOAD:=$(call AutoProbe,bmp085-spi)
 endef
 define KernelPackage/bmp085-spi/description
  This driver adds support for Bosch Sensortec's digital pressure
