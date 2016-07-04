@@ -1,0 +1,55 @@
+From: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Date: Thu, 4 Feb 2016 22:09:23 +0100
+Subject: [PATCH] net: mvneta: Fix for_each_present_cpu usage
+
+This patch convert the for_each_present in on_each_cpu, instead of
+applying on the present cpus it will be applied only on the online cpus.
+This fix a bug reported on
+http://thread.gmane.org/gmane.linux.ports.arm.kernel/468173.
+
+Using the macro on_each_cpu (instead of a for_each_* loop) also ensures
+that all the calls will be done all at once.
+
+Fixes: f86428854480 ("net: mvneta: Statically assign queues to CPUs")
+Reported-by: Stefan Roese <stefan.roese@gmail.com>
+Suggested-by: Jisheng Zhang <jszhang@marvell.com>
+Suggested-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Signed-off-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -2562,7 +2562,7 @@ static void mvneta_start_dev(struct mvne
+ 	mvneta_port_enable(pp);
+ 
+ 	/* Enable polling on the port */
+-	for_each_present_cpu(cpu) {
++	for_each_online_cpu(cpu) {
+ 		struct mvneta_pcpu_port *port = per_cpu_ptr(pp->ports, cpu);
+ 
+ 		napi_enable(&port->napi);
+@@ -2587,7 +2587,7 @@ static void mvneta_stop_dev(struct mvnet
+ 
+ 	phy_stop(pp->phy_dev);
+ 
+-	for_each_present_cpu(cpu) {
++	for_each_online_cpu(cpu) {
+ 		struct mvneta_pcpu_port *port = per_cpu_ptr(pp->ports, cpu);
+ 
+ 		napi_disable(&port->napi);
+@@ -3055,13 +3055,11 @@ err_cleanup_rxqs:
+ static int mvneta_stop(struct net_device *dev)
+ {
+ 	struct mvneta_port *pp = netdev_priv(dev);
+-	int cpu;
+ 
+ 	mvneta_stop_dev(pp);
+ 	mvneta_mdio_remove(pp);
+ 	unregister_cpu_notifier(&pp->cpu_notifier);
+-	for_each_present_cpu(cpu)
+-		smp_call_function_single(cpu, mvneta_percpu_disable, pp, true);
++	on_each_cpu(mvneta_percpu_disable, pp, true);
+ 	free_percpu_irq(dev->irq, pp->ports);
+ 	mvneta_cleanup_rxqs(pp);
+ 	mvneta_cleanup_txqs(pp);
