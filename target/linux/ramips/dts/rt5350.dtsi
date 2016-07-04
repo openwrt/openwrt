@@ -138,7 +138,7 @@
 		};
 
 		i2c: i2c@900 {
-			compatible = "link,rt5350-i2c", "ralink,rt2880-i2c";
+			compatible = "ralink,rt2880-i2c";
 			reg = <0x900 0x100>;
 
 			resets = <&rstctrl 16>;
@@ -236,17 +236,17 @@
 		state_default: pinctrl0 {
 		};
 
-		spi_pins: spi {
-			spi {
-				ralink,group = "spi";
-				ralink,function = "spi";
-			};
-		};
-
 		i2c_pins: i2c {
 			i2c {
 				ralink,group = "i2c";
 				ralink,function = "i2c";
+			};
+		};
+
+		spi_pins: spi {
+			spi {
+				ralink,group = "spi";
+				ralink,function = "spi";
 			};
 		};
 
