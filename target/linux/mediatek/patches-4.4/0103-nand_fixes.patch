@@ -1,0 +1,22 @@
+--- a/drivers/mtd/nand/mtk_nand.c
++++ b/drivers/mtd/nand/mtk_nand.c
+@@ -1017,8 +1017,8 @@ static int mtk_nfc_ooblayout_free(struct
+ 	if (section >= eccsteps)
+ 		return -ERANGE;
+ 
+-	oob_region->length = fdm->reg_size - fdm->ecc_size;
+-	oob_region->offset = section * fdm->reg_size + fdm->ecc_size;
++	oob_region->length = fdm->reg_size - 1;
++	oob_region->offset = section * fdm->reg_size + 1;
+ 
+ 	return 0;
+ }
+@@ -1058,7 +1058,7 @@ static void mtk_nfc_set_fdm(struct mtk_n
+ 		fdm->reg_size = NFI_FDM_MAX_SIZE;
+ 
+ 	/* bad block mark storage */
+-	fdm->ecc_size = 1;
++	fdm->ecc_size = fdm->reg_size;
+ }
+ 
+ static void mtk_nfc_set_bad_mark_ctl(struct mtk_nfc_bad_mark_ctl *bm_ctl,

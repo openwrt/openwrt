@@ -1,0 +1,37 @@
+From 6da56ec248e48c9c78721f51528c178adec3b35b Mon Sep 17 00:00:00 2001
+In-Reply-To: <5765615E.5010409@nod.at>
+References: <5765615E.5010409@nod.at>
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 18 Jun 2016 11:42:52 +0200
+Subject: [PATCH] ubifs: silence error output if MS_SILENT is set
+X-Patchwork-Id: 637491
+X-Patchwork-Delegate: richard.weinberger@gmail.com
+To: linux-mtd@lists.infradead.org
+Cc: Artem Bityutskiy <dedekind1@gmail.com>,
+    Richard Weinberger <richard.weinberger@gmail.com>
+
+This change completes
+commit 90bea5a3f0bf680b87b90516f3c231997f4b8f3b
+which already implements support for MS_SILENT except for that one
+error message which is still being displayed despite MS_SILENT being
+set. Suppress that error message as well in case MS_SILENT is set.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ fs/ubifs/super.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/fs/ubifs/super.c
++++ b/fs/ubifs/super.c
+@@ -2107,8 +2107,9 @@ static struct dentry *ubifs_mount(struct
+ 	 */
+ 	ubi = open_ubi(name, UBI_READONLY);
+ 	if (IS_ERR(ubi)) {
+-		pr_err("UBIFS error (pid: %d): cannot open \"%s\", error %d",
+-		       current->pid, name, (int)PTR_ERR(ubi));
++		if (!(flags & MS_SILENT))
++			pr_err("UBIFS error (pid: %d): cannot open \"%s\", error %d",
++			       current->pid, name, (int)PTR_ERR(ubi));
+ 		return ERR_CAST(ubi);
+ 	}
+ 

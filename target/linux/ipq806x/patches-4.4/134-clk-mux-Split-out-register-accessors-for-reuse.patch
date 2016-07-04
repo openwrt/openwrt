@@ -18,8 +18,6 @@ Signed-off-by: Ram Chandra Jangir <rjangi@codeaurora.org>
  include/linux/clk-provider.h |  9 ++++--
  2 files changed, 53 insertions(+), 30 deletions(-)
 
-diff --git a/drivers/clk/clk-mux.c b/drivers/clk/clk-mux.c
-index 7129c86..b03a34d 100644
 --- a/drivers/clk/clk-mux.c
 +++ b/drivers/clk/clk-mux.c
 @@ -28,35 +28,24 @@
@@ -64,7 +62,7 @@ index 7129c86..b03a34d 100644
  		val--;
  
  	if (val >= num_parents)
-@@ -64,24 +53,53 @@ static u8 clk_mux_get_parent(struct clk_hw *hw)
+@@ -64,24 +53,53 @@ static u8 clk_mux_get_parent(struct clk_
  
  	return val;
  }
@@ -127,7 +125,7 @@ index 7129c86..b03a34d 100644
  	if (mux->lock)
  		spin_lock_irqsave(mux->lock, flags);
  	else
-@@ -105,7 +123,7 @@ static int clk_mux_set_parent(struct clk_hw *hw, u8 index)
+@@ -105,7 +123,7 @@ static int clk_mux_set_parent(struct clk
  }
  
  const struct clk_ops clk_mux_ops = {
@@ -136,7 +134,7 @@ index 7129c86..b03a34d 100644
  	.set_parent = clk_mux_set_parent,
  	.determine_rate = __clk_mux_determine_rate,
  };
-@@ -120,7 +138,7 @@ struct clk *clk_register_mux_table(struct device *dev, const char *name,
+@@ -120,7 +138,7 @@ struct clk *clk_register_mux_table(struc
  		const char * const *parent_names, u8 num_parents,
  		unsigned long flags,
  		void __iomem *reg, u8 shift, u32 mask,
@@ -145,11 +143,9 @@ index 7129c86..b03a34d 100644
  {
  	struct clk_mux *mux;
  	struct clk *clk;
-diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
-index c56988a..b6b17b5 100644
 --- a/include/linux/clk-provider.h
 +++ b/include/linux/clk-provider.h
-@@ -432,7 +432,7 @@ void clk_unregister_divider(struct clk *clk);
+@@ -433,7 +433,7 @@ void clk_unregister_divider(struct clk *
  struct clk_mux {
  	struct clk_hw	hw;
  	void __iomem	*reg;
@@ -158,7 +154,7 @@ index c56988a..b6b17b5 100644
  	u32		mask;
  	u8		shift;
  	u8		flags;
-@@ -448,6 +448,11 @@ struct clk_mux {
+@@ -449,6 +449,11 @@ struct clk_mux {
  extern const struct clk_ops clk_mux_ops;
  extern const struct clk_ops clk_mux_ro_ops;
  
@@ -170,7 +166,7 @@ index c56988a..b6b17b5 100644
  struct clk *clk_register_mux(struct device *dev, const char *name,
  		const char * const *parent_names, u8 num_parents,
  		unsigned long flags,
-@@ -458,7 +463,7 @@ struct clk *clk_register_mux_table(struct device *dev, const char *name,
+@@ -459,7 +464,7 @@ struct clk *clk_register_mux_table(struc
  		const char * const *parent_names, u8 num_parents,
  		unsigned long flags,
  		void __iomem *reg, u8 shift, u32 mask,
@@ -179,6 +175,3 @@ index c56988a..b6b17b5 100644
  
  void clk_unregister_mux(struct clk *clk);
  
--- 
-2.7.2
-

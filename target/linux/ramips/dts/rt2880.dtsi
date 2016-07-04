@@ -114,6 +114,22 @@
 			status = "disabled";
 		};
 
+		i2c: i2c@900 {
+			compatible = "ralink,rt2880-i2c";
+			reg = <0x900 0x100>;
+
+			resets = <&rstctrl 9>;
+			reset-names = "i2c";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c_pins>;
+		};
+
 		uartlite: uartlite@c00 {
 			compatible = "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
@@ -135,6 +151,13 @@
 			sdram {
 				ralink,group = "sdram";
 				ralink,function = "sdram";
+			};
+		};
+
+		i2c_pins: i2c {
+			i2c {
+				ralink,group = "i2c";
+				ralink,function = "i2c";
 			};
 		};
 

@@ -94,7 +94,7 @@
  	int limit;
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -1639,9 +1639,11 @@ static int stmmac_init_dma_engine(struct
+@@ -1641,9 +1641,11 @@ static int stmmac_init_dma_engine(struct
  	int pbl = DEFAULT_DMA_PBL, fixed_burst = 0, burst_len = 0;
  	int mixed_burst = 0;
  	int atds = 0;
@@ -106,7 +106,7 @@
  		fixed_burst = priv->plat->dma_cfg->fixed_burst;
  		mixed_burst = priv->plat->dma_cfg->mixed_burst;
  		burst_len = priv->plat->dma_cfg->burst_len;
-@@ -1652,7 +1654,7 @@ static int stmmac_init_dma_engine(struct
+@@ -1654,7 +1656,7 @@ static int stmmac_init_dma_engine(struct
  
  	return priv->hw->dma->init(priv->ioaddr, pbl, fixed_burst, mixed_burst,
  				   burst_len, priv->dma_tx_phy,

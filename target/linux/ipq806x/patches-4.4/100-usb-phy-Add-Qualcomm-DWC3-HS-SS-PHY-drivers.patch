@@ -1,8 +1,8 @@
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -390,4 +390,15 @@
-	  Enable this to support the Broadcom Cygnus PCIe PHY.
-	  If unsure, say N.
+@@ -390,4 +390,15 @@ config PHY_CYGNUS_PCIE
+ 	  Enable this to support the Broadcom Cygnus PCIe PHY.
+ 	  If unsure, say N.
  
 +config PHY_QCOM_DWC3
 +	tristate "QCOM DWC3 USB PHY support"
@@ -18,7 +18,7 @@
  endmenu
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -48,3 +48,4 @@ obj-$(CONFIG_PHY_TUSB1210)	+=
+@@ -48,3 +48,4 @@ obj-$(CONFIG_PHY_TUSB1210)		+= phy-tusb1
  obj-$(CONFIG_PHY_BRCMSTB_SATA)		+= phy-brcmstb-sata.o
  obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o
  obj-$(CONFIG_PHY_CYGNUS_PCIE)		+= phy-bcm-cygnus-pcie.o
