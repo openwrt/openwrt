@@ -19,7 +19,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 
 --- a/drivers/mtd/nand/pxa3xx_nand.c
 +++ b/drivers/mtd/nand/pxa3xx_nand.c
-@@ -1419,34 +1419,43 @@ static int pxa3xx_nand_waitfunc(struct m
+@@ -1420,34 +1420,43 @@ static int pxa3xx_nand_waitfunc(struct m
  	return NAND_STATUS_READY;
  }
  
@@ -71,7 +71,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  	info->ndtr0cs0 = nand_readl(info, NDTR0CS0);
  	info->ndtr1cs0 = nand_readl(info, NDTR1CS0);
  	return 0;
-@@ -1635,10 +1644,7 @@ static int pxa3xx_nand_scan(struct mtd_i
+@@ -1636,10 +1645,7 @@ static int pxa3xx_nand_scan(struct mtd_i
  	if (pdata->keep_config && !pxa3xx_nand_detect_config(info))
  		goto KEEP_CONFIG;
  
@@ -83,7 +83,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  	if (ret)
  		return ret;
  
-@@ -1651,7 +1657,6 @@ static int pxa3xx_nand_scan(struct mtd_i
+@@ -1652,7 +1658,6 @@ static int pxa3xx_nand_scan(struct mtd_i
  	}
  
  KEEP_CONFIG:
@@ -91,7 +91,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  	if (info->reg_ndcr & NDCR_DWIDTH_M)
  		chip->options |= NAND_BUSWIDTH_16;
  
-@@ -1736,6 +1741,10 @@ KEEP_CONFIG:
+@@ -1737,6 +1742,10 @@ KEEP_CONFIG:
  		host->row_addr_cycles = 3;
  	else
  		host->row_addr_cycles = 2;
