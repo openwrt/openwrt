@@ -126,7 +126,7 @@
 		};
 
 		i2s: i2s@a00 {
-			compatible = "ralink,mt7620a-i2s";
+			compatible = "mediatek,mt7628-i2s";
 			reg = <0xa00 0x100>;
 
 			resets = <&rstctrl 17>;
@@ -135,8 +135,11 @@
 			interrupt-parent = <&intc>;
 			interrupts = <10>;
 
-			dmas = <&gdma 2>,
-				<&gdma 3>;
+			txdma-req = <2>;
+			rxdma-req = <3>;
+
+			dmas = <&gdma 4>,
+				<&gdma 6>;
 			dma-names = "tx", "rx";
 
 			status = "disabled";
