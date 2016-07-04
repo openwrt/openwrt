@@ -7,11 +7,7 @@
 
 define Profile/370-DB
   NAME:=Marvell Armada 370 DB (DB-88F6710-BP-DDR3)
-  PACKAGES:= \
-	kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
-	kmod-i2c-core kmod-i2c-mv64xxx \
-	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-thermal-armada
+  PACKAGES:=
 endef
 
 define Profile/370-DB/Description
@@ -22,11 +18,7 @@ $(eval $(call Profile,370-DB))
 
 define Profile/370-RD
   NAME:=Marvell Armada 370 RD (RD-88F6710-A1)
-  PACKAGES:= \
-	kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
-	kmod-i2c-core kmod-i2c-mv64xxx \
-	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-thermal-armada
+  PACKAGES:=
 endef
 
 define Profile/370-RD/Description
@@ -37,10 +29,7 @@ $(eval $(call Profile,370-RD))
 
 define Profile/385-RD
   NAME:=Marvell Armada 385 RD (RD-88F6820-AP)
-  PACKAGES:= \
-	kmod-mmc kmod-mvsdio kmod-usb3 kmod-usb-storage \
-	kmod-i2c-core kmod-i2c-mv64xxx \
-	kmod-thermal-armada
+  PACKAGES:=
 endef
 
 define Profile/385-RD/Description
@@ -51,11 +40,7 @@ $(eval $(call Profile,385-RD))
 
 define Profile/385-DB-AP
   NAME:=Marvell Armada 385 DB AP (DB-88F6820-AP)
-  PACKAGES:= \
-	kmod-usb3 kmod-usb-storage \
-	kmod-i2c-core kmod-i2c-mv64xxx \
-	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-thermal-armada
+  PACKAGES:=
 endef
 
 define Profile/385-DB-AP/Description
@@ -66,11 +51,7 @@ $(eval $(call Profile,385-DB-AP))
 
 define Profile/XP-DB
   NAME:=Marvell Armada XP DB (DB-78460-BP)
-  PACKAGES:= \
-	kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
-	kmod-i2c-core kmod-i2c-mv64xxx \
-	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-thermal-armada
+  PACKAGES:=
 endef
 
 define Profile/XP-DB/Description
@@ -81,11 +62,7 @@ $(eval $(call Profile,XP-DB))
 
 define Profile/XP-GP
   NAME:=Marvell Armada XP GP (DB-MV784MP-GP)
-  PACKAGES:= \
-	kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
-	kmod-i2c-core kmod-i2c-mv64xxx \
-	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-thermal-armada
+  PACKAGES:=
 endef
 
 define Profile/XP-GP/Description
