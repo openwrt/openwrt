@@ -360,7 +360,6 @@
 	nand@0 {
 		reg = <0>;
 		spare_per_sector = <64>;
-		nand-on-flash-bbt;
 		nand-ecc-mode = "hw";
 		nand-ecc-strength = <12>;
 		nand-ecc-step-size = <1024>;
@@ -390,7 +389,7 @@
 			};
 
 			partition@4140000 {
-				label = "rootfs";
+				label = "ubi";
 				reg = <0x4140000 0x1000000>;
 			};
 		};

@@ -20,7 +20,10 @@ platform_check_image() {
 	local board=$(cat /tmp/sysinfo/board_name)
 
 	case "$board" in
-	NAND | \
+	NAND)
+		nand_do_platform_check $board $1
+		return $?
+		;;
 	eMMC)
 		local kernel_length=`(tar xf $tar_file sysupgrade-$board/kernel -O | wc -c) 2> /dev/null`
 		local rootfs_length=`(tar xf $tar_file sysupgrade-$board/root -O | wc -c) 2> /dev/null`
@@ -38,4 +41,13 @@ platform_check_image() {
 	}
 
 	return 0
+}
+
+platform_pre_upgrade() {
+	local board=$(cat /tmp/sysinfo/board_name)
+	case "$board" in
+	NAND)
+		nand_do_upgrade $1
+		;;
+	esac
 }
