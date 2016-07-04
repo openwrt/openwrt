@@ -1,0 +1,36 @@
+Handle delays/excessive latency during flash command processing with PIO.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -227,6 +227,7 @@ struct pxa3xx_nand_info {
+ 	int			use_dma;	/* use DMA ? */
+ 	int			use_spare;	/* use spare ? */
+ 	int			need_wait;
++	int			pio_progress;
+ 
+ 	/* Amount of real data per full chunk */
+ 	unsigned int		chunk_size;
+@@ -769,6 +770,7 @@ static irqreturn_t pxa3xx_nand_irq_threa
+ {
+ 	struct pxa3xx_nand_info *info = data;
+ 
++	info->pio_progress = 1;
+ 	handle_data_pio(info);
+ 
+ 	info->state = STATE_CMD_DONE;
+@@ -1175,8 +1177,13 @@ static void nand_cmdfunc(struct mtd_info
+ 		info->need_wait = 1;
+ 		pxa3xx_nand_start(info);
+ 
++retry:
++		info->pio_progress = 0;
+ 		if (!wait_for_completion_timeout(&info->cmd_complete,
+ 		    CHIP_DELAY_TIMEOUT)) {
++			if (info->pio_progress)
++			    goto retry;
++
+ 			dev_err(&info->pdev->dev, "Wait time out!!!\n");
+ 			/* Stop State Machine for next command cycle */
+ 			pxa3xx_nand_stop(info);
