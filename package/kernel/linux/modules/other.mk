@@ -1072,3 +1072,39 @@ define KernelPackage/bmp085-spi/description
 endef
 
 $(eval $(call KernelPackage,bmp085-spi))
+
+
+define KernelPackage/virtio-pci
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Virtio PCI support
+  KCONFIG:= CONFIG_VIRTIO CONFIG_VIRTIO_PCI
+  FILES:=\
+	$(LINUX_DIR)/drivers/virtio/virtio_pci.ko \
+	$(LINUX_DIR)/drivers/virtio/virtio.ko \
+	$(LINUX_DIR)/drivers/virtio/virtio_ring.ko
+  AUTOLOAD:=$(call AutoProbe,virtio virtio_ring virtio_pci)
+endef
+define KernelPackage/virtio-pci/description
+ This driver adds virtio PCI support.
+endef
+
+$(eval $(call KernelPackage,virtio-pci))
+
+
+define KernelPackage/virtio-mmio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Virtio MMIO support
+  KCONFIG:= CONFIG_VIRTIO CONFIG_VIRTIO_MMIO
+  FILES:= \
+	$(LINUX_DIR)/drivers/virtio/virtio.ko \
+	$(LINUX_DIR)/drivers/virtio/virtio_ring.ko \
+	$(LINUX_DIR)/drivers/virtio/virtio_mmio.ko
+  AUTOLOAD:=$(call AutoProbe,virtio virtio_ring virtio_mmio)
+endef
+define KernelPackage/virtio-mmio/description
+ This driver adds virtio MMIO support.
+endef
+
+$(eval $(call KernelPackage,virtio-mmio))
+
+
