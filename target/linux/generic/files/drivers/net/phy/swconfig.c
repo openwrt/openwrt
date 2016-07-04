@@ -635,6 +635,9 @@ swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
 	struct switch_val val;
 	int err = -EINVAL;
 
+	if (!capable(CAP_NET_ADMIN))
+		return -EPERM;
+
 	dev = swconfig_get_dev(info);
 	if (!dev)
 		return -EINVAL;
