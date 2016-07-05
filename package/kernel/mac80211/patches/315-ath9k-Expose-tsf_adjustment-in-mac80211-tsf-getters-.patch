@@ -1,0 +1,32 @@
+From: Benjamin Berg <benjamin.berg@open-mesh.com>
+Date: Mon, 4 Jul 2016 14:37:23 +0200
+Subject: [PATCH] ath9k: Expose tsf_adjustment in mac80211 tsf getters and
+ setters.
+
+The ath9k driver modifies the TSF for VIFs for the purpose of sending
+beacons in a staggered fashion. This patch exposes this VIF specific
+adjustment of the TSF value to mac80211. Without the change the TSF
+routines handle the hardware TSF value instead of the actual TSF value as
+seen on the air.
+
+Signed-off-by: Benjamin Berg <benjamin.berg@open-mesh.com>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1835,6 +1835,7 @@ static u64 ath9k_get_tsf(struct ieee8021
+ 		tsf = sc->cur_chan->tsf_val +
+ 		      ath9k_hw_get_tsf_offset(&sc->cur_chan->tsf_ts, NULL);
+ 	}
++	tsf += le64_to_cpu(avp->tsf_adjust);
+ 	ath9k_ps_restore(sc);
+ 	mutex_unlock(&sc->mutex);
+ 
+@@ -1850,6 +1851,7 @@ static void ath9k_set_tsf(struct ieee802
+ 
+ 	mutex_lock(&sc->mutex);
+ 	ath9k_ps_wakeup(sc);
++	tsf -= le64_to_cpu(avp->tsf_adjust);
+ 	getrawmonotonic(&avp->chanctx->tsf_ts);
+ 	if (sc->cur_chan == avp->chanctx)
+ 		ath9k_hw_settsf64(sc->sc_ah, tsf);
