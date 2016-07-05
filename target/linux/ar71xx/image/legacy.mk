@@ -1,4 +1,3 @@
-include ./legacy-devices.mk
 rootfs_type=$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 
 # $(1): rootfs type.
