@@ -64,7 +64,7 @@
 						read-only;
 					};
 					partition@64000 {
-						label = "uboot-config";
+						label = "uboot_env";
 						reg = <0x64000 0x004000>;
 					};
 					ath9k_cal: partition@68000 {
@@ -85,7 +85,6 @@
 			ath9k_eep {
 				compatible = "ath9k,eeprom";
 				ath,eep-flash = <&ath9k_cal 0x0000>;
-				ath,mac-offset = <0x10c>;
 				ath,pci-slot = <14>;
 				ath,eep-endian;
 			};
