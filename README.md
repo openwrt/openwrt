@@ -645,22 +645,16 @@ On bootup, board will check for MAC address in the following order of priority:
 |MAC_5		|5		|6LoWPAN		|
 
 ####How to obtain WiFi mac address:
-To obtain mac address for WiFi STA, one can use generate_mac function from shell library as follow:
+To obtain mac address for WiFi STA, do as follows:
 
-	root@OpenWrt:/# . /lib/functions/mac.sh
-	root@OpenWrt:/# generate_mac 0
-	E0704 08:46:46.575446  4593 device_data.cc:116] No valid reg version
+	root@OpenWrt:/# . /usr/bin/mac.sh 0	
+	E0705 13:19:01.033485  1828 device_data.cc:116] No valid reg version
 	mac source: serial number
-	MAC = e2:0b:8e:7d:41:77
+	MAC = e2:0d:8c:73:b8:a9
 
 If mac address is stored in OTP, then one can use proddata to read 1st mac address(which is WiFi STA) from otp:
 
 	root@OpenWrt:/# proddata read MAC_0
-
-
-If mac address is stored is generated using random scheme, then it will be stored at `/etc/config/MAC_0`:
-
-	root@OpenWrt:/# cat /etc/config/MAC_0
 
 ### Known Issues:
 
