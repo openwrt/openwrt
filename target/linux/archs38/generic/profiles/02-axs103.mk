@@ -7,7 +7,7 @@
 
 define Profile/axs103
 	NAME:=Synopsys DesignWare AXS103
-	PACKAGES:= kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-mmc kmod-sdhci
+	PACKAGES:= kmod-usb-core kmod-usb-ohci kmod-mmc kmod-sdhci
 endef
 
 define Profile/axs103/Description
