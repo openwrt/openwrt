@@ -155,45 +155,6 @@ LINUX_RECONF_DIFF = $(call __linux_confcmd,$(filter-out $(LINUX_RECONFIG_TARGET)
 ifeq ($(DUMP),1)
   BuildTarget=$(BuildTargets/DumpCurrent)
 
-  ifneq ($(BOARD),)
-    TMP_CONFIG:=$(TMP_DIR)/.kconfig-$(call target_conf,$(TARGETID))
-    $(TMP_CONFIG): $(LINUX_KCONFIG_LIST)
-		$(LINUX_CONF_CMD) > $@ || rm -f $@
-    -include $(TMP_CONFIG)
-    .SILENT: $(TMP_CONFIG)
-    .PRECIOUS: $(TMP_CONFIG)
-
-    ifneq ($(CONFIG_OF),)
-      FEATURES += dt
-    endif
-    ifneq ($(CONFIG_GENERIC_GPIO)$(CONFIG_GPIOLIB),)
-      FEATURES += gpio
-    endif
-    ifneq ($(CONFIG_PCI),)
-      FEATURES += pci
-    endif
-    ifneq ($(CONFIG_PCIEPORTBUS),)
-      FEATURES += pcie
-    endif
-    ifneq ($(CONFIG_USB)$(CONFIG_USB_SUPPORT),)
-      ifneq ($(CONFIG_USB_ARCH_HAS_HCD)$(CONFIG_USB_EHCI_HCD),)
-        FEATURES += usb
-      endif
-    endif
-    ifneq ($(CONFIG_PCMCIA)$(CONFIG_PCCARD),)
-      FEATURES += pcmcia
-    endif
-    ifneq ($(CONFIG_VGA_CONSOLE)$(CONFIG_FB),)
-      FEATURES += display
-    endif
-    ifneq ($(CONFIG_RTC_CLASS),)
-      FEATURES += rtc
-    endif
-    FEATURES += $(foreach v,v4 v5 v6 v7,$(if $(findstring -march=arm$(v),$(CFLAGS)),arm_$(v)))
-
-    # remove duplicates
-    FEATURES:=$(sort $(FEATURES))
-  endif
   CPU_CFLAGS = -Os -pipe
   ifneq ($(findstring mips,$(ARCH)),)
     ifneq ($(findstring mips64,$(ARCH)),)
@@ -263,6 +224,46 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_archs = -marchs
   endif
   DEFAULT_CFLAGS=$(strip $(CPU_CFLAGS) $(CPU_CFLAGS_$(CPU_TYPE)) $(CPU_CFLAGS_$(CPU_SUBTYPE)))
+
+  ifneq ($(BOARD),)
+    TMP_CONFIG:=$(TMP_DIR)/.kconfig-$(call target_conf,$(TARGETID))
+    $(TMP_CONFIG): $(LINUX_KCONFIG_LIST)
+		$(LINUX_CONF_CMD) > $@ || rm -f $@
+    -include $(TMP_CONFIG)
+    .SILENT: $(TMP_CONFIG)
+    .PRECIOUS: $(TMP_CONFIG)
+
+    ifneq ($(CONFIG_OF),)
+      FEATURES += dt
+    endif
+    ifneq ($(CONFIG_GENERIC_GPIO)$(CONFIG_GPIOLIB),)
+      FEATURES += gpio
+    endif
+    ifneq ($(CONFIG_PCI),)
+      FEATURES += pci
+    endif
+    ifneq ($(CONFIG_PCIEPORTBUS),)
+      FEATURES += pcie
+    endif
+    ifneq ($(CONFIG_USB)$(CONFIG_USB_SUPPORT),)
+      ifneq ($(CONFIG_USB_ARCH_HAS_HCD)$(CONFIG_USB_EHCI_HCD),)
+        FEATURES += usb
+      endif
+    endif
+    ifneq ($(CONFIG_PCMCIA)$(CONFIG_PCCARD),)
+      FEATURES += pcmcia
+    endif
+    ifneq ($(CONFIG_VGA_CONSOLE)$(CONFIG_FB),)
+      FEATURES += display
+    endif
+    ifneq ($(CONFIG_RTC_CLASS),)
+      FEATURES += rtc
+    endif
+    FEATURES += $(foreach v,v4 v5 v6 v7,$(if $(filter -march=arm$(v)%,$(CPU_CFLAGS_$(CPU_TYPE))),arm_$(v)))
+
+    # remove duplicates
+    FEATURES:=$(sort $(FEATURES))
+  endif
 endif
 
 CUR_SUBTARGET:=$(SUBTARGET)
