@@ -22,7 +22,7 @@ define Image/Build/Initramfs
 	$(call Image/Build/Profile/$(PROFILE),initramfs)
 endef
 
-DEVICE_VARS += DTS IMAGE_SIZE
+DEVICE_VARS += DTS IMAGE_SIZE KERNEL_SIZE
 
 loadaddr-y := 0x80000000
 loadaddr-$(CONFIG_TARGET_ramips_rt288x) := 0x88000000

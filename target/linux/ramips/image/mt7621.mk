@@ -12,7 +12,7 @@ define Build/seama-seal
 endef
 
 define Build/ubnt-erx-factory-image
-	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) ]; then \
+	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
 		$(TAR) -cf $(1) --transform='s/^.*/compat/' $(1).compat; \
 		\
@@ -30,6 +30,8 @@ define Build/ubnt-erx-factory-image
 		$(TAR) -rf $(1) --transform='s/^.*/version.tmp/' $(1).version; \
 		\
 		$(CP) $(1) $(BIN_DIR)/; \
+	else \
+		echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
 	fi
 endef
 
@@ -155,8 +157,7 @@ define Device/ubnt-erx
   KERNEL_SIZE := 3145728
   KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGES := sysupgrade.tar
-  KERNEL_INITRAMFS := $$(KERNEL) | check-size $$(KERNEL_SIZE) | \
-			ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
+  KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
   IMAGE/sysupgrade.tar := sysupgrade-nand
   DEVICE_TITLE := Ubiquiti EdgeRouter X
   DEVICE_PACKAGES := -kmod-mt76 -kmod-rt2800-pci -kmod-cfg80211 -wpad-mini -iwinfo
