@@ -72,18 +72,58 @@ endef
 
 $(eval $(call KernelPackage,i2c-mt7621))
 
+define KernelPackage/dma-ralink
+  SUBMENU:=Other modules
+  TITLE:=Ralink GDMA Engine
+  DEPENDS:=@TARGET_ramips
+  KCONFIG:= \
+	CONFIG_DMADEVICES=y \
+	CONFIG_DW_DMAC_PCI=n \
+	CONFIG_DMA_RALINK
+  FILES:= \
+	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
+	$(LINUX_DIR)/drivers/dma/ralink-gdma.ko
+  AUTOLOAD:=$(call AutoLoad,52,ralink-gdma)
+endef
 
+define KernelPackage/dma-ralink/description
+ Kernel modules for enable ralink dma engine.
+endef
+
+$(eval $(call KernelPackage,dma-ralink))
+
+define KernelPackage/hsdma-mtk
+  SUBMENU:=Other modules
+  TITLE:=MediaTek HSDMA Engine
+  DEPENDS:=@TARGET_ramips @TARGET_ramips_mt7621
+  KCONFIG:= \
+	CONFIG_DMADEVICES=y \
+	CONFIG_DW_DMAC_PCI=n \
+	CONFIG_MTK_HSDMA
+  FILES:= \
+	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
+	$(LINUX_DIR)/drivers/dma/mtk-hsdma.ko
+  AUTOLOAD:=$(call AutoLoad,53,mtk-hsdma)
+endef
+
+define KernelPackage/hsdma-mtk/description
+ Kernel modules for enable MediaTek hsdma engine.
+endef
+
+$(eval $(call KernelPackage,hsdma-mtk))
 
 define KernelPackage/sound-mt7620
   TITLE:=MT7620 PCM/I2S Alsa Driver
-  DEPENDS:=@TARGET_ramips_mt7620 +kmod-sound-soc-core +kmod-regmap @!TARGET_ramips_rt288x
+  DEPENDS:=@TARGET_ramips +kmod-sound-soc-core +kmod-regmap +kmod-dma-ralink @!TARGET_ramips_rt288x
   KCONFIG:= \
 	CONFIG_SND_RALINK_SOC_I2S \
+	CONFIG_SND_SIMPLE_CARD \
 	CONFIG_SND_SOC_WM8960
   FILES:= \
 	$(LINUX_DIR)/sound/soc/ralink/snd-soc-ralink-i2s.ko \
+	$(LINUX_DIR)/sound/soc/generic/snd-soc-simple-card.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8960.ko
-  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-ralink-i2s)
+  AUTOLOAD:=$(call AutoLoad,90,snd-soc-wm8960 snd-soc-ralink-i2s snd-soc-simple-card)
   $(call AddDepends/sound)
 endef
 
