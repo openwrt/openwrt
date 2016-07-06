@@ -1042,6 +1042,7 @@ $(eval $(call KernelPackage,bmp085-spi))
 
 define KernelPackage/virtio-pci
   SUBMENU:=$(OTHER_MENU)
+  DEPENDS:= @PCI_SUPPORT
   TITLE:=Virtio PCI support
   KCONFIG:= CONFIG_VIRTIO CONFIG_VIRTIO_PCI
   FILES:=\
