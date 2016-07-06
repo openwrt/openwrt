@@ -995,7 +995,7 @@ $(eval $(call KernelPackage,echo))
 define KernelPackage/bmp085
   SUBMENU:=$(OTHER_MENU)
   TITLE:=BMP085/BMP18x pressure sensor
-  DEPENDS:= +kmod-regmap
+  DEPENDS:= +kmod-regmap @!LINUX_4_1 @!LINUX_3_18
   KCONFIG:= CONFIG_BMP085
   FILES:= $(LINUX_DIR)/drivers/misc/bmp085.ko
 endef
@@ -1042,6 +1042,7 @@ $(eval $(call KernelPackage,bmp085-spi))
 
 define KernelPackage/virtio-pci
   SUBMENU:=$(OTHER_MENU)
+  DEPENDS:= @PCI_SUPPORT
   TITLE:=Virtio PCI support
   KCONFIG:= CONFIG_VIRTIO CONFIG_VIRTIO_PCI
   FILES:=\
