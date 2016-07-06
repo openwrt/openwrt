@@ -7,17 +7,16 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=ubi-utils
-PKG_REV:=7d2839b8dede3ae368780364b4a07473d2303219
-PKG_VERSION:=1.5.1
-PKG_RELEASE:=2
+PKG_NAME:=mtd-utils
+PKG_REV:=aea36417067dade75192bafa03af70b6eb2677b1
+PKG_VERSION:=1.5.2
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=git://git.infradead.org/mtd-utils.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_MIRROR_MD5SUM:=69b68adcfcbe786584771e5978534ab4
 
 PKG_INSTALL:=1
 
@@ -30,16 +29,29 @@ PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ubi-utils
-  TITLE:=Utilities for ubi info/debug
+define Package/mtd-utils/Default
   SECTION:=utils
   CATEGORY:=Utilities
   URL:=http://www.linux-mtd.infradead.org/
   DEPENDS:=@NAND_SUPPORT
 endef
 
+define Package/ubi-utils
+ $(call Package/mtd-utils/Default)
+  TITLE:=Utilities for ubi info/debug
+endef
+
 define Package/ubi-utils/description
   Utilities for manipulating memory technology devices.
+endef
+
+define Package/nand-utils
+ $(call Package/mtd-utils/Default)
+  TITLE:=Utilities for nand flash read/write/test
+endef
+
+define Package/nand-utils/description
+  Utilities for NAND devices.
 endef
 
 MAKE_FLAGS += \
@@ -57,5 +69,11 @@ define Package/ubi-utils/install
 		$(PKG_INSTALL_DIR)/usr/sbin/{ubinfo,ubinize,ubirename,ubirmvol,ubirsvol,ubiupdatevol} $(1)/usr/sbin/
 endef
 
+define Package/nand-utils/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) \
+	$(PKG_INSTALL_DIR)/usr/sbin/{nanddump,nandwrite,nandtest,mtdinfo} $(1)/usr/sbin/
+endef
 
 $(eval $(call BuildPackage,ubi-utils))
+$(eval $(call BuildPackage,nand-utils))
