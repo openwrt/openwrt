@@ -127,4 +127,5 @@ struct ethtool_ops ag71xx_ethtool_ops = {
 	.get_ringparam	= ag71xx_ethtool_get_ringparam,
 	.set_ringparam	= ag71xx_ethtool_set_ringparam,
 	.get_link	= ethtool_op_get_link,
+	.get_ts_info	= ethtool_op_get_ts_info,
 };

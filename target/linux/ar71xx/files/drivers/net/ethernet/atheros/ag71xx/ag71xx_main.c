@@ -819,6 +819,8 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 
 	netdev_sent_queue(dev, skb->len);
 
+	skb_tx_timestamp(skb);
+
 	desc->ctrl &= ~DESC_EMPTY;
 	ring->curr += n;
 
