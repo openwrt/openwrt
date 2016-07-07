@@ -1,4 +1,5 @@
 GCC_VARIANT:=initial
+GCC_PREPARE=$(CONFIG_USE_MUSL)
 
 include ../common.mk
 
@@ -10,7 +11,6 @@ GCC_CONFIGURE += \
 	--disable-threads \
 
 define Host/Compile
-	$(CP) $(BUILD_DIR_TOOLCHAIN)/linux-dev/* $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/
 	+$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) \
 		all-build-libiberty \
 		all-gcc \

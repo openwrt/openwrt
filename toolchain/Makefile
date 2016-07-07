@@ -24,32 +24,41 @@
 # 8) toolchain/libc/utils/install
 #    build & install libc utilities
 #
+# For musl, steps 2 and 4 are skipped, and step 3 is done after 5
 
 curdir:=toolchain
 
 # subdirectories to descend into
-$(curdir)/builddirs := $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_INSIGHT),insight) $(if $(CONFIG_EXTERNAL_TOOLCHAIN),wrapper,kernel-headers binutils gcc/minimal gcc/initial gcc/final $(LIBC)/headers $(LIBC) fortify-headers)
+$(curdir)/builddirs := $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_INSIGHT),insight) $(if $(CONFIG_EXTERNAL_TOOLCHAIN),wrapper,kernel-headers binutils gcc/initial gcc/final $(LIBC) fortify-headers)
 ifdef CONFIG_USE_UCLIBC
   $(curdir)/builddirs += $(LIBC)/utils
 endif
-$(curdir)/builddirs-compile:=$($(curdir)/builddirs-prepare)
-$(curdir)/builddirs-install:=$($(curdir)/builddirs-compile)
 
 # builddir dependencies
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
-  $(curdir)/gcc/minimal/compile:=$(curdir)/binutils/install
-  $(curdir)/kernel-headers/install:=$(curdir)/gcc/minimal/install
-  $(curdir)/gcc/initial/prepare:=$(curdir)/gcc/minimal/prepare
-  $(curdir)/gcc/final/prepare:=$(curdir)/gcc/initial/prepare
+  ifdef CONFIG_USE_MUSL
+    $(curdir)/kernel-headers/compile:=$(curdir)/gcc/initial/install
+    $(curdir)/$(LIBC)/compile:=$(curdir)/kernel-headers/install
+  else
+    $(curdir)/builddirs += $(LIBC)/headers gcc/minimal
+    $(curdir)/gcc/minimal/compile:=$(curdir)/binutils/install
+    $(curdir)/kernel-headers/compile:=$(curdir)/gcc/minimal/install
+    $(curdir)/gcc/initial/prepare:=$(curdir)/gcc/minimal/prepare
+    $(curdir)/$(LIBC)/prepare:=$(curdir)/$(LIBC)/headers/prepare
+    $(curdir)/$(LIBC)/headers/compile:=$(curdir)/kernel-headers/install
+    $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/headers/install
+  endif
 
-  $(curdir)/$(LIBC)/headers/compile:=$(curdir)/kernel-headers/install
-  $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/headers/install
+  $(curdir)/gcc/initial/compile+=$(curdir)/binutils/install
+  $(curdir)/gcc/final/prepare:=$(curdir)/gcc/initial/prepare
   $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/install
   $(curdir)/gcc/final/compile:=$(curdir)/$(LIBC)/install
   $(curdir)/$(LIBC)/utils/compile:=$(curdir)/gcc/final/install
-  $(curdir)/$(LIBC)/prepare:=$(curdir)/$(LIBC)/headers/prepare
   $(curdir)/$(LIBC)/utils/prepare:=$(curdir)/$(LIBC)/headers/prepare
 endif
+
+$(curdir)/builddirs-compile:=$($(curdir)/builddirs-prepare)
+$(curdir)/builddirs-install:=$($(curdir)/builddirs-compile)
 
 ifndef DUMP_TARGET_DB
 ifneq ($(ARCH),)

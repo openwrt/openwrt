@@ -15,6 +15,7 @@ define Host/Install
 		install_root="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev" \
 		install-bootstrap-headers=yes \
 		install-headers
+	$(CP) $(BUILD_DIR_TOOLCHAIN)/linux-dev/* $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/
 	$(MAKE) -C $(CUR_BUILD_DIR) \
 		csu/subdir_lib
 	( cd $(CUR_BUILD_DIR); \
