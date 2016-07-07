@@ -35,10 +35,16 @@ int main(int argc, char **argv)
 {
 	int fd, found = 0, len, ret = -1;
 	char *ptr, *p;
+	unsigned int search_space;
 
-	if (argc != 3) {
-		fprintf(stderr, "Usage: %s <file> <cmdline>\n", argv[0]);
+	if (argc <= 2 || argc > 4) {
+		fprintf(stderr, "Usage: %s <file> <cmdline> [size]\n", argv[0]);
 		goto err1;
+	} else if (argc == 3) {
+		fprintf(stdout, "search space used is default of 16KB\n");
+		search_space = SEARCH_SPACE;
+	} else {
+		search_space = atoi(argv[3]);
 	}
 	len = strlen(argv[2]);
 	if (len + 9 > CMDLINE_MAX) {
@@ -47,12 +53,12 @@ int main(int argc, char **argv)
 	}
 	
 	if (((fd = open(argv[1], O_RDWR)) < 0) ||
-		(ptr = (char *) mmap(0, SEARCH_SPACE + CMDLINE_MAX, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0)) == (void *) (-1)) {
+		(ptr = (char *) mmap(0, search_space + CMDLINE_MAX, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0)) == (void *) (-1)) {
 		fprintf(stderr, "Could not open kernel image");
 		goto err2;
 	}
 	
-	for (p = ptr; p < (ptr + SEARCH_SPACE); p += 4) {
+	for (p = ptr; p < (ptr + search_space); p += 4) {
 		if (memcmp(p, "CMDLINE:", 8) == 0) {
 			found = 1;
 			p += 8;
