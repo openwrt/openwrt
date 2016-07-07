@@ -23,7 +23,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
     endif
   endif
 endif
-ifneq ($(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmware)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
+ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmware)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
   BUILD_B43_TOOLS = y
 endif
 
