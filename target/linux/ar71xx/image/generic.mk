@@ -133,7 +133,7 @@ endef
 TARGET_DEVICES += cap324
 
 define Device/cap324-nocloud
-  DEVICE_TITLE := PowerCloud CAP324 Cloud AP
+  DEVICE_TITLE := PowerCloud CAP324 Cloud AP (No-Cloud)
   DEVICE_PACKAGES := uboot-envtools
   BOARDNAME := CAP324
   DEVICE_PROFILE := CAP324
