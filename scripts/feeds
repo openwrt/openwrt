@@ -22,7 +22,10 @@ my @mkver = split /\s+/, `$mk -v`, 4;
 my $valid_mk = 1;
 $mkver[0] =~ /^GNU/ or $valid_mk = 0;
 $mkver[1] =~ /^Make/ or $valid_mk = 0;
-$mkver[2] >= "3.81" or $valid_mk = 0;
+
+my ($mkv1, $mkv2) = split /\./, $mkver[2];
+($mkv1 >= 4 || ($mkv1 == 3 && $mkv2 >= 81)) or $valid_mk = 0;
+
 $valid_mk or die "Unsupported version of make found: $mk\n";
 
 my @feeds;
