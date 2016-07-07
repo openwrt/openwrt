@@ -1,7 +1,7 @@
-From 8db21da6d756efe530df2736c7dc99aeeca209ce Mon Sep 17 00:00:00 2001
+From 8833c229e00291163a2464d82d0d7902e24466ca Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 25 Jan 2016 14:13:12 -0800
-Subject: [PATCH 196/381] drm/vc4: Return an ERR_PTR from BO creation instead
+Subject: [PATCH 196/423] drm/vc4: Return an ERR_PTR from BO creation instead
  of NULL.
 
 Fixes igt vc4_create_bo/create-bo-0 by returning -EINVAL from the

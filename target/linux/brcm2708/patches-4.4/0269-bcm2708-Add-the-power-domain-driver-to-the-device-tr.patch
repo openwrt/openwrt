@@ -1,0 +1,26 @@
+From 5a8fe845b22e7ecef4b0d0d7fdfaa21794fa48c9 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 19 Apr 2016 14:36:31 -0700
+Subject: [PATCH 269/423] bcm2708: Add the power domain driver to the device
+ tree.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -285,6 +285,12 @@
+ 			mboxes = <&mailbox>;
+ 		};
+ 
++		power: power {
++			compatible = "raspberrypi,bcm2835-power";
++			firmware = <&firmware>;
++			#power-domain-cells = <1>;
++		};
++
+ 		leds: leds {
+ 			compatible = "gpio-leds";
+ 		};

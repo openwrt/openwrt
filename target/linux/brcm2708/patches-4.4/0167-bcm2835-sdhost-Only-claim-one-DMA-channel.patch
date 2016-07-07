@@ -1,7 +1,7 @@
-From f76d188586952fcd3b55916f30c484c62c8fabab Mon Sep 17 00:00:00 2001
+From 71804345eb4c8408fb50b0f15b750915776a20ad Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Mon, 7 Mar 2016 16:46:39 +0000
-Subject: [PATCH 167/381] bcm2835-sdhost: Only claim one DMA channel
+Subject: [PATCH 167/423] bcm2835-sdhost: Only claim one DMA channel
 
 With both MMC controllers enabled there are few DMA channels left. The
 bcm2835-sdhost driver only uses DMA in one direction at a time, so it

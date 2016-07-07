@@ -1,7 +1,7 @@
-From 1111ae49a509d672b43194d2e483f297f98d78ad Mon Sep 17 00:00:00 2001
+From 8a4ce18b5f3ca5570666284a3a0208534dd41c26 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 23 Mar 2016 14:16:25 +0000
-Subject: [PATCH 210/381] vchiq_arm: Access the dequeue_pending flag locked
+Subject: [PATCH 210/423] vchiq_arm: Access the dequeue_pending flag locked
 
 Reading through this code looking for another problem (now found in userland)
 the use of dequeue_pending outside a lock didn't seem safe.

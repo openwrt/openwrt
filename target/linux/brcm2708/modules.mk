@@ -117,6 +117,27 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-digidac1-soundcard))
 
+define KernelPackage/sound-soc-dionaudio-loco
+  TITLE:=Support for Dion Audio LOCO DAC-AMP
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_DIONAUDIO_LOCO \
+	CONFIG_SND_SOC_PCM5102A
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-dionaudio-loco.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm5102a.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-snd-soc-pcm5102a \
+	snd-soc-dionaudio-loco)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-dionaudio-loco/description
+  This package contains support for Dion Audio LOCO DAC-AMP
+endef
+
+$(eval $(call KernelPackage,sound-soc-dionaudio-loco))
+
 define KernelPackage/sound-soc-hifiberry-dac
   TITLE:=Support for HifiBerry DAC
   KCONFIG:= \
@@ -226,6 +247,30 @@ define KernelPackage/sound-soc-iqaudio-dac/description
 endef
 
 $(eval $(call KernelPackage,sound-soc-iqaudio-dac))
+
+define KernelPackage/sound-soc-iqaudio-digi
+  TITLE:=Support for IQaudIO-DIGI
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_IQAUDIO_DIGI \
+	CONFIG_SND_SOC_WM8804 \
+	CONFIG_SND_SOC_WM8804_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-iqaudio-digi.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804 snd-soc-wm8804-i2c \
+	snd-soc-iqaudio-digi)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s \
+	+kmod-i2c-bcm2708
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-iqaudio-digi/description
+  This package contains support for IQaudIO-DIGI
+endef
+
+$(eval $(call KernelPackage,sound-soc-iqaudio-digi))
 
 define KernelPackage/sound-soc-justboom-dac
   TITLE:=Support for JustBoom DAC

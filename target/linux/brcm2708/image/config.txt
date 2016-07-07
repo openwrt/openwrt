@@ -933,16 +933,23 @@ enable_uart=1
 ##  Device Tree Settings
 ################################################################################
 
-dtparam=random=on,watchdog=on,audio=on,i2c0=on,i2c1=on,spi=on
+dtparam=random=on
+dtparam=watchdog=on
+dtparam=audio=on
+dtparam=i2c0=on
+dtparam=i2c1=on
+dtparam=spi=on
 
 #dtoverlay=adau1977-adc
 #dtoverlay=audioinjector-wm8731-audio
+#dtoverlay=dionaudio-loco
 #dtoverlay=hifiberry-amp
 #dtoverlay=hifiberry-dac
 #dtoverlay=hifiberry-dacplus
 #dtoverlay=hifiberry-digi
 #dtoverlay=iqaudio-dac
 #dtoverlay=iqaudio-dacplus
+#dtoverlay=iqaudio-digi-wm8804-audio
 #dtoverlay=justboom-dac
 #dtoverlay=justboom-digi
 #dtoverlay=raspidac3

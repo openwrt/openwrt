@@ -1,7 +1,7 @@
-From 7d0e8dc92007a9ad6193e8cda7d954e78e6556ee Mon Sep 17 00:00:00 2001
+From 4baa30f9ca6367b354e98536f838d0b60499a51e Mon Sep 17 00:00:00 2001
 From: Devon Fyson <devonfyson@gmail.com>
 Date: Wed, 30 Dec 2015 16:40:47 -0500
-Subject: [PATCH 121/381] Extend clock timeout, fix modprobe baudrate
+Subject: [PATCH 121/423] Extend clock timeout, fix modprobe baudrate
  parameter.
 
 Set the BSC_CLKT clock streching timeout to 35ms as per SMBus specs.\n- Increase priority of baudrate parameter passed to modprobe (in /etc/modprobe.d/*.conf or command line). Currently custom baudrates don't work because they are overridden by clock-frequency in the platform_device passed to the function.

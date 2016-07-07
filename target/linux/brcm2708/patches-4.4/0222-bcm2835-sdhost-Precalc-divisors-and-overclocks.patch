@@ -1,7 +1,7 @@
-From e87ddfc18bbca9beae107b274b317fb86420b0a5 Mon Sep 17 00:00:00 2001
+From 5891d0fea3401ae4248fb98d6e70c9e6ffcf1aab Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Thu, 31 Mar 2016 15:44:53 +0100
-Subject: [PATCH 222/381] bcm2835-sdhost: Precalc divisors and overclocks
+Subject: [PATCH 222/423] bcm2835-sdhost: Precalc divisors and overclocks
 
 Recalculating the clock divisors when the core clock changes is wasteful
 and makes it harder to manage the overclock settings. Instead,

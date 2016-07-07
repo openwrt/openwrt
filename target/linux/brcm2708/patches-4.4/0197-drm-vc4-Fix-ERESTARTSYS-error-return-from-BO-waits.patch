@@ -1,7 +1,7 @@
-From a0554ab8b841b57b9bba5acb16b24763dfbf02e0 Mon Sep 17 00:00:00 2001
+From a60ba3cce2f5fb3bb34443d4b5ba8cbf135e6163 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 25 Jan 2016 14:32:41 -0800
-Subject: [PATCH 197/381] drm/vc4: Fix -ERESTARTSYS error return from BO waits.
+Subject: [PATCH 197/423] drm/vc4: Fix -ERESTARTSYS error return from BO waits.
 
 This caused the wait ioctls to claim that waiting had completed when
 we actually got interrupted by a signal before it was done.  Fixes
