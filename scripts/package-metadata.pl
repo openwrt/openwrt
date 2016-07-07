@@ -272,6 +272,7 @@ sub print_package_config_category($) {
 			print "menu \"$menu\"\n";
 		}
 		foreach my $pkg (@pkgs) {
+			next if $pkg->{ignore};
 			my $title = $pkg->{name};
 			my $c = (72 - length($pkg->{name}) - length($pkg->{title}));
 			if ($c > 0) {

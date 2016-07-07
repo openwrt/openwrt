@@ -162,10 +162,10 @@ sub parse_package_metadata($) {
 			$overrides{$src} = 1;
 		};
 		next unless $src;
-		next if $ignore{$src};
 		/^Package:\s*(.+?)\s*$/ and do {
 			undef $feature;
 			$pkg = {};
+			$pkg->{ignore} = $ignore{$src};
 			$pkg->{src} = $src;
 			$pkg->{makefile} = $makefile;
 			$pkg->{name} = $1;
@@ -189,7 +189,7 @@ sub parse_package_metadata($) {
 		$feature and do {
 			/^Target-Name:\s*(.+?)\s*$/ and do {
 				$features{$1} or $features{$1} = [];
-				push @{$features{$1}}, $feature;
+				push @{$features{$1}}, $feature unless $ignore{$src};
 			};
 			/^Target-Title:\s*(.+?)\s*$/ and $feature->{target_title} = $1;
 			/^Feature-Priority:\s*(\d+)\s*$/ and $feature->{priority} = $1;
@@ -256,7 +256,7 @@ sub parse_package_metadata($) {
 				$preconfig = {
 					id => $1
 				};
-				$preconfig{$pkgname}->{$1} = $preconfig;
+				$preconfig{$pkgname}->{$1} = $preconfig unless $ignore{$src};
 			}
 		};
 		/^Preconfig-Type:\s*(.*?)\s*$/ and $preconfig->{type} = $1;
