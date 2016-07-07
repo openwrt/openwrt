@@ -54,9 +54,7 @@ CONFIGURE_VARS += \
 
 CONFIGURE_ARGS += \
 	--enable-shared \
-	--enable-static \
 	--disable-yydebug \
-	--with-build-cc="$(HOSTCC)" \
 	--with-pcap=linux \
 	--without-septel \
 	--without-dag \
