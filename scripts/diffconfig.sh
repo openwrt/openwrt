@@ -1,5 +1,6 @@
 #!/bin/sh
 grep \^CONFIG_TARGET_ .config | head -n3 > tmp/.diffconfig.head
+grep \^CONFIG_TARGET_DEVICE_ .config >> tmp/.diffconfig.head
 grep '^CONFIG_ALL=y' .config >> tmp/.diffconfig.head
 grep '^CONFIG_ALL_KMODS=y' .config >> tmp/.diffconfig.head
 grep '^CONFIG_ALL_NONSHARED=y' .config >> tmp/.diffconfig.head
