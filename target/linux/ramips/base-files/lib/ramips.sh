@@ -322,6 +322,9 @@ ramips_board_detect() {
 	*"NCS601W")
 		name="ncs601w"
 		;;
+	*"NixcoreX1")
+		name="nixcore-x1"
+		;;
 	*"NW718")
 		name="nw718"
 		;;

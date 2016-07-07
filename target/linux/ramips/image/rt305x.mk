@@ -100,6 +100,17 @@ define BuildFirmware/HLKRM04/initramfs
 	mkhilinkfw -e -i$(call imgname,$(1),$(2))-uImage.bin -o $(call imgname,$(1),$(2))-factory.bin;
 endef
 
+nixcore_8mb_mtd_size=8060928
+nixcore_16mb_mtd_size=16449536
+define BuildFirmware/NIXCORE/squashfs
+	$(call BuildFirmware/CustomFlash/$(1),$(1),$(2)-8M,$(3)-8M,$(nixcore_8mb_mtd_size))
+	$(call BuildFirmware/CustomFlash/$(1),$(1),$(2)-16M,$(3)-16M,$(nixcore_16mb_mtd_size))
+endef
+define BuildFirmware/NIXCORE/initramfs
+	$(call BuildFirmware/OF/initramfs,$(1),$(2)-8M,$(3)-8M)
+	$(call BuildFirmware/OF/initramfs,$(1),$(2)-16M,$(3)-16M)
+endef
+
 vocore_8mb_mtd_size=8060928
 vocore_16mb_mtd_size=16449536
 define BuildFirmware/VOCORE/squashfs
@@ -258,6 +269,7 @@ Image/Build/Profile/MZKW300NH2=$(call BuildFirmware/Edimax/$(1),$(1),mzk-w300nh2
 Image/Build/Profile/MZKWDPR=$(call BuildFirmware/Default8M/$(1),$(1),mzk-wdpr,MZK-WDPR)
 Image/Build/Profile/NCS601W=$(call BuildFirmware/Default8M/$(1),$(1),ncs601W,NCS601W)
 nw718_mtd_size=3801088
+Image/Build/Profile/NIXCORE=$(call BuildFirmware/NIXCORE/$(1),$(1),nixcore,NIXCORE)
 Image/Build/Profile/NW718=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),nw718m,NW718,$(nw718_mtd_size),ARA1B4NCRNW718;1,factory)
 Image/Build/Profile/M2M=$(call BuildFirmware/Default8M/$(1),$(1),m2m,M2M,Linux Kernel Image)
 Image/Build/Profile/MINIEMBPLUG=$(call BuildFirmware/Default8M/$(1),$(1),miniembplug,MINIEMBPLUG)
@@ -353,6 +365,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/MZKWDPR,$(1))
 	$(call Image/Build/Profile/NBG-419N,$(1))
 	$(call Image/Build/Profile/NCS601W,$(1))
+	$(call Image/Build/Profile/NIXCORE,$(1))
 	$(call Image/Build/Profile/NW718,$(1))
 	$(call Image/Build/Profile/MINIEMBWIFI,$(1))
 	$(call Image/Build/Profile/MINIEMBPLUG,$(1))
