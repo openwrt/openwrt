@@ -30,7 +30,6 @@
 #include <sys/stat.h>
 #include <string.h>
 
-#define SEARCH_SPACE	(16 * 1024)
 #define DTB_MAX	(16 * 1024)
 
 int main(int argc, char **argv)
@@ -38,11 +37,18 @@ int main(int argc, char **argv)
 	int fd, fddtb, found = 0, len, ret = -1;
 	char *ptr, *ptrdtb, *p;
 	struct stat s;
+	unsigned int search_space , dtb_max_size;
 
-	if (argc != 3) {
-		fprintf(stderr, "Usage: %s <file> <dtb>\n", argv[0]);
+	if (argc <= 2 || argc > 4) {
+		fprintf(stderr, "Usage: %s <file> <dtb> [size]\n", argv[0]);
 		goto err1;
+	} else if (argc == 3) {
+		fprintf(stdout, "DT size used is default of 16KB\n");
+		search_space = dtb_max_size = DTB_MAX;
+	} else {
+		search_space = dtb_max_size = atoi(argv[3]);
 	}
+
 	fddtb = open(argv[1], O_RDONLY);
 	if (!fddtb)
 		goto err1;
@@ -53,24 +59,24 @@ int main(int argc, char **argv)
 	}
 
 	len = s.st_size;
-	if (len + 8 > DTB_MAX) {
+	if (len + 8 > dtb_max_size) {
 		fprintf(stderr, "DTB too big\n");
 		goto err1;
 	}
 
         if (((fddtb = open(argv[2], O_RDONLY)) < 0) ||
-		(ptrdtb = (char *) mmap(0, DTB_MAX, PROT_READ, MAP_SHARED, fddtb, 0)) == (void *) (-1)) {
+		(ptrdtb = (char *) mmap(0, dtb_max_size, PROT_READ, MAP_SHARED, fddtb, 0)) == (void *) (-1)) {
 		fprintf(stderr, "Could not open DTB");
 		goto err2;
 	}
 
 	if (((fd = open(argv[1], O_RDWR)) < 0) ||
-		(ptr = (char *) mmap(0, SEARCH_SPACE + DTB_MAX, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0)) == (void *) (-1)) {
+		(ptr = (char *) mmap(0, search_space + dtb_max_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0)) == (void *) (-1)) {
 		fprintf(stderr, "Could not open kernel image");
 		goto err3;
 	}
 
-	for (p = ptr; p < (ptr + SEARCH_SPACE); p += 4) {
+	for (p = ptr; p < (ptr + search_space); p += 4) {
 		if (memcmp(p, "OWRTDTB:", 8) == 0) {
 			found = 1;
 			p += 8;
@@ -82,7 +88,7 @@ int main(int argc, char **argv)
 		goto err4;
 	}
 
-	memset(p, 0, DTB_MAX - 8);
+	memset(p, 0, dtb_max_size - 8);
 	memcpy(p, ptrdtb, len);
 	msync(p, len, MS_SYNC|MS_INVALIDATE);
 	ret = 0;

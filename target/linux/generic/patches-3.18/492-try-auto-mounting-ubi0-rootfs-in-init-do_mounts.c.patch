@@ -11,7 +11,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/init/do_mounts.c
 +++ b/init/do_mounts.c
-@@ -433,7 +433,27 @@ retry:
+@@ -433,7 +433,28 @@ retry:
  out:
  	put_page(page);
  }
@@ -29,6 +29,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			case -EACCES:
 +				flags |= MS_RDONLY;
 +				tried++;
++				break;
 +			default:
 +				return err;
 +		}
