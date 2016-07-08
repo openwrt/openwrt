@@ -15,7 +15,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -587,7 +587,7 @@ struct wireless_dev *brcmf_ap_add_vif(st
+@@ -601,7 +601,7 @@ struct wireless_dev *brcmf_ap_add_vif(st
  
  	brcmf_dbg(INFO, "Adding vif \"%s\"\n", name);
  
@@ -24,7 +24,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	if (IS_ERR(vif))
  		return (struct wireless_dev *)vif;
  
-@@ -5114,8 +5114,7 @@ static struct cfg80211_ops brcmf_cfg8021
+@@ -5174,8 +5174,7 @@ static struct cfg80211_ops brcmf_cfg8021
  };
  
  struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
@@ -34,7 +34,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  {
  	struct brcmf_cfg80211_vif *vif_walk;
  	struct brcmf_cfg80211_vif *vif;
-@@ -5130,8 +5129,6 @@ struct brcmf_cfg80211_vif *brcmf_alloc_v
+@@ -5190,8 +5189,6 @@ struct brcmf_cfg80211_vif *brcmf_alloc_v
  	vif->wdev.wiphy = cfg->wiphy;
  	vif->wdev.iftype = type;
  
@@ -43,7 +43,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	brcmf_init_prof(&vif->profile);
  
  	if (type == NL80211_IFTYPE_AP) {
-@@ -6769,7 +6766,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+@@ -6833,7 +6830,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
  	init_vif_event(&cfg->vif_event);
  	INIT_LIST_HEAD(&cfg->vif_list);
  
