@@ -26,7 +26,7 @@
  	ar->hw->wiphy->cipher_suites = cipher_suites;
  	ar->hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
  
-+#if CPTCFG_MAC80211_LEDS
++#ifdef CPTCFG_MAC80211_LEDS
 +	ieee80211_create_tpt_led_trigger(ar->hw,
 +		IEEE80211_TPT_LEDTRIG_FL_RADIO, ath10k_tpt_blink,
 +		ARRAY_SIZE(ath10k_tpt_blink));
