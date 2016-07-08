@@ -100,15 +100,7 @@ define AsusDevice
   TARGET_DEVICES += asus-$(1)
 endef
 
-define Device/linksys
-  IMAGES := trx
-  IMAGE/trx := trx-nand
-endef
-
 define LinksysDevice
-  define Device/linksys-$(1)
-	$$(Device/linksys)
-  endef
   TARGET_DEVICES += linksys-$(1)
 endef
 
