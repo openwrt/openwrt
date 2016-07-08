@@ -55,7 +55,7 @@
  	ops->spectral_scan_config = ar9003_hw_spectral_scan_config;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -717,7 +717,8 @@ static void ath9k_init_txpower_limits(st
+@@ -716,7 +716,8 @@ static void ath9k_init_txpower_limits(st
  	if (ah->caps.hw_caps & ATH9K_HW_CAP_5GHZ)
  		ath9k_init_band_txpower(sc, NL80211_BAND_5GHZ);
  
