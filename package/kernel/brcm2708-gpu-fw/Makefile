@@ -9,8 +9,8 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=brcm2708-gpu-fw
-PKG_VERSION:=2016-06-08
-PKG_RELEASE:=70143fe9d371cd6486a80d6765e93b5574212b64
+PKG_VERSION:=2016-07-08
+PKG_RELEASE:=6364331ee24c03108b4a572cb218164480b9275b
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_RELEASE)
 
@@ -41,7 +41,7 @@ define Download/fixup_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup.dat
-  MD5SUM:=c85a8a7fd6f1012dedb979d5a5350135
+  MD5SUM:=ab7cdc81eddc455497391a64bae58ac2
 endef
 $(eval $(call Download,fixup_dat))
 
@@ -49,7 +49,7 @@ define Download/fixup_cd_dat
   FILE:=$(RPI_FIRMWARE_FILE)-fixup_cd.dat
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=fixup_cd.dat
-  MD5SUM:=1e6c0d6c576956282b498f255eb12d3b
+  MD5SUM:=9d86a9ed23631db63b9d3d85afdbafa9
 endef
 $(eval $(call Download,fixup_cd_dat))
 
@@ -57,7 +57,7 @@ define Download/start_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start.elf
-  MD5SUM:=94f8e421d6e46e89a60aa001af63844e
+  MD5SUM:=6a704ac53346894b13ed33886690ba56
 endef
 $(eval $(call Download,start_elf))
 
@@ -65,7 +65,7 @@ define Download/start_cd_elf
   FILE:=$(RPI_FIRMWARE_FILE)-start_cd.elf
   URL:=$(RPI_FIRMWARE_URL)
   URL_FILE:=start_cd.elf
-  MD5SUM:=0a9082c25af181cbf16338de2362d5d6
+  MD5SUM:=381ae908e45515d4dafe642ddbc48a32
 endef
 $(eval $(call Download,start_cd_elf))
 
