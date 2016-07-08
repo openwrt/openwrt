@@ -236,6 +236,7 @@ platform_check_image() {
 	gl-domino | \
 	hiwifi-hc6361 | \
 	hornet-ub-x2 | \
+	jwap230 | \
 	mzk-w04nu | \
 	mzk-w300nh | \
 	tew-632brp | \

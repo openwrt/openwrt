@@ -411,6 +411,12 @@ gl-ar300)
 		"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan"
 	;;
 
+jwap230)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_add_switch "switch0" \
+		"0@eth0" "1:lan" "5:wan" "6@eth1"
+	;;
+
 wpj342)
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan" "2:wan"

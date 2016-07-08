@@ -566,6 +566,9 @@ ar71xx_board_detect() {
 	*JWAP003)
 		name="jwap003"
 		;;
+	*JWAP230)
+		name="jwap230"
+		;;
 	*"Hornet-UB")
 		local size
 		size=$(awk '/firmware/ { print $2 }' /proc/mtd)

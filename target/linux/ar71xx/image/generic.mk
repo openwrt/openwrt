@@ -268,6 +268,15 @@ define Device/gl-inet-6416A-v1
 endef
 TARGET_DEVICES += gl-inet-6408A-v1 gl-inet-6416A-v1
 
+define Device/jwap230
+  DEVICE_TITLE := jjPlus JWAP230
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = JWAP230
+  IMAGE_SIZE = 16000k
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += jwap230
+
 define Device/rnx-n360rt
   $(Device/tplink-4m)
   DEVICE_TITLE := Rosewill RNX-N360RT

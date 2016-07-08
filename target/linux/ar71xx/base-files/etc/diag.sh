@@ -158,6 +158,9 @@ get_status_led() {
 	ja76pf2)
 		status_led="jjplus:green:led1"
 		;;
+	jwap230)
+		status_led="jwap230:green:led1"
+		;;
 	ls-sr71)
 		status_led="ubnt:green:d22"
 		;;

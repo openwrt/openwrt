@@ -100,6 +100,7 @@ obj-$(CONFIG_ATH79_MACH_GS_OOLITE)	+= mach-gs-oolite.o
 obj-$(CONFIG_ATH79_MACH_HIWIFI_HC6361)	+= mach-hiwifi-hc6361.o
 obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o
 obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach-jwap003.o
+obj-$(CONFIG_ATH79_MACH_JWAP230)	+= mach-jwap230.o
 obj-$(CONFIG_ATH79_MACH_HORNET_UB)	+= mach-hornet-ub.o
 obj-$(CONFIG_ATH79_MACH_MC_MAC1200R)     += mach-mc-mac1200r.o
 obj-$(CONFIG_ATH79_MACH_MR12)		+= mach-mr12.o
