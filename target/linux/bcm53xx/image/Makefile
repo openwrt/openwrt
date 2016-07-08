@@ -15,8 +15,6 @@ define Image/Prepare
 	# For UBI we want only one extra block
 	rm -f $(KDIR)/ubi_mark
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
-
-	$(CP) ./ubinize.cfg $(KDIR)
 endef
 
 define Build/lzma-d16
@@ -24,16 +22,13 @@ define Build/lzma-d16
 	@mv $@.new $@
 endef
 
-define Build/mkfs/squashfs
-	( cd $(KDIR); $(STAGING_DIR_HOST)/bin/ubinize -p 128KiB -m 2048 -o $(KDIR)/root-block-0x20000-min-0x800.ubi ubinize.cfg )
-endef
-
 define Build/trx-serial
 	$(STAGING_DIR_HOST)/bin/trx \
-		-o $@ \
+		-o $@.new \
 		-m 33554432 \
 		-f $(word 1,$^) -a 1024 \
-		-f $(KDIR)/root.squashfs -a 0x10000 -A $(KDIR)/fs_mark
+		-f $@ -a 0x10000 -A $(KDIR)/fs_mark
+	mv $@.new $@
 endef
 
 define Build/trx-nand
@@ -42,11 +37,12 @@ define Build/trx-nand
 	# root: UBI with one extra block containing UBI mark to trigger erasing
 	#	rest of partition
 	$(STAGING_DIR_HOST)/bin/trx \
-		-o $@ \
+		-o $@.new \
 		-m 33554432 \
 		-f $(word 1,$^) -a 0x20000 -b 0x400000 \
-		-f $(KDIR)/root-block-0x20000-min-0x800.ubi \
+		-f $@ \
 		-A $(KDIR)/ubi_mark -a 0x20000
+	mv $@.new $@
 endef
 
 define Build/asus-trx
@@ -63,7 +59,7 @@ define Build/seama-nand
 		-m "type=firmware" \
 		-f $(word 1,$^) \
 		-b 0x400000 \
-		-f $(KDIR)/root-block-0x20000-min-0x800.ubi \
+		-f $@ \
 		-f $(KDIR)/ubi_mark
 	# Seama container
 	$(STAGING_DIR_HOST)/bin/seama \
@@ -84,12 +80,15 @@ define Device/Default
   KERNEL_NAME := zImage
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
   IMAGES := trx
-  IMAGE/trx := trx-nand
+  BLOCKSIZE := 128KiB
+  PAGESIZE := 2048
+  UBINIZE_OPTS :=
+  IMAGE/trx := append-ubi | trx-nand
 endef
 
 define Device/asus
   IMAGES := trx
-  IMAGE/trx := trx-nand | asus-trx
+  IMAGE/trx := append-ubi | trx-nand | asus-trx
 endef
 
 define AsusDevice
@@ -106,7 +105,7 @@ endef
 
 define Device/dlink
   IMAGES := bin
-  IMAGE/bin := seama-nand
+  IMAGE/bin := append-ubi | seama-nand
 endef
 
 define DLinkDevice
@@ -119,7 +118,7 @@ endef
 
 define Device/netgear
   IMAGES := chk
-  IMAGE/chk := trx-nand | netgear-chk
+  IMAGE/chk := append-ubi | trx-nand | netgear-chk
   NETGEAR_REGION := 1
 endef
 
@@ -148,7 +147,7 @@ endef
 
 define Device/smartrg-sr400ac
   IMAGES := trx
-  IMAGE/trx := trx-serial
+  IMAGE/trx := append-rootfs | trx-serial
 endef
 
 TARGET_DEVICES += \
