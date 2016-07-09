@@ -19,13 +19,13 @@ try_git() {
 	case "$GET_REV" in
 	r*)
 		GET_REV="$(echo $GET_REV | tr -d 'r')"
-		BASE_REV="$(git rev-list reboot..HEAD --count)"
+		BASE_REV="$(git rev-list reboot..HEAD | wc -l)"
 		REV="$(git rev-parse HEAD~$((BASE_REV - GET_REV)))"
 		;;
 	*)
 		UPSTREAM_BASE="$(git merge-base $GET_REV origin/master)"
-		UPSTREAM_REV="$(git rev-list reboot..$UPSTREAM_BASE --count)"
-		REV="$(git rev-list reboot..$GET_REV --count)"
+		UPSTREAM_REV="$(git rev-list reboot..$UPSTREAM_BASE | wc -l)"
+		REV="$(git rev-list reboot..$GET_REV | wc -l)"
 		if [ -n "$REV" -a -n "$UPSTREAM_REV" -a "$REV" -gt "$UPSTREAM_REV" ]; then
 			REV="r${UPSTREAM_REV}+$((REV - UPSTREAM_REV))"
 		else
