@@ -24,8 +24,8 @@ try_git() {
 		;;
 	*)
 		UPSTREAM_BASE="$(git merge-base $GET_REV origin/master)"
-		UPSTREAM_REV="$(git rev-list reboot..$UPSTREAM_BASE | wc -l)"
-		REV="$(git rev-list reboot..$GET_REV | wc -l)"
+		UPSTREAM_REV="$(git rev-list reboot..$UPSTREAM_BASE | wc -l | awk '{print $1}')"
+		REV="$(git rev-list reboot..$GET_REV | wc -l | awk '{print $1}')"
 		if [ -n "$REV" -a -n "$UPSTREAM_REV" -a "$REV" -gt "$UPSTREAM_REV" ]; then
 			REV="r${UPSTREAM_REV}+$((REV - UPSTREAM_REV))"
 		else
