@@ -437,22 +437,17 @@ TARGET_DEVICES += hiwifi-hc6361
 # The pre-filled 64 bytes consist of
 # - 28 bytes seama_header
 # - 36 bytes of META data (4-bytes aligned)
-#
-# And as the 4 bytes jffs2 marker will be erased on first boot, they need to
-# be excluded from the calculation of checksum
 define Build/seama-factory
 	( dd if=/dev/zero bs=64 count=1; cat $(word 1,$^) ) >$@.loader.tmp
 	( dd if=$@.loader.tmp bs=64k conv=sync; dd if=$(word 2,$^) ) >$@.tmp.0
 	tail -c +65 $@.tmp.0 >$@.tmp.1
-	head -c -4 $@.tmp.1 >$@.tmp.2
 	$(STAGING_DIR_HOST)/bin/seama \
-		-i $@.tmp.2 \
+		-i $@.tmp.1 \
 		-m "dev=/dev/mtdblock/1" -m "type=firmware"
 	$(STAGING_DIR_HOST)/bin/seama \
 		-s $@ \
 		-m "signature=$(1)" \
-		-i $@.tmp.2.seama
-	tail -c 4 $@.tmp.1 >>$@
+		-i $@.tmp.1.seama
 	rm -f $@.loader.tmp $@.tmp.*
 endef
 
@@ -461,6 +456,7 @@ define Build/seama-sysupgrade
 		-i $(word 1,$^) \
 		-m "dev=/dev/mtdblock/1" -m "type=firmware"
 	( dd if=$(word 1,$^).seama bs=64k conv=sync; dd if=$(word 2,$^) ) >$@
+	rm -f $(word 1,$^).seama
 endef
 
 define Build/seama-initramfs
@@ -470,16 +466,21 @@ define Build/seama-initramfs
 	mv $@.seama $@
 endef
 
+define Build/seama-pad-rootfs
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(word 2,$^) -c 64 >>$@
+endef
+
 define Device/seama
   CONSOLE := ttyS0,115200
-  KERNEL := kernel-bin | loader-kernel-cmdline | lzma
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | lzma | loader-kernel-cmdline | lzma
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | seama-initramfs
   KERNEL_INITRAMFS_SUFFIX = $$(KERNEL_SUFFIX).seama
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := seama-sysupgrade $$$$(SEAMA_SIGNATURE) | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin := seama-factory $$$$(SEAMA_SIGNATURE) | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := seama-sysupgrade $$$$(SEAMA_SIGNATURE) | seama-pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := seama-factory $$$$(SEAMA_SIGNATURE) | seama-pad-rootfs | check-size $$$$(IMAGE_SIZE)
   SEAMA_SIGNATURE :=
-  DEVICE_VARS := SEAMA_SIGNATURE
+  DEVICE_VARS += SEAMA_SIGNATURE
 endef
 
 define Device/mynet-n600
