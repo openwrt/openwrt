@@ -28,9 +28,9 @@ define Device/bcm63xx
   FLASH_MB := 4
   CFE_BOARD_ID :=
   CFE_CHIP_ID :=
-  CFE_EXTRAS := --block-size $$(BLOCK_SIZE) --image-offset $$(if $$(IMAGE_OFFSET),$$(IMAGE_OFFSET),$$(BLOCK_SIZE))
+  CFE_EXTRAS = --block-size $$(BLOCK_SIZE) --image-offset $$(if $$(IMAGE_OFFSET),$$(IMAGE_OFFSET),$$(BLOCK_SIZE))
 endef
-DEVICE_VARS += BLOCK_SIZE FLASH_MB IMAGE_SIZE
+DEVICE_VARS += BLOCK_SIZE FLASH_MB IMAGE_OFFSET
 DEVICE_VARS += CFE_BOARD_ID CFE_CHIP_ID CFE_EXTRAS
 
 define Device/bcm63xx_netgear
