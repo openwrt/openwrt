@@ -4,7 +4,7 @@ functions on the Arduino Yun.
 
 --- a/arch/mips/ath79/common.h
 +++ b/arch/mips/ath79/common.h
-@@ -28,6 +28,7 @@ void ath79_ddr_wb_flush(unsigned int reg
+@@ -30,6 +30,7 @@ void ath79_ddr_wb_flush(unsigned int reg
  void ath79_gpio_function_enable(u32 mask);
  void ath79_gpio_function_disable(u32 mask);
  void ath79_gpio_function_setup(u32 set, u32 clear);
@@ -48,7 +48,7 @@ functions on the Arduino Yun.
  	void __iomem *reg = ath79_gpio_get_function_reg();
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-@@ -847,6 +847,7 @@
+@@ -850,6 +850,7 @@
  #define AR71XX_GPIO_REG_INT_PENDING	0x20
  #define AR71XX_GPIO_REG_INT_ENABLE	0x24
  #define AR71XX_GPIO_REG_FUNC		0x28
@@ -56,7 +56,7 @@ functions on the Arduino Yun.
  
  #define AR934X_GPIO_REG_OUT_FUNC0	0x2c
  #define AR934X_GPIO_REG_OUT_FUNC1	0x30
-@@ -971,6 +972,8 @@
+@@ -974,6 +975,8 @@
  #define AR724X_GPIO_FUNC_UART_EN		BIT(1)
  #define AR724X_GPIO_FUNC_JTAG_DISABLE		BIT(0)
  
