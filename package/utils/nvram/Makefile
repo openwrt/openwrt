@@ -50,6 +50,7 @@ define Package/nvram/install
 ifneq ($(CONFIG_TARGET_brcm47xx),)
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/nvram.init $(1)/etc/init.d/nvram
+endif
 endef
 
 $(eval $(call BuildPackage,nvram))
