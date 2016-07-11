@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -814,6 +814,9 @@ static inline int ath9k_dump_btcoex(stru
+@@ -816,6 +816,9 @@ static inline int ath9k_dump_btcoex(stru
  #ifdef CPTCFG_MAC80211_LEDS
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -950,6 +953,13 @@ void ath_ant_comb_scan(struct ath_softc
+@@ -952,6 +955,13 @@ void ath_ant_comb_scan(struct ath_softc
  
  #define ATH9K_NUM_CHANCTX  2 /* supports 2 operating channels */
  
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -1002,9 +1012,8 @@ struct ath_softc {
+@@ -1004,9 +1014,8 @@ struct ath_softc {
  	spinlock_t chan_lock;
  
  #ifdef CPTCFG_MAC80211_LEDS
@@ -201,7 +201,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1407,6 +1407,61 @@ static const struct file_operations fops
+@@ -1411,6 +1411,61 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -263,7 +263,7 @@
  
  int ath9k_init_debug(struct ath_hw *ah)
  {
-@@ -1431,6 +1486,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1435,6 +1490,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_eeprom);
  	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
  			    sc, &fops_chanbw);
