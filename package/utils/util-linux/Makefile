@@ -32,6 +32,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/util-linux/Default
   SECTION:=utils
   CATEGORY:=Utilities
+  DEPENDS:= +librt
   URL:=http://www.kernel.org/pub/linux/utils/util-linux/
 endef
 
@@ -202,7 +203,6 @@ endef
 define Package/dmesg
 $(call Package/util-linux/Default)
   TITLE:=print or control the kernel ring buffer
-  DEPENDS:= +librt
 endef
 
 define Package/dmesg/description

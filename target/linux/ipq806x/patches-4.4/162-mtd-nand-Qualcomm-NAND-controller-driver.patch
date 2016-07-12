@@ -80,7 +80,7 @@ drivers/mtd/nand/Kconfig      |    7 +
 
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
-@@ -546,4 +546,11 @@
+@@ -546,4 +546,11 @@ config MTD_NAND_HISI504
  	help
  	  Enables support for NAND controller on Hisilicon SoC Hip04.
  
@@ -2015,7 +2015,7 @@ drivers/mtd/nand/Kconfig      |    7 +
 +MODULE_LICENSE("GPL v2");
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -55,5 +55,6 @@
+@@ -55,5 +55,6 @@ obj-$(CONFIG_MTD_NAND_BCM47XXNFLASH)	+=
  obj-$(CONFIG_MTD_NAND_SUNXI)		+= sunxi_nand.o
  obj-$(CONFIG_MTD_NAND_HISI504)	        += hisi504_nand.o
  obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand/

@@ -197,19 +197,3 @@ define KernelPackage/leds-pca963x/description
 endef
 
 $(eval $(call KernelPackage,leds-pca963x))
-
-
-define KernelPackage/leds-tlc591xx
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=TLC591xx LED support
-  DEPENDS:=@TARGET_mvebu +kmod-i2c-core +kmod-regmap
-  KCONFIG:=CONFIG_LEDS_TLC591XX
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-tlc591xx.ko
-  AUTOLOAD:=$(call AutoLoad,60,leds-tlc591xx,1)
-endef
-
-define KernelPackage/leds-tlc591xx/description
- Kernel module for LEDs on TLC591xx
-endef
-
-$(eval $(call KernelPackage,leds-tlc591xx))

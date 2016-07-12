@@ -635,6 +635,9 @@ swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
 	struct switch_val val;
 	int err = -EINVAL;
 
+	if (!capable(CAP_NET_ADMIN))
+		return -EPERM;
+
 	dev = swconfig_get_dev(info);
 	if (!dev)
 		return -EINVAL;
@@ -1022,16 +1025,19 @@ static struct genl_ops swconfig_ops[] = {
 	},
 	{
 		.cmd = SWITCH_CMD_SET_GLOBAL,
+		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
 		.policy = switch_policy,
 	},
 	{
 		.cmd = SWITCH_CMD_SET_VLAN,
+		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
 		.policy = switch_policy,
 	},
 	{
 		.cmd = SWITCH_CMD_SET_PORT,
+		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
 		.policy = switch_policy,
 	},

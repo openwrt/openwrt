@@ -30,7 +30,7 @@ drivers/clk/qcom/Kconfig     |   4 ++
 
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
-@@ -114,3 +114,7 @@
+@@ -114,3 +114,7 @@ config QCOM_HFPLL
  	  Support for the high-frequency PLLs present on Qualcomm devices.
  	  Say Y if you want to support CPU frequency scaling on devices
  	  such as MSM8974, APQ8084, etc.
@@ -40,7 +40,7 @@ drivers/clk/qcom/Kconfig     |   4 ++
 +	select KRAIT_L2_ACCESSORS
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -8,6 +8,7 @@
+@@ -8,6 +8,7 @@ clk-qcom-y += clk-rcg2.o
  clk-qcom-y += clk-branch.o
  clk-qcom-y += clk-regmap-divider.o
  clk-qcom-y += clk-regmap-mux.o
@@ -48,7 +48,6 @@ drivers/clk/qcom/Kconfig     |   4 ++
  clk-qcom-y += clk-hfpll.o
  clk-qcom-y += reset.o
  clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o
- 
 --- /dev/null
 +++ b/drivers/clk/qcom/clk-krait.c
 @@ -0,0 +1,166 @@

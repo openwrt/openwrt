@@ -41,6 +41,7 @@ CONFIGURE_ARGS += \
 	--enable-singlethreaded \
 	--enable-opensslextra \
 	--enable-sni \
+	--enable-stunnel \
 	--enable-ecc \
 	--disable-examples
 

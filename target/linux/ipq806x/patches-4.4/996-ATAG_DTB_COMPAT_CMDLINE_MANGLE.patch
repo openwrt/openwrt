@@ -18,7 +18,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1927,6 +1927,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+@@ -1928,6 +1928,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
  	  The command-line arguments provided by the boot loader will be
  	  appended to the the device tree bootargs property.
  
@@ -107,7 +107,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
  {
  	char cmdline[COMMAND_LINE_SIZE];
-@@ -85,12 +134,21 @@ static void merge_fdt_bootargs(void *fdt
+@@ -85,12 +140,21 @@ static void merge_fdt_bootargs(void *fdt
  
  	/* and append the ATAG_CMDLINE */
  	if (fdt_cmdline) {
@@ -129,7 +129,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  	}
  	*ptr = '\0';
  
-@@ -147,7 +205,9 @@ int atags_to_fdt(void *atag_list, void *
+@@ -147,7 +211,9 @@ int atags_to_fdt(void *atag_list, void *
  			else
  				setprop_string(fdt, "/chosen", "bootargs",
  					       atag->u.cmdline.cmdline);
@@ -140,7 +140,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  			if (memcount >= sizeof(mem_reg_property)/4)
  				continue;
  			if (!atag->u.mem.size)
-@@ -186,6 +246,10 @@ int atags_to_fdt(void *atag_list, void *
+@@ -186,6 +252,10 @@ int atags_to_fdt(void *atag_list, void *
  		setprop(fdt, "/memory", "reg", mem_reg_property,
  			4 * memcount * memsize);
  	}
@@ -164,7 +164,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  static int kernel_init(void *);
  
  extern void init_IRQ(void);
-@@ -585,6 +589,18 @@ asmlinkage __visible void __init start_k
+@@ -560,6 +564,18 @@ asmlinkage __visible void __init start_k
  	page_alloc_init();
  
  	pr_notice("Kernel command line: %s\n", boot_command_line);

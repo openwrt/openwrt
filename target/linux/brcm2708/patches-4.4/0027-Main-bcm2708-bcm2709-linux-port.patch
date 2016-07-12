@@ -75,7 +75,7 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -317,6 +317,52 @@ choice
+@@ -318,6 +318,52 @@ choice
  	default ARCH_VERSATILE if !MMU
  	default ARCH_MULTIPLATFORM if MMU
  
@@ -128,7 +128,7 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  config ARCH_MULTIPLATFORM
  	bool "Allow multiple platforms to be selected"
  	depends on MMU
-@@ -808,6 +854,9 @@ config ARCH_VIRT
+@@ -809,6 +855,9 @@ config ARCH_VIRT
  # Kconfigs may be included either alphabetically (according to the
  # plat- suffix) or along side the corresponding mach-* source.
  #

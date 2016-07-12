@@ -138,7 +138,7 @@
 		};
 
 		i2c: i2c@900 {
-			compatible = "link,rt5350-i2c", "ralink,rt2880-i2c";
+			compatible = "ralink,rt2880-i2c";
 			reg = <0x900 0x100>;
 
 			resets = <&rstctrl 16>;
@@ -149,6 +149,26 @@
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2c_pins>;
+
+			status = "disabled";
+		};
+
+		i2s@a00 {
+			compatible = "ralink,rt3352-i2s";
+			reg = <0xa00 0x100>;
+
+			resets = <&rstctrl 17>;
+			reset-names = "i2s";
+
+			interrupt-parent = <&intc>;
+			interrupts = <10>;
+
+			txdma-req = <2>;
+			rxdma-req = <3>;
+
+			dmas = <&gdma 4>,
+				<&gdma 6>;
+			dma-names = "tx", "rx";
 
 			status = "disabled";
 		};
@@ -236,17 +256,17 @@
 		state_default: pinctrl0 {
 		};
 
-		spi_pins: spi {
-			spi {
-				ralink,group = "spi";
-				ralink,function = "spi";
-			};
-		};
-
 		i2c_pins: i2c {
 			i2c {
 				ralink,group = "i2c";
 				ralink,function = "i2c";
+			};
+		};
+
+		spi_pins: spi {
+			spi {
+				ralink,group = "spi";
+				ralink,function = "spi";
 			};
 		};
 

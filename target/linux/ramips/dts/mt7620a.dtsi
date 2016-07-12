@@ -176,7 +176,7 @@
 		};
 
 		i2c: i2c@900 {
-			compatible = "link,mt7620a-i2c", "ralink,rt2880-i2c";
+			compatible = "ralink,rt2880-i2c";
 			reg = <0x900 0x100>;
 
 			resets = <&rstctrl 16>;
@@ -192,7 +192,7 @@
 		};
 
 		i2s: i2s@a00 {
-			compatible = "ralink,mt7620a-i2s";
+			compatible = "mediatek,mt7620-i2s";
 			reg = <0xa00 0x100>;
 
 			resets = <&rstctrl 17>;
@@ -201,8 +201,11 @@
 			interrupt-parent = <&intc>;
 			interrupts = <10>;
 
+			txdma-req = <2>;
+			rxdma-req = <3>;
+
 			dmas = <&gdma 4>,
-				<&gdma 5>;
+				<&gdma 6>;
 			dma-names = "tx", "rx";
 
 			status = "disabled";

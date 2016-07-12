@@ -30,12 +30,13 @@ define Image/Build/squashfs
 	$(CP) $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs
 
 	$(call Image/Build/SysupgradeCombined,eMMC,squashfs)
-endef
 
-define Image/Build/jffs2-128k
-	$(CP) $(KDIR)/root.jffs2-128k $(BIN_DIR)/$(IMG_PREFIX)-root.jffs2
-
-	$(call Image/Build/SysupgradeCombined,NAND,jffs2-128k)
+	$(call Image/BuilduImage,NAND)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call Image/BuilduImage,NAND,-initramfs)
+	$(CP) $(KDIR)/uImage-NAND-initramfs $(BIN_DIR)/$(IMG_PREFIX)-uImage-NAND-initramfs
+endif
+	$(call Image/Build/SysupgradeNAND,NAND,$(1),$(KDIR)/uImage-NAND)
 endef
 
 define Image/Build
