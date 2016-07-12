@@ -56,8 +56,8 @@ proto_dhcp_setup() {
 		-s /lib/netifd/dhcp.script \
 		-f -t 0 -i "$iface" \
 		${ipaddr:+-r $ipaddr} \
-		${hostname:+-H $hostname} \
-		${vendorid:+-V $vendorid} \
+		${hostname:+-H "$hostname"} \
+		${vendorid:+-V "$vendorid"} \
 		$clientid $broadcast $release $dhcpopts
 }
 
