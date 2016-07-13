@@ -28,7 +28,7 @@ define Package/ath10k-firmware-default
   CATEGORY:=Kernel modules
   SUBMENU:=$(WMENU)
   URL:=$(PKG_SOURCE_URL)
-  DEPENDS:=kmod-ath10k
+  DEPENDS:=
 endef
 
 define Package/ath10k-firmware-qca988x
