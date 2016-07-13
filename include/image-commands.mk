@@ -105,8 +105,9 @@ define Build/append-ubi
 		$(if $(KERNEL_IN_UBI),--kernel $(word 1,$^)) \
 		$(word 2,$^) \
 		$@.tmp \
-		-p $(BLOCKSIZE) -m $(PAGESIZE) -E 5 \
-		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE))
+		-p $(BLOCKSIZE) -m $(PAGESIZE) \
+		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE)) \
+		$(UBINIZE_OPTS)
 	cat $@.tmp >> $@
 	rm $@.tmp
 endef
