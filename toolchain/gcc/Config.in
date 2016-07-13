@@ -16,6 +16,10 @@ choice
 		bool "gcc 5.x"
 		depends on !arc
 
+	config GCC_USE_VERSION_6
+		bool "gcc 6.x"
+		depends on !arc
+
 endchoice
 
 config GCC_USE_GRAPHITE
