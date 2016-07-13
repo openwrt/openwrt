@@ -217,7 +217,7 @@ git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@222904 138bc75d-0d04-0410-961f-8
 +Use musl C library
 --- a/gcc/configure
 +++ b/gcc/configure
-@@ -27802,6 +27802,9 @@ if test "${gcc_cv_libc_provides_ssp+set}
+@@ -27833,6 +27833,9 @@ if test "${gcc_cv_libc_provides_ssp+set}
  else
    gcc_cv_libc_provides_ssp=no
      case "$target" in
@@ -227,7 +227,7 @@ git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@222904 138bc75d-0d04-0410-961f-8
         *-*-linux* | *-*-kfreebsd*-gnu | *-*-knetbsd*-gnu)
        # glibc 2.4 and later provides __stack_chk_fail and
        # either __stack_chk_guard, or TLS access to stack guard canary.
-@@ -27834,6 +27837,7 @@ fi
+@@ -27865,6 +27868,7 @@ fi
  	 # <http://gcc.gnu.org/ml/gcc/2008-10/msg00130.html>) and for now
  	 # simply assert that glibc does provide this, which is true for all
  	 # realistically usable GNU/Hurd configurations.
@@ -235,7 +235,7 @@ git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@222904 138bc75d-0d04-0410-961f-8
  	 gcc_cv_libc_provides_ssp=yes;;
         *-*-darwin* | *-*-freebsd*)
  	 ac_fn_c_check_func "$LINENO" "__stack_chk_fail" "ac_cv_func___stack_chk_fail"
-@@ -27930,6 +27934,9 @@ case "$target" in
+@@ -27961,6 +27965,9 @@ case "$target" in
        gcc_cv_target_dl_iterate_phdr=no
      fi
      ;;
@@ -247,7 +247,7 @@ git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@222904 138bc75d-0d04-0410-961f-8
  if test x$gcc_cv_target_dl_iterate_phdr = xyes; then
 --- a/gcc/configure.ac
 +++ b/gcc/configure.ac
-@@ -5282,6 +5282,9 @@ AC_CACHE_CHECK(__stack_chk_fail in targe
+@@ -5287,6 +5287,9 @@ AC_CACHE_CHECK(__stack_chk_fail in targe
        gcc_cv_libc_provides_ssp,
        [gcc_cv_libc_provides_ssp=no
      case "$target" in
@@ -257,7 +257,7 @@ git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@222904 138bc75d-0d04-0410-961f-8
         *-*-linux* | *-*-kfreebsd*-gnu | *-*-knetbsd*-gnu)
        # glibc 2.4 and later provides __stack_chk_fail and
        # either __stack_chk_guard, or TLS access to stack guard canary.
-@@ -5308,6 +5311,7 @@ AC_CACHE_CHECK(__stack_chk_fail in targe
+@@ -5313,6 +5316,7 @@ AC_CACHE_CHECK(__stack_chk_fail in targe
  	 # <http://gcc.gnu.org/ml/gcc/2008-10/msg00130.html>) and for now
  	 # simply assert that glibc does provide this, which is true for all
  	 # realistically usable GNU/Hurd configurations.
@@ -265,7 +265,7 @@ git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@222904 138bc75d-0d04-0410-961f-8
  	 gcc_cv_libc_provides_ssp=yes;;
         *-*-darwin* | *-*-freebsd*)
  	 AC_CHECK_FUNC(__stack_chk_fail,[gcc_cv_libc_provides_ssp=yes],
-@@ -5381,6 +5385,9 @@ case "$target" in
+@@ -5386,6 +5390,9 @@ case "$target" in
        gcc_cv_target_dl_iterate_phdr=no
      fi
      ;;
@@ -286,7 +286,7 @@ git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@222904 138bc75d-0d04-0410-961f-8
  -tno-android-cc -tno-android-ld}
  
  @emph{H8/300 Options}
-@@ -15325,13 +15325,19 @@ These @samp{-m} options are defined for
+@@ -15340,13 +15340,19 @@ These @samp{-m} options are defined for
  @item -mglibc
  @opindex mglibc
  Use the GNU C library.  This is the default except
