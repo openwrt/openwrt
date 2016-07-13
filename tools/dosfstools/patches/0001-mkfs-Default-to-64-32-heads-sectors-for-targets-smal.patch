@@ -13,11 +13,9 @@ Signed-off-by: Andreas Bombe <aeb@debian.org>
  src/mkfs.fat.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/src/mkfs.fat.c b/src/mkfs.fat.c
-index 8a320fd..bad492b 100644
 --- a/src/mkfs.fat.c
 +++ b/src/mkfs.fat.c
-@@ -519,6 +519,16 @@ static void establish_params(struct device_info *info)
+@@ -519,6 +519,16 @@ static void establish_params(struct devi
      unsigned int cluster_size = 4;  /* starting point for FAT12 and FAT16 */
      int def_root_dir_entries = 512;
  
@@ -34,6 +32,3 @@ index 8a320fd..bad492b 100644
      if (info->type != TYPE_FIXED) {
  	/* enter default parameters for floppy disks if the size matches */
  	switch (info->size / 1024) {
--- 
-2.1.4
-

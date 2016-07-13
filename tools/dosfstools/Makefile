@@ -20,12 +20,9 @@ HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
 include $(INCLUDE_DIR)/host-build.mk
 
 ifeq ($(HOST_OS),Darwin)
+HOST_CFLAGS += -UHAVE_ENDIAN_H
 LDLIBS += -liconv
 endif
-
-define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)" LDFLAGS="$(HOST_LDFLAGS)" LDLIBS="$(LDLIBS)"
-endef
 
 define Host/Install
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/src/mkfs.fat $(STAGING_DIR_HOST)/bin/
