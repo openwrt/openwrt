@@ -55,7 +55,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/net/core/filter.c
 +++ b/net/core/filter.c
-@@ -1293,8 +1293,9 @@ static u64 bpf_skb_store_bytes(u64 r1, u
+@@ -1291,8 +1291,9 @@ static u64 bpf_skb_store_bytes(u64 r1, u
  		/* skb_store_bits cannot return -EFAULT here */
  		skb_store_bits(skb, offset, ptr, len);
  
@@ -67,7 +67,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return 0;
  }
  
-@@ -1420,8 +1421,12 @@ static u64 bpf_clone_redirect(u64 r1, u6
+@@ -1415,8 +1416,12 @@ static u64 bpf_clone_redirect(u64 r1, u6
  	if (unlikely(!skb2))
  		return -ENOMEM;
  
@@ -81,7 +81,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	skb2->dev = dev;
  	skb_sender_cpu_clear(skb2);
-@@ -1464,8 +1469,12 @@ int skb_do_redirect(struct sk_buff *skb)
+@@ -1459,8 +1464,12 @@ int skb_do_redirect(struct sk_buff *skb)
  		return -EINVAL;
  	}
  

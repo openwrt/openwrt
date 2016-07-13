@@ -52,11 +52,9 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  drivers/usb/core/urb.c | 5 -----
  1 file changed, 5 deletions(-)
 
-diff --git a/drivers/usb/core/urb.c b/drivers/usb/core/urb.c
-index 3d27477..a317e1e 100644
 --- a/drivers/usb/core/urb.c
 +++ b/drivers/usb/core/urb.c
-@@ -443,11 +443,6 @@ int usb_submit_urb(struct urb *urb, gfp_t mem_flags)
+@@ -443,11 +443,6 @@ int usb_submit_urb(struct urb *urb, gfp_
  	 * cause problems in HCDs if they get it wrong.
  	 */
  
@@ -68,6 +66,3 @@ index 3d27477..a317e1e 100644
  	/* Check against a simple/standard policy */
  	allowed = (URB_NO_TRANSFER_DMA_MAP | URB_NO_INTERRUPT | URB_DIR_MASK |
  			URB_FREE_BUFFER);
--- 
-2.5.5
-

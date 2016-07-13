@@ -12,11 +12,9 @@ Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
  drivers/phy/phy-bcm-ns-usb2.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/phy/phy-bcm-ns-usb2.c b/drivers/phy/phy-bcm-ns-usb2.c
-index 95ab6b2..58dff80 100644
 --- a/drivers/phy/phy-bcm-ns-usb2.c
 +++ b/drivers/phy/phy-bcm-ns-usb2.c
-@@ -109,8 +109,8 @@ static int bcm_ns_usb2_probe(struct platform_device *pdev)
+@@ -109,8 +109,8 @@ static int bcm_ns_usb2_probe(struct plat
  	}
  
  	usb2->phy = devm_phy_create(dev, NULL, &ops);
@@ -27,6 +25,3 @@ index 95ab6b2..58dff80 100644
  
  	phy_set_drvdata(usb2->phy, usb2);
  	platform_set_drvdata(pdev, usb2);
--- 
-1.8.4.5
-

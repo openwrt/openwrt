@@ -30,9 +30,6 @@ Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
  create mode 100644 drivers/phy/phy-bcm-ns-usb2.c
  create mode 100644 include/linux/bcma/bcma_driver_arm_c9.h
 
-diff --git a/Documentation/devicetree/bindings/phy/bcm-ns-usb2-phy.txt b/Documentation/devicetree/bindings/phy/bcm-ns-usb2-phy.txt
-new file mode 100644
-index 0000000..a7aee9e
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/phy/bcm-ns-usb2-phy.txt
 @@ -0,0 +1,21 @@
@@ -57,8 +54,6 @@ index 0000000..a7aee9e
 +		clocks = <&genpll BCM_NSP_GENPLL_USB_PHY_REF_CLK>;
 +		clock-names = "phy-ref-clk";
 +	};
-diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
-index f6ff76e..f2b458f 100644
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
 @@ -15,6 +15,15 @@ config GENERIC_PHY
@@ -77,8 +72,6 @@ index f6ff76e..f2b458f 100644
  config PHY_BERLIN_USB
  	tristate "Marvell Berlin USB PHY Driver"
  	depends on ARCH_BERLIN && RESET_CONTROLLER && HAS_IOMEM && OF
-diff --git a/drivers/phy/Makefile b/drivers/phy/Makefile
-index f03fa1f..0de09e1 100644
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
 @@ -3,6 +3,7 @@
@@ -89,9 +82,6 @@ index f03fa1f..0de09e1 100644
  obj-$(CONFIG_PHY_BERLIN_USB)		+= phy-berlin-usb.o
  obj-$(CONFIG_PHY_BERLIN_SATA)		+= phy-berlin-sata.o
  obj-$(CONFIG_PHY_DM816X_USB)		+= phy-dm816x-usb.o
-diff --git a/drivers/phy/phy-bcm-ns-usb2.c b/drivers/phy/phy-bcm-ns-usb2.c
-new file mode 100644
-index 0000000..95ab6b2
 --- /dev/null
 +++ b/drivers/phy/phy-bcm-ns-usb2.c
 @@ -0,0 +1,137 @@
@@ -232,8 +222,6 @@ index 0000000..95ab6b2
 +module_platform_driver(bcm_ns_usb2_driver);
 +
 +MODULE_LICENSE("GPL v2");
-diff --git a/include/linux/bcma/bcma.h b/include/linux/bcma/bcma.h
-index 0367c63..e6b41f4 100644
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
 @@ -4,6 +4,7 @@
@@ -244,9 +232,6 @@ index 0367c63..e6b41f4 100644
  #include <linux/bcma/bcma_driver_chipcommon.h>
  #include <linux/bcma/bcma_driver_pci.h>
  #include <linux/bcma/bcma_driver_pcie2.h>
-diff --git a/include/linux/bcma/bcma_driver_arm_c9.h b/include/linux/bcma/bcma_driver_arm_c9.h
-new file mode 100644
-index 0000000..93bd73d
 --- /dev/null
 +++ b/include/linux/bcma/bcma_driver_arm_c9.h
 @@ -0,0 +1,15 @@
@@ -265,6 +250,3 @@ index 0000000..93bd73d
 +#define  BCMA_DMU_CRU_STRAPS_CTRL_4BYTE			0x00008000
 +
 +#endif /* LINUX_BCMA_DRIVER_ARM_C9_H_ */
--- 
-1.8.4.5
-
