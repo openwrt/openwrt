@@ -468,6 +468,17 @@ define Device/tl-wr841-v9
     TPLINK_HWID := 0x08410009
 endef
 
+define Device/tl-wr841-v9-vn
+$(Device/tplink-8mlzma)
+    MTDPARTS := spi0.0:128k(u-boot)ro,1024k(kernel),6912k(rootfs),64k(config)ro,64k(art)ro,7936k@0x20000(firmware) 
+    BOARDNAME := TL-WR841N-v9
+    DEVICE_PROFILE := TLWR841
+    TPLINK_HWID := 0x08410109
+    CONSOLE := ttyS0,115200
+    IMAGE/factory.bin := append-rootfs | mktplinkfw factory -v 3.16.99
+endef
+
+
 define Device/tl-wr841-v10
     $(Device/tplink-4mlzma)
     BOARDNAME := TL-WR841N-v9
@@ -516,7 +527,7 @@ define Device/tl-wr847n-v8
     DEVICE_PROFILE := TLWR841
     TPLINK_HWID := 0x08470008
 endef
-TARGET_DEVICES += tl-wr841-v1.5 tl-wr841-v3 tl-wr841-v5 tl-wr841-v7 tl-wr841-v8 tl-wr841-v9 tl-wr841-v10 tl-wr841-v11 tl-wr842n-v1 tl-wr842n-v2 tl-wr842n-v3 tl-wr843nd-v1 tl-wr847n-v8
+TARGET_DEVICES += tl-wr841-v1.5 tl-wr841-v3 tl-wr841-v5 tl-wr841-v7 tl-wr841-v8 tl-wr841-v9 tl-wr841-v9-vn tl-wr841-v10 tl-wr841-v11 tl-wr842n-v1 tl-wr842n-v2 tl-wr842n-v3 tl-wr843nd-v1 tl-wr847n-v8
 
 define Device/tl-wr941nd-v2
     $(Device/tplink-4m)

@@ -189,6 +189,13 @@ tplink_board_detect() {
 			hwver=' v1.5'
 		fi
 		;;
+	"084101"*)
+		model="TP-Link TL-WR841N/ND"
+		if [ "$hwid" = '08410109' -a "$mid" = '00000001' ]; then
+			hwver=' v9.2vn'
+		fi
+
+		;;
 	"084200"*)
 		model="TP-Link TL-WR842N/ND"
 		;;
