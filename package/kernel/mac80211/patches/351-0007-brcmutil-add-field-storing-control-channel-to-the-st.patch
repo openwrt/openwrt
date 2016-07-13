@@ -27,7 +27,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -2705,7 +2705,7 @@ static s32 brcmf_inform_single_bss(struc
+@@ -2765,7 +2765,7 @@ static s32 brcmf_inform_single_bss(struc
  	if (!bi->ctl_ch) {
  		ch.chspec = le16_to_cpu(bi->chanspec);
  		cfg->d11inf.decchspec(&ch);
@@ -36,16 +36,16 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	}
  	channel = bi->ctl_ch;
  
-@@ -2823,7 +2823,7 @@ static s32 brcmf_inform_ibss(struct brcm
+@@ -2883,7 +2883,7 @@ static s32 brcmf_inform_ibss(struct brcm
  	else
- 		band = wiphy->bands[IEEE80211_BAND_5GHZ];
+ 		band = wiphy->bands[NL80211_BAND_5GHZ];
  
 -	freq = ieee80211_channel_to_frequency(ch.chnum, band->band);
 +	freq = ieee80211_channel_to_frequency(ch.control_ch_num, band->band);
  	cfg->channel = freq;
  	notify_channel = ieee80211_get_channel(wiphy, freq);
  
-@@ -2833,7 +2833,7 @@ static s32 brcmf_inform_ibss(struct brcm
+@@ -2893,7 +2893,7 @@ static s32 brcmf_inform_ibss(struct brcm
  	notify_ielen = le32_to_cpu(bi->ie_length);
  	notify_signal = (s16)le16_to_cpu(bi->RSSI) * 100;
  
@@ -54,16 +54,16 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	brcmf_dbg(CONN, "capability: %X\n", notify_capability);
  	brcmf_dbg(CONN, "beacon interval: %d\n", notify_interval);
  	brcmf_dbg(CONN, "signal: %d\n", notify_signal);
-@@ -5251,7 +5251,7 @@ brcmf_bss_roaming_done(struct brcmf_cfg8
+@@ -5311,7 +5311,7 @@ brcmf_bss_roaming_done(struct brcmf_cfg8
  	else
- 		band = wiphy->bands[IEEE80211_BAND_5GHZ];
+ 		band = wiphy->bands[NL80211_BAND_5GHZ];
  
 -	freq = ieee80211_channel_to_frequency(ch.chnum, band->band);
 +	freq = ieee80211_channel_to_frequency(ch.control_ch_num, band->band);
  	notify_channel = ieee80211_get_channel(wiphy, freq);
  
  done:
-@@ -5773,14 +5773,15 @@ static int brcmf_construct_chaninfo(stru
+@@ -5833,14 +5833,15 @@ static int brcmf_construct_chaninfo(stru
  		channel = band->channels;
  		index = band->n_channels;
  		for (j = 0; j < band->n_channels; j++) {
@@ -82,7 +82,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  		/* assuming the chanspecs order is HT20,
  		 * HT40 upper, HT40 lower, and VHT80.
-@@ -5882,7 +5883,7 @@ static int brcmf_enable_bw40_2g(struct b
+@@ -5942,7 +5943,7 @@ static int brcmf_enable_bw40_2g(struct b
  			if (WARN_ON(ch.bw != BRCMU_CHAN_BW_40))
  				continue;
  			for (j = 0; j < band->n_channels; j++) {
@@ -118,8 +118,8 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 -	freq = ieee80211_channel_to_frequency(ch.chnum,
 +	freq = ieee80211_channel_to_frequency(ch.control_ch_num,
  					      ch.band == BRCMU_CHAN_BAND_2G ?
- 					      IEEE80211_BAND_2GHZ :
- 					      IEEE80211_BAND_5GHZ);
+ 					      NL80211_BAND_2GHZ :
+ 					      NL80211_BAND_5GHZ);
 @@ -1873,7 +1873,7 @@ s32 brcmf_p2p_notify_rx_mgmt_p2p_probere
  
  	if (test_bit(BRCMF_P2P_STATUS_FINDING_COMMON_CHANNEL, &p2p->status) &&
@@ -136,8 +136,8 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 -	freq = ieee80211_channel_to_frequency(ch.chnum,
 +	freq = ieee80211_channel_to_frequency(ch.control_ch_num,
  					      ch.band == BRCMU_CHAN_BAND_2G ?
- 					      IEEE80211_BAND_2GHZ :
- 					      IEEE80211_BAND_5GHZ);
+ 					      NL80211_BAND_2GHZ :
+ 					      NL80211_BAND_5GHZ);
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmutil/d11.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmutil/d11.c
 @@ -107,6 +107,7 @@ static void brcmu_d11n_decchspec(struct

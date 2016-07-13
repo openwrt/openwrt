@@ -15,7 +15,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -670,20 +670,24 @@ static struct wireless_dev *brcmf_cfg802
+@@ -684,20 +684,24 @@ static struct wireless_dev *brcmf_cfg802
  		return ERR_PTR(-EOPNOTSUPP);
  	case NL80211_IFTYPE_AP:
  		wdev = brcmf_ap_add_vif(wiphy, name, flags, params);
