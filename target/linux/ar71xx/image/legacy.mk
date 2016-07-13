@@ -322,7 +322,6 @@ define Image/BuildKernel
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
 	cp $(KDIR)/loader-generic.elf $(VMLINUX)-lzma.elf
 	-mkdir -p $(KDIR_TMP)
-	$(call Image/Build/Profile/$(IMAGE_PROFILE),buildkernel)
 endef
 
 define Image/BuildKernel/Initramfs
@@ -1140,10 +1139,6 @@ define Image/Build/jffs2
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
 
-define Image/Build/Initramfs
-	$(call Image/Build/Profile/$(IMAGE_PROFILE),initramfs)
-endef
-
 define Image/Prepare
 	gzip -9n -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
@@ -1153,7 +1148,6 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/BuildLoader,generic,elf,,,-initramfs)
 endif
 	$(call Image/BuildLoader,generic,elf)
-	$(call Image/Build/Profile/$(if $(CONFIG_IB),Default,$(IMAGE_PROFILE)),loader)
 endef
 
 define Image/Prepare/Profile
@@ -1162,6 +1156,7 @@ endef
 
 define Image/Build/Profile
 	$(call Image/Build/Profile/$(1),buildkernel)
+	$(call Image/Build/Profile/$(1),initramfs)
 	$(call Image/Build/Profile/$(1),$(2))
 endef
 
