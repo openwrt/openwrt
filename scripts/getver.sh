@@ -19,7 +19,7 @@ try_git() {
 	case "$GET_REV" in
 	r*)
 		GET_REV="$(echo $GET_REV | tr -d 'r')"
-		BASE_REV="$(git rev-list reboot..HEAD | wc -l)"
+		BASE_REV="$(git rev-list reboot..HEAD | wc -l | awk '{print $1}')"
 		REV="$(git rev-parse HEAD~$((BASE_REV - GET_REV)))"
 		;;
 	*)
