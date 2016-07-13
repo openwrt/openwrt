@@ -1156,7 +1156,7 @@ endef
 
 define Image/Build/Profile
 	$(call Image/Build/Profile/$(1),buildkernel)
-	$(call Image/Build/Profile/$(1),initramfs)
+	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/Build/Profile/$(1),initramfs))
 	$(call Image/Build/Profile/$(1),$(2))
 endef
 
