@@ -45,7 +45,7 @@ define Device/Default
 	KERNEL_IN_UBI :=
 	BOARD_NAME :=
 endef
-DEVICE_VARS += DEVICE_DTS KERNEL_IN_UBI BOARD_NAME
+DEVICE_VARS += DEVICE_DTS BOARD_NAME KERNEL_SIZE
 
 define Device/LegacyImage
 	KERNEL_SUFFIX := -uImage
@@ -79,7 +79,7 @@ define Device/DniImage
 	IMAGE/factory.img := append-kernel | append-ubi | netgear-dni
 	IMAGE/sysupgrade.tar = sysupgrade-nand
 endef
-DEVICE_VARS += KERNEL_SIZE NETGEAR_BOARD_ID NETGEAR_HW_ID DEVICE_BLOCK_SIZE DEVICE_PAGE_SIZE
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
 define Device/TpSafeImage
 	PROFILES += $$(DEVICE_NAME)
@@ -162,10 +162,10 @@ define Device/EA8500
 	IMAGES := factory.bin sysupgrade.tar
 	IMAGE/factory.bin := append-kernel 3145728 | append-ubi
 	IMAGE/sysupgrade.tar := sysupgrade-nand
-	DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE
 	DEVICE_TITLE := Linksys EA8500
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
+DEVICE_VARS += DEVICE_DTS
 
 define Device/R7500
 	$(call Device/DniImage)
