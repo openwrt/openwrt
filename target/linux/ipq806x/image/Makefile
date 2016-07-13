@@ -4,7 +4,6 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 UBIFS_OPTS = -m 2048 -e 124KiB -c 4096 -U -F
-UBINIZE_OPTS = -m 2048 -p 128KiB
 
 KERNEL_LOADADDR := 0x42208000
 
