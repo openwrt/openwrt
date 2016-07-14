@@ -10,7 +10,7 @@ NAND_BLOCKSIZE := 2048-128k
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += DEVICE_DTS KERNEL_SIZE
+DEVICE_VARS += KERNEL_SIZE
 KERNEL_LOADADDR:=0x8000
 TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome
 
@@ -20,7 +20,6 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL_SUFFIX  := -uImage
   KERNEL_INSTALL := 1
-  KERNEL_IN_UBI :=
 endef
 
 define Device/dockstar

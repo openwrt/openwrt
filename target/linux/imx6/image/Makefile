@@ -103,7 +103,6 @@ KERNEL_LOADADDR=0x10008000
 
 define Device/Default
   PROFILES := Generic
-  DEVICE_DTS :=
   FILESYSTEMS := squashfs ext4
   KERNEL_INSTALL := 1
   KERNEL_SUFFIX := -uImage
@@ -113,8 +112,6 @@ define Device/Default
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
   IMAGES :=
 endef
-
-DEVICE_VARS += DEVICE_DTS
 
 define Device/ventana
   DEVICE_TITLE := Gateworks Ventana family

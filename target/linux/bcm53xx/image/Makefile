@@ -68,7 +68,7 @@ define Build/seama-nand
 		-i $@.entity
 endef
 
-DEVICE_VARS += DEVICE_DTS PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION
+DEVICE_VARS += PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION
 
 define Device/Default
   # .dtb files are prefixed by SoC type, e.g. bcm4708- which is not included in device/image names

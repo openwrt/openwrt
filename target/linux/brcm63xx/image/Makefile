@@ -165,10 +165,8 @@ define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
   KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_SUFFIX := .elf
-  DEVICE_DTS :=
   DEVICE_DTS_DIR := ../dts
 endef
-DEVICE_VARS += DEVICE_DTS DEVICE_DTS_DIR
 
 ATH5K_PACKAGES := kmod-ath5k wpad-mini
 ATH9K_PACKAGES := kmod-ath9k wpad-mini

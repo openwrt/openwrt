@@ -24,9 +24,8 @@ define Device/Default
   PROFILES = Default $$(DEVICE_PROFILE)
   KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   DEVICE_PROFILE :=
-  DEVICE_DTS :=
 endef
-DEVICE_VARS += DEVICE_PROFILE DEVICE_DTS
+DEVICE_VARS += DEVICE_PROFILE
 
 define Device/vmlinux
   KERNEL_SUFFIX := .elf

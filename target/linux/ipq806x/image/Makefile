@@ -39,13 +39,12 @@ define Device/Default
 	PROFILES := Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
-	DEVICE_DTS :=
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
 	IMAGES :=
 	KERNEL_IN_UBI :=
 	BOARD_NAME :=
 endef
-DEVICE_VARS += DEVICE_DTS BOARD_NAME KERNEL_SIZE
+DEVICE_VARS += BOARD_NAME KERNEL_SIZE
 
 define Device/LegacyImage
 	KERNEL_SUFFIX := -uImage
@@ -165,7 +164,6 @@ define Device/EA8500
 	DEVICE_TITLE := Linksys EA8500
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
-DEVICE_VARS += DEVICE_DTS
 
 define Device/R7500
 	$(call Device/DniImage)

@@ -49,9 +49,7 @@ define Device/Default
   KERNEL := kernel-bin | kernel-img
   IMAGES := sdcard.img
   IMAGE/sdcard.img := boot-img | sdcard-img
-  DEVICE_DTS :=
 endef
-DEVICE_VARS += DEVICE_DTS
 
 define Device/rpi
   DEVICE_TITLE := Raspberry Pi B/B+/CM/Zero

@@ -54,10 +54,8 @@ KERNEL_ENTRY_POINT=0x8000
 ### Device macros ###
 define Device/Default
 	IMG_PREFIX := zynq
-	DEVICE_DTS :=
 	PROFILE_SANITIZED :=
 endef
-DEVICE_VARS += DEVICE_DTS
 
 define Device/DefaultConfig
 	DEVICE_LC = $(1)
