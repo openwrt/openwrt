@@ -19,7 +19,7 @@ endef
 
 define Build/lzma-d16
 	$(STAGING_DIR_HOST)/bin/lzma e $@ -d16 $(1) $@.new
-	@mv $@.new $@
+	mv $@.new $@
 endef
 
 define Build/trx-serial
