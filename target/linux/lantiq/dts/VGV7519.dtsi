@@ -102,11 +102,6 @@
 			gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
 		};
 
-		pci@E105400 {
-			status = "okay";
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-		};
-
 		pcie@d900000 {
 			status = "disabled";
 		};
@@ -117,11 +112,6 @@
 		firmware1 = "lantiq/vr9_phy11g_a1x.bin";	/*VR9 1.1*/
 		firmware2 = "lantiq/vr9_phy11g_a2x.bin";	/*VR9 1.2*/
 		phys = [ 00 01 ];
-	};
-
-	ralink_eep {
-		compatible = "ralink,eeprom";
-		ralink,eeprom = "RT2860.eeprom";
 	};
 
 	gpio-keys-polled {
@@ -211,6 +201,20 @@
 			label = "vgv7519:red:power";
 			gpios = <&stp 15 GPIO_ACTIVE_LOW>;
 		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
+	wifi@1814,3091 {
+		compatible = "pci1814,3091";
+		reg = <0x7000 0 0 0 0>;
+		ralink,mtd-eeprom = <&boardconfig 0x410>;
+		ralink,mtd-eeprom-swap;
+		mtd-mac-address = <&boardconfig 0x16>;
+		mtd-mac-address-increment = <1>;
 	};
 };
 

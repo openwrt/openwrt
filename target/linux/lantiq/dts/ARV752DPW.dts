@@ -135,19 +135,6 @@
 			phy-mode = "rmii";
 			mtd-mac-address = <&boardconfig 0x16>;
 		};
-
-		pci@E105400 {
-			status = "okay";
-			lantiq,external-clock;
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-			interrupt-map = <0x7000 0 0 1 &icu0 135>;
-			req-mask = <0x3>;
-		};
-	};
-
-	ralink_eep {
-		compatible = "ralink,eeprom";
-		ralink,eeprom = "RT2860.eeprom";
 	};
 
 	gpio-keys-polled {
@@ -229,5 +216,20 @@
 			label = "arv752dpw:blue:voice";
 			gpios = <&gpiomm 9 GPIO_ACTIVE_LOW>;
 		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	lantiq,external-clock;
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	interrupt-map = <0x7000 0 0 1 &icu0 135>;
+	req-mask = <0x3>;
+
+	wifi@1814,0601 {
+		compatible = "pci1814,0601";
+		reg = <0x7000 0 0 0 0>;
+		ralink,mtd-eeprom = <&boardconfig 0x410>;
+		ralink,mtd-eeprom-swap;
 	};
 };

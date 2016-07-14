@@ -113,18 +113,6 @@
 		ifxhcd@E101000 {
 			status = "okay";
 		};
-
-		pci@E105400 {
-			status = "okay";
-			lantiq,external-clock;
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-			req-mask = <0xf>;
-		};
-	};
-
-	ralink_eep {
-		compatible = "ralink,eeprom";
-		ralink,eeprom = "RT2860.eeprom";
 	};
 
 	gpio-keys-polled {
@@ -220,5 +208,19 @@
 			gpio-export,output = <1>;
 			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
 		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	lantiq,external-clock;
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	req-mask = <0xf>;
+
+	wifi@0,0 {
+		compatible = "pci0,0";
+		reg = <0x7000 0 0 0 0>;
+		ralink,mtd-eeprom = <&boardconfig 0x410>;
+		ralink,mtd-eeprom-swap;
 	};
 };

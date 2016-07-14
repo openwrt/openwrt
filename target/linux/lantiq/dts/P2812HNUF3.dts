@@ -54,9 +54,12 @@
 			};
 		};
 	};
+};
 
-	ralink_eep {
-		compatible = "ralink,eeprom";
+&pci0 {
+	wifi@1814,3092 {
+		compatible = "pci1814,3092";
+		reg = <0x7000 0 0 0 0>;
 		ralink,eeprom = "RT3092.eeprom";
 	};
 };

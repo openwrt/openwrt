@@ -68,12 +68,6 @@
 					};
 				};
 			};
-
-			ralink_eep {
-				compatible = "ralink,eeprom";
-				ralink,eeprom = "RT2860.eeprom";
-				reg = <0 0x3f0410 0x110>;
-			};
 		};
 
 		gpio: pinmux@E100B10 {
@@ -95,11 +89,6 @@
 		etop@E180000 {
 			phy-mode = "mii";
 			mtd-mac-address = <&boardconfig 0x16>;
-		};
-
-		pci@E105400 {
-			status = "okay";
-			interrupt-map = <0x7000 0 0 1 &icu0 135 1>;
 		};
 	};
 
@@ -148,5 +137,16 @@
 			label = "arv7525pw:green:wlan";
 			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	interrupt-map = <0x7000 0 0 1 &icu0 135 1>;
+
+	wifi@0,0 {
+		compatible = "pci0,0";
+		reg = <0x7000 0 0 0 0>;
+		ralink,mtd-eeprom = <&boardconfig 0x410>;
 	};
 };
