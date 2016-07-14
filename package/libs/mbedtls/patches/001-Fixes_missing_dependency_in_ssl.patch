@@ -1,0 +1,21 @@
+From 7247f99b3e068a2b90b7776a2cdd438fddb7a38b Mon Sep 17 00:00:00 2001
+From: James Cowgill <james410@cowgill.org.uk>
+Date: Mon, 11 Jul 2016 13:57:05 +0100
+Subject: [PATCH] Fixes missing dependency in ss.h on platform.h
+
+Fixes #522 - 'mbedtls_time_t does not name a type in ssl.h'
+---
+ include/mbedtls/ssl.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/include/mbedtls/ssl.h
++++ b/include/mbedtls/ssl.h
+@@ -54,7 +54,7 @@
+ #endif
+ 
+ #if defined(MBEDTLS_HAVE_TIME)
+-#include <time.h>
++#include "platform.h"
+ #endif
+ 
+ /*
