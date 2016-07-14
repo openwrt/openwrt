@@ -39,8 +39,8 @@ define Build/tplink-safeloader
 endef
 
 define Build/append-dtb
-    $(if $(DEVICE_DTS_DIR),$(call Image/BuildDTB,$(DEVICE_DTS_DIR)/$(DEVICE_DTS).dts,$(DTS_DIR)/$(DEVICE_DTS).dtb))
-    cat $(DTS_DIR)/$(DEVICE_DTS).dtb >> $@
+	$(call Image/BuildDTB,$(if $(DEVICE_DTS_DIR),$(DEVICE_DTS_DIR),$(DTS_DIR))/$(DEVICE_DTS).dts,$@.dtb)
+	cat $@.dtb >> $@
 endef
 
 define Build/fit
