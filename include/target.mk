@@ -259,7 +259,7 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_RTC_CLASS),)
       FEATURES += rtc
     endif
-    FEATURES += $(foreach v,v4 v5 v6 v7,$(if $(filter -march=arm$(v)%,$(CPU_CFLAGS_$(CPU_TYPE))),arm_$(v)))
+    FEATURES += $(foreach v,6 7,$(if $(CONFIG_CPU_V$(v)),arm_v$(v)))
 
     # remove duplicates
     FEATURES:=$(sort $(FEATURES))
