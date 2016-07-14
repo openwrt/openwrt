@@ -1176,7 +1176,7 @@
  		break;
  	case RT5392:
  		rt2800_init_rfcsr_5392(rt2x00dev);
-@@ -7859,6 +8798,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7856,6 +8795,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF5390:
  	case RF5392:
  	case RF5592:
@@ -1184,7 +1184,7 @@
  		break;
  	default:
  		rt2x00_err(rt2x00dev, "Invalid RF chipset 0x%04x detected\n",
-@@ -8427,6 +9367,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8424,6 +9364,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5372:
  	case RF5390:
  	case RF5392:
@@ -1192,7 +1192,7 @@
  		spec->num_channels = 14;
  		if (spec->clk_is_20mhz)
  			spec->channels = rf_vals_xtal20mhz_3x;
-@@ -8567,6 +9508,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8564,6 +9505,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5372:
  	case RF5390:
  	case RF5392:

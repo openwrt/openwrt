@@ -17,7 +17,7 @@
  				/*
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
-@@ -144,7 +144,8 @@ static void rt2x00lib_intf_scheduled_ite
+@@ -145,7 +145,8 @@ static void rt2x00lib_intf_scheduled_ite
  
  	if (test_and_clear_bit(DELAYED_UPDATE_BEACON, &intf->delayed_flags)) {
  		mutex_lock(&intf->beacon_skb_mutex);
@@ -27,7 +27,7 @@
  		mutex_unlock(&intf->beacon_skb_mutex);
  	}
  }
-@@ -207,6 +208,7 @@ static void rt2x00lib_beaconupdate_iter(
+@@ -208,6 +209,7 @@ static void rt2x00lib_beaconupdate_iter(
  					struct ieee80211_vif *vif)
  {
  	struct rt2x00_dev *rt2x00dev = data;
@@ -35,7 +35,7 @@
  
  	if (vif->type != NL80211_IFTYPE_AP &&
  	    vif->type != NL80211_IFTYPE_ADHOC &&
-@@ -220,7 +222,8 @@ static void rt2x00lib_beaconupdate_iter(
+@@ -221,7 +223,8 @@ static void rt2x00lib_beaconupdate_iter(
  	 * never be called for USB devices.
  	 */
  	WARN_ON(rt2x00_is_usb(rt2x00dev));
