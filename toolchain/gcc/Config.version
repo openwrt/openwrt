@@ -4,13 +4,12 @@ config GCC_VERSION_4_8_ARC
 
 config GCC_VERSION
 	string
-	default "4.8-linaro"    if GCC_VERSION_4_8_LINARO
 	default "arc-2016.03"   if GCC_VERSION_4_8_ARC
 	default "5.4.0"
 
 config GCC_VERSION_4_8
 	bool
-	default y	if (GCC_VERSION_4_8_LINARO || GCC_VERSION_4_8_ARC)
+	default y	if GCC_VERSION_4_8_ARC
 
 config GCC_VERSION_5
 	default y if (!TOOLCHAINOPTS && !arc)
