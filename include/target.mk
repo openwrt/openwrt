@@ -183,19 +183,19 @@ ifeq ($(DUMP),1)
   endif
   ifneq ($(findstring arm,$(ARCH)),)
     CPU_TYPE ?= xscale
-    CPU_CFLAGS_arm920t = -march=armv4t -mtune=arm920t
-    CPU_CFLAGS_arm926ej-s = -march=armv5te -mtune=arm926ej-s
-    CPU_CFLAGS_arm1136j-s = -march=armv6 -mtune=arm1136j-s
-    CPU_CFLAGS_arm1176jzf-s = -march=armv6 -mtune=arm1176jzf-s
-    CPU_CFLAGS_cortex-a5 = -march=armv7-a -mtune=cortex-a5
-    CPU_CFLAGS_cortex-a7 = -march=armv7-a -mtune=cortex-a7
-    CPU_CFLAGS_cortex-a8 = -march=armv7-a -mtune=cortex-a8
-    CPU_CFLAGS_cortex-a9 = -march=armv7-a -mtune=cortex-a9
-    CPU_CFLAGS_cortex-a15 = -march=armv7-a -mtune=cortex-a15
-    CPU_CFLAGS_cortex-a53 = -march=armv8-a -mtune=cortex-a53
-    CPU_CFLAGS_fa526 = -march=armv4 -mtune=fa526
-    CPU_CFLAGS_mpcore = -march=armv6k -mtune=mpcore
-    CPU_CFLAGS_xscale = -march=armv5te -mtune=xscale
+    CPU_CFLAGS_arm920t = -mcpu=arm920t
+    CPU_CFLAGS_arm926ej-s = -mcpu=arm926ej-s
+    CPU_CFLAGS_arm1136j-s = -mcpu=arm1136j-s
+    CPU_CFLAGS_arm1176jzf-s = -mcpu=arm1176jzf-s
+    CPU_CFLAGS_cortex-a5 = -mcpu=cortex-a5
+    CPU_CFLAGS_cortex-a7 = -mcpu=cortex-a7
+    CPU_CFLAGS_cortex-a8 = -mcpu=cortex-a8
+    CPU_CFLAGS_cortex-a9 = -mcpu=cortex-a9
+    CPU_CFLAGS_cortex-a15 = -mcpu=cortex-a15
+    CPU_CFLAGS_cortex-a53 = -mcpu=cortex-a53
+    CPU_CFLAGS_fa526 = -mcpu=fa526
+    CPU_CFLAGS_mpcore = -mcpu=mpcore
+    CPU_CFLAGS_xscale = -mcpu=xscale
     ifeq ($(CONFIG_SOFT_FLOAT),)
       CPU_CFLAGS_neon = -mfpu=neon
       CPU_CFLAGS_vfp = -mfpu=vfp
