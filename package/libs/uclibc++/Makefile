@@ -63,6 +63,7 @@ MAKE_FLAGS:= \
 	LDFLAGS="-Wl,--warn-common -Wl,--warn-once -Wl,-z,combreloc -Wl,-z,defs $(TARGET_LDFLAGS)" \
 	CP="$(CP)" \
 	GEN_LIBS="-lc $(LIBGCC_S) $(SSP_LIB)" \
+	GEN_CFLAGS="-std=gnu++98 -nostdinc++" \
 	check_as_needed=
 
 # check_as_needed overrides dependency on libgcc_s
