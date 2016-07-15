@@ -6,15 +6,16 @@
 #
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2016.03
+PKG_VERSION:=2016.07
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
 
-PKG_MD5SUM:=973c1d896be751321cc3aafa564f64b2
+PKG_MD5SUM:=425a3fa610a7d972e5092a0e92276c70
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
@@ -74,6 +75,8 @@ UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
 UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
 endif
 
+UENV:=default
+
 define Build/Configure
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(BOARD)_$(UBOOT_CONFIG)_config
@@ -81,7 +84,8 @@ endef
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
-		CROSS_COMPILE=$(TARGET_CROSS)
+		CROSS_COMPILE=$(TARGET_CROSS) \
+		DTCDIR=$(LINUX_DIR)/scripts/dtc/
 endef
 
 define Package/uboot/install/default
@@ -99,11 +103,20 @@ define Package/uboot/install/default
 	$(CP) $(PKG_BUILD_DIR)/u-boot-dtb.img \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/u-boot-dtb.img
 
+	$(CP) $(PKG_BUILD_DIR)/u-boot-dtb.img \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot-dtb.img
+
 	$(CP) $(PKG_BUILD_DIR)/spl/boot.bin \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/boot.bin
 
+	$(CP) $(PKG_BUILD_DIR)/spl/boot.bin \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot.bin
+
 	$(CP) $(PKG_BUILD_DIR)/spl/u-boot-spl \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/u-boot-spl
+
+	$(CP) uEnv-$(UENV).txt \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-uEnv.txt
 
 	$(CP) $(PKG_BUILD_DIR)/spl/u-boot-spl-dtb.bin \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/u-boot-spl-dtb.bin

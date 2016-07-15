@@ -6,7 +6,8 @@
 #
 
 define Profile/ZC702
-	NAME:=ZC702 development baord
+	NAME:=ZC702 development board
+	PACKAGES:= uboot-zynq-zc702
 endef
 
 define Profile/ZC702/Description

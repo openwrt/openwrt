@@ -6,7 +6,8 @@
 #
 
 define Profile/ZED
-	NAME:=ZedBoard development baord
+	NAME:=ZedBoard development board
+	PACKAGES:= uboot-zynq-zed
 endef
 
 define Profile/ZED/Description

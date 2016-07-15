@@ -6,7 +6,8 @@
 #
 
 define Profile/ZYBO
-	NAME:=ZYBO development baord
+	NAME:=ZYBO development board
+	PACKAGES:= uboot-zynq-zybo
 endef
 
 define Profile/ZYBO/Description
