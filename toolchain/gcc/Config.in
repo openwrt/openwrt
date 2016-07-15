@@ -70,3 +70,11 @@ config INSTALL_GFORTRAN
 	default n
 	help
 	    Build/install GNU fortran compiler ?
+
+config INSTALL_GCCGO
+	bool
+	prompt "Build/install Go compiler?" if TOOLCHAINOPTS
+	depends on !GCC_VERSION_4_8 && (USE_GLIBC || BROKEN)
+	default n
+	help
+	    Build/install GNU gccgo compiler ?

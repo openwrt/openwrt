@@ -39,7 +39,16 @@ define Host/Configure
 	);
 endef
 
+ifeq ($(CONFIG_USE_GLIBC)$(CONFIG_INSTALL_GCCGO),yy)
+define FixGogccCrt
+	# link crtX.o for gotools
+	mkdir -p $(GCC_BUILD_DIR)/gotools
+	$(foreach crt, i 1 n, ln -sf ../../glibc-dev/lib/crt$(crt).o $(GCC_BUILD_DIR)/gotools/ ; )
+endef
+endif
+
 define Host/Compile
+	$(FixGogccCrt)
 	+$(GCC_MAKE) $(HOST_JOBS) -C $(GCC_BUILD_DIR) all
 endef
 
