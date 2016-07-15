@@ -604,6 +604,16 @@ config ATH79_MACH_GL_AR300
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_GL_AR300M
+	bool "GL_AR300M support"
+	select SOC_QCA953X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_GL_DOMINO
 	bool "DOMINO support"
 	select SOC_AR933X
