@@ -1,0 +1,4 @@
+loadkernel=fatload mmc 0 0x2080000 uImage
+loaddtb=fatload mmc 0 0x2000000 devicetree.dtb
+bootargs=console=ttyPS0,115200 root=/dev/mmcblk0p2 rootwait
+uenvcmd=run loadkernel \&\& run loaddtb \&\& bootm 0x2080000 - 0x2000000

@@ -6,6 +6,7 @@
 #
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=u-boot
 PKG_VERSION:=2016.07
@@ -74,6 +75,8 @@ UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
 UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
 endif
 
+UENV:=default
+
 define Build/Configure
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(BOARD)_$(UBOOT_CONFIG)_config
@@ -99,11 +102,20 @@ define Package/uboot/install/default
 	$(CP) $(PKG_BUILD_DIR)/u-boot-dtb.img \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/u-boot-dtb.img
 
+	$(CP) $(PKG_BUILD_DIR)/u-boot-dtb.img \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot-dtb.img
+
 	$(CP) $(PKG_BUILD_DIR)/spl/boot.bin \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/boot.bin
 
+	$(CP) $(PKG_BUILD_DIR)/spl/boot.bin \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot.bin
+
 	$(CP) $(PKG_BUILD_DIR)/spl/u-boot-spl \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/u-boot-spl
+
+	$(CP) uEnv-$(UENV).txt \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-uEnv.txt
 
 	$(CP) $(PKG_BUILD_DIR)/spl/u-boot-spl-dtb.bin \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/u-boot-spl-dtb.bin

@@ -6,6 +6,10 @@
 #
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
+include $(INCLUDE_DIR)/host.mk
+
+FAT32_BLOCK_SIZE=1024
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_ZYNQ_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
 #################################################
 # Images
@@ -40,7 +44,26 @@ define Image/boot-imgs
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/fit-$(DEVICE_LC).its $(KDIR)/fit-$(DEVICE_LC).itb
 	$(CP) $(KDIR)/fit-$(DEVICE_LC).itb $(BIN_DIR)/$(IMG_PREFIX)-fit.itb
 	ln -fs $(IMG_PREFIX)-fit.itb $(BIN_DIR)/fit.itb
+endef
 
+define Image/Build/Zynq
+	# Create SD card image
+	rm -f $(KDIR_TMP)/$(IMG_PREFIX)-boot.img
+	mkfs.fat $(KDIR_TMP)/$(IMG_PREFIX)-boot.img -C $(FAT32_BLOCKS)
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-boot.img $(KDIR)/uboot-$(IMG_PREFIX)-u-boot.bin ::boot.bin
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-boot.img $(BIN_DIR)/$(DEVICE_DTS)-system.dtb ::devicetree.dtb
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-boot.img $(KDIR)/uboot-$(IMG_PREFIX)-u-boot-dtb.img ::u-boot.img
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-boot.img $(KDIR)/uboot-$(IMG_PREFIX)-uEnv.txt ::uEnv.txt
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
+
+	./gen_zynq_sdcard_img.sh \
+		$(BIN_DIR)/$(IMG_PREFIX)-sdcard-vfat-$(1).img \
+		$(KDIR_TMP)/$(IMG_PREFIX)-boot.img \
+		$(KDIR)/root.$(1) \
+		$(CONFIG_ZYNQ_SD_BOOT_PARTSIZE) \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+
+	$(if $(CONFIG_TARGET_IMAGES_GZIP),gzip -9n -c $(BIN_DIR)/$(IMG_PREFIX)-sdcard-vfat-$(1).img > $(BIN_DIR)/$(IMG_PREFIX)-sdcard-vfat-$(1).img.gz)
 endef
 
 #################################################
@@ -81,6 +104,12 @@ endef
 define Image/BuildKernel
 	$(eval $(call Device/$(PROFILE)))
 	$(call Image/boot-imgs)
+endef
+
+define Image/Build
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).img
+
+	$(call Image/Build/Zynq,$(1))
 endef
 
 $(eval $(call BuildImage))
