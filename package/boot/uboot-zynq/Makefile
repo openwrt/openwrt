@@ -84,7 +84,8 @@ endef
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
-		CROSS_COMPILE=$(TARGET_CROSS)
+		CROSS_COMPILE=$(TARGET_CROSS) \
+		DTCDIR=$(LINUX_DIR)/scripts/dtc/
 endef
 
 define Package/uboot/install/default
