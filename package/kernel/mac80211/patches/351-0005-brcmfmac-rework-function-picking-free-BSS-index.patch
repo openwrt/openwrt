@@ -43,7 +43,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -527,6 +527,21 @@ brcmf_cfg80211_update_proto_addr_mode(st
+@@ -541,6 +541,21 @@ brcmf_cfg80211_update_proto_addr_mode(st
  						ADDR_INDIRECT);
  }
  
@@ -65,7 +65,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  static int brcmf_cfg80211_request_ap_if(struct brcmf_if *ifp)
  {
  	struct brcmf_mbss_ssid_le mbss_ssid_le;
-@@ -534,7 +549,7 @@ static int brcmf_cfg80211_request_ap_if(
+@@ -548,7 +563,7 @@ static int brcmf_cfg80211_request_ap_if(
  	int err;
  
  	memset(&mbss_ssid_le, 0, sizeof(mbss_ssid_le));
