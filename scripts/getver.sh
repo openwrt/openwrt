@@ -25,8 +25,8 @@ try_git() {
 		;;
 	*)
 		BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-		ORIGIN="$(git rev-parse --symbolic-full-name ${BRANCH}@{u} 2>/dev/null)"
-		[ -n "$ORIGIN" ] || ORIGIN="$(git rev-parse --symbolic-full-name master@{u} 2>/dev/null)"
+		ORIGIN="$(git rev-parse --verify --symbolic-full-name ${BRANCH}@{u} 2>/dev/null)"
+		[ -n "$ORIGIN" ] || ORIGIN="$(git rev-parse --verify --symbolic-full-name master@{u} 2>/dev/null)"
 		REV="$(git rev-list ${REBOOT}..$GET_REV | wc -l | awk '{print $1}')"
 
 		if [ -n "$ORIGIN" ]; then
