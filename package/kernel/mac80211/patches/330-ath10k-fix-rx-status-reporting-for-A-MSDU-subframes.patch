@@ -1,0 +1,36 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 17 Jul 2016 12:49:59 +0200
+Subject: [PATCH] ath10k: fix rx status reporting for A-MSDU subframes
+
+Patch by Nagarajan, Ashok Raj <arnagara@qti.qualcomm.com>
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/drivers/net/wireless/ath/ath10k/htt_rx.c
++++ b/drivers/net/wireless/ath/ath10k/htt_rx.c
+@@ -1525,7 +1525,7 @@ static void ath10k_htt_rx_h_filter(struc
+ static int ath10k_htt_rx_handle_amsdu(struct ath10k_htt *htt)
+ {
+ 	struct ath10k *ar = htt->ar;
+-	static struct ieee80211_rx_status rx_status;
++	struct ieee80211_rx_status *rx_status = &htt->rx_status;
+ 	struct sk_buff_head amsdu;
+ 	int ret;
+ 
+@@ -1549,11 +1549,11 @@ static int ath10k_htt_rx_handle_amsdu(st
+ 		return ret;
+ 	}
+ 
+-	ath10k_htt_rx_h_ppdu(ar, &amsdu, &rx_status, 0xffff);
++	ath10k_htt_rx_h_ppdu(ar, &amsdu, rx_status, 0xffff);
+ 	ath10k_htt_rx_h_unchain(ar, &amsdu, ret > 0);
+-	ath10k_htt_rx_h_filter(ar, &amsdu, &rx_status);
+-	ath10k_htt_rx_h_mpdu(ar, &amsdu, &rx_status);
+-	ath10k_htt_rx_h_deliver(ar, &amsdu, &rx_status);
++	ath10k_htt_rx_h_filter(ar, &amsdu, rx_status);
++	ath10k_htt_rx_h_mpdu(ar, &amsdu, rx_status);
++	ath10k_htt_rx_h_deliver(ar, &amsdu, rx_status);
+ 
+ 	return 0;
+ }
