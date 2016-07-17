@@ -110,8 +110,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	u32 reg, mask;
  
 +#if CONFIG_OF
-+	if (fw_arg0 == -2)
-+		early_init_dt_verify((void *)fw_arg1);
++	if (fw_passed_dtb)
++		early_init_dt_verify((void *)fw_passed_dtb);
 +#endif
 +
  	bcm63xx_cpu_init();
