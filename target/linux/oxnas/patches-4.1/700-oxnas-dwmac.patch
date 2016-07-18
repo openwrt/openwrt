@@ -1,0 +1,44 @@
+--- a/drivers/net/ethernet/stmicro/stmmac/Kconfig
++++ b/drivers/net/ethernet/stmicro/stmmac/Kconfig
+@@ -20,7 +20,7 @@ config STMMAC_PLATFORM
+ 	---help---
+ 	  This selects the platform specific bus support for the stmmac driver.
+ 	  This is the driver used on several SoCs:
+-	  STi, Allwinner, Amlogic Meson, Altera SOCFPGA.
++	  STi, Allwinner, Amlogic Meson, Altera SOCFPGA and Oxnas.
+ 
+ 	  If you have a controller with this interface, say Y or M here.
+ 
+--- a/drivers/net/ethernet/stmicro/stmmac/Makefile
++++ b/drivers/net/ethernet/stmicro/stmmac/Makefile
+@@ -5,8 +5,9 @@ stmmac-objs:= stmmac_main.o stmmac_ethto
+ 	      mmc_core.o stmmac_hwtstamp.o stmmac_ptp.o $(stmmac-y)
+ 
+ obj-$(CONFIG_STMMAC_PLATFORM) += stmmac-platform.o
+-stmmac-platform-objs:= stmmac_platform.o dwmac-meson.o dwmac-sunxi.o	\
+-		       dwmac-sti.o dwmac-socfpga.o dwmac-rk.o
++stmmac-platform-objs:= stmmac_platform.o dwmac-meson.o dwmac-oxnas.o	\
++		       dwmac-sunxi.o dwmac-sti.o dwmac-socfpga.o	\
++		       dwmac-rk.o
+ 
+ obj-$(CONFIG_STMMAC_PCI) += stmmac-pci.o
+ stmmac-pci-objs:= stmmac_pci.o
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+@@ -34,6 +34,7 @@
+ 
+ static const struct of_device_id stmmac_dt_ids[] = {
+ 	/* SoC specific glue layers should come before generic bindings */
++	{ .compatible = "plxtech,nas782x-gmac", .data = &oxnas_gmac_data},
+ 	{ .compatible = "rockchip,rk3288-gmac", .data = &rk3288_gmac_data},
+ 	{ .compatible = "amlogic,meson6-dwmac", .data = &meson6_dwmac_data},
+ 	{ .compatible = "allwinner,sun7i-a20-gmac", .data = &sun7i_gmac_data},
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.h
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.h
+@@ -25,5 +25,6 @@ extern const struct stmmac_of_data stih4
+ extern const struct stmmac_of_data stid127_dwmac_data;
+ extern const struct stmmac_of_data socfpga_gmac_data;
+ extern const struct stmmac_of_data rk3288_gmac_data;
++extern const struct stmmac_of_data oxnas_gmac_data;
+ 
+ #endif /* __STMMAC_PLATFORM_H__ */

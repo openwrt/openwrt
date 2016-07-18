@@ -25,6 +25,7 @@
 #include <linux/regmap.h>
 #include <linux/reset.h>
 #include <linux/stmmac.h>
+#include <linux/version.h>
 
 #include <mach/hardware.h>
 
@@ -91,21 +92,37 @@ static void oxnas_gmac_exit(struct platform_device *pdev, void *priv)
 	}
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+static void *oxnas_gmac_probe(struct platform_device *pdev)
+{
+#else
 static int oxnas_gmac_probe(struct platform_device *pdev)
 {
 	struct plat_stmmacenet_data *plat_dat;
 	struct stmmac_resources stmmac_res;
 	int			ret;
+#endif
 	struct device		*dev = &pdev->dev;
 	struct oxnas_gmac	*bsp_priv;
 
 	bsp_priv = devm_kzalloc(dev, sizeof(*bsp_priv), GFP_KERNEL);
 	if (!bsp_priv)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+		return ERR_PTR(-ENOMEM);
+#else
 		return -ENOMEM;
+#endif
 	bsp_priv->clk = devm_clk_get(dev, "gmac");
 	if (IS_ERR(bsp_priv->clk))
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+		return bsp_priv->clk;
+#else
 		return PTR_ERR(bsp_priv->clk);
+#endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+	return bsp_priv;
+#else
 	ret = stmmac_get_platform_resources(pdev, &stmmac_res);
 	if (ret)
 		return ret;
@@ -123,8 +140,17 @@ static int oxnas_gmac_probe(struct platform_device *pdev)
 		return ret;
 
 	return stmmac_dvr_probe(dev, plat_dat, &stmmac_res);
+#endif
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+const struct stmmac_of_data oxnas_gmac_data = {
+	.has_gmac = 1,
+	.setup = oxnas_gmac_probe,
+	.init = oxnas_gmac_init,
+	.exit = oxnas_gmac_exit,
+};
+#else
 static const struct of_device_id oxnas_gmac_match[] = {
 	{ .compatible = "plxtech,nas782x-gmac" },
 	{ }
@@ -141,5 +167,6 @@ static struct platform_driver oxnas_gmac_driver = {
 	},
 };
 module_platform_driver(oxnas_gmac_driver);
+#endif
 
 MODULE_LICENSE("GPL v2");
