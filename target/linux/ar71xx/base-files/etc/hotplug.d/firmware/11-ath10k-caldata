@@ -47,6 +47,10 @@ board=$(ar71xx_board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
+	dap-2695-a1)
+		ath10kcal_extract "radiocfg" 20480 2116
+		ath10kcal_patch_mac $(mtd_get_mac_ascii bdcfg wlanmac_a)
+		;;
 	dlan-pro-1200-ac)
 		ath10kcal_extract "art" 20480 2116
 		;;

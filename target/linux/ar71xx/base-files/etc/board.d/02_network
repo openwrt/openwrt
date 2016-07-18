@@ -230,6 +230,9 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 		;;
+	dap-2695-a1)
+		ucidef_add_switch "switch0" "0@eth0" "2:lan" "3:wan" "6@eth1"
+		;;
 	db120|\
 	rb-2011l|\
 	rb-2011uas|\

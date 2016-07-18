@@ -105,6 +105,10 @@ seama_get_type_magic() {
 	get_image "$@" | dd bs=1 count=4 skip=53 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
+wrgg_get_image_magic() {
+	get_image "$@" | dd bs=4 count=1 skip=8 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
 cybertan_get_image_magic() {
 	get_image "$@" | dd bs=8 count=1 skip=0  2>/dev/null | hexdump -v -n 8 -e '1/1 "%02x"'
 }
@@ -530,6 +534,15 @@ platform_check_image() {
 		}
 
 		return 0
+		;;
+	dap-2695-a1)
+		local magic=$(wrgg_get_image_magic "$1")
+		[ "$magic" != "21030820" ] && {
+			echo "Invalid image, bad type: $magic"
+			return 1
+		}
+
+		return 0;
 		;;
 	esac
 
