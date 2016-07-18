@@ -72,7 +72,17 @@
  
  ifndef CONFIG_NO_GITVER
  # Add VERSION_STR postfix for builds from a git repository
-@@ -803,6 +804,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
+@@ -312,7 +313,9 @@ endif
+ ifdef CONFIG_IBSS_RSN
+ NEED_RSN_AUTHENTICATOR=y
+ CFLAGS += -DCONFIG_IBSS_RSN
++ifndef MULTICALL
+ CFLAGS += -DCONFIG_NO_VLAN
++endif
+ OBJS += ibss_rsn.o
+ endif
+ 
+@@ -803,6 +806,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
  CFLAGS += -DCONFIG_DYNAMIC_EAP_METHODS
  LIBS += -ldl -rdynamic
  endif
@@ -83,7 +93,7 @@
  endif
  
  ifdef CONFIG_MACSEC
-@@ -823,9 +828,11 @@ NEED_EAP_COMMON=y
+@@ -823,9 +830,11 @@ NEED_EAP_COMMON=y
  NEED_RSN_AUTHENTICATOR=y
  CFLAGS += -DCONFIG_AP
  OBJS += ap.o
@@ -95,7 +105,7 @@
  OBJS += ../src/ap/hostapd.o
  OBJS += ../src/ap/wpa_auth_glue.o
  OBJS += ../src/ap/utils.o
-@@ -898,10 +905,18 @@ endif
+@@ -898,10 +907,18 @@ endif
  ifdef CONFIG_HS20
  OBJS += ../src/ap/hs20.o
  endif
@@ -114,7 +124,7 @@
  NEED_AES_WRAP=y
  OBJS += ../src/ap/wpa_auth.o
  OBJS += ../src/ap/wpa_auth_ie.o
-@@ -1680,6 +1695,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
+@@ -1680,6 +1697,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
  
  $(OBJS_c) $(OBJS_t) $(OBJS_t2) $(OBJS) $(BCHECK) $(EXTRA_progs): .config
  
@@ -127,7 +137,7 @@
  wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)
  	$(Q)$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
  	@$(E) "  LD " $@
-@@ -1782,6 +1803,12 @@ endif
+@@ -1782,6 +1805,12 @@ endif
  		-e 's|\@DBUS_INTERFACE\@|$(DBUS_INTERFACE)|g' $< >$@
  	@$(E) "  sed" $<
  
