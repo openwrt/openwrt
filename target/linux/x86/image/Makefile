@@ -194,7 +194,6 @@ define Image/Build
   endif
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/$(IMG_PREFIX)-vmlinuz
 	$(call Image/Build/gzip/$(1))
-	$(call Image/Build/Profile/$(PROFILE),$(1))
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
 endif
