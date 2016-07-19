@@ -258,13 +258,13 @@ wrt160nl)
 	;;
 
 wzr-hp-g300nh)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "switch0" \
 		"0:lan" "1:lan" "2:lan" "3:lan" "5@eth0"
 	;;
 
 cr3000)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "switch0"  \
 		"0@eth0" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
 	;;
