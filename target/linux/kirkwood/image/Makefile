@@ -23,18 +23,20 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL_SUFFIX  := -uImage
   KERNEL_INSTALL := 1
+
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  BLOCKSIZE := 128KiB
+  IMAGES := sysupgrade.tar
+  IMAGE/sysupgrade.tar := sysupgrade-nand
 endef
 
 define Device/dockstar
   DEVICE_DTS := kirkwood-dockstar
-  PAGESIZE := 2048
-  SUBPAGESIZE := 512
-  BLOCKSIZE := 128KiB
   FILESYSTEMS := squashfs
   PROFILES := Generic DOCKSTAR
-  IMAGES := factory.bin sysupgrade.tar
+  IMAGES += factory.bin
   IMAGE/factory.bin := append-ubi
-  IMAGE/sysupgrade.tar := sysupgrade-nand
   KERNEL_IN_UBI := 1
   KERNEL := kernel-bin | append-dtb
 endef
@@ -53,28 +55,20 @@ endef
 
 define Device/linksys-audi
   DEVICE_DTS := kirkwood-linksys-audi
-  PAGESIZE := 512
-  SUBPAGESIZE := 256
-  BLOCKSIZE := 16KiB
   KERNEL_SIZE := 2624k
   FILESYSTEMS := squashfs
   PROFILES := Generic AUDI
-  IMAGES := factory.bin sysupgrade.tar
+  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel $$$$(KERNEL_SIZE) | append-ubi
-  IMAGE/sysupgrade.tar := sysupgrade-nand
 endef
 
 define Device/linksys-viper
   DEVICE_DTS := kirkwood-linksys-viper
-  PAGESIZE := 2048
-  SUBPAGESIZE := 512
-  BLOCKSIZE := 128KiB
   KERNEL_SIZE := 2688k
   FILESYSTEMS := squashfs
   PROFILES := Generic VIPER
-  IMAGES := factory.bin sysupgrade.tar
+  IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel $$$$(KERNEL_SIZE) | append-ubi
-  IMAGE/sysupgrade.tar := sysupgrade-nand
 endef
 
 define Image/BuildKernel/Template
