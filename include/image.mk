@@ -16,6 +16,10 @@ include $(INCLUDE_DIR)/image-legacy.mk
 override MAKE:=$(_SINGLE)$(SUBMAKE)
 override NO_TRACE_MAKE:=$(_SINGLE)$(NO_TRACE_MAKE)
 
+param_get = $(patsubst $(1)=%,%,$(filter $(1)=%,$(2)))
+param_mangle = $(subst $(space),_,$(strip $(1)))
+param_unmangle = $(subst _,$(space),$(1))
+
 KDIR=$(KERNEL_BUILD_DIR)
 KDIR_TMP=$(KDIR)/tmp
 DTS_DIR:=$(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/dts
@@ -203,7 +207,7 @@ endif
 
 define Image/mkfs/ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
-		$(UBIFS_OPTS) \
+		$(UBIFS_OPTS) $(call param_unmangle,$(call param_get,fs,$(1))) \
 		$(if $(CONFIG_TARGET_UBIFS_FREE_SPACE_FIXUP),--space-fixup) \
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_NONE),--force-compr=none) \
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--force-compr=lzo) \
@@ -256,7 +260,7 @@ define Image/Checksum
 endef
 
 $(KDIR)/root.%: kernel_prepare
-	$(Image/mkfs/$*)
+	$(call Image/mkfs/$(word 1,$(subst +,$(space),$*)),$(subst +,$(space),$*))
 
 define Device/InitProfile
   PROFILES := $(PROFILE)
@@ -292,6 +296,9 @@ define Device/Init
   PAGESIZE :=
   SUBPAGESIZE :=
   UBINIZE_OPTS := -E 5
+  MKUBIFS_OPTS :=
+
+  FS_OPTIONS/ubifs = $$(MKUBIFS_OPTS)
 
   DEVICE_DTS :=
   DEVICE_DTS_DIR :=
@@ -380,7 +387,7 @@ endef
 define Device/Build/image
   $$(_TARGET): $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)),$(1)))
-  $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/$$(KERNEL_IMAGE) $(KDIR)/root.$(1)
+  $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/$$(KERNEL_IMAGE) $(KDIR)/root.$(1)$$(if $$(FS_OPTIONS/$(1)),+fs=$$(call param_mangle,$$(FS_OPTIONS/$(1))))
 	@rm -f $$@
 	[ -f $$(word 1,$$^) -a -f $$(word 2,$$^) ]
 	$$(call concat_cmd,$(if $(IMAGE/$(2)/$(1)),$(IMAGE/$(2)/$(1)),$(IMAGE/$(2))))
