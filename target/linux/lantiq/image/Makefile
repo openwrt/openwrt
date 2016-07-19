@@ -584,23 +584,19 @@ ifeq ($(SUBTARGET),xrx200)
 
 # VR9
 
-Image/BuildKernel/Profile/P2812HNUF1=$(call Image/BuildKernel/Template,P2812HNUF1)
-Image/Build/Profile/P2812HNUF1=$(call Image/BuildNAND/$(1),$(1),P2812HNUF1)
-
-define LegacyDevice/P2812HNUF1
+define Device/P2812HNUF1
+  $(Device/NAND)
   DEVICE_TITLE := ZyXEL P-2812HNU-F1
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
 endef
-LEGACY_DEVICES += P2812HNUF1
-
-Image/BuildKernel/Profile/P2812HNUF3=$(call Image/BuildKernel/Template,P2812HNUF3)
-Image/Build/Profile/P2812HNUF3=$(call Image/BuildNAND/$(1),$(1),P2812HNUF3)
+TARGET_DEVICES += P2812HNUF1
 
 define LegacyDevice/P2812HNUF3
+  $(Device/NAND)
   DEVICE_TITLE := ZyXEL P-2812HNU-F3
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
 endef
-LEGACY_DEVICES += P2812HNUF3
+TARGET_DEVICES += P2812HNUF3
 
 define Device/ARV7519RW22
   IMAGE_SIZE := 31232k
@@ -609,15 +605,12 @@ define Device/ARV7519RW22
 endef
 TARGET_DEVICES += ARV7519RW22
 
-
-Image/BuildKernel/Profile/BTHOMEHUBV5A=$(call Image/BuildKernel/Template,BTHOMEHUBV5A)
-Image/Build/Profile/BTHOMEHUBV5A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV5A)
-
-define LegacyDevice/BTHOMEHUBV5A
+define Device/BTHOMEHUBV5A
+  $(Device/NAND)
   DEVICE_TITLE := BT Home Hub 5A
   DEVICE_PACKAGES := kmod-ath9k kmod-ath10k wpad-mini kmod-usb-dwc2
 endef
-LEGACY_DEVICES += BTHOMEHUBV5A
+TARGET_DEVICES += BTHOMEHUBV5A
 
 define Device/EASY80920NAND
   $(Device/lantiqFullImage)
