@@ -18,10 +18,8 @@ include $(INCLUDE_DIR)/image.mk
 
 ifeq ($(SUBTARGET),xway)
   UBIFS_OPTS := -m 512 -e 15872 -c 1959
-  UBI_OPTS:="-m 512 -p 16KiB -s 256"
 else
   UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
-  UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 endif
 
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
@@ -56,13 +54,6 @@ define MkImageLzma
 	mkimage -A mips -O linux -T kernel -a 0x80002000 -C lzma \
 		-e 0x80002000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
 		-d $(KDIR)/vmlinux$(2)-$(1).lzma $(KDIR)/uImage-$(1)$(2)
-endef
-
-define MkImageEVA
-	lzma2eva 0x80002000 0x80002000 $(KDIR)/vmlinux$(2)-$(1).lzma $(KDIR)/$(1)$(2).eva.prealign
-	dd if=$(KDIR)/$(1)$(2).eva.prealign of=$(KDIR)/$(1)$(2).eva.align.64k bs=64k conv=sync
-	dd if=$(KDIR)/$(1)$(2).eva.prealign of=$(KDIR)/$(1)$(2).eva.align.128k bs=128k conv=sync
-	cat ./eva.dummy.squashfs >> $(KDIR)/$(1)$(2).eva.align.64k
 endef
 
 define Image/Build/squashfs
@@ -106,11 +97,6 @@ define Image/BuildDGN3500B/squashfs
 	dgn3500sum $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1)-sysupgrade.image $(DGN3500_SKERNEL) DE
 endef
 
-
-define Image/BuildEVA/squashfs
-	cat $(KDIR)/$(2).eva.align.64k $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva
-	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva)
-endef
 
 define Image/BuildLoader/squashfs
 	dd if=$(KDIR)/loader-$(2).bin of=$(KDIR)/loader-$(2).bin.padded bs=3072k conv=sync
@@ -158,14 +144,6 @@ define Image/Prepare/Template
 	$(call Image/BuildLoader/Template,$(1))
 	$(Image/Prepare/InitramfsTemplate)
 endef
-
-define Image/BuildKernelEVA/Template
-	$(call PatchKernelLzma,$(1))
-	$(call MkImageEVA,$(1))
-	$(CP) $(KDIR)/$(1).eva.align.64k $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva.align.64k
-	$(CP) $(KDIR)/$(1).eva.align.128k $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva.align.128k
-endef
-
 
 ### Kernel scripts ###
 define Build/mkbrncmdline
@@ -311,10 +289,8 @@ ifeq ($(SUBTARGET),xway)
 
 # Danube
 
-Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
-Image/Build/Profile/BTHOMEHUBV2B=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV2B)
-
-define LegacyDevice/BTHOMEHUBV2B
+define Device/BTHOMEHUBV2B
+  $(Device/NAND)
   DEVICE_TITLE := BT Home Hub 2B
   DEVICE_PACKAGES :=  kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
@@ -324,7 +300,7 @@ define LegacyDevice/BTHOMEHUBV2B
 	kmod-ath9k wpad-mini \
 	swconfig
 endef
-LEGACY_DEVICES += BTHOMEHUBV2B
+TARGET_DEVICES += BTHOMEHUBV2B
 
 define Device/EASY50712
   IMAGE_SIZE := 3776k
@@ -478,10 +454,8 @@ TARGET_DEVICES += GIGASX76X
 
 # AR9
 
-Image/BuildKernel/Profile/BTHOMEHUBV3A=$(call Image/BuildKernel/Template,BTHOMEHUBV3A)
-Image/Build/Profile/BTHOMEHUBV3A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV3A)
-
 define LegacyDevice/BTHOMEHUBV3A
+  $(Device/NAND)
   DEVICE_TITLE := BT Home Hub 3A
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
@@ -491,7 +465,7 @@ define LegacyDevice/BTHOMEHUBV3A
 	kmod-ath9k wpad-mini \
 	swconfig uboot-envtools
 endef
-LEGACY_DEVICES += BTHOMEHUBV3A
+TARGET_DEVICES += BTHOMEHUBV3A
 
 Image/BuildKernel/Profile/DGN3500=$(call Image/BuildKernel/Template,DGN3500)
 Image/Build/Profile/DGN3500=$(call Image/BuildDGN3500/$(1),$(1),DGN3500)
@@ -547,10 +521,8 @@ define Device/WBMRB
 endef
 TARGET_DEVICES += WBMRB
 
-Image/BuildKernel/Profile/FRITZ7320=$(call Image/BuildKernelEVA/Template,FRITZ7320)
-Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
-
-define LegacyDevice/FRITZ7320
+define Device/FRITZ7320
+  $(Device/AVM)
   DEVICE_TITLE := 1&1 HomeServer - FRITZ7320
   DEVICE_PACKAGES := kmod-ath9k wpad-mini \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
@@ -559,7 +531,7 @@ define LegacyDevice/FRITZ7320
 	kmod-ltq-deu-ar9 kmod-usb-dwc2 \
 	kmod-ath9k wpad-mini
 endef
-LEGACY_DEVICES += FRITZ7320
+TARGET_DEVICES += FRITZ7320
 
 define Device/H201L
   IMAGE_SIZE := 7808k
@@ -706,35 +678,6 @@ endef
 TARGET_DEVICES += VGV7519BRN
 
 endif
-
-define Image/BuildNAND/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
-	$(call Image/Build/UbinizeImage,$(2),,squashfs,$(UBI_OPTS))
-	$(call Image/Build/SysupgradeNAND,$(2),$(1),$(KDIR)/uImage-$(2))
-endef
-
-define Image/Build/ubifs
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubifs
-endef
-
-define Image/Build/ubi
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubi
-	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs-overlay.ubi
-endef
-
-define Image/BuildEVA/ubi
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubi
-	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs-overlay.ubi
-endef
-
-define Image/BuildNAND/ubifs
-	$(call Image/Build/UbinizeImage,$(2),,ubifs,$(UBI_OPTS))
-	$(call Image/Build/SysupgradeNAND,$(2),$(1),$(KDIR)/uImage-$(2))
-endef
-
-define Image/BuildEVA/ubifs
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubifs
-endef
 
 define Image/Prepare/Profile
 	$(call Image/Prepare/Profile/$(1))
