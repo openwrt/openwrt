@@ -203,6 +203,25 @@ define Device/Default
 endef
 DEVICE_VARS += IMAGE_SIZE
 
+define Device/NAND/xway
+  BLOCKSIZE := 16KiB
+  PAGESIZE := 512
+  SUBPAGESIZE := 256
+  FILESYSTEMS += ubifs
+endef
+
+define Device/NAND/xrx200
+  BLOCKSIZE := 128KiB
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  FILESYSTEMS += ubifs
+endef
+
+define Device/NAND
+  $(Device/NAND/$(SUBTARGET))
+  IMAGE/sysupgrade.bin := sysupgrade-nand
+endef
+
 define Device/lantiqBrnImage
   KERNEL := kernel-bin | append-dtb | mkbrncmdline | lzma-no-dict
   IMAGES := factory.bin
