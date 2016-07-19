@@ -35,6 +35,11 @@ define Image/BuildLoader/Template
 		compile loader.bin
 endef
 
+define Build/eva-image
+	lzma2eva $(KERNEL_LOADADDR) $(KERNEL_LOADADDR) $@ $@.new
+	( dd if=$@.new bs=64k conv=sync; cat ./eva.dummy.squashfs; ) > $@
+endef
+
 
 define CompressLzma
 	$(STAGING_DIR_HOST)/bin/lzma e $(1) $(2)
@@ -233,6 +238,11 @@ define Device/lantiqFullImage
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-offset 4 0
   IMAGES := sysupgrade.bin fullimage.img
   IMAGE/fullimage.img := fullimage | check-size $$$$(IMAGE_SIZE)
+endef
+
+define Device/AVM
+  $(Device/NAND)
+  KERNEL := kernel-bin | append-dtb | lzma | eva-image
 endef
 
 ifeq ($(SUBTARGET),xway_legacy)
@@ -627,23 +637,19 @@ define Device/EASY80920NOR
 endef
 TARGET_DEVICES += EASY80920NOR
 
-Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
-Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
-
-define LegacyDevice/FRITZ3370
+define Device/FRITZ3370
+  $(Device/AVM)
   DEVICE_TITLE := Fritz!Box WLan - FRITZ3370
   DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2
 endef
-LEGACY_DEVICES += FRITZ3370
+TARGET_DEVICES += FRITZ3370
 
-Image/BuildKernel/Profile/FRITZ7360SL=$(call Image/BuildKernelEVA/Template,FRITZ7360SL)
-Image/Build/Profile/FRITZ7360SL=$(call Image/BuildEVA/$(1),$(1),FRITZ7360SL)
-
-define LegacyDevice/FRITZ7360SL
+define Device/FRITZ7360SL
+  $(Device/AVM)
   DEVICE_TITLE := 1&1 HomeServer - FRITZ7360SL
   DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2
 endef
-LEGACY_DEVICES += FRITZ7360L
+TARGET_DEVICES += FRITZ7360SL
 
 Image/Prepare/Profile/VG3503J=$(call Image/Prepare/Template,VG3503J)
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
