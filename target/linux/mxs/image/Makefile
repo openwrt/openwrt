@@ -24,24 +24,11 @@ define Image/BuildKernel
 endef
 
 define Image/InstallKernel
-
-  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE),)
 	mkdir -p $(TARGET_DIR)/boot
-	cp $(KDIR)/zImage $(TARGET_DIR)/boot/
-  endif
-
-  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
-	mkdir -p $(TARGET_DIR)/boot
-	cp $(KDIR)/uImage $(TARGET_DIR)/boot/
-  endif
-  
-  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
-	mkdir -p $(TARGET_DIR)/boot
-	$(foreach board,$(BOARDS),
-		$(CP) $(DTS_DIR)/$(board).dtb $(TARGET_DIR)/boot/
-	)
-  endif
-
+	cp \
+		$(KDIR)/zImage $(KDIR)/uImage \
+		$(foreach board,$(BOARDS),$(DTS_DIR)/$(board).dtb) \
+		$(TARGET_DIR)/boot/
 endef
 
 define Image/Build/SDCard-vfat-ext4

@@ -7,7 +7,6 @@
 
 define Profile/duckbill
   NAME:=I2SE Duckbill boards
-  DEPENDS:=+@TARGET_ROOTFS_INCLUDE_KERNEL +@TARGET_ROOTFS_INCLUDE_DTB
   FEATURES+=usbgadget
   PACKAGES+= \
 	-dnsmasq -firewall -ppp -ip6tables -iptables -6relayd -mtd uboot-envtools \
