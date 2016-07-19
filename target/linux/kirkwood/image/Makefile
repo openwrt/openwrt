@@ -14,6 +14,9 @@ DEVICE_VARS += KERNEL_SIZE
 KERNEL_LOADADDR:=0x8000
 TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome
 
+UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+
 define Device/Default
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL := kernel-bin | append-dtb | uImage none
@@ -167,26 +170,11 @@ define Image/Build/ubi
  endif
 endef
 
-DOCKSTAR_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-DOCKSTAR_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
-GOFLEXHOME_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-GOFLEXHOME_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
-GOFLEXNET_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-GOFLEXNET_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 Image/BuildKernel/Template/Generic=$(call Image/BuildKernel/Template)
 Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
 
-IB62X0_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-IB62X0_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
 Image/InstallKernel/Template/IB62X0=$(call Image/InstallKernel/Template,ib62x0)
-
-ICONNECT_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-ICONNECT_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Template/ICONNECT=$(call Image/BuildKernel/Template,iconnect)
 Image/InstallKernel/Template/ICONNECT=$(call Image/InstallKernel/Template,iconnect)
@@ -197,38 +185,20 @@ IOMEGA_IX2_200_UBI_OPTS:="-m 512 -p 16384 -s 256"
 Image/BuildKernel/Template/IOMEGA_IX2_200=$(call Image/BuildKernel/Template,iomega_ix2_200)
 Image/InstallKernel/Template/IOMEGA_IX2_200=$(call Image/InstallKernel/Template,iomega_ix2_200)
 
-NSA310S_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-NSA310S_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 Image/BuildKernel/Template/NSA310S=$(call Image/BuildKernel/Template,nsa310s)
 Image/InstallKernel/Template/NSA310S=$(call Image/InstallKernel/Template,nsa310s)
-
-POGOE02_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-POGOE02_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Template/POGOE02=$(call Image/BuildKernel/Template,pogo_e02)
 Image/InstallKernel/Template/POGOE02=$(call Image/InstallKernel/Template,pogo_e02)
 
-SHEEVAPLUG_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-SHEEVAPLUG_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 Image/BuildKernel/Template/SHEEVAPLUG=$(call Image/BuildKernel/Template,sheevaplug)
 Image/InstallKernel/Template/SHEEVAPLUG=$(call Image/InstallKernel/Template,sheevaplug)
-
-SHEEVAPLUGSATA_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-SHEEVAPLUGSATA_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Template/SHEEVAPLUGSATA=$(call Image/BuildKernel/Template,sheevaplug-esata)
 Image/InstallKernel/Template/SHEEVAPLUGSATA=$(call Image/InstallKernel/Template,sheevaplug-esata)
 
-GuruplugServerPlus_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-GuruplugServerPlus_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-
 Image/BuildKernel/Template/GuruplugServerPlus=$(call Image/BuildKernel/Template,guruplug-server-plus)
 Image/InstallKernel/Template/GuruplugServerPlus=$(call Image/InstallKernel/Template,guruplug-server-plus)
-
-Topkick1281P2_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-Topkick1281P2_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Template/Topkick1281P2=$(call Image/BuildKernel/Template,topkick)
 Image/InstallKernel/Template/Topkick1281P2=$(call Image/InstallKernel/Template,topkick)
