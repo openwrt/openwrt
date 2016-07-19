@@ -1,7 +1,7 @@
 ARCH:=mips
 SUBTARGET:=xrx200
 BOARDNAME:=XRX200
-FEATURES:=squashfs atm mips16 jffs2 nand ubifs
+FEATURES:=squashfs atm mips16 nand ubifs
 CPU_TYPE:=34kc
 CPU_SUBTYPE:=dsp
 

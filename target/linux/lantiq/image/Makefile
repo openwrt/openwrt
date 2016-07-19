@@ -105,25 +105,6 @@ define Image/BuildLoader/squashfs
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
 endef
 
-define Image/BuildEVA/jffs2-128k
-	cat $(KDIR)/$(2).eva.align.128k $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva
-endef
-
-define Image/Build/jffs2-64k
-	dd if=$(KDIR)/uImage-$(2) of=$(KDIR)/uImage-$(2)-$(1) bs=64k conv=sync
-	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
-endef
-
-define Image/Build/jffs2-128k
-	dd if=$(KDIR)/uImage-$(2) of=$(KDIR)/uImage-$(2)-$(1) bs=128k conv=sync
-	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
-endef
-
-define Image/Build/jffs2-256k
-	dd if=$(KDIR)/uImage-$(2) of=$(KDIR)/uImage-$(2)-$(1) bs=256k conv=sync
-	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
-endef
-
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   define Image/BuildKernel/InitramfsTemplate
 	$(call PatchKernelLzma,$(1),-initramfs)
