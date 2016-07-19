@@ -114,29 +114,6 @@ define Image/BuildKernel/Template
  endif
 endef
 
-define Image/InstallKernel/Template
-
- ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
-	$(INSTALL_DIR) $(TARGET_DIR)/boot
-   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
-	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/
-	ln -sf $(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/uImage
-   endif
-   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE),)
-	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-zImage $(TARGET_DIR)/boot/
-	ln -sf $(IMG_PREFIX)-zImage $(TARGET_DIR)/boot/zImage
-   endif
- endif
-
- ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
-	$(INSTALL_DIR) $(TARGET_DIR)/boot
-  ifneq ($(1),)
-	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb $(TARGET_DIR)/boot/
-	ln -sf $(IMG_PREFIX)-$(1).dtb $(TARGET_DIR)/boot/$(1).dtb
-  endif
- endif
-endef
-
 define Image/Build/jffs2-nand-2048-128k
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-$(1).img \
 		bs=2048 conv=sync
@@ -164,38 +141,19 @@ define Image/Build/ubi
  endif
 endef
 
-Image/BuildKernel/Template/Generic=$(call Image/BuildKernel/Template)
-Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
-
-Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
-Image/InstallKernel/Template/IB62X0=$(call Image/InstallKernel/Template,ib62x0)
-
-Image/BuildKernel/Template/ICONNECT=$(call Image/BuildKernel/Template,iconnect)
-Image/InstallKernel/Template/ICONNECT=$(call Image/InstallKernel/Template,iconnect)
-
 IOMEGA_IX2_200_UBIFS_OPTS:="-m 512 -e 15872 -c 2048"
 IOMEGA_IX2_200_UBI_OPTS:="-m 512 -p 16384 -s 256"
 
+Image/BuildKernel/Template/Generic=$(call Image/BuildKernel/Template)
+Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
+Image/BuildKernel/Template/ICONNECT=$(call Image/BuildKernel/Template,iconnect)
 Image/BuildKernel/Template/IOMEGA_IX2_200=$(call Image/BuildKernel/Template,iomega_ix2_200)
-Image/InstallKernel/Template/IOMEGA_IX2_200=$(call Image/InstallKernel/Template,iomega_ix2_200)
-
 Image/BuildKernel/Template/NSA310S=$(call Image/BuildKernel/Template,nsa310s)
-Image/InstallKernel/Template/NSA310S=$(call Image/InstallKernel/Template,nsa310s)
-
 Image/BuildKernel/Template/POGOE02=$(call Image/BuildKernel/Template,pogo_e02)
-Image/InstallKernel/Template/POGOE02=$(call Image/InstallKernel/Template,pogo_e02)
-
 Image/BuildKernel/Template/SHEEVAPLUG=$(call Image/BuildKernel/Template,sheevaplug)
-Image/InstallKernel/Template/SHEEVAPLUG=$(call Image/InstallKernel/Template,sheevaplug)
-
 Image/BuildKernel/Template/SHEEVAPLUGSATA=$(call Image/BuildKernel/Template,sheevaplug-esata)
-Image/InstallKernel/Template/SHEEVAPLUGSATA=$(call Image/InstallKernel/Template,sheevaplug-esata)
-
 Image/BuildKernel/Template/GuruplugServerPlus=$(call Image/BuildKernel/Template,guruplug-server-plus)
-Image/InstallKernel/Template/GuruplugServerPlus=$(call Image/InstallKernel/Template,guruplug-server-plus)
-
 Image/BuildKernel/Template/Topkick1281P2=$(call Image/BuildKernel/Template,topkick)
-Image/InstallKernel/Template/Topkick1281P2=$(call Image/InstallKernel/Template,topkick)
 
 define Image/BuildKernel
 	$(call Image/BuildKernel/Template/$(PROFILE))
