@@ -189,20 +189,19 @@ endef
 
 # Shared device definition: applies to every defined device
 define Device/Default
-  PROFILES = Default $$(DEVICE_PROFILE)
+  PROFILES = Default
   KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_NAME = $$(KERNEL_NAME)-initramfs
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   FILESYSTEMS := squashfs
-  DEVICE_PROFILE :=
-  DEVICE_DTS = $$(DEVICE_PROFILE)
+  DEVICE_DTS := $(1)
   DEVICE_DTS_DIR := ../dts
   IMAGE_SIZE :=
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
-DEVICE_VARS += DEVICE_PROFILE IMAGE_SIZE
+DEVICE_VARS += IMAGE_SIZE
 
 define Device/lantiqBrnImage
   KERNEL := kernel-bin | append-dtb | mkbrncmdline | lzma-no-dict
@@ -220,7 +219,6 @@ endef
 ifeq ($(SUBTARGET),xway_legacy)
 
 define Device/ARV4520PW
-  DEVICE_PROFILE := ARV4520PW
   IMAGE_SIZE := 3648k
   DEVICE_TITLE := Easybox 800, WAV-281 - ARV4520PW
   DEVICE_PACKAGES := kmod-ltq-hcd-danube \
@@ -233,7 +231,6 @@ endef
 TARGET_DEVICES += ARV4520PW
 
 define Device/ARV4525PW
-  DEVICE_PROFILE := ARV4525PW
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := Speedport W502V Typ A - ARV4525PW
   DEVICE_PACKAGES := kmod-ath5k wpad-mini \
@@ -244,7 +241,6 @@ endef
 TARGET_DEVICES += ARV4525PW
 
 define Device/ARV452CQW
-  DEVICE_PROFILE := ARV452CQW
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := Easybox 801 - ARV452CQW
   DEVICE_PACKAGES := kmod-ltq-hcd-danube \
@@ -257,7 +253,6 @@ endef
 TARGET_DEVICES += ARV452CQW
 
 define Device/ARV4518PWR01
-  DEVICE_PROFILE := ARV4518PWR01
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := ARV4518PWR01
   DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
@@ -270,7 +265,6 @@ endef
 TARGET_DEVICES += ARV4518PWR01
 
 define Device/ARV4518PWR01A
-  DEVICE_PROFILE := ARV4518PWR01A
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := ARV4518PWR01A
   DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
@@ -304,14 +298,12 @@ endef
 LEGACY_DEVICES += BTHOMEHUBV2B
 
 define Device/EASY50712
-  DEVICE_PROFILE := EASY50712
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := Lantiq Danube - EASY50712
 endef
 TARGET_DEVICES += EASY50712
 
 define Device/ACMP252
-  DEVICE_PROFILE := ACMP252
   IMAGE_SIZE := 14848k
   DEVICE_TITLE := AudioCodes MediaPack MP-252
   DEVICE_PACKAGES := kmod-rt2x00-pci wpad-mini \
@@ -322,7 +314,6 @@ endef
 TARGET_DEVICES += ACMP252
 
 define Device/ARV4510PW
-  DEVICE_PROFILE := ARV4510PW
   IMAGE_SIZE := 15616k
   DEVICE_TITLE := Wippies, Elisa - ARV4510PW
   DEVICE_PACKAGES := kmod-ledtrig-usbdev kmod-usb2-pci kmod-usb-uhci \
@@ -336,7 +327,6 @@ endef
 TARGET_DEVICES += ARV4510PW
 
 define Device/ARV7525PW
-  DEVICE_PROFILE := ARV7525PW
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := Speedport W303V Typ A - ARV7525PW
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini \
@@ -347,7 +337,6 @@ endef
 TARGET_DEVICES += ARV7525PW
 
 define Device/ARV4519PW
-  DEVICE_PROFILE := ARV4519PW
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := Vodafone, Pirelli - ARV4519PW
   DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
@@ -359,7 +348,6 @@ endef
 TARGET_DEVICES += ARV4519PW
 
 define Device/ARV7506PW11
-  DEVICE_PROFILE := ARV7506PW11
   IMAGE_SIZE := 7808k
   DEVICE_TITLE := Alice/O2 IAD 4421 - ARV7506PW11
   DEVICE_PACKAGES := kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
@@ -371,7 +359,6 @@ endef
 TARGET_DEVICES += ARV7506PW11
 
 define Device/ARV7510PW22
-  DEVICE_PROFILE := ARV7510PW22
   IMAGE_SIZE := 31232k
   DEVICE_TITLE := Astoria - ARV7510PW22
   DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
@@ -386,7 +373,6 @@ endef
 TARGET_DEVICES += ARV7510PW22
 
 define Device/ARV7518PW
-  DEVICE_PROFILE := ARV7518PW
   IMAGE_SIZE := 7872k
   DEVICE_TITLE := Astoria - ARV7518PW
   DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
@@ -399,7 +385,6 @@ endef
 TARGET_DEVICES += ARV7518PW
 
 define Device/ARV7519PW
-  DEVICE_PROFILE := ARV7519PW
   IMAGE_SIZE := 15488k
   DEVICE_TITLE := Astoria - ARV7519PW
   DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
@@ -412,7 +397,6 @@ endef
 TARGET_DEVICES += ARV7519PW
 
 define Device/ARV752DPW
-  DEVICE_PROFILE := ARV752DPW
   IMAGE_SIZE := 7872k
   DEVICE_TITLE := Easybox 802 - ARV752DPW
   DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
@@ -426,7 +410,6 @@ endef
 TARGET_DEVICES += ARV752DPW
 
 define Device/ARV752DPW22
-  DEVICE_PROFILE := ARV752DPW22
   IMAGE_SIZE := 7616k
   DEVICE_TITLE := Easybox 803 - ARV752DPW22
   DEVICE_PACKAGES := kmod-usb2-pci kmod-usb-uhci kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
@@ -440,7 +423,6 @@ endef
 TARGET_DEVICES += ARV752DPW22
 
 define Device/ARV8539PW22
-  DEVICE_PROFILE := ARV8539PW22
   IMAGE_SIZE := 7616k
   DEVICE_TITLE := Speedport W504V Typ A - ARV8539PW22
   DEVICE_PACKAGES := kmod-ltq-hcd-danube \
@@ -453,7 +435,6 @@ endef
 TARGET_DEVICES += ARV8539PW22
 
 define Device/GIGASX76X
-  DEVICE_PROFILE := GIGASX76X
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := Gigaset sx76x
   DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
@@ -512,7 +493,6 @@ endef
 LEGACY_DEVICES += DGN3500B
 
 define Device/WBMRA
-  DEVICE_PROFILE := WBMRA
   IMAGE_SIZE := 31488k
   DEVICE_DTS := WBMR
   DEVICE_TITLE := Buffalo WBMR-HP-G300H (A) - WBMR
@@ -526,7 +506,6 @@ endef
 TARGET_DEVICES += WBMRA
 
 define Device/WBMRB
-  DEVICE_PROFILE := WBMRB
   IMAGE_SIZE := 31488k
   DEVICE_DTS := WBMR
   DEVICE_TITLE := Buffalo WBMR-HP-G300H (B) - WBMR
@@ -554,7 +533,6 @@ endef
 LEGACY_DEVICES += FRITZ7320
 
 define Device/H201L
-  DEVICE_PROFILE := H201L
   IMAGE_SIZE := 7808k
   DEVICE_TITLE := ZTE H201L - H201L
   DEVICE_PACKAGES := kmod-ath9k-htc wpad-mini \
@@ -568,7 +546,6 @@ endef
 TARGET_DEVICES += H201L
 
 define Device/P2601HNFX
-  DEVICE_PROFILE := P2601HNFX
   IMAGE_SIZE := 15616k
   DEVICE_TITLE := ZyXEL P-2601HN-Fx
   DEVICE_PACKAGES := kmod-rt2800-usb wpad-mini \
@@ -607,7 +584,6 @@ endef
 LEGACY_DEVICES += P2812HNUF3
 
 define Device/ARV7519RW22
-  DEVICE_PROFILE := ARV7519RW22
   IMAGE_SIZE := 31232k
   DEVICE_TITLE := Livebox Astoria ARV7519RW22
   DEVICE_PACKAGES := kmod-usb-dwc2
@@ -626,7 +602,6 @@ LEGACY_DEVICES += BTHOMEHUBV5A
 
 define Device/EASY80920NAND
   $(Device/lantiqFullImage)
-  DEVICE_PROFILE := EASY80920NAND
   IMAGE_SIZE := 64512k
   DEVICE_TITLE := Lantiq VR9 - EASY80920NAND
   DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2
@@ -634,7 +609,6 @@ endef
 TARGET_DEVICES += EASY80920NAND
 
 define Device/EASY80920NOR
-  DEVICE_PROFILE := EASY80920NOR
   IMAGE_SIZE := 7936k
   DEVICE_TITLE := Lantiq VR9 - EASY80920NOR
   DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2
@@ -671,7 +645,6 @@ LEGACY_DEVICES += VG3503J
 include tp-link.mk
 
 define Device/WBMR300
-  DEVICE_PROFILE := WBMR300
   IMAGE_SIZE := 15616k
   DEVICE_TITLE := Buffalo WBMR-300HPD
   DEVICE_PACKAGES := kmod-mt76 wpad-mini kmod-usb-dwc2
@@ -679,7 +652,6 @@ endef
 TARGET_DEVICES += WBMR300
 
 define Device/VGV7510KW22NOR
-  DEVICE_PROFILE := VGV7510KW22NOR
   IMAGE_SIZE := 15232k
   DEVICE_TITLE := o2 Box 6431 / Arcadyan VGV7510KW22 (NOR)
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
@@ -688,7 +660,6 @@ TARGET_DEVICES += VGV7510KW22NOR
 
 define Device/VGV7510KW22BRN
   $(Device/lantiqBrnImage)
-  DEVICE_PROFILE := VGV7510KW22BRN
   IMAGE_SIZE := 7168k
   SIGNATURE := 5D00008000
   MAGIC := 0x12345678
@@ -699,7 +670,6 @@ endef
 TARGET_DEVICES += VGV7510KW22BRN
 
 define Device/VGV7519NOR
-  DEVICE_PROFILE := VGV7519NOR
   IMAGE_SIZE := 15360k
   DEVICE_TITLE := Experiabox 8 VGV7519
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
@@ -708,7 +678,6 @@ TARGET_DEVICES += VGV7519NOR
 
 define Device/VGV7519BRN
   $(Device/lantiqBrnImage)
-  DEVICE_PROFILE := VGV7519BRN
   IMAGE_SIZE := 7168k
   SIGNATURE := 5D00008000
   MAGIC := 0x12345678
