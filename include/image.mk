@@ -216,7 +216,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
 
     define Image/mkfs/ubifs
 
-        ifneq ($($(PROFILE)_UBIFS_OPTS)$(UBIFS_OPTS),)
+        $(if $($(PROFILE)_UBIFS_OPTS)$(UBIFS_OPTS),
 		$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 			$(if $($(PROFILE)_UBIFS_OPTS), \
 				$(shell echo $($(PROFILE)_UBIFS_OPTS)), \
@@ -230,13 +230,13 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
 			--squash-uids \
 			-o $(KDIR)/root.ubifs \
 			-d $(TARGET_DIR)
-        endif
+	)
 	$(call Image/Build,ubifs)
 
-        ifneq ($($(PROFILE)_UBI_OPTS)$(UBI_OPTS),)
+        $(if $($(PROFILE)_UBI_OPTS)$(UBI_OPTS),
 		$(if $(wildcard ./ubinize.cfg),$(call Image/mkfs/ubifs/generate,))
 		$(if $(wildcard ./ubinize-overlay.cfg),$(call Image/mkfs/ubifs/generate,-overlay))
-        endif
+	)
 	$(if $(wildcard ./ubinize.cfg),$(call Image/Build,ubi))
     endef
 endif
@@ -283,14 +283,8 @@ define Image/Checksum
 	)
 endef
 
-define BuildImage/mkfs
-  install-images: mkfs-$(1)
-  .PHONY: mkfs-$(1)
-  mkfs-$(1): kernel_prepare
-	$(Image/mkfs/$(1))
-  $(KDIR)/root.$(1): mkfs-$(1)
-
-endef
+$(KDIR)/root.%: kernel_prepare
+	$(Image/mkfs/$*)
 
 define Device/InitProfile
   PROFILES := $(PROFILE)
@@ -544,9 +538,8 @@ define BuildImage
 
   $(foreach device,$(TARGET_DEVICES),$(call Device,$(device)))
   $(foreach device,$(LEGACY_DEVICES),$(call LegacyDevice,$(device)))
-  $(foreach fs,$(TARGET_FILESYSTEMS) $(fs-subtypes-y),$(call BuildImage/mkfs,$(fs)))
 
-  install-images: kernel_prepare
+  install-images: kernel_prepare $(foreach fs,$(TARGET_FILESYSTEMS) $(fs-subtypes-y),$(KDIR)/root.$(fs))
 	$(foreach fs,$(TARGET_FILESYSTEMS),
 		$(call Image/Build,$(fs))
 	)
