@@ -77,6 +77,16 @@ define Device/gl-domino
 endef
 TARGET_DEVICES += gl-domino
 
+define Device/gl-mifi
+  DEVICE_TITLE := GL MIFI
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = GL-MIFI
+  IMAGE_SIZE = 16000k
+  CONSOLE = ttyATH0,115200
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += gl-mifi
+
 define Device/dr531
   DEVICE_TITLE := Wallys DR531
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

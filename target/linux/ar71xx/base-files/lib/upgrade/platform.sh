@@ -232,6 +232,7 @@ platform_check_image() {
 	ew-dorin | \
 	ew-dorin-router | \
 	gl-ar150 | \
+	gl-mifi | \
 	gl-ar300 | \
 	gl-ar300m | \
 	gl-domino | \

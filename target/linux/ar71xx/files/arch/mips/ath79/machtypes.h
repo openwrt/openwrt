@@ -89,6 +89,7 @@ enum ath79_mach_type {
 	ATH79_MACH_GL_AR300M,		/* GL-AR300M */
 	ATH79_MACH_GL_DOMINO,		/* Domino */
 	ATH79_MACH_GL_INET,		/* GL-CONNECT GL-INET */
+	ATH79_MACH_GL_MIFI,		/* GL-MIFI support */
 	ATH79_MACH_GS_MINIBOX_V1,	/* Gainstrong MiniBox V1.0 */
 	ATH79_MACH_GS_OOLITE,           /* GS OOLITE V1.0 */
 	ATH79_MACH_HIWIFI_HC6361,	/* HiWiFi HC6361 */

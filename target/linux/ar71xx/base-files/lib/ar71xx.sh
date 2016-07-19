@@ -538,6 +538,8 @@ ar71xx_board_detect() {
 		;;
 	*"GL-AR300M")
 		name="gl-ar300m"
+	*"GL-MIFI")
+		name="gl-mifi"
 		;;
 	*"EnGenius EPG5000")
 		name="epg5000"

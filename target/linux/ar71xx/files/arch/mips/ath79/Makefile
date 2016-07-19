@@ -96,6 +96,7 @@ obj-$(CONFIG_ATH79_MACH_GL_AR300)	+= mach-gl-ar300.o
 obj-$(CONFIG_ATH79_MACH_GL_AR300M)	+= mach-gl-ar300m.o
 obj-$(CONFIG_ATH79_MACH_GL_DOMINO)		+= mach-gl-domino.o
 obj-$(CONFIG_ATH79_MACH_GL_INET)	+= mach-gl-inet.o
+obj-$(CONFIG_ATH79_MACH_GL_MIFI)	+= mach-gl-mifi.o
 obj-$(CONFIG_ATH79_MACH_GS_MINIBOX_V1)	+= mach-gs-minibox-v1.o
 obj-$(CONFIG_ATH79_MACH_GS_OOLITE)	+= mach-gs-oolite.o
 obj-$(CONFIG_ATH79_MACH_HIWIFI_HC6361)	+= mach-hiwifi-hc6361.o
