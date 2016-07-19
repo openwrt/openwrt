@@ -16,6 +16,14 @@ KERNEL_ENTRY = 0x80002000
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+ifeq ($(SUBTARGET),xway)
+  UBIFS_OPTS := -m 512 -e 15872 -c 1959
+  UBI_OPTS:="-m 512 -p 16KiB -s 256"
+else
+  UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
+  UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+endif
+
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 
 define Image/BuildLoader/Template
@@ -279,8 +287,6 @@ endif
 ifeq ($(SUBTARGET),xway)
 
 # Danube
-DEVICE_BTHOMEHUBV2B_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
-DEVICE_BTHOMEHUBV2B_UBI_OPTS:="-m 512 -p 16KiB -s 256"
 
 Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
 Image/Build/Profile/BTHOMEHUBV2B=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV2B)
@@ -460,10 +466,7 @@ endef
 TARGET_DEVICES += GIGASX76X
 
 
-
 # AR9
-DEVICE_BTHOMEHUBV3A_UBIFS_OPTS:="-m 512 -e 15872 -c 1959"
-DEVICE_BTHOMEHUBV3A_UBI_OPTS:="-m 512 -p 16KiB -s 256"
 
 Image/BuildKernel/Profile/BTHOMEHUBV3A=$(call Image/BuildKernel/Template,BTHOMEHUBV3A)
 Image/Build/Profile/BTHOMEHUBV3A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV3A)
@@ -584,8 +587,6 @@ endif
 ifeq ($(SUBTARGET),xrx200)
 
 # VR9
-DEVICE_P2812HNUF1_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-DEVICE_P2812HNUF1_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/P2812HNUF1=$(call Image/BuildKernel/Template,P2812HNUF1)
 Image/Build/Profile/P2812HNUF1=$(call Image/BuildNAND/$(1),$(1),P2812HNUF1)
@@ -595,9 +596,6 @@ define LegacyDevice/P2812HNUF1
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
 endef
 LEGACY_DEVICES += P2812HNUF1
-
-DEVICE_P2812HNUF3_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-DEVICE_P2812HNUF3_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/P2812HNUF3=$(call Image/BuildKernel/Template,P2812HNUF3)
 Image/Build/Profile/P2812HNUF3=$(call Image/BuildNAND/$(1),$(1),P2812HNUF3)
@@ -616,9 +614,6 @@ define Device/ARV7519RW22
 endef
 TARGET_DEVICES += ARV7519RW22
 
-
-DEVICE_BTHOMEHUBV5A_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-DEVICE_BTHOMEHUBV5A_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/BTHOMEHUBV5A=$(call Image/BuildKernel/Template,BTHOMEHUBV5A)
 Image/Build/Profile/BTHOMEHUBV5A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV5A)
@@ -645,10 +640,6 @@ define Device/EASY80920NOR
   DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2
 endef
 TARGET_DEVICES += EASY80920NOR
-
-
-DEVICE_FRITZ3370_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
-DEVICE_FRITZ3370_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 Image/BuildKernel/Profile/FRITZ3370=$(call Image/BuildKernelEVA/Template,FRITZ3370)
 Image/Build/Profile/FRITZ3370=$(call Image/BuildEVA/$(1),$(1),FRITZ3370)
@@ -729,38 +720,34 @@ TARGET_DEVICES += VGV7519BRN
 
 endif
 
-ifneq ($($(PROFILE)_UBI_OPTS),)
-  define Image/BuildNAND/squashfs
+define Image/BuildNAND/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
-	$(call Image/Build/UbinizeImage,$(2),,squashfs,$($(PROFILE)_UBI_OPTS))
+	$(call Image/Build/UbinizeImage,$(2),,squashfs,$(UBI_OPTS))
 	$(call Image/Build/SysupgradeNAND,$(2),$(1),$(KDIR)/uImage-$(2))
-  endef
+endef
 
-  define Image/Build/ubifs
+define Image/Build/ubifs
 	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubifs
-  endef
+endef
 
-  define Image/Build/ubi
+define Image/Build/ubi
 	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubi
 	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs-overlay.ubi
-  endef
+endef
 
-  define Image/BuildEVA/ubi
+define Image/BuildEVA/ubi
 	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubi
 	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs-overlay.ubi
-  endef
+endef
 
-ifneq ($($(PROFILE)_UBIFS_OPTS),)
-  define Image/BuildNAND/ubifs
-	$(call Image/Build/UbinizeImage,$(2),,ubifs,$($(PROFILE)_UBI_OPTS))
+define Image/BuildNAND/ubifs
+	$(call Image/Build/UbinizeImage,$(2),,ubifs,$(UBI_OPTS))
 	$(call Image/Build/SysupgradeNAND,$(2),$(1),$(KDIR)/uImage-$(2))
-  endef
+endef
 
-  define Image/BuildEVA/ubifs
+define Image/BuildEVA/ubifs
 	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(2)-rootfs.ubifs
-  endef
-endif
-endif
+endef
 
 define Image/Prepare/Profile
 	$(call Image/Prepare/Profile/$(1))
