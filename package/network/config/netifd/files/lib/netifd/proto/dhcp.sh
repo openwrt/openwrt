@@ -54,7 +54,7 @@ proto_dhcp_setup() {
 	proto_run_command "$config" udhcpc \
 		-p /var/run/udhcpc-$iface.pid \
 		-s /lib/netifd/dhcp.script \
-		-f -R -t 0 -i "$iface" \
+		-f -t 0 -i "$iface" \
 		${ipaddr:+-r $ipaddr} \
 		${hostname:+-H $hostname} \
 		${vendorid:+-V $vendorid} \
