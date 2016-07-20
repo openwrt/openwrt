@@ -6,24 +6,13 @@ USE_PROCD=1
 PROG=/usr/sbin/igmpproxy
 CONFIGFILE=/var/etc/igmpproxy.conf
 
-# igmpproxy supports both a debug mode and verbosity, which are very useful
-# when something isn't working.
-#
-# Debug mode will print everything to stdout instead of syslog. Generally
-# verbosity should NOT be set as it will quickly fill your syslog.
-#
-# Put any debug or verbosity options into IGMP_OPTS
-#
-# Examples:
-# OPTIONS="-d -v -v" - debug mode and very verbose, this will land in
-#                        stdout and not in syslog
-# OPTIONS="-v" - be verbose, this will write aditional information to syslog
-
-OPTIONS=""
-
 igmp_header() {
-	local quickleave
+	local quickleave verbose
 	config_get_bool quickleave "$1" quickleave 0
+	config_get verbose "$1" verbose 0
+
+	[ $verbose = "1" ] && logopts="-v"
+	[ $verbose = "2" ] && logopts="-v -v"
 
 	mkdir -p /var/etc
 	rm -f /var/etc/igmpproxy.conf
@@ -113,6 +102,7 @@ service_triggers() {
 start_service() {
 	has_upstream=
 	netdevs=
+	logopts=
 	config_load igmpproxy
 
 	config_foreach igmp_header igmpproxy
@@ -121,7 +111,7 @@ start_service() {
 
 	procd_open_instance
 	procd_set_param command $PROG
-	[ -n "$OPTIONS" ] && procd_append_param $OPTIONS
+	[ -n "$logopts" ] && procd_append_param command $logopts
 	procd_append_param command $CONFIGFILE
 	procd_set_param file $CONFIGFILE
 	procd_set_param netdev $netdevs
