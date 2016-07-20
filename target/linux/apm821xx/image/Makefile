@@ -78,6 +78,88 @@ define Device/mr24
 endef
 TARGET_DEVICES += mr24
 
+define Build/create-uImage-dtb
+	# flat_dt target expect FIT image - which WNDR4700's uboot doesn't support
+	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) \
+		-O linux -T kernel -C none \
+		-n '$(call toupper,$(LINUX_KARCH)) LEDE Linux-$(LINUX_VERSION)' \
+		-d $@.dtb $@.new
+	@mv $@.new $@
+endef
+
+define Build/append-fakerootfs
+	rm -rf $@.fakerootsquashfs $@.fakefs
+
+	# append a fake/empty rootfs to fool netgear's uboot
+	# CHECK_DNI_FIRMWARE_ROOTFS_INTEGRITY in do_chk_dniimg()
+	dd if=/dev/zero of=$@.fakerd bs=16 count=1 conv=sync
+
+	-$(STAGING_DIR_HOST)/bin/mkimage \
+		-A $(LINUX_KARCH) -O linux -T filesystem -C none \
+		-a 0x00000000 -e 0x00000000 \
+		-n '$(DEVICE_PROFILE) fakerootfs' \
+		-d $@.fakerd $@.fakefs
+
+	cat $@.fakefs >> $@
+	rm -rf $@.fakerootsquashfs $@.fakefs
+endef
+
+define Build/wndr4700-specialImage
+	rm -rf $@.fakerd $@.new
+
+	dd if=/dev/zero of=$@.fakerd bs=32 count=1 conv=sync
+
+	# Netgear used an old uboot that doesn't have FIT support.
+	# So we are stuck with either a full ext2/4 fs in a initrd.
+	# ... or we try to make the "multi" image approach to work
+	# for us.
+	#
+	# Sadly, the "multi" image has to consists of three
+	# "fixed" parts in the following "fixed" order:
+	# 1. The kernel which is in $@
+	# 2. The (fake) initrd which is in $@.fakerd
+	# 3. The device tree binary which is in $@.dtb
+	#
+	# Now, given that we use the function for the kernel which
+	# already has a initramfs image inside, we still have to
+	# add a "fake" initrd (which a mkimage header) in the second
+	# part of the legacy multi image. Since we need to put the
+	# device tree stuff into part 3.
+
+	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) -O linux -T multi \
+		-C $(1) -a $(KERNEL_LOADADDR) -e $(KERNEL_ENTRY) \
+		-n '$(DEVICE_PROFILE) initramfs' -d $@:$@.fakerd:$@.dtb $@.new
+	mv $@.new $@
+	rm -rf $@.fakerd
+endef
+
+define Device/WNDR4700
+  DEVICE_TITLE := Netgear Centria N900 WNDR4700/WNDR4720
+  DEVICE_PACKAGES := badblocks block-mount e2fsprogs \
+	kmod-ath9k kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-ledtrig-usbdev \
+	kmod-md-mod kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
+	kmod-nls-utf8 kmod-usb3 kmod-usb-dwc2 kmod-usb-storage \
+	partx-utils swconfig wpad-mini
+  DEVICE_NAME := wndr4700
+  DEVICE_PROFILE := wndr4700
+  DEVICE_DTS := wndr4700
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  BLOCKSIZE := 131072
+  DTB_SIZE := 131008
+  IMAGE_SIZE:=25559040
+  IMAGES := factory.img sysupgrade.tar
+  KERNEL_SIZE := 1920k
+  KERNEL := kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | append-fakerootfs
+  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | wndr4700-specialImage gzip
+  IMAGE/factory.img := dtb | create-uImage-dtb | append-kernel | pad-to 2M | append-ubi | \
+		       netgear-dni | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.tar := sysupgrade-nand
+  NETGEAR_BOARD_ID := WNDR4700
+  NETGEAR_HW_ID := 29763875+128+256
+endef
+TARGET_DEVICES += WNDR4700
+
 endif
 
 ifeq ($(SUBTARGET),sata)
@@ -161,4 +243,3 @@ TARGET_DEVICES += MyBookLiveDuo
 endif
 
 $(eval $(call BuildImage))
-

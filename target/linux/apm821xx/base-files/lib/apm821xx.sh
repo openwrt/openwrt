@@ -18,6 +18,10 @@ apm821xx_board_detect() {
 		name="mbl"
 		;;
 
+	*"Netgear WNDR4700/WNDR4720 Series")
+		name="wndr4700"
+		;;
+
 	*)
 		name="unknown"
 		;;

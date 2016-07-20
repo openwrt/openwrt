@@ -21,6 +21,11 @@ platform_check_image() {
 		return $?;
 		;;
 
+	wndr4700)
+		nand_do_platform_check $board "$1"
+		return $?;
+		;;
+
 	*)
 		;;
 	esac
@@ -35,6 +40,10 @@ platform_pre_upgrade() {
 	case "$board" in
 	mr24)
 		merakinand_do_upgrade "$1"
+		;;
+
+	wndr4700)
+		nand_do_upgrade "$1"
 		;;
 
 	*)

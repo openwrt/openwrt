@@ -13,6 +13,12 @@ mbl | \
 mr24)
 	ucidef_set_interface_lan "eth0"
 	;;
+
+wndr4700)
+	ucidef_add_switch "switch0" \
+		"0@eth0" "4:lan" "3:lan" "2:lan" "1:lan" "5:wan"
+	;;
+
 *)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;

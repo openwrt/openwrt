@@ -13,6 +13,10 @@ get_status_led() {
 		status_led="mr24:green:power"
 		;;
 
+	wndr4700)
+		status_led="wndr4700:green:power"
+		;;
+
 	*)
 		;;
 	esac
