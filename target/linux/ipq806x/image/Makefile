@@ -40,11 +40,8 @@ define Device/Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
-	IMAGES :=
-	KERNEL_IN_UBI :=
-	BOARD_NAME :=
 endef
-DEVICE_VARS += BOARD_NAME KERNEL_SIZE
+DEVICE_VARS += KERNEL_SIZE
 
 define Device/LegacyImage
 	KERNEL_SUFFIX := -uImage
