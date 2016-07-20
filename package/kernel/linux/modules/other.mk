@@ -514,22 +514,6 @@ endef
 $(eval $(call KernelPackage,wdt-orion))
 
 
-define KernelPackage/booke-wdt
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=PowerPC Book-E Watchdog Timer
-  DEPENDS:=@(TARGET_mpc85xx||TARGET_ppc40x||TARGET_ppc44x)
-  KCONFIG:=CONFIG_BOOKE_WDT
-  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/booke_wdt.ko
-  AUTOLOAD:=$(call AutoLoad,50,booke_wdt,1)
-endef
-
-define KernelPackage/booke-wdt/description
- Kernel module for PowerPC Book-E Watchdog Timer
-endef
-
-$(eval $(call KernelPackage,booke-wdt))
-
-
 define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
