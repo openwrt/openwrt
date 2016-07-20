@@ -618,12 +618,13 @@
  }
 --- a/drivers/bcma/host_pci.c
 +++ b/drivers/bcma/host_pci.c
-@@ -294,7 +294,7 @@ static const struct pci_device_id bcma_p
+@@ -294,7 +294,8 @@ static const struct pci_device_id bcma_p
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4358) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4359) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4360) },
 -	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4365) },
 +	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_BROADCOM, 0x4365, PCI_VENDOR_ID_DELL, 0x0016) },
++	{ PCI_DEVICE_SUB(PCI_VENDOR_ID_BROADCOM, 0x4365, PCI_VENDOR_ID_FOXCONN, 0xe092) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a0) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
@@ -705,7 +706,51 @@
 +}
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -350,7 +350,7 @@ static int bcma_register_devices(struct
+@@ -136,7 +136,6 @@ static bool bcma_is_core_needed_early(u1
+ 	return false;
+ }
+ 
+-#if defined(CONFIG_OF) && defined(CONFIG_OF_ADDRESS)
+ static struct device_node *bcma_of_find_child_device(struct platform_device *parent,
+ 						     struct bcma_device *core)
+ {
+@@ -184,7 +183,7 @@ static unsigned int bcma_of_get_irq(stru
+ 	struct of_phandle_args out_irq;
+ 	int ret;
+ 
+-	if (!parent || !parent->dev.of_node)
++	if (!IS_ENABLED(CONFIG_OF_IRQ) || !parent || !parent->dev.of_node)
+ 		return 0;
+ 
+ 	ret = bcma_of_irq_parse(parent, core, &out_irq, num);
+@@ -202,23 +201,15 @@ static void bcma_of_fill_device(struct p
+ {
+ 	struct device_node *node;
+ 
++	if (!IS_ENABLED(CONFIG_OF_IRQ))
++		return;
++
+ 	node = bcma_of_find_child_device(parent, core);
+ 	if (node)
+ 		core->dev.of_node = node;
+ 
+ 	core->irq = bcma_of_get_irq(parent, core, 0);
+ }
+-#else
+-static void bcma_of_fill_device(struct platform_device *parent,
+-				struct bcma_device *core)
+-{
+-}
+-static inline unsigned int bcma_of_get_irq(struct platform_device *parent,
+-					   struct bcma_device *core, int num)
+-{
+-	return 0;
+-}
+-#endif /* CONFIG_OF */
+ 
+ unsigned int bcma_core_irq(struct bcma_device *core, int num)
+ {
+@@ -350,7 +341,7 @@ static int bcma_register_devices(struct
  		bcma_register_core(bus, core);
  	}
  
