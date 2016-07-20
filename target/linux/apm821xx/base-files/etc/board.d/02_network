@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. /lib/functions/system.sh
+. /lib/functions/uci-defaults.sh
+. /lib/apm821xx.sh
+
+board_config_update
+
+board=$(apm821xx_board_name)
+
+case "$board" in
+*)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

@@ -208,6 +208,7 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_8540:=-mcpu=8540
     CPU_CFLAGS_405:=-mcpu=405
     CPU_CFLAGS_440:=-mcpu=440
+    CPU_CFLAGS_464fp:=-mcpu=464fp
   endif
   ifeq ($(ARCH),sparc)
     CPU_TYPE = sparc
