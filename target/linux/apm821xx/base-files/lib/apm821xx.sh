@@ -14,6 +14,10 @@ apm821xx_board_detect() {
 		name="mr24"
 		;;
 
+	*"MyBook Live"*)
+		name="mbl"
+		;;
+
 	*)
 		name="unknown"
 		;;

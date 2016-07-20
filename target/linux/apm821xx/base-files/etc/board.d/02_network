@@ -9,6 +9,7 @@ board_config_update
 board=$(apm821xx_board_name)
 
 case "$board" in
+mbl | \
 mr24)
 	ucidef_set_interface_lan "eth0"
 	;;

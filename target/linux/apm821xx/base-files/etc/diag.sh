@@ -5,6 +5,10 @@
 
 get_status_led() {
 	case $(apm821xx_board_name) in
+	mbl)
+		status_led="mbl:green:power"
+		;;
+
 	mr24)
 		status_led="mr24:green:power"
 		;;

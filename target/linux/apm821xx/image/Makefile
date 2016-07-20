@@ -78,6 +78,87 @@ define Device/mr24
 endef
 TARGET_DEVICES += mr24
 
-$(eval $(call BuildImage))
+endif
+
+ifeq ($(SUBTARGET),sata)
+
+### Image scripts for the WD My Book Live Series ###
+define Build/boot-script
+	$(STAGING_DIR_HOST)/bin/mkimage -A powerpc -T script -C none -n "$(PROFILE) Boot Script" \
+		-d mbl_boot.scr \
+		$@.scr
+endef
+
+define Build/boot-img
+	$(RM) -rf $@.bootdir
+	mkdir -p $@.bootdir/boot
+
+	$(CP) $@.scr $@.bootdir/boot/boot.scr
+	$(CP) $@.dtb $@.bootdir/boot/$(DEVICE_DTB)
+	$(CP) $(word 1,$^) $@.bootdir/boot/uImage
+
+	genext2fs --block-size $(BLOCKSIZE) --size-in-blocks $$((1024 * $(BOOT_SIZE))) --root $@.bootdir $@.boot
+
+	# convert it to revision 1 - needed for u-boot ext2load
+	$(STAGING_DIR_HOST)/bin/tune2fs -O filetype $@.boot
+	$(STAGING_DIR_HOST)/bin/e2fsck -pDf $@.boot > /dev/null
+endef
+
+define Build/hdd-img
+	./mbl_gen_hdd_img.sh $@ $@.boot $(word 2,$^)
+	$(if $(CONFIG_TARGET_IMAGES_GZIP),gzip -9n -c $@ > $(BIN_DIR)/$(notdir $@).gz)
+endef
+
+define Build/uRamdisk
+	$(call Image/mkfs/ext4)
+	gzip -9n -c $(KDIR)/root.ext4 > $(KDIR)/root.ext4.gz
+	$(STAGING_DIR_HOST)/bin/mkimage -A powerpc -T ramdisk -C gzip -n "$(PROFILE) rootfs" \
+		-d $(KDIR)/root.ext4.gz \
+		$@.uRamdisk
+endef
+
+define Build/recovery-tar
+	sh ./mbl_gen_recovery_tar.sh \
+		--profile $(DEVICE_PROFILE) \
+		--dtb $@.dtb \
+		--dtbname $(DEVICE_DTB) \
+		--kernel $@	 \
+		--rootfs $@.uRamdisk \
+		$@
+endef
+
+define Device/MyBookLiveDefault
+  IMAGE_SIZE := 48m
+  BLOCKSIZE := 1024
+  DTB_SIZE := 16384
+  KERNEL := kernel-bin | gzip | uImage gzip
+  BOOT_SIZE := 8
+  IMAGES := rootfs.img recovery.tar
+  DEVICE_DTB := apollo3g.dtb
+  IMAGE/rootfs.img := boot-script | dtb | boot-img | hdd-img
+  IMAGE/recovery.tar := kernel-bin | dtb | uRamdisk | recovery-tar
+endef
+
+define Device/MyBookLiveSingle
+$(Device/MyBookLiveDefault)
+  DEVICE_TITLE := Western Digital My Book Live
+  DEVICE_DTS := apollo3g
+  DEVICE_PROFILE := apollo3g
+endef
+
+TARGET_DEVICES += MyBookLiveSingle
+
+define Device/MyBookLiveDuo
+$(Device/MyBookLiveDefault)
+  DEVICE_TITLE := Western Digital My Book Live Duo
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev kmod-usb-storage kmod-fs-vfat wpad-mini
+  DEVICE_DTS := apollo3g-duo
+  DEVICE_PROFILE := ap2nc
+endef
+
+TARGET_DEVICES += MyBookLiveDuo
 
 endif
+
+$(eval $(call BuildImage))
+

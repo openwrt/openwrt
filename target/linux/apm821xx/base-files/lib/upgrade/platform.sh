@@ -11,6 +11,11 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
+	mbl)
+		mbl_do_platform_check $board "$1"
+		return $?;
+		;;
+
 	mr24)
 		merakinand_do_platform_check $board "$1"
 		return $?;
@@ -41,6 +46,10 @@ platform_do_upgrade() {
 	local board=$(apm821xx_board_name)
 
 	case "$board" in
+	mbl)
+		mbl_do_upgrade "$ARGV"
+		;;
+
 	*)
 		default_do_upgrade "$ARGV"
 		;;
@@ -51,6 +60,10 @@ platform_copy_config() {
 	local board=$(apm821xx_board_name)
 
 	case "$board" in
+	mbl)
+		mbl_copy_config
+		;;
+
 	*)
 		;;
 	esac
