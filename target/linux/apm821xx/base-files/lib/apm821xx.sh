@@ -10,6 +10,10 @@ apm821xx_board_detect() {
 	model=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /model/ {print $2}' /proc/cpuinfo)
 
 	case "$model" in
+	*"Meraki MR24 Access Point")
+		name="mr24"
+		;;
+
 	*)
 		name="unknown"
 		;;

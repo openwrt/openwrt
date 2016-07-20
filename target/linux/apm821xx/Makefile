@@ -11,6 +11,7 @@ CPU_TYPE:=464fp
 FEATURES:=fpu dt gpio
 MAINTAINER:=Chris Blake <chrisrblake93@gmail.com>, \
 	    Christian Lamparter <chunkeey@gmail.com>
+SUBTARGETS:=nand
 
 KERNEL_PATCHVER:=4.4
 

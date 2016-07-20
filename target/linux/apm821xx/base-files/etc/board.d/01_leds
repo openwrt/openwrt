@@ -8,6 +8,14 @@ board_config_update
 board=$(apm821xx_board_name)
 
 case "$board" in
+mr24)
+	ucidef_set_led_netdev "wan" "WAN" "mr24:green:wan" "eth0"
+	ucidef_set_led_wlan "wlan1" "WLAN1" "mr24:green:wifi1" "phy0assoc"
+	ucidef_set_led_wlan "wlan2" "WLAN2" "mr24:green:wifi2" "phy0assoc"
+	ucidef_set_led_wlan "wlan3" "WLAN3" "mr24:green:wifi3" "phy0assoc"
+	ucidef_set_led_wlan "wlan4" "WLAN4" "mr24:green:wifi4" "phy0tpt"
+	;;
+
 *)
 	;;
 esac
