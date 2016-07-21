@@ -91,7 +91,7 @@ else
   endef
 endif
 
-PROFILE:=$(call qstrip,$(CONFIG_TARGET_PROFILE))
+PROFILE?=$(call qstrip,$(CONFIG_TARGET_PROFILE))
 
 ifeq ($(TARGET_BUILD),1)
   ifneq ($(DUMP),)
