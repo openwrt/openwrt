@@ -82,6 +82,7 @@ CONFIGURE_VARS += \
 	samba_cv_USE_SETRESUID=yes \
 	samba_cv_have_setreuid=yes \
 	samba_cv_have_setresuid=yes \
+	ac_cv_header_libunwind_h=no \
 	ac_cv_header_zlib_h=no \
 	samba_cv_zlib_1_2_3=no \
 	ac_cv_path_PYTHON="" \
