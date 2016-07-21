@@ -26,11 +26,17 @@ define LegacyDevice/R6100
 endef
 LEGACY_DEVICES += R6100
 
-define LegacyDevice/WNDR4300
-  DEVICE_TITLE := NETGEAR WNDR3700v4/WNDR4300
+define LegacyDevice/WNDR3700V4
+  DEVICE_TITLE := NETGEAR WNDR3700v4
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
 endef
-LEGACY_DEVICES += WNDR4300
+LEGACY_DEVICES += WNDR3700V4
+
+define LegacyDevice/WNDR4300V1
+  DEVICE_TITLE := NETGEAR WNDR4300v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
+endef
+LEGACY_DEVICES += WNDR4300V1
 
 define LegacyDevice/NBG6716
   DEVICE_TITLE := Zyxel NBG 6716
