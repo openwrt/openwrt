@@ -1,0 +1,42 @@
+From: Masashi Honma <masashi.honma@gmail.com>
+Date: Wed, 13 Jul 2016 16:04:35 +0900
+Subject: [PATCH] mac80211: End the MPSP even if EOSP frame was not received
+
+The mesh STA sends QoS frame with EOSP (end of service period)
+subfiled=1 to end the MPSP(mesh peer service period). Previously, if
+the frame was not acked by peer, the mesh STA did not end the MPSP.
+This patch ends the MPSP even if the QoS frame was no acked.
+
+Signed-off-by: Masashi Honma <masashi.honma@gmail.com>
+---
+
+--- a/net/mac80211/status.c
++++ b/net/mac80211/status.c
+@@ -784,6 +784,13 @@ void ieee80211_tx_status(struct ieee8021
+ 			clear_sta_flag(sta, WLAN_STA_SP);
+ 
+ 		acked = !!(info->flags & IEEE80211_TX_STAT_ACK);
++
++		/* mesh Peer Service Period support */
++		if (ieee80211_vif_is_mesh(&sta->sdata->vif) &&
++		    ieee80211_is_data_qos(fc))
++			ieee80211_mpsp_trigger_process(
++				ieee80211_get_qos_ctl(hdr), sta, true, acked);
++
+ 		if (!acked && test_sta_flag(sta, WLAN_STA_PS_STA)) {
+ 			/*
+ 			 * The STA is in power save mode, so assume
+@@ -794,13 +801,6 @@ void ieee80211_tx_status(struct ieee8021
+ 			return;
+ 		}
+ 
+-		/* mesh Peer Service Period support */
+-		if (ieee80211_vif_is_mesh(&sta->sdata->vif) &&
+-		    ieee80211_is_data_qos(fc))
+-			ieee80211_mpsp_trigger_process(
+-					ieee80211_get_qos_ctl(hdr),
+-					sta, true, acked);
+-
+ 		if (ieee80211_hw_check(&local->hw, HAS_RATE_CONTROL) &&
+ 		    (ieee80211_is_data(hdr->frame_control)) &&
+ 		    (rates_idx != -1))
