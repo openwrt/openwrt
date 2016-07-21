@@ -111,6 +111,10 @@ define Image/Build/Profile/orangepi_plus
 	$(call Image/Build/SDCard,$(1),sun8i-h3-orangepi-plus)
 endef
 
+define Image/Build/Profile/orangepi_2
+	$(call Image/Build/SDCard,$(1),sun8i-h3-orangepi-2)
+endef
+
 define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Profile/$(PROFILE),$(1))
