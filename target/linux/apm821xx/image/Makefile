@@ -194,20 +194,20 @@ define Build/hdd-img
 endef
 
 define Build/uRamdisk
-	$(call Image/mkfs/ext4)
-	gzip -9n -c $(KDIR)/root.ext4 > $(KDIR)/root.ext4.gz
-	$(STAGING_DIR_HOST)/bin/mkimage -A powerpc -T ramdisk -C gzip -n "$(PROFILE) rootfs" \
-		-d $(KDIR)/root.ext4.gz \
-		$@.uRamdisk
+	$(STAGING_DIR_HOST)/bin/mkimage \
+		-A powerpc -T ramdisk -C gzip \
+		-n "$(DEVICE_NAME) rootfs" \
+		-d $@ $@.new
+	mv $@.new $@
 endef
 
 define Build/recovery-tar
 	sh ./mbl_gen_recovery_tar.sh \
 		--profile $(DEVICE_PROFILE) \
-		--dtb $@.dtb \
+		--dtb $(word 1,$^).dtb \
 		--dtbname $(DEVICE_DTB) \
-		--kernel $@	 \
-		--rootfs $@.uRamdisk \
+		--kernel $(word 1,$^) \
+		--rootfs $@ \
 		$@
 endef
 
@@ -215,12 +215,14 @@ define Device/MyBookLiveDefault
   IMAGE_SIZE := 48m
   BLOCKSIZE := 1024
   DTB_SIZE := 16384
-  KERNEL := kernel-bin | gzip | uImage gzip
+  KERNEL := kernel-bin | dtb | gzip | uImage gzip
   BOOT_SIZE := 8
-  IMAGES := rootfs.img recovery.tar
+  IMAGES := rootfs.img recovery.tar kernel.dtb
   DEVICE_DTB := apollo3g.dtb
+  FILESYSTEMS := ext4
+  IMAGE/kernel.dtb := append-dtb
   IMAGE/rootfs.img := boot-script | dtb | boot-img | hdd-img
-  IMAGE/recovery.tar := kernel-bin | dtb | uRamdisk | recovery-tar
+  IMAGE/recovery.tar := append-rootfs | gzip | uRamdisk | recovery-tar
 endef
 
 define Device/MyBookLiveSingle
