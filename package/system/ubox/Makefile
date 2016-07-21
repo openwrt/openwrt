@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ubox
-PKG_VERSION:=2016-03-07
+PKG_VERSION:=2016-07-19
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(OPENWRT_GIT)/project/ubox.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=fd4bb41ee7ab136d25609c2a917beea5d52b723b
+PKG_SOURCE_VERSION:=aead2c0cbffdda9b46d74a998a4c6aeef423b21a
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -37,8 +37,10 @@ endef
 
 define Package/ubox/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/usr/sbin $(1)/lib/
+	$(INSTALL_DIR) $(1)/sbin $(1)/usr/sbin $(1)/lib/ $(1)/usr/bin
 
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{kmodloader,validate_data} $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/getrandom $(1)/usr/bin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libvalidate.so $(1)/lib
 
 	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/rmmod
