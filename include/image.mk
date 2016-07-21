@@ -145,25 +145,29 @@ define Image/BuildDTB
 	$(RM) $(2).tmp
 endef
 
-define Image/mkfs/jffs2/sub
-		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) --pad -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
-		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(2))
+define Image/mkfs/jffs2/sub-raw
+	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
+		$(2) \
+		-e $(patsubst %k,%KiB,$(1)) \
+		-o $@ -d $(TARGET_DIR) \
+		-v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 endef
 
-define Image/mkfs/jffs2/sub-raw
-		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2)-raw -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
+define Image/mkfs/jffs2/sub
+	$(call Image/mkfs/jffs2/sub-raw,$(1),--pad $(2))
+	$(call add_jffs2_mark,$@)
 endef
 
 define Image/mkfs/jffs2/template
-  Image/mkfs/jffs2-$(1) = $$(call Image/mkfs/jffs2/sub,$(1),$(1),$(JFFS2OPTS))
-  Image/mkfs/jffs2-$(1)-raw = $$(call Image/mkfs/jffs2/sub-raw,$(1),$(1),$(JFFS2OPTS))
+  Image/mkfs/jffs2-$(1) = $$(call Image/mkfs/jffs2/sub,$(1),$(JFFS2OPTS))
+  Image/mkfs/jffs2-$(1)-raw = $$(call Image/mkfs/jffs2/sub-raw,$(1),$(JFFS2OPTS))
 
 endef
 
 define Image/mkfs/jffs2-nand/template
   Image/mkfs/jffs2-nand-$(1) = \
 	$$(call Image/mkfs/jffs2/sub, \
-		$(word 2,$(subst -, ,$(1))),nand-$(1), \
+		$(word 2,$(subst -, ,$(1))), \
 			$(JFFS2OPTS) --no-cleanmarkers --pagesize=$(word 1,$(subst -, ,$(1))))
 
 endef
@@ -172,7 +176,11 @@ $(eval $(foreach S,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/template,$(S))))
 $(eval $(foreach S,$(NAND_BLOCKSIZE),$(call Image/mkfs/jffs2-nand/template,$(S))))
 
 define Image/mkfs/squashfs
-	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(TARGET_DIR) $(KDIR)/root.squashfs -nopad -noappend -root-owned -comp $(SQUASHFSCOMP) $(SQUASHFSOPT) -processors $(if $(CONFIG_PKG_BUILD_JOBS),$(CONFIG_PKG_BUILD_JOBS),1) $(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
+	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(TARGET_DIR) $@ \
+		-nopad -noappend -root-owned \
+		-comp $(SQUASHFSCOMP) $(SQUASHFSOPT) \
+		-processors $(if $(CONFIG_PKG_BUILD_JOBS),$(CONFIG_PKG_BUILD_JOBS),1) \
+		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
 endef
 
 # $(1): board name
@@ -224,7 +232,7 @@ define Image/mkfs/ext4
 		-m $(CONFIG_TARGET_EXT4_RESERVED_PCT) \
 		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
 		$(if $(SOURCE_DATE_EPOCH),-T $(SOURCE_DATE_EPOCH)) \
-		$(KDIR)/root.ext4 $(TARGET_DIR)/
+		$@ $(TARGET_DIR)/
 endef
 
 define Image/mkfs/prepare/default
