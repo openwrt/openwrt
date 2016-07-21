@@ -22,9 +22,6 @@ define Image/boot-imgs
 	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,\
 		$(BIN_DIR)/$(IMG_PREFIX)-system.dtb)
 
-	$(call Image/mkfs/cpiogz)
-	$(call Image/mkfs/targz)
-
 	# Create uboot cpio.gz
 	mkimage -A arm -T ramdisk -C gzip -n "$(PROFILE) OpenWRT rootfs" \
 		-d $(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz \
