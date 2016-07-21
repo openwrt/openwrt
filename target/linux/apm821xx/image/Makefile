@@ -9,6 +9,7 @@ include $(INCLUDE_DIR)/host.mk
 DEVICE_VARS += DEVICE_DTS DEVICE_PROFILE IMAGE_SIZE DTB_SIZE
 
 define Device/Default
+  PROFILES := Default
   KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   DEVICE_PROFILE :=
   DEVICE_DTS :=
