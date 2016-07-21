@@ -28,8 +28,6 @@ define mtdpartsize
 $(shell sz=`echo '$(2)' | sed -ne 's/.*[:$(COMMA)]\([0-9]*\)k[@]*[0-9a-zx]*($(1)).*/\1/p'`; [ -n "$$sz" ] && echo $$(($$sz * 1024)))
 endef
 
-SINGLE_PROFILES:=
-
 # $(1)      : name of image build method to be used, e.g., AthLzma.
 # $(2)      : name of the build template to be used, e.g. 64k, 64kraw, 128k, etc.
 # $(3)      : name of the profile to be defined.
@@ -41,17 +39,6 @@ define SingleProfile
   # $(1): action name, e.g. loader, buildkernel, squashfs, etc.
   define Image/Build/Profile/$(3)
 	$$(call Image/Build/Template/$(2)/$$(1),$(1),$(4),$$(call mkcmdline,$(5),$(6),$(7)),$(8),$(9),$(10),$(11),$(12),$(13),$(14))
-  endef
-  SINGLE_PROFILES += $(3)
-endef
-
-# $(1), name of the MultiProfile to be added.
-# $(2), name of Profiles to be included in the MultiProfile.
-define MultiProfile
-  define Image/Build/Profile/$(1)
-	$(foreach p,$(2),
-		$$(call Image/Build/Profile/$p,$$(1))
-	)
   endef
 endef
 
@@ -1081,29 +1068,6 @@ $(eval $(call SingleProfile,Zcomax,64k,ZCN1523H516,zcn-1523h-5-16,ZCN-1523H-5,tt
 
 $(eval $(call SingleProfile,ZyXEL,64k,NBG_460N_550N_550NH,nbg460n_550n_550nh,NBG460N,ttyS0,115200,NBG-460N))
 
-$(eval $(call MultiProfile,AP121,AP121_2M AP121_4M AP121_8M AP121_16M))
-$(eval $(call MultiProfile,AP136,AP136_010 AP136_020))
-$(eval $(call MultiProfile,AP143,AP143_8M AP143_16M))
-$(eval $(call MultiProfile,AP147,AP147_010))
-$(eval $(call MultiProfile,AP152,AP152_16M))
-$(eval $(call MultiProfile,DIR615IX,DIR615I1 DIR615I3))
-$(eval $(call MultiProfile,EWDORIN, EWDORINAP EWDORINRT EWDORIN16M))
-$(eval $(call MultiProfile,OPENMESH,OM2P OM5P OM5PAC MR600 MR900 MR1750))
-$(eval $(call MultiProfile,TEW652BRP,TEW652BRP_FW TEW652BRP_RECOVERY))
-$(eval $(call MultiProfile,TUBE2H,TUBE2H8M TUBE2H16M))
-$(eval $(call MultiProfile,WNR612V2,REALWNR612V2 N150R))
-$(eval $(call MultiProfile,WNR1000V2,REALWNR1000V2 WNR1000V2_VC))
-$(eval $(call MultiProfile,WP543,WP543_2M WP543_4M WP543_8M WP543_16M))
-$(eval $(call MultiProfile,WPE72,WPE72_4M WPE72_8M WPE72_16M))
-$(eval $(call MultiProfile,WPJ342,WPJ342_16M))
-$(eval $(call MultiProfile,WPJ344,WPJ344_16M))
-$(eval $(call MultiProfile,WPJ531,WPJ531_16M))
-$(eval $(call MultiProfile,WPJ558,WPJ558_16M))
-$(eval $(call MultiProfile,Yun,YUN_16M YUN_8M))
-
-$(eval $(call MultiProfile,Minimal,$(SINGLE_PROFILES)))
-$(eval $(call MultiProfile,Madwifi,EAP7660D WP543))
-
 define LegacyDevice/OM2P
   DEVICE_TITLE := OpenMesh OM2P/OM2Pv2/OM2P-HS/OM2P-HSv2/OM2P-HSv3/OM2P-LC
   DEVICE_PACKAGES := kmod-ath9k om-watchdog
@@ -1120,11 +1084,7 @@ $(eval $(call SingleProfile,NetgearNAND,64k,R6100,r6100,R6100,ttyS0,115200,$$(r6
 
 $(eval $(call SingleProfile,ZyXELNAND,128k,NBG6716,nbg6716,NBG6716,ttyS0,115200,NBG6716,$$(zyx_nbg6716_mtdlayout),mem=256M))
 
-$(eval $(call MultiProfile,WNDR4300,WNDR3700V4 WNDR4300V1))
-
 endif # ifeq ($(SUBTARGET),nand)
-
-$(eval $(call MultiProfile,Default,$(SINGLE_PROFILES)))
 
 define Image/Build/squashfs
 	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-raw
