@@ -93,8 +93,6 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  create mode 100644 arch/arm/dts/sun8i-a83t-cubietruck-plus.dts
  create mode 100644 arch/arm/dts/sunxi-itead-core-common.dtsi
 
-diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index 578038b..0cea4b4 100644
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
 @@ -126,6 +126,7 @@ dtb-$(CONFIG_MACH_SUN4I) += \
@@ -125,17 +123,17 @@ index 578038b..0cea4b4 100644
  	sun7i-a20-lamobo-r1.dtb \
  	sun7i-a20-m3.dtb \
  	sun7i-a20-m5.dtb \
-@@ -189,6 +194,7 @@ dtb-$(CONFIG_MACH_SUN8I_A33) += \
+@@ -189,8 +194,10 @@ dtb-$(CONFIG_MACH_SUN8I_A33) += \
  	sun8i-a33-sinlinx-sina33.dtb
  dtb-$(CONFIG_MACH_SUN8I_A83T) += \
  	sun8i-a83t-allwinner-h8homlet-v2.dtb \
 +	sun8i-a83t-cubietruck-plus.dtb \
  	sun8i-a83t-sinovoip-bpi-m3.dtb
  dtb-$(CONFIG_MACH_SUN8I_H3) += \
++	sun8i-h3-orangepi-2.dtb \
  	sun8i-h3-orangepi-pc.dtb \
-diff --git a/arch/arm/dts/axp22x.dtsi b/arch/arm/dts/axp22x.dtsi
-new file mode 100644
-index 0000000..0cfec50
+ 	sun8i-h3-orangepi-plus.dtb
+ dtb-$(CONFIG_MACH_SUN9I) += \
 --- /dev/null
 +++ b/arch/arm/dts/axp22x.dtsi
 @@ -0,0 +1,145 @@
@@ -284,8 +282,6 @@ index 0000000..0cfec50
 +		};
 +	};
 +};
-diff --git a/arch/arm/dts/sun4i-a10-a1000.dts b/arch/arm/dts/sun4i-a10-a1000.dts
-index 2630d78..97570cb 100644
 --- a/arch/arm/dts/sun4i-a10-a1000.dts
 +++ b/arch/arm/dts/sun4i-a10-a1000.dts
 @@ -93,6 +93,10 @@
@@ -299,8 +295,6 @@ index 2630d78..97570cb 100644
  &ehci0 {
  	status = "okay";
  };
-diff --git a/arch/arm/dts/sun4i-a10-chuwi-v7-cw0825.dts b/arch/arm/dts/sun4i-a10-chuwi-v7-cw0825.dts
-index 1430568..023b03e 100644
 --- a/arch/arm/dts/sun4i-a10-chuwi-v7-cw0825.dts
 +++ b/arch/arm/dts/sun4i-a10-chuwi-v7-cw0825.dts
 @@ -45,6 +45,7 @@
@@ -339,8 +333,6 @@ index 1430568..023b03e 100644
  &lradc {
  	vref-supply = <&reg_vcc3v0>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun4i-a10-cubieboard.dts b/arch/arm/dts/sun4i-a10-cubieboard.dts
-index 046a84d..710e2ef 100644
 --- a/arch/arm/dts/sun4i-a10-cubieboard.dts
 +++ b/arch/arm/dts/sun4i-a10-cubieboard.dts
 @@ -83,6 +83,10 @@
@@ -354,8 +346,6 @@ index 046a84d..710e2ef 100644
  &cpu0 {
  	cpu-supply = <&reg_dcdc2>;
  };
-diff --git a/arch/arm/dts/sun4i-a10-gemei-g9.dts b/arch/arm/dts/sun4i-a10-gemei-g9.dts
-index 570754d..ac64781 100644
 --- a/arch/arm/dts/sun4i-a10-gemei-g9.dts
 +++ b/arch/arm/dts/sun4i-a10-gemei-g9.dts
 @@ -47,6 +47,7 @@
@@ -470,8 +460,6 @@ index 570754d..ac64781 100644
  &reg_usb1_vbus {
  	status = "okay";
  };
-diff --git a/arch/arm/dts/sun4i-a10-inet1.dts b/arch/arm/dts/sun4i-a10-inet1.dts
-index 487ce63..e09053b 100644
 --- a/arch/arm/dts/sun4i-a10-inet1.dts
 +++ b/arch/arm/dts/sun4i-a10-inet1.dts
 @@ -47,6 +47,7 @@
@@ -562,8 +550,6 @@ index 487ce63..e09053b 100644
  &reg_dcdc2 {
  	regulator-always-on;
  	regulator-min-microvolt = <1000000>;
-diff --git a/arch/arm/dts/sun4i-a10-inet97fv2.dts b/arch/arm/dts/sun4i-a10-inet97fv2.dts
-index 6c927a8..04b0d2d 100644
 --- a/arch/arm/dts/sun4i-a10-inet97fv2.dts
 +++ b/arch/arm/dts/sun4i-a10-inet97fv2.dts
 @@ -47,6 +47,8 @@
@@ -737,8 +723,6 @@ index 6c927a8..04b0d2d 100644
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
  };
-diff --git a/arch/arm/dts/sun4i-a10-inet9f-rev03.dts b/arch/arm/dts/sun4i-a10-inet9f-rev03.dts
-index 8446465..bba4f9c 100644
 --- a/arch/arm/dts/sun4i-a10-inet9f-rev03.dts
 +++ b/arch/arm/dts/sun4i-a10-inet9f-rev03.dts
 @@ -59,6 +59,159 @@
@@ -949,8 +933,6 @@ index 8446465..bba4f9c 100644
  	usb0_id_detect_pin: usb0_id_detect_pin@0 {
  		allwinner,pins = "PH4";
  		allwinner,function = "gpio_in";
-diff --git a/arch/arm/dts/sun4i-a10-itead-iteaduino-plus.dts b/arch/arm/dts/sun4i-a10-itead-iteaduino-plus.dts
-index 985e155..4e798f0 100644
 --- a/arch/arm/dts/sun4i-a10-itead-iteaduino-plus.dts
 +++ b/arch/arm/dts/sun4i-a10-itead-iteaduino-plus.dts
 @@ -1,5 +1,6 @@
@@ -1085,8 +1067,6 @@ index 985e155..4e798f0 100644
 -	usb2_vbus-supply = <&reg_usb2_vbus>;
 -	status = "okay";
 -};
-diff --git a/arch/arm/dts/sun4i-a10-jesurun-q5.dts b/arch/arm/dts/sun4i-a10-jesurun-q5.dts
-index dc2f2ae..7afc7a6 100644
 --- a/arch/arm/dts/sun4i-a10-jesurun-q5.dts
 +++ b/arch/arm/dts/sun4i-a10-jesurun-q5.dts
 @@ -156,6 +156,10 @@
@@ -1126,8 +1106,6 @@ index dc2f2ae..7afc7a6 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun4i-a10-marsboard.dts b/arch/arm/dts/sun4i-a10-marsboard.dts
-index 02158bc..8e50723 100644
 --- a/arch/arm/dts/sun4i-a10-marsboard.dts
 +++ b/arch/arm/dts/sun4i-a10-marsboard.dts
 @@ -91,6 +91,10 @@
@@ -1182,8 +1160,6 @@ index 02158bc..8e50723 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun4i-a10-mk802.dts b/arch/arm/dts/sun4i-a10-mk802.dts
-index 3c7eebe..ee46ea8 100644
 --- a/arch/arm/dts/sun4i-a10-mk802.dts
 +++ b/arch/arm/dts/sun4i-a10-mk802.dts
 @@ -44,6 +44,7 @@
@@ -1260,8 +1236,6 @@ index 3c7eebe..ee46ea8 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun4i-a10-olinuxino-lime.dts b/arch/arm/dts/sun4i-a10-olinuxino-lime.dts
-index 28e32ad..b350448 100644
 --- a/arch/arm/dts/sun4i-a10-olinuxino-lime.dts
 +++ b/arch/arm/dts/sun4i-a10-olinuxino-lime.dts
 @@ -124,6 +124,18 @@
@@ -1283,8 +1257,6 @@ index 28e32ad..b350448 100644
  &mdio {
  	status = "okay";
  
-diff --git a/arch/arm/dts/sun4i-a10-pcduino.dts b/arch/arm/dts/sun4i-a10-pcduino.dts
-index 4e3e1b9..39034aa 100644
 --- a/arch/arm/dts/sun4i-a10-pcduino.dts
 +++ b/arch/arm/dts/sun4i-a10-pcduino.dts
 @@ -104,6 +104,10 @@
@@ -1386,9 +1358,6 @@ index 4e3e1b9..39034aa 100644
 +	usb2_vbus-supply = <&reg_vcc5v0>; /* USB2 VBUS is always on */
  	status = "okay";
  };
-diff --git a/arch/arm/dts/sun4i-a10-pcduino2.dts b/arch/arm/dts/sun4i-a10-pcduino2.dts
-new file mode 100644
-index 0000000..de483a1
 --- /dev/null
 +++ b/arch/arm/dts/sun4i-a10-pcduino2.dts
 @@ -0,0 +1,78 @@
@@ -1470,8 +1439,6 @@ index 0000000..de483a1
 +	usb2_vbus-supply = <&reg_usb2_vbus>;
 +	status = "okay";
 +};
-diff --git a/arch/arm/dts/sun4i-a10-pov-protab2-ips9.dts b/arch/arm/dts/sun4i-a10-pov-protab2-ips9.dts
-index 223515e..ea90634 100644
 --- a/arch/arm/dts/sun4i-a10-pov-protab2-ips9.dts
 +++ b/arch/arm/dts/sun4i-a10-pov-protab2-ips9.dts
 @@ -47,6 +47,7 @@
@@ -1589,8 +1556,6 @@ index 223515e..ea90634 100644
  &reg_dcdc2 {
  	regulator-always-on;
  	regulator-min-microvolt = <1000000>;
-diff --git a/arch/arm/dts/sun4i-a10.dtsi b/arch/arm/dts/sun4i-a10.dtsi
-index 463bacd..2c8f5e6 100644
 --- a/arch/arm/dts/sun4i-a10.dtsi
 +++ b/arch/arm/dts/sun4i-a10.dtsi
 @@ -45,6 +45,7 @@
@@ -1840,8 +1805,6 @@ index 463bacd..2c8f5e6 100644
  		sid: eeprom@01c23800 {
  			compatible = "allwinner,sun4i-a10-sid";
  			reg = <0x01c23800 0x10>;
-diff --git a/arch/arm/dts/sun5i-a10s-auxtek-t004.dts b/arch/arm/dts/sun5i-a10s-auxtek-t004.dts
-index 2b3511e..a790ec8 100644
 --- a/arch/arm/dts/sun5i-a10s-auxtek-t004.dts
 +++ b/arch/arm/dts/sun5i-a10s-auxtek-t004.dts
 @@ -86,6 +86,20 @@
@@ -1865,8 +1828,6 @@ index 2b3511e..a790ec8 100644
  &mmc0 {
  	pinctrl-names = "default";
  	pinctrl-0 = <&mmc0_pins_a>, <&mmc0_cd_pin_t004>;
-diff --git a/arch/arm/dts/sun5i-a10s-olinuxino-micro.dts b/arch/arm/dts/sun5i-a10s-olinuxino-micro.dts
-index 5a422c1..86d046a 100644
 --- a/arch/arm/dts/sun5i-a10s-olinuxino-micro.dts
 +++ b/arch/arm/dts/sun5i-a10s-olinuxino-micro.dts
 @@ -111,7 +111,7 @@
@@ -1878,8 +1839,6 @@ index 5a422c1..86d046a 100644
  		pagesize = <16>;
  		reg = <0x50>;
  		read-only;
-diff --git a/arch/arm/dts/sun5i-a13-empire-electronix-d709.dts b/arch/arm/dts/sun5i-a13-empire-electronix-d709.dts
-index 7fbb0b0..6efbba6 100644
 --- a/arch/arm/dts/sun5i-a13-empire-electronix-d709.dts
 +++ b/arch/arm/dts/sun5i-a13-empire-electronix-d709.dts
 @@ -123,7 +123,7 @@
@@ -1920,8 +1879,6 @@ index 7fbb0b0..6efbba6 100644
  		allwinner,pins = "PG0";
  		allwinner,function = "gpio_in";
  		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
-diff --git a/arch/arm/dts/sun5i-a13-inet-98v-rev2.dts b/arch/arm/dts/sun5i-a13-inet-98v-rev2.dts
-index 6d466a2..1b11ec9 100644
 --- a/arch/arm/dts/sun5i-a13-inet-98v-rev2.dts
 +++ b/arch/arm/dts/sun5i-a13-inet-98v-rev2.dts
 @@ -123,21 +123,6 @@
@@ -1976,8 +1933,6 @@ index 6d466a2..1b11ec9 100644
 +	usb1_vbus-supply = <&reg_ldo3>;
  	status = "okay";
  };
-diff --git a/arch/arm/dts/sun5i-a13-utoo-p66.dts b/arch/arm/dts/sun5i-a13-utoo-p66.dts
-index eb793d5..fa9ddfd 100644
 --- a/arch/arm/dts/sun5i-a13-utoo-p66.dts
 +++ b/arch/arm/dts/sun5i-a13-utoo-p66.dts
 @@ -47,11 +47,21 @@
@@ -2043,8 +1998,6 @@ index eb793d5..fa9ddfd 100644
  &reg_dcdc2 {
  	regulator-always-on;
  	regulator-min-microvolt = <1000000>;
-diff --git a/arch/arm/dts/sun5i-q8-common.dtsi b/arch/arm/dts/sun5i-q8-common.dtsi
-index 0641d68..a78e189 100644
 --- a/arch/arm/dts/sun5i-q8-common.dtsi
 +++ b/arch/arm/dts/sun5i-q8-common.dtsi
 @@ -41,11 +41,21 @@
@@ -2069,8 +2022,6 @@ index 0641d68..a78e189 100644
  	chosen {
  		stdout-path = "serial0:115200n8";
  	};
-diff --git a/arch/arm/dts/sun5i-r8-chip.dts b/arch/arm/dts/sun5i-r8-chip.dts
-index abf3ccb..6ad19e2 100644
 --- a/arch/arm/dts/sun5i-r8-chip.dts
 +++ b/arch/arm/dts/sun5i-r8-chip.dts
 @@ -64,6 +64,26 @@
@@ -2151,8 +2102,6 @@ index abf3ccb..6ad19e2 100644
  &reg_ldo5 {
  	regulator-min-microvolt = <1800000>;
  	regulator-max-microvolt = <1800000>;
-diff --git a/arch/arm/dts/sun5i.dtsi b/arch/arm/dts/sun5i.dtsi
-index 9ffee9b..59a9426 100644
 --- a/arch/arm/dts/sun5i.dtsi
 +++ b/arch/arm/dts/sun5i.dtsi
 @@ -44,6 +44,7 @@
@@ -2214,8 +2163,6 @@ index 9ffee9b..59a9426 100644
  		sid: eeprom@01c23800 {
  			compatible = "allwinner,sun4i-a10-sid";
  			reg = <0x01c23800 0x10>;
-diff --git a/arch/arm/dts/sun6i-a31-colombus.dts b/arch/arm/dts/sun6i-a31-colombus.dts
-index 0d0b6f2..f9cf368 100644
 --- a/arch/arm/dts/sun6i-a31-colombus.dts
 +++ b/arch/arm/dts/sun6i-a31-colombus.dts
 @@ -60,6 +60,16 @@
@@ -2263,8 +2210,6 @@ index 0d0b6f2..f9cf368 100644
  };
  
  &reg_usb2_vbus {
-diff --git a/arch/arm/dts/sun6i-a31-hummingbird.dts b/arch/arm/dts/sun6i-a31-hummingbird.dts
-index d0cfada..9a74637 100644
 --- a/arch/arm/dts/sun6i-a31-hummingbird.dts
 +++ b/arch/arm/dts/sun6i-a31-hummingbird.dts
 @@ -54,6 +54,8 @@
@@ -2454,8 +2399,6 @@ index d0cfada..9a74637 100644
  &reg_usb1_vbus {
  	gpio = <&pio 7 24 GPIO_ACTIVE_HIGH>; /* PH24 */
  	status = "okay";
-diff --git a/arch/arm/dts/sun6i-a31.dtsi b/arch/arm/dts/sun6i-a31.dtsi
-index 44f889f..1867af2 100644
 --- a/arch/arm/dts/sun6i-a31.dtsi
 +++ b/arch/arm/dts/sun6i-a31.dtsi
 @@ -61,7 +61,7 @@
@@ -2600,8 +2543,6 @@ index 44f889f..1867af2 100644
  			#size-cells = <0>;
  			#gpio-cells = <3>;
  
-diff --git a/arch/arm/dts/sun6i-a31s-primo81.dts b/arch/arm/dts/sun6i-a31s-primo81.dts
-index cfdc03e..379746a 100644
 --- a/arch/arm/dts/sun6i-a31s-primo81.dts
 +++ b/arch/arm/dts/sun6i-a31s-primo81.dts
 @@ -1,16 +1,57 @@
@@ -2871,9 +2812,6 @@ index cfdc03e..379746a 100644
 +	usb1_vbus-supply = <&reg_dldo1>;
  	status = "okay";
  };
-diff --git a/arch/arm/dts/sun6i-a31s-sina31s-core.dtsi b/arch/arm/dts/sun6i-a31s-sina31s-core.dtsi
-new file mode 100644
-index 0000000..4ec0c86
 --- /dev/null
 +++ b/arch/arm/dts/sun6i-a31s-sina31s-core.dtsi
 @@ -0,0 +1,142 @@
@@ -3019,9 +2957,6 @@ index 0000000..4ec0c86
 +	status = "okay";
 +};
 +
-diff --git a/arch/arm/dts/sun6i-a31s-sina31s.dts b/arch/arm/dts/sun6i-a31s-sina31s.dts
-new file mode 100644
-index 0000000..6ead2f5
 --- /dev/null
 +++ b/arch/arm/dts/sun6i-a31s-sina31s.dts
 @@ -0,0 +1,153 @@
@@ -3178,9 +3113,6 @@ index 0000000..6ead2f5
 +&usbphy {
 +	status = "okay";
 +};
-diff --git a/arch/arm/dts/sun6i-a31s-yones-toptech-bs1078-v2.dts b/arch/arm/dts/sun6i-a31s-yones-toptech-bs1078-v2.dts
-new file mode 100644
-index 0000000..360adfb
 --- /dev/null
 +++ b/arch/arm/dts/sun6i-a31s-yones-toptech-bs1078-v2.dts
 @@ -0,0 +1,205 @@
@@ -3389,8 +3321,6 @@ index 0000000..360adfb
 +	usb2_vbus-supply = <&reg_dc1sw>;
 +	status = "okay";
 +};
-diff --git a/arch/arm/dts/sun7i-a20-bananapi.dts b/arch/arm/dts/sun7i-a20-bananapi.dts
-index 9f7b472..67c8a76 100644
 --- a/arch/arm/dts/sun7i-a20-bananapi.dts
 +++ b/arch/arm/dts/sun7i-a20-bananapi.dts
 @@ -92,6 +92,24 @@
@@ -3511,8 +3441,6 @@ index 9f7b472..67c8a76 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun7i-a20-cubieboard2.dts b/arch/arm/dts/sun7i-a20-cubieboard2.dts
-index 39a51d5..1fa832d 100644
 --- a/arch/arm/dts/sun7i-a20-cubieboard2.dts
 +++ b/arch/arm/dts/sun7i-a20-cubieboard2.dts
 @@ -84,6 +84,10 @@
@@ -3572,8 +3500,6 @@ index 39a51d5..1fa832d 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun7i-a20-cubietruck.dts b/arch/arm/dts/sun7i-a20-cubietruck.dts
-index e6b0192..8da939a 100644
 --- a/arch/arm/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/dts/sun7i-a20-cubietruck.dts
 @@ -101,6 +101,10 @@
@@ -3587,9 +3513,6 @@ index e6b0192..8da939a 100644
  &cpu0 {
  	cpu-supply = <&reg_dcdc2>;
  };
-diff --git a/arch/arm/dts/sun7i-a20-icnova-swac.dts b/arch/arm/dts/sun7i-a20-icnova-swac.dts
-new file mode 100644
-index 0000000..f5b5325
 --- /dev/null
 +++ b/arch/arm/dts/sun7i-a20-icnova-swac.dts
 @@ -0,0 +1,169 @@
@@ -3762,9 +3685,6 @@ index 0000000..f5b5325
 +	usb2_vbus-supply = <&reg_usb2_vbus>;
 +	status = "okay";
 +};
-diff --git a/arch/arm/dts/sun7i-a20-itead-ibox.dts b/arch/arm/dts/sun7i-a20-itead-ibox.dts
-new file mode 100644
-index 0000000..661c21d
 --- /dev/null
 +++ b/arch/arm/dts/sun7i-a20-itead-ibox.dts
 @@ -0,0 +1,125 @@
@@ -3893,8 +3813,6 @@ index 0000000..661c21d
 +&reg_ahci_5v {
 +	status = "okay";
 +};
-diff --git a/arch/arm/dts/sun7i-a20-lamobo-r1.dts b/arch/arm/dts/sun7i-a20-lamobo-r1.dts
-index 975b0b2..5ee43d8 100644
 --- a/arch/arm/dts/sun7i-a20-lamobo-r1.dts
 +++ b/arch/arm/dts/sun7i-a20-lamobo-r1.dts
 @@ -97,16 +97,6 @@
@@ -3914,8 +3832,6 @@ index 975b0b2..5ee43d8 100644
  };
  
  &ehci0 {
-diff --git a/arch/arm/dts/sun7i-a20-mk808c.dts b/arch/arm/dts/sun7i-a20-mk808c.dts
-index 4f432f8..90ff4a2 100644
 --- a/arch/arm/dts/sun7i-a20-mk808c.dts
 +++ b/arch/arm/dts/sun7i-a20-mk808c.dts
 @@ -53,6 +53,7 @@
@@ -3986,8 +3902,6 @@ index 4f432f8..90ff4a2 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun7i-a20-olimex-som-evb.dts b/arch/arm/dts/sun7i-a20-olimex-som-evb.dts
-index 6904dbd..23aacce 100644
 --- a/arch/arm/dts/sun7i-a20-olimex-som-evb.dts
 +++ b/arch/arm/dts/sun7i-a20-olimex-som-evb.dts
 @@ -1,5 +1,6 @@
@@ -4155,8 +4069,6 @@ index 6904dbd..23aacce 100644
  	usb0_vbus-supply = <&reg_usb0_vbus>;
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
-diff --git a/arch/arm/dts/sun7i-a20-olinuxino-lime.dts b/arch/arm/dts/sun7i-a20-olinuxino-lime.dts
-index 0423708..35ad700 100644
 --- a/arch/arm/dts/sun7i-a20-olinuxino-lime.dts
 +++ b/arch/arm/dts/sun7i-a20-olinuxino-lime.dts
 @@ -117,6 +117,18 @@
@@ -4178,8 +4090,6 @@ index 0423708..35ad700 100644
  &mmc0 {
  	pinctrl-names = "default";
  	pinctrl-0 = <&mmc0_pins_a>, <&mmc0_cd_pin_reference_design>;
-diff --git a/arch/arm/dts/sun7i-a20-olinuxino-lime2.dts b/arch/arm/dts/sun7i-a20-olinuxino-lime2.dts
-index 8acff78..d5c796c 100644
 --- a/arch/arm/dts/sun7i-a20-olinuxino-lime2.dts
 +++ b/arch/arm/dts/sun7i-a20-olinuxino-lime2.dts
 @@ -170,6 +170,12 @@
@@ -4265,8 +4175,6 @@ index 8acff78..d5c796c 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/dts/sun7i-a20-olinuxino-micro.dts
-index c5d70ca..7e3006f 100644
 --- a/arch/arm/dts/sun7i-a20-olinuxino-micro.dts
 +++ b/arch/arm/dts/sun7i-a20-olinuxino-micro.dts
 @@ -125,6 +125,12 @@
@@ -4282,8 +4190,6 @@ index c5d70ca..7e3006f 100644
  };
  
  &i2c2 {
-diff --git a/arch/arm/dts/sun7i-a20-orangepi-mini.dts b/arch/arm/dts/sun7i-a20-orangepi-mini.dts
-index 73cd81e..2be04c4 100644
 --- a/arch/arm/dts/sun7i-a20-orangepi-mini.dts
 +++ b/arch/arm/dts/sun7i-a20-orangepi-mini.dts
 @@ -95,6 +95,10 @@
@@ -4349,8 +4255,6 @@ index 73cd81e..2be04c4 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun7i-a20-orangepi.dts b/arch/arm/dts/sun7i-a20-orangepi.dts
-index 55a06ce..71125bf 100644
 --- a/arch/arm/dts/sun7i-a20-orangepi.dts
 +++ b/arch/arm/dts/sun7i-a20-orangepi.dts
 @@ -141,7 +141,18 @@
@@ -4405,8 +4309,6 @@ index 55a06ce..71125bf 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun7i-a20-pcduino3-nano.dts b/arch/arm/dts/sun7i-a20-pcduino3-nano.dts
-index 5361fce..ddac732 100644
 --- a/arch/arm/dts/sun7i-a20-pcduino3-nano.dts
 +++ b/arch/arm/dts/sun7i-a20-pcduino3-nano.dts
 @@ -82,6 +82,14 @@
@@ -4527,8 +4429,6 @@ index 5361fce..ddac732 100644
 +	usb2_vbus-supply = <&reg_usb1_vbus>;
  	status = "okay";
  };
-diff --git a/arch/arm/dts/sun7i-a20-pcduino3.dts b/arch/arm/dts/sun7i-a20-pcduino3.dts
-index afc9ece..1a8b39b 100644
 --- a/arch/arm/dts/sun7i-a20-pcduino3.dts
 +++ b/arch/arm/dts/sun7i-a20-pcduino3.dts
 @@ -111,6 +111,14 @@
@@ -4638,8 +4538,6 @@ index afc9ece..1a8b39b 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun7i-a20-wexler-tab7200.dts b/arch/arm/dts/sun7i-a20-wexler-tab7200.dts
-index 83c6d3f..2f6b21a 100644
 --- a/arch/arm/dts/sun7i-a20-wexler-tab7200.dts
 +++ b/arch/arm/dts/sun7i-a20-wexler-tab7200.dts
 @@ -48,6 +48,7 @@
@@ -4787,8 +4685,6 @@ index 83c6d3f..2f6b21a 100644
  	usb1_vbus-supply = <&reg_usb1_vbus>;
  	usb2_vbus-supply = <&reg_usb2_vbus>;
  	status = "okay";
-diff --git a/arch/arm/dts/sun7i-a20-wits-pro-a20-dkt.dts b/arch/arm/dts/sun7i-a20-wits-pro-a20-dkt.dts
-index e7d84fe..dc31d47 100644
 --- a/arch/arm/dts/sun7i-a20-wits-pro-a20-dkt.dts
 +++ b/arch/arm/dts/sun7i-a20-wits-pro-a20-dkt.dts
 @@ -1,13 +1,52 @@
@@ -5012,8 +4908,6 @@ index e7d84fe..dc31d47 100644
 +	usb2_vbus-supply = <&reg_usb2_vbus>;
 +	status = "okay";
 +};
-diff --git a/arch/arm/dts/sun7i-a20.dtsi b/arch/arm/dts/sun7i-a20.dtsi
-index 71ab6b8..0940a78 100644
 --- a/arch/arm/dts/sun7i-a20.dtsi
 +++ b/arch/arm/dts/sun7i-a20.dtsi
 @@ -47,6 +47,7 @@
@@ -5220,8 +5114,6 @@ index 71ab6b8..0940a78 100644
  		sid: eeprom@01c23800 {
  			compatible = "allwinner,sun7i-a20-sid";
  			reg = <0x01c23800 0x200>;
-diff --git a/arch/arm/dts/sun8i-a23-a33.dtsi b/arch/arm/dts/sun8i-a23-a33.dtsi
-index 9c4a55c..7e05e09 100644
 --- a/arch/arm/dts/sun8i-a23-a33.dtsi
 +++ b/arch/arm/dts/sun8i-a23-a33.dtsi
 @@ -56,7 +56,7 @@
@@ -5364,8 +5256,6 @@ index 9c4a55c..7e05e09 100644
 +		};
  	};
  };
-diff --git a/arch/arm/dts/sun8i-a23-gt90h-v4.dts b/arch/arm/dts/sun8i-a23-gt90h-v4.dts
-index 1aeb06c..b2ce284 100644
 --- a/arch/arm/dts/sun8i-a23-gt90h-v4.dts
 +++ b/arch/arm/dts/sun8i-a23-gt90h-v4.dts
 @@ -47,15 +47,26 @@
@@ -5535,8 +5425,6 @@ index 1aeb06c..b2ce284 100644
 +	usb1_vbus-supply = <&reg_dldo1>;
  	status = "okay";
  };
-diff --git a/arch/arm/dts/sun8i-a23.dtsi b/arch/arm/dts/sun8i-a23.dtsi
-index 2cc27c7..92e6616 100644
 --- a/arch/arm/dts/sun8i-a23.dtsi
 +++ b/arch/arm/dts/sun8i-a23.dtsi
 @@ -50,6 +50,31 @@
@@ -5571,8 +5459,6 @@ index 2cc27c7..92e6616 100644
  		mbus_clk: clk@01c2015c {
  			#clock-cells = <0>;
  			compatible = "allwinner,sun8i-a23-mbus-clk";
-diff --git a/arch/arm/dts/sun8i-a33-sinlinx-sina33.dts b/arch/arm/dts/sun8i-a33-sinlinx-sina33.dts
-index 1d5390d..fef6abc 100644
 --- a/arch/arm/dts/sun8i-a33-sinlinx-sina33.dts
 +++ b/arch/arm/dts/sun8i-a33-sinlinx-sina33.dts
 @@ -68,7 +68,7 @@
@@ -5692,8 +5578,6 @@ index 1d5390d..fef6abc 100644
  &uart0 {
  	pinctrl-names = "default";
  	pinctrl-0 = <&uart0_pins_b>;
-diff --git a/arch/arm/dts/sun8i-a33.dtsi b/arch/arm/dts/sun8i-a33.dtsi
-index faa7d3c..001d840 100644
 --- a/arch/arm/dts/sun8i-a33.dtsi
 +++ b/arch/arm/dts/sun8i-a33.dtsi
 @@ -72,6 +72,41 @@
@@ -5755,9 +5639,6 @@ index faa7d3c..001d840 100644
  		usb_otg: usb@01c19000 {
  			compatible = "allwinner,sun8i-a33-musb";
  			reg = <0x01c19000 0x0400>;
-diff --git a/arch/arm/dts/sun8i-a83t-cubietruck-plus.dts b/arch/arm/dts/sun8i-a83t-cubietruck-plus.dts
-new file mode 100644
-index 0000000..88b1e09
 --- /dev/null
 +++ b/arch/arm/dts/sun8i-a83t-cubietruck-plus.dts
 @@ -0,0 +1,65 @@
@@ -5826,8 +5707,6 @@ index 0000000..88b1e09
 +	pinctrl-0 = <&uart0_pins_b>;
 +	status = "okay";
 +};
-diff --git a/arch/arm/dts/sun8i-a83t.dtsi b/arch/arm/dts/sun8i-a83t.dtsi
-index 245b819..d3473f8 100644
 --- a/arch/arm/dts/sun8i-a83t.dtsi
 +++ b/arch/arm/dts/sun8i-a83t.dtsi
 @@ -52,12 +52,6 @@
@@ -6039,8 +5918,6 @@ index 245b819..d3473f8 100644
 +		};
  	};
  };
-diff --git a/arch/arm/dts/sun8i-h3-orangepi-pc.dts b/arch/arm/dts/sun8i-h3-orangepi-pc.dts
-index 4b25dcc..30ccca0 100644
 --- a/arch/arm/dts/sun8i-h3-orangepi-pc.dts
 +++ b/arch/arm/dts/sun8i-h3-orangepi-pc.dts
 @@ -45,6 +45,7 @@
@@ -6140,8 +6017,6 @@ index 4b25dcc..30ccca0 100644
  &uart0 {
  	pinctrl-names = "default";
  	pinctrl-0 = <&uart0_pins_a>;
-diff --git a/arch/arm/dts/sun8i-h3-orangepi-plus.dts b/arch/arm/dts/sun8i-h3-orangepi-plus.dts
-index 1cb6c66..900ec4f 100644
 --- a/arch/arm/dts/sun8i-h3-orangepi-plus.dts
 +++ b/arch/arm/dts/sun8i-h3-orangepi-plus.dts
 @@ -45,6 +45,7 @@
@@ -6221,8 +6096,6 @@ index 1cb6c66..900ec4f 100644
  };
  
  &ehci1 {
-diff --git a/arch/arm/dts/sun8i-h3.dtsi b/arch/arm/dts/sun8i-h3.dtsi
-index 0faa38a..c2f63c5 100644
 --- a/arch/arm/dts/sun8i-h3.dtsi
 +++ b/arch/arm/dts/sun8i-h3.dtsi
 @@ -83,12 +83,6 @@
@@ -6478,17 +6351,40 @@ index 0faa38a..c2f63c5 100644
  			phys = <&usbphy 3>;
  			phy-names = "usb";
  			status = "disabled";
-@@ -469,7 +499,7 @@
+@@ -469,7 +499,18 @@
  			gpio-controller;
  			#gpio-cells = <3>;
  			interrupt-controller;
 -			#interrupt-cells = <2>;
 +			#interrupt-cells = <3>;
++
++			rgmii_pins: rgmii_pins {
++				allwinner,pins = "PD0", "PD1", "PD2", "PD3",
++						 "PD4", "PD5", "PD7",
++						 "PD8", "PD9", "PD10",
++						 "PD12", "PD13", "PD15",
++						 "PD16", "PD17";
++				allwinner,function = "emac";
++				allwinner,drive = <SUN4I_PINCTRL_40_MA>;
++				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
++			};
  
  			uart0_pins_a: uart0@0 {
  				allwinner,pins = "PA4", "PA5";
-@@ -502,10 +532,22 @@
+@@ -500,12 +541,34 @@
+ 				allwinner,drive = <SUN4I_PINCTRL_30_MA>;
+ 				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
  			};
++
++			mmc2_8bit_pins: mmc2_8bit {
++				allwinner,pins = "PC5", "PC6", "PC8",
++						 "PC9", "PC10", "PC11",
++						 "PC12", "PC13", "PC14",
++						 "PC15", "PC16";
++				allwinner,function = "mmc2";
++				allwinner,drive = <SUN4I_PINCTRL_30_MA>;
++				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
++			};
  		};
  
 -		bus_rst: reset@01c202c0 {
@@ -6513,7 +6409,7 @@ index 0faa38a..c2f63c5 100644
  		};
  
  		timer@01c20c00 {
-@@ -529,7 +571,7 @@
+@@ -529,7 +592,7 @@
  			reg-shift = <2>;
  			reg-io-width = <4>;
  			clocks = <&bus_gates 112>;
@@ -6522,7 +6418,7 @@ index 0faa38a..c2f63c5 100644
  			dmas = <&dma 6>, <&dma 6>;
  			dma-names = "rx", "tx";
  			status = "disabled";
-@@ -542,7 +584,7 @@
+@@ -542,7 +605,7 @@
  			reg-shift = <2>;
  			reg-io-width = <4>;
  			clocks = <&bus_gates 113>;
@@ -6531,7 +6427,7 @@ index 0faa38a..c2f63c5 100644
  			dmas = <&dma 7>, <&dma 7>;
  			dma-names = "rx", "tx";
  			status = "disabled";
-@@ -555,7 +597,7 @@
+@@ -555,7 +618,7 @@
  			reg-shift = <2>;
  			reg-io-width = <4>;
  			clocks = <&bus_gates 114>;
@@ -6540,7 +6436,7 @@ index 0faa38a..c2f63c5 100644
  			dmas = <&dma 8>, <&dma 8>;
  			dma-names = "rx", "tx";
  			status = "disabled";
-@@ -568,7 +610,7 @@
+@@ -568,12 +631,26 @@
  			reg-shift = <2>;
  			reg-io-width = <4>;
  			clocks = <&bus_gates 115>;
@@ -6549,7 +6445,26 @@ index 0faa38a..c2f63c5 100644
  			dmas = <&dma 9>, <&dma 9>;
  			dma-names = "rx", "tx";
  			status = "disabled";
-@@ -591,5 +633,40 @@
+ 		};
+ 
++		emac: ethernet@01c30000 {
++			compatible = "allwinner,sun8i-h3-emac";
++			reg = <0x01c30000 0x2000>, <0x01c00030 0x4>;
++			reg-names = "emac", "syscon";
++			interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&ahb_rst 17>, <&ahb_rst 66>;
++			reset-names = "ahb", "ephy";
++			clocks = <&bus_gates 17>, <&bus_gates 128>;
++			clock-names = "ahb", "ephy";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		gic: interrupt-controller@01c81000 {
+ 			compatible = "arm,cortex-a7-gic", "arm,cortex-a15-gic";
+ 			reg = <0x01c81000 0x1000>,
+@@ -591,5 +668,40 @@
  			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
  				     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
  		};
@@ -6590,8 +6505,6 @@ index 0faa38a..c2f63c5 100644
 +		};
  	};
  };
-diff --git a/arch/arm/dts/sun8i-q8-common.dtsi b/arch/arm/dts/sun8i-q8-common.dtsi
-index 07cd268..346a49d 100644
 --- a/arch/arm/dts/sun8i-q8-common.dtsi
 +++ b/arch/arm/dts/sun8i-q8-common.dtsi
 @@ -41,11 +41,23 @@
@@ -6718,8 +6631,6 @@ index 07cd268..346a49d 100644
 +&simplefb_lcd {
 +	vcc-lcd-supply = <&reg_dc1sw>;
 +};
-diff --git a/arch/arm/dts/sun9i-a80-cubieboard4.dts b/arch/arm/dts/sun9i-a80-cubieboard4.dts
-index 6484dcf..eb2ccd0 100644
 --- a/arch/arm/dts/sun9i-a80-cubieboard4.dts
 +++ b/arch/arm/dts/sun9i-a80-cubieboard4.dts
 @@ -62,9 +62,31 @@
@@ -6775,8 +6686,6 @@ index 6484dcf..eb2ccd0 100644
  	status = "okay";
  };
  
-diff --git a/arch/arm/dts/sun9i-a80-optimus.dts b/arch/arm/dts/sun9i-a80-optimus.dts
-index 6ce4b5e..d7a20d9 100644
 --- a/arch/arm/dts/sun9i-a80-optimus.dts
 +++ b/arch/arm/dts/sun9i-a80-optimus.dts
 @@ -65,7 +65,7 @@
@@ -6870,8 +6779,6 @@ index 6ce4b5e..d7a20d9 100644
  };
  
  &usbphy1 {
-diff --git a/arch/arm/dts/sun9i-a80.dtsi b/arch/arm/dts/sun9i-a80.dtsi
-index a43ad77..f68b324 100644
 --- a/arch/arm/dts/sun9i-a80.dtsi
 +++ b/arch/arm/dts/sun9i-a80.dtsi
 @@ -128,6 +128,17 @@
@@ -7196,9 +7103,6 @@ index a43ad77..f68b324 100644
 +		};
  	};
  };
-diff --git a/arch/arm/dts/sunxi-itead-core-common.dtsi b/arch/arm/dts/sunxi-itead-core-common.dtsi
-new file mode 100644
-index 0000000..2565d51
 --- /dev/null
 +++ b/arch/arm/dts/sunxi-itead-core-common.dtsi
 @@ -0,0 +1,136 @@
@@ -7338,8 +7242,6 @@ index 0000000..2565d51
 +	usb2_vbus-supply = <&reg_usb2_vbus>;
 +	status = "okay";
 +};
-diff --git a/arch/arm/dts/sunxi-q8-common.dtsi b/arch/arm/dts/sunxi-q8-common.dtsi
-index 17b26ff..b824146 100644
 --- a/arch/arm/dts/sunxi-q8-common.dtsi
 +++ b/arch/arm/dts/sunxi-q8-common.dtsi
 @@ -75,3 +75,9 @@
@@ -7352,3 +7254,205 @@ index 17b26ff..b824146 100644
 +	pinctrl-0 = <&pwm0_pins>;
 +	status = "okay";
 +};
+--- /dev/null
++++ b/arch/arm/dts/sun8i-h3-orangepi-2.dts
+@@ -0,0 +1,199 @@
++/*
++ * Copyright (C) 2016 Hans de Goede <hdegoede@redhat.com>
++ *
++ * This file is dual-licensed: you can use it either under the terms
++ * of the GPL or the X11 license, at your option. Note that this dual
++ * licensing only applies to this file, and not this project as a
++ * whole.
++ *
++ *  a) This file is free software; you can redistribute it and/or
++ *     modify it under the terms of the GNU General Public License as
++ *     published by the Free Software Foundation; either version 2 of the
++ *     License, or (at your option) any later version.
++ *
++ *     This file is distributed in the hope that it will be useful,
++ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *     GNU General Public License for more details.
++ *
++ * Or, alternatively,
++ *
++ *  b) Permission is hereby granted, free of charge, to any person
++ *     obtaining a copy of this software and associated documentation
++ *     files (the "Software"), to deal in the Software without
++ *     restriction, including without limitation the rights to use,
++ *     copy, modify, merge, publish, distribute, sublicense, and/or
++ *     sell copies of the Software, and to permit persons to whom the
++ *     Software is furnished to do so, subject to the following
++ *     conditions:
++ *
++ *     The above copyright notice and this permission notice shall be
++ *     included in all copies or substantial portions of the Software.
++ *
++ *     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
++ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
++ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ *     OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++/dts-v1/;
++#include "sun8i-h3.dtsi"
++#include "sunxi-common-regulators.dtsi"
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/pinctrl/sun4i-a10.h>
++
++/ {
++	model = "Xunlong Orange Pi 2";
++	compatible = "xunlong,orangepi-2", "allwinner,sun8i-h3";
++
++	aliases {
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		pinctrl-names = "default";
++		pinctrl-0 = <&leds_opc>, <&leds_r_opc>;
++
++		status_led {
++			label = "orangepi:red:status";
++			gpios = <&pio 0 15 GPIO_ACTIVE_HIGH>;
++		};
++
++		pwr_led {
++			label = "orangepi:green:pwr";
++			gpios = <&r_pio 0 10 GPIO_ACTIVE_HIGH>;
++			default-state = "on";
++		};
++	};
++
++	r_gpio_keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&sw_r_opc>;
++
++		sw2 {
++			label = "sw2";
++			linux,code = <BTN_1>;
++			gpios = <&r_pio 0 4 GPIO_ACTIVE_LOW>;
++		};
++
++		sw4 {
++			label = "sw4";
++			linux,code = <BTN_0>;
++			gpios = <&r_pio 0 3 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	wifi_pwrseq: wifi_pwrseq {
++		compatible = "mmc-pwrseq-simple";
++		pinctrl-names = "default";
++		pinctrl-0 = <&wifi_pwrseq_pin_orangepi>;
++		reset-gpios = <&r_pio 0 7 GPIO_ACTIVE_LOW>; /* PL7 WIFI_EN */
++	};
++};
++
++&ehci1 {
++	status = "okay";
++};
++
++&ir {
++	pinctrl-names = "default";
++	pinctrl-0 = <&ir_pins_a>;
++	status = "okay";
++};
++
++&mmc0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc0_pins_a>, <&mmc0_cd_pin>;
++	vmmc-supply = <&reg_vcc3v3>;
++	bus-width = <4>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_HIGH>; /* PF6 */
++	cd-inverted;
++	status = "okay";
++};
++
++&mmc1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&mmc1_pins_a>;
++	vmmc-supply = <&reg_vcc3v3>;
++	mmc-pwrseq = <&wifi_pwrseq>;
++	bus-width = <4>;
++	non-removable;
++	status = "okay";
++};
++
++&pio {
++	leds_opc: led_pins@0 {
++		allwinner,pins = "PA15";
++		allwinner,function = "gpio_out";
++		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
++		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
++	};
++};
++
++&r_pio {
++	leds_r_opc: led_pins@0 {
++		allwinner,pins = "PL10";
++		allwinner,function = "gpio_out";
++		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
++		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
++	};
++
++	sw_r_opc: key_pins@0 {
++		allwinner,pins = "PL3", "PL4";
++		allwinner,function = "gpio_in";
++		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
++		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
++	};
++
++	wifi_pwrseq_pin_orangepi: wifi_pwrseq_pin@0 {
++		allwinner,pins = "PL7";
++		allwinner,function = "gpio_out";
++		allwinner,drive = <SUN4I_PINCTRL_10_MA>;
++		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
++	};
++};
++
++&reg_usb1_vbus {
++	gpio = <&pio 6 13 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pins_a>;
++	status = "okay";
++};
++
++&usb1_vbus_pin_a {
++	allwinner,pins = "PG13";
++};
++
++&usbphy {
++	usb1_vbus-supply = <&reg_usb1_vbus>;
++	status = "okay";
++};
++
++&emac {
++	pinctrl-names = "default";
++	pinctrl-0 = <&rgmii_pins>;
++	phy-mode = "rgmii";
++	phy = <&phy1>;
++	status = "okay";
++
++	phy1: ethernet-phy@1 {
++		reg = <1>;
++	};
++};
++
