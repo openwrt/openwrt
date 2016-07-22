@@ -25,7 +25,7 @@ ifdef CONFIG_USE_MKLIBS
 	$(RSTRIP) $(TMP_DIR)/mklibs-out
 	for lib in `ls $(TMP_DIR)/mklibs-out/*.so.* 2>/dev/null`; do \
 		LIB="$${lib##*/}"; \
-		DEST="`ls "$(TARGET_DIR)/lib/$$LIB" "$(TARGET_DIR)/usr/lib/$$LIB" 2>/dev/null`"; \
+		DEST="`ls "$(1)/lib/$$LIB" "$(1)/usr/lib/$$LIB" 2>/dev/null`"; \
 		[ -n "$$DEST" ] || continue; \
 		echo "Copying stripped library $$lib to $$DEST"; \
 		cp "$$lib" "$$DEST" || exit 1; \
@@ -53,26 +53,26 @@ OPKG:= \
 
 define prepare_rootfs
 	@if [ -d $(TOPDIR)/files ]; then \
-		$(call file_copy,$(TOPDIR)/files/.,$(TARGET_DIR)); \
+		$(call file_copy,$(TOPDIR)/files/.,$(1)); \
 	fi
-	@mkdir -p $(TARGET_DIR)/etc/rc.d
+	@mkdir -p $(1)/etc/rc.d
 	@( \
-		cd $(TARGET_DIR); \
+		cd $(1); \
 		for script in ./usr/lib/opkg/info/*.postinst; do \
-			IPKG_INSTROOT=$(TARGET_DIR) $$(which bash) $$script; \
+			IPKG_INSTROOT=$(1) $$(which bash) $$script; \
 		done; \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
-			IPKG_INSTROOT=$(TARGET_DIR) $$(which bash) ./etc/rc.common $$script enable; \
+			IPKG_INSTROOT=$(1) $$(which bash) ./etc/rc.common $$script enable; \
 		done || true \
 	)
-	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(TARGET_DIR)/usr/lib/opkg/status)
-	@-find $(TARGET_DIR) -name CVS   | $(XARGS) rm -rf
-	@-find $(TARGET_DIR) -name .svn  | $(XARGS) rm -rf
-	@-find $(TARGET_DIR) -name .git  | $(XARGS) rm -rf
-	@-find $(TARGET_DIR) -name '.#*' | $(XARGS) rm -f
-	rm -f $(TARGET_DIR)/usr/lib/opkg/info/*.postinst*
-	rm -f $(TARGET_DIR)/usr/lib/opkg/info/*.prerm*
-	$(if $(CONFIG_CLEAN_IPKG),rm -rf $(TARGET_DIR)/usr/lib/opkg)
-	$(mklibs)
+	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
+	@-find $(1) -name CVS   | $(XARGS) rm -rf
+	@-find $(1) -name .svn  | $(XARGS) rm -rf
+	@-find $(1) -name .git  | $(XARGS) rm -rf
+	@-find $(1) -name '.#*' | $(XARGS) rm -f
+	rm -f $(1)/usr/lib/opkg/info/*.postinst*
+	rm -f $(1)/usr/lib/opkg/info/*.prerm*
+	$(if $(CONFIG_CLEAN_IPKG),rm -rf $(1)/usr/lib/opkg)
+	$(call mklibs,$(1))
 endef

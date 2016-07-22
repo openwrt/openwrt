@@ -56,7 +56,7 @@ $(curdir)/install: $(TMP_DIR)/.build $(curdir)/system/opkg/host/install
 		done; \
 	done || true
 	@-$(MAKE) package/preconfig
-	$(prepare_rootfs)
+	$(call prepare_rootfs,$(TARGET_DIR))
 
 PASSOPT=""
 PASSARG=""
