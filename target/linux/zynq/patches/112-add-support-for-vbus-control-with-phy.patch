@@ -1,0 +1,62 @@
+--- a/drivers/usb/chipidea/ci_hdrc_usb2.c
++++ b/drivers/usb/chipidea/ci_hdrc_usb2.c
+@@ -33,6 +33,7 @@ static const struct ci_hdrc_platform_dat
+ 
+ static struct ci_hdrc_platform_data ci_zynq_pdata = {
+ 	.capoffset	= DEF_CAPOFFSET,
++	.flags		= CI_HDRC_PHY_VBUS_CONTROL,
+ };
+ 
+ static const struct of_device_id ci_hdrc_usb2_of_match[] = {
+--- a/drivers/usb/chipidea/host.c
++++ b/drivers/usb/chipidea/host.c
+@@ -66,6 +66,14 @@ static int ehci_ci_portpower(struct usb_
+ 		}
+ 	}
+ 
++	if (ci->platdata->flags & CI_HDRC_PHY_VBUS_CONTROL &&
++			ci->usb_phy && ci->usb_phy->set_vbus) {
++		if (enable)
++			ci->usb_phy->set_vbus(ci->usb_phy, 1);
++		else
++			ci->usb_phy->set_vbus(ci->usb_phy, 0);
++	}
++
+ 	if (enable && (ci->platdata->phy_mode == USBPHY_INTERFACE_MODE_HSIC)) {
+ 		/*
+ 		 * Marvell 28nm HSIC PHY requires forcing the port to HS mode.
+--- a/drivers/usb/chipidea/otg_fsm.c
++++ b/drivers/usb/chipidea/otg_fsm.c
+@@ -456,6 +456,11 @@ static void ci_otg_drv_vbus(struct otg_f
+ 				return;
+ 			}
+ 		}
++
++		if (ci->platdata->flags & CI_HDRC_PHY_VBUS_CONTROL &&
++				ci->usb_phy && ci->usb_phy->set_vbus)
++			ci->usb_phy->set_vbus(ci->usb_phy, 1);
++
+ 		/* Disable data pulse irq */
+ 		hw_write_otgsc(ci, OTGSC_DPIE, 0);
+ 
+@@ -465,6 +470,10 @@ static void ci_otg_drv_vbus(struct otg_f
+ 		if (ci->platdata->reg_vbus)
+ 			regulator_disable(ci->platdata->reg_vbus);
+ 
++		if (ci->platdata->flags & CI_HDRC_PHY_VBUS_CONTROL &&
++				ci->usb_phy && ci->usb_phy->set_vbus)
++			ci->usb_phy->set_vbus(ci->usb_phy, 0);
++
+ 		fsm->a_bus_drop = 1;
+ 		fsm->a_bus_req = 0;
+ 	}
+--- a/include/linux/usb/chipidea.h
++++ b/include/linux/usb/chipidea.h
+@@ -55,6 +55,7 @@ struct ci_hdrc_platform_data {
+ #define CI_HDRC_OVERRIDE_AHB_BURST	BIT(9)
+ #define CI_HDRC_OVERRIDE_TX_BURST	BIT(10)
+ #define CI_HDRC_OVERRIDE_RX_BURST	BIT(11)
++#define CI_HDRC_PHY_VBUS_CONTROL        BIT(12)
+ 	enum usb_dr_mode	dr_mode;
+ #define CI_HDRC_CONTROLLER_RESET_EVENT		0
+ #define CI_HDRC_CONTROLLER_STOPPED_EVENT	1

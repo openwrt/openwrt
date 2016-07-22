@@ -1,0 +1,17 @@
+--- a/arch/arm/boot/dts/zynq-zed.dts
++++ b/arch/arm/boot/dts/zynq-zed.dts
+@@ -32,10 +32,12 @@
+ 		bootargs = "earlyprintk";
+ 		stdout-path = "serial0:115200n8";
+ 	};
+-
+ 	usb_phy0: phy0 {
+-		compatible = "usb-nop-xceiv";
++		compatible = "ulpi-phy";
+ 		#phy-cells = <0>;
++		reg = <0xe0002000 0x1000>;
++		view-port = <0x0170>;
++		drv-vbus;
+ 	};
+ };
+ 
