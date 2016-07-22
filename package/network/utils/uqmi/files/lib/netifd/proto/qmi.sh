@@ -19,19 +19,22 @@ proto_qmi_init_config() {
 	proto_config_add_string modes
 	proto_config_add_boolean ipv6
 	proto_config_add_boolean dhcp
+	proto_config_add_int metric
 }
 
 proto_qmi_setup() {
 	local interface="$1"
 
-	local device apn auth username password pincode delay modes ipv6 dhcp
+	local device apn auth username password pincode delay modes ipv6 dhcp metric
 	local cid_4 pdh_4 cid_6 pdh_6 ipv4
 	local ip subnet gateway dns1 dns2 ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
-	json_get_vars device apn auth username password pincode delay modes ipv6 dhcp
+	json_get_vars device apn auth username password pincode delay modes ipv6 dhcp metric
 
 	ipv4=1
 
 	[ "$ipv6" = 1 ] || ipv6=""
+
+	[ "$metric" = "" ] && metric="0"
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
@@ -200,6 +203,7 @@ proto_qmi_setup() {
 			json_add_string name "${interface}_4"
 			json_add_string ifname "@$interface"
 			json_add_string proto "dhcp"
+			json_add_int metric "$metric"
 			json_close_object
 			ubus call network add_dynamic "$(json_dump)"
 		}
@@ -209,6 +213,7 @@ proto_qmi_setup() {
 			json_add_string name "${interface}_6"
 			json_add_string ifname "@$interface"
 			json_add_string proto "dhcpv6"
+			json_add_int metric "$metric"
 			# RFC 7278: Extend an IPv6 /64 Prefix to LAN
 			json_add_string extendprefix 1
 			json_close_object
