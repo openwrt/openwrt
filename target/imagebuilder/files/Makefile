@@ -56,10 +56,7 @@ PACKAGE_DIR:=$(TOPDIR)/packages
 LISTS_DIR:=$(subst $(space),/,$(patsubst %,..,$(subst /,$(space),$(TARGET_DIR))))$(DL_DIR)
 OPKG:= \
   IPKG_NO_SCRIPT=1 \
-  IPKG_TMP="$(TMP_DIR)/ipkgtmp" \
   IPKG_INSTROOT="$(TARGET_DIR)" \
-  IPKG_CONF_DIR="$(TMP_DIR)" \
-  IPKG_OFFLINE_ROOT="$(TARGET_DIR)" \
   $(STAGING_DIR_HOST)/bin/opkg \
 	-f $(TOPDIR)/repositories.conf \
 	--force-depends \

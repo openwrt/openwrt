@@ -36,10 +36,7 @@ endif
 # where to build (and put) .ipk packages
 OPKG:= \
   IPKG_NO_SCRIPT=1 \
-  IPKG_TMP=$(TMP_DIR)/ipkg \
   IPKG_INSTROOT=$(TARGET_DIR) \
-  IPKG_CONF_DIR=$(STAGING_DIR)/etc \
-  IPKG_OFFLINE_ROOT=$(TARGET_DIR) \
   $(XARGS) $(STAGING_DIR_HOST)/bin/opkg \
 	--offline-root $(TARGET_DIR) \
 	--force-depends \
