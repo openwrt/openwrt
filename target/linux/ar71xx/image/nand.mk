@@ -40,6 +40,6 @@ LEGACY_DEVICES += WNDR4300V1
 
 define LegacyDevice/NBG6716
   DEVICE_TITLE := Zyxel NBG 6716
-  DEVICE_PACKAGES := kmod-rtc-pcf8563 kmod-ath10k
+  DEVICE_PACKAGES := kmod-rtc-pcf8563 kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += NBG6716

@@ -300,7 +300,7 @@ TARGET_DEVICES += rnx-n360rt
 define Device/mc-mac1200r
   $(Device/tplink-8mlzma)
   DEVICE_TITLE := MERCURY MAC1200R
-  DEVICE_PACKAGES := kmod-ath10k
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME := MC-MAC1200R
   DEVICE_PROFILE := MAC1200R
   TPLINK_HWID := 0x12000001
@@ -392,7 +392,7 @@ TARGET_DEVICES += oolite
 
 define Device/NBG6616
   DEVICE_TITLE := ZyXEL NBG6616
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-usb-storage kmod-rtc-pcf8563 kmod-ath10k
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-usb-storage kmod-rtc-pcf8563 kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = NBG6616
   KERNEL_SIZE = 2048k
   IMAGE_SIZE = 15323k
@@ -534,7 +534,7 @@ endef
 define Device/qihoo-c301
 $(Device/seama)
   DEVICE_TITLE := Qihoo C301
-  DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
+  DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = QIHOO-C301
   IMAGE_SIZE = 15744k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(devdata),64k(devconf),15744k(firmware),64k(warm_start),64k(action_image_config),64k(radiocfg)ro;spi0.1:15360k(upgrade2),1024k(privatedata)

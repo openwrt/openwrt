@@ -153,7 +153,7 @@ TARGET_DEVICES += tl-wdr3500-v1 tl-wdr3600-v1 tl-wdr4300-v1 tl-wdr4300-v1-il tl-
 define Device/tl-wdr6500-v2
 $(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK TL-WDR6500v2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k ath10k-firmware-qca988x
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | uImage lzma | mktplinkfw-initramfs
   BOARDNAME = TL-WDR6500-v2
@@ -177,7 +177,7 @@ TARGET_DEVICES += tl-wdr3320-v2
 define Device/archer-c5-v1
     $(Device/tplink-16mlzma)
     DEVICE_TITLE := TP-LINK Archer C5
-    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k ath10k-firmware-qca988x
     BOARDNAME := ARCHER-C5
     DEVICE_PROFILE := ARCHERC7
     TPLINK_HWID := 0xc5000001
@@ -186,7 +186,7 @@ endef
 define Device/archer-c7-v1
     $(Device/tplink-8mlzma)
     DEVICE_TITLE := TP-LINK Archer C7 v1
-    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k ath10k-firmware-qca988x
     BOARDNAME := ARCHER-C7
     DEVICE_PROFILE := ARCHERC7
     TPLINK_HWID := 0x75000001
@@ -195,7 +195,7 @@ endef
 define Device/archer-c7-v2
     $(Device/tplink-16mlzma)
     DEVICE_TITLE := TP-LINK Archer C7 v2
-    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k ath10k-firmware-qca988x
     BOARDNAME := ARCHER-C7-V2
     DEVICE_PROFILE := ARCHERC7
     TPLINK_HWID := 0xc7000002
@@ -205,7 +205,7 @@ endef
 define Device/tl-wdr7500-v3
     $(Device/tplink-8mlzma)
     DEVICE_TITLE := TP-LINK Archer C7 v3
-    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k ath10k-firmware-qca988x
     BOARDNAME := ARCHER-C7
     DEVICE_PROFILE := ARCHERC7
     TPLINK_HWID := 0x75000003

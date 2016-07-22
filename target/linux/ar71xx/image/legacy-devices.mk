@@ -118,7 +118,7 @@ LEGACY_DEVICES += AP81
 define LegacyDevice/AP83
   DEVICE_TITLE := Atheros AP83 reference board
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 \
-  	  vsc7385-ucode-ap83 vsc7395-ucode-ap83
+	  vsc7385-ucode-ap83 vsc7395-ucode-ap83
 endef
 LEGACY_DEVICES += AP83
 
@@ -143,7 +143,7 @@ LEGACY_DEVICES += PB42
 define LegacyDevice/PB44
   DEVICE_TITLE := Atheros PB44 reference board
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
-  	  vsc7385-ucode-pb44 vsc7395-ucode-pb44
+	  vsc7385-ucode-pb44 vsc7395-ucode-pb44
 endef
 LEGACY_DEVICES += PB44
 
@@ -161,7 +161,7 @@ LEGACY_DEVICES += A02RBW300N
 define LegacyDevice/F9K1115V2
   DEVICE_TITLE := Belkin AC1750DB (F9K1115V2)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb3 kmod-ledtrig-usbdev \
-  	kmod-ath10k
+	kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += F9K1115V2
 
@@ -263,28 +263,28 @@ LEGACY_DEVICES += WPJ558
 define LegacyDevice/dLAN_Hotspot
   DEVICE_TITLE := devolo dLAN Hotspot
   DEVICE_PACKAGES := open-plc-utils open-plc-utils-chkpib open-plc-utils-getpib open-plc-utils-modpib \
-  	open-plc-utils-setpib open-plc-utils-hpavkey open-plc-utils-plchost \
-  	open-plc-utils-plctool open-plc-utils-pibdump open-plc-utils-plcstat \
-  	ebtables hostapd-utils wifitoggle wpad
+	open-plc-utils-setpib open-plc-utils-hpavkey open-plc-utils-plchost \
+	open-plc-utils-plctool open-plc-utils-pibdump open-plc-utils-plcstat \
+	ebtables hostapd-utils wifitoggle wpad
 endef
 LEGACY_DEVICES += dLAN_Hotspot
 
 define LegacyDevice/dLAN_pro_500_wp
   DEVICE_TITLE := devolo dLAN pro 500 Wireless+
   DEVICE_PACKAGES := open-plc-utils open-plc-utils-chkpib open-plc-utils-getpib open-plc-utils-modpib \
-  	open-plc-utils-setpib open-plc-utils-hpavkey open-plc-utils-amphost \
-  	open-plc-utils-plctool open-plc-utils-pibdump open-plc-utils-plcstat \
-  	ebtables hostapd-utils wifitoggle wpad
+	open-plc-utils-setpib open-plc-utils-hpavkey open-plc-utils-amphost \
+	open-plc-utils-plctool open-plc-utils-pibdump open-plc-utils-plcstat \
+	ebtables hostapd-utils wifitoggle wpad
 endef
 LEGACY_DEVICES += dLAN_pro_500_wp
 
 define LegacyDevice/dLAN_pro_1200_ac
   DEVICE_TITLE := devolo dLAN pro 1200+ WiFi ac
   DEVICE_PACKAGES := open-plc-utils open-plc-utils-chkpib open-plc-utils-getpib open-plc-utils-modpib \
-  	open-plc-utils-setpib open-plc-utils-hpavkey open-plc-utils-plchost \
-  	open-plc-utils-plctool open-plc-utils-pibdump open-plc-utils-plcstat \
-  	ebtables hostapd-utils wifitoggle wpad ip-full kmod-ath10k kmod-leds-gpio \
-  	kmod-ledtrig-gpio
+	open-plc-utils-setpib open-plc-utils-hpavkey open-plc-utils-plchost \
+	open-plc-utils-plctool open-plc-utils-pibdump open-plc-utils-plcstat \
+	ebtables hostapd-utils wifitoggle wpad ip-full kmod-ath10k ath10k-firmware-qca988x \
+	kmod-leds-gpio kmod-ledtrig-gpio
 endef
 LEGACY_DEVICES += dLAN_pro_1200_ac
 
@@ -360,7 +360,7 @@ LEGACY_DEVICES += DIR835A1
 
 define LegacyDevice/DGL5500A1
   DEVICE_TITLE := D-Link DGL-5500 rev. A1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += DGL5500A1
 
@@ -382,22 +382,22 @@ endef
 LEGACY_DEVICES += ESR900
 
 define LegacyDevice/ESR1750
-        DEVICE_TITLE := EnGenius ESR1750
-        DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k wpad-mini
+  DEVICE_TITLE := EnGenius ESR1750
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += ESR1750
 
 define LegacyDevice/EPG5000
-        DEVICE_TITLE := EnGenius EPG5000
-        DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k wpad-mini
+  DEVICE_TITLE := EnGenius EPG5000
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += EPG5000
 
 define LegacyDevice/EWDORIN
   DEVICE_TITLE := Embedded Wireless Dorin Platform
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev kmod-usb-storage \
-  	kmod-fs-vfat kmod-fs-msdos kmod-fs-ntfs kmod-fs-ext4 \
-  	kmod-nls-cp437 kmod-nls-cp850 kmod-nls-cp852 kmod-nls-iso8859-1 kmod-nls-utf8
+	kmod-fs-vfat kmod-fs-msdos kmod-fs-ntfs kmod-fs-ext4 \
+	kmod-nls-cp437 kmod-nls-cp850 kmod-nls-cp852 kmod-nls-iso8859-1 kmod-nls-utf8
 endef
 LEGACY_DEVICES += EWDORIN
 
@@ -492,7 +492,7 @@ LEGACY_DEVICES += OM5P
 
 define LegacyDevice/OM5PAC
   DEVICE_TITLE := OpenMesh OM5P-AC/OM5P-ACv2
-  DEVICE_PACKAGES := kmod-ath9k kmod-ath10k om-watchdog
+  DEVICE_PACKAGES := kmod-ath9k kmod-ath10k ath10k-firmware-qca988x om-watchdog
 endef
 LEGACY_DEVICES += OM5PAC
 
@@ -510,13 +510,13 @@ LEGACY_DEVICES += MR900
 
 define LegacyDevice/MR1750
         DEVICE_TITLE := OpenMesh MR1750/MR1750v2
-        DEVICE_PACKAGES := kmod-ath9k kmod-ath10k
+        DEVICE_PACKAGES := kmod-ath9k kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += MR1750
 
 define LegacyDevice/OPENMESH
   DEVICE_TITLE := OpenMesh products
-  DEVICE_PACKAGES := kmod-ath9k kmod-ath10k om-watchdog
+  DEVICE_PACKAGES := kmod-ath9k kmod-ath10k ath10k-firmware-qca988x om-watchdog
 endef
 LEGACY_DEVICES += OPENMESH
 
@@ -593,7 +593,7 @@ LEGACY_DEVICES += TEW732BR
 
 define LegacyDevice/TEW823DRU
   DEVICE_TITLE := TRENDNet TEW-823DRU
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += TEW823DRU
 
