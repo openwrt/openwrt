@@ -36,7 +36,7 @@ endif
 LegacyDevice/Dump = $(Device/Dump)
 
 define LegacyDevice/Check
-  _PROFILE_SET = $$(strip $$(foreach profile,$$(PROFILES) DEVICE_$(1),$$(call DEVICE_CHECK_PROFILE,$$(profile))))
+  $(Device/Check/Common)
   _TARGET_PREPARE := $$(if $$(_PROFILE_SET),legacy-images-prepare,prepare-disabled)
   _TARGET := $$(if $$(_PROFILE_SET),legacy-images,install-disabled)
   $$(if $$(_PROFILE_SET),install: legacy-images-make)
