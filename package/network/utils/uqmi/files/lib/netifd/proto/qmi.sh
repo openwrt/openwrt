@@ -31,11 +31,7 @@ proto_qmi_setup() {
 
 	ipv4=1
 
-	if [ "$ipv6" = 0 ]; then
-		ipv6=""
-	else
-		ipv6=1
-	fi
+	[ "$ipv6" = 1 ] || ipv6=""
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
