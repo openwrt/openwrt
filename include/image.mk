@@ -20,6 +20,8 @@ param_get = $(patsubst $(1)=%,%,$(filter $(1)=%,$(2)))
 param_mangle = $(subst $(space),_,$(strip $(1)))
 param_unmangle = $(subst _,$(space),$(1))
 
+mkfs_target_dir = $(TARGET_DIR)
+
 KDIR=$(KERNEL_BUILD_DIR)
 KDIR_TMP=$(KDIR)/tmp
 DTS_DIR:=$(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/dts
@@ -149,18 +151,18 @@ define Image/mkfs/jffs2/sub-raw
 	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
 		$(2) \
 		-e $(patsubst %k,%KiB,$(1)) \
-		-o $@ -d $(TARGET_DIR) \
+		-o $@ -d $(call mkfs_target_dir,$(3)) \
 		-v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 endef
 
 define Image/mkfs/jffs2/sub
-	$(call Image/mkfs/jffs2/sub-raw,$(1),--pad $(2))
+	$(call Image/mkfs/jffs2/sub-raw,$(1),--pad $(2),$(3))
 	$(call add_jffs2_mark,$@)
 endef
 
 define Image/mkfs/jffs2/template
-  Image/mkfs/jffs2-$(1) = $$(call Image/mkfs/jffs2/sub,$(1),$(JFFS2OPTS))
-  Image/mkfs/jffs2-$(1)-raw = $$(call Image/mkfs/jffs2/sub-raw,$(1),$(JFFS2OPTS))
+  Image/mkfs/jffs2-$(1) = $$(call Image/mkfs/jffs2/sub,$(1),$(JFFS2OPTS),$$(1))
+  Image/mkfs/jffs2-$(1)-raw = $$(call Image/mkfs/jffs2/sub-raw,$(1),$(JFFS2OPTS),$$(1))
 
 endef
 
@@ -168,7 +170,7 @@ define Image/mkfs/jffs2-nand/template
   Image/mkfs/jffs2-nand-$(1) = \
 	$$(call Image/mkfs/jffs2/sub, \
 		$(word 2,$(subst -, ,$(1))), \
-			$(JFFS2OPTS) --no-cleanmarkers --pagesize=$(word 1,$(subst -, ,$(1))))
+			$(JFFS2OPTS) --no-cleanmarkers --pagesize=$(word 1,$(subst -, ,$(1))),$$(1))
 
 endef
 
@@ -176,7 +178,7 @@ $(eval $(foreach S,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/template,$(S))))
 $(eval $(foreach S,$(NAND_BLOCKSIZE),$(call Image/mkfs/jffs2-nand/template,$(S))))
 
 define Image/mkfs/squashfs
-	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(TARGET_DIR) $@ \
+	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(call mkfs_target_dir,$(1)) $@ \
 		-nopad -noappend -root-owned \
 		-comp $(SQUASHFSCOMP) $(SQUASHFSOPT) \
 		-processors $(if $(CONFIG_PKG_BUILD_JOBS),$(CONFIG_PKG_BUILD_JOBS),1) \
@@ -220,7 +222,7 @@ define Image/mkfs/ubifs
 		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--force-compr=zlib) \
 		$(if $(shell echo $(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)),--jrn-size=$(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)) \
 		--squash-uids \
-		-o $@ -d $(TARGET_DIR)
+		-o $@ -d $(call mkfs_target_dir,$(1))
 endef
 
 E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024)))
@@ -232,7 +234,7 @@ define Image/mkfs/ext4
 		-m $(CONFIG_TARGET_EXT4_RESERVED_PCT) \
 		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
 		$(if $(SOURCE_DATE_EPOCH),-T $(SOURCE_DATE_EPOCH)) \
-		$@ $(TARGET_DIR)/
+		$@ $(call mkfs_target_dir,$(1))/
 endef
 
 define Image/mkfs/prepare/default
