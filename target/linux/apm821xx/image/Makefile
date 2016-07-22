@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 include $(INCLUDE_DIR)/host.mk
 
-DEVICE_VARS += DEVICE_DTS DEVICE_PROFILE IMAGE_SIZE DTB_SIZE
+DEVICE_VARS += DEVICE_PROFILE IMAGE_SIZE DTB_SIZE
 
 define Device/Default
   PROFILES := Default
@@ -15,6 +15,7 @@ define Device/Default
   DEVICE_DTS :=
   KERNEL_ENTRY := 0x00000000
   KERNEL_LOADADDR := 0x00000000
+  DEVICE_DTS_DIR := ../dts
 endef
 
 define Build/dtb
