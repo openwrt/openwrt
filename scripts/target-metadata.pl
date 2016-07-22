@@ -250,6 +250,9 @@ endchoice
 menu "Target Devices"
 	depends on TARGET_MULTI_PROFILE
 
+	config TARGET_ALL_PROFILES
+		bool "Enable all profiles by default"
+
 	config TARGET_PER_DEVICE_ROOTFS
 		bool "Use a per-device root filesystem that adds profile packages"
 
@@ -262,6 +265,7 @@ EOF
 config TARGET_DEVICE_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
 	depends on TARGET_$target->{conf}
+	default y if TARGET_ALL_PROFILES
 EOF
 			my @pkglist = merge_package_lists($target->{packages}, $profile->{packages});
 			foreach my $pkg (@pkglist) {
