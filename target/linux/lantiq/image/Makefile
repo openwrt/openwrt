@@ -454,7 +454,7 @@ TARGET_DEVICES += GIGASX76X
 
 # AR9
 
-define LegacyDevice/BTHOMEHUBV3A
+define Device/BTHOMEHUBV3A
   $(Device/NAND)
   DEVICE_TITLE := BT Home Hub 3A
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev \
@@ -573,7 +573,7 @@ define Device/P2812HNUF1
 endef
 TARGET_DEVICES += P2812HNUF1
 
-define LegacyDevice/P2812HNUF3
+define Device/P2812HNUF3
   $(Device/NAND)
   DEVICE_TITLE := ZyXEL P-2812HNU-F3
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
