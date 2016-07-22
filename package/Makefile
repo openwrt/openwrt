@@ -49,11 +49,7 @@ $(curdir)/install: $(TMP_DIR)/.build $(curdir)/system/opkg/host/install
 	rm -rf $(TARGET_DIR)
 	[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
 	$(call opkg,$(TARGET_DIR)) install \
-		$(wildcard \
-		  $(foreach dir,$(PACKAGE_SUBDIRS), \
-		    $(foreach pkg, \
-		      $(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null), \
-		      $(dir)/$(pkg)_*.ipk)))
+		$(call opkg_package_files,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null))
 	@for file in $(PACKAGE_INSTALL_FILES); do \
 		[ -s $$file.flags ] || continue; \
 		for flag in `cat $$file.flags`; do \

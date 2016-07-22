@@ -47,6 +47,9 @@ opkg = \
 	--add-arch all:100 \
 	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
 
+opkg_package_files = $(wildcard \
+	$(foreach dir,$(PACKAGE_SUBDIRS), \
+	  $(foreach pkg,$(1), $(dir)/$(pkg)_*.ipk)))
 
 define prepare_rootfs
 	@if [ -d $(TOPDIR)/files ]; then \
