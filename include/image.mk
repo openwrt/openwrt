@@ -16,6 +16,7 @@ include $(INCLUDE_DIR)/image-legacy.mk
 override MAKE:=$(_SINGLE)$(SUBMAKE)
 override NO_TRACE_MAKE:=$(_SINGLE)$(NO_TRACE_MAKE)
 
+target_params = $(subst +,$(space),$*)
 param_get = $(patsubst $(1)=%,%,$(filter $(1)=%,$(2)))
 param_mangle = $(subst $(space),_,$(strip $(1)))
 param_unmangle = $(subst _,$(space),$(1))
@@ -272,7 +273,7 @@ ifdef CONFIG_TARGET_ROOTFS_CPIOGZ
 endif
 
 $(KDIR)/root.%: kernel_prepare
-	$(call Image/mkfs/$(word 1,$(subst +,$(space),$*)),$(subst +,$(space),$*))
+	$(call Image/mkfs/$(word 1,$(target_params)),$(target_params))
 
 define Device/InitProfile
   PROFILES := $(PROFILE)
