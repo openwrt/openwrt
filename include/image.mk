@@ -11,7 +11,18 @@ include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/version.mk
 include $(INCLUDE_DIR)/image-commands.mk
+
+ifndef IB
+  ifdef CONFIG_TARGET_PER_DEVICE_ROOTFS
+    TARGET_PER_DEVICE_ROOTFS := 1
+  endif
+endif
+
 include $(INCLUDE_DIR)/image-legacy.mk
+
+ifdef TARGET_PER_DEVICE_ROOTFS
+  include $(INCLUDE_DIR)/rootfs.mk
+endif
 
 override MAKE:=$(_SINGLE)$(SUBMAKE)
 override NO_TRACE_MAKE:=$(_SINGLE)$(NO_TRACE_MAKE)
@@ -21,7 +32,8 @@ param_get = $(patsubst $(1)=%,%,$(filter $(1)=%,$(2)))
 param_mangle = $(subst $(space),_,$(strip $(1)))
 param_unmangle = $(subst _,$(space),$(1))
 
-mkfs_target_dir = $(TARGET_DIR)
+mkfs_packages_id = $(shell echo $(sort $(1)) | md5sum | head -c 8)
+mkfs_target_dir = $(if $(call param_get,pkg,$(1)),$(KDIR)/target-dir-$(call param_get,pkg,$(1)),$(TARGET_DIR))
 
 KDIR=$(KERNEL_BUILD_DIR)
 KDIR_TMP=$(KDIR)/tmp
@@ -240,15 +252,15 @@ endef
 
 define Image/mkfs/prepare/default
 	# Use symbolic permissions to avoid clobbering SUID/SGID/sticky bits
-	- $(FIND) $(TARGET_DIR) -type f -not -perm /0100 -not -name 'ssh_host*' -not -name 'shadow' -print0 | $(XARGS) -0 chmod u+rw,g+r,o+r
-	- $(FIND) $(TARGET_DIR) -type f -perm /0100 -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
-	- $(FIND) $(TARGET_DIR) -type d -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
-	$(INSTALL_DIR) $(TARGET_DIR)/tmp $(TARGET_DIR)/overlay
-	chmod 1777 $(TARGET_DIR)/tmp
+	- $(FIND) $(1) -type f -not -perm /0100 -not -name 'ssh_host*' -not -name 'shadow' -print0 | $(XARGS) -0 chmod u+rw,g+r,o+r
+	- $(FIND) $(1) -type f -perm /0100 -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
+	- $(FIND) $(1) -type d -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
+	$(INSTALL_DIR) $(1)/tmp $(1)/overlay
+	chmod 1777 $(1)/tmp
 endef
 
 define Image/mkfs/prepare
-	$(call Image/mkfs/prepare/default)
+	$(call Image/mkfs/prepare/default,$(1))
 endef
 
 
@@ -271,6 +283,23 @@ ifdef CONFIG_TARGET_ROOTFS_CPIOGZ
 	( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9n >$(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz )
   endef
 endif
+
+mkfs_packages = $(filter-out @%,$(PACKAGES_$(call param_get,pkg,pkg=$(target_params))))
+mkfs_packages_add = $(filter-out -%,$(mkfs_packages))
+mkfs_packages_remove = $(patsubst -%,%,$(filter -%,$(mkfs_packages)))
+mkfs_cur_target_dir = $(call mkfs_target_dir,pkg=$(target_params))
+
+target-dir-%: FORCE
+	rm -rf $(mkfs_cur_target_dir)
+	$(CP) $(TARGET_DIR) $(mkfs_cur_target_dir)
+	$(if $(mkfs_packages_add), \
+		$(call opkg,$(mkfs_cur_target_dir)) install \
+			$(call opkg_package_files,$(mkfs_packages_add)))
+	$(if $(mkfs_packages_remove), \
+		$(call opkg,$(mkfs_cur_target_dir)) remove \
+			$(mkfs_packages_remove))
+	$(call Image/mkfs/prepare,$(mkfs_cur_target_dir))
+	$(call prepare_rootfs,$(mkfs_cur_target_dir))
 
 $(KDIR)/root.%: kernel_prepare
 	$(call Image/mkfs/$(word 1,$(target_params)),$(target_params))
@@ -347,6 +376,10 @@ endif
 
 define Device/Check/Common
   _PROFILE_SET = $$(strip $$(foreach profile,$$(PROFILES) DEVICE_$(1),$$(call DEVICE_CHECK_PROFILE,$$(profile))))
+  ifdef TARGET_PER_DEVICE_ROOTFS
+    ROOTFS_ID/$(1) := $$(if $$(_PROFILE_SET),$$(call mkfs_packages_id,$$(DEVICE_PACKAGES)))
+    PACKAGES_$$(ROOTFS_ID/$(1)) := $$(DEVICE_PACKAGES)
+  endif
 endef
 
 define Device/Check
@@ -409,7 +442,16 @@ endef
 define Device/Build/image
   $$(_TARGET): $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)),$(1)))
-  $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)): $$(KDIR_KERNEL_IMAGE) $(KDIR)/root.$(1)$$(if $$(FS_OPTIONS/$(1)),+fs=$$(call param_mangle,$$(FS_OPTIONS/$(1))))
+  ROOTFS/$(1)/$(3) := \
+	$(KDIR)/root.$(1)$$(strip \
+		$$(if $$(FS_OPTIONS/$(1)),+fs=$$(call param_mangle,$$(FS_OPTIONS/$(1)))) \
+	)$$(strip \
+		$(if $(TARGET_PER_DEVICE_ROOTFS),+pkg=$$(ROOTFS_ID/$(3))) \
+	)
+  ifndef IB
+    $$(ROOTFS/$(1)/$(3)): $(if $(TARGET_PER_DEVICE_ROOTFS),target-dir-$$(ROOTFS_ID/$(3)))
+  endif
+  $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)): $$(KDIR_KERNEL_IMAGE) $$(ROOTFS/$(1)/$(3))
 	@rm -f $$@
 	[ -f $$(word 1,$$^) -a -f $$(word 2,$$^) ]
 	$$(call concat_cmd,$(if $(IMAGE/$(2)/$(1)),$(IMAGE/$(2)/$(1)),$(IMAGE/$(2))))
@@ -493,7 +535,7 @@ define BuildImage
   endif
 
   mkfs_prepare: image_prepare
-	$(call Image/mkfs/prepare)
+	$(call Image/mkfs/prepare,$(TARGET_DIR))
 
   kernel_prepare: mkfs_prepare
 	$(call Image/Build/targz)

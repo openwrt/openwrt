@@ -151,6 +151,18 @@ sub gen_target_config() {
 		target_name($a) cmp target_name($b);
 	} @target;
 
+	foreach my $target (@target_sort) {
+		next if @{$target->{subtargets}} > 0;
+		print <<EOF;
+config DEFAULT_TARGET_$target->{conf}
+	bool
+	depends on TARGET_PER_DEVICE_ROOTFS
+	default y if TARGET_$target->{conf}
+EOF
+		foreach my $pkg (@{$target->{packages}}) {
+			print "\tselect DEFAULT_$pkg if TARGET_PER_DEVICE_ROOTFS\n";
+		}
+	}
 
 	print <<EOF;
 choice
@@ -238,6 +250,9 @@ endchoice
 menu "Target Devices"
 	depends on TARGET_MULTI_PROFILE
 
+	config TARGET_PER_DEVICE_ROOTFS
+		bool "Use a per-device root filesystem that adds profile packages"
+
 EOF
 	foreach my $target (@target) {
 		my $profiles = $target->{profiles};
@@ -250,7 +265,8 @@ config TARGET_DEVICE_$target->{conf}_$profile->{id}
 EOF
 			my @pkglist = merge_package_lists($target->{packages}, $profile->{packages});
 			foreach my $pkg (@pkglist) {
-				print "\tselect DEFAULT_$pkg\n";
+				print "\tselect DEFAULT_$pkg if !TARGET_PER_DEVICE_ROOTFS\n";
+				print "\tselect MODULE_DEFAULT_$pkg if TARGET_PER_DEVICE_ROOTFS\n";
 				$defaults{$pkg} = 1;
 			}
 		}
@@ -340,8 +356,18 @@ config LINUX_$v
 EOF
 	}
 	foreach my $def (sort keys %defaults) {
-		print "\tconfig DEFAULT_".$def."\n";
-		print "\t\tbool\n\n";
+		print <<EOF;
+	config DEFAULT_$def
+		bool
+
+	config MODULE_DEFAULT_$def
+		tristate
+		depends on TARGET_PER_DEVICE_ROOTFS
+		depends on m
+		default m if DEFAULT_$def
+		select PACKAGE_$def
+
+EOF
 	}
 }
 
