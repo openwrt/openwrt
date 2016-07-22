@@ -34,11 +34,11 @@ ifdef CONFIG_USE_MKLIBS
 endif
 
 # where to build (and put) .ipk packages
-OPKG:= \
+opkg = \
   IPKG_NO_SCRIPT=1 \
-  IPKG_INSTROOT=$(TARGET_DIR) \
-  $(XARGS) $(STAGING_DIR_HOST)/bin/opkg \
-	--offline-root $(TARGET_DIR) \
+  IPKG_INSTROOT=$(1) \
+  $(STAGING_DIR_HOST)/bin/opkg \
+	--offline-root $(1) \
 	--force-depends \
 	--force-overwrite \
 	--force-postinstall \
