@@ -37,6 +37,7 @@ endif
 opkg = \
   IPKG_NO_SCRIPT=1 \
   IPKG_INSTROOT=$(1) \
+  TMPDIR=$(1)/tmp \
   $(STAGING_DIR_HOST)/bin/opkg \
 	--offline-root $(1) \
 	--force-depends \
