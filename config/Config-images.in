@@ -16,6 +16,7 @@ menu "Target Images"
 			prompt "Compression"
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ar71xx
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
+			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_apm821xx
 			default TARGET_INITRAMFS_COMPRESSION_NONE
 			depends on TARGET_ROOTFS_INITRAMFS
 			help
