@@ -136,7 +136,7 @@ MAKE_INSTALL_FLAGS = \
 	$(MAKE_FLAGS) \
 	DESTDIR="$(PKG_INSTALL_DIR)"
 
-MAKE_PATH = .
+MAKE_PATH ?= .
 
 define Build/Compile/Default
 	+$(MAKE_VARS) \
