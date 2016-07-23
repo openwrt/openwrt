@@ -92,13 +92,14 @@ static int usbdev_trig_find_usb_dev(struct usb_device *usb_dev, void *data)
 {
 	struct usbdev_trig_match *match = data;
 
+	if (strcmp(dev_name(&usb_dev->dev), match->device_name) != 0)
+		return 0;
+
 	if (WARN_ON(match->usb_dev))
 		return 0;
 
-	if (!strcmp(dev_name(&usb_dev->dev), match->device_name)) {
-		dev_dbg(&usb_dev->dev, "matched this device!\n");
-		match->usb_dev = usb_get_dev(usb_dev);
-	}
+	dev_dbg(&usb_dev->dev, "matched this device!\n");
+	match->usb_dev = usb_get_dev(usb_dev);
 
 	return 0;
 }
