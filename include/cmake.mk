@@ -8,6 +8,9 @@ endif
 
 CMAKE_BINARY_DIR?=$(PKG_BUILD_DIR)
 CMAKE_SOURCE_DIR?=.
+ifneq ($(origin CMAKE_BINARY_SUBDIR), undefined)
+         CMAKE_SOURCE_DIR=..
+endif
 
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   cmake_tool=$(TOOLCHAIN_DIR)/bin/$(1)
@@ -36,7 +39,7 @@ CMAKE_HOST_FIND_ROOT_PATH:=$(STAGING_DIR)/host;$(STAGING_DIR_HOST)
 CMAKE_SHARED_LDFLAGS:=-Wl,-Bsymbolic-functions
 
 define Build/Configure/Default
-	(cd $(CMAKE_BINARY_DIR); \
+	(cd $(CMAKE_BINARY_DIR)/$(CMAKE_BINARY_SUBDIR); \
 		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)" \
