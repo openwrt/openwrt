@@ -354,6 +354,22 @@ ucidef_add_vdsl_modem() {
 	json_select ..
 }
 
+ucidef_set_led_disk() {
+	local cfg="led_$1"
+	local name="$2"
+	local sysfs="$3"
+
+	json_select_object led
+
+	json_select_object "$1"
+	json_add_string name "$name"
+	json_add_string sysfs "$sysfs"
+	json_add_string trigger disk-activity
+	json_select ..
+
+	json_select ..
+}
+
 ucidef_set_led_netdev() {
 	local cfg="led_$1"
 	local name="$2"
