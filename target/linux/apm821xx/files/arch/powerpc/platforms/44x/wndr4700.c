@@ -82,15 +82,18 @@ static struct ath9k_platform_data ar9580_wmac1_data = {
 	.eeprom_name = "pci_wmac0.eeprom",
 };
 
-static void load_eeprom_ar9380(struct pci_dev *dev)
+static int __init wndr4700_ath9k_eeprom_load(void)
 {
-	dev->dev.platform_data = &ar9380_wmac0_data;
-}
+	struct pci_dev *dev;
 
-static void load_eeprom_ar9580(struct pci_dev *dev)
-{
-	dev->dev.platform_data = &ar9580_wmac1_data;
-}
+	dev = pci_get_device(PCI_VENDOR_ID_ATHEROS, 0x0030, NULL);
+	if (dev)
+		dev->dev.platform_data = &ar9380_wmac0_data;
 
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_ATHEROS, 0x0030, load_eeprom_ar9380);
-DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_ATHEROS, 0x0033, load_eeprom_ar9580);
+	dev = pci_get_device(PCI_VENDOR_ID_ATHEROS, 0x0033, NULL);
+	if (dev)
+		dev->dev.platform_data = &ar9580_wmac1_data;
+
+	return 0;
+}
+machine_device_initcall(wndr4700, wndr4700_ath9k_eeprom_load);
