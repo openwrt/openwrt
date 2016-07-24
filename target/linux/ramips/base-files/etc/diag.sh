@@ -27,6 +27,7 @@ get_status_led() {
 	mzk-dp150n|\
 	mzk-w300nh2|\
 	nbg-419n|\
+	nbg-419n2|\
 	pwh2004|\
 	wnce2001|\
 	wndr3700v5|\
