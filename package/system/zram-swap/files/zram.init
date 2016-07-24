@@ -71,8 +71,17 @@ zram_reset()
 
 list_cpu_idx()
 {
-	local line i=0
-
+	# Offset by 1 if /dev/zram0 is in use by /tmp
+	if [ "$(mount | grep /dev/zram0)" ]; then
+		local line i=1
+		# Hot-add new ZRAM device (if necessary)
+		if [ ! -b /dev/zram1 ]; then 
+			cat /sys/class/zram-control/hot_add
+		fi
+	else
+		local line i=0
+	fi
+	
 	while read line; do {
 		case "$line" in
 			[Pp]rocessor*)
