@@ -15,7 +15,7 @@ KERNEL_LOADADDR:=0x8000
 TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome
 
 UBI_OPTS:="-m 2048 -p 128KiB -s 512"
-UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
 
 define Device/Default
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
