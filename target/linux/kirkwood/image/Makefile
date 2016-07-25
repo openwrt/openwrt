@@ -14,7 +14,7 @@ DEVICE_VARS += KERNEL_SIZE
 KERNEL_LOADADDR:=0x8000
 TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome
 
-UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+UBI_OPTS := -m 2048 -p 128KiB -s 512
 UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
 
 define Device/Default
@@ -141,8 +141,8 @@ define Image/Build/ubi
  endif
 endef
 
-IOMEGA_IX2_200_UBIFS_OPTS:="-m 512 -e 15872 -c 2048"
-IOMEGA_IX2_200_UBI_OPTS:="-m 512 -p 16384 -s 256"
+IOMEGA_IX2_200_UBIFS_OPTS := -m 512 -e 15872 -c 2048
+IOMEGA_IX2_200_UBI_OPTS := -m 512 -p 16384 -s 256
 
 Image/BuildKernel/Template/Generic=$(call Image/BuildKernel/Template)
 Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
