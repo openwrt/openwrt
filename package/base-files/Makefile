@@ -25,9 +25,6 @@ include $(INCLUDE_DIR)/package.mk
 ifneq ($(DUMP),1)
   STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell $(SH_FUNC) echo $(CONFIG_TARGET_INIT_PATH) | md5s)
   TARGET:=-$(BOARD)
-  ifneq ($(wildcard $(PLATFORM_DIR)/base-files-$(PROFILE) $(PLATFORM_SUBDIR)/base-files-$(PROFILE)),)
-    TARGET:=$(TARGET)-$(PROFILE)
-  endif
 endif
 
 define Package/base-files
@@ -118,22 +115,10 @@ define Package/base-files/install
 	if [ -d $(PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
-	if [ -d $(PLATFORM_DIR)/base-files-$(PROFILE)/. ]; then \
-		$(CP) $(PLATFORM_DIR)/base-files-$(PROFILE)/* $(1)/; \
-	fi
-	if [ -d $(PLATFORM_DIR)/$(PROFILE)/base-files/. ]; then \
-		$(CP) $(PLATFORM_DIR)/$(PROFILE)/base-files/* $(1)/; \
-	fi
 	$(if $(filter-out $(PLATFORM_DIR),$(PLATFORM_SUBDIR)), \
 		if [ -d $(PLATFORM_SUBDIR)/base-files/. ]; then \
 			$(CP) $(PLATFORM_SUBDIR)/base-files/* $(1)/; \
 		fi; \
-		if [ -d $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/. ]; then \
-			$(CP) $(PLATFORM_SUBDIR)/base-files-$(PROFILE)/* $(1)/; \
-		fi; \
-		if [ -d $(PLATFORM_SUBDIR)/$(PROFILE)/base-files/. ]; then \
-			$(CP) $(PLATFORM_SUBDIR)/$(PROFILE)/base-files/* $(1)/; \
-		fi \
 	)
 
 	$(VERSION_SED) \
