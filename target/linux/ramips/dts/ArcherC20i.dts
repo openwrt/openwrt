@@ -12,17 +12,54 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+		lan {
+			label = "c20i:blue:lan";
+			gpios = <&gpio0 1 1>;
+		};
+		usb {
+			label = "c20i:blue:usb";
+			gpios = <&gpio0 11 1>;
+		};
+		wps {
+			label = "c20i:blue:wps";
+			gpios = <&gpio1 15 1>;
+		};
+		wan {
+			label = "c20i:blue:wan";
+			gpios = <&gpio2 0 1>;
+		};
+		wlan {
+			label = "c20i:blue:wlan";
+			gpios = <&gpio3 0 1>;
+		};
 	};
 
-	gpio-keys-polled {
-		compatible = "gpio-keys-polled";
+	gpio-keys {
+		compatible = "gpio-keys";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		poll-interval = <20>;
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio0 2 1>;
+			linux,code = <0xf7>;
+		};
+		reset_wps {
+			label = "reset_wps";
+			gpios = <&gpio0 13 1>;
+			linux,code = <0x198>;
+		};
 	};
 };
 
+&gpio1 {
+	status = "okay";
+};
+
 &gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
 	status = "okay";
 };
 
@@ -73,7 +110,7 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd";
+			ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd", "ephy", "spi refclk";
 			ralink,function = "gpio";
 		};
 	};
@@ -81,7 +118,6 @@
 
 &ethernet {
 		pinctrl-names = "default";
-		pinctrl-0 = <&ephy_pins>;
 		mtd-mac-address = <&rom 0xf100>;
 		mediatek,portmap = "wllll";
 	};
