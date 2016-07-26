@@ -125,6 +125,7 @@ ifneq ($(USER_FILES),)
 endif
 	$(MAKE) package_postinst
 	$(MAKE) build_image
+	$(MAKE) checksum
 
 package_index: FORCE
 	@echo
@@ -169,6 +170,11 @@ build_image: FORCE
 	@echo Building images...
 	$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1 EXTRA_IMAGE_NAME="$(EXTRA_IMAGE_NAME)" \
 		$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)")
+
+checksum: FORCE
+	@echo
+	@echo Calculating checksums...
+	@$(call sha256sums,$(BIN_DIR))
 
 clean:
 	rm -rf $(TMP_DIR) $(DL_DIR) $(TARGET_DIR) $(BIN_DIR)

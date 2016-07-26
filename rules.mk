@@ -371,6 +371,13 @@ define file_copy
 	$(CP) $(1) $(2)
 endef
 
+# Calculate sha256sum of any plain file within a given directory
+# $(1) => Input directory
+define sha256sums
+	(cd $(1); find . -maxdepth 1 -type f -not -name 'sha256sums' -printf "%P\n" | sort | \
+		xargs openssl dgst -sha256 | sed -ne 's!^SHA256(\(.*\))= \(.*\)$$!\2 *\1!p' > sha256sums)
+endef
+
 # file extension
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 
