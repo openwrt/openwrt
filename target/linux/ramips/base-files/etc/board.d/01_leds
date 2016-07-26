@@ -4,11 +4,11 @@
 . /lib/ramips.sh
 
 set_usb_led() {
-	ucidef_set_led_usbdev "usb" "USB" "$1" "1-1"
+	ucidef_set_led_usbdev "usb" "USB" "${1}" "${2:-1-1}"
 }
 
 set_wifi_led() {
-	ucidef_set_led_netdev "wifi_led" "wifi" "$1" "wlan0"
+	ucidef_set_led_netdev "wifi_led" "wifi" "${1}" "${2:-wlan0}"
 }
 
 
