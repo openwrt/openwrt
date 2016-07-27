@@ -1370,9 +1370,8 @@ static int b53_switch_init(struct b53_device *dev)
 			sw_dev->cpu_port = 5;
 	}
 
-	/* cpu port is always last */
-	sw_dev->ports = sw_dev->cpu_port + 1;
 	dev->enabled_ports |= BIT(sw_dev->cpu_port);
+	sw_dev->ports = fls(dev->enabled_ports);
 
 	dev->ports = devm_kzalloc(dev->dev,
 				  sizeof(struct b53_port) * sw_dev->ports,
