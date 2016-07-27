@@ -157,6 +157,13 @@ WBMR300)
 		"2:lan:2" "3:lan:3" "5:lan:4" "4:wan:1" "6t@eth0"
 	;;
 
+EASY80920NAND|EASY80920NOR)
+	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_add_switch "switch0" \
+		"4:lan:1" "2:lan:2" "1:lan:3" "0:lan:3" "5:wan:1" "6t@eth0"
+	;;
+
 *)
 	ucidef_set_interface_lan 'eth0'
 	;;

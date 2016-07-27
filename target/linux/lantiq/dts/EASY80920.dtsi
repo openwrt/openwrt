@@ -266,13 +266,19 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0>;
-		mac-address = [ 00 11 22 33 44 55 ];
+		lantiq,switch;
 
-		ethernet@0 {
+		ethernet@4 {
 			compatible = "lantiq,xrx200-pdi-port";
-			reg = <0>;
-			phy-mode = "rgmii";
-			phy-handle = <&phy0>;
+			reg = <4>;
+			phynmode0 = "gmii";
+			phy-handle = <&phy13>;
+		};
+		ethernet@2 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <2>;
+			phy-mode = "gmii";
+			phy-handle = <&phy11>;
 		};
 		ethernet@1 {
 			compatible = "lantiq,xrx200-pdi-port";
@@ -280,11 +286,11 @@
 			phy-mode = "rgmii";
 			phy-handle = <&phy1>;
 		};
-		ethernet@2 {
+		ethernet@0 {
 			compatible = "lantiq,xrx200-pdi-port";
-			reg = <2>;
-			phy-mode = "gmii";
-			phy-handle = <&phy11>;
+			reg = <0>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy0>;
 		};
 	};
 
@@ -293,27 +299,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <1>;
-		mac-address = [ 00 11 22 33 44 56 ];
 		lantiq,wan;
+
 		ethernet@5 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <5>;
 			phy-mode = "rgmii";
 			phy-handle = <&phy5>;
-		};
-	};
-
-	test: interface@2 {
-		compatible = "lantiq,xrx200-pdi";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <2>;
-		mac-address = [ 00 11 22 33 44 57 ];
-		ethernet@4 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <4>;
-			phynmode0 = "gmii";
-			phy-handle = <&phy13>;
 		};
 	};
 
