@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=brcmfmac43430-firmware-sdio
-PKG_VERSION:=2016-04-16
-PKG_RELEASE:=54bab3d6a6d43239c71d26464e6e10e5067ffea7
+PKG_VERSION:=2016-06-07
+PKG_RELEASE:=a7491de4c4b2f1ceb5d0dfa5350b95e5c6fb9bd4
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -20,7 +20,7 @@ define Download/brcmfmac43430_sdio_bin
   FILE:=$(BRCMFMAC43430_SDIO_FILE).bin
   URL:=$(BRCMFMAC43430_SDIO_URL)
   URL_FILE:=brcmfmac43430-sdio.bin
-  MD5SUM:=4a410ab9a1eefe82e158d36df02b3589
+  MD5SUM:=b24aad300e161782072b227abe9862f7
 endef
 $(eval $(call Download,brcmfmac43430_sdio_bin))
 
