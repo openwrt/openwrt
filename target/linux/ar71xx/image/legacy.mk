@@ -1068,12 +1068,6 @@ $(eval $(call SingleProfile,Zcomax,64k,ZCN1523H516,zcn-1523h-5-16,ZCN-1523H-5,tt
 
 $(eval $(call SingleProfile,ZyXEL,64k,NBG_460N_550N_550NH,nbg460n_550n_550nh,NBG460N,ttyS0,115200,NBG-460N))
 
-define LegacyDevice/OM2P
-  DEVICE_TITLE := OpenMesh OM2P/OM2Pv2/OM2P-HS/OM2P-HSv2/OM2P-HSv3/OM2P-LC
-  DEVICE_PACKAGES := kmod-ath9k om-watchdog
-endef
-LEGACY_DEVICES += OM2P
-
 endif # ifeq ($(SUBTARGET),generic)
 
 ifeq ($(SUBTARGET),nand)
