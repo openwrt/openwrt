@@ -7,14 +7,14 @@ define Package/r8169-firmware/install
 endef
 $(eval $(call BuildPackage,r8169-firmware))
 
-Package/r8188eu-firmware = $(call Package/firmware-default,RealTek RTL8188EU firmware)
-define Package/r8188eu-firmware/install
+Package/rtl8188eu-firmware = $(call Package/firmware-default,RealTek RTL8188EU firmware)
+define Package/rtl8188eu-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
 	$(CP) \
 		$(PKG_BUILD_DIR)/rtlwifi/rtl8188eufw.bin \
 		$(1)/lib/firmware/rtlwifi
 endef
-$(eval $(call BuildPackage,r8188eu-firmware))
+$(eval $(call BuildPackage,rtl8188eu-firmware))
 
 Package/rtl8192ce-firmware = $(call Package/firmware-default,RealTek RTL8192CE firmware)
 define Package/rtl8192ce-firmware/install
