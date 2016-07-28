@@ -64,9 +64,9 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
 +	ptr = str - 1;
 +
 +	do {
-+		ptr++;
 +		//first find an 'r' at the begining or after a space
 +		do {
++			ptr++;
 +			ptr = strchr(ptr, 'r');
 +			if(!ptr) return dest;
 +
