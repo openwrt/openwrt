@@ -22,6 +22,41 @@ preinit_ip_config() {
 	ip -4 address add $pi_ip/$pi_netmask broadcast $pi_broadcast dev $1
 }
 
+preinit_config_switch() {
+	local role roles ports device enable reset
+
+	local name=$1
+	local lan_if=$2
+
+	json_select switch
+	json_select $name
+
+	json_get_vars enable reset
+
+	if json_is_a roles array; then
+		json_get_keys roles roles
+		json_select roles
+
+		for role in $roles; do
+			json_select "$role"
+			json_get_vars ports device
+			json_select ..
+
+			if [ "$device" = "$lan_if" ]; then
+				swconfig dev $name set reset $reset
+				swconfig dev $name set enable_vlan $enable
+				swconfig dev $name vlan $role set ports "$ports"
+				swconfig dev $name set apply
+			fi
+		done
+
+		json_select ..
+	fi
+
+	json_select ..
+	json_select ..
+}
+
 preinit_config_board() {
 	/bin/board_detect /tmp/board.json
 
@@ -43,8 +78,17 @@ preinit_config_board() {
 	# only use the first one
 	ifname=${ifname%% *}
 
-	# trim any vlan ids
-	ifname=${ifname%\.*}
+	if [ -x /sbin/swconfig ]; then
+		# configure the switch, if present
+
+		json_get_keys keys switch
+		for key in $keys; do
+			preinit_config_switch $key $ifname
+		done
+	else
+		# trim any vlan ids
+		ifname=${ifname%\.*}
+	fi
 
 	preinit_ip_config $ifname
 }
