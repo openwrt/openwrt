@@ -58,7 +58,7 @@ set_state() {
 	cpva642)
 		status_led="CPVA642:green:power:"
 		;;
-	ct536_ct5621)
+	ct-536p_5621t)
 		status_led="CT536_CT5621:green:power"
 		;;
 	cvg834g)
