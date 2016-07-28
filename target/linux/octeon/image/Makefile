@@ -22,7 +22,7 @@ endef
 define Build/tar-file
 	mkdir -p $(KDIR)/sysupgrade-$(DEVICE_NAME)/
 	echo "BOARD=$(BOARD)" > $(KDIR)/sysupgrade-$(DEVICE_NAME)/CONTROL
-	$(CP) $(KDIR)/$(KERNEL_IMAGE) $(KDIR)/sysupgrade-$(DEVICE_NAME)/kernel
+	$(CP) $(KDIR_KERNEL_IMAGE) $(KDIR)/sysupgrade-$(DEVICE_NAME)/kernel
 	$(CP) $(KDIR)/root.$(1) $(KDIR)/sysupgrade-$(DEVICE_NAME)/root
 	(cd $(KDIR); $(TAR) cvf \
 		$@ sysupgrade-$(DEVICE_NAME))
