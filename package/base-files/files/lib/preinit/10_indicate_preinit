@@ -9,6 +9,33 @@ preinit_ip_config() {
 	ip -4 address add $pi_ip/$pi_netmask broadcast $pi_broadcast dev $1
 }
 
+preinit_config_board() {
+	/bin/board_detect /tmp/board.json
+
+	[ -f "/tmp/board.json" ] || return
+
+	. /usr/share/libubox/jshn.sh
+
+	json_init
+	json_load "$(cat /tmp/board.json)"
+
+	json_select network
+		json_select "lan"
+			json_get_vars ifname
+		json_select ..
+	json_select ..
+
+	[ -n "$ifname" ] || return
+
+	# only use the first one
+	ifname=${ifname%% *}
+
+	# trim any vlan ids
+	ifname=${ifname%\.*}
+
+	preinit_ip_config $ifname
+}
+
 preinit_ip() {
 	# if the preinit interface isn't specified and ifname is set in
 	# preinit.arch use that interface
@@ -18,6 +45,8 @@ preinit_ip() {
 
 	if [ -n "$pi_ifname" ]; then
 		preinit_ip_config $pi_ifname
+	elif [ -d "/etc/board.d/" ]; then
+		preinit_config_board
 	fi
 }
 
