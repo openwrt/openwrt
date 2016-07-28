@@ -149,15 +149,16 @@ VGV7510KW22)
 	ucidef_add_switch "switch0" \
 		"2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
 	;;
-*)
-	ucidef_set_interface_lan 'eth0'
-	;;
 
 WBMR300)
 	lan_mac=$(mtd_get_mac_ascii ubootconfig ethaddr)
 	wan_mac="$lan_mac"
 	ucidef_add_switch "switch0" \
-		"2:lan:1" "3:lan:2" "5:lan:3" "4:wan:1" "6t@eth0"
+		"2:lan:2" "3:lan:3" "5:lan:4" "4:wan:1" "6t@eth0"
+	;;
+
+*)
+	ucidef_set_interface_lan 'eth0'
 	;;
 
 esac
