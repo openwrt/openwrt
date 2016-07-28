@@ -3,9 +3,22 @@
 # Copyright (C) 2010 Vertical Communications
 
 preinit_ip_config() {
-	grep -q "$1" /proc/net/dev || return
+	local netdev vid
 
-	ip link set dev $1 up
+	netdev=${1%\.*}
+	vid=${1#*\.}
+
+	if [ "$vid" = "$netdev" ]; then
+		vid=
+	fi
+
+	grep -q "$netdev" /proc/net/dev || return
+
+	if [ -n "$vid" ]; then
+		ip link add link $netdev name $1 type vlan id $vid
+	fi
+
+	ip link set dev $netdev up
 	ip -4 address add $pi_ip/$pi_netmask broadcast $pi_broadcast dev $1
 }
 
@@ -52,8 +65,21 @@ preinit_ip() {
 
 preinit_ip_deconfig() {
 	[ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
+		local netdev vid
+
+		netdev=${pi_ifname%\.*}
+		vid=${pi_ifname#*\.}
+
+		if [ "$vid" = "$netdev" ]; then
+			vid=
+		fi
+
 		ip -4 address flush dev $pi_ifname
-		ip link set dev $pi_ifname down
+		ip link set dev $netdev down
+
+		if [ -n "$vid" ]; then
+			ip link delete $pi_ifname
+		fi
 	}
 }
 
