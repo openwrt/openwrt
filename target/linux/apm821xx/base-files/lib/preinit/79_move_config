@@ -3,6 +3,7 @@
 BOOTPART=/dev/sda1
 
 move_config() {
+	grep -q 'MyBook Live' /proc/cpuinfo || return
 	if [ -b $BOOTPART ]; then
 		mkdir -p /boot
 		mount -t ext4 -o rw,noatime $BOOTPART /boot
