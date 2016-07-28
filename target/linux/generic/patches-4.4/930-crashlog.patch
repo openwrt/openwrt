@@ -26,7 +26,7 @@
  
 +config CRASHLOG
 +	bool "Crash logging"
-+	depends on (!NO_BOOTMEM || HAVE_MEMBLOCK) && !(ARM || SPARC || PPC)
++	depends on (!NO_BOOTMEM || HAVE_MEMBLOCK)
 +
  config BLK_DEV_INITRD
  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
@@ -43,7 +43,7 @@
  
 --- /dev/null
 +++ b/kernel/crashlog.c
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,193 @@
 +/*
 + * Crash information logger
 + * Copyright (C) 2010 Felix Fietkau <nbd@nbd.name>
@@ -75,6 +75,7 @@
 +#include <linux/kmsg_dump.h>
 +#include <linux/module.h>
 +#include <linux/pfn.h>
++#include <linux/vmalloc.h>
 +#include <asm/io.h>
 +
 +#define CRASHLOG_PAGES	4
@@ -208,10 +209,21 @@
 +
 +int __init crashlog_init_fs(void)
 +{
-+	if (!crashlog_addr)
-+		return -ENOMEM;
++	struct page *pages[CRASHLOG_PAGES];
++	pgprot_t prot;
++	int i;
 +
-+	crashlog_buf = ioremap(crashlog_addr, CRASHLOG_SIZE);
++	if (!crashlog_addr) {
++		printk("No memory allocated for crashlog\n");
++		return -ENOMEM;
++	}
++
++	printk("Crashlog allocated RAM at address 0x%lx\n", (unsigned long) crashlog_addr);
++	for (i = 0; i < CRASHLOG_PAGES; i++)
++		pages[i] = pfn_to_page((crashlog_addr >> PAGE_SHIFT) + i);
++
++	prot = pgprot_writecombine(PAGE_KERNEL);
++	crashlog_buf = vmap(pages, CRASHLOG_PAGES, VM_MAP, prot);
 +
 +	crashlog_copy();
 +
@@ -265,12 +277,12 @@
  
  #include <asm-generic/sections.h>
  #include <linux/io.h>
-@@ -503,6 +504,8 @@ static void __init_memblock memblock_ins
- 	memblock_set_region_node(rgn, nid);
- 	type->cnt++;
- 	type->total_size += size;
-+	if (type == &memblock.memory && idx == 0)
-+		crashlog_init_memblock(base, size);
- }
- 
- /**
+@@ -541,6 +542,8 @@ int __init_memblock memblock_add_range(s
+ 		type->regions[0].flags = flags;
+ 		memblock_set_region_node(&type->regions[0], nid);
+ 		type->total_size = size;
++		if (type == &memblock.memory)
++			crashlog_init_memblock(base, size);
+ 		return 0;
+ 	}
+ repeat:
