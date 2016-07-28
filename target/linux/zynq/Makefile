@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/host.mk
 ARCH:=arm
 BOARD:=zynq
 BOARDNAME:=Xilinx Zynq 7000 SoCs
-FEATURES:=fpu gpio rtc usb usbgadget targz ubifs
+FEATURES:=fpu gpio rtc usb usbgadget targz
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=neon
 MAINTAINER:=Jason Wu <jason.wu.misc@gamil.com>
