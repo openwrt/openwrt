@@ -422,7 +422,6 @@ define Device/Build/compile
 endef
 
 define Device/Build/kernel
-  _KERNEL_IMAGES += $$(KDIR_KERNEL_NAME)
   $(KDIR)/$$(KERNEL_NAME):: image_prepare
   $$(_TARGET): $$(if $$(KERNEL_INSTALL),$(BIN_DIR)/$$(KERNEL_IMAGE))
   $(call Device/Export,$$(KDIR_KERNEL_IMAGE),$(1))
