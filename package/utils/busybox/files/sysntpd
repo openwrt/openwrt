@@ -64,7 +64,6 @@ service_triggers() {
 	script=$(readlink -f "$initscript")
 	name=$(basename ${script:-$initscript})
 
-	procd_open_trigger
 	procd_add_config_trigger "config.change" "system" /etc/init.d/$name reload
 
 	config_load system
@@ -82,8 +81,6 @@ service_triggers() {
 			procd_add_raw_trigger "interface.*" 1000 /etc/init.d/$name reload
 		fi
 	}
-
-	procd_close_trigger
 
 	procd_add_validation validate_ntp_section
 }
