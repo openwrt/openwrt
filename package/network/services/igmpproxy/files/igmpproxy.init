@@ -97,6 +97,7 @@ igmp_add_firewall_network() {
 
 service_triggers() {
 	procd_add_reload_trigger "igmpproxy"
+	config_foreach igmp_add_network phyint
 }
 
 start_service() {
@@ -116,9 +117,6 @@ start_service() {
 	procd_set_param file $CONFIGFILE
 	procd_set_param netdev $netdevs
 	procd_set_param respawn
-	procd_open_trigger
-	config_foreach igmp_add_network phyint
-	procd_close_trigger
 
 	procd_open_data
 
