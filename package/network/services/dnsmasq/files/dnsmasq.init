@@ -64,6 +64,12 @@ dhcp_check() {
 
 	[ -s "$stamp" ] && return $(cat "$stamp")
 
+	# If there's no carrier yet, skip this interface.
+	# The init script will be called again once the link is up
+	case "$(devstatus "$ifname" | jsonfilter -e @.carrier)" in
+		false) return 1;;
+	esac
+
 	udhcpc -n -q -s /bin/true -t 1 -i "$ifname" >&- && rv=1 || rv=0
 
 	[ $rv -eq 1 ] && \
