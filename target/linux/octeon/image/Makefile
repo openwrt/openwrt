@@ -7,25 +7,14 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += KERNEL_PREFIX FILESYSTEMS
-
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
+  BOARD_NAME := $(BOARD)
   KERNEL_NAME := vmlinux.elf
   KERNEL_INITRAMFS_NAME := vmlinux-initramfs.elf
   KERNEL := kernel-bin | strip-kernel | patch-cmdline
   IMAGES := sysupgrade.tar
-  FILESYSTEMS := squashfs
-  IMAGE/sysupgrade.tar := tar-file $$$$(FILESYSTEMS)
-endef
-
-define Build/tar-file
-	mkdir -p $(KDIR)/sysupgrade-$(DEVICE_NAME)/
-	echo "BOARD=$(BOARD)" > $(KDIR)/sysupgrade-$(DEVICE_NAME)/CONTROL
-	$(CP) $(KDIR_KERNEL_IMAGE) $(KDIR)/sysupgrade-$(DEVICE_NAME)/kernel
-	$(CP) $(KDIR)/root.$(1) $(KDIR)/sysupgrade-$(DEVICE_NAME)/root
-	(cd $(KDIR); $(TAR) cvf \
-		$@ sysupgrade-$(DEVICE_NAME))
+  IMAGE/sysupgrade.tar := sysupgrade-nand
 endef
 
 define Build/strip-kernel
