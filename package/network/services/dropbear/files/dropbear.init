@@ -127,7 +127,6 @@ service_triggers()
 {
 	local interfaces
 
-	procd_open_trigger
 	procd_add_config_trigger "config.change" "dropbear" /etc/init.d/dropbear reload
 
 	config_load "${NAME}"
@@ -138,7 +137,6 @@ service_triggers()
 			procd_add_interface_trigger "interface.*" $n /etc/init.d/dropbear reload
 		done
 	}
-	procd_close_trigger
 
 	procd_add_validation validate_section_dropbear
 }
