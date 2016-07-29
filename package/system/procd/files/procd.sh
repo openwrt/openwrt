@@ -32,6 +32,7 @@
 
 . $IPKG_INSTROOT/usr/share/libubox/jshn.sh
 
+PROCD_RELOAD_DELAY=1000
 _PROCD_SERVICE=
 
 _procd_call() {
@@ -221,6 +222,11 @@ _procd_set_param() {
 	esac
 }
 
+_procd_add_timeout() {
+	[ "$PROCD_RELOAD_DELAY" -gt 0 ] && json_add_int "" "$PROCD_RELOAD_DELAY"
+	return 0
+}
+
 _procd_add_interface_trigger() {
 	json_add_array
 	_procd_add_array_data "$1"
@@ -240,6 +246,8 @@ _procd_add_interface_trigger() {
 
 	json_close_array
 	json_close_array
+
+	_procd_add_timeout
 }
 
 _procd_add_reload_interface_trigger() {
@@ -271,6 +279,8 @@ _procd_add_config_trigger() {
 	json_close_array
 
 	json_close_array
+
+	_procd_add_timeout
 }
 
 _procd_add_raw_trigger() {
