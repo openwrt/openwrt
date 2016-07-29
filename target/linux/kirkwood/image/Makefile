@@ -28,7 +28,7 @@ define Device/Default
   SUBPAGESIZE := 512
   BLOCKSIZE := 128KiB
   IMAGES := sysupgrade.tar
-  IMAGE/sysupgrade.tar := sysupgrade-nand
+  IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
 
 define Device/dockstar

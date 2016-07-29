@@ -202,7 +202,7 @@ endef
 
 define Device/NAND
   $(Device/NAND/$(SUBTARGET))
-  IMAGE/sysupgrade.bin := sysupgrade-nand
+  IMAGE/sysupgrade.bin := sysupgrade-tar
 endef
 
 define Device/lantiqBrnImage

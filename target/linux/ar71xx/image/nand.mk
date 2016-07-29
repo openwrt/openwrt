@@ -16,7 +16,7 @@ define Device/mr18
   IMAGES := sysupgrade.tar
   KERNEL := kernel-bin | patch-cmdline | MerakiNAND
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | MerakiNAND
-  IMAGE/sysupgrade.tar := sysupgrade-nand
+  IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
 TARGET_DEVICES += mr18
 

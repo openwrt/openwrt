@@ -24,7 +24,7 @@ endef
 
 define Device/UBI
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := sysupgrade-nand
+  IMAGE/sysupgrade.bin := sysupgrade-tar
 endef
 
 define Device/UBI-factory

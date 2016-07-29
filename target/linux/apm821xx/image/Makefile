@@ -76,7 +76,7 @@ define Device/mr24
   IMAGE_SIZE := 8191k
   KERNEL := kernel-bin | lzma | uImage lzma | MerakiAdd-dtb | MerakiNAND
   KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux | gzip | uImage gzip | MerakiAdd-dtb | pad-to 2047k | MerakiAdd-initramfs | MerakiNAND
-  IMAGE/sysupgrade.tar := sysupgrade-nand
+  IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
 TARGET_DEVICES += mr24
 
@@ -156,7 +156,7 @@ define Device/WNDR4700
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | wndr4700-specialImage gzip
   IMAGE/factory.img := dtb | create-uImage-dtb | append-kernel | pad-to 2M | append-ubi | \
 		       netgear-dni | check-size $$$$(IMAGE_SIZE)
-  IMAGE/sysupgrade.tar := sysupgrade-nand
+  IMAGE/sysupgrade.tar := sysupgrade-tar
   NETGEAR_BOARD_ID := WNDR4700
   NETGEAR_HW_ID := 29763875+128+256
 endef

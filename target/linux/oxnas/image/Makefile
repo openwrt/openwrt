@@ -36,7 +36,7 @@ define Device/Default
   PROFILES = Default $$(DTS)
   IMAGES := ubinized.bin sysupgrade.tar
   IMAGE/ubinized.bin := append-ubi
-  IMAGE/sysupgrade.tar := sysupgrade-nand
+  IMAGE/sysupgrade.tar := sysupgrade-tar
   KERNEL_IN_UBI := 1
   UBOOTENV_IN_UBI := 1
 endef

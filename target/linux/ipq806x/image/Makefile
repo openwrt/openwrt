@@ -59,7 +59,7 @@ define Device/UbiFit
 	KERNEL_IN_UBI := 1
 	IMAGES := nand-factory.ubi nand-sysupgrade.tar
 	IMAGE/nand-factory.ubi := append-ubi
-	IMAGE/nand-sysupgrade.tar := sysupgrade-nand
+	IMAGE/nand-sysupgrade.tar := sysupgrade-tar
 endef
 
 define Device/DniImage
@@ -157,7 +157,7 @@ define Device/EA8500
 	BOARD_NAME := ea8500
 	IMAGES := factory.bin sysupgrade.tar
 	IMAGE/factory.bin := append-kernel 3145728 | append-ubi
-	IMAGE/sysupgrade.tar := sysupgrade-nand
+	IMAGE/sysupgrade.tar := sysupgrade-tar
 	DEVICE_TITLE := Linksys EA8500
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef

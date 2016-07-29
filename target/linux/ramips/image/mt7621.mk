@@ -158,7 +158,7 @@ define Device/ubnt-erx
   KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGES := sysupgrade.tar
   KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
-  IMAGE/sysupgrade.tar := sysupgrade-nand
+  IMAGE/sysupgrade.tar := sysupgrade-tar
   DEVICE_TITLE := Ubiquiti EdgeRouter X
   DEVICE_PACKAGES := -kmod-mt76 -kmod-rt2800-pci -kmod-cfg80211 -wpad-mini -iwinfo
 endef
