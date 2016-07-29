@@ -119,12 +119,12 @@ append_ipset() {
 }
 
 append_interface() {
-	local ifname=$(uci_get_state network "$1" ifname "$1")
+	network_get_device ifname "$1"
 	xappend "--interface=$ifname"
 }
 
 append_notinterface() {
-	local ifname=$(uci_get_state network "$1" ifname "$1")
+	network_get_device ifname "$1"
 	xappend "--except-interface=$ifname"
 }
 
