@@ -6,7 +6,7 @@ endef
 
 define Build/mktplinkfw2
 	mktplinkfw2 -B $(BOARD_ID) -s -a 0x4 -j \
-		-k $(word 1,$^) -r $(word 2,$^) \
+		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) \
 		-o $@
 endef
 DEVICE_VARS += BOARD_ID

@@ -476,8 +476,8 @@ TARGET_DEVICES += hiwifi-hc6361
 # - 28 bytes seama_header
 # - 36 bytes of META data (4-bytes aligned)
 define Build/seama-factory
-	( dd if=/dev/zero bs=64 count=1; cat $(word 1,$^) ) >$@.loader.tmp
-	( dd if=$@.loader.tmp bs=64k conv=sync; dd if=$(word 2,$^) ) >$@.tmp.0
+	( dd if=/dev/zero bs=64 count=1; cat $(IMAGE_KERNEL) ) >$@.loader.tmp
+	( dd if=$@.loader.tmp bs=64k conv=sync; dd if=$(IMAGE_ROOTFS) ) >$@.tmp.0
 	tail -c +65 $@.tmp.0 >$@.tmp.1
 	$(STAGING_DIR_HOST)/bin/seama \
 		-i $@.tmp.1 \
@@ -491,10 +491,10 @@ endef
 
 define Build/seama-sysupgrade
 	$(STAGING_DIR_HOST)/bin/seama \
-		-i $(word 1,$^) \
+		-i $(IMAGE_KERNEL) \
 		-m "dev=/dev/mtdblock/1" -m "type=firmware"
-	( dd if=$(word 1,$^).seama bs=64k conv=sync; dd if=$(word 2,$^) ) >$@
-	rm -f $(word 1,$^).seama
+	( dd if=$(IMAGE_KERNEL).seama bs=64k conv=sync; dd if=$(IMAGE_ROOTFS) ) >$@
+	rm -f $(IMAGE_KERNEL).seama
 endef
 
 define Build/seama-initramfs
@@ -505,7 +505,7 @@ define Build/seama-initramfs
 endef
 
 define Build/seama-pad-rootfs
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(word 2,$^) -c 64 >>$@
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 64 >>$@
 endef
 
 define Device/seama

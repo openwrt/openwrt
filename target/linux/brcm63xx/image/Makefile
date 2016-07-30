@@ -102,12 +102,12 @@ $(subst root.,,$(notdir $(1)))
 endef
 
 define Build/cfe-bin
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(word 1,$^) -f $(word 2,$^) \
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(IMAGE_KERNEL) -f $(IMAGE_ROOTFS) \
 		--output $@ --boardid $(CFE_BOARD_ID) --chipid $(CFE_CHIP_ID) \
 		--entry $(LOADER_ENTRY) --load-addr $(LOADER_ENTRY) \
 		--info1 "$(call Image/LimitName16,$(DEVICE_NAME))" \
-		--info2 "$(call Image/FileSystemStrip,$(word 2,$^))" \
-		$(call rootfspad/$(call Image/FileSystemStrip,$(word 2,$^))) \
+		--info2 "$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))" \
+		$(call rootfspad/$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))) \
 		$(CFE_EXTRAS) $(1)
 endef
 
@@ -115,15 +115,15 @@ define Build/cfe-old-bin
 	$(TOPDIR)/scripts/brcmImage.pl -t -p \
 		-o $@ -b $(CFE_BOARD_ID) -c $(CFE_CHIP_ID) \
 		-e $(LOADER_ENTRY) -a $(LOADER_ENTRY) \
-		-k $(word 1,$^) -r $(word 2,$^) \
+		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) \
 		$(CFE_EXTRAS)
 endef
 
 define Build/cfe-spw303v-bin
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(word 1,$^) -f $(word 2,$^) \
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(IMAGE_KERNEL) -f $(IMAGE_ROOTFS) \
 		--output $@ --boardid $(CFE_BOARD_ID) --chipid $(CFE_CHIP_ID) \
 		--entry $(LOADER_ENTRY) --load-addr $(LOADER_ENTRY) \
-		$(call rootfspad/$(call Image/FileSystemStrip,$(word 2,$^))) \
+		$(call rootfspad/$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))) \
 		$(CFE_EXTRAS) $(1)
 endef
 
@@ -144,20 +144,20 @@ endef
 
 define Build/redboot-bin
 	# Prepare kernel and rootfs
-	dd if=$(word 1,$^) of=$(BIN_DIR)/$(REDBOOT_PREFIX)-vmlinux.gz bs=65536 conv=sync
-	dd if=$(word 2,$^) of=$(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(word 2,$^)) bs=64k conv=sync
-	echo -ne \\xDE\\xAD\\xC0\\xDE >> $(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(word 2,$^))
+	dd if=$(IMAGE_KERNEL) of=$(BIN_DIR)/$(REDBOOT_PREFIX)-vmlinux.gz bs=65536 conv=sync
+	dd if=$(IMAGE_ROOTFS) of=$(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(IMAGE_ROOTFS)) bs=64k conv=sync
+	echo -ne \\xDE\\xAD\\xC0\\xDE >> $(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(IMAGE_ROOTFS))
 	# Generate the scripted image
 	$(TOPDIR)/scripts/redboot-script.pl \
 		-k $(BIN_DIR)/$(REDBOOT_PREFIX)-vmlinux.gz \
-		-r $(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(word 2,$^)) \
+		-r $(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(IMAGE_ROOTFS)) \
 		-a $(strip $(LOADADDR)) -f 0xbe430000 -l 0x7c0000 \
 		-s 0x1000 -t 20 -o $@.redbootscript
 	dd if="$@.redbootscript" of="$@.redbootscript.padded" bs=4096 conv=sync
 	cat \
 		"$@.redbootscript.padded" \
 		"$(BIN_DIR)/$(REDBOOT_PREFIX)-vmlinux.gz" \
-		"$(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(word 2,$^))" \
+		"$(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(IMAGE_ROOTFS))" \
 		> "$@"
 endef
 

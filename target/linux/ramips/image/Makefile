@@ -49,8 +49,8 @@ define Build/trx
 	$(STAGING_DIR_HOST)/bin/trx \
 		-o $@ \
 		-m $(IMAGE_SIZE) \
-		-f $(word 1,$^) \
-		-a 4 -f $(word 2,$^)
+		-f $(IMAGE_KERNEL) \
+		-a 4 -f $(IMAGE_ROOTFS)
 endef
 
 define Build/relocate-kernel

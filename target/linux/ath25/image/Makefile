@@ -10,24 +10,24 @@ include $(INCLUDE_DIR)/image.mk
 define Build/mkfwimage
 	$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(1).OpenWrt.$(REVISION) \
-		-k $(word 1,$^) \
-		-r $(word 2,$^) \
+		-k $(IMAGE_KERNEL) \
+		-r $(IMAGE_ROOTFS) \
 		-o $@.new && \
 	mv $@.new $@
 endef
 
 define Build/combined-image
 	-sh $(TOPDIR)/scripts/combined-image.sh \
-		"$(word 1,$^)" \
-		"$(word 2,$^)" \
+		"$(IMAGE_KERNEL)" \
+		"$(IMAGE_ROOTFS)" \
 		"$@.new" && \
 	mv $@.new $@
 endef
 
 define Build/mkmylofw
 	$(STAGING_DIR_HOST)/bin/mkmylofw -B $(1) \
-		-p0x020000:0x130000:ah:0x80041000:linux:$(word 1,$^) \
-		-p0x150000:0x2a0000:::rootfs:$(word 2,$^) \
+		-p0x020000:0x130000:ah:0x80041000:linux:$(IMAGE_KERNEL) \
+		-p0x150000:0x2a0000:::rootfs:$(IMAGE_ROOTFS) \
 		$@.new && \
 	mv $@.new $@
 endef

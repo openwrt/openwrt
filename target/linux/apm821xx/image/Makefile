@@ -179,7 +179,7 @@ define Build/boot-img
 
 	$(CP) $@.scr $@.bootdir/boot/boot.scr
 	$(CP) $@.dtb $@.bootdir/boot/$(DEVICE_DTB)
-	$(CP) $(word 1,$^) $@.bootdir/boot/uImage
+	$(CP) $(IMAGE_KERNEL) $@.bootdir/boot/uImage
 
 	genext2fs --block-size $(BLOCKSIZE) --size-in-blocks $$((1024 * $(BOOT_SIZE))) --root $@.bootdir $@.boot
 
@@ -189,7 +189,7 @@ define Build/boot-img
 endef
 
 define Build/hdd-img
-	./mbl_gen_hdd_img.sh $@ $@.boot $(word 2,$^)
+	./mbl_gen_hdd_img.sh $@ $@.boot $(IMAGE_ROOTFS)
 	$(if $(CONFIG_TARGET_IMAGES_GZIP),gzip -9n -c $@ > $(BIN_DIR)/$(notdir $@).gz)
 endef
 
@@ -204,9 +204,9 @@ endef
 define Build/recovery-tar
 	sh ./mbl_gen_recovery_tar.sh \
 		--profile $(DEVICE_PROFILE) \
-		--dtb $(word 1,$^).dtb \
+		--dtb $(IMAGE_KERNEL).dtb \
 		--dtbname $(DEVICE_DTB) \
-		--kernel $(word 1,$^) \
+		--kernel $(IMAGE_KERNEL) \
 		--rootfs $@ \
 		$@
 endef

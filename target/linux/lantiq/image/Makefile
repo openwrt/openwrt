@@ -152,21 +152,21 @@ define Build/mkbrncmdline
 endef
 
 define Build/mkbrnimg
-   mkbrnimg -s $(SIGNATURE) -m $(MAGIC) -p $(CRC32_POLY) -o $@ $(word 1,$^) $(word 2,$^)
+   mkbrnimg -s $(SIGNATURE) -m $(MAGIC) -p $(CRC32_POLY) -o $@ $(IMAGE_KERNEL) $(IMAGE_ROOTFS)
 endef
 
 define Build/fullimage
 	mkimage -A mips -O linux -C lzma -T filesystem -a 0x00  \
 		-e 0x00 -n 'LEDE RootFS' \
-		-d $(word 2,$^) $(word 2,$^).new
+		-d $(IMAGE_ROOTFS) $(IMAGE_ROOTFS).new
 
-	cat $(word 1,$^) $(word 2,$^).new > $@.tmp
+	cat $(IMAGE_KERNEL) $(IMAGE_ROOTFS).new > $@.tmp
 
 	mkimage -A mips -O linux -T multi -a 0x00 -C none \
 		-e 0x00 -n 'OpenWrt fullimage' \
 		-d $@.tmp $@
 
-	rm $(word 2,$^).new
+	rm $(IMAGE_ROOTFS).new
 	rm $@.tmp
 endef
 

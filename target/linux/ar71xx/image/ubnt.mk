@@ -7,7 +7,7 @@
 define Build/mkubntimage
 	$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
-		-k $(word 1,$^) \
+		-k $(IMAGE_KERNEL) \
 		-r $@ \
 		-o $@
 endef

@@ -1,5 +1,8 @@
 # Build commands that can be called from Device/* templates
 
+IMAGE_KERNEL = $(word 1,$^)
+IMAGE_ROOTFS = $(word 2,$^)
+
 define Build/uImage
 	mkimage -A $(LINUX_KARCH) \
 		-O linux -T kernel \
@@ -30,7 +33,7 @@ define Build/tplink-safeloader
        -$(STAGING_DIR_HOST)/bin/tplink-safeloader \
 		-B $(TPLINK_BOARD_NAME) \
 		-V $(REVISION) \
-		-k $(word 1,$^) \
+		-k $(IMAGE_KERNEL) \
 		-r $@ \
 		-o $@.new \
 		-j \
@@ -92,18 +95,18 @@ define Build/patch-cmdline
 endef
 
 define Build/append-kernel
-	dd if=$(word 1,$^) $(if $(1),bs=$(1) conv=sync) >> $@
+	dd if=$(IMAGE_KERNEL) $(if $(1),bs=$(1) conv=sync) >> $@
 endef
 
 define Build/append-rootfs
-	dd if=$(word 2,$^) $(if $(1),bs=$(1) conv=sync) >> $@
+	dd if=$(IMAGE_ROOTFS) $(if $(1),bs=$(1) conv=sync) >> $@
 endef
 
 define Build/append-ubi
 	sh $(TOPDIR)/scripts/ubinize-image.sh \
 		$(if $(UBOOTENV_IN_UBI),--uboot-env) \
-		$(if $(KERNEL_IN_UBI),--kernel $(word 1,$^)) \
-		$(word 2,$^) \
+		$(if $(KERNEL_IN_UBI),--kernel $(IMAGE_KERNEL)) \
+		$(IMAGE_ROOTFS) \
 		$@.tmp \
 		-p $(BLOCKSIZE) -m $(PAGESIZE) \
 		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE)) \
@@ -142,7 +145,7 @@ endef
 
 define Build/combined-image
 	-sh $(TOPDIR)/scripts/combined-image.sh \
-		"$(word 1,$^)" \
+		"$(IMAGE_KERNEL)" \
 		"$@" \
 		"$@.new"
 	@mv $@.new $@
@@ -151,7 +154,7 @@ endef
 define Build/sysupgrade-tar
 	sh $(TOPDIR)/scripts/sysupgrade-tar.sh \
 		--board $(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)) \
-		--kernel $(call param_get_default,kernel,$(1),$(word 1,$^)) \
-		--rootfs $(call param_get_default,rootfs,$(1),$(word 2,$^)) \
+		--kernel $(call param_get_default,kernel,$(1),$(IMAGE_KERNEL)) \
+		--rootfs $(call param_get_default,rootfs,$(1),$(IMAGE_ROOTFS)) \
 		$@
 endef

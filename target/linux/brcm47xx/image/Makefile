@@ -53,7 +53,7 @@ define Build/trx-with-loader
 		-m 33554432 \
 		-o $@ \
 		-f $(KDIR)/loader.gz \
-		-f $(word 1,$^) \
+		-f $(IMAGE_KERNEL) \
 		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
 endef
 
@@ -72,7 +72,7 @@ define Build/trx-without-loader
 	$(STAGING_DIR_HOST)/bin/trx \
 		-m 33554432 \
 		-o $@ \
-		-f $(word 1,$^) \
+		-f $(IMAGE_KERNEL) \
 		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
 endef
 
