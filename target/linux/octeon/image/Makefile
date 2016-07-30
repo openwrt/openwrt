@@ -9,7 +9,6 @@ include $(INCLUDE_DIR)/image.mk
 
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
-  BOARD_NAME := $(BOARD)
   KERNEL_NAME := vmlinux.elf
   KERNEL_INITRAMFS_NAME := vmlinux-initramfs.elf
   KERNEL := kernel-bin | strip-kernel | patch-cmdline
