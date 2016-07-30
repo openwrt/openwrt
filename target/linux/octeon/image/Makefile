@@ -13,7 +13,9 @@ define Device/Default
   KERNEL_INITRAMFS_NAME := vmlinux-initramfs.elf
   KERNEL := kernel-bin | strip-kernel | patch-cmdline
   IMAGES := sysupgrade.tar
+  IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@
   IMAGE/sysupgrade.tar := sysupgrade-tar
+  FILESYSTEMS := squashfs
 endef
 
 define Build/strip-kernel
