@@ -29,7 +29,7 @@ define Device/generic
 endef
 TARGET_DEVICES += generic
 
-ER_CMDLINE:=-mtdparts=phys_mapped_flash:640k(boot0)ro,640k(boot1)ro,64k(eeprom)ro block2mtd.block2mtd=/dev/mmcblk0p2,65536,rootfs,5 root=/dev/mtdblock3 rootfstype=squashfs rootwait
+ER_CMDLINE:=-mtdparts=phys_mapped_flash:640k(boot0)ro,640k(boot1)ro,64k(eeprom)ro block2mtd.block2mtd=/dev/mmcblk0p2,65536,rootfs,15 root=/dev/mtdblock3 rootfstype=squashfs rootwait
 define Device/er
   CMDLINE := $(ER_CMDLINE) 
   DEVICE_TITLE := Ubiquiti EdgeRouter
