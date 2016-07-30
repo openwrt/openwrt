@@ -7,7 +7,7 @@
 
 define Profile/MeshCube
   NAME:=MeshCube MTX-1
-  PACKAGES:=kmod-ath5k kmod-hostap kmod-hostap-pci kmod-net-prism54 \
+  PACKAGES:=kmod-ath5k kmod-net-prism54 \
 	kmod-usb-core kmod-usb-ohci kmod-usb-storage kmod-fs-ext4 kmod-fs-vfat
 endef
 
