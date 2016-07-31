@@ -65,7 +65,7 @@ define LegacyDevice/Build
   ifndef IB
     ifdef CONFIG_TARGET_PER_DEVICE_ROOTFS
       ROOTFS/$(1) := $(foreach fs,$(TARGET_FILESYSTEMS), \
-        $(KDIR)/root.$(fs)$$(strip $(if $(CONFIG_TARGET_PER_DEVICE_ROOTFS),+pkg=$$(ROOTFS_ID/$(1))))
+        $(KDIR)/root.$(fs)$$(strip $(if $(CONFIG_TARGET_PER_DEVICE_ROOTFS),+pkg=$$(ROOTFS_ID/$(1)))) \
       )
 
       $$(ROOTFS/$(1)): target-dir-$$(ROOTFS_ID/$(1))
