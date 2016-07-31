@@ -252,6 +252,22 @@ endef
 
 $(eval $(call KernelPackage,hwmon-sht21))
 
+define KernelPackage/hwmon-sch5627
+  TITLE:=SMSC SCH5627 monitoring support
+  KCONFIG:=CONFIG_SENSORS_SCH5627
+  FILES:= \
+	$(LINUX_DIR)/drivers/hwmon/sch5627.ko \
+	$(LINUX_DIR)/drivers/hwmon/sch56xx-common.ko
+  AUTOLOAD:=$(call AutoProbe,sch5627)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-sch5627/description
+ SMSC SCH5627 Super I/O chips include complete hardware monitoring
+endef
+
+$(eval $(call KernelPackage,hwmon-sch5627))
+
 define KernelPackage/hwmon-pc87360
   TITLE:=PC87360 monitoring support
   KCONFIG:=CONFIG_SENSORS_PC87360
