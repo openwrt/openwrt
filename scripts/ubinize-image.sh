@@ -1,5 +1,6 @@
 #!/bin/sh
 
+part=""
 ubootenv=""
 ubinize_param=""
 kernel=""
@@ -22,6 +23,7 @@ ubivol() {
 	name=$2
 	image=$3
 	autoresize=$4
+	size="$5"
 	echo "[$name]"
 	echo "mode=ubi"
 	echo "vol_id=$volid"
@@ -29,6 +31,7 @@ ubivol() {
 	echo "vol_name=$name"
 	if [ "$image" ]; then
 		echo "image=$image"
+		[ -n "$size" ] && echo "vol_size=${size}MiB"
 	else
 		echo "vol_size=1MiB"
 	fi
@@ -46,6 +49,22 @@ ubilayout() {
 		ubivol $vol_id ubootenv2
 		vol_id=$(( $vol_id + 1 ))
 	fi
+	for part in $parts; do
+		name="${part%%=*}"
+		prev="$part"
+		part="${part#*=}"
+		[ "$prev" = "$part" ] && part=
+
+		image="${part%%=*}"
+		prev="$part"
+		part="${part#*=}"
+		[ "$prev" = "$part" ] && part=
+
+		size="$part"
+
+		ubivol $vol_id "$name" "$image" "" "$size"
+		vol_id=$(( $vol_id + 1 ))
+	done
 	if [ "$3" ]; then
 		ubivol $vol_id kernel "$3"
 		vol_id=$(( $vol_id + 1 ))
@@ -64,6 +83,12 @@ while [ "$1" ]; do
 		;;
 	"--kernel")
 		kernel="$2"
+		shift
+		shift
+		continue
+		;;
+	"--part")
+		parts="$parts $2"
 		shift
 		shift
 		continue
@@ -88,7 +113,7 @@ while [ "$1" ]; do
 done
 
 if [ ! -r "$rootfs" -o ! -r "$kernel" -a ! "$outfile" ]; then
-	echo "syntax: $0 [--uboot-env] [--kernel kernelimage] rootfs out [ubinize opts]"
+	echo "syntax: $0 [--uboot-env] [--part <name>=<file>] [--kernel kernelimage] rootfs out [ubinize opts]"
 	exit 1
 fi
 
