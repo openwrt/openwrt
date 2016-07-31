@@ -34,7 +34,7 @@ static int mtdsplit_parse_brnimage(struct mtd_info *master,
 	uint32_t buf;
 	unsigned long rootfs_offset, rootfs_size, kernel_size;
 	size_t len;
-	int ret;
+	int ret = 0;
 
 	for (rootfs_offset = 0; rootfs_offset < master->size;
 	     rootfs_offset += BRNIMAGE_ALIGN_BYTES) {
