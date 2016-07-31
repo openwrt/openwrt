@@ -15,6 +15,7 @@ PKG_RELEASE:=2
 PKG_USE_MIPS16:=0
 PKG_BUILD_PARALLEL:=1
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_FLAGS:=nonshared
 
 # Perf's makefile and headers are not relocatable and must be built from the
 # Linux sources directory
@@ -25,7 +26,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/perf
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:= +libelf1 +libdw +libpthread +librt +objdump @!LINUX_3_18
+  DEPENDS:= +libelf1 +libdw +libpthread +librt +objdump @!LINUX_3_18 @!IN_SDK
   TITLE:=Linux performance monitoring tool
   VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
   URL:=http://www.kernel.org
