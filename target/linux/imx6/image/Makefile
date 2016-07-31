@@ -51,20 +51,10 @@ define Build/ubi-boot-overlay
 		$(BIN_DIR)/$(IMG_PREFIX)-$(DEVICE_NAME)-bootfs_$(word 1, $(1)).ubifs
 
 	# ubi
-	rm -rf p $(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))
-	mkdir -p $(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))
-	$(CP) $(word 2, $^) \
-		$(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))/
-	$(CP) $(KDIR)/boot-$(DEVICE_NAME)-bootfs_$(word 1, $(1)).ubifs \
-		$(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))/boot.ubifs
-	$(CP) ./ubinize-$(DEVICE_NAME).cfg \
-		$(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))/ubinize.cfg
-	( cd $(KDIR)/$(DEVICE_NAME)_$(word 1, $(1)); \
-		$(STAGING_DIR_HOST)/bin/ubinize \
-		-m $(word 2, $(1)) -p $(word 4, $(1)) -s $(word 2, $(1)) \
-		-o $@ \
-		ubinize.cfg \
-	)
+	sh $(TOPDIR)/scripts/ubinize-image.sh \
+		--part boot=$(KDIR)/boot-$(DEVICE_NAME)-bootfs_$(word 1, $(1)).ubifs=15 \
+		$(IMAGE_ROOTFS) $@ \
+		-m $(word 2, $(1)) -p $(word 4, $(1)) -s $(word 2, $(1))
 endef
 
 define Build/bootfs.tar.gz
