@@ -73,7 +73,7 @@ define Device/DniImage
 	NETGEAR_HW_ID :=
 	IMAGES := factory.img sysupgrade.tar
 	IMAGE/factory.img := append-kernel | append-ubi | netgear-dni
-	IMAGE/sysupgrade.tar = sysupgrade-nand
+	IMAGE/sysupgrade.tar = sysupgrade-tar
 endef
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
