@@ -98,7 +98,7 @@ $(shell expr substr "$(1)" 1 16)
 endef
 
 define Image/FileSystemStrip
-$(subst root.,,$(notdir $(1)))
+$(firstword $(subst +,$(space),$(subst root.,,$(notdir $(1)))))
 endef
 
 define Build/cfe-bin
