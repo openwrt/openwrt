@@ -590,7 +590,7 @@ TARGET_DEVICES += ARV7519RW22
 define Device/BTHOMEHUBV5A
   $(Device/NAND)
   DEVICE_TITLE := BT Home Hub 5A
-  DEVICE_PACKAGES := kmod-ath9k kmod-ath10k wpad-mini kmod-usb-dwc2
+  DEVICE_PACKAGES := kmod-ath9k kmod-ath10k ath10k-firmware-qca988x wpad-mini kmod-usb-dwc2
 endef
 TARGET_DEVICES += BTHOMEHUBV5A
 
