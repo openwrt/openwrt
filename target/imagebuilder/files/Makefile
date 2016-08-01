@@ -123,9 +123,9 @@ _call_image: staging_dir/host/.prereq-build
 ifneq ($(USER_FILES),)
 	$(MAKE) copy_files
 endif
-	$(MAKE) package_postinst
-	$(MAKE) build_image
-	$(MAKE) checksum
+	$(MAKE) -s package_postinst
+	$(MAKE) -s build_image
+	$(MAKE) -s checksum
 
 package_index: FORCE
 	@echo
@@ -194,7 +194,7 @@ ifneq ($(PROFILE),)
   endif
 endif
 	(unset PROFILE FILES PACKAGES MAKEFLAGS; \
-	$(MAKE) _call_image \
+	$(MAKE) -s _call_image \
 		$(if $(PROFILE),USER_PROFILE="$(PROFILE_FILTER)") \
 		$(if $(FILES),USER_FILES="$(FILES)") \
 		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)") \
