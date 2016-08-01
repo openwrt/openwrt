@@ -106,6 +106,8 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		$(SDK_BUILD_DIR)/
 	$(CP) \
 		$(TOPDIR)/package/Makefile \
+		$(TOPDIR)/package/libs/toolchain \
+		$(TOPDIR)/package/kernel/linux \
 		$(SDK_BUILD_DIR)/package/
 
 	-rm -f $(SDK_BUILD_DIR)/feeds.conf.default
