@@ -48,12 +48,50 @@ rootfs_size_BR6475ND:=5832704
 Image/Build/Profile/BR6475ND=$(call BuildFirmware/EdimaxCombined/$(1),$(1),br-6475nd,BR-6475ND,$(kernel_size_BR6475ND),$(rootfs_size_BR6475ND),CSYS,RN54,0x70000,0x01100000)
 
 
-define Image/Build/Profile/Default
-	$(call Image/Build/Profile/CYSWR1100,$(1))
-	$(call Image/Build/Profile/DIR645,$(1))
-	$(call Image/Build/Profile/HPM,$(1))
-	$(call Image/Build/Profile/RTN56U,$(1))
-	$(call Image/Build/Profile/BR6475ND,$(1))
-	$(call Image/Build/Profile/TEW691GR,$(1))
-	$(call Image/Build/Profile/TEW692GR,$(1))
+define LegacyDevice/CYSWR1100
+  DEVICE_TITLE := Samsung CY-SWR1100
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
+LEGACY_DEVICES += CYSWR1100
+
+
+define LegacyDevice/DIR645
+  DEVICE_TITLE := D-Link DIR-645
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+endef
+LEGACY_DEVICES += DIR645
+
+
+define LegacyDevice/HPM
+  DEVICE_TITLE := Omnima HPM
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
+endef
+LEGACY_DEVICES += HPM
+
+
+define LegacyDevice/RTN56U
+  DEVICE_TITLE := Asus RT-N56U
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+endef
+LEGACY_DEVICES += RTN56U
+
+
+define LegacyDevice/TEW691GR
+  DEVICE_TITLE := TRENDnet TEW-691GR
+  DEVICE_PACKAGES := swconfig
+endef
+LEGACY_DEVICES += TEW691GR
+
+
+define LegacyDevice/TEW692GR
+  DEVICE_TITLE := TEW692GR
+  DEVICE_PACKAGES := swconfig
+endef
+LEGACY_DEVICES += TEW692GR
+
+
+define LegacyDevice/BR6475ND
+  DEVICE_TITLE := Edimax BR-6475nD
+  DEVICE_PACKAGES := swconfig
+endef
+LEGACY_DEVICES += BR6475ND

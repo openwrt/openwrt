@@ -246,6 +246,7 @@ endif
 
 ifeq ($(SUBTARGET),rt305x)
 include rt305x.mk
+include rt305x-legacy.mk
 endif
 
 ifeq ($(SUBTARGET),rt3883)
