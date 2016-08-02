@@ -47,16 +47,14 @@ ARV4519PW|ARV7510PW22|ARV7518PW|ARV752DPW22|ARV8539PW22)
 
 # rtl8306g
 ARV7506PW11)
-	lan_mac=$(mtd_get_mac_binary board_config 22)
-	wan_mac=$(macaddr_add "$lan_mac" 2)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 2)
 	ucidef_add_switch "switch0" \
 		"4:lan:1" "3:lan:2" "2:lan:3" "1:lan:4" "5t@eth0"
 	;;
 
 # rtl8306g
 ARV7519PW)
-	lan_mac=$(mtd_get_mac_binary board_config 22)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4t@eth0"
 	;;
@@ -103,22 +101,19 @@ P2812HNUF*)
 	;;
 
 TDW8970|TDW8980)
-	lan_mac=$(mtd_get_mac_binary boardconfig 61696)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 61696)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:1" "2:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
 	;;
 
 VR200v)
-	lan_mac=$(mtd_get_mac_binary romfile 61696)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary romfile 61696)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:1" "2:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
 	;;
 
 ARV7519RW22)
-	lan_mac=$(mtd_get_mac_binary boardconfig 22)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 22)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:1" "2:lan:2" "3:lan:3" "4:lan:4" "5:lan:5" "6t@eth0"
 	;;
@@ -130,22 +125,19 @@ BTHOMEHUBV2B|BTHOMEHUBV3A)
 	;;
 
 BTHOMEHUBV5A)
-	lan_mac=$(mtd_get_mac_binary caldata 4364)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary caldata 4364)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:1" "1:lan:2" "2:lan:3" "4:lan:4" "6t@eth0"
 	;;
 
 VGV7519)
-	lan_mac=$(mtd_get_mac_binary board_config 22)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 1)
 	ucidef_add_switch "switch0" \
 		"4:lan:1" "2:lan:2" "1:lan:3" "0:lan:4" "6t@eth0"
 	;;
 
 VGV7510KW22)
-	lan_mac=$(mtd_get_mac_binary board_config 22)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 1)
 	ucidef_add_switch "switch0" \
 		"2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
 	;;
