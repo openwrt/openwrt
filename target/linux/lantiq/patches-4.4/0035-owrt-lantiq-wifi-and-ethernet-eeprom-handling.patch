@@ -51,7 +51,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,307 @@
+@@ -0,0 +1,281 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -93,9 +93,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static int ath9k_eep_load;
 +int __init of_ath9k_eeprom_probe(struct platform_device *pdev)
 +{
-+	struct device_node *np = pdev->dev.of_node, *mtd_np;
-+	struct resource *eep_res, *mac_res = NULL;
-+	void __iomem *eep, *mac;
++	struct device_node *np = pdev->dev.of_node, *mtd_np = NULL;
 +	int mac_offset, led_pin;
 +	u32 mac_inc = 0, pci_slot = 0;
 +	int i;
@@ -106,41 +104,38 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	phandle phandle;
 +	u16 dev_ids[2] = { 0 };
 +
-+	if ((list = of_get_property(np, "ath,eep-flash", &i)) && i == 2 *
-+			sizeof(*list) && (phandle = be32_to_cpup(list++)) &&
-+			(mtd_np = of_find_node_by_phandle(phandle)) && ((part =
-+			of_get_property(mtd_np, "label", NULL)) || (part =
-+			mtd_np->name)) && (the_mtd = get_mtd_device_nm(part))
-+			!= ERR_PTR(-ENODEV)) {
-+		i = mtd_read(the_mtd, be32_to_cpup(list),
-+				ATH9K_PLAT_EEP_MAX_WORDS << 1, &flash_readlen,
-+				(void *) ath9k_pdata.eeprom_data);
-+		if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
-+			size_t mac_readlen;
-+			mtd_read(the_mtd, mac_offset, 6, &mac_readlen,
-+				(void *) athxk_eeprom_mac);
-+		}
-+		put_mtd_device(the_mtd);
-+		if ((sizeof(ath9k_pdata.eeprom_data) != flash_readlen) || i) {
-+			dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
-+			return -ENODEV;
-+		}
-+	} else {
-+		eep_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+		mac_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	list = of_get_property(np, "ath,eep-flash", &i);
++	if (!list || (i != (2 * sizeof(*list))))
++		return -ENODEV;
 +
-+		if (!eep_res) {
-+			dev_err(&pdev->dev, "failed to load eeprom address\n");
-+			return -ENODEV;
-+		}
-+		if (resource_size(eep_res) != ATH9K_PLAT_EEP_MAX_WORDS << 1) {
-+			dev_err(&pdev->dev, "eeprom has an invalid size\n");
-+			return -EINVAL;
-+		}
++	phandle = be32_to_cpup(list++);
++	if (phandle)
++		mtd_np = of_find_node_by_phandle(phandle);
 +
-+		eep = ioremap(eep_res->start, resource_size(eep_res));
-+		memcpy_fromio(ath9k_pdata.eeprom_data, eep,
-+				ATH9K_PLAT_EEP_MAX_WORDS << 1);
++	if (!mtd_np)
++		return -ENODEV;
++
++	part = of_get_property(mtd_np, "label", NULL);
++	if (!part)
++		part = mtd_np->name;
++
++	the_mtd = get_mtd_device_nm(part);
++	if (IS_ERR(the_mtd))
++		return -ENODEV;
++
++	i = mtd_read(the_mtd, be32_to_cpup(list), ATH9K_PLAT_EEP_MAX_WORDS << 1,
++		&flash_readlen, (void *) ath9k_pdata.eeprom_data);
++
++	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
++		size_t mac_readlen;
++		mtd_read(the_mtd, mac_offset, 6, &mac_readlen,
++			(void *) athxk_eeprom_mac);
++	}
++	put_mtd_device(the_mtd);
++
++	if ((sizeof(ath9k_pdata.eeprom_data) != flash_readlen) || i) {
++		dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
++		return -ENODEV;
 +	}
 +
 +	if (of_find_property(np, "ath,eep-swap", NULL))
@@ -153,18 +148,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		dev_info(&pdev->dev, "endian check enabled.\n");
 +	}
 +
-+	if (!is_valid_ether_addr(athxk_eeprom_mac)) {
-+		if (mac_res) {
-+			if (resource_size(mac_res) != 6) {
-+				dev_err(&pdev->dev, "mac has an invalid size\n");
-+				return -EINVAL;
-+			}
-+			mac = ioremap(mac_res->start, resource_size(mac_res));
-+			memcpy_fromio(athxk_eeprom_mac, mac, 6);
-+		} else if (ltq_get_eth_mac()) {
-+			memcpy(athxk_eeprom_mac, ltq_get_eth_mac(), 6);
-+		}
-+	}
++	if (!is_valid_ether_addr(athxk_eeprom_mac) && ltq_get_eth_mac())
++		memcpy(athxk_eeprom_mac, ltq_get_eth_mac(), 6);
++
 +	if (!is_valid_ether_addr(athxk_eeprom_mac)) {
 +		dev_warn(&pdev->dev, "using random mac\n");
 +		random_ether_addr(athxk_eeprom_mac);
@@ -263,9 +249,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +int __init of_ath5k_eeprom_probe(struct platform_device *pdev)
 +{
-+	struct device_node *np = pdev->dev.of_node, *mtd_np;
-+	struct resource *eep_res, *mac_res = NULL;
-+	void __iomem *eep, *mac;
++	struct device_node *np = pdev->dev.of_node, *mtd_np = NULL;
 +	int mac_offset;
 +	u32 mac_inc = 0;
 +	int i;
@@ -275,57 +259,47 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	const char *part;
 +	phandle phandle;
 +
-+	if ((list = of_get_property(np, "ath,eep-flash", &i)) && i == 2 *
-+			sizeof(*list) && (phandle = be32_to_cpup(list++)) &&
-+			(mtd_np = of_find_node_by_phandle(phandle)) && ((part =
-+			of_get_property(mtd_np, "label", NULL)) || (part =
-+			mtd_np->name)) && (the_mtd = get_mtd_device_nm(part))
-+			!= ERR_PTR(-ENODEV)) {
-+		i = mtd_read(the_mtd, be32_to_cpup(list),
-+				ATH5K_PLAT_EEP_MAX_WORDS << 1, &flash_readlen,
-+				(void *) ath5k_pdata.eeprom_data);
-+		put_mtd_device(the_mtd);
-+		if ((sizeof(ATH5K_PLAT_EEP_MAX_WORDS << 1) != flash_readlen)
-+				|| i) {
-+			dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
-+			return -ENODEV;
-+		}
-+	} else {
-+		eep_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+		mac_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	list = of_get_property(np, "ath,eep-flash", &i);
++	if (!list || (i != (2 * sizeof(*list))))
++		return -ENODEV;
 +
-+		if (!eep_res) {
-+			dev_err(&pdev->dev, "failed to load eeprom address\n");
-+			return -ENODEV;
-+		}
-+		if (resource_size(eep_res) != ATH5K_PLAT_EEP_MAX_WORDS << 1) {
-+			dev_err(&pdev->dev, "eeprom has an invalid size\n");
-+			return -EINVAL;
-+		}
++	phandle = be32_to_cpup(list++);
++	if (phandle)
++		mtd_np = of_find_node_by_phandle(phandle);
 +
-+		eep = ioremap(eep_res->start, resource_size(eep_res));
-+		ath5k_pdata.eeprom_data = kmalloc(ATH5K_PLAT_EEP_MAX_WORDS<<1,
-+				GFP_KERNEL);
-+		memcpy_fromio(ath5k_pdata.eeprom_data, eep,
-+				ATH5K_PLAT_EEP_MAX_WORDS << 1);
++	if (!mtd_np)
++		return -ENODEV;
++
++	part = of_get_property(mtd_np, "label", NULL);
++	if (!part)
++		part = mtd_np->name;
++
++	the_mtd = get_mtd_device_nm(part);
++	if (IS_ERR(the_mtd))
++		return -ENODEV;
++
++	i = mtd_read(the_mtd, be32_to_cpup(list), ATH5K_PLAT_EEP_MAX_WORDS << 1,
++		&flash_readlen,	(void *) ath5k_pdata.eeprom_data);
++
++	put_mtd_device(the_mtd);
++
++	if ((sizeof(ATH5K_PLAT_EEP_MAX_WORDS << 1) != flash_readlen)
++			|| i) {
++		dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
++		return -ENODEV;
 +	}
 +
 +	if (of_find_property(np, "ath,eep-swap", NULL))
 +		for (i = 0; i < ATH5K_PLAT_EEP_MAX_WORDS; i++)
 +			ath5k_pdata.eeprom_data[i] = swab16(ath5k_pdata.eeprom_data[i]);
 +
-+	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
++	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset))
 +		memcpy_fromio(athxk_eeprom_mac, (void*) ath5k_pdata.eeprom_data + mac_offset, 6);
-+	} else if (mac_res) {
-+		if (resource_size(mac_res) != 6) {
-+			dev_err(&pdev->dev, "mac has an invalid size\n");
-+			return -EINVAL;
-+		}
-+		mac = ioremap(mac_res->start, resource_size(mac_res));
-+		memcpy_fromio(athxk_eeprom_mac, mac, 6);
-+	} else if (ltq_get_eth_mac())
++
++	if (!is_valid_ether_addr(athxk_eeprom_mac) && ltq_get_eth_mac())
 +		memcpy(athxk_eeprom_mac, ltq_get_eth_mac(), 6);
-+	else {
++
++	if (!is_valid_ether_addr(athxk_eeprom_mac)) {
 +		dev_warn(&pdev->dev, "using random mac\n");
 +		random_ether_addr(athxk_eeprom_mac);
 +	}
