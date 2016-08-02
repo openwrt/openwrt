@@ -67,11 +67,6 @@
 				};
 			};
 
-			mac_addr {
-				compatible = "lantiq,eth-mac";
-				reg = <0 0x7f0016 0x6>;
-			};
-
 			ath9k_eep {
 				compatible = "ath9k,eeprom";
 				ath,eep-flash = <&art 0x400>;
@@ -114,6 +109,7 @@
 
 		etop@E180000 {
 			phy-mode = "mii";
+			mtd-mac-address = <&art 0x16>;
 		};
 
 		pci@E105400 {

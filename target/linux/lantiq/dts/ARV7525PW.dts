@@ -61,17 +61,12 @@
 						reg = <0x20000 0x3d0000>;
 					};
 
-					partition@400000 {
+					boardconfig: partition@400000 {
 						label = "board_config";
 						reg = <0x3f0000 0x10000>;
 						read-only;
 					};
 				};
-			};
-
-			mac_addr {
-				compatible = "lantiq,eth-mac";
-				reg = <0 0x3f0016 0x6>;
 			};
 
 			ralink_eep {
@@ -99,6 +94,7 @@
 
 		etop@E180000 {
 			phy-mode = "mii";
+			mtd-mac-address = <&boardconfig 0x16>;
 		};
 
 		pci@E105400 {

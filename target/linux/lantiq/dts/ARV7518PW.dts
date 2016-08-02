@@ -78,11 +78,6 @@
 				lantiq,shadow = <0x0>;
 			};
 
-			mac_addr {
-				compatible = "lantiq,eth-mac";
-				reg = <0 0x7f0016 0x6>;
-			};
-
 			ath9k_eep {
 				compatible = "ath9k,eeprom";
 				ath,eep-flash = <&boardconfig 0x400>;
@@ -135,6 +130,7 @@
 
 		etop@E180000 {
 			phy-mode = "mii";
+			mtd-mac-address = <&boardconfig 0x16>;
 		};
 
 		ifxhcd@E101000 {

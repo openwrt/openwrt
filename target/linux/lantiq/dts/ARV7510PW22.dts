@@ -60,17 +60,12 @@
 						reg = <0x60000 0xf80000>;
 					};
 
-					partition@fe0000 {
+					boardconfig: partition@fe0000 {
 						label = "board_config";
 						reg = <0xfe0000 0x20000>;
 						read-only;
 					};
 				};
-			};
-
-			mac_addr {
-				compatible = "lantiq,eth-mac";
-				reg = <0 0xfe0016 0x6>;
 			};
 		};
 
@@ -121,8 +116,9 @@
 		};
 
 		etop@E180000 {
-			phy-mode = "mii";
 			/* Switch reset 19 */
+			phy-mode = "mii";
+			mtd-mac-address = <&boardconfig 0x16>;
 		};
 
 		pci@E105400 {

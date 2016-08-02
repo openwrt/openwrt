@@ -50,17 +50,12 @@
 						reg = <0x50000 0x7a0000>;
 					};
 
-					partition@7f0000 {
+					boardconfig: partition@7f0000 {
 						label = "board_config";
 						reg = <0x7f0000 0x10000>;
 						read-only;
 					};
 				};
-			};
-
-			mac_addr {
-				compatible = "lantiq,eth-mac";
-				reg = <0 0x7f0016 0x6>;
 			};
 		};
 
@@ -85,6 +80,7 @@
 		/* GPIO 19: switch reset */
 		etop@E180000 {
 			phy-mode = "rmii";
+			mtd-mac-address = <&boardconfig 0x16>;
 		};
 
 		pci@E105400 {
