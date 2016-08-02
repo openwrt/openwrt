@@ -59,7 +59,7 @@
 						reg = <0x40000 0x7B0000>;       /* 7872 KiB */
 					};
 
-					partition@7F0000 {
+					art: partition@7F0000 {
 						label = "art";
 						reg = <0x7F0000 0x10000>;       /* 64 KiB*/
 						read-only;
@@ -75,8 +75,8 @@
 
 			ath9k_eep {
 				compatible = "ath9k,eeprom";
-				reg = <0 0x7f0400 0x1000
-					0 0x7f0016 0x6>;
+				ath,eep-flash = <&art 0x400>;
+				ath,mac-offset = <0x16>;
 				ath,mac-increment = <1>;
 				ath,pci-slot = <14>;
 				ath,eep-endian;

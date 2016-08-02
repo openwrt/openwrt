@@ -60,7 +60,7 @@
 						reg = <0x20000 0x7d0000>;
 					};
 
-					partition@400000 {
+					boardconfig: partition@400000 {
 						label = "boardconfig";
 						reg = <0x7f0000 0x10000>;
 						read-only;
@@ -86,8 +86,8 @@
 
 			ath9k_eep {
 				compatible = "ath9k,eeprom";
-				reg = <0 0x7f0400 0x1000
-					0 0x7f0016 0x6>;
+				ath,eep-flash = <&boardconfig 0x400>;
+				ath,mac-offset = <0x16>;
 				ath,mac-increment = <1>;
 				ath,pci-slot = <14>;
 				ath,eep-endian;
