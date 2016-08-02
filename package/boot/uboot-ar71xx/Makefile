@@ -33,6 +33,7 @@ endef
 
 define uboot/nbg460n_550n_550nh
   TITLE:=U-boot for the NBG460N/550N/550NH routers
+  DEFAULT:=y if (TARGET_ar71xx_generic_DEVICE_NBG_460N_550N_550NH || TARGET_DEVICE_ar71xx_generic_DEVICE_NBG_460N_550N_550NH || TARGET_ar71xx_generic_Default)
 endef
 
 UBOOTS:=nbg460n_550n_550nh
@@ -44,7 +45,6 @@ define Package/uboot-ar71xx-$(1)
   TITLE:=$(2)
   DEPENDS:=@TARGET_ar71xx_generic
   URL:=http://www.denx.de/wiki/U-Boot
-  DEFAULT:=y if (TARGET_ar71xx_generic_NBG_460N_550N_550NH || TARGET_ar71xx_generic_Default || CONFIG_TARGET_ar71xx_generic_Minimal)
   VARIANT:=$(1)
 endef
 endef
