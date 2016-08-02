@@ -198,6 +198,7 @@ nand_do_upgrade_success() {
 	sync
 	[ -f "$conf_tar" ] && nand_restore_config "$conf_tar"
 	echo "sysupgrade successful"
+	umount -a
 	reboot -f
 }
 
@@ -213,6 +214,7 @@ nand_upgrade_ubinized() {
 
 	if [ ! "$mtdnum" ]; then
 		echo "cannot find mtd device $CI_UBIPART"
+		umount -a
 		reboot -f
 	fi
 
