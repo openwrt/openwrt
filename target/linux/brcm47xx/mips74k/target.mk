@@ -1,6 +1,5 @@
 BOARDNAME:=MIPS 74K
 CPU_TYPE:=74kc
-CPU_SUBTYPE:=dsp2
 FEATURES+=mips16
 
 define Target/Description

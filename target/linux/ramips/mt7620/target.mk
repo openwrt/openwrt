@@ -6,7 +6,6 @@ SUBTARGET:=mt7620
 BOARDNAME:=MT7620 based boards
 FEATURES+=usb
 CPU_TYPE:=24kec
-CPU_SUBTYPE:=dsp
 
 DEFAULT_PACKAGES += kmod-rt2800-pci kmod-rt2800-soc kmod-mt76
 

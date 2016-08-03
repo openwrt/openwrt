@@ -172,8 +172,6 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_74kc = -mips32r2 -mtune=74kc
     CPU_CFLAGS_1004kc = -mips32r2 -mtune=1004kc
     CPU_CFLAGS_octeon = -march=octeon -mabi=64
-    CPU_CFLAGS_dsp = -mdsp
-    CPU_CFLAGS_dsp2 = -mdspr2
   endif
   ifeq ($(ARCH),i386)
     CPU_TYPE ?= i486
