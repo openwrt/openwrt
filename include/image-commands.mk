@@ -7,7 +7,7 @@ define Build/uImage
 	mkimage -A $(LINUX_KARCH) \
 		-O linux -T kernel \
 		-C $(1) -a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
-		-n '$(call toupper,$(LINUX_KARCH)) LEDE Linux-$(LINUX_VERSION)' -d $@ $@.new
+		-n '$(if $(UIMAGE_NAME),$(UIMAGE_NAME),$(call toupper,$(LINUX_KARCH)) LEDE Linux-$(LINUX_VERSION))' -d $@ $@.new
 	@mv $@.new $@
 endef
 
