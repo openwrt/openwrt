@@ -25,10 +25,11 @@
 
 BOARDNAME:=marduk
 
-DEFAULT_PACKAGES+=kmod-leds-gpio kmod-ledtrig-heartbeat kmod-i2c i2c-tools \
+DEFAULT_PACKAGES+=kmod-leds-gpio kmod-ledtrig-heartbeat kmod-i2c-core i2c-tools \
                   kmod-sound-pistachio-soc alsa-lib alsa-utils alsa-utils-tests \
-                  kmod-uccp420wlan kmod-cfg80211 fping iperf3 iw hostapd wpa-cli wpa-supplicant \
-                  uhttpd uboot-envtools tcpdump board-test proddata
+                  kmod-uccp420wlan kmod-cfg80211 fping iw hostapd wpa-cli wpa-supplicant \
+                  uhttpd uboot-envtools tcpdump board-test proddata \
+                  luci tar letmecreate
 
 define Profile/marduk/default
 	$(1)_DEVICE_DTS:=$(2)
