@@ -418,6 +418,12 @@ define Device/sl-r7205
 endef
 TARGET_DEVICES += sl-r7205
 
+define Device/tew-714tru
+  DTS := TEW-714TRU
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := TRENDnet TEW-714TRU
+endef
+TARGET_DEVICES += tew-714tru
 
 define Device/v22rw-2x2
   DTS := V22RW-2X2
