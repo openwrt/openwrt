@@ -20,11 +20,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  fs/ubifs/super.c | 14 +++++++-------
  1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/fs/ubifs/super.c b/fs/ubifs/super.c
-index 736dd58..4ec0510 100644
 --- a/fs/ubifs/super.c
 +++ b/fs/ubifs/super.c
-@@ -520,19 +520,19 @@ static int init_constants_early(struct ubifs_info *c)
+@@ -520,19 +520,19 @@ static int init_constants_early(struct u
  	c->max_write_shift = fls(c->max_write_size) - 1;
  
  	if (c->leb_size < UBIFS_MIN_LEB_SZ) {
@@ -49,7 +47,7 @@ index 736dd58..4ec0510 100644
  		return -EINVAL;
  	}
  
-@@ -543,8 +543,8 @@ static int init_constants_early(struct ubifs_info *c)
+@@ -543,8 +543,8 @@ static int init_constants_early(struct u
  	if (c->max_write_size < c->min_io_size ||
  	    c->max_write_size % c->min_io_size ||
  	    !is_power_of_2(c->max_write_size)) {
@@ -60,6 +58,3 @@ index 736dd58..4ec0510 100644
  		return -EINVAL;
  	}
  
--- 
-2.9.0
-
