@@ -579,7 +579,7 @@ define KernelPackage/ipt-extra
   KCONFIG:=$(KCONFIG_IPT_EXTRA)
   FILES:=$(foreach mod,$(IPT_EXTRA-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_EXTRA-m)))
-  $(call AddDepends/ipt)
+  $(call AddDepends/ipt,+kmod-br-netfilter)
 endef
 
 define KernelPackage/ipt-extra/description
@@ -644,12 +644,27 @@ endef
 $(eval $(call KernelPackage,arptables))
 
 
+define KernelPackage/br-netfilter
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Bridge netfilter support modules
+  HIDDEN:=1
+  DEPENDS:=+kmod-ipt-core +kmod-bridge
+  FILES:=$(LINUX_DIR)/net/bridge/br_netfilter.ko
+  KCONFIG:=CONFIG_BRIDGE_NETFILTER
+  AUTOLOAD:=$(call AutoProbe,br_netfilter)
+endef
+
+$(eval $(call KernelPackage,br-netfilter))
+
+
 define KernelPackage/ebtables
   SUBMENU:=$(NF_MENU)
   TITLE:=Bridge firewalling modules
-  DEPENDS:=+kmod-ipt-core +kmod-bridge
-  FILES:=$(foreach mod,$(EBTABLES-m),$(LINUX_DIR)/net/$(mod).ko)
-  KCONFIG:=CONFIG_BRIDGE_NETFILTER=y \
+  DEPENDS:=+kmod-ipt-core +kmod-bridge +kmod-br-netfilter
+  FILES:= \
+	$(LINUX_DIR)/net/bridge/br_netfilter.ko \
+	$(foreach mod,$(EBTABLES-m),$(LINUX_DIR)/net/$(mod).ko)
+  KCONFIG:=CONFIG_BRIDGE_NETFILTER \
 	$(KCONFIG_EBTABLES)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(EBTABLES-m)))
 endef
