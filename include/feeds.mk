@@ -23,7 +23,7 @@ ifneq ($(CONFIG_PER_FEED_REPO),)
   endif
 endif
 
-PACKAGE_DIR_ALL := $(PACKAGE_DIR)_all
+PACKAGE_DIR_ALL := $(TOPDIR)/staging_dir/packages/$(BOARD)
 
 PKG_CONFIG_DEPENDS += \
 	CONFIG_PER_FEED_REPO \
