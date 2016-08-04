@@ -531,6 +531,24 @@ endef
 $(eval $(call KernelPackage,rtc-ds1307))
 
 
+define KernelPackage/rtc-ds1374
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Dallas/Maxim DS1374 RTC support
+  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_DS1374 \
+	CONFIG_RTC_DRV_DS1374_WDT=n \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1374.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-ds1374)
+endef
+
+define KernelPackage/rtc-ds1374/description
+ Kernel module for Dallas/Maxim DS1374.
+endef
+
+$(eval $(call KernelPackage,rtc-ds1374))
+
+
 define KernelPackage/rtc-ds1672
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1672 RTC support
