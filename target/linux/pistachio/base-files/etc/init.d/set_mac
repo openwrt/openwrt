@@ -15,6 +15,7 @@ start()
     generate_mac $SOFTAP_OTP_REG0
     uci set wireless.ap.macaddr=$MAC
     uci commit wireless
+    sync
     /etc/init.d/network restart
 
     generate_mac $ETH_OTP_REG0
