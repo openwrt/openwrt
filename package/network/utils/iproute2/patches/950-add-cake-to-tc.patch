@@ -1,6 +1,6 @@
 --- a/include/linux/pkt_sched.h
 +++ b/include/linux/pkt_sched.h
-@@ -877,4 +877,56 @@ struct tc_pie_xstats {
+@@ -850,4 +850,56 @@ struct tc_pie_xstats {
  	__u32 maxq;             /* maximum queue size */
  	__u32 ecn_mark;         /* packets marked with ecn*/
  };
@@ -59,7 +59,7 @@
  #endif
 --- a/tc/Makefile
 +++ b/tc/Makefile
-@@ -64,6 +64,7 @@ TCMODULES += q_codel.o
+@@ -63,6 +63,7 @@ TCMODULES += q_codel.o
  TCMODULES += q_fq_codel.o
  TCMODULES += q_fq.o
  TCMODULES += q_pie.o
