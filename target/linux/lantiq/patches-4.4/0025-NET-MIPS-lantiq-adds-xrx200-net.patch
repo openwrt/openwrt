@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1830 @@
+@@ -0,0 +1,1836 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -1090,7 +1090,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	for (i = 0; i < priv->num_port; i++)
 +		if (priv->port[i].phydev)
 +			phy_start(priv->port[i].phydev);
-+	netif_start_queue(dev);
++	netif_wake_queue(dev);
 +
 +	return 0;
 +}
@@ -1262,6 +1262,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	struct xrx200_chan *ch = &priv->hw->chan[XRX200_DMA_TX];
 +	struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
 +	u32 byte_offset;
++	int ret = NETDEV_TX_OK;
 +	int len;
 +#ifdef SW_ROUTING
 +	u32 special_tag = (SPID_CPU_PORT << SPID_SHIFT) | DPID_ENABLE;
@@ -1270,11 +1271,6 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	skb->dev = dev;
 +	len = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
 +
-+	if ((desc->ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) || ch->skb[ch->dma.desc]) {
-+		netdev_err(dev, "tx ring full\n");
-+		netif_stop_queue(dev);
-+		return NETDEV_TX_BUSY;
-+	}
 +#ifdef SW_ROUTING
 +	if (is_multicast_ether_addr(eth_hdr(skb)->h_dest)) {
 +		u16 port_map = priv->port_map;
@@ -1309,11 +1305,19 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +	/* dma needs to start on a 16 byte aligned address */
 +	byte_offset = CPHYSADDR(skb->data) % 16;
++
++	spin_lock_bh(&priv->hw->lock);
++	if ((desc->ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) || ch->skb[ch->dma.desc]) {
++		netdev_err(dev, "tx ring full\n");
++		netif_stop_queue(dev);
++		ret = NETDEV_TX_BUSY;
++		goto out;
++	}
++
 +	ch->skb[ch->dma.desc] = skb;
 +
 +	dev->trans_start = jiffies;
 +
-+	spin_lock_bh(&priv->hw->lock);
 +	desc->addr = ((unsigned int) dma_map_single(NULL, skb->data, len,
 +						DMA_TO_DEVICE)) - byte_offset;
 +	wmb();
@@ -1324,12 +1328,14 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	if (ch->dma.desc == ch->tx_free)
 +		netif_stop_queue(dev);
 +
-+	spin_unlock_bh(&priv->hw->lock);
 +
 +	priv->stats.tx_packets++;
 +	priv->stats.tx_bytes+=len;
 +
-+	return NETDEV_TX_OK;
++out:
++	spin_unlock_bh(&priv->hw->lock);
++
++	return ret;
 +}
 +
 +static irqreturn_t xrx200_dma_irq(int irq, void *priv)
