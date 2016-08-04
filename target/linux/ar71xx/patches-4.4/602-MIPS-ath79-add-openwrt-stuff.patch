@@ -32,7 +32,7 @@
  config ATH79_DEV_SPI
  	def_bool n
  
-@@ -129,4 +147,13 @@ config ATH79_DEV_WMAC
+@@ -129,4 +147,14 @@ config ATH79_DEV_WMAC
  	depends on (SOC_AR913X || SOC_AR933X || SOC_AR934X || SOC_QCA955X)
  	def_bool n
  
@@ -43,6 +43,7 @@
 +	def_bool n
 +
 +config ATH79_ROUTERBOOT
++	select LZO_DECOMPRESS
 +	def_bool n
 +
  endif
