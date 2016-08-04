@@ -104,6 +104,7 @@ define KernelPackage/lib-lzo
   KCONFIG:= \
 	CONFIG_LZO_COMPRESS \
 	CONFIG_LZO_DECOMPRESS
+  HIDDEN:=1
   FILES:= \
 	$(LINUX_DIR)/lib/lzo/lzo_compress.ko \
 	$(LINUX_DIR)/lib/lzo/lzo_decompress.ko
@@ -120,6 +121,7 @@ $(eval $(call KernelPackage,lib-lzo))
 define KernelPackage/lib-lz4
   SUBMENU:=$(LIB_MENU)
   TITLE:=LZ4 support
+  HIDDEN:=1
   KCONFIG:= \
 	CONFIG_LZ4_COMPRESS \
 	CONFIG_LZ4_DECOMPRESS
@@ -196,6 +198,7 @@ $(eval $(call KernelPackage,lib-textsearch))
 define KernelPackage/lib-zlib
   SUBMENU:=$(LIB_MENU)
   TITLE:=Zlib support
+  HIDDEN:=1
   KCONFIG:= \
     CONFIG_ZLIB_DEFLATE \
     CONFIG_ZLIB_INFLATE
