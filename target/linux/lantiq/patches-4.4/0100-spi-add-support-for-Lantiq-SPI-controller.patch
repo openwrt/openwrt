@@ -13,7 +13,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -355,6 +355,13 @@ config SPI_MT65XX
+@@ -346,6 +346,13 @@ config SPI_MT65XX
  	  say Y or M here.If you are not sure, say N.
  	  SPI drivers for Mediatek MT65XX and MT81XX series ARM SoCs.
  
@@ -29,8 +29,8 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  	depends on GPIOLIB || COMPILE_TEST
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -45,6 +45,7 @@ obj-$(CONFIG_SPI_GPIO)			+= spi-gpio.o
- obj-$(CONFIG_SPI_GPIO_OLD)		+= spi_gpio_old.o
+@@ -44,6 +44,7 @@ obj-$(CONFIG_SPI_FSL_SPI)		+= spi-fsl-sp
+ obj-$(CONFIG_SPI_GPIO)			+= spi-gpio.o
  obj-$(CONFIG_SPI_IMG_SPFI)		+= spi-img-spfi.o
  obj-$(CONFIG_SPI_IMX)			+= spi-imx.o
 +obj-$(CONFIG_SPI_LANTIQ)		+= spi-lantiq.o
