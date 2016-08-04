@@ -47,7 +47,11 @@ Firstly, to obtain a copy of the (Ci40) Marduk platform supported OpenWrt source
 
  * Clone the repository: ```` git clone https://github.com/CreatorDev/openwrt.git ````
 
-To simply make a build based on the IMG default config run the following commands:
+Install build dependencies:
+
+    $ sudo apt-get install libncurses5-dev libncursesw5-dev zlib1g-dev libssl-dev gawk subversion
+
+To make a build based on the default Ci40 config, run the following commands:
 
     $ cd openwrt
     $ ./scripts/feeds update -a
