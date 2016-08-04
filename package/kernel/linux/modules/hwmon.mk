@@ -298,6 +298,21 @@ endef
 $(eval $(call KernelPackage,hwmon-w83627hf))
 
 
+define KernelPackage/hwmon-w83793
+  TITLE:=Winbond W83793G/R monitoring support
+  KCONFIG:=CONFIG_SENSORS_W83793
+  FILES:=$(LINUX_DIR)/drivers/hwmon/w83793.ko
+  AUTOLOAD:=$(call AutoProbe,w83793)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
+endef
+
+define KernelPackage/hwmon-w83793/description
+  Kernel module for the Winbond W83793G and W83793R chips.
+endef
+
+$(eval $(call KernelPackage,hwmon-w83793))
+
+
 define KernelPackage/hwmon-gsc
   TITLE:=Gateworks GSC monitoring support
   KCONFIG:=CONFIG_SENSORS_GSC
