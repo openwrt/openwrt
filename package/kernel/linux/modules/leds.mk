@@ -54,21 +54,6 @@ endef
 $(eval $(call KernelPackage,ledtrig-gpio))
 
 
-define KernelPackage/ledtrig-morse
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Morse Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_MORSE
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-morse.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-morse)
-endef
-
-define KernelPackage/ledtrig-morse/description
- Kernel module to show morse coded messages on LEDs
-endef
-
-$(eval $(call KernelPackage,ledtrig-morse))
-
-
 define KernelPackage/ledtrig-netdev
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED NETDEV Trigger

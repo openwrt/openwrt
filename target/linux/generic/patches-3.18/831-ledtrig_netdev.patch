@@ -1,8 +1,8 @@
 --- a/drivers/leds/trigger/Kconfig
 +++ b/drivers/leds/trigger/Kconfig
-@@ -112,4 +112,11 @@ config LEDS_TRIGGER_MORSE
- 	tristate "LED Morse Trigger"
- 	depends on LEDS_TRIGGERS
+@@ -108,4 +108,11 @@ config LEDS_TRIGGER_CAMERA
+ 	  This enables direct flash/torch on/off by the driver, kernel space.
+ 	  If unsure, say Y.
  
 +config LEDS_TRIGGER_NETDEV
 +	tristate "LED Netdev Trigger"
@@ -14,8 +14,8 @@
  endif # LEDS_TRIGGERS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -63,3 +63,4 @@ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-d
+@@ -62,3 +62,4 @@ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-d
+ 
  # LED Triggers
  obj-$(CONFIG_LEDS_TRIGGERS)		+= trigger/
- obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
 +obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= ledtrig-netdev.o

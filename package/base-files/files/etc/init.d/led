@@ -83,11 +83,6 @@ load_led() {
 				echo $port_state > /sys/class/leds/${sysfs}/port_state
 			;;
 
-		"morse")
-			echo $message > /sys/class/leds/${sysfs}/message
-			echo $delay > /sys/class/leds/${sysfs}/delay
-			;;
-
 		"gpio")
 			echo $gpio > /sys/class/leds/${sysfs}/gpio
 			echo $inverted > /sys/class/leds/${sysfs}/inverted
