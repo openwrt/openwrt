@@ -59,38 +59,43 @@ To make a build based on the default Ci40 config, run the following commands:
 
 _Ignore any "WARNING: No feed for package..." from the install feeds step._
 
-Load Marduk platform specific OpenWrt configuration for Pistachio.
-
-    $ make menuconfig
-
-1. Select the "Target System" as IMG MIPS Pistachio
-
-        Target System (Atheros AR7xxx/AR9xxx) --->(X) IMG MIPS Pistachio
-
-2. Check the "Target Profile" is set to Basic platform profile for Marduk with Cascoda ca8210
-
-        Target Profile (Basic platform profile for Marduk)  --->
-            (X) Basic platform profile for Marduk with Cascoda ca8210
-
-As an alternative to menuconfig, you can use the default configuration by running the following command:
+Set the default configuration for Ci40 by running the following command:
 
     $ cat target/linux/pistachio/creator-platform-cascoda-default.config > .config
 
-You can add a git revision number as DISTRIB_REVISION in the openwrt image by doing the following:
+Complete the configuration process by running menuconfig:
+
+    $ make menuconfig
+
+1. Check that "Target System" is IMG MIPS Pistachio
+
+        Target System (IMG MIPS Pistachio)  --->
+
+2. Check the "Target Profile" is set to Basic platform profile for Marduk with Cascoda ca8210
+
+        Target Profile (Basic platform profile for Marduk with Cascoda ca8210)  --->
+
+3. Save and Exit menuconfig
+
+Optionally, you can add a git revision number as DISTRIB_REVISION in the openwrt image by doing the following:
 
     $ getver.sh . > version
 
-Now build OpenWrt in the standard way:
+Now build OpenWrt with one of the following commands (see the gnu make documentation for more options):
 
-    $ make V=s -j1
+    $ make
+
+or
+
+    $ make V=s                       // Verbose mode
 
 Once the build is completed, you will find the resulting output i.e. images, dtbs and rootfs at "bin/pistachio".
 
-Example output for V0.9.2:
+Example output for V0.9.4:
 
-- openwrt-0.9.2-pistachio-pistachio_marduk_ca8210-uImage
-- openwrt-0.9.2-pistachio-pistachio_marduk_ca8210-uImage-initramfs
-- openwrt-0.9.2-pistachio-marduk-marduk_ca8210-rootfs.tar.gz
+- openwrt-0.9.4-pistachio-pistachio_marduk_ca8210-uImage
+- openwrt-0.9.4-pistachio-pistachio_marduk_ca8210-uImage-initramfs
+- openwrt-0.9.4-pistachio-marduk-marduk_ca8210-rootfs.tar.gz
 - pistachio_marduk_ca8210.dtb
 
 By default the version number is blank if you do not use the creator-platform-cascoda-default.config for loading the configuration.
