@@ -6,13 +6,14 @@
 #
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/prereq.mk
+include $(INCLUDE_DIR)/depends.mk
 
 ifneq ($(DUMP),1)
   all: compile
 endif
 
-export QUILT=1
-STAMP_PREPARED:=$(LINUX_DIR)/.prepared
+KERNEL_FILE_DEPENDS=$(GENERIC_PATCH_DIR) $(PATCH_DIR) $(GENERIC_FILES_DIR) $(FILES_DIR)
+STAMP_PREPARED=$(LINUX_DIR)/.prepared$(if $(QUILT)$(DUMP),,_$(shell $(call find_md5,$(KERNEL_FILE_DEPENDS),)))
 STAMP_CONFIGURED:=$(LINUX_DIR)/.configured
 include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
@@ -60,12 +61,22 @@ ifdef CONFIG_COLLECT_KERNEL_DEBUG
   endef
 endif
 
+ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
+  ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
+    define Kernel/Autoclean
+      $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
+      $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "*/.dep_*")
+    endef
+  endif
+endif
+
 define BuildKernel
   $(if $(QUILT),$(Build/Quilt))
   $(if $(LINUX_SITE),$(call Download,kernel))
 
   .NOTPARALLEL:
 
+  $(Kernel/Autoclean)
   $(STAMP_PREPARED): $(if $(LINUX_SITE),$(DL_DIR)/$(LINUX_SOURCE))
 	-rm -rf $(KERNEL_BUILD_DIR)
 	-mkdir -p $(KERNEL_BUILD_DIR)
@@ -102,7 +113,7 @@ define BuildKernel
 		echo; \
 	) > $$@
 
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_KCONFIG_LIST) $(TOPDIR)/.config
+  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_KCONFIG_LIST) $(TOPDIR)/.config FORCE
 	$(Kernel/Configure)
 	touch $$@
 
