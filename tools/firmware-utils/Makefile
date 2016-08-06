@@ -57,6 +57,7 @@ define Host/Compile
 	$(call cc,buffalo-tag buffalo-lib, -Wall)
 	$(call cc,buffalo-tftp buffalo-lib, -Wall)
 	$(call cc,mkwrgimg md5, -Wall)
+	$(call cc,mkwrggimg md5, -Wall)
 	$(call cc,mkedimaximg)
 	$(call cc,mkbrncmdline)
 	$(call cc,mkbrnimg)
