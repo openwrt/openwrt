@@ -29,7 +29,7 @@ define KernelPackage/ltq-hcd-template
 endef
 
 KernelPackage/ltq-hcd-ase=$(call KernelPackage/ltq-hcd-template,ase,TARGET_lantiq_ase)
-KernelPackage/ltq-hcd-danube=$(call KernelPackage/ltq-hcd-template,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy))
+KernelPackage/ltq-hcd-danube=$(call KernelPackage/ltq-hcd-template,danube,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy))
 KernelPackage/ltq-hcd-ar9=$(call KernelPackage/ltq-hcd-template,ar9,TARGET_lantiq_xway)
 
 define Build/Prepare
