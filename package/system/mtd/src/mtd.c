@@ -54,6 +54,7 @@
 
 #define TRX_MAGIC		0x48445230	/* "HDR0" */
 #define SEAMA_MAGIC		0x5ea3a417
+#define WRGG03_MAGIC		0x20080321
 
 #if !defined(__BYTE_ORDER)
 #error "Unknown byte order"
@@ -62,9 +63,11 @@
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define cpu_to_be32(x)	(x)
 #define be32_to_cpu(x)	(x)
+#define le32_to_cpu(x)	bswap_32(x)
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
 #define cpu_to_be32(x)	bswap_32(x)
 #define be32_to_cpu(x)	bswap_32(x)
+#define le32_to_cpu(x)  (x)
 #else
 #error "Unsupported endianness"
 #endif
@@ -73,6 +76,7 @@ enum mtd_image_format {
 	MTD_IMAGE_FORMAT_UNKNOWN,
 	MTD_IMAGE_FORMAT_TRX,
 	MTD_IMAGE_FORMAT_SEAMA,
+	MTD_IMAGE_FORMAT_WRGG03,
 };
 
 static char *buf = NULL;
@@ -201,6 +205,8 @@ image_check(int imagefd, const char *mtd)
 		imageformat = MTD_IMAGE_FORMAT_TRX;
 	else if (be32_to_cpu(magic) == SEAMA_MAGIC)
 		imageformat = MTD_IMAGE_FORMAT_SEAMA;
+	else if (le32_to_cpu(magic) == WRGG03_MAGIC)
+		imageformat = MTD_IMAGE_FORMAT_WRGG03;
 
 	switch (imageformat) {
 	case MTD_IMAGE_FORMAT_TRX:
@@ -208,6 +214,8 @@ image_check(int imagefd, const char *mtd)
 			ret = trx_check(imagefd, mtd, buf, &buflen);
 		break;
 	case MTD_IMAGE_FORMAT_SEAMA:
+		break;
+	case MTD_IMAGE_FORMAT_WRGG03:
 		break;
 	default:
 #ifdef target_brcm
@@ -677,6 +685,10 @@ resume:
 			if (mtd_fixseama)
 				mtd_fixseama(mtd, 0, 0);
 			break;
+		case MTD_IMAGE_FORMAT_WRGG03:
+			if (mtd_fixwrgg)
+				mtd_fixwrgg(mtd, 0, 0);
+			break;
 		default:
 			break;
 		}
@@ -722,6 +734,10 @@ static void usage(void)
 	    fprintf(stderr,
 	"        fixseama                fix the checksum in a seama header on first boot\n");
 	}
+	if (mtd_fixwrgg) {
+	    fprintf(stderr,
+	"        fixwrgg                 fix the checksum in a wrgg header on first boot\n");
+	}
 	fprintf(stderr,
 	"Following options are available:\n"
 	"        -q                      quiet mode (once: no [w] on writing,\n"
@@ -739,9 +755,9 @@ static void usage(void)
 	    fprintf(stderr,
 	"        -o offset               offset of the image header in the partition(for fixtrx)\n");
 	}
-	if (mtd_fixtrx || mtd_fixseama) {
+	if (mtd_fixtrx || mtd_fixseama || mtd_fixwrgg) {
 		fprintf(stderr,
-	"        -c datasize             amount of data to be used for checksum calculation (for fixtrx / fixseama)\n");
+	"        -c datasize             amount of data to be used for checksum calculation (for fixtrx / fixseama / fixwrgg)\n");
 	}
 	fprintf(stderr,
 #ifdef FIS_SUPPORT
@@ -782,6 +798,7 @@ int main (int argc, char **argv)
 		CMD_JFFS2WRITE,
 		CMD_FIXTRX,
 		CMD_FIXSEAMA,
+		CMD_FIXWRGG,
 		CMD_VERIFY,
 		CMD_DUMP,
 		CMD_RESETBC,
@@ -896,6 +913,9 @@ int main (int argc, char **argv)
 	} else if (((strcmp(argv[0], "fixseama") == 0) && (argc == 2)) && mtd_fixseama) {
 		cmd = CMD_FIXSEAMA;
 		device = argv[1];
+	} else if (((strcmp(argv[0], "fixwrgg") == 0) && (argc == 2)) && mtd_fixwrgg) {
+		cmd = CMD_FIXWRGG;
+		device = argv[1];
 	} else if ((strcmp(argv[0], "verify") == 0) && (argc == 3)) {
 		cmd = CMD_VERIFY;
 		imagefile = argv[1];
@@ -991,6 +1011,10 @@ int main (int argc, char **argv)
 		case CMD_FIXSEAMA:
 			if (mtd_fixseama)
 				mtd_fixseama(device, 0, data_size);
+			break;
+		case CMD_FIXWRGG:
+			if (mtd_fixwrgg)
+				mtd_fixwrgg(device, 0, data_size);
 			break;
 	}
 
