@@ -5,7 +5,7 @@
 SUBTARGET:=mt7688
 BOARDNAME:=MT7688 based boards
 FEATURES+=usb
-CPU_TYPE:=24kec
+CPU_TYPE:=24kc
 
 DEFAULT_PACKAGES += kmod-mt76
 

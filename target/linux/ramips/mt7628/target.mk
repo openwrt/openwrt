@@ -5,7 +5,7 @@
 SUBTARGET:=mt7628
 BOARDNAME:=MT7628 based boards
 FEATURES+=usb
-CPU_TYPE:=24kec
+CPU_TYPE:=24kc
 
 DEFAULT_PACKAGES += kmod-mt76
 
