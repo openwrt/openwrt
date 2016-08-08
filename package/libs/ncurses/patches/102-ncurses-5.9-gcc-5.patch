@@ -13,11 +13,9 @@ Subject: [PATCH] ncurses 5.9 - patch 20141206
 	  https://gcc.gnu.org/ml/gcc-patches/2014-07/msg00236.html
   (reports by Marcus Shawcroft, Maohui Lei).
 
-diff --git a/ncurses/base/MKlib_gen.sh b/ncurses/base/MKlib_gen.sh
-index d8cc3c9..b91398c 100755
 --- a/ncurses/base/MKlib_gen.sh
 +++ b/ncurses/base/MKlib_gen.sh
-@@ -474,11 +474,22 @@ sed -n -f $ED1 \
+@@ -437,11 +437,22 @@ sed -n -f $ED1 \
  	-e 's/gen_$//' \
  	-e 's/  / /g' >>$TMP
  
