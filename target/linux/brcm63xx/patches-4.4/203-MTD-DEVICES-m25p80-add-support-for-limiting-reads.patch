@@ -58,7 +58,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static int m25p80_erase(struct spi_nor *nor, loff_t offset)
  {
  	struct m25p *flash = nor->priv;
-@@ -245,6 +269,9 @@ static int m25p_probe(struct spi_device
+@@ -244,6 +268,9 @@ static int m25p_probe(struct spi_device
  	else
  		flash_name = spi->modalias;
  

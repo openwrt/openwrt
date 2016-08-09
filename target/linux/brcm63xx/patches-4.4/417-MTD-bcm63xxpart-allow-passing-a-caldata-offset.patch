@@ -105,16 +105,15 @@ contained in flash.
  		pr_info("Partition %d is %s offset %llx and length %llx\n", i,
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
-@@ -56,10 +56,12 @@ struct device_node;
+@@ -56,9 +56,11 @@ struct device_node;
  /**
   * struct mtd_part_parser_data - used to pass data to MTD partition parsers.
   * @origin: for RedBoot, start address of MTD device
 + * @caldata: for CFE, start address of wifi calibration data
-  * @of_node: for OF parsers, device node containing partitioning information
   */
  struct mtd_part_parser_data {
  	unsigned long origin;
 +	unsigned long caldata[2];
- 	struct device_node *of_node;
  };
+ 
  
