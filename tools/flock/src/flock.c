@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
   int do_close = 0;
   int err;
   int status;
+  int open_flags = 0;
   char *eon;
   char **cmd_argv = NULL, *sh_c_argv[4];
   const char *filename = NULL;
@@ -266,6 +267,21 @@ int main(int argc, char *argv[])
       if ( timeout_expired )
 	exit(1);		/* -w option set and failed to lock */
       continue;			/* otherwise try again */
+    case EBADF:			/* since Linux 3.4 (commit 55725513) */
+      /* Probably NFSv4 where flock() is emulated by fcntl().
+       * Let's try to reopen in read-write mode.
+       */
+      if (!(open_flags & O_RDWR) &&
+          type != LOCK_SH &&
+          filename &&
+          access(filename, R_OK | W_OK) == 0) {
+
+              close(fd);
+              open_flags = O_RDWR;
+              fd = open(filename, open_flags);
+              break;
+      }
+      /* go through */
     default:			/* Other errors */
       if ( filename )
 	fprintf(stderr, "%s: %s: %s\n", program, filename, strerror(err));
