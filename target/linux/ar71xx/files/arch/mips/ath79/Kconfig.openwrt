@@ -1,3 +1,13 @@
+config ATH79_MACH_A60
+	bool "OpenMesh A60 board support"
+	select SOC_QCA955X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+	select ATH79_DEV_USB
+
 config ATH79_MACH_ALFA_AP120C
 	bool "ALFA Network AP120C board support"
 	select ATH79_DEV_AP9X_PCI if PCI
