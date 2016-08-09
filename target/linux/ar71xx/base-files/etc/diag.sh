@@ -8,6 +8,9 @@ get_status_led() {
 	local board=$(ar71xx_board_name)
 
 	case $board in
+	a60)
+		status_led="a60:green:status"
+		;;
 	alfa-nx)
 		status_led="alfa:green:led_8"
 		;;

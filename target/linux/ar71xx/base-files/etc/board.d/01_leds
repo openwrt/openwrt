@@ -11,6 +11,10 @@ board_config_update
 board=$(ar71xx_board_name)
 
 case "$board" in
+a60)
+	ucidef_set_led_default "status-red" "Status (red)" "a60:red:status" "0"
+	ucidef_set_led_default "status-blue" "Status (blue)" "a60:blue:status" "0"
+	;;
 airgateway|\
 airgatewaypro)
 	ucidef_set_led_wlan "wlan" "WLAN" "ubnt:blue:wlan" "phy0tpt"
