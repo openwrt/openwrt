@@ -58,6 +58,7 @@ $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.bz2: clean
 	find $(TOOLCHAIN_BUILD_DIR) -name .git | $(XARGS) rm -rf
 	find $(TOOLCHAIN_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 	find $(TOOLCHAIN_BUILD_DIR) -name CVS | $(XARGS) rm -rf
+	mkdir -p $(BIN_DIR)
 	(cd $(BUILD_DIR); \
 		tar cfj $@ $(TOOLCHAIN_NAME); \
 	)
