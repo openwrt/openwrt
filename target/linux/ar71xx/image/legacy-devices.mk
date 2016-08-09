@@ -1,3 +1,10 @@
+define LegacyDevice/A60
+   DEVICE_TITLE := OpenMesh A60
+   DEVICE_PACKAGES := om-watchdog kmod-ath10k ath10k-firmware-qca988x \
+	mod-usb-core kmod-usb2
+endef
+LEGACY_DEVICES += A60
+
 define LegacyDevice/ALFANX
   DEVICE_TITLE := ALFA Network N2/N5 board
 endef
