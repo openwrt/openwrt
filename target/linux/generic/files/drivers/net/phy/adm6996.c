@@ -1052,6 +1052,11 @@ static int adm6996_read_status(struct phy_device *phydev)
 	phydev->speed = SPEED_100;
 	phydev->duplex = DUPLEX_FULL;
 	phydev->link = 1;
+
+	phydev->state = PHY_RUNNING;
+	netif_carrier_on(phydev->attached_dev);
+	phydev->adjust_link(phydev->attached_dev);
+
 	return 0;
 }
 
