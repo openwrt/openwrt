@@ -59,7 +59,7 @@ To make a build based on the default Ci40 config, run the following commands:
 
 _Ignore any "WARNING: No feed for package..." from the install feeds step._
 
-Set the default configuration for Ci40 by running the following command:
+Set the default configuration for Ci40 by running the following command (this sets version numbers and OPKG URLs):
 
     $ cat target/linux/pistachio/creator-platform-cascoda-default.config > .config
 
