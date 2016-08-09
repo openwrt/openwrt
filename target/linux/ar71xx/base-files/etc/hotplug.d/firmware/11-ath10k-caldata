@@ -76,6 +76,7 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
 		;;
+	a60 | \
 	mr1750 | \
 	mr1750v2 | \
 	om5p-acv2)
