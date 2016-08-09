@@ -42,19 +42,30 @@ define Build/lzma-kernel
 	dd if=$@.l7 of=$@ bs=65536 conv=sync
 endef
 
+define Build/copy-kernel
+	rm -f $@ $@.elf
+	cp $< $@
+	cp $< $@.elf
+endef
+
+define Build/elf-kernel
+	cp $(IMAGE_KERNEL).elf $@
+endef
+
 
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
-  KERNEL := kernel-bin | lzma-kernel
+  KERNEL := copy-kernel | lzma-kernel
   IMAGES := sysupgrade.bin
   FILESYSTEMS := squashfs
 endef
 
 define Device/generic
   DEVICE_TITLE := Generic Images
-  IMAGES := kernel.lzma kernel.gz rootfs.bin sysupgrade.bin
-  IMAGE/kernel.gz := append-kernel | gzip-kernel
-  IMAGE/kernel.lzma := append-kernel | lzma-kernel
+  IMAGES := kernel.lzma kernel.elf kernel.gz rootfs.bin sysupgrade.bin
+  IMAGE/kernel.gz := elf-kernel | gzip-kernel
+  IMAGE/kernel.elf := elf-kernel
+  IMAGE/kernel.lzma := elf-kernel | lzma-kernel
   IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | combined-image
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(if $$(findstring kernel,$$(2)),,$$(1)-)$$(2)
