@@ -406,6 +406,9 @@ ramips_board_detect() {
 	*"TEW-714TRU")
 		name="tew-714tru"
 		;;
+	*"Timecloud")
+		name="timecloud"
+		;;
 	*"UBNT-ERX")
 		name="ubnt-erx"
 		;;

@@ -118,7 +118,8 @@ get_status_led() {
 	f5d8235-v2)
 		status_led="$board:blue:router"
 		;;
-	f7c027)
+	f7c027|\
+	timecloud)
 		status_led="$board:orange:status"
 		;;
 	hc5*61|\

@@ -105,6 +105,13 @@ define Device/sap-g3200u3
 endef
 TARGET_DEVICES += sap-g3200u3
 
+define Device/timecloud
+  DTS := Timecloud
+  DEVICE_TITLE := Thunder Timecloud
+  DEVICE_PACKAGES := kmod-usb3
+endef
+TARGET_DEVICES += timecloud
+
 define Device/witi
   DTS := WITI
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
