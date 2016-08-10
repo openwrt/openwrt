@@ -116,6 +116,14 @@ define DLinkDevice
   TARGET_DEVICES += dlink-$(1)
 endef
 
+define Device/dlink-dir-885l
+  DEVICE_TITLE := D-Link DIR-885L
+  DEVICE_PACKAGES := kmod-brcmfmac
+  $(Device/dlink)
+  SIGNATURE := wrgac42_dlink.2015_dir885l
+endef
+TARGET_DEVICES += dlink-dir-885l
+
 define Device/netgear
   IMAGES := chk
   IMAGE/chk := append-ubi | trx-nand | netgear-chk
@@ -141,11 +149,15 @@ define Device/netgear-r6300-v2
 endef
 
 define Device/netgear-r8000
+  DEVICE_TITLE := Netgear R8000
+  DEVICE_PACKAGES := kmod-brcmfmac
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H315T00_NETGEAR
 endef
 
 define Device/smartrg-sr400ac
+  DEVICE_TITLE := SmartRG SR400ac
+  DEVICE_PACKAGES := kmod-brcmfmac
   IMAGES := trx
   IMAGE/trx := append-rootfs | trx-serial
 endef
@@ -160,7 +172,6 @@ $(eval $(call AsusDevice,rt-ac56u,RT-AC56U))
 $(eval $(call AsusDevice,rt-ac68u,RT-AC68U))
 $(eval $(call AsusDevice,rt-ac87u,RT-AC87U))
 $(eval $(call AsusDevice,rt-n18u,RT-N18U))
-$(eval $(call DLinkDevice,dir-885l,wrgac42_dlink.2015_dir885l))
 $(eval $(call LinksysDevice,ea6300-v1))
 $(eval $(call NetgearDevice,r7000,U12H270T00_NETGEAR))
 $(eval $(call NetgearDevice,r7900,U12H315T30_NETGEAR))
