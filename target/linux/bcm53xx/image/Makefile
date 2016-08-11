@@ -91,29 +91,30 @@ define Device/asus
   IMAGE/trx := append-ubi | trx-nand | asus-trx
 endef
 
-define AsusDevice
-  define Device/asus-$(1)
-	$$(Device/asus)
-	PRODUCTID := $(2)
-  endef
-  TARGET_DEVICES += asus-$(1)
+define Device/asus-rt-ac56u
+  DEVICE_TITLE := Asus RT-AC56U
+  DEVICE_PACKAGES := kmod-b43
 endef
+TARGET_DEVICES += asus-rt-ac56u
 
-define LinksysDevice
-  TARGET_DEVICES += linksys-$(1)
+define Device/asus-rt-ac68u
+  DEVICE_TITLE := Asus RT-AC68U
 endef
+TARGET_DEVICES += asus-rt-ac68u
+
+define Device/asus-rt-ac87u
+  DEVICE_TITLE := Asus RT-AC87U
+endef
+TARGET_DEVICES += asus-rt-ac87u
+
+define Device/asus-rt-n18u
+  DEVICE_TITLE := Asus RT-N18U
+endef
+TARGET_DEVICES += asus-rt-n18u
 
 define Device/dlink
   IMAGES := bin
   IMAGE/bin := append-ubi | seama-nand
-endef
-
-define DLinkDevice
-  define Device/dlink-$(1)
-	$$(Device/dlink)
-	SIGNATURE := $(2)
-  endef
-  TARGET_DEVICES += dlink-$(1)
 endef
 
 define Device/dlink-dir-885l
@@ -124,29 +125,38 @@ define Device/dlink-dir-885l
 endef
 TARGET_DEVICES += dlink-dir-885l
 
+define Device/linksys-ea6300-v1
+  DEVICE_TITLE := Linksys EA6300 V1
+  DEVICE_PACKAGES := kmod-b43
+endef
+TARGET_DEVICES += linksys-ea6300-v1
+
 define Device/netgear
   IMAGES := chk
   IMAGE/chk := append-ubi | trx-nand | netgear-chk
   NETGEAR_REGION := 1
 endef
 
-define NetgearDevice
-  define Device/netgear-$(1)
-	$$(Device/netgear)
-	NETGEAR_BOARD_ID := $(2)
-  endef
-  TARGET_DEVICES += netgear-$(1)
-endef
-
 define Device/netgear-r6250
+  DEVICE_TITLE := Netgear R6250
+  DEVICE_PACKAGES := kmod-b43
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H245T00_NETGEAR
 endef
 
 define Device/netgear-r6300-v2
+  DEVICE_TITLE := Netgear R6300 V2
+  DEVICE_PACKAGES := kmod-b43
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H240T00_NETGEAR
 endef
+
+define Device/netgear-r7000
+  DEVICE_TITLE := Netgear R7000
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H270T00_NETGEAR
+endef
+TARGET_DEVICES += netgear-r7000
 
 define Device/netgear-r7900
   DEVICE_TITLE := Netgear R7900
@@ -183,12 +193,5 @@ TARGET_DEVICES += \
 	buffalo-wxr-1900dhp \
 	netgear-r6250 netgear-r6300-v2 netgear-r8000 \
 	smartrg-sr400ac
-
-$(eval $(call AsusDevice,rt-ac56u,RT-AC56U))
-$(eval $(call AsusDevice,rt-ac68u,RT-AC68U))
-$(eval $(call AsusDevice,rt-ac87u,RT-AC87U))
-$(eval $(call AsusDevice,rt-n18u,RT-N18U))
-$(eval $(call LinksysDevice,ea6300-v1))
-$(eval $(call NetgearDevice,r7000,U12H270T00_NETGEAR))
 
 $(eval $(call BuildImage))
