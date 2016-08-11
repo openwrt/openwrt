@@ -43,7 +43,7 @@
  
 --- /dev/null
 +++ b/kernel/crashlog.c
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,209 @@
 +/*
 + * Crash information logger
 + * Copyright (C) 2010 Felix Fietkau <nbd@nbd.name>
@@ -103,40 +103,53 @@
 +
 +extern struct list_head *crashlog_modules;
 +
++static bool crashlog_set_addr(phys_addr_t addr, phys_addr_t size)
++{
++	/* Limit to lower 64 MB to avoid highmem */
++	phys_addr_t limit = 64 * 1024 * 1024;
++
++	if (crashlog_addr)
++		return false;
++
++	if (addr > limit)
++		return false;
++
++	if (addr + size > limit)
++		size = limit - addr;
++
++	crashlog_addr = addr + size - CRASHLOG_OFFSET;
++	return true;
++}
++
 +#ifndef CONFIG_NO_BOOTMEM
 +void __init crashlog_init_bootmem(bootmem_data_t *bdata)
 +{
-+	unsigned long addr;
++	phys_addr_t start, end;
 +
-+	if (crashlog_addr)
++	start = PFN_PHYS(bdata->node_low_pfn);
++	end = PFN_PHYS(bdata->node_min_pfn);
++	if (!crashlog_set_addr(start, end - start))
 +		return;
 +
-+	addr = PFN_PHYS(bdata->node_low_pfn) - CRASHLOG_OFFSET;
-+	if (reserve_bootmem(addr, CRASHLOG_SIZE, BOOTMEM_EXCLUSIVE) < 0) {
-+		printk("Crashlog failed to allocate RAM at address 0x%lx\n", addr);
-+		bdata->node_low_pfn -= CRASHLOG_PAGES;
-+		addr = PFN_PHYS(bdata->node_low_pfn);
++	if (reserve_bootmem(crashlog_addr, CRASHLOG_SIZE, BOOTMEM_EXCLUSIVE) < 0) {
++		printk("Crashlog failed to allocate RAM at address 0x%lx\n",
++		       crashlog_addr);
++		crashlog_addr = 0;
 +	}
-+	crashlog_addr = addr;
 +}
 +#endif
 +
 +#ifdef CONFIG_HAVE_MEMBLOCK
 +void __init_memblock crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
 +{
-+	if (crashlog_addr)
++	if (!crashlog_set_addr(addr, size))
 +		return;
 +
-+	if (size <= CRASHLOG_OFFSET + CRASHLOG_SIZE)
-+		return;
-+
-+	addr += size - CRASHLOG_OFFSET;
-+	if (memblock_reserve(addr, CRASHLOG_SIZE)) {
-+		printk("Crashlog failed to allocate RAM at address 0x%lx\n", (unsigned long) addr);
-+		return;
++	if (memblock_reserve(crashlog_addr, CRASHLOG_SIZE)) {
++		printk("Crashlog failed to allocate RAM at address 0x%lx\n",
++		       crashlog_addr);
++		crashlog_addr = 0;
 +	}
-+
-+	crashlog_addr = addr;
 +}
 +#endif
 +
