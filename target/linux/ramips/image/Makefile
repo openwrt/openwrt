@@ -197,7 +197,7 @@ define BuildFirmware/Seama/squashfs
 	$(call MkImageLzmaDtb,$(2),$(3),$(5))
 	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1)-sysupgrade.bin)
 	cat $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/root.$(1) > $(KDIR)/img_$(2).$(1).tmp
-	if [ `stat -c%s "$(KDIR)/img_$(2).$(1).tmp"` -gt $$$$(($(5) - 64)) ]; then \
+	if [ `stat -c%s "$(KDIR)/img_$(2).$(1).tmp"` -gt $(5) ]; then \
 		echo "Warning: $(KDIR)/img_$(2).$(1).tmp is too big" >&2; \
 	else \
 		dd if=$(KDIR)/vmlinux-$(2).bin.lzma of=$(KDIR)/vmlinux-$(2).bin.lzma.padded bs=64k conv=sync; \
@@ -269,8 +269,7 @@ ifeq ($(SUBTARGET),mt7688)
 include mt7688.mk
 endif
 
-
-ifndef TARGET_DEVICES
+ifdef LEGACY_DEVICES
 #
 # Generic Targets - only needed for legacy image building code
 #
@@ -294,8 +293,12 @@ endef
 define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
-	$(call Image/Build/Profile/$(PROFILE),$(1))
 endef
+
+define Image/Build/Profile
+	$(call Image/Build/Profile/$(1),$(2))
+endef
+
 endif
 
 $(eval $(call BuildImage))
