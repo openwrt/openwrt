@@ -33,7 +33,8 @@ define KernelPackage/fs-9p
   KCONFIG:=\
 	CONFIG_9P_FS \
 	CONFIG_9P_FS_POSIX_ACL=n \
-	CONFIG_9P_FS_SECURITY=n
+	CONFIG_9P_FS_SECURITY=n \
+	CONFIG_9P_FSCACHE=n
   FILES:=$(LINUX_DIR)/fs/9p/9p.ko
   AUTOLOAD:=$(call AutoLoad,30,9p)
 endef
