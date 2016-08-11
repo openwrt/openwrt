@@ -148,6 +148,14 @@ define Device/netgear-r6300-v2
   NETGEAR_BOARD_ID := U12H240T00_NETGEAR
 endef
 
+define Device/netgear-r7900
+  DEVICE_TITLE := Netgear R7900
+  DEVICE_PACKAGES := kmod-brcmfmac
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H315T30_NETGEAR
+endef
+TARGET_DEVICES += netgear-r7900
+
 define Device/netgear-r8000
   DEVICE_TITLE := Netgear R8000
   DEVICE_PACKAGES := kmod-brcmfmac
@@ -174,7 +182,6 @@ $(eval $(call AsusDevice,rt-ac87u,RT-AC87U))
 $(eval $(call AsusDevice,rt-n18u,RT-N18U))
 $(eval $(call LinksysDevice,ea6300-v1))
 $(eval $(call NetgearDevice,r7000,U12H270T00_NETGEAR))
-$(eval $(call NetgearDevice,r7900,U12H315T30_NETGEAR))
 # $(eval $(call NetgearDevice,r8500,U12H334T00_NETGEAR))
 
 $(eval $(call BuildImage))
