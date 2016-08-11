@@ -118,6 +118,30 @@ define Device/asus-rt-n18u
 endef
 TARGET_DEVICES += asus-rt-n18u
 
+define Device/buffalo-wxr-1900dhp
+  DEVICE_TITLE := Buffalo WXR-1900DHP
+  DEVICE_PACKAGES := $(USB3_PACKAGES)
+endef
+TARGET_DEVICES += buffalo-wxr-1900dhp
+
+define Device/buffalo-wzr-600dhp2
+  DEVICE_TITLE := Buffalo WZR-600DHP2
+  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+endef
+TARGET_DEVICES += buffalo-wzr-600dhp2
+
+define Device/buffalo-wzr-900dhp
+  DEVICE_TITLE := Buffalo WZR-900DHP
+  DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
+endef
+TARGET_DEVICES += buffalo-wzr-900dhp
+
+define Device/buffalo-wzr-1750dhp
+  DEVICE_TITLE := Buffalo WZR-1750DHP
+  DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
+endef
+TARGET_DEVICES += buffalo-wzr-1750dhp
+
 define Device/dlink
   IMAGES := bin
   IMAGE/bin := append-ubi | seama-nand
@@ -196,8 +220,6 @@ define Device/smartrg-sr400ac
 endef
 
 TARGET_DEVICES += \
-	buffalo-wzr-1750dhp buffalo-wzr-600dhp2 buffalo-wzr-900dhp \
-	buffalo-wxr-1900dhp \
 	netgear-r6250 netgear-r6300-v2 netgear-r8000 \
 	smartrg-sr400ac
 
