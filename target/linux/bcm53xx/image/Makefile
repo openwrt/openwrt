@@ -163,6 +163,14 @@ define Device/netgear-r8000
   NETGEAR_BOARD_ID := U12H315T00_NETGEAR
 endef
 
+define Device/netgear-r8500
+  DEVICE_TITLE := Netgear R8500
+  DEVICE_PACKAGES := kmod-brcmfmac
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H334T00_NETGEAR
+endef
+# TARGET_DEVICES += netgear-r8500
+
 define Device/smartrg-sr400ac
   DEVICE_TITLE := SmartRG SR400ac
   DEVICE_PACKAGES := kmod-brcmfmac
@@ -182,6 +190,5 @@ $(eval $(call AsusDevice,rt-ac87u,RT-AC87U))
 $(eval $(call AsusDevice,rt-n18u,RT-N18U))
 $(eval $(call LinksysDevice,ea6300-v1))
 $(eval $(call NetgearDevice,r7000,U12H270T00_NETGEAR))
-# $(eval $(call NetgearDevice,r8500,U12H334T00_NETGEAR))
 
 $(eval $(call BuildImage))
