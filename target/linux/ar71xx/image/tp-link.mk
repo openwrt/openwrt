@@ -145,7 +145,7 @@ endef
 
 define Device/mw4530r-v1
 $(Device/tl-wdr4300-v1)
-  DEVICE_TITLE := TP-LINK TL-WDR4530 v1
+  DEVICE_TITLE := Mercury MW4530R v1
   TPLINK_HWID := 0x45300001
 endef
 TARGET_DEVICES += tl-wdr3500-v1 tl-wdr3600-v1 tl-wdr4300-v1 tl-wdr4300-v1-il tl-wdr4310-v1 mw4530r-v1

@@ -280,7 +280,7 @@ tplink_board_detect() {
 		model="TP-Link TL-WDR6500"
 		;;
 	"453000"*)
-		model="MERCURY MW4530R"
+		model="Mercury MW4530R"
 		;;
 	"934100"*)
 		model="NC-LINK SMART-300"
