@@ -420,6 +420,22 @@ endef
 $(eval $(call KernelPackage,fs-reiserfs))
 
 
+define KernelPackage/fs-squashfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=SquashFS 4.0 filesystem support
+  KCONFIG:=CONFIG_SQUASHFS \
+	CONFIG_SQUASHFS_XZ=y
+  FILES:=$(LINUX_DIR)/fs/squashfs/squashfs.ko
+  AUTOLOAD:=$(call AutoLoad,30,squashfs,1)
+endef
+
+define KernelPackage/fs-squashfs/description
+ Kernel module for SquashFS 4.0 support
+endef
+
+$(eval $(call KernelPackage,fs-squashfs))
+
+
 define KernelPackage/fs-udf
   SUBMENU:=$(FS_MENU)
   TITLE:=UDF filesystem support
