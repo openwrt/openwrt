@@ -1,0 +1,27 @@
+From afdfad89c6538b141a8028bc5c230bbdc87232ce Mon Sep 17 00:00:00 2001
+From: Mingkai Hu <Mingkai.Hu@freescale.com>
+Date: Thu, 19 Nov 2015 12:49:50 +0800
+Subject: [PATCH 61/70] arm64/layerscape: Enable PCIe for Layerscape
+
+Signed-off-by: Mingkai Hu <Mingkai.Hu@freescale.com>
+Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
+---
+ arch/arm64/Kconfig.platforms |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
+index 4043c35..4acd002 100644
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -31,6 +31,8 @@ config ARCH_EXYNOS7
+ 
+ config ARCH_LAYERSCAPE
+ 	bool "ARMv8 based Freescale Layerscape SoC family"
++	select PCI_LAYERSCAPE if PCI
++	select LS_SCFG_MSI if PCI_MSI
+ 	help
+ 	  This enables support for the Freescale Layerscape SoC family.
+ 
+-- 
+1.7.9.5
+

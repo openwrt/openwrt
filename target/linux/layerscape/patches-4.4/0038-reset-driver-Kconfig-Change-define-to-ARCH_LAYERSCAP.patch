@@ -1,0 +1,27 @@
+From bb8e6416f0a820e4f70c7ddd35421a59c496a0dc Mon Sep 17 00:00:00 2001
+From: Rai Harninder-B01044 <harninder.rai@freescale.com>
+Date: Wed, 28 Oct 2015 13:24:44 +0530
+Subject: [PATCH 38/70] reset driver: Kconfig: Change define to
+ ARCH_LAYERSCAPE
+
+Signed-off-by: Rai Harninder-B01044 <harninder.rai@freescale.com>
+---
+ drivers/power/reset/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/power/reset/Kconfig b/drivers/power/reset/Kconfig
+index 198c9fe..a28ba2d 100644
+--- a/drivers/power/reset/Kconfig
++++ b/drivers/power/reset/Kconfig
+@@ -175,7 +175,7 @@ config POWER_RESET_ZX
+ 
+ config POWER_RESET_LAYERSCAPE
+ 	bool "Freescale LayerScape reset driver"
+-	depends on ARCH_FSL_LS2085A
++	depends on ARCH_LAYERSCAPE
+ 	help
+ 	  Reboot support for the Freescale LayerScape SoCs.
+ 
+-- 
+1.7.9.5
+

@@ -1,0 +1,65 @@
+From 5de730bd1314e059ebb6532987e149166d330f35 Mon Sep 17 00:00:00 2001
+From: yangbo lu <yangbo.lu@freescale.com>
+Date: Tue, 19 Apr 2016 09:47:15 +0800
+Subject: [PATCH 48/70] mmc: sdhci-of-esdhc: add/remove some quirks according
+ to vendor version
+
+commit 6c42cb309fee2e126beed6b96a986dc7d85a033d
+[context adjustment]
+
+A previous patch had removed esdhc_of_platform_init() by mistake.
+static void esdhc_of_platform_init(struct sdhci_host *host)
+{
+	u32 vvn;
+
+	vvn = in_be32(host->ioaddr + SDHCI_SLOT_INT_STATUS);
+	vvn = (vvn & SDHCI_VENDOR_VER_MASK) >> SDHCI_VENDOR_VER_SHIFT;
+	if (vvn == VENDOR_V_22)
+		host->quirks2 |= SDHCI_QUIRK2_HOST_NO_CMD23;
+
+	if (vvn > VENDOR_V_22)
+		host->quirks &= ~SDHCI_QUIRK_NO_BUSY_IRQ;
+}
+
+This patch is used to fix it by add/remove some quirks according to
+verdor version in probe.
+
+Signed-off-by: Yangbo Lu <yangbo.lu@freescale.com>
+Fixes: f4932cfd22f1 ("mmc: sdhci-of-esdhc: support both BE and LE host controller")
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Integrated-by: Zhao Qiang <qiang.zhao@nxp.com>
+---
+ drivers/mmc/host/sdhci-of-esdhc.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/mmc/host/sdhci-of-esdhc.c b/drivers/mmc/host/sdhci-of-esdhc.c
+index 90e94a0..a04ed4e 100644
+--- a/drivers/mmc/host/sdhci-of-esdhc.c
++++ b/drivers/mmc/host/sdhci-of-esdhc.c
+@@ -584,6 +584,8 @@ static int sdhci_esdhc_probe(struct platform_device *pdev)
+ {
+ 	struct sdhci_host *host;
+ 	struct device_node *np;
++	struct sdhci_pltfm_host *pltfm_host;
++	struct sdhci_esdhc *esdhc;
+ 	int ret;
+ 
+ 	np = pdev->dev.of_node;
+@@ -611,6 +613,14 @@ static int sdhci_esdhc_probe(struct platform_device *pdev)
+ 	if (of_device_is_compatible(np, "fsl,ls1021a-esdhc"))
+ 		host->quirks |= SDHCI_QUIRK_BROKEN_TIMEOUT_VAL;
+ 
++	pltfm_host = sdhci_priv(host);
++	esdhc = pltfm_host->priv;
++	if (esdhc->vendor_ver == VENDOR_V_22)
++		host->quirks2 |= SDHCI_QUIRK2_HOST_NO_CMD23;
++
++	if (esdhc->vendor_ver > VENDOR_V_22)
++		host->quirks &= ~SDHCI_QUIRK_NO_BUSY_IRQ;
++
+ 	if (of_device_is_compatible(np, "fsl,p2020-esdhc")) {
+ 		/*
+ 		 * Freescale messed up with P2020 as it has a non-standard
+-- 
+1.7.9.5
+
