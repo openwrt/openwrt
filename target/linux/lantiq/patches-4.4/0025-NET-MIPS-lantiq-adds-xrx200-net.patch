@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1836 @@
+@@ -0,0 +1,1850 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -276,6 +276,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +#define XRX200_DMA_IRQ		INT_NUM_IM2_IRL0
 +#define XRX200_DMA_RX		0
 +#define XRX200_DMA_TX		1
++#define XRX200_DMA_TX_2		3
 +#define XRX200_DMA_IS_TX(x)	(x%2)
 +#define XRX200_DMA_IS_RX(x)	(!XRX200_DMA_IS_TX(x))
 +
@@ -424,6 +425,8 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	struct napi_struct napi;
 +	struct ltq_dma_channel dma;
 +	struct sk_buff *skb[LTQ_DESC_NUM];
++
++	spinlock_t lock;
 +};
 +
 +struct xrx200_hw {
@@ -439,8 +442,6 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +	int port_map[XRX200_MAX_PORT];
 +	unsigned short wan_map;
-+
-+	spinlock_t lock;
 +
 +	struct switch_dev swdev;
 +};
@@ -1078,14 +1079,14 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	for (i = 0; i < XRX200_MAX_DMA; i++) {
 +		if (!priv->hw->chan[i].dma.irq)
 +			continue;
-+		spin_lock_bh(&priv->hw->lock);
++		spin_lock_bh(&priv->hw->chan[i].lock);
 +		if (!priv->hw->chan[i].refcount) {
 +			if (XRX200_DMA_IS_RX(i))
 +				napi_enable(&priv->hw->chan[i].napi);
 +			ltq_dma_open(&priv->hw->chan[i].dma);
 +		}
 +		priv->hw->chan[i].refcount++;
-+		spin_unlock_bh(&priv->hw->lock);
++		spin_unlock_bh(&priv->hw->chan[i].lock);
 +	}
 +	for (i = 0; i < priv->num_port; i++)
 +		if (priv->port[i].phydev)
@@ -1109,14 +1110,14 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	for (i = 0; i < XRX200_MAX_DMA; i++) {
 +		if (!priv->hw->chan[i].dma.irq)
 +			continue;
-+		spin_lock_bh(&priv->hw->lock);
++		spin_lock_bh(&priv->hw->chan[i].lock);
 +		priv->hw->chan[i].refcount--;
 +		if (!priv->hw->chan[i].refcount) {
 +			if (XRX200_DMA_IS_RX(i))
 +				napi_disable(&priv->hw->chan[i].napi);
 +			ltq_dma_close(&priv->hw->chan[XRX200_DMA_RX].dma);
 +		}
-+		spin_unlock_bh(&priv->hw->lock);
++		spin_unlock_bh(&priv->hw->chan[i].lock);
 +	}
 +
 +	return 0;
@@ -1211,12 +1212,11 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +static void xrx200_tx_housekeeping(unsigned long ptr)
 +{
-+	struct xrx200_hw *hw = (struct xrx200_hw *) ptr;
-+	struct xrx200_chan *ch = &hw->chan[XRX200_DMA_TX];
++	struct xrx200_chan *ch = (struct xrx200_chan *) ptr;
 +	int pkts = 0;
 +	int i;
 +
-+	spin_lock_bh(&hw->lock);
++	spin_lock_bh(&ch->lock);
 +	ltq_dma_ack_irq(&ch->dma);
 +	while ((ch->dma.desc_base[ch->tx_free].ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) == LTQ_DMA_C) {
 +		struct sk_buff *skb = ch->skb[ch->tx_free];
@@ -1230,7 +1230,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		ch->tx_free %= LTQ_DESC_NUM;
 +	}
 +	ltq_dma_enable_irq(&ch->dma);
-+	spin_unlock_bh(&hw->lock);
++	spin_unlock_bh(&ch->lock);
 +
 +	if (!pkts)
 +		return;
@@ -1259,14 +1259,20 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +static int xrx200_start_xmit(struct sk_buff *skb, struct net_device *dev)
 +{
 +	struct xrx200_priv *priv = netdev_priv(dev);
-+	struct xrx200_chan *ch = &priv->hw->chan[XRX200_DMA_TX];
-+	struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
++	struct xrx200_chan *ch;
++	struct ltq_dma_desc *desc;
 +	u32 byte_offset;
 +	int ret = NETDEV_TX_OK;
 +	int len;
 +#ifdef SW_ROUTING
 +	u32 special_tag = (SPID_CPU_PORT << SPID_SHIFT) | DPID_ENABLE;
 +#endif
++	if(priv->id)
++		ch = &priv->hw->chan[XRX200_DMA_TX_2];
++	else
++		ch = &priv->hw->chan[XRX200_DMA_TX];
++
++	desc = &ch->dma.desc_base[ch->dma.desc];
 +
 +	skb->dev = dev;
 +	len = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
@@ -1306,7 +1312,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	/* dma needs to start on a 16 byte aligned address */
 +	byte_offset = CPHYSADDR(skb->data) % 16;
 +
-+	spin_lock_bh(&priv->hw->lock);
++	spin_lock_bh(&ch->lock);
 +	if ((desc->ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) || ch->skb[ch->dma.desc]) {
 +		netdev_err(dev, "tx ring full\n");
 +		netif_stop_queue(dev);
@@ -1333,7 +1339,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	priv->stats.tx_bytes+=len;
 +
 +out:
-+	spin_unlock_bh(&priv->hw->lock);
++	spin_unlock_bh(&ch->lock);
 +
 +	return ret;
 +}
@@ -1365,11 +1371,16 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		int irq = XRX200_DMA_IRQ + i;
 +		struct xrx200_chan *ch = &hw->chan[i];
 +
++		spin_lock_init(&ch->lock);
++
 +		ch->idx = ch->dma.nr = i;
 +
 +		if (i == XRX200_DMA_TX) {
 +			ltq_dma_alloc_tx(&ch->dma);
 +			err = request_irq(irq, xrx200_dma_irq, 0, "vrx200_tx", hw);
++		} else if (i == XRX200_DMA_TX_2) {
++			ltq_dma_alloc_tx(&ch->dma);
++			err = request_irq(irq, xrx200_dma_irq, 0, "vrx200_tx_2", hw);
 +		} else if (i == XRX200_DMA_RX) {
 +			ltq_dma_alloc_rx(&ch->dma);
 +			for (ch->dma.desc = 0; ch->dma.desc < LTQ_DESC_NUM;
@@ -1383,6 +1394,8 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +		if (!err)
 +			ch->dma.irq = irq;
++		else
++			pr_err("net-xrx200: failed to request irq %d\n", irq);
 +	}
 +
 +	return err;
@@ -1952,10 +1965,10 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	}
 +
 +	/* bring up the dma engine and IP core */
-+	spin_lock_init(&xrx200_hw.lock);
 +	xrx200_dma_init(&xrx200_hw);
 +	xrx200_hw_init(&xrx200_hw);
-+	tasklet_init(&xrx200_hw.chan[XRX200_DMA_TX].tasklet, xrx200_tx_housekeeping, (u32) &xrx200_hw);
++	tasklet_init(&xrx200_hw.chan[XRX200_DMA_TX].tasklet, xrx200_tx_housekeeping, (u32) &xrx200_hw.chan[XRX200_DMA_TX]);
++	tasklet_init(&xrx200_hw.chan[XRX200_DMA_TX_2].tasklet, xrx200_tx_housekeeping, (u32) &xrx200_hw.chan[XRX200_DMA_TX_2]);
 +
 +	/* bring up the mdio bus */
 +	mdio_np = of_find_compatible_node(pdev->dev.of_node, NULL,
@@ -1989,6 +2002,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	for (i = 0; i < xrx200_hw.num_devs; i++) {
 +		xrx200_hw.chan[XRX200_DMA_RX].devs[i] = xrx200_hw.devs[i];
 +		xrx200_hw.chan[XRX200_DMA_TX].devs[i] = xrx200_hw.devs[i];
++		xrx200_hw.chan[XRX200_DMA_TX_2].devs[i] = xrx200_hw.devs[i];
 +	}
 +
 +	/* setup NAPI */
