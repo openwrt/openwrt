@@ -105,7 +105,6 @@ struct switch_dev_ops {
 };
 
 struct switch_dev {
-	struct device_node *of_node;
 	const struct switch_dev_ops *ops;
 	/* will be automatically filled */
 	char devname[IFNAMSIZ];
@@ -126,7 +125,6 @@ struct switch_dev {
 
 	struct mutex sw_mutex;
 	struct switch_port *portbuf;
-	struct switch_portmap *portmap;
 	struct switch_port_link linkbuf;
 
 	char buf[128];
@@ -139,11 +137,6 @@ struct switch_dev {
 struct switch_port {
 	u32 id;
 	u32 flags;
-};
-
-struct switch_portmap {
-	u32 virt;
-	const char *s;
 };
 
 struct switch_val {
