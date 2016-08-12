@@ -41,7 +41,6 @@ enum {
 	CMD_LOAD,
 	CMD_HELP,
 	CMD_SHOW,
-	CMD_PORTMAP,
 };
 
 static void
@@ -285,10 +284,6 @@ int main(int argc, char **argv)
 				print_usage();
 			cmd = CMD_LOAD;
 			ckey = argv[++i];
-		} else if (!strcmp(arg, "portmap")) {
-			if (i + 1 < argc)
-				csegment = argv[++i];
-			cmd = CMD_PORTMAP;
 		} else if (!strcmp(arg, "show")) {
 			cmd = CMD_SHOW;
 		} else {
@@ -361,9 +356,6 @@ int main(int argc, char **argv)
 		break;
 	case CMD_HELP:
 		list_attributes(dev);
-		break;
-	case CMD_PORTMAP:
-		swlib_print_portmap(dev, csegment);
 		break;
 	case CMD_SHOW:
 		if (cport >= 0 || cvlan >= 0) {
