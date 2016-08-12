@@ -2,6 +2,13 @@
 # Copyright (C) 2006 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 
+preinit_ip_config() {
+	grep -q "$1" /proc/net/dev || return
+
+	ip link set dev $1 up
+	ip -4 address add $pi_ip/$pi_netmask broadcast $pi_broadcast dev $1
+}
+
 preinit_ip() {
 	# if the preinit interface isn't specified and ifname is set in
 	# preinit.arch use that interface
@@ -9,10 +16,9 @@ preinit_ip() {
 		pi_ifname=$ifname
 	fi
 
-	[ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
-		ip link set dev $pi_ifname up
-		ip -4 address add $pi_ip/$pi_netmask broadcast $pi_broadcast dev $pi_ifname
-	}
+	if [ -n "$pi_ifname" ]; then
+		preinit_ip_config $pi_ifname
+	fi
 }
 
 preinit_ip_deconfig() {
