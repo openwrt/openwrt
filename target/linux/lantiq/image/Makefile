@@ -228,7 +228,7 @@ ifeq ($(SUBTARGET),xway_legacy)
 define Device/ARV4520PW
   IMAGE_SIZE := 3648k
   DEVICE_TITLE := Easybox 800, WAV-281 - ARV4520PW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -540,7 +540,7 @@ define Device/H201L
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoe \
-	kmod-ltq-deu-ar9 kmod-usb-dwc2 \
+	kmod-ltq-deu-ar9 kmod-usb-dwc2 kmod-ledtrig-usbdev \
 	kmod-ltq-tapi kmod-ltq-vmmc \
 	swconfig
 endef
@@ -569,7 +569,7 @@ ifeq ($(SUBTARGET),xrx200)
 define Device/P2812HNUF1
   $(Device/NAND)
   DEVICE_TITLE := ZyXEL P-2812HNU-F1
-  DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2
+  DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2 kmod-ledtrig-usbdev
 endef
 TARGET_DEVICES += P2812HNUF1
 
@@ -598,14 +598,14 @@ define Device/EASY80920NAND
   $(Device/lantiqFullImage)
   IMAGE_SIZE := 64512k
   DEVICE_TITLE := Lantiq VR9 - EASY80920NAND
-  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2
+  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-ledtrig-usbdev
 endef
 TARGET_DEVICES += EASY80920NAND
 
 define Device/EASY80920NOR
   IMAGE_SIZE := 7936k
   DEVICE_TITLE := Lantiq VR9 - EASY80920NOR
-  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2
+  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-ledtrig-usbdev
 endef
 TARGET_DEVICES += EASY80920NOR
 
