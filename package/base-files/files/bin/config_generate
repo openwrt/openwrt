@@ -4,7 +4,7 @@ CFG=/etc/board.json
 
 . /usr/share/libubox/jshn.sh
 
-[ -f $CFG ] || exit 1
+[ -f $CFG ] || /bin/board_detect || exit 1
 [ -f /etc/config/network -a -f /etc/config/system ] && exit 0
 
 generate_static_network() {
