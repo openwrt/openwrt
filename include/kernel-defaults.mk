@@ -12,7 +12,7 @@ KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 	KBUILD_HAVE_NLS=no \
 	KBUILD_BUILD_USER="$(call qstrip,$(CONFIG_KERNEL_BUILD_USER))" \
 	KBUILD_BUILD_HOST="$(call qstrip,$(CONFIG_KERNEL_BUILD_DOMAIN))" \
-	KBUILD_BUILD_TIMESTAMP="$(shell date -u --date="@$(SOURCE_DATE_EPOCH)")" \
+	$(if $(SOURCE_DATE_EPOCH),KBUILD_BUILD_TIMESTAMP="$(shell date -u --date="@$(SOURCE_DATE_EPOCH)")") \
 	KBUILD_BUILD_VERSION="0" \
 	CONFIG_SHELL="$(BASH)" \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
