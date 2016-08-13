@@ -74,6 +74,35 @@ menu "Global build settings"
 
 	source "config/Config-kernel.in"
 
+	choice
+		prompt "Default SSL provider"
+			default SSL_DEFAULT_POLARSSL
+			help
+			  Set the SSL library to enable by default when there is a
+			  choice of libraries (e.g. to prefer openssl when both
+			  polarssl and openssl are options).  For "No SSL" option
+			  selects no SSL when that is an option, but doesn't
+			  prevent building packages requiring SSL (i.e. it's a
+			  default not a hard setting).
+			config SSL_DEFAULT_POLARSSL
+				bool "PolarSSL"
+				select PACKAGE_libpolarssl
+			config SSL_DEFAULT_OPENSSL
+				bool "OpenSSL"
+				select PACKAGE_libopenssl
+			config SSL_DEFAULT_MBEDTLS
+				bool "mbedtls"
+				select PACKAGE_libmbedtls
+			config SSL_DEFAULT_NOSSL
+				bool "No SSL"
+	endchoice
+
+	config SSL_DEFAULT_FALLBACK_OPENSSL
+		bool
+		prompt "Fallback to OpenSSL is default not available and OpenSSL is"
+		depends on !SSL_DEFAULT_OPENSSL
+		default n
+
 	comment "Package build options"
 
 	config DEBUG
