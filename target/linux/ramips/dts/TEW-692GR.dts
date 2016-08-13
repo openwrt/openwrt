@@ -86,7 +86,7 @@
 
 &ethernet {
 	status = "okay";
-	mtd-mac-address = <&factory 0x28>;
+	mtd-mac-address = <&factory 0x4>;
 
 	port@0 {
 		phy-handle = <&phy0>;
@@ -98,6 +98,19 @@
 
 		phy0: ethernet-phy@0 {
 			reg = <0>;
+			phy-mode = "rgmii";
+
+			qca,ar8327-initvals = <
+				0x04 0x07600000 /* PORT0 PAD MODE CTRL */
+				0x0c 0x07600000 /* PORT6 PAD MODE CTRL */
+				0x10 0x40000000 /* Power-on Strapping: 176-pin interface configuration */
+				0x50 0xc437c437 /* LED Control Register 0 */
+				0x54 0xc337c337 /* LED Control Register 1 */
+				0x58 0x00000000 /* LED Control Register 2 */
+				0x5c 0x03ffff00 /* LED Control Register 3 */
+				0x7c 0x0000007e /* PORT0_STATUS */
+				0x94 0x0000007e /* PORT6 STATUS */
+			>;
 		};
 	};
 };
@@ -117,10 +130,18 @@
 	host-bridge {
 		pci-bridge@1 {
 			status = "okay";
+
+			wmac@0,0 {
+				compatible = "ralink,rt2880-pci", "pciclass060400", "pciclass0604";
+				reg = < 0x10000 0 0 0 0 >;
+				ralink,2ghz = <0>;
+			};
 		};
 	};
 };
 
 &wmac {
+	status = "okay";
+	ralink,mtd-eeprom = <&factory 0x0>;
 	ralink,5ghz = <0>;
 };

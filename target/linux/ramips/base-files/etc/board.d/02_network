@@ -337,8 +337,7 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 3)
 		;;
 	tew-692gr)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 4)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 1)
 		;;
 	tiny-ac)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env LAN_MAC_ADDR)
