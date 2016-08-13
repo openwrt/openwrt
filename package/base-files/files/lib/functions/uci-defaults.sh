@@ -1,7 +1,5 @@
 #!/bin/ash
 
-CFG=/etc/board.json
-
 . /lib/functions.sh
 . /usr/share/libubox/jshn.sh
 
