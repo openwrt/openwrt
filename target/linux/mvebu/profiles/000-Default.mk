@@ -7,7 +7,7 @@
 
 define Profile/Default
 	NAME:=Default Profile (all drivers)
-	PACKAGES:= kmod-mwlwifi wpad-mini swconfig
+	PACKAGES:= kmod-mwlwifi wpad-mini swconfig uboot-mvebu-clearfog
 endef
 
 define Profile/Default/Description

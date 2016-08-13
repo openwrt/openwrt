@@ -150,6 +150,7 @@ define Device/armada-388-clearfog
   KERNEL_INSTALL := 1
   KERNEL := dtb | kernel-bin
   DEVICE_TITLE := SolidRun ClearFog
+  DEVICE_PACKAGES := uboot-mvebu-clearfog
   IMAGES := bundle.tar.gz
   IMAGE/bundle.tar.gz := clearfog-bundle
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
