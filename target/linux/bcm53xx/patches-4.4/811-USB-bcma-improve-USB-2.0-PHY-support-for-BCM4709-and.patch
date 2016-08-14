@@ -27,8 +27,8 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  MODULE_AUTHOR("Hauke Mehrtens");
  MODULE_DESCRIPTION("Common USB driver for BCMA Bus");
  MODULE_LICENSE("GPL");
-@@ -168,10 +179,35 @@ static void bcma_hcd_init_chip_mips(stru
- 	}
+@@ -241,10 +252,35 @@ static int bcma_hcd_usb20_old_arm_init(s
+ 	return 0;
  }
  
 +static u32 bcma_hcd_usb_ref_clk_get_rate(void __iomem *dmu)
@@ -63,7 +63,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	arm_core = bcma_find_core(dev->bus, BCMA_CORE_ARMCA9);
  	if (!arm_core) {
-@@ -185,14 +221,29 @@ static void bcma_hcd_init_chip_arm_phy(s
+@@ -258,14 +294,29 @@ static void bcma_hcd_init_chip_arm_phy(s
  		return;
  	}
  
@@ -96,7 +96,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	iounmap(dmu);
  }
-@@ -220,15 +271,17 @@ static void bcma_hcd_init_chip_arm_hc(st
+@@ -293,15 +344,17 @@ static void bcma_hcd_init_chip_arm_hc(st
  
  static void bcma_hcd_init_chip_arm(struct bcma_device *dev)
  {

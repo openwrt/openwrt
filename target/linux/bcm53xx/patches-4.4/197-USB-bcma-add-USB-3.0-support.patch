@@ -22,7 +22,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  MODULE_AUTHOR("Hauke Mehrtens");
  MODULE_DESCRIPTION("Common USB driver for BCMA Bus");
-@@ -39,6 +40,7 @@ struct bcma_hcd_device {
+@@ -42,6 +43,7 @@ struct bcma_hcd_device {
  	struct bcma_device *core;
  	struct platform_device *ehci_dev;
  	struct platform_device *ohci_dev;
@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	struct gpio_desc *gpio_desc;
  };
  
-@@ -246,6 +248,10 @@ static const struct usb_ehci_pdata ehci_
+@@ -319,6 +321,10 @@ static const struct usb_ehci_pdata ehci_
  static const struct usb_ohci_pdata ohci_pdata = {
  };
  
@@ -41,7 +41,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static struct platform_device *bcma_hcd_create_pdev(struct bcma_device *dev,
  						    const char *name, u32 addr,
  						    const void *data,
-@@ -339,6 +345,150 @@ err_unregister_ohci_dev:
+@@ -412,6 +418,150 @@ err_unregister_ohci_dev:
  	return err;
  }
  
@@ -192,7 +192,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static int bcma_hcd_usb30_init(struct bcma_hcd_device *bcma_hcd)
  {
  	struct bcma_device *core = bcma_hcd->core;
-@@ -346,6 +496,14 @@ static int bcma_hcd_usb30_init(struct bc
+@@ -419,6 +569,14 @@ static int bcma_hcd_usb30_init(struct bc
  
  	bcma_core_enable(core, 0);
  
@@ -207,7 +207,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	of_platform_default_populate(dev->of_node, NULL, dev);
  
  	return 0;
-@@ -393,11 +551,14 @@ static void bcma_hcd_remove(struct bcma_
+@@ -471,11 +629,14 @@ static void bcma_hcd_remove(struct bcma_
  	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
  	struct platform_device *ohci_dev = usb_dev->ohci_dev;
  	struct platform_device *ehci_dev = usb_dev->ehci_dev;
