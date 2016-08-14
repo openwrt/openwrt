@@ -87,6 +87,19 @@ endef
 TARGET_DEVICES += tew-692gr
 
 
+define Device/wlr-6000
+  DTS := WLR-6000
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7244k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := \
+	$$(IMAGE/sysupgrade.bin) | senao-header -r 0x0202 -p 0x41 -t 2
+  DEVICE_TITLE := Sitecom WLR-6000
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+endef
+TARGET_DEVICES += wlr-6000
+
+
 define BuildFirmware/RTN56U/squashfs
 	$(call BuildFirmware/Default8M/$(1),$(1),rt-n56u,RT-N56U)
 	-mkrtn56uimg -s $(call sysupname,$(1),rt-n56u)

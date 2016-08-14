@@ -207,6 +207,9 @@ get_status_led() {
 		status_led="$board:amber:power"
 		;;
 	whr-g300n|\
+	wlr-6000)
+		status_led="$board:red:power"
+		;;
 	wzr-agl300nh)
 		status_led="$board:green:router"
 		;;

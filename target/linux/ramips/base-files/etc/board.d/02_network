@@ -226,7 +226,8 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "8@eth0"
 		;;
 	tew-691gr|\
-	tew-692gr)
+	tew-692gr|\
+	wlr-6000)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
 		;;
@@ -382,6 +383,9 @@ ramips_setup_macs()
 	wizfi630a)
 		lan_mac=$(mtd_get_mac_binary factory 4)
 		wan_mac=$(mtd_get_mac_binary factory 40)
+		;;
+	wlr-6000)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 32772)" 2)
 		;;
 	wsr-1166)
 		local index="$(find_mtd_index "board_data")"

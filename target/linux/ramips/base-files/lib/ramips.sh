@@ -508,6 +508,9 @@ ramips_board_detect() {
 	*"WLI-TX4-AG300N")
 		name="wli-tx4-ag300n"
 		;;
+	*"WLR-6000")
+		name="wlr-6000"
+		;;
 	*"WMR-300")
 		name="wmr-300"
 		;;

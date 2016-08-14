@@ -148,6 +148,7 @@ platform_check_image() {
 	wl-351|\
 	wl-wn575a3|\
 	wli-tx4-ag300n|\
+	wlr-6000|\
 	wmr-300|\
 	wnce2001|\
 	wndr3700v5|\
