@@ -90,7 +90,9 @@ preinit_config_board() {
 		ifname=${ifname%\.*}
 	fi
 
-	preinit_ip_config $ifname
+	pi_ifname=$ifname
+
+	preinit_ip_config $pi_ifname
 }
 
 preinit_ip() {
