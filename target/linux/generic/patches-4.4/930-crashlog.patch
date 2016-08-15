@@ -43,7 +43,7 @@
  
 --- /dev/null
 +++ b/kernel/crashlog.c
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,213 @@
 +/*
 + * Crash information logger
 + * Copyright (C) 2010 Felix Fietkau <nbd@nbd.name>
@@ -117,7 +117,11 @@
 +	if (addr + size > limit)
 +		size = limit - addr;
 +
-+	crashlog_addr = addr + size - CRASHLOG_OFFSET;
++	crashlog_addr = addr;
++
++	if (addr + size > CRASHLOG_OFFSET)
++		crashlog_addr += size - CRASHLOG_OFFSET;
++
 +	return true;
 +}
 +
