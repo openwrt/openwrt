@@ -11,7 +11,6 @@ BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs ext4 initramfs pci usb
 CPU_TYPE:=octeon
-CPU_CFLAGS_octeon:=-march=octeon -mabi=64
 MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.4
