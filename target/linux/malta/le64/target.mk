@@ -1,4 +1,5 @@
 ARCH:=mips64el
+CPU_TYPE:=mips64
 SUBTARGET:=le64
 BOARDNAME:=Little Endian (64-bits)
 FEATURES:=ramdisk

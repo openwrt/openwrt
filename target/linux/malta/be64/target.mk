@@ -1,4 +1,5 @@
 ARCH:=mips64
+CPU_TYPE:=mips64
 SUBTARGET:=be64
 BOARDNAME:=Big Endian (64-bits)
 FEATURES:=ramdisk
