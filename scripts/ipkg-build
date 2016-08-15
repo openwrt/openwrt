@@ -13,14 +13,14 @@ version=1.0
 FIND="$(which find)"
 FIND="${FIND:-$(which gfind)}"
 TAR="${TAR:-$(which tar)}"
-SVN="$(which svn)"
-GIT="$(which git)"
 GZIP="$(which gzip)"
 
 # look up date of last commit
 if [ -d "$TOPDIR/.git" ]; then
+	GIT="$(which git)"
 	TIMESTAMP=$(cd $TOPDIR; $GIT log -1 -s --format=%ci)
 elif [ -d "$TOPDIR/.svn" ]; then
+	SVN="$(which svn)"
 	TIMESTAMP=$($SVN info "$TOPDIR" | sed -n "s/^Last Changed Date: \(.*\)/\1/p")
 else
 	TIMESTAMP=$(date)
