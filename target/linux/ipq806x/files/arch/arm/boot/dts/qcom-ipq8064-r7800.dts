@@ -365,6 +365,23 @@
 			gpios = <&qcom_pinmux 67 0>;
 		};
 	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		display_data {
+			gpio-export,name = "usb0";
+			gpio-export,output = <1>;
+			gpios = <&qcom_pinmux 15 0>;
+		};
+
+		display_clock {
+			gpio-export,name = "usb1";
+			gpio-export,output = <1>;
+			gpios = <&qcom_pinmux 16 0>;
+		};
+	};
 };
 
 &adm_dma {
