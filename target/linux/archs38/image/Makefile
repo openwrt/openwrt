@@ -15,7 +15,7 @@ define Build/calculate-ep
 endef
 
 define Build/patch-dtb
-	$(call Image/BuildDTB,../dts/$(DEVICE_DTS).dts,$@.dtb)
+	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb)
 	$(STAGING_DIR_HOST)/bin/patch-dtb $@ $@.dtb
 endef
 
