@@ -865,11 +865,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	struct rt305x_esw *esw;
  	struct resource *irq;
  	int ret;
-@@ -568,6 +1353,20 @@ static int esw_probe(struct platform_dev
+@@ -568,6 +1353,21 @@ static int esw_probe(struct platform_dev
  	if (reg_init)
  		esw->reg_led_polarity = be32_to_cpu(*reg_init);
  
 +	swdev = &esw->swdev;
++	swdev->of_node = pdev->dev.of_node;
 +	swdev->name = "rt305x-esw";
 +	swdev->alias = "rt305x";
 +	swdev->cpu_port = RT305X_ESW_PORT6;

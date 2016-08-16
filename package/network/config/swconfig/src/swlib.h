@@ -129,6 +129,7 @@ struct switch_dev {
 	struct switch_attr *ops;
 	struct switch_attr *port_ops;
 	struct switch_attr *vlan_ops;
+	struct switch_portmap *maps;
 	struct switch_dev *next;
 	void *priv;
 };
@@ -161,6 +162,11 @@ struct switch_port {
 	unsigned int flags;
 };
 
+struct switch_portmap {
+	unsigned int virt;
+	char *segment;
+};
+
 struct switch_port_link {
 	int link:1;
 	int duplex:1;
@@ -176,6 +182,12 @@ struct switch_port_link {
  * swlib_list: list all switches
  */
 void swlib_list(void);
+
+/**
+ * swlib_print_portmap: get portmap
+ * @dev: switch device struct
+ */
+void swlib_print_portmap(struct switch_dev *dev, char *segment);
 
 /**
  * swlib_connect: connect to the switch through netlink
