@@ -11,7 +11,7 @@ CPU_TYPE:=archs
 BOARD:=archs38
 BOARDNAME:=Synopsys DesignWare ARC HS38
 MAINTAINER:=Alexey Brodkin <abrodkin@synopsys.com>
-SUBTARGETS:=generic
+SUBTARGETS:=sd ramdisk
 
 KERNEL_PATCHVER:=4.4
 

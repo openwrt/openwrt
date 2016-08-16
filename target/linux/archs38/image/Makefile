@@ -14,37 +14,21 @@ define Build/calculate-ep
 	$(eval KERNEL_ENTRY=$(shell $(KERNEL_CROSS)readelf -h $(LINUX_DIR)/vmlinux | grep "Entry point address" | grep -o 0x.*))
 endef
 
+define Build/build-dtb
+	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$(DTS_DIR)/$(DEVICE_DTS).dtb)
+endef
+
 define Build/patch-dtb
-	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb)
-	$(STAGING_DIR_HOST)/bin/patch-dtb $@ $@.dtb
+	$(STAGING_DIR_HOST)/bin/patch-dtb $@ $(DTS_DIR)/$(DEVICE_DTS).dtb
 endef
 
-# Shared device definition: applies to every defined device
-define Device/Default
-  PROFILES = Default $$(DEVICE_PROFILE)
-  KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
-  DEVICE_PROFILE :=
-endef
-DEVICE_VARS += DEVICE_PROFILE
-
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+# Root FS built-in
 define Device/vmlinux
-  KERNEL_SUFFIX := .elf
-  KERNEL_INITRAMFS := kernel-bin | patch-dtb
-  KERNEL_INITRAMFS_NAME = vmlinux-initramfs.elf
+	KERNEL_SUFFIX := .elf
+	KERNEL := kernel-bin | build-dtb | patch-dtb
+	KERNEL_INITRAMFS_NAME = vmlinux-initramfs.elf
 endef
-
-define Device/uImage
-  KERNEL_SUFFIX := -uImage
-  KERNEL_INITRAMFS := kernel-bin | patch-dtb | calculate-ep | uImage none
-  KERNEL_LOADADDR := 0x80000000
-endef
-
-define Device/axs103
-	$(call Device/uImage)
-	DEVICE_PROFILE := axs103
-	DEVICE_DTS := axs103_idu
-endef
-TARGET_DEVICES += axs103
 
 define Device/nsim_hs
 	$(call Device/vmlinux)
@@ -52,5 +36,51 @@ define Device/nsim_hs
 	DEVICE_DTS := nsim_hs_idu
 endef
 TARGET_DEVICES += nsim_hs
+else
+# Root FS on SD-card
+KERNEL_LOADADDR := 0x80000000
+DEVICE_DTS_LIST:= axs103_idu
+FAT32_BLOCK_SIZE=1024
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_AXS10X_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
+
+define Image/Build/SDCard
+	rm -f $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img
+	mkdosfs $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img -C $(FAT32_BLOCKS)
+	mkimage -C none -A arc -T script -d uEnv.txt $(BIN_DIR)/uEnv.scr
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(BIN_DIR)/uEnv.scr ::boot.scr
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(DTS_DIR)/*.dtb ::
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
+
+	./gen_axs10x_sdcard_img.sh \
+		$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-sdcard-vfat-$(1).img \
+		$(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img \
+		$(KDIR)/root.$(1) \
+		$(CONFIG_AXS10X_SD_BOOT_PARTSIZE) \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+
+ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
+	gzip -f9n $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-sdcard-vfat-$(1).img
+endif
+endef
+
+define Image/BuildKernel
+	# Build unified uImage
+	$(call Build/calculate-ep)
+	$(call Image/BuildKernel/MkuImage, \
+		none, $(KERNEL_LOADADDR), $(KERNEL_ENTRY), \
+		$(KDIR)/vmlinux, \
+		$(BIN_DIR)/$(IMG_PREFIX)-uImage \
+	)
+
+	# Build .dtb for all boards we may run on
+	$(foreach DEVICE_DTS,$(shell echo $(DEVICE_DTS_LIST)), $(call Build/build-dtb))
+endef
+
+define Image/Build
+	$(call Image/Build/$(1),$(1))
+	$(call Image/Build/SDCard,$(1))
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+endef
+endif
 
 $(eval $(call BuildImage))
