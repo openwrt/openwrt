@@ -306,6 +306,8 @@
 
 	ethernet: ethernet@10100000 {
 		compatible = "ralink,rt3883-eth";
+		#address-cells = <1>;
+		#size-cells = <0>;
 		reg = <0x10100000 0x10000>;
 
 		resets = <&rstctrl 21>;
