@@ -1,0 +1,104 @@
+From 78921f39c6495203bbbf4207c442c2b59f8f11c0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 25 Jul 2016 18:03:17 +0200
+Subject: [PATCH] bcma: support BCM53573 series of wireless SoCs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BCM53573 seems to be the first series of Northstar family with wireless
+on the chip. The base models are BCM53573-s (A0, A1) and there is also
+BCM47189B0 which seems to be some small modification.
+
+The only problem with these chipsets seems to be watchdog. It's totally
+unavailable on 53573A0 / 53573A1 and preferable PMU watchdog is broken
+on 53573B0 / 53573B1.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ drivers/bcma/driver_chipcommon.c | 32 +++++++++++++++++++++++++++++---
+ include/linux/bcma/bcma.h        |  3 +++
+ 2 files changed, 32 insertions(+), 3 deletions(-)
+
+--- a/drivers/bcma/driver_chipcommon.c
++++ b/drivers/bcma/driver_chipcommon.c
+@@ -36,12 +36,31 @@ u32 bcma_chipco_get_alp_clock(struct bcm
+ }
+ EXPORT_SYMBOL_GPL(bcma_chipco_get_alp_clock);
+ 
++static bool bcma_core_cc_has_pmu_watchdog(struct bcma_drv_cc *cc)
++{
++	struct bcma_bus *bus = cc->core->bus;
++
++	if (cc->capabilities & BCMA_CC_CAP_PMU) {
++		if (bus->chipinfo.id == BCMA_CHIP_ID_BCM53573) {
++			WARN(bus->chipinfo.rev <= 1, "No watchdog available\n");
++			/* 53573B0 and 53573B1 have bugged PMU watchdog. It can
++			 * be enabled but timer can't be bumped. Use CC one
++			 * instead.
++			 */
++			return false;
++		}
++		return true;
++	} else {
++		return false;
++	}
++}
++
+ static u32 bcma_chipco_watchdog_get_max_timer(struct bcma_drv_cc *cc)
+ {
+ 	struct bcma_bus *bus = cc->core->bus;
+ 	u32 nb;
+ 
+-	if (cc->capabilities & BCMA_CC_CAP_PMU) {
++	if (bcma_core_cc_has_pmu_watchdog(cc)) {
+ 		if (bus->chipinfo.id == BCMA_CHIP_ID_BCM4706)
+ 			nb = 32;
+ 		else if (cc->core->id.rev < 26)
+@@ -95,9 +114,16 @@ static int bcma_chipco_watchdog_ticks_pe
+ 
+ int bcma_chipco_watchdog_register(struct bcma_drv_cc *cc)
+ {
++	struct bcma_bus *bus = cc->core->bus;
+ 	struct bcm47xx_wdt wdt = {};
+ 	struct platform_device *pdev;
+ 
++	if (bus->chipinfo.id == BCMA_CHIP_ID_BCM53573 &&
++	    bus->chipinfo.rev <= 1) {
++		pr_debug("No watchdog on 53573A0 / 53573A1\n");
++		return 0;
++	}
++
+ 	wdt.driver_data = cc;
+ 	wdt.timer_set = bcma_chipco_watchdog_timer_set_wdt;
+ 	wdt.timer_set_ms = bcma_chipco_watchdog_timer_set_ms_wdt;
+@@ -105,7 +131,7 @@ int bcma_chipco_watchdog_register(struct
+ 		bcma_chipco_watchdog_get_max_timer(cc) / cc->ticks_per_ms;
+ 
+ 	pdev = platform_device_register_data(NULL, "bcm47xx-wdt",
+-					     cc->core->bus->num, &wdt,
++					     bus->num, &wdt,
+ 					     sizeof(wdt));
+ 	if (IS_ERR(pdev))
+ 		return PTR_ERR(pdev);
+@@ -217,7 +243,7 @@ u32 bcma_chipco_watchdog_timer_set(struc
+ 	u32 maxt;
+ 
+ 	maxt = bcma_chipco_watchdog_get_max_timer(cc);
+-	if (cc->capabilities & BCMA_CC_CAP_PMU) {
++	if (bcma_core_cc_has_pmu_watchdog(cc)) {
+ 		if (ticks == 1)
+ 			ticks = 2;
+ 		else if (ticks > maxt)
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -203,6 +203,9 @@ struct bcma_host_ops {
+ #define  BCMA_PKG_ID_BCM4709	0
+ #define BCMA_CHIP_ID_BCM47094	53030
+ #define BCMA_CHIP_ID_BCM53018	53018
++#define BCMA_CHIP_ID_BCM53573	53573
++#define  BCMA_PKG_ID_BCM53573	0
++#define  BCMA_PKG_ID_BCM47189	1
+ 
+ /* Board types (on PCI usually equals to the subsystem dev id) */
+ /* BCM4313 */
