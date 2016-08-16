@@ -1297,7 +1297,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		special_tag |= port_map << PORT_MAP_SHIFT;
 +	}
 +	special_tag |= priv->port_map << PORT_MAP_SHIFT;
-+	if(priv->id)
++	if(priv->wan)
 +		special_tag |= (1 << DPID_SHIFT);
 +	if(skb_headroom(skb) < 4) {
 +		struct sk_buff *tmp = skb_realloc_headroom(skb, 4);
