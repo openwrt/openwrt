@@ -34,35 +34,23 @@ define Device/vmlinux
 endef
 
 define Device/uImage
-  KERNEL_SUFFIX := .bin
+  KERNEL_SUFFIX := -uImage
   KERNEL_INITRAMFS := kernel-bin | patch-dtb | calculate-ep | uImage none
   KERNEL_LOADADDR := 0x80000000
 endef
 
-define add_archs38_uImage
-  define Device/$(1)-uImage
-    $(call Device/uImage)
-    DEVICE_PROFILE := $(1)
-    DEVICE_DTS := $(1)
-  endef
-  TARGET_DEVICES += $(1)-uImage
+define Device/axs103
+	$(call Device/uImage)
+	DEVICE_PROFILE := axs103
+	DEVICE_DTS := axs103_idu
 endef
+TARGET_DEVICES += axs103
 
-define add_archs38_vmlinux
-  define Device/$(1)-vmlinux
-    $(call Device/vmlinux)
-    DEVICE_PROFILE := $(1)
-    DEVICE_DTS := $(1)
-  endef
-  TARGET_DEVICES += $(1)-vmlinux
+define Device/nsim_hs
+	$(call Device/vmlinux)
+	DEVICE_PROFILE := nsim_hs
+	DEVICE_DTS := nsim_hs_idu
 endef
-
-# DesignWare AXS103
-$(eval $(call add_archs38_vmlinux,axs103_idu))
-$(eval $(call add_archs38_uImage,axs103_idu))
-
-# nSIM with ARCHS38
-$(eval $(call add_archs38_vmlinux,nsim_hs_idu))
-$(eval $(call add_archs38_uImage,nsim_hs_idu))
+TARGET_DEVICES += nsim_hs
 
 $(eval $(call BuildImage))
