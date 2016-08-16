@@ -21,7 +21,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -78,29 +78,30 @@ static void m25p80_write(struct spi_nor
+@@ -78,6 +78,7 @@ static void m25p80_write(struct spi_nor
  {
  	struct m25p *flash = nor->priv;
  	struct spi_device *spi = flash->spi;
@@ -29,10 +29,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	struct spi_transfer t[2] = {};
  	struct spi_message m;
  	int cmd_sz = m25p_cmdsz(nor);
-+	int i;
- 
- 	spi_message_init(&m);
- 
+@@ -87,20 +88,19 @@ static void m25p80_write(struct spi_nor
  	if (nor->program_opcode == SPINOR_OP_AAI_WP && nor->sst_write_second)
  		cmd_sz = 1;
  
