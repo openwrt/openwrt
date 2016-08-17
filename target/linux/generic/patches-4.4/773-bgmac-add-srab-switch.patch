@@ -4,15 +4,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -17,6 +17,7 @@
- #include <linux/phy_fixed.h>
- #include <linux/interrupt.h>
- #include <linux/dma-mapping.h>
+@@ -11,6 +11,7 @@
+ 
+ #include <linux/bcma/bcma.h>
+ #include <linux/etherdevice.h>
 +#include <linux/platform_data/b53.h>
  #include <linux/bcm47xx_nvram.h>
+ #include "bgmac.h"
  
- static const struct bcma_device_id bgmac_bcma_tbl[] = {
-@@ -1408,6 +1409,17 @@ static const struct ethtool_ops bgmac_et
+@@ -1378,6 +1379,17 @@ static const struct ethtool_ops bgmac_et
  	.get_drvinfo		= bgmac_get_drvinfo,
  };
  
@@ -30,15 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * MII
   **************************************************/
-@@ -1656,6 +1668,7 @@ static int bgmac_probe(struct bcma_devic
- 		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
- 		bgmac->feature_flags |= BGMAC_FEAT_NO_RESET;
- 		bgmac->feature_flags |= BGMAC_FEAT_FORCE_SPEED_2500;
-+		bgmac->feature_flags |= BGMAC_FEAT_SRAB;
- 		break;
- 	default:
- 		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
-@@ -1703,6 +1716,14 @@ static int bgmac_probe(struct bcma_devic
+@@ -1510,6 +1522,14 @@ int bgmac_enet_probe(struct bgmac *info)
  	net_dev->hw_features = net_dev->features;
  	net_dev->vlan_features = net_dev->features;
  
@@ -53,20 +45,20 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		dev_err(bgmac->dev, "Cannot register net device\n");
-@@ -1730,6 +1751,10 @@ static void bgmac_remove(struct bcma_dev
- {
- 	struct bgmac *bgmac = bcma_get_drvdata(core);
+@@ -1533,6 +1553,10 @@ EXPORT_SYMBOL_GPL(bgmac_enet_probe);
  
+ void bgmac_enet_remove(struct bgmac *bgmac)
+ {
 +	if (bgmac->b53_device)
 +		platform_device_unregister(&bgmac_b53_dev);
 +	bgmac->b53_device = NULL;
 +
  	unregister_netdev(bgmac->net_dev);
  	phy_disconnect(bgmac->net_dev->phydev);
- 	bcma_mdio_mii_unregister(bgmac->mii_bus);
+ 	netif_napi_del(&bgmac->napi);
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
-@@ -392,6 +392,7 @@
+@@ -390,6 +390,7 @@
  #define BGMAC_FEAT_NO_CLR_MIB		BIT(13)
  #define BGMAC_FEAT_FORCE_SPEED_2500	BIT(14)
  #define BGMAC_FEAT_CMDCFG_SR_REV4	BIT(15)
@@ -74,13 +66,23 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  struct bgmac_slot_info {
  	union {
-@@ -473,6 +474,9 @@ struct bgmac {
- 	bool has_robosw;
- 
- 	bool loopback;
+@@ -494,6 +495,9 @@ struct bgmac {
+ 	u32 (*get_bus_clock)(struct bgmac *bgmac);
+ 	void (*cmn_maskset32)(struct bgmac *bgmac, u16 offset, u32 mask,
+ 			      u32 set);
 +
 +	/* platform device for associated switch */
 +	struct platform_device *b53_device;
  };
  
- struct mii_bus *bcma_mdio_mii_register(struct bcma_device *core, u8 phyaddr);
+ int bgmac_enet_probe(struct bgmac *info);
+--- a/drivers/net/ethernet/broadcom/bgmac-bcma.c
++++ b/drivers/net/ethernet/broadcom/bgmac-bcma.c
+@@ -229,6 +229,7 @@ static int bgmac_probe(struct bcma_devic
+ 		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
+ 		bgmac->feature_flags |= BGMAC_FEAT_NO_RESET;
+ 		bgmac->feature_flags |= BGMAC_FEAT_FORCE_SPEED_2500;
++		bgmac->feature_flags |= BGMAC_FEAT_SRAB;
+ 		break;
+ 	default:
+ 		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
