@@ -111,6 +111,7 @@ define Kernel/SetNoInitramfs
 endef
 
 define Kernel/Configure/Default
+	rm -f $(LINUX_DIR)/localversion
 	$(LINUX_CONF_CMD) > $(LINUX_DIR)/.config.target
 # copy CONFIG_KERNEL_* settings over to .config.target
 	awk '/^(#[[:space:]]+)?CONFIG_KERNEL/{sub("CONFIG_KERNEL_","CONFIG_");print}' $(TOPDIR)/.config >> $(LINUX_DIR)/.config.target
