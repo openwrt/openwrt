@@ -17,8 +17,6 @@ define Image/Prepare
 	# For UBI we want only one extra block
 	rm -f $(KDIR)/ubi_mark
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
-
-	$(CP) ./ubinize.cfg $(KDIR)
 endef
 
 define Build/append-dtb
