@@ -28,6 +28,7 @@
 #include <endian.h>
 #include <string.h>
 #include <errno.h>
+#include <stdint.h>
 
 #include <sys/ioctl.h>
 #include <mtd/mtd-user.h>
