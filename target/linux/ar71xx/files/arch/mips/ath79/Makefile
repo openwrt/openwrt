@@ -205,6 +205,7 @@ obj-$(CONFIG_ATH79_MACH_WZR_HP_G300NH2)	+= mach-wzr-hp-g300nh2.o
 obj-$(CONFIG_ATH79_MACH_WZR_HP_AG300H)	+= mach-wzr-hp-ag300h.o
 obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
 obj-$(CONFIG_ATH79_MACH_WZR_450HP2)	+= mach-wzr-450hp2.o
+obj-$(CONFIG_ATH79_MACH_ZBT_WE1526)	+= mach-zbt-we1526.o
 obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
 obj-$(CONFIG_ATH79_MACH_CARAMBOLA2)	+= mach-carambola2.o
 obj-$(CONFIG_ATH79_MACH_NBG6716)	+= mach-nbg6716.o

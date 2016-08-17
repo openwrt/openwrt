@@ -1098,6 +1098,9 @@ ar71xx_board_detect() {
 	*WHR-HP-G300N)
 		name="whr-hp-g300n"
 		;;
+	*ZBT-WE1526)
+		name="zbt-we1526"
+		;;
 	*ZCN-1523H-2)
 		name="zcn-1523h-2"
 		;;
