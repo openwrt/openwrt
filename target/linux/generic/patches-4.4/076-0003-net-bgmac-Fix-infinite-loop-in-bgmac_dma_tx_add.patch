@@ -1,0 +1,27 @@
+From e86663c475d384ab5f46cb5637e9b7ad08c5c505 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Fri, 15 Jul 2016 15:42:52 -0700
+Subject: [PATCH] net: bgmac: Fix infinite loop in bgmac_dma_tx_add()
+
+Nothing is decrementing the index "i" while we are cleaning up the
+fragments we could not successful transmit.
+
+Fixes: 9cde94506eacf ("bgmac: implement scatter/gather support")
+Reported-by: coverity (CID 1352048)
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/broadcom/bgmac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -207,7 +207,7 @@ err_dma:
+ 	dma_unmap_single(dma_dev, slot->dma_addr, skb_headlen(skb),
+ 			 DMA_TO_DEVICE);
+ 
+-	while (i > 0) {
++	while (i-- > 0) {
+ 		int index = (ring->end + i) % BGMAC_TX_RING_SLOTS;
+ 		struct bgmac_slot_info *slot = &ring->slots[index];
+ 		u32 ctl1 = le32_to_cpu(ring->cpu_base[index].ctl1);
