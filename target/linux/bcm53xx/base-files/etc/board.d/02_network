@@ -8,6 +8,16 @@
 board_config_update
 
 board=$(cat /proc/device-tree/compatible | tr '\0' '\t' | cut -f 1)
+
+case "$board" in
+tenda,ac9)
+	ucidef_add_switch "switch0" \
+		"1:lan" "2:lan" "3:lan" "4:lan" "8@eth0" "0:wan" "5@eth1"
+	board_config_flush
+	exit 0
+	;;
+esac
+
 case "$board" in
 asus,rt-ac87u)
 	ifname=eth1
