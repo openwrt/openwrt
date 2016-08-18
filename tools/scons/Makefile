@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=scons
-PKG_VERSION:=2.4.1
+PKG_VERSION:=2.5.0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/scons \
 		http://fossies.org/linux/misc/
-PKG_MD5SUM:=9a0ddf33d9839f04380e0fae87cc4b40
+PKG_MD5SUM:=9e00fa0df8f5ca5c5f5975b40e0ed354
 
 include $(INCLUDE_DIR)/host-build.mk
 
