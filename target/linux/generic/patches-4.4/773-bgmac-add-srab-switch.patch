@@ -12,7 +12,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <linux/bcm47xx_nvram.h>
  #include "bgmac.h"
  
-@@ -1378,6 +1379,17 @@ static const struct ethtool_ops bgmac_et
+@@ -1399,6 +1400,17 @@ static const struct ethtool_ops bgmac_et
  	.get_drvinfo		= bgmac_get_drvinfo,
  };
  
@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * MII
   **************************************************/
-@@ -1510,6 +1522,14 @@ int bgmac_enet_probe(struct bgmac *info)
+@@ -1535,6 +1547,14 @@ int bgmac_enet_probe(struct bgmac *info)
  	net_dev->hw_features = net_dev->features;
  	net_dev->vlan_features = net_dev->features;
  
@@ -45,7 +45,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		dev_err(bgmac->dev, "Cannot register net device\n");
-@@ -1533,6 +1553,10 @@ EXPORT_SYMBOL_GPL(bgmac_enet_probe);
+@@ -1558,6 +1578,10 @@ EXPORT_SYMBOL_GPL(bgmac_enet_probe);
  
  void bgmac_enet_remove(struct bgmac *bgmac)
  {
@@ -58,15 +58,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	netif_napi_del(&bgmac->napi);
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
-@@ -390,6 +390,7 @@
- #define BGMAC_FEAT_NO_CLR_MIB		BIT(13)
- #define BGMAC_FEAT_FORCE_SPEED_2500	BIT(14)
- #define BGMAC_FEAT_CMDCFG_SR_REV4	BIT(15)
-+#define BGMAC_FEAT_SRAB			BIT(16)
+@@ -409,6 +409,7 @@
+ #define BGMAC_FEAT_CC4_IF_SW_TYPE	BIT(17)
+ #define BGMAC_FEAT_CC4_IF_SW_TYPE_RGMII	BIT(18)
+ #define BGMAC_FEAT_CC7_IF_TYPE_RGMII	BIT(19)
++#define BGMAC_FEAT_SRAB			BIT(20)
  
  struct bgmac_slot_info {
  	union {
-@@ -494,6 +495,9 @@ struct bgmac {
+@@ -513,6 +514,9 @@ struct bgmac {
  	u32 (*get_bus_clock)(struct bgmac *bgmac);
  	void (*cmn_maskset32)(struct bgmac *bgmac, u16 offset, u32 mask,
  			      u32 set);
@@ -78,11 +78,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  int bgmac_enet_probe(struct bgmac *info);
 --- a/drivers/net/ethernet/broadcom/bgmac-bcma.c
 +++ b/drivers/net/ethernet/broadcom/bgmac-bcma.c
-@@ -229,6 +229,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -231,6 +231,7 @@ static int bgmac_probe(struct bcma_devic
  		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
  		bgmac->feature_flags |= BGMAC_FEAT_NO_RESET;
  		bgmac->feature_flags |= BGMAC_FEAT_FORCE_SPEED_2500;
 +		bgmac->feature_flags |= BGMAC_FEAT_SRAB;
  		break;
- 	default:
+ 	case BCMA_CHIP_ID_BCM53573:
  		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
