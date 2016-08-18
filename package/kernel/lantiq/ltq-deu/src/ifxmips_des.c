@@ -465,14 +465,15 @@ int ecb_des_encrypt(struct blkcipher_desc *desc,
         struct des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
         struct blkcipher_walk walk;
         int err;
+        unsigned int enc_bytes;
 
         blkcipher_walk_init(&walk, dst, src, nbytes);
         err = blkcipher_walk_virt(desc, &walk);
 
-        while ((nbytes = walk.nbytes)) {
-                nbytes -= (nbytes % DES_BLOCK_SIZE); 
+        while ((nbytes = enc_bytes = walk.nbytes)) {
+                enc_bytes -= (nbytes % DES_BLOCK_SIZE);
                 ifx_deu_des_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                               NULL, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+                               NULL, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
                 nbytes &= DES_BLOCK_SIZE - 1;
                 err = blkcipher_walk_done(desc, &walk, nbytes);
         }
@@ -496,15 +497,16 @@ int ecb_des_decrypt(struct blkcipher_desc *desc,
         struct des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
         struct blkcipher_walk walk;
         int err;
+        unsigned int dec_bytes;
 
         DPRINTF(1, "\n");
         blkcipher_walk_init(&walk, dst, src, nbytes);
         err = blkcipher_walk_virt(desc, &walk);
 
-        while ((nbytes = walk.nbytes)) {
-                nbytes -= (nbytes % DES_BLOCK_SIZE); 
+        while ((nbytes = dec_bytes = walk.nbytes)) {
+                dec_bytes -= (nbytes % DES_BLOCK_SIZE);
                 ifx_deu_des_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                               NULL, nbytes, CRYPTO_DIR_DECRYPT, 0);
+                               NULL, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
                 nbytes &= DES_BLOCK_SIZE - 1;
                 err = blkcipher_walk_done(desc, &walk, nbytes);
         }
@@ -574,16 +576,17 @@ int cbc_des_encrypt(struct blkcipher_desc *desc,
         struct des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
         struct blkcipher_walk walk;
         int err;
+        unsigned int enc_bytes;
 
         DPRINTF(1, "\n");
         blkcipher_walk_init(&walk, dst, src, nbytes);
         err = blkcipher_walk_virt(desc, &walk);
 
-        while ((nbytes = walk.nbytes)) {
+        while ((nbytes = enc_bytes = walk.nbytes)) {
                 u8 *iv = walk.iv;
-                nbytes -= (nbytes % DES_BLOCK_SIZE); 
+                enc_bytes -= (nbytes % DES_BLOCK_SIZE);
                 ifx_deu_des_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                               iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);      
+                               iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
                 nbytes &= DES_BLOCK_SIZE - 1;
                 err = blkcipher_walk_done(desc, &walk, nbytes);
         }
@@ -607,16 +610,17 @@ int cbc_des_decrypt(struct blkcipher_desc *desc,
         struct des_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
         struct blkcipher_walk walk;
         int err;
+        unsigned int dec_bytes;
 
         DPRINTF(1, "\n");
         blkcipher_walk_init(&walk, dst, src, nbytes);
         err = blkcipher_walk_virt(desc, &walk);
 
-        while ((nbytes = walk.nbytes)) {
+        while ((nbytes = dec_bytes = walk.nbytes)) {
                 u8 *iv = walk.iv;
-                nbytes -= (nbytes % DES_BLOCK_SIZE); 
+                dec_bytes -= (nbytes % DES_BLOCK_SIZE);
                 ifx_deu_des_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                               iv, nbytes, CRYPTO_DIR_DECRYPT, 0);
+                               iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
                 nbytes &= DES_BLOCK_SIZE - 1;
                 err = blkcipher_walk_done(desc, &walk, nbytes);
         }

@@ -249,6 +249,26 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
         byte_cnt -= 16;
     }
 
+    /* To handle all non-aligned bytes (not aligned to 16B size) */
+    if (byte_cnt) {
+        aes->ID3R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 0));
+        aes->ID2R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 1));
+        aes->ID1R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 2));
+        aes->ID0R = INPUT_ENDIAN_SWAP(*((u32 *) in_arg + (i * 4) + 3));    /* start crypto */
+
+        while (aes->controlr.BUS) {
+        }
+
+        *((volatile u32 *) out_arg + (i * 4) + 0) = aes->OD3R;
+        *((volatile u32 *) out_arg + (i * 4) + 1) = aes->OD2R;
+        *((volatile u32 *) out_arg + (i * 4) + 2) = aes->OD1R;
+        *((volatile u32 *) out_arg + (i * 4) + 3) = aes->OD0R;
+
+        /* to ensure that the extended pages are clean */
+        memset (out_arg + (i * 16) + (nbytes % AES_BLOCK_SIZE), 0,
+                (AES_BLOCK_SIZE - (nbytes % AES_BLOCK_SIZE)));
+
+    }
 
     //tc.chen : copy iv_arg back
     if (mode > 0) {
@@ -467,14 +487,15 @@ int ecb_aes_encrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
+    unsigned int enc_bytes;
     
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = walk.nbytes)) {
-            nbytes -= (nbytes % AES_BLOCK_SIZE); 
+    while ((nbytes = enc_bytes = walk.nbytes)) {
+            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
         ifx_deu_aes_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       NULL, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+                       NULL, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
                 nbytes &= AES_BLOCK_SIZE - 1;
         err = blkcipher_walk_done(desc, &walk, nbytes);
     }
@@ -498,14 +519,15 @@ int ecb_aes_decrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
+    unsigned int dec_bytes;
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = walk.nbytes)) {
-            nbytes -= (nbytes % AES_BLOCK_SIZE); 
+    while ((nbytes = dec_bytes = walk.nbytes)) {
+            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
         ifx_deu_aes_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       NULL, nbytes, CRYPTO_DIR_DECRYPT, 0);
+                       NULL, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
         nbytes &= AES_BLOCK_SIZE - 1;
         err = blkcipher_walk_done(desc, &walk, nbytes);
     }
@@ -553,15 +575,16 @@ int cbc_aes_encrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
+    unsigned int enc_bytes;
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = walk.nbytes)) {
+    while ((nbytes = enc_bytes = walk.nbytes)) {
             u8 *iv = walk.iv;
-            nbytes -= (nbytes % AES_BLOCK_SIZE);            
+            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
             ifx_deu_aes_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);  
+                       iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
         nbytes &= AES_BLOCK_SIZE - 1;
         err = blkcipher_walk_done(desc, &walk, nbytes);
     }
@@ -585,15 +608,16 @@ int cbc_aes_decrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
+    unsigned int dec_bytes;
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = walk.nbytes)) {
+    while ((nbytes = dec_bytes = walk.nbytes)) {
         u8 *iv = walk.iv;
-            nbytes -= (nbytes % AES_BLOCK_SIZE);        
+            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
             ifx_deu_aes_cbc(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       iv, nbytes, CRYPTO_DIR_DECRYPT, 0);
+                       iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
         nbytes &= AES_BLOCK_SIZE - 1;
         err = blkcipher_walk_done(desc, &walk, nbytes);
     }
@@ -642,15 +666,16 @@ int ctr_basic_aes_encrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
+    unsigned int enc_bytes;
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = walk.nbytes)) {
+    while ((nbytes = enc_bytes = walk.nbytes)) {
             u8 *iv = walk.iv;
-            nbytes -= (nbytes % AES_BLOCK_SIZE);            
+            enc_bytes -= (nbytes % AES_BLOCK_SIZE);
             ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);  
+                       iv, enc_bytes, CRYPTO_DIR_ENCRYPT, 0);
         nbytes &= AES_BLOCK_SIZE - 1;
         err = blkcipher_walk_done(desc, &walk, nbytes);
     }
@@ -674,15 +699,16 @@ int ctr_basic_aes_decrypt(struct blkcipher_desc *desc,
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
     int err;
+    unsigned int dec_bytes;
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
     err = blkcipher_walk_virt(desc, &walk);
 
-    while ((nbytes = walk.nbytes)) {
+    while ((nbytes = dec_bytes = walk.nbytes)) {
         u8 *iv = walk.iv;
-            nbytes -= (nbytes % AES_BLOCK_SIZE);        
+            dec_bytes -= (nbytes % AES_BLOCK_SIZE);
             ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       iv, nbytes, CRYPTO_DIR_DECRYPT, 0);
+                       iv, dec_bytes, CRYPTO_DIR_DECRYPT, 0);
         nbytes &= AES_BLOCK_SIZE - 1;
         err = blkcipher_walk_done(desc, &walk, nbytes);
     }
@@ -730,7 +756,7 @@ int ctr_rfc3686_aes_encrypt(struct blkcipher_desc *desc,
 {
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
-    int err;
+    int err, bsize = nbytes;
     u8 rfc3686_iv[16];
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
@@ -744,12 +770,29 @@ int ctr_rfc3686_aes_encrypt(struct blkcipher_desc *desc,
     *(__be32 *)(rfc3686_iv + CTR_RFC3686_NONCE_SIZE + CTR_RFC3686_IV_SIZE) =
         cpu_to_be32(1);
 
-    while ((nbytes = walk.nbytes)) {
-            nbytes -= (nbytes % AES_BLOCK_SIZE);            
-            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       rfc3686_iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);  
-        nbytes &= AES_BLOCK_SIZE - 1;
-        err = blkcipher_walk_done(desc, &walk, nbytes);
+    /* scatterlist source is the same size as request size, just process once */
+    if (nbytes == walk.nbytes) {
+	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			rfc3686_iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+	nbytes -= walk.nbytes;
+	err = blkcipher_walk_done(desc, &walk, nbytes);
+	return err;
+    }
+
+    while ((nbytes = walk.nbytes) && (walk.nbytes >= AES_BLOCK_SIZE)) {
+	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			rfc3686_iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+
+	nbytes -= walk.nbytes;
+	bsize -= walk.nbytes;
+	err = blkcipher_walk_done(desc, &walk, nbytes);
+    }
+
+    /* to handle remaining bytes < AES_BLOCK_SIZE */
+    if (walk.nbytes) {
+	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			rfc3686_iv, walk.nbytes, CRYPTO_DIR_ENCRYPT, 0);
+	err = blkcipher_walk_done(desc, &walk, 0);
     }
    
     return err;
@@ -770,7 +813,7 @@ int ctr_rfc3686_aes_decrypt(struct blkcipher_desc *desc,
 {
     struct aes_ctx *ctx = crypto_blkcipher_ctx(desc->tfm);
     struct blkcipher_walk walk;
-    int err;
+    int err, bsize = nbytes;
     u8 rfc3686_iv[16];
 
     blkcipher_walk_init(&walk, dst, src, nbytes);
@@ -784,12 +827,29 @@ int ctr_rfc3686_aes_decrypt(struct blkcipher_desc *desc,
     *(__be32 *)(rfc3686_iv + CTR_RFC3686_NONCE_SIZE + CTR_RFC3686_IV_SIZE) =
         cpu_to_be32(1);
 
-    while ((nbytes = walk.nbytes)) {
-            nbytes -= (nbytes % AES_BLOCK_SIZE);        
-            ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
-                       rfc3686_iv, nbytes, CRYPTO_DIR_DECRYPT, 0);
-        nbytes &= AES_BLOCK_SIZE - 1;
-        err = blkcipher_walk_done(desc, &walk, nbytes);
+    /* scatterlist source is the same size as request size, just process once */
+    if (nbytes == walk.nbytes) {
+	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			rfc3686_iv, nbytes, CRYPTO_DIR_ENCRYPT, 0);
+	nbytes -= walk.nbytes;
+	err = blkcipher_walk_done(desc, &walk, nbytes);
+	return err;
+    }
+
+    while ((nbytes = walk.nbytes) % (walk.nbytes >= AES_BLOCK_SIZE)) {
+	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			rfc3686_iv, nbytes, CRYPTO_DIR_DECRYPT, 0);
+
+	nbytes -= walk.nbytes;
+	bsize -= walk.nbytes;
+	err = blkcipher_walk_done(desc, &walk, nbytes);
+    }
+
+    /* to handle remaining bytes < AES_BLOCK_SIZE */
+    if (walk.nbytes) {
+	ifx_deu_aes_ctr(ctx, walk.dst.virt.addr, walk.src.virt.addr,
+			rfc3686_iv, walk.nbytes, CRYPTO_DIR_ENCRYPT, 0);
+	err = blkcipher_walk_done(desc, &walk, 0);
     }
 
     return err;
