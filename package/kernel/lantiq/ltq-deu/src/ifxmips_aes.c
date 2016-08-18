@@ -252,10 +252,10 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 
     //tc.chen : copy iv_arg back
     if (mode > 0) {
-        *((u32 *) iv_arg) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg));
-        *((u32 *) iv_arg + 1) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));             
-        *((u32 *) iv_arg + 2) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 2));             
-        *((u32 *) iv_arg + 3) = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 3));              
+        *((u32 *) iv_arg) = DEU_ENDIAN_SWAP(aes->IV3R);
+        *((u32 *) iv_arg + 1) = DEU_ENDIAN_SWAP(aes->IV2R);
+        *((u32 *) iv_arg + 2) = DEU_ENDIAN_SWAP(aes->IV1R);
+        *((u32 *) iv_arg + 3) = DEU_ENDIAN_SWAP(aes->IV0R);
     }
 
     CRTCL_SECT_END;
