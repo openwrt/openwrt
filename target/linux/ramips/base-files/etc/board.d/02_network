@@ -333,8 +333,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 57350)
 		;;
 	tew-691gr)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 3)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 3)
 		;;
 	tew-692gr)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 4)" 1)

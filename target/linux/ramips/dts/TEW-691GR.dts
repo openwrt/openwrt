@@ -86,7 +86,7 @@
 };
 
 &ethernet {
-	mtd-mac-address = <&factory 0x28>;
+	mtd-mac-address = <&factory 0x4>;
 
 	port@0 {
 		phy-handle = <&phy0>;
@@ -98,10 +98,13 @@
 
 		phy0: ethernet-phy@0 {
 			reg = <0>;
+			phy-mode = "rgmii";
 		};
 	};
 };
 
 &wmac {
+	status = "okay";
+	ralink,mtd-eeprom = <&factory 0x0>;
 	ralink,5ghz = <0>;
 };
