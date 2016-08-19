@@ -87,7 +87,7 @@ endif
 endef
 
 define Image/BuildKernel
-	$(call MkDTB,$($(PROFILE)_DEVICE_DTS))
+	$(if $(IB),,$(call MkDTB,$($(PROFILE)_DEVICE_DTS)))
 	$(call Image/BuildKernel/uImage,$(PROFILE))
 endef
 
