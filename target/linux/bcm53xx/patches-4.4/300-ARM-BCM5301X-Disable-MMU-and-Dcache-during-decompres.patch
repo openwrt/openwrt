@@ -82,19 +82,20 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +	mov	r8, r12
 --- a/arch/arm/boot/compressed/cache-v7-min.S
 +++ b/arch/arm/boot/compressed/cache-v7-min.S
-@@ -51,7 +51,7 @@ loop2:
- loop3:
- 	orr	r11, r10, r9, lsl r5		@ factor way and cache number into r11
- 	orr	r11, r11, r7, lsl r2		@ factor index number into r11
+@@ -12,6 +12,7 @@
+ 
+ #include <linux/linkage.h>
+ #include <linux/init.h>
++#include <asm/assembler.h>
+ 
+ 	__INIT
+ 
+@@ -63,7 +64,7 @@ loop2:
+  ARM(	orr	r11, r11, r9, lsl r2	)	@ factor index number into r11
+  THUMB(	lsl	r6, r9, r2		)
+  THUMB(	orr	r11, r11, r6		)	@ factor index number into r11
 -	mcr	p15, 0, r11, c7, c14, 2		@ clean & invalidate by set/way
-+	mcr     p15, 0, r11, c7, c6, 2		@ Invalidate line
- 	subs	r9, r9, #1			@ decrement the way
- 	bge	loop3
- 	subs	r7, r7, #1			@ decrement the index
-@@ -63,5 +63,6 @@ skip:
- finished:
- 	mov	r10, #0				@ swith back to cache level 0
- 	mcr	p15, 2, r10, c0, c0, 0		@ select current cache level in cssr
-+	dsb
- 	isb
- 	mov	pc, lr
++	mcr     p15, 0, r11, c7, c6, 2		@ clean & invalidate by set/way
+ 	subs	r9, r9, #1			@ decrement the index
+ 	bge	loop2
+ 	subs	r4, r4, #1			@ decrement the way
