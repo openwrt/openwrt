@@ -225,7 +225,7 @@ define Device/tenda-ac9
   IMAGES := trx
   IMAGE/trx := append-rootfs | trx-serial
 endef
-# TARGET_DEVICES += tenda-ac9
+TARGET_DEVICES += tenda-ac9
 
 TARGET_DEVICES += \
 	netgear-r6250 netgear-r6300-v2 netgear-r8000 \
