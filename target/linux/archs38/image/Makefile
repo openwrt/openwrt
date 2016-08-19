@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/image.mk
 # in memory from build to built. Thus we need to extract EP from vmlinux
 # every time before generation of uImage.
 define Build/calculate-ep
-	$(eval KERNEL_ENTRY=$(shell $(KERNEL_CROSS)readelf -h $(LINUX_DIR)/vmlinux | grep "Entry point address" | grep -o 0x.*))
+	$(eval KERNEL_ENTRY=$(shell $(KERNEL_CROSS)readelf -h $(1) | grep "Entry point address" | grep -o 0x.*))
 endef
 
 define Build/build-dtb
@@ -36,7 +36,8 @@ define Device/nsim_hs
 	DEVICE_DTS := nsim_hs_idu
 endef
 TARGET_DEVICES += nsim_hs
-else
+endif
+
 # Root FS on SD-card
 KERNEL_LOADADDR := 0x80000000
 DEVICE_DTS_LIST:= axs103_idu
@@ -65,7 +66,7 @@ endef
 
 define Image/BuildKernel
 	# Build unified uImage
-	$(call Build/calculate-ep)
+	$(call Build/calculate-ep, $(KDIR)/vmlinux.elf)
 	$(call Image/BuildKernel/MkuImage, \
 		none, $(KERNEL_LOADADDR), $(KERNEL_ENTRY), \
 		$(KDIR)/vmlinux, \
@@ -81,6 +82,5 @@ define Image/Build
 	$(call Image/Build/SDCard,$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
-endif
 
 $(eval $(call BuildImage))
