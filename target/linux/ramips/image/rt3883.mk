@@ -2,6 +2,26 @@
 # RT3662/RT3883 Profiles
 #
 
+define Device/TEW691GR
+  DTS := TEW-691GR
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | umedia-header 0x026910
+  DEVICE_TITLE := TRENDnet TEW-691GR
+  DEVICE_PACKAGES := swconfig
+endef
+TARGET_DEVICES += TEW691GR
+
+
+define Device/TEW692GR
+  DTS := TEW-692GR
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | umedia-header 0x026920
+  DEVICE_TITLE := TRENDnet TEW-692GR
+  DEVICE_PACKAGES := swconfig
+endef
+TARGET_DEVICES += TEW692GR
+
+
 # $(1) = squashfs/initramfs
 # $(2) = lowercase board name
 # $(3) = dts file
@@ -41,8 +61,6 @@ Image/Build/Profile/DIR645=$(call BuildFirmware/Seama/$(1),$(1),dir-645,DIR-645,
 hpm_mtd_size=16449536
 Image/Build/Profile/HPM=$(call BuildFirmware/CustomFlash/$(1),$(1),hpm,HPM,$(hpm_mtd_size))
 Image/Build/Profile/RTN56U=$(call BuildFirmware/RTN56U/$(1),$(1),rt-n56u,RT-N56U)
-Image/Build/Profile/TEW691GR=$(call BuildFirmware/UMedia/$(1),$(1),tew-691gr,TEW-691GR,0x026910)
-Image/Build/Profile/TEW692GR=$(call BuildFirmware/UMedia/$(1),$(1),tew-692gr,TEW-692GR,0x026920)
 kernel_size_BR6475ND:=2097152
 rootfs_size_BR6475ND:=5832704
 Image/Build/Profile/BR6475ND=$(call BuildFirmware/EdimaxCombined/$(1),$(1),br-6475nd,BR-6475ND,$(kernel_size_BR6475ND),$(rootfs_size_BR6475ND),CSYS,RN54,0x70000,0x01100000)
@@ -74,20 +92,6 @@ define LegacyDevice/RTN56U
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
 LEGACY_DEVICES += RTN56U
-
-
-define LegacyDevice/TEW691GR
-  DEVICE_TITLE := TRENDnet TEW-691GR
-  DEVICE_PACKAGES := swconfig
-endef
-LEGACY_DEVICES += TEW691GR
-
-
-define LegacyDevice/TEW692GR
-  DEVICE_TITLE := TEW692GR
-  DEVICE_PACKAGES := swconfig
-endef
-LEGACY_DEVICES += TEW692GR
 
 
 define LegacyDevice/BR6475ND
