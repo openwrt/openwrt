@@ -74,6 +74,10 @@ define MkCombineduImage
 	$(call MkImage,lzma,$(KDIR)/vmlinux-$(2).bin.lzma.combined,$(call sysupname,$(1),$(2)),$(6))
 endef
 
+define Build/umedia-header
+	fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
+endef
+
 #
 # The real magic happens inside these templates
 #

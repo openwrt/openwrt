@@ -26,10 +26,6 @@ define Build/poray-header
 		mv $@.new $@
 endef
 
-define Build/umedia-header
-	fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
-endef
-
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
 	( \
