@@ -56,6 +56,7 @@ case "$FIRMWARE" in
 		hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ath10kcal_extract "art" 4096 12064
 		;;
+         r7500v2 |\
          r7800)
 		ath10kcal_extract "art" 4096 12064
 		;;
@@ -71,6 +72,7 @@ case "$FIRMWARE" in
 		hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ath10kcal_extract "art" 20480 12064
 		;;
+        r7500v2 |\
         r7800)
 		ath10kcal_extract "art" 20480 12064
 		;;

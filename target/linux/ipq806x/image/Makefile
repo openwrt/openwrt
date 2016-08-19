@@ -175,6 +175,19 @@ define Device/R7500
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
+define Device/R7500v2
+	$(call Device/DniImage)
+	DEVICE_DTS := qcom-ipq8064-r7500v2
+	KERNEL_SIZE := 2097152
+	NETGEAR_BOARD_ID := R7500v2
+	NETGEAR_HW_ID := 29764958+0+128+512+3x3+4x4
+	BLOCKSIZE := 128KiB
+	PAGESIZE := 2048
+	BOARD_NAME := r7500v2
+	DEVICE_TITLE := Netgear Nighthawk X4 R7500v2
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+endef
+
 define Device/R7800
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8064-r7800
@@ -188,6 +201,6 @@ define Device/R7800
 	DEVICE_PACKAGES := ath10k-firmware-qca9984
 endef
 
-TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 R7500 R7800
+TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 R7500 R7500v2 R7800
 
 $(eval $(call BuildImage))
