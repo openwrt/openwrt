@@ -10,6 +10,7 @@ platform_check_image() {
 	d7800 |\
 	ea8500 |\
 	r7500 |\
+	r7500v2 |\
 	r7800)
 		nand_do_platform_check $board $1
 		return $?;
@@ -34,6 +35,7 @@ platform_pre_upgrade() {
 	ap148 |\
 	d7800 |\
 	r7500 |\
+	r7500v2 |\
 	r7800)
 		nand_do_upgrade "$1"
 		;;

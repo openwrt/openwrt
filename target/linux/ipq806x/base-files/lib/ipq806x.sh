@@ -29,6 +29,9 @@ ipq806x_board_detect() {
 	*"R7500")
 		name="r7500"
 		;;
+	*"R7500v2")
+		name="r7500v2"
+		;;
 	*"Linksys EA8500"*)
 		name="ea8500"
 		;;
