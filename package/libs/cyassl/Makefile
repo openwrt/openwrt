@@ -35,6 +35,10 @@ CyaSSL is an SSL library optimized for small footprint, both on disk and for
 memory use.
 endef
 
+define Package/libcyassl/config
+	source "$(SOURCE)/Config.in"
+endef
+
 TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
@@ -42,8 +46,68 @@ CONFIGURE_ARGS += \
 	--enable-opensslextra \
 	--enable-sni \
 	--enable-stunnel \
-	--enable-ecc \
 	--disable-examples
+
+ifeq ($(CONFIG_IPV6),y)
+CONFIGURE_ARGS += \
+        --enable-ipv6
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_AES_CCM),y)
+CONFIGURE_ARGS += \
+	--enable-aesccm
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_AES_GCM),y)
+CONFIGURE_ARGS += \
+	--enable-aesgcm
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_CHACHA),y)
+CONFIGURE_ARGS += \
+	--enable-chacha
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_ECC),y)
+CONFIGURE_ARGS += \
+	--enable-ecc \
+	--enable-supportedcurves
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_DH),y)
+CONFIGURE_ARGS += \
+	--enable-dh
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_ARC4),n)
+CONFIGURE_ARGS += \
+	--disable-arc4
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_DES3),y)
+CONFIGURE_ARGS += \
+	--disable-des3
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_PSK),y)
+CONFIGURE_ARGS += \
+	--enable-psk
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_DTLS),y)
+CONFIGURE_ARGS += \
+	--enable-dtls
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_ECC25519),y)
+CONFIGURE_ARGS += \
+	--enable-ecc25519
+endif
+
+ifeq ($(CONFIG_CYASSL_HAS_POLY1305),y)
+CONFIGURE_ARGS += \
+	--enable-poly1305
+endif
 
 #ifneq ($(CONFIG_TARGET_x86),)
 #	CONFIGURE_ARGS += --enable-intelasm
@@ -53,13 +117,15 @@ CONFIGURE_ARGS += \
 #endif
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
 
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libwolfssl.{so*,la} $(1)/usr/lib/
 	ln -s libwolfssl.so $(1)/usr/lib/libcyassl.so
 	ln -s libwolfssl.la $(1)/usr/lib/libcyassl.la
+
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/*.pc $(1)/usr/lib/pkgconfig
 endef
 
 define Package/libcyassl/install
