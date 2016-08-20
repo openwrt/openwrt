@@ -190,6 +190,14 @@ keenetic)
 	set_usb_led "zyxel:green:usb"
 	set_wifi_led "rt2800soc-phy0::radio"
 	;;
+keenetic_4g_a)
+	ucidef_set_led_default "power" "power" "zyxel:green:power" "1"
+	set_usb_led "zyxel:green:usb"
+	set_wifi_led "rt2800soc-phy0::radio"
+	;;
+keenetic_lite_a)
+	ucidef_set_led_default "power" "power" "zyxel:green:power" "1"
+	;;
 m2m)
 	set_wifi_led "$board:blue:wifi"
 	ucidef_set_led_netdev "eth" "Ethernet" "$board:green:wan" "eth0"

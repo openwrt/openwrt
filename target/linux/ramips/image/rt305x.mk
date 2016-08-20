@@ -294,10 +294,14 @@ Image/Build/Profile/NBG-419N=$(call BuildFirmware/Default4M/$(1),$(1),nbg-419n,N
 Image/Build/Profile/MZKW300NH2=$(call BuildFirmware/Edimax/$(1),$(1),mzk-w300nh2,MZK-W300NH2,$(mzkw300nh2_mtd_size),CSYS,RN52,0x50000,0xc0000)
 Image/Build/Profile/MZKWDPR=$(call BuildFirmware/Default8M/$(1),$(1),mzk-wdpr,MZK-WDPR)
 Image/Build/Profile/NCS601W=$(call BuildFirmware/Default8M/$(1),$(1),ncs601W,NCS601W)
+# 3538948(=0x360004) = 3866624(ralink_default_fw_size_4M=0x3B0000) - 327680(=0x50000) + 4
+keenetic_rt305x_mtd_size_4M=3538948
 # 7733252(=0x760004) = 8060928(ralink_default_fw_size_8M=0x7B0000) - 327680(=0x50000) + 4
 keenetic_rt305x_mtd_size_8M=7733252
 Image/Build/Profile/KEENETIC=$(call BuildFirmware/ZyXEL_Keenetic_series/$(1),$(1),keenetic,KEENETIC,$(keenetic_rt305x_mtd_size_8M),1245184,0x00004215)
+Image/Build/Profile/KEENETIC_LITE_A=$(call BuildFirmware/ZyXEL_Keenetic_series/$(1),$(1),keenetic_lite_a,KEENETIC_LITE_A,$(keenetic_rt305x_mtd_size_4M),983040,0x00000417)
 Image/Build/Profile/NBG4104=$(call BuildFirmware/ZyXEL_Keenetic_series/$(1),$(1),nbg4104,NBG4104,$(keenetic_rt305x_mtd_size_8M),1245184,0x00004104)
+Image/Build/Profile/KEENETIC_4G_A=$(call BuildFirmware/ZyXEL_Keenetic_series/$(1),$(1),keenetic_4g_a,KEENETIC_4G_A,$(keenetic_rt305x_mtd_size_4M),983040,0x00004115)
 Image/Build/Profile/NBG4114=$(call BuildFirmware/ZyXEL_Keenetic_series/$(1),$(1),nbg4114,NBG4114,$(keenetic_rt305x_mtd_size_8M),1245184,0x00005115)
 nw718_mtd_size=3801088
 Image/Build/Profile/NW718=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),nw718m,NW718,$(nw718_mtd_size),ARA1B4NCRNW718;1,factory)
@@ -385,6 +389,8 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/JHR-N825R,$(1))
 	$(call Image/Build/Profile/JHR-N926R,$(1))
 	$(call Image/Build/Profile/KEENETIC,$(1))
+	$(call Image/Build/Profile/KEENETIC_4G_A,$(1))
+	$(call Image/Build/Profile/KEENETIC_LITE_A,$(1))
 	$(call Image/Build/Profile/M2M,$(1))
 	$(call Image/Build/Profile/M3,$(1))
 	$(call Image/Build/Profile/M4,$(1))

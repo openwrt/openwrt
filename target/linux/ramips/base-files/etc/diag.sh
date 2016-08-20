@@ -127,6 +127,8 @@ get_status_led() {
 		status_led="$board:blue:system"
 		;;
 	keenetic|\
+	keenetic_4g_a|\
+	keenetic_lite_a|\
 	nbg4104|\
 	nbg4114)
 		status_led="zyxel:green:power"

@@ -15,6 +15,7 @@ packages_USB:=$(packages_KMOD_USB) $(packages_LUCI_USB) $(packages_NET_USB) $(pa
 # for routers without USB:
 # packages_FS_NET:=davfs2 libneon posixovl
 packages_NOUSB:=$(packages_FS_NET)
+packages_NOIPv6:=-kmod-ip6tables -kmod-ipv6 -odhcp6c -odhcpd -libip6tc
 
 packages_NET_ETHERNET:=xl2tpd ppp-mod-pptp
 packages_LUCI_GENERIC:=luci
@@ -22,6 +23,7 @@ packages_GENERIC:=kmod-ledtrig-netdev kmod-nls-utf8
 packages_IPv6:=luci-proto-ipv6
 
 packages_8M:=ntfs-3g kmod-fs-vfat zram-swap
+packages_4M:=-dropbear
 
 define Profile/KEENETIC
 	NAME:=ZyXEL Keenetic
@@ -33,6 +35,17 @@ define Profile/KEENETIC/Description
 endef
 $(eval $(call Profile,KEENETIC))
 
+define Profile/KEENETIC_LITE_A
+	NAME:=ZyXEL Keenetic Lite rev.A
+	PACKAGES:=$(packages_GENERIC) $(packages_NET_ETHERNET) $(packages_NOUSB) $(packages_NOIPv6) $(packages_LUCI_GENERIC) $(packages_4M) kmod-ledtrig-heartbeat
+endef
+
+define Profile/KEENETIC_LITE_A/Description
+	Package set for ZyXEL Keenetic Lite rev.A board
+endef
+
+$(eval $(call Profile,KEENETIC_LITE_A))
+
 define Profile/NBG4104
 	NAME:=ZyXEL Keenetic Lite rev.B/NBG4104
 	PACKAGES:=$(packages_GENERIC) $(packages_NET_ETHERNET) $(packages_NOUSB) $(packages_IPv6) $(packages_LUCI_GENERIC)
@@ -43,6 +56,17 @@ define Profile/NBG4104/Description
 endef
 
 $(eval $(call Profile,NBG4104))
+
+define Profile/KEENETIC_4G_A
+	NAME:=ZyXEL Keenetic 4G rev.A
+	PACKAGES:=$(packages_GENERIC) $(packages_NET_ETHERNET) $(packages_USB) $(packages_NOIPv6) $(packages_LUCI_GENERIC) $(packages_4M) kmod-ledtrig-heartbeat block-mount
+endef
+
+define Profile/KEENETIC_4G_A/Description
+	Package set for ZyXEL Keenetic 4G rev.A board
+endef
+
+$(eval $(call Profile,KEENETIC_4G_A))
 
 define Profile/NBG4114
 	NAME:=ZyXEL Keenetic 4G rev.B/NBG4114

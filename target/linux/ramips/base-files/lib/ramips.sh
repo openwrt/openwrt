@@ -544,8 +544,14 @@ ramips_board_detect() {
 	*"ZyXEL Keenetic")
 		name="keenetic"
 		;;
+	*"ZyXEL Keenetic Lite rev.A")
+		name="keenetic_lite_a"
+		;;
 	*"ZyXEL Keenetic Lite rev.B/NBG4104")
 		name="nbg4104"
+		;;
+	*"ZyXEL Keenetic 4G rev.A")
+		name="keenetic_4g_a"
 		;;
 	*"ZyXEL Keenetic 4G rev.B/NBG4114")
 		name="nbg4114"

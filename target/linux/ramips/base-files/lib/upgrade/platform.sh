@@ -72,6 +72,8 @@ platform_check_image() {
 	jhr-n825r|\
 	jhr-n926r|\
 	keenetic | \
+	keenetic_4g_a | \
+	keenetic_lite_a | \
 	linkits7688|\
 	linkits7688d|\
 	m2m|\
