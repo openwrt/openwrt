@@ -71,6 +71,7 @@ ramips_setup_interfaces()
 	dir-615-h1|\
 	firewrt|\
 	hlk-rm04|\
+	keenetic | \
 	miwifi-mini|\
 	miwifi-nano|\
 	mt7621|\
@@ -338,6 +339,7 @@ ramips_setup_macs()
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 5)
 		;;
+	keenetic | \
 	wcr-150gn)
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;

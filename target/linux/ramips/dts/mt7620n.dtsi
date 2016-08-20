@@ -228,6 +228,13 @@
 		state_default: pinctrl0 {
 		};
 
+		i2c_pins: i2c {
+			i2c {
+				ralink,group = "i2c";
+				ralink,function = "i2c";
+			};
+		};
+
 		spi_pins: spi {
 			spi {
 				ralink,group = "spi";
@@ -242,10 +249,52 @@
 			};
 		};
 
+		uartf_pins: uartf {
+			uartf {
+				ralink,group = "uartf";
+				ralink,function = "uartf";
+			};
+		};
+
 		uartlite_pins: uartlite {
 			uart {
 				ralink,group = "uartlite";
 				ralink,function = "uartlite";
+			};
+		};
+
+		wdt_pins: wdt {
+			wdt {
+				ralink,group = "wdt";
+				ralink,function = "wdt";
+			};
+		};
+
+		pa_pins: pa {
+			pa {
+				ralink,group = "pa";
+				ralink,function = "pa";
+			};
+		};
+
+		mdio_pins: mdio {
+			mdio {
+				ralink,group = "mdio";
+				ralink,function = "mdio";
+			};
+		};
+
+		rgmii1_pins: rgmii1 {
+			rgmii1 {
+				ralink,group = "rgmii1";
+				ralink,function = "rgmii1";
+			};
+		};
+
+		phy_led_pins: phy_led {
+			phy_led {
+				ralink,group = "led";
+				ralink,function = "led";
 			};
 		};
 	};

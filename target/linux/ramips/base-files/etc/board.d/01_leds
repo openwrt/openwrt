@@ -157,7 +157,7 @@ hc5661)
 	ucidef_set_led_default "system" "system" "$board:blue:system" "1"
 	ucidef_set_led_netdev "internet" "internet" "$board:blue:internet" "eth0.2"
 	set_wifi_led "$board:blue:wlan2g"
-	;;	
+	;;
 hc5761)
 	ucidef_set_led_default "system" "system" "$board:blue:system" "1"
 	ucidef_set_led_netdev "internet" "internet" "$board:blue:internet" "eth0.2"
@@ -184,6 +184,11 @@ hpm)
 ht-tm02)
 	ucidef_set_led_netdev "eth" "Ethernet" "$board:green:lan" "eth0"
 	set_wifi_led "$board:blue:wlan"
+	;;
+keenetic)
+	ucidef_set_led_default "power" "power" "zyxel:green:power" "1"
+	set_usb_led "zyxel:green:usb"
+	set_wifi_led "rt2800soc-phy0::radio"
 	;;
 m2m)
 	set_wifi_led "$board:blue:wifi"

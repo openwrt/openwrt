@@ -132,7 +132,7 @@ endef
 buffalo_whrg300n_mtd_size=3801088
 define BuildFirmware/WHRG300N/squashfs
 	$(call BuildFirmware/Default4M/$(1),$(1),whr-g300n,WHR-G300N)
-	# the following line has a bad argument 3 ... the old Makefile was already broken	
+	# the following line has a bad argument 3 ... the old Makefile was already broken
 	$(call BuildFirmware/Buffalo,$(1),whr-g300n,whr-g300n)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
@@ -177,6 +177,43 @@ define BuildFirmware/WNCE2001/squashfs
 		-o $(call imgname,$(1),$(2))-factory-northamerica.bin
 endef
 BuildFirmware/WNCE2001/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
+
+
+define BuildFirmware/ZyXEL_Keenetic_series/squashfs
+	# $(1)=squashfs
+	# $(2)=lowercase_board_name
+	# $(3)=dts_file
+	# $(4)=max_FW_size
+	# $(5)=uImage_size
+	# $(6)=product_code
+	$(eval max_size=$(shell expr $(4) + 4))
+	$(call BuildFirmware/OF,$(1),$(2),$(3),$(max_size))
+	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1)-factory)
+
+	@if [ -f $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1)-sysupgrade.bin ]; then \
+		if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt `expr $(5) - 64` ]; then \
+			echo "Warning: unable to build Factory image! $(KDIR)/vmlinux-$(2).bin.lzma is too big: `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` (`expr $(5) - 64` max) " >&2; \
+			rm $(KDIR)/vmlinux-$(2).bin.lzma; \
+		else \
+			echo "Generating Factory image!" >&2; \
+			dd if=$(KDIR)/vmlinux-$(2).bin.lzma of=$(KDIR)/vmlinux-$(2).bin.lzma.factory bs=`expr $(5) - 64` conv=sync; \
+		fi; \
+	fi
+	$(call MkImage,lzma,$(KDIR)/vmlinux-$(2).bin.lzma.factory,$(KDIR)/vmlinux-$(2).uImage.factory,$(3))
+	@if [ -f $(KDIR)/vmlinux-$(2).uImage.factory ] ; then \
+		cat $(KDIR)/vmlinux-$(2).uImage.factory $(KDIR)/root.$(1) > $(KDIR)/$(output_name).bin; \
+		if [ `stat -c%s "$(KDIR)/$(output_name).bin"` -gt $(max_size) ]; then \
+			echo "Warning: $(KDIR)/$(output_name).bin is too big: `stat -c%s "$(KDIR)/$(output_name).bin"` ($(max_size) max) " >&2; \
+		else \
+			$(CP) $(KDIR)/$(output_name).bin $(BIN_DIR)/$(output_name).bin; \
+			dd if=$(BIN_DIR)/$(output_name).bin of=$(BIN_DIR)/$(output_name).factory bs=65536 conv=sync; \
+			mv $(BIN_DIR)/$(output_name).factory $(BIN_DIR)/$(output_name).bin; \
+			$(STAGING_DIR_HOST)/bin/zyimage -v "$(output_name)" -d $(6) $(BIN_DIR)/$(output_name).bin; \
+		fi; \
+	else \
+		echo "Warning: Refusing to try to create Factory image due to Sysupgrade image $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1)-sysupgrade.bin was not created!"; \
+	fi
+endef
 
 
 
@@ -257,6 +294,8 @@ Image/Build/Profile/NBG-419N=$(call BuildFirmware/Default4M/$(1),$(1),nbg-419n,N
 Image/Build/Profile/MZKW300NH2=$(call BuildFirmware/Edimax/$(1),$(1),mzk-w300nh2,MZK-W300NH2,$(mzkw300nh2_mtd_size),CSYS,RN52,0x50000,0xc0000)
 Image/Build/Profile/MZKWDPR=$(call BuildFirmware/Default8M/$(1),$(1),mzk-wdpr,MZK-WDPR)
 Image/Build/Profile/NCS601W=$(call BuildFirmware/Default8M/$(1),$(1),ncs601W,NCS601W)
+keenetic_rt305x_mtd_size_8M=7733252
+Image/Build/Profile/KEENETIC=$(call BuildFirmware/ZyXEL_Keenetic_series/$(1),$(1),keenetic,KEENETIC,$(keenetic_rt305x_mtd_size_8M),1245184,0x00004215)
 nw718_mtd_size=3801088
 Image/Build/Profile/NW718=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),nw718m,NW718,$(nw718_mtd_size),ARA1B4NCRNW718;1,factory)
 Image/Build/Profile/M2M=$(call BuildFirmware/Default8M/$(1),$(1),m2m,M2M,Linux Kernel Image)
@@ -342,6 +381,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/JHR-N805R,$(1))
 	$(call Image/Build/Profile/JHR-N825R,$(1))
 	$(call Image/Build/Profile/JHR-N926R,$(1))
+	$(call Image/Build/Profile/KEENETIC,$(1))
 	$(call Image/Build/Profile/M2M,$(1))
 	$(call Image/Build/Profile/M3,$(1))
 	$(call Image/Build/Profile/M4,$(1))
