@@ -37,10 +37,16 @@ define Build/boot-overlay
 		--space-fixup --force-compr=zlib --squash-uids \
 		$(MKUBIFS_OPTS) -c 8124 \
 		-o $@.boot.ubifs -d $@.boot
+
+	$(TAR) -C $@.boot -cf $@.boot.tar .
 endef
 
 define Build/bootfs.tar.gz
-	$(TAR) -C $(IMAGE_KERNEL).boot \
+	rm -rf $@.boot
+	mkdir -p $@.boot
+
+	$(TAR) -C $@.boot -xf $(IMAGE_KERNEL).boot.tar
+	$(TAR) -C $@.boot \
 		--numeric-owner --owner=0 --group=0 --transform "s,./,./boot/," \
 		-czvf $@ .
 endef
