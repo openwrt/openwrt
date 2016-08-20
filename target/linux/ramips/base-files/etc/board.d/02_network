@@ -78,6 +78,7 @@ ramips_setup_interfaces()
 	mt7628|\
 	mzk-750dhp|\
 	mzk-w300nh2|\
+	nbg4104 | \
 	oy-0001|\
 	pbr-m1|\
 	psg1208|\
@@ -198,6 +199,12 @@ ramips_setup_interfaces()
 	vocore)
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:lan" "6t@eth0"
+		;;
+	nbg4114)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 1 6t"
+		ucidef_add_switch_vlan "switch0" "2" "4 6t"
 		;;
 	rt-n56u)
 		ucidef_add_switch "switch0" \
@@ -340,6 +347,8 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 5)
 		;;
 	keenetic | \
+	nbg4104 | \
+	nbg4114 | \
 	wcr-150gn)
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;

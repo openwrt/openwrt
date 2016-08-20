@@ -96,6 +96,8 @@ platform_check_image() {
 	mzk-w300nh2|\
 	mzk-wdpr|\
 	nbg-419n|\
+	nbg4104 | \
+	nbg4114 | \
 	nw718|\
 	oy-0001|\
 	pbr-m1|\

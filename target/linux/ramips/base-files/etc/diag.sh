@@ -126,7 +126,9 @@ get_status_led() {
 	mlwg2)
 		status_led="$board:blue:system"
 		;;
-	keenetic)
+	keenetic|\
+	nbg4104|\
+	nbg4114)
 		status_led="zyxel:green:power"
 		;;
 	linkits7688| \
