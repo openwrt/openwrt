@@ -181,6 +181,7 @@ define Package/ath10k-firmware-qca9984/install
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/QCA9984/hw1.0/board-2.bin \
 		$(1)/lib/firmware/ath10k/QCA9984/hw1.0/board-2.bin
+	$(LN) -s board-2.bin $(1)/lib/firmware/ath10k/QCA9984/hw1.0/board.bin
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/QCA9984/hw1.0/firmware-5.bin_10.4-3.2-00072 \
 		$(1)/lib/firmware/ath10k/QCA9984/hw1.0/firmware-5.bin
