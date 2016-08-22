@@ -27,8 +27,6 @@ Tested-by: Wei Ni <wni.nvidia@gmail.com>
 Reviewed-by: Olof Johansson <olofj@chromium.org>
 Commit-Queue: Olof Johansson <olofj@chromium.org>
 ---
-diff --git a/drivers/hwmon/lm90.c b/drivers/hwmon/lm90.c
-index fb9e224..c54d3c8 100644
 --- a/drivers/hwmon/lm90.c
 +++ b/drivers/hwmon/lm90.c
 @@ -96,6 +96,8 @@
@@ -40,21 +38,21 @@ index fb9e224..c54d3c8 100644
  
  /*
   * Addresses to scan
-@@ -118,6 +120,13 @@
- 
+@@ -119,6 +121,13 @@ static const unsigned short normal_i2c[]
  enum chips { lm90, adm1032, lm99, lm86, max6657, max6659, adt7461, max6680,
  	max6646, w83l771, max6696, sa56004, g781, tmp451 };
-+
+ 
 +enum sensor_id {
 +	LOCAL = 0,
 +	REMOTE,
 +	REMOTE2,
 +	SENSOR_ID_END,
 +};
- 
++
  /*
   * The LM90 registers
-@@ -368,6 +377,7 @@
+  */
+@@ -368,6 +377,7 @@ struct lm90_data {
  	struct i2c_client *client;
  	struct device *hwmon_dev;
  	const struct attribute_group *groups[6];
@@ -62,12 +60,10 @@ index fb9e224..c54d3c8 100644
  	struct mutex update_lock;
  	struct regulator *regulator;
  	char valid; /* zero until following fields are valid */
-@@ -878,6 +888,24 @@
- 	struct sensor_device_attribute_2 *attr = to_sensor_dev_attr_2(devattr);
- 
+@@ -880,6 +890,24 @@ static ssize_t show_temp11(struct device
  	return sprintf(buf, "%d\n", read_temp11(dev, attr->index));
-+}
-+
+ }
+ 
 +static int lm90_read_local_temp(void *dev, int *temp)
 +{
 +	*temp = read_temp11(dev, 4);
@@ -84,10 +80,12 @@ index fb9e224..c54d3c8 100644
 +{
 +	*temp = read_temp11(dev, 5);
 +	return 0;
- }
- 
++}
++
  static int write_temp11(struct device *dev, int nr, int index, long val)
-@@ -1150,6 +1238,18 @@
+ {
+ 	struct {
+@@ -1210,6 +1238,18 @@ static const struct attribute_group lm90
  	.attrs = lm90_temp3_attributes,
  };
  
@@ -106,7 +104,7 @@ index fb9e224..c54d3c8 100644
  /* pec used for ADM1032 only */
  static ssize_t show_pec(struct device *dev, struct device_attribute *dummy,
  			char *buf)
-@@ -1599,6 +1699,30 @@
+@@ -1659,6 +1699,30 @@ static int lm90_probe(struct i2c_client
  		}
  	}
  
@@ -137,7 +135,7 @@ index fb9e224..c54d3c8 100644
  	return 0;
  
  exit_unregister:
-@@ -1674,8 +1726,11 @@
+@@ -1674,8 +1738,11 @@ exit_restore:
  
  static int lm90_remove(struct i2c_client *client)
  {

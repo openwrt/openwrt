@@ -14,11 +14,9 @@ Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
  drivers/net/ethernet/ibm/emac/phy.c | 26 ++++++++++++++++++++++++++
  1 file changed, 26 insertions(+)
 
-diff --git a/drivers/net/ethernet/ibm/emac/phy.c b/drivers/net/ethernet/ibm/emac/phy.c
-index d3b9d10..5b88cc6 100644
 --- a/drivers/net/ethernet/ibm/emac/phy.c
 +++ b/drivers/net/ethernet/ibm/emac/phy.c
-@@ -470,12 +470,38 @@ static struct mii_phy_def m88e1112_phy_def = {
+@@ -470,12 +470,38 @@ static struct mii_phy_def m88e1112_phy_d
  	.ops		= &m88e1112_phy_ops,
  };
  
@@ -57,6 +55,3 @@ index d3b9d10..5b88cc6 100644
  	&genmii_phy_def,
  	NULL
  };
--- 
-2.8.1
-

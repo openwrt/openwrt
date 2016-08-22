@@ -13,20 +13,15 @@ Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
  drivers/spi/spi-qup.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index 45e30c7..59bc37c 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
-@@ -569,7 +569,8 @@ static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
+@@ -569,7 +569,8 @@ static irqreturn_t spi_qup_qup_irq(int i
  	}
-
+ 
  	/* re-read opflags as flags may have changed due to actions above */
 -	opflags = readl_relaxed(controller->base + QUP_OPERATIONAL);
 +	if (opflags & QUP_OP_OUT_SERVICE_FLAG)
 +		opflags = readl_relaxed(controller->base + QUP_OPERATIONAL);
-
+ 
  	if ((controller->rx_bytes == xfer->len &&
  		(opflags & QUP_OP_MAX_INPUT_DONE_FLAG)) ||  error)
---
-2.7.2
-

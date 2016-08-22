@@ -31,8 +31,6 @@ Cc: Christian Ruppert <christian.ruppert@alitech.com>
  arch/arc/boot/dts/vdk_hs38_smp.dts     | 1 +
  13 files changed, 13 insertions(+)
 
-diff --git a/arch/arc/boot/dts/abilis_tb100_dvk.dts b/arch/arc/boot/dts/abilis_tb100_dvk.dts
-index 3dd6ed9..3acf04d 100644
 --- a/arch/arc/boot/dts/abilis_tb100_dvk.dts
 +++ b/arch/arc/boot/dts/abilis_tb100_dvk.dts
 @@ -24,6 +24,7 @@
@@ -43,8 +41,6 @@ index 3dd6ed9..3acf04d 100644
  	chosen {
  		bootargs = "earlycon=uart8250,mmio32,0xff100000,9600n8 console=ttyS0,9600n8";
  	};
-diff --git a/arch/arc/boot/dts/abilis_tb101_dvk.dts b/arch/arc/boot/dts/abilis_tb101_dvk.dts
-index 1cf51c2..37d88c5 100644
 --- a/arch/arc/boot/dts/abilis_tb101_dvk.dts
 +++ b/arch/arc/boot/dts/abilis_tb101_dvk.dts
 @@ -24,6 +24,7 @@
@@ -55,8 +51,6 @@ index 1cf51c2..37d88c5 100644
  	chosen {
  		bootargs = "earlycon=uart8250,mmio32,0xff100000,9600n8 console=ttyS0,9600n8";
  	};
-diff --git a/arch/arc/boot/dts/axs101.dts b/arch/arc/boot/dts/axs101.dts
-index 3f9b058..d9b9b9d 100644
 --- a/arch/arc/boot/dts/axs101.dts
 +++ b/arch/arc/boot/dts/axs101.dts
 @@ -13,6 +13,7 @@
@@ -67,8 +61,6 @@ index 3f9b058..d9b9b9d 100644
  	compatible = "snps,axs101", "snps,arc-sdp";
  
  	chosen {
-diff --git a/arch/arc/boot/dts/axs103.dts b/arch/arc/boot/dts/axs103.dts
-index e6d0e31..ec7fb27 100644
 --- a/arch/arc/boot/dts/axs103.dts
 +++ b/arch/arc/boot/dts/axs103.dts
 @@ -16,6 +16,7 @@
@@ -79,8 +71,6 @@ index e6d0e31..ec7fb27 100644
  	compatible = "snps,axs103", "snps,arc-sdp";
  
  	chosen {
-diff --git a/arch/arc/boot/dts/axs103_idu.dts b/arch/arc/boot/dts/axs103_idu.dts
-index f999fef..070c297 100644
 --- a/arch/arc/boot/dts/axs103_idu.dts
 +++ b/arch/arc/boot/dts/axs103_idu.dts
 @@ -16,6 +16,7 @@
@@ -91,8 +81,6 @@ index f999fef..070c297 100644
  	compatible = "snps,axs103", "snps,arc-sdp";
  
  	chosen {
-diff --git a/arch/arc/boot/dts/nsim_700.dts b/arch/arc/boot/dts/nsim_700.dts
-index 105a001..97a9a91 100644
 --- a/arch/arc/boot/dts/nsim_700.dts
 +++ b/arch/arc/boot/dts/nsim_700.dts
 @@ -10,6 +10,7 @@
@@ -103,8 +91,6 @@ index 105a001..97a9a91 100644
  	compatible = "snps,nsim";
  	clock-frequency = <80000000>;	/* 80 MHZ */
  	#address-cells = <1>;
-diff --git a/arch/arc/boot/dts/nsim_hs.dts b/arch/arc/boot/dts/nsim_hs.dts
-index fc81879..1d47b14 100644
 --- a/arch/arc/boot/dts/nsim_hs.dts
 +++ b/arch/arc/boot/dts/nsim_hs.dts
 @@ -10,6 +10,7 @@
@@ -115,8 +101,6 @@ index fc81879..1d47b14 100644
  	compatible = "snps,nsim_hs";
  	#address-cells = <2>;
  	#size-cells = <2>;
-diff --git a/arch/arc/boot/dts/nsim_hs_idu.dts b/arch/arc/boot/dts/nsim_hs_idu.dts
-index 46ab319..b3a69a8 100644
 --- a/arch/arc/boot/dts/nsim_hs_idu.dts
 +++ b/arch/arc/boot/dts/nsim_hs_idu.dts
 @@ -10,6 +10,7 @@
@@ -127,8 +111,6 @@ index 46ab319..b3a69a8 100644
  	compatible = "snps,nsim_hs";
  	interrupt-parent = <&core_intc>;
  
-diff --git a/arch/arc/boot/dts/nsimosci.dts b/arch/arc/boot/dts/nsimosci.dts
-index 1c169dc..80f3c33 100644
 --- a/arch/arc/boot/dts/nsimosci.dts
 +++ b/arch/arc/boot/dts/nsimosci.dts
 @@ -10,6 +10,7 @@
@@ -139,8 +121,6 @@ index 1c169dc..80f3c33 100644
  	compatible = "snps,nsimosci";
  	clock-frequency = <20000000>;	/* 20 MHZ */
  	#address-cells = <1>;
-diff --git a/arch/arc/boot/dts/nsimosci_hs.dts b/arch/arc/boot/dts/nsimosci_hs.dts
-index d64a96f..f680f1e 100644
 --- a/arch/arc/boot/dts/nsimosci_hs.dts
 +++ b/arch/arc/boot/dts/nsimosci_hs.dts
 @@ -10,6 +10,7 @@
@@ -151,8 +131,6 @@ index d64a96f..f680f1e 100644
  	compatible = "snps,nsimosci_hs";
  	clock-frequency = <20000000>;	/* 20 MHZ */
  	#address-cells = <1>;
-diff --git a/arch/arc/boot/dts/nsimosci_hs_idu.dts b/arch/arc/boot/dts/nsimosci_hs_idu.dts
-index f6bf0ca..6e46b11 100644
 --- a/arch/arc/boot/dts/nsimosci_hs_idu.dts
 +++ b/arch/arc/boot/dts/nsimosci_hs_idu.dts
 @@ -10,6 +10,7 @@
@@ -163,8 +141,6 @@ index f6bf0ca..6e46b11 100644
  	compatible = "snps,nsimosci_hs";
  	clock-frequency = <5000000>;	/* 5 MHZ */
  	#address-cells = <1>;
-diff --git a/arch/arc/boot/dts/vdk_hs38.dts b/arch/arc/boot/dts/vdk_hs38.dts
-index 5d803dd..3c51103 100644
 --- a/arch/arc/boot/dts/vdk_hs38.dts
 +++ b/arch/arc/boot/dts/vdk_hs38.dts
 @@ -13,6 +13,7 @@
@@ -175,8 +151,6 @@ index 5d803dd..3c51103 100644
  	compatible = "snps,axs103";
  
  	chosen {
-diff --git a/arch/arc/boot/dts/vdk_hs38_smp.dts b/arch/arc/boot/dts/vdk_hs38_smp.dts
-index 031a5bc..0054684 100644
 --- a/arch/arc/boot/dts/vdk_hs38_smp.dts
 +++ b/arch/arc/boot/dts/vdk_hs38_smp.dts
 @@ -13,6 +13,7 @@
@@ -187,6 +161,3 @@ index 031a5bc..0054684 100644
  	compatible = "snps,axs103";
  
  	chosen {
--- 
-2.7.4
-

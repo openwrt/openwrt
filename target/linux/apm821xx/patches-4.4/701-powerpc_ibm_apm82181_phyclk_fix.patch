@@ -1,8 +1,6 @@
-diff --git a/drivers/net/ethernet/ibm/emac/core.c b/drivers/net/ethernet/ibm/emac/core.c
-index 5d7db6c..01bed2e 100644
 --- a/drivers/net/ethernet/ibm/emac/core.c
 +++ b/drivers/net/ethernet/ibm/emac/core.c
-@@ -129,6 +129,7 @@ static inline void emac_report_timeout_error(struct emac_instance *dev,
+@@ -129,6 +129,7 @@ static inline void emac_report_timeout_e
  {
  	if (emac_has_feature(dev, EMAC_FTR_440GX_PHY_CLK_FIX |
  				  EMAC_FTR_460EX_PHY_CLK_FIX |
@@ -10,7 +8,7 @@ index 5d7db6c..01bed2e 100644
  				  EMAC_FTR_440EP_PHY_CLK_FIX))
  		DBG(dev, "%s" NL, error);
  	else if (net_ratelimit())
-@@ -146,6 +147,10 @@ static inline void emac_rx_clk_tx(struct emac_instance *dev)
+@@ -146,6 +147,10 @@ static inline void emac_rx_clk_tx(struct
  	if (emac_has_feature(dev, EMAC_FTR_440EP_PHY_CLK_FIX))
  		dcri_clrset(SDR0, SDR0_MFR,
  			    0, SDR0_MFR_ECS >> dev->cell_index);
@@ -21,7 +19,7 @@ index 5d7db6c..01bed2e 100644
  #endif
  }
  
-@@ -155,6 +160,10 @@ static inline void emac_rx_clk_default(struct emac_instance *dev)
+@@ -155,6 +160,10 @@ static inline void emac_rx_clk_default(s
  	if (emac_has_feature(dev, EMAC_FTR_440EP_PHY_CLK_FIX))
  		dcri_clrset(SDR0, SDR0_MFR,
  			    SDR0_MFR_ECS >> dev->cell_index, 0);
@@ -32,7 +30,7 @@ index 5d7db6c..01bed2e 100644
  #endif
  }
  
-@@ -2587,7 +2596,7 @@ static int emac_init_config(struct emac_instance *dev)
+@@ -2587,7 +2596,7 @@ static int emac_init_config(struct emac_
  		if (of_device_is_compatible(np, "ibm,emac-apm821xx")) {
  			dev->features |= (EMAC_APM821XX_REQ_JUMBO_FRAME_SIZE |
  					  EMAC_FTR_APM821XX_NO_HALF_DUPLEX |
@@ -41,8 +39,6 @@ index 5d7db6c..01bed2e 100644
  		}
  	} else if (of_device_is_compatible(np, "ibm,emac4")) {
  		dev->features |= EMAC_FTR_EMAC4;
-diff --git a/drivers/net/ethernet/ibm/emac/core.h b/drivers/net/ethernet/ibm/emac/core.h
-index 93ae114..072176a 100644
 --- a/drivers/net/ethernet/ibm/emac/core.h
 +++ b/drivers/net/ethernet/ibm/emac/core.h
 @@ -333,6 +333,8 @@ struct emac_instance {

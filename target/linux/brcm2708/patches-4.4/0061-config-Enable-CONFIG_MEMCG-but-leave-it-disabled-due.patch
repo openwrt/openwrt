@@ -10,7 +10,7 @@ Subject: [PATCH 061/423] config: Enable CONFIG_MEMCG, but leave it disabled
 
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -5306,7 +5306,7 @@ int __init cgroup_init_early(void)
+@@ -5307,7 +5307,7 @@ int __init cgroup_init_early(void)
  	return 0;
  }
  
@@ -19,7 +19,7 @@ Subject: [PATCH 061/423] config: Enable CONFIG_MEMCG, but leave it disabled
  
  /**
   * cgroup_init - cgroup initialization
-@@ -5802,6 +5802,27 @@ static int __init cgroup_disable(char *s
+@@ -5803,6 +5803,27 @@ static int __init cgroup_disable(char *s
  }
  __setup("cgroup_disable=", cgroup_disable);
  

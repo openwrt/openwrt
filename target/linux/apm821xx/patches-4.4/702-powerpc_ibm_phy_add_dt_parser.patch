@@ -8,8 +8,6 @@ Subject: [PATCH] phy device tree support for emac
  drivers/net/ethernet/ibm/emac/core.h |   4 +
  2 files changed, 265 insertions(+)
 
-diff --git a/drivers/net/ethernet/ibm/emac/core.c b/drivers/net/ethernet/ibm/emac/core.c
-index 4c9771d..5a8a26c 100644
 --- a/drivers/net/ethernet/ibm/emac/core.c
 +++ b/drivers/net/ethernet/ibm/emac/core.c
 @@ -42,6 +42,7 @@
@@ -20,7 +18,7 @@ index 4c9771d..5a8a26c 100644
  #include <linux/slab.h>
  
  #include <asm/processor.h>
-@@ -2383,6 +2384,246 @@ static int emac_read_uint_prop(struct device_node *np, const char *name,
+@@ -2392,6 +2393,246 @@ static int emac_read_uint_prop(struct de
  	return 0;
  }
  
@@ -267,7 +265,7 @@ index 4c9771d..5a8a26c 100644
  static int emac_init_phy(struct emac_instance *dev)
  {
  	struct device_node *np = dev->ofdev->dev.of_node;
-@@ -2453,6 +2694,18 @@ static int emac_init_phy(struct emac_instance *dev)
+@@ -2462,6 +2703,18 @@ static int emac_init_phy(struct emac_ins
  
  	emac_configure(dev);
  
@@ -286,7 +284,7 @@ index 4c9771d..5a8a26c 100644
  	if (dev->phy_address != 0xffffffff)
  		phy_map = ~(1 << dev->phy_address);
  
-@@ -2480,6 +2733,7 @@ static int emac_init_phy(struct emac_instance *dev)
+@@ -2489,6 +2742,7 @@ static int emac_init_phy(struct emac_ins
  		return -ENXIO;
  	}
  
@@ -294,7 +292,7 @@ index 4c9771d..5a8a26c 100644
  	/* Init PHY */
  	if (dev->phy.def->ops->init)
  		dev->phy.def->ops->init(&dev->phy);
-@@ -2898,6 +3152,8 @@ static int emac_probe(struct platform_device *ofdev)
+@@ -2907,6 +3161,8 @@ static int emac_probe(struct platform_de
  	/* I have a bad feeling about this ... */
  
   err_detach_tah:
@@ -303,7 +301,7 @@ index 4c9771d..5a8a26c 100644
  	if (emac_has_feature(dev, EMAC_FTR_HAS_TAH))
  		tah_detach(dev->tah_dev, dev->tah_port);
   err_detach_rgmii:
-@@ -2948,6 +3204,11 @@ static int emac_remove(struct platform_device *ofdev)
+@@ -2957,6 +3213,11 @@ static int emac_remove(struct platform_d
  	if (emac_has_feature(dev, EMAC_FTR_HAS_ZMII))
  		zmii_detach(dev->zmii_dev, dev->zmii_port);
  
@@ -315,8 +313,6 @@ index 4c9771d..5a8a26c 100644
  	busy_phy_map &= ~(1 << dev->phy.address);
  	DBG(dev, "busy_phy_map now %#x" NL, busy_phy_map);
  
-diff --git a/drivers/net/ethernet/ibm/emac/core.h b/drivers/net/ethernet/ibm/emac/core.h
-index 93ae114..0710a66 100644
 --- a/drivers/net/ethernet/ibm/emac/core.h
 +++ b/drivers/net/ethernet/ibm/emac/core.h
 @@ -199,6 +199,10 @@ struct emac_instance {
@@ -330,6 +326,3 @@ index 93ae114..0710a66 100644
  	/* ZMII infos if any */
  	u32				zmii_ph;
  	u32				zmii_port;
--- 
-2.1.4
-

@@ -19,34 +19,29 @@ Signed-off-by: Nitheesh Sekar <nsekar@codeaurora.org>
  drivers/usb/dwc3/dwc3-of-simple.c | 9 +++++----
  1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/usb/dwc3/dwc3-of-simple.c b/drivers/usb/dwc3/dwc3-of-simple.c
-index 9c9f741..9743353 100644
 --- a/drivers/usb/dwc3/dwc3-of-simple.c
 +++ b/drivers/usb/dwc3/dwc3-of-simple.c
-@@ -42,6 +42,7 @@ static int dwc3_of_simple_probe(struct platform_device *pdev)
+@@ -42,6 +42,7 @@ static int dwc3_of_simple_probe(struct p
  	struct device		*dev = &pdev->dev;
  	struct device_node	*np = dev->of_node;
-
+ 
 +	unsigned int		count;
  	int			ret;
  	int			i;
-
-@@ -49,11 +50,11 @@ static int dwc3_of_simple_probe(struct platform_device *pdev)
+ 
+@@ -49,11 +50,11 @@ static int dwc3_of_simple_probe(struct p
  	if (!simple)
  		return -ENOMEM;
-
+ 
 -	ret = of_clk_get_parent_count(np);
 -	if (ret < 0)
 -		return ret;
 +	count = of_clk_get_parent_count(np);
 +	if (!count)
 +		return -ENOENT;
-
+ 
 -	simple->num_clocks = ret;
 +	simple->num_clocks = count;
-
+ 
  	simple->clks = devm_kcalloc(dev, simple->num_clocks,
  			sizeof(struct clk *), GFP_KERNEL);
---
-2.7.2
-

@@ -11,11 +11,9 @@ produce a noisy warning.
  drivers/usb/host/pci-quirks.c | 362 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 362 insertions(+)
 
-diff --git a/drivers/usb/host/xhci-pci.c b/drivers/usb/host/xhci-pci.c
-index 1c4d89e..555bd3f 100644
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -172,7 +172,7 @@ static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
+@@ -176,7 +176,7 @@ static void xhci_pci_quirks(struct devic
  	}
  	if (pdev->vendor == PCI_VENDOR_ID_RENESAS &&
  			pdev->device == 0x0015)
@@ -24,11 +22,9 @@ index 1c4d89e..555bd3f 100644
  	if (pdev->vendor == PCI_VENDOR_ID_VIA)
  		xhci->quirks |= XHCI_RESET_ON_RESUME;
  
-diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
-index 9e71c96..27cfcb9 100644
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -389,10 +389,14 @@ static int xhci_try_enable_msi(struct usb_hcd *hcd)
+@@ -388,10 +388,14 @@ static int xhci_try_enable_msi(struct us
  		free_irq(hcd->irq, hcd);
  	hcd->irq = 0;
  
@@ -46,12 +42,13 @@ index 9e71c96..27cfcb9 100644
  
  	if (!ret)
  		/* hcd->irq is 0, we have MSI */
-diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
-index 6b085aa..514dc3f 100644
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1649,3 +1649,4 @@ struct xhci_hcd {
- #define XHCI_BROKEN_STREAMS     (1 << 19)
- #define XHCI_PME_STUCK_QUIRK    (1 << 20)
+@@ -1648,6 +1648,7 @@ struct xhci_hcd {
+ 	/* support xHCI 0.96 spec USB2 software LPM */
+ 	unsigned		sw_lpm_support:1;
+ 	/* support xHCI 1.0 spec USB2 hardware LPM */
 +#define XHCI_FORCE_MSI		(1 << 24)
- 	unsigned int		num_active_eps;
+ 	unsigned		hw_lpm_support:1;
+ 	/* cached usb2 extened protocol capabilites */
+ 	u32                     *ext_caps;

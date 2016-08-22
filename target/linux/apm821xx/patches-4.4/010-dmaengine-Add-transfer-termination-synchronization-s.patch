@@ -17,11 +17,9 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  drivers/dma/dmaengine.c | 81 +++++++++++++++++++++++++------------------------
  1 file changed, 42 insertions(+), 39 deletions(-)
 
-diff --git a/drivers/dma/dmaengine.c b/drivers/dma/dmaengine.c
-index f2cbff9..81a36fc 100644
 --- a/drivers/dma/dmaengine.c
 +++ b/drivers/dma/dmaengine.c
-@@ -542,6 +542,42 @@ static struct dma_chan *private_candidate(const dma_cap_mask_t *mask,
+@@ -542,6 +542,42 @@ static struct dma_chan *private_candidat
  	return NULL;
  }
  
@@ -64,7 +62,7 @@ index f2cbff9..81a36fc 100644
  /**
   * dma_get_slave_channel - try to get specific channel exclusively
   * @chan: target channel
-@@ -580,7 +616,6 @@ struct dma_chan *dma_get_any_slave_channel(struct dma_device *device)
+@@ -580,7 +616,6 @@ struct dma_chan *dma_get_any_slave_chann
  {
  	dma_cap_mask_t mask;
  	struct dma_chan *chan;
@@ -72,7 +70,7 @@ index f2cbff9..81a36fc 100644
  
  	dma_cap_zero(mask);
  	dma_cap_set(DMA_SLAVE, mask);
-@@ -588,23 +623,11 @@ struct dma_chan *dma_get_any_slave_channel(struct dma_device *device)
+@@ -588,23 +623,11 @@ struct dma_chan *dma_get_any_slave_chann
  	/* lock against __dma_request_channel */
  	mutex_lock(&dma_list_mutex);
  
@@ -98,7 +96,7 @@ index f2cbff9..81a36fc 100644
  }
  EXPORT_SYMBOL_GPL(dma_get_any_slave_channel);
  
-@@ -621,35 +644,15 @@ struct dma_chan *__dma_request_channel(const dma_cap_mask_t *mask,
+@@ -621,35 +644,15 @@ struct dma_chan *__dma_request_channel(c
  {
  	struct dma_device *device, *_d;
  	struct dma_chan *chan = NULL;
@@ -138,6 +136,3 @@ index f2cbff9..81a36fc 100644
  	}
  	mutex_unlock(&dma_list_mutex);
  
--- 
-2.8.1
-

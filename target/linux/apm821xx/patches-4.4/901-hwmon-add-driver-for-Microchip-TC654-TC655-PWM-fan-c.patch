@@ -24,11 +24,9 @@ Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
  3 files changed, 980 insertions(+)
  create mode 100644 drivers/hwmon/tc654.c
 
-diff --git a/drivers/hwmon/Kconfig b/drivers/hwmon/Kconfig
-index ff94007..941fe4951 100644
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
-@@ -1514,6 +1514,16 @@ config SENSORS_INA2XX
+@@ -1493,6 +1493,16 @@ config SENSORS_INA2XX
  	  This driver can also be built as a module.  If so, the module
  	  will be called ina2xx.
  
@@ -45,11 +43,9 @@ index ff94007..941fe4951 100644
  config SENSORS_TC74
  	tristate "Microchip TC74"
  	depends on I2C
-diff --git a/drivers/hwmon/Makefile b/drivers/hwmon/Makefile
-index 2ef5b7c..04270c7 100644
 --- a/drivers/hwmon/Makefile
 +++ b/drivers/hwmon/Makefile
-@@ -145,6 +145,7 @@ obj-$(CONFIG_SENSORS_SMSC47B397)+= smsc47b397.o
+@@ -143,6 +143,7 @@ obj-$(CONFIG_SENSORS_SMSC47B397)+= smsc4
  obj-$(CONFIG_SENSORS_SMSC47M1)	+= smsc47m1.o
  obj-$(CONFIG_SENSORS_SMSC47M192)+= smsc47m192.o
  obj-$(CONFIG_SENSORS_AMC6821)	+= amc6821.o
@@ -57,9 +53,6 @@ index 2ef5b7c..04270c7 100644
  obj-$(CONFIG_SENSORS_TC74)	+= tc74.o
  obj-$(CONFIG_SENSORS_THMC50)	+= thmc50.o
  obj-$(CONFIG_SENSORS_TMP102)	+= tmp102.o
-diff --git a/drivers/hwmon/tc654.c b/drivers/hwmon/tc654.c
-new file mode 100644
-index 0000000..d584baf
 --- /dev/null
 +++ b/drivers/hwmon/tc654.c
 @@ -0,0 +1,969 @@
@@ -1032,6 +1025,3 @@ index 0000000..d584baf
 +MODULE_AUTHOR("Christian Lamparter <chunkeey@gmail.com>");
 +MODULE_DESCRIPTION("Microchip TC654/TC655 hwmon driver");
 +MODULE_LICENSE("GPL");
--- 
-2.8.1
-

@@ -65,8 +65,8 @@ Andy Shevchenko (4):
  sound/soc/intel/common/sst-firmware.c              |  2 +-
  11 files changed, 64 insertions(+), 78 deletions(-)
 
---- a/drivers/dma/dw/core.c	2016-05-21 23:13:19.964478443 +0200
-+++ b/drivers/dma/dw/core.c	2016-05-21 22:47:08.665465180 +0200
+--- a/drivers/dma/dw/core.c
++++ b/drivers/dma/dw/core.c
 @@ -45,22 +45,19 @@
  			DW_DMA_MSIZE_16;			\
  		u8 _dmsize = _is_slave ? _sconfig->dst_maxburst :	\
@@ -1116,8 +1116,8 @@ Andy Shevchenko (4):
  			channel_writel(dwc, LLP, 0);
  		}
  	}
---- a/drivers/dma/dw/pci.c	2016-05-21 23:13:19.964478443 +0200
-+++ b/drivers/dma/dw/pci.c	2016-05-21 22:47:08.665465180 +0200
+--- a/drivers/dma/dw/pci.c
++++ b/drivers/dma/dw/pci.c
 @@ -17,8 +17,8 @@
  
  static int dw_pci_probe(struct pci_dev *pdev, const struct pci_device_id *pid)
@@ -1150,8 +1150,8 @@ Andy Shevchenko (4):
  	{ }
  };
  MODULE_DEVICE_TABLE(pci, dw_pci_id_table);
---- a/drivers/dma/dw/platform.c	2016-05-21 23:13:19.964478443 +0200
-+++ b/drivers/dma/dw/platform.c	2016-05-21 22:47:08.665465180 +0200
+--- a/drivers/dma/dw/platform.c
++++ b/drivers/dma/dw/platform.c
 @@ -42,13 +42,13 @@ static struct dma_chan *dw_dma_of_xlate(
  
  	slave.src_id = dma_spec->args[0];
@@ -1309,8 +1309,8 @@ Andy Shevchenko (4):
  	{ }
  };
  MODULE_DEVICE_TABLE(acpi, dw_dma_acpi_id_table);
---- a/drivers/dma/dw/regs.h	2016-05-21 23:13:19.964478443 +0200
-+++ b/drivers/dma/dw/regs.h	2016-05-21 22:47:08.665465180 +0200
+--- a/drivers/dma/dw/regs.h
++++ b/drivers/dma/dw/regs.h
 @@ -114,10 +114,6 @@ struct dw_dma_regs {
  #define dma_writel_native writel
  #endif
@@ -1475,8 +1475,6 @@ Andy Shevchenko (4):
  int dw_dma_remove(struct dw_dma_chip *chip);
  
  /* DMA API extensions */
-diff --git a/include/linux/platform_data/dma-dw.h b/include/linux/platform_data/dma-dw.h
-index 03b6095..d15d8ba 100644
 --- a/include/linux/platform_data/dma-dw.h
 +++ b/include/linux/platform_data/dma-dw.h
 @@ -21,15 +21,15 @@
@@ -1517,6 +1515,3 @@ index 03b6095..d15d8ba 100644
  	unsigned char	nr_masters;
  	unsigned char	data_width[DW_DMA_MAX_NR_MASTERS];
  };
--- 
-2.8.1
-

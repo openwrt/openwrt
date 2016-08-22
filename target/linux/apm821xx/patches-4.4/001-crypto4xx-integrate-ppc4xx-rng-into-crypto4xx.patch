@@ -25,8 +25,6 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  create mode 100644 drivers/crypto/amcc/crypto4xx_trng.c
  create mode 100644 drivers/crypto/amcc/crypto4xx_trng.h
 
-diff --git a/drivers/char/hw_random/Kconfig b/drivers/char/hw_random/Kconfig
-index c76a88d..ac51149 100644
 --- a/drivers/char/hw_random/Kconfig
 +++ b/drivers/char/hw_random/Kconfig
 @@ -268,19 +268,6 @@ config HW_RANDOM_NOMADIK
@@ -49,11 +47,9 @@ index c76a88d..ac51149 100644
  config HW_RANDOM_PSERIES
  	tristate "pSeries HW Random Number Generator support"
  	depends on PPC64 && IBMVIO
-diff --git a/drivers/char/hw_random/Makefile b/drivers/char/hw_random/Makefile
-index e09305b..63022b4 100644
 --- a/drivers/char/hw_random/Makefile
 +++ b/drivers/char/hw_random/Makefile
-@@ -22,7 +22,6 @@ obj-$(CONFIG_HW_RANDOM_TX4939) += tx4939-rng.o
+@@ -22,7 +22,6 @@ obj-$(CONFIG_HW_RANDOM_TX4939) += tx4939
  obj-$(CONFIG_HW_RANDOM_MXC_RNGA) += mxc-rnga.o
  obj-$(CONFIG_HW_RANDOM_OCTEON) += octeon-rng.o
  obj-$(CONFIG_HW_RANDOM_NOMADIK) += nomadik-rng.o
@@ -61,9 +57,6 @@ index e09305b..63022b4 100644
  obj-$(CONFIG_HW_RANDOM_PSERIES) += pseries-rng.o
  obj-$(CONFIG_HW_RANDOM_POWERNV) += powernv-rng.o
  obj-$(CONFIG_HW_RANDOM_EXYNOS)	+= exynos-rng.o
-diff --git a/drivers/char/hw_random/ppc4xx-rng.c b/drivers/char/hw_random/ppc4xx-rng.c
-deleted file mode 100644
-index c0db438..0000000
 --- a/drivers/char/hw_random/ppc4xx-rng.c
 +++ /dev/null
 @@ -1,147 +0,0 @@
@@ -214,11 +207,9 @@ index c0db438..0000000
 -MODULE_LICENSE("GPL");
 -MODULE_AUTHOR("Josh Boyer <jwboyer@linux.vnet.ibm.com>");
 -MODULE_DESCRIPTION("HW RNG driver for PPC 4xx processors");
-diff --git a/drivers/crypto/Kconfig b/drivers/crypto/Kconfig
-index 0a22ac7..12fd499 100644
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -279,6 +279,14 @@ config CRYPTO_DEV_PPC4XX
+@@ -277,6 +277,14 @@ config CRYPTO_DEV_PPC4XX
  	help
  	  This option allows you to have support for AMCC crypto acceleration.
  
@@ -233,16 +224,12 @@ index 0a22ac7..12fd499 100644
  config CRYPTO_DEV_OMAP_SHAM
  	tristate "Support for OMAP MD5/SHA1/SHA2 hw accelerator"
  	depends on ARCH_OMAP2PLUS
-diff --git a/drivers/crypto/amcc/Makefile b/drivers/crypto/amcc/Makefile
-index 5c0c62b..b955399 100644
 --- a/drivers/crypto/amcc/Makefile
 +++ b/drivers/crypto/amcc/Makefile
 @@ -1,2 +1,3 @@
  obj-$(CONFIG_CRYPTO_DEV_PPC4XX) += crypto4xx.o
  crypto4xx-y :=  crypto4xx_core.o crypto4xx_alg.o crypto4xx_sa.o
 +crypto4xx-$(CONFIG_HW_RANDOM_PPC4XX) += crypto4xx_trng.o
-diff --git a/drivers/crypto/amcc/crypto4xx_core.c b/drivers/crypto/amcc/crypto4xx_core.c
-index 62134c8..dae1e39 100644
 --- a/drivers/crypto/amcc/crypto4xx_core.c
 +++ b/drivers/crypto/amcc/crypto4xx_core.c
 @@ -40,6 +40,7 @@
@@ -253,7 +240,7 @@ index 62134c8..dae1e39 100644
  
  #define PPC4XX_SEC_VERSION_STR			"0.5"
  
-@@ -1225,6 +1226,7 @@ static int crypto4xx_probe(struct platform_device *ofdev)
+@@ -1221,6 +1222,7 @@ static int crypto4xx_probe(struct platfo
  	if (rc)
  		goto err_start_dev;
  
@@ -261,7 +248,7 @@ index 62134c8..dae1e39 100644
  	return 0;
  
  err_start_dev:
-@@ -1252,6 +1254,8 @@ static int crypto4xx_remove(struct platform_device *ofdev)
+@@ -1248,6 +1250,8 @@ static int crypto4xx_remove(struct platf
  	struct device *dev = &ofdev->dev;
  	struct crypto4xx_core_device *core_dev = dev_get_drvdata(dev);
  
@@ -270,7 +257,7 @@ index 62134c8..dae1e39 100644
  	free_irq(core_dev->irq, dev);
  	irq_dispose_mapping(core_dev->irq);
  
-@@ -1272,7 +1276,7 @@ MODULE_DEVICE_TABLE(of, crypto4xx_match);
+@@ -1268,7 +1272,7 @@ MODULE_DEVICE_TABLE(of, crypto4xx_match)
  
  static struct platform_driver crypto4xx_driver = {
  	.driver = {
@@ -279,13 +266,11 @@ index 62134c8..dae1e39 100644
  		.of_match_table = crypto4xx_match,
  	},
  	.probe		= crypto4xx_probe,
-@@ -1284,4 +1288,3 @@ module_platform_driver(crypto4xx_driver);
+@@ -1280,4 +1284,3 @@ module_platform_driver(crypto4xx_driver)
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("James Hsiao <jhsiao@amcc.com>");
  MODULE_DESCRIPTION("Driver for AMCC PPC4xx crypto accelerator");
 -
-diff --git a/drivers/crypto/amcc/crypto4xx_core.h b/drivers/crypto/amcc/crypto4xx_core.h
-index bac0bde..ecfdcfe 100644
 --- a/drivers/crypto/amcc/crypto4xx_core.h
 +++ b/drivers/crypto/amcc/crypto4xx_core.h
 @@ -24,6 +24,8 @@
@@ -313,8 +298,6 @@ index bac0bde..ecfdcfe 100644
  	u32 int_status;
  	u32 irq;
  	struct tasklet_struct tasklet;
-diff --git a/drivers/crypto/amcc/crypto4xx_reg_def.h b/drivers/crypto/amcc/crypto4xx_reg_def.h
-index 5f5fbc0..46fe57c 100644
 --- a/drivers/crypto/amcc/crypto4xx_reg_def.h
 +++ b/drivers/crypto/amcc/crypto4xx_reg_def.h
 @@ -125,6 +125,7 @@
@@ -325,9 +308,6 @@ index 5f5fbc0..46fe57c 100644
  #define PPC4XX_INT_DESCR_CNT			4
  #define PPC4XX_INT_TIMEOUT_CNT			0
  #define PPC4XX_INT_CFG				1
-diff --git a/drivers/crypto/amcc/crypto4xx_trng.c b/drivers/crypto/amcc/crypto4xx_trng.c
-new file mode 100644
-index 0000000..677ca17
 --- /dev/null
 +++ b/drivers/crypto/amcc/crypto4xx_trng.c
 @@ -0,0 +1,131 @@
@@ -462,9 +442,6 @@ index 0000000..677ca17
 +}
 +
 +MODULE_ALIAS("ppc4xx_rng");
-diff --git a/drivers/crypto/amcc/crypto4xx_trng.h b/drivers/crypto/amcc/crypto4xx_trng.h
-new file mode 100644
-index 0000000..931d225
 --- /dev/null
 +++ b/drivers/crypto/amcc/crypto4xx_trng.h
 @@ -0,0 +1,34 @@
@@ -502,6 +479,3 @@ index 0000000..931d225
 +#endif
 +
 +#endif
--- 
-2.8.1
-

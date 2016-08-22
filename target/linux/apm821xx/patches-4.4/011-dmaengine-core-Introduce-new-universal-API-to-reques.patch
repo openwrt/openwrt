@@ -69,11 +69,9 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  include/linux/dmaengine.h          | 51 +++++++++++++++++++---
  3 files changed, 127 insertions(+), 36 deletions(-)
 
-diff --git a/Documentation/dmaengine/client.txt b/Documentation/dmaengine/client.txt
-index 11fb87f..4b04d89 100644
 --- a/Documentation/dmaengine/client.txt
 +++ b/Documentation/dmaengine/client.txt
-@@ -22,25 +22,14 @@ The slave DMA usage consists of following steps:
+@@ -22,25 +22,14 @@ The slave DMA usage consists of followin
     Channel allocation is slightly different in the slave DMA context,
     client drivers typically need a channel from a particular DMA
     controller only and even in some cases a specific channel is desired.
@@ -86,7 +84,8 @@ index 11fb87f..4b04d89 100644
 -			void *filter_param);
 -   where dma_filter_fn is defined as:
 -	typedef bool (*dma_filter_fn)(struct dma_chan *chan, void *filter_param);
--
++	struct dma_chan *dma_request_chan(struct device *dev, const char *name);
+ 
 -   The 'filter_fn' parameter is optional, but highly recommended for
 -   slave and cyclic channels as they typically need to obtain a specific
 -   DMA channel.
@@ -97,16 +96,12 @@ index 11fb87f..4b04d89 100644
 -   Otherwise, the 'filter_fn' routine will be called once for each free
 -   channel which has a capability in 'mask'.  'filter_fn' is expected to
 -   return 'true' when the desired DMA channel is found.
-+	struct dma_chan *dma_request_chan(struct device *dev, const char *name);
-+
 +   Which will find and return the 'name' DMA channel associated with the 'dev'
 +   device. The association is done via DT, ACPI or board file based
 +   dma_slave_map matching table.
  
     A channel allocated via this interface is exclusive to the caller,
     until dma_release_channel() is called.
-diff --git a/drivers/dma/dmaengine.c b/drivers/dma/dmaengine.c
-index 81a36fc..a094dbb 100644
 --- a/drivers/dma/dmaengine.c
 +++ b/drivers/dma/dmaengine.c
 @@ -43,6 +43,7 @@
@@ -117,7 +112,7 @@ index 81a36fc..a094dbb 100644
  #include <linux/dma-mapping.h>
  #include <linux/init.h>
  #include <linux/module.h>
-@@ -665,27 +666,73 @@ struct dma_chan *__dma_request_channel(const dma_cap_mask_t *mask,
+@@ -665,27 +666,73 @@ struct dma_chan *__dma_request_channel(c
  }
  EXPORT_SYMBOL_GPL(__dma_request_channel);
  
@@ -199,7 +194,7 @@ index 81a36fc..a094dbb 100644
  
  /**
   * dma_request_slave_channel - try to allocate an exclusive slave channel
-@@ -697,17 +744,35 @@ EXPORT_SYMBOL_GPL(dma_request_slave_channel_reason);
+@@ -697,17 +744,35 @@ EXPORT_SYMBOL_GPL(dma_request_slave_chan
  struct dma_chan *dma_request_slave_channel(struct device *dev,
  					   const char *name)
  {
@@ -239,8 +234,6 @@ index 81a36fc..a094dbb 100644
  void dma_release_channel(struct dma_chan *chan)
  {
  	mutex_lock(&dma_list_mutex);
-diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
-index c47c68e..d50a6b51 100644
 --- a/include/linux/dmaengine.h
 +++ b/include/linux/dmaengine.h
 @@ -607,11 +607,38 @@ enum dmaengine_alignment {
@@ -290,7 +283,7 @@ index c47c68e..d50a6b51 100644
  	dma_cap_mask_t  cap_mask;
  	unsigned short max_xor;
  	unsigned short max_pq;
-@@ -1140,9 +1168,11 @@ enum dma_status dma_wait_for_async_tx(struct dma_async_tx_descriptor *tx);
+@@ -1140,9 +1168,11 @@ enum dma_status dma_wait_for_async_tx(st
  void dma_issue_pending_all(void);
  struct dma_chan *__dma_request_channel(const dma_cap_mask_t *mask,
  					dma_filter_fn fn, void *fn_param);
@@ -304,7 +297,7 @@ index c47c68e..d50a6b51 100644
  void dma_release_channel(struct dma_chan *chan);
  int dma_get_slave_caps(struct dma_chan *chan, struct dma_slave_caps *caps);
  #else
-@@ -1166,16 +1196,21 @@ static inline struct dma_chan *__dma_request_channel(const dma_cap_mask_t *mask,
+@@ -1166,16 +1196,21 @@ static inline struct dma_chan *__dma_req
  {
  	return NULL;
  }
@@ -331,7 +324,7 @@ index c47c68e..d50a6b51 100644
  static inline void dma_release_channel(struct dma_chan *chan)
  {
  }
-@@ -1186,6 +1221,8 @@ static inline int dma_get_slave_caps(struct dma_chan *chan,
+@@ -1186,6 +1221,8 @@ static inline int dma_get_slave_caps(str
  }
  #endif
  
@@ -340,6 +333,3 @@ index c47c68e..d50a6b51 100644
  static inline int dmaengine_desc_set_reuse(struct dma_async_tx_descriptor *tx)
  {
  	struct dma_slave_caps caps;
--- 
-2.8.1
-

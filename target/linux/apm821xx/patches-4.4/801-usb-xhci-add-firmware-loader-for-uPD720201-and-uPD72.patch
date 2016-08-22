@@ -33,8 +33,6 @@ Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
  drivers/usb/host/xhci-pci.c | 492 ++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 492 insertions(+)
 
-diff --git a/drivers/usb/host/xhci-pci.c b/drivers/usb/host/xhci-pci.c
-index 48672fa..328c891 100644
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
 @@ -24,6 +24,8 @@
@@ -46,7 +44,7 @@ index 48672fa..328c891 100644
  
  #include "xhci.h"
  #include "xhci-trace.h"
-@@ -207,6 +209,458 @@ static void xhci_pme_acpi_rtd3_enable(struct pci_dev *dev)
+@@ -209,6 +211,458 @@ static void xhci_pme_acpi_rtd3_enable(st
  static void xhci_pme_acpi_rtd3_enable(struct pci_dev *dev) { }
  #endif /* CONFIG_ACPI */
  
@@ -505,7 +503,7 @@ index 48672fa..328c891 100644
  /* called during probe() after chip reset completes */
  static int xhci_pci_setup(struct usb_hcd *hcd)
  {
-@@ -246,6 +700,22 @@ static int xhci_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
+@@ -248,6 +702,22 @@ static int xhci_pci_probe(struct pci_dev
  	struct hc_driver *driver;
  	struct usb_hcd *hcd;
  
@@ -528,7 +526,7 @@ index 48672fa..328c891 100644
  	driver = (struct hc_driver *)id->driver_data;
  
  	/* Prevent runtime suspending between USB-2 and USB-3 initialization */
-@@ -303,6 +773,16 @@ static void xhci_pci_remove(struct pci_dev *dev)
+@@ -305,6 +775,16 @@ static void xhci_pci_remove(struct pci_d
  {
  	struct xhci_hcd *xhci;
  
@@ -545,6 +543,3 @@ index 48672fa..328c891 100644
  	xhci = hcd_to_xhci(pci_get_drvdata(dev));
  	xhci->xhc_state |= XHCI_STATE_REMOVING;
  	if (xhci->shared_hcd) {
--- 
-2.8.1
-

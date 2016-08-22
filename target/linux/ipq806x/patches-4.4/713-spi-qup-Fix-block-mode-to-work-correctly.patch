@@ -14,13 +14,11 @@ Change-Id: I4b4f4d25be57e6e8148f6f0d24bed376eb287ecf
  drivers/spi/spi-qup.c | 181 +++++++++++++++++++++++++++++++++++++++-----------
  1 file changed, 141 insertions(+), 40 deletions(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index 089c5e8..e487416 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
 @@ -83,6 +83,8 @@
  #define QUP_IO_M_MODE_BAM		3
-
+ 
  /* QUP_OPERATIONAL fields */
 +#define QUP_OP_IN_BLOCK_READ_REQ	BIT(13)
 +#define QUP_OP_OUT_BLOCK_WRITE_REQ	BIT(12)
@@ -30,20 +28,20 @@ index 089c5e8..e487416 100644
 @@ -156,6 +158,12 @@ struct spi_qup {
  	struct dma_slave_config	tx_conf;
  };
-
+ 
 +static inline bool spi_qup_is_flag_set(struct spi_qup *controller, u32 flag)
 +{
 +	u32 opflag = readl_relaxed(controller->base + QUP_OPERATIONAL);
 +
 +	return opflag & flag;
 +}
-
+ 
  static inline bool spi_qup_is_dma_xfer(int mode)
  {
-@@ -217,29 +225,26 @@ static int spi_qup_set_state(struct spi_qup *controller, u32 state)
+@@ -217,29 +225,26 @@ static int spi_qup_set_state(struct spi_
  	return 0;
  }
-
+ 
 -static void spi_qup_fifo_read(struct spi_qup *controller,
 -			    struct spi_transfer *xfer)
 +static void spi_qup_read_from_fifo(struct spi_qup *controller,
@@ -54,18 +52,18 @@ index 089c5e8..e487416 100644
 -	int idx, shift, w_size;
 -
 -	w_size = controller->w_size;
--
--	while (controller->rx_bytes < xfer->len) {
 +	int i, shift, num_bytes;
 +	u32 word;
-
+ 
+-	while (controller->rx_bytes < xfer->len) {
+-
 -		state = readl_relaxed(controller->base + QUP_OPERATIONAL);
 -		if (0 == (state & QUP_OP_IN_FIFO_NOT_EMPTY))
 -			break;
 +	for (; num_words; num_words--) {
-
+ 
  		word = readl_relaxed(controller->base + QUP_INPUT_FIFO);
-
+ 
 +		num_bytes = min_t(int, xfer->len - controller->rx_bytes,
 +					controller->w_size);
 +
@@ -74,13 +72,13 @@ index 089c5e8..e487416 100644
 +			controller->rx_bytes += num_bytes;
  			continue;
  		}
-
+ 
 -		for (idx = 0; idx < w_size; idx++, controller->rx_bytes++) {
 +		for (i = 0; i < num_bytes; i++, controller->rx_bytes++) {
  			/*
  			 * The data format depends on bytes per SPI word:
  			 *  4 bytes: 0x12345678
-@@ -247,38 +252,80 @@ static void spi_qup_fifo_read(struct spi_qup *controller,
+@@ -247,38 +252,80 @@ static void spi_qup_fifo_read(struct spi
  			 *  1 byte : 0x00000012
  			 */
  			shift = BITS_PER_BYTE;
@@ -90,7 +88,7 @@ index 089c5e8..e487416 100644
  		}
  	}
  }
-
+ 
 -static void spi_qup_fifo_write(struct spi_qup *controller,
 +static void spi_qup_read(struct spi_qup *controller,
  			    struct spi_transfer *xfer)
@@ -117,24 +115,24 @@ index 089c5e8..e487416 100644
 +			if (!spi_qup_is_flag_set(controller,
 +						 QUP_OP_IN_FIFO_NOT_EMPTY))
 +				break;
-+
+ 
+-	w_size = controller->w_size;
 +			num_words = 1;
 +		}
-
--	w_size = controller->w_size;
++
 +		/* read up to the maximum transfer size available */
 +		spi_qup_read_from_fifo(controller, xfer, num_words);
-
+ 
 -	while (controller->tx_bytes < xfer->len) {
 +		remainder -= num_words;
-
+ 
 -		state = readl_relaxed(controller->base + QUP_OPERATIONAL);
 -		if (state & QUP_OP_OUT_FIFO_FULL)
 +		/* if block mode, check to see if next block is available */
 +		if (is_block_mode && !spi_qup_is_flag_set(controller,
 +					QUP_OP_IN_BLOCK_READ_REQ))
  			break;
-
+ 
 +	} while (remainder);
 +
 +	/*
@@ -158,7 +156,7 @@ index 089c5e8..e487416 100644
 +	for (; num_words; num_words--) {
  		word = 0;
 -		for (idx = 0; idx < w_size; idx++, controller->tx_bytes++) {
-
+ 
 -			if (!tx_buf) {
 -				controller->tx_bytes += w_size;
 -				break;
@@ -169,18 +167,18 @@ index 089c5e8..e487416 100644
 +				data = tx_buf[controller->tx_bytes + i];
 +				word |= data << (BITS_PER_BYTE * (3 - i));
  			}
-
+ 
 -			data = tx_buf[controller->tx_bytes];
 -			word |= data << (BITS_PER_BYTE * (3 - idx));
 -		}
 +		controller->tx_bytes += num_bytes;
-
+ 
  		writel_relaxed(word, controller->base + QUP_OUTPUT_FIFO);
  	}
 @@ -291,6 +338,44 @@ static void spi_qup_dma_done(void *data)
  	complete(done);
  }
-
+ 
 +static void spi_qup_write(struct spi_qup *controller,
 +			    struct spi_transfer *xfer)
 +{
@@ -225,36 +223,36 @@ index 089c5e8..e487416 100644
 @@ -348,11 +433,13 @@ unsigned long timeout)
  		return ret;
  	}
-
+ 
 -	if (xfer->rx_buf)
 -		rx_done = spi_qup_dma_done;
 +	if (!qup->qup_v1) {
 +		if (xfer->rx_buf)
 +			rx_done = spi_qup_dma_done;
-
+ 
 -	if (xfer->tx_buf)
 -		tx_done = spi_qup_dma_done;
 +		if (xfer->tx_buf)
 +			tx_done = spi_qup_dma_done;
 +	}
-
+ 
  	if (xfer->rx_buf) {
  		ret = spi_qup_prep_sg(master, xfer, DMA_DEV_TO_MEM, rx_done,
-@@ -401,7 +488,7 @@ static int spi_qup_do_pio(struct spi_master *master, struct spi_transfer *xfer,
+@@ -401,7 +488,7 @@ static int spi_qup_do_pio(struct spi_mas
  	}
-
+ 
  	if (qup->mode == QUP_IO_M_MODE_FIFO)
 -		spi_qup_fifo_write(qup, xfer);
 +		spi_qup_write(qup, xfer);
-
+ 
  	ret = spi_qup_set_state(qup, QUP_STATE_RUN);
  	if (ret) {
-@@ -434,10 +521,11 @@ static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
-
+@@ -434,10 +521,11 @@ static irqreturn_t spi_qup_qup_irq(int i
+ 
  	writel_relaxed(qup_err, controller->base + QUP_ERROR_FLAGS);
  	writel_relaxed(spi_err, controller->base + SPI_ERROR_FLAGS);
 -	writel_relaxed(opflags, controller->base + QUP_OPERATIONAL);
-
+ 
  	if (!xfer) {
 -		dev_err_ratelimited(controller->dev, "unexpected irq %08x %08x %08x\n",
 +		writel_relaxed(opflags, controller->base + QUP_OPERATIONAL);
@@ -263,10 +261,10 @@ index 089c5e8..e487416 100644
  				    qup_err, spi_err, opflags);
  		return IRQ_HANDLED;
  	}
-@@ -463,12 +551,20 @@ static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
+@@ -463,12 +551,20 @@ static irqreturn_t spi_qup_qup_irq(int i
  		error = -EIO;
  	}
-
+ 
 -	if (!spi_qup_is_dma_xfer(controller->mode)) {
 +	if (spi_qup_is_dma_xfer(controller->mode)) {
 +		writel_relaxed(opflags, controller->base + QUP_OPERATIONAL);
@@ -280,24 +278,24 @@ index 089c5e8..e487416 100644
  		if (opflags & QUP_OP_IN_SERVICE_FLAG)
 -			spi_qup_fifo_read(controller, xfer);
 +			spi_qup_read(controller, xfer);
-
+ 
  		if (opflags & QUP_OP_OUT_SERVICE_FLAG)
 -			spi_qup_fifo_write(controller, xfer);
 +			spi_qup_write(controller, xfer);
  	}
-
+ 
  	spin_lock_irqsave(&controller->lock, flags);
-@@ -476,6 +572,9 @@ static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
+@@ -476,6 +572,9 @@ static irqreturn_t spi_qup_qup_irq(int i
  	controller->xfer = xfer;
  	spin_unlock_irqrestore(&controller->lock, flags);
-
+ 
 +	/* re-read opflags as flags may have changed due to actions above */
 +	opflags = readl_relaxed(controller->base + QUP_OPERATIONAL);
 +
  	if ((controller->rx_bytes == xfer->len &&
  		(opflags & QUP_OP_MAX_INPUT_DONE_FLAG)) ||  error)
  		complete(&controller->done);
-@@ -519,11 +618,13 @@ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+@@ -519,11 +618,13 @@ static int spi_qup_io_config(struct spi_
  		/* must be zero for FIFO */
  		writel_relaxed(0, controller->base + QUP_MX_INPUT_CNT);
  		writel_relaxed(0, controller->base + QUP_MX_OUTPUT_CNT);
@@ -311,7 +309,4 @@ index 089c5e8..e487416 100644
 +		/* must be zero for BLOCK and BAM */
  		writel_relaxed(0, controller->base + QUP_MX_READ_CNT);
  		writel_relaxed(0, controller->base + QUP_MX_WRITE_CNT);
-
---
-2.7.2
-
+ 

@@ -53,11 +53,9 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  include/linux/dmaengine.h            | 90 ++++++++++++++++++++++++++++++++++++
  4 files changed, 148 insertions(+), 5 deletions(-)
 
-diff --git a/Documentation/dmaengine/client.txt b/Documentation/dmaengine/client.txt
-index 11fb87f..d9f9f46 100644
 --- a/Documentation/dmaengine/client.txt
 +++ b/Documentation/dmaengine/client.txt
-@@ -128,7 +128,7 @@ The slave DMA usage consists of following steps:
+@@ -117,7 +117,7 @@ The slave DMA usage consists of followin
  	transaction.
  
  	For cyclic DMA, a callback function may wish to terminate the
@@ -66,7 +64,7 @@ index 11fb87f..d9f9f46 100644
  
  	Therefore, it is important that DMA engine drivers drop any
  	locks before calling the callback function which may cause a
-@@ -166,12 +166,29 @@ The slave DMA usage consists of following steps:
+@@ -155,12 +155,29 @@ The slave DMA usage consists of followin
  
  Further APIs:
  
@@ -97,7 +95,7 @@ index 11fb87f..d9f9f46 100644
  2. int dmaengine_pause(struct dma_chan *chan)
  
     This pauses activity on the DMA channel without data loss.
-@@ -197,3 +214,20 @@ Further APIs:
+@@ -186,3 +203,20 @@ Further APIs:
  	a running DMA channel.  It is recommended that DMA engine users
  	pause or stop (via dmaengine_terminate_all()) the channel before
  	using this API.
@@ -118,8 +116,6 @@ index 11fb87f..d9f9f46 100644
 +
 +  The behavior of this function is undefined if dma_async_issue_pending() has
 +  been called between dmaengine_terminate_async() and this function.
-diff --git a/Documentation/dmaengine/provider.txt b/Documentation/dmaengine/provider.txt
-index 67d4ce4..122b7f4 100644
 --- a/Documentation/dmaengine/provider.txt
 +++ b/Documentation/dmaengine/provider.txt
 @@ -327,8 +327,24 @@ supported.
@@ -149,11 +145,9 @@ index 67d4ce4..122b7f4 100644
  
  Misc notes (stuff that should be documented, but don't really know
  where to put them)
-diff --git a/drivers/dma/dmaengine.c b/drivers/dma/dmaengine.c
-index 3ecec14..d6fc82e 100644
 --- a/drivers/dma/dmaengine.c
 +++ b/drivers/dma/dmaengine.c
-@@ -265,8 +265,11 @@ static void dma_chan_put(struct dma_chan *chan)
+@@ -266,8 +266,11 @@ static void dma_chan_put(struct dma_chan
  	module_put(dma_chan_to_owner(chan));
  
  	/* This channel is not in use anymore, free it */
@@ -166,11 +160,9 @@ index 3ecec14..d6fc82e 100644
  
  	/* If the channel is used via a DMA request router, free the mapping */
  	if (chan->router && chan->router->route_free) {
-diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
-index c47c68e..4662d9a 100644
 --- a/include/linux/dmaengine.h
 +++ b/include/linux/dmaengine.h
-@@ -654,6 +654,8 @@ enum dmaengine_alignment {
+@@ -681,6 +681,8 @@ struct dma_filter {
   *	paused. Returns 0 or an error code
   * @device_terminate_all: Aborts all transfers on a channel. Returns 0
   *	or an error code
@@ -179,7 +171,7 @@ index c47c68e..4662d9a 100644
   * @device_tx_status: poll for transaction completion, the optional
   *	txstate parameter can be supplied with a pointer to get a
   *	struct with auxiliary transfer status information, otherwise the call
-@@ -737,6 +739,7 @@ struct dma_device {
+@@ -765,6 +767,7 @@ struct dma_device {
  	int (*device_pause)(struct dma_chan *chan);
  	int (*device_resume)(struct dma_chan *chan);
  	int (*device_terminate_all)(struct dma_chan *chan);
@@ -187,7 +179,7 @@ index c47c68e..4662d9a 100644
  
  	enum dma_status (*device_tx_status)(struct dma_chan *chan,
  					    dma_cookie_t cookie,
-@@ -828,6 +831,13 @@ static inline struct dma_async_tx_descriptor *dmaengine_prep_dma_sg(
+@@ -856,6 +859,13 @@ static inline struct dma_async_tx_descri
  			src_sg, src_nents, flags);
  }
  
@@ -201,7 +193,7 @@ index c47c68e..4662d9a 100644
  static inline int dmaengine_terminate_all(struct dma_chan *chan)
  {
  	if (chan->device->device_terminate_all)
-@@ -836,6 +846,86 @@ static inline int dmaengine_terminate_all(struct dma_chan *chan)
+@@ -864,6 +874,86 @@ static inline int dmaengine_terminate_al
  	return -ENOSYS;
  }
  
@@ -288,6 +280,3 @@ index c47c68e..4662d9a 100644
  static inline int dmaengine_pause(struct dma_chan *chan)
  {
  	if (chan->device->device_pause)
--- 
-2.8.1
-

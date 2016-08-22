@@ -24,14 +24,12 @@ Signed-off-by: Nitheesh Sekar <nsekar@codeaurora.org>
  3 files changed, 188 insertions(+)
  create mode 100644 drivers/usb/dwc3/dwc3-of-simple.c
 
-diff --git a/drivers/usb/dwc3/Kconfig b/drivers/usb/dwc3/Kconfig
-index 5a42c45..070e704 100644
 --- a/drivers/usb/dwc3/Kconfig
 +++ b/drivers/usb/dwc3/Kconfig
 @@ -87,6 +87,15 @@ config USB_DWC3_KEYSTONE
  	  Support of USB2/3 functionality in TI Keystone2 platforms.
  	  Say 'Y' or 'M' here if you have one such device
-
+ 
 +config USB_DWC3_OF_SIMPLE
 +       tristate "Generic OF Simple Glue Layer"
 +       depends on OF && COMMON_CLK
@@ -44,20 +42,15 @@ index 5a42c45..070e704 100644
  config USB_DWC3_ST
  	tristate "STMicroelectronics Platforms"
  	depends on ARCH_STI && OF
-diff --git a/drivers/usb/dwc3/Makefile b/drivers/usb/dwc3/Makefile
-index acc951d..6491f9b 100644
 --- a/drivers/usb/dwc3/Makefile
 +++ b/drivers/usb/dwc3/Makefile
-@@ -37,5 +37,6 @@ obj-$(CONFIG_USB_DWC3_OMAP)		+= dwc3-omap.o
+@@ -37,5 +37,6 @@ obj-$(CONFIG_USB_DWC3_OMAP)		+= dwc3-oma
  obj-$(CONFIG_USB_DWC3_EXYNOS)		+= dwc3-exynos.o
  obj-$(CONFIG_USB_DWC3_PCI)		+= dwc3-pci.o
  obj-$(CONFIG_USB_DWC3_KEYSTONE)		+= dwc3-keystone.o
 +obj-$(CONFIG_USB_DWC3_OF_SIMPLE)	+= dwc3-of-simple.o
  obj-$(CONFIG_USB_DWC3_QCOM)		+= dwc3-qcom.o
  obj-$(CONFIG_USB_DWC3_ST)		+= dwc3-st.o
-diff --git a/drivers/usb/dwc3/dwc3-of-simple.c b/drivers/usb/dwc3/dwc3-of-simple.c
-new file mode 100644
-index 0000000..60c4c5a
 --- /dev/null
 +++ b/drivers/usb/dwc3/dwc3-of-simple.c
 @@ -0,0 +1,178 @@
@@ -239,6 +232,3 @@ index 0000000..60c4c5a
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("DesignWare USB3 OF Simple Glue Layer");
 +MODULE_AUTHOR("Felipe Balbi <balbi@ti.com>");
---
-2.7.2
-

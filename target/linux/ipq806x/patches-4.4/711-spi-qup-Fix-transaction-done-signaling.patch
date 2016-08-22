@@ -16,20 +16,15 @@ Signed-off-by: Andy Gross <andy.gross@linaro.org>
  drivers/spi/spi-qup.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index 714fd4e..fe629f2 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
-@@ -447,7 +447,8 @@ static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
+@@ -447,7 +447,8 @@ static irqreturn_t spi_qup_qup_irq(int i
  	controller->xfer = xfer;
  	spin_unlock_irqrestore(&controller->lock, flags);
-
+ 
 -	if (controller->rx_bytes == xfer->len || error)
 +	if ((controller->rx_bytes == xfer->len &&
 +		(opflags & QUP_OP_MAX_INPUT_DONE_FLAG)) ||  error)
  		complete(&controller->done);
-
+ 
  	return IRQ_HANDLED;
---
-2.7.2
-

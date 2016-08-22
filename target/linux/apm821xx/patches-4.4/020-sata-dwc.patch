@@ -66,8 +66,6 @@ Mans Rullgard (11):
  drivers/ata/sata_dwc_460ex.c | 552 ++++++++++++++++++++++---------------------
  1 file changed, 283 insertions(+), 269 deletions(-)
 
-diff --git a/drivers/ata/sata_dwc_460ex.c b/drivers/ata/sata_dwc_460ex.c
-index 9020349..00c2af1 100644
 --- a/drivers/ata/sata_dwc_460ex.c
 +++ b/drivers/ata/sata_dwc_460ex.c
 @@ -30,10 +30,12 @@
@@ -197,7 +195,7 @@ index 9020349..00c2af1 100644
  /*
   * Prototypes
   */
-@@ -215,6 +192,93 @@ static void sata_dwc_dma_xfer_complete(struct ata_port *ap, u32 check_status);
+@@ -215,6 +192,93 @@ static void sata_dwc_dma_xfer_complete(s
  static void sata_dwc_port_stop(struct ata_port *ap);
  static void sata_dwc_clear_dmacr(struct sata_dwc_device_port *hsdevp, u8 tag);
  
@@ -291,7 +289,7 @@ index 9020349..00c2af1 100644
  static const char *get_prot_descript(u8 protocol)
  {
  	switch ((enum ata_tf_protocols)protocol) {
-@@ -305,21 +369,20 @@ static struct dma_async_tx_descriptor *dma_dwc_xfer_setup(struct ata_queued_cmd
+@@ -305,21 +369,20 @@ static struct dma_async_tx_descriptor *d
  	struct ata_port *ap = qc->ap;
  	struct sata_dwc_device_port *hsdevp = HSDEVP_FROM_AP(ap);
  	struct sata_dwc_device *hsdev = HSDEV_FROM_AP(ap);
@@ -318,7 +316,7 @@ index 9020349..00c2af1 100644
  	sconf.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
  	sconf.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
  
-@@ -336,8 +399,8 @@ static struct dma_async_tx_descriptor *dma_dwc_xfer_setup(struct ata_queued_cmd
+@@ -336,8 +399,8 @@ static struct dma_async_tx_descriptor *d
  	desc->callback = dma_dwc_xfer_done;
  	desc->callback_param = hsdev;
  
@@ -329,7 +327,7 @@ index 9020349..00c2af1 100644
  
  	return desc;
  }
-@@ -350,48 +413,38 @@ static int sata_dwc_scr_read(struct ata_link *link, unsigned int scr, u32 *val)
+@@ -350,48 +413,38 @@ static int sata_dwc_scr_read(struct ata_
  		return -EINVAL;
  	}
  
@@ -389,7 +387,7 @@ index 9020349..00c2af1 100644
  }
  
  static u32 qcmd_tag_to_mask(u8 tag)
-@@ -412,7 +465,7 @@ static void sata_dwc_error_intr(struct ata_port *ap,
+@@ -412,7 +465,7 @@ static void sata_dwc_error_intr(struct a
  
  	ata_ehi_clear_desc(ehi);
  
@@ -398,7 +396,7 @@ index 9020349..00c2af1 100644
  	status = ap->ops->sff_check_status(ap);
  
  	tag = ap->link.active_tag;
-@@ -423,7 +476,7 @@ static void sata_dwc_error_intr(struct ata_port *ap,
+@@ -423,7 +476,7 @@ static void sata_dwc_error_intr(struct a
  		hsdevp->dma_pending[tag], hsdevp->cmd_issued[tag]);
  
  	/* Clear error register and interrupt bit */
@@ -407,7 +405,7 @@ index 9020349..00c2af1 100644
  	clear_interrupt_bit(hsdev, SATA_DWC_INTPR_ERR);
  
  	/* This is the only error happening now.  TODO check for exact error */
-@@ -462,12 +515,12 @@ static irqreturn_t sata_dwc_isr(int irq, void *dev_instance)
+@@ -462,12 +515,12 @@ static irqreturn_t sata_dwc_isr(int irq,
  	int handled, num_processed, port = 0;
  	uint intpr, sactive, sactive2, tag_mask;
  	struct sata_dwc_device_port *hsdevp;
@@ -422,7 +420,7 @@ index 9020349..00c2af1 100644
  
  	ap = host->ports[port];
  	hsdevp = HSDEVP_FROM_AP(ap);
-@@ -486,12 +539,12 @@ static irqreturn_t sata_dwc_isr(int irq, void *dev_instance)
+@@ -486,12 +539,12 @@ static irqreturn_t sata_dwc_isr(int irq,
  	if (intpr & SATA_DWC_INTPR_NEWFP) {
  		clear_interrupt_bit(hsdev, SATA_DWC_INTPR_NEWFP);
  
@@ -437,7 +435,7 @@ index 9020349..00c2af1 100644
  
  		qc = ata_qc_from_tag(ap, tag);
  		/*
-@@ -505,11 +558,11 @@ static irqreturn_t sata_dwc_isr(int irq, void *dev_instance)
+@@ -505,11 +558,11 @@ static irqreturn_t sata_dwc_isr(int irq,
  		handled = 1;
  		goto DONE;
  	}
@@ -512,7 +510,7 @@ index 9020349..00c2af1 100644
  	} else {
  		/*
  		 * This should not happen, it indicates the driver is out of
-@@ -688,10 +737,9 @@ static void sata_dwc_clear_dmacr(struct sata_dwc_device_port *hsdevp, u8 tag)
+@@ -688,10 +737,9 @@ static void sata_dwc_clear_dmacr(struct
  		 */
  		dev_err(hsdev->dev,
  			"%s DMA protocol RX and TX DMA not pending tag=0x%02x pending=%d dmacr: 0x%08x\n",
@@ -526,7 +524,7 @@ index 9020349..00c2af1 100644
  	}
  }
  
-@@ -716,7 +764,7 @@ static void sata_dwc_dma_xfer_complete(struct ata_port *ap, u32 check_status)
+@@ -716,7 +764,7 @@ static void sata_dwc_dma_xfer_complete(s
  			 __func__, qc->tag, qc->tf.command,
  			 get_dma_dir_descript(qc->dma_dir),
  			 get_prot_descript(qc->tf.protocol),
@@ -535,7 +533,7 @@ index 9020349..00c2af1 100644
  	}
  #endif
  
-@@ -725,7 +773,7 @@ static void sata_dwc_dma_xfer_complete(struct ata_port *ap, u32 check_status)
+@@ -725,7 +773,7 @@ static void sata_dwc_dma_xfer_complete(s
  			dev_err(ap->dev,
  				"%s DMA protocol RX and TX DMA not pending dmacr: 0x%08x\n",
  				__func__,
@@ -544,7 +542,7 @@ index 9020349..00c2af1 100644
  		}
  
  		hsdevp->dma_pending[tag] = SATA_DWC_DMA_PENDING_NONE;
-@@ -742,8 +790,9 @@ static int sata_dwc_qc_complete(struct ata_port *ap, struct ata_queued_cmd *qc,
+@@ -742,8 +790,9 @@ static int sata_dwc_qc_complete(struct a
  	u8 status = 0;
  	u32 mask = 0x0;
  	u8 tag = qc->tag;
@@ -555,7 +553,7 @@ index 9020349..00c2af1 100644
  	dev_dbg(ap->dev, "%s checkstatus? %x\n", __func__, check_status);
  
  	if (hsdevp->dma_pending[tag] == SATA_DWC_DMA_PENDING_TX)
-@@ -756,10 +805,8 @@ static int sata_dwc_qc_complete(struct ata_port *ap, struct ata_queued_cmd *qc,
+@@ -756,10 +805,8 @@ static int sata_dwc_qc_complete(struct a
  
  	/* clear active bit */
  	mask = (~(qcmd_tag_to_mask(tag)));
@@ -568,7 +566,7 @@ index 9020349..00c2af1 100644
  	ata_qc_complete(qc);
  	return 0;
  }
-@@ -767,54 +814,62 @@ static int sata_dwc_qc_complete(struct ata_port *ap, struct ata_queued_cmd *qc,
+@@ -767,54 +814,62 @@ static int sata_dwc_qc_complete(struct a
  static void sata_dwc_enable_interrupts(struct sata_dwc_device *hsdev)
  {
  	/* Enable selective interrupts by setting the interrupt maskregister*/
@@ -621,18 +619,18 @@ index 9020349..00c2af1 100644
 +	port->lbal_addr		= base + 0x0c;
 +	port->lbam_addr		= base + 0x10;
 +	port->lbah_addr		= base + 0x14;
- 
--	port->error_addr = (void __iomem *)base + 0x04;
--	port->feature_addr = (void __iomem *)base + 0x04;
++
 +	port->device_addr	= base + 0x18;
 +	port->command_addr	= base + 0x1c;
 +	port->status_addr	= base + 0x1c;
  
--	port->nsect_addr = (void __iomem *)base + 0x08;
+-	port->error_addr = (void __iomem *)base + 0x04;
+-	port->feature_addr = (void __iomem *)base + 0x04;
 +	port->altstatus_addr	= base + 0x20;
 +	port->ctl_addr		= base + 0x20;
 +}
-+
+ 
+-	port->nsect_addr = (void __iomem *)base + 0x08;
 +static int sata_dwc_dma_get_channel(struct sata_dwc_device_port *hsdevp)
 +{
 +	struct sata_dwc_device *hsdev = hsdevp->hsdev;
@@ -662,7 +660,7 @@ index 9020349..00c2af1 100644
  }
  
  /*
-@@ -829,7 +884,6 @@ static int sata_dwc_port_start(struct ata_port *ap)
+@@ -829,7 +884,6 @@ static int sata_dwc_port_start(struct at
  	struct sata_dwc_device *hsdev;
  	struct sata_dwc_device_port *hsdevp = NULL;
  	struct device *pdev;
@@ -670,7 +668,7 @@ index 9020349..00c2af1 100644
  	int i;
  
  	hsdev = HSDEV_FROM_AP(ap);
-@@ -853,20 +907,13 @@ static int sata_dwc_port_start(struct ata_port *ap)
+@@ -853,20 +907,13 @@ static int sata_dwc_port_start(struct at
  	}
  	hsdevp->hsdev = hsdev;
  
@@ -696,7 +694,7 @@ index 9020349..00c2af1 100644
  
  	for (i = 0; i < SATA_DWC_QCMD_MAX; i++)
  		hsdevp->cmd_issued[i] = SATA_DWC_CMD_ISSUED_NOT;
-@@ -877,18 +924,18 @@ static int sata_dwc_port_start(struct ata_port *ap)
+@@ -877,18 +924,18 @@ static int sata_dwc_port_start(struct at
  	if (ap->port_no == 0)  {
  		dev_dbg(ap->dev, "%s: clearing TXCHEN, RXCHEN in DMAC\n",
  			__func__);
@@ -736,7 +734,7 @@ index 9020349..00c2af1 100644
  
  	kfree(hsdevp);
  	ap->private_data = NULL;
-@@ -924,22 +973,20 @@ static void sata_dwc_exec_command_by_tag(struct ata_port *ap,
+@@ -924,22 +973,20 @@ static void sata_dwc_exec_command_by_tag
  					 struct ata_taskfile *tf,
  					 u8 tag, u32 cmd_issued)
  {
@@ -761,7 +759,7 @@ index 9020349..00c2af1 100644
  	ata_sff_exec_command(ap, tf);
  }
  
-@@ -992,18 +1039,18 @@ static void sata_dwc_bmdma_start_by_tag(struct ata_queued_cmd *qc, u8 tag)
+@@ -992,18 +1039,18 @@ static void sata_dwc_bmdma_start_by_tag(
  	sata_dwc_tf_dump(ap, &qc->tf);
  
  	if (start_dma) {
@@ -785,7 +783,7 @@ index 9020349..00c2af1 100644
  
  		/* Enable AHB DMA transfer on the specified channel */
  		dmaengine_submit(desc);
-@@ -1025,36 +1072,12 @@ static void sata_dwc_bmdma_start(struct ata_queued_cmd *qc)
+@@ -1025,36 +1072,12 @@ static void sata_dwc_bmdma_start(struct
  	sata_dwc_bmdma_start_by_tag(qc, tag);
  }
  
@@ -823,7 +821,7 @@ index 9020349..00c2af1 100644
  
  #ifdef DEBUG_NCQ
  	if (qc->tag > 0 || ap->link.sactive > 1)
-@@ -1068,47 +1091,33 @@ static unsigned int sata_dwc_qc_issue(struct ata_queued_cmd *qc)
+@@ -1068,47 +1091,33 @@ static unsigned int sata_dwc_qc_issue(st
  
  	if (!ata_is_ncq(qc->tf.protocol))
  		tag = 0;
@@ -883,7 +881,7 @@ index 9020349..00c2af1 100644
  static void sata_dwc_error_handler(struct ata_port *ap)
  {
  	ata_sff_error_handler(ap);
-@@ -1125,17 +1134,22 @@ static int sata_dwc_hardreset(struct ata_link *link, unsigned int *class,
+@@ -1125,17 +1134,22 @@ static int sata_dwc_hardreset(struct ata
  	sata_dwc_enable_interrupts(hsdev);
  
  	/* Reconfigure the DMA control register */
@@ -911,7 +909,7 @@ index 9020349..00c2af1 100644
  /*
   * scsi mid-layer and libata interface structures
   */
-@@ -1148,7 +1162,13 @@ static struct scsi_host_template sata_dwc_sht = {
+@@ -1148,7 +1162,13 @@ static struct scsi_host_template sata_dw
  	 */
  	.sg_tablesize		= LIBATA_MAX_PRD,
  	/* .can_queue		= ATA_MAX_QUEUE, */
@@ -926,7 +924,7 @@ index 9020349..00c2af1 100644
  };
  
  static struct ata_port_operations sata_dwc_ops = {
-@@ -1157,7 +1177,6 @@ static struct ata_port_operations sata_dwc_ops = {
+@@ -1157,7 +1177,6 @@ static struct ata_port_operations sata_d
  	.error_handler		= sata_dwc_error_handler,
  	.hardreset		= sata_dwc_hardreset,
  
@@ -934,7 +932,7 @@ index 9020349..00c2af1 100644
  	.qc_issue		= sata_dwc_qc_issue,
  
  	.scr_read		= sata_dwc_scr_read,
-@@ -1166,6 +1185,8 @@ static struct ata_port_operations sata_dwc_ops = {
+@@ -1166,6 +1185,8 @@ static struct ata_port_operations sata_d
  	.port_start		= sata_dwc_port_start,
  	.port_stop		= sata_dwc_port_stop,
  
@@ -943,7 +941,7 @@ index 9020349..00c2af1 100644
  	.bmdma_setup		= sata_dwc_bmdma_setup,
  	.bmdma_start		= sata_dwc_bmdma_start,
  };
-@@ -1184,13 +1205,14 @@ static int sata_dwc_probe(struct platform_device *ofdev)
+@@ -1184,13 +1205,14 @@ static int sata_dwc_probe(struct platfor
  	struct sata_dwc_device *hsdev;
  	u32 idr, versionr;
  	char *ver = (char *)&versionr;
@@ -959,7 +957,7 @@ index 9020349..00c2af1 100644
  
  	/* Allocate DWC SATA device */
  	host = ata_host_alloc_pinfo(&ofdev->dev, ppi, SATA_DWC_MAX_PORTS);
-@@ -1201,57 +1223,33 @@ static int sata_dwc_probe(struct platform_device *ofdev)
+@@ -1201,57 +1223,33 @@ static int sata_dwc_probe(struct platfor
  	host->private_data = hsdev;
  
  	/* Ioremap SATA registers */
@@ -1026,7 +1024,7 @@ index 9020349..00c2af1 100644
  	/* Enable SATA Interrupts */
  	sata_dwc_enable_interrupts(hsdev);
  
-@@ -1263,6 +1261,25 @@ static int sata_dwc_probe(struct platform_device *ofdev)
+@@ -1263,6 +1261,25 @@ static int sata_dwc_probe(struct platfor
  		goto error_out;
  	}
  
@@ -1052,7 +1050,7 @@ index 9020349..00c2af1 100644
  	/*
  	 * Now, register with libATA core, this will also initiate the
  	 * device discovery process, invoking our port_start() handler &
-@@ -1276,12 +1293,7 @@ static int sata_dwc_probe(struct platform_device *ofdev)
+@@ -1276,12 +1293,7 @@ static int sata_dwc_probe(struct platfor
  	return 0;
  
  error_out:
@@ -1066,7 +1064,7 @@ index 9020349..00c2af1 100644
  	return err;
  }
  
-@@ -1293,11 +1305,13 @@ static int sata_dwc_remove(struct platform_device *ofdev)
+@@ -1293,11 +1305,13 @@ static int sata_dwc_remove(struct platfo
  
  	ata_host_detach(host);
  
@@ -1083,6 +1081,3 @@ index 9020349..00c2af1 100644
  	dev_dbg(&ofdev->dev, "done\n");
  	return 0;
  }
--- 
-2.8.1
-
