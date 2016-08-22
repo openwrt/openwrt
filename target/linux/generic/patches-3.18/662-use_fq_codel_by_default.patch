@@ -13,7 +13,7 @@
  	  device, it has to decide which ones to send first, which ones to
 --- a/net/sched/sch_fq_codel.c
 +++ b/net/sched/sch_fq_codel.c
-@@ -592,7 +592,7 @@ static const struct Qdisc_class_ops fq_c
+@@ -599,7 +599,7 @@ static const struct Qdisc_class_ops fq_c
  	.walk		=	fq_codel_walk,
  };
  
@@ -22,7 +22,7 @@
  	.cl_ops		=	&fq_codel_class_ops,
  	.id		=	"fq_codel",
  	.priv_size	=	sizeof(struct fq_codel_sched_data),
-@@ -608,6 +608,7 @@ static struct Qdisc_ops fq_codel_qdisc_o
+@@ -615,6 +615,7 @@ static struct Qdisc_ops fq_codel_qdisc_o
  	.dump_stats =	fq_codel_dump_stats,
  	.owner		=	THIS_MODULE,
  };
@@ -51,7 +51,7 @@
  EXPORT_SYMBOL(default_qdisc_ops);
  
  /* Main transmission queue. */
-@@ -739,7 +739,7 @@ static void attach_one_default_qdisc(str
+@@ -742,7 +742,7 @@ static void attach_one_default_qdisc(str
  
  	if (dev->tx_queue_len) {
  		qdisc = qdisc_create_dflt(dev_queue,
@@ -84,7 +84,7 @@
  		if (qdisc == NULL) {
 --- a/net/sched/sch_api.c
 +++ b/net/sched/sch_api.c
-@@ -1947,7 +1947,7 @@ static int __init pktsched_init(void)
+@@ -1949,7 +1949,7 @@ static int __init pktsched_init(void)
  		return err;
  	}
  

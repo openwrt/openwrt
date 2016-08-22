@@ -1,6 +1,6 @@
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -26,6 +26,7 @@ bool bcma_wait_value(struct bcma_device
+@@ -24,6 +24,7 @@ bool bcma_wait_value(struct bcma_device
  		     int timeout);
  void bcma_prepare_core(struct bcma_bus *bus, struct bcma_device *core);
  void bcma_init_bus(struct bcma_bus *bus);
@@ -8,7 +8,7 @@
  int bcma_bus_register(struct bcma_bus *bus);
  void bcma_bus_unregister(struct bcma_bus *bus);
  int __init bcma_bus_early_register(struct bcma_bus *bus);
-@@ -42,6 +43,9 @@ int bcma_bus_scan(struct bcma_bus *bus);
+@@ -40,6 +41,9 @@ int bcma_bus_scan(struct bcma_bus *bus);
  int bcma_sprom_get(struct bcma_bus *bus);
  
  /* driver_chipcommon.c */
@@ -18,7 +18,7 @@
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  void bcma_chipco_serial_init(struct bcma_drv_cc *cc);
  extern struct platform_device bcma_pflash_dev;
-@@ -52,6 +56,8 @@ int bcma_core_chipcommon_b_init(struct b
+@@ -50,6 +54,8 @@ int bcma_core_chipcommon_b_init(struct b
  void bcma_core_chipcommon_b_free(struct bcma_drv_cc_b *ccb);
  
  /* driver_chipcommon_pmu.c */
@@ -27,7 +27,7 @@
  u32 bcma_pmu_get_alp_clock(struct bcma_drv_cc *cc);
  u32 bcma_pmu_get_cpu_clock(struct bcma_drv_cc *cc);
  
-@@ -100,7 +106,35 @@ static inline void __exit bcma_host_soc_
+@@ -98,7 +104,35 @@ static inline void __exit bcma_host_soc_
  #endif /* CONFIG_BCMA_HOST_SOC && CONFIG_OF */
  
  /* driver_pci.c */
@@ -63,7 +63,7 @@
  
  extern int bcma_chipco_watchdog_register(struct bcma_drv_cc *cc);
  
-@@ -117,6 +151,39 @@ static inline void bcma_core_pci_hostmod
+@@ -115,6 +149,39 @@ static inline void bcma_core_pci_hostmod
  }
  #endif /* CONFIG_BCMA_DRIVER_PCI_HOSTMODE */
  
@@ -500,7 +500,7 @@
  	}
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -434,6 +434,27 @@ static inline struct bcma_device *bcma_f
+@@ -435,6 +435,27 @@ static inline struct bcma_device *bcma_f
  	return bcma_find_core_unit(bus, coreid, 0);
  }
  
