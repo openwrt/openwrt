@@ -1,7 +1,7 @@
-From 7d9acff816e15f7d8a51f912bc663373f1d31e7b Mon Sep 17 00:00:00 2001
+From 1cb94db3d1bfe0075bde78fb2989f17e0a8a3936 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Wed, 17 Aug 2016 22:47:22 +0200
-Subject: [PATCH net-next] net: bgmac: support Ethernet core on BCM53573 SoCs
+Date: Wed, 17 Aug 2016 23:00:30 +0200
+Subject: [PATCH] net: bgmac: support Ethernet core on BCM53573 SoCs
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -22,6 +22,7 @@ otherwise generic PHY driver would get some invalid info.
 This has been successfully tested on Tenda AC9 (BCM47189B0).
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/broadcom/bgmac-bcma.c | 19 ++++++++++++++++++-
  drivers/net/ethernet/broadcom/bgmac.c      | 25 +++++++++++++++++++++++++
