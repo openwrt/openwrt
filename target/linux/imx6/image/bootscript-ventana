@@ -1,4 +1,4 @@
-echo "Gateworks Ventana OpenWrt Boot script v1.00"
+echo "Gateworks Ventana OpenWrt Boot script v1.01"
 
 # set some defaults
 # set some defaults
@@ -35,9 +35,9 @@ if test -n "$bootdev" ; then
 	echo "Using bootdev from env: $bootdev"
 else
 	if itest.s "x${dtype}" == "xmmc" ; then
-		bootdev=mmcblk0
+		bootdev=mmcblk0p1
 	else
-		bootdev=sda
+		bootdev=sda1
 	fi
 fi
 
@@ -54,7 +54,7 @@ if itest.s "x${dtype}" == "xnand" ; then
 else
 	echo "Booting from block device ${bootdev}..."
 	setenv fsload "${fs}load ${dtype} ${disk}:1"
-	setenv root "root=/dev/${bootdev}"
+	setenv root "root=/dev/${bootdev} rootfstype=${fs} rootwait rw"
 fi
 
 setenv bootargs "${bootargs}" "${root}" "${video}" "${extra}"
