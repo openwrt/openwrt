@@ -54,10 +54,10 @@
  endif
  
 +dump_cflags:
-+	@echo -n $(CFLAGS) " "
++	@printf "%s " "$(CFLAGS)"
 +
 +dump_ldflags:
-+	@echo -n $(LDFLAGS) $(LIBS) $(EXTRALIBS) " "
++	@printf "%s " "$(LDFLAGS) $(LIBS) $(EXTRALIBS)"
 +
  nt_password_hash: $(NOBJS)
  	$(Q)$(CC) $(LDFLAGS) -o nt_password_hash $(NOBJS) $(LIBS_n)
@@ -142,10 +142,10 @@
  	@$(E) "  sed" $<
  
 +dump_cflags:
-+	@echo -n $(CFLAGS) " "
++	@printf "%s " "$(CFLAGS)"
 +
 +dump_ldflags:
-+	@echo -n $(LDFLAGS) $(LIBS) $(EXTRALIBS) " "
++	@printf "%s " "$(LDFLAGS) $(LIBS) $(EXTRALIBS)"
 +
  wpa_supplicant.exe: wpa_supplicant
  	mv -f $< $@
