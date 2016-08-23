@@ -84,6 +84,9 @@ tools-y += libressl
 $(curdir)/mkimage/compile += $(curdir)/libressl/install
 $(curdir)/firmware-utils/compile += $(curdir)/libressl/install
 endif
+ifneq ($(HOST_OS),Linux)
+  tools-y += coreutils
+endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
 $(foreach tool, $(filter-out patch,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/install))
