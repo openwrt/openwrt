@@ -21,101 +21,88 @@ interface_wan=""
 board=$(lantiq_board_name)
 
 case "$board" in
-# adm6996
 ARV4510PW)
 	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_add_switch "switch0" \
-		"3:lan:1" "2:lan:2" "1:lan:3" "0:lan:4" "5t@eth0"
+		"0:lan:4" "2:lan:2" "1:lan:3" "3:lan:1" "5t@eth0"
 	;;
 
 ARV4520PW)
 	ucidef_add_switch "switch0" \
-		"3:lan:1" "2:lan:2" "1:lan:3" "0:lan:4" "5t@eth0"
+		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5t@eth0"
 	;;
 
 ACMP252|GIGASX76X)
 	ucidef_add_switch "switch0" \
-		"4:lan:1" "3:lan:2" "2:lan:3" "1:lan:4" "5t@eth0"
+		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5t@eth0"
 	;;
 
-# ar8316
 ARV4519PW|ARV7510PW22|ARV7518PW|ARV752DPW22|ARV8539PW22)
 	ucidef_add_switch "switch0" \
-		"0t@eth0" "2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4"
+		"0t@eth0" "2:lan" "3:lan" "4:lan" "5:lan"
 	;;
 
-# rtl8306g
 ARV7506PW11)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 2)
 	ucidef_add_switch "switch0" \
-		"4:lan:1" "3:lan:2" "2:lan:3" "1:lan:4" "5t@eth0"
+		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5t@eth0"
 	;;
 
-# rtl8306g
 ARV7519PW)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 1)
 	ucidef_add_switch "switch0" \
-		"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4t@eth0"
+		"0:lan" "1:lan" "2:lan" "3:lan" "4t@eth0"
 	;;
 
 WBMR)
 	ucidef_add_switch "switch0" \
-		"0t@eth0" "2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4"
+		"0t@eth0" "2:lan" "3:lan" "4:lan" "5:lan"
 	;;
-
-VG3503J)
-	ucidef_set_interface_lan 'eth0'
-	;;
-
-ARV4518PWR01*)
-        ucidef_set_interface_lan 'eth0'
-        ;;
 
 DGN3500*)
 	ucidef_add_switch "switch0" \
-		"3:lan:1" "2:lan:2" "1:lan:3" "0:lan:4" "5t@eth0"
+		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5t@eth0"
 	;;
 
 FRITZ7360SL)
 	ucidef_add_switch "switch0" \
-		"4:lan:1" "2:lan:2" "0:lan:3" "1:lan:4" "6t@eth0"
+		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
 	;;
 
 H201L)
 	ucidef_add_switch "switch0" \
-		"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4t@eth0"
+		"0:lan" "1:lan" "2:lan" "3:lan" "4t@eth0"
 	;;
 
-#rtl8306g
 P2601HNFX)
 	ucidef_add_switch "switch0" \
-		"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "5t@eth0"
+		"0:lan" "1:lan" "2:lan" "3:lan" "5t@eth0"
 	;;
 
 P2812HNUF*)
 	lan_mac=$(mtd_get_mac_ascii uboot-env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_add_switch "switch0" \
-		"0:lan:1" "1:lan:2" "2:lan:3" "4:lan:4" "5:lan:5" "6t@eth0"
+		"0:lan" "1:lan" "2:lan" "4:lan" "5:lan" "6t@eth0"
 	;;
 
 TDW8970|TDW8980)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 61696)" 1)
 	ucidef_add_switch "switch0" \
-		"0:lan:1" "2:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
+		"0:lan:2" "2:lan:3" "4:lan:4" "5:lan:1" "6t@eth0"
 	;;
 
 VR200v)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary romfile 61696)" 1)
 	ucidef_add_switch "switch0" \
-		"0:lan:1" "2:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
+		"0:lan" "2:lan" "4:lan" "5:lan" "6t@eth0"
 	;;
 
 ARV7519RW22)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 22)" 1)
 	ucidef_add_switch "switch0" \
-		"0:lan:1" "2:lan:2" "3:lan:3" "4:lan:4" "5:lan:5" "6t@eth0"
+		"0:lan" "2:lan" "3:lan" "4:lan" "5:lan" "6t@eth0"
 	;;
 
 BTHOMEHUBV2B)
@@ -134,19 +121,19 @@ BTHOMEHUBV3A)
 BTHOMEHUBV5A)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary caldata 4364)" 1)
 	ucidef_add_switch "switch0" \
-		"0:lan:1" "1:lan:2" "2:lan:3" "4:lan:4" "6t@eth0"
+		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
 	;;
 
 VGV7519)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 1)
 	ucidef_add_switch "switch0" \
-		"4:lan:1" "2:lan:2" "1:lan:3" "0:lan:4" "6t@eth0"
+		"0:lan:4" "1:lan:3" "2:lan:2" "4:lan:1" "6t@eth0"
 	;;
 
 VGV7510KW22)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 1)
 	ucidef_add_switch "switch0" \
-		"2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "6t@eth0"
+		"2:lan:2" "3:lan:1" "4:lan:4" "5:lan:3" "6t@eth0"
 	;;
 
 WBMR300)
@@ -160,7 +147,7 @@ EASY80920NAND|EASY80920NOR)
 	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_add_switch "switch0" \
-		"4:lan:1" "2:lan:2" "1:lan:3" "0:lan:3" "5:wan:1" "6t@eth0"
+		"0:lan:4" "1:lan:3" "2:lan:2" "4:lan:1" "5:wan:5" "6t@eth0"
 	;;
 
 *)
