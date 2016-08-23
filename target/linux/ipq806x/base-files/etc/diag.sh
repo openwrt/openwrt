@@ -6,7 +6,7 @@
 get_status_led() {
 	case $(ipq806x_board_name) in
 	c2600)
-		status_led="status:blue"
+		status_led="c2600:blue:status"
 		;;
 	ea8500)
 		status_led="ea8500:white:power"

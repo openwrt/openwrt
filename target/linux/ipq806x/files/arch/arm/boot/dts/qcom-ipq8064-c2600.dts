@@ -376,35 +376,35 @@
 		compatible = "gpio-leds";
 
 		lan {
-			label = "lan:blue";
+			label = "c2600:blue:lan";
 			gpios = <&qcom_pinmux 6 0>;
 		};
-                usb4 {
-			label = "usb_4:blue";
+		usb4 {
+			label = "c2600:blue:usb_4";
 			gpios = <&qcom_pinmux 7 0>;
 		};
-                usb2 {
-			label = "usb_2:blue";
+		usb2 {
+			label = "c2600:blue:usb_2";
 			gpios = <&qcom_pinmux 8 0>;
 		};
-                wps {
-			label = "wps:blue";
+		wps {
+			label = "c2600:blue:wps";
 			gpios = <&qcom_pinmux 9 0>;
 		};
-                wan_blue {
-			label = "wan:blue";
+		wan_blue {
+			label = "c2600:blue:wan";
 			gpios = <&qcom_pinmux 33 1>;
 		};
-                status {
-			label = "status:blue";
+		status {
+			label = "c2600:blue:status";
 			gpios = <&qcom_pinmux 53 0>;
 			default-state = "on";
 		};
-                ledgnr {
-			label = "ledgnr:blue";
+		ledgnr {
+			label = "c2600:blue:ledgnr";
 			gpios = <&qcom_pinmux 66 0>;
 		};
-        };
+	};
 };
 
 &adm_dma {
