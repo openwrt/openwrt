@@ -5,6 +5,12 @@
 # See /LICENSE for more information.
 #
 
+ifneq ($(SOURCE_DATE_EPOCH),)
+  ifndef DUMP
+    KBUILD_BUILD_TIMESTAMP:=$(shell perl -e 'print scalar gmtime($(SOURCE_DATE_EPOCH))')
+  endif
+endif
+
 KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 	HOSTCFLAGS="$(HOST_CFLAGS) -Wall -Wmissing-prototypes -Wstrict-prototypes" \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
@@ -12,7 +18,7 @@ KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 	KBUILD_HAVE_NLS=no \
 	KBUILD_BUILD_USER="$(call qstrip,$(CONFIG_KERNEL_BUILD_USER))" \
 	KBUILD_BUILD_HOST="$(call qstrip,$(CONFIG_KERNEL_BUILD_DOMAIN))" \
-	$(if $(SOURCE_DATE_EPOCH),KBUILD_BUILD_TIMESTAMP="$(shell date -u --date="@$(SOURCE_DATE_EPOCH)")") \
+	KBUILD_BUILD_TIMESTAMP="$(KBUILD_BUILD_TIMESTAMP)" \
 	KBUILD_BUILD_VERSION="0" \
 	CONFIG_SHELL="$(BASH)" \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
