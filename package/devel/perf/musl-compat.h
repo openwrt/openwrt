@@ -7,7 +7,6 @@
 #include <asm/unistd.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <sched.h>
 
 #undef _IOWR
 #undef _IOR
@@ -39,22 +38,6 @@ static inline long sysconf_wrap(int name)
 }
 
 #define sysconf(_n) sysconf_wrap(_n)
-
-static inline int compat_sched_getcpu(void)
-{
-#ifdef __NR_getcpu
-	unsigned int val;
-
-	if (syscall(__NR_getcpu, &val))
-		return -1;
-
-	return val;
-#else
-	return -1;
-#endif
-}
-
-#define sched_getcpu compat_sched_getcpu
 
 #endif
 #endif
