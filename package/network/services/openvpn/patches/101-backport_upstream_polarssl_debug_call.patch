@@ -1,0 +1,33 @@
+openvpn: fix build without POLARSSL_DEBUG_C
+
+Backport of upstream master commit
+b63f98633dbe2ca92cd43fc6f8597ab283a600bf.
+
+Signed-off-by: Magnus Kroken <mkroken@gmail.com>
+
+From b63f98633dbe2ca92cd43fc6f8597ab283a600bf Mon Sep 17 00:00:00 2001
+From: Steffan Karger <steffan@karger.me>
+Date: Tue, 14 Jun 2016 22:00:03 +0200
+Subject: [PATCH] mbedtls: don't set debug threshold if compiled without
+ MBEDTLS_DEBUG_C
+
+For targets with space constraints, one might want to compile mbed TLS
+without MBEDTLS_DEBUG_C defined, to save some tens of kilobytes.  Make
+sure OpenVPN still compiles if that is the case.
+
+Signed-off-by: Steffan Karger <steffan@karger.me>
+Acked-by: Gert Doering <gert@greenie.muc.de>
+Message-Id: <1465934403-22226-1-git-send-email-steffan@karger.me>
+URL: http://article.gmane.org/gmane.network.openvpn.devel/11922
+Signed-off-by: Gert Doering <gert@greenie.muc.de>
+--- a/src/openvpn/ssl_polarssl.c
++++ b/src/openvpn/ssl_polarssl.c
+@@ -747,7 +747,9 @@ void key_state_ssl_init(struct key_state
+   if (polar_ok(ssl_init(ks_ssl->ctx)))
+     {
+       /* Initialise SSL context */
++      #ifdef POLARSSL_DEBUG_C
+       debug_set_threshold(3);
++      #endif
+       ssl_set_dbg (ks_ssl->ctx, my_debug, NULL);
+       ssl_set_endpoint (ks_ssl->ctx, ssl_ctx->endpoint);
