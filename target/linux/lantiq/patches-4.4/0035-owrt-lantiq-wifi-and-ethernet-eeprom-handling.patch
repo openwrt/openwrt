@@ -51,7 +51,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,299 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -247,6 +247,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
++static int ath5k_eep_load;
 +int __init of_ath5k_eeprom_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node, *mtd_np = NULL;
@@ -278,13 +279,19 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (IS_ERR(the_mtd))
 +		return -ENODEV;
 +
-+	i = mtd_read(the_mtd, be32_to_cpup(list), ATH5K_PLAT_EEP_MAX_WORDS << 1,
-+		&flash_readlen,	(void *) ath5k_pdata.eeprom_data);
++	ath5k_pdata.eeprom_data = kmalloc(ATH5K_PLAT_EEP_MAX_WORDS<<1, GFP_KERNEL);
 +
++	i = mtd_read(the_mtd, be32_to_cpup(list), ATH5K_PLAT_EEP_MAX_WORDS << 1,
++		&flash_readlen, (void *) ath5k_pdata.eeprom_data);
++
++	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
++		size_t mac_readlen;
++		mtd_read(the_mtd, mac_offset, 6, &mac_readlen,
++			(void *) athxk_eeprom_mac);
++	}
 +	put_mtd_device(the_mtd);
 +
-+	if ((sizeof(ATH5K_PLAT_EEP_MAX_WORDS << 1) != flash_readlen)
-+			|| i) {
++	if (((ATH5K_PLAT_EEP_MAX_WORDS<<1) != flash_readlen) || i) {
 +		dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
 +		return -ENODEV;
 +	}
@@ -293,11 +300,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		for (i = 0; i < ATH5K_PLAT_EEP_MAX_WORDS; i++)
 +			ath5k_pdata.eeprom_data[i] = swab16(ath5k_pdata.eeprom_data[i]);
 +
-+	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset))
-+		memcpy_fromio(athxk_eeprom_mac, (void*) ath5k_pdata.eeprom_data + mac_offset, 6);
-+
 +	if (!is_valid_ether_addr(athxk_eeprom_mac) && ltq_get_eth_mac())
-+		memcpy(athxk_eeprom_mac, ltq_get_eth_mac(), 6);
++		ether_addr_copy(athxk_eeprom_mac, ltq_get_eth_mac());
 +
 +	if (!is_valid_ether_addr(athxk_eeprom_mac)) {
 +		dev_warn(&pdev->dev, "using random mac\n");
@@ -330,9 +334,23 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static int __init of_ath5k_eeprom_init(void)
 +{
++	int ret = platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
++
++	if (ret)
++		ath5k_eep_load = 1;
++
++	return ret;
++}
++
++static int __init of_ath5k_eeprom_init_late(void)
++{
++	if (!ath5k_eep_load)
++		return 0;
++
 +	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
 +}
-+device_initcall(of_ath5k_eeprom_init);
++late_initcall(of_ath5k_eeprom_init_late);
++subsys_initcall(of_ath5k_eeprom_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/eth_mac.c
 @@ -0,0 +1,25 @@
