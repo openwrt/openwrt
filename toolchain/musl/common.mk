@@ -11,7 +11,7 @@ PKG_NAME:=musl
 PKG_VERSION:=$(call qstrip,$(CONFIG_MUSL_VERSION))
 PKG_RELEASE=1
 
-PKG_MD5SUM:=d529ce4a2f7f79d8c3fd4b8329417b57
+PKG_MD5SUM:=9590a9d47ee64f220b3c12f7afb864ca
 
 PKG_SOURCE_URL:=http://www.musl-libc.org/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -22,12 +22,6 @@ HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 include $(INCLUDE_DIR)/hardening.mk
-
-# Please see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67260
-ifeq ($(CONFIG_sh3),y)
-TARGET_CFLAGS+= \
-	-fno-optimize-sibling-calls
-endif
 
 MUSL_CONFIGURE:= \
 	$(TARGET_CONFIGURE_OPTS) \
