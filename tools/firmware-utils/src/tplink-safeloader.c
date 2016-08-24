@@ -449,10 +449,6 @@ static void put_partitions(uint8_t *buffer, const struct image_partition_entry *
 
 		base += parts[i].size;
 	}
-
-	image_pt++;
-
-	memset(image_pt, 0xff, end-image_pt);
 }
 
 /** Generates and writes the image MD5 checksum */
@@ -492,12 +488,14 @@ static void * generate_factory_image(const char *vendor, const struct image_part
 	if (!image)
 		error(1, errno, "malloc");
 
+	memset(image, 0xff, *len);
 	put32(image, *len);
 
-	size_t vendor_len = strlen(vendor);
-	put32(image+0x14, vendor_len);
-	memcpy(image+0x18, vendor, vendor_len);
-	memset(image+0x18+vendor_len, 0xff, 4092-vendor_len);
+	if (vendor) {
+		size_t vendor_len = strlen(vendor);
+		put32(image+0x14, vendor_len);
+		memcpy(image+0x18, vendor, vendor_len);
+	}
 
 	put_partitions(image + 0x1014, parts);
 	put_md5(image+0x04, image+0x14, *len-0x14);
