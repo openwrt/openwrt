@@ -4,7 +4,7 @@
 
 SUBTARGET:=mt7621
 BOARDNAME:=MT7621 based boards
-FEATURES+=usb rtc
+FEATURES+=usb nand rtc
 CPU_TYPE:=1004kc
 CPU_SUBTYPE:=dsp
 
