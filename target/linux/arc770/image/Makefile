@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015 OpenWrt.org
+# Copyright (C) 2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/image.mk
 
 # On ARC initramfs is put before entry point and so entry point moves
 # in memory from build to built. Thus we need to extract EP from vmlinux
-# every time late in building process.
+# every time before generation of uImage.
 define Build/calculate-ep
 	$(eval KERNEL_ENTRY=$(shell $(KERNEL_CROSS)readelf -h $(LINUX_DIR)/vmlinux | grep "Entry point address" | grep -o 0x.*))
 endef
@@ -34,35 +34,23 @@ define Device/vmlinux
 endef
 
 define Device/uImage
-  KERNEL_SUFFIX := .bin
+  KERNEL_SUFFIX := -uImage
   KERNEL_INITRAMFS := kernel-bin | patch-dtb | calculate-ep | uImage none
   KERNEL_LOADADDR := 0x80000000
 endef
 
-define add_arc770_uImage
-  define Device/$(1)-uImage
-    $(call Device/uImage)
-    DEVICE_PROFILE := $(1)
-    DEVICE_DTS := $(1)
-  endef
-  TARGET_DEVICES += $(1)-uImage
+define Device/axs101
+	$(call Device/uImage)
+	DEVICE_PROFILE := axs101
+	DEVICE_DTS := axs101
 endef
+TARGET_DEVICES += axs101
 
-define add_arc770_vmlinux
-  define Device/$(1)-vmlinux
-    $(call Device/vmlinux)
-    DEVICE_PROFILE := $(1)
-    DEVICE_DTS := $(1)
-  endef
-  TARGET_DEVICES += $(1)-vmlinux
+define Device/nsim
+	$(call Device/vmlinux)
+	DEVICE_PROFILE := nsim
+	DEVICE_DTS := nsim_700
 endef
-
-# DesignWare AXS101
-$(eval $(call add_arc770_vmlinux,axs101))
-$(eval $(call add_arc770_uImage,axs101))
-
-# nSIM with ARC770
-$(eval $(call add_arc770_vmlinux,nsim_700))
-$(eval $(call add_arc770_uImage,nsim_700))
+TARGET_DEVICES += nsim
 
 $(eval $(call BuildImage))
