@@ -1,6 +1,6 @@
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -24,6 +24,7 @@ struct bcma_bus;
+@@ -22,6 +22,7 @@ struct bcma_bus;
  /* main.c */
  bool bcma_wait_value(struct bcma_device *core, u16 reg, u32 mask, u32 value,
  		     int timeout);
@@ -223,7 +223,7 @@
  			  core->core_index, bcma_device_name(&core->id),
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -447,4 +447,6 @@ extern u32 bcma_chipco_pll_read(struct b
+@@ -448,4 +448,6 @@ extern u32 bcma_chipco_pll_read(struct b
  #define  BCMA_DMA_TRANSLATION_DMA64_CMT	0x80000000 /* Client Mode Translation for 64-bit DMA */
  extern u32 bcma_core_dma_translation(struct bcma_device *core);
  
