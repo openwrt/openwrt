@@ -1,0 +1,32 @@
+From 3e5b50a8a74a6f32e9eb4490529ac9c74b5e3670 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Wed, 13 Jul 2016 12:35:18 +0200
+Subject: [PATCH] musl: remove sh3 workaround
+
+The GCC bug 67260 is fixed upstream now, remove this workaround.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ toolchain/musl/common.mk | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/toolchain/musl/common.mk b/toolchain/musl/common.mk
+index de00ea0..aa17899 100644
+--- a/toolchain/musl/common.mk
++++ b/toolchain/musl/common.mk
+@@ -23,12 +23,6 @@ HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)-$(PKG_VERSION)
+ include $(INCLUDE_DIR)/toolchain-build.mk
+ include $(INCLUDE_DIR)/hardening.mk
+ 
+-# Please see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67260
+-ifeq ($(CONFIG_sh3),y)
+-TARGET_CFLAGS+= \
+-	-fno-optimize-sibling-calls
+-endif
+-
+ MUSL_CONFIGURE:= \
+ 	$(TARGET_CONFIGURE_OPTS) \
+ 	CFLAGS="$(TARGET_CFLAGS)" \
+-- 
+2.1.4
+
