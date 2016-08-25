@@ -21,6 +21,11 @@ interface_wan=""
 board=$(lantiq_board_name)
 
 case "$board" in
+ACMP252|GIGASX76X)
+	ucidef_add_switch "switch0" \
+		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5t@eth0"
+	;;
+
 ARV4510PW)
 	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
@@ -28,19 +33,14 @@ ARV4510PW)
 		"0:lan:4" "2:lan:2" "1:lan:3" "3:lan:1" "5t@eth0"
 	;;
 
-ARV4520PW)
-	ucidef_add_switch "switch0" \
-		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5t@eth0"
-	;;
-
-ACMP252|GIGASX76X)
-	ucidef_add_switch "switch0" \
-		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5t@eth0"
-	;;
-
 ARV4519PW|ARV7510PW22|ARV7518PW|ARV752DPW22|ARV8539PW22)
 	ucidef_add_switch "switch0" \
 		"0t@eth0" "2:lan" "3:lan" "4:lan" "5:lan"
+	;;
+
+ARV4520PW)
+	ucidef_add_switch "switch0" \
+		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5t@eth0"
 	;;
 
 ARV7506PW11)
@@ -55,14 +55,41 @@ ARV7519PW)
 		"0:lan" "1:lan" "2:lan" "3:lan" "4t@eth0"
 	;;
 
-WBMR)
+ARV7519RW22)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 22)" 1)
 	ucidef_add_switch "switch0" \
-		"0t@eth0" "2:lan" "3:lan" "4:lan" "5:lan"
+		"0:lan" "2:lan" "3:lan" "4:lan" "5:lan" "6t@eth0"
+	;;
+
+BTHOMEHUBV2B)
+	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_add_switch "switch0" \
+		"1:lan" "2:lan" "3:lan" "4:lan" "5t@eth0"
+	;;
+
+BTHOMEHUBV3A)
+	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_set_interface_lan 'eth0'
+	;;
+
+BTHOMEHUBV5A)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary caldata 4364)" 1)
+	ucidef_add_switch "switch0" \
+		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
 	;;
 
 DGN3500*)
 	ucidef_add_switch "switch0" \
 		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5t@eth0"
+	;;
+
+EASY80920NAND|EASY80920NOR)
+	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_add_switch "switch0" \
+		"0:lan:4" "1:lan:3" "2:lan:2" "4:lan:1" "5:wan:5" "6t@eth0"
 	;;
 
 FRITZ7360SL)
@@ -99,29 +126,10 @@ VR200v)
 		"0:lan" "2:lan" "4:lan" "5:lan" "6t@eth0"
 	;;
 
-ARV7519RW22)
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 22)" 1)
+VGV7510KW22)
+	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 1)
 	ucidef_add_switch "switch0" \
-		"0:lan" "2:lan" "3:lan" "4:lan" "5:lan" "6t@eth0"
-	;;
-
-BTHOMEHUBV2B)
-	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
-	ucidef_add_switch "switch0" \
-		"1:lan" "2:lan" "3:lan" "4:lan" "5t@eth0"
-	;;
-
-BTHOMEHUBV3A)
-	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
-	ucidef_set_interface_lan 'eth0'
-	;;
-
-BTHOMEHUBV5A)
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary caldata 4364)" 1)
-	ucidef_add_switch "switch0" \
-		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
+		"2:lan:2" "3:lan:1" "4:lan:4" "5:lan:3" "6t@eth0"
 	;;
 
 VGV7519)
@@ -130,10 +138,9 @@ VGV7519)
 		"0:lan:4" "1:lan:3" "2:lan:2" "4:lan:1" "6t@eth0"
 	;;
 
-VGV7510KW22)
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 1)
+WBMR)
 	ucidef_add_switch "switch0" \
-		"2:lan:2" "3:lan:1" "4:lan:4" "5:lan:3" "6t@eth0"
+		"0t@eth0" "2:lan" "3:lan" "4:lan" "5:lan"
 	;;
 
 WBMR300)
@@ -141,13 +148,6 @@ WBMR300)
 	wan_mac="$lan_mac"
 	ucidef_add_switch "switch0" \
 		"2:lan:2" "3:lan:3" "5:lan:4" "4:wan:1" "6t@eth0"
-	;;
-
-EASY80920NAND|EASY80920NOR)
-	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
-	wan_mac=$(macaddr_add "$lan_mac" 1)
-	ucidef_add_switch "switch0" \
-		"0:lan:4" "1:lan:3" "2:lan:2" "4:lan:1" "5:wan:5" "6t@eth0"
 	;;
 
 *)
