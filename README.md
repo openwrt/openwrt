@@ -61,7 +61,7 @@ _Ignore any "WARNING: No feed for package..." from the install feeds step._
 
 Set the default configuration for Ci40 by running the following command (this sets version numbers and OPKG URLs):
 
-    $ cat target/linux/pistachio/creator-platform-cascoda-default.config > .config
+    $ cat target/linux/pistachio/creator-platform-default-cascoda.config > .config
 
 Complete the configuration process by running menuconfig:
 
@@ -98,7 +98,7 @@ Example output for V0.9.4:
 - openwrt-0.9.4-pistachio-marduk-marduk_ca8210-rootfs.tar.gz
 - pistachio_marduk_ca8210.dtb
 
-By default the version number is blank if you do not use the creator-platform-cascoda-default.config for loading the configuration.
+By default the version number is blank if you do not use the creator-platform-default-cascoda.config for loading the configuration.
 
 ## Customising your OpenWrt
 You can configure OpenWrt from scratch but it's best to start from a base profile
