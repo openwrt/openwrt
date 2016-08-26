@@ -1,6 +1,14 @@
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8186,6 +8186,27 @@ static const struct rf_channel rf_vals_5
+@@ -36,6 +36,7 @@
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
++#include <linux/clk.h>
+ 
+ #include "rt2x00.h"
+ #include "rt2800lib.h"
+@@ -8186,6 +8187,27 @@ static const struct rf_channel rf_vals_5
  	{196, 83, 0, 12, 1},
  };
  
@@ -28,7 +36,7 @@
  static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  {
  	struct hw_mode_spec *spec = &rt2x00dev->spec;
-@@ -8276,7 +8297,10 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8276,7 +8298,10 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5390:
  	case RF5392:
  		spec->num_channels = 14;
@@ -40,19 +48,20 @@
  		break;
  
  	case RF3052:
-@@ -8460,6 +8484,19 @@ static int rt2800_probe_rt(struct rt2x00
+@@ -8460,6 +8485,20 @@ static int rt2800_probe_rt(struct rt2x00
  	return 0;
  }
  
 +int rt2800_probe_clk(struct rt2x00_dev *rt2x00dev)
 +{
-+	struct rt2x00_platform_data *pdata = rt2x00dev->dev->platform_data;
 +	struct hw_mode_spec *spec = &rt2x00dev->spec;
++	struct clk *clk = clk_get(rt2x00dev->dev, NULL);
 +
-+	if (!pdata)
-+		return -EINVAL;
++	if (IS_ERR(clk))
++		return PTR_ERR(clk);
 +
-+	spec->clk_is_20mhz = pdata->clk_is_20mhz;
++	if (clk_get_rate(clk) == 20000000)
++		spec->clk_is_20mhz = 1;
 +
 +	return 0;
 +}
@@ -60,7 +69,7 @@
  int rt2800_probe_hw(struct rt2x00_dev *rt2x00dev)
  {
  	struct rt2800_drv_data *drv_data = rt2x00dev->drv_data;
-@@ -8502,6 +8539,15 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -8502,6 +8541,15 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	rt2800_register_write(rt2x00dev, GPIO_CTRL, reg);
  
  	/*
@@ -94,13 +103,3 @@
  };
  
  /*
---- a/include/linux/rt2x00_platform.h
-+++ b/include/linux/rt2x00_platform.h
-@@ -18,6 +18,7 @@ struct rt2x00_platform_data {
- 
- 	int disable_2ghz;
- 	int disable_5ghz;
-+	int clk_is_20mhz;
- };
- 
- #endif /* _RT2X00_PLATFORM_H */

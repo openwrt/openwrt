@@ -18,7 +18,6 @@ struct rt2x00_platform_data {
 
 	int disable_2ghz;
 	int disable_5ghz;
-	int clk_is_20mhz;
 };
 
 #endif /* _RT2X00_PLATFORM_H */
