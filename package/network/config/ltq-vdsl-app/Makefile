@@ -1,5 +1,5 @@
 # Copyright (C) 2010 OpenWrt.org
-# Copyright (C) 2015 Lantiq Beteiligungs GmbH & Co KG.
+# Copyright (C) 2015-2016 Lantiq Beteiligungs GmbH & Co KG.
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-app
-PKG_VERSION:=4.16.6.3
-PKG_RELEASE:=2
+PKG_VERSION:=4.17.18.6
+PKG_RELEASE:=1
 PKG_BASE_NAME:=dsl_cpe_control
 PKG_SOURCE:=$(PKG_BASE_NAME)_vrx-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=8bedf330a456fe0864844e61b57da627
+PKG_MD5SUM:=0edd45e31cc240d2986932960742fb37
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
 PKG_LICENSE:=BSD-2-Clause
 

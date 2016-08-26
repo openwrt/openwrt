@@ -11,7 +11,7 @@
     DSL_CPE_MAC_CFG_SET(DSL_EFM_SPEED_100, DSL_EFM_DUPLEX_FULL, DSL_EFM_FLOWCTRL_ON, DSL_EFM_AUTONEG_OFF, \
 --- a/src/dsl_cpe_control.c
 +++ b/src/dsl_cpe_control.c
-@@ -6871,7 +6871,7 @@ DSL_int_t dsl_cpe_daemon (
+@@ -6761,7 +6761,7 @@ DSL_int_t dsl_cpe_daemon (
     for (nDevice = 0; nDevice < DSL_CPE_MAX_DSL_ENTITIES; nDevice++)
     {
  #if defined(INCLUDE_DSL_CPE_API_VRX)
