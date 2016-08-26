@@ -1,5 +1,5 @@
 # Copyright (C) 2015 OpenWrt.org
-# Copyright (C) 2015 Lantiq Beteiligungs GmbH & Co KG.
+# Copyright (C) 2015-2016 Lantiq Beteiligungs GmbH & Co KG.
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dsl_vr9_firmware_xdsl
-PKG_VERSION:=05.07.04.03.00.06_05.07.01.08.00.01_osc
+PKG_VERSION:=05.08.01.08.01.06_05.08.00.0B.01.01_osc
 PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=4c8d9ca68dda88d3cfc0ca0fb946a63e
+PKG_MD5SUM:=13868b2c24df8470dc26c45998166d04
 PKG_BUILD_DEPENDS:=bsdiff/host
 
 PKG_FLAGS:=nonshared
@@ -19,16 +19,16 @@ PKG_FLAGS:=nonshared
 include $(INCLUDE_DIR)/package.mk
 
 PKG_B_NAME:=dsl_vr9_firmware_xdsl
-PKG_B_VERSION:=05.07.03.03.00.06_05.07.01.0C.00.02_osc
+PKG_B_VERSION:=05.07.09.09.00.06_05.07.04.04.00.02_osc
 PKG_B_SOURCE:=$(PKG_B_NAME)-$(PKG_B_VERSION).tar.gz
 
-ANNEX_A_VER:=574306_571801
-ANNEX_B_VER:=573306_571C02
+ANNEX_A_VER:=581816_580B11
+ANNEX_B_VER:=579906_574402
 
 define Download/dsl_vr9_firmware_xdsl_b
   FILE:=$(PKG_B_SOURCE)
   URL:=$(PKG_SOURCE_URL)
-  MD5SUM:=af5581836cbe574574590c046fe45bab
+  MD5SUM:=e2f392d42aaf51e74f7c2ff2ef731072
 endef
 $(eval $(call Download,dsl_vr9_firmware_xdsl_b))
 
