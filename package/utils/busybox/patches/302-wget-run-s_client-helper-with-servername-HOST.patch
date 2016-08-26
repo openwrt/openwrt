@@ -1,0 +1,107 @@
+diff --git a/networking/wget.c b/networking/wget.c
+index 37950ed..653d807 100644
+--- a/networking/wget.c
++++ b/networking/wget.c
+@@ -62,9 +62,10 @@
+ //config:	  a helper program to talk over HTTPS.
+ //config:
+ //config:	  OpenSSL has a simple SSL client for debug purposes.
+-//config:	  If you select "openssl" helper, wget will effectively call
+-//config:	  "openssl s_client -quiet -connect IP:443 2>/dev/null"
+-//config:	  and pipe its data through it.
++//config:	  If you select "openssl" helper, wget will effectively run:
++//config:	  "openssl s_client -quiet -connect hostname:443
++//config:	  -servername hostname 2>/dev/null" and pipe its data
++//config:	  through it. -servername is not used if hostname is numeric.
+ //config:	  Note inconvenient API: host resolution is done twice,
+ //config:	  and there is no guarantee openssl's idea of IPv6 address
+ //config:	  format is the same as ours.
+@@ -349,6 +350,30 @@ static void set_alarm(void)
+ # define clear_alarm() ((void)0)
+ #endif
+ 
++#if ENABLE_FEATURE_WGET_OPENSSL
++/*
++ * is_ip_address() attempts to verify whether or not a string
++ * contains an IPv4 or IPv6 address (vs. an FQDN).  The result
++ * of inet_pton() can be used to determine this.
++ *
++ * TODO add proper error checking when inet_pton() returns -1
++ * (some form of system error has occurred, and errno is set)
++ */
++static int is_ip_address(const char *string)
++{
++	struct sockaddr_in sa;
++
++	int result = inet_pton(AF_INET, string, &(sa.sin_addr));
++# if ENABLE_FEATURE_IPV6
++	if (result == 0) {
++		struct sockaddr_in6 sa6;
++		result = inet_pton(AF_INET6, string, &(sa6.sin6_addr));
++	}
++# endif
++	return (result == 1);
++}
++#endif
++
+ static FILE *open_socket(len_and_sockaddr *lsa)
+ {
+ 	int fd;
+@@ -629,6 +654,7 @@ static FILE* prepare_ftp_session(FILE **dfpp, struct host_info *target, len_and_
+ static int spawn_https_helper_openssl(const char *host, unsigned port)
+ {
+ 	char *allocated = NULL;
++	char *servername;
+ 	int sp[2];
+ 	int pid;
+ 	IF_FEATURE_WGET_SSL_HELPER(volatile int child_failed = 0;)
+@@ -639,12 +665,14 @@ static int spawn_https_helper_openssl(const char *host, unsigned port)
+ 
+ 	if (!strchr(host, ':'))
+ 		host = allocated = xasprintf("%s:%u", host, port);
++	servername = xstrdup(host);
++	strrchr(servername, ':')[0] = '\0';
+ 
+ 	fflush_all();
+ 	pid = xvfork();
+ 	if (pid == 0) {
+ 		/* Child */
+-		char *argv[6];
++		char *argv[8];
+ 
+ 		close(sp[0]);
+ 		xmove_fd(sp[1], 0);
+@@ -656,12 +684,22 @@ static int spawn_https_helper_openssl(const char *host, unsigned port)
+ 		 */
+ 		xmove_fd(2, 3);
+ 		xopen("/dev/null", O_RDWR);
++		memset(&argv, 0, sizeof(argv));
+ 		argv[0] = (char*)"openssl";
+ 		argv[1] = (char*)"s_client";
+ 		argv[2] = (char*)"-quiet";
+ 		argv[3] = (char*)"-connect";
+ 		argv[4] = (char*)host;
+-		argv[5] = NULL;
++		/*
++		 * Per RFC 6066 Section 3, the only permitted values in the
++		 * TLS server_name (SNI) field are FQDNs (DNS hostnames).
++		 * IPv4 and IPv6 addresses, port numbers are not allowed.
++		 */
++		if (!is_ip_address(servername)) {
++			argv[5] = (char*)"-servername";
++			argv[6] = (char*)servername;
++		}
++
+ 		BB_EXECVP(argv[0], argv);
+ 		xmove_fd(3, 2);
+ # if ENABLE_FEATURE_WGET_SSL_HELPER
+@@ -674,6 +712,7 @@ static int spawn_https_helper_openssl(const char *host, unsigned port)
+ 	}
+ 
+ 	/* Parent */
++	free(servername);
+ 	free(allocated);
+ 	close(sp[1]);
+ # if ENABLE_FEATURE_WGET_SSL_HELPER
+-- 
+cgit v0.12
