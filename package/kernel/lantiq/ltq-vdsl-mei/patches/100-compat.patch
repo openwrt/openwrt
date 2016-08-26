@@ -10,7 +10,7 @@
  
 --- a/src/drv_mei_cpe_linux.h
 +++ b/src/drv_mei_cpe_linux.h
-@@ -51,12 +51,6 @@
+@@ -57,12 +57,6 @@
  #include <linux/poll.h>
  #include <linux/types.h>
  
@@ -22,10 +22,10 @@
 -
  #endif /* #if (MEI_DRV_IFXOS_ENABLE == 0)*/
  
- /* ============================================================================
+ #include <linux/dma-mapping.h>
 --- a/src/drv_mei_cpe_linux.c
 +++ b/src/drv_mei_cpe_linux.c
-@@ -98,6 +98,8 @@
+@@ -114,6 +114,8 @@
  
  #include "drv_mei_cpe_api_atm_ptm_intern.h"
  
@@ -34,7 +34,7 @@
  /* ===================================
     extern function declarations
     =================================== */
-@@ -196,6 +198,8 @@ static void MEI_MemVAllocTest();
+@@ -220,6 +222,8 @@ static void MEI_NlSendMsg(IFX_char_t* pM
  /* Local variables (LINUX)             */
  /* =================================== */
  static IFX_uint8_t major_number = 0;
@@ -43,17 +43,19 @@
  #ifdef MODULE
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
  MODULE_PARM(major_number, "b");
-@@ -1798,7 +1802,9 @@ static int __init MEI_module_init (void)
+@@ -2174,9 +2178,11 @@ static int MEI_module_init (void)
        return (result);
     }
  
 +#if 0
-    ppa_callback_set(LTQ_MEI_SHOWTIME_CHECK, (void *)ltq_mei_atm_showtime_check);
+ #if (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1)
+    ppa_callback_set(LTQ_MEI_SHOWTIME_CHECK, (void *)ltq_mei_showtime_check);
+ #endif /* #if (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1) */
 +#endif
  
     return 0;
  }
-@@ -1922,6 +1928,10 @@ static void MEI_module_exit (void)
+@@ -2304,6 +2310,10 @@ static void MEI_module_exit (void)
  
  #else
     unregister_chrdev ( major_number , DRV_MEI_NAME );
@@ -64,17 +66,19 @@
  #endif
  
  #if CONFIG_PROC_FS
-@@ -1978,7 +1988,9 @@ static void MEI_module_exit (void)
+@@ -2388,9 +2398,11 @@ static void MEI_module_exit (void)
              ("MEI_DRV: Chipset Basic Exit failed" MEI_DRV_CRLF));
     }
  
 +#if 0
+ #if (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1)
     ppa_callback_set(LTQ_MEI_SHOWTIME_CHECK, (void *)NULL);
+ #endif /* #if (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1) */
 +#endif
  
-    /* touch one time this variable to avoid that the linker will remove it */
-    debug_level = MEI_DRV_PRN_LEVEL_OFF;
-@@ -2095,6 +2107,10 @@ static int MEI_InitModuleRegCharDev(cons
+ #if (MEI_SUPPORT_DEBUG_LOGGER == 1)
+    if (nl_debug_sock)
+@@ -2514,6 +2526,10 @@ static int MEI_InitModuleRegCharDev(cons
              ("Using major number %d" MEI_DRV_CRLF, major_number));
     }
  
@@ -85,7 +89,7 @@
     return 0;
  #endif      /* CONFIG_DEVFS_FS */
  }
-@@ -2135,21 +2151,32 @@ static int MEI_InitModuleBasics(void)
+@@ -2563,21 +2579,32 @@ static int MEI_InitModuleBasics(void)
  }
  
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
@@ -118,7 +122,7 @@
  
     return 0;
  }
-@@ -2469,11 +2496,15 @@ IFX_int32_t MEI_IoctlInitDevice(
+@@ -2905,11 +2932,15 @@ IFX_int32_t MEI_IoctlInitDevice(
              pMeiDev->eModePoll = e_MEI_DEV_ACCESS_MODE_IRQ;
              pMeiDev->intMask   = ME_ARC2ME_INTERRUPT_UNMASK_ALL;
  
@@ -136,7 +140,23 @@
                                            MEI_DRV_LINENUM_GET(pMeiDev),
 --- a/src/drv_mei_cpe_api_atm_ptm_intern.c
 +++ b/src/drv_mei_cpe_api_atm_ptm_intern.c
-@@ -193,6 +193,51 @@ int ifx_mei_atm_led_blink(void)
+@@ -147,6 +147,7 @@ IFX_int32_t MEI_InternalXtmSwhowtimeExit
+    return retVal;
+ }
+ 
++#if 0
+ IFX_int32_t MEI_InternalTcRequest(
+                               MEI_DYN_CNTRL_T        *pMeiDynCntrl,
+                               MEI_TC_Request_t       *pArgTcRequest)
+@@ -232,6 +233,7 @@ IFX_int32_t MEI_InternalTcReset(
+ 
+    return retVal;
+ }
++#endif
+ 
+ /**
+    Function that is used by the PP subsystem to get some showtime relevant data
+@@ -311,10 +313,57 @@ int ifx_mei_atm_led_blink(void)
      return IFX_SUCCESS;
  }
  
@@ -177,7 +197,7 @@
 +int ifx_mei_atm_showtime_check(int *is_showtime,
 +                              struct port_cell_info *port_cell,
 +                              void **xdata_addr) {
-+	return ltq_mei_atm_showtime_check(0, is_showtime, port_cell, xdata_addr);
++	return ltq_mei_showtime_check(0, is_showtime, port_cell, xdata_addr);
 +}
 +
 +EXPORT_SYMBOL(ifx_mei_atm_showtime_enter);
@@ -187,7 +207,13 @@
 +
  EXPORT_SYMBOL (MEI_InternalXtmSwhowtimeEntrySignal);
  EXPORT_SYMBOL (MEI_InternalXtmSwhowtimeExitSignal);
++#if 0
+ EXPORT_SYMBOL (MEI_InternalTcRequest);
+ EXPORT_SYMBOL (MEI_InternalTcReset);
++#endif
  EXPORT_SYMBOL(ifx_mei_atm_led_blink);
+ 
+ #endif      /* #if (MEI_EXPORT_INTERNAL_API == 1) && (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1) */
 --- a/src/drv_mei_cpe_api_atm_ptm_intern.h
 +++ b/src/drv_mei_cpe_api_atm_ptm_intern.h
 @@ -21,7 +21,6 @@
@@ -198,9 +224,9 @@
  
  #if (MEI_EXPORT_INTERNAL_API == 1) && (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1)
  
-@@ -42,8 +41,21 @@ extern IFX_int32_t MEI_InternalXtmSwhowt
+@@ -59,8 +58,21 @@ extern IFX_int32_t MEI_InternalTcReset(
                                MEI_DYN_CNTRL_T        *pMeiDynCntrl,
-                               MEI_XTM_ShowtimeExit_t *pArgXtm);
+                               MEI_TC_Reset_t         *pArgTcReset);
  
 +#if 1
 +#include <lantiq_atm.h>
@@ -218,17 +244,21 @@
  extern void* ppa_callback_get(e_ltq_mei_cb_type type);
 +#endif
  
- int ltq_mei_atm_showtime_check (
+ int ltq_mei_showtime_check(
                                const unsigned char line_idx,
 --- a/src/drv_mei_cpe_device_vrx.c
 +++ b/src/drv_mei_cpe_device_vrx.c
-@@ -28,13 +28,6 @@
+@@ -28,17 +28,6 @@
  #include "drv_mei_cpe_api.h"
  #include "drv_mei_cpe_mei_vrx.h"
  
 -#if defined(LINUX)
 -#  if (LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0))
--#    include "ifx_pcie.h"
+-#    if (MEI_SUPPORT_DEVICE_VR10_320 != 1)
+-#       include "ifx_pcie.h"
+-#    else
+-#       include "../drivers/net/ethernet/lantiq/lantiq_pcie.h"
+-#    endif
 -#  else
 -#    include "lantiq_pcie.h"
 -#  endif
@@ -236,7 +266,7 @@
  
  IFX_int32_t MEI_GPIntProcess(MEI_MeiRegVal_t processInt, MEI_DEV_T *pMeiDev)
  {
-@@ -82,6 +75,7 @@ IFX_int32_t MEI_GetChipInfo(MEI_DEV_T *p
+@@ -86,6 +75,7 @@ IFX_int32_t MEI_GetChipInfo(MEI_DEV_T *p
  */
  IFX_int32_t MEI_VR10_PcieEntitiesCheck(IFX_uint8_t nEntityNum)
  {
@@ -244,7 +274,7 @@
     IFX_uint32_t pcie_entitiesNum;
  
     /* get information from pcie driver */
-@@ -102,6 +96,9 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
+@@ -110,6 +100,9 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
     }
  
     return IFX_SUCCESS;
@@ -254,16 +284,16 @@
  }
  
  /**
-@@ -116,6 +113,7 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
+@@ -124,6 +117,7 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
  */
  IFX_int32_t MEI_VR10_PcieEntityInit(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
  {
 +#if 0
     IFX_uint8_t entityNum;
+ #if (MEI_SUPPORT_DEVICE_VR10_320 != 1)
     ifx_pcie_ep_dev_t MEI_pcie_ep_dev;
- 
-@@ -138,6 +136,9 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
-    pMeiDrvCntrl->MEI_pcie_irq = MEI_pcie_ep_dev.irq;
+@@ -156,6 +150,9 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
+    pMeiDrvCntrl->MEI_pcie_irq = 99;
  
     return IFX_SUCCESS;
 +#else
@@ -272,15 +302,15 @@
  }
  
  /**
-@@ -152,6 +153,7 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
+@@ -170,6 +167,7 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
  */
  IFX_int32_t MEI_VR10_PcieEntityFree(IFX_uint8_t entityNum)
  {
 +#if 0
+ #if (MEI_SUPPORT_DEVICE_VR10_320 != 1)
     if (ifx_pcie_ep_dev_info_release(entityNum))
-    {
-       PRN_ERR_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_ERR,
-@@ -161,6 +163,9 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
+ #else
+@@ -183,6 +181,9 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
     }
  
     return IFX_SUCCESS;
@@ -290,7 +320,7 @@
  }
  
  /**
-@@ -175,6 +180,7 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
+@@ -197,6 +198,7 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
  */
  IFX_int32_t MEI_VR10_InternalInitDevice(MEI_DYN_CNTRL_T *pMeiDynCntrl)
  {
@@ -298,7 +328,7 @@
     IFX_int32_t         retVal;
     IOCTL_MEI_devInit_t InitDev;
     MEI_DEV_T           *pMeiDev = pMeiDynCntrl->pMeiDev;
-@@ -199,6 +205,9 @@ IFX_int32_t MEI_VR10_InternalInitDevice(
+@@ -221,6 +223,9 @@ IFX_int32_t MEI_VR10_InternalInitDevice(
     *MEI_GPIO_U32REG(GPIO_P0_ALSEL1) &= ~((1 << 0) | (1 << 3) | (1 << 8));
  
     return IFX_SUCCESS;
@@ -310,7 +340,7 @@
  IFX_int32_t MEI_PLL_ConfigInit(MEI_DEV_T *pMeiDev)
 --- a/src/drv_mei_cpe_dsm.c
 +++ b/src/drv_mei_cpe_dsm.c
-@@ -138,7 +138,7 @@ IFX_void_t MEI_VRX_DSM_DataInit(MEI_DEV_
+@@ -144,7 +144,7 @@ IFX_void_t MEI_VRX_DSM_DataInit(MEI_DEV_
     memset((IFX_uint8_t *)&pMeiDev->firmwareFeatures, 0x00, sizeof(IOCTL_MEI_firmwareFeatures_t));
     pMeiDev->meiFwDlCount = 0;
  
@@ -319,3 +349,20 @@
  
     PRN_DBG_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_NORMAL,
              ("MEI_DRV: PP callback function addr = 0x%08X" MEI_DRV_CRLF,
+--- a/src/drv_mei_cpe_download_vrx.c
++++ b/src/drv_mei_cpe_download_vrx.c
+@@ -3281,12 +3281,14 @@ IFX_int32_t MEI_DEV_IoctlFirmwareDownloa
+    /* reset TC layer */
+    if (ret == 0)
+    {
++#if 0
+       if (MEI_InternalTcReset(pMeiDynCntrl, &tc_reset) != 0)
+       {
+             PRN_ERR_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_WRN,
+                   ("MEI_DRV[%02d]: Could not perform reset of TC-Layer!"
+                    MEI_DRV_CRLF, MEI_DRV_LINENUM_GET(pMeiDev)));
+       }
++#endif
+    }
+ #endif
+ 

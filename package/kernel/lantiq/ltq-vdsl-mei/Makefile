@@ -1,5 +1,5 @@
 # Copyright (C) 2012 OpenWrt.org
-# Copyright (C) 2015 Lantiq Beteiligungs GmbH & Co KG.
+# Copyright (C) 2015-2016 Lantiq Beteiligungs GmbH & Co KG.
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9-mei
-PKG_VERSION:=1.4.8.5
+PKG_VERSION:=1.5.17.6
 PKG_RELEASE:=1
 
 PKG_BASE_NAME:=drv_mei_cpe
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=78bf61dbc3421123c6716b874a930759
+PKG_MD5SUM:=05179cec47b51dbb66024e8a993b6e0a
 PKG_FIXUP:=autoreconf
 PKG_FLAGS:=nonshared
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>

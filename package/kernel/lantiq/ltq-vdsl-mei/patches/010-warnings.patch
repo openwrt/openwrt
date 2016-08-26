@@ -1,6 +1,6 @@
 --- a/src/drv_mei_cpe_api.h
 +++ b/src/drv_mei_cpe_api.h
-@@ -937,7 +937,7 @@ typedef struct MEI_dev_s
+@@ -1000,7 +1000,7 @@ typedef struct MEI_dev_s
  #if ( defined(MEI_DRVOS_HAVE_DRV_SELECT) && (MEI_DRVOS_HAVE_DRV_SELECT == 1) )
     /** support for select() */
     IFX_boolean_t         bNfcNeedWakeUp;
@@ -11,12 +11,12 @@
     /** list of all open instances which can receive NFC's, EVT's ALM's */
 --- a/src/drv_mei_cpe_linux.c
 +++ b/src/drv_mei_cpe_linux.c
-@@ -1220,9 +1220,9 @@ static unsigned int MEI_Poll (struct fil
+@@ -1302,9 +1302,9 @@ static unsigned int MEI_Poll (struct fil
     }
  
     MEI_DRVOS_SelectQueueAddTask(
 -               (MEI_DRVOS_select_OSArg_t*) filp,
--               (MEI_DRVOS_event_t*)        &(pMeiDev->selNfcWakeupList),
+-               (MEI_DRVOS_selectQueue_t*)  &(pMeiDev->selNfcWakeupList),
 -               (MEI_DRVOS_selectTable_t*)  wait);
 +               filp,
 +               &(pMeiDev->selNfcWakeupList),
@@ -24,14 +24,3 @@
  
     if (pDynNfc->pRecvDataCntrl[pDynNfc->rdIdxRd].bufCtrl != MEI_RECV_BUF_CTRL_FREE)      /* buffer in use */
     {
---- a/src/Makefile.am
-+++ b/src/Makefile.am
-@@ -201,7 +201,7 @@ else
- 
- drv_mei_cpe_common_cflags = \
- 	$(AM_CFLAGS) -D__KERNEL__ -DLINUX -D__linux__ -DMODULE -DEXPORT_SYMTAB \
--	-pipe -Wno-format -Wimplicit -Wunused -Wuninitialized -Wsign-compare -Wstrict-aliasing
-+	-pipe -Wall -Wimplicit -Wunused -Wuninitialized -Wstrict-aliasing
- 
- endif
- 
