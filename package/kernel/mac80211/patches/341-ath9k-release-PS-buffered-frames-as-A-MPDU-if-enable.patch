@@ -1,0 +1,40 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 28 Aug 2016 13:15:10 +0200
+Subject: [PATCH] ath9k: release PS buffered frames as A-MPDU if enabled
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -1660,10 +1660,11 @@ void ath9k_release_buffered_frames(struc
+ 	struct ath_node *an = (struct ath_node *)sta->drv_priv;
+ 	struct ath_txq *txq = sc->tx.uapsdq;
+ 	struct ieee80211_tx_info *info;
++	struct ath_frame_info *fi;
+ 	struct list_head bf_q;
+ 	struct ath_buf *bf_tail = NULL, *bf;
+ 	int sent = 0;
+-	int i;
++	int n, i;
+ 
+ 	INIT_LIST_HEAD(&bf_q);
+ 	for (i = 0; tids && nframes; i++, tids >>= 1) {
+@@ -1683,10 +1684,15 @@ void ath9k_release_buffered_frames(struc
+ 			ath9k_set_moredata(sc, bf, true);
+ 			list_add_tail(&bf->list, &bf_q);
+ 			ath_set_rates(tid->an->vif, tid->an->sta, bf, true);
+-			if (bf_isampdu(bf)) {
++			if (bf_isampdu(bf))
+ 				ath_tx_addto_baw(sc, tid, bf);
+-				bf->bf_state.bf_type &= ~BUF_AGGR;
++			if (bf_isaggr(bf)) {
++				fi = get_frame_info(bf->bf_mpdu);
++				n = ath_compute_num_delims(sc, tid, bf,
++							   fi->framelen, true);
++				bf->bf_state.ndelim = n;
+ 			}
++
+ 			if (bf_tail)
+ 				bf_tail->bf_next = bf;
+ 
