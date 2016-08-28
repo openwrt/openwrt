@@ -1,0 +1,20 @@
+--- a/libbb/gz_open.c
++++ b/libbb/gz_open.c
+@@ -29,7 +29,7 @@
+ #include <unistd.h>
+ #include "libbb.h"
+ 
+-static int gz_use_vfork;
++static const int gz_use_vfork = 1;
+ 
+ FILE *
+ gz_open(FILE *compressed_file, int *pid)
+@@ -38,8 +38,6 @@ gz_open(FILE *compressed_file, int *pid)
+ 	off_t floc;
+ 	int cfile = -1;
+ 
+-	gz_use_vfork = (getenv("OPKG_USE_VFORK") != NULL);
+-
+ 	if (gz_use_vfork) {
+ 		/* Create a new file descriptor for the input stream
+ 		 * (it *must* be associated with a file), and lseek()
