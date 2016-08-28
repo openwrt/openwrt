@@ -1,0 +1,31 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 26 Aug 2016 21:57:16 +0200
+Subject: [PATCH] mac80211: fix tim recalculation after PS response
+
+Handle the case where the mac80211 intermediate queues are empty and the
+driver has buffered frames
+
+Fixes: ba8c3d6f16a1 ("mac80211: add an intermediate software queue implementation")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -1616,7 +1616,6 @@ ieee80211_sta_ps_deliver_response(struct
+ 
+ 		sta_info_recalc_tim(sta);
+ 	} else {
+-		unsigned long tids = sta->txq_buffered_tids & driver_release_tids;
+ 		int tid;
+ 
+ 		/*
+@@ -1648,7 +1647,8 @@ ieee80211_sta_ps_deliver_response(struct
+ 		for (tid = 0; tid < ARRAY_SIZE(sta->sta.txq); tid++) {
+ 			struct txq_info *txqi = to_txq_info(sta->sta.txq[tid]);
+ 
+-			if (!(tids & BIT(tid)) || txqi->tin.backlog_packets)
++			if (!(driver_release_tids & BIT(tid)) ||
++			    txqi->tin.backlog_packets)
+ 				continue;
+ 
+ 			sta_info_recalc_tim(sta);
