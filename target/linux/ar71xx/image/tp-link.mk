@@ -199,7 +199,9 @@ define Device/archer-c7-v2
     BOARDNAME := ARCHER-C7-V2
     DEVICE_PROFILE := ARCHERC7
     TPLINK_HWID := 0xc7000002
-    IMAGE/factory.bin := append-rootfs | mktplinkfw factory -C US
+    IMAGES := sysupgrade.bin factory.bin factory-us.bin factory-eu.bin
+    IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
+    IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
 endef
 
 define Device/tl-wdr7500-v3
