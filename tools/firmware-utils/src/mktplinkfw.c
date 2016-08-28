@@ -46,7 +46,7 @@ struct fw_header {
 	char		fw_version[36];
 	uint32_t	hw_id;		/* hardware id */
 	uint32_t	hw_rev;		/* hardware revision */
-	uint32_t	region;		/* region code */
+	uint32_t	region_code;	/* region code */
 	uint8_t		md5sum1[MD5SUM_LEN];
 	uint32_t	unk2;
 	uint8_t		md5sum2[MD5SUM_LEN];
@@ -63,7 +63,10 @@ struct fw_header {
 	uint16_t	ver_hi;
 	uint16_t	ver_mid;
 	uint16_t	ver_lo;
-	uint8_t		pad[354];
+	uint8_t		pad[130];
+	char		region_str1[32];
+	char		region_str2[32];
+	uint8_t		pad2[160];
 } __attribute__ ((packed));
 
 struct flash_layout {
@@ -73,6 +76,12 @@ struct flash_layout {
 	uint32_t	kernel_ep;
 	uint32_t	rootfs_ofs;
 };
+
+struct fw_region {
+	char		name[4];
+	uint32_t	code;
+};
+
 
 /*
  * Globals
@@ -92,7 +101,7 @@ static char *opt_hw_rev;
 static uint32_t hw_rev;
 static uint32_t opt_hdr_ver = 1;
 static char *country;
-static uint32_t region;
+static const struct fw_region *region;
 static int fw_ver_lo;
 static int fw_ver_mid;
 static int fw_ver_hi;
@@ -173,9 +182,10 @@ static struct flash_layout layouts[] = {
 	}
 };
 
-static const char *const regions[] = {
-	"UN", /* universal */
-	"US",
+static const struct fw_region regions[] = {
+	/* Default region (universal) uses code 0 as well */
+	{"US", 1},
+	{"EU", 0},
 };
 
 /*
@@ -214,22 +224,15 @@ static struct flash_layout *find_layout(const char *id)
 	return ret;
 }
 
-static uint32_t find_region(const char *country) {
-	uint32_t i;
+static const struct fw_region * find_region(const char *country) {
+	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(regions); i++) {
-		if (strcasecmp(regions[i], country) == 0)
-			return i;
+		if (strcasecmp(regions[i].name, country) == 0)
+			return &regions[i];
 	}
 
-	return -1;
-}
-
-static const char * get_region_country(uint32_t region) {
-	if (region < ARRAY_SIZE(regions))
-		return regions[region];
-	else
-		return "unknown";
+	return NULL;
 }
 
 static void usage(int status)
@@ -353,13 +356,9 @@ static int check_options(void)
 
 	if (country) {
 		region = find_region(country);
-		if (region == (uint32_t)-1) {
-			char *end;
-			region = strtoul(country, &end, 0);
-			if (*end) {
-				ERR("unknown region code \"%s\"", country);
-				return -1;
-			}
+		if (!region) {
+			ERR("unknown region code \"%s\"", country);
+			return -1;
 		}
 	}
 
@@ -476,7 +475,6 @@ static void fill_header(char *buf, int len)
 	strncpy(hdr->fw_version, version, sizeof(hdr->fw_version));
 	hdr->hw_id = htonl(hw_id);
 	hdr->hw_rev = htonl(hw_rev);
-	hdr->region = htonl(region);
 
 	if (boot_info.file_size == 0)
 		memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
@@ -496,6 +494,18 @@ static void fill_header(char *buf, int len)
 	hdr->ver_hi = htons(fw_ver_hi);
 	hdr->ver_mid = htons(fw_ver_mid);
 	hdr->ver_lo = htons(fw_ver_lo);
+
+	if (region) {
+		hdr->region_code = htonl(region->code);
+		snprintf(
+			hdr->region_str1, sizeof(hdr->region_str1), "00000000;%02X%02X%02X%02X;",
+			region->name[0], region->name[1], region->name[2], region->name[3]
+		);
+		snprintf(
+			hdr->region_str2, sizeof(hdr->region_str2), "%02X%02X%02X%02X",
+			region->name[0], region->name[1], region->name[2], region->name[3]
+		);
+	}
 
 	get_md5(buf, len, hdr->md5sum1);
 }
@@ -636,11 +646,6 @@ static inline void inspect_fw_phex(const char *label, uint32_t val)
 	printf("%-23s: 0x%08x\n", label, val);
 }
 
-static inline void inspect_fw_phexpost(const char *label, uint32_t val, const char *post)
-{
-	printf("%-23s: 0x%08x (%s)\n", label, val, post);
-}
-
 static inline void inspect_fw_phexdec(const char *label, uint32_t val)
 {
 	printf("%-23s: 0x%08x / %8u bytes\n", label, val, val);
@@ -711,7 +716,7 @@ static int inspect_fw(void)
 	inspect_fw_pstr("Firmware version", hdr->fw_version);
 	inspect_fw_phex("Hardware ID", ntohl(hdr->hw_id));
 	inspect_fw_phex("Hardware Revision", ntohl(hdr->hw_rev));
-	inspect_fw_phexpost("Region code", ntohl(hdr->region), get_region_country(ntohl(hdr->region)));
+	inspect_fw_phex("Region code", ntohl(hdr->region_code));
 
 	printf("\n");
 
