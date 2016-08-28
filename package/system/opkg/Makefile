@@ -109,7 +109,7 @@ endef
 
 Package/opkg-smime/conffiles = $(Package/opkg/conffiles)
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_CFLAGS += -ffunction-sections -fdata-sections -DOPKG_USE_VFORK=1
 EXTRA_CFLAGS += $(TARGET_CPPFLAGS)
 
 CONFIGURE_ARGS += \
