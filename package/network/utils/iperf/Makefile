@@ -41,7 +41,7 @@ TARGET_CFLAGS += -D_GNU_SOURCE
 CONFIGURE_ARGS += --disable-multicast
 
 CONFIGURE_VARS += CXXFLAGS="$$$$CXXFLAGS -fno-rtti"
-CONFIGURE_VARS += LIBS="-lpthread"
+CONFIGURE_VARS += LIBS="-lpthread -lm"
 
 define Package/iperf/install
 	$(INSTALL_DIR) $(1)/usr/bin
