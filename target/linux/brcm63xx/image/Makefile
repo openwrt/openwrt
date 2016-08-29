@@ -151,7 +151,7 @@ define Build/redboot-bin
 	$(TOPDIR)/scripts/redboot-script.pl \
 		-k $(BIN_DIR)/$(REDBOOT_PREFIX)-vmlinux.gz \
 		-r $(BIN_DIR)/$(REDBOOT_PREFIX)-$(notdir $(IMAGE_ROOTFS)) \
-		-a $(strip $(LOADADDR)) -f 0xbe430000 -l 0x7c0000 \
+		-a $(strip $(LOADER_ENTRY)) -f 0xbe430000 -l 0x7c0000 \
 		-s 0x1000 -t 20 -o $@.redbootscript
 	dd if="$@.redbootscript" of="$@.redbootscript.padded" bs=4096 conv=sync
 	cat \

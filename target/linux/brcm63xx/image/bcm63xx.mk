@@ -44,7 +44,7 @@ DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
 
 define Device/bcm63xx_redboot
   FILESYSTEMS := squashfs
-  KERNEL := kernel-bin | append-dtb | gzip
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | gzip
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma elf
   IMAGES := redboot.bin
   IMAGE/redboot.bin := redboot-bin
