@@ -102,6 +102,9 @@ set_state() {
 	hg655b)
 		status_led="HW65x:green:power"
 		;;
+	livebox1)
+		status_led="Livebox1:red:adsl-fail-power"
+		;;
 	p870hw-51a_v2)
 		status_led="P870HW-51a:green:power"
 		;;

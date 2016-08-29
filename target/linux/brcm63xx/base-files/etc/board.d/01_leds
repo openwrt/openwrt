@@ -58,6 +58,11 @@ homehub2a)
 	ucidef_set_led_usbdev "usb1" "USB1" "HOMEHUB2A:blue:phone" "1-1"
 	ucidef_set_led_usbdev "usb2" "USB2" "HOMEHUB2A:green:phone" "2-1"
 	;;
+livebox1)
+	ucidef_set_led_netdev "lan" "LAN" "Livebox1:red:traffic" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "Livebox1:red:adsl" "eth1"
+	ucidef_set_led_netdev "wlan0" "WIFI" "Livebox1:red:wifi" "wlan0"
+	;;
 r5010un_v2)
 	ucidef_set_led_usbdev "usb" "USB" "R5010UNv2:green:usb" "1-1"
 	;;

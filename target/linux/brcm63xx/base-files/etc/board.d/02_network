@@ -129,6 +129,10 @@ bcm963268bu_p300)
 		"0:lan" "3:lan" "4:lan" "5:lan" "6:lan" "7:lan" "8t@eth0"
 	;;
 
+livebox1)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	;;
+
 *)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
