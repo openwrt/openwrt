@@ -16,6 +16,9 @@ REVISION_2.21 = 16d0a0c
 MD5SUM_2.22 = b575850e77b37d70f96472285290b391
 REVISION_2.22 = b995d95
 
+MD5SUM_2.24 = 5c5a6f1ac6fce866e37643c41ac116f3
+REVISION_2.24 = 8c716c2
+
 
 PKG_NAME:=glibc
 PKG_VERSION:=$(call qstrip,$(CONFIG_GLIBC_VERSION))
@@ -55,10 +58,14 @@ ifeq ($(ARCH),mips64)
   endif
 endif
 
+
+# -Os miscompiles w. 2.24 gcc5/gcc6
+# only -O2 tested by upstream changeset
+# "Optimize i386 syscall inlining for GCC 5"
 GLIBC_CONFIGURE:= \
 	BUILD_CC="$(HOSTCC)" \
 	$(TARGET_CONFIGURE_OPTS) \
-	CFLAGS="$(TARGET_CFLAGS)" \
+	CFLAGS="-O2 $(filter-out -Os,$(call qstrip,$(TARGET_CFLAGS)))" \
 	libc_cv_slibdir="/lib" \
 	use_ldconfig=no \
 	$(HOST_BUILD_DIR)/$(GLIBC_PATH)configure \
@@ -74,6 +81,7 @@ GLIBC_CONFIGURE:= \
 		--$(if $(CONFIG_SOFT_FLOAT),without,with)-fp
 
 export libc_cv_ssp=no
+export libc_cv_ssp_strong=no
 export ac_cv_header_cpuid_h=yes
 export HOST_CFLAGS := $(HOST_CFLAGS) -idirafter $(CURDIR)/$(PATH_PREFIX)/include
 
