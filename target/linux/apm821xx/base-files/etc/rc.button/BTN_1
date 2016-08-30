@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/apm821xx.sh
+
+BOARD=$(apm821xx_board_name)
+
+if [ $BOARD == "wndr4700" ]; then
+	case "$ACTION" in
+	released)
+		rmmod dwc2
+	;;
+	pressed)
+		modprobe dwc2
+	;;
+	esac
+fi
+
+return 0
