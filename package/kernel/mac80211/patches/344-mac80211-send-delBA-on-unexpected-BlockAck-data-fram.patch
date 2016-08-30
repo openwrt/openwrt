@@ -1,0 +1,64 @@
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Mon, 29 Aug 2016 23:25:18 +0300
+Subject: [PATCH] mac80211: send delBA on unexpected BlockAck data frames
+
+When we receive data frames with ACK policy BlockAck, send
+delBA as requested by the 802.11 spec. Since this would be
+happening for every frame inside an A-MPDU if it's really
+received outside a session, limit it to a single attempt.
+
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/agg-rx.c
++++ b/net/mac80211/agg-rx.c
+@@ -388,8 +388,10 @@ void __ieee80211_start_rx_ba_session(str
+ 	}
+ 
+ end:
+-	if (status == WLAN_STATUS_SUCCESS)
++	if (status == WLAN_STATUS_SUCCESS) {
+ 		__set_bit(tid, sta->ampdu_mlme.agg_session_valid);
++		__clear_bit(tid, sta->ampdu_mlme.unexpected_agg);
++	}
+ 	mutex_unlock(&sta->ampdu_mlme.mtx);
+ 
+ end_no_lock:
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1072,8 +1072,15 @@ static void ieee80211_rx_reorder_ampdu(s
+ 	tid = *ieee80211_get_qos_ctl(hdr) & IEEE80211_QOS_CTL_TID_MASK;
+ 
+ 	tid_agg_rx = rcu_dereference(sta->ampdu_mlme.tid_rx[tid]);
+-	if (!tid_agg_rx)
++	if (!tid_agg_rx) {
++		if (ack_policy == IEEE80211_QOS_CTL_ACK_POLICY_BLOCKACK &&
++		    !test_bit(tid, rx->sta->ampdu_mlme.agg_session_valid) &&
++		    !test_and_set_bit(tid, rx->sta->ampdu_mlme.unexpected_agg))
++			ieee80211_send_delba(rx->sdata, rx->sta->sta.addr, tid,
++					     WLAN_BACK_RECIPIENT,
++					     WLAN_REASON_QSTA_REQUIRE_SETUP);
+ 		goto dont_reorder;
++	}
+ 
+ 	/* qos null data frames are excluded */
+ 	if (unlikely(hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_NULLFUNC)))
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -230,6 +230,8 @@ struct tid_ampdu_rx {
+  * @tid_rx_stop_requested:  bitmap indicating which BA sessions per TID the
+  *	driver requested to close until the work for it runs
+  * @agg_session_valid: bitmap indicating which TID has a rx BA session open on
++ * @unexpected_agg: bitmap indicating which TID already sent a delBA due to
++ *	unexpected aggregation related frames outside a session
+  * @work: work struct for starting/stopping aggregation
+  * @tid_tx: aggregation info for Tx per TID
+  * @tid_start_tx: sessions where start was requested
+@@ -244,6 +246,7 @@ struct sta_ampdu_mlme {
+ 	unsigned long tid_rx_timer_expired[BITS_TO_LONGS(IEEE80211_NUM_TIDS)];
+ 	unsigned long tid_rx_stop_requested[BITS_TO_LONGS(IEEE80211_NUM_TIDS)];
+ 	unsigned long agg_session_valid[BITS_TO_LONGS(IEEE80211_NUM_TIDS)];
++	unsigned long unexpected_agg[BITS_TO_LONGS(IEEE80211_NUM_TIDS)];
+ 	/* tx */
+ 	struct work_struct work;
+ 	struct tid_ampdu_tx __rcu *tid_tx[IEEE80211_NUM_TIDS];
