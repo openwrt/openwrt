@@ -1,0 +1,117 @@
+From 6133f95661afd3fae856ba7019a909197d686dd4 Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Wed, 10 Aug 2016 11:42:26 +0100
+Subject: [PATCH] spi: img-spfi: finish every transfer cleanly
+
+At the end of a tranfer, if the tranfer is not pending,
+all data bits in the interrupt register should be cleared.
+If SPFI did not finish cleanly, new incomming data or new
+data requests will be signaled.
+
+Clearing the status bits for interrupts was done before in
+the wait function. That functionality triggered issues
+for DMA duplex transactions where the wait function was
+called twice: in both TX and RX callbacks.
+
+Change-Id: I8f46a199ad4e0a43a2a32cacaf4569cbce598f15
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+
+diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
+index 37b0d36..4d62b82 100644
+--- a/drivers/spi/spi-img-spfi.c
++++ b/drivers/spi/spi-img-spfi.c
+@@ -83,6 +83,14 @@
+ #define SPFI_INTERRUPT_SDE			BIT(1)
+ #define SPFI_INTERRUPT_SDTRIG			BIT(0)
+ 
++#define SPFI_INTERRUPT_DATA_BITS		(SPFI_INTERRUPT_SDHF |\
++						SPFI_INTERRUPT_SDFUL |\
++						SPFI_INTERRUPT_GDEX32BIT |\
++						SPFI_INTERRUPT_GDHF |\
++						SPFI_INTERRUPT_GDFUL |\
++						SPFI_INTERRUPT_ALLDONETRIG |\
++						SPFI_INTERRUPT_GDEX8BIT)
++
+ /*
+  * There are four parallel FIFOs of 16 bytes each.  The word buffer
+  * (*_32BIT_VALID_DATA) accesses all four FIFOs at once, resulting in an
+@@ -144,6 +152,23 @@
+ 	spfi_writel(spfi, 0, SPFI_CONTROL);
+ }
+ 
++static inline void spfi_finish(struct img_spfi *spfi)
++{
++	if (!(spfi->complete))
++		return;
++
++	/* Clear data bits as all transfers(TX and RX) have finished */
++	spfi_writel(spfi, SPFI_INTERRUPT_DATA_BITS, SPFI_INTERRUPT_CLEAR);
++	if (spfi_readl(spfi, SPFI_INTERRUPT_STATUS) & SPFI_INTERRUPT_DATA_BITS) {
++		dev_err(spfi->dev, "SPFI did not finish transfer cleanly.\n");
++		spfi_reset(spfi);
++	}
++	/* Disable SPFI for it not to interfere with pending transactions */
++	spfi_writel(spfi,
++		    spfi_readl(spfi, SPFI_CONTROL) & ~SPFI_CONTROL_SPFI_EN,
++		    SPFI_CONTROL);
++}
++
+ static int spfi_wait_all_done(struct img_spfi *spfi)
+ {
+ 	unsigned long timeout = jiffies + msecs_to_jiffies(50);
+@@ -152,19 +177,9 @@
+ 		return 0;
+ 
+ 	while (time_before(jiffies, timeout)) {
+-		u32 status = spfi_readl(spfi, SPFI_INTERRUPT_STATUS);
+-
+-		if (status & SPFI_INTERRUPT_ALLDONETRIG) {
+-			spfi_writel(spfi, SPFI_INTERRUPT_ALLDONETRIG,
+-				    SPFI_INTERRUPT_CLEAR);
+-			/*
+-			 * Disable SPFI for it not to interfere with
+-			 * pending transactions
+-			 */
+-			spfi_writel(spfi, spfi_readl(spfi, SPFI_CONTROL)
+-			& ~SPFI_CONTROL_SPFI_EN, SPFI_CONTROL);
++		if (spfi_readl(spfi, SPFI_INTERRUPT_STATUS) &
++		    SPFI_INTERRUPT_ALLDONETRIG)
+ 			return 0;
+-		}
+ 		cpu_relax();
+ 	}
+ 
+@@ -296,6 +311,8 @@
+ 	}
+ 
+ 	ret = spfi_wait_all_done(spfi);
++	spfi_finish(spfi);
++
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -311,8 +328,10 @@
+ 
+ 	spin_lock_irqsave(&spfi->lock, flags);
+ 	spfi->rx_dma_busy = false;
+-	if (!spfi->tx_dma_busy)
++	if (!spfi->tx_dma_busy) {
++		spfi_finish(spfi);
+ 		spi_finalize_current_transfer(spfi->master);
++	}
+ 	spin_unlock_irqrestore(&spfi->lock, flags);
+ }
+ 
+@@ -325,8 +344,10 @@
+ 
+ 	spin_lock_irqsave(&spfi->lock, flags);
+ 	spfi->tx_dma_busy = false;
+-	if (!spfi->rx_dma_busy)
++	if (!spfi->rx_dma_busy) {
++		spfi_finish(spfi);
+ 		spi_finalize_current_transfer(spfi->master);
++	}
+ 	spin_unlock_irqrestore(&spfi->lock, flags);
+ }
+ 
