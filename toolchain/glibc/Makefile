@@ -1,11 +1,11 @@
 PATH_PREFIX := .
 VARIANT:=final
-HOST_BUILD_PARALLEL:=0
+HOST_BUILD_PARALLEL:=1
 
 include ./common.mk
 
 define Host/Compile
-	$(MAKE) -C $(CUR_BUILD_DIR) \
+	+$(MAKE) -C $(CUR_BUILD_DIR) \
 		PARALLELMFLAGS="$(HOST_JOBS)" \
 		BUILD_CFLAGS="$(HOST_CFLAGS)" \
 		all
