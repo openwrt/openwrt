@@ -2,14 +2,10 @@ if USE_GLIBC
 
 config GLIBC_VERSION
 	string
-	default "2.22" if GLIBC_VERSION_2_22
 	default "2.24" if GLIBC_VERSION_2_24
 
-config GLIBC_VERSION_2_22
-	default y if !TOOLCHAINOPTS
-	bool
-
 config GLIBC_VERSION_2_24
+	default y if !TOOLCHAINOPTS
 	bool
 
 endif
