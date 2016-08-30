@@ -17,9 +17,11 @@ mr24)
 	;;
 
 mbl)
+	ucidef_set_led_ide "sata" "SATA" "mbl:blue:power"
 	;;
 
 wndr4700)
+	ucidef_set_led_ide "sata" "SATA" "wndr4700:green:hd"
 	ucidef_set_led_netdev "wan" "WAN (green)" "wndr4700:green:wan" "eth0.2"
 	ucidef_set_led_usbdev "usb3-1" "USB3-1" "wndr4700:blue:usb" "2-1"
 	ucidef_set_led_usbdev "usb3-2" "USB3-2" "wndr4700:blue:usb" "3-1"
