@@ -249,3 +249,19 @@ define KernelPackage/i2c-mux-pca9541/description
 endef
 
 $(eval $(call KernelPackage,i2c-mux-pca9541))
+
+
+I2C_IMX_MODULES:= \
+  CONFIG_I2C_IMX:drivers/i2c/busses/i2c-imx
+
+define KernelPackage/i2c-imx
+  $(call i2c_defaults,$(I2C_IMX_MODULES),51)
+  TITLE:=Freescale i.MX/MXC
+  DEPENDS:=kmod-i2c-core
+endef
+
+define KernelPackage/i2c-imx/description
+ Kernel modules for IMX IIC bus controller
+endef
+
+$(eval $(call KernelPackage,i2c-imx))

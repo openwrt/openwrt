@@ -393,6 +393,22 @@ endef
 $(eval $(call KernelPackage,sdhci))
 
 
+define KernelPackage/sdhci-of-esdhc
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Freescale eSDHC controller support
+  DEPENDS:=+kmod-sdhci
+  KCONFIG:=CONFIG_MMC_SDHCI_OF_ESDHC
+  FILES:=$(LINUX_DIR)/drivers/mmc/host/sdhci-of-esdhc.ko
+  AUTOLOAD:=$(call AutoProbe,sdhci-of-esdhc,1)
+endef
+
+define KernelPackage/sdhci-of-esdhc/description
+ Kernel support for the Freescale eSDHC controller
+endef
+
+$(eval $(call KernelPackage,sdhci-of-esdhc))
+
+
 define KernelPackage/rfkill
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RF switch subsystem support
