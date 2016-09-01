@@ -21,6 +21,7 @@ PKG_MD5SUM:=973c1d896be751321cc3aafa564f64b2
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
+PKG_TARGETS:=bin
 
 PKG_BUILD_PARALLEL:=1
 
@@ -45,7 +46,7 @@ define Package/uboot-mvebu-$(1)
   TITLE:=$(2)
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)
-  MAINTAINER:=Luka Perkov <luka@openwrt.org>
+  MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 endef
 endef
 
