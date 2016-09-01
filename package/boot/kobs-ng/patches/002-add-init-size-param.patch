@@ -1,3 +1,6 @@
+Add --chip_0_size param to override the size of the mtd partition which is
+required if the SPL does not occupy the entire partition. For Gateworks
+Ventana boards the 'uboot' partition contains both the SPL and uboot.
 --- a/src/main.c
 +++ b/src/main.c
 @@ -94,6 +94,7 @@ void usage(void)
@@ -10,7 +13,7 @@
  	"    --data_hold_time=<value> ............. NCB field (default 60)\n"
 --- a/src/mtd.c
 +++ b/src/mtd.c
-@@ -716,6 +716,11 @@ struct mtd_data *mtd_open(const struct m
+@@ -876,6 +876,11 @@ struct mtd_data *mtd_open(const struct m
  			goto out;
  		}
  
@@ -20,9 +23,9 @@
 +		}
 +
  		/* verify it's a nand */
- 		if (miu->type != MTD_NANDFLASH) {
- 			fprintf(stderr, "mtd: device %s not NAND\n", mp->name);
-@@ -2914,7 +2919,7 @@ static const struct {
+ 		if (miu->type != MTD_NANDFLASH
+ 			&& miu->type != MTD_MLCNANDFLASH) {
+@@ -3385,7 +3390,7 @@ static const struct {
  } mtd_int_args[] = {
  	ARG_IGNORE(chip_count),
  	ARG_IGNORE(chip_0_offset),
@@ -31,7 +34,7 @@
  	ARG_IGNORE(chip_1_offset),
  	ARG_IGNORE(chip_1_size),
  	ARG(search_exponent),
-@@ -3107,7 +3112,7 @@ void mtd_cfg_dump(struct mtd_config *cfg
+@@ -3578,7 +3583,7 @@ void mtd_cfg_dump(struct mtd_config *cfg
  //	Pd(chip_count);
  	Ps(chip_0_device_path);
  //	Pd(chip_0_offset);
