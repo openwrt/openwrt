@@ -1626,3 +1626,20 @@ define KernelPackage/usb3/description
 endef
 
 $(eval $(call KernelPackage,usb3))
+
+
+define KernelPackage/usb-net2280
+  TITLE:=Support for NetChip 228x PCI USB peripheral controller
+  KCONFIG:= CONFIG_USB_NET2280
+  DEPENDS:=@PCI_SUPPORT +kmod-usb-gadget
+  FILES:=$(LINUX_DIR)/drivers/usb/gadget/udc/net2280.ko
+  AUTOLOAD:=$(call AutoLoad,46,net2280)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-net2280/description
+  Kernel support for NetChip 228x / PLX USB338x PCI USB peripheral controller.
+endef
+
+$(eval $(call KernelPackage,usb-net2280))
+
