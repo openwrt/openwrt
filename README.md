@@ -19,7 +19,7 @@ This guide helps as a quick start but for full details about OpenWrt please see 
 
 
 
-## This readme contains the basics of building and modifying OpenWrt for Ci40. **You will find much more documentation on the [Creator Documentation website](https://docs.creatordev.io/ci40/guides/platform/).**
+## This readme contains the basics of building and modifying OpenWrt for Ci40. **You will find much more documentation on the [Creator Documentation website](https://docs.creatordev.io/ci40/guides/openwrt-platform/).**
 
 
 
