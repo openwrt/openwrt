@@ -264,6 +264,13 @@ define Image/mkfs/prepare
 	$(call Image/mkfs/prepare/default,$(1))
 endef
 
+define Image/Manifest
+	$(STAGING_DIR_HOST)/bin/opkg \
+		--offline-root $(TARGET_DIR) \
+		--add-arch all:100 \
+		--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200 list-installed > \
+		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest
+endef
 
 ifdef CONFIG_TARGET_ROOTFS_TARGZ
   define Image/Build/targz
@@ -565,5 +572,6 @@ define BuildImage
 	$(MAKE) legacy-images
 
   install: install-images
+	$(call Image/Manifest)
 
 endef
