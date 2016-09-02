@@ -48,14 +48,6 @@ define BuildFirmware/DIR300B1/squashfs
 endef
 BuildFirmware/DIR300B1/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
 
-define BuildFirmware/DIR615H1/squashfs
-	$(call BuildFirmware/Default4M/$(1),$(1),dir-615-h1,DIR-615-H1)
-	-mksenaofw -e $(call sysupname,$(1),dir-615-h1) \
-		-o $(call imgname,$(1),dir-615-h1)-factory.bin \
-		-r 0x218 -p 0x30 -t 3
-endef
-BuildFirmware/DIR615H1/initramfs=$(call BuildFirmware/OF/initramfs,$(1),dir-615-h1,DIR-615-H1)
-
 # sign dap 1350 based images
 dap1350_mtd_size=7667712
 define BuildFirmware/dap1350/squashfs
@@ -182,7 +174,6 @@ Image/Build/Profile/DIR-300-B1=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-300-b
 Image/Build/Profile/DIR-600-B1=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-600-b1,DIR-600-B1,wrgn23_dlwbr_dir600b)
 Image/Build/Profile/DIR-600-B2=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-600-b2,DIR-600-B2,wrgn23_dlwbr_dir600b)
 Image/Build/Profile/DIR-615-D=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-615-d,DIR-615-D,wrgn23_dlwbr_dir615d)
-Image/Build/Profile/DIR615H1=$(call BuildFirmware/DIR615H1/$(1),$(1))
 Image/Build/Profile/DAP1350=$(call BuildFirmware/dap1350/$(1),$(1),dap-1350,DAP-1350,RT3052-AP-DAP1350-3)
 Image/Build/Profile/DAP1350WW=$(call BuildFirmware/dap1350/$(1),$(1),dap-1350WW,DAP-1350,RT3052-AP-DAP1350WW-3)
 Image/Build/Profile/DCS930=$(call BuildFirmware/DCS930/$(1),$(1),dcs-930,DCS-930)
@@ -309,10 +300,16 @@ endef
 LEGACY_DEVICES += DIR-615-D
 
 
-define LegacyDevice/DIR615H1
+define Device/dir-615-h1
+  DTS := DIR-615-H1
+  BLOCKSIZE := 4k
+  IMAGES += factory.bin
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE/factory.bin := \
+	$$(IMAGE/sysupgrade.bin) | senao-header -r 0x218 -p 0x30 -t 3
   DEVICE_TITLE := D-Link DIR-615 H1
 endef
-LEGACY_DEVICES += DIR615H1
+TARGET_DEVICES += dir-615-h1
 
 
 define LegacyDevice/DAP1350
