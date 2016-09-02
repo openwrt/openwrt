@@ -28,6 +28,7 @@ BOARDNAME:=marduk
 DEFAULT_PACKAGES+=kmod-leds-gpio kmod-ledtrig-heartbeat kmod-i2c-core i2c-tools \
                   kmod-sound-pistachio-soc alsa-lib alsa-utils alsa-utils-tests \
                   kmod-uccp420wlan kmod-cfg80211 fping iw hostapd wpa-cli wpa-supplicant \
+                  kmod-tpm-i2c-infineon kmod-random-tpm tpm-tools \
                   uhttpd uboot-envtools tcpdump board-test proddata \
                   luci
 
