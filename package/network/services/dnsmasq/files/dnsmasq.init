@@ -351,6 +351,22 @@ dhcp_vendorclass_add() {
 	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
+dhcp_match_add() {
+	local cfg="$1"
+
+	config_get networkid "$cfg" networkid
+	[ -n "$networkid" ] || return 0
+
+	config_get match "$cfg" match
+	[ -n "$match" ] || return 0
+
+	xappend "--dhcp-match=$networkid,$match"
+
+	config_get_bool force "$cfg" force 0
+
+	dhcp_option_add "$cfg" "$networkid" "$force"
+}
+
 dhcp_host_add() {
 	local cfg="$1"
 
@@ -669,6 +685,7 @@ start_service() {
 	config_foreach dhcp_circuitid_add circuitid
 	config_foreach dhcp_remoteid_add remoteid
 	config_foreach dhcp_subscrid_add subscrid
+	config_foreach dhcp_match_add match
 	config_foreach dhcp_domain_add domain
 	config_foreach dhcp_hostrecord_add hostrecord
 	config_foreach dhcp_relay_add relay
