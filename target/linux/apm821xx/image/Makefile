@@ -72,10 +72,13 @@ define Device/mr24
   BLOCKSIZE := 64512
   IMAGES := sysupgrade.tar
   DTB_SIZE := 64512
-  KERNEL_SIZE := 2048k
+  KERNEL_SIZE := 1984k
   IMAGE_SIZE := 8191k
   KERNEL := kernel-bin | lzma | uImage lzma | MerakiAdd-dtb | MerakiNAND
-  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux | lzma | uImage lzma | MerakiAdd-dtb | pad-to 2047k | MerakiAdd-initramfs | MerakiNAND
+  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux | lzma | uImage lzma | \
+		      check-size $$(KERNEL_SIZE) | \
+		      MerakiAdd-dtb | pad-to 2047k | MerakiAdd-initramfs | \
+		      MerakiNAND
   IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
 TARGET_DEVICES += mr24
