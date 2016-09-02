@@ -807,9 +807,11 @@ Signed-off-by: Toke HÃ¸iland-JÃ¸rgensen <toke@toke.dk>
  		ath_draintxq(sc, txq);
  	}
  
-@@ -2335,15 +2307,12 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2334,16 +2306,14 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 	struct ath_softc *sc = hw->priv;
  	struct ath_txq *txq = txctl->txq;
  	struct ath_atx_tid *tid = NULL;
++	struct ath_node *an = NULL;
  	struct ath_buf *bf;
 -	bool queue, ps_resp;
 +	bool ps_resp;
@@ -824,16 +826,13 @@ Signed-off-by: Toke HÃ¸iland-JÃ¸rgensen <toke@toke.dk>
  	ps_resp = !!(info->control.flags & IEEE80211_TX_CTRL_PS_RESPONSE);
  
  	ret = ath_tx_prepare(hw, skb, txctl);
-@@ -2358,63 +2327,13 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2358,63 +2328,18 @@ int ath_tx_start(struct ieee80211_hw *hw
  
  	q = skb_get_queue_mapping(skb);
  
-+	if (ps_resp)
-+		txq = sc->tx.uapsdq;
-+
- 	ath_txq_lock(sc, txq);
- 	if (txq == sc->tx.txq_map[q]) {
- 		fi->txq = q;
+-	ath_txq_lock(sc, txq);
+-	if (txq == sc->tx.txq_map[q]) {
+-		fi->txq = q;
 -		if (++txq->pending_frames > sc->tx.txq_max_pending[q] &&
 -		    !txq->stopped) {
 -			if (ath9k_is_chanctx_enabled())
@@ -869,14 +868,15 @@ Signed-off-by: Toke HÃ¸iland-JÃ¸rgensen <toke@toke.dk>
 -
 -	if (ps_resp) {
 -		ath_txq_unlock(sc, txq);
--		txq = sc->tx.uapsdq;
++	if (ps_resp)
+ 		txq = sc->tx.uapsdq;
 -		ath_txq_lock(sc, txq);
 -	} else if (txctl->an && queue) {
 -		WARN_ON(tid->txq != txctl->txq);
 -
 -		if (info->flags & IEEE80211_TX_CTL_CLEAR_PS_FILT)
 -			tid->clear_ps_filter = true;
--
+ 
 -		/*
 -		 * Add this frame to software queue for scheduling later
 -		 * for aggregation.
@@ -885,14 +885,21 @@ Signed-off-by: Toke HÃ¸iland-JÃ¸rgensen <toke@toke.dk>
 -		__skb_queue_tail(&tid->buf_q, skb);
 -		if (!txctl->an->sleeping)
 -			ath_tx_queue_tid(sc, txq, tid);
--
++	if (txctl->sta) {
++		an = (struct ath_node *) sta->drv_priv;
++		tid = ath_get_skb_tid(sc, an, skb);
++	}
+ 
 -		ath_txq_schedule(sc, txq);
 -		goto out;
++	ath_txq_lock(sc, txq);
++	if (txq == sc->tx.txq_map[q]) {
++		fi->txq = q;
 +		++txq->pending_frames;
  	}
  
  	bf = ath_tx_setup_buffer(sc, txq, tid, skb);
-@@ -2907,9 +2826,8 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2907,9 +2832,8 @@ void ath_tx_node_init(struct ath_softc *
  	struct ath_atx_tid *tid;
  	int tidno, acno;
  
@@ -904,7 +911,7 @@ Signed-off-by: Toke HÃ¸iland-JÃ¸rgensen <toke@toke.dk>
  		tid->an        = an;
  		tid->tidno     = tidno;
  		tid->seq_start = tid->seq_next = 0;
-@@ -2917,11 +2835,14 @@ void ath_tx_node_init(struct ath_softc *
+@@ -2917,11 +2841,14 @@ void ath_tx_node_init(struct ath_softc *
  		tid->baw_head  = tid->baw_tail = 0;
  		tid->active	   = false;
  		tid->clear_ps_filter = true;
@@ -920,7 +927,7 @@ Signed-off-by: Toke HÃ¸iland-JÃ¸rgensen <toke@toke.dk>
  	}
  }
  
-@@ -2931,9 +2852,8 @@ void ath_tx_node_cleanup(struct ath_soft
+@@ -2931,9 +2858,8 @@ void ath_tx_node_cleanup(struct ath_soft
  	struct ath_txq *txq;
  	int tidno;
  
@@ -932,7 +939,7 @@ Signed-off-by: Toke HÃ¸iland-JÃ¸rgensen <toke@toke.dk>
  		txq = tid->txq;
  
  		ath_txq_lock(sc, txq);
-@@ -2945,6 +2865,9 @@ void ath_tx_node_cleanup(struct ath_soft
+@@ -2945,6 +2871,9 @@ void ath_tx_node_cleanup(struct ath_soft
  		tid->active = false;
  
  		ath_txq_unlock(sc, txq);
