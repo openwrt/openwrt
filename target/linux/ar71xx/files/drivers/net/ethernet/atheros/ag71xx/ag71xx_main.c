@@ -527,6 +527,8 @@ static void ag71xx_fast_reset(struct ag71xx *ag)
 	mii_reg = ag71xx_rr(ag, AG71XX_REG_MII_CFG);
 	rx_ds = ag71xx_rr(ag, AG71XX_REG_RX_DESC);
 
+	ag71xx_tx_packets(ag, true);
+
 	ath79_device_reset_set(reset_mask);
 	udelay(10);
 	ath79_device_reset_clear(reset_mask);
@@ -534,7 +536,6 @@ static void ag71xx_fast_reset(struct ag71xx *ag)
 
 	ag71xx_dma_reset(ag);
 	ag71xx_hw_setup(ag);
-	ag71xx_tx_packets(ag, true);
 	ag->tx_ring.curr = 0;
 	ag->tx_ring.dirty = 0;
 	netdev_reset_queue(ag->dev);
