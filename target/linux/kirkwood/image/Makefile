@@ -38,7 +38,6 @@ define Device/dockstar
   IMAGES += factory.bin
   IMAGE/factory.bin := append-ubi
   KERNEL_IN_UBI := 1
-  KERNEL := kernel-bin | append-dtb
 endef
 
 define Device/goflexnet
