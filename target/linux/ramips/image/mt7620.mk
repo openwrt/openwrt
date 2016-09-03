@@ -66,6 +66,7 @@ TARGET_DEVICES += ArcherC50
 
 define Device/ex2700
   DTS := EX2700
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-kernel-ex2700
@@ -76,6 +77,7 @@ TARGET_DEVICES += ex2700
 
 define Device/wt3020-4M
   DTS := WT3020-4M
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | poray-header -B WT3020 -F 4M
@@ -394,14 +396,16 @@ TARGET_DEVICES += tiny-ac
 
 define Device/dch-m225
   DTS := DCH-M225
+  BLOCKSIZE := 4k
   IMAGES += factory.bin
   IMAGE_SIZE := 6848k
   IMAGE/sysupgrade.bin := \
-	append-kernel | pad-offset 65536 64 | append-rootfs | \
+	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
 	pad-rootfs | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := \
-	append-kernel | pad-offset 65536 64 | append-rootfs | pad-rootfs -x 64 | \
+	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+	append-rootfs | pad-rootfs -x 64 | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
 	seama-seal -m "signature=wapn22_dlink.2013gui_dap1320b" | \
 	check-size $$$$(IMAGE_SIZE)

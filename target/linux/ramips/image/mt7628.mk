@@ -4,6 +4,7 @@
 
 define Device/mt7628
   DTS := MT7628
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := MediaTek MT7628 EVB
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev

@@ -107,6 +107,7 @@ TARGET_DEVICES += f7c027
 
 define Device/air3gii
   DTS := AIR3GII
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := AirLive Air3GII
 endef
@@ -122,6 +123,7 @@ TARGET_DEVICES += awm003-evb
 
 define Device/awmapn2403
   DTS := AWAPN2403
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := AsiaRF AWAPN2403
 endef
@@ -145,6 +147,7 @@ TARGET_DEVICES += carambola
 
 define Device/d105
   DTS := D105
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Huawei D105
 endef
@@ -167,6 +170,7 @@ TARGET_DEVICES += dir-620-d1
 
 define Device/esr-9753
   DTS := ESR-9753
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := EnGenius ESR-9753
 endef
@@ -221,6 +225,7 @@ TARGET_DEVICES += mofi3500-3gn
 
 define Device/3g150b
   DTS := 3G150B
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_TITLE := Tenda 3G150B
@@ -238,6 +243,7 @@ TARGET_DEVICES += mr-102n
 
 define Device/mpr-a1
   DTS := MPRA1
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_TITLE := HAME MPR-A1
@@ -257,6 +263,7 @@ TARGET_DEVICES += mpr-a2
 
 define Device/dir-300-b7
   DTS := DIR-300-B7
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := D-Link DIR-300 B7
 endef
@@ -272,6 +279,7 @@ TARGET_DEVICES += dir-320-b1
 
 define Device/nbg-419n
   DTS := NBG-419N
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := ZyXEL NBG-419N
 endef
@@ -321,6 +329,7 @@ TARGET_DEVICES += miniembwifi
 
 define Device/psr-680w
   DTS := PSR-680W
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Petatel PSR-680W Wireless 3G Router
 endef
@@ -357,6 +366,7 @@ TARGET_DEVICES += rt5350f-olinuxino-evb
 
 define Device/rt-g32-b1
   DTS := RT-G32-B1
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Asus RT-G32 B1
 endef
@@ -365,6 +375,7 @@ TARGET_DEVICES += rt-g32-b1
 
 define Device/rt-n10-plus
   DTS := RT-N10-PLUS
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Asus RT-N10+
 endef
@@ -380,10 +391,12 @@ TARGET_DEVICES += rut5xx
 
 define Device/sl-r7205
   DTS := SL-R7205
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Skyline SL-R7205 Wireless 3G Router
 endef
 TARGET_DEVICES += sl-r7205
+
 
 define Device/tew-714tru
   DTS := TEW-714TRU
@@ -391,8 +404,10 @@ define Device/tew-714tru
 endef
 TARGET_DEVICES += tew-714tru
 
+
 define Device/v22rw-2x2
   DTS := V22RW-2X2
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Ralink AP-RT3052-V22RW-2X2
 endef
@@ -408,6 +423,7 @@ TARGET_DEVICES += w502u
 
 define Device/wcr150gn
   DTS := WCR150GN
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Sparklan WCR-150GN
 endef
@@ -416,6 +432,7 @@ TARGET_DEVICES += wcr150gn
 
 define Device/mzk-dp150n
   DTS := MZK-DP150N
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Planex MZK-DP150N
   DEVICE_PACKAGES := kmod-spi-dev
@@ -441,6 +458,7 @@ TARGET_DEVICES += wizfi630a
 
 define Device/wl-330n
   DTS := WL-330N
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Asus WL-330N
 endef
@@ -449,6 +467,7 @@ TARGET_DEVICES += wl-330n
 
 define Device/wl-330n3g
   DTS := WL-330N3G
+  BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Asus WL-330N3G
   DEVICE_PACKAGES :=
@@ -458,6 +477,7 @@ TARGET_DEVICES += wl-330n3g
 
 define Device/wl-351
   DTS := WL-351
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Sitecom WL-351 v1
   DEVICE_PACKAGES := kmod-switch-rtl8366rb kmod-swconfig swconfig
@@ -467,6 +487,7 @@ TARGET_DEVICES += wl-351
 
 define Device/ur-326n4g
   DTS := UR-326N4G
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := UPVEL UR-326N4G
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
@@ -491,6 +512,7 @@ TARGET_DEVICES += wr6202
 
 define Device/xdxrn502j
   DTS := XDXRN502J
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := XDX RN502J
 endef

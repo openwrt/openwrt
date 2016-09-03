@@ -37,6 +37,7 @@ endef
 
 define Device/mt7621
   DTS := MT7621
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := MediaTek MT7621 EVB
 endef
@@ -65,15 +66,17 @@ TARGET_DEVICES += wsr-1166
 
 define Device/dir-860l-b1
   DTS := DIR-860L-B1
+  BLOCKSIZE := 4k
   IMAGES += factory.bin
   KERNEL := kernel-bin | patch-dtb | relocate-kernel | lzma | uImage lzma
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   IMAGE/sysupgrade.bin := \
-	append-kernel | pad-offset 65536 64 | append-rootfs | \
+	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
 	pad-rootfs | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := \
-	append-kernel | pad-offset 65536 64 | append-rootfs | pad-rootfs -x 64 | \
+	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+	append-rootfs | pad-rootfs -x 64 | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
 	seama-seal -m "signature=wrgac13_dlink.2013gui_dir860lb" | \
 	check-size $$$$(IMAGE_SIZE)
