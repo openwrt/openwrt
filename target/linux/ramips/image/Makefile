@@ -83,6 +83,15 @@ define Build/senao-header
 	mv $@.new $@
 endef
 
+define Build/seama
+	$(STAGING_DIR_HOST)/bin/seama -i $@ $(1)
+	mv $@.seama $@
+endef
+
+define Build/seama-seal
+	$(call Build/seama,-s $@.seama $(1))
+endef
+
 #
 # The real magic happens inside these templates
 #

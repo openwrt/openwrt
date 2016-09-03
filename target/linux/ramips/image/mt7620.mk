@@ -37,15 +37,6 @@ define Build/elecom-header
 	$(STAGING_DIR_HOST)/bin/tar -cf $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
-define Build/seama
-	$(STAGING_DIR_HOST)/bin/seama -i $@ $(1)
-	mv $@.seama $@
-endef
-
-define Build/seama-seal
-	$(call Build/seama,-s $@.seama $(1))
-endef
-
 define Device/ArcherC20i
   DTS := ArcherC20i
   KERNEL := $(KERNEL_DTB)

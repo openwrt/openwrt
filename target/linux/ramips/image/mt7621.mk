@@ -2,15 +2,6 @@
 # MT7621 Profiles
 #
 
-define Build/seama
-	$(STAGING_DIR_HOST)/bin/seama -i $@ $(1)
-	mv $@.seama $@
-endef
-
-define Build/seama-seal
-	$(call Build/seama,-s $@.seama $(1))
-endef
-
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
