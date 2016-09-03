@@ -300,6 +300,7 @@ define Image/Build
 endef
 
 define Image/Build/Profile
+	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/Build/Profile/$(1),initramfs))
 	$(call Image/Build/Profile/$(1),$(2))
 endef
 
