@@ -131,7 +131,8 @@ define Build/pad-to
 endef
 
 define Build/pad-rootfs
-	$(STAGING_DIR_HOST)/bin/padjffs2 $@ $(1) 4 8 16 64 128 256
+	$(STAGING_DIR_HOST)/bin/padjffs2 $@ $(1) \
+		$(if $(BLOCKSIZE),$(BLOCKSIZE:%k=%),4 8 16 64 128 256)
 endef
 
 define Build/pad-offset
