@@ -137,8 +137,8 @@ endef
 define Build/pad-offset
 	let \
 		size="$$(stat -c%s $@)" \
-		pad="$(word 1, $(1))" \
-		offset="$(word 2, $(1))" \
+		pad="$(subst k,* 1024,$(word 1, $(1)))" \
+		offset="$(subst k,* 1024,$(word 2, $(1)))" \
 		pad="(pad - ((size + offset) % pad)) % pad" \
 		newsize='size + pad'; \
 		dd if=$@ of=$@.new bs=$$newsize count=1 conv=sync
