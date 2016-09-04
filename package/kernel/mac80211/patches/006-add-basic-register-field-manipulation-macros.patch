@@ -1,0 +1,145 @@
+From: Jakub Kicinski <jakub.kicinski@netronome.com>
+Date: Wed, 31 Aug 2016 12:46:44 +0100
+Subject: [PATCH] add basic register-field manipulation macros
+
+Common approach to accessing register fields is to define
+structures or sets of macros containing mask and shift pair.
+Operations on the register are then performed as follows:
+
+ field = (reg >> shift) & mask;
+
+ reg &= ~(mask << shift);
+ reg |= (field & mask) << shift;
+
+Defining shift and mask separately is tedious.  Ivo van Doorn
+came up with an idea of computing them at compilation time
+based on a single shifted mask (later refined by Felix) which
+can be used like this:
+
+ #define REG_FIELD 0x000ff000
+
+ field = FIELD_GET(REG_FIELD, reg);
+
+ reg &= ~REG_FIELD;
+ reg |= FIELD_PREP(REG_FIELD, field);
+
+FIELD_{GET,PREP} macros take care of finding out what the
+appropriate shift is based on compilation time ffs operation.
+
+GENMASK can be used to define registers (which is usually
+less error-prone and easier to match with datasheets).
+
+This approach is the most convenient I've seen so to limit code
+multiplication let's move the macros to a global header file.
+Attempts to use static inlines instead of macros failed due
+to false positive triggering of BUILD_BUG_ON()s, especially with
+GCC < 6.0.
+
+Signed-off-by: Jakub Kicinski <jakub.kicinski@netronome.com>
+Reviewed-by: Dinan Gunawardena <dinan.gunawardena@netronome.com>
+---
+ create mode 100644 include/linux/bitfield.h
+
+--- /dev/null
++++ b/include/linux/bitfield.h
+@@ -0,0 +1,100 @@
++/*
++ * Copyright (C) 2014 Felix Fietkau <nbd@nbd.name>
++ * Copyright (C) 2004 - 2009 Ivo van Doorn <IvDoorn@gmail.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef _LINUX_BITFIELD_H
++#define _LINUX_BITFIELD_H
++
++#include <linux/bug.h>
++
++#ifdef __CHECKER__
++#define __BUILD_BUG_ON_NOT_POWER_OF_2(n) (0)
++#else
++#define __BUILD_BUG_ON_NOT_POWER_OF_2(n)	\
++	BUILD_BUG_ON(((n) & ((n) - 1)) != 0)
++#endif
++
++/*
++ * Bitfield access macros
++ *
++ * FIELD_{GET,PREP} macros take as first parameter shifted mask
++ * from which they extract the base mask and shift amount.
++ * Mask must be a compilation time constant.
++ *
++ * Example:
++ *
++ *  #define REG_FIELD_A  GENMASK(6, 0)
++ *  #define REG_FIELD_B  BIT(7)
++ *  #define REG_FIELD_C  GENMASK(15, 8)
++ *  #define REG_FIELD_D  GENMASK(31, 16)
++ *
++ * Get:
++ *  a = FIELD_GET(REG_FIELD_A, reg);
++ *  b = FIELD_GET(REG_FIELD_B, reg);
++ *
++ * Set:
++ *  reg = FIELD_PREP(REG_FIELD_A, 1) |
++ *	  FIELD_PREP(REG_FIELD_B, 0) |
++ *	  FIELD_PREP(REG_FIELD_C, c) |
++ *	  FIELD_PREP(REG_FIELD_D, 0x40);
++ *
++ * Modify:
++ *  reg &= ~REG_FIELD_C;
++ *  reg |= FIELD_PREP(REG_FIELD_C, c);
++ */
++
++#define __bf_shf(x) (__builtin_ffsll(x) - 1)
++
++#define __BF_FIELD_CHECK(_mask, _reg, _val, _pfx)			\
++	({								\
++		BUILD_BUG_ON_MSG(!__builtin_constant_p(_mask),		\
++				 _pfx "mask is not constant");		\
++		BUILD_BUG_ON_MSG(!(_mask), _pfx "mask is zero");	\
++		BUILD_BUG_ON_MSG(__builtin_constant_p(_val) ?		\
++				 ~((_mask) >> __bf_shf(_mask)) & (_val) : 0, \
++				 _pfx "value too large for the field"); \
++		BUILD_BUG_ON_MSG((_mask) > (typeof(_reg))~0ull,		\
++				 _pfx "type of reg too small for mask"); \
++		__BUILD_BUG_ON_NOT_POWER_OF_2((_mask) +			\
++					      (1ULL << __bf_shf(_mask))); \
++	})
++
++/**
++ * FIELD_PREP() - prepare a bitfield element
++ * @_mask: shifted mask defining the field's length and position
++ * @_val:  value to put in the field
++ *
++ * FIELD_PREP() masks and shifts up the value.  The result should
++ * be combined with other fields of the bitfield using logical OR.
++ */
++#define FIELD_PREP(_mask, _val)						\
++	({								\
++		__BF_FIELD_CHECK(_mask, 0ULL, _val, "FIELD_PREP: ");	\
++		((typeof(_mask))(_val) << __bf_shf(_mask)) & (_mask);	\
++	})
++
++/**
++ * FIELD_GET() - extract a bitfield element
++ * @_mask: shifted mask defining the field's length and position
++ * @_reg:  32bit value of entire bitfield
++ *
++ * FIELD_GET() extracts the field specified by @_mask from the
++ * bitfield passed in as @_reg by masking and shifting it down.
++ */
++#define FIELD_GET(_mask, _reg)						\
++	({								\
++		__BF_FIELD_CHECK(_mask, _reg, 0U, "FIELD_GET: ");	\
++		(typeof(_mask))(((_reg) & (_mask)) >> __bf_shf(_mask));	\
++	})
++
++#endif
