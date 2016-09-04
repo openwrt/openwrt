@@ -16,10 +16,10 @@ KERNEL_PATCHVER:=4.4
 
 DEVICE_TYPE:=developerboard
 
-include $(INCLUDE_DIR)/target.mk
-
 define Target/Description
 	Synopsys DesignWare boards
 endef
+
+include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))

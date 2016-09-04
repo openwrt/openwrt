@@ -15,11 +15,11 @@ MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 KERNEL_PATCHVER:=3.18
 
-include $(INCLUDE_DIR)/target.mk
-
 define Target/Description
 	Build firmware images for AMCC/IBM PPC40x based boards.
 endef
+
+include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=uImage cuImage.magicbox cuImage.openrb
 

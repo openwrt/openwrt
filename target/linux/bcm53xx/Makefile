@@ -15,11 +15,11 @@ CPU_TYPE:=cortex-a9
 
 KERNEL_PATCHVER:=4.4
 
-include $(INCLUDE_DIR)/target.mk
-
 define Target/Description
 	Build firmware images for Broadcom based BCM47xx/53xx routers with ARM CPU, *not* MIPS.
 endef
+
+include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=zImage dtbs
 

@@ -15,14 +15,14 @@ FEATURES:=squashfs usb atm pci pcmcia usbgadget
 KERNEL_PATCHVER:=4.4
 MAINTAINER:=Jonas Gorski <jogo@openwrt.org>
 
-include $(INCLUDE_DIR)/target.mk
-
-DEFAULT_PACKAGES += swconfig kmod-gpio-button-hotplug
-
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers
 	currently supports BCM6338, BCM6348 and BCM6358 based devices.
 	(e.g. Inventel Livebox, Siemens SE515, Neufbox 4)
 endef
+
+include $(INCLUDE_DIR)/target.mk
+
+DEFAULT_PACKAGES += swconfig kmod-gpio-button-hotplug
 
 $(eval $(call BuildTarget))

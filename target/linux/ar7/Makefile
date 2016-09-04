@@ -15,12 +15,12 @@ SUBTARGETS:=generic ac49x
 
 KERNEL_PATCHVER:=3.18
 
-include $(INCLUDE_DIR)/target.mk
-
-DEFAULT_PACKAGES+= swconfig
-
 define Target/Description
 	Build firmware images for TI AR7 based routers.
 endef
+
+include $(INCLUDE_DIR)/target.mk
+
+DEFAULT_PACKAGES+= swconfig
 
 $(eval $(call BuildTarget))

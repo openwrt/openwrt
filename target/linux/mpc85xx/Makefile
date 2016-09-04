@@ -16,6 +16,10 @@ SUBTARGETS=generic p1020
 
 KERNEL_PATCHVER:=4.4
 
+define Target/Description
+	Build images for the Freescale MPC85xx based boards.
+endef
+
 include $(INCLUDE_DIR)/target.mk
 
 KERNEL_IMAGES := zImage
@@ -26,9 +30,5 @@ endif
 DEFAULT_PACKAGES += \
 	kmod-input-core kmod-input-gpio-keys kmod-button-hotplug \
 	kmod-leds-gpio swconfig kmod-ath9k wpad-mini
-
-define Target/Description
-	Build images for the Freescale MPC85xx based boards.
-endef
 
 $(eval $(call BuildTarget))

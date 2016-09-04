@@ -18,11 +18,11 @@ KERNEL_PATCHVER:=4.4
 
 DEVICE_TYPE:=developerboard
 
-include $(INCLUDE_DIR)/target.mk
-
 define Target/Description
 	Build images for ARM Ltd. Realview boards to be run with qemu
 endef
+
+include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=zImage
 

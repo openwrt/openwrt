@@ -16,10 +16,10 @@ KERNEL_PATCHVER:=3.18
 
 DEVICE_TYPE=other
 
-include $(INCLUDE_DIR)/target.mk
-
 define Target/Description
 	Build firmware images for XBurst JZ47x0 based boards.
 endef
+
+include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))

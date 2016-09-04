@@ -19,12 +19,12 @@ MAINTAINER:=Alexander Couzens <lynxis@fe80.eu>
 
 KERNELNAME:=zImage dtbs
 
-include $(INCLUDE_DIR)/target.mk
-
-DEFAULT_PACKAGES += uboot-omap-am335x_evm uboot-omap-omap3_beagle uboot-omap-omap3_overo uboot-omap-omap4_panda
-
 define Target/Description
 	TI OMAP boards
 endef
+
+include $(INCLUDE_DIR)/target.mk
+
+DEFAULT_PACKAGES += uboot-omap-am335x_evm uboot-omap-omap3_beagle uboot-omap-omap3_overo uboot-omap-omap4_panda
 
 $(eval $(call BuildTarget))
