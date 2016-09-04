@@ -152,7 +152,7 @@ define Device/WNDR4700
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k
   DTB_SIZE := 131008
-  IMAGE_SIZE:=25559040
+  IMAGE_SIZE := 24960k
   IMAGES := factory.img sysupgrade.tar
   KERNEL_SIZE := 1920k
   KERNEL := dtb | kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | append-fakerootfs
@@ -220,7 +220,7 @@ endef
 
 define Device/MyBookLiveDefault
   IMAGE_SIZE := 48m
-  BLOCKSIZE := 1024
+  BLOCKSIZE := 1k
   DTB_SIZE := 16384
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
   BOOT_SIZE := 8

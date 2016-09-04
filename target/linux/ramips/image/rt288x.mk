@@ -31,10 +31,9 @@ define Device/ar725w
 endef
 TARGET_DEVICES += ar725w
 
-belkin_f5d8235v1_mtd_size=7929856
 define Device/f5d8235v1
   DTS := F5D8235_V1
-  IMAGE_SIZE := $(belkin_f5d8235v1_mtd_size)
+  IMAGE_SIZE := 7744k
   DEVICE_TITLE := Belkin F5D8235 V1
   DEVICE_PACKAGES := kmod-switch-rtl8366s
 endef

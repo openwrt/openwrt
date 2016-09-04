@@ -2,50 +2,45 @@
 # RT305X Profiles
 #
 
-asl26555_8mb_mtd_size=7929856
 define Device/asl26555-8M
   DTS := ASL26555-8M
-  IMAGE_SIZE := $(asl26555_8mb_mtd_size)
+  IMAGE_SIZE := 7744k
   DEVICE_TITLE := Alpha ASL26555 
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
 endef
 TARGET_DEVICES += asl26555-8M
 
 
-asl26555_16mb_mtd_size=16252928
 define Device/asl26555-16M
   DTS := ASL26555-16M
-  IMAGE_SIZE := $(asl26555_16mb_mtd_size)
+  IMAGE_SIZE := 15872k
   DEVICE_TITLE := Alpha ASL26555 16M
   DEVICE_PACKAGES :=
 endef
 TARGET_DEVICES += asl26555-16M
 
 
-nixcore_8mb_mtd_size=8060928
 define Device/nixcore-8M
   DTS := NIXCORE-8M
-  IMAGE_SIZE := $(nixcore_8mb_mtd_size)
+  IMAGE_SIZE := 7872k
   DEVICE_TITLE := NixcoreX1 8M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
 endef
 TARGET_DEVICES += nixcore-8M
 
 
-nixcore_16mb_mtd_size=16449536
 define Device/nixcore-16M
   DTS := NIXCORE-16M
-  IMAGE_SIZE := $(nixcore_16mb_mtd_size)
+  IMAGE_SIZE := 16064k
   DEVICE_TITLE := NixcoreX1 16M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
 endef
 TARGET_DEVICES += nixcore-16M
 
 
-vocore_8mb_mtd_size=8060928
 define Device/vocore-8M
   DTS := VOCORE-8M
-  IMAGE_SIZE := $(vocore_8mb_mtd_size)
+  IMAGE_SIZE := 7872k
   DEVICE_TITLE :=  VoCore 8M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-ralink \
@@ -54,10 +49,9 @@ endef
 TARGET_DEVICES += vocore-8M
 
 
-vocore_16mb_mtd_size=16449536
 define Device/vocore-16M
   DTS := VOCORE-16M
-  IMAGE_SIZE := $(vocore_16mb_mtd_size)
+  IMAGE_SIZE := 16064k
   DEVICE_TITLE := VoCore 16M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-ralink \
@@ -66,10 +60,9 @@ endef
 TARGET_DEVICES += vocore-16M
 
 
-allnet_all5002_mtd_size=33226752
 define Device/all5002
   DTS := ALL5002
-  IMAGE_SIZE := $(allnet_all5002_mtd_size)
+  IMAGE_SIZE := 32448k
   DEVICE_TITLE := Allnet ALL5002
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
           kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
@@ -79,7 +72,7 @@ TARGET_DEVICES += all5002
 
 define Device/all5003
   DTS := ALL5003
-  IMAGE_SIZE := $(allnet_all5002_mtd_size)
+  IMAGE_SIZE := 32448k
   DEVICE_TITLE := Allnet ALL5003
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
           kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
@@ -87,28 +80,25 @@ endef
 TARGET_DEVICES += all5003
 
 
-argus_atp52b_mtd_size=7995392
 define Device/atp-52b
   DTS := ATP-52B
-  IMAGE_SIZE := $(argus_atp52b_mtd_size)
+  IMAGE_SIZE := 7808k
   DEVICE_TITLE := Argus ATP-52B
 endef
 TARGET_DEVICES += atp-52b
 
 
-belkin_f5d8235v2_mtd_size=7929856
 define Device/f5d8235v2
   DTS := F5D8235_V2
-  IMAGE_SIZE := $(belkin_f5d8235v2_mtd_size)
+  IMAGE_SIZE := 7744k
   DEVICE_TITLE := Belkin F5D8235 v2
 endef
 TARGET_DEVICES += f5d8235v2
 
 
-belkin_f7c027_mtd_size=7798784
 define Device/f7c027
   DTS := F7C027
-  IMAGE_SIZE := $(belkin_f7c027_mtd_size)
+  IMAGE_SIZE := 7616k
   DEVICE_TITLE := Belkin F7C027
   DEVICE_PACKAGES := -kmod-usb-core -kmod-usb-dwc2 -kmod-ledtrig-usbdev
 endef

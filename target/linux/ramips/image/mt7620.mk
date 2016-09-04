@@ -64,10 +64,9 @@ define Device/ArcherC50
 endef
 TARGET_DEVICES += ArcherC50
 
-ex2700_mtd_size=3866624
 define Device/ex2700
   DTS := EX2700
-  IMAGE_SIZE := $(ex2700_mtd_size)
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-kernel-ex2700
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | netgear-header -B EX2700 -H 29764623+4+0+32+2x2+0
@@ -111,58 +110,52 @@ define Device/e1700
 endef
 TARGET_DEVICES += e1700
 
-br100_mtd_size=8126464
 define Device/ai-br100
   DTS := AI-BR100
-  IMAGE_SIZE := $(br100_mtd_size)
+  IMAGE_SIZE := 7936k
   DEVICE_TITLE := Aigale Ai-BR100
   DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += ai-br100
 
-whr_300hp2_mtd_size=7012352
 define Device/whr-300hp2
   DTS := WHR-300HP2
-  IMAGE_SIZE := $(whr_300hp2_mtd_size)
+  IMAGE_SIZE := 6848k
   DEVICE_TITLE := Buffalo WHR-300HP2
 endef
 TARGET_DEVICES += whr-300hp2
 
 define Device/whr-600d
   DTS := WHR-600D
-  IMAGE_SIZE := $(whr_300hp2_mtd_size)
+  IMAGE_SIZE := 6848k
   DEVICE_TITLE := Buffalo WHR-600D
 endef
 TARGET_DEVICES += whr-600d
 
-whr_1166d_mtd_size=15400960
 define Device/whr-1166d
   DTS := WHR-1166D
-  IMAGE_SIZE := $(whr_1166d_mtd_size)
+  IMAGE_SIZE := 15040k
   DEVICE_TITLE := Buffalo WHR-1166D
 endef
 TARGET_DEVICES += whr-1166d
 
-dlink810l_mtd_size=6881280
 define Device/dir-810l
   DTS := DIR-810L
-  IMAGE_SIZE := $(dlink810l_mtd_size)
+  IMAGE_SIZE := 6720k
   DEVICE_TITLE := D-Link DIR-810L
 endef
 TARGET_DEVICES += dir-810l
 
-na930_mtd_size=20971520
 define Device/na930
   DTS := NA930
-  IMAGE_SIZE := $(na930_mtd_size)
+  IMAGE_SIZE := 20m
   DEVICE_TITLE := Sercomm NA930
 endef
 TARGET_DEVICES += na930
 
-microwrt_mtd_size=16515072
 define Device/microwrt
   DTS := MicroWRT
-  IMAGE_SIZE := $(microwrt_mtd_size)
+  IMAGE_SIZE := 16128k
   DEVICE_TITLE := Microduino MicroWRT
 endef
 TARGET_DEVICES += microwrt
@@ -419,11 +412,10 @@ define Device/tiny-ac
 endef
 TARGET_DEVICES += tiny-ac
 
-dch_m225_mtd_size=7012352
 define Device/dch-m225
   DTS := DCH-M225
   IMAGES += factory.bin
-  IMAGE_SIZE := $(dch_m225_mtd_size)
+  IMAGE_SIZE := 6848k
   IMAGE/sysupgrade.bin := \
 	append-kernel | pad-offset 65536 64 | append-rootfs | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \

@@ -150,7 +150,7 @@ define Device/wf-2881
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   FILESYSTEMS := squashfs
-  IMAGE_SIZE := 132382720
+  IMAGE_SIZE := 129280k
   KERNEL := $(KERNEL_DTB) | pad-offset $$(BLOCKSIZE) 64 | uImage lzma
   IMAGE/sysupgrade.bin := append-kernel | append-ubi | check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := NETIS WF-2881
