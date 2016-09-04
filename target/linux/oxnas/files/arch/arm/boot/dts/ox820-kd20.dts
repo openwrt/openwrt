@@ -13,7 +13,7 @@
 	model = "Shuttle KD20";
 
 	chosen {
-		bootargs = "console=ttyS0,115200n8 earlyprintk=serial";
+		bootargs = "console=ttyS0,115200n8 earlyprintk=serial mem=256M";
 	};
 
 	pcie-controller@47C00000 {
@@ -33,14 +33,30 @@
 		status = "okay";
 
 		partition@0 {
-			label = "boot";
-			reg = <0x00000000 0x00e00000>;
-			/*read-only;*/
+			label = "stage1";
+			reg = <0x00000000 0x00040000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "u-boot";
+			reg = <0x00040000 0x00200000>;
+			read-only;
+		};
+
+		partition@240000 {
+			label = "initrd";
+			reg = <0x00240000 0x00600000>;
+		};
+
+		partition@840000 {
+			label = "kernel";
+			reg = <0x00840000 0x007C0000>;
 		};
 
 		partition@e00000 {
 			label = "ubi";
-			reg = <0x00e00000 0x07200000>;
+			reg = <0x01000000 0x07000000>;
 		};
 	};
 
