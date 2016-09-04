@@ -117,7 +117,7 @@ define Build/append-ubi
 		$(foreach part,$(UBINIZE_PARTS),--part $(part)) \
 		$(IMAGE_ROOTFS) \
 		$@.tmp \
-		-p $(BLOCKSIZE) -m $(PAGESIZE) \
+		-p $(BLOCKSIZE:%k=%KiB) -m $(PAGESIZE) \
 		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE)) \
 		$(if $(VID_HDR_OFFSET),-O $(VID_HDR_OFFSET)) \
 		$(UBINIZE_OPTS)
