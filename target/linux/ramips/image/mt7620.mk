@@ -85,7 +85,6 @@ TARGET_DEVICES += wt3020-4M
 
 define Device/wt3020-8M
   DTS := WT3020-8M
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | poray-header -B WT3020 -F 8M
   DEVICE_TITLE := Nexx WT3020 (8MB)
@@ -162,49 +161,42 @@ TARGET_DEVICES += microwrt
 
 define Device/mt7620a
   DTS := MT7620a
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := MediaTek MT7620a EVB
 endef
 TARGET_DEVICES += mt7620a
 
 define Device/mt7620a_mt7610e
   DTS := MT7620a_MT7610e
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := MediaTek MT7620a + MT7610e EVB
 endef
 TARGET_DEVICES += mt7620a_mt7610e
 
 define Device/mt7620a_mt7530
   DTS := MT7620a_MT7530
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := MediaTek MT7620a + MT7530 EVB
 endef
 TARGET_DEVICES += mt7620a_mt7530
 
 define Device/mt7620a_v22sg
   DTS := MT7620a_V22SG
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := MediaTek MT7620a V22SG
 endef
 TARGET_DEVICES += mt7620a_v22sg
 
 define Device/rp-n53
   DTS := RP-N53
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Asus RP-N53
 endef
 TARGET_DEVICES += rp-n53
 
 define Device/cf-wr800n
   DTS := CF-WR800N
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Comfast CF-WR800N
 endef
 TARGET_DEVICES += cf-wr800n
 
 define Device/cs-qr10
   DTS := CS-QR10
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Planex CS-QR10
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-i2c-core kmod-i2c-ralink kmod-sound-core kmod-sound-mtk kmod-sdhci-mt7620
 endef
@@ -212,14 +204,12 @@ TARGET_DEVICES += cs-qr10
 
 define Device/db-wrt01
   DTS := DB-WRT01
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Planex DB-WRT01
 endef
 TARGET_DEVICES += db-wrt01
 
 define Device/mzk-750dhp
   DTS := MZK-750DHP
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Planex MZK-750DHP
   DEVICE_PACKAGES := kmod-mt76
 endef
@@ -227,14 +217,12 @@ TARGET_DEVICES += mzk-750dhp
 
 define Device/mzk-ex300np
   DTS := MZK-EX300NP
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Planex MZK-EX300NP
 endef
 TARGET_DEVICES += mzk-ex300np
 
 define Device/mzk-ex750np
   DTS := MZK-EX750NP
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Planex MZK-EX750NP
   DEVICE_PACKAGES := kmod-mt76
 endef
@@ -273,7 +261,6 @@ TARGET_DEVICES += oy-0001
 
 define Device/psg1208
   DTS := PSG1208
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Phicomm PSG1208
   DEVICE_PACKAGES := kmod-mt76
 endef
@@ -309,14 +296,12 @@ TARGET_DEVICES += mlwg2
 
 define Device/wmr-300
   DTS := WMR-300
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Buffalo WMR-300
 endef
 TARGET_DEVICES += wmr-300
 
 define Device/rt-n14u
   DTS := RT-N14U
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Asus RT-N14u
 endef
 TARGET_DEVICES += rt-n14u
@@ -362,7 +347,6 @@ TARGET_DEVICES += gl-mt750
 
 define Device/zte-q7
   DTS := ZTE-Q7
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := ZTE Q7
 endef
 TARGET_DEVICES += zte-q7
@@ -376,7 +360,6 @@ TARGET_DEVICES += youku-yk1
 
 define Device/zbt-ape522ii
   DTS := ZBT-APE522II
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Zbtlink ZBT-APE522II
   DEVICE_PACKAGES := kmod-mt76
 endef
@@ -384,7 +367,6 @@ TARGET_DEVICES += zbt-ape522ii
 
 define Device/zbt-wa05
   DTS := ZBT-WA05
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Zbtlink ZBT-WA05
 endef
 TARGET_DEVICES += zbt-wa05
@@ -399,14 +381,12 @@ TARGET_DEVICES += zbt-we826
 
 define Device/zbt-wr8305rt
   DTS := ZBT-WR8305RT
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Zbtlink ZBT-WR8305RT
 endef
 TARGET_DEVICES += zbt-wr8305rt
 
 define Device/tiny-ac
   DTS := TINY-AC
-  IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := Dovado Tiny AC
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
