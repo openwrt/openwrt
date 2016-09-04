@@ -59,7 +59,8 @@ define Build/omninas-factory
 		$@.tmp/rdimg.gz
 	echo 2.35.20140102 > $@.tmp/version ; echo >> $@.tmp/version
 	chmod 0744 $@.tmp/*
-	$(TAR) -C $@.tmp -czvf $@ .
+	$(TAR) -C $@.tmp -czvf $@ \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") .
 endef
 
 define Build/encrypt-3des
@@ -75,7 +76,8 @@ define Device/kd20
   KERNEL_INITRAMFS = kernel-bin | append-dtb | uImage none | omninas-factory | encrypt-3des sohmuntitnlaes
   KERNEL_IMAGE := zImage
   DEVICE_PACKAGES := kmod-usb3 kmod-i2c-gpio kmod-rtc-pcf8563 kmod-gpio-beeper \
-                     kmod-hwmon-core kmod-hwmon-gpiofan
+                     kmod-hwmon-core kmod-hwmon-gpiofan \
+                     kmod-md-mod kmod-md-raid0 kmod-md-raid1 kmod-fs-ext4 kmod-fs-xfs
   KERNEL_IN_UBI := 
   UBOOTENV_IN_UBI := 
 endef
