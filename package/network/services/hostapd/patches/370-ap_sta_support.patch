@@ -199,7 +199,7 @@
  	       "  -g = global ctrl_interface\n"
  	       "  -G = global ctrl_interface group\n"
  	       "  -h = show this help text\n"
-+		   "  -H = connect to a hostapd instance to manage state changes\n"
++	       "  -H = connect to a hostapd instance to manage state changes\n"
  	       "  -i = interface name\n"
  	       "  -I = additional configuration file\n"
  	       "  -K = include keys (passwords, etc.) in debug output\n"
@@ -228,7 +228,7 @@
  	u8 ssid[SSID_MAX_LEN];
  	/** Length of SSID */
  	size_t ssid_len;
-+	/** HT caapbilities */
++	/** HT capabilities */
 +	u16 ht_capab;
 +	/* Five octets of HT Operation Information */
 +	u8 ht_param;
