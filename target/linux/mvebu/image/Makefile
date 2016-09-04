@@ -83,7 +83,7 @@ endef
 
 define Device/NAND-128K
   $(Device/UBI)
-  BLOCKSIZE := 128KiB
+  BLOCKSIZE := 128k
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   VID_HDR_OFFSET := 2048
@@ -91,13 +91,13 @@ endef
 
 define Device/NAND-256K
   $(Device/UBI)
-  BLOCKSIZE := 256KiB
+  BLOCKSIZE := 256k
   PAGESIZE := 4096
 endef
 
 define Device/NAND-512K
   $(Device/UBI)
-  BLOCKSIZE := 512KiB
+  BLOCKSIZE := 512k
   PAGESIZE := 4096
 endef
 
@@ -145,7 +145,7 @@ TARGET_DEVICES += linksys-wrt1900ac
 define Device/openblocks-ax3
   $(Device/UBI-factory)
   DEVICE_DTS := armada-xp-openblocks-ax3-4
-  BLOCKSIZE := 128KiB
+  BLOCKSIZE := 128k
   PAGESIZE := 1
   IMAGE/factory.img := append-kernel $$$$(KERNEL_SIZE) | append-ubi
   DEVICE_TITLE := Plat'Home OpenBlocks AX3

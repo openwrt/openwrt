@@ -26,7 +26,7 @@ define Device/Default
 
   PAGESIZE := 2048
   SUBPAGESIZE := 512
-  BLOCKSIZE := 128KiB
+  BLOCKSIZE := 128k
   IMAGES := sysupgrade.tar
   IMAGE/sysupgrade.tar := sysupgrade-tar
 endef

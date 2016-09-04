@@ -29,7 +29,7 @@ define Device/Default
   KERNEL_INITRAMFS = kernel-bin | lzma | fit lzma $$(DTS_DIR)/ox820-$$(DTS).dtb | ubootable
   KERNEL_INITRAMFS_PREFIX = $$(IMAGE_PREFIX)-u-boot-initramfs
   KERNEL_INITRAMFS_SUFFIX := .bin
-  BLOCKSIZE := 128KiB
+  BLOCKSIZE := 128k
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   FILESYSTEMS := squashfs ubifs

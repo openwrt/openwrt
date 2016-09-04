@@ -94,7 +94,7 @@ define Device/AP148
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	DEVICE_DTS := qcom-ipq8064-ap148
-	BLOCKSIZE := 128KiB
+	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
 	DEVICE_TITLE := Qualcomm AP148
@@ -105,7 +105,7 @@ define Device/AP148-legacy
 	$(call Device/LegacyImage)
 	$(call Device/UbiFit)
 	DEVICE_DTS := qcom-ipq8064-ap148
-	BLOCKSIZE := 128KiB
+	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
 	DEVICE_TITLE := Qualcomm AP148 (legacy)
@@ -115,7 +115,7 @@ endef
 define Device/C2600
 	$(call Device/TpSafeImage)
 	DEVICE_DTS := qcom-ipq8064-c2600
-	BLOCKSIZE := 128KiB
+	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := c2600
 	TPLINK_BOARD_NAME := C2600
@@ -129,7 +129,7 @@ define Device/D7800
 	KERNEL_SIZE := 2097152
 	NETGEAR_BOARD_ID := D7800
 	NETGEAR_HW_ID := 29764958+0+128+512+4x4+4x4
-	BLOCKSIZE := 128KiB
+	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := d7800
 	DEVICE_TITLE := Netgear Nighthawk X4 D7800
@@ -149,7 +149,7 @@ define Device/EA8500
 	$(call Device/LegacyImage)
 	DEVICE_DTS := qcom-ipq8064-ea8500
 	PAGESIZE := 2048
-	BLOCKSIZE := 128KiB
+	BLOCKSIZE := 128k
 	KERNEL_SIZE := 3145728
 	FILESYSTEMS := squashfs
 	KERNEL = kernel-bin | append-dtb | uImage none | append-file $(KDIR)/root.dummy
@@ -168,7 +168,7 @@ define Device/R7500
 	KERNEL_SIZE := 2097152
 	NETGEAR_BOARD_ID := R7500
 	NETGEAR_HW_ID := 29764841+0+128+256+3x3+4x4
-	BLOCKSIZE := 128KiB
+	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := r7500
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500
@@ -181,7 +181,7 @@ define Device/R7500v2
 	KERNEL_SIZE := 2097152
 	NETGEAR_BOARD_ID := R7500v2
 	NETGEAR_HW_ID := 29764958+0+128+512+3x3+4x4
-	BLOCKSIZE := 128KiB
+	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := r7500v2
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500v2
@@ -194,7 +194,7 @@ define Device/R7800
 	KERNEL_SIZE := 2097152
 	NETGEAR_BOARD_ID := R7800
 	NETGEAR_HW_ID := 29764958+0+128+512+4x4+4x4+cascade
-	BLOCKSIZE := 128KiB
+	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := r7800
 	DEVICE_TITLE := Netgear Nighthawk X4S R7800

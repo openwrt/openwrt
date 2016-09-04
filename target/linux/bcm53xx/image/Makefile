@@ -83,7 +83,7 @@ define Device/Default
   KERNEL_NAME := zImage
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
   IMAGES := trx
-  BLOCKSIZE := 128KiB
+  BLOCKSIZE := 128k
   PAGESIZE := 2048
   UBINIZE_OPTS :=
   IMAGE/trx := append-ubi | trx-nand

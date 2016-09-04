@@ -69,7 +69,7 @@ define Device/mr24
   DEVICE_PACKAGES := kmod-spi-gpio kmod-ath9k wpad-mini
   DEVICE_PROFILE := MR24
   DEVICE_DTS := MR24
-  BLOCKSIZE := 64512
+  BLOCKSIZE := 63k
   IMAGES := sysupgrade.tar
   DTB_SIZE := 64512
   KERNEL_SIZE := 1984k
@@ -150,7 +150,7 @@ define Device/WNDR4700
   DEVICE_DTS := wndr4700
   PAGESIZE := 2048
   SUBPAGESIZE := 512
-  BLOCKSIZE := 131072
+  BLOCKSIZE := 128k
   DTB_SIZE := 131008
   IMAGE_SIZE:=25559040
   IMAGES := factory.img sysupgrade.tar

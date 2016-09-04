@@ -187,14 +187,14 @@ endef
 DEVICE_VARS += IMAGE_SIZE
 
 define Device/NAND/xway
-  BLOCKSIZE := 16KiB
+  BLOCKSIZE := 16k
   PAGESIZE := 512
   SUBPAGESIZE := 256
   FILESYSTEMS += ubifs
 endef
 
 define Device/NAND/xrx200
-  BLOCKSIZE := 128KiB
+  BLOCKSIZE := 128k
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   FILESYSTEMS += ubifs

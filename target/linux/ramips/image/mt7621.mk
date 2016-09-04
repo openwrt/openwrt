@@ -147,11 +147,11 @@ TARGET_DEVICES += zbt-wg3526
 
 define Device/wf-2881
   DTS := WF-2881
-  BLOCKSIZE := 128KiB
+  BLOCKSIZE := 128k
   PAGESIZE := 2048
   FILESYSTEMS := squashfs
   IMAGE_SIZE := 132382720
-  KERNEL := $(KERNEL_DTB) | pad-offset 131072 64 | uImage lzma
+  KERNEL := $(KERNEL_DTB) | pad-offset $$(BLOCKSIZE) 64 | uImage lzma
   IMAGE/sysupgrade.bin := append-kernel | append-ubi | check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := NETIS WF-2881
   DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev
