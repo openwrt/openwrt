@@ -410,7 +410,10 @@ ar71xx_board_detect() {
 	*"AP143 reference board")
 		name="ap143"
 		;;
-	*"AP147-010 reference board")
+	*"ANONABOX_PRO")
+		name="anonabox-pro"
+		;;
+        *"AP147-010 reference board")
 		name="ap147-010"
 		;;
 	*"AP152 reference board")
