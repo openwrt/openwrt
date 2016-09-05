@@ -643,6 +643,7 @@ start_service() {
 	mkdir -p $(dirname $CONFIGFILE)
 	mkdir -p /var/lib/misc
 	touch /tmp/dhcp.leases
+	chown dnsmasq:dnsmasq /var/run/dnsmasq
 
 	[ -f "$TIMESTAMPFILE" ] && rm -f "$TIMESTAMPFILE"
 
