@@ -1,0 +1,35 @@
+From e1ff3dd1ae52cef5b5373c8cc4ad949c2c25a71c Mon Sep 17 00:00:00 2001
+From: Miklos Szeredi <mszeredi@redhat.com>
+Date: Mon, 5 Sep 2016 13:55:20 +0200
+Subject: [PATCH] ovl: fix workdir creation
+
+Workdir creation fails in latest kernel.
+
+Fix by allowing EOPNOTSUPP as a valid return value from
+vfs_removexattr(XATTR_NAME_POSIX_ACL_*).  Upper filesystem may not support
+ACL and still be perfectly able to support overlayfs.
+
+Reported-by: Martin Ziegler <ziegler@uni-freiburg.de>
+Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
+Fixes: c11b9fdd6a61 ("ovl: remove posix_acl_default from workdir")
+Cc: <stable@vger.kernel.org>
+---
+ fs/overlayfs/super.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/fs/overlayfs/super.c
++++ b/fs/overlayfs/super.c
+@@ -794,11 +794,11 @@ retry:
+ 			goto out_dput;
+ 
+ 		err = vfs_removexattr(work, XATTR_NAME_POSIX_ACL_DEFAULT);
+-		if (err && err != -ENODATA)
++		if (err && err != -ENODATA && err != -EOPNOTSUPP)
+ 			goto out_dput;
+ 
+ 		err = vfs_removexattr(work, XATTR_NAME_POSIX_ACL_ACCESS);
+-		if (err && err != -ENODATA)
++		if (err && err != -ENODATA && err != -EOPNOTSUPP)
+ 			goto out_dput;
+ 
+ 		/* Clear any inherited mode bits */

@@ -1,0 +1,73 @@
+From 0956254a2d5b9e2141385514553aeef694dfe3b5 Mon Sep 17 00:00:00 2001
+From: Miklos Szeredi <mszeredi@redhat.com>
+Date: Mon, 8 Aug 2016 15:08:49 +0200
+Subject: [PATCH] ovl: don't copy up opaqueness
+
+When a copy up of a directory occurs which has the opaque xattr set, the
+xattr remains in the upper directory. The immediate behavior with overlayfs
+is that the upper directory is not treated as opaque, however after a
+remount the opaque flag is used and upper directory is treated as opaque.
+This causes files created in the lower layer to be hidden when using
+multiple lower directories.
+
+Fix by not copying up the opaque flag.
+
+To reproduce:
+
+ ----8<---------8<---------8<---------8<---------8<---------8<----
+mkdir -p l/d/s u v w mnt
+mount -t overlay overlay -olowerdir=l,upperdir=u,workdir=w mnt
+rm -rf mnt/d/
+mkdir -p mnt/d/n
+umount mnt
+mount -t overlay overlay -olowerdir=u:l,upperdir=v,workdir=w mnt
+touch mnt/d/foo
+umount mnt
+mount -t overlay overlay -olowerdir=u:l,upperdir=v,workdir=w mnt
+ls mnt/d
+ ----8<---------8<---------8<---------8<---------8<---------8<----
+
+output should be:  "foo  n"
+
+Reported-by: Derek McGowan <dmcg@drizz.net>
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=151291
+Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
+Cc: <stable@vger.kernel.org>
+---
+ fs/overlayfs/copy_up.c   | 2 ++
+ fs/overlayfs/inode.c     | 2 +-
+ fs/overlayfs/overlayfs.h | 1 +
+ 3 files changed, 4 insertions(+), 1 deletion(-)
+
+--- a/fs/overlayfs/copy_up.c
++++ b/fs/overlayfs/copy_up.c
+@@ -48,6 +48,8 @@ int ovl_copy_xattr(struct dentry *old, s
+ 	}
+ 
+ 	for (name = buf; name < (buf + list_size); name += strlen(name) + 1) {
++		if (ovl_is_private_xattr(name))
++			continue;
+ retry:
+ 		size = vfs_getxattr(old, name, value, value_size);
+ 		if (size == -ERANGE)
+--- a/fs/overlayfs/inode.c
++++ b/fs/overlayfs/inode.c
+@@ -219,7 +219,7 @@ static int ovl_readlink(struct dentry *d
+ }
+ 
+ 
+-static bool ovl_is_private_xattr(const char *name)
++bool ovl_is_private_xattr(const char *name)
+ {
+ 	return strncmp(name, OVL_XATTR_PRE_NAME, OVL_XATTR_PRE_LEN) == 0;
+ }
+--- a/fs/overlayfs/overlayfs.h
++++ b/fs/overlayfs/overlayfs.h
+@@ -175,6 +175,7 @@ ssize_t ovl_getxattr(struct dentry *dent
+ ssize_t ovl_listxattr(struct dentry *dentry, char *list, size_t size);
+ int ovl_removexattr(struct dentry *dentry, const char *name);
+ struct inode *ovl_d_select_inode(struct dentry *dentry, unsigned file_flags);
++bool ovl_is_private_xattr(const char *name);
+ 
+ struct inode *ovl_new_inode(struct super_block *sb, umode_t mode,
+ 			    struct ovl_entry *oe);
