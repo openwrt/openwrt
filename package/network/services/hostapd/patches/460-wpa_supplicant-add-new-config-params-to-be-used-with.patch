@@ -140,7 +140,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  /* Helper macros for network block parser */
  
  #ifdef OFFSET
-@@ -2047,6 +2139,9 @@ static const struct parse_data ssid_fiel
+@@ -2048,6 +2140,9 @@ static const struct parse_data ssid_fiel
  	{ INT(ap_max_inactivity) },
  	{ INT(dtim_period) },
  	{ INT(beacon_int) },
@@ -163,7 +163,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  
  
  #define DEFAULT_EAP_WORKAROUND ((unsigned int) -1)
-@@ -711,6 +713,9 @@ struct wpa_ssid {
+@@ -719,6 +721,9 @@ struct wpa_ssid {
  	 */
  	void *parent_cred;
  
@@ -175,7 +175,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	 * macsec_policy - Determines the policy for MACsec secure session
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2518,6 +2518,13 @@ static void wpas_start_assoc_cb(struct w
+@@ -2527,6 +2527,13 @@ static void wpas_start_assoc_cb(struct w
  			params.beacon_int = ssid->beacon_int;
  		else
  			params.beacon_int = wpa_s->conf->beacon_int;

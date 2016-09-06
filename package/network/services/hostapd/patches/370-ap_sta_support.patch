@@ -34,8 +34,8 @@
  -include .config
  -include $(if $(MULTICALL),../hostapd/.config)
  
-@@ -113,6 +117,8 @@ OBJS_c += ../src/utils/wpa_debug.o
- OBJS_c += ../src/utils/common.o
+@@ -114,6 +118,8 @@ OBJS_c += ../src/utils/common.o
+ OBJS_c += ../src/common/cli.o
  OBJS += wmm_ac.o
  
 +OBJS += ../src/common/wpa_ctrl.o
@@ -114,7 +114,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -4646,6 +4699,20 @@ static int wpa_supplicant_init_iface(str
+@@ -4748,6 +4801,20 @@ static int wpa_supplicant_init_iface(str
  			   sizeof(wpa_s->bridge_ifname));
  	}
  
@@ -135,7 +135,7 @@
  	/* RSNA Supplicant Key Management - INITIALIZE */
  	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
  	eapol_sm_notify_portValid(wpa_s->eapol, FALSE);
-@@ -4937,6 +5004,11 @@ static void wpa_supplicant_deinit_iface(
+@@ -5041,6 +5108,11 @@ static void wpa_supplicant_deinit_iface(
  	if (terminate)
  		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_TERMINATING);
  
@@ -155,9 +155,9 @@
  #include "common/ieee802_11_defs.h"
 +#include "common/ieee802_11_common.h"
  #include "drivers/driver.h"
+ #include "eap_peer/eap.h"
  #include "wpa_supplicant_i.h"
- #include "config.h"
-@@ -287,6 +288,10 @@ static void calculate_update_time(const
+@@ -288,6 +289,10 @@ static void calculate_update_time(const
  static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
  			     struct os_reltime *fetch_time)
  {
@@ -168,7 +168,7 @@
  	dst->flags = src->flags;
  	os_memcpy(dst->bssid, src->bssid, ETH_ALEN);
  	dst->freq = src->freq;
-@@ -299,6 +304,15 @@ static void wpa_bss_copy_res(struct wpa_
+@@ -300,6 +305,15 @@ static void wpa_bss_copy_res(struct wpa_
  	dst->est_throughput = src->est_throughput;
  	dst->snr = src->snr;
  
