@@ -1,7 +1,7 @@
-Index: linux-4.1.16/arch/mips/ath79/Kconfig
+Index: linux-4.4.14/arch/mips/ath79/Kconfig
 ===================================================================
---- linux-4.1.16.orig/arch/mips/ath79/Kconfig
-+++ linux-4.1.16/arch/mips/ath79/Kconfig
+--- linux-4.4.14.orig/arch/mips/ath79/Kconfig
++++ linux-4.4.14/arch/mips/ath79/Kconfig
 @@ -83,6 +83,20 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
@@ -23,10 +23,10 @@ Index: linux-4.1.16/arch/mips/ath79/Kconfig
  source "arch/mips/ath79/Kconfig.openwrt"
  
  endmenu
-Index: linux-4.1.16/arch/mips/ath79/Makefile
+Index: linux-4.4.14/arch/mips/ath79/Makefile
 ===================================================================
---- linux-4.1.16.orig/arch/mips/ath79/Makefile
-+++ linux-4.1.16/arch/mips/ath79/Makefile
+--- linux-4.4.14.orig/arch/mips/ath79/Makefile
++++ linux-4.4.14/arch/mips/ath79/Makefile
 @@ -193,3 +193,4 @@ obj-$(CONFIG_ATH79_MACH_WZR_450HP2)	+= m
  obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
  obj-$(CONFIG_ATH79_MACH_CARAMBOLA2)	+= mach-carambola2.o
@@ -34,8 +34,8 @@ Index: linux-4.1.16/arch/mips/ath79/Makefile
 +obj-$(CONFIG_ATH79_MACH_ANONABOX_PRO)	+= mach-anonabox-pro.o
 Index: linux-4.1.16/arch/mips/ath79/machtypes.h
 ===================================================================
---- linux-4.1.16.orig/arch/mips/ath79/machtypes.h
-+++ linux-4.1.16/arch/mips/ath79/machtypes.h
+--- linux-4.4.14.orig/arch/mips/ath79/machtypes.h
++++ linux-4.4.14/arch/mips/ath79/machtypes.h
 @@ -246,6 +246,7 @@ enum ath79_mach_type {
  	ATH79_MACH_WZR_450HP2,		/* Buffalo WZR-450HP2 */
  	ATH79_MACH_ZCN_1523H_2,		/* Zcomax ZCN-1523H-2-xx */
