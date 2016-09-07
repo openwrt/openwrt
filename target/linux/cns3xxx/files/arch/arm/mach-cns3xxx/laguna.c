@@ -1030,7 +1030,9 @@ static int __init laguna_model_setup(void)
 			laguna_gpio_leds[3].name = "blue";
 			laguna_gpio_leds[3].active_low = 0,
 			laguna_gpio_leds_data.num_leds = 4;
-		} else if (strncmp(laguna_info.model, "GW2384", 6) == 0) {
+		} else if ( (strncmp(laguna_info.model, "GW2384", 6) == 0)
+			 || (strncmp(laguna_info.model, "GW2394", 6) == 0) )
+		{
 			// configure GPIO's
 			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2384));
 			// configure LED's
