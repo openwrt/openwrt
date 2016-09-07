@@ -131,12 +131,14 @@ define Build/Compile
 		CFLAGS="" \
 		CPPFLAGS="" \
 		LDFLAGS="" \
+		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,) \
 		subst
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		LDFLAGS=-Wl,--gc-sections \
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		LIBBLKID="$(PKG_BUILD_DIR)/lib/libblkid.a -luuid" \
+		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,) \
 		all
 endef
 
