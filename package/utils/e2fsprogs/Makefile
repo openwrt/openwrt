@@ -44,6 +44,7 @@ define Package/libext2fs
 $(call Package/e2fsprogs/Default)
   SECTION:=libs
   CATEGORY:=Libraries
+  DEPENDS:=+libuuid
   TITLE:=ext2/3/4 filesystem library
 endef
 
@@ -138,6 +139,8 @@ define Build/Compile
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		LIBBLKID="$(PKG_BUILD_DIR)/lib/libblkid.a -luuid" \
+		ELF_OTHER_LIBS="$(TARGET_LDFLAGS) -luuid" \
+		SYSLIBS="$(TARGET_LDFLAGS) -ldl -L$(PKG_BUILD_DIR)/lib/ -lcom_err" \
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,) \
 		all
 endef
