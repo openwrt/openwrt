@@ -390,7 +390,7 @@ TARGET_DEVICES += rt5350f-olinuxino-evb
 define Device/rt-g32-b1
   DTS := RT-G32-B1
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
-  DEVICE_TITLE := Skyline SL-R7205 Wireless 3G Router
+  DEVICE_TITLE := Asus RT-G32 B1
 endef
 TARGET_DEVICES += rt-g32-b1
 
