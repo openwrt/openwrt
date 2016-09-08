@@ -21,10 +21,11 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  #include "b53_regs.h"
  #include "b53_priv.h"
-@@ -1370,6 +1371,23 @@ static int b53_switch_init(struct b53_de
+@@ -1383,6 +1384,28 @@ static int b53_switch_init(struct b53_de
  			sw_dev->cpu_port = 5;
  	}
  
++	/* Set correct CPU port */
 +	if (of_machine_is_compatible("asus,rt-ac87u"))
 +		sw_dev->cpu_port = 7;
 +	else if (of_machine_is_compatible("netgear,r7900"))
@@ -33,6 +34,10 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +		sw_dev->cpu_port = 8;
 +	else if (of_machine_is_compatible("netgear,r8500"))
 +		sw_dev->cpu_port = 8;
++
++	/* Enable extra ports */
++	if (of_machine_is_compatible("tenda,ac9"))
++		dev->enabled_ports |= BIT(5);
 +
 +	/*
 +	 * Workaround for devices using port 8 (connected to the 3rd iface).
