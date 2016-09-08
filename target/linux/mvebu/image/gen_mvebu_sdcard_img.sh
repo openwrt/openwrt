@@ -18,12 +18,12 @@
 #
 
 usage() {
-	echo "$0 <sectors> <outfile> <bootloader> [<type_partitionN> <sectors_partitionN> <img_partitionN>]?"
+	echo "$0 <outfile> <bootloader> [<type_partitionN> <sectors_partitionN> <img_partitionN>]?"
 }
 
 # always require first 3 arguments
 # then in pairs up to 8 more for a total of up to 4 partitions
-if [ $# -lt 3 ] || [ $# -gt 15 ] || [ $(($#%3)) -ne 0 ]; then
+if [ $# -lt 2 ] || [ $# -gt 15 ] || [ $((($# - 2) % 3)) -ne 0 ]; then
 	usage
 	exit 1
 fi
@@ -31,7 +31,6 @@ fi
 set -e
 
 # parameters
-IMGSIZE=$1; shift
 OUTFILE="$1"; shift
 BOOTLOADER="$1"; shift
 
@@ -41,7 +40,7 @@ dd if=/dev/zero of="$OUTFILE" bs=512 count=1 >/dev/null
 printf "Done\n"
 
 while [ "$#" -ge 3 ]; do
-	ptgen_args="$ptgen_args -p $(($2 / 2)) -S 0x$1"
+	ptgen_args="$ptgen_args -p $(($2 / 2 + 256)) -S 0x$1"
 	parts="$parts$3 "
 	shift; shift; shift
 done
@@ -65,7 +64,11 @@ while [ "$#" -ge 2 ]; do
 	parts="${parts#* }"
 
 	printf "Writing %s to partition %i: " "$img" $i
-	dd if="$img" of="$OUTFILE" bs=512 seek=$(($1 / 512)) conv=notrunc 2>/dev/null
+	(
+		cat "$img"
+		# add padding to avoid leaving behind old overlay fs data
+		dd if=/dev/zero bs=128k count=1 2>/dev/null
+	) | dd of="$OUTFILE" bs=512 seek=$(($1 / 512)) conv=notrunc 2>/dev/null
 	printf "Done\n"
 
 	let i=i+1
