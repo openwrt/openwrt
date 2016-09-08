@@ -16,7 +16,7 @@ define Profile/n810-base
 	kmod-fs-vfat kmod-fs-msdos \
 	kmod-input-evdev \
 	kmod-leds-gpio \
-	kmod-usb-tahvo kmod-usb-eth-gadget \
+	kmod-usb-tahvo kmod-usb-gadget-eth \
 	kmod-usb-net kmod-usb-net-cdc-ether kmod-usb-net-pegasus kmod-usb-net-rndis \
 	kmod-usb-storage kmod-usb-hid \
 	kmod-bluetooth kmod-bluetooth-hci-h4p bluez-utils bluez-hcidump \
