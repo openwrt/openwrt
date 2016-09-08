@@ -65,6 +65,7 @@ get_status_led() {
 	dir-620-d1|\
 	hpm|\
 	hw550-3g|\
+	mac1200rv2|\
 	miniembwifi|\
 	mofi3500-3gn|\
 	rut5xx|\

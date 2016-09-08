@@ -33,3 +33,10 @@ define Device/duzun-dm06
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
 endef
 TARGET_DEVICES += duzun-dm06
+
+define Device/mac1200r-v2
+  DTS := MAC1200RV2
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Mercury MAC1200R v2.0
+endef
+TARGET_DEVICES += mac1200r-v2

@@ -72,6 +72,7 @@ ramips_setup_interfaces()
 	dir-615-h1|\
 	firewrt|\
 	hlk-rm04|\
+	mac1200rv2|\
 	miwifi-mini|\
 	miwifi-nano|\
 	mt7621|\
@@ -312,6 +313,10 @@ ramips_setup_macs()
 	linkits7688d)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(mtd_get_mac_binary factory 46)
+		;;
+	mac1200rv2)
+		lan_mac=$(mtd_get_mac_binary factory_info 13)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	m3|\
 	m4|\

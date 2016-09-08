@@ -76,6 +76,7 @@ platform_check_image() {
 	m2m|\
 	m3|\
 	m4|\
+	mac1200rv2|\
 	microwrt|\
 	miniembplug|\
 	miniembwifi|\
