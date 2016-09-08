@@ -130,6 +130,10 @@ define Build/pad-to
 	mv $@.new $@
 endef
 
+define Build/pad-extra
+	dd if=/dev/zero bs=$(1) count=1 >> $@
+endef
+
 define Build/pad-rootfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $@ $(1) \
 		$(if $(BLOCKSIZE),$(BLOCKSIZE:%k=%),4 8 16 64 128 256)
