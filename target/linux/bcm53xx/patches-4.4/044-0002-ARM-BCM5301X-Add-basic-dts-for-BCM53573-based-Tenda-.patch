@@ -1,49 +1,40 @@
+From 21c29be6a69d3ef4f5a2e16272deb4845f8208ad Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 23 Aug 2016 07:37:43 +0200
 Subject: [PATCH] ARM: BCM5301X: Add basic dts for BCM53573 based Tenda AC9
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-BCM53573 seems to be low priced alternative for standard Northstar
-chipsets. It uses single core Cortex-A7, doesn't have SDU or local (TWD)
-timer. It was also stripped out of independent SPI controller and 2
-GMACs.
+BCM53573 seems to be low priced alternative for Northstar chipsts. It
+uses single core Cortex-A7 and doesn't have SDU or local (TWD) timer. It
+was also stripped out of independent SPI controller and 2 GMACs.
 
 DTS for Tenda AC9 isn't completed yet. It misses e.g. switch entry (we
-still need some bgmac/b53 fixes) and probably some clocks. It adds
-support for basic features however and can be improved later.
+still need some b53 fixes) and probably some clocks. It adds support for
+basic features however and can be improved later.
 
-Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- MAINTAINERS                              |   2 +
- arch/arm/boot/dts/Makefile               |   1 +
+ arch/arm/boot/dts/Makefile               |   2 +
  arch/arm/boot/dts/bcm47189-tenda-ac9.dts |  74 ++++++++++++++++
  arch/arm/boot/dts/bcm53573.dtsi          | 147 +++++++++++++++++++++++++++++++
- 4 files changed, 224 insertions(+)
+ 3 files changed, 223 insertions(+)
  create mode 100644 arch/arm/boot/dts/bcm47189-tenda-ac9.dts
  create mode 100644 arch/arm/boot/dts/bcm53573.dtsi
 
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -2337,6 +2337,8 @@ S:	Maintained
- F:	arch/arm/mach-bcm/bcm_5301x.c
- F:	arch/arm/boot/dts/bcm5301x.dtsi
- F:	arch/arm/boot/dts/bcm470*
-+F:	arch/arm/boot/dts/bcm53573*
-+F:	arch/arm/boot/dts/bcm47189*
- 
- BROADCOM BCM53573 ARM ARCHITECTURE
- M:	Rafał Miłecki <rafal@milecki.pl>
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -77,6 +77,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
- 	bcm4709-netgear-r7000.dtb \
- 	bcm4709-netgear-r8000.dtb \
- 	bcm47094-dlink-dir-885l.dtb \
-+	bcm47189-tenda-ac9.dtb \
- 	bcm94708.dtb \
+@@ -82,6 +82,8 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
  	bcm94709.dtb \
  	bcm953012er.dtb \
+ 	bcm953012k.dtb
++dtb-$(CONFIG_ARCH_BCM_53573) += \
++	bcm47189-tenda-ac9.dtb
+ dtb-$(CONFIG_ARCH_BCM_63XX) += \
+ 	bcm963138dvt.dtb
+ dtb-$(CONFIG_ARCH_BCM_CYGNUS) += \
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm47189-tenda-ac9.dts
 @@ -0,0 +1,74 @@
