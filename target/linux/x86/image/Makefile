@@ -54,16 +54,8 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
     root=$(ROOTPART) rootfstype=ext4 rootwait
   endef
 
-  define Image/cmdline/jffs2-64k
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs,5 root=/dev/mtdblock0 rootfstype=jffs2 rootwait
-  endef
-
-  define Image/cmdline/jffs2-128k
-    block2mtd.block2mtd=$(ROOTPART),131072,rootfs,5 root=/dev/mtdblock0 rootfstype=jffs2 rootwait
-  endef
-
   define Image/cmdline/squashfs
-    block2mtd.block2mtd=$(ROOTPART),65536,rootfs,5 root=/dev/mtdblock0 rootfstype=squashfs rootwait
+    root=$(ROOTPART) rootfstype=squashfs rootwait
   endef
 
   define Image/Build/grub2
@@ -101,7 +93,7 @@ endif
 ROOTDELAY=10
 
 define Image/Build/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	dd if=/dev/zero bs=128k count=1 >> $(KDIR)/root.squashfs
 endef
 
 define Image/Build/iso
@@ -160,12 +152,6 @@ ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
   ifneq ($(CONFIG_TARGET_IMAGES_PAD),)
     define Image/Build/gzip/squashfs
 	$(call Image/Build/gzip,squashfs)
-    endef
-    define Image/Build/gzip/jffs2-64k
-	$(call Image/Build/gzip,jffs2-64k)
-    endef
-    define Image/Build/gzip/jffs2-128k
-	$(call Image/Build/gzip,jffs2-128k)
     endef
   endif
 endif
