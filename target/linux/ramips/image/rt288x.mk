@@ -21,7 +21,7 @@ define Device/ar670w
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | gemtek-header ar725w
 endef
-TARGET_DEVICES += ar725w
+TARGET_DEVICES += ar670w
 
 define Device/ar725w
   DTS := AR725W
