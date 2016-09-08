@@ -13,13 +13,13 @@ FEATURES:=squashfs ext4 vdi vmdk pcmcia targz fpu
 SUBTARGETS=generic legacy xen_domu geode 64
 MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
-DEFAULT_PACKAGES += partx-utils
-
 KERNEL_PATCHVER:=4.4
 
 KERNELNAME:=bzImage
 
 include $(INCLUDE_DIR)/target.mk
+
+DEFAULT_PACKAGES += partx-utils mkf2fs e2fsprogs
 
 $(eval $(call BuildTarget))
 
