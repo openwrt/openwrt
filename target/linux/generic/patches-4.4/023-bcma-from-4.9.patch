@@ -1,25 +1,3 @@
-From 78921f39c6495203bbbf4207c442c2b59f8f11c0 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Mon, 25 Jul 2016 18:03:17 +0200
-Subject: [PATCH] bcma: support BCM53573 series of wireless SoCs
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-BCM53573 seems to be the first series of Northstar family with wireless
-on the chip. The base models are BCM53573-s (A0, A1) and there is also
-BCM47189B0 which seems to be some small modification.
-
-The only problem with these chipsets seems to be watchdog. It's totally
-unavailable on 53573A0 / 53573A1 and preferable PMU watchdog is broken
-on 53573B0 / 53573B1.
-
-Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
----
- drivers/bcma/driver_chipcommon.c | 32 +++++++++++++++++++++++++++++---
- include/linux/bcma/bcma.h        |  3 +++
- 2 files changed, 32 insertions(+), 3 deletions(-)
-
 --- a/drivers/bcma/driver_chipcommon.c
 +++ b/drivers/bcma/driver_chipcommon.c
 @@ -36,12 +36,31 @@ u32 bcma_chipco_get_alp_clock(struct bcm
