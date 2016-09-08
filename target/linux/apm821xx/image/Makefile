@@ -184,7 +184,7 @@ define Build/boot-img
 	$(CP) $(IMAGE_KERNEL).dtb $@.bootdir/boot/$(DEVICE_DTB)
 	$(CP) $(IMAGE_KERNEL) $@.bootdir/boot/uImage
 
-	genext2fs --block-size $(BLOCKSIZE) --size-in-blocks $$((1024 * $(BOOT_SIZE))) --root $@.bootdir $@.boot
+	genext2fs --block-size $(BLOCKSIZE:%k=%Ki) --size-in-blocks $$((1024 * $(BOOT_SIZE))) --root $@.bootdir $@.boot
 
 	# convert it to revision 1 - needed for u-boot ext2load
 	$(STAGING_DIR_HOST)/bin/tune2fs -O filetype $@.boot
