@@ -56,6 +56,7 @@ TARGET_DEVICES += hpm
 
 define Device/tew-691gr
   DTS := TEW-691GR
+  BLOCKSIZE := 64k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | umedia-header 0x026910
   DEVICE_TITLE := TRENDnet TEW-691GR
@@ -66,6 +67,7 @@ TARGET_DEVICES += tew-691gr
 
 define Device/tew-692gr
   DTS := TEW-692GR
+  BLOCKSIZE := 64k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | umedia-header 0x026920
   DEVICE_TITLE := TRENDnet TEW-692GR
@@ -115,6 +117,7 @@ Image/Build/Profile/BR6475ND=$(call BuildFirmware/EdimaxCombined/$(1),$(1),br-64
 
 
 define LegacyDevice/RTN56U
+  BLOCKSIZE := 64k
   DEVICE_TITLE := Asus RT-N56U
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
@@ -122,6 +125,7 @@ LEGACY_DEVICES += RTN56U
 
 
 define LegacyDevice/BR6475ND
+  BLOCKSIZE := 64k
   DEVICE_TITLE := Edimax BR-6475nD
   DEVICE_PACKAGES := swconfig
 endef
