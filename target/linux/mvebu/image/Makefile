@@ -182,7 +182,7 @@ define Device/armada-388-clearfog
   KERNEL_INSTALL := 1
   KERNEL := dtb | kernel-bin
   DEVICE_TITLE := SolidRun ClearFog
-  DEVICE_PACKAGES := uboot-mvebu-clearfog kmod-fs-ext4
+  DEVICE_PACKAGES := uboot-mvebu-clearfog
   IMAGES := bundle.tar.gz sdcard.img.gz
   IMAGE/bundle.tar.gz := clearfog-bundle
   IMAGE/sdcard.img.gz := boot-scr | boot-img | sdcard-img | gzip
