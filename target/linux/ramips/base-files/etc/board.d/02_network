@@ -94,9 +94,12 @@ ramips_setup_interfaces()
 	wsr-600|\
 	wt1520|\
 	y1|\
+	youku-yk1|\
+	zbt-ape522ii|\
+	zbt-we826|\
 	zbt-wg2626|\
 	zbt-wg3526|\
-	youku-yk1)
+	zbt-wr8305rt)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
@@ -126,10 +129,10 @@ ramips_setup_interfaces()
 	gl-mt300n|\
 	gl-mt750|\
 	hg255d|\
-	mzk-wdpr|\
 	jhr-n805r|\
 	jhr-n825r|\
 	jhr-n926r|\
+	mzk-wdpr|\
 	rt-n14u|\
 	ubnt-erx|\
 	ur-326n4g|\
@@ -175,6 +178,7 @@ ramips_setup_interfaces()
 	mzk-ex750np|\
 	na930|\
 	wli-tx4-ag300n|\
+	wmr-300|\
 	wrh-300cr)
 		ucidef_set_interface_lan "eth0"
 		;;
@@ -196,9 +200,6 @@ ramips_setup_interfaces()
 	wizard8800|\
 	wl-330n)
 		ucidef_set_interface_lan "eth0.1"
-		;;
-	wmr-300)
-		ucidef_set_interface_lan "eth0"
 		;;
 	mzk-dp150n|\
 	vocore)
@@ -231,12 +232,6 @@ ramips_setup_interfaces()
 	wizfi630a)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "0:wan" "6@eth0"
-		;;
-	zbt-ape522ii|\
-	zbt-we826|\
-	zbt-wr8305rt)
-		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
 	*)
 		RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350)"`
