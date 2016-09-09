@@ -2,24 +2,24 @@
 # RT3662/RT3883 Profiles
 #
 
-define Device/TEW691GR
+define Device/tew-691gr
   DTS := TEW-691GR
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | umedia-header 0x026910
   DEVICE_TITLE := TRENDnet TEW-691GR
   DEVICE_PACKAGES := swconfig
 endef
-TARGET_DEVICES += TEW691GR
+TARGET_DEVICES += tew-691gr
 
 
-define Device/TEW692GR
+define Device/tew-692gr
   DTS := TEW-692GR
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | umedia-header 0x026920
   DEVICE_TITLE := TRENDnet TEW-692GR
   DEVICE_PACKAGES := swconfig
 endef
-TARGET_DEVICES += TEW692GR
+TARGET_DEVICES += tew-692gr
 
 
 # $(1) = squashfs/initramfs
