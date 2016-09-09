@@ -10,7 +10,7 @@ ARCH:=mipsel
 BOARD:=au1000
 BOARDNAME:=RMI/AMD AU1x00
 FEATURES:=squashfs usb pci
-SUBTARGETS=au1500 au1550
+SUBTARGETS:=au1500 au1550
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 KERNEL_PATCHVER:=3.18

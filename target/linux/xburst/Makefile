@@ -14,7 +14,7 @@ SUBTARGETS:=qi_lb60
 
 KERNEL_PATCHVER:=3.18
 
-DEVICE_TYPE=other
+DEVICE_TYPE:=other
 
 define Target/Description
 	Build firmware images for XBurst JZ47x0 based boards.
