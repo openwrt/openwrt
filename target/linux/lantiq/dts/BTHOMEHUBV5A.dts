@@ -244,15 +244,6 @@
 			phy-mode = "gmii";
 			phy-handle = <&phy13>;
 		};
-	};
-
-	wan: interface@1 {
-		compatible = "lantiq,xrx200-pdi";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <1>;
-		lantiq,wan;
-
 		ethernet@5 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <5>;
