@@ -189,6 +189,12 @@
 		mtd-mac-address = <&boardconfig 0x16>;
 		lantiq,switch;
 
+		ethernet@0 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <0>;
+			phy-mode = "mii";
+			phy-handle = <&phy1>;
+		};
 		ethernet@2 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <2>;
@@ -212,23 +218,6 @@
 			reg = <5>;
 			phy-mode = "mii";
 			phy-handle = <&phy14>;
-		};
-	};
-
-	wan: interface@1 {
-		compatible = "lantiq,xrx200-pdi";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <1>;
-		mtd-mac-address = <&boardconfig 0x16>;
-		mtd-mac-address-increment = <3>;
-		lantiq,wan;
-
-		ethernet@0 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <0>;
-			phy-mode = "mii";
-			phy-handle = <&phy1>;
 		};
 	};
 
