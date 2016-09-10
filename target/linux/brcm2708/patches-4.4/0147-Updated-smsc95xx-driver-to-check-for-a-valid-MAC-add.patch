@@ -1,9 +1,8 @@
-From af4e7094adf051d1cec6ebc04cfbc5d3049ce126 Mon Sep 17 00:00:00 2001
+From ef351705676a8a3906bfbc3696e7d44bcc3a320b Mon Sep 17 00:00:00 2001
 From: Craig Roberts <cjr@craigroberts.net>
 Date: Tue, 16 Feb 2016 10:03:42 +0000
-Subject: [PATCH 147/423] Updated smsc95xx driver to check for a valid MAC
- address in eeprom before using smsc95xx.macaddr parameter passed on command
- line.
+Subject: [PATCH] Updated smsc95xx driver to check for a valid MAC address in
+ eeprom before using smsc95xx.macaddr parameter passed on command line.
 
 The built-in RPi adaptor will still get a MAC address based on the parameter passed on the command line as the RPi hardware does not have an eeprom,
 however usb->ethernet adaptors using the same driver should have an eeprom with MAC address as part of their hardware and therefore will use this

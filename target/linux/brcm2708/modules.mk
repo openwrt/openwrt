@@ -183,7 +183,7 @@ endef
 $(eval $(call KernelPackage,sound-soc-hifiberry-dacplus))
 
 define KernelPackage/sound-soc-hifiberry-digi
-  TITLE:=Support for HifiBerry Digi
+  TITLE:=Support for HifiBerry Digi / Digi+ / Digi+ Pro
   KCONFIG:= \
 	CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI \
 	CONFIG_SND_SOC_WM8804

@@ -1,7 +1,7 @@
-From 9cb63901af94334ee9f4bf55f731633ea478626a Mon Sep 17 00:00:00 2001
+From 41c1cc2920df75124c931cd58f6b67ec586a5a6a Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 24 Jun 2015 14:10:44 +0100
-Subject: [PATCH 012/423] spi-bcm2835: Support pin groups other than 7-11
+Subject: [PATCH] spi-bcm2835: Support pin groups other than 7-11
 
 The spi-bcm2835 driver automatically uses GPIO chip-selects due to
 some unreliability of the native ones. In doing so it chooses the

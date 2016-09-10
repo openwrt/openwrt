@@ -1,7 +1,7 @@
-From afe4e8694c719164db2918fe267658e4971bafaa Mon Sep 17 00:00:00 2001
+From bb79ceb9166d67ad8d658dead2f62bda7668f139 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 8 Feb 2016 11:19:14 -0800
-Subject: [PATCH 283/423] drm/vc4: Fix spurious GPU resets due to BO reuse.
+Subject: [PATCH] drm/vc4: Fix spurious GPU resets due to BO reuse.
 
 We were tracking the "where are the head pointers pointing" globally,
 so if another job reused the same BOs and execution was at the same

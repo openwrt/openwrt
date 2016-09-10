@@ -1,16 +1,16 @@
-From 6148931ae669f041a7036c9eb0ec1b225275c1dd Mon Sep 17 00:00:00 2001
+From 34e0545c33b0f444a5dd8c066cfe37420e95db33 Mon Sep 17 00:00:00 2001
 From: Daniel Matuschek <info@crazy-audio.com>
 Date: Wed, 15 Jan 2014 21:41:23 +0100
-Subject: [PATCH 065/423] ASoC: wm8804: Implement MCLK configuration options,
- add 32bit support WM8804 can run with PLL frequencies of 256xfs and 128xfs
- for most sample rates. At 192kHz only 128xfs is supported. The existing
- driver selects 128xfs automatically for some lower samples rates. By using an
- additional mclk_div divider, it is now possible to control the behaviour.
- This allows using 256xfs PLL frequency on all sample rates up to 96kHz. It
- should allow lower jitter and better signal quality. The behavior has to be
- controlled by the sound card driver, because some sample frequency share the
- same setting. e.g. 192kHz and 96kHz use 24.576MHz master clock. The only
- difference is the MCLK divider.
+Subject: [PATCH] ASoC: wm8804: Implement MCLK configuration options, add 32bit
+ support WM8804 can run with PLL frequencies of 256xfs and 128xfs for most
+ sample rates. At 192kHz only 128xfs is supported. The existing driver selects
+ 128xfs automatically for some lower samples rates. By using an additional
+ mclk_div divider, it is now possible to control the behaviour. This allows
+ using 256xfs PLL frequency on all sample rates up to 96kHz. It should allow
+ lower jitter and better signal quality. The behavior has to be controlled by
+ the sound card driver, because some sample frequency share the same setting.
+ e.g. 192kHz and 96kHz use 24.576MHz master clock. The only difference is the
+ MCLK divider.
 
 This also added support for 32bit data.
 

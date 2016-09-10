@@ -1,8 +1,7 @@
-From bbbdf3afb567a7bded1b606d34ba6d97cbf1fb0a Mon Sep 17 00:00:00 2001
+From db9dc8093738d064963257f19b8b6d927d137dd9 Mon Sep 17 00:00:00 2001
 From: wm4 <wm4@nowhere>
 Date: Wed, 13 Jan 2016 19:44:03 +0100
-Subject: [PATCH 131/423] bcm2835: always use 2/4/8 channels for multichannel
- layouts
+Subject: [PATCH] bcm2835: always use 2/4/8 channels for multichannel layouts
 
 Pad the unused channels with NA. This means userspace needs to write
 additional, silent padding channels, which is not ideal, but better

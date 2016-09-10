@@ -1,8 +1,8 @@
-From 29e3799c22dba7bb579a8caacc957f888965b2dc Mon Sep 17 00:00:00 2001
+From 7a4238c79a815c0cb87eecb30897f6710f5e4a82 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Mon, 2 Nov 2015 17:07:33 +0000
-Subject: [PATCH 101/423] drm/vc4: Enable VC4 modules, and increase CMA size
- with overlay
+Subject: [PATCH] drm/vc4: Enable VC4 modules, and increase CMA size with
+ overlay
 
 If using the overlay, be careful not to boot to GUI or run startx,
 or the Pi will almost hang, reporting stalls in kernel threads.

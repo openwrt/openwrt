@@ -1,8 +1,8 @@
-From ea38a9fb0b8312167361ea9957b4f7a3233492aa Mon Sep 17 00:00:00 2001
+From 3fb1fdfad76d7ebbe1c78e262f57e636cfa2545d Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Fri, 11 Dec 2015 19:45:03 -0800
-Subject: [PATCH 115/423] drm: Use the driver's gem_object_free function from
- CMA helpers.
+Subject: [PATCH] drm: Use the driver's gem_object_free function from CMA
+ helpers.
 
 VC4 wraps the CMA objects in its own structures, so it needs to do its
 own teardown (waiting for GPU to finish, updating bo_stats tracking).

@@ -1,8 +1,7 @@
-From 9e26f4ac9231419f7dcc0f793fb2d1f17748eae9 Mon Sep 17 00:00:00 2001
+From 8bf3ca92ea1352a4b97258eee4b225240e525a54 Mon Sep 17 00:00:00 2001
 From: wm4 <wm4@nowhere>
 Date: Wed, 13 Jan 2016 19:44:24 +0100
-Subject: [PATCH 132/423] bcm2835: only allow stereo if analogue jack is
- selected
+Subject: [PATCH] bcm2835: only allow stereo if analogue jack is selected
 
 Sending more than 2 channels to videocore while outputting to analogue
 mysteriously outputs heavy artifacts. So just paint it over with a

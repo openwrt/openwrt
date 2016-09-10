@@ -1,8 +1,8 @@
-From a49c5fc29582017da47598db437cf253e7620e7e Mon Sep 17 00:00:00 2001
+From 5e45aa3d7aa8a59d82fb57cafd341e2c8c908f81 Mon Sep 17 00:00:00 2001
 From: Andrew Litt <ajlitt@splunge.net>
 Date: Mon, 11 Jan 2016 07:54:21 +0000
-Subject: [PATCH 124/423] bcm2835-mmc: Don't override bus width capabilities
- from devicetree
+Subject: [PATCH] bcm2835-mmc: Don't override bus width capabilities from
+ devicetree
 
 Take out the force setting of the MMC_CAP_4_BIT_DATA host capability
 so that the result read from devicetree via mmc_of_parse() is

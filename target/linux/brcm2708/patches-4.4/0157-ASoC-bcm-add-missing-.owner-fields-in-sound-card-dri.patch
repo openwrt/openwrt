@@ -1,8 +1,7 @@
-From 5590ca50d54491e5fc3f273f03198a1b08fd88cc Mon Sep 17 00:00:00 2001
+From 8369af719005849271d4c50a87dc6422b83dc276 Mon Sep 17 00:00:00 2001
 From: Matthias Reichl <hias@horus.com>
 Date: Tue, 23 Feb 2016 17:28:23 +0100
-Subject: [PATCH 157/423] ASoC: bcm: add missing .owner fields in sound card
- drivers
+Subject: [PATCH] ASoC: bcm: add missing .owner fields in sound card drivers
 
 If snd_soc_card.owner is not set the kernel won't do usage refcounting
 and one can remove the card driver module while it's in use (eg playback

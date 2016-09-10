@@ -1,8 +1,7 @@
-From f6d5c3deefad3bf030e1410afeac8f562ed7be4d Mon Sep 17 00:00:00 2001
+From 6a602d99694b69c8cd19970f7d2b019dadaaaa09 Mon Sep 17 00:00:00 2001
 From: janluca <janluca@zedat.fu-berlin.de>
 Date: Sun, 27 Dec 2015 14:34:04 +0100
-Subject: [PATCH 120/423] MMC: Do not use mmc_debug if CONFIG_MMC_BCM2835 is
- not set
+Subject: [PATCH] MMC: Do not use mmc_debug if CONFIG_MMC_BCM2835 is not set
 
 If CONFIG_MMC_BCM2835 was not set the compiling of the kernel failed
 since mmc_debug was not defined but used in drivers/mmc/core/quirks.c.

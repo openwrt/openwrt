@@ -1,7 +1,7 @@
-From 81e1683aced46435585f3a0a81e47f9bc7609abf Mon Sep 17 00:00:00 2001
+From 827e46013755254e526f0b682495ee88066a05a3 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 23 Mar 2016 20:53:47 +0000
-Subject: [PATCH 212/423] vchiq_arm: Service callbacks must not fail
+Subject: [PATCH] vchiq_arm: Service callbacks must not fail
 
 Service callbacks are not allowed to return an error. The internal callback
 that delivers events and messages to user tasks does not enqueue them if

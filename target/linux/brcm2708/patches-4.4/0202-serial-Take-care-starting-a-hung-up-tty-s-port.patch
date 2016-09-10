@@ -1,7 +1,7 @@
-From 91796069d412600985585cbb8d72cb5dbf7d9a2e Mon Sep 17 00:00:00 2001
+From baaee4dd48573d8de4e22d812717c6863ba4b7e6 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 9 Mar 2016 13:28:24 +0000
-Subject: [PATCH 202/423] serial: Take care starting a hung-up tty's port
+Subject: [PATCH] serial: Take care starting a hung-up tty's port
 
 tty_port_hangup sets a port's tty field to NULL (holding the port lock),
 but uart_tx_stopped, called from __uart_start (with the port lock),

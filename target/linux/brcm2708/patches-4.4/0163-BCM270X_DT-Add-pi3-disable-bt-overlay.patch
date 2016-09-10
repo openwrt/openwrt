@@ -1,7 +1,7 @@
-From a8b3a8c0c610b29be2d685548a1b21269b651b33 Mon Sep 17 00:00:00 2001
+From f74038a8afbdbb109f831befeb53ce2b641a8805 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 2 Mar 2016 10:59:05 +0000
-Subject: [PATCH 163/423] BCM270X_DT: Add pi3-disable-bt overlay
+Subject: [PATCH] BCM270X_DT: Add pi3-disable-bt overlay
 
 Disable Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15. To disable
 the systemd service that initialises the modem so it doesn't use the UART:

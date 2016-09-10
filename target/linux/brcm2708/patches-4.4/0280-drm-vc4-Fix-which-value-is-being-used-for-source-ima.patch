@@ -1,8 +1,7 @@
-From 265a20f8e1c0e3578aea9dcf9d2ea93ea909b76b Mon Sep 17 00:00:00 2001
+From 4ac20cea599c0f91b3240013ce603e608cab2d6a Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 28 Dec 2015 14:45:25 -0800
-Subject: [PATCH 280/423] drm/vc4: Fix which value is being used for source
- image size.
+Subject: [PATCH] drm/vc4: Fix which value is being used for source image size.
 
 This doesn't matter yet since we only allow 1:1 scaling, but the
 comment clearly says we should be using the source size.

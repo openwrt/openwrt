@@ -1,8 +1,8 @@
-From 33665d0e0cca6401025655121d66450716353f75 Mon Sep 17 00:00:00 2001
+From d52d6e440040cd5139f9f9ef0071ea00b103302e Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Thu, 26 Feb 2015 09:58:22 +0000
-Subject: [PATCH 011/423] pinctrl-bcm2835: Only request the interrupts listed
- in the DTB
+Subject: [PATCH] pinctrl-bcm2835: Only request the interrupts listed in the
+ DTB
 
 Although the GPIO controller can generate three interrupts (four counting
 the common one), the device tree files currently only specify two. In the

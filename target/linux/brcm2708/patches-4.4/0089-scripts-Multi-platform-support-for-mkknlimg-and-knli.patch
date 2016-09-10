@@ -1,8 +1,7 @@
-From 644468c76c90757811b1490557d7fa1ab8e9477b Mon Sep 17 00:00:00 2001
+From 93ede86bcccc686cdc933e0711289b0312f0361a Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 11 Nov 2015 11:38:59 +0000
-Subject: [PATCH 089/423] scripts: Multi-platform support for mkknlimg and
- knlinfo
+Subject: [PATCH] scripts: Multi-platform support for mkknlimg and knlinfo
 
 The firmware uses tags in the kernel trailer to choose which dtb file
 to load. Current firmware loads bcm2835-*.dtb if the '283x' tag is true,

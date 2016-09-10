@@ -1,7 +1,7 @@
-From deb04405c9c7362840387414fcf33f01d056c697 Mon Sep 17 00:00:00 2001
+From b73a3233de4b17d80cfb100dcda2216cb3fcf8c6 Mon Sep 17 00:00:00 2001
 From: Dan Carpenter <dan.carpenter@oracle.com>
 Date: Tue, 8 Mar 2016 15:09:41 +0300
-Subject: [PATCH 293/423] drm/vc4: Return -EFAULT on copy_from_user() failure
+Subject: [PATCH] drm/vc4: Return -EFAULT on copy_from_user() failure
 
 The copy_from_user() function returns the number of bytes not copied but
 we want to return a negative error code.

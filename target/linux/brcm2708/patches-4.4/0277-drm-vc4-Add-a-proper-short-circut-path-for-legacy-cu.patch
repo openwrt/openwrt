@@ -1,8 +1,8 @@
-From 3f24f34e62b4bdcff3a5d46e847b200b5380b5ee Mon Sep 17 00:00:00 2001
+From 81f885f1ab1729bb2d14ca44d4861e0bb982b324 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Wed, 30 Dec 2015 11:50:22 -0800
-Subject: [PATCH 277/423] drm/vc4: Add a proper short-circut path for legacy
- cursor updates.
+Subject: [PATCH] drm/vc4: Add a proper short-circut path for legacy cursor
+ updates.
 
 Previously, on every modeset we would allocate new display list
 memory, recompute changed planes, write all of them to the new memory,

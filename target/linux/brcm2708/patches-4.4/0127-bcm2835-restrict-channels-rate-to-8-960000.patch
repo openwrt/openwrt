@@ -1,7 +1,7 @@
-From eeb06bfcdcc321f270753d6ba822c9212c49db00 Mon Sep 17 00:00:00 2001
+From 4b235ff95b0fcfa9731c1159402f4fef0e26f1d3 Mon Sep 17 00:00:00 2001
 From: wm4 <wm4@nowhere>
 Date: Wed, 13 Jan 2016 19:42:18 +0100
-Subject: [PATCH 127/423] bcm2835: restrict channels*rate to 8*960000
+Subject: [PATCH] bcm2835: restrict channels*rate to 8*960000
 
 This is required at least for SPDIF. If the bitrate goes above,
 videocore will either resample the audio or corrupt it due to

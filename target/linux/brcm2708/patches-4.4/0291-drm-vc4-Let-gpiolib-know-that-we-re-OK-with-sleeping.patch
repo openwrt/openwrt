@@ -1,8 +1,8 @@
-From 52a8cd7d35e6c8860c2449e04ae305a3cdc671f1 Mon Sep 17 00:00:00 2001
+From 92bceb9faef5ef033e79b746aa8d5fd465548fbc Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 29 Feb 2016 17:53:00 -0800
-Subject: [PATCH 291/423] drm/vc4: Let gpiolib know that we're OK with sleeping
- for HPD.
+Subject: [PATCH] drm/vc4: Let gpiolib know that we're OK with sleeping for
+ HPD.
 
 Fixes an error thrown every few seconds when we poll HPD when it's on
 a I2C to GPIO expander.

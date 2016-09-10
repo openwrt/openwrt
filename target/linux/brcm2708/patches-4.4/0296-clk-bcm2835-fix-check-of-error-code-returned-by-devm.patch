@@ -1,7 +1,7 @@
-From 962b219e1cbec5b7fc6a3b5c9e03077ca759695d Mon Sep 17 00:00:00 2001
+From e16d40b0eafe97952af1005d8b1ab97ce4440066 Mon Sep 17 00:00:00 2001
 From: Vladimir Zapolskiy <vz@mleia.com>
 Date: Sun, 6 Mar 2016 03:21:35 +0200
-Subject: [PATCH 296/423] clk: bcm2835: fix check of error code returned by
+Subject: [PATCH] clk: bcm2835: fix check of error code returned by
  devm_ioremap_resource()
 
 The change fixes potential oops while accessing iomem on invalid

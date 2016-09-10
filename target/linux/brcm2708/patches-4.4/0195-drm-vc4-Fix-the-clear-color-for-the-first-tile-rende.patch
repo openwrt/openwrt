@@ -1,8 +1,7 @@
-From 68cbe5055b8b2d1b96fd6b5009f16064783e6b00 Mon Sep 17 00:00:00 2001
+From 339e2ea50b25fe0183161cee31f640e691f2a1c0 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 25 Jan 2016 13:52:41 -0800
-Subject: [PATCH 195/423] drm/vc4: Fix the clear color for the first tile
- rendered.
+Subject: [PATCH] drm/vc4: Fix the clear color for the first tile rendered.
 
 Apparently in hardware (as opposed to simulation), the clear colors
 need to be uploaded before the render config, otherwise they won't

@@ -1,7 +1,7 @@
-From c43a9027e42856592c071e5bbc7e38e8f236ce51 Mon Sep 17 00:00:00 2001
+From 81fcdac0b54488a1fea35a0fe2e799511888fa84 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 19 Oct 2015 08:44:35 -0700
-Subject: [PATCH 096/423] drm/vc4: Drop struct_mutex around CL validation.
+Subject: [PATCH] drm/vc4: Drop struct_mutex around CL validation.
 
 We were using it so that we could make sure that shader validation
 state didn't change while we were validating, but now shader

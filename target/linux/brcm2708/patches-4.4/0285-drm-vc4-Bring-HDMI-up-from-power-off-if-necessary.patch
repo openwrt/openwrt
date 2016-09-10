@@ -1,7 +1,7 @@
-From aae3a606556af7e815414df480aa49e1e56d1bc1 Mon Sep 17 00:00:00 2001
+From 17467b182d70d76c27d8e498abb281b28f58f92c Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Fri, 12 Feb 2016 14:15:14 -0800
-Subject: [PATCH 285/423] drm/vc4: Bring HDMI up from power off if necessary.
+Subject: [PATCH] drm/vc4: Bring HDMI up from power off if necessary.
 
 If the firmware hadn't brought up HDMI for us, we need to do its
 power-on reset sequence (reset HD and and clear its STANDBY bits,

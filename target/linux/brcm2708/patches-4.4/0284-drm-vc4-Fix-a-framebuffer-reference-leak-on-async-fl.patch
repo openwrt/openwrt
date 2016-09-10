@@ -1,8 +1,8 @@
-From 0a26ed79b85b1fd55b88a1c3b5d1b4c3382b03f9 Mon Sep 17 00:00:00 2001
+From 2ee2a1f157f4eb81c2aca3a076fe74c1e587d2f8 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Fri, 5 Feb 2016 15:06:15 -0800
-Subject: [PATCH 284/423] drm/vc4: Fix a framebuffer reference leak on async
- flip interrupt.
+Subject: [PATCH] drm/vc4: Fix a framebuffer reference leak on async flip
+ interrupt.
 
 We'd need X to queue up an async pageflip while another is
 outstanding, and then take a SIGIO.  I think X actually avoids sending

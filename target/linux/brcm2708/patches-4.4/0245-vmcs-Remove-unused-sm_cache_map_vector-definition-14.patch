@@ -1,8 +1,7 @@
-From 9a9153d6a6e2c413ff568a9e26dd4711060c0732 Mon Sep 17 00:00:00 2001
+From 39aaeeb6912c97ede930b463c99b7848d1340a45 Mon Sep 17 00:00:00 2001
 From: Khem Raj <raj.khem@gmail.com>
 Date: Sun, 17 Apr 2016 04:44:47 -0700
-Subject: [PATCH 245/423] vmcs: Remove unused sm_cache_map_vector definition
- (#1411)
+Subject: [PATCH] vmcs: Remove unused sm_cache_map_vector definition (#1411)
 
 The code using it also ifdef'ed with 0, anyyd gcc 6
 complains

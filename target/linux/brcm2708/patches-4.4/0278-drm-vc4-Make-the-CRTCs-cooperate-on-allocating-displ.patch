@@ -1,8 +1,8 @@
-From 417b8c7dcc6cad23f255a4307dda97d04f9c9b5b Mon Sep 17 00:00:00 2001
+From 1c86cb2794cdba850675a95de59acf505a3d7654 Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Mon, 28 Dec 2015 13:25:41 -0800
-Subject: [PATCH 278/423] drm/vc4: Make the CRTCs cooperate on allocating
- display lists.
+Subject: [PATCH] drm/vc4: Make the CRTCs cooperate on allocating display
+ lists.
 
 So far, we've only ever lit up one CRTC, so this has been fine.  To
 extend to more displays or more planes, we need to make sure we don't

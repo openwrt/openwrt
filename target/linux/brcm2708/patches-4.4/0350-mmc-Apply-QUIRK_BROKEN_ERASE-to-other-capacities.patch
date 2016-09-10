@@ -1,0 +1,23 @@
+From 2aa9602cca746c3bd2fe664574234adb147e4ba7 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 19 May 2016 14:40:28 +0100
+Subject: [PATCH] mmc: Apply QUIRK_BROKEN_ERASE to other capacities
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/mmc/card/block.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -2558,6 +2558,10 @@ static const struct mmc_fixup blk_fixups
+ 	 */
+ 	MMC_FIXUP("SD16G", 0x41, 0x3432, add_quirk_mmc,
+ 		  MMC_QUIRK_ERASE_BROKEN),
++	MMC_FIXUP("SD32G", 0x41, 0x3432, add_quirk_mmc,
++		  MMC_QUIRK_ERASE_BROKEN),
++	MMC_FIXUP("SD64G", 0x41, 0x3432, add_quirk_mmc,
++		  MMC_QUIRK_ERASE_BROKEN),
+ 
+ 	END_FIXUP
+ };

@@ -1,7 +1,7 @@
-From 36b4312e6c109ead13feef44315fa73d1e1fa9f0 Mon Sep 17 00:00:00 2001
+From e0f147530d17dfe705fee528c40232047bd1ee47 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Tue, 23 Feb 2016 17:26:48 +0000
-Subject: [PATCH 153/423] amba_pl011: Don't use DT aliases for numbering
+Subject: [PATCH] amba_pl011: Don't use DT aliases for numbering
 
 The pl011 driver looks for DT aliases of the form "serial<n>",
 and if found uses <n> as the device ID. This can cause

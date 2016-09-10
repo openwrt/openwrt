@@ -68,8 +68,8 @@ ifeq ($(SUBTARGET),bcm2709)
 endif
 
 define Device/rpi-3
-  DEVICE_TITLE := Raspberry Pi 3 B
-  DEVICE_DTS := bcm2710-rpi-3-b
+  DEVICE_TITLE := Raspberry Pi 3 B/CM
+  DEVICE_DTS := bcm2710-rpi-3-b bcm2710-rpi-cm3
   DEVICE_PACKAGES := brcmfmac43430-firmware-sdio kmod-brcmfmac wpad-mini
 endef
 ifeq ($(SUBTARGET),bcm2710)
