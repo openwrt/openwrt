@@ -170,8 +170,8 @@ fi
 
 ucidef_set_interface_wan "$interface_wan" "pppoe"
 
-[ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan "$lan_mac"
-[ -n "$wan_mac" ] && ucidef_set_interface_macaddr wan "$wan_mac"
+[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
+[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" "$wan_mac"
 
 board_config_flush
 

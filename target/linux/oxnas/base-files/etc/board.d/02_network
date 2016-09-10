@@ -15,7 +15,7 @@ case "$(oxnas_board_name)" in
 esac
 
 ucidef_set_interface_lan "eth0" "dhcp"
-[ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan "$lan_mac"
+[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
 
 board_config_flush
 

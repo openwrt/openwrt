@@ -69,7 +69,6 @@ bsb)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	ucidef_add_switch "switch0" \
 		"0@eth1" "1:lan" "3:lan"  # XXX: confirm cpu port!
-	ucidef_set_interface_wlan
 	;;
 
 cpe210|\
@@ -194,7 +193,7 @@ el-m150)
 	;;
 
 tellstick-znet-lite)
-	ucidef_set_interface_wan "eth0" "dhcp"
+	ucidef_set_interface_wan "eth0"
 	ucidef_set_interface_raw "wlan" "wlan0" "dhcp"
 	;;
 
