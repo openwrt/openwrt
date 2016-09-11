@@ -59,7 +59,7 @@ define Device/linksys-audi
   FILESYSTEMS := squashfs
   PROFILES := Generic AUDI
   IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
 endef
 
 define Device/linksys-viper
@@ -68,7 +68,7 @@ define Device/linksys-viper
   FILESYSTEMS := squashfs
   PROFILES := Generic VIPER
   IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
 endef
 
 define Image/BuildKernel/Template

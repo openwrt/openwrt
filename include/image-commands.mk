@@ -103,11 +103,11 @@ define Build/patch-cmdline
 endef
 
 define Build/append-kernel
-	dd if=$(IMAGE_KERNEL) $(if $(1),bs=$(1) conv=sync) >> $@
+	dd if=$(IMAGE_KERNEL) >> $@
 endef
 
 define Build/append-rootfs
-	dd if=$(IMAGE_ROOTFS) $(if $(1),bs=$(1) conv=sync) >> $@
+	dd if=$(IMAGE_ROOTFS) >> $@
 endef
 
 define Build/append-ubi

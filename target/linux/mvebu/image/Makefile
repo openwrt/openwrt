@@ -71,7 +71,7 @@ define Device/UBI-factory
   $(Device/UBI)
   UBINIZE_OPTS := -E 5
   IMAGES += factory.img
-  IMAGE/factory.img := append-kernel $$$$(KERNEL_SIZE) | append-ubi | pad-to $$$$(PAGESIZE)
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | pad-to $$$$(PAGESIZE)
 endef
 
 define Device/NAND-128K
@@ -167,7 +167,7 @@ TARGET_DEVICES += armada-370-db armada-370-rd armada-xp-db armada-xp-gp
 define Device/armada-388-rd
   DEVICE_TITLE := Marvell Armada 388 RD (RD-88F6820-AP)
   IMAGES := firmware.bin
-  IMAGE/firmware.bin := append-kernel 256k | append-rootfs | pad-rootfs
+  IMAGE/firmware.bin := append-kernel | pad-to 256k | append-rootfs | pad-rootfs
 endef
 TARGET_DEVICES += armada-388-rd
 
