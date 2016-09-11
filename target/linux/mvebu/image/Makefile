@@ -141,7 +141,7 @@ define Device/openblocks-ax3
   DEVICE_DTS := armada-xp-openblocks-ax3-4
   BLOCKSIZE := 128k
   PAGESIZE := 1
-  IMAGE/factory.img := append-kernel $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/factory.img := append-kernel | pad-to $$(BLOCKSIZE) | append-ubi
   DEVICE_TITLE := Plat'Home OpenBlocks AX3
 endef
 TARGET_DEVICES += openblocks-ax3
