@@ -150,13 +150,13 @@ define Device/EA8500
 	DEVICE_DTS := qcom-ipq8064-ea8500
 	PAGESIZE := 2048
 	BLOCKSIZE := 128k
-	KERNEL_SIZE := 3145728
+	KERNEL_SIZE := 3072k
 	FILESYSTEMS := squashfs
 	KERNEL = kernel-bin | append-dtb | uImage none | append-file $(KDIR)/root.dummy
 	PROFILES += $$(DEVICE_NAME)
 	BOARD_NAME := ea8500
 	IMAGES := factory.bin sysupgrade.tar
-	IMAGE/factory.bin := append-kernel 3145728 | append-ubi
+	IMAGE/factory.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi
 	IMAGE/sysupgrade.tar := sysupgrade-tar
 	DEVICE_TITLE := Linksys EA8500
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
