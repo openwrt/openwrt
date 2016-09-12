@@ -1041,3 +1041,18 @@ define KernelPackage/9pnet/description
 endef
 
 $(eval $(call KernelPackage,9pnet))
+
+
+define KernelPackage/nlmon
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Virtual netlink monitoring device
+  KCONFIG:=CONFIG_NLMON
+  FILES:=$(LINUX_DIR)/drivers/net/nlmon.ko
+  AUTOLOAD:=$(call AutoProbe,nlmon)
+endef
+
+define KernelPackage/nlmon/description
+  Kernel module which adds a monitoring device for netlink.
+endef
+
+$(eval $(call KernelPackage,nlmon))
