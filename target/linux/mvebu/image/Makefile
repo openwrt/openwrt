@@ -71,6 +71,7 @@ endef
 
 define Device/UBI-factory
   $(Device/UBI)
+  UBINIZE_OPTS := -E 5
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel $$$$(KERNEL_SIZE) | append-ubi | pad-to $$$$(PAGESIZE)
 endef

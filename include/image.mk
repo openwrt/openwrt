@@ -353,7 +353,7 @@ define Device/Init
   PAGESIZE :=
   SUBPAGESIZE :=
   VID_HDR_OFFSET :=
-  UBINIZE_OPTS := -E 5
+  UBINIZE_OPTS :=
   UBINIZE_PARTS :=
   MKUBIFS_OPTS :=
 

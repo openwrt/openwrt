@@ -94,7 +94,6 @@ define Device/ventana
 	kobs-ng
   KERNEL += | boot-overlay
   IMAGES := nand.ubi bootfs.tar.gz
-  UBINIZE_OPTS :=
   UBINIZE_PARTS = boot=$$(KDIR_KERNEL_IMAGE).boot.ubifs=15
   IMAGE/nand.ubi := append-ubi
   IMAGE/bootfs.tar.gz := bootfs.tar.gz | install-dtb

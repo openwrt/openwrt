@@ -85,7 +85,6 @@ define Device/Default
   IMAGES := trx
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  UBINIZE_OPTS :=
   IMAGE/trx := append-ubi | trx-nand
 endef
 

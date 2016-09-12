@@ -28,6 +28,7 @@ define Device/Default
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k
   IMAGES := sysupgrade.tar
+  UBINIZE_OPTS := -E 5
   IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
 
