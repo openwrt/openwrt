@@ -93,7 +93,9 @@ static long to_kbytes(const char *string) {
 	}
 
 	/* result: number + 1024^(exp) */
-	return result * ((2 << ((10 * exp) - 1)) ?: 1);
+	if (exp == 0)
+		return result;
+	return result * (2 << ((10 * exp) - 1));
 }
 
 /* convert the sector number into a CHS value for the partition table */
