@@ -404,7 +404,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	sta->tx_stats.packets[skb_get_queue_mapping(skb)]++;
  
 -	if (fast_tx->pn_offs) {
-+	if (pn_offs) {
++	if (pn_offs && (key_conf->flags & IEEE80211_KEY_FLAG_GENERATE_IV)) {
  		u64 pn;
 -		u8 *crypto_hdr = skb->data + fast_tx->pn_offs;
 +		u8 *crypto_hdr = skb->data + pn_offs;
