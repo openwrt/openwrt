@@ -70,6 +70,8 @@ endef
 
 DEVICE_VARS += PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION
 
+BRCMFMAC_43602A1 := kmod-brcmfmac brcmfmac-firmware-43602a1-pcie
+BRCMFMAC_4366B1 := kmod-brcmfmac brcmfmac-firmware-4366b1-pcie
 USB2_PACKAGES := kmod-usb-ohci kmod-usb2
 USB3_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3
 
@@ -148,7 +150,7 @@ endef
 
 define Device/dlink-dir-885l
   DEVICE_TITLE := D-Link DIR-885L
-  DEVICE_PACKAGES := kmod-brcmfmac $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
   $(Device/dlink)
   SIGNATURE := wrgac42_dlink.2015_dir885l
 endef
@@ -190,7 +192,7 @@ TARGET_DEVICES += netgear-r7000
 
 define Device/netgear-r7900
   DEVICE_TITLE := Netgear R7900
-  DEVICE_PACKAGES := kmod-brcmfmac $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H315T30_NETGEAR
 endef
@@ -198,14 +200,14 @@ TARGET_DEVICES += netgear-r7900
 
 define Device/netgear-r8000
   DEVICE_TITLE := Netgear R8000
-  DEVICE_PACKAGES := kmod-brcmfmac $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H315T00_NETGEAR
 endef
 
 define Device/netgear-r8500
   DEVICE_TITLE := Netgear R8500
-  DEVICE_PACKAGES := kmod-brcmfmac $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H334T00_NETGEAR
 endef
@@ -213,7 +215,7 @@ endef
 
 define Device/smartrg-sr400ac
   DEVICE_TITLE := SmartRG SR400ac
-  DEVICE_PACKAGES := kmod-brcmfmac $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
   IMAGES := trx
   IMAGE/trx := append-rootfs | trx-serial
 endef
