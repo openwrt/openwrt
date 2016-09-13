@@ -10,7 +10,6 @@ NAND_BLOCKSIZE := 2048-128k
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += KERNEL_SIZE
 KERNEL_LOADADDR:=0x8000
 TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome
 

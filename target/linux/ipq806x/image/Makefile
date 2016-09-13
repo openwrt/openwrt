@@ -41,7 +41,6 @@ define Device/Default
 	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
 endef
-DEVICE_VARS += KERNEL_SIZE
 
 define Device/LegacyImage
 	KERNEL_SUFFIX := -uImage

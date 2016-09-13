@@ -12,8 +12,6 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR := 0x00008000
 
-DEVICE_VARS += KERNEL_SIZE
-
 define Build/dtb
         $(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb)
 endef
