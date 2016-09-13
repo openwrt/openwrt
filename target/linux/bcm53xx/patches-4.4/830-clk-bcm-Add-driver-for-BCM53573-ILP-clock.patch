@@ -1,20 +1,14 @@
-From 1909c8bf322e0bbb068d57c370c5b64906a8c5a7 Mon Sep 17 00:00:00 2001
+From 205fc550ceb74f7e8bfcba5c5c7329aa1b34d4ee Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
 Date: Fri, 29 Jul 2016 14:48:19 +0200
-Subject: [PATCH V6] clk: bcm: Add driver for BCM53573 ILP clock
+Subject: [PATCH V8] clk: bcm: Add driver for BCM53573 ILP clock
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 This clock is present on BCM53573 devices (including BCM47189) that use
-Cortex-A7. ILP is a part of PMU (Power Management Unit) and so it should
-be defined as one of its subnodes (subdevices). For more details see
-Documentation entry.
-
-Unfortunately there isn't a set of registers related to ILP clock only.
-We use registers 0x66c, 0x674 and 0x6dc and between them there are e.g.
-"retention*" and "control_ext" regs. This is why this driver maps all
-0x1000 B of space.
+Cortex-A7. ILP is a part of PMU (Power Management Unit) multi-function
+device so we use syscon (and regmap) for it.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
@@ -38,17 +32,19 @@ V6: Drop #include <linux/clk.h>
     Use _hw_ functions for registering struct clk_hw (new API)
 
     Thanks a lot Stephen!
+V7: Use syscon and regmap (thanks Rob!)
+V8: Update Documentation (drop unused "reg", unit address)
 ---
- .../bindings/clock/brcm,bcm53573-ilp.txt           |  40 ++++++
+ .../bindings/clock/brcm,bcm53573-ilp.txt           |  36 +++++
  drivers/clk/bcm/Makefile                           |   1 +
- drivers/clk/bcm/clk-bcm53573-ilp.c                 | 157 +++++++++++++++++++++
- 3 files changed, 198 insertions(+)
+ drivers/clk/bcm/clk-bcm53573-ilp.c                 | 148 +++++++++++++++++++++
+ 3 files changed, 185 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/clock/brcm,bcm53573-ilp.txt
  create mode 100644 drivers/clk/bcm/clk-bcm53573-ilp.c
 
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/clock/brcm,bcm53573-ilp.txt
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,36 @@
 +Broadcom BCM53573 ILP clock
 +===========================
 +
@@ -58,32 +54,28 @@ V6: Drop #include <linux/clk.h>
 +This binding is used for ILP clock (sometimes referred as "slow clock")
 +on Broadcom BCM53573 devices using Cortex-A7 CPU.
 +
-+This clock is part of PMU (Power Management Unit), a Broadcom's device
-+handing power-related aspects. Please note PMU contains more subdevices,
-+ILP is only one of them.
-+
 +ILP's rate has to be calculated on runtime and it depends on ALP clock
 +which has to be referenced.
 +
++This clock is part of PMU (Power Management Unit), a Broadcom's device
++handing power-related aspects. Its node must be sub-node of the PMU
++device.
++
 +Required properties:
 +- compatible: "brcm,bcm53573-ilp"
-+- reg: iomem address range of PMU (Power Management Unit)
-+- reg-names: "pmu", the only needed & supported reg right now
 +- clocks: has to reference an ALP clock
 +- #clock-cells: should be <0>
++- clock-output-names: from common clock bindings, should contain clock
++		      name
 +
 +Example:
 +
 +pmu@18012000 {
-+	compatible = "simple-bus";
-+	ranges = <0x00000000 0x18012000 0x00001000>;
-+	#address-cells = <1>;
-+	#size-cells = <1>;
++	compatible = "simple-mfd", "syscon";
++	reg = <0x18012000 0x00001000>;
 +
-+	ilp: ilp@0 {
++	ilp {
 +		compatible = "brcm,bcm53573-ilp";
-+		reg = <0 0x1000>;
-+		reg-names = "pmu";
 +		clocks = <&alp>;
 +		#clock-cells = <0>;
 +		clock-output-names = "ilp";
@@ -98,7 +90,7 @@ V6: Drop #include <linux/clk.h>
 +obj-$(CONFIG_ARCH_BCM_53573)	+= clk-bcm53573-ilp.o
 --- /dev/null
 +++ b/drivers/clk/bcm/clk-bcm53573-ilp.c
-@@ -0,0 +1,157 @@
+@@ -0,0 +1,148 @@
 +/*
 + * Copyright (C) 2016 Rafał Miłecki <rafal@milecki.pl>
 + *
@@ -110,8 +102,10 @@ V6: Drop #include <linux/clk.h>
 +#include <linux/clk-provider.h>
 +#include <linux/err.h>
 +#include <linux/io.h>
++#include <linux/mfd/syscon.h>
 +#include <linux/of.h>
 +#include <linux/of_address.h>
++#include <linux/regmap.h>
 +#include <linux/slab.h>
 +
 +#define PMU_XTAL_FREQ_RATIO			0x66c
@@ -121,15 +115,15 @@ V6: Drop #include <linux/clk.h>
 +
 +struct bcm53573_ilp {
 +	struct clk_hw hw;
-+	void __iomem *pmu;
++	struct regmap *regmap;
 +};
 +
 +static int bcm53573_ilp_enable(struct clk_hw *hw)
 +{
 +	struct bcm53573_ilp *ilp = container_of(hw, struct bcm53573_ilp, hw);
 +
-+	writel(0x10199, ilp->pmu + PMU_SLOW_CLK_PERIOD);
-+	writel(0x10000, ilp->pmu + 0x674);
++	regmap_write(ilp->regmap, PMU_SLOW_CLK_PERIOD, 0x10199);
++	regmap_write(ilp->regmap, 0x674, 0x10000);
 +
 +	return 0;
 +}
@@ -138,24 +132,25 @@ V6: Drop #include <linux/clk.h>
 +{
 +	struct bcm53573_ilp *ilp = container_of(hw, struct bcm53573_ilp, hw);
 +
-+	writel(0, ilp->pmu + PMU_SLOW_CLK_PERIOD);
-+	writel(0, ilp->pmu + 0x674);
++	regmap_write(ilp->regmap, PMU_SLOW_CLK_PERIOD, 0);
++	regmap_write(ilp->regmap, 0x674, 0);
 +}
 +
 +static unsigned long bcm53573_ilp_recalc_rate(struct clk_hw *hw,
 +					      unsigned long parent_rate)
 +{
 +	struct bcm53573_ilp *ilp = container_of(hw, struct bcm53573_ilp, hw);
-+	void __iomem *pmu = ilp->pmu;
++	struct regmap *regmap = ilp->regmap;
 +	u32 last_val, cur_val;
 +	int sum = 0, num = 0, loop_num = 0;
 +	int avg;
 +
 +	/* Enable measurement */
-+	writel(XTAL_CTL_EN, pmu + PMU_XTAL_FREQ_RATIO);
++	regmap_write(regmap, PMU_XTAL_FREQ_RATIO, XTAL_CTL_EN);
 +
 +	/* Read initial value */
-+	last_val = readl(pmu + PMU_XTAL_FREQ_RATIO) & XTAL_ALP_PER_4ILP;
++	regmap_read(regmap, PMU_XTAL_FREQ_RATIO, &last_val);
++	last_val &= XTAL_ALP_PER_4ILP;
 +
 +	/*
 +	 * At minimum we should loop for a bit to let hardware do the
@@ -163,7 +158,8 @@ V6: Drop #include <linux/clk.h>
 +	 * precision lets try getting 20 different values for and use average.
 +	 */
 +	while (num < 20) {
-+		cur_val = readl(pmu + PMU_XTAL_FREQ_RATIO) & XTAL_ALP_PER_4ILP;
++		regmap_read(regmap, PMU_XTAL_FREQ_RATIO, &cur_val);
++		cur_val &= XTAL_ALP_PER_4ILP;
 +
 +		if (cur_val != last_val) {
 +			/* Got different value, use it */
@@ -182,7 +178,7 @@ V6: Drop #include <linux/clk.h>
 +	}
 +
 +	/* Disable measurement to save power */
-+	writel(0x0, pmu + PMU_XTAL_FREQ_RATIO);
++	regmap_write(regmap, PMU_XTAL_FREQ_RATIO, 0x0);
 +
 +	avg = sum / num;
 +
@@ -198,10 +194,8 @@ V6: Drop #include <linux/clk.h>
 +static void bcm53573_ilp_init(struct device_node *np)
 +{
 +	struct bcm53573_ilp *ilp;
-+	struct resource res;
 +	struct clk_init_data init = { 0 };
 +	const char *parent_name;
-+	int index;
 +	int err;
 +
 +	ilp = kzalloc(sizeof(*ilp), GFP_KERNEL);
@@ -214,18 +208,9 @@ V6: Drop #include <linux/clk.h>
 +		goto err_free_ilp;
 +	}
 +
-+	/* TODO: This looks generic, try making it OF helper. */
-+	index = of_property_match_string(np, "reg-names", "pmu");
-+	if (index < 0) {
-+		err = index;
-+		goto err_free_ilp;
-+	}
-+	err = of_address_to_resource(np, index, &res);
-+	if (err)
-+		goto err_free_ilp;
-+	ilp->pmu = ioremap(res.start, resource_size(&res));
-+	if (IS_ERR(ilp->pmu)) {
-+		err = PTR_ERR(ilp->pmu);
++	ilp->regmap = syscon_node_to_regmap(of_get_parent(np));
++	if (IS_ERR(ilp->regmap)) {
++		err = PTR_ERR(ilp->regmap);
 +		goto err_free_ilp;
 +	}
 +
@@ -237,7 +222,7 @@ V6: Drop #include <linux/clk.h>
 +	ilp->hw.init = &init;
 +	err = clk_hw_register(NULL, &ilp->hw);
 +	if (err)
-+		goto err_unmap_pmu;
++		goto err_free_ilp;
 +
 +	err = of_clk_add_hw_provider(np, of_clk_hw_simple_get, &ilp->hw);
 +	if (err)
@@ -247,8 +232,6 @@ V6: Drop #include <linux/clk.h>
 +
 +err_clk_hw_unregister:
 +	clk_hw_unregister(&ilp->hw);
-+err_unmap_pmu:
-+	iounmap(ilp->pmu);
 +err_free_ilp:
 +	kfree(ilp);
 +	pr_err("Failed to init ILP clock: %d\n", err);
