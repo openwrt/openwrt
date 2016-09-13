@@ -27,7 +27,7 @@ Signed-off-by: Antonio Quartulli <ordex@autistici.org>
  	 * bssid_hint - BSSID of a proposed AP
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4779,6 +4779,22 @@ retry:
+@@ -4780,6 +4780,22 @@ retry:
  		nla_put_u32(msg, NL80211_ATTR_MCAST_RATE, params->mcast_rate);
  	}
  

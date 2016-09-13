@@ -1,0 +1,39 @@
+From 23dc11dfbd8e78a2450120e9afc83c1d32a8e683 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Mon, 12 Sep 2016 19:02:34 +0200
+Subject: [PATCH] Revert "nl80211: Remove duplicated check in
+ nl80211_setup_ap()"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit 647862eb60c324015ea31293cc052558b5185ca4.
+
+The second check of device_ap_sme looks like duplicated, but it isn't
+actually. The trick is nl80211_create_monitor_interface may change that
+variable value and the second evaluation may give a different result.
+
+This definitely isn't a very clear code, but that change caused a
+regression for drivers that:
+1) Don't report NL80211_ATTR_DEVICE_AP_SME
+2) Don't support monitor mode
+3) Don't support subscribing for PROBE_REQ and/or ACTION frames
+like brcmfmac. With such drivers hostapd doesn't start anymore.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ src/drivers/driver_nl80211.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4434,7 +4434,8 @@ static int nl80211_setup_ap(struct i802_
+ 				   "nl80211: Failed to subscribe for mgmt frames from SME driver - trying to run without it");
+ 
+ 	if (!drv->device_ap_sme && drv->use_monitor &&
+-	    nl80211_create_monitor_interface(drv))
++	    nl80211_create_monitor_interface(drv) &&
++	    !drv->device_ap_sme)
+ 		return -1;
+ 
+ 	if (drv->device_ap_sme &&
