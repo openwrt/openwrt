@@ -579,6 +579,27 @@ endef
 $(eval $(call KernelPackage,nbd))
 
 
+define KernelPackage/ubi
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Unsorted block images
+  KCONFIG:= \
+	CONFIG_MTD_UBI \
+	CONFIG_MTD_UBI_BLOCK=y
+  FILES:=$(LINUX_DIR)/drivers/mtd/ubi/ubi.ko
+  AUTOLOAD:=$(call AutoLoad,30,ubi,1)
+endef
+
+define KernelPackage/ubi/description
+ UBI is a software layer above MTD layer which admits of LVM-like
+ logical volumes on top of MTD devices, hides some complexities of
+ flash chips like wear and bad blocks and provides some other useful
+ capabilities. Please, consult the MTD web site for more details
+ (www.linux-mtd.infradead.org).
+endef
+
+$(eval $(call KernelPackage,ubi))
+
+
 define KernelPackage/scsi-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SCSI device support
