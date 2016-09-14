@@ -57,7 +57,7 @@ TARGET_DEVICES += wsr-1166
 
 define Device/dir-860l-b1
   DTS := DIR-860L-B1
-  BLOCKSIZE := 4k
+  BLOCKSIZE := 64k
   IMAGES += factory.bin
   KERNEL := kernel-bin | patch-dtb | relocate-kernel | lzma | uImage lzma
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

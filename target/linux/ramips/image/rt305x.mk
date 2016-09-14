@@ -432,7 +432,7 @@ TARGET_DEVICES += wcr150gn
 
 define Device/mzk-dp150n
   DTS := MZK-DP150N
-  BLOCKSIZE := 4k
+  BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Planex MZK-DP150N
   DEVICE_PACKAGES := kmod-spi-dev
