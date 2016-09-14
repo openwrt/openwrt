@@ -61,7 +61,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		goto err_remove;
  
 +	/* auto-attach "rootfs" volume if existing and non-ubifs */
-+	if (config_enabled(CONFIG_MTD_ROOTFS_ROOT_DEV))
++	if (IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) && IS_BUILTIN(CONFIG_MTD_UBI))
 +		ubiblock_create_auto_rootfs();
 +
  	/*
