@@ -436,6 +436,23 @@ endef
 $(eval $(call KernelPackage,fs-squashfs))
 
 
+define KernelPackage/fs-ubifs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=UBIFS file system support
+  KCONFIG:=CONFIG_UBIFS_FS
+  FILES:=$(LINUX_DIR)/fs/ubifs/ubifs.ko
+  AUTOLOAD:=$(call AutoLoad,30,ubifs,1)
+  DEPENDS:=+kmod-ubi
+  $(call AddDepends/nls)
+endef
+
+define KernelPackage/fs-ubifs/description
+ UBIFS is a file system for flash devices which works on top of UBI.
+endef
+
+$(eval $(call KernelPackage,fs-ubifs))
+
+
 define KernelPackage/fs-udf
   SUBMENU:=$(FS_MENU)
   TITLE:=UDF filesystem support
