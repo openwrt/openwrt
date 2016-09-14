@@ -6,20 +6,20 @@ Index: linux-4.1.16/arch/mips/ath79/Kconfig
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
-+config ATH79_MACH_ANONABOX_PRO
-+	bool "Anonabox Pro board"
-+        select SOC_QCA953X
-+        select ATH79_DEV_GPIO_BUTTONS
-+        select ATH79_DEV_LEDS_GPIO
-+        select ATH79_DEV_SPI
-+        select ATH79_DEV_USB
-+        select ATH79_DEV_WMAC
-+        select ATH79_DEV_ETH
-+        select ATH79_DEV_M25P80
-+        help
-+          Say 'Y' here if you want your kernel to support the
-+          Anonabox Pro board.
-+
+config ATH79_MACH_ANONABOX_PRO
+	bool "Anonabox Pro board"
+        select SOC_QCA953X
+        select ATH79_DEV_GPIO_BUTTONS
+        select ATH79_DEV_LEDS_GPIO
+        select ATH79_DEV_SPI
+        select ATH79_DEV_USB
+        select ATH79_DEV_WMAC
+        select ATH79_DEV_ETH
+        select ATH79_DEV_M25P80
+        help
+          Say 'Y' here if you want your kernel to support the
+          Anonabox Pro board.
+
  source "arch/mips/ath79/Kconfig.openwrt"
  
  endmenu
