@@ -8,7 +8,7 @@
 -			FILE *in, *out;
 -			struct _curl_cb_data cb_data;
 -			char *tmp_file_name = NULL;
- 
+-
 -			sprintf_alloc(&tmp_file_name, "%s/%s.gz", tmp,
 -				      src->name);
 -
@@ -26,7 +26,7 @@
 -			err = opkg_download(url, tmp_file_name,
 -					  (curl_progress_func) curl_progress_cb,
 -					  &cb_data, 0);
--
+ 
 -			if (err == 0) {
 -				opkg_msg(INFO, "Inflating %s...\n",
 -						tmp_file_name);
@@ -87,34 +87,38 @@
  	       opkg_msg(NOTICE, "Updated list of available packages in %s.\n",
 --- a/libopkg/pkg_hash.c
 +++ b/libopkg/pkg_hash.c
-@@ -102,12 +102,18 @@ pkg_hash_add_from_file(const char *file_
- 			pkg_src_t *src, pkg_dest_t *dest, int is_status_file)
- {
- 	pkg_t *pkg;
--	FILE *fp;
-+	FILE *fp, *fp_c = NULL;
+@@ -29,6 +29,7 @@
+ #include "sprintf_alloc.h"
+ #include "file_util.h"
+ #include "libbb/libbb.h"
++#include "libbb/gzip.h"
+ 
+ void
+ pkg_hash_init(void)
+@@ -106,8 +107,15 @@ pkg_hash_add_from_file(const char *file_
  	char *buf;
  	const size_t len = 4096;
  	int ret = 0;
-+	int pid;
- 
- 	fp = fopen(file_name, "r");
-+	if (fp && src && src->gzip) {
-+		fp_c = fp;
-+		fp = gz_open(fp_c, &pid);
-+	}
++	struct gzip_handle zh;
 +
++	if (src && src->gzip) {
++		fp = gzip_fdopen(&zh, file_name);
++	}
++	else {
++		fp = fopen(file_name, "r");
++ 	}
+ 
+-	fp = fopen(file_name, "r");
  	if (fp == NULL) {
  		opkg_perror(ERROR, "Failed to open %s", file_name);
  		return -1;
-@@ -154,6 +160,10 @@ pkg_hash_add_from_file(const char *file_
- 
+@@ -155,6 +163,9 @@ pkg_hash_add_from_file(const char *file_
  	free(buf);
  	fclose(fp);
-+	if (fp_c) {
-+		fclose(fp_c);
-+		gz_close(pid);
-+	}
  
++	if (src && src->gzip)
++		gzip_close(&zh);
++
  	return ret;
  }
+ 
