@@ -16,17 +16,23 @@ define Package/brcmfmac-firmware-4366b1-pcie/install
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-4366b1-pcie))
 
-Package/brcmfmac-firmware-sdio = $(call Package/firmware-default,Broadcom BCM43xx fullmac SDIO firmware)
-define Package/brcmfmac-firmware-sdio/install
+Package/brcmfmac-firmware-4329-sdio = $(call Package/firmware-default,Broadcom BCM4329 FullMac SDIO firmware)
+define Package/brcmfmac-firmware-4329-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/brcm/brcmfmac4329-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4329-sdio.bin
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-4329-sdio))
+
+Package/brcmfmac-firmware-43362-sdio = $(call Package/firmware-default,Broadcom BCM43362 FullMac SDIO firmware)
+define Package/brcmfmac-firmware-43362-sdio/install
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/brcm/brcmfmac43362-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43362-sdio.bin
 endef
-$(eval $(call BuildPackage,brcmfmac-firmware-sdio))
+$(eval $(call BuildPackage,brcmfmac-firmware-43362-sdio))
 
 Package/brcmfmac-firmware-usb = $(call Package/firmware-default,Broadcom BCM43xx fullmac USB firmware)
 define Package/brcmfmac-firmware-usb/install
