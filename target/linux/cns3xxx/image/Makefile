@@ -11,14 +11,19 @@ define Image/Prepare
 	mkimage -A arm -O linux -T kernel -C none -a 0x20008000 -e 0x20008000 -n 'OpenWrt Linux-$(LINUX_VERSION)' -d $(KDIR)/zImage $(KDIR)/uImage
 endef
 
+LEGACY_NOR_KERNEL_SIZE = 2048k
+LEGACY_SPI_KERNEL_SIZE = 1536k
+
 # Build sysupgrade image
-define BuildFirmware/Generic
-	dd if=$(KDIR)/uImage of=$(KDIR)/uImage.pad bs=64k conv=sync; \
-	dd if=$(KDIR)/root.$(1) of=$(KDIR)/root.$(1).pad bs=128k conv=sync; \
+define BuildFirmware/Legacy
+	dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade.bin \
+		of=$(KDIR)/uImage.pad bs=$(3) count=1
+	dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade.bin \
+		of=$(KDIR)/root.$(1).pad bs=$(3) skip=1
 	sh $(TOPDIR)/scripts/combined-image.sh \
 		$(KDIR)/uImage.pad \
 		$(KDIR)/root.$(1).pad \
-		$(BIN_DIR)/$(IMG_PREFIX)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))-sysupgrade.bin
+		$(BIN_DIR)/$(IMG_PREFIX)-$(1)-$(2)-legacy-sysupgrade.bin
 endef
 
 define Image/BuildKernel/Initramfs
@@ -26,22 +31,14 @@ define Image/BuildKernel/Initramfs
 endef
 
 define Image/Build
+	cat $(KDIR)/uImage $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade.bin
 	$(call Image/Build/$(1),$(1))
-	$(call BuildFirmware/Generic,$(1))
-	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
+	$(call BuildFirmware/Legacy,$(1),laguna_spi,$(LEGACY_SPI_KERNEL_SIZE))
+	$(call BuildFirmware/Legacy,$(1),laguna_nor,$(LEGACY_NOR_KERNEL_SIZE))
 endef
 
 define Image/Build/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=128k conv=sync
-	( \
-	dd if=$(KDIR)/uImage bs=2048k conv=sync; \
-	dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1)_laguna_nor.bin
-	( \
-	dd if=$(KDIR)/uImage bs=1536k conv=sync; \
-	dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
-	) > $(BIN_DIR)/$(IMG_PREFIX)-$(1)_laguna_spi.bin
+	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade.bin)
 endef
 
 $(eval $(call BuildImage))

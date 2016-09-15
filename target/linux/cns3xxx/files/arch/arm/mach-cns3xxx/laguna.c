@@ -122,13 +122,8 @@ static struct mtd_partition laguna_nor_partitions[] = {
 		.size		= SZ_128K,
 		.offset		= SZ_256K,
 	}, {
-		.name		= "kernel",
-		.size		= SZ_2M,
+		.name		= "firmware",
 		.offset		= SZ_256K + SZ_128K,
-	}, {
-		.name		= "rootfs",
-		.size		= SZ_16M - SZ_256K - SZ_128K - SZ_2M,
-		.offset		= SZ_256K + SZ_128K + SZ_2M,
 	},
 };
 
@@ -168,13 +163,8 @@ static struct mtd_partition laguna_spi_partitions[] = {
 		.size		= SZ_256K,
 		.offset		= SZ_256K,
 	}, {
-		.name		= "kernel",
-		.size		= SZ_1M + SZ_512K,
+		.name		= "firmware",
 		.offset		= SZ_512K,
-	}, {
-		.name		= "rootfs",
-		.size		= SZ_16M - SZ_2M,
-		.offset		= SZ_2M,
 	},
 };
 
@@ -1017,49 +1007,19 @@ static int __init laguna_model_setup(void)
 		platform_device_register(&laguna_uart);
 
 		if (laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) {
-			switch (laguna_info.nor_flash_size) {
-				case 1:
-					laguna_nor_partitions[3].size = SZ_8M - SZ_256K - SZ_128K - SZ_2M;
-					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_8M - 1;
-				break;
-				case 2:
-					laguna_nor_partitions[3].size = SZ_16M - SZ_256K - SZ_128K - SZ_2M;
-					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_16M - 1;
-				break;
-				case 3:
-					laguna_nor_partitions[3].size = SZ_32M - SZ_256K - SZ_128K - SZ_2M;
-					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_32M - 1;
-				break;
-				case 4:
-					laguna_nor_partitions[3].size = SZ_64M - SZ_256K - SZ_128K - SZ_2M;
-					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_64M - 1;
-				break;
-				case 5:
-					laguna_nor_partitions[3].size = SZ_128M - SZ_256K - SZ_128K - SZ_2M;
-					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_128M - 1;
-				break;
-			}
+			laguna_nor_partitions[2].size =
+				(SZ_4M << laguna_info.nor_flash_size) -
+				laguna_nor_partitions[2].offset;
+			laguna_nor_res.end = CNS3XXX_FLASH_BASE +
+				laguna_nor_partitions[2].offset +
+				laguna_nor_partitions[2].size - 1;
 			platform_device_register(&laguna_nor_pdev);
 		}
 
 		if (laguna_info.config2_bitmap & (SPI_FLASH_LOAD)) {
-			switch (laguna_info.spi_flash_size) {
-				case 1:
-					laguna_spi_partitions[3].size = SZ_4M - SZ_2M;
-				break;
-				case 2:
-					laguna_spi_partitions[3].size = SZ_8M - SZ_2M;
-				break;
-				case 3:
-					laguna_spi_partitions[3].size = SZ_16M - SZ_2M;
-				break;
-				case 4:
-					laguna_spi_partitions[3].size = SZ_32M - SZ_2M;
-				break;
-				case 5:
-					laguna_spi_partitions[3].size = SZ_64M - SZ_2M;
-				break;
-			}
+			laguna_spi_partitions[2].size =
+				(SZ_2M << laguna_info.spi_flash_size) -
+				laguna_spi_partitions[2].offset;
 			spi_register_board_info(ARRAY_AND_SIZE(laguna_spi_devices));
 		}
 
