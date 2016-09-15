@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=brcmfmac43430-firmware-sdio
+PKG_NAME:=brcmfmac-firmware-43430-sdio
 PKG_VERSION:=2016-06-07
 PKG_RELEASE:=a7491de4c4b2f1ceb5d0dfa5350b95e5c6fb9bd4
 
@@ -32,14 +32,14 @@ define Download/brcmfmac43430_sdio_txt
 endef
 $(eval $(call Download,brcmfmac43430_sdio_txt))
 
-define Package/brcmfmac43430-firmware-sdio
+define Package/brcmfmac-firmware-43430-sdio
   SECTION:=firmware
   CATEGORY:=Firmware
-  TITLE:=Broadcom BCM43430 fullmac SDIO firmware
+  TITLE:=Broadcom BCM43430 FullMac SDIO firmware
   URL:=http://www.broadcom.com/
 endef
 
-define Package/brcmfmac43430-firmware-sdio/description
+define Package/brcmfmac-firmware-43430-sdio/description
 	Broadcom BCM43430 fullmac SDIO firmware
 endef
 
@@ -54,10 +54,10 @@ define Build/Compile
 	true
 endef
 
-define Package/brcmfmac43430-firmware-sdio/install
+define Package/brcmfmac-firmware-43430-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/brcmfmac43430-sdio.bin $(1)/lib/firmware/brcm/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/brcmfmac43430-sdio.txt $(1)/lib/firmware/brcm/
 endef
 
-$(eval $(call BuildPackage,brcmfmac43430-firmware-sdio))
+$(eval $(call BuildPackage,brcmfmac-firmware-43430-sdio))
