@@ -242,7 +242,7 @@ define KernelPackage/usb-gadget-ehci-debug
 	CONFIG_USB_G_DBGP \
 	CONFIG_USB_G_DBGP_SERIAL=y \
 	CONFIG_USB_G_DBGP_PRINTK=n
-  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite +kmod-usb-serial-gadget
+  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite +kmod-usb-gadget-serial
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/legacy/g_dbgp.ko
   AUTOLOAD:=$(call AutoLoad,52,g_dbgp)
   $(call AddDepends/usb)
