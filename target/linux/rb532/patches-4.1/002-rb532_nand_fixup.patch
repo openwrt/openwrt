@@ -2,7 +2,7 @@
 +++ b/arch/mips/rb532/devices.c
 @@ -140,6 +140,19 @@ static struct platform_device cf_slot0 =
  };
-
+ 
  /* Resources and device for NAND */
 +
 +/*
@@ -19,11 +19,11 @@
 +
  static int rb532_dev_ready(struct mtd_info *mtd)
  {
-	return gpio_get_value(GPIO_RDY);
+ 	return gpio_get_value(GPIO_RDY);
 @@ -254,6 +267,16 @@ static struct platform_device *rb532_dev
  /* NAND definitions */
  #define NAND_CHIP_DELAY 25
-
+ 
 +static int rb532_nand_fixup(struct mtd_info *mtd)
 +{
 +	struct nand_chip *chip = mtd->priv;
@@ -36,10 +36,12 @@
 +
  static void __init rb532_nand_setup(void)
  {
-	switch (mips_machtype) {
+ 	switch (mips_machtype) {
 @@ -272,6 +295,7 @@ static void __init rb532_nand_setup(void
-	rb532_nand_data.chip.nr_partitions = ARRAY_SIZE(rb532_partition_info);
-	rb532_nand_data.chip.partitions = rb532_partition_info;
-	rb532_nand_data.chip.chip_delay = NAND_CHIP_DELAY;
+ 	rb532_nand_data.chip.nr_partitions = ARRAY_SIZE(rb532_partition_info);
+ 	rb532_nand_data.chip.partitions = rb532_partition_info;
+ 	rb532_nand_data.chip.chip_delay = NAND_CHIP_DELAY;
 +	rb532_nand_data.chip.chip_fixup = &rb532_nand_fixup;
  }
+ 
+ 
