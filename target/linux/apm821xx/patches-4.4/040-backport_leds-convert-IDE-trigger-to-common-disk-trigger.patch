@@ -37,19 +37,17 @@ Signed-off-by: Jacek Anaszewski <j.anaszewski@samsung.com>
  create mode 100644 drivers/leds/trigger/ledtrig-disk.c
  delete mode 100644 drivers/leds/trigger/ledtrig-ide-disk.c
 
-diff --git a/drivers/ata/libata-core.c b/drivers/ata/libata-core.c
-index 6be7770..2eca572 100644
 --- a/drivers/ata/libata-core.c
 +++ b/drivers/ata/libata-core.c
-@@ -69,6 +69,7 @@
- #include <asm/unaligned.h>
+@@ -67,6 +67,7 @@
+ #include <asm/byteorder.h>
  #include <linux/cdrom.h>
  #include <linux/ratelimit.h>
 +#include <linux/leds.h>
  #include <linux/pm_runtime.h>
  #include <linux/platform_device.h>
  
-@@ -5072,6 +5073,9 @@ void ata_qc_complete(struct ata_queued_cmd *qc)
+@@ -4914,6 +4915,9 @@ void ata_qc_complete(struct ata_queued_c
  {
  	struct ata_port *ap = qc->ap;
  
@@ -59,11 +57,9 @@ index 6be7770..2eca572 100644
  	/* XXX: New EH and old EH use different mechanisms to
  	 * synchronize EH with regular execution path.
  	 *
-diff --git a/drivers/ide/ide-disk.c b/drivers/ide/ide-disk.c
-index 05dbcce..5ceb176 100644
 --- a/drivers/ide/ide-disk.c
 +++ b/drivers/ide/ide-disk.c
-@@ -186,7 +186,7 @@ static ide_startstop_t ide_do_rw_disk(ide_drive_t *drive, struct request *rq,
+@@ -186,7 +186,7 @@ static ide_startstop_t ide_do_rw_disk(id
  	BUG_ON(drive->dev_flags & IDE_DFLAG_BLOCKED);
  	BUG_ON(rq->cmd_type != REQ_TYPE_FS);
  
@@ -72,8 +68,6 @@ index 05dbcce..5ceb176 100644
  
  	pr_debug("%s: %sing: block=%llu, sectors=%u\n",
  		 drive->name, rq_data_dir(rq) == READ ? "read" : "writ",
-diff --git a/drivers/leds/trigger/Kconfig b/drivers/leds/trigger/Kconfig
-index 9893d91..3f9ddb9 100644
 --- a/drivers/leds/trigger/Kconfig
 +++ b/drivers/leds/trigger/Kconfig
 @@ -33,12 +33,12 @@ config LEDS_TRIGGER_ONESHOT
@@ -92,9 +86,7 @@ index 9893d91..3f9ddb9 100644
 +	  This allows LEDs to be controlled by disk activity.
  	  If unsure, say Y.
  
- config LEDS_TRIGGER_MTD
-diff --git a/drivers/leds/trigger/Makefile b/drivers/leds/trigger/Makefile
-index 8cc64a4..a72c43c 100644
+ config LEDS_TRIGGER_HEARTBEAT
 --- a/drivers/leds/trigger/Makefile
 +++ b/drivers/leds/trigger/Makefile
 @@ -1,6 +1,6 @@
@@ -104,10 +96,7 @@ index 8cc64a4..a72c43c 100644
 +obj-$(CONFIG_LEDS_TRIGGER_DISK)		+= ledtrig-disk.o
  obj-$(CONFIG_LEDS_TRIGGER_HEARTBEAT)	+= ledtrig-heartbeat.o
  obj-$(CONFIG_LEDS_TRIGGER_BACKLIGHT)	+= ledtrig-backlight.o
- obj-$(CONFIG_LEDS_TRIGGER_GPIO)	+= ledtrig-gpio.o
-diff --git a/drivers/leds/trigger/ledtrig-disk.c b/drivers/leds/trigger/ledtrig-disk.c
-new file mode 100644
-index 0000000..cd525b4
+ obj-$(CONFIG_LEDS_TRIGGER_GPIO)		+= ledtrig-gpio.o
 --- /dev/null
 +++ b/drivers/leds/trigger/ledtrig-disk.c
 @@ -0,0 +1,41 @@
@@ -152,11 +141,8 @@ index 0000000..cd525b4
 +	return 0;
 +}
 +device_initcall(ledtrig_disk_init);
-diff --git a/drivers/leds/trigger/ledtrig-ide-disk.c b/drivers/leds/trigger/ledtrig-ide-disk.c
-deleted file mode 100644
-index 15123d3..0000000
---- a/drivers/leds/trigger/ledtrig-ide-disk.c	2016-07-11 18:31:24.000000000 +0200
-+++ /dev/null	2016-08-08 12:56:55.887448160 +0200
+--- a/drivers/leds/trigger/ledtrig-ide-disk.c
++++ /dev/null
 @@ -1,47 +0,0 @@
 -/*
 - * LED IDE-Disk Activity Trigger
@@ -205,11 +191,9 @@ index 15123d3..0000000
 -MODULE_AUTHOR("Richard Purdie <rpurdie@openedhand.com>");
 -MODULE_DESCRIPTION("LED IDE Disk Activity Trigger");
 -MODULE_LICENSE("GPL");
-diff --git a/include/linux/leds.h b/include/linux/leds.h
-index e5e7f2e..0aa3701 100644
 --- a/include/linux/leds.h
 +++ b/include/linux/leds.h
-@@ -325,10 +325,10 @@ static inline void *led_get_trigger_data(struct led_classdev *led_cdev)
+@@ -302,10 +302,10 @@ static inline void *led_get_trigger_data
  #endif /* CONFIG_LEDS_TRIGGERS */
  
  /* Trigger specific functions */
@@ -222,7 +206,4 @@ index e5e7f2e..0aa3701 100644
 +static inline void ledtrig_disk_activity(void) {}
  #endif
  
- #ifdef CONFIG_LEDS_TRIGGER_MTD
--- 
-2.8.1
-
+ #if defined(CONFIG_LEDS_TRIGGER_CAMERA) || defined(CONFIG_LEDS_TRIGGER_CAMERA_MODULE)
