@@ -111,35 +111,46 @@ TARGET_DEVICES += cpe210-220 cpe510-520
 
 define Device/tl-wdr4300-v1
 $(Device/tplink-8mlzma)
-  DEVICE_TITLE := TP-LINK TL-WDR4300
+  DEVICE_TITLE := TP-LINK TL-WDR4300 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
-  BOARDNAME = TL-WDR4300
-  DEVICE_PROFILE = TLWDR4300
+  BOARDNAME := TL-WDR4300
+  DEVICE_PROFILE := TLWDR4300
   TPLINK_HWID := 0x43000001
 endef
 
 define Device/tl-wdr3500-v1
-$(Device/tl-wdr4300-v1)
+$(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK TL-WDR3500 v1
-  BOARDNAME = TL-WDR3500
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  BOARDNAME := TL-WDR3500
+  DEVICE_PROFILE := TLWDR4300
   TPLINK_HWID := 0x35000001
 endef
 
 define Device/tl-wdr3600-v1
-$(Device/tl-wdr4300-v1)
+$(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK TL-WDR3600 v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  BOARDNAME := TL-WDR4300
+  DEVICE_PROFILE := TLWDR4300
   TPLINK_HWID := 0x36000001
 endef
 
 define Device/tl-wdr4300-v1-il
-$(Device/tl-wdr4300-v1)
+$(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK TL-WDR4300 v1 IL
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  BOARDNAME := TL-WDR4300
+  DEVICE_PROFILE := TLWDR4300
   TPLINK_HWID := 0x43008001
 endef
 
 define Device/tl-wdr4310-v1
-$(Device/tl-wdr4300-v1)
+$(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK TL-WDR4310 v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  BOARDNAME := TL-WDR4300
+  DEVICE_PROFILE = TLWDR4300
   TPLINK_HWID := 0x43100001
 endef
 
@@ -864,4 +875,3 @@ define Device/tl-wa7210n-v2
     CONSOLE := ttyATH0,115200
 endef
 TARGET_DEVICES += tl-wa7210n-v2
-
