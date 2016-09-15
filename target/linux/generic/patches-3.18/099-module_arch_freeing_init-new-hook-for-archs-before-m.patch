@@ -145,7 +145,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  #endif
 --- a/kernel/module.c
 +++ b/kernel/module.c
-@@ -1837,6 +1837,10 @@ void __weak module_arch_cleanup(struct m
+@@ -1840,6 +1840,10 @@ void __weak module_arch_cleanup(struct m
  {
  }
  
@@ -156,7 +156,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  /* Free a module, remove from lists, etc. */
  static void free_module(struct module *mod)
  {
-@@ -1869,6 +1873,7 @@ static void free_module(struct module *m
+@@ -1872,6 +1876,7 @@ static void free_module(struct module *m
  
  	/* This may be NULL, but that's OK */
  	unset_module_init_ro_nx(mod);
@@ -164,7 +164,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  	module_free(mod, mod->module_init);
  	kfree(mod->args);
  	percpu_modfree(mod);
-@@ -2958,6 +2963,7 @@ static struct module *layout_and_allocat
+@@ -2983,6 +2988,7 @@ static struct module *layout_and_allocat
  static void module_deallocate(struct module *mod, struct load_info *info)
  {
  	percpu_modfree(mod);
@@ -172,8 +172,8 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  	module_free(mod, mod->module_init);
  	module_free(mod, mod->module_core);
  }
-@@ -3081,6 +3087,7 @@ static int do_init_module(struct module
- 	mod->strtab = mod->core_strtab;
+@@ -3105,6 +3111,7 @@ static int do_init_module(struct module
+ 	rcu_assign_pointer(mod->kallsyms, &mod->core_kallsyms);
  #endif
  	unset_module_init_ro_nx(mod);
 +	module_arch_freeing_init(mod);
