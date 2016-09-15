@@ -116,6 +116,7 @@ $(Device/tplink-8mlzma)
   BOARDNAME := TL-WDR4300
   DEVICE_PROFILE := TLWDR4300
   TPLINK_HWID := 0x43000001
+  IMAGE/factory.bin := append-rootfs | mktplinkfw factory -C US
 endef
 
 define Device/tl-wdr3500-v1
@@ -134,6 +135,7 @@ $(Device/tplink-8mlzma)
   BOARDNAME := TL-WDR4300
   DEVICE_PROFILE := TLWDR4300
   TPLINK_HWID := 0x36000001
+  IMAGE/factory.bin := append-rootfs | mktplinkfw factory -C US
 endef
 
 define Device/tl-wdr4300-v1-il
