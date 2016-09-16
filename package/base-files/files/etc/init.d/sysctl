@@ -10,7 +10,7 @@ set_vm_min_free() {
 	elif [ "$mem" -gt 32768 ]; then # 64M
 		val=8192
 	elif [ "$mem" -gt 16384 ]; then # 32M
-		val=4096
+		val=1024
 	else
 		return
 	fi
