@@ -58,7 +58,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
 
 --- a/fs/overlayfs/copy_up.c
 +++ b/fs/overlayfs/copy_up.c
-@@ -303,7 +303,6 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -305,7 +305,6 @@ int ovl_copy_up_one(struct dentry *paren
  	struct dentry *upperdir;
  	struct dentry *upperdentry;
  	const struct cred *old_cred;
@@ -66,7 +66,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	char *link = NULL;
  
  	if (WARN_ON(!workdir))
-@@ -322,28 +321,7 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -324,28 +323,7 @@ int ovl_copy_up_one(struct dentry *paren
  			return PTR_ERR(link);
  	}
  
@@ -96,7 +96,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  
  	err = -EIO;
  	if (lock_rename(workdir, upperdir) != NULL) {
-@@ -366,9 +344,7 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -368,9 +346,7 @@ int ovl_copy_up_one(struct dentry *paren
  out_unlock:
  	unlock_rename(workdir, upperdir);
  	revert_creds(old_cred);
@@ -309,7 +309,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	kfree(ufs);
  }
  
-@@ -1068,10 +1078,14 @@ static int ovl_fill_super(struct super_b
+@@ -1087,10 +1097,14 @@ static int ovl_fill_super(struct super_b
  	else
  		sb->s_d_op = &ovl_dentry_operations;
  
@@ -325,7 +325,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  
  	root_dentry = d_make_root(ovl_new_inode(sb, S_IFDIR, oe));
  	if (!root_dentry)
-@@ -1104,6 +1118,8 @@ static int ovl_fill_super(struct super_b
+@@ -1123,6 +1137,8 @@ static int ovl_fill_super(struct super_b
  
  out_free_oe:
  	kfree(oe);

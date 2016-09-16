@@ -23,7 +23,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
 
 --- a/drivers/net/ethernet/intel/igb/e1000_82575.c
 +++ b/drivers/net/ethernet/intel/igb/e1000_82575.c
-@@ -612,13 +612,25 @@ static s32 igb_get_invariants_82575(stru
+@@ -613,13 +613,25 @@ static s32 igb_get_invariants_82575(stru
  	switch (link_mode) {
  	case E1000_CTRL_EXT_LINK_MODE_1000BASE_KX:
  		hw->phy.media_type = e1000_media_type_internal_serdes;
@@ -49,7 +49,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  		}
  		/* fall through for I2C based SGMII */
  	case E1000_CTRL_EXT_LINK_MODE_PCIE_SERDES:
-@@ -635,8 +647,11 @@ static s32 igb_get_invariants_82575(stru
+@@ -636,8 +648,11 @@ static s32 igb_get_invariants_82575(stru
  				hw->phy.media_type = e1000_media_type_copper;
  				dev_spec->sgmii_active = true;
  			}
@@ -221,7 +221,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  /**
   *  igb_probe - Device Initialization Routine
   *  @pdev: PCI device information struct
-@@ -2639,6 +2760,13 @@ static int igb_probe(struct pci_dev *pde
+@@ -2641,6 +2762,13 @@ static int igb_probe(struct pci_dev *pde
  		}
  	}
  	pm_runtime_put_noidle(&pdev->dev);
@@ -235,7 +235,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  	return 0;
  
  err_register:
-@@ -2786,6 +2914,10 @@ static void igb_remove(struct pci_dev *p
+@@ -2788,6 +2916,10 @@ static void igb_remove(struct pci_dev *p
  	struct e1000_hw *hw = &adapter->hw;
  
  	pm_runtime_get_noresume(&pdev->dev);
@@ -246,7 +246,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  #ifdef CONFIG_IGB_HWMON
  	igb_sysfs_exit(adapter);
  #endif
-@@ -3102,6 +3234,12 @@ static int __igb_open(struct net_device
+@@ -3111,6 +3243,12 @@ static int __igb_open(struct net_device
  	if (!resuming)
  		pm_runtime_put(&pdev->dev);
  
@@ -259,7 +259,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  	/* start the watchdog. */
  	hw->mac.get_link_status = 1;
  	schedule_work(&adapter->watchdog_task);
-@@ -7093,21 +7231,41 @@ void igb_alloc_rx_buffers(struct igb_rin
+@@ -7102,21 +7240,41 @@ void igb_alloc_rx_buffers(struct igb_rin
  static int igb_mii_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
  {
  	struct igb_adapter *adapter = netdev_priv(netdev);
