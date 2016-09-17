@@ -29,3 +29,16 @@ alias ll='ls -alF --color=auto'
 	done
 	unset FILE
 }
+
+if ( grep -qsE '^root:[!x]?:' /etc/shadow && \
+     grep -qsE '^root:[!x]?:' /etc/passwd  && \
+     [ -z "$FAILSAFE" ] )
+then
+cat << EOF
+=== WARNING! =====================================
+There is no root password defined on this device!
+Use the "passwd" command to set up a new password
+in order to prevent unauthorized SSH logins.
+--------------------------------------------------
+EOF
+fi
