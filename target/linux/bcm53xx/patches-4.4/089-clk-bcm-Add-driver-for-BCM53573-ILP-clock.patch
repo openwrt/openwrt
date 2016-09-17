@@ -1,7 +1,7 @@
-From 205fc550ceb74f7e8bfcba5c5c7329aa1b34d4ee Mon Sep 17 00:00:00 2001
+From bd8dd593f7d2211f2273e05741d157b0c8d020ae Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Fri, 29 Jul 2016 14:48:19 +0200
-Subject: [PATCH V8] clk: bcm: Add driver for BCM53573 ILP clock
+Date: Tue, 13 Sep 2016 09:06:04 +0200
+Subject: [PATCH] clk: bcm: Add driver for BCM53573 ILP clock
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -11,29 +11,9 @@ Cortex-A7. ILP is a part of PMU (Power Management Unit) multi-function
 device so we use syscon (and regmap) for it.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
----
-V2: Rebase on top of clk-next
-    Use ALP as parent clock
-    Improve comments
-    Switch from ioremap_nocache to ioremap
-    Check of_clk_add_provide result for error
-V3: Drop #include <linux/moduleh>
-    Make ILP DT entry part of PMU
-    Describe ILP as subdevice of PMU in Documentation
-V4: Use BCM53573 name as suggested by Jon and Ray. It seems "Northstar"
-    (even if used in some resources) should be used in relation to
-    Cortex-A9 devices only.
-V5: Rename remaining "ns" references to "bcm53573", sorry, I sent V4 too
-    early.
-V6: Drop #include <linux/clk.h>
-    Use "int" as type where it matches usage
-    Add cpu_relax() in the loop
-    Add disable callback
-    Use _hw_ functions for registering struct clk_hw (new API)
-
-    Thanks a lot Stephen!
-V7: Use syscon and regmap (thanks Rob!)
-V8: Update Documentation (drop unused "reg", unit address)
+Acked-by: Rob Herring <robh@kernel.org>
+[sboyd@codeaurora.org: Remove 0 from clk_init_data to silence sparse]
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 ---
  .../bindings/clock/brcm,bcm53573-ilp.txt           |  36 +++++
  drivers/clk/bcm/Makefile                           |   1 +
@@ -83,11 +63,14 @@ V8: Update Documentation (drop unused "reg", unit address)
 +};
 --- a/drivers/clk/bcm/Makefile
 +++ b/drivers/clk/bcm/Makefile
-@@ -8,3 +8,4 @@ obj-$(CONFIG_COMMON_CLK_IPROC)	+= clk-ns
+@@ -4,6 +4,7 @@ obj-$(CONFIG_CLK_BCM_KONA)	+= clk-bcm281
+ obj-$(CONFIG_CLK_BCM_KONA)	+= clk-bcm21664.o
+ obj-$(CONFIG_COMMON_CLK_IPROC)	+= clk-iproc-armpll.o clk-iproc-pll.o clk-iproc-asiu.o
+ obj-$(CONFIG_ARCH_BCM2835)	+= clk-bcm2835.o
++obj-$(CONFIG_ARCH_BCM_53573)	+= clk-bcm53573-ilp.o
+ obj-$(CONFIG_COMMON_CLK_IPROC)	+= clk-ns2.o
  obj-$(CONFIG_ARCH_BCM_CYGNUS)	+= clk-cygnus.o
  obj-$(CONFIG_ARCH_BCM_NSP)	+= clk-nsp.o
- obj-$(CONFIG_ARCH_BCM_5301X)	+= clk-nsp.o
-+obj-$(CONFIG_ARCH_BCM_53573)	+= clk-bcm53573-ilp.o
 --- /dev/null
 +++ b/drivers/clk/bcm/clk-bcm53573-ilp.c
 @@ -0,0 +1,148 @@
@@ -194,7 +177,7 @@ V8: Update Documentation (drop unused "reg", unit address)
 +static void bcm53573_ilp_init(struct device_node *np)
 +{
 +	struct bcm53573_ilp *ilp;
-+	struct clk_init_data init = { 0 };
++	struct clk_init_data init = { };
 +	const char *parent_name;
 +	int err;
 +
