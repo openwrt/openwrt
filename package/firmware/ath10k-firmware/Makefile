@@ -21,11 +21,9 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 include $(INCLUDE_DIR)/package.mk
 
-WMENU:=Wireless Drivers
-
 define Package/ath10k-firmware-default
-  SECTION:=kernel
-  CATEGORY:=Kernel modules
+  SECTION:=firmware
+  CATEGORY:=Firmware
   SUBMENU:=$(WMENU)
   URL:=$(PKG_SOURCE_URL)
   DEPENDS:=
@@ -64,6 +62,8 @@ define Package/ath10k-firmware-qca988x
 $(Package/ath10k-firmware-default)
   DEFAULT:=PACKAGE_kmod-ath10k
   TITLE:=ath10k firmware for QCA988x devices
+  SECTION:=firmware
+  CATEGORY:=Firmware
 endef
 
 QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community-16.1.bin-lede
@@ -94,11 +94,15 @@ $(eval $(call Download,ath10k-firmware-qca9984-ct))
 define Package/ath10k-firmware-qca99x0
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k firmware for QCA99x0 devices
+  SECTION:=firmware
+  CATEGORY:=Firmware
 endef
 
 define Package/ath10k-firmware-qca988x-ct
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.1 firmware for QCA988x devices
+  SECTION:=firmware
+  CATEGORY:=Firmware
 endef
 
 define Package/ath10k-firmware-qca988x-ct/description
@@ -135,21 +139,29 @@ endef
 define Package/ath10k-firmware-qca99x0-ct
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4.3 firmware for QCA99x0 devices
+  SECTION:=firmware
+  CATEGORY:=Firmware
 endef
 
 define Package/ath10k-firmware-qca9984-ct
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k CT 10.4.3 firmware for QCA9984 devices
+  SECTION:=firmware
+  CATEGORY:=Firmware
 endef
 
 define Package/ath10k-firmware-qca9984
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k firmware for QCA9984 devices
+  SECTION:=firmware
+  CATEGORY:=Firmware
 endef
 
 define Package/ath10k-firmware-qca6174
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k firmware for QCA6174 devices
+  SECTION:=firmware
+  CATEGORY:=Firmware
 endef
 
 QCA99X0_BOARD_REV:=ddcec9efd245da9365c474f513a855a55f3ac7fe
