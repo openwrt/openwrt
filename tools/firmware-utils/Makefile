@@ -74,6 +74,7 @@ define Host/Compile
 	$(call cc,dgn3500sum)
 	$(call cc,edimax_fw_header, -Wall)
 	$(call cc,mkmerakifw sha1, -Wall)
+	$(call cc,mkmerakifw-old, -Wall)
 	$(call cc,jcgimage, -lz -Wall)
 endef
 
