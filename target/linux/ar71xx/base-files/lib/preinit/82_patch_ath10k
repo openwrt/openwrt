@@ -12,16 +12,19 @@ do_patch_ath10k_firmware() {
 		return
 	}
 
-	local firmware_md5_orig="fcb2fbd42d73a63fbf603505c718cbde"
-	local firmware_md5_current="$(md5sum $firmware_file)"
-	local firmware_md5_current="${firmware_md5_current%% *}"
+	local mac_offset=276
+	local mac_length=6
+	local default_mac="00:03:07:12:34:56"
+	local current_mac="$(hexdump -v -n $mac_length -s $mac_offset -e '5/1 "%02x:" 1/1 "%02x"' $firmware_file  2>/dev/null)"
 
-	# verify md5sum before patching
-	[ "$firmware_md5_orig" != "$firmware_md5_current" ] || {
+	# check if mac address was already patched
+	[ "$default_mac" = "$current_mac" ] || {
 		return
 	}
 
-	# some boards have bogus mac in otp, patch the default mac in the firmware
+	# some boards have bogus mac in otp (= directly in the PCIe card's EEPROM).
+	# we have to patch the default mac in the firmware because we cannot change
+	# the otp.
 	case $(ar71xx_board_name) in
 		dgl-5500-a1 | tew-823dru)
 			local mac
@@ -29,7 +32,7 @@ do_patch_ath10k_firmware() {
 
 			cp $firmware_file /tmp/ath10k-firmware.bin
 			macaddr_2bin $mac | dd of=/tmp/ath10k-firmware.bin \
-				conv=notrunc bs=1 seek=276 count=6
+				conv=notrunc bs=1 seek=$mac_offset count=$mac_length
 
 		;;
 	esac
