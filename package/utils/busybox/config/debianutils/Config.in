@@ -6,19 +6,16 @@
 
 menu "Debian Utilities"
 
-
 config BUSYBOX_CONFIG_MKTEMP
 	bool "mktemp"
 	default BUSYBOX_DEFAULT_MKTEMP
 	help
 	  mktemp is used to create unique temporary files
-
 config BUSYBOX_CONFIG_PIPE_PROGRESS
 	bool "pipe_progress"
 	default BUSYBOX_DEFAULT_PIPE_PROGRESS
 	help
 	  Display a dot to indicate pipe activity.
-
 config BUSYBOX_CONFIG_RUN_PARTS
 	bool "run-parts"
 	default BUSYBOX_DEFAULT_RUN_PARTS
@@ -49,7 +46,6 @@ config BUSYBOX_CONFIG_FEATURE_RUN_PARTS_FANCY
 	  Support additional options:
 	  -l --list print the names of the all matching files (not
 	            limited to executables), but don't actually run them.
-
 config BUSYBOX_CONFIG_START_STOP_DAEMON
 	bool "start-stop-daemon"
 	default BUSYBOX_DEFAULT_START_STOP_DAEMON
@@ -74,7 +70,6 @@ config BUSYBOX_CONFIG_FEATURE_START_STOP_DAEMON_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_START_STOP_DAEMON && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Support long options for the start-stop-daemon applet.
-
 config BUSYBOX_CONFIG_WHICH
 	bool "which"
 	default BUSYBOX_DEFAULT_WHICH

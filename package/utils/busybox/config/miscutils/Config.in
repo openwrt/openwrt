@@ -246,6 +246,12 @@ config BUSYBOX_CONFIG_UBIUPDATEVOL
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Update a UBI volume.
+config BUSYBOX_CONFIG_UBIRENAME
+	bool "ubirename"
+	default BUSYBOX_DEFAULT_UBIRENAME
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  Utility to rename UBI volumes
 config BUSYBOX_CONFIG_WALL
 	bool "wall"
 	default BUSYBOX_DEFAULT_WALL
@@ -554,23 +560,13 @@ config BUSYBOX_CONFIG_LAST
 	help
 	  'last' displays a list of the last users that logged into the system.
 
-choice
-	prompt "Choose last implementation"
-	depends on BUSYBOX_CONFIG_LAST
-	default BUSYBOX_CONFIG_FEATURE_LAST_FANCY
-
-config BUSYBOX_CONFIG_FEATURE_LAST_SMALL
-	bool "small"
-	help
-	  This is a small version of last with just the basic set of
-	  features.
-
 config BUSYBOX_CONFIG_FEATURE_LAST_FANCY
-	bool "huge"
+	bool "Turn on output of extra information"
+	default BUSYBOX_DEFAULT_FEATURE_LAST_FANCY
+	depends on BUSYBOX_CONFIG_LAST
 	help
 	  'last' displays detailed information about the last users that
 	  logged into the system (mimics sysvinit last). +900 bytes.
-endchoice
 
 config BUSYBOX_CONFIG_HDPARM
 	bool "hdparm"

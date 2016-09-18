@@ -115,9 +115,21 @@ config BUSYBOX_CONFIG_FEATURE_COMPRESS_USAGE
 	  and have very little memory, this might not be a win. Otherwise,
 	  you probably want this.
 
+config BUSYBOX_CONFIG_BUSYBOX
+	bool "Include busybox applet"
+	default BUSYBOX_DEFAULT_BUSYBOX
+	help
+	  The busybox applet provides general help regarding busybox and
+	  allows the included applets to be listed.  It's also required
+	  if applet links are to be installed at runtime.
+
+	  If you can live without these features disabling this will save
+	  some space.
+
 config BUSYBOX_CONFIG_FEATURE_INSTALLER
 	bool "Support --install [-s] to install applet links at runtime"
 	default BUSYBOX_DEFAULT_FEATURE_INSTALLER
+	depends on BUSYBOX_CONFIG_BUSYBOX
 	help
 	  Enable 'busybox --install [-s]' support. This will allow you to use
 	  busybox at runtime to create hard links or symlinks for all the
@@ -686,6 +698,16 @@ config BUSYBOX_CONFIG_DEBUG_PESSIMIZE
 	  stepping through it with a debugger. This switches it off, resulting
 	  in a much bigger executable that more closely matches the source
 	  code.
+
+config BUSYBOX_CONFIG_DEBUG_SANITIZE
+	bool "Enable runtime sanitizers (ASAN/LSAN/USAN/etc...)"
+	default BUSYBOX_DEFAULT_DEBUG_SANITIZE
+	help
+	  Say Y here if you want to enable runtime sanitizers. These help
+	  catch bad memory accesses (e.g. buffer overflows), but will make
+	  the executable larger and slow down runtime a bit.
+
+	  If you aren't developing/testing busybox, say N here.
 
 config BUSYBOX_CONFIG_UNIT_TEST
 	bool "Build unit tests"

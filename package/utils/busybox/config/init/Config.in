@@ -76,10 +76,21 @@ config BUSYBOX_CONFIG_INIT
 	help
 	  init is the first program run when the system boots.
 
+config BUSYBOX_CONFIG_LINUXRC
+	bool "Support running init from within an initrd (not initramfs)"
+	default BUSYBOX_DEFAULT_LINUXRC
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
+	help
+	  Legacy support for running init under the old-style initrd. Allows
+	  the name linuxrc to act as init, and it doesn't assume init is PID 1.
+
+	  This does not apply to initramfs, which runs /init as PID 1 and
+	  requires no special support.
+
 config BUSYBOX_CONFIG_FEATURE_USE_INITTAB
 	bool "Support reading an inittab file"
 	default BUSYBOX_DEFAULT_FEATURE_USE_INITTAB
-	depends on BUSYBOX_CONFIG_INIT
+	depends on BUSYBOX_CONFIG_INIT || BUSYBOX_CONFIG_LINUXRC
 	help
 	  Allow init to read an inittab file when the system boot.
 
@@ -106,7 +117,7 @@ config BUSYBOX_CONFIG_FEATURE_KILL_DELAY
 config BUSYBOX_CONFIG_FEATURE_INIT_SCTTY
 	bool "Run commands with leading dash with controlling tty"
 	default BUSYBOX_DEFAULT_FEATURE_INIT_SCTTY
-	depends on BUSYBOX_CONFIG_INIT
+	depends on BUSYBOX_CONFIG_INIT || BUSYBOX_CONFIG_LINUXRC
 	help
 	  If this option is enabled, init will try to give a controlling
 	  tty to any command which has leading hyphen (often it's "-/bin/sh").
@@ -121,40 +132,29 @@ config BUSYBOX_CONFIG_FEATURE_INIT_SCTTY
 config BUSYBOX_CONFIG_FEATURE_INIT_SYSLOG
 	bool "Enable init to write to syslog"
 	default BUSYBOX_DEFAULT_FEATURE_INIT_SYSLOG
-	depends on BUSYBOX_CONFIG_INIT
+	depends on BUSYBOX_CONFIG_INIT || BUSYBOX_CONFIG_LINUXRC
 
 config BUSYBOX_CONFIG_FEATURE_EXTRA_QUIET
 	bool "Be _extra_ quiet on boot"
 	default BUSYBOX_DEFAULT_FEATURE_EXTRA_QUIET
-	depends on BUSYBOX_CONFIG_INIT
+	depends on BUSYBOX_CONFIG_INIT || BUSYBOX_CONFIG_LINUXRC
 	help
 	  Prevent init from logging some messages to the console during boot.
 
 config BUSYBOX_CONFIG_FEATURE_INIT_COREDUMPS
 	bool "Support dumping core for child processes (debugging only)"
 	default BUSYBOX_DEFAULT_FEATURE_INIT_COREDUMPS
-	depends on BUSYBOX_CONFIG_INIT
+	depends on BUSYBOX_CONFIG_INIT || BUSYBOX_CONFIG_LINUXRC
 	help
 	  If this option is enabled and the file /.init_enable_core
 	  exists, then init will call setrlimit() to allow unlimited
 	  core file sizes. If this option is disabled, processes
 	  will not generate any core files.
 
-config BUSYBOX_CONFIG_FEATURE_INITRD
-	bool "Support running init from within an initrd (not initramfs)"
-	default BUSYBOX_DEFAULT_FEATURE_INITRD
-	depends on BUSYBOX_CONFIG_INIT
-	help
-	  Legacy support for running init under the old-style initrd. Allows
-	  the name linuxrc to act as init, and it doesn't assume init is PID 1.
-
-	  This does not apply to initramfs, which runs /init as PID 1 and
-	  requires no special support.
-
 config BUSYBOX_CONFIG_INIT_TERMINAL_TYPE
 	string "Initial terminal type"
 	default BUSYBOX_DEFAULT_INIT_TERMINAL_TYPE
-	depends on BUSYBOX_CONFIG_INIT
+	depends on BUSYBOX_CONFIG_INIT || BUSYBOX_CONFIG_LINUXRC
 	help
 	  This is the initial value set by init for the TERM environment
 	  variable. This variable is used by programs which make use of
@@ -162,6 +162,21 @@ config BUSYBOX_CONFIG_INIT_TERMINAL_TYPE
 
 	  Note that on Linux, init attempts to detect serial terminal and
 	  sets TERM to "vt102" if one is found.
+
+config BUSYBOX_CONFIG_FEATURE_INIT_MODIFY_CMDLINE
+	bool "Modify the command-line to \"init\""
+	default BUSYBOX_DEFAULT_FEATURE_INIT_MODIFY_CMDLINE
+	depends on BUSYBOX_CONFIG_INIT || BUSYBOX_CONFIG_LINUXRC
+	help
+	  When launched as PID 1 and after parsing its arguments, init
+	  wipes all the arguments but argv[0] and rewrites argv[0] to
+	  contain only "init", so that its command-line appears solely as
+	  "init" in tools such as ps.
+	  If this option is set to Y, init will keep its original behavior,
+	  otherwise, all the arguments including argv[0] will be preserved,
+	  be they parsed or ignored by init.
+	  The original command-line used to launch init can then be
+	  retrieved in /proc/1/cmdline on Linux, for example.
 config BUSYBOX_CONFIG_MESG
 	bool "mesg"
 	default BUSYBOX_DEFAULT_MESG

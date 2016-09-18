@@ -123,6 +123,29 @@ config BUSYBOX_CONFIG_SHUF
 	default BUSYBOX_DEFAULT_SHUF
 	help
 	  Generate random permutations
+config BUSYBOX_CONFIG_STAT
+	bool "stat"
+	default BUSYBOX_DEFAULT_STAT
+	help
+	  display file or filesystem status.
+
+config BUSYBOX_CONFIG_FEATURE_STAT_FORMAT
+	bool "Enable custom formats (-c)"
+	default BUSYBOX_DEFAULT_FEATURE_STAT_FORMAT
+	depends on BUSYBOX_CONFIG_STAT
+	help
+	  Without this, stat will not support the '-c format' option where
+	  users can pass a custom format string for output. This adds about
+	  7k to a nonstatic build on amd64.
+
+config BUSYBOX_CONFIG_FEATURE_STAT_FILESYSTEM
+	bool "Enable display of filesystem status (-f)"
+	default BUSYBOX_DEFAULT_FEATURE_STAT_FILESYSTEM
+	depends on BUSYBOX_CONFIG_STAT
+	select BUSYBOX_CONFIG_PLATFORM_LINUX # statfs()
+	help
+	  Without this, stat will not support the '-f' option to display
+	  information about filesystem status.
 config BUSYBOX_CONFIG_SYNC
 	bool "sync"
 	default BUSYBOX_DEFAULT_SYNC
@@ -759,22 +782,6 @@ config BUSYBOX_CONFIG_FEATURE_SPLIT_FANCY
 	  Add support for features not required by SUSv3.
 	  Supports additional suffixes 'b' for 512 bytes,
 	  'g' for 1GiB for the -b option.
-
-config BUSYBOX_CONFIG_STAT
-	bool "stat"
-	default BUSYBOX_DEFAULT_STAT
-	select BUSYBOX_CONFIG_PLATFORM_LINUX # statfs()
-	help
-	  display file or filesystem status.
-
-config BUSYBOX_CONFIG_FEATURE_STAT_FORMAT
-	bool "Enable custom formats (-c)"
-	default BUSYBOX_DEFAULT_FEATURE_STAT_FORMAT
-	depends on BUSYBOX_CONFIG_STAT
-	help
-	  Without this, stat will not support the '-c format' option where
-	  users can pass a custom format string for output. This adds about
-	  7k to a nonstatic build on amd64.
 
 config BUSYBOX_CONFIG_STTY
 	bool "stty"

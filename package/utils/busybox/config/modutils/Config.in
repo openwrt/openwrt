@@ -44,9 +44,6 @@ config BUSYBOX_CONFIG_MODPROBE_SMALL
 	  - rmmod is an alias to modprobe -r
 	  - depmod generates modules.dep.bb
 
-	  As of 2008-07, this code is experimental. It is 14kb smaller
-	  than "non-small" modutils.
-
 config BUSYBOX_CONFIG_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE
 	bool "Accept module options on modprobe command line"
 	default BUSYBOX_DEFAULT_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE

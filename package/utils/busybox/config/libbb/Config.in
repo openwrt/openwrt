@@ -6,14 +6,38 @@
 
 menu "Busybox Library Tuning"
 
-config BUSYBOX_CONFIG_FEATURE_SYSTEMD
-	bool "Enable systemd support"
-	default BUSYBOX_DEFAULT_FEATURE_SYSTEMD
+config BUSYBOX_CONFIG_FEATURE_USE_BSS_TAIL
+	bool "Use the end of BSS page"
+	default BUSYBOX_DEFAULT_FEATURE_USE_BSS_TAIL
 	help
-	  If you plan to use busybox daemons on a system where daemons
-	  are controlled by systemd, enable this option.
-	  If you don't use systemd, it is still safe to enable it,
-	  but the downside is increased code size.
+	  Attempt to reclaim a small unused part of BSS.
+
+	  Executables have the following parts:
+	  = read-only executable code and constants, also known as "text"
+	  = read-write data
+	  = non-initialized (zeroed on demand) data, also known as "bss"
+
+	  At link time, "text" is padded to a full page. At runtime, all "text"
+	  pages are mapped RO and executable.
+	  "Data" starts on the next page boundary, but is not padded
+	  to a full page at the end. "Bss" starts wherever "data" ends.
+	  At runtime, "data" pages are mapped RW and they are file-backed
+	  (this includes a small portion of "bss" which may live in the last
+	  partial page of "data").
+	  Pages which are fully in "bss" are mapped to anonymous memory.
+
+	  "Bss" end is usually not page-aligned. There is an unused space
+	  in the last page. Linker marks its start with the "_end" symbol.
+
+	  This option will attempt to use that space for bb_common_bufsiz1[]
+	  array. If it fits after _end, it will be used, and COMMON_BUFSIZE
+	  will be enlarged from its guaranteed minimum size of 1 kbyte.
+	  This may require recompilation a second time, since value of _end
+	  is known only after final link.
+
+	  If you are getting a build error like this:
+	        appletlib.c:(.text.main+0xd): undefined reference to '_end'
+	  disable this option.
 config BUSYBOX_CONFIG_FEATURE_RTMINMAX
 	bool "Support RTMIN[+n] and RTMAX[-n] signal names"
 	default BUSYBOX_DEFAULT_FEATURE_RTMINMAX
@@ -30,7 +54,7 @@ config BUSYBOX_CONFIG_PASSWORD_MINLEN
 
 config BUSYBOX_CONFIG_MD5_SMALL
 	int "MD5: Trade bytes for speed (0:fast, 3:slow)"
-	default BUSYBOX_DEFAULT_MD5_SMALL
+	default BUSYBOX_DEFAULT_MD5_SMALL  # all "fast or small" options default to small
 	range 0 3
 	help
 	  Trade binary size versus speed for the md5sum algorithm.
@@ -44,7 +68,7 @@ config BUSYBOX_CONFIG_MD5_SMALL
 
 config BUSYBOX_CONFIG_SHA3_SMALL
 	int "SHA3: Trade bytes for speed (0:fast, 1:slow)"
-	default BUSYBOX_DEFAULT_SHA3_SMALL
+	default BUSYBOX_DEFAULT_SHA3_SMALL  # all "fast or small" options default to small
 	range 0 1
 	help
 	  Trade binary size versus speed for the sha3sum algorithm.
@@ -54,7 +78,7 @@ config BUSYBOX_CONFIG_SHA3_SMALL
 
 config BUSYBOX_CONFIG_FEATURE_FAST_TOP
 	bool "Faster /proc scanning code (+100 bytes)"
-	default BUSYBOX_DEFAULT_FEATURE_FAST_TOP
+	default BUSYBOX_DEFAULT_FEATURE_FAST_TOP  # all "fast or small" options default to small
 	help
 	  This option makes top (and ps) ~20% faster (or 20% less CPU hungry),
 	  but code size is slightly bigger.
@@ -128,7 +152,7 @@ config BUSYBOX_CONFIG_FEATURE_EDITING_SAVE_ON_EXIT
 config BUSYBOX_CONFIG_FEATURE_REVERSE_SEARCH
 	bool "Reverse history search"
 	default BUSYBOX_DEFAULT_FEATURE_REVERSE_SEARCH
-	depends on BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING
 	help
 	  Enable readline-like Ctrl-R combination for reverse history search.
 	  Increases code by about 0.5k.

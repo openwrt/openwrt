@@ -6,6 +6,11 @@
 
 menu "Linux System Utilities"
 
+config BUSYBOX_CONFIG_BLKDISCARD
+	bool "blkdiscard"
+	default BUSYBOX_DEFAULT_BLKDISCARD
+	help
+	  blkdiscard discards sectors on a given device.
 config BUSYBOX_CONFIG_BLOCKDEV
 	bool "blockdev"
 	default BUSYBOX_DEFAULT_BLOCKDEV
@@ -174,11 +179,34 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_OTHERTAB
 	default BUSYBOX_DEFAULT_FEATURE_MOUNT_OTHERTAB
 	help
 	  Support mount -T (specifying an alternate fstab)
+config BUSYBOX_CONFIG_NSENTER
+	bool "nsenter"
+	default BUSYBOX_DEFAULT_NSENTER
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  Run program with namespaces of other processes.
+
+config BUSYBOX_CONFIG_FEATURE_NSENTER_LONG_OPTS
+	bool "Enable long options"
+	default BUSYBOX_DEFAULT_FEATURE_NSENTER_LONG_OPTS
+	depends on BUSYBOX_CONFIG_NSENTER && BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Support long options for the nsenter applet. This makes
+	  the busybox implementation more compatible with upstream.
 config BUSYBOX_CONFIG_REV
 	bool "rev"
 	default BUSYBOX_DEFAULT_REV
 	help
 	  Reverse lines of a file or files.
+config BUSYBOX_CONFIG_SETARCH
+	bool "setarch"
+	default BUSYBOX_DEFAULT_SETARCH
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  The linux32 utility is used to create a 32bit environment for the
+	  specified program (usually a shell). It only makes sense to have
+	  this util on a system that supports both 64bit and 32bit userland
+	  (like amd64/x86, ppc64/ppc, sparc64/sparc, etc...).
 config BUSYBOX_CONFIG_UEVENT
 	bool "uevent"
 	default BUSYBOX_DEFAULT_UEVENT
@@ -186,6 +214,13 @@ config BUSYBOX_CONFIG_UEVENT
 	help
 	  uevent is a netlink listener for kernel uevent notifications
 	  sent via netlink. It is usually used for dynamic device creation.
+config BUSYBOX_CONFIG_UNSHARE
+	bool "unshare"
+	default BUSYBOX_DEFAULT_UNSHARE
+	depends on BUSYBOX_CONFIG_LONG_OPTS && !BUSYBOX_CONFIG_NOMMU
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  Run program with some namespaces unshared from parent.
 
 config BUSYBOX_CONFIG_ACPID
 	bool "acpid"
@@ -668,16 +703,6 @@ config BUSYBOX_CONFIG_SCRIPTREPLAY
 	help
 	  This program replays a typescript, using timing information
 	  given by script -t.
-
-config BUSYBOX_CONFIG_SETARCH
-	bool "setarch"
-	default BUSYBOX_DEFAULT_SETARCH
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  The linux32 utility is used to create a 32bit environment for the
-	  specified program (usually a shell). It only makes sense to have
-	  this util on a system that supports both 64bit and 32bit userland
-	  (like amd64/x86, ppc64/ppc, sparc64/sparc, etc...).
 
 config BUSYBOX_CONFIG_SWAPONOFF
 	bool "swaponoff"
