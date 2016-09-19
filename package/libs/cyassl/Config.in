@@ -1,5 +1,4 @@
-menu "Configuration"
-	depends on PACKAGE_libcyassl
+if PACKAGE_libcyassl
 
 config CYASSL_HAS_AES_CCM
 	bool "Include AES-CCM support"
@@ -46,4 +45,4 @@ config CYASSL_HAS_POLY_1305
 	bool "Include Poly-1305 support"
 	default n
 
-endmenu
+endif
