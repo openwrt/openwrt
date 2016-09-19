@@ -96,16 +96,37 @@ menuconfig EXTERNAL_TOOLCHAIN
 		default "/opt/cross/powerpc-unknown-linux-gnu"  if powerpc
 		default "/opt/cross/x86_64-unknown-linux-gnu"   if x86_64
 
-	config TOOLCHAIN_LIBC
-		string
+	choice TOOLCHAIN_LIBC_TYPE
 		prompt "Toolchain libc"  if DEVEL
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
-		default "uclibc"
+		default EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL
 		help
 		  Specify the libc type used by the external toolchain. The given value
 		  is passed as -m flag to all gcc and g++ invocations. This is mainly
 		  intended for multilib toolchains which support glibc and uclibc at
 		  the same time. If no value is specified, no -m flag is passed.
+
+		config EXTERNAL_TOOLCHAIN_LIBC_USE_GLIBC
+			bool "glibc"
+			select USE_GLIBC
+
+		config EXTERNAL_TOOLCHAIN_LIBC_USE_UCLIBC
+			bool "uClibc"
+			select USE_UCLIBC
+			depends on !(aarch64 || aarch64_be)
+
+		config EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL
+			bool "musl"
+			select USE_MUSL
+
+	endchoice
+
+	config TOOLCHAIN_LIBC
+		string
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "glibc" if EXTERNAL_TOOLCHAIN_LIBC_USE_GLIBC
+		default "uclibc" if EXTERNAL_TOOLCHAIN_LIBC_USE_UCLIBC
+		default "musl" if EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL
 
 	config TOOLCHAIN_BIN_PATH
 		string

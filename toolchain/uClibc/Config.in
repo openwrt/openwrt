@@ -2,5 +2,5 @@
 
 config UCLIBC_ENABLE_DEBUG
 	bool "Build with debug information"
-	depends on TOOLCHAINOPTS && USE_UCLIBC
+	depends on TOOLCHAINOPTS && USE_UCLIBC && !EXTERNAL_TOOLCHAIN
 	default n
