@@ -73,6 +73,16 @@ case "$FIRMWARE" in
 		ath9k_eeprom_extract "caldata" 4096 2048
 		ath9k_patch_firmware_mac $(mtd_get_mac_binary caldata 0)
 		;;
+	z1)
+		. /lib/upgrade/nand.sh
+
+		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
+			ath9k_ubi_eeprom_extract "caldata" 4096 2048
+		else
+			ath9k_eeprom_extract "origcaldata" 4096 2048
+		fi
+		ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_binary_ubi board-config 102) +2)
+		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"
 		;;
@@ -99,6 +109,16 @@ case "$FIRMWARE" in
 	wndr4300)
 		ath9k_eeprom_extract "caldata" 20480 2048
 		ath9k_patch_firmware_mac $(mtd_get_mac_binary caldata 12)
+		;;
+	z1)
+		. /lib/upgrade/nand.sh
+
+		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
+			ath9k_ubi_eeprom_extract "caldata" 86016 4096
+		else
+			ath9k_eeprom_extract "origcaldata" 86016 4096
+		fi
+		ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_binary_ubi board-config 102) +3)
 		;;
 	*)
 		ath9k_eeprom_die "board $board is not supported yet"

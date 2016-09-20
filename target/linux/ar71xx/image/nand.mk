@@ -20,6 +20,29 @@ define Device/mr18
 endef
 TARGET_DEVICES += mr18
 
+define Build/MerakiNAND-old
+	-$(STAGING_DIR_HOST)/bin/mkmerakifw-old \
+		-B $(BOARDNAME) -s \
+		-i $@ \
+		-o $@.new
+	@mv $@.new $@
+endef
+
+define Device/z1
+  DEVICE_TITLE := Meraki Z1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-spi-gpio kmod-ath9k kmod-owl-loader
+  BOARDNAME = Z1
+  BLOCKSIZE := 64k
+  CONSOLE = ttyS0,115200
+  MTDPARTS = ar934x-nfc:128K(loader1)ro,8064K(kernel),128K(loader2)ro,8064K(recovery),114560K(ubi),128K(origcaldata)ro
+  IMAGES := sysupgrade.tar
+  KERNEL := kernel-bin | patch-cmdline | MerakiNAND-old
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | MerakiNAND-old
+  IMAGE/sysupgrade.tar := sysupgrade-tar
+endef
+
+TARGET_DEVICES += z1
+
 define LegacyDevice/R6100
   DEVICE_TITLE := NETGEAR R6100
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev

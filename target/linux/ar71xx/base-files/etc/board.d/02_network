@@ -538,6 +538,12 @@ wndr3700)
 	ucidef_add_switch_port_attr "switch0" 5 led 2
 	;;
 
+z1)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_add_switch "switch0" \
+		"0@eth0" "1:lan:1" "2:lan:2" "3:lan:3" "4:lan:4" "5:wan"
+	;;
+
 *)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;

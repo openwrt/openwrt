@@ -426,6 +426,9 @@ get_status_led() {
 	wrt160nl)
 		status_led="wrt160nl:blue:wps"
 		;;
+	z1)
+		status_led="z1:green:tricolor0"
+		;;
 	zbt-we1526)
 		status_led="zbt-we1526:green:status"
 		;;
