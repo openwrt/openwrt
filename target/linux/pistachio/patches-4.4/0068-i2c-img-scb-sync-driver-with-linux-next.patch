@@ -1,0 +1,304 @@
+From 0d25e6d50bb794d96b2790d0e78d9cb2f6468566 Mon Sep 17 00:00:00 2001
+From: Sifan Naeem <sifan.naeem@imgtec.com>
+Date: Tue, 13 Oct 2015 10:03:20 +0100
+Subject: i2c: img-scb: sync driver with linux-next
+
+The version sent upstream is different to the driver in gerrit as the driver
+was modified after feedback from James Hogan.
+
+The series of patches sent as fixes are now merged upstream to 4.3 but the
+series with enhancements are yet to be merged.
+
+Merging the upstream version to our repo would help us find bugs in the driver.
+
+Change-Id: I7d0888e51727923fe5b411711caa135f2c19d495
+Signed-off-by: Sifan Naeem <sifan.naeem@imgtec.com>
+---
+ drivers/i2c/busses/i2c-img-scb.c | 176 ++++++++++++++-------------------------
+ 1 file changed, 64 insertions(+), 112 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-img-scb.c b/drivers/i2c/busses/i2c-img-scb.c
+index f65d2f3..810efcc 100644
+--- a/drivers/i2c/busses/i2c-img-scb.c
++++ b/drivers/i2c/busses/i2c-img-scb.c
+@@ -509,22 +509,8 @@ static void img_i2c_soft_reset(struct img_i2c *i2c)
+ {
+ 	i2c->t_halt = false;
+ 	img_i2c_writel(i2c, SCB_CONTROL_REG, 0);
+-
+-	/* Disable all interrupts */
+-	img_i2c_writel(i2c, SCB_INT_MASK_REG, 0);
+-
+-	/* Clear all interrupts */
+-	img_i2c_writel(i2c, SCB_INT_CLEAR_REG, ~0);
+-
+-	/* Clear the scb_line_status events */
+-	img_i2c_writel(i2c, SCB_CLEAR_REG, ~0);
+-
+ 	img_i2c_writel(i2c, SCB_CONTROL_REG,
+ 		       SCB_CONTROL_CLK_ENABLE | SCB_CONTROL_SOFT_RESET);
+-
+-	/* Enable interrupts */
+-	img_i2c_switch_mode(i2c, MODE_INACTIVE);
+-	img_i2c_writel(i2c, SCB_INT_MASK_REG, i2c->int_enable);
+ }
+ 
+ /*
+@@ -636,10 +622,7 @@ static void img_i2c_complete_transaction(struct img_i2c *i2c, int status)
+ 	img_i2c_switch_mode(i2c, MODE_INACTIVE);
+ 	if (status) {
+ 		i2c->msg_status = status;
+-		img_i2c_soft_reset(i2c);
+-	} else {
+-		img_i2c_writel(i2c, SCB_INT_CLEAR_REG, ~0);
+-		img_i2c_writel(i2c, SCB_CLEAR_REG, ~0);
++		img_i2c_transaction_halt(i2c, false);
+ 	}
+ 	complete(&i2c->msg_complete);
+ }
+@@ -778,8 +761,8 @@ static unsigned int img_i2c_atomic(struct img_i2c *i2c,
+ 		break;
+ 	case CMD_RET_ACK:
+ 		if (i2c->line_status & LINESTAT_ACK_DET ||
+-		    (i2c->line_status & LINESTAT_NACK_DET
+-		    && i2c->msg.flags & I2C_M_IGNORE_NAK)) {
++		    (i2c->line_status & LINESTAT_NACK_DET &&
++		    i2c->msg.flags & I2C_M_IGNORE_NAK)) {
+ 			if (i2c->msg.len == 0) {
+ 				next_cmd = CMD_GEN_STOP;
+ 			} else if (i2c->msg.flags & I2C_M_RD) {
+@@ -886,87 +869,42 @@ static unsigned int img_i2c_auto(struct img_i2c *i2c,
+ 	}
+ 
+ 	/* Enable transaction halt on start bit */
+-	if (i2c->line_status & LINESTAT_START_BIT_DET) {
+-		if (!i2c->last_msg) {
+-			img_i2c_transaction_halt(i2c, true);
+-			/* we're no longer interested in the slave event */
+-			i2c->int_enable &= ~INT_SLAVE_EVENT;
+-		}
+-		/*
+-		 * Remove start bit detected status after it is handled,
+-		 * doing so will prevent this condition being hit for
+-		 * every interrupt on a particular transfer.
+-		 */
+-		i2c->line_status &= ~LINESTAT_START_BIT_DET;
++	if (!i2c->last_msg && line_status & LINESTAT_START_BIT_DET) {
++		img_i2c_transaction_halt(i2c, !i2c->last_msg);
++		/* we're no longer interested in the slave event */
++		i2c->int_enable &= ~INT_SLAVE_EVENT;
+ 	}
+ 
+ 	mod_timer(&i2c->check_timer, jiffies + msecs_to_jiffies(1));
+ 
++	if (int_status & INT_STOP_DETECTED) {
++		/* Drain remaining data in FIFO and complete transaction */
++		if (i2c->msg.flags & I2C_M_RD)
++			img_i2c_read_fifo(i2c);
++		return ISR_COMPLETE(0);
++	}
++
+ 	if (i2c->msg.flags & I2C_M_RD) {
+-		if (int_status & INT_MASTER_HALTED) {
++		if (int_status & (INT_FIFO_FULL_FILLING | INT_MASTER_HALTED)) {
+ 			img_i2c_read_fifo(i2c);
+ 			if (i2c->msg.len == 0)
+-				return ISR_COMPLETE(0);
+-			/*
+-			 * By releasing and then enabling transaction halt,
+-			 * trying to allow only a single byte to proceed.
+-			 */
+-			img_i2c_transaction_halt(i2c, false);
+-			img_i2c_transaction_halt(i2c, !i2c->last_msg);
+-		}
+-		if (int_status & INT_FIFO_FULL_FILLING) {
+-			img_i2c_read_fifo(i2c);
+-			if (i2c->msg.len == 0) {
+-				if (i2c->last_msg)
+-					return ISR_WAITSTOP;
+-				return ISR_COMPLETE(0);
+-			}
+-		}
+-		if (int_status & INT_STOP_DETECTED) {
+-			int ret;
+-			/*
+-			 * Stop bit indicates the end of the transfer, it means
+-			 * we should read all the data (or drain the FIFO). We
+-			 * must signal completion for this transaction.
+-			 */
+-			img_i2c_transaction_halt(i2c, false);
+-			img_i2c_read_fifo(i2c);
+-			ret = (i2c->msg.len == 0) ? 0 : EIO;
+-			return ISR_COMPLETE(ret);
++				return ISR_WAITSTOP;
+ 		}
+ 	} else {
+-		if (int_status & INT_MASTER_HALTED) {
++		if (int_status & (INT_FIFO_EMPTY | INT_MASTER_HALTED)) {
+ 			if ((int_status & INT_FIFO_EMPTY) &&
+-					i2c->msg.len == 0)
+-				return ISR_COMPLETE(0);
+-			img_i2c_write_fifo(i2c);
+-			/*
+-			 * By releasing and then enabling transaction halt,
+-			 * trying to allow only a single byte to proceed.
+-			 */
+-			img_i2c_transaction_halt(i2c, false);
+-			img_i2c_transaction_halt(i2c, !i2c->last_msg);
+-		}
+-		if (int_status & INT_FIFO_EMPTY) {
+-			if (i2c->msg.len == 0) {
+-				if (i2c->last_msg)
+-					return ISR_WAITSTOP;
+-				return ISR_COMPLETE(0);
+-			}
++			    i2c->msg.len == 0)
++				return ISR_WAITSTOP;
+ 			img_i2c_write_fifo(i2c);
+ 		}
+-		if (int_status & INT_STOP_DETECTED) {
+-			int ret;
+-
+-			img_i2c_transaction_halt(i2c, false);
+-			/*
+-			 * Stop bit indicates the end of a transfer and if the
+-			 * transfer has finished before all data is written to
+-			 * the fifo return error with transfer complete signal.
+-			 */
+-			ret = (i2c->msg.len == 0) ? 0 : EIO;
+-			return ISR_COMPLETE(ret);
+-		}
++	}
++	if (int_status & INT_MASTER_HALTED) {
++		/*
++		 * Release and then enable transaction halt, to
++		 * allow only a single byte to proceed.
++		 */
++		img_i2c_transaction_halt(i2c, false);
++		img_i2c_transaction_halt(i2c, !i2c->last_msg);
+ 	}
+ 
+ 	return 0;
+@@ -1145,6 +1083,15 @@ static int img_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+ 		i2c->last_msg = (i == num - 1);
+ 		reinit_completion(&i2c->msg_complete);
+ 
++		/*
++		 * Clear line status and all interrupts before starting a
++		 * transfer, as we may have unserviced interrupts from
++		 * previous transfers that might be handled in the context
++		 * of the new transfer.
++		 */
++		img_i2c_writel(i2c, SCB_INT_CLEAR_REG, ~0);
++		img_i2c_writel(i2c, SCB_CLEAR_REG, ~0);
++
+ 		if (atomic) {
+ 			img_i2c_atomic_start(i2c);
+ 		} else {
+@@ -1160,8 +1107,8 @@ static int img_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+ 				img_i2c_write(i2c);
+ 
+ 			/*
+-			 * By releasing and then enabling transaction halt,
+-			 * trying to allow only a single byte to proceed.
++			 * Release and then enable transaction halt, to
++			 * allow only a single byte to proceed.
+ 			 * This doesn't have an effect on the initial transfer
+ 			 * but will allow the following transfers to start
+ 			 * processing if the previous transfer was marked as
+@@ -1179,7 +1126,6 @@ static int img_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msgs,
+ 		if (time_left == 0) {
+ 			dev_err(adap->dev.parent, "i2c transfer timed out\n");
+ 			i2c->msg_status = -ETIMEDOUT;
+-			img_i2c_soft_reset(i2c);
+ 			break;
+ 		}
+ 
+@@ -1223,13 +1169,8 @@ static int img_i2c_init(struct img_i2c *i2c)
+ 		return -EINVAL;
+ 	}
+ 	
+-	if (rev >= REL_SOC_IP_SCB_2_2_1) {
+-		i2c->need_wr_rd_fence = true;
+-		dev_info(i2c->adap.dev.parent, "fence quirk enabled");
+-	}
+-
+-	bitrate_khz = i2c->bitrate / 1000;
+-	clk_khz = clk_get_rate(i2c->scb_clk) / 1000;
++	/* Fencing enabled by default. */
++	i2c->need_wr_rd_fence = true;
+ 
+ 	/* Determine what mode we're in from the bitrate */
+ 	timing = timings[0];
+@@ -1239,11 +1180,13 @@ static int img_i2c_init(struct img_i2c *i2c)
+ 			break;
+ 		}
+ 	}
+-	if (i2c->bitrate > timing.max_bitrate) {
+-		dev_err(i2c->adap.dev.parent,
+-			 "requested bitrate (%d) not supported\n",
+-			 i2c->bitrate);
+-		return -EINVAL;
++	if (i2c->bitrate > timings[ARRAY_SIZE(timings) - 1].max_bitrate) {
++		dev_warn(i2c->adap.dev.parent,
++			 "requested bitrate (%u) is higher than the max bitrate supported (%u)\n",
++			 i2c->bitrate,
++			 timings[ARRAY_SIZE(timings) - 1].max_bitrate);
++		timing = timings[ARRAY_SIZE(timings) - 1];
++		i2c->bitrate = timing.max_bitrate;
+ 	}
+ 
+ 	bitrate_khz = i2c->bitrate / 1000;
+@@ -1298,14 +1241,11 @@ static int img_i2c_init(struct img_i2c *i2c)
+ 	 * Setup clock duty cycle, start with 50% and adjust TCKH and TCKL
+ 	 * values from there if they don't meet minimum timing requirements
+ 	 */
+-	tckh = tckl = int_bitrate / 2;
+-	if (int_bitrate % 2)
+-		tckl++;
++	tckh = int_bitrate / 2;
++	tckl = int_bitrate - tckh;
+ 
+ 	/* Adjust TCKH and TCKL values */
+-	data = timing.tckl / clk_period;
+-	if (timing.tckl % clk_period)
+-		data++;
++	data = DIV_ROUND_UP(timing.tckl, clk_period);
+ 
+ 	if (tckl < data) {
+ 		tckl = data;
+@@ -1313,10 +1253,10 @@ static int img_i2c_init(struct img_i2c *i2c)
+ 	}
+ 
+ 	if (tckh > 0)
+-		tckh -= 1;
++		--tckh;
+ 
+ 	if (tckl > 0)
+-		tckl -= 1;
++		--tckl;
+ 
+ 	img_i2c_writel(i2c, SCB_TIME_TCKH_REG, tckh);
+ 	img_i2c_writel(i2c, SCB_TIME_TCKL_REG, tckl);
+@@ -1361,6 +1301,18 @@ static int img_i2c_init(struct img_i2c *i2c)
+ 	/* Take module out of soft reset and enable clocks */
+ 	img_i2c_soft_reset(i2c);
+ 
++	/* Disable all interrupts */
++	img_i2c_writel(i2c, SCB_INT_MASK_REG, 0);
++
++	/* Clear all interrupts */
++	img_i2c_writel(i2c, SCB_INT_CLEAR_REG, ~0);
++
++	/* Clear the scb_line_status events */
++	img_i2c_writel(i2c, SCB_CLEAR_REG, ~0);
++
++	/* Enable interrupts */
++	img_i2c_writel(i2c, SCB_INT_MASK_REG, i2c->int_enable);
++
+ 	/* Perform a synchronous sequence to reset the bus */
+ 	ret = img_i2c_reset_bus(i2c);
+ 
+-- 
+2.6.2
+

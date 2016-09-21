@@ -1,0 +1,44 @@
+From f8538054f973f558651091720980fc0c313c52fb Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Wed, 15 Jul 2015 16:03:36 +0100
+Subject: ASoC: img: add rate change tolerance
+
+Allow a rate change of +/- 5% of the expected rate to take
+place (used by streamsync), but continue denying changes beyond
+this to stop child audio drivers attempting to change the
+sample rate multiplier
+
+Change-Id: I80373b426615a6359142e1e9f29b842fdce46994
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ sound/soc/img/pistachio-bub.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/sound/soc/img/pistachio-bub.c b/sound/soc/img/pistachio-bub.c
+index e0074e5..cc85d12 100644
+--- a/sound/soc/img/pistachio-bub.c
++++ b/sound/soc/img/pistachio-bub.c
+@@ -755,12 +755,19 @@ static int pistachio_card_i2s_clk_notifier_cb(struct notifier_block *nb,
+ {
+ 	struct clk_notifier_data *ndata = data;
+ 	struct pistachio_card_data *pbc;
++	int diff;
++	u64 tolerance;
+ 
+ 	pbc = container_of(nb, struct pistachio_card_data, i2s_clk_notifier);
+ 
+ 	switch (event) {
+ 	case PRE_RATE_CHANGE:
+-		if (ndata->new_rate == pbc->i2s_mclk_rate) {
++		diff = abs((int)ndata->new_rate - (int)pbc->i2s_mclk_rate);
++
++		tolerance = ((u64)pbc->i2s_mclk_rate * 5) + 50;
++		do_div(tolerance, 100);
++
++		if (diff < (int)tolerance) {
+ 			dev_dbg(pbc->card.dev,
+ 				"rate change OK (%lu)\n", ndata->new_rate);
+ 			return NOTIFY_OK;
+-- 
+2.6.2
+

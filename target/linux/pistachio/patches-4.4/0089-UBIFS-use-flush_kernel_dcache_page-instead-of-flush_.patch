@@ -1,0 +1,73 @@
+From 54bdd727fc0814f017b0df8548d9bccc16324354 Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Mon, 22 Feb 2016 16:36:13 +0000
+Subject: UBIFS: use flush_kernel_dcache_page instead of flush_dcache_page
+
+When the kernel needs to modify a user page it has obtained with
+kmap, it should call this function  after all modifications are
+complete, but before kunmapping it, to bring L2 caches and underlying
+memory up to date.
+This is the behavior we see for UBIFS read/writepage and therefore
+flush_kernel_dcache_page should be used instead of flush_dcache_page.
+By comparison, flush_dcache_page is used at any time the kernel
+writes to a page in the page cache or reads from a page in the page cache
+with potential shared/writable userspace mappings.
+
+Change-Id: Ie017e8718f87c326f7f7f58f803a38dd5bf0b70c
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ fs/ubifs/file.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/fs/ubifs/file.c b/fs/ubifs/file.c
+index 0edc128..b1082e5 100644
+--- a/fs/ubifs/file.c
++++ b/fs/ubifs/file.c
+@@ -176,7 +176,7 @@ out_free:
+ out:
+ 	SetPageUptodate(page);
+ 	ClearPageError(page);
+-	flush_dcache_page(page);
++	flush_kernel_dcache_page(page);
+ 	kunmap(page);
+ 	return 0;
+ 
+@@ -184,7 +184,7 @@ error:
+ 	kfree(dn);
+ 	ClearPageUptodate(page);
+ 	SetPageError(page);
+-	flush_dcache_page(page);
++	flush_kernel_dcache_page(page);
+ 	kunmap(page);
+ 	return err;
+ }
+@@ -687,7 +687,7 @@ out_hole:
+ 
+ 	SetPageUptodate(page);
+ 	ClearPageError(page);
+-	flush_dcache_page(page);
++	flush_kernel_dcache_page(page);
+ 	kunmap(page);
+ 	*n = nn;
+ 	return 0;
+@@ -695,7 +695,7 @@ out_hole:
+ out_err:
+ 	ClearPageUptodate(page);
+ 	SetPageError(page);
+-	flush_dcache_page(page);
++	flush_kernel_dcache_page(page);
+ 	kunmap(page);
+ 	ubifs_err(c, "bad data node (block %u, inode %lu)",
+ 		  page_block, inode->i_ino);
+@@ -1046,7 +1046,7 @@ static int ubifs_writepage(struct page *page, struct writeback_control *wbc)
+ 	 */
+ 	kaddr = kmap_atomic(page);
+ 	memset(kaddr + len, 0, PAGE_CACHE_SIZE - len);
+-	flush_dcache_page(page);
++	flush_kernel_dcache_page(page);
+ 	kunmap_atomic(kaddr);
+ 
+ 	if (i_size > synced_i_size) {
+-- 
+2.6.2
+

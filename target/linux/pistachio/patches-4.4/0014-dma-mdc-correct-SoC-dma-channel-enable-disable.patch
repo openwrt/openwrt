@@ -1,0 +1,71 @@
+From 92f0c2676531142cca465f4558c5504dfa5f3fca Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Sat, 30 May 2015 23:35:06 +0100
+Subject: dma: mdc: correct SoC dma channel enable/disable
+
+Move the calls to SoC enable/disable functions to
+the correct places
+
+Change-Id: I85b98b8942ec27c2b48d2fc2d8b05b30d2420a65
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ drivers/dma/img-mdc-dma.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/dma/img-mdc-dma.c b/drivers/dma/img-mdc-dma.c
+index 9ca5683..79eb47c 100644
+--- a/drivers/dma/img-mdc-dma.c
++++ b/drivers/dma/img-mdc-dma.c
+@@ -545,8 +545,6 @@ static void mdc_issue_desc(struct mdc_chan *mchan)
+ 	dev_dbg(mdma2dev(mdma), "Issuing descriptor on channel %d\n",
+ 		mchan->chan_nr);
+ 
+-	mdma->soc->enable_chan(mchan);
+-
+ 	val = mdc_chan_readl(mchan, MDC_GENERAL_CONFIG);
+ 	val |= MDC_GENERAL_CONFIG_LIST_IEN | MDC_GENERAL_CONFIG_IEN |
+ 		MDC_GENERAL_CONFIG_LEVEL_INT | MDC_GENERAL_CONFIG_PHYSICAL_W |
+@@ -560,6 +558,8 @@ static void mdc_issue_desc(struct mdc_chan *mchan)
+ 	val = mdc_chan_readl(mchan, MDC_CONTROL_AND_STATUS);
+ 	val |= MDC_CONTROL_AND_STATUS_LIST_EN;
+ 	mdc_chan_writel(mchan, val, MDC_CONTROL_AND_STATUS);
++
++	mdma->soc->enable_chan(mchan);
+ }
+ 
+ static void mdc_issue_pending(struct dma_chan *chan)
+@@ -654,12 +654,15 @@ static enum dma_status mdc_tx_status(struct dma_chan *chan,
+ static int mdc_terminate_all(struct dma_chan *chan)
+ {
+ 	struct mdc_chan *mchan = to_mdc_chan(chan);
++	struct mdc_dma *mdma = mchan->mdma;
+ 	struct mdc_tx_desc *mdesc;
+ 	unsigned long flags;
+ 	LIST_HEAD(head);
+ 
+ 	spin_lock_irqsave(&mchan->vc.lock, flags);
+ 
++	mdma->soc->disable_chan(mchan);
++
+ 	mdc_chan_writel(mchan, MDC_CONTROL_AND_STATUS_CANCEL,
+ 			MDC_CONTROL_AND_STATUS);
+ 
+@@ -702,6 +705,7 @@ static void mdc_free_chan_resources(struct dma_chan *chan)
+ static irqreturn_t mdc_chan_irq(int irq, void *dev_id)
+ {
+ 	struct mdc_chan *mchan = (struct mdc_chan *)dev_id;
++	struct mdc_dma *mdma = mchan->mdma;
+ 	struct mdc_tx_desc *mdesc;
+ 	u32 val, processed, done1, done2;
+ 	unsigned int i;
+@@ -760,6 +764,7 @@ static irqreturn_t mdc_chan_irq(int irq, void *dev_id)
+ 		} else if (mdesc->list_cmds_done == mdesc->list_len) {
+ 			mchan->desc = NULL;
+ 			vchan_cookie_complete(&mdesc->vd);
++			mdma->soc->disable_chan(mchan);
+ 			mdc_issue_desc(mchan);
+ 			break;
+ 		}
+-- 
+2.6.2
+

@@ -1,0 +1,43 @@
+From 29bcb2fb5d6cac9874e36557dbbd0580186ca932 Mon Sep 17 00:00:00 2001
+From: Chaitanya Tata <Chaitanya.Tata@imgtec.com>
+Date: Tue, 7 Jun 2016 17:27:06 +0530
+Subject: ZONE_DMA: RPU 64MB Limitation: Avoiding Bounce Buffers
+
+Kernel patches to avoid using bounce buffers.
+Enable ZONE_DMA and extend it to 64M region.
+
+Change-Id: Ic34bde38c027a7e5607f94c80a8bd3e9e11e6f3c
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ arch/mips/Kconfig           | 1 +
+ arch/mips/include/asm/dma.h | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 1c58731..b48ee15 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -377,6 +377,7 @@ config MACH_LOONGSON64
+ 
+ config MACH_PISTACHIO
+ 	bool "IMG Pistachio SoC based boards"
++	select GENERIC_ISA_DMA
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select BOOT_ELF32
+ 	select BOOT_RAW
+diff --git a/arch/mips/include/asm/dma.h b/arch/mips/include/asm/dma.h
+index 5b9ed1b..f6dfa38 100644
+--- a/arch/mips/include/asm/dma.h
++++ b/arch/mips/include/asm/dma.h
+@@ -87,7 +87,7 @@
+ /* don't care; ISA bus master won't work, ISA slave DMA supports 32bit addr */
+ #define MAX_DMA_ADDRESS		PAGE_OFFSET
+ #else
+-#define MAX_DMA_ADDRESS		(PAGE_OFFSET + 0x01000000)
++#define MAX_DMA_ADDRESS		(PAGE_OFFSET + 0x04000000)
+ #endif
+ #define MAX_DMA_PFN		PFN_DOWN(virt_to_phys((void *)MAX_DMA_ADDRESS))
+ 
+-- 
+2.6.2
+

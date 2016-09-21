@@ -1,0 +1,85 @@
+From 52247336f2462e8a13d2c9156c1b240f8394e7be Mon Sep 17 00:00:00 2001
+From: Naidu Tellapati <Naidu.Tellapati@imgtec.com>
+Date: Thu, 11 Jun 2015 12:30:42 +0100
+Subject: FROMLIST: DT: pdm: Add binding document for IMG PDM DAC
+
+Add binding document for the Pulse Density Modulator (PDM) DAC
+present on the Pistachio SOC.
+
+(picked from https://patchwork.ozlabs.org/patch/426342/)
+
+BUG=None
+TEST=Tested on Pistachio BuB
+
+Change-Id: I19a147794ec06c7cc08f7e7c5089cbcfad0e44a1
+Signed-off-by: Naidu Tellapati <Naidu.Tellapati@imgtec.com>
+Signed-off-by: Arul Ramasamy <Arul.Ramasamy@imgtec.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+---
+ Documentation/devicetree/bindings/misc/img-pdm.txt | 54 ++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/misc/img-pdm.txt
+
+diff --git a/Documentation/devicetree/bindings/misc/img-pdm.txt b/Documentation/devicetree/bindings/misc/img-pdm.txt
+new file mode 100644
+index 0000000..96fde23
+--- /dev/null
++++ b/Documentation/devicetree/bindings/misc/img-pdm.txt
+@@ -0,0 +1,54 @@
++Imagination Technologies Pulse Density Modulator (PDM) DAC.
++
++Required properties:
++- compatible: Must be "img,pistachio-pdm"
++- clocks: phandle to input PDM clock
++- clock-names: Must include the following entry:
++  - pdm: input clock to pdm block.
++- img,cr-periph: Must contain a phandle to the peripheral control
++  syscon node which contains PDM control registers.
++- #pdm-cells: Must be 2.
++- The first cell is the PDM channel number (valid values: 0, 1, 2, 3)
++- The second cell is 12-bit pulse-in value
++
++Specifying PDM information for devices
++======================================
++
++1. PDM User nodes
++
++PDM properties should be named "pdms". The exact meaning of each pdms property
++is described above.
++
++	pdm-specifier : array of #pdm-cells specifying the given PDM
++						(controller specific)
++
++The following example could be used to describe a PDM-based backlight device:
++
++	pdm: pdm {
++		#pdm-cells = <2>;
++	};
++
++	[...]
++
++	bl: backlight {
++		pdms = <&pdm 2 0>;
++	};
++
++pdm-specifier typically encodes the chip-relative PDM channel number and the
++12-bit pulse-in value.
++
++2. PDM Controller nodes
++
++PDM controller nodes must specify the number of cells used for the specifier
++using the '#pdm-cells' property.
++
++An example PDM controller might look like this:
++
++Example:
++	pdm: pdm@18148000 {
++		compatible = "img,pistachio-pdm";
++		clocks = <&pdm_clk>;
++		clk-names = "pdm";
++		img,cr-periph = <&cr_periph>;
++		#pdm-cells = <2>;
++	};
+-- 
+2.6.2
+

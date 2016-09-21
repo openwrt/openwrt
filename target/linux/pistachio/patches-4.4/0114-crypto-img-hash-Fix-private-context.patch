@@ -1,0 +1,65 @@
+From a8ae21b44662c17c6395488b8736d31b708e6077 Mon Sep 17 00:00:00 2001
+From: Will Thomas <will.thomas@imgtec.com>
+Date: Fri, 10 Jun 2016 16:05:56 +0100
+Subject: crypto: img-hash: Fix private context
+
+Move 0 length buffer to end of structure to stop overwriting
+fallback request data. This doesn't cause a bug in itself but
+could if more struct members are added below.
+
+Update driver to use the proper value for DMA burst length.
+Previous value of 16 is not supported, downsize to 4.
+
+Sporadic null pointer exceptions came from here. Fix them.
+
+Change-Id: I67c9ce76295a840645e5e9e60d74fe01a2eaa225
+Signed-off-by: Will Thomas <will.thomas@imgtec.com>
+---
+ drivers/crypto/img-hash.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/crypto/img-hash.c b/drivers/crypto/img-hash.c
+index 8ba4500..f90fdf3 100644
+--- a/drivers/crypto/img-hash.c
++++ b/drivers/crypto/img-hash.c
+@@ -71,6 +71,7 @@
+ #define DRIVER_FLAGS_MD5		BIT(21)
+ 
+ #define IMG_HASH_QUEUE_LENGTH		20
++#define IMG_HASH_DMA_BURST		4
+ #define IMG_HASH_DMA_THRESHOLD		64
+ 
+ #ifdef __LITTLE_ENDIAN
+@@ -102,8 +103,10 @@ struct img_hash_request_ctx {
+ 	unsigned long		op;
+ 
+ 	size_t			bufcnt;
+-	u8 buffer[0] __aligned(sizeof(u32));
+ 	struct ahash_request	fallback_req;
++
++	/* Zero length buffer must remain last member of struct */
++	u8 buffer[0] __aligned(sizeof(u32));
+ };
+ 
+ struct img_hash_ctx {
+@@ -340,7 +343,7 @@ static int img_hash_dma_init(struct img_hash_dev *hdev)
+ 	dma_conf.direction = DMA_MEM_TO_DEV;
+ 	dma_conf.dst_addr = hdev->bus_addr;
+ 	dma_conf.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+-	dma_conf.dst_maxburst = 16;
++	dma_conf.dst_maxburst = IMG_HASH_DMA_BURST;
+ 	dma_conf.device_fc = false;
+ 
+ 	err = dmaengine_slave_config(hdev->dma_lch,  &dma_conf);
+@@ -361,7 +364,7 @@ static void img_hash_dma_task(unsigned long d)
+ 	size_t nbytes, bleft, wsend, len, tbc;
+ 	struct scatterlist tsg;
+ 
+-	if (!ctx->sg)
++	if (!ctx || !ctx->sg)
+ 		return;
+ 
+ 	addr = sg_virt(ctx->sg);
+-- 
+2.6.2
+

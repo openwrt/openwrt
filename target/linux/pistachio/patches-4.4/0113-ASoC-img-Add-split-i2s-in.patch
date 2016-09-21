@@ -1,0 +1,2317 @@
+From 273b9fc4e7ff4a9d7433fa41bd98d702f059ee3a Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Mon, 12 Oct 2015 17:36:52 +0100
+Subject: ASoC: img: Add split i2s-in
+
+Add split i2s-in support.
+
+Not suitable for upstream due to incompatibilies with ALSA
+framework
+
+Change-Id: Ib16f63053536b9e35aa7b2b711589da8efbeafca
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ .../devicetree/bindings/sound/img,i2s-in.txt       |  47 +-
+ .../bindings/sound/img,pistachio-audio.txt         |  10 +-
+ include/sound/dmaengine_pcm.h                      |   6 +
+ include/sound/soc.h                                |   4 +
+ sound/soc/img/img-i2s-in.c                         | 793 ++++++++++++++++++---
+ sound/soc/img/pistachio.c                          | 623 +++++++++++++---
+ sound/soc/soc-core.c                               |  86 ++-
+ sound/soc/soc-devres.c                             |  23 +
+ sound/soc/soc-generic-dmaengine-pcm.c              |  36 +
+ 9 files changed, 1451 insertions(+), 177 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/img,i2s-in.txt b/Documentation/devicetree/bindings/sound/img,i2s-in.txt
+index a9e3c86..76277d4 100644
+--- a/Documentation/devicetree/bindings/sound/img,i2s-in.txt
++++ b/Documentation/devicetree/bindings/sound/img,i2s-in.txt
+@@ -4,7 +4,9 @@ Required Properties:
+ 
+   - compatible : Compatible list, must contain "img,i2s-in"
+ 
+-  - #sound-dai-cells : Must be equal to 0
++  - #sound-dai-cells : Must be equal to 1
++
++  - #sound-platform-cells : Must be equal to 1
+ 
+   - reg : Offset and length of the register set for the device
+ 
+@@ -15,13 +17,34 @@ Required Properties:
+ 
+   - dmas: Contains an entry for each entry in dma-names.
+ 
+-  - dma-names: Must include the following entry:
+-	"rx"	Single DMA channel used by all active I2S channels
++  - dma-names: Must include one or both of the following:
++	"rx"					Shared DMA channel
++	"rxN" for N=0..img,i2s-channels - 1	Per-channel DMA
+ 
+   - img,i2s-channels : Number of I2S channels instantiated in the I2S in block
+ 
++  - img,cr-periph : Must contain a phandle to the peripheral control syscon
++                    node which contains the alternate i2s control registers
++
+ Optional Properties:
+ 
++  - img,clock-master : Contains bitmask for clock master configuration. One
++		       bit per i2s channel for channels 0-3. 4/5 cannot be
++		       modified and always use MFIO47/MFIO48. If omitted,
++		       all channels will use MFIO47/MFIO48
++
++	0 -> MFIO47 = bit clock, MFIO48 = left/right clock
++	1 -> MFIO11 = bit clock, MFIO12 = left/right clock
++
++  - img,shared-dma : Contains number of channels to combine for use with the
++		     shared DMA channel. If this is not equal to the value
++		     specified in img,i2s-channels, per-channel dma references
++		     must exist for the remaining channels. If this is equal
++		     to zero, the shared dma channel reference can be ommitted.
++		     The combined channels must share the same bit and
++		     left/right clock. If omitted, all channels will combined
++		     for use with the shared DMA channel
++
+   - interrupts : Contains the I2S in interrupts. Depending on
+ 	the configuration, there may be no interrupts, one interrupt,
+ 	or an interrupt per I2S channel
+@@ -36,10 +59,22 @@ i2s_in: i2s-in@18100800 {
+ 	compatible = "img,i2s-in";
+ 	reg = <0x18100800 0x200>;
+ 	interrupts = <GIC_SHARED 7 IRQ_TYPE_LEVEL_HIGH>;
+-	dmas = <&mdc 30 0xffffffff 0>;
+-	dma-names = "rx";
+ 	clocks = <&cr_periph SYS_CLK_I2S_IN>;
+ 	clock-names = "sys";
+ 	img,i2s-channels = <6>;
+-	#sound-dai-cells = <0>;
++	img,cr-periph = <&cr_periph>;
++	img,clock-master = <0xf>;
++	img,shared-dma = <3>;
++	dmas =  <&mdc 30 0xffffffff 0>,
++		<&mdc 24 0xffffffff 0>,
++		<&mdc 25 0xffffffff 0>,
++		<&mdc 26 0xffffffff 0>,
++		<&mdc 27 0xffffffff 0>,
++		<&mdc 28 0xffffffff 0>,
++		<&mdc 29 0xffffffff 0>;
++	dma-names = "rx", "rx0", "rx1", "rx2",
++		    "rx3", "rx4", "rx5";
++
++	#sound-dai-cells = <1>;
++	#sound-platform-cells = <1>;
+ };
+diff --git a/Documentation/devicetree/bindings/sound/img,pistachio-audio.txt b/Documentation/devicetree/bindings/sound/img,pistachio-audio.txt
+index ea0e041..4cdbf2e 100644
+--- a/Documentation/devicetree/bindings/sound/img,pistachio-audio.txt
++++ b/Documentation/devicetree/bindings/sound/img,pistachio-audio.txt
+@@ -45,6 +45,8 @@ Optional subnodes:
+ 
+   - i2s-in : Contains i2s in information
+ 
++  - i2s-in-alt : Contains i2s in (alternate interface) information
++
+ Required spdif-out subnode properties:
+ 
+   - cpu-dai : phandle of spdif out cpu dai
+@@ -86,14 +88,14 @@ Optional i2s-out subnodes:
+ 		   cannot be equal to "internal-dac" or "tpa6130a2". The name
+ 		   should be short to avoid control name truncation
+ 
+-Required i2s-in subnode properties:
++Required i2s-in, i2s-in-alt subnode properties:
+ 
+-  - cpu-dai : phandle of i2s in cpu dai
++  - cpu-dais : array of phandles of i2s in cpu dais
+ 
+   - format : i2s in format. "i2s" and "left_j" are supported by
+ 	     the Pistachio iteration of the i2s in controller
+ 
+-Optional i2s-in subnode properties:
++Optional i2s-in, i2s-in-alt subnode properties:
+ 
+   - bitclock-inversion : i2s out BCLK inversion
+ 
+@@ -101,7 +103,7 @@ Optional i2s-in subnode properties:
+ 
+   - continuous-clock : i2s out BCLK and LRCLK always active
+ 
+-Optional i2s-in subnodes:
++Optional i2s-in, i2s-in-alt subnodes:
+ 
+   - <codec-name> : Contains codec information. <codec-name> will be used as
+ 		   the prefix for the codec. This name must be unique for
+diff --git a/include/sound/dmaengine_pcm.h b/include/sound/dmaengine_pcm.h
+index 5c6ec33..5f54abb 100644
+--- a/include/sound/dmaengine_pcm.h
++++ b/include/sound/dmaengine_pcm.h
+@@ -145,11 +145,17 @@ struct snd_dmaengine_pcm_config {
+ int snd_dmaengine_pcm_register(struct device *dev,
+ 	const struct snd_dmaengine_pcm_config *config,
+ 	unsigned int flags);
++int snd_dmaengine_pcm_register_id_name(struct device *dev,
++	const struct snd_dmaengine_pcm_config *config, unsigned int flags,
++	unsigned int id, char *platform_name);
+ void snd_dmaengine_pcm_unregister(struct device *dev);
+ 
+ int devm_snd_dmaengine_pcm_register(struct device *dev,
+ 	const struct snd_dmaengine_pcm_config *config,
+ 	unsigned int flags);
++int devm_snd_dmaengine_pcm_register_id_name(struct device *dev,
++	const struct snd_dmaengine_pcm_config *config, unsigned int flags,
++	unsigned int id, char *platform_name);
+ 
+ int snd_dmaengine_pcm_prepare_slave_config(struct snd_pcm_substream *substream,
+ 	struct snd_pcm_hw_params *params,
+diff --git a/include/sound/soc.h b/include/sound/soc.h
+index b4c0ec9..1cc8d4b 100644
+--- a/include/sound/soc.h
++++ b/include/sound/soc.h
+@@ -1651,6 +1651,10 @@ unsigned int snd_soc_of_parse_daifmt(struct device_node *np,
+ 				     struct device_node **framemaster);
+ int snd_soc_of_get_dai_name(struct device_node *of_node,
+ 			    const char **dai_name);
++int snd_soc_of_get_dai_name_alt(struct device_node *of_node, char *name,
++				int index, const char **dai_name);
++int snd_soc_of_get_platform_name(struct device_node *of_node, char *name,
++				int index,  const char **platform_name);
+ int snd_soc_of_get_dai_link_codecs(struct device *dev,
+ 				   struct device_node *of_node,
+ 				   struct snd_soc_dai_link *dai_link);
+diff --git a/sound/soc/img/img-i2s-in.c b/sound/soc/img/img-i2s-in.c
+index dc1e53a..b88b49c 100644
+--- a/sound/soc/img/img-i2s-in.c
++++ b/sound/soc/img/img-i2s-in.c
+@@ -18,6 +18,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/reset.h>
+ 
++#include <linux/mfd/syscon.h>
++
+ #include <sound/core.h>
+ #include <sound/dmaengine_pcm.h>
+ #include <sound/initval.h>
+@@ -33,6 +35,8 @@
+ #define IMG_I2S_IN_CTL_16PACK_MASK		BIT(1)
+ #define IMG_I2S_IN_CTL_ME_MASK			BIT(0)
+ 
++#define IMG_I2S_IN_CH_RX_FIFO(chan)		((chan) * 0x20)
++
+ #define IMG_I2S_IN_CH_CTL			0x4
+ #define IMG_I2S_IN_CH_CTL_CCDEL_MASK		0x38000
+ #define IMG_I2S_IN_CH_CTL_CCDEL_SHIFT		15
+@@ -51,15 +55,62 @@
+ 
+ #define IMG_I2S_IN_CH_STRIDE			0x20
+ 
++#define	IMG_I2S_IN_CH_SCNT			0x10
++
++#define	PERIPH_I2S_IN_CLOCK_MASTER		0x280
++
++#define	PERIPH_SAMPLE_CAPTURE			0x80
++#define	PERIPH_SAMPLE_CAPTURE_I2S_IN_MASK	0x3f
++
++#define	IMG_I2S_IN_CH_BIT(i2s, ch)  (1UL << (((i2s)->max_i2s_chan - 1) - (ch)))
++#define	IMG_I2S_IN_CS_MASK(i2s, cs) (((1UL << (cs)->active_channels) - 1) << \
++				    (((i2s)->max_i2s_chan -	\
++				    (cs)->active_channels) - (cs)->first_channel))
++
++struct img_i2s_in_channel;
++
++struct img_i2s_in_channel_group {
++	u32 mask;
++	u32 channel_sets;
++	u32 active_channel_sets;
++	u32 master;
++	bool stopping;
++};
++
++struct img_i2s_in_channel_set {
++	struct img_i2s_in_channel_group *group;
++	char dma_name[5];
++	char cpu_dai_name[18];
++	char platform_name[23];
++	struct snd_dmaengine_dai_dma_data dma_data;
++	u32 first_channel;
++	u32 last_channel;
++	u32 active_channels;
++	bool active;
++	bool shared_dma;
++};
++
++struct img_i2s_in_channel {
++	struct img_i2s_in_channel_set *set;
++};
++
+ struct img_i2s_in {
++	spinlock_t lock;
+ 	void __iomem *base;
+ 	struct clk *clk_sys;
+-	struct snd_dmaengine_dai_dma_data dma_data;
+ 	struct device *dev;
+ 	unsigned int max_i2s_chan;
+ 	void __iomem *channel_base;
+-	unsigned int active_channels;
+-	struct snd_soc_dai_driver dai_driver;
++	u32 active_channel_sets;
++	bool core_me;
++	struct regmap *periph_regs;
++	u32 clock_masters;
++	u32 shared_dma_channels;
++	struct img_i2s_in_channel_set *channel_sets;
++	struct img_i2s_in_channel *channels;
++	struct img_i2s_in_channel_group *groups;
++	struct snd_soc_dai_driver *cpu_dais;
++	struct snd_soc_component_driver img_i2s_in_component;
+ };
+ 
+ static inline void img_i2s_in_writel(struct img_i2s_in *i2s, u32 val, u32 reg)
+@@ -102,49 +153,236 @@ static inline void img_i2s_in_ch_enable(struct img_i2s_in *i2s, u32 chan,
+ 	img_i2s_in_ch_writel(i2s, chan, reg, IMG_I2S_IN_CH_CTL);
+ }
+ 
+-static inline void img_i2s_in_flush(struct img_i2s_in *i2s)
++static inline void img_i2s_in_flush(struct img_i2s_in *i2s,
++		struct img_i2s_in_channel_set *cs)
+ {
+ 	int i;
+ 	u32 reg;
+ 
+-	for (i = 0; i < i2s->active_channels; i++) {
+-		reg = img_i2s_in_ch_disable(i2s, i);
++	for (i = cs->first_channel; i <= cs->last_channel; i++) {
++		reg = img_i2s_in_ch_readl(i2s, i, IMG_I2S_IN_CH_CTL);
+ 		reg |= IMG_I2S_IN_CH_CTL_FIFO_FLUSH_MASK;
+ 		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
+ 		reg &= ~IMG_I2S_IN_CH_CTL_FIFO_FLUSH_MASK;
+ 		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
+-		img_i2s_in_ch_enable(i2s, i, reg);
+ 	}
+ }
+ 
++static void img_i2s_in_do_multistart(struct img_i2s_in *i2s, u32 mask)
++{
++	int i;
++	u32 reg;
++
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if (mask & IMG_I2S_IN_CH_BIT(i2s, i)) {
++			reg = img_i2s_in_ch_readl(i2s, i, IMG_I2S_IN_CH_CTL);
++			reg |= IMG_I2S_IN_CH_CTL_ME_MASK;
++			img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		}
++	}
++}
++
++static void img_i2s_in_do_multistop(struct img_i2s_in *i2s, u32 mask)
++{
++	int i;
++	u32 reg;
++
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if (mask & IMG_I2S_IN_CH_BIT(i2s, i)) {
++			reg = img_i2s_in_ch_readl(i2s, i, IMG_I2S_IN_CH_CTL);
++			reg &= ~IMG_I2S_IN_CH_CTL_ME_MASK;
++			img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		}
++	}
++}
++
++static void img_i2s_in_multistart(struct img_i2s_in *i2s, u32 mask)
++{
++	int n = 0, i, first = -1, last;
++	u32 reg, regb, regc, regd;
++
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if (mask & IMG_I2S_IN_CH_BIT(i2s, i)) {
++			n++;
++			if (first == -1)
++				first = i;
++			last = i;
++		}
++	}
++
++	if (n == 0) {
++		return;
++	} else if ((n == 1) || (!i2s->core_me)) {
++		img_i2s_in_do_multistart(i2s, mask);
++	} else {
++		while (1) {
++			regmap_update_bits(i2s->periph_regs,
++					PERIPH_SAMPLE_CAPTURE,
++					PERIPH_SAMPLE_CAPTURE_I2S_IN_MASK,
++					PERIPH_SAMPLE_CAPTURE_I2S_IN_MASK);
++			regmap_update_bits(i2s->periph_regs,
++					PERIPH_SAMPLE_CAPTURE,
++					PERIPH_SAMPLE_CAPTURE_I2S_IN_MASK,
++					0);
++			reg = img_i2s_in_ch_readl(i2s, first,
++						IMG_I2S_IN_CH_SCNT);
++			regb = img_i2s_in_ch_readl(i2s, last,
++						IMG_I2S_IN_CH_SCNT);
++			img_i2s_in_do_multistart(i2s, mask);
++			regmap_update_bits(i2s->periph_regs,
++					PERIPH_SAMPLE_CAPTURE,
++					PERIPH_SAMPLE_CAPTURE_I2S_IN_MASK,
++					PERIPH_SAMPLE_CAPTURE_I2S_IN_MASK);
++			regmap_update_bits(i2s->periph_regs,
++					PERIPH_SAMPLE_CAPTURE,
++					PERIPH_SAMPLE_CAPTURE_I2S_IN_MASK,
++					0);
++			regc = img_i2s_in_ch_readl(i2s, first,
++						IMG_I2S_IN_CH_SCNT);
++			regd = img_i2s_in_ch_readl(i2s, last,
++						IMG_I2S_IN_CH_SCNT);
++			if ((regc - reg) == (regd - regb))
++				break;
++			img_i2s_in_do_multistop(i2s, mask);
++		}
++	}
++}
++
++static u32 img_i2s_in_get_mask_shared_dma_first_only(struct img_i2s_in *i2s,
++							u32 mask)
++{
++	if (i2s->shared_dma_channels &&
++			(mask & (1UL << (i2s->max_i2s_chan - 1)))) {
++		mask &= ~(((1UL << i2s->shared_dma_channels) - 1) <<
++			(i2s->max_i2s_chan - i2s->shared_dma_channels));
++		mask |= 1UL << (i2s->max_i2s_chan - 1);
++	}
++
++	return mask;
++}
++
++static u32 img_i2s_in_get_mask_shared_dma_all(struct img_i2s_in *i2s,
++							u32 mask)
++{
++	if (i2s->shared_dma_channels &&
++			(mask & (1UL << (i2s->max_i2s_chan - 1)))) {
++		mask |= ((1UL << i2s->shared_dma_channels) - 1) <<
++			(i2s->max_i2s_chan - i2s->shared_dma_channels);
++	}
++
++	return mask;
++}
++
++static u32 img_i2s_in_get_mask_shared_dma_active_only(struct img_i2s_in *i2s,
++							u32 mask)
++{
++	u32 active_channels = i2s->channel_sets[0].active_channels;
++
++	if (i2s->shared_dma_channels &&
++			(mask & (1UL << (i2s->max_i2s_chan - 1)))) {
++		mask &= ~(((1UL << i2s->shared_dma_channels) - 1) <<
++			(i2s->max_i2s_chan - i2s->shared_dma_channels));
++		mask |= ((1UL << active_channels) - 1) <<
++			(i2s->max_i2s_chan - active_channels);
++	}
++
++	return mask;
++}
++
+ static int img_i2s_in_trigger(struct snd_pcm_substream *substream, int cmd,
+ 	struct snd_soc_dai *dai)
+ {
+ 	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(dai);
+-	u32 reg;
++	u32 reg, mask;
++	unsigned long flags;
++	int ret = 0;
++	struct img_i2s_in_channel_set *cs;
++	struct img_i2s_in_channel_group *group;
++	struct img_i2s_in_channel *ch;
++	bool nostart = false;
++
++	cs = &i2s->channel_sets[dai->id];
++	ch = &i2s->channels[cs->first_channel];
++
++	spin_lock_irqsave(&i2s->lock, flags);
++
++	group = cs->group;
+ 
+ 	switch (cmd) {
+ 	case SNDRV_PCM_TRIGGER_START:
+ 	case SNDRV_PCM_TRIGGER_RESUME:
+ 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
+-		reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
+-		reg |= IMG_I2S_IN_CTL_ME_MASK;
+-		img_i2s_in_writel(i2s, reg, IMG_I2S_IN_CTL);
++
++		if (cs->active)
++			break;
++
++		if (!group || group->stopping) {
++			ret = -EINVAL;
++			break;
++		}
++
++		group->active_channel_sets++;
++
++		if (group->active_channel_sets == group->channel_sets) {
++			mask = group->mask;
++			mask = img_i2s_in_get_mask_shared_dma_active_only(i2s,
++									mask);
++			img_i2s_in_multistart(i2s, mask);
++			group->stopping = true;
++		} else {
++			nostart = true;
++		}
++
++		if (!i2s->core_me && !nostart) {
++			reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
++			reg |= IMG_I2S_IN_CTL_ME_MASK;
++			img_i2s_in_writel(i2s, reg, IMG_I2S_IN_CTL);
++			i2s->core_me = true;
++		}
++
++		i2s->active_channel_sets++;
++		cs->active = true;
++
+ 		break;
+ 
+ 	case SNDRV_PCM_TRIGGER_STOP:
+ 	case SNDRV_PCM_TRIGGER_SUSPEND:
+ 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
+-		reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
+-		reg &= ~IMG_I2S_IN_CTL_ME_MASK;
+-		img_i2s_in_writel(i2s, reg, IMG_I2S_IN_CTL);
+-		img_i2s_in_flush(i2s);
++
++		if (!cs->active)
++			break;
++
++		if (!group) {
++			ret = -EINVAL;
++			break;
++		}
++
++		mask = IMG_I2S_IN_CS_MASK(i2s, cs);
++		img_i2s_in_do_multistop(i2s, mask);
++
++		i2s->active_channel_sets--;
++		cs->active = false;
++		group->active_channel_sets--;
++		if (!group->active_channel_sets)
++			group->stopping = false;
++
++		if (!i2s->active_channel_sets) {
++			reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
++			reg &= ~IMG_I2S_IN_CTL_ME_MASK;
++			img_i2s_in_writel(i2s, reg, IMG_I2S_IN_CTL);
++			i2s->core_me = false;
++		}
++
++		img_i2s_in_flush(i2s, cs);
++
+ 		break;
+ 	default:
+-		return -EINVAL;
++		ret = -EINVAL;
+ 	}
+ 
+-	return 0;
++	spin_unlock_irqrestore(&i2s->lock, flags);
++
++	return ret;
+ }
+ 
+ static int img_i2s_in_check_rate(struct img_i2s_in *i2s,
+@@ -185,9 +423,16 @@ static int img_i2s_in_hw_params(struct snd_pcm_substream *substream,
+ 	unsigned int bclk_filter_enable, bclk_filter_value;
+ 	int i, ret = 0;
+ 	u32 reg, control_reg, control_mask, chan_control_mask;
+-	u32 control_set = 0, chan_control_set = 0;
++	u32 control_set = 0, chan_control_set = 0, max_chan;
++	u32 channel_mask, mask, new_control_reg, new_reg;
++	unsigned long flags;
++	struct img_i2s_in_channel_set *cs;
++	bool includes_shared = false;
++	bool control_reg_diff = false;
+ 	snd_pcm_format_t format;
+ 
++	cs = &i2s->channel_sets[dai->id];
++
+ 	rate = params_rate(params);
+ 	format = params_format(params);
+ 	channels = params_channels(params);
+@@ -214,13 +459,10 @@ static int img_i2s_in_hw_params(struct snd_pcm_substream *substream,
+ 		return -EINVAL;
+ 	}
+ 
+-	if ((channels < 2) ||
+-			(channels > (i2s->max_i2s_chan * 2)) ||
+-			(channels % 2))
++	max_chan = ((cs->last_channel - cs->first_channel) + 1) * 2;
++	if ((channels < 2) || (channels > max_chan) || (channels % 2))
+ 		return -EINVAL;
+ 
+-	control_set |= ((i2s_channels - 1) << IMG_I2S_IN_CTL_ACTIVE_CH_SHIFT);
+-
+ 	ret = img_i2s_in_check_rate(i2s, rate, frame_size,
+ 			&bclk_filter_enable, &bclk_filter_value);
+ 	if (ret < 0)
+@@ -232,9 +474,6 @@ static int img_i2s_in_hw_params(struct snd_pcm_substream *substream,
+ 	if (bclk_filter_value)
+ 		chan_control_set |= IMG_I2S_IN_CH_CTL_FMODE_MASK;
+ 
+-	control_mask = (u32)(~IMG_I2S_IN_CTL_16PACK_MASK &
+-			~IMG_I2S_IN_CTL_ACTIVE_CHAN_MASK);
+-
+ 	chan_control_mask = (u32)(~IMG_I2S_IN_CH_CTL_16PACK_MASK &
+ 			~IMG_I2S_IN_CH_CTL_FEN_MASK &
+ 			~IMG_I2S_IN_CH_CTL_FMODE_MASK &
+@@ -242,23 +481,75 @@ static int img_i2s_in_hw_params(struct snd_pcm_substream *substream,
+ 			~IMG_I2S_IN_CH_CTL_FW_MASK &
+ 			~IMG_I2S_IN_CH_CTL_PACKH_MASK);
+ 
+-	control_reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
+-	control_reg = (control_reg & control_mask) | control_set;
+-	img_i2s_in_writel(i2s, control_reg, IMG_I2S_IN_CTL);
++	control_mask = ~IMG_I2S_IN_CTL_16PACK_MASK;
+ 
+-	for (i = 0; i < i2s_channels; i++) {
+-		reg = img_i2s_in_ch_disable(i2s, i);
+-		reg = (reg & chan_control_mask) | chan_control_set;
+-		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
+-		img_i2s_in_ch_enable(i2s, i, reg);
++	channel_mask = i2s->clock_masters;
++	if (!(IMG_I2S_IN_CH_BIT(i2s, cs->first_channel) & channel_mask))
++		channel_mask = ~channel_mask;
++
++	mask = 1UL << (i2s->max_i2s_chan - 1);
++
++	includes_shared = (i2s->shared_dma_channels && (channel_mask & mask));
++
++	spin_lock_irqsave(&i2s->lock, flags);
++
++	/* See if the wrapper register needs to change */
++	if (includes_shared) {
++		if (cs->shared_dma) {
++			control_set |= ((i2s_channels - 1) <<
++				IMG_I2S_IN_CTL_ACTIVE_CH_SHIFT);
++			control_mask &= ~IMG_I2S_IN_CTL_ACTIVE_CHAN_MASK;
++		}
++
++		control_reg = img_i2s_in_readl(i2s, IMG_I2S_IN_CTL);
++
++		new_control_reg = (control_reg & control_mask) | control_set;
++
++		/* If it does, and there are any active channels, fail */
++		if (new_control_reg != control_reg) {
++			if (i2s->active_channel_sets) {
++				spin_unlock_irqrestore(&i2s->lock, flags);
++				return -EBUSY;
++			}
++			control_reg_diff = true;
++		}
+ 	}
+-	for (; i < i2s->max_i2s_chan; i++) {
+-		reg = img_i2s_in_ch_disable(i2s, i);
+-		reg = (reg & chan_control_mask) | chan_control_set;
+-		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++
++	/*
++	 * Check that no individual registers need to change where the
++	 * corresponding channel is active
++	 */
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if ((channel_mask & mask) && i2s->channels[i].set->active) {
++			reg = img_i2s_in_ch_readl(i2s, i, IMG_I2S_IN_CH_CTL);
++			new_reg = (reg & chan_control_mask) | chan_control_set;
++			if (new_reg != reg) {
++				spin_unlock_irqrestore(&i2s->lock, flags);
++				return -EBUSY;
++			}
++		}
++		mask >>= 1;
++	}
++
++	mask = 1UL << (i2s->max_i2s_chan - 1);
++
++	if (control_reg_diff)
++		img_i2s_in_writel(i2s, new_control_reg, IMG_I2S_IN_CTL);
++
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if (channel_mask & mask) {
++			reg = img_i2s_in_ch_readl(i2s, i, IMG_I2S_IN_CH_CTL);
++			new_reg = (reg & chan_control_mask) | chan_control_set;
++			if (new_reg != reg)
++				img_i2s_in_ch_writel(i2s, i, new_reg,
++						IMG_I2S_IN_CH_CTL);
++		}
++		mask >>= 1;
+ 	}
+ 
+-	i2s->active_channels = i2s_channels;
++	cs->active_channels = i2s_channels;
++
++	spin_unlock_irqrestore(&i2s->lock, flags);
+ 
+ 	return 0;
+ }
+@@ -268,7 +559,11 @@ static int img_i2s_in_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ 	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(dai);
+ 	int i;
+ 	u32 chan_control_mask, lrd_set = 0, blkp_set = 0, chan_control_set = 0;
+-	u32 reg;
++	u32 reg, channel_mask, mask;
++	struct img_i2s_in_channel_set *cs;
++	unsigned long flags;
++
++	cs = &i2s->channel_sets[dai->id];
+ 
+ 	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
+ 	case SND_SOC_DAIFMT_NB_NF:
+@@ -306,29 +601,36 @@ static int img_i2s_in_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ 
+ 	chan_control_mask = (u32)~IMG_I2S_IN_CH_CTL_CLK_TRANS_MASK;
+ 
++	channel_mask = i2s->clock_masters;
++	if (!(IMG_I2S_IN_CH_BIT(i2s, cs->first_channel) & channel_mask))
++		channel_mask = ~channel_mask;
++
++	mask = 1UL << (i2s->max_i2s_chan - 1);
++
++	spin_lock_irqsave(&i2s->lock, flags);
++
++	if (i2s->active_channel_sets) {
++		spin_unlock_irqrestore(&i2s->lock, flags);
++		return -EBUSY;
++	}
++
+ 	/*
+ 	 * BLKP and LRD must be set during separate register writes
+ 	 */
+-	for (i = 0; i < i2s->active_channels; i++) {
+-		reg = img_i2s_in_ch_disable(i2s, i);
+-		reg = (reg & chan_control_mask) | chan_control_set;
+-		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
+-		reg = (reg & ~IMG_I2S_IN_CH_CTL_BLKP_MASK) | blkp_set;
+-		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
+-		reg = (reg & ~IMG_I2S_IN_CH_CTL_LRD_MASK) | lrd_set;
+-		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
+-		img_i2s_in_ch_enable(i2s, i, reg);
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if (mask & channel_mask) {
++			reg = img_i2s_in_ch_readl(i2s, i, IMG_I2S_IN_CH_CTL);
++			reg = (reg & chan_control_mask) | chan_control_set;
++			img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++			reg = (reg & ~IMG_I2S_IN_CH_CTL_BLKP_MASK) | blkp_set;
++			img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++			reg = (reg & ~IMG_I2S_IN_CH_CTL_LRD_MASK) | lrd_set;
++			img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
++		}
++		mask >>= 1;
+ 	}
+ 
+-	for (; i < i2s->max_i2s_chan; i++) {
+-		reg = img_i2s_in_ch_readl(i2s, i, IMG_I2S_IN_CH_CTL);
+-		reg = (reg & chan_control_mask) | chan_control_set;
+-		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
+-		reg = (reg & ~IMG_I2S_IN_CH_CTL_BLKP_MASK) | blkp_set;
+-		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
+-		reg = (reg & ~IMG_I2S_IN_CH_CTL_LRD_MASK) | lrd_set;
+-		img_i2s_in_ch_writel(i2s, i, reg, IMG_I2S_IN_CH_CTL);
+-	}
++	spin_unlock_irqrestore(&i2s->lock, flags);
+ 
+ 	return 0;
+ }
+@@ -339,19 +641,176 @@ static const struct snd_soc_dai_ops img_i2s_in_dai_ops = {
+ 	.set_fmt = img_i2s_in_set_fmt
+ };
+ 
+-static int img_i2s_in_dai_probe(struct snd_soc_dai *dai)
++static int img_i2s_in_group_info(struct snd_kcontrol *kcontrol,
++					struct snd_ctl_elem_info *uinfo)
+ {
+-	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(dai);
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(cpu_dai);
++
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = i2s->max_i2s_chan;
++	uinfo->value.integer.min = 0;
++	uinfo->value.integer.max = 1;
++
++	return 0;
++}
++
++static int img_i2s_in_group_get(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_value *ucontrol, int group)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(cpu_dai);
++	int i;
++	u32 mask;
++	unsigned long flags;
++
++	spin_lock_irqsave(&i2s->lock, flags);
++
++	mask = i2s->groups[group].mask;
++
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if (mask & IMG_I2S_IN_CH_BIT(i2s, i))
++			ucontrol->value.integer.value[i] = 1;
++		else
++			ucontrol->value.integer.value[i] = 0;
++	}
+ 
+-	snd_soc_dai_init_dma_data(dai, NULL, &i2s->dma_data);
++	spin_unlock_irqrestore(&i2s->lock, flags);
+ 
+ 	return 0;
+ }
+ 
+-static const struct snd_soc_component_driver img_i2s_in_component = {
+-	.name = "img-i2s-in"
++static int img_i2s_in_group_get_a(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_value *ucontrol)
++{
++	return img_i2s_in_group_get(kcontrol, ucontrol, 0);
++}
++
++static int img_i2s_in_group_get_b(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_value *ucontrol)
++{
++	return img_i2s_in_group_get(kcontrol, ucontrol, 1);
++}
++
++static int img_i2s_in_group_set(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_value *ucontrol, int group)
++{
++	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
++	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(cpu_dai);
++	int i;
++	u32 mask, new_mask;
++	unsigned long flags;
++
++	new_mask = 0;
++	for (i = 0; i < i2s->max_i2s_chan; i++)
++		if (ucontrol->value.integer.value[i])
++			new_mask |= IMG_I2S_IN_CH_BIT(i2s, i);
++
++	/* Master must be present in group */
++	if (!(new_mask & IMG_I2S_IN_CH_BIT(i2s, i2s->groups[group].master)))
++		return -EINVAL;
++
++	spin_lock_irqsave(&i2s->lock, flags);
++
++	/* Members of the group must have the specified bclk/lrclk master */
++	if (group) {
++		if ((new_mask & i2s->clock_masters) != new_mask) {
++			spin_unlock_irqrestore(&i2s->lock, flags);
++			return -EINVAL;
++		}
++	} else {
++		if ((new_mask & ~i2s->clock_masters) != new_mask) {
++			spin_unlock_irqrestore(&i2s->lock, flags);
++			return -EINVAL;
++		}
++	}
++
++	mask = i2s->groups[group].mask;
++
++	/* Check none of the channels currently in the group are active */
++	if (i2s->groups[group].active_channel_sets) {
++		spin_unlock_irqrestore(&i2s->lock, flags);
++		return -EINVAL;
++	}
++
++	/*
++	 * If one of the channels using the shared dma is present in the new
++	 * group, all of the channels that use the shared dma must be present
++	 */
++	mask = img_i2s_in_get_mask_shared_dma_all(i2s, new_mask);
++	if ((mask & new_mask) != mask) {
++		spin_unlock_irqrestore(&i2s->lock, flags);
++		return -EINVAL;
++	}
++
++	mask = i2s->groups[group].mask;
++
++	for (i = 0; i < i2s->max_i2s_chan; i++)
++		if (new_mask & IMG_I2S_IN_CH_BIT(i2s, i))
++			i2s->channels[i].set->group = &i2s->groups[group];
++		else if (mask & IMG_I2S_IN_CH_BIT(i2s, i))
++			i2s->channels[i].set->group = NULL;
++
++	i2s->groups[group].mask = new_mask;
++
++	i2s->groups[group].channel_sets = 0;
++	new_mask = img_i2s_in_get_mask_shared_dma_first_only(i2s, new_mask);
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if (new_mask & IMG_I2S_IN_CH_BIT(i2s, i))
++			i2s->groups[group].channel_sets++;
++	}
++
++	spin_unlock_irqrestore(&i2s->lock, flags);
++
++	return 0;
++}
++
++static int img_i2s_in_group_set_a(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_value *ucontrol)
++{
++	return img_i2s_in_group_set(kcontrol, ucontrol, 0);
++}
++
++static int img_i2s_in_group_set_b(struct snd_kcontrol *kcontrol,
++		struct snd_ctl_elem_value *ucontrol)
++{
++	return img_i2s_in_group_set(kcontrol, ucontrol, 1);
++}
++
++static struct snd_kcontrol_new img_i2s_in_controls[] = {
++	{
++		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = "I2S In Group 1",
++		.info = img_i2s_in_group_info,
++		.get = img_i2s_in_group_get_a,
++		.put = img_i2s_in_group_set_a
++	},
++	{
++		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
++		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
++		.name = "I2S In Group 2",
++		.info = img_i2s_in_group_info,
++		.get = img_i2s_in_group_get_b,
++		.put = img_i2s_in_group_set_b
++	},
+ };
+ 
++static int img_i2s_in_dai_probe(struct snd_soc_dai *dai)
++{
++	struct img_i2s_in *i2s = snd_soc_dai_get_drvdata(dai);
++	struct img_i2s_in_channel_set *cs;
++
++	cs = &i2s->channel_sets[dai->id];
++
++	snd_soc_dai_init_dma_data(dai, NULL, &cs->dma_data);
++
++	if (!dai->id)
++		snd_soc_add_dai_controls(dai, img_i2s_in_controls, 2);
++
++	return 0;
++}
++
+ static int img_i2s_in_dma_prepare_slave_config(struct snd_pcm_substream *st,
+ 	struct snd_pcm_hw_params *params, struct dma_slave_config *sc)
+ {
+@@ -380,11 +839,13 @@ static const struct snd_dmaengine_pcm_config img_i2s_in_dma_config = {
+ static int img_i2s_in_probe(struct platform_device *pdev)
+ {
+ 	struct img_i2s_in *i2s;
++	struct img_i2s_in_channel_set *cs;
++	struct snd_soc_dai_driver *cd;
+ 	struct resource *res;
+ 	void __iomem *base;
+ 	int ret, i;
+ 	struct reset_control *rst;
+-	u32 reg;
++	u32 reg, temp, mask, num_channel_sets;
+ 	unsigned int max_i2s_chan_pow_2;
+ 	struct device *dev = &pdev->dev;
+ 
+@@ -409,10 +870,61 @@ static int img_i2s_in_probe(struct platform_device *pdev)
+ 		return -EINVAL;
+ 	}
+ 
++	if (!i2s->max_i2s_chan)
++		return -EINVAL;
++
+ 	max_i2s_chan_pow_2 = 1 << get_count_order(i2s->max_i2s_chan);
+ 
+ 	i2s->channel_base = base + (max_i2s_chan_pow_2 * 0x20);
+ 
++	i2s->periph_regs = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
++							    "img,cr-periph");
++	if (IS_ERR(i2s->periph_regs))
++		return PTR_ERR(i2s->periph_regs);
++
++	of_property_read_u32(pdev->dev.of_node, "img,clock-master",
++			&i2s->clock_masters);
++
++	i2s->clock_masters <<= 2;
++
++	if (of_property_read_u32(pdev->dev.of_node, "img,shared-dma",
++			&i2s->shared_dma_channels)) {
++		i2s->shared_dma_channels = i2s->max_i2s_chan;
++	}
++
++	if (i2s->shared_dma_channels > i2s->max_i2s_chan) {
++		dev_err(dev, "img,shared-dma must be <= img,i2s-channels\n");
++		return -EINVAL;
++	}
++
++	mask = (1UL << i2s->shared_dma_channels) - 1;
++	temp = (i2s->clock_masters >>
++		(i2s->max_i2s_chan - i2s->shared_dma_channels)) & mask;
++
++	if (temp && (temp != mask)) {
++		dev_err(dev, "img,shared-dma channels must have the same clock-master\n");
++		return -EINVAL;
++	}
++
++	if (i2s->clock_masters & ~0x3CUL) {
++		dev_err(dev, "channels 4/5 cannot use MFIO11/MFIO12 for BCLK/LRCLK\n");
++		return -EINVAL;
++	}
++
++	mask = 0x3F;
++	if (i2s->clock_masters) {
++		reg = 0x30;
++		reg |= (i2s->clock_masters & 0x20) ? 0x1 : 0x0;
++		reg |= (i2s->clock_masters & 0x10) ? 0x2 : 0x0;
++		reg |= (i2s->clock_masters & 0x8) ? 0x4 : 0x0;
++		reg |= (i2s->clock_masters & 0x4) ? 0x8 : 0x0;
++
++	} else {
++		reg = 0;
++	}
++	regmap_update_bits(i2s->periph_regs, PERIPH_I2S_IN_CLOCK_MASTER,
++				mask, reg);
++
+ 	i2s->clk_sys = devm_clk_get(dev, "sys");
+ 	if (IS_ERR(i2s->clk_sys))
+ 		return PTR_ERR(i2s->clk_sys);
+@@ -421,18 +933,6 @@ static int img_i2s_in_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		return ret;
+ 
+-	i2s->active_channels = 1;
+-	i2s->dma_data.addr = res->start + IMG_I2S_IN_RX_FIFO;
+-	i2s->dma_data.addr_width = 4;
+-
+-	i2s->dai_driver.probe = img_i2s_in_dai_probe;
+-	i2s->dai_driver.capture.channels_min = 2;
+-	i2s->dai_driver.capture.channels_max = i2s->max_i2s_chan * 2;
+-	i2s->dai_driver.capture.rates = SNDRV_PCM_RATE_8000_192000;
+-	i2s->dai_driver.capture.formats = SNDRV_PCM_FMTBIT_S32_LE |
+-		SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S16_LE;
+-	i2s->dai_driver.ops = &img_i2s_in_dai_ops;
+-
+ 	rst = devm_reset_control_get(dev, "rst");
+ 	if (IS_ERR(rst)) {
+ 		dev_dbg(dev, "No top level reset found\n");
+@@ -461,15 +961,148 @@ static int img_i2s_in_probe(struct platform_device *pdev)
+ 			IMG_I2S_IN_CH_CTL_JUST_MASK |
+ 			IMG_I2S_IN_CH_CTL_FW_MASK, IMG_I2S_IN_CH_CTL);
+ 
+-	ret = devm_snd_soc_register_component(dev, &img_i2s_in_component,
+-						&i2s->dai_driver, 1);
+-	if (ret)
++	spin_lock_init(&i2s->lock);
++
++	num_channel_sets = i2s->max_i2s_chan - i2s->shared_dma_channels;
++	if (i2s->shared_dma_channels)
++		num_channel_sets++;
++
++	i2s->channel_sets = devm_kzalloc(dev,
++		sizeof(*i2s->channel_sets) * num_channel_sets, GFP_KERNEL);
++	if (!i2s->channel_sets) {
++		ret = -ENOMEM;
++		goto err_clk_disable;
++	}
++
++	i2s->cpu_dais = devm_kzalloc(dev,
++		sizeof(*i2s->cpu_dais) * num_channel_sets, GFP_KERNEL);
++	if (!i2s->cpu_dais) {
++		ret = -ENOMEM;
++		goto err_clk_disable;
++	}
++
++	i2s->channels = devm_kzalloc(dev,
++		sizeof(*i2s->channels) * i2s->max_i2s_chan, GFP_KERNEL);
++	if (!i2s->channels) {
++		ret = -ENOMEM;
++		goto err_clk_disable;
++	}
++
++	i2s->groups = devm_kzalloc(dev, sizeof(*i2s->groups) * 2, GFP_KERNEL);
++	if (!i2s->groups) {
++		ret = -ENOMEM;
+ 		goto err_clk_disable;
++	}
++
++	i2s->img_i2s_in_component.name = "img-i2s-in-component";
++
++	cs = &i2s->channel_sets[0];
++	cd = &i2s->cpu_dais[0];
++
++	if (i2s->shared_dma_channels) {
++		cd->probe = img_i2s_in_dai_probe;
++		cd->capture.channels_min = 2;
++		cd->capture.channels_max = 2 * i2s->shared_dma_channels;
++		cd->capture.rates = SNDRV_PCM_RATE_8000_192000;
++		cd->capture.formats = SNDRV_PCM_FMTBIT_S32_LE |
++					SNDRV_PCM_FMTBIT_S24_LE |
++					SNDRV_PCM_FMTBIT_S16_LE;
++		cd->ops = &img_i2s_in_dai_ops;
++		strcpy(cs->cpu_dai_name, "img-i2s-in-shared");
++		cd->name = cs->cpu_dai_name;
++		strcpy(cs->platform_name, "img-i2s-in-plat-shared");
++
++		cs->first_channel = 0;
++		cs->last_channel = i2s->shared_dma_channels - 1;
++
++		cs->dma_data.addr = res->start + IMG_I2S_IN_RX_FIFO;
++		cs->dma_data.addr_width = 4;
+ 
+-	ret = devm_snd_dmaengine_pcm_register(dev, &img_i2s_in_dma_config, 0);
++		cs->shared_dma = true;
++
++		ret = devm_snd_dmaengine_pcm_register_id_name(dev,
++				&img_i2s_in_dma_config, 0, 0,
++				cs->platform_name);
++		if (ret)
++			goto err_clk_disable;
++
++		for (i = 0; i < i2s->shared_dma_channels; i++)
++			i2s->channels[i].set = cs;
++
++		cs++;
++		cd++;
++	}
++
++	for (i = i2s->shared_dma_channels; i < i2s->max_i2s_chan; i++) {
++		cd->probe = img_i2s_in_dai_probe;
++		cd->capture.channels_min = 2;
++		cd->capture.channels_max = 2;
++		cd->capture.rates = SNDRV_PCM_RATE_8000_192000;
++		cd->capture.formats = SNDRV_PCM_FMTBIT_S32_LE |
++				SNDRV_PCM_FMTBIT_S24_LE |
++				SNDRV_PCM_FMTBIT_S16_LE;
++		cd->ops = &img_i2s_in_dai_ops;
++		sprintf(cs->cpu_dai_name, "img-i2s-in-%d", i);
++		cd->name = cs->cpu_dai_name;
++		sprintf(cs->platform_name, "img-i2s-in-plat-%d", i);
++
++		cs->first_channel = i;
++		cs->last_channel = i;
++
++		sprintf(cs->dma_name, "rx%d", i);
++		cs->dma_data.chan_name = cs->dma_name;
++		cs->dma_data.addr = res->start + (max_i2s_chan_pow_2 * 0x20) +
++					IMG_I2S_IN_CH_RX_FIFO(i);
++		cs->dma_data.addr_width = 4;
++		cs->dma_data.maxburst = 4;
++
++		ret = devm_snd_dmaengine_pcm_register_id_name(dev, NULL,
++				SND_DMAENGINE_PCM_FLAG_CUSTOM_CHANNEL_NAME,
++				(i - i2s->shared_dma_channels) + 1,
++				cs->platform_name);
++		if (ret)
++			goto err_clk_disable;
++
++		i2s->channels[i].set = cs;
++
++		cs++;
++		cd++;
++	}
++
++	ret = devm_snd_soc_register_component(dev, &i2s->img_i2s_in_component,
++					i2s->cpu_dais, num_channel_sets);
+ 	if (ret)
+ 		goto err_clk_disable;
+ 
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if (~i2s->clock_masters & IMG_I2S_IN_CH_BIT(i2s, i))
++			break;
++	}
++
++	if (i != i2s->max_i2s_chan) {
++		i2s->groups[0].master = i;
++		mask = IMG_I2S_IN_CH_BIT(i2s, i);
++		mask = img_i2s_in_get_mask_shared_dma_all(i2s, mask);
++		i2s->groups[0].mask = mask;
++		i2s->groups[0].channel_sets = 1;
++		i2s->channels[i].set->group = &i2s->groups[0];
++	}
++
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		if (i2s->clock_masters & IMG_I2S_IN_CH_BIT(i2s, i))
++			break;
++	}
++
++	if (i != i2s->max_i2s_chan) {
++		i2s->groups[1].master = i;
++		mask = IMG_I2S_IN_CH_BIT(i2s, i);
++		mask = img_i2s_in_get_mask_shared_dma_all(i2s, mask);
++		i2s->groups[1].mask = mask;
++		i2s->groups[1].channel_sets = 1;
++		i2s->channels[i].set->group = &i2s->groups[1];
++	}
++
++
+ 	return 0;
+ 
+ err_clk_disable:
+diff --git a/sound/soc/img/pistachio.c b/sound/soc/img/pistachio.c
+index e4b6546..a861b8c 100644
+--- a/sound/soc/img/pistachio.c
++++ b/sound/soc/img/pistachio.c
+@@ -38,7 +38,7 @@
+ #define	PISTACHIO_CLOCK_MASTER_EXT	-1
+ #define	PISTACHIO_CLOCK_MASTER_LOOPBACK	-2
+ 
+-#define	PISTACHIO_MAX_I2S_CODECS	12
++#define	PISTACHIO_MAX_I2S_CODECS	18
+ 
+ #define	PISTACHIO_MAX_FS_RATES	20
+ 
+@@ -142,6 +142,7 @@ struct pistachio_card {
+ 	struct pistachio_parallel_out *parallel_out;
+ 	struct pistachio_i2s_out *i2s_out;
+ 	struct pistachio_i2s_in *i2s_in;
++	struct pistachio_i2s_in *i2s_in_alt;
+ 	bool spdif_in;
+ 	struct device_node *event_timer_np;
+ 	struct pistachio_evt *event_timer;
+@@ -161,6 +162,8 @@ struct pistachio_card {
+ 	struct snd_ctl_elem_id *sample_rate_ids[PISTACHIO_EVT_MAX_SOURCES];
+ 	struct snd_ctl_elem_id *phase_difference_id;
+ 	struct snd_soc_dai_link_component *tpa6130a2;
++	struct snd_soc_dai_link *i2s_in_start;
++	struct snd_soc_dai_link *i2s_in_alt_start;
+ };
+ 
+ static void pistachio_card_set_mclk_codecs(struct pistachio_i2s *i2s,
+@@ -203,6 +206,10 @@ static int pistachio_card_set_mclk(struct pistachio_card *pbc,
+ 	if (pbc->i2s_in)
+ 		pistachio_card_set_mclk_codecs(&pbc->i2s_in->i2s, mclk, rate);
+ 
++	if (pbc->i2s_in_alt)
++		pistachio_card_set_mclk_codecs(&pbc->i2s_in_alt->i2s, mclk,
++						rate);
++
+ 	return 0;
+ }
+ 
+@@ -220,7 +227,9 @@ static int pistachio_card_set_pll_rate(struct pistachio_card *pbc,
+ 	(pbc->parallel_out && pbc->parallel_out->output.active_rate) ||
+ 	(pbc->i2s_out && pbc->i2s_out->output.active_rate) ||
+ 	(pbc->i2s_in && pbc->i2s_in->active_rate &&
+-	pbc->i2s_in->i2s.mclk_a.mclk))
++	pbc->i2s_in->i2s.mclk_a.mclk) ||
++	(pbc->i2s_in_alt && pbc->i2s_in_alt->active_rate &&
++	pbc->i2s_in_alt->i2s.mclk_a.mclk))
+ 		return -EBUSY;
+ 
+ 	/*
+@@ -249,9 +258,10 @@ static int pistachio_card_set_pll_rate(struct pistachio_card *pbc,
+ 
+ static void pistachio_card_rate_err(struct pistachio_card *pbc,
+ 	struct pistachio_i2s_mclk *mclk_a, struct pistachio_i2s_mclk *mclk_b,
+-	unsigned int rate_a, unsigned int rate_b)
++	struct pistachio_i2s_mclk *mclk_c, unsigned int rate_a,
++	unsigned int rate_b, unsigned int rate_c)
+ {
+-	char *mclk_name, *dir_a, *dir_b;
++	char *mclk_name, *dir_a, *dir_b, *dir_c;
+ 
+ 	if (mclk_a->mclk == &pbc->i2s_mclk)
+ 		mclk_name = "i2s";
+@@ -261,28 +271,70 @@ static void pistachio_card_rate_err(struct pistachio_card *pbc,
+ 	if (pbc->i2s_out && ((mclk_a == &pbc->i2s_out->i2s.mclk_a) ||
+ 			(mclk_a == &pbc->i2s_out->i2s.mclk_b))) {
+ 		dir_a = "I2S out";
+-		dir_b = "I2S in";
+-	} else {
++	} else if (pbc->i2s_in && ((mclk_a == &pbc->i2s_in->i2s.mclk_a) ||
++			(mclk_a == &pbc->i2s_in->i2s.mclk_b))) {
+ 		dir_a = "I2S in";
++	} else {
++		dir_a = "I2S in (alt)";
++	}
++
++	if (pbc->i2s_out && ((mclk_b == &pbc->i2s_out->i2s.mclk_a) ||
++			(mclk_b == &pbc->i2s_out->i2s.mclk_b))) {
+ 		dir_b = "I2S out";
++	} else if (pbc->i2s_in && ((mclk_b == &pbc->i2s_in->i2s.mclk_a) ||
++			(mclk_b == &pbc->i2s_in->i2s.mclk_b))) {
++		dir_b = "I2S in";
++	} else {
++		dir_b = "I2S in (alt)";
++	}
++
++	if (pbc->i2s_out && ((mclk_c == &pbc->i2s_out->i2s.mclk_a) ||
++			(mclk_c == &pbc->i2s_out->i2s.mclk_b))) {
++		dir_c = "I2S out";
++	} else if (pbc->i2s_in && ((mclk_c == &pbc->i2s_in->i2s.mclk_a) ||
++			(mclk_c == &pbc->i2s_in->i2s.mclk_b))) {
++		dir_c = "I2S in";
++	} else {
++		dir_c = "I2S in (alt)";
+ 	}
+ 
+ 	if (!mclk_b) {
+ 		dev_err(pbc->card.dev,
+ 			"No valid rate for mclk %s (%s sample rate %u)\n",
+ 			mclk_name, dir_a, rate_a);
+-	} else {
++	} else if (!mclk_c) {
+ 		dev_err(pbc->card.dev,
+ 			"No valid rate for mclk %s (%s sample rate %u, %s sample rate %u)\n",
+ 			mclk_name, dir_a, rate_a, dir_b, rate_b);
++	} else {
++		dev_err(pbc->card.dev,
++			"No valid rate for mclk %s (%s sample rate %u, %s sample rate %u, %s sample rate %u)\n",
++			mclk_name, dir_a, rate_a, dir_b, rate_b, dir_c,
++			rate_c);
+ 	}
+ }
+ 
++static bool pistachio_card_mclk_ok(struct pistachio_i2s_mclk *mclk,
++					unsigned int rate)
++{
++	int i;
++
++	if (!mclk)
++		return true;
++
++	for (i = 0; i < mclk->num_fs_rates; i++)
++		if ((mclk->mclk->cur_rate / mclk->fs_rates[i]) == rate)
++			return true;
++
++	return false;
++}
++
+ static int pistachio_card_get_optimal_mclk_rate(struct pistachio_card *pbc,
+ 	struct pistachio_i2s_mclk *mclk_a, struct pistachio_i2s_mclk *mclk_b,
+-	unsigned int rate_a, unsigned int rate_b, unsigned int *p_mclk_rate)
++	struct pistachio_i2s_mclk *mclk_c, unsigned int rate_a,
++	unsigned int rate_b, unsigned int rate_c, unsigned int *p_mclk_rate)
+ {
+-	int i, j;
++	int i, j, k;
+ 	unsigned int div, total_div, mclk_rate;
+ 
+ 	/*
+@@ -290,23 +342,11 @@ static int pistachio_card_get_optimal_mclk_rate(struct pistachio_card *pbc,
+ 	 * change the rate. This ensures a rate set using the "I2S Rates"
+ 	 * control will not be erroneously overridden by a hw_params call
+ 	 */
+-	for (i = 0; i < mclk_a->num_fs_rates; i++)
+-		if ((mclk_a->mclk->cur_rate / mclk_a->fs_rates[i]) == rate_a)
+-			break;
+-	if (i != mclk_a->num_fs_rates) {
+-		if (mclk_b) {
+-			for (i = 0; i < mclk_b->num_fs_rates; i++)
+-				if ((mclk_b->mclk->cur_rate /
+-						mclk_b->fs_rates[i]) == rate_b)
+-					break;
+-			if (i != mclk_b->num_fs_rates) {
+-				*p_mclk_rate = mclk_a->mclk->cur_rate;
+-				return 0;
+-			}
+-		} else {
+-			*p_mclk_rate = mclk_a->mclk->cur_rate;
+-			return 0;
+-		}
++	if (pistachio_card_mclk_ok(mclk_a, rate_a) &&
++			pistachio_card_mclk_ok(mclk_b, rate_b) &&
++			pistachio_card_mclk_ok(mclk_c, rate_c)) {
++		*p_mclk_rate = mclk_a->mclk->cur_rate;
++		return 0;
+ 	}
+ 
+ 	total_div = pbc->audio_pll_rate / rate_a;
+@@ -326,8 +366,19 @@ static int pistachio_card_get_optimal_mclk_rate(struct pistachio_card *pbc,
+ 			break;
+ 
+ 		for (j = 0; j < mclk_b->num_fs_rates; j++) {
+-			if ((rate_b * mclk_b->fs_rates[j] * div) ==
++			if ((rate_b * mclk_b->fs_rates[j] * div) !=
+ 					pbc->audio_pll_rate)
++				continue;
++
++			if (!mclk_c)
++				break;
++
++			for (k = 0; k < mclk_c->num_fs_rates; k++) {
++				if ((rate_c * mclk_c->fs_rates[k] * div) ==
++						pbc->audio_pll_rate)
++					break;
++			}
++			if (k != mclk_c->num_fs_rates)
+ 				break;
+ 		}
+ 		if (j != mclk_b->num_fs_rates)
+@@ -335,7 +386,8 @@ static int pistachio_card_get_optimal_mclk_rate(struct pistachio_card *pbc,
+ 	}
+ 
+ 	if (i == mclk_a->num_fs_rates) {
+-		pistachio_card_rate_err(pbc, mclk_a, mclk_b, rate_a, rate_b);
++		pistachio_card_rate_err(pbc, mclk_a, mclk_b, mclk_c,
++					rate_a, rate_b, rate_c);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -361,18 +413,26 @@ static bool pistachio_card_mclk_active(struct pistachio_card *pbc,
+ 			return true;
+ 	}
+ 
++	if (pbc->i2s_in_alt && pbc->i2s_in_alt->active_rate) {
++		if (pbc->i2s_in_alt->i2s.mclk_a.mclk == mclk)
++			return true;
++		if (pbc->i2s_in_alt->i2s.mclk_b.mclk == mclk)
++			return true;
++	}
++
+ 	return false;
+ }
+ 
+ static int pistachio_card_update_mclk(struct pistachio_card *pbc,
+ 	struct pistachio_i2s_mclk *mclk_a, struct pistachio_i2s_mclk *mclk_b,
+-	unsigned int rate_a, unsigned int rate_b)
++	struct pistachio_i2s_mclk *mclk_c, unsigned int rate_a,
++	unsigned int rate_b, unsigned int rate_c)
+ {
+ 	unsigned int mclk_rate;
+ 	int ret;
+ 
+-	ret = pistachio_card_get_optimal_mclk_rate(pbc, mclk_a, mclk_b, rate_a,
+-							rate_b, &mclk_rate);
++	ret = pistachio_card_get_optimal_mclk_rate(pbc, mclk_a, mclk_b, mclk_c,
++					rate_a, rate_b, rate_c, &mclk_rate);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -388,7 +448,7 @@ static int pistachio_card_update_mclk(struct pistachio_card *pbc,
+ static int pistachio_card_update_mclk_single(struct pistachio_card *pbc,
+ 		struct pistachio_i2s_mclk *mclk, unsigned int rate)
+ {
+-	return pistachio_card_update_mclk(pbc, mclk, NULL, rate, 0);
++	return pistachio_card_update_mclk(pbc, mclk, NULL, NULL, rate, 0, 0);
+ }
+ 
+ static inline int pistachio_card_get_pll_rate(unsigned int rate)
+@@ -585,7 +645,7 @@ static void pistachio_card_parallel_out_shutdown(struct snd_pcm_substream *st)
+ }
+ 
+ static int pistachio_card_parallel_out_hw_params(struct snd_pcm_substream *st,
+-				struct snd_pcm_hw_params *params)
++					struct snd_pcm_hw_params *params)
+ {
+ 	struct snd_soc_pcm_runtime *rtd = st->private_data;
+ 	struct pistachio_card *pbc = snd_soc_card_get_drvdata(rtd->card);
+@@ -756,34 +816,31 @@ static struct snd_soc_ops pistachio_card_i2s_out_ops = {
+ 	.start_at_abort = pistachio_card_i2s_out_start_at_abort
+ };
+ 
+-static int pistachio_card_i2s_in_link_init(struct snd_soc_pcm_runtime *rtd)
++static int pistachio_card_i2s_in_link_init_cmn(struct pistachio_i2s_in *i2s,
++					struct snd_soc_pcm_runtime *rtd)
+ {
+ 	int ret, i;
+ 	unsigned int fmt;
+-	struct pistachio_card *pbc = snd_soc_card_get_drvdata(rtd->card);
+-	u32 val;
+ 
+-	pbc->i2s_in->cpu_dev = rtd->cpu_dai->dev;
+-
+-	ret = pistachio_card_i2s_link_init(&pbc->i2s_in->i2s, rtd);
++	ret = pistachio_card_i2s_link_init(&i2s->i2s, rtd);
+ 	if (ret)
+ 		return ret;
+ 
+-	fmt = pbc->i2s_in->fmt | SND_SOC_DAIFMT_CBM_CFM;
++	fmt = i2s->fmt | SND_SOC_DAIFMT_CBM_CFM;
+ 	ret = snd_soc_dai_set_fmt(rtd->cpu_dai, fmt);
+ 	if (ret)
+ 		return ret;
+ 
+-	for (i = 0; i < pbc->i2s_in->i2s.num_codecs; i++) {
+-		fmt = pbc->i2s_in->fmt;
++	for (i = 0; i < i2s->i2s.num_codecs; i++) {
++		fmt = i2s->fmt;
+ 
+-		if (i == pbc->i2s_in->frame_master)
+-			if (i == pbc->i2s_in->bitclock_master)
++		if (i == i2s->frame_master)
++			if (i == i2s->bitclock_master)
+ 				fmt |= SND_SOC_DAIFMT_CBM_CFM;
+ 			else
+ 				fmt |= SND_SOC_DAIFMT_CBS_CFM;
+ 		else
+-			if (i == pbc->i2s_in->bitclock_master)
++			if (i == i2s->bitclock_master)
+ 				fmt |= SND_SOC_DAIFMT_CBM_CFS;
+ 			else
+ 				fmt |= SND_SOC_DAIFMT_CBS_CFS;
+@@ -793,15 +850,28 @@ static int pistachio_card_i2s_in_link_init(struct snd_soc_pcm_runtime *rtd)
+ 			return ret;
+ 	}
+ 
++	return 0;
++}
++
++static int pistachio_card_i2s_in_link_init(struct snd_soc_pcm_runtime *rtd)
++{
++	struct pistachio_card *pbc = snd_soc_card_get_drvdata(rtd->card);
++	u32 val;
++	int ret;
++
++	pbc->i2s_in->cpu_dev = rtd->cpu_dai->dev;
++
+ 	if (pbc->i2s_in->frame_master == PISTACHIO_CLOCK_MASTER_LOOPBACK)
+ 		val = PISTACHIO_I2S_LOOPBACK_CLK_LOCAL;
+ 	else
+ 		val = PISTACHIO_I2S_LOOPBACK_CLK_NONE;
+ 
+-	regmap_update_bits(pbc->periph_regs, PISTACHIO_I2S_LOOPBACK_REG,
++	ret = regmap_update_bits(pbc->periph_regs, PISTACHIO_I2S_LOOPBACK_REG,
+ 				PISTACHIO_I2S_LOOPBACK_CLK_MASK, val);
++	if (ret)
++		return ret;
+ 
+-	return 0;
++	return pistachio_card_i2s_in_link_init_cmn(pbc->i2s_in, rtd);
+ }
+ 
+ static void pistachio_card_i2s_in_shutdown(struct snd_pcm_substream *st)
+@@ -827,6 +897,38 @@ static struct snd_soc_ops pistachio_card_i2s_in_ops = {
+ 	.hw_params = pistachio_card_i2s_in_hw_params
+ };
+ 
++static int pistachio_card_i2s_in_alt_link_init(struct snd_soc_pcm_runtime *rtd)
++{
++	struct pistachio_card *pbc = snd_soc_card_get_drvdata(rtd->card);
++
++	pbc->i2s_in_alt->cpu_dev = rtd->cpu_dai->dev;
++
++	return pistachio_card_i2s_in_link_init_cmn(pbc->i2s_in_alt, rtd);
++}
++
++static void pistachio_card_i2s_in_alt_shutdown(struct snd_pcm_substream *st)
++{
++	struct snd_soc_pcm_runtime *rtd = st->private_data;
++	struct pistachio_card *pbc = snd_soc_card_get_drvdata(rtd->card);
++
++	pbc->i2s_in_alt->active_rate = 0;
++}
++
++static int pistachio_card_i2s_in_alt_hw_params(struct snd_pcm_substream *st,
++				struct snd_pcm_hw_params *params)
++{
++	struct snd_soc_pcm_runtime *rtd = st->private_data;
++	struct pistachio_card *pbc = snd_soc_card_get_drvdata(rtd->card);
++
++	return pistachio_card_change_rate(pbc, params_rate(params),
++		&pbc->i2s_in_alt->i2s, &pbc->i2s_in_alt->active_rate);
++}
++
++static struct snd_soc_ops pistachio_card_i2s_in_alt_ops = {
++	.shutdown = pistachio_card_i2s_in_alt_shutdown,
++	.hw_params = pistachio_card_i2s_in_alt_hw_params
++};
++
+ static int pistachio_card_parse_of_spdif_out(struct device_node *node,
+ 		struct pistachio_card *pbc, struct snd_soc_dai_link *link)
+ {
+@@ -1171,23 +1273,26 @@ err_codec_info:
+ }
+ 
+ static int pistachio_card_parse_of_i2s(struct device_node *i2s_out_np,
+-	struct device_node *i2s_in_np, struct pistachio_card *pbc,
+-	struct snd_soc_dai_link *links,
++	struct device_node *i2s_in_np, struct device_node *i2s_in_alt_np,
++	unsigned int num_i2s_in_links, unsigned int num_i2s_in_alt_links,
++	struct pistachio_card *pbc, struct snd_soc_dai_link *links,
+ 	struct pistachio_i2s_codec_info *codec_info,
+ 	bool i2s_loopback)
+ {
+-	int ret;
++	int ret, i, j, k;
+ 	struct device *dev = pbc->card.dev;
+ 	unsigned int fmt;
+ 	struct device_node *np;
+-	struct pistachio_i2s_mclk_fs_info i2s_mclk_info, dac_mclk_info;
++	struct pistachio_i2s_mclk_fs_info i2s_mclk_info;
++	struct pistachio_i2s_mclk_fs_info dac_mclk_info;
++	char name[23], *str;
++	struct of_phandle_args args;
++	u32 clock_masters = 0, shared_dma, max_chan;
++	bool i2s_in_clock_info_acquired = false, single_cpu_dai;
+ 
+ 	pbc->i2s_mclk.max_rate = PISTACHIO_I2S_MCLK_MAX_FREQ;
+ 	pbc->dac_mclk.max_rate = PISTACHIO_DAC_MCLK_MAX_FREQ;
+ 
+-	codec_info->bitclock_master_idx = -1;
+-	codec_info->frame_master_idx = -1;
+-
+ 	if (i2s_out_np) {
+ 		pbc->i2s_out = devm_kzalloc(dev, sizeof(*pbc->i2s_out),
+ 						GFP_KERNEL);
+@@ -1234,20 +1339,96 @@ static int pistachio_card_parse_of_i2s(struct device_node *i2s_out_np,
+ 		links++;
+ 	}
+ 
++	pbc->i2s_in_start = links;
++
++	codec_info->bitclock_master_idx = -1;
++	codec_info->frame_master_idx = -1;
++
+ 	if (i2s_in_np) {
+ 		pbc->i2s_in = devm_kzalloc(dev, sizeof(*pbc->i2s_in),
+ 						GFP_KERNEL);
+ 		if (!pbc->i2s_in)
+ 			return -ENOMEM;
+ 
+-		links->name = links->stream_name = "pistachio-i2s-in";
++		for (i = 0; i < num_i2s_in_links; i++) {
+ 
+-		np = of_parse_phandle(i2s_in_np, "cpu-dai", 0);
+-		if (!np)
+-			return -EINVAL;
++			sprintf(name, "pistachio-i2s-in-%d", i);
++			str = devm_kzalloc(pbc->card.dev, strlen(name) + 1,
++						GFP_KERNEL);
++			if (!str)
++				return -ENOMEM;
++			strcpy(str, name);
++			links[i].name = links[i].stream_name = str;
++
++			if (of_property_read_bool(i2s_in_np, "cpu-dai")) {
++				np = of_parse_phandle(i2s_in_np, "cpu-dai", 0);
++				if (!np)
++					return -EINVAL;
++				single_cpu_dai = true;
++			} else {
++				ret = of_parse_phandle_with_args(i2s_in_np,
++						"cpu-dais", "#sound-dai-cells",
++						i, &args);
++				if (ret)
++					return ret;
++				np = args.np;
++				if (!np)
++					return -EINVAL;
++				single_cpu_dai = false;
++			}
+ 
+-		links->cpu_of_node = np;
+-		links->platform_of_node = np;
++			links[i].cpu_of_node = np;
++			links[i].platform_of_node = np;
++
++			if (!i2s_in_clock_info_acquired) {
++				of_property_read_u32(np,
++						"img,clock-master",
++						&clock_masters);
++				clock_masters <<= 2;
++				ret = of_property_read_u32(np,
++						"img,i2s-channels",
++						&max_chan);
++				if (ret)
++					return ret;
++				if (of_property_read_u32(np,
++						"img,shared-dma",
++						&shared_dma))
++					shared_dma = max_chan;
++				if (!shared_dma)
++					shared_dma = 1;
++				i2s_in_clock_info_acquired = true;
++			}
++
++			if (i != 0) {
++				links[i].codec_dai_name = "snd-soc-dummy-dai";
++				links[i].codec_name = "snd-soc-dummy";
++			}
++
++			if (single_cpu_dai) {
++				k = 0;
++			} else {
++				for (j = 0, k = 0; j < args.args[0]; j++) {
++					if (j == 0)
++						k += shared_dma;
++					else
++						k++;
++				}
++
++				ret = snd_soc_of_get_dai_name_alt(i2s_in_np,
++					"cpu-dais", i, &links[i].cpu_dai_name);
++				if (ret)
++					return ret;
++
++				ret = snd_soc_of_get_platform_name(i2s_in_np,
++					"cpu-dais", i,
++					&links[i].platform_name);
++				if (ret)
++					return ret;
++			}
++
++			if (clock_masters & (1UL << ((max_chan - k) - 1)))
++				return -EINVAL;
++		}
+ 
+ 		fmt = snd_soc_of_parse_daifmt(i2s_in_np, NULL, NULL, NULL);
+ 		fmt &= ~SND_SOC_DAIFMT_MASTER_MASK;
+@@ -1280,14 +1461,144 @@ static int pistachio_card_parse_of_i2s(struct device_node *i2s_out_np,
+ 					codec_info->bitclock_master_idx;
+ 		}
+ 
+-		links->init = pistachio_card_i2s_in_link_init;
++		links[0].init = pistachio_card_i2s_in_link_init;
+ 
+ 		/*
+ 		 * If no mclks are used by i2s in, there is nothing for
+ 		 * the ops callbacks to do, so leave this as NULL
+ 		 */
+ 		if (pbc->i2s_in->i2s.mclk_a.mclk)
+-			links->ops = &pistachio_card_i2s_in_ops;
++			links[0].ops = &pistachio_card_i2s_in_ops;
++
++		links += num_i2s_in_links;
++	}
++
++	pbc->i2s_in_alt_start = links;
++
++	codec_info->bitclock_master_idx = -1;
++	codec_info->frame_master_idx = -1;
++
++	if (i2s_in_alt_np) {
++		pbc->i2s_in_alt = devm_kzalloc(dev, sizeof(*pbc->i2s_in_alt),
++						GFP_KERNEL);
++		if (!pbc->i2s_in_alt)
++			return -ENOMEM;
++
++		for (i = 0; i < num_i2s_in_alt_links; i++) {
++
++			sprintf(name, "pistachio-i2s-in-alt-%d", i);
++			str = devm_kzalloc(pbc->card.dev, strlen(name) + 1,
++						GFP_KERNEL);
++			strcpy(str, name);
++			links[i].name = links[i].stream_name = str;
++
++			if (of_property_read_bool(i2s_in_alt_np, "cpu-dai")) {
++				np = of_parse_phandle(i2s_in_alt_np,
++							"cpu-dai", 0);
++				if (!np)
++					return -EINVAL;
++				single_cpu_dai = true;
++			} else {
++				ret = of_parse_phandle_with_args(i2s_in_alt_np,
++						"cpu-dais", "#sound-dai-cells",
++						i, &args);
++				if (ret)
++					return ret;
++				np = args.np;
++				if (!np)
++					return -EINVAL;
++				single_cpu_dai = false;
++			}
++
++			links[i].cpu_of_node = np;
++			links[i].platform_of_node = np;
++
++			if (!i2s_in_clock_info_acquired) {
++				of_property_read_u32(np,
++						"img,clock-master",
++						&clock_masters);
++				clock_masters <<= 2;
++				ret = of_property_read_u32(np,
++						"img,i2s-channels",
++						&max_chan);
++				if (ret)
++					return ret;
++				if (of_property_read_u32(np,
++						"img,shared-dma",
++						&shared_dma))
++					shared_dma = max_chan;
++				if (!shared_dma)
++					shared_dma = 1;
++				i2s_in_clock_info_acquired = true;
++			}
++
++			if (i != 0) {
++				links[i].codec_dai_name = "snd-soc-dummy-dai";
++				links[i].codec_name = "snd-soc-dummy";
++			}
++
++			if (single_cpu_dai) {
++				k = 0;
++			} else {
++				for (j = 0, k = 0; j < args.args[0]; j++) {
++					if (j == 0)
++						k += shared_dma;
++					else
++						k++;
++				}
++
++				ret = snd_soc_of_get_dai_name_alt(i2s_in_alt_np,
++					"cpu-dais", i, &links[i].cpu_dai_name);
++				if (ret)
++					return ret;
++
++				ret = snd_soc_of_get_platform_name(
++						i2s_in_alt_np, "cpu-dais", i,
++						&links[i].platform_name);
++				if (ret)
++					return ret;
++			}
++
++			if (~clock_masters & (1UL << ((max_chan - k) - 1)))
++				return -EINVAL;
++		}
++
++		fmt = snd_soc_of_parse_daifmt(i2s_in_alt_np, NULL, NULL, NULL);
++		fmt &= ~SND_SOC_DAIFMT_MASTER_MASK;
++		pbc->i2s_in_alt->fmt = fmt;
++
++		i2s_mclk_info.num_fs_rates = 0;
++		dac_mclk_info.num_fs_rates = 0;
++
++		ret = pistachio_card_parse_of_i2s_common(i2s_in_alt_np, pbc,
++				&pbc->i2s_in_alt->i2s, links, codec_info,
++				&i2s_mclk_info, &dac_mclk_info);
++		if (ret)
++			return ret;
++
++		if ((codec_info->bitclock_master_idx == -1) ||
++				(codec_info->frame_master_idx == -1)) {
++			pbc->i2s_in_alt->frame_master =
++					PISTACHIO_CLOCK_MASTER_EXT;
++			pbc->i2s_in_alt->bitclock_master =
++					PISTACHIO_CLOCK_MASTER_EXT;
++		} else {
++			pbc->i2s_in_alt->frame_master =
++					codec_info->frame_master_idx;
++			pbc->i2s_in_alt->bitclock_master =
++					codec_info->bitclock_master_idx;
++		}
++
++		links[0].init = pistachio_card_i2s_in_alt_link_init;
++
++		/*
++		 * If no mclks are used by i2s in, there is nothing for
++		 * the ops callbacks to do, so leave this as NULL
++		 */
++		if (pbc->i2s_in_alt->i2s.mclk_a.mclk)
++			links[0].ops = &pistachio_card_i2s_in_alt_ops;
++
++		links += num_i2s_in_alt_links;
+ 	}
+ 
+ 	return 0;
+@@ -1356,8 +1667,9 @@ static int pistachio_card_parse_of(struct device_node *node,
+ 				struct pistachio_card *pbc)
+ {
+ 	int ret = 0;
++	unsigned int num_i2s_in_links, num_i2s_in_alt_links;
+ 	struct device_node *spdif_out_np, *spdif_in_np, *parallel_out_np;
+-	struct device_node *i2s_out_np, *i2s_in_np, *event_np;
++	struct device_node *i2s_out_np, *i2s_in_np, *i2s_in_alt_np, *event_np;
+ 	struct snd_soc_dai_link *link, *prl_out = NULL;
+ 	enum of_gpio_flags flags;
+ 	struct pistachio_i2s_codec_info i2s_codec_info;
+@@ -1407,8 +1719,40 @@ static int pistachio_card_parse_of(struct device_node *node,
+ 		pbc->card.num_links++;
+ 
+ 	i2s_in_np = of_get_child_by_name(node, "i2s-in");
+-	if (i2s_in_np)
+-		pbc->card.num_links++;
++	if (i2s_in_np) {
++		if (of_property_read_bool(i2s_in_np, "cpu-dai")) {
++			num_i2s_in_links = 1;
++		} else {
++			ret = of_count_phandle_with_args(i2s_in_np, "cpu-dais",
++							"#sound-dai-cells");
++			if (ret < 0)
++				goto end;
++			if (!ret || (ret > 6)) {
++				ret = -EINVAL;
++				goto end;
++			}
++			num_i2s_in_links = ret;
++		}
++		pbc->card.num_links += num_i2s_in_links;
++	}
++
++	i2s_in_alt_np = of_get_child_by_name(node, "i2s-in-alt");
++	if (i2s_in_alt_np) {
++		if (of_property_read_bool(i2s_in_alt_np, "cpu-dai")) {
++			num_i2s_in_alt_links = 1;
++		} else {
++			ret = of_count_phandle_with_args(i2s_in_alt_np,
++					"cpu-dais", "#sound-dai-cells");
++			if (ret < 0)
++				goto end;
++			if (!ret || (ret > 6)) {
++				ret = -EINVAL;
++				goto end;
++			}
++			num_i2s_in_alt_links = ret;
++		}
++		pbc->card.num_links += num_i2s_in_alt_links;
++	}
+ 
+ 	i2s_loopback = of_property_read_bool(node, "img,i2s-clk-loopback");
+ 	if (i2s_loopback && (!i2s_out_np || !i2s_in_np)) {
+@@ -1458,9 +1802,11 @@ static int pistachio_card_parse_of(struct device_node *node,
+ 		link++;
+ 	}
+ 
+-	if (i2s_out_np || i2s_in_np) {
+-		ret = pistachio_card_parse_of_i2s(i2s_out_np, i2s_in_np, pbc,
+-					link, &i2s_codec_info, i2s_loopback);
++	if (i2s_out_np || i2s_in_np || i2s_in_alt_np) {
++		ret = pistachio_card_parse_of_i2s(i2s_out_np, i2s_in_np,
++				i2s_in_alt_np, num_i2s_in_links,
++				num_i2s_in_alt_links, pbc, link,
++				&i2s_codec_info, i2s_loopback);
+ 		if (ret)
+ 			goto end;
+ 	}
+@@ -1515,6 +1861,9 @@ static void pistachio_card_unref(struct pistachio_card *pbc)
+ 	for (i = 0; i < pbc->card.num_links; i++, link++) {
+ 		if (link->cpu_of_node)
+ 			of_node_put(link->cpu_of_node);
++		if (pbc->i2s_in_start && (link >= pbc->i2s_in_start) &&
++				link->platform_of_node)
++			of_node_put(link->platform_of_node);
+ 		for (j = 0; j < link->num_codecs; j++)
+ 			of_node_put(link->codecs[j].of_node);
+ 	}
+@@ -1829,7 +2178,7 @@ static int pistachio_card_info_sample_rates(struct snd_kcontrol *kcontrol,
+ 		struct snd_ctl_elem_info *uinfo)
+ {
+ 	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
+-	uinfo->count = 2;
++	uinfo->count = 3;
+ 	uinfo->value.integer.min = 0;
+ 	uinfo->value.integer.max = 192000;
+ 
+@@ -1838,16 +2187,18 @@ static int pistachio_card_info_sample_rates(struct snd_kcontrol *kcontrol,
+ 
+ static int pistachio_card_set_sample_rates_mclk(struct pistachio_card *pbc,
+ 		struct pistachio_mclk *mclk, unsigned int i2s_out_rate,
+-		unsigned int i2s_in_rate)
++		unsigned int i2s_in_rate, unsigned int i2s_in_alt_rate)
+ {
+-	struct pistachio_i2s_mclk *mclk_a, *mclk_b;
+-	unsigned int rate_a, rate_b;
++	struct pistachio_i2s_mclk *mclk_a, *mclk_b, *mclk_c;
++	unsigned int rate_a, rate_b, rate_c;
+ 	int ret = 0;
+ 
+ 	mclk_a = NULL;
+ 	mclk_b = NULL;
++	mclk_c = NULL;
+ 	rate_a = i2s_out_rate;
+ 	rate_b = i2s_in_rate;
++	rate_c = i2s_in_alt_rate;
+ 
+ 	if (i2s_out_rate) {
+ 		if (pbc->i2s_out->i2s.mclk_a.mclk == mclk)
+@@ -1861,15 +2212,32 @@ static int pistachio_card_set_sample_rates_mclk(struct pistachio_card *pbc,
+ 		else if (pbc->i2s_in->i2s.mclk_b.mclk == mclk)
+ 			mclk_b = &pbc->i2s_in->i2s.mclk_b;
+ 	}
++	if (i2s_in_alt_rate) {
++		if (pbc->i2s_in_alt->i2s.mclk_a.mclk == mclk)
++			mclk_c = &pbc->i2s_in_alt->i2s.mclk_a;
++		else if (pbc->i2s_in_alt->i2s.mclk_b.mclk == mclk)
++			mclk_c = &pbc->i2s_in_alt->i2s.mclk_b;
++	}
+ 	if (!mclk_a) {
+ 		mclk_a = mclk_b;
+ 		rate_a = rate_b;
+-		mclk_b = NULL;
++		mclk_b = mclk_c;
++		rate_b = rate_c;
++		mclk_c = NULL;
++		if (!mclk_a) {
++			mclk_a = mclk_b;
++			rate_a = rate_b;
++			mclk_b = NULL;
++		}
++	} else if (!mclk_b) {
++		mclk_b = mclk_c;
++		rate_b = rate_c;
++		mclk_c = NULL;
+ 	}
+ 
+ 	if (mclk_a) {
+-		ret = pistachio_card_update_mclk(pbc, mclk_a, mclk_b, rate_a,
+-						rate_b);
++		ret = pistachio_card_update_mclk(pbc, mclk_a, mclk_b, mclk_c,
++						rate_a, rate_b, rate_c);
+ 	}
+ 
+ 	return ret;
+@@ -1882,13 +2250,17 @@ static int pistachio_card_set_sample_rates(struct snd_kcontrol *kcontrol,
+ 	struct pistachio_card *pbc = snd_soc_card_get_drvdata(card);
+ 	int ret;
+ 	unsigned int pll_rate, i2s_out_rate = 0, i2s_in_rate = 0;
++	unsigned int i2s_in_alt_rate = 0;
++
+ 
+ 	if (pbc->i2s_out)
+ 		i2s_out_rate = ucontrol->value.integer.value[0];
+ 	if (pbc->i2s_in && pbc->i2s_in->i2s.mclk_a.mclk)
+ 		i2s_in_rate = ucontrol->value.integer.value[1];
++	if (pbc->i2s_in_alt && pbc->i2s_in_alt->i2s.mclk_a.mclk)
++		i2s_in_alt_rate = ucontrol->value.integer.value[2];
+ 
+-	if (!i2s_out_rate && !i2s_in_rate)
++	if (!i2s_out_rate && !i2s_in_rate && !i2s_in_alt_rate)
+ 		return 0;
+ 
+ 	pll_rate = 0;
+@@ -1909,6 +2281,15 @@ static int pistachio_card_set_sample_rates(struct snd_kcontrol *kcontrol,
+ 		pll_rate = ret;
+ 	}
+ 
++	if (i2s_in_alt_rate) {
++		ret = pistachio_card_get_pll_rate(i2s_in_alt_rate);
++		if (ret < 0)
++			return ret;
++		if (pll_rate && (ret != pll_rate))
++			return -EINVAL;
++		pll_rate = ret;
++	}
++
+ 	mutex_lock(&pbc->rate_mutex);
+ 
+ 	if (pbc->audio_pll_rate != pll_rate) {
+@@ -1920,14 +2301,14 @@ static int pistachio_card_set_sample_rates(struct snd_kcontrol *kcontrol,
+ 	}
+ 
+ 	ret = pistachio_card_set_sample_rates_mclk(pbc, &pbc->i2s_mclk,
+-						i2s_out_rate, i2s_in_rate);
++				i2s_out_rate, i2s_in_rate, i2s_in_alt_rate);
+ 	if (ret) {
+ 		mutex_unlock(&pbc->rate_mutex);
+ 		return ret;
+ 	}
+ 
+ 	ret = pistachio_card_set_sample_rates_mclk(pbc, &pbc->dac_mclk,
+-						i2s_out_rate, i2s_in_rate);
++				i2s_out_rate, i2s_in_rate, i2s_in_alt_rate);
+ 
+ 	mutex_unlock(&pbc->rate_mutex);
+ 
+@@ -2118,7 +2499,7 @@ static void pistachio_card_info_i2s_out(struct pistachio_card *pbc,
+ }
+ 
+ static void pistachio_card_info_i2s_in(struct pistachio_card *pbc,
+-					struct snd_soc_dai_link *link)
++					struct snd_soc_dai_link *links)
+ {
+ 	int i, j;
+ 	struct snd_soc_dai_link_component *components;
+@@ -2131,13 +2512,15 @@ static void pistachio_card_info_i2s_in(struct pistachio_card *pbc,
+ 
+ 	dev_dbg(dev, "I2S IN\n");
+ 	dev_dbg(dev, "\n");
+-	dev_dbg(dev, "    CPU DAI\n");
+-	dev_dbg(dev, "        i2s-in (%s)\n",
+-		link->cpu_of_node->name);
++	dev_dbg(dev, "    CPU DAIS\n");
++	for (i = 0; i < (pbc->i2s_in_alt_start - pbc->i2s_in_start); i++) {
++		dev_dbg(dev, "        i2s-in-%d (%s) (%s)\n", i,
++			links[i].cpu_of_node->name, links[i].cpu_dai_name);
++	}
+ 	dev_dbg(dev, "\n");
+ 	dev_dbg(dev, "    CODECS\n");
+ 
+-	for (i = 0; i < pbc->i2s_out->i2s.num_codecs; i++) {
++	for (i = 0; i < pbc->i2s_in->i2s.num_codecs; i++) {
+ 		for (j = 0; j < pbc->card.num_configs; j++)
+ 			if (confs[j].of_node == components[i].of_node)
+ 				break;
+@@ -2180,6 +2563,72 @@ static void pistachio_card_info_i2s_in(struct pistachio_card *pbc,
+ 	dev_dbg(dev, "\n");
+ }
+ 
++static void pistachio_card_info_i2s_in_alt(struct pistachio_card *pbc,
++					struct snd_soc_dai_link *links)
++{
++	int i, j;
++	struct snd_soc_dai_link_component *components;
++	struct snd_soc_codec_conf *confs;
++	char *text;
++	struct device *dev = pbc->card.dev;
++
++	components = pbc->i2s_in_alt->i2s.components;
++	confs = pbc->card.codec_conf;
++
++	dev_dbg(dev, "I2S IN (ALTERNATE)\n");
++	dev_dbg(dev, "\n");
++	dev_dbg(dev, "    CPU DAIS\n");
++	for (i = 0; i < (&pbc->card.dai_link[pbc->card.num_links] -
++			pbc->i2s_in_alt_start); i++) {
++		dev_dbg(dev, "        i2s-in-alt-%d (%s) (%s)\n", i,
++			links[i].cpu_of_node->name, links[i].cpu_dai_name);
++	}
++	dev_dbg(dev, "\n");
++	dev_dbg(dev, "    CODECS\n");
++
++	for (i = 0; i < pbc->i2s_in_alt->i2s.num_codecs; i++) {
++		for (j = 0; j < pbc->card.num_configs; j++)
++			if (confs[j].of_node == components[i].of_node)
++				break;
++
++		if (i == pbc->i2s_in_alt->frame_master)
++			if (i == pbc->i2s_in_alt->bitclock_master)
++				text = "(Frame + Bit Clock Master)";
++			else
++				text = "(Frame Master)";
++		else
++			if (i == pbc->i2s_in_alt->bitclock_master)
++				text = "(Bitclock Master)";
++			else
++				text = "";
++
++		dev_dbg(dev, "        %s (%s) (%s) %s\n", confs[j].name_prefix,
++			confs[j].of_node->name,
++			components[i].dai_name, text);
++	}
++	dev_dbg(dev, "\n");
++
++	pistachio_card_info_mclks(pbc, &pbc->i2s_in_alt->i2s);
++
++	dev_dbg(dev, "\n");
++
++	if ((pbc->i2s_in_alt->fmt & SND_SOC_DAIFMT_FORMAT_MASK) ==
++			SND_SOC_DAIFMT_I2S)
++		text = "I2S";
++	else
++		text = "Left Justified";
++	dev_dbg(dev, "    Format: %s\n", text);
++
++	if ((pbc->i2s_in_alt->fmt & SND_SOC_DAIFMT_CLOCK_MASK) ==
++			SND_SOC_DAIFMT_CONT)
++		text = "Yes";
++	else
++		text = "No";
++	dev_dbg(dev, "    Continuous Clock: %s\n", text);
++
++	dev_dbg(dev, "\n");
++}
++
+ static void pistachio_card_info(struct pistachio_card *pbc)
+ {
+ 	struct device *dev = pbc->card.dev;
+@@ -2241,9 +2690,13 @@ static void pistachio_card_info(struct pistachio_card *pbc)
+ 		pistachio_card_info_i2s_out(pbc, link);
+ 		link++;
+ 	}
+-
+-	if (pbc->i2s_in)
++	if (pbc->i2s_in) {
+ 		pistachio_card_info_i2s_in(pbc, link);
++		link += (pbc->i2s_in_alt_start - pbc->i2s_in_start);
++	}
++
++	if (pbc->i2s_in_alt)
++		pistachio_card_info_i2s_in_alt(pbc, link);
+ 
+ 	if (gpio_is_valid(pbc->mute_gpio)) {
+ 		if (pbc->mute_gpio_inverted)
+diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
+index a1305f8..259f75a 100644
+--- a/sound/soc/soc-core.c
++++ b/sound/soc/soc-core.c
+@@ -960,6 +960,9 @@ static int soc_bind_dai_link(struct snd_soc_card *card, int num)
+ 			if (platform->dev->of_node !=
+ 			    dai_link->platform_of_node)
+ 				continue;
++			if(platform_name && strcmp(platform->component.name,
++			    platform_name))
++				continue;
+ 		} else {
+ 			if (strcmp(platform->component.name, platform_name))
+ 				continue;
+@@ -2373,12 +2376,12 @@ int snd_soc_register_card(struct snd_soc_card *card)
+ 		 * Platform may be specified by either name or OF node, but
+ 		 * can be left unspecified, and a dummy platform will be used.
+ 		 */
+-		if (link->platform_name && link->platform_of_node) {
++		/*if (link->platform_name && link->platform_of_node) {
+ 			dev_err(card->dev,
+ 				"ASoC: Both platform name/of_node are set for %s\n",
+ 				link->name);
+ 			return -EINVAL;
+-		}
++		}*/
+ 
+ 		/*
+ 		 * CPU device may be specified by either name or OF node, but
+@@ -3587,6 +3590,47 @@ static int snd_soc_get_dai_name(struct of_phandle_args *args,
+ 	return ret;
+ }
+ 
++static int snd_soc_get_platform_name(struct of_phandle_args *args,
++				const char **platform_name)
++{
++	struct snd_soc_platform *platform;
++	int ret = -EPROBE_DEFER;
++	int id = -1;
++
++	mutex_lock(&client_mutex);
++	list_for_each_entry(platform, &platform_list, list) {
++		if (platform->dev->of_node != args->np)
++			continue;
++
++		switch (args->args_count) {
++		case 0:
++			*platform_name = platform->component.name;
++			ret = 0;
++			break;
++		case 1:
++			id = args->args[0];
++			if(platform->component.id == id) {
++				*platform_name = platform->component.name;
++				ret = 0;
++			}
++			break;
++		default:
++			/* not supported */
++			break;
++		}
++
++		if (!ret)
++			break;
++
++		if (id < 0) {
++			ret = -EINVAL;
++			continue;
++		}
++	}
++	mutex_unlock(&client_mutex);
++	return ret;
++}
++
+ int snd_soc_of_get_dai_name(struct device_node *of_node,
+ 			    const char **dai_name)
+ {
+@@ -3606,6 +3650,44 @@ int snd_soc_of_get_dai_name(struct device_node *of_node,
+ }
+ EXPORT_SYMBOL_GPL(snd_soc_of_get_dai_name);
+ 
++int snd_soc_of_get_dai_name_alt(struct device_node *of_node, char *name,
++				int index, const char **dai_name)
++{
++	struct of_phandle_args args;
++	int ret;
++
++	ret = of_parse_phandle_with_args(of_node, name, "#sound-dai-cells",
++						index, &args);
++	if (ret)
++		return ret;
++
++	ret = snd_soc_get_dai_name(&args, dai_name);
++
++	of_node_put(args.np);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(snd_soc_of_get_dai_name_alt);
++
++int snd_soc_of_get_platform_name(struct device_node *of_node, char *name,
++				int index,  const char **platform_name)
++{
++	struct of_phandle_args args;
++	int ret;
++
++	ret = of_parse_phandle_with_args(of_node, name,
++			"#sound-platform-cells", index, &args);
++	if (ret)
++		return ret;
++
++	ret = snd_soc_get_platform_name(&args, platform_name);
++
++	of_node_put(args.np);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(snd_soc_of_get_platform_name);
++
+ /*
+  * snd_soc_of_get_dai_link_codecs - Parse a list of CODECs in the devicetree
+  * @dev: Card device
+diff --git a/sound/soc/soc-devres.c b/sound/soc/soc-devres.c
+index a57921e..86e4768 100644
+--- a/sound/soc/soc-devres.c
++++ b/sound/soc/soc-devres.c
+@@ -159,4 +159,27 @@ int devm_snd_dmaengine_pcm_register(struct device *dev,
+ }
+ EXPORT_SYMBOL_GPL(devm_snd_dmaengine_pcm_register);
+ 
++int devm_snd_dmaengine_pcm_register_id_name(struct device *dev,
++	const struct snd_dmaengine_pcm_config *config, unsigned int flags,
++	unsigned int id, char *platform_name)
++{
++	struct device **ptr;
++	int ret;
++
++	ptr = devres_alloc(devm_dmaengine_pcm_release, sizeof(*ptr), GFP_KERNEL);
++	if (!ptr)
++		return -ENOMEM;
++
++	ret = snd_dmaengine_pcm_register_id_name(dev, config, flags, id, platform_name);
++	if (ret == 0) {
++		*ptr = dev;
++		devres_add(dev, ptr);
++	} else {
++		devres_free(ptr);
++	}
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(devm_snd_dmaengine_pcm_register_id_name);
++
+ #endif
+diff --git a/sound/soc/soc-generic-dmaengine-pcm.c b/sound/soc/soc-generic-dmaengine-pcm.c
+index 1cc5483..870dda0 100644
+--- a/sound/soc/soc-generic-dmaengine-pcm.c
++++ b/sound/soc/soc-generic-dmaengine-pcm.c
+@@ -519,6 +519,42 @@ err_free_dma:
+ }
+ EXPORT_SYMBOL_GPL(snd_dmaengine_pcm_register);
+ 
++int snd_dmaengine_pcm_register_id_name(struct device *dev,
++	const struct snd_dmaengine_pcm_config *config, unsigned int flags,
++	unsigned int id, char *platform_name)
++{
++	struct dmaengine_pcm *pcm;
++	int ret;
++
++	pcm = kzalloc(sizeof(*pcm), GFP_KERNEL);
++	if (!pcm)
++		return -ENOMEM;
++
++	pcm->config = config;
++	pcm->flags = flags;
++
++	ret = dmaengine_pcm_request_chan_of(pcm, dev, config);
++	if (ret)
++		goto err_free_dma;
++
++	ret = snd_soc_add_platform(dev, &pcm->platform,
++		&dmaengine_pcm_platform);
++	if (ret)
++		goto err_free_dma;
++
++	pcm->platform.component.id = id;
++	kfree(pcm->platform.component.name);
++	pcm->platform.component.name = kstrdup(platform_name, GFP_KERNEL);
++
++	return 0;
++
++err_free_dma:
++	dmaengine_pcm_release_chan(pcm);
++	kfree(pcm);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(snd_dmaengine_pcm_register_id_name);
++
+ /**
+  * snd_dmaengine_pcm_unregister - Removes a dmaengine based PCM device
+  * @dev: Parent device the PCM was register with
+-- 
+2.6.2
+

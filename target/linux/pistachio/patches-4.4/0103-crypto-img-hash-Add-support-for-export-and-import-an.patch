@@ -1,0 +1,123 @@
+From 75a585465beed1812e0ae2727a395ba7f5778a91 Mon Sep 17 00:00:00 2001
+From: James Hartley <james.hartley@imgtec.com>
+Date: Wed, 1 Jun 2016 11:49:04 +0100
+Subject: crypto: img-hash: Add support for export and import and log a
+ successful probe
+
+Currently the img-hash accelerator does not probe
+successfully due to a change in the checks made during
+registration with the crypto framework. This is due to
+import and export functions not being defined.  Correct
+this.
+
+Currently the probe function only emits an output on success
+when debug is specifically enabled.  It would be more useful if
+this happens by default.
+
+Change-Id: I28ca3a0ce1e066af5fe6bac281c7f81385ac5525
+Signed-off-by: James Hartley <james.hartley@imgtec.com>
+---
+ drivers/crypto/img-hash.c | 40 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 39 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/crypto/img-hash.c b/drivers/crypto/img-hash.c
+index 02af070..8ba4500 100644
+--- a/drivers/crypto/img-hash.c
++++ b/drivers/crypto/img-hash.c
+@@ -587,6 +587,32 @@ static int img_hash_finup(struct ahash_request *req)
+ 	return crypto_ahash_finup(&rctx->fallback_req);
+ }
+ 
++static int img_hash_import(struct ahash_request *req, const void *in)
++{
++	struct img_hash_request_ctx *rctx = ahash_request_ctx(req);
++	struct crypto_ahash *tfm = crypto_ahash_reqtfm(req);
++	struct img_hash_ctx *ctx = crypto_ahash_ctx(tfm);
++
++	ahash_request_set_tfm(&rctx->fallback_req, ctx->fallback);
++	rctx->fallback_req.base.flags = req->base.flags
++		& CRYPTO_TFM_REQ_MAY_SLEEP;
++
++	return crypto_ahash_import(&rctx->fallback_req, in);
++}
++
++static int img_hash_export(struct ahash_request *req, void *out)
++{
++	struct img_hash_request_ctx *rctx = ahash_request_ctx(req);
++	struct crypto_ahash *tfm = crypto_ahash_reqtfm(req);
++	struct img_hash_ctx *ctx = crypto_ahash_ctx(tfm);
++
++	ahash_request_set_tfm(&rctx->fallback_req, ctx->fallback);
++	rctx->fallback_req.base.flags = req->base.flags
++		& CRYPTO_TFM_REQ_MAY_SLEEP;
++
++	return crypto_ahash_export(&rctx->fallback_req, out);
++}
++
+ static int img_hash_digest(struct ahash_request *req)
+ {
+ 	struct crypto_ahash *tfm = crypto_ahash_reqtfm(req);
+@@ -711,9 +737,12 @@ static struct ahash_alg img_algs[] = {
+ 		.update = img_hash_update,
+ 		.final = img_hash_final,
+ 		.finup = img_hash_finup,
++		.export = img_hash_export,
++		.import = img_hash_import,
+ 		.digest = img_hash_digest,
+ 		.halg = {
+ 			.digestsize = MD5_DIGEST_SIZE,
++			.statesize = sizeof(struct md5_state),
+ 			.base = {
+ 				.cra_name = "md5",
+ 				.cra_driver_name = "img-md5",
+@@ -734,9 +763,12 @@ static struct ahash_alg img_algs[] = {
+ 		.update = img_hash_update,
+ 		.final = img_hash_final,
+ 		.finup = img_hash_finup,
++		.export = img_hash_export,
++		.import = img_hash_import,
+ 		.digest = img_hash_digest,
+ 		.halg = {
+ 			.digestsize = SHA1_DIGEST_SIZE,
++			.statesize = sizeof(struct sha1_state),
+ 			.base = {
+ 				.cra_name = "sha1",
+ 				.cra_driver_name = "img-sha1",
+@@ -757,9 +789,12 @@ static struct ahash_alg img_algs[] = {
+ 		.update = img_hash_update,
+ 		.final = img_hash_final,
+ 		.finup = img_hash_finup,
++		.export = img_hash_export,
++		.import = img_hash_import,
+ 		.digest = img_hash_digest,
+ 		.halg = {
+ 			.digestsize = SHA224_DIGEST_SIZE,
++			.statesize = sizeof(struct sha256_state),
+ 			.base = {
+ 				.cra_name = "sha224",
+ 				.cra_driver_name = "img-sha224",
+@@ -780,9 +815,12 @@ static struct ahash_alg img_algs[] = {
+ 		.update = img_hash_update,
+ 		.final = img_hash_final,
+ 		.finup = img_hash_finup,
++		.export = img_hash_export,
++		.import = img_hash_import,
+ 		.digest = img_hash_digest,
+ 		.halg = {
+ 			.digestsize = SHA256_DIGEST_SIZE,
++			.statesize = sizeof(struct sha256_state),
+ 			.base = {
+ 				.cra_name = "sha256",
+ 				.cra_driver_name = "img-sha256",
+@@ -971,7 +1009,7 @@ static int img_hash_probe(struct platform_device *pdev)
+ 	err = img_register_algs(hdev);
+ 	if (err)
+ 		goto err_algs;
+-	dev_dbg(dev, "Img MD5/SHA1/SHA224/SHA256 Hardware accelerator initialized\n");
++	dev_info(dev, "Img MD5/SHA1/SHA224/SHA256 Hardware accelerator initialized\n");
+ 
+ 	return 0;
+ 
+-- 
+2.6.2
+
