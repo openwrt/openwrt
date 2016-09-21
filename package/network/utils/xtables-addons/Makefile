@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=xtables-addons
-PKG_VERSION:=2.10
+PKG_VERSION:=2.11
 PKG_RELEASE:=1
-PKG_MD5SUM:=727bf0dd4a3d9c65724267bd0d5d80b0
+PKG_MD5SUM:=9f3123295db81a9d1bc08dabf075d0d6
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@SF/xtables-addons
@@ -39,7 +39,6 @@ endef
 
 CONFIGURE_ARGS+= \
 	--with-kbuild="$(LINUX_DIR)" \
-	--with-xtables="$(STAGING_DIR)/usr" \
 	--with-xtlibdir="/usr/lib/iptables" \
 
 define Build/Compile
@@ -146,7 +145,7 @@ $(eval $(call BuildTemplate,lscan,lscan,xt_lscan,xt_lscan,))
 $(eval $(call BuildTemplate,lua,Lua PacketScript,xt_LUA,LUA/xt_LUA,+kmod-ipt-conntrack-extra))
 $(eval $(call BuildTemplate,psd,psd,xt_psd,xt_psd,))
 $(eval $(call BuildTemplate,quota2,quota2,xt_quota2,xt_quota2,))
-$(eval $(call BuildTemplate,sysrq,SYSRQ,xt_SYSRQ,xt_SYSRQ,+kmod-ipt-compat-xtables))
+$(eval $(call BuildTemplate,sysrq,SYSRQ,xt_SYSRQ,xt_SYSRQ,+kmod-ipt-compat-xtables +kmod-crypto-hash))
 $(eval $(call BuildTemplate,tarpit,TARPIT,xt_TARPIT,xt_TARPIT,+kmod-ipt-compat-xtables))
 
 $(eval $(call BuildPackage,iptaccount))
