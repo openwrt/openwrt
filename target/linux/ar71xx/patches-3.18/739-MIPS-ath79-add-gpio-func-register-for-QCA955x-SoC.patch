@@ -1,0 +1,44 @@
+--- a/arch/mips/ath79/gpio.c
++++ b/arch/mips/ath79/gpio.c
+@@ -146,7 +146,8 @@ static void __iomem *ath79_gpio_get_func
+ 	if (soc_is_ar71xx() ||
+ 	    soc_is_ar724x() ||
+ 	    soc_is_ar913x() ||
+-	    soc_is_ar933x())
++	    soc_is_ar933x() ||
++	    soc_is_qca955x())
+ 		reg = AR71XX_GPIO_REG_FUNC;
+ 	else if (soc_is_ar934x() ||
+ 		 soc_is_qca953x() || soc_is_qca956x())
+@@ -185,15 +186,27 @@ void __init ath79_gpio_output_select(uns
+ {
+ 	void __iomem *base = ath79_gpio_base;
+ 	unsigned long flags;
+-	unsigned int reg;
++	unsigned int reg, reg_base;
++	unsigned long gpio_count;
+ 	u32 t, s;
+ 
+-	BUG_ON(!soc_is_ar934x() && !soc_is_qca953x());
++	if (soc_is_ar934x()) {
++		gpio_count = AR934X_GPIO_COUNT;
++		reg_base = AR934X_GPIO_REG_OUT_FUNC0;
++	} else if (soc_is_qca953x()) {
++		gpio_count = QCA953X_GPIO_COUNT;
++		reg_base = QCA953X_GPIO_REG_OUT_FUNC0;
++	} else if (soc_is_qca955x()) {
++		gpio_count = QCA955X_GPIO_COUNT;
++		reg_base = QCA955X_GPIO_REG_OUT_FUNC0;
++	} else {
++		BUG();
++	}
+ 
+-	if (gpio >= AR934X_GPIO_COUNT)
++	if (gpio >= gpio_count)
+ 		return;
+ 
+-	reg = AR934X_GPIO_REG_OUT_FUNC0 + 4 * (gpio / 4);
++	reg = reg_base + 4 * (gpio / 4);
+ 	s = 8 * (gpio % 4);
+ 
+ 	spin_lock_irqsave(&ath79_gpio_lock, flags);

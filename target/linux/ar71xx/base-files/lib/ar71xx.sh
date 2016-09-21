@@ -518,6 +518,12 @@ ar71xx_board_detect() {
 	*MR600v2)
 		name="mr600v2"
 		;;
+	*MR1750)
+		name="mr1750"
+		;;
+	*MR1750v2)
+		name="mr1750v2"
+		;;
 	*MR600)
 		name="mr600"
 		;;
@@ -560,6 +566,9 @@ ar71xx_board_detect() {
 	*"OM2P HSv2")
 		name="om2p-hsv2"
 		;;
+	*"OM2P HSv3")
+		name="om2p-hsv3"
+		;;
 	*"OM2P LC")
 		name="om2p-lc"
 		;;
@@ -568,6 +577,12 @@ ar71xx_board_detect() {
 		;;
 	*"OM5P AN")
 		name="om5p-an"
+		;;
+	*"OM5P AC")
+		name="om5p-ac"
+		;;
+	*"OM5P ACv2")
+		name="om5p-acv2"
 		;;
 	*"Onion Omega")
 		name="onion-omega"

@@ -1847,6 +1847,9 @@ define Image/Build/OpenMesh
 		"$(BUILD_DIR)/fwupgrade.cfg-$(4)" "fwupgrade.cfg" \
 		"$(KDIR_TMP)/vmlinux-$(2).uImage" "kernel" \
 		"$(KDIR)/root.$(1)" "rootfs"
+	if [ -e "$(call factoryname,$(1),$(2))" ]; then \
+		cp "$(call factoryname,$(1),$(2))" "$(call sysupname,$(1),$(2))"; \
+	fi
 endef
 
 
@@ -2010,8 +2013,10 @@ $(eval $(call SingleProfile,Netgear,64kraw,WPN824N,wpn824n,WPN824N,ttyS0,115200,
 
 $(eval $(call SingleProfile,OpenMesh,squashfs-only,OM2P,om2p,,,,OM2P))
 $(eval $(call SingleProfile,OpenMesh,squashfs-only,OM5P,om5p,,,,OM5P))
+$(eval $(call SingleProfile,OpenMesh,squashfs-only,OM5PAC,om5pac,,,,OM5PAC))
 $(eval $(call SingleProfile,OpenMesh,squashfs-only,MR600,mr600,,,,MR600))
 $(eval $(call SingleProfile,OpenMesh,squashfs-only,MR900,mr900,,,,MR900))
+$(eval $(call SingleProfile,OpenMesh,squashfs-only,MR1750,mr1750,,,,MR1750))
 
 $(eval $(call SingleProfile,PB4X,128k,ALL0305,all0305,ALL0305,ttyS0,115200))
 $(eval $(call SingleProfile,PB4X,128k,EAP7660D,eap7660d,EAP7660D,ttyS0,115200))
@@ -2105,7 +2110,7 @@ $(eval $(call MultiProfile,AP121,AP121_2M AP121_4M))
 $(eval $(call MultiProfile,DIR615IX,DIR615I1 DIR615I3))
 $(eval $(call MultiProfile,AP136,AP136_010 AP136_020))
 $(eval $(call MultiProfile,EWDORIN, EWDORINAP EWDORINRT EWDORIN16M))
-$(eval $(call MultiProfile,OPENMESH,OM2P OM5P MR600 MR900))
+$(eval $(call MultiProfile,OPENMESH,OM2P OM5P OM5PAC MR600 MR900 MR1750))
 $(eval $(call MultiProfile,TEW652BRP,TEW652BRP_FW TEW652BRP_RECOVERY))
 $(eval $(call MultiProfile,TLMR3220,TLMR3220V1))
 $(eval $(call MultiProfile,TLMR3420,TLMR3420V1))

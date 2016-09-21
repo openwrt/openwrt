@@ -13,7 +13,7 @@ boot() {
 		local board=$(ar71xx_board_name)
 
 		case "$board" in
-			"om2p"|"om2p-hs"|"om2p-hsv2")
+			"om2p"|"om2p-hs"|"om2p-hsv2"|"om2p-hsv3"|"om5p-acv2")
 				service_start /sbin/om-watchdog 12
 				;;
 			"om2pv2"|"om2p-lc")
@@ -22,10 +22,13 @@ boot() {
 			"om5p"|"om5p-an")
 				service_start /sbin/om-watchdog 11
 				;;
+			"om5p-ac")
+				service_start /sbin/om-watchdog 17
+				;;
 			"mr600v2")
 				service_start /sbin/om-watchdog 15
 				;;
-			"mr900"|"mr900v2")
+			"mr900"|"mr900v2"|"mr1750"|"mr1750v2")
 				service_start /sbin/om-watchdog 16
 				;;
 		esac

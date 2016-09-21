@@ -143,6 +143,10 @@ get_status_led() {
 	mr600v2)
 		status_led="mr600:blue:power"
 		;;
+	mr1750 | \
+	mr1750v2)
+		status_led="mr1750:blue:power"
+		;;
 	mr900 | \
 	mr900v2)
 		status_led="mr900:blue:power"
@@ -168,12 +172,17 @@ get_status_led() {
 	om2pv2 | \
 	om2p-hs | \
 	om2p-hsv2 | \
+	om2p-hsv3 | \
 	om2p-lc)
 		status_led="om2p:blue:power"
 		;;
 	om5p | \
 	om5p-an)
 		status_led="om5p:blue:power"
+		;;
+	om5p-ac | \
+	om5p-acv2)
+		status_led="om5pac:blue:power"
 		;;
 	onion-omega)
 		status_led="onion:amber:system"
