@@ -1,0 +1,59 @@
+From 1fc7ecb24ea36461d8ebdf31ea0edb322d77f0cd Mon Sep 17 00:00:00 2001
+From: Naidu Tellapati <Naidu.Tellapati@imgtec.com>
+Date: Tue, 9 Jun 2015 07:51:04 +0100
+Subject: FROMLIST: DT: eFuse: Add binding document for IMG Generic eFuse
+ Controller
+
+Add binding document for Imagination Technologies Generic eFuse Controller
+present on Pistachio SoC.
+
+(picked from https://www.mail-archive.com/devicetree@vger.kernel.org/msg51962.html)
+
+BUG=None
+TEST=Tested on Pistachio BuB
+
+Change-Id: Ib9810df506070a0068d4f77186ffaf8a04fc524e
+Signed-off-by: Arul Ramasamy <Arul.Ramasamy@imgtec.com>
+Signed-off-by: Jude Abraham <Jude.Abraham@imgtec.com>
+Signed-off-by: Naidu Tellapati <Naidu.Tellapati@imgtec.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+---
+ .../devicetree/bindings/soc/img/img-efuse.txt      | 26 ++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/soc/img/img-efuse.txt
+
+diff --git a/Documentation/devicetree/bindings/soc/img/img-efuse.txt b/Documentation/devicetree/bindings/soc/img/img-efuse.txt
+new file mode 100644
+index 0000000..1b16aab
+--- /dev/null
++++ b/Documentation/devicetree/bindings/soc/img/img-efuse.txt
+@@ -0,0 +1,26 @@
++* Imagination Technologies Generic eFuse controller
++
++Required properties:
++- compatible: Must be "img,pistachio-efuse".
++- reg: Must contain the base address and length of the eFuse registers.
++
++Optional properties:
++- clocks: Must contain an entry for each entry in clock-names.
++  See ../clock/clock-bindings.txt for details.
++- clock-names: Must include the following entries:
++  - osc: External oscillator clock
++  - sys: eFuse register interface clock
++
++Example:
++efuse: efuse@18149200 {
++	compatible = "img,pistachio-efuse";
++	reg = <0x18149200 0x200>;
++};
++
++Example with optional clock properties:
++efuse: efuse@18149200 {
++	compatible = "img,pistachio-efuse";
++	reg = <0x18149200 0x200>;
++	clocks = <&osc>, <&system_clk>;
++	clock-names = "osc", "sys";
++};
+-- 
+2.6.2
+
