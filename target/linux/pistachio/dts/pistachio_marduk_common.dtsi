@@ -146,13 +146,17 @@
 	VDD-supply = <&internal_dac_supply>;
 };
 
+&pin_spim0 {
+	drive-strength = <2>;
+};
+
 &spim0_clk {
 	drive-strength = <2>;
 };
 
 &spfi0 {
 	status = "okay";
-	pinctrl-0 = <&spim0_pins>;
+	pinctrl-0 = <&spim0_pins>, <&spim0_cs0_alt_pin>, <&spim0_cs2_alt_pin>, <&spim0_cs3_alt_pin>, <&spim0_cs4_alt_pin>;
 	pinctrl-names = "default";
 
 	cs-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>, <&gpio0 2 GPIO_ACTIVE_HIGH>,
@@ -184,7 +188,7 @@
 &spfi1 {
 	status = "okay";
 
-	pinctrl-0 = <&spim1_pins>, <&spim1_quad_pins>;
+	pinctrl-0 = <&spim1_pins>, <&spim1_quad_pins>, <&spim1_cs0_pin>, <&spim1_cs1_pin>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>, <&gpio0 1 GPIO_ACTIVE_HIGH>;
 
@@ -249,6 +253,10 @@
 	mac-address = [0123456789AB];
 };
 
+&pin_enet {
+	drive-strength = <2>;
+};
+
 &pin_enet_phy_clk {
 	drive-strength = <2>;
 };
@@ -257,6 +265,14 @@
 	status = "okay";
 	bus-width = <4>;
 	disable-wp;
+};
+
+&pin_sdhost_cmd {
+	drive-strength = <2>;
+};
+
+&pin_sdhost_data {
+	drive-strength = <2>;
 };
 
 &ir {
