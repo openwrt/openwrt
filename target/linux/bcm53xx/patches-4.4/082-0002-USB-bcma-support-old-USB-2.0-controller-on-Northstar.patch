@@ -1,6 +1,6 @@
-From ef54f033c53bf4518f6e16e7ed815acd855e03c5 Mon Sep 17 00:00:00 2001
+From d6b76c4ddb124dd22c6e910ca9332e472e7b3273 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Wed, 10 Aug 2016 11:51:16 +0200
+Date: Wed, 10 Aug 2016 11:56:46 +0200
 Subject: [PATCH] USB: bcma: support old USB 2.0 controller on Northstar
  devices
 MIME-Version: 1.0
@@ -27,6 +27,7 @@ To handle this add a check for architecture and implement required
 initialization for ARM case.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/usb/host/bcma-hcd.c    | 86 ++++++++++++++++++++++++++++++++++++++++--
  include/linux/bcma/bcma_regs.h |  1 +
