@@ -312,9 +312,12 @@
 };
 
 &i2s_out_pins {
+	i2s-out-clk {
+		pins = "mfio37", "mfio38";
+		function = "i2s_out";
+	};
 	i2s-out {
-		pins = "mfio37", "mfio38", "mfio39",
-		       "mfio40", "mfio41";
+		pins = "mfio39", "mfio40", "mfio41";
 		function = "i2s_out";
 	};
 };

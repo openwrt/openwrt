@@ -529,97 +529,103 @@
 		};
 
 		i2c0_pins: i2c0-pins {
-			i2c0 {
+			pin_i2c0: i2c0 {
 				pins = "mfio28", "mfio29";
 				function = "i2c0";
+				drive-strength = <4>;
 			};
 		};
 
 		i2c1_pins: i2c1-pins {
-			i2c1 {
+			pin_i2c1: i2c1 {
 				pins = "mfio30", "mfio31";
 				function = "i2c1";
+				drive-strength = <4>;
 			};
 		};
 
 		i2c2_pins: i2c2-pins {
-			i2c2 {
+			pin_i2c2: i2c2 {
 				pins = "mfio32", "mfio33";
 				function = "i2c2";
+				drive-strength = <4>;
 			};
 		};
 
 		i2c3_pins: i2c3-pins {
-			i2c3 {
+			pin_i2c3: i2c3 {
 				pins = "mfio34", "mfio35";
 				function = "i2c3";
+				drive-strength = <4>;
 			};
 		};
 
 		spim0_pins: spim0-pins {
-			spim0 {
+			pin_spim0: spim0 {
 				pins = "mfio9", "mfio10";
 				function = "spim0";
+				drive-strength = <4>;
 			};
 			spim0_clk: spim0-clk {
 				pins = "mfio8";
 				function = "spim0";
+				drive-strength = <4>;
 			};
 		};
 
-		spim0_cs0_pin: spim0-cs0-pin {
+		spim0_cs0_alt_pin: spim0-cs0-alt-pin {
 			spim0-cs0 {
 				pins = "mfio2";
-				function = "spim0";
+				drive-strength = <2>;
 			};
 		};
 
 		spim0_cs1_pin: spim0-cs1-pin {
 			spim0-cs1 {
 				pins = "mfio1";
-				function = "spim0";
+				drive-strength = <2>;
 			};
 		};
 
 		spim0_cs2_pin: spim0-cs2-pin {
 			spim0-cs2 {
 				pins = "mfio55";
-				function = "spim0";
+				drive-strength = <2>;
 			};
 		};
 
 		spim0_cs2_alt_pin: spim0-cs2-alt-pin {
 			spim0-cs2 {
 				pins = "mfio28";
-				function = "spim0";
+				drive-strength = <2>;
 			};
 		};
 
 		spim0_cs3_pin: spim0-cs3-pin {
 			spim0-cs3 {
 				pins = "mfio56";
-				function = "spim0";
+				drive-strength = <2>;
 			};
 		};
 
 		spim0_cs3_alt_pin: spim0-cs3-alt-pin {
 			spim0-cs3 {
 				pins = "mfio29";
-				function = "spim0";
+				drive-strength = <2>;
 			};
 		};
 
 		spim0_cs4_pin: spim0-cs4-pin {
 			spim0-cs4 {
 				pins = "mfio57";
-				function = "spim0";
+				drive-strength = <2>;
 			};
 		};
 
 		spim0_cs4_alt_pin: spim0-cs4-alt-pin {
 			spim0-cs4 {
 				pins = "mfio30";
-				function = "spim0";
+				drive-strength = <2>;
 			};
 		};
 
@@ -714,13 +720,15 @@
 			uart0 {
 				pins = "mfio55", "mfio56";
 				function = "uart0";
+				drive-strength = <2>;
 			};
 		};
 
 		uart0_rts_cts_pins: uart0-rts-cts-pins {
 			uart0-rts-cts {
-				  pins = "mfio57", "mfio58";
-				  function = "uart0";
+				pins = "mfio57", "mfio58";
+				function = "uart0";
+				drive-strength = <2>;
 			};
 		};
 
@@ -728,6 +736,7 @@
 			uart1 {
 				pins = "mfio59", "mfio60";
 				function = "uart1";
+				drive-strength = <2>;
 			};
 		};
 
@@ -735,11 +744,12 @@
 			uart1-rts-cts {
 				  pins = "mfio1", "mfio2";
 				  function = "uart1";
+				  drive-strength = <2>;
 			};
 		};
 
 		enet_pins: enet-pins {
-			enet {
+			pin_enet: enet {
 				pins = "mfio63", "mfio64", "mfio65", "mfio66",
 				       "mfio67", "mfio68", "mfio69", "mfio70";
 				function = "eth";
@@ -755,38 +765,40 @@
 		};
 
 		sdhost_pins: sdhost-pins {
-			sdhost-clk {
+			pin_sdhost_clk: sdhost-clk {
 				pins = "mfio15";
 				function = "sdhost";
 				slew-rate = <1>;
-				drive-strength = <2>;
+				drive-strength = <4>;
 			};
-			sdhost-cmd {
+			pin_sdhost_cmd: sdhost-cmd {
 				pins = "mfio16";
 				function = "sdhost";
 				slew-rate = <1>;
 				drive-strength = <4>;
 			};
-			sdhost-data {
+			pin_sdhost_data: sdhost-data {
 				pins = "mfio17", "mfio18", "mfio19", "mfio20",
 				       "mfio21", "mfio22", "mfio23", "mfio24";
 				function = "sdhost";
 				slew-rate = <1>;
 				drive-strength = <4>;
 			};
-			sdhost-power-select {
+			pin_sdhost_power_select: sdhost-power-select {
 				pins = "mfio25";
 				function = "sdhost";
 				slew-rate = <1>;
-				drive-strength = <4>;
+				drive-strength = <2>;
 			};
-			sdhost-card-detect {
+			pin_sdhost_card_detect: sdhost-card-detect {
 				pins = "mfio26";
 				function = "sdhost";
+				drive-strength = <2>;
 			};
-			sdhost-write-protect {
+			pin_sdhost_write_protect: sdhost-write-protect {
 				pins = "mfio27";
 				function = "sdhost";
+				drive-strength = <2>;
 			};
 		};
 
@@ -794,6 +806,7 @@
 			ir-data {
 				pins = "mfio72";
 				function = "ir";
+				drive-strength = <2>;
 			};
 		};
 
@@ -801,6 +814,7 @@
 			pwmpdm0 {
 				pins = "mfio73";
 				function = "pwmpdm";
+				drive-strength = <2>;
 			};
 		};
 
@@ -808,6 +822,7 @@
 			pwmpdm1 {
 				pins = "mfio74";
 				function = "pwmpdm";
+				drive-strength = <2>;
 			};
 		};
 
@@ -815,6 +830,7 @@
 			pwmpdm2 {
 				pins = "mfio75";
 				function = "pwmpdm";
+				drive-strength = <2>;
 			};
 		};
 
@@ -822,6 +838,7 @@
 			pwmpdm3 {
 				pins = "mfio76";
 				function = "pwmpdm";
+				drive-strength = <2>;
 			};
 		};
 
@@ -829,6 +846,7 @@
 			pin_dac_clk: dac-clk {
 				pins = "mfio45";
 				function = "i2s_dac_clk";
+				drive-strength = <4>;
 			};
 		};
 
@@ -836,6 +854,7 @@
 			pin_i2s_mclk: i2s-mclk {
 				pins = "mfio36";
 				function = "i2s_out";
+				drive-strength = <4>;
 			};
 		};
 
@@ -844,6 +863,7 @@
 				pins = "mfio61";
 				function = "spdif_out";
 				slew-rate = <1>;
+				drive-strength = <2>;
 			};
 		};
 
@@ -851,15 +871,22 @@
 			spdif-in {
 				pins = "mfio62";
 				function = "spdif_in";
+				drive-strength = <2>;
 			};
 		};
 
 		i2s_out_pins: i2s-out-pins {
+			pins_i2s_out_clk: i2s-out-clk {
+				pins = "mfio37", "mfio38";
+				function = "i2s_out";
+				drive-strength = <4>;
+			};
 			pins_i2s_out: i2s-out {
-				pins = "mfio37", "mfio38", "mfio39",
-				       "mfio40", "mfio41", "mfio42",
+				pins = "mfio39", "mfio40",
+				       "mfio41", "mfio42",
 				       "mfio43", "mfio44";
 				function = "i2s_out";
+				drive-strength = <2>;
 			};
 		};
 
@@ -869,6 +896,7 @@
 				       "mfio50", "mfio51", "mfio52",
 				       "mfio53", "mfio54";
 				function = "i2s_in";
+				drive-strength = <2>;
 			};
 		};
 
