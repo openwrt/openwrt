@@ -1044,7 +1044,7 @@ $(eval $(call KernelPackage,bmp085-spi))
 define KernelPackage/owl-loader
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Owl loader for initializing Atheros PCI(e) Wifi chips
-  DEPENDS:=@PCI_SUPPORT +kmod-ath9k
+  DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_OWL_LOADER
   FILES:=$(LINUX_DIR)/drivers/misc/owl-loader.ko
   AUTOLOAD:=$(call AutoProbe,owl-loader)
