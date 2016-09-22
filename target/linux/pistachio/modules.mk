@@ -227,7 +227,6 @@ define KernelPackage/uccp420wlan
     CONFIG_MWIFIEX=n \
     CONFIG_RSI_91X=n
   FILES:=$(LINUX_DIR)/drivers/net/wireless/uccp420wlan/uccp420wlan.ko
-  AUTOLOAD:=$(call AutoLoad,32,uccp420wlan)
 endef
 
 define KernelPackage/uccp420wlan/description
