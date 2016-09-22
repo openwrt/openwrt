@@ -82,6 +82,12 @@ proto_qmi_setup() {
 		return 1
 	}
 
+	# try to clear previous autoconnect state
+	# do not reuse previous wds client id to prevent hangs caused by stale data
+	uqmi -s -d "$device" \
+		--stop-network 0xffffffff \
+		--autoconnect > /dev/null
+
 	uqmi -s -d "$device" --set-data-format 802.3
 	uqmi -s -d "$device" --wda-set-data-format 802.3
 
@@ -106,7 +112,8 @@ proto_qmi_setup() {
 		${auth:+--auth-type $auth} \
 		${username:+--username $username} \
 		${password:+--password $password} \
-		--ip-family ipv4`
+		--ip-family ipv4 \
+		--autoconnect`
 	[ $? -ne 0 ] && {
 		echo "Unable to connect IPv4"
 		uqmi -s -d "$device" --set-client-id wds,"$cid_4" --release-client-id wds
@@ -121,7 +128,7 @@ proto_qmi_setup() {
 				${auth:+--auth-type $auth} \
 				${username:+--username $username} \
 				${password:+--password $password} \
-				--ip-family ipv6`
+				--ip-family ipv6 --autoconnect`
 			[ $? -ne 0 ] && {
 				echo "Unable to connect IPv6"
 				uqmi -s -d "$device" --set-client-id wds,"$cid_6" --release-client-id wds
@@ -198,6 +205,19 @@ proto_qmi_setup() {
 	}
 }
 
+qmi_wds_stop() {
+	local cid="$1"
+	local pdh="$2"
+
+	[ -n "$cid" ] || return
+
+	# disable previous autoconnect state using the global handle
+	uqmi -s -d "$device" --set-client-id wds,"$cid" --stop-network "0xffffffff"
+
+	[ -n "$pdh" ] && uqmi -s -d "$device" --set-client-id wds,"$cid" --stop-network "$pdh"
+	uqmi -s -d "$device" --set-client-id wds,"$cid" --release-client-id wds
+}
+
 proto_qmi_teardown() {
 	local interface="$1"
 
@@ -212,18 +232,8 @@ proto_qmi_teardown() {
 	json_select data
 	json_get_vars cid_4 pdh_4 cid_6 pdh_6
 
-	[ -n "$cid_4" ] && {
-		[ -n "$pdh_4" ] && {
-			uqmi -s -d "$device" --set-client-id wds,"$cid_4" --stop-network "$pdh_4"
-			uqmi -s -d "$device" --set-client-id wds,"$cid_4" --release-client-id wds
-		}
-	}
-	[ -n "$cid_6" ] && {
-		[ -n "$pdh_6" ] && {
-			uqmi -s -d "$device" --set-client-id wds,"$cid_6" --stop-network "$pdh_6"
-			uqmi -s -d "$device" --set-client-id wds,"$cid_6" --release-client-id wds
-		}
-	}
+	qmi_wds_stop "$cid_4" "$pdh_4"
+	qmi_wds_stop "$cid_6" "$pdh_6"
 
 	proto_init_update "*" 0
 	proto_send_update "$interface"
