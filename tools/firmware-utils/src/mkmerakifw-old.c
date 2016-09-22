@@ -129,7 +129,7 @@ static void usage(int status)
 
 static void writel(unsigned char *buf, size_t offset, uint32_t value)
 {
-	value = htobe32(value);
+	value = htonl(value);
 	memcpy(buf + offset, &value, sizeof(uint32_t));
 }
 
