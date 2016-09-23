@@ -42,6 +42,7 @@ platform_check_image_target_openmesh()
 
 	case "$img_board_target" in
 		A60)
+			[ "$board" = "a40" ] && return 0
 			[ "$board" = "a60" ] && return 0
 			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
 			return 1
