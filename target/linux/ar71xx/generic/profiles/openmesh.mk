@@ -61,13 +61,13 @@ endef
 $(eval $(call Profile,MR1750))
 
 define Profile/A60
-        NAME:=OpenMesh A60
+        NAME:=OpenMesh A40/A60
         PACKAGES:=kmod-ath9k kmod-ath10k ath10k-firmware-qca988x \
 		 om-watchdog mod-usb-core kmod-usb2
 endef
 
 define Profile/A60/Description
-        Package set optimized for the OpenMesh A60.
+        Package set optimized for the OpenMesh A40/A60.
 endef
 
 $(eval $(call Profile,A60))
