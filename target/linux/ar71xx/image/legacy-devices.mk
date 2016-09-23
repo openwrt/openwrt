@@ -1,5 +1,5 @@
 define LegacyDevice/A60
-   DEVICE_TITLE := OpenMesh A60
+   DEVICE_TITLE := OpenMesh A40/A60
    DEVICE_PACKAGES := om-watchdog kmod-ath10k ath10k-firmware-qca988x \
 	mod-usb-core kmod-usb2
 endef
