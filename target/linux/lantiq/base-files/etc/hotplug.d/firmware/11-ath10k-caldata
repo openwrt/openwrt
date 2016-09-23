@@ -35,11 +35,11 @@ ath10k_caldata_set_macaddr() {
 
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:02:00.0.bin")
-	local board=$(lantiq_board_name)
+	board=$(lantiq_board_name)
 	case $board in
 		BTHOMEHUBV5A)
-			local lan_mac=$(mtd_get_mac_binary caldata 4364)
-			local wifi_mac=$(macaddr_add "$lan_mac" 3)
+			lan_mac=$(mtd_get_mac_binary caldata 4364)
+			wifi_mac=$(macaddr_add "$lan_mac" 3)
 			ath10k_caldata_extract "caldata" 20480
 			ath10k_caldata_set_macaddr $wifi_mac
 			;;
