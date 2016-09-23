@@ -298,16 +298,15 @@
 		status = "disabled";
 	};
 
-	nand@41000000 {
-		compatible = "plxtech,nand-nas782x", "gen_nand";
-		reg = <0x41000000 0x100000>, <0x41C00000 0x20>;
-		nand-ecc-mode = "soft";
+	nandc: nand-controller@41000000 {
+		compatible = "oxsemi,ox820-nand";
+		reg = <0x41000000 0x100000>;
 		clocks = <&stdclk 9>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_nand0>;
 		resets = <&rst 15>;
 		#address-cells = <1>;
-		#size-cells = <1>;
+		#size-cells = <0>;
 		status = "disabled";
 	};
 

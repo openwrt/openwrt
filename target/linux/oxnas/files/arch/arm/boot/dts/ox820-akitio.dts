@@ -34,15 +34,6 @@
 	nand@41000000 {
 		status = "okay";
 
-		partition@0 {
-			label = "boot";
-			reg = <0x0 0x26c0000>;
-		};
-
-		partition@26c0000 {
-			label = "ubi";
-			reg = <0x26c0000 0xd940000>;
-		};
 	};
 
 	ethernet@40400000 {
@@ -131,4 +122,25 @@
 			};
 		};
 	};
+};
+
+&nandc {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		nand-ecc-mode = "soft";
+		nand-ecc-algo = "hamming";
+
+		partition@0 {
+			label = "boot";
+			reg = <0x00000000 0x026c0000>;
+		};
+
+		partition@26c0000 {
+			label = "ubi";
+			reg = <0x026c0000 0x0d940000>;
+		};
 };

@@ -1,13 +1,12 @@
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
-@@ -546,4 +546,12 @@ config MTD_NAND_HISI504
+@@ -546,4 +546,11 @@ config MTD_NAND_HISI504
  	help
  	  Enables support for NAND controller on Hisilicon SoC Hip04.
  
 +config MTD_NAND_OXNAS
 +	tristate "Support for NAND on Plxtech NAS782X SoC"
 +	depends on ARCH_OXNAS
-+	select MTD_NAND_PLATFORM
 +	help
 +	  Enables support for NAND Flash chips on Plxtech NAS782X SoCs. NAND is attached
 +	  to the STATIC Unit.

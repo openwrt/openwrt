@@ -28,21 +28,6 @@
 		status = "okay";
 	};
 
-	nand@41000000 {
-		status = "okay";
-
-		partition@0 {
-			label = "boot";
-			reg = <0x00000000 0x00e00000>;
-			/*read-only;*/
-		};
-
-		partition@e00000 {
-			label = "ubi";
-			reg = <0x00e00000 0x07200000>;
-		};
-	};
-
 	ethernet@40400000 {
 		status = "okay";
 	};
@@ -81,6 +66,29 @@
 		green {
 			label = "pogoplug:green:usr";
 			gpios = <&GPIOB 17 1>;
+		};
+	};
+};
+
+&nandc {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		nand-ecc-mode = "soft";
+		nand-ecc-algo = "hamming";
+
+		partition@0 {
+			label = "boot";
+			reg = <0x00000000 0x00e00000>;
+			/*read-only;*/
+		};
+
+		partition@e00000 {
+			label = "ubi";
+			reg = <0x00e00000 0x07200000>;
 		};
 	};
 };

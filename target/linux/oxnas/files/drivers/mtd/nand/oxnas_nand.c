@@ -1,94 +1,211 @@
 /*
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 as published
- *  by the Free Software Foundation.
+ * Oxford Semiconductor OXNAS NAND driver
+
+ * Copyright (C) 2016 Neil Armstrong <narmstrong@baylibre.com>
+ * Heavily based on plat_nand.c :
+ * Author: Vitaly Wool <vitalywool@gmail.com>
+ * Copyright (C) 2013 Ma Haijun <mahaijuns@gmail.com>
+ * Copyright (C) 2012 John Crispin <blogic@openwrt.org>
  *
- *  based on xway_nand.c
- *  Copyright © 2012 John Crispin <blogic@openwrt.org>
- *  and oxnas_nand.c "NAND glue for Oxnas platforms"
- *  written by Ma Haijun <mahaijuns@gmail.com>
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
  */
 
-#include <linux/mtd/nand.h>
-#include <linux/of_gpio.h>
-#include <linux/of_platform.h>
+#include <linux/err.h>
+#include <linux/io.h>
+#include <linux/module.h>
+#include <linux/platform_device.h>
+#include <linux/slab.h>
 #include <linux/clk.h>
 #include <linux/reset.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/nand.h>
+#include <linux/mtd/partitions.h>
+#include <linux/of.h>
 
-/* nand commands */
-#define NAND_CMD_ALE		BIT(18)
-#define NAND_CMD_CLE		BIT(19)
-#define NAND_CMD_CS		0
-#define NAND_CMD_RESET		0xff
-#define NAND_CMD		(NAND_CMD_CS | NAND_CMD_CLE)
-#define NAND_ADDR		(NAND_CMD_CS | NAND_CMD_ALE)
-#define NAND_DATA		(NAND_CMD_CS)
+/* Nand commands */
+#define OXNAS_NAND_CMD_ALE		BIT(18)
+#define OXNAS_NAND_CMD_CLE		BIT(19)
 
-static void oxnas_cmd_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
+#define OXNAS_NAND_MAX_CHIPS	1
+
+struct oxnas_nand {
+	struct nand_hw_control base;
+	void __iomem *io_base;
+	struct clk *clk;
+	struct nand_chip *chips[OXNAS_NAND_MAX_CHIPS];
+	unsigned long ctrl;
+	struct mtd_partition *partitions;
+	int nr_partitions;
+};
+
+static uint8_t oxnas_nand_read_byte(struct mtd_info *mtd)
 {
-	struct nand_chip *this = mtd->priv;
-	unsigned long nandaddr = (unsigned long) this->IO_ADDR_W;
+	struct nand_chip *chip = mtd_to_nand(mtd);
+	struct oxnas_nand *oxnas = nand_get_controller_data(chip);
+
+	return readb(oxnas->io_base);
+}
+
+static void oxnas_nand_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
+{
+	struct nand_chip *chip = mtd_to_nand(mtd);
+	struct oxnas_nand *oxnas = nand_get_controller_data(chip);
+
+	ioread8_rep(oxnas->io_base, buf, len);
+}
+
+static void oxnas_nand_write_buf(struct mtd_info *mtd,
+				 const uint8_t *buf, int len)
+{
+	struct nand_chip *chip = mtd_to_nand(mtd);
+	struct oxnas_nand *oxnas = nand_get_controller_data(chip);
+
+	iowrite8_rep(oxnas->io_base + oxnas->ctrl, buf, len);
+}
+
+/* Single CS command control */
+static void oxnas_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
+				unsigned int ctrl)
+{
+	struct nand_chip *chip = mtd_to_nand(mtd);
+	struct oxnas_nand *oxnas = nand_get_controller_data(chip);
 
 	if (ctrl & NAND_CTRL_CHANGE) {
-		nandaddr &= ~(NAND_CMD | NAND_ADDR);
 		if (ctrl & NAND_CLE)
-			nandaddr |= NAND_CMD;
+			oxnas->ctrl = OXNAS_NAND_CMD_CLE;
 		else if (ctrl & NAND_ALE)
-			nandaddr |= NAND_ADDR;
-		this->IO_ADDR_W = (void __iomem *) nandaddr;
+			oxnas->ctrl = OXNAS_NAND_CMD_ALE;
+		else
+			oxnas->ctrl = 0;
 	}
 
 	if (cmd != NAND_CMD_NONE)
-		writeb(cmd, (void __iomem *) nandaddr);
+		writeb(cmd, oxnas->io_base + oxnas->ctrl);
 }
-
-static int oxnas_nand_probe(struct platform_device *pdev)
-{
-	/* enable clock and release static block reset */
-	struct clk *clk = of_clk_get(pdev->dev.of_node, 0);
-
-	if (IS_ERR(clk))
-		return PTR_ERR(clk);
-
-	clk_prepare_enable(clk);
-	device_reset(&pdev->dev);
-
-	return 0;
-}
-
-/* allow users to override the partition in DT using the cmdline */
-static const char * part_probes[] = { "cmdlinepart", "ofpart", NULL };
-
-static struct platform_nand_data oxnas_nand_data = {
-	.chip = {
-		.nr_chips		= 1,
-		.chip_delay		= 30,
-		.part_probe_types	= part_probes,
-	},
-	.ctrl = {
-		.probe		= oxnas_nand_probe,
-		.cmd_ctrl	= oxnas_cmd_ctrl,
-	}
-};
 
 /*
- * Try to find the node inside the DT. If it is available attach out
- * platform_nand_data
+ * Probe for the NAND device.
  */
-static int __init oxnas_register_nand(void)
+static int oxnas_nand_probe(struct platform_device *pdev)
 {
-	struct device_node *node;
-	struct platform_device *pdev;
+	struct device_node *np = pdev->dev.of_node;
+	struct device_node *nand_np;
+	struct oxnas_nand *oxnas;
+	struct nand_chip *chip;
+	struct mtd_info *mtd;
+	struct resource *res;
+	int nchips = 0;
+	int count = 0;
+	int err = 0;
 
-	node = of_find_compatible_node(NULL, NULL, "plxtech,nand-nas782x");
-	if (!node)
-		return -ENOENT;
-	pdev = of_find_device_by_node(node);
-	if (!pdev)
+	/* Allocate memory for the device structure (and zero it) */
+	oxnas = devm_kzalloc(&pdev->dev, sizeof(struct nand_chip),
+			    GFP_KERNEL);
+	if (!oxnas)
+		return -ENOMEM;
+
+	nand_hw_control_init(&oxnas->base);
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	oxnas->io_base = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(oxnas->io_base))
+		return PTR_ERR(oxnas->io_base);
+
+	oxnas->clk = devm_clk_get(&pdev->dev, NULL);
+	if (IS_ERR(oxnas->clk))
+		oxnas->clk = NULL;
+
+	/* Only a single chip node is supported */
+	count = of_get_child_count(np);
+	pr_info("########### count: %d\n", count);
+	if (count > 1)
 		return -EINVAL;
-	pdev->dev.platform_data = &oxnas_nand_data;
-	of_node_put(node);
+
+	clk_prepare_enable(oxnas->clk);
+	device_reset_optional(&pdev->dev);
+
+	for_each_child_of_node(np, nand_np) {
+		chip = devm_kzalloc(&pdev->dev, sizeof(struct nand_chip),
+				    GFP_KERNEL);
+		if (!chip)
+			return -ENOMEM;
+
+		chip->controller = &oxnas->base;
+
+		nand_set_flash_node(chip, nand_np);
+		nand_set_controller_data(chip, oxnas);
+
+		mtd = nand_to_mtd(chip);
+		mtd->dev.parent = &pdev->dev;
+		mtd->priv = chip;
+
+		chip->cmd_ctrl = oxnas_nand_cmd_ctrl;
+		chip->read_buf = oxnas_nand_read_buf;
+		chip->read_byte = oxnas_nand_read_byte;
+		chip->write_buf = oxnas_nand_write_buf;
+		chip->chip_delay = 30;
+
+		/* Scan to find existence of the device */
+		err = nand_scan(mtd, 1);
+		pr_info("########### nand_scan err: %d\n", err);
+		if (err)
+			return err;
+
+		err = mtd_device_register(mtd, NULL, 0);
+		pr_info("########### mtd_device_register err: %d\n", err);
+		if (err) {
+			nand_release(mtd);
+			return err;
+		}
+
+		oxnas->chips[nchips] = chip;
+		++nchips;
+	}
+
+	pr_info("########### nchips: %d\n", nchips);
+
+	/* Exit if no chips found */
+	if (!nchips)
+		return -ENODEV;
+
+	platform_set_drvdata(pdev, oxnas);
+
 	return 0;
 }
 
-subsys_initcall(oxnas_register_nand);
+static int oxnas_nand_remove(struct platform_device *pdev)
+{
+	struct oxnas_nand *oxnas = platform_get_drvdata(pdev);
+
+	if (oxnas->chips[0])
+		nand_release(nand_to_mtd(oxnas->chips[0]));
+
+	clk_disable_unprepare(oxnas->clk);
+
+	return 0;
+}
+
+static const struct of_device_id oxnas_nand_match[] = {
+	{ .compatible = "oxsemi,ox820-nand" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, oxnas_nand_match);
+
+static struct platform_driver oxnas_nand_driver = {
+	.probe	= oxnas_nand_probe,
+	.remove	= oxnas_nand_remove,
+	.driver	= {
+		.name		= "oxnas_nand",
+		.of_match_table = oxnas_nand_match,
+	},
+};
+
+module_platform_driver(oxnas_nand_driver);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Neil Armstrong <narmstrong@baylibre.com>");
+MODULE_DESCRIPTION("Oxnas NAND driver");
+MODULE_ALIAS("platform:oxnas_nand");

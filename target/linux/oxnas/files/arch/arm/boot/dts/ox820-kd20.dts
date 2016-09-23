@@ -31,37 +31,6 @@
 		nr-ports = <2>;
 	};
 
-	nand@41000000 {
-		status = "okay";
-
-		partition@0 {
-			label = "stage1";
-			reg = <0x00000000 0x00040000>;
-			read-only;
-		};
-
-		partition@40000 {
-			label = "u-boot";
-			reg = <0x00040000 0x00200000>;
-			read-only;
-		};
-
-		partition@240000 {
-			label = "initrd";
-			reg = <0x00240000 0x00600000>;
-		};
-
-		partition@840000 {
-			label = "kernel";
-			reg = <0x00840000 0x007C0000>;
-		};
-
-		partition@e00000 {
-			label = "ubi";
-			reg = <0x01000000 0x07000000>;
-		};
-	};
-
 	ethernet@40400000 {
 		status = "okay";
 		snps,phy-addr = <1>;
@@ -161,5 +130,44 @@
 	gpio-poweroff {
 		compatible = "gpio-poweroff";
 		gpios = <&GPIOA 9 0>;
+	};
+};
+
+&nandc {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		nand-ecc-mode = "soft";
+		nand-ecc-algo = "hamming";
+
+		partition@0 {
+			label = "stage1";
+			reg = <0x00000000 0x00040000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "u-boot";
+			reg = <0x00040000 0x00200000>;
+			read-only;
+		};
+
+		partition@240000 {
+			label = "initrd";
+			reg = <0x00240000 0x00600000>;
+		};
+
+		partition@840000 {
+			label = "kernel";
+			reg = <0x00840000 0x007C0000>;
+		};
+
+		partition@e00000 {
+			label = "ubi";
+			reg = <0x01000000 0x07000000>;
+		};
 	};
 };
