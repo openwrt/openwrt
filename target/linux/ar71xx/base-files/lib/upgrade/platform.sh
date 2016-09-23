@@ -292,6 +292,7 @@ platform_check_image() {
 
 		return 0;
 		;;
+	a40 | \
 	a60 | \
 	mr1750 | \
 	mr1750v2 | \
@@ -529,6 +530,7 @@ platform_do_upgrade() {
 	tew-673gru)
 		platform_do_upgrade_dir825b "$ARGV"
 		;;
+	a40 | \
 	a60 | \
 	mr1750 | \
 	mr1750v2 | \
