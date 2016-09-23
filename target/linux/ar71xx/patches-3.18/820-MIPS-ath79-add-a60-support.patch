@@ -5,7 +5,7 @@
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
  
 +config ATH79_MACH_A60
-+	bool "OpenMesh A60 board support"
++	bool "OpenMesh A40/A60 board support"
 +	select SOC_QCA955X
 +	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_ETH
@@ -29,10 +29,11 @@
  obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach-alfa-nx.o
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,6 +16,7 @@
+@@ -16,6 +16,8 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
++	ATH79_MACH_A40,			/* OpenMesh A40 */
 +	ATH79_MACH_A60,			/* OpenMesh A60 */
  	ATH79_MACH_ALFA_AP120C,		/* ALFA Network AP120C board */
  	ATH79_MACH_ALFA_AP96,		/* ALFA Network AP96 board */

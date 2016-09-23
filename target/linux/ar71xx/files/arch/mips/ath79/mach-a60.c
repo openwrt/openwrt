@@ -40,6 +40,19 @@
 
 #define A60_WMAC_CALDATA_OFFSET	0x1000
 
+static struct gpio_led a40_leds_gpio[] __initdata = {
+	{
+		.name		= "a40:red:status",
+		.gpio		= A60_GPIO_LED_RED,
+	}, {
+		.name		= "a40:green:status",
+		.gpio		= A60_GPIO_LED_GREEN,
+	}, {
+		.name		= "a40:blue:status",
+		.gpio		= A60_GPIO_LED_BLUE,
+	}
+};
+
 static struct gpio_led a60_leds_gpio[] __initdata = {
 	{
 		.name		= "a60:red:status",
@@ -150,6 +163,14 @@ static void __init a60_setup_common(void)
 
 	ath79_register_pci();
 }
+
+static void __init a40_setup(void)
+{
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(a40_leds_gpio), a40_leds_gpio);
+	a60_setup_common();
+}
+
+MIPS_MACHINE(ATH79_MACH_A40, "A40", "OpenMesh A40", a40_setup);
 
 static void __init a60_setup(void)
 {
