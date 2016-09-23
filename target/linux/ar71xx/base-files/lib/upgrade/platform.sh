@@ -498,6 +498,7 @@ platform_check_image() {
 		tplink_pharos_check_image "$1" && return 0
 		return 1
 		;;
+	a40|\
 	a60|\
 	mr1750v2|\
 	mr1750|\
@@ -678,6 +679,7 @@ platform_do_upgrade() {
 	tew-673gru)
 		platform_do_upgrade_dir825b "$ARGV"
 		;;
+	a40|\
 	a60|\
 	mr1750v2|\
 	mr1750|\
