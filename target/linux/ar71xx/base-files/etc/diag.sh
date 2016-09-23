@@ -6,6 +6,9 @@
 
 get_status_led() {
 	case $(ar71xx_board_name) in
+	a40)
+		status_led="a40:green:status"
+		;;
 	a60)
 		status_led="a60:green:status"
 		;;

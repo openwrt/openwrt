@@ -321,6 +321,9 @@ ar71xx_board_detect() {
 	*"Oolite V1.0")
 		name="oolite"
 		;;
+	*"A40")
+		name="a40"
+		;;
 	*"A60")
 		name="a60"
 		;;
