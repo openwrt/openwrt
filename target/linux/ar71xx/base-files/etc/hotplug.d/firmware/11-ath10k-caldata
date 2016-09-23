@@ -75,6 +75,7 @@ case "$FIRMWARE" in
 		ath10kcal_extract "caldata" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
+	a40 | \
 	a60 | \
 	mr1750 | \
 	mr1750v2 | \
