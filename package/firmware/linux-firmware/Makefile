@@ -16,7 +16,9 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_SOURCE_VERSION)
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
-PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
+PKG_SOURCE_URL:=\
+	https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware \
+	https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
 PKG_MIRROR_MD5SUM:=762d7f4a87e944338c2871c953603377
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
