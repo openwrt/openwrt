@@ -21,7 +21,6 @@ PKG_MD5SUM:=973c1d896be751321cc3aafa564f64b2
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
-PKG_TARGETS:=bin
 
 PKG_BUILD_PARALLEL:=1
 
@@ -33,6 +32,7 @@ endef
 
 define uboot/clearfog
   TITLE:=U-Boot for SolidRun ClearFog A1
+  DEVICE:=armada-388-clearfog
 endef
 
 UBOOTS:= \
@@ -42,7 +42,9 @@ define Package/uboot/template
 define Package/uboot-mvebu-$(1)
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_mvebu
+  DEPENDS:=@(TARGET_DEVICE_mvebu_DEVICE_$(3)||TARGET_mvebu_DEVICE_$(3))
+  DEFAULT:=m
+  HIDDEN:=1
   TITLE:=$(2)
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)
@@ -53,7 +55,7 @@ endef
 define BuildUBootPackage
 	$(eval $(uboot/Default))
 	$(eval $(uboot/$(1)))
-	$(call Package/uboot/template,$(1),$(TITLE))
+	$(call Package/uboot/template,$(1),$(TITLE),$(DEVICE))
 endef
 
 define Build/Configure
