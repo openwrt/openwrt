@@ -193,12 +193,15 @@ sub mconf_depends {
 
 			$m = "select";
 			next if $only_dep;
+
+			$flags =~ /@/ or $depend = "PACKAGE_$depend";
 		} else {
 			if ($vdep = $package{$depend}->{vdepends}) {
 				$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
+			} else {
+				$flags =~ /@/ or $depend = "PACKAGE_$depend";
 			}
 		}
-		$flags =~ /@/ or $depend = "PACKAGE_$depend";
 		if ($condition) {
 			if ($m =~ /select/) {
 				next if $depend eq $condition;
