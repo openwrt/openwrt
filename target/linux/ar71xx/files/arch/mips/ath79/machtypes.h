@@ -17,6 +17,7 @@
 enum ath79_mach_type {
 	ATH79_MACH_GENERIC_OF = -1,	/* Device tree board */
 	ATH79_MACH_GENERIC = 0,
+	ATH79_MACH_A40,				/* OpenMesh A40 */
 	ATH79_MACH_A60,				/* OpenMesh A60 */
 	ATH79_MACH_ALFA_AP120C,			/* ALFA Network AP120C board */
 	ATH79_MACH_ALFA_AP96,			/* ALFA Network AP96 board */
