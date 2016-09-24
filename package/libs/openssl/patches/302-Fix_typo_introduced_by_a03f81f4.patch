@@ -1,0 +1,21 @@
+From 581215a519c66db7255ea360ed25bb00033ccd52 Mon Sep 17 00:00:00 2001
+From: Rich Salz <rsalz@openssl.org>
+Date: Thu, 22 Sep 2016 08:47:45 -0400
+Subject: [PATCH] Fix typo introduced by a03f81f4
+
+Reviewed-by: Richard Levitte <levitte@openssl.org>
+---
+ crypto/engine/eng_cryptodev.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/crypto/engine/eng_cryptodev.c
++++ b/crypto/engine/eng_cryptodev.c
+@@ -939,7 +939,7 @@ static int cryptodev_digest_copy(EVP_MD_
+     if (fstate->mac_len != 0) {
+         if (fstate->mac_data != NULL) {
+             dstate->mac_data = OPENSSL_malloc(fstate->mac_len);
+-            if (dstate->ac_data == NULL) {
++            if (dstate->mac_data == NULL) {
+                 printf("cryptodev_digest_init: malloc failed\n");
+                 return 0;
+             }
