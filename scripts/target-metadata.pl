@@ -263,7 +263,7 @@ EOF
 		foreach my $profile (@{$target->{profiles}}) {
 			next unless $profile->{id} =~ /^DEVICE_/;
 			print <<EOF;
-config TARGET_DEVICE_$target->{conf}_$profile->{id}
+menuconfig TARGET_DEVICE_$target->{conf}_$profile->{id}
 	bool "$profile->{name}"
 	depends on TARGET_$target->{conf}
 	default y if TARGET_ALL_PROFILES
@@ -274,6 +274,17 @@ EOF
 				print "\tselect MODULE_DEFAULT_$pkg if TARGET_PER_DEVICE_ROOTFS\n";
 				$defaults{$pkg} = 1;
 			}
+
+			print <<EOF;
+
+
+	config TARGET_DEVICE_PACKAGES_$target->{conf}_$profile->{id}
+		string "$profile->{name} additional packages"
+		default ""
+		depends on TARGET_PER_DEVICE_ROOTFS
+		depends on TARGET_DEVICE_$target->{conf}_$profile->{id}
+
+EOF
 		}
 	}
 
