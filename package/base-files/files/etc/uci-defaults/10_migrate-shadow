@@ -1,7 +1,7 @@
 #!/bin/sh
 
-local ppwd="$(sed -ne '/^root:/s/^root:\([^:]*\):.*$/\1/p' /etc/passwd)"
-local spwd="$(sed -ne '/^root:/s/^root:\([^:]*\):.*$/\1/p' /etc/shadow)"
+ppwd="$(sed -ne '/^root:/s/^root:\([^:]*\):.*$/\1/p' /etc/passwd)"
+spwd="$(sed -ne '/^root:/s/^root:\([^:]*\):.*$/\1/p' /etc/shadow)"
 
 if [ -n "${ppwd#[\!x]}" ] && [ -z "${spwd#[\!x]}" ]; then
 	logger -t migrate-shadow "Moving root password hash into shadow database"

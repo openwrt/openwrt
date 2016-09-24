@@ -10,7 +10,7 @@
 # This script sets system defaults for the hardware on firstboot
 #
 
-local hardware=`sed -n /Hardware/s/.*:.//p /proc/cpuinfo`
+hardware=`sed -n /Hardware/s/.*:.//p /proc/cpuinfo`
 
 wrt350nv2_default() {
 # leds

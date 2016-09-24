@@ -8,12 +8,12 @@ uci show network | grep "\.vlan=0"
 
 logger -t network "network config is invalid, creating new one"
 
-local lan_proto="$(uci -q get network.lan.proto)"
-local lan_ipaddr="$(uci -q get network.lan.ipaddr)"
-local lan_netmask="$(uci -q get network.lan.netmask)"
-local wan_proto="$(uci -q get network.wan.proto)"
-local wan_ipaddr="$(uci -q get network.wan.ipaddr)"
-local wan_netmask="$(uci -q get network.wan.netmask)"
+lan_proto="$(uci -q get network.lan.proto)"
+lan_ipaddr="$(uci -q get network.lan.ipaddr)"
+lan_netmask="$(uci -q get network.lan.netmask)"
+wan_proto="$(uci -q get network.wan.proto)"
+wan_ipaddr="$(uci -q get network.wan.ipaddr)"
+wan_netmask="$(uci -q get network.wan.netmask)"
 
 echo "" > /etc/config/network
 config_generate

@@ -175,9 +175,9 @@ detect_by_model() {
 }
 
 
-local model="$(sed -ne 's/^machine[ \t]*: //p' /proc/cpuinfo)"
-local boardtype="$(nvram get boardtype)"
-local boardnum="$(nvram get boardnum)"
+model="$(sed -ne 's/^machine[ \t]*: //p' /proc/cpuinfo)"
+boardtype="$(nvram get boardtype)"
+boardnum="$(nvram get boardnum)"
 
 board_config_update
 

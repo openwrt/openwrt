@@ -16,7 +16,6 @@
 include /lib/network
 scan_interfaces
 
-local led
 config_load system
 config_get led led_dsl sysfs
 if [ -n "$led" ]; then
@@ -28,18 +27,14 @@ if [ -n "$led" ]; then
 	esac
 fi
 
-local interfaces=`ubus list network.interface.\* | cut -d"." -f3`
-local ifc
+interfaces=`ubus list network.interface.\* | cut -d"." -f3`
 for ifc in $interfaces; do
 
-	local up
 	json_load "$(ifstatus $ifc)"
 	json_get_var up up
 
-	local auto
 	config_get_bool auto "$ifc" auto 1
 
-	local proto
 	json_get_var proto proto
 
 	if [ "$DSL_INTERFACE_STATUS" = "UP" ]; then
