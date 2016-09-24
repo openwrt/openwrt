@@ -293,8 +293,7 @@ mkfs_cur_target_dir = $(call mkfs_target_dir,pkg=$(target_params))
 
 opkg_target = \
 	$(call opkg,$(mkfs_cur_target_dir)) \
-		-f $(mkfs_cur_target_dir).conf \
-		-l $(mkfs_cur_target_dir).tmp
+		-f $(mkfs_cur_target_dir).conf
 
 target-dir-%: FORCE
 	rm -rf $(mkfs_cur_target_dir) $(mkfs_cur_target_dir).opkg
@@ -311,9 +310,7 @@ target-dir-%: FORCE
 	$(call Image/mkfs/prepare,$(mkfs_cur_target_dir))
 	$(call prepare_rootfs,$(mkfs_cur_target_dir))
 	mv $(mkfs_cur_target_dir).opkg $(mkfs_cur_target_dir)/etc/opkg
-	rm -rf \
-		$(mkfs_cur_target_dir).conf \
-		$(mkfs_cur_target_dir).tmp
+	rm -f $(mkfs_cur_target_dir).conf
 
 $(KDIR)/root.%: kernel_prepare
 	$(call Image/mkfs/$(word 1,$(target_params)),$(target_params))

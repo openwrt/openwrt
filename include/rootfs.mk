@@ -72,6 +72,7 @@ define prepare_rootfs
 	@-find $(1) -name .svn  | $(XARGS) rm -rf
 	@-find $(1) -name .git  | $(XARGS) rm -rf
 	@-find $(1) -name '.#*' | $(XARGS) rm -f
+	rm -f $(1)/usr/lib/opkg/lists/*
 	rm -f $(1)/usr/lib/opkg/info/*.postinst*
 	rm -f $(1)/usr/lib/opkg/info/*.prerm*
 	$(if $(CONFIG_CLEAN_IPKG),rm -rf $(1)/usr/lib/opkg)
