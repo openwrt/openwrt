@@ -64,6 +64,39 @@ wndr3700_board_detect() {
 	AR71XX_MODEL="$machine"
 }
 
+ubnt_get_mtd_part_magic() {
+	ar71xx_get_mtd_offset_size_format EEPROM 4118 2 %02x
+}
+
+ubnt_xm_board_detect() {
+	local model
+	local magic
+
+	magic="$(ubnt_get_mtd_part_magic)"
+	case ${magic:0:3} in
+		"e00"|\
+		"e01"|\
+		"e80")  # Different revisions of the NanoStation?
+			model="Ubiquiti NanoStation M"
+			;;
+		"e0a")
+			model="Ubiquiti NanoStation loco M"
+			;;
+		"e1b")  # Rocket M5 untested
+			model="Ubiquiti Rocket M"
+			;;
+		"e20"|\
+		"e2d")  # Bullet M Ti
+			model="Ubiquiti Bullet M"
+			;;
+		"e30")
+			model="Ubiquiti PicoStation M"
+			;;
+	esac
+
+	[ -z "$model" ] || AR71XX_MODEL="${model}${magic:3:1}"
+}
+
 cybertan_get_hw_magic() {
 	local part
 
@@ -569,12 +602,14 @@ ar71xx_board_detect() {
 		;;
 	*"Bullet M")
 		name="bullet-m"
+		ubnt_xm_board_detect
 		;;
 	*"Loco M XW")
 		name="loco-m-xw"
 		;;
 	*"Nanostation M")
 		name="nanostation-m"
+		ubnt_xm_board_detect
 		;;
 	*"Nanostation M XW")
 		name="nanostation-m-xw"
@@ -791,6 +826,7 @@ ar71xx_board_detect() {
 		;;
 	*"Rocket M")
 		name="rocket-m"
+		ubnt_xm_board_detect
 		;;
 	*"Rocket M TI")
 		name="rocket-m-ti"
