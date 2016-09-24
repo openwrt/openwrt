@@ -661,11 +661,8 @@ define KernelPackage/ebtables
   SUBMENU:=$(NF_MENU)
   TITLE:=Bridge firewalling modules
   DEPENDS:=+kmod-ipt-core +kmod-bridge +kmod-br-netfilter
-  FILES:= \
-	$(LINUX_DIR)/net/bridge/br_netfilter.ko \
-	$(foreach mod,$(EBTABLES-m),$(LINUX_DIR)/net/$(mod).ko)
-  KCONFIG:=CONFIG_BRIDGE_NETFILTER \
-	$(KCONFIG_EBTABLES)
+  FILES:=$(foreach mod,$(EBTABLES-m),$(LINUX_DIR)/net/$(mod).ko)
+  KCONFIG:=$(KCONFIG_EBTABLES)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(EBTABLES-m)))
 endef
 
