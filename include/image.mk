@@ -298,7 +298,7 @@ opkg_target = \
 target-dir-%: FORCE
 	rm -rf $(mkfs_cur_target_dir) $(mkfs_cur_target_dir).opkg
 	$(CP) $(TARGET_DIR) $(mkfs_cur_target_dir)
-	mv $(mkfs_cur_target_dir)/etc/opkg $(mkfs_cur_target_dir).opkg
+	-mv $(mkfs_cur_target_dir)/etc/opkg $(mkfs_cur_target_dir).opkg
 	echo 'src default file://$(PACKAGE_DIR_ALL)' > $(mkfs_cur_target_dir).conf
 	$(if $(call opkg_package_files,$(mkfs_packages_add)), \
 		$(opkg_target) update && \
@@ -309,7 +309,7 @@ target-dir-%: FORCE
 			$(mkfs_packages_remove))
 	$(call Image/mkfs/prepare,$(mkfs_cur_target_dir))
 	$(call prepare_rootfs,$(mkfs_cur_target_dir))
-	mv $(mkfs_cur_target_dir).opkg $(mkfs_cur_target_dir)/etc/opkg
+	-mv $(mkfs_cur_target_dir).opkg $(mkfs_cur_target_dir)/etc/opkg
 	rm -f $(mkfs_cur_target_dir).conf
 
 $(KDIR)/root.%: kernel_prepare
