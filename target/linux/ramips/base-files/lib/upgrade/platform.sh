@@ -204,7 +204,8 @@ platform_check_image() {
 		return 0
 		;;
 	c20i|\
-	c50)
+	c50|\
+	mr200)
 		[ "$magic" != "03000000" ] && {
 			echo "Invalid image type."
 			return 1

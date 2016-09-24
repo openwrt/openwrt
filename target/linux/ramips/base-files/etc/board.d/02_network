@@ -217,6 +217,11 @@ ramips_setup_interfaces()
 	wl-330n)
 		ucidef_set_interface_lan "eth0.1"
 		;;
+	mr200)
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
+		ucidef_set_interface_wan "usb0"
+		;;
 	mzk-dp150n|\
 	vocore)
 		ucidef_add_switch "switch0" \

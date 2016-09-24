@@ -295,6 +295,9 @@ ramips_board_detect() {
 	*"MR-102N")
 		name="mr-102n"
 		;;
+	*"MR200")
+		name="mr200"
+		;;
 	*"MT7620a + MT7530 evaluation"*)
 		name="mt7620a_mt7530"
 		;;

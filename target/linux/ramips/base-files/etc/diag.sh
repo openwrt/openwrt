@@ -164,6 +164,9 @@ get_status_led() {
 	mr-102n)
 		status_led="$board:amber:status"
 		;;
+	mr200)
+		status_led="$board:white:power"
+		;;
 	nw718)
 		status_led="$board:amber:cpu"
 		;;

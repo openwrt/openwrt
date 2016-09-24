@@ -156,6 +156,12 @@ static struct flash_layout layouts[] = {
 		.kernel_ep	= 0x80000000,
 		.rootfs_ofs	= 0x140000,
 	}, {
+		.id		= "8MLmtk",
+		.fw_max_len	= 0x7b0000,
+		.kernel_la	= 0x80000000,
+		.kernel_ep	= 0x80000000,
+		.rootfs_ofs	= 0x140000,
+	}, {
 		/* terminating entry */
 	}
 };
@@ -189,6 +195,13 @@ static struct board_info boards[] = {
 		.hw_id		= 0xc7500001,
 		.hw_rev		= 69,
 		.layout_id	= "8Mmtk",
+		.hdr_ver	= 3,
+		.endian_swap	= true,
+	}, {
+		.id		= "ArcherMR200",
+		.hw_id		= 0xd7500001,
+		.hw_rev		= 0x4a,
+		.layout_id	= "8MLmtk",
 		.hdr_ver	= 3,
 		.endian_swap	= true,
 	}, {
