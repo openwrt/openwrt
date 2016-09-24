@@ -162,6 +162,8 @@ enum {
 #define MV_GLOBALREG(_type) MV_SWITCH_GLOBAL, MV_GLOBAL_##_type
 
 enum {
+	MV_GLOBAL2_SMI_OP		= 0x18,
+	MV_GLOBAL2_SMI_DATA		= 0x19,
 	MV_GLOBAL2_SDET_POLARITY	= 0x1d,
 };
 #define MV_GLOBAL2REG(_type) MV_SWITCH_GLOBAL2, MV_GLOBAL2_##_type
@@ -228,6 +230,14 @@ enum {
 #define MV_FDB_LO_MASK			0xf000
 #define MV_FDB_HI_SHIFT			4
 #define MV_FDB_LO_SHIFT			12
+
+/* Marvell Specific PHY register */
+#define MII_MV_SPEC_CTRL		16
+enum {
+	MV_SPEC_MDI_CROSS_AUTO		= (0x6 << 4),
+	MV_SPEC_ENERGY_DETECT		= (0x3 << 8),
+	MV_SPEC_DOWNSHIFT_COUNTER	= (0x3 << 12),
+};
 
 struct mvsw61xx_state {
 	struct switch_dev dev;

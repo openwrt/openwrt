@@ -148,6 +148,31 @@ mvsw61xx_wait_mask_s(struct switch_dev *dev, int addr,
 }
 
 static int
+mvsw61xx_mdio_read(struct switch_dev *dev, int addr, int reg)
+{
+	sw16(dev, MV_GLOBAL2REG(SMI_OP),
+	     MV_INDIRECT_READ | (addr << MV_INDIRECT_ADDR_S) | reg);
+
+	if (mvsw61xx_wait_mask_s(dev,  MV_GLOBAL2REG(SMI_OP),
+				 MV_INDIRECT_INPROGRESS, 0) < 0)
+		return -ETIMEDOUT;
+
+	return sr16(dev, MV_GLOBAL2REG(SMI_DATA));
+}
+
+static int
+mvsw61xx_mdio_write(struct switch_dev *dev, int addr, int reg, u16 val)
+{
+	sw16(dev, MV_GLOBAL2REG(SMI_DATA), val);
+
+	sw16(dev, MV_GLOBAL2REG(SMI_OP),
+	     MV_INDIRECT_WRITE | (addr << MV_INDIRECT_ADDR_S) | reg);
+
+	return mvsw61xx_wait_mask_s(dev,  MV_GLOBAL2REG(SMI_OP),
+				    MV_INDIRECT_INPROGRESS, 0) < 0;
+}
+
+static int
 mvsw61xx_get_port_mask(struct switch_dev *dev,
 		const struct switch_attr *attr, struct switch_val *val)
 {
@@ -566,7 +591,7 @@ static int mvsw61xx_apply(struct switch_dev *dev)
 	return mvsw61xx_update_state(dev);
 }
 
-static int mvsw61xx_reset(struct switch_dev *dev)
+static int _mvsw61xx_reset(struct switch_dev *dev, bool full)
 {
 	struct mvsw61xx_state *state = get_state(dev);
 	int i;
@@ -599,6 +624,17 @@ static int mvsw61xx_reset(struct switch_dev *dev)
 
 		/* Set port association vector */
 		sw16(dev, MV_PORTREG(ASSOC, i), (1 << i));
+
+		/* power up phys */
+		if (full && i < 5) {
+			mvsw61xx_mdio_write(dev, i, MII_MV_SPEC_CTRL,
+					    MV_SPEC_MDI_CROSS_AUTO |
+					    MV_SPEC_ENERGY_DETECT |
+					    MV_SPEC_DOWNSHIFT_COUNTER);
+			mvsw61xx_mdio_write(dev, i, MII_BMCR, BMCR_RESET |
+					    BMCR_ANENABLE | BMCR_FULLDPLX |
+					    BMCR_SPEED1000);
+		}
 	}
 
 	for (i = 0; i < dev->vlans; i++) {
@@ -621,6 +657,11 @@ static int mvsw61xx_reset(struct switch_dev *dev)
 	}
 
 	return 0;
+}
+
+static int mvsw61xx_reset(struct switch_dev *dev)
+{
+	return _mvsw61xx_reset(dev, false);
 }
 
 enum {
@@ -797,6 +838,8 @@ static int mvsw61xx_probe(struct platform_device *pdev)
 	state->dev.name = model_str;
 	state->dev.ops = &mvsw61xx_ops;
 	state->dev.alias = dev_name(&pdev->dev);
+
+	_mvsw61xx_reset(&state->dev, true);
 
 	err = register_switch(&state->dev, NULL);
 	if (err < 0)
