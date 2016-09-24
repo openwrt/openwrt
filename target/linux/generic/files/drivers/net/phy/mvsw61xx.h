@@ -49,6 +49,14 @@ enum {
 };
 
 enum {
+	MV_PORT_STATUS_CMODE_100BASE_X	= 0x8,
+	MV_PORT_STATUS_CMODE_1000BASE_X	= 0x9,
+	MV_PORT_STATUS_CMODE_SGMII	= 0xa,
+};
+
+#define MV_PORT_STATUS_CMODE_MASK	0xf
+
+enum {
 	MV_PORT_STATUS_SPEED_10		= 0x00,
 	MV_PORT_STATUS_SPEED_100	= 0x01,
 	MV_PORT_STATUS_SPEED_1000	= 0x02,
@@ -238,6 +246,11 @@ enum {
 	MV_SPEC_ENERGY_DETECT		= (0x3 << 8),
 	MV_SPEC_DOWNSHIFT_COUNTER	= (0x3 << 12),
 };
+
+#define MII_MV_PAGE			22
+
+#define MV_REG_FIBER_SERDES		0xf
+#define MV_PAGE_FIBER_SERDES		0x1
 
 struct mvsw61xx_state {
 	struct switch_dev dev;
