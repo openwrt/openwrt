@@ -54,7 +54,7 @@ $(curdir)/merge-index: $(curdir)/merge
 
 $(curdir)/install: $(TMP_DIR)/.build $(curdir)/system/opkg/host/install $(curdir)/merge $(if $(CONFIG_TARGET_PER_DEVICE_ROOTFS),$(curdir)/merge-index)
 	- find $(STAGING_DIR_ROOT) -type d | $(XARGS) chmod 0755
-	rm -rf $(TARGET_DIR)
+	rm -rf $(TARGET_DIR) $(TARGET_DIR_ORIG)
 	[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
 	$(call opkg,$(TARGET_DIR)) install \
 		$(call opkg_package_files,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null))
@@ -65,6 +65,9 @@ $(curdir)/install: $(TMP_DIR)/.build $(curdir)/system/opkg/host/install $(curdir
 		done; \
 	done || true
 	@-$(MAKE) package/preconfig
+
+	$(CP) $(TARGET_DIR) $(TARGET_DIR_ORIG)
+
 	$(call prepare_rootfs,$(TARGET_DIR))
 
 PASSOPT=""

@@ -52,6 +52,8 @@ opkg_package_files = $(wildcard \
 	$(foreach dir,$(PACKAGE_SUBDIRS), \
 	  $(foreach pkg,$(1), $(dir)/$(pkg)_*.ipk)))
 
+TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
+
 define prepare_rootfs
 	@if [ -d $(TOPDIR)/files ]; then \
 		$(call file_copy,$(TOPDIR)/files/.,$(1)); \
