@@ -541,6 +541,9 @@ ramips_board_detect() {
 	*"ZBT-APE522II")
 		name="zbt-ape522ii"
 		;;
+	*"ZBT-CPE102")
+		name="zbt-cpe102"
+		;;
 	*"ZBT-WA05")
 		name="zbt-wa05"
 		;;

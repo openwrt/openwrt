@@ -208,6 +208,9 @@ get_status_led() {
 	wrtnode)
 		status_led="wrtnode:blue:indicator"
 		;;
+	zbt-cpe102)
+		status_led="$board:green:4g-0"
+		;;
 	esac
 }
 

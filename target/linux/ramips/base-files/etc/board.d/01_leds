@@ -318,6 +318,9 @@ zbt-ape522ii)
 	ucidef_set_led_netdev "sys1" "wlan1" "$board:green:sys1" "wlan1" "tx rx"
 	ucidef_set_led_netdev "sys2" "wlan0" "$board:green:sys2" "wlan0" "tx rx"
 	;;
+zbt-cpe102)
+	ucidef_set_led_default "power" "power" "$board:green:4g-0" "0"
+	;;
 zbt-wa05)
 	ucidef_set_led_default "power" "power" "$board:blue:power" "1"
 	set_wifi_led "$board:blue:air"

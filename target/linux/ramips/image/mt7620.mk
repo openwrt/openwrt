@@ -358,6 +358,13 @@ define Device/zbt-ape522ii
 endef
 TARGET_DEVICES += zbt-ape522ii
 
+define Device/zbt-cpe102
+  DTS := ZBT-CPE102
+  DEVICE_TITLE := Zbtlink ZBT-CPE102
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += zbt-cpe102
+
 define Device/zbt-wa05
   DTS := ZBT-WA05
   DEVICE_TITLE := Zbtlink ZBT-WA05
