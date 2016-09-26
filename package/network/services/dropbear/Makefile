@@ -66,7 +66,6 @@ CONFIGURE_ARGS += \
 	--disable-pam \
 	--enable-openpty \
 	--enable-syslog \
-	$(if $(CONFIG_SHADOW_PASSWORDS),,--disable-shadow) \
 	--disable-lastlog \
 	--disable-utmpx \
 	$(if $(CONFIG_DROPBEAR_UTMP),,--disable-utmp) \
