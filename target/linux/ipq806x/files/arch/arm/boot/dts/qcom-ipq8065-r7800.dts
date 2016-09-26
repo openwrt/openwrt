@@ -33,25 +33,13 @@
 
 	soc {
 		pinmux@800000 {
+			pinctrl-0 = <&mdio0_pins &rgmii2_pins>;
+			pinctrl-names = "default";
+
 			i2c4_pins: i2c4_pinmux {
-				pins = "gpio12", "gpio13";
-				function = "gsbi4";
-				bias-disable;
-			};
-
-			pcie0_pins: pcie0_pinmux {
 				mux {
-					pins = "gpio3";
-					function = "pcie1_rst";
-					drive-strength = <12>;
-					bias-disable;
-				};
-			};
-
-			pcie1_pins: pcie1_pinmux {
-				mux {
-					pins = "gpio48";
-					function = "pcie2_rst";
+					pins = "gpio12", "gpio13";
+					function = "gsbi4";
 					drive-strength = <12>;
 					bias-disable;
 				};
@@ -87,6 +75,11 @@
 					drive-strength = <8>;
 					bias-disable;
 				};
+
+				clk {
+					pins = "gpio1";
+					input-disable;
+				};
 			};
 
 			rgmii2_pins: rgmii2_pins {
@@ -96,6 +89,25 @@
 					function = "rgmii2";
 					drive-strength = <8>;
 					bias-disable;
+				};
+
+				tx {
+					pins = "gpio27", "gpio28", "gpio29", "gpio30", "gpio31", "gpio32" ;
+					input-disable;
+				};
+			};
+
+			spi_pins: spi_pins {
+				mux {
+					pins = "gpio18", "gpio19", "gpio21";
+					function = "gsbi5";
+					drive-strength = <10>;
+					bias-none;
+				};
+
+				cs {
+					pins = "gpio20";
+					drive-strength = <12>;
 				};
 			};
 		};
@@ -112,6 +124,30 @@
 			 * RPM usage. Turning this on in kernel manifests as
 			 * i2c failure for the RPM.
 			 */
+		};
+
+		gsbi5: gsbi@1a200000 {
+			qcom,mode = <GSBI_PROT_SPI>;
+			status = "ok";
+
+			spi4: spi@1a280000 {
+				status = "ok";
+				spi-max-frequency = <50000000>;
+				pinctrl-0 = <&spi_pins>;
+				pinctrl-names = "default";
+
+				cs-gpios = <&qcom_pinmux 20 0>;
+
+				flash: m25p80@0 {
+					compatible = "s25fl512s";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					spi-max-frequency = <51200000>;
+					reg = <0>;
+
+					linux,part-probe = "qcom-smem";
+				};
+			};
 		};
 
 		sata-phy@1b400000 {
@@ -236,8 +272,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			gpios = <&qcom_pinmux 1 0 &qcom_pinmux 0 0>;
-			pinctrl-0 = <&mdio0_pins>;
-			pinctrl-names = "default";
 
 			phy0: ethernet-phy@0 {
 				device_type = "ethernet-phy";
@@ -246,16 +280,34 @@
 					0x00004 0x7600000   /* PAD0_MODE */
 					0x00008 0x1000000   /* PAD5_MODE */
 					0x0000c 0x80        /* PAD6_MODE */
-					0x000e4 0x6a545     /* MAC_POWER_SEL */
+					0x000e4 0xaa545     /* MAC_POWER_SEL */
 					0x000e0 0xc74164de  /* SGMII_CTRL */
 					0x0007c 0x4e        /* PORT0_STATUS */
 					0x00094 0x4e        /* PORT6_STATUS */
+					0x00970 0x1e864443  /* QM_PORT0_CTRL0 */
+					0x00974 0x000001c6  /* QM_PORT0_CTRL1 */
+					0x00978 0x19008643  /* QM_PORT1_CTRL0 */
+					0x0097c 0x000001c6  /* QM_PORT1_CTRL1 */
+					0x00980 0x19008643  /* QM_PORT2_CTRL0 */
+					0x00984 0x000001c6  /* QM_PORT2_CTRL1 */
+					0x00988 0x19008643  /* QM_PORT3_CTRL0 */
+					0x0098c 0x000001c6  /* QM_PORT3_CTRL1 */
+					0x00990 0x19008643  /* QM_PORT4_CTRL0 */
+					0x00994 0x000001c6  /* QM_PORT4_CTRL1 */
+					0x00998 0x1e864443  /* QM_PORT5_CTRL0 */
+					0x0099c 0x000001c6  /* QM_PORT5_CTRL1 */
+					0x009a0 0x1e864443  /* QM_PORT6_CTRL0 */
+					0x009a4 0x000001c6  /* QM_PORT6_CTRL1 */
 					>;
 			};
 
 			phy4: ethernet-phy@4 {
 				device_type = "ethernet-phy";
 				reg = <4>;
+				qca,ar8327-initvals = <
+					0x000e4 0x6a545     /* MAC_POWER_SEL */
+					0x0000c 0x80        /* PAD6_MODE */
+					>;
 			};
 		};
 
@@ -263,9 +315,13 @@
 			status = "ok";
 			phy-mode = "rgmii";
 			qcom,id = <1>;
-
-			pinctrl-0 = <&rgmii2_pins>;
-			pinctrl-names = "default";
+			qcom,phy_mdio_addr = <4>;
+			qcom,poll_required = <0>;
+			qcom,rgmii_delay = <1>;
+			qcom,phy_mii_type = <0>;
+			qcom,emulation = <0>;
+			qcom,irq = <255>;
+			mdiobus = <&mdio0>;
 
 			mtd-mac-address = <&art 6>;
 
@@ -279,6 +335,13 @@
 			status = "ok";
 			phy-mode = "sgmii";
 			qcom,id = <2>;
+			qcom,phy_mdio_addr = <0>;	/* none */
+			qcom,poll_required = <0>;	/* no polling */
+			qcom,rgmii_delay = <0>;
+			qcom,phy_mii_type = <1>;
+			qcom,emulation = <0>;
+			qcom,irq = <258>;
+			mdiobus = <&mdio0>;
 
 			mtd-mac-address = <&art 0>;
 
@@ -286,6 +349,11 @@
 				speed = <1000>;
 				full-duplex;
 			};
+		};
+
+		rpm@108000 {
+			pinctrl-0 = <&i2c4_pins>;
+			pinctrl-names = "default";
 		};
 	};
 
