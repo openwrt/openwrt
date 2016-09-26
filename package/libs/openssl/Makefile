@@ -16,6 +16,7 @@ PKG_USE_MIPS16:=0
 
 PKG_BUILD_PARALLEL:=0
 
+
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.openssl.org/source/ \
@@ -97,7 +98,7 @@ endef
 
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-camellia no-krb5 \
- no-whrlpool no-whirlpool no-seed
+ no-whrlpool no-whirlpool no-seed no-jpake
 OPENSSL_OPTIONS:= shared no-err no-sse2 no-ssl2 no-ssl2-method no-heartbeats
 
 ifdef CONFIG_OPENSSL_ENGINE_CRYPTO
