@@ -164,12 +164,20 @@ insert_modules() {
 }
 
 default_prerm() {
+	local root="${IPKG_INSTROOT}"
 	local name
+
 	name=$(basename ${1%.*})
-	[ -f /usr/lib/opkg/info/${name}.prerm-pkg ] && . /usr/lib/opkg/info/${name}.prerm-pkg
-	for i in `cat /usr/lib/opkg/info/${name}.list | grep "^/etc/init.d/"`; do
-		$i disable
-		$i stop
+	[ -f "$root/usr/lib/opkg/info/${name}.prerm-pkg" ] && . "$root/usr/lib/opkg/info/${name}.prerm-pkg"
+
+	local shell="$(which bash)"
+	for i in `cat "$root/usr/lib/opkg/info/${name}.list" | grep "^/etc/init.d/"`; do
+		if [ -n "$root" ]; then
+			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" disable
+		else
+			"$i" disable
+			"$i" stop
+		fi
 	done
 }
 
