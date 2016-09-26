@@ -30,8 +30,7 @@ alias ll='ls -alF --color=auto'
 	unset FILE
 }
 
-if ( grep -qsE '^root:[!x]?:' /etc/shadow && \
-     grep -qsE '^root:[!x]?:' /etc/passwd  && \
+if ( grep -qs '^root::' /etc/shadow && \
      [ -z "$FAILSAFE" ] )
 then
 cat << EOF
