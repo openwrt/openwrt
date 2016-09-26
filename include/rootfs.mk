@@ -40,10 +40,7 @@ opkg = \
   TMPDIR=$(1)/tmp \
   $(STAGING_DIR_HOST)/bin/opkg \
 	--offline-root $(1) \
-	--force-depends \
-	--force-overwrite \
 	--force-postinstall \
-	--force-maintainer \
 	--add-dest root:/ \
 	--add-arch all:100 \
 	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
