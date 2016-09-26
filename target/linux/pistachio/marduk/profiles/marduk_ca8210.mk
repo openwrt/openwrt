@@ -15,4 +15,4 @@ define Profile/marduk_ca8210/Description
         board
 endef
 
-$(eval $(call Profile/marduk/default,marduk_ca8210,pistachio_marduk_ca8210))
+$(eval $(call Profile,marduk_ca8210))
