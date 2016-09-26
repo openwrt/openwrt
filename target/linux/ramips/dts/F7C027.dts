@@ -37,7 +37,7 @@
 		poll-interval = <20>;
 
 		top {
-			label = "top";
+			label = "restore";
 			gpios = <&gpio0 10 1>;
 			linux,code = <0x198>;
 		};
@@ -45,13 +45,13 @@
 		power {
 			label = "power";
 			gpios = <&gpio0 12 1>;
-			linux,code = <0x100>;
+			linux,code = <0xf7>;
 		};
 
 		sensor {
 			label = "sensor";
 			gpios = <&gpio0 14 1>;
-			linux,code = <0x101>;
+			linux,code = <0x100>;
 		};
 	};
 };
