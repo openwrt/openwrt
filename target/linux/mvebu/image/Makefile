@@ -175,7 +175,7 @@ define Device/armada-388-clearfog
   KERNEL_INSTALL := 1
   KERNEL := dtb | kernel-bin
   DEVICE_TITLE := SolidRun ClearFog
-  DEVICE_PACKAGES := mkf2fs e2fsprogs swconfig
+  DEVICE_PACKAGES := mkf2fs e2fsprogs swconfig kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
   IMAGES := bundle.tar.gz sdcard.img.gz
   IMAGE/bundle.tar.gz := clearfog-bundle
   IMAGE/sdcard.img.gz := boot-scr | boot-img | sdcard-img | gzip

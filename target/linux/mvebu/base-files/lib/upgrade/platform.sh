@@ -20,6 +20,10 @@ platform_check_image() {
 		}
 		return 0;
 		;;
+	armada-388-clearfog)
+		platform_check_image_clearfog "$ARGV"
+		return $?
+		;;
 	esac
 
 	echo "Sysupgrade is not yet supported on $board."
@@ -33,8 +37,20 @@ platform_do_upgrade() {
 	armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-shelby|armada-xp-linksys-mamba)
 		platform_do_upgrade_linksys "$ARGV"
 		;;
+	armada-388-clearfog)
+		platform_do_upgrade_clearfog "$ARGV"
+		;;
 	*)
 		default_do_upgrade "$ARGV"
+		;;
+	esac
+}
+platform_copy_config() {
+	local board=$(mvebu_board_name)
+
+	case "$board" in
+	armada-388-clearfog)
+		platform_copy_config_clearfog "$ARGV"
 		;;
 	esac
 }
