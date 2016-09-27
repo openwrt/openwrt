@@ -152,6 +152,9 @@ get_status_led() {
 	nw718)
 		status_led="$board:amber:cpu"
 		;;
+	newifi-d1)
+		status_led="$board:blue:status"
+		;;
 	oy-0001|\
 	sl-r7205|\
 	zbt-we826)

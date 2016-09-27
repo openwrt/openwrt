@@ -325,6 +325,9 @@ ramips_board_detect() {
 	*"NBG-419N")
 		name="nbg-419n"
 		;;
+	*"Newifi-D1")
+		name="newifi-d1"
+		;;
 	*"NCS601W")
 		name="ncs601w"
 		;;
