@@ -16,8 +16,6 @@ platform_check_image() {
 	case "$board" in
 	3g150b|\
 	3g300m|\
-	3g-6200n|\
-	3g-6200nl|\
 	a5-v11|\
 	ai-br100|\
 	air3gii|\
@@ -178,15 +176,18 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	ar670w)
-		[ "$magic" != "6d000080" ] && {
+	3g-6200n|\
+	3g-6200nl|\
+	br-6475nd)
+		[ "$magic" != "43535953" ] && {
 			echo "Invalid image type."
 			return 1
 		}
 		return 0
 		;;
-	br-6475nd)
-		[ "$magic" != "43535953" ] && {
+
+	ar670w)
+		[ "$magic" != "6d000080" ] && {
 			echo "Invalid image type."
 			return 1
 		}

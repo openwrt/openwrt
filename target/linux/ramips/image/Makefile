@@ -78,6 +78,11 @@ define Build/umedia-header
 	fix-u-media-header -T 0x46 -B $(1) -i $@ -o $@.new && mv $@.new $@
 endef
 
+define Build/edimax-header
+	$(STAGING_DIR_HOST)/bin/mkedimaximg -i $@ -o $@.new $(1)
+	@mv $@.new $@
+endef
+
 define Build/senao-header
 	$(STAGING_DIR_HOST)/bin/mksenaofw $(1) -e $@ -o $@.new
 	mv $@.new $@

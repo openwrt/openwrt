@@ -2,17 +2,6 @@
 # RT305X Profiles
 #
 
-# sign an image to make it work with edimax tftp recovery
-define BuildFirmware/Edimax/squashfs
-	$(call BuildFirmware/OF,$(1),$(2),$(3),$(4))
-	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		mkedimaximg -i $(call sysupname,$(1),$(2)) \
-			-o $(call imgname,$(1),$(2))-factory.bin \
-			-s $(5) -m $(6) -f $(7) -S $(8); \
-	fi
-endef
-BuildFirmware/Edimax/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
-
 # Sign Poray images
 define BuildFirmware/Poray4M/squashfs
 	$(call BuildFirmware/Default4M/$(1),$(1),$(2),$(3))
@@ -157,9 +146,6 @@ define Image/Build/Profile/ALL02393G
 	$(call Image/Build/Template/$(image_type)/$(1),UIMAGE_8M,all0239-3g,ALL0239-3G,ttyS1,57600,phys)
 endef
 
-edimax_3g6200n_mtd_size=3735552
-Image/Build/Profile/3G6200N=$(call BuildFirmware/Edimax/$(1),$(1),3g-6200n,3G-6200N,$(edimax_3g6200n_mtd_size),CSYS,3G62,0x50000,0xc0000)
-Image/Build/Profile/3G6200NL=$(call BuildFirmware/Edimax/$(1),$(1),3g-6200nl,3G-6200NL,$(edimax_3g6200n_mtd_size),CSYS,3G62,0x50000,0xc0000)
 Image/Build/Profile/3G300M=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),3g300m,3G300M,$(ralink_default_fw_size_4M),3G150M_SPI Kernel Image,factory)
 Image/Build/Profile/A5-V11=$(call BuildFirmware/Poray4M/$(1),$(1),a5-v11,A5-V11)
 Image/Build/Profile/ALL0256N=$(call BuildFirmware/DefaultDualSize/$(1),$(1),all0256n,ALL0256N)
@@ -177,11 +163,9 @@ Image/Build/Profile/DAP1350=$(call BuildFirmware/dap1350/$(1),$(1),dap-1350,DAP-
 Image/Build/Profile/DAP1350WW=$(call BuildFirmware/dap1350/$(1),$(1),dap-1350WW,DAP-1350,RT3052-AP-DAP1350WW-3)
 Image/Build/Profile/DCS930=$(call BuildFirmware/DCS930/$(1),$(1),dcs-930,DCS-930)
 Image/Build/Profile/DCS930LB1=$(call BuildFirmware/DCS930/$(1),$(1),dcs-930l-b1,DCS-930L-B1)
-Image/Build/Profile/FONERA20N=$(call BuildFirmware/Edimax/$(1),$(1),fonera20n,FONERA20N,$(ralink_default_fw_size_8M),RSDK,NL1T,0x50000,0xc0000)
 Image/Build/Profile/HLKRM04=$(call BuildFirmware/HLKRM04/$(1),$(1),hlk-rm04,HLKRM04,HLK-RM04)
 Image/Build/Profile/M3=$(call BuildFirmware/Poray4M/$(1),$(1),m3,M3)
 Image/Build/Profile/M4=$(call BuildFirmware/PorayDualSize/$(1),$(1),m4,M4)
-Image/Build/Profile/MZKW300NH2=$(call BuildFirmware/Edimax/$(1),$(1),mzk-w300nh2,MZK-W300NH2,$(mzkw300nh2_mtd_size),CSYS,RN52,0x50000,0xc0000)
 nw718_mtd_size=3801088
 Image/Build/Profile/NW718=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),nw718m,NW718,$(nw718_mtd_size),ARA1B4NCRNW718;1,factory)
 Image/Build/Profile/PX-4885=$(call BuildFirmware/DefaultDualSize/$(1),$(1),px-4885,PX-4885)
@@ -224,16 +208,24 @@ endef
 TARGET_DEVICES += dir-610-a1
 
 
-define LegacyDevice/3G6200N
+define Device/3g-6200n
+  DTS := 3G-6200N
+  IMAGE_SIZE := 3648k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m 3G62 -f 0x50000 -S 0x01100000 | pad-rootfs
   DEVICE_TITLE := Edimax 3g-6200n
 endef
-LEGACY_DEVICES += 3G6200N
+TARGET_DEVICES += 3g-6200n
 
 
-define LegacyDevice/3G6200NL
+define Device/3g-6200nl
+  DTS := 3G-6200NL
+  IMAGE_SIZE := 3648k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m 3G62 -f 0x50000 -S 0x01100000 | pad-rootfs
   DEVICE_TITLE := Edimax 3g-6200nl
 endef
-LEGACY_DEVICES += 3G6200NL
+TARGET_DEVICES += 3g-6200nl
 
 
 define LegacyDevice/3G300M
@@ -352,11 +344,15 @@ endef
 LEGACY_DEVICES += DCS930LB1
 
 
-define LegacyDevice/FONERA20N
+define Device/fonera20n
+  DTS := FONERA20N
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | \
+	edimax-header -s RSDK -m NL1T -f 0x50000 -S 0xc0000
   DEVICE_TITLE := Fonera 2.0N
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
 endef
-LEGACY_DEVICES += FONERA20N
+TARGET_DEVICES += fonera20n
 
 
 define LegacyDevice/HLKRM04
@@ -379,10 +375,15 @@ endef
 LEGACY_DEVICES += M4
 
 
-define LegacyDevice/MZKW300NH2
+define Device/mzk-w300nh2
+  DTS := MZK-W300NH2
+  IMAGE_SIZE := 3648k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | \
+	edimax-header -s CSYS -m RN52 -f 0x50000 -S 0xc0000
   DEVICE_TITLE := Planex MZK-W300NH2
 endef
-LEGACY_DEVICES += MZKW300NH2
+TARGET_DEVICES += mzk-w300nh2
 
 
 define LegacyDevice/NW718
@@ -452,5 +453,3 @@ define LegacyDevice/WHRG300N
   DEVICE_TITLE := Buffalo WHR-G300N
 endef
 LEGACY_DEVICES += WHRG300N
-
-
