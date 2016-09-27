@@ -1,0 +1,32 @@
+From 704d1c6b56f4ee2ad6a5f012a72a278d17c1a223 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Mon, 19 Sep 2016 12:09:52 +0100
+Subject: [PATCH] brcmfmac: rework pointer trickery in
+ brcmf_proto_bcdc_query_dcmd()
+
+The variable info is assigned to point to bcdc->msg[1], which is the
+same as pointing to bcdc->buf. As that is what we want to access
+make it clear by fixing the assignment. This also avoid out-of-bounds
+errors from static analyzers are bcdc->msg[1] is not in the structure
+definition.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c
+@@ -194,7 +194,7 @@ retry:
+ 	}
+ 
+ 	/* Check info buffer */
+-	info = (void *)&msg[1];
++	info = (void *)&bcdc->buf[0];
+ 
+ 	/* Copy info buffer */
+ 	if (buf) {
