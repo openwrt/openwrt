@@ -36,6 +36,9 @@ get_status_led() {
 	xdxrn502j)
 		status_led="$board:green:power"
 		;;
+	3g-6200nl)
+		status_led="$board:green:internet"
+		;;
 	a5-v11|\
 	cs-qr10|\
 	d105|\

@@ -47,8 +47,13 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
+		internet {
+			label = "3g-6200nl:green:internet";
+			gpios = <&gpio0 9 1>;
+		};
+
 		wlan {
-			label = "3g-6200nl:amber:wlan";
+			label = "3g-6200nl:green:wlan";
 			gpios = <&gpio0 14 1>;
 		};
 	};
@@ -59,10 +64,10 @@
 		#size-cells = <0>;
 		poll-interval = <20>;
 
-		wps {
-			label = "wps";
+		reset {
+			label = "reset";
 			gpios = <&gpio0 12 1>;
-			linux,code = <0x211>;
+			linux,code = <0x198>;
 		};
 	};
 };

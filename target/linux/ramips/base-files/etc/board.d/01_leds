@@ -26,6 +26,9 @@ case $board in
 	set_usb_led "$board:blue:3g"
 	;;
 3g-6200nl|\
+wnce2001)
+	set_wifi_led "$board:green:wlan"
+	;;
 br-6475nd|\
 mzk-w300nh2)
 	set_wifi_led "$board:amber:wlan"
@@ -305,9 +308,6 @@ whr-300hp2|\
 whr-600d)
 	ucidef_set_led_default "power" "power" "$board:green:power" "1"
 	ucidef_set_led_default "router" "router" "$board:green:router" "1"
-	;;
-wnce2001)
-	set_wifi_led "$board:green:wlan"
 	;;
 wrh-300cr)
 	set_wifi_led "$board:green:wlan"

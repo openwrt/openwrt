@@ -69,16 +69,16 @@
 		#size-cells = <0>;
 		poll-interval = <20>;
 
-		wps {
-			label = "wps";
+		reset {
+			label = "reset";
 			gpios = <&gpio0 12 1>;
-			linux,code = <0x211>;
+			linux,code = <0x198>;
 		};
 
-		wlanswitch {
+		rfkill {
 			label = "wlanswitch";
 			gpios = <&gpio0 13 1>;
-			linux,code = <0x100>;
+			linux,code = <0xf7>;
 		};
 	};
 };
