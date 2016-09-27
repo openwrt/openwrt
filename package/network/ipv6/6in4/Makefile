@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6in4
-PKG_VERSION:=23
+PKG_VERSION:=24
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0
 
@@ -19,7 +19,7 @@ define Package/6in4
   CATEGORY:=Network
   DEPENDS:=@IPV6 +kmod-sit +uclient-fetch
   TITLE:=IPv6-in-IPv4 configuration support
-  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
+  MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
   PKGARCH:=all
 endef
 
