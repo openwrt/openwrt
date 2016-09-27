@@ -99,6 +99,7 @@ platform_check_image() {
 	nixcore|\
 	nw718|\
 	oy-0001|\
+	pbr-d1|\
 	pbr-m1|\
 	psg1208|\
 	psr-680w|\

@@ -337,6 +337,9 @@ ramips_board_detect() {
 	*"OY-0001")
 		name="oy-0001"
 		;;
+	*"PBR-D1")
+		name="pbr-d1"
+		;;
 	*"PBR-M1")
 		name="pbr-m1"
 		;;
