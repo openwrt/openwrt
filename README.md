@@ -49,7 +49,7 @@ Firstly, to obtain a copy of the (Ci40) Marduk platform supported OpenWrt source
 
 Install build dependencies:
 
-    $ sudo apt-get install libncurses5-dev libncursesw5-dev zlib1g-dev libssl-dev gawk subversion
+    $ sudo apt-get install libncurses5-dev libncursesw5-dev zlib1g-dev libssl-dev gawk subversion device-tree-compiler
 
 To make a build based on the default Ci40 config, run the following commands:
 
