@@ -14,16 +14,20 @@ get_status_led() {
 	all0305)
 		status_led="eap7660d:green:ds4"
 		;;
-	antminer-s1)
+	antminer-s1|\
+	antminer-s3|\
+	antminer-r1|\
+	minibox-v1|\
+	som9331)
 		status_led="$board:green:system"
 		;;
-	antminer-s3)
-		status_led="$board:green:system"
-		;;
-	antminer-r1)
-		status_led="$board:green:system"
-		;;
-	ap132)
+	ap132|\
+	ap81|\
+	db120|\
+	dr344|\
+	tew-632brp|\
+	wpj344|\
+	zbt-we1526)
 		status_led="$board:green:status"
 		;;
 	ap136-010|\
@@ -36,10 +40,10 @@ get_status_led() {
 	ap135-020)
 		status_led="ap135:green:status"
 		;;
-	ap81)
-		status_led="$board:green:status"
-		;;
-	ap83)
+	ap83|\
+	mr12|\
+	mr16|\
+	nbg6616)
 		status_led="$board:green:power"
 		;;
 	ap96)
@@ -87,9 +91,6 @@ get_status_led() {
 	cr5000)
 		status_led="pcs:amber:power"
 		;;
-	db120)
-		status_led="$board:green:status"
-		;;
 	dgl-5500-a1|\
 	dhp-1565-a1|\
 	dir-505-a1|\
@@ -118,13 +119,11 @@ get_status_led() {
 	dlan-pro-1200-ac)
 		status_led="devolo:status:wlan"
 		;;
-	dr344)
-		status_led="$board:green:status"
-		;;
 	dr531)
 		status_led="$board:green:sig4"
 		;;
-	dragino2)
+	dragino2|\
+	oolite)
 		status_led="$board:red:system"
 		;;
 	eap300v2)
@@ -147,9 +146,7 @@ get_status_led() {
 	gl-inet)
 		status_led="gl-connect:green:lan"
 		;;
-	epg5000)
-		status_led="$board:amber:power"
-		;;
+	epg5000|\
 	esr1750)
 		status_led="$board:amber:power"
 		;;
@@ -176,13 +173,8 @@ get_status_led() {
 	mc-mac1200r)
 		status_led="mercury:green:system"
 		;;
-	mr12)
-		status_led="$board:green:power"
-		;;
-	mr16)
-		status_led="$board:green:power"
-		;;
-	mr18)
+	mr18|\
+	z1)
 		status_led="$board:green:tricolor0"
 		;;
 	mr600)
@@ -212,9 +204,6 @@ get_status_led() {
 		;;
 	nbg460n_550n_550nh)
 		status_led="nbg460n:green:power"
-		;;
-	nbg6616)
-		status_led="$board:green:power"
 		;;
 	nbg6716)
 		status_led="$board:white:power"
@@ -288,23 +277,11 @@ get_status_led() {
 	smart-300)
 		status_led="nc-link:green:system"
 		;;
-	minibox-v1)
-		status_led="$board:green:system"
-		;;
-	oolite)
-		status_led="$board:red:system"
-		;;
 	qihoo-c301)
 		status_led="qihoo:green:status"
 		;;
 	tellstick-znet-lite)
 		status_led="tellstick:white:system"
-		;;
-	som9331)
-		status_led="$board:green:system"
-		;;
-	tew-632brp)
-		status_led="$board:green:status"
 		;;
 	tew-673gru)
 		status_led="trendnet:blue:wps"
@@ -424,29 +401,14 @@ get_status_led() {
 	wp543)
 		status_led="$board:green:diag"
 		;;
-	wpj342)
-		status_led="$board:green:sig3"
-		;;
-	wpj344)
-		status_led="$board:green:status"
-		;;
-	wpj531)
-		status_led="$board:green:sig3"
-		;;
+	wpj342|\
+	wpj531|\
 	wpj558)
 		status_led="$board:green:sig3"
 		;;
-	wrt400n)
-		status_led="$board:blue:wps"
-		;;
+	wrt400n|\
 	wrt160nl)
 		status_led="$board:blue:wps"
-		;;
-	z1)
-		status_led="$board:green:tricolor0"
-		;;
-	zbt-we1526)
-		status_led="$board:green:status"
 		;;
 	zcn-1523h-2|\
 	zcn-1523h-5)
