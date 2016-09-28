@@ -143,6 +143,7 @@ get_status_led() {
 		status_led="$board:blue:status"
 		;;
 	miwifi-mini|\
+	miwifi-nano|\
 	zte-q7)
 		status_led="$board:red:status"
 		;;
