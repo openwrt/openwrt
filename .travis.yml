@@ -1,6 +1,11 @@
 sudo: false
 language: c
 
+addons:
+  apt:
+    packages:
+    - device-tree-compiler
+
 before_install:
     - export CXXFLAGS="$CXXFLAGS -fPIC"
 
