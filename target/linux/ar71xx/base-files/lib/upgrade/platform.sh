@@ -168,45 +168,6 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
-	all0258n|\
-	all0315n|\
-	cap324|\
-	cap4200ag|\
-	cr3000|\
-	cr5000)
-		platform_check_image_allnet "$1" && return 0
-		return 1
-		;;
-	alfa-ap96|\
-	alfa-nx|\
-	ap113|\
-	ap121-mini|\
-	ap121|\
-	ap135-020|\
-	ap136-010|\
-	ap136-020|\
-	ap147-010|\
-	ap152|\
-	ap96|\
-	arduino-yun|\
-	bxu2000n-2-a1|\
-	db120|\
-	dr344|\
-	f9k1115v2|\
-	hornet-ub|\
-	mr12|\
-	mr16|\
-	wpj558|\
-	zbt-we1526|\
-	zcn-1523h-2|\
-	zcn-1523h-5)
-		[ "$magic_long" != "68737173" -a "$magic_long" != "19852003" ] && {
-			echo "Invalid image type."
-			return 1
-		}
-
-		return 0
-		;;
 	airgatewaypro|\
 	airgateway|\
 	airrouter|\
@@ -286,55 +247,74 @@ platform_check_image() {
 
 		return 0
 		;;
-	cpe210|\
-	cpe510)
-		tplink_pharos_check_image "$1" && return 0
-		return 1
-		;;
-	bsb|\
-	dir-825-b1|\
-	tew-673gru)
-		dir825b_check_image "$1" && return 0
-		;;
-	mynet-rext|\
-	wrt160nl)
-		cybertan_check_image "$1" && return 0
-		return 1
-		;;
-	mynet-n600|\
-	mynet-n750|\
-	qihoo-c301)
-		[ "$magic_long" != "5ea3a417" ] && {
-			echo "Invalid image, bad magic: $magic_long"
-			return 1
-		}
-
-		local typemagic=$(seama_get_type_magic "$1")
-		[ "$typemagic" != "6669726d" ] && {
-			echo "Invalid image, bad type: $typemagic"
+	alfa-ap96|\
+	alfa-nx|\
+	ap113|\
+	ap121-mini|\
+	ap121|\
+	ap135-020|\
+	ap136-010|\
+	ap136-020|\
+	ap147-010|\
+	ap152|\
+	ap96|\
+	arduino-yun|\
+	bxu2000n-2-a1|\
+	db120|\
+	dr344|\
+	f9k1115v2|\
+	hornet-ub|\
+	mr12|\
+	mr16|\
+	wpj558|\
+	zbt-we1526|\
+	zcn-1523h-2|\
+	zcn-1523h-5)
+		[ "$magic_long" != "68737173" -a "$magic_long" != "19852003" ] && {
+			echo "Invalid image type."
 			return 1
 		}
 
 		return 0
 		;;
-	mr1750v2|\
-	mr1750|\
-	mr600v2|\
-	mr600|\
-	mr900v2|\
-	mr900|\
-	om2p-hsv2|\
-	om2p-hsv3|\
-	om2p-hs|\
-	om2p-lc|\
-	om2pv2|\
-	om2p|\
-	om5p-acv2|\
-	om5p-ac|\
-	om5p-an|\
-	om5p)
-		platform_check_image_openmesh "$magic_long" "$1" && return 0
+	all0258n|\
+	all0315n|\
+	cap324|\
+	cap4200ag|\
+	cr3000|\
+	cr5000)
+		platform_check_image_allnet "$1" && return 0
 		return 1
+		;;
+	all0305|\
+	eap300v2|\
+	eap7660d|\
+	ja76pf2|\
+	ja76pf|\
+	jwap003|\
+	ls-sr71|\
+	pb42|\
+	pb44|\
+	routerstation-pro|\
+	routerstation|\
+	wp543|\
+	wpe72)
+		[ "$magic" != "4349" ] && {
+			echo "Invalid image. Use *-sysupgrade.bin files on this board"
+			return 1
+		}
+
+		local md5_img=$(dd if="$1" bs=2 skip=9 count=16 2>/dev/null)
+		local md5_chk=$(dd if="$1" bs=$CI_BLKSZ skip=1 2>/dev/null | md5sum -); md5_chk="${md5_chk%% *}"
+
+		if [ -n "$md5_img" -a -n "$md5_chk" ] && [ "$md5_img" = "$md5_chk" ]; then
+			return 0
+		else
+			echo "Invalid image. Contents do not match checksum (image:$md5_img calculated:$md5_chk)"
+			return 1
+		fi
+
+		return 0
 		;;
 	antminer-s1|\
 	antminer-s3|\
@@ -439,8 +419,59 @@ platform_check_image() {
 
 		return 0
 		;;
-	tube2h)
-		alfa_check_image "$1" && return 0
+	bsb|\
+	dir-825-b1|\
+	tew-673gru)
+		dir825b_check_image "$1" && return 0
+		;;
+	cpe210|\
+	cpe510)
+		tplink_pharos_check_image "$1" && return 0
+		return 1
+		;;
+	mr1750v2|\
+	mr1750|\
+	mr600v2|\
+	mr600|\
+	mr900v2|\
+	mr900|\
+	om2p-hsv2|\
+	om2p-hsv3|\
+	om2p-hs|\
+	om2p-lc|\
+	om2pv2|\
+	om2p|\
+	om5p-acv2|\
+	om5p-ac|\
+	om5p-an|\
+	om5p)
+		platform_check_image_openmesh "$magic_long" "$1" && return 0
+		return 1
+		;;
+	mr18|\
+	z1)
+		merakinand_do_platform_check $board $1
+		return $?
+		;;
+	mynet-n600|\
+	mynet-n750|\
+	qihoo-c301)
+		[ "$magic_long" != "5ea3a417" ] && {
+			echo "Invalid image, bad magic: $magic_long"
+			return 1
+		}
+
+		local typemagic=$(seama_get_type_magic "$1")
+		[ "$typemagic" != "6669726d" ] && {
+			echo "Invalid image, bad type: $typemagic"
+			return 1
+		}
+
+		return 0
+		;;
+	mynet-rext|\
+	wrt160nl)
+		cybertan_check_image "$1" && return 0
 		return 1
 		;;
 	nbg6616|\
@@ -452,6 +483,17 @@ platform_check_image() {
 		}
 
 		return 0
+		;;
+	nbg6716|\
+	r6100|\
+	wndr3700v4|\
+	wndr4300)
+		nand_do_platform_check $board $1
+		return $?
+		;;
+	tube2h)
+		alfa_check_image "$1" && return 0
+		return 1
 		;;
 	wndr3700|\
 	wnr1000-v2|\
@@ -465,48 +507,6 @@ platform_check_image() {
 			echo "Invalid image, hardware ID mismatch, hw:$hw_magic image:$magic_long."
 			return 1
 		}
-
-		return 0
-		;;
-	mr18|\
-	z1)
-		merakinand_do_platform_check $board $1
-		return $?
-		;;
-	nbg6716|\
-	r6100|\
-	wndr3700v4|\
-	wndr4300)
-		nand_do_platform_check $board $1
-		return $?
-		;;
-	all0305|\
-	eap300v2|\
-	eap7660d|\
-	ja76pf2|\
-	ja76pf|\
-	jwap003|\
-	ls-sr71|\
-	pb42|\
-	pb44|\
-	routerstation-pro|\
-	routerstation|\
-	wp543|\
-	wpe72)
-		[ "$magic" != "4349" ] && {
-			echo "Invalid image. Use *-sysupgrade.bin files on this board"
-			return 1
-		}
-
-		local md5_img=$(dd if="$1" bs=2 skip=9 count=16 2>/dev/null)
-		local md5_chk=$(dd if="$1" bs=$CI_BLKSZ skip=1 2>/dev/null | md5sum -); md5_chk="${md5_chk%% *}"
-
-		if [ -n "$md5_img" -a -n "$md5_chk" ] && [ "$md5_img" = "$md5_chk" ]; then
-			return 0
-		else
-			echo "Invalid image. Contents do not match checksum (image:$md5_img calculated:$md5_chk)"
-			return 1
-		fi
 
 		return 0
 		;;
@@ -536,15 +536,15 @@ platform_pre_upgrade() {
 	local board=$(ar71xx_board_name)
 
 	case "$board" in
+	mr18|\
+	z1)
+		merakinand_do_upgrade "$1"
+		;;
 	nbg6716|\
 	r6100|\
 	wndr3700v4|\
 	wndr4300)
 		nand_do_upgrade "$1"
-		;;
-	mr18|\
-	z1)
-		merakinand_do_upgrade "$1"
 		;;
 	esac
 }
@@ -553,6 +553,9 @@ platform_do_upgrade() {
 	local board=$(ar71xx_board_name)
 
 	case "$board" in
+	all0258n)
+		platform_do_upgrade_allnet "0x9f050000" "$ARGV"
+		;;
 	all0305|\
 	eap7660d|\
 	ja76pf2|\
@@ -564,13 +567,6 @@ platform_do_upgrade() {
 	routerstation-pro|\
 	routerstation)
 		platform_do_upgrade_combined "$ARGV"
-		;;
-	wp543|\
-	wpe72)
-		platform_do_upgrade_compex "$ARGV"
-		;;
-	all0258n)
-		platform_do_upgrade_allnet "0x9f050000" "$ARGV"
 		;;
 	all0315n)
 		platform_do_upgrade_allnet "0x9f080000" "$ARGV"
@@ -605,6 +601,10 @@ platform_do_upgrade() {
 	unifi-outdoor-plus)
 		MTD_CONFIG_ARGS="-s 0x180000"
 		default_do_upgrade "$ARGV"
+		;;
+	wp543|\
+	wpe72)
+		platform_do_upgrade_compex "$ARGV"
 		;;
 	*)
 		default_do_upgrade "$ARGV"
