@@ -157,24 +157,24 @@
 		#size-cells = <0>;
 		poll-interval = <100>;
 
-		/* wps {
+		wps {
 			label = "wps";
 			gpios = <&gpio 11 1>;
 			linux,code = <0x211>;
-		}; */
+		};
 		restart {
 			label = "restart";
 			gpios = <&gpio 12 1>;
-			linux,code = <0x110>;
+			linux,code = <0x100>;
 		};
 		dsl {
 			label = "dsl";
 			gpios = <&gpio 13 1>;
-			linux,code = <0x111>;
+			linux,code = <0x101>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 28 1>;
+			gpios = <&gpio 30 1>;
 			linux,code = <0x198>;
 		};
 	};
