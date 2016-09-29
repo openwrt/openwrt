@@ -16,7 +16,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
-@@ -2254,6 +2254,8 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
+@@ -2253,6 +2253,8 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
  			return 0;
  		brcmf_p2p_cancel_remain_on_channel(vif->ifp);
  		brcmf_p2p_deinit_discovery(p2p);
