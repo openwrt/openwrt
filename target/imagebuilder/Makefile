@@ -26,7 +26,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host/lib \
 		$(PKG_BUILD_DIR)/target $(PKG_BUILD_DIR)/scripts $(IB_DTSDIR)
 	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
-	$(CP) \
+	$(CP) -L \
 		$(INCLUDE_DIR) $(SCRIPT_DIR) \
 		$(TOPDIR)/rules.mk \
 		./files/Makefile \
