@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "vr9.dtsi"
+#include "vr9.dtsi"
 
 / {
 	model = "WBMR300 - Buffalo WBMR-300HPD";
@@ -61,13 +61,13 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 33 0>;
+			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 			lantiq,portmask = <0x3>;
 		};
 
 		ifxhcd@E106000 {
 			status = "okay";
-			gpios = <&gpio 33 0>;
+			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -79,7 +79,7 @@
 
 	gpio_poweroff {
 		compatible = "gpio-poweroff";
-		gpios = <&gpio 6 1>;
+		gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 	};
 
 	gpio-keys-polled {
@@ -90,34 +90,34 @@
 
 		power {
 			label = "power";
-			gpios = <&gpio 5 1>;
-			linux,code = <0x74>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 7 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio 31 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		auto {
 			label = "auto";
-			gpios = <&gpio 48 0>;
-			linux,code = <0x100>;
-			linux,input-type = <5>; /* EV_SW */
+			gpios = <&gpio 48 GPIO_ACTIVE_HIGH>;
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
 		};
 
 		router {
 			label = "router";
-			gpios = <&gpio 2 0>;
-			linux,code = <0x100>;
-			linux,input-type = <5>; /* EV_SW */
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
 		};
 	};
 
@@ -126,68 +126,68 @@
 
 		diag_r: diag_r {
 			label = "wbmr300:red:diag";
-			gpios = <&gpio 0 0>;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			default_state = "off";
 		};
 
 		wifi_g: wifi_g {
 			label = "wbmr300:green:wifi";
-			gpios = <&gpio 1 0>;
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		dsl: dsl {
 			label = "dsl";
-			gpios = <&gpio 4 0>;
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 		};
 
 		router_y: router_y {
 			label = "wbmr300:yellow:router";
-			gpios = <&gpio 8 0>;
+			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		wifi_y: wifi_y {
 			label = "wbmr300:yellow:wifi";
-			gpios = <&gpio 9 0>;
+			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan1: lan1 {
 			label = "wbmr300:green:lan1";
-			gpios = <&gpio 11 0>;
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan: wan {
 			label = "wbmr300:green:wan";
-			gpios = <&gpio 12 0>;
+			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan3: lan3 {
 			label = "wbmr300:green:lan3";
-			gpios = <&gpio 15 0>;
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 
 		lan2: lan2 {
 			label = "wbmr300:green:lan2";
-			gpios = <&gpio 33 0>;
+			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		};
 
 		internet_g: internet_g {
 			label = "wbmr300:green:internet";
-			gpios = <&gpio 34 0>;
+			gpios = <&gpio 34 GPIO_ACTIVE_HIGH>;
 		};
 
 		internet_y: internet_y {
 			label = "wbmr300:yellow:internet";
-			gpios = <&gpio 35 0>;
+			gpios = <&gpio 35 GPIO_ACTIVE_HIGH>;
 		};
 
 		router_g: router_g {
 			label = "wbmr300:green:router";
-			gpios = <&gpio 36 0>;
+			gpios = <&gpio 36 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_g: power_g {
 			label = "wbmr300:green:power";
-			gpios = <&gpio 49 0>;
+			gpios = <&gpio 49 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

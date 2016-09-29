@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "ARV7519PW - Astoria Networks";
@@ -117,7 +117,7 @@
 		pci@E105400 {
 			status = "okay";
 			lantiq,external-clock;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0xf>;
 		};
 	};
@@ -135,13 +135,13 @@
 
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 11 1>;
-			linux,code = <0xf7>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 28 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -149,64 +149,64 @@
 		compatible = "gpio-leds";
 		power: power {
 			label = "power";
-			gpios = <&gpio 2 1>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power2: power2 {
 			label = "power2";
-			gpios = <&gpio 14 1>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 		online: online {
 			label = "online";
-			gpios = <&gpio 3 1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 		online2 {
 			label = "online2";
-			gpios = <&gpio 30 1>;
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
 			label = "wifi";
-			gpios = <&gpio 12 1>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 		wifi2 {
 			label = "wifi2";
-			gpios = <&gpio 10 1>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 		wifi3 {
 			label = "wifi3";
-			gpios = <&gpio 6 1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		voice {
 			label = "voice";
-			gpios = <&gpio 31 1>;
+			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio 15 1>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 		wps2 {
 			label = "wps2";
-			gpios = <&gpio 7 1>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 		wps3 {
 			label = "wps3";
-			gpios = <&gpio 23 1>;
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
 			label = "dsl";
-			gpios = <&gpio 4 1>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		lan {
 			label = "lan";
-			gpios = <&gpio 1 1>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 		tv {
 			label = "tv";
-			gpios = <&gpio 20 1>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 		upgrade {
 			label = "upgrade";
-			gpios = <&gpio 29 1>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -218,7 +218,7 @@
 		switch {
 			gpio-export,name = "switch";
 			gpio-export,output = <1>;
-			gpios = <&gpio 19 0>;
+			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

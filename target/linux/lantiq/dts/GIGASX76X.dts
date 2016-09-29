@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "GIGASX76X - Gigaset SX761,SX762,SX763";
@@ -16,7 +16,7 @@
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpiomm 1 0>;
+			gpios = <&gpiomm 1 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -84,13 +84,13 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 29 0>;
+			gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
 		};
 
 		pci@E105400 {
 			status = "okay";
 			lantiq,internal-clock;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0x1>;
 		};
 	};
@@ -103,8 +103,8 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 14 0>;
-			linux,code = <0x198>;
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -115,7 +115,7 @@
 		switch {
 			gpio-export,name = "switch";
 			gpio-export,output = <1>;
-			gpios = <&gpio 19 0>;
+			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

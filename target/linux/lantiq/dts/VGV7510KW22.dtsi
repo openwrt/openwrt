@@ -1,4 +1,4 @@
-/include/ "vr9.dtsi"
+#include "vr9.dtsi"
 
 / {
 	model = "VGV7510KW22 - o2 Box 6431";
@@ -76,7 +76,7 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 47 0>;
+			gpios = <&gpio 47 GPIO_ACTIVE_HIGH>;
 		};
 
 		pci@E105400 {
@@ -86,7 +86,7 @@
 			interrupt-map = <
 				0x7000 0 0 1 &icu0 30 1 // slot 14, irq 30
 				>;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0x1>;	/* GNT1 */
 		};
 
@@ -115,14 +115,14 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 6 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio 9 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
@@ -131,48 +131,48 @@
 
 		dsl: dsl {
 			label = "vgv7510kw22:green:dsl";
-			gpios = <&gpio 2 1>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
 		internet_red {
 			label = "vgv7510kw22:red:internet";
-			gpios = <&gpio 10 1>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 
 		info_red {
 			label = "vgv7510kw22:red:info";
-			gpios = <&gpio 12 1>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		power_green: power {
 			label = "vgv7510kw22:green:power";
-			gpios = <&gpio 14 1>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 
 		info_green {
 			label = "vgv7510kw22:green:info";
-			gpios = <&gpio 15 1>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		internet_green: internet_green {
 			label = "vgv7510kw22:green:internet";
-			gpios = <&gpio 19 1>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi: wifi {
 			label = "vgv7510kw22:green:wlan";
-			gpios = <&gpio 20 1>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 
 		power_red: power2 {
 			label = "vgv7510kw22:red:power";
-			gpios = <&gpio 28 1>;
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 
 		phone {
 			label = "vgv7510kw22:green:telefon";
-			gpios = <&gpio 29 1>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "ar9.dtsi"
+#include "ar9.dtsi"
 
 / {
 	model = "WBMR - Buffalo WBMR-HP-G300H";
@@ -101,7 +101,7 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 36 0>;
+			gpios = <&gpio 36 GPIO_ACTIVE_HIGH>;
 		};
 
 		pci@E105400 {
@@ -117,23 +117,23 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio 0 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 37 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 		eject {
 			label = "eject";
-			gpios = <&gpio 34 1>;
-			linux,code = <0xf7>;
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 		movie {
 			label = "movie";
-			gpios = <&gpio 22 1>;
-			linux,code = <0x109>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_9>;
 		};
 	};
 
@@ -142,40 +142,40 @@
 
 		power_green: power {
 			label = "wbmr:green:power";
-			gpios = <&gpio 1 1>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power2 {
 			label = "wbmr:red:power";
-			gpios = <&gpio 5 1>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		security {
 			label = "wbmr:yellow:security";
-			gpios = <&gpio 14 1>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
 			label = "wbmr:green:wireless";
-			gpios = <&gpio 15 1>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
 			label = "wbmr:green:dsl";
-			gpios = <&gpio 16 1>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 		online_green: online {
 			label = "wbmr:green:internet";
-			gpios = <&gpio 17 1>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 		online2 {
 			label = "wbmr:red:internet";
-			gpios = <&gpio 18 1>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 		movie {
 			label = "wbmr:blue:movie";
-			gpios = <&gpio 20 1>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 		usb: usb {
 			label = "wbmr:green:usb";
-			gpios = <&gpio 28 1>;
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 	};

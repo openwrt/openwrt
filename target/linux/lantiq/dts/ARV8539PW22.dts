@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "ARV8539PW22 - Speedport W 504V Typ A";
@@ -22,7 +22,7 @@
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpio 31 0>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -112,12 +112,12 @@
 
 		pci@E105400 {
 			status = "okay";
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 14 0>;
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 			lantiq,portmask = <0x3>;
 		};
 
@@ -131,13 +131,13 @@
 
 		wlan {
 			label = "wlan";
-			gpios = <&gpio 29 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 30 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -146,27 +146,27 @@
 
 		power_green: power-green {
 			label = "arv8539pw22:green:power";
-			gpios = <&gpio 24 1>;
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power-red {
 			label = "arv8539pw22:red:power";
-			gpios = <&gpio 4 1>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		dsl_green: dsl-green {
 			label = "arv8539pw22:green:dsl";
-			gpios = <&gpio 5 1>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		online_green: online-green {
 			label = "arv8539pw22:green:online";
-			gpios = <&gpio 6 1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
 		wireless_green: wireless-green {
 			label = "arv8539pw22:green:wlan";
-			gpios = <&gpio 8 1>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		/*
 			telefonie green is missing

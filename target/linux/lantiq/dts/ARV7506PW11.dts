@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "ARV7506PW11 - Alice/O2 IAD 4421";
@@ -83,7 +83,7 @@
 
 		pci@E105400 {
 			status = "okay";
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -100,13 +100,13 @@
 
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 11 1>;
-			linux,code = <0xf7>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 30 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -114,40 +114,40 @@
 		compatible = "gpio-leds";
 		wlan: wlan {
 			label = "arv7506pw11:green:wlan";
-			gpios = <&gpio 2 1>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		power: power {
 			label = "arv7506pw11:green:power";
-			gpios = <&gpio 3 1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		dsl: dsl {
 			label = "arv7506pw11:green:dsl";
-			gpios = <&gpio 4 1>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		internet: internet {
 			label = "arv7506pw11:green:internet";
-			gpios = <&gpio 5 1>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power_red {
 			label = "arv7506pw11:red:power";
-			gpios = <&gpio 6 1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		internet_red {
 			label = "arv7506pw11:red:internet";
-			gpios = <&gpio 7 1>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 		info {
 			label = "arv7506pw11:green:info";
-			gpios = <&gpio 8 1>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		telefon {
 			label = "arv7506pw11:green:telefon";
-			gpios = <&gpio 9 1>;
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 		info_red {
 			label = "arv7506pw11:red:info";
-			gpios = <&gpio 20 1>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

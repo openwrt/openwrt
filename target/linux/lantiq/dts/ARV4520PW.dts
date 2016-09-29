@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "ARV4520PW - Easybox 800, WAV-281";
@@ -27,8 +27,8 @@
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpio 31 0
-				&gpiomm 7 0>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH
+				&gpiomm 7 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -118,13 +118,13 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-                        gpios = <&gpio 28 0>;
+                        gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
 		};
 
 		pci@E105400 {
 			status = "okay";
 			lantiq,external-clock;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 
 	};
@@ -139,13 +139,13 @@
 
 		rfkill {
 			label = "wps";
-			gpios = <&gpio 29 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 30 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -154,63 +154,63 @@
 
 		power_blue: power {
 			label = "arv4520pw:blue:power";
-			gpios = <&gpio 3 1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		dsl: dsl {
 			label = "arv4520pw:blue:dsl";
-			gpios = <&gpio 4 1>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		internet_blue: internet {
 			label = "arv4520pw:blue:internet";
-			gpios = <&gpio 5 1>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power2 {
 			label = "arv4520pw:red:power";
-			gpios = <&gpio 6 1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		wps {
 			label = "arv4520pw:yellow:wps";
-			gpios = <&gpio 7 1>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 		wps2 {
 			label = "arv4520pw:red:wps";
-			gpios = <&gpio 9 1>;
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 		/*
 			wps green is missing
 		*/
 		fxs1 {
 			label = "arv4520pw:blue:telefon1";
-			gpios = <&gpiomm 0 1>;
+			gpios = <&gpiomm 0 GPIO_ACTIVE_LOW>;
 		};
 		fxs2 {
 			label = "arv4520pw:blue:telefon2";
-			gpios = <&gpiomm 1 1>;
+			gpios = <&gpiomm 1 GPIO_ACTIVE_LOW>;
 		};
 		isdn {
 			label = "arv4520pw:blue:isdn";
-			gpios = <&gpiomm 2 1>;
+			gpios = <&gpiomm 2 GPIO_ACTIVE_LOW>;
 		};
 		fxo {
 			label = "arv4520pw:blue:line";
-			gpios = <&gpiomm 3 1>;
+			gpios = <&gpiomm 3 GPIO_ACTIVE_LOW>;
 		};
 		voice {
 			label = "arv4520pw:blue:sprache";
-			gpios = <&gpiomm 4 1>;
+			gpios = <&gpiomm 4 GPIO_ACTIVE_LOW>;
 		};
 		usb: usb {
 			label = "arv4520pw:blue:usb";
-			gpios = <&gpiomm 5 1>;
+			gpios = <&gpiomm 5 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
 			label = "arv4520pw:blue:wifi";
-			gpios = <&gpiomm 6 1>;
+			gpios = <&gpiomm 6 GPIO_ACTIVE_LOW>;
 		};
 		internet2 {
 			label = "arv4520pw:red:internet";
-			gpios = <&gpiomm 9 1>;
+			gpios = <&gpiomm 9 GPIO_ACTIVE_LOW>;
 		};
 		/*
 			info is missing

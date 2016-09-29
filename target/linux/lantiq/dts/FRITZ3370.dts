@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "vr9.dtsi"
+#include "vr9.dtsi"
 
 / {
 	model = "FRITZ3370 - Fritz!Box WLAN 3370";
@@ -110,8 +110,8 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 5 0
-				&gpio 14 0>;
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH
+				&gpio 14 GPIO_ACTIVE_HIGH>;
 			lantiq,portmask = <0x3>;
 		};
 	};
@@ -136,13 +136,13 @@
 		poll-interval = <100>;
 		power {
 			label = "power";
-			gpios = <&gpio 1 0>;
-			linux,code = <0x100>;
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			linux,code = <BTN_0>;
 		};
 /*		wifi {
 			label = "wifi";
-			gpios = <&gpio 29 0>;
-			linux,code = <0x101>;
+			gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
+			linux,code = <BTN_1>;
 		};*/
 	};
 
@@ -151,32 +151,32 @@
 
 		power_green: power {
 			label = "fritz3370:green:power";
-			gpios = <&gpio 32 1>;
+			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power2 {
 			label = "fritz3370:red:power";
-			gpios = <&gpio 33 1>;
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
 		};
 		info_red {
 			label = "fritz3370:red:info";
-			gpios = <&gpio 34 1>;
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
 			label = "fritz3370:green:wlan";
-			gpios = <&gpio 35 1>;
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
 			label = "fritz3370:green:dsl";
-			gpios = <&gpio 36 1>;
+			gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
 		};
 		lan {
 			label = "fritz3370:green:lan";
-			gpios = <&gpio 38 1>;
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 		};
 		info_green: info_green {
 			label = "fritz3370:green:info";
-			gpios = <&gpio 47 1>;
+			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
@@ -228,14 +228,14 @@
 			reg = <0>;
 			phy-mode = "rgmii";
 			phy-handle = <&phy0>;
-			gpios = <&gpio 37 0>;
+			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		};
 		ethernet@1 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <1>;
 			phy-mode = "rgmii";
 			phy-handle = <&phy1>;
-			gpios = <&gpio 44 0>;
+			gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
 		};
 		ethernet@2 {
 			compatible = "lantiq,xrx200-pdi-port";

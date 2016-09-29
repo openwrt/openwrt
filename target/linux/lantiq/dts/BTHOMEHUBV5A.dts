@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "vr9.dtsi"
+#include "vr9.dtsi"
 
 / {
 	model = "BTHOMEHUBV5A - BT Home Hub 5A";
@@ -114,7 +114,7 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 33 0>;
+			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		};
 
 		pci@E105400 {
@@ -122,7 +122,7 @@
 			lantiq,bus-clock = <33333333>;
 			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
 			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -149,20 +149,20 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 2 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio 25 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		restart {
 			label = "restart";
-			gpios = <&gpio 39 1>;
-			linux,code = <0x74>;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
 		};
 	};
 
@@ -172,49 +172,49 @@
 		/* broadband-* is a single RGB led */
 		broadband-red {
 			label = "bthomehubv5a:red:broadband";
-			gpios = <&gpio 0 1>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 		broadband-green {
 			label = "bthomehubv5a:green:broadband";
-			gpios = <&gpio 3 1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 		broadband_blue: broadband-blue {
 			label = "bthomehubv5a:blue:broadband";
-			gpios = <&gpio 8 1>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		/* wireless-* is a single RGB led */
 		wireless-red {
 			label = "bthomehubv5a:red:wireless";
-			gpios = <&gpio 9 1>;
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 		wireless-green {
 			label = "bthomehubv5a:green:wireless";
-			gpios = <&gpio 10 1>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 		wireless_blue: wireless-blue {
 			label = "bthomehubv5a:blue:wireless";
-			gpios = <&gpio 11 1>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		/* power-* is a single RGB led */
 		power_red: power-red {
 			label = "bthomehubv5a:red:power";
-			gpios = <&gpio 12 1>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power-green {
 			label = "bthomehubv5a:green:power";
-			gpios = <&gpio 14 1>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_blue: power-blue {
 			label = "bthomehubv5a:blue:power";
-			gpios = <&gpio 15 1>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		dimmed {
 			label = "dimmed";
-			gpios = <&gpio 19 0>;
+			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

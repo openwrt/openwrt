@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "vr9.dtsi"
+#include "vr9.dtsi"
 
 / {
 	model = "VG3503J - BT OpenReach VDSL Modem";
@@ -90,8 +90,8 @@
 		poll-interval = <100>;
 		reset {
 			label = "reset";
-			gpios = <&gpio 6 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -100,15 +100,15 @@
 
 		power_red: power2 {
 			label = "vg3503j:red:power";
-			gpios = <&gpio 14 1>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
 			label = "vg3503j:green:dsl";
-			gpios = <&gpio 19 1>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power {
 			label = "vg3503j:green:power";
-			gpios = <&gpio 28 1>;
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 	};

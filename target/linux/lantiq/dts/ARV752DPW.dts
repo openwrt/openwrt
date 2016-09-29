@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "ARV752DPW - Arcor 802";
@@ -26,7 +26,7 @@
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpiomm 1 0>;
+			gpios = <&gpiomm 1 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -128,7 +128,7 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpiomm 0 0>;
+			gpios = <&gpiomm 0 GPIO_ACTIVE_HIGH>;
 		};
 
 		etop@E180000 {
@@ -139,7 +139,7 @@
 		pci@E105400 {
 			status = "okay";
 			lantiq,external-clock;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			interrupt-map = <0x7000 0 0 1 &icu0 135>;
 			req-mask = <0x3>;
 		};
@@ -159,23 +159,23 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio 11 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 		restart {
 			label = "restart";
-			gpios = <&gpio 12 1>;
-			linux,code = <0x100>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
 		};
 		dsl {
 			label = "dsl";
-			gpios = <&gpio 13 1>;
-			linux,code = <0x101>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 30 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -183,52 +183,52 @@
 		compatible = "gpio-leds";
 		power_blue: power1 {
 			label = "arv752dpw:blue:power";
-			gpios = <&gpio 3 1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 		internet_red: internet {
 			label = "arv752dpw:red:internet";
-			gpios = <&gpio 4 1>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		message {
 			label = "arv752dpw:red:message";
-			gpios = <&gpio 5 1>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power {
 			label = "arv752dpw:red:power";
-			gpios = <&gpio 6 1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		voice1 {
 			label = "arv752dpw:red:voice";
-			gpios = <&gpio 8 1>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		umts: umts {
 			label = "arv752dpw:red:umts";
-			gpios = <&gpiomm 3 1>;
+			gpios = <&gpiomm 3 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
 			label = "arv752dpw:red:wifi";
-			gpios = <&gpiomm 4 1>;
+			gpios = <&gpiomm 4 GPIO_ACTIVE_LOW>;
 		};
 		fxs1 {
 			label = "arv752dpw:green:tae-n";
-			gpios = <&gpiomm 5 1>;
+			gpios = <&gpiomm 5 GPIO_ACTIVE_LOW>;
 		};
 		fxs2 {
 			label = "arv752dpw:green:tae-u";
-			gpios = <&gpiomm 6 1>;
+			gpios = <&gpiomm 6 GPIO_ACTIVE_LOW>;
 		};
 		fxo {
 			label = "arv752dpw:green:isdn";
-			gpios = <&gpiomm 7 1>;
+			gpios = <&gpiomm 7 GPIO_ACTIVE_LOW>;
 		};
 		internet2 {
 			label = "arv752dpw:blue:internet";
-			gpios = <&gpiomm 8 1>;
+			gpios = <&gpiomm 8 GPIO_ACTIVE_LOW>;
 		};
 		voice2 {
 			label = "arv752dpw:blue:voice";
-			gpios = <&gpiomm 9 1>;
+			gpios = <&gpiomm 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

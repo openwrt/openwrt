@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "P2812HNUFX.dtsi"
+#include "P2812HNUFX.dtsi"
 
 / {
 	model = "P2812HNUF1 - ZyXEL P-2812HNU-F1";
@@ -57,11 +57,11 @@
 	gpio-leds {
 		usb1: usb1 {
 			label = "p2812hnuf1:green:usb1";
-			gpios = <&gpio 38 1>;
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 		};
 		usb2: usb2 {
 			label = "p2812hnuf1:green:usb2";
-			gpios = <&gpio 44 1>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

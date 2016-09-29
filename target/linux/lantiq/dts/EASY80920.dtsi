@@ -1,4 +1,4 @@
-/include/ "vr9.dtsi"
+#include "vr9.dtsi"
 
 / {
 	chosen {
@@ -116,7 +116,7 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 33 0>;
+			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 			lantiq,portmask = <0x3>;
 		};
 
@@ -138,7 +138,7 @@
 			interrupt-map = <
 				0x7000 0 0 1 &icu0 29 1 // slot 14, irq 29
 				>;
-			gpios-reset = <&gpio 21 0>;
+			gpios-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0x1>;	/* GNT1 */
 		};
 	};
@@ -157,13 +157,13 @@
 		poll-interval = <100>;
 /*		reset {
 			label = "reset";
-			gpios = <&gpio 7 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};*/
 		paging {
 			label = "paging";
-			gpios = <&gpio 11 1>;
-			linux,code = <0x100>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
 		};
 	};
 
@@ -172,40 +172,40 @@
 
 		power: power {
 			label = "easy80920:green:power";
-			gpios = <&stp 9 0>;
+			gpios = <&stp 9 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		warning {
 			label = "easy80920:green:warning";
-			gpios = <&stp 22 0>;
+			gpios = <&stp 22 GPIO_ACTIVE_HIGH>;
 		};
 		fxs1 {
 			label = "easy80920:green:fxs1";
-			gpios = <&stp 21 0>;
+			gpios = <&stp 21 GPIO_ACTIVE_HIGH>;
 		};
 		fxs2 {
 			label = "easy80920:green:fxs2";
-			gpios = <&stp 20 0>;
+			gpios = <&stp 20 GPIO_ACTIVE_HIGH>;
 		};
 		fxo {
 			label = "easy80920:green:fxo";
-			gpios = <&stp 19 0>;
+			gpios = <&stp 19 GPIO_ACTIVE_HIGH>;
 		};
 		usb1: usb1 {
 			label = "easy80920:green:usb1";
-			gpios = <&stp 18 0>;
+			gpios = <&stp 18 GPIO_ACTIVE_HIGH>;
 		};
 		usb2: usb2 {
 			label = "easy80920:green:usb2";
-			gpios = <&stp 15 0>;
+			gpios = <&stp 15 GPIO_ACTIVE_HIGH>;
 		};
 		sd {
 			label = "easy80920:green:sd";
-			gpios = <&stp 14 0>;
+			gpios = <&stp 14 GPIO_ACTIVE_HIGH>;
 		};
 		wps {
 			label = "easy80920:green:wps";
-			gpios = <&stp 12 0>;
+			gpios = <&stp 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

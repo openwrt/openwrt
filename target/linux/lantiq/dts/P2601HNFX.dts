@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "ar9.dtsi"
+#include "ar9.dtsi"
 
 / {
 	model = "P2601HNFX - ZyXEL P-2601HN-Fx";
@@ -108,7 +108,7 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 9 0>;
+			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		stp: stp@E100BB0 {
@@ -125,7 +125,7 @@
 			lantiq,bus-clock = <33333333>;
 			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
 			interrupt-map = <0x7000 0 0 1 &icu0 29 1>;
-			gpios-reset = <&gpio 21 0>;
+			gpios-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0x1>;
 		};
 	};
@@ -138,13 +138,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 53 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 53 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 54 1>;
-			linux,code = <0xf7>;
+			gpios = <&gpio 54 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 	};
 
@@ -153,40 +153,40 @@
 
 		power_green: power {
 			label = "p2601hnfx:green:power";
-			gpios = <&stp 11 1>;
+			gpios = <&stp 11 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power2 {
 			label = "p2601hnfx:red:power";
-			gpios = <&gpio 29 1>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 		online: online {
 			label = "p2601hnfx:green:internet";
-			gpios = <&stp 13 1>;
+			gpios = <&stp 13 GPIO_ACTIVE_LOW>;
 		};
 		online2 {
 			label = "p2601hnfx:red:internet";
-			gpios = <&stp 12 1>;
+			gpios = <&stp 12 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
 			label = "p2601hnfx:green:dsl";
-			gpios = <&stp 14 1>;
+			gpios = <&stp 14 GPIO_ACTIVE_LOW>;
 		};
 		phone {
 			label = "p2601hnfx:green:phone";
-			gpios = <&stp 9 1>;
+			gpios = <&stp 9 GPIO_ACTIVE_LOW>;
 		};
 		phone2 {
 			label = "p2601hnfx:orange:phone";
-			gpios = <&stp 8 1>;
+			gpios = <&stp 8 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
 			label = "p2601hnfx:green:wireless";
-			gpios = <&stp 15 1>;
+			gpios = <&stp 15 GPIO_ACTIVE_LOW>;
 		};
 		wifi2 {
 			label = "p2601hnfx:orange:wireless";
-			gpios = <&stp 10 1>;
+			gpios = <&stp 10 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -197,12 +197,12 @@
 		switch {
 			gpio-export,name = "switch";
 			gpio-export,output = <1>;
-			gpios = <&gpio 50 0>;
+			gpios = <&gpio 50 GPIO_ACTIVE_HIGH>;
 		};
 		usb {
 			gpio-export,name = "wifi";
 			gpio-export,output = <1>;
-			gpios = <&gpio 9 0>;
+			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

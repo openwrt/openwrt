@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "BTHOMEHUBV2B - BT Home Hub 2B";  /* SoC: Lantiq Danube-S PSB 50712 @ 333MHz V1.3/1.5 */
@@ -25,7 +25,7 @@
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpio 31 0>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -214,7 +214,7 @@
 			lantiq,bus-clock = <33333333>;
 			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
 			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0x1>;		 /* GNT1 */
 		};
 
@@ -228,18 +228,18 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 2 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 		findhandset {
 			label = "findhandset";
-			gpios = <&gpio 15 1>;
-			linux,code = <0x101>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio 22 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
@@ -248,52 +248,52 @@
 
 		upgrading-orange {
 			label = "bthomehubv2b:orange:upgrading";
-			gpios = <&stp0 5 0>;
+			gpios = <&stp0 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		phone-orange {
 			label = "bthomehubv2b:orange:phone";
-			gpios = <&stp0 6 0>;
+			gpios = <&stp0 6 GPIO_ACTIVE_HIGH>;
 		};
 		phone-blue {
 			label = "bthomehubv2b:blue:phone";
-			gpios = <&stp0 7 0>;
+			gpios = <&stp0 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		wireless-orange {
 			label = "bthomehubv2b:orange:wireless";
-			gpios = <&stp0 8 0>;
+			gpios = <&stp0 8 GPIO_ACTIVE_HIGH>;
 		};
 		wireless_blue: wireless-blue {
 			label = "bthomehubv2b:blue:wireless";
-			gpios = <&stp0 9 0>;
+			gpios = <&stp0 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		broadband-red {
 			label = "bthomehubv2b:red:broadband";
-			gpios = <&stp0 10 0>;
+			gpios = <&stp0 10 GPIO_ACTIVE_HIGH>;
 		};
 		broadband-orange {
 			label = "bthomehubv2b:orange:broadband";
-			gpios = <&stp0 11 0>;
+			gpios = <&stp0 11 GPIO_ACTIVE_HIGH>;
 		};
 		broadband_blue: broadband-blue {
 			label = "bthomehubv2b:blue:broadband";
-			gpios = <&stp0 12 0>;
+			gpios = <&stp0 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_red: power-red {
 			label = "bthomehubv2b:red:power";
-			gpios = <&stp0 13 0>;
+			gpios = <&stp0 13 GPIO_ACTIVE_HIGH>;
 		};
 		power_orange: power-orange {
 			label = "bthomehubv2b:orange:power";
-			gpios = <&stp0 14 0>;
+			gpios = <&stp0 14 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		power_blue: power-blue {
 			label = "bthomehubv2b:blue:power";
-			gpios = <&stp0 15 0>;
+			gpios = <&stp0 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

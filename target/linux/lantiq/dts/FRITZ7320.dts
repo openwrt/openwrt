@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "ar9.dtsi"
+#include "ar9.dtsi"
 
 / {
 	model = "FRITZ7320 - 1&1 HomeServer";
@@ -109,7 +109,7 @@
 			lantiq,bus-clock = <33333333>;
 			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
 			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0xf>; /* GNT1 */
 		};
 	};
@@ -122,13 +122,13 @@
 
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 1 1>;
-			linux,code = <0xf7>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 		dect {
 			label = "dect";
-			gpios = <&gpio 2 1>;
-			linux,code = <0x102>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_2>;
 		};
 	};
 
@@ -136,28 +136,28 @@
 		compatible = "gpio-leds";
 		power: power {
 			label = "fritz7320:green:power";
-			gpios = <&gpio 44 1>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		voice {
 			label = "fritz7320:green:fon";
-			gpios = <&gpio 47 1>;
+			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 		};
 		dect {
 			label = "fritz7320:green:dect";
-			gpios = <&gpio 38 1>;
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 		};
 		wlan: wlan {
 			label = "fritz7320:green:wlan";
-			gpios = <&gpio 37 1>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 		info_green: info_green {
 			label = "fritz7320:green:info";
-			gpios = <&gpio 35 1>;
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 		};
 		info_red {
 			label = "fritz7320:red:info";
-			gpios = <&gpio 45 1>;
+			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

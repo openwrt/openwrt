@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "amazonse.dtsi"
+#include "amazonse.dtsi"
 
 / {
 	model = "DGN1000B - Netgear DGN1000B";
@@ -117,18 +117,18 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 0 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 25 1>;
-			linux,code = <0xf7>;
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio 29 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
@@ -136,27 +136,27 @@
 		compatible = "gpio-leds";
 		dsl: dsl {
 			label = "dgn1000b:green:dsl";
-			gpios = <&gpio 1 1>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		online_green: online {
 			label = "dgn1000b:green:online";
-			gpios = <&gpio 2 1>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		online2 {
 			label = "dgn1000b:red:online";
-			gpios = <&gpio 3 1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		wps {
 			label = "dgn1000b:green:wps";
-			gpios = <&gpio 4 1>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		power: power {
 			label = "dgn1000b:green:power";
-			gpios = <&gpio 13 1>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		/*

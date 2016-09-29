@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "ARV7525PW - Speedport W303V Typ A";
@@ -26,7 +26,7 @@
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpio 31 0>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -113,13 +113,13 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio 29 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 30 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -127,28 +127,28 @@
 		compatible = "gpio-leds";
 		power_green: power {
 			label = "arv7525pw:green:power";
-			gpios = <&gpio 3 1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power1 {
 			label = "arv7525pw:red:power";
-			gpios = <&gpio 4 1>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		online: online {
 			label = "arv7525pw:green:online";
-			gpios = <&gpio 5 1>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		voice {
 			label = "arv7525pw:green:telefonie";
-			gpios = <&gpio 6 1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		voice2 {
 			label = "arv7525pw:red:telefonie";
-			gpios = <&gpio 8 1>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
 			label = "arv7525pw:green:wlan";
-			gpios = <&gpio 9 1>;
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

@@ -1,4 +1,4 @@
-/include/ "vr9.dtsi"
+#include "vr9.dtsi"
 
 / {
 	chosen {
@@ -136,13 +136,13 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 33 0>;
+			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 			lantiq,portmask = <0x3>;
 		};
 
 		ifxhcd@E106000 {
 			status = "okay";
-			gpios = <&gpio 33 0>;
+			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		};
 
 		pci@E105400 {
@@ -164,7 +164,7 @@
 			interrupt-map = <
 				0x7000 0 0 1 &icu0 30 1 // slot 14, irq 30
 				>;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0x1>;	/* GNT1 */
 		};
 	};
@@ -184,14 +184,14 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 39 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 1 1>;
-			linux,code = <0xf7>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 	};
 
@@ -200,52 +200,52 @@
 
 		internet_red {
 			label = "p2812hnufx:red:internet";
-			gpios = <&stp 16 1>;
+			gpios = <&stp 16 GPIO_ACTIVE_LOW>;
 		};
 		internet_green: internet_green {
 			label = "p2812hnufx:green:internet";
-			gpios = <&stp 17 1>;
+			gpios = <&stp 17 GPIO_ACTIVE_LOW>;
 		};
 		dsl_green: dsl_green {
 			label = "p2812hnufx:green:dsl";
-			gpios = <&stp 18 1>;
+			gpios = <&stp 18 GPIO_ACTIVE_LOW>;
 		};
 		dsl_orange {
 			label = "p2812hnufx:orange:dsl";
-			gpios = <&stp 19 1>;
+			gpios = <&stp 19 GPIO_ACTIVE_LOW>;
 		};
 		wireless_orange {
 			label = "p2812hnufx:orange:wlan";
-			gpios = <&stp 20 1>;
+			gpios = <&stp 20 GPIO_ACTIVE_LOW>;
 		};
 		wireless_green: wireless_green {
 			label = "p2812hnufx:green:wlan";
-			gpios = <&stp 21 1>;
+			gpios = <&stp 21 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power {
 			label = "p2812hnufx:red:power";
-			gpios = <&stp 22 1>;
+			gpios = <&stp 22 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power2 {
 			label = "p2812hnufx:green:power";
-			gpios = <&stp 23 1>;
+			gpios = <&stp 23 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		phone1 {
 			label = "p2812hnufx:green:phone";
-			gpios = <&gpio 11 1>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 		phone1warn {
 			label = "p2812hnufx:orange:phone";
-			gpios = <&gpio 12 1>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 		phone2warn {
 			label = "p2812hnufx:orange:phone2";
-			gpios = <&gpio 26 1>;
+			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
 		};
 		phone2 {
 			label = "p2812hnufx:green:phone2";
-			gpios = <&gpio 28 1>;
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

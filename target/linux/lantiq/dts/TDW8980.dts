@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "TDW89X0.dtsi"
+#include "TDW89X0.dtsi"
 
 / {
 	model = "TDW8980 - TP-LINK TD-W8980";
@@ -21,7 +21,7 @@
 			lantiq,bus-clock = <33333333>;
 			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
 			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -32,7 +32,7 @@
 	gpio-leds {
 		wifi2 {
 			label = "tdw8980:green:wlan5ghz";
-			gpios = <&gpio 24 1>;
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

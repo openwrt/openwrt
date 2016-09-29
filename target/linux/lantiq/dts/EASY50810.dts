@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "ar9.dtsi"
+#include "ar9.dtsi"
 
 / {
 	chosen {
@@ -112,7 +112,7 @@
 			interrupt-map = <
                                 0x7000 0 0 1 &icu0 29 1 // slot 14, irq 29
 			>;
-			gpios-reset = <&gpio 21 0>;
+			gpios-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0x1>;		/* GNT1 */
 		};
 

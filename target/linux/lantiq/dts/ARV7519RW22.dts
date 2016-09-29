@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "vr9.dtsi"
+#include "vr9.dtsi"
 
 / {
 	model = "ARV7519RW22 - Orange Livebox 2.1";
@@ -80,12 +80,12 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 32 0>;
+			gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
 		};
 
 		ifxhcd@E106000 {
 			status = "okay";
-			gpios = <&gpio 32 0>;
+			gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
 		};
 
 		pcie@d900000 {
@@ -113,18 +113,18 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 6 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 33 1>;
-			linux,code = <0xf7>;
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio 37 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
@@ -133,32 +133,32 @@
 
 		lan_green {
 			label = "arv7519rw22:green:lan";
-			gpios = <&gpio 2 1>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		internet_red {
 			label = "arv7519rw22:red:internet";
-			gpios = <&gpio 10 1>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 		power_green: power_green {
 			label = "arv7519rw22:green:power";
-			gpios = <&gpio 14 1>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		alarm_blue {
 			label = "arv7519rw22:blue:alarm";
-			gpios = <&gpio 15 1>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 		internet_orange {
 			label = "arv7519rw22:orange:internet";
-			gpios = <&gpio 19 1>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 		internet_green: internet_green {
 			label = "arv7519rw22:green:internet";
-			gpios = <&gpio 28 1>;
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 		voice_green {
 			label = "arv7519rw22:green:voice";
-			gpios = <&gpio 29 1>;
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

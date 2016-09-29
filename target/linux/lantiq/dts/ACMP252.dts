@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "ACMP252 - AudioCodes MediaPack MP-252";
@@ -16,7 +16,7 @@
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpio 31 0>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -87,7 +87,7 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 3 0>;
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
 		};
 
 		etop@E180000 {

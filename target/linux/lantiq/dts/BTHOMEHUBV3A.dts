@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "ar9.dtsi"
+#include "ar9.dtsi"
 
 / {
 	model = "BTHOMEHUBV3A - BT Home Hub 3A";  /* SoC: Lantiq ar9 @ 333MHz */
@@ -25,7 +25,7 @@
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpio 31 0>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -143,12 +143,12 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 33 0>;
+			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		};
 
 		pci@E105400 {
 			status = "okay";
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 
 	};
@@ -160,18 +160,18 @@
 		poll-interval = <100>;
 		reset {
 			label = "reset";
-			gpios = <&gpio 54 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 54 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 		restart {
 			label = "restart";
-			gpios = <&gpio 52 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 52 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio 53 1>;
-			linux,code = <0x211>;
+			gpios = <&gpio 53 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
@@ -180,42 +180,42 @@
 
 		wireless-red {
 			label = "bthomehubv3a:red:wireless";
-			gpios = <&gpio 2 1>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		wireless-orange {
 			label = "bthomehubv3a:orange:wireless";
-			gpios = <&gpio 6 1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		wireless_blue: wireless-blue {
 			label = "bthomehubv3a:blue:wireless";
-			gpios = <&gpio 9 1>;
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
 		};
 
 		broadband-red {
 			label = "bthomehubv3a:red:broadband";
-			gpios = <&gpio 11 1>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 		broadband-orange {
 			label = "bthomehubv3a:orange:broadband";
-			gpios = <&gpio 0 1>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 		broadband_blue: broadband-blue {
 			label = "bthomehubv3a:blue:broadband";
-			gpios = <&gpio 12 1>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		power_red: power-red {
 			label = "bthomehubv3a:red:power";
-			gpios = <&gpio 14 1>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 		power_orange: power-orange {
 			label = "bthomehubv3a:orange:power";
-			gpios = <&gpio 5 1>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_blue: power-blue {
 			label = "bthomehubv3a:blue:power";
-			gpios = <&gpio 1 1>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

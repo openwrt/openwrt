@@ -1,6 +1,6 @@
 /dts-v1/;
 
-/include/ "danube.dtsi"
+#include "danube.dtsi"
 
 / {
 	model = "ARV4519PW - Vodafone Netfaster IAD 2, Pirelli P.RG A4201G";
@@ -27,7 +27,7 @@
 	sram@1F000000 {
 		vmmc@107000 {
 			status = "okay";
-			gpios = <&gpio 31 0>;
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -99,13 +99,13 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-			gpios = <&gpio 14 0>;
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		};
 
 		pci@E105400 {
 			status = "okay";
 			lantiq,external-clock;
-			gpio-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0xf>;
 		};
 	};
@@ -118,13 +118,13 @@
 
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 28 1>;
-			linux,code = <0xf7>;
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 30 1>;
-			linux,code = <0x198>;
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
@@ -133,60 +133,60 @@
 
 		power_green: power {
 			label = "arv4519pw:green:power";
-			gpios = <&gpio 2 1>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power2 {
 			label = "arv4519pw:red:power";
-			gpios = <&gpio 7 1>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 		wifi: wifi {
 			label = "arv4519pw:green:wlan";
-			gpios = <&gpio 6 1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		dsl: dsl {
 			label = "arv4519pw:green:dsl";
-			gpios = <&gpio 4 1>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		internet_green: online {
 			label = "arv4519pw:green:internet";
-			gpios = <&gpio 5 1>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		online2 {
 			label = "arv4519pw:red:internet";
-			gpios = <&gpio 8 1>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 		usb: usb {
 			label = "arv4519pw:green:usb";
-			gpios = <&gpio 19 1>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 		voip {
 			label = "arv4519pw:green:voip";
-			gpios = <&gpiomm 0 1>;
+			gpios = <&gpiomm 0 GPIO_ACTIVE_LOW>;
 		};
 		fxs1 {
 			label = "arv4519pw:green:phone1";
-			gpios = <&gpiomm 1 1>;
+			gpios = <&gpiomm 1 GPIO_ACTIVE_LOW>;
 		};
 		fxs2 {
 			label = "arv4519pw:green:phone2";
-			gpios = <&gpiomm 2 1>;
+			gpios = <&gpiomm 2 GPIO_ACTIVE_LOW>;
 		};
 		fxo {
 			label = "arv4519pw:green:line";
-			gpios = <&gpiomm 3 1>;
+			gpios = <&gpiomm 3 GPIO_ACTIVE_LOW>;
 		};
 		wps2 {
 			label = "arv4519pw:green:wps";
-			gpios = <&gpiomm 4 1>;
+			gpios = <&gpiomm 4 GPIO_ACTIVE_LOW>;
 		};
 		wps {
 			label = "arv4519pw:orange:wps";
-			gpios = <&gpiomm 5 1>;
+			gpios = <&gpiomm 5 GPIO_ACTIVE_LOW>;
 		};
 		wps3 {
 			label = "arv4519pw:red:wps";
-			gpios = <&gpiomm 6 1>;
+			gpios = <&gpiomm 6 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
