@@ -310,27 +310,21 @@ static struct mtd_part_parser uimage_netgear_parser = {
 
 static ssize_t uimage_find_edimax(u_char *buf, size_t len)
 {
-	struct uimage_header *header;
+	u32 *magic;
 
-	if (len < FW_EDIMAX_OFFSET + sizeof(*header)) {
+	if (len < FW_EDIMAX_OFFSET + sizeof(struct uimage_header)) {
 		pr_err("Buffer too small for checking Edimax header\n");
 		return -ENOSPC;
 	}
 
-	header = (struct uimage_header *)(buf + FW_EDIMAX_OFFSET);
-
-	switch be32_to_cpu(header->ih_magic) {
-	case FW_MAGIC_EDIMAX:
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	if (header->ih_os != IH_OS_LINUX ||
-	    header->ih_type != IH_TYPE_FILESYSTEM)
+	magic = (u32 *)buf;
+	if (be32_to_cpu(*magic) != FW_MAGIC_EDIMAX)
 		return -EINVAL;
 
-	return FW_EDIMAX_OFFSET;
+	if (!uimage_verify_default(buf + FW_EDIMAX_OFFSET, len))
+		return FW_EDIMAX_OFFSET;
+
+	return -EINVAL;
 }
 
 static int
