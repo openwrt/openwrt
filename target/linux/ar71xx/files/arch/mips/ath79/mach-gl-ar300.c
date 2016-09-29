@@ -41,12 +41,12 @@
 
 static struct gpio_led gl_ar300_leds_gpio[] __initdata = {
 	{
-		.name = "gl_ar300:wlan",
+		.name = "gl-ar300:wlan",
 		.gpio = GL_AR300_GPIO_LED_WLAN,
 		.active_low = 1,
 	},
 	{
-		.name = "gl_ar300:wan",
+		.name = "gl-ar300:wan",
 		.gpio = GL_AR300_GPIO_LED_WAN,
 		.active_low = 1,
 	},

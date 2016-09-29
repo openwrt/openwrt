@@ -144,7 +144,7 @@ get_status_led() {
 		status_led="belkin:blue:status"
 		;;
 	gl-inet)
-		status_led="gl-connect:green:lan"
+		status_led="$board:green:lan"
 		;;
 	epg5000|\
 	esr1750)

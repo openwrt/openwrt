@@ -47,32 +47,32 @@
 
 static struct gpio_led domino_leds_gpio[] __initdata = {
 	{
-		.name = "domino:blue:wlan",
+		.name = "gl-domino:blue:wlan",
 		.gpio = DOMINO_GPIO_LED_WLAN,
 		.active_low = 0,
 	},
 	{
-		.name = "domino:red:wan",
+		.name = "gl-domino:red:wan",
 		.gpio = DOMINO_GPIO_LED_WAN,
 		.active_low = 1,
 	},
 	{
-		.name = "domino:white:usb",
+		.name = "gl-domino:white:usb",
 		.gpio = DOMINO_GPIO_LED_USB,
 		.active_low = 0,
 	},
 	{
-		.name = "domino:green:lan1",
+		.name = "gl-domino:green:lan1",
 		.gpio = DOMINO_GPIO_LED_LAN1,
 		.active_low = 0,
 	},
 	{
-		.name = "domino:yellow:wps",
+		.name = "gl-domino:yellow:wps",
 		.gpio = DOMINO_GPIO_LED_WPS,
 		.active_low = 1,
 	},
 	{
-		.name = "domino:orange:sys",
+		.name = "gl-domino:orange:sys",
 		.gpio = DOMINO_GPIO_LED_SYS,
 		.active_low = 1,
 	},
