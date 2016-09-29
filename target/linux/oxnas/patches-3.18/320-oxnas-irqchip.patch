@@ -24,7 +24,7 @@
  obj-$(CONFIG_ARCH_VT8500)		+= irq-vt8500.o
 --- a/drivers/irqchip/irq-gic.c
 +++ b/drivers/irqchip/irq-gic.c
-@@ -1044,6 +1044,7 @@ IRQCHIP_DECLARE(gic_400, "arm,gic-400",
+@@ -1052,6 +1052,7 @@ IRQCHIP_DECLARE(gic_400, "arm,gic-400",
  IRQCHIP_DECLARE(cortex_a15_gic, "arm,cortex-a15-gic", gic_of_init);
  IRQCHIP_DECLARE(cortex_a9_gic, "arm,cortex-a9-gic", gic_of_init);
  IRQCHIP_DECLARE(cortex_a7_gic, "arm,cortex-a7-gic", gic_of_init);
