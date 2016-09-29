@@ -32,7 +32,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -4381,7 +4381,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+@@ -4382,7 +4382,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
  	struct brcmf_join_params join_params;
  	enum nl80211_iftype dev_role;
  	struct brcmf_fil_bss_enable_le bss_enable;
@@ -41,7 +41,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	bool mbss;
  	int is_11d;
  
-@@ -4457,16 +4457,8 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+@@ -4458,16 +4458,8 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
  
  	brcmf_config_ap_mgmt_ie(ifp->vif, &settings->beacon);
  
@@ -59,7 +59,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		if (is_11d != ifp->vif->is_11d) {
  			err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_REGULATORY,
  						    is_11d);
-@@ -4514,6 +4506,8 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+@@ -4515,6 +4507,8 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
  		err = -EINVAL;
  		goto exit;
  	}
@@ -68,7 +68,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	if (dev_role == NL80211_IFTYPE_AP) {
  		if ((brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS)) && (!mbss))
  			brcmf_fil_iovar_int_set(ifp, "mbss", 1);
-@@ -4523,6 +4517,17 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+@@ -4524,6 +4518,17 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
  			brcmf_err("setting AP mode failed %d\n", err);
  			goto exit;
  		}
@@ -86,7 +86,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_UP, 1);
  		if (err < 0) {
  			brcmf_err("BRCMF_C_UP error (%d)\n", err);
-@@ -4544,7 +4549,13 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+@@ -4545,7 +4550,13 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
  			goto exit;
  		}
  		brcmf_dbg(TRACE, "AP mode configuration complete\n");
@@ -101,7 +101,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		err = brcmf_fil_bsscfg_data_set(ifp, "ssid", &ssid_le,
  						sizeof(ssid_le));
  		if (err < 0) {
-@@ -4561,7 +4572,10 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+@@ -4562,7 +4573,10 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
  		}
  
  		brcmf_dbg(TRACE, "GO mode configuration complete\n");

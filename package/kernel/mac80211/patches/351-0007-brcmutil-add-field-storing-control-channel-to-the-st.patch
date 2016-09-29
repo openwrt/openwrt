@@ -54,7 +54,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	brcmf_dbg(CONN, "capability: %X\n", notify_capability);
  	brcmf_dbg(CONN, "beacon interval: %d\n", notify_interval);
  	brcmf_dbg(CONN, "signal: %d\n", notify_signal);
-@@ -5234,7 +5234,7 @@ brcmf_bss_roaming_done(struct brcmf_cfg8
+@@ -5235,7 +5235,7 @@ brcmf_bss_roaming_done(struct brcmf_cfg8
  	else
  		band = wiphy->bands[IEEE80211_BAND_5GHZ];
  
@@ -63,7 +63,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	notify_channel = ieee80211_get_channel(wiphy, freq);
  
  done:
-@@ -5756,14 +5756,15 @@ static int brcmf_construct_chaninfo(stru
+@@ -5757,14 +5757,15 @@ static int brcmf_construct_chaninfo(stru
  		channel = band->channels;
  		index = band->n_channels;
  		for (j = 0; j < band->n_channels; j++) {
@@ -82,7 +82,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  		/* assuming the chanspecs order is HT20,
  		 * HT40 upper, HT40 lower, and VHT80.
-@@ -5865,7 +5866,7 @@ static int brcmf_enable_bw40_2g(struct b
+@@ -5866,7 +5867,7 @@ static int brcmf_enable_bw40_2g(struct b
  			if (WARN_ON(ch.bw != BRCMU_CHAN_BW_40))
  				continue;
  			for (j = 0; j < band->n_channels; j++) {

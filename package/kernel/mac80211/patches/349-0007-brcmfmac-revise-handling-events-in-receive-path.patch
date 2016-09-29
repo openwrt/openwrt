@@ -1,0 +1,139 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Mon, 11 Apr 2016 11:35:27 +0200
+Subject: [PATCH] brcmfmac: revise handling events in receive path
+
+Move event handling out of brcmf_netif_rx() avoiding the need
+to pass a flag. This flag is only ever true for USB hosts as
+other interface use separate brcmf_rx_event() function.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
+@@ -216,7 +216,7 @@ bool brcmf_c_prec_enq(struct device *dev
+ 		      int prec);
+ 
+ /* Receive frame for delivery to OS.  Callee disposes of rxp. */
+-void brcmf_rx_frame(struct device *dev, struct sk_buff *rxp, bool handle_evnt);
++void brcmf_rx_frame(struct device *dev, struct sk_buff *rxp, bool handle_event);
+ /* Receive async event packet from firmware. Callee disposes of rxp. */
+ void brcmf_rx_event(struct device *dev, struct sk_buff *rxp);
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -298,18 +298,11 @@ void brcmf_txflowblock(struct device *de
+ 	brcmf_fws_bus_blocked(drvr, state);
+ }
+ 
+-void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb,
+-		    bool handle_event)
++void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb)
+ {
+-	skb->protocol = eth_type_trans(skb, ifp->ndev);
+-
+ 	if (skb->pkt_type == PACKET_MULTICAST)
+ 		ifp->stats.multicast++;
+ 
+-	/* Process special event packets */
+-	if (handle_event)
+-		brcmf_fweh_process_skb(ifp->drvr, skb);
+-
+ 	if (!(ifp->ndev->flags & IFF_UP)) {
+ 		brcmu_pkt_buf_free_skb(skb);
+ 		return;
+@@ -329,7 +322,7 @@ void brcmf_netif_rx(struct brcmf_if *ifp
+ 		netif_rx_ni(skb);
+ }
+ 
+-void brcmf_rx_frame(struct device *dev, struct sk_buff *skb, bool handle_evnt)
++void brcmf_rx_frame(struct device *dev, struct sk_buff *skb, bool handle_event)
+ {
+ 	struct brcmf_if *ifp;
+ 	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
+@@ -348,10 +341,17 @@ void brcmf_rx_frame(struct device *dev,
+ 		return;
+ 	}
+ 
+-	if (brcmf_proto_is_reorder_skb(skb))
++	skb->protocol = eth_type_trans(skb, ifp->ndev);
++
++	if (brcmf_proto_is_reorder_skb(skb)) {
+ 		brcmf_proto_rxreorder(ifp, skb);
+-	else
+-		brcmf_netif_rx(ifp, skb, handle_evnt);
++	} else {
++		/* Process special event packets */
++		if (handle_event)
++			brcmf_fweh_process_skb(ifp->drvr, skb);
++
++		brcmf_netif_rx(ifp, skb);
++	}
+ }
+ 
+ void brcmf_rx_event(struct device *dev, struct sk_buff *skb)
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
+@@ -221,8 +221,7 @@ int brcmf_get_next_free_bsscfgidx(struct
+ void brcmf_txflowblock_if(struct brcmf_if *ifp,
+ 			  enum brcmf_netif_stop_reason reason, bool state);
+ void brcmf_txfinalize(struct brcmf_if *ifp, struct sk_buff *txp, bool success);
+-void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb,
+-		    bool handle_event);
++void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb);
+ void brcmf_net_setcarrier(struct brcmf_if *ifp, bool on);
+ int __init brcmf_core_init(void);
+ void __exit brcmf_core_exit(void);
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
+@@ -1668,7 +1668,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
+ 	/* validate flags and flow id */
+ 	if (flags == 0xFF) {
+ 		brcmf_err("invalid flags...so ignore this packet\n");
+-		brcmf_netif_rx(ifp, pkt, false);
++		brcmf_netif_rx(ifp, pkt);
+ 		return;
+ 	}
+ 
+@@ -1680,7 +1680,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
+ 		if (rfi == NULL) {
+ 			brcmf_dbg(INFO, "received flags to cleanup, but no flow (%d) yet\n",
+ 				  flow_id);
+-			brcmf_netif_rx(ifp, pkt, false);
++			brcmf_netif_rx(ifp, pkt);
+ 			return;
+ 		}
+ 
+@@ -1705,7 +1705,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
+ 		rfi = kzalloc(buf_size, GFP_ATOMIC);
+ 		if (rfi == NULL) {
+ 			brcmf_err("failed to alloc buffer\n");
+-			brcmf_netif_rx(ifp, pkt, false);
++			brcmf_netif_rx(ifp, pkt);
+ 			return;
+ 		}
+ 
+@@ -1819,7 +1819,7 @@ void brcmf_fws_rxreorder(struct brcmf_if
+ netif_rx:
+ 	skb_queue_walk_safe(&reorder_list, pkt, pnext) {
+ 		__skb_unlink(pkt, &reorder_list);
+-		brcmf_netif_rx(ifp, pkt, false);
++		brcmf_netif_rx(ifp, pkt);
+ 	}
+ }
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c
+@@ -1157,7 +1157,7 @@ brcmf_msgbuf_process_rx_complete(struct
+ 		brcmu_pkt_buf_free_skb(skb);
+ 		return;
+ 	}
+-	brcmf_netif_rx(ifp, skb, false);
++	brcmf_netif_rx(ifp, skb);
+ }
+ 
+ 

@@ -41,7 +41,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -5371,7 +5371,6 @@ brcmf_notify_connect_status_ap(struct br
+@@ -5372,7 +5372,6 @@ brcmf_notify_connect_status_ap(struct br
  			       struct net_device *ndev,
  			       const struct brcmf_event_msg *e, void *data)
  {
@@ -49,7 +49,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	static int generation;
  	u32 event = e->event_code;
  	u32 reason = e->reason;
-@@ -5382,8 +5381,6 @@ brcmf_notify_connect_status_ap(struct br
+@@ -5383,8 +5382,6 @@ brcmf_notify_connect_status_ap(struct br
  	    ndev != cfg_to_ndev(cfg)) {
  		brcmf_dbg(CONN, "AP mode link down\n");
  		complete(&cfg->vif_disabled);
