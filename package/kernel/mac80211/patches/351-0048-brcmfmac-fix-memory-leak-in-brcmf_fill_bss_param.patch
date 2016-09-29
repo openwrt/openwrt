@@ -1,0 +1,41 @@
+From 23e9c128adb2038c27a424a5f91136e7fa3e0dc6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Wed, 21 Sep 2016 08:23:24 +0200
+Subject: [PATCH] brcmfmac: fix memory leak in brcmf_fill_bss_param
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This function is called from get_station callback which means that every
+time user space was getting/dumping station(s) we were leaking 2 KiB.
+
+Signed-off-by: RafaÅ MiÅecki <rafal@milecki.pl>
+Fixes: 1f0dc59a6de ("brcmfmac: rework .get_station() callback")
+Cc: stable@vger.kernel.org # 4.2+
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -2463,7 +2463,7 @@ static void brcmf_fill_bss_param(struct
+ 				     WL_BSS_INFO_MAX);
+ 	if (err) {
+ 		brcmf_err("Failed to get bss info (%d)\n", err);
+-		return;
++		goto out_kfree;
+ 	}
+ 	si->filled |= BIT(NL80211_STA_INFO_BSS_PARAM);
+ 	si->bss_param.beacon_interval = le16_to_cpu(buf->bss_le.beacon_period);
+@@ -2475,6 +2475,9 @@ static void brcmf_fill_bss_param(struct
+ 		si->bss_param.flags |= BSS_PARAM_FLAGS_SHORT_PREAMBLE;
+ 	if (capability & WLAN_CAPABILITY_SHORT_SLOT_TIME)
+ 		si->bss_param.flags |= BSS_PARAM_FLAGS_SHORT_SLOT_TIME;
++
++out_kfree:
++	kfree(buf);
+ }
+ 
+ static s32

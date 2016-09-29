@@ -1,0 +1,58 @@
+From 7f00ee2bbc630900ba16fc2690473f3e2db0e264 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 27 Sep 2016 14:11:04 +0200
+Subject: [PATCH] brcmfmac: use correct skb freeing helper when deleting
+ flowring
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Flowrings contain skbs waiting for transmission that were passed to us
+by netif. It means we checked every one of them looking for 802.1x
+Ethernet type. When deleting flowring we have to use freeing function
+that will check for 802.1x type as well.
+
+Freeing skbs without a proper check was leading to counter not being
+properly decreased. This was triggering a WARNING every time
+brcmf_netdev_wait_pend8021x was called.
+
+Signed-off-by: RafaÅ MiÅecki <rafal@milecki.pl>
+Acked-by: Arend van Spriel <arend@broadcom.com>
+Cc: stable@vger.kernel.org # 4.5+
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/flowring.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/flowring.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/flowring.c
+@@ -234,13 +234,20 @@ static void brcmf_flowring_block(struct
+ 
+ void brcmf_flowring_delete(struct brcmf_flowring *flow, u16 flowid)
+ {
++	struct brcmf_bus *bus_if = dev_get_drvdata(flow->dev);
+ 	struct brcmf_flowring_ring *ring;
++	struct brcmf_if *ifp;
+ 	u16 hash_idx;
++	u8 ifidx;
+ 	struct sk_buff *skb;
+ 
+ 	ring = flow->rings[flowid];
+ 	if (!ring)
+ 		return;
++
++	ifidx = brcmf_flowring_ifidx_get(flow, flowid);
++	ifp = brcmf_get_ifp(bus_if->drvr, ifidx);
++
+ 	brcmf_flowring_block(flow, flowid, false);
+ 	hash_idx = ring->hash_id;
+ 	flow->hash[hash_idx].ifidx = BRCMF_FLOWRING_INVALID_IFIDX;
+@@ -249,7 +256,7 @@ void brcmf_flowring_delete(struct brcmf_
+ 
+ 	skb = skb_dequeue(&ring->skblist);
+ 	while (skb) {
+-		brcmu_pkt_buf_free_skb(skb);
++		brcmf_txfinalize(ifp, skb, false);
+ 		skb = skb_dequeue(&ring->skblist);
+ 	}
+ 

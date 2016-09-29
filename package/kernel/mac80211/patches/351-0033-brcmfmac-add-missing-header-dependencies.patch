@@ -1,0 +1,29 @@
+From 8af92af3f2d55db143417a5d401696f4b642009a Mon Sep 17 00:00:00 2001
+From: Baoyou Xie <baoyou.xie@linaro.org>
+Date: Mon, 29 Aug 2016 20:39:35 +0800
+Subject: [PATCH] brcmfmac: add missing header dependencies
+
+We get 1 warning when building kernel with W=1:
+
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/tracepoint.c:23:6: warning: no previous prototype for '__brcmf_err' [-Wmissing-prototypes]
+
+In fact, this function is declared in brcmfmac/debug.h, so this patch
+adds missing header dependencies.
+
+Signed-off-by: Baoyou Xie <baoyou.xie@linaro.org>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/tracepoint.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/tracepoint.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/tracepoint.c
+@@ -19,6 +19,7 @@
+ #ifndef __CHECKER__
+ #define CREATE_TRACE_POINTS
+ #include "tracepoint.h"
++#include "debug.h"
+ 
+ void __brcmf_err(const char *func, const char *fmt, ...)
+ {

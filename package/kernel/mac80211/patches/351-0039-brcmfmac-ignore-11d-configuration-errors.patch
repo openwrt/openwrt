@@ -1,0 +1,84 @@
+From b3589dfe02123a0d0ea82076a9f8ef84a46852c0 Mon Sep 17 00:00:00 2001
+From: Hante Meuleman <hante.meuleman@broadcom.com>
+Date: Mon, 19 Sep 2016 12:09:51 +0100
+Subject: [PATCH] brcmfmac: ignore 11d configuration errors
+
+802.11d is not always supported by firmware anymore. Currently the
+AP configuration of 11d will cause an abort if the ioctl set is
+failing. This behavior is not correct and the error should be
+ignored.
+
+Reviewed-by: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Signed-off-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ .../broadcom/brcm80211/brcmfmac/cfg80211.c         | 27 ++++++++++++----------
+ 1 file changed, 15 insertions(+), 12 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -4422,6 +4422,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+ 	u16 chanspec = chandef_to_chanspec(&cfg->d11inf, &settings->chandef);
+ 	bool mbss;
+ 	int is_11d;
++	bool supports_11d;
+ 
+ 	brcmf_dbg(TRACE, "ctrlchn=%d, center=%d, bw=%d, beacon_interval=%d, dtim_period=%d,\n",
+ 		  settings->chandef.chan->hw_value,
+@@ -4434,11 +4435,16 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+ 	mbss = ifp->vif->mbss;
+ 
+ 	/* store current 11d setting */
+-	brcmf_fil_cmd_int_get(ifp, BRCMF_C_GET_REGULATORY, &ifp->vif->is_11d);
+-	country_ie = brcmf_parse_tlvs((u8 *)settings->beacon.tail,
+-				      settings->beacon.tail_len,
+-				      WLAN_EID_COUNTRY);
+-	is_11d = country_ie ? 1 : 0;
++	if (brcmf_fil_cmd_int_get(ifp, BRCMF_C_GET_REGULATORY,
++				  &ifp->vif->is_11d)) {
++		supports_11d = false;
++	} else {
++		country_ie = brcmf_parse_tlvs((u8 *)settings->beacon.tail,
++					      settings->beacon.tail_len,
++					      WLAN_EID_COUNTRY);
++		is_11d = country_ie ? 1 : 0;
++		supports_11d = true;
++	}
+ 
+ 	memset(&ssid_le, 0, sizeof(ssid_le));
+ 	if (settings->ssid == NULL || settings->ssid_len == 0) {
+@@ -4497,7 +4503,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+ 
+ 	/* Parameters shared by all radio interfaces */
+ 	if (!mbss) {
+-		if (is_11d != ifp->vif->is_11d) {
++		if ((supports_11d) && (is_11d != ifp->vif->is_11d)) {
+ 			err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_REGULATORY,
+ 						    is_11d);
+ 			if (err < 0) {
+@@ -4539,7 +4545,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+ 			brcmf_err("SET INFRA error %d\n", err);
+ 			goto exit;
+ 		}
+-	} else if (WARN_ON(is_11d != ifp->vif->is_11d)) {
++	} else if (WARN_ON(supports_11d && (is_11d != ifp->vif->is_11d))) {
+ 		/* Multiple-BSS should use same 11d configuration */
+ 		err = -EINVAL;
+ 		goto exit;
+@@ -4673,11 +4679,8 @@ static int brcmf_cfg80211_stop_ap(struct
+ 			brcmf_err("setting INFRA mode failed %d\n", err);
+ 		if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MBSS))
+ 			brcmf_fil_iovar_int_set(ifp, "mbss", 0);
+-		err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_REGULATORY,
+-					    ifp->vif->is_11d);
+-		if (err < 0)
+-			brcmf_err("restoring REGULATORY setting failed %d\n",
+-				  err);
++		brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_REGULATORY,
++				      ifp->vif->is_11d);
+ 		/* Bring device back up so it can be used again */
+ 		err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_UP, 1);
+ 		if (err < 0)
