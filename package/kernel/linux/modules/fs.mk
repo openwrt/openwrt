@@ -463,7 +463,7 @@ define KernelPackage/fs-vfat
 	$(LINUX_DIR)/fs/fat/fat.ko \
 	$(LINUX_DIR)/fs/fat/vfat.ko
   AUTOLOAD:=$(call AutoLoad,30,fat vfat)
-  $(call AddDepends/nls)
+  $(call AddDepends/nls,cp437 iso8859-1 utf8)
 endef
 
 define KernelPackage/fs-vfat/description
