@@ -18,7 +18,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -750,12 +750,48 @@ s32 brcmf_notify_escan_complete(struct b
+@@ -771,12 +771,48 @@ s32 brcmf_notify_escan_complete(struct b
  	return err;
  }
  
@@ -67,7 +67,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	/* vif event pending in firmware */
  	if (brcmf_cfg80211_vif_event_armed(cfg))
  		return -EBUSY;
-@@ -772,12 +808,13 @@ int brcmf_cfg80211_del_iface(struct wiph
+@@ -793,12 +829,13 @@ int brcmf_cfg80211_del_iface(struct wiph
  	switch (wdev->iftype) {
  	case NL80211_IFTYPE_ADHOC:
  	case NL80211_IFTYPE_STATION:

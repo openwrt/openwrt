@@ -45,7 +45,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  #include "core.h"
  #include "debug.h"
  #include "tracepoint.h"
-@@ -225,8 +226,13 @@ static void brcmf_fweh_handle_if_event(s
+@@ -182,8 +183,13 @@ static void brcmf_fweh_handle_if_event(s
  
  	err = brcmf_fweh_call_event_handler(ifp, emsg->event_code, emsg, data);
  
@@ -63,7 +63,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  /**
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
-@@ -2280,8 +2280,7 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
+@@ -2290,8 +2290,7 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
  		else
  			err = 0;
  	}

@@ -43,7 +43,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -506,6 +506,21 @@ brcmf_cfg80211_update_proto_addr_mode(st
+@@ -527,6 +527,21 @@ brcmf_cfg80211_update_proto_addr_mode(st
  						ADDR_INDIRECT);
  }
  
@@ -65,7 +65,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  static int brcmf_cfg80211_request_ap_if(struct brcmf_if *ifp)
  {
  	struct brcmf_mbss_ssid_le mbss_ssid_le;
-@@ -513,7 +528,7 @@ static int brcmf_cfg80211_request_ap_if(
+@@ -534,7 +549,7 @@ static int brcmf_cfg80211_request_ap_if(
  	int err;
  
  	memset(&mbss_ssid_le, 0, sizeof(mbss_ssid_le));
@@ -76,7 +76,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -909,30 +909,6 @@ void brcmf_remove_interface(struct brcmf
+@@ -938,30 +938,6 @@ void brcmf_remove_interface(struct brcmf
  	brcmf_del_if(ifp->drvr, ifp->bsscfgidx);
  }
  
@@ -109,7 +109,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  static int brcmf_inetaddr_changed(struct notifier_block *nb,
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
-@@ -214,7 +214,6 @@ int brcmf_net_attach(struct brcmf_if *if
+@@ -221,7 +221,6 @@ int brcmf_net_attach(struct brcmf_if *if
  struct brcmf_if *brcmf_add_if(struct brcmf_pub *drvr, s32 bsscfgidx, s32 ifidx,
  			      bool is_p2pdev, char *name, u8 *mac_addr);
  void brcmf_remove_interface(struct brcmf_if *ifp);

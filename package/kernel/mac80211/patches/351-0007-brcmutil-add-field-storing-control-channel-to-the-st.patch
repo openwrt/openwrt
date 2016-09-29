@@ -27,7 +27,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -2690,7 +2690,7 @@ static s32 brcmf_inform_single_bss(struc
+@@ -2689,7 +2689,7 @@ static s32 brcmf_inform_single_bss(struc
  	if (!bi->ctl_ch) {
  		ch.chspec = le16_to_cpu(bi->chanspec);
  		cfg->d11inf.decchspec(&ch);
@@ -36,7 +36,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	}
  	channel = bi->ctl_ch;
  
-@@ -2808,7 +2808,7 @@ static s32 brcmf_inform_ibss(struct brcm
+@@ -2807,7 +2807,7 @@ static s32 brcmf_inform_ibss(struct brcm
  	else
  		band = wiphy->bands[IEEE80211_BAND_5GHZ];
  
@@ -45,7 +45,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	cfg->channel = freq;
  	notify_channel = ieee80211_get_channel(wiphy, freq);
  
-@@ -2818,7 +2818,7 @@ static s32 brcmf_inform_ibss(struct brcm
+@@ -2817,7 +2817,7 @@ static s32 brcmf_inform_ibss(struct brcm
  	notify_ielen = le32_to_cpu(bi->ie_length);
  	notify_signal = (s16)le16_to_cpu(bi->RSSI) * 100;
  
@@ -54,7 +54,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	brcmf_dbg(CONN, "capability: %X\n", notify_capability);
  	brcmf_dbg(CONN, "beacon interval: %d\n", notify_interval);
  	brcmf_dbg(CONN, "signal: %d\n", notify_signal);
-@@ -5132,7 +5132,7 @@ brcmf_bss_roaming_done(struct brcmf_cfg8
+@@ -5234,7 +5234,7 @@ brcmf_bss_roaming_done(struct brcmf_cfg8
  	else
  		band = wiphy->bands[IEEE80211_BAND_5GHZ];
  
@@ -63,7 +63,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	notify_channel = ieee80211_get_channel(wiphy, freq);
  
  done:
-@@ -5654,14 +5654,15 @@ static int brcmf_construct_chaninfo(stru
+@@ -5756,14 +5756,15 @@ static int brcmf_construct_chaninfo(stru
  		channel = band->channels;
  		index = band->n_channels;
  		for (j = 0; j < band->n_channels; j++) {
@@ -82,7 +82,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  		/* assuming the chanspecs order is HT20,
  		 * HT40 upper, HT40 lower, and VHT80.
-@@ -5763,7 +5764,7 @@ static int brcmf_enable_bw40_2g(struct b
+@@ -5865,7 +5866,7 @@ static int brcmf_enable_bw40_2g(struct b
  			if (WARN_ON(ch.bw != BRCMU_CHAN_BW_40))
  				continue;
  			for (j = 0; j < band->n_channels; j++) {
@@ -102,7 +102,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		}
  		afx_hdl->peer_chan = bi->ctl_ch;
  		brcmf_dbg(TRACE, "ACTION FRAME SCAN : Peer %pM found, channel : %d\n",
-@@ -1380,7 +1380,7 @@ int brcmf_p2p_notify_action_frame_rx(str
+@@ -1385,7 +1385,7 @@ int brcmf_p2p_notify_action_frame_rx(str
  			if (test_bit(BRCMF_P2P_STATUS_FINDING_COMMON_CHANNEL,
  				     &p2p->status) &&
  			    (ether_addr_equal(afx_hdl->tx_dst_addr, e->addr))) {
@@ -111,7 +111,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  				brcmf_dbg(INFO, "GON request: Peer found, channel=%d\n",
  					  afx_hdl->peer_chan);
  				complete(&afx_hdl->act_frm_scan);
-@@ -1423,7 +1423,7 @@ int brcmf_p2p_notify_action_frame_rx(str
+@@ -1428,7 +1428,7 @@ int brcmf_p2p_notify_action_frame_rx(str
  	memcpy(&mgmt_frame->u, frame, mgmt_frame_len);
  	mgmt_frame_len += offsetof(struct ieee80211_mgmt, u);
  
@@ -120,7 +120,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  					      ch.band == BRCMU_CHAN_BAND_2G ?
  					      IEEE80211_BAND_2GHZ :
  					      IEEE80211_BAND_5GHZ);
-@@ -1863,7 +1863,7 @@ s32 brcmf_p2p_notify_rx_mgmt_p2p_probere
+@@ -1873,7 +1873,7 @@ s32 brcmf_p2p_notify_rx_mgmt_p2p_probere
  
  	if (test_bit(BRCMF_P2P_STATUS_FINDING_COMMON_CHANNEL, &p2p->status) &&
  	    (ether_addr_equal(afx_hdl->tx_dst_addr, e->addr))) {
@@ -129,7 +129,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		brcmf_dbg(INFO, "PROBE REQUEST: Peer found, channel=%d\n",
  			  afx_hdl->peer_chan);
  		complete(&afx_hdl->act_frm_scan);
-@@ -1888,7 +1888,7 @@ s32 brcmf_p2p_notify_rx_mgmt_p2p_probere
+@@ -1898,7 +1898,7 @@ s32 brcmf_p2p_notify_rx_mgmt_p2p_probere
  
  	mgmt_frame = (u8 *)(rxframe + 1);
  	mgmt_frame_len = e->datalen - sizeof(*rxframe);

@@ -1,0 +1,69 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 17 Feb 2016 11:27:05 +0100
+Subject: [PATCH] brcmfmac: keep ARP and ND offload enabled during WOWL
+
+Currently ARP and ND (IPv6 Neigbor Discovery) offload get disabled
+on entering suspend. However when firmwares support the wowl_cap
+iovar then these offload routines can be kept enabled as they
+will work during WOWL as well.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -3556,7 +3556,8 @@ static s32 brcmf_cfg80211_resume(struct
+ 		brcmf_report_wowl_wakeind(wiphy, ifp);
+ 		brcmf_fil_iovar_int_set(ifp, "wowl_clear", 0);
+ 		brcmf_config_wowl_pattern(ifp, "clr", NULL, 0, NULL, 0);
+-		brcmf_configure_arp_nd_offload(ifp, true);
++		if (!brcmf_feat_is_enabled(ifp, BRCMF_FEAT_WOWL_ARP_ND))
++			brcmf_configure_arp_nd_offload(ifp, true);
+ 		brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PM,
+ 				      cfg->wowl.pre_pmmode);
+ 		cfg->wowl.active = false;
+@@ -3580,7 +3581,8 @@ static void brcmf_configure_wowl(struct
+ 
+ 	brcmf_dbg(TRACE, "Suspend, wowl config.\n");
+ 
+-	brcmf_configure_arp_nd_offload(ifp, false);
++	if (!brcmf_feat_is_enabled(ifp, BRCMF_FEAT_WOWL_ARP_ND))
++		brcmf_configure_arp_nd_offload(ifp, false);
+ 	brcmf_fil_cmd_int_get(ifp, BRCMF_C_GET_PM, &cfg->wowl.pre_pmmode);
+ 	brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_PM, PM_MAX);
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.c
+@@ -147,6 +147,7 @@ void brcmf_feat_attach(struct brcmf_pub
+ 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_WOWL)) {
+ 		err = brcmf_fil_iovar_int_get(ifp, "wowl_cap", &wowl_cap);
+ 		if (!err) {
++			ifp->drvr->feat_flags |= BIT(BRCMF_FEAT_WOWL_ARP_ND);
+ 			if (wowl_cap & BRCMF_WOWL_PFN_FOUND)
+ 				ifp->drvr->feat_flags |=
+ 					BIT(BRCMF_FEAT_WOWL_ND);
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.h
+@@ -29,6 +29,7 @@
+  * SCAN_RANDOM_MAC: Random MAC during (net detect) scheduled scan.
+  * WOWL_ND: WOWL net detect (PNO)
+  * WOWL_GTK: (WOWL) GTK rekeying offload
++ * WOWL_ARP_ND: ARP and Neighbor Discovery offload support during WOWL.
+  */
+ #define BRCMF_FEAT_LIST \
+ 	BRCMF_FEAT_DEF(MBSS) \
+@@ -40,7 +41,8 @@
+ 	BRCMF_FEAT_DEF(TDLS) \
+ 	BRCMF_FEAT_DEF(SCAN_RANDOM_MAC) \
+ 	BRCMF_FEAT_DEF(WOWL_ND) \
+-	BRCMF_FEAT_DEF(WOWL_GTK)
++	BRCMF_FEAT_DEF(WOWL_GTK) \
++	BRCMF_FEAT_DEF(WOWL_ARP_ND)
+ 
+ /*
+  * Quirks:

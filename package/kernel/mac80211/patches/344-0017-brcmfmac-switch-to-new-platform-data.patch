@@ -1,0 +1,734 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 17 Feb 2016 11:27:07 +0100
+Subject: [PATCH] brcmfmac: switch to new platform data
+
+Platform data is only available for sdio. With this patch a new
+platform data structure is being used which allows for platform
+data for any device and configurable per device. This patch only
+switches to the new structure and adds support for SDIO devices.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcmsdh.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcmsdh.c
+@@ -103,7 +103,7 @@ static void brcmf_sdiod_dummy_irqhandler
+ 
+ int brcmf_sdiod_intr_register(struct brcmf_sdio_dev *sdiodev)
+ {
+-	struct brcmfmac_sdio_platform_data *pdata;
++	struct brcmfmac_sdio_pd *pdata;
+ 	int ret = 0;
+ 	u8 data;
+ 	u32 addr, gpiocontrol;
+@@ -173,7 +173,7 @@ int brcmf_sdiod_intr_register(struct brc
+ 
+ int brcmf_sdiod_intr_unregister(struct brcmf_sdio_dev *sdiodev)
+ {
+-	struct brcmfmac_sdio_platform_data *pdata;
++	struct brcmfmac_sdio_pd *pdata;
+ 
+ 	brcmf_dbg(SDIO, "Entering\n");
+ 
+@@ -1164,17 +1164,6 @@ static int brcmf_ops_sdio_probe(struct s
+ 	dev_set_drvdata(&func->dev, bus_if);
+ 	dev_set_drvdata(&sdiodev->func[1]->dev, bus_if);
+ 	sdiodev->dev = &sdiodev->func[1]->dev;
+-	sdiodev->pdata = brcmf_get_module_param(sdiodev->dev);
+-
+-#ifdef CONFIG_PM_SLEEP
+-	/* wowl can be supported when KEEP_POWER is true and (WAKE_SDIO_IRQ
+-	 * is true or when platform data OOB irq is true).
+-	 */
+-	if ((sdio_get_host_pm_caps(sdiodev->func[1]) & MMC_PM_KEEP_POWER) &&
+-	    ((sdio_get_host_pm_caps(sdiodev->func[1]) & MMC_PM_WAKE_SDIO_IRQ) ||
+-	     (sdiodev->pdata && sdiodev->pdata->oob_irq_supported)))
+-		bus_if->wowl_supported = true;
+-#endif
+ 
+ 	brcmf_sdiod_change_state(sdiodev, BRCMF_SDIOD_DOWN);
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -6459,8 +6459,8 @@ int brcmf_cfg80211_wait_vif_event(struct
+ static s32 brcmf_translate_country_code(struct brcmf_pub *drvr, char alpha2[2],
+ 					struct brcmf_fil_country_le *ccreq)
+ {
+-	struct cc_translate *country_codes;
+-	struct cc_entry *cc;
++	struct brcmfmac_pd_cc *country_codes;
++	struct brcmfmac_pd_cc_entry *cc;
+ 	s32 found_index;
+ 	int i;
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
+@@ -80,7 +80,7 @@ module_param_named(ignore_probe_fail, br
+ MODULE_PARM_DESC(ignore_probe_fail, "always succeed probe for debugging");
+ #endif
+ 
+-static struct brcmfmac_sdio_platform_data *brcmfmac_pdata;
++static struct brcmfmac_platform_data *brcmfmac_pdata;
+ struct brcmf_mp_global_t brcmf_mp_global;
+ 
+ int brcmf_c_preinit_dcmds(struct brcmf_if *ifp)
+@@ -229,15 +229,46 @@ void __brcmf_dbg(u32 level, const char *
+ 
+ static void brcmf_mp_attach(void)
+ {
++	/* If module param firmware path is set then this will always be used,
++	 * if not set then if available use the platform data version. To make
++	 * sure it gets initialized at all, always copy the module param version
++	 */
+ 	strlcpy(brcmf_mp_global.firmware_path, brcmf_firmware_path,
+ 		BRCMF_FW_ALTPATH_LEN);
++	if ((brcmfmac_pdata) && (brcmfmac_pdata->fw_alternative_path) &&
++	    (brcmf_mp_global.firmware_path[0] == '\0')) {
++		strlcpy(brcmf_mp_global.firmware_path,
++			brcmfmac_pdata->fw_alternative_path,
++			BRCMF_FW_ALTPATH_LEN);
++	}
+ }
+ 
+-struct brcmfmac_sdio_platform_data *brcmf_get_module_param(struct device *dev)
+-{
+-	if (!brcmfmac_pdata)
+-		brcmf_of_probe(dev, &brcmfmac_pdata);
+-	return brcmfmac_pdata;
++struct brcmfmac_sdio_pd *brcmf_get_module_param(struct device *dev,
++						enum brcmf_bus_type bus_type,
++						u32 chip, u32 chiprev)
++{
++	struct brcmfmac_sdio_pd *pdata;
++	struct brcmfmac_pd_device *device_pd;
++	int i;
++
++	if (brcmfmac_pdata) {
++		for (i = 0; i < brcmfmac_pdata->device_count; i++) {
++			device_pd = &brcmfmac_pdata->devices[i];
++			if ((device_pd->bus_type == bus_type) &&
++			    (device_pd->id == chip) &&
++			    ((device_pd->rev == chiprev) ||
++			     (device_pd->rev == -1))) {
++				brcmf_dbg(INFO, "Platform data for device found\n");
++				if (device_pd->bus_type == BRCMF_BUSTYPE_SDIO)
++					return &device_pd->bus.sdio;
++				break;
++			}
++		}
++	}
++	pdata = NULL;
++	brcmf_of_probe(dev, &pdata);
++
++	return pdata;
+ }
+ 
+ int brcmf_mp_device_attach(struct brcmf_pub *drvr)
+@@ -287,7 +318,7 @@ static int brcmf_common_pd_remove(struct
+ static struct platform_driver brcmf_pd = {
+ 	.remove		= brcmf_common_pd_remove,
+ 	.driver		= {
+-		.name	= BRCMFMAC_SDIO_PDATA_NAME,
++		.name	= BRCMFMAC_PDATA_NAME,
+ 	}
+ };
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h
+@@ -16,7 +16,7 @@
+ #define BRCMFMAC_COMMON_H
+ 
+ #include <linux/platform_device.h>
+-#include <linux/platform_data/brcmfmac-sdio.h>
++#include <linux/platform_data/brcmfmac.h>
+ #include "fwil_types.h"
+ 
+ extern const u8 ALLFFMAC[ETH_ALEN];
+@@ -43,33 +43,6 @@ struct brcmf_mp_global_t {
+ extern struct brcmf_mp_global_t brcmf_mp_global;
+ 
+ /**
+- * struct cc_entry - Struct for translating user space country code (iso3166) to
+- *		     firmware country code and revision.
+- *
+- * @iso3166: iso3166 alpha 2 country code string.
+- * @cc: firmware country code string.
+- * @rev: firmware country code revision.
+- */
+-struct cc_entry {
+-	char	iso3166[BRCMF_COUNTRY_BUF_SZ];
+-	char	cc[BRCMF_COUNTRY_BUF_SZ];
+-	s32	rev;
+-};
+-
+-/**
+- * struct cc_translate - Struct for translating country codes as set by user
+- *			 space to a country code and rev which can be used by
+- *			 firmware.
+- *
+- * @table_size: number of entries in table (> 0)
+- * @table: dynamic array of 1 or more elements with translation information.
+- */
+-struct cc_translate {
+-	int	table_size;
+-	struct cc_entry table[0];
+-};
+-
+-/**
+  * struct brcmf_mp_device - Device module paramaters.
+  *
+  * @sdiod_txglomsz: SDIO txglom size.
+@@ -88,10 +61,12 @@ struct brcmf_mp_device {
+ 	int	fcmode;
+ 	bool	roamoff;
+ 	bool	ignore_probe_fail;
+-	struct cc_translate *country_codes;
++	struct brcmfmac_pd_cc *country_codes;
+ };
+ 
+-struct brcmfmac_sdio_platform_data *brcmf_get_module_param(struct device *dev);
++struct brcmfmac_sdio_pd *brcmf_get_module_param(struct device *dev,
++						enum brcmf_bus_type bus_type,
++						u32 chip, u32 chiprev);
+ int brcmf_mp_device_attach(struct brcmf_pub *drvr);
+ void brcmf_mp_device_detach(struct brcmf_pub *drvr);
+ #ifdef DEBUG
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c
+@@ -23,8 +23,7 @@
+ #include "common.h"
+ #include "of.h"
+ 
+-void
+-brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_platform_data **sdio)
++void brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_pd **sdio)
+ {
+ 	struct device_node *np = dev->of_node;
+ 	int irq;
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h
+@@ -15,10 +15,9 @@
+  */
+ #ifdef CONFIG_OF
+ void
+-brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_platform_data **sdio);
++brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_pd **sdio);
+ #else
+-static void brcmf_of_probe(struct device *dev,
+-			   struct brcmfmac_sdio_platform_data **sdio)
++static void brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_pd **sdio)
+ {
+ }
+ #endif /* CONFIG_OF */
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -33,8 +33,6 @@
+ #include <linux/bcma/bcma.h>
+ #include <linux/debugfs.h>
+ #include <linux/vmalloc.h>
+-#include <linux/platform_data/brcmfmac-sdio.h>
+-#include <linux/moduleparam.h>
+ #include <asm/unaligned.h>
+ #include <defs.h>
+ #include <brcmu_wifi.h>
+@@ -44,6 +42,8 @@
+ #include "sdio.h"
+ #include "chip.h"
+ #include "firmware.h"
++#include "core.h"
++#include "common.h"
+ 
+ #define DCMD_RESP_TIMEOUT	msecs_to_jiffies(2500)
+ #define CTL_DONE_TIMEOUT	msecs_to_jiffies(2500)
+@@ -3775,26 +3775,28 @@ static const struct brcmf_buscore_ops br
+ static bool
+ brcmf_sdio_probe_attach(struct brcmf_sdio *bus)
+ {
++	struct brcmf_sdio_dev *sdiodev;
+ 	u8 clkctl = 0;
+ 	int err = 0;
+ 	int reg_addr;
+ 	u32 reg_val;
+ 	u32 drivestrength;
+ 
+-	sdio_claim_host(bus->sdiodev->func[1]);
++	sdiodev = bus->sdiodev;
++	sdio_claim_host(sdiodev->func[1]);
+ 
+ 	pr_debug("F1 signature read @0x18000000=0x%4x\n",
+-		 brcmf_sdiod_regrl(bus->sdiodev, SI_ENUM_BASE, NULL));
++		 brcmf_sdiod_regrl(sdiodev, SI_ENUM_BASE, NULL));
+ 
+ 	/*
+ 	 * Force PLL off until brcmf_chip_attach()
+ 	 * programs PLL control regs
+ 	 */
+ 
+-	brcmf_sdiod_regwb(bus->sdiodev, SBSDIO_FUNC1_CHIPCLKCSR,
++	brcmf_sdiod_regwb(sdiodev, SBSDIO_FUNC1_CHIPCLKCSR,
+ 			  BRCMF_INIT_CLKCTL1, &err);
+ 	if (!err)
+-		clkctl = brcmf_sdiod_regrb(bus->sdiodev,
++		clkctl = brcmf_sdiod_regrb(sdiodev,
+ 					   SBSDIO_FUNC1_CHIPCLKCSR, &err);
+ 
+ 	if (err || ((clkctl & ~SBSDIO_AVBITS) != BRCMF_INIT_CLKCTL1)) {
+@@ -3803,50 +3805,77 @@ brcmf_sdio_probe_attach(struct brcmf_sdi
+ 		goto fail;
+ 	}
+ 
+-	bus->ci = brcmf_chip_attach(bus->sdiodev, &brcmf_sdio_buscore_ops);
++	bus->ci = brcmf_chip_attach(sdiodev, &brcmf_sdio_buscore_ops);
+ 	if (IS_ERR(bus->ci)) {
+ 		brcmf_err("brcmf_chip_attach failed!\n");
+ 		bus->ci = NULL;
+ 		goto fail;
+ 	}
++	sdiodev->pdata = brcmf_get_module_param(sdiodev->dev,
++						   BRCMF_BUSTYPE_SDIO,
++						   bus->ci->chip,
++						   bus->ci->chiprev);
++	/* platform specific configuration:
++	 *   alignments must be at least 4 bytes for ADMA
++	 */
++	bus->head_align = ALIGNMENT;
++	bus->sgentry_align = ALIGNMENT;
++	if (sdiodev->pdata) {
++		if (sdiodev->pdata->sd_head_align > ALIGNMENT)
++			bus->head_align = sdiodev->pdata->sd_head_align;
++		if (sdiodev->pdata->sd_sgentry_align > ALIGNMENT)
++			bus->sgentry_align = sdiodev->pdata->sd_sgentry_align;
++	}
++	/* allocate scatter-gather table. sg support
++	 * will be disabled upon allocation failure.
++	 */
++	brcmf_sdiod_sgtable_alloc(sdiodev);
++
++#ifdef CONFIG_PM_SLEEP
++	/* wowl can be supported when KEEP_POWER is true and (WAKE_SDIO_IRQ
++	 * is true or when platform data OOB irq is true).
++	 */
++	if ((sdio_get_host_pm_caps(sdiodev->func[1]) & MMC_PM_KEEP_POWER) &&
++	    ((sdio_get_host_pm_caps(sdiodev->func[1]) & MMC_PM_WAKE_SDIO_IRQ) ||
++	     (sdiodev->pdata && sdiodev->pdata->oob_irq_supported)))
++		sdiodev->bus_if->wowl_supported = true;
++#endif
+ 
+ 	if (brcmf_sdio_kso_init(bus)) {
+ 		brcmf_err("error enabling KSO\n");
+ 		goto fail;
+ 	}
+ 
+-	if ((bus->sdiodev->pdata) && (bus->sdiodev->pdata->drive_strength))
+-		drivestrength = bus->sdiodev->pdata->drive_strength;
++	if ((sdiodev->pdata) && (sdiodev->pdata->drive_strength))
++		drivestrength = sdiodev->pdata->drive_strength;
+ 	else
+ 		drivestrength = DEFAULT_SDIO_DRIVE_STRENGTH;
+-	brcmf_sdio_drivestrengthinit(bus->sdiodev, bus->ci, drivestrength);
++	brcmf_sdio_drivestrengthinit(sdiodev, bus->ci, drivestrength);
+ 
+ 	/* Set card control so an SDIO card reset does a WLAN backplane reset */
+-	reg_val = brcmf_sdiod_regrb(bus->sdiodev,
+-				    SDIO_CCCR_BRCM_CARDCTRL, &err);
++	reg_val = brcmf_sdiod_regrb(sdiodev, SDIO_CCCR_BRCM_CARDCTRL, &err);
+ 	if (err)
+ 		goto fail;
+ 
+ 	reg_val |= SDIO_CCCR_BRCM_CARDCTRL_WLANRESET;
+ 
+-	brcmf_sdiod_regwb(bus->sdiodev,
+-			  SDIO_CCCR_BRCM_CARDCTRL, reg_val, &err);
++	brcmf_sdiod_regwb(sdiodev, SDIO_CCCR_BRCM_CARDCTRL, reg_val, &err);
+ 	if (err)
+ 		goto fail;
+ 
+ 	/* set PMUControl so a backplane reset does PMU state reload */
+ 	reg_addr = CORE_CC_REG(brcmf_chip_get_pmu(bus->ci)->base, pmucontrol);
+-	reg_val = brcmf_sdiod_regrl(bus->sdiodev, reg_addr, &err);
++	reg_val = brcmf_sdiod_regrl(sdiodev, reg_addr, &err);
+ 	if (err)
+ 		goto fail;
+ 
+ 	reg_val |= (BCMA_CC_PMU_CTL_RES_RELOAD << BCMA_CC_PMU_CTL_RES_SHIFT);
+ 
+-	brcmf_sdiod_regwl(bus->sdiodev, reg_addr, reg_val, &err);
++	brcmf_sdiod_regwl(sdiodev, reg_addr, reg_val, &err);
+ 	if (err)
+ 		goto fail;
+ 
+-	sdio_release_host(bus->sdiodev->func[1]);
++	sdio_release_host(sdiodev->func[1]);
+ 
+ 	brcmu_pktq_init(&bus->txq, (PRIOMASK + 1), TXQLEN);
+ 
+@@ -3867,7 +3896,7 @@ brcmf_sdio_probe_attach(struct brcmf_sdi
+ 	return true;
+ 
+ fail:
+-	sdio_release_host(bus->sdiodev->func[1]);
++	sdio_release_host(sdiodev->func[1]);
+ 	return false;
+ }
+ 
+@@ -4045,18 +4074,6 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
+ 	bus->txminmax = BRCMF_TXMINMAX;
+ 	bus->tx_seq = SDPCM_SEQ_WRAP - 1;
+ 
+-	/* platform specific configuration:
+-	 *   alignments must be at least 4 bytes for ADMA
+-	 */
+-	bus->head_align = ALIGNMENT;
+-	bus->sgentry_align = ALIGNMENT;
+-	if (sdiodev->pdata) {
+-		if (sdiodev->pdata->sd_head_align > ALIGNMENT)
+-			bus->head_align = sdiodev->pdata->sd_head_align;
+-		if (sdiodev->pdata->sd_sgentry_align > ALIGNMENT)
+-			bus->sgentry_align = sdiodev->pdata->sd_sgentry_align;
+-	}
+-
+ 	/* single-threaded workqueue */
+ 	wq = alloc_ordered_workqueue("brcmf_wq/%s", WQ_MEM_RECLAIM,
+ 				     dev_name(&sdiodev->func[1]->dev));
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.h
+@@ -184,7 +184,7 @@ struct brcmf_sdio_dev {
+ 	struct brcmf_sdio *bus;
+ 	struct device *dev;
+ 	struct brcmf_bus *bus_if;
+-	struct brcmfmac_sdio_platform_data *pdata;
++	struct brcmfmac_sdio_pd *pdata;
+ 	bool oob_irq_requested;
+ 	bool irq_en;			/* irq enable flags */
+ 	spinlock_t irq_en_lock;
+--- a/include/linux/platform_data/brcmfmac-sdio.h
++++ /dev/null
+@@ -1,135 +0,0 @@
+-/*
+- * Copyright (c) 2013 Broadcom Corporation
+- *
+- * Permission to use, copy, modify, and/or distribute this software for any
+- * purpose with or without fee is hereby granted, provided that the above
+- * copyright notice and this permission notice appear in all copies.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+- */
+-
+-#ifndef _LINUX_BRCMFMAC_PLATFORM_H
+-#define _LINUX_BRCMFMAC_PLATFORM_H
+-
+-/*
+- * Platform specific driver functions and data. Through the platform specific
+- * device data functions can be provided to help the brcmfmac driver to
+- * operate with the device in combination with the used platform.
+- *
+- * Use the platform data in the following (similar) way:
+- *
+- *
+-#include <brcmfmac_platform.h>
+-
+-
+-static void brcmfmac_power_on(void)
+-{
+-}
+-
+-static void brcmfmac_power_off(void)
+-{
+-}
+-
+-static void brcmfmac_reset(void)
+-{
+-}
+-
+-static struct brcmfmac_sdio_platform_data brcmfmac_sdio_pdata = {
+-	.power_on		= brcmfmac_power_on,
+-	.power_off		= brcmfmac_power_off,
+-	.reset			= brcmfmac_reset
+-};
+-
+-static struct platform_device brcmfmac_device = {
+-	.name			= BRCMFMAC_SDIO_PDATA_NAME,
+-	.id			= PLATFORM_DEVID_NONE,
+-	.dev.platform_data	= &brcmfmac_sdio_pdata
+-};
+-
+-void __init brcmfmac_init_pdata(void)
+-{
+-	brcmfmac_sdio_pdata.oob_irq_supported = true;
+-	brcmfmac_sdio_pdata.oob_irq_nr = gpio_to_irq(GPIO_BRCMF_SDIO_OOB);
+-	brcmfmac_sdio_pdata.oob_irq_flags = IORESOURCE_IRQ |
+-					    IORESOURCE_IRQ_HIGHLEVEL;
+-	platform_device_register(&brcmfmac_device);
+-}
+- *
+- *
+- * Note: the brcmfmac can be loaded as module or be statically built-in into
+- * the kernel. If built-in then do note that it uses module_init (and
+- * module_exit) routines which equal device_initcall. So if you intend to
+- * create a module with the platform specific data for the brcmfmac and have
+- * it built-in to the kernel then use a higher initcall then device_initcall
+- * (see init.h). If this is not done then brcmfmac will load without problems
+- * but will not pickup the platform data.
+- *
+- * When the driver does not "detect" platform driver data then it will continue
+- * without reporting anything and just assume there is no data needed. Which is
+- * probably true for most platforms.
+- *
+- * Explanation of the platform_data fields:
+- *
+- * drive_strength: is the preferred drive_strength to be used for the SDIO
+- * pins. If 0 then a default value will be used. This is the target drive
+- * strength, the exact drive strength which will be used depends on the
+- * capabilities of the device.
+- *
+- * oob_irq_supported: does the board have support for OOB interrupts. SDIO
+- * in-band interrupts are relatively slow and for having less overhead on
+- * interrupt processing an out of band interrupt can be used. If the HW
+- * supports this then enable this by setting this field to true and configure
+- * the oob related fields.
+- *
+- * oob_irq_nr, oob_irq_flags: the OOB interrupt information. The values are
+- * used for registering the irq using request_irq function.
+- *
+- * broken_sg_support: flag for broken sg list support of SDIO host controller.
+- * Set this to true if the SDIO host controller has higher align requirement
+- * than 32 bytes for each scatterlist item.
+- *
+- * sd_head_align: alignment requirement for start of data buffer
+- *
+- * sd_sgentry_align: length alignment requirement for each sg entry
+- *
+- * power_on: This function is called by the brcmfmac when the module gets
+- * loaded. This can be particularly useful for low power devices. The platform
+- * spcific routine may for example decide to power up the complete device.
+- * If there is no use-case for this function then provide NULL.
+- *
+- * power_off: This function is called by the brcmfmac when the module gets
+- * unloaded. At this point the device can be powered down or otherwise be reset.
+- * So if an actual power_off is not supported but reset is then reset the device
+- * when this function gets called. This can be particularly useful for low power
+- * devices. If there is no use-case for this function (either power-down or
+- * reset) then provide NULL.
+- *
+- * reset: This function can get called if the device communication broke down.
+- * This functionality is particularly useful in case of SDIO type devices. It is
+- * possible to reset a dongle via sdio data interface, but it requires that
+- * this is fully functional. This function is chip/module specific and this
+- * function should return only after the complete reset has completed.
+- */
+-
+-#define BRCMFMAC_SDIO_PDATA_NAME	"brcmfmac_sdio"
+-
+-struct brcmfmac_sdio_platform_data {
+-	unsigned int drive_strength;
+-	bool oob_irq_supported;
+-	unsigned int oob_irq_nr;
+-	unsigned long oob_irq_flags;
+-	bool broken_sg_support;
+-	unsigned short sd_head_align;
+-	unsigned short sd_sgentry_align;
+-	void (*power_on)(void);
+-	void (*power_off)(void);
+-	void (*reset)(void);
+-};
+-
+-#endif /* _LINUX_BRCMFMAC_PLATFORM_H */
+--- /dev/null
++++ b/include/linux/platform_data/brcmfmac.h
+@@ -0,0 +1,185 @@
++/*
++ * Copyright (c) 201 Broadcom Corporation
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
++ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
++ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#ifndef _LINUX_BRCMFMAC_PLATFORM_H
++#define _LINUX_BRCMFMAC_PLATFORM_H
++
++
++#define BRCMFMAC_PDATA_NAME		"brcmfmac"
++
++#define BRCMFMAC_COUNTRY_BUF_SZ		4
++
++
++/*
++ * Platform specific driver functions and data. Through the platform specific
++ * device data functions and data can be provided to help the brcmfmac driver to
++ * operate with the device in combination with the used platform.
++ */
++
++
++/**
++ * Note: the brcmfmac can be loaded as module or be statically built-in into
++ * the kernel. If built-in then do note that it uses module_init (and
++ * module_exit) routines which equal device_initcall. So if you intend to
++ * create a module with the platform specific data for the brcmfmac and have
++ * it built-in to the kernel then use a higher initcall then device_initcall
++ * (see init.h). If this is not done then brcmfmac will load without problems
++ * but will not pickup the platform data.
++ *
++ * When the driver does not "detect" platform driver data then it will continue
++ * without reporting anything and just assume there is no data needed. Which is
++ * probably true for most platforms.
++ */
++
++/**
++ * enum brcmf_bus_type - Bus type identifier. Currently SDIO, USB and PCIE are
++ *			 supported.
++ */
++enum brcmf_bus_type {
++	BRCMF_BUSTYPE_SDIO,
++	BRCMF_BUSTYPE_USB,
++	BRCMF_BUSTYPE_PCIE
++};
++
++
++/**
++ * struct brcmfmac_sdio_pd - SDIO Device specific platform data.
++ *
++ * @txglomsz:		SDIO txglom size. Use 0 if default of driver is to be
++ *			used.
++ * @drive_strength:	is the preferred drive_strength to be used for the SDIO
++ *			pins. If 0 then a default value will be used. This is
++ *			the target drive strength, the exact drive strength
++ *			which will be used depends on the capabilities of the
++ *			device.
++ * @oob_irq_supported:	does the board have support for OOB interrupts. SDIO
++ *			in-band interrupts are relatively slow and for having
++ *			less overhead on interrupt processing an out of band
++ *			interrupt can be used. If the HW supports this then
++ *			enable this by setting this field to true and configure
++ *			the oob related fields.
++ * @oob_irq_nr,
++ * @oob_irq_flags:	the OOB interrupt information. The values are used for
++ *			registering the irq using request_irq function.
++ * @broken_sg_support:	flag for broken sg list support of SDIO host controller.
++ *			Set this to true if the SDIO host controller has higher
++ *			align requirement than 32 bytes for each scatterlist
++ *			item.
++ * @sd_head_align:	alignment requirement for start of data buffer.
++ * @sd_sgentry_align:	length alignment requirement for each sg entry.
++ * @reset:		This function can get called if the device communication
++ *			broke down. This functionality is particularly useful in
++ *			case of SDIO type devices. It is possible to reset a
++ *			dongle via sdio data interface, but it requires that
++ *			this is fully functional. This function is chip/module
++ *			specific and this function should return only after the
++ *			complete reset has completed.
++ */
++struct brcmfmac_sdio_pd {
++	int		txglomsz;
++	unsigned int	drive_strength;
++	bool		oob_irq_supported;
++	unsigned int	oob_irq_nr;
++	unsigned long	oob_irq_flags;
++	bool		broken_sg_support;
++	unsigned short	sd_head_align;
++	unsigned short	sd_sgentry_align;
++	void		(*reset)(void);
++};
++
++/**
++ * struct brcmfmac_pd_cc_entry - Struct for translating user space country code
++ *				 (iso3166) to firmware country code and
++ *				 revision.
++ *
++ * @iso3166:	iso3166 alpha 2 country code string.
++ * @cc:		firmware country code string.
++ * @rev:	firmware country code revision.
++ */
++struct brcmfmac_pd_cc_entry {
++	char	iso3166[BRCMFMAC_COUNTRY_BUF_SZ];
++	char	cc[BRCMFMAC_COUNTRY_BUF_SZ];
++	s32	rev;
++};
++
++/**
++ * struct brcmfmac_pd_cc - Struct for translating country codes as set by user
++ *			   space to a country code and rev which can be used by
++ *			   firmware.
++ *
++ * @table_size:	number of entries in table (> 0)
++ * @table:	array of 1 or more elements with translation information.
++ */
++struct brcmfmac_pd_cc {
++	int				table_size;
++	struct brcmfmac_pd_cc_entry	table[0];
++};
++
++/**
++ * struct brcmfmac_pd_device - Device specific platform data. (id/rev/bus_type)
++ *			       is the unique identifier of the device.
++ *
++ * @id:			ID of the device for which this data is. In case of SDIO
++ *			or PCIE this is the chipid as identified by chip.c In
++ *			case of USB this is the chipid as identified by the
++ *			device query.
++ * @rev:		chip revision, see id.
++ * @bus_type:		The type of bus. Some chipid/rev exist for different bus
++ *			types. Each bus type has its own set of settings.
++ * @feature_disable:	Bitmask of features to disable (override), See feature.c
++ *			in brcmfmac for details.
++ * @country_codes:	If available, pointer to struct for translating country
++ *			codes.
++ * @bus:		Bus specific (union) device settings. Currently only
++ *			SDIO.
++ */
++struct brcmfmac_pd_device {
++	unsigned int		id;
++	unsigned int		rev;
++	enum brcmf_bus_type	bus_type;
++	unsigned int		feature_disable;
++	struct brcmfmac_pd_cc	*country_codes;
++	union {
++		struct brcmfmac_sdio_pd sdio;
++	} bus;
++};
++
++/**
++ * struct brcmfmac_platform_data - BRCMFMAC specific platform data.
++ *
++ * @power_on:	This function is called by the brcmfmac driver when the module
++ *		gets loaded. This can be particularly useful for low power
++ *		devices. The platform spcific routine may for example decide to
++ *		power up the complete device. If there is no use-case for this
++ *		function then provide NULL.
++ * @power_off:	This function is called by the brcmfmac when the module gets
++ *		unloaded. At this point the devices can be powered down or
++ *		otherwise be reset. So if an actual power_off is not supported
++ *		but reset is supported by the devices then reset the devices
++ *		when this function gets called. This can be particularly useful
++ *		for low power devices. If there is no use-case for this
++ *		function then provide NULL.
++ */
++struct brcmfmac_platform_data {
++	void	(*power_on)(void);
++	void	(*power_off)(void);
++	char	*fw_alternative_path;
++	int	device_count;
++	struct brcmfmac_pd_device devices[0];
++};
++
++
++#endif /* _LINUX_BRCMFMAC_PLATFORM_H */
