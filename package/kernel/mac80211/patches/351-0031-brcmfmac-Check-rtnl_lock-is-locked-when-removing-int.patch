@@ -1,0 +1,111 @@
+From 15dacf880e49ce3ecee05eb1a0c6b8e363dbacdc Mon Sep 17 00:00:00 2001
+From: "mhiramat@kernel.org" <mhiramat@kernel.org>
+Date: Mon, 15 Aug 2016 18:40:57 +0900
+Subject: [PATCH] brcmfmac: Check rtnl_lock is locked when removing interface
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Check rtnl_lock is locked in brcmf_p2p_ifp_removed() by passing
+rtnl_locked flag. Actually the caller brcmf_del_if() checks whether
+the rtnl_lock is locked, but doesn't pass it to brcmf_p2p_ifp_removed().
+
+Without this fix, wpa_supplicant goes softlockup with rtnl_lock
+holding (this means all other process using netlink are locked up too)
+
+e.g.
+[ 4495.876627] INFO: task wpa_supplicant:7307 blocked for more than 10 seconds.
+[ 4495.876632]       Tainted: G        W       4.8.0-rc1+ #8
+[ 4495.876635] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[ 4495.876638] wpa_supplicant  D ffff974c647b39a0     0  7307      1 0x00000000
+[ 4495.876644]  ffff974c647b39a0 0000000000000000 ffff974c00000000 ffff974c7dc59c58
+[ 4495.876651]  ffff974c6b7417c0 ffff974c645017c0 ffff974c647b4000 ffffffff86f16c08
+[ 4495.876657]  ffff974c645017c0 0000000000000246 00000000ffffffff ffff974c647b39b8
+[ 4495.876664] Call Trace:
+[ 4495.876671]  [<ffffffff868aeccc>] schedule+0x3c/0x90
+[ 4495.876676]  [<ffffffff868af065>] schedule_preempt_disabled+0x15/0x20
+[ 4495.876682]  [<ffffffff868b0996>] mutex_lock_nested+0x176/0x3b0
+[ 4495.876686]  [<ffffffff867a2067>] ? rtnl_lock+0x17/0x20
+[ 4495.876690]  [<ffffffff867a2067>] rtnl_lock+0x17/0x20
+[ 4495.876720]  [<ffffffffc0ae9a5d>] brcmf_p2p_ifp_removed+0x4d/0x70 [brcmfmac]
+[ 4495.876741]  [<ffffffffc0aebde6>] brcmf_remove_interface+0x196/0x1b0 [brcmfmac]
+[ 4495.876760]  [<ffffffffc0ae9901>] brcmf_p2p_del_vif+0x111/0x220 [brcmfmac]
+[ 4495.876777]  [<ffffffffc0adefab>] brcmf_cfg80211_del_iface+0x21b/0x270 [brcmfmac]
+[ 4495.876820]  [<ffffffffc097b39e>] nl80211_del_interface+0xfe/0x3a0 [cfg80211]
+[ 4495.876825]  [<ffffffff867ca335>] genl_family_rcv_msg+0x1b5/0x370
+[ 4495.876832]  [<ffffffff860e5d8d>] ? trace_hardirqs_on+0xd/0x10
+[ 4495.876836]  [<ffffffff867ca56d>] genl_rcv_msg+0x7d/0xb0
+[ 4495.876839]  [<ffffffff867ca4f0>] ? genl_family_rcv_msg+0x370/0x370
+[ 4495.876846]  [<ffffffff867c9a47>] netlink_rcv_skb+0x97/0xb0
+[ 4495.876849]  [<ffffffff867ca168>] genl_rcv+0x28/0x40
+[ 4495.876854]  [<ffffffff867c93c3>] netlink_unicast+0x1d3/0x2f0
+[ 4495.876860]  [<ffffffff867c933b>] ? netlink_unicast+0x14b/0x2f0
+[ 4495.876866]  [<ffffffff867c97cb>] netlink_sendmsg+0x2eb/0x3a0
+[ 4495.876870]  [<ffffffff8676dad8>] sock_sendmsg+0x38/0x50
+[ 4495.876874]  [<ffffffff8676e4df>] ___sys_sendmsg+0x27f/0x290
+[ 4495.876882]  [<ffffffff8628b935>] ? mntput_no_expire+0x5/0x3f0
+[ 4495.876888]  [<ffffffff8628b9be>] ? mntput_no_expire+0x8e/0x3f0
+[ 4495.876894]  [<ffffffff8628b935>] ? mntput_no_expire+0x5/0x3f0
+[ 4495.876899]  [<ffffffff8628bd44>] ? mntput+0x24/0x40
+[ 4495.876904]  [<ffffffff86267830>] ? __fput+0x190/0x200
+[ 4495.876909]  [<ffffffff8676f125>] __sys_sendmsg+0x45/0x80
+[ 4495.876914]  [<ffffffff8676f172>] SyS_sendmsg+0x12/0x20
+[ 4495.876918]  [<ffffffff868b5680>] entry_SYSCALL_64_fastpath+0x23/0xc1
+[ 4495.876924]  [<ffffffff860e2b8f>] ? trace_hardirqs_off_caller+0x1f/0xc0
+
+Signed-off-by: Masami Hiramatsu <mhiramat@kernel.org>
+Acked-by: RafaÅ MiÅecki <rafal@milecki.pl>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c  | 8 +++++---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.h  | 2 +-
+ 3 files changed, 7 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -743,7 +743,7 @@ static void brcmf_del_if(struct brcmf_pu
+ 		 * serious troublesome side effects. The p2p module will clean
+ 		 * up the ifp if needed.
+ 		 */
+-		brcmf_p2p_ifp_removed(ifp);
++		brcmf_p2p_ifp_removed(ifp, rtnl_locked);
+ 		kfree(ifp);
+ 	}
+ }
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
+@@ -2299,7 +2299,7 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
+ 	return err;
+ }
+ 
+-void brcmf_p2p_ifp_removed(struct brcmf_if *ifp)
++void brcmf_p2p_ifp_removed(struct brcmf_if *ifp, bool rtnl_locked)
+ {
+ 	struct brcmf_cfg80211_info *cfg;
+ 	struct brcmf_cfg80211_vif *vif;
+@@ -2308,9 +2308,11 @@ void brcmf_p2p_ifp_removed(struct brcmf_
+ 	vif = ifp->vif;
+ 	cfg = wdev_to_cfg(&vif->wdev);
+ 	cfg->p2p.bss_idx[P2PAPI_BSSCFG_DEVICE].vif = NULL;
+-	rtnl_lock();
++	if (!rtnl_locked)
++		rtnl_lock();
+ 	cfg80211_unregister_wdev(&vif->wdev);
+-	rtnl_unlock();
++	if (!rtnl_locked)
++		rtnl_unlock();
+ 	brcmf_free_vif(vif);
+ }
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.h
+@@ -155,7 +155,7 @@ struct wireless_dev *brcmf_p2p_add_vif(s
+ int brcmf_p2p_del_vif(struct wiphy *wiphy, struct wireless_dev *wdev);
+ int brcmf_p2p_ifchange(struct brcmf_cfg80211_info *cfg,
+ 		       enum brcmf_fil_p2p_if_types if_type);
+-void brcmf_p2p_ifp_removed(struct brcmf_if *ifp);
++void brcmf_p2p_ifp_removed(struct brcmf_if *ifp, bool rtnl_locked);
+ int brcmf_p2p_start_device(struct wiphy *wiphy, struct wireless_dev *wdev);
+ void brcmf_p2p_stop_device(struct wiphy *wiphy, struct wireless_dev *wdev);
+ int brcmf_p2p_scan_prep(struct wiphy *wiphy,

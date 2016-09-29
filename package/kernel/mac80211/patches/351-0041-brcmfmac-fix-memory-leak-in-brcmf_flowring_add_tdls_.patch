@@ -1,0 +1,39 @@
+From bc981641360183990de59da17f9f560f9150b801 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Mon, 19 Sep 2016 12:09:53 +0100
+Subject: [PATCH] brcmfmac: fix memory leak in brcmf_flowring_add_tdls_peer()
+
+In the error paths in brcmf_flowring_add_tdls_peer() the allocated
+resource should be freed.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/flowring.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/flowring.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/flowring.c
+@@ -495,14 +495,18 @@ void brcmf_flowring_add_tdls_peer(struct
+ 	} else {
+ 		search = flow->tdls_entry;
+ 		if (memcmp(search->mac, peer, ETH_ALEN) == 0)
+-			return;
++			goto free_entry;
+ 		while (search->next) {
+ 			search = search->next;
+ 			if (memcmp(search->mac, peer, ETH_ALEN) == 0)
+-				return;
++				goto free_entry;
+ 		}
+ 		search->next = tdls_entry;
+ 	}
+ 
+ 	flow->tdls_active = true;
++	return;
++
++free_entry:
++	kfree(tdls_entry);
+ }

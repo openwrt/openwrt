@@ -1,0 +1,31 @@
+From 835680b82f029818c813324aed3073cdcf63241f Mon Sep 17 00:00:00 2001
+From: Hante Meuleman <hante.meuleman@broadcom.com>
+Date: Mon, 19 Sep 2016 12:09:56 +0100
+Subject: [PATCH] brcmfmac: remove unnecessary null pointer check
+
+in the function brcmf_bus_start() in the exception handling a
+check is made to dermine whether ifp is null, though this is not
+possible. Removing the unnessary check.
+
+Reviewed-by: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Signed-off-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -1048,8 +1048,7 @@ fail:
+ 		brcmf_fws_del_interface(ifp);
+ 		brcmf_fws_deinit(drvr);
+ 	}
+-	if (ifp)
+-		brcmf_net_detach(ifp->ndev, false);
++	brcmf_net_detach(ifp->ndev, false);
+ 	if (p2p_ifp)
+ 		brcmf_net_detach(p2p_ifp->ndev, false);
+ 	drvr->iflist[0] = NULL;

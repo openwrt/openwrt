@@ -263,7 +263,7 @@
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/ip6_gre.c
 +++ b/net/ipv6/ip6_gre.c
-@@ -393,7 +393,7 @@ static void ip6gre_err(struct sk_buff *s
+@@ -394,7 +394,7 @@ static void ip6gre_err(struct sk_buff *s
  
  	t = ip6gre_tunnel_lookup(skb->dev, &ipv6h->daddr, &ipv6h->saddr,
  				flags & GRE_KEY ?
@@ -272,7 +272,7 @@
  				p[1]);
  	if (t == NULL)
  		return;
-@@ -475,11 +475,11 @@ static int ip6gre_rcv(struct sk_buff *sk
+@@ -476,11 +476,11 @@ static int ip6gre_rcv(struct sk_buff *sk
  			offset += 4;
  		}
  		if (flags&GRE_KEY) {
@@ -286,7 +286,7 @@
  			offset += 4;
  		}
  	}
-@@ -744,7 +744,7 @@ static netdev_tx_t ip6gre_xmit2(struct s
+@@ -745,7 +745,7 @@ static netdev_tx_t ip6gre_xmit2(struct s
  
  		if (tunnel->parms.o_flags&GRE_SEQ) {
  			++tunnel->o_seqno;
@@ -295,7 +295,7 @@
  			ptr--;
  		}
  		if (tunnel->parms.o_flags&GRE_KEY) {
-@@ -840,7 +840,7 @@ static inline int ip6gre_xmit_ipv6(struc
+@@ -841,7 +841,7 @@ static inline int ip6gre_xmit_ipv6(struc
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)

@@ -1,0 +1,103 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 6 Jun 2016 23:03:55 +0200
+Subject: [PATCH] brcmfmac: drop unused pm_block vif attribute
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This attribute was added 3 years ago by
+commit 3eacf866559c ("brcmfmac: introduce brcmf_cfg80211_vif structure")
+but it remains unused since then. It seems we can safely drop it.
+
+Signed-off-by: RafaÅ MiÅecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -587,7 +587,7 @@ struct wireless_dev *brcmf_ap_add_vif(st
+ 
+ 	brcmf_dbg(INFO, "Adding vif \"%s\"\n", name);
+ 
+-	vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_AP, false);
++	vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_AP);
+ 	if (IS_ERR(vif))
+ 		return (struct wireless_dev *)vif;
+ 
+@@ -5098,8 +5098,7 @@ static struct cfg80211_ops brcmf_cfg8021
+ };
+ 
+ struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
+-					   enum nl80211_iftype type,
+-					   bool pm_block)
++					   enum nl80211_iftype type)
+ {
+ 	struct brcmf_cfg80211_vif *vif_walk;
+ 	struct brcmf_cfg80211_vif *vif;
+@@ -5114,8 +5113,6 @@ struct brcmf_cfg80211_vif *brcmf_alloc_v
+ 	vif->wdev.wiphy = cfg->wiphy;
+ 	vif->wdev.iftype = type;
+ 
+-	vif->pm_block = pm_block;
+-
+ 	brcmf_init_prof(&vif->profile);
+ 
+ 	if (type == NL80211_IFTYPE_AP) {
+@@ -6754,7 +6751,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+ 	init_vif_event(&cfg->vif_event);
+ 	INIT_LIST_HEAD(&cfg->vif_list);
+ 
+-	vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_STATION, false);
++	vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_STATION);
+ 	if (IS_ERR(vif))
+ 		goto wiphy_out;
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
+@@ -167,7 +167,6 @@ struct vif_saved_ie {
+  * @wdev: wireless device.
+  * @profile: profile information.
+  * @sme_state: SME state using enum brcmf_vif_status bits.
+- * @pm_block: power-management blocked.
+  * @list: linked list.
+  * @mgmt_rx_reg: registered rx mgmt frame types.
+  * @mbss: Multiple BSS type, set if not first AP (not relevant for P2P).
+@@ -177,7 +176,6 @@ struct brcmf_cfg80211_vif {
+ 	struct wireless_dev wdev;
+ 	struct brcmf_cfg80211_profile profile;
+ 	unsigned long sme_state;
+-	bool pm_block;
+ 	struct vif_saved_ie saved_ie;
+ 	struct list_head list;
+ 	u16 mgmt_rx_reg;
+@@ -388,8 +386,7 @@ s32 brcmf_cfg80211_down(struct net_devic
+ enum nl80211_iftype brcmf_cfg80211_get_iftype(struct brcmf_if *ifp);
+ 
+ struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
+-					   enum nl80211_iftype type,
+-					   bool pm_block);
++					   enum nl80211_iftype type);
+ void brcmf_free_vif(struct brcmf_cfg80211_vif *vif);
+ 
+ s32 brcmf_vif_set_mgmt_ie(struct brcmf_cfg80211_vif *vif, s32 pktflag,
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
+@@ -2074,8 +2074,7 @@ static struct wireless_dev *brcmf_p2p_cr
+ 	if (p2p->bss_idx[P2PAPI_BSSCFG_DEVICE].vif)
+ 		return ERR_PTR(-ENOSPC);
+ 
+-	p2p_vif = brcmf_alloc_vif(p2p->cfg, NL80211_IFTYPE_P2P_DEVICE,
+-				  false);
++	p2p_vif = brcmf_alloc_vif(p2p->cfg, NL80211_IFTYPE_P2P_DEVICE);
+ 	if (IS_ERR(p2p_vif)) {
+ 		brcmf_err("could not create discovery vif\n");
+ 		return (struct wireless_dev *)p2p_vif;
+@@ -2175,7 +2174,7 @@ struct wireless_dev *brcmf_p2p_add_vif(s
+ 		return ERR_PTR(-EOPNOTSUPP);
+ 	}
+ 
+-	vif = brcmf_alloc_vif(cfg, type, false);
++	vif = brcmf_alloc_vif(cfg, type);
+ 	if (IS_ERR(vif))
+ 		return (struct wireless_dev *)vif;
+ 	brcmf_cfg80211_arm_vif_event(cfg, vif);

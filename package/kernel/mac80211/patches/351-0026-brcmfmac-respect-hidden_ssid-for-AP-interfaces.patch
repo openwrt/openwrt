@@ -1,0 +1,43 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 6 Jul 2016 12:22:54 +0200
+Subject: [PATCH] brcmfmac: respect hidden_ssid for AP interfaces
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This was succesfully tested with 4366B1. A small workaround is needed
+for the main interface otherwise it would stuck at the hidden state.
+
+Signed-off-by: RafaÅ MiÅecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -4586,6 +4586,15 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+ 			brcmf_err("SET SSID error (%d)\n", err);
+ 			goto exit;
+ 		}
++
++		if (settings->hidden_ssid) {
++			err = brcmf_fil_iovar_int_set(ifp, "closednet", 1);
++			if (err) {
++				brcmf_err("closednet error (%d)\n", err);
++				goto exit;
++			}
++		}
++
+ 		brcmf_dbg(TRACE, "AP mode configuration complete\n");
+ 	} else if (dev_role == NL80211_IFTYPE_P2P_GO) {
+ 		err = brcmf_fil_iovar_int_set(ifp, "chanspec", chanspec);
+@@ -4644,6 +4653,10 @@ static int brcmf_cfg80211_stop_ap(struct
+ 			return err;
+ 		}
+ 
++		/* First BSS doesn't get a full reset */
++		if (ifp->bsscfgidx == 0)
++			brcmf_fil_iovar_int_set(ifp, "closednet", 0);
++
+ 		memset(&join_params, 0, sizeof(join_params));
+ 		err = brcmf_fil_cmd_data_set(ifp, BRCMF_C_SET_SSID,
+ 					     &join_params, sizeof(join_params));

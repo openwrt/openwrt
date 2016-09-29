@@ -45,7 +45,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -711,6 +711,10 @@
+@@ -711,6 +711,10 @@ config I2C_RK3X
  	  This driver can also be built as a module. If so, the module will
  	  be called i2c-rk3x.
  
@@ -58,7 +58,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	help
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -66,6 +66,7 @@
+@@ -66,6 +66,7 @@ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
  obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
  obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
  obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o

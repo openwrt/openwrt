@@ -1,0 +1,37 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 7 Jun 2016 08:20:21 +0200
+Subject: [PATCH] brcmfmac: include required headers in cfg80211.h
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Without this including cfg80211.h in a wrong order could result in:
+
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h:122:24: error: array type has incomplete element type
+  struct brcmf_wsec_key key[BRCMF_MAX_DEFAULT_KEYS];
+                        ^
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h:291:24: error: field âp2pâ has incomplete type
+  struct brcmf_p2p_info p2p;
+                        ^
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h:297:27: error: field âpmk_listâ has incomplete type
+  struct brcmf_pmk_list_le pmk_list;
+                           ^
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h:317:28: error: field âassoclistâ has incomplete type
+  struct brcmf_assoclist_le assoclist;
+
+Signed-off-by: RafaÅ MiÅecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
+@@ -20,6 +20,9 @@
+ /* for brcmu_d11inf */
+ #include <brcmu_d11.h>
+ 
++#include "fwil_types.h"
++#include "p2p.h"
++
+ #define WL_NUM_SCAN_MAX			10
+ #define WL_TLV_INFO_MAX			1024
+ #define WL_BSS_INFO_MAX			2048

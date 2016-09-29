@@ -1,0 +1,38 @@
+From 2f0e56fa37cce60a5ac5d451bcadec51cd711436 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 27 Sep 2016 12:12:24 +0200
+Subject: [PATCH] brcmfmac: replace WARNING on timeout with a simple error
+ message
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Even with timeout increased to 950 ms we get WARNINGs from time to time.
+It mostly happens on A-MPDU stalls (e.g. when station goes out of
+range). It may take up to 5-10 secods for the firmware to recover and
+for that time it doesn't process packets.
+
+It's still useful to have a message on time out as it may indicate some
+firmware problem and incorrect key update. Raising a WARNING however
+wasn't really that necessary, it doesn't point to any driver bug anymore
+and backtrace wasn't much useful.
+
+Signed-off-by: RafaÅ MiÅecki <rafal@milecki.pl>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -1155,7 +1155,8 @@ int brcmf_netdev_wait_pend8021x(struct b
+ 				 !brcmf_get_pend_8021x_cnt(ifp),
+ 				 MAX_WAIT_FOR_8021X_TX);
+ 
+-	WARN_ON(!err);
++	if (!err)
++		brcmf_err("Timed out waiting for no pending 802.1x packets\n");
+ 
+ 	return !err;
+ }

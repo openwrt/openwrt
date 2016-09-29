@@ -1,0 +1,51 @@
+From bccf3ffc8c6d8e0251a15541bb4d12b423c4f729 Mon Sep 17 00:00:00 2001
+From: Ismael Luceno <ismael@iodev.co.uk>
+Date: Mon, 22 Aug 2016 19:40:07 -0300
+Subject: [PATCH] brcmfmac: Add USB ID for Cisco Linksys AE1200
+
+The AE1200 comes with different revisions of the BCM43235 chipset,
+but all have the same USB ID. Only revision 3 can be supported.
+
+Signed-off-by: Ismael Luceno <ismael@iodev.co.uk>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c        | 4 ++++
+ drivers/net/wireless/broadcom/brcm80211/include/brcm_hw_ids.h | 2 ++
+ 2 files changed, 6 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
+@@ -1456,11 +1456,15 @@ static int brcmf_usb_reset_resume(struct
+ #define BRCMF_USB_DEVICE(dev_id)	\
+ 	{ USB_DEVICE(BRCM_USB_VENDOR_ID_BROADCOM, dev_id) }
+ 
++#define LINKSYS_USB_DEVICE(dev_id)	\
++	{ USB_DEVICE(BRCM_USB_VENDOR_ID_LINKSYS, dev_id) }
++
+ static struct usb_device_id brcmf_usb_devid_table[] = {
+ 	BRCMF_USB_DEVICE(BRCM_USB_43143_DEVICE_ID),
+ 	BRCMF_USB_DEVICE(BRCM_USB_43236_DEVICE_ID),
+ 	BRCMF_USB_DEVICE(BRCM_USB_43242_DEVICE_ID),
+ 	BRCMF_USB_DEVICE(BRCM_USB_43569_DEVICE_ID),
++	LINKSYS_USB_DEVICE(BRCM_USB_43235_LINKSYS_DEVICE_ID),
+ 	{ USB_DEVICE(BRCM_USB_VENDOR_ID_LG, BRCM_USB_43242_LG_DEVICE_ID) },
+ 	/* special entry for device with firmware loaded and running */
+ 	BRCMF_USB_DEVICE(BRCM_USB_BCMFW_DEVICE_ID),
+--- a/drivers/net/wireless/broadcom/brcm80211/include/brcm_hw_ids.h
++++ b/drivers/net/wireless/broadcom/brcm80211/include/brcm_hw_ids.h
+@@ -22,6 +22,7 @@
+ 
+ #define BRCM_USB_VENDOR_ID_BROADCOM	0x0a5c
+ #define BRCM_USB_VENDOR_ID_LG		0x043e
++#define BRCM_USB_VENDOR_ID_LINKSYS	0x13b1
+ #define BRCM_PCIE_VENDOR_ID_BROADCOM	PCI_VENDOR_ID_BROADCOM
+ 
+ /* Chipcommon Core Chip IDs */
+@@ -56,6 +57,7 @@
+ 
+ /* USB Device IDs */
+ #define BRCM_USB_43143_DEVICE_ID	0xbd1e
++#define BRCM_USB_43235_LINKSYS_DEVICE_ID	0x0039
+ #define BRCM_USB_43236_DEVICE_ID	0xbd17
+ #define BRCM_USB_43242_DEVICE_ID	0xbd1f
+ #define BRCM_USB_43242_LG_DEVICE_ID	0x3101

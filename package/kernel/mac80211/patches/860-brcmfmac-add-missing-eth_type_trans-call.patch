@@ -1,0 +1,26 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Subject: [PATCH] brcmfmac: add missing eth_type_trans call
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+There are 2 protocols supported by brcmfmac and msgbuf one was missing a
+proper skb setup before passing it to the netif. This was triggering
+"NULL pointer dereference".
+
+Fixes: 9c349892ccc9 ("brcmfmac: revise handling events in receive path")
+Signed-off-by: RafaÅ MiÅecki <zajec5@gmail.com>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/msgbuf.c
+@@ -1157,6 +1157,9 @@ brcmf_msgbuf_process_rx_complete(struct
+ 		brcmu_pkt_buf_free_skb(skb);
+ 		return;
+ 	}
++
++	skb->protocol = eth_type_trans(skb, ifp->ndev);
++
+ 	brcmf_netif_rx(ifp, skb);
+ }
+ 

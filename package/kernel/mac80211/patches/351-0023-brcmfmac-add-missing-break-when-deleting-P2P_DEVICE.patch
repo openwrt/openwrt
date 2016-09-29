@@ -1,0 +1,27 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sun, 19 Jun 2016 01:55:57 +0200
+Subject: [PATCH] brcmfmac: add missing break when deleting P2P_DEVICE
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We obviously don't want to fall through in that switch. With this change
+1) We wait for event (triggered by p2p_disc) as expected
+2) We remove interface manually on timeout
+3) We return 0 on success instead of -ENOTSUPP
+
+Signed-off-by: RafaÅ MiÅecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/p2p.c
+@@ -2263,6 +2263,8 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
+ 			return 0;
+ 		brcmf_p2p_cancel_remain_on_channel(vif->ifp);
+ 		brcmf_p2p_deinit_discovery(p2p);
++		break;
++
+ 	default:
+ 		return -ENOTSUPP;
+ 	}

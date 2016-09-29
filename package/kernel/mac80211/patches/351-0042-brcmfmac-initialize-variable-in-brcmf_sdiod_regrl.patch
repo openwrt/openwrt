@@ -1,0 +1,28 @@
+From 26305d3d7298d1ddf8fd4ce95a382aa90534f0a3 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Mon, 19 Sep 2016 12:09:54 +0100
+Subject: [PATCH] brcmfmac: initialize variable in brcmf_sdiod_regrl()
+
+In case of an error the variable returned is uninitialized. The caller
+will probably check the error code before using it, but better assure
+it is set to zero.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcmsdh.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcmsdh.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcmsdh.c
+@@ -416,7 +416,7 @@ u8 brcmf_sdiod_regrb(struct brcmf_sdio_d
+ 
+ u32 brcmf_sdiod_regrl(struct brcmf_sdio_dev *sdiodev, u32 addr, int *ret)
+ {
+-	u32 data;
++	u32 data = 0;
+ 	int retval;
+ 
+ 	brcmf_dbg(SDIO, "addr:0x%08x\n", addr);

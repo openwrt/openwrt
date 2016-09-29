@@ -1,0 +1,51 @@
+From 7703773ef1d85b40433902a8da20167331597e4a Mon Sep 17 00:00:00 2001
+From: Nicolas Iooss <nicolas.iooss_linux@m4x.org>
+Date: Tue, 23 Aug 2016 11:37:17 +0200
+Subject: [PATCH] brcmfmac: fix pmksa->bssid usage
+
+The struct cfg80211_pmksa defines its bssid field as:
+
+    const u8 *bssid;
+
+contrary to struct brcmf_pmksa, which uses:
+
+    u8 bssid[ETH_ALEN];
+
+Therefore in brcmf_cfg80211_del_pmksa(), &pmksa->bssid takes the address
+of this field (of type u8**), not the one of its content (which would be
+u8*).  Remove the & operator to make brcmf_dbg("%pM") and memcmp()
+behave as expected.
+
+This bug have been found using a custom static checker (which checks the
+usage of %p... attributes at build time).  It has been introduced in
+commit 6c404f34f2bd ("brcmfmac: Cleanup pmksa cache handling code"),
+which replaced pmksa->bssid by &pmksa->bssid while refactoring the code,
+without modifying struct cfg80211_pmksa definition.
+
+Replace &pmk[i].bssid with pmk[i].bssid too to make the code clearer,
+this change does not affect the semantic.
+
+Fixes: 6c404f34f2bd ("brcmfmac: Cleanup pmksa cache handling code")
+Cc: stable@vger.kernel.org
+Signed-off-by: Nicolas Iooss <nicolas.iooss_linux@m4x.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -3804,11 +3804,11 @@ brcmf_cfg80211_del_pmksa(struct wiphy *w
+ 	if (!check_vif_up(ifp->vif))
+ 		return -EIO;
+ 
+-	brcmf_dbg(CONN, "del_pmksa - PMK bssid = %pM\n", &pmksa->bssid);
++	brcmf_dbg(CONN, "del_pmksa - PMK bssid = %pM\n", pmksa->bssid);
+ 
+ 	npmk = le32_to_cpu(cfg->pmk_list.npmk);
+ 	for (i = 0; i < npmk; i++)
+-		if (!memcmp(&pmksa->bssid, &pmk[i].bssid, ETH_ALEN))
++		if (!memcmp(pmksa->bssid, pmk[i].bssid, ETH_ALEN))
+ 			break;
+ 
+ 	if ((npmk > 0) && (i < npmk)) {
