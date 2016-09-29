@@ -1,0 +1,53 @@
+From e3ebcd7428c142fb7b74ded9a624cddfb403d2c5 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 19 Aug 2016 17:46:34 -0400
+Subject: [PATCH] rtl8xxxu: Use flag to indicate whether device has TX report
+ timer support
+
+Use a fileops flag to indicate whether the device has TX report timer
+support. This will make it easier to include future devices such as
+8188eu to use the TX report timer.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h       | 1 +
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c | 1 +
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c  | 5 ++---
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
+@@ -1341,6 +1341,7 @@ struct rtl8xxxu_fileops {
+ 	char tx_desc_size;
+ 	char rx_desc_size;
+ 	char has_s0s1;
++	char has_tx_report;
+ 	u32 adda_1t_init;
+ 	u32 adda_1t_path_on;
+ 	u32 adda_2t_path_on_a;
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723b.c
+@@ -1666,6 +1666,7 @@ struct rtl8xxxu_fileops rtl8723bu_fops =
+ 	.tx_desc_size = sizeof(struct rtl8xxxu_txdesc40),
+ 	.rx_desc_size = sizeof(struct rtl8xxxu_rxdesc24),
+ 	.has_s0s1 = 1,
++	.has_tx_report = 1,
+ 	.adda_1t_init = 0x01c00014,
+ 	.adda_1t_path_on = 0x01c00014,
+ 	.adda_2t_path_on_a = 0x01c00014,
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -4000,10 +4000,9 @@ static int rtl8xxxu_init_device(struct i
+ 		priv->fops->usb_quirks(priv);
+ 
+ 		/*
+-		 * Presumably this is for 8188EU as well
+-		 * Enable TX report and TX report timer
++		 * Enable TX report and TX report timer for 8723bu/8188eu/...
+ 		 */
+-		if (priv->rtl_chip == RTL8723B) {
++		if (priv->fops->has_tx_report) {
+ 			val8 = rtl8xxxu_read8(priv, REG_TX_REPORT_CTRL);
+ 			val8 |= TX_REPORT_CTRL_TIMER_ENABLE;
+ 			rtl8xxxu_write8(priv, REG_TX_REPORT_CTRL, val8);

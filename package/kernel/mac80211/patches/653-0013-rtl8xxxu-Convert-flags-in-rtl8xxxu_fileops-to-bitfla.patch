@@ -1,0 +1,26 @@
+From ee675cc30e07cc925489e9663539e69873b04100 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 19 Aug 2016 17:46:35 -0400
+Subject: [PATCH] rtl8xxxu: Convert flags in rtl8xxxu_fileops to bitflags
+
+This leaves space for a few more flags within the same space.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
+@@ -1340,8 +1340,8 @@ struct rtl8xxxu_fileops {
+ 	int rx_agg_buf_size;
+ 	char tx_desc_size;
+ 	char rx_desc_size;
+-	char has_s0s1;
+-	char has_tx_report;
++	u8 has_s0s1:1;
++	u8 has_tx_report:1;
+ 	u32 adda_1t_init;
+ 	u32 adda_1t_path_on;
+ 	u32 adda_2t_path_on_a;

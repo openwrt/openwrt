@@ -1,6 +1,6 @@
-From da21652f72bbdcec7dd8fe61ae32f28608f90c85 Mon Sep 17 00:00:00 2001
+From 2b9c9f52dc03b298c845def62ea890a2d77e9f21 Mon Sep 17 00:00:00 2001
 From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Date: Thu, 26 May 2016 17:52:19 +0300
+Date: Thu, 9 Jun 2016 14:38:49 -0400
 Subject: [PATCH] rtl8xxxu: tuse %*ph to dump buffers
 
 Use %*ph specifier to dump small buffers in hex format instead of doing this
@@ -8,6 +8,7 @@ byte-by-byte.
 
 Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192c.c | 9 ++-------
  drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192e.c | 9 ++-------

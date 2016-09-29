@@ -1,0 +1,46 @@
+From be49b1f111c76ce20a60a90587e2b8e8ab809a06 Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Fri, 19 Aug 2016 17:46:37 -0400
+Subject: [PATCH] rtl8xxxu: Simplify calculating of hw value used for setting
+ TX rate
+
+Calculating the value in one place rather than using one calculation
+in one place and a different one for management frames in another
+location makes little sense.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -4848,7 +4848,8 @@ static void rtl8xxxu_tx(struct ieee80211
+ 		}
+ 	}
+ 
+-	if (rate_flag & IEEE80211_TX_RC_MCS)
++	if (rate_flag & IEEE80211_TX_RC_MCS &&
++	    !ieee80211_is_mgmt(hdr->frame_control))
+ 		rate = tx_info->control.rates[0].idx + DESC_RATE_MCS0;
+ 	else
+ 		rate = tx_rate->hw_value;
+@@ -4869,7 +4870,7 @@ static void rtl8xxxu_tx(struct ieee80211
+ 			tx_desc->txdw1 |= cpu_to_le32(TXDESC32_AGG_BREAK);
+ 
+ 		if (ieee80211_is_mgmt(hdr->frame_control)) {
+-			tx_desc->txdw5 = cpu_to_le32(tx_rate->hw_value);
++			tx_desc->txdw5 = cpu_to_le32(rate);
+ 			tx_desc->txdw4 |=
+ 				cpu_to_le32(TXDESC32_USE_DRIVER_RATE);
+ 			tx_desc->txdw5 |=
+@@ -4923,7 +4924,7 @@ static void rtl8xxxu_tx(struct ieee80211
+ 			tx_desc40->txdw2 |= cpu_to_le32(TXDESC40_AGG_BREAK);
+ 
+ 		if (ieee80211_is_mgmt(hdr->frame_control)) {
+-			tx_desc40->txdw4 = cpu_to_le32(tx_rate->hw_value);
++			tx_desc40->txdw4 = cpu_to_le32(rate);
+ 			tx_desc40->txdw3 |=
+ 				cpu_to_le32(TXDESC40_USE_DRIVER_RATE);
+ 			tx_desc40->txdw4 |=

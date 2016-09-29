@@ -1,0 +1,90 @@
+From 91dcbb7175317da7caafc3b05b002addd42cdabd Mon Sep 17 00:00:00 2001
+From: Jes Sorensen <Jes.Sorensen@redhat.com>
+Date: Mon, 27 Jun 2016 12:32:06 -0400
+Subject: [PATCH] rtl8xxxu: Enable aggregation for rtl8723au
+
+Implement rtl8xxxu_gen1_init_aggregation(). Aggregation should be the
+same for all gen1 parts. We may want to allow for tuning parameters in
+the fileopes struct. For now this is based allocating 16KB RX buffers,
+leaving 16000 bytes for actual packets, and the rest for the skb
+overhead.
+
+Signed-off-by: Jes Sorensen <Jes.Sorensen@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h   |  1 +
+ .../net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723a.c |  2 ++
+ .../net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c  | 34 ++++++++++++++++++++++
+ 3 files changed, 37 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
+@@ -1412,6 +1412,7 @@ void rtl8xxxu_gen1_report_connect(struct
+ 				  u8 macid, bool connect);
+ void rtl8xxxu_gen2_report_connect(struct rtl8xxxu_priv *priv,
+ 				  u8 macid, bool connect);
++void rtl8xxxu_gen1_init_aggregation(struct rtl8xxxu_priv *priv);
+ void rtl8xxxu_gen1_enable_rf(struct rtl8xxxu_priv *priv);
+ void rtl8xxxu_gen1_disable_rf(struct rtl8xxxu_priv *priv);
+ void rtl8xxxu_gen2_disable_rf(struct rtl8xxxu_priv *priv);
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723a.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8723a.c
+@@ -377,6 +377,7 @@ struct rtl8xxxu_fileops rtl8723au_fops =
+ 	.phy_iq_calibrate = rtl8xxxu_gen1_phy_iq_calibrate,
+ 	.config_channel = rtl8xxxu_gen1_config_channel,
+ 	.parse_rx_desc = rtl8xxxu_parse_rxdesc16,
++	.init_aggregation = rtl8xxxu_gen1_init_aggregation,
+ 	.enable_rf = rtl8xxxu_gen1_enable_rf,
+ 	.disable_rf = rtl8xxxu_gen1_disable_rf,
+ 	.usb_quirks = rtl8xxxu_gen1_usb_quirks,
+@@ -384,6 +385,7 @@ struct rtl8xxxu_fileops rtl8723au_fops =
+ 	.update_rate_mask = rtl8xxxu_update_rate_mask,
+ 	.report_connect = rtl8xxxu_gen1_report_connect,
+ 	.writeN_block_size = 1024,
++	.rx_agg_buf_size = 16000,
+ 	.tx_desc_size = sizeof(struct rtl8xxxu_txdesc32),
+ 	.rx_desc_size = sizeof(struct rtl8xxxu_rxdesc16),
+ 	.adda_1t_init = 0x0b1b25a0,
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -4405,6 +4405,40 @@ void rtl8xxxu_gen2_report_connect(struct
+ 	rtl8xxxu_gen2_h2c_cmd(priv, &h2c, sizeof(h2c.media_status_rpt));
+ }
+ 
++void rtl8xxxu_gen1_init_aggregation(struct rtl8xxxu_priv *priv)
++{
++	u8 agg_ctrl, usb_spec, page_thresh;
++
++	usb_spec = rtl8xxxu_read8(priv, REG_USB_SPECIAL_OPTION);
++	usb_spec &= ~USB_SPEC_USB_AGG_ENABLE;
++
++	agg_ctrl = rtl8xxxu_read8(priv, REG_TRXDMA_CTRL);
++	agg_ctrl &= ~TRXDMA_CTRL_RXDMA_AGG_EN;
++
++	agg_ctrl |= TRXDMA_CTRL_RXDMA_AGG_EN;
++
++	rtl8xxxu_write8(priv, REG_TRXDMA_CTRL, agg_ctrl);
++	rtl8xxxu_write8(priv, REG_USB_SPECIAL_OPTION, usb_spec);
++
++	/*
++	 * The number of packets we can take looks to be buffer size / 512
++	 * which matches the 512 byte rounding we have to do when de-muxing
++	 * the packets.
++	 *
++	 * Sample numbers from the vendor driver:
++	 * USB High-Speed mode values:
++	 *   RxAggBlockCount = 8 : 512 byte unit
++	 *   RxAggBlockTimeout = 6
++	 *   RxAggPageCount = 48 : 128 byte unit
++	 *   RxAggPageTimeout = 4 or 6 (absolute time 34ms/(2^6))
++	 */
++
++	page_thresh = (priv->fops->rx_agg_buf_size / 512);
++	rtl8xxxu_write8(priv, REG_RXDMA_AGG_PG_TH, page_thresh);
++	rtl8xxxu_write8(priv, REG_USB_DMA_AGG_TO, 4);
++	priv->rx_buf_aggregation = 1;
++}
++
+ static void rtl8xxxu_set_basic_rates(struct rtl8xxxu_priv *priv, u32 rate_cfg)
+ {
+ 	u32 val32;
