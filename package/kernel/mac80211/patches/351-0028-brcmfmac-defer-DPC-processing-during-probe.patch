@@ -1,0 +1,42 @@
+From fd3ed33f51c2a586412d35b4f64803f019ab589f Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Fri, 15 Jul 2016 12:39:13 +0200
+Subject: [PATCH] brcmfmac: defer DPC processing during probe
+
+The sdio dpc starts processing when in SDIOD_STATE_DATA. This state was
+entered right after firmware download. This patch moves that transition
+just before enabling sdio interrupt handling thus avoiding watchdog
+expiry which would put the bus to sleep while probing.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -3304,10 +3304,6 @@ static int brcmf_sdio_download_firmware(
+ 		goto err;
+ 	}
+ 
+-	/* Allow full data communication using DPC from now on. */
+-	brcmf_sdiod_change_state(bus->sdiodev, BRCMF_SDIOD_DATA);
+-	bcmerror = 0;
+-
+ err:
+ 	brcmf_sdio_clkctl(bus, CLK_SDONLY, false);
+ 	sdio_release_host(bus->sdiodev->func[1]);
+@@ -4045,6 +4041,9 @@ static void brcmf_sdio_firmware_callback
+ 	}
+ 
+ 	if (err == 0) {
++		/* Allow full data communication using DPC from now on. */
++		brcmf_sdiod_change_state(bus->sdiodev, BRCMF_SDIOD_DATA);
++
+ 		err = brcmf_sdiod_intr_register(sdiodev);
+ 		if (err != 0)
+ 			brcmf_err("intr register failed:%d\n", err);

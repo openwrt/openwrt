@@ -1,0 +1,60 @@
+From 2df86ad959c9d1cdbeb2f23a0801857731156692 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 23 Sep 2016 15:27:46 +0200
+Subject: [PATCH] brcmfmac: drop unused fields from struct brcmf_pub
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+They seem to be there from the first day. We calculate these values but
+never use them.
+
+Signed-off-by: RafaÅ MiÅecki <rafal@milecki.pl>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c     | 3 ---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h     | 4 ----
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c | 2 --
+ 3 files changed, 9 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -508,9 +508,6 @@ int brcmf_net_attach(struct brcmf_if *if
+ 	ndev->hard_header_len += drvr->hdrlen;
+ 	ndev->ethtool_ops = &brcmf_ethtool_ops;
+ 
+-	drvr->rxsz = ndev->mtu + ndev->hard_header_len +
+-			      drvr->hdrlen;
+-
+ 	/* set the mac address */
+ 	memcpy(ndev->dev_addr, ifp->mac_addr, ETH_ALEN);
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
+@@ -112,15 +112,11 @@ struct brcmf_pub {
+ 
+ 	/* Internal brcmf items */
+ 	uint hdrlen;		/* Total BRCMF header length (proto + bus) */
+-	uint rxsz;		/* Rx buffer size bus module should use */
+ 
+ 	/* Dongle media info */
+ 	char fwver[BRCMF_DRIVER_FIRMWARE_VERSION_LEN];
+ 	u8 mac[ETH_ALEN];		/* MAC address obtained from dongle */
+ 
+-	/* Multicast data packets sent to dongle */
+-	unsigned long tx_multicast;
+-
+ 	struct mac_address addresses[BRCMF_MAX_IFS];
+ 
+ 	struct brcmf_if *iflist[BRCMF_MAX_IFS];
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
+@@ -2104,8 +2104,6 @@ int brcmf_fws_process_skb(struct brcmf_i
+ 	if (!skb->priority)
+ 		skb->priority = cfg80211_classify8021d(skb, NULL);
+ 
+-	drvr->tx_multicast += !!multicast;
+-
+ 	if (fws->avoid_queueing) {
+ 		rc = brcmf_proto_txdata(drvr, ifp->ifidx, 0, skb);
+ 		if (rc < 0)

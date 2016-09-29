@@ -1,0 +1,34 @@
+From 938f89e50a41c2d56710805fb019ad7618cef84b Mon Sep 17 00:00:00 2001
+From: Wolfram Sang <wsa-dev@sang-engineering.com>
+Date: Thu, 11 Aug 2016 23:05:31 +0200
+Subject: [PATCH] net: wireless: broadcom: brcm80211: brcmfmac: usb: don't
+ print error when allocating urb fails
+
+kmalloc will print enough information in case of failure.
+
+Signed-off-by: Wolfram Sang <wsa-dev@sang-engineering.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
+@@ -1099,15 +1099,11 @@ struct brcmf_usbdev *brcmf_usb_attach(st
+ 	devinfo->tx_freecount = ntxq;
+ 
+ 	devinfo->ctl_urb = usb_alloc_urb(0, GFP_ATOMIC);
+-	if (!devinfo->ctl_urb) {
+-		brcmf_err("usb_alloc_urb (ctl) failed\n");
++	if (!devinfo->ctl_urb)
+ 		goto error;
+-	}
+ 	devinfo->bulk_urb = usb_alloc_urb(0, GFP_ATOMIC);
+-	if (!devinfo->bulk_urb) {
+-		brcmf_err("usb_alloc_urb (bulk) failed\n");
++	if (!devinfo->bulk_urb)
+ 		goto error;
+-	}
+ 
+ 	return &devinfo->bus_pub;
+ 

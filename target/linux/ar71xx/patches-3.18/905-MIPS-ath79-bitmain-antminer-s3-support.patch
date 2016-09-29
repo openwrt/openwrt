@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -66,6 +66,16 @@ config ATH79_MACH_ANTMINER_S1
+@@ -75,6 +75,16 @@ config ATH79_MACH_ANTMINER_S1
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
  
@@ -19,7 +19,7 @@
  	select SOC_AR724X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -43,6 +43,7 @@ obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach
+@@ -44,6 +44,7 @@ obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach
  obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
  obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o
  obj-$(CONFIG_ATH79_MACH_ANTMINER_S1)+= mach-antminer-s1.o
@@ -29,7 +29,7 @@
  obj-$(CONFIG_ATH79_MACH_AP132)		+= mach-ap132.o
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -22,6 +22,7 @@ enum ath79_mach_type {
+@@ -23,6 +23,7 @@ enum ath79_mach_type {
  	ATH79_MACH_ALL0305,		/* Allnet ALL0305 */
  	ATH79_MACH_ALL0315N,		/* Allnet ALL0315N */
  	ATH79_MACH_ANTMINER_S1,	/* Antminer-S1 */

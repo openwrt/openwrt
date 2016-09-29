@@ -1,0 +1,53 @@
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Fri, 15 Jul 2016 12:16:12 +0200
+Subject: [PATCH] brcmfmac: restore stopping netdev queue when bus clogs up
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When the host-interface bus has hard time handling transmit packets
+it informs higher layer about this and it would stop the netdev
+queue when needed. However, since commit 9cd18359d31e ("brcmfmac:
+Make FWS queueing configurable.") this was broken. With this patch
+the behaviour is restored.
+
+Cc: stable@vger.kernel.org # v4.5, v4.6, v4.7
+Fixes: 9cd18359d31e ("brcmfmac: Make FWS queueing configurable.")
+Tested-by: Per FÃ¶rlin <per.forlin@gmail.com>
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fwsignal.c
+@@ -2469,10 +2469,22 @@ void brcmf_fws_bustxfail(struct brcmf_fw
+ void brcmf_fws_bus_blocked(struct brcmf_pub *drvr, bool flow_blocked)
+ {
+ 	struct brcmf_fws_info *fws = drvr->fws;
++	struct brcmf_if *ifp;
++	int i;
+ 
+-	fws->bus_flow_blocked = flow_blocked;
+-	if (!flow_blocked)
+-		brcmf_fws_schedule_deq(fws);
+-	else
+-		fws->stats.bus_flow_block++;
++	if (fws->avoid_queueing) {
++		for (i = 0; i < BRCMF_MAX_IFS; i++) {
++			ifp = drvr->iflist[i];
++			if (!ifp || !ifp->ndev)
++				continue;
++			brcmf_txflowblock_if(ifp, BRCMF_NETIF_STOP_REASON_FLOW,
++					     flow_blocked);
++		}
++	} else {
++		fws->bus_flow_blocked = flow_blocked;
++		if (!flow_blocked)
++			brcmf_fws_schedule_deq(fws);
++		else
++			fws->stats.bus_flow_block++;
++	}
+ }

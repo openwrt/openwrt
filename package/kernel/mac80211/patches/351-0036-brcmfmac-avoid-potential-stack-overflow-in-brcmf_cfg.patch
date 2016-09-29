@@ -1,0 +1,34 @@
+From ded89912156b1a47d940a0c954c43afbabd0c42c Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Mon, 5 Sep 2016 10:45:47 +0100
+Subject: [PATCH] brcmfmac: avoid potential stack overflow in
+ brcmf_cfg80211_start_ap()
+
+User-space can choose to omit NL80211_ATTR_SSID and only provide raw
+IE TLV data. When doing so it can provide SSID IE with length exceeding
+the allowed size. The driver further processes this IE copying it
+into a local variable without checking the length. Hence stack can be
+corrupted and used as exploit.
+
+Cc: stable@vger.kernel.org # v4.7
+Reported-by: Daxing Guo <freener.gdx@gmail.com>
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -4447,7 +4447,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+ 				(u8 *)&settings->beacon.head[ie_offset],
+ 				settings->beacon.head_len - ie_offset,
+ 				WLAN_EID_SSID);
+-		if (!ssid_ie)
++		if (!ssid_ie || ssid_ie->len > IEEE80211_MAX_SSID_LEN)
+ 			return -EINVAL;
+ 
+ 		memcpy(ssid_le.SSID, ssid_ie->data, ssid_ie->len);

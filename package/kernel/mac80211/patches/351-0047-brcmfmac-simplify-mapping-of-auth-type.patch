@@ -1,0 +1,39 @@
+From 92c313604711a0976def79dabb9e8da3cc2cc780 Mon Sep 17 00:00:00 2001
+From: Hante Meuleman <hante.meuleman@broadcom.com>
+Date: Mon, 19 Sep 2016 12:09:59 +0100
+Subject: [PATCH] brcmfmac: simplify mapping of auth type
+
+The 802.11 standard only has four valid auth type configurations of which
+our firmware only supports two, ie. Open System and Shared Key. Simplify
+the mapping falling back to automatic for other types specified by
+user-space.
+
+Reviewed-by: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Signed-off-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -1577,15 +1577,9 @@ static s32 brcmf_set_auth_type(struct ne
+ 		val = 1;
+ 		brcmf_dbg(CONN, "shared key\n");
+ 		break;
+-	case NL80211_AUTHTYPE_AUTOMATIC:
+-		val = 2;
+-		brcmf_dbg(CONN, "automatic\n");
+-		break;
+-	case NL80211_AUTHTYPE_NETWORK_EAP:
+-		brcmf_dbg(CONN, "network eap\n");
+ 	default:
+ 		val = 2;
+-		brcmf_err("invalid auth type (%d)\n", sme->auth_type);
++		brcmf_dbg(CONN, "automatic, auth type (%d)\n", sme->auth_type);
+ 		break;
+ 	}
+ 

@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -21,6 +21,7 @@ enum ath79_mach_type {
+@@ -22,6 +22,7 @@ enum ath79_mach_type {
  	ATH79_MACH_ALL0258N,		/* Allnet ALL0258N */
  	ATH79_MACH_ALL0305,		/* Allnet ALL0305 */
  	ATH79_MACH_ALL0315N,		/* Allnet ALL0315N */
@@ -10,7 +10,7 @@
  	ATH79_MACH_AP121_MINI,		/* Atheros AP121-MINI reference board */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -56,6 +56,16 @@ config ATH79_MACH_ALL0315N
+@@ -65,6 +65,16 @@ config ATH79_MACH_ALL0315N
  	select ATH79_DEV_LEDS_GPIO
  	select ATH79_DEV_M25P80
  
@@ -29,7 +29,7 @@
  	select SOC_AR724X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -42,6 +42,7 @@ obj-$(CONFIG_ATH79_MACH_ALFA_AP96)	+= ma
+@@ -43,6 +43,7 @@ obj-$(CONFIG_ATH79_MACH_ALFA_AP96)	+= ma
  obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach-alfa-nx.o
  obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
  obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o

@@ -1,0 +1,26 @@
+From: Markus Elfring <elfring@users.sourceforge.net>
+Date: Fri, 18 Mar 2016 13:23:24 +1100
+Subject: [PATCH] brcmfmac: Delete unnecessary variable initialisation
+
+In brcmf_sdio_download_firmware(), bcmerror is set by the call to
+brcmf_sdio_download_code_file(), before it's checked in the following
+line.
+
+Signed-off-by: Markus Elfring <elfring@users.sourceforge.net>
+Acked-by: Arend van Spriel <arend@broadcom.com>
+[Rewrote commit message]
+Signed-off-by: Julian Calaby <julian.calaby@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -3258,7 +3258,7 @@ static int brcmf_sdio_download_firmware(
+ 					const struct firmware *fw,
+ 					void *nvram, u32 nvlen)
+ {
+-	int bcmerror = -EFAULT;
++	int bcmerror;
+ 	u32 rstvec;
+ 
+ 	sdio_claim_host(bus->sdiodev->func[1]);

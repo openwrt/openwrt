@@ -1,0 +1,38 @@
+From: Franky Lin <frankyl@broadcom.com>
+Date: Wed, 17 Feb 2016 11:26:56 +0100
+Subject: [PATCH] brcmfmac: check return for ARP ip setting iovar
+
+The return value of iovar set function should be saved and checked.
+
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Franky Lin <frankyl@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -1039,14 +1039,14 @@ static int brcmf_inetaddr_changed(struct
+ 				return NOTIFY_OK;
+ 			}
+ 			for (i = 0; i < ARPOL_MAX_ENTRIES; i++) {
+-				if (addr_table[i] != 0) {
+-					brcmf_fil_iovar_data_set(ifp,
+-						"arp_hostip", &addr_table[i],
+-						sizeof(addr_table[i]));
+-					if (ret)
+-						brcmf_err("add arp ip err %d\n",
+-							  ret);
+-				}
++				if (addr_table[i] == 0)
++					continue;
++				ret = brcmf_fil_iovar_data_set(ifp, "arp_hostip",
++							       &addr_table[i],
++							       sizeof(addr_table[i]));
++				if (ret)
++					brcmf_err("add arp ip err %d\n",
++						  ret);
+ 			}
+ 		}
+ 		break;

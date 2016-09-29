@@ -1,6 +1,6 @@
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -439,6 +439,12 @@
+@@ -439,6 +439,12 @@ config SPI_RT2880
  	help
  	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
  
@@ -15,7 +15,7 @@
  	depends on ARCH_S3C24XX
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -46,6 +46,7 @@
+@@ -46,6 +46,7 @@ obj-$(CONFIG_SPI_LM70_LLP)		+= spi-lm70l
  obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mpc512x-psc.o
  obj-$(CONFIG_SPI_MPC52xx_PSC)		+= spi-mpc52xx-psc.o
  obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52xx.o
@@ -25,7 +25,7 @@
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
 --- /dev/null
 +++ b/drivers/spi/spi-mt7621.c
-@@ -0,0 +1,391 @@
+@@ -0,0 +1,394 @@
 +/*
 + * spi-mt7621.c -- MediaTek MT7621 SPI controller driver
 + *
@@ -224,6 +224,9 @@
 +
 +		if (!buf)
 +			continue;
++
++		if (t->speed_hz < speed)
++			speed = t->speed_hz;
 +
 +		if (WARN_ON(len + rlen > 36)) {
 +			status = -EIO;

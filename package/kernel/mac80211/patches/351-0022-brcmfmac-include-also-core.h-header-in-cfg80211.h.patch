@@ -1,0 +1,33 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sat, 18 Jun 2016 18:49:38 +0200
+Subject: [PATCH] brcmfmac: include also core.h header in cfg80211.h
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This header provides two inline functions using struct brcmf_if so we
+need core.h to avoid:
+
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h: In function ândev_to_profâ:
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h:368:13: error: dereferencing pointer to incomplete type
+  return &ifp->vif->profile;
+             ^
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h: In function ândev_to_vifâ:
+drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h:374:12: error: dereferencing pointer to incomplete type
+  return ifp->vif;
+            ^
+
+Signed-off-by: RafaÅ MiÅecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
+@@ -20,6 +20,7 @@
+ /* for brcmu_d11inf */
+ #include <brcmu_d11.h>
+ 
++#include "core.h"
+ #include "fwil_types.h"
+ #include "p2p.h"
+ 
