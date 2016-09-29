@@ -287,3 +287,233 @@ define KernelPackage/sound_dummy/description
 endef
 
 $(eval $(call KernelPackage,sound-dummy))
+
+define KernelPackage/sound-hda-core
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Sound Core Support
+  KCONFIG:= \
+	CONFIG_SND_HDA_CORE \
+	CONFIG_SND_HDA_HWDEP=y \
+	CONFIG_SND_HDA_RECONFIG=n \
+	CONFIG_SND_HDA_INPUT_BEEP=n \
+	CONFIG_SND_HDA_PATCH_LOADER=n \
+	CONFIG_SND_HDA_GENERIC
+  FILES:= \
+	$(LINUX_DIR)/sound/hda/snd-hda-core.ko \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec.ko \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-generic.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-core snd-hda-codec snd-hda-codec-generic)
+  $(call AddDepends/sound,kmod-regmap)
+endef
+
+define KernelPackage/sound-hda-core/description
+ Kernel modules for HD Audio sound support
+endef
+
+$(eval $(call KernelPackage,sound-hda-core))
+
+define KernelPackage/sound-hda-codec-realtek
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:= HD Audio Realtek Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_REALTEK
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-realtek.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-realtek)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-realtek/description
+ Kernel modules for Intel HDA Realtek codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-realtek))
+
+define KernelPackage/sound-hda-codec-cmedia
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio C-Media Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_CMEDIA
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-cmedia.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-cmedia)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-cmedia/description
+ Kernel modules for HD Audio C-Media codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-cmedia))
+
+define KernelPackage/sound-hda-codec-analog
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Analog Devices Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_ANALOG
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-analog.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-analog)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-analog/description
+ Kernel modules for HD Audio Analog Devices codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-analog))
+
+define KernelPackage/sound-hda-codec-idt
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Sigmatel IDT Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_SIGMATEL
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-idt.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-idt)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-idt/description
+ Kernel modules for HD Audio Sigmatel IDT codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-idt))
+
+define KernelPackage/sound-hda-codec-si3054
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Silicon Labs 3054 Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_SI3054
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-si3054.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-si3054)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-si3054/description
+ Kernel modules for HD Audio Silicon Labs 3054 codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-si3054))
+
+define KernelPackage/sound-hda-codec-cirrus
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Cirrus Logic Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_CIRRUS
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-cirrus.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-cirrus)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-cirrus/description
+ Kernel modules for HD Audio Cirrus Logic codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-cirrus))
+
+define KernelPackage/sound-hda-codec-ca0110
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Creative CA0110 Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_CA0110
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-ca0110.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-ca0110)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-ca0110/description
+ Kernel modules for HD Audio Creative CA0110 codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-ca0110))
+
+define KernelPackage/sound-hda-codec-ca0132
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Creative CA0132 Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_CA0132 \
+	CONFIG_SND_HDA_CODEC_CA0132_DSP=n
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-ca0132.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-ca0132)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-ca0132/description
+ Kernel modules for HD Audio Creative CA0132 codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-ca0132))
+
+define KernelPackage/sound-hda-codec-conexant
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Conexant Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_CONEXANT
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-conexant.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-conexant)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-conexant/description
+ Kernel modules for HD Audio Conexant codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-conexant))
+
+define KernelPackage/sound-hda-codec-via
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Via Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_VIA
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-via.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-via)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-via/description
+ Kernel modules for HD Audio VIA codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-via))
+
+define KernelPackage/sound-hda-codec-hdmi
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio HDMI/DisplayPort Codec
+  KCONFIG:= \
+	CONFIG_SND_HDA_CODEC_HDMI
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-hdmi.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-codec-hdmi)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-codec-hdmi/description
+ Kernel modules for HD Audio HDMI codec support
+endef
+
+$(eval $(call KernelPackage,sound-hda-codec-hdmi))
+
+define KernelPackage/sound-hda-intel
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=HD Audio Intel Driver
+  KCONFIG:= \
+	CONFIG_SOUND_PCI \
+	CONFIG_SND_HDA_INTEL
+  FILES:= \
+	$(LINUX_DIR)/sound/pci/hda/snd-hda-intel.ko
+  AUTOLOAD:=$(call AutoProbe,snd-hda-intel)
+  $(call AddDepends/sound,kmod-sound-hda-core)
+endef
+
+define KernelPackage/sound-hda-intel/description
+ Kernel modules for HD Audio Intel driver support
+endef
+
+$(eval $(call KernelPackage,sound-hda-intel))
