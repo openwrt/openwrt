@@ -259,6 +259,13 @@ define Device/psg1208
 endef
 TARGET_DEVICES += psg1208
 
+define Device/psg1218
+  DTS := PSG1218
+  DEVICE_TITLE := Phicomm PSG1218
+  DEVICE_PACKAGES := kmod-mt76
+endef
+TARGET_DEVICES += psg1218
+
 define Device/y1
   DTS := Y1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

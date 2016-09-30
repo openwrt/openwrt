@@ -349,6 +349,9 @@ ramips_board_detect() {
 	*"PSG1208")
 		name="psg1208"
 		;;
+	*"PSG1218")
+		name="psg1218"
+		;;
 	*"PSR-680W"*)
 		name="psr-680w"
 		;;
