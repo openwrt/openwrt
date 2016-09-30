@@ -24,6 +24,11 @@
 	aliases {
 		serial0 = &uart4;
 		mdio-gpio0 = &mdio0;
+
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
+		led-upgrade = &power;
 	};
 
 	chosen {
@@ -365,7 +370,7 @@
 			default-state = "off";
 		};
 
-		power {
+		power: power {
 			label = "ea8500:white:power";
 			gpios = <&qcom_pinmux 6 1>;
 			default-state = "off";

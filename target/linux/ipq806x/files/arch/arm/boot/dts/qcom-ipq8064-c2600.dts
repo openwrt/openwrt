@@ -23,6 +23,11 @@
 	aliases {
 		serial0 = &uart4;
 		mdio-gpio0 = &mdio0;
+
+		led-boot = &power;
+		led-failsafe = &ledgnr;
+		led-running = &power;
+		led-upgrade = &ledgnr;
 	};
 
 	chosen {
@@ -395,12 +400,12 @@
 			label = "c2600:blue:wan";
 			gpios = <&qcom_pinmux 33 1>;
 		};
-		status {
+		power: status {
 			label = "c2600:blue:status";
 			gpios = <&qcom_pinmux 53 0>;
 			default-state = "on";
 		};
-		ledgnr {
+		ledgnr: ledgnr {
 			label = "c2600:blue:ledgnr";
 			gpios = <&qcom_pinmux 66 0>;
 		};
