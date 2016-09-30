@@ -268,7 +268,7 @@ vchiq: hack: Add include depecated dma include file
   * Watchdog
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
-@@ -533,6 +533,7 @@ source "drivers/misc/lis3lv02d/Kconfig"
+@@ -545,6 +545,7 @@ source "drivers/misc/lis3lv02d/Kconfig"
  source "drivers/misc/altera-stapl/Kconfig"
  source "drivers/misc/mei/Kconfig"
  source "drivers/misc/vmw_vmci/Kconfig"
@@ -278,7 +278,7 @@ vchiq: hack: Add include depecated dma include file
  source "drivers/misc/echo/Kconfig"
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -51,6 +51,7 @@ obj-$(CONFIG_INTEL_MEI)		+= mei/
+@@ -52,6 +52,7 @@ obj-$(CONFIG_INTEL_MEI)		+= mei/
  obj-$(CONFIG_VMWARE_VMCI)	+= vmw_vmci/
  obj-$(CONFIG_LATTICE_ECP3_CONFIG)	+= lattice-ecp3-config.o
  obj-$(CONFIG_SRAM)		+= sram.o

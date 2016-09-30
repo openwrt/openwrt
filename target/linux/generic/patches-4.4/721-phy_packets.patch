@@ -1,6 +1,6 @@
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1298,6 +1298,7 @@ enum netdev_priv_flags {
+@@ -1297,6 +1297,7 @@ enum netdev_priv_flags {
  	IFF_NO_QUEUE			= 1<<21,
  	IFF_OPENVSWITCH			= 1<<22,
  	IFF_L3MDEV_SLAVE		= 1<<23,
@@ -8,7 +8,7 @@
  };
  
  #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
-@@ -1324,6 +1325,7 @@ enum netdev_priv_flags {
+@@ -1323,6 +1324,7 @@ enum netdev_priv_flags {
  #define IFF_NO_QUEUE			IFF_NO_QUEUE
  #define IFF_OPENVSWITCH			IFF_OPENVSWITCH
  #define IFF_L3MDEV_SLAVE		IFF_L3MDEV_SLAVE
@@ -16,7 +16,7 @@
  
  /**
   *	struct net_device - The DEVICE structure.
-@@ -1603,6 +1605,11 @@ struct net_device {
+@@ -1602,6 +1604,11 @@ struct net_device {
  	const struct l3mdev_ops	*l3mdev_ops;
  #endif
  
@@ -28,7 +28,7 @@
  	const struct header_ops *header_ops;
  
  	unsigned int		flags;
-@@ -1669,6 +1676,10 @@ struct net_device {
+@@ -1668,6 +1675,10 @@ struct net_device {
  	struct mpls_dev __rcu	*mpls_ptr;
  #endif
  

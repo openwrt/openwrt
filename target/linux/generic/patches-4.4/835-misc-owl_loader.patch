@@ -1,9 +1,9 @@
---- a/drivers/misc/Kconfig	2016-09-18 15:23:07.100190724 +0200
-+++ b/drivers/misc/Kconfig	2016-09-18 15:26:56.130785350 +0200
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
 @@ -150,6 +150,18 @@ config SGI_IOC4
  	  If you have an SGI Altix with an IOC4-based card say Y.
  	  Otherwise say N.
-
+ 
 +config OWL_LOADER
 +	tristate "Owl loader for initializing Atheros PCI(e) Wifi chips"
 +	depends on PCI
@@ -19,8 +19,8 @@
  config TIFM_CORE
  	tristate "TI Flash Media interface support"
  	depends on PCI
---- a/drivers/misc/Makefile	2016-09-18 15:21:56.406675181 +0200
-+++ b/drivers/misc/Makefile	2016-09-18 15:22:46.866805239 +0200
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
 @@ -15,6 +15,7 @@ obj-$(CONFIG_BMP085_SPI)	+= bmp085-spi.o
  obj-$(CONFIG_DUMMY_IRQ)		+= dummy-irq.o
  obj-$(CONFIG_ICS932S401)	+= ics932s401.o

@@ -292,30 +292,31 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
 -	err = ubifs_add_dirt(c, lnum, dlen2);
 -	if (err)
 -		goto out_ro;
+-
+-	dent_key_init(c, &key, old_dir->i_ino, &old_dentry->d_name);
+-	err = ubifs_tnc_remove_nm(c, &key, &old_dentry->d_name);
+-	if (err)
+-		goto out_ro;
 +	offs += aligned_dlen1;
 +	if (whiteout) {
 +		dent_key_init(c, &key, old_dir->i_ino, &old_dentry->d_name);
 +		err = ubifs_tnc_add_nm(c, &key, lnum, offs, dlen2, &old_dentry->d_name);
 +		if (err)
 +			goto out_ro;
- 
--	dent_key_init(c, &key, old_dir->i_ino, &old_dentry->d_name);
--	err = ubifs_tnc_remove_nm(c, &key, &old_dentry->d_name);
--	if (err)
--		goto out_ro;
++
 +		ubifs_delete_orphan(c, whiteout->i_ino);
 +	} else {
 +		err = ubifs_add_dirt(c, lnum, dlen2);
 +		if (err)
 +			goto out_ro;
- 
--	offs += aligned_dlen1 + aligned_dlen2;
++
 +		dent_key_init(c, &key, old_dir->i_ino, &old_dentry->d_name);
 +		err = ubifs_tnc_remove_nm(c, &key, &old_dentry->d_name);
 +		if (err)
 +			goto out_ro;
 +	}
-+
+ 
+-	offs += aligned_dlen1 + aligned_dlen2;
 +	offs += aligned_dlen2;
  	if (new_inode) {
  		ino_key_init(c, &key, new_inode->i_ino);
