@@ -169,7 +169,7 @@ Implement optinal multicast->unicast conversion for igmp snooping
  			err = br_ip6_multicast_add_group(br, port,
 -							 &grec->grec_mca, vid);
 +							 &grec->grec_mca, vid, src);
- 			if (!err)
+ 			if (err)
  				break;
  		}
 @@ -1427,7 +1453,8 @@ br_multicast_leave_group(struct net_brid

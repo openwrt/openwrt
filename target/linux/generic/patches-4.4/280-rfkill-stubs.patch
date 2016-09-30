@@ -1,7 +1,5 @@
-Index: linux-4.4.21/net/rfkill/Kconfig
-===================================================================
---- linux-4.4.21.orig/net/rfkill/Kconfig	2016-09-15 08:29:29.000000000 +0200
-+++ linux-4.4.21/net/rfkill/Kconfig	2016-09-27 18:23:27.210404930 +0200
+--- a/net/rfkill/Kconfig
++++ b/net/rfkill/Kconfig
 @@ -1,7 +1,11 @@
  #
  # RF switch subsystem configuration
@@ -15,7 +13,7 @@ Index: linux-4.4.21/net/rfkill/Kconfig
  	tristate "RF switch subsystem support"
  	help
  	  Say Y here if you want to have control over RF switches
-@@ -13,19 +17,19 @@
+@@ -13,19 +17,19 @@ menuconfig RFKILL
  # LED trigger support
  config RFKILL_LEDS
  	bool
@@ -38,7 +36,7 @@ Index: linux-4.4.21/net/rfkill/Kconfig
  	depends on REGULATOR
  	help
            This options enable controlling radio transmitters connected to
-@@ -36,7 +40,7 @@
+@@ -36,7 +40,7 @@ config RFKILL_REGULATOR
  
  config RFKILL_GPIO
  	tristate "GPIO RFKILL driver"
@@ -47,10 +45,8 @@ Index: linux-4.4.21/net/rfkill/Kconfig
  	depends on GPIOLIB || COMPILE_TEST
  	default n
  	help
-Index: linux-4.4.21/net/rfkill/Makefile
-===================================================================
---- linux-4.4.21.orig/net/rfkill/Makefile	2016-09-15 08:29:29.000000000 +0200
-+++ linux-4.4.21/net/rfkill/Makefile	2016-09-27 18:22:12.373010155 +0200
+--- a/net/rfkill/Makefile
++++ b/net/rfkill/Makefile
 @@ -4,6 +4,6 @@
  
  rfkill-y			+= core.o
@@ -59,11 +55,9 @@ Index: linux-4.4.21/net/rfkill/Makefile
 +obj-$(CONFIG_RFKILL_FULL)	+= rfkill.o
  obj-$(CONFIG_RFKILL_REGULATOR)	+= rfkill-regulator.o
  obj-$(CONFIG_RFKILL_GPIO)	+= rfkill-gpio.o
-Index: linux-4.4.21/net/Makefile
-===================================================================
---- linux-4.4.21.orig/net/Makefile	2016-09-15 08:29:29.000000000 +0200
-+++ linux-4.4.21/net/Makefile	2016-09-27 18:23:43.954773045 +0200
-@@ -49,7 +49,7 @@
+--- a/net/Makefile
++++ b/net/Makefile
+@@ -49,7 +49,7 @@ obj-$(CONFIG_MAC80211)		+= mac80211/
  obj-$(CONFIG_TIPC)		+= tipc/
  obj-$(CONFIG_NETLABEL)		+= netlabel/
  obj-$(CONFIG_IUCV)		+= iucv/
@@ -72,11 +66,9 @@ Index: linux-4.4.21/net/Makefile
  obj-$(CONFIG_NET_9P)		+= 9p/
  obj-$(CONFIG_CAIF)		+= caif/
  ifneq ($(CONFIG_DCB),)
-Index: linux-4.4.21/include/linux/rfkill.h
-===================================================================
---- linux-4.4.21.orig/include/linux/rfkill.h	2016-09-15 08:29:29.000000000 +0200
-+++ linux-4.4.21/include/linux/rfkill.h	2016-09-27 18:47:20.426653801 +0200
-@@ -64,7 +64,7 @@
+--- a/include/linux/rfkill.h
++++ b/include/linux/rfkill.h
+@@ -64,7 +64,7 @@ struct rfkill_ops {
  	int	(*set_block)(void *data, bool blocked);
  };
  
