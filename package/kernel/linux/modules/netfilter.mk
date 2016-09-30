@@ -819,7 +819,7 @@ $(eval $(call KernelPackage,ipt-hashlimit))
 define KernelPackage/nft-core
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables support
-  DEPENDS:=+kmod-nfnetlink +kmod-nf-conntrack6
+  DEPENDS:=+kmod-nfnetlink +kmod-nf-conntrack6 +kmod-nf-ipt +kmod-nf-ipt6
   FILES:=$(foreach mod,$(NFT_CORE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_CORE-m)))
   KCONFIG:= \
@@ -842,7 +842,7 @@ $(eval $(call KernelPackage,nft-core))
 define KernelPackage/nft-nat
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables NAT support
-  DEPENDS:=+kmod-nft-core +kmod-nf-nat
+  DEPENDS:=+kmod-nft-core +kmod-nf-nat +kmod-nf-nat6
   FILES:=$(foreach mod,$(NFT_NAT-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_NAT-m)))
   KCONFIG:=$(KCONFIG_NFT_NAT)
