@@ -19,6 +19,7 @@ PKG_LICENSE_FILES:=
 
 export SHELL:=/bin/sh
 .ONESHELL:
+.SHELLFLAGS = -ec
 
 include $(INCLUDE_DIR)/package.mk
 
