@@ -9,14 +9,14 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -75,6 +75,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+@@ -76,6 +76,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
  	bcm4709-asus-rt-ac87u.dtb \
  	bcm4709-buffalo-wxr-1900dhp.dtb \
  	bcm4709-netgear-r7000.dtb \
 +	bcm4709-netgear-r7900.dtb \
  	bcm4709-netgear-r8000.dtb \
  	bcm47094-dlink-dir-885l.dtb \
- 	bcm47094-netgear-r8500.dtb \
+ 	bcm47094-luxul-xwr-3100.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4709-netgear-r7900.dts
 @@ -0,0 +1,41 @@
@@ -31,7 +31,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +
 +/dts-v1/;
 +
-+#include "bcm4708.dtsi"
++#include "bcm4709.dtsi"
 +#include "bcm5301x-nand-cs0-bch8.dtsi"
 +
 +/ {
