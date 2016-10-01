@@ -38,7 +38,7 @@ Subject: [PATCH] ARM: BCM5301X: Specify USB controllers in DT
  		};
  
  		usb3: usb3@23000 {
-@@ -257,6 +278,19 @@
+@@ -257,6 +278,20 @@
  
  			#address-cells = <1>;
  			#size-cells = <1>;
@@ -52,6 +52,7 @@ Subject: [PATCH] ARM: BCM5301X: Specify USB controllers in DT
 +				compatible = "generic-xhci";
 +				reg = <0x00023000 0x1000>;
 +				interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL_HIGH>;
++				usb3-fake-doorbell;
 +				phys = <&usb3_phy>;
 +				phy-names = "usb";
 +			};
