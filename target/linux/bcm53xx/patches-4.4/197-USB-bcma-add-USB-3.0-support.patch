@@ -192,10 +192,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static int bcma_hcd_usb30_init(struct bcma_hcd_device *bcma_hcd)
  {
  	struct bcma_device *core = bcma_hcd->core;
-@@ -419,6 +569,14 @@ static int bcma_hcd_usb30_init(struct bc
+@@ -419,7 +569,13 @@ static int bcma_hcd_usb30_init(struct bc
  
  	bcma_core_enable(core, 0);
  
+-	of_platform_default_populate(dev->of_node, NULL, dev);
 +	bcma_hcd_usb30_phy_init(bcma_hcd);
 +
 +	bcma_hcd->xhci_dev = bcma_hcd_create_pdev(core, "xhci-hcd", core->addr,
@@ -203,11 +204,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +						  sizeof(xhci_pdata));
 +	if (IS_ERR(bcma_hcd->ohci_dev))
 +		return PTR_ERR(bcma_hcd->ohci_dev);
-+
- 	of_platform_default_populate(dev->of_node, NULL, dev);
  
  	return 0;
-@@ -471,11 +629,14 @@ static void bcma_hcd_remove(struct bcma_
+ }
+@@ -471,11 +627,14 @@ static void bcma_hcd_remove(struct bcma_
  	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
  	struct platform_device *ohci_dev = usb_dev->ohci_dev;
  	struct platform_device *ehci_dev = usb_dev->ehci_dev;
