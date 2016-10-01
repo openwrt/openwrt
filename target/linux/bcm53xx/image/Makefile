@@ -72,8 +72,8 @@ DEVICE_VARS += PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION
 
 BRCMFMAC_43602A1 := kmod-brcmfmac brcmfmac-firmware-43602a1-pcie
 BRCMFMAC_4366B1 := kmod-brcmfmac brcmfmac-firmware-4366b1-pcie
-USB2_PACKAGES := kmod-usb-ohci kmod-usb2
-USB3_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3
+USB2_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-phy-bcm-ns-usb2
+USB3_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb3 kmod-phy-bcm-ns-usb2
 
 define Device/Default
   # .dtb files are prefixed by SoC type, e.g. bcm4708- which is not included in device/image names
