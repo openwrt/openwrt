@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=patchelf
-PKG_VERSION:=0.8
+PKG_VERSION:=0.9
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://nixos.org/releases/patchelf/patchelf-$(PKG_VERSION)
-PKG_MD5SUM:=5b151e3c83b31f5931b4a9fc01635bfd
+PKG_MD5SUM:=d02687629c7e1698a486a93a0d607947
 
 HOST_BUILD_PARALLEL:=1
 HOST_FIXUP:=autoreconf
