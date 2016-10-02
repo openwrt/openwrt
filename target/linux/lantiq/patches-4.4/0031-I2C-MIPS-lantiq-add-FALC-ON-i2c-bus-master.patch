@@ -82,7 +82,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/platform_device.h>
 +#include <linux/io.h>
 +#include <linux/of_irq.h>
-+#include <linux/of_i2c.h>
 +
 +#include <lantiq_soc.h>
 +#include "i2c-lantiq.h"
@@ -621,7 +620,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.functionality	= ltq_i2c_functionality,
 +};
 +
-+static int __devinit ltq_i2c_probe(struct platform_device *pdev)
++static int ltq_i2c_probe(struct platform_device *pdev)
 +{
 +	struct device_node *node = pdev->dev.of_node;
 +	struct ltq_i2c *priv;
@@ -651,6 +650,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	adap->class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
 +	strlcpy(adap->name, DRV_NAME "-adapter", sizeof(adap->name));
 +	adap->algo = &ltq_i2c_algorithm;
++	adap->dev.parent = &pdev->dev;
++	adap->dev.of_node = pdev->dev.of_node;
 +
 +	if (of_property_read_u32(node, "clock-frequency", &priv->i2c_clock)) {
 +		dev_warn(&pdev->dev, "No I2C speed selected, using 100kHz\n");
@@ -660,9 +661,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	init_completion(&priv->cmd_complete);
 +	mutex_init(&priv->mutex);
 +
-+	priv->membase = devm_request_and_ioremap(&pdev->dev, mmres);
-+	if (priv->membase == NULL)
-+		return -ENOMEM;
++	priv->membase = devm_ioremap_resource(&pdev->dev, mmres);
++	if (IS_ERR(priv->membase))
++		return PTR_ERR(priv->membase);
 +
 +	priv->dev = &pdev->dev;
 +	priv->irq_lb = irqres[0].start;
@@ -739,11 +740,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		dev_err(&pdev->dev, "can't configure adapter\n");
 +		i2c_del_adapter(adap);
 +		platform_set_drvdata(pdev, NULL);
++		goto out;
 +	} else {
 +		dev_info(&pdev->dev, "version %s\n", DRV_VERSION);
 +	}
-+
-+	of_i2c_register_devices(adap);
 +
 +out:
 +	/* if init failed, we need to deactivate the clock gate */
@@ -753,7 +753,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return ret;
 +}
 +
-+static int __devexit ltq_i2c_remove(struct platform_device *pdev)
++static int ltq_i2c_remove(struct platform_device *pdev)
 +{
 +	struct ltq_i2c *priv = platform_get_drvdata(pdev);
 +
@@ -780,7 +780,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static struct platform_driver ltq_i2c_driver = {
 +	.probe	= ltq_i2c_probe,
-+	.remove	= __devexit_p(ltq_i2c_remove),
++	.remove	= ltq_i2c_remove,
 +	.driver	= {
 +		.name	= DRV_NAME,
 +		.owner	= THIS_MODULE,
