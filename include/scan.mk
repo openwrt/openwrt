@@ -40,7 +40,8 @@ define PackageDir
 			rm -f $$@; \
 		}; \
 		echo; \
-	} > $$@ || true
+	} > $$@.tmp
+	mv $$@.tmp $$@
 endef
 
 $(OVERRIDELIST):
@@ -76,7 +77,8 @@ $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 			print "$$(eval $$(call PackageDir," info "," dir "," pkg "))"; \
 		} ' < $<; \
 		true; \
-	) > $@
+	) > $@.tmp
+	mv $@.tmp $@
 
 -include $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk
 
