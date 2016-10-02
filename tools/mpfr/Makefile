@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mpfr
-PKG_VERSION:=3.1.4
+PKG_VERSION:=3.1.5
 
 PKG_SOURCE_URL:=http://www.mpfr.org/mpfr-$(PKG_VERSION) \
 		@GNU/mpfr
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=b8a2f6b0e68bef46e53da2ac439e1cf4
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_MD5SUM:=c4ac246cf9795a4491e7766002cd528f
 
 HOST_BUILD_PARALLEL:=1
 HOST_FIXUP:=autoreconf
