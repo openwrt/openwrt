@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=upx
-PKG_VERSION:=3.09
+PKG_VERSION:=3.91
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-src.tar.bz2
-PKG_SOURCE_URL:=@SF/upx
-PKG_MD5SUM:=1253da46eac54a217eb73e2d44818e53
+PKG_SOURCE_URL:=https://github.com/upx/upx/releases/download/v$(PKG_VERSION)
+PKG_MD5SUM:=c6d0b3ea2ecb28cb8031d59a4b087a43
 PKG_CAT:=bzcat
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)-src
