@@ -89,3 +89,5 @@ linksys_preupgrade() {
 	esac
 }
 
+append sysupgrade_pre_upgrade linksys_preupgrade
+
