@@ -22,17 +22,6 @@ else
   UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
 endif
 
-LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
-
-define Image/BuildLoader/Template
-	-rm -rf $(KDIR)/lzma-loader
-	$(LOADER_MAKE) LOADER=loader$(2)-$(1).bin\
-		LZMA_TEXT_START=0x80a00000 \
-		LOADADDR=0x80002000 \
-		LOADER_DATA="$(KDIR)/vmlinux$(2)-$(1).lzma" BOARD="$(1)" \
-		compile loader.bin
-endef
-
 define Build/eva-image
 	lzma2eva $(KERNEL_LOADADDR) $(KERNEL_LOADADDR) $@ $@.new
 	( dd if=$@.new bs=64k conv=sync; cat ./eva.dummy.squashfs; ) > $@
@@ -98,12 +87,6 @@ define Image/BuildDGN3500B/squashfs
 endef
 
 
-define Image/BuildLoader/squashfs
-	dd if=$(KDIR)/loader-$(2).bin of=$(KDIR)/loader-$(2).bin.padded bs=3072k conv=sync
-	cat $(KDIR)/loader-$(2).bin.padded $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
-	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
-endef
-
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   define Image/BuildKernel/InitramfsTemplate
 	$(call PatchKernelLzma,$(1),-initramfs)
@@ -117,32 +100,6 @@ define Image/BuildKernel/Template
 	$(call MkImageLzma,$(1))
 	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
 	$(Image/BuildKernel/InitramfsTemplate)
-endef
-
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-  define Image/BuildKernelLoader/InitramfsTemplate
-	$(CP) $(KDIR)/loader-initramfs-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs-loader
-	$(CP) $(KDIR)/vmlinux-initramfs-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-initramfs
-  endef
-endif
-
-define Image/BuildKernelLoader/Template
-	$(CP) $(KDIR)/loader-$(1).bin $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux-loader
-	$(CP) $(KDIR)/vmlinux-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux
-	$(Image/BuildKernelLoader/InitramfsTemplate)
-endef
-
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-  define Image/Prepare/InitramfsTemplate
-	$(call PatchKernelLzma,$(1),-initramfs)
-	$(call Image/BuildLoader/Template,$(1),-initramfs)
-  endef
-endif
-
-define Image/Prepare/Template
-	$(call PatchKernelLzma,$(1))
-	$(call Image/BuildLoader/Template,$(1))
-	$(Image/Prepare/InitramfsTemplate)
 endef
 
 ### Kernel scripts ###
@@ -623,14 +580,11 @@ define Device/FRITZ7360SL
 endef
 TARGET_DEVICES += FRITZ7360SL
 
-Image/Prepare/Profile/VG3503J=$(call Image/Prepare/Template,VG3503J)
-Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
-Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
-
-define LegacyDevice/VG3503J
-  DEVICE_TITLE := BT Openreak - ECI VDSL Modem
+define Device/VG3503J
+  IMAGE_SIZE := 8000k
+  DEVICE_TITLE := BT OpenReach - ECI VDSL Modem
 endef
-LEGACY_DEVICES += VG3503J
+TARGET_DEVICES += VG3503J
 
 include tp-link.mk
 

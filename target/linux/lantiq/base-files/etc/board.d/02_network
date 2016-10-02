@@ -120,6 +120,13 @@ TDW8970|TDW8980)
 		"0:lan:2" "2:lan:3" "4:lan:4" "5:lan:1" "6t@eth0"
 	;;
 
+VG3503J)
+	lan_mac=$(mtd_get_mac_ascii uboot-env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_add_switch "switch0" \
+		"2:lan:1" "4:lan:2" "6t@eth0"
+	;;
+
 VR200v)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary romfile 61696)" 1)
 	ucidef_add_switch "switch0" \
