@@ -32,3 +32,21 @@
     return ret;
  }
  
+--- a/coregrind/m_machine.c
++++ b/coregrind/m_machine.c
+@@ -1652,6 +1652,7 @@ Bool VG_(machine_get_hwcaps)( void )
+         }
+      }
+ 
++#ifndef __mips_soft_float
+      /* Check if CPU has FPU and 32 dbl. prec. FP registers */
+      int FIR = 0;
+      __asm__ __volatile__(
+@@ -1661,6 +1662,7 @@ Bool VG_(machine_get_hwcaps)( void )
+      if (FIR & (1 << FP64)) {
+         vai.hwcaps |= VEX_PRID_CPU_32FPR;
+      }
++#endif
+ 
+      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
+      VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
