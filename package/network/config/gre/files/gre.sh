@@ -44,15 +44,28 @@ gre_generic_setup() {
 gre_setup() {
 	local cfg="$1"
 	local mode="$2"
+	local remoteip
 
 	local ipaddr peeraddr
 	json_get_vars df ipaddr peeraddr tunlink
 
 	[ -z "$peeraddr" ] && {
-		proto_notify_error "$cfg" "MISSING_ADDRESS"
+		proto_notify_error "$cfg" "MISSING_PEER_ADDRESS"
 		proto_block_restart "$cfg"
 		exit
 	}
+
+	remoteip=$(resolveip -t 10 -4 "$peeraddr")
+
+	if [ -z "$remoteip" ]; then
+		proto_notify_error "$cfg" "PEER_RESOLVE_FAIL"
+		exit
+	fi
+
+	for ip in $remoteip; do
+		peeraddr=$ip
+		break
+	done
 
 	( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
 
@@ -101,15 +114,28 @@ proto_gretap_setup() {
 grev6_setup() {
 	local cfg="$1"
 	local mode="$2"
+	local remoteip6
 
 	local ip6addr peer6addr weakif
 	json_get_vars ip6addr peer6addr tunlink weakif
 
 	[ -z "$peer6addr" ] && {
-		proto_notify_error "$cfg" "MISSING_ADDRESS"
+		proto_notify_error "$cfg" "MISSING_PEER_ADDRESS"
 		proto_block_restart "$cfg"
 		exit
 	}
+
+	remoteip6=$(resolveip -t 10 -6 "$peer6addr")
+
+	if [ -z "$remoteip6" ]; then
+		proto_notify_error "$cfg" "PEER_RESOLVE_FAIL"
+		exit
+	fi
+
+	for ip6 in $remoteip6; do
+		peer6addr=$ip6
+		break
+	done
 
 	( proto_add_host_dependency "$cfg" "$peer6addr" "$tunlink" )
 
