@@ -36,6 +36,25 @@ define AddDepends/usb
 endef
 
 
+define KernelPackage/usb-ledtrig-usbport
+  TITLE:=LED trigger for USB ports
+  KCONFIG:=CONFIG_USB_LEDS_TRIGGER_USBPORT
+  DEPENDS:=@!LINUX_3_18
+  FILES:=$(LINUX_DIR)/drivers/usb/core/ledtrig-usbport.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-usbport)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-ledtrig-usbport/description
+  This driver allows LEDs to be controlled by USB events. Enabling this
+  trigger allows specifying list of USB ports that should turn on LED
+  when some USB device gets connected.
+  If possible it should be prefered over similar ledtrig-usbdev.
+endef
+
+$(eval $(call KernelPackage,usb-ledtrig-usbport))
+
+
 define KernelPackage/usb-musb-hdrc
   TITLE:=Support for Mentor Graphics silicon dual role USB
   KCONFIG:= \
