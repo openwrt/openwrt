@@ -26,7 +26,7 @@ $(eval $(call TestHostCommand,case-sensitive-fs, \
 
 $(eval $(call TestHostCommand,proper-umask, \
 	Please build with umask 022 - other values produce broken packages, \
-	umask | grep -xF 0022))
+	umask | grep -xE 00[012][012]))
 
 $(eval $(call SetupHostCommand,gcc, \
 	Please install the GNU C Compiler (gcc), \
