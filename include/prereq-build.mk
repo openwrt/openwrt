@@ -164,6 +164,9 @@ $(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))
 
+$(eval $(call SetupHostCommand,xz,Please install xz-utils, \
+	xz --version | grep XZ))
+
 ifneq ($(HOST_OS),Darwin)
 $(eval $(call SetupHostCommand,openssl,Please install the 'openssl' utility, \
 	openssl version | grep '\(OpenSSL\|LibreSSL\)'))
