@@ -11,11 +11,12 @@ PKG_NAME:=libnftnl
 PKG_VERSION:=1.0.3
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=git://git.netfilter.org/libnftnl
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=libnftnl-1.0.3
+PKG_MIRROR_MD5SUM:=a4e169ff6a6addafd5ade3680fd76a00e36927fd85f8adac64dcba4fe203abb7
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 PKG_LICENSE:=GPL-2.0+
 

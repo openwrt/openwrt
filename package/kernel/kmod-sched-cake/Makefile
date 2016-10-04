@@ -15,8 +15,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/dtaht/sch_cake.git
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_MIRROR_MD5SUM:=d6fd82607862c16ba5f1007ecfb251eba9e2cc82c55bb3f4aee2fbebf9fa6d2a
 PKG_MAINTAINER:=Kevin Darbyshire-Bryant <kevin@darbyshire-bryant.me.uk>
 
 include $(INCLUDE_DIR)/package.mk

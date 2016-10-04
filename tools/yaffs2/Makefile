@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=yaffs2_android
 PKG_VERSION:=2008-12-18
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://android.googlesource.com/platform/external/yaffs2
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)
 PKG_SOURCE_VERSION:=d333fc232d7e5ae3370080d5d6f7d88ea9c6b3a1
-PKG_MIRROR_MD5SUM:=8145d4dd9b46face26121f27ad60cc1c
+PKG_MIRROR_MD5SUM:=8ba9beeda93681a5fc3ea79bdc8186d7ed8c73779e7e64302ce38ab1c1a0faf5
 HOST_BUILD_DIR=$(BUILD_DIR_HOST)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/host-build.mk

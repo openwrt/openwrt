@@ -13,7 +13,7 @@ PKG_SOURCE_URL:=http://svn.nslu2-linux.org/svnroot/upslug2/trunk
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_SUBDIR:=upslug2-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=41
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 
 include $(INCLUDE_DIR)/host-build.mk
 

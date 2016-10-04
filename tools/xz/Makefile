@@ -9,10 +9,10 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=xz
 PKG_VERSION:=5.2.2
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://tukaani.org/xz \
-		http://fossies.org/linux/misc
-PKG_MD5SUM:=f90c9a0c8b259aee2234c4e0d7fd70af
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE_URL:=@SF/lzmautils \
+		http://tukaani.org/xz
+PKG_MD5SUM:=f341b1906ebcdde291dd619399ae944600edc9193619dd0c0110a5f05bfcc89e
 
 HOST_BUILD_PARALLEL:=1
 
