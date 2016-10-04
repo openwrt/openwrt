@@ -35,7 +35,7 @@ endef
 # code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
 dl_pack/bz2=$(TAR) --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -cjf $(1) $(2)
 dl_pack/gz=$(TAR) --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -c $(2) | gzip -nc > $(1)
-dl_pack/xz=$(TAR) --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -c $(2) | xz -zc > $(1)
+dl_pack/xz=$(TAR) --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -c $(2) | xz -zc -7e > $(1)
 dl_pack/unknown=echo "ERROR: Unknown pack format for file $(1)"; false
 define dl_pack
 	$(if $(dl_pack/$(call ext,$(1))),$(dl_pack/$(call ext,$(1))),$(dl_pack/unknown))
