@@ -303,7 +303,7 @@ define KernelPackage/sound-hda-core
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec.ko \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-generic.ko
   AUTOLOAD:=$(call AutoProbe,snd-hda-core snd-hda-codec snd-hda-codec-generic)
-  $(call AddDepends/sound,kmod-regmap)
+  $(call AddDepends/sound,+kmod-regmap)
 endef
 
 define KernelPackage/sound-hda-core/description
