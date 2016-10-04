@@ -9,19 +9,26 @@
 
 board_config_update
 
-[ -n "$(lantiq_is_dt_led_chosen wifi)" ] && ucidef_set_led_wlan "wifi" "wifi" "$(lantiq_get_dt_led_chosen wifi)" "phy0tpt"
-[ -n "$(lantiq_is_dt_led_chosen usb)" ] && ucidef_set_led_usbdev "usb" "usb" "$(lantiq_get_dt_led_chosen usb)" "1-1"
-[ -n "$(lantiq_is_dt_led_chosen usb2)" ] && ucidef_set_led_usbdev "usb2" "usb2" "$(lantiq_get_dt_led_chosen usb2)" "2-1"
+led_wifi="$(lantiq_get_dt_led wifi)"
+[ -n "$led_wifi" ] && ucidef_set_led_wlan "wifi" "wifi" "$led_wifi" "phy0tpt"
 
-[ -n "$(lantiq_is_dt_led_chosen internet)" ] && {
+led_usb="$(lantiq_get_dt_led usb)"
+[ -n "$led_usb" ] && ucidef_set_led_usbdev "usb" "usb" "$led_usb" "1-1"
+
+led_usb2="$(lantiq_get_dt_led usb2)"
+[ -n "$led_usb2" ] && ucidef_set_led_usbdev "usb2" "usb2" "$led_usb2" "2-1"
+
+led_internet="$(lantiq_get_dt_led internet)"
+[ -n "$led_internet" ] && {
 	interface="nas0"
 
-	[ -n "$(lantiq_is_dt_led_chosen dsl)" ] && {
+	led_dsl="$(lantiq_get_dt_led dsl)"
+	[ -n "$led_dsl" ] && {
 		interface="pppoe-wan"
-		ucidef_set_led_default "dsl" "dsl" "$(lantiq_get_dt_led_chosen dsl)" "0"
+		ucidef_set_led_default "dsl" "dsl" "$led_dsl" "0"
 	}
 
-	ucidef_set_led_netdev "internet" "internet" "$(lantiq_get_dt_led_chosen internet)" "$interface"
+	ucidef_set_led_netdev "internet" "internet" "$led_internet" "$interface"
 }
 
 board=$(lantiq_board_name)
