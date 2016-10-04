@@ -24,6 +24,10 @@ $(eval $(call TestHostCommand,case-sensitive-fs, \
 	rm -f $(TMP_DIR)/test.*; touch $(TMP_DIR)/test.fs; \
 		test ! -f $(TMP_DIR)/test.FS))
 
+$(eval $(call TestHostCommand,proper-umask, \
+	Please build with umask 022 - other values produce broken packages, \
+	umask | grep -xF 0022))
+
 $(eval $(call SetupHostCommand,gcc, \
 	Please install the GNU C Compiler (gcc), \
 	$(CC) --version | grep gcc, \
