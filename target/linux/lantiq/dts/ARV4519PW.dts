@@ -7,17 +7,17 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
 
-		leds {
-			boot = &power_green;
-			failsafe = &power_red;
-			running = &power_green;
+	aliases {
+		led-boot = &power_green;
+		led-failsafe = &power_red;
+		led-running = &power_green;
 
-			dsl = &dsl;
-			internet = &internet_green;
-			usb = &usb;
-			wifi = &wifi;
-		};
+		led-dsl = &dsl;
+		led-internet = &internet_green;
+		led-usb = &usb;
+		led-wifi = &wifi;
 	};
 
 	memory@0 {

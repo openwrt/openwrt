@@ -3,15 +3,15 @@
 / {
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
 
-		leds {
-			boot = &power;
-			failsafe = &power;
-			running = &power;
+	aliases {
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
 
-			usb = &usb1;
-			usb2 = &usb2;
-		};
+		led-usb = &usb1;
+		led-usb2 = &usb2;
 	};
 
 	memory@0 {

@@ -5,16 +5,14 @@
 / {
 	model = "ARV4525PW - Speedport W501V Typ A";
 
-	chosen {
-		leds {
-			/* we dont have a power led, lets use the online led */
-			boot = &online;
-			failsafe = &online;
+	aliases {
+		/* we dont have a power led, lets use the online led */
+		led-boot = &online;
+		led-failsafe = &online;
 
-			dsl = &dsl;
-			internet = &online;
-			wifi = &wifi;
-		};
+		led-dsl = &dsl;
+		led-internet = &online;
+		led-wifi = &wifi;
 	};
 
 	memory@0 {

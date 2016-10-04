@@ -5,16 +5,14 @@
 / {
 	model = "ARV8539PW22 - Speedport W 504V Typ A";
 
-    chosen {
-	    leds {
-			boot = &power_green;
-			failsafe = &power_red;
-			running = &power_green;
+    aliases {
+		led-boot = &power_green;
+		led-failsafe = &power_red;
+		led-running = &power_green;
 
-		    dsl = &dsl_green;
-		    internet = &online_green;
-		    wifi = &wireless_green;
-	    };
+	    dsl = &dsl_green;
+	    internet = &online_green;
+	    wifi = &wireless_green;
     };
 
 	memory@0 {

@@ -5,16 +5,14 @@
 / {
 	model = "ARV7506PW11 - Alice/O2 IAD 4421";
 
-	chosen {
-		leds {
-			boot = &power;
-			failsafe = &power_red;
-			running = &power;
+	aliases {
+		led-boot = &power;
+		led-failsafe = &power_red;
+		led-running = &power;
 
-			dsl = &dsl;
-			internet = &internet;
-			wifi = &wlan;
-		};
+		led-dsl = &dsl;
+		led-internet = &internet;
+		led-wifi = &wlan;
 	};
 
 	memory@0 {

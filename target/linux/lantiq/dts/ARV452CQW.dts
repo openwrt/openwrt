@@ -7,16 +7,16 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
 
-		leds {
-			boot = &power_blue;
-			failsafe = &power_red;
-			running = &power_blue;
+	aliases {
+		led-boot = &power_blue;
+		led-failsafe = &power_red;
+		led-running = &power_blue;
 
-			internet = &dsl_blue;
-			usb = &usb;
-			wifi = &wifi;
-		};
+		led-internet = &dsl_blue;
+		led-usb = &usb;
+		led-wifi = &wifi;
 	};
 
 	memory@0 {
@@ -113,7 +113,7 @@
 					lantiq,pull = <0>;
 					lantiq,output = <1>;
 				};
-				leds {
+				aliases {
 					lantiq,pins = "io3", "io5", "io6", "io7", "io9";
 					lantiq,output = <1>;
 				};
