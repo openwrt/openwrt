@@ -7,6 +7,7 @@ USE_PROCD=1
 
 UHTTPD_BIN="/usr/sbin/uhttpd"
 PX5G_BIN="/usr/sbin/px5g"
+OPENSSL_BIN="/usr/bin/openssl"
 
 append_arg() {
 	local cfg="$1"
@@ -43,8 +44,12 @@ generate_keys() {
 	config_get location   "$cfg" location
 	config_get commonname "$cfg" commonname
 
-	[ -x "$PX5G_BIN" ] && {
-		$PX5G_BIN selfsigned -der \
+	# Prefer OpenSSL for certificate generation (existence evaluated last)
+	local GENKEY_CMD=""
+	[ -x "$PX5G_BIN" ] && GENKEY_CMD="$PX5G_BIN selfsigned -der"
+	[ -x "$OPENSSL_BIN" ] && GENKEY_CMD="$OPENSSL_BIN req -x509 -outform der -nodes"
+	[ -n "$GENKEY_CMD" ] && {
+		$GENKEY_CMD \
 			-days ${days:-730} -newkey rsa:${bits:-2048} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
 			-subj /C="${country:-DE}"/ST="${state:-Saxony}"/L="${location:-Leipzig}"/CN="${commonname:-Lede}"
 		sync
