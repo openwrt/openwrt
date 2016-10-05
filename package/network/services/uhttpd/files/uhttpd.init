@@ -44,10 +44,10 @@ generate_keys() {
 	config_get location   "$cfg" location
 	config_get commonname "$cfg" commonname
 
-	# Prefer OpenSSL for certificate generation (existence evaluated last)
+	# Prefer px5g for certificate generation (existence evaluated last)
 	local GENKEY_CMD=""
-	[ -x "$PX5G_BIN" ] && GENKEY_CMD="$PX5G_BIN selfsigned -der"
 	[ -x "$OPENSSL_BIN" ] && GENKEY_CMD="$OPENSSL_BIN req -x509 -outform der -nodes"
+	[ -x "$PX5G_BIN" ] && GENKEY_CMD="$PX5G_BIN selfsigned -der"
 	[ -n "$GENKEY_CMD" ] && {
 		$GENKEY_CMD \
 			-days ${days:-730} -newkey rsa:${bits:-2048} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
