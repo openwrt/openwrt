@@ -115,6 +115,15 @@ cf-e316n-v2)
 	ucidef_set_led_netdev "wan" "WAN" "$board:blue:wan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:blue:wlan" "phy0tpt"
 	;;
+cf-e320n-v2)
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "$board:red:wan" "eth1"
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:blue:wlan" "phy0tpt"
+	;;
+cf-e520n|\
+cf-e530n)
+	ucidef_set_led_netdev "wan" "WAN" "$board:blue:wan" "eth1"
+	;;
 cpe210|\
 cpe510)
 	ucidef_set_led_switch "lan0" "LAN0" "tp-link:green:lan0" "switch0" "0x20"

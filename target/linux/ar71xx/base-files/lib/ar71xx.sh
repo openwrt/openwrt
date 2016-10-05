@@ -497,8 +497,17 @@ ar71xx_board_detect() {
 	*CAP4200AG)
 		name="cap4200ag"
 		;;
-	*"COMFAST CF-E316N v2")
+	*"CF-E316N v2")
 		name="cf-e316n-v2"
+		;;
+	*"CF-E320N v2")
+		name="cf-e320n-v2"
+		;;
+	*CF-E520N)
+		name="cf-e520n"
+		;;
+	*CF-E530N)
+		name="cf-e530n"
 		;;
 	*"CPE210/220")
 		name="cpe210"

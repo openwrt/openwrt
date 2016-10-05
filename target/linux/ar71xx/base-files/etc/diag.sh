@@ -86,8 +86,13 @@ get_status_led() {
 	cap4200ag)
 		status_led="senao:green:pwr"
 		;;
-	cf-e316n-v2)
+	cf-e316n-v2|\
+	cf-e520n|\
+	cf-e530n)
 		status_led="$board:blue:wan"
+		;;
+	cf-e320n-v2)
+		status_led="$board:blue:wlan"
 		;;
 	cpe510)
 		status_led="tp-link:green:link4"

@@ -23,9 +23,34 @@ define Device/cf-e316n-v2
   BOARDNAME = CF-E316N-V2
   IMAGE_SIZE = 16192k
   CONSOLE = ttyS0,115200
-  MTDPARTS = spi0.0:64k(u-boot)ro,64k(art)ro,16192k(firmware),64k(nvram)ro
+  MTDPARTS = spi0.0:64k(u-boot)ro,64k(art)ro,16192k(firmware),64k(art-backup)ro
 endef
 TARGET_DEVICES += cf-e316n-v2
+
+define Device/cf-e320n-v2
+  $(Device/cf-e316n-v2)
+  DEVICE_TITLE := COMFAST CF-E320N v2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = CF-E320N-V2
+endef
+TARGET_DEVICES += cf-e320n-v2
+
+define Device/cf-e520n
+  DEVICE_TITLE := COMFAST CF-E520N
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = CF-E520N
+  IMAGE_SIZE = 8000k
+  CONSOLE = ttyS0,115200
+  MTDPARTS = spi0.0:64k(u-boot)ro,64k(art)ro,8000k(firmware),64k(art-backup)ro
+endef
+TARGET_DEVICES += cf-e520n
+
+define Device/cf-e530n
+  $(Device/cf-e520n)
+  DEVICE_TITLE := COMFAST CF-E530N
+  BOARDNAME = CF-E530N
+endef
+TARGET_DEVICES += cf-e530n
 
 define Device/domywifi-dw33d
   DEVICE_TITLE := DomyWifi DW33D

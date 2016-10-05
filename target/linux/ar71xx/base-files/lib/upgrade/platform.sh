@@ -182,6 +182,9 @@ platform_check_image() {
 	c-55|\
 	carambola2|\
 	cf-e316n-v2|\
+	cf-e320n-v2|\
+	cf-e520n|\
+	cf-e530n|\
 	dgl-5500-a1|\
 	dhp-1565-a1|\
 	dir-505-a1|\
