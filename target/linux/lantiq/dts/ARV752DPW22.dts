@@ -15,6 +15,7 @@
 		led-running = &power_red;
 
 		led-internet = &internet_red;
+		led-usb = &umts;
 		led-wifi = &wifi;
 	};
 
@@ -205,7 +206,7 @@
 			label = "arv752dpw22:red:voice";
 			gpios = <&gpio 8 1>;
 		};
-		microphone {
+		umts: umts {
 			label = "arv752dpw22:red:umts";
 			gpios = <&gpiomm 3 1>;
 		};

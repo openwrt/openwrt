@@ -15,6 +15,7 @@
 		led-running = &power;
 
 		led-internet = &internet;
+		led-usb = &umts;
 		led-wifi = &wlan;
 	};
 
@@ -178,7 +179,7 @@
 			label = "wlan";
 			gpios = <&gpio 10 1>;
 		};
-		3g {
+		umts: 3g {
 			label = "3g";
 			gpios = <&gpio 15 1>;
 		};
