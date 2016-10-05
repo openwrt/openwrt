@@ -2113,21 +2113,21 @@ ar8xxx_phy_match(u32 phy_id)
 static bool
 ar8xxx_is_possible(struct mii_bus *bus)
 {
-	unsigned i;
+	unsigned int i, found_phys = 0;
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 5; i++) {
 		u32 phy_id;
 
 		phy_id = mdiobus_read(bus, i, MII_PHYSID1) << 16;
 		phy_id |= mdiobus_read(bus, i, MII_PHYSID2);
-		if (!ar8xxx_phy_match(phy_id)) {
+		if (ar8xxx_phy_match(phy_id)) {
+			found_phys++;
+		} else if (phy_id) {
 			pr_debug("ar8xxx: unknown PHY at %s:%02x id:%08x\n",
 				 dev_name(&bus->dev), i, phy_id);
-			return false;
 		}
 	}
-
-	return true;
+	return !!found_phys;
 }
 
 static int
