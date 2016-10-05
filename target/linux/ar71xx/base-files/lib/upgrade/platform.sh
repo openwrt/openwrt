@@ -424,6 +424,14 @@ platform_check_image() {
 	tew-673gru)
 		dir825b_check_image "$1" && return 0
 		;;
+	c-60|\
+	nbg6716|\
+	r6100|\
+	wndr3700v4|\
+	wndr4300)
+		nand_do_platform_check $board $1
+		return $?
+		;;
 	cpe210|\
 	cpe510)
 		tplink_pharos_check_image "$1" && return 0
@@ -485,13 +493,6 @@ platform_check_image() {
 
 		return 0
 		;;
-	nbg6716|\
-	r6100|\
-	wndr3700v4|\
-	wndr4300)
-		nand_do_platform_check $board $1
-		return $?
-		;;
 	tube2h)
 		alfa_check_image "$1" && return 0
 		return 1
@@ -537,15 +538,16 @@ platform_pre_upgrade() {
 	local board=$(ar71xx_board_name)
 
 	case "$board" in
-	mr18|\
-	z1)
-		merakinand_do_upgrade "$1"
-		;;
+	c-60|\
 	nbg6716|\
 	r6100|\
 	wndr3700v4|\
 	wndr4300)
 		nand_do_upgrade "$1"
+		;;
+	mr18|\
+	z1)
+		merakinand_do_upgrade "$1"
 		;;
 	esac
 }

@@ -53,7 +53,8 @@ board=$(ar71xx_board_name)
 case "$FIRMWARE" in
 "soc_wmac.eeprom")
 	case $board in
-	c-55)
+	c-55|\
+	c-60)
 		ath9k_eeprom_extract "art" 4096 2048
 		ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_binary art 0) +1)
 		;;

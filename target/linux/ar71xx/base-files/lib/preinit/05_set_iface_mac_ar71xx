@@ -22,7 +22,8 @@ fetch_mac_from_mtd() {
 
 preinit_set_mac_address() {
 	case $(ar71xx_board_name) in
-		c-55)
+		c-55|\
+		c-60)
 			mac_lan=$(mtd_get_mac_binary art 0)
 			[ -n "$mac_lan" ] && ifconfig eth0 hw ether "$mac_lan"
 			;;

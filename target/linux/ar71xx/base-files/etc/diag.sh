@@ -73,7 +73,8 @@ get_status_led() {
 	cap324)
 		status_led="pcs:green:power"
 		;;
-	c-55)
+	c-55|\
+	c-60)
 		status_led="$board:green:pwr"
 		;;
 	cap4200ag)

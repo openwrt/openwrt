@@ -482,6 +482,9 @@ ar71xx_board_detect() {
 	*C-55)
 		name="c-55"
 		;;
+	*C-60)
+		name="c-60"
+		;;
 	*CAP4200AG)
 		name="cap4200ag"
 		;;

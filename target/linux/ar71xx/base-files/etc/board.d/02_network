@@ -199,6 +199,10 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "3:lan"
 		;;
+	c-60)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:wan" "4:lan"
+		;;
 	cap324)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;

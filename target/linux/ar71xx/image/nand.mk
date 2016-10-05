@@ -1,3 +1,18 @@
+define Device/c-60
+  DEVICE_TITLE := AirTight C-60
+  DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-core kmod-usb2 kmod-ath9k
+  BOARDNAME = C-60
+  BLOCKSIZE := 64k
+  KERNEL_SIZE = 3648k
+  IMAGE_SIZE = 32m
+  IMAGES := sysupgrade.tar
+  MTDPARTS = spi0.0:256k(u-boot)ro,128k(u-boot-env)ro,3648k(kernel),64k(art)ro;ar934x-nfc:32m(ubi)
+  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
+  IMAGE/sysupgrade.tar := sysupgrade-tar
+endef
+
+TARGET_DEVICES += c-60
+
 define Build/MerakiNAND
 	-$(STAGING_DIR_HOST)/bin/mkmerakifw \
 		-B $(BOARDNAME) -s \
