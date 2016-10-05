@@ -3,7 +3,7 @@
  *
  *  Copyright (C) 2011, Tobias Waldvogel <tobias.waldvogel@gmail.com>
  *
- *  Based on work by Michał Mirosław <mirq-linux@rere.qmqm.pl> and
+ *  Based on work by MichaÅ MirosÅaw <mirq-linux@rere.qmqm.pl> and
  *  Paulius Zaleckas <paulius.zaleckas@gmail.com> and
  *  Giuseppe De Robertis <Giuseppe.DeRobertis@ba.infn.it> and
  *  GPLd spaghetti code from Raidsonic and other Gemini-based NAS vendors.

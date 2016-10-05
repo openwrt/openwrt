@@ -3,7 +3,7 @@
  *
  *  Copyright (C) 2006, Storlink, Corp.
  *  Copyright (C) 2008-2009, Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
- *  Copyright (C) 2010, Michał Mirosław <mirq-linux@rere.qmqm.pl>
+ *  Copyright (C) 2010, MichaÅ MirosÅaw <mirq-linux@rere.qmqm.pl>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
