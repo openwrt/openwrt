@@ -60,23 +60,3 @@
  			goto out;
  		case 'W':
  			params.wait_for_monitor++;
---- /dev/null
-+++ b/src/utils/build_features.h
-@@ -0,0 +1,17 @@
-+#ifndef BUILD_FEATURES_H
-+#define BUILD_FEATURES_H
-+
-+static inline int has_feature(const char *feat)
-+{
-+#ifdef IEEE8021X_EAPOL
-+	if (!strcmp(feat, "eap"))
-+		return 1;
-+#endif
-+#ifdef IEEE80211N
-+	if (!strcmp(feat, "11n"))
-+		return 1;
-+#endif
-+	return 0;
-+}
-+
-+#endif /* BUILD_FEATURES_H */
