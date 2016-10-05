@@ -1044,7 +1044,6 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->reset_bit = QCA955X_RESET_GE1_MAC |
 					   QCA955X_RESET_GE1_MDIO;
 			pdata->set_speed = qca955x_set_speed_sgmii;
-			pdata->use_flow_control = 1;
 		}
 
 		pdata->has_gbit = 1;
