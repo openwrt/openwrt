@@ -130,6 +130,9 @@ get_status_led() {
 	oolite)
 		status_led="$board:red:system"
 		;;
+	eap120)
+		status_led="$(ar71xx_board_name):green:system"
+		;;
 	eap300v2)
 		status_led="engenius:blue:power"
 		;;

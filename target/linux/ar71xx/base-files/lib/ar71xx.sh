@@ -361,6 +361,9 @@ tplink_pharos_board_detect() {
 	'CPE520(TP-LINK|UN|N300-5)')
 		model='TP-Link CPE520'
 		;;
+	'EAP120(TP-LINK|UN|N300-2)')
+		model='TP-Link EAP120'
+		;;
 	esac
 
 	[ -n "$model" ] && AR71XX_MODEL="$model v$2"
@@ -562,6 +565,10 @@ ar71xx_board_detect() {
 		;;
 	*"Domino Pi")
 		name="gl-domino"
+		;;
+	*"EAP120")
+		name="eap120"
+		tplink_pharos_board_detect
 		;;
 	*"EAP300 v2")
 		name="eap300v2"

@@ -109,6 +109,21 @@ $(Device/cpe510-520)
 endef
 TARGET_DEVICES += cpe210-220 cpe510-520
 
+define Device/eap120
+  DEVICE_TITLE := TP-LINK EAP120
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),14336k(rootfs),192k(config)ro,64k(ART)ro,15872k@0x40000(firmware)
+  IMAGE_SIZE := 15872k
+  BOARDNAME := EAP120
+  TPLINK_BOARD_NAME := EAP120
+  DEVICE_PROFILE := EAP120
+  LOADER_TYPE := elf
+  KERNEL := kernel-bin | patch-cmdline | lzma | loader-kernel
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+TARGET_DEVICES += eap120
+
 define Device/tl-wdr4300-v1
 $(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK TL-WDR4300 v1

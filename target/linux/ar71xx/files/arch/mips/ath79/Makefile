@@ -86,6 +86,7 @@ obj-$(CONFIG_ATH79_MACH_DLAN_PRO_500_WP)	+= mach-dlan-pro-500-wp.o
 obj-$(CONFIG_ATH79_MACH_DR344)			+= mach-dr344.o
 obj-$(CONFIG_ATH79_MACH_DR531)			+= mach-dr531.o
 obj-$(CONFIG_ATH79_MACH_DRAGINO2)		+= mach-dragino2.o
+obj-$(CONFIG_ATH79_MACH_EAP120)			+= mach-eap120.o
 obj-$(CONFIG_ATH79_MACH_EAP300V2)		+= mach-eap300v2.o
 obj-$(CONFIG_ATH79_MACH_EAP7660D)		+= mach-eap7660d.o
 obj-$(CONFIG_ATH79_MACH_EL_M150)		+= mach-el-m150.o
