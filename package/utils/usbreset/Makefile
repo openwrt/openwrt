@@ -26,11 +26,6 @@ define Package/usbreset/description
  devices.
 endef
 
-define Build/Prepare
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)
-	$(INSTALL_DATA) ./src/usbreset.c $(PKG_BUILD_DIR)/
-endef
-
 define Build/Compile
 	$(TARGET_CC) $(TARGET_CFLAGS) -Wall \
 		-o $(PKG_BUILD_DIR)/usbreset $(PKG_BUILD_DIR)/usbreset.c
