@@ -291,7 +291,7 @@ ifeq ($(SUBTARGET),xway)
 define Device/BTHOMEHUBV2B
   $(Device/NAND)
   DEVICE_TITLE := BT Home Hub 2B
-  DEVICE_PACKAGES :=  kmod-ltq-hcd-danube \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	kmod-ltq-deu-danube \
