@@ -26,11 +26,6 @@ define Package/libnl-tiny/description
  This package contains a stripped down version of libnl
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
-
 TARGET_CFLAGS += $(FPIC)
 
 define Build/Compile
