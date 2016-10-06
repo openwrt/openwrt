@@ -161,12 +161,6 @@ define LegacyDevice/DB120
 endef
 LEGACY_DEVICES += DB120
 
-define LegacyDevice/DRAGINO2
-  DEVICE_TITLE := DRAGINO2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
-endef
-LEGACY_DEVICES += DRAGINO2
-
 define LegacyDevice/EWDORINAP
   DEVICE_TITLE := Embedded Wireless Dorin Platform (4MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev kmod-usb-storage

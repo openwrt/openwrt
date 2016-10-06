@@ -27,6 +27,16 @@ define Device/cf-e316n-v2
 endef
 TARGET_DEVICES += cf-e316n-v2
 
+define Device/dragino2
+  BOARDNAME := DRAGINO2
+  CONSOLE := ttyATH0,115200
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_TITLE := Dragino 2 (MS14)
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,16000k(firmware),64k(config)ro,64k(art)ro
+endef
+TARGET_DEVICES += dragino2
+
 define Device/weio
   DEVICE_TITLE := WeIO
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
