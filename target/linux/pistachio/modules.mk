@@ -40,9 +40,10 @@ define KernelPackage/sound-pistachio-soc
     $(LINUX_DIR)/sound/soc/img/img-parallel-out.ko \
     $(LINUX_DIR)/sound/soc/img/img-spdif-in.ko \
     $(LINUX_DIR)/sound/soc/img/img-spdif-out.ko \
+    $(LINUX_DIR)/sound/soc/img/pistachio-event-timer-module.ko \
     $(LINUX_DIR)/sound/soc/img/pistachio-internal-dac.ko \
     $(LINUX_DIR)/sound/soc/img/pistachio.ko
-  AUTOLOAD:=$(call AutoProbe,img-i2s-in.ko img-i2s-out.ko img-parallel-out.ko img-spdif-in.ko img-spdif-out.ko pistachio-internal-dac.ko snd-soc-tpa6130a2.ko pistachio.ko)
+  AUTOLOAD:=$(call AutoProbe,img-i2s-in.ko img-i2s-out.ko img-parallel-out.ko img-spdif-in.ko img-spdif-out.ko pistachio-event-timer-module.ko pistachio-internal-dac.ko snd-soc-tpa6130a2.ko pistachio.ko)
   DEPENDS:=@TARGET_pistachio_marduk +kmod-sound-soc-core +kmod-serial-sc16is7xx
   $(call AddDepends/sound)
 endef

@@ -1,0 +1,61 @@
+From e02cbc7ae888c5e382394bef77dc085e62ae08b6 Mon Sep 17 00:00:00 2001
+From: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+Date: Fri, 3 Jun 2016 13:16:34 +0530
+Subject: marduk: fix pistachio audio
+
+Signed-off-by: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+---
+ kernel/time/clocksource.c |  1 +
+ sound/soc/img/Kconfig     |  1 +
+ sound/soc/img/Makefile    | 14 ++++++++++----
+ 3 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/kernel/time/clocksource.c b/kernel/time/clocksource.c
+index 15facb1..088edc2 100644
+--- a/kernel/time/clocksource.c
++++ b/kernel/time/clocksource.c
+@@ -87,6 +87,7 @@ clocks_calc_mult_shift(u32 *mult, u32 *shift, u32 from, u32 to, u32 maxsec)
+ 	*mult = tmp;
+ 	*shift = sft;
+ }
++EXPORT_SYMBOL(clocks_calc_mult_shift);
+ 
+ /*[Clocksource internal variables]---------
+  * curr_clocksource:
+diff --git a/sound/soc/img/Kconfig b/sound/soc/img/Kconfig
+index b12b62c..9560b16 100644
+--- a/sound/soc/img/Kconfig
++++ b/sound/soc/img/Kconfig
+@@ -90,4 +90,5 @@ config SND_SOC_IMG_PISTACHIO
+ 	select SND_SOC_IMG_SPDIF_OUT
+ 	select SND_SOC_IMG_PISTACHIO_EVENT_TIMER
+ 	select SND_SOC_IMG_PISTACHIO_INTERNAL_DAC
++	select SND_SOC_TPA6130A2
+ 
+diff --git a/sound/soc/img/Makefile b/sound/soc/img/Makefile
+index f5c8bbc..c23816d 100644
+--- a/sound/soc/img/Makefile
++++ b/sound/soc/img/Makefile
+@@ -4,9 +4,15 @@ obj-$(CONFIG_SND_SOC_IMG_PARALLEL_OUT) += img-parallel-out.o
+ obj-$(CONFIG_SND_SOC_IMG_SPDIF_IN) += img-spdif-in.o
+ obj-$(CONFIG_SND_SOC_IMG_SPDIF_OUT) += img-spdif-out.o
+ 
+-obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER) += pistachio-event-timer.o
+-obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER_ATU) += pistachio-event-timer-atu.o
+-obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER_LOCAL) += pistachio-event-timer-local.o
+-obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_INTERNAL_DAC) += pistachio-internal-dac.o
++obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER) += pistachio-event-timer-module.o
++
++ifneq ($(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER_LOCAL),)
++pistachio-event-timer-module-objs := pistachio-event-timer.o pistachio-event-timer-local.o
++endif
+ 
++ifneq ($(CONFIG_SND_SOC_IMG_PISTACHIO_EVENT_TIMER_ATU),)
++pistachio-event-timer-module-objs := pistachio-event-timer.o pistachio-event-timer-atu.o
++endif
++
++obj-$(CONFIG_SND_SOC_IMG_PISTACHIO_INTERNAL_DAC) += pistachio-internal-dac.o
+ obj-$(CONFIG_SND_SOC_IMG_PISTACHIO) += pistachio.o
+-- 
+1.9.1
+
