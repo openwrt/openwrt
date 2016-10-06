@@ -28,11 +28,6 @@ define Package/resolveip/description
  runtime in case of slow or defunct DNS servers.
 endef
 
-define Build/Prepare
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)
-	$(INSTALL_DATA) ./src/resolveip.c $(PKG_BUILD_DIR)/
-endef
-
 define Build/Compile
 	$(TARGET_CC) $(TARGET_CFLAGS) -Wall \
 		-o $(PKG_BUILD_DIR)/resolveip $(PKG_BUILD_DIR)/resolveip.c
