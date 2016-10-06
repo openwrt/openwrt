@@ -57,6 +57,17 @@ ap147-010)
 	ucidef_set_led_switch "lan4" "LAN4" "ap147:green:lan4" "switch0" "0x02"
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "ap147:green:wlan-2g" "phy0tpt"
 	;;
+ap90q|\
+dr531)
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth1"
+
+	case "$board" in
+	ap90q)
+		ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+		;;
+	esac
+	;;
 bhr-4grv2)
 	ucidef_set_led_default "power" "POWER" "buffalo:green:power" "1"
 	ucidef_set_led_default "diag" "DIAG" "buffalo:red:diag" "0"
@@ -151,10 +162,6 @@ cr3000)
 cr5000)
 	ucidef_set_led_wlan "wlan" "WLAN" "pcs:blue:wlan" "phy0tpt"
 	ucidef_set_led_usbdev "usb" "USB" "pcs:white:wps" "1-1"
-	;;
-dr531)
-	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
-	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth1"
 	;;
 dragino2)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:red:wlan" "phy0tpt"

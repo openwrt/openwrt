@@ -1,3 +1,12 @@
+define Device/ap90q
+  DEVICE_TITLE := YunCore AP90Q
+  BOARDNAME = AP90Q
+  IMAGE_SIZE = 16000k
+  CONSOLE = ttyS0,115200
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += ap90q
+
 define Device/bsb
   DEVICE_TITLE := Smart Electronics Black Swift board
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

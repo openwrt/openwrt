@@ -178,6 +178,7 @@ platform_check_image() {
 	ap132|\
 	ap81|\
 	ap83|\
+	ap90q|\
 	bullet-m|\
 	c-55|\
 	carambola2|\

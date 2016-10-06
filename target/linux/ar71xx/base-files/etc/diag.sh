@@ -47,6 +47,10 @@ get_status_led() {
 	tl-wpa8630)
 		status_led="$board:green:power"
 		;;
+	ap90q|\
+	gl-inet)
+		status_led="$board:green:lan"
+		;;
 	ap96)
 		status_led="$board:green:led2"
 		;;
@@ -167,9 +171,6 @@ get_status_led() {
 		;;
 	f9k1115v2)
 		status_led="belkin:blue:status"
-		;;
-	gl-inet)
-		status_led="$board:green:lan"
 		;;
 	epg5000|\
 	esr1750)

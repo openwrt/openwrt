@@ -470,6 +470,9 @@ ar71xx_board_detect() {
 	*AP83)
 		name="ap83"
 		;;
+	*AP90Q)
+		name="ap90q"
+		;;
 	*"Archer C5")
 		name="archer-c5"
 		;;

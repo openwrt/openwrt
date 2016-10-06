@@ -174,6 +174,15 @@ config ATH79_MACH_AP83
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_AP90Q
+	bool "YunCore AP90Q support"
+	select SOC_QCA953X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_AP96
 	bool "Atheros AP96 board support"
 	select SOC_AR71XX
