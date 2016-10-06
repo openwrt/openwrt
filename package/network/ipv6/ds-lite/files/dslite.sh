@@ -26,16 +26,20 @@ proto_dslite_setup() {
 
 	( proto_add_host_dependency "$cfg" "::" "$tunlink" )
 
-	remoteip6=$(resolveip -6 $peeraddr)
+	remoteip6=$(resolveip -6 "$peeraddr")
 	if [ -z "$remoteip6" ]; then
 		sleep 3
-		remoteip6=$(resolveip -6 $peeraddr)
+		remoteip6=$(resolveip -6 "$peeraddr")
 		if [ -z "$remoteip6" ]; then
 			proto_notify_error "$cfg" "AFTR_DNS_FAIL"
 			return
 		fi
 	fi
-	peeraddr="${remoteip6%% *}"
+
+	for ip6 in $remoteip6; do
+		peeraddr=$ip6
+		break
+	done
 
 	[ -z "$ip6addr" ] && {
 		local wanif="$tunlink"
