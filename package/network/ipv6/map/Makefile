@@ -30,11 +30,6 @@ define Package/map/description
  configuration details.
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
-
 define Package/map/install
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/map.sh $(1)/lib/netifd/proto/map.sh
