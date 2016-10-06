@@ -27,11 +27,6 @@ define Package/libiconv
   TITLE:=Tiny drop-in replacement for the GNU Character set conversion library
 endef
 
-define Build/Prepare
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef      
-
 define Build/Configure
 endef
 
