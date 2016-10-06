@@ -30,11 +30,6 @@ TARGET_CPPFLAGS := \
 	$(TARGET_CPPFLAGS) \
 	-I$(LINUX_DIR)/user_headers/include
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
-
 define Build/Compile
 	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
 	$(MAKE) -C $(PKG_BUILD_DIR) \
