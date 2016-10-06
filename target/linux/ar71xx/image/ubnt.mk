@@ -5,7 +5,7 @@
 # mkubntimage is using the kernel image direct
 # routerboard creates partitions out of the ubnt header
 define Build/mkubntimage
-	$(STAGING_DIR_HOST)/bin/mkfwimage \
+	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
 		-k $(IMAGE_KERNEL) \
 		-r $@ \
@@ -15,18 +15,19 @@ endef
 # all UBNT XM device expect the kernel image to have 1024k while flash, when
 # booting the image, the size doesn't matter.
 define Build/mkubntimage-split
-	dd if=$@ of=$@.old1 bs=1024k count=1
-	dd if=$@ of=$@.old2 bs=1024k skip=1
+	-[ -f $@ ] && ( \
+	dd if=$@ of=$@.old1 bs=1024k count=1; \
+	dd if=$@ of=$@.old2 bs=1024k skip=1; \
 	$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
 		-k $@.old1 \
 		-r $@.old2 \
-		-o $@
-	rm $@.old1 $@.old2
+		-o $@; \
+	rm $@.old1 $@.old2 )
 endef
 
 define Build/mkubntimage2
-	$(STAGING_DIR_HOST)/bin/mkfwimage2 -f 0x9f000000 \
+	-$(STAGING_DIR_HOST)/bin/mkfwimage2 -f 0x9f000000 \
 		-v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
 		-p jffs2:0x50000:0xf60000:0:0:$@ \
 		-o $@.new

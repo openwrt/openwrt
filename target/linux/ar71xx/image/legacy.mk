@@ -659,18 +659,18 @@ endef
 
 define Image/Build/CyberTAN
 	echo -n '' > $(KDIR_TMP)/empty.bin
-	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp \
+	-$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp \
 		-f $(KDIR_TMP)/vmlinux-$(2).uImage -F $(KDIR_TMP)/empty.bin \
-		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
-	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(5) \
+		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1) && \
+	$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(5) \
 		-i $(KDIR)/image.tmp \
 		-o $(call sysupname,$(1),$(2))
-	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR_TMP)/vmlinux-$(2).uImage \
-		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
-	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(5) -g \
+	-$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR_TMP)/vmlinux-$(2).uImage \
+		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1) && \
+	$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(5) -g \
 		-i $(KDIR)/image.tmp \
 		-o $(call factoryname,$(1),$(2))
-	rm $(KDIR)/image.tmp
+	-rm $(KDIR)/image.tmp
 endef
 
 Image/Build/CyberTANGZIP/loader=$(call Image/BuildLoader,$(1),gz,$(2),0x80060000)
