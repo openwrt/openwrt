@@ -1,4 +1,4 @@
-From 53bf716f35e12a82ac5e6f122858b5b8653ce01a Mon Sep 17 00:00:00 2001
+From fd57e2b430bc2d7aecb0deb55daee4c801528222 Mon Sep 17 00:00:00 2001
 From: Govindraj Raja <Govindraj.Raja@imgtec.com>
 Date: Thu, 10 Sep 2015 17:00:07 +0100
 Subject: pinctrl: pistachio: fix mfio function description and pinmux.
@@ -20,79 +20,13 @@ Issue ID: 73488 (linux/pinctrl primary functions for MFIOs 83-89 are incorrect)
 Change-Id: I04415c7a5f84163e799af64320910339abb0f97b
 Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
 ---
- drivers/pinctrl/pinctrl-pistachio.c | 36 ++++++++++++++++++------------------
- 1 file changed, 18 insertions(+), 18 deletions(-)
+ drivers/pinctrl/pinctrl-pistachio.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/pinctrl/pinctrl-pistachio.c b/drivers/pinctrl/pinctrl-pistachio.c
-index 85c9046..98a459b 100644
+index 6b1a47f..98a459b 100644
 --- a/drivers/pinctrl/pinctrl-pistachio.c
 +++ b/drivers/pinctrl/pinctrl-pistachio.c
-@@ -469,27 +469,27 @@ static const char * const pistachio_mips_pll_lock_groups[] = {
- 	"mfio83",
- };
- 
--static const char * const pistachio_sys_pll_lock_groups[] = {
-+static const char * const pistachio_audio_pll_lock_groups[] = {
- 	"mfio84",
- };
- 
--static const char * const pistachio_wifi_pll_lock_groups[] = {
-+static const char * const pistachio_rpu_v_pll_lock_groups[] = {
- 	"mfio85",
- };
- 
--static const char * const pistachio_bt_pll_lock_groups[] = {
-+static const char * const pistachio_rpu_l_pll_lock_groups[] = {
- 	"mfio86",
- };
- 
--static const char * const pistachio_rpu_v_pll_lock_groups[] = {
-+static const char * const pistachio_sys_pll_lock_groups[] = {
- 	"mfio87",
- };
- 
--static const char * const pistachio_rpu_l_pll_lock_groups[] = {
-+static const char * const pistachio_wifi_pll_lock_groups[] = {
- 	"mfio88",
- };
- 
--static const char * const pistachio_audio_pll_lock_groups[] = {
-+static const char * const pistachio_bt_pll_lock_groups[] = {
- 	"mfio89",
- };
- 
-@@ -559,12 +559,12 @@ enum pistachio_mux_option {
- 	PISTACHIO_FUNCTION_DREQ4,
- 	PISTACHIO_FUNCTION_DREQ5,
- 	PISTACHIO_FUNCTION_MIPS_PLL_LOCK,
-+	PISTACHIO_FUNCTION_AUDIO_PLL_LOCK,
-+	PISTACHIO_FUNCTION_RPU_V_PLL_LOCK,
-+	PISTACHIO_FUNCTION_RPU_L_PLL_LOCK,
- 	PISTACHIO_FUNCTION_SYS_PLL_LOCK,
- 	PISTACHIO_FUNCTION_WIFI_PLL_LOCK,
- 	PISTACHIO_FUNCTION_BT_PLL_LOCK,
--	PISTACHIO_FUNCTION_RPU_V_PLL_LOCK,
--	PISTACHIO_FUNCTION_RPU_L_PLL_LOCK,
--	PISTACHIO_FUNCTION_AUDIO_PLL_LOCK,
- 	PISTACHIO_FUNCTION_DEBUG_RAW_CCA_IND,
- 	PISTACHIO_FUNCTION_DEBUG_ED_SEC20_CCA_IND,
- 	PISTACHIO_FUNCTION_DEBUG_ED_SEC40_CCA_IND,
-@@ -620,12 +620,12 @@ static const struct pistachio_function pistachio_functions[] = {
- 	FUNCTION(dreq4),
- 	FUNCTION(dreq5),
- 	FUNCTION(mips_pll_lock),
-+	FUNCTION(audio_pll_lock),
-+	FUNCTION(rpu_v_pll_lock),
-+	FUNCTION(rpu_l_pll_lock),
- 	FUNCTION(sys_pll_lock),
- 	FUNCTION(wifi_pll_lock),
- 	FUNCTION(bt_pll_lock),
--	FUNCTION(rpu_v_pll_lock),
--	FUNCTION(rpu_l_pll_lock),
--	FUNCTION(audio_pll_lock),
- 	FUNCTION(debug_raw_cca_ind),
- 	FUNCTION(debug_ed_sec20_cca_ind),
- 	FUNCTION(debug_ed_sec40_cca_ind),
 @@ -809,17 +809,17 @@ static const struct pistachio_pin_group pistachio_groups[] = {
  			   PADS_FUNCTION_SELECT2, 12, 0x3),
  	MFIO_MUX_PIN_GROUP(83, MIPS_PLL_LOCK, MIPS_TRACE_DATA, USB_DEBUG,
@@ -118,5 +52,5 @@ index 85c9046..98a459b 100644
  	PIN_GROUP(TCK, "tck"),
  	PIN_GROUP(TRSTN, "trstn"),
 -- 
-2.1.0
+2.6.2
 
