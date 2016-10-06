@@ -29,11 +29,6 @@ Refer to http://wiki.openwrt.org/doc/uci/network for
 configuration details.
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
-
 define Build/Configure
 endef
 
