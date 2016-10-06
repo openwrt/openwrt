@@ -111,7 +111,7 @@ define Host/Install/Default
 endef
 
 define Host/Install
-  $(call Host/Install/Default)
+  $(call Host/Install/Default,$(HOST_BUILD_PREFIX))
 endef
 
 
@@ -173,7 +173,7 @@ ifndef DUMP
 		touch $$@
 
   $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
-		$(call Host/Install)
+		$(call Host/Install,$(HOST_BUILD_PREFIX))
 		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		mkdir -p $$(shell dirname $$@)
 		touch $(HOST_STAMP_BUILT)
