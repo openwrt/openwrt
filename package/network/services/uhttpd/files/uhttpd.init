@@ -46,12 +46,13 @@ generate_keys() {
 
 	# Prefer px5g for certificate generation (existence evaluated last)
 	local GENKEY_CMD=""
+	local UNIQUEID=$(dd if=/dev/urandom bs=1 count=4 | hexdump -e '1/1 "%02x"')
 	[ -x "$OPENSSL_BIN" ] && GENKEY_CMD="$OPENSSL_BIN req -x509 -outform der -nodes"
 	[ -x "$PX5G_BIN" ] && GENKEY_CMD="$PX5G_BIN selfsigned -der"
 	[ -n "$GENKEY_CMD" ] && {
 		$GENKEY_CMD \
 			-days ${days:-730} -newkey rsa:${bits:-2048} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
-			-subj /C="${country:-DE}"/ST="${state:-Saxony}"/L="${location:-Leipzig}"/CN="${commonname:-Lede}"
+			-subj /C="${country:-DE}"/ST="${state:-Saxony}"/L="${location:-Leipzig}"/O="${commonname:-Lede}$UNIQUEID"/CN="${commonname:-Lede}"
 		sync
 		mv "${UHTTPD_KEY}.new" "${UHTTPD_KEY}"
 		mv "${UHTTPD_CERT}.new" "${UHTTPD_CERT}"
