@@ -21,11 +21,6 @@ define KernelPackage/rtc-rv5c386a
   FILES:=$(PKG_BUILD_DIR)/rtc.ko
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
-
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
