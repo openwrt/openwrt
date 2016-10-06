@@ -29,11 +29,6 @@ define Package/nvram/description
  It works on bcm47xx (Linux 2.6) without using the kernel api.
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
-
 define Build/Configure
 endef
 
