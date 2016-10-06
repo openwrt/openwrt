@@ -31,11 +31,6 @@ KernelPackage/ltq-ptm-ar9=$(call KernelPackage/ltq-ptm-template,ar9,xway)
 KernelPackage/ltq-ptm-ase=$(call KernelPackage/ltq-ptm-template,ase,ase)
 KernelPackage/ltq-ptm-vr9=$(call KernelPackage/ltq-ptm-template,vr9,xrx200)
 
-define Build/Prepare
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)
-endef
-
 define Build/Configure
 endef
 

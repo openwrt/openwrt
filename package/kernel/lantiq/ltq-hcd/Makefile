@@ -32,11 +32,6 @@ KernelPackage/ltq-hcd-ase=$(call KernelPackage/ltq-hcd-template,ase,TARGET_lanti
 KernelPackage/ltq-hcd-danube=$(call KernelPackage/ltq-hcd-template,danube,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy))
 KernelPackage/ltq-hcd-ar9=$(call KernelPackage/ltq-hcd-template,ar9,TARGET_lantiq_xway)
 
-define Build/Prepare
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)
-endef
-
 define Build/Configure
 endef
 

@@ -30,11 +30,6 @@ KernelPackage/ltq-deu-danube=$(call KernelPackage/ltq-deu-template,danube,xway)
 KernelPackage/ltq-deu-ar9=$(call KernelPackage/ltq-deu-template,ar9,xway)
 KernelPackage/ltq-deu-vr9=$(call KernelPackage/ltq-deu-template,vr9,xrx200)
 
-define Build/Prepare
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)
-endef
-
 define Build/Configure
 endef
 

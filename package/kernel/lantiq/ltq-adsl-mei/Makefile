@@ -31,11 +31,6 @@ KernelPackage/ltq-adsl-danube-mei=$(call KernelPackage/ltq-adsl-mei-template,dan
 KernelPackage/ltq-adsl-ar9-mei=$(call KernelPackage/ltq-adsl-mei-template,ar9,TARGET_lantiq_xway)
 KernelPackage/ltq-adsl-ase-mei=$(call KernelPackage/ltq-adsl-mei-template,ase,TARGET_lantiq_ase)
 
-define Build/Prepare
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)/
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
-
 define Build/Configure
 endef
 
