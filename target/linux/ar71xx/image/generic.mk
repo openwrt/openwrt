@@ -80,6 +80,16 @@ define Device/cf-e530n
 endef
 TARGET_DEVICES += cf-e530n
 
+define Device/cpe870
+  DEVICE_TITLE := YunCore CPE870
+  DEVICE_PACKAGES := rssileds
+  BOARDNAME = CPE870
+  IMAGE_SIZE = 7936k
+  CONSOLE = ttyS0,115200
+  MTDPARTS = spi0.0:64k(u-boot)ro,64k(u-boot-env),7936k(firmware),64k(config)ro,64k(art)ro
+endef
+TARGET_DEVICES += cpe870
+
 define Device/domywifi-dw33d
   DEVICE_TITLE := DomyWifi DW33D
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ledtrig-usbdev kmod-ath10k
