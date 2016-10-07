@@ -128,6 +128,7 @@ static int ptm_stop(struct net_device *);
   static unsigned int ptm_poll(int, unsigned int);
   static int ptm_napi_poll(struct napi_struct *, int);
 static int ptm_hard_start_xmit(struct sk_buff *, struct net_device *);
+static int ptm_change_mtu(struct net_device *, int);
 static int ptm_ioctl(struct net_device *, struct ifreq *, int);
 static void ptm_tx_timeout(struct net_device *);
 
@@ -246,7 +247,7 @@ static struct net_device_ops g_ptm_netdev_ops = {
     .ndo_start_xmit      = ptm_hard_start_xmit,
     .ndo_validate_addr   = eth_validate_addr,
     .ndo_set_mac_address = eth_mac_addr,
-    .ndo_change_mtu      = eth_change_mtu,
+    .ndo_change_mtu      = ptm_change_mtu,
     .ndo_do_ioctl        = ptm_ioctl,
     .ndo_tx_timeout      = ptm_tx_timeout,
 };
@@ -449,6 +450,15 @@ PTM_HARD_START_XMIT_FAIL:
     dev_kfree_skb_any(skb);
     g_ptm_priv_data.itf[ndev].stats.tx_dropped++;
     return NETDEV_TX_OK;
+}
+
+static int ptm_change_mtu(struct net_device *dev, int mtu)
+{
+	/* Allow up to 1508 bytes, for RFC4638 */
+        if (mtu < 68 || mtu > ETH_DATA_LEN + 8)
+                return -EINVAL;
+        dev->mtu = mtu;
+        return 0;
 }
 
 static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
