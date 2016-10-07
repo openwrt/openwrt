@@ -196,24 +196,6 @@ define Build/hdd-img
 	$(if $(CONFIG_TARGET_IMAGES_GZIP),gzip -9n -c $@ > $(BIN_DIR)/$(notdir $@).gz)
 endef
 
-define Build/uRamdisk
-	$(STAGING_DIR_HOST)/bin/mkimage \
-		-A powerpc -T ramdisk -C gzip \
-		-n "$(DEVICE_NAME) rootfs" \
-		-d $@ $@.new
-	mv $@.new $@
-endef
-
-define Build/recovery-tar
-	sh ./mbl_gen_recovery_tar.sh \
-		--profile $(DEVICE_PROFILE) \
-		--dtb $(IMAGE_KERNEL).dtb \
-		--dtbname $(DEVICE_DTB) \
-		--kernel $(IMAGE_KERNEL) \
-		--rootfs $@ \
-		$@
-endef
-
 define Build/export-dtb
 	cp $(IMAGE_KERNEL).dtb $@
 endef
@@ -223,13 +205,13 @@ define Device/MyBookLiveDefault
   BLOCKSIZE := 1k
   DTB_SIZE := 16384
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
+  KERNEL_INITRAMFS := kernel-bin | dtb | gzip | uImage gzip
   BOOT_SIZE := 8
-  IMAGES := rootfs.img recovery.tar kernel.dtb
+  IMAGES := rootfs.img kernel.dtb
   DEVICE_DTB := apollo3g.dtb
   FILESYSTEMS := ext4
   IMAGE/kernel.dtb := export-dtb
   IMAGE/rootfs.img := boot-script | boot-img | hdd-img
-  IMAGE/recovery.tar := append-rootfs | gzip | uRamdisk | recovery-tar
 endef
 
 define Device/MyBookLiveSingle

@@ -1,5 +1,5 @@
 BOARDNAME := Devices which boot from SATA (NAS)
-FEATURES += ext4 usb
+FEATURES += ext4 usb ramdisk
 DEFAULT_PACKAGES += badblocks block-mount e2fsprogs \
 		    kmod-dm kmod-md-mod partx-utils
 
