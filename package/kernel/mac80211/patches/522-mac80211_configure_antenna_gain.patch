@@ -1,6 +1,6 @@
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -2410,6 +2410,7 @@ struct cfg80211_qos_map {
+@@ -2562,6 +2562,7 @@ struct cfg80211_nan_func {
   *	(as advertised by the nl80211 feature flag.)
   * @get_tx_power: store the current TX power into the dbm variable;
   *	return 0 if successful
@@ -8,7 +8,7 @@
   *
   * @set_wds_peer: set the WDS peer for a WDS interface
   *
-@@ -2671,6 +2672,7 @@ struct cfg80211_ops {
+@@ -2836,6 +2837,7 @@ struct cfg80211_ops {
  				enum nl80211_tx_power_setting type, int mbm);
  	int	(*get_tx_power)(struct wiphy *wiphy, struct wireless_dev *wdev,
  				int *dbm);
@@ -36,9 +36,9 @@
  	u8 ps_dtim_period;
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -1829,6 +1829,9 @@ enum nl80211_commands {
-  *	%NL80211_ATTR_EXT_CAPA_MASK, to specify the extended capabilities per
-  *	interface type.
+@@ -1937,6 +1937,9 @@ enum nl80211_commands {
+  * @NL80211_ATTR_NAN_MATCH: used to report a match. This is a nested attribute.
+  *	See &enum nl80211_nan_match_attributes.
   *
 + * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
 + *	transmit power to stay within regulatory limits. u32, dBi.
@@ -46,9 +46,9 @@
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -2213,6 +2216,8 @@ enum nl80211_attrs {
- 
- 	NL80211_ATTR_IFTYPE_EXT_CAPA,
+@@ -2336,6 +2339,8 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_NAN_FUNC,
+ 	NL80211_ATTR_NAN_MATCH,
  
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
 +
@@ -57,7 +57,7 @@
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2238,6 +2238,19 @@ static int ieee80211_get_tx_power(struct
+@@ -2406,6 +2406,19 @@ static int ieee80211_get_tx_power(struct
  	return 0;
  }
  
@@ -77,7 +77,7 @@
  static int ieee80211_set_wds_peer(struct wiphy *wiphy, struct net_device *dev,
  				  const u8 *addr)
  {
-@@ -3412,6 +3425,7 @@ const struct cfg80211_ops mac80211_confi
+@@ -3633,6 +3646,7 @@ const struct cfg80211_ops mac80211_confi
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
@@ -87,7 +87,7 @@
  	CFG80211_TESTMODE_CMD(ieee80211_testmode_cmd)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1340,6 +1340,7 @@ struct ieee80211_local {
+@@ -1363,6 +1363,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */
@@ -129,15 +129,15 @@
  	local->user_power_level = IEEE80211_UNSET_POWER_LEVEL;
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -407,6 +407,7 @@ static const struct nla_policy nl80211_p
- 	[NL80211_ATTR_PBSS] = { .type = NLA_FLAG },
- 	[NL80211_ATTR_BSS_SELECT] = { .type = NLA_NESTED },
- 	[NL80211_ATTR_STA_SUPPORT_P2P_PS] = { .type = NLA_U8 },
+@@ -416,6 +416,7 @@ static const struct nla_policy nl80211_p
+ 	[NL80211_ATTR_NAN_MASTER_PREF] = { .type = NLA_U8 },
+ 	[NL80211_ATTR_NAN_DUAL] = { .type = NLA_U8 },
+ 	[NL80211_ATTR_NAN_FUNC] = { .type = NLA_NESTED },
 +	[NL80211_ATTR_WIPHY_ANTENNA_GAIN] = { .type = NLA_U32 },
  };
  
  /* policy for the key attributes */
-@@ -2294,6 +2295,20 @@ static int nl80211_set_wiphy(struct sk_b
+@@ -2353,6 +2354,20 @@ static int nl80211_set_wiphy(struct sk_b
  		if (result)
  			return result;
  	}

@@ -38,16 +38,7 @@
  #ifdef CPTCFG_ATH9K_DEBUGFS
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -22,7 +22,7 @@
- 
- #ifdef CPTCFG_MAC80211_LEDS
- 
--void ath_fill_led_pin(struct ath_softc *sc)
-+static void ath_fill_led_pin(struct ath_softc *sc)
- {
- 	struct ath_hw *ah = sc->sc_ah;
- 
-@@ -39,61 +39,111 @@ void ath_fill_led_pin(struct ath_softc *
+@@ -39,61 +39,111 @@ static void ath_fill_led_pin(struct ath_
  		else
  			ah->led_pin = ATH_LED_PIN_DEF;
  	}
@@ -190,7 +181,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -942,7 +942,7 @@ int ath9k_init_device(u16 devid, struct
+@@ -946,7 +946,7 @@ int ath9k_init_device(u16 devid, struct
  
  #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */

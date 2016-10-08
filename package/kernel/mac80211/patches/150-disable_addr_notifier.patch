@@ -18,7 +18,7 @@
  static int ieee80211_ifa6_changed(struct notifier_block *nb,
  				  unsigned long data, void *arg)
  {
-@@ -1090,14 +1090,14 @@ int ieee80211_register_hw(struct ieee802
+@@ -1101,14 +1101,14 @@ int ieee80211_register_hw(struct ieee802
  	if (result)
  		goto fail_flows;
  
@@ -35,7 +35,7 @@
  	local->ifa6_notifier.notifier_call = ieee80211_ifa6_changed;
  	result = register_inet6addr_notifier(&local->ifa6_notifier);
  	if (result)
-@@ -1106,13 +1106,13 @@ int ieee80211_register_hw(struct ieee802
+@@ -1117,13 +1117,13 @@ int ieee80211_register_hw(struct ieee802
  
  	return 0;
  
@@ -52,7 +52,7 @@
   fail_ifa:
  #endif
  	ieee80211_txq_teardown_flows(local);
-@@ -1142,10 +1142,10 @@ void ieee80211_unregister_hw(struct ieee
+@@ -1153,10 +1153,10 @@ void ieee80211_unregister_hw(struct ieee
  	tasklet_kill(&local->tx_pending_tasklet);
  	tasklet_kill(&local->tasklet);
  

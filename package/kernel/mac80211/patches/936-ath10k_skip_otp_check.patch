@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath10k/core.c
 +++ b/drivers/net/wireless/ath/ath10k/core.c
-@@ -1243,9 +1243,6 @@ static int ath10k_core_fetch_firmware_fi
+@@ -1282,9 +1282,6 @@ static int ath10k_core_fetch_firmware_fi
  {
  	int ret;
  
@@ -10,7 +10,7 @@
  	ar->fw_api = 5;
  	ath10k_dbg(ar, ATH10K_DBG_BOOT, "trying fw api %d\n", ar->fw_api);
  
-@@ -1944,7 +1941,7 @@ EXPORT_SYMBOL(ath10k_core_stop);
+@@ -2054,7 +2051,7 @@ EXPORT_SYMBOL(ath10k_core_stop);
  static int ath10k_core_probe_fw(struct ath10k *ar)
  {
  	struct bmi_target_info target_info;
@@ -19,7 +19,7 @@
  
  	ret = ath10k_hif_power_up(ar);
  	if (ret) {
-@@ -1968,6 +1965,9 @@ static int ath10k_core_probe_fw(struct a
+@@ -2078,6 +2075,9 @@ static int ath10k_core_probe_fw(struct a
  		goto err_power_down;
  	}
  
@@ -29,7 +29,7 @@
  	ret = ath10k_core_fetch_firmware_files(ar);
  	if (ret) {
  		ath10k_err(ar, "could not fetch firmware files (%d)\n", ret);
-@@ -1990,11 +1990,14 @@ static int ath10k_core_probe_fw(struct a
+@@ -2100,11 +2100,14 @@ static int ath10k_core_probe_fw(struct a
  			   "could not load pre cal data: %d\n", ret);
  	}
  

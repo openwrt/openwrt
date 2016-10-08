@@ -18,7 +18,7 @@
  	void (*spectral_scan_trigger)(struct ath_hw *ah);
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -1945,6 +1945,26 @@ void ar9003_hw_init_rate_txpower(struct
+@@ -1947,6 +1947,26 @@ void ar9003_hw_init_rate_txpower(struct
  	}
  }
  
@@ -45,7 +45,7 @@
  void ar9003_hw_attach_phy_ops(struct ath_hw *ah)
  {
  	struct ath_hw_private_ops *priv_ops = ath9k_hw_private_ops(ah);
-@@ -1981,6 +2001,7 @@ void ar9003_hw_attach_phy_ops(struct ath
+@@ -1983,6 +2003,7 @@ void ar9003_hw_attach_phy_ops(struct ath
  	priv_ops->set_radar_params = ar9003_hw_set_radar_params;
  	priv_ops->fast_chan_change = ar9003_hw_fast_chan_change;
  
@@ -55,7 +55,7 @@
  	ops->spectral_scan_config = ar9003_hw_spectral_scan_config;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -716,7 +716,8 @@ static void ath9k_init_txpower_limits(st
+@@ -719,7 +719,8 @@ static void ath9k_init_txpower_limits(st
  	if (ah->caps.hw_caps & ATH9K_HW_CAP_5GHZ)
  		ath9k_init_band_txpower(sc, NL80211_BAND_5GHZ);
  
@@ -65,7 +65,7 @@
  }
  
  static const struct ieee80211_iface_limit if_limits[] = {
-@@ -903,6 +904,18 @@ static void ath9k_set_hw_capab(struct at
+@@ -906,6 +907,18 @@ static void ath9k_set_hw_capab(struct at
  	SET_IEEE80211_PERM_ADDR(hw, common->macaddr);
  }
  
@@ -84,7 +84,7 @@
  int ath9k_init_device(u16 devid, struct ath_softc *sc,
  		    const struct ath_bus_ops *bus_ops)
  {
-@@ -948,6 +961,8 @@ int ath9k_init_device(u16 devid, struct
+@@ -951,6 +964,8 @@ int ath9k_init_device(u16 devid, struct
  		ARRAY_SIZE(ath9k_tpt_blink));
  #endif
  
@@ -110,7 +110,7 @@
  static inline void ath9k_hw_set_bt_ant_diversity(struct ath_hw *ah, bool enable)
 --- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-@@ -1325,9 +1325,30 @@ void ar5008_hw_init_rate_txpower(struct
+@@ -1322,9 +1322,30 @@ void ar5008_hw_init_rate_txpower(struct
  	}
  }
  
@@ -141,7 +141,7 @@
  	static const u32 ar5416_cca_regs[6] = {
  		AR_PHY_CCA,
  		AR_PHY_CH1_CCA,
-@@ -1342,6 +1363,8 @@ int ar5008_hw_attach_phy_ops(struct ath_
+@@ -1339,6 +1360,8 @@ int ar5008_hw_attach_phy_ops(struct ath_
  	if (ret)
  	    return ret;
  
