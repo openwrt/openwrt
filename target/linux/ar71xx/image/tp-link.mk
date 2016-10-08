@@ -217,6 +217,16 @@ define Device/archer-c7-v2
     IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
 endef
 
+define Device/archer-c7-v2-il
+    $(Device/tplink-16mlzma)
+    DEVICE_TITLE := TP-LINK Archer C7 v2 IL
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k ath10k-firmware-qca988x
+    BOARDNAME := ARCHER-C7-V2
+    DEVICE_PROFILE := ARCHERC7
+    TPLINK_HWID := 0xc7000002
+    TPLINK_HWREV := 0x494c0001
+endef
+
 define Device/tl-wdr7500-v3
     $(Device/tplink-8mlzma)
     DEVICE_TITLE := TP-LINK Archer C7 v3
@@ -225,7 +235,7 @@ define Device/tl-wdr7500-v3
     DEVICE_PROFILE := ARCHERC7
     TPLINK_HWID := 0x75000003
 endef
-TARGET_DEVICES += archer-c5-v1 archer-c7-v1 archer-c7-v2 tl-wdr7500-v3
+TARGET_DEVICES += archer-c5-v1 archer-c7-v1 archer-c7-v2 archer-c7-v2-il tl-wdr7500-v3
 
 define Device/tl-mr10u-v1
     $(Device/tplink-4mlzma)
