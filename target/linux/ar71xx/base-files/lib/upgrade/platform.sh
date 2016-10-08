@@ -188,6 +188,7 @@ platform_check_image() {
 	cf-e380ac-v2|\
 	cf-e520n|\
 	cf-e530n|\
+	cpe830|\
 	cpe870|\
 	dgl-5500-a1|\
 	dhp-1565-a1|\

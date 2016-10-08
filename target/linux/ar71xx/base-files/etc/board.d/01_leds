@@ -58,6 +58,7 @@ ap147-010)
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "ap147:green:wlan-2g" "phy0tpt"
 	;;
 ap90q|\
+cpe830|\
 cpe870|\
 dr531)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
@@ -67,6 +68,7 @@ dr531)
 	ap90q)
 		ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 		;;
+	cpe830|\
 	cpe870)
 		ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 		ucidef_set_rssimon "wlan0" "200000" "1"

@@ -80,6 +80,14 @@ define Device/cf-e530n
 endef
 TARGET_DEVICES += cf-e530n
 
+define Device/cpe830
+  $(Device/ap90q)
+  DEVICE_TITLE := YunCore CPE830
+  DEVICE_PACKAGES := rssileds
+  BOARDNAME = CPE830
+endef
+TARGET_DEVICES += cpe830
+
 define Device/cpe870
   DEVICE_TITLE := YunCore CPE870
   DEVICE_PACKAGES := rssileds

@@ -526,6 +526,9 @@ ar71xx_board_detect() {
 		name="cpe510"
 		tplink_pharos_board_detect
 		;;
+	*CPE830)
+		name="cpe830"
+		;;
 	*CPE870)
 		name="cpe870"
 		;;

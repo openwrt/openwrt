@@ -48,6 +48,7 @@ get_status_led() {
 		status_led="$board:green:power"
 		;;
 	ap90q|\
+	cpe830|\
 	cpe870|\
 	gl-inet)
 		status_led="$board:green:lan"

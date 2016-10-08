@@ -1,5 +1,7 @@
 /*
- * YunCore AP90Q board support
+ * Support for YunCore boards:
+ * - AP90Q
+ * - CPE830
  *
  * Copyright (C) 2016 Piotr Dymacz <pepe2k@gmail.com>
  *
@@ -23,6 +25,7 @@
 #include "dev-wmac.h"
 #include "machtypes.h"
 
+/* AP90Q */
 #define AP90Q_GPIO_LED_WAN	4
 #define AP90Q_GPIO_LED_WLAN	12
 #define AP90Q_GPIO_LED_LAN	16
@@ -61,39 +64,61 @@ static struct gpio_keys_button ap90q_gpio_keys[] __initdata = {
 	},
 };
 
-static void __init ap90q_gpio_setup(void)
-{
-	/* For LED on GPIO4 */
-	ath79_gpio_function_disable(AR934X_GPIO_FUNC_CLK_OBS4_EN);
+/* CPE830 */
+#define CPE830_GPIO_LED_LINK4	0
+#define CPE830_GPIO_LED_LINK1	1
+#define CPE830_GPIO_LED_LINK2	2
+#define CPE830_GPIO_LED_LINK3	3
+#define CPE830_GPIO_LED_WAN	4
+#define CPE830_GPIO_LED_WLAN	12
+#define CPE830_GPIO_LED_LAN	16
 
-	ath79_gpio_direction_select(AP90Q_GPIO_LED_LAN, true);
-	ath79_gpio_direction_select(AP90Q_GPIO_LED_WAN, true);
-	ath79_gpio_direction_select(AP90Q_GPIO_LED_WLAN, true);
+#define CPE830_GPIO_BTN_RESET	17
 
-	/* Mute LEDs on boot */
-	gpio_set_value(AP90Q_GPIO_LED_LAN, 1);
-	gpio_set_value(AP90Q_GPIO_LED_WAN, 1);
+static struct gpio_led cpe830_leds_gpio[] __initdata = {
+	{
+		.name		= "cpe830:green:lan",
+		.gpio		= CPE830_GPIO_LED_LAN,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cpe830:green:wan",
+		.gpio		= CPE830_GPIO_LED_WAN,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cpe830:green:wlan",
+		.gpio		= CPE830_GPIO_LED_WLAN,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cpe830:green:link1",
+		.gpio		= CPE830_GPIO_LED_LINK1,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cpe830:green:link2",
+		.gpio		= CPE830_GPIO_LED_LINK2,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cpe830:green:link3",
+		.gpio		= CPE830_GPIO_LED_LINK3,
+		.active_low	= 1,
+	},
+	{
+		.name		= "cpe830:green:link4",
+		.gpio		= CPE830_GPIO_LED_LINK4,
+		.active_low	= 1,
+	},
+};
 
-	ath79_gpio_output_select(AP90Q_GPIO_LED_LAN, 0);
-	ath79_gpio_output_select(AP90Q_GPIO_LED_WAN, 0);
-	ath79_gpio_output_select(AP90Q_GPIO_LED_WLAN, 0);
-
-	ath79_register_leds_gpio(-1, ARRAY_SIZE(ap90q_leds_gpio),
-				 ap90q_leds_gpio);
-
-	ath79_register_gpio_keys_polled(-1, AP90Q_KEYS_POLL_INTERVAL,
-					ARRAY_SIZE(ap90q_gpio_keys),
-					ap90q_gpio_keys);
-}
-
-static void __init ap90q_setup(void)
+static void __init ap90q_cpe830_common_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
 	u8 *mac = (u8 *) KSEG1ADDR(0x1fff0000);
 
 	ath79_register_m25p80(NULL);
-
-	ap90q_gpio_setup();
 
 	ath79_setup_ar933x_phy4_switch(false, false);
 
@@ -118,6 +143,59 @@ static void __init ap90q_setup(void)
 	ath79_register_eth(0);
 
 	ath79_register_wmac(art, NULL);
+
+	/* For LED on GPIO4 */
+	ath79_gpio_function_disable(AR934X_GPIO_FUNC_CLK_OBS4_EN);
+
+	ath79_gpio_direction_select(AP90Q_GPIO_LED_LAN, true);
+	ath79_gpio_direction_select(AP90Q_GPIO_LED_WAN, true);
+	ath79_gpio_direction_select(AP90Q_GPIO_LED_WLAN, true);
+
+	/* Mute LEDs on boot */
+	gpio_set_value(AP90Q_GPIO_LED_LAN, 1);
+	gpio_set_value(AP90Q_GPIO_LED_WAN, 1);
+
+	ath79_gpio_output_select(AP90Q_GPIO_LED_LAN, 0);
+	ath79_gpio_output_select(AP90Q_GPIO_LED_WAN, 0);
+	ath79_gpio_output_select(AP90Q_GPIO_LED_WLAN, 0);
+
+	ath79_register_gpio_keys_polled(-1, AP90Q_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(ap90q_gpio_keys),
+					ap90q_gpio_keys);
+}
+
+static void __init ap90q_setup(void)
+{
+	ap90q_cpe830_common_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(ap90q_leds_gpio),
+				 ap90q_leds_gpio);
 }
 
 MIPS_MACHINE(ATH79_MACH_AP90Q, "AP90Q", "YunCore AP90Q", ap90q_setup);
+
+static void __init cpe830_setup(void)
+{
+	ap90q_cpe830_common_setup();
+
+	ath79_gpio_direction_select(CPE830_GPIO_LED_LINK1, true);
+	ath79_gpio_direction_select(CPE830_GPIO_LED_LINK2, true);
+	ath79_gpio_direction_select(CPE830_GPIO_LED_LINK3, true);
+	ath79_gpio_direction_select(CPE830_GPIO_LED_LINK4, true);
+
+	/* Mute LEDs on boot */
+	gpio_set_value(CPE830_GPIO_LED_LINK1, 1);
+	gpio_set_value(CPE830_GPIO_LED_LINK2, 1);
+	gpio_set_value(CPE830_GPIO_LED_LINK3, 1);
+	gpio_set_value(CPE830_GPIO_LED_LINK4, 1);
+
+	ath79_gpio_output_select(CPE830_GPIO_LED_LINK1, 0);
+	ath79_gpio_output_select(CPE830_GPIO_LED_LINK2, 0);
+	ath79_gpio_output_select(CPE830_GPIO_LED_LINK3, 0);
+	ath79_gpio_output_select(CPE830_GPIO_LED_LINK4, 0);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cpe830_leds_gpio),
+				 cpe830_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_CPE830, "CPE830", "YunCore CPE830", cpe830_setup);
