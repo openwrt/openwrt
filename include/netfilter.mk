@@ -262,6 +262,10 @@ $(eval $(if $(NF_KMOD),$(call nf_add,IPT_TEE,CONFIG_NF_DUP_IPV6, $(P_V6)nf_dup_i
 
 $(eval $(call nf_add,IPT_U32,CONFIG_NETFILTER_XT_MATCH_U32, $(P_XT)xt_u32))
 
+# checksum
+
+$(eval $(call nf_add,IPT_CHECKSUM,CONFIG_NETFILTER_XT_TARGET_CHECKSUM, $(P_XT)xt_CHECKSUM))
+
 
 # netlink
 
