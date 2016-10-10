@@ -29,6 +29,7 @@ get_status_led() {
 	nbg-419n|\
 	nbg-419n2|\
 	pwh2004|\
+	vr500|\
 	wnce2001|\
 	wndr3700v5|\
 	x5|\

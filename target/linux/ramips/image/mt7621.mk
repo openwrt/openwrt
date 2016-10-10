@@ -182,6 +182,14 @@ define Device/sk-wb8
 endef
 TARGET_DEVICES += sk-wb8
 
+define Device/vr500
+  DTS := VR500
+  IMAGE_SIZE := 66453504
+  DEVICE_TITLE := Planex VR500
+  DEVICE_PACKAGES := kmod-usb3
+endef
+TARGET_DEVICES += vr500
+
 # FIXME: is this still needed?
 define Image/Prepare
 #define Build/Compile

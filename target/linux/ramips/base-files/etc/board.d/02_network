@@ -85,6 +85,7 @@ ramips_setup_interfaces()
 	psg1218|\
 	sap-g3200u3|\
 	sk-wb8|\
+	vr500|\
 	wf-2881|\
 	whr-300hp2|\
 	whr-600d|\
@@ -353,6 +354,10 @@ ramips_setup_macs()
 	tiny-ac)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env LAN_MAC_ADDR)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env WAN_MAC_ADDR)
+		;;
+	vr500)
+		lan_mac=$(mtd_get_mac_binary factory 57344)
+		wan_mac=$(mtd_get_mac_binary factory 57350)
 		;;
 	w306r-v20)
 		lan_mac=$(cat /sys/class/net/eth0/address)
