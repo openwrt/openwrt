@@ -21,6 +21,10 @@ ifeq ($(PKG_VERSION),2.26.1)
   PKG_MD5SUM:=d2b24e5b5301b7ff0207414c34c3e0fb
 endif
 
+ifeq ($(PKG_VERSION),2.27)
+  PKG_MD5SUM:=2869c9bf3e60ee97c74ac2a6bf4e9d68
+endif
+
 ifeq ($(findstring linaro, $(CONFIG_BINUTILS_VERSION)),linaro)
   PKG_SOURCE_URL:=https://releases.linaro.org/14.09/components/toolchain/binutils-linaro/
   PKG_REV:=2.24.0-2014.09
