@@ -1103,6 +1103,12 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/BuildLoader,generic,elf,,,-initramfs)
 endif
 	$(call Image/BuildLoader,generic,elf)
+
+	# Note: not only used for legacy images
+	rm -rf $(KDIR)/relocate
+	$(CP) ../../generic/image/relocate $(KDIR)
+	$(MAKE) -C $(KDIR)/relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
+	$(CP) $(KDIR)/relocate/loader.bin $(KDIR)/relocate.bin
 endef
 
 define Image/Prepare/Profile

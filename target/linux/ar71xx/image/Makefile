@@ -78,6 +78,15 @@ define Build/loader-okli
 	mv "$@.new" "$@"
 endef
 
+define Build/relocate-kernel
+	( \
+		dd if=$(KDIR)/relocate.bin bs=32 conv=sync && \
+		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
+		cat "$@" \
+	) > "$@.new"
+	mv "$@.new" "$@"
+endef
+
 define Build/copy-file
 	cat "$(1)" > "$@"
 endef
