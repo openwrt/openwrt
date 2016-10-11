@@ -485,7 +485,7 @@ define Device/seama
   CONSOLE := ttyS0,115200
   LOADER_TYPE := bin
   BLOCKSIZE := 64k
-  KERNEL := kernel-bin | lzma | loader-kernel-cmdline | lzma
+  KERNEL := kernel-bin | patch-cmdline | relocate-kernel | lzma
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | seama
   KERNEL_INITRAMFS_SUFFIX = $$(KERNEL_SUFFIX).seama
   IMAGES := sysupgrade.bin factory.bin
