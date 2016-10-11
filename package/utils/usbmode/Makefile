@@ -45,6 +45,17 @@ define Build/Prepare
 	rm -f \
 		$(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/05c6:1000:sVe=GT
 	cp ./data/* $(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/
+	#in order to keep the Lede GIT repo free of filenames with colons,
+	#we name the files xxxx-yyyy
+	# and rename here after copying to the build directory
+	for filevar in $(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/*-* ; \
+	do \
+		[ -f "$$$$filevar" ] || continue ; \
+		FILENAME=$$$$(basename $$$$filevar) ; \
+		NEWNAME=$$$${FILENAME//-/:} ; \
+		rm "$(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/$$$$NEWNAME" ; \
+		mv "$(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/$$$$FILENAME" "$(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/$$$$NEWNAME" ; \
+	done
 endef
 
 define Package/usb-modeswitch/install
