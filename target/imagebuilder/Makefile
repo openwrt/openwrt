@@ -21,7 +21,7 @@ IB_DTSDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(LINUX_DIR))/arch/$(ARCH)/
 
 all: compile
 
-$(BIN_DIR)/$(IB_NAME).tar.bz2: clean
+$(BIN_DIR)/$(IB_NAME).tar.xz: clean
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host/lib \
 		$(PKG_BUILD_DIR)/target $(PKG_BUILD_DIR)/scripts $(IB_DTSDIR)
@@ -77,12 +77,12 @@ endif
 	find $(STAGING_DIR_HOST)/bin -maxdepth 1 -type f -perm -u=x \
 	  | $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host/bin/
 	STRIP=sstrip $(SCRIPT_DIR)/rstrip.sh $(PKG_BUILD_DIR)/staging_dir/host/bin/
-	$(TAR) -cf - -C $(BUILD_DIR) $(IB_NAME) | bzip2 -c > $@
+	$(TAR) -cf - -C $(BUILD_DIR) $(IB_NAME) | xz -zc -7e > $@
 
 download:
 prepare:
-compile: $(BIN_DIR)/$(IB_NAME).tar.bz2
+compile: $(BIN_DIR)/$(IB_NAME).tar.xz
 install: compile
 
 clean: FORCE
-	rm -rf $(PKG_BUILD_DIR) $(BIN_DIR)/$(IB_NAME).tar.bz2
+	rm -rf $(PKG_BUILD_DIR) $(BIN_DIR)/$(IB_NAME).tar.xz
