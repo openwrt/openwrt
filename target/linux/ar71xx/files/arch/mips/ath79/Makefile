@@ -78,6 +78,7 @@ obj-$(CONFIG_ATH79_MACH_DIR_615_C1)		+= mach-dir-615-c1.o
 obj-$(CONFIG_ATH79_MACH_DIR_615_I1)		+= mach-dir-615-i1.o
 obj-$(CONFIG_ATH79_MACH_DIR_825_B1)		+= mach-dir-825-b1.o
 obj-$(CONFIG_ATH79_MACH_DIR_825_C1)		+= mach-dir-825-c1.o
+obj-$(CONFIG_ATH79_MACH_DIR_869_A1)		+= mach-dir-869-a1.o
 obj-$(CONFIG_ATH79_MACH_DLAN_HOTSPOT)		+= mach-dlan-hotspot.o
 obj-$(CONFIG_ATH79_MACH_DLAN_PRO_1200_AC)	+= mach-dlan-pro-1200-ac.o
 obj-$(CONFIG_ATH79_MACH_DLAN_PRO_500_WP)	+= mach-dlan-pro-500-wp.o
