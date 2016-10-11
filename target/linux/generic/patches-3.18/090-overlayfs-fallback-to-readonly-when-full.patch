@@ -76,9 +76,9 @@ Miklos
  	err = ovl_lock_rename_workdir(workdir, upperdir);
  	if (err)
  		goto out;
-@@ -507,6 +513,9 @@ static int ovl_remove_and_whiteout(struc
+@@ -506,6 +512,9 @@ static int ovl_remove_and_whiteout(struc
+ 	struct dentry *opaquedir = NULL;
  	int err;
- 	int flags = 0;
  
 +	if (WARN_ON(!workdir))
 +		return -EROFS;
