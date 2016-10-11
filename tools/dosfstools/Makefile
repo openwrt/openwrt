@@ -15,21 +15,10 @@ PKG_SOURCE_URL:=https://github.com/dosfstools/dosfstools/releases/download/v$(PK
 		http://fossies.org/linux/misc
 PKG_MD5SUM:=9037738953559d1efe04fc5408b6846216cc0138f7f9d32de80b6ec3c35e7daf
 
-HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
-
 include $(INCLUDE_DIR)/host-build.mk
 
 ifeq ($(HOST_OS),Darwin)
 HOST_CFLAGS += -UHAVE_ENDIAN_H
-LDLIBS += -liconv
 endif
-
-define Host/Install
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/src/mkfs.fat $(STAGING_DIR_HOST)/bin/
-endef
-
-define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/mk{dosfs,fs.fat}
-endef
 
 $(eval $(call HostBuild))
