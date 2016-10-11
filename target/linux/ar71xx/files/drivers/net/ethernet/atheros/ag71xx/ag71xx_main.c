@@ -453,16 +453,11 @@ static void ag71xx_hw_stop(struct ag71xx *ag)
 static void ag71xx_hw_setup(struct ag71xx *ag)
 {
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-	struct ag71xx_mdio_platform_data *mpdata;
 	u32 init = MAC_CFG1_INIT;
 
-	if (pdata->mii_bus_dev && ag->pdev->id == 0) {
-		mpdata = pdata->mii_bus_dev->platform_data;
-		if (mpdata && mpdata->builtin_switch)
-		    init |= MAC_CFG1_TFC | MAC_CFG1_RFC;
-	}
-
 	/* setup MAC configuration registers */
+	if (pdata->use_flow_control)
+		init |= MAC_CFG1_TFC | MAC_CFG1_RFC;
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, init);
 
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
