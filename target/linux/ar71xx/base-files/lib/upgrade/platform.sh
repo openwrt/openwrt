@@ -453,6 +453,7 @@ platform_check_image() {
 		merakinand_do_platform_check $board $1
 		return $?
 		;;
+	dir-869-a1|\
 	mynet-n600|\
 	mynet-n750|\
 	qihoo-c301)

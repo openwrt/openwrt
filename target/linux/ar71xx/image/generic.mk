@@ -505,6 +505,20 @@ define Device/seama
   DEVICE_VARS += SEAMA_SIGNATURE
 endef
 
+define Device/dir-869-a1
+$(Device/seama)
+  DEVICE_TITLE := D-Link DIR-869 rev. A1
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  BOARDNAME = DIR-869-A1
+  IMAGE_SIZE = 15872k
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(devdata)ro,64k(devconf)ro,15872k(firmware),64k(radiocfg)ro
+  SEAMA_SIGNATURE := wrgac54_dlink.2015_dir869
+  IMAGE/factory.bin := \
+	$$(IMAGE/default) | pad-rootfs -x 64 | \
+	seama | seama-seal -m "signature=$$$$(SEAMA_SIGNATURE)" | \
+	check-size $$$$(IMAGE_SIZE)
+endef
+
 define Device/mynet-n600
 $(Device/seama)
   DEVICE_TITLE := Western Digital My Net N600
@@ -535,4 +549,4 @@ $(Device/seama)
   SEAMA_SIGNATURE := wrgac26_qihoo360_360rg
 endef
 
-TARGET_DEVICES += mynet-n600 mynet-n750 qihoo-c301
+TARGET_DEVICES += dir-869-a1 mynet-n600 mynet-n750 qihoo-c301

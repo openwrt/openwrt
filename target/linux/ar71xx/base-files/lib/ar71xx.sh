@@ -536,6 +536,9 @@ ar71xx_board_detect() {
 	*"DIR-835 rev. A1")
 		name="dir-835-a1"
 		;;
+	*"DIR-869 rev. A1")
+		name="dir-869-a1"
+		;;
 	*"dLAN Hotspot")
 		name="dlan-hotspot"
 		;;

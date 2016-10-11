@@ -62,6 +62,7 @@ case "$FIRMWARE" in
 		ath10kcal_extract "caldata" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) +2)
 		;;
+	dir-869-a1 | \
 	qihoo-c301)
 		ath10kcal_extract "radiocfg" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
