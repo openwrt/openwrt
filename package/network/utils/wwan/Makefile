@@ -30,6 +30,16 @@ define Package/wwan/install
 	$(INSTALL_BIN) ./files/wwan.usbmisc $(1)/etc/hotplug.d/usbmisc/00_wwan.sh
 	$(INSTALL_DIR) $(1)/lib/network/wwan/
 	$(INSTALL_DATA) ./files/data/* $(1)/lib/network/wwan/
+	#in order to keep the Lede GIT repo free of filenames with colons,
+	#we name the files xxxx-yyyy
+	# and rename here after copying to the build directory
+	shopt -s nullglob ; \
+	for filevar in $(1)/lib/network/wwan/*-* ; \
+	do \
+		FILENAME=$$$$(basename $$$$filevar) ; \
+		NEWNAME=$$$${FILENAME//-/:} ; \
+		mv "$(1)/lib/network/wwan/$$$$FILENAME" "$(1)/lib/network/wwan/$$$$NEWNAME" ; \
+	done
 endef
 
 $(eval $(call BuildPackage,wwan))
