@@ -33,7 +33,7 @@ endef
 
 define Image/Build/SDCard-vfat-ext4
 	rm -f $(KDIR)/boot.img
-	mkdosfs $(KDIR)/boot.img -C $(FAT32_BLOCKS)
+	mkfs.fat $(KDIR)/boot.img -C $(FAT32_BLOCKS)
 
 	mcopy -i $(KDIR)/boot.img $(DTS_DIR)/$(3).dtb ::$(3).dtb
 	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage

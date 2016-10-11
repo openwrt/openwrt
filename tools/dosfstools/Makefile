@@ -26,7 +26,6 @@ endif
 
 define Host/Install
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/src/mkfs.fat $(STAGING_DIR_HOST)/bin/
-	$(LN) mkfs.fat $(STAGING_DIR_HOST)/bin/mkdosfs
 endef
 
 define Host/Clean

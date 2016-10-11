@@ -46,7 +46,7 @@ FAT32_BLOCKS=$(shell echo $$(($(CONFIG_AXS10X_SD_BOOT_PARTSIZE)*1024*1024/$(FAT3
 
 define Image/Build/SDCard
 	rm -f $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img
-	mkdosfs $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img -C $(FAT32_BLOCKS)
+	mkfs.fat $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img -C $(FAT32_BLOCKS)
 	mkimage -C none -A arc -T script -d uEnv.txt $(BIN_DIR)/uEnv.scr
 	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(BIN_DIR)/uEnv.scr ::boot.scr
 	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(DTS_DIR)/*.dtb ::

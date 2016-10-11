@@ -32,7 +32,7 @@ endef
 
 define Image/Build/SDCard
 	rm -f $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img
-	mkdosfs $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img -C $(FAT32_BLOCKS)
+	mkfs.fat $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img -C $(FAT32_BLOCKS)
 
 	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(KDIR)/uboot-sunxi-$(PROFILE)-boot.scr ::boot.scr
 	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(DTS_DIR)/$(2).dtb ::dtb
