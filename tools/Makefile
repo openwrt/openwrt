@@ -79,6 +79,7 @@ $(curdir)/bc/compile := $(curdir)/bison/install
 $(curdir)/findutils/compile := $(curdir)/bison/install
 $(curdir)/gengetopt/compile := $(curdir)/libtool/install
 $(curdir)/patchelf/compile := $(curdir)/libtool/install
+$(curdir)/dosfstools/compile := $(curdir)/autoconf/install $(curdir)/automake/install
 ifeq ($(HOST_OS),Darwin)
 tools-y += libressl
 $(curdir)/mkimage/compile += $(curdir)/libressl/install
