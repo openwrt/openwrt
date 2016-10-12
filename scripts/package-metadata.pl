@@ -351,7 +351,7 @@ sub print_package_overrides() {
 	keys %overrides > 0 or return;
 	print "\tconfig OVERRIDE_PKGS\n";
 	print "\t\tstring\n";
-	print "\t\tdefault \"".join(" ", keys %overrides)."\"\n\n";
+	print "\t\tdefault \"".join(" ", sort keys %overrides)."\"\n\n";
 }
 
 sub gen_package_config() {
