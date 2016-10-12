@@ -1,6 +1,6 @@
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -184,7 +184,7 @@ TARFILE=        ../$(NAME).tar
+@@ -185,7 +185,7 @@ TARFILE=        ../$(NAME).tar
  EXHEADER=       e_os2.h
  HEADER=         e_os.h
  
@@ -9,7 +9,7 @@
  
  # as we stick to -e, CLEARENV ensures that local variables in lower
  # Makefiles remain local and variable. $${VAR+VAR} is tribute to Korn
-@@ -400,11 +400,6 @@ openssl.pc: Makefile
+@@ -403,11 +403,6 @@ openssl.pc: Makefile
  	    echo 'Version: '$(VERSION); \
  	    echo 'Requires: libssl libcrypto' ) > openssl.pc
  

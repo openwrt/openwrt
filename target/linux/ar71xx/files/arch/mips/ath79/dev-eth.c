@@ -907,6 +907,7 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ath79_switch_data;
+			pdata->use_flow_control = 1;
 
 			ath79_switch_data.phy_poll_mask |= BIT(4);
 		}
@@ -951,6 +952,7 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->has_gbit = 1;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ath79_switch_data;
+			pdata->use_flow_control = 1;
 
 			ath79_switch_data.phy_poll_mask |= BIT(4);
 		}
@@ -1015,6 +1017,7 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ath79_switch_data;
+			pdata->use_flow_control = 1;
 
 			ath79_switch_data.phy_poll_mask |= BIT(4);
 		}
@@ -1083,6 +1086,7 @@ void __init ath79_register_eth(unsigned int id)
 
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
+			pdata->use_flow_control = 1;
 
 			/* reset the built-in switch */
 			ath79_device_reset_set(AR934X_RESET_ETH_SWITCH);
