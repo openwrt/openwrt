@@ -276,8 +276,12 @@ menu "Target Devices"
 
 EOF
 	foreach my $target (@target) {
-		my $profiles = $target->{profiles};
-		foreach my $profile (@{$target->{profiles}}) {
+		my @profiles = sort {
+			my $x = $a->{name};
+			my $y = $b->{name};
+			"\L$x" cmp "\L$y";
+		} @{$target->{profiles}};
+		foreach my $profile (@profiles) {
 			next unless $profile->{id} =~ /^DEVICE_/;
 			print <<EOF;
 menuconfig TARGET_DEVICE_$target->{conf}_$profile->{id}
