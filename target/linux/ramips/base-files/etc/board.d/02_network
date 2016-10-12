@@ -24,7 +24,7 @@ ramips_setup_rt3x5x_vlans()
 			lanports="$port:lan $lanports"
 		fi
 	done
-	ucidef_add_switch "rt305x" $lanports $wanports "6@eth0"
+	ucidef_add_switch "rt305x" $lanports $wanports "6t@eth0"
 }
 
 ramips_setup_interfaces()
