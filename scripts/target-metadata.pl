@@ -218,6 +218,9 @@ EOF
 config TARGET_MULTI_PROFILE
 	bool "Multiple devices"
 	depends on HAS_DEVICES
+	help
+	Instead of only building a single image, or all images, this allows you
+	to select images to be built for multiple devices in one build.
 
 EOF
 
@@ -256,6 +259,20 @@ menu "Target Devices"
 
 	config TARGET_PER_DEVICE_ROOTFS
 		bool "Use a per-device root filesystem that adds profile packages"
+		help
+		When disabled, all device packages from all selected devices
+		will be included in all images by default. (Marked as <*>) You will
+		still be able to manually deselect any/all packages.
+		When enabled, each device builds it's own image, including only the
+		profile packages for that device.  (Marked as {M}) You will be able
+		to change a package to included in all images by marking as {*}, but
+		will not be able to disable a profile package completely.
+		
+		To get the most use of this setting, you must set in a .config stub
+		before calling "make defconfig".  Selecting TARGET_MULTI_PROFILE and
+		then manually selecting (via menuconfig for instance) this option
+		will have pre-defaulted all profile packages to included, making this
+		option appear to have had no effect.
 
 EOF
 	foreach my $target (@target) {
