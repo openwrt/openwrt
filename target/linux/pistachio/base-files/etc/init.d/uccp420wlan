@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+
+. /lib/functions/mac.sh
+
+START=10
+STOP=10
+
+start() {
+	generate_mac $WIFI_OTP_REG0
+	local mac_param="mac_addr=\"$(echo $MAC | sed 's/://g')\""
+	insmod uccp420wlan $mac_param
+}
+
+stop() {
+	rmmod uccp420wlan
+}

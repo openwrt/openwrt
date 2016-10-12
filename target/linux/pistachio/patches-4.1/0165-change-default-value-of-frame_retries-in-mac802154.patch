@@ -1,0 +1,27 @@
+From 709057b8ad0e3084bdc0c24eaf107d2559c784cb Mon Sep 17 00:00:00 2001
+From: Mayank Sirotiya <Mayank.Sirotiya@imgtec.com>
+Date: Fri, 10 Jun 2016 12:26:49 +0530
+Subject: change default value of frame_retries in mac802154
+
+Signed-off-by: Manohar Narkhede <Manohar.Narkhede@imgtec.com>
+---
+ net/mac802154/iface.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/net/mac802154/iface.c b/net/mac802154/iface.c
+index 91b75ab..6adce0f 100644
+--- a/net/mac802154/iface.c
++++ b/net/mac802154/iface.c
+@@ -486,8 +486,7 @@ ieee802154_setup_sdata(struct ieee802154_sub_if_data *sdata,
+ 	wpan_dev->min_be = 3;
+ 	wpan_dev->max_be = 5;
+ 	wpan_dev->csma_retries = 4;
+-	/* for compatibility, actual default is 3 */
+-	wpan_dev->frame_retries = -1;
++	wpan_dev->frame_retries = 3;
+ 
+ 	wpan_dev->pan_id = cpu_to_le16(IEEE802154_PANID_BROADCAST);
+ 	wpan_dev->short_addr = cpu_to_le16(IEEE802154_ADDR_BROADCAST);
+-- 
+1.9.1
+

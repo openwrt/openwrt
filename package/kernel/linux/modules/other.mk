@@ -890,6 +890,23 @@ endef
 
 $(eval $(call KernelPackage,random-omap))
 
+define KernelPackage/random-tpm
+  TITLE:= tpm hardware random support
+  SUBMENU:=$(OTHER_MENU)
+  KCONFIG:= \
+    CONFIG_HW_RANDOM_TPM=y
+  FILES:= \
+    $(LINUX_DIR)/drivers/char/hw_random/tpm-rng.ko
+  AUTOLOAD:= $(call AutoProbe, tpm-rng.ko)
+  DEPENDS:=+kmod-random-core kmod-tpm
+endef
+
+define KernelPackage/random-tpm/description
+  TPM support
+endef
+
+$(eval $(call KernelPackage,random-tpm))
+
 define KernelPackage/thermal
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Generic Thermal sysfs driver

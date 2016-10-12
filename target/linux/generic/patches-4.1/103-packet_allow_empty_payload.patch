@@ -1,0 +1,17 @@
+Fix a regression in the af_packet code that was breaking PPPoE
+
+pppd sends packets with only a header and no payload.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+--- a/net/packet/af_packet.c
++++ b/net/packet/af_packet.c
+@@ -2112,7 +2112,7 @@ static void tpacket_destruct_skb(struct
+ static bool ll_header_truncated(const struct net_device *dev, int len)
+ {
+ 	/* net device doesn't like empty head */
+-	if (unlikely(len <= dev->hard_header_len)) {
++	if (unlikely(len < dev->hard_header_len)) {
+ 		net_warn_ratelimited("%s: packet size is too short (%d <= %d)\n",
+ 				     current->comm, len, dev->hard_header_len);
+ 		return true;

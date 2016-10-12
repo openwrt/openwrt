@@ -1,0 +1,12 @@
+diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
+index 774f9f9..8b8842e 100644
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1200,7 +1200,6 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
+ 
+ 	if (JEDEC_MFR(info) == SNOR_MFR_ATMEL ||
+ 	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||
+-	    JEDEC_MFR(info) == SNOR_MFR_MACRONIX ||
+ 	    JEDEC_MFR(info) == SNOR_MFR_SST) {
+ 		write_enable(nor);
+ 		write_sr(nor, 0);

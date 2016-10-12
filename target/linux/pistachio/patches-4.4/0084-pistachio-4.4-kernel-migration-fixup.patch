@@ -1,0 +1,173 @@
+From 791dbd92e8bbae26a8d0f399f561578b66cce228 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Mon, 1 Feb 2016 16:24:47 +0000
+Subject: pistachio: 4.4 kernel migration fixup.
+
+fixup to migrate to 4.4 kernel.
+
+Change-Id: Ica10f1af38c8f810401fbd8e56272c5824457910
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ arch/mips/pistachio/irq_wake.c                      |  3 +++
+ arch/mips/pistachio/pm.c                            |  2 +-
+ drivers/clk/pistachio/clk-pll.c                     | 16 ++++------------
+ drivers/net/wireless/uccp420wlan/src/80211_if.c     | 21 ++++++++++-----------
+ drivers/net/wireless/uccp420wlan/src/hal_hostport.c |  1 +
+ sound/core/pcm_native.c                             |  4 +++-
+ 6 files changed, 22 insertions(+), 25 deletions(-)
+
+diff --git a/arch/mips/pistachio/irq_wake.c b/arch/mips/pistachio/irq_wake.c
+index 73914a8..416488b 100644
+--- a/arch/mips/pistachio/irq_wake.c
++++ b/arch/mips/pistachio/irq_wake.c
+@@ -8,6 +8,9 @@
+  * version 2, as published by the Free Software Foundation.
+  */
+ 
++#include <linux/module.h>
++#include <linux/platform_device.h>
++
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irqchip/mips-gic.h>
+diff --git a/arch/mips/pistachio/pm.c b/arch/mips/pistachio/pm.c
+index 33b2ce8..77625da 100644
+--- a/arch/mips/pistachio/pm.c
++++ b/arch/mips/pistachio/pm.c
+@@ -116,7 +116,7 @@ static int __init pistachio_pm_init(void)
+ 		goto put_node;
+ 	}
+ 
+-	sram_pool = dev_get_gen_pool(&pdev->dev);
++	sram_pool = gen_pool_get(&pdev->dev, NULL);
+ 	if (!sram_pool) {
+ 		pr_warn("%s: sram pool unavailable!\n", __func__);
+ 		ret = -ENODEV;
+diff --git a/drivers/clk/pistachio/clk-pll.c b/drivers/clk/pistachio/clk-pll.c
+index 55d8d48..001ec27 100644
+--- a/drivers/clk/pistachio/clk-pll.c
++++ b/drivers/clk/pistachio/clk-pll.c
+@@ -66,10 +66,8 @@
+ #define MAX_OUTPUT_FRAC			1600000000UL
+ 
+ /* Fractional PLL operating modes */
+-enum pll_mode {
+-	PLL_MODE_FRAC,
+-	PLL_MODE_INT,
+-};
++#define PLL_MODE_INT			1
++#define PLL_MODE_FRAC			0
+ 
+ struct pistachio_clk_pll {
+ 	struct clk_hw hw;
+@@ -105,7 +103,7 @@ static inline struct pistachio_clk_pll *to_pistachio_pll(struct clk_hw *hw)
+ 	return container_of(hw, struct pistachio_clk_pll, hw);
+ }
+ 
+-static inline enum pll_mode pll_frac_get_mode(struct clk_hw *hw)
++static inline u32 pll_frac_get_mode(struct clk_hw *hw)
+ {
+ 	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
+ 	u32 val;
+@@ -114,7 +112,7 @@ static inline enum pll_mode pll_frac_get_mode(struct clk_hw *hw)
+ 	return val ? PLL_MODE_INT : PLL_MODE_FRAC;
+ }
+ 
+-static inline void pll_frac_set_mode(struct clk_hw *hw, enum pll_mode mode)
++static inline void pll_frac_set_mode(struct clk_hw *hw, u32 mode)
+ {
+ 	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
+ 	u32 val;
+@@ -283,12 +281,6 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 	else
+ 		pll_frac_set_mode(hw, PLL_MODE_INT);
+ 
+-	/* set operating mode */
+-	if (params->frac)
+-		pll_frac_set_mode(hw, PLL_MODE_FRAC);
+-	else
+-		pll_frac_set_mode(hw, PLL_MODE_INT);
+-
+ 	if (enabled)
+ 		pll_lock(pll);
+ 
+diff --git a/drivers/net/wireless/uccp420wlan/src/80211_if.c b/drivers/net/wireless/uccp420wlan/src/80211_if.c
+index 774d9c0..a076e6b 100644
+--- a/drivers/net/wireless/uccp420wlan/src/80211_if.c
++++ b/drivers/net/wireless/uccp420wlan/src/80211_if.c
+@@ -1236,18 +1236,18 @@ static void init_hw(struct ieee80211_hw *hw)
+ 		       sizeof(struct ieee80211_iface_combination));
+ 	hw->wiphy->n_iface_combinations = num_if_comb;
+ 
+-	hw->flags = IEEE80211_HW_SIGNAL_DBM | IEEE80211_HW_SUPPORTS_PS;
+-	hw->flags |= IEEE80211_HW_HOST_BROADCAST_PS_BUFFERING;
+-	hw->flags |= IEEE80211_HW_AMPDU_AGGREGATION;
+-	hw->flags |= IEEE80211_HW_MFP_CAPABLE;
+-	hw->flags |= IEEE80211_HW_REPORTS_TX_ACK_STATUS;
++	ieee80211_hw_set(hw, SIGNAL_DBM);
++	ieee80211_hw_set(hw, SUPPORTS_PS);
++	ieee80211_hw_set(hw, HOST_BROADCAST_PS_BUFFERING);
++	ieee80211_hw_set(hw, AMPDU_AGGREGATION);
++	ieee80211_hw_set(hw, MFP_CAPABLE);
++	ieee80211_hw_set(hw, REPORTS_TX_ACK_STATUS);
+ 
+ 	if (wifi->params.dot11a_support)
+-		hw->flags |= IEEE80211_HW_SPECTRUM_MGMT;
++		ieee80211_hw_set(hw, SPECTRUM_MGMT);
+ 
+-	hw->flags |= IEEE80211_HW_SUPPORTS_PER_STA_GTK;
+-
+-	hw->flags |= IEEE80211_HW_CONNECTION_MONITOR;
++	ieee80211_hw_set(hw, SUPPORTS_PER_STA_GTK);
++	ieee80211_hw_set(hw, CONNECTION_MONITOR);
+ 
+ 	hw->wiphy->max_scan_ssids = MAX_NUM_SSIDS; /* 4 */
+ 	 /* Low priority bg scan */
+@@ -1311,7 +1311,7 @@ static int ampdu_action(struct ieee80211_hw *hw,
+ 				struct ieee80211_vif *vif,
+ 				enum ieee80211_ampdu_mlme_action action,
+ 				struct ieee80211_sta *sta,
+-				u16 tid, u16 *ssn, u8 buf_size)
++				u16 tid, u16 *ssn, u8 buf_size, bool amsdu)
+ {
+ 	int ret = 0;
+ 	unsigned int val = 0;
+@@ -2334,7 +2334,6 @@ static struct ieee80211_ops ops = {
+ 	.bss_info_changed   = bss_info_changed,
+ 	.set_tim            = NULL,
+ 	.set_key            = set_key,
+-	.get_tkip_seq       = NULL,
+ 	.tx_last_beacon     = tx_last_beacon,
+ 	.ampdu_action       = ampdu_action,
+ 	.set_antenna	    = set_antenna,
+diff --git a/drivers/net/wireless/uccp420wlan/src/hal_hostport.c b/drivers/net/wireless/uccp420wlan/src/hal_hostport.c
+index b00a6a9..5cd7842 100644
+--- a/drivers/net/wireless/uccp420wlan/src/hal_hostport.c
++++ b/drivers/net/wireless/uccp420wlan/src/hal_hostport.c
+@@ -45,6 +45,7 @@
+ #include <linux/module.h>
+ #include <linux/clk.h>
+ #include <linux/iio/consumer.h>
++#include <linux/proc_fs.h>
+ 
+ #define COMMAND_START_MAGIC 0xDEAD
+ 
+diff --git a/sound/core/pcm_native.c b/sound/core/pcm_native.c
+index def3fec..945fb80 100644
+--- a/sound/core/pcm_native.c
++++ b/sound/core/pcm_native.c
+@@ -1149,8 +1149,10 @@ static int snd_pcm_startat_system(struct snd_pcm_substream *substream,
+ 	hrtimer_init(&substream->start_at_timer, clock, HRTIMER_MODE_ABS);
+ 	substream->start_at_timer.function = snd_pcm_do_start_time;
+ 
+-	return hrtimer_start(&substream->start_at_timer,
++	hrtimer_start(&substream->start_at_timer,
+ 			timespec_to_ktime(*start_time), HRTIMER_MODE_ABS);
++
++	return 0;
+ #else
+ 	return -ENOSYS;
+ #endif
+-- 
+2.1.0
+

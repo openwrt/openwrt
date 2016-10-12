@@ -1,0 +1,52 @@
+From ba1a7cc8073d8d9c467973f5d63b15f74a606247 Mon Sep 17 00:00:00 2001
+From: Stefan Schmidt <stefan@datenfreihafen.org>
+Date: Sat, 16 Apr 2016 23:55:49 +0200
+Subject: [PATCH 2/2] wpan-ping: set more default values for our configuration
+
+Make sure we actually have sane default values for the internal
+configuration. This also fixes a side effect from the calloc fix.
+The packet counter was zero from now on but we actually want the
+highest number when no other value is given on the commandline.
+
+Also fix a typo while being there.
+
+Signed-off-by: Stefan Schmidt <stefan@datenfreihafen.org>
+---
+ wpan-ping/wpan-ping.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/wpan-ping/wpan-ping.c b/wpan-ping/wpan-ping.c
+index cbad1fc..603536e 100644
+--- a/wpan-ping/wpan-ping.c
++++ b/wpan-ping/wpan-ping.c
+@@ -32,6 +32,7 @@
+ #include <unistd.h>
+ #include <getopt.h>
+ #include <stdbool.h>
++#include <limits.h>
+ 
+ #include <netlink/netlink.h>
+ 
+@@ -443,12 +444,18 @@ int main(int argc, char *argv[]) {
+ 	/* Default to interface wpan0 if nothing else is given */
+ 	conf->interface = "wpan0";
+ 
+-	/* Deafult to minimum packet size */
++	/* Default to minimum packet size */
+ 	conf->packet_len = MIN_PAYLOAD_LEN;
+ 
+ 	/* Default to short addressing */
+ 	conf->extended = false;
+ 
++	/* Default to client mode */
++	conf->server = false;
++
++	/* Default to 65535 packets being sent */
++	conf->packets = USHRT_MAX;
++
+ 	if (argc < 2) {
+ 		usage(argv[0]);
+ 		exit(1);
+-- 
+2.5.5
+
