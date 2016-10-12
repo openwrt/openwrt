@@ -6,18 +6,15 @@ START=19
 USE_PROCD=1
 PROG=/usr/sbin/dnsmasq
 
-DNS_SERVERS=""
-DOMAIN=""
-
 ADD_LOCAL_DOMAIN=1
 ADD_LOCAL_HOSTNAME=1
 
-CONFIGFILE="/var/etc/dnsmasq.conf"
-CONFIGFILE_TMP="/var/etc/dnsmasq.conf.$$"
-HOSTFILE="/tmp/hosts/dhcp"
+BASECONFIGFILE="/var/etc/dnsmasq.conf"
+BASEHOSTFILE="/tmp/hosts/dhcp"
+BASETIMESTAMPFILE="/etc/dnsmasq.time"
 TRUSTANCHORSFILE="/usr/share/dnsmasq/trust-anchors.conf"
-TIMESTAMPFILE="/etc/dnsmasq.time"
 TIMEVALIDFILE="/var/state/dnsmasqsec"
+BASEDHCPSTAMPFILE="/var/run/dnsmasq"
 
 xappend() {
 	local value="$1"
@@ -59,7 +56,7 @@ dhcp_calc() {
 
 dhcp_check() {
 	local ifname="$1"
-	local stamp="/var/run/dnsmasq.$ifname.dhcp"
+	local stamp="${BASEDHCPSTAMPFILE_CFG}.${ifname}.dhcp"
 	local rv=0
 
 	[ -s "$stamp" ] && return $(cat "$stamp")
@@ -140,135 +137,14 @@ append_pxe_service() {
 	xappend "--pxe-service=$1"
 }
 
-dnsmasq() {
-	local cfg="$1"
-	append_bool "$cfg" authoritative "--dhcp-authoritative"
-	append_bool "$cfg" nodaemon "--no-daemon"
-	append_bool "$cfg" domainneeded "--domain-needed"
-	append_bool "$cfg" filterwin2k "--filterwin2k"
-	append_bool "$cfg" nohosts "--no-hosts"
-	append_bool "$cfg" nonegcache "--no-negcache"
-	append_bool "$cfg" strictorder "--strict-order"
-	append_bool "$cfg" logqueries "--log-queries=extra"
-	append_bool "$cfg" noresolv "--no-resolv"
-	append_bool "$cfg" localise_queries "--localise-queries"
-	append_bool "$cfg" readethers "--read-ethers"
-	append_bool "$cfg" dbus "--enable-dbus"
-	append_bool "$cfg" boguspriv "--bogus-priv"
-	append_bool "$cfg" expandhosts "--expand-hosts"
-	config_get tftp_root "$cfg" "tftp_root"
-	[ -d "$tftp_root" ] && append_bool "$cfg" enable_tftp "--enable-tftp"
-	append_bool "$cfg" tftp_no_fail "--tftp-no-fail"
-	append_bool "$cfg" nonwildcard "--bind-dynamic"
-	append_bool "$cfg" fqdn "--dhcp-fqdn"
-	append_bool "$cfg" proxydnssec "--proxy-dnssec"
-	append_bool "$cfg" localservice "--local-service"
-	append_bool "$cfg" quietdhcp "--quiet-dhcp"
-	append_bool "$cfg" sequential_ip "--dhcp-sequential-ip"
-	append_bool "$cfg" allservers "--all-servers"
-	append_bool "$cfg" noping "--no-ping"
+filter_dnsmasq() {
+	local cfg="$1" func="$2" match_cfg="$3" found_cfg
 
-	append_parm "$cfg" dhcpscript "--dhcp-script"
-	append_parm "$cfg" cachesize "--cache-size"
-	append_parm "$cfg" dnsforwardmax "--dns-forward-max"
-	append_parm "$cfg" port "--port"
-	append_parm "$cfg" ednspacket_max "--edns-packet-max"
-	append_parm "$cfg" dhcpleasemax "--dhcp-lease-max"
-	append_parm "$cfg" "queryport" "--query-port"
-	append_parm "$cfg" "minport" "--min-port"
-	append_parm "$cfg" "maxport" "--max-port"
-	append_parm "$cfg" "domain" "--domain"
-	append_parm "$cfg" "local" "--server"
-	config_list_foreach "$cfg" "server" append_server
-	config_list_foreach "$cfg" "address" append_address
-	config_list_foreach "$cfg" "ipset" append_ipset
-	config_list_foreach "$cfg" "interface" append_interface
-	config_list_foreach "$cfg" "notinterface" append_notinterface
-	config_list_foreach "$cfg" "addnhosts" append_addnhosts
-	config_list_foreach "$cfg" "bogusnxdomain" append_bogusnxdomain
-	append_parm "$cfg" "leasefile" "--dhcp-leasefile" "/tmp/dhcp.leases"
-	append_parm "$cfg" "resolvfile" "--resolv-file" "/tmp/resolv.conf.auto"
-	append_parm "$cfg" "serversfile" "--servers-file"
-	append_parm "$cfg" "tftp_root" "--tftp-root"
-	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
-	append_parm "$cfg" "local_ttl" "--local-ttl"
-	append_parm "$cfg" "pxe_prompt" "--pxe-prompt"
-	config_list_foreach "$cfg" "pxe_service" append_pxe_service
-	config_get DOMAIN "$cfg" domain
-
-	config_get_bool ADD_LOCAL_DOMAIN "$cfg" add_local_domain 1
-	config_get_bool ADD_LOCAL_HOSTNAME "$cfg" add_local_hostname 1
-
-	config_get_bool readethers "$cfg" readethers
-	[ "$readethers" = "1" -a \! -e "/etc/ethers" ] && touch /etc/ethers
-
-	config_get leasefile $cfg leasefile "/tmp/dhcp.leases"
-	[ -n "$leasefile" -a \! -e "$leasefile" ] && touch "$leasefile"
-	config_get_bool cachelocal "$cfg" cachelocal 1
-
-	config_get_bool noresolv "$cfg" noresolv 0
-	if [ "$noresolv" != "1" ]; then
-		config_get resolvfile "$cfg" resolvfile "/tmp/resolv.conf.auto"
-		# So jail doesn't complain if file missing
-		[ -n "$resolvfile" -a \! -e "$resolvfile" ] && touch "$resolvfile"
+	# use entry when no instance entry set, or if it matches
+	config_get found_cfg "$cfg" "instance"
+	if [ -z "$found_cfg" -o "$found_cfg" = "$match_cfg" ]; then
+		$func $cfg
 	fi
-
-	config_get hostsfile "$cfg" dhcphostsfile
-	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
-
-	local rebind
-	config_get_bool rebind "$cfg" rebind_protection 1
-	[ $rebind -gt 0 ] && {
-		log_once \
-			"DNS rebinding protection is active," \
-			"will discard upstream RFC1918 responses!"
-		xappend "--stop-dns-rebind"
-
-		local rebind_localhost
-		config_get_bool rebind_localhost "$cfg" rebind_localhost 0
-		[ $rebind_localhost -gt 0 ] && {
-			log_once "Allowing 127.0.0.0/8 responses"
-			xappend "--rebind-localhost-ok"
-		}
-
-		append_rebind_domain() {
-			log_once "Allowing RFC1918 responses for domain $1"
-			xappend "--rebind-domain-ok=$1"
-		}
-
-		config_list_foreach "$cfg" rebind_domain append_rebind_domain
-	}
-
-	config_get_bool dnssec "$cfg" dnssec 0
-	[ "$dnssec" -gt 0 ] && {
-		xappend "--conf-file=$TRUSTANCHORSFILE"
-		xappend "--dnssec"
-		[ -x /etc/init.d/sysntpd ] && {
-			/etc/init.d/sysntpd enabled
-			[ "$?" -ne 0 -o "$(uci_get system.ntp.enabled)" = "1" ] && {
-				[ -f "$TIMEVALIDFILE" ] || xappend "--dnssec-no-timecheck"
-			}
-		}
-		append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
-	}
-
-	dhcp_option_add "$cfg" "" 0
-
-	xappend "--dhcp-broadcast=tag:needs-broadcast"
-
-	mkdir -p /tmp/hosts /tmp/dnsmasq.d
-	xappend "--addn-hosts=/tmp/hosts"
-	xappend "--conf-dir=/tmp/dnsmasq.d"
-	xappend "--user=dnsmasq"
-	xappend "--group=dnsmasq"
-
-	echo >> $CONFIGFILE_TMP
-
-	config_get_bool enable_tftp "$cfg" enable_tftp 0
-	[ "$enable_tftp" -gt 0 ] && {
-		config_get tftp_root "$cfg" tftp_root
-		append EXTRA_MOUNT $tftp_root
-	}
 }
 
 dhcp_subscrid_add() {
@@ -635,30 +511,27 @@ dhcp_relay_add() {
 	fi
 }
 
-service_triggers()
+dnsmasq_start()
 {
-	procd_add_reload_trigger "dhcp"
-	procd_add_raw_trigger "interface.*" 2000 /etc/init.d/dnsmasq reload
-}
+	local cfg="$1" disabled
 
-boot()
-{
-	BOOT=1
-	start "$@"
-}
+	config_get_bool disabled "$cfg" disabled 0
+	[ "$disabled" -gt 0 ] && return 0
 
-start_service() {
-	[ -n "$BOOT" ] && return
-
-	include /lib/functions
-
-	config_load dhcp
+	# reset list of DOMAINS and DNS servers (for each dnsmasq instance)
+	DNS_SERVERS=""
+	DOMAIN=""
+	CONFIGFILE="${BASECONFIGFILE}.${cfg}"
+	CONFIGFILE_TMP="${CONFIGFILE}.$$"
+	HOSTFILE="${BASEHOSTFILE}.${cfg}"
+	TIMESTAMPFILE="${BASETIMESTAMPFILE}.${cfg}"
+	BASEDHCPSTAMPFILE_CFG="${BASEDHCPSTAMPFILE}.${cfg}"
 
 	# before we can call xappend
 	mkdir -p /var/run/dnsmasq/
 	mkdir -p $(dirname $CONFIGFILE)
+	mkdir -p $(dirname $HOSTFILE)
 	mkdir -p /var/lib/misc
-	touch /tmp/dhcp.leases
 	chown dnsmasq:dnsmasq /var/run/dnsmasq
 
 	[ -f "$TIMESTAMPFILE" ] && rm -f "$TIMESTAMPFILE"
@@ -673,22 +546,152 @@ start_service() {
 
 	$PROG --version | grep -osqE "^Compile time options:.* DHCPv6( |$)" && DHCPv6CAPABLE=1 || DHCPv6CAPABLE=0
 
-	args=""
-	config_foreach dnsmasq dnsmasq
-	config_foreach dhcp_host_add host
+	append_bool "$cfg" authoritative "--dhcp-authoritative"
+	append_bool "$cfg" nodaemon "--no-daemon"
+	append_bool "$cfg" domainneeded "--domain-needed"
+	append_bool "$cfg" filterwin2k "--filterwin2k"
+	append_bool "$cfg" nohosts "--no-hosts"
+	append_bool "$cfg" nonegcache "--no-negcache"
+	append_bool "$cfg" strictorder "--strict-order"
+	append_bool "$cfg" logqueries "--log-queries=extra"
+	append_bool "$cfg" noresolv "--no-resolv"
+	append_bool "$cfg" localise_queries "--localise-queries"
+	append_bool "$cfg" readethers "--read-ethers"
+	append_bool "$cfg" dbus "--enable-dbus"
+	append_bool "$cfg" boguspriv "--bogus-priv"
+	append_bool "$cfg" expandhosts "--expand-hosts"
+	config_get tftp_root "$cfg" "tftp_root"
+	[ -d "$tftp_root" ] && append_bool "$cfg" enable_tftp "--enable-tftp"
+	append_bool "$cfg" tftp_no_fail "--tftp-no-fail"
+	append_bool "$cfg" nonwildcard "--bind-dynamic"
+	append_bool "$cfg" fqdn "--dhcp-fqdn"
+	append_bool "$cfg" proxydnssec "--proxy-dnssec"
+	append_bool "$cfg" localservice "--local-service"
+	append_bool "$cfg" quietdhcp "--quiet-dhcp"
+	append_bool "$cfg" sequential_ip "--dhcp-sequential-ip"
+	append_bool "$cfg" allservers "--all-servers"
+	append_bool "$cfg" noping "--no-ping"
+
+	append_parm "$cfg" dhcpscript "--dhcp-script"
+	append_parm "$cfg" cachesize "--cache-size"
+	append_parm "$cfg" dnsforwardmax "--dns-forward-max"
+	append_parm "$cfg" port "--port"
+	append_parm "$cfg" ednspacket_max "--edns-packet-max"
+	append_parm "$cfg" dhcpleasemax "--dhcp-lease-max"
+	append_parm "$cfg" "queryport" "--query-port"
+	append_parm "$cfg" "minport" "--min-port"
+	append_parm "$cfg" "maxport" "--max-port"
+	append_parm "$cfg" "domain" "--domain"
+	append_parm "$cfg" "local" "--server"
+	config_list_foreach "$cfg" "server" append_server
+	config_list_foreach "$cfg" "address" append_address
+	config_list_foreach "$cfg" "ipset" append_ipset
+	config_list_foreach "$cfg" "interface" append_interface
+	config_list_foreach "$cfg" "notinterface" append_notinterface
+	config_list_foreach "$cfg" "addnhosts" append_addnhosts
+	config_list_foreach "$cfg" "bogusnxdomain" append_bogusnxdomain
+	append_parm "$cfg" "leasefile" "--dhcp-leasefile" "/tmp/dhcp.leases"
+	append_parm "$cfg" "resolvfile" "--resolv-file" "/tmp/resolv.conf.auto"
+	append_parm "$cfg" "serversfile" "--servers-file"
+	append_parm "$cfg" "tftp_root" "--tftp-root"
+	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
+	append_parm "$cfg" "local_ttl" "--local-ttl"
+	append_parm "$cfg" "pxe_prompt" "--pxe-prompt"
+	config_list_foreach "$cfg" "pxe_service" append_pxe_service
+	config_get DOMAIN "$cfg" domain
+
+	config_get_bool ADD_LOCAL_DOMAIN "$cfg" add_local_domain 1
+	config_get_bool ADD_LOCAL_HOSTNAME "$cfg" add_local_hostname 1
+
+	config_get_bool readethers "$cfg" readethers
+	[ "$readethers" = "1" -a \! -e "/etc/ethers" ] && touch /etc/ethers
+
+	config_get resolvfile $cfg resolvfile
+	config_get dhcpscript $cfg dhcpscript
+
+	config_get leasefile $cfg leasefile "/tmp/dhcp.leases"
+	[ -n "$leasefile" -a \! -e "$leasefile" ] && touch "$leasefile"
+	config_get_bool cachelocal "$cfg" cachelocal 1
+
+	config_get_bool noresolv "$cfg" noresolv 0
+	if [ "$noresolv" != "1" ]; then
+		config_get resolvfile "$cfg" resolvfile "/tmp/resolv.conf.auto"
+		# So jail doesn't complain if file missing
+		[ -n "$resolvfile" -a \! -e "$resolvfile" ] && touch "$resolvfile"
+	fi
+
+	config_get hostsfile "$cfg" dhcphostsfile
+	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
+
+	local rebind
+	config_get_bool rebind "$cfg" rebind_protection 1
+	[ $rebind -gt 0 ] && {
+		log_once \
+			"DNS rebinding protection is active," \
+			"will discard upstream RFC1918 responses!"
+		xappend "--stop-dns-rebind"
+
+		local rebind_localhost
+		config_get_bool rebind_localhost "$cfg" rebind_localhost 0
+		[ $rebind_localhost -gt 0 ] && {
+			log_once "Allowing 127.0.0.0/8 responses"
+			xappend "--rebind-localhost-ok"
+		}
+
+		append_rebind_domain() {
+			log_once "Allowing RFC1918 responses for domain $1"
+			xappend "--rebind-domain-ok=$1"
+		}
+
+		config_list_foreach "$cfg" rebind_domain append_rebind_domain
+	}
+
+	config_get_bool dnssec "$cfg" dnssec 0
+	[ "$dnssec" -gt 0 ] && {
+		xappend "--conf-file=$TRUSTANCHORSFILE"
+		xappend "--dnssec"
+		[ -x /etc/init.d/sysntpd ] && {
+			/etc/init.d/sysntpd enabled
+			[ "$?" -ne 0 -o "$(uci_get system.ntp.enabled)" = "1" ] && {
+				[ -f "$TIMEVALIDFILE" ] || xappend "--dnssec-no-timecheck"
+			}
+		}
+		append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
+	}
+
+	dhcp_option_add "$cfg" "" 0
+
+	xappend "--dhcp-broadcast=tag:needs-broadcast"
+
+	xappend "--addn-hosts=$HOSTFILE"
+
+	config_get dnsmasqconfdir "$cfg" confdir "/tmp/dnsmasq.d"
+	[ ! -d "$dnsmasqconfdir" ] && mkdir -p $dnsmasqconfdir
+	xappend "--conf-dir=$dnsmasqconfdir"
+	xappend "--user=dnsmasq"
+	xappend "--group=dnsmasq"
 	echo >> $CONFIGFILE_TMP
-	config_foreach dhcp_boot_add boot
-	config_foreach dhcp_mac_add mac
-	config_foreach dhcp_tag_add tag
-	config_foreach dhcp_vendorclass_add vendorclass
-	config_foreach dhcp_userclass_add userclass
-	config_foreach dhcp_circuitid_add circuitid
-	config_foreach dhcp_remoteid_add remoteid
-	config_foreach dhcp_subscrid_add subscrid
-	config_foreach dhcp_match_add match
-	config_foreach dhcp_domain_add domain
-	config_foreach dhcp_hostrecord_add hostrecord
-	config_foreach dhcp_relay_add relay
+
+	config_get_bool enable_tftp "$cfg" enable_tftp 0
+	[ "$enable_tftp" -gt 0 ] && {
+		config_get tftp_root "$cfg" tftp_root
+		append EXTRA_MOUNT $tftp_root
+	}
+
+	config_foreach filter_dnsmasq host dhcp_host_add "$cfg"
+	echo >> $CONFIGFILE_TMP
+	config_foreach filter_dnsmasq boot dhcp_boot_add "$cfg"
+	config_foreach filter_dnsmasq mac dhcp_mac_add "$cfg"
+	config_foreach filter_dnsmasq tag dhcp_tag_add "$cfg"
+	config_foreach filter_dnsmasq vendorclass dhcp_vendorclass_add "$cfg"
+	config_foreach filter_dnsmasq userclass dhcp_userclass_add "$cfg"
+	config_foreach filter_dnsmasq circuitid dhcp_circuitid_add "$cfg"
+	config_foreach filter_dnsmasq remoteid dhcp_remoteid_add "$cfg"
+	config_foreach filter_dnsmasq subscrid dhcp_subscrid_add "$cfg"
+	config_foreach filter_dnsmasq match dhcp_match_add "$cfg"
+	config_foreach filter_dnsmasq domain dhcp_domain_add "$cfg"
+	config_foreach filter_dnsmasq hostrecord dhcp_hostrecord_add "$cfg"
+	config_foreach filter_dnsmasq relay dhcp_relay_add "$cfg"
 
 	# add own hostname
 	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && {
@@ -712,39 +715,105 @@ start_service() {
 	}
 
 	echo >> $CONFIGFILE_TMP
-	config_foreach dhcp_srv_add srvhost
-	config_foreach dhcp_mx_add mxhost
+	config_foreach filter_dnsmasq srvhost dhcp_srv_add "$cfg"
+	config_foreach filter_dnsmasq mxhost dhcp_mx_add "$cfg"
 	echo >> $CONFIGFILE_TMP
 
 	config_get odhcpd_is_active odhcpd maindhcp
 	if [ "$odhcpd_is_active" != "1" ]; then
-		config_foreach dhcp_add dhcp
+		config_foreach filter_dnsmasq dhcp dhcp_add "$cfg"
 	fi
 
 	echo >> $CONFIGFILE_TMP
-	config_foreach dhcp_cname_add cname
+	config_foreach filter_dnsmasq cname dhcp_cname_add "$cfg"
+	echo >> $CONFIGFILE_TMP
+
 	echo >> $CONFIGFILE_TMP
 	mv -f $CONFIGFILE_TMP $CONFIGFILE
 
-	rm -f /tmp/resolv.conf
-	[ $ADD_LOCAL_DOMAIN -eq 1 ] && [ -n "$DOMAIN" ] && {
-		echo "search $DOMAIN" >> /tmp/resolv.conf
+	[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && {
+		rm -f /tmp/resolv.conf
+		[ $ADD_LOCAL_DOMAIN -eq 1 ] && [ -n "$DOMAIN" ] && {
+			echo "search $DOMAIN" >> /tmp/resolv.conf
+		}
+		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
+		for DNS_SERVER in $DNS_SERVERS ; do
+			echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
+		done
 	}
-	DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
-	for DNS_SERVER in $DNS_SERVERS ; do
-		echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
-	done
 
-	procd_open_instance
-	procd_set_param command $PROG -C $CONFIGFILE -k -x /var/run/dnsmasq/dnsmasq.pid
+	procd_open_instance $cfg
+	procd_set_param command $PROG -C $CONFIGFILE -k -x /var/run/dnsmasq/dnsmasq."${cfg}".pid
 	procd_set_param file $CONFIGFILE
 	procd_set_param respawn
 
+	local dnsmasqconffile="/etc/dnsmasq.${cfg}.conf"
+	if [ ! -r "$dnsmasqconffile" ]; then
+		dnsmasqconffile=/etc/dnsmasq.conf
+	fi
+
 	procd_add_jail dnsmasq ubus log
-	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE /etc/passwd /etc/group /etc/TZ /dev/null /dev/urandom /etc/dnsmasq.conf /tmp/dnsmasq.d /tmp/resolv.conf.auto /etc/hosts /etc/ethers $EXTRA_MOUNT
-	procd_add_jail_mount_rw /var/run/dnsmasq/ /tmp/dhcp.leases
+	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE /etc/passwd /etc/group /etc/TZ /dev/null /dev/urandom $dnsmasqconffile $dnsmasqconfdir $resolvfile $dhcpscript /etc/hosts /etc/ethers $EXTRA_MOUNT
+	procd_add_jail_mount_rw /var/run/dnsmasq/ $leasefile
 
 	procd_close_instance
+}
+
+dnsmasq_stop()
+{
+	local cfg="$1"
+
+	config_get resolvfile "$cfg" "resolvfile"
+
+	#relink /tmp/resolve.conf only for main instance
+	[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && {
+		[ -f /tmp/resolv.conf ] && {
+			rm -f /tmp/resolv.conf
+			ln -s "$resolvfile" /tmp/resolv.conf
+		}
+	}
+
+	rm -f ${BASEDHCPSTAMPFILE}.${cfg}.*.dhcp
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger "dhcp"
+	procd_add_raw_trigger "interface.*" 2000 /etc/init.d/dnsmasq reload
+}
+
+boot()
+{
+	BOOT=1
+	start "$@"
+}
+
+start_service() {
+	local instance="$1"
+	local instance_found=0
+
+	[ -n "$BOOT" ] && return
+
+	. /lib/functions/network.sh
+
+	config_cb() {
+		local type="$1"
+		local name="$2"
+		if [ "$type" = "dnsmasq" ]; then
+			if [ -n "$instance" -a "$instance" = "$name" ]; then
+				instance_found=1
+			fi
+		fi
+	}
+
+	config_load dhcp
+
+	if [ -n "$instance" ]; then
+		[ "$instance_found" -gt 0 ] || return
+		dnsmasq_start "$instance"
+	else
+		config_foreach dnsmasq_start dnsmasq
+	fi
 }
 
 reload_service() {
@@ -753,9 +822,25 @@ reload_service() {
 }
 
 stop_service() {
-	[ -f /tmp/resolv.conf ] && {
-		rm -f /tmp/resolv.conf
-		ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
+	local instance="$1"
+	local instance_found=0
+
+	config_cb() {
+		local type="$1"
+		local name="$2"
+		if [ "$type" = "dnsmasq" ]; then
+			if [ -n "$instance" -a "$instance" = "$name" ]; then
+				instance_found=1
+			fi
+		fi
 	}
-	rm -f /var/run/dnsmasq.*.dhcp
+
+	config_load dhcp
+
+	if [ -n "$instance" ]; then
+		[ "$instance_found" -gt 0 ] || return
+		dnsmasq_stop "$instance"
+	else
+		config_foreach dnsmasq_stop dnsmasq
+	fi
 }
