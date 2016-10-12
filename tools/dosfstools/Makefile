@@ -15,6 +15,8 @@ PKG_SOURCE_URL:=https://github.com/dosfstools/dosfstools/releases/download/v$(PK
 		http://fossies.org/linux/misc
 PKG_MD5SUM:=9037738953559d1efe04fc5408b6846216cc0138f7f9d32de80b6ec3c35e7daf
 
+HOST_FIXUP:=autoreconf
+
 include $(INCLUDE_DIR)/host-build.mk
 
 ifeq ($(HOST_OS),Darwin)
