@@ -76,7 +76,7 @@ _procd_close_service() {
 	_procd_open_trigger
 	service_triggers
 	_procd_close_trigger
-	_procd_ubus_call set
+	_procd_ubus_call ${1:-set}
 }
 
 _procd_add_array_data() {

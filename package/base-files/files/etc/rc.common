@@ -102,9 +102,11 @@ ${INIT_TRACE:+set -x}
 	. $IPKG_INSTROOT/lib/functions/procd.sh
 	basescript=$(readlink "$initscript")
 	rc_procd() {
+		local method="set"
+		[ -n "$2" ] && method="add"
 		procd_open_service "$(basename ${basescript:-$initscript})" "$initscript"
 		"$@"
-		procd_close_service
+		procd_close_service "$method"
 	}
 
 	start() {
