@@ -1,5 +1,6 @@
 #
-# Copyright (C) 2012-2015 OpenWrt.org
+# Copyright (C) 2012-2016 OpenWrt.org
+# Copyright (C) 2016 LEDE-project.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -118,6 +119,13 @@ define Device/linksys-wrt1900acv2
   DEVICE_DTS := armada-385-linksys-cobra
 endef
 TARGET_DEVICES += linksys-wrt1900acv2
+
+define Device/linksys-wrt3200acm
+  $(call Device/linksys,WRT3200ACM (Rango))
+  $(Device/armada-385-linksys)
+  DEVICE_DTS := armada-385-linksys-rango
+endef
+TARGET_DEVICES += linksys-wrt3200acm
 
 define Device/linksys-wrt1900acs
   $(call Device/linksys,WRT1900ACS (Shelby))

@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2014-2015 OpenWrt.org
+# Copyright (C) 2014-2016 OpenWrt.org
+# Copyright (C) 2016 LEDE-Project.org
 #
 
 . /lib/functions/uci-defaults.sh
@@ -20,6 +21,11 @@ armada-385-linksys-cobra)
 	ucidef_set_led_netdev "wan" "WAN" "pca963x:cobra:white:wan" "eth0"
 	ucidef_set_led_usbdev "usb2" "USB2" "pca963x:cobra:white:usb2" "1-1"
 	ucidef_set_led_usbdev "usb3" "USB3" "pca963x:cobra:white:usb3_1" "2-1"
+	;;
+armada-385-linksys-rango)
+	ucidef_set_led_netdev "wan" "WAN" "pca963x:rango:white:wan" "eth0"
+	ucidef_set_led_usbdev "usb2" "USB2" "pca963x:rango:white:usb2" "1-1"
+	ucidef_set_led_usbdev "usb3" "USB3" "pca963x:rango:white:usb3_1" "2-1"
 	;;
 armada-385-linksys-shelby)
 	ucidef_set_led_netdev "wan" "WAN" "pca963x:shelby:white:wan" "eth0"

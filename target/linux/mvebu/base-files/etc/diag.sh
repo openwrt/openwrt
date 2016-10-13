@@ -13,6 +13,9 @@ get_status_led() {
 	armada-385-linksys-cobra)
 		status_led="cobra:white:power"
 		;;
+	armada-385-linksys-rango)
+		status_led="rango:white:power"
+		;;
 	armada-385-linksys-shelby)
 		status_led="shelby:white:power"
 		;;
