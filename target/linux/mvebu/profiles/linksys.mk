@@ -83,3 +83,14 @@ define Profile/Shelby/Description
 endef
 
 $(eval $(call Profile,Shelby))
+
+define Profile/Rango
+  NAME:=Linksys WRT3200ACM (Rango)
+  PACKAGES:= kmod-mwlwifi wpad-mini swconfig
+endef
+
+define Profile/Rango/Description
+ Package set compatible with the Linksys WRT3200ACM (Rango).
+endef
+
+$(eval $(call Profile,Rango))
