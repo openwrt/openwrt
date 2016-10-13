@@ -103,20 +103,20 @@ ifeq ($(DUMP),)
         ifneq ($(ABI_VERSION),)
         compile: $(PKG_INFO_DIR)/$(1).version
         endif
+      else
+        $(if $(CONFIG_PACKAGE_$(1)),$$(info WARNING: skipping $(1) -- package not selected))
+      endif
 
-        ifeq ($(CONFIG_PACKAGE_$(1)),y)
-          .PHONY: $(PKG_INSTALL_STAMP).$(1)
-          compile: $(PKG_INSTALL_STAMP).$(1)
-          $(PKG_INSTALL_STAMP).$(1):
+      .PHONY: $(PKG_INSTALL_STAMP).$(1)
+      compile: $(PKG_INSTALL_STAMP).$(1)
+      $(PKG_INSTALL_STAMP).$(1):
 			if [ -f $(PKG_INSTALL_STAMP).clean ]; then \
 				rm -f \
 					$(PKG_INSTALL_STAMP) \
 					$(PKG_INSTALL_STAMP).clean; \
-			fi; \
+			fi
+      ifeq ($(CONFIG_PACKAGE_$(1)),y)
 			echo "$(1)" >> $(PKG_INSTALL_STAMP)
-        endif
-      else
-        $(if $(CONFIG_PACKAGE_$(1)),$$(info WARNING: skipping $(1) -- package not selected))
       endif
     endif
     endif
