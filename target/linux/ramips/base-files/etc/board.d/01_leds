@@ -88,11 +88,12 @@ c20i)
 	ucidef_set_led_wlan "wlan" "wlan" "$board:blue:wlan" "phy0radio"
 	;;
 c50)
-	ucidef_set_led_default "power" "power" "$board:blue:power" "0"
-	ucidef_set_led_netdev "lan" "lan" "$board:blue:lan" "eth0.2"
-	set_usb_led "$board:blue:usb"
-	ucidef_set_led_wlan "wlan2g" "wlan2g" "$board:blue:wlan2g" "phy1radio"
-	ucidef_set_led_wlan "wlan5g" "wlan5g" "$board:blue:wlan5g" "phy0radio"
+	ucidef_set_led_default "power" "power" "$board:green:power" "0"
+	ucidef_set_led_switch "lan" "lan" "$board:green:lan" "switch0" "0x1e"
+	ucidef_set_led_switch "wan" "wan" "$board:green:wan" "switch0" "0x01"
+	set_usb_led "$board:green:usb"
+	ucidef_set_led_netdev "wlan2g" "wlan2g" "$board:green:wlan2g" wlan1
+	set_wifi_led "$board:green:wlan5g"
 	;;
 cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "$board:white:ethernet" eth0.1
