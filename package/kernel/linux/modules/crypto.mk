@@ -125,8 +125,8 @@ define KernelPackage/crypto-iv
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-rng +kmod-crypto-wq
   KCONFIG:= CONFIG_CRYPTO_BLKCIPHER2
   FILES:= \
-	$(LINUX_DIR)/crypto/eseqiv.ko \
-	$(LINUX_DIR)/crypto/chainiv.ko
+	$(LINUX_DIR)/crypto/eseqiv.ko@lt4.8 \
+	$(LINUX_DIR)/crypto/chainiv.ko@lt4.8
   AUTOLOAD:=$(call AutoLoad,10,eseqiv chainiv)
   $(call AddDepends/crypto)
 endef
