@@ -502,8 +502,7 @@ define Device/WBMRA
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath9k wpad hostapd-utils \
-	swconfig
+	kmod-ath9k wpad-mini swconfig
 endef
 TARGET_DEVICES += WBMRA
 
@@ -515,8 +514,7 @@ define Device/WBMRB
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath9k wpad hostapd-utils \
-	swconfig
+	kmod-ath9k wpad-mini swconfig
 endef
 TARGET_DEVICES += WBMRB
 
