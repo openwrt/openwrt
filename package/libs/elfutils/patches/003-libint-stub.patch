@@ -37,9 +37,9 @@
  
 --- a/libasm/libasmP.h
 +++ b/libasm/libasmP.h
-@@ -33,6 +33,9 @@
+@@ -35,6 +35,9 @@
  
- #include <libasm.h>
+ #include "libdwelf.h"
  
 +#ifdef _ /* fix libintl-stub */
 +#undef _

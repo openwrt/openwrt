@@ -116,70 +116,6 @@
  #include <fcntl.h>
  #include <gelf.h>
  #include <libdw.h>
---- a/src/i386_ld.c
-+++ b/src/i386_ld.c
-@@ -20,7 +20,7 @@
- #endif
- 
- #include <assert.h>
--#include <error.h>
-+#include <err.h>
- #include <libintl.h>
- #include <stdlib.h>
- #include <string.h>
---- a/src/ld.c
-+++ b/src/ld.c
-@@ -21,7 +21,7 @@
- 
- #include <argp.h>
- #include <assert.h>
--#include <error.h>
-+#include <err.h>
- #include <fcntl.h>
- #include <libelf.h>
- #include <libintl.h>
---- a/src/ldgeneric.c
-+++ b/src/ldgeneric.c
-@@ -23,7 +23,7 @@
- #include <ctype.h>
- #include <dlfcn.h>
- #include <errno.h>
--#include <error.h>
-+#include <err.h>
- #include <fcntl.h>
- #include <fnmatch.h>
- #include <gelf.h>
---- a/src/ldlex.c
-+++ b/src/ldlex.c
-@@ -1106,7 +1106,7 @@ char *ldtext;
- #include <assert.h>
- #include <ctype.h>
- #include <elf.h>
--#include <error.h>
-+#include <err.h>
- #include <inttypes.h>
- #include <libintl.h>
- #include <stdbool.h>
---- a/src/ldscript.c
-+++ b/src/ldscript.c
-@@ -95,7 +95,7 @@
- #endif
- 
- #include <assert.h>
--#include <error.h>
-+#include <err.h>
- #include <libintl.h>
- #include <stdbool.h>
- #include <stdint.h>
-@@ -106,7 +106,7 @@
- #include <system.h>
- #include <ld.h>
- 
--/* The error handler.  */
-+/* The err.handler.  */
- static void yyerror (const char *s);
- 
- /* Some helper functions we need to construct the data structures
 --- a/src/nm.c
 +++ b/src/nm.c
 @@ -26,7 +26,7 @@
@@ -388,7 +324,7 @@
 +#include <err.h>
  #include <unistd.h>
  #include <dwarf.h>
- #include <sys/resource.h>
+ 
 --- a/tests/dwfl-bug-getmodules.c
 +++ b/tests/dwfl-bug-getmodules.c
 @@ -18,7 +18,7 @@
@@ -681,28 +617,6 @@
  #include <libelfP.h>
  #include <dwarf.h>
  #include <stdlib.h>
---- a/src/ldlex.l
-+++ b/src/ldlex.l
-@@ -23,7 +23,7 @@
- #include <assert.h>
- #include <ctype.h>
- #include <elf.h>
--#include <error.h>
-+#include <err.h>
- #include <inttypes.h>
- #include <libintl.h>
- #include <stdbool.h>
---- a/libebl/eblwstrtab.c
-+++ b/libebl/eblwstrtab.c
-@@ -305,7 +305,7 @@ copystrings (struct Ebl_WStrent *nodep,
- 
-   /* Process the current node.  */
-   nodep->offset = *offsetp;
--  *freep = wmempcpy (*freep, nodep->string, nodep->len);
-+  *freep = wmemcpy (*freep, nodep->string, nodep->len) + nodep->len;
-   *offsetp += nodep->len * sizeof (wchar_t);
- 
-   for (subs = nodep->next; subs != NULL; subs = subs->next)
 --- a/libdwfl/dwfl_error.c
 +++ b/libdwfl/dwfl_error.c
 @@ -140,6 +140,7 @@ __libdwfl_seterrno (Dwfl_Error error)
@@ -755,7 +669,7 @@
  typedef struct Dwfl Dwfl;
 --- a/libdwfl/find-debuginfo.c
 +++ b/libdwfl/find-debuginfo.c
-@@ -372,7 +372,7 @@ dwfl_standard_find_debuginfo (Dwfl_Modul
+@@ -385,7 +385,7 @@ dwfl_standard_find_debuginfo (Dwfl_Modul
        /* If FILE_NAME is a symlink, the debug file might be associated
  	 with the symlink target name instead.  */
  
