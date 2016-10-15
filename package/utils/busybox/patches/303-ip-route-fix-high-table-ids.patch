@@ -121,7 +121,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  	memset(&req, 0, sizeof(req));
  
  	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtmsg));
-@@ -420,7 +426,7 @@ IF_FEATURE_IP_RULE(ARG_table,)
+@@ -419,7 +425,7 @@ IF_FEATURE_IP_RULE(ARG_table,)
  			NEXT_ARG();
  			if (rtnl_rttable_a2n(&tid, *argv))
  				invarg_1_to_2(*argv, "table");
@@ -130,7 +130,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  #endif
  		} else if (arg == ARG_dev || arg == ARG_oif) {
  			NEXT_ARG();
-@@ -476,6 +482,15 @@ IF_FEATURE_IP_RULE(ARG_table,)
+@@ -475,6 +481,15 @@ IF_FEATURE_IP_RULE(ARG_table,)
  		}
  	}
  
