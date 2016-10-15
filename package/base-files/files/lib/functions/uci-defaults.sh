@@ -94,7 +94,7 @@ ucidef_set_interface_raw() {
 }
 
 _ucidef_add_switch_port() {
-	# inherited: $num $device $need_tag $role $index $prev_role
+	# inherited: $num $device $need_tag $want_untag $role $index $prev_role
 	# inherited: $n_cpu $n_ports $n_vlan $cpu0 $cpu1 $cpu2 $cpu3 $cpu4 $cpu5
 
 	n_ports=$((n_ports + 1))
@@ -102,10 +102,11 @@ _ucidef_add_switch_port() {
 	json_select_array ports
 		json_add_object
 			json_add_int num "$num"
-			[ -n "$device"   ] && json_add_string  device   "$device"
-			[ -n "$need_tag" ] && json_add_boolean need_tag "$need_tag"
-			[ -n "$role"     ] && json_add_string  role     "$role"
-			[ -n "$index"    ] && json_add_int     index    "$index"
+			[ -n "$device"     ] && json_add_string  device     "$device"
+			[ -n "$need_tag"   ] && json_add_boolean need_tag   "$need_tag"
+			[ -n "$want_untag" ] && json_add_boolean want_untag "$want_untag"
+			[ -n "$role"       ] && json_add_string  role       "$role"
+			[ -n "$index"      ] && json_add_int     index      "$index"
 		json_close_object
 	json_select ..
 
@@ -140,7 +141,7 @@ _ucidef_add_switch_port() {
 
 _ucidef_finish_switch_roles() {
 	# inherited: $name $n_cpu $n_vlan $cpu0 $cpu1 $cpu2 $cpu3 $cpu4 $cpu5
-	local index role roles num device need_tag port ports
+	local index role roles num device need_tag want_untag port ports
 
 	json_select switch
 		json_select "$name"
@@ -155,7 +156,7 @@ _ucidef_finish_switch_roles() {
 			json_select "$name"
 				json_select ports
 					json_select "$port"
-						json_get_vars num device need_tag
+						json_get_vars num device need_tag want_untag
 					json_select ..
 				json_select ..
 
@@ -207,9 +208,14 @@ ucidef_add_switch() {
 						num="${port%%@*}"
 						device="${port##*@}"
 						need_tag=0
+						want_untag=0
 						[ "${num%t}" != "$num" ] && {
 							num="${num%t}"
 							need_tag=1
+						}
+						[ "${num%u}" != "$num" ] && {
+							num="${num%u}"
+							want_untag=1
 						}
 					;;
 					[0-9]*:*:[0-9]*)
@@ -227,7 +233,7 @@ ucidef_add_switch() {
 					_ucidef_add_switch_port
 				fi
 
-				unset num device role index need_tag
+				unset num device role index need_tag want_untag
 			done
 		json_select ..
 	json_select ..
