@@ -873,6 +873,7 @@ define Device/tl-wa901nd-v4
     BOARDNAME := TL-WA901ND-v4
     DEVICE_PROFILE := TLWA901
     TPLINK_HWID := 0x09010004
+    IMAGE/factory.bin := append-rootfs | mktplinkfw factory -C EU
 endef
 
 TARGET_DEVICES += tl-wa901nd-v1 tl-wa901nd-v2 tl-wa901nd-v3 tl-wa901nd-v4
