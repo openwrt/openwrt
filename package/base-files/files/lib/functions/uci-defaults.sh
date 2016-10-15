@@ -160,7 +160,7 @@ _ucidef_finish_switch_roles() {
 					json_select ..
 				json_select ..
 
-				if [ $n_vlan -gt $n_cpu -o ${need_tag:-0} -eq 1 ]; then
+				if [ ${need_tag:-0} -eq 1 -o ${want_untag:-0} -ne 1 ]; then
 					num="${num}t"
 					device="${device}.${index}"
 				fi
