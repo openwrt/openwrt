@@ -245,7 +245,7 @@ define Image/mkfs/ext4
 	$(STAGING_DIR_HOST)/bin/make_ext4fs \
 		-l $(E2SIZE) -b $(CONFIG_TARGET_EXT4_BLOCKSIZE) \
 		-i $(CONFIG_TARGET_EXT4_MAXINODE) \
-		-m $(CONFIG_TARGET_EXT4_RESERVED_PCT) \
+		$(if $(CONFIG_TARGET_EXT4_RESERVED_PCT),-m $(CONFIG_TARGET_EXT4_RESERVED_PCT)) \
 		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
 		$(if $(SOURCE_DATE_EPOCH),-T $(SOURCE_DATE_EPOCH)) \
 		$@ $(call mkfs_target_dir,$(1))/
