@@ -33,7 +33,7 @@ fast2604 |\
 rta1320 |\
 v2110)
 	ucidef_add_switch "switch0" \
-		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5@eth0"
+		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5u@eth0"
 	;;
 
 agpf-s0 |\
@@ -57,7 +57,7 @@ usr9108 |\
 v2500v_bb)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	ucidef_add_switch "switch0" \
-		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5@eth1"
+		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5u@eth1"
 	;;
 
 dsl-274xb-c |\
