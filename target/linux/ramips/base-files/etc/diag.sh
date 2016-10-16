@@ -109,6 +109,11 @@ get_status_led() {
 	y1s)
 		status_led="$board:blue:power"
 		;;
+	rt-ac51u|\
+	rt-ac54u)
+		status_led="$board:blue:power"
+		status_led="$board:blue:power2"
+		;;
 	db-wrt01|\
 	esr-9753)
 		status_led="$board:orange:power"
