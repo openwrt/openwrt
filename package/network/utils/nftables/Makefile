@@ -1,4 +1,4 @@
-# Copyright (C) 2015 OpenWrt.org
+# Copyright (C) 2015-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,18 +7,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nftables
-PKG_VERSION:=0.4+2015-04-09
+PKG_VERSION:=0.6
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=git://git.netfilter.org/nftables
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=3ed296118a065caff5600e60d4f7ef18e137f9a0
-PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
-PKG_LICENSE:=GPL-2.0
+PKG_SOURCE_URL:=ftp://ftp.netfilter.org/pub/nftables
+PKG_MD5SUM:=fd320e35fdf14b7be795492189b13dae
 
-PKG_FIXUP:=autoreconf
+PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -31,7 +27,7 @@ define Package/nftables
   CATEGORY:=Network
   SUBMENU:=Firewall
   TITLE:=nftables packet filtering userspace utility
-  DEPENDS:=+kmod-nft-core +kmod-nft-nat +libnftnl
+  DEPENDS:=+kmod-nft-core +kmod-nft-nat +libnftnl +libmnl
   URL:=http://netfilter.org/projects/nftables/
 endef
 
