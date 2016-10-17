@@ -19,16 +19,16 @@ proto_qmi_init_config() {
 	proto_config_add_string modes
 	proto_config_add_boolean ipv6
 	proto_config_add_boolean dhcp
-	proto_config_add_int metric
+	proto_config_add_defaults
 }
 
 proto_qmi_setup() {
 	local interface="$1"
 
-	local device apn auth username password pincode delay modes ipv6 dhcp metric
+	local device apn auth username password pincode delay modes ipv6 dhcp $PROTO_DEFAULT_OPTIONS
 	local cid_4 pdh_4 cid_6 pdh_6 ipv4
 	local ip subnet gateway dns1 dns2 ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
-	json_get_vars device apn auth username password pincode delay modes ipv6 dhcp metric
+	json_get_vars device apn auth username password pincode delay modes ipv6 dhcp $PROTO_DEFAULT_OPTIONS
 
 	ipv4=1
 
@@ -172,9 +172,11 @@ proto_qmi_setup() {
 			proto_add_ipv6_address "$ip_6" "128"
 			proto_add_ipv6_prefix "${ip_6}/${ip_prefix_length}"
 			proto_add_ipv6_route "$gateway_6" "128"
-			proto_add_ipv6_route "::0" 0 "$gateway_6" "" "" "${ip_6}/${ip_prefix_length}"
-			proto_add_dns_server "$dns1_6"
-			proto_add_dns_server "$dns2_6"
+			[ "$defaultroute" = 0 ] || proto_add_ipv6_route "::0" 0 "$gateway_6" "" "" "${ip_6}/${ip_prefix_length}"
+			[ "$peerdns" = 0 ] || {
+				proto_add_dns_server "$dns1_6"
+				proto_add_dns_server "$dns2_6"
+			}
 			proto_add_data
 			json_add_string "cid_6" "$cid_6"
 			json_add_string "pdh_6" "$pdh_6"
@@ -183,7 +185,7 @@ proto_qmi_setup() {
 			json_add_string name "${interface}_6"
 			json_add_string ifname "@$interface"
 			json_add_string proto "dhcpv6"
-			json_add_int metric "$metric"
+			proto_add_dynamic_defaults
 			# RFC 7278: Extend an IPv6 /64 Prefix to LAN
 			json_add_string extendprefix 1
 			json_close_object
@@ -199,7 +201,7 @@ proto_qmi_setup() {
 		json_add_string name "${interface}_4"
 		json_add_string ifname "@$interface"
 		json_add_string proto "dhcp"
-		json_add_int metric "$metric"
+		proto_add_dynamic_defaults
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	}
