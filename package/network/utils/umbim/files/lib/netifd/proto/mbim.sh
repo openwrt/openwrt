@@ -17,6 +17,7 @@ proto_mbim_init_config() {
 	proto_config_add_string auth
 	proto_config_add_string username
 	proto_config_add_string password
+	proto_config_add_defaults
 }
 
 _proto_mbim_setup() {
@@ -24,8 +25,8 @@ _proto_mbim_setup() {
 	local tid=2
 	local ret
 
-	local device apn pincode delay
-	json_get_vars device apn pincode delay auth username password
+	local device apn pincode delay $PROTO_DEFAULT_OPTIONS
+	json_get_vars device apn pincode delay auth username password $PROTO_DEFAULT_OPTIONS
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
@@ -130,6 +131,7 @@ _proto_mbim_setup() {
 	json_add_string name "${interface}_4"
 	json_add_string ifname "@$interface"
 	json_add_string proto "dhcp"
+	proto_add_dynamic_defaults
 	json_close_object
 	ubus call network add_dynamic "$(json_dump)"
 
@@ -138,6 +140,7 @@ _proto_mbim_setup() {
 	json_add_string ifname "@$interface"
 	json_add_string proto "dhcpv6"
 	json_add_string extendprefix 1
+	proto_add_dynamic_defaults
 	ubus call network add_dynamic "$(json_dump)"
 }
 
