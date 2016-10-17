@@ -146,6 +146,8 @@ wifi_reload() {
 }
 
 wifi_detect() {
+	[ ! -f /etc/config/wireless ] && touch /etc/config/wireless
+
 	for driver in $DRIVERS; do (
 		if eval "type detect_$driver" 2>/dev/null >/dev/null; then
 			eval "detect_$driver" || echo "$driver: Detect failed" >&2
