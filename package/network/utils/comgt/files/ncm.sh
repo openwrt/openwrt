@@ -19,6 +19,7 @@ proto_ncm_init_config() {
 	proto_config_add_string mode
 	proto_config_add_string pdptype
 	proto_config_add_boolean ipv6
+	proto_config_add_defaults
 }
 
 proto_ncm_setup() {
@@ -26,8 +27,8 @@ proto_ncm_setup() {
 
 	local manufacturer initialize setmode connect ifname devname devpath
 
-	local device apn auth username password pincode delay mode pdptype ipv6
-	json_get_vars device apn auth username password pincode delay mode pdptype ipv6
+	local device apn auth username password pincode delay mode pdptype ipv6 $PROTO_DEFAULT_OPTIONS
+	json_get_vars device apn auth username password pincode delay mode pdptype ipv6 $PROTO_DEFAULT_OPTIONS
 	
 	if [ "$ipv6" = 0 ]; then
 		ipv6=""
@@ -141,6 +142,7 @@ proto_ncm_setup() {
 	json_add_string name "${interface}_4"
 	json_add_string ifname "@$interface"
 	json_add_string proto "dhcp"
+	proto_add_dynamic_defaults
 	ubus call network add_dynamic "$(json_dump)"
 
 	[ -n "$ipv6" ] && {
@@ -149,6 +151,7 @@ proto_ncm_setup() {
 		json_add_string ifname "@$interface"
 		json_add_string proto "dhcpv6"
 		json_add_string extendprefix 1
+		proto_add_dynamic_defaults
 		ubus call network add_dynamic "$(json_dump)"
 	}
 }
