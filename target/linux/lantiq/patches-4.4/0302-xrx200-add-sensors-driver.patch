@@ -27,7 +27,7 @@
  	depends on SPI_MASTER
 --- /dev/null
 +++ b/drivers/hwmon/ltq-cputemp.c
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,154 @@
 +/* Lantiq CPU Temperatur sensor driver for xrx200
 + *
 + * Copyright (C) 2016 Florian Eckert <feckert@tdt.de>
@@ -48,6 +48,7 @@
 +
 +#include <linux/module.h>
 +#include <linux/init.h>
++#include <linux/delay.h>
 +#include <linux/of_device.h>
 +#include <linux/hwmon.h>
 +#include <linux/hwmon-sysfs.h>
@@ -61,6 +62,9 @@
 +static void ltq_cputemp_enable(void)
 +{
 +	ltq_cgu_w32(ltq_cgu_r32(CGU_GPHY1_CR) | CGU_TEMP_PD, CGU_GPHY1_CR);
++
++	/* wait a short moment to let the SoC get the first temperatur value */
++	mdelay(100);
 +}
 +
 +static void ltq_cputemp_disable(void)
@@ -70,8 +74,16 @@
 +
 +static int ltq_cputemp_read(void)
 +{
-+	/* Shift 9 for register alignment and 1 to divide value by 2 */
-+	return (ltq_cgu_r32(CGU_GPHY1_CR) >> 10) & 0xFF;
++	int value;
++
++	/* get the temperature including one decimal place */
++	value = (ltq_cgu_r32(CGU_GPHY1_CR) >> 9) & 0x01FF;
++	value = (value << 2 ) + value;
++
++	/* range -38 to +154 °C, register value zero is -38.0 °C */
++	value -= 380;
++
++	return value;
 +}
 +
 +static ssize_t show_cputemp(struct device *dev,
@@ -81,7 +93,7 @@
 +
 +	value = ltq_cputemp_read();
 +	/* scale temp to millidegree */
-+	value = value * 1000;
++	value = value * 100;
 +
 +	return sprintf(buf, "%d\n", value);
 +}
@@ -101,6 +113,10 @@
 +	int ret;
 +	struct device *hwmon_dev;
 +
++	/* available on vr9 v1.2 SoCs only */
++	if (ltq_soc_type() != SOC_TYPE_VR9_2)
++		return -ENODEV;
++
 +	hwmon_dev = devm_hwmon_device_register_with_groups(&pdev->dev,
 +							"CPU0",
 +							NULL,
@@ -114,7 +130,7 @@
 +
 +	ltq_cputemp_enable();
 +	value = ltq_cputemp_read();
-+	dev_info(&pdev->dev, "Current CPU die temperature: %d °C", value);
++	dev_info(&pdev->dev, "Current CPU die temperature: %d.%d °C", value / 10, value % 10);
 +
 +	return 0;
 +
