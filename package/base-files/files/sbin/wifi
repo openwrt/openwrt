@@ -145,7 +145,7 @@ wifi_reload() {
 	wifi_reload_legacy
 }
 
-wifi_detect() {
+wifi_config() {
 	[ ! -f /etc/config/wireless ] && touch /etc/config/wireless
 
 	for driver in $DRIVERS; do (
@@ -229,7 +229,8 @@ scan_wifi
 
 case "$1" in
 	down) wifi_updown "disable" "$2";;
-	detect) wifi_detect ;;
+	detect) ;;
+	config) wifi_config ;;
 	status) ubus_wifi_cmd "status" "$2";;
 	reload) wifi_reload "$2";;
 	reload_legacy) wifi_reload_legacy "$2";;
