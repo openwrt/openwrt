@@ -566,6 +566,9 @@ ar71xx_board_detect() {
 	*"Domino Pi")
 		name="gl-domino"
 		;;
+	*"DW33D")
+		name="dw33d"
+		;;
 	*"EAP120")
 		name="eap120"
 		tplink_pharos_board_detect

@@ -142,6 +142,12 @@ dragino2)
 	ucidef_set_led_netdev "lan" "LAN" "$board:red:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "$board:red:wan" "eth1"
 	;;
+dw33d)
+	ucidef_set_led_usbdev "mmc" "MMC" "$board:blue:mmc" "1-1"
+	ucidef_set_led_usbdev "usb" "USB" "$board:blue:usb" "2-1"
+	ucidef_set_led_netdev "internet" "INTERNET" "$board:blue:internet" "eth0"
+	ucidef_set_led_wlan "wlan2g" "WLAN-2.4G" "$board:blue:wlan-2g" "phy1tpt"
+	;;
 eap300v2)
 	ucidef_set_led_netdev "lan" "LAN" "engenius:blue:lan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "engenius:blue:wlan" "phy0tpt"
