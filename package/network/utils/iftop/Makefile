@@ -8,15 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iftop
-PKG_VERSION:=1.0pre4
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.ex-parrot.com/~pdw/iftop/download
-PKG_HASH:=f733eeea371a7577f8fe353d86dd88d16f5b2a2e702bd96f5ffb2c197d9b4f97
-
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://code.blinkace.com/pdw/iftop.git
+PKG_SOURCE_DATE:=2017-02-06
+PKG_SOURCE_VERSION:=35af3cf65f17961d173b31fd3b00166ec095c226
+PKG_MIRROR_HASH:=84131e2448ea5aa884d2bd7d58dc81741b5c476b4664a8c2c1eb34f62985804a
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0
+
+PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
