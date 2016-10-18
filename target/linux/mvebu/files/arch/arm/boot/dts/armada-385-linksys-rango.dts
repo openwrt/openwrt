@@ -198,13 +198,13 @@
 
 				partition@7e0000 {
 					label = "devinfo";
-					reg = <0x7e0000 0x1e0000>;   /* 1920KB */
+					reg = <0x7e0000 0x40000>;   /* 256KB */
 					read-only;
 				};
 
 				partition@820000 {
 					label = "sysdiag";
-					reg = <0x820000 0x40000>;   /* 256KB */
+					reg = <0x820000 0x1e0000>;   /* 1920KB */
 					read-only;
 				};
 
@@ -235,7 +235,7 @@
 				 */
 				partition@aa00000 {
 					label = "syscfg";
-					reg = <0x5a00000 0x5600000>;
+					reg = <0xaa00000 0x5600000>;
 				};
 
 				/*
@@ -246,7 +246,7 @@
 				 */
 				partition@180000 {
 					label = "unused_area";
-					reg = <0x260000 0x580000>;   /* 5.6MB */
+					reg = <0x260000 0x5c0000>;   /* 5.75MB */
 				};
 			};
 		};
