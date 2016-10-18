@@ -70,6 +70,7 @@ define Device/DniImage
 	KERNEL_NAME := zImage
 	NETGEAR_BOARD_ID :=
 	NETGEAR_HW_ID :=
+	UBINIZE_OPTS := -E 5
 	IMAGES := factory.img sysupgrade.tar
 	IMAGE/factory.img := append-kernel | append-ubi | netgear-dni
 	IMAGE/sysupgrade.tar = sysupgrade-tar
@@ -154,6 +155,7 @@ define Device/EA8500
 	KERNEL = kernel-bin | append-dtb | uImage none | append-file $(KDIR)/root.dummy
 	PROFILES += $$(DEVICE_NAME)
 	BOARD_NAME := ea8500
+	UBINIZE_OPTS := -E 5
 	IMAGES := factory.bin sysupgrade.tar
 	IMAGE/factory.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi
 	IMAGE/sysupgrade.tar := sysupgrade-tar
