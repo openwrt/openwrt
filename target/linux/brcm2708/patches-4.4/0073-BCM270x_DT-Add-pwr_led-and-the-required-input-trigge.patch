@@ -79,9 +79,9 @@ See: https://github.com/raspberrypi/linux/issues/1064
  	else
 --- a/drivers/leds/trigger/Kconfig
 +++ b/drivers/leds/trigger/Kconfig
-@@ -122,4 +122,11 @@ config LEDS_TRIGGER_USBDEV
- 	  This allows LEDs to be controlled by the presence/activity of
- 	  an USB device. If unsure, say N.
+@@ -115,4 +115,11 @@ config LEDS_TRIGGER_NETDEV
+ 	  This allows LEDs to be controlled by network device activity.
+ 	  If unsure, say Y.
  
 +config LEDS_TRIGGER_INPUT
 +	tristate "LED Input Trigger"
