@@ -181,7 +181,7 @@ Image/Build/Profile/WHRG300N=$(call BuildFirmware/WHRG300N/$(1),$(1))
 
 define LegacyDevice/ALL02393G
   DEVICE_TITLE := Allnet ALL0239-3G 
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += ALL02393G
 
@@ -230,7 +230,7 @@ TARGET_DEVICES += 3g-6200nl
 
 define LegacyDevice/3G300M
   DEVICE_TITLE := Tenda 3G300M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += 3G300M
 
@@ -251,7 +251,7 @@ LEGACY_DEVICES += ALL0256N
 
 define LegacyDevice/AWM002EVB
   DEVICE_TITLE := AsiaRF AWM002-EVB
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 		kmod-i2c-core kmod-i2c-gpio
 endef
 LEGACY_DEVICES += AWM002EVB
@@ -259,7 +259,7 @@ LEGACY_DEVICES += AWM002EVB
 
 define LegacyDevice/BROADWAY
   DEVICE_TITLE := Hauppauge Broadway
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += BROADWAY
 
@@ -350,7 +350,7 @@ define Device/fonera20n
   IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | \
 	edimax-header -s RSDK -m NL1T -f 0x50000 -S 0xc0000
   DEVICE_TITLE := Fonera 2.0N
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += fonera20n
 
@@ -394,7 +394,7 @@ LEGACY_DEVICES += NW718
 
 define LegacyDevice/PX-4885
   DEVICE_TITLE := 7Links PX-4885
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev kmod-leds-gpio
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-leds-gpio
 endef
 LEGACY_DEVICES += PX-4885
 

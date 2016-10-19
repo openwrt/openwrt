@@ -30,7 +30,7 @@ TARGET_DEVICES += cf-e316n-v2
 define Device/dragino2
   BOARDNAME := DRAGINO2
   CONSOLE := ttyATH0,115200
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   DEVICE_TITLE := Dragino 2 (MS14)
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,16000k(firmware),64k(config)ro,64k(art)ro
@@ -108,7 +108,7 @@ TARGET_DEVICES += dr531
 
 define Device/wndr3700
   DEVICE_TITLE := NETGEAR WNDR3700
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev kmod-leds-wndr3700-usb
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-leds-wndr3700-usb
   BOARDNAME = WNDR3700
   NETGEAR_KERNEL_MAGIC = 0x33373030
   NETGEAR_BOARD_ID = WNDR3700
@@ -206,7 +206,7 @@ TARGET_DEVICES += cr3000-nocloud
 
 define Device/cr5000
   DEVICE_TITLE := PowerCloud CR5000 Cloud Router
-  DEVICE_PACKAGES := uboot-envtools kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev kmod-usb-core
+  DEVICE_PACKAGES := uboot-envtools kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-core
   BOARDNAME := CR5000
   DEVICE_PROFILE := CR5000
   IMAGE_SIZE = 7104k
@@ -217,7 +217,7 @@ TARGET_DEVICES += cr5000
 
 define Device/cr5000-nocloud
   DEVICE_TITLE := PowerCloud CR5000 (No-Cloud)
-  DEVICE_PACKAGES := uboot-envtools kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev kmod-usb-core
+  DEVICE_PACKAGES := uboot-envtools kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-core
   BOARDNAME := CR5000
   DEVICE_PROFILE := CR5000
   IMAGE_SIZE = 7808k
@@ -330,7 +330,7 @@ TARGET_DEVICES += mc-mac1200r
 define Device/minibox-v1
   $(Device/tplink-16mlzma)
   DEVICE_TITLE := Gainstrong MiniBox V1.0
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2  kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2  kmod-usb-ledtrig-usbport
   BOARDNAME := MINIBOX-V1
   DEVICE_PROFILE := MINIBOXV1
   TPLINK_HWID := 0x3C000201
@@ -401,7 +401,7 @@ TARGET_DEVICES += tellstick-znet-lite
 define Device/oolite
   $(Device/tplink-16mlzma)
   DEVICE_TITLE := Gainstrong OOLITE
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := GS-OOLITE
   DEVICE_PROFILE := OOLITE
   TPLINK_HWID := 0x3C000101
@@ -412,7 +412,7 @@ TARGET_DEVICES += oolite
 
 define Device/NBG6616
   DEVICE_TITLE := ZyXEL NBG6616
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-usb-storage kmod-rtc-pcf8563 kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-rtc-pcf8563 kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = NBG6616
   KERNEL_SIZE = 2048k
   IMAGE_SIZE = 15323k
@@ -552,7 +552,7 @@ endef
 define Device/qihoo-c301
 $(Device/seama)
   DEVICE_TITLE := Qihoo C301
-  DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = QIHOO-C301
   IMAGE_SIZE = 15744k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(devdata),64k(devconf),15744k(firmware),64k(warm_start),64k(action_image_config),64k(radiocfg)ro;spi0.1:15360k(upgrade2),1024k(privatedata)

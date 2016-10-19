@@ -141,7 +141,7 @@ endef
 define Device/WNDR4700
   DEVICE_TITLE := Netgear Centria N900 WNDR4700/WNDR4720
   DEVICE_PACKAGES := badblocks block-mount e2fsprogs \
-	kmod-ath9k kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-ledtrig-usbdev \
+	kmod-ath9k kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-usb-ledtrig-usbport \
 	kmod-md-mod kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
 	kmod-nls-utf8 kmod-usb3 kmod-usb-dwc2 kmod-usb-storage \
 	partx-utils swconfig wpad-mini
@@ -226,7 +226,7 @@ TARGET_DEVICES += MyBookLiveSingle
 define Device/MyBookLiveDuo
 $(Device/MyBookLiveDefault)
   DEVICE_TITLE := Western Digital My Book Live Duo
-  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev kmod-usb-storage kmod-fs-vfat wpad-mini
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-mini
   DEVICE_DTS := apollo3g-duo
   DEVICE_PROFILE := ap2nc
 endef

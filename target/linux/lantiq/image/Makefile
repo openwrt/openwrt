@@ -227,7 +227,7 @@ ifeq ($(SUBTARGET),xway_legacy)
 define Device/ARV4520PW
   IMAGE_SIZE := 3648k
   DEVICE_TITLE := Easybox 800, WAV-281 - ARV4520PW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -249,7 +249,7 @@ TARGET_DEVICES += ARV4525PW
 define Device/ARV452CQW
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := Easybox 801 - ARV452CQW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
 	kmod-ath5k wpad-mini \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
@@ -261,7 +261,7 @@ TARGET_DEVICES += ARV452CQW
 define Device/ARV4518PWR01
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := ARV4518PWR01
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -273,7 +273,7 @@ TARGET_DEVICES += ARV4518PWR01
 define Device/ARV4518PWR01A
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := ARV4518PWR01A
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -320,7 +320,7 @@ TARGET_DEVICES += ACMP252
 define Device/ARV4510PW
   IMAGE_SIZE := 15616k
   DEVICE_TITLE := Wippies, Elisa - ARV4510PW
-  DEVICE_PACKAGES := kmod-ledtrig-usbdev kmod-usb2-pci kmod-usb-uhci \
+  DEVICE_PACKAGES := kmod-usb-ledtrig-usbport kmod-usb2-pci kmod-usb-uhci \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -343,7 +343,7 @@ TARGET_DEVICES += ARV7525PW
 define Device/ARV4519PW
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := Vodafone, Pirelli - ARV4519PW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -365,7 +365,7 @@ TARGET_DEVICES += ARV7506PW11
 define Device/ARV7510PW22
   IMAGE_SIZE := 31232k
   DEVICE_TITLE := Astoria - ARV7510PW22
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -379,7 +379,7 @@ TARGET_DEVICES += ARV7510PW22
 define Device/ARV7518PW
   IMAGE_SIZE := 7872k
   DEVICE_TITLE := Astoria - ARV7518PW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -403,7 +403,7 @@ TARGET_DEVICES += ARV7519PW
 define Device/ARV752DPW
   IMAGE_SIZE := 7872k
   DEVICE_TITLE := Easybox 802 - ARV752DPW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -416,7 +416,7 @@ TARGET_DEVICES += ARV752DPW
 define Device/ARV752DPW22
   IMAGE_SIZE := 7616k
   DEVICE_TITLE := Easybox 803 - ARV752DPW22
-  DEVICE_PACKAGES := kmod-usb2-pci kmod-usb-uhci kmod-ltq-hcd-danube kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb2-pci kmod-usb-uhci kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -471,7 +471,7 @@ Image/Build/Profile/DGN3500=$(call Image/BuildDGN3500/$(1),$(1),DGN3500)
 
 define LegacyDevice/DGN3500
   DEVICE_TITLE := Netgear DGN3500
-  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ath9k wpad-mini \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
@@ -485,7 +485,7 @@ Image/Build/Profile/DGN3500B=$(call Image/BuildDGN3500B/$(1),$(1),DGN3500B)
 
 define LegacyDevice/DGN3500B
   DEVICE_TITLE := Netgear DGN3500B
-  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ath9k wpad-mini \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
@@ -498,7 +498,7 @@ define Device/WBMRA
   IMAGE_SIZE := 31488k
   DEVICE_DTS := WBMR
   DEVICE_TITLE := Buffalo WBMR-HP-G300H (A) - WBMR
-  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -510,7 +510,7 @@ define Device/WBMRB
   IMAGE_SIZE := 31488k
   DEVICE_DTS := WBMR
   DEVICE_TITLE := Buffalo WBMR-HP-G300H (B) - WBMR
-  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -538,7 +538,7 @@ define Device/H201L
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoe \
-	kmod-ltq-deu-ar9 kmod-usb-dwc2 kmod-ledtrig-usbdev \
+	kmod-ltq-deu-ar9 kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-tapi kmod-ltq-vmmc \
 	swconfig
 endef
@@ -567,7 +567,7 @@ ifeq ($(SUBTARGET),xrx200)
 define Device/P2812HNUF1
   $(Device/NAND)
   DEVICE_TITLE := ZyXEL P-2812HNU-F1
-  DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += P2812HNUF1
 
@@ -596,14 +596,14 @@ define Device/EASY80920NAND
   $(Device/lantiqFullImage)
   IMAGE_SIZE := 64512k
   DEVICE_TITLE := Lantiq VR9 - EASY80920NAND
-  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += EASY80920NAND
 
 define Device/EASY80920NOR
   IMAGE_SIZE := 7936k
   DEVICE_TITLE := Lantiq VR9 - EASY80920NOR
-  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += EASY80920NOR
 

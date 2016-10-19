@@ -5,7 +5,7 @@ LEGACY_DEVICES += ALFANX
 
 define LegacyDevice/HORNETUB
   DEVICE_TITLE := ALFA Network Hornet-UB board (8MB flash, 32MB ram)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += HORNETUB
 
@@ -163,25 +163,25 @@ LEGACY_DEVICES += DB120
 
 define LegacyDevice/EWDORINAP
   DEVICE_TITLE := Embedded Wireless Dorin Platform (4MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev kmod-usb-storage
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage
 endef
 LEGACY_DEVICES += EWDORINAP
 
 define LegacyDevice/EWDORINRT
   DEVICE_TITLE := Embedded Wireless Dorin Router
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev kmod-usb-storage
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage
 endef
 LEGACY_DEVICES += EWDORINRT
 
 define LegacyDevice/EWDORIN16M
   DEVICE_TITLE := Embedded Wireless Dorin Platform (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev kmod-usb-storage
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage
 endef
 LEGACY_DEVICES += EWDORIN16M
 
 define LegacyDevice/HORNETUBx2
   DEVICE_TITLE := ALFA Network Hornet-UB-x2 board (16MB flash, 64MB ram)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += HORNETUBx2
 
@@ -210,7 +210,7 @@ LEGACY_DEVICES += TUBE2H16M
 
 define LegacyDevice/WLR8100
   DEVICE_TITLE := Sitecom WLR-8100
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-usb3
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb3
 endef
 LEGACY_DEVICES += WLR8100
 
@@ -259,7 +259,7 @@ LEGACY_DEVICES += YUN_16M
 
 define LegacyDevice/F9K1115V2
   DEVICE_TITLE := Belkin AC1750DB (F9K1115V2)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb3 kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb3 kmod-usb-ledtrig-usbport \
 	kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += F9K1115V2
@@ -336,7 +336,7 @@ LEGACY_DEVICES += DIR601B1
 
 define LegacyDevice/DIR505A1
   DEVICE_TITLE := D-Link DIR-505 rev. A1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += DIR505A1
 
@@ -360,7 +360,7 @@ LEGACY_DEVICES += DHP1565A1
 
 define LegacyDevice/DIR825C1
   DEVICE_TITLE := D-Link DIR-825 rev. C1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += DIR825C1
 
@@ -389,7 +389,7 @@ LEGACY_DEVICES += MYNETREXT
 
 define LegacyDevice/DIR825B1
   DEVICE_TITLE := D-Link DIR-825 rev. B1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += DIR825B1
 
@@ -401,7 +401,7 @@ LEGACY_DEVICES += TEW673GRU
 
 define LegacyDevice/DLRTDEV01
   DEVICE_TITLE := PowerCloud Systems dlrtdev01 model
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += DLRTDEV01
 
@@ -423,7 +423,7 @@ LEGACY_DEVICES += dLAN_pro_1200_ac
 
 define LegacyDevice/ESR900
   DEVICE_TITLE := EnGenius ESR900
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += ESR900
 
@@ -488,13 +488,13 @@ LEGACY_DEVICES += WNR2000V3
 
 define LegacyDevice/WNR2000V4
   DEVICE_TITLE := NETGEAR WNR2000V4
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WNR2000V4
 
 define LegacyDevice/WNR2200
   DEVICE_TITLE := NETGEAR WNR2200
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WNR2200
 
@@ -602,7 +602,7 @@ LEGACY_DEVICES += PB44
 
 define LegacyDevice/MZKW04NU
   DEVICE_TITLE := Planex MZK-W04NU
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += MZKW04NU
 
@@ -644,37 +644,37 @@ LEGACY_DEVICES += WRT400N
 
 define LegacyDevice/WZRHPG300NH
   DEVICE_TITLE := Buffalo WZR-HP-G300NH
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WZRHPG300NH
 
 define LegacyDevice/WZRHPG300NH2
   DEVICE_TITLE := Buffalo WZR-HP-G300NH2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WZRHPG300NH2
 
 define LegacyDevice/WZRHPAG300H
   DEVICE_TITLE := Buffalo WZR-HP-AG300H
-  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-ohci kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WZRHPAG300H
 
 define LegacyDevice/WZRHPG450H
   DEVICE_TITLE := Buffalo WZR-HP-G450H
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WZRHPG450H
 
 define LegacyDevice/WZR600DHP
   DEVICE_TITLE := Buffalo WZR-600DHP
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WZR600DHP
 
 define LegacyDevice/WZR450HP2
   DEVICE_TITLE := Buffalo WZR-450HP2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WZR450HP2
 

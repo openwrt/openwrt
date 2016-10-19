@@ -10,7 +10,7 @@ define Profile/Default
 	PRIORITY:=1
 	PACKAGES:=\
 		kmod-usb-core kmod-usb3 \
-		kmod-ledtrig-usbdev
+		kmod-usb-ledtrig-usbport
 endef
 
 define Profile/Default/Description

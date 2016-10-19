@@ -8,6 +8,7 @@ load_led() {
 	local sysfs
 	local trigger
 	local dev
+	local ports
 	local mode
 	local default
 	local delayon
@@ -33,6 +34,15 @@ load_led() {
 		# handled by rssileds userspace process
 		return
 	fi
+
+	[ "$trigger" = "usbdev" ] && {
+		# Backward compatibility: translate to the new trigger
+		trigger="usbport"
+		# Translate port of root hub, e.g. 4-1 -> usb4-port1
+		ports=$(echo "$dev" | sed -n 's/^\([0-9]*\)-\([0-9]*\)$/usb\1-port\2/p')
+		# Translate port of extra hub, e.g. 2-2.4 -> 2-2-port4
+		[ -z "$ports" ] && ports=$(echo "$dev" | sed -n 's/\./-port/p')
+	}
 
 	[ -e /sys/class/leds/${sysfs}/brightness ] && {
 		echo "setting up led ${name}"
@@ -71,11 +81,12 @@ load_led() {
 				echo $delayoff > /sys/class/leds/${sysfs}/delay_off
 			;;
 
-		"usbdev")
-			[ -n "$dev" ] && {
-				echo $dev > /sys/class/leds/${sysfs}/device_name
-				echo $interval > /sys/class/leds/${sysfs}/activity_interval
-			}
+		"usbport")
+			local p
+
+			for p in $ports; do
+				echo 1 > /sys/class/leds/${sysfs}/ports/$p
+			done
 			;;
 
 		"port_state")

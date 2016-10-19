@@ -6,7 +6,7 @@ define Device/asl26555-8M
   DTS := ASL26555-8M
   IMAGE_SIZE := 7744k
   DEVICE_TITLE := Alpha ASL26555 
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += asl26555-8M
 
@@ -64,7 +64,7 @@ define Device/all5002
   DTS := ALL5002
   IMAGE_SIZE := 32448k
   DEVICE_TITLE := Allnet ALL5002
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
           kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
 endef
 TARGET_DEVICES += all5002
@@ -74,7 +74,7 @@ define Device/all5003
   DTS := ALL5003
   IMAGE_SIZE := 32448k
   DEVICE_TITLE := Allnet ALL5003
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
           kmod-i2c-core kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
 endef
 TARGET_DEVICES += all5003
@@ -100,7 +100,7 @@ define Device/f7c027
   DTS := F7C027
   IMAGE_SIZE := 7616k
   DEVICE_TITLE := Belkin F7C027
-  DEVICE_PACKAGES := -kmod-usb-core -kmod-usb-dwc2 -kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := -kmod-usb-core -kmod-usb-dwc2 -kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += f7c027
 
@@ -180,7 +180,7 @@ TARGET_DEVICES += esr-9753
 define Device/hw550-3g
   DTS := HW550-3G
   DEVICE_TITLE := Aztech HW550-3G
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += hw550-3g
 
@@ -211,7 +211,7 @@ TARGET_DEVICES += ip2202
 define Device/ht-tm02
   DTS := HT-TM02
   DEVICE_TITLE := HooToo HT-TM02
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += ht-tm02
 
@@ -229,7 +229,7 @@ define Device/3g150b
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_TITLE := Tenda 3G150B
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += 3g150b
 
@@ -498,7 +498,7 @@ define Device/ur-326n4g
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := UPVEL UR-326N4G
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += ur-326n4g
 
@@ -506,7 +506,7 @@ TARGET_DEVICES += ur-326n4g
 define Device/ur-336un
   DTS := UR-336UN
   DEVICE_TITLE := UPVEL UR-336UN
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += ur-336un
 

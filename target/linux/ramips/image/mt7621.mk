@@ -79,7 +79,7 @@ define Device/firewrt
   DTS := FIREWRT
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Firefly FireWRT
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += firewrt
 
@@ -87,7 +87,7 @@ define Device/newifi-d1
   DTS := Newifi-D1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Newifi D1
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-i2c-mt7621
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621
 endef
 TARGET_DEVICES += newifi-d1
 
@@ -95,7 +95,7 @@ define Device/pbr-m1
   DTS := PBR-M1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := PBR-M1
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci \
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci \
 	kmod-rtc-pcf8563 kmod-i2c-mt7621
 endef
 TARGET_DEVICES += pbr-m1
@@ -103,7 +103,7 @@ TARGET_DEVICES += pbr-m1
 define Device/sap-g3200u3
   DTS := SAP-G3200U3
   DEVICE_TITLE := STORYLiNK SAP-G3200U3
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += sap-g3200u3
 
@@ -118,7 +118,7 @@ define Device/witi
   DTS := WITI
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := MQmaker WiTi
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci \
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci \
 	kmod-rtc-pcf8563 kmod-i2c-mt7621
 endef
 TARGET_DEVICES += witi
@@ -135,7 +135,7 @@ define Device/zbt-wg2626
   DTS := ZBT-WG2626
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := ZBT WG2626
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci
 endef
 TARGET_DEVICES += zbt-wg2626
 
@@ -143,7 +143,7 @@ define Device/zbt-wg3526
   DTS := ZBT-WG3526
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := ZBT WG3526
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci
 endef
 TARGET_DEVICES += zbt-wg3526
 
@@ -157,7 +157,7 @@ define Device/wf-2881
   UBINIZE_OPTS := -E 5
   IMAGE/sysupgrade.bin := append-kernel | append-ubi | check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := NETIS WF-2881
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += wf-2881
 
@@ -178,7 +178,7 @@ define Device/sk-wb8
   DTS := SK-WB8
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := SamKnows Whitebox 8
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev uboot-envtools
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport uboot-envtools
 endef
 TARGET_DEVICES += sk-wb8
 
