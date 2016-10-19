@@ -7,20 +7,10 @@ choice
 	help
 	  Select the version of binutils you wish to use.
 
-	config BINUTILS_USE_VERSION_2_24_LINARO
-		depends on !arc
-		bool "Linaro binutils 2.24"
-		select BINUTILS_VERSION_2_24_LINARO
-
 	config BINUTILS_USE_VERSION_2_25_1
 		depends on !arc
 		bool "Binutils 2.25.1"
 		select BINUTILS_VERSION_2_25_1
-
-	config BINUTILS_USE_VERSION_2_26_1
-		depends on !arc
-		bool "Binutils 2.26.1"
-		select BINUTILS_VERSION_2_26_1
 
 	config BINUTILS_USE_VERSION_2_27
 		depends on !arc

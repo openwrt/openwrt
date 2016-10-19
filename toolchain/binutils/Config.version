@@ -1,11 +1,5 @@
-config BINUTILS_VERSION_2_24_LINARO
-	bool
-
 config BINUTILS_VERSION_2_25_1
 	default y if (!TOOLCHAINOPTS && !arc)
-	bool
-
-config BINUTILS_VERSION_2_26_1
 	bool
 
 config BINUTILS_VERSION_2_27
@@ -17,9 +11,7 @@ config BINUTILS_VERSION_2_26_ARC
 
 config BINUTILS_VERSION
 	string
-	default "2.24-linaro"          if BINUTILS_VERSION_2_24_LINARO
 	default "2.25.1"               if BINUTILS_VERSION_2_25_1
-	default "2.26.1"               if BINUTILS_VERSION_2_26_1
 	default "2.27"		       if BINUTILS_VERSION_2_27
 	default "arc-2016.03"          if BINUTILS_VERSION_2_26_ARC
 
