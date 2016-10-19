@@ -19,6 +19,7 @@ load_led() {
 	config_get name $1 name "$sysfs"
 	config_get trigger $1 trigger "none"
 	config_get dev $1 dev
+	config_get ports $1 port
 	config_get mode $1 mode "link"
 	config_get_bool default $1 default "nil"
 	config_get delayon $1 delayon

@@ -335,6 +335,15 @@ generate_led() {
 			EOF
 		;;
 
+		usbport)
+			local ports port
+			json_get_values ports ports
+			uci set system.$cfg.trigger='usbport'
+			for port in $ports; do
+				uci add_list system.$cfg.port=$port
+			done
+		;;
+
 		rssi)
 			local iface minq maxq offset factor
 			json_get_vars iface minq maxq offset factor
