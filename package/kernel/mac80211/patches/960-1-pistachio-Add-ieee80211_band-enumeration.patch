@@ -1,0 +1,43 @@
+From 245fd4276334421b8e060384680e15e304c2a34b Mon Sep 17 00:00:00 2001
+From: Francois Berder <francois.berder@imgtec.com>
+Date: Wed, 19 Oct 2016 16:08:43 +0100
+Subject: [PATCH] pistachio: Add ieee80211_band enumeration
+
+---
+ include/net/cfg80211.h | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index efb2627..30b3d29 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -68,6 +68,26 @@ struct wiphy;
+  */
+ 
+ /**
++ * enum ieee80211_band - supported frequency bands
++ *
++ * The bands are assigned this way because the supported
++ * bitrates differ in these bands.
++ *
++ * @IEEE80211_BAND_2GHZ: 2.4GHz ISM band
++ * @IEEE80211_BAND_5GHZ: around 5GHz band (4.9-5.7)
++ * @IEEE80211_BAND_60GHZ: around 60 GHz band (58.32 - 64.80 GHz)
++ * @IEEE80211_NUM_BANDS: number of defined bands
++ */
++enum ieee80211_band {
++	IEEE80211_BAND_2GHZ = NL80211_BAND_2GHZ,
++	IEEE80211_BAND_5GHZ = NL80211_BAND_5GHZ,
++	IEEE80211_BAND_60GHZ = NL80211_BAND_60GHZ,
++
++	/* keep last */
++	IEEE80211_NUM_BANDS
++};
++
++/**
+  * enum ieee80211_channel_flags - channel flags
+  *
+  * Channel flags set by the regulatory control code.
+-- 
+2.7.4
+
