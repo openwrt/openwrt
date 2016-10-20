@@ -223,7 +223,7 @@ endef
 
 define Device/tenda-ac9
   DEVICE_TITLE := Tenda AC9
-  DEVICE_PACKAGES := $(USB2_PACKAGES)
+  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
   IMAGES := trx
   IMAGE/trx := append-rootfs | trx-serial
 endef
