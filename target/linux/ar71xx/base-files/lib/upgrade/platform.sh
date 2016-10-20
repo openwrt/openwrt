@@ -182,6 +182,7 @@ platform_check_image() {
 	ap96 | \
 	bxu2000n-2-a1 | \
 	db120 | \
+	dw33d | \
 	f9k1115v2 |\
 	hornet-ub | \
 	mr12 | \

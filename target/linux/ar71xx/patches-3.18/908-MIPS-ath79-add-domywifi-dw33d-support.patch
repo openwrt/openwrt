@@ -1,0 +1,45 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -480,6 +480,22 @@
+ 	select ATH79_DEV_NFC
+ 	select ATH79_DEV_USB
+ 
++config ATH79_MACH_DOMYWIFI_DW33D
++	bool "DomyWifi DW33D support"
++	select SOC_QCA955X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_NFC
++	select ATH79_DEV_WMAC
++	select ATH79_DEV_USB
++	select MTD_NAND
++	select MTD_NAND_AR934X
++	select MTD_NAND_AR934X_HW_ECC
++	select MTD_NAND_ECC
++
+ config ATH79_MACH_DRAGINO2
+ 	bool "DRAGINO V2 support"
+ 	select SOC_AR933X
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -69,6 +69,7 @@
+ obj-$(CONFIG_ATH79_MACH_DIR_615_I1)	+= mach-dir-615-i1.o
+ obj-$(CONFIG_ATH79_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
+ obj-$(CONFIG_ATH79_MACH_DIR_825_C1)	+= mach-dir-825-c1.o
++obj-$(CONFIG_ATH79_MACH_DOMYWIFI_DW33D)	+= mach-domywifi-dw33d.o
+ obj-$(CONFIG_ATH79_MACH_DRAGINO2)	+= mach-dragino2.o
+ obj-$(CONFIG_ATH79_MACH_ESR900)	+= mach-esr900.o
+ obj-$(CONFIG_ATH79_MACH_EW_DORIN)	+= mach-ew-dorin.o
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -57,6 +57,7 @@
+ 	ATH79_MACH_DIR_835_A1,		/* D-Link DIR-835 rev. A1 */
+ 	ATH79_MACH_DLAN_PRO_500_WP,	/* devolo dLAN pro 500 Wireless+ */
+ 	ATH79_MACH_DLAN_PRO_1200_AC,	/* devolo dLAN pro 1200+ WiFi ac*/
++	ATH79_MACH_DOMYWIFI_DW33D,	/* DomyWifi DW33D */
+ 	ATH79_MACH_DRAGINO2,		/* Dragino Version 2 */
+ 	ATH79_MACH_ESR900,		/* EnGenius ESR900 */
+ 	ATH79_MACH_EW_DORIN,		/* embedded wireless Dorin Platform */
