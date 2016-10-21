@@ -1,6 +1,8 @@
 
 ![Creator logo](creatorlogo.png)
 
+[![Stories in Backlog](https://badge.waffle.io/CreatorDev/openwrt.png?label=s:%20Backlog&title=Backlog)](http://waffle.io/CreatorDev/openwrt)
+
 # Using OpenWrt on Creator Ci40 (Marduk) platform
 
 #### For more high-level details about the platform please visit the [Creator Ci40 website](https://community.imgtec.com/platforms/creator-ci40/)
