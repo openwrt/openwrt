@@ -8,6 +8,7 @@
 
 # Substituted by SDK, do not remove
 # REVISION:=x
+# SOURCE_DATE_EPOCH:=x
 
 RELEASE:=Reboot
 
