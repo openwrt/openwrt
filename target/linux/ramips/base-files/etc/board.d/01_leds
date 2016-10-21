@@ -264,7 +264,8 @@ psg1208)
 	set_wifi_led "$board:white:wlan2g"
 	;;
 psg1218)
-	ucidef_set_led_default "power" "power" "$board:red:status" "1"
+	ucidef_set_led_netdev "Network" "Network" "$board:blue:status" "eth0"
+	ucidef_set_led_default "status" "STATUS" "$board:yellow:status" "0"
 	;;
 px-4885)
 	set_wifi_led "$board:orange:wifi"

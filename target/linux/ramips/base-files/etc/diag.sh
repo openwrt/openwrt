@@ -99,7 +99,7 @@ get_status_led() {
 		status_led="$board:white:wps"
 		;;
 	psg1218)
-		status_led="$board:blue:status"
+		status_led="$board:yellow:status"
 		;;
 	cy-swr1100|\
 	w502u)
