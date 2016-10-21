@@ -79,8 +79,11 @@ define Build/loader-okli
 endef
 
 define Build/relocate-kernel
+	rm -rf $(KDIR)/relocate
+	$(CP) ../../generic/image/relocate $(KDIR)
+	$(MAKE) -C $(KDIR)/relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
 	( \
-		dd if=$(KDIR)/relocate.bin bs=32 conv=sync && \
+		dd if=$(KDIR)/relocate/loader.bin bs=32 conv=sync && \
 		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
 		cat "$@" \
 	) > "$@.new"
