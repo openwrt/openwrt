@@ -23,6 +23,7 @@
 
 #define _GNU_SOURCE
 #include <byteswap.h>
+#include <endian.h>
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
