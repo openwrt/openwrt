@@ -97,6 +97,8 @@ get_status_led() {
 	dap-1350|\
 	na930|\
 	pbr-m1|\
+	rt-ac51u|\
+	rt-ac54u\
 	rt-n13u|\
 	rt-n14u|\
 	rt-n15|\
@@ -108,11 +110,6 @@ get_status_led() {
 	y1|\
 	y1s)
 		status_led="$board:blue:power"
-		;;
-	rt-ac51u|\
-	rt-ac54u)
-		status_led="$board:blue:power"
-		status_led="$board:blue:power2"
 		;;
 	db-wrt01|\
 	esr-9753)
