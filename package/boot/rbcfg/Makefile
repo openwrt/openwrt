@@ -17,6 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/rbcfg
   SECTION:=utils
   CATEGORY:=Utilities
+  SUBMENU:=Boot Loaders
   TITLE:=RouterBOOT configuration tool
   DEPENDS:=@TARGET_ar71xx
 endef
