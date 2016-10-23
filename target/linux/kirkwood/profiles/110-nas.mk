@@ -8,7 +8,7 @@
 define Profile/DOCKSTAR
   NAME:=Seagate FreeAgent Dockstar
   PACKAGES:= \
-	kmod-rtc-marvell kmod-usb2 kmod-usb-storage
+	kmod-usb2 kmod-usb-storage
 endef
 
 define Profile/DOCKSTAR/Description
@@ -21,7 +21,7 @@ define Profile/GOFLEXHOME
   NAME:=Seagate GoFlexHome
   PACKAGES:= \
 	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-usb2 kmod-usb-storage \
+	kmod-usb2 kmod-usb-storage \
 	uboot-envtools
 endef
 
@@ -48,7 +48,7 @@ define Profile/IB62X0
   NAME:=RaidSonic ICY BOX IB-NAS62x0
   PACKAGES:= \
 	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-usb2 kmod-usb-storage
+	kmod-usb2 kmod-usb-storage
 endef
 
 define Profile/IB62X0/Description
@@ -86,7 +86,7 @@ define Profile/NSA310S
   NAME:=ZyXEL NSA310S
   PACKAGES:= \
 	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-usb2 kmod-usb-storage
+	kmod-usb2 kmod-usb-storage
 endef
 
 define Profile/NSA310S/Description
