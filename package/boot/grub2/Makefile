@@ -28,9 +28,7 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/grub2
-  SUBMENU:=Boot Loaders
-  CATEGORY:=Utilities
-  SECTION:=utils
+  CATEGORY:=Boot Loaders
   TITLE:=GRand Unified Bootloader
   URL:=http://www.gnu.org/software/grub/
   DEPENDS:=@TARGET_x86||TARGET_x86_64
@@ -39,6 +37,7 @@ endef
 define Package/grub2-editenv
   CATEGORY:=Utilities
   SECTION:=utils
+  SUBMENU:=Boot Loaders
   TITLE:=Grub2 Environment editor
   URL:=http://www.gnu.org/software/grub/
   DEPENDS:=@TARGET_x86||TARGET_x86_64
