@@ -6,7 +6,7 @@ include $(INCLUDE_DIR)/image.mk
 define Image/BuilduImage
 	$(CP) $(KDIR)/zImage$(2) $(KDIR)/zImage-$(1)$(2)
 	cat $(LINUX_DIR)/arch/arm/boot/dts/mt7623-$1.dtb >> $(KDIR)/zImage-$(1)$(2)
-	mkimage -A arm -O linux -T kernel -C none -a 0x80008000 -e 0x80008000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)'  -d $(KDIR)/zImage-$(1)$(2) $(KDIR)/uImage-$(1)$(2)
+	mkimage -A arm -O linux -T kernel -C none -a 0x80008000 -e 0x80008000 -n 'MIPS CShoreWrt Linux-$(LINUX_VERSION)'  -d $(KDIR)/zImage-$(1)$(2) $(KDIR)/uImage-$(1)$(2)
 endef
 
 define Image/Build/SysupgradeCombined

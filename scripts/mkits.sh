@@ -59,7 +59,7 @@ ARCH_UPPER=`echo $ARCH | tr '[:lower:]' '[:upper:]'`
 if [ -n "${DTB}" ]; then
 	FDT="
 		fdt@1 {
-			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} device tree blob\";
+			description = \"${ARCH_UPPER} CShoreWrt ${DEVICE} device tree blob\";
 			data = /incbin/(\"${DTB}\");
 			type = \"flat_dt\";
 			arch = \"${ARCH}\";
@@ -78,12 +78,12 @@ fi
 DATA="/dts-v1/;
 
 / {
-	description = \"${ARCH_UPPER} OpenWrt FIT (Flattened Image Tree)\";
+	description = \"${ARCH_UPPER} CShoreWrt FIT (Flattened Image Tree)\";
 	#address-cells = <1>;
 
 	images {
 		kernel@1 {
-			description = \"${ARCH_UPPER} OpenWrt Linux-${VERSION}\";
+			description = \"${ARCH_UPPER} CShoreWrt Linux-${VERSION}\";
 			data = /incbin/(\"${KERNEL}\");
 			type = \"kernel\";
 			arch = \"${ARCH}\";
@@ -106,7 +106,7 @@ ${FDT}
 	configurations {
 		default = \"config@1\";
 		config@1 {
-			description = \"OpenWrt\";
+			description = \"CShoreWrt\";
 			kernel = \"kernel@1\";
 			fdt = \"fdt@1\";
 		};

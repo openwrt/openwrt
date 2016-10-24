@@ -46,9 +46,9 @@ PATCH_DIR=../patches/$(GCC_VERSION)
 
 BUGURL=https://dev.openwrt.org/
 ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
-  PKGVERSION=OpenWrt/Linaro GCC $(PKG_REV) $(REVISION)
+  PKGVERSION=CShoreWrt/Linaro GCC $(PKG_REV) $(REVISION)
 else
-  PKGVERSION=OpenWrt GCC $(PKG_VERSION) $(REVISION)
+  PKGVERSION=CShoreWrt GCC $(PKG_VERSION) $(REVISION)
 endif
 
 HOST_BUILD_PARALLEL:=1

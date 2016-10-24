@@ -13,7 +13,7 @@ particular bug. Few manufacturers do ship their routers with a Sample Developmen
 that would allow you to create your own and custom firmware and most of the time,
 when they do, you will most likely not be able to complete the firmware creation process.
 
-This is one of the reasons why OpenWrt and other firmware exists: providing a 
+This is one of the reasons why CShoreWrt and other firmware exists: providing a 
 version independent, and tools independent firmware, that can be run on various 
 platforms, known to be running Linux originally.
 
@@ -121,15 +121,15 @@ Scroll over the firmware to find printable words that can be significant.
 
 \subsubsection{Amount of flash memory}
 
-Linux can hardly fit in a 2MB flash device, once you have opened the device and 
+Linux can hardly fit in a 4MB flash device, once you have opened the device and 
 located the flash chip, try to find its characteristics on the Internet. If
-your flash chip is a 2MB or less device, your device is most likely to run a 
+your flash chip is a 4MB or less device, your device is most likely to run a 
 proprietary OS such as WindRiver VxWorks, or a custom manufacturer OS like Zyxel ZynOS.
 
-OpenWrt does not currently run on devices which have 2MB or less of flash memory.
+CShoreWrt does not currently run on devices which have 4MB or less of flash memory.
 This limitation will probably not be worked around since those devices are most 
 of the time micro-routers, or Wireless Access Points, which are not the main 
-OpenWrt target.
+CShoreWrt target.
 
 \subsubsection{Pluging a serial port}
 
@@ -479,15 +479,15 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Me, myself and I <memyselfandi@domain.tld");
 \end{verbatim}
 
-\subsection{Adding your target in OpenWrt}
+\subsection{Adding your target in CShoreWrt}
 
 Once you spotted the key changes that were made to the Linux kernel
-to support your target, you will want to create a target in OpenWrt
+to support your target, you will want to create a target in CShoreWrt
 for your hardware. This can be useful to benefit from the toolchain
-that OpenWrt builds as well as the resulting user-space and kernel
+that CShoreWrt builds as well as the resulting user-space and kernel
 configuration options.
 
-Provided that your target is already known to OpenWrt, it will be
+Provided that your target is already known to CShoreWrt, it will be
 as simple as creating a \texttt{target/linux/board} directory
 where you will be creating the following directories and files.
 
@@ -555,11 +555,11 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/BuildKernel
-        cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.elf
+        cp $(KDIR)/vmlinux.elf $(BIN_DIR)/cshorewrt-$(BOARD)-vmlinux.elf
         gzip -9n -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
         $(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
-        dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma bs=65536 conv=sync
-        dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/openwrt-$(BOARD)-vmlinux.gz bs=65536 conv=sync
+        dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/cshorewrt-$(BOARD)-vmlinux.lzma bs=65536 conv=sync
+        dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/cshorewrt-$(BOARD)-vmlinux.gz bs=65536 conv=sync
 endef
 
 define Image/Build/squashfs
@@ -568,13 +568,13 @@ endef
 
 define Image/Build
         $(call Image/Build/$(1))
-        dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
+        dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/cshorewrt-$(BOARD)-root.$(1) bs=128k conv=sync
 
         -$(STAGING_DIR_HOST)/bin/mkfwimage \
-                -B XS2 -v XS2.ar2316.OpenWrt \
-                -k $(BIN_DIR)/openwrt-$(BOARD)-vmlinux.lzma \
-                -r $(BIN_DIR)/openwrt-$(BOARD)-root.$(1) \
-                -o $(BIN_DIR)/openwrt-$(BOARD)-ubnt2-$(1).bin
+                -B XS2 -v XS2.ar2316.CShoreWrt \
+                -k $(BIN_DIR)/cshorewrt-$(BOARD)-vmlinux.lzma \
+                -r $(BIN_DIR)/cshorewrt-$(BOARD)-root.$(1) \
+                -o $(BIN_DIR)/cshorewrt-$(BOARD)-ubnt2-$(1).bin
 endef
 
 $(eval $(call BuildImage))

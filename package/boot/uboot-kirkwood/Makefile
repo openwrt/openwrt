@@ -112,18 +112,18 @@ define Build/Compile
 		CROSS_COMPILE=$(TARGET_CROSS)
 	mkimage -A $(ARCH) -O linux -T kernel -C none \
 		-a 0x600000 -e 0x600000 \
-		-n 'OpenWrt Das U-Boot uImage' \
+		-n 'CShoreWrt Das U-Boot uImage' \
 		-d $(PKG_BUILD_DIR)/u-boot.bin $(PKG_BUILD_DIR)/u-boot.img
 endef
 
 define Package/uboot/install/default
 	$(INSTALL_DIR) $(BIN_DIR)/uboot-$(BOARD)-$(1)
 	$(CP) $(PKG_BUILD_DIR)/u-boot.bin \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.bin
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/cshorewrt-$(BOARD)-$(1)-u-boot.bin
 	$(CP) $(PKG_BUILD_DIR)/u-boot.kwb \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.kwb
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/cshorewrt-$(BOARD)-$(1)-u-boot.kwb
 	$(CP) $(PKG_BUILD_DIR)/u-boot.img \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.img
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/cshorewrt-$(BOARD)-$(1)-u-boot.img
 	$(INSTALL_DIR) $(BIN_DIR)/u-boot-kwboot/
 	$(CP) $(PKG_BUILD_DIR)/tools/kwboot \
 		$(BIN_DIR)/u-boot-kwboot/

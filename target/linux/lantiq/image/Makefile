@@ -41,7 +41,7 @@ endef
 
 define MkImageLzma
 	mkimage -A mips -O linux -T kernel -a 0x80002000 -C lzma \
-		-e 0x80002000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-e 0x80002000 -n 'MIPS CShoreWrt Linux-$(LINUX_VERSION)' \
 		-d $(KDIR)/vmlinux$(2)-$(1).lzma $(KDIR)/uImage-$(1)$(2)
 endef
 
@@ -196,7 +196,7 @@ define Build/fullimage
 	cat $(word 1,$^) $(word 2,$^).new > $@.tmp
 
 	mkimage -A mips -O linux -T multi -a 0x00 -C none \
-		-e 0x00 -n 'OpenWrt fullimage' \
+		-e 0x00 -n 'CShoreWrt fullimage' \
 		-d $@.tmp $@
 
 	rm $(word 2,$^).new

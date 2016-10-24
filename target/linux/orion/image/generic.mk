@@ -85,7 +85,7 @@ define Image/BuildKernel/ARM/uImage
 	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
 	-d '$(KDIR)/$(1)-zImage$(2)' '$(KDIR)/$(1)-uImage$(2)'
  ifeq ($(2),-initramfs) # only copy uImage for ramdisk build
-	cp '$(KDIR)/$(1)-uImage-initramfs' '$(BIN_DIR)/openwrt-$(1)-uImage-initramfs'
+	cp '$(KDIR)/$(1)-uImage-initramfs' '$(BIN_DIR)/cshorewrt-$(1)-uImage-initramfs'
  endif
 endef
 
@@ -162,13 +162,13 @@ define Image/Build/Default/sysupgrade
 	( \
 		dd if='$(KDIR)/$(2)-uImage$(4)' bs=$(3)k conv=sync; \
 		dd if='$(KDIR)/root.$(1)'; \
-	) > '$(BIN_DIR)/openwrt-$(2)-$(1)-sysupgrade.img'
+	) > '$(BIN_DIR)/cshorewrt-$(2)-$(1)-sysupgrade.img'
 endef
 
 define Image/Build/Default/factory
  # parameters: 1 = rootfs type, 2 = machine name, 3 = header
 	# $(BOARD) $(1) factory upgrade image for $(2)
-	'$(STAGING_DIR_HOST)/bin/add_header' $(3) '$(BIN_DIR)/openwrt-$(2)-$(1)-sysupgrade.img' '$(BIN_DIR)/openwrt-$(2)-$(1)-factory.img'
+	'$(STAGING_DIR_HOST)/bin/add_header' $(3) '$(BIN_DIR)/cshorewrt-$(2)-$(1)-sysupgrade.img' '$(BIN_DIR)/cshorewrt-$(2)-$(1)-factory.img'
 endef
 
 ##
@@ -198,7 +198,7 @@ define Image/Build/Linksys/wrt350nv2-builder
 	rm -rf '$(TMP_DIR)/$(2)_factory'
 	mkdir '$(TMP_DIR)/$(2)_factory'
  # create parameter file
-	echo ':image 0 $(BIN_DIR)/openwrt-$(2)-$(1)-sysupgrade.img' > '$(TMP_DIR)/$(2)_factory/$(2).par'
+	echo ':image 0 $(BIN_DIR)/cshorewrt-$(2)-$(1)-sysupgrade.img' > '$(TMP_DIR)/$(2)_factory/$(2).par'
 	[ ! -f '$(STAGING_DIR_HOST)/share/wrt350nv2-builder/u-boot.bin' ] || ( \
 		echo ':u-boot 0 $(STAGING_DIR_HOST)/share/wrt350nv2-builder/u-boot.bin' >> '$(TMP_DIR)/$(2)_factory/$(2).par'; \
 	)
@@ -209,13 +209,13 @@ define Image/Build/Linksys/wrt350nv2-builder
 		'$(STAGING_DIR_HOST)/bin/wrt350nv2-builder' -b '$(TMP_DIR)/$(2)_factory/$(2).par'; \
 	)
  # copy bin file as recovery image
-	$(CP) '$(TMP_DIR)/$(2)_factory/wrt350n.bin' '$(BIN_DIR)/openwrt-$(2)-$(1)-recovery.bin'
+	$(CP) '$(TMP_DIR)/$(2)_factory/wrt350n.bin' '$(BIN_DIR)/cshorewrt-$(2)-$(1)-recovery.bin'
  # create factory image for stock firmware update mechanism
 	( \
 		cd '$(TMP_DIR)/$(2)_factory'; \
 		zip 'wrt350n.zip' 'wrt350n.bin'; \
 	)
-	'$(STAGING_DIR_HOST)/bin/wrt350nv2-builder' -z '$(TMP_DIR)/$(2)_factory/wrt350n.zip' '$(BIN_DIR)/openwrt-$(2)-$(1)-factory.img'
+	'$(STAGING_DIR_HOST)/bin/wrt350nv2-builder' -z '$(TMP_DIR)/$(2)_factory/wrt350n.zip' '$(BIN_DIR)/cshorewrt-$(2)-$(1)-factory.img'
 	rm -rf '$(TMP_DIR)/$(2)_factory'
 endef
 

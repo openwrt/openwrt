@@ -376,7 +376,7 @@ endef
 define Package/uboot/install/default
 	$(CP) \
 		$(PKG_BUILD_DIR)/$(2) \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.img
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/cshorewrt-$(BOARD)-$(1)-u-boot.img
 endef
 
 define Package/uboot/install/uart
@@ -385,7 +385,7 @@ define Package/uboot/install/uart
 		> $(PKG_BUILD_DIR)/ddr_settings
 	perl $(PKG_BUILD_DIR)/tools/gct.pl \
 		$(PKG_BUILD_DIR)/ddr_settings $(PKG_BUILD_DIR)/u-boot.srec \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.asc
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/cshorewrt-$(BOARD)-$(1)-u-boot.asc
  endef
 
 define Package/uboot/install/template

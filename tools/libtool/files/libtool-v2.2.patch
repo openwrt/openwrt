@@ -5,7 +5,7 @@
  func_echo ()
  {
 -    $ECHO "$progname${mode+: }$mode: $*"
-+    $ECHO "OpenWrt-$progname-patched-2.2${mode+: }$mode: $*"
++    $ECHO "CShoreWrt-$progname-patched-2.2${mode+: }$mode: $*"
  }
  
  # func_verbose arg...
@@ -14,7 +14,7 @@
  func_error ()
  {
 -    $ECHO "$progname${mode+: }$mode: "${1+"$@"} 1>&2
-+    $ECHO "OpenWrt-$progname-patched-2.2${mode+: }$mode: "${1+"$@"} 1>&2
++    $ECHO "CShoreWrt-$progname-patched-2.2${mode+: }$mode: "${1+"$@"} 1>&2
  }
  
  # func_warning arg...
@@ -22,7 +22,7 @@
  func_warning ()
  {
 -    $opt_warning && $ECHO "$progname${mode+: }$mode: warning: "${1+"$@"} 1>&2
-+    $opt_warning && $ECHO "OpenWrt-$progname-patched-2.2${mode+: }$mode: warning: "${1+"$@"} 1>&2
++    $opt_warning && $ECHO "CShoreWrt-$progname-patched-2.2${mode+: }$mode: warning: "${1+"$@"} 1>&2
  
      # bash bug again:
      :

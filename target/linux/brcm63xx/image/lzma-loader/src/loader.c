@@ -137,7 +137,7 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 
 	board_init();
 
-	printf("\n\nOpenWrt kernel loader for BCM63XX\n");
+	printf("\n\nCShoreWrt kernel loader for BCM63XX\n");
 	printf("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
 	printf("Copyright (C) 2014 Jonas Gorski <jogo@openwrt.org>\n");
 

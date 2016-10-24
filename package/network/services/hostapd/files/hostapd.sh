@@ -110,7 +110,7 @@ hostapd_set_bss_options() {
 			[ -z "$auth_secret" ] && config_get auth_secret "$vif" key
 			append "$var" "auth_server_shared_secret=$auth_secret" "$N"
 			# You don't really want to enable this unless you are doing
-			# some corner case testing or are using OpenWrt as a work around
+			# some corner case testing or are using CshoreWrt as a work around
 			# for some systematic issues.
 			config_get_bool auth_cache "$vif" auth_cache 0
 			config_get rsn_preauth "$vif" rsn_preauth
@@ -195,8 +195,8 @@ hostapd_set_bss_options() {
 
 	[ -n "$wps_possible" -a -n "$config_methods" ] && {
 		config_get device_type "$vif" wps_device_type "6-0050F204-1"
-		config_get device_name "$vif" wps_device_name "OpenWrt AP"
-		config_get manufacturer "$vif" wps_manufacturer "openwrt.org"
+		config_get device_name "$vif" wps_device_name "CShoreWrt AP"
+		config_get manufacturer "$vif" wps_manufacturer "https://sourceforge.net/projects/cshorewrt/"
 		config_get wps_pin "$vif" wps_pin
 
 		config_get_bool ext_registrar "$vif" ext_registrar 0

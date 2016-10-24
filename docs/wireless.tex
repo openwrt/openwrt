@@ -20,7 +20,7 @@ config wifi-iface
     option device       "wl0"
 #   option network  lan
     option mode         "ap"
-    option ssid         "OpenWrt"
+    option ssid         "CShoreWrt"
     option hidden       "0"
     option encryption   "none"
 \end{Verbatim}
@@ -37,7 +37,7 @@ config wifi-iface
     option device       "wifi0"
 #   option network  lan
     option mode         "ap"
-    option ssid         "OpenWrt"
+    option ssid         "CShoreWrt"
     option hidden       "0"
     option encryption   "none"
 \end{Verbatim}
@@ -53,7 +53,7 @@ config wifi-iface
     option device       "wlan0"
 #   option network  lan
     option mode         "ap"
-    option ssid         "OpenWrt"
+    option ssid         "CShoreWrt"
     option hidden       "0"
     option encryption   "none"
 \end{Verbatim}
@@ -69,7 +69,7 @@ config wifi-iface
     option device   wifi0
 #   option network  lan
     option mode     ap
-    option ssid     OpenWrt_private
+    option ssid     CShoreWrt_private
     option hidden   0
     option encryption none
 
@@ -81,7 +81,7 @@ config wifi-iface
     option device   wifi1
 #   option network  lan
     option mode     ap
-    option ssid     OpenWrt_public
+    option ssid     CShoreWrt_public
     option hidden   1
     option encryption none
 \end{Verbatim}
@@ -253,7 +253,7 @@ config wifi-iface
 \paragraph{Mesh Point}
 
 Mesh Point (802.11s) is only supported by some mac80211 drivers. It requires the iw package
-to be installed to setup mesh links. OpenWrt creates mshN mesh point interfaces. A sample
+to be installed to setup mesh links. CShoreWrt creates mshN mesh point interfaces. A sample
 configuration looks like this:
 
 \begin{Verbatim}
@@ -265,7 +265,7 @@ config wifi-iface
     option device       "wlan0"
     option network  	lan
     option mode         "mesh"
-    option mesh_id     "OpenWrt"
+    option mesh_id     "CShoreWrt"
 \end{Verbatim}
 
 \paragraph{Wireless Distribution System}
@@ -288,7 +288,7 @@ config wifi-iface
     option device       "wl0"
     option network  	lan
     option mode         "ap"
-    option ssid         "OpenWrt"
+    option ssid         "CShoreWrt"
     option hidden       "0"
     option encryption   "none"
 
@@ -296,7 +296,7 @@ config wifi-iface
     option device       "wl0"
     option network      lan
     option mode         wds
-    option ssid         "OpenWrt WDS"
+    option ssid         "CShoreWrt WDS"
     option bssid        "ca:fe:ba:be:00:02"
 \end{Verbatim}
 
@@ -315,7 +315,7 @@ config wifi-iface
     option device   "wl0"
     option network  lan
     option mode     ap
-    option ssid     "OpenWrt"
+    option ssid     "CShoreWrt"
     option encryption  psk2
     option key      "<key for clients>"
 
@@ -324,14 +324,14 @@ config wifi-iface
     option network  lan
     option mode     wds
     option bssid    ca:fe:ba:be:00:02
-    option ssid     "OpenWrt WDS"
+    option ssid     "CShoreWrt WDS"
     option encryption	psk2
     option key      "<psk for WDS>"
 \end{Verbatim}
 
 \paragraph{802.1x configurations}
 
-OpenWrt supports both 802.1x client and Access Point
+CShoreWrt supports both 802.1x client and Access Point
 configurations. 802.1x client is only working with
 drivers supported by wpa-supplicant. Configuration
 only supports EAP types TLS, TTLS or PEAP.
@@ -342,7 +342,7 @@ only supports EAP types TLS, TTLS or PEAP.
 config wifi-iface
     option device         "ath0"
     option network        lan
-    option ssid           OpenWrt
+    option ssid           CShoreWrt
     option eap_type       tls
     option ca_cert        "/etc/config/certs/ca.crt"
     option priv_key       "/etc/config/certs/priv.crt"
@@ -355,7 +355,7 @@ config wifi-iface
 config wifi-iface
     option device         "ath0"
     option network        lan
-    option ssid           OpenWrt
+    option ssid           CShoreWrt
     option eap_type       peap
     option ca_cert        "/etc/config/certs/ca.crt"
     option auth           MSCHAPV2
@@ -486,7 +486,7 @@ config wifi-device dummydev
 config wifi-iface
 	option device dummydev
 	option mode ap
-	option ssid OpenWrt
+	option ssid CShoreWrt
 EOF
 }
 \end{Verbatim}

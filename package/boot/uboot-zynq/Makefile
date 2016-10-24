@@ -72,7 +72,7 @@ endef
 ifdef BUILD_VARIANT
 $(eval $(call uboot/$(BUILD_VARIANT)))
 UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
-UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
+UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),cshorewrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
 endif
 
 UENV:=default

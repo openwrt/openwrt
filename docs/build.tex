@@ -20,9 +20,9 @@ modified to make the kernel run on the embedded platform.
 
 \subsection{Building an image}
 
-OpenWrt takes a different approach to building a firmware; downloading, patching
+CShoreWrt takes a different approach to building a firmware; downloading, patching
 and compiling everything from scratch, including the cross compiler. To put it
-in simpler terms, OpenWrt does not contain any executables or even sources, it is an
+in simpler terms, CShoreWrt does not contain any executables or even sources, it is an
 automated system for downloading the sources, patching them to work with the given
 platform and compiling them correctly for that platform. What this means is that
 just by changing the template, you can change any step in the process.
@@ -32,23 +32,11 @@ will download the latest kernel, patch it to run on the embedded platform and pr
 a new firmware image -- there is no work to be done trying to track down an unmodified
 copy of the existing kernel to see what changes had been made, the patches are
 already provided and the process ends up almost completely transparent. This does not
-just apply to the kernel, but to anything included with OpenWrt -- It is this one
-simple understated concept which is what allows OpenWrt to stay on the bleeding edge
+just apply to the kernel, but to anything included with CShoreWrt -- It is this one
+simple understated concept which is what allows CShoreWrt to stay on the bleeding edge
 with the latest compilers, latest kernels and latest applications.
 
-So let's take a look at OpenWrt and see how this all works.
-
-
-\subsubsection{Download OpenWrt}
-
-OpenWrt can be downloaded via subversion using the following command:
-
-\begin{Verbatim}
-$ svn checkout svn://svn.openwrt.org/openwrt/trunk openwrt-trunk
-\end{Verbatim}
-
-Additionally, there is a trac interface on \href{https://dev.openwrt.org/}{https://dev.openwrt.org/}
-which can be used to monitor svn commits and browse the source repository.
+So let's take a look at CShoreWrt and see how this all works.
 
 
 \subsubsection{The directory structure}
@@ -76,7 +64,7 @@ add a new version of one of the components above.
     \item \texttt{build\_dir/toolchain-\textit{<arch>}*}
 \end{itemize}
 
-\texttt{package} is for exactly that -- packages. In an OpenWrt firmware, almost everything
+\texttt{package} is for exactly that -- packages. In an CShoreWrt firmware, almost everything
 is an \texttt{.ipk}, a software package which can be added to the firmware to provide new
 features or removed to save space. Note that packages are also maintained outside of the main
 trunk and can be obtained from subversion using the package feeds system:
@@ -118,12 +106,12 @@ target or package steps will be placed in the "\texttt{dl}" directory.
     \item \texttt{dl}
 \end{itemize}
 
-\subsubsection{Building OpenWrt}
+\subsubsection{Building CShoreWrt}
 
-While the OpenWrt build environment was intended mostly for developers, it also has to be
+While the CShoreWrt build environment was intended mostly for developers, it also has to be
 simple enough that an inexperienced end user can easily build his or her own customized firmware.
 
-Running the command "\texttt{make menuconfig}" will bring up OpenWrt's configuration menu
+Running the command "\texttt{make menuconfig}" will bring up CShoreWrt's configuration menu
 screen, through this menu you can select which platform you're targeting, which versions of
 the toolchain you want to use to build and what packages you want to install into the
 firmware image. Note that it will also check to make sure you have the basic dependencies for it
@@ -152,7 +140,7 @@ to \texttt{target/linux/\textit{<platform>}/config} so that it is preserved over
 "\texttt{make clean}" calls.
 
 To begin compiling the firmware, type "\texttt{make}". By default
-OpenWrt will only display a high level overview of the compile process and not each individual
+CShoreWrt will only display a high level overview of the compile process and not each individual
 command.
 
 \subsubsection{Example:}
@@ -179,9 +167,9 @@ and packages will be in the "\texttt{bin/packages}" directory.
 
 \subsection{Creating packages}
 
-One of the things that we've attempted to do with OpenWrt's template system is make it
-incredibly easy to port software to OpenWrt. If you look at a typical package directory
-in OpenWrt you'll find several things:
+One of the things that we've attempted to do with CShoreWrt's template system is make it
+incredibly easy to port software to CShoreWrt. If you look at a typical package directory
+in CShoreWrt you'll find several things:
 
 \begin{itemize}
     \item \texttt{package/\textit{<name>}/Makefile}
@@ -193,7 +181,7 @@ The patches directory is optional and typically contains bug fixes or optimizati
 reduce the size of the executable. The package makefile is the important item, provides
 the steps actually needed to download and compile the package.
 
-The files directory is also optional and typicall contains package specific startup scripts or default configuration files that can be used out of the box with OpenWrt.
+The files directory is also optional and typicall contains package specific startup scripts or default configuration files that can be used out of the box with CShoreWrt.
 
 Looking at one of the package makefiles, you'd hardly recognize it as a makefile.
 Through what can only be described as blatant disregard and abuse of the traditional
@@ -269,7 +257,7 @@ and abstracted to the point where you only need to specify a few variables.
 
 The \texttt{PKG\_*} variables define where to download the package from;
 \texttt{@SF} is a special keyword for downloading packages from sourceforge. There is also
-another keyword of \texttt{@GNU} for grabbing GNU source releases. If any of the above mentionned download source fails, the OpenWrt mirrors will be used as source.
+another keyword of \texttt{@GNU} for grabbing GNU source releases. If any of the above mentionned download source fails, the CShoreWrt mirrors will be used as source.
 
 The md5sum (if present) is used to verify the package was downloaded correctly and
 \texttt{PKG\_BUILD\_DIR} defines where to find the package after the sources are
@@ -375,7 +363,7 @@ directly as the Nth argument to \texttt{BuildPackage}.
 
 The reason that some of the defines are prefixed by "\texttt{Package/\textit{<name>}}"
 and others are simply "\texttt{Build}" is because of the possibility of generating
-multiple packages from a single source. OpenWrt works under the assumption of one
+multiple packages from a single source. CShoreWrt works under the assumption of one
 source per package Makefile, but you can split that source into as many packages as
 desired. Since you only need to compile the sources once, there's one global set of
 "\texttt{Build}" defines, but you can add as many "Package/<name>" defines as you want
@@ -439,7 +427,7 @@ for your proprietary kernel modules as well.
 
 \subsection{Creating kernel modules packages}
 
-The OpenWrt distribution makes the distinction between two kind of kernel modules, those coming along with the mainline kernel, and the others available as a separate project. We will see later that a common template is used for both of them.
+The CShoreWrt distribution makes the distinction between two kind of kernel modules, those coming along with the mainline kernel, and the others available as a separate project. We will see later that a common template is used for both of them.
 
 For kernel modules that are part of the mainline kernel source, the makefiles are located in \textit{package/kernel/modules/*.mk} and they appear under the section "Kernel modules"
 
@@ -537,7 +525,7 @@ Other useful targets include:
 
 
 \subsection{Using build environments}
-OpenWrt provides a means of building images for multiple configurations
+CShoreWrt provides a means of building images for multiple configurations
 which can use multiple targets in one single checkout. These \emph{environments}
 store a copy of the .config file generated by \texttt{make menuconfig} and the contents
 of the \texttt{./files} folder.
