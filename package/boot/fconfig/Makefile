@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/fconfig
   SECTION:=utils
   CATEGORY:=Utilities
+  SUBMENU:=Boot Loaders
   TITLE:=RedBoot configuration editor
   URL:=http://andrzejekiert.ovh.org/software.html.en
 endef
