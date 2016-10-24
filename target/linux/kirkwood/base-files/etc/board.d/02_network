@@ -14,26 +14,21 @@ case "$board" in
 "dockstar"|\
 "goflexhome"|\
 "goflexnet"|\
-"iconnect"|\
 "ib62x0"|\
+"iconnect"|\
 "nsa310s"|\
-"pogo_e02")
+"pogo_e02"|\
+"sheevaplug"|\
+"sheevaplug-esata")
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
-"linksys-audi")
-	ucidef_add_switch "switch0" \
-		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0" "6@eth1"
-	;;
+"linksys-audi"|\
 "linksys-viper")
 	ucidef_add_switch "switch0" \
 		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0" "6@eth1"
 	;;
 "guruplug-server-plus")
 	ucidef_set_interface_lan "eth0 eth1" "dhcp"
-	;;
-"sheevaplug" | \
-"sheevaplug-esata")
-	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
 *)
 	ucidef_set_interface_lan "eth0"
