@@ -108,6 +108,32 @@ define Device/gl-mifi
 endef
 TARGET_DEVICES += gl-mifi
 
+define Device/mr12
+  DEVICE_TITLE := Meraki MR12
+  DEVICE_PACKAGES := kmod-spi-gpio
+  BOARDNAME = MR12
+  IMAGE_SIZE = 15744k
+  MTDPARTS = spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13440k(rootfs),2304k(kernel),128k(art)ro,15744k@0x80000(firmware)
+  IMAGE/kernel.bin = append-kernel
+  IMAGE/rootfs.bin = append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to 13440k | append-kernel | check-size $$$$(IMAGE_SIZE)
+  IMAGES := kernel.bin rootfs.bin sysupgrade.bin
+endef
+TARGET_DEVICES += mr12
+
+define Device/mr16
+  DEVICE_TITLE := Meraki MR16
+  DEVICE_PACKAGES := kmod-spi-gpio
+  BOARDNAME = MR16
+  IMAGE_SIZE = 15744k
+  MTDPARTS = spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13440k(rootfs),2304k(kernel),128k(art)ro,15744k@0x80000(firmware)
+  IMAGE/kernel.bin = append-kernel
+  IMAGE/rootfs.bin = append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to 13440k | append-kernel | check-size $$$$(IMAGE_SIZE)
+  IMAGES := kernel.bin rootfs.bin sysupgrade.bin
+endef
+TARGET_DEVICES += mr16
+
 define Device/dr531
   DEVICE_TITLE := Wallys DR531
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

@@ -185,18 +185,6 @@ define LegacyDevice/HORNETUBx2
 endef
 LEGACY_DEVICES += HORNETUBx2
 
-define LegacyDevice/MR12
-  DEVICE_TITLE := Meraki MR12
-  DEVICE_PACKAGES := kmod-spi-gpio
-endef
-LEGACY_DEVICES += MR12
-
-define LegacyDevice/MR16
-  DEVICE_TITLE := Meraki MR16
-  DEVICE_PACKAGES := kmod-spi-gpio
-endef
-LEGACY_DEVICES += MR16
-
 define LegacyDevice/PB92
   DEVICE_TITLE := Atheros PB92 reference board
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
