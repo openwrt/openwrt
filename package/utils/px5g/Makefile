@@ -19,6 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/px5g/Template
   SECTION:=utils
   CATEGORY:=Utilities
+  SUBMENU:=Encryption
   TITLE:=X.509 certificate generator (using $(1))
   MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
   DEPENDS:=+lib$(1)
