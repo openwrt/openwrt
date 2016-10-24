@@ -1,46 +1,61 @@
 --- a/drivers/net/wireless/ath/regd.c
 +++ b/drivers/net/wireless/ath/regd.c
-@@ -341,6 +341,10 @@ ath_reg_apply_beaconing_flags(struct wip
+@@ -116,6 +116,9 @@ static const struct ieee80211_regdomain
+ 
+ static bool dynamic_country_user_possible(struct ath_regulatory *reg)
+ {
++	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
++		return true;
++
+ 	if (IS_ENABLED(CPTCFG_ATH_REG_DYNAMIC_USER_CERT_TESTING))
+ 		return true;
+ 
+@@ -188,6 +191,8 @@ static bool dynamic_country_user_possibl
+ 
+ static bool ath_reg_dyn_country_user_allow(struct ath_regulatory *reg)
+ {
++	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
++		return true;
+ 	if (!IS_ENABLED(CPTCFG_ATH_REG_DYNAMIC_USER_REG_HINTS))
+ 		return false;
+ 	if (!dynamic_country_user_possible(reg))
+@@ -341,6 +346,9 @@ ath_reg_apply_beaconing_flags(struct wip
  	struct ieee80211_channel *ch;
  	unsigned int i;
  
-+#ifdef CPTCFG_ATH_USER_REGD
-+	return;
-+#endif
++	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
++		return;
 +
  	for (band = 0; band < NUM_NL80211_BANDS; band++) {
  		if (!wiphy->bands[band])
  			continue;
-@@ -374,6 +378,10 @@ ath_reg_apply_ir_flags(struct wiphy *wip
+@@ -374,6 +382,9 @@ ath_reg_apply_ir_flags(struct wiphy *wip
  {
  	struct ieee80211_supported_band *sband;
  
-+#ifdef CPTCFG_ATH_USER_REGD
-+	return;
-+#endif
++	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
++		return;
 +
  	sband = wiphy->bands[NL80211_BAND_2GHZ];
  	if (!sband)
  		return;
-@@ -402,6 +410,10 @@ static void ath_reg_apply_radar_flags(st
+@@ -402,6 +413,9 @@ static void ath_reg_apply_radar_flags(st
  	struct ieee80211_channel *ch;
  	unsigned int i;
  
-+#ifdef CPTCFG_ATH_USER_REGD
-+	return;
-+#endif
++	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
++		return;
 +
  	if (!wiphy->bands[NL80211_BAND_5GHZ])
  		return;
  
-@@ -633,6 +645,11 @@ ath_regd_init_wiphy(struct ath_regulator
+@@ -633,6 +647,10 @@ ath_regd_init_wiphy(struct ath_regulator
  	const struct ieee80211_regdomain *regd;
  
  	wiphy->reg_notifier = reg_notifier;
 +
-+#ifdef CPTCFG_ATH_USER_REGD
-+	return 0;
-+#endif
++	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
++		return 0;
 +
  	wiphy->regulatory_flags |= REGULATORY_STRICT_REG |
  				   REGULATORY_CUSTOM_REG;
