@@ -223,75 +223,14 @@ define Device/linksys-e3000-v1
 endef
 TARGET_DEVICES += linksys-e3000-v1
 
-  TARGET_DEVICES += standard
+TARGET_DEVICES += standard
 endif
 
 #################################################
 # Subtarget legacy
 #################################################
 
-define Device/dlink-dwl-3150
-	IMAGES := bin
-	IMAGE/bin := trx-with-loader | tailed-bin
-	BIN_TAIL := BCM-5352-2050-0000000-01
-endef
-
-define Device/edimax-ps1208-mfg
-	IMAGES := bin
-	IMAGE/bin := trx-with-loader | edimax-bin
-endef
-
-define Device/huawei-e970
-	KERNEL_NAME = vmlinux.gz
-	IMAGES := bin
-	IMAGE/bin := trx-without-loader | huawei-bin
-endef
-
-define Device/linksys-wrt54g3gv2-vf
-	FILESYSTEMS := $(FS_128K)
-	IMAGES := noheader.bin bin
-	IMAGE/noheader.bin := linksys-pattern-partition | trx-v2-with-loader
-	IMAGE/bin := linksys-pattern-partition | trx-v2-with-loader | linksys-bin
-	DEVICE_ID := 3G2V
-	VERSION := 3.00.24
-	SERIAL := 6
-endef
-
-define Device/linksys-wrt54gs
-	$(Device/linksys)
-	FILESYSTEMS := $(FS_128K)
-	DEVICE_ID := W54S
-	VERSION := 4.80.1
-endef
-
-define Device/linksys-wrtsl54gs
-	$(Device/linksys)
-	FILESYSTEMS := $(FS_128K)
-	DEVICE_ID := W54U
-	VERSION := 2.08.1
-endef
-
-define Device/netgear-wgt634u
-	FILESYSTEMS := $(FS_128K)
-	IMAGES := bin
-	IMAGE/bin := trx-with-loader | prepend-with-elf
-endef
-
-define Device/usrobotics-usr5461
-	IMAGES := bin
-	IMAGE/bin := trx-with-loader | usrobotics-bin
-endef
-
 ifeq ($(SUBTARGET),legacy)
-  TARGET_DEVICES += \
-	dlink-dwl-3150 \
-	edimax-ps1208-mfg \
-	huawei-e970 \
-	linksys-wrt54g3gv2-vf \
-	linksys-wrt54gs \
-	linksys-wrtsl54gs \
-	netgear-wgt634u \
-	usrobotics-usr5461
 
 define Device/asus-wl-300g
   $(Device/asus)
@@ -347,6 +286,26 @@ define Device/asus-wl-hdd25
 endef
 TARGET_DEVICES += asus-wl-hdd25
 
+define Device/dlink-dwl-3150
+  IMAGES := bin
+  IMAGE/bin := trx-with-loader | tailed-bin
+  BIN_TAIL := BCM-5352-2050-0000000-01
+endef
+TARGET_DEVICES += dlink-dwl-3150
+
+define Device/edimax-ps1208-mfg
+  IMAGES := bin
+  IMAGE/bin := trx-with-loader | edimax-bin
+endef
+TARGET_DEVICES += edimax-ps1208-mfg
+
+define Device/huawei-e970
+  KERNEL_NAME = vmlinux.gz
+  IMAGES := bin
+  IMAGE/bin := trx-without-loader | huawei-bin
+endef
+TARGET_DEVICES += huawei-e970
+
 define Device/linksys-wrt54g3g
   $(Device/linksys)
   DEVICE_ID := W54F
@@ -361,6 +320,17 @@ define Device/linksys-wrt54g3g-em
 endef
 TARGET_DEVICES += linksys-wrt54g3g-em
 
+define Device/linksys-wrt54g3gv2-vf
+  FILESYSTEMS := $(FS_128K)
+  IMAGES := noheader.bin bin
+  IMAGE/noheader.bin := linksys-pattern-partition | trx-v2-with-loader
+  IMAGE/bin := linksys-pattern-partition | trx-v2-with-loader | linksys-bin
+  DEVICE_ID := 3G2V
+  VERSION := 3.00.24
+  SERIAL := 6
+endef
+TARGET_DEVICES += linksys-wrt54g3gv2-vf
+
 define Device/linksys-wrt54g
   $(Device/linksys)
   DEVICE_ID := W54G
@@ -368,12 +338,28 @@ define Device/linksys-wrt54g
 endef
 TARGET_DEVICES += linksys-wrt54g
 
+define Device/linksys-wrt54gs
+  $(Device/linksys)
+  FILESYSTEMS := $(FS_128K)
+  DEVICE_ID := W54S
+  VERSION := 4.80.1
+endef
+TARGET_DEVICES += linksys-wrt54gs
+
 define Device/linksys-wrt54gs-v4
   $(Device/linksys)
   DEVICE_ID := W54s
   VERSION := 1.09.1
 endef
 TARGET_DEVICES += linksys-wrt54gs-v4
+
+define Device/linksys-wrtsl54gs
+  $(Device/linksys)
+  FILESYSTEMS := $(FS_128K)
+  DEVICE_ID := W54U
+  VERSION := 2.08.1
+endef
+TARGET_DEVICES += linksys-wrtsl54gs
 
 define Device/linksys-wrt150n
   $(Device/linksys)
@@ -422,6 +408,13 @@ define Device/netgear-wgr614-v8
 endef
 TARGET_DEVICES += netgear-wgr614-v8
 
+define Device/netgear-wgt634u
+  FILESYSTEMS := $(FS_128K)
+  IMAGES := bin
+  IMAGE/bin := trx-with-loader | prepend-with-elf
+endef
+TARGET_DEVICES += netgear-wgt634u
+
 define Device/netgear-wndr3300-v1
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H093T00_NETGEAR
@@ -436,7 +429,13 @@ define Device/netgear-wnr834b-v2
 endef
 TARGET_DEVICES += netgear-wnr834b-v2
 
-  TARGET_DEVICES += standard standard-noloader-gz
+define Device/usrobotics-usr5461
+  IMAGES := bin
+  IMAGE/bin := trx-with-loader | usrobotics-bin
+endef
+TARGET_DEVICES += usrobotics-usr5461
+
+TARGET_DEVICES += standard standard-noloader-gz
 endif
 
 #################################################
@@ -790,7 +789,7 @@ define Device/netgear-wnr3500-v2-vc
 endef
 #  TARGET_DEVICES += netgear-wnr3500-v2-vc
 
-  TARGET_DEVICES += standard standard-noloader-nodictionarylzma
+TARGET_DEVICES += standard standard-noloader-nodictionarylzma
 endif
 
 #################################################
