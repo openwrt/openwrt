@@ -46,28 +46,13 @@ define Package/uhttpd/config
   config PACKAGE_uhttpd_debug
     bool "Build with debug messages"
     default n
-endef
 
-
-define Package/uhttpd-mod-tls
-  $(Package/uhttpd/default)
-  TITLE+= (TLS plugin)
-  DEPENDS:=uhttpd \
-	+PACKAGE_uhttpd-mod-tls_polarssl:libustream-polarssl \
-	+PACKAGE_uhttpd-mod-tls_mbedtls:libustream-mbedtls \
-	+PACKAGE_uhttpd-mod-tls_cyassl:libustream-cyassl \
-	+PACKAGE_uhttpd-mod-tls_openssl:libustream-openssl
-endef
-
-define Package/uhttpd-mod-tls/description
- The TLS plugin adds HTTPS support to uHTTPd.
-endef
-
-define Package/uhttpd-mod-tls/config
   choice
-    depends on PACKAGE_uhttpd-mod-tls
     prompt "TLS Provider"
-    default PACKAGE_uhttpd-mod-tls_polarssl
+    default PACKAGE_uhttpd-mod-tls_polarssl if SSL_DEFAULT_POLARSSL
+    default PACKAGE_uhttpd-mod-tls_mbedtls if SSL_DEFAULT_MBEDTLS
+    default PACKAGE_uhttpd-mod-tls_openssl if ( SSL_DEFAULT_OPENSSL || SSL_DEFAULT_FALLBACK_OPENSSL )
+    default PACAKGE_utttpd-mod-tls_nossl if SSL_DEFAULT_NOSSL
 
     config PACKAGE_uhttpd-mod-tls_mbedtls
       bool "mbedTLS"
@@ -80,7 +65,26 @@ define Package/uhttpd-mod-tls/config
 
     config PACKAGE_uhttpd-mod-tls_openssl
       bool "OpenSSL"
+
+    config PACKAGE_uhttpd-mod-tls_nossl
+      bool "No SSL"
   endchoice
+endef
+
+
+define Package/uhttpd-mod-tls
+  $(Package/uhttpd/default)
+  TITLE+= (TLS plugin)
+  DEPENDS:=uhttpd @!PACKAGE_uhttpd-mod-tls_nossl \
+	+PACKAGE_uhttpd-mod-tls_openssl:libustream-openssl \
+	+PACKAGE_uhttpd-mod-tls_polarssl:libustream-polarssl \
+	+PACKAGE_uhttpd-mod-tls_mbedtls:libustream-mbedtls \
+	+PACKAGE_uhttpd-mod-tls_cyassl:libustream-cyassl
+  DEFAULT:=y if !SSL_DEFAULT_NOSSL, m if ALL
+endef
+
+define Package/uhttpd-mod-tls/description
+ The TLS plugin adds HTTPS support to uHTTPd.
 endef
 
 define Package/uhttpd-mod-lua
