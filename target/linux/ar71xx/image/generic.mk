@@ -112,8 +112,8 @@ define Device/mr12
   DEVICE_TITLE := Meraki MR12
   DEVICE_PACKAGES := kmod-spi-gpio
   BOARDNAME = MR12
-  IMAGE_SIZE = 15744k
-  MTDPARTS = spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13440k(rootfs),2304k(kernel),128k(art)ro,15744k@0x80000(firmware)
+  IMAGE_SIZE = 15680k
+  MTDPARTS = spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13440k(rootfs),2240k(kernel),64k(mac),128k(art)ro,15680k@0x80000(firmware)
   IMAGE/kernel.bin = append-kernel
   IMAGE/rootfs.bin = append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to 13440k | append-kernel | check-size $$$$(IMAGE_SIZE)
@@ -125,8 +125,8 @@ define Device/mr16
   DEVICE_TITLE := Meraki MR16
   DEVICE_PACKAGES := kmod-spi-gpio
   BOARDNAME = MR16
-  IMAGE_SIZE = 15744k
-  MTDPARTS = spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13440k(rootfs),2304k(kernel),128k(art)ro,15744k@0x80000(firmware)
+  IMAGE_SIZE = 15680k
+  MTDPARTS = spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13440k(rootfs),2240k(kernel),64k(mac),128k(art)ro,15680k@0x80000(firmware)
   IMAGE/kernel.bin = append-kernel
   IMAGE/rootfs.bin = append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to 13440k | append-kernel | check-size $$$$(IMAGE_SIZE)
