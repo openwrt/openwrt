@@ -391,6 +391,7 @@ TARGET_DEVICES += linksys-wrt160n-v1
 
 define Device/linksys-wrt300n-v1
   $(Device/linksys)
+  IMAGES := bin trx
   DEVICE_ID := EWCB
   VERSION := 1.03.6
 endef
