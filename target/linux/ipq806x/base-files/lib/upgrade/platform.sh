@@ -9,6 +9,7 @@ platform_check_image() {
 	ap148 |\
 	d7800 |\
 	ea8500 |\
+	nbg6817 |\
 	r7500 |\
 	r7500v2 |\
 	r7800)
@@ -34,6 +35,7 @@ platform_pre_upgrade() {
 	case "$board" in
 	ap148 |\
 	d7800 |\
+	nbg6817 |\
 	r7500 |\
 	r7500v2 |\
 	r7800)
@@ -56,6 +58,16 @@ platform_do_upgrade() {
 		;;
 	ea8500)
 		platform_do_upgrade_linksys "$ARGV"
+		;;
+	esac
+}
+
+platform_nand_pre_upgrade() {
+	local board=$(ipq806x_board_name)
+
+	case "$board" in
+	nbg6817)
+		zyxel_do_upgrade "$1"
 		;;
 	esac
 }
