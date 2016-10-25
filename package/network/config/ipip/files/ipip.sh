@@ -9,15 +9,28 @@
 
 proto_ipip_setup() {
 	local cfg="$1"
+	local remoteip
 
 	local df ipaddr peeraddr tunlink ttl tos zone mtu
 	json_get_vars df ipaddr peeraddr tunlink ttl tos zone mtu
 
 	[ -z "$peeraddr" ] && {
-		proto_notify_error "$cfg" "MISSING_ADDRESS"
+		proto_notify_error "$cfg" "MISSING_PEER_ADDRESS"
 		proto_block_restart "$cfg"
 		return
 	}
+
+	remoteip=$(resolveip -t 10 -4 "$peeraddr")
+
+	if [ -z "$remoteip" ]; then
+		proto_notify_error "$cfg" "PEER_RESOLVE_FAIL"
+		return
+	fi
+
+	for ip in $remoteip; do
+		peeraddr=$ip
+		break
+	done
 
 	( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
 
