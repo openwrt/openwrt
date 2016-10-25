@@ -44,7 +44,7 @@ Miklos
 
 --- a/fs/overlayfs/copy_up.c
 +++ b/fs/overlayfs/copy_up.c
-@@ -311,6 +311,9 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -313,6 +313,9 @@ int ovl_copy_up_one(struct dentry *paren
  	struct cred *override_cred;
  	char *link = NULL;
  
@@ -76,9 +76,9 @@ Miklos
  	err = ovl_lock_rename_workdir(workdir, upperdir);
  	if (err)
  		goto out;
-@@ -506,6 +512,9 @@ static int ovl_remove_and_whiteout(struc
- 	struct dentry *opaquedir = NULL;
+@@ -507,6 +513,9 @@ static int ovl_remove_and_whiteout(struc
  	int err;
+ 	int flags = 0;
  
 +	if (WARN_ON(!workdir))
 +		return -EROFS;
@@ -88,7 +88,7 @@ Miklos
  		err = PTR_ERR(opaquedir);
 --- a/fs/overlayfs/super.c
 +++ b/fs/overlayfs/super.c
-@@ -741,9 +741,15 @@ static int ovl_fill_super(struct super_b
+@@ -760,9 +760,15 @@ static int ovl_fill_super(struct super_b
  	ufs->workdir = ovl_workdir_create(ufs->upper_mnt, workpath.dentry);
  	err = PTR_ERR(ufs->workdir);
  	if (IS_ERR(ufs->workdir)) {
