@@ -26,6 +26,9 @@ ipq806x_board_detect() {
 	*"DB149")
 		name="db149"
 		;;
+	*"NBG6817")
+		name="nbg6817"
+		;;
 	*"R7500")
 		name="r7500"
 		;;

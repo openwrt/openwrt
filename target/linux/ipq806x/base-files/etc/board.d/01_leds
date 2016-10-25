@@ -33,6 +33,11 @@ ea8500)
 	ucidef_set_led_wlan "wifi" "WIFI" "ea8500:green:wifi" "phy0radio"
 	ucidef_set_led_default "wps" "WPS" "ea8500:green:wps" "0"
 	;;
+nbg6817)
+	ucidef_set_led_wlan "wlan2g" "WLAN2g" "$board:amber:wifi" "phy1radio"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:amber:wifi5" "phy0radio"
+	ucidef_set_led_netdev "wan" "WAN" "$board:white:internet" "eth1"
+	;;
 *)
 	;;
 esac
