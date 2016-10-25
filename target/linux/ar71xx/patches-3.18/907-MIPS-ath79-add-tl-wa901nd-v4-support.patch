@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -152,6 +152,7 @@ enum ath79_mach_type {
+@@ -157,6 +157,7 @@ enum ath79_mach_type {
  	ATH79_MACH_TL_WA901ND,		/* TP-LINK TL-WA901ND */
  	ATH79_MACH_TL_WA901ND_V2,	/* TP-LINK TL-WA901ND v2 */
  	ATH79_MACH_TL_WA901ND_V3,	/* TP-LINK TL-WA901ND v3 */
@@ -10,7 +10,7 @@
  	ATH79_MACH_TL_WDR4900_V2,	/* TP-LINK TL-WDR4900 v2 */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -1023,6 +1023,15 @@ config ATH79_MACH_TL_WA901ND_V2
+@@ -1052,6 +1052,15 @@ config ATH79_MACH_TL_WA901ND_V2
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_WMAC
  
@@ -28,7 +28,7 @@
  	select SOC_AR934X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -128,6 +128,7 @@ obj-$(CONFIG_ATH79_MACH_TL_WA7210N_V2)	+
+@@ -131,6 +131,7 @@ obj-$(CONFIG_ATH79_MACH_TL_WA7210N_V2)	+
  obj-$(CONFIG_ATH79_MACH_TL_WA830RE_V2)	+= mach-tl-wa830re-v2.o
  obj-$(CONFIG_ATH79_MACH_TL_WA901ND)	+= mach-tl-wa901nd.o
  obj-$(CONFIG_ATH79_MACH_TL_WA901ND_V2)	+= mach-tl-wa901nd-v2.o

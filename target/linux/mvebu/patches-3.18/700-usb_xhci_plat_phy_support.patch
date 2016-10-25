@@ -8,7 +8,7 @@
  #include <linux/slab.h>
  #include <linux/usb/xhci_pdriver.h>
  
-@@ -158,12 +159,27 @@ static int xhci_plat_probe(struct platfo
+@@ -161,12 +162,27 @@ static int xhci_plat_probe(struct platfo
  	if (HCC_MAX_PSA(xhci->hcc_params) >= 4)
  		xhci->shared_hcd->can_do_streams = 1;
  
@@ -37,7 +37,7 @@
  put_usb3_hcd:
  	usb_put_hcd(xhci->shared_hcd);
  
-@@ -187,6 +203,7 @@ static int xhci_plat_remove(struct platf
+@@ -190,6 +206,7 @@ static int xhci_plat_remove(struct platf
  	struct clk *clk = xhci->clk;
  
  	usb_remove_hcd(xhci->shared_hcd);
