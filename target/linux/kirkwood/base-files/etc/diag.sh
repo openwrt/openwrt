@@ -8,9 +8,11 @@ get_status_led() {
 	case $(kirkwood_board_name) in
 	dockstar|\
 	goflexhome|\
-	goflexnet|\
-	pogo_e02)
+	goflexnet)
 		status_led="status:orange:fault"
+		;;
+	pogo_e02)
+		status_led="pogo_e02:orange:fault"
 		;;
 	linksys-audi)
 		status_led="audi:green:power"
