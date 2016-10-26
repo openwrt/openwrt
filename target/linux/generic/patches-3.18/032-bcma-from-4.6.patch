@@ -327,7 +327,7 @@
  #define BCMA_CORE_ARM_CA7		0x847
  #define BCMA_CORE_SYS_MEM		0x849
  #define BCMA_CORE_DEFAULT		0xFFF
-@@ -199,6 +201,7 @@ struct bcma_host_ops {
+@@ -200,6 +202,7 @@ struct bcma_host_ops {
  #define  BCMA_PKG_ID_BCM4707	1
  #define  BCMA_PKG_ID_BCM4708	2
  #define  BCMA_PKG_ID_BCM4709	0
@@ -398,7 +398,7 @@
  extern u32 bcma_chipco_get_alp_clock(struct bcma_drv_cc *cc);
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -47,7 +47,6 @@ void bcma_core_chipcommon_early_init(str
+@@ -45,7 +45,6 @@ void bcma_core_chipcommon_early_init(str
  void bcma_core_chipcommon_init(struct bcma_drv_cc *cc);
  void bcma_chipco_bcm4331_ext_pa_lines_ctl(struct bcma_drv_cc *cc, bool enable);
  #ifdef CONFIG_BCMA_DRIVER_MIPS

@@ -34,7 +34,7 @@
 +MODULE_LICENSE("GPL");
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1801,6 +1801,7 @@ int wake_up_state(struct task_struct *p,
+@@ -1823,6 +1823,7 @@ int wake_up_state(struct task_struct *p,
  {
  	return try_to_wake_up(p, state, 0);
  }
