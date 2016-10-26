@@ -1,6 +1,6 @@
 --- a/include/configs/ib62x0.h
 +++ b/include/configs/ib62x0.h
-@@ -92,7 +92,8 @@
+@@ -74,7 +74,8 @@
  	"mtdparts=orion_nand:"						\
  	"0xe0000@0x0(uboot),"						\
  	"0x20000@0xe0000(uboot_env),"					\
@@ -10,7 +10,7 @@
  
  #define CONFIG_EXTRA_ENV_SETTINGS \
  	"console=console=ttyS0,115200\0"				\
-@@ -100,7 +101,7 @@
+@@ -82,7 +83,7 @@
  	"mtdparts="CONFIG_MTDPARTS					\
  	"kernel=/boot/zImage\0"						\
  	"fdt=/boot/ib62x0.dtb\0"					\

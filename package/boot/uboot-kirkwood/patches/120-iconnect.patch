@@ -1,6 +1,6 @@
 --- a/include/configs/iconnect.h
 +++ b/include/configs/iconnect.h
-@@ -66,30 +66,35 @@
+@@ -59,30 +59,35 @@
  #define CONFIG_ENV_IS_NOWHERE
  #endif
  #define CONFIG_ENV_SIZE		0x20000
@@ -45,3 +45,13 @@
  
  /*
   * Ethernet driver configuration
+--- a/configs/iconnect_defconfig
++++ b/configs/iconnect_defconfig
+@@ -7,6 +7,7 @@ CONFIG_SYS_PROMPT="iconnect => "
+ # CONFIG_CMD_FLASH is not set
+ CONFIG_CMD_USB=y
+ # CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_DHCP=y
+ CONFIG_CMD_MII=y
+ CONFIG_CMD_PING=y
+ CONFIG_CMD_EXT2=y

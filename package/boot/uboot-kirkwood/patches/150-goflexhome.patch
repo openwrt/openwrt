@@ -1,8 +1,6 @@
-Index: u-boot-2014.10/include/configs/goflexhome.h
-===================================================================
---- u-boot-2014.10.orig/include/configs/goflexhome.h
-+++ u-boot-2014.10/include/configs/goflexhome.h
-@@ -96,20 +96,18 @@
+--- a/include/configs/goflexhome.h
++++ b/include/configs/goflexhome.h
+@@ -87,20 +87,18 @@
   */
  #define CONFIG_BOOTCOMMAND \
  	"setenv bootargs ${console} ${mtdparts} ${bootargs_root}; " \
@@ -10,8 +8,8 @@ Index: u-boot-2014.10/include/configs/goflexhome.h
 -	"ubifsmount ubi:root; " \
 -	"ubifsload 0x800000 ${kernel}; " \
 -	"bootm 0x800000"
-+	"ubi part ubi; "						\
-+	"ubi read 0x800000 kernel; "				\
++	"ubi part ubi; " \
++	"ubi read 0x800000 kernel; " \
 +	"bootz 0x800000"
  
  #define CONFIG_MTDPARTS \
