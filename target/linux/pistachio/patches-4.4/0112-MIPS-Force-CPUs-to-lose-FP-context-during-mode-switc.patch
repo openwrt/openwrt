@@ -1,0 +1,120 @@
+From a7388098413e5401816d7cf32e27ece6ce95510b Mon Sep 17 00:00:00 2001
+From: Paul Burton <paul.burton@imgtec.com>
+Date: Thu, 21 Apr 2016 12:43:58 +0100
+Subject: MIPS: Force CPUs to lose FP context during mode switches
+
+Commit 9791554b45a2 ("MIPS,prctl: add PR_[GS]ET_FP_MODE prctl options
+for MIPS") added support for the PR_SET_FP_MODE prctl, which allows a
+userland program to modify its FP mode at runtime. This is most notably
+required if dynamic linking leads to the FP mode requirement changing at
+runtime from that indicated in the initial executable's ELF header. In
+order to avoid overhead in the general FP context restore code, it aimed
+to have threads in the process become unable to enable the FPU during a
+mode switch & have the thread calling the prctl syscall wait for all
+other threads in the process to be context switched at least once. Once
+that happens we can know that no thread in the process whose mode will
+be switched has live FP context, and it's safe to perform the mode
+switch. However in the (rare) case of modeswitches occurring in
+multithreaded programs this can lead to indeterminate delays for the
+thread invoking the prctl syscall, and the code monitoring for those
+context switches was woefully inadequate for all but the simplest cases.
+
+Fix this by broadcasting an IPI if other CPUs may have live FP context
+for an affected thread, with a handler causing those CPUs to relinquish
+their FPU ownership. Threads will then be allowed to continue running
+but will stall on the wait_on_atomic_t in enable_restore_fp_context if
+they attempt to use FP again whilst the mode switch is still in
+progress. The end result is less fragile poking at scheduler context
+switch counts & a more expedient completion of the mode switch.
+
+Signed-off-by: Paul Burton <paul.burton@imgtec.com>
+Fixes: 9791554b45a2 ("MIPS,prctl: add PR_[GS]ET_FP_MODE prctl options for MIPS")
+Reviewed-by: Maciej W. Rozycki <macro@imgtec.com>
+Cc: Adam Buchbinder <adam.buchbinder@gmail.com>
+Cc: James Hogan <james.hogan@imgtec.com>
+Cc: stable <stable@vger.kernel.org> # v4.0+
+Cc: linux-mips@linux-mips.org
+Cc: linux-kernel@vger.kernel.org
+Patchwork: https://patchwork.linux-mips.org/patch/13145/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+(cherry picked from commit 6b8322576e9d325b65c54fbef64e4e8690ad70ce)
+
+ Conflicts:
+	arch/mips/kernel/process.c
+
+[Rahul Bedarkar - fix minor conflict in comment block]
+
+Change-Id: Iecd5e95b173a759640a3b2f5c9a64c0e6f0463dd
+Signed-off-by: Rahul Bedarkar <rahul.bedarkar@imgtec.com>
+---
+ arch/mips/kernel/process.c | 40 +++++++++++++++++-----------------------
+ 1 file changed, 17 insertions(+), 23 deletions(-)
+
+diff --git a/arch/mips/kernel/process.c b/arch/mips/kernel/process.c
+index 89847be..ac84ac8 100644
+--- a/arch/mips/kernel/process.c
++++ b/arch/mips/kernel/process.c
+@@ -582,11 +582,19 @@ int mips_get_process_fp_mode(struct task_struct *task)
+ 	return value;
+ }
+ 
++static void prepare_for_fp_mode_switch(void *info)
++{
++	struct mm_struct *mm = info;
++
++	if (current->mm == mm)
++		lose_fpu(1);
++}
++
+ int mips_set_process_fp_mode(struct task_struct *task, unsigned int value)
+ {
+ 	const unsigned int known_bits = PR_FP_MODE_FR | PR_FP_MODE_FRE;
+-	unsigned long switch_count;
+ 	struct task_struct *t;
++	int max_users;
+ 
+ 	/* Check the value is valid */
+ 	if (value & ~known_bits)
+@@ -615,31 +623,17 @@ int mips_set_process_fp_mode(struct task_struct *task, unsigned int value)
+ 	smp_mb__after_atomic();
+ 
+ 	/*
+-	 * If there are multiple online CPUs then wait until all threads whose
+-	 * FP mode is about to change have been context switched. This approach
+-	 * allows us to only worry about whether an FP mode switch is in
+-	 * progress when FP is first used in a tasks time slice. Pretty much all
+-	 * of the mode switch overhead can thus be confined to cases where mode
+-	 * switches are actually occuring. That is, to here. However for the
+-	 * thread performing the mode switch it may take a while...
++	 * If there are multiple online CPUs then force any which are running
++	 * threads in this process to lose their FPU context, which they can't
++	 * regain until fp_mode_switching is cleared later.
+ 	 */
+ 	if (num_online_cpus() > 1) {
+-		spin_lock_irq(&task->sighand->siglock);
+-
+-		for_each_thread(task, t) {
+-			if (t == current)
+-				continue;
+-
+-			switch_count = t->nvcsw + t->nivcsw;
+-
+-			do {
+-				spin_unlock_irq(&task->sighand->siglock);
+-				cond_resched();
+-				spin_lock_irq(&task->sighand->siglock);
+-			} while ((t->nvcsw + t->nivcsw) == switch_count);
+-		}
++		/* No need to send an IPI for the local CPU */
++		max_users = (task->mm == current->mm) ? 1 : 0;
+ 
+-		spin_unlock_irq(&task->sighand->siglock);
++		if (atomic_read(&current->mm->mm_users) > max_users)
++			smp_call_function(prepare_for_fp_mode_switch,
++					  (void *)current->mm, 1);
+ 	}
+ 
+ 	/*
+-- 
+2.6.2
+

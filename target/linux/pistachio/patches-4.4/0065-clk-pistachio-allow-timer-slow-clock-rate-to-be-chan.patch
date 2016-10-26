@@ -1,0 +1,39 @@
+From ac6599806dd4fee1a5a0b98fc221d6ecc17f92d0 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Thu, 26 Nov 2015 11:12:18 +0000
+Subject: clk: pistachio: allow timer slow clock rate to be changed.
+
+Pistachio has not previously used the slow clock for the timer.
+The new RTC driver will use it, so modify the divider table to allow
+clock set_rate to be called.
+
+This will allow the RTC driver to be used for time stamp and alarms.
+
+Change-Id: I6895bb5b311dc9431288671766565b7dbec37664
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/clk/pistachio/clk-pistachio.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/clk/pistachio/clk-pistachio.c b/drivers/clk/pistachio/clk-pistachio.c
+index 87e5b6e..fd64bd9 100644
+--- a/drivers/clk/pistachio/clk-pistachio.c
++++ b/drivers/clk/pistachio/clk-pistachio.c
+@@ -286,10 +286,10 @@ static struct pistachio_div pistachio_periph_divs[] __initdata = {
+ 	DIV(PERIPH_CLK_ROM_DIV, "rom_div", "periph_sys", 0x10c, 7),
+ 	DIV(PERIPH_CLK_COUNTER_FAST_DIV, "counter_fast_div", "periph_sys",
+ 	    0x110, 7),
+-	DIV(PERIPH_CLK_COUNTER_SLOW_PRE_DIV, "counter_slow_pre_div",
+-	    "periph_sys", 0x114, 7),
+-	DIV(PERIPH_CLK_COUNTER_SLOW_DIV, "counter_slow_div",
+-	    "counter_slow_pre_div", 0x118, 7),
++	DIV_F(PERIPH_CLK_COUNTER_SLOW_PRE_DIV, "counter_slow_pre_div",
++	    "periph_sys", 0x114, 7, 0, CLK_DIVIDER_ROUND_CLOSEST),
++	DIV_F(PERIPH_CLK_COUNTER_SLOW_DIV, "counter_slow_div",
++	    "counter_slow_pre_div", 0x118, 7, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_IR_PRE_DIV, "ir_pre_div", "periph_sys", 0x11c, 7,
+ 	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_IR_DIV, "ir_div", "ir_pre_div", 0x120, 7,
+-- 
+2.6.2
+

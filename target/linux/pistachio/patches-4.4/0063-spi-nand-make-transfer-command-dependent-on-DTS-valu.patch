@@ -1,0 +1,53 @@
+From 418e06942cdeade717e6e38102f8d3867e8ffa13 Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Thu, 19 Nov 2015 10:52:39 +0000
+Subject: spi-nand: make transfer command dependent on DTS value
+
+Before, the transfer command (X2/X4) was hardcoded in the spi-nand
+driver. With this change, the transfer mode, obtained from the
+DTS file is checked, and the transfer command is determined based
+on the obtained value. This way, to switch between single, dual
+and quad modes only the DTS file has to be modified by altering
+the RX/TX bus width value.
+
+Change-Id: I7f187de8cae4f1abf774fbefbed469dd17f26151
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ drivers/mtd/spi-nand/spi-nand-device.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/mtd/spi-nand/spi-nand-device.c b/drivers/mtd/spi-nand/spi-nand-device.c
+index 30c83f3..cf8e2d2 100644
+--- a/drivers/mtd/spi-nand/spi-nand-device.c
++++ b/drivers/mtd/spi-nand/spi-nand-device.c
+@@ -350,17 +350,24 @@ static int spi_nand_device_read_cache(struct spi_nand *snand,
+ {
+ 	struct spi_nand_device *snand_dev = snand->priv;
+ 	struct spi_nand_device_cmd *cmd = &snand_dev->cmd;
++	struct spi_device *spi = snand_dev->spi;
+ 
+ 	memset(cmd, 0, sizeof(struct spi_nand_device_cmd));
+-	cmd->n_cmd = 5;
+-	cmd->cmd[0] = SPI_NAND_READ_CACHE_X4;
++	if ((spi->mode & SPI_RX_DUAL) || (spi->mode & SPI_RX_QUAD))
++		cmd->n_cmd = 5;
++	else
++		cmd->n_cmd = 4;
++	cmd->cmd[0] = (spi->mode & SPI_RX_QUAD) ? SPI_NAND_READ_CACHE_X4 :
++			((spi->mode & SPI_RX_DUAL) ? SPI_NAND_READ_CACHE_X2 :
++			SPI_NAND_READ_CACHE);
+ 	cmd->cmd[1] = 0; /* dummy byte */
+ 	cmd->cmd[2] = (u8)((page_offset & 0xff00) >> 8);
+ 	cmd->cmd[3] = (u8)(page_offset & 0xff);
+ 	cmd->cmd[4] = 0; /* dummy byte */
+ 	cmd->n_rx = length;
+ 	cmd->rx_buf = read_buf;
+-	cmd->rx_nbits = 4;
++	cmd->rx_nbits = (spi->mode & SPI_RX_QUAD) ? 4 :
++			((spi->mode & SPI_RX_DUAL) ? 2 : 1);
+ 
+ 	dev_dbg(snand->dev, "%s: offset 0x%x\n", __func__, page_offset);
+ 
+-- 
+2.6.2
+

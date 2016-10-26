@@ -1,0 +1,30 @@
+From 058cdc234a5de3564a60994d86a9407a079ad9e9 Mon Sep 17 00:00:00 2001
+From: Surendra Yeragamreddy <Surendra.Yeragamreddy@imgtec.com>
+Date: Mon, 11 Jan 2016 17:55:31 +0530
+Subject: Fractional PLL freq adjustments - fine tuning.
+
+Application writes the freq adjustment value into freq field of
+struct timex. So commented out right shift of that value and
+reading the freq adj value directly.
+
+Change-Id: Ib50b68431b932304846854180ec85ae1bfcebd4e
+Signed-off-by: Surendra Yeragamreddy <Surendra.Yeragamreddy@imgtec.com>
+---
+ drivers/misc/atu/atu_clk_maintainer.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/misc/atu/atu_clk_maintainer.c b/drivers/misc/atu/atu_clk_maintainer.c
+index 2589fff..297dff8 100644
+--- a/drivers/misc/atu/atu_clk_maintainer.c
++++ b/drivers/misc/atu/atu_clk_maintainer.c
+@@ -639,7 +639,6 @@ static int atu_adjtimex(struct timex *txc)
+ 			int dir;
+ 
+ 			freq = txc->freq;
+-			freq = (freq * NSEC_PER_USEC) >> 16;
+ 
+ 			if (freq < 0) {
+ 				dir = -1;
+-- 
+2.6.2
+

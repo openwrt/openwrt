@@ -1,0 +1,161 @@
+From 78d1ed01d6f9f4c38233f43c970e1fa7ddeced6c Mon Sep 17 00:00:00 2001
+From: Will Thomas <will.thomas@imgtec.com>
+Date: Mon, 4 Apr 2016 15:37:37 +0100
+Subject: misc: img: Remove SoC specific config from IMG PDM
+
+This patch removes the SoC specific constants from the ImgTec
+PDM driver by including the SoC specific data in the compatible data
+structure.
+
+Later revisions of the hardware have an additional enable register. The
+driver uses the compatible data to establish whether this register exists
+and needs to be written to.
+
+Note, this patch has only compile tested.
+
+Change-Id: I2a76442c8b0c0c552c3cafcfb30ed945903931f2
+Signed-off-by: Will Thomas <will.thomas@imgtec.com>
+---
+ drivers/misc/img-pdm.c | 42 +++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 35 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/misc/img-pdm.c b/drivers/misc/img-pdm.c
+index fdbe9c0..f486dd5 100644
+--- a/drivers/misc/img-pdm.c
++++ b/drivers/misc/img-pdm.c
+@@ -29,23 +29,31 @@
+ #include <linux/sysfs.h>
+ 
+ /* Registers */
+-#define PERIP_PWM_PDM_CONTROL			0x0140
+ #define PERIP_PWM_PDM_CONTROL_CH_MASK		0x1
+ #define PERIP_PWM_PDM_CONTROL_CH_SHIFT(ch)	((ch) * 4)
+ 
+-#define PERIP_PDM0_VAL				0x0144
++#define PERIP_PDM0_VAL				0x4
+ #define PERIP_PDM_CH_ADDR_SHIFT(ch)		((ch) * 4)
+ #define PERIP_PDM_SRC_DATA_MASK			0xfff
+ 
++#define PERIP_PDM_CONTROL_MASK			0x1
++#define PERIP_PDM_CONTROL_SHIFT(ch)		((ch) * 1)
++
+ #define IMG_NUM_PDM				4
+ #define PDM_CHANNEL_REQUESTED			1
+ #define PDM_CHANNEL_ENABLED			2
+ 
++struct img_pdm_soc_data {
++	u32 syscon_offset;
++	int en;
++};
++
+ struct img_pdm_device {
+ 	struct clk *clk;
+ 	struct kobject **pdm_kobj;
+ 	struct regmap *periph_regs;
+ 	struct platform_device *pdev;
++	const struct img_pdm_soc_data *data;
+ };
+ 
+ static struct img_pdm_channel *pdm_channels;
+@@ -54,6 +62,7 @@ static DEFINE_MUTEX(pdm_lock);
+ int img_pdm_channel_config(struct img_pdm_channel *chan, unsigned int val)
+ {
+ 	struct img_pdm_device *pdm_dev;
++	u32 offset = chan->pdm_dev->data->syscon_offset;
+ 
+ 	mutex_lock(&pdm_lock);
+ 
+@@ -71,7 +80,8 @@ int img_pdm_channel_config(struct img_pdm_channel *chan, unsigned int val)
+ 
+ 	val &= PERIP_PDM_SRC_DATA_MASK;
+ 	regmap_write(pdm_dev->periph_regs,
+-		     PERIP_PDM0_VAL + PERIP_PDM_CH_ADDR_SHIFT(chan->pdm_id),
++		     PERIP_PDM0_VAL + offset +
++		     PERIP_PDM_CH_ADDR_SHIFT(chan->pdm_id),
+ 		     val);
+ 	mutex_unlock(&pdm_lock);
+ 
+@@ -237,6 +247,7 @@ EXPORT_SYMBOL_GPL(img_pdm_channel_put);
+ int img_pdm_channel_enable(struct img_pdm_channel *chan, bool state)
+ {
+ 	struct img_pdm_device *pdm_dev;
++	u32 offset;
+ 
+ 	mutex_lock(&pdm_lock);
+ 
+@@ -246,6 +257,7 @@ int img_pdm_channel_enable(struct img_pdm_channel *chan, bool state)
+ 	}
+ 
+ 	pdm_dev = chan->pdm_dev;
++	offset = pdm_dev->data->syscon_offset;
+ 
+ 	if (!test_bit(PDM_CHANNEL_REQUESTED, &chan->flags)) {
+ 		dev_err(&pdm_dev->pdev->dev, "channel not requested\n");
+@@ -253,9 +265,18 @@ int img_pdm_channel_enable(struct img_pdm_channel *chan, bool state)
+ 		return -EINVAL;
+ 	}
+ 
++	if (pdm_dev->data->en > 0) {
++		regmap_update_bits(pdm_dev->periph_regs,
++				offset + pdm_dev->data->en,
++				PERIP_PDM_CONTROL_MASK <<
++				PERIP_PDM_CONTROL_SHIFT(chan->pdm_id),
++				(!!state) <<
++				PERIP_PDM_CONTROL_SHIFT(chan->pdm_id));
++	}
++
+ 	if (state) {
+ 		regmap_update_bits(pdm_dev->periph_regs,
+-				PERIP_PWM_PDM_CONTROL,
++				offset,
+ 				PERIP_PWM_PDM_CONTROL_CH_MASK <<
+ 				PERIP_PWM_PDM_CONTROL_CH_SHIFT(chan->pdm_id),
+ 				1 <<
+@@ -263,10 +284,10 @@ int img_pdm_channel_enable(struct img_pdm_channel *chan, bool state)
+ 		set_bit(PDM_CHANNEL_ENABLED, &chan->flags);
+ 	} else {
+ 		regmap_write(pdm_dev->periph_regs,
+-			     PERIP_PDM0_VAL +
++			     PERIP_PDM0_VAL + offset +
+ 			     PERIP_PDM_CH_ADDR_SHIFT(chan->pdm_id), 0);
+ 		regmap_update_bits(pdm_dev->periph_regs,
+-				PERIP_PWM_PDM_CONTROL,
++				offset,
+ 				PERIP_PWM_PDM_CONTROL_CH_MASK <<
+ 				PERIP_PWM_PDM_CONTROL_CH_SHIFT(chan->pdm_id),
+ 				0 <<
+@@ -314,6 +335,7 @@ static ssize_t img_pdm_pulse_in_read(struct kobject *kobj,
+ 	struct platform_device *pdev;
+ 	struct img_pdm_device *pdm_dev;
+ 	struct img_pdm_channel *chan;
++	u32 offset;
+ 
+ 	pdev = to_platform_device(kobj_to_dev(kobj->parent));
+ 	pdm_dev = platform_get_drvdata(pdev);
+@@ -325,9 +347,10 @@ static ssize_t img_pdm_pulse_in_read(struct kobject *kobj,
+ 		return ret;
+ 	}
+ 
++	offset = pdm_dev->data->syscon_offset;
+ 	chan = &pdm_channels[ch_num];
+ 	regmap_read(pdm_dev->periph_regs,
+-		    PERIP_PDM0_VAL +
++		    PERIP_PDM0_VAL + offset +
+ 		    PERIP_PDM_CH_ADDR_SHIFT(chan->pdm_id), &val);
+ 	val &= PERIP_PDM_SRC_DATA_MASK;
+ 
+@@ -604,6 +627,11 @@ static int img_pdm_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static const struct img_pdm_soc_data pistachio_pdm = {
++	.syscon_offset = 0x140,
++	.en = -1,
++};
++
+ static const struct of_device_id img_pdm_of_match[] = {
+ 	{ .compatible = "img,pistachio-pdm", },
+ 	{ }
+-- 
+2.6.2
+

@@ -1,0 +1,80 @@
+From c878c1da8a544a0cde795de900314c2e6b04e229 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Mon, 29 Jun 2015 14:33:01 +0100
+Subject: pistachio: bt: no hotplugging support needed
+
+Use platform_driver_probe() in place of platform_driver_register(). The
+most important implication is that in case probe() fails, the whole module
+entry() fails. This allows to express dependencies between the platform
+drivers in a more natural way, through modules.dep file, without
+resorting to deferred probing.
+
+BUG=none
+TEST='modprobe img-bt' and 'modprobe -r img-bt'
+
+Change-Id: I61dabcbe633c84bbdaa7ab9dc6f229ce6acd7d18
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ drivers/bluetooth/pistachio/img-bt-main.c       | 15 ++-------------
+ drivers/bluetooth/pistachio/img-hostport-main.c |  5 +++--
+ 2 files changed, 5 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/bluetooth/pistachio/img-bt-main.c b/drivers/bluetooth/pistachio/img-bt-main.c
+index e57e7e4..d4202e7 100644
+--- a/drivers/bluetooth/pistachio/img-bt-main.c
++++ b/drivers/bluetooth/pistachio/img-bt-main.c
+@@ -433,7 +433,7 @@ static void img_bt_pltfr_reg_handler_rollback(unsigned int client_id)
+ 	img_transport_remove_callback(client_id);
+ }
+ 
+-static int img_bt_pltfr_probe(struct platform_device *pdev)
++static int __init img_bt_pltfr_probe(struct platform_device *pdev)
+ {
+ 	int result = 0;
+ 
+@@ -514,18 +514,7 @@ struct platform_driver img_bt_driver = {
+ 
+ static int __init img_bt_init(void)
+ {
+-	int result = 0;
+-
+-	result = platform_driver_register(&img_bt_driver);
+-	if (result) {
+-		dbg("failed to register platform driver\n");
+-		goto pltfr_regist_failed;
+-	}
+-
+-	return result;
+-
+-pltfr_regist_failed:
+-	return result;
++	return platform_driver_probe(&img_bt_driver, img_bt_pltfr_probe);
+ }
+ 
+ static void __exit img_bt_exit(void)
+diff --git a/drivers/bluetooth/pistachio/img-hostport-main.c b/drivers/bluetooth/pistachio/img-hostport-main.c
+index 0a60311..cd88b31 100644
+--- a/drivers/bluetooth/pistachio/img-hostport-main.c
++++ b/drivers/bluetooth/pistachio/img-hostport-main.c
+@@ -378,7 +378,7 @@ static void img_hostport_pltfr_clksetup_rollback(void)
+ 
+ }
+ 
+-static int img_hostport_pltfr_probe(struct platform_device *pdev)
++static int __init img_hostport_pltfr_probe(struct platform_device *pdev)
+ {
+ 	int result = 0;
+ 
+@@ -465,7 +465,8 @@ static void __exit img_hostport_leave(void)
+ 
+ static int __init img_hostport_entry(void)
+ {
+-	return platform_driver_register(&img_uccp_driver);
++	return platform_driver_probe(&img_uccp_driver,
++					img_hostport_pltfr_probe);
+ }
+ 
+ module_init(img_hostport_entry);
+-- 
+2.6.2
+

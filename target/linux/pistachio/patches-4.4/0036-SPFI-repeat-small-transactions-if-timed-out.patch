@@ -1,0 +1,94 @@
+From a8c2863581d23b48d2c99cb84d31e9efb3e8b5ed Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Mon, 7 Sep 2015 09:07:29 +0100
+Subject: SPFI: repeat small transactions if timed out
+
+Small transactions might fail with a timeout. This happens
+intermittently and repeating the transfer (only write) after
+soft reset and the toggle of the CS line fixes the issue.
+
+Change-Id: If0f0e485ca3406e332d3fb7b9eb467fc2b8e6088
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ drivers/spi/spi-img-spfi.c | 37 ++++++++++++++++++++++++++++---------
+ 1 file changed, 28 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
+index 823cbc9..0c8b953 100644
+--- a/drivers/spi/spi-img-spfi.c
++++ b/drivers/spi/spi-img-spfi.c
+@@ -87,6 +87,7 @@
+  */
+ #define SPFI_32BIT_FIFO_SIZE			64
+ #define SPFI_8BIT_FIFO_SIZE			16
++#define MAX_ACCEPTED_FAILURES			1
+ 
+ struct img_spfi {
+ 	struct device *dev;
+@@ -136,7 +137,7 @@ static inline void spfi_reset(struct img_spfi *spfi)
+ 
+ static int spfi_wait_all_done(struct img_spfi *spfi)
+ {
+-	unsigned long timeout = jiffies + msecs_to_jiffies(50);
++	unsigned long timeout = jiffies + msecs_to_jiffies(10);
+ 
+ 	while (time_before(jiffies, timeout)) {
+ 		u32 status = spfi_readl(spfi, SPFI_INTERRUPT_STATUS);
+@@ -149,7 +150,6 @@ static int spfi_wait_all_done(struct img_spfi *spfi)
+ 		cpu_relax();
+ 	}
+ 
+-	dev_err(spfi->dev, "Timed out waiting for transaction to complete\n");
+ 	spfi_reset(spfi);
+ 
+ 	return -ETIMEDOUT;
+@@ -535,6 +535,7 @@ static int img_spfi_transfer_one(struct spi_master *master,
+ {
+ 	struct img_spfi *spfi = spi_master_get_devdata(spi->master);
+ 	int ret;
++	int no_acc_failures = MAX_ACCEPTED_FAILURES;
+ 
+ 	if (xfer->len > SPFI_TRANSACTION_TSIZE_MASK) {
+ 		dev_err(spfi->dev,
+@@ -542,13 +543,31 @@ static int img_spfi_transfer_one(struct spi_master *master,
+ 			xfer->len, SPFI_TRANSACTION_TSIZE_MASK);
+ 		return -EINVAL;
+ 	}
+-
+-	img_spfi_config(master, spi, xfer);
+-	if (master->can_dma && master->can_dma(master, spi, xfer))
+-		ret = img_spfi_start_dma(master, spi, xfer);
+-	else
+-		ret = img_spfi_start_pio(master, spi, xfer);
+-
++	/*
++	 * We know that small transactions might fail so we'll retry
++	 * after we reset the communication with the device
++	 */
++	while (no_acc_failures >= 0) {
++		img_spfi_config(master, spi, xfer);
++		if (master->can_dma && master->can_dma(master, spi, xfer))
++			ret = img_spfi_start_dma(master, spi, xfer);
++		else
++			ret = img_spfi_start_pio(master, spi, xfer);
++		if (ret == -ETIMEDOUT) {
++			no_acc_failures--;
++			/*
++			 * De-assert and re-assert chip-select;
++			 * SPFI reset will be done at the end of previous
++			 * transfer if the operation times out.
++			 */
++			gpio_set_value(spi->cs_gpio, 1);
++			gpio_set_value(spi->cs_gpio, 0);
++		}
++		else
++			break;
++	}
++	if (no_acc_failures < 0)
++		dev_err(spfi->dev, "Timed out waiting for transaction to complete\n");
+ 	return ret;
+ }
+ 
+-- 
+2.6.2
+
