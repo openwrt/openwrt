@@ -28,7 +28,8 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/grub2
-  CATEGORY:=Boot Loaders
+  CATEGORY:=Boot Loaders
+  SECTION:=boot
   TITLE:=GRand Unified Bootloader
   URL:=http://www.gnu.org/software/grub/
   DEPENDS:=@TARGET_x86||TARGET_x86_64
