@@ -164,7 +164,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  	module_free(mod, mod->module_init);
  	kfree(mod->args);
  	percpu_modfree(mod);
-@@ -2978,6 +2983,7 @@ static struct module *layout_and_allocat
+@@ -2983,6 +2988,7 @@ static struct module *layout_and_allocat
  static void module_deallocate(struct module *mod, struct load_info *info)
  {
  	percpu_modfree(mod);
@@ -172,7 +172,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  	module_free(mod, mod->module_init);
  	module_free(mod, mod->module_core);
  }
-@@ -3100,6 +3106,7 @@ static int do_init_module(struct module
+@@ -3105,6 +3111,7 @@ static int do_init_module(struct module
  	rcu_assign_pointer(mod->kallsyms, &mod->core_kallsyms);
  #endif
  	unset_module_init_ro_nx(mod);
