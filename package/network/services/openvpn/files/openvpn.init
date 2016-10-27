@@ -124,7 +124,7 @@ start_instance() {
 		socks_proxy status status_version syslog tcp_queue_limit tls_auth tls_version_min \
 		tls_cipher tls_remote tls_timeout tls_verify tmp_dir topology tran_window \
 		tun_mtu tun_mtu_extra txqueuelen user verb down push up \
-		verify_x509_name x509_username_field \
+		capath cafile verify_x509_name x509_username_field \
 		ifconfig_ipv6 route_ipv6 server_ipv6 ifconfig_ipv6_pool ifconfig_ipv6_push iroute_ipv6
 
 	openvpn_add_instance "$s" "/var/etc" "openvpn-$s.conf"
