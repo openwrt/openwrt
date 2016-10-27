@@ -206,6 +206,7 @@ define Package/ppp/install
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/netifd/proto/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp-up $(1)/lib/netifd/
+	$(INSTALL_BIN) ./files/lib/netifd/ppp6-up $(1)/lib/netifd/
 	$(INSTALL_BIN) ./files/lib/netifd/ppp-down $(1)/lib/netifd/
 endef
 Package/ppp-multilink/install=$(Package/ppp/install)

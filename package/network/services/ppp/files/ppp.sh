@@ -144,7 +144,7 @@ ppp_generic_setup() {
 		${connect:+connect "$connect"} \
 		${disconnect:+disconnect "$disconnect"} \
 		ip-up-script /lib/netifd/ppp-up \
-		ipv6-up-script /lib/netifd/ppp-up \
+		ipv6-up-script /lib/netifd/ppp6-up \
 		ip-down-script /lib/netifd/ppp-down \
 		ipv6-down-script /lib/netifd/ppp-down \
 		${mtu:+mtu $mtu mru $mtu} \
