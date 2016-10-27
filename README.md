@@ -91,12 +91,13 @@ or
 
 Once the build is completed, you will find the resulting output i.e. images, dtbs and rootfs at "bin/pistachio".
 
-Example output for V0.9.4:
+Example output for V0.10.x:
 
-- openwrt-0.9.4-pistachio-pistachio_marduk_ca8210-uImage
-- openwrt-0.9.4-pistachio-pistachio_marduk_ca8210-uImage-initramfs
-- openwrt-0.9.4-pistachio-marduk-marduk_ca8210-rootfs.tar.gz
-- pistachio_marduk_ca8210.dtb
+- openwrt-0.10.x-pistachio-marduk-marduk-kernel.itb
+- openwrt-0.10.x-pistachio-marduk-marduk-initramfs-kernel.itb
+- openwrt-0.10.x-pistachio-marduk-marduk-ca8210-rootfs.tar.gz
+- openwrt-0.10.x-pistachio-marduk-marduk-squashfs-factory.ubi
+- openwrt-0.10.x-pistachio-marduk-marduk-squashfs-sysupgrade.tar
 
 By default the version number is blank if you do not use the creator-platform-default-cascoda.config for loading the configuration.
 

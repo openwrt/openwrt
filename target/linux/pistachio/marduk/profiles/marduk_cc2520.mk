@@ -15,5 +15,4 @@ define Profile/marduk_cc2520/Description
         board
 endef
 
-
-$(eval $(call Profile/marduk/default,marduk_cc2520,pistachio_marduk_cc2520))
+$(eval $(call Profile,marduk_cc2520))
