@@ -68,7 +68,7 @@ $(call Package/util-linux/Default)
 endef
 
 define Package/libfdisk/description
-  The libfdisk library is used for manipulating with partition tables. 
+  The libfdisk library is used for manipulating with partition tables.
 endef
 
 define Package/libmount
@@ -123,7 +123,7 @@ endef
 define Package/blkdiscard
 $(call Package/util-linux/Default)
   TITLE:=discard sectors on a device
-  SUBMENU=disc
+  SUBMENU=Disc
 endef
 
 define Package/blkdiscard/description
@@ -136,7 +136,7 @@ define Package/blkid
 $(call Package/util-linux/Default)
   TITLE:=locate and print block device attributes
   DEPENDS:= +libblkid +libuuid
-  SUBMENU=disc
+  SUBMENU=Disc
 endef
 
 define Package/blkid/description
@@ -158,7 +158,7 @@ define Package/cfdisk
 $(call Package/util-linux/Default)
   TITLE:=display or manipulate disk partition table
   DEPENDS:= +libblkid +libncurses +libsmartcols +libfdisk +libmount
-  SUBMENU:=disc
+  SUBMENU:=Disc
 endef
 
 define Package/cfdisk/description
@@ -178,7 +178,7 @@ define Package/fdisk
 $(call Package/util-linux/Default)
   TITLE:=manipulate disk partition table
   DEPENDS:= +libblkid +libsmartcols +libfdisk
-  SUBMENU=disc
+  SUBMENU=Disc
 endef
 
 define Package/fdisk/description
@@ -189,7 +189,7 @@ define Package/findfs
 $(call Package/util-linux/Default)
   TITLE:=find a filesystem by label or UUID
   DEPENDS:= +libblkid
-  SUBMENU=disc
+  SUBMENU=Disc
 endef
 
 define Package/findfs/description
@@ -259,7 +259,7 @@ define Package/lsblk
 $(call Package/util-linux/Default)
   TITLE:=list block devices
   DEPENDS:= +libblkid +libmount +libsmartcols
-  SUBMENU=disc
+  SUBMENU=Disc
 endef
 
 define Package/lsblk/description
@@ -321,7 +321,7 @@ define Package/partx-utils
 $(call Package/util-linux/Default)
   TITLE:=inform kernel about the presence and numbering of on-disk partitions
   DEPENDS:= +libblkid +libsmartcols
-  SUBMENU=disc
+  SUBMENU=Disc
 endef
 
 define Package/partx-utils/description
@@ -353,7 +353,7 @@ endef
 define Package/sfdisk
 $(call Package/util-linux/Default)
   TITLE:=partition table manipulator for Linux
-  SUBMENU=disc
+  SUBMENU=Disc
   DEPENDS:= +libblkid +libfdisk +libsmartcols
 endef
 
@@ -366,7 +366,7 @@ define Package/swap-utils
 $(call Package/util-linux/Default)
   TITLE:=swap space management utilities
   DEPENDS+= +libblkid
-  SUBMENU:=disc
+  SUBMENU:=Filesystem
 endef
 
 define Package/swap-utils/description
@@ -423,7 +423,7 @@ define Package/wipefs
 $(call Package/util-linux/Default)
   TITLE:=wipe a signature from a device
   DEPENDS:= +libblkid
-  SUBMENU:=disc
+  SUBMENU:=Disc
 endef
 
 define Package/wipefs/description
