@@ -306,6 +306,10 @@
 					0x009a0 0x1e864443  /* QM_PORT6_CTRL0 */
 					0x009a4 0x000001c6  /* QM_PORT6_CTRL1 */
 					>;
+				qca,ar8327-vlans = <
+					0x1	0x5e	    /* VLAN1 Ports 1/2/3/4/6 */
+					0x2	0x21	    /* VLAN2 Ports 0/5 */
+				>;
 			};
 
 			phy4: ethernet-phy@4 {
