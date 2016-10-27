@@ -109,7 +109,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config INIT_ALL_POSSIBLE
 --- a/kernel/module.c
 +++ b/kernel/module.c
-@@ -2704,6 +2704,7 @@ static struct module *setup_load_info(st
+@@ -2709,6 +2709,7 @@ static struct module *setup_load_info(st
  
  static int check_modinfo(struct module *mod, struct load_info *info, int flags)
  {
@@ -117,7 +117,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const char *modmagic = get_modinfo(info, "vermagic");
  	int err;
  
-@@ -2729,6 +2730,7 @@ static int check_modinfo(struct module *
+@@ -2734,6 +2735,7 @@ static int check_modinfo(struct module *
  		pr_warn("%s: module is from the staging directory, the quality "
  			"is unknown, you have been warned.\n", mod->name);
  	}

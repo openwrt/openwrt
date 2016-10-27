@@ -1,6 +1,6 @@
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1270,6 +1270,7 @@ enum netdev_priv_flags {
+@@ -1271,6 +1271,7 @@ enum netdev_priv_flags {
  	IFF_XMIT_DST_RELEASE_PERM	= 1<<22,
  	IFF_IPVLAN_MASTER		= 1<<23,
  	IFF_IPVLAN_SLAVE		= 1<<24,
@@ -8,7 +8,7 @@
  };
  
  #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
-@@ -1297,6 +1298,7 @@ enum netdev_priv_flags {
+@@ -1298,6 +1299,7 @@ enum netdev_priv_flags {
  #define IFF_XMIT_DST_RELEASE_PERM	IFF_XMIT_DST_RELEASE_PERM
  #define IFF_IPVLAN_MASTER		IFF_IPVLAN_MASTER
  #define IFF_IPVLAN_SLAVE		IFF_IPVLAN_SLAVE
@@ -16,7 +16,7 @@
  
  /**
   *	struct net_device - The DEVICE structure.
-@@ -1567,6 +1569,11 @@ struct net_device {
+@@ -1568,6 +1570,11 @@ struct net_device {
  	const struct swdev_ops *swdev_ops;
  #endif
  
@@ -28,7 +28,7 @@
  	const struct header_ops *header_ops;
  
  	unsigned int		flags;
-@@ -1633,6 +1640,10 @@ struct net_device {
+@@ -1634,6 +1641,10 @@ struct net_device {
  	struct mpls_dev __rcu	*mpls_ptr;
  #endif
  
@@ -41,7 +41,7 @@
   */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -2059,6 +2059,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -2083,6 +2083,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -52,7 +52,7 @@
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -2185,16 +2189,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -2209,16 +2213,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  
