@@ -51,10 +51,11 @@ endef
 define Build/trx-with-loader
 	$(STAGING_DIR_HOST)/bin/trx \
 		-m 33554432 \
-		-o $@ \
+		-o $@.new \
 		-f $(KDIR)/loader.gz \
 		-f $(IMAGE_KERNEL) \
 		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
+	mv $@.new $@
 endef
 
 define Build/trx-v2-with-loader
@@ -71,9 +72,10 @@ endef
 define Build/trx-without-loader
 	$(STAGING_DIR_HOST)/bin/trx \
 		-m 33554432 \
-		-o $@ \
+		-o $@.new \
 		-f $(IMAGE_KERNEL) \
 		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
+	mv $@.new $@
 endef
 
 define Build/asus-trx
