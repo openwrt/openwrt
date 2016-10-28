@@ -98,6 +98,7 @@ static struct ar8327_pad_cfg wpj344_ar8327_pad0_cfg = {
 	.rxclk_delay_en = true,
 	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
 	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+	.mac06_exchange_dis = true,
 };
 
 static struct ar8327_led_cfg wpj344_ar8327_led_cfg = {
