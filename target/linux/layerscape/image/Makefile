@@ -25,6 +25,11 @@ define Build/append-ls-dtb
 	dd if=$(DTS_DIR)/$(1).dtb >> $@
 endef
 
+define Build/append-ls-rootfs-ext4
+	$(STAGING_DIR_HOST)/bin/make_ext4fs -l $(word 2,$(1)) -b 4096 -i 6000 -m 0 -J $(KDIR)/$(word 1,$(1))-$(word 2,$(1)).root.ext4 $(TARGET_DIR)
+	dd if=$(KDIR)/$(word 1,$(1))-$(word 2,$(1)).root.ext4 >> $@
+endef
+
 define Device/Default
   PROFILES = Default
   FILESYSTEMS := squashfs
@@ -56,5 +61,24 @@ endif
   					append-kernel | pad-to 10M | append-rootfs | pad-to 64M | check-size 67108865
 endef
 TARGET_DEVICES += ls1043ardb
+
+define Device/ls1012ardb
+  DEVICE_TITLE := ls1012ardb-$(SUBTARGET)
+  DEVICE_PACKAGES += rcw-layerscape-ls1012ardb uboot-layerscape-$(SUBTARGET)-ls1012ardb kmod-ppfe ppfe-ls1012ardb
+ifeq ($(SUBTARGET),64b)
+  DEVICE_DTS = freescale/fsl-ls1012a-rdb
+endif
+ifeq ($(SUBTARGET),32b)
+  DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1012a-rdb
+endif
+  IMAGE/firmware.bin = append-ls-rcw $(1) | pad-to 1M | append-ls-uboot $(1) | pad-to 3M | \
+  					append-ls-dtb $$(DEVICE_DTS) | pad-to 4M | append-kernel | pad-to 9M | \
+  					append-rootfs | pad-to 32M | check-size 33554433
+  IMAGES += firmware.ext4.bin
+  IMAGE/firmware.ext4.bin = append-ls-rcw $(1) | pad-to 1M | append-ls-uboot $(1) | pad-to 3M | \
+  					append-ls-dtb $$(DEVICE_DTS) | pad-to 4M | append-kernel | pad-to 9M | \
+  					append-ls-rootfs-ext4 $(1) 23M | check-size 33554433
+endef
+TARGET_DEVICES += ls1012ardb
 
 $(eval $(call BuildImage))
