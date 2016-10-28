@@ -41,7 +41,7 @@ define trxalign/jffs2-64k
 -a 0x10000 -f $(KDIR)/root.$(1)
 endef
 define trxalign/squashfs
--a 1024 -f $(KDIR)/root.$(1) $(if $(2),-f $(2)) -a 0x10000 -A $(KDIR)/fs_mark
+-a 1024 -f $(1) $(if $(2),-f $(2)) -a 0x10000 -A $(KDIR)/fs_mark
 endef
 
 #################################################
@@ -54,7 +54,7 @@ define Build/trx-with-loader
 		-o $@.new \
 		-f $(KDIR)/loader.gz \
 		-f $(IMAGE_KERNEL) \
-		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
+		$(call trxalign/$(FILESYSTEM),$@)
 	mv $@.new $@
 endef
 
@@ -65,7 +65,7 @@ define Build/trx-v2-with-loader
 		-o $@.new \
 		-f $(KDIR)/loader.gz \
 		-f $(KDIR)/vmlinux.lzma \
-		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM),$@.pattern)
+		$(call trxalign/$(FILESYSTEM),$@,$@.pattern)
 	mv $@.new $@
 endef
 
@@ -74,7 +74,7 @@ define Build/trx-without-loader
 		-m 33554432 \
 		-o $@.new \
 		-f $(IMAGE_KERNEL) \
-		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
+		$(call trxalign/$(FILESYSTEM),$@)
 	mv $@.new $@
 endef
 
@@ -140,7 +140,7 @@ define Device/Default
 	KERNEL_NAME = vmlinux.lzma
 	FILESYSTEMS := $(FS_64K)
 	IMAGES := trx
-	IMAGE/trx := trx-with-loader
+	IMAGE/trx := append-rootfs | trx-with-loader
 endef
 
 define Device/standard
@@ -150,33 +150,33 @@ endef
 define Device/standard-noloader-gz
   DEVICE_TITLE := Image with gzipped kernel
   KERNEL_NAME = vmlinux.gz
-  IMAGE/trx := trx-without-loader
+  IMAGE/trx := append-rootfs | trx-without-loader
 endef
 
 define Device/standard-noloader-nodictionarylzma
   DEVICE_TITLE := Image with LZMA compressed kernel matching CFE decompressor
   KERNEL_NAME = vmlinux-nodictionary.lzma
-  IMAGE/trx := trx-without-loader
+  IMAGE/trx := append-rootfs | trx-without-loader
 endef
 
 define Device/asus
 	IMAGES := trx
-	IMAGE/trx := trx-with-loader | asus-trx
+	IMAGE/trx := append-rootfs | trx-with-loader | asus-trx
 endef
 
 define Device/linksys
 	IMAGES := bin
-	IMAGE/bin := trx-with-loader | linksys-bin
+	IMAGE/bin := append-rootfs | trx-with-loader | linksys-bin
 endef
 
 define Device/motorola
 	IMAGES := bin
-	IMAGE/bin := trx-with-loader | motorola-bin
+	IMAGE/bin := append-rootfs | trx-with-loader | motorola-bin
 endef
 
 define Device/netgear
 	IMAGES := chk
-	IMAGE/chk := trx-with-loader | netgear-chk
+	IMAGE/chk := append-rootfs | trx-with-loader | netgear-chk
 endef
 
 #################################################
@@ -309,7 +309,7 @@ TARGET_DEVICES += asus-wl-hdd25
 define Device/dlink-dwl-3150
   DEVICE_TITLE := D-Link DWL-3150
   IMAGES := bin
-  IMAGE/bin := trx-with-loader | tailed-bin
+  IMAGE/bin := append-rootfs | trx-with-loader | tailed-bin
   BIN_TAIL := BCM-5352-2050-0000000-01
 endef
 TARGET_DEVICES += dlink-dwl-3150
@@ -317,7 +317,7 @@ TARGET_DEVICES += dlink-dwl-3150
 define Device/edimax-ps1208-mfg
   DEVICE_TITLE := Edimax PS-1208MFg
   IMAGES := bin
-  IMAGE/bin := trx-with-loader | edimax-bin
+  IMAGE/bin := append-rootfs | trx-with-loader | edimax-bin
 endef
 TARGET_DEVICES += edimax-ps1208-mfg
 
@@ -325,7 +325,7 @@ define Device/huawei-e970
   DEVICE_TITLE := Huawei E970
   KERNEL_NAME = vmlinux.gz
   IMAGES := bin
-  IMAGE/bin := trx-without-loader | huawei-bin
+  IMAGE/bin := append-rootfs | trx-without-loader | huawei-bin
 endef
 TARGET_DEVICES += huawei-e970
 
@@ -349,8 +349,8 @@ define Device/linksys-wrt54g3gv2-vf
   DEVICE_TITLE := Linksys WRT54G3GV2-VF
   FILESYSTEMS := $(FS_128K)
   IMAGES := noheader.bin bin
-  IMAGE/noheader.bin := linksys-pattern-partition | trx-v2-with-loader
-  IMAGE/bin := linksys-pattern-partition | trx-v2-with-loader | linksys-bin
+  IMAGE/noheader.bin := linksys-pattern-partition | append-rootfs | trx-v2-with-loader
+  IMAGE/bin := linksys-pattern-partition | append-rootfs | trx-v2-with-loader | linksys-bin
   DEVICE_ID := 3G2V
   VERSION := 3.00.24
   SERIAL := 6
@@ -449,7 +449,7 @@ define Device/netgear-wgt634u
   DEVICE_TITLE := Netgear WGT634U
   FILESYSTEMS := $(FS_128K)
   IMAGES := bin
-  IMAGE/bin := trx-with-loader | prepend-with-elf
+  IMAGE/bin := append-rootfs | trx-with-loader | prepend-with-elf
 endef
 TARGET_DEVICES += netgear-wgt634u
 
@@ -472,7 +472,7 @@ TARGET_DEVICES += netgear-wnr834b-v2
 define Device/usrobotics-usr5461
   DEVICE_TITLE := USRobotics USR5461
   IMAGES := bin
-  IMAGE/bin := trx-with-loader | usrobotics-bin
+  IMAGE/bin := append-rootfs | trx-with-loader | usrobotics-bin
 endef
 TARGET_DEVICES += usrobotics-usr5461
 
