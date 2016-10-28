@@ -186,7 +186,8 @@ hostapd_set_bss_options() {
 		wps_pushbutton wps_label ext_registrar wps_pbc_in_m1 \
 		wps_device_type wps_device_name wps_manufacturer wps_pin \
 		macfilter ssid wmm uapsd hidden short_preamble rsn_preauth \
-		iapp_interface eapol_version acct_server acct_secret acct_port
+		iapp_interface eapol_version acct_server acct_secret acct_port \
+		dynamic_vlan
 
 	set_default isolate 0
 	set_default maxassoc 0
@@ -229,6 +230,8 @@ hostapd_set_bss_options() {
 			append bss_conf "acct_server_shared_secret=$acct_secret" "$N"
 	}
 
+	local vlan_possible=""
+
 	case "$auth_type" in
 		none)
 			wps_possible=1
@@ -260,9 +263,10 @@ hostapd_set_bss_options() {
 				auth_server auth_secret auth_port \
 				dae_client dae_secret dae_port \
 				ownip \
-				eap_reauth_period dynamic_vlan \
-				vlan_naming vlan_tagged_interface \
-				vlan_bridge vlan_file
+				eap_reauth_period
+
+			# radius can provide VLAN ID for clients
+			vlan_possible=1
 
 			# legacy compatibility
 			[ -n "$auth_server" ] || json_get_var auth_server server
@@ -272,7 +276,6 @@ hostapd_set_bss_options() {
 			set_default auth_port 1812
 			set_default dae_port 3799
 
-			set_default vlan_naming 1
 
 			append bss_conf "auth_server_addr=$auth_server" "$N"
 			append bss_conf "auth_server_port=$auth_port" "$N"
@@ -289,19 +292,6 @@ hostapd_set_bss_options() {
 			append bss_conf "eapol_key_index_workaround=1" "$N"
 			append bss_conf "ieee8021x=1" "$N"
 			append wpa_key_mgmt "WPA-EAP"
-
-			[ -n "$dynamic_vlan" ] && {
-				append bss_conf "dynamic_vlan=$dynamic_vlan" "$N"
-				append bss_conf "vlan_naming=$vlan_naming" "$N"
-				[ -n "$vlan_bridge" ] && \
-					append bss_conf "vlan_bridge=$vlan_bridge" "$N"
-				[ -n "$vlan_tagged_interface" ] && \
-					append bss_conf "vlan_tagged_interface=$vlan_tagged_interface" "$N"
-				[ -n "$vlan_file" ] && {
-					[ -e "$vlan_file" ] || touch "$vlan_file"
-					append bss_conf "vlan_file=$vlan_file" "$N"
-				}
-			}
 
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
 		;;
@@ -427,6 +417,8 @@ hostapd_set_bss_options() {
 		allow)
 			append bss_conf "macaddr_acl=1" "$N"
 			append bss_conf "accept_mac_file=$_macfile" "$N"
+			# accept_mac_file can be used to set MAC to VLAN ID mapping
+			vlan_possible=1
 		;;
 		deny)
 			append bss_conf "macaddr_acl=0" "$N"
@@ -448,6 +440,21 @@ hostapd_set_bss_options() {
 			done
 			[ -n "$macfile" -a -f "$macfile" ] && cat "$macfile"
 		) > "$_macfile"
+	}
+
+	[ -n "$vlan_possible" -a -n "$dynamic_vlan" ] && {
+		json_get_vars vlan_naming vlan_tagged_interface vlan_bridge vlan_file
+		set_default vlan_naming 1
+		append bss_conf "dynamic_vlan=$dynamic_vlan" "$N"
+		append bss_conf "vlan_naming=$vlan_naming" "$N"
+		[ -n "$vlan_bridge" ] && \
+			append bss_conf "vlan_bridge=$vlan_bridge" "$N"
+		[ -n "$vlan_tagged_interface" ] && \
+			append bss_conf "vlan_tagged_interface=$vlan_tagged_interface" "$N"
+		[ -n "$vlan_file" ] && {
+			[ -e "$vlan_file" ] || touch "$vlan_file"
+			append bss_conf "vlan_file=$vlan_file" "$N"
+		}
 	}
 
 	append "$var" "$bss_conf" "$N"
