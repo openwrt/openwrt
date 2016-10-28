@@ -23,8 +23,7 @@ mbl)
 wndr4700)
 	ucidef_set_led_ide "sata" "SATA" "wndr4700:green:hd"
 	ucidef_set_led_netdev "wan" "WAN (green)" "wndr4700:green:wan" "eth0.2"
-	ucidef_set_led_usbdev "usb3-1" "USB3-1" "wndr4700:blue:usb" "2-1"
-	ucidef_set_led_usbdev "usb3-2" "USB3-2" "wndr4700:blue:usb" "3-1"
+	ucidef_set_led_usbport "usb3" "USB3" "wndr4700:blue:usb" "usb2-port1" "usb2-port2" "usb3-port1" "usb3-port2"
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "wndr4700:blue:wlan" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "wndr4700:blue:wlan" "phy1tpt"
 	;;
