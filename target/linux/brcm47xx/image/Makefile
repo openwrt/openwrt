@@ -64,7 +64,7 @@ define Build/trx-v2-with-loader
 		-o $@.new \
 		-f $(KDIR)/loader.gz \
 		-f $(KDIR)/vmlinux.lzma \
-		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM),$@)
+		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM),$@.pattern)
 	mv $@.new $@
 endef
 
@@ -99,7 +99,7 @@ define Build/linksys-bin
 endef
 
 define Build/linksys-pattern-partition
-	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(DEVICE_ID) -v v$(VERSION) $(if $(SERIAL),-s $(SERIAL)) -i /dev/null -o $@
+	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(DEVICE_ID) -v v$(VERSION) $(if $(SERIAL),-s $(SERIAL)) -i /dev/null -o $@.pattern
 endef
 
 define Build/motorola-bin
