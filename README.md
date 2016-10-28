@@ -27,13 +27,12 @@ This guide helps as a quick start but for full details about OpenWrt please see 
 
 ## Package Content
 
-The release distribution is structured as documented in the upstream project however
-there are some key paths where IMG have added solutions:
+The release distribution is structured as documented in the upstream project however there are some key paths where IMG have added solutions:
 
 | Folder              				| Content                                              							|
 | :----               				| :----                                                							|
 | target/linux/pistachio			| IMG pistachio SoC based board configs and makefiles   						|
-| target/linux/pistachio/config-4.1		| IMG pistachio SoC specific kernel config							        |
+| target/linux/pistachio/config-4.4		| IMG pistachio SoC specific kernel config							        |
 | target/linux/pistachio/marduk/profiles/marduk_cc2520.mk	| IMG Marduk platform profile with TI cc2520	|
 | target/linux/pistachio/marduk/profiles/marduk_ca8210.mk	| IMG Marduk platform profile with Cascoda ca8210  |
 
@@ -51,7 +50,7 @@ Firstly, to obtain a copy of the (Ci40) Marduk platform supported OpenWrt source
 
 Install build dependencies:
 
-    $ sudo apt-get install libncurses5-dev libncursesw5-dev zlib1g-dev libssl-dev gawk subversion device-tree-compiler
+    $ sudo apt-get install libncurses5-dev libncursesw5-dev zlib1g-dev libssl-dev gawk subversion device-tree-compiler bsdmainutils bc rsync
 
 To make a build based on the default Ci40 config, run the following commands:
 
@@ -104,6 +103,7 @@ Example output for V0.10.x:
 By default the version number is blank if you do not use the creator-platform-default-cascoda.config for loading the configuration.
 
 ## Customising your OpenWrt
+
 You can configure OpenWrt from scratch but it's best to start from a base profile
 e.g. the one for the IMG pistachio board as it has some useful defaults.
 
@@ -129,18 +129,18 @@ Verify that package name is selected. Just save and exit.
 
 ## Customising your Linux Kernel
 
-Kernel configuration is saved at target/linux/pistachio/config-4.1
-e.g. This the one for the IMG pistachio board as it has some useful defaults.
+Kernel configuration is saved at target/linux/pistachio/config-4.4. This is the one for the IMG pistachio board as it has some useful defaults.
 
 To customise to suit your requirements use the following command:
 
     $ make kernel_menuconfig
 
-If you change any option you need and then save & quit GUI, the changed configuration will get written into target/linux/pistachio/config-4.1
+If you change any option you need and then save & quit GUI, the changed configuration will get written into target/linux/pistachio/config-4.4
 
 For more details please refer to [OpenWrt Build System]("http://wiki.openwrt.org/doc/howto/build")
 
 ## Adding Linux Kernel patches
+
 Linux kernel patches are added at :-
 
     target/linux/pistachio/patches-<kernel_version>/
@@ -148,12 +148,20 @@ Linux kernel patches are added at :-
 * All kernel patches are created from the linux kernel hosted [here](https://github.com/CreatorDev/linux).
 * Kernel patches for specific kernel version used in OpenWrt are prepared from corresponding branches in [linux](https://github.com/CreatorDev/linux) repo. e.g.
 
-        target/linux/pistachio/patches-4.1/
+        target/linux/pistachio/patches-4.4/
 
-contains patches created from [openwrt-4.1.13](https://github.com/CreatorDev/linux/tree/openwrt-4.1.13) branch.
+contains patches created from [openwrt-4.4.14](https://github.com/CreatorDev/linux/tree/openwrt-4.4.14) branch.
 * For adding the kernel patch in OpenWrt, create a PR in [linux](https://github.com/CreatorDev/linux) with the change, and also create a PR with the patch of the change in OpenWrt repository.
 * Following command can be used for creating the kernel patch :-
 
         git format-patch <commit_id> --keep-subject --start-number <number>
 
 *NOTE :* Number should the next one from the last patch already added in OpenWrt.
+
+----
+
+## Contributing
+
+We welcome all contributions to this project and we give credit where it's due. Anything from enhancing functionality to improving documentation and bug reporting - it's all good.
+
+For more details about the Contributor's guidelines, refer to the [contributor guide](https://github.com/CreatorKit/creator-docs/blob/master/ContributorGuide.md).
