@@ -33,8 +33,15 @@ define uboot/ls1043ardb
 	CONFIG=ls1043ardb
 endef
 
+define uboot/ls1012ardb
+	TITLE:=U-Boot $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012ardb 64b Dev Board
+	CONFIG=ls1012ardb_qspi
+	IMAGE=u-boot-swap.bin
+endef
+
 UBOOTS := \
-	ls1043ardb
+	ls1043ardb \
+	ls1012ardb
 
 define Package/uboot/template
 define Package/uboot-layerscape-64b-$(1)

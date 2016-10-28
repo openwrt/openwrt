@@ -16,7 +16,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=https://github.com/fsl-jyt/rcw.git
-PKG_SOURCE_VERSION:=4c74045c34375ee0cf6a9bbd57ef8f00a5a01fd6
+PKG_SOURCE_VERSION:=e101d1207f402c7b761990a3e6681fdae8f253e3
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
@@ -35,8 +35,14 @@ define rcw/ls1043ardb
 	CONFIG=ls1043ardb-rcw.bin
 endef
 
+define rcw/ls1012ardb
+	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012ardb 64b/32b Dev Board
+	CONFIG=ls1012ardb-rcw.bin
+endef
+
 RCWS := \
-	ls1043ardb
+	ls1043ardb \
+	ls1012ardb
 
 define Package/rcw/template
 define Package/rcw-layerscape-$(1)
