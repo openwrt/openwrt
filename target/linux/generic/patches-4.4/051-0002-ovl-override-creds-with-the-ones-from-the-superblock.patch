@@ -58,7 +58,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
 
 --- a/fs/overlayfs/copy_up.c
 +++ b/fs/overlayfs/copy_up.c
-@@ -305,7 +305,6 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -315,7 +315,6 @@ int ovl_copy_up_one(struct dentry *paren
  	struct dentry *upperdir;
  	struct dentry *upperdentry;
  	const struct cred *old_cred;
@@ -66,7 +66,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	char *link = NULL;
  
  	if (WARN_ON(!workdir))
-@@ -324,28 +323,7 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -334,28 +333,7 @@ int ovl_copy_up_one(struct dentry *paren
  			return PTR_ERR(link);
  	}
  
@@ -96,7 +96,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  
  	err = -EIO;
  	if (lock_rename(workdir, upperdir) != NULL) {
-@@ -368,9 +346,7 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -378,9 +356,7 @@ int ovl_copy_up_one(struct dentry *paren
  out_unlock:
  	unlock_rename(workdir, upperdir);
  	revert_creds(old_cred);
@@ -105,10 +105,10 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
 -out_free_link:
  	if (link)
  		free_page((unsigned long) link);
- 
+
 --- a/fs/overlayfs/dir.c
 +++ b/fs/overlayfs/dir.c
-@@ -405,28 +405,13 @@ static int ovl_create_or_link(struct den
+@@ -408,28 +408,13 @@ static int ovl_create_or_link(struct den
  		err = ovl_create_upper(dentry, inode, &stat, link, hardlink);
  	} else {
  		const struct cred *old_cred;
@@ -138,7 +138,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	}
  
  	if (!err)
-@@ -656,32 +641,11 @@ static int ovl_do_remove(struct dentry *
+@@ -659,32 +644,11 @@ static int ovl_do_remove(struct dentry *
  	if (OVL_TYPE_PURE_UPPER(type)) {
  		err = ovl_remove_upper(dentry, is_dir);
  	} else {
@@ -172,7 +172,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	}
  out_drop_write:
  	ovl_drop_write(dentry);
-@@ -720,7 +684,6 @@ static int ovl_rename2(struct inode *old
+@@ -723,7 +687,6 @@ static int ovl_rename2(struct inode *old
  	bool new_is_dir = false;
  	struct dentry *opaquedir = NULL;
  	const struct cred *old_cred = NULL;
@@ -180,7 +180,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  
  	err = -EINVAL;
  	if (flags & ~(RENAME_EXCHANGE | RENAME_NOREPLACE))
-@@ -789,26 +752,8 @@ static int ovl_rename2(struct inode *old
+@@ -792,26 +755,8 @@ static int ovl_rename2(struct inode *old
  	old_opaque = !OVL_TYPE_PURE_UPPER(old_type);
  	new_opaque = !OVL_TYPE_PURE_UPPER(new_type);
  
@@ -209,7 +209,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  
  	if (overwrite && OVL_TYPE_MERGE_OR_LOWER(new_type) && new_is_dir) {
  		opaquedir = ovl_check_empty_and_clear(new);
-@@ -939,10 +884,8 @@ out_dput_old:
+@@ -942,10 +887,8 @@ out_dput_old:
  out_unlock:
  	unlock_rename(new_upperdir, old_upperdir);
  out_revert_creds:

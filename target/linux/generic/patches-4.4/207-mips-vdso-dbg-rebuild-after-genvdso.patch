@@ -2,7 +2,7 @@
 +++ b/arch/mips/vdso/Makefile
 @@ -77,7 +77,7 @@ $(obj-vdso): KBUILD_AFLAGS := $(aflags-v
  
- $(obj)/vdso.lds: KBUILD_CPPFLAGS := $(native-abi)
+ $(obj)/vdso.lds: KBUILD_CPPFLAGS := $(ccflags-vdso) $(native-abi)
  
 -$(obj)/vdso.so.dbg: $(obj)/vdso.lds $(obj-vdso) FORCE
 +$(obj)/vdso.so.dbg: $(obj)/vdso.lds $(obj-vdso) $(obj)/genvdso FORCE

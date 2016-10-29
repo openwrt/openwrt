@@ -16,7 +16,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/mmc/card/block.c
 +++ b/drivers/mmc/card/block.c
-@@ -2552,6 +2552,13 @@ static const struct mmc_fixup blk_fixups
+@@ -2553,6 +2553,13 @@ static const struct mmc_fixup blk_fixups
  	MMC_FIXUP("V10016", CID_MANFID_KINGSTON, CID_OEMID_ANY, add_quirk_mmc,
  		  MMC_QUIRK_TRIM_BROKEN),
  

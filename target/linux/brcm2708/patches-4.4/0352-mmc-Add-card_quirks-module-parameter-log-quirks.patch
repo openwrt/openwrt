@@ -31,7 +31,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  static inline int mmc_blk_part_switch(struct mmc_card *card,
  				      struct mmc_blk_data *md);
  static int get_card_status(struct mmc_card *card, u32 *status, int retries);
-@@ -2570,6 +2577,7 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2571,6 +2578,7 @@ static int mmc_blk_probe(struct mmc_card
  {
  	struct mmc_blk_data *md, *part_md;
  	char cap_str[10];
@@ -39,7 +39,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  	/*
  	 * Check that the card supports the command class(es) we need.
-@@ -2577,7 +2585,16 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2578,7 +2586,16 @@ static int mmc_blk_probe(struct mmc_card
  	if (!(card->csd.cmdclass & CCC_BLOCK_READ))
  		return -ENODEV;
  
@@ -57,7 +57,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  	md = mmc_blk_alloc(card);
  	if (IS_ERR(md))
-@@ -2585,9 +2602,14 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2586,9 +2603,14 @@ static int mmc_blk_probe(struct mmc_card
  
  	string_get_size((u64)get_capacity(md->disk), 512, STRING_UNITS_2,
  			cap_str, sizeof(cap_str));
