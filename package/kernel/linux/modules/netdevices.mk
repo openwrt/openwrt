@@ -272,6 +272,22 @@ endef
 $(eval $(call KernelPackage,switch-rtl8366s))
 
 
+define KernelPackage/switch-rtl8367b
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Realtek RTL8367R/B switch support
+  DEPENDS:=+kmod-switch-rtl8366-smi
+  KCONFIG:=CONFIG_RTL8367B_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8367b.ko
+  AUTOLOAD:=$(call AutoLoad,43,rtl8367b)
+endef
+
+define KernelPackage/switch-rtl8367b/description
+ Realtek RTL8367R/B switch support
+endef
+
+$(eval $(call KernelPackage,switch-rtl8367b))
+
+
 define KernelPackage/natsemi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=National Semiconductor DP8381x series
