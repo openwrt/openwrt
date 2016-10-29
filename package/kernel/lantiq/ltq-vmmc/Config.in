@@ -24,7 +24,7 @@ choice
 endchoice
 
 choice
-	depends on PACKAGE_kmod-ltq-vmmc
+	depends on (PACKAGE_kmod-ltq-vmmc && VOICE_VMMC_WITH_DEVICE_FALCON)
 	prompt "FXS coefficients"
 	default LTQ_VOICE_CPE_VMMC_COEF_FALCON_ETSI
 	help
