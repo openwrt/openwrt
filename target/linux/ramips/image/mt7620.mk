@@ -37,6 +37,10 @@ define Build/elecom-header
 	$(STAGING_DIR_HOST)/bin/tar -cf $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
+define Build/zyimage
+	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
+endef
+
 define Device/ArcherC20i
   DTS := ArcherC20i
   KERNEL := $(KERNEL_DTB)
@@ -418,3 +422,13 @@ define Device/dch-m225
   DEVICE_PACKAGES := kmod-mt76
 endef
 TARGET_DEVICES += dch-m225
+
+define Device/kng_rc
+  DTS := kng_rc
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := ZyXEL Keenetic Viva
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | zyimage -d 8997 -v "ZyXEL Keenetic Viva"
+endef
+TARGET_DEVICES += kng_rc
