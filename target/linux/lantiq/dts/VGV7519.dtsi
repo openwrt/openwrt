@@ -7,7 +7,7 @@
 	model = "VGV7519 - KPN Experiabox V8";
 
 	chosen {
-		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit mem=62M vpe1_load_addr=0x83e00000 vpe1_mem=2M maxvpes=1 maxtcs=1";
 	};
 
 	aliases {
@@ -18,6 +18,15 @@
 		led-dsl = &broadband_green;
 		led-internet = &internet_green;
 		led-wifi = &wireless_green;
+	};
+
+	sram@1F000000 {
+	        vmmc@107000 {
+	                status = "okay";
+	                gpios = <&gpio 30 GPIO_ACTIVE_HIGH  //fxs relay
+	                         &gpio 31 GPIO_ACTIVE_HIGH  //still unknown
+	                         &gpio 3  GPIO_ACTIVE_HIGH>; //reset_slic?
+	        };
 	};
 
 	memory@0 {
