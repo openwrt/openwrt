@@ -96,7 +96,7 @@ define Device/pbr-m1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := PBR-M1
   DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci \
-	kmod-rtc-pcf8563 kmod-i2c-mt7621
+	kmod-i2c-mt7621
 endef
 TARGET_DEVICES += pbr-m1
 
@@ -119,7 +119,7 @@ define Device/witi
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := MQmaker WiTi
   DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci \
-	kmod-rtc-pcf8563 kmod-i2c-mt7621
+	kmod-i2c-mt7621
 endef
 TARGET_DEVICES += witi
 
