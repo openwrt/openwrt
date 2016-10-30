@@ -386,7 +386,8 @@ platform_check_image() {
 	tl-wr842n-v3|\
 	tl-wr941nd-v5|\
 	tl-wr941nd-v6|\
-	tl-wr941nd)
+	tl-wr941nd|\
+	wpa8630)
 		local magic_ver="0100"
 
 		case "$board" in

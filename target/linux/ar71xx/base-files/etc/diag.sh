@@ -43,7 +43,8 @@ get_status_led() {
 	ap83|\
 	mr12|\
 	mr16|\
-	nbg6616)
+	nbg6616|\
+	wpa8630)
 		status_led="$board:green:power"
 		;;
 	ap96)

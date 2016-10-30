@@ -1129,6 +1129,9 @@ ar71xx_board_detect() {
 	*"WNR1000 V2")
 		name="wnr1000-v2"
 		;;
+	*WPA8630)
+		name="wpa8630"
+		;;
 	*WPN824N)
 		name="wpn824n"
 		;;

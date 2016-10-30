@@ -398,6 +398,10 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch_port_attr "switch0" 2 led 9
 		ucidef_add_switch_port_attr "switch0" 5 led 2
 		;;
+	wpa8630)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "5:lan:4"
+		;;
 	wpj344)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan" "2:wan"
