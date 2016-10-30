@@ -10,9 +10,7 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	linksys,ea8500)
-		platform_do_upgrade_linksys "$ARGV"
-		;;
+	compex,wpq864|\
 	netgear,d7800 |\
 	netgear,r7500 |\
 	netgear,r7500v2 |\
@@ -20,6 +18,9 @@ platform_do_upgrade() {
 	qcom,ipq8064-ap148 |\
 	zyxel,nbg6817)
 		nand_do_upgrade "$ARGV"
+		;;
+	linksys,ea8500)
+		platform_do_upgrade_linksys "$ARGV"
 		;;
 	tplink,c2600)
 		PART_NAME="os-image:rootfs"

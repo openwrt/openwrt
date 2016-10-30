@@ -34,8 +34,8 @@ endef
 
 define Device/UbiFit
 	KERNEL_IN_UBI := 1
-	IMAGES := nand-factory.ubi nand-sysupgrade.bin
-	IMAGE/nand-factory.ubi := append-ubi
+	IMAGES := nand-factory.bin nand-sysupgrade.bin
+	IMAGE/nand-factory.bin := append-ubi
 	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
@@ -72,6 +72,17 @@ define Device/ZyXELImage
 	IMAGE/mmcblk0p5-rootfs.bin := append-rootfs | pad-rootfs | pad-to $$$${BLOCKSIZE}
 	IMAGE/mmcblk0p4-kernel.bin := append-kernel
 endef
+
+define Device/compex_wpq864
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS := qcom-ipq8064-wpq864
+	DEVICE_TITLE := Compex WPQ864
+	DEVICE_PACKAGES := kmod-gpio-beeper
+endef
+TARGET_DEVICES += compex_wpq864
 
 define Device/linksys_ea8500
 	$(call Device/LegacyImage)
