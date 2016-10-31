@@ -16,11 +16,11 @@ boot() {
 }
 
 start() {
-	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -s -f $RTC_DEV
+	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -s -u -f $RTC_DEV
 }
 
 stop() {
-	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -w -f $RTC_DEV && \
+	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -w -u -f $RTC_DEV && \
 		logger -t sysfixtime "saved '$(date)' to $RTC_DEV"
 }
 
