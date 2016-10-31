@@ -12,8 +12,6 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  board/sunxi/Kconfig                | 6 ++++++
  2 files changed, 7 insertions(+)
 
-diff --git a/arch/arm/cpu/armv7/sunxi/usb_phy.c b/arch/arm/cpu/armv7/sunxi/usb_phy.c
-index 6ac96cc..0749fbd 100644
 --- a/arch/arm/cpu/armv7/sunxi/usb_phy.c
 +++ b/arch/arm/cpu/armv7/sunxi/usb_phy.c
 @@ -76,6 +76,7 @@ static int get_vbus_gpio(int index)
@@ -24,11 +22,9 @@ index 6ac96cc..0749fbd 100644
  	}
  	return -EINVAL;
  }
-diff --git a/board/sunxi/Kconfig b/board/sunxi/Kconfig
-index 5e9d3af..5e72fac 100644
 --- a/board/sunxi/Kconfig
 +++ b/board/sunxi/Kconfig
-@@ -342,6 +342,12 @@ config USB2_VBUS_PIN
+@@ -341,6 +341,12 @@ config USB2_VBUS_PIN
  	---help---
  	See USB1_VBUS_PIN help text.
  

@@ -4,11 +4,9 @@ Date: Tue, 16 Jun 2015 10:52:01 +0200
 Subject: sun6i: define alternate-function for UART2 on GPG
 
 
-diff --git a/arch/arm/include/asm/arch-sunxi/gpio.h b/arch/arm/include/asm/arch-sunxi/gpio.h
-index 8e67b3b..1fbf494 100644
 --- a/arch/arm/include/asm/arch-sunxi/gpio.h
 +++ b/arch/arm/include/asm/arch-sunxi/gpio.h
-@@ -177,6 +177,7 @@ enum sunxi_gpio_number {
+@@ -180,6 +180,7 @@ enum sunxi_gpio_number {
  #define SUN6I_GPG_SDC1		2
  #define SUN8I_GPG_SDC1		2
  #define SUN6I_GPG_TWI3		2
@@ -16,6 +14,3 @@ index 8e67b3b..1fbf494 100644
  #define SUN5I_GPG_UART1		4
  
  #define SUN4I_GPH_SDC1		5
--- 
-cgit v0.10.2
-

@@ -1,7 +1,6 @@
-diff -ruN a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
---- a/arch/arm/dts/Makefile	2016-01-12 15:06:54.000000000 +0100
-+++ b/arch/arm/dts/Makefile	2016-01-30 15:31:50.000000000 +0100
-@@ -142,6 +142,7 @@
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -152,6 +152,7 @@ dtb-$(CONFIG_MACH_SUN6I) += \
  	sun6i-a31-m9.dtb \
  	sun6i-a31-mele-a1000g-quad.dtb \
  	sun6i-a31-mixtile-loftq.dtb \
@@ -9,9 +8,8 @@ diff -ruN a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
  	sun6i-a31s-cs908.dtb \
  	sun6i-a31s-primo81.dtb \
  	sun6i-a31s-sinovoip-bpi-m2.dtb
-diff -ruN a/arch/arm/dts/sun6i-a31.dtsi b/arch/arm/dts/sun6i-a31.dtsi
---- a/arch/arm/dts/sun6i-a31.dtsi	2016-01-12 15:06:54.000000000 +0100
-+++ b/arch/arm/dts/sun6i-a31.dtsi	2016-01-31 15:06:47.000000000 +0100
+--- a/arch/arm/dts/sun6i-a31.dtsi
++++ b/arch/arm/dts/sun6i-a31.dtsi
 @@ -643,6 +643,13 @@
  				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
  			};
@@ -26,9 +24,8 @@ diff -ruN a/arch/arm/dts/sun6i-a31.dtsi b/arch/arm/dts/sun6i-a31.dtsi
  			mmc0_pins_a: mmc0@0 {
  				allwinner,pins = "PF0", "PF1", "PF2",
  						 "PF3", "PF4", "PF5";
-diff -ruN a/arch/arm/dts/sun6i-a31-pangolin.dts b/arch/arm/dts/sun6i-a31-pangolin.dts
---- a/arch/arm/dts/sun6i-a31-pangolin.dts	1970-01-01 01:00:00.000000000 +0100
-+++ b/arch/arm/dts/sun6i-a31-pangolin.dts	2016-02-09 01:21:44.965168099 +0100
+--- /dev/null
++++ b/arch/arm/dts/sun6i-a31-pangolin.dts
 @@ -0,0 +1,292 @@
 +/*
 + * Copyright 2015, Theobroma Systems Design und Consulting GmbH
@@ -322,9 +319,8 @@ diff -ruN a/arch/arm/dts/sun6i-a31-pangolin.dts b/arch/arm/dts/sun6i-a31-pangoli
 +	status = "okay";
 +	usb1_vbus-supply = <&reg_usb1_vbus>;
 +};
-diff -ruN a/configs/pangolin_defconfig b/configs/pangolin_defconfig
---- a/configs/pangolin_defconfig	1970-01-01 01:00:00.000000000 +0100
-+++ b/configs/pangolin_defconfig	2016-01-30 14:43:59.000000000 +0100
+--- /dev/null
++++ b/configs/pangolin_defconfig
 @@ -0,0 +1,36 @@
 +CONFIG_SUNXI_PANGOLIN=y
 +CONFIG_SPL=y
@@ -362,8 +358,6 @@ diff -ruN a/configs/pangolin_defconfig b/configs/pangolin_defconfig
 +CONFIG_DM_SPI=y
 +CONFIG_DM_SPI_FLASH=y
 +CONFIG_SUNXI_SPI=y
-diff --git a/board/sunxi/Kconfig b/board/sunxi/Kconfig
-index e155c4c..1b147b2 100644
 --- a/board/sunxi/Kconfig
 +++ b/board/sunxi/Kconfig
 @@ -15,7 +15,6 @@ config SUNXI_GEN_SUN6I
@@ -374,9 +368,9 @@ index e155c4c..1b147b2 100644
  choice
  	prompt "Sunxi SoC Variant"
  	optional
-@@ -80,6 +79,14 @@ config MACH_SUN8I
- 	bool
- 	default y if MACH_SUN8I_A23 || MACH_SUN8I_A33
+@@ -533,6 +532,14 @@ config VIDEO_LCD_PANEL_I2C_SCL
+ 	Set the SCL pin for the LCD i2c interface. This takes a string in the
+ 	format understood by sunxi_name_to_gpio, e.g. PH1 for pin 1 of port H.
  
 +choice
 +	prompt "Sunxi Board Variant"
@@ -387,8 +381,5 @@ index e155c4c..1b147b2 100644
 +
 +endchoice
  
- config DRAM_CLK
- 	int "sunxi dram clock speed"
--- 
-cgit v0.10.2
-
+ # Note only one of these may be selected at a time! But hidden choices are
+ # not supported by Kconfig

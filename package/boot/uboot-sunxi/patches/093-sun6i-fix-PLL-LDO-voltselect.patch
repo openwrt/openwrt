@@ -16,8 +16,6 @@ order of magnitude as Boot1.
 Furthermore, a bit of documentation is added to clarify that the
 required setting for the PLL LDO is 1.37v as per the A31 manual.
 
-diff --git a/arch/arm/cpu/armv7/sunxi/clock_sun6i.c b/arch/arm/cpu/armv7/sunxi/clock_sun6i.c
-index fa7ebd8..3a6e56e 100644
 --- a/arch/arm/cpu/armv7/sunxi/clock_sun6i.c
 +++ b/arch/arm/cpu/armv7/sunxi/clock_sun6i.c
 @@ -24,14 +24,27 @@ void clock_init_safe(void)
@@ -49,9 +47,7 @@ index fa7ebd8..3a6e56e 100644
 +
  	clock_set_pll1(408000000);
  
- 	writel(AHB1_ABP1_DIV_DEFAULT, &ccm->ahb1_apb1_div);
-diff --git a/arch/arm/include/asm/arch-sunxi/prcm.h b/arch/arm/include/asm/arch-sunxi/prcm.h
-index 82ed541..41a62a4 100644
+ 	writel(PLL6_CFG_DEFAULT, &ccm->pll6_cfg);
 --- a/arch/arm/include/asm/arch-sunxi/prcm.h
 +++ b/arch/arm/include/asm/arch-sunxi/prcm.h
 @@ -111,13 +111,13 @@
@@ -72,6 +68,3 @@ index 82ed541..41a62a4 100644
  	__PRCM_PLL_CTRL_VDD_LDO_OUT((((n) & 0x7) * 30) + 1160)
  #define PRCM_PLL_CTRL_LDO_KEY (0xa7 << 24)
  #define PRCM_PLL_CTRL_LDO_KEY_MASK (0xff << 24)
--- 
-cgit v0.10.2
-
