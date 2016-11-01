@@ -86,7 +86,7 @@ TARGET_DEVICES += firewrt
 
 define Device/newifi-d1
   DTS := Newifi-D1
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := Newifi D1
   DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621
 endef
