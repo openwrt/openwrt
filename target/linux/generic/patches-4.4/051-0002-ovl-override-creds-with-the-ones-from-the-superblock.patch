@@ -105,7 +105,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
 -out_free_link:
  	if (link)
  		free_page((unsigned long) link);
-
+ 
 --- a/fs/overlayfs/dir.c
 +++ b/fs/overlayfs/dir.c
 @@ -408,28 +408,13 @@ static int ovl_create_or_link(struct den

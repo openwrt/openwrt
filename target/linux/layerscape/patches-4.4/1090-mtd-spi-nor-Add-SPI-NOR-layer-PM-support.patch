@@ -24,7 +24,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -1139,6 +1139,26 @@ static int spi_nor_check(struct spi_nor
+@@ -1140,6 +1140,26 @@ static int spi_nor_check(struct spi_nor
  	return 0;
  }
  
@@ -51,7 +51,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
  int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
  {
  	const struct flash_info *info = NULL;
-@@ -1186,18 +1206,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1187,18 +1207,9 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	mutex_init(&nor->lock);
  
@@ -73,7 +73,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
  
  	if (!mtd->name)
  		mtd->name = dev_name(dev);
-@@ -1363,6 +1374,45 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1364,6 +1375,45 @@ int spi_nor_scan(struct spi_nor *nor, co
  }
  EXPORT_SYMBOL_GPL(spi_nor_scan);
  
