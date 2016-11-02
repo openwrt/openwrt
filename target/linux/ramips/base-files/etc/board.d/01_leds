@@ -54,7 +54,7 @@ wf-2881)
 	set_usb_led "$board:green:usb"
 	;;
 all0256n)
-	ucidef_set_rssimon "wlan0" "40000" "1"
+	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "$board:green:rssilow" "wlan0" "1" "40" "0" "6"
 	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "$board:green:rssimed" "wlan0" "30" "80" "-29" "5"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$board:green:rssihigh" "wlan0" "70" "100" "-69" "8"
@@ -313,7 +313,7 @@ whr-600d)
 	ucidef_set_led_default "router" "router" "$board:green:router" "1"
 	;;
 wl-wn575a3)
-	ucidef_set_rssimon "wlan1" "40000" "1"
+	ucidef_set_rssimon "wlan1" "200000" "1"
 	ucidef_set_led_rssi "wifi-low" "wifi-low" "$board:green:wifi-low" "wlan1" "1" "49" "0" "1"
 	ucidef_set_led_rssi "wifi-med" "wifi-med" "$board:green:wifi-med" "wlan1" "50" "84" "0" "1"
 	ucidef_set_led_rssi "wifi-high" "wifi-high" "$board:green:wifi-high" "wlan1" "85" "100" "0" "1"
