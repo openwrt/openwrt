@@ -31,6 +31,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/uboot-envtools
   SECTION:=utils
   CATEGORY:=Utilities
+  SUBMENU:=Boot Loaders
   TITLE:=read/modify U-Boot bootloader environment
   URL:=http://www.denx.de/wiki/U-Boot
 endef
