@@ -7,18 +7,19 @@
 #include <dt-bindings/soc/qcom,gsbi.h>
 #include <dt-bindings/reset/qcom,gcc-ipq806x.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
 	model = "Qualcomm IPQ8065";
-	compatible = "qcom,ipq8065";
+	compatible = "qcom,ipq8065", "qcom,ipq8064";
 	interrupt-parent = <&intc>;
 
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "qcom,krait";
 			enable-method = "qcom,kpss-acc-v1";
 			device_type = "cpu";
@@ -26,82 +27,18 @@
 			next-level-cache = <&L2>;
 			qcom,acc = <&acc0>;
 			qcom,saw = <&saw0>;
-			clocks = <&kraitcc 0>;
-			clock-names = "cpu";
+			clocks = <&kraitcc 0>, <&kraitcc 4>;
+			clock-names = "cpu", "l2";
 			qcom,imem = <&imem>;
 			clock-latency = <100000>;
-			core-supply = <&smb208_s2a>;
+			cpu-supply = <&smb208_s2a>;
 			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
 			cooling-max-state = <10>;
 			#cooling-cells = <2>;
-
-			operating-points-0-0 = <
-				/* kHz      uV */
-				1725000 1262500
-				1400000 1175000
-				1000000 1100000
-				 800000 1050000
-				 600000 1000000
- 				 384000 975000
- 			>;
-			operating-points-0-1 = <
-				/* kHz      uV */
-				1725000 1262500
-				1400000 1175000
-				1000000 1100000
-				 800000 1050000
-				 600000 1000000
- 				 384000 950000
-			>;
-			operating-points-0-2 = <
-				/* kHz      uV */
-				1725000 1200000
-				1400000 1125000
-				1000000 1050000
-				 800000 1000000
-				 600000 950000
- 				 384000 925000
-			>;
-			operating-points-0-3 = <
-				/* kHz      uV */
-				1725000 1175000
-				1400000 1100000
-				1000000 1025000
-				 800000 975000
-				 600000 925000
- 				 384000 900000
-			>;
-			operating-points-0-4 = <
-				/* kHz      uV */
-				1725000 1150000
-				1400000 1075000
-				1000000 1000000
-				 800000 950000
-				 600000 900000
- 				 384000 875000
-			>;
-			operating-points-0-5 = <
-				/* kHz      uV */
-				1725000 1100000
-				1400000 1025000
-				1000000 950000
-				 800000 900000
-				 600000 850000
- 				 384000 825000
-			>;
-			operating-points-0-6 = <
-				/* kHz      uV */
-				1725000 1050000
-				1400000 975000
-				1000000 900000
-				 800000 850000
-				 600000 800000
- 				 384000 775000
-			>;
 		};
 
-		cpu@1 {
+		cpu1: cpu@1 {
 			compatible = "qcom,krait";
 			enable-method = "qcom,kpss-acc-v1";
 			device_type = "cpu";
@@ -109,92 +46,24 @@
 			next-level-cache = <&L2>;
 			qcom,acc = <&acc1>;
 			qcom,saw = <&saw1>;
-			clocks = <&kraitcc 1>;
-			clock-names = "cpu";
+			clocks = <&kraitcc 1>, <&kraitcc 4>;
+			clock-names = "cpu", "l2";
 			qcom,imem = <&imem>;
 			clock-latency = <100000>;
-			core-supply = <&smb208_s2b>;
+			cpu-supply = <&smb208_s2b>;
 			cooling-min-state = <0>;
 			cooling-max-state = <10>;
 			#cooling-cells = <2>;
-
-			operating-points-0-0 = <
-				/* kHz      uV */
-				1725000 1262500
-				1400000 1175000
-				1000000 1100000
-				 800000 1050000
-				 600000 1000000
- 				 384000 975000
- 			>;
-			operating-points-0-1 = <
-				/* kHz      uV */
-				1725000 1262500
-				1400000 1175000
-				1000000 1100000
-				 800000 1050000
-				 600000 1000000
- 				 384000 950000
-			>;
-			operating-points-0-2 = <
-				/* kHz      uV */
-				1725000 1200000
-				1400000 1125000
-				1000000 1050000
-				 800000 1000000
-				 600000 950000
- 				 384000 925000
-			>;
-			operating-points-0-3 = <
-				/* kHz      uV */
-				1725000 1175000
-				1400000 1100000
-				1000000 1025000
-				 800000 975000
-				 600000 925000
- 				 384000 900000
-			>;
-			operating-points-0-4 = <
-				/* kHz      uV */
-				1725000 1150000
-				1400000 1075000
-				1000000 1000000
-				 800000 950000
-				 600000 900000
- 				 384000 875000
-			>;
-			operating-points-0-5 = <
-				/* kHz      uV */
-				1725000 1100000
-				1400000 1025000
-				1000000 950000
-				 800000 900000
-				 600000 850000
- 				 384000 825000
-			>;
-			operating-points-0-6 = <
-				/* kHz      uV */
-				1725000 1050000
-				1400000 975000
-				1000000 900000
-				 800000 850000
-				 600000 800000
- 				 384000 775000
-			>;
 		};
 
 		L2: l2-cache {
 			compatible = "cache";
 			cache-level = <2>;
-			clocks = <&kraitcc 4>;
-			clock-names = "cache";
-			cache-points-kHz = <
-				/* kHz    uV    CPU kHz */
-				1200000 1150000 1200000
-				1000000 1100000  600000
-				 384000 1100000  384000
-			>;
-			vdd_dig-supply = <&smb208_s1a>;
+			qcom,saw = <&saw_l2>;
+		};
+
+		qcom,l2 {
+			qcom,l2-rates = <384000000 1000000000 1200000000>;
 		};
 	};
 
@@ -357,48 +226,6 @@
 					qcom,switch-mode-frequency = <1200000>;
 				};
 			};
-
-			rpm_clocks {
-				#clock-cells = <0>;
-				compatible = "qcom,rpm-clk";
-				qcom,rpm-clk-active-only;
-
-				cxo_clk: cxo {
-					reg = <QCOM_RPM_CXO_CLK>;
-					qcom,rpm-clk-name = "cxo";
-					qcom,rpm-clk-freq = <25000000>;
-				};
-
-				pxo_clk: pxo {
-					reg = <QCOM_RPM_PXO_CLK>;
-					qcom,rpm-clk-name = "pxo";
-					qcom,rpm-clk-freq = <25000000>;
-				};
-
-				ebi1_clk: ebi1 {
-					reg = <QCOM_RPM_EBI1_CLK>;
-					qcom,rpm-clk-name = "ebi1";
-					qcom,rpm-clk-freq = <533000000>;
-				};
-
-				apps_fabric_clk: apps-fabric {
-					reg = <QCOM_RPM_APPS_FABRIC_CLK>;
-					qcom,rpm-clk-name = "apps-fabric";
-					qcom,rpm-clk-freq = <533000000>;
-				};
-
-				nss_fabric0_clk: nss-fabric0 {
-					reg = <QCOM_RPM_NSS_FABRIC_0_CLK>;
-					qcom,rpm-clk-name = "nss-fabric0";
-					qcom,rpm-clk-freq = <533000000>;
-				};
-
-				nss_fabric1_clk: nss-fabric1 {
-					reg = <QCOM_RPM_NSS_FABRIC_1_CLK>;
-					qcom,rpm-clk-name = "nss-fabric1";
-					qcom,rpm-clk-freq = <266000000>;
-				};
-			};
 		};
 
 		rng@1a500000 {
@@ -511,15 +338,26 @@
  		};
 
 		saw0: regulator@2089000 {
-			compatible = "qcom,saw2";
+			compatible = "qcom,saw2", "syscon";
 			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;
 			regulator;
 		};
 
 		saw1: regulator@2099000 {
-			compatible = "qcom,saw2";
+			compatible = "qcom,saw2", "syscon";
 			reg = <0x02099000 0x1000>, <0x02009000 0x1000>;
 			regulator;
+		};
+
+		saw_l2: regulator@02012000 {
+			compatible = "qcom,saw2", "syscon";
+			reg = <0x02012000 0x1000>;
+			regulator;
+		};
+ 
+		sic_non_secure: sic-non-secure@12100000 {
+			compatible = "syscon";
+			reg = <0x12100000 0x10000>;
 		};
 
 		gsbi1: gsbi@12440000 {
@@ -817,6 +655,7 @@
 			reg = <0x00900000 0x4000>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
+			#power-domain-cells = <1>;
 		};
 
 		lcc: clock-controller@28000000 {
@@ -1103,7 +942,7 @@
 		adm_dma: dma@18300000 {
 			compatible = "qcom,adm";
 			reg = <0x18300000 0x100000>;
-			interrupts = <0 170 0>;
+			interrupts = <GIC_SPI 170 IRQ_TYPE_NONE>;
 			#dma-cells = <1>;
 
 			clocks = <&gcc ADM0_CLK>, <&gcc ADM0_PBUS_CLK>;
@@ -1221,6 +1060,7 @@
 
 			status = "disabled";
 		};
+
 		/* Temporary fixed regulator */
 		vsdcc_fixed: vsdcc-regulator {
 			compatible = "regulator-fixed";
@@ -1294,7 +1134,6 @@
 				#dma-names = "tx", "rx";
 			};
 		};
-
 	};
 
 	sfpb_mutex: sfpb-mutex {
