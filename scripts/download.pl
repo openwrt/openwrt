@@ -77,8 +77,9 @@ my $hash_cmd = hash_cmd();
 sub download
 {
 	my $mirror = shift;
-	my $options = $ENV{WGET_OPTIONS} || "";
-
+	my $wget_options = $ENV{WGET_OPTIONS} || "";
+	my $curl_options = $ENV{CURL_OPTIONS} || "";
+	
 	$mirror =~ s!/$!!;
 
 	if ($mirror =~ s!^file://!!) {
@@ -124,7 +125,7 @@ sub download
 			}
 		};
 	} else {
-		open WGET, "wget -t5 --timeout=20 --no-check-certificate $options -O- '$mirror/$url_filename' |" or die "Cannot launch wget.\n";
+		open WGET, "which curl >/dev/null 2>&1 && curl -L -k $curl_options '$mirror/$filename' || wget -t5 --timeout=20 --no-check-certificate $wget_options -O- '$mirror/$filename' |" or die "Cannot launch curl or wget.\n";
 		$hash_cmd and do {
 			open MD5SUM, "| $hash_cmd > '$target/$filename.hash'" or die "Cannot launch $hash_cmd.\n";
 		};
