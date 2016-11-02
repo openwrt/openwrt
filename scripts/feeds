@@ -333,7 +333,7 @@ sub list {
 			my $localpath = "./feeds/$feed->[1]";
 			my $m = $update_method{$feed->[0]};
 			my $revision;
-			if( !$m->{'revision'} ) {
+			if (!-d "$localpath" || !$m->{'revision'}) {
 				$revision = "X";
 			}
 			elsif( $m->{'controldir'} && -d "$localpath/$m->{'controldir'}" ) {
