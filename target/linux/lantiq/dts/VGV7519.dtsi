@@ -2,7 +2,7 @@
 
 / {
 
-    model = "VGV7519 - KPN Experiabox V8";
+	model = "VGV7519 - KPN Experiabox V8";
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
@@ -104,13 +104,7 @@
 
 		pci@E105400 {
 			status = "okay";
-			lantiq,bus-clock = <33333333>;
-			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
-			interrupt-map = <
-				0x7000 0 0 1 &icu0 30 1 // slot 14, irq 30
-				>;
 			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-			req-mask = <0x1>;	/* GNT1 */
 		};
 
 		pcie@d900000 {

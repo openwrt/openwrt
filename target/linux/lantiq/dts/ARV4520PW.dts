@@ -118,7 +118,7 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-                        gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
 		};
 
 		pci@E105400 {
@@ -126,7 +126,6 @@
 			lantiq,external-clock;
 			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
-
 	};
 
 // gpiomm 10 - switch

@@ -67,9 +67,6 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
 
-			interrupt-parent = <&icu0>;
-			interrupts = <166 135 66 40 41 42 38>;
-
 			state_default: pinmux {
 				mdio {
 					lantiq,groups = "mdio";
@@ -115,9 +112,6 @@
 
 		pci@E105400 {
 			status = "okay";
-			lantiq,bus-clock = <33333333>;
-			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
-			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
 			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 	};

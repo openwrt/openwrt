@@ -96,7 +96,6 @@
 
 		etop@E180000 {
 			phy-mode = "mii";
-			mac-address = [ 00 11 22 33 44 55 ];
 		};
 
 		ifxhcd@E101000 {
@@ -106,11 +105,7 @@
 		pci@E105400 {
 			status = "okay";
 			req-mask = <0xf>;
-			lantiq,bus-clock = <33333333>;
-			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
-			interrupt-map = <0x7000 0 0 1 &icu0 30 1>;
 			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-			req-mask = <0xf>; /* GNT1 */
 		};
 	};
 

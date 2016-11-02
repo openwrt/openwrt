@@ -116,7 +116,7 @@
 			compatible = "lantiq,gptu-xway";
 			reg = <0xE100A00 0x100>;
 			interrupt-parent = <&icu0>;
-                        interrupts = <126 127 128 129 130 131>;
+			interrupts = <126 127 128 129 130 131>;
 		};
 
 		asc0: serial@E100400 {
@@ -219,6 +219,8 @@
 		};
 
 		pci0: pci@E105400 {
+			status = "disabled";
+
 			#address-cells = <3>;
 			#size-cells = <2>;
 			#interrupt-cells = <1>;
@@ -228,7 +230,10 @@
 				0x1000000 0 0x00000000 0xAE00000 0 0x200000>; /* io space */
 			reg = <0x7000000 0x8000         /* config space */
 				0xE105400 0x400>;       /* pci bridge */
-			status = "disabled";
+			lantiq,bus-clock = <33333333>;
+			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
+			interrupt-map = <0x7000 0 0 1 &icu0 30 1>; /* slot 14, irq 30 */
+			req-mask = <0x1>; /* GNT1 */
 		};
 	};
 

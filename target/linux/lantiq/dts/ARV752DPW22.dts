@@ -139,15 +139,14 @@
 			status = "okay";
 			lantiq,external-clock;
 			interrupt-map = <
-                                0x7000 0 0 1 &icu0 30
-		                0x7800 0 0 1 &icu0 135
-			        0x7800 0 0 2 &icu0 135
-			        0x7800 0 0 3 &icu0 135
+				0x7000 0 0 1 &icu0 30
+				0x7800 0 0 1 &icu0 135
+				0x7800 0 0 2 &icu0 135
+				0x7800 0 0 3 &icu0 135
 			>;
 			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			req-mask = <0x3>;
 		};
-
 	};
 
 	ralink_eep {

@@ -30,15 +30,7 @@
 	};
 
 	fpi@10000000 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		localbus@0 {
-			#address-cells = <2>;
-			#size-cells = <1>;
-			ranges = <0 0 0x0 0x3ffffff /* addrsel0 */
-				1 0 0x4000000 0x4000010>; /* addsel1 */
-			compatible = "lantiq,localbus", "simple-bus";
-
 			nand-parts@0 {		  /* NAND Flash: Samsung K9F5608U0D-JIB0 32MB */
 				compatible = "gen_nand", "lantiq,nand-xway";
 				lantiq,cs = <1>;
@@ -91,13 +83,8 @@
 		};
 
 		gpio: pinmux@E100B10 {
-			compatible = "lantiq,pinctrl-xr9";
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
-
-			#gpio-cells = <2>;
-			gpio-controller;
-			reg = <0xE100B10 0xA0>;
 
 			state_default: pinmux {
 				nand_out {
@@ -150,7 +137,6 @@
 			status = "okay";
 			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
-
 	};
 
 	gpio-keys-polled {
@@ -219,4 +205,3 @@
 		};
 	};
 };
-

@@ -12,15 +12,7 @@
 	};
 
 	fpi@10000000 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		localbus@0 {
-			#address-cells = <2>;
-			#size-cells = <1>;
-			ranges = <0 0 0x0 0x3ffffff /* addrsel0 */
-				1 0 0x4000000 0x4000010>; /* addsel1 */
-			compatible = "lantiq,localbus", "simple-bus";
-
 			nor-boot@0 {
 				compatible = "lantiq,nor";
 				bank-width = <2>;
@@ -57,13 +49,8 @@
 		};
 
 		gpio: pinmux@E100B10 {
-			compatible = "lantiq,pinctrl-xway";
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
-
-			#gpio-cells = <2>;
-			gpio-controller;
-			reg = <0xE100B10 0xA0>;
 
 			state_default: pinmux {
 				stp {
@@ -87,33 +74,7 @@
 		};
 
 		etop@E180000 {
-			compatible = "lantiq,etop-xway";
-			reg = <0xE180000 0x40000>;
-			interrupt-parent = <&icu0>;
-			interrupts = <73 78>;
 			phy-mode = "rmii";
-			mac-address = [ 00 11 22 33 44 55 ];
 		};
-
-		stp0: stp@E100BB0 {
-			#gpio-cells = <2>;
-			compatible = "lantiq,gpio-stp-xway";
-			gpio-controller;
-			reg = <0xE100BB0 0x40>;
-
-			lantiq,shadow = <0xfff>;
-			lantiq,groups = <0x3>;
-		};
-
-		pci@E105400 {
-			lantiq,bus-clock = <33333333>;
-			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
-			interrupt-map = <
-                                0x7000 0 0 1 &icu0 29 1 // slot 14, irq 29
-			>;
-			gpios-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-			req-mask = <0x1>;		/* GNT1 */
-		};
-
 	};
 };
