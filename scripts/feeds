@@ -354,7 +354,7 @@ sub list {
 				printf "%s %s %s\n", $feed->[0], $feed->[1], $uri;
 			}
 			else {
-				printf "\%-8s \%-8s \%-8s \%s\n", $feed->[1], $feed->[0], $revision, join(", ", @{$feed->[2]});
+				printf "\%-10s \%-8s \%-8s \%s\n", $feed->[1], $feed->[0], $revision, join(", ", @{$feed->[2]});
 			}
 		}
 		return 0;
