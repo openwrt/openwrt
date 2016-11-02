@@ -176,8 +176,21 @@ sub mconf_depends {
 		next if $package{$depend} and $package{$depend}->{buildonly};
 		if ($flags =~ /\+/) {
 			if ($vdep = $package{$depend}->{vdepends}) {
-				my @vdeps = @$vdep;
-				$depend = shift @vdeps;
+				my @vdeps;
+				$depend = undef;
+
+				foreach my $v (@$vdep) {
+					if ($package{$v} && $package{$v}->{variant_default}) {
+						$depend = $v;
+					} else {
+						push @vdeps, $v;
+					}
+				}
+
+				if (!$depend) {
+					$depend = shift @vdeps;
+				}
+
 				if (@vdeps > 1) {
 					$condition = ($condition ? "$condition && " : '') . '!('.join("||", map { "PACKAGE_".$_ } @vdeps).')';
 				} elsif (@vdeps > 0) {
