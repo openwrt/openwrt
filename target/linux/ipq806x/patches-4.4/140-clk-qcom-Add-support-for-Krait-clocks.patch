@@ -50,7 +50,7 @@ drivers/clk/qcom/Kconfig     |   4 ++
  clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o
 --- /dev/null
 +++ b/drivers/clk/qcom/clk-krait.c
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,167 @@
 +/*
 + * Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
 + *
@@ -128,18 +128,19 @@ drivers/clk/qcom/Kconfig     |   4 ++
 +	return clk_mux_get_parent(hw, sel, mux->parent_map, 0);
 +}
 +
-+static struct clk_hw *krait_mux_get_safe_parent(struct clk_hw *hw)
++static struct clk_hw *krait_mux_get_safe_parent(struct clk_hw *hw,
++						unsigned long *safe_freq)
 +{
 +	int i;
 +	struct krait_mux_clk *mux = to_krait_mux_clk(hw);
-+	int num_parents = clk_hw_get_num_parents(hw->clk);
++	int num_parents = clk_hw_get_num_parents(hw);
 +
 +	i = mux->safe_sel;
 +	for (i = 0; i < num_parents; i++)
 +		if (mux->safe_sel == mux->parent_map[i])
 +			break;
 +
-+	return __clk_get_hw(clk_hw_get_parent_by_index(hw->clk, i));
++	return clk_hw_get_parent_by_index(hw, i);
 +}
 +
 +static int krait_mux_enable(struct clk_hw *hw)
@@ -172,7 +173,7 @@ drivers/clk/qcom/Kconfig     |   4 ++
 +static long krait_div2_round_rate(struct clk_hw *hw, unsigned long rate,
 +				  unsigned long *parent_rate)
 +{
-+	*parent_rate = clk_hw_round_rate(clk_hw_get_parent(hw->clk), rate * 2);
++	*parent_rate = clk_hw_round_rate(clk_hw_get_parent(hw), rate * 2);
 +	return DIV_ROUND_UP(*parent_rate, 2);
 +}
 +
