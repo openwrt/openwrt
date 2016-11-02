@@ -203,6 +203,15 @@ Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
  	/* We store the key here so there's no point in using rcu_dereference()
  	 * but that's fine because the code that changes the pointers will call
  	 * this function after doing so. For a single CPU that would be enough,
+@@ -3436,7 +3445,7 @@ begin:
+ 
+ 		if (tx.key &&
+ 		    (tx.key->conf.flags & IEEE80211_KEY_FLAG_GENERATE_IV))
+-			pn_offs = ieee80211_hdrlen(hdr->frame_control);
++			pn_offs = tx.hdrlen;
+ 
+ 		ieee80211_xmit_fast_finish(sta->sdata, sta, pn_offs,
+ 					   tx.key, skb);
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
 @@ -1225,6 +1225,7 @@ void ieee80211_send_auth(struct ieee8021
