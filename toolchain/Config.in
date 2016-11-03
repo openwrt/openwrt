@@ -96,17 +96,6 @@ menuconfig EXTERNAL_TOOLCHAIN
 		default "/opt/cross/powerpc-unknown-linux-gnu"  if powerpc
 		default "/opt/cross/x86_64-unknown-linux-gnu"   if x86_64
 
-	config TOOLCHAIN_LIBC
-		string
-		prompt "Toolchain libc"  if DEVEL
-		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
-		default "uclibc"
-		help
-		  Specify the libc type used by the external toolchain. The given value
-		  is passed as -m flag to all gcc and g++ invocations. This is mainly
-		  intended for multilib toolchains which support glibc and uclibc at
-		  the same time. If no value is specified, no -m flag is passed.
-
 	config TOOLCHAIN_BIN_PATH
 		string
 		prompt "Toolchain program path"  if DEVEL
@@ -133,6 +122,31 @@ menuconfig EXTERNAL_TOOLCHAIN
 		help
 		  Specify additional directories searched for libraries (override LDFLAGS).
 		  Use ./DIR for directories relative to the root above.
+
+	choice
+		prompt "C Library implementation" if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default EXTERNAL_LIBC_USE_UCLIBC if arc
+		default EXTERNAL_LIBC_USE_MUSL
+		help
+		  Select the C library implementation.
+
+		config EXTERNAL_LIBC_USE_GLIBC
+			bool "(e)glibc"
+			select USE_GLIBC
+			depends on !arc
+
+		config EXTERNAL_LIBC_USE_UCLIBC
+			select USE_UCLIBC
+			bool "uClibc"
+			depends on !(aarch64 || aarch64_be)
+			depends on BROKEN || !(arm || armeb || i386 || x86_64 || mips || mipsel || mips64 || mips64el || powerpc)
+
+		config EXTERNAL_LIBC_USE_MUSL
+			select USE_MUSL
+			bool "musl"
+			depends on !(arc)
+	endchoice
 
 config NEED_TOOLCHAIN
 	bool
@@ -270,6 +284,19 @@ config USE_MUSL
 config USE_EXTERNAL_LIBC
 	bool
 	default y if EXTERNAL_TOOLCHAIN || NATIVE_TOOLCHAIN
+
+config TOOLCHAIN_LIBC
+	string
+	depends on USE_EXTERNAL_LIBC
+	default "glibc"   if EXTERNAL_LIBC_USE_GLIBC
+	default "uclibc"  if EXTERNAL_LIBC_USE_UCLIBC
+	default "musl"	  if EXTERNAL_LIBC_USE_MUSL
+	help
+	  Specify the libc type used by the external toolchain. The given value
+	  is passed as -m flag to all gcc and g++ invocations. This is mainly
+	  intended for multilib toolchains which support glibc and uclibc at
+	  the same time.
+
 
 source "toolchain/binutils/Config.version"
 source "toolchain/gcc/Config.version"
