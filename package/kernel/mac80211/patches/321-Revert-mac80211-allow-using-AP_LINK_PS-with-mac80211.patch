@@ -1,9 +1,10 @@
 From: Felix Fietkau <nbd@nbd.name>
-Date: Thu, 3 Nov 2016 10:47:21 +0100
-Subject: [PATCH] mac80211: fix broken AP mode handling of powersave clients
+Date: Thu, 3 Nov 2016 12:10:34 +0100
+Subject: [PATCH] Revert "mac80211: allow using AP_LINK_PS with
+ mac80211-generated TIM IE"
 
-Commit c68df2e7be0c ("mac80211: allow using AP_LINK_PS with
-mac80211-generated TIM IE") introduced a logic error, where
+This reverts commit c68df2e7be0c1238ea3c281fd744a204ef3b15a0.
+
 __sta_info_recalc_tim turns into a no-op if local->ops->set_tim is not
 set. This prevents the beacon TIM bit from being set for all drivers
 that do not implement this op (almost all of them), thus thoroughly
@@ -21,7 +22,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* No need to do anything if the driver does all */
 -	if (!local->ops->set_tim)
-+	if (local->ops->set_tim)
++	if (ieee80211_hw_check(&local->hw, AP_LINK_PS))
  		return;
  
  	if (sta->dead)
