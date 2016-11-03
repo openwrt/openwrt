@@ -85,6 +85,8 @@ else ifneq (,$(findstring $(ARCH) , armeb ))
   LINUX_KARCH := arm
 else ifneq (,$(findstring $(ARCH) , mipsel mips64 mips64el ))
   LINUX_KARCH := mips
+else ifneq (,$(findstring $(ARCH) , powerpc64 ))
+  LINUX_KARCH := powerpc
 else ifneq (,$(findstring $(ARCH) , sh2 sh3 sh4 ))
   LINUX_KARCH := sh
 else ifneq (,$(findstring $(ARCH) , i386 x86_64 ))
