@@ -101,6 +101,19 @@
 	};
 
 	clocks {
+
+		cxo_board {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <25000000>;
+		};
+
+		pxo_board {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <25000000>;
+		};
+
 		sleep_clk: sleep_clk {
 			compatible = "fixed-clock";
 			clock-frequency = <32768>;
@@ -210,6 +223,11 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			rpmcc: clock-controller {
+				compatible	= "qcom,rpmcc-ipq806x", "qcom,rpmcc";
+				#clock-cells = <1>;
+			};
 
 			smb208_regulators {
 				compatible = "qcom,rpm-smb208-regulators";
