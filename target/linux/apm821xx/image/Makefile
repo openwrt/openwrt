@@ -80,6 +80,7 @@ define Device/mr24
 		      MerakiAdd-dtb | pad-to 2047k | MerakiAdd-initramfs | \
 		      MerakiNAND
   IMAGE/sysupgrade.tar := sysupgrade-tar
+  UBINIZE_OPTS := -E 5
 endef
 TARGET_DEVICES += mr24
 
@@ -162,6 +163,7 @@ define Device/WNDR4700
   IMAGE/sysupgrade.tar := sysupgrade-tar
   NETGEAR_BOARD_ID := WNDR4700
   NETGEAR_HW_ID := 29763875+128+256
+  UBINIZE_OPTS := -E 5
 endef
 TARGET_DEVICES += WNDR4700
 
