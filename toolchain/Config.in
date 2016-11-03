@@ -168,7 +168,6 @@ menuconfig EXTRA_TARGET_ARCH
 	bool
 	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
 	depends on !sparc
-	default y	if powerpc64
 	default n
 	help
 	  Some builds may require a 'biarch' toolchain. This option
@@ -178,7 +177,6 @@ menuconfig EXTRA_TARGET_ARCH
 
 	config EXTRA_TARGET_ARCH_NAME
 		string
-		default "powerpc64"	if powerpc64
 		prompt "Extra architecture name" if EXTRA_TARGET_ARCH
 		help
 		  Specify the cpu name (eg powerpc64 or x86_64) of the
@@ -186,7 +184,6 @@ menuconfig EXTRA_TARGET_ARCH
 
 	config EXTRA_TARGET_ARCH_OPTS
 		string
-		default "-m64"		if powerpc64
 		prompt "Extra architecture compiler options" if EXTRA_TARGET_ARCH
 		help
 		  If you're specifying an addition target architecture,
