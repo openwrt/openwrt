@@ -193,6 +193,7 @@ platform_check_image() {
 		;;
 	cy-swr1100|\
 	dir-610-a1|\
+	dir-600-b5
 	dir-645|\
 	dir-860l-b1)
 		[ "$magic" != "5ea3a417" ] && {
