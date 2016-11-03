@@ -660,6 +660,12 @@ dnsmasq_start()
 		append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
 	}
 
+	config_get addmac "$cfg" addmac 0
+	[ "$addmac" != "0" ] && {
+		[ "$addmac" = "1" ] && addmac=
+		xappend "--add-mac${addmac:+="$addmac"}"
+	}
+
 	dhcp_option_add "$cfg" "" 0
 
 	xappend "--dhcp-broadcast=tag:needs-broadcast"
