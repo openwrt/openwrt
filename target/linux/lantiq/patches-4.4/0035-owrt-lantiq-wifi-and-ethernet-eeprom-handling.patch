@@ -5,19 +5,18 @@ Subject: [PATCH 35/36] owrt: lantiq: wifi and ethernet eeprom handling
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
- arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h  |    6 +
- .../mips/include/asm/mach-lantiq/xway/lantiq_soc.h |    3 +
- arch/mips/lantiq/xway/Makefile                     |    3 +
- arch/mips/lantiq/xway/ath_eep.c                    |  282 ++++++++++++++++++++
- arch/mips/lantiq/xway/eth_mac.c                    |   76 ++++++
- arch/mips/lantiq/xway/pci-ath-fixup.c              |  109 ++++++++
- arch/mips/lantiq/xway/rt_eep.c                     |   60 +++++
- 7 files changed, 539 insertions(+)
+ arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h  |   6 +
+ .../mips/include/asm/mach-lantiq/xway/lantiq_soc.h |   3 +
+ arch/mips/lantiq/xway/Makefile                     |   3 +
+ arch/mips/lantiq/xway/ath_eep.c                    | 299 +++++++++++++++++++++
+ arch/mips/lantiq/xway/eth_mac.c                    |  25 ++
+ arch/mips/lantiq/xway/pci-ath-fixup.c              | 118 ++++++++
+ drivers/net/ethernet/lantiq_etop.c                 |   6 +-
+ 7 files changed, 459 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
  create mode 100644 arch/mips/lantiq/xway/ath_eep.c
  create mode 100644 arch/mips/lantiq/xway/eth_mac.c
  create mode 100644 arch/mips/lantiq/xway/pci-ath-fixup.c
- create mode 100644 arch/mips/lantiq/xway/rt_eep.c
 
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
@@ -46,7 +45,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-y += vmmc.o tffs.o
  
 +obj-y += eth_mac.o
-+obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
++obj-$(CONFIG_PCI) += ath_eep.o pci-ath-fixup.o
 +
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
@@ -500,69 +499,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	ath_fixups[ath_num_fixups].cal_data = cal_data;
 +	ath_num_fixups++;
 +}
---- /dev/null
-+++ b/arch/mips/lantiq/xway/rt_eep.c
-@@ -0,0 +1,60 @@
-+/*
-+ *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
-+ *
-+ *  This program is free software; you can redistribute it and/or modify it
-+ *  under the terms of the GNU General Public License version 2 as published
-+ *  by the Free Software Foundation.
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/module.h>
-+#include <linux/pci.h>
-+#include <linux/platform_device.h>
-+#include <linux/rt2x00_platform.h>
-+
-+extern int (*ltq_pci_plat_dev_init)(struct pci_dev *dev);
-+static struct rt2x00_platform_data rt2x00_pdata;
-+
-+static int rt2x00_pci_plat_dev_init(struct pci_dev *dev)
-+{
-+	dev->dev.platform_data = &rt2x00_pdata;
-+	return 0;
-+}
-+
-+int __init of_ralink_eeprom_probe(struct platform_device *pdev)
-+{
-+	struct device_node *np = pdev->dev.of_node;
-+	const char *eeprom;
-+
-+	if (of_property_read_string(np, "ralink,eeprom", &eeprom)) {
-+		dev_err(&pdev->dev, "failed to load eeprom filename\n");
-+		return 0;
-+	}
-+
-+	rt2x00_pdata.eeprom_file_name = kstrdup(eeprom, GFP_KERNEL);
-+//	rt2x00_pdata.mac_address = mac;
-+	ltq_pci_plat_dev_init = rt2x00_pci_plat_dev_init;
-+
-+	dev_info(&pdev->dev, "using %s as eeprom\n", eeprom);
-+
-+	return 0;
-+}
-+
-+static struct of_device_id ralink_eeprom_ids[] = {
-+	{ .compatible = "ralink,eeprom" },
-+	{ }
-+};
-+
-+static struct platform_driver ralink_eeprom_driver = {
-+	.driver		= {
-+		.name		= "ralink,eeprom",
-+		.owner	= THIS_MODULE,
-+		.of_match_table	= of_match_ptr(ralink_eeprom_ids),
-+	},
-+};
-+
-+static int __init of_ralink_eeprom_init(void)
-+{
-+	return platform_driver_probe(&ralink_eeprom_driver, of_ralink_eeprom_probe);
-+}
-+device_initcall(of_ralink_eeprom_init);
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
 @@ -840,7 +840,11 @@ ltq_etop_init(struct net_device *dev)
