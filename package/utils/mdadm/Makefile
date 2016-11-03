@@ -24,6 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/mdadm
   SECTION:=utils
   CATEGORY:=Utilities
+  SUBMENU:=Disc
   TITLE:=A tool for managing Soft RAID under Linux
   URL:=http://www.kernel.org/pub/linux/utils/raid/mdadm/
   DEPENDS:=+@KERNEL_DIRECT_IO
