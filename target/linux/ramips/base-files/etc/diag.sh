@@ -56,6 +56,7 @@ get_status_led() {
 	dir-320-b1|\
 	dir-600-b1|\
 	dir-600-b2|\
+	dir-600-b5
 	dir-610-a1|\
 	dir-615-d|\
 	dir-615-h1|\
