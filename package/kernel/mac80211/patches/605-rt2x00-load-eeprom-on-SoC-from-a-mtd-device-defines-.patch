@@ -97,5 +97,5 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		return 0;
 +
  	ee_name = rt2x00lib_get_eeprom_file_name(rt2x00dev);
- 	if (!ee_name) {
- 		rt2x00_err(rt2x00dev,
+ 	if (!ee_name && test_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags)) {
+ 		rt2x00_err(rt2x00dev, "Required EEPROM name is missing.");
