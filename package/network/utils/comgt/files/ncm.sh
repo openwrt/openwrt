@@ -118,7 +118,7 @@ proto_ncm_setup() {
 	[ -n "$mode" ] && {
 		json_select modes
 		json_get_var setmode "$mode"
-		COMMAND="$setmode" gcom -d "$device" -s /etc/gcom/runcommand.gcom || {
+		eval COMMAND="$setmode" gcom -d "$device" -s /etc/gcom/runcommand.gcom || {
 			echo "Failed to set operating mode"
 			proto_notify_error "$interface" SETMODE_FAILED
 			return 1
