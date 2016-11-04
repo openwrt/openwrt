@@ -10,6 +10,7 @@ $(curdir)/builddirs:=linux sdk imagebuilder toolchain
 $(curdir)/builddirs-default:=linux
 $(curdir)/builddirs-install:=linux $(if $(CONFIG_SDK),sdk) $(if $(CONFIG_IB),imagebuilder) $(if $(CONFIG_MAKE_TOOLCHAIN),toolchain)
 
+$(curdir)/sdk/install:=$(curdir)/linux/install
 $(curdir)/imagebuilder/install:=$(curdir)/linux/install
 
 $(eval $(call stampfile,$(curdir),target,prereq,.config))
