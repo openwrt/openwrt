@@ -374,8 +374,8 @@ static struct resource laguna_uart_resources[] = {
 		.end   = CNS3XXX_UART0_BASE + SZ_4K - 1,
 		.flags    = IORESOURCE_MEM
 	},{
-		.start = CNS3XXX_UART2_BASE,
-		.end   = CNS3XXX_UART2_BASE + SZ_4K - 1,
+		.start = CNS3XXX_UART1_BASE,
+		.end   = CNS3XXX_UART1_BASE + SZ_4K - 1,
 		.flags    = IORESOURCE_MEM
 	},{
 		.start = CNS3XXX_UART2_BASE,
