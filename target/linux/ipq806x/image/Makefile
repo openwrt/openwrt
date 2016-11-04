@@ -94,7 +94,7 @@ define Device/ZyXELImage
 	PROFILES += $$(DEVICE_NAME)
 	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
-	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $$$${KERNEL_SIZE}
+	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $${KERNEL_SIZE}
 	KERNEL_NAME := zImage
 	IMAGES := sysupgrade.tar mmcblk0p5-rootfs.bin mmcblk0p4-kernel.bin
 	IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-to $$$${BLOCKSIZE} | sysupgrade-tar rootfs=$$$$@
