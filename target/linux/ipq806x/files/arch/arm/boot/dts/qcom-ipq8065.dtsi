@@ -79,6 +79,92 @@
 		};
 	};
 
+	thermal-zones {
+		cpu-thermal0 {
+			polling-delay-passive = <250>;
+			polling-delay = <1000>;
+
+			thermal-sensors = <&gcc 5>;
+			coefficients = <1132 0>;
+
+			trips {
+				cpu_alert0: trip0 {
+					temperature = <75000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+				cpu_crit0: trip1 {
+					temperature = <110000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
+		};
+
+		cpu-thermal1 {
+			polling-delay-passive = <250>;
+			polling-delay = <1000>;
+
+			thermal-sensors = <&gcc 6>;
+			coefficients = <1132 0>;
+
+			trips {
+				cpu_alert1: trip0 {
+					temperature = <75000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+				cpu_crit1: trip1 {
+					temperature = <110000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
+		};
+
+		cpu-thermal2 {
+			polling-delay-passive = <250>;
+			polling-delay = <1000>;
+
+			thermal-sensors = <&gcc 7>;
+			coefficients = <1199 0>;
+
+			trips {
+				cpu_alert2: trip0 {
+					temperature = <75000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+				cpu_crit2: trip1 {
+					temperature = <110000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
+		};
+
+		cpu-thermal3 {
+			polling-delay-passive = <250>;
+			polling-delay = <1000>;
+
+			thermal-sensors = <&gcc 8>;
+			coefficients = <1132 0>;
+
+			trips {
+				cpu_alert3: trip0 {
+					temperature = <75000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+				cpu_crit3: trip1 {
+					temperature = <110000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+			};
+		};
+	};
+
 	cpu-pmu {
 		compatible = "qcom,krait-pmu";
 		interrupts = <1 10 0x304>;
@@ -205,8 +291,14 @@
 			reg = <0x00700000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			stride = <1>;
-			ranges = <0x0 0x00700000 0x1000>;
+			ranges;
+
+			tsens_calib: calib {
+				reg = <0x400 0x10>;
+			};
+			tsens_backup: backup_calib {
+				reg = <0x410 0x10>;
+			};
 		};
 
 		rpm@108000 {
@@ -687,9 +779,12 @@
 		gcc: clock-controller@900000 {
 			compatible = "qcom,gcc-ipq8064";
 			reg = <0x00900000 0x4000>;
+			nvmem-cells = <&tsens_calib>, <&tsens_backup>;
+			nvmem-cell-names = "calib", "calib_backup";
 			#clock-cells = <1>;
 			#reset-cells = <1>;
 			#power-domain-cells = <1>;
+			#thermal-sensor-cells = <1>;
 		};
 
 		lcc: clock-controller@28000000 {
@@ -702,16 +797,6 @@
 		tcsr: syscon@1a400000 {
 			compatible = "qcom,tcsr-ipq8064", "syscon";
 			reg = <0x1a400000 0x100>;
-		};
-
-		tsens: tsens-ipq806x {
-			compatible = "qcom,ipq806x-tsens";
-			reg = <0x900000 0x3678>, <0x700000 0x420>;
-			reg-names = "tsens_physical", "tsens_eeprom_physical";
-			interrupts = <0 178 0>;
-			qcom,sensors = <11>;
-			qcom,tsens_factor = <1000>;
-			qcom,slope = <1176 1176 1154 1176 1111 1132 1132 1199 1132 1199 1132>;
 		};
 
 		qcom,msm-thermal {
