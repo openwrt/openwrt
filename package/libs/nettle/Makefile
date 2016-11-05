@@ -40,6 +40,7 @@ TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
 	--enable-shared \
+	--enable-fat \
 	--disable-openssl \
 	--disable-documentation \
 	--enable-static
