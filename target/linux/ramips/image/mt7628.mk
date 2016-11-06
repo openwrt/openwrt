@@ -19,6 +19,13 @@ define Device/miwifi-nano
 endef
 TARGET_DEVICES += miwifi-nano
 
+define Device/wl-wn575a3
+  DTS := WL-WN575A3
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Wavlink WL-WN575A3
+endef
+TARGET_DEVICES += wl-wn575a3
+
 define Device/wrtnode2p
   DTS := WRTNODE2P
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

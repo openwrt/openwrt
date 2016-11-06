@@ -145,6 +145,7 @@ platform_check_image() {
 	wl-330n3g|\
 	wl-341v3|\
 	wl-351|\
+	wl-wn575a3|\
 	wli-tx4-ag300n|\
 	wmr-300|\
 	wnce2001|\
