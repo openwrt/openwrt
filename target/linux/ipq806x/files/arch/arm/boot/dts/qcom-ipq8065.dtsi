@@ -224,6 +224,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
+			clocks = <&gcc RPM_MSG_RAM_H_CLK>;
+			clock-names = "ram";
+
 			rpmcc: clock-controller {
 				compatible	= "qcom,rpmcc-ipq806x", "qcom,rpmcc";
 				#clock-cells = <1>;
