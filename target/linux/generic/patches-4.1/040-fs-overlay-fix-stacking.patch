@@ -21,7 +21,7 @@ Cc: <stable@vger.kernel.org> # v4.2+
 
 --- a/fs/overlayfs/inode.c
 +++ b/fs/overlayfs/inode.c
-@@ -377,6 +377,9 @@ struct inode *ovl_d_select_inode(struct
+@@ -383,6 +383,9 @@ struct inode *ovl_d_select_inode(struct
  		ovl_path_upper(dentry, &realpath);
  	}
  

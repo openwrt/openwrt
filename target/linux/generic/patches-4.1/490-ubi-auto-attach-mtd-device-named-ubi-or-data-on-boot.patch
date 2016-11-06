@@ -11,7 +11,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/ubi/build.c
 +++ b/drivers/mtd/ubi/build.c
-@@ -1218,6 +1218,49 @@ static struct mtd_info * __init open_mtd
+@@ -1221,6 +1221,49 @@ static struct mtd_info * __init open_mtd
  	return mtd;
  }
  
@@ -61,7 +61,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int __init ubi_init(void)
  {
  	int err, i, k;
-@@ -1310,6 +1353,12 @@ static int __init ubi_init(void)
+@@ -1313,6 +1356,12 @@ static int __init ubi_init(void)
  		}
  	}
  
