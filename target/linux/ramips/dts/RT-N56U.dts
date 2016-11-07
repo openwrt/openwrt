@@ -125,10 +125,10 @@
 		pci-bridge@1 {
 			status = "okay";
 
-			wmac@0,0 {
-				compatible = "ralink,rt2880-pci", "pciclass060400", "pciclass0604";
-				reg = < 0x10000 0 0 0 0 >;
-				ralink,eeprom = "rt2x00pci_1_0.eeprom";
+			wifi@1814,3091 {
+				compatible = "pci1814,3091";
+				reg = <0x10000 0 0 0 0>;
+				ralink,mtd-eeprom = <&factory 0x8000>;
 			};
 		};
 	};

@@ -145,4 +145,12 @@
 
 &pcie {
 	status = "okay";
+
+	pcie-bridge {
+		wifi@1814,3091 {
+			compatible = "pci1814,3091";
+			reg = <0x0000 0 0 0 0>;
+			mediatek,mtd-eeprom = <&factory 0x8000>;
+		};
+	};
 };
