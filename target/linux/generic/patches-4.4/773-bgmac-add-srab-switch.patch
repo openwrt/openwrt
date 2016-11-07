@@ -12,7 +12,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <linux/bcm47xx_nvram.h>
  #include "bgmac.h"
  
-@@ -1400,6 +1401,17 @@ static const struct ethtool_ops bgmac_et
+@@ -1403,6 +1404,17 @@ static const struct ethtool_ops bgmac_et
  	.get_drvinfo		= bgmac_get_drvinfo,
  };
  
@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * MII
   **************************************************/
-@@ -1536,6 +1548,14 @@ int bgmac_enet_probe(struct bgmac *info)
+@@ -1539,6 +1551,14 @@ int bgmac_enet_probe(struct bgmac *info)
  	net_dev->hw_features = net_dev->features;
  	net_dev->vlan_features = net_dev->features;
  
@@ -45,7 +45,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		dev_err(bgmac->dev, "Cannot register net device\n");
-@@ -1559,6 +1579,10 @@ EXPORT_SYMBOL_GPL(bgmac_enet_probe);
+@@ -1562,6 +1582,10 @@ EXPORT_SYMBOL_GPL(bgmac_enet_probe);
  
  void bgmac_enet_remove(struct bgmac *bgmac)
  {
