@@ -366,6 +366,7 @@ platform_check_image() {
 	tl-wdr4300|\
 	tl-wdr4900-v2|\
 	tl-wdr6500-v2|\
+	tl-wpa8630|\
 	tl-wr1041n-v2|\
 	tl-wr1043nd-v2|\
 	tl-wr1043nd|\
@@ -386,8 +387,7 @@ platform_check_image() {
 	tl-wr842n-v3|\
 	tl-wr941nd-v5|\
 	tl-wr941nd-v6|\
-	tl-wr941nd|\
-	wpa8630)
+	tl-wr941nd)
 		local magic_ver="0100"
 
 		case "$board" in

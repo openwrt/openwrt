@@ -985,6 +985,9 @@ ar71xx_board_detect() {
 	*"TL-WDR6500 v2")
 		name="tl-wdr6500-v2"
 		;;
+	*TL-WPA8630)
+		name="tl-wpa8630"
+		;;
 	*TL-WR741ND)
 		name="tl-wr741nd"
 		;;
@@ -1128,9 +1131,6 @@ ar71xx_board_detect() {
 		;;
 	*"WNR1000 V2")
 		name="wnr1000-v2"
-		;;
-	*WPA8630)
-		name="wpa8630"
 		;;
 	*WPN824N)
 		name="wpn824n"

@@ -371,6 +371,18 @@ define Device/tl-mr3420-v2
 endef
 TARGET_DEVICES += tl-mr3020-v1 tl-mr3040-v1 tl-mr3040-v2 tl-mr3220-v1 tl-mr3220-v2 tl-mr3420-v1 tl-mr3420-v2
 
+define Device/tl-wpa8630
+    $(Device/tplink-8mlzma)
+    DEVICE_TITLE := TP-LINK TL-WPA8630
+    DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+    BOARDNAME := TL-WPA8630
+    DEVICE_PROFILE := TL-WPA8630
+    TPLINK_HWID := 0x86300001
+    MTDPARTS = spi0.0:64k(u-boot)ro,1280k(kernel),6720k(rootfs),64k(mib0)ro,64k(ART)ro,8000k@0x10000(firmware)
+    IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade -a 0x10000
+endef
+TARGET_DEVICES += tl-wpa8630
+
 define Device/tl-wr703n-v1
     $(Device/tplink-4mlzma)
     DEVICE_TITLE := TP-LINK TL-WR703N
@@ -913,15 +925,3 @@ define Device/tl-wa7210n-v2
     CONSOLE := ttyATH0,115200
 endef
 TARGET_DEVICES += tl-wa7210n-v2
-
-define Device/wpa8630
-    $(Device/tplink-8mlzma)
-    DEVICE_TITLE := TP-LINK WPA8630
-    DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
-    BOARDNAME := WPA8630
-    DEVICE_PROFILE := WPA8630
-    TPLINK_HWID := 0x86300001
-    MTDPARTS = spi0.0:64k(u-boot)ro,1280k(kernel),6720k(rootfs),64k(mib0)ro,64k(ART)ro,8000k@0x10000(firmware)
-    IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade -a 0x10000
-endef
-TARGET_DEVICES += wpa8630
