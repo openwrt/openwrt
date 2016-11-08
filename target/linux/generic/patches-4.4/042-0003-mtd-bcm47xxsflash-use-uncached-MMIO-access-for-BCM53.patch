@@ -1,6 +1,6 @@
-From 77fab8f7dc756ba65f37145c493cc04f17e36bea Mon Sep 17 00:00:00 2001
+From 64ad46379fcf14f437553f654d1adcd3d0e0d7f9 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Mon, 15 Aug 2016 14:13:09 +0200
+Date: Mon, 15 Aug 2016 14:21:28 +0200
 Subject: [PATCH] mtd: bcm47xxsflash: use uncached MMIO access for BCM53573
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -13,6 +13,8 @@ access. Switch to ioremap_nocache conditionally to support BCM53573 and
 don't break performance on old MIPS devices.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 ---
  drivers/mtd/devices/bcm47xxsflash.c | 24 +++++++++++++++++++-----
  1 file changed, 19 insertions(+), 5 deletions(-)
