@@ -60,6 +60,14 @@ define Package/gre/install
 	$(INSTALL_BIN) ./files/gre.sh $(1)/lib/netifd/proto/gre.sh
 endef
 
+define Package/grev4/install
+	:
+endef
+
+define Package/grev6/install
+	:
+endef
+
 $(eval $(call BuildPackage,gre))
 $(eval $(call BuildPackage,grev4))
 $(eval $(call BuildPackage,grev6))
