@@ -25,6 +25,10 @@ endif
 
 PACKAGE_DIR_ALL := $(TOPDIR)/staging_dir/packages/$(BOARD)
 
+opkg_package_files = $(wildcard \
+	$(foreach dir,$(PACKAGE_SUBDIRS), \
+	  $(foreach pkg,$(1), $(dir)/$(pkg)_*.ipk)))
+
 PKG_CONFIG_DEPENDS += \
 	CONFIG_PER_FEED_REPO \
 	CONFIG_PER_FEED_REPO_ADD_DISABLED \

@@ -45,10 +45,6 @@ opkg = \
 	--add-arch all:100 \
 	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
 
-opkg_package_files = $(wildcard \
-	$(foreach dir,$(PACKAGE_SUBDIRS), \
-	  $(foreach pkg,$(1), $(dir)/$(pkg)_*.ipk)))
-
 TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 
 define prepare_rootfs
