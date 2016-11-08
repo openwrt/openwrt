@@ -46,8 +46,23 @@
 				mux {
 					pins = "gpio18", "gpio19", "gpio21";
 					function = "gsbi5";
+					bias-pull-down;
+				};
+
+				data {
+					pins = "gpio18", "gpio19";
 					drive-strength = <10>;
-					bias-none;
+				};
+
+				cs {
+					pins = "gpio20";
+					drive-strength = <10>;
+					bias-pull-up;
+				};
+
+				clk {
+					pins = "gpio21";
+					drive-strength = <12>;
 				};
 			};
 
@@ -114,7 +129,7 @@
 			qcom,mode = <GSBI_PROT_SPI>;
 			status = "ok";
 
-			spi4: spi@1a280000 {
+			spi5: spi@1a280000 {
 				status = "ok";
 				spi-max-frequency = <50000000>;
 
@@ -124,7 +139,7 @@
 				cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
 
 				flash: m25p80@0 {
-					compatible = "s25fl256s1";
+					compatible = "jedec,spi-nor";
 					#address-cells = <1>;
 					#size-cells = <1>;
 					spi-max-frequency = <50000000>;
@@ -380,7 +395,7 @@
 		wifi {
 			label = "wifi";
 			gpios = <&qcom_pinmux 49 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_WLAN>;
+			linux,code = <KEY_RFKILL>;
 		};
 
 		reset {
@@ -423,6 +438,11 @@
 		wps {
 			label = "c2600:white:wps";
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		wan_red {
+			label = "c2600:red:wan";
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_blue {

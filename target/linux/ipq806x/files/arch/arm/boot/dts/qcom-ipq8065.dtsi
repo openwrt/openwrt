@@ -29,7 +29,7 @@
 			qcom,saw = <&saw0>;
 			clocks = <&kraitcc 0>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
-			qcom,imem = <&imem>;
+			qcom,imem = <&qfprom>;
 			clock-latency = <100000>;
 			cpu-supply = <&smb208_s2a>;
 			voltage-tolerance = <5>;
@@ -49,7 +49,7 @@
 			qcom,saw = <&saw1>;
 			clocks = <&kraitcc 1>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
-			qcom,imem = <&imem>;
+			qcom,imem = <&qfprom>;
 			clock-latency = <100000>;
 			cpu-supply = <&smb208_s2b>;
 			cooling-min-state = <0>;
@@ -200,7 +200,7 @@
 			reg-names = "lpass-lpaif";
 		};
 
-		imem: memory@700000 {
+		qfprom: qfprom@700000 {
 			compatible = "qcom,qfprom", "syscon";
 			reg = <0x00700000 0x1000>;
 			#address-cells = <1>;
