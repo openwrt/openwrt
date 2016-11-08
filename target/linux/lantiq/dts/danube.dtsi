@@ -139,11 +139,12 @@
 		};
 
 		ifxhcd@E101000 {
-			compatible = "lantiq,ifxhcd-danube";
+			compatible = "lantiq,ifxhcd-danube-dwc2", "lantiq,ifxhcd-danube";
 			reg = <0xE101000 0x1000
 				0xE120000 0x3f000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <62>;
+			dr_mode = "host";
 			status = "disabled";
 		};
 
