@@ -242,7 +242,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	else
 +		gsw->port4 = PORT4_EPHY;
 +
-+	gsw->irq = irq_of_parse_and_map(np, 0);
++	gsw->irq = platform_get_irq(pdev, 0);
 +
 +	platform_set_drvdata(pdev, gsw);
 +
