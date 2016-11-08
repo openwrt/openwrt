@@ -464,6 +464,7 @@ define KernelPackage/usb2
 	+TARGET_brcm47xx:kmod-usb-bcma \
 	+TARGET_brcm47xx:kmod-usb-ssb \
 	+TARGET_bcm53xx:kmod-usb-bcma \
+	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb2 \
 	+TARGET_mpc85xx:kmod-usb2-fsl
   KCONFIG:=\
 	CONFIG_USB_EHCI_HCD \
@@ -1628,6 +1629,7 @@ define KernelPackage/usb3
   TITLE:=Support for USB3 controllers
   DEPENDS:= \
 	+TARGET_bcm53xx:kmod-usb-bcma \
+	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3 \
 	+TARGET_omap:kmod-usb-phy-omap-usb3
   KCONFIG:= \
 	CONFIG_USB_XHCI_HCD \
