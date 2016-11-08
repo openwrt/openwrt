@@ -263,6 +263,7 @@ platform_check_image() {
 	ap152|\
 	ap96|\
 	arduino-yun|\
+	bhr-4grv2|\
 	bxu2000n-2-a1|\
 	db120|\
 	dr344|\

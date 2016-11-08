@@ -482,6 +482,9 @@ ar71xx_board_detect() {
 	*AW-NR580)
 		name="aw-nr580"
 		;;
+	*BHR-4GRV2)
+		name="bhr-4grv2"
+		;;
 	*CAP324)
 		name="cap324"
 		;;

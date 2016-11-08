@@ -57,6 +57,10 @@ ap147-010)
 	ucidef_set_led_switch "lan4" "LAN4" "ap147:green:lan4" "switch0" "0x02"
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "ap147:green:wlan-2g" "phy0tpt"
 	;;
+bhr-4grv2)
+	ucidef_set_led_default "power" "POWER" "buffalo:green:power" "1"
+	ucidef_set_led_default "diag" "DIAG" "buffalo:red:diag" "0"
+	;;
 bsb)
 	ucidef_set_led_default "sys" "SYS" "$board:red:sys" "1"
 	;;

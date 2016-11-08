@@ -53,6 +53,11 @@ get_status_led() {
 	aw-nr580)
 		status_led="$board:green:ready"
 		;;
+	bhr-4grv2|\
+	wzr-hp-ag300h|\
+	wzr-hp-g300nh2)
+		status_led="buffalo:red:diag"
+		;;
 	bsb)
 		status_led="$board:red:sys"
 		;;
@@ -392,10 +397,6 @@ get_status_led() {
 		;;
 	wlae-ag300n)
 		status_led="buffalo:green:status"
-		;;
-	wzr-hp-ag300h|\
-	wzr-hp-g300nh2)
-		status_led="buffalo:red:diag"
 		;;
 	r6100|\
 	wndap360|\
