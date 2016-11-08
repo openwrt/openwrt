@@ -60,6 +60,14 @@ define Package/vti/install
 	$(INSTALL_BIN) ./files/vti.sh $(1)/lib/netifd/proto/vti.sh
 endef
 
+define Package/vtiv4/install
+	:
+endef
+
+define Package/vtiv6/install
+	:
+endef
+
 $(eval $(call BuildPackage,vti))
 $(eval $(call BuildPackage,vtiv4))
 $(eval $(call BuildPackage,vtiv6))
