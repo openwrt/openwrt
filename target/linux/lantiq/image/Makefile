@@ -111,7 +111,7 @@ ifeq ($(SUBTARGET),xway_legacy)
 define Device/ARV4520PW
   IMAGE_SIZE := 3648k
   DEVICE_TITLE := Easybox 800, WAV-281 - ARV4520PW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -133,7 +133,7 @@ TARGET_DEVICES += ARV4525PW
 define Device/ARV452CQW
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := Easybox 801 - ARV452CQW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ath5k wpad-mini \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
@@ -145,7 +145,7 @@ TARGET_DEVICES += ARV452CQW
 define Device/ARV4518PWR01
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := ARV4518PWR01
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -157,7 +157,7 @@ TARGET_DEVICES += ARV4518PWR01
 define Device/ARV4518PWR01A
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := ARV4518PWR01A
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -175,7 +175,7 @@ ifeq ($(SUBTARGET),xway)
 define Device/BTHOMEHUBV2B
   $(Device/NAND)
   DEVICE_TITLE := BT Home Hub 2B
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube \
+  DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	kmod-ltq-deu-danube \
@@ -227,7 +227,7 @@ TARGET_DEVICES += ARV7525PW
 define Device/ARV4519PW
   IMAGE_SIZE := 3776k
   DEVICE_TITLE := Vodafone, Pirelli - ARV4519PW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -249,7 +249,7 @@ TARGET_DEVICES += ARV7506PW11
 define Device/ARV7510PW22
   IMAGE_SIZE := 31232k
   DEVICE_TITLE := Astoria - ARV7510PW22
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -263,7 +263,7 @@ TARGET_DEVICES += ARV7510PW22
 define Device/ARV7518PW
   IMAGE_SIZE := 7872k
   DEVICE_TITLE := Astoria - ARV7518PW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -275,7 +275,7 @@ TARGET_DEVICES += ARV7518PW
 define Device/ARV7519PW
   IMAGE_SIZE := 15488k
   DEVICE_TITLE := Astoria - ARV7519PW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube \
+  DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -287,7 +287,7 @@ TARGET_DEVICES += ARV7519PW
 define Device/ARV752DPW
   IMAGE_SIZE := 7872k
   DEVICE_TITLE := Easybox 802 - ARV752DPW
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -300,7 +300,7 @@ TARGET_DEVICES += ARV752DPW
 define Device/ARV752DPW22
   IMAGE_SIZE := 7616k
   DEVICE_TITLE := Easybox 803 - ARV752DPW22
-  DEVICE_PACKAGES := kmod-usb2-pci kmod-usb-uhci kmod-ltq-hcd-danube kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb2-pci kmod-usb-uhci kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -313,7 +313,7 @@ TARGET_DEVICES += ARV752DPW22
 define Device/ARV8539PW22
   IMAGE_SIZE := 7616k
   DEVICE_TITLE := Speedport W504V Typ A - ARV8539PW22
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube \
+  DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
@@ -325,7 +325,7 @@ TARGET_DEVICES += ARV8539PW22
 define Device/GIGASX76X
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := Gigaset sx76x
-  DEVICE_PACKAGES := kmod-ltq-hcd-danube \
+  DEVICE_PACKAGES := kmod-usb-dwc2 \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoe \
