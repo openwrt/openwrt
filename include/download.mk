@@ -93,7 +93,7 @@ define DownloadMethod/git
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		git clone $(URL) $(SUBDIR) && \
+		git clone $(OPTS) $(URL) $(SUBDIR) && \
 		(cd $(SUBDIR) && git checkout $(VERSION) && \
 		git submodule update --init --recursive) && \
 		echo "Packing checkout..." && \
@@ -172,6 +172,7 @@ define Download/Defaults
   MIRROR:=1
   MIRROR_MD5SUM:=x
   VERSION:=
+  OPTS:=
 endef
 
 define Download
