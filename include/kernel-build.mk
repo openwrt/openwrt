@@ -46,6 +46,24 @@ define Download/kernel
   MD5SUM:=$(LINUX_KERNEL_MD5SUM)
 endef
 
+KERNEL_GIT_OPTS:=
+ifneq ($(strip $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)),"")
+  KERNEL_GIT_OPTS+=--reference $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)
+endif
+
+ifneq ($(strip $(CONFIG_KERNEL_GIT_BRANCH)),"")
+  KERNEL_GIT_OPTS+=--branch $(CONFIG_KERNEL_GIT_BRANCH)
+endif
+
+define Download/git-kernel
+  URL:=$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI))
+  PROTO:=git
+  VERSION:=$(CONFIG_KERNEL_GIT_BRANCH)
+  FILE:=$(LINUX_SOURCE)
+  SUBDIR:=linux-$(KERNEL_PATCHVER)
+  OPTS:=$(KERNEL_GIT_OPTS)
+endef
+
 ifdef CONFIG_COLLECT_KERNEL_DEBUG
   define Kernel/CollectDebug
 	rm -rf $(KERNEL_BUILD_DIR)/debug
@@ -73,6 +91,7 @@ endif
 define BuildKernel
   $(if $(QUILT),$(Build/Quilt))
   $(if $(LINUX_SITE),$(call Download,kernel))
+  $(if $(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),$(call Download,git-kernel))
 
   .NOTPARALLEL:
 
