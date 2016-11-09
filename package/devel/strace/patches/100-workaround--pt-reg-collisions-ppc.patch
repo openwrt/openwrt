@@ -1,0 +1,19 @@
+diff --git a/ptrace.h b/ptrace.h
+index ddb46cb..48a54b8 100644
+--- a/ptrace.h
++++ b/ptrace.h
+@@ -55,7 +55,14 @@ extern long ptrace(int, int, char *, long);
+ # define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
+ #endif
+ 
++#if POWERPC
++#include <linux/types.h>
++#define __ASSEMBLY__
++#endif
+ #include <linux/ptrace.h>
++#if POWERPC
++#undef __ASSEMBLY__
++#endif
+ 
+ #ifdef HAVE_STRUCT_IA64_FPREG
+ # undef ia64_fpreg
