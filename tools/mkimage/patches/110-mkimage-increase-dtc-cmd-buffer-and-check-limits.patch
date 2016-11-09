@@ -1,0 +1,58 @@
+From dca81e4f1591974b4ae3227a8103b81f3eeb803f Mon Sep 17 00:00:00 2001
+From: Ian Pozella <Ian.Pozella@imgtec.com>
+Date: Mon, 7 Nov 2016 14:26:20 +0000
+Subject: [PATCH] mkimage: increase dtc cmd buffer and check limits
+
+Previously any builds with long paths could cause the buffer to be
+truncated causing undefined behaviour.
+---
+ tools/fit_image.c | 8 ++++++--
+ tools/mkimage.h   | 2 +-
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/tools/fit_image.c b/tools/fit_image.c
+index 3ececf9..1c7ba84 100644
+--- a/tools/fit_image.c
++++ b/tools/fit_image.c
+@@ -96,7 +96,7 @@ static int fit_handle_file(struct image_tool_params *params)
+ 	if (strlen (params->imagefile) +
+ 		strlen (MKIMAGE_TMPFILE_SUFFIX) + 1 > sizeof (tmpfile)) {
+ 		fprintf (stderr, "%s: Image file name (%s) too long, "
+-				"can't create tmpfile",
++				"can't create tmpfile\n",
+ 				params->imagefile, params->cmdname);
+ 		return (EXIT_FAILURE);
+ 	}
+@@ -107,11 +107,15 @@ static int fit_handle_file(struct image_tool_params *params)
+ 		/* dtc -I dts -O dtb -p 500 datafile > tmpfile */
+ 		snprintf(cmd, sizeof(cmd), "%s %s %s > %s",
+ 			 MKIMAGE_DTC, params->dtc, params->datafile, tmpfile);
+-		debug("Trying to execute \"%s\"\n", cmd);
+ 	} else {
+ 		snprintf(cmd, sizeof(cmd), "cp %s %s",
+ 			 params->imagefile, tmpfile);
+ 	}
++	debug("Trying to execute \"%s\"\n", cmd);
++	if (ret >= sizeof(cmd)) {
++		fprintf (stderr, "Command too long, can't create fit image\n");
++		return (EXIT_FAILURE);
++	}
+ 	if (system (cmd) == -1) {
+ 		fprintf (stderr, "%s: system(%s) failed: %s\n",
+ 				params->cmdname, cmd, strerror(errno));
+diff --git a/tools/mkimage.h b/tools/mkimage.h
+index 3f369b7..8266e41 100644
+--- a/tools/mkimage.h
++++ b/tools/mkimage.h
+@@ -43,7 +43,7 @@ static inline ulong map_to_sysmem(void *ptr)
+ #define MKIMAGE_TMPFILE_SUFFIX		".tmp"
+ #define MKIMAGE_MAX_TMPFILE_LEN		256
+ #define MKIMAGE_DEFAULT_DTC_OPTIONS	"-I dts -O dtb -p 500"
+-#define MKIMAGE_MAX_DTC_CMDLINE_LEN	512
++#define MKIMAGE_MAX_DTC_CMDLINE_LEN	1024
+ #define MKIMAGE_DTC			"dtc"   /* assume dtc is in $PATH */
+ 
+ #endif /* _MKIIMAGE_H_ */
+-- 
+2.7.4
+
