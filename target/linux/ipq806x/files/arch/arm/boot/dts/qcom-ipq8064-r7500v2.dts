@@ -7,7 +7,7 @@
 	compatible = "netgear,r7500v2", "qcom,ipq8064";
 
 	memory@0 {
-		reg = <0x42000000 0xe000000>;
+		reg = <0x42000000 0x1e000000>;
 		device_type = "memory";
 	};
 
@@ -18,6 +18,11 @@
 		rsvd@41200000 {
 			reg = <0x41200000 0x300000>;
 			no-map;
+		};
+
+		rsvd@5fe00000 {
+			reg = <0x5fe00000 0x200000>;
+			reusable;
 		};
 	};
 
