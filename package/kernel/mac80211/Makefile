@@ -1383,7 +1383,7 @@ endef
 define KernelPackage/wlcore
   $(call KernelPackage/mac80211/Default)
   TITLE:=TI common driver part
-  DEPENDS+= @TARGET_omap +kmod-mac80211 +@DRIVER_11N_SUPPORT
+  DEPENDS+= +kmod-mmc +kmod-mac80211 +@DRIVER_11N_SUPPORT
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore_sdio.ko
