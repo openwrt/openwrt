@@ -20,6 +20,7 @@ for (feed in customFeeds) {
 }
 
 properties([
+    buildDiscarder(logRotator(numToKeepStr: '5')),
     parameters([
         booleanParam(defaultValue: false, description: 'Clean out everything.', \
             name: 'FULL_CLEAN'),
