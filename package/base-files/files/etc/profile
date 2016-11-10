@@ -20,7 +20,7 @@ alias ll='ls -alF --color=auto'
 
 [ -z "$KSH_VERSION" -o \! -s /etc/mkshrc ] || . /etc/mkshrc
 
-[ -x /usr/bin/arp ] || arp() { cat /proc/net/arp; }
+[ -x /usr/bin/arp -o -x /sbin/arp ] || arp() { cat /proc/net/arp; }
 [ -x /usr/bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
 
 [ -n "$FAILSAFE" ] || {
