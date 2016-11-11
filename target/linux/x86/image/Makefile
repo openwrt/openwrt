@@ -15,6 +15,7 @@ GRUB_TERMINALS =
 GRUB_SERIAL_CONFIG =
 GRUB_TERMINAL_CONFIG =
 GRUB_CONSOLE_CMDLINE =
+GRUB_ROOT = hd0,msdos1
 
 USE_ATKBD = generic 64
 
@@ -46,6 +47,10 @@ ROOTPART:=$(if $(ROOTPART),$(ROOTPART),PARTUUID=$(SIGNATURE)-02)
 
 GRUB_TIMEOUT:=$(call qstrip,$(CONFIG_GRUB_TIMEOUT))
 
+ifneq ($(CONFIG_TARGET_x86_xen_domu),)
+  GRUB_ROOT = xen/xvda,msdos1
+endif
+
 ifneq ($(CONFIG_GRUB_IMAGES),)
 
   BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
@@ -75,6 +80,7 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
 		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1)) $(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE))#g' \
 		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
+		-e 's#@ROOT@#$(GRUB_ROOT)#g' \
 		./grub.cfg > $(KDIR)/root.grub/boot/grub/grub.cfg
 	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" SIGNATURE="$(SIGNATURE)" PATH="$(TARGET_PATH)" ./gen_image_generic.sh \
 		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
