@@ -2,6 +2,8 @@
 
 #include "rt2880.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "V11ST-FE", "ralink,rt2880-soc";
 	model = "Ralink V11ST-FE";
@@ -56,7 +58,7 @@
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 0>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 

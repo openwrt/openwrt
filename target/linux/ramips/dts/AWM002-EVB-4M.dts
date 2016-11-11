@@ -2,6 +2,8 @@
 
 #include "AWM002-4M.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	model = "AsiaRF AWM002 EVB";
 
@@ -33,13 +35,13 @@
 		reset_wps {
 			label = "reset_wps";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		mode {
 			label = "mode";
 			gpios = <&gpio0 20 1>;
-			linux,code = <0x32>;
+			linux,code = <ABS_MT_WIDTH_MAJOR>;
 		};
 	};
 };

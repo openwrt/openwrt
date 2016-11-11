@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "JHR-N825R", "ralink,rt3052-soc";
 	model = "JCG JHR-N825R";
@@ -54,7 +56,7 @@
 		reset_wps {
 			label = "reset_wps";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 };

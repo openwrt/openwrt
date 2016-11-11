@@ -2,6 +2,8 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "ralink,mt7620a-soc";
 	model = "Buffalo WHR-300HP2";
@@ -54,27 +56,27 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio2 12 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		aoss {
 			label = "aoss";
 			gpios = <&gpio2 13 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		ap {
 			label = "ap";
 			gpios = <&gpio2 14 1>;
-			linux,code = <0x100>;
-			linux,input-type = <5>; /* EV_SW */
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
 		};
 
 		bridge {
 			label = "bridge";
 			gpios = <&gpio2 15 1>;
-			linux,code = <0x100>;
-			linux,input-type = <5>; /* EV_SW */
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
 		};
 	};
 };

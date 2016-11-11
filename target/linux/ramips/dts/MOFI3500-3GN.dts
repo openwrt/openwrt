@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "MOFI3500-3GN", "ralink,rt3052-soc";
 	model = "MoFi Network MOFI3500-3GN";
@@ -71,19 +73,19 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		connect {
 			label = "connect";
 			gpios = <&gpio0 7 1>;
-			linux,code = <0xda>;
+			linux,code = <KEY_CONNECT>;
 		};
 
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 };

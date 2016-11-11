@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "MR-102N", "ralink,rt3052-soc";
 	model = "AXIMCom MR-102N";
@@ -76,13 +78,13 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 13 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
 			gpios = <&gpio0 18 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 };

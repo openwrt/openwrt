@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "MZK-W300NH2", "ralink,rt3052-soc";
 	model = "Planex MZK-W300NH2";
@@ -72,19 +74,19 @@
 		wps {
 			label = "wps";
 			gpios = <&gpio0 12 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		rt {
 			label = "rt";
 			gpios = <&gpio0 13 1>;
-			linux,code = <0x100>;
+			linux,code = <BTN_0>;
 		};
 	};
 };

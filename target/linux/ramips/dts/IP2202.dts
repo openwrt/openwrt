@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "IP2202", "ralink,rt3052-soc";
 	model = "Poray IP2202";
@@ -61,7 +63,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 };

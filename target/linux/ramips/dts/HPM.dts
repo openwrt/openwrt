@@ -2,6 +2,8 @@
 
 #include "rt3883.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "HPM", "ralink,rt3883-soc";
 	model = "Omnima HPM";
@@ -19,7 +21,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 14 0>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 

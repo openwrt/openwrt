@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "BR-6425", "ralink,rt3052-soc";
 	model = "Edimax BR-6425";
@@ -38,13 +40,13 @@
 		reset_wps {
 			label = "reset_wps";
 			gpios = <&gpio0 12 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		rfkill {
 			label = "RFKILL switch";
 			gpios = <&gpio0 13 1>;
-			linux,code = <0xf7>;
+			linux,code = <KEY_RFKILL>;
 		};
 	};
 };

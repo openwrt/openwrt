@@ -2,6 +2,8 @@
 
 #include "rt5350.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "wizfi630a", "ralink,rt5350-soc";
 	model = "WIZnet WizFi630A";
@@ -48,25 +50,25 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 17 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 		
 		scm1 {
 			label = "SCM1";
 			gpios = <&gpio0 19 1>;
-			linux,code = <0x100>;
+			linux,code = <BTN_0>;
 		};
 
 		scm2 {
 			label = "SCM2";
 			gpios = <&gpio0 2 1>;
-			linux,code = <0x101>;
+			linux,code = <BTN_1>;
 		};
 	};
 };

@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "BC2", "ralink,rt3052-soc";
 	model = "NexAira BC2";
@@ -56,7 +58,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 17 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 };

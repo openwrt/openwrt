@@ -2,6 +2,8 @@
 
 #include "rt5350.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "A5-V11", "ralink,rt5350-soc";
 	model = "A5-V11";
@@ -29,7 +31,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 

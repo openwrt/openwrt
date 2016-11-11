@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "3G-6200N", "ralink,rt3050-soc";
 	model = "Edimax 3g-6200n";
@@ -72,13 +74,13 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 12 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		rfkill {
 			label = "wlanswitch";
 			gpios = <&gpio0 13 1>;
-			linux,code = <0xf7>;
+			linux,code = <KEY_RFKILL>;
 		};
 	};
 };

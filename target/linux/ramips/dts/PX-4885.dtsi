@@ -1,5 +1,7 @@
 #include "rt5350.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "PX-4885", "ralink,rt5350-soc";
 	model = "7Links PX-4885";
@@ -13,7 +15,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 

@@ -2,6 +2,8 @@
 
 #include "rt5350.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "3G150B", "ralink,rt5350-soc";
 	model = "Tenda 3G150B";
@@ -29,7 +31,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 

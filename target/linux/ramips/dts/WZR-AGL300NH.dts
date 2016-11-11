@@ -2,6 +2,8 @@
 
 #include "rt2880.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -63,19 +65,19 @@
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		router {
 			label = "router_switch";
 			gpios = <&gpio0 7 0>;
-			linux,code = <0x100>;
+			linux,code = <BTN_0>;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&gpio0 9 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 

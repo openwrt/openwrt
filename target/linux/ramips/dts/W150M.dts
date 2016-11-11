@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "W150M", "ralink,rt3050-soc";
 	model = "Tenda W150M";
@@ -81,13 +83,13 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		mode {
 			label = "mode";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x100>;
+			linux,code = <BTN_0>;
 		};
 	};
 };

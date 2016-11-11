@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "WHR-G300N", "ralink,rt3052-soc";
 	model = "Buffalo WHR-G300N";
@@ -43,25 +45,25 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		aoss {
 			label = "aoss";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		router-off {
 			label = "router-off";
 			gpios = <&gpio0 11 1>;
-			linux,code = <0x102>;
+			linux,code = <BTN_2>;
 		};
 
 		router-on {
 			label = "router-on";
 			gpios = <&gpio0 8 1>;
-			linux,code = <0x103>;
+			linux,code = <BTN_3>;
 		};
 	};
 };

@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "UR-336UN", "ralink,rt3052-soc";
 	model = "UPVEL UR-336UN";
@@ -53,13 +55,13 @@
 		reset_wps {
 			label = "reset_wps";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		mode {
 			label = "mode";
 			gpios = <&gpio0 7 1>;
-			linux,code = <0x32>;
+			linux,code = <ABS_MT_WIDTH_MAJOR>;
 		};
 	};
 };

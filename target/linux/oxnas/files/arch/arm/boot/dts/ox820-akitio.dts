@@ -9,6 +9,8 @@
 /dts-v1/;
 #include "ox820.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	model = "Akitio MyCloud mini";
 
@@ -75,12 +77,12 @@
 		power {
 			label = "power";
 			gpios = <&GPIOA 11 1>;
-			linux,code = <116>;
+			linux,code = <KEY_POWER>;
 		};
 		reset {
 			label = "reset";
 			gpios = <&GPIOB 6 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 

@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "WR512-3GN", "ralink,rt3052-soc";
 	model = "WR512-3GN-like router";
@@ -76,13 +78,13 @@
 		reset_wps {
 			label = "reset_wps";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		mode {
 			label = "mode";
 			gpios = <&gpio0 7 1>;
-			linux,code = <0x32>;
+			linux,code = <ABS_MT_WIDTH_MAJOR>;
 		};
 	};
 };

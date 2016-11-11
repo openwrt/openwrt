@@ -2,6 +2,8 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "MINIEMBWIFI", "ralink,rt3052-soc";
 	model = "Omnima MiniEMBWiFi";
@@ -29,7 +31,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 12 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 

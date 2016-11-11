@@ -2,6 +2,8 @@
 
 #include "mt7621.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "mediatek,mt7621-eval-board", "mediatek,mt7621-soc";
 	model = "Thunder Timecloud";
@@ -39,13 +41,13 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 13 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		BTN_0 {
 			label = "BTN_0";
 			gpios = <&gpio0 4 1>;
-			linux,code = <0x100>;
+			linux,code = <BTN_0>;
 		};
 	};
 };

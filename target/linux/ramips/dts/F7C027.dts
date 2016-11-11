@@ -2,6 +2,8 @@
 
 #include "rt5350.dtsi"
 
+#include <dt-bindings/input/input.h>
+
 / {
 	compatible = "F7C027", "ralink,rt5350-soc";
 	model = "Belkin F7C027";
@@ -39,19 +41,19 @@
 		top {
 			label = "restore";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 
 		power {
 			label = "power";
 			gpios = <&gpio0 12 1>;
-			linux,code = <0xf7>;
+			linux,code = <KEY_RFKILL>;
 		};
 
 		sensor {
 			label = "sensor";
 			gpios = <&gpio0 14 1>;
-			linux,code = <0x100>;
+			linux,code = <BTN_0>;
 		};
 	};
 };
