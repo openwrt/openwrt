@@ -6,7 +6,7 @@
  * Configure as needed, pull in the feeds and run the build. Allows
  * overridding feeds listed using build parameters.
  */
-// Be careful with using dir() until JENKINS-33510 is fixed
+// TODO be careful with using dir() until JENKINS-33510 is fixed
 
 def customFeeds = [
     ['packages', 'packages', 'https://github.com/CreatorDev'],
@@ -22,8 +22,6 @@ for (feed in customFeeds) {
 properties([
     buildDiscarder(logRotator(numToKeepStr: '5')),
     parameters([
-        booleanParam(defaultValue: false, description: 'Clean out everything.', \
-            name: 'FULL_CLEAN'),
         booleanParam(defaultValue: false, description: 'Build *all* packages for opkg. Warning \
             this will take a very long time!', name: 'ALL_PACKAGES'),
         stringParam(defaultValue: 'target/linux/pistachio/creator-platform-default-cascoda.config', \
@@ -36,11 +34,6 @@ properties([
 node('docker && imgtec') {  // Only run on internal slaves as build takes a lot of resources
     def docker_image
     stage('Prepare') {
-        // Clean checkout without wasting bandwidth/time
-        sh 'rm -rf .config .config.old feeds.conf.default bin build_dir staging_dir tmp'
-        if (env.FULL_CLEAN == 'true'){
-            sh 'rm -rf dl'
-        }
         checkout scm
 
         // Default config
@@ -59,7 +52,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
 
         // Build all (for opkg)
         // TODO grab vault creds and mod config to use OPKGSMIME
-        if (env.ALL_PACKAGES == 'true'){
+        if (env.ALL_PACKAGES == 'true'){  // TODO seems like a bug that bool is a string
             echo 'Enabling all user and kernel packages'
             sh 'echo \'' \
              + 'CONFIG_ALL=y\n' \
@@ -125,11 +118,10 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
         }
         stage('Build') {
             // Attempt to build quickly and reliably
-            // TODO IGNORE_ERRORS=m if build all
             try {
                 sh "make -j4 V=s ${env.ALL_PACKAGES ? 'IGNORE_ERRORS=m' : null}"
             } catch (hudson.AbortException err) {
-                // BUG JENKINS-28822
+                // TODO BUG JENKINS-28822
                 if(err.getMessage().contains('script returned exit code 143')) {
                     throw err
                 }
@@ -140,6 +132,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
 
         stage('Upload') {
             archiveArtifacts 'bin/*/*'
+            deleteDir()  // clean up the workspace to save space
         }
     }
 }
