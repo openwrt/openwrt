@@ -623,6 +623,9 @@ define Device/tl-wr841-v11
    BOARDNAME := TL-WR841N-v11
    DEVICE_PROFILE := TLWR841
    TPLINK_HWID := 0x08410011
+   IMAGES += factory-us.bin factory-eu.bin
+   IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
+   IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
 endef
 
 define Device/tl-wr842n-v1
