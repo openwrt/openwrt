@@ -289,18 +289,31 @@ mr18)
 	;;
 mr600)
 	ucidef_set_led_wlan "wlan58" "WLAN58" "$board:green:wlan58" "phy0tpt"
+	ucidef_set_led_default "wps" "WPS" "mr600:blue:wps" "0"
+	;;
+mr600v2)
+	ucidef_set_led_default "wlan24-red" "WLAN 2.4GHz (red)" "mr600:red:wlan24" "0"
+	ucidef_set_led_default "wlan24-yellow" "WLAN 2.4GHz (yellow)" "mr600:yellow:wlan24" "0"
+	ucidef_set_led_wlan "wlan24-green" "WLAN 4GHz (green)" "mr600:green:wlan24" "phy1tpt"
+	ucidef_set_led_default "wlan5-red" "WLAN 5GHz (red)" "mr600:red:wlan58" "0"
+	ucidef_set_led_default "wlan5-yellow" "WLAN 5GHz (yellow)" "mr600:yellow:wlan58" "0"
+	ucidef_set_led_wlan "wlan5-green" "WLAN 5GHz (green)" "mr600:green:wlan58" "phy0tpt"
 	;;
 mr1750|\
 mr1750v2)
 	ucidef_set_led_netdev "lan" "LAN" "mr1750:blue:wan" "eth0"
 	ucidef_set_led_wlan "wlan58" "WLAN58" "mr1750:blue:wlan58" "phy0tpt"
 	ucidef_set_led_wlan "wlan24" "WLAN24" "mr1750:blue:wlan24" "phy1tpt"
+	ucidef_set_led_default "status-red" "Status (red)" "mr1750:red:wifi" "0"
+	ucidef_set_led_default "status-green" "Status (green)" "mr1750:green:wifi" "0"
 	;;
 mr900|\
 mr900v2)
 	ucidef_set_led_netdev "lan" "LAN" "mr900:blue:wan" "eth0"
 	ucidef_set_led_wlan "wlan24" "WLAN24" "mr900:blue:wlan24" "phy0tpt"
 	ucidef_set_led_wlan "wlan58" "WLAN58" "mr900:blue:wlan58" "phy1tpt"
+	ucidef_set_led_default "status-red" "Status (red)" "mr900:red:wifi" "0"
+	ucidef_set_led_default "status-green" "Status (green)" "mr900:green:wifi" "0"
 	;;
 mynet-n600)
 	ucidef_set_led_netdev "wan" "WAN" "wd:blue:internet" "eth1"
@@ -347,15 +360,29 @@ om2p-hsv3|\
 om2p-lc)
 	ucidef_set_led_netdev "port1" "port1" "om2p:blue:wan" "eth0"
 	ucidef_set_led_netdev "port2" "port2" "om2p:blue:lan" "eth1"
+	ucidef_set_led_default "wlan-red" "WLAN (red)" "om2p:red:wifi" "0"
+	ucidef_set_led_default "wlan-yellow" "WLAN (yellow)" "om2p:yellow:wifi" "0"
+	ucidef_set_led_default "wlan-green" "WLAN (green)" "om2p:green:wifi" "0"
 	;;
 om5p|\
 om5p-an)
 	ucidef_set_led_netdev "port1" "port1" "om5p:blue:wan" "eth0"
 	ucidef_set_led_netdev "port2" "port2" "om5p:blue:lan" "eth1"
+	ucidef_set_led_default "wlan-red" "WLAN (red)" "om5p:red:wifi" "0"
+	ucidef_set_led_default "wlan-yellow" "WLAN (yellow)" "om5p:yellow:wifi" "0"
+	ucidef_set_led_default "wlan-green" "WLAN (green)" "om5p:green:wifi" "0"
 	;;
 om5p-ac)
 	ucidef_set_led_netdev "port1" "port1" "om5pac:blue:lan" "eth0"
 	ucidef_set_led_netdev "port2" "port2" "om5pac:blue:wan" "eth1"
+	ucidef_set_led_default "wlan-red" "WLAN (red)" "om5pac:red:wifi" "0"
+	ucidef_set_led_default "wlan-yellow" "WLAN (yellow)" "om5pac:yellow:wifi" "0"
+	ucidef_set_led_default "wlan-green" "WLAN (green)" "om5pac:green:wifi" "0"
+	;;
+om5p-acv2)
+	ucidef_set_led_default "wlan-red" "WLAN (red)" "om5pac:red:wifi" "0"
+	ucidef_set_led_default "wlan-yellow" "WLAN (yellow)" "om5pac:yellow:wifi" "0"
+	ucidef_set_led_default "wlan-green" "WLAN (green)" "om5pac:green:wifi" "0"
 	;;
 omy-g1)
 	ucidef_set_led_wlan "wlan" "WLAN" "omy:green:wlan" "phy0tpt"
