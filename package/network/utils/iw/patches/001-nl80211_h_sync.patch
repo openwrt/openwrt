@@ -1,8 +1,8 @@
 --- a/nl80211.h
 +++ b/nl80211.h
-@@ -1817,6 +1817,11 @@ enum nl80211_commands {
-  * @NL80211_ATTR_STA_SUPPORT_P2P_PS: whether P2P PS mechanism supported
-  *	or not. u8, one of the values of &enum nl80211_sta_p2p_ps_status
+@@ -1937,6 +1937,11 @@ enum nl80211_commands {
+  * @NL80211_ATTR_NAN_MATCH: used to report a match. This is a nested attribute.
+  *	See &enum nl80211_nan_match_attributes.
   *
 + * @NL80211_ATTR_PAD: attribute used for padding for 64-bit alignment
 + *
@@ -12,9 +12,9 @@
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -2197,6 +2202,10 @@ enum nl80211_attrs {
- 
- 	NL80211_ATTR_STA_SUPPORT_P2P_PS,
+@@ -2336,6 +2341,10 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_NAN_FUNC,
+ 	NL80211_ATTR_NAN_MATCH,
  
 +	NL80211_ATTR_PAD,
 +
@@ -23,67 +23,3 @@
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -2513,6 +2522,7 @@ enum nl80211_sta_bss_param {
-  *	attributes carrying the actual values.
-  * @NL80211_STA_INFO_RX_DURATION: aggregate PPDU duration for all frames
-  *	received from the station (u64, usec)
-+ * @NL80211_STA_INFO_PAD: attribute used for padding for 64-bit alignment
-  * @__NL80211_STA_INFO_AFTER_LAST: internal
-  * @NL80211_STA_INFO_MAX: highest possible station info attribute
-  */
-@@ -2550,6 +2560,7 @@ enum nl80211_sta_info {
- 	NL80211_STA_INFO_BEACON_SIGNAL_AVG,
- 	NL80211_STA_INFO_TID_STATS,
- 	NL80211_STA_INFO_RX_DURATION,
-+	NL80211_STA_INFO_PAD,
- 
- 	/* keep last */
- 	__NL80211_STA_INFO_AFTER_LAST,
-@@ -2566,6 +2577,7 @@ enum nl80211_sta_info {
-  *	transmitted MSDUs (not counting the first attempt; u64)
-  * @NL80211_TID_STATS_TX_MSDU_FAILED: number of failed transmitted
-  *	MSDUs (u64)
-+ * @NL80211_TID_STATS_PAD: attribute used for padding for 64-bit alignment
-  * @NUM_NL80211_TID_STATS: number of attributes here
-  * @NL80211_TID_STATS_MAX: highest numbered attribute here
-  */
-@@ -2575,6 +2587,7 @@ enum nl80211_tid_stats {
- 	NL80211_TID_STATS_TX_MSDU,
- 	NL80211_TID_STATS_TX_MSDU_RETRIES,
- 	NL80211_TID_STATS_TX_MSDU_FAILED,
-+	NL80211_TID_STATS_PAD,
- 
- 	/* keep last */
- 	NUM_NL80211_TID_STATS,
-@@ -3011,6 +3024,7 @@ enum nl80211_user_reg_hint_type {
-  *	transmitting data (on channel or globally)
-  * @NL80211_SURVEY_INFO_TIME_SCAN: time the radio spent for scan
-  *	(on this channel or globally)
-+ * @NL80211_SURVEY_INFO_PAD: attribute used for padding for 64-bit alignment
-  * @NL80211_SURVEY_INFO_MAX: highest survey info attribute number
-  *	currently defined
-  * @__NL80211_SURVEY_INFO_AFTER_LAST: internal use
-@@ -3026,6 +3040,7 @@ enum nl80211_survey_info {
- 	NL80211_SURVEY_INFO_TIME_RX,
- 	NL80211_SURVEY_INFO_TIME_TX,
- 	NL80211_SURVEY_INFO_TIME_SCAN,
-+	NL80211_SURVEY_INFO_PAD,
- 
- 	/* keep last */
- 	__NL80211_SURVEY_INFO_AFTER_LAST,
-@@ -3451,6 +3466,7 @@ enum nl80211_bss_scan_width {
-  * @NL80211_BSS_LAST_SEEN_BOOTTIME: CLOCK_BOOTTIME timestamp when this entry
-  *	was last updated by a received frame. The value is expected to be
-  *	accurate to about 10ms. (u64, nanoseconds)
-+ * @NL80211_BSS_PAD: attribute used for padding for 64-bit alignment
-  * @__NL80211_BSS_AFTER_LAST: internal
-  * @NL80211_BSS_MAX: highest BSS attribute
-  */
-@@ -3471,6 +3487,7 @@ enum nl80211_bss {
- 	NL80211_BSS_BEACON_TSF,
- 	NL80211_BSS_PRESP_DATA,
- 	NL80211_BSS_LAST_SEEN_BOOTTIME,
-+	NL80211_BSS_PAD,
- 
- 	/* keep last */
- 	__NL80211_BSS_AFTER_LAST,
