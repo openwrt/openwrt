@@ -16,3 +16,22 @@
 / {
 	model = "MyBook Live Duo";
 };
+
+&SATA0 {
+	status = "okay";
+};
+
+&USBOTG0 {
+	status = "okay";
+	dr_mode = "host";
+};
+
+&GPIO1 {
+	enable-usb {
+		status = "okay";
+	};
+
+	enable-port0 {
+		status = "okay";
+	};
+};

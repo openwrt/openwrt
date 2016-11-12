@@ -14,21 +14,3 @@
 / {
 	model = "MyBook Live";
 };
-
-&SATA0 {
-	status = "disabled";
-};
-
-&USBOTG0 {
-	status = "disabled";
-};
-
-&gpio0 {
-	enable-usb {
-		status = "disabled";
-	};
-
-	enable-port0 {
-		status = "disabled";
-	};
-};
