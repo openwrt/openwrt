@@ -58,7 +58,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
 
 --- a/fs/overlayfs/copy_up.c
 +++ b/fs/overlayfs/copy_up.c
-@@ -315,7 +315,6 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -317,7 +317,6 @@ int ovl_copy_up_one(struct dentry *paren
  	struct dentry *upperdir;
  	struct dentry *upperdentry;
  	const struct cred *old_cred;
@@ -66,7 +66,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  	char *link = NULL;
  
  	if (WARN_ON(!workdir))
-@@ -334,28 +333,7 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -336,28 +335,7 @@ int ovl_copy_up_one(struct dentry *paren
  			return PTR_ERR(link);
  	}
  
@@ -96,7 +96,7 @@ Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
  
  	err = -EIO;
  	if (lock_rename(workdir, upperdir) != NULL) {
-@@ -378,9 +356,7 @@ int ovl_copy_up_one(struct dentry *paren
+@@ -380,9 +358,7 @@ int ovl_copy_up_one(struct dentry *paren
  out_unlock:
  	unlock_rename(workdir, upperdir);
  	revert_creds(old_cred);

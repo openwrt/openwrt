@@ -16,7 +16,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
 
 --- a/fs/ubifs/dir.c
 +++ b/fs/ubifs/dir.c
-@@ -1095,11 +1095,6 @@ static int ubifs_rename(struct inode *ol
+@@ -1101,11 +1101,6 @@ static int ubifs_rename(struct inode *ol
  		old_dentry, old_inode->i_ino, old_dir->i_ino,
  		new_dentry, new_dir->i_ino, flags);
  
@@ -28,7 +28,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  	if (unlink)
  		ubifs_assert(mutex_is_locked(&new_inode->i_mutex));
  
-@@ -1284,6 +1279,64 @@ out_cancel:
+@@ -1290,6 +1285,64 @@ out_cancel:
  	return err;
  }
  
@@ -93,7 +93,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  int ubifs_getattr(struct vfsmount *mnt, struct dentry *dentry,
  		  struct kstat *stat)
  {
-@@ -1332,7 +1385,7 @@ const struct inode_operations ubifs_dir_
+@@ -1338,7 +1391,7 @@ const struct inode_operations ubifs_dir_
  	.mkdir       = ubifs_mkdir,
  	.rmdir       = ubifs_rmdir,
  	.mknod       = ubifs_mknod,

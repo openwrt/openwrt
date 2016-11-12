@@ -31,11 +31,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/broadcom/bgmac.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
-index 31ca204..91cbf92 100644
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -307,6 +307,10 @@ static void bgmac_dma_rx_enable(struct bgmac *bgmac,
+@@ -307,6 +307,10 @@ static void bgmac_dma_rx_enable(struct b
  	u32 ctl;
  
  	ctl = bgmac_read(bgmac, ring->mmio_base + BGMAC_DMA_RX_CTL);
@@ -46,7 +44,7 @@ index 31ca204..91cbf92 100644
  	if (bgmac->feature_flags & BGMAC_FEAT_RX_MASK_SETUP) {
  		ctl &= ~BGMAC_DMA_RX_BL_MASK;
  		ctl |= BGMAC_DMA_RX_BL_128 << BGMAC_DMA_RX_BL_SHIFT;
-@@ -317,7 +321,6 @@ static void bgmac_dma_rx_enable(struct bgmac *bgmac,
+@@ -317,7 +321,6 @@ static void bgmac_dma_rx_enable(struct b
  		ctl &= ~BGMAC_DMA_RX_PT_MASK;
  		ctl |= BGMAC_DMA_RX_PT_1 << BGMAC_DMA_RX_PT_SHIFT;
  	}
@@ -54,6 +52,3 @@ index 31ca204..91cbf92 100644
  	ctl |= BGMAC_DMA_RX_ENABLE;
  	ctl |= BGMAC_DMA_RX_PARITY_DISABLE;
  	ctl |= BGMAC_DMA_RX_OVERFLOW_CONT;
--- 
-2.10.1
-

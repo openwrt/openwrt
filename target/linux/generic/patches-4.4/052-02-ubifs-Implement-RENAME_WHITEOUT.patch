@@ -65,7 +65,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  /**
   * vfs_dent_type - get VFS directory entry type.
   * @type: UBIFS directory entry type
-@@ -997,37 +1016,43 @@ out_budg:
+@@ -1003,37 +1022,43 @@ out_budg:
  }
  
  /**
@@ -116,7 +116,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  	if (inode3)
  		mutex_unlock(&ubifs_inode(inode3)->ui_mutex);
  	if (inode1 != inode2)
-@@ -1036,12 +1061,15 @@ static void unlock_3_inodes(struct inode
+@@ -1042,12 +1067,15 @@ static void unlock_3_inodes(struct inode
  }
  
  static int ubifs_rename(struct inode *old_dir, struct dentry *old_dentry,
@@ -133,7 +133,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  	int err, release, sync = 0, move = (new_dir != old_dir);
  	int is_dir = S_ISDIR(old_inode->i_mode);
  	int unlink = !!new_inode;
-@@ -1063,9 +1091,13 @@ static int ubifs_rename(struct inode *ol
+@@ -1069,9 +1097,13 @@ static int ubifs_rename(struct inode *ol
  	 * separately.
  	 */
  
@@ -149,7 +149,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  	ubifs_assert(mutex_is_locked(&old_dir->i_mutex));
  	ubifs_assert(mutex_is_locked(&new_dir->i_mutex));
  	if (unlink)
-@@ -1087,7 +1119,32 @@ static int ubifs_rename(struct inode *ol
+@@ -1093,7 +1125,32 @@ static int ubifs_rename(struct inode *ol
  		return err;
  	}
  
@@ -183,7 +183,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  
  	/*
  	 * Like most other Unix systems, set the @i_ctime for inodes on a
-@@ -1157,12 +1214,34 @@ static int ubifs_rename(struct inode *ol
+@@ -1163,12 +1220,34 @@ static int ubifs_rename(struct inode *ol
  		if (unlink && IS_SYNC(new_inode))
  			sync = 1;
  	}
@@ -220,7 +220,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  	ubifs_release_budget(c, &req);
  
  	mutex_lock(&old_inode_ui->ui_mutex);
-@@ -1195,7 +1274,11 @@ out_cancel:
+@@ -1201,7 +1280,11 @@ out_cancel:
  				inc_nlink(old_dir);
  		}
  	}
@@ -233,7 +233,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  	ubifs_release_budget(c, &ino_req);
  	ubifs_release_budget(c, &req);
  	return err;
-@@ -1249,7 +1332,7 @@ const struct inode_operations ubifs_dir_
+@@ -1255,7 +1338,7 @@ const struct inode_operations ubifs_dir_
  	.mkdir       = ubifs_mkdir,
  	.rmdir       = ubifs_rmdir,
  	.mknod       = ubifs_mknod,
