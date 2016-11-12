@@ -1,23 +1,19 @@
 --- a/nl80211.h
 +++ b/nl80211.h
-@@ -1937,6 +1937,11 @@ enum nl80211_commands {
+@@ -1937,6 +1937,9 @@ enum nl80211_commands {
   * @NL80211_ATTR_NAN_MATCH: used to report a match. This is a nested attribute.
   *	See &enum nl80211_nan_match_attributes.
   *
-+ * @NL80211_ATTR_PAD: attribute used for padding for 64-bit alignment
-+ *
 + * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
 + *	transmit power to stay within regulatory limits. u32, dBi.
 + *
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -2336,6 +2341,10 @@ enum nl80211_attrs {
+@@ -2336,6 +2339,8 @@ enum nl80211_attrs {
  	NL80211_ATTR_NAN_FUNC,
  	NL80211_ATTR_NAN_MATCH,
  
-+	NL80211_ATTR_PAD,
-+
 +	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
 +
  	/* add attributes here, update the policy in nl80211.c */
