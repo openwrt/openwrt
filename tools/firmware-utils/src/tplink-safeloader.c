@@ -67,6 +67,12 @@ struct flash_partition_entry {
 	uint32_t size;
 };
 
+struct device_info {
+	const char *vendor;
+	const char *support_list;
+	const struct flash_partition_entry *partitions;
+	void *(*generate_sysupgrade_image)(const struct flash_partition_entry *flash_parts, const struct image_partition_entry *image_parts, size_t *len);
+};
 
 /** The content of the soft-version structure */
 struct __attribute__((__packed__)) soft_version {
@@ -575,6 +581,13 @@ static void *generate_sysupgrade_image_eap120(const struct flash_partition_entry
 	return image;
 }
 
+struct device_info eap120_info = {
+	.vendor = eap120_vendor,
+	.support_list = eap120_support_list,
+	.partitions = eap120_partitions,
+	.generate_sysupgrade_image = &generate_sysupgrade_image_eap120,
+};
+
 /** Generates an image for CPE210/220/510/520 and writes it to a file */
 static void do_cpe(const char *output,
 		const char *kernel_image,
@@ -655,21 +668,21 @@ static void do_eap(const char *output,
 		uint32_t rev,
 		bool add_jffs2_eof,
 		bool sysupgrade,
-		const char *support_list) {
+		struct device_info *info) {
 	struct image_partition_entry parts[6] = {};
 
-	parts[0] = make_partition_table(eap120_partitions);
+	parts[0] = make_partition_table(info->partitions);
 	parts[1] = make_soft_version(rev);
-	parts[2] = make_support_list(support_list, false);
+	parts[2] = make_support_list(info->support_list, false);
 	parts[3] = read_file("os-image", kernel_image, false);
 	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof);
 
 	size_t len;
 	void *image;
 	if (sysupgrade)
-		image = generate_sysupgrade_image_eap120(eap120_partitions, parts, &len);
+		image = info->generate_sysupgrade_image(info->partitions, parts, &len);
 	else
-		image = generate_factory_image(eap120_vendor, parts, &len);
+		image = generate_factory_image(info->vendor, parts, &len);
 
 	FILE *file = fopen(output, "wb");
 	if (!file)
@@ -773,7 +786,7 @@ int main(int argc, char *argv[]) {
 	else if (strcmp(board, "C2600") == 0)
 		do_c2600(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "EAP120") == 0)
-		do_eap(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade, eap120_support_list);
+		do_eap(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade, &eap120_info);
 	else
 		error(1, 0, "unsupported board %s", board);
 
