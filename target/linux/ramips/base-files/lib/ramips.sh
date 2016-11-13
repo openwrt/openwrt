@@ -166,6 +166,9 @@ ramips_board_detect() {
 	*"DuZun DM06")
 		name="duzun-dm06"
 		;;
+	*"DWR-512 B")
+		name="dwr-512-b"
+		;;
 	*"E1700")
 		name="e1700"
 		;;

@@ -50,6 +50,7 @@ platform_check_image() {
 	dir-620-d1|\
 	dir-810l|\
 	duzun-dm06|\
+	dwr-512-b|\
 	e1700|\
 	esr-9753|\
 	ex2700|\

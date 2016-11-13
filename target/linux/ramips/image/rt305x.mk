@@ -174,6 +174,15 @@ endef
 TARGET_DEVICES += dir-620-d1
 
 
+define Device/dwr-512-b
+  DTS := DWR-512-B
+  DEVICE_TITLE := D-Link DWR-512 B
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev \
+			kmod-usb-serial kmod-usb-serial-option kmod-usb-serial-wwan comgt
+endef
+TARGET_DEVICES += dwr-512-b
+
+
 define Device/esr-9753
   DTS := ESR-9753
   BLOCKSIZE := 64k
