@@ -581,6 +581,27 @@ static void *generate_sysupgrade_image_eap120(const struct flash_partition_entry
 	return image;
 }
 
+struct device_info cpe210_info = {
+	.vendor = cpe510_vendor,
+	.support_list = cpe210_support_list,
+	.partitions = cpe510_partitions,
+	.generate_sysupgrade_image = &generate_sysupgrade_image,
+};
+
+struct device_info cpe510_info = {
+	.vendor = cpe510_vendor,
+	.support_list = cpe510_support_list,
+	.partitions = cpe510_partitions,
+	.generate_sysupgrade_image = &generate_sysupgrade_image,
+};
+
+struct device_info c2600_info = {
+	.vendor = c2600_vendor,
+	.support_list = c2600_support_list,
+	.partitions = c2600_partitions,
+	.generate_sysupgrade_image = &generate_sysupgrade_image_c2600,
+};
+
 struct device_info eap120_info = {
 	.vendor = eap120_vendor,
 	.support_list = eap120_support_list,
@@ -588,81 +609,7 @@ struct device_info eap120_info = {
 	.generate_sysupgrade_image = &generate_sysupgrade_image_eap120,
 };
 
-/** Generates an image for CPE210/220/510/520 and writes it to a file */
-static void do_cpe(const char *output,
-		const char *kernel_image,
-		const char *rootfs_image,
-		uint32_t rev,
-		bool add_jffs2_eof,
-		bool sysupgrade,
-		const char *support_list) {
-	struct image_partition_entry parts[6] = {};
-
-	parts[0] = make_partition_table(cpe510_partitions);
-	parts[1] = make_soft_version(rev);
-	parts[2] = make_support_list(support_list, false);
-	parts[3] = read_file("os-image", kernel_image, false);
-	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof);
-
-	size_t len;
-	void *image;
-	if (sysupgrade)
-		image = generate_sysupgrade_image(cpe510_partitions, parts, &len);
-	else
-		image = generate_factory_image(cpe510_vendor, parts, &len);
-
-	FILE *file = fopen(output, "wb");
-	if (!file)
-		error(1, errno, "unable to open output file");
-
-	if (fwrite(image, len, 1, file) != 1)
-		error(1, 0, "unable to write output file");
-
-	fclose(file);
-
-	free(image);
-
-	size_t i;
-	for (i = 0; parts[i].name; i++)
-		free_image_partition(parts[i]);
-}
-
-/** Generates an image for C2600 and writes it to a file */
-static void do_c2600(const char *output, const char *kernel_image, const char *rootfs_image, uint32_t rev, bool add_jffs2_eof, bool sysupgrade) {
-	struct image_partition_entry parts[6] = {};
-
-	parts[0] = make_partition_table(c2600_partitions);
-	parts[1] = make_soft_version(rev);
-	parts[2] = make_support_list(c2600_support_list, true);
-	parts[3] = read_file("os-image", kernel_image, false);
-	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof);
-
-	size_t len;
-	void *image;
-	if (sysupgrade)
-		image = generate_sysupgrade_image_c2600(c2600_partitions, parts, &len);
-	else
-		image = generate_factory_image(c2600_vendor, parts, &len);
-
-	FILE *file = fopen(output, "wb");
-	if (!file)
-		error(1, errno, "unable to open output file");
-
-	if (fwrite(image, len, 1, file) != 1)
-		error(1, 0, "unable to write output file");
-
-	fclose(file);
-
-	free(image);
-
-	size_t i;
-	for (i = 0; parts[i].name; i++)
-		free_image_partition(parts[i]);
-}
-
-
-/** Generates an image for EAP120 and writes it to a file */
-static void do_eap(const char *output,
+static void build_image(const char *output,
 		const char *kernel_image,
 		const char *rootfs_image,
 		uint32_t rev,
@@ -723,6 +670,7 @@ int main(int argc, char *argv[]) {
 	const char *board = NULL, *kernel_image = NULL, *rootfs_image = NULL, *output = NULL;
 	bool add_jffs2_eof = false, sysupgrade = false;
 	unsigned rev = 0;
+	struct device_info *info;
 
 	while (true) {
 		int c;
@@ -780,15 +728,17 @@ int main(int argc, char *argv[]) {
 		error(1, 0, "no output filename has been specified");
 
 	if (strcmp(board, "CPE210") == 0)
-		do_cpe(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade, cpe210_support_list);
+		info = &cpe210_info;
 	else if (strcmp(board, "CPE510") == 0)
-		do_cpe(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade, cpe510_support_list);
+		info = &cpe510_info;
 	else if (strcmp(board, "C2600") == 0)
-		do_c2600(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade);
+		info = &c2600_info;
 	else if (strcmp(board, "EAP120") == 0)
-		do_eap(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade, &eap120_info);
+		info = &eap120_info;
 	else
 		error(1, 0, "unsupported board %s", board);
+
+	build_image(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade, info);
 
 	return 0;
 }
