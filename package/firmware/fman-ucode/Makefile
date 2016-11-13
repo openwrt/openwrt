@@ -15,7 +15,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://git.freescale.com/git/cgit.cgi/ppc/sdk/fm-ucode.git
+PKG_SOURCE_URL:=https://git.freescale.com/git/cgit.cgi/ppc/sdk/fm-ucode.git
 PKG_SOURCE_VERSION:=b19c645821941493fbef32e616b5a16404259976
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
