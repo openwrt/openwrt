@@ -94,6 +94,10 @@ get_status_led() {
 	cf-e320n-v2)
 		status_led="$board:blue:wlan"
 		;;
+	cf-e380ac-v1|\
+	cf-e380ac-v2)
+		status_led="$board:blue:wlan2g"
+		;;
 	cpe510)
 		status_led="tp-link:green:link4"
 		;;

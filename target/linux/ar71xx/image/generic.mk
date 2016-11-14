@@ -35,6 +35,25 @@ define Device/cf-e320n-v2
 endef
 TARGET_DEVICES += cf-e320n-v2
 
+define Device/cf-e380ac-v1
+  DEVICE_TITLE := COMFAST CF-E380AC v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
+  BOARDNAME = CF-E380AC-V1
+  IMAGE_SIZE = 16128k
+  CONSOLE = ttyS0,115200
+  MTDPARTS = spi0.0:128k(u-boot)ro,64k(art)ro,16128k(firmware),64k(art-backup)ro
+endef
+TARGET_DEVICES += cf-e380ac-v1
+
+define Device/cf-e380ac-v2
+  $(Device/cf-e380ac-v1)
+  DEVICE_TITLE := COMFAST CF-E380AC v2
+  BOARDNAME = CF-E380AC-V2
+  IMAGE_SIZE = 16000k
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(art)ro,16000k(firmware),64k(art-backup)ro
+endef
+TARGET_DEVICES += cf-e380ac-v2
+
 define Device/cf-e520n
   DEVICE_TITLE := COMFAST CF-E520N
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

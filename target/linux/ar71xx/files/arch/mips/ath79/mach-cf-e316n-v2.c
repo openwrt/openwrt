@@ -2,9 +2,11 @@
  *  Support for COMFAST boards:
  *  - CF-E316N v2 (AR9341)
  *  - CF-E320N v2 (QCA9531)
+ *  - CF-E380AC v1/v2 (QCA9558)
  *  - CF-E520N/CF-E530N (QCA9531)
  *
  *  Copyright (C) 2016 Piotr Dymacz <pepe2k@gmail.com>
+ *  Copyright (C) 2016 Gareth Parker <gareth41@orcon.net.nz>
  *  Copyright (C) 2015 Paul Fertser <fercerpav@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -13,6 +15,7 @@
  */
 
 #include <linux/gpio.h>
+#include <linux/platform_data/phy-at803x.h>
 #include <linux/platform_device.h>
 #include <linux/timer.h>
 
@@ -20,6 +23,7 @@
 #include <asm/mach-ath79/ar71xx_regs.h>
 
 #include "common.h"
+#include "dev-ap9x-pci.h"
 #include "dev-eth.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
@@ -126,6 +130,70 @@ static struct gpio_keys_button cf_e320n_v2_gpio_keys[] __initdata = {
 	},
 };
 
+/* CF-E380AC v1/v2 */
+#define CF_E380AC_V1V2_GPIO_LED_LAN	0
+#define CF_E380AC_V1V2_GPIO_LED_WLAN2G	2
+#define CF_E380AC_V1V2_GPIO_LED_WLAN5G	3
+
+#define CF_E380AC_V1V2_GPIO_EXT_WDT	17
+
+#define CF_E380AC_V1V2_GPIO_BTN_RESET	19
+
+static struct gpio_led cf_e380ac_v1_leds_gpio[] __initdata = {
+	{
+		.name		= "cf-e380ac-v1:green:lan",
+		.gpio		= CF_E380AC_V1V2_GPIO_LED_LAN,
+		.active_low	= 0,
+	}, {
+		.name		= "cf-e380ac-v1:blue:wlan2g",
+		.gpio		= CF_E380AC_V1V2_GPIO_LED_WLAN2G,
+		.active_low	= 0,
+	}, {
+		.name		= "cf-e380ac-v1:red:wlan5g",
+		.gpio		= CF_E380AC_V1V2_GPIO_LED_WLAN5G,
+		.active_low	= 0,
+	},
+};
+
+static struct gpio_led cf_e380ac_v2_leds_gpio[] __initdata = {
+	{
+		.name		= "cf-e380ac-v2:green:lan",
+		.gpio		= CF_E380AC_V1V2_GPIO_LED_LAN,
+		.active_low	= 0,
+	}, {
+		.name		= "cf-e380ac-v2:blue:wlan2g",
+		.gpio		= CF_E380AC_V1V2_GPIO_LED_WLAN2G,
+		.active_low	= 0,
+	}, {
+		.name		= "cf-e380ac-v2:red:wlan5g",
+		.gpio		= CF_E380AC_V1V2_GPIO_LED_WLAN5G,
+		.active_low	= 0,
+	},
+};
+
+static struct gpio_keys_button cf_e380ac_v1v2_gpio_keys[] __initdata = {
+	{
+		.desc		= "Reset button",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = CF_EXXXN_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= CF_E380AC_V1V2_GPIO_BTN_RESET,
+		.active_low	= 1,
+	},
+};
+
+static struct at803x_platform_data cf_e380ac_v1v2_at803x_data = {
+	.disable_smarteee = 1,
+};
+
+static struct mdio_board_info cf_e380ac_v1v2_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &cf_e380ac_v1v2_at803x_data,
+	},
+};
+
 /* CF-E520N/CF-E530N */
 #define CF_E5X0N_GPIO_LED_WAN		11
 #define CF_E5X0N_GPIO_BTN_RESET		17
@@ -166,9 +234,9 @@ static void gpio_wdt_toggle(unsigned long gpio)
 		  jiffies + msecs_to_jiffies(CF_EXXXN_EXT_WDT_TIMEOUT_MS));
 }
 
-static void __init cf_exxxn_common_setup(int gpio_wdt)
+static void __init cf_exxxn_common_setup(unsigned long art_ofs, int gpio_wdt)
 {
-	u8 *art = (u8 *) KSEG1ADDR(0x1f011000);
+	u8 *art = (u8 *) KSEG1ADDR(0x1f001000 + art_ofs);
 
 	if (gpio_wdt > -1) {
 		gpio_request_one(gpio_wdt, GPIOF_OUT_INIT_HIGH,
@@ -189,7 +257,7 @@ static void __init cf_e316n_v2_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f010000);
 
-	cf_exxxn_common_setup(CF_E316N_V2_GPIO_EXT_WDT);
+	cf_exxxn_common_setup(0x10000, CF_E316N_V2_GPIO_EXT_WDT);
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_SW_PHY_SWAP);
 
@@ -255,7 +323,7 @@ static void __init cf_exxxn_qca953x_eth_setup(void)
 
 static void __init cf_e320n_v2_setup(void)
 {
-	cf_exxxn_common_setup(CF_E320N_V2_GPIO_EXT_WDT);
+	cf_exxxn_common_setup(0x10000, CF_E320N_V2_GPIO_EXT_WDT);
 
 	cf_exxxn_qca953x_eth_setup();
 
@@ -287,6 +355,71 @@ static void __init cf_e320n_v2_setup(void)
 MIPS_MACHINE(ATH79_MACH_CF_E320N_V2, "CF-E320N-V2", "COMFAST CF-E320N v2",
 	     cf_e320n_v2_setup);
 
+static void __init cf_e380ac_v1v2_common_setup(unsigned long art_ofs)
+{
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f000000 + art_ofs);
+
+	cf_exxxn_common_setup(art_ofs, CF_E380AC_V1V2_GPIO_EXT_WDT);
+
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+
+	ath79_register_mdio(0, 0x0);
+	mdiobus_register_board_info(cf_e380ac_v1v2_mdio0_info,
+				    ARRAY_SIZE(cf_e380ac_v1v2_mdio0_info));
+
+	/* LAN */
+	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ath79_eth0_data.phy_mask = BIT(0);
+	ath79_eth0_pll_data.pll_1000 = 0xbe000000;
+	ath79_eth0_pll_data.pll_100 = 0xb0000101;
+	ath79_eth0_pll_data.pll_10 = 0xb0001313;
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
+	ath79_register_eth(0);
+
+	ap91_pci_init(mac + 0x5000, NULL);
+
+	/* Disable JTAG (enables GPIO0-3) */
+	ath79_gpio_function_enable(AR934X_GPIO_FUNC_JTAG_DISABLE);
+
+	ath79_gpio_direction_select(CF_E380AC_V1V2_GPIO_LED_LAN, true);
+	ath79_gpio_direction_select(CF_E380AC_V1V2_GPIO_LED_WLAN2G, true);
+	ath79_gpio_direction_select(CF_E380AC_V1V2_GPIO_LED_WLAN5G, true);
+
+	ath79_gpio_output_select(CF_E380AC_V1V2_GPIO_LED_LAN, 0);
+	ath79_gpio_output_select(CF_E380AC_V1V2_GPIO_LED_WLAN2G, 0);
+	ath79_gpio_output_select(CF_E380AC_V1V2_GPIO_LED_WLAN5G, 0);
+
+	/* For J7-4 */
+	ath79_gpio_function_disable(AR934X_GPIO_FUNC_CLK_OBS4_EN);
+
+	ath79_register_gpio_keys_polled(-1, CF_EXXXN_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(cf_e380ac_v1v2_gpio_keys),
+					cf_e380ac_v1v2_gpio_keys);
+}
+
+static void __init cf_e380ac_v1_setup(void)
+{
+	cf_e380ac_v1v2_common_setup(0x20000);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_e380ac_v1_leds_gpio),
+				 cf_e380ac_v1_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_CF_E380AC_V1, "CF-E380AC-V1", "COMFAST CF-E380AC v1",
+	     cf_e380ac_v1_setup);
+
+static void __init cf_e380ac_v2_setup(void)
+{
+	cf_e380ac_v1v2_common_setup(0x40000);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_e380ac_v2_leds_gpio),
+				 cf_e380ac_v2_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_CF_E380AC_V2, "CF-E380AC-V2", "COMFAST CF-E380AC v2",
+	     cf_e380ac_v2_setup);
+
 static void __init cf_e5x0n_gpio_setup(void)
 {
 	ath79_gpio_direction_select(CF_E5X0N_GPIO_LED_WAN, true);
@@ -300,7 +433,7 @@ static void __init cf_e5x0n_gpio_setup(void)
 
 static void __init cf_e520n_setup(void)
 {
-	cf_exxxn_common_setup(-1);
+	cf_exxxn_common_setup(0x10000, -1);
 
 	cf_exxxn_qca953x_eth_setup();
 
@@ -315,7 +448,7 @@ MIPS_MACHINE(ATH79_MACH_CF_E520N, "CF-E520N", "COMFAST CF-E520N",
 
 static void __init cf_e530n_setup(void)
 {
-	cf_exxxn_common_setup(-1);
+	cf_exxxn_common_setup(0x10000, -1);
 
 	cf_exxxn_qca953x_eth_setup();
 
