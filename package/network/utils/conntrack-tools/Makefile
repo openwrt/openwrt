@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=conntrack-tools
-PKG_VERSION:=1.4.3
+PKG_VERSION:=1.4.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -16,7 +16,7 @@ PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/conntrack-tools/files \
 	ftp://ftp.netfilter.org/pub/conntrack-tools \
 	http://mirrors.evolva.ro/netfilter.org/conntrack-tools
-PKG_MD5SUM:=966a5d8f846ddf5304bcd12685c0707f
+PKG_MD5SUM:=b7caf4fcc4c03575df57d25e5216584d597fd916c891f191dac616ce68bdba6c
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0
@@ -24,13 +24,9 @@ PKG_LICENSE:=GPL-2.0
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
-TAR_OPTIONS += --exclude='*.rej'
-
 PKG_BUILD_DEPENDS:=librpc
 
 include $(INCLUDE_DIR)/package.mk
-
-TARGET_CFLAGS += -D_GNU_SOURCE=1
 
 define Package/conntrack-tools/default
   SECTION:=net
