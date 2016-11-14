@@ -173,7 +173,6 @@ get_status_led() {
 	px-4885|\
 	re6500|\
 	whr-1166d|\
-	whr-300hp2|\
 	whr-600d|\
 	widora-neo)
 		status_led="$board:orange:wifi"
@@ -213,6 +212,7 @@ get_status_led() {
 	wizfi630a)
 		status_led="$board::run"
 		;;
+	whr-300hp2|\
 	wsr-1166|\
 	wsr-600)
 		status_led="$board:green:power"
