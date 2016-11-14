@@ -128,7 +128,8 @@ add_overlayfiles() {
 }
 
 # hooks
-sysupgrade_image_check="platform_check_image"
+sysupgrade_image_check="fwtool_check_image platform_check_image"
+sysupgrade_pre_upgrade="fwtool_pre_upgrade"
 [ $SAVE_OVERLAY = 0 -o ! -d /overlay/etc ] && \
 	sysupgrade_init_conffiles="add_uci_conffiles" || \
 	sysupgrade_init_conffiles="add_overlayfiles"
