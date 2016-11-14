@@ -378,8 +378,6 @@ define Device/tl-wpa8630
     BOARDNAME := TL-WPA8630
     DEVICE_PROFILE := TL-WPA8630
     TPLINK_HWID := 0x86300001
-    MTDPARTS = spi0.0:64k(u-boot)ro,1344k(kernel),6656k(rootfs),64k(mib0)ro,64k(ART)ro,8000k@0x10000(firmware)
-    IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade -a 0x10000
 endef
 TARGET_DEVICES += tl-wpa8630
 

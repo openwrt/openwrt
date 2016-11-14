@@ -40,8 +40,14 @@
 #define TL_WPA8630_WMAC_CALDATA_OFFSET	0x1000
 #define TL_WPA8630_PCI_CALDATA_OFFSET	0x5000
 
+static const char *tl_wpa8630_part_probes[] = {
+	"tp-link-64k",
+	NULL,
+};
+
 static struct flash_platform_data tl_wpa8630_flash_data = {
-	.type = "s25fl064k",
+	.part_probes	= tl_wpa8630_part_probes,
+	.type		= "s25fl064k",
 };
 
 static struct gpio_led tl_wpa8630_leds_gpio[] __initdata = {
