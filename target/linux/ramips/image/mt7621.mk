@@ -148,6 +148,14 @@ define Device/zbt-wg3526
 endef
 TARGET_DEVICES += zbt-wg3526
 
+define Device/ac1200pro
+  DTS := AC1200pro
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := Digineo AC1200 Pro
+  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci
+endef
+TARGET_DEVICES += ac1200pro
+
 define Device/wf-2881
   DTS := WF-2881
   BLOCKSIZE := 128k

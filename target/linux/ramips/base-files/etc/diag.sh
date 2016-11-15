@@ -53,10 +53,7 @@ get_status_led() {
 	mzk-ex750np)
 		status_led="$board:red:power"
 		;;
-	ai-br100|\
-	ht-tm02)
-		status_led="$board:blue:wlan"
-		;;
+	ac1200pro|\
 	all0239-3g|\
 	dcs-930|\
 	dir-300-b1|\
@@ -81,6 +78,10 @@ get_status_led() {
 	zbt-wg2626|\
 	zbt-wg3526)
 		status_led="$board:green:status"
+		;;
+	ai-br100|\
+	ht-tm02)
+		status_led="$board:blue:wlan"
 		;;
 	atp-52b|\
 	ip2202)

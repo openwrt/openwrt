@@ -1,0 +1,15 @@
+/dts-v1/;
+
+#include "ZBT-WG3526.dtsi"
+
+/ {
+	model = "Digineo AC1200 Pro";
+};
+
+&firmware {
+	reg = <0x50000 0x1fb0000>;
+};
+
+&status_led {
+	label = "ac1200pro:green:status";
+};
