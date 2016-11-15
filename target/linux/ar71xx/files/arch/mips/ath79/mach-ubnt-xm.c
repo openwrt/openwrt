@@ -279,6 +279,7 @@ static void __init ubnt_unifi_outdoor_plus_setup(void)
 	ath79_register_eth(0);
 	ath79_register_eth(1);
 
+	ap9x_pci_get_wmac_data(0)->ubnt_hsr = true;
 	ap91_pci_init(ee, NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(ubnt_unifi_outdoor_plus_leds_gpio),
