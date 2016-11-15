@@ -268,7 +268,7 @@ endef
 
 define Device/ubnt-unifi-outdoor-plus
 $(Device/ubnt-uap-pro)
-  DEVICE_TITLE := Ubiquiti UniFi Outdoor Pro
+  DEVICE_TITLE := Ubiquiti UniFi Outdoor Plus
   UBNT_CHIP := ar7240
   BOARDNAME := UBNT-UOP
   DEVICE_PROFILE := UBNT
