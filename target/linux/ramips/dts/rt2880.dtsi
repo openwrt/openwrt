@@ -186,6 +186,14 @@
 		#clock-cells = <1>;
 	};
 
+	pci: pci@440000 {
+		compatible = "ralink,rt288x-pci";
+		reg = <0x00440000 0x20000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "disabled";
+	};
+
 	ethernet: ethernet@400000 {
 		compatible = "ralink,rt2880-eth";
 		reg = <0x00400000 0x10000>;
