@@ -1,0 +1,339 @@
+From 5508699bbd461ae3db35ba0112bd06e66f7a6184 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Wed, 16 Mar 2016 16:20:56 +0530
+Subject: drivers/misc: add Imagination Technologies scratchpad driver
+
+Add driver which provides sysfs access to the pistachio scratchpad
+registers, these registers are soft reset protected registers.
+
+Change-Id: Ibadcab5c32a222c5231713b63e23709835c1f0dc
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ .../devicetree/bindings/misc/img-scratchpad.txt    |  21 ++
+ drivers/misc/Kconfig                               |  10 +
+ drivers/misc/Makefile                              |   1 +
+ drivers/misc/img-scratchpad.c                      | 254 +++++++++++++++++++++
+ 4 files changed, 286 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/misc/img-scratchpad.txt
+ create mode 100644 drivers/misc/img-scratchpad.c
+
+diff --git a/Documentation/devicetree/bindings/misc/img-scratchpad.txt b/Documentation/devicetree/bindings/misc/img-scratchpad.txt
+new file mode 100644
+index 0000000..a20b88d
+--- /dev/null
++++ b/Documentation/devicetree/bindings/misc/img-scratchpad.txt
+@@ -0,0 +1,21 @@
++Imagination Technologies scratchpad driver
++
++Provide syfs read/write access to the scratchpad registers.
++These registers are soft reset protected registers.
++
++Required properties:
++- compatible: Should be "img,pistachio-scratchpad", "syscon"
++- reg: Should contain scratchpad registers location and length
++- clocks: Must contain an entry for each entry in clock-names.
++- clock-names: Should contain "wdt" and "sys";
++- sysfs-mask: 8 bit value should specify the registers to be exposed via sysfs
++
++Examples:
++
++scratchpad@18102120 {
++	compatible = "img,pistachio-scratchpad", "syscon";
++	reg = <0x18102120 0x20>;
++	clocks = <&clk_periph PERIPH_CLK_WD>, <&cr_periph SYS_CLK_WD>;
++	clock-names = "wdt", "sys";
++	sysfs-mask = /bits/ 8 <0xFE>; /*expose all except the first reg */
++};
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index bd90b6e..8a69d29 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -545,6 +545,16 @@ config UBOOT_BOOTCOUNT
+ 	  The U-Boot Bootcount driver allows to access the
+ 	  bootcounter through sysfs file.
+ 
++config IMG_SCRATCHPAD
++	tristate "Imagination Technologies scratchpad driver"
++	depends on OF
++	depends on HAS_IOMEM
++	depends on MFD_SYSCON
++	depends on COMMON_CLK
++	depends on MIPS || COMPILE_TEST
++	help
++	  Provide sysfs read/write access to scratchpad registers.
++
+ source "drivers/misc/c2port/Kconfig"
+ source "drivers/misc/eeprom/Kconfig"
+ source "drivers/misc/cb710/Kconfig"
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index ed230a8..bbf498e 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -59,3 +59,4 @@ obj-$(CONFIG_VEXPRESS_SYSCFG)	+= vexpress-syscfg.o
+ obj-$(CONFIG_CXL_BASE)		+= cxl/
+ obj-$(CONFIG_ATU)		+= atu/
+ obj-$(CONFIG_IMG_PDM)           += img-pdm.o
++obj-$(CONFIG_IMG_SCRATCHPAD)	+= img-scratchpad.o
+diff --git a/drivers/misc/img-scratchpad.c b/drivers/misc/img-scratchpad.c
+new file mode 100644
+index 0000000..b2da3530
+--- /dev/null
++++ b/drivers/misc/img-scratchpad.c
+@@ -0,0 +1,254 @@
++/*
++ * Copyright (C) 2016 Imagination Technologies Ltd.
++ *
++ * This driver provides sysfs read/write access to the scratchpad
++ * registers, these registers are soft reset protected registers.
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++*/
++
++#include <linux/clk.h>
++#include <linux/fs.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/slab.h>
++#include <linux/of_address.h>
++#include <linux/of_platform.h>
++#include <linux/mfd/syscon.h>
++#include <linux/regmap.h>
++
++
++#define MAX_NUM_REG	8
++#define REG_SIZE	4
++#define FILE_PREFIX	"reg"
++
++struct scratchpad_device {
++	struct clk *wdt_clk;
++	struct clk *sys_clk;
++	struct regmap *regmap;
++	struct attribute_group attr_group;
++	struct device_attribute *attr;
++	struct attribute **attrs;
++};
++
++static int reg_show(struct device *dev, struct device_attribute *attr,
++		    char *buf)
++{
++	unsigned int value;
++	unsigned int index;
++	int ret;
++	struct scratchpad_device *priv = dev_get_drvdata(dev);
++
++	/* find out reg number based on name of attr */
++	if (sscanf(attr->attr.name, FILE_PREFIX"%u", &index) != 1)
++		return -EINVAL;
++
++	if (index > MAX_NUM_REG)
++		return -EINVAL;
++
++	ret = regmap_read(priv->regmap, index*REG_SIZE, &value);
++	if (ret)
++		return ret;
++
++	return sprintf(buf, "0x%x\n", value);
++}
++
++static int reg_store(struct device *dev, struct device_attribute *attr,
++		     const char *buf, size_t count)
++{
++	int ret;
++	u32 value;
++	unsigned int index;
++	struct scratchpad_device *priv = dev_get_drvdata(dev);
++
++	/* find out reg number based on name of attr */
++	if (sscanf(attr->attr.name, FILE_PREFIX"%u", &index) != 1)
++		return -EINVAL;
++
++	if (index > MAX_NUM_REG)
++		return -EINVAL;
++
++	ret = kstrtou32(buf, 0, &value);
++	if (ret < 0)
++		return ret;
++
++	ret = regmap_write(priv->regmap, index*REG_SIZE, value);
++	if (ret)
++		return ret;
++
++	return count;
++}
++
++static int enable_wdt_clk(struct device *dev)
++{
++	int ret;
++	struct scratchpad_device *priv = dev_get_drvdata(dev);
++
++	priv->sys_clk = devm_clk_get(dev, "sys");
++	if (IS_ERR(priv->sys_clk)) {
++		dev_err(dev, "failed to get the sys clock\n");
++		return PTR_ERR(priv->sys_clk);
++	}
++
++	priv->wdt_clk = devm_clk_get(dev, "wdt");
++	if (IS_ERR(priv->wdt_clk)) {
++		dev_err(dev, "failed to get the wdt clock\n");
++		return PTR_ERR(priv->wdt_clk);
++	}
++
++	ret = clk_prepare_enable(priv->sys_clk);
++	if (ret) {
++		dev_err(dev, "could not prepare or enable sys clock\n");
++		return ret;
++	}
++
++	ret = clk_prepare_enable(priv->wdt_clk);
++	if (ret) {
++		dev_err(dev, "could not prepare or enable wdt clock\n");
++		clk_disable_unprepare(priv->sys_clk);
++	}
++
++	return ret;
++}
++
++static void disable_wdt_clk(struct device *dev)
++{
++	struct scratchpad_device *priv = dev_get_drvdata(dev);
++
++	clk_disable_unprepare(priv->wdt_clk);
++	clk_disable_unprepare(priv->sys_clk);
++}
++
++static int create_sysfs_files(struct device *dev, unsigned long sysfs_mask)
++{
++	int i, attr_index = 0;
++	unsigned int num_regs = 0;
++	int ret;
++	struct scratchpad_device *priv = dev_get_drvdata(dev);
++
++	/* If no files to be created, just return */
++	if (!sysfs_mask)
++		return 0;
++
++	for_each_set_bit(i, &sysfs_mask, BITS_PER_BYTE)
++		num_regs++;
++
++	/* Allocate memory for sysfs attributes based on number
++	 * of registers to be exposed
++	 * +1 for NULL termination in the end
++	 */
++	priv->attrs = devm_kzalloc(dev,
++			sizeof(struct attribute *) * (num_regs+1),
++			GFP_KERNEL);
++	if (!priv->attrs)
++		return -ENOMEM;
++
++	priv->attr = devm_kzalloc(dev,
++			sizeof(struct device_attribute) * num_regs,
++			GFP_KERNEL);
++	if (!priv->attr)
++		return -ENOMEM;
++
++	/* create sysfs attributes */
++	for_each_set_bit(i, &sysfs_mask, BITS_PER_BYTE) {
++		char *name;
++		const int name_len = sizeof(FILE_PREFIX) + 2;
++
++		name = devm_kmalloc(dev, name_len, GFP_KERNEL);
++		if (!name)
++			return -ENOMEM;
++
++		/* specify file name based on the actual reg index */
++		snprintf(name, name_len, FILE_PREFIX"%01u", i);
++
++		sysfs_attr_init(&priv->attr[attr_index].attr);
++		priv->attr[attr_index].attr.name = name;
++		priv->attr[attr_index].attr.mode = (S_IWUSR | S_IRUGO);
++		priv->attr[attr_index].show = reg_show;
++		priv->attr[attr_index].store = reg_store;
++		priv->attrs[attr_index] = &priv->attr[attr_index].attr;
++		attr_index++;
++	}
++
++	priv->attr_group.attrs = priv->attrs;
++	ret = sysfs_create_group(&dev->kobj, &priv->attr_group);
++	if (ret)
++		dev_err(dev, "Error in creating sysfs group\n");
++
++	return ret;
++}
++
++static int scratchpad_probe(struct platform_device *ofdev)
++{
++	struct device *dev = &ofdev->dev;
++	struct scratchpad_device *priv;
++	int ret;
++	u8 sysfs_mask = 0xFF;
++
++	priv = devm_kzalloc(dev, sizeof(struct scratchpad_device),
++			    GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	dev_set_drvdata(dev, priv);
++
++	priv->regmap = syscon_node_to_regmap(dev->of_node);
++	if (IS_ERR(priv->regmap)) {
++		dev_err(dev, "Unable to get regmap\n");
++		return PTR_ERR(priv->regmap);
++	}
++
++	if (of_property_read_u8(dev->of_node, "sysfs-mask", &sysfs_mask))
++		dev_info(dev, "sysfs-mask property not specified\n");
++
++	ret = enable_wdt_clk(dev);
++	if (ret)
++		return ret;
++
++	ret = create_sysfs_files(dev, sysfs_mask);
++	if (ret)
++		goto clk_unprepare;
++
++	return 0;
++
++clk_unprepare:
++	disable_wdt_clk(dev);
++	return ret;
++}
++
++static int scratchpad_remove(struct platform_device *ofdev)
++{
++	struct scratchpad_device *priv = dev_get_drvdata(&ofdev->dev);
++
++	sysfs_remove_group(&ofdev->dev.kobj, &priv->attr_group);
++
++	disable_wdt_clk(&ofdev->dev);
++
++	return 0;
++}
++
++static const struct of_device_id scratchpad_match[] = {
++	{ .compatible = "img,pistachio-scratchpad", },
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, scratchpad_match);
++
++static struct platform_driver scratchpad_driver = {
++	.driver = {
++		.name = "img-scratchpad",
++		.of_match_table = scratchpad_match,
++	},
++	.probe = scratchpad_probe,
++	.remove = scratchpad_remove,
++};
++
++module_platform_driver(scratchpad_driver);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Shraddha Chaudhari<shraddha.chaudhari@imgtec.com>");
++MODULE_DESCRIPTION("Provide syfs read/write access to the scratchpad registers");
+-- 
+2.6.2
+

@@ -1,0 +1,99 @@
+From a12d768fc36291384d5feedb8b96942384808fb3 Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Fri, 19 Jun 2015 17:08:32 +0100
+Subject: Revert "ALSA: pcm: Remove arch-dependent mmap kludges"
+
+This reverts commit c37de55efa1ccf018c27b876560725ff5e9f5701.
+
+The mmap functionality does not seem to be fixed for mips at present
+
+Conflicts:
+	sound/core/pcm_native.c
+
+Change-Id: I6f586b3c1150defbd7a2805264b9877751edf05d
+Signed-off-by: Damien Horsley <Damien.Horsley@imgtec.com>
+---
+ sound/core/pcm_native.c | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
+
+diff --git a/sound/core/pcm_native.c b/sound/core/pcm_native.c
+index d370846..def3fec 100644
+--- a/sound/core/pcm_native.c
++++ b/sound/core/pcm_native.c
+@@ -35,10 +35,15 @@
+ #include <sound/timer.h>
+ #include <sound/minors.h>
+ #include <linux/uio.h>
++
+ #if defined(CONFIG_HIGH_RES_TIMERS)
+ #include <linux/hrtimer.h>
+ #endif
+ 
++#if defined(CONFIG_MIPS) && defined(CONFIG_DMA_NONCOHERENT)
++#include <dma-coherence.h>
++#endif
++
+ /*
+  *  Compatibility
+  */
+@@ -3550,6 +3555,20 @@ static inline struct page *
+ snd_pcm_default_page_ops(struct snd_pcm_substream *substream, unsigned long ofs)
+ {
+ 	void *vaddr = substream->runtime->dma_area + ofs;
++#if defined(CONFIG_MIPS) && defined(CONFIG_DMA_NONCOHERENT)
++	if (substream->dma_buffer.dev.type == SNDRV_DMA_TYPE_DEV)
++		return virt_to_page(CAC_ADDR(vaddr));
++#endif
++#if defined(CONFIG_PPC32) && defined(CONFIG_NOT_COHERENT_CACHE)
++	if (substream->dma_buffer.dev.type == SNDRV_DMA_TYPE_DEV) {
++		dma_addr_t addr = substream->runtime->dma_addr + ofs;
++		addr -= get_dma_offset(substream->dma_buffer.dev.dev);
++		/* assume dma_handle set via pfn_to_phys() in
++		 * mm/dma-noncoherent.c
++		 */
++		return pfn_to_page(addr >> PAGE_SHIFT);
++	}
++#endif
+ 	return virt_to_page(vaddr);
+ }
+ 
+@@ -3594,6 +3613,13 @@ static const struct vm_operations_struct snd_pcm_vm_ops_data_fault = {
+ 	.fault =	snd_pcm_mmap_data_fault,
+ };
+ 
++#ifndef ARCH_HAS_DMA_MMAP_COHERENT
++/* This should be defined / handled globally! */
++#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
++#define ARCH_HAS_DMA_MMAP_COHERENT
++#endif
++#endif
++
+ /*
+  * mmap the DMA buffer on RAM
+  */
+@@ -3618,7 +3644,8 @@ int snd_pcm_lib_default_mmap(struct snd_pcm_substream *substream,
+ 				area->vm_end - area->vm_start, area->vm_page_prot);
+ 	}
+ #endif /* CONFIG_GENERIC_ALLOCATOR */
+-#ifndef CONFIG_X86 /* for avoiding warnings arch/x86/mm/pat.c */
++
++#ifdef ARCH_HAS_DMA_MMAP_COHERENT
+ 	if (!substream->ops->page &&
+ 	    substream->dma_buffer.dev.type == SNDRV_DMA_TYPE_DEV)
+ 		return dma_mmap_coherent(substream->dma_buffer.dev.dev,
+@@ -3626,7 +3653,11 @@ int snd_pcm_lib_default_mmap(struct snd_pcm_substream *substream,
+ 					 substream->runtime->dma_area,
+ 					 substream->runtime->dma_addr,
+ 					 area->vm_end - area->vm_start);
+-#endif /* CONFIG_X86 */
++#elif defined(CONFIG_MIPS) && defined(CONFIG_DMA_NONCOHERENT)
++	if (substream->dma_buffer.dev.type == SNDRV_DMA_TYPE_DEV &&
++	    !plat_device_is_coherent(substream->dma_buffer.dev.dev))
++		area->vm_page_prot = pgprot_noncached(area->vm_page_prot);
++#endif /* ARCH_HAS_DMA_MMAP_COHERENT */
+ 	/* mmap with fault handler */
+ 	area->vm_ops = &snd_pcm_vm_ops_data_fault;
+ 	return 0;
+-- 
+2.6.2
+

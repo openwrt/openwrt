@@ -1,0 +1,1423 @@
+From 0eebb6a80036eac4ff5d15fa0b76ebd6f53aba0a Mon Sep 17 00:00:00 2001
+From: "damien.horsley" <damien.horsley@imgtec.com>
+Date: Tue, 22 Mar 2016 11:47:51 +0000
+Subject: ASoC: Update drivers for upstreaming
+
+This includes following updations :-
+
+1. ASoC: pcm3168a: Upstreaming changes
+
+Merge changes that were made during upstreaming
+into pcm3168a driver
+
+- Macro changed to generic SOC_DOUBLE_STS
+- set_sysclk callback now calls clk_set_rate
+- set_fmt callback handling improved
+- Power management added
+- Cosmetic changes
+
+2 ASoC: img: i2s_out: Upstreaming changes
+
+Merge changes that were made during upstreaming
+into i2s out driver
+
+- Register access functions changed
+- Error handling during probe improved
+
+3. ASoC: img: parallel_out: Upstreaming changes
+
+Merge changes that were made during upstreaming
+into parallel out driver
+
+- Frame clock edge selection moved to set_fmt callback
+- Superfluous spinlock removed
+- Error handling during probe improved
+
+4. ASoC: img: spdif_in: Upstreaming changes
+
+Merge changes that were made during upstreaming
+into spdif in driver
+
+- Error handling during probe improved
+
+5. ASoC: img: spdif_out: Upstreaming changes
+
+Merge changes that were made during upstreaming
+into spdif out driver
+
+- Error handling during probe improved
+
+6. ASoC: img: internal_dac: Upstreaming changes
+
+Merge changes that were made during upstreaming
+into internal dac driver
+
+- Power management added
+- Cosmetic changes
+- Mute control handling improved
+- Power up/down sequence improved
+- Read voltage from device tree and set control bit accordingly
+
+Change-Id: I5bb5e125979e7a1de3f1f44499d3784e857bfd04
+Signed-off-by: damien.horsley <damien.horsley@imgtec.com>
+---
+ include/sound/soc.h                    |   8 ++
+ sound/soc/codecs/pcm3168a-i2c.c        |   2 +-
+ sound/soc/codecs/pcm3168a-spi.c        |   2 +-
+ sound/soc/codecs/pcm3168a.c            | 168 ++++++++++++-----------
+ sound/soc/codecs/pcm3168a.h            |  13 +-
+ sound/soc/img/img-i2s-out.c            | 111 ++++++++-------
+ sound/soc/img/img-parallel-out.c       | 131 +++++-------------
+ sound/soc/img/img-spdif-in.c           |  15 ++-
+ sound/soc/img/img-spdif-out.c          |  14 +-
+ sound/soc/img/pistachio-internal-dac.c | 240 ++++++++++++++++-----------------
+ 10 files changed, 336 insertions(+), 368 deletions(-)
+
+diff --git a/include/sound/soc.h b/include/sound/soc.h
+index ce12720..b4c0ec9 100644
+--- a/include/sound/soc.h
++++ b/include/sound/soc.h
+@@ -110,6 +110,14 @@
+ 	.put = snd_soc_put_volsw, \
+ 	.private_value = SOC_DOUBLE_VALUE(reg, shift_left, shift_right, \
+ 					  max, invert, 0) }
++#define SOC_DOUBLE_STS(xname, reg, shift_left, shift_right, max, invert) \
++{									\
++	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = (xname),		\
++	.info = snd_soc_info_volsw, .get = snd_soc_get_volsw,		\
++	.access = SNDRV_CTL_ELEM_ACCESS_READ |				\
++		SNDRV_CTL_ELEM_ACCESS_VOLATILE,				\
++	.private_value = SOC_DOUBLE_VALUE(reg, shift_left, shift_right,	\
++					  max, invert, 0) }
+ #define SOC_DOUBLE_R(xname, reg_left, reg_right, xshift, xmax, xinvert) \
+ {	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = (xname), \
+ 	.info = snd_soc_info_volsw, \
+diff --git a/sound/soc/codecs/pcm3168a-i2c.c b/sound/soc/codecs/pcm3168a-i2c.c
+index c296d39..6feb090 100644
+--- a/sound/soc/codecs/pcm3168a-i2c.c
++++ b/sound/soc/codecs/pcm3168a-i2c.c
+@@ -1,7 +1,7 @@
+ /*
+  * PCM3168A codec i2c driver
+  *
+- * Copyright (C) 2014 Imagination Technologies Ltd.
++ * Copyright (C) 2015 Imagination Technologies Ltd.
+  *
+  * Author: Damien Horsley <Damien.Horsley@imgtec.com>
+  *
+diff --git a/sound/soc/codecs/pcm3168a-spi.c b/sound/soc/codecs/pcm3168a-spi.c
+index d351e5a..03945a2 100644
+--- a/sound/soc/codecs/pcm3168a-spi.c
++++ b/sound/soc/codecs/pcm3168a-spi.c
+@@ -1,7 +1,7 @@
+ /*
+  * PCM3168A codec spi driver
+  *
+- * Copyright (C) 2014 Imagination Technologies Ltd.
++ * Copyright (C) 2015 Imagination Technologies Ltd.
+  *
+  * Author: Damien Horsley <Damien.Horsley@imgtec.com>
+  *
+diff --git a/sound/soc/codecs/pcm3168a.c b/sound/soc/codecs/pcm3168a.c
+index b6fbbd6..0c7248a 100644
+--- a/sound/soc/codecs/pcm3168a.c
++++ b/sound/soc/codecs/pcm3168a.c
+@@ -1,7 +1,7 @@
+ /*
+  * PCM3168A codec driver
+  *
+- * Copyright (C) 2014 Imagination Technologies Ltd.
++ * Copyright (C) 2015 Imagination Technologies Ltd.
+  *
+  * Author: Damien Horsley <Damien.Horsley@imgtec.com>
+  *
+@@ -49,8 +49,8 @@ struct pcm3168a_priv {
+ 	struct regulator_bulk_data supplies[PCM3168A_NUM_SUPPLIES];
+ 	struct regmap *regmap;
+ 	struct clk *scki;
+-	bool adc_slave_mode;
+-	bool dac_slave_mode;
++	bool adc_master_mode;
++	bool dac_master_mode;
+ 	unsigned long sysclk;
+ 	unsigned int adc_fmt;
+ 	unsigned int dac_fmt;
+@@ -131,10 +131,10 @@ static const struct snd_kcontrol_new pcm3168a_snd_controls[] = {
+ 	SOC_DOUBLE("DAC2 Invert Switch", PCM3168A_DAC_INV, 2, 3, 1, 0),
+ 	SOC_DOUBLE("DAC3 Invert Switch", PCM3168A_DAC_INV, 4, 5, 1, 0),
+ 	SOC_DOUBLE("DAC4 Invert Switch", PCM3168A_DAC_INV, 6, 7, 1, 0),
+-	PCM3168A_DOUBLE_STS("DAC1 Zero Flag", PCM3168A_DAC_ZERO, 0, 1, 1, 0),
+-	PCM3168A_DOUBLE_STS("DAC2 Zero Flag", PCM3168A_DAC_ZERO, 2, 3, 1, 0),
+-	PCM3168A_DOUBLE_STS("DAC3 Zero Flag", PCM3168A_DAC_ZERO, 4, 5, 1, 0),
+-	PCM3168A_DOUBLE_STS("DAC4 Zero Flag", PCM3168A_DAC_ZERO, 6, 7, 1, 0),
++	SOC_DOUBLE_STS("DAC1 Zero Flag", PCM3168A_DAC_ZERO, 0, 1, 1, 0),
++	SOC_DOUBLE_STS("DAC2 Zero Flag", PCM3168A_DAC_ZERO, 2, 3, 1, 0),
++	SOC_DOUBLE_STS("DAC3 Zero Flag", PCM3168A_DAC_ZERO, 4, 5, 1, 0),
++	SOC_DOUBLE_STS("DAC4 Zero Flag", PCM3168A_DAC_ZERO, 6, 7, 1, 0),
+ 	SOC_ENUM("DAC Volume Control Type", pcm3168a_dac_volume_type),
+ 	SOC_ENUM("DAC Volume Rate Multiplier", pcm3168a_dac_att_mult),
+ 	SOC_ENUM("DAC De-Emphasis", pcm3168a_dac_demp),
+@@ -174,9 +174,9 @@ static const struct snd_kcontrol_new pcm3168a_snd_controls[] = {
+ 	SOC_DOUBLE("ADC1 Mute Switch", PCM3168A_ADC_MUTE, 0, 1, 1, 0),
+ 	SOC_DOUBLE("ADC2 Mute Switch", PCM3168A_ADC_MUTE, 2, 3, 1, 0),
+ 	SOC_DOUBLE("ADC3 Mute Switch", PCM3168A_ADC_MUTE, 4, 5, 1, 0),
+-	PCM3168A_DOUBLE_STS("ADC1 Overflow Flag", PCM3168A_ADC_OV, 0, 1, 1, 0),
+-	PCM3168A_DOUBLE_STS("ADC2 Overflow Flag", PCM3168A_ADC_OV, 2, 3, 1, 0),
+-	PCM3168A_DOUBLE_STS("ADC3 Overflow Flag", PCM3168A_ADC_OV, 4, 5, 1, 0),
++	SOC_DOUBLE_STS("ADC1 Overflow Flag", PCM3168A_ADC_OV, 0, 1, 1, 0),
++	SOC_DOUBLE_STS("ADC2 Overflow Flag", PCM3168A_ADC_OV, 2, 3, 1, 0),
++	SOC_DOUBLE_STS("ADC3 Overflow Flag", PCM3168A_ADC_OV, 4, 5, 1, 0),
+ 	SOC_ENUM("ADC Volume Control Type", pcm3168a_adc_volume_type),
+ 	SOC_ENUM("ADC Volume Rate Multiplier", pcm3168a_adc_att_mult),
+ 	SOC_ENUM("ADC Overflow Flag Polarity", pcm3168a_adc_ov_pol),
+@@ -272,7 +272,7 @@ static unsigned int pcm3168a_scki_ratios[] = {
+ 
+ static int pcm3168a_reset(struct pcm3168a_priv *pcm3168a)
+ {
+-	int ret = 0;
++	int ret;
+ 
+ 	ret = regmap_write(pcm3168a->regmap, PCM3168A_RST_SMODE, 0);
+ 	if (ret)
+@@ -295,37 +295,31 @@ static int pcm3168a_digital_mute(struct snd_soc_dai *dai, int mute)
+ 	return 0;
+ }
+ 
+-static int pcm3168a_set_dai_sysclk(struct snd_soc_dai *codec_dai,
++static int pcm3168a_set_dai_sysclk(struct snd_soc_dai *dai,
+ 				  int clk_id, unsigned int freq, int dir)
+ {
+-	struct snd_soc_codec *codec = codec_dai->codec;
+-	struct pcm3168a_priv *pcm3168a = snd_soc_codec_get_drvdata(codec);
++	struct pcm3168a_priv *pcm3168a = snd_soc_codec_get_drvdata(dai->codec);
++	int ret;
+ 
+ 	if (freq > PCM1368A_MAX_SYSCLK)
+ 		return -EINVAL;
+ 
++	ret = clk_set_rate(pcm3168a->scki, freq);
++	if (ret)
++		return ret;
++
+ 	pcm3168a->sysclk = freq;
+ 
+ 	return 0;
+ }
+ 
+-static int pcm3168a_set_dai_fmt(struct snd_soc_dai *codec_dai,
++static int pcm3168a_set_dai_fmt(struct snd_soc_dai *dai,
+ 			       unsigned int format, bool dac)
+ {
+-	struct snd_soc_codec *codec = codec_dai->codec;
++	struct snd_soc_codec *codec = dai->codec;
+ 	struct pcm3168a_priv *pcm3168a = snd_soc_codec_get_drvdata(codec);
+ 	u32 fmt, reg, mask, shift;
+-	bool slave_mode;
+-
+-	if (dac) {
+-		reg = PCM3168A_DAC_PWR_MST_FMT;
+-		mask = PCM3168A_DAC_FMT_MASK;
+-		shift = PCM3168A_DAC_FMT_SHIFT;
+-	} else {
+-		reg = PCM3168A_ADC_MST_FMT;
+-		mask = PCM3168A_ADC_FMTAD_MASK;
+-		shift = PCM3168A_ADC_FMTAD_SHIFT;
+-	}
++	bool master_mode;
+ 
+ 	switch (format & SND_SOC_DAIFMT_FORMAT_MASK) {
+ 	case SND_SOC_DAIFMT_LEFT_J:
+@@ -348,28 +342,18 @@ static int pcm3168a_set_dai_fmt(struct snd_soc_dai *codec_dai,
+ 		return -EINVAL;
+ 	}
+ 
+-	regmap_update_bits(pcm3168a->regmap, reg, mask, fmt << shift);
+-
+ 	switch (format & SND_SOC_DAIFMT_MASTER_MASK) {
+ 	case SND_SOC_DAIFMT_CBS_CFS:
+-		slave_mode = true;
++		master_mode = false;
+ 		break;
+ 	case SND_SOC_DAIFMT_CBM_CFM:
+-		slave_mode = false;
++		master_mode = true;
+ 		break;
+ 	default:
+ 		dev_err(codec->dev, "unsupported master/slave mode\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	if (dac) {
+-		pcm3168a->dac_slave_mode = slave_mode;
+-		pcm3168a->dac_fmt = fmt;
+-	} else {
+-		pcm3168a->adc_slave_mode = slave_mode;
+-		pcm3168a->adc_fmt = fmt;
+-	}
+-
+ 	switch (format & SND_SOC_DAIFMT_INV_MASK) {
+ 	case SND_SOC_DAIFMT_NB_NF:
+ 		break;
+@@ -377,19 +361,35 @@ static int pcm3168a_set_dai_fmt(struct snd_soc_dai *codec_dai,
+ 		return -EINVAL;
+ 	}
+ 
++	if (dac) {
++		reg = PCM3168A_DAC_PWR_MST_FMT;
++		mask = PCM3168A_DAC_FMT_MASK;
++		shift = PCM3168A_DAC_FMT_SHIFT;
++		pcm3168a->dac_master_mode = master_mode;
++		pcm3168a->dac_fmt = fmt;
++	} else {
++		reg = PCM3168A_ADC_MST_FMT;
++		mask = PCM3168A_ADC_FMTAD_MASK;
++		shift = PCM3168A_ADC_FMTAD_SHIFT;
++		pcm3168a->adc_master_mode = master_mode;
++		pcm3168a->adc_fmt = fmt;
++	}
++
++	regmap_update_bits(pcm3168a->regmap, reg, mask, fmt << shift);
++
+ 	return 0;
+ }
+ 
+-static int pcm3168a_set_dai_fmt_dac(struct snd_soc_dai *codec_dai,
++static int pcm3168a_set_dai_fmt_dac(struct snd_soc_dai *dai,
+ 			       unsigned int format)
+ {
+-	return pcm3168a_set_dai_fmt(codec_dai, format, true);
++	return pcm3168a_set_dai_fmt(dai, format, true);
+ }
+ 
+-static int pcm3168a_set_dai_fmt_adc(struct snd_soc_dai *codec_dai,
++static int pcm3168a_set_dai_fmt_adc(struct snd_soc_dai *dai,
+ 			       unsigned int format)
+ {
+-	return pcm3168a_set_dai_fmt(codec_dai, format, false);
++	return pcm3168a_set_dai_fmt(dai, format, false);
+ }
+ 
+ static int pcm3168a_hw_params(struct snd_pcm_substream *substream,
+@@ -398,10 +398,10 @@ static int pcm3168a_hw_params(struct snd_pcm_substream *substream,
+ {
+ 	struct snd_soc_codec *codec = dai->codec;
+ 	struct pcm3168a_priv *pcm3168a = snd_soc_codec_get_drvdata(codec);
+-	bool tx, slave_mode;
++	bool tx, master_mode;
+ 	u32 val, mask, shift, reg;
+ 	unsigned int rate, channels, fmt, ratio, max_ratio;
+-	int i;
++	int i, min_frame_size;
+ 	snd_pcm_format_t format;
+ 
+ 	rate = params_rate(params);
+@@ -416,14 +416,14 @@ static int pcm3168a_hw_params(struct snd_pcm_substream *substream,
+ 		reg = PCM3168A_DAC_PWR_MST_FMT;
+ 		mask = PCM3168A_DAC_MSDA_MASK;
+ 		shift = PCM3168A_DAC_MSDA_SHIFT;
+-		slave_mode = pcm3168a->dac_slave_mode;
++		master_mode = pcm3168a->dac_master_mode;
+ 		fmt = pcm3168a->dac_fmt;
+ 	} else {
+ 		max_ratio = PCM3168A_NUM_SCKI_RATIOS_ADC;
+ 		reg = PCM3168A_ADC_MST_FMT;
+ 		mask = PCM3168A_ADC_MSAD_MASK;
+ 		shift = PCM3168A_ADC_MSAD_SHIFT;
+-		slave_mode = pcm3168a->adc_slave_mode;
++		master_mode = pcm3168a->adc_master_mode;
+ 		fmt = pcm3168a->adc_fmt;
+ 	}
+ 
+@@ -437,20 +437,32 @@ static int pcm3168a_hw_params(struct snd_pcm_substream *substream,
+ 		return -EINVAL;
+ 	}
+ 
+-	if ((!slave_mode || (fmt & PCM3168A_FMT_DSP_MASK)) &&
+-			(format == SNDRV_PCM_FORMAT_S24_3LE)) {
+-		dev_err(codec->dev, "48-bit frames not supported in master mode or slave mode using DSP(A/B)\n");
+-		return -EINVAL;
+-	}
+-
+-	if ((!slave_mode || ((fmt != PCM3168A_FMT_RIGHT_J) &&
+-			(fmt != PCM3168A_FMT_LEFT_J))) &&
+-			(format == SNDRV_PCM_FORMAT_S16)) {
+-		dev_err(codec->dev, "32-bit frames are supported only for slave mode using left/right justified\n");
++	min_frame_size = params_width(params) * 2;
++	switch (min_frame_size) {
++	case 32:
++		if (master_mode || (fmt != PCM3168A_FMT_RIGHT_J)) {
++			dev_err(codec->dev, "32-bit frames are supported only for slave mode using right justified\n");
++			return -EINVAL;
++		}
++		fmt = PCM3168A_FMT_RIGHT_J_16;
++		break;
++	case 48:
++		if (master_mode || (fmt & PCM3168A_FMT_DSP_MASK)) {
++			dev_err(codec->dev, "48-bit frames not supported in master mode, or slave mode using DSP\n");
++			return -EINVAL;
++		}
++		break;
++	case 64:
++		break;
++	default:
++		dev_err(codec->dev, "unsupported frame size: %d\n", min_frame_size);
+ 		return -EINVAL;
+ 	}
+ 
+-	val = slave_mode ? 0 : ((i + 1) << shift);
++	if (master_mode)
++		val = ((i + 1) << shift);
++	else
++		val = 0;
+ 
+ 	regmap_update_bits(pcm3168a->regmap, reg, mask, val);
+ 
+@@ -462,18 +474,6 @@ static int pcm3168a_hw_params(struct snd_pcm_substream *substream,
+ 		shift = PCM3168A_ADC_FMTAD_SHIFT;
+ 	}
+ 
+-	/*
+-	 * Justification has no effect for S32 and S16 as the whole frame
+-	 * is filled with the samples, but the register field
+-	 * must be set to a particular value for correct operation
+-	 */
+-	if ((fmt == PCM3168A_FMT_RIGHT_J) &&
+-			(format == SNDRV_PCM_FORMAT_S32)) {
+-		fmt = PCM3168A_FMT_LEFT_J;
+-	} else if (format == SNDRV_PCM_FORMAT_S16) {
+-		fmt = PCM3168A_FMT_RIGHT_J_16;
+-	}
+-
+ 	regmap_update_bits(pcm3168a->regmap, reg, mask, fmt << shift);
+ 
+ 	return 0;
+@@ -599,6 +599,7 @@ const struct regmap_config pcm3168a_regmap = {
+ EXPORT_SYMBOL_GPL(pcm3168a_regmap);
+ 
+ static const struct snd_soc_codec_driver pcm3168a_driver = {
++	.idle_bias_off = true,
+ 	.controls = pcm3168a_snd_controls,
+ 	.num_controls = ARRAY_SIZE(pcm3168a_snd_controls),
+ 	.dapm_widgets = pcm3168a_dapm_widgets,
+@@ -620,14 +621,15 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
+ 
+ 	pcm3168a->scki = devm_clk_get(dev, "scki");
+ 	if (IS_ERR(pcm3168a->scki)) {
+-		dev_err(dev, "failed to get the clock: %ld\n",
+-				PTR_ERR(pcm3168a->scki));
+-		return PTR_ERR(pcm3168a->scki);
++		ret = PTR_ERR(pcm3168a->scki);
++		if (ret != -EPROBE_DEFER)
++			dev_err(dev, "failed to acquire clock 'scki': %d\n", ret);
++		return ret;
+ 	}
+ 
+ 	ret = clk_prepare_enable(pcm3168a->scki);
+ 	if (ret) {
+-		dev_err(dev, "failed to enable mclk: %d\n", ret);
++		dev_err(dev, "Failed to enable mclk: %d\n", ret);
+ 		return ret;
+ 	}
+ 
+@@ -639,7 +641,8 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
+ 	ret = devm_regulator_bulk_get(dev,
+ 			ARRAY_SIZE(pcm3168a->supplies), pcm3168a->supplies);
+ 	if (ret) {
+-		dev_err(dev, "failed to request supplies: %d\n", ret);
++		if (ret != -EPROBE_DEFER)
++			dev_err(dev, "failed to request supplies: %d\n", ret);
+ 		goto err_clk;
+ 	}
+ 
+@@ -663,17 +666,17 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
+ 		goto err_regulator;
+ 	}
+ 
++	pm_runtime_set_active(dev);
++	pm_runtime_enable(dev);
++	pm_runtime_idle(dev);
++
+ 	ret = snd_soc_register_codec(dev, &pcm3168a_driver, pcm3168a_dais,
+ 			ARRAY_SIZE(pcm3168a_dais));
+ 	if (ret) {
+-		dev_err(dev, "failed to register codec:%d\n", ret);
++		dev_err(dev, "failed to register codec: %d\n", ret);
+ 		goto err_regulator;
+ 	}
+ 
+-	pm_runtime_set_active(dev);
+-	pm_runtime_enable(dev);
+-	pm_runtime_idle(dev);
+-
+ 	return 0;
+ 
+ err_regulator:
+@@ -688,8 +691,13 @@ EXPORT_SYMBOL_GPL(pcm3168a_probe);
+ 
+ void pcm3168a_remove(struct device *dev)
+ {
++	struct pcm3168a_priv *pcm3168a = dev_get_drvdata(dev);
++
+ 	snd_soc_unregister_codec(dev);
+ 	pm_runtime_disable(dev);
++	regulator_bulk_disable(ARRAY_SIZE(pcm3168a->supplies),
++				pcm3168a->supplies);
++	clk_disable_unprepare(pcm3168a->scki);
+ }
+ EXPORT_SYMBOL_GPL(pcm3168a_remove);
+ 
+diff --git a/sound/soc/codecs/pcm3168a.h b/sound/soc/codecs/pcm3168a.h
+index a4c7838..56c8332 100644
+--- a/sound/soc/codecs/pcm3168a.h
++++ b/sound/soc/codecs/pcm3168a.h
+@@ -1,7 +1,7 @@
+ /*
+  * PCM3168A codec driver header
+  *
+- * Copyright (C) 2014 Imagination Technologies Ltd.
++ * Copyright (C) 2015 Imagination Technologies Ltd.
+  *
+  * Author: Damien Horsley <Damien.Horsley@imgtec.com>
+  *
+@@ -97,15 +97,4 @@ extern void pcm3168a_remove(struct device *dev);
+ 
+ #define PCM3168A_ADC_VOL_CHAN_START		0x59
+ 
+-#define PCM3168A_DOUBLE_STS(xname, reg, shift_left, shift_right, max, invert) \
+-{									\
+-	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, .name = (xname),		\
+-	.info = snd_soc_info_volsw, .get = snd_soc_get_volsw,		\
+-	.put = snd_soc_put_volsw,					\
+-	.access = SNDRV_CTL_ELEM_ACCESS_READ |				\
+-		SNDRV_CTL_ELEM_ACCESS_VOLATILE,				\
+-	.private_value = SOC_DOUBLE_VALUE(reg, shift_left, shift_right,	\
+-	max, invert, 0)							\
+-}
+-
+ #endif
+diff --git a/sound/soc/img/img-i2s-out.c b/sound/soc/img/img-i2s-out.c
+index ea840f1..8940cc9 100644
+--- a/sound/soc/img/img-i2s-out.c
++++ b/sound/soc/img/img-i2s-out.c
+@@ -115,37 +115,38 @@ static inline u32 img_i2s_out_ch_readl(struct img_i2s_out *i2s, u32 chan,
+ 	return readl(i2s->channel_base + (chan * IMG_I2S_OUT_CH_STRIDE) + reg);
+ }
+ 
+-static inline u32 img_i2s_out_ch_disable(struct img_i2s_out *i2s, u32 chan)
++static inline void img_i2s_out_ch_disable(struct img_i2s_out *i2s, u32 chan)
+ {
+ 	u32 reg;
+ 
+ 	reg = img_i2s_out_ch_readl(i2s, chan, IMG_I2S_OUT_CH_CTL);
+ 	reg &= ~IMG_I2S_OUT_CHAN_CTL_ME_MASK;
+ 	img_i2s_out_ch_writel(i2s, chan, reg, IMG_I2S_OUT_CH_CTL);
+-
+-	return reg;
+ }
+ 
+-static inline void img_i2s_out_ch_enable(struct img_i2s_out *i2s, u32 chan,
+-					u32 reg)
++static inline void img_i2s_out_ch_enable(struct img_i2s_out *i2s, u32 chan)
+ {
++	u32 reg;
++
++	reg = img_i2s_out_ch_readl(i2s, chan, IMG_I2S_OUT_CH_CTL);
+ 	reg |= IMG_I2S_OUT_CHAN_CTL_ME_MASK;
+ 	img_i2s_out_ch_writel(i2s, chan, reg, IMG_I2S_OUT_CH_CTL);
+ }
+ 
+-static inline u32 img_i2s_out_disable(struct img_i2s_out *i2s)
++static inline void img_i2s_out_disable(struct img_i2s_out *i2s)
+ {
+ 	u32 reg;
+ 
+ 	reg = img_i2s_out_readl(i2s, IMG_I2S_OUT_CTL);
+ 	reg &= ~IMG_I2S_OUT_CTL_ME_MASK;
+ 	img_i2s_out_writel(i2s, reg, IMG_I2S_OUT_CTL);
+-
+-	return reg;
+ }
+ 
+-static inline void img_i2s_out_enable(struct img_i2s_out *i2s, u32 reg)
++static inline void img_i2s_out_enable(struct img_i2s_out *i2s)
+ {
++	u32 reg;
++
++	reg = img_i2s_out_readl(i2s, IMG_I2S_OUT_CTL);
+ 	reg |= IMG_I2S_OUT_CTL_ME_MASK;
+ 	img_i2s_out_writel(i2s, reg, IMG_I2S_OUT_CTL);
+ }
+@@ -172,10 +173,10 @@ static void img_i2s_out_reset(struct img_i2s_out *i2s)
+ 		img_i2s_out_ch_writel(i2s, i, chan_ctl, IMG_I2S_OUT_CH_CTL);
+ 
+ 	for (i = 0; i < i2s->active_channels; i++)
+-		img_i2s_out_ch_enable(i2s, i, chan_ctl);
++		img_i2s_out_ch_enable(i2s, i);
+ 
+ 	img_i2s_out_writel(i2s, core_ctl, IMG_I2S_OUT_CTL);
+-	img_i2s_out_enable(i2s, core_ctl);
++	img_i2s_out_enable(i2s);
+ }
+ 
+ static int img_i2s_out_trigger(struct snd_pcm_substream *substream, int cmd,
+@@ -213,7 +214,7 @@ static int img_i2s_out_hw_params(struct snd_pcm_substream *substream,
+ 	unsigned int channels, i2s_channels;
+ 	long pre_div_a, pre_div_b, diff_a, diff_b, rate, clk_rate;
+ 	int i;
+-	u32 reg, control_reg, control_mask, control_set = 0;
++	u32 reg, control_mask, control_set = 0;
+ 	snd_pcm_format_t format;
+ 
+ 	rate = params_rate(params);
+@@ -225,8 +226,8 @@ static int img_i2s_out_hw_params(struct snd_pcm_substream *substream,
+ 		return -EINVAL;
+ 
+ 	if ((channels < 2) ||
+-			(channels > (i2s->max_i2s_chan * 2)) ||
+-			(channels % 2))
++	    (channels > (i2s->max_i2s_chan * 2)) ||
++	    (channels % 2))
+ 		return -EINVAL;
+ 
+ 	pre_div_a = clk_round_rate(i2s->clk_ref, rate * 256);
+@@ -258,26 +259,26 @@ static int img_i2s_out_hw_params(struct snd_pcm_substream *substream,
+ 	if (diff_a > diff_b)
+ 		control_set |= IMG_I2S_OUT_CTL_CLK_MASK;
+ 
+-	control_set |= (((i2s_channels - 1) <<
+-			IMG_I2S_OUT_CTL_ACTIVE_CHAN_SHIFT) &
+-			IMG_I2S_OUT_CTL_ACTIVE_CHAN_MASK);
++	control_set |= ((i2s_channels - 1) <<
++		       IMG_I2S_OUT_CTL_ACTIVE_CHAN_SHIFT) &
++		       IMG_I2S_OUT_CTL_ACTIVE_CHAN_MASK;
+ 
+-	control_mask = (u32)(~IMG_I2S_OUT_CTL_CLK_MASK &
+-			~IMG_I2S_OUT_CTL_ACTIVE_CHAN_MASK);
++	control_mask = IMG_I2S_OUT_CTL_CLK_MASK |
++		       IMG_I2S_OUT_CTL_ACTIVE_CHAN_MASK;
+ 
+-	control_reg = img_i2s_out_disable(i2s);
+-	control_reg = (control_reg & control_mask) | control_set;
+-	img_i2s_out_writel(i2s, control_reg, IMG_I2S_OUT_CTL);
++	img_i2s_out_disable(i2s);
+ 
+-	for (i = 0; i < i2s_channels; i++) {
+-		reg = img_i2s_out_ch_readl(i2s, i, IMG_I2S_OUT_CH_CTL);
+-		img_i2s_out_ch_enable(i2s, i, reg);
+-	}
++	reg = img_i2s_out_readl(i2s, IMG_I2S_OUT_CTL);
++	reg = (reg & ~control_mask) | control_set;
++	img_i2s_out_writel(i2s, reg, IMG_I2S_OUT_CTL);
++
++	for (i = 0; i < i2s_channels; i++)
++		img_i2s_out_ch_enable(i2s, i);
+ 
+ 	for (; i < i2s->max_i2s_chan; i++)
+ 		img_i2s_out_ch_disable(i2s, i);
+ 
+-	img_i2s_out_enable(i2s, control_reg);
++	img_i2s_out_enable(i2s);
+ 
+ 	i2s->active_channels = i2s_channels;
+ 
+@@ -287,10 +288,10 @@ static int img_i2s_out_hw_params(struct snd_pcm_substream *substream,
+ static int img_i2s_out_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ {
+ 	struct img_i2s_out *i2s = snd_soc_dai_get_drvdata(dai);
+-	int i, ret = 0;
++	int i;
+ 	bool force_clk_active;
+ 	u32 chan_control_mask, control_mask, chan_control_set = 0;
+-	u32 reg = 0, control_reg, control_set = 0;
++	u32 reg = 0, control_set = 0;
+ 
+ 	force_clk_active = ((fmt & SND_SOC_DAIFMT_CLOCK_MASK) ==
+ 			SND_SOC_DAIFMT_CONT);
+@@ -337,33 +338,37 @@ static int img_i2s_out_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ 		return -EINVAL;
+ 	}
+ 
+-	control_mask = (u32)(~IMG_I2S_OUT_CTL_CLK_EN_MASK &
+-		~IMG_I2S_OUT_CTL_MASTER_MASK &
+-		~IMG_I2S_OUT_CTL_BCLK_POL_MASK &
+-		~IMG_I2S_OUT_CTL_FRM_CLK_POL_MASK &
+-		~IMG_I2S_OUT_CTL_EXT_EN_CLK_MASK);
++	control_mask = IMG_I2S_OUT_CTL_CLK_EN_MASK |
++		       IMG_I2S_OUT_CTL_MASTER_MASK |
++		       IMG_I2S_OUT_CTL_BCLK_POL_MASK |
++		       IMG_I2S_OUT_CTL_FRM_CLK_POL_MASK |
++			   IMG_I2S_OUT_CTL_EXT_EN_CLK_MASK;
+ 
+-	chan_control_mask = (u32)~IMG_I2S_OUT_CHAN_CTL_CLKT_MASK;
++	chan_control_mask = IMG_I2S_OUT_CHAN_CTL_CLKT_MASK;
+ 
+-	control_reg = img_i2s_out_disable(i2s);
+-	control_reg = (control_reg & control_mask) | control_set;
+-	img_i2s_out_writel(i2s, control_reg, IMG_I2S_OUT_CTL);
++	img_i2s_out_disable(i2s);
+ 
+-	for (i = 0; i < i2s->active_channels; i++) {
+-		reg = img_i2s_out_ch_disable(i2s, i);
+-		reg = (reg & chan_control_mask) | chan_control_set;
++	reg = img_i2s_out_readl(i2s, IMG_I2S_OUT_CTL);
++	reg = (reg & ~control_mask) | control_set;
++	img_i2s_out_writel(i2s, reg, IMG_I2S_OUT_CTL);
++
++	for (i = 0; i < i2s->active_channels; i++)
++		img_i2s_out_ch_disable(i2s, i);
++
++	for (i = 0; i < i2s->max_i2s_chan; i++) {
++		reg = img_i2s_out_ch_readl(i2s, i, IMG_I2S_OUT_CH_CTL);
++		reg = (reg & ~chan_control_mask) | chan_control_set;
+ 		img_i2s_out_ch_writel(i2s, i, reg, IMG_I2S_OUT_CH_CTL);
+-		img_i2s_out_ch_enable(i2s, i, reg);
+ 	}
+ 
+-	for (; i < i2s->max_i2s_chan; i++)
+-		img_i2s_out_ch_writel(i2s, i, reg, IMG_I2S_OUT_CH_CTL);
++	for (i = 0; i < i2s->active_channels; i++)
++		img_i2s_out_ch_enable(i2s, i);
+ 
+-	img_i2s_out_enable(i2s, control_reg);
++	img_i2s_out_enable(i2s);
+ 
+ 	i2s->force_clk_active = force_clk_active;
+ 
+-	return ret;
++	return 0;
+ }
+ 
+ static int img_i2s_out_start_at(struct snd_pcm_substream *substream,
+@@ -446,6 +451,7 @@ static int img_i2s_out_probe(struct platform_device *pdev)
+ 	int i, ret;
+ 	unsigned int max_i2s_chan_pow_2;
+ 	u32 reg;
++	struct device *dev = &pdev->dev;
+ 
+ 	i2s = devm_kzalloc(&pdev->dev, sizeof(*i2s), GFP_KERNEL);
+ 	if (!i2s)
+@@ -474,17 +480,24 @@ static int img_i2s_out_probe(struct platform_device *pdev)
+ 
+ 	i2s->rst = devm_reset_control_get(&pdev->dev, "rst");
+ 	if (IS_ERR(i2s->rst)) {
+-		dev_err(&pdev->dev, "No top level reset found\n");
++		if (PTR_ERR(i2s->rst) != -EPROBE_DEFER)
++			dev_err(&pdev->dev, "No top level reset found\n");
+ 		return PTR_ERR(i2s->rst);
+ 	}
+ 
+ 	i2s->clk_sys = devm_clk_get(&pdev->dev, "sys");
+-	if (IS_ERR(i2s->clk_sys))
++	if (IS_ERR(i2s->clk_sys)) {
++		if (PTR_ERR(i2s->clk_sys) != -EPROBE_DEFER)
++			dev_err(dev, "Failed to acquire clock 'sys'\n");
+ 		return PTR_ERR(i2s->clk_sys);
++	}
+ 
+ 	i2s->clk_ref = devm_clk_get(&pdev->dev, "ref");
+-	if (IS_ERR(i2s->clk_ref))
++	if (IS_ERR(i2s->clk_ref)) {
++		if (PTR_ERR(i2s->clk_ref) != -EPROBE_DEFER)
++			dev_err(dev, "Failed to acquire clock 'ref'\n");
+ 		return PTR_ERR(i2s->clk_ref);
++	}
+ 
+ 	ret = clk_prepare_enable(i2s->clk_sys);
+ 	if (ret)
+diff --git a/sound/soc/img/img-parallel-out.c b/sound/soc/img/img-parallel-out.c
+index 4c232a9..3414db2 100644
+--- a/sound/soc/img/img-parallel-out.c
++++ b/sound/soc/img/img-parallel-out.c
+@@ -35,16 +35,12 @@
+ #define IMG_PRL_OUT_CTL_ME_MASK		BIT(1)
+ #define IMG_PRL_OUT_CTL_SRST_MASK	BIT(0)
+ 
+-static const char *const img_prl_out_edge_names[] = { "Rising", "Falling" };
+-
+ struct img_prl_out {
+-	spinlock_t lock;
+ 	void __iomem *base;
+ 	struct clk *clk_sys;
+ 	struct clk *clk_ref;
+ 	struct snd_dmaengine_dai_dma_data dma_data;
+ 	struct device *dev;
+-	bool active;
+ 	struct reset_control *rst;
+ };
+ 
+@@ -95,73 +91,12 @@ static void img_prl_out_reset(struct img_prl_out *prl)
+ 	img_prl_out_writel(prl, ctl, IMG_PRL_OUT_CTL);
+ }
+ 
+-static int img_prl_out_edge_info(struct snd_kcontrol *kcontrol,
+-					struct snd_ctl_elem_info *uinfo)
+-{
+-	return snd_ctl_enum_info(uinfo, 1, 2, img_prl_out_edge_names);
+-}
+-
+-static int img_prl_out_get_edge(struct snd_kcontrol *kcontrol,
+-				  struct snd_ctl_elem_value *ucontrol)
+-{
+-	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
+-	struct img_prl_out *prl = snd_soc_dai_get_drvdata(cpu_dai);
+-	u32 reg;
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&prl->lock, flags);
+-	reg = img_prl_out_readl(prl, IMG_PRL_OUT_CTL);
+-	ucontrol->value.integer.value[0] = !!(reg & IMG_PRL_OUT_CTL_EDGE_MASK);
+-	spin_unlock_irqrestore(&prl->lock, flags);
+-
+-	return 0;
+-}
+-
+-static int img_prl_out_set_edge(struct snd_kcontrol *kcontrol,
+-				  struct snd_ctl_elem_value *ucontrol)
+-{
+-	struct snd_soc_dai *cpu_dai = snd_kcontrol_chip(kcontrol);
+-	struct img_prl_out *prl = snd_soc_dai_get_drvdata(cpu_dai);
+-	unsigned long flags;
+-	int ret = 0;
+-	u32 reg;
+-
+-	spin_lock_irqsave(&prl->lock, flags);
+-	if (prl->active) {
+-		ret = -EBUSY;
+-	} else {
+-		reg = img_prl_out_readl(prl, IMG_PRL_OUT_CTL);
+-		if (ucontrol->value.integer.value[0])
+-			reg |= IMG_PRL_OUT_CTL_EDGE_MASK;
+-		else
+-			reg &= ~IMG_PRL_OUT_CTL_EDGE_MASK;
+-		img_prl_out_writel(prl, reg, IMG_PRL_OUT_CTL);
+-	}
+-	spin_unlock_irqrestore(&prl->lock, flags);
+-
+-	return ret;
+-}
+-
+-static struct snd_kcontrol_new img_prl_out_controls[] = {
+-	{
+-		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
+-		.name = "Parallel Out Edge Falling",
+-		.info = img_prl_out_edge_info,
+-		.get = img_prl_out_get_edge,
+-		.put = img_prl_out_set_edge
+-	}
+-};
+-
+ static int img_prl_out_trigger(struct snd_pcm_substream *substream, int cmd,
+ 			struct snd_soc_dai *dai)
+ {
+ 	struct img_prl_out *prl = snd_soc_dai_get_drvdata(dai);
+-	unsigned long flags;
+-	int ret = 0;
+ 	u32 reg;
+ 
+-	spin_lock_irqsave(&prl->lock, flags);
+-
+ 	switch (cmd) {
+ 	case SNDRV_PCM_TRIGGER_START:
+ 	case SNDRV_PCM_TRIGGER_RESUME:
+@@ -169,21 +104,17 @@ static int img_prl_out_trigger(struct snd_pcm_substream *substream, int cmd,
+ 		reg = img_prl_out_readl(prl, IMG_PRL_OUT_CTL);
+ 		reg |= IMG_PRL_OUT_CTL_ME_MASK;
+ 		img_prl_out_writel(prl, reg, IMG_PRL_OUT_CTL);
+-		prl->active = true;
+ 		break;
+ 	case SNDRV_PCM_TRIGGER_STOP:
+ 	case SNDRV_PCM_TRIGGER_SUSPEND:
+ 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
+ 		img_prl_out_reset(prl);
+-		prl->active = false;
+ 		break;
+ 	default:
+-		ret = -EINVAL;
++		return -EINVAL;
+ 	}
+ 
+-	spin_unlock_irqrestore(&prl->lock, flags);
+-
+-	return ret;
++	return 0;
+ }
+ 
+ static int img_prl_out_hw_params(struct snd_pcm_substream *substream,
+@@ -191,8 +122,7 @@ static int img_prl_out_hw_params(struct snd_pcm_substream *substream,
+ {
+ 	struct img_prl_out *prl = snd_soc_dai_get_drvdata(dai);
+ 	unsigned int rate, channels;
+-	u32 reg, reg_set = 0;
+-	unsigned long flags;
++	u32 reg, control_set = 0;
+ 	snd_pcm_format_t format;
+ 
+ 	rate = params_rate(params);
+@@ -201,7 +131,7 @@ static int img_prl_out_hw_params(struct snd_pcm_substream *substream,
+ 
+ 	switch (params_format(params)) {
+ 	case SNDRV_PCM_FORMAT_S32_LE:
+-		reg_set |= IMG_PRL_OUT_CTL_PACKH_MASK;
++		control_set |= IMG_PRL_OUT_CTL_PACKH_MASK;
+ 		break;
+ 	case SNDRV_PCM_FORMAT_S24_LE:
+ 		break;
+@@ -214,25 +144,31 @@ static int img_prl_out_hw_params(struct snd_pcm_substream *substream,
+ 
+ 	clk_set_rate(prl->clk_ref, rate * 256);
+ 
+-	spin_lock_irqsave(&prl->lock, flags);
+ 	reg = img_prl_out_readl(prl, IMG_PRL_OUT_CTL);
+-	reg = (reg & ~IMG_PRL_OUT_CTL_PACKH_MASK) | reg_set;
++	reg = (reg & ~IMG_PRL_OUT_CTL_PACKH_MASK) | control_set;
+ 	img_prl_out_writel(prl, reg, IMG_PRL_OUT_CTL);
+-	spin_unlock_irqrestore(&prl->lock, flags);
+ 
+ 	return 0;
+ }
+ 
+-static int img_prl_out_start_at(struct snd_pcm_substream *substream,
+-		struct snd_soc_dai *cpu_dai, int clock_type,
+-		const struct timespec *ts)
++static int img_prl_out_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ {
+-	struct img_prl_out *prl = snd_soc_dai_get_drvdata(cpu_dai);
+-	unsigned long flags;
++	struct img_prl_out *prl = snd_soc_dai_get_drvdata(dai);
++	u32 reg, control_set = 0;
+ 
+-	spin_lock_irqsave(&prl->lock, flags);
+-	prl->active = true;
+-	spin_unlock_irqrestore(&prl->lock, flags);
++	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
++	case SND_SOC_DAIFMT_NB_NF:
++		break;
++	case SND_SOC_DAIFMT_NB_IF:
++		control_set |= IMG_PRL_OUT_CTL_EDGE_MASK;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	reg = img_prl_out_readl(prl, IMG_PRL_OUT_CTL);
++	reg = (reg & ~IMG_PRL_OUT_CTL_EDGE_MASK) | control_set;
++	img_prl_out_writel(prl, reg, IMG_PRL_OUT_CTL);
+ 
+ 	return 0;
+ }
+@@ -241,12 +177,8 @@ static int img_prl_out_start_at_abort(struct snd_pcm_substream *substream,
+ 		struct snd_soc_dai *cpu_dai)
+ {
+ 	struct img_prl_out *prl = snd_soc_dai_get_drvdata(cpu_dai);
+-	unsigned long flags;
+ 
+-	spin_lock_irqsave(&prl->lock, flags);
+-	prl->active = false;
+ 	img_prl_out_reset(prl);
+-	spin_unlock_irqrestore(&prl->lock, flags);
+ 
+ 	return 0;
+ }
+@@ -254,7 +186,7 @@ static int img_prl_out_start_at_abort(struct snd_pcm_substream *substream,
+ static const struct snd_soc_dai_ops img_prl_out_dai_ops = {
+ 	.trigger = img_prl_out_trigger,
+ 	.hw_params = img_prl_out_hw_params,
+-	.start_at = img_prl_out_start_at,
++	.set_fmt = img_prl_out_set_fmt,
+ 	.start_at_abort = img_prl_out_start_at_abort
+ };
+ 
+@@ -264,9 +196,6 @@ static int img_prl_out_dai_probe(struct snd_soc_dai *dai)
+ 
+ 	snd_soc_dai_init_dma_data(dai, &prl->dma_data, NULL);
+ 
+-	snd_soc_add_dai_controls(dai, img_prl_out_controls,
+-			ARRAY_SIZE(img_prl_out_controls));
+-
+ 	return 0;
+ }
+ 
+@@ -291,6 +220,7 @@ static int img_prl_out_probe(struct platform_device *pdev)
+ 	struct resource *res;
+ 	void __iomem *base;
+ 	int ret;
++	struct device *dev = &pdev->dev;
+ 
+ 	prl = devm_kzalloc(&pdev->dev, sizeof(*prl), GFP_KERNEL);
+ 	if (!prl)
+@@ -309,17 +239,24 @@ static int img_prl_out_probe(struct platform_device *pdev)
+ 
+ 	prl->rst = devm_reset_control_get(&pdev->dev, "rst");
+ 	if (IS_ERR(prl->rst)) {
+-		dev_err(&pdev->dev, "No top level reset found\n");
++		if (PTR_ERR(prl->rst) != -EPROBE_DEFER)
++			dev_err(&pdev->dev, "No top level reset found\n");
+ 		return PTR_ERR(prl->rst);
+ 	}
+ 
+ 	prl->clk_sys = devm_clk_get(&pdev->dev, "sys");
+-	if (IS_ERR(prl->clk_sys))
++	if (IS_ERR(prl->clk_sys)) {
++		if (PTR_ERR(prl->clk_sys) != -EPROBE_DEFER)
++			dev_err(dev, "Failed to acquire clock 'sys'\n");
+ 		return PTR_ERR(prl->clk_sys);
++	}
+ 
+ 	prl->clk_ref = devm_clk_get(&pdev->dev, "ref");
+-	if (IS_ERR(prl->clk_ref))
++	if (IS_ERR(prl->clk_ref)) {
++		if (PTR_ERR(prl->clk_ref) != -EPROBE_DEFER)
++			dev_err(dev, "Failed to acquire clock 'ref'\n");
+ 		return PTR_ERR(prl->clk_ref);
++	}
+ 
+ 	ret = clk_prepare_enable(prl->clk_sys);
+ 	if (ret)
+@@ -335,8 +272,6 @@ static int img_prl_out_probe(struct platform_device *pdev)
+ 			goto err_pm_disable;
+ 	}
+ 
+-	spin_lock_init(&prl->lock);
+-
+ 	prl->dma_data.addr = res->start + IMG_PRL_OUT_TX_FIFO;
+ 	prl->dma_data.addr_width = 4;
+ 	prl->dma_data.maxburst = 4;
+diff --git a/sound/soc/img/img-spdif-in.c b/sound/soc/img/img-spdif-in.c
+index b388b2d..4d9953d 100644
+--- a/sound/soc/img/img-spdif-in.c
++++ b/sound/soc/img/img-spdif-in.c
+@@ -699,6 +699,7 @@ static int img_spdif_in_probe(struct platform_device *pdev)
+ 	int ret;
+ 	struct reset_control *rst;
+ 	u32 reg;
++	struct device *dev = &pdev->dev;
+ 
+ 	spdif = devm_kzalloc(&pdev->dev, sizeof(*spdif), GFP_KERNEL);
+ 	if (!spdif)
+@@ -715,9 +716,12 @@ static int img_spdif_in_probe(struct platform_device *pdev)
+ 
+ 	spdif->base = base;
+ 
+-	spdif->clk_sys = devm_clk_get(&pdev->dev, "sys");
+-	if (IS_ERR(spdif->clk_sys))
++	spdif->clk_sys = devm_clk_get(dev, "sys");
++	if (IS_ERR(spdif->clk_sys)) {
++		if (PTR_ERR(spdif->clk_sys) != -EPROBE_DEFER)
++			dev_err(dev, "Failed to acquire clock 'sys'\n");
+ 		return PTR_ERR(spdif->clk_sys);
++	}
+ 
+ 	ret = clk_prepare_enable(spdif->clk_sys);
+ 	if (ret)
+@@ -725,8 +729,11 @@ static int img_spdif_in_probe(struct platform_device *pdev)
+ 
+ 	rst = devm_reset_control_get(&pdev->dev, "rst");
+ 	if (IS_ERR(rst)) {
+-		dev_dbg(&pdev->dev,
+-				"No top level reset found\n");
++		if (PTR_ERR(rst) == -EPROBE_DEFER) {
++			ret = -EPROBE_DEFER;
++			goto err_clk_disable;
++		}
++		dev_dbg(dev, "No top level reset found\n");
+ 		img_spdif_in_writel(spdif, IMG_SPDIF_IN_SOFT_RESET_MASK,
+ 				IMG_SPDIF_IN_SOFT_RESET);
+ 		img_spdif_in_writel(spdif, 0, IMG_SPDIF_IN_SOFT_RESET);
+diff --git a/sound/soc/img/img-spdif-out.c b/sound/soc/img/img-spdif-out.c
+index 35efde8..7629a81 100644
+--- a/sound/soc/img/img-spdif-out.c
++++ b/sound/soc/img/img-spdif-out.c
+@@ -332,6 +332,7 @@ static int img_spdif_out_probe(struct platform_device *pdev)
+ 	struct resource *res;
+ 	void __iomem *base;
+ 	int ret;
++	struct device *dev = &pdev->dev;
+ 
+ 	spdif = devm_kzalloc(&pdev->dev, sizeof(*spdif), GFP_KERNEL);
+ 	if (!spdif)
+@@ -350,17 +351,24 @@ static int img_spdif_out_probe(struct platform_device *pdev)
+ 
+ 	spdif->rst = devm_reset_control_get(&pdev->dev, "rst");
+ 	if (IS_ERR(spdif->rst)) {
+-		dev_err(&pdev->dev, "No top level reset found\n");
++		if (PTR_ERR(spdif->rst) != -EPROBE_DEFER)
++			dev_err(&pdev->dev, "No top level reset found\n");
+ 		return PTR_ERR(spdif->rst);
+ 	}
+ 
+ 	spdif->clk_sys = devm_clk_get(&pdev->dev, "sys");
+-	if (IS_ERR(spdif->clk_sys))
++	if (IS_ERR(spdif->clk_sys)) {
++		if (PTR_ERR(spdif->clk_sys) != -EPROBE_DEFER)
++			dev_err(dev, "Failed to acquire clock 'sys'\n");
+ 		return PTR_ERR(spdif->clk_sys);
++	}
+ 
+ 	spdif->clk_ref = devm_clk_get(&pdev->dev, "ref");
+-	if (IS_ERR(spdif->clk_ref))
++	if (IS_ERR(spdif->clk_ref)) {
++		if (PTR_ERR(spdif->clk_ref) != -EPROBE_DEFER)
++			dev_err(dev, "Failed to acquire clock 'ref'\n");
+ 		return PTR_ERR(spdif->clk_ref);
++	}
+ 
+ 	ret = clk_prepare_enable(spdif->clk_sys);
+ 	if (ret)
+diff --git a/sound/soc/img/pistachio-internal-dac.c b/sound/soc/img/pistachio-internal-dac.c
+index b116b0f..162a0fd 100644
+--- a/sound/soc/img/pistachio-internal-dac.c
++++ b/sound/soc/img/pistachio-internal-dac.c
+@@ -12,109 +12,46 @@
+ 
+ #include <linux/clk.h>
+ #include <linux/delay.h>
++#include <linux/mfd/syscon.h>
+ #include <linux/module.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/regmap.h>
+ #include <linux/regulator/consumer.h>
+-#include <linux/mfd/syscon.h>
+ 
+ #include <sound/pcm_params.h>
+ #include <sound/soc.h>
+ 
+-#define CR_AUDIO_DAC_CTRL		0x40
+-#define CR_AUDIO_DAC_CTRL_MUTE_MASK	0x4
+-#define CR_AUDIO_DAC_CTRL_PWR_SEL_MASK	0x2
+-#define CR_AUDIO_DAC_CTRL_PWRDN_MASK	0x1
++#define PISTACHIO_INTERNAL_DAC_CTRL			0x40
++#define PISTACHIO_INTERNAL_DAC_CTRL_PWR_SEL_MASK	0x2
++#define PISTACHIO_INTERNAL_DAC_CTRL_PWRDN_MASK		0x1
++
++#define PISTACHIO_INTERNAL_DAC_SRST			0x44
++#define PISTACHIO_INTERNAL_DAC_SRST_MASK		0x1
+ 
+-#define CR_AUDIO_DAC_GTI_CTRL			0x48
+-#define CR_AUDIO_DAC_GTI_CTRL_ADDR_SHIFT	0
+-#define CR_AUDIO_DAC_GTI_CTRL_ADDR_MASK		0xFFF
+-#define CR_AUDIO_DAC_GTI_CTRL_WE_MASK		0x1000
+-#define CR_AUDIO_DAC_GTI_CTRL_WDATA_SHIFT	13
+-#define CR_AUDIO_DAC_GTI_CTRL_WDATA_MASK	0x1FE000
++#define PISTACHIO_INTERNAL_DAC_GTI_CTRL			0x48
++#define PISTACHIO_INTERNAL_DAC_GTI_CTRL_ADDR_SHIFT	0
++#define PISTACHIO_INTERNAL_DAC_GTI_CTRL_ADDR_MASK	0xFFF
++#define PISTACHIO_INTERNAL_DAC_GTI_CTRL_WE_MASK		0x1000
++#define PISTACHIO_INTERNAL_DAC_GTI_CTRL_WDATA_SHIFT	13
++#define PISTACHIO_INTERNAL_DAC_GTI_CTRL_WDATA_MASK	0x1FE000
+ 
+-#define	AUDIO_DAC_INTERNAL_REG_PWR		0x1
++#define PISTACHIO_INTERNAL_DAC_PWR			0x1
++#define PISTACHIO_INTERNAL_DAC_PWR_MASK			0x1
+ 
+ #define PISTACHIO_INTERNAL_DAC_FORMATS (SNDRV_PCM_FMTBIT_S24_LE |  \
+ 					SNDRV_PCM_FMTBIT_S32_LE)
+ 
+ /* codec private data */
+ struct pistachio_internal_dac {
+-	spinlock_t lock;
+ 	struct regmap *regmap;
+-
+-	/* The mute state as set by alsa using the digital_mute callback */
+-	bool alsa_mute_state;
+-	/* The mute state as set by the userspace mute control */
+-	bool control_mute_state;
+-	/* The actual mute state is equal to an OR of the above */
++	struct regulator *supply;
++	bool mute;
+ };
+ 
+-static int pistachio_internal_dac_get_mute(struct snd_kcontrol *kcontrol,
+-				  struct snd_ctl_elem_value *ucontrol)
+-{
+-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
+-	struct pistachio_internal_dac *dac = snd_soc_codec_get_drvdata(codec);
+-
+-	ucontrol->value.integer.value[0] = dac->control_mute_state;
+-
+-	return 0;
+-}
+-
+-static void pistachio_internal_dac_mute(struct pistachio_internal_dac *dac)
+-{
+-	u32 reg;
+-
+-	if (dac->control_mute_state || dac->alsa_mute_state)
+-		reg = CR_AUDIO_DAC_CTRL_MUTE_MASK;
+-	else
+-		reg = 0;
+-
+-	regmap_update_bits(dac->regmap, CR_AUDIO_DAC_CTRL,
+-			CR_AUDIO_DAC_CTRL_MUTE_MASK, reg);
+-}
+-
+-static int pistachio_internal_dac_set_mute(struct snd_kcontrol *kcontrol,
+-				  struct snd_ctl_elem_value *ucontrol)
+-{
+-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
+-	struct pistachio_internal_dac *dac = snd_soc_codec_get_drvdata(codec);
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&dac->lock, flags);
+-	dac->control_mute_state = ucontrol->value.integer.value[0];
+-	pistachio_internal_dac_mute(dac);
+-	spin_unlock_irqrestore(&dac->lock, flags);
+-
+-	return 0;
+-}
+-
+ static const struct snd_kcontrol_new pistachio_internal_dac_snd_controls[] = {
+-	{
+-		.access = SNDRV_CTL_ELEM_ACCESS_READWRITE,
+-		.iface = SNDRV_CTL_ELEM_IFACE_PCM,
+-		.name = "Mute Switch",
+-		.info = snd_ctl_boolean_mono_info,
+-		.get = pistachio_internal_dac_get_mute,
+-		.put = pistachio_internal_dac_set_mute,
+-	}
++	SOC_SINGLE("Playback Switch", PISTACHIO_INTERNAL_DAC_CTRL, 2, 1, 1)
+ };
+ 
+-static int pistachio_internal_dac_digital_mute(struct snd_soc_dai *dai,
+-						int mute)
+-{
+-	struct snd_soc_codec *codec = dai->codec;
+-	struct pistachio_internal_dac *dac = snd_soc_codec_get_drvdata(codec);
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&dac->lock, flags);
+-	dac->alsa_mute_state = mute;
+-	pistachio_internal_dac_mute(dac);
+-	spin_unlock_irqrestore(&dac->lock, flags);
+-
+-	return 0;
+-}
+-
+ static const struct snd_soc_dapm_widget pistachio_internal_dac_widgets[] = {
+ 	SND_SOC_DAPM_DAC("DAC", "Playback", SND_SOC_NOPM, 0, 0),
+ 	SND_SOC_DAPM_OUTPUT("AOUTL"),
+@@ -129,46 +66,48 @@ static const struct snd_soc_dapm_route pistachio_internal_dac_routes[] = {
+ static void pistachio_internal_dac_reg_writel(struct regmap *top_regs,
+ 						u32 val, u32 reg)
+ {
+-	regmap_update_bits(top_regs, CR_AUDIO_DAC_GTI_CTRL,
+-			CR_AUDIO_DAC_GTI_CTRL_ADDR_MASK,
+-			reg << CR_AUDIO_DAC_GTI_CTRL_ADDR_SHIFT);
++	regmap_update_bits(top_regs, PISTACHIO_INTERNAL_DAC_GTI_CTRL,
++			PISTACHIO_INTERNAL_DAC_GTI_CTRL_ADDR_MASK,
++			reg << PISTACHIO_INTERNAL_DAC_GTI_CTRL_ADDR_SHIFT);
+ 
+-	regmap_update_bits(top_regs, CR_AUDIO_DAC_GTI_CTRL,
+-			CR_AUDIO_DAC_GTI_CTRL_WDATA_MASK,
+-			val << CR_AUDIO_DAC_GTI_CTRL_WDATA_SHIFT);
++	regmap_update_bits(top_regs, PISTACHIO_INTERNAL_DAC_GTI_CTRL,
++			PISTACHIO_INTERNAL_DAC_GTI_CTRL_WDATA_MASK,
++			val << PISTACHIO_INTERNAL_DAC_GTI_CTRL_WDATA_SHIFT);
+ 
+-	regmap_update_bits(top_regs, CR_AUDIO_DAC_GTI_CTRL,
+-			CR_AUDIO_DAC_GTI_CTRL_WE_MASK,
+-			CR_AUDIO_DAC_GTI_CTRL_WE_MASK);
++	regmap_update_bits(top_regs, PISTACHIO_INTERNAL_DAC_GTI_CTRL,
++			PISTACHIO_INTERNAL_DAC_GTI_CTRL_WE_MASK,
++			PISTACHIO_INTERNAL_DAC_GTI_CTRL_WE_MASK);
+ 
+-	regmap_update_bits(top_regs, CR_AUDIO_DAC_GTI_CTRL,
+-			CR_AUDIO_DAC_GTI_CTRL_WE_MASK, 0);
++	regmap_update_bits(top_regs, PISTACHIO_INTERNAL_DAC_GTI_CTRL,
++			PISTACHIO_INTERNAL_DAC_GTI_CTRL_WE_MASK, 0);
+ }
+ 
+ static void pistachio_internal_dac_pwr_off(struct pistachio_internal_dac *dac)
+ {
+-	regmap_update_bits(dac->regmap, CR_AUDIO_DAC_CTRL,
+-		CR_AUDIO_DAC_CTRL_PWRDN_MASK,
+-		CR_AUDIO_DAC_CTRL_PWRDN_MASK);
++	regmap_update_bits(dac->regmap, PISTACHIO_INTERNAL_DAC_CTRL,
++		PISTACHIO_INTERNAL_DAC_CTRL_PWRDN_MASK,
++		PISTACHIO_INTERNAL_DAC_CTRL_PWRDN_MASK);
+ 
+ 	pistachio_internal_dac_reg_writel(dac->regmap, 0,
+-					AUDIO_DAC_INTERNAL_REG_PWR);
+-
+-	msleep(10);
++					PISTACHIO_INTERNAL_DAC_PWR);
+ }
+ 
+ static void pistachio_internal_dac_pwr_on(struct pistachio_internal_dac *dac)
+ {
+-	pistachio_internal_dac_reg_writel(dac->regmap, 1,
+-					AUDIO_DAC_INTERNAL_REG_PWR);
++	regmap_update_bits(dac->regmap, PISTACHIO_INTERNAL_DAC_SRST,
++			PISTACHIO_INTERNAL_DAC_SRST_MASK,
++			PISTACHIO_INTERNAL_DAC_SRST_MASK);
+ 
+-	regmap_update_bits(dac->regmap, CR_AUDIO_DAC_CTRL,
+-			CR_AUDIO_DAC_CTRL_PWRDN_MASK, 0);
+-}
++	regmap_update_bits(dac->regmap, PISTACHIO_INTERNAL_DAC_SRST,
++			PISTACHIO_INTERNAL_DAC_SRST_MASK, 0);
+ 
+-static const struct snd_soc_dai_ops pistachio_internal_dac_dac_dai_ops = {
+-	.digital_mute	= pistachio_internal_dac_digital_mute,
+-};
++	pistachio_internal_dac_reg_writel(dac->regmap,
++					PISTACHIO_INTERNAL_DAC_PWR_MASK,
++					PISTACHIO_INTERNAL_DAC_PWR);
++
++	regmap_update_bits(dac->regmap, PISTACHIO_INTERNAL_DAC_CTRL,
++			PISTACHIO_INTERNAL_DAC_CTRL_PWRDN_MASK, 0);
++}
+ 
+ static struct snd_soc_dai_driver pistachio_internal_dac_dais[] = {
+ 	{
+@@ -179,12 +118,22 @@ static struct snd_soc_dai_driver pistachio_internal_dac_dais[] = {
+ 			.channels_max = 2,
+ 			.rates = SNDRV_PCM_RATE_8000_48000,
+ 			.formats = PISTACHIO_INTERNAL_DAC_FORMATS,
+-		},
+-		.ops = &pistachio_internal_dac_dac_dai_ops,
++		}
+ 	},
+ };
+ 
++static int pistachio_internal_dac_codec_probe(struct snd_soc_codec *codec)
++{
++	struct pistachio_internal_dac *dac = snd_soc_codec_get_drvdata(codec);
++
++	snd_soc_codec_init_regmap(codec, dac->regmap);
++
++	return 0;
++}
++
+ static const struct snd_soc_codec_driver pistachio_internal_dac_driver = {
++	.probe = pistachio_internal_dac_codec_probe,
++	.idle_bias_off = true,
+ 	.controls = pistachio_internal_dac_snd_controls,
+ 	.num_controls = ARRAY_SIZE(pistachio_internal_dac_snd_controls),
+ 	.dapm_widgets = pistachio_internal_dac_widgets,
+@@ -196,17 +145,15 @@ static const struct snd_soc_codec_driver pistachio_internal_dac_driver = {
+ static int pistachio_internal_dac_probe(struct platform_device *pdev)
+ {
+ 	struct pistachio_internal_dac *dac;
+-	int ret;
++	int ret, voltage;
+ 	struct device *dev = &pdev->dev;
++	u32 reg;
+ 
+-	dac = devm_kzalloc(dev,
+-		sizeof(*dac), GFP_KERNEL);
++	dac = devm_kzalloc(dev, sizeof(*dac), GFP_KERNEL);
+ 
+-	if (dac == NULL)
++	if (!dac)
+ 		return -ENOMEM;
+ 
+-	spin_lock_init(&dac->lock);
+-
+ 	platform_set_drvdata(pdev, dac);
+ 
+ 	dac->regmap = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
+@@ -214,28 +161,72 @@ static int pistachio_internal_dac_probe(struct platform_device *pdev)
+ 	if (IS_ERR(dac->regmap))
+ 		return PTR_ERR(dac->regmap);
+ 
+-	pistachio_internal_dac_pwr_off(dac);
+-	pistachio_internal_dac_pwr_on(dac);
++	dac->supply = devm_regulator_get(dev, "VDD");
++	if (IS_ERR(dac->supply)) {
++		ret = PTR_ERR(dac->supply);
++		if (ret != -EPROBE_DEFER)
++			dev_err(dev, "failed to acquire supply 'VDD-supply': %d\n", ret);
++		return ret;
++	}
+ 
+-	ret = snd_soc_register_codec(dev, &pistachio_internal_dac_driver,
+-			pistachio_internal_dac_dais,
+-			ARRAY_SIZE(pistachio_internal_dac_dais));
++	ret = regulator_enable(dac->supply);
+ 	if (ret) {
+-		dev_err(dev, "failed to register codec:%d\n", ret);
++		dev_err(dev, "failed to enable supply: %d\n", ret);
+ 		return ret;
+ 	}
+ 
++	voltage = regulator_get_voltage(dac->supply);
++
++	switch (voltage) {
++	case 1800000:
++		reg = 0;
++		break;
++	case 3300000:
++		reg = PISTACHIO_INTERNAL_DAC_CTRL_PWR_SEL_MASK;
++		break;
++	default:
++		dev_err(dev, "invalid voltage: %d\n", voltage);
++		ret = -EINVAL;
++		goto err_regulator;
++	}
++
++	regmap_update_bits(dac->regmap, PISTACHIO_INTERNAL_DAC_CTRL,
++			PISTACHIO_INTERNAL_DAC_CTRL_PWR_SEL_MASK, reg);
++
++	pistachio_internal_dac_pwr_off(dac);
++	pistachio_internal_dac_pwr_on(dac);
++
+ 	pm_runtime_set_active(dev);
+ 	pm_runtime_enable(dev);
+ 	pm_runtime_idle(dev);
+ 
++	ret = snd_soc_register_codec(dev, &pistachio_internal_dac_driver,
++			pistachio_internal_dac_dais,
++			ARRAY_SIZE(pistachio_internal_dac_dais));
++	if (ret) {
++		dev_err(dev, "failed to register codec: %d\n", ret);
++		goto err_pwr;
++	}
++
+ 	return 0;
++
++err_pwr:
++	pm_runtime_disable(&pdev->dev);
++	pistachio_internal_dac_pwr_off(dac);
++err_regulator:
++	regulator_disable(dac->supply);
++
++	return ret;
+ }
+ 
+ static int pistachio_internal_dac_remove(struct platform_device *pdev)
+ {
++	struct pistachio_internal_dac *dac = dev_get_drvdata(&pdev->dev);
++
+ 	snd_soc_unregister_codec(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
++	pistachio_internal_dac_pwr_off(dac);
++	regulator_disable(dac->supply);
+ 
+ 	return 0;
+ }
+@@ -244,6 +235,13 @@ static int pistachio_internal_dac_remove(struct platform_device *pdev)
+ static int pistachio_internal_dac_rt_resume(struct device *dev)
+ {
+ 	struct pistachio_internal_dac *dac = dev_get_drvdata(dev);
++	int ret;
++
++	ret = regulator_enable(dac->supply);
++	if (ret) {
++		dev_err(dev, "failed to enable supply: %d\n", ret);
++		return ret;
++	}
+ 
+ 	pistachio_internal_dac_pwr_on(dac);
+ 
+@@ -256,6 +254,8 @@ static int pistachio_internal_dac_rt_suspend(struct device *dev)
+ 
+ 	pistachio_internal_dac_pwr_off(dac);
+ 
++	regulator_disable(dac->supply);
++
+ 	return 0;
+ }
+ #endif
+-- 
+2.6.2
+

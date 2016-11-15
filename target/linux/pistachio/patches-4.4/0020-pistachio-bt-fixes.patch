@@ -1,0 +1,55 @@
+From 889c6fff9aec601270f62e2a674c58280d104804 Mon Sep 17 00:00:00 2001
+From: Bartosz Flis <bartosz.flis@imgtec.com>
+Date: Tue, 7 Jul 2015 16:48:22 +0100
+Subject: pistachio: bt: fixes
+
+This change fixes :-
+
+1. plat. driver section mismatch
+Since probe() routine is in __init section and we use
+platform_driver_probe(), there is no need for .probe field in the
+img_bt_driver struct. This gets rid of the linker warning.
+
+BUG=none
+TEST='modprobe img-bt'
+
+2. pistachio: bt: fix a reference to an old header
+"img-transport.h" has moved to a new location and this #include
+hasn't been updated.
+
+BUG=none
+TEST=kernel recompilation
+
+Change-Id: I6a0758b8bf3d2b7da57d06a832ccb52926b2860c
+Signed-off-by: Bartosz Flis <bartosz.flis@imgtec.com>
+---
+ drivers/bluetooth/pistachio/img-bt-main.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/bluetooth/pistachio/img-bt-main.c b/drivers/bluetooth/pistachio/img-bt-main.c
+index d4202e7..e942481 100644
+--- a/drivers/bluetooth/pistachio/img-bt-main.c
++++ b/drivers/bluetooth/pistachio/img-bt-main.c
+@@ -38,9 +38,10 @@
+ #include <linux/types.h>
+ #include <linux/workqueue.h>
+ 
++#include <soc/img/img-transport.h>
++
+ #include "circ-buf-ext.h"
+ #include "gateway.h"
+-#include "img-transport.h"
+ #include "payload.h"
+ 
+ static const char *client_name = "img-bt";
+@@ -499,7 +500,6 @@ static const struct of_device_id img_bt_dt_ids[] = {
+ MODULE_DEVICE_TABLE(of, img_bt_dt_ids);
+ 
+ struct platform_driver img_bt_driver = {
+-	.probe = img_bt_pltfr_probe,
+ 	.remove = img_bt_pltfr_remove,
+ 	.driver = {
+ 		.name   = "img-bt",
+-- 
+2.6.2
+
