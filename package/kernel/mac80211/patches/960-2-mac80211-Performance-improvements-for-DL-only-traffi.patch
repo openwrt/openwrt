@@ -1,0 +1,455 @@
+From 1f36c49b24f31541d7c8fa7f95131f79aa8a17b7 Mon Sep 17 00:00:00 2001
+From: Chaitanya Tata <chaitanya.tata@imgtec.com>
+Date: Tue, 12 Apr 2016 18:02:22 +0530
+Subject: [PATCH] mac80211: Performance improvements for DL only traffic while
+ in power-save.
+
+While in power-save if we have Downlink (DL) only traffic, currently
+we stay in power-save and retrieve the buffered frames using legacy
+power save (default), this drastically decreases performance.
+
+We have implemented an algorithm to track the incoming frames and
+intelligently take a decision whether to stay in power-save (for low
+rate traffic) or to come out of power-save (for high rate traffic).
+
+Tested with ping (low rate) and iperf (high rate).
+
+Note: This is a local patch, not upstreamed.
+
+Change-Id: I4814e5c05d0e2bbf91a07c7fb6bd195ee396ca65
+Signed-off-by: Chaitanya Tata <chaitanya.tata@imgtec.com>
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ include/net/mac80211.h        |   3 +-
+ net/mac80211/debugfs_netdev.c | 100 +++++++++++++++++++++++++++++++++++++++-
+ net/mac80211/ieee80211_i.h    |  15 +++++-
+ net/mac80211/iface.c          |   4 ++
+ net/mac80211/main.c           |  13 ++++++
+ net/mac80211/mlme.c           | 103 +++++++++++++++++++++++++++++++++++++++++-
+ net/mac80211/rx.c             |  20 +++++++-
+ 7 files changed, 253 insertions(+), 5 deletions(-)
+
+diff --git a/include/net/mac80211.h b/include/net/mac80211.h
+index 3d57a75..8ba7cdd 100644
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1325,7 +1325,8 @@ enum ieee80211_smps_mode {
+  */
+ struct ieee80211_conf {
+ 	u32 flags;
+-	int power_level, dynamic_ps_timeout;
++	int power_level, dynamic_ps_timeout, dynamic_ps_rx_timeout;
++	int dynamic_ps_rx_traffic_timeout;
+ 	int max_antenna_gain;
+ 
+ 	u16 listen_interval;
+diff --git a/net/mac80211/debugfs_netdev.c b/net/mac80211/debugfs_netdev.c
+index 89daa44..66aaafd 100644
+--- a/net/mac80211/debugfs_netdev.c
++++ b/net/mac80211/debugfs_netdev.c
+@@ -538,6 +538,102 @@ static ssize_t ieee80211_if_parse_tsf(
+ }
+ IEEE80211_IF_FILE_RW(tsf);
+ 
++static ssize_t ieee80211_if_fmt_max_more_data_cnt(
++	const struct ieee80211_sub_if_data *sdata, char *buf, int buflen)
++{
++	return snprintf(buf, buflen, "max_more_data_cnt value is %d\n",sdata->max_more_data_cnt);
++
++}
++static ssize_t ieee80211_if_parse_max_more_data_cnt(
++	struct ieee80211_sub_if_data *sdata, const char *buf, int buflen)
++{
++	unsigned int ret = 0;
++	unsigned int  max_more_data_cnt;
++
++	if (!ieee80211_sdata_running(sdata))
++		return -ENETDOWN;
++
++	ret = kstrtouint(buf, 0 ,&max_more_data_cnt);
++
++	if (ret)
++		return ret;
++
++	if (max_more_data_cnt < 0)
++		return -EINVAL;
++
++	sdata->max_more_data_cnt = max_more_data_cnt;
++
++	return buflen;
++}
++IEEE80211_IF_FILE_RW(max_more_data_cnt);
++
++static ssize_t ieee80211_if_fmt_dynamic_ps_rx_timeout(
++	const struct ieee80211_sub_if_data *sdata, char *buf, int buflen)
++{
++	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_conf *conf = &local->hw.conf;
++
++	return snprintf(buf, buflen, "dynamic_ps_rx_timeout value is %dms\n",conf->dynamic_ps_rx_timeout);
++}
++
++static ssize_t ieee80211_if_parse_dynamic_ps_rx_timeout(
++	struct ieee80211_sub_if_data *sdata, const char *buf, int buflen)
++{
++	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_conf *conf = &local->hw.conf;
++	unsigned int ret = 0;
++	unsigned int  dynamic_ps_rx_timeout;
++
++	if (!ieee80211_sdata_running(sdata))
++		return -ENETDOWN;
++
++	ret = kstrtouint(buf, 0 ,&dynamic_ps_rx_timeout);
++
++	if (ret)
++		return ret;
++
++	if (dynamic_ps_rx_timeout < 0)
++		return -EINVAL;
++
++	conf->dynamic_ps_rx_timeout= dynamic_ps_rx_timeout;
++
++	return buflen;
++}
++IEEE80211_IF_FILE_RW(dynamic_ps_rx_timeout);
++
++static ssize_t ieee80211_if_fmt_dynamic_ps_rx_traffic_timeout(
++	const struct ieee80211_sub_if_data *sdata, char *buf, int buflen)
++{
++	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_conf *conf = &local->hw.conf;
++
++	return snprintf(buf, buflen, "dynamic_ps_rx_traffic_timeout (starts after 1st MD) value is %dms\n",conf->dynamic_ps_rx_traffic_timeout);
++}
++static ssize_t ieee80211_if_parse_dynamic_ps_rx_traffic_timeout(
++	struct ieee80211_sub_if_data *sdata, const char *buf, int buflen)
++{
++	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_conf *conf = &local->hw.conf;
++	unsigned int ret = 0;
++	unsigned int  dynamic_ps_rx_traffic_timeout;
++
++	if (!ieee80211_sdata_running(sdata))
++		return -ENETDOWN;
++
++	ret = kstrtouint(buf, 0 ,&dynamic_ps_rx_traffic_timeout);
++
++	if (ret)
++		return ret;
++
++	if (dynamic_ps_rx_traffic_timeout < 0)
++		return -EINVAL;
++
++	conf->dynamic_ps_rx_traffic_timeout= dynamic_ps_rx_traffic_timeout;
++
++	return buflen;
++}
++IEEE80211_IF_FILE_RW(dynamic_ps_rx_traffic_timeout);
++
+ 
+ /* WDS attributes */
+ IEEE80211_IF_FILE(peer, u.wds.remote_addr, MAC);
+@@ -630,7 +726,9 @@ static void add_sta_files(struct ieee80211_sub_if_data *sdata)
+ 	DEBUGFS_ADD_MODE(beacon_loss, 0200);
+ 	DEBUGFS_ADD_MODE(uapsd_queues, 0600);
+ 	DEBUGFS_ADD_MODE(uapsd_max_sp_len, 0600);
+-	DEBUGFS_ADD_MODE(tdls_wider_bw, 0600);
++	DEBUGFS_ADD_MODE(max_more_data_cnt, 0600);
++	DEBUGFS_ADD_MODE(dynamic_ps_rx_timeout, 0600);
++	DEBUGFS_ADD_MODE(dynamic_ps_rx_traffic_timeout, 0600);
+ }
+ 
+ static void add_ap_files(struct ieee80211_sub_if_data *sdata)
+diff --git a/net/mac80211/ieee80211_i.h b/net/mac80211/ieee80211_i.h
+index 2b4f88d..f900211 100644
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -834,6 +834,12 @@ struct ieee80211_sub_if_data {
+ 
+ 	unsigned long state;
+ 
++	unsigned int max_more_data_cnt;
++
++	unsigned int more_data_cnt;
++
++	unsigned int rx_packet_count;
++
+ 	char name[IFNAMSIZ];
+ 
+ 	/* Fragment table for host-based reassembly */
+@@ -1311,7 +1317,10 @@ struct ieee80211_local {
+ 	struct ieee80211_sub_if_data *ps_sdata;
+ 	struct work_struct dynamic_ps_enable_work;
+ 	struct work_struct dynamic_ps_disable_work;
++	struct work_struct dynamic_ps_rx_recalc_ps_work;
+ 	struct timer_list dynamic_ps_timer;
++	struct timer_list dynamic_ps_rx_timer;
++	struct timer_list dynamic_ps_rx_traffic_timer;
+ 	struct notifier_block ifa_notifier;
+ 	struct notifier_block ifa6_notifier;
+ 
+@@ -1863,7 +1872,11 @@ static inline int ieee80211_ac_from_tid(int tid)
+ 
+ void ieee80211_dynamic_ps_enable_work(struct work_struct *work);
+ void ieee80211_dynamic_ps_disable_work(struct work_struct *work);
++void ieee80211_dynamic_ps_rx_recalc_ps_work (struct work_struct *work);
+ void ieee80211_dynamic_ps_timer(unsigned long data);
++void ieee80211_dynamic_ps_rx_timer(unsigned long data);
++void ieee80211_dynamic_ps_rx_traffic_timer(unsigned long data);
++
+ void ieee80211_send_nullfunc(struct ieee80211_local *local,
+ 			     struct ieee80211_sub_if_data *sdata,
+ 			     bool powersave);
+@@ -2038,7 +2051,7 @@ void ieee80211_dfs_cac_cancel(struct ieee80211_local *local);
+ void ieee80211_dfs_radar_detected_work(struct work_struct *work);
+ int ieee80211_send_action_csa(struct ieee80211_sub_if_data *sdata,
+ 			      struct cfg80211_csa_settings *csa_settings);
+-
++bool ieee80211_powersave_allowed(struct ieee80211_sub_if_data *sdata);
+ bool ieee80211_cs_valid(const struct ieee80211_cipher_scheme *cs);
+ bool ieee80211_cs_list_valid(const struct ieee80211_cipher_scheme *cs, int n);
+ const struct ieee80211_cipher_scheme *
+diff --git a/net/mac80211/iface.c b/net/mac80211/iface.c
+index 679f4a1..9faf4e6 100644
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -1850,6 +1850,10 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
+ 	sdata->ap_power_level = IEEE80211_UNSET_POWER_LEVEL;
+ 	sdata->user_power_level = local->user_power_level;
+ 
++	sdata->more_data_cnt   = 0;
++	sdata->max_more_data_cnt = 3;
++	sdata->rx_packet_count = 0;
++
+ 	sdata->encrypt_headroom = IEEE80211_ENCRYPT_HEADROOM;
+ 
+ 	/* setup type-dependent data */
+diff --git a/net/mac80211/main.c b/net/mac80211/main.c
+index a3a1ef1..6c30cab 100644
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -637,8 +637,17 @@ struct ieee80211_hw *ieee80211_alloc_hw_nm(size_t priv_data_len,
+ 		  ieee80211_dynamic_ps_enable_work);
+ 	INIT_WORK(&local->dynamic_ps_disable_work,
+ 		  ieee80211_dynamic_ps_disable_work);
++	INIT_WORK(&local->dynamic_ps_rx_recalc_ps_work,
++		  ieee80211_dynamic_ps_rx_recalc_ps_work);
++
+ 	setup_timer(&local->dynamic_ps_timer,
+ 		    ieee80211_dynamic_ps_timer, (unsigned long) local);
++	/*Timers for Dynamic RX power save*/
++	setup_timer(&local->dynamic_ps_rx_timer,
++		    ieee80211_dynamic_ps_rx_timer, (unsigned long) local);
++
++	setup_timer(&local->dynamic_ps_rx_traffic_timer,
++		    ieee80211_dynamic_ps_rx_traffic_timer, (unsigned long) local);
+ 
+ 	INIT_WORK(&local->sched_scan_stopped_work,
+ 		  ieee80211_sched_scan_stopped_work);
+@@ -881,6 +890,10 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
+ 	max_bitrates = 0;
+ 	supp_ht = false;
+ 	supp_vht = false;
++
++	local->hw.conf.dynamic_ps_rx_timeout = 100;
++	local->hw.conf.dynamic_ps_rx_traffic_timeout = 1500;
++
+ 	for (band = 0; band < NUM_NL80211_BANDS; band++) {
+ 		struct ieee80211_supported_band *sband;
+ 
+diff --git a/net/mac80211/mlme.c b/net/mac80211/mlme.c
+index 8d426f6..8cc3d0e 100644
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1417,7 +1417,7 @@ static void ieee80211_change_ps(struct ieee80211_local *local)
+ 	}
+ }
+ 
+-static bool ieee80211_powersave_allowed(struct ieee80211_sub_if_data *sdata)
++bool ieee80211_powersave_allowed(struct ieee80211_sub_if_data *sdata)
+ {
+ 	struct ieee80211_if_managed *mgd = &sdata->u.mgd;
+ 	struct sta_info *sta = NULL;
+@@ -1451,6 +1451,7 @@ static bool ieee80211_powersave_allowed(struct ieee80211_sub_if_data *sdata)
+ void ieee80211_recalc_ps(struct ieee80211_local *local)
+ {
+ 	struct ieee80211_sub_if_data *sdata, *found = NULL;
++	struct ieee80211_conf *conf = &local->hw.conf;
+ 	int count = 0;
+ 	int timeout;
+ 
+@@ -1498,6 +1499,19 @@ void ieee80211_recalc_ps(struct ieee80211_local *local)
+ 		local->ps_sdata = NULL;
+ 	}
+ 
++	if (count == 1 && conf->dynamic_ps_rx_timeout > 0 &&
++	    (found->more_data_cnt > found->max_more_data_cnt)) {
++		found->more_data_cnt = 0;
++		local->ps_sdata = NULL;
++		ieee80211_change_ps(local);
++		local->ps_sdata = found;
++		sdata->rx_packet_count = 0;
++		/*Check for inactivity to go back to PS*/
++		mod_timer(&local->dynamic_ps_rx_timer, jiffies +
++			  msecs_to_jiffies(conf->dynamic_ps_rx_timeout));
++		return;
++	}
++
+ 	ieee80211_change_ps(local);
+ }
+ 
+@@ -1597,6 +1611,18 @@ void ieee80211_dynamic_ps_enable_work(struct work_struct *work)
+ 	}
+ }
+ 
++void ieee80211_dynamic_ps_rx_recalc_ps_work(struct work_struct *work)
++{
++	struct ieee80211_local *local =
++		container_of(work, struct ieee80211_local,
++			     dynamic_ps_rx_recalc_ps_work);
++
++	mutex_lock(&local->iflist_mtx);
++	ieee80211_recalc_ps(local, -1);
++	mutex_unlock(&local->iflist_mtx);
++}
++
++
+ void ieee80211_dynamic_ps_timer(unsigned long data)
+ {
+ 	struct ieee80211_local *local = (void *) data;
+@@ -1604,6 +1630,81 @@ void ieee80211_dynamic_ps_timer(unsigned long data)
+ 	ieee80211_queue_work(&local->hw, &local->dynamic_ps_enable_work);
+ }
+ 
++void ieee80211_dynamic_ps_rx_timer(unsigned long data)
++{
++	struct ieee80211_local *local = (void *) data;
++	struct ieee80211_sub_if_data *sdata = NULL;
++	struct ieee80211_conf *conf = &local->hw.conf;
++	unsigned char count = 0;
++
++	if (local->quiescing || local->suspended)
++		return;
++
++	list_for_each_entry(sdata, &local->interfaces, list) {
++		if (!ieee80211_sdata_running(sdata))
++			continue;
++
++		if (sdata->vif.type == NL80211_IFTYPE_AP) {
++			/* If an AP vif is found, then disable PS
++			 * by setting the count to zero thereby setting
++			 * ps_sdata to NULL.
++			 */
++			count = 0;
++			break;
++		}
++		if (sdata->vif.type != NL80211_IFTYPE_STATION)
++			continue;
++
++		count++;
++	}
++
++	if (count == 1) {
++		if (sdata->rx_packet_count) {
++			/*No change, data is still flowing*/
++			mod_timer(&local->dynamic_ps_rx_timer, jiffies +
++				  msecs_to_jiffies(conf->dynamic_ps_rx_timeout));
++		} else {
++			/*Go To powersave only if tx is also empty*/
++			mod_timer(&local->dynamic_ps_timer, jiffies +
++				  msecs_to_jiffies(conf->dynamic_ps_timeout));
++		}
++		sdata->rx_packet_count = 0;
++	}
++}
++
++void ieee80211_dynamic_ps_rx_traffic_timer(unsigned long data)
++{
++	struct ieee80211_local *local = (void *) data;
++	struct ieee80211_sub_if_data *sdata , *found = NULL;
++	unsigned char count = 0;
++
++	if (local->quiescing || local->suspended)
++		return;
++
++	list_for_each_entry(sdata, &local->interfaces, list) {
++		if (!ieee80211_sdata_running(sdata))
++			continue;
++		if (sdata->vif.type == NL80211_IFTYPE_AP) {
++			/* If an AP vif is found, then disable PS
++			 * by setting the count to zero thereby setting
++			 * ps_sdata to NULL.
++			 */
++			count = 0;
++			break;
++		}
++		if (sdata->vif.type != NL80211_IFTYPE_STATION)
++			continue;
++		found = sdata;
++		count++;
++	}
++	if (count == 1) {
++		if (found->more_data_cnt < found->max_more_data_cnt) {
++			/*Traffic is slow, stay in ps*/
++			found->more_data_cnt = 0;
++		}
++	}
++}
++
+ void ieee80211_dfs_cac_timer_work(struct work_struct *work)
+ {
+ 	struct delayed_work *delayed_work = to_delayed_work(work);
+diff --git a/net/mac80211/rx.c b/net/mac80211/rx.c
+index dfa1410..bdd72a4 100644
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1213,11 +1213,28 @@ ieee80211_rx_h_check_more_data(struct ieee80211_rx_data *rx)
+ 	struct ieee80211_local *local;
+ 	struct ieee80211_hdr *hdr;
+ 	struct sk_buff *skb;
++	struct ieee80211_sub_if_data *sdata = rx->sdata;
++	struct ieee80211_conf *conf;
+ 
+ 	local = rx->local;
++	conf = &local->hw.conf;
++
+ 	skb = rx->skb;
+ 	hdr = (struct ieee80211_hdr *) skb->data;
+ 
++	if (conf->dynamic_ps_rx_timeout > 0 &&
++	    ieee80211_powersave_allowed(sdata) &&
++	    (conf->flags & IEEE80211_CONF_PS) &&
++	     ieee80211_is_data(hdr->frame_control) &&
++	     ieee80211_has_moredata(hdr->frame_control)) {
++		sdata->more_data_cnt++;
++		/*For first packet start a traffic timer*/
++		if (sdata->more_data_cnt == 1)
++			mod_timer(&local->dynamic_ps_rx_traffic_timer, jiffies +
++				  msecs_to_jiffies(conf->dynamic_ps_rx_traffic_timeout));
++		ieee80211_queue_work(&local->hw, &local->dynamic_ps_rx_recalc_ps_work);
++	}
++
+ 	if (!local->pspolling)
+ 		return RX_CONTINUE;
+ 
+@@ -1235,7 +1252,7 @@ ieee80211_rx_h_check_more_data(struct ieee80211_rx_data *rx)
+ 	}
+ 
+ 	/* more data bit is set, let's request a new frame from the AP */
+-	ieee80211_send_pspoll(local, rx->sdata);
++	ieee80211_send_pspoll(local, sdata);
+ 
+ 	return RX_CONTINUE;
+ }
+@@ -3916,6 +3933,7 @@ static bool ieee80211_prepare_and_rx_handle(struct ieee80211_rx_data *rx,
+ 		rx->skb = skb;
+ 	}
+ 
++	sdata->rx_packet_count++;
+ 	ieee80211_invoke_rx_handlers(rx);
+ 	return true;
+ }
+-- 
+2.7.4
+
