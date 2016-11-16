@@ -15,7 +15,8 @@ merakinand_do_kernel_check() {
 
 	# What is our kernel magic string?
 	case "$board_name" in
-	"mr24")
+	"mr24"|\
+	"mx60")
 		[ "$image_magic_word" == "8e73ed8a" ] && {
 			echo "pass" && return 0
 		}
@@ -33,7 +34,8 @@ merakinand_do_platform_check() {
 	local kernel_magic="$(merakinand_do_kernel_check $1 $2)"
 
 	case "$board_name" in
-	"mr24")
+	"mr24"|\
+	"mx60")
 		[ "$control_length" = 0 -o "$file_type" != "squashfs" -o "$kernel_magic" != "pass" ] && {
 			echo "Invalid sysupgrade file for $board_name"
 			return 1
@@ -54,7 +56,8 @@ merakinand_do_upgrade() {
 
 	# Do we need to do any platform tweaks?
 	case "$board_name" in
-	"mr24")
+	"mr24"|\
+	"mx60")
 		nand_do_upgrade $1
 		;;
 	*)

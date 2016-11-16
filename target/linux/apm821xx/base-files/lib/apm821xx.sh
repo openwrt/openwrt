@@ -14,6 +14,10 @@ apm821xx_board_detect() {
 		name="mr24"
 		;;
 
+	*"Meraki MX60/MX60W Security Appliance")
+		name="mx60"
+		;;
+
 	*"MyBook Live"*)
 		name="mbl"
 		;;

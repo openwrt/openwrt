@@ -84,6 +84,38 @@ define Device/mr24
 endef
 TARGET_DEVICES += mr24
 
+define Device/mx60
+  DEVICE_TITLE := Cisco Meraki MX60
+  DEVICE_PACKAGES := kmod-spi-gpio swconfig kmod-usb-ledtrig-usbport \
+	kmod-usb-dwc2 kmod-usb-storage block-mount
+  DEVICE_PROFILE := MX60
+  DEVICE_DTS := MX60
+  BLOCKSIZE := 63k
+  IMAGES := sysupgrade.tar
+  DTB_SIZE := 64512
+  # The kernel size will need to match the offset defined in mkmerakifw.c,
+  # otherwise the final image will fail to boot. This is set within the
+  # MX60 kernel header definition which is found at
+  # ./tools/firmware-utils/src/mkmerakifw.c, line 103~
+  KERNEL_SIZE := 2984k
+  IMAGE_SIZE := 1021m
+  KERNEL := kernel-bin | gzip | uImage gzip | MerakiAdd-dtb | MerakiNAND
+  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux | gzip | uImage gzip | \
+		      check-size $$(KERNEL_SIZE) | \
+		      MerakiAdd-dtb | pad-to 2047k | MerakiAdd-initramfs | \
+		      MerakiNAND
+  IMAGE/sysupgrade.tar := sysupgrade-tar
+  UBINIZE_OPTS := -E 5
+endef
+TARGET_DEVICES += mx60
+
+define Device/mx60w
+$(Device/mx60)
+  DEVICE_TITLE := Cisco Meraki MX60W
+  DEVICE_PACKAGES += kmod-ath9k wpad-mini
+endef
+TARGET_DEVICES += mx60w
+
 define Build/create-uImage-dtb
 	# flat_dt target expect FIT image - which WNDR4700's uboot doesn't support
 	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) \

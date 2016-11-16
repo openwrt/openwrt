@@ -4,17 +4,14 @@
 . /lib/apm821xx.sh
 
 get_status_led() {
-	case $(apm821xx_board_name) in
-	mbl)
-		status_led="mbl:green:power"
-		;;
+	local board=$(apm821xx_board_name)
 
-	mr24)
-		status_led="mr24:green:power"
-		;;
-
+	case $board in
+	mbl|\
+	mr24|\
+	mx60|\
 	wndr4700)
-		status_led="wndr4700:green:power"
+		status_led="$board:green:power"
 		;;
 
 	*)

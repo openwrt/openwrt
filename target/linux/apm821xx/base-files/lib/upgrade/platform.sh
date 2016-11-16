@@ -16,7 +16,8 @@ platform_check_image() {
 		return $?;
 		;;
 
-	mr24)
+	mr24|\
+	mx60)
 		merakinand_do_platform_check $board "$1"
 		return $?;
 		;;
@@ -38,7 +39,8 @@ platform_pre_upgrade() {
 	local board=$(apm821xx_board_name)
 
 	case "$board" in
-	mr24)
+	mr24|\
+	mx60)
 		merakinand_do_upgrade "$1"
 		;;
 
