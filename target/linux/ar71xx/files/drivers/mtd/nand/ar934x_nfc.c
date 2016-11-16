@@ -983,13 +983,10 @@ ar934x_nfc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
 
 static int
 ar934x_nfc_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
-			  const u8 *buf, int oob_required)
+			  const u8 *buf, int oob_required, int page)
 {
 	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
-	int page;
 	int len;
-
-	page = nfc->seqin_page_addr;
 
 	nfc_dbg(nfc, "write_page_raw: page:%d oob:%d\n", page, oob_required);
 
@@ -1006,13 +1003,10 @@ ar934x_nfc_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
 
 static int
 ar934x_nfc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
-		      const u8 *buf, int oob_required)
+		      const u8 *buf, int oob_required, int page)
 {
 	struct ar934x_nfc *nfc = mtd_to_ar934x_nfc(mtd);
-	int page;
 	int err;
-
-	page = nfc->seqin_page_addr;
 
 	nfc_dbg(nfc, "write_page: page:%d oob:%d\n", page, oob_required);
 
