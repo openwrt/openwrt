@@ -67,28 +67,28 @@ $(Package/ath10k-firmware-default)
   CATEGORY:=Firmware
 endef
 
-QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin-18.rc1-lede
-QCA99X0_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-7.bin-lede.004
-QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-7.bin-lede.004
+QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin-18.rc2-lede
+QCA99X0_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.005
+QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.005
 
 define Download/ath10k-firmware-qca988x-ct
   URL:=https://www.candelatech.com/downloads/
   FILE:=$(QCA988X_FIRMWARE_FILE_CT)
-  MD5SUM:=89b436bad5d80c57bbf74e498095c9d2
+  MD5SUM:=665482e1fd20a410627996c9a0b93411
 endef
 $(eval $(call Download,ath10k-firmware-qca988x-ct))
 
 define Download/ath10k-firmware-qca99x0-ct
   URL:=https://www.candelatech.com/downloads/ath10k-10-4/
   FILE:=$(QCA99X0_FIRMWARE_FILE_CT)
-  MD5SUM:=809bb9bf8a18ea218a8e1b9ffc0f8447
+  MD5SUM:=a63d9651e884bbb38ed6ff722f6c6951
 endef
 $(eval $(call Download,ath10k-firmware-qca99x0-ct))
 
 define Download/ath10k-firmware-qca9984-ct
   URL:=https://www.candelatech.com/downloads/ath10k-9984-10-4/
   FILE:=$(QCA9984_FIRMWARE_FILE_CT)
-  MD5SUM:=924eb8ea30de11299b13e207469a3350
+  MD5SUM:=b2427376dbfdb083b3d27cf42b2c525d
 endef
 $(eval $(call Download,ath10k-firmware-qca9984-ct))
 
