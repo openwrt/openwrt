@@ -297,13 +297,13 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
 +	for (fmr = t->parms.fmrs; fmr; fmr = fmr->next) {
 +		unsigned mshift = 32 - fmr->ip4_prefix_len;
 +		if (ntohl(fmr->ip4_prefix.s_addr) >> mshift ==
-+				ntohl(iph->daddr) >> mshift)
++				ntohl(ip_hdr(skb)->daddr) >> mshift)
 +			break;
 +	}
 +
 +	/* change dstaddr according to FMR */
 +	if (fmr)
-+		ip4ip6_fmr_calc(&fl6.daddr, iph, skb_tail_pointer(skb), fmr, true);
++		ip4ip6_fmr_calc(&fl6.daddr, ip_hdr(skb), skb_tail_pointer(skb), fmr, true);
 +
  	err = ip6_tnl_xmit2(skb, dev, dsfield, &fl6, encap_limit, &mtu);
  	if (err != 0) {

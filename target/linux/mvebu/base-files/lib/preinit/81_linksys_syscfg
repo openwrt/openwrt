@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2014 OpenWrt.org
+# Copyright (C) 2014-2016 OpenWrt.org
 #
 
 preinit_mount_syscfg() {
@@ -8,15 +8,16 @@ preinit_mount_syscfg() {
 	. /lib/mvebu.sh
 
 	case $(mvebu_board_name) in
-	armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-shelby|armada-xp-linksys-mamba)
+	armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-rango|armada-385-linksys-shelby|armada-xp-linksys-mamba)
 		needs_recovery=0
-		ubiattach -m 8 || needs_recovery=1
+		syscfg_part=$(grep syscfg /proc/mtd |cut -c4)
+		ubiattach -m $syscfg_part || needs_recovery=1
 		if [ $needs_recovery -eq 1 ]
 		then
 			echo "ubifs syscfg partition is damaged, reformatting"
-			ubidetach -m 8
-			ubiformat -y -O 2048 -q /dev/mtd8
-			ubiattach -m 8
+			ubidetach -m $syscfg_part
+			ubiformat -y -O 2048 -q /dev/mtd$syscfg_part
+			ubiattach -m $syscfg_part
 			ubimkvol /dev/ubi1 -n 0 -N syscfg -t dynamic --maxavsize
 		fi
 		mkdir /tmp/syscfg

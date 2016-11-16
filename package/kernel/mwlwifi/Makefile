@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mwlwifi
-PKG_VERSION:=10.3.0.18-20160804
-PKG_RELEASE=1
+PKG_VERSION:=10.3.2.0-20161013
+PKG_RELEASE=2
 
 PKG_LICENSE:=ISC
 PKG_LICENSE_FILES:=
@@ -17,7 +17,7 @@ PKG_LICENSE_FILES:=
 PKG_SOURCE_URL:=https://github.com/kaloz/mwlwifi
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=d48847cc83954930fdcd98818bbf33e75707b8e1
+PKG_SOURCE_VERSION:=41db55d3872cad94763a5fa0c5f028fa1ab66f58
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.xz
 
 PKG_MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
@@ -56,6 +56,7 @@ define KernelPackage/mwlwifi/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mwlwifi
 	$(CP) $(PKG_BUILD_DIR)/bin/firmware/88W8864.bin $(1)/lib/firmware/mwlwifi/
 	$(CP) $(PKG_BUILD_DIR)/bin/firmware/88W8897.bin $(1)/lib/firmware/mwlwifi/
+	$(CP) $(PKG_BUILD_DIR)/bin/firmware/88W8964.bin $(1)/lib/firmware/mwlwifi/
 	$(CP) $(PKG_BUILD_DIR)/bin/firmware/Marvell_license.txt $(1)/lib/firmware/mwlwifi/
 endef
 
