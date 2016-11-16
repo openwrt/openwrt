@@ -2,6 +2,7 @@
 ![Creator logo](creatorlogo.png)
 
 [![Stories in Backlog](https://badge.waffle.io/CreatorDev/openwrt.png?label=s:%20Backlog&title=Backlog)](http://waffle.io/CreatorDev/openwrt)
+[![Build Status](http://jenkins.creatordev.io/buildStatus/icon?job=CreatorDev/openwrt/ci40)](http://jenkins.creatordev.io/job/CreatorDev/openwrt/ci40)
 
 # Using OpenWrt on Creator Ci40 (Marduk) platform
 
