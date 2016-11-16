@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2014-2015 OpenWrt.org
+# Copyright (C) 2014-2016 OpenWrt.org
 #
 
 [ -e /etc/config/ubootenv ] && exit 0
@@ -16,6 +16,9 @@ board=$(mvebu_board_name)
 case "$board" in
 armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-shelby)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x40000"
+	;;
+armada-385-linksys-rango)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 armada-xp-linksys-mamba)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x20000"

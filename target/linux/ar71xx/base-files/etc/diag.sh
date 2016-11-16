@@ -116,6 +116,9 @@ get_status_led() {
 	dragino2)
 		status_led="dragino2:red:system"
 		;;
+	dw33d)
+		status_led="dw33d:blue:status"
+		;;
 	eap300v2)
 		status_led="engenius:blue:power"
 		;;

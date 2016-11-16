@@ -1,6 +1,6 @@
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -25,22 +25,18 @@ struct bcma_bus;
+@@ -23,22 +23,18 @@ struct bcma_bus;
  bool bcma_wait_value(struct bcma_device *core, u16 reg, u32 mask, u32 value,
  		     int timeout);
  void bcma_prepare_core(struct bcma_bus *bus, struct bcma_device *core);
@@ -26,7 +26,7 @@
  
  /* sprom.c */
  int bcma_sprom_get(struct bcma_bus *bus);
-@@ -111,6 +107,14 @@ extern int bcma_chipco_watchdog_register
+@@ -109,6 +105,14 @@ extern int bcma_chipco_watchdog_register
  #ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
  bool bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc);
  void bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc);
@@ -467,7 +467,7 @@
  	if (!bus->drv_cc.core)
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -318,6 +318,7 @@ struct bcma_bus {
+@@ -319,6 +319,7 @@ struct bcma_bus {
  	const struct bcma_host_ops *ops;
  
  	enum bcma_hosttype hosttype;
