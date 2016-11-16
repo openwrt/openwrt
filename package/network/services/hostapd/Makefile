@@ -44,7 +44,7 @@ ifeq ($(LOCAL_VARIANT),mesh)
   CONFIG_VARIANT:=full
 endif
 
-ifeq ($(LOCAL_TYPE),supplicant)
+ifneq ($(LOCAL_TYPE),hostapd)
   ifeq ($(LOCAL_VARIANT),full)
     PKG_CONFIG_DEPENDS += \
 		CONFIG_WPA_SUPPLICANT_INTERNAL \
