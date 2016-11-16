@@ -9,7 +9,7 @@
  __iomem void *ltq_pci_mapped_cfg;
  static __iomem void *ltq_pci_membase;
  
-@@ -87,8 +89,8 @@
+@@ -87,8 +89,8 @@ static inline u32 ltq_calc_bar11mask(voi
  	u32 mem, bar11mask;
  
  	/* BAR11MASK value depends on available memory on system. */

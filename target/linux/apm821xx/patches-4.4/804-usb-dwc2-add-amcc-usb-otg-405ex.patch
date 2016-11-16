@@ -38,7 +38,11 @@
  static int __dwc2_lowlevel_hw_enable(struct dwc2_hsotg *hsotg)
  {
  	struct platform_device *pdev = to_platform_device(hsotg->dev);
-@@ -309,2 +340,3 @@ static int dwc2_driver_remove(struct pla
+@@ -307,6 +338,7 @@ static int dwc2_driver_remove(struct pla
+ }
+ 
  static const struct of_device_id dwc2_of_match_table[] = {
 +	{ .compatible = "amcc,usb-otg-405ex", .data = &params_amcc_dwc_otg },
  	{ .compatible = "brcm,bcm2835-usb", .data = &params_bcm2835 },
+ 	{ .compatible = "rockchip,rk3066-usb", .data = &params_rk3066 },
+ 	{ .compatible = "snps,dwc2", .data = NULL },
