@@ -54,7 +54,17 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
 
 --- a/drivers/usb/core/urb.c
 +++ b/drivers/usb/core/urb.c
-@@ -443,11 +443,6 @@ int usb_submit_urb(struct urb *urb, gfp_
+@@ -323,9 +323,6 @@ EXPORT_SYMBOL_GPL(usb_unanchor_urb);
+  */
+ int usb_submit_urb(struct urb *urb, gfp_t mem_flags)
+ {
+-	static int			pipetypes[4] = {
+-		PIPE_CONTROL, PIPE_ISOCHRONOUS, PIPE_BULK, PIPE_INTERRUPT
+-	};
+ 	int				xfertype, max;
+ 	struct usb_device		*dev;
+ 	struct usb_host_endpoint	*ep;
+@@ -443,11 +440,6 @@ int usb_submit_urb(struct urb *urb, gfp_
  	 * cause problems in HCDs if they get it wrong.
  	 */
  
