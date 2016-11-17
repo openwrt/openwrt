@@ -21,11 +21,9 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  drivers/clk/qcom/gcc-msm8974.c | 17 +++++++----------
  5 files changed, 33 insertions(+), 43 deletions(-)
 
-diff --git a/drivers/clk/qcom/gcc-apq8084.c b/drivers/clk/qcom/gcc-apq8084.c
-index 1567c3a..070037a 100644
 --- a/drivers/clk/qcom/gcc-apq8084.c
 +++ b/drivers/clk/qcom/gcc-apq8084.c
-@@ -3607,18 +3607,16 @@ MODULE_DEVICE_TABLE(of, gcc_apq8084_match_table);
+@@ -3607,18 +3607,16 @@ MODULE_DEVICE_TABLE(of, gcc_apq8084_matc
  
  static int gcc_apq8084_probe(struct platform_device *pdev)
  {
@@ -51,11 +49,9 @@ index 1567c3a..070037a 100644
  
  	return qcom_cc_probe(pdev, &gcc_apq8084_desc);
  }
-diff --git a/drivers/clk/qcom/gcc-ipq806x.c b/drivers/clk/qcom/gcc-ipq806x.c
-index 16fc64c..dd5402b 100644
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
-@@ -3023,19 +3023,17 @@ MODULE_DEVICE_TABLE(of, gcc_ipq806x_match_table);
+@@ -3023,19 +3023,17 @@ MODULE_DEVICE_TABLE(of, gcc_ipq806x_matc
  
  static int gcc_ipq806x_probe(struct platform_device *pdev)
  {
@@ -81,11 +77,9 @@ index 16fc64c..dd5402b 100644
  
  	ret = qcom_cc_probe(pdev, &gcc_ipq806x_desc);
  	if (ret)
-diff --git a/drivers/clk/qcom/gcc-msm8660.c b/drivers/clk/qcom/gcc-msm8660.c
-index f110bb5..ad41303 100644
 --- a/drivers/clk/qcom/gcc-msm8660.c
 +++ b/drivers/clk/qcom/gcc-msm8660.c
-@@ -2720,17 +2720,16 @@ MODULE_DEVICE_TABLE(of, gcc_msm8660_match_table);
+@@ -2720,17 +2720,16 @@ MODULE_DEVICE_TABLE(of, gcc_msm8660_matc
  
  static int gcc_msm8660_probe(struct platform_device *pdev)
  {
@@ -110,11 +104,9 @@ index f110bb5..ad41303 100644
  
  	return qcom_cc_probe(pdev, &gcc_msm8660_desc);
  }
-diff --git a/drivers/clk/qcom/gcc-msm8960.c b/drivers/clk/qcom/gcc-msm8960.c
-index 66c18bc..983dd7d 100644
 --- a/drivers/clk/qcom/gcc-msm8960.c
 +++ b/drivers/clk/qcom/gcc-msm8960.c
-@@ -3503,7 +3503,6 @@ MODULE_DEVICE_TABLE(of, gcc_msm8960_match_table);
+@@ -3503,7 +3503,6 @@ MODULE_DEVICE_TABLE(of, gcc_msm8960_matc
  
  static int gcc_msm8960_probe(struct platform_device *pdev)
  {
@@ -122,7 +114,7 @@ index 66c18bc..983dd7d 100644
  	struct device *dev = &pdev->dev;
  	const struct of_device_id *match;
  	struct platform_device *tsens;
-@@ -3513,14 +3512,13 @@ static int gcc_msm8960_probe(struct platform_device *pdev)
+@@ -3513,14 +3512,13 @@ static int gcc_msm8960_probe(struct plat
  	if (!match)
  		return -EINVAL;
  
@@ -143,11 +135,9 @@ index 66c18bc..983dd7d 100644
  
  	ret = qcom_cc_probe(pdev, match->data);
  	if (ret)
-diff --git a/drivers/clk/qcom/gcc-msm8974.c b/drivers/clk/qcom/gcc-msm8974.c
-index 28abb8f..335952d 100644
 --- a/drivers/clk/qcom/gcc-msm8974.c
 +++ b/drivers/clk/qcom/gcc-msm8974.c
-@@ -2717,7 +2717,7 @@ static void msm8974_pro_clock_override(void)
+@@ -2717,7 +2717,7 @@ static void msm8974_pro_clock_override(v
  
  static int gcc_msm8974_probe(struct platform_device *pdev)
  {
@@ -156,7 +146,7 @@ index 28abb8f..335952d 100644
  	struct device *dev = &pdev->dev;
  	bool pro;
  	const struct of_device_id *id;
-@@ -2730,16 +2730,13 @@ static int gcc_msm8974_probe(struct platform_device *pdev)
+@@ -2730,16 +2730,13 @@ static int gcc_msm8974_probe(struct plat
  	if (pro)
  		msm8974_pro_clock_override();
  
@@ -164,20 +154,19 @@ index 28abb8f..335952d 100644
 -	clk = clk_register_fixed_rate(dev, "xo", NULL, CLK_IS_ROOT, 19200000);
 -	if (IS_ERR(clk))
 -		return PTR_ERR(clk);
-+	ret = qcom_cc_register_board_clk(dev, "xo_board", "xo", 19200000);
-+	if (ret)
-+		return ret;
- 
+-
 -	/* Should move to DT node? */
 -	clk = clk_register_fixed_rate(dev, "sleep_clk_src", NULL,
 -				      CLK_IS_ROOT, 32768);
 -	if (IS_ERR(clk))
 -		return PTR_ERR(clk);
++	ret = qcom_cc_register_board_clk(dev, "xo_board", "xo", 19200000);
++	if (ret)
++		return ret;
++
 +	ret = qcom_cc_register_sleep_clk(dev);
 +	if (ret)
 +		return ret;
  
  	return qcom_cc_probe(pdev, &gcc_msm8974_desc);
  }
--- 
-cgit v0.12

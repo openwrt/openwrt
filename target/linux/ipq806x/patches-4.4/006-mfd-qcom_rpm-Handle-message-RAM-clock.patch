@@ -37,8 +37,6 @@ Signed-off-by: Lee Jones <lee.jones@linaro.org>
  drivers/mfd/qcom_rpm.c | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)
 
-diff --git a/drivers/mfd/qcom_rpm.c b/drivers/mfd/qcom_rpm.c
-index d330071..52fafea 100644
 --- a/drivers/mfd/qcom_rpm.c
 +++ b/drivers/mfd/qcom_rpm.c
 @@ -21,6 +21,7 @@
@@ -57,7 +55,7 @@ index d330071..52fafea 100644
  
  	struct completion ack;
  	struct mutex lock;
-@@ -552,6 +554,20 @@ static int qcom_rpm_probe(struct platform_device *pdev)
+@@ -503,6 +505,20 @@ static int qcom_rpm_probe(struct platfor
  	mutex_init(&rpm->lock);
  	init_completion(&rpm->ack);
  
@@ -78,7 +76,7 @@ index d330071..52fafea 100644
  	irq_ack = platform_get_irq_byname(pdev, "ack");
  	if (irq_ack < 0) {
  		dev_err(&pdev->dev, "required ack interrupt missing\n");
-@@ -672,7 +688,11 @@ static int qcom_rpm_probe(struct platform_device *pdev)
+@@ -621,7 +637,11 @@ static int qcom_rpm_probe(struct platfor
  
  static int qcom_rpm_remove(struct platform_device *pdev)
  {
@@ -90,5 +88,3 @@ index d330071..52fafea 100644
  	return 0;
  }
  
--- 
-cgit v0.12

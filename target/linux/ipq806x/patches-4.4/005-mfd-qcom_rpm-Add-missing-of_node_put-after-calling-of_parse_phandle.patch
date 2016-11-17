@@ -13,11 +13,9 @@ Signed-off-by: Lee Jones <lee.jones@linaro.org>
  drivers/mfd/qcom_rpm.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/mfd/qcom_rpm.c b/drivers/mfd/qcom_rpm.c
-index a74210d..d330071 100644
 --- a/drivers/mfd/qcom_rpm.c
 +++ b/drivers/mfd/qcom_rpm.c
-@@ -589,6 +589,7 @@ static int qcom_rpm_probe(struct platform_device *pdev)
+@@ -538,6 +538,7 @@ static int qcom_rpm_probe(struct platfor
  	}
  
  	rpm->ipc_regmap = syscon_node_to_regmap(syscon_np);
@@ -25,5 +23,3 @@ index a74210d..d330071 100644
  	if (IS_ERR(rpm->ipc_regmap))
  		return PTR_ERR(rpm->ipc_regmap);
  
--- 
-cgit v0.12
