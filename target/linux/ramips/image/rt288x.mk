@@ -20,7 +20,7 @@ define Device/ar670w
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   KERNEL := $(KERNEL_DTB)
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | gemtek-header ar725w
+  IMAGE/factory.bin := $$(sysupgrade_bin) | gemtek-header ar725w
 endef
 TARGET_DEVICES += ar670w
 
@@ -28,7 +28,7 @@ define Device/ar725w
   DTS := AR725W
   DEVICE_TITLE := Gemtek AR725W
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | gemtek-header ar725w
+  IMAGE/factory.bin := $$(sysupgrade_bin) | gemtek-header ar725w
 endef
 TARGET_DEVICES += ar725w
 

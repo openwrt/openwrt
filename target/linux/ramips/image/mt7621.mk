@@ -49,7 +49,7 @@ TARGET_DEVICES += re6500
 
 define Device/wsr-1166
   DTS := WSR-1166
-  IMAGE/sysupgrade.bin := trx | pad-rootfs
+  IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := Buffalo WSR-1166
 endef
@@ -64,7 +64,7 @@ define Device/dir-860l-b1
   IMAGE/sysupgrade.bin := \
 	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := \
 	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 	append-rootfs | pad-rootfs -x 64 | \
@@ -164,7 +164,7 @@ define Device/wf-2881
   IMAGE_SIZE := 129280k
   KERNEL := $(KERNEL_DTB) | pad-offset $$(BLOCKSIZE) 64 | uImage lzma
   UBINIZE_OPTS := -E 5
-  IMAGE/sysupgrade.bin := append-kernel | append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | append-ubi | append-metadata | check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := NETIS WF-2881
   DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport
 endef
@@ -177,7 +177,7 @@ define Device/ubnt-erx
   KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGES := sysupgrade.tar
   KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
   DEVICE_TITLE := Ubiquiti EdgeRouter X
   DEVICE_PACKAGES := -kmod-mt76 -kmod-rt2x00-lib -kmod-mac80211 -kmod-cfg80211 -wpad-mini -iwinfo
 endef

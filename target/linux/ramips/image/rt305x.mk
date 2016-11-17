@@ -5,6 +5,7 @@
 define Device/asl26555-8M
   DTS := ASL26555-8M
   IMAGE_SIZE := 7744k
+  SUPPORTED_DEVICES := asl26555
   DEVICE_TITLE := Alpha ASL26555 
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
@@ -14,6 +15,7 @@ TARGET_DEVICES += asl26555-8M
 define Device/asl26555-16M
   DTS := ASL26555-16M
   IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES := asl26555
   DEVICE_TITLE := Alpha ASL26555 16M
   DEVICE_PACKAGES :=
 endef
@@ -23,6 +25,7 @@ TARGET_DEVICES += asl26555-16M
 define Device/nixcore-8M
   DTS := NIXCORE-8M
   IMAGE_SIZE := 7872k
+  SUPPORTED_DEVICES := nixcore-x1
   DEVICE_TITLE := NixcoreX1 8M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
 endef
@@ -32,6 +35,7 @@ TARGET_DEVICES += nixcore-8M
 define Device/nixcore-16M
   DTS := NIXCORE-16M
   IMAGE_SIZE := 16064k
+  SUPPORTED_DEVICES := nixcore-x1
   DEVICE_TITLE := NixcoreX1 16M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
 endef
@@ -41,6 +45,7 @@ TARGET_DEVICES += nixcore-16M
 define Device/vocore-8M
   DTS := VOCORE-8M
   IMAGE_SIZE := 7872k
+  SUPPORTED_DEVICES := vocore
   DEVICE_TITLE :=  VoCore 8M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-ralink \
@@ -52,6 +57,7 @@ TARGET_DEVICES += vocore-8M
 define Device/vocore-16M
   DTS := VOCORE-16M
   IMAGE_SIZE := 16064k
+  SUPPORTED_DEVICES := vocore
   DEVICE_TITLE := VoCore 16M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-ralink \

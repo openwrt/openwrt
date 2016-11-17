@@ -7,7 +7,7 @@ define Device/br-6475nd
   BLOCKSIZE := 64k
   IMAGE_SIZE := 7744k
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
-	edimax-header -s CSYS -m RN54 -f 0x70000 -S 0x01100000 | pad-rootfs
+	edimax-header -s CSYS -m RN54 -f 0x70000 -S 0x01100000 | pad-rootfs | append-metadata
   DEVICE_TITLE := Edimax BR-6475nD
   DEVICE_PACKAGES := swconfig
 endef
@@ -21,12 +21,12 @@ define Device/cy-swr1100
   IMAGE/sysupgrade.bin := \
 	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := \
 	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 	append-rootfs | pad-rootfs -x 64 | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	seama-seal -m "signature=wrgnd10_samsung_ss815" | \
+	seama-seal -m "signature=wrgnd10_samsung_ss815" | append-metadata | \
 	check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := Samsung CY-SWR1100
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
@@ -42,7 +42,7 @@ define Device/dir-645
   IMAGE/sysupgrade.bin := \
 	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := \
 	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 	append-rootfs | pad-rootfs -x 64 | \
@@ -69,7 +69,7 @@ define Device/tew-691gr
   DTS := TEW-691GR
   BLOCKSIZE := 64k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | umedia-header 0x026910
+  IMAGE/factory.bin := $$(sysupgrade_bin) | umedia-header 0x026910
   DEVICE_TITLE := TRENDnet TEW-691GR
   DEVICE_PACKAGES := swconfig
 endef
@@ -80,7 +80,7 @@ define Device/tew-692gr
   DTS := TEW-692GR
   BLOCKSIZE := 64k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | umedia-header 0x026920
+  IMAGE/factory.bin := $$(sysupgrade_bin) | umedia-header 0x026920
   DEVICE_TITLE := TRENDnet TEW-692GR
   DEVICE_PACKAGES := swconfig
 endef
@@ -93,7 +93,7 @@ define Device/wlr-6000
   IMAGE_SIZE := 7244k
   IMAGES += factory.dlf
   IMAGE/factory.dlf := \
-	$$(IMAGE/sysupgrade.bin) | senao-header -r 0x0202 -p 0x41 -t 2
+	$$(sysupgrade_bin) | senao-header -r 0x0202 -p 0x41 -t 2
   DEVICE_TITLE := Sitecom WLR-6000
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
