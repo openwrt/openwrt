@@ -1,6 +1,7 @@
 . /lib/functions/lantiq.sh
 
 PART_NAME=firmware
+REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
 	[ "$#" -gt 1 ] && return 1

@@ -64,8 +64,9 @@ define Device/Default
   DEVICE_DTS := $(1)
   DEVICE_DTS_DIR := ../dts
   IMAGE_SIZE :=
+  SUPPORTED_DEVICES = $$(DEVICE_DTS)
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
 endef
 DEVICE_VARS += IMAGE_SIZE
 
@@ -85,7 +86,7 @@ endef
 
 define Device/NAND
   $(Device/NAND/$(SUBTARGET))
-  IMAGE/sysupgrade.bin := sysupgrade-tar
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
 define Device/lantiqBrnImage
@@ -358,10 +359,10 @@ define Device/DGN3500
 	factory-NA.bin factory-WW.bin
   IMAGE/sysupgrade-NA.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "NA" | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
   IMAGE/sysupgrade-WW.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "WW" | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
   IMAGE/factory-NA.bin := \
 	pad-extra $(DGN3500_KERNEL_OFFSET_DEC) | append-kernel | append-rootfs | \
 	dgn3500-sercom-footer $(DGN3500_KERNEL_OFFSET_HEX) "NA" | pad-rootfs | \
@@ -385,7 +386,7 @@ define Device/DGN3500B
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "DE" | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE)
+	pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
   IMAGE/factory.bin := \
 	pad-extra $(DGN3500_KERNEL_OFFSET_DEC) | append-kernel | append-rootfs | \
 	dgn3500-sercom-footer $(DGN3500_KERNEL_OFFSET_HEX) "DE" | pad-rootfs | \
