@@ -19,6 +19,7 @@ PKG_SOURCE_URL:=http://alpha.gnu.org/gnu/grub \
 	http://www.nic.funet.fi/pub/gnu/alpha/gnu/grub/
 PKG_HASH:=f6c702b2a8ea58f27a2b02928bb77973cb5a827af08f63db38c471c0a01b418d
 
+PKG_FIXUP:=autoreconf
 HOST_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=grub2/host
 
