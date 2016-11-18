@@ -207,6 +207,22 @@ define Device/rb750gr3
 endef
 TARGET_DEVICES += rb750gr3
 
+define Device/w2914nsv2
+  DTS := W2914NSV2
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := WeVO W2914NS v2
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621 kmod-mt76
+endef
+TARGET_DEVICES += w2914nsv2
+
+define Device/11acnas
+  DTS := 11ACNAS
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := WeVO 11AC NAS Router
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621 kmod-mt76
+endef
+TARGET_DEVICES += 11acnas
+
 # FIXME: is this still needed?
 define Image/Prepare
 #define Build/Compile

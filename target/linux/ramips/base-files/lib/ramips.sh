@@ -13,6 +13,9 @@ ramips_board_detect() {
 	machine=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)
 
 	case "$machine" in
+	*"11AC NAS Router")
+		name="w2914nsv2"
+		;;
 	*"3G150B")
 		name="3g150b"
 		;;
@@ -453,6 +456,9 @@ ramips_board_detect() {
 		;;
 	*"W150M")
 		name="w150m"
+		;;
+	*"W2914NS v2")
+		name="w2914nsv2"
 		;;
 	*"W306R V2.0")
 		name="w306r-v20"
