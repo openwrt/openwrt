@@ -1595,7 +1595,7 @@ static struct platform_driver rtl8367b_driver = {
 
 module_platform_driver(rtl8367b_driver);
 
-MODULE_DESCRIPTION(RTL8367B_DRIVER_DESC);
+MODULE_DESCRIPTION("Realtek RTL8367B ethernet switch driver");
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:" RTL8367B_DRIVER_NAME);

@@ -1829,7 +1829,7 @@ static void __exit rtl8367_module_exit(void)
 }
 module_exit(rtl8367_module_exit);
 
-MODULE_DESCRIPTION(RTL8367_DRIVER_DESC);
+MODULE_DESCRIPTION("Realtek RTL8367 ethernet switch driver");
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:" RTL8367_DRIVER_NAME);
