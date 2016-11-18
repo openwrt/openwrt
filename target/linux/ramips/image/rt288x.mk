@@ -31,7 +31,8 @@ define Device/f5d8235v1
   DTS := F5D8235_V1
   IMAGE_SIZE := 7744k
   DEVICE_TITLE := Belkin F5D8235 V1
-  DEVICE_PACKAGES := kmod-switch-rtl8366s
+  DEVICE_PACKAGES := kmod-switch-rtl8366s kmod-usb-core kmod-usb-ohci \
+    kmod-usb-ohci-pci kmod-usb2 kmod-usb2-pci kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += f5d8235v1
 
