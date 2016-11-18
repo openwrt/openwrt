@@ -1,11 +1,11 @@
 /dts-v1/;
 
 #include "mt7621.dtsi"
+
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	compatible = "mediatek,mt7621-eval-board", "mediatek,mt7621-soc";
 	model = "MikroTik RB750Gr3";
 
 	memory@0 {
@@ -65,8 +65,8 @@
 		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		linux,modalias = "m25p80";
 		spi-max-frequency = <10000000>;
+		m25p,chunked-io = <32>;
 
 		partition@0 {
 			label = "u-boot";
@@ -110,12 +110,4 @@
 
 &sdhci {
 	status = "okay";
-};
-
-&xhci {
-	status = "okay";
-};
-
-&pcie {
-	status = "disabled";
 };

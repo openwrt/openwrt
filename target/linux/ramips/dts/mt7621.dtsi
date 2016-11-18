@@ -3,7 +3,7 @@
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
-	compatible = "mediatek,mtk7621-soc";
+	compatible = "mediatek,mt7621-soc";
 
 	cpus {
 		cpu@0 {
@@ -160,7 +160,7 @@
 		};
 
 		spi0: spi@b00 {
-			status = "okay";
+			status = "disabled";
 
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
@@ -175,14 +175,6 @@
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&spi_pins>;
-
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				reg = <0>;
-				spi-max-frequency = <10000000>;
-				m25p,chunked-io = <32>;
-			};
 		};
 
 		gdma: gdma@2800 {
@@ -322,6 +314,8 @@
 	};
 
 	sdhci: sdhci@1E130000 {
+		status = "disabled";
+
 		compatible = "ralink,mt7620-sdhci";
 		reg = <0x1E130000 0x4000>;
 
@@ -427,7 +421,7 @@
 				GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH
 				GIC_SHARED 25 IRQ_TYPE_LEVEL_HIGH>;
 
-		status = "okay";
+		status = "disabled";
 
 		resets = <&rstctrl 24 &rstctrl 25 &rstctrl 26>;
 		reset-names = "pcie0", "pcie1", "pcie2";

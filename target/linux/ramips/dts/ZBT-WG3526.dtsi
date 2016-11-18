@@ -54,6 +54,7 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
+		m25p,chunked-io = <32>;
 
 		partition@0 {
 			label = "u-boot";
