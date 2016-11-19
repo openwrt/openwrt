@@ -26,34 +26,21 @@ define Build/ubnt-erx-factory-image
 	fi
 endef
 
-define Device/mt7621
-  DTS := MT7621
-  BLOCKSIZE := 64k
-  IMAGE_SIZE := $(ralink_default_fw_size_4M)
-  DEVICE_TITLE := MediaTek MT7621 EVB
-endef
-TARGET_DEVICES += mt7621
-
-define Device/wsr-600
-  DTS := WSR-600
+define Device/11acnas
+  DTS := 11ACNAS
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := Buffalo WSR-600
+  DEVICE_TITLE := WeVO 11AC NAS Router
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621 kmod-mt76
 endef
-TARGET_DEVICES += wsr-600
+TARGET_DEVICES += 11acnas
 
-define Device/re6500
-  DTS := RE6500
-  DEVICE_TITLE := Linksys RE6500
+define Device/ac1200pro
+  DTS := AC1200pro
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := Digineo AC1200 Pro
+  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci
 endef
-TARGET_DEVICES += re6500
-
-define Device/wsr-1166
-  DTS := WSR-1166
-  IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := Buffalo WSR-1166
-endef
-TARGET_DEVICES += wsr-1166
+TARGET_DEVICES += ac1200pro
 
 define Device/dir-860l-b1
   DTS := DIR-860L-B1
@@ -84,6 +71,14 @@ define Device/firewrt
 endef
 TARGET_DEVICES += firewrt
 
+define Device/mt7621
+  DTS := MT7621
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_TITLE := MediaTek MT7621 EVB
+endef
+TARGET_DEVICES += mt7621
+
 define Device/newifi-d1
   DTS := Newifi-D1
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
@@ -101,6 +96,20 @@ define Device/pbr-m1
 endef
 TARGET_DEVICES += pbr-m1
 
+define Device/rb750gr3
+  DTS := RB750Gr3
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := MikroTik RB750Gr3
+  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev uboot-envtools -kmod-mt76 -kmod-rt2x00-lib -kmod-mac80211 -kmod-cfg80211 -wpad-mini -iwinfo
+endef
+TARGET_DEVICES += rb750gr3
+
+define Device/re6500
+  DTS := RE6500
+  DEVICE_TITLE := Linksys RE6500
+endef
+TARGET_DEVICES += re6500
+
 define Device/sap-g3200u3
   DTS := SAP-G3200U3
   DEVICE_TITLE := STORYLiNK SAP-G3200U3
@@ -108,12 +117,63 @@ define Device/sap-g3200u3
 endef
 TARGET_DEVICES += sap-g3200u3
 
+define Device/sk-wb8
+  DTS := SK-WB8
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := SamKnows Whitebox 8
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport uboot-envtools
+endef
+TARGET_DEVICES += sk-wb8
+
 define Device/timecloud
   DTS := Timecloud
   DEVICE_TITLE := Thunder Timecloud
   DEVICE_PACKAGES := kmod-usb3
 endef
 TARGET_DEVICES += timecloud
+
+define Device/ubnt-erx
+  DTS := UBNT-ERX
+  FILESYSTEMS := squashfs
+  KERNEL_SIZE := 3145728
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGES := sysupgrade.tar
+  KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  DEVICE_TITLE := Ubiquiti EdgeRouter X
+  DEVICE_PACKAGES := -kmod-mt76 -kmod-rt2x00-lib -kmod-mac80211 -kmod-cfg80211 -wpad-mini -iwinfo
+endef
+TARGET_DEVICES += ubnt-erx
+
+define Device/vr500
+  DTS := VR500
+  IMAGE_SIZE := 66453504
+  DEVICE_TITLE := Planex VR500
+  DEVICE_PACKAGES := kmod-usb3
+endef
+TARGET_DEVICES += vr500
+
+define Device/w2914nsv2
+  DTS := W2914NSV2
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := WeVO W2914NS v2
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621 kmod-mt76
+endef
+TARGET_DEVICES += w2914nsv2
+
+define Device/wf-2881
+  DTS := WF-2881
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  FILESYSTEMS := squashfs
+  IMAGE_SIZE := 129280k
+  KERNEL := $(KERNEL_DTB) | pad-offset $$(BLOCKSIZE) 64 | uImage lzma
+  UBINIZE_OPTS := -E 5
+  IMAGE/sysupgrade.bin := append-kernel | append-ubi | append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := NETIS WF-2881
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += wf-2881
 
 define Device/witi
   DTS := WITI
@@ -132,6 +192,21 @@ define Device/wndr3700v5
 endef
 TARGET_DEVICES += wndr3700v5
 
+define Device/wsr-1166
+  DTS := WSR-1166
+  IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Buffalo WSR-1166
+endef
+TARGET_DEVICES += wsr-1166
+
+define Device/wsr-600
+  DTS := WSR-600
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Buffalo WSR-600
+endef
+TARGET_DEVICES += wsr-600
+
 define Device/zbt-wg2626
   DTS := ZBT-WG2626
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
@@ -147,81 +222,6 @@ define Device/zbt-wg3526
   DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci
 endef
 TARGET_DEVICES += zbt-wg3526
-
-define Device/ac1200pro
-  DTS := AC1200pro
-  IMAGE_SIZE := $(ralink_default_fw_size_32M)
-  DEVICE_TITLE := Digineo AC1200 Pro
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci
-endef
-TARGET_DEVICES += ac1200pro
-
-define Device/wf-2881
-  DTS := WF-2881
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  FILESYSTEMS := squashfs
-  IMAGE_SIZE := 129280k
-  KERNEL := $(KERNEL_DTB) | pad-offset $$(BLOCKSIZE) 64 | uImage lzma
-  UBINIZE_OPTS := -E 5
-  IMAGE/sysupgrade.bin := append-kernel | append-ubi | append-metadata | check-size $$$$(IMAGE_SIZE)
-  DEVICE_TITLE := NETIS WF-2881
-  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport
-endef
-TARGET_DEVICES += wf-2881
-
-define Device/ubnt-erx
-  DTS := UBNT-ERX
-  FILESYSTEMS := squashfs
-  KERNEL_SIZE := 3145728
-  KERNEL := $(KERNEL_DTB) | uImage lzma
-  IMAGES := sysupgrade.tar
-  KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
-  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
-  DEVICE_TITLE := Ubiquiti EdgeRouter X
-  DEVICE_PACKAGES := -kmod-mt76 -kmod-rt2x00-lib -kmod-mac80211 -kmod-cfg80211 -wpad-mini -iwinfo
-endef
-TARGET_DEVICES += ubnt-erx
-
-define Device/sk-wb8
-  DTS := SK-WB8
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := SamKnows Whitebox 8
-  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport uboot-envtools
-endef
-TARGET_DEVICES += sk-wb8
-
-define Device/vr500
-  DTS := VR500
-  IMAGE_SIZE := 66453504
-  DEVICE_TITLE := Planex VR500
-  DEVICE_PACKAGES := kmod-usb3
-endef
-TARGET_DEVICES += vr500
-
-define Device/rb750gr3
-  DTS := RB750Gr3
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := MikroTik RB750Gr3
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev uboot-envtools -kmod-mt76 -kmod-rt2x00-lib -kmod-mac80211 -kmod-cfg80211 -wpad-mini -iwinfo
-endef
-TARGET_DEVICES += rb750gr3
-
-define Device/w2914nsv2
-  DTS := W2914NSV2
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := WeVO W2914NS v2
-  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621 kmod-mt76
-endef
-TARGET_DEVICES += w2914nsv2
-
-define Device/11acnas
-  DTS := 11ACNAS
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := WeVO 11AC NAS Router
-  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621 kmod-mt76
-endef
-TARGET_DEVICES += 11acnas
 
 # FIXME: is this still needed?
 define Image/Prepare
