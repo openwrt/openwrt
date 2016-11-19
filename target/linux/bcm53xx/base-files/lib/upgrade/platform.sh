@@ -59,6 +59,11 @@ platform_identify() {
 		return
 	}
 
+	if osafeloader info "$1" > /dev/null; then
+		echo "safeloader"
+		return
+	fi
+
 	echo "unknown"
 }
 
@@ -102,6 +107,8 @@ platform_check_image() {
 				error=1
 			fi
 		;;
+		"safeloader")
+		;;
 		"seama")
 			local img_signature=$(oseama info "$1" | grep "Meta entry:.*signature=" | sed "s/.*=//")
 			local dev_signature=$(platform_expected_image)
@@ -118,6 +125,13 @@ platform_check_image() {
 			}
 		;;
 		"trx")
+			local expected=$(platform_expected_image)
+
+			[ "$expected" == "safeloader" ] && {
+				echo "This device expects SafeLoader format and may not work with TRX"
+				error=1
+			}
+
 			if ! otrx check "$1"; then
 				echo "Invalid (corrupted?) TRX firmware"
 				error=1
@@ -245,7 +259,7 @@ platform_pre_upgrade_seama() {
 }
 
 platform_pre_upgrade() {
-	export RAMFS_COPY_BIN="${RAMFS_COPY_BIN} /usr/bin/oseama /bin/sed"
+	export RAMFS_COPY_BIN="${RAMFS_COPY_BIN} /usr/bin/osafeloader /usr/bin/oseama /bin/sed"
 
 	local file_type=$(platform_identify "$1")
 
@@ -268,6 +282,24 @@ platform_trx_from_chk_cmd() {
 
 platform_trx_from_cybertan_cmd() {
 	echo -n dd bs=32 skip=1
+}
+
+platform_img_from_safeloader() {
+	local dir="/tmp/sysupgrade-bcm53xx"
+
+	# Extract partitions from SafeLoader
+	rm -fR $dir
+	mkdir -p $dir
+	osafeloader extract "$1" \
+		-p "os-image" \
+		-o $dir/os-image
+	osafeloader extract "$1" \
+		-p "file-system" \
+		-o $dir/file-system
+
+	mtd write $dir/file-system rootfs
+
+	echo -n $dir/os-image
 }
 
 platform_img_from_seama() {
@@ -298,6 +330,7 @@ platform_do_upgrade() {
 	case "$file_type" in
 		"chk")		cmd=$(platform_trx_from_chk_cmd "$trx");;
 		"cybertan")	cmd=$(platform_trx_from_cybertan_cmd "$trx");;
+		"safeloader")	trx=$(platform_img_from_safeloader "$trx");;
 		"seama")	trx=$(platform_img_from_seama "$trx");;
 	esac
 

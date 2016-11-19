@@ -23,7 +23,8 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=zImage dtbs
 
-DEFAULT_PACKAGES += swconfig wpad-mini nvram oseama otrx \
+DEFAULT_PACKAGES += swconfig wpad-mini nvram \
+	osafeloader oseama otrx \
 	kmod-gpio-button-hotplug \
 	kmod-leds-gpio kmod-ledtrig-default-on kmod-ledtrig-timer
 
