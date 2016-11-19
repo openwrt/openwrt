@@ -31,6 +31,7 @@ platform_expected_image() {
 		"netgear,r7900")	echo "chk U12H315T30_NETGEAR"; return;;
 		"netgear,r8000")	echo "chk U12H315T00_NETGEAR"; return;;
 		"netgear,r8500")	echo "chk U12H334T00_NETGEAR"; return;;
+		"tplink,archer-c9-v1")	echo "safeloader"; return;;
 	esac
 }
 
