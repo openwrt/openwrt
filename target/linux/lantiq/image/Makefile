@@ -66,7 +66,7 @@ define Device/Default
   IMAGE_SIZE :=
   SUPPORTED_DEVICES = $$(DEVICE_DTS)
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 DEVICE_VARS += IMAGE_SIZE
 
@@ -359,10 +359,10 @@ define Device/DGN3500
 	factory-NA.bin factory-WW.bin
   IMAGE/sysupgrade-NA.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "NA" | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
+	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade-WW.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "WW" | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
+	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory-NA.bin := \
 	pad-extra $(DGN3500_KERNEL_OFFSET_DEC) | append-kernel | append-rootfs | \
 	dgn3500-sercom-footer $(DGN3500_KERNEL_OFFSET_HEX) "NA" | pad-rootfs | \
@@ -386,7 +386,7 @@ define Device/DGN3500B
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "DE" | \
-	pad-rootfs | check-size $$$$(IMAGE_SIZE) | append-metadata
+	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin := \
 	pad-extra $(DGN3500_KERNEL_OFFSET_DEC) | append-kernel | append-rootfs | \
 	dgn3500-sercom-footer $(DGN3500_KERNEL_OFFSET_HEX) "DE" | pad-rootfs | \
