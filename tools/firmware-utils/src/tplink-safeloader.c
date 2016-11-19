@@ -70,6 +70,7 @@ struct flash_partition_entry {
 struct device_info {
 	const char *vendor;
 	const char *support_list;
+	char support_trail;
 	const struct flash_partition_entry *partitions;
 	void *(*generate_sysupgrade_image)(const struct flash_partition_entry *flash_parts, const struct image_partition_entry *image_parts, size_t *len);
 };
@@ -347,14 +348,14 @@ static struct image_partition_entry make_soft_version(uint32_t rev) {
 }
 
 /** Generates the support-list partition */
-static struct image_partition_entry make_support_list(const char *support_list, bool trailzero) {
-	size_t len = strlen(support_list);
+static struct image_partition_entry make_support_list(struct device_info *info) {
+	size_t len = strlen(info->support_list);
 	struct image_partition_entry entry = alloc_image_partition("support-list", len + 9);
 
 	put32(entry.data, len);
 	memset(entry.data+4, 0, 4);
-	memcpy(entry.data+8, support_list, len);
-	entry.data[len+8] = trailzero ? '\x00' : '\xff';
+	memcpy(entry.data+8, info->support_list, len);
+	entry.data[len+8] = info->support_trail;
 
 	return entry;
 }
@@ -609,6 +610,7 @@ static void *generate_sysupgrade_image_eap120(const struct flash_partition_entry
 struct device_info cpe210_info = {
 	.vendor = cpe510_vendor,
 	.support_list = cpe210_support_list,
+	.support_trail = '\xff',
 	.partitions = cpe510_partitions,
 	.generate_sysupgrade_image = &generate_sysupgrade_image,
 };
@@ -616,6 +618,7 @@ struct device_info cpe210_info = {
 struct device_info cpe510_info = {
 	.vendor = cpe510_vendor,
 	.support_list = cpe510_support_list,
+	.support_trail = '\xff',
 	.partitions = cpe510_partitions,
 	.generate_sysupgrade_image = &generate_sysupgrade_image,
 };
@@ -623,6 +626,7 @@ struct device_info cpe510_info = {
 struct device_info c2600_info = {
 	.vendor = c2600_vendor,
 	.support_list = c2600_support_list,
+	.support_trail = '\x00',
 	.partitions = c2600_partitions,
 	.generate_sysupgrade_image = &generate_sysupgrade_image_c2600,
 };
@@ -630,12 +634,14 @@ struct device_info c2600_info = {
 struct device_info e9_info = {
 	.vendor = c2600_vendor,
 	.support_list = c9_support_list,
+	.support_trail = '\x00',
 	.partitions = c5_partitions,
 };
 
 struct device_info eap120_info = {
 	.vendor = eap120_vendor,
 	.support_list = eap120_support_list,
+	.support_trail = '\xff',
 	.partitions = eap120_partitions,
 	.generate_sysupgrade_image = &generate_sysupgrade_image_eap120,
 };
@@ -651,7 +657,7 @@ static void build_image(const char *output,
 
 	parts[0] = make_partition_table(info->partitions);
 	parts[1] = make_soft_version(rev);
-	parts[2] = make_support_list(info->support_list, false);
+	parts[2] = make_support_list(info);
 	parts[3] = read_file("os-image", kernel_image, false);
 	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof);
 
