@@ -171,6 +171,25 @@ static const struct flash_partition_entry c2600_partitions[] = {
 	{NULL, 0, 0}
 };
 
+static const struct flash_partition_entry c5_partitions[] = {
+	{"fs-uboot", 0x00000, 0x40000},
+	{"os-image", 0x40000, 0x200000},
+	{"file-system", 0x240000, 0xc00000},
+	{"default-mac", 0xe40000, 0x00200},
+	{"pin", 0xe40200, 0x00200},
+	{"product-info", 0xe40400, 0x00200},
+	{"partition-table", 0xe50000, 0x10000},
+	{"soft-version", 0xe60000, 0x00200},
+	{"support-list", 0xe61000, 0x0f000},
+	{"profile", 0xe70000, 0x10000},
+	{"default-config", 0xe80000, 0x10000},
+	{"user-config", 0xe90000, 0x50000},
+	{"log", 0xee0000, 0x100000},
+	{"radio_bk", 0xfe0000, 0x10000},
+	{"radio", 0xff0000, 0x10000},
+	{NULL, 0, 0}
+};
+
 /**    The flash partition table for EAP120;
     it is the same as the one used by the stock images.
 */
@@ -215,6 +234,12 @@ static const char cpe510_support_list[] =
 static const char c2600_support_list[] =
 	"SupportList:\r\n"
 	"{product_name:Archer C2600,product_ver:1.0.0,special_id:00000000}\r\n";
+
+static const char c9_support_list[] =
+	"SupportList:\n"
+	"{product_name:ArcherC9,"
+	"product_ver:1.0.0,"
+	"special_id:00000000}\n";
 
 /**
    The support list for EAP120
@@ -602,6 +627,12 @@ struct device_info c2600_info = {
 	.generate_sysupgrade_image = &generate_sysupgrade_image_c2600,
 };
 
+struct device_info e9_info = {
+	.vendor = c2600_vendor,
+	.support_list = c9_support_list,
+	.partitions = c5_partitions,
+};
+
 struct device_info eap120_info = {
 	.vendor = eap120_vendor,
 	.support_list = eap120_support_list,
@@ -735,6 +766,8 @@ int main(int argc, char *argv[]) {
 		info = &c2600_info;
 	else if (strcmp(board, "EAP120") == 0)
 		info = &eap120_info;
+	else if (strcmp(board, "ARCHERC9") == 0)
+		info = &e9_info;
 	else
 		error(1, 0, "unsupported board %s", board);
 
