@@ -65,6 +65,13 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
             // Default config
             sh "cp ${params.CONFIG_FILE?.trim()} .config"
 
+            // Add development config
+            echo 'Enabling development config'
+            sh 'echo \'' \
+             + 'CONFIG_DEVEL=y\n' \
+             + 'CONFIG_LOCALMIRROR=\"https://downloads.creatordev.io/pistachio/marduk/dl\"\n' \
+             + '\' >> .config'
+
             // Versioning
             sh "sed -i 's/.*CONFIG_VERSION_NUMBER.*/CONFIG_VERSION_NUMBER=\"${params.VERSION?.trim() ?: 'j' + env.BUILD_NUMBER}\"/g' .config"
             sh 'scripts/getver.sh > version'
@@ -135,8 +142,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
                         echo 'src-link ${feed[0]} ../feed-${feed[1]}' >> feeds.conf.default"
                 }
             }
-            sh 'cat .config'
-            sh 'cat feeds.conf.default'
+            sh 'cat .config feeds.conf.default'
             sh 'scripts/feeds update -a && scripts/feeds install -a'
             sh 'make defconfig'
         }
