@@ -1,6 +1,8 @@
 #
-# Copyright (C) 2014-2015 OpenWrt.org
+# Copyright (C) 2014-2016 OpenWrt.org
 #
+
+. /lib/mvebu.sh
 
 linksys_get_target_firmware() {
 	cur_boot_part=`/usr/sbin/fw_printenv -n boot_part`
@@ -26,7 +28,22 @@ linksys_get_target_firmware() {
 }
 
 linksys_get_root_magic() {
-	(get_image "$@" | dd skip=786432 bs=4 count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2>/dev/null
+	case "$(mvebu_board_name)" in
+		armada-xp-linksys-mamba)
+			skip=786432
+			;;
+		armada-385-linksys-caiman | \
+		armada-385-linksys-cobra | \
+		armada-385-linksys-rango | \
+		armada-385-linksys-shelby)
+			skip=1572864
+			;;
+		*)
+			echo "WARNING: unknown rootfs offset for '$(mvebu_board_name)', assuming 6 MB" >&2
+			skip=1572864
+			;;
+	esac
+	(get_image "$@" | dd skip=${skip} bs=4 count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2>/dev/null
 }
 
 platform_do_upgrade_linksys() {
