@@ -879,7 +879,7 @@ $(eval $(call KernelPackage,ikconfig))
 define KernelPackage/zram
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ZRAM
-  DEPENDS:=+kmod-lib-lzo +kmod-lib-lz4
+  DEPENDS:=+kmod-lib-lzo +kmod-lib-lz4 @BROKEN
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
