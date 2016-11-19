@@ -62,6 +62,9 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
                 ],
             ])
 
+            // Versioning
+            sh "echo ${params.VERSION?.trim() ?: 'j' + env.BUILD_NUMBER} > version"
+
             // Default config
             sh "cp ${params.CONFIG_FILE?.trim()} .config"
 
@@ -71,10 +74,6 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
              + 'CONFIG_DEVEL=y\n' \
              + 'CONFIG_LOCALMIRROR=\"https://downloads.creatordev.io/pistachio/marduk/dl\"\n' \
              + '\' >> .config'
-
-            // Versioning
-            sh "sed -i 's/.*CONFIG_VERSION_NUMBER.*/CONFIG_VERSION_NUMBER=\"${params.VERSION?.trim() ?: 'j' + env.BUILD_NUMBER}\"/g' .config"
-            sh 'scripts/getver.sh > version'
 
             // Build tools/sdks
             if (params.BUILD_TOOLS) {
