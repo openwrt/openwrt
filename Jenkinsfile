@@ -156,6 +156,9 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
 
         stage('Upload') {
             archiveArtifacts 'bin/*/*'
+            if (params.ALL_PACKAGES) {
+                archiveArtifacts 'bin/*/packages/**'
+            }
             deleteDir()  // clean up the workspace to save space
         }
     }
