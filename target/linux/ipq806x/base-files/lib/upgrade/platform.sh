@@ -4,30 +4,7 @@ PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
-	local board=$(ipq806x_board_name)
-
-	case "$board" in
-	ap148 |\
-	d7800 |\
-	ea8500 |\
-	nbg6817 |\
-	r7500 |\
-	r7500v2 |\
-	r7800)
-		nand_do_platform_check $board $1
-		return $?;
-		;;
-	c2600)
-		local magic_long="$(get_magic_long "$1")"
-		[ "$magic_long" != "27051956" ] && {
-			echo "Invalid image, bad magic: $magic_long"
-			return 1
-		}
-		return 0;
-		;;
-	*)
-		return 1;
-	esac
+	return 0;
 }
 
 platform_pre_upgrade() {
