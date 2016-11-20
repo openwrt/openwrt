@@ -5,10 +5,10 @@
 . /lib/functions.sh
 
 # 'kernel' partition on NAND contains the kernel
-CI_KERNPART="kernel"
+CI_KERNPART="${CI_KERNPART:-kernel}"
 
 # 'ubi' partition on NAND contains UBI
-CI_UBIPART="ubi"
+CI_UBIPART="${CI_UBIPART:-ubi}"
 
 ubi_mknod() {
 	local dir="$1"
