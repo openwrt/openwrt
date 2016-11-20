@@ -11,6 +11,7 @@ use strict;
 use warnings;
 use File::Basename;
 use File::Copy;
+use Text::ParseWords;
 
 @ARGV > 2 or die "Syntax: $0 <target dir> <filename> <hash> <url filename> [<mirror> ...]\n";
 
@@ -73,12 +74,28 @@ sub hash_cmd() {
 	return undef;
 }
 
+sub download_cmd($) {
+	my $url = shift;
+	my $have_curl = 0;
+
+	if (open CURL, '-|', 'curl', '--version') {
+		if (defined(my $line = readline CURL)) {
+			$have_curl = 1 if $line =~ /^curl /;
+		}
+		close CURL;
+	}
+
+	return $have_curl
+		? (qw(curl --connect-timeout 20 --retry 5 --location --insecure), shellwords($ENV{CURL_OPTIONS} || ''), $url)
+		: (qw(wget --tries=5 --timeout=20 --no-check-certificate --output-document=-), shellwords($ENV{WGET_OPTIONS} || ''), $url)
+	;
+}
+
 my $hash_cmd = hash_cmd();
 
 sub download
 {
 	my $mirror = shift;
-	my $options = $ENV{WGET_OPTIONS} || "";
 
 	$mirror =~ s!/$!!;
 
@@ -125,18 +142,19 @@ sub download
 			}
 		};
 	} else {
-		open WGET, "wget -t5 --timeout=20 --no-check-certificate $options -O- '$mirror/$url_filename' |" or die "Cannot launch wget.\n";
+		my @cmd = download_cmd("$mirror/$url_filename");
+		open(FETCH_FD, '-|', @cmd) or die "Cannot launch curl or wget.\n";
 		$hash_cmd and do {
 			open MD5SUM, "| $hash_cmd > '$target/$filename.hash'" or die "Cannot launch $hash_cmd.\n";
 		};
 		open OUTPUT, "> $target/$filename.dl" or die "Cannot create file $target/$filename.dl: $!\n";
 		my $buffer;
-		while (read WGET, $buffer, 1048576) {
+		while (read FETCH_FD, $buffer, 1048576) {
 			$hash_cmd and print MD5SUM $buffer;
 			print OUTPUT $buffer;
 		}
 		$hash_cmd and close MD5SUM;
-		close WGET;
+		close FETCH_FD;
 		close OUTPUT;
 
 		if ($? >> 8) {
