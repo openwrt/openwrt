@@ -58,37 +58,37 @@ case "$FIRMWARE" in
 		ath10kcal_extract "radiocfg" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_ascii bdcfg wlanmac_a)
 		;;
-	dw33d)
-		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(mtd_get_mac_binary art 18)
-		;;
-	mc-mac1200r)
-		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
-		;;
-	tl-wdr6500-v2)
-		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
-		;;
-	r6100)
-		ath10kcal_extract "caldata" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) +2)
-		;;
 	dir-869-a1 | \
 	qihoo-c301)
 		ath10kcal_extract "radiocfg" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
 		;;
-	esr1750 | \
-	epg5000)
+	dw33d)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(mtd_get_mac_binary art 18)
+		;;
+	epg5000 | \
+	esr1750)
 		ath10kcal_extract "caldata" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
+		;;
+	mc-mac1200r)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
 		;;
 	mr1750 | \
 	mr1750v2 | \
 	om5p-acv2)
 		ath10kcal_extract "ART" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
+		;;
+	r6100)
+		ath10kcal_extract "caldata" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) +2)
+		;;
+	tl-wdr6500-v2)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
 		;;
 	tl-wpa8630)
 		ath10kcal_extract "art" 20480 2116
@@ -112,12 +112,12 @@ case "$FIRMWARE" in
 		ath10kcal_extract "RFdata" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
 		;;
-	rb-911g-5hpacd)
-		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
-		;;
 	om5p-ac)
 		ath10kcal_extract "ART" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
+		;;
+	rb-911g-5hpacd)
+		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
 		;;
 	esac
 	;;
