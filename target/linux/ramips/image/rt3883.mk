@@ -26,7 +26,7 @@ define Device/cy-swr1100
 	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 	append-rootfs | pad-rootfs -x 64 | \
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
-	seama-seal -m "signature=wrgnd10_samsung_ss815" | append-metadata | \
+	seama-seal -m "signature=wrgnd10_samsung_ss815" | \
 	check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := Samsung CY-SWR1100
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
