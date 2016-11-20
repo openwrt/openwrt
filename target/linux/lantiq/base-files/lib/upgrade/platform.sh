@@ -4,28 +4,7 @@ PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
-	[ "$#" -gt 1 ] && return 1
-	local board=$(lantiq_board_name)
-
-	case "$board" in
-		BTHOMEHUBV2B|BTHOMEHUBV3A|BTHOMEHUBV5A|P2812HNUF* )
-			nand_do_platform_check $board $1
-			return $?;
-			;;
-	esac
-
-	case "$(get_magic_word "$1")" in
-		# uImage
-		2705) return 0;;
-		# AVM
-		8112) return 0;;
-		# tplink
-		0200) return 0;;
-		*)
-			echo "Invalid image type"
-			return 1
-		;;
-	esac
+	return 0
 }
 
 platform_pre_upgrade() {
