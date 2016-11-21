@@ -11,11 +11,9 @@ Signed-off-by: Felipe Balbi <balbi@kernel.org>
  drivers/usb/dwc3/core.h | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
-index e4f8b90..c0520d67 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -1024,6 +1024,12 @@ struct dwc3_gadget_ep_cmd_params {
+@@ -1021,6 +1021,12 @@ struct dwc3_gadget_ep_cmd_params {
  void dwc3_set_mode(struct dwc3 *dwc, u32 mode);
  int dwc3_gadget_resize_tx_fifos(struct dwc3 *dwc);
  
@@ -28,5 +26,3 @@ index e4f8b90..c0520d67 100644
  #if IS_ENABLED(CONFIG_USB_DWC3_HOST) || IS_ENABLED(CONFIG_USB_DWC3_DUAL_ROLE)
  int dwc3_host_init(struct dwc3 *dwc);
  void dwc3_host_exit(struct dwc3 *dwc);
--- 
-cgit v0.12

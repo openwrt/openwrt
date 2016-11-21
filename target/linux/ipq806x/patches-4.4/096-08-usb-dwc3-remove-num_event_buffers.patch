@@ -19,11 +19,9 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/dwc3/gadget.c | 38 +++++++---------------
  3 files changed, 44 insertions(+), 77 deletions(-)
 
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index 67d183a..9e5c57c7 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -203,13 +203,10 @@ static struct dwc3_event_buffer *dwc3_alloc_one_event_buffer(struct dwc3 *dwc,
+@@ -203,13 +203,10 @@ static struct dwc3_event_buffer *dwc3_al
  static void dwc3_free_event_buffers(struct dwc3 *dwc)
  {
  	struct dwc3_event_buffer	*evt;
@@ -40,7 +38,7 @@ index 67d183a..9e5c57c7 100644
  }
  
  /**
-@@ -222,27 +219,19 @@ static void dwc3_free_event_buffers(struct dwc3 *dwc)
+@@ -222,27 +219,19 @@ static void dwc3_free_event_buffers(stru
   */
  static int dwc3_alloc_event_buffers(struct dwc3 *dwc, unsigned length)
  {
@@ -75,7 +73,7 @@ index 67d183a..9e5c57c7 100644
  
  	return 0;
  }
-@@ -256,25 +245,22 @@ static int dwc3_alloc_event_buffers(struct dwc3 *dwc, unsigned length)
+@@ -256,25 +245,22 @@ static int dwc3_alloc_event_buffers(stru
  static int dwc3_event_buffers_setup(struct dwc3 *dwc)
  {
  	struct dwc3_event_buffer	*evt;
@@ -116,7 +114,7 @@ index 67d183a..9e5c57c7 100644
  
  	return 0;
  }
-@@ -282,19 +268,16 @@ static int dwc3_event_buffers_setup(struct dwc3 *dwc)
+@@ -282,19 +268,16 @@ static int dwc3_event_buffers_setup(stru
  static void dwc3_event_buffers_cleanup(struct dwc3 *dwc)
  {
  	struct dwc3_event_buffer	*evt;
@@ -143,11 +141,9 @@ index 67d183a..9e5c57c7 100644
  }
  
  static int dwc3_alloc_scratch_buffers(struct dwc3 *dwc)
-diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
-index 4ea4b51..be03999 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -667,7 +667,6 @@ struct dwc3_scratchpad_array {
+@@ -665,7 +665,6 @@ struct dwc3_scratchpad_array {
   * @regs: base address for our registers
   * @regs_size: address space size
   * @nr_scratch: number of scratch buffers
@@ -155,7 +151,7 @@ index 4ea4b51..be03999 100644
   * @u1u2: only used on revisions <1.83a for workaround
   * @maximum_speed: maximum speed requested (mainly for testing purposes)
   * @revision: revision register contents
-@@ -778,7 +777,6 @@ struct dwc3 {
+@@ -775,7 +774,6 @@ struct dwc3 {
  	u32			gctl;
  
  	u32			nr_scratch;
@@ -163,11 +159,9 @@ index 4ea4b51..be03999 100644
  	u32			u1u2;
  	u32			maximum_speed;
  
-diff --git a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
-index e6bd3a9..5e6a495 100644
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -2602,14 +2602,14 @@ static void dwc3_process_event_entry(struct dwc3 *dwc,
+@@ -2556,14 +2556,14 @@ static void dwc3_process_event_entry(str
  	}
  }
  
@@ -184,7 +178,7 @@ index e6bd3a9..5e6a495 100644
  	left = evt->count;
  
  	if (!(evt->flags & DWC3_EVENT_PENDING))
-@@ -2634,7 +2634,7 @@ static irqreturn_t dwc3_process_event_buf(struct dwc3 *dwc, u32 buf)
+@@ -2588,7 +2588,7 @@ static irqreturn_t dwc3_process_event_bu
  		evt->lpos = (evt->lpos + 4) % DWC3_EVENT_BUFFERS_SIZE;
  		left -= 4;
  
@@ -193,7 +187,7 @@ index e6bd3a9..5e6a495 100644
  	}
  
  	evt->count = 0;
-@@ -2642,9 +2642,9 @@ static irqreturn_t dwc3_process_event_buf(struct dwc3 *dwc, u32 buf)
+@@ -2596,9 +2596,9 @@ static irqreturn_t dwc3_process_event_bu
  	ret = IRQ_HANDLED;
  
  	/* Unmask interrupt */
@@ -205,7 +199,7 @@ index e6bd3a9..5e6a495 100644
  
  	return ret;
  }
-@@ -2654,27 +2654,23 @@ static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc)
+@@ -2608,27 +2608,23 @@ static irqreturn_t dwc3_thread_interrupt
  	struct dwc3 *dwc = _dwc;
  	unsigned long flags;
  	irqreturn_t ret = IRQ_NONE;
@@ -237,7 +231,7 @@ index e6bd3a9..5e6a495 100644
  	count &= DWC3_GEVNTCOUNT_MASK;
  	if (!count)
  		return IRQ_NONE;
-@@ -2683,9 +2679,9 @@ static irqreturn_t dwc3_check_event_buf(struct dwc3 *dwc, u32 buf)
+@@ -2637,9 +2633,9 @@ static irqreturn_t dwc3_check_event_buf(
  	evt->flags |= DWC3_EVENT_PENDING;
  
  	/* Mask interrupt */
@@ -249,7 +243,7 @@ index e6bd3a9..5e6a495 100644
  
  	return IRQ_WAKE_THREAD;
  }
-@@ -2693,18 +2689,8 @@ static irqreturn_t dwc3_check_event_buf(struct dwc3 *dwc, u32 buf)
+@@ -2647,18 +2643,8 @@ static irqreturn_t dwc3_check_event_buf(
  static irqreturn_t dwc3_interrupt(int irq, void *_dwc)
  {
  	struct dwc3			*dwc = _dwc;
@@ -269,5 +263,3 @@ index e6bd3a9..5e6a495 100644
  }
  
  /**
--- 
-cgit v0.12

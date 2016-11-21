@@ -12,11 +12,9 @@ Signed-off-by: Felipe Balbi <balbi@kernel.org>
  drivers/usb/dwc3/core.h | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
-index c0520d67..6254b2f 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -223,7 +223,8 @@
+@@ -222,7 +222,8 @@
  /* Global HWPARAMS3 Register */
  #define DWC3_GHWPARAMS3_SSPHY_IFC(n)		((n) & 3)
  #define DWC3_GHWPARAMS3_SSPHY_IFC_DIS		0
@@ -26,7 +24,7 @@ index c0520d67..6254b2f 100644
  #define DWC3_GHWPARAMS3_HSPHY_IFC(n)		(((n) & (3 << 2)) >> 2)
  #define DWC3_GHWPARAMS3_HSPHY_IFC_DIS		0
  #define DWC3_GHWPARAMS3_HSPHY_IFC_UTMI		1
-@@ -249,6 +250,7 @@
+@@ -248,6 +249,7 @@
  #define DWC3_DCFG_DEVADDR_MASK	DWC3_DCFG_DEVADDR(0x7f)
  
  #define DWC3_DCFG_SPEED_MASK	(7 << 0)
@@ -34,7 +32,7 @@ index c0520d67..6254b2f 100644
  #define DWC3_DCFG_SUPERSPEED	(4 << 0)
  #define DWC3_DCFG_HIGHSPEED	(0 << 0)
  #define DWC3_DCFG_FULLSPEED2	(1 << 0)
-@@ -339,6 +341,7 @@
+@@ -338,6 +340,7 @@
  
  #define DWC3_DSTS_CONNECTSPD		(7 << 0)
  
@@ -42,5 +40,3 @@ index c0520d67..6254b2f 100644
  #define DWC3_DSTS_SUPERSPEED		(4 << 0)
  #define DWC3_DSTS_HIGHSPEED		(0 << 0)
  #define DWC3_DSTS_FULLSPEED2		(1 << 0)
--- 
-cgit v0.12

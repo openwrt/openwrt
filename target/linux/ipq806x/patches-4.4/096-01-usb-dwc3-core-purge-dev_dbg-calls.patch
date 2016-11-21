@@ -12,11 +12,9 @@ Signed-off-by: Felipe Balbi <balbi@ti.com>
  drivers/usb/dwc3/core.c | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index 22b47973..de5e01f 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -272,7 +272,8 @@ static int dwc3_event_buffers_setup(struct dwc3 *dwc)
+@@ -272,7 +272,8 @@ static int dwc3_event_buffers_setup(stru
  
  	for (n = 0; n < dwc->num_event_buffers; n++) {
  		evt = dwc->ev_buffs[n];
@@ -26,7 +24,7 @@ index 22b47973..de5e01f 100644
  				evt->buf, (unsigned long long) evt->dma,
  				evt->length);
  
-@@ -608,12 +609,13 @@ static int dwc3_core_init(struct dwc3 *dwc)
+@@ -608,12 +609,13 @@ static int dwc3_core_init(struct dwc3 *d
  		reg |= DWC3_GCTL_GBLHIBERNATIONEN;
  		break;
  	default:
@@ -42,5 +40,3 @@ index 22b47973..de5e01f 100644
  		dwc->is_fpga = true;
  	}
  
--- 
-cgit v0.12

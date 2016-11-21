@@ -15,11 +15,9 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/dwc3/gadget.c |  4 ++--
  3 files changed, 7 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index 9e5c57c7..05b7ec3 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -204,7 +204,7 @@ static void dwc3_free_event_buffers(struct dwc3 *dwc)
+@@ -204,7 +204,7 @@ static void dwc3_free_event_buffers(stru
  {
  	struct dwc3_event_buffer	*evt;
  
@@ -28,7 +26,7 @@ index 9e5c57c7..05b7ec3 100644
  	if (evt)
  		dwc3_free_one_event_buffer(dwc, evt);
  }
-@@ -221,17 +221,12 @@ static int dwc3_alloc_event_buffers(struct dwc3 *dwc, unsigned length)
+@@ -221,17 +221,12 @@ static int dwc3_alloc_event_buffers(stru
  {
  	struct dwc3_event_buffer *evt;
  
@@ -47,7 +45,7 @@ index 9e5c57c7..05b7ec3 100644
  
  	return 0;
  }
-@@ -246,7 +241,7 @@ static int dwc3_event_buffers_setup(struct dwc3 *dwc)
+@@ -246,7 +241,7 @@ static int dwc3_event_buffers_setup(stru
  {
  	struct dwc3_event_buffer	*evt;
  
@@ -56,7 +54,7 @@ index 9e5c57c7..05b7ec3 100644
  	dwc3_trace(trace_dwc3_core,
  			"Event buf %p dma %08llx length %d\n",
  			evt->buf, (unsigned long long) evt->dma,
-@@ -269,7 +264,7 @@ static void dwc3_event_buffers_cleanup(struct dwc3 *dwc)
+@@ -269,7 +264,7 @@ static void dwc3_event_buffers_cleanup(s
  {
  	struct dwc3_event_buffer	*evt;
  
@@ -65,11 +63,9 @@ index 9e5c57c7..05b7ec3 100644
  
  	evt->lpos = 0;
  
-diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
-index be03999..df72234a 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -753,7 +753,7 @@ struct dwc3 {
+@@ -750,7 +750,7 @@ struct dwc3 {
  	struct platform_device	*xhci;
  	struct resource		xhci_resources[DWC3_XHCI_RESOURCES_NUM];
  
@@ -78,11 +74,9 @@ index be03999..df72234a 100644
  	struct dwc3_ep		*eps[DWC3_ENDPOINTS_NUM];
  
  	struct usb_gadget	gadget;
-diff --git a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
-index 5e6a495..96dfde0 100644
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -2609,7 +2609,7 @@ static irqreturn_t dwc3_process_event_buf(struct dwc3 *dwc)
+@@ -2563,7 +2563,7 @@ static irqreturn_t dwc3_process_event_bu
  	int left;
  	u32 reg;
  
@@ -91,7 +85,7 @@ index 5e6a495..96dfde0 100644
  	left = evt->count;
  
  	if (!(evt->flags & DWC3_EVENT_PENDING))
-@@ -2668,7 +2668,7 @@ static irqreturn_t dwc3_check_event_buf(struct dwc3 *dwc)
+@@ -2622,7 +2622,7 @@ static irqreturn_t dwc3_check_event_buf(
  	u32 count;
  	u32 reg;
  
@@ -100,5 +94,3 @@ index 5e6a495..96dfde0 100644
  
  	count = dwc3_readl(dwc->regs, DWC3_GEVNTCOUNT(0));
  	count &= DWC3_GEVNTCOUNT_MASK;
--- 
-cgit v0.12

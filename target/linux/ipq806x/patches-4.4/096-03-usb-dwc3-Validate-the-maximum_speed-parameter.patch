@@ -13,11 +13,9 @@ Signed-off-by: Felipe Balbi <balbi@kernel.org>
  drivers/usb/dwc3/gadget.c |  9 ++++++---
  2 files changed, 22 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index 001c755..17fd814 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -1012,8 +1012,20 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -1012,8 +1012,20 @@ static int dwc3_probe(struct platform_de
  		goto err1;
  	}
  
@@ -40,7 +38,7 @@ index 001c755..17fd814 100644
  		dwc->maximum_speed = USB_SPEED_SUPER;
  
  		/*
-@@ -1023,6 +1035,8 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -1023,6 +1035,8 @@ static int dwc3_probe(struct platform_de
  		    (DWC3_GHWPARAMS3_SSPHY_IFC(dwc->hwparams.hwparams3) ==
  		     DWC3_GHWPARAMS3_SSPHY_IFC_GEN2))
  			dwc->maximum_speed = USB_SPEED_SUPER_PLUS;
@@ -49,13 +47,11 @@ index 001c755..17fd814 100644
  	}
  
  	/* Adjust Frame Length */
-diff --git a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
-index 482e6a1..3ac170f 100644
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -1670,10 +1670,13 @@ static int dwc3_gadget_start(struct usb_gadget *g,
- 		case USB_SPEED_SUPER_PLUS:
- 			reg |= DWC3_DSTS_SUPERSPEED_PLUS;
+@@ -1634,10 +1634,13 @@ static int dwc3_gadget_start(struct usb_
+ 		case USB_SPEED_HIGH:
+ 			reg |= DWC3_DSTS_HIGHSPEED;
  			break;
 -		case USB_SPEED_SUPER:	/* FALLTHROUGH */
 -		case USB_SPEED_UNKNOWN:	/* FALTHROUGH */
@@ -70,5 +66,3 @@ index 482e6a1..3ac170f 100644
  		}
  	}
  	dwc3_writel(dwc->regs, DWC3_DCFG, reg);
--- 
-cgit v0.12

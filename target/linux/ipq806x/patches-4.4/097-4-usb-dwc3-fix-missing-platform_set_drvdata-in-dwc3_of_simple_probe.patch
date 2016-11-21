@@ -15,11 +15,9 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/dwc3/dwc3-of-simple.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/usb/dwc3/dwc3-of-simple.c b/drivers/usb/dwc3/dwc3-of-simple.c
-index 9743353..e56d59b 100644
 --- a/drivers/usb/dwc3/dwc3-of-simple.c
 +++ b/drivers/usb/dwc3/dwc3-of-simple.c
-@@ -61,6 +61,7 @@ static int dwc3_of_simple_probe(struct platform_device *pdev)
+@@ -61,6 +61,7 @@ static int dwc3_of_simple_probe(struct p
  	if (!simple->clks)
  		return -ENOMEM;
  
@@ -27,5 +25,3 @@ index 9743353..e56d59b 100644
  	simple->dev = dev;
  
  	for (i = 0; i < simple->num_clocks; i++) {
--- 
-cgit v0.12

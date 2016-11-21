@@ -15,11 +15,9 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/dwc3/core.c | 23 ++++++++++++++++++++++-
  1 file changed, 22 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index fa20f5a9..34277ce 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -1150,6 +1150,11 @@ static int dwc3_suspend(struct device *dev)
+@@ -1124,6 +1124,11 @@ static int dwc3_suspend(struct device *d
  	phy_exit(dwc->usb2_generic_phy);
  	phy_exit(dwc->usb3_generic_phy);
  
@@ -31,7 +29,7 @@ index fa20f5a9..34277ce 100644
  	pinctrl_pm_select_sleep_state(dev);
  
  	return 0;
-@@ -1163,11 +1168,21 @@ static int dwc3_resume(struct device *dev)
+@@ -1137,11 +1142,21 @@ static int dwc3_resume(struct device *de
  
  	pinctrl_pm_select_default_state(dev);
  
@@ -54,7 +52,7 @@ index fa20f5a9..34277ce 100644
  
  	ret = phy_init(dwc->usb3_generic_phy);
  	if (ret < 0)
-@@ -1200,6 +1215,12 @@ static int dwc3_resume(struct device *dev)
+@@ -1174,6 +1189,12 @@ static int dwc3_resume(struct device *de
  err_usb2phy_init:
  	phy_exit(dwc->usb2_generic_phy);
  
@@ -67,5 +65,3 @@ index fa20f5a9..34277ce 100644
  	return ret;
  }
  
--- 
-cgit v0.12

@@ -17,11 +17,9 @@ Signed-off-by: Felipe Balbi <balbi@kernel.org>
  drivers/usb/dwc3/core.c | 17 +++++++++++++----
  1 file changed, 13 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index de5e01f..001c755 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -962,10 +962,6 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -962,10 +962,6 @@ static int dwc3_probe(struct platform_de
  		fladj = pdata->fladj_value;
  	}
  
@@ -32,7 +30,7 @@ index de5e01f..001c755 100644
  	dwc->lpm_nyet_threshold = lpm_nyet_threshold;
  	dwc->tx_de_emphasis = tx_de_emphasis;
  
-@@ -1016,6 +1012,19 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -1016,6 +1012,19 @@ static int dwc3_probe(struct platform_de
  		goto err1;
  	}
  
@@ -52,5 +50,3 @@ index de5e01f..001c755 100644
  	/* Adjust Frame Length */
  	dwc3_frame_length_adjustment(dwc, fladj);
  
--- 
-cgit v0.12

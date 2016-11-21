@@ -1,7 +1,7 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -402,7 +402,7 @@ KBUILD_CFLAGS_KERNEL :=
- KBUILD_AFLAGS   := -D__ASSEMBLY__
+@@ -403,7 +403,7 @@ KBUILD_CFLAGS_KERNEL :=
+ KBUILD_AFLAGS   := -D__ASSEMBLY__ $(call cc-option,-fno-PIE)
  KBUILD_AFLAGS_MODULE  := -DMODULE
  KBUILD_CFLAGS_MODULE  := -DMODULE
 -KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds

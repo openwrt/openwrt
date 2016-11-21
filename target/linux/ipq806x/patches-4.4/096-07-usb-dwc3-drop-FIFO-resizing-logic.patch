@@ -25,8 +25,6 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  drivers/usb/dwc3/platform_data.h                   |  1 -
  7 files changed, 2 insertions(+), 108 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/dwc3.txt b/Documentation/devicetree/bindings/usb/dwc3.txt
-index fb2ad0a..1569568 100644
 --- a/Documentation/devicetree/bindings/usb/dwc3.txt
 +++ b/Documentation/devicetree/bindings/usb/dwc3.txt
 @@ -14,7 +14,6 @@ Optional properties:
@@ -52,8 +50,6 @@ index fb2ad0a..1569568 100644
  	usb-phy = <&usb2_phy>, <&usb3,phy>;
 -	tx-fifo-resize;
  };
-diff --git a/Documentation/devicetree/bindings/usb/qcom,dwc3.txt b/Documentation/devicetree/bindings/usb/qcom,dwc3.txt
-index ca164e7..39acb08 100644
 --- a/Documentation/devicetree/bindings/usb/qcom,dwc3.txt
 +++ b/Documentation/devicetree/bindings/usb/qcom,dwc3.txt
 @@ -59,7 +59,6 @@ Example device nodes:
@@ -64,11 +60,9 @@ index ca164e7..39acb08 100644
  				dr_mode = "host";
  			};
  		};
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index fa20f5a9..67d183a 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -882,9 +882,6 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -882,9 +882,6 @@ static int dwc3_probe(struct platform_de
  	dwc->usb3_lpm_capable = device_property_read_bool(dev,
  				"snps,usb3_lpm_capable");
  
@@ -78,7 +72,7 @@ index fa20f5a9..67d183a 100644
  	dwc->disable_scramble_quirk = device_property_read_bool(dev,
  				"snps,disable_scramble_quirk");
  	dwc->u2exit_lfps_quirk = device_property_read_bool(dev,
-@@ -926,7 +923,6 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -926,7 +923,6 @@ static int dwc3_probe(struct platform_de
  		if (pdata->hird_threshold)
  			hird_threshold = pdata->hird_threshold;
  
@@ -86,11 +80,9 @@ index fa20f5a9..67d183a 100644
  		dwc->usb3_lpm_capable = pdata->usb3_lpm_capable;
  		dwc->dr_mode = pdata->dr_mode;
  
-diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
-index 6254b2f..7cbe9e9 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -709,9 +709,7 @@ struct dwc3_scratchpad_array {
+@@ -707,9 +707,7 @@ struct dwc3_scratchpad_array {
   * 	0	- utmi_sleep_n
   * 	1	- utmi_l1_suspend_n
   * @is_fpga: true when we are using the FPGA board
@@ -100,7 +92,7 @@ index 6254b2f..7cbe9e9 100644
   * @setup_packet_pending: true when there's a Setup Packet in FIFO. Workaround
   * @start_config_issued: true when StartConfig command has been issued
   * @three_stage_setup: set if we perform a three phase setup
-@@ -855,9 +853,7 @@ struct dwc3 {
+@@ -852,9 +850,7 @@ struct dwc3 {
  	unsigned		has_lpm_erratum:1;
  	unsigned		is_utmi_l1_suspend:1;
  	unsigned		is_fpga:1;
@@ -110,7 +102,7 @@ index 6254b2f..7cbe9e9 100644
  	unsigned		setup_packet_pending:1;
  	unsigned		three_stage_setup:1;
  	unsigned		usb3_lpm_capable:1;
-@@ -1025,7 +1021,6 @@ struct dwc3_gadget_ep_cmd_params {
+@@ -1022,7 +1018,6 @@ struct dwc3_gadget_ep_cmd_params {
  
  /* prototypes */
  void dwc3_set_mode(struct dwc3 *dwc, u32 mode);
@@ -118,11 +110,9 @@ index 6254b2f..7cbe9e9 100644
  
  /* check whether we are on the DWC_usb31 core */
  static inline bool dwc3_is_usb31(struct dwc3 *dwc)
-diff --git a/drivers/usb/dwc3/ep0.c b/drivers/usb/dwc3/ep0.c
-index eca2e6d..4454de0 100644
 --- a/drivers/usb/dwc3/ep0.c
 +++ b/drivers/usb/dwc3/ep0.c
-@@ -586,9 +586,6 @@ static int dwc3_ep0_set_config(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
+@@ -583,9 +583,6 @@ static int dwc3_ep0_set_config(struct dw
  			reg = dwc3_readl(dwc->regs, DWC3_DCTL);
  			reg |= (DWC3_DCTL_ACCEPTU1ENA | DWC3_DCTL_ACCEPTU2ENA);
  			dwc3_writel(dwc->regs, DWC3_DCTL, reg);
@@ -132,7 +122,7 @@ index eca2e6d..4454de0 100644
  		}
  		break;
  
-@@ -1027,12 +1024,6 @@ static int dwc3_ep0_start_control_status(struct dwc3_ep *dep)
+@@ -1020,12 +1017,6 @@ static int dwc3_ep0_start_control_status
  
  static void __dwc3_ep0_do_control_status(struct dwc3 *dwc, struct dwc3_ep *dep)
  {
@@ -145,11 +135,9 @@ index eca2e6d..4454de0 100644
  	WARN_ON(dwc3_ep0_start_control_status(dep));
  }
  
-diff --git a/drivers/usb/dwc3/gadget.c b/drivers/usb/dwc3/gadget.c
-index d54a028..3a5c271 100644
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -145,92 +145,6 @@ int dwc3_gadget_set_link_state(struct dwc3 *dwc, enum dwc3_link_state state)
+@@ -145,92 +145,6 @@ int dwc3_gadget_set_link_state(struct dw
  	return -ETIMEDOUT;
  }
  
@@ -242,8 +230,6 @@ index d54a028..3a5c271 100644
  void dwc3_gadget_giveback(struct dwc3_ep *dep, struct dwc3_request *req,
  		int status)
  {
-diff --git a/drivers/usb/dwc3/platform_data.h b/drivers/usb/dwc3/platform_data.h
-index 2bb4d3a..aaa6f00 100644
 --- a/drivers/usb/dwc3/platform_data.h
 +++ b/drivers/usb/dwc3/platform_data.h
 @@ -23,7 +23,6 @@
@@ -254,5 +240,3 @@ index 2bb4d3a..aaa6f00 100644
  	bool usb3_lpm_capable;
  
  	unsigned is_utmi_l1_suspend:1;
--- 
-cgit v0.12

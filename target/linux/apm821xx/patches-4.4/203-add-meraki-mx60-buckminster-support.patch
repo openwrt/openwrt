@@ -1,9 +1,9 @@
 --- a/arch/powerpc/platforms/44x/Kconfig
 +++ b/arch/powerpc/platforms/44x/Kconfig
-@@ -30,6 +30,19 @@
+@@ -30,6 +30,19 @@ config BLUESTONE
  	help
  	  This option enables support for the APM APM821xx Evaluation board.
-
+ 
 +config BUCKMINSTER
 +	bool "Buckminster"
 +	depends on 44x
@@ -22,7 +22,7 @@
  	depends on 44x
 --- a/arch/powerpc/platforms/44x/ppc44x_simple.c
 +++ b/arch/powerpc/platforms/44x/ppc44x_simple.c
-@@ -63,6 +63,7 @@
+@@ -63,6 +63,7 @@ static char *board[] __initdata = {
  	"amcc,sequoia",
  	"amcc,taishan",
  	"amcc,yosemite",

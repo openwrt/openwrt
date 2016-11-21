@@ -101,7 +101,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static void bgmac_dma_rx_enable(struct bgmac *bgmac,
-@@ -371,7 +371,7 @@ static int bgmac_dma_rx_skb_for_slot(str
+@@ -374,7 +374,7 @@ static int bgmac_dma_rx_skb_for_slot(str
  	dma_addr = dma_map_single(dma_dev, buf + BGMAC_RX_BUF_OFFSET,
  				  BGMAC_RX_BUF_SIZE, DMA_FROM_DEVICE);
  	if (dma_mapping_error(dma_dev, dma_addr)) {
@@ -110,7 +110,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		put_page(virt_to_head_page(buf));
  		return -ENOMEM;
  	}
-@@ -466,16 +466,16 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -469,16 +469,16 @@ static int bgmac_dma_rx_read(struct bgma
  
  			/* Check for poison and drop or pass the packet */
  			if (len == 0xdead && flags == 0xbeef) {
@@ -131,7 +131,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				put_page(virt_to_head_page(buf));
  				bgmac->net_dev->stats.rx_length_errors++;
  				bgmac->net_dev->stats.rx_errors++;
-@@ -487,7 +487,7 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -490,7 +490,7 @@ static int bgmac_dma_rx_read(struct bgma
  
  			skb = build_skb(buf, BGMAC_RX_ALLOC_SIZE);
  			if (unlikely(!skb)) {
@@ -140,7 +140,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				put_page(virt_to_head_page(buf));
  				bgmac->net_dev->stats.rx_errors++;
  				break;
-@@ -641,7 +641,7 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -644,7 +644,7 @@ static int bgmac_dma_alloc(struct bgmac
  	BUILD_BUG_ON(BGMAC_MAX_RX_RINGS > ARRAY_SIZE(ring_base));
  
  	if (!(bcma_aread32(bgmac->core, BCMA_IOST) & BCMA_IOST_DMA64)) {
@@ -149,7 +149,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return -ENOTSUPP;
  	}
  
-@@ -655,8 +655,8 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -658,8 +658,8 @@ static int bgmac_dma_alloc(struct bgmac
  						     &ring->dma_base,
  						     GFP_KERNEL);
  		if (!ring->cpu_base) {
@@ -160,7 +160,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			goto err_dma_free;
  		}
  
-@@ -680,8 +680,8 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -683,8 +683,8 @@ static int bgmac_dma_alloc(struct bgmac
  						     &ring->dma_base,
  						     GFP_KERNEL);
  		if (!ring->cpu_base) {
@@ -171,7 +171,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			err = -ENOMEM;
  			goto err_dma_free;
  		}
-@@ -800,8 +800,8 @@ static u16 bgmac_phy_read(struct bgmac *
+@@ -803,8 +803,8 @@ static u16 bgmac_phy_read(struct bgmac *
  	bcma_write32(core, phy_access_addr, tmp);
  
  	if (!bgmac_wait_value(core, phy_access_addr, BGMAC_PA_START, 0, 1000)) {
@@ -182,7 +182,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return 0xffff;
  	}
  
-@@ -833,7 +833,7 @@ static int bgmac_phy_write(struct bgmac
+@@ -836,7 +836,7 @@ static int bgmac_phy_write(struct bgmac
  
  	bgmac_write(bgmac, BGMAC_INT_STATUS, BGMAC_IS_MDIO);
  	if (bgmac_read(bgmac, BGMAC_INT_STATUS) & BGMAC_IS_MDIO)
@@ -191,7 +191,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	tmp = BGMAC_PA_START;
  	tmp |= BGMAC_PA_WRITE;
-@@ -843,8 +843,8 @@ static int bgmac_phy_write(struct bgmac
+@@ -846,8 +846,8 @@ static int bgmac_phy_write(struct bgmac
  	bcma_write32(core, phy_access_addr, tmp);
  
  	if (!bgmac_wait_value(core, phy_access_addr, BGMAC_PA_START, 0, 1000)) {
@@ -202,7 +202,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return -ETIMEDOUT;
  	}
  
-@@ -897,7 +897,7 @@ static void bgmac_phy_reset(struct bgmac
+@@ -900,7 +900,7 @@ static void bgmac_phy_reset(struct bgmac
  	bgmac_phy_write(bgmac, bgmac->phyaddr, MII_BMCR, BMCR_RESET);
  	udelay(100);
  	if (bgmac_phy_read(bgmac, bgmac->phyaddr, MII_BMCR) & BMCR_RESET)
@@ -211,7 +211,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	bgmac_phy_init(bgmac);
  }
  
-@@ -998,7 +998,8 @@ static void bgmac_mac_speed(struct bgmac
+@@ -1001,7 +1001,8 @@ static void bgmac_mac_speed(struct bgmac
  		set |= BGMAC_CMDCFG_ES_2500;
  		break;
  	default:
@@ -221,7 +221,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	if (bgmac->mac_duplex == DUPLEX_HALF)
-@@ -1097,8 +1098,8 @@ static void bgmac_chip_reset(struct bgma
+@@ -1100,8 +1101,8 @@ static void bgmac_chip_reset(struct bgma
  
  		if (bcm47xx_nvram_getenv("et_swtype", buf, sizeof(buf)) > 0) {
  			if (kstrtou8(buf, 0, &et_swtype))
@@ -232,7 +232,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			et_swtype &= 0x0f;
  			et_swtype <<= 4;
  			sw_type = et_swtype;
-@@ -1261,7 +1262,7 @@ static irqreturn_t bgmac_interrupt(int i
+@@ -1264,7 +1265,7 @@ static irqreturn_t bgmac_interrupt(int i
  
  	int_status &= ~(BGMAC_IS_TX0 | BGMAC_IS_RX);
  	if (int_status)
@@ -241,7 +241,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* Disable new interrupts until handling existing ones */
  	bgmac_chip_intrs_off(bgmac);
-@@ -1315,7 +1316,7 @@ static int bgmac_open(struct net_device
+@@ -1318,7 +1319,7 @@ static int bgmac_open(struct net_device
  	err = request_irq(bgmac->core->irq, bgmac_interrupt, IRQF_SHARED,
  			  KBUILD_MODNAME, net_dev);
  	if (err < 0) {
@@ -250,7 +250,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		bgmac_dma_cleanup(bgmac);
  		return err;
  	}
-@@ -1596,14 +1597,14 @@ static int bgmac_fixed_phy_register(stru
+@@ -1599,14 +1600,14 @@ static int bgmac_fixed_phy_register(stru
  
  	phy_dev = fixed_phy_register(PHY_POLL, &fphy_status, -1, NULL);
  	if (!phy_dev || IS_ERR(phy_dev)) {
@@ -267,7 +267,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return err;
  	}
  
-@@ -1643,7 +1644,7 @@ static int bgmac_mii_register(struct bgm
+@@ -1646,7 +1647,7 @@ static int bgmac_mii_register(struct bgm
  
  	err = mdiobus_register(mii_bus);
  	if (err) {
@@ -276,7 +276,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		goto err_free_irq;
  	}
  
-@@ -1655,7 +1656,7 @@ static int bgmac_mii_register(struct bgm
+@@ -1658,7 +1659,7 @@ static int bgmac_mii_register(struct bgm
  	phy_dev = phy_connect(bgmac->net_dev, bus_id, &bgmac_adjust_link,
  			      PHY_INTERFACE_MODE_MII);
  	if (IS_ERR(phy_dev)) {
@@ -285,7 +285,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		err = PTR_ERR(phy_dev);
  		goto err_unregister_bus;
  	}
-@@ -1704,7 +1705,8 @@ static int bgmac_probe(struct bcma_devic
+@@ -1707,7 +1708,8 @@ static int bgmac_probe(struct bcma_devic
  		mac = sprom->et2mac;
  		break;
  	default:
@@ -295,7 +295,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return -ENOTSUPP;
  	}
  
-@@ -1727,6 +1729,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1730,6 +1732,7 @@ static int bgmac_probe(struct bcma_devic
  	net_dev->irq = core->irq;
  	net_dev->ethtool_ops = &bgmac_ethtool_ops;
  	bgmac = netdev_priv(net_dev);
@@ -303,7 +303,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	bgmac->net_dev = net_dev;
  	bgmac->core = core;
  	bcma_set_drvdata(core, bgmac);
-@@ -1738,7 +1741,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1741,7 +1744,7 @@ static int bgmac_probe(struct bcma_devic
  	/* On BCM4706 we need common core to access PHY */
  	if (core->id.id == BCMA_CORE_4706_MAC_GBIT &&
  	    !core->bus->drv_gmac_cmn.core) {
@@ -312,7 +312,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		err = -ENODEV;
  		goto err_netdev_free;
  	}
-@@ -1757,15 +1760,15 @@ static int bgmac_probe(struct bcma_devic
+@@ -1760,15 +1763,15 @@ static int bgmac_probe(struct bcma_devic
  	}
  	bgmac->phyaddr &= BGMAC_PHY_MASK;
  	if (bgmac->phyaddr == BGMAC_PHY_MASK) {
@@ -332,7 +332,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		err = -ENOTSUPP;
  		goto err_netdev_free;
  	}
-@@ -1794,7 +1797,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1797,7 +1800,7 @@ static int bgmac_probe(struct bcma_devic
  
  	err = bgmac_dma_alloc(bgmac);
  	if (err) {
@@ -341,7 +341,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		goto err_netdev_free;
  	}
  
-@@ -1808,16 +1811,16 @@ static int bgmac_probe(struct bcma_devic
+@@ -1811,16 +1814,16 @@ static int bgmac_probe(struct bcma_devic
  	bgmac->has_robosw = !!(core->bus->sprom.boardflags_lo &
  			       BGMAC_BFL_ENETROBO);
  	if (bgmac->has_robosw)
@@ -361,7 +361,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		goto err_dma_free;
  	}
  
-@@ -1827,7 +1830,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1830,7 +1833,7 @@ static int bgmac_probe(struct bcma_devic
  
  	err = register_netdev(bgmac->net_dev);
  	if (err) {

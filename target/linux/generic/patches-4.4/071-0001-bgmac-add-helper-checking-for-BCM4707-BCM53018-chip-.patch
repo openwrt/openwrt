@@ -36,7 +36,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static bool bgmac_wait_value(struct bcma_device *core, u16 reg, u32 mask,
  			     u32 value, int timeout)
  {
-@@ -987,11 +998,9 @@ static void bgmac_mac_speed(struct bgmac
+@@ -990,11 +1001,9 @@ static void bgmac_mac_speed(struct bgmac
  static void bgmac_miiconfig(struct bgmac *bgmac)
  {
  	struct bcma_device *core = bgmac->core;
@@ -49,7 +49,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		bcma_awrite32(core, BCMA_IOCTL,
  			      bcma_aread32(core, BCMA_IOCTL) | 0x40 |
  			      BGMAC_BCMA_IOCTL_SW_CLKEN);
-@@ -1055,9 +1064,7 @@ static void bgmac_chip_reset(struct bgma
+@@ -1058,9 +1067,7 @@ static void bgmac_chip_reset(struct bgma
  	}
  
  	/* Request Misc PLL for corerev > 2 */
@@ -60,7 +60,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		bgmac_set(bgmac, BCMA_CLKCTLST,
  			  BGMAC_BCMA_CLKCTLST_MISC_PLL_REQ);
  		bgmac_wait_value(bgmac->core, BCMA_CLKCTLST,
-@@ -1193,8 +1200,7 @@ static void bgmac_enable(struct bgmac *b
+@@ -1196,8 +1203,7 @@ static void bgmac_enable(struct bgmac *b
  		break;
  	}
  
@@ -70,7 +70,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		rxq_ctl = bgmac_read(bgmac, BGMAC_RXQ_CTL);
  		rxq_ctl &= ~BGMAC_RXQ_CTL_MDP_MASK;
  		bp_clk = bcma_pmu_get_bus_clock(&bgmac->core->bus->drv_cc) /
-@@ -1472,14 +1478,12 @@ static int bgmac_fixed_phy_register(stru
+@@ -1475,14 +1481,12 @@ static int bgmac_fixed_phy_register(stru
  
  static int bgmac_mii_register(struct bgmac *bgmac)
  {
@@ -86,7 +86,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return bgmac_fixed_phy_register(bgmac);
  
  	mii_bus = mdiobus_alloc();
-@@ -1550,7 +1554,6 @@ static void bgmac_mii_unregister(struct
+@@ -1553,7 +1557,6 @@ static void bgmac_mii_unregister(struct
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipattach */
  static int bgmac_probe(struct bcma_device *core)
  {
@@ -94,7 +94,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct net_device *net_dev;
  	struct bgmac *bgmac;
  	struct ssb_sprom *sprom = &core->bus->sprom;
-@@ -1631,8 +1634,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1634,8 +1637,7 @@ static int bgmac_probe(struct bcma_devic
  	bgmac_chip_reset(bgmac);
  
  	/* For Northstar, we have to take all GMAC core out of reset */
