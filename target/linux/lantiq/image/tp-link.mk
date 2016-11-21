@@ -15,7 +15,7 @@ define Device/lantiqTpLink
   KERNEL := kernel-bin | append-dtb | lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | tplink-fw
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := mktplinkfw2 | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := mktplinkfw2 | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/TDW8970
