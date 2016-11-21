@@ -29,6 +29,11 @@
 	aliases {
 		serial0 = &uart4;
 		mdio-gpio0 = &mdio0;
+
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
+		led-upgrade = &power;
 	};
 
 	chosen {
@@ -38,10 +43,41 @@
 
 	soc {
 		pinmux@800000 {
+			button_pins: button_pins {
+				mux {
+					pins = "gpio6", "gpio54", "gpio65";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-pull-up;
+				};
+			};
+
 			i2c4_pins: i2c4_pinmux {
-				pins = "gpio12", "gpio13";
-				function = "gsbi4";
-				bias-disable;
+				mux {
+					pins = "gpio12", "gpio13";
+					function = "gsbi4";
+					drive-strength = <12>;
+					bias-disable;
+				};
+			};
+
+			led_pins: led_pins {
+				mux {
+					pins = "gpio7", "gpio8", "gpio9", "gpio22", "gpio23",
+						"gpio24","gpio26", "gpio53", "gpio64";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-pull-up;
+				};
+			};
+
+			mdio0_pins: mdio0_pins {
+				mux {
+					pins = "gpio0", "gpio1";
+					function = "gpio";
+					drive-strength = <8>;
+					bias-disable;
+				};
 			};
 
 			nand_pins: nand_pins {
@@ -67,15 +103,6 @@
 				};
 			};
 
-			mdio0_pins: mdio0_pins {
-				mux {
-					pins = "gpio0", "gpio1";
-					function = "gpio";
-					drive-strength = <8>;
-					bias-disable;
-				};
-			};
-
 			rgmii2_pins: rgmii2_pins {
 				mux {
 					pins = "gpio27", "gpio28", "gpio29", "gpio30", "gpio31", "gpio32",
@@ -83,6 +110,26 @@
 					function = "rgmii2";
 					drive-strength = <8>;
 					bias-disable;
+				};
+			};
+
+			usb0_pwr_en_pins: usb0_pwr_en_pins {
+				mux {
+					pins = "gpio15";
+					function = "gpio";
+					drive-strength = <12>;
+					bias-pull-down;
+					output-high;
+				};
+			};
+
+			usb1_pwr_en_pins: usb1_pwr_en_pins {
+				mux {
+					pins = "gpio16", "gpio68";
+					function = "gpio";
+					drive-strength = <12>;
+					bias-pull-down;
+					output-high;
 				};
 			};
 		};
@@ -127,10 +174,16 @@
 
 		usb30@0 {
 			status = "ok";
+
+			pinctrl-0 = <&usb0_pwr_en_pins>;
+			pinctrl-names = "default";
 		};
 
 		usb30@1 {
 			status = "ok";
+
+			pinctrl-0 = <&usb1_pwr_en_pins>;
+			pinctrl-names = "default";
 		};
 
 		pcie0: pci@1b500000 {
@@ -222,7 +275,7 @@
 			compatible = "virtual,mdio-gpio";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			gpios = <&qcom_pinmux 1 0 &qcom_pinmux 0 0>;
+			gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
 			pinctrl-0 = <&mdio0_pins>;
 			pinctrl-names = "default";
 
@@ -274,79 +327,87 @@
 				full-duplex;
 			};
 		};
+
+		rpm@108000 {
+			pinctrl-0 = <&i2c4_pins>;
+			pinctrl-names = "default";
+		};
 	};
 
 	gpio-keys {
 		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
 
 		wifi {
 			label = "wifi";
-			gpios = <&qcom_pinmux 6 1>;
-			linux,code = <KEY_WLAN>;
+			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&qcom_pinmux 54 1>;
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&qcom_pinmux 65 1>;
+			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
 	gpio-leds {
 		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
 
 		usb1 {
 			label = "r7500v2:amber:usb1";
-			gpios = <&qcom_pinmux 7 0>;
+			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		usb3 {
 			label = "r7500v2:amber:usb3";
-			gpios = <&qcom_pinmux 8 0>;
+			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		status {
 			label = "r7500v2:amber:status";
-			gpios = <&qcom_pinmux 9 0>;
+			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		internet {
 			label = "r7500v2:white:internet";
-			gpios = <&qcom_pinmux 22 0>;
+			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan {
 			label = "r7500v2:white:wan";
-			gpios = <&qcom_pinmux 23 0>;
+			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps {
 			label = "r7500v2:white:wps";
-			gpios = <&qcom_pinmux 24 0>;
+			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
 		};
 
 		esata {
 			label = "r7500v2:white:esata";
-			gpios = <&qcom_pinmux 26 0>;
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
 		};
 
-		power {
+		power: power {
 			label = "r7500v2:white:power";
-			gpios = <&qcom_pinmux 53 0>;
-			default-state = "on";
+			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
 		};
 
 		rfkill {
 			label = "r7500v2:white:rfkill";
-			gpios = <&qcom_pinmux 64 0>;
+			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
 		};
-
 	};
 };
 

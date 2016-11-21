@@ -1,4 +1,5 @@
 #include "qcom-ipq8064-v1.0.dtsi"
+
 #include <dt-bindings/input/input.h>
 
 / {
@@ -25,9 +26,9 @@
 		mdio-gpio0 = &mdio0;
 
 		led-boot = &power;
-		led-failsafe = &ledgnr;
+		led-failsafe = &general;
 		led-running = &power;
-		led-upgrade = &ledgnr;
+		led-upgrade = &general;
 	};
 
 	chosen {
@@ -36,10 +37,32 @@
 
 	soc {
 		pinmux@800000 {
+			button_pins: button_pins {
+				mux {
+					pins = "gpio16", "gpio54", "gpio65";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-pull-up;
+				};
+			};
+
 			i2c4_pins: i2c4_pinmux {
-				pins = "gpio12", "gpio13";
-				function = "gsbi4";
-				bias-disable;
+				mux {
+					pins = "gpio12", "gpio13";
+					function = "gsbi4";
+					drive-strength = <12>;
+					bias-disable;
+				};
+			};
+
+			led_pins: led_pins {
+				mux {
+					pins = "gpio6", "gpio7", "gpio8", "gpio9", "gpio26", "gpio33",
+					       "gpio53", "gpio66";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-pull-up;
+				};
 			};
 
 			spi_pins: spi_pins {
@@ -56,6 +79,7 @@
 
 				cs {
 					pins = "gpio20";
+					function = "gpio";
 					drive-strength = <10>;
 					bias-pull-up;
 				};
@@ -63,31 +87,6 @@
 				clk {
 					pins = "gpio21";
 					drive-strength = <12>;
-				};
-			};
-
-			nand_pins: nand_pins {
-				mux {
-					pins = "gpio34", "gpio35", "gpio36",
-					       "gpio37", "gpio38", "gpio39",
-					       "gpio40", "gpio41", "gpio42",
-					       "gpio43", "gpio44", "gpio45",
-					       "gpio46", "gpio47";
-					function = "nand";
-					drive-strength = <10>;
-					bias-disable;
-				};
-
-				pullups {
-					pins = "gpio39";
-					bias-pull-up;
-				};
-
-				hold {
-					pins = "gpio40", "gpio41", "gpio42",
-					       "gpio43", "gpio44", "gpio45",
-					       "gpio46", "gpio47";
-					bias-bus-hold;
 				};
 			};
 
@@ -107,6 +106,26 @@
 					function = "rgmii2";
 					drive-strength = <8>;
 					bias-disable;
+				};
+			};
+
+			usb0_pwr_en_pin: usb0_pwr_en_pin {
+				mux {
+					pins = "gpio25";
+					function = "gpio";
+					drive-strength = <10>;
+					bias-pull-up;
+					output-high;
+				};
+			};
+
+			usb1_pwr_en_pin: usb1_pwr_en_pin {
+				mux {
+					pins = "gpio23";
+					function = "gpio";
+					drive-strength = <10>;
+					bias-pull-up;
+					output-high;
 				};
 			};
 		};
@@ -314,10 +333,16 @@
 
 		usb30@0 {
 			status = "ok";
+
+			pinctrl-0 = <&usb0_pwr_en_pin>;
+			pinctrl-names = "default";
 		};
 
 		usb30@1 {
 			status = "ok";
+
+			pinctrl-0 = <&usb1_pwr_en_pin>;
+			pinctrl-names = "default";
 		};
 
 		pcie0: pci@1b500000 {
@@ -387,10 +412,17 @@
 				full-duplex;
 			};
 		};
+
+		rpm@108000 {
+			pinctrl-0 = <&i2c4_pins>;
+			pinctrl-names = "default";
+		};
 	};
 
 	gpio-keys {
 		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
 
 		wifi {
 			label = "wifi";
@@ -410,15 +442,17 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
-                ledgeneral {
-			label = "ledgeneral";
+		ledswitch {
+			label = "ledswitch";
 			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_DOLLAR>;
+			linux,code = <KEY_LIGHTS_TOGGLE>;
 		};
 	};
 
 	gpio-leds {
 		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
 
 		lan {
 			label = "c2600:white:lan";
@@ -441,7 +475,7 @@
 		};
 
 		wan_red {
-			label = "c2600:red:wan";
+			label = "c2600:orange:wan";
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
 		};
 
@@ -453,27 +487,12 @@
 		power: status {
 			label = "c2600:white:status";
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
 		};
 
-		ledgnr: ledgnr {
-			label = "c2600:white:ledgnr";
+		general: general {
+			label = "c2600:white:general";
 			gpios = <&qcom_pinmux 66 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usb1_power {
-			gpio-export,name = "usb1_power";
-			gpio-export,output = <1>;
-			gpios = <&qcom_pinmux 25 GPIO_ACTIVE_HIGH>;
-		};
-		usb2_power {
-			gpio-export,name = "usb2_power";
-			gpio-export,output = <1>;
-			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

@@ -42,8 +42,14 @@
 
 	soc {
 		pinmux@800000 {
-			pinctrl-0 = <&mdio0_pins &rgmii2_pins>;
-			pinctrl-names = "default";
+			button_pins: button_pins {
+				mux {
+					pins = "gpio6", "gpio54", "gpio65";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-pull-up;
+				};
+			};
 
 			i2c4_pins: i2c4_pinmux {
 				mux {
@@ -52,6 +58,14 @@
 					drive-strength = <12>;
 					bias-disable;
 				};
+			};
+
+			led_pins: led_pins {
+				pins = "gpio7", "gpio8", "gpio9", "gpio22", "gpio23",
+					"gpio24","gpio26", "gpio53", "gpio64", "gpio67";
+				function = "gpio";
+				drive-strength = <2>;
+				bias-pull-down;
 			};
 
 			nand_pins: nand_pins {
@@ -165,6 +179,26 @@
 					output-high;
 				};
 			};
+
+			usb0_pwr_en_pins: usb0_pwr_en_pins {
+				mux {
+					pins = "gpio15";
+					function = "gpio";
+					drive-strength = <12>;
+					bias-pull-down;
+					output-high;
+				};
+			};
+
+			usb1_pwr_en_pins: usb1_pwr_en_pins {
+				mux {
+					pins = "gpio16", "gpio68";
+					function = "gpio";
+					drive-strength = <12>;
+					bias-pull-down;
+					output-high;
+				};
+			};
 		};
 
 		gsbi@16300000 {
@@ -191,7 +225,7 @@
 				pinctrl-0 = <&spi_pins>;
 				pinctrl-names = "default";
 
-				cs-gpios = <&qcom_pinmux 20 0>;
+				cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
 
 				flash: m25p80@0 {
 					compatible = "jedec,spi-nor";
@@ -214,7 +248,7 @@
 				pinctrl-0 = <&spi6_pins>;
 				pinctrl-names = "default";
 
-				cs-gpios = <&qcom_pinmux 57 0>;
+				cs-gpios = <&qcom_pinmux 57 GPIO_ACTIVE_HIGH>;
 
 				spi-nor@0 {
 					compatible = "spi-nor";
@@ -251,10 +285,16 @@
 
 		usb30@0 {
 			status = "ok";
+
+			pinctrl-0 = <&usb0_pwr_en_pins>;
+			pinctrl-names = "default";
 		};
 
 		usb30@1 {
 			status = "ok";
+
+			pinctrl-0 = <&usb1_pwr_en_pins>;
+			pinctrl-names = "default";
 		};
 
 		pcie0: pci@1b500000 {
@@ -336,14 +376,16 @@
 				label = "firmware";
 				reg = <0x1480000 0x2000000>;
 			};
-
 		};
 
 		mdio0: mdio {
 			compatible = "virtual,mdio-gpio";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			gpios = <&qcom_pinmux 1 0 &qcom_pinmux 0 0>;
+			gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
+			pinctrl-0 = <&mdio0_pins>;
+			pinctrl-names = "default";
+
 
 			phy0: ethernet-phy@0 {
 				device_type = "ethernet-phy";
@@ -399,6 +441,9 @@
 			qcom,irq = <255>;
 			mdiobus = <&mdio0>;
 
+			pinctrl-0 = <&rgmii2_pins>;
+			pinctrl-names = "default";
+
 			mtd-mac-address = <&art 6>;
 
 			fixed-link {
@@ -435,10 +480,12 @@
 
 	gpio-keys {
 		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
 
 		wifi {
 			label = "wifi";
-			gpios = <&qcom_pinmux 6 1>;
+			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 			debounce-interval = <60>;
 			wakeup-source;
@@ -446,7 +493,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&qcom_pinmux 54 1>;
+			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 			wakeup-source;
@@ -454,7 +501,7 @@
 
 		wps {
 			label = "wps";
-			gpios = <&qcom_pinmux 65 1>;
+			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 			debounce-interval = <60>;
 			wakeup-source;
@@ -463,79 +510,58 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
 
 		power_white: power_white {
 			label = "r7800:white:power";
-			gpios = <&qcom_pinmux 53 0>;
+			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		power_amber: power_amber {
 			label = "r7800:amber:power";
-			gpios = <&qcom_pinmux 9 0>;
+			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan_white {
 			label = "r7800:white:wan";
-			gpios = <&qcom_pinmux 22 0>;
+			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan_amber {
 			label = "r7800:amber:wan";
-			gpios = <&qcom_pinmux 23 0>;
+			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
 		};
 
 		usb1 {
 			label = "r7800:white:usb1";
-			gpios = <&qcom_pinmux 7 0>;
+			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		usb2 {
 			label = "r7800:white:usb2";
-			gpios = <&qcom_pinmux 8 0>;
+			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		esata {
 			label = "r7800:white:esata";
-			gpios = <&qcom_pinmux 26 0>;
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
 		};
 
 		rfkill {
 			label = "r7800:white:rfkill";
-			gpios = <&qcom_pinmux 64 0>;
+			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps {
 			label = "r7800:white:wps";
-			gpios = <&qcom_pinmux 24 0>;
+			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
 		};
 
 		wifi {
 			label = "r7800:white:wifi";
-			gpios = <&qcom_pinmux 67 0>;
-		};
-	};
-
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usb1-power {
-			gpio-export,name = "usb1";
-			gpio-export,output = <1>;
-			gpios = <&qcom_pinmux 15 0>;
-		};
-
-		usb2-power {
-			gpio-export,name = "usb2";
-			gpio-export,output = <1>;
-			gpios = <&qcom_pinmux 16 0>;
-		};
-
-		usb-power {
-			gpio-export,name = "usb_p";
-			gpio-export,output = <1>;
-			gpios = <&qcom_pinmux 68 0>;
+			gpios = <&qcom_pinmux 67 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

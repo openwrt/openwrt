@@ -25,6 +25,11 @@
 		serial0 = &uart4;
 		mdio-gpio0 = &mdio0;
 		sdcc1 = &sdcc1;
+
+		led-boot = &power;
+		led-failsafe = &power;
+		led-running = &power;
+		led-upgrade = &power;
 	};
 
 	chosen {
@@ -34,8 +39,14 @@
 
 	soc {
 		pinmux@800000 {
-			pinctrl-0 = <&mdio0_pins &rgmii2_pins>;
-			pinctrl-names = "default";
+			button_pins: button_pins {
+				mux {
+					pins = "gpio6", "gpio54", "gpio65";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-pull-up;
+				};
+			};
 
 			i2c4_pins: i2c4_pinmux {
 				mux {
@@ -43,6 +54,22 @@
 					function = "gsbi4";
 					drive-strength = <12>;
 					bias-disable;
+				};
+			};
+
+			led_pins: led_pins {
+				off {
+					pins = "gpio26", "gpio33", "gpio64";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+
+				on {
+					pins = "gpio9";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-pull-up;
 				};
 			};
 
@@ -86,6 +113,42 @@
 				cs {
 					pins = "gpio20";
 					drive-strength = <12>;
+				};
+			};
+
+			usb0_pwr_en_pins: usb0_pwr_en_pins {
+				pwr {
+					pins = "gpio14";
+					function = "gpio";
+					drive-strength = <12>;
+					bias-pull-down;
+					output-high;
+				};
+
+				ovc {
+					pins = "gpio15";
+					function = "gpio";
+					drive-strength = <12>;
+					bias-pull-up;
+					output-high;
+				};
+			};
+
+			usb1_pwr_en_pins: usb1_pwr_en_pins {
+				pwr {
+					pins = "gpio17";
+					function = "gpio";
+					drive-strength = <12>;
+					bias-pull-down;
+					output-high;
+				};
+
+				ovc {
+					pins = "gpio16";
+					function = "gpio";
+					drive-strength = <12>;
+					bias-pull-up;
+					output-high;
 				};
 			};
 		};
@@ -146,10 +209,16 @@
 
 		usb30@0 {
 			status = "ok";
+
+			pinctrl-0 = <&usb0_pwr_en_pins>;
+			pinctrl-names = "default";
 		};
 
 		usb30@1 {
 			status = "ok";
+
+			pinctrl-0 = <&usb1_pwr_en_pins>;
+			pinctrl-names = "default";
 		};
 
 		pcie0: pci@1b500000 {
@@ -170,7 +239,9 @@
 			compatible = "virtual,mdio-gpio";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			gpios = <&qcom_pinmux 1 0 &qcom_pinmux 0 0>;
+			gpios = <&qcom_pinmux 1 GPIO_ACTIVE_LOW &qcom_pinmux 0 GPIO_ACTIVE_LOW>;
+			pinctrl-0 = <&mdio0_pins>;
+			pinctrl-names = "default";
 
 			phy0: ethernet-phy@0 {
 				device_type = "ethernet-phy";
@@ -222,6 +293,9 @@
 			qcom,irq = <255>;
 			mdiobus = <&mdio0>;
 
+			pinctrl-0 = <&rgmii2_pins>;
+			pinctrl-names = "default";
+
 			fixed-link {
 				speed = <1000>;
 				full-duplex;
@@ -253,18 +327,18 @@
 
 		amba {
 			sdcc1: sdcc@12400000 {
-				status          = "okay";
-                                dmas = <&sdcc1bam 2>, <&sdcc1bam 1>;
-                                dma-names = "tx", "rx";
+				status = "okay";
+				dmas = <&sdcc1bam 2>, <&sdcc1bam 1>;
+				dma-names = "tx", "rx";
 			};
 		};
-
-
-
 	};
 
 	gpio-keys {
 		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
 		wifi {
 			label = "wifi";
 			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
@@ -286,15 +360,17 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
 		internet {
 			label = "nbg6817:white:internet";
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
 		};
 
-		power {
+		power: power {
 			label = "nbg6817:white:power";
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
 		};
 
 		wifi {
@@ -305,33 +381,6 @@
 		wifi5g {
 			label = "nbg6817:amber:wifi5g";
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usb0_status {
-			gpio-export,name = "usb0";
-			gpio-export,output = <1>;
-			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_HIGH>;
-		};
-
-		usb1_status {
-			gpio-export,name = "usb1";
-			gpio-export,output = <1>;
-			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_HIGH>;
-		};
-		usb1_power {
-			gpio-export,name = "usb1_power";
-			gpio-export,output = <1>;
-			gpios = <&qcom_pinmux 14 GPIO_ACTIVE_HIGH>;
-		};
-		usb2_power {
-			gpio-export,name = "usb2_power";
-			gpio-export,output = <1>;
-			gpios = <&qcom_pinmux 17 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
