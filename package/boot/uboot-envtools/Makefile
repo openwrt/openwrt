@@ -24,6 +24,8 @@ PKG_BUILD_DEPENDS:=+fstools
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
 
+PKG_FLAGS:=nonshared
+
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
