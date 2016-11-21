@@ -175,7 +175,9 @@ default_prerm() {
 		if [ -n "$root" ]; then
 			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" disable
 		else
-			"$i" disable
+			if [ "$PKG_UPGRADE" != "1" ]; then
+				"$i" disable
+			fi
 			"$i" stop
 		fi
 	done
@@ -240,17 +242,17 @@ default_postinst() {
 
 	[ -n "$root" ] || rm -f /tmp/luci-indexcache 2>/dev/null
 
-	if [ "$PKG_UPGRADE" != "1" ]; then
-		local shell="$(which bash)"
-		for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
-			if [ -n "$root" ]; then
-				${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
-			else
+	local shell="$(which bash)"
+	for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
+		if [ -n "$root" ]; then
+			${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
+		else
+			if [ "$PKG_UPGRADE" != "1" ]; then
 				"$i" enable
-				"$i" start
 			fi
-		done
-	fi
+			"$i" start
+		fi
+	done
 
 	return $ret
 }
