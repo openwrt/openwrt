@@ -40,8 +40,11 @@ ramips_board_detect() {
 	*"ALL0239-3G")
 		name="all0239-3g"
 		;;
-	*"ALL0256N")
-		name="all0256n"
+	*"ALL0256N (4M)")
+		name="all0256n-4M"
+		;;
+	*"ALL0256N (8M)")
+		name="all0256n-8M"
 		;;
 	*"ALL5002")
 		name="all5002"
@@ -67,8 +70,11 @@ ramips_board_detect() {
 	*"AWAPN2403")
 		name="awapn2403"
 		;;
-	*"AWM002 EVB")
-		name="awm002-evb"
+	*"AWM002 EVB (4M)")
+		name="awm002-evb-4M"
+		;;
+	*"AWM002 EVB (8M)")
+		name="awm002-evb-8M"
 		;;
 	*"AWM003 EVB")
 		name="awm003-evb"
@@ -244,8 +250,11 @@ ramips_board_detect() {
 	*"M3")
 		name="m3"
 		;;
-	*"M4")
-		name="m4"
+	*"M4 (4M)")
+		name="m4-4M"
+		;;
+	*"M4 (8M)")
+		name="m4-8M"
 		;;
 	*"MediaTek LinkIt Smart 7688")
 		linkit="$(dd bs=1 skip=1024 count=12 if=/dev/mtd2 2> /dev/null)"
@@ -376,8 +385,11 @@ ramips_board_detect() {
 	*"PWH2004")
 		name="pwh2004"
 		;;
-	*"PX-4885")
-		name="px-4885"
+	*"PX-4885 (4M)")
+		name="px-4885-4M"
+		;;
+	*"PX-4885 (8M)")
+		name="px-4885-8M"
 		;;
 	*"Q7")
 		name="zte-q7"
@@ -538,8 +550,11 @@ ramips_board_detect() {
 	*"WNDR3700v5")
 		name="wndr3700v5"
 		;;
-	*"WR512-3GN-like"*)
-		name="wr512-3gn"
+	*"WR512-3GN (4M)")
+		name="wr512-3gn-4M"
+		;;
+	*"WR512-3GN (8M)")
+		name="wr512-3gn-8M"
 		;;
 	*"WR6202")
 		name="wr6202"
@@ -562,8 +577,11 @@ ramips_board_detect() {
 	*"WSR-600DHP")
 		name="wsr-600"
 		;;
-	*"WT1520")
-		name="wt1520"
+	*"WT1520 (4M)")
+		name="wt1520-4M"
+		;;
+	*"WT1520 (8M)")
+		name="wt1520-8M"
 		;;
 	*"WT3020 (4M)")
 		name="wt3020-4M"

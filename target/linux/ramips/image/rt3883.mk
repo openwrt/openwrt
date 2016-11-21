@@ -1,6 +1,9 @@
 #
 # RT3662/RT3883 Profiles
 #
+define Build/mkrtn56uimg
+	$(STAGING_DIR_HOST)/bin/mkrtn56uimg $(1) $@
+endef
 
 define Device/br-6475nd
   DTS := BR-6475ND
@@ -64,6 +67,19 @@ define Device/hpm
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 TARGET_DEVICES += hpm
+
+
+define Device/rt-n56u
+  DTS := RT-N56U
+  BLOCKSIZE := 64k
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin += | mkrtn56uimg -s
+  IMAGE/factory.bin := 	$$(sysupgrade_bin) | \
+	check-size $$$$(IMAGE_SIZE) | mkrtn56uimg -f
+  DEVICE_TITLE := Asus RT-N56U
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
+endef
+TARGET_DEVICES += rt-n56u
 
 
 define Device/tew-691gr

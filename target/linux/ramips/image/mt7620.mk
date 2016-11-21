@@ -19,13 +19,6 @@ define Build/netgear-header
 		-o $@.new && mv $@.new $@
 endef
 
-define Build/poray-header
-	mkporayfw $(1) \
-		-f $@ \
-		-o $@.new; \
-		mv $@.new $@
-endef
-
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
 	( \

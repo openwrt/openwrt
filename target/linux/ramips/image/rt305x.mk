@@ -1,6 +1,22 @@
 #
 # RT305X Profiles
 #
+define Build/dap-header
+	$(STAGING_DIR_HOST)/bin/mkdapimg $(1) -i $@ -o $@.new
+	mv $@.new $@
+endef
+
+define Build/hilink-header
+	$(STAGING_DIR_HOST)/bin/mkhilinkfw -e -i $@ -o $@.new
+	mv $@.new $@
+endef
+
+define Build/jcg-header
+	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) -u $@ -o $@.new
+	mv $@.new $@
+endef
+
+
 define Device/3g150b
   DTS := 3G150B
   BLOCKSIZE := 4k
@@ -11,6 +27,46 @@ define Device/3g150b
 endef
 TARGET_DEVICES += 3g150b
 
+define Device/3g300m
+  DTS := 3G300M
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  UIMAGE_NAME := 3G150M_SPI Kernel Image
+  DEVICE_TITLE := Tenda 3G300M
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += 3g300m
+
+define Device/3g-6200n
+  DTS := 3G-6200N
+  IMAGE_SIZE := 3648k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m 3G62 -f 0x50000 -S 0x01100000 | pad-rootfs | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := Edimax 3g-6200n
+endef
+TARGET_DEVICES += 3g-6200n
+
+define Device/3g-6200nl
+  DTS := 3G-6200NL
+  IMAGE_SIZE := 3648k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m 3G62 -f 0x50000 -S 0x01100000 | pad-rootfs | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := Edimax 3g-6200nl
+endef
+TARGET_DEVICES += 3g-6200nl
+
+define Device/a5-v11
+  DTS := A5-V11
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B A5-V11 -F 4M
+  DEVICE_TITLE := A5-V11
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
+endef
+TARGET_DEVICES += a5-v11
+
 define Device/air3gii
   DTS := AIR3GII
   BLOCKSIZE := 64k
@@ -18,6 +74,21 @@ define Device/air3gii
   DEVICE_TITLE := AirLive Air3GII
 endef
 TARGET_DEVICES += air3gii
+
+define Device/all0256n-4M
+  DTS := ALL0256N-4M
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_TITLE := Allnet ALL0256N (4MB)
+  DEVICE_PACKAGES := rssileds
+endef
+TARGET_DEVICES += all0256n-4M
+
+define Device/all0256n-8M
+  DTS := ALL0256N-8M
+  DEVICE_TITLE := Allnet ALL0256N (8MB)
+  DEVICE_PACKAGES := rssileds
+endef
+TARGET_DEVICES += all0256n-8M
 
 define Device/all5002
   DTS := ALL5002
@@ -60,6 +131,23 @@ define Device/atp-52b
 endef
 TARGET_DEVICES += atp-52b
 
+define Device/awm002-evb-4M
+  DTS := AWM002-EVB-4M
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_TITLE := AsiaRF AWM002-EVB (4M)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
+		kmod-i2c-core kmod-i2c-gpio
+endef
+TARGET_DEVICES += awm002-evb-4M
+
+define Device/awm002-evb-8M
+  DTS := AWM002-EVB-8M
+  DEVICE_TITLE := AsiaRF AWM002-EVB (8M)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
+		kmod-i2c-core kmod-i2c-gpio
+endef
+TARGET_DEVICES += awm002-evb-8M
+
 define Device/awm003-evb
   DTS := AWM003-EVB
   DEVICE_TITLE := AsiaRF AWM003 EVB
@@ -80,6 +168,15 @@ define Device/bc2
 endef
 TARGET_DEVICES += bc2
 
+define Device/broadway
+  DTS := BROADWAY
+  IMAGE_SIZE := 7744k
+  UIMAGE_NAME:= Broadway Kernel Image
+  DEVICE_TITLE := Hauppauge Broadway
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += broadway
+
 define Device/carambola
   DTS := CARAMBOLA
   DEVICE_TITLE := 8devices Carambola
@@ -95,6 +192,28 @@ define Device/d105
 endef
 TARGET_DEVICES += d105
 
+define Device/dap-1350
+  DTS := DAP-1350
+  IMAGES += factory.bin factory-NA.bin
+  IMAGE_SIZE := 7488k
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	dap-header -s RT3052-AP-DAP1350WW-3
+  IMAGE/factory-NA.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	dap-header -s RT3052-AP-DAP1350-3
+  DEVICE_TITLE := D-Link DAP-1350
+endef
+TARGET_DEVICES += dap-1350
+
+define Device/dir-300-b1
+  DTS := DIR-300-B1
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | wrg-header wrgn23_dlwbr_dir300b
+  DEVICE_TITLE := D-Link DIR-300 B1
+endef
+TARGET_DEVICES += dir-300-b1
+
 define Device/dir-300-b7
   DTS := DIR-300-B7
   BLOCKSIZE := 4k
@@ -108,6 +227,60 @@ define Device/dir-320-b1
   DEVICE_TITLE := D-Link DIR-320 B1
 endef
 TARGET_DEVICES += dir-320-b1
+
+define Device/dir-600-b1
+  DTS := DIR-600-B1
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  SUPPORTED_DEVICES := dir-600-b1 dir-600-b2
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | wrg-header wrgn23_dlwbr_dir600b
+  DEVICE_TITLE := D-Link DIR-600 B1/B2
+endef
+TARGET_DEVICES += dir-600-b1
+
+define Device/dir-610-a1
+  DTS := DIR-610-A1
+  BLOCKSIZE := 4k
+  IMAGES += factory.bin
+  KERNEL := $(KERNEL_DTB)
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE/sysupgrade.bin := \
+	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs | \
+	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
+	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := \
+	append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+	append-rootfs | pad-rootfs -x 64 | \
+	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
+	seama-seal -m "signature=wrgn59_dlob.hans_dir610" | \
+	check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := D-Link DIR-610 A1 
+  DEVICE_PACKAGES := kmod-ledtrig-netdev kmod-ledtrig-timer
+endef
+TARGET_DEVICES += dir-610-a1
+
+define Device/dir-615-d
+  DTS := DIR-615-D
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | wrg-header wrgn23_dlwbr_dir615d
+  DEVICE_TITLE := D-Link DIR-615 D
+endef
+TARGET_DEVICES += dir-615-d
+
+
+define Device/dir-615-h1
+  DTS := DIR-615-H1
+  BLOCKSIZE := 4k
+  IMAGES += factory.bin
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | senao-header -r 0x218 -p 0x30 -t 3
+  DEVICE_TITLE := D-Link DIR-615 H1
+endef
+TARGET_DEVICES += dir-615-h1
 
 define Device/dir-620-a1
   DTS := DIR-620-A1
@@ -152,12 +325,31 @@ define Device/f7c027
 endef
 TARGET_DEVICES += f7c027
 
+define Device/fonera20n
+  DTS := FONERA20N
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | \
+	edimax-header -s RSDK -m NL1T -f 0x50000 -S 0xc0000
+  DEVICE_TITLE := Fonera 2.0N
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += fonera20n
+
 define Device/freestation5
   DTS := FREESTATION5
   DEVICE_TITLE := ARC Wireless FreeStation
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-rt2500-usb kmod-rt2800-usb kmod-rt2x00-usb
 endef
 TARGET_DEVICES += freestation5
+
+define Device/hlk-rm04
+  DTS := HLKRM04
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | hilink-header
+  DEVICE_TITLE := Hi-Link HLK-RM04
+endef
+TARGET_DEVICES += hlk-rm04
 
 define Device/ht-tm02
   DTS := HT-TM02
@@ -179,6 +371,36 @@ define Device/ip2202
 endef
 TARGET_DEVICES += ip2202
 
+define Device/jhr-n805r
+  DTS := JHR-N805R
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | jcg-header 29.24
+  DEVICE_TITLE := JCG JHR-N805R
+endef
+TARGET_DEVICES += jhr-n805r
+
+define Device/jhr-n825r
+  DTS := JHR-N825R
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | jcg-header 23.24
+  DEVICE_TITLE := JCG JHR-N825R
+endef
+TARGET_DEVICES += jhr-n825r
+
+define Device/jhr-n926r
+  DTS := JHR-N926R
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | jcg-header 25.24
+  DEVICE_TITLE := JCG JHR-N926R
+endef
+TARGET_DEVICES += jhr-n926r
+
 define Device/m2m
   DTS := M2M
   UIMAGE_NAME:= Linux Kernel Image
@@ -188,6 +410,40 @@ define Device/m2m
 		kmod-fs-ext4 kmod-fs-vfat block-mount
 endef
 TARGET_DEVICES += m2m
+
+define Device/m3
+  DTS := M3
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B M3 -F 4M
+  DEVICE_TITLE := Poray M3
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev \
+	kmod-ledtrig-timer
+endef
+TARGET_DEVICES += m3
+
+define Device/m4-4M
+  DTS := M4-4M
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B M4 -F 4M
+  DEVICE_TITLE := Poray M4 (4MB)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev \
+	kmod-ledtrig-timer
+endef
+TARGET_DEVICES += m4-4M
+
+define Device/m4-8M
+  DTS := M4-8M
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B M4 -F 8M
+  DEVICE_TITLE := Poray M4 (8MB)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+endef
+TARGET_DEVICES += m4-8M
 
 define Device/miniembplug
   DTS := MINIEMBPLUG
@@ -239,6 +495,16 @@ define Device/mzk-dp150n
 endef
 TARGET_DEVICES += mzk-dp150n
 
+define Device/mzk-w300nh2
+  DTS := MZK-W300NH2
+  IMAGE_SIZE := 3648k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | \
+	edimax-header -s CSYS -m RN52 -f 0x50000 -S 0xc0000
+  DEVICE_TITLE := Planex MZK-W300NH2
+endef
+TARGET_DEVICES += mzk-w300nh2
+
 define Device/mzk-wdpr
   DTS := MZK-WDPR
   DEVICE_TITLE := Planex MZK-WDPR
@@ -284,6 +550,14 @@ define Device/nixcore-x1-16M
 endef
 TARGET_DEVICES += nixcore-16M
 
+define Device/nw718
+  DTS := NW718
+  IMAGE_SIZE := 3712k
+  UIMAGE_NAME:= ARA1B4NCRNW718;1
+  DEVICE_TITLE := Netcore NW718
+endef
+TARGET_DEVICES += nw718
+
 define Device/psr-680w
   DTS := PSR-680W
   BLOCKSIZE := 64k
@@ -298,6 +572,23 @@ define Device/pwh2004
   DEVICE_PACKAGES :=
 endef
 TARGET_DEVICES += pwh2004
+
+define Device/px-4885-4M
+  DTS := PX-4885-4M
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_TITLE := 7Links PX-4885 (4M)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport kmod-leds-gpio
+endef
+TARGET_DEVICES += px-4885-4M
+
+define Device/px-4885-8M
+  DTS := PX-4885-8M
+  DEVICE_TITLE := 7Links PX-4885 (8M)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
+	kmod-usb-ledtrig-usbport kmod-leds-gpio
+endef
+TARGET_DEVICES += px-4885-8M
 
 define Device/rt5350f-olinuxino
   DTS := RT5350F-OLINUXINO
@@ -404,6 +695,22 @@ define Device/vocore-16M
 endef
 TARGET_DEVICES += vocore-16M
 
+define Device/w150m
+  DTS := W150M
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  UIMAGE_NAME:= W150M Kernel Image
+  DEVICE_TITLE := Tenda W150M
+endef
+TARGET_DEVICES += w150m
+
+define Device/w306r-v20
+  DTS := W306R_V20
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  UIMAGE_NAME:= linkn Kernel Image
+  DEVICE_TITLE := Tenda W306R V2.0
+endef
+TARGET_DEVICES += w306r-v20
+
 define Device/w502u
   DTS := W502U
   DEVICE_TITLE := ALFA Networks W502U
@@ -458,11 +765,76 @@ define Device/wl-351
 endef
 TARGET_DEVICES += wl-351
 
+define Device/wnce2001
+  DTS := WNCE2001
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin factory-NA.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	dap-header -s RT3052-AP-WNCE2001-3 -r WW -v 1.0.0.99
+  IMAGE/factory-NA.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	dap-header -s RT3052-AP-WNCE2001-3 -r NA -v 1.0.0.99
+  DEVICE_TITLE := Netgear WNCE2001
+endef
+TARGET_DEVICES += wnce2001
+
+define Device/wr512-3gn-4M
+  DTS := WR512-3GN-4M
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  DEVICE_TITLE := WR512-3GN (4M)
+endef
+TARGET_DEVICES += wr512-3gn-4M
+
+define Device/wr512-3gn-8M
+  DTS := WR512-3GN-8M
+  DEVICE_TITLE := WR512-3GN (8M)
+endef
+TARGET_DEVICES += wr512-3gn-8M
+
 define Device/wr6202
   DTS := WR6202
   DEVICE_TITLE := AWB WR6202
 endef
 TARGET_DEVICES += wr6202
+
+define Device/wt1520-4M
+  DTS := WT1520-4M
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B WT1520 -F 4M
+  DEVICE_TITLE := Nexx WT1520 (4MB)
+endef
+TARGET_DEVICES += wt1520-4M
+
+define Device/wt1520-8M
+  DTS := WT1520-8M
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B WT1520 -F 8M
+  DEVICE_TITLE := Nexx WT1520 (8MB)
+endef
+TARGET_DEVICES += wt1520-8M
+
+define Device/x5
+  DTS := X5
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B X5 -F 8M
+  DEVICE_TITLE := Poray X5/X6
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+endef
+TARGET_DEVICES += x5
+
+
+define Device/x8
+  DTS := X8
+  IMAGES += factory.bin
+  IMAGE/factory.bin := \
+	$$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | poray-header -B X8 -F 8M
+  DEVICE_TITLE := Poray X8
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer
+endef
+TARGET_DEVICES += x8
 
 define Device/xdxrn502j
   DTS := XDXRN502J
