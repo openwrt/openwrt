@@ -6,29 +6,10 @@
 . /lib/mvebu.sh
 
 RAMFS_COPY_DATA=/lib/mvebu.sh
+REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
-	local board=$(mvebu_board_name)
-	local magic_long="$(get_magic_long "$1")"
-
-	[ "$#" -gt 1 ] && return 1
-
-	case "$board" in
-	armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-rango|armada-385-linksys-shelby|armada-xp-linksys-mamba)
-		[ "$magic_long" != "27051956" -a "$magic_long" != "73797375" ] && {
-			echo "Invalid image type."
-			return 1
-		}
-		return 0;
-		;;
-	armada-388-clearfog)
-		platform_check_image_clearfog "$ARGV"
-		return $?
-		;;
-	esac
-
-	echo "Sysupgrade is not yet supported on $board."
-	return 1
+	return 0
 }
 
 platform_do_upgrade() {
