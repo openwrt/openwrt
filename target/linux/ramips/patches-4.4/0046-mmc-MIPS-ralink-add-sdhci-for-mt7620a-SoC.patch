@@ -3906,7 +3906,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    host->mrq = mrq;    
 +
 +    if (msdc_do_request(mmc,mrq)) {  	
-+        if(host->hw->flags & MSDC_REMOVABLE && CONFIG_SOC_MT7621 && mrq->data && mrq->data->error) {
++        if(host->hw->flags & MSDC_REMOVABLE && ralink_soc == MT762X_SOC_MT7621AT && mrq->data && mrq->data->error) {
 +            msdc_tune_request(mmc,mrq);                                    	
 +        }        	
 +    }
