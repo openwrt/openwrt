@@ -51,6 +51,9 @@ endef
 
 HOST_BUILD_PREFIX := $(STAGING_DIR_HOST)
 
+CONFIGURE_VARS += \
+	grub_build_mkfont_excuse="don't want fonts"
+
 CONFIGURE_ARGS += \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--disable-werror \
@@ -59,7 +62,11 @@ CONFIGURE_ARGS += \
 	--disable-libzfs \
 	--disable-grub-mkfont
 
+HOST_CONFIGURE_VARS += \
+	grub_build_mkfont_excuse="don't want fonts"
+
 HOST_CONFIGURE_ARGS += \
+	--disable-grub-mkfont \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--sbindir="$(STAGING_DIR_HOST)/bin" \
 	--disable-werror \
