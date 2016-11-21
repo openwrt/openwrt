@@ -223,7 +223,7 @@
  Active  mips        mips32         vrx200      avm             fb3370              fb3370_sfspl                         fb3370:SYS_BOOT_SFSPL                                                                                                             Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 --- /dev/null
 +++ b/include/configs/vgv7519.h
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,64 @@
 +/*
 + * This file is released under the terms of GPL v2 and any later version.
 + * See the file COPYING in the root directory of the source tree for details.
@@ -244,6 +244,8 @@
 +#define CONFIG_LTQ_SUPPORT_ETHERNET	/* Enable ethernet */
 +
 +#define CONFIG_LTQ_SUPPORT_NOR_FLASH	/* Have a parallel NOR flash */
++
++#define CONFIG_SYS_BOOTM_LEN		0x1000000	/* 16 MB */
 +
 +#define CONFIG_SYS_MAX_FLASH_BANKS	2	/* max number of memory banks */
 +#define CONFIG_SYS_FLASH_BANKS_LIST { CONFIG_SYS_FLASH_BASE, CONFIG_SYS_FLASH2_BASE }
