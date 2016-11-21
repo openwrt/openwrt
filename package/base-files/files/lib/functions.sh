@@ -178,7 +178,7 @@ default_prerm() {
 			if [ "$PKG_UPGRADE" != "1" ]; then
 				"$i" disable
 			fi
-			"$i" stop
+			"$i" stop || /bin/true
 		fi
 	done
 }
