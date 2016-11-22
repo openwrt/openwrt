@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnetfilter_queue
-PKG_VERSION:=1.0.2
+PKG_VERSION:=2016-07-03
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:= \
-	http://www.netfilter.org/projects/libnetfilter_queue/files/ \
-	ftp://ftp.netfilter.org/pub/libnetfilter_queue/
-PKG_MD5SUM:=df09befac35cb215865b39a36c96a3fa
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL=http://git.netfilter.org/libnetfilter_queue
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=981025e103d887fb6a9c9bb49c74ec323108d098
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.xz
 
 PKG_FIXUP:=autoreconf
 PKG_LICENSE:=GPL-2.0+
