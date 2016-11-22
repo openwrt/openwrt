@@ -25,13 +25,14 @@ for (feed in customFeeds) {
 properties([
     buildDiscarder(logRotator(numToKeepStr: '5')),
     parameters([
-        booleanParam(defaultValue: false, description: 'Build extra tools such as toolchain, \
-            SDK and Image builder', name: 'BUILD_TOOLS'),
-        booleanParam(defaultValue: false, description: 'Build *all* packages for opkg. Warning \
-            this will take a very long time!', name: 'ALL_PACKAGES'),
-        stringParam(defaultValue: 'target/linux/pistachio/creator-platform-default-cascoda.config', \
-            description: 'Config file to use', name: "DEFCONFIG_FILE"),
-        stringParam(defaultValue: '', description: 'Set version, if left blank ci build number will be used.', \
+        booleanParam(defaultValue: false,
+            description: 'Build extra tools such as toolchain, SDK and Image builder',
+            name: 'BUILD_TOOLS'),
+        booleanParam(defaultValue: false, description: 'Build *all* packages for opkg',
+            name: 'ALL_PACKAGES'),
+        stringParam(defaultValue: 'target/linux/pistachio/creator-platform-default-cascoda.config',
+            description: 'Config file to use', name: "CONFIG_FILE"),
+        stringParam(defaultValue: '', description: 'Set version, if blank job number will be used.',
             name: 'VERSION'),
     ] + feedParams)
 ])
@@ -62,14 +63,14 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
             ])
 
             // Default config
-            sh "cp ${env.DEFCONFIG_FILE} .config"
+            sh "cp ${params.CONFIG_FILE?.trim()} .config"
 
             // Versioning
-            sh "sed -i 's/.*CONFIG_VERSION_NUMBER.*/CONFIG_VERSION_NUMBER=\"${env.VERSION?.trim() ?: 'j' + env.BUILD_NUMBER}\"/g' .config"
+            sh "sed -i 's/.*CONFIG_VERSION_NUMBER.*/CONFIG_VERSION_NUMBER=\"${params.VERSION?.trim() ?: 'j' + env.BUILD_NUMBER}\"/g' .config"
             sh 'scripts/getver.sh > version'
 
-            // Build tools
-            if (env.BUILD_TOOLS == 'true') {
+            // Build tools/sdks
+            if (params.BUILD_TOOLS == 'true') {
                 echo 'Enabling toolchain, image builder and sdk creation'
                 sh 'echo \'' \
                  + 'CONFIG_MAKE_TOOLCHAIN=y\n' \
@@ -80,11 +81,10 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
 
             // Build all (for opkg)
             // TODO grab vault creds and mod config to use OPKGSMIME
-            if (env.ALL_PACKAGES == 'true'){  // TODO seems like a bug that bool is a string
+            if (params.ALL_PACKAGES == 'true'){
                 echo 'Enabling all user and kernel packages'
                 sh 'echo \'' \
                  + 'CONFIG_ALL=y\n' \
-                 + 'CONFIG_ALL_KMODS=y\n' \
                  + '\' >> .config'
             }
 
@@ -117,7 +117,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
 
             // If specified override each feed with local clone
             for (feed in customFeeds) {
-                if (env."OVERRIDE_${feed[1].toUpperCase()}"?.trim()){
+                if (params."OVERRIDE_${feed[1].toUpperCase()}"?.trim()){
                     dir("feed-${feed[1]}") {
                         checkout([
                             $class: 'GitSCM',
@@ -143,7 +143,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
         stage('Build') {
             // Attempt to build quickly and reliably
             try {
-                sh "make -j4 V=s ${env.ALL_PACKAGES ? 'IGNORE_ERRORS=m' : null}"
+                sh "make -j4 V=s ${params.ALL_PACKAGES == 'true'  ? 'IGNORE_ERRORS=m' : ''}"
             } catch (hudson.AbortException err) {
                 // TODO BUG JENKINS-28822
                 if(err.getMessage().contains('script returned exit code 143')) {
@@ -151,7 +151,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
                 }
                 echo 'Parallel build failed, attempting to continue in  single threaded mode'
             }
-            sh "make -j1 V=s ${env.ALL_PACKAGES ? 'IGNORE_ERRORS=m' : null}"
+            sh "make -j1 V=s ${params.ALL_PACKAGES == 'true'  ? 'IGNORE_ERRORS=m' : ''}"
         }
 
         stage('Upload') {
