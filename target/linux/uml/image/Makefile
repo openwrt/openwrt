@@ -11,7 +11,12 @@ define Image/Prepare
 	cp $(LINUX_DIR)/linux $(KDIR)/vmlinux.elf
 endef
 
+define Image/Build/squashfs
+	dd if=/dev/zero of=$(KDIR)/root.squashfs bs=1024k count=0 seek=$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+endef
+
 define Image/Build
+	$(call Image/Build/$(1))
 	cp $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).img
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 endef

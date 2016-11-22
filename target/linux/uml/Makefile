@@ -20,7 +20,7 @@ ARCH:=$(shell uname -m | sed \
 )
 BOARD:=uml
 BOARDNAME:=User Mode Linux
-FEATURES:=ext4 audio
+FEATURES:=squashfs ext4 audio
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 KERNEL_PATCHVER:=4.4
@@ -35,7 +35,7 @@ endef
 
 LINUX_TARGET_CONFIG:=$(CURDIR)/config/$(ARCH)
 
-DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim
+DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim mkf2fs e2fsprogs
 
 endif
 
