@@ -115,8 +115,6 @@ TARGET_DEVICES += witi
 
 define Device/witi-nand
   DTS := WITI-NAND
-  BLOCKSIZE := 128KiB
-  PAGESIZE := 2048
   FILESYSTEMS := squashfs
   IMAGE_SIZE := 132382720
   KERNEL := $(KERNEL_DTB) | pad-offset 131072 64 | uImage lzma
