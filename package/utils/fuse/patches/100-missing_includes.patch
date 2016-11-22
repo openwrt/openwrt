@@ -1,13 +1,3 @@
---- a/lib/mount_util.c
-+++ b/lib/mount_util.c
-@@ -16,6 +16,7 @@
- #include <errno.h>
- #include <fcntl.h>
- #include <limits.h>
-+#include <paths.h>
- #ifndef __NetBSD__
- #include <mntent.h>
- #endif
 --- a/include/fuse.h
 +++ b/include/fuse.h
 @@ -32,6 +32,7 @@
