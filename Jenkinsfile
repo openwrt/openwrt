@@ -70,7 +70,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
             sh 'scripts/getver.sh > version'
 
             // Build tools/sdks
-            if (params.BUILD_TOOLS == 'true') {
+            if (params.BUILD_TOOLS) {
                 echo 'Enabling toolchain, image builder and sdk creation'
                 sh 'echo \'' \
                  + 'CONFIG_MAKE_TOOLCHAIN=y\n' \
@@ -81,7 +81,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
 
             // Build all (for opkg)
             // TODO grab vault creds and mod config to use OPKGSMIME
-            if (params.ALL_PACKAGES == 'true'){
+            if (params.ALL_PACKAGES){
                 echo 'Enabling all user and kernel packages'
                 sh 'echo \'' \
                  + 'CONFIG_ALL=y\n' \
@@ -143,7 +143,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
         stage('Build') {
             // Attempt to build quickly and reliably
             try {
-                sh "make -j4 V=s ${params.ALL_PACKAGES == 'true'  ? 'IGNORE_ERRORS=m' : ''}"
+                sh "make -j4 V=s ${params.ALL_PACKAGES ? 'IGNORE_ERRORS=m' : ''}"
             } catch (hudson.AbortException err) {
                 // TODO BUG JENKINS-28822
                 if(err.getMessage().contains('script returned exit code 143')) {
@@ -151,7 +151,7 @@ node('docker && imgtec') {  // Only run on internal slaves as build takes a lot 
                 }
                 echo 'Parallel build failed, attempting to continue in  single threaded mode'
             }
-            sh "make -j1 V=s ${params.ALL_PACKAGES == 'true'  ? 'IGNORE_ERRORS=m' : ''}"
+            sh "make -j1 V=s ${params.ALL_PACKAGES ? 'IGNORE_ERRORS=m' : ''}"
         }
 
         stage('Upload') {
