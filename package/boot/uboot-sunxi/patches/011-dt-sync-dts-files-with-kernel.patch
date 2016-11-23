@@ -103,8 +103,8 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  	sun4i-a10-pov-protab2-ips9.dtb
  dtb-$(CONFIG_MACH_SUN5I) += \
  	sun5i-a10s-auxtek-t003.dtb \
-@@ -154,7 +155,9 @@ dtb-$(CONFIG_MACH_SUN6I) += \
- 	sun6i-a31-mixtile-loftq.dtb \
+@@ -155,7 +156,9 @@ dtb-$(CONFIG_MACH_SUN6I) += \
+ 	sun6i-a31-pangolin.dtb \
  	sun6i-a31s-cs908.dtb \
  	sun6i-a31s-primo81.dtb \
 -	sun6i-a31s-sinovoip-bpi-m2.dtb
@@ -114,7 +114,7 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  dtb-$(CONFIG_MACH_SUN7I) += \
  	sun7i-a20-ainol-aw1.dtb \
  	sun7i-a20-bananapi.dtb \
-@@ -163,6 +166,8 @@ dtb-$(CONFIG_MACH_SUN7I) += \
+@@ -164,6 +167,8 @@ dtb-$(CONFIG_MACH_SUN7I) += \
  	sun7i-a20-cubietruck.dtb \
  	sun7i-a20-hummingbird.dtb \
  	sun7i-a20-i12-tvbox.dtb \
@@ -123,7 +123,7 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  	sun7i-a20-lamobo-r1.dtb \
  	sun7i-a20-m3.dtb \
  	sun7i-a20-m5.dtb \
-@@ -189,8 +194,10 @@ dtb-$(CONFIG_MACH_SUN8I_A33) += \
+@@ -190,8 +195,10 @@ dtb-$(CONFIG_MACH_SUN8I_A33) += \
  	sun8i-a33-sinlinx-sina33.dtb
  dtb-$(CONFIG_MACH_SUN8I_A83T) += \
  	sun8i-a83t-allwinner-h8homlet-v2.dtb \
@@ -2486,7 +2486,7 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  			clock-output-names = "usb_phy0", "usb_phy1", "usb_phy2",
  					     "usb_ohci0", "usb_ohci1",
  					     "usb_ohci2";
-@@ -677,6 +709,16 @@
+@@ -684,6 +716,16 @@
  				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
  			};
  
@@ -2503,7 +2503,7 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  			gmac_pins_mii_a: gmac_mii@0 {
  				allwinner,pins = "PA0", "PA1", "PA2", "PA3",
  						"PA8", "PA9", "PA11",
-@@ -754,6 +796,13 @@
+@@ -761,6 +803,13 @@
  			reg = <0x01c20ca0 0x20>;
  		};
  
@@ -2517,7 +2517,7 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  		rtp: rtp@01c25000 {
  			compatible = "allwinner,sun6i-a31-ts";
  			reg = <0x01c25000 0x100>;
-@@ -900,6 +949,16 @@
+@@ -907,6 +956,16 @@
  			#size-cells = <0>;
  		};
  
@@ -2534,7 +2534,7 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  		timer@01c60000 {
  			compatible = "allwinner,sun6i-a31-hstimer",
  				     "allwinner,sun7i-a20-hstimer";
-@@ -1061,7 +1120,7 @@
+@@ -1068,7 +1127,7 @@
  			resets = <&apb0_rst 0>;
  			gpio-controller;
  			interrupt-controller;

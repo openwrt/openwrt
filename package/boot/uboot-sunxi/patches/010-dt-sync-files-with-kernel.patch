@@ -18,9 +18,6 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  create mode 100644 include/dt-bindings/clock/sun4i-a10-pll2.h
  create mode 100644 include/dt-bindings/input/linux-event-codes.h
 
-diff --git a/include/dt-bindings/clock/sun4i-a10-pll2.h b/include/dt-bindings/clock/sun4i-a10-pll2.h
-new file mode 100644
-index 0000000..071c811
 --- /dev/null
 +++ b/include/dt-bindings/clock/sun4i-a10-pll2.h
 @@ -0,0 +1,53 @@
@@ -77,8 +74,6 @@ index 0000000..071c811
 +#define SUN4I_A10_PLL2_8X	3
 +
 +#endif /* __DT_BINDINGS_CLOCK_SUN4I_A10_PLL2_H_ */
-diff --git a/include/dt-bindings/input/input.h b/include/dt-bindings/input/input.h
-index 042e7b3..a214133 100644
 --- a/include/dt-bindings/input/input.h
 +++ b/include/dt-bindings/input/input.h
 @@ -9,515 +9,7 @@
@@ -598,9 +593,6 @@ index 042e7b3..a214133 100644
  
  #define MATRIX_KEY(row, col, code)	\
  	((((row) & 0xFF) << 24) | (((col) & 0xFF) << 16) | ((code) & 0xFFFF))
-diff --git a/include/dt-bindings/input/linux-event-codes.h b/include/dt-bindings/input/linux-event-codes.h
-new file mode 100644
-index 0000000..87cf351
 --- /dev/null
 +++ b/include/dt-bindings/input/linux-event-codes.h
 @@ -0,0 +1,805 @@

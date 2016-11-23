@@ -28,11 +28,9 @@ Tested-by: Michael Haas <haas@computerlinguist.org>
  board/sunxi/gmac.c                          | 14 +-------------
  4 files changed, 12 insertions(+), 41 deletions(-)
 
-diff --git a/arch/arm/cpu/armv7/sunxi/board.c b/arch/arm/cpu/armv7/sunxi/board.c
-index e80785b..7653148 100644
 --- a/arch/arm/cpu/armv7/sunxi/board.c
 +++ b/arch/arm/cpu/armv7/sunxi/board.c
-@@ -152,6 +152,7 @@ void s_init(void)
+@@ -136,6 +136,7 @@ void s_init(void)
  	timer_init();
  	gpio_init();
  	i2c_init_board();
@@ -40,7 +38,7 @@ index e80785b..7653148 100644
  }
  
  #ifdef CONFIG_SPL_BUILD
-@@ -259,30 +260,3 @@ void enable_caches(void)
+@@ -243,30 +244,3 @@ void enable_caches(void)
  	dcache_enable();
  }
  #endif
@@ -71,8 +69,6 @@ index e80785b..7653148 100644
 -	return 0;
 -}
 -#endif
-diff --git a/arch/arm/include/asm/arch-sunxi/sys_proto.h b/arch/arm/include/asm/arch-sunxi/sys_proto.h
-index 9df3744..a373319 100644
 --- a/arch/arm/include/asm/arch-sunxi/sys_proto.h
 +++ b/arch/arm/include/asm/arch-sunxi/sys_proto.h
 @@ -24,6 +24,10 @@ void sdelay(unsigned long);
@@ -87,8 +83,6 @@ index 9df3744..a373319 100644
 +#endif
  
  #endif
-diff --git a/board/sunxi/board.c b/board/sunxi/board.c
-index 80eae9c..e16718f 100644
 --- a/board/sunxi/board.c
 +++ b/board/sunxi/board.c
 @@ -90,6 +90,11 @@ int board_init(void)
@@ -103,8 +97,6 @@ index 80eae9c..e16718f 100644
  	/* Uses dm gpio code so do this here and not in i2c_init_board() */
  	return soft_i2c_board_init();
  }
-diff --git a/board/sunxi/gmac.c b/board/sunxi/gmac.c
-index 4e222d8..69eb8ff 100644
 --- a/board/sunxi/gmac.c
 +++ b/board/sunxi/gmac.c
 @@ -6,7 +6,7 @@
