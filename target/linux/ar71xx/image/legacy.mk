@@ -298,8 +298,6 @@ define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
 	cp $(KDIR)/vmlinux $(VMLINUX).bin
 	dd if=$(KDIR)/vmlinux.bin.lzma of=$(VMLINUX).lzma bs=65536 conv=sync
-	dd if=$(KDIR)/vmlinux.bin.gz of=$(VMLINUX).gz bs=65536 conv=sync
-	$(call MkuImage,gzip,,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
 	cp $(KDIR)/loader-generic.elf $(VMLINUX)-lzma.elf
 	-mkdir -p $(KDIR_TMP)
@@ -309,8 +307,6 @@ define Image/BuildKernel/Initramfs
 	cp $(KDIR)/vmlinux-initramfs.elf $(VMLINUX)-initramfs.elf
 	cp $(KDIR)/vmlinux-initramfs $(VMLINUX)-initramfs.bin
 	dd if=$(KDIR)/vmlinux-initramfs.bin.lzma of=$(VMLINUX)-initramfs.lzma bs=65536 conv=sync
-	dd if=$(KDIR)/vmlinux-initramfs.bin.gz of=$(VMLINUX)-initramfs.gz bs=65536 conv=sync
-	$(call MkuImage,gzip,,$(KDIR)/vmlinux-initramfs.bin.gz,$(UIMAGE)-initramfs-gzip.bin)
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux-initramfs.bin.lzma,$(UIMAGE)-initramfs-lzma.bin)
 	cp $(KDIR)/loader-generic-initramfs.elf $(VMLINUX)-initramfs-lzma.elf
 	$(call Image/Build/Initramfs)
@@ -1072,10 +1068,8 @@ define Image/Build/squashfs
 endef
 
 define Image/Prepare
-	gzip -9n -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	gzip -9n -c $(KDIR)/vmlinux-initramfs > $(KDIR)/vmlinux-initramfs.bin.gz
 	$(call CompressLzma,$(KDIR)/vmlinux-initramfs,$(KDIR)/vmlinux-initramfs.bin.lzma)
 	$(call Image/BuildLoader,generic,elf,,,-initramfs)
 endif
