@@ -73,7 +73,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +	};
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
-@@ -106,3 +106,11 @@ config MSM_MMCC_8974
+@@ -135,3 +135,11 @@ config MSM_MMCC_8974
  	  Support for the multimedia clock controller on msm8974 devices.
  	  Say Y if you want to support multimedia devices such as display,
  	  graphics, video encode/decode, camera, etc.
@@ -87,10 +87,10 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +	  such as MSM8974, APQ8084, etc.
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -23,3 +23,4 @@ obj-$(CONFIG_MSM_LCC_8960) += lcc-msm896
- obj-$(CONFIG_MSM_GCC_8974) += gcc-msm8974.o
- obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8960.o
+@@ -25,3 +25,4 @@ obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8
  obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8974.o
+ obj-$(CONFIG_QCOM_CLK_SMD_RPM) += clk-smd-rpm.o
+ obj-$(CONFIG_QCOM_CLK_RPM) += clk-rpm.o
 +obj-$(CONFIG_QCOM_HFPLL) += hfpll.o
 --- /dev/null
 +++ b/drivers/clk/qcom/hfpll.c

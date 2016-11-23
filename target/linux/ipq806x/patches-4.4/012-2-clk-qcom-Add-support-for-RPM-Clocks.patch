@@ -1,28 +1,16 @@
-!This is the adjusted version of patch that has been submitted to upstream and that, unfortunately, provides support for RPM clocks only for apq8064 board.
-
-!TODO: make a patch that adds support for ipq806x along with apq8064 and not replaces it.
-
-From patchwork Wed Nov  2 15:56:57 2016
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Subject: [v9,2/3] clk: qcom: Add support for RPM Clocks
+From 872f91b5ea720c72f81fb46d353c43ecb3263ffa Mon Sep 17 00:00:00 2001
 From: Georgi Djakov <georgi.djakov@linaro.org>
-X-Patchwork-Id: 9409425
-Message-Id: <20161102155658.32203-3-georgi.djakov@linaro.org>
-To: sboyd@codeaurora.org, mturquette@baylibre.com
-Cc: linux-clk@vger.kernel.org, devicetree@vger.kernel.org,
- robh+dt@kernel.org, mark.rutland@arm.com,
- linux-kernel@vger.kernel.org, linux-arm-msm@vger.kernel.org,
- georgi.djakov@linaro.org
-Date: Wed,  2 Nov 2016 17:56:57 +0200
+Date: Wed, 2 Nov 2016 17:56:57 +0200
+Subject: clk: qcom: Add support for RPM Clocks
 
 This adds initial support for clocks controlled by the Resource
 Power Manager (RPM) processor on some Qualcomm SoCs, which use
 the qcom_rpm driver to communicate with RPM.
-Such platforms are ipq806x and msm8960.
+Such platforms are apq8064 and msm8960.
 
 Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
+Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 ---
  .../devicetree/bindings/clock/qcom,rpmcc.txt       |   1 +
  drivers/clk/qcom/Kconfig                           |  13 +
@@ -32,18 +20,13 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  5 files changed, 528 insertions(+)
  create mode 100644 drivers/clk/qcom/clk-rpm.c
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-arm-msm" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
 --- a/Documentation/devicetree/bindings/clock/qcom,rpmcc.txt
 +++ b/Documentation/devicetree/bindings/clock/qcom,rpmcc.txt
 @@ -11,6 +11,7 @@ Required properties :
                 compatible "qcom,rpmcc" should be also included.
  
  			"qcom,rpmcc-msm8916", "qcom,rpmcc"
-+			"qcom,rpmcc-ipq806x", "qcom,rpmcc"
++			"qcom,rpmcc-apq8064", "qcom,rpmcc"
  
  - #clock-cells : shall contain 1
  
@@ -71,14 +54,14 @@ More majordomo info at  http://vger.kernel.org/majordomo-info.html
  	depends on COMMON_CLK_QCOM && QCOM_SMD_RPM
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -29,3 +29,4 @@ obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8
- obj-$(CONFIG_QCOM_HFPLL) += hfpll.o
- obj-$(CONFIG_KRAITCC) += krait-cc.o
+@@ -23,3 +23,4 @@ obj-$(CONFIG_MSM_GCC_8974) += gcc-msm897
+ obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8960.o
+ obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8974.o
  obj-$(CONFIG_QCOM_CLK_SMD_RPM) += clk-smd-rpm.o
 +obj-$(CONFIG_QCOM_CLK_RPM) += clk-rpm.o
 --- /dev/null
 +++ b/drivers/clk/qcom/clk-rpm.c
-@@ -0,0 +1,486 @@
+@@ -0,0 +1,489 @@
 +/*
 + * Copyright (c) 2016, Linaro Limited
 + * Copyright (c) 2014, The Linux Foundation. All rights reserved.
@@ -429,42 +412,45 @@ More majordomo info at  http://vger.kernel.org/majordomo-info.html
 +	.recalc_rate	= clk_rpm_recalc_rate,
 +};
 +
-+/* ipq806x */
-+DEFINE_CLK_RPM(ipq806x, afab_clk, afab_a_clk, QCOM_RPM_APPS_FABRIC_CLK);
-+DEFINE_CLK_RPM(ipq806x, cfpb_clk, cfpb_a_clk, QCOM_RPM_CFPB_CLK);
-+DEFINE_CLK_RPM(ipq806x, daytona_clk, daytona_a_clk, QCOM_RPM_DAYTONA_FABRIC_CLK);
-+DEFINE_CLK_RPM(ipq806x, ebi1_clk, ebi1_a_clk, QCOM_RPM_EBI1_CLK);
-+DEFINE_CLK_RPM(ipq806x, nss_fabric_0_clk, nss_fabric_0_a_clk, QCOM_RPM_NSS_FABRIC_0_CLK);
-+DEFINE_CLK_RPM(ipq806x, nss_fabric_1_clk, nss_fabric_1_a_clk, QCOM_RPM_NSS_FABRIC_1_CLK);
-+DEFINE_CLK_RPM(ipq806x, sfab_clk, sfab_a_clk, QCOM_RPM_SYS_FABRIC_CLK);
-+DEFINE_CLK_RPM(ipq806x, sfpb_clk, sfpb_a_clk, QCOM_RPM_SFPB_CLK);
++/* apq8064 */
++DEFINE_CLK_RPM(apq8064, afab_clk, afab_a_clk, QCOM_RPM_APPS_FABRIC_CLK);
++DEFINE_CLK_RPM(apq8064, cfpb_clk, cfpb_a_clk, QCOM_RPM_CFPB_CLK);
++DEFINE_CLK_RPM(apq8064, daytona_clk, daytona_a_clk, QCOM_RPM_DAYTONA_FABRIC_CLK);
++DEFINE_CLK_RPM(apq8064, ebi1_clk, ebi1_a_clk, QCOM_RPM_EBI1_CLK);
++DEFINE_CLK_RPM(apq8064, mmfab_clk, mmfab_a_clk, QCOM_RPM_MM_FABRIC_CLK);
++DEFINE_CLK_RPM(apq8064, mmfpb_clk, mmfpb_a_clk, QCOM_RPM_MMFPB_CLK);
++DEFINE_CLK_RPM(apq8064, sfab_clk, sfab_a_clk, QCOM_RPM_SYS_FABRIC_CLK);
++DEFINE_CLK_RPM(apq8064, sfpb_clk, sfpb_a_clk, QCOM_RPM_SFPB_CLK);
++DEFINE_CLK_RPM(apq8064, qdss_clk, qdss_a_clk, QCOM_RPM_QDSS_CLK);
 +
-+static struct clk_rpm *ipq806x_clks[] = {
-+	[RPM_APPS_FABRIC_CLK] = &ipq806x_afab_clk,
-+	[RPM_APPS_FABRIC_A_CLK] = &ipq806x_afab_a_clk,
-+	[RPM_CFPB_CLK] = &ipq806x_cfpb_clk,
-+	[RPM_CFPB_A_CLK] = &ipq806x_cfpb_a_clk,
-+	[RPM_DAYTONA_FABRIC_CLK] = &ipq806x_daytona_clk,
-+	[RPM_DAYTONA_FABRIC_A_CLK] = &ipq806x_daytona_a_clk,
-+	[RPM_EBI1_CLK] = &ipq806x_ebi1_clk,
-+	[RPM_EBI1_A_CLK] = &ipq806x_ebi1_a_clk,
-+	[RPM_NSS_FABRIC_0_CLK] = &ipq806x_nss_fabric_0_clk,
-+	[RPM_NSS_FABRIC_0_A_CLK] = &ipq806x_nss_fabric_0_a_clk,
-+	[RPM_NSS_FABRIC_1_CLK] = &ipq806x_nss_fabric_1_clk,
-+	[RPM_NSS_FABRIC_1_A_CLK] = &ipq806x_nss_fabric_1_a_clk,
-+	[RPM_SYS_FABRIC_CLK] = &ipq806x_sfab_clk,
-+	[RPM_SYS_FABRIC_A_CLK] = &ipq806x_sfab_a_clk,
-+	[RPM_SFPB_CLK] = &ipq806x_sfpb_clk,
-+	[RPM_SFPB_A_CLK] = &ipq806x_sfpb_a_clk,
++static struct clk_rpm *apq8064_clks[] = {
++	[RPM_APPS_FABRIC_CLK] = &apq8064_afab_clk,
++	[RPM_APPS_FABRIC_A_CLK] = &apq8064_afab_a_clk,
++	[RPM_CFPB_CLK] = &apq8064_cfpb_clk,
++	[RPM_CFPB_A_CLK] = &apq8064_cfpb_a_clk,
++	[RPM_DAYTONA_FABRIC_CLK] = &apq8064_daytona_clk,
++	[RPM_DAYTONA_FABRIC_A_CLK] = &apq8064_daytona_a_clk,
++	[RPM_EBI1_CLK] = &apq8064_ebi1_clk,
++	[RPM_EBI1_A_CLK] = &apq8064_ebi1_a_clk,
++	[RPM_MM_FABRIC_CLK] = &apq8064_mmfab_clk,
++	[RPM_MM_FABRIC_A_CLK] = &apq8064_mmfab_a_clk,
++	[RPM_MMFPB_CLK] = &apq8064_mmfpb_clk,
++	[RPM_MMFPB_A_CLK] = &apq8064_mmfpb_a_clk,
++	[RPM_SYS_FABRIC_CLK] = &apq8064_sfab_clk,
++	[RPM_SYS_FABRIC_A_CLK] = &apq8064_sfab_a_clk,
++	[RPM_SFPB_CLK] = &apq8064_sfpb_clk,
++	[RPM_SFPB_A_CLK] = &apq8064_sfpb_a_clk,
++	[RPM_QDSS_CLK] = &apq8064_qdss_clk,
++	[RPM_QDSS_A_CLK] = &apq8064_qdss_a_clk,
 +};
 +
-+static const struct rpm_clk_desc rpm_clk_ipq806x = {
-+	.clks = ipq806x_clks,
-+	.num_clks = ARRAY_SIZE(ipq806x_clks),
++static const struct rpm_clk_desc rpm_clk_apq8064 = {
++	.clks = apq8064_clks,
++	.num_clks = ARRAY_SIZE(apq8064_clks),
 +};
 +
 +static const struct of_device_id rpm_clk_match_table[] = {
-+	{ .compatible = "qcom,rpmcc-ipq806x", .data = &rpm_clk_ipq806x },
++	{ .compatible = "qcom,rpmcc-apq8064", .data = &rpm_clk_apq8064 },
 +	{ }
 +};
 +MODULE_DEVICE_TABLE(of, rpm_clk_match_table);
@@ -522,7 +508,7 @@ More majordomo info at  http://vger.kernel.org/majordomo-info.html
 +		ret = devm_clk_hw_register(&pdev->dev, &rpm_clks[i]->hw);
 +		if (ret)
 +			goto err;
-+		}
++	}
 +
 +	ret = of_clk_add_hw_provider(pdev->dev.of_node, of_clk_hw_onecell_get,
 +				     data);
@@ -567,11 +553,11 @@ More majordomo info at  http://vger.kernel.org/majordomo-info.html
 +MODULE_ALIAS("platform:qcom-clk-rpm");
 --- a/include/dt-bindings/clock/qcom,rpmcc.h
 +++ b/include/dt-bindings/clock/qcom,rpmcc.h
-@@ -14,6 +14,28 @@
+@@ -14,6 +14,30 @@
  #ifndef _DT_BINDINGS_CLK_MSM_RPMCC_H
  #define _DT_BINDINGS_CLK_MSM_RPMCC_H
  
-+/* ipq806x */
++/* apq8064 */
 +#define RPM_PXO_CLK				0
 +#define RPM_PXO_A_CLK				1
 +#define RPM_CXO_CLK				2
@@ -580,18 +566,20 @@ More majordomo info at  http://vger.kernel.org/majordomo-info.html
 +#define RPM_APPS_FABRIC_A_CLK			5
 +#define RPM_CFPB_CLK				6
 +#define RPM_CFPB_A_CLK				7
-+#define RPM_DAYTONA_FABRIC_CLK			8
-+#define RPM_DAYTONA_FABRIC_A_CLK		9
-+#define RPM_EBI1_CLK				10
-+#define RPM_EBI1_A_CLK				11
-+#define RPM_NSS_FABRIC_0_CLK			12
-+#define RPM_NSS_FABRIC_0_A_CLK			13
-+#define RPM_NSS_FABRIC_1_CLK			14
-+#define RPM_NSS_FABRIC_1_A_CLK			15
-+#define RPM_SYS_FABRIC_CLK			16
-+#define RPM_SYS_FABRIC_A_CLK			17
-+#define RPM_SFPB_CLK				18
-+#define RPM_SFPB_A_CLK				19
++#define RPM_QDSS_CLK				8
++#define RPM_QDSS_A_CLK				9
++#define RPM_DAYTONA_FABRIC_CLK			10
++#define RPM_DAYTONA_FABRIC_A_CLK		11
++#define RPM_EBI1_CLK				12
++#define RPM_EBI1_A_CLK				13
++#define RPM_MM_FABRIC_CLK			14
++#define RPM_MM_FABRIC_A_CLK			15
++#define RPM_MMFPB_CLK				16
++#define RPM_MMFPB_A_CLK				17
++#define RPM_SYS_FABRIC_CLK			18
++#define RPM_SYS_FABRIC_A_CLK			19
++#define RPM_SFPB_CLK				20
++#define RPM_SFPB_A_CLK				21
 +
  /* msm8916 */
  #define RPM_SMD_XO_CLK_SRC				0

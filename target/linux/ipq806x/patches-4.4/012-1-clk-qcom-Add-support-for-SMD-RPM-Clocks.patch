@@ -117,10 +117,10 @@ More majordomo info at  http://vger.kernel.org/majordomo-info.html
  	select QCOM_GDSC
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -28,3 +28,4 @@ obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8
+@@ -22,3 +22,4 @@ obj-$(CONFIG_MSM_LCC_8960) += lcc-msm896
+ obj-$(CONFIG_MSM_GCC_8974) += gcc-msm8974.o
+ obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8960.o
  obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8974.o
- obj-$(CONFIG_QCOM_HFPLL) += hfpll.o
- obj-$(CONFIG_KRAITCC) += krait-cc.o
 +obj-$(CONFIG_QCOM_CLK_SMD_RPM) += clk-smd-rpm.o
 --- /dev/null
 +++ b/drivers/clk/qcom/clk-smd-rpm.c
