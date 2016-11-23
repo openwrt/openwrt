@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2013 OpenWrt.org
+# Copyright (C) 2009-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,17 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnetfilter_conntrack
-PKG_VERSION:=1.0.4
+PKG_VERSION:=1.0.6
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libnetfilter_conntrack/files/ \
 	ftp://ftp.netfilter.org/pub/libnetfilter_conntrack/
-PKG_MD5SUM:=18cf80c4b339a3285e78822dbd4f08d7
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_MD5SUM:=7139c5f408dd9606ffecfd5dcda8175b
 
-PKG_FIXUP:=autoreconf
 PKG_LICENSE:=GPL-2.0+
 
 PKG_INSTALL:=1

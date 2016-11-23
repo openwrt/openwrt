@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2011 OpenWrt.org
+# Copyright (C) 2009-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=conntrack-tools
-PKG_VERSION:=1.4.3
+PKG_VERSION:=1.4.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -16,21 +16,15 @@ PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/conntrack-tools/files \
 	ftp://ftp.netfilter.org/pub/conntrack-tools \
 	http://mirrors.evolva.ro/netfilter.org/conntrack-tools
-PKG_MD5SUM:=966a5d8f846ddf5304bcd12685c0707f
+PKG_MD5SUM:=acd9e0b27cf16ae3092ba900e4d7560e
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=GPL-2.0
 
-PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
-
-TAR_OPTIONS += --exclude='*.rej'
 
 PKG_BUILD_DEPENDS:=librpc
 
 include $(INCLUDE_DIR)/package.mk
-
-TARGET_CFLAGS += -D_GNU_SOURCE=1
 
 define Package/conntrack-tools/default
   SECTION:=net
