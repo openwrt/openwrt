@@ -62,7 +62,7 @@ static inline unsigned int genl_family_get_id(struct genl_family *family)
 	if (family->ce_mask & FAMILY_ATTR_ID)
 		return family->gf_id;
 	else
-		return GENL_ID_GENERATE;
+		return 0;
 }
 
 static inline void genl_family_set_id(struct genl_family *family, unsigned int id)
