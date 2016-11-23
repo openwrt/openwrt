@@ -1,4 +1,4 @@
-rootfs_type=$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
+rootfs_type=$(patsubst squashfs-%,squashfs,$(1))
 
 # $(1): rootfs type.
 # $(2): board name.
@@ -134,9 +134,6 @@ define CatFiles
 	if [ $(2) -eq 0 ]; then \
 		filename="$(3)"; fstype=$${filename##*\.}; \
 		case "$${fstype}" in \
-		"jffs2-64k") bs=65536;; \
-		"jffs2-128k") bs=131072;; \
-		"jffs2-256k") bs=262144;; \
 		*) bs=`stat -c%s $(1)`;; \
 		esac; \
 		( dd if=$(1) bs=$${bs} conv=sync;  cat $(3) ) > $(5); \
@@ -872,17 +869,8 @@ define Image/Build/Zcomax
 endef
 
 
-# $(1): template name to be defined, etc. squashfs-only, 64k, 64kraw, etc.
-# $(2): jffs2 blocksize.
-define Jffs2Template
-  define Image/Build/Template/$(1)/jffs2-$(2)
-    $$(call Image/Build/$$(1),jffs2-$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8),$$(9),$$(10))
-  endef
-endef
-
 # $(1): template name to be defined.
 # $(2): squashfs suffix to be used.
-# $(3): jffs2 suffix to be used.
 define BuildTemplate
   # $(1)     : name of build method.
   # $(2)     : board name.
@@ -900,17 +888,16 @@ define BuildTemplate
   define Image/Build/Template/$(1)/squashfs
     $$(call Image/Build/$$(1),squashfs$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8),$$(9),$$(10))
   endef
-  $(if $(3),$(foreach bs,$(3),$(eval $(call Jffs2Template,$(1),$(bs)))))
 endef
 
 $(eval $(call BuildTemplate,squashfs-only))
-$(eval $(call BuildTemplate,64k,-64k,64k))
-$(eval $(call BuildTemplate,64kraw,-raw,64k))
+$(eval $(call BuildTemplate,64k,-64k))
+$(eval $(call BuildTemplate,64kraw,-raw))
 $(eval $(call BuildTemplate,64kraw-nojffs,-raw))
-$(eval $(call BuildTemplate,128k,,128k))
-$(eval $(call BuildTemplate,128kraw,-raw,128k))
-$(eval $(call BuildTemplate,256k,,256k))
-$(eval $(call BuildTemplate,all,,64k 128k 256k))
+$(eval $(call BuildTemplate,128k))
+$(eval $(call BuildTemplate,128kraw,-raw))
+$(eval $(call BuildTemplate,256k))
+$(eval $(call BuildTemplate,all))
 
 ifeq ($(SUBTARGET),generic)
 $(eval $(call SingleProfile,ALFA,64k,ALFANX,alfa-nx,ALFA-NX,ttyS0,115200,$$(alfa_mtdlayout_8M),1638400,6291456,vmlinux.gz.uImage,pb9x-2.6.31-jffs2))
@@ -1081,10 +1068,6 @@ define Image/Build/squashfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs-64k 64
 	cp $(KDIR)/root.squashfs-64k $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
-endef
-
-define Image/Build/jffs2
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
 

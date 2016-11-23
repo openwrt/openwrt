@@ -5,8 +5,6 @@
 # See /LICENSE for more information.
 #
 
-JFFS2_BLOCKSIZE = 64k 128k 256k
-
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -101,7 +99,6 @@ define Device/Default
   PROFILES = Default Minimal $$(DEVICE_PROFILE)
   MTDPARTS :=
   BLOCKSIZE := 64k
-  FILESYSTEMS = $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-$$(BLOCKSIZE)
   CONSOLE = ttyS0,115200
   CMDLINE = $$(if $$(BOARDNAME),board=$$(BOARDNAME)) $$(if $$(MTDPARTS),mtdparts=$$(MTDPARTS)) $$(if $$(CONSOLE),console=$$(CONSOLE))
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
