@@ -52,7 +52,7 @@ struct board_info {
 			uint32_t fdt_offset;
 			uint32_t unknown_offset;
 		} mx60;
-	};
+	} u;
 	char *id;
 	char *description;
 };
@@ -72,7 +72,7 @@ static const struct board_info boards[] = {
 		.magic1		= 0x8e73ed8a,
 		.magic2		= 0x8e73ed8a,
 		.imagelen	= 0x00800000,
-		.statichash	= {0xda, 0x39, 0xa3, 0xee, 0x5e,
+		.u.statichash	= {0xda, 0x39, 0xa3, 0xee, 0x5e,
 				   0x6b, 0x4b, 0x0d, 0x32, 0x55,
 				   0xbf, 0xef, 0x95, 0x60, 0x18,
 				   0x90, 0xaf, 0xd8, 0x07, 0x09},
@@ -82,7 +82,7 @@ static const struct board_info boards[] = {
 		.magic1		= 0x8e73ed8a,
 		.magic2		= 0x8e73ed8a,
 		.imagelen	= 0x00800000,
-		.statichash	= {0xff, 0xff, 0xff, 0xff, 0xff,
+		.u.statichash	= {0xff, 0xff, 0xff, 0xff, 0xff,
 				   0xff, 0xff, 0xff, 0xff, 0xff,
 				   0xff, 0xff, 0xff, 0xff, 0xff,
 				   0xff, 0xff, 0xff, 0xff, 0xff},
@@ -100,7 +100,7 @@ static const struct board_info boards[] = {
 		 * 4th Row: ? Unused/Unknown ?
 		 * 5th Row: ? Unused/Unknown ?
 		 */
-		.mx60		= {
+		.u.mx60		= {
 			.kernel_offset	= 0x10000,
 			.ramdisk_offset	= 0x3FFC00,
 			.fdt_offset	= 0x0400,
@@ -286,14 +286,14 @@ int main(int argc, char *argv[])
 
 	switch (board->magic2) {
 	case 0xa1f0beef:
-		writel(buf, HDR_OFF_KERNEL_OFFSET, board->mx60.kernel_offset);
-		writel(buf, HDR_OFF_RAMDISK_OFFSET, board->mx60.ramdisk_offset);
-		writel(buf, HDR_OFF_FDT_OFFSET, board->mx60.fdt_offset),
-		writel(buf, HDR_OFF_UNKNOWN_OFFSET, board->mx60.unknown_offset);
+		writel(buf, HDR_OFF_KERNEL_OFFSET, board->u.mx60.kernel_offset);
+		writel(buf, HDR_OFF_RAMDISK_OFFSET, board->u.mx60.ramdisk_offset);
+		writel(buf, HDR_OFF_FDT_OFFSET, board->u.mx60.fdt_offset),
+		writel(buf, HDR_OFF_UNKNOWN_OFFSET, board->u.mx60.unknown_offset);
 		break;
 
 	case 0x8e73ed8a:
-		memcpy(buf + HDR_OFF_STATICHASH, board->statichash, 20);
+		memcpy(buf + HDR_OFF_STATICHASH, board->u.statichash, 20);
 		break;
 	}
 
