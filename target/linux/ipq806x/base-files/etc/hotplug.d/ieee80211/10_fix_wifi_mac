@@ -21,6 +21,9 @@ case "$board" in
 	r7800)
 		echo $(macaddr_add $(mtd_get_mac_binary art 6)  $(($PHYNBR + 1)) ) > /sys${DEVPATH}/macaddress
 		;;
+	vr2600v)
+		echo $(macaddr_add $(mtd_get_mac_binary default-mac 0)  $(($PHYNBR - 1)) ) > /sys${DEVPATH}/macaddress
+		;;
 	*)
 		;;
 esac

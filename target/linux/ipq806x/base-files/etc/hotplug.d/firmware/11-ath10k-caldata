@@ -63,6 +63,9 @@ case "$FIRMWARE" in
          r7800)
 		ath10kcal_extract "art" 4096 12064
 		;;
+	vr2600v)
+		ath10kcal_extract "ART" 4096 12064
+		;;
 	esac
 	;;
 "ath10k/cal-pci-0001:01:00.0.bin")
@@ -81,6 +84,9 @@ case "$FIRMWARE" in
         r7500v2 |\
         r7800)
 		ath10kcal_extract "art" 20480 12064
+		;;
+	vr2600v)
+		ath10kcal_extract "ART" 20480 12064
 		;;
 	esac
 	;;

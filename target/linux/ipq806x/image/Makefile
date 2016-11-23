@@ -224,6 +224,23 @@ define Device/NBG6817
 	$(call Device/ZyXELImage)
 endef
 
-TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 R7500 R7500v2 R7800 NBG6817
+define Device/VR2600v
+	PROFILES += $$(DEVICE_NAME)
+	FILESYSTEMS := squashfs
+	KERNEL_SUFFIX := -uImage
+	KERNEL = kernel-bin | append-dtb | uImage none
+	KERNEL_NAME := zImage
+	KERNEL_SIZE := 2097152
+	DEVICE_DTS := qcom-ipq8064-vr2600v
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := vr2600v
+	DEVICE_TITLE := TP-Link Archer VR2600v
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
+endef
+
+TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 R7500 R7500v2 R7800 NBG6817 VR2600v
 
 $(eval $(call BuildImage))

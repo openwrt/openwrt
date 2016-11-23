@@ -45,6 +45,13 @@ nbg6817)
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:amber:wifi5" "phy0radio"
 	ucidef_set_led_netdev "wan" "WAN" "$board:white:internet" "eth1"
 	;;
+vr2600v)
+	ucidef_set_led_usbport "usb" "USB" "${board}:white:usb" "usb1-port1" "usb2-port1" "usb3-port1" "usb4-port1"
+	ucidef_set_led_switch "lan" "lan" "${board}:white:lan" "switch0" "0x1e"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "${board}:white:wlan2g" "phy0radio"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "${board}:white:wlan5g" "phy1radio"
+	ucidef_set_led_switch "wan" "wan" "${board}:white:wan" "switch0" "0x20"
+	;;
 *)
 	;;
 esac
