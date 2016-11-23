@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2015.10
+PKG_VERSION:=2016.11
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=7c203b0fc3390a122d8e8b75f147eac5
+PKG_MD5SUM:=ca1f6e019d08aff8d0ca1beb2e66737d
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
@@ -72,8 +72,7 @@ UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.img
 endif
 
 define Build/Configure
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		USE_PRIVATE_LIBGCC=yes $(UBOOT_CONFIG)_config
+	$(MAKE) -C $(PKG_BUILD_DIR) $(UBOOT_CONFIG)_defconfig
 endef
 
 define Build/Compile
