@@ -16,8 +16,6 @@ Acked-by: Ian Campbell <ijc@hellion.org.uk>
  drivers/usb/host/ohci-sunxi.c | 15 ++++++++++++---
  2 files changed, 23 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/usb/host/ehci-sunxi.c b/drivers/usb/host/ehci-sunxi.c
-index cf3dcc4..677a5d3 100644
 --- a/drivers/usb/host/ehci-sunxi.c
 +++ b/drivers/usb/host/ehci-sunxi.c
 @@ -17,6 +17,14 @@
@@ -35,7 +33,7 @@ index cf3dcc4..677a5d3 100644
  struct ehci_sunxi_priv {
  	struct ehci_ctrl ehci;
  	int ahb_gate_mask; /* Mask of ahb_gate0 clk gate bits for this hcd */
-@@ -39,8 +47,9 @@ static int ehci_usb_probe(struct udevice *dev)
+@@ -39,8 +47,9 @@ static int ehci_usb_probe(struct udevice
  #ifdef CONFIG_MACH_SUN8I_H3
  	priv->ahb_gate_mask |= 1 << AHB_GATE_OFFSET_USB_OHCI0;
  #endif
@@ -47,8 +45,6 @@ index cf3dcc4..677a5d3 100644
  
  	setbits_le32(&ccm->ahb_gate0, priv->ahb_gate_mask);
  #ifdef CONFIG_SUNXI_GEN_SUN6I
-diff --git a/drivers/usb/host/ohci-sunxi.c b/drivers/usb/host/ohci-sunxi.c
-index 1b1f651..d4fb95a 100644
 --- a/drivers/usb/host/ohci-sunxi.c
 +++ b/drivers/usb/host/ohci-sunxi.c
 @@ -17,6 +17,14 @@
@@ -66,7 +62,7 @@ index 1b1f651..d4fb95a 100644
  struct ohci_sunxi_priv {
  	ohci_t ohci;
  	int ahb_gate_mask; /* Mask of ahb_gate0 clk gate bits for this hcd */
-@@ -42,9 +50,10 @@ static int ohci_usb_probe(struct udevice *dev)
+@@ -42,9 +50,10 @@ static int ohci_usb_probe(struct udevice
  	priv->ahb_gate_mask |= 1 << AHB_GATE_OFFSET_USB_EHCI0;
  #endif
  	priv->usb_gate_mask = CCM_USB_CTRL_OHCI0_CLK;

@@ -4,11 +4,9 @@ Date: Tue, 16 Jun 2015 10:53:11 +0200
 Subject: ARM: sun6i: Support console on UART2 (GPG6/GPG7)
 
 
-diff --git a/arch/arm/cpu/armv7/sunxi/board.c b/arch/arm/cpu/armv7/sunxi/board.c
-index 5f39aa0..99675c3 100644
 --- a/arch/arm/cpu/armv7/sunxi/board.c
 +++ b/arch/arm/cpu/armv7/sunxi/board.c
-@@ -76,6 +76,10 @@ static int gpio_init(void)
+@@ -88,6 +88,10 @@ static int gpio_init(void)
  	sunxi_gpio_set_cfgpin(SUNXI_GPG(3), SUN5I_GPG_UART1);
  	sunxi_gpio_set_cfgpin(SUNXI_GPG(4), SUN5I_GPG_UART1);
  	sunxi_gpio_set_pull(SUNXI_GPG(4), SUNXI_GPIO_PULL_UP);
@@ -19,8 +17,6 @@ index 5f39aa0..99675c3 100644
  #elif CONFIG_CONS_INDEX == 3 && defined(CONFIG_MACH_SUN8I)
  	sunxi_gpio_set_cfgpin(SUNXI_GPB(0), SUN8I_GPB_UART2);
  	sunxi_gpio_set_cfgpin(SUNXI_GPB(1), SUN8I_GPB_UART2);
-diff --git a/include/configs/sunxi-common.h b/include/configs/sunxi-common.h
-index 9576bc1..bda4059 100644
 --- a/include/configs/sunxi-common.h
 +++ b/include/configs/sunxi-common.h
 @@ -260,6 +260,8 @@ extern int soft_i2c_gpio_scl;
@@ -32,6 +28,3 @@ index 9576bc1..bda4059 100644
  #elif CONFIG_CONS_INDEX == 3 && defined(CONFIG_MACH_SUN8I)
  #define OF_STDOUT_PATH		"/soc@01c00000/serial@01c28800:115200"
  #elif CONFIG_CONS_INDEX == 5 && defined(CONFIG_MACH_SUN8I)
--- 
-cgit v0.10.2
-

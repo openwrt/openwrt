@@ -4,11 +4,9 @@ Date: Tue, 16 Jun 2015 10:59:38 +0200
 Subject: ARM: sunxi: Make CONS_INDEX configurable
 
 
-diff --git a/board/sunxi/Kconfig b/board/sunxi/Kconfig
-index 2a1cd3c..e155c4c 100644
 --- a/board/sunxi/Kconfig
 +++ b/board/sunxi/Kconfig
-@@ -209,6 +209,14 @@ config SYS_BOARD
+@@ -229,6 +229,14 @@ config SYS_BOARD
  config SYS_SOC
  	default "sunxi"
  
@@ -23,6 +21,3 @@ index 2a1cd3c..e155c4c 100644
  config UART0_PORT_F
  	bool "UART0 on MicroSD breakout board"
  	default n
--- 
-cgit v0.10.2
-
