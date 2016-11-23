@@ -22,6 +22,10 @@ define Build/dtb
 	$(call Image/BuildDTB,../dts/$(DEVICE_DTS).dts,$@.dtb,,--space $(DTB_SIZE))
 endef
 
+define Build/export-dtb
+	cp $(IMAGE_KERNEL).dtb $@
+endef
+
 ifeq ($(SUBTARGET),nand)
 
 define Image/cpiogz
@@ -186,13 +190,14 @@ define Device/WNDR4700
   BLOCKSIZE := 128k
   DTB_SIZE := 131008
   IMAGE_SIZE := 24960k
-  IMAGES := factory.img sysupgrade.tar
+  IMAGES := factory.img sysupgrade.tar kernel.dtb
   KERNEL_SIZE := 1920k
   KERNEL := dtb | kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | append-fakerootfs
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | wndr4700-specialImage gzip
   IMAGE/factory.img := create-uImage-dtb | append-kernel | pad-to 2M | append-ubi | \
 		       netgear-dni | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.tar := sysupgrade-tar
+  IMAGE/kernel.dtb := export-dtb | uImage none
   NETGEAR_BOARD_ID := WNDR4700
   NETGEAR_HW_ID := 29763875+128+256
   UBINIZE_OPTS := -E 5
@@ -228,10 +233,6 @@ endef
 define Build/hdd-img
 	./mbl_gen_hdd_img.sh $@ $@.boot $(IMAGE_ROOTFS)
 	$(if $(CONFIG_TARGET_IMAGES_GZIP),gzip -9n -c $@ > $(BIN_DIR)/$(notdir $@).gz)
-endef
-
-define Build/export-dtb
-	cp $(IMAGE_KERNEL).dtb $@
 endef
 
 define Device/MyBookLiveDefault
