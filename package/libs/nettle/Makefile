@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nettle
-PKG_VERSION:=3.2
+PKG_VERSION:=3.3
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/nettle
-PKG_MD5SUM:=afb15b4764ebf1b4e6d06c62bd4d29e4
+PKG_MD5SUM:=10f969f78a463704ae73529978148dbe
 
 PKG_LICENSE:=GPL-2.0+
 PKG_LICENSE_FILES:=COPYING
@@ -40,6 +40,7 @@ TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
 	--enable-shared \
+	--enable-fat \
 	--disable-openssl \
 	--disable-documentation \
 	--enable-static
