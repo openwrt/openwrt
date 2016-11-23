@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2007 OpenWrt.org
+
+START=80
+INIT_SCRIPT=/etc/init.d/bluetooth_init.sh
+
+start() {
+	#The below command will return 0 if BT is initialized
+	hciconfig name
+	if [ $? -ne 0 ]
+	then
+		chmod +x $INIT_SCRIPT
+		.$INIT_SCRIPT
+	fi
+}
