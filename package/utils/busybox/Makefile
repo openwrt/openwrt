@@ -110,7 +110,6 @@ define Package/busybox/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
 	$(INSTALL_BIN) ./files/cron $(1)/etc/init.d/cron
-	$(INSTALL_BIN) ./files/telnet $(1)/etc/init.d/telnet
 	$(INSTALL_BIN) ./files/sysntpd $(1)/etc/init.d/sysntpd
 	$(INSTALL_BIN) ./files/ntpd-hotplug $(1)/usr/sbin/ntpd-hotplug
 	-rm -rf $(1)/lib64
