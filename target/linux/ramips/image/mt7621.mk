@@ -38,7 +38,7 @@ define Device/ac1200pro
   DTS := AC1200pro
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := Digineo AC1200 Pro
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci
+  DEVICE_PACKAGES := kmod-usb3 kmod-ata-core kmod-ata-ahci
 endef
 TARGET_DEVICES += ac1200pro
 
@@ -100,7 +100,7 @@ define Device/rb750gr3
   DTS := RB750Gr3
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := MikroTik RB750Gr3
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev uboot-envtools -kmod-mt76 -kmod-rt2x00-lib -kmod-mac80211 -kmod-cfg80211 -wpad-mini -iwinfo
+  DEVICE_PACKAGES := kmod-usb3 uboot-envtools -kmod-mt76 -kmod-rt2x00-lib -kmod-mac80211 -kmod-cfg80211 -wpad-mini -iwinfo
 endef
 TARGET_DEVICES += rb750gr3
 
