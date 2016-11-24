@@ -32,4 +32,19 @@ config DROPBEAR_ECC
 
 		Increases binary size by about 23 kB (MIPS).
 
+config DROPBEAR_UTMP
+	bool "Utmp support"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_UTMP
+	help
+		This enables dropbear utmp support, the file /var/run/utmp is used to
+		track who is currently logged in.
+
+config DROPBEAR_PUTUTLINE
+	bool "Pututline support"
+	default n
+	depends on DROPBEAR_UTMP
+	help
+		Dropbear will use pututline() to write the utmp structure into the utmp file.
+
 endmenu

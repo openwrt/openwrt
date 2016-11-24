@@ -68,12 +68,11 @@ CONFIGURE_ARGS += \
 	--enable-syslog \
 	$(if $(CONFIG_SHADOW_PASSWORDS),,--disable-shadow) \
 	--disable-lastlog \
-	--disable-utmp \
-	--disable-utmpx \
+	$(if $(CONFIG_DROPBEAR_UTMP),,--disable-utmp) \
 	--disable-wtmp \
 	--disable-wtmpx \
 	--disable-loginfunc \
-	--disable-pututline \
+	$(if $(CONFIG_DROPBEAR_PUTUTLINE),,--disable-pututline) \
 	--disable-pututxline \
 	--disable-zlib \
 	--enable-bundled-libtom
