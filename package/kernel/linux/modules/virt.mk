@@ -8,32 +8,20 @@ define KernelPackage/irqbypass
   SUBMENU:=Virtualization
   TITLE:=IRQ offload/bypass manager
   KCONFIG:=CONFIG_IRQ_BYPASS_MANAGER
+  HIDDEN:=1
   FILES:= $(LINUX_DIR)/virt/lib/irqbypass.ko
   AUTOLOAD:=$(call AutoProbe,irqbypass.ko)
 endef
-
-define KernelPackage/irqbypass/description
-  Various virtualization hardware acceleration techniques allow bypassing or
-  offloading interrupts received from devices around the host kernel.  Posted
-  Interrupts on Intel VT-d systems can allow interrupts to be received
-  directly by a virtual machine.  ARM IRQ Forwarding allows forwarded physical
-  interrupts to be directly deactivated by the guest.  This manager allows
-  interrupt producers and consumers to find each other to enable this sort of
-  bypass.
-endef
-
 $(eval $(call KernelPackage,irqbypass))
 
 
 define KernelPackage/kvm-x86
   SUBMENU:=Virtualization
   TITLE:=Kernel-based Virtual Machine (KVM) support
-  DEPENDS:=@TARGET_x86 +kmod-irqbypass
+  DEPENDS:=@TARGET_x86_generic||TARGET_x86_64 +kmod-irqbypass
   KCONFIG:=\
 	  CONFIG_VIRTUALIZATION=y \
 	  CONFIG_KVM \
-	  CONFIG_VHOST_NET=n \
-	  CONFIG_VHOST_CROSS_ENDIAN_LEGACY=n \
 	  CONFIG_TASK_XACCT=n \
 
   FILES:= $(LINUX_DIR)/arch/$(LINUX_KARCH)/kvm/kvm.ko
@@ -56,8 +44,8 @@ $(eval $(call KernelPackage,kvm-x86))
 define KernelPackage/kvm-intel
   SUBMENU:=Virtualization
   TITLE:=KVM for Intel processors support
-  DEPENDS:=@TARGET_x86 +kmod-kvm-x86
-  KCONFIG:=CONFIG_KVM_INTEL CONFIG_KVM_AMD=n
+  DEPENDS:=+kmod-kvm-x86
+  KCONFIG:=CONFIG_KVM_INTEL
   FILES:= $(LINUX_DIR)/arch/$(LINUX_KARCH)/kvm/kvm-intel.ko
   AUTOLOAD:=$(call AutoProbe,kvm-intel.ko)
 endef
@@ -73,8 +61,8 @@ $(eval $(call KernelPackage,kvm-intel))
 define KernelPackage/kvm-amd
   SUBMENU:=Virtualization
   TITLE:=KVM for AMD processors support
-  DEPENDS:=@TARGET_x86 +kmod-kvm-x86
-  KCONFIG:=CONFIG_KVM_INTEL=n CONFIG_KVM_AMD
+  DEPENDS:=+kmod-kvm-x86
+  KCONFIG:=CONFIG_KVM_AMD
   FILES:= $(LINUX_DIR)/arch/$(LINUX_KARCH)/kvm/kvm-amd.ko
   AUTOLOAD:=$(call AutoProbe,kvm-amd.ko)
 endef
