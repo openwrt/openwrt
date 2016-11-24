@@ -21,9 +21,7 @@ define KernelPackage/kvm-x86
   DEPENDS:=@TARGET_x86_generic||TARGET_x86_64 +kmod-irqbypass
   KCONFIG:=\
 	  CONFIG_VIRTUALIZATION=y \
-	  CONFIG_KVM \
-	  CONFIG_TASK_XACCT=n \
-
+	  CONFIG_KVM
   FILES:= $(LINUX_DIR)/arch/$(LINUX_KARCH)/kvm/kvm.ko
   AUTOLOAD:=$(call AutoProbe,kvm.ko)
 endef
