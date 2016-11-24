@@ -4,24 +4,6 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-define KernelPackage/vhost_net
-  SUBMENU:=Virtualization
-  TITLE:=Host kernel accelerator for virtio net
-  DEPENDS:=
-  KCONFIG:=CONFIG_VHOST_NET
-  FILES:= $(LINUX_DIR)/drivers/vhost/vhost_net.ko
-  AUTOLOAD:=$(call AutoProbe,vhost_net.ko)
-endef
-
-define KernelPackage/vhost_net/description
-  This kernel module can be loaded in host kernel to accelerate
-  guest networking with virtio_net. Not to be confused with virtio_net
-  module itself which needs to be loaded in guest kernel.
-endef
-
-$(eval $(call KernelPackage,vhost_net))
-
-
 define KernelPackage/irqbypass
   SUBMENU:=Virtualization
   TITLE:=IRQ offload/bypass manager
