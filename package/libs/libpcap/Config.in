@@ -12,4 +12,9 @@ config PCAP_HAS_BT
 	depends on BROKEN
 	default n
 
+config PCAP_HAS_NF
+	bool "Include netfilter support"
+	depends on PACKAGE_iptables-mod-nfqueue
+	default n
+
 endmenu

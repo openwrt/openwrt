@@ -48,8 +48,7 @@ TARGET_CFLAGS += \
 
 CONFIGURE_VARS += \
 	ac_cv_linux_vers=$(LINUX_VERSION) \
-	ac_cv_header_libusb_1_0_libusb_h=no \
-	ac_cv_netfilter_can_compile=no
+	ac_cv_header_libusb_1_0_libusb_h=no
 
 
 CONFIGURE_ARGS += \
@@ -68,6 +67,10 @@ CONFIGURE_ARGS += \
 ifeq ($(CONFIG_IPV6),y)
 CONFIGURE_ARGS += \
 	--enable-ipv6
+endif
+
+ifneq ($(CONFIG_PCAP_HAS_NF),y)
+	CONFIGURE_VARS += ac_cv_netfilter_can_compile=no
 endif
 
 MAKE_FLAGS += \
