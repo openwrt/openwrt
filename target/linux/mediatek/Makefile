@@ -7,6 +7,7 @@ BOARD:=mediatek
 BOARDNAME:=MediaTek Ralink ARM
 FEATURES:=squashfs nand ubifs
 CPU_TYPE:=cortex-a7
+CPU_SUBTYPE:=neon-vfpv4
 MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.4
