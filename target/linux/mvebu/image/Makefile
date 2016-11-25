@@ -147,7 +147,7 @@ TARGET_DEVICES += linksys-wrt1900ac
 define Device/openblocks-ax3
   $(Device/UBI-factory)
   DEVICE_DTS := armada-xp-openblocks-ax3-4
-  SUPPORTED_DEVCES := $(1)
+  SUPPORTED_DEVICES := $(1)
   BLOCKSIZE := 128k
   PAGESIZE := 1
   IMAGE/factory.img := append-kernel | pad-to $$(BLOCKSIZE) | append-ubi
@@ -196,7 +196,7 @@ TARGET_DEVICES += armada-388-clearfog
 define Device/globalscale-mirabox
   $(Device/NAND-512K)
   DEVICE_DTS := armada-370-mirabox
-  SUPPORTED_DEVCES := mirabox
+  SUPPORTED_DEVICES := mirabox
   DEVICE_TITLE := Globalscale Mirabox
 endef
 TARGET_DEVICES += globalscale-mirabox
