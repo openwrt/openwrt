@@ -138,6 +138,7 @@ define Device/Default
 	KERNEL := kernel-bin
 	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
 	KERNEL_NAME = vmlinux.lzma
+	KERNEL_INITRAMFS_NAME = vmlinux-initramfs.lzma
 	FILESYSTEMS := $(FS_64K)
 	IMAGES := trx
 	IMAGE/trx := append-rootfs | trx-with-loader
