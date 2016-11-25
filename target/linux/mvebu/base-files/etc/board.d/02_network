@@ -15,7 +15,11 @@ case "$board" in
 armada-385-linksys-caiman|\
 armada-385-linksys-cobra|\
 armada-385-linksys-rango|\
-armada-385-linksys-shelby|\
+armada-385-linksys-shelby)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "switch0" \
+		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "6@eth1" "4:wan" "5@eth0"
+	;;
 armada-xp-linksys-mamba)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "switch0" \
