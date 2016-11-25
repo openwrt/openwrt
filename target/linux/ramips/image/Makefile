@@ -99,6 +99,11 @@ define Build/seama-seal
 	$(call Build/seama,-s $@.seama $(1))
 endef
 
+define Build/wrg-header
+	mkwrgimg -i $@ -d "/dev/mtdblock/2" -s $(1) -o $@.new
+	mv $@.new $@
+endef
+
 #
 # The real magic happens inside these templates
 #

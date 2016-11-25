@@ -6,13 +6,6 @@ define Build/gemtek-header
 	mkheader_gemtek $@ $@.new $(1) && mv $@.new $@
 endef
 
-define Build/airlink-header
-	mkwrgimg -i $@ \
-		-d "/dev/mtdblock/2" \
-		-s "wrgn16a_airlink_ar670w" \
-		-o $@.new && mv $@.new $@
-endef
-
 define Device/ar670w
   DTS := AR670W
   BLOCKSIZE := 64k
@@ -20,7 +13,8 @@ define Device/ar670w
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   KERNEL := $(KERNEL_DTB)
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | gemtek-header ar725w
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	wrg-header wrgn16a_airlink_ar670w
 endef
 TARGET_DEVICES += ar670w
 
