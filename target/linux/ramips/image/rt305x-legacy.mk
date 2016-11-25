@@ -157,7 +157,6 @@ Image/Build/Profile/JHR-N825R=$(call BuildFirmware/JCG/$(1),$(1),jhr-n825r,JHR-N
 Image/Build/Profile/JHR-N926R=$(call BuildFirmware/JCG/$(1),$(1),jhr-n926r,JHR-N926R,25.24)
 Image/Build/Profile/DIR-300-B1=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-300-b1,DIR-300-B1,wrgn23_dlwbr_dir300b)
 Image/Build/Profile/DIR-600-B1=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-600-b1,DIR-600-B1,wrgn23_dlwbr_dir600b)
-Image/Build/Profile/DIR-600-B2=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-600-b2,DIR-600-B2,wrgn23_dlwbr_dir600b)
 Image/Build/Profile/DIR-615-D=$(call BuildFirmware/DIR300B1/$(1),$(1),dir-615-d,DIR-615-D,wrgn23_dlwbr_dir615d)
 Image/Build/Profile/DAP1350=$(call BuildFirmware/dap1350/$(1),$(1),dap-1350,DAP-1350,RT3052-AP-DAP1350-3)
 Image/Build/Profile/DAP1350WW=$(call BuildFirmware/dap1350/$(1),$(1),dap-1350WW,DAP-1350,RT3052-AP-DAP1350WW-3)
@@ -289,15 +288,9 @@ LEGACY_DEVICES += DIR-300-B1
 
 
 define LegacyDevice/DIR-600-B1
-  DEVICE_TITLE := D-Link DIR-600 B1
+  DEVICE_TITLE := D-Link DIR-600 B1/B2
 endef
 LEGACY_DEVICES += DIR-600-B1
-
-
-define LegacyDevice/DIR-600-B2
-  DEVICE_TITLE := D-Link DIR-600 B2
-endef
-LEGACY_DEVICES += DIR-600-B2
 
 
 define LegacyDevice/DIR-615-D

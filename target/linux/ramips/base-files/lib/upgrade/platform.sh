@@ -43,7 +43,6 @@ platform_check_image() {
 	dir-300-b7|\
 	dir-320-b1|\
 	dir-600-b1|\
-	dir-600-b2|\
 	dir-615-d|\
 	dir-615-h1|\
 	dir-620-a1|\
