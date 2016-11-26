@@ -71,7 +71,15 @@
      for (pcie_port = startup_port; pcie_port < IFX_PCIE_CORE_NR; pcie_port++){
  	if (pcie_rc_initialize(pcie_port) == 0) {
  	    IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: ifx_pcie_cfg_base 0x%p\n", 
-@@ -1083,6 +1114,30 @@ static int __init ifx_pcie_bios_init(voi
+@@ -1067,6 +1098,7 @@ static int __init ifx_pcie_bios_init(voi
+                 return -ENOMEM;
+             }
+             ifx_pcie_controller[pcie_port].pcic.io_map_base = (unsigned long)io_map_base;
++            pci_load_of_ranges(&ifx_pcie_controller[pcie_port].pcic, node);
+ 
+             register_pci_controller(&ifx_pcie_controller[pcie_port].pcic);
+             /* XXX, clear error status */
+@@ -1083,6 +1115,30 @@ static int __init ifx_pcie_bios_init(voi
  
      return 0;
  }
