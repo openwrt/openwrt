@@ -65,7 +65,8 @@ define Device/ex2700
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   KERNEL := $(KERNEL_DTB) | uImage lzma | pad-kernel-ex2700
-  IMAGE/factory.bin := $$(sysupgrade_bin) | netgear-header -B EX2700 -H 29764623+4+0+32+2x2+0
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	netgear-header -B EX2700 -H 29764623+4+0+32+2x2+0
   DEVICE_TITLE := Netgear EX2700
 endef
 TARGET_DEVICES += ex2700
@@ -76,7 +77,8 @@ define Device/wt3020-4M
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
   SUPPORTED_DEVICES := wt3020
-  IMAGE/factory.bin := $$(sysupgrade_bin) | poray-header -B WT3020 -F 4M
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	poray-header -B WT3020 -F 4M
   DEVICE_TITLE := Nexx WT3020 (4MB)
 endef
 TARGET_DEVICES += wt3020-4M
@@ -85,7 +87,8 @@ define Device/wt3020-8M
   DTS := WT3020-8M
   IMAGES += factory.bin
   SUPPORTED_DEVICES := wt3020
-  IMAGE/factory.bin := $$(sysupgrade_bin) | poray-header -B WT3020 -F 8M
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	poray-header -B WT3020 -F 8M
   DEVICE_TITLE := Nexx WT3020 (8MB)
 endef
 TARGET_DEVICES += wt3020-8M
@@ -94,7 +97,8 @@ define Device/wrh-300cr
   DTS := WRH-300CR
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | elecom-header
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	elecom-header
   DEVICE_TITLE := Elecom WRH-300CR 
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
@@ -103,7 +107,8 @@ TARGET_DEVICES += wrh-300cr
 define Device/e1700
   DTS := E1700
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | umedia-header 0x013326
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	umedia-header 0x013326
   DEVICE_TITLE := Linksys E1700
 endef
 TARGET_DEVICES += e1700
@@ -431,6 +436,7 @@ define Device/kng_rc
   DEVICE_TITLE := ZyXEL Keenetic Viva
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | zyimage -d 8997 -v "ZyXEL Keenetic Viva"
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	zyimage -d 8997 -v "ZyXEL Keenetic Viva"
 endef
 TARGET_DEVICES += kng_rc

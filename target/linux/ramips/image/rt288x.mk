@@ -22,7 +22,8 @@ define Device/ar725w
   DTS := AR725W
   DEVICE_TITLE := Gemtek AR725W
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | gemtek-header ar725w
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	gemtek-header ar725w
 endef
 TARGET_DEVICES += ar725w
 
