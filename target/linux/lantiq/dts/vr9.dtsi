@@ -210,10 +210,18 @@
 			interrupts = <96>;
 		};
 
-		pcie@d900000 {
+		pcie0: pcie@d900000 {
+			compatible = "lantiq,pcie-xrx200";
+
+			#interrupt-cells = <1>;
+			#size-cells = <2>;
+			#address-cells = <3>;
+
 			interrupt-parent = <&icu0>;
 			interrupts = <161 144>;
-			compatible = "lantiq,pcie-xrx200";
+
+			device_type = "pci";
+
 			gpio-reset = <&gpio 38 GPIO_ACTIVE_HIGH>;
 		};
 
