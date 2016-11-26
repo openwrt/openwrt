@@ -9,6 +9,9 @@ fwtool_check_image() {
 
 	if ! fwtool -q -i /tmp/sysupgrade.meta "$1"; then
 		echo "Image metadata not found"
+		[ "$REQUIRE_IMAGE_METADATA" = 1 -a "$FORCE" != 1 ] && {
+			echo "Use sysupgrade -F to override this check when downgrading or flashing to vendor firmware"
+		}
 		[ "$REQUIRE_IMAGE_METADATA" = 1 ] && return 1
 		return 0
 	fi
