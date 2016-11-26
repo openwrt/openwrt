@@ -150,7 +150,6 @@
 
 			spi5: spi@1a280000 {
 				status = "ok";
-				spi-max-frequency = <50000000>;
 
 				pinctrl-0 = <&spi_pins>;
 				pinctrl-names = "default";
@@ -474,18 +473,18 @@
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 		};
 
-		wan_red {
-			label = "c2600:orange:wan";
+		wan_amber {
+			label = "c2600:amber:wan";
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
 		};
 
-		wan_blue {
+		wan_white {
 			label = "c2600:white:wan";
 			gpios = <&qcom_pinmux 33 GPIO_ACTIVE_LOW>;
 		};
 
-		power: status {
-			label = "c2600:white:status";
+		power: power {
+			label = "c2600:white:power";
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};

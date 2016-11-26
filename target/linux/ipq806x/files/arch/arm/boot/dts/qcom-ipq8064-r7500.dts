@@ -25,10 +25,10 @@
 		serial0 = &uart4;
 		mdio-gpio0 = &mdio0;
 
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
+		led-boot = &power_white;
+		led-failsafe = &power_amber;
+		led-running = &power_white;
+		led-upgrade = &power_amber;
 	};
 
 	chosen {
@@ -59,7 +59,7 @@
 			led_pins: led_pins {
 				mux {
 					pins = "gpio7", "gpio8", "gpio9", "gpio22", "gpio23",
-						"gpio24","gpio26", "gpio53", "gpio64", "gpio67";
+						"gpio24","gpio26", "gpio53", "gpio64";
 					function = "gpio";
 					drive-strength = <2>;
 					bias-pull-up;
@@ -321,27 +321,27 @@
 		pinctrl-names = "default";
 
 		usb1 {
-			label = "r7500:amber:usb1";
+			label = "r7500:white:usb1";
 			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
 		};
 
-		usb3 {
-			label = "r7500:amber:usb3";
+		usb2 {
+			label = "r7500:white:usb2";
 			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
 		};
 
-		status {
-			label = "r7500:amber:status";
+		power_amber: power_amber {
+			label = "r7500:amber:power";
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 		};
 
-		internet {
-			label = "r7500:white:internet";
+		wan_white {
+			label = "r7500:white:wan";
 			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
 		};
 
-		wan {
-			label = "r7500:white:wan";
+		wan_amber {
+			label = "r7500:amber:wan";
 			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -355,20 +355,15 @@
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
 		};
 
-		power: power {
+		power_white: power_white {
 			label = "r7500:white:power";
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 
-		rfkill {
-			label = "r7500:white:rfkill";
+		wifi {
+			label = "r7500:white:wifi";
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
-		};
-
-		wifi5g {
-			label = "r7500:white:wifi5g";
-			gpios = <&qcom_pinmux 67 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

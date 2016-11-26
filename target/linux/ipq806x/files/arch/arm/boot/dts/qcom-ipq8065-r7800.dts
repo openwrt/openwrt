@@ -31,7 +31,7 @@
 		mdio-gpio0 = &mdio0;
 
 		led-boot = &power_white;
-		led-failsafe = &power_white;
+		led-failsafe = &power_amber;
 		led-running = &power_white;
 		led-upgrade = &power_amber;
 	};
@@ -62,7 +62,7 @@
 
 			led_pins: led_pins {
 				pins = "gpio7", "gpio8", "gpio9", "gpio22", "gpio23",
-					"gpio24","gpio26", "gpio53", "gpio64", "gpio67";
+					"gpio24","gpio26", "gpio53", "gpio64";
 				function = "gpio";
 				drive-strength = <2>;
 				bias-pull-down;
@@ -221,7 +221,7 @@
 
 			spi5: spi@1a280000 {
 				status = "ok";
-				spi-max-frequency = <50000000>;
+
 				pinctrl-0 = <&spi_pins>;
 				pinctrl-names = "default";
 
@@ -244,14 +244,14 @@
 			status = "ok";
 			spi6: spi@16580000 {
 				status = "ok";
-				spi-max-frequency = <6000000>;
+
 				pinctrl-0 = <&spi6_pins>;
 				pinctrl-names = "default";
 
 				cs-gpios = <&qcom_pinmux 57 GPIO_ACTIVE_HIGH>;
 
 				spi-nor@0 {
-					compatible = "spi-nor";
+					compatible = "jedec,spi-nor";
 					reg = <0>;
 					spi-max-frequency = <6000000>;
 				};
@@ -516,7 +516,7 @@
 		power_white: power_white {
 			label = "r7800:white:power";
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
+			default-state = "keep";
 		};
 
 		power_amber: power_amber {
@@ -549,19 +549,14 @@
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
 		};
 
-		rfkill {
-			label = "r7800:white:rfkill";
+		wifi {
+			label = "r7800:white:wifi";
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps {
 			label = "r7800:white:wps";
 			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
-		};
-
-		wifi {
-			label = "r7800:white:wifi";
-			gpios = <&qcom_pinmux 67 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

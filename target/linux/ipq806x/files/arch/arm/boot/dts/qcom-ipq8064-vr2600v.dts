@@ -129,7 +129,6 @@
 
 			spi4: spi@1a280000 {
 				status = "ok";
-				spi-max-frequency = <50000000>;
 
 				pinctrl-0 = <&spi_pins>;
 				pinctrl-names = "default";
@@ -401,6 +400,7 @@
 		power: power {
 			label = "vr2600v:white:power";
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
 		};
 
 		phone {

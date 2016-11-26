@@ -58,18 +58,11 @@
 			};
 
 			led_pins: led_pins {
-				off {
-					pins = "gpio26", "gpio33", "gpio64";
+				mux {
+					pins = "gpio9", "gpio26", "gpio33", "gpio64";
 					function = "gpio";
 					drive-strength = <2>;
 					bias-pull-down;
-				};
-
-				on {
-					pins = "gpio9";
-					function = "gpio";
-					drive-strength = <2>;
-					bias-pull-up;
 				};
 			};
 
@@ -117,38 +110,40 @@
 			};
 
 			usb0_pwr_en_pins: usb0_pwr_en_pins {
-				pwr {
-					pins = "gpio14";
+				mux {
+					pins = "gpio16", "gpio17";
 					function = "gpio";
 					drive-strength = <12>;
-					bias-pull-down;
-					output-high;
 				};
 
-				ovc {
-					pins = "gpio15";
-					function = "gpio";
-					drive-strength = <12>;
-					bias-pull-up;
-					output-high;
-				};
-			};
-
-			usb1_pwr_en_pins: usb1_pwr_en_pins {
 				pwr {
 					pins = "gpio17";
-					function = "gpio";
-					drive-strength = <12>;
 					bias-pull-down;
 					output-high;
 				};
 
 				ovc {
 					pins = "gpio16";
+					bias-pull-up;
+				};
+			};
+
+			usb1_pwr_en_pins: usb1_pwr_en_pins {
+				mux {
+					pins = "gpio14", "gpio15";
 					function = "gpio";
 					drive-strength = <12>;
-					bias-pull-up;
+				};
+
+				pwr {
+					pins = "gpio14";
+					bias-pull-down;
 					output-high;
+				};
+
+				ovc {
+					pins = "gpio15";
+					bias-pull-up;
 				};
 			};
 		};
@@ -173,14 +168,14 @@
 
 			spi4: spi@1a280000 {
 				status = "ok";
-				spi-max-frequency = <50000000>;
+
 				pinctrl-0 = <&spi_pins>;
 				pinctrl-names = "default";
 
 				cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
 
 				flash: m25p80@0 {
-					compatible = "s25fl512s";
+					compatible = "jedec,spi-nor";
 					#address-cells = <1>;
 					#size-cells = <1>;
 					spi-max-frequency = <51200000>;
@@ -371,17 +366,22 @@
 		power: power {
 			label = "nbg6817:white:power";
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
+			default-state = "keep";
 		};
 
-		wifi {
-			label = "nbg6817:amber:wifi";
+		wifi2g {
+			label = "nbg6817:amber:wifi2g";
 			gpios = <&qcom_pinmux 33 GPIO_ACTIVE_HIGH>;
 		};
+
+		/* wifi2g amber from the manual is missing */
 
 		wifi5g {
 			label = "nbg6817:amber:wifi5g";
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
 		};
+
+		/* wifi5g amber from the manual is missing */
 	};
 };
 

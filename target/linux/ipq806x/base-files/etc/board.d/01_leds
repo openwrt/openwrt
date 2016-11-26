@@ -16,40 +16,26 @@ c2600)
 	ucidef_set_led_usbport "usb2" "USB 2" "${board}:white:usb_4" "usb3-port1" "usb4-port1"
 	ucidef_set_led_switch "wan" "wan" "${board}:white:wan" "switch0" "0x20"
 	ucidef_set_led_switch "lan" "lan" "${board}:white:lan" "switch0" "0x1e"
-	ucidef_set_led_default "general" "general" "${board}:white:general" "1"
 	;;
 d7800 |\
 r7500 |\
-r7500v2)
-	ucidef_set_led_usbdev "usb1" "USB 1" "${board}:white:usb1" "1-1"
-	ucidef_set_led_usbdev "usb2" "USB 2" "${board}:white:usb3" "3-1"
-	ucidef_set_led_netdev "wan" "WAN" "${board}:white:wan" "eth0"
-	ucidef_set_led_ide "esata" "eSATA" "${board}:amber:esata"
-	ucidef_set_led_default "wps" "WPS" "${board}:white:wps" "0"
-	ucidef_set_led_default "rfkill" "rfkill" "${board}:white:rfkill" "0"
-	;;
+r7500v2 |\
 r7800)
 	ucidef_set_led_usbport "usb1" "USB 1" "${board}:white:usb1" "usb1-port1" "usb2-port1"
 	ucidef_set_led_usbport "usb2" "USB 2" "${board}:white:usb2" "usb3-port1" "usb4-port1"
 	ucidef_set_led_netdev "wan" "WAN" "${board}:white:wan" "eth0"
 	ucidef_set_led_ide "esata" "eSATA" "${board}:white:esata"
-	ucidef_set_led_wlan "wps" "WPS" "${board}:white:wps" "phy0tpt"
-	ucidef_set_led_wlan "rfkill" "rfkill" "${board}:white:rfkill" "phy1tpt"
-	;;
-ea8500)
-	ucidef_set_led_wlan "wifi" "WIFI" "ea8500:green:wifi" "phy0radio"
-	ucidef_set_led_default "wps" "WPS" "ea8500:green:wps" "0"
 	;;
 nbg6817)
-	ucidef_set_led_wlan "wlan2g" "WLAN2g" "$board:amber:wifi" "phy1radio"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:amber:wifi5" "phy0radio"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:amber:wifi2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:amber:wifi5g" "phy0tpt"
 	ucidef_set_led_netdev "wan" "WAN" "$board:white:internet" "eth1"
 	;;
 vr2600v)
 	ucidef_set_led_usbport "usb" "USB" "${board}:white:usb" "usb1-port1" "usb2-port1" "usb3-port1" "usb4-port1"
 	ucidef_set_led_switch "lan" "lan" "${board}:white:lan" "switch0" "0x1e"
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "${board}:white:wlan2g" "phy0radio"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "${board}:white:wlan5g" "phy1radio"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "${board}:white:wlan2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "${board}:white:wlan5g" "phy1tpt"
 	ucidef_set_led_switch "wan" "wan" "${board}:white:wan" "switch0" "0x20"
 	;;
 *)
