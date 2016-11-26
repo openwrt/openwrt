@@ -19,7 +19,6 @@ define U-Boot/Default
   BUILD_TARGET:=omap
   BUILD_DEVICES:=Default
   UBOOT_IMAGE:=u-boot.img MLO
-  HIDDEN:=1
 endef
 
 define U-Boot/omap4_panda
