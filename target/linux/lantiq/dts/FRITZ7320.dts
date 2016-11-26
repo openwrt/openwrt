@@ -65,14 +65,6 @@
 			};
 		};
 
-		ath9k_eep {
-			compatible = "ath9k,eeprom";
-			ath,eep-flash = <&ath9k_cal 0x985>;
-			ath,device-id = /bits/ 16 <0xff1d 0x2d>;
-			ath,eep-endian;
-			ath,eep-swap;
-		};
-
 		gpio: pinmux@E100B10 {
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
@@ -102,12 +94,6 @@
 
 		ifxhcd@E101000 {
 			status = "okay";
-		};
-
-		pci@E105400 {
-			status = "okay";
-			req-mask = <0xf>;
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -156,5 +142,17 @@
 			label = "fritz7320:red:info";
 			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
 		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	req-mask = <0xf>;
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
+	wifi@0,0 {
+		compatible = "pci0,0";
+		reg = <0x7000 0 0 0 0>;
+		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
 	};
 };

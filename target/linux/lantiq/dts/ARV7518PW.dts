@@ -79,15 +79,6 @@
 				gpio-controller;
 				lantiq,shadow = <0x0>;
 			};
-
-			ath9k_eep {
-				compatible = "ath9k,eeprom";
-				ath,eep-flash = <&boardconfig 0x400>;
-				ath,mac-offset = <0x16>;
-				ath,mac-increment = <1>;
-				ath,pci-slot = <14>;
-				ath,eep-endian;
-			};
 		};
 
 		gpio: pinmux@E100B10 {
@@ -138,13 +129,6 @@
 		ifxhcd@E101000 {
 			status = "okay";
 			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
-		};
-
-		pci@E105400 {
-			status = "okay";
-			lantiq,external-clock;
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-			req-mask = <0xf>;
 		};
 	};
 
@@ -228,5 +212,20 @@
 			label = "arv7518pw:red:wps";
 			gpios = <&gpiomm 6 GPIO_ACTIVE_LOW>;
 		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	lantiq,external-clock;
+	req-mask = <0xf>;
+
+	wifi@168c,0029 {
+		compatible = "pci168c,0029";
+		reg = <0x7000 0 0 0 0>;
+		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		mtd-mac-address = <&boardconfig 0x16>;
+		mtd-mac-address-increment = <1>;
 	};
 };

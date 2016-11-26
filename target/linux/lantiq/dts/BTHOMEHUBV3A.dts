@@ -75,13 +75,6 @@
 					};
 				};
 			};
-
-			ath9k_eep {
-				compatible = "ath9k,eeprom";
-				ath,eep-flash = <&ath9k_cal 0x0000>;
-				ath,pci-slot = <14>;
-				ath,eep-endian;
-			};
 		};
 
 		gpio: pinmux@E100B10 {
@@ -133,11 +126,6 @@
 		ifxhcd@E101000 {
 			status = "okay";
 			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
-		};
-
-		pci@E105400 {
-			status = "okay";
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -205,5 +193,15 @@
 			label = "bthomehubv3a:blue:power";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
+	ath9k@7000 {
+		reg = <0x7000 0 0 0 0>;
+		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
 	};
 };

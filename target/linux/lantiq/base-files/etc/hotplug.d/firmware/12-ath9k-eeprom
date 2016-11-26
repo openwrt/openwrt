@@ -1,0 +1,140 @@
+#!/bin/sh
+# Based on ar71xx 10-ath9k-eeprom
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+. /lib/functions/lantiq.sh
+. /lib/upgrade/nand.sh
+
+# xor multiple hex values of the same length
+xor() {
+	local val
+	local ret="0x$1"
+	local retlen=${#1}
+
+	shift
+	while [ -n "$1" ]; do
+		val="0x$1"
+		ret=$((ret ^ val))
+		shift
+	done
+
+	printf "%0${retlen}x" "$ret"
+}
+
+ath9k_eeprom_die() {
+	echo "ath9k eeprom: $*"
+	exit 1
+}
+
+ath9k_eeprom_extract_raw() {
+	local source=$1
+	local offset=$2
+	local size=4096
+
+	dd if=$source of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$size 2>/dev/null || \
+			ath9k_eeprom_die "failed to extract from $mtd"
+}
+
+ath9k_eeprom_extract() {
+	local part=$1
+	local offset=$2
+	local mtd
+
+	mtd=$(find_mtd_chardev $part)
+	[ -n "$mtd" ] || \
+		ath9k_eeprom_die "no mtd device found for partition $part"
+
+	ath9k_eeprom_extract_raw $mtd $offset
+}
+
+ath9k_ubi_eeprom_extract() {
+	local part=$1
+	local offset=$2
+	local ubidev=$(nand_find_ubi $CI_UBIPART)
+	local ubi
+
+	ubi=$(nand_find_volume $ubidev $part)
+	[ -n "$ubi" ] || \
+		ath9k_eeprom_die "no UBI volume found for $part"
+
+	ath9k_eeprom_extract_raw /dev/$ubi $offset
+}
+
+ath9k_patch_firmware_mac() {
+	local mac=$1
+	local mac_offset=$2
+	local swap=$3
+	local chksum_offset=$4
+	local xor_mac
+	local xor_fw_mac
+	local xor_fw_chksum
+
+	[ -z "$mac" -o -z "$mac_offset" ] && return
+
+	[ $swap -gt 0 ] && mac="${mac:3:2}:${mac:0:2}:${mac:9:2}:${mac:6:2}:${mac:15:2}:${mac:12:2}"
+
+	[ -n "$chksum_offset" ] && {
+		xor_mac=${mac//:/}
+		xor_mac="${xor_mac:0:4} ${xor_mac:4:4} ${xor_mac:8:4}"
+
+		xor_fw_mac=$(hexdump -v -n 6 -s $mac_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
+		xor_fw_mac="${xor_fw_mac:0:4} ${xor_fw_mac:4:4} ${xor_fw_mac:8:4}"
+
+		xor_fw_chksum=$(hexdump -v -n 2 -s $chksum_offset -e '/1 "%02x"' /lib/firmware/$FIRMWARE)
+		xor_fw_chksum=$(xor $xor_fw_chksum $xor_fw_mac $xor_mac)
+
+		printf "%b" "\x${xor_fw_chksum:0:2}\x${xor_fw_chksum:2:2}" | \
+			dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$chksum_offset count=2
+	}
+
+	macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=$mac_offset count=6
+}
+
+case "$FIRMWARE" in
+	"ath9k-eeprom-pci-0000:00:0e.0.bin" | \
+	"ath9k-eeprom-pci-0000:01:00.0.bin" | \
+	"ath9k-eeprom-pci-0000:02:00.0.bin")
+		board=$(lantiq_board_name)
+
+		case "$board" in
+			ARV7518PW)
+				ath9k_eeprom_extract "boardconfig" 1024
+				;;
+			ARV8539PW22)
+				ath9k_eeprom_extract "art" 1024
+				;;
+			BTHOMEHUBV2B)
+				ath9k_eeprom_extract "art" 0
+				ath9k_patch_firmware_mac "00:00:00:00:00:00" 524 1 514
+				;;
+			BTHOMEHUBV3A)
+				ath9k_eeprom_extract "art-copy" 0
+				ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_ascii uboot-env ethaddr) +2) 268 1 258
+				;;
+			BTHOMEHUBV5A)
+				ath9k_eeprom_extract "caldata" 4096
+				;;
+			DGN3500*)
+				ath9k_eeprom_extract "calibration" 61440
+				ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_ascii uboot-env ethaddr) +2) 524 0 514
+				;;
+			FRITZ3370)
+				ath9k_eeprom_extract "urlader" 2437
+				ath9k_patch_firmware_mac "00:00:00:00:00:00" 2 0
+				;;
+			FRITZ7320|FRITZ7360SL)
+				ath9k_eeprom_extract "urlader" 2437
+				ath9k_patch_firmware_mac "00:00:00:00:00:00" 268 0 258
+				;;
+			TDW8970|TDW8980)
+				ath9k_eeprom_extract "boardconfig" 135168
+				;;
+			*)
+				ath9k_eeprom_die "board $board is not supported yet"
+				;;
+		esac
+		;;
+esac

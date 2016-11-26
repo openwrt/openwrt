@@ -111,11 +111,6 @@
 			status = "okay";
 			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		};
-
-		pci@E105400 {
-			status = "okay";
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-		};
 	};
 
 	gphy-xrx200 {
@@ -123,14 +118,6 @@
 		firmware1 = "lantiq/vr9_phy11g_a1x.bin";	/*VR9 1.1*/
 		firmware2 = "lantiq/vr9_phy11g_a2x.bin";	/*VR9 1.2*/
 		phys = [ 00 01 ];
-	};
-
-	ath9k_eep {
-		compatible = "ath9k,eeprom";
-		ath,eep-flash = <&caldata 0x1000>;
-		ath,mac-offset = <0x110c>;
-		ath,mac-increment = <2>;
-		ath,pci-slot = <0xe>; /* 14 */
 	};
 
 	gpio-keys-polled {
@@ -208,6 +195,20 @@
 			label = "dimmed";
 			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
 		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
+	wifi@168c,002d {
+		compatible = "pci168c,002d";
+		reg = <0x7000 0 0 0 0>;
+		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		qca,disable-5ghz;
+		mtd-mac-address = <&caldata 0x110c>;
+		mtd-mac-address-increment = <2>;
 	};
 };
 

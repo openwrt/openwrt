@@ -33,7 +33,7 @@ define Device/TDW8980
   BOARD_ID := TD-W8980v1
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := TP-LINK TD-W8980
-  DEVICE_PACKAGES:= kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES:= kmod-ath9k kmod-owl-loader wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
 endef
 
 define Device/VR200v

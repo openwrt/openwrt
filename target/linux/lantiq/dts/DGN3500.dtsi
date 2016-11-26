@@ -69,19 +69,6 @@
 		ifxhcd@E101000 {
 			status = "okay";
 		};
-
-		pci@E105400 {
-			status = "okay";
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
-	ath9k_eep {
-		compatible = "ath9k,eeprom";
-		ath,eep-flash = <&ath9k_cal 0xf000>;
-		ath,pci-slot = <14>;
-		ath,eep-endian;
-		ath,eep-swap;
 	};
 
 	rtl8366rb {
@@ -150,6 +137,17 @@
 			label = "dgn3500:green:wps";
 			gpios = <&gpio 52 GPIO_ACTIVE_LOW>;
 		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
+	wifi@168c,0029 {
+		compatible = "pci168c,0029";
+		reg = <0x7000 0 0 0 0>;
+		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
 	};
 };
 

@@ -118,13 +118,6 @@
 		};
 	};
 
-	ath9k_eep {
-		compatible = "ath9k,eeprom";
-		ath,eep-flash = <&ath9k_cal 0x985>;
-		ath,eep-endian;
-		ath,eep-swap;
-	};
-
 	gphy-xrx200 {
 		compatible = "lantiq,phy-xrx200";
 		firmware = "lantiq/vr9_phy11g_a1x.bin";
@@ -196,7 +189,7 @@
 		reg = <4 0>;
 		spi-max-frequency = <1000000>;
 
-		ath9k_cal: partition@0 {
+		partition@0 {
 			reg = <0x0 0x20000>;
 			label = "urlader";
 			read-only;
@@ -272,6 +265,22 @@
 		phy13: ethernet-phy@13 {
 			reg = <0x13>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+	};
+};
+
+&pcie0 {
+	pcie@0 {
+		reg = <0 0 0 0 0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		device_type = "pci";
+
+		wifi@0,0 {
+			compatible = "pci0,0";
+			reg = <0 0 0 0 0>;
+			qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:01:00.0.bin */
 		};
 	};
 };

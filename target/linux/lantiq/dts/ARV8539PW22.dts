@@ -66,15 +66,6 @@
 					};
 				};
 			};
-
-			ath9k_eep {
-				compatible = "ath9k,eeprom";
-				ath,eep-flash = <&art 0x400>;
-				ath,mac-offset = <0x16>;
-				ath,mac-increment = <1>;
-				ath,pci-slot = <14>;
-				ath,eep-endian;
-			};
 		};
 
 		gpio: pinmux@E100B10 {
@@ -109,11 +100,6 @@
 		etop@E180000 {
 			phy-mode = "mii";
 			mtd-mac-address = <&art 0x16>;
-		};
-
-		pci@E105400 {
-			status = "okay";
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 
 		ifxhcd@E101000 {
@@ -175,3 +161,15 @@
 	};
 };
 
+&pci0 {
+	status = "okay";
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
+	wifi@168c,0029 {
+		compatible = "pci168c,0029";
+		reg = <0x7000 0 0 0 0>;
+		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		mtd-mac-address = <&art 0x16>;
+		mtd-mac-address-increment = <1>;
+	};
+};

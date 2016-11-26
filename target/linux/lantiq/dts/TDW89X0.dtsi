@@ -14,6 +14,7 @@
 
 		led-dsl = &dsl;
 		led-internet = &internet;
+		led-wifi = &wifi;
 		led-usb = &usb0;
 		led-usb2 = &usb2;
 	};
@@ -83,16 +84,6 @@
 		phys = [ 00 01 ];
 	};
 
-	ath9k_eep {
-		compatible = "ath9k,eeprom";
-		ath,eep-flash = <&ath9k_cal 0x21000>;
-		ath,mac-offset = <0xf100>;
-		ath,mac-increment = <2>;
-		ath,led-pin = <0>;
-		ath,disable-5ghz;
-		ath,led-active-high;
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -142,6 +133,15 @@
 		wps: wps {
 			label = "tdw89x0:green:wps";
 			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	wifi-leds {
+		compatible = "gpio-leds";
+
+		wifi: wifi {
+			label = "tdw89x0:green:wifi";
+			gpios = <&ath9k 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -246,6 +246,27 @@
 		phy13: ethernet-phy@13 {
 			reg = <0x13>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+	};
+};
+
+&pcie0 {
+	pcie@0 {
+		reg = <0 0 0 0 0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		device_type = "pci";
+
+		ath9k: wifi@168c,002e {
+			compatible = "pci168c,002e";
+			reg = <0 0 0 0 0>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			qca,no-eeprom;
+			qca,disable-5ghz;
+			mtd-mac-address = <&ath9k_cal 0xf100>;
+			mtd-mac-address-increment = <2>;
 		};
 	};
 };
