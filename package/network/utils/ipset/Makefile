@@ -1,4 +1,4 @@
- 
+
 # Copyright (C) 2009-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -41,6 +41,13 @@ MAKE_FLAGS += \
 
 define Build/Compile
 	$(call Build/Compile/Default)
+endef
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include $(1)/usr/lib $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libipset $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipset.{a,so*} $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/lib/libipset.pc $(1)/usr/lib/pkgconfig/
 endef
 
 define Package/ipset/install
