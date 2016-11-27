@@ -130,12 +130,12 @@
 		eject {
 			label = "eject";
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RFKILL>;
+			linux,code = <KEY_EJECTCD>;
 		};
 		movie {
 			label = "movie";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
-			linux,code = <BTN_9>;
+			linux,code = <KEY_VIDEO>;
 		};
 	};
 

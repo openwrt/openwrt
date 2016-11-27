@@ -116,14 +116,14 @@
 		#size-cells = <0>;
 		poll-interval = <100>;
 		dect {
-			label = "power";
+			label = "dect";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
-			linux,code = <BTN_2>;
+			linux,code = <KEY_PHONE>;
 		};
 		wifi {
 			label = "wifi";
 			gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
-			linux,code = <BTN_1>;
+			linux,code = <KEY_WLAN>;
 		};
 	};
 
