@@ -113,6 +113,13 @@ struct board_info boards[] = {
 		.flags		= {0x3f, 0x00},
 	},
 	{
+		.id             = "E2100L",
+		.pattern        = "NL1X",
+		.hw_ver         = 0x00,
+		.sn             = 0x0f,
+		.flags          = {0x3f, 0x00},
+	},
+	{
 		.id		= "mynet-rext",
 		.pattern	= "WDHNSTFH",
 		.hw_ver		= 0x00,

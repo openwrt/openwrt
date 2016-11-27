@@ -14,6 +14,15 @@ define Profile/WRT160NL/Description
 	Package set optimized for the Linksys WRT160NL.
 endef
 
+define Profile/E2100L
+	NAME:=Linksys E2100L
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+
+define Profile/E2100L/Description
+	Package set optimized for the Linksys E2100L
+endef
+
 define Profile/WRT400N
 	NAME:=Linksys WRT400N
 	PACKAGES:=
@@ -24,4 +33,5 @@ define Profile/WRT400N/Description
 endef
 
 $(eval $(call Profile,WRT160NL))
+$(eval $(call Profile,E2100L))
 $(eval $(call Profile,WRT400N))
