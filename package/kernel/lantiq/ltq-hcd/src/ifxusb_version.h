@@ -1,5 +1,0 @@
-
-#ifndef IFXUSB_VERSION
-#define IFXUSB_VERSION "3.2 B110801"
-#endif
-
