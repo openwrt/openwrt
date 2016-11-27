@@ -358,6 +358,9 @@ get_status_led() {
 	wrt400n)
 		status_led="wrt400n:blue:wps"
 		;;
+	e2100l)
+		status_led="e2100l:blue:wps"
+		;;
 	wrt160nl)
 		status_led="wrt160nl:blue:wps"
 		;;

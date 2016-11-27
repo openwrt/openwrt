@@ -1981,6 +1981,8 @@ $(eval $(call SingleProfile,CameoDB120_8M,64kraw,TEW732BR,tew-732br,TEW-732BR,tt
 
 $(eval $(call SingleProfile,CyberTANGZIP,64k,WRT160NL,wrt160nl,WRT160NL,ttyS0,115200,,1.00.01))
 
+$(eval $(call SingleProfile,CyberTANGZIP,64k,E2100L,e2100l,E2100L,ttyS0,115200,,1.00.01))
+
 $(eval $(call SingleProfile,CyberTANLZMA,64k,MYNETREXT,mynet-rext,MYNET-REXT,ttyS0,115200,$$(mynet_rext_mtdlayout) root=31:2,1.00.01))
 
 $(eval $(call SingleProfile,CameoAP94,64kraw,DIR825B1,dir-825-b1,DIR-825-B1,ttyS0,115200,$$(cameo_ap94_mtdlayout),$$(cameo_ap94_mtdlayout_fat),01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00))
