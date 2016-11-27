@@ -4,7 +4,7 @@ BOARDNAME:=XWAY Legacy
 FEATURES:=squashfs atm mips16 ramdisk small_flash
 CPU_TYPE:=24kc
 
-DEFAULT_PACKAGES+=kmod-leds-gpio kmod-gpio-button-hotplug
+DEFAULT_PACKAGES+=kmod-leds-gpio kmod-gpio-button-hotplug swconfig
 
 define Target/Description
 	Lantiq XWAY Legacy for old boards with small flash

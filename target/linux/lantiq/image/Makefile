@@ -115,8 +115,7 @@ define Device/ARV4520PW
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-rt61-pci wpad-mini \
-	swconfig
+	kmod-rt61-pci wpad-mini
 endef
 TARGET_DEVICES += ARV4520PW
 
@@ -126,7 +125,7 @@ define Device/ARV4525PW
   DEVICE_PACKAGES := kmod-ath5k wpad-mini \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
-	ltq-adsl-app ppp-mod-pppoa
+	ltq-adsl-app ppp-mod-pppoa -swconfig
 endef
 TARGET_DEVICES += ARV4525PW
 
@@ -137,8 +136,7 @@ define Device/ARV452CQW
 	kmod-ath5k wpad-mini \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
-	ltq-adsl-app ppp-mod-pppoa \
-	swconfig
+	ltq-adsl-app ppp-mod-pppoa
 endef
 TARGET_DEVICES += ARV452CQW
 
@@ -149,8 +147,7 @@ define Device/ARV4518PWR01
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath5k wpad-mini \
-	swconfig
+	kmod-ath5k wpad-mini
 endef
 TARGET_DEVICES += ARV4518PWR01
 
@@ -161,8 +158,7 @@ define Device/ARV4518PWR01A
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath5k wpad-mini \
-	swconfig
+	kmod-ath5k wpad-mini
 endef
 TARGET_DEVICES += ARV4518PWR01A
 
@@ -180,8 +176,7 @@ define Device/BTHOMEHUBV2B
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	kmod-ltq-deu-danube \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath9k wpad-mini \
-	swconfig
+	kmod-ath9k wpad-mini
 endef
 TARGET_DEVICES += BTHOMEHUBV2B
 
@@ -197,7 +192,7 @@ define Device/ACMP252
   DEVICE_PACKAGES := kmod-rt2x00-pci wpad-mini \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-ptm-danube \
-	ltq-adsl-app
+	ltq-adsl-app -swconfig
 endef
 TARGET_DEVICES += ACMP252
 
@@ -209,8 +204,7 @@ define Device/ARV4510PW
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ltq-tapi kmod-ltq-vmmc \
-	kmod-rt2800-pci kmod-ath5k wpad-mini \
-	swconfig
+	kmod-rt2800-pci kmod-ath5k wpad-mini
 endef
 TARGET_DEVICES += ARV4510PW
 
@@ -220,7 +214,7 @@ define Device/ARV7525PW
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
-	ltq-adsl-app ppp-mod-pppoa
+	ltq-adsl-app ppp-mod-pppoa -swconfig
 endef
 TARGET_DEVICES += ARV7525PW
 
@@ -230,8 +224,7 @@ define Device/ARV4519PW
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
-	ltq-adsl-app ppp-mod-pppoa \
-	swconfig
+	ltq-adsl-app ppp-mod-pppoa
 endef
 TARGET_DEVICES += ARV4519PW
 
@@ -241,8 +234,7 @@ define Device/ARV7506PW11
   DEVICE_PACKAGES := kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-rt2800-pci wpad-mini \
-	swconfig
+	kmod-rt2800-pci wpad-mini
 endef
 TARGET_DEVICES += ARV7506PW11
 
@@ -255,8 +247,7 @@ define Device/ARV7510PW22
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ltq-tapi kmod-ltq-vmmc \
 	kmod-rt2800-pci wpad-mini \
-	kmod-usb-uhci kmod-usb2 kmod-usb2-pci \
-	swconfig
+	kmod-usb-uhci kmod-usb2 kmod-usb2-pci
 endef
 TARGET_DEVICES += ARV7510PW22
 
@@ -267,8 +258,7 @@ define Device/ARV7518PW
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath9k wpad-mini \
-	swconfig
+	kmod-ath9k wpad-mini
 endef
 TARGET_DEVICES += ARV7518PW
 
@@ -279,8 +269,7 @@ define Device/ARV7519PW
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-rt2800-pci wpad-mini \
-	swconfig
+	kmod-rt2800-pci wpad-mini
 endef
 TARGET_DEVICES += ARV7519PW
 
@@ -292,8 +281,7 @@ define Device/ARV752DPW
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ltq-tapi kmod-ltq-vmmc \
-	kmod-rt2800-pci wpad-mini \
-	swconfig
+	kmod-rt2800-pci wpad-mini
 endef
 TARGET_DEVICES += ARV752DPW
 
@@ -305,8 +293,7 @@ define Device/ARV752DPW22
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ltq-tapi kmod-ltq-vmmc \
-	kmod-rt2800-pci wpad-mini \
-	swconfig
+	kmod-rt2800-pci wpad-mini
 endef
 TARGET_DEVICES += ARV752DPW22
 
@@ -317,8 +304,7 @@ define Device/ARV8539PW22
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath9k wpad-mini \
-	swconfig
+	kmod-ath9k wpad-mini
 endef
 TARGET_DEVICES += ARV8539PW22
 
@@ -329,8 +315,7 @@ define Device/GIGASX76X
 	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
 	kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
 	ltq-adsl-app ppp-mod-pppoe \
-	kmod-ath5k wpad-mini \
-	swconfig
+	kmod-ath5k wpad-mini
 endef
 TARGET_DEVICES += GIGASX76X
 
@@ -345,8 +330,7 @@ define Device/BTHOMEHUBV3A
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
 	kmod-ltq-deu-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath9k wpad-mini \
-	swconfig uboot-envtools
+	kmod-ath9k wpad-mini uboot-envtools
 endef
 TARGET_DEVICES += BTHOMEHUBV3A
 
@@ -377,7 +361,7 @@ define Device/DGN3500
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ltq-deu-ar9 swconfig
+	kmod-ltq-deu-ar9
 endef
 TARGET_DEVICES += DGN3500
 
@@ -397,7 +381,7 @@ define Device/DGN3500B
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ltq-deu-ar9 swconfig
+	kmod-ltq-deu-ar9
 endef
 TARGET_DEVICES += DGN3500B
 
@@ -409,7 +393,7 @@ define Device/WBMRA
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath9k wpad-mini swconfig
+	kmod-ath9k wpad-mini
 endef
 TARGET_DEVICES += WBMRA
 
@@ -421,7 +405,7 @@ define Device/WBMRB
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
-	kmod-ath9k wpad-mini swconfig
+	kmod-ath9k wpad-mini
 endef
 TARGET_DEVICES += WBMRB
 
@@ -434,7 +418,7 @@ define Device/FRITZ7320
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ltq-deu-ar9 kmod-usb-dwc2 \
-	kmod-ath9k wpad-mini
+	kmod-ath9k wpad-mini -swconfig
 endef
 TARGET_DEVICES += FRITZ7320
 
@@ -446,8 +430,7 @@ define Device/H201L
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoe \
 	kmod-ltq-deu-ar9 kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
-	kmod-ltq-tapi kmod-ltq-vmmc \
-	swconfig
+	kmod-ltq-tapi kmod-ltq-vmmc
 endef
 TARGET_DEVICES += H201L
 
@@ -458,8 +441,7 @@ define Device/P2601HNFX
 	kmod-ltq-adsl-ar9-mei kmod-ltq-adsl-ar9 \
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoe \
-	kmod-ltq-deu-ar9 kmod-usb-dwc2 \
-	swconfig
+	kmod-ltq-deu-ar9 kmod-usb-dwc2
 endef
 TARGET_DEVICES += P2601HNFX
 
