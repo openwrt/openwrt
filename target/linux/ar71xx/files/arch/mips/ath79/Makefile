@@ -43,6 +43,7 @@ obj-$(CONFIG_ATH79_MACH_ALFA_AP96)	+= mach-alfa-ap96.o
 obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach-alfa-nx.o
 obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
 obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o
+obj-$(CONFIG_ATH79_MACH_ANONABOX_PRO)	+= mach-anonabox-pro.o
 obj-$(CONFIG_ATH79_MACH_ANTMINER_S1)+= mach-antminer-s1.o
 obj-$(CONFIG_ATH79_MACH_ANTMINER_S3)+= mach-antminer-s3.o
 obj-$(CONFIG_ATH79_MACH_ANTROUTER_R1)  += mach-antrouter-r1.o

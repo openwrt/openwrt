@@ -181,6 +181,7 @@ platform_check_image() {
 	alfa-ap96 | \
 	alfa-nx | \
 	arduino-yun | \
+        anonabox-pro | \
 	ap113 | \
 	ap121 | \
 	ap121-mini | \

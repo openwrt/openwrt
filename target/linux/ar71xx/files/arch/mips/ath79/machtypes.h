@@ -23,6 +23,7 @@ enum ath79_mach_type {
 	ATH79_MACH_ALL0258N,		/* Allnet ALL0258N */
 	ATH79_MACH_ALL0305,		/* Allnet ALL0305 */
 	ATH79_MACH_ALL0315N,		/* Allnet ALL0315N */
+        ATH79_MACH_ANONABOX_PRO,        /* AnonaBox Pro */
 	ATH79_MACH_ANTMINER_S1,		/* Antminer S1 */
 	ATH79_MACH_ANTMINER_S3,		/* Antminer S3 */
 	ATH79_MACH_ANTROUTER_R1,	/* Antrouter R1 */
