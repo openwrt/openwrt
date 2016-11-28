@@ -2171,6 +2171,8 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 		swdev->devname, swdev->name, priv->chip_rev,
 		dev_name(&priv->mii_bus->dev));
 
+	list_add(&priv->list, &ar8xxx_dev_list);
+
 found:
 	priv->use_count++;
 
@@ -2198,8 +2200,6 @@ found:
 	}
 
 	phydev->priv = priv;
-
-	list_add(&priv->list, &ar8xxx_dev_list);
 
 	mutex_unlock(&ar8xxx_dev_list_lock);
 
