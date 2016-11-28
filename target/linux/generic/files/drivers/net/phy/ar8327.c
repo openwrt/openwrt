@@ -223,9 +223,7 @@ ar8327_led_work_func(struct work_struct *work)
 
 	aled = container_of(work, struct ar8327_led, led_work);
 
-	spin_lock(&aled->lock);
 	pattern = aled->pattern;
-	spin_unlock(&aled->lock);
 
 	ar8327_set_led_pattern(aled->sw_priv, aled->led_num,
 			       pattern);
@@ -308,9 +306,7 @@ ar8327_led_enable_hw_mode_show(struct device *dev,
 	struct ar8327_led *aled = led_cdev_to_ar8327_led(led_cdev);
 	ssize_t ret = 0;
 
-	spin_lock(&aled->lock);
 	ret += sprintf(buf, "%d\n", aled->enable_hw_mode);
-	spin_unlock(&aled->lock);
 
 	return ret;
 }
