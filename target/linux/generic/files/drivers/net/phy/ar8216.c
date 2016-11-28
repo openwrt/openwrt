@@ -1889,7 +1889,7 @@ ar8xxx_mib_stop(struct ar8xxx_priv *priv)
 	if (!ar8xxx_has_mib_counters(priv))
 		return;
 
-	cancel_delayed_work(&priv->mib_work);
+	cancel_delayed_work_sync(&priv->mib_work);
 }
 
 static struct ar8xxx_priv *
