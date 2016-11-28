@@ -41,3 +41,12 @@ in order to prevent unauthorized SSH logins.
 --------------------------------------------------
 EOF
 fi
+
+service() {
+	[ -f "/etc/init.d/$1" ] || {
+		echo -n "$1 does not exist. the following services are available :"
+		ls "/etc/init.d"
+		return 1
+	}
+	/etc/init.d/$@
+}
