@@ -115,12 +115,12 @@ struct switch_dev {
 	const char *alias;
 	struct net_device *netdev;
 
-	int ports;
-	int vlans;
-	int cpu_port;
+	unsigned int ports;
+	unsigned int vlans;
+	unsigned int cpu_port;
 
 	/* the following fields are internal for swconfig */
-	int id;
+	unsigned int id;
 	struct list_head dev_list;
 	unsigned long def_global, def_port, def_vlan;
 
@@ -148,8 +148,8 @@ struct switch_portmap {
 
 struct switch_val {
 	const struct switch_attr *attr;
-	int port_vlan;
-	int len;
+	unsigned int port_vlan;
+	unsigned int len;
 	union {
 		const char *s;
 		u32 i;
