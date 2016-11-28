@@ -71,6 +71,8 @@ platform_check_image() {
 	jhr-n805r|\
 	jhr-n825r|\
 	jhr-n926r|\
+	kn_rc|\
+	kn_rf|\
 	kng_rc|\
 	linkits7688|\
 	linkits7688d|\

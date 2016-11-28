@@ -595,6 +595,12 @@ ramips_board_detect() {
 	*"ZBT-WR8305RT")
 		name="zbt-wr8305rt"
 		;;
+	*"ZyXEL Keenetic Omni")
+		name="kn_rc"
+		;;
+	*"ZyXEL Keenetic Omni II")
+		name="kn_rf"
+		;;
 	*"ZyXEL Keenetic Viva")
 		name="kng_rc"
 		;;

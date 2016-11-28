@@ -24,6 +24,8 @@ get_status_led() {
 	dir-860l-b1|\
 	e1700|\
 	fonera20n|\
+	kn_rc|\
+	kn_rf|\
 	kng_rc|\
 	mzk-750dhp|\
 	mzk-dp150n|\
