@@ -306,7 +306,7 @@ ar8327_led_enable_hw_mode_show(struct device *dev,
 	struct ar8327_led *aled = led_cdev_to_ar8327_led(led_cdev);
 	ssize_t ret = 0;
 
-	ret += sprintf(buf, "%d\n", aled->enable_hw_mode);
+	ret += scnprintf(buf, PAGE_SIZE, "%d\n", aled->enable_hw_mode);
 
 	return ret;
 }
@@ -1433,4 +1433,3 @@ const struct ar8xxx_chip ar8337_chip = {
 	.mib_decs = ar8236_mibs,
 	.mib_func = AR8327_REG_MIB_FUNC
 };
-
