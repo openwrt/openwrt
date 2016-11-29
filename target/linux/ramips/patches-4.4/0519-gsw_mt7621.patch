@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/mediatek/mt7530.c
 +++ b/drivers/net/ethernet/mediatek/mt7530.c
-@@ -541,6 +541,7 @@ mt7530_apply_config(struct switch_dev *d
+@@ -543,6 +543,7 @@ mt7530_apply_config(struct switch_dev *d
  		u8 etags = priv->vlan_entries[i].etags;
  		u32 val;
  
@@ -8,7 +8,7 @@
  		/* vid of vlan */
  		val = mt7530_r32(priv, REG_ESW_VLAN_VTIM(i));
  		if (i % 2 == 0) {
-@@ -551,7 +552,7 @@ mt7530_apply_config(struct switch_dev *d
+@@ -553,7 +554,7 @@ mt7530_apply_config(struct switch_dev *d
  			val |= (vid << 12);
  		}
  		mt7530_w32(priv, REG_ESW_VLAN_VTIM(i), val);
@@ -17,7 +17,7 @@
  		/* vlan port membership */
  		if (member)
  			mt7530_w32(priv, REG_ESW_VLAN_VAWD1, REG_ESW_VLAN_VAWD1_IVL_MAC |
-@@ -571,7 +572,11 @@ mt7530_apply_config(struct switch_dev *d
+@@ -573,7 +574,11 @@ mt7530_apply_config(struct switch_dev *d
  		mt7530_w32(priv, REG_ESW_VLAN_VAWD2, val);
  
  		/* write to vlan table */
