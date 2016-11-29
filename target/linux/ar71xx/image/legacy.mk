@@ -1036,7 +1036,6 @@ define Image/Build/squashfs
 	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-raw
 	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-64k
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs-64k 64
-	cp $(KDIR)/root.squashfs-64k $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
