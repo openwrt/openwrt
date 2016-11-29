@@ -82,7 +82,8 @@ ubnt_xm_board_detect() {
 		"e0a")
 			model="Ubiquiti NanoStation loco M"
 			;;
-		"e1b")  # Rocket M5 untested
+		"e1b"|\ # Note: the M5 / M5 Ti haven't yet been verified
+		"e1d")  # Rocket M Ti
 			model="Ubiquiti Rocket M"
 			;;
 		"e20"|\
