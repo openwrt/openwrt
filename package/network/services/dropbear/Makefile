@@ -77,13 +77,13 @@ CONFIGURE_ARGS += \
 	--disable-zlib \
 	--enable-bundled-libtom
 
-TARGET_CFLAGS += -DDEFAULT_PATH=\\\"$(CONFIG_TARGET_INIT_PATH)\\\" -DARGTYPE=3 -ffunction-sections -fdata-sections
+TARGET_CFLAGS += -DARGTYPE=3 -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 
 define Build/Configure
 	$(Build/Configure/Default)
 
-	$(SED) 's,^#define DEFAULT_PATH .*$$$$,#define DEFAULT_PATH "$(CONFIG_TARGET_INIT_PATH)",g' \
+	$(SED) 's,^#define DEFAULT_PATH .*$$$$,#define DEFAULT_PATH "$(TARGET_INIT_PATH)",g' \
 		$(PKG_BUILD_DIR)/options.h
 
 	awk 'BEGIN { rc = 1 } \
