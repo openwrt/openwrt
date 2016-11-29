@@ -981,7 +981,6 @@ $(eval $(call SingleProfile,EnGenius,64k,ESR900,esr900,ESR900,ttyS0,115200,$$(es
 $(eval $(call SingleProfile,EnGenius,64k,ESR1750,esr1750,ESR1750,ttyS0,115200,$$(esr1750_mtdlayout),KRuImage,,0x61))
 $(eval $(call SingleProfile,EnGenius,64k,EPG5000,epg5000,EPG5000,ttyS0,115200,$$(epg5000_mtdlayout),KRuImage,,0x71))
 
-$(eval $(call SingleProfile,MyLoader,64k,WP543_2M,wp543,,ttyS0,115200,0x200000,2M))
 $(eval $(call SingleProfile,MyLoader,64k,WP543_4M,wp543,,ttyS0,115200,0x400000,4M))
 $(eval $(call SingleProfile,MyLoader,64k,WP543_8M,wp543,,ttyS0,115200,0x800000,8M))
 $(eval $(call SingleProfile,MyLoader,64k,WP543_16M,wp543,,ttyS0,115200,0x1000000,16M))

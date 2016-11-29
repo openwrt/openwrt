@@ -398,12 +398,6 @@ define LegacyDevice/EPG5000
 endef
 LEGACY_DEVICES += EPG5000
 
-define LegacyDevice/WP543_2M
-  DEVICE_TITLE := Compex WP543/WPJ543 (2MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
-endef
-LEGACY_DEVICES += WP543_2M
-
 define LegacyDevice/WP543_4M
   DEVICE_TITLE := Compex WP543/WPJ543 (4MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
