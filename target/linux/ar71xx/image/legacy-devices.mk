@@ -61,24 +61,6 @@ define LegacyDevice/ALL0315N
 endef
 LEGACY_DEVICES += ALL0315N
 
-define LegacyDevice/AP113
-  DEVICE_TITLE := Atheros AP113 reference board
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-endef
-LEGACY_DEVICES += AP113
-
-define LegacyDevice/AP121_2M
-  DEVICE_TITLE := Atheros AP121 reference board (2MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-endef
-LEGACY_DEVICES += AP121_2M
-
-define LegacyDevice/AP121_4M
-  DEVICE_TITLE := Atheros AP121 reference board (4MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-endef
-LEGACY_DEVICES += AP121_4M
-
 define LegacyDevice/AP121_8M
   DEVICE_TITLE := Atheros AP121 reference board (8MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
@@ -90,11 +72,6 @@ define LegacyDevice/AP121_16M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
 endef
 LEGACY_DEVICES += AP121_16M
-
-define LegacyDevice/AP121MINI
-  DEVICE_TITLE := Atheros AP121-MINI reference board
-endef
-LEGACY_DEVICES += AP121MINI
 
 define LegacyDevice/AP132
   DEVICE_TITLE := Atheros AP132 reference board
@@ -184,12 +161,6 @@ define LegacyDevice/HORNETUBx2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += HORNETUBx2
-
-define LegacyDevice/PB92
-  DEVICE_TITLE := Atheros PB92 reference board
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-endef
-LEGACY_DEVICES += PB92
 
 define LegacyDevice/TUBE2H16M
   DEVICE_TITLE := ALFA Network Tube2H board (16MB flash)
