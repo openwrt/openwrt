@@ -76,18 +76,18 @@ ubnt_xm_board_detect() {
 	case ${magic:0:3} in
 		"e00"|\
 		"e01"|\
-		"e80")  # Different revisions of the NanoStation?
+		"e80")
 			model="Ubiquiti NanoStation M"
 			;;
 		"e0a")
 			model="Ubiquiti NanoStation loco M"
 			;;
-		"e1b"|\ # Note: the M5 / M5 Ti haven't yet been verified
-		"e1d")  # Rocket M Ti
+		"e1b"|\
+		"e1d")
 			model="Ubiquiti Rocket M"
 			;;
 		"e20"|\
-		"e2d")  # Bullet M Ti
+		"e2d")
 			model="Ubiquiti Bullet M"
 			;;
 		"e30")
