@@ -468,12 +468,6 @@ define Image/Build/dLAN
 	$(eval rootsize=$(call mtdpartsize,rootfs,$(4)))
 	$(eval kernsize=$(call mtdpartsize,kernel,$(4)))
 	$(call Sysupgrade/$(5),$(1),$(2),$(if $(6),$(6),$(kernsize)),$(if $(rootsize),$(rootsize),$(fwsize)))
-	if [ -e "$(call factoryname,$(1),$(2))" ]; then \
-		dd if=$(KDIR_TMP)/vmlinux-$(2).uImage \
-			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
-		dd if=$(KDIR)/root.$(1) \
-			of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync; \
-	fi
 endef
 
 Image/Build/dLANLzma/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
@@ -485,12 +479,6 @@ define Image/Build/Ath
 	$(eval rootsize=$(call mtdpartsize,rootfs,$(4)))
 	$(eval kernsize=$(call mtdpartsize,kernel,$(4)))
 	$(call Sysupgrade/$(5),$(1),$(2),$(if $(6),$(6),$(kernsize)),$(if $(rootsize),$(rootsize),$(fwsize)))
-	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		dd if=$(KDIR_TMP)/vmlinux-$(2).uImage \
-			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
-		dd if=$(KDIR)/root.$(1) \
-			of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync; \
-	fi
 endef
 
 Image/Build/AthGzip/buildkernel=$(call MkuImageGzip,$(2),$(3) $(4))
@@ -532,10 +520,6 @@ define Image/Build/EnGenius
 	$(eval kernsize=$(call mtdpartsize,kernel,$(4)))
 	$(call Sysupgrade/$(5),$(1),$(2),$(if $(6),$(6),$(kernsize)),$(if $(rootsize),$(rootsize),$(fwsize)))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		dd if=$(KDIR_TMP)/vmlinux-$(2).uImage \
-			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
-		dd if=$(KDIR)/root.$(1) \
-			of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync; \
 		mksenaofw -e $(call sysupname,$(1),$(2)) \
 			-o $(call imgname,$(1),$(2))-factory.dlf \
 			-r 0x101 -p $(7) -t 2; \
@@ -855,7 +839,7 @@ define Image/Build/Zcomax
 		$(STAGING_DIR_HOST)/bin/mkzcfw \
 			-B $(2) \
 			-k $(KDIR_TMP)/vmlinux-$(2).uImage \
-			-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+			-r $(KDIR)/root.$(1) \
 			-o $(call imgname,$(1),$(2))-factory.img; \
 	fi
 endef
