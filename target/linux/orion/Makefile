@@ -13,7 +13,7 @@ FEATURES:=broken rtc
 SUBTARGETS:=generic harddisk
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
