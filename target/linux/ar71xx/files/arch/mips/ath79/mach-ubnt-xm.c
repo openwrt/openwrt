@@ -16,6 +16,7 @@
 #include <linux/ath9k_platform.h>
 #include <linux/etherdevice.h>
 #include <linux/ar8216_platform.h>
+#include <linux/platform_data/phy-at803x.h>
 
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/irq.h>
@@ -477,9 +478,25 @@ static void __init ubnt_nano_m_xw_setup(void)
 	ath79_register_eth(0);
 }
 
+static struct at803x_platform_data ubnt_loco_m_xw_at803x_data = {
+	.has_reset_gpio = 1,
+	.reset_gpio = 0,
+};
+
+static struct mdio_board_info ubnt_loco_m_xw_mdio_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 1,
+		.platform_data = &ubnt_loco_m_xw_at803x_data,
+	},
+};
+
 static void __init ubnt_loco_m_xw_setup(void)
 {
 	ubnt_xw_init();
+
+	mdiobus_register_board_info(ubnt_loco_m_xw_mdio_info,
+				    ARRAY_SIZE(ubnt_loco_m_xw_mdio_info));
 
 	ath79_register_mdio(0, ~BIT(1));
 	ath79_eth0_data.phy_mask = BIT(1);
