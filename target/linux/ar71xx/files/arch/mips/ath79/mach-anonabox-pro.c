@@ -12,7 +12,8 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
+ * 
+ * Signed-off-by: August Germar august@anonabox.com
  */
 
 #include <linux/platform_device.h>
@@ -104,5 +105,5 @@ static void __init anonabox_pro_setup(void)
         ath79_register_eth(1);
 }
 
-MIPS_MACHINE(ATH79_MACH_ANONABOX_PRO, "ANONABOX_PRO", "Anonabox Pro board",
+MIPS_MACHINE(ATH79_MACH_ANONABOX_PRO, "ANONABOX_PRO", "Anonabox QCA9531",
         anonabox_pro_setup);
