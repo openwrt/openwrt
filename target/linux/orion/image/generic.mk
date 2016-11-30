@@ -67,6 +67,14 @@ endif
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)  # nothing more to do for a ramdisk build
 $(call Image/Default/FileSizeCheck,$(KDIR)/wrt350nv2-uImage,$(shell expr $(KERNEL_MTD_SIZE) \* 1024))
  endif
+
+ ## Buffalo Terastation Pro II/Live: mach id 1584 (0x0630)
+$(call Image/BuildKernel/ARM/zImage,terastation-pro2,"\x06\x1c\xa0\xe3\x30\x10\x81\xe3")
+$(call Image/BuildKernel/ARM/uImage,terastation-pro2)
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+$(call Image/BuildKernel/ARM/zImage,terastation-pro2,"\x06\x1c\xa0\xe3\x30\x10\x81\xe3",-initramfs)
+$(call Image/BuildKernel/ARM/uImage,terastation-pro2,-initramfs)
+endif
 endef
 
 define Image/BuildKernel/ARM/zImage
@@ -124,6 +132,9 @@ $(call Image/Build/Default,$(1),wnr854t,$(ERASE_SIZE_128K),$(KERNEL_MTD_SIZE),.j
 
  ## Linksys WRT350N v2
 $(call Image/Build/Linksys/wrt350nv2,$(1),wrt350nv2,$(ERASE_SIZE_64K),$(KERNEL_MTD_SIZE),)
+
+ ## Buffalo Terastation Pro II/Live
+$(call Image/Build/Default,$(1),terastation-pro2,$(ERASE_SIZE_128K),$(KERNEL_MTD_SIZE),.jffs2,TERASTATION_PRO2)
 endef
 
 define Image/Build/squashfs
