@@ -223,12 +223,6 @@ package/symlinks-clean:
 help:
 	cat README
 
-docs docs/compile: FORCE
-	@$(_SINGLE)$(SUBMAKE) -C docs compile
-
-docs/clean: FORCE
-	@$(_SINGLE)$(SUBMAKE) -C docs clean
-
 distclean:
 	rm -rf bin build_dir .config* dl feeds key-build* logs package/feeds package/openwrt-packages staging_dir tmp
 	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean

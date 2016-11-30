@@ -10,7 +10,6 @@ FILES="
 	Makefile
 	README
 	dl
-	docs
 	feeds.conf.default
 	include
 	package

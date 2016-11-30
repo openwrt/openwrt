@@ -391,7 +391,7 @@ sub top_of_openwrt_tree {
 
 	my @tree_check = (
 		"BSDmakefile", "Config.in", "LICENSE", "Makefile", "README",
-		"docs", "feeds.conf.default", "include", "package", "rules.mk",
+		"feeds.conf.default", "include", "package", "rules.mk",
 		"scripts", "target", "toolchain", "tools"
 	);
 
