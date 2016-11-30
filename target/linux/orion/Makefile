@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=orion
 BOARDNAME:=Marvell Orion
-FEATURES:=broken
+FEATURES:=broken rtc
 SUBTARGETS:=generic harddisk
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
