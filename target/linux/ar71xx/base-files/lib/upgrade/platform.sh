@@ -270,6 +270,7 @@ platform_check_image() {
 		;;
 
 	mynet-rext|\
+	e2100l|\
 	wrt160nl)
 		cybertan_check_image "$1" && return 0
 		return 1

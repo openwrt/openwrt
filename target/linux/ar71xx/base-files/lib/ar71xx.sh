@@ -932,6 +932,9 @@ ar71xx_board_detect() {
 	*WRT160NL)
 		name="wrt160nl"
 		;;
+	*E2100L)
+		name="e2100l"
+		;;
 	*WRT400N)
 		name="wrt400n"
 		;;
