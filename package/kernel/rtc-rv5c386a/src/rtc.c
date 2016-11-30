@@ -62,7 +62,7 @@
 #endif
 
 #include <bcm47xx.h>
-#include <bcm47xx_nvram.h>
+#include <linux/bcm47xx_nvram.h>
 
 #define RTC_IS_OPEN		0x01	/* Means /dev/rtc is in use.  */
 
