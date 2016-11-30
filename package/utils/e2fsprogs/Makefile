@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=e2fsprogs
 PKG_VERSION:=1.43.3
 PKG_MD5SUM:=ce8ef1bbb0d4730f170167284fda156ac9d6bf18db2750eb94af619a81b19927
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/e2fsprogs
@@ -140,7 +140,7 @@ define Build/Compile
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		LIBBLKID="$(PKG_BUILD_DIR)/lib/libblkid.a -luuid" \
 		ELF_OTHER_LIBS="$(TARGET_LDFLAGS) -luuid" \
-		SYSLIBS="$(TARGET_LDFLAGS) -ldl -L$(PKG_BUILD_DIR)/lib/ -lcom_err" \
+		SYSLIBS="$(TARGET_LDFLAGS) -ldl -L$(PKG_BUILD_DIR)/lib/ -l:libcom_err.so.0.0" \
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,) \
 		all
 endef
