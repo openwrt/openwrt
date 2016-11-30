@@ -6,7 +6,7 @@
 #
 
 BOARDNAME:=Generic
-FEATURES:=squashfs
+FEATURES+=squashfs
 
 define Target/Description
 	Build firmware images for Marvell Orion based boards that boot from internal flash.

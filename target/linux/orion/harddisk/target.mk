@@ -6,7 +6,7 @@
 #
 
 BOARDNAME:=Internal Hard-Disk
-FEATURES:=targz
+FEATURES+=targz
 
 define Target/Description
 	Build firmware images for Marvell Orion based boards that boot directly from internal disk storage.
