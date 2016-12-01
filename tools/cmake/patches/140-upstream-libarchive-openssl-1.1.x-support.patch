@@ -370,7 +370,7 @@ Patch-from: https://bugzilla.redhat.com/1383744
 +++ b/Utilities/cmlibarchive/libarchive/archive_hmac_private.h
 @@ -72,7 +72,7 @@ typedef	struct hmac_sha1_ctx archive_hma
  #elif defined(HAVE_LIBCRYPTO)
- #include <openssl/hmac.h>
+ #include "archive_openssl_hmac_private.h"
  
 -typedef	HMAC_CTX archive_hmac_sha1_ctx;
 +typedef	HMAC_CTX* archive_hmac_sha1_ctx;

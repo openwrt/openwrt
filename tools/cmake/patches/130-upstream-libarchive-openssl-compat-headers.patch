@@ -1,0 +1,190 @@
+From 7d433206cf7de8f28aa2d169ed25cd401fcfc413 Mon Sep 17 00:00:00 2001
+From: Brad King <brad.king@kitware.com>
+Date: Thu, 17 Nov 2016 15:26:41 -0500
+Subject: [PATCH] libarchive: Add headers to adapt between OpenSSL 1.1 and older versions
+
+Add private forwarding headers for `openssl/{evp,hmac}.h` to give us a
+central place to add adaptation code to work across multiple
+incompatible OpenSSL versions.  Provide compatibility implementations of
+some OpenSSL 1.1 APIs when using older OpenSSL versions.
+---
+ Utilities/cmlibarchive/libarchive/CMakeLists.txt                 |  2 ++
+ Utilities/cmlibarchive/libarchive/archive_cryptor_private.h      |  2 +-
+ Utilities/cmlibarchive/libarchive/archive_digest_private.h       |  2 +-
+ Utilities/cmlibarchive/libarchive/archive_hmac_private.h         |  2 +-
+ Utilities/cmlibarchive/libarchive/archive_openssl_evp_private.h  | 51 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ Utilities/cmlibarchive/libarchive/archive_openssl_hmac_private.h | 52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 108 insertions(+), 3 deletions(-)
+ create mode 100644 Utilities/cmlibarchive/libarchive/archive_openssl_evp_private.h
+ create mode 100644 Utilities/cmlibarchive/libarchive/archive_openssl_hmac_private.h
+
+diff --git a/Utilities/cmlibarchive/libarchive/CMakeLists.txt b/Utilities/cmlibarchive/libarchive/CMakeLists.txt
+index 4eeb5e3..eaa7b20 100644
+--- a/Utilities/cmlibarchive/libarchive/CMakeLists.txt
++++ b/Utilities/cmlibarchive/libarchive/CMakeLists.txt
+@@ -38,6 +38,8 @@ SET(libarchive_SOURCES
+   archive_hmac.c
+   archive_hmac_private.h
+   archive_match.c
++  archive_openssl_evp_private.h
++  archive_openssl_hmac_private.h
+   archive_options.c
+   archive_options_private.h
+   archive_pack_dev.h
+diff --git a/Utilities/cmlibarchive/libarchive/archive_cryptor_private.h b/Utilities/cmlibarchive/libarchive/archive_cryptor_private.h
+index 37eaad3..1c1a8c0 100644
+--- a/Utilities/cmlibarchive/libarchive/archive_cryptor_private.h
++++ b/Utilities/cmlibarchive/libarchive/archive_cryptor_private.h
+@@ -99,7 +99,7 @@ typedef struct {
+ } archive_crypto_ctx;
+ 
+ #elif defined(HAVE_LIBCRYPTO)
+-#include <openssl/evp.h>
++#include "archive_openssl_evp_private.h"
+ #define AES_BLOCK_SIZE	16
+ #define AES_MAX_KEY_SIZE 32
+ 
+diff --git a/Utilities/cmlibarchive/libarchive/archive_digest_private.h b/Utilities/cmlibarchive/libarchive/archive_digest_private.h
+index 77fad58..00697ae 100644
+--- a/Utilities/cmlibarchive/libarchive/archive_digest_private.h
++++ b/Utilities/cmlibarchive/libarchive/archive_digest_private.h
+@@ -134,7 +134,7 @@
+   defined(ARCHIVE_CRYPTO_SHA384_OPENSSL) ||\
+   defined(ARCHIVE_CRYPTO_SHA512_OPENSSL)
+ #define	ARCHIVE_CRYPTO_OPENSSL 1
+-#include <openssl/evp.h>
++#include "archive_openssl_evp_private.h"
+ #endif
+ 
+ /* Windows crypto headers */
+diff --git a/Utilities/cmlibarchive/libarchive/archive_hmac_private.h b/Utilities/cmlibarchive/libarchive/archive_hmac_private.h
+index 64de743..f36d694 100644
+--- a/Utilities/cmlibarchive/libarchive/archive_hmac_private.h
++++ b/Utilities/cmlibarchive/libarchive/archive_hmac_private.h
+@@ -70,7 +70,7 @@ typedef struct {
+ typedef	struct hmac_sha1_ctx archive_hmac_sha1_ctx;
+ 
+ #elif defined(HAVE_LIBCRYPTO)
+-#include <openssl/hmac.h>
++#include "archive_openssl_hmac_private.h"
+ 
+ typedef	HMAC_CTX archive_hmac_sha1_ctx;
+ 
+diff --git a/Utilities/cmlibarchive/libarchive/archive_openssl_evp_private.h b/Utilities/cmlibarchive/libarchive/archive_openssl_evp_private.h
+new file mode 100644
+index 0000000..0e97e27
+--- /dev/null
++++ b/Utilities/cmlibarchive/libarchive/archive_openssl_evp_private.h
+@@ -0,0 +1,51 @@
++/*-
++ * Copyright (c) 2003-2007 Tim Kientzle
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR(S) ``AS IS'' AND ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
++ * IN NO EVENT SHALL THE AUTHOR(S) BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++#ifndef ARCHIVE_OPENSSL_EVP_PRIVATE_H_INCLUDED
++#define ARCHIVE_OPENSSL_EVP_PRIVATE_H_INCLUDED
++
++#include <openssl/evp.h>
++#include <openssl/opensslv.h>
++
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
++#include <stdlib.h> /* malloc, free */
++#include <string.h> /* memset */
++static inline EVP_MD_CTX *EVP_MD_CTX_new(void)
++{
++	EVP_MD_CTX *ctx = (EVP_MD_CTX *)malloc(sizeof(EVP_MD_CTX));
++	if (ctx != NULL) {
++		memset(ctx, 0, sizeof(*ctx));
++	}
++	return ctx;
++}
++
++static inline void EVP_MD_CTX_free(EVP_MD_CTX *ctx)
++{
++	EVP_MD_CTX_cleanup(ctx);
++	memset(ctx, 0, sizeof(*ctx));
++	free(ctx);
++}
++#endif
++
++#endif
+diff --git a/Utilities/cmlibarchive/libarchive/archive_openssl_hmac_private.h b/Utilities/cmlibarchive/libarchive/archive_openssl_hmac_private.h
+new file mode 100644
+index 0000000..d4ae0d1
+--- /dev/null
++++ b/Utilities/cmlibarchive/libarchive/archive_openssl_hmac_private.h
+@@ -0,0 +1,52 @@
++/*-
++ * Copyright (c) 2003-2007 Tim Kientzle
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR(S) ``AS IS'' AND ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
++ * IN NO EVENT SHALL THE AUTHOR(S) BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++#ifndef ARCHIVE_OPENSSL_HMAC_PRIVATE_H_INCLUDED
++#define ARCHIVE_OPENSSL_HMAC_PRIVATE_H_INCLUDED
++
++#include <openssl/hmac.h>
++#include <openssl/opensslv.h>
++
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
++#include <stdlib.h> /* malloc, free */
++#include <string.h> /* memset */
++static inline HMAC_CTX *HMAC_CTX_new(void)
++{
++	HMAC_CTX *ctx = (HMAC_CTX *)malloc(sizeof(HMAC_CTX));
++	if (ctx != NULL) {
++		memset(ctx, 0, sizeof(*ctx));
++		HMAC_CTX_init(ctx);
++	}
++	return ctx;
++}
++
++static inline void HMAC_CTX_free(HMAC_CTX *ctx)
++{
++	HMAC_CTX_cleanup(ctx);
++	memset(ctx, 0, sizeof(*ctx));
++	free(ctx);
++}
++#endif
++
++#endif
+--
+libgit2 0.24.0
+
