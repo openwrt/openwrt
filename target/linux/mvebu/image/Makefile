@@ -144,7 +144,7 @@ define Device/linksys-wrt1900ac
 endef
 TARGET_DEVICES += linksys-wrt1900ac
 
-define Device/openblocks-ax3
+define Device/openblocks-ax3-4
   $(Device/UBI-factory)
   DEVICE_DTS := armada-xp-openblocks-ax3-4
   SUPPORTED_DEVICES := $(1)
@@ -153,7 +153,7 @@ define Device/openblocks-ax3
   IMAGE/factory.img := append-kernel | pad-to $$(BLOCKSIZE) | append-ubi
   DEVICE_TITLE := Plat'Home OpenBlocks AX3
 endef
-TARGET_DEVICES += openblocks-ax3
+TARGET_DEVICES += openblocks-ax3-4
 
 define Device/armada-385-db-ap
   $(Device/NAND-256K)
