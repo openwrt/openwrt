@@ -110,7 +110,7 @@ endef
 
 define Image/Default/FileSizeCheck
  # parameters: 1 = file path, 2 = maximum size in bytes
-	[ `stat -c %s '$(1)'` -le $(2) ] || { echo '   ERROR: $(1) too big (> $(2) bytes)'; exit 1; }
+	[ `stat -c %s '$(1)'` -le $(2) ] || { echo '   ERROR: $(1) too big (> $(2) bytes)'; rm -f $(1); }
 endef
 
 
@@ -215,18 +215,14 @@ define Image/Build/Linksys/wrt350nv2-builder
 	)
 	echo '#version 0x2020' >> '$(TMP_DIR)/$(2)_factory/$(2).par'
  # create bin file for recovery and factory image
-	( \
+	-( \
 		cd '$(TMP_DIR)/$(2)_factory'; \
 		'$(STAGING_DIR_HOST)/bin/wrt350nv2-builder' -b '$(TMP_DIR)/$(2)_factory/$(2).par'; \
-	)
- # copy bin file as recovery image
-	$(CP) '$(TMP_DIR)/$(2)_factory/wrt350n.bin' '$(BIN_DIR)/openwrt-$(2)-$(1)-recovery.bin'
- # create factory image for stock firmware update mechanism
+	) && $(CP) '$(TMP_DIR)/$(2)_factory/wrt350n.bin' '$(BIN_DIR)/openwrt-$(2)-$(1)-recovery.bin' && \
 	( \
 		cd '$(TMP_DIR)/$(2)_factory'; \
 		zip 'wrt350n.zip' 'wrt350n.bin'; \
-	)
-	'$(STAGING_DIR_HOST)/bin/wrt350nv2-builder' -z '$(TMP_DIR)/$(2)_factory/wrt350n.zip' '$(BIN_DIR)/openwrt-$(2)-$(1)-factory.img'
+	) && '$(STAGING_DIR_HOST)/bin/wrt350nv2-builder' -z '$(TMP_DIR)/$(2)_factory/wrt350n.zip' '$(BIN_DIR)/openwrt-$(2)-$(1)-factory.img'
 	rm -rf '$(TMP_DIR)/$(2)_factory'
 endef
 
