@@ -126,6 +126,9 @@ get_status_led() {
 	pbr-d1)
 		status_led="$board:orange:power"
 		;;
+	f5d8235-v1)
+		status_led="$board:blue:wired"
+		;;
 	f5d8235-v2)
 		status_led="$board:blue:router"
 		;;

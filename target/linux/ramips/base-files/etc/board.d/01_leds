@@ -158,7 +158,11 @@ ex2700)
 	ucidef_set_led_default "power_r" "POWER (red)" "$board:red:power" "0"
 	set_wifi_led "$board:green:router"
 	;;
-f5d8235-v1|\
+f5d8235-v1)
+	ucidef_set_led_default "lan" "lan" "$board:blue:wired" "0"
+	set_usb_led "$board:blue:storage"
+	set_wifi_led "$board:blue:wireless"
+	;;
 f5d8235-v2)
 	set_usb_led "$board:blue:storage"
 	;;
