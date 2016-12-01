@@ -92,7 +92,7 @@ define BuildTemplate
     SUBMENU:=Netfilter Extensions
     TITLE:=$(2) netfilter module
     DEPENDS:=+kmod-ipt-core $(5)
-    KCONFIG:=$(6)
+    KCONFIG:=CONFIG_NF_CONNTRACK_MARK=y
     FILES:=$(foreach mod,$(4),$(PKG_BUILD_DIR)/extensions/$(mod).$(LINUX_KMOD_SUFFIX))
     AUTOLOAD:=$(call AutoProbe,$(notdir $(4)))
   endef
@@ -124,7 +124,7 @@ endef
 
 #$(eval $(call BuildTemplate,SUFFIX,DESCRIPTION,EXTENSION,MODULE,PRIORITY,DEPENDS))
 
-$(eval $(call BuildTemplate,compat-xtables,API compatibilty layer,,compat_xtables,+IPV6:kmod-ip6tables,CONFIG_NF_CONNTRACK_MARK=y))
+$(eval $(call BuildTemplate,compat-xtables,API compatibilty layer,,compat_xtables,+IPV6:kmod-ip6tables))
 $(eval $(call BuildTemplate,nathelper-rtsp,RTSP Conntrack and NAT,,rtsp/nf_conntrack_rtsp rtsp/nf_nat_rtsp,+kmod-ipt-conntrack-extra +kmod-ipt-nat))
 
 $(eval $(call BuildTemplate,account,ACCOUNT,xt_ACCOUNT,ACCOUNT/xt_ACCOUNT,+kmod-ipt-compat-xtables))
