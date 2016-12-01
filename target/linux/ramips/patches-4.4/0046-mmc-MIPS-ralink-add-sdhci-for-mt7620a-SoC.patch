@@ -1760,7 +1760,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/sd.c
-@@ -0,0 +1,3060 @@
+@@ -0,0 +1,3067 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -1958,7 +1958,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.dat_drv        = 4,
 +	.data_pins      = 4,
 +	.data_offset    = 0,
-+	.flags          = MSDC_SYS_SUSPEND | MSDC_WP_PIN_EN | MSDC_CD_PIN_EN | MSDC_REMOVABLE | MSDC_HIGHSPEED,
++	.flags          = MSDC_SYS_SUSPEND | MSDC_CD_PIN_EN | MSDC_REMOVABLE | MSDC_HIGHSPEED,
 +//	.flags          = MSDC_SYS_SUSPEND | MSDC_WP_PIN_EN | MSDC_CD_PIN_EN | MSDC_REMOVABLE,
 +};
 +
@@ -4509,6 +4509,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    int ret, irq;
 + 
 +    pdev->dev.platform_data = &msdc0_hw;
++ 
++   if (of_property_read_bool(pdev->dev.of_node, "mtk,wp-en"))
++	msdc0_hw.flags |= MSDC_WP_PIN_EN;
 +  
 +    /* Allocate MMC host for this device */
 +    mmc = mmc_alloc_host(sizeof(struct msdc_host), &pdev->dev);
@@ -4603,7 +4606,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    spin_lock_init(&host->lock);
 +    msdc_init_hw(host);
 +
-+    ret = request_irq((unsigned int)irq, msdc_irq, IRQF_TRIGGER_LOW, dev_name(&pdev->dev), host);
++	if (ralink_soc == MT762X_SOC_MT7621AT)
++		ret = request_irq((unsigned int)irq, msdc_irq, 0, dev_name(&pdev->dev), host);
++	else 
++		ret = request_irq((unsigned int)irq, msdc_irq, IRQF_TRIGGER_LOW, dev_name(&pdev->dev), host);
++
 +    if (ret) goto release;
 +    // mt65xx_irq_unmask(irq); /* --- by chhung */
 +    
