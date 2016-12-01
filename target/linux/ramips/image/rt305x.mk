@@ -94,12 +94,12 @@ endef
 TARGET_DEVICES += atp-52b
 
 
-define Device/f5d8235v2
+define Device/f5d8235-v2
   DTS := F5D8235_V2
   IMAGE_SIZE := 7744k
   DEVICE_TITLE := Belkin F5D8235 v2
 endef
-TARGET_DEVICES += f5d8235v2
+TARGET_DEVICES += f5d8235-v2
 
 
 define Device/f7c027
@@ -127,13 +127,13 @@ endef
 TARGET_DEVICES += awm003-evb
 
 
-define Device/awmapn2403
+define Device/awapn2403
   DTS := AWAPN2403
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := AsiaRF AWAPN2403
 endef
-TARGET_DEVICES += awmapn2403
+TARGET_DEVICES += awapn2403
 
 
 define Device/bc2
@@ -316,13 +316,13 @@ endef
 TARGET_DEVICES += mzk-wdpr
 
 
-define Device/ncs601W
+define Device/ncs601w
   DTS := NCS601W
   DEVICE_TITLE := Wansview NCS601W
   DEVICE_PACKAGES := kmod-video-core kmod-video-uvc \
 		kmod-usb-core kmod-usb-ohci
 endef
-TARGET_DEVICES += ncs601W
+TARGET_DEVICES += ncs601w
 
 
 define Device/m2m
@@ -444,13 +444,13 @@ endef
 TARGET_DEVICES += w502u
 
 
-define Device/wcr150gn
+define Device/wcr-150gn
   DTS := WCR150GN
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Sparklan WCR-150GN
 endef
-TARGET_DEVICES += wcr150gn
+TARGET_DEVICES += wcr-150gn
 
 
 define Device/mzk-dp150n
@@ -463,12 +463,12 @@ endef
 TARGET_DEVICES += mzk-dp150n
 
 
-define Device/wizard-8800
+define Device/wizard8800
   DTS := WIZARD8800
   UIMAGE_NAME:= Linux Kernel Image
   DEVICE_TITLE := EasyAcc WIZARD 8800
 endef
-TARGET_DEVICES += wizard-8800
+TARGET_DEVICES += wizard8800
 
 
 define Device/wizfi630a

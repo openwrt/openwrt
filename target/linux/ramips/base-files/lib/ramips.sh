@@ -260,7 +260,7 @@ ramips_board_detect() {
 		name="m2m"
 		;;
 	*"Mercury MAC1200R v2")
-		name="mac1200rv2"
+		name="mac1200r-v2"
 		;;
 	*"MicroWRT")
 		name="microwrt"
