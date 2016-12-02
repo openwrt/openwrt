@@ -25,31 +25,35 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -		if (phydev->state == PHY_NOLINK) {
 -			if (priv->gpiod_reset && !priv->phy_reset) {
 -				struct at803x_context context;
-+	if (phydev->state == PHY_NOLINK) {
-+		if (priv->gpiod_reset && !priv->phy_reset) {
-+			struct at803x_context context;
- 
+-
 -				at803x_context_save(phydev, &context);
-+			at803x_context_save(phydev, &context);
- 
+-
 -				gpiod_set_value(priv->gpiod_reset, 1);
 -				msleep(1);
 -				gpiod_set_value(priv->gpiod_reset, 0);
 -				msleep(1);
-+			gpiod_set_value(priv->gpiod_reset, 1);
-+			msleep(1);
-+			gpiod_set_value(priv->gpiod_reset, 0);
-+			msleep(1);
- 
+-
 -				at803x_context_restore(phydev, &context);
-+			at803x_context_restore(phydev, &context);
- 
+-
 -				dev_dbg(&phydev->dev, "%s(): phy was reset\n",
 -					__func__);
 -				priv->phy_reset = true;
 -			}
 -		} else {
 -			priv->phy_reset = false;
++	if (phydev->state == PHY_NOLINK) {
++		if (priv->gpiod_reset && !priv->phy_reset) {
++			struct at803x_context context;
++
++			at803x_context_save(phydev, &context);
++
++			gpiod_set_value(priv->gpiod_reset, 1);
++			msleep(1);
++			gpiod_set_value(priv->gpiod_reset, 0);
++			msleep(1);
++
++			at803x_context_restore(phydev, &context);
++
 +			dev_dbg(&phydev->dev, "%s(): phy was reset\n",
 +				__func__);
 +			priv->phy_reset = true;
