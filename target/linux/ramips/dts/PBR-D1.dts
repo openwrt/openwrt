@@ -43,10 +43,10 @@
 		#size-cells = <0>;
 		poll-interval = <20>;
 
-		wps {
+		reset {
 			label = "reset";
 			gpios = <&gpio1 38 1>;
-			linux,code = <KEY_WPS_BUTTON>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
