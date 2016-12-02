@@ -339,11 +339,18 @@ wndr3700v5)
 wt3020)
 	ucidef_set_led_default "power" "power" "$board:blue:power" "0"
 	;;
-y1|\
-y1s)
-	ucidef_set_led_default "power" "power" "$board:blue:power" "1"
+y1)
 	set_usb_led "$board:blue:usb"
-	set_wifi_led "$board:blue:wifi"
+	ucidef_set_led_netdev "wifi" "WIFI" "$board:blue:wifi" "wlan1"
+	ucidef_set_led_netdev "wifi5g" "WIFI5G" "$board:blue:wifi5g" "wlan0"
+	ucidef_set_led_netdev "lan" "LAN" "$board:blue:lan" "eth0.1" "tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "$board:blue:internet" "eth0.2" "tx rx"
+	;;
+y1s)
+	set_usb_led "$board:blue:usb"
+	ucidef_set_led_netdev "wifi" "WIFI" "$board:yellow:wifi" "wlan1"
+	ucidef_set_led_netdev "wifi5g" "WIFI5G" "$board:blue:wifi" "wlan0"
+	ucidef_set_led_netdev "wan" "WAN" "$board:blue:internet" "eth0.2" "tx rx"
 	;;
 zbt-ape522ii)
 	ucidef_set_led_netdev "wlan2g4" "wlan1-link" "$board:green:wlan2g4" "wlan1"
