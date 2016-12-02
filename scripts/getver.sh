@@ -40,7 +40,7 @@ try_git() {
 			REV="${UPSTREAM_REV}+$((REV - UPSTREAM_REV))"
 		fi
 
-		REV="${REV:+r$REV}"
+		REV="${REV:+r$REV-$(git log --format="%h" -1)}"
 		;;
 	esac
 
