@@ -175,8 +175,8 @@ if VERSIONOPT
 		prompt "Release version number"
 		help
 			This is the release version number embedded in the image.
-			If unspecified, it defaults to CURRENT for the master branch
-			or to ##.##-CURRENT on release branches.
+			If unspecified, it defaults to SNAPSHOT for the master branch
+			or to ##.##-SNAPSHOT on release branches.
 
 	config VERSION_CODE
 		string
@@ -195,8 +195,8 @@ if VERSIONOPT
 			This is the repository address embedded in the image, it defaults
 			to the trunk snapshot repo; the url may contain the following placeholders:
 			 %R .. Repository revision ID
-			 %V .. Configured release version number or "CURRENT", uppercase
-			 %v .. Configured release version number or "current", lowercase
+			 %V .. Configured release version number or "SNAPSHOT", uppercase
+			 %v .. Configured release version number or "snapshot", lowercase
 			 %C .. Configured release revision code or value of %R, uppercase
 			 %c .. Configured release revision code or value of %R, lowercase
 			 %N .. Release name, uppercase
