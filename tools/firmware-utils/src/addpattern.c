@@ -106,6 +106,13 @@ struct board_info {
 
 struct board_info boards[] = {
 	{
+		.id             = "E2100L",
+		.pattern        = "NL1X",
+		.hw_ver         = 0x00,
+		.sn             = 0x0f,
+		.flags          = {0x3f, 0x00},
+	},
+	{
 		.id		= "WRT160NL",
 		.pattern	= "NL16",
 		.hw_ver		= 0x00,
