@@ -484,6 +484,24 @@ define Device/som9331
 endef
 TARGET_DEVICES += som9331
 
+define Device/sr3200
+  DEVICE_TITLE := YunCore SR3200
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
+  BOARDNAME = SR3200
+  IMAGE_SIZE = 16000k
+  CONSOLE = ttyS0,115200
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += sr3200
+
+define Device/xd3200
+  $(Device/sr3200)
+  DEVICE_TITLE := YunCore XD3200
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  BOARDNAME = XD3200
+endef
+TARGET_DEVICES += xd3200
+
 define Device/tellstick-znet-lite
   $(Device/tplink-16mlzma)
   DEVICE_TITLE := TellStick ZNet Lite

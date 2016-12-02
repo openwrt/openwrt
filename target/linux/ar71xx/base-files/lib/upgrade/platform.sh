@@ -228,6 +228,7 @@ platform_check_image() {
 	rocket-m-xw|\
 	rocket-m|\
 	rw2458n|\
+	sr3200|\
 	tew-632brp|\
 	tew-712br|\
 	tew-732br|\
@@ -251,7 +252,8 @@ platform_check_image() {
 	wzr-hp-ag300h|\
 	wzr-hp-g300nh2|\
 	wzr-hp-g300nh|\
-	wzr-hp-g450h)
+	wzr-hp-g450h|\
+	xd3200)
 		[ "$magic" != "2705" ] && {
 			echo "Invalid image type."
 			return 1

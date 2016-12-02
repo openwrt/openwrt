@@ -444,6 +444,9 @@ som9331)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:red:wlan" "phy0tpt"
 	ucidef_set_led_usbdev "usb" "USB" "$board:green:system" "1-1"
 	;;
+sr3200)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:green:wlan2g" "phy1tpt"
+	;;
 tellstick-znet-lite)
 	ucidef_set_led_netdev "lan_act" "LANACT" "tellstick:green:lan" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LANLINK" "tellstick:orange:lan" "eth0" "link"
@@ -737,6 +740,9 @@ wzr-hp-g300nh)
 	ucidef_set_led_wlan "wlan" "Wireless" "buffalo:green:wireless" "phy0tpt"
 	ucidef_set_led_netdev "router" "Router" "buffalo:green:router" "eth1"
 	ucidef_set_led_usbdev "usb" "USB" "buffalo:blue:usb" "1-1"
+	;;
+xd3200)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:blue:wlan2g" "phy1tpt"
 	;;
 z1)
 	ucidef_set_led_netdev "wlan1" "WLAN1" "$board:blue:tricolor0" "wlan1"

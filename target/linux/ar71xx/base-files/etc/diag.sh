@@ -18,7 +18,9 @@ get_status_led() {
 	antminer-s3|\
 	antminer-r1|\
 	minibox-v1|\
-	som9331)
+	som9331|\
+	sr3200|\
+	xd3200)
 		status_led="$board:green:system"
 		;;
 	ap132|\

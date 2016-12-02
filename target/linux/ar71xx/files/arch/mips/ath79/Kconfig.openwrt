@@ -280,6 +280,17 @@ config ATH79_MACH_SOM9331
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_SR3200
+	bool "YunCore SR3200 support"
+	select SOC_QCA956X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_BHR_4GRV2
 	bool "Buffalo BHR-4GRV2 board support"
 	select SOC_QCA955X
@@ -423,6 +434,16 @@ config ATH79_MACH_WPJ558
 	select ATH79_DEV_LEDS_GPIO
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
+config ATH79_MACH_XD3200
+	bool "YunCore XD3200 support"
+	select SOC_QCA956X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
 config ATH79_MACH_DGL_5500_A1

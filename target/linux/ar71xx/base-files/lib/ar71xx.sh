@@ -905,6 +905,9 @@ ar71xx_board_detect() {
 	*SOM9331)
 		name="som9331"
 		;;
+	*SR3200)
+		name="sr3200"
+		;;
 	*TEW-632BRP)
 		name="tew-632brp"
 		;;
@@ -1189,6 +1192,9 @@ ar71xx_board_detect() {
 		;;
 	*WHR-HP-G300N)
 		name="whr-hp-g300n"
+		;;
+	*XD3200)
+		name="xd3200"
 		;;
 	*Z1)
 		name="z1"

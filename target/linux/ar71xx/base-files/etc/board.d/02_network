@@ -230,6 +230,7 @@ ar71xx_setup_interfaces()
 	dir-835-a1|\
 	esr900|\
 	mynet-n750|\
+	sr3200|\
 	wndr3700v4|\
 	wndr4300)
 		ucidef_add_switch "switch0" \
@@ -395,7 +396,8 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:wan"
 		;;
-	unifiac-pro)
+	unifiac-pro|\
+	xd3200)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:wan"
 		;;
