@@ -1,0 +1,791 @@
+From 4b90ef9ce4197f9d7c58290d2b13a7a3d06679c5 Mon Sep 17 00:00:00 2001
+From: wavelet2 <a3d35232@btinternet.com>
+Date: Fri, 19 Aug 2016 09:32:53 +0100
+Subject: [PATCH] Overlay for Microchip MCP23S08/17 SPI gpio expanders  (#1566)
+
+Added Overlay for Microchip MCP23S08/17 SPI gpio expanders
+---
+ arch/arm/boot/dts/overlays/Makefile             |   1 +
+ arch/arm/boot/dts/overlays/README               |  24 +
+ arch/arm/boot/dts/overlays/mcp23s17-overlay.dts | 732 ++++++++++++++++++++++++
+ 3 files changed, 757 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/mcp23s17-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -49,6 +49,7 @@ dtbo-$(RPI_DT_OVERLAYS) += justboom-dac.
+ dtbo-$(RPI_DT_OVERLAYS) += justboom-digi.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += lirc-rpi.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += mcp23017.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += mcp23s17.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += mcp2515-can0.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += mcp2515-can1.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += mmc.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -628,6 +628,30 @@ Params: gpiopin                 Gpio pin
+         addr                    I2C address of the MCP23017 (default: 0x20)
+ 
+ 
++Name:   mcp23s17
++Info:   Configures the MCP23S08/17 SPI GPIO expanders.
++        If devices are present on SPI1 or SPI2, those interfaces must be enabled
++        with one of the spi1-1/2/3cs and/or spi2-1/2/3cs overlays.
++        If interrupts are enabled for a device on a given CS# on a SPI bus, that
++        device must be the only one present on that SPI bus/CS#.
++Load:   dtoverlay=mcp23s17,<param>=<val>
++Params: s08-spi<n>-<m>-present  4-bit integer, bitmap indicating MCP23S08
++                                devices present on SPI<n>, CS#<m>
++
++        s17-spi<n>-<m>-present  8-bit integer, bitmap indicating MCP23S17
++                                devices present on SPI<n>, CS#<m>
++
++        s08-spi<n>-<m>-int-gpio integer, enables interrupts on a single
++                                MCP23S08 device on SPI<n>, CS#<m>, specifies
++                                the GPIO pin to which INT output of MCP23S08
++                                is connected.
++
++        s17-spi<n>-<m>-int-gpio integer, enables mirrored interrupts on a
++                                single MCP23S17 device on SPI<n>, CS#<m>,
++                                specifies the GPIO pin to which either INTA
++                                or INTB output of MCP23S17 is connected.
++
++
+ Name:   mcp2515-can0
+ Info:   Configures the MCP2515 CAN controller on spi0.0
+ Load:   dtoverlay=mcp2515-can0,<param>=<val>
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/mcp23s17-overlay.dts
+@@ -0,0 +1,732 @@
++// Overlay for MCP23S08/17 GPIO Extenders from Microchip Semiconductor
++
++// dtparams:
++//     s08-spi<n>-<m>-present  - 4-bit integer, bitmap indicating MCP23S08 devices present on SPI<n>, CS#<m>.
++//     s17-spi<n>-<m>-present  - 8-bit integer, bitmap indicating MCP23S17 devices present on SPI<n>, CS#<m>.
++//     s08-spi<n>-<m>-int-gpio - integer, enables interrupts on a single MCP23S08 device on SPI<n>, CS#<m>, specifies the GPIO pin to which INT output is connected.
++//     s17-spi<n>-<m>-int-gpio - integer, enables mirrored interrupts on a single MCP23S17 device on SPI<n>, CS#<m>, specifies the GPIO pin to which either INTA or INTB output is connected.
++//
++// If devices are present on SPI1 or SPI2, those interfaces must be enabled with one of the spi1-1/2/3cs and/or spi2-1/2/3cs overlays.
++// If interrupts are enabled for a device on a given CS# on a SPI bus, that device must be the only one present on that SPI bus/CS#.
++//
++// Example 1: A single MCP23S17 device on SPI0, CS#0 with its SPI addr set to 0 and INTA output connected to GPIO25:
++// dtoverlay=mcp23s17:s17-spi0-0-present=1,s17-spi0-0-int-gpio=25
++//
++// Example 2: Two MCP23S08 devices on SPI1, CS#0 with their addrs set to 2 and 3. Three MCP23S17 devices on SPI1, CS#1 with their addrs set to 0, 1 and 7:
++// dtoverlay=spi1-2cs
++// dtoverlay=mcp23s17:s08-spi1-0-present=12,s17-spi1-1-present=131
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	// disable spi-dev on spi0.0
++	fragment@0 {
++		target = <&spidev0>;
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	// disable spi-dev on spi0.1
++	fragment@1 {
++		target = <&spidev1>;
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	// disable spi-dev on spi1.0
++	fragment@2 {
++		target-path = "spi1/spidev@0";
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	// disable spi-dev on spi1.1
++	fragment@3 {
++		target-path = "spi1/spidev@1";
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	// disable spi-dev on spi1.2
++	fragment@4 {
++		target-path = "spi1/spidev@2";
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	// disable spi-dev on spi2.0
++	fragment@5 {
++		target-path = "spi2/spidev@0";
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	// disable spi-dev on spi2.1
++	fragment@6 {
++		target-path = "spi2/spidev@1";
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	// disable spi-dev on spi2.2
++	fragment@7 {
++		target-path = "spi2/spidev@2";
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	// enable one or more mcp23s08s on spi0.0
++	fragment@8 {
++		target = <&spi0>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s08_00: mcp23s08@0 {
++				compatible = "microchip,mcp23s08";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s08-spi0-0-present parameter */
++     				reg = <0>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s08-spi0-0-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s08s on spi0.1
++	fragment@9 {
++		target = <&spi0>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s08_01: mcp23s08@1 {
++				compatible = "microchip,mcp23s08";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s08-spi0-1-present parameter */
++     				reg = <1>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s08-spi0-1-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s08s on spi1.0
++	fragment@10 {
++		target = <&spi1>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s08_10: mcp23s08@0 {
++				compatible = "microchip,mcp23s08";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s08-spi1-0-present parameter */
++     				reg = <0>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s08-spi1-0-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s08s on spi1.1
++	fragment@11 {
++		target = <&spi1>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s08_11: mcp23s08@1 {
++				compatible = "microchip,mcp23s08";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s08-spi1-1-present parameter */
++     				reg = <1>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s08-spi1-1-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s08s on spi1.2
++	fragment@12 {
++		target = <&spi1>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s08_12: mcp23s08@2 {
++				compatible = "microchip,mcp23s08";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s08-spi1-2-present parameter */
++     				reg = <2>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s08-spi1-2-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s08s on spi2.0
++	fragment@13 {
++		target = <&spi2>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s08_20: mcp23s08@0 {
++				compatible = "microchip,mcp23s08";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s08-spi2-0-present parameter */
++     				reg = <0>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s08-spi2-0-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s08s on spi2.1
++	fragment@14 {
++		target = <&spi2>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s08_21: mcp23s08@1 {
++				compatible = "microchip,mcp23s08";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s08-spi2-1-present parameter */
++     				reg = <1>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s08-spi2-1-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s08s on spi2.2
++	fragment@15 {
++		target = <&spi2>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s08_22: mcp23s08@2 {
++				compatible = "microchip,mcp23s08";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s08-spi2-2-present parameter */
++     				reg = <2>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s08-spi2-2-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s17s on spi0.0
++	fragment@16 {
++		target = <&spi0>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s17_00: mcp23s17@0 {
++				compatible = "microchip,mcp23s17";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s17-spi0-0-present parameter */
++     				reg = <0>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s17-spi0-0-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s17s on spi0.1
++	fragment@17 {
++		target = <&spi0>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s17_01: mcp23s17@1 {
++				compatible = "microchip,mcp23s17";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s17-spi0-1-present parameter */
++     				reg = <1>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s17-spi0-1-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s17s on spi1.0
++	fragment@18 {
++		target = <&spi1>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s17_10: mcp23s17@0 {
++				compatible = "microchip,mcp23s17";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s17-spi1-0-present parameter */
++     				reg = <0>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s17-spi1-0-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s17s on spi1.1
++	fragment@19 {
++		target = <&spi1>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s17_11: mcp23s17@1 {
++				compatible = "microchip,mcp23s17";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s17-spi1-1-present parameter */
++     				reg = <1>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s17-spi1-1-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s17s on spi1.2
++	fragment@20 {
++		target = <&spi1>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s17_12: mcp23s17@2 {
++				compatible = "microchip,mcp23s17";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s17-spi1-2-present parameter */
++     				reg = <2>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s17-spi1-2-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s17s on spi2.0
++	fragment@21 {
++		target = <&spi2>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s17_20: mcp23s17@0 {
++				compatible = "microchip,mcp23s17";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s17-spi2-0-present parameter */
++     				reg = <0>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s17-spi2-0-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s17s on spi2.1
++	fragment@22 {
++		target = <&spi2>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s17_21: mcp23s17@1 {
++				compatible = "microchip,mcp23s17";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s17-spi2-1-present parameter */
++     				reg = <1>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s17-spi2-1-int-gpio parameter */
++			};
++		};
++	};
++
++	// enable one or more mcp23s17s on spi2.2
++	fragment@23 {
++		target = <&spi2>;
++		__dormant__ {
++			status = "okay";
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++			mcp23s17_22: mcp23s17@2 {
++				compatible = "microchip,mcp23s17";
++  				gpio-controller;
++  				#gpio-cells = <2>;
++    				microchip,spi-present-mask = <0x00>;  /* overwritten by mcp23s17-spi2-2-present parameter */
++     				reg = <2>;
++    				spi-max-frequency = <500000>;
++				status = "okay";
++				#interrupt-cells=<2>;
++				interrupts = <0 2>;  /* 1st word overwritten by mcp23s17-spi2-2-int-gpio parameter */
++			};
++		};
++	};
++
++	// Configure GPIO pin connected to INT(A/B) output of mcp23s08/17 on spi0.0 as a input with no pull-up/down
++	fragment@24 {
++		target = <&gpio>;
++		__dormant__ {
++			spi0_0_int_pins: spi0_0_int_pins {
++				brcm,pins = <0>;  /* overwritten by mcp23s08/17-spi0-0-int-gpio parameter */
++				brcm,function = <0>;
++				brcm,pull = <0>;
++			};
++		};
++	};
++
++	// Configure GPIO pin connected to INT(A/B) output of mcp23s08/17 on spi0.1 as a input with no pull-up/down
++	fragment@25 {
++		target = <&gpio>;
++		__dormant__ {
++			spi0_1_int_pins: spi0_1_int_pins {
++				brcm,pins = <0>;  /* overwritten by mcp23s08/17-spi0-1-int-gpio parameter */
++				brcm,function = <0>;
++				brcm,pull = <0>;
++			};
++		};
++	};
++
++	// Configure GPIO pin connected to INT(A/B) output of mcp23s08/17 on spi1.0 as a input with no pull-up/down
++	fragment@26 {
++		target = <&gpio>;
++		__dormant__ {
++			spi1_0_int_pins: spi1_0_int_pins {
++				brcm,pins = <0>;  /* overwritten by mcp23s08/17-spi1-0-int-gpio parameter */
++				brcm,function = <0>;
++				brcm,pull = <0>;
++			};
++		};
++	};
++
++	// Configure GPIO pin connected to INT(A/B) output of mcp23s08/17 on spi1.1 as a input with no pull-up/down
++	fragment@27 {
++		target = <&gpio>;
++		__dormant__ {
++			spi1_1_int_pins: spi1_1_int_pins {
++				brcm,pins = <0>;  /* overwritten by mcp23s08/17-spi1-1-int-gpio parameter */
++				brcm,function = <0>;
++				brcm,pull = <0>;
++			};
++		};
++	};
++
++	// Configure GPIO pin connected to INT(A/B) output of mcp23s08/17 on spi1.2 as a input with no pull-up/down
++	fragment@28 {
++		target = <&gpio>;
++		__dormant__ {
++			spi1_2_int_pins: spi1_2_int_pins {
++				brcm,pins = <0>;  /* overwritten by mcp23s08/17-spi1-2-int-gpio parameter */
++				brcm,function = <0>;
++				brcm,pull = <0>;
++			};
++		};
++	};
++
++	// Configure GPIO pin connected to INT(A/B) output of mcp23s08/17 on spi2.0 as a input with no pull-up/down
++	fragment@29 {
++		target = <&gpio>;
++		__dormant__ {
++			spi2_0_int_pins: spi2_0_int_pins {
++				brcm,pins = <0>;  /* overwritten by mcp23s08/17-spi2-0-int-gpio parameter */
++				brcm,function = <0>;
++				brcm,pull = <0>;
++			};
++		};
++	};
++
++	// Configure GPIO pin connected to INT(A/B) output of mcp23s08/17 on spi2.1 as a input with no pull-up/down
++	fragment@30 {
++		target = <&gpio>;
++		__dormant__ {
++			spi2_1_int_pins: spi2_1_int_pins {
++				brcm,pins = <0>;  /* overwritten by mcp23s08/17-spi2-1-int-gpio parameter */
++				brcm,function = <0>;
++				brcm,pull = <0>;
++			};
++		};
++	};
++
++	// Configure GPIO pin connected to INT(A/B) output of mcp23s08/17 on spi2.2 as a input with no pull-up/down
++	fragment@31 {
++		target = <&gpio>;
++		__dormant__ {
++			spi2_2_int_pins: spi2_2_int_pins {
++				brcm,pins = <0>;  /* overwritten by mcp23s08/17-spi2-2-int-gpio parameter */
++				brcm,function = <0>;
++				brcm,pull = <0>;
++			};
++		};
++	};
++
++	// Enable interrupts for a mcp23s08 on spi0.0.
++	// Use default active low interrupt signalling.
++	fragment@32 {
++		target = <&mcp23s08_00>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++		};
++	};
++
++	// Enable interrupts for a mcp23s08 on spi0.1.
++	// Use default active low interrupt signalling.
++	fragment@33 {
++		target = <&mcp23s08_01>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++		};
++	};
++
++	// Enable interrupts for a mcp23s08 on spi1.0.
++	// Use default active low interrupt signalling.
++	fragment@34 {
++		target = <&mcp23s08_10>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++		};
++	};
++
++	// Enable interrupts for a mcp23s08 on spi1.1.
++	// Use default active low interrupt signalling.
++	fragment@35 {
++		target = <&mcp23s08_11>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++		};
++	};
++
++	// Enable interrupts for a mcp23s08 on spi1.2.
++	// Use default active low interrupt signalling.
++	fragment@36 {
++		target = <&mcp23s08_12>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++		};
++	};
++
++	// Enable interrupts for a mcp23s08 on spi2.0.
++	// Use default active low interrupt signalling.
++	fragment@37 {
++		target = <&mcp23s08_20>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++		};
++	};
++
++	// Enable interrupts for a mcp23s08 on spi2.1.
++	// Use default active low interrupt signalling.
++	fragment@38 {
++		target = <&mcp23s08_21>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++		};
++	};
++
++	// Enable interrupts for a mcp23s08 on spi2.2.
++	// Use default active low interrupt signalling.
++	fragment@39 {
++		target = <&mcp23s08_22>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++		};
++	};
++
++	// Enable interrupts for a mcp23s17 on spi0.0.
++	// Enable mirroring so that either INTA or INTB output of mcp23s17 can be connected to the GPIO pin.
++	// Use default active low interrupt signalling.
++	fragment@40 {
++		target = <&mcp23s17_00>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++			microchip,irq-mirror;
++		};
++	};
++
++	// Enable interrupts for a mcp23s17 on spi0.1.
++	// Enable mirroring so that either INTA or INTB output of mcp23s17 can be connected to the GPIO pin.
++	// Configure INTA/B outputs of mcp23s08/17 as active low.
++	fragment@41 {
++		target = <&mcp23s17_01>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++			microchip,irq-mirror;
++		};
++	};
++
++	// Enable interrupts for a mcp23s17 on spi1.0.
++	// Enable mirroring so that either INTA or INTB output of mcp23s17 can be connected to the GPIO pin.
++	// Configure INTA/B outputs of mcp23s08/17 as active low.
++	fragment@42 {
++		target = <&mcp23s17_10>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++			microchip,irq-mirror;
++		};
++	};
++
++	// Enable interrupts for a mcp23s17 on spi1.1.
++	// Enable mirroring so that either INTA or INTB output of mcp23s17 can be connected to the GPIO pin.
++	// Configure INTA/B outputs of mcp23s08/17 as active low.
++	fragment@43 {
++		target = <&mcp23s17_11>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++			microchip,irq-mirror;
++		};
++	};
++
++	// Enable interrupts for a mcp23s17 on spi1.2.
++	// Enable mirroring so that either INTA or INTB output of mcp23s17 can be connected to the GPIO pin.
++	// Configure INTA/B outputs of mcp23s08/17 as active low.
++	fragment@44 {
++		target = <&mcp23s17_12>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++			microchip,irq-mirror;
++		};
++	};
++
++	// Enable interrupts for a mcp23s17 on spi2.0.
++	// Enable mirroring so that either INTA or INTB output of mcp23s17 can be connected to the GPIO pin.
++	// Configure INTA/B outputs of mcp23s08/17 as active low.
++	fragment@45 {
++		target = <&mcp23s17_20>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++			microchip,irq-mirror;
++		};
++	};
++
++	// Enable interrupts for a mcp23s17 on spi2.1.
++	// Enable mirroring so that either INTA or INTB output of mcp23s17 can be connected to the GPIO pin.
++	// Configure INTA/B outputs of mcp23s08/17 as active low.
++	fragment@46 {
++		target = <&mcp23s17_21>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++			microchip,irq-mirror;
++		};
++	};
++
++	// Enable interrupts for a mcp23s17 on spi2.2.
++	// Enable mirroring so that either INTA or INTB output of mcp23s17 can be connected to the GPIO pin.
++	// Configure INTA/B outputs of mcp23s08/17 as active low.
++	fragment@47 {
++		target = <&mcp23s17_22>;
++		__dormant__ {
++			interrupt-parent = <&gpio>;
++			interrupt-controller;
++			microchip,irq-mirror;
++		};
++	};
++
++	__overrides__ {
++		s08-spi0-0-present = <0>,"+0+8",  <&mcp23s08_00>,"microchip,spi-present-mask:0";
++		s08-spi0-1-present = <0>,"+1+9",  <&mcp23s08_01>,"microchip,spi-present-mask:0";
++		s08-spi1-0-present = <0>,"+2+10", <&mcp23s08_10>,"microchip,spi-present-mask:0";
++		s08-spi1-1-present = <0>,"+3+11", <&mcp23s08_11>,"microchip,spi-present-mask:0";
++		s08-spi1-2-present = <0>,"+4+12", <&mcp23s08_12>,"microchip,spi-present-mask:0";
++		s08-spi2-0-present = <0>,"+5+13", <&mcp23s08_20>,"microchip,spi-present-mask:0";
++		s08-spi2-1-present = <0>,"+6+14", <&mcp23s08_21>,"microchip,spi-present-mask:0";
++		s08-spi2-2-present = <0>,"+7+15", <&mcp23s08_22>,"microchip,spi-present-mask:0";
++		s17-spi0-0-present = <0>,"+0+16", <&mcp23s17_00>,"microchip,spi-present-mask:0";
++		s17-spi0-1-present = <0>,"+1+17", <&mcp23s17_01>,"microchip,spi-present-mask:0";
++		s17-spi1-0-present = <0>,"+2+18", <&mcp23s17_10>,"microchip,spi-present-mask:0";
++		s17-spi1-1-present = <0>,"+3+19", <&mcp23s17_11>,"microchip,spi-present-mask:0";
++		s17-spi1-2-present = <0>,"+4+20", <&mcp23s17_12>,"microchip,spi-present-mask:0";
++		s17-spi2-0-present = <0>,"+5+21", <&mcp23s17_20>,"microchip,spi-present-mask:0";
++		s17-spi2-1-present = <0>,"+6+22", <&mcp23s17_21>,"microchip,spi-present-mask:0";
++		s17-spi2-2-present = <0>,"+7+23", <&mcp23s17_22>,"microchip,spi-present-mask:0";
++		s08-spi0-0-int-gpio = <0>,"+24+32", <&spi0_0_int_pins>,"brcm,pins:0", <&mcp23s08_00>,"interrupts:0";
++		s08-spi0-1-int-gpio = <0>,"+25+33", <&spi0_1_int_pins>,"brcm,pins:0", <&mcp23s08_01>,"interrupts:0";
++		s08-spi1-0-int-gpio = <0>,"+26+34", <&spi1_0_int_pins>,"brcm,pins:0", <&mcp23s08_10>,"interrupts:0";
++		s08-spi1-1-int-gpio = <0>,"+27+35", <&spi1_1_int_pins>,"brcm,pins:0", <&mcp23s08_11>,"interrupts:0";
++		s08-spi1-2-int-gpio = <0>,"+28+36", <&spi1_2_int_pins>,"brcm,pins:0", <&mcp23s08_12>,"interrupts:0";
++		s08-spi2-0-int-gpio = <0>,"+29+37", <&spi2_0_int_pins>,"brcm,pins:0", <&mcp23s08_20>,"interrupts:0";
++		s08-spi2-1-int-gpio = <0>,"+30+38", <&spi2_1_int_pins>,"brcm,pins:0", <&mcp23s08_21>,"interrupts:0";
++		s08-spi2-2-int-gpio = <0>,"+31+39", <&spi2_2_int_pins>,"brcm,pins:0", <&mcp23s08_22>,"interrupts:0";
++		s17-spi0-0-int-gpio = <0>,"+24+40", <&spi0_0_int_pins>,"brcm,pins:0", <&mcp23s17_00>,"interrupts:0";
++		s17-spi0-1-int-gpio = <0>,"+25+41", <&spi0_1_int_pins>,"brcm,pins:0", <&mcp23s17_01>,"interrupts:0";
++		s17-spi1-0-int-gpio = <0>,"+26+42", <&spi1_0_int_pins>,"brcm,pins:0", <&mcp23s17_10>,"interrupts:0";
++		s17-spi1-1-int-gpio = <0>,"+27+43", <&spi1_1_int_pins>,"brcm,pins:0", <&mcp23s17_11>,"interrupts:0";
++		s17-spi1-2-int-gpio = <0>,"+28+44", <&spi1_2_int_pins>,"brcm,pins:0", <&mcp23s17_12>,"interrupts:0";
++		s17-spi2-0-int-gpio = <0>,"+29+45", <&spi2_0_int_pins>,"brcm,pins:0", <&mcp23s17_20>,"interrupts:0";
++		s17-spi2-1-int-gpio = <0>,"+30+46", <&spi2_1_int_pins>,"brcm,pins:0", <&mcp23s17_21>,"interrupts:0";
++		s17-spi2-2-int-gpio = <0>,"+31+47", <&spi2_2_int_pins>,"brcm,pins:0", <&mcp23s17_22>,"interrupts:0";
++	};
++};
++

@@ -1,0 +1,38 @@
+From c4bd9665b145cacfdf9cbd5f3d83ed0961080236 Mon Sep 17 00:00:00 2001
+From: Mario Kleiner <mario.kleiner.de@gmail.com>
+Date: Tue, 19 Jul 2016 20:59:01 +0200
+Subject: [PATCH] drm/vc4: Enable/Disable vblanks properly in crtc en/disable.
+
+Add missing drm_crtc_vblank_on/off() calls so vblank irq
+handling/updating/timestamping never runs with a crtc shut down
+or during its shutdown/startup, as that causes large jumps in
+vblank count and trouble for compositors.
+
+Signed-off-by: Mario Kleiner <mario.kleiner.de@gmail.com>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -468,6 +468,9 @@ static void vc4_crtc_disable(struct drm_
+ 	int ret;
+ 	require_hvs_enabled(dev);
+ 
++	/* Disable vblank irq handling before crtc is disabled. */
++	drm_crtc_vblank_off(crtc);
++
+ 	if (VC4_DSI_USE_FIRMWARE_SETUP &&
+ 	    (CRTC_READ(PV_V_CONTROL) & PV_VCONTROL_DSI)) {
+ 		/* Skip disabling the PV/HVS for the channel if it was
+@@ -531,6 +534,9 @@ static void vc4_crtc_enable(struct drm_c
+ 	/* Turn on the pixel valve, which will emit the vstart signal. */
+ 	CRTC_WRITE(PV_V_CONTROL,
+ 		   CRTC_READ(PV_V_CONTROL) | PV_VCONTROL_VIDEN);
++
++	/* Enable vblank irq handling after crtc is started. */
++	drm_crtc_vblank_on(crtc);
+ }
+ 
+ static bool vc4_crtc_mode_fixup(struct drm_crtc *crtc,

@@ -1,0 +1,50 @@
+From 88e9625826d782595ae6b2acf7b8214f5d05726b Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 19 Aug 2016 15:39:01 +0100
+Subject: [PATCH] overlays: Add swap_lr and enable_jack to audremap
+
+swap_lr causes the channels to be reversed, and enable_jack prevents the
+headphone output from being disabled.
+
+See: https://github.com/raspberrypi/linux/issues/1473
+---
+ arch/arm/boot/dts/overlays/README               | 9 ++++++---
+ arch/arm/boot/dts/overlays/audremap-overlay.dts | 7 ++++++-
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -254,9 +254,12 @@ Params: <None>
+ 
+ 
+ Name:   audremap
+-Info:   Switches PWM sound output to pins 12 & 13
+-Load:   dtoverlay=audremap
+-Params: <None>
++Info:   Switches PWM sound output to pins 12 (Right) & 13 (Left)
++Load:   dtoverlay=audremap,<param>=<val>
++Params: swap_lr                 Reverse the channel allocation, which will also
++                                swap the audio jack outputs (default off)
++        enable_jack             Don't switch off the audio jack output
++                                (default off)
+ 
+ 
+ Name:   bmp085_i2c-sensor
+--- a/arch/arm/boot/dts/overlays/audremap-overlay.dts
++++ b/arch/arm/boot/dts/overlays/audremap-overlay.dts
+@@ -6,9 +6,14 @@
+ 
+         fragment@0 {
+                 target = <&audio_pins>;
+-                __overlay__ {
++                frag0: __overlay__ {
+                         brcm,pins = < 12 13 >;
+                         brcm,function = < 4 >; /* alt0 alt0 */
+                 };
+         };
++
++	__overrides__ {
++		swap_lr = <&frag0>, "swap_lr?";
++		enable_jack = <&frag0>, "enable_jack?";
++	};
+ };

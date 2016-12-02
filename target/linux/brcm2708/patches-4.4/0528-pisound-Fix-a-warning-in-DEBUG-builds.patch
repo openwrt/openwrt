@@ -1,0 +1,31 @@
+From 84835c07b7cdf960db7cb9e8cf13363e2d8c99b0 Mon Sep 17 00:00:00 2001
+From: Giedrius Trainavicius <giedrius@blokas.io>
+Date: Tue, 25 Oct 2016 01:47:20 +0300
+Subject: [PATCH] pisound: Fix a warning in DEBUG builds
+
+Also change a macro that enables debug level printing from DEBUG to
+PISOUND_DEBUG.
+---
+ sound/soc/bcm/pisound.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/sound/soc/bcm/pisound.c
++++ b/sound/soc/bcm/pisound.c
+@@ -55,7 +55,7 @@ static void pisnd_midi_uninit(void);
+ 
+ #define PISOUND_LOG_PREFIX "pisound: "
+ 
+-#ifdef DEBUG
++#ifdef PISOUND_DEBUG
+ #	define printd(...) pr_alert(PISOUND_LOG_PREFIX __VA_ARGS__)
+ #else
+ #	define printd(...) do {} while (0)
+@@ -119,7 +119,7 @@ static void pisnd_midi_recv_callback(voi
+ 	while ((n = pisnd_spi_recv(data, sizeof(data)))) {
+ 		int res = snd_rawmidi_receive(substream, data, n);
+ 		(void)res;
+-		printd("midi recv 0x%02x, res = %d\n", data, res);
++		printd("midi recv %u bytes, res = %d\n", n, res);
+ 	}
+ }
+ 

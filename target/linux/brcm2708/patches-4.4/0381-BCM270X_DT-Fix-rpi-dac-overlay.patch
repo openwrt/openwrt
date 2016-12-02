@@ -1,0 +1,34 @@
+From 89f988c93882e1ac4ad7864ee9469aa02550090c Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 3 Jun 2016 21:56:40 +0100
+Subject: [PATCH] BCM270X_DT: Fix rpi-dac overlay
+
+The rpi-dac overlay is almost identical to the hifiberry-dac overlay -
+the codec used is different but it also doesn't sit on the I2C bus. As
+a result, when the overlays were modified for dynamic loading and it
+was discovered that the hifiberry-dac overlay didn't work any more, the
+the rpi-dac overlay was also broken.
+
+The failure was caused by the fact that outside a bus, device names are
+constructed from the concatenation of the path elements leading to it,
+so moving the codec instantiation inside /soc caused the device name
+to get a "soc" added, breaking ALSA's naming.
+
+See: http://forum.kodi.tv/showthread.php?tid=269814&pid=2349776#pid2349776
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/rpi-dac-overlay.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/rpi-dac-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rpi-dac-overlay.dts
+@@ -13,7 +13,7 @@
+ 	};
+ 
+ 	fragment@1 {
+-		target = <&soc>;
++		target-path = "/";
+ 		__overlay__ {
+ 			pcm1794a-codec {
+ 				#sound-dai-cells = <0>;

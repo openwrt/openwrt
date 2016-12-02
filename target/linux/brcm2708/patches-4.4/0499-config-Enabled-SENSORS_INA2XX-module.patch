@@ -1,0 +1,30 @@
+From f9235a23a6a38f7c2ef6851113874a340781f84a Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 9 Sep 2016 19:35:13 +0100
+Subject: [PATCH] config: Enabled SENSORS_INA2XX module
+
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -649,6 +649,7 @@ CONFIG_HWMON=m
+ CONFIG_SENSORS_LM75=m
+ CONFIG_SENSORS_SHT21=m
+ CONFIG_SENSORS_SHTC1=m
++CONFIG_SENSORS_INA2XX=m
+ CONFIG_THERMAL=y
+ CONFIG_THERMAL_BCM2835=y
+ CONFIG_WATCHDOG=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -641,6 +641,7 @@ CONFIG_HWMON=m
+ CONFIG_SENSORS_LM75=m
+ CONFIG_SENSORS_SHT21=m
+ CONFIG_SENSORS_SHTC1=m
++CONFIG_SENSORS_INA2XX=m
+ CONFIG_THERMAL=y
+ CONFIG_THERMAL_BCM2835=y
+ CONFIG_WATCHDOG=y

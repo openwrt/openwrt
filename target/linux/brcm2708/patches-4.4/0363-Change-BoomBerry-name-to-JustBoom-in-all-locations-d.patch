@@ -1,0 +1,1139 @@
+From 6a5d72f7ea13b48840353fd22f672dc3af8b9fc5 Mon Sep 17 00:00:00 2001
+From: Aaron Shaw <shawaj@gmail.com>
+Date: Thu, 26 May 2016 23:37:11 +0100
+Subject: [PATCH] Change BoomBerry name to JustBoom in all locations due to
+ legal challenge
+
+---
+ arch/arm/boot/dts/overlays/Makefile                |   4 +-
+ arch/arm/boot/dts/overlays/README                  |  52 ++---
+ .../boot/dts/overlays/boomberry-dac-overlay.dts    |  43 -----
+ .../boot/dts/overlays/boomberry-digi-overlay.dts   |  39 ----
+ .../arm/boot/dts/overlays/justboom-dac-overlay.dts |  43 +++++
+ .../boot/dts/overlays/justboom-digi-overlay.dts    |  39 ++++
+ arch/arm/configs/bcm2709_defconfig                 |   4 +-
+ arch/arm/configs/bcmrpi_defconfig                  |   4 +-
+ sound/soc/bcm/Kconfig                              |  12 +-
+ sound/soc/bcm/Makefile                             |   8 +-
+ sound/soc/bcm/boomberry-dac.c                      | 162 ----------------
+ sound/soc/bcm/boomberry-digi.c                     | 215 ---------------------
+ sound/soc/bcm/justboom-dac.c                       | 162 ++++++++++++++++
+ sound/soc/bcm/justboom-digi.c                      | 215 +++++++++++++++++++++
+ 14 files changed, 501 insertions(+), 501 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/overlays/boomberry-dac-overlay.dts
+ delete mode 100644 arch/arm/boot/dts/overlays/boomberry-digi-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/justboom-dac-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/justboom-digi-overlay.dts
+ delete mode 100644 sound/soc/bcm/boomberry-dac.c
+ delete mode 100644 sound/soc/bcm/boomberry-digi.c
+ create mode 100644 sound/soc/bcm/justboom-dac.c
+ create mode 100644 sound/soc/bcm/justboom-digi.c
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -18,8 +18,6 @@ dtbo-$(RPI_DT_OVERLAYS) += akkordion-iqd
+ dtbo-$(RPI_DT_OVERLAYS) += at86rf233.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += audioinjector-wm8731-audio.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor.dtbo
+-dtbo-$(RPI_DT_OVERLAYS) += boomberry-dac.dtbo
+-dtbo-$(RPI_DT_OVERLAYS) += boomberry-digi.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dpi24.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dwc2.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dwc-otg.dtbo
+@@ -43,6 +41,8 @@ dtbo-$(RPI_DT_OVERLAYS) += i2s-gpio28-31
+ dtbo-$(RPI_DT_OVERLAYS) += i2s-mmap.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += iqaudio-dac.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += iqaudio-dacplus.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += justboom-dac.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += justboom-digi.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += lirc-rpi.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += mcp2515-can0.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += mcp2515-can1.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -238,32 +238,6 @@ Load:   dtoverlay=bmp085_i2c-sensor
+ Params: <None>
+ 
+ 
+-Name:   boomberry-dac
+-Info:   Configures the BoomBerry DAC HAT, Amp HAT, DAC Zero and Amp Zero audio
+-        cards
+-Load:   dtoverlay=boomberry-dac,<param>=<val>
+-Params: 24db_digital_gain       Allow gain to be applied via the PCM512x codec
+-                                Digital volume control. Enable with
+-                                "dtoverlay=boomberry-dac,24db_digital_gain"
+-                                (The default behaviour is that the Digital
+-                                volume control is limited to a maximum of
+-                                0dB. ie. it can attenuate but not provide
+-                                gain. For most users, this will be desired
+-                                as it will prevent clipping. By appending
+-                                the 24dB_digital_gain parameter, the Digital
+-                                volume control will allow up to 24dB of
+-                                gain. If this parameter is enabled, it is the
+-                                responsibility of the user to ensure that
+-                                the Digital volume control is set to a value
+-                                that does not result in clipping/distortion!)
+-
+-
+-Name:   boomberry-digi
+-Info:   Configures the BoomBerry Digi HAT and Digi Zero audio cards
+-Load:   dtoverlay=boomberry-digi
+-Params: <None>
+-
+-
+ Name:   dht11
+ Info:   Overlay for the DHT11/DHT21/DHT22 humidity/temperature sensors
+         Also sometimes found with the part number(s) AM230x.
+@@ -541,6 +515,32 @@ Params: 24db_digital_gain       Allow ga
+                                 that does not result in clipping/distortion!)
+ 
+ 
++Name:   justboom-dac
++Info:   Configures the JustBoom DAC HAT, Amp HAT, DAC Zero and Amp Zero audio
++        cards
++Load:   dtoverlay=justboom-dac,<param>=<val>
++Params: 24db_digital_gain       Allow gain to be applied via the PCM512x codec
++                                Digital volume control. Enable with
++                                "dtoverlay=justboom-dac,24db_digital_gain"
++                                (The default behaviour is that the Digital
++                                volume control is limited to a maximum of
++                                0dB. ie. it can attenuate but not provide
++                                gain. For most users, this will be desired
++                                as it will prevent clipping. By appending
++                                the 24dB_digital_gain parameter, the Digital
++                                volume control will allow up to 24dB of
++                                gain. If this parameter is enabled, it is the
++                                responsibility of the user to ensure that
++                                the Digital volume control is set to a value
++                                that does not result in clipping/distortion!)
++
++
++Name:   justboom-digi
++Info:   Configures the JustBoom Digi HAT and Digi Zero audio cards
++Load:   dtoverlay=justboom-digi
++Params: <None>
++
++
+ Name:   lirc-rpi
+ Info:   Configures lirc-rpi (Linux Infrared Remote Control for Raspberry Pi)
+         Consult the module documentation for more details.
+--- a/arch/arm/boot/dts/overlays/boomberry-dac-overlay.dts
++++ /dev/null
+@@ -1,43 +0,0 @@
+-// Definitions for BoomBerry DAC
+-/dts-v1/;
+-/plugin/;
+-
+-/ {
+-	compatible = "brcm,bcm2708";
+-
+-	fragment@0 {
+-		target = <&i2s>;
+-		__overlay__ {
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+-		target = <&i2c1>;
+-		__overlay__ {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			status = "okay";
+-
+-			pcm5122@4d {
+-				#sound-dai-cells = <0>;
+-				compatible = "ti,pcm5122";
+-				reg = <0x4d>;
+-				status = "okay";
+-			};
+-		};
+-	};
+-
+-	fragment@2 {
+-		target = <&sound>;
+-		frag2: __overlay__ {
+-			compatible = "boomberry,boomberry-dac";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	__overrides__ {
+-		24db_digital_gain = <&frag2>,"boomberry,24db_digital_gain?";
+-	};
+-};
+--- a/arch/arm/boot/dts/overlays/boomberry-digi-overlay.dts
++++ /dev/null
+@@ -1,39 +0,0 @@
+-// Definitions for BoomBerry Digi
+-/dts-v1/;
+-/plugin/;
+-
+-/ {
+-	compatible = "brcm,bcm2708";
+-
+-	fragment@0 {
+-		target = <&i2s>;
+-		__overlay__ {
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@1 {
+-		target = <&i2c1>;
+-		__overlay__ {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			status = "okay";
+-
+-			wm8804@3b {
+-				#sound-dai-cells = <0>;
+-				compatible = "wlf,wm8804";
+-				reg = <0x3b>;
+-				status = "okay";
+-			};
+-		};
+-	};
+-
+-	fragment@2 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "boomberry,boomberry-digi";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/justboom-dac-overlay.dts
+@@ -0,0 +1,43 @@
++// Definitions for JustBoom DAC
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pcm5122@4d {
++				#sound-dai-cells = <0>;
++				compatible = "ti,pcm5122";
++				reg = <0x4d>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&sound>;
++		frag2: __overlay__ {
++			compatible = "justboom,justboom-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		24db_digital_gain = <&frag2>,"justboom,24db_digital_gain?";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/justboom-digi-overlay.dts
+@@ -0,0 +1,39 @@
++// Definitions for JustBoom Digi
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			wm8804@3b {
++				#sound-dai-cells = <0>;
++				compatible = "wlf,wm8804";
++				reg = <0x3b>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "justboom,justboom-digi";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++};
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -861,8 +861,8 @@ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP=m
+ CONFIG_SND_BCM2708_SOC_RPI_DAC=m
+ CONFIG_SND_BCM2708_SOC_RPI_PROTO=m
+-CONFIG_SND_BCM2708_SOC_BOOMBERRY_DAC=m
+-CONFIG_SND_BCM2708_SOC_BOOMBERRY_DIGI=m
++CONFIG_SND_BCM2708_SOC_JUSTBOOM_DAC=m
++CONFIG_SND_BCM2708_SOC_JUSTBOOM_DIGI=m
+ CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC=m
+ CONFIG_SND_BCM2708_SOC_RASPIDAC3=m
+ CONFIG_SND_AUDIOINJECTOR_PI_SOUNDCARD=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -853,8 +853,8 @@ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP=m
+ CONFIG_SND_BCM2708_SOC_RPI_DAC=m
+ CONFIG_SND_BCM2708_SOC_RPI_PROTO=m
+-CONFIG_SND_BCM2708_SOC_BOOMBERRY_DAC=m
+-CONFIG_SND_BCM2708_SOC_BOOMBERRY_DIGI=m
++CONFIG_SND_BCM2708_SOC_JUSTBOOM_DAC=m
++CONFIG_SND_BCM2708_SOC_JUSTBOOM_DIGI=m
+ CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC=m
+ CONFIG_SND_BCM2708_SOC_RASPIDAC3=m
+ CONFIG_SND_AUDIOINJECTOR_PI_SOUNDCARD=m
+--- a/sound/soc/bcm/Kconfig
++++ b/sound/soc/bcm/Kconfig
+@@ -50,19 +50,19 @@ config SND_BCM2708_SOC_RPI_PROTO
+ 	help
+ 	  Say Y or M if you want to add support for Audio Codec Board PROTO (WM8731).
+ 
+-config SND_BCM2708_SOC_BOOMBERRY_DAC
+-	tristate "Support for BoomBerry DAC"
++config SND_BCM2708_SOC_JUSTBOOM_DAC
++	tristate "Support for JustBoom DAC"
+ 	depends on SND_BCM2708_SOC_I2S || SND_BCM2835_SOC_I2S
+ 	select SND_SOC_PCM512x
+ 	help
+-	  Say Y or M if you want to add support for BoomBerry DAC.
++	  Say Y or M if you want to add support for JustBoom DAC.
+ 
+-config SND_BCM2708_SOC_BOOMBERRY_DIGI
+-	tristate "Support for BoomBerry Digi"
++config SND_BCM2708_SOC_JUSTBOOM_DIGI
++	tristate "Support for JustBoom Digi"
+ 	depends on SND_BCM2708_SOC_I2S || SND_BCM2835_SOC_I2S
+ 	select SND_SOC_WM8804
+ 	help
+-	  Say Y or M if you want to add support for BoomBerry Digi.
++	  Say Y or M if you want to add support for JustBoom Digi.
+ 
+ config SND_BCM2708_SOC_IQAUDIO_DAC
+ 	tristate "Support for IQaudIO-DAC"
+--- a/sound/soc/bcm/Makefile
++++ b/sound/soc/bcm/Makefile
+@@ -9,8 +9,8 @@ snd-soc-hifiberry-dac-objs := hifiberry_
+ snd-soc-hifiberry-dacplus-objs := hifiberry_dacplus.o
+ snd-soc-hifiberry-digi-objs := hifiberry_digi.o
+ snd-soc-hifiberry-amp-objs := hifiberry_amp.o
+-snd-soc-boomberry-dac-objs := boomberry-dac.o
+-snd-soc-boomberry-digi-objs := boomberry-digi.o
++snd-soc-justboom-dac-objs := justboom-dac.o
++snd-soc-justboom-digi-objs := justboom-digi.o
+ snd-soc-rpi-dac-objs := rpi-dac.o
+ snd-soc-rpi-proto-objs := rpi-proto.o
+ snd-soc-iqaudio-dac-objs := iqaudio-dac.o
+@@ -22,8 +22,8 @@ obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_D
+ obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS) += snd-soc-hifiberry-dacplus.o
+ obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) += snd-soc-hifiberry-digi.o
+ obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP) += snd-soc-hifiberry-amp.o
+-obj-$(CONFIG_SND_BCM2708_SOC_BOOMBERRY_DAC) += snd-soc-boomberry-dac.o
+-obj-$(CONFIG_SND_BCM2708_SOC_BOOMBERRY_DIGI) += snd-soc-boomberry-digi.o
++obj-$(CONFIG_SND_BCM2708_SOC_JUSTBOOM_DAC) += snd-soc-justboom-dac.o
++obj-$(CONFIG_SND_BCM2708_SOC_JUSTBOOM_DIGI) += snd-soc-justboom-digi.o
+ obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
+ obj-$(CONFIG_SND_BCM2708_SOC_RPI_PROTO) += snd-soc-rpi-proto.o
+ obj-$(CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC) += snd-soc-iqaudio-dac.o
+--- a/sound/soc/bcm/boomberry-dac.c
++++ /dev/null
+@@ -1,162 +0,0 @@
+-/*
+- * ASoC Driver for BoomBerry DAC Raspberry Pi HAT Sound Card
+- *
+- * Author:	Milan Neskovic
+- *		Copyright 2016
+- *		based on code by Daniel Matuschek <info@crazy-audio.com>
+- *		based on code by Florian Meier <florian.meier@koalo.de>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * version 2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful, but
+- * WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+- * General Public License for more details.
+- */
+-
+-#include <linux/module.h>
+-#include <linux/platform_device.h>
+-
+-#include <sound/core.h>
+-#include <sound/pcm.h>
+-#include <sound/pcm_params.h>
+-#include <sound/soc.h>
+-#include <sound/jack.h>
+-
+-#include "../codecs/pcm512x.h"
+-
+-static bool digital_gain_0db_limit = true;
+-
+-static int snd_rpi_boomberry_dac_init(struct snd_soc_pcm_runtime *rtd)
+-{
+-	struct snd_soc_codec *codec = rtd->codec;
+-	snd_soc_update_bits(codec, PCM512x_GPIO_EN, 0x08, 0x08);
+-	snd_soc_update_bits(codec, PCM512x_GPIO_OUTPUT_4, 0xf, 0x02);
+-	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08,0x08);
+-
+-	if (digital_gain_0db_limit)
+-	{
+-		int ret;
+-		struct snd_soc_card *card = rtd->card;
+-
+-		ret = snd_soc_limit_volume(card, "Digital Playback Volume", 207);
+-		if (ret < 0)
+-			dev_warn(card->dev, "Failed to set volume limit: %d\n", ret);
+-	}
+-
+-	return 0;
+-}
+-
+-static int snd_rpi_boomberry_dac_hw_params(struct snd_pcm_substream *substream,
+-				       struct snd_pcm_hw_params *params)
+-{
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+-	/*return snd_soc_dai_set_bclk_ratio(cpu_dai, 64);*/
+-	unsigned int sample_bits =
+-		snd_pcm_format_physical_width(params_format(params));
+-	return snd_soc_dai_set_bclk_ratio(cpu_dai, sample_bits * 2);
+-}
+-
+-static int snd_rpi_boomberry_dac_startup(struct snd_pcm_substream *substream) {
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_codec *codec = rtd->codec;
+-	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08,0x08);
+-	return 0;
+-}
+-
+-static void snd_rpi_boomberry_dac_shutdown(struct snd_pcm_substream *substream) {
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_codec *codec = rtd->codec;
+-	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08,0x00);
+-}
+-
+-/* machine stream operations */
+-static struct snd_soc_ops snd_rpi_boomberry_dac_ops = {
+-	.hw_params = snd_rpi_boomberry_dac_hw_params,
+-	.startup = snd_rpi_boomberry_dac_startup,
+-	.shutdown = snd_rpi_boomberry_dac_shutdown,
+-};
+-
+-static struct snd_soc_dai_link snd_rpi_boomberry_dac_dai[] = {
+-{
+-	.name		= "BoomBerry DAC",
+-	.stream_name	= "BoomBerry DAC HiFi",
+-	.cpu_dai_name	= "bcm2708-i2s.0",
+-	.codec_dai_name	= "pcm512x-hifi",
+-	.platform_name	= "bcm2708-i2s.0",
+-	.codec_name	= "pcm512x.1-004d",
+-	.dai_fmt	= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
+-				SND_SOC_DAIFMT_CBS_CFS,
+-	.ops		= &snd_rpi_boomberry_dac_ops,
+-	.init		= snd_rpi_boomberry_dac_init,
+-},
+-};
+-
+-/* audio machine driver */
+-static struct snd_soc_card snd_rpi_boomberry_dac = {
+-	.name         = "snd_rpi_boomberry_dac",
+-	.owner        = THIS_MODULE,
+-	.dai_link     = snd_rpi_boomberry_dac_dai,
+-	.num_links    = ARRAY_SIZE(snd_rpi_boomberry_dac_dai),
+-};
+-
+-static int snd_rpi_boomberry_dac_probe(struct platform_device *pdev)
+-{
+-	int ret = 0;
+-
+-	snd_rpi_boomberry_dac.dev = &pdev->dev;
+-
+-	if (pdev->dev.of_node) {
+-	    struct device_node *i2s_node;
+-	    struct snd_soc_dai_link *dai = &snd_rpi_boomberry_dac_dai[0];
+-	    i2s_node = of_parse_phandle(pdev->dev.of_node,
+-					"i2s-controller", 0);
+-
+-	    if (i2s_node) {
+-			dai->cpu_dai_name = NULL;
+-			dai->cpu_of_node = i2s_node;
+-			dai->platform_name = NULL;
+-			dai->platform_of_node = i2s_node;
+-	    }
+-
+-	    digital_gain_0db_limit = !of_property_read_bool(
+-			pdev->dev.of_node, "boomberry,24db_digital_gain");
+-	}
+-
+-	ret = snd_soc_register_card(&snd_rpi_boomberry_dac);
+-	if (ret)
+-		dev_err(&pdev->dev,
+-			"snd_soc_register_card() failed: %d\n", ret);
+-
+-	return ret;
+-}
+-
+-static int snd_rpi_boomberry_dac_remove(struct platform_device *pdev)
+-{
+-	return snd_soc_unregister_card(&snd_rpi_boomberry_dac);
+-}
+-
+-static const struct of_device_id snd_rpi_boomberry_dac_of_match[] = {
+-	{ .compatible = "boomberry,boomberry-dac", },
+-	{},
+-};
+-MODULE_DEVICE_TABLE(of, snd_rpi_boomberry_dac_of_match);
+-
+-static struct platform_driver snd_rpi_boomberry_dac_driver = {
+-	.driver = {
+-		.name   = "snd-rpi-boomberry-dac",
+-		.owner  = THIS_MODULE,
+-		.of_match_table = snd_rpi_boomberry_dac_of_match,
+-	},
+-	.probe          = snd_rpi_boomberry_dac_probe,
+-	.remove         = snd_rpi_boomberry_dac_remove,
+-};
+-
+-module_platform_driver(snd_rpi_boomberry_dac_driver);
+-
+-MODULE_AUTHOR("Milan Neskovic <info@boomberry.co>");
+-MODULE_DESCRIPTION("ASoC Driver for BoomBerry PI DAC HAT Sound Card");
+-MODULE_LICENSE("GPL v2");
+--- a/sound/soc/bcm/boomberry-digi.c
++++ /dev/null
+@@ -1,215 +0,0 @@
+-/*
+- * ASoC Driver for BoomBerry Raspberry Pi Digi HAT Sound Card
+- *
+- * Author:	Milan Neskovic
+- *		Copyright 2016
+- *		based on code by Daniel Matuschek <info@crazy-audio.com>
+- *		based on code by Florian Meier <florian.meier@koalo.de>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * version 2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful, but
+- * WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+- * General Public License for more details.
+- */
+-
+-#include <linux/module.h>
+-#include <linux/platform_device.h>
+-
+-#include <sound/core.h>
+-#include <sound/pcm.h>
+-#include <sound/pcm_params.h>
+-#include <sound/soc.h>
+-#include <sound/jack.h>
+-
+-#include "../codecs/wm8804.h"
+-
+-static int snd_rpi_boomberry_digi_init(struct snd_soc_pcm_runtime *rtd)
+-{
+-	struct snd_soc_codec *codec = rtd->codec;
+-
+-	/* enable TX output */
+-	snd_soc_update_bits(codec, WM8804_PWRDN, 0x4, 0x0);
+-
+-	return 0;
+-}
+-
+-static int snd_rpi_boomberry_digi_startup(struct snd_pcm_substream *substream) {
+-	/* turn on digital output */
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_codec *codec = rtd->codec;
+-	snd_soc_update_bits(codec, WM8804_PWRDN, 0x3c, 0x00);
+-	return 0;
+-}
+-
+-static void snd_rpi_boomberry_digi_shutdown(struct snd_pcm_substream *substream) {
+-	/* turn off output */
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_codec *codec = rtd->codec;
+-	snd_soc_update_bits(codec, WM8804_PWRDN, 0x3c, 0x3c);
+-}
+-
+-static int snd_rpi_boomberry_digi_hw_params(struct snd_pcm_substream *substream,
+-				       struct snd_pcm_hw_params *params)
+-{
+-	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+-	struct snd_soc_codec *codec = rtd->codec;
+-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+-
+-	int sysclk = 27000000; /* This is fixed on this board */
+-
+-	long mclk_freq=0;
+-	int mclk_div=1;
+-	int sampling_freq=1;
+-
+-	int ret;
+-
+-	int samplerate = params_rate(params);
+-
+-	if (samplerate<=96000) {
+-		mclk_freq=samplerate*256;
+-		mclk_div=WM8804_MCLKDIV_256FS;
+-	} else {
+-		mclk_freq=samplerate*128;
+-		mclk_div=WM8804_MCLKDIV_128FS;
+-	}
+-
+-	switch (samplerate) {
+-		case 32000:
+-			sampling_freq=0x03;
+-			break;
+-		case 44100:
+-			sampling_freq=0x00;
+-			break;
+-		case 48000:
+-			sampling_freq=0x02;
+-			break;
+-		case 88200:
+-			sampling_freq=0x08;
+-			break;
+-		case 96000:
+-			sampling_freq=0x0a;
+-			break;
+-		case 176400:
+-			sampling_freq=0x0c;
+-			break;
+-		case 192000:
+-			sampling_freq=0x0e;
+-			break;
+-		default:
+-			dev_err(codec->dev,
+-			"Failed to set WM8804 SYSCLK, unsupported samplerate %d\n",
+-			samplerate);
+-	}
+-
+-	snd_soc_dai_set_clkdiv(codec_dai, WM8804_MCLK_DIV, mclk_div);
+-	snd_soc_dai_set_pll(codec_dai, 0, 0, sysclk, mclk_freq);
+-
+-	ret = snd_soc_dai_set_sysclk(codec_dai, WM8804_TX_CLKSRC_PLL,
+-					sysclk, SND_SOC_CLOCK_OUT);
+-	if (ret < 0) {
+-		dev_err(codec->dev,
+-		"Failed to set WM8804 SYSCLK: %d\n", ret);
+-		return ret;
+-	}
+-
+-	/* Enable TX output */
+-	snd_soc_update_bits(codec, WM8804_PWRDN, 0x4, 0x0);
+-
+-	/* Power on */
+-	snd_soc_update_bits(codec, WM8804_PWRDN, 0x9, 0);
+-
+-	/* set sampling frequency status bits */
+-	snd_soc_update_bits(codec, WM8804_SPDTX4, 0x0f, sampling_freq);
+-
+-	return snd_soc_dai_set_bclk_ratio(cpu_dai,64);
+-}
+-
+-/* machine stream operations */
+-static struct snd_soc_ops snd_rpi_boomberry_digi_ops = {
+-	.hw_params = snd_rpi_boomberry_digi_hw_params,
+-        .startup = snd_rpi_boomberry_digi_startup,
+-        .shutdown = snd_rpi_boomberry_digi_shutdown,
+-};
+-
+-static struct snd_soc_dai_link snd_rpi_boomberry_digi_dai[] = {
+-{
+-	.name		= "BoomBerry Digi",
+-	.stream_name	= "BoomBerry Digi HiFi",
+-	.cpu_dai_name	= "bcm2708-i2s.0",
+-	.codec_dai_name	= "wm8804-spdif",
+-	.platform_name	= "bcm2708-i2s.0",
+-	.codec_name	= "wm8804.1-003b",
+-	.dai_fmt	= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
+-				SND_SOC_DAIFMT_CBM_CFM,
+-	.ops		= &snd_rpi_boomberry_digi_ops,
+-	.init		= snd_rpi_boomberry_digi_init,
+-},
+-};
+-
+-/* audio machine driver */
+-static struct snd_soc_card snd_rpi_boomberry_digi = {
+-	.name         = "snd_rpi_boomberry_digi",
+-	.owner        = THIS_MODULE,
+-	.dai_link     = snd_rpi_boomberry_digi_dai,
+-	.num_links    = ARRAY_SIZE(snd_rpi_boomberry_digi_dai),
+-};
+-
+-static int snd_rpi_boomberry_digi_probe(struct platform_device *pdev)
+-{
+-	int ret = 0;
+-
+-	snd_rpi_boomberry_digi.dev = &pdev->dev;
+-
+-	if (pdev->dev.of_node) {
+-	    struct device_node *i2s_node;
+-	    struct snd_soc_dai_link *dai = &snd_rpi_boomberry_digi_dai[0];
+-	    i2s_node = of_parse_phandle(pdev->dev.of_node,
+-					"i2s-controller", 0);
+-
+-	    if (i2s_node) {
+-			dai->cpu_dai_name = NULL;
+-			dai->cpu_of_node = i2s_node;
+-			dai->platform_name = NULL;
+-			dai->platform_of_node = i2s_node;
+-	    }
+-	}
+-
+-	ret = snd_soc_register_card(&snd_rpi_boomberry_digi);
+-	if (ret)
+-		dev_err(&pdev->dev,
+-			"snd_soc_register_card() failed: %d\n", ret);
+-
+-	return ret;
+-}
+-
+-static int snd_rpi_boomberry_digi_remove(struct platform_device *pdev)
+-{
+-	return snd_soc_unregister_card(&snd_rpi_boomberry_digi);
+-}
+-
+-static const struct of_device_id snd_rpi_boomberry_digi_of_match[] = {
+-	{ .compatible = "boomberry,boomberry-digi", },
+-	{},
+-};
+-MODULE_DEVICE_TABLE(of, snd_rpi_boomberry_digi_of_match);
+-
+-static struct platform_driver snd_rpi_boomberry_digi_driver = {
+-	.driver = {
+-		.name   = "snd-rpi-boomberry-digi",
+-		.owner  = THIS_MODULE,
+-		.of_match_table = snd_rpi_boomberry_digi_of_match,
+-	},
+-	.probe          = snd_rpi_boomberry_digi_probe,
+-	.remove         = snd_rpi_boomberry_digi_remove,
+-};
+-
+-module_platform_driver(snd_rpi_boomberry_digi_driver);
+-
+-MODULE_AUTHOR("Milan Neskovic <info@boomberry.co>");
+-MODULE_DESCRIPTION("ASoC Driver for BoomBerry PI Digi HAT Sound Card");
+-MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/sound/soc/bcm/justboom-dac.c
+@@ -0,0 +1,162 @@
++/*
++ * ASoC Driver for JustBoom DAC Raspberry Pi HAT Sound Card
++ *
++ * Author:	Milan Neskovic
++ *		Copyright 2016
++ *		based on code by Daniel Matuschek <info@crazy-audio.com>
++ *		based on code by Florian Meier <florian.meier@koalo.de>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/jack.h>
++
++#include "../codecs/pcm512x.h"
++
++static bool digital_gain_0db_limit = true;
++
++static int snd_rpi_justboom_dac_init(struct snd_soc_pcm_runtime *rtd)
++{
++	struct snd_soc_codec *codec = rtd->codec;
++	snd_soc_update_bits(codec, PCM512x_GPIO_EN, 0x08, 0x08);
++	snd_soc_update_bits(codec, PCM512x_GPIO_OUTPUT_4, 0xf, 0x02);
++	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08,0x08);
++
++	if (digital_gain_0db_limit)
++	{
++		int ret;
++		struct snd_soc_card *card = rtd->card;
++
++		ret = snd_soc_limit_volume(card, "Digital Playback Volume", 207);
++		if (ret < 0)
++			dev_warn(card->dev, "Failed to set volume limit: %d\n", ret);
++	}
++
++	return 0;
++}
++
++static int snd_rpi_justboom_dac_hw_params(struct snd_pcm_substream *substream,
++				       struct snd_pcm_hw_params *params)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
++	/*return snd_soc_dai_set_bclk_ratio(cpu_dai, 64);*/
++	unsigned int sample_bits =
++		snd_pcm_format_physical_width(params_format(params));
++	return snd_soc_dai_set_bclk_ratio(cpu_dai, sample_bits * 2);
++}
++
++static int snd_rpi_justboom_dac_startup(struct snd_pcm_substream *substream) {
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_codec *codec = rtd->codec;
++	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08,0x08);
++	return 0;
++}
++
++static void snd_rpi_justboom_dac_shutdown(struct snd_pcm_substream *substream) {
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_codec *codec = rtd->codec;
++	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08,0x00);
++}
++
++/* machine stream operations */
++static struct snd_soc_ops snd_rpi_justboom_dac_ops = {
++	.hw_params = snd_rpi_justboom_dac_hw_params,
++	.startup = snd_rpi_justboom_dac_startup,
++	.shutdown = snd_rpi_justboom_dac_shutdown,
++};
++
++static struct snd_soc_dai_link snd_rpi_justboom_dac_dai[] = {
++{
++	.name		= "JustBoom DAC",
++	.stream_name	= "JustBoom DAC HiFi",
++	.cpu_dai_name	= "bcm2708-i2s.0",
++	.codec_dai_name	= "pcm512x-hifi",
++	.platform_name	= "bcm2708-i2s.0",
++	.codec_name	= "pcm512x.1-004d",
++	.dai_fmt	= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
++				SND_SOC_DAIFMT_CBS_CFS,
++	.ops		= &snd_rpi_justboom_dac_ops,
++	.init		= snd_rpi_justboom_dac_init,
++},
++};
++
++/* audio machine driver */
++static struct snd_soc_card snd_rpi_justboom_dac = {
++	.name         = "snd_rpi_justboom_dac",
++	.owner        = THIS_MODULE,
++	.dai_link     = snd_rpi_justboom_dac_dai,
++	.num_links    = ARRAY_SIZE(snd_rpi_justboom_dac_dai),
++};
++
++static int snd_rpi_justboom_dac_probe(struct platform_device *pdev)
++{
++	int ret = 0;
++
++	snd_rpi_justboom_dac.dev = &pdev->dev;
++
++	if (pdev->dev.of_node) {
++	    struct device_node *i2s_node;
++	    struct snd_soc_dai_link *dai = &snd_rpi_justboom_dac_dai[0];
++	    i2s_node = of_parse_phandle(pdev->dev.of_node,
++					"i2s-controller", 0);
++
++	    if (i2s_node) {
++			dai->cpu_dai_name = NULL;
++			dai->cpu_of_node = i2s_node;
++			dai->platform_name = NULL;
++			dai->platform_of_node = i2s_node;
++	    }
++
++	    digital_gain_0db_limit = !of_property_read_bool(
++			pdev->dev.of_node, "justboom,24db_digital_gain");
++	}
++
++	ret = snd_soc_register_card(&snd_rpi_justboom_dac);
++	if (ret)
++		dev_err(&pdev->dev,
++			"snd_soc_register_card() failed: %d\n", ret);
++
++	return ret;
++}
++
++static int snd_rpi_justboom_dac_remove(struct platform_device *pdev)
++{
++	return snd_soc_unregister_card(&snd_rpi_justboom_dac);
++}
++
++static const struct of_device_id snd_rpi_justboom_dac_of_match[] = {
++	{ .compatible = "justboom,justboom-dac", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, snd_rpi_justboom_dac_of_match);
++
++static struct platform_driver snd_rpi_justboom_dac_driver = {
++	.driver = {
++		.name   = "snd-rpi-justboom-dac",
++		.owner  = THIS_MODULE,
++		.of_match_table = snd_rpi_justboom_dac_of_match,
++	},
++	.probe          = snd_rpi_justboom_dac_probe,
++	.remove         = snd_rpi_justboom_dac_remove,
++};
++
++module_platform_driver(snd_rpi_justboom_dac_driver);
++
++MODULE_AUTHOR("Milan Neskovic <info@justboom.co>");
++MODULE_DESCRIPTION("ASoC Driver for JustBoom PI DAC HAT Sound Card");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/sound/soc/bcm/justboom-digi.c
+@@ -0,0 +1,215 @@
++/*
++ * ASoC Driver for JustBoom Raspberry Pi Digi HAT Sound Card
++ *
++ * Author:	Milan Neskovic
++ *		Copyright 2016
++ *		based on code by Daniel Matuschek <info@crazy-audio.com>
++ *		based on code by Florian Meier <florian.meier@koalo.de>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/jack.h>
++
++#include "../codecs/wm8804.h"
++
++static int snd_rpi_justboom_digi_init(struct snd_soc_pcm_runtime *rtd)
++{
++	struct snd_soc_codec *codec = rtd->codec;
++
++	/* enable TX output */
++	snd_soc_update_bits(codec, WM8804_PWRDN, 0x4, 0x0);
++
++	return 0;
++}
++
++static int snd_rpi_justboom_digi_startup(struct snd_pcm_substream *substream) {
++	/* turn on digital output */
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_codec *codec = rtd->codec;
++	snd_soc_update_bits(codec, WM8804_PWRDN, 0x3c, 0x00);
++	return 0;
++}
++
++static void snd_rpi_justboom_digi_shutdown(struct snd_pcm_substream *substream) {
++	/* turn off output */
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_codec *codec = rtd->codec;
++	snd_soc_update_bits(codec, WM8804_PWRDN, 0x3c, 0x3c);
++}
++
++static int snd_rpi_justboom_digi_hw_params(struct snd_pcm_substream *substream,
++				       struct snd_pcm_hw_params *params)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_dai *codec_dai = rtd->codec_dai;
++	struct snd_soc_codec *codec = rtd->codec;
++	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
++
++	int sysclk = 27000000; /* This is fixed on this board */
++
++	long mclk_freq=0;
++	int mclk_div=1;
++	int sampling_freq=1;
++
++	int ret;
++
++	int samplerate = params_rate(params);
++
++	if (samplerate<=96000) {
++		mclk_freq=samplerate*256;
++		mclk_div=WM8804_MCLKDIV_256FS;
++	} else {
++		mclk_freq=samplerate*128;
++		mclk_div=WM8804_MCLKDIV_128FS;
++	}
++
++	switch (samplerate) {
++		case 32000:
++			sampling_freq=0x03;
++			break;
++		case 44100:
++			sampling_freq=0x00;
++			break;
++		case 48000:
++			sampling_freq=0x02;
++			break;
++		case 88200:
++			sampling_freq=0x08;
++			break;
++		case 96000:
++			sampling_freq=0x0a;
++			break;
++		case 176400:
++			sampling_freq=0x0c;
++			break;
++		case 192000:
++			sampling_freq=0x0e;
++			break;
++		default:
++			dev_err(codec->dev,
++			"Failed to set WM8804 SYSCLK, unsupported samplerate %d\n",
++			samplerate);
++	}
++
++	snd_soc_dai_set_clkdiv(codec_dai, WM8804_MCLK_DIV, mclk_div);
++	snd_soc_dai_set_pll(codec_dai, 0, 0, sysclk, mclk_freq);
++
++	ret = snd_soc_dai_set_sysclk(codec_dai, WM8804_TX_CLKSRC_PLL,
++					sysclk, SND_SOC_CLOCK_OUT);
++	if (ret < 0) {
++		dev_err(codec->dev,
++		"Failed to set WM8804 SYSCLK: %d\n", ret);
++		return ret;
++	}
++
++	/* Enable TX output */
++	snd_soc_update_bits(codec, WM8804_PWRDN, 0x4, 0x0);
++
++	/* Power on */
++	snd_soc_update_bits(codec, WM8804_PWRDN, 0x9, 0);
++
++	/* set sampling frequency status bits */
++	snd_soc_update_bits(codec, WM8804_SPDTX4, 0x0f, sampling_freq);
++
++	return snd_soc_dai_set_bclk_ratio(cpu_dai,64);
++}
++
++/* machine stream operations */
++static struct snd_soc_ops snd_rpi_justboom_digi_ops = {
++	.hw_params = snd_rpi_justboom_digi_hw_params,
++        .startup = snd_rpi_justboom_digi_startup,
++        .shutdown = snd_rpi_justboom_digi_shutdown,
++};
++
++static struct snd_soc_dai_link snd_rpi_justboom_digi_dai[] = {
++{
++	.name		= "JustBoom Digi",
++	.stream_name	= "JustBoom Digi HiFi",
++	.cpu_dai_name	= "bcm2708-i2s.0",
++	.codec_dai_name	= "wm8804-spdif",
++	.platform_name	= "bcm2708-i2s.0",
++	.codec_name	= "wm8804.1-003b",
++	.dai_fmt	= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
++				SND_SOC_DAIFMT_CBM_CFM,
++	.ops		= &snd_rpi_justboom_digi_ops,
++	.init		= snd_rpi_justboom_digi_init,
++},
++};
++
++/* audio machine driver */
++static struct snd_soc_card snd_rpi_justboom_digi = {
++	.name         = "snd_rpi_justboom_digi",
++	.owner        = THIS_MODULE,
++	.dai_link     = snd_rpi_justboom_digi_dai,
++	.num_links    = ARRAY_SIZE(snd_rpi_justboom_digi_dai),
++};
++
++static int snd_rpi_justboom_digi_probe(struct platform_device *pdev)
++{
++	int ret = 0;
++
++	snd_rpi_justboom_digi.dev = &pdev->dev;
++
++	if (pdev->dev.of_node) {
++	    struct device_node *i2s_node;
++	    struct snd_soc_dai_link *dai = &snd_rpi_justboom_digi_dai[0];
++	    i2s_node = of_parse_phandle(pdev->dev.of_node,
++					"i2s-controller", 0);
++
++	    if (i2s_node) {
++			dai->cpu_dai_name = NULL;
++			dai->cpu_of_node = i2s_node;
++			dai->platform_name = NULL;
++			dai->platform_of_node = i2s_node;
++	    }
++	}
++
++	ret = snd_soc_register_card(&snd_rpi_justboom_digi);
++	if (ret)
++		dev_err(&pdev->dev,
++			"snd_soc_register_card() failed: %d\n", ret);
++
++	return ret;
++}
++
++static int snd_rpi_justboom_digi_remove(struct platform_device *pdev)
++{
++	return snd_soc_unregister_card(&snd_rpi_justboom_digi);
++}
++
++static const struct of_device_id snd_rpi_justboom_digi_of_match[] = {
++	{ .compatible = "justboom,justboom-digi", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, snd_rpi_justboom_digi_of_match);
++
++static struct platform_driver snd_rpi_justboom_digi_driver = {
++	.driver = {
++		.name   = "snd-rpi-justboom-digi",
++		.owner  = THIS_MODULE,
++		.of_match_table = snd_rpi_justboom_digi_of_match,
++	},
++	.probe          = snd_rpi_justboom_digi_probe,
++	.remove         = snd_rpi_justboom_digi_remove,
++};
++
++module_platform_driver(snd_rpi_justboom_digi_driver);
++
++MODULE_AUTHOR("Milan Neskovic <info@justboom.co>");
++MODULE_DESCRIPTION("ASoC Driver for JustBoom PI Digi HAT Sound Card");
++MODULE_LICENSE("GPL v2");

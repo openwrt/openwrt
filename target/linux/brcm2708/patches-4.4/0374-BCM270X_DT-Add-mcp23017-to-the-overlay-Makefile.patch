@@ -1,0 +1,20 @@
+From 12dd94a6587b4d327216d12675e3691e0f4316aa Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 3 Jun 2016 22:21:47 +0100
+Subject: [PATCH] BCM270X_DT: Add mcp23017 to the overlay Makefile
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -44,6 +44,7 @@ dtbo-$(RPI_DT_OVERLAYS) += iqaudio-dacpl
+ dtbo-$(RPI_DT_OVERLAYS) += justboom-dac.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += justboom-digi.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += lirc-rpi.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += mcp23017.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += mcp2515-can0.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += mcp2515-can1.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += mmc.dtbo

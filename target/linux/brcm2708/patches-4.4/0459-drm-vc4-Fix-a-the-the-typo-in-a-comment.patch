@@ -1,0 +1,22 @@
+From 2ea806f591f60f022514aeb4963e6d483dc5f934 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Sat, 2 Jul 2016 09:58:41 -0700
+Subject: [PATCH] drm/vc4: Fix a "the the" typo in a comment.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit a20d5fa61c32a0c94d237da642326db2ef3c7433)
+---
+ drivers/gpu/drm/vc4/vc4_validate_shaders.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_validate_shaders.c
++++ b/drivers/gpu/drm/vc4/vc4_validate_shaders.c
+@@ -162,7 +162,7 @@ check_tmu_write(uint64_t inst,
+ 			return false;
+ 		}
+ 
+-		/* We assert that the the clamped address is the first
++		/* We assert that the clamped address is the first
+ 		 * argument, and the UBO base address is the second argument.
+ 		 * This is arbitrary, but simpler than supporting flipping the
+ 		 * two either way.

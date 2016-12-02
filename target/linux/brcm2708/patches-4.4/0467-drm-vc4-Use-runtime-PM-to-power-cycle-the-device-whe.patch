@@ -1,0 +1,102 @@
+From 7aa7785c89ccb0203b5eb9a3b26d5358cb2543c0 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 8 Feb 2016 12:59:02 -0800
+Subject: [PATCH] drm/vc4: Use runtime PM to power cycle the device when the
+ GPU hangs.
+
+This gets us functional GPU reset again, like we had until a refactor
+at merge time.  Tested with a little patch to stuff in a broken binner
+job every 100 frames.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 36cb6253f9383fd9a59ee7b8458c6232ef48577c)
+---
+ drivers/gpu/drm/vc4/vc4_drv.h |  6 +++++-
+ drivers/gpu/drm/vc4/vc4_gem.c | 26 +++++++++++++++++++++-----
+ 2 files changed, 26 insertions(+), 6 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -104,6 +104,11 @@ struct vc4_dev {
+ 	struct vc4_bo *overflow_mem;
+ 	struct work_struct overflow_mem_work;
+ 
++	int power_refcount;
++
++	/* Mutex controlling the power refcount. */
++	struct mutex power_lock;
++
+ 	struct {
+ 		struct timer_list timer;
+ 		struct work_struct reset_work;
+@@ -495,7 +500,6 @@ void vc4_plane_async_set_fb(struct drm_p
+ extern struct platform_driver vc4_v3d_driver;
+ int vc4_v3d_debugfs_ident(struct seq_file *m, void *unused);
+ int vc4_v3d_debugfs_regs(struct seq_file *m, void *unused);
+-int vc4_v3d_set_power(struct vc4_dev *vc4, bool on);
+ 
+ /* vc4_validate.c */
+ int
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -261,8 +261,16 @@ vc4_reset(struct drm_device *dev)
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 
+ 	DRM_INFO("Resetting GPU.\n");
+-	vc4_v3d_set_power(vc4, false);
+-	vc4_v3d_set_power(vc4, true);
++
++	mutex_lock(&vc4->power_lock);
++	if (vc4->power_refcount) {
++		/* Power the device off and back on the by dropping the
++		 * reference on runtime PM.
++		 */
++		pm_runtime_put_sync_suspend(&vc4->v3d->pdev->dev);
++		pm_runtime_get_sync(&vc4->v3d->pdev->dev);
++	}
++	mutex_unlock(&vc4->power_lock);
+ 
+ 	vc4_irq_reset(dev);
+ 
+@@ -709,7 +717,10 @@ vc4_complete_exec(struct drm_device *dev
+ 	}
+ 	mutex_unlock(&dev->struct_mutex);
+ 
+-	pm_runtime_put(&vc4->v3d->pdev->dev);
++	mutex_lock(&vc4->power_lock);
++	if (--vc4->power_refcount == 0)
++		pm_runtime_put(&vc4->v3d->pdev->dev);
++	mutex_unlock(&vc4->power_lock);
+ 
+ 	kfree(exec);
+ }
+@@ -851,7 +862,7 @@ vc4_submit_cl_ioctl(struct drm_device *d
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	struct drm_vc4_submit_cl *args = data;
+ 	struct vc4_exec_info *exec;
+-	int ret;
++	int ret = 0;
+ 
+ 	if ((args->flags & ~VC4_SUBMIT_CL_USE_CLEAR_COLOR) != 0) {
+ 		DRM_ERROR("Unknown flags: 0x%02x\n", args->flags);
+@@ -864,7 +875,10 @@ vc4_submit_cl_ioctl(struct drm_device *d
+ 		return -ENOMEM;
+ 	}
+ 
+-	ret = pm_runtime_get_sync(&vc4->v3d->pdev->dev);
++	mutex_lock(&vc4->power_lock);
++	if (vc4->power_refcount++ == 0)
++		ret = pm_runtime_get_sync(&vc4->v3d->pdev->dev);
++	mutex_unlock(&vc4->power_lock);
+ 	if (ret < 0) {
+ 		kfree(exec);
+ 		return ret;
+@@ -925,6 +939,8 @@ vc4_gem_init(struct drm_device *dev)
+ 		    (unsigned long)dev);
+ 
+ 	INIT_WORK(&vc4->job_done_work, vc4_job_done_work);
++
++	mutex_init(&vc4->power_lock);
+ }
+ 
+ void

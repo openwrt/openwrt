@@ -1,0 +1,25 @@
+From 1f7b4f4c4b7c103a836cb5b94a1e12a51213d04c Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 4 Jul 2016 12:59:18 -0700
+Subject: [PATCH] drm/vc4: Fix definition of QPU_R_MS_REV_FLAGS
+
+We don't use it in shader validation currently, so it had no effect,
+but best to fix it anyway in case we do some day.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 20e48fd6a9252e21528c7e39b874c8fdca97f25a)
+---
+ drivers/gpu/drm/vc4/vc4_qpu_defines.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_qpu_defines.h
++++ b/drivers/gpu/drm/vc4/vc4_qpu_defines.h
+@@ -70,7 +70,7 @@ enum qpu_raddr {
+ 	QPU_R_ELEM_QPU = 38,
+ 	QPU_R_NOP,
+ 	QPU_R_XY_PIXEL_COORD = 41,
+-	QPU_R_MS_REV_FLAGS = 41,
++	QPU_R_MS_REV_FLAGS = 42,
+ 	QPU_R_VPM = 48,
+ 	QPU_R_VPM_LD_BUSY,
+ 	QPU_R_VPM_LD_WAIT,

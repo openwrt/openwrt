@@ -1,0 +1,29 @@
+From b66013edab6e2149beb55eb1021926fd7ea26da7 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 15 Sep 2016 17:52:17 +0100
+Subject: [PATCH] drm/vc4: Fix up the limited range RGB output commit.
+
+CEA mode #1 is the only one that doesn't do limited range, thus the
+strange pattern in other drivers.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -343,8 +343,11 @@ static void vc4_hdmi_encoder_mode_set(st
+ 	csc_ctl = VC4_SET_FIELD(VC4_HD_CSC_CTL_ORDER_BGR,
+ 				VC4_HD_CSC_CTL_ORDER);
+ 
+-	if (vc4_encoder->hdmi_monitor && drm_match_cea_mode(mode) != 0) {
+-		/* Enable limited range RGB output.  This matrix is:
++	if (vc4_encoder->hdmi_monitor && drm_match_cea_mode(mode) > 1) {
++		/* CEA VICs other than #1 requre limited range RGB
++		 * output.  Apply a colorspace conversion to squash
++		 * 0-255 down to 16-235.  The matrix here is:
++		 *
+ 		 * [ 0      0      0.8594 16]
+ 		 * [ 0      0.8594 0      16]
+ 		 * [ 0.8594 0      0      16]

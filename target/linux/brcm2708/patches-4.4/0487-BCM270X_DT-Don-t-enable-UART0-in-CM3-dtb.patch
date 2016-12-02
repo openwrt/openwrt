@@ -1,0 +1,37 @@
+From 7315db2c16ae18cfc3678da9da8b023c1d2492a8 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 19 Aug 2016 11:19:02 +0100
+Subject: [PATCH] BCM270X_DT: Don't enable UART0 in CM3 dtb
+
+---
+ arch/arm/boot/dts/bcm2710-rpi-cm3.dts | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2710-rpi-cm3.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-cm3.dts
+@@ -40,12 +40,6 @@
+ 		brcm,function = <4>; /* alt0 */
+ 	};
+ 
+-	uart0_pins: uart0_pins {
+-		brcm,pins;
+-		brcm,function;
+-		brcm,pull = <0 2>;
+-	};
+-
+ 	audio_pins: audio_pins {
+ 		brcm,pins;
+ 		brcm,function;
+@@ -75,12 +69,6 @@
+ 	status = "okay";
+ };
+ 
+-&uart0 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&uart0_pins>;
+-	status = "okay";
+-};
+-
+ &spi0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;

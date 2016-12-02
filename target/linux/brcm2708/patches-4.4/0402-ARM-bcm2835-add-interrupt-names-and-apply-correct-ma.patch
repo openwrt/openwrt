@@ -1,0 +1,50 @@
+From 620065b16a5da22db7fbac1017357e3c2e37e1f6 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Sat, 23 Apr 2016 14:07:03 +0000
+Subject: [PATCH] ARM: bcm2835: add interrupt-names and apply correct mapping
+
+Add interrupt-names properties to dt and apply the correct
+mapping between irq and dma channels.
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -56,10 +56,32 @@
+ 				     <1 24>,
+ 				     <1 25>,
+ 				     <1 26>,
+-				     <1 27>;
++				     /* dma channel 11-14 share one irq */
++				     <1 27>,
++				     <1 27>,
++				     <1 27>,
++				     <1 27>,
++				     /* unused shared irq for all channels */
++				     <1 28>;
++			interrupt-names = "dma0",
++					  "dma1",
++					  "dma2",
++					  "dma3",
++					  "dma4",
++					  "dma5",
++					  "dma6",
++					  "dma7",
++					  "dma8",
++					  "dma9",
++					  "dma10",
++					  "dma11",
++					  "dma12",
++					  "dma13",
++					  "dma14",
++					  "dma-shared-all";
+ 
+ 			#dma-cells = <1>;
+-			brcm,dma-channel-mask = <0x0f34>;
++			brcm,dma-channel-mask = <0x7f34>;
+ 		};
+ 
+ 		intc: interrupt-controller@7e00b200 {

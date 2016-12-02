@@ -1,0 +1,53 @@
+From f594ac854025bc377a8b2095e9be41af96eed278 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Thu, 2 Jun 2016 10:38:29 +0100
+Subject: [PATCH] drm/vc4: clean up error exit path on failed dpi_connector
+ allocation
+
+There is redundant code in the clean up exit path when dpi_connector
+fails to be allocated.  The current code checks if connector is NULL
+before destroying it, in fact, connector is NULL at this point so
+the check is redundant and can be removed. The final clean up is
+that we can remove the goto fail with a simple return and the unused
+variable ret.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit a9402dfe17bddeee5c72943385eaa13c39f106f7)
+---
+ drivers/gpu/drm/vc4/vc4_dpi.c | 14 +++-----------
+ 1 file changed, 3 insertions(+), 11 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_dpi.c
++++ b/drivers/gpu/drm/vc4/vc4_dpi.c
+@@ -236,14 +236,12 @@ static struct drm_connector *vc4_dpi_con
+ {
+ 	struct drm_connector *connector = NULL;
+ 	struct vc4_dpi_connector *dpi_connector;
+-	int ret = 0;
+ 
+ 	dpi_connector = devm_kzalloc(dev->dev, sizeof(*dpi_connector),
+ 				     GFP_KERNEL);
+-	if (!dpi_connector) {
+-		ret = -ENOMEM;
+-		goto fail;
+-	}
++	if (!dpi_connector)
++		return ERR_PTR(-ENOMEM);
++
+ 	connector = &dpi_connector->base;
+ 
+ 	dpi_connector->encoder = dpi->encoder;
+@@ -260,12 +258,6 @@ static struct drm_connector *vc4_dpi_con
+ 	drm_mode_connector_attach_encoder(connector, dpi->encoder);
+ 
+ 	return connector;
+-
+- fail:
+-	if (connector)
+-		vc4_dpi_connector_destroy(connector);
+-
+-	return ERR_PTR(ret);
+ }
+ 
+ static const struct drm_encoder_funcs vc4_dpi_encoder_funcs = {

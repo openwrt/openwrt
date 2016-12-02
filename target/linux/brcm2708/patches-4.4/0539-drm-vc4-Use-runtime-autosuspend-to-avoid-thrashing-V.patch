@@ -1,0 +1,78 @@
+From 5163dcd743642b47a6f82ced6dd110a669984359 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 4 Nov 2016 15:58:38 -0700
+Subject: [PATCH] drm/vc4: Use runtime autosuspend to avoid thrashing V3D power
+ state.
+
+The pm_runtime_put() we were using immediately released power on the
+device, which meant that we were generally turning the device off and
+on once per frame.  In many profiles I've looked at, that added up to
+about 1% of CPU time, but this could get worse in the case of frequent
+rendering and readback (as may happen in X rendering).  By keeping the
+device on until we've been idle for a couple of frames, we drop the
+overhead of runtime PM down to sub-.1%.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 3a62234680d86efa0239665ed8a0e908f1aef147)
+---
+ drivers/gpu/drm/vc4/vc4_drv.c | 9 ++++++---
+ drivers/gpu/drm/vc4/vc4_gem.c | 6 ++++--
+ drivers/gpu/drm/vc4/vc4_v3d.c | 2 ++
+ 3 files changed, 12 insertions(+), 5 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -86,21 +86,24 @@ static int vc4_get_param_ioctl(struct dr
+ 		if (ret < 0)
+ 			return ret;
+ 		args->value = V3D_READ(V3D_IDENT0);
+-		pm_runtime_put(&vc4->v3d->pdev->dev);
++		pm_runtime_mark_last_busy(&vc4->v3d->pdev->dev);
++		pm_runtime_put_autosuspend(&vc4->v3d->pdev->dev);
+ 		break;
+ 	case DRM_VC4_PARAM_V3D_IDENT1:
+ 		ret = pm_runtime_get_sync(&vc4->v3d->pdev->dev);
+ 		if (ret < 0)
+ 			return ret;
+ 		args->value = V3D_READ(V3D_IDENT1);
+-		pm_runtime_put(&vc4->v3d->pdev->dev);
++		pm_runtime_mark_last_busy(&vc4->v3d->pdev->dev);
++		pm_runtime_put_autosuspend(&vc4->v3d->pdev->dev);
+ 		break;
+ 	case DRM_VC4_PARAM_V3D_IDENT2:
+ 		ret = pm_runtime_get_sync(&vc4->v3d->pdev->dev);
+ 		if (ret < 0)
+ 			return ret;
+ 		args->value = V3D_READ(V3D_IDENT2);
+-		pm_runtime_put(&vc4->v3d->pdev->dev);
++		pm_runtime_mark_last_busy(&vc4->v3d->pdev->dev);
++		pm_runtime_put_autosuspend(&vc4->v3d->pdev->dev);
+ 		break;
+ 	case DRM_VC4_PARAM_SUPPORTS_BRANCHES:
+ 	case DRM_VC4_PARAM_SUPPORTS_ETC1:
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -728,8 +728,10 @@ vc4_complete_exec(struct drm_device *dev
+ 	mutex_unlock(&dev->struct_mutex);
+ 
+ 	mutex_lock(&vc4->power_lock);
+-	if (--vc4->power_refcount == 0)
+-		pm_runtime_put(&vc4->v3d->pdev->dev);
++	if (--vc4->power_refcount == 0) {
++		pm_runtime_mark_last_busy(&vc4->v3d->pdev->dev);
++		pm_runtime_put_autosuspend(&vc4->v3d->pdev->dev);
++	}
+ 	mutex_unlock(&vc4->power_lock);
+ 
+ 	kfree(exec);
+--- a/drivers/gpu/drm/vc4/vc4_v3d.c
++++ b/drivers/gpu/drm/vc4/vc4_v3d.c
+@@ -222,6 +222,8 @@ static int vc4_v3d_bind(struct device *d
+ 		return ret;
+ 	}
+ 
++	pm_runtime_use_autosuspend(dev);
++	pm_runtime_set_autosuspend_delay(dev, 40); /* a little over 2 frames. */
+ 	pm_runtime_enable(dev);
+ 
+ 	return 0;

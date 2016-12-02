@@ -1,0 +1,30 @@
+From 154e97d4ee2d45bcfada0b3c0c52e9530a7ec96b Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 12 Aug 2016 17:12:32 +0100
+Subject: [PATCH] config: Enable SENSORS_LM75
+
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -642,6 +642,7 @@ CONFIG_BATTERY_DS2760=m
+ CONFIG_POWER_RESET=y
+ CONFIG_POWER_RESET_GPIO=y
+ CONFIG_HWMON=m
++CONFIG_SENSORS_LM75=m
+ CONFIG_SENSORS_SHT21=m
+ CONFIG_SENSORS_SHTC1=m
+ CONFIG_THERMAL=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -634,6 +634,7 @@ CONFIG_BATTERY_DS2760=m
+ CONFIG_POWER_RESET=y
+ CONFIG_POWER_RESET_GPIO=y
+ CONFIG_HWMON=m
++CONFIG_SENSORS_LM75=m
+ CONFIG_SENSORS_SHT21=m
+ CONFIG_SENSORS_SHTC1=m
+ CONFIG_THERMAL=y

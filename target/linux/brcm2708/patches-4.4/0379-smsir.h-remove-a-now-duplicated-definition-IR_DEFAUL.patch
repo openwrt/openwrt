@@ -1,0 +1,24 @@
+From a2da38f8f3d558aeee87ebd3208f475ef684a59d Mon Sep 17 00:00:00 2001
+From: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+Date: Thu, 19 Nov 2015 11:41:36 -0200
+Subject: [PATCH] smsir.h: remove a now duplicated definition
+ (IR_DEFAULT_TIMEOUT)
+
+This macro is now part of the core. Remove from Siano driver.
+
+Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+---
+ drivers/media/common/siano/smsir.h | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/media/common/siano/smsir.h
++++ b/drivers/media/common/siano/smsir.h
+@@ -30,8 +30,6 @@ along with this program.  If not, see <h
+ #include <linux/input.h>
+ #include <media/rc-core.h>
+ 
+-#define IR_DEFAULT_TIMEOUT		100
+-
+ struct smscore_device_t;
+ 
+ struct ir_t {

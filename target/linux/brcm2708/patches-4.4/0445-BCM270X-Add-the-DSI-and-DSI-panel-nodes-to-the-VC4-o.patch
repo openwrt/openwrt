@@ -1,0 +1,84 @@
+From a5957ee5e1e3605c97c1282c21a0e799f81b49a1 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 2 Jun 2016 15:09:35 -0700
+Subject: [PATCH] BCM270X: Add the DSI and DSI panel nodes to the VC4 overlay.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi              | 24 ++++++++++++++++++++--
+ arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts | 16 +++++++++++++++
+ 2 files changed, 38 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -2,6 +2,7 @@
+ #include <dt-bindings/clock/bcm2835-aux.h>
+ #include "dt-bindings/power/raspberrypi-power.h"
+ #include "dt-bindings/gpio/gpio.h"
++#include "dt-bindings/pinctrl/bcm2835.h"
+ #include "skeleton.dtsi"
+ 
+ / {
+@@ -110,9 +111,10 @@
+ 			reg = <0x7e101000 0x2000>;
+ 
+ 			/* CPRMAN derives everything from the platform's
+-			 * oscillator.
++			 * oscillator except for a few clocks that may
++			 * derive from something else derived from CPRMAN..
+ 			 */
+-			clocks = <&clk_osc>;
++			clocks = <&clk_osc>, <&dsi1 0>, <&dsi1 1>, <&dsi1 2>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -282,6 +284,24 @@
+ 			status = "disabled";
+ 		};
+ 
++		dsi1: dsi@7e700000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			#clock-cells = <1>;
++
++			compatible = "brcm,bcm2835-dsi1";
++			reg = <0x7e700000 0x8c>;
++			interrupts = <2 12>;
++
++			clocks = <&cprman BCM2835_PLLD_DSI1>,
++				 <&cprman BCM2835_CLOCK_DSI1E>,
++				 <&cprman BCM2835_CLOCK_DSI1P>;
++			clock-names = "phy", "escape", "pixel";
++			clock-output-names = "dsi1_byte", "dsi1_ddr2", "dsi1_ddr";
++			status = "disabled";
++			power-domains = <&power RPI_POWER_DOMAIN_DSI1>;
++		};
++
+ 		i2c1: i2c@7e804000 {
+ 			compatible = "brcm,bcm2708-i2c";
+ 			reg = <0x7e804000 0x1000>;
+--- a/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
+@@ -126,6 +126,22 @@
+ 		};
+ 	};
+ 
++	fragment@16 {
++		target = <&dsi1>;
++		__overlay__  {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			brcm,panel = <&pitouchscreen>;
++
++			pitouchscreen: panel {
++				compatible = "raspberrypi,touchscreen";
++				reg = <0>;
++			};
++		};
++	};
++
+ 	__overrides__ {
+ 		cma-256 = <0>,"+0-1-2-3-4";
+ 		cma-192 = <0>,"-0+1-2-3-4";

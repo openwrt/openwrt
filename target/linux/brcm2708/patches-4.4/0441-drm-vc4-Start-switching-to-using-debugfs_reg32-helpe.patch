@@ -1,0 +1,156 @@
+From 65b36b9316eb06fa8fb7163206dc8878d36091ae Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 20 May 2016 16:24:47 -0700
+Subject: [PATCH] drm/vc4: Start switching to using debugfs_reg32 helpers for
+ debugfs.
+
+Every file was defining its own little struct and dumping for the
+regs, when there's a helper in debugfs for doing just this.  However,
+instead of printing:
+
+PV_HORZA (0x000c): 0x00000000
+
+we now print:
+
+PV_HORZA = 0x00000000
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 48 ++++++++++++++++--------------------------
+ drivers/gpu/drm/vc4/vc4_drv.c  | 13 ++++++++++++
+ drivers/gpu/drm/vc4/vc4_drv.h  |  6 ++++++
+ 3 files changed, 37 insertions(+), 30 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -35,6 +35,7 @@
+ #include "drm_atomic_helper.h"
+ #include "drm_crtc_helper.h"
+ #include "linux/clk.h"
++#include "linux/debugfs.h"
+ #include "drm_fb_cma_helper.h"
+ #include "linux/component.h"
+ #include "linux/of_device.h"
+@@ -85,35 +86,25 @@ struct vc4_crtc_data {
+ #define CRTC_WRITE(offset, val) writel(val, vc4_crtc->regs + (offset))
+ #define CRTC_READ(offset) readl(vc4_crtc->regs + (offset))
+ 
+-#define CRTC_REG(reg) { reg, #reg }
+-static const struct {
+-	u32 reg;
+-	const char *name;
+-} crtc_regs[] = {
+-	CRTC_REG(PV_CONTROL),
+-	CRTC_REG(PV_V_CONTROL),
+-	CRTC_REG(PV_VSYNCD_EVEN),
+-	CRTC_REG(PV_HORZA),
+-	CRTC_REG(PV_HORZB),
+-	CRTC_REG(PV_VERTA),
+-	CRTC_REG(PV_VERTB),
+-	CRTC_REG(PV_VERTA_EVEN),
+-	CRTC_REG(PV_VERTB_EVEN),
+-	CRTC_REG(PV_INTEN),
+-	CRTC_REG(PV_INTSTAT),
+-	CRTC_REG(PV_STAT),
+-	CRTC_REG(PV_HACT_ACT),
++static const struct debugfs_reg32 crtc_regs[] = {
++	VC4_DEBUG_REG(PV_CONTROL),
++	VC4_DEBUG_REG(PV_V_CONTROL),
++	VC4_DEBUG_REG(PV_VSYNCD_EVEN),
++	VC4_DEBUG_REG(PV_HORZA),
++	VC4_DEBUG_REG(PV_HORZB),
++	VC4_DEBUG_REG(PV_VERTA),
++	VC4_DEBUG_REG(PV_VERTB),
++	VC4_DEBUG_REG(PV_VERTA_EVEN),
++	VC4_DEBUG_REG(PV_VERTB_EVEN),
++	VC4_DEBUG_REG(PV_INTEN),
++	VC4_DEBUG_REG(PV_INTSTAT),
++	VC4_DEBUG_REG(PV_STAT),
++	VC4_DEBUG_REG(PV_HACT_ACT),
+ };
+ 
+ static void vc4_crtc_dump_regs(struct vc4_crtc *vc4_crtc)
+ {
+-	int i;
+-
+-	for (i = 0; i < ARRAY_SIZE(crtc_regs); i++) {
+-		DRM_INFO("0x%04x (%s): 0x%08x\n",
+-			 crtc_regs[i].reg, crtc_regs[i].name,
+-			 CRTC_READ(crtc_regs[i].reg));
+-	}
++	vc4_dump_regs32(crtc_regs, ARRAY_SIZE(crtc_regs), vc4_crtc->regs, "");
+ }
+ 
+ #ifdef CONFIG_DEBUG_FS
+@@ -136,11 +127,8 @@ int vc4_crtc_debugfs_regs(struct seq_fil
+ 		return 0;
+ 	vc4_crtc = to_vc4_crtc(crtc);
+ 
+-	for (i = 0; i < ARRAY_SIZE(crtc_regs); i++) {
+-		seq_printf(m, "%s (0x%04x): 0x%08x\n",
+-			   crtc_regs[i].name, crtc_regs[i].reg,
+-			   CRTC_READ(crtc_regs[i].reg));
+-	}
++	debugfs_print_regs32(m, crtc_regs, ARRAY_SIZE(crtc_regs),
++			     vc4_crtc->regs, "");
+ 
+ 	return 0;
+ }
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -9,6 +9,7 @@
+ 
+ #include <linux/clk.h>
+ #include <linux/component.h>
++#include <linux/debugfs.h>
+ #include <linux/device.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
+@@ -52,6 +53,18 @@ static void vc4_drm_preclose(struct drm_
+ 		vc4_cancel_page_flip(crtc, file);
+ }
+ 
++void vc4_dump_regs32(const struct debugfs_reg32 *regs, unsigned int num_regs,
++		     void __iomem *base, const char *prefix)
++{
++	unsigned int i;
++
++	for (i = 0; i < num_regs; i++) {
++		DRM_INFO("%s0x%04lx (%s): 0x%08x\n",
++			 prefix, regs[i].offset, regs[i].name,
++			 readl(base + regs[i].offset));
++	}
++}
++
+ static void vc4_lastclose(struct drm_device *dev)
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -9,6 +9,8 @@
+ #include "drmP.h"
+ #include "drm_gem_cma_helper.h"
+ 
++struct debugfs_reg32;
++
+ struct vc4_dev {
+ 	struct drm_device *dev;
+ 
+@@ -207,6 +209,8 @@ to_vc4_encoder(struct drm_encoder *encod
+ #define HVS_READ(offset) readl(vc4->hvs->regs + offset)
+ #define HVS_WRITE(offset, val) writel(val, vc4->hvs->regs + offset)
+ 
++#define VC4_DEBUG_REG(reg) { .name = #reg, .offset = reg }
++
+ struct vc4_exec_info {
+ 	/* Sequence number for this bin/render job. */
+ 	uint64_t seqno;
+@@ -418,6 +422,8 @@ void vc4_debugfs_cleanup(struct drm_mino
+ 
+ /* vc4_drv.c */
+ void __iomem *vc4_ioremap_regs(struct platform_device *dev, int index);
++void vc4_dump_regs32(const struct debugfs_reg32 *reg, unsigned int num_regs,
++		     void __iomem *base, const char *prefix);
+ 
+ /* vc4_dpi.c */
+ extern struct platform_driver vc4_dpi_driver;

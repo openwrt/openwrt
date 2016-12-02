@@ -1,0 +1,60 @@
+From be7d40bc3716ddaaff3cc085f0bdd90b26b72aeb Mon Sep 17 00:00:00 2001
+From: Dan Williams <dan.j.williams@intel.com>
+Date: Wed, 21 Sep 2016 12:50:45 -0700
+Subject: [PATCH] x86/boot: Fix kdump, cleanup aborted E820_PRAM max_pfn
+ manipulation
+
+commit 917db484dc6a69969d317b3e57add4208a8d9d42 upstream.
+
+In commit:
+
+  ec776ef6bbe1 ("x86/mm: Add support for the non-standard protected e820 type")
+
+Christoph references the original patch I wrote implementing pmem support.
+The intent of the 'max_pfn' changes in that commit were to enable persistent
+memory ranges to be covered by the struct page memmap by default.
+
+However, that approach was abandoned when Christoph ported the patches [1], and
+that functionality has since been replaced by devm_memremap_pages().
+
+In the meantime, this max_pfn manipulation is confusing kdump [2] that
+assumes that everything covered by the max_pfn is "System RAM".  This
+results in kdump hanging or crashing.
+
+ [1]: https://lists.01.org/pipermail/linux-nvdimm/2015-March/000348.html
+ [2]: https://bugzilla.redhat.com/show_bug.cgi?id=1351098
+
+So fix it.
+
+Reported-by: Zhang Yi <yizhan@redhat.com>
+Reported-by: Jeff Moyer <jmoyer@redhat.com>
+Tested-by: Zhang Yi <yizhan@redhat.com>
+Signed-off-by: Dan Williams <dan.j.williams@intel.com>
+Reviewed-by: Jeff Moyer <jmoyer@redhat.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Boaz Harrosh <boaz@plexistor.com>
+Cc: Christoph Hellwig <hch@lst.de>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Ross Zwisler <ross.zwisler@linux.intel.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-nvdimm@lists.01.org
+Fixes: ec776ef6bbe1 ("x86/mm: Add support for the non-standard protected e820 type")
+Link: http://lkml.kernel.org/r/147448744538.34910.11287693517367139607.stgit@dwillia2-desk3.amr.corp.intel.com
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ arch/x86/kernel/e820.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/x86/kernel/e820.c
++++ b/arch/x86/kernel/e820.c
+@@ -347,7 +347,7 @@ int __init sanitize_e820_map(struct e820
+ 		 * continue building up new bios map based on this
+ 		 * information
+ 		 */
+-		if (current_type != last_type || current_type == E820_PRAM) {
++		if (current_type != last_type) {
+ 			if (last_type != 0)	 {
+ 				new_bios[new_bios_entry].size =
+ 					change_point[chgidx]->addr - last_addr;

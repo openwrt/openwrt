@@ -1,0 +1,21 @@
+From 9b01aef9d4187db3f256f349e6d148bbf1aad28b Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 15 Aug 2016 10:08:58 -0700
+Subject: [PATCH] BCM270X: Drop HPD setting from the common dtsi.
+
+The HPD is quite board-specific, so we need to set it in the per-board
+DT.
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -347,7 +347,6 @@
+ 			reg = <0x7e902000 0x600>,
+ 			      <0x7e808000 0x100>;
+ 			ddc = <&i2c2>;
+-			hpd-gpios = <&gpio 46 GPIO_ACTIVE_HIGH>;
+ 			clocks = <&cprman BCM2835_PLLH_PIX>,
+ 				 <&cprman BCM2835_CLOCK_HSM>;
+ 			clock-names = "pixel", "hdmi";

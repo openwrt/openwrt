@@ -1,0 +1,44 @@
+From 78dd826ec156f24ee345f58cb6ba2b0efe478595 Mon Sep 17 00:00:00 2001
+From: Robert Foss <robert.foss@collabora.com>
+Date: Tue, 3 May 2016 13:48:20 -0400
+Subject: [PATCH] drm/vc4: Return -EBUSY if there's already a pending flip
+ event.
+
+As per the documentation in drm_crtc.h, atomic_commit should return
+-EBUSY if an asynchronous update is requested and there is an earlier
+update pending.
+
+v2: Rebase on the s/async/nonblock/ change.
+
+Signed-off-by: Robert Foss <robert.foss@collabora.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit e7c31f6f25b84fed961dc0dce6248878527693ae)
+---
+ drivers/gpu/drm/vc4/vc4_kms.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_kms.c
++++ b/drivers/gpu/drm/vc4/vc4_kms.c
+@@ -119,10 +119,18 @@ static int vc4_atomic_commit(struct drm_
+ 		return -ENOMEM;
+ 
+ 	/* Make sure that any outstanding modesets have finished. */
+-	ret = down_interruptible(&vc4->async_modeset);
+-	if (ret) {
+-		kfree(c);
+-		return ret;
++	if (nonblock) {
++		ret = down_trylock(&vc4->async_modeset);
++		if (ret) {
++			kfree(c);
++			return -EBUSY;
++		}
++	} else {
++		ret = down_interruptible(&vc4->async_modeset);
++		if (ret) {
++			kfree(c);
++			return ret;
++		}
+ 	}
+ 
+ 	ret = drm_atomic_helper_prepare_planes(dev, state);

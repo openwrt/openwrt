@@ -1,0 +1,27 @@
+From dd5e781b91b431e19cba0f0763a2821a60277a7b Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 19 Jul 2016 11:31:19 -0700
+Subject: [PATCH] drm/vc4: Use drm_free_large() on handles to match its
+ allocation.
+
+If you managed to exceed the limit to switch to vmalloc, we'd use the
+wrong free.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Fixes: d5b1a78a772f ("drm/vc4: Add support for drawing 3D frames.")
+Cc: stable@vger.kernel.org
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -584,7 +584,7 @@ vc4_cl_lookup_bos(struct drm_device *dev
+ 	spin_unlock(&file_priv->table_lock);
+ 
+ fail:
+-	kfree(handles);
++	drm_free_large(handles);
+ 	return 0;
+ }
+ 

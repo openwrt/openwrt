@@ -1,0 +1,28 @@
+From 16be2ba945abbb43d62dd7d5a34ab4d6b4f40932 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 23 Jun 2016 16:37:46 +0100
+Subject: [PATCH] mmc: Apply ERASE_BROKEN quirks correctly
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/mmc/card/block.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -2564,12 +2564,9 @@ static const struct mmc_fixup blk_fixups
+ 	 *  On some Kingston SD cards, multiple erases of less than 64
+ 	 *  sectors can cause corruption.
+ 	 */
+-	MMC_FIXUP("SD16G", 0x41, 0x3432, add_quirk_mmc,
+-		  MMC_QUIRK_ERASE_BROKEN),
+-	MMC_FIXUP("SD32G", 0x41, 0x3432, add_quirk_mmc,
+-		  MMC_QUIRK_ERASE_BROKEN),
+-	MMC_FIXUP("SD64G", 0x41, 0x3432, add_quirk_mmc,
+-		  MMC_QUIRK_ERASE_BROKEN),
++	MMC_FIXUP("SD16G", 0x41, 0x3432, add_quirk, MMC_QUIRK_ERASE_BROKEN),
++	MMC_FIXUP("SD32G", 0x41, 0x3432, add_quirk, MMC_QUIRK_ERASE_BROKEN),
++	MMC_FIXUP("SD64G", 0x41, 0x3432, add_quirk, MMC_QUIRK_ERASE_BROKEN),
+ 
+ 	END_FIXUP
+ };

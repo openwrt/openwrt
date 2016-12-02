@@ -1,0 +1,31 @@
+From 12f6492a41b05d08a324cb53631804719e378e73 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <6by9@users.noreply.github.com>
+Date: Tue, 31 May 2016 10:38:31 +0100
+Subject: [PATCH] BCM2835-V4L2: Increase minimum resolution to 32x32
+
+https://github.com/raspberrypi/linux/issues/1498 showed
+up that 16x16 is failing to work on the GPU for some reason.
+
+GPU bug being tracked on
+https://github.com/raspberrypi/firmware/issues/607
+Workaround here by increasing minimum resolution via V4L2
+to 32x32.
+
+Signed-off-by: Dave Stevenson <6by9@users.noreply.github.com>
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -36,8 +36,8 @@
+ 
+ #define BM2835_MMAL_VERSION "0.0.2"
+ #define BM2835_MMAL_MODULE_NAME "bcm2835-v4l2"
+-#define MIN_WIDTH 16
+-#define MIN_HEIGHT 16
++#define MIN_WIDTH 32
++#define MIN_HEIGHT 32
+ #define MIN_BUFFER_SIZE (80*1024)
+ 
+ #define MAX_VIDEO_MODE_WIDTH 1280

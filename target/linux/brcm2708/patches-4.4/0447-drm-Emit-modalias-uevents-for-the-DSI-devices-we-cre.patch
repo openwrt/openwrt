@@ -1,0 +1,48 @@
+From b948504b2bfdcb24e774c8801ee6d118e5e3ca90 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 9 Aug 2016 15:13:33 -0700
+Subject: [PATCH] drm: Emit modalias uevents for the DSI devices we create.
+
+This gets the Raspberry Pi panel module to automatically load at boot
+time.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/drm_mipi_dsi.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/drivers/gpu/drm/drm_mipi_dsi.c
++++ b/drivers/gpu/drm/drm_mipi_dsi.c
+@@ -50,6 +50,24 @@ static int mipi_dsi_device_match(struct
+ 	return of_driver_match_device(dev, drv);
+ }
+ 
++/**
++ * Send modalias events when devices are created on the bus, so that
++ * modules can load automatically.
++ */
++static int mipi_dsi_uevent(struct device *dev, struct kobj_uevent_env *env)
++{
++	int rc;
++
++	/* Just do the OF uevent, which emits the compatible string so
++	 * that a MODULE_DEVICE_TABLE(of, ...) works.
++	 */
++	rc = of_device_uevent_modalias(dev, env);
++	if (rc != -ENODEV)
++		return rc;
++
++	return 0;
++}
++
+ static const struct dev_pm_ops mipi_dsi_device_pm_ops = {
+ 	.runtime_suspend = pm_generic_runtime_suspend,
+ 	.runtime_resume = pm_generic_runtime_resume,
+@@ -65,6 +83,7 @@ static struct bus_type mipi_dsi_bus_type
+ 	.name = "mipi-dsi",
+ 	.match = mipi_dsi_device_match,
+ 	.pm = &mipi_dsi_device_pm_ops,
++	.uevent = mipi_dsi_uevent,
+ };
+ 
+ static int of_device_match(struct device *dev, void *data)

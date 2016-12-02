@@ -1,0 +1,26 @@
+From c13643e0da4736d029d6323207a0c0bc49815a9a Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 25 Jul 2016 16:10:04 -0700
+Subject: [PATCH] drm/vc4: Fix oops when userspace hands in a bad BO.
+
+We'd end up NULL pointer dereferencing because we didn't take the
+error path out in the parent.  Fixes igt vc4_lookup_fail test.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Fixes: d5b1a78a772f ("drm/vc4: Add support for drawing 3D frames.")
+Cc: stable@vger.kernel.org
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -585,7 +585,7 @@ vc4_cl_lookup_bos(struct drm_device *dev
+ 
+ fail:
+ 	drm_free_large(handles);
+-	return 0;
++	return ret;
+ }
+ 
+ static int

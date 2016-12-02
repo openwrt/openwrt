@@ -1,0 +1,220 @@
+From 057da8ee92db7c8caece571aa20f478f5cae1318 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 27 Sep 2016 09:03:13 -0700
+Subject: [PATCH] drm/vc4: Fix races when the CS reads from render targets.
+
+With the introduction of bin/render pipelining, the previous job may
+not be completed when we start binning the next one.  If the previous
+job wrote our VBO, IB, or CS textures, then the binning stage might
+get stale or uninitialized results.
+
+Fixes the major rendering failure in glmark2 -b terrain.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Fixes: ca26d28bbaa3 ("drm/vc4: improve throughput by pipelining binning and rendering jobs")
+Cc: stable@vger.kernel.org
+---
+ drivers/gpu/drm/vc4/vc4_drv.h       | 19 ++++++++++++++++++-
+ drivers/gpu/drm/vc4/vc4_gem.c       | 13 +++++++++++++
+ drivers/gpu/drm/vc4/vc4_render_cl.c | 21 +++++++++++++++++----
+ drivers/gpu/drm/vc4/vc4_validate.c  | 17 ++++++++++++++---
+ 4 files changed, 62 insertions(+), 8 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -129,9 +129,16 @@ to_vc4_dev(struct drm_device *dev)
+ struct vc4_bo {
+ 	struct drm_gem_cma_object base;
+ 
+-	/* seqno of the last job to render to this BO. */
++	/* seqno of the last job to render using this BO. */
+ 	uint64_t seqno;
+ 
++	/* seqno of the last job to use the RCL to write to this BO.
++	 *
++	 * Note that this doesn't include binner overflow memory
++	 * writes.
++	 */
++	uint64_t write_seqno;
++
+ 	/* List entry for the BO's position in either
+ 	 * vc4_exec_info->unref_list or vc4_dev->bo_cache.time_list
+ 	 */
+@@ -227,6 +234,9 @@ struct vc4_exec_info {
+ 	/* Sequence number for this bin/render job. */
+ 	uint64_t seqno;
+ 
++	/* Latest write_seqno of any BO that binning depends on. */
++	uint64_t bin_dep_seqno;
++
+ 	/* Last current addresses the hardware was processing when the
+ 	 * hangcheck timer checked on us.
+ 	 */
+@@ -241,6 +251,13 @@ struct vc4_exec_info {
+ 	struct drm_gem_cma_object **bo;
+ 	uint32_t bo_count;
+ 
++	/* List of BOs that are being written by the RCL.  Other than
++	 * the binner temporary storage, this is all the BOs written
++	 * by the job.
++	 */
++	struct drm_gem_cma_object *rcl_write_bo[4];
++	uint32_t rcl_write_bo_count;
++
+ 	/* Pointers for our position in vc4->job_list */
+ 	struct list_head head;
+ 
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -483,6 +483,11 @@ vc4_update_bo_seqnos(struct vc4_exec_inf
+ 	list_for_each_entry(bo, &exec->unref_list, unref_head) {
+ 		bo->seqno = seqno;
+ 	}
++
++	for (i = 0; i < exec->rcl_write_bo_count; i++) {
++		bo = to_vc4_bo(&exec->rcl_write_bo[i]->base);
++		bo->write_seqno = seqno;
++	}
+ }
+ 
+ /* Queues a struct vc4_exec_info for execution.  If no job is
+@@ -685,6 +690,14 @@ vc4_get_bcl(struct drm_device *dev, stru
+ 		goto fail;
+ 
+ 	ret = vc4_validate_shader_recs(dev, exec);
++	if (ret)
++		goto fail;
++
++	/* Block waiting on any previous rendering into the CS's VBO,
++	 * IB, or textures, so that pixels are actually written by the
++	 * time we try to read them.
++	 */
++	ret = vc4_wait_for_seqno(dev, exec->bin_dep_seqno, ~0ull, true);
+ 
+ fail:
+ 	kfree(temp);
+--- a/drivers/gpu/drm/vc4/vc4_render_cl.c
++++ b/drivers/gpu/drm/vc4/vc4_render_cl.c
+@@ -45,6 +45,8 @@ struct vc4_rcl_setup {
+ 
+ 	struct drm_gem_cma_object *rcl;
+ 	u32 next_offset;
++
++	u32 next_write_bo_index;
+ };
+ 
+ static inline void rcl_u8(struct vc4_rcl_setup *setup, u8 val)
+@@ -407,6 +409,8 @@ static int vc4_rcl_msaa_surface_setup(st
+ 	if (!*obj)
+ 		return -EINVAL;
+ 
++	exec->rcl_write_bo[exec->rcl_write_bo_count++] = *obj;
++
+ 	if (surf->offset & 0xf) {
+ 		DRM_ERROR("MSAA write must be 16b aligned.\n");
+ 		return -EINVAL;
+@@ -417,7 +421,8 @@ static int vc4_rcl_msaa_surface_setup(st
+ 
+ static int vc4_rcl_surface_setup(struct vc4_exec_info *exec,
+ 				 struct drm_gem_cma_object **obj,
+-				 struct drm_vc4_submit_rcl_surface *surf)
++				 struct drm_vc4_submit_rcl_surface *surf,
++				 bool is_write)
+ {
+ 	uint8_t tiling = VC4_GET_FIELD(surf->bits,
+ 				       VC4_LOADSTORE_TILE_BUFFER_TILING);
+@@ -440,6 +445,9 @@ static int vc4_rcl_surface_setup(struct
+ 	if (!*obj)
+ 		return -EINVAL;
+ 
++	if (is_write)
++		exec->rcl_write_bo[exec->rcl_write_bo_count++] = *obj;
++
+ 	if (surf->flags & VC4_SUBMIT_RCL_SURFACE_READ_IS_FULL_RES) {
+ 		if (surf == &exec->args->zs_write) {
+ 			DRM_ERROR("general zs write may not be a full-res.\n");
+@@ -542,6 +550,8 @@ vc4_rcl_render_config_surface_setup(stru
+ 	if (!*obj)
+ 		return -EINVAL;
+ 
++	exec->rcl_write_bo[exec->rcl_write_bo_count++] = *obj;
++
+ 	if (tiling > VC4_TILING_FORMAT_LT) {
+ 		DRM_ERROR("Bad tiling format\n");
+ 		return -EINVAL;
+@@ -599,15 +609,18 @@ int vc4_get_rcl(struct drm_device *dev,
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = vc4_rcl_surface_setup(exec, &setup.color_read, &args->color_read);
++	ret = vc4_rcl_surface_setup(exec, &setup.color_read, &args->color_read,
++				    false);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = vc4_rcl_surface_setup(exec, &setup.zs_read, &args->zs_read);
++	ret = vc4_rcl_surface_setup(exec, &setup.zs_read, &args->zs_read,
++				    false);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = vc4_rcl_surface_setup(exec, &setup.zs_write, &args->zs_write);
++	ret = vc4_rcl_surface_setup(exec, &setup.zs_write, &args->zs_write,
++				    true);
+ 	if (ret)
+ 		return ret;
+ 
+--- a/drivers/gpu/drm/vc4/vc4_validate.c
++++ b/drivers/gpu/drm/vc4/vc4_validate.c
+@@ -267,6 +267,9 @@ validate_indexed_prim_list(VALIDATE_ARGS
+ 	if (!ib)
+ 		return -EINVAL;
+ 
++	exec->bin_dep_seqno = max(exec->bin_dep_seqno,
++				  to_vc4_bo(&ib->base)->write_seqno);
++
+ 	if (offset > ib->base.size ||
+ 	    (ib->base.size - offset) / index_size < length) {
+ 		DRM_ERROR("IB access overflow (%d + %d*%d > %zd)\n",
+@@ -555,8 +558,7 @@ static bool
+ reloc_tex(struct vc4_exec_info *exec,
+ 	  void *uniform_data_u,
+ 	  struct vc4_texture_sample_info *sample,
+-	  uint32_t texture_handle_index)
+-
++	  uint32_t texture_handle_index, bool is_cs)
+ {
+ 	struct drm_gem_cma_object *tex;
+ 	uint32_t p0 = *(uint32_t *)(uniform_data_u + sample->p_offset[0]);
+@@ -714,6 +716,11 @@ reloc_tex(struct vc4_exec_info *exec,
+ 
+ 	*validated_p0 = tex->paddr + p0;
+ 
++	if (is_cs) {
++		exec->bin_dep_seqno = max(exec->bin_dep_seqno,
++					  to_vc4_bo(&tex->base)->write_seqno);
++	}
++
+ 	return true;
+  fail:
+ 	DRM_INFO("Texture p0 at %d: 0x%08x\n", sample->p_offset[0], p0);
+@@ -835,7 +842,8 @@ validate_gl_shader_rec(struct drm_device
+ 			if (!reloc_tex(exec,
+ 				       uniform_data_u,
+ 				       &validated_shader->texture_samples[tex],
+-				       texture_handles_u[tex])) {
++				       texture_handles_u[tex],
++				       i == 2)) {
+ 				return -EINVAL;
+ 			}
+ 		}
+@@ -867,6 +875,9 @@ validate_gl_shader_rec(struct drm_device
+ 		uint32_t stride = *(uint8_t *)(pkt_u + o + 5);
+ 		uint32_t max_index;
+ 
++		exec->bin_dep_seqno = max(exec->bin_dep_seqno,
++					  to_vc4_bo(&vbo->base)->write_seqno);
++
+ 		if (state->addr & 0x8)
+ 			stride |= (*(uint32_t *)(pkt_u + 100 + i * 4)) & ~0xff;
+ 

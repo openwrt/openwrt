@@ -1,0 +1,36 @@
+From 9e4059062b23b8f220d3f5d2c317d7a96697d355 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 10 Oct 2016 15:06:20 +0100
+Subject: [PATCH] BCM270X_DT: Update CM3 to use sdhost interface
+
+---
+ arch/arm/boot/dts/bcm2710-rpi-cm3.dts | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2710-rpi-cm3.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-cm3.dts
+@@ -8,10 +8,9 @@
+ };
+ 
+ &gpio {
+-
+-	mmc_pins: mmc_pins {
++	sdhost_pins: sdhost_pins {
+ 		brcm,pins = <48 49 50 51 52 53>;
+-		brcm,function = <7>; /* alt3 */
++		brcm,function = <4>; /* alt0 */
+ 		brcm,pull = <0 2 2 2 2 2>;
+ 	};
+ 
+@@ -46,9 +45,9 @@
+ 	};
+ };
+ 
+-&mmc {
++&sdhost {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&mmc_pins>;
++	pinctrl-0 = <&sdhost_pins>;
+ 	non-removable;
+ 	bus-width = <4>;
+ 	status = "okay";

@@ -1,0 +1,27 @@
+From bf239659e82c137de23c322fa852b24a0acd3156 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 31 Mar 2016 12:51:04 -0700
+Subject: [PATCH] clk: bcm2835: Don't rate change PLLs on behalf of dividers.
+
+Our core PLLs are intended to be configured once and left alone.  With
+the flag set, asking to set the PLLD_DSI1 clock rate would change PLLD
+just to get closer to the requested DSI clock, thus changing PLLD_PER,
+the UART and ethernet PHY clock rates downstream of it, and breaking
+ethernet.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/clk/bcm/clk-bcm2835.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -1209,7 +1209,7 @@ bcm2835_register_pll_divider(struct bcm2
+ 	init.num_parents = 1;
+ 	init.name = divider_name;
+ 	init.ops = &bcm2835_pll_divider_clk_ops;
+-	init.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED;
++	init.flags = CLK_IGNORE_UNUSED;
+ 
+ 	divider = devm_kzalloc(cprman->dev, sizeof(*divider), GFP_KERNEL);
+ 	if (!divider)

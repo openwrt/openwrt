@@ -1,0 +1,25 @@
+From f3331b8d48456a8113abbaf1985a0ca50e4d17a3 Mon Sep 17 00:00:00 2001
+From: Eric Nelson <eric@nelint.com>
+Date: Sat, 3 Oct 2015 08:18:50 -0700
+Subject: [PATCH] [media] rc-core: define a default timeout for drivers
+
+A default timeout value of 125 ms should work for all decoders.
+
+Declare a constant to help standardize its' use.
+
+Signed-off-by: Eric Nelson <eric@nelint.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@osg.samsung.com>
+---
+ include/media/rc-core.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/media/rc-core.h
++++ b/include/media/rc-core.h
+@@ -239,6 +239,7 @@ static inline void init_ir_raw_event(str
+ 	memset(ev, 0, sizeof(*ev));
+ }
+ 
++#define IR_DEFAULT_TIMEOUT	MS_TO_NS(125)
+ #define IR_MAX_DURATION         500000000	/* 500 ms */
+ #define US_TO_NS(usec)		((usec) * 1000)
+ #define MS_TO_US(msec)		((msec) * 1000)

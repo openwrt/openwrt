@@ -1,0 +1,34 @@
+From 6771102fcd8bf6a7e1638807b78f35df4fece9a6 Mon Sep 17 00:00:00 2001
+From: Rob Herring <robh@kernel.org>
+Date: Thu, 9 Jun 2016 16:19:25 -0500
+Subject: [PATCH] drm: vc4: enable XBGR8888 and ABGR8888 pixel formats
+
+DRM_FORMAT_XBGR8888 and DRM_FORMAT_ABGR8888 are 2 of the native formats
+used in Android, so enable them for VC4. There seems to be no logic behind
+HVS_PIXEL_ORDER_xxxx naming, but HVS_PIXEL_ORDER_ARGB seems to work
+correctly.
+
+Signed-off-by: Rob Herring <robh@kernel.org>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 93977767f092fbf0787e5d2a0bf2e0a3fc6f6ced)
+---
+ drivers/gpu/drm/vc4/vc4_plane.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_plane.c
++++ b/drivers/gpu/drm/vc4/vc4_plane.c
+@@ -94,6 +94,14 @@ static const struct hvs_format {
+ 		.pixel_order = HVS_PIXEL_ORDER_ABGR, .has_alpha = true,
+ 	},
+ 	{
++		.drm = DRM_FORMAT_ABGR8888, .hvs = HVS_PIXEL_FORMAT_RGBA8888,
++		.pixel_order = HVS_PIXEL_ORDER_ARGB, .has_alpha = true,
++	},
++	{
++		.drm = DRM_FORMAT_XBGR8888, .hvs = HVS_PIXEL_FORMAT_RGBA8888,
++		.pixel_order = HVS_PIXEL_ORDER_ARGB, .has_alpha = false,
++	},
++	{
+ 		.drm = DRM_FORMAT_RGB565, .hvs = HVS_PIXEL_FORMAT_RGB565,
+ 		.pixel_order = HVS_PIXEL_ORDER_XRGB, .has_alpha = false,
+ 	},

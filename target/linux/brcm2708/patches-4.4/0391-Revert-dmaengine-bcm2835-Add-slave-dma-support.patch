@@ -1,0 +1,312 @@
+From 31f3ee328b2a471999acca527e3a83d6af3c75d9 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Fri, 22 Apr 2016 17:17:37 +0000
+Subject: [PATCH] Revert "dmaengine: bcm2835: Add slave dma support"
+
+This reverts commit 8a349301238aabb40c9da5ca8c8492b6b8d146f6.
+---
+ drivers/dma/bcm2835-dma.c | 206 ++++------------------------------------------
+ 1 file changed, 14 insertions(+), 192 deletions(-)
+
+--- a/drivers/dma/bcm2835-dma.c
++++ b/drivers/dma/bcm2835-dma.c
+@@ -1,10 +1,11 @@
+ /*
+  * BCM2835 DMA engine support
+  *
++ * This driver only supports cyclic DMA transfers
++ * as needed for the I2S module.
++ *
+  * Author:      Florian Meier <florian.meier@koalo.de>
+  *              Copyright 2013
+- *              Gellert Weisz <gellert@raspberrypi.org>
+- *              Copyright 2013-2014
+  *
+  * Based on
+  *	OMAP DMAengine support by Russell King
+@@ -94,8 +95,6 @@ struct bcm2835_desc {
+ 	size_t size;
+ };
+ 
+-#define BCM2835_DMA_WAIT_CYCLES	0  /* Slow down DMA transfers: 0-31 */
+-
+ #define BCM2835_DMA_CS		0x00
+ #define BCM2835_DMA_ADDR	0x04
+ #define BCM2835_DMA_SOURCE_AD	0x0c
+@@ -112,16 +111,12 @@ struct bcm2835_desc {
+ #define BCM2835_DMA_RESET	BIT(31) /* WO, self clearing */
+ 
+ #define BCM2835_DMA_INT_EN	BIT(0)
+-#define BCM2835_DMA_WAIT_RESP	BIT(3)
+ #define BCM2835_DMA_D_INC	BIT(4)
+-#define BCM2835_DMA_D_WIDTH	BIT(5)
+ #define BCM2835_DMA_D_DREQ	BIT(6)
+ #define BCM2835_DMA_S_INC	BIT(8)
+-#define BCM2835_DMA_S_WIDTH	BIT(9)
+ #define BCM2835_DMA_S_DREQ	BIT(10)
+ 
+ #define BCM2835_DMA_PER_MAP(x)	((x) << 16)
+-#define BCM2835_DMA_WAITS(x)	(((x) & 0x1f) << 21)
+ 
+ #define BCM2835_DMA_DATA_TYPE_S8	1
+ #define BCM2835_DMA_DATA_TYPE_S16	2
+@@ -135,14 +130,6 @@ struct bcm2835_desc {
+ #define BCM2835_DMA_CHAN(n)	((n) << 8) /* Base address */
+ #define BCM2835_DMA_CHANIO(base, n) ((base) + BCM2835_DMA_CHAN(n))
+ 
+-#define MAX_NORMAL_TRANSFER	SZ_1G
+-/*
+- * Max length on a Lite channel is 65535 bytes.
+- * DMA handles byte-enables on SDRAM reads and writes even on 128-bit accesses,
+- * but byte-enables don't exist on peripheral addresses, so align to 32-bit.
+- */
+-#define MAX_LITE_TRANSFER	(SZ_64K - 4)
+-
+ static inline struct bcm2835_dmadev *to_bcm2835_dma_dev(struct dma_device *d)
+ {
+ 	return container_of(d, struct bcm2835_dmadev, ddev);
+@@ -239,19 +226,13 @@ static irqreturn_t bcm2835_dma_callback(
+ 	d = c->desc;
+ 
+ 	if (d) {
+-		if (c->cyclic) {
+-			vchan_cyclic_callback(&d->vd);
+-
+-			/* Keep the DMA engine running */
+-			writel(BCM2835_DMA_ACTIVE,
+-			       c->chan_base + BCM2835_DMA_CS);
+-
+-		} else {
+-			vchan_cookie_complete(&c->desc->vd);
+-			bcm2835_dma_start_desc(c);
+-		}
++		/* TODO Only works for cyclic DMA */
++		vchan_cyclic_callback(&d->vd);
+ 	}
+ 
++	/* Keep the DMA engine running */
++	writel(BCM2835_DMA_ACTIVE, c->chan_base + BCM2835_DMA_CS);
++
+ 	spin_unlock_irqrestore(&c->vc.lock, flags);
+ 
+ 	return IRQ_HANDLED;
+@@ -358,6 +339,8 @@ static void bcm2835_dma_issue_pending(st
+ 	struct bcm2835_chan *c = to_bcm2835_dma_chan(chan);
+ 	unsigned long flags;
+ 
++	c->cyclic = true; /* Nothing else is implemented */
++
+ 	spin_lock_irqsave(&c->vc.lock, flags);
+ 	if (vchan_issue_pending(&c->vc) && !c->desc)
+ 		bcm2835_dma_start_desc(c);
+@@ -375,7 +358,7 @@ static struct dma_async_tx_descriptor *b
+ 	struct bcm2835_desc *d;
+ 	dma_addr_t dev_addr;
+ 	unsigned int es, sync_type;
+-	unsigned int frame, max_size;
++	unsigned int frame;
+ 	int i;
+ 
+ 	/* Grab configuration */
+@@ -410,12 +393,7 @@ static struct dma_async_tx_descriptor *b
+ 
+ 	d->c = c;
+ 	d->dir = direction;
+-	if (c->ch >= 8) /* LITE channel */
+-		max_size = MAX_LITE_TRANSFER;
+-	else
+-		max_size = MAX_NORMAL_TRANSFER;
+-	period_len = min(period_len, max_size);
+-	d->frames = (buf_len - 1) / (period_len + 1);
++	d->frames = buf_len / period_len;
+ 
+ 	d->cb_list = kcalloc(d->frames, sizeof(*d->cb_list), GFP_KERNEL);
+ 	if (!d->cb_list) {
+@@ -463,171 +441,17 @@ static struct dma_async_tx_descriptor *b
+ 				BCM2835_DMA_PER_MAP(c->dreq);
+ 
+ 		/* Length of a frame */
+-		if (frame != d->frames - 1)
+-			control_block->length = period_len;
+-		else
+-			control_block->length = buf_len - (d->frames - 1) *
+-						period_len;
++		control_block->length = period_len;
+ 		d->size += control_block->length;
+ 
+ 		/*
+ 		 * Next block is the next frame.
+-		 * This function is called on cyclic DMA transfers.
++		 * This DMA engine driver currently only supports cyclic DMA.
+ 		 * Therefore, wrap around at number of frames.
+ 		 */
+ 		control_block->next = d->cb_list[((frame + 1) % d->frames)].paddr;
+ 	}
+ 
+-	c->cyclic = true;
+-
+-	return vchan_tx_prep(&c->vc, &d->vd, flags);
+-}
+-
+-static struct dma_async_tx_descriptor *
+-bcm2835_dma_prep_slave_sg(struct dma_chan *chan,
+-			  struct scatterlist *sgl,
+-			  unsigned int sg_len,
+-			  enum dma_transfer_direction direction,
+-			  unsigned long flags, void *context)
+-{
+-	struct bcm2835_chan *c = to_bcm2835_dma_chan(chan);
+-	enum dma_slave_buswidth dev_width;
+-	struct bcm2835_desc *d;
+-	dma_addr_t dev_addr;
+-	struct scatterlist *sgent;
+-	unsigned int i, sync_type, split_cnt, max_size;
+-
+-	if (!is_slave_direction(direction)) {
+-		dev_err(chan->device->dev, "direction not supported\n");
+-		return NULL;
+-	}
+-
+-	if (direction == DMA_DEV_TO_MEM) {
+-		dev_addr = c->cfg.src_addr;
+-		dev_width = c->cfg.src_addr_width;
+-		sync_type = BCM2835_DMA_S_DREQ;
+-	} else {
+-		dev_addr = c->cfg.dst_addr;
+-		dev_width = c->cfg.dst_addr_width;
+-		sync_type = BCM2835_DMA_D_DREQ;
+-	}
+-
+-	/* Bus width translates to the element size (ES) */
+-	switch (dev_width) {
+-	case DMA_SLAVE_BUSWIDTH_4_BYTES:
+-		break;
+-	default:
+-		dev_err(chan->device->dev, "buswidth not supported: %i\n",
+-			dev_width);
+-		return NULL;
+-	}
+-
+-	/* Allocate and setup the descriptor. */
+-	d = kzalloc(sizeof(*d), GFP_NOWAIT);
+-	if (!d)
+-		return NULL;
+-
+-	d->dir = direction;
+-
+-	if (c->ch >= 8) /* LITE channel */
+-		max_size = MAX_LITE_TRANSFER;
+-	else
+-		max_size = MAX_NORMAL_TRANSFER;
+-
+-	/*
+-	 * Store the length of the SG list in d->frames
+-	 * taking care to account for splitting up transfers
+-	 * too large for a LITE channel
+-	 */
+-	d->frames = 0;
+-	for_each_sg(sgl, sgent, sg_len, i) {
+-		unsigned int len = sg_dma_len(sgent);
+-
+-		d->frames += len / max_size + 1;
+-	}
+-
+-	/* Allocate memory for control blocks */
+-	d->control_block_size = d->frames * sizeof(struct bcm2835_dma_cb);
+-	d->control_block_base = dma_zalloc_coherent(chan->device->dev,
+-			d->control_block_size, &d->control_block_base_phys,
+-			GFP_NOWAIT);
+-	if (!d->control_block_base) {
+-		kfree(d);
+-		return NULL;
+-	}
+-
+-	/*
+-	 * Iterate over all SG entries, create a control block
+-	 * for each frame and link them together.
+-	 * Count the number of times an SG entry had to be split
+-	 * as a result of using a LITE channel
+-	 */
+-	split_cnt = 0;
+-
+-	for_each_sg(sgl, sgent, sg_len, i) {
+-		unsigned int j;
+-		dma_addr_t addr = sg_dma_address(sgent);
+-		unsigned int len = sg_dma_len(sgent);
+-
+-		for (j = 0; j < len; j += max_size) {
+-			struct bcm2835_dma_cb *control_block =
+-				&d->control_block_base[i + split_cnt];
+-
+-			/* Setup addresses */
+-			if (d->dir == DMA_DEV_TO_MEM) {
+-				control_block->info = BCM2835_DMA_D_INC |
+-						      BCM2835_DMA_D_WIDTH |
+-						      BCM2835_DMA_S_DREQ;
+-				control_block->src = dev_addr;
+-				control_block->dst = addr + (dma_addr_t)j;
+-			} else {
+-				control_block->info = BCM2835_DMA_S_INC |
+-						      BCM2835_DMA_S_WIDTH |
+-						      BCM2835_DMA_D_DREQ;
+-				control_block->src = addr + (dma_addr_t)j;
+-				control_block->dst = dev_addr;
+-			}
+-
+-			/* Common part */
+-			control_block->info |=
+-				BCM2835_DMA_WAITS(BCM2835_DMA_WAIT_CYCLES);
+-			control_block->info |= BCM2835_DMA_WAIT_RESP;
+-
+-			/* Enable */
+-			if (i == sg_len - 1 && len - j <= max_size)
+-				control_block->info |= BCM2835_DMA_INT_EN;
+-
+-			/* Setup synchronization */
+-			if (sync_type)
+-				control_block->info |= sync_type;
+-
+-			/* Setup DREQ channel */
+-			if (c->dreq)
+-				control_block->info |=
+-					BCM2835_DMA_PER_MAP(c->dreq);
+-
+-			/* Length of a frame */
+-			control_block->length = min(len - j, max_size);
+-			d->size += control_block->length;
+-
+-			if (i < sg_len - 1 || len - j > max_size) {
+-				/* Next block is the next frame. */
+-				control_block->next =
+-					d->control_block_base_phys +
+-					sizeof(struct bcm2835_dma_cb) *
+-					(i + split_cnt + 1);
+-			} else {
+-				/* Next block is empty. */
+-				control_block->next = 0;
+-			}
+-
+-			if (len - j > max_size)
+-				split_cnt++;
+-		}
+-	}
+-
+-	c->cyclic = false;
+-
+ 	return vchan_tx_prep(&c->vc, &d->vd, flags);
+ error_cb:
+ 	i--;
+@@ -796,7 +620,6 @@ static int bcm2835_dma_probe(struct plat
+ 	od->ddev.device_tx_status = bcm2835_dma_tx_status;
+ 	od->ddev.device_issue_pending = bcm2835_dma_issue_pending;
+ 	od->ddev.device_prep_dma_cyclic = bcm2835_dma_prep_dma_cyclic;
+-	od->ddev.device_prep_slave_sg = bcm2835_dma_prep_slave_sg;
+ 	od->ddev.device_config = bcm2835_dma_slave_config;
+ 	od->ddev.device_terminate_all = bcm2835_dma_terminate_all;
+ 	od->ddev.src_addr_widths = BIT(DMA_SLAVE_BUSWIDTH_4_BYTES);
+@@ -886,5 +709,4 @@ module_platform_driver(bcm2835_dma_drive
+ MODULE_ALIAS("platform:bcm2835-dma");
+ MODULE_DESCRIPTION("BCM2835 DMA engine driver");
+ MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
+-MODULE_AUTHOR("Gellert Weisz <gellert@raspberrypi.org>");
+ MODULE_LICENSE("GPL v2");

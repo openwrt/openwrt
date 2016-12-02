@@ -1,0 +1,30 @@
+From dcdecbf9e91309e3e497db20119c3f3df4391f66 Mon Sep 17 00:00:00 2001
+From: Jools Wills <buzz@exotica.org.uk>
+Date: Mon, 8 Aug 2016 11:04:29 +0100
+Subject: [PATCH] enable gembird joypad support
+
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -891,6 +891,7 @@ CONFIG_HID_EMS_FF=m
+ CONFIG_HID_ELECOM=m
+ CONFIG_HID_ELO=m
+ CONFIG_HID_EZKEY=m
++CONFIG_HID_GEMBIRD=m
+ CONFIG_HID_HOLTEK=m
+ CONFIG_HID_KEYTOUCH=m
+ CONFIG_HID_KYE=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -883,6 +883,7 @@ CONFIG_HID_EMS_FF=m
+ CONFIG_HID_ELECOM=m
+ CONFIG_HID_ELO=m
+ CONFIG_HID_EZKEY=m
++CONFIG_HID_GEMBIRD=m
+ CONFIG_HID_HOLTEK=m
+ CONFIG_HID_KEYTOUCH=m
+ CONFIG_HID_KYE=m

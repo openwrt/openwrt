@@ -1,0 +1,96 @@
+From da62b2064a19346529bf827e8d7fbbd76e5e7ead Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 23 Nov 2016 14:19:40 +0000
+Subject: [PATCH] config: Add ABX80X RTC driver and overlay
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/README              | 12 ++++++++++--
+ arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts | 12 +++++++++++-
+ arch/arm/configs/bcm2709_defconfig             |  1 +
+ arch/arm/configs/bcmrpi_defconfig              |  1 +
+ 4 files changed, 23 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -498,7 +498,11 @@ Params: addr                    I2C addr
+ Name:   i2c-rtc
+ Info:   Adds support for a number of I2C Real Time Clock devices
+ Load:   dtoverlay=i2c-rtc,<param>=<val>
+-Params: ds1307                  Select the DS1307 device
++Params: abx80x                  Select one of the ABx80x family:
++                                  AB0801, AB0803, AB0804, AB0805,
++                                  AB1801, AB1803, AB1804, AB1805
++
++        ds1307                  Select the DS1307 device
+ 
+         ds1339                  Select the DS1339 device
+ 
+@@ -514,7 +518,11 @@ Params: ds1307                  Select t
+ 
+         pcf8563                 Select the PCF8563 device
+ 
+-        trickle-resistor-ohms   Resistor value for trickle charge (DS1339-only)
++        trickle-diode-type      Diode type for trickle charge - "standard" or
++                                "schottky" (ABx80x only)
++
++        trickle-resistor-ohms   Resistor value for trickle charge (DS1339,
++                                ABx80x)
+ 
+         wakeup-source           Specify that the RTC can be used as a wakeup
+                                 source
+--- a/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
+@@ -12,6 +12,13 @@
+ 			#size-cells = <0>;
+ 			status = "okay";
+ 
++			abx80x: abx80x@69 {
++				compatible = "abracon,abx80x";
++				reg = <0x69>;
++				abracon,tc-diode = "standard";
++				abracon,tc-resistor = <0>;
++				status = "disable";
++			};
+ 			ds1307: ds1307@68 {
+ 				compatible = "maxim,ds1307";
+ 				reg = <0x68>;
+@@ -56,6 +63,7 @@
+ 		};
+ 	};
+ 	__overrides__ {
++		abx80x = <&abx80x>,"status";
+ 		ds1307 = <&ds1307>,"status";
+ 		ds1339 = <&ds1339>,"status";
+ 		ds3231 = <&ds3231>,"status";
+@@ -64,7 +72,9 @@
+ 		pcf2127 = <&pcf2127>,"status";
+ 		pcf8523 = <&pcf8523>,"status";
+ 		pcf8563 = <&pcf8563>,"status";
+-		trickle-resistor-ohms = <&ds1339>,"trickle-resistor-ohms:0";
++		trickle-diode-type = <&abx80x>,"abracon,tc-diode";
++		trickle-resistor-ohms = <&ds1339>,"trickle-resistor-ohms:0",
++					<&abx80x>,"abracon,tc-resistor";
+ 		wakeup-source = <&ds1339>,"wakeup-source?",
+ 				<&ds3231>,"wakeup-source?",
+ 				<&mcp7940x>,"wakeup-source?",
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -1060,6 +1060,7 @@ CONFIG_LEDS_TRIGGER_CAMERA=m
+ CONFIG_LEDS_TRIGGER_INPUT=y
+ CONFIG_RTC_CLASS=y
+ # CONFIG_RTC_HCTOSYS is not set
++CONFIG_RTC_DRV_ABX80X=m
+ CONFIG_RTC_DRV_DS1307=m
+ CONFIG_RTC_DRV_DS1374=m
+ CONFIG_RTC_DRV_DS1672=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -1067,6 +1067,7 @@ CONFIG_LEDS_TRIGGER_CAMERA=m
+ CONFIG_LEDS_TRIGGER_INPUT=y
+ CONFIG_RTC_CLASS=y
+ # CONFIG_RTC_HCTOSYS is not set
++CONFIG_RTC_DRV_ABX80X=m
+ CONFIG_RTC_DRV_DS1307=m
+ CONFIG_RTC_DRV_DS1374=m
+ CONFIG_RTC_DRV_DS1672=m

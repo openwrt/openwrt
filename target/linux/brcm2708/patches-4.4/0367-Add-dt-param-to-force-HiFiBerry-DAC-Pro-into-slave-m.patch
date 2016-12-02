@@ -1,0 +1,82 @@
+From 8f9baa887c3328ee17a78b05eba51af6c8ffc83e Mon Sep 17 00:00:00 2001
+From: DigitalDreamtime <clive.messer@digitaldreamtime.co.uk>
+Date: Sun, 29 May 2016 05:22:29 +0100
+Subject: [PATCH] Add dt param to force HiFiBerry DAC+ Pro into slave mode
+
+"dtoverlay=hifiberry-dacplus,slave"
+
+Add 'slave' param to use HiFiBerry DAC+ Pro in slave mode,
+with Pi as master for bit and frame clock.
+
+Signed-off-by: DigitalDreamtime <clive.messer@digitaldreamtime.co.uk>
+---
+ arch/arm/boot/dts/overlays/README                        |  2 ++
+ arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts |  6 ++++--
+ sound/soc/bcm/hifiberry_dacplus.c                        | 10 ++++++++--
+ 3 files changed, 14 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -344,6 +344,8 @@ Params: 24db_digital_gain       Allow ga
+                                 responsibility of the user to ensure that
+                                 the Digital volume control is set to a value
+                                 that does not result in clipping/distortion!)
++        slave                   Force DAC+ Pro into slave mode, using Pi as
++                                master for bit clock and frame clock.
+ 
+ 
+ Name:   hifiberry-digi
+--- a/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
++++ b/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
+@@ -41,7 +41,7 @@
+ 
+ 	fragment@3 {
+ 		target = <&sound>;
+-		frag3: __overlay__ {
++		hifiberry_dacplus: __overlay__ {
+ 			compatible = "hifiberry,hifiberry-dacplus";
+ 			i2s-controller = <&i2s>;
+ 			status = "okay";
+@@ -49,6 +49,8 @@
+ 	};
+ 
+ 	__overrides__ {
+-		24db_digital_gain = <&frag3>,"hifiberry,24db_digital_gain?";
++		24db_digital_gain =
++			<&hifiberry_dacplus>,"hifiberry,24db_digital_gain?";
++		slave = <&hifiberry_dacplus>,"hifiberry-dacplus,slave?";
+ 	};
+ };
+--- a/sound/soc/bcm/hifiberry_dacplus.c
++++ b/sound/soc/bcm/hifiberry_dacplus.c
+@@ -47,6 +47,7 @@ struct pcm512x_priv {
+ /* Clock rate of CLK48EN attached to GPIO3 pin */
+ #define CLK_48EN_RATE 24576000UL
+ 
++static bool slave;
+ static bool snd_rpi_hifiberry_is_dacpro;
+ static bool digital_gain_0db_limit = true;
+ 
+@@ -145,8 +146,11 @@ static int snd_rpi_hifiberry_dacplus_ini
+ 	struct snd_soc_codec *codec = rtd->codec;
+ 	struct pcm512x_priv *priv;
+ 
+-	snd_rpi_hifiberry_is_dacpro
+-		= snd_rpi_hifiberry_dacplus_is_pro_card(codec);
++	if (slave)
++		snd_rpi_hifiberry_is_dacpro = false;
++	else
++		snd_rpi_hifiberry_is_dacpro =
++				snd_rpi_hifiberry_dacplus_is_pro_card(codec);
+ 
+ 	if (snd_rpi_hifiberry_is_dacpro) {
+ 		struct snd_soc_dai_link *dai = rtd->dai_link;
+@@ -314,6 +318,8 @@ static int snd_rpi_hifiberry_dacplus_pro
+ 
+ 		digital_gain_0db_limit = !of_property_read_bool(
+ 			pdev->dev.of_node, "hifiberry,24db_digital_gain");
++		slave = of_property_read_bool(pdev->dev.of_node,
++						"hifiberry-dacplus,slave");
+ 	}
+ 
+ 	ret = snd_soc_register_card(&snd_rpi_hifiberry_dacplus);

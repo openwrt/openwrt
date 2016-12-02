@@ -1,0 +1,29 @@
+From 1efce478669516e7a0fad7fa9943c889fcc21d2e Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Sun, 27 Nov 2016 21:45:55 +0000
+Subject: [PATCH] BCM270X_DT: Update UART0 clock-frequency
+
+The Raspberry Pi firmware now sets the UART0 clock frequency to
+48MHz (was 3MHz), to allow for baudrates up to 3MHz. This value
+is overwritten by the firmware, but alternative loaders such
+as U-Boot ignore the firmware-provided DTB. And besides, the
+default ought to be correct.
+
+See: https://github.com/raspberrypi/linux/issues/1732
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -456,7 +456,7 @@
+ 			reg = <2>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "uart0_pclk";
+-			clock-frequency = <3000000>;
++			clock-frequency = <48000000>;
+ 		};
+ 
+ 		clk_apb_p: clock@3 {

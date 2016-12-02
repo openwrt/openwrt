@@ -1,0 +1,22 @@
+From ac88474b485e297429614c8544e779d9329d2851 Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Sat, 4 Jun 2016 11:30:48 +0200
+Subject: [PATCH] gpio-ir overlay: gpio_pin shouldn't change pull setting
+
+Signed-off-by: Matthias Reichl <hias@horus.com>
+---
+ arch/arm/boot/dts/overlays/gpio-ir-overlay.dts | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/gpio-ir-overlay.dts
++++ b/arch/arm/boot/dts/overlays/gpio-ir-overlay.dts
+@@ -36,8 +36,7 @@
+         __overrides__ {
+                 // parameters
+                 gpio_pin =      <&gpio_ir>,"gpios:4",
+-                                        <&gpio_ir_pins>,"brcm,pins:0",
+-                                        <&gpio_ir_pins>,"brcm,pull:0";  // pin number
++                                        <&gpio_ir_pins>,"brcm,pins:0";  // pin number
+                 gpio_pull = <&gpio_ir_pins>,"brcm,pull:0";              // pull-up/down state
+ 
+                 rc-map-name = <&gpio_ir>,"linux,rc-map-name";           // default rc map

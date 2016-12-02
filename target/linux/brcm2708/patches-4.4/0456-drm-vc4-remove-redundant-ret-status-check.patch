@@ -1,0 +1,35 @@
+From 6c69e9ba4802bc0240a930ebacf171ddcf2f3d95 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Sat, 9 Jul 2016 23:26:03 +0100
+Subject: [PATCH] drm/vc4: remove redundant ret status check
+
+At the current point where ret is being checked for non-zero it has
+not changed since it was initialized to zero, hence the check and the
+label unref are redundant and can be removed.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit deb4765db386db67626ffd075d8b5eb5fdf9c4f6)
+---
+ drivers/gpu/drm/vc4/vc4_drv.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -233,8 +233,6 @@ static int vc4_drm_bind(struct device *d
+ 	vc4_bo_cache_init(drm);
+ 
+ 	drm_mode_config_init(drm);
+-	if (ret)
+-		goto unref;
+ 
+ 	vc4_gem_init(drm);
+ 
+@@ -268,7 +266,6 @@ unbind_all:
+ 	component_unbind_all(dev, drm);
+ gem_destroy:
+ 	vc4_gem_destroy(drm);
+-unref:
+ 	drm_dev_unref(drm);
+ 	vc4_bo_cache_destroy(drm);
+ 	return ret;

@@ -1,0 +1,26 @@
+From c0b690ea72068de3cc9e48e99efa1d2cc72a9d0c Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 10 Oct 2016 09:44:06 -0700
+Subject: [PATCH] drm/vc4: Fix memory leak of the CRTC state.
+
+The underscores variant frees the pointers inside, while the
+no-underscores variant calls underscores and then frees the struct.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Fixes: d8dbf44f13b9 ("drm/vc4: Make the CRTCs cooperate on allocating display lists.")
+Cc: stable@vger.kernel.org
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -862,7 +862,7 @@ static void vc4_crtc_destroy_state(struc
+ 
+ 	}
+ 
+-	__drm_atomic_helper_crtc_destroy_state(crtc, state);
++	drm_atomic_helper_crtc_destroy_state(crtc, state);
+ }
+ 
+ static const struct drm_crtc_funcs vc4_crtc_funcs = {

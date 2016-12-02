@@ -1,0 +1,42 @@
+From 2a12837fa5ce42d748662fe8fcfd486df98a3513 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 12 Aug 2016 10:57:41 -0700
+Subject: [PATCH] drm/vc4: Replace HDMI force-connected with an EDID probe.
+
+The force-connected started out because I didn't know how to read the
+HPD pin successfully, which required the hpd_active_low check and
+getting the correct active level into the DTs.  It stayed because we
+don't have the Pi3's HPD line exposed to Linux, so this was the only
+way to bring up graphics on it.
+
+However, with the DSI panel support now present, users want to be able
+to run DSI-only systems, and forcing HDMI on is interfering with
+default screen configurations.  Work around the Pi3's missing HPD by
+probing the DDC on I2C and see if it's present at all.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -166,8 +166,6 @@ vc4_hdmi_connector_detect(struct drm_con
+ 	struct drm_device *dev = connector->dev;
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 
+-	return connector_status_connected;
+-
+ 	if (vc4->hdmi->hpd_gpio) {
+ 		if (gpio_get_value_cansleep(vc4->hdmi->hpd_gpio) ^
+ 		    vc4->hdmi->hpd_active_low)
+@@ -176,6 +174,9 @@ vc4_hdmi_connector_detect(struct drm_con
+ 			return connector_status_disconnected;
+ 	}
+ 
++	if (drm_probe_ddc(vc4->hdmi->ddc))
++		return connector_status_connected;
++
+ 	if (HDMI_READ(VC4_HDMI_HOTPLUG) & VC4_HDMI_HOTPLUG_CONNECTED)
+ 		return connector_status_connected;
+ 	else

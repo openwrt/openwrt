@@ -1,0 +1,126 @@
+From 83b8a95e047475cd43016426288f5072067ea369 Mon Sep 17 00:00:00 2001
+From: Mario Kleiner <mario.kleiner.de@gmail.com>
+Date: Wed, 18 May 2016 14:02:46 +0200
+Subject: [PATCH] drm/vc4: Make pageflip completion handling more robust.
+
+Protect both the setup of the pageflip event and the
+latching of the new requested displaylist head pointer
+by the event lock, so we can't get into a situation
+where vc4_atomic_flush latches the new display list via
+HVS_WRITE, then immediately gets preempted before queueing
+the pageflip event, then the page-flip completes in hw and
+the vc4_crtc_handle_page_flip() runs and no-ops due to
+lack of a pending pageflip event, then vc4_atomic_flush
+continues and only then queues the pageflip event - after
+the page flip handling already no-oped. This would cause
+flip completion handling only at the next vblank - one
+frame too late.
+
+In vc4_crtc_handle_page_flip() check the actual DL head
+pointer in SCALER_DISPLACTX against the requested pointer
+for page flip to make sure that the flip actually really
+completed in the current vblank and doesn't get deferred
+to the next one because the DL head pointer was written
+a bit too late into SCALER_DISPLISTX, after start of
+vblank, and missed the boat. This avoids handling a
+pageflip completion too early - one frame too early.
+
+According to Eric, DL head pointer updates which were
+written into the HVS DISPLISTX reg get committed to hardware
+at the last pixel of active scanout. Our vblank interrupt
+handler, as triggered by PV_INT_VFP_START irq, gets to run
+earliest at the first pixel of HBLANK at the end of the
+last scanline of active scanout, ie. vblank irq handling
+runs at least 1 pixel duration after a potential pageflip
+completion happened in hardware.
+
+This ordering of events in the hardware, together with the
+lock protection and SCALER_DISPLACTX sampling of this patch,
+guarantees that pageflip completion handling only runs at
+exactly the vblank irq of actual pageflip completion in all
+cases.
+
+Background info from Eric about the relative timing of
+HVS, PV's and trigger points for interrupts, DL updates:
+
+https://lists.freedesktop.org/archives/dri-devel/2016-May/107510.html
+
+Tested on RPi 2B with hardware timing measurement equipment
+and shown to no longer complete flips too early or too late.
+
+Signed-off-by: Mario Kleiner <mario.kleiner.de@gmail.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 56d1fe0979dc9b73c1c12ee07722ac380d42a0c4)
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 28 ++++++++++++++++++----------
+ drivers/gpu/drm/vc4/vc4_regs.h |  4 ++++
+ 2 files changed, 22 insertions(+), 10 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -465,14 +465,6 @@ static void vc4_crtc_atomic_flush(struct
+ 
+ 	WARN_ON_ONCE(dlist_next - dlist_start != vc4_state->mm.size);
+ 
+-	HVS_WRITE(SCALER_DISPLISTX(vc4_crtc->channel),
+-		  vc4_state->mm.start);
+-
+-	if (debug_dump_regs) {
+-		DRM_INFO("CRTC %d HVS after:\n", drm_crtc_index(crtc));
+-		vc4_hvs_dump_state(dev);
+-	}
+-
+ 	if (crtc->state->event) {
+ 		unsigned long flags;
+ 
+@@ -482,8 +474,20 @@ static void vc4_crtc_atomic_flush(struct
+ 
+ 		spin_lock_irqsave(&dev->event_lock, flags);
+ 		vc4_crtc->event = crtc->state->event;
+-		spin_unlock_irqrestore(&dev->event_lock, flags);
+ 		crtc->state->event = NULL;
++
++		HVS_WRITE(SCALER_DISPLISTX(vc4_crtc->channel),
++			  vc4_state->mm.start);
++
++		spin_unlock_irqrestore(&dev->event_lock, flags);
++	} else {
++		HVS_WRITE(SCALER_DISPLISTX(vc4_crtc->channel),
++			  vc4_state->mm.start);
++	}
++
++	if (debug_dump_regs) {
++		DRM_INFO("CRTC %d HVS after:\n", drm_crtc_index(crtc));
++		vc4_hvs_dump_state(dev);
+ 	}
+ }
+ 
+@@ -509,10 +513,14 @@ static void vc4_crtc_handle_page_flip(st
+ {
+ 	struct drm_crtc *crtc = &vc4_crtc->base;
+ 	struct drm_device *dev = crtc->dev;
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
++	struct vc4_crtc_state *vc4_state = to_vc4_crtc_state(crtc->state);
++	u32 chan = vc4_crtc->channel;
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&dev->event_lock, flags);
+-	if (vc4_crtc->event) {
++	if (vc4_crtc->event &&
++	    (vc4_state->mm.start == HVS_READ(SCALER_DISPLACTX(chan)))) {
+ 		drm_crtc_send_vblank_event(crtc, vc4_crtc->event);
+ 		vc4_crtc->event = NULL;
+ 		drm_crtc_vblank_put(crtc);
+--- a/drivers/gpu/drm/vc4/vc4_regs.h
++++ b/drivers/gpu/drm/vc4/vc4_regs.h
+@@ -343,6 +343,10 @@
+ #define SCALER_DISPLACT0                        0x00000030
+ #define SCALER_DISPLACT1                        0x00000034
+ #define SCALER_DISPLACT2                        0x00000038
++#define SCALER_DISPLACTX(x)			(SCALER_DISPLACT0 +	\
++						 (x) * (SCALER_DISPLACT1 - \
++							SCALER_DISPLACT0))
++
+ #define SCALER_DISPCTRL0                        0x00000040
+ # define SCALER_DISPCTRLX_ENABLE		BIT(31)
+ # define SCALER_DISPCTRLX_RESET			BIT(30)

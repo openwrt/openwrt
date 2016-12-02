@@ -1,0 +1,63 @@
+From e14a11520223fbb5d011a83f3de60cd56f3afad5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 2 Sep 2016 17:21:42 +0100
+Subject: [PATCH] bcm2835-sdhost: Don't exit cmd wait loop on error
+
+The FAIL flag can be set in the CMD register before command processing
+is complete, leading to spurious "failed to complete" errors. This has
+the effect of promoting harmless CRC7 errors during CMD1 processing
+into errors that can delay and even prevent booting.
+
+Also:
+1) Convert the last KERN_ERROR message in the register dumping to
+   KERN_INFO.
+2) Remove an unnecessary reset call from  bcm2835_sdhost_add_host.
+
+See: https://github.com/raspberrypi/linux/pull/1492
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/mmc/host/bcm2835-sdhost.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -373,7 +373,7 @@ static void bcm2835_sdhost_dumpregs(stru
+ 	pr_info("%s: SDRSP2 0x%08x\n",
+ 		mmc_hostname(host->mmc),
+ 		bcm2835_sdhost_read(host, SDRSP2));
+-	pr_err("%s: SDRSP3 0x%08x\n",
++	pr_info("%s: SDRSP3 0x%08x\n",
+ 		mmc_hostname(host->mmc),
+ 		bcm2835_sdhost_read(host, SDRSP3));
+ 	pr_info("%s: SDHSTS 0x%08x\n",
+@@ -1183,9 +1183,8 @@ static void bcm2835_sdhost_finish_comman
+ 		retries = 1; // We've already waited long enough this time
+ 	}
+ 
+-	retries = host->cmd_quick_poll_retries;
+ 	for (sdcmd = bcm2835_sdhost_read(host, SDCMD);
+-	     (sdcmd & SDCMD_NEW_FLAG) && !(sdcmd & SDCMD_FAIL_FLAG) && retries;
++	     (sdcmd & SDCMD_NEW_FLAG) && retries;
+ 	     retries--) {
+ 		cpu_relax();
+ 		sdcmd = bcm2835_sdhost_read(host, SDCMD);
+@@ -1208,8 +1207,7 @@ static void bcm2835_sdhost_finish_comman
+ 			usleep_range(1, 10);
+ 			spin_lock_irqsave(&host->lock, *irq_flags);
+ 			sdcmd = bcm2835_sdhost_read(host, SDCMD);
+-			if (!(sdcmd & SDCMD_NEW_FLAG) ||
+-			    (sdcmd & SDCMD_FAIL_FLAG))
++			if (!(sdcmd & SDCMD_NEW_FLAG))
+ 				break;
+ 		}
+ 	}
+@@ -1892,8 +1890,6 @@ int bcm2835_sdhost_add_host(struct bcm28
+ 
+ 	mmc = host->mmc;
+ 
+-	bcm2835_sdhost_reset_internal(host);
+-
+ 	mmc->f_max = host->max_clk;
+ 	mmc->f_min = host->max_clk / SDCDIV_MAX_CDIV;
+ 

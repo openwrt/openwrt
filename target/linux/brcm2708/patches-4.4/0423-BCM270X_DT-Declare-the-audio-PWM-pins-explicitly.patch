@@ -1,0 +1,122 @@
+From 44bc32bd05018d23b4145d56d09419ce8bd89055 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 20 Jun 2016 13:21:26 +0100
+Subject: [PATCH] BCM270X_DT: Declare the audio PWM pins explicitly
+
+Make the audio driver's use of the PWM functions explicit. Overlays
+that want to use the PWM functionality for other purposes must
+disable the audio node.
+
+See: https://github.com/raspberrypi/linux/issues/1473
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts | 10 ++++++++++
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      |  9 +++++++++
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts    | 10 ++++++++++
+ arch/arm/boot/dts/bcm2710-rpi-3-b.dts    | 10 ++++++++++
+ 4 files changed, 39 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -37,6 +37,11 @@
+ 		brcm,pins = <18 19 20 21>;
+ 		brcm,function = <4>; /* alt0 */
+ 	};
++
++	audio_pins: audio_pins {
++		brcm,pins = <40 45>;
++		brcm,function = <4>;
++	};
+ };
+ 
+ &sdhost {
+@@ -120,6 +125,11 @@
+ 	hpd-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+ };
+ 
++&audio {
++	pinctrl-names = "default";
++	pinctrl-0 = <&audio_pins>;
++};
++
+ / {
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -36,6 +36,10 @@
+ 	i2s_pins: i2s {
+ 		brcm,pins = <28 29 30 31>;
+ 		brcm,function = <6>; /* alt2 */
++
++	audio_pins: audio_pins {
++		brcm,pins = <40 45>;
++		brcm,function = <4>;
+ 	};
+ };
+ 
+@@ -114,6 +118,11 @@
+ 	hpd-gpios = <&gpio 46 GPIO_ACTIVE_HIGH>;
+ };
+ 
++&audio {
++	pinctrl-names = "default";
++	pinctrl-0 = <&audio_pins>;
++};
++
+ / {
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -37,6 +37,11 @@
+ 		brcm,pins = <18 19 20 21>;
+ 		brcm,function = <4>; /* alt0 */
+ 	};
++
++	audio_pins: audio_pins {
++		brcm,pins = <40 45>;
++		brcm,function = <4>;
++	};
+ };
+ 
+ &sdhost {
+@@ -120,6 +125,11 @@
+ 	hpd-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+ };
+ 
++&audio {
++	pinctrl-names = "default";
++	pinctrl-0 = <&audio_pins>;
++};
++
+ / {
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+--- a/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
+@@ -61,6 +61,11 @@
+ 		brcm,function;
+ 		brcm,pull;
+ 	};
++
++	audio_pins: audio_pins {
++		brcm,pins = <40 41>;
++		brcm,function = <4>;
++	};
+ };
+ 
+ &sdhost {
+@@ -165,6 +170,11 @@
+ 	hpd-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+ };
+ 
++&audio {
++	pinctrl-names = "default";
++	pinctrl-0 = <&audio_pins>;
++};
++
+ / {
+ 	chosen {
+ 		bootargs = "8250.nr_uarts=1";

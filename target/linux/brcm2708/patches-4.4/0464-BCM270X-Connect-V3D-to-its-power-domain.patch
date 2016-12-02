@@ -1,0 +1,23 @@
+From 1a2dbddc5d2792170b1788f6a30aede54c409f72 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 12 Aug 2016 10:15:34 -0700
+Subject: [PATCH] BCM270X: Connect V3D to its power domain.
+
+We were doing this with manual firmware calls before, but to backport
+runtime PM we want to be using a proper power domain.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -366,6 +366,7 @@
+ 		v3d: v3d@7ec00000 {
+ 			compatible = "brcm,vc4-v3d";
+ 			reg = <0x7ec00000 0x1000>;
++			power-domains = <&power RPI_POWER_DOMAIN_V3D>;
+ 			status = "disabled";
+ 		};
+ 

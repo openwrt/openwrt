@@ -1,0 +1,27 @@
+From b5dd047d429d99a2e9a567d29df581e21e7ba071 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 7 Sep 2016 16:57:59 +0100
+Subject: [PATCH] fbmem: Ensure that parameters are properly checked within
+ fb_copyarea_user
+
+---
+ drivers/video/fbdev/core/fbmem.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/video/fbdev/core/fbmem.c
++++ b/drivers/video/fbdev/core/fbmem.c
+@@ -1090,7 +1090,13 @@ static int fb_copyarea_user(struct fb_in
+ 	int ret = 0;
+ 	if (!lock_fb_info(info))
+ 		return -ENODEV;
+-	if (copy->dx + copy->width > info->var.xres ||
++	if (copy->dx >= info->var.xres ||
++	    copy->sx >= info->var.xres ||
++	    copy->width > info->var.xres ||
++	    copy->dy >= info->var.yres ||
++	    copy->sy >= info->var.yres ||
++	    copy->height > info->var.yres ||
++	    copy->dx + copy->width > info->var.xres ||
+ 	    copy->sx + copy->width > info->var.xres ||
+ 	    copy->dy + copy->height > info->var.yres ||
+ 	    copy->sy + copy->height > info->var.yres) {

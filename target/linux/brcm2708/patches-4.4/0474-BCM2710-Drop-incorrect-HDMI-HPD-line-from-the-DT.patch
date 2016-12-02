@@ -1,0 +1,26 @@
+From a2cf6abba42a5b95cda76929c8681d18e97152a0 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 12 Aug 2016 11:02:14 -0700
+Subject: [PATCH] BCM2710: Drop incorrect HDMI HPD line from the DT.
+
+It's actually off on the GPIO expander, which I don't think we have
+access to.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/bcm2710-rpi-3-b.dts | 4 ----
+ 1 file changed, 4 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
++++ b/arch/arm/boot/dts/bcm2710-rpi-3-b.dts
+@@ -166,10 +166,6 @@
+ 	};
+ };
+ 
+-&hdmi {
+-	hpd-gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+-};
+-
+ &audio {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&audio_pins>;

@@ -1,0 +1,30 @@
+From d6bbcaf3c7706243fafc0d6ddf4136f9c83eb599 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 11 Feb 2016 12:29:45 -0800
+Subject: [PATCH] drm/vc4: Fix flipped HVS channels for DSI0/1.
+
+Empirically, DSI1 appears to be using HVS channel 0 on my Pi2.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -699,13 +699,13 @@ void vc4_cancel_page_flip(struct drm_crt
+ }
+ 
+ static const struct vc4_crtc_data pv0_data = {
+-	.hvs_channel = 0,
++	.hvs_channel = 2,
+ 	.encoder0_type = VC4_ENCODER_TYPE_DSI0,
+ 	.encoder1_type = VC4_ENCODER_TYPE_DPI,
+ };
+ 
+ static const struct vc4_crtc_data pv1_data = {
+-	.hvs_channel = 2,
++	.hvs_channel = 0,
+ 	.encoder0_type = VC4_ENCODER_TYPE_DSI1,
+ 	.encoder1_type = VC4_ENCODER_TYPE_SMI,
+ };

@@ -1,0 +1,358 @@
+From 50cb4c343d766b0a3efa441a2c62fb890f0b3e45 Mon Sep 17 00:00:00 2001
+From: Mario Kleiner <mario.kleiner.de@gmail.com>
+Date: Thu, 23 Jun 2016 08:17:50 +0200
+Subject: [PATCH] drm/vc4: Implement precise vblank timestamping.
+
+Precise vblank timestamping is implemented via the
+usual scanout position based method. On VC4 the
+pixelvalves PV do not have a scanout position
+register. Only the hardware video scaler HVS has a
+similar register which describes which scanline for
+the output is currently composited and stored in the
+HVS fifo for later consumption by the PV.
+
+This causes a problem in that the HVS runs at a much
+faster clock (system clock / audio gate) than the PV
+which runs at video mode dot clock, so the unless the
+fifo between HVS and PV is full, the HVS will progress
+faster in its observable read line position than video
+scan rate, so the HVS position reading can't be directly
+translated into a scanout position for timestamp correction.
+
+Additionally when the PV is in vblank, it doesn't consume
+from the fifo, so the fifo gets full very quickly and then
+the HVS stops compositing until the PV enters active scanout
+and starts consuming scanlines from the fifo again, making
+new space for the HVS to composite.
+
+Therefore a simple translation of HVS read position into
+elapsed time since (or to) start of active scanout does
+not work, but for the most interesting cases we can still
+get useful and sufficiently accurate results:
+
+1. The PV enters active scanout of a new frame with the
+   fifo of the HVS completely full, and the HVS can refill
+   any fifo line which gets consumed and thereby freed up by
+   the PV during active scanout very quickly. Therefore the
+   PV and HVS work effectively in lock-step during active
+   scanout with the fifo never having more than 1 scanline
+   freed up by the PV before it gets refilled. The PV's
+   real scanout position is therefore trailing the HVS
+   compositing position as scanoutpos = hvspos - fifosize
+   and we can get the true scanoutpos as HVS readpos minus
+   fifo size, so precise timestamping works while in active
+   scanout, except for the last few scanlines of the frame,
+   when the HVS reaches end of frame, stops compositing and
+   the PV catches up and drains the fifo. This special case
+   would only introduce minor errors though.
+
+2. If we are in vblank, then we can only guess something
+   reasonable. If called from vblank irq, we assume the irq is
+   usually dispatched with minimum delay, so we can take a
+   timestamp taken at entry into the vblank irq handler as a
+   baseline and then add a full vblank duration until the
+   guessed start of active scanout. As irq dispatch is usually
+   pretty low latency this works with relatively low jitter and
+   good results.
+
+   If we aren't called from vblank then we could be anywhere
+   within the vblank interval, so we return a neutral result,
+   simply the current system timestamp, and hope for the best.
+
+Measurement shows the generated timestamps to be rather precise,
+and at least never off more than 1 vblank duration worst-case.
+
+Limitations: Doesn't work well yet for interlaced video modes,
+             therefore disabled in interlaced mode for now.
+
+v2: Use the DISPBASE registers to determine the FIFO size (changes
+    by anholt)
+
+Signed-off-by: Mario Kleiner <mario.kleiner.de@gmail.com>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Reviewed-and-tested-by: Mario Kleiner <mario.kleiner.de@gmail.com> (v2)
+(cherry picked from commit 1bf59f1dcbe25272f6b5d870054647e58a8a9c55)
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 162 +++++++++++++++++++++++++++++++++++++++++
+ drivers/gpu/drm/vc4/vc4_drv.c  |   2 +
+ drivers/gpu/drm/vc4/vc4_drv.h  |   7 ++
+ drivers/gpu/drm/vc4/vc4_regs.h |  22 +++++-
+ 4 files changed, 192 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -47,12 +47,17 @@ struct vc4_crtc {
+ 	const struct vc4_crtc_data *data;
+ 	void __iomem *regs;
+ 
++	/* Timestamp at start of vblank irq - unaffected by lock delays. */
++	ktime_t t_vblank;
++
+ 	/* Which HVS channel we're using for our CRTC. */
+ 	int channel;
+ 
+ 	u8 lut_r[256];
+ 	u8 lut_g[256];
+ 	u8 lut_b[256];
++	/* Size in pixels of the COB memory allocated to this CRTC. */
++	u32 cob_size;
+ 
+ 	struct drm_pending_vblank_event *event;
+ };
+@@ -134,6 +139,144 @@ int vc4_crtc_debugfs_regs(struct seq_fil
+ }
+ #endif
+ 
++int vc4_crtc_get_scanoutpos(struct drm_device *dev, unsigned int crtc_id,
++			    unsigned int flags, int *vpos, int *hpos,
++			    ktime_t *stime, ktime_t *etime,
++			    const struct drm_display_mode *mode)
++{
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
++	struct vc4_crtc *vc4_crtc = vc4->crtc[crtc_id];
++	u32 val;
++	int fifo_lines;
++	int vblank_lines;
++	int ret = 0;
++
++	/*
++	 * XXX Doesn't work well in interlaced mode yet, partially due
++	 * to problems in vc4 kms or drm core interlaced mode handling,
++	 * so disable for now in interlaced mode.
++	 */
++	if (mode->flags & DRM_MODE_FLAG_INTERLACE)
++		return ret;
++
++	/* preempt_disable_rt() should go right here in PREEMPT_RT patchset. */
++
++	/* Get optional system timestamp before query. */
++	if (stime)
++		*stime = ktime_get();
++
++	/*
++	 * Read vertical scanline which is currently composed for our
++	 * pixelvalve by the HVS, and also the scaler status.
++	 */
++	val = HVS_READ(SCALER_DISPSTATX(vc4_crtc->channel));
++
++	/* Get optional system timestamp after query. */
++	if (etime)
++		*etime = ktime_get();
++
++	/* preempt_enable_rt() should go right here in PREEMPT_RT patchset. */
++
++	/* Vertical position of hvs composed scanline. */
++	*vpos = VC4_GET_FIELD(val, SCALER_DISPSTATX_LINE);
++
++	/* No hpos info available. */
++	if (hpos)
++		*hpos = 0;
++
++	/* This is the offset we need for translating hvs -> pv scanout pos. */
++	fifo_lines = vc4_crtc->cob_size / mode->crtc_hdisplay;
++
++	if (fifo_lines > 0)
++		ret |= DRM_SCANOUTPOS_VALID;
++
++	/* HVS more than fifo_lines into frame for compositing? */
++	if (*vpos > fifo_lines) {
++		/*
++		 * We are in active scanout and can get some meaningful results
++		 * from HVS. The actual PV scanout can not trail behind more
++		 * than fifo_lines as that is the fifo's capacity. Assume that
++		 * in active scanout the HVS and PV work in lockstep wrt. HVS
++		 * refilling the fifo and PV consuming from the fifo, ie.
++		 * whenever the PV consumes and frees up a scanline in the
++		 * fifo, the HVS will immediately refill it, therefore
++		 * incrementing vpos. Therefore we choose HVS read position -
++		 * fifo size in scanlines as a estimate of the real scanout
++		 * position of the PV.
++		 */
++		*vpos -= fifo_lines + 1;
++		if (mode->flags & DRM_MODE_FLAG_INTERLACE)
++			*vpos /= 2;
++
++		ret |= DRM_SCANOUTPOS_ACCURATE;
++		return ret;
++	}
++
++	/*
++	 * Less: This happens when we are in vblank and the HVS, after getting
++	 * the VSTART restart signal from the PV, just started refilling its
++	 * fifo with new lines from the top-most lines of the new framebuffers.
++	 * The PV does not scan out in vblank, so does not remove lines from
++	 * the fifo, so the fifo will be full quickly and the HVS has to pause.
++	 * We can't get meaningful readings wrt. scanline position of the PV
++	 * and need to make things up in a approximative but consistent way.
++	 */
++	ret |= DRM_SCANOUTPOS_IN_VBLANK;
++	vblank_lines = mode->crtc_vtotal - mode->crtc_vdisplay;
++
++	if (flags & DRM_CALLED_FROM_VBLIRQ) {
++		/*
++		 * Assume the irq handler got called close to first
++		 * line of vblank, so PV has about a full vblank
++		 * scanlines to go, and as a base timestamp use the
++		 * one taken at entry into vblank irq handler, so it
++		 * is not affected by random delays due to lock
++		 * contention on event_lock or vblank_time lock in
++		 * the core.
++		 */
++		*vpos = -vblank_lines;
++
++		if (stime)
++			*stime = vc4_crtc->t_vblank;
++		if (etime)
++			*etime = vc4_crtc->t_vblank;
++
++		/*
++		 * If the HVS fifo is not yet full then we know for certain
++		 * we are at the very beginning of vblank, as the hvs just
++		 * started refilling, and the stime and etime timestamps
++		 * truly correspond to start of vblank.
++		 */
++		if ((val & SCALER_DISPSTATX_FULL) != SCALER_DISPSTATX_FULL)
++			ret |= DRM_SCANOUTPOS_ACCURATE;
++	} else {
++		/*
++		 * No clue where we are inside vblank. Return a vpos of zero,
++		 * which will cause calling code to just return the etime
++		 * timestamp uncorrected. At least this is no worse than the
++		 * standard fallback.
++		 */
++		*vpos = 0;
++	}
++
++	return ret;
++}
++
++int vc4_crtc_get_vblank_timestamp(struct drm_device *dev, unsigned int crtc_id,
++				  int *max_error, struct timeval *vblank_time,
++				  unsigned flags)
++{
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
++	struct vc4_crtc *vc4_crtc = vc4->crtc[crtc_id];
++	struct drm_crtc *crtc = &vc4_crtc->base;
++	struct drm_crtc_state *state = crtc->state;
++
++	/* Helper routine in DRM core does all the work: */
++	return drm_calc_vbltimestamp_from_scanoutpos(dev, crtc_id, max_error,
++						     vblank_time, flags,
++						     &state->adjusted_mode);
++}
++
+ static void vc4_crtc_destroy(struct drm_crtc *crtc)
+ {
+ 	drm_crtc_cleanup(crtc);
+@@ -535,6 +678,7 @@ static irqreturn_t vc4_crtc_irq_handler(
+ 	irqreturn_t ret = IRQ_NONE;
+ 
+ 	if (stat & PV_INT_VFP_START) {
++		vc4_crtc->t_vblank = ktime_get();
+ 		CRTC_WRITE(PV_INTSTAT, PV_INT_VFP_START);
+ 		drm_crtc_handle_vblank(&vc4_crtc->base);
+ 		vc4_crtc_handle_page_flip(vc4_crtc);
+@@ -759,6 +903,22 @@ static void vc4_set_crtc_possible_masks(
+ 	}
+ }
+ 
++static void
++vc4_crtc_get_cob_allocation(struct vc4_crtc *vc4_crtc)
++{
++	struct drm_device *drm = vc4_crtc->base.dev;
++	struct vc4_dev *vc4 = to_vc4_dev(drm);
++	u32 dispbase = HVS_READ(SCALER_DISPBASEX(vc4_crtc->channel));
++	/* Top/base are supposed to be 4-pixel aligned, but the
++	 * Raspberry Pi firmware fills the low bits (which are
++	 * presumably ignored).
++	 */
++	u32 top = VC4_GET_FIELD(dispbase, SCALER_DISPBASEX_TOP) & ~3;
++	u32 base = VC4_GET_FIELD(dispbase, SCALER_DISPBASEX_BASE) & ~3;
++
++	vc4_crtc->cob_size = top - base + 4;
++}
++
+ static int vc4_crtc_bind(struct device *dev, struct device *master, void *data)
+ {
+ 	struct platform_device *pdev = to_platform_device(dev);
+@@ -835,6 +995,8 @@ static int vc4_crtc_bind(struct device *
+ 		crtc->cursor = cursor_plane;
+ 	}
+ 
++	vc4_crtc_get_cob_allocation(vc4_crtc);
++
+ 	CRTC_WRITE(PV_INTEN, 0);
+ 	CRTC_WRITE(PV_INTSTAT, PV_INT_VFP_START);
+ 	ret = devm_request_irq(dev, platform_get_irq(pdev, 0),
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -116,6 +116,8 @@ static struct drm_driver vc4_drm_driver
+ 	.enable_vblank = vc4_enable_vblank,
+ 	.disable_vblank = vc4_disable_vblank,
+ 	.get_vblank_counter = drm_vblank_no_hw_counter,
++	.get_scanout_position = vc4_crtc_get_scanoutpos,
++	.get_vblank_timestamp = vc4_crtc_get_vblank_timestamp,
+ 
+ #if defined(CONFIG_DEBUG_FS)
+ 	.debugfs_init = vc4_debugfs_init,
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -419,6 +419,13 @@ int vc4_enable_vblank(struct drm_device
+ void vc4_disable_vblank(struct drm_device *dev, unsigned int crtc_id);
+ void vc4_cancel_page_flip(struct drm_crtc *crtc, struct drm_file *file);
+ int vc4_crtc_debugfs_regs(struct seq_file *m, void *arg);
++int vc4_crtc_get_scanoutpos(struct drm_device *dev, unsigned int crtc_id,
++			    unsigned int flags, int *vpos, int *hpos,
++			    ktime_t *stime, ktime_t *etime,
++			    const struct drm_display_mode *mode);
++int vc4_crtc_get_vblank_timestamp(struct drm_device *dev, unsigned int crtc_id,
++				  int *max_error, struct timeval *vblank_time,
++				  unsigned flags);
+ 
+ /* vc4_debugfs.c */
+ int vc4_debugfs_init(struct drm_minor *minor);
+--- a/drivers/gpu/drm/vc4/vc4_regs.h
++++ b/drivers/gpu/drm/vc4/vc4_regs.h
+@@ -368,7 +368,6 @@
+ # define SCALER_DISPBKGND_FILL			BIT(24)
+ 
+ #define SCALER_DISPSTAT0                        0x00000048
+-#define SCALER_DISPBASE0                        0x0000004c
+ # define SCALER_DISPSTATX_MODE_MASK		VC4_MASK(31, 30)
+ # define SCALER_DISPSTATX_MODE_SHIFT		30
+ # define SCALER_DISPSTATX_MODE_DISABLED		0
+@@ -377,6 +376,24 @@
+ # define SCALER_DISPSTATX_MODE_EOF		3
+ # define SCALER_DISPSTATX_FULL			BIT(29)
+ # define SCALER_DISPSTATX_EMPTY			BIT(28)
++# define SCALER_DISPSTATX_FRAME_COUNT_MASK	VC4_MASK(17, 12)
++# define SCALER_DISPSTATX_FRAME_COUNT_SHIFT	12
++# define SCALER_DISPSTATX_LINE_MASK		VC4_MASK(11, 0)
++# define SCALER_DISPSTATX_LINE_SHIFT		0
++
++#define SCALER_DISPBASE0                        0x0000004c
++/* Last pixel in the COB (display FIFO memory) allocated to this HVS
++ * channel.  Must be 4-pixel aligned (and thus 4 pixels less than the
++ * next COB base).
++ */
++# define SCALER_DISPBASEX_TOP_MASK		VC4_MASK(31, 16)
++# define SCALER_DISPBASEX_TOP_SHIFT		16
++/* First pixel in the COB (display FIFO memory) allocated to this HVS
++ * channel.  Must be 4-pixel aligned.
++ */
++# define SCALER_DISPBASEX_BASE_MASK		VC4_MASK(15, 0)
++# define SCALER_DISPBASEX_BASE_SHIFT		0
++
+ #define SCALER_DISPCTRL1                        0x00000050
+ #define SCALER_DISPBKGND1                       0x00000054
+ #define SCALER_DISPBKGNDX(x)			(SCALER_DISPBKGND0 +        \
+@@ -387,6 +404,9 @@
+ 						 (x) * (SCALER_DISPSTAT1 - \
+ 							SCALER_DISPSTAT0))
+ #define SCALER_DISPBASE1                        0x0000005c
++#define SCALER_DISPBASEX(x)			(SCALER_DISPBASE0 +        \
++						 (x) * (SCALER_DISPBASE1 - \
++							SCALER_DISPBASE0))
+ #define SCALER_DISPCTRL2                        0x00000060
+ #define SCALER_DISPCTRLX(x)			(SCALER_DISPCTRL0 +        \
+ 						 (x) * (SCALER_DISPCTRL1 - \

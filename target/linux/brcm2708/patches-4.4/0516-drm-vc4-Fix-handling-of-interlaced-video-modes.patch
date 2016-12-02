@@ -1,0 +1,104 @@
+From fa69b17facd1a2fd3e430b78f65b60b4a087b53d Mon Sep 17 00:00:00 2001
+From: Mario Kleiner <mario.kleiner.de@gmail.com>
+Date: Tue, 19 Jul 2016 20:58:58 +0200
+Subject: [PATCH] drm/vc4: Fix handling of interlaced video modes.
+
+We must not apply CRTC_INTERLACE_HALVE_V to interlaced modes during
+mode enumeration, as drm_helper_probe_single_connector_modes
+does, so wrap it and reset the effect of CRTC_INTERLACE_HALVE_V
+on affected interlaced modes.
+
+Also mode_fixup interlaced modes passed in from user space.
+
+This fixes the vblank timestamping constants and entries in
+the mode->crtc_xxx fields needed for precise vblank timestamping.
+
+Signed-off-by: Mario Kleiner <mario.kleiner.de@gmail.com>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 18 ++++++++++++++++++
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 29 +++++++++++++++++++++++++++--
+ 2 files changed, 45 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -538,6 +538,23 @@ static void vc4_crtc_enable(struct drm_c
+ 		   CRTC_READ(PV_V_CONTROL) | PV_VCONTROL_VIDEN);
+ }
+ 
++static bool vc4_crtc_mode_fixup(struct drm_crtc *crtc,
++				const struct drm_display_mode *mode,
++				struct drm_display_mode *adjusted_mode)
++{
++	/*
++	 * Interlaced video modes got CRTC_INTERLACE_HALVE_V applied when
++	 * coming from user space. We don't want this, as it screws up
++	 * vblank timestamping, so fix it up.
++	 */
++	drm_mode_set_crtcinfo(adjusted_mode, 0);
++
++	DRM_DEBUG_KMS("[CRTC:%d] adjusted_mode :\n", crtc->base.id);
++	drm_mode_debug_printmodeline(adjusted_mode);
++
++	return true;
++}
++
+ static int vc4_crtc_atomic_check(struct drm_crtc *crtc,
+ 				 struct drm_crtc_state *state)
+ {
+@@ -848,6 +865,7 @@ static const struct drm_crtc_helper_func
+ 	.mode_set_nofb = vc4_crtc_mode_set_nofb,
+ 	.disable = vc4_crtc_disable,
+ 	.enable = vc4_crtc_enable,
++	.mode_fixup = vc4_crtc_mode_fixup,
+ 	.atomic_check = vc4_crtc_atomic_check,
+ 	.atomic_flush = vc4_crtc_atomic_flush,
+ };
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -219,10 +219,35 @@ vc4_hdmi_connector_best_encoder(struct d
+ 	return hdmi_connector->encoder;
+ }
+ 
++/*
++ * drm_helper_probe_single_connector_modes() applies drm_mode_set_crtcinfo to
++ * all modes with flag CRTC_INTERLACE_HALVE_V. We don't want this, as it
++ * screws up vblank timestamping for interlaced modes, so fix it up.
++ */
++static int vc4_hdmi_connector_probe_modes(struct drm_connector *connector,
++					  uint32_t maxX, uint32_t maxY)
++{
++	struct drm_display_mode *mode;
++	int count;
++
++	count = drm_helper_probe_single_connector_modes(connector, maxX, maxY);
++	if (count == 0)
++		return 0;
++
++	DRM_DEBUG_KMS("[CONNECTOR:%d:%s] probed adapted modes :\n",
++		      connector->base.id, connector->name);
++	list_for_each_entry(mode, &connector->modes, head) {
++		drm_mode_set_crtcinfo(mode, 0);
++		drm_mode_debug_printmodeline(mode);
++	}
++
++	return count;
++}
++
+ static const struct drm_connector_funcs vc4_hdmi_connector_funcs = {
+ 	.dpms = drm_atomic_helper_connector_dpms,
+ 	.detect = vc4_hdmi_connector_detect,
+-	.fill_modes = drm_helper_probe_single_connector_modes,
++	.fill_modes = vc4_hdmi_connector_probe_modes,
+ 	.destroy = vc4_hdmi_connector_destroy,
+ 	.reset = drm_atomic_helper_connector_reset,
+ 	.atomic_duplicate_state = drm_atomic_helper_connector_duplicate_state,
+@@ -258,7 +283,7 @@ static struct drm_connector *vc4_hdmi_co
+ 	connector->polled = (DRM_CONNECTOR_POLL_CONNECT |
+ 			     DRM_CONNECTOR_POLL_DISCONNECT);
+ 
+-	connector->interlace_allowed = 0;
++	connector->interlace_allowed = 1;
+ 	connector->doublescan_allowed = 0;
+ 
+ 	drm_mode_connector_attach_encoder(connector, encoder);

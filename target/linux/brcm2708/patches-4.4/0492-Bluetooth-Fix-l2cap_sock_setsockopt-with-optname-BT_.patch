@@ -1,0 +1,33 @@
+From 4f740b73749a855452f283909401139692633600 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Amadeusz=20S=C5=82awi=C5=84ski?=
+ <amadeusz.slawinski@tieto.com>
+Date: Thu, 14 Jul 2016 10:50:23 +0200
+Subject: [PATCH] Bluetooth: Fix l2cap_sock_setsockopt() with optname BT_RCVMTU
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+commit 23bc6ab0a0912146fd674a0becc758c3162baabc upstream.
+
+When we retrieve imtu value from userspace we should use 16 bit pointer
+cast instead of 32 as it's defined that way in headers. Fixes setsockopt
+calls on big-endian platforms.
+
+Signed-off-by: Amadeusz Sławiński <amadeusz.slawinski@tieto.com>
+Signed-off-by: Marcel Holtmann <marcel@holtmann.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ net/bluetooth/l2cap_sock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/bluetooth/l2cap_sock.c
++++ b/net/bluetooth/l2cap_sock.c
+@@ -817,7 +817,7 @@ static int l2cap_sock_setsockopt(struct
+ 			break;
+ 		}
+ 
+-		if (get_user(opt, (u32 __user *) optval)) {
++		if (get_user(opt, (u16 __user *) optval)) {
+ 			err = -EFAULT;
+ 			break;
+ 		}

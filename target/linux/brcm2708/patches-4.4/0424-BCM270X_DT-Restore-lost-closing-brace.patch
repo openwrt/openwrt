@@ -1,0 +1,20 @@
+From c97ebdd04db461f38eaa674f29a3f313533221a4 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 12 Jul 2016 10:35:01 +0100
+Subject: [PATCH] BCM270X_DT: Restore lost closing brace.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2708-rpi-b.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -36,6 +36,7 @@
+ 	i2s_pins: i2s {
+ 		brcm,pins = <28 29 30 31>;
+ 		brcm,function = <6>; /* alt2 */
++	};
+ 
+ 	audio_pins: audio_pins {
+ 		brcm,pins = <40 45>;

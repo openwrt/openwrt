@@ -1,0 +1,36 @@
+From 5be3a203fd3b663f590e97938203b6d0766a1578 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 27 May 2016 18:23:51 +0100
+Subject: [PATCH] config: Add support for Logitech Rumblepad
+
+---
+ arch/arm/configs/bcm2709_defconfig | 4 ++++
+ arch/arm/configs/bcmrpi_defconfig  | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -896,6 +896,10 @@ CONFIG_HID_TWINHAN=m
+ CONFIG_HID_KENSINGTON=m
+ CONFIG_HID_LCPOWER=m
+ CONFIG_HID_LOGITECH=m
++CONFIG_HID_LOGITECH_DJ=m
++CONFIG_LOGITECH_FF=y
++CONFIG_LOGIRUMBLEPAD2_FF=y
++CONFIG_LOGIG940_FF=y
+ CONFIG_HID_MAGICMOUSE=m
+ CONFIG_HID_MICROSOFT=m
+ CONFIG_HID_MONTEREY=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -888,6 +888,10 @@ CONFIG_HID_TWINHAN=m
+ CONFIG_HID_KENSINGTON=m
+ CONFIG_HID_LCPOWER=m
+ CONFIG_HID_LOGITECH=m
++CONFIG_HID_LOGITECH_DJ=m
++CONFIG_LOGITECH_FF=y
++CONFIG_LOGIRUMBLEPAD2_FF=y
++CONFIG_LOGIG940_FF=y
+ CONFIG_HID_MAGICMOUSE=m
+ CONFIG_HID_MICROSOFT=m
+ CONFIG_HID_MONTEREY=m

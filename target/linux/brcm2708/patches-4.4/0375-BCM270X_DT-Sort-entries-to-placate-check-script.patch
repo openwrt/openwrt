@@ -1,0 +1,56 @@
+From d42e78e55dcd757dc2002675d9266bc17f903900 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 3 Jun 2016 23:01:01 +0100
+Subject: [PATCH] BCM270X_DT: Sort entries to placate check script
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/Makefile | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -18,10 +18,10 @@ dtbo-$(RPI_DT_OVERLAYS) += akkordion-iqd
+ dtbo-$(RPI_DT_OVERLAYS) += at86rf233.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += audioinjector-wm8731-audio.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += dht11.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dpi24.dtbo
+-dtbo-$(RPI_DT_OVERLAYS) += dwc2.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dwc-otg.dtbo
+-dtbo-$(RPI_DT_OVERLAYS) += dht11.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += dwc2.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += enc28j60.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += gpio-ir.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += gpio-poweroff.dtbo
+@@ -31,10 +31,10 @@ dtbo-$(RPI_DT_OVERLAYS) += hifiberry-dac
+ dtbo-$(RPI_DT_OVERLAYS) += hifiberry-digi.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += hy28a.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += hy28b.dtbo
+-dtbo-$(RPI_DT_OVERLAYS) += i2c-rtc.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c-gpio.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c-mux.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c-pwm-pca9685a.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += i2c-rtc.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c0-bcm2708.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c1-bcm2708.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2s-gpio28-31.dtbo
+@@ -73,16 +73,16 @@ dtbo-$(RPI_DT_OVERLAYS) += sdhost.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdio.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdio-1bit.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdtweak.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += smi.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += smi-dev.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += smi-nand.dtbo
+-dtbo-$(RPI_DT_OVERLAYS) += smi.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi-gpio35-39.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi1-1cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi1-2cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi1-3cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi2-1cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi2-2cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi2-3cs.dtbo
+-dtbo-$(RPI_DT_OVERLAYS) += spi-gpio35-39.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += tinylcd35.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += uart1.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += vc4-kms-v3d.dtbo

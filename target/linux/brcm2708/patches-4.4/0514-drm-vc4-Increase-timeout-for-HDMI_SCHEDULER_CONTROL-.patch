@@ -1,0 +1,34 @@
+From 4fe0280a07dea7997dd8a789c704f69b5620cdd2 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Wed, 28 Sep 2016 17:21:05 -0700
+Subject: [PATCH] drm/vc4: Increase timeout for HDMI_SCHEDULER_CONTROL changes.
+
+Fixes occasional debug spew at boot when connected directly through
+HDMI, and probably confusing the HDMI state machine when we go trying
+to poke registers for the enable sequence too soon.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -408,7 +408,7 @@ static void vc4_hdmi_encoder_enable(stru
+ 			   VC4_HDMI_SCHEDULER_CONTROL_MODE_HDMI);
+ 
+ 		ret = wait_for(HDMI_READ(VC4_HDMI_SCHEDULER_CONTROL) &
+-			       VC4_HDMI_SCHEDULER_CONTROL_HDMI_ACTIVE, 1);
++			       VC4_HDMI_SCHEDULER_CONTROL_HDMI_ACTIVE, 1000);
+ 		WARN_ONCE(ret, "Timeout waiting for "
+ 			  "VC4_HDMI_SCHEDULER_CONTROL_HDMI_ACTIVE\n");
+ 	} else {
+@@ -420,7 +420,7 @@ static void vc4_hdmi_encoder_enable(stru
+ 			   ~VC4_HDMI_SCHEDULER_CONTROL_MODE_HDMI);
+ 
+ 		ret = wait_for(!(HDMI_READ(VC4_HDMI_SCHEDULER_CONTROL) &
+-				 VC4_HDMI_SCHEDULER_CONTROL_HDMI_ACTIVE), 1);
++				 VC4_HDMI_SCHEDULER_CONTROL_HDMI_ACTIVE), 1000);
+ 		WARN_ONCE(ret, "Timeout waiting for "
+ 			  "!VC4_HDMI_SCHEDULER_CONTROL_HDMI_ACTIVE\n");
+ 	}

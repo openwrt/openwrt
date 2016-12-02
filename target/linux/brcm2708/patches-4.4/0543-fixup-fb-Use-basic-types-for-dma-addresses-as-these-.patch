@@ -1,0 +1,23 @@
+From ab3d72ab3a895ece2820f6de879472eafb157c39 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Mon, 14 Nov 2016 22:05:30 +0000
+Subject: [PATCH] fixup: fb: Use basic types for dma addresses as these are
+ also included from user code
+
+---
+ include/uapi/linux/fb.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/include/uapi/linux/fb.h
++++ b/include/uapi/linux/fb.h
+@@ -353,8 +353,8 @@ struct fb_copyarea {
+ };
+ 
+ struct fb_dmacopy {
+-	dma_addr_t dst;
+-	dma_addr_t src;
++	void *dst;
++	__u32 src;
+ 	__u32 length;
+ };
+ 

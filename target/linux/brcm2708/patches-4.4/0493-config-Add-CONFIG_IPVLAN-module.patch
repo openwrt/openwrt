@@ -1,0 +1,30 @@
+From a64c4779cd96af992937ff2e9a13dc6b93d0a6fe Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 23 Aug 2016 14:07:29 +0100
+Subject: [PATCH] config: Add CONFIG_IPVLAN module
+
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -448,6 +448,7 @@ CONFIG_BONDING=m
+ CONFIG_DUMMY=m
+ CONFIG_IFB=m
+ CONFIG_MACVLAN=m
++CONFIG_IPVLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -441,6 +441,7 @@ CONFIG_BONDING=m
+ CONFIG_DUMMY=m
+ CONFIG_IFB=m
+ CONFIG_MACVLAN=m
++CONFIG_IPVLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m

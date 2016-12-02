@@ -1,0 +1,57 @@
+From ed5a62d83a6a9bd2b318f0ed9bf9b3d28376f8f7 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 19 Jul 2016 11:32:44 -0700
+Subject: [PATCH] drm/vc4: Use drm_malloc_ab to fix large rendering jobs.
+
+If you exceeded the size that kmalloc would return, you'd get a dmesg
+warning and a return from the job submit.  We can handle much
+allocations with vmalloc, and drm_malloc_ab makes that decision.
+
+Fixes failure in piglit's scissor-many.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit ece7267dccf0e9e08cb6e8dc6b7ad2be9c4eb444)
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -549,8 +549,8 @@ vc4_cl_lookup_bos(struct drm_device *dev
+ 		return -EINVAL;
+ 	}
+ 
+-	exec->bo = kcalloc(exec->bo_count, sizeof(struct drm_gem_cma_object *),
+-			   GFP_KERNEL);
++	exec->bo = drm_calloc_large(exec->bo_count,
++				    sizeof(struct drm_gem_cma_object *));
+ 	if (!exec->bo) {
+ 		DRM_ERROR("Failed to allocate validated BO pointers\n");
+ 		return -ENOMEM;
+@@ -624,7 +624,7 @@ vc4_get_bcl(struct drm_device *dev, stru
+ 	 * read the contents back for validation, and I think the
+ 	 * bo->vaddr is uncached access.
+ 	 */
+-	temp = kmalloc(temp_size, GFP_KERNEL);
++	temp = drm_malloc_ab(temp_size, 1);
+ 	if (!temp) {
+ 		DRM_ERROR("Failed to allocate storage for copying "
+ 			  "in bin/render CLs.\n");
+@@ -699,7 +699,7 @@ vc4_get_bcl(struct drm_device *dev, stru
+ 	ret = vc4_wait_for_seqno(dev, exec->bin_dep_seqno, ~0ull, true);
+ 
+ fail:
+-	kfree(temp);
++	drm_free_large(temp);
+ 	return ret;
+ }
+ 
+@@ -712,7 +712,7 @@ vc4_complete_exec(struct drm_device *dev
+ 	if (exec->bo) {
+ 		for (i = 0; i < exec->bo_count; i++)
+ 			drm_gem_object_unreference_unlocked(&exec->bo[i]->base);
+-		kfree(exec->bo);
++		drm_free_large(exec->bo);
+ 	}
+ 
+ 	while (!list_empty(&exec->unref_list)) {

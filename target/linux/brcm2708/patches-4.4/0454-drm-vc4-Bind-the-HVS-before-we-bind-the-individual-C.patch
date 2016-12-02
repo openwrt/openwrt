@@ -1,0 +1,28 @@
+From 883112e5caaefcb620248e9f63426e82349033e0 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 8 Jul 2016 11:25:09 -0700
+Subject: [PATCH] drm/vc4: Bind the HVS before we bind the individual CRTCs.
+
+We need to be able to look at the CRTC's registers in the HVS as part
+of initialization, while the HVS doesn't need to look at the PV
+registers.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Reviewed-and-tested-by: Mario Kleiner <mario.kleiner.de@gmail.com>
+(cherry picked from commit 7a100969f30b77761901c05a5c810bcaea65df44)
+---
+ drivers/gpu/drm/vc4/vc4_drv.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -295,8 +295,8 @@ static struct platform_driver *const com
+ 	&vc4_hdmi_driver,
+ 	&vc4_dpi_driver,
+ 	&vc4_dsi_driver,
+-	&vc4_crtc_driver,
+ 	&vc4_hvs_driver,
++	&vc4_crtc_driver,
+ 	&vc4_v3d_driver,
+ };
+ 

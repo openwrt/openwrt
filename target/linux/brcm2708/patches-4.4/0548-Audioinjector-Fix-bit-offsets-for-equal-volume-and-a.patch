@@ -1,0 +1,55 @@
+From 80531f433182a0db5da749045a6e3f48bf4277db Mon Sep 17 00:00:00 2001
+From: Matt Flax <flatmax@flatmax.org>
+Date: Sun, 20 Nov 2016 19:15:24 +1100
+Subject: [PATCH] [Audioinjector] Fix bit offsets for equal volume and add 8
+ kHz operation (#1727)
+
+Applying to the audioinjector sound card only. This patch offsets channel
+2 correctly from the LR clock. This ensures that channel 2 doesn't loose
+any bits during capture. It also results in both channels 1 and 2 having
+the same volume. This commit also adds 8 kHz operation.
+
+Signed-off-by: Matt Flax <flatmax@flatmax.org>
+---
+ sound/soc/bcm/audioinjector-pi-soundcard.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+--- a/sound/soc/bcm/audioinjector-pi-soundcard.c
++++ b/sound/soc/bcm/audioinjector-pi-soundcard.c
+@@ -30,7 +30,7 @@
+ #include "../codecs/wm8731.h"
+ 
+ static const unsigned int bcm2835_rates_12000000[] = {
+-	32000, 44100, 48000, 96000, 88200,
++	8000, 16000, 32000, 44100, 48000, 96000, 88200,
+ };
+ 
+ static struct snd_pcm_hw_constraint_list bcm2835_constraints_12000000 = {
+@@ -55,19 +55,21 @@ static int snd_audioinjector_pi_soundcar
+ 
+ 	switch (params_rate(params)){
+ 		case 8000:
+-			return snd_soc_dai_set_bclk_ratio(cpu_dai, 1508);
++			return snd_soc_dai_set_bclk_ratio(cpu_dai, 1);
++		case 16000:
++			return snd_soc_dai_set_bclk_ratio(cpu_dai, 750);
+ 		case 32000:
+-			return snd_soc_dai_set_bclk_ratio(cpu_dai, 378);
++			return snd_soc_dai_set_bclk_ratio(cpu_dai, 375);
+ 		case 44100:
+-			return snd_soc_dai_set_bclk_ratio(cpu_dai, 274);
++			return snd_soc_dai_set_bclk_ratio(cpu_dai, 272);
+ 		case 48000:
+-			return snd_soc_dai_set_bclk_ratio(cpu_dai, 252);
++			return snd_soc_dai_set_bclk_ratio(cpu_dai, 250);
+ 		case 88200:
+ 			return snd_soc_dai_set_bclk_ratio(cpu_dai, 136);
+ 		case 96000:
+-			return snd_soc_dai_set_bclk_ratio(cpu_dai, 126);
++			return snd_soc_dai_set_bclk_ratio(cpu_dai, 125);
+ 		default:
+-			return snd_soc_dai_set_bclk_ratio(cpu_dai, 126);
++			return snd_soc_dai_set_bclk_ratio(cpu_dai, 125);
+ 	}
+ }
+ 

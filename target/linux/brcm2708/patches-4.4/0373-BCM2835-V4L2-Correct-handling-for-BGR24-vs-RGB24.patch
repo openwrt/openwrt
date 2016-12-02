@@ -1,0 +1,170 @@
+From 8d2b378035000b56c9ac7964c7000e9cd7679c01 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <6by9@users.noreply.github.com>
+Date: Wed, 25 May 2016 23:25:36 +0100
+Subject: [PATCH] BCM2835-V4L2: Correct handling for BGR24 vs RGB24.
+
+There was a bug in the GPU firmware that had reversed these
+two formats.
+Detect the old firmware, and reverse the formats if necessary.
+
+Signed-off-by: Dave Stevenson <6by9@users.noreply.github.com>
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 69 ++++++++++++++++++-------
+ drivers/media/platform/bcm2835/bcm2835-camera.h |  1 +
+ 2 files changed, 52 insertions(+), 18 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -115,7 +115,7 @@ static struct mmal_fmt formats[] = {
+ 	 .name = "RGB24 (LE)",
+ 	 .fourcc = V4L2_PIX_FMT_RGB24,
+ 	 .flags = 0,
+-	 .mmal = MMAL_ENCODING_BGR24,
++	 .mmal = MMAL_ENCODING_RGB24,
+ 	 .depth = 24,
+ 	 .mmal_component = MMAL_COMPONENT_CAMERA,
+ 	 .ybbp = 3,
+@@ -187,7 +187,7 @@ static struct mmal_fmt formats[] = {
+ 	 .name = "RGB24 (BE)",
+ 	 .fourcc = V4L2_PIX_FMT_BGR24,
+ 	 .flags = 0,
+-	 .mmal = MMAL_ENCODING_RGB24,
++	 .mmal = MMAL_ENCODING_BGR24,
+ 	 .depth = 24,
+ 	 .mmal_component = MMAL_COMPONENT_CAMERA,
+ 	 .ybbp = 3,
+@@ -1059,6 +1059,13 @@ static int mmal_setup_components(struct
+ 	else
+ 		camera_port->format.encoding = mfmt->mmal;
+ 
++	if (dev->rgb_bgr_swapped) {
++		if (camera_port->format.encoding == MMAL_ENCODING_RGB24)
++			camera_port->format.encoding = MMAL_ENCODING_BGR24;
++		else if (camera_port->format.encoding == MMAL_ENCODING_BGR24)
++			camera_port->format.encoding = MMAL_ENCODING_RGB24;
++	}
++
+ 	camera_port->format.encoding_variant = 0;
+ 	camera_port->es.video.width = f->fmt.pix.width;
+ 	camera_port->es.video.height = f->fmt.pix.height;
+@@ -1569,12 +1576,17 @@ static int set_camera_parameters(struct
+ 	return ret;
+ }
+ 
++#define MAX_SUPPORTED_ENCODINGS 20
++
+ /* MMAL instance and component init */
+ static int __init mmal_init(struct bm2835_mmal_dev *dev)
+ {
+ 	int ret;
+ 	struct mmal_es_format *format;
+ 	u32 bool_true = 1;
++	u32 supported_encodings[MAX_SUPPORTED_ENCODINGS];
++	int param_size;
++	struct vchiq_mmal_component  *camera;
+ 
+ 	ret = vchiq_mmal_init(&dev->instance);
+ 	if (ret < 0)
+@@ -1586,21 +1598,48 @@ static int __init mmal_init(struct bm283
+ 	if (ret < 0)
+ 		goto unreg_mmal;
+ 
+-	if (dev->component[MMAL_COMPONENT_CAMERA]->outputs <
+-	    MMAL_CAMERA_PORT_COUNT) {
++	camera = dev->component[MMAL_COMPONENT_CAMERA];
++	if (camera->outputs <  MMAL_CAMERA_PORT_COUNT) {
+ 		ret = -EINVAL;
+ 		goto unreg_camera;
+ 	}
+ 
+ 	ret = set_camera_parameters(dev->instance,
+-				    dev->component[MMAL_COMPONENT_CAMERA],
++				    camera,
+ 				    dev);
+ 	if (ret < 0)
+ 		goto unreg_camera;
+ 
+-	format =
+-	    &dev->component[MMAL_COMPONENT_CAMERA]->
+-	    output[MMAL_CAMERA_PORT_PREVIEW].format;
++	/* There was an error in the firmware that meant the camera component
++	 * produced BGR instead of RGB.
++	 * This is now fixed, but in order to support the old firmwares, we
++	 * have to check.
++	 */
++	dev->rgb_bgr_swapped = true;
++	param_size = sizeof(supported_encodings);
++	ret = vchiq_mmal_port_parameter_get(dev->instance,
++		&camera->output[MMAL_CAMERA_PORT_CAPTURE],
++		MMAL_PARAMETER_SUPPORTED_ENCODINGS,
++		&supported_encodings,
++		&param_size);
++	if (ret == 0) {
++		int i;
++
++		for (i = 0; i < param_size/sizeof(u32); i++) {
++			if (supported_encodings[i] == MMAL_ENCODING_BGR24) {
++				/* Found BGR24 first - old firmware. */
++				break;
++			}
++			if (supported_encodings[i] == MMAL_ENCODING_RGB24) {
++				/* Found RGB24 first
++				 * new firmware, so use RGB24.
++				 */
++				dev->rgb_bgr_swapped = false;
++			break;
++			}
++		}
++	}
++	format = &camera->output[MMAL_CAMERA_PORT_PREVIEW].format;
+ 
+ 	format->encoding = MMAL_ENCODING_OPAQUE;
+ 	format->encoding_variant = MMAL_ENCODING_I420;
+@@ -1614,9 +1653,7 @@ static int __init mmal_init(struct bm283
+ 	format->es->video.frame_rate.num = 0; /* Rely on fps_range */
+ 	format->es->video.frame_rate.den = 1;
+ 
+-	format =
+-	    &dev->component[MMAL_COMPONENT_CAMERA]->
+-	    output[MMAL_CAMERA_PORT_VIDEO].format;
++	format = &camera->output[MMAL_CAMERA_PORT_VIDEO].format;
+ 
+ 	format->encoding = MMAL_ENCODING_OPAQUE;
+ 	format->encoding_variant = MMAL_ENCODING_I420;
+@@ -1631,14 +1668,11 @@ static int __init mmal_init(struct bm283
+ 	format->es->video.frame_rate.den = 1;
+ 
+ 	vchiq_mmal_port_parameter_set(dev->instance,
+-		&dev->component[MMAL_COMPONENT_CAMERA]->
+-				output[MMAL_CAMERA_PORT_VIDEO],
++		&camera->output[MMAL_CAMERA_PORT_VIDEO],
+ 		MMAL_PARAMETER_NO_IMAGE_PADDING,
+ 		&bool_true, sizeof(bool_true));
+ 
+-	format =
+-	    &dev->component[MMAL_COMPONENT_CAMERA]->
+-	    output[MMAL_CAMERA_PORT_CAPTURE].format;
++	format = &camera->output[MMAL_CAMERA_PORT_CAPTURE].format;
+ 
+ 	format->encoding = MMAL_ENCODING_OPAQUE;
+ 
+@@ -1660,8 +1694,7 @@ static int __init mmal_init(struct bm283
+ 	dev->capture.enc_level = V4L2_MPEG_VIDEO_H264_LEVEL_4_0;
+ 
+ 	vchiq_mmal_port_parameter_set(dev->instance,
+-		&dev->component[MMAL_COMPONENT_CAMERA]->
+-			output[MMAL_CAMERA_PORT_CAPTURE],
++		&camera->output[MMAL_CAMERA_PORT_CAPTURE],
+ 		MMAL_PARAMETER_NO_IMAGE_PADDING,
+ 		&bool_true, sizeof(bool_true));
+ 
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.h
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.h
+@@ -109,6 +109,7 @@ struct bm2835_mmal_dev {
+ 	unsigned int camera_num;
+ 	unsigned int max_width;
+ 	unsigned int max_height;
++	unsigned int rgb_bgr_swapped;
+ };
+ 
+ int bm2835_mmal_init_controls(

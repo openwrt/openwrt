@@ -1,0 +1,25 @@
+From d5daa09a0c5f5f6acf6f4445f24aa05c09f3b085 Mon Sep 17 00:00:00 2001
+From: David Lechner <david@lechnology.com>
+Date: Mon, 27 Jun 2016 22:52:22 -0500
+Subject: [PATCH] Add critical information for getting pi3-miniuart-bt overlay
+ to work
+
+Bluetooth on RPi 3 using uart1 will not work without setting core_freq=250 in config.txt. This is not
+documented anywhere, so this seems like a good place to start.
+---
+ arch/arm/boot/dts/overlays/README | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -691,7 +691,9 @@ Info:   Switch Pi3 Bluetooth function to
+         N.B. It is also necessary to edit /lib/systemd/system/hciuart.service
+         and replace ttyAMA0 with ttyS0, unless you have a system with udev rules
+         that create /dev/serial0 and /dev/serial1, in which case use
+-        /dev/serial1 instead because it will always be correct.
++        /dev/serial1 instead because it will always be correct. Furthermore,
++        you must also set core_freq=250 in config.txt or the miniuart will not
++        work.
+ Load:   dtoverlay=pi3-miniuart-bt
+ Params: <None>
+ 

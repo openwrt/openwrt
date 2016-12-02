@@ -1,0 +1,87 @@
+From 105aa2411add3d0d8bb815109e4a6fb6c778a1d2 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 14 Apr 2016 19:00:33 -0700
+Subject: [PATCH] clk: bcm2835: Add an enum for the DSI1 pixel clock.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/clk/bcm/clk-bcm2835.c       | 39 +++++++++++++++++++++++++++++++++++--
+ include/dt-bindings/clock/bcm2835.h |  1 +
+ 2 files changed, 38 insertions(+), 2 deletions(-)
+
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -934,6 +934,9 @@ static long bcm2835_clock_rate_from_divi
+ 	const struct bcm2835_clock_data *data = clock->data;
+ 	u64 temp;
+ 
++	if (data->int_bits == 0 && data->frac_bits == 0)
++		return parent_rate;
++
+ 	/*
+ 	 * The divisor is a 12.12 fixed point field, but only some of
+ 	 * the bits are populated in any given clock.
+@@ -957,7 +960,12 @@ static unsigned long bcm2835_clock_get_r
+ 	struct bcm2835_clock *clock = bcm2835_clock_from_hw(hw);
+ 	struct bcm2835_cprman *cprman = clock->cprman;
+ 	const struct bcm2835_clock_data *data = clock->data;
+-	u32 div = cprman_read(cprman, data->div_reg);
++	u32 div;
++
++	if (data->int_bits == 0 && data->frac_bits == 0)
++		return parent_rate;
++
++	div = cprman_read(cprman, data->div_reg);
+ 
+ 	return bcm2835_clock_rate_from_divisor(clock, parent_rate, div);
+ }
+@@ -1403,6 +1411,28 @@ static const char *const bcm2835_clock_v
+ 	__VA_ARGS__)
+ 
+ /*
++ * DSI1 parent clocks.  The DSI1 byte clock comes from the DSI1 PHY,
++ * which in turn sources from plld_dsi1.
++ */
++static const char *const bcm2835_clock_dsi1_parents[] = {
++	"gnd",
++	"xosc",
++	"testdebug0",
++	"testdebug1",
++	"dsi1_ddr",
++	"dsi1_ddr_inv",
++	"dsi1_ddr2",
++	"dsi1_ddr2_inv",
++	"dsi1_byte",
++	"dsi1_byte_inv",
++};
++
++#define REGISTER_DSI1_CLK(...)	REGISTER_CLK(				\
++	.num_mux_parents = ARRAY_SIZE(bcm2835_clock_dsi1_parents),	\
++	.parents = bcm2835_clock_dsi1_parents,				\
++	__VA_ARGS__)
++
++/*
+  * the real definition of all the pll, pll_dividers and clocks
+  * these make use of the above REGISTER_* macros
+  */
+@@ -1847,7 +1877,12 @@ static const struct bcm2835_clk_desc clk
+ 		.div_reg = CM_DSI1EDIV,
+ 		.int_bits = 4,
+ 		.frac_bits = 8),
+-
++	[BCM2835_CLOCK_DSI1P]	= REGISTER_DSI1_CLK(
++		.name = "dsi1p",
++		.ctl_reg = CM_DSI1PCTL,
++		.div_reg = CM_DSI1PDIV,
++		.int_bits = 0,
++		.frac_bits = 0),
+ 	/* the gates */
+ 
+ 	/*
+--- a/include/dt-bindings/clock/bcm2835.h
++++ b/include/dt-bindings/clock/bcm2835.h
+@@ -64,3 +64,4 @@
+ #define BCM2835_CLOCK_CAM1		46
+ #define BCM2835_CLOCK_DSI0E		47
+ #define BCM2835_CLOCK_DSI1E		48
++#define BCM2835_CLOCK_DSI1P		49

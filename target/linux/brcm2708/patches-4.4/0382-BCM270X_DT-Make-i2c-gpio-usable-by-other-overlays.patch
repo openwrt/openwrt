@@ -1,0 +1,37 @@
+From 312ddfe70ee2d9893aec7d03b70f3c38d374fed1 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 6 Jun 2016 09:23:37 +0100
+Subject: [PATCH] BCM270X_DT: Make i2c-gpio usable by other overlays
+
+Modify the i2c-gpio overlay to export symbol i2c-gpio for use by other
+overlays. Export the alias as well for good measure.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/i2c-gpio-overlay.dts | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/i2c-gpio-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c-gpio-overlay.dts
+@@ -19,6 +19,21 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@1 {
++		target-path = "/aliases";
++		__overlay__ {
++			i2c_gpio = "/i2c@0";
++		};
++	};
++
++	fragment@2 {
++		target-path = "/__symbols__";
++		__overlay__ {
++			i2c_gpio = "/i2c@0";
++		};
++	};
++
+ 	__overrides__ {
+ 		i2c_gpio_sda = <&i2c_gpio>,"gpios:4";
+ 		i2c_gpio_scl = <&i2c_gpio>,"gpios:16";

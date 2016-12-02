@@ -1,0 +1,26 @@
+From aa8fd2f11c4e5928d5ba0ad2e45d6abee4b897c2 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Fri, 22 Apr 2016 16:13:59 +0000
+Subject: [PATCH] ARM: bcm270x: changed bcrm,dma-channel-mask to mask out the
+ used channel
+
+Dma channel0 is used by the legacy api - to avoid confilcts this
+needs to get masked out in the device-tree instead of hardcoding it
+in the driver.
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -59,7 +59,7 @@
+ 				     <1 27>;
+ 
+ 			#dma-cells = <1>;
+-			brcm,dma-channel-mask = <0x0f35>;
++			brcm,dma-channel-mask = <0x0f34>;
+ 		};
+ 
+ 		intc: interrupt-controller@7e00b200 {

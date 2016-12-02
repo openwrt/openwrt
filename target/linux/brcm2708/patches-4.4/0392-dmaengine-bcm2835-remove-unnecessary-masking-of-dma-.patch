@@ -1,0 +1,56 @@
+From 54ecedafe5c0a626888e781804ee54125e4cdea9 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Wed, 16 Mar 2016 12:24:56 -0700
+Subject: [PATCH] dmaengine: bcm2835: remove unnecessary masking of dma
+ channels
+
+The original patch contained 3 dma channels that were masked out.
+
+These - as far as research and discussions show - are a
+artefacts remaining from the downstream legacy dma-api.
+
+Right now down-stream still includes a legacy api used only
+in a single (downstream only) driver (bcm2708_fb) that requires
+2D DMA for speedup (DMA-channel 0).
+Formerly the sd-card support driver also was using this legacy
+api (DMA-channel 2), but since has been moved over to use
+dmaengine directly.
+
+The DMA-channel 3 is already masked out in the devicetree in
+the default property "brcm,dma-channel-mask = <0x7f35>;"
+
+So we can remove the whole masking of DMA channels.
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Signed-off-by: Vinod Koul <vinod.koul@intel.com>
+---
+ drivers/dma/bcm2835-dma.c | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+--- a/drivers/dma/bcm2835-dma.c
++++ b/drivers/dma/bcm2835-dma.c
+@@ -123,9 +123,6 @@ struct bcm2835_desc {
+ #define BCM2835_DMA_DATA_TYPE_S32	4
+ #define BCM2835_DMA_DATA_TYPE_S128	16
+ 
+-#define BCM2835_DMA_BULK_MASK	BIT(0)
+-#define BCM2835_DMA_FIQ_MASK	(BIT(2) | BIT(3))
+-
+ /* Valid only for channels 0 - 14, 15 has its own base address */
+ #define BCM2835_DMA_CHAN(n)	((n) << 8) /* Base address */
+ #define BCM2835_DMA_CHANIO(base, n) ((base) + BCM2835_DMA_CHAN(n))
+@@ -641,12 +638,6 @@ static int bcm2835_dma_probe(struct plat
+ 		goto err_no_dma;
+ 	}
+ 
+-	/*
+-	 * Do not use the FIQ and BULK channels,
+-	 * because they are used by the GPU.
+-	 */
+-	chans_available &= ~(BCM2835_DMA_FIQ_MASK | BCM2835_DMA_BULK_MASK);
+-
+ 	for (i = 0; i < pdev->num_resources; i++) {
+ 		irq = platform_get_irq(pdev, i);
+ 		if (irq < 0)

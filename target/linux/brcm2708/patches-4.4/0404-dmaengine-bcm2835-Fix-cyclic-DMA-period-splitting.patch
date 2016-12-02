@@ -1,0 +1,38 @@
+From 60026ebc9abd3e719f56db57c482679176ae8881 Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Tue, 7 Jun 2016 19:37:10 +0200
+Subject: [PATCH] dmaengine: bcm2835: Fix cyclic DMA period splitting
+
+The code responsible for splitting periods into chunks that
+can be handled by the DMA controller missed to update total_len,
+the number of bytes processed in the current period, when there
+are more chunks to follow.
+
+Therefore total_len was stuck at 0 and the code didn't work at all.
+This resulted in a wrong control block layout and audio issues because
+the cyclic DMA callback wasn't executing on period boundaries.
+
+Fix this by adding the missing total_len update.
+
+Signed-off-by: Matthias Reichl <hias@horus.com>
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+Tested-by: Clive Messer <clive.messer@digitaldreamtime.co.uk>
+---
+ drivers/dma/bcm2835-dma.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/dma/bcm2835-dma.c
++++ b/drivers/dma/bcm2835-dma.c
+@@ -252,8 +252,11 @@ static void bcm2835_dma_create_cb_set_le
+ 	 */
+ 
+ 	/* have we filled in period_length yet? */
+-	if (*total_len + control_block->length < period_len)
++	if (*total_len + control_block->length < period_len) {
++		/* update number of bytes in this period so far */
++		*total_len += control_block->length;
+ 		return;
++	}
+ 
+ 	/* calculate the length that remains to reach period_length */
+ 	control_block->length = period_len - *total_len;

@@ -68,6 +68,30 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-adau1977-adc))
 
+define KernelPackage/sound-soc-allo-piano-dac
+  TITLE:=Support for Allo Piano DAC
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_ALLO_PIANO_DAC \
+	CONFIG_SND_SOC_PCM512x \
+	CONFIG_SND_SOC_PCM512x_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-allo-piano-dac.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
+	snd-soc-allo-piano-dac)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s \
+	+kmod-i2c-bcm2708
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-allo-piano-dac/description
+  This package contains support for Allo Piano DAC
+endef
+
+$(eval $(call KernelPackage,sound-soc-allo-piano-dac))
+
 define KernelPackage/sound-soc-audioinjector-pi-soundcard
   TITLE:=Support for AudioInjector Pi soundcard
   KCONFIG:= \
@@ -313,6 +337,26 @@ define KernelPackage/sound-soc-justboom-digi/description
 endef
 
 $(eval $(call KernelPackage,sound-soc-justboom-digi))
+
+define KernelPackage/sound-soc-pisound
+  TITLE:=Support for Blokas Labs PiSound
+  KCONFIG:= \
+	CONFIG_SND_PISOUND \
+	CONFIG_SND_SOC_PCM5102A
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-pisound.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm5102a.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm5102a snd-soc-pisound)
+  DEPENDS:= \
+	kmod-sound-soc-bcm2835-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-pisound/description
+  This package contains support for Blokas Labs PiSound
+endef
+
+$(eval $(call KernelPackage,sound-soc-pisound))
 
 define KernelPackage/sound-soc-raspidac3
   TITLE:=Support for RaspiDAC Rev.3x

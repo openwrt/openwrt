@@ -1,0 +1,56 @@
+From 7a2796d02bb044340fabbdc1c4a13c6f381155ac Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 19 Aug 2016 11:26:57 +0100
+Subject: [PATCH] overlays: Add audremap overlay
+
+The audremap overlay switches the PWM audio outputs to GPIO pins
+12 (L) and 13 (R).
+---
+ arch/arm/boot/dts/overlays/Makefile             |  1 +
+ arch/arm/boot/dts/overlays/README               |  6 ++++++
+ arch/arm/boot/dts/overlays/audremap-overlay.dts | 14 ++++++++++++++
+ 3 files changed, 21 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/audremap-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -18,6 +18,7 @@ dtbo-$(RPI_DT_OVERLAYS) += ads7846.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += akkordion-iqdacplus.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += at86rf233.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += audioinjector-wm8731-audio.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += audremap.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dht11.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dionaudio-loco.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -253,6 +253,12 @@ Load:   dtoverlay=audioinjector-wm8731-a
+ Params: <None>
+ 
+ 
++Name:   audremap
++Info:   Switches PWM sound output to pins 12 & 13
++Load:   dtoverlay=audremap
++Params: <None>
++
++
+ Name:   bmp085_i2c-sensor
+ Info:   Configures the BMP085/BMP180 digital barometric pressure and temperature
+         sensors from Bosch Sensortec
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/audremap-overlay.dts
+@@ -0,0 +1,14 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++        compatible = "brcm,bcm2708";
++
++        fragment@0 {
++                target = <&audio_pins>;
++                __overlay__ {
++                        brcm,pins = < 12 13 >;
++                        brcm,function = < 4 >; /* alt0 alt0 */
++                };
++        };
++};

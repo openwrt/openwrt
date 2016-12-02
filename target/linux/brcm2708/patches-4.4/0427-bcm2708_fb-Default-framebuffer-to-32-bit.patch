@@ -1,0 +1,21 @@
+From 227faa25e6fa97afb852eeff41d15b2e285776d5 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Thu, 28 Jul 2016 12:15:47 +0100
+Subject: [PATCH] bcm2708_fb: Default framebuffer to 32-bit
+
+Can be overridden with framebuffer_depth=16 in config.txt for old behaviour
+---
+ drivers/video/fbdev/bcm2708_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/video/fbdev/bcm2708_fb.c
++++ b/drivers/video/fbdev/bcm2708_fb.c
+@@ -51,7 +51,7 @@ static const char *bcm2708_name = "BCM27
+ 
+ static int fbwidth = 800;  /* module parameter */
+ static int fbheight = 480; /* module parameter */
+-static int fbdepth = 16;   /* module parameter */
++static int fbdepth = 32;   /* module parameter */
+ static int fbswap = 0;     /* module parameter */
+ 
+ static u32 dma_busy_wait_threshold = 1<<15;

@@ -1,0 +1,27 @@
+From 139a3c77a6a73446e8e6d2086c8b1c4f236d4dfa Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 28 Jun 2016 22:13:15 +0100
+Subject: [PATCH] pinctrl-bcm2835: Fix return type of bcm2835_pmx_free
+
+---
+ drivers/pinctrl/bcm/pinctrl-bcm2835.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
++++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
+@@ -831,13 +831,14 @@ static const struct pinctrl_ops bcm2835_
+ 	.dt_free_map = bcm2835_pctl_dt_free_map,
+ };
+ 
+-static void bcm2835_pmx_free(struct pinctrl_dev *pctldev,
++static int bcm2835_pmx_free(struct pinctrl_dev *pctldev,
+ 		unsigned offset)
+ {
+ 	struct bcm2835_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
+ 
+ 	/* disable by setting to GPIO_IN */
+ 	bcm2835_pinctrl_fsel_set(pc, offset, BCM2835_FSEL_GPIO_IN);
++	return 0;
+ }
+ 
+ static int bcm2835_pmx_get_functions_count(struct pinctrl_dev *pctldev)

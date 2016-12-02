@@ -1,0 +1,30 @@
+From f9d8003717adf713eb2835deec560e51ae0b410e Mon Sep 17 00:00:00 2001
+From: Takashi Iwai <tiwai@suse.de>
+Date: Tue, 2 Aug 2016 14:16:42 +0200
+Subject: [PATCH] drm/mipi-dsi: Unregister bus at exit
+
+This is a preliminary patch for building drm-mipi-dsi as a module.
+Add the module exit callback to unregister the bus properly.
+
+Suggested-by: Thierry Reding <treding@nvidia.com>
+Signed-off-by: Takashi Iwai <tiwai@suse.de>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/drm_mipi_dsi.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/gpu/drm/drm_mipi_dsi.c
++++ b/drivers/gpu/drm/drm_mipi_dsi.c
+@@ -928,6 +928,12 @@ static int __init mipi_dsi_bus_init(void
+ }
+ postcore_initcall(mipi_dsi_bus_init);
+ 
++static void __exit mipi_dsi_bus_exit(void)
++{
++	bus_unregister(&mipi_dsi_bus_type);
++}
++module_exit(mipi_dsi_bus_exit);
++
+ MODULE_AUTHOR("Andrzej Hajda <a.hajda@samsung.com>");
+ MODULE_DESCRIPTION("MIPI DSI Bus");
+ MODULE_LICENSE("GPL and additional rights");

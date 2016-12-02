@@ -1,0 +1,36 @@
+From cce231204608c6829f716774a286236e23bff7bf Mon Sep 17 00:00:00 2001
+From: Nicolas Boullis <nboullis@debian.org>
+Date: Sat, 4 Jun 2016 00:57:06 +0200
+Subject: [PATCH] Implement a "wakeup-source" option for the i2c-rtc DeviceTree
+ overlay.
+
+See: https://github.com/raspberrypi/linux/pull/1511
+---
+ arch/arm/boot/dts/overlays/README              | 3 +++
+ arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts | 4 ++++
+ 2 files changed, 7 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -445,6 +445,9 @@ Params: ds1307                  Select t
+ 
+         trickle-resistor-ohms   Resistor value for trickle charge (DS1339-only)
+ 
++        wakeup-source           Specify that the RTC can be used as a wakeup
++                                source
++
+ 
+ Name:   i2c0-bcm2708
+ Info:   Enable the i2c_bcm2708 driver for the i2c0 bus. Not all pin combinations
+--- a/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
+@@ -65,5 +65,9 @@
+ 		pcf8523 = <&pcf8523>,"status";
+ 		pcf8563 = <&pcf8563>,"status";
+ 		trickle-resistor-ohms = <&ds1339>,"trickle-resistor-ohms:0";
++		wakeup-source = <&ds1339>,"wakeup-source?",
++				<&ds3231>,"wakeup-source?",
++				<&mcp7940x>,"wakeup-source?",
++				<&mcp7941x>,"wakeup-source?";
+ 	};
+ };

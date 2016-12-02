@@ -1,0 +1,32 @@
+From 723b9cf9501336d1bd66c67f6955ce2f09b81846 Mon Sep 17 00:00:00 2001
+From: Takashi Iwai <tiwai@suse.de>
+Date: Tue, 2 Aug 2016 14:16:43 +0200
+Subject: [PATCH] drm/mipi-dsi: Allow to build drm-mipi-dsi as a module
+
+The drm-mipi-dsi driver has been only built-in although this isn't
+strictly required to be so.  Since it's referred by lots of DRM
+drivers nowadays, most of distro kernels include the driver as
+built-in as a result, even though many systems don't need it at all.
+
+This patch fixes Kconfig to allow drm-mipi-dsi driver built as a
+module, so that we can save footprint on systems without such DRM
+drivers.  The probe order is managed by the module dependency, and
+postcore_initcall() works just fine as a module init call.
+
+Signed-off-by: Takashi Iwai <tiwai@suse.de>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/Kconfig
++++ b/drivers/gpu/drm/Kconfig
+@@ -22,7 +22,7 @@ menuconfig DRM
+ 	  (/dev/agpgart) support if it is available for your platform.
+ 
+ config DRM_MIPI_DSI
+-	bool
++	tristate
+ 	depends on DRM
+ 
+ config DRM_KMS_HELPER

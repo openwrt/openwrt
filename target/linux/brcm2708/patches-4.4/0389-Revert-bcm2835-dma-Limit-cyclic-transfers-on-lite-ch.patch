@@ -1,0 +1,35 @@
+From 50523fe3cfcef4a7728176b11a6e2975243ab74e Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Fri, 22 Apr 2016 17:17:22 +0000
+Subject: [PATCH] Revert "bcm2835-dma: Limit cyclic transfers on lite channels
+ to 32k"
+
+This reverts commit 052c2005b6ecedc5abad86632f5781adda310aa7.
+---
+ drivers/dma/bcm2835-dma.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+--- a/drivers/dma/bcm2835-dma.c
++++ b/drivers/dma/bcm2835-dma.c
+@@ -144,12 +144,6 @@ struct bcm2835_desc {
+  */
+ #define MAX_LITE_TRANSFER	(SZ_64K - 4)
+ 
+-/*
+- * Transfers larger than 32k cause issues with the bcm2708-i2s driver,
+- * so limit transfer size to 32k as bcm2708-dmaengine did.
+- */
+-#define MAX_CYCLIC_LITE_TRANSFER	SZ_32K
+-
+ static inline struct bcm2835_dmadev *to_bcm2835_dma_dev(struct dma_device *d)
+ {
+ 	return container_of(d, struct bcm2835_dmadev, ddev);
+@@ -418,7 +412,7 @@ static struct dma_async_tx_descriptor *b
+ 	d->c = c;
+ 	d->dir = direction;
+ 	if (c->ch >= 8) /* LITE channel */
+-		max_size = MAX_CYCLIC_LITE_TRANSFER;
++		max_size = MAX_LITE_TRANSFER;
+ 	else
+ 		max_size = MAX_NORMAL_TRANSFER;
+ 	period_len = min(period_len, max_size);

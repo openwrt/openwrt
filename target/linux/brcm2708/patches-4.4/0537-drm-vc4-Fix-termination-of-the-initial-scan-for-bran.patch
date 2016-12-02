@@ -1,0 +1,68 @@
+From 1f42fbc79dea3529dd919249ee6e58f157704aaf Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 20 Oct 2016 16:48:12 -0700
+Subject: [PATCH] drm/vc4: Fix termination of the initial scan for branch
+ targets.
+
+The loop is scanning until the original max_ip (size of the BO), but
+we want to not examine any code after the PROG_END's delay slots.
+There was a block trying to do that, except that we had some early
+continue statements if the signal wasn't a PROG_END or a BRANCH.
+
+The failure mode would be that a valid shader is rejected because some
+undefined memory after the PROG_END slots is parsed as a branch and
+the rest of its setup is illegal.  I haven't seen this in the wild,
+but valgrind was complaining when about this up in the userland
+simulator mode.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 457e67a728696c4f8e6423c64e93def50530db9a)
+---
+ drivers/gpu/drm/vc4/vc4_validate_shaders.c | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_validate_shaders.c
++++ b/drivers/gpu/drm/vc4/vc4_validate_shaders.c
+@@ -608,9 +608,7 @@ static bool
+ vc4_validate_branches(struct vc4_shader_validation_state *validation_state)
+ {
+ 	uint32_t max_branch_target = 0;
+-	bool found_shader_end = false;
+ 	int ip;
+-	int shader_end_ip = 0;
+ 	int last_branch = -2;
+ 
+ 	for (ip = 0; ip < validation_state->max_ip; ip++) {
+@@ -621,8 +619,13 @@ vc4_validate_branches(struct vc4_shader_
+ 		uint32_t branch_target_ip;
+ 
+ 		if (sig == QPU_SIG_PROG_END) {
+-			shader_end_ip = ip;
+-			found_shader_end = true;
++			/* There are two delay slots after program end is
++			 * signaled that are still executed, then we're
++			 * finished.  validation_state->max_ip is the
++			 * instruction after the last valid instruction in the
++			 * program.
++			 */
++			validation_state->max_ip = ip + 3;
+ 			continue;
+ 		}
+ 
+@@ -676,15 +679,9 @@ vc4_validate_branches(struct vc4_shader_
+ 		}
+ 		set_bit(after_delay_ip, validation_state->branch_targets);
+ 		max_branch_target = max(max_branch_target, after_delay_ip);
+-
+-		/* There are two delay slots after program end is signaled
+-		 * that are still executed, then we're finished.
+-		 */
+-		if (found_shader_end && ip == shader_end_ip + 2)
+-			break;
+ 	}
+ 
+-	if (max_branch_target > shader_end_ip) {
++	if (max_branch_target > validation_state->max_ip - 3) {
+ 		DRM_ERROR("Branch landed after QPU_SIG_PROG_END");
+ 		return false;
+ 	}

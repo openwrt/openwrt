@@ -1,0 +1,22 @@
+From cdf33f3fa4f136d6e558161b517aca695a6151ff Mon Sep 17 00:00:00 2001
+From: Michael Kaplan <m.kaplan@evva.com>
+Date: Wed, 8 Jun 2016 15:14:11 +0200
+Subject: [PATCH] Fixed MCP23017 section in overlay README
+
+Old description could have led to the misunderstanding that it is an
+i2c port expander, but in fact it is a gpio expander.
+---
+ arch/arm/boot/dts/overlays/README | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -595,7 +595,7 @@ Params: gpio_out_pin            GPIO for
+ 
+ 
+ Name:   mcp23017
+-Info:   Configures the MCP23017 I2C port expander
++Info:   Configures the MCP23017 I2C GPIO expander
+ Load:   dtoverlay=mcp23017,<param>=<val>
+ Params: gpiopin                 Gpio pin connected to the INTA output of the
+                                 MCP23017 (default: 4)

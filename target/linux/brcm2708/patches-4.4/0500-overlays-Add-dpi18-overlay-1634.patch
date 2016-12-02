@@ -1,0 +1,75 @@
+From 654ea8a724a4abaf000841788cec8f90756682a7 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <pelwell@users.noreply.github.com>
+Date: Mon, 12 Sep 2016 13:46:56 +0100
+Subject: [PATCH] overlays: Add dpi18 overlay (#1634)
+
+Add support for 18-bit DPI displays. Although the dpi24 overlay could
+be used, this overlay leaves GPIOs 22-27 free for other uses.
+---
+ arch/arm/boot/dts/overlays/Makefile          |  1 +
+ arch/arm/boot/dts/overlays/README            |  8 +++++++
+ arch/arm/boot/dts/overlays/dpi18-overlay.dts | 31 ++++++++++++++++++++++++++++
+ 3 files changed, 40 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/dpi18-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -22,6 +22,7 @@ dtbo-$(RPI_DT_OVERLAYS) += audremap.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dht11.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dionaudio-loco.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += dpi18.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dpi24.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dwc-otg.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += dwc2.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -283,6 +283,14 @@ Load:   dtoverlay=dionaudio-loco
+ Params: <None>
+ 
+ 
++Name:   dpi18
++Info:   Overlay for a generic 18-bit DPI display
++        This uses GPIOs 0-21 (so no I2C, uart etc.), and activates the output
++        2-3 seconds after the kernel has started.
++Load:   dtoverlay=dpi18
++Params: <None>
++
++
+ Name:   dpi24
+ Info:   Overlay for a generic 24-bit DPI display
+         This uses GPIOs 0-27 (so no I2C, uart etc.), and activates the output
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/dpi18-overlay.dts
+@@ -0,0 +1,31 @@
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	// There is no DPI driver module, but we need a platform device
++	// node (that doesn't already use pinctrl) to hang the pinctrl
++	// reference on - leds will do
++
++	fragment@0 {
++		target = <&leds>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&dpi18_pins>;
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			dpi18_pins: dpi18_pins {
++				brcm,pins = <0 1 2 3 4 5 6 7 8 9 10 11
++					     12 13 14 15 16 17 18 19 20
++					     21>;
++				brcm,function = <6>; /* alt2 */
++				brcm,pull = <0>; /* no pull */
++			};
++		};
++	};
++};

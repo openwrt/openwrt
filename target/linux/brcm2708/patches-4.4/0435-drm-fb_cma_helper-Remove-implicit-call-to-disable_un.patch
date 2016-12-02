@@ -1,0 +1,79 @@
+From f63b6059c6129d81d3fc85b02d9b83b85023c437 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Thu, 14 Jan 2016 16:24:56 +0100
+Subject: [PATCH] drm/fb_cma_helper: Remove implicit call to
+ disable_unused_functions
+
+The drm_fbdev_cma_init function always calls the
+drm_helper_disable_unused_functions. Since it's part of the usual probe
+process, all the drivers using that helper will end up having their encoder
+and CRTC disable functions called at probe if their device has not been
+reported as enabled.
+
+This could be fixed by reading out from the registers the current state of
+the device if it is enabled, but even that will not handle the case where
+the device is actually disabled.
+
+Moreover, the drivers using the atomic modesetting expect that their enable
+and disable callback to be called when the device is already enabled or
+disabled (respectively).
+
+We can however fix this issue by moving the call to
+drm_helper_disable_unused_functions out of drm_fbdev_cma_init and make the
+drivers needing it (all the drivers calling drm_fbdev_cma_init and not
+using the atomic modesetting) explicitly call it.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Link: http://patchwork.freedesktop.org/patch/msgid/1452785109-6172-14-git-send-email-maxime.ripard@free-electrons.com
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Daniel Vetter <daniel.vetter@ffwll.ch>
+(cherry picked from commit 4314e19ef4ae0ba8872bd8610f6fef5e8743e236)
+---
+ drivers/gpu/drm/drm_fb_cma_helper.c | 3 ---
+ drivers/gpu/drm/imx/imx-drm-core.c  | 1 +
+ drivers/gpu/drm/sti/sti_drv.c       | 1 +
+ drivers/gpu/drm/tilcdc/tilcdc_drv.c | 1 +
+ 4 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/gpu/drm/drm_fb_cma_helper.c
++++ b/drivers/gpu/drm/drm_fb_cma_helper.c
+@@ -348,9 +348,6 @@ struct drm_fbdev_cma *drm_fbdev_cma_init
+ 
+ 	}
+ 
+-	/* disable all the possible outputs/crtcs before entering KMS mode */
+-	drm_helper_disable_unused_functions(dev);
+-
+ 	ret = drm_fb_helper_initial_config(helper, preferred_bpp);
+ 	if (ret < 0) {
+ 		dev_err(dev->dev, "Failed to set initial hw configuration.\n");
+--- a/drivers/gpu/drm/imx/imx-drm-core.c
++++ b/drivers/gpu/drm/imx/imx-drm-core.c
+@@ -313,6 +313,7 @@ static int imx_drm_driver_load(struct dr
+ 		dev_warn(drm->dev, "Invalid legacyfb_depth.  Defaulting to 16bpp\n");
+ 		legacyfb_depth = 16;
+ 	}
++	drm_helper_disable_unused_functions(drm);
+ 	imxdrm->fbhelper = drm_fbdev_cma_init(drm, legacyfb_depth,
+ 				drm->mode_config.num_crtc, MAX_CRTC);
+ 	if (IS_ERR(imxdrm->fbhelper)) {
+--- a/drivers/gpu/drm/sti/sti_drv.c
++++ b/drivers/gpu/drm/sti/sti_drv.c
+@@ -160,6 +160,7 @@ static int sti_load(struct drm_device *d
+ 
+ 	drm_mode_config_reset(dev);
+ 
++	drm_helper_disable_unused_functions(dev);
+ 	drm_fbdev_cma_init(dev, 32,
+ 			   dev->mode_config.num_crtc,
+ 			   dev->mode_config.num_connector);
+--- a/drivers/gpu/drm/tilcdc/tilcdc_drv.c
++++ b/drivers/gpu/drm/tilcdc/tilcdc_drv.c
+@@ -294,6 +294,7 @@ static int tilcdc_load(struct drm_device
+ 			break;
+ 	}
+ 
++	drm_helper_disable_unused_functions(dev);
+ 	priv->fbdev = drm_fbdev_cma_init(dev, bpp,
+ 			dev->mode_config.num_crtc,
+ 			dev->mode_config.num_connector);

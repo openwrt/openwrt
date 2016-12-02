@@ -1,0 +1,167 @@
+From 26a7e2d3d11c23acc6f87414da736c07a3b9cc52 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Sat, 5 Nov 2016 14:14:43 +0000
+Subject: [PATCH] bcm2708_fb: Add ioctl for reading gpu memory through dma
+
+---
+ drivers/video/fbdev/bcm2708_fb.c | 109 +++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/fb.h          |   7 +++
+ 2 files changed, 116 insertions(+)
+
+--- a/drivers/video/fbdev/bcm2708_fb.c
++++ b/drivers/video/fbdev/bcm2708_fb.c
+@@ -31,8 +31,10 @@
+ #include <linux/console.h>
+ #include <linux/debugfs.h>
+ #include <asm/sizes.h>
++#include <asm/uaccess.h>
+ #include <linux/io.h>
+ #include <linux/dma-mapping.h>
++#include <linux/cred.h>
+ #include <soc/bcm2835/raspberrypi-firmware.h>
+ 
+ //#define BCM2708_FB_DEBUG
+@@ -429,6 +431,110 @@ static int bcm2708_fb_pan_display(struct
+ 	return result;
+ }
+ 
++static void dma_memcpy(struct bcm2708_fb *fb, dma_addr_t dst, dma_addr_t src, int size)
++{
++	int burst_size = (fb->dma_chan == 0) ? 8 : 2;
++	struct bcm2708_dma_cb *cb = fb->cb_base;
++
++	cb->info = BCM2708_DMA_BURST(burst_size) | BCM2708_DMA_S_WIDTH |
++		   BCM2708_DMA_S_INC | BCM2708_DMA_D_WIDTH |
++		   BCM2708_DMA_D_INC | BCM2708_DMA_TDMODE;
++	cb->dst = dst;
++	cb->src = src;
++	cb->length = size;
++	cb->stride = 0;
++	cb->pad[0] = 0;
++	cb->pad[1] = 0;
++	cb->next = 0;
++
++	if (size < dma_busy_wait_threshold) {
++		bcm_dma_start(fb->dma_chan_base, fb->cb_handle);
++		bcm_dma_wait_idle(fb->dma_chan_base);
++	} else {
++		void __iomem *dma_chan = fb->dma_chan_base;
++		cb->info |= BCM2708_DMA_INT_EN;
++		bcm_dma_start(fb->dma_chan_base, fb->cb_handle);
++		while (bcm_dma_is_busy(dma_chan)) {
++			wait_event_interruptible(
++				fb->dma_waitq,
++				!bcm_dma_is_busy(dma_chan));
++		}
++		fb->stats.dma_irqs++;
++	}
++	fb->stats.dma_copies++;
++}
++
++#define INTALIAS_NORMAL(x) ((x)&~0xc0000000) // address with no aliases
++#define INTALIAS_L1L2_NONALLOCATING(x) (((x)&~0xc0000000)|0x80000000) // cache coherent but non-allocating in L1 and L2
++
++static long vc_mem_copy(struct bcm2708_fb *fb, unsigned long arg)
++{
++	struct fb_dmacopy ioparam;
++	size_t size = PAGE_SIZE;
++	u32 *buf = NULL;
++	dma_addr_t bus_addr;
++	long rc = 0;
++	size_t offset;
++	struct { u32 base, length; } gpu = {};
++
++	/* restrict this to root user */
++	if (!uid_eq(current_euid(), GLOBAL_ROOT_UID))
++	{
++		rc = -EFAULT;
++		goto out;
++	}
++
++	/* Get the parameter data.
++	 */
++	if (copy_from_user
++	    (&ioparam, (void *)arg, sizeof(ioparam)) != 0) {
++		pr_err("[%s]: failed to copy-from-user\n",
++				__func__);
++		rc = -EFAULT;
++		goto out;
++	}
++
++	rc = rpi_firmware_property(fb->fw,
++				    RPI_FIRMWARE_GET_VC_MEMORY,
++				    &gpu, sizeof(gpu));
++	if (rc != 0 || gpu.base == 0 || gpu.length == 0) {
++		pr_err("[%s]: Unable to determine gpu memory %ld,%x,%x)\n", __func__, rc, gpu.base, gpu.length);
++		return -EFAULT;
++	}
++
++	if (INTALIAS_NORMAL(ioparam.src) < gpu.base || INTALIAS_NORMAL(ioparam.src) >= gpu.base + gpu.length) {
++		pr_err("[%s]: Invalid memory access %x (%x-%x)", __func__, INTALIAS_NORMAL(ioparam.src), gpu.base, gpu.base + gpu.length);
++		return -EFAULT;
++	}
++
++	buf = dma_alloc_coherent(NULL, PAGE_ALIGN(size), &bus_addr,
++				 GFP_ATOMIC);
++	if (!buf) {
++		pr_err("[%s]: failed to dma_alloc_coherent(%d)\n",
++				__func__, size);
++		rc = -ENOMEM;
++		goto out;
++	}
++
++	for (offset = 0; offset < ioparam.length; offset += size) {
++		size_t remaining = ioparam.length - offset;
++		size_t s = min(size, remaining);
++		unsigned char *p = (unsigned char *)ioparam.src + offset;
++		unsigned char *q = (unsigned char *)ioparam.dst + offset;
++		dma_memcpy(fb, (dma_addr_t)buf, INTALIAS_L1L2_NONALLOCATING((dma_addr_t)p), size);
++		if (copy_to_user(q, buf, s) != 0) {
++			pr_err("[%s]: failed to copy-to-user\n",
++					__func__);
++			rc = -EFAULT;
++			goto out;
++		}
++	}
++out:
++	if (buf)
++		dma_free_coherent(NULL, PAGE_ALIGN(size), buf, bus_addr);
++	return rc;
++}
++
+ static int bcm2708_ioctl(struct fb_info *info, unsigned int cmd, unsigned long arg)
+ {
+ 	struct bcm2708_fb *fb = to_bcm2708(info);
+@@ -441,6 +547,9 @@ static int bcm2708_ioctl(struct fb_info
+ 					    RPI_FIRMWARE_FRAMEBUFFER_SET_VSYNC,
+ 					    &dummy, sizeof(dummy));
+ 		break;
++	case FBIODMACOPY:
++		ret = vc_mem_copy(fb, arg);
++		break;
+ 	default:
+ 		dev_dbg(info->device, "Unknown ioctl 0x%x\n", cmd);
+ 		return -ENOTTY;
+--- a/include/uapi/linux/fb.h
++++ b/include/uapi/linux/fb.h
+@@ -39,6 +39,7 @@
+  * be concurrently added to the mainline kernel
+  */
+ #define FBIOCOPYAREA		_IOW('z', 0x21, struct fb_copyarea)
++#define FBIODMACOPY 		_IOW('z', 0x22, struct fb_dmacopy)
+ 
+ #define FB_TYPE_PACKED_PIXELS		0	/* Packed Pixels	*/
+ #define FB_TYPE_PLANES			1	/* Non interleaved planes */
+@@ -351,6 +352,12 @@ struct fb_copyarea {
+ 	__u32 sy;
+ };
+ 
++struct fb_dmacopy {
++	dma_addr_t dst;
++	dma_addr_t src;
++	__u32 length;
++};
++
+ struct fb_fillrect {
+ 	__u32 dx;	/* screen-relative */
+ 	__u32 dy;

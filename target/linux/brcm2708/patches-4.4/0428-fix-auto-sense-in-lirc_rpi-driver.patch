@@ -1,0 +1,45 @@
+From 413e42754e61620eb75e0bd632c697b89ff0ffb9 Mon Sep 17 00:00:00 2001
+From: Ingo Kresse <ingo.kresse@gmail.com>
+Date: Fri, 29 Jul 2016 22:50:21 +0000
+Subject: [PATCH] fix auto-sense in lirc_rpi driver
+
+On a Raspberry Pi 2, the lirc_rpi driver might receive spurious
+interrupts and change it's low-active / high-active setting.
+When this happens, the IR remote control stops working.
+
+This patch disables this auto-detection if the 'sense' parameter
+was set in the device tree, making the driver robust to such
+spurious interrupts.
+---
+ drivers/staging/media/lirc/lirc_rpi.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/staging/media/lirc/lirc_rpi.c
++++ b/drivers/staging/media/lirc/lirc_rpi.c
+@@ -79,6 +79,7 @@ static bool invert = 0;
+ 
+ struct gpio_chip *gpiochip;
+ static int irq_num;
++static int auto_sense = 1;
+ 
+ /* forward declarations */
+ static long send_pulse(unsigned long length);
+@@ -279,7 +280,9 @@ static irqreturn_t irq_handler(int i, vo
+ 				 * detecting pulse while this
+ 				 * MUST be a space!
+ 				 */
+-				sense = sense ? 0 : 1;
++				if (auto_sense) {
++					sense = sense ? 0 : 1;
++				}
+ 			}
+ 		} else {
+ 			data = (int) (deltv*1000000 +
+@@ -417,6 +420,7 @@ static int init_port(void)
+ 		printk(KERN_INFO LIRC_DRIVER_NAME
+ 		       ": manually using active %s receiver on GPIO pin %d\n",
+ 		       sense ? "low" : "high", gpio_in_pin);
++		auto_sense = 0;
+ 	}
+ 
+ 	return 0;

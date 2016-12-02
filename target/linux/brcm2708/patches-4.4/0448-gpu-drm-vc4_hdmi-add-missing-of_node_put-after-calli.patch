@@ -1,0 +1,46 @@
+From 46c6aaecefb953f629a7dddd2cb1eb70d3d6c954 Mon Sep 17 00:00:00 2001
+From: Peter Chen <peter.chen@nxp.com>
+Date: Tue, 5 Jul 2016 10:04:54 +0800
+Subject: [PATCH] gpu: drm: vc4_hdmi: add missing of_node_put after calling
+ of_parse_phandle
+
+of_node_put needs to be called when the device node which is got
+from of_parse_phandle has finished using.
+
+Signed-off-by: Peter Chen <peter.chen@nxp.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 027a697677b0d5ff211773596d96f84078ceda80)
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -467,12 +467,6 @@ static int vc4_hdmi_bind(struct device *
+ 	if (IS_ERR(hdmi->hd_regs))
+ 		return PTR_ERR(hdmi->hd_regs);
+ 
+-	ddc_node = of_parse_phandle(dev->of_node, "ddc", 0);
+-	if (!ddc_node) {
+-		DRM_ERROR("Failed to find ddc node in device tree\n");
+-		return -ENODEV;
+-	}
+-
+ 	hdmi->pixel_clock = devm_clk_get(dev, "pixel");
+ 	if (IS_ERR(hdmi->pixel_clock)) {
+ 		DRM_ERROR("Failed to get pixel clock\n");
+@@ -484,7 +478,14 @@ static int vc4_hdmi_bind(struct device *
+ 		return PTR_ERR(hdmi->hsm_clock);
+ 	}
+ 
++	ddc_node = of_parse_phandle(dev->of_node, "ddc", 0);
++	if (!ddc_node) {
++		DRM_ERROR("Failed to find ddc node in device tree\n");
++		return -ENODEV;
++	}
++
+ 	hdmi->ddc = of_find_i2c_adapter_by_node(ddc_node);
++	of_node_put(ddc_node);
+ 	if (!hdmi->ddc) {
+ 		DRM_DEBUG("Failed to get ddc i2c adapter by node\n");
+ 		return -EPROBE_DEFER;

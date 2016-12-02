@@ -1,0 +1,28 @@
+From 9ca847e5e96f1cb3e9886434c25cb755124dfdb9 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Sat, 23 Apr 2016 14:20:41 +0000
+Subject: [PATCH] ARM: bcm2835: make dma-channel-0 available for kms setups
+
+Enable the use of dma-channel 0 when using the vc4-kms-v3d overlay.
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+---
+ arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
++++ b/arch/arm/boot/dts/overlays/vc4-kms-v3d-overlay.dts
+@@ -119,6 +119,13 @@
+ 		};
+ 	};
+ 
++	fragment@15 {
++		target-path = "/soc/dma";
++		__overlay__ {
++			brcm,dma-channel-mask = <0x7f35>;
++		};
++	};
++
+ 	__overrides__ {
+ 		cma-256 = <0>,"+0-1-2-3-4";
+ 		cma-192 = <0>,"-0+1-2-3-4";

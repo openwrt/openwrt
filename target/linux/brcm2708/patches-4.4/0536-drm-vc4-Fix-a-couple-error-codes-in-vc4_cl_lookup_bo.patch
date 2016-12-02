@@ -1,0 +1,39 @@
+From 4c41f90e1f84c4a5c080eca03b07a0116297593b Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Thu, 13 Oct 2016 11:54:31 +0300
+Subject: [PATCH] drm/vc4: Fix a couple error codes in vc4_cl_lookup_bos()
+
+If the allocation fails the current code returns success.  If
+copy_from_user() fails it returns the number of bytes remaining instead
+of -EFAULT.
+
+Fixes: d5b1a78a772f ("drm/vc4: Add support for drawing 3D frames.")
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit b2cdeb19f16ad984eb5bb9193f793d05a8101511)
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -560,14 +560,15 @@ vc4_cl_lookup_bos(struct drm_device *dev
+ 
+ 	handles = drm_malloc_ab(exec->bo_count, sizeof(uint32_t));
+ 	if (!handles) {
++		ret = -ENOMEM;
+ 		DRM_ERROR("Failed to allocate incoming GEM handles\n");
+ 		goto fail;
+ 	}
+ 
+-	ret = copy_from_user(handles,
+-			     (void __user *)(uintptr_t)args->bo_handles,
+-			     exec->bo_count * sizeof(uint32_t));
+-	if (ret) {
++	if (copy_from_user(handles,
++			   (void __user *)(uintptr_t)args->bo_handles,
++			   exec->bo_count * sizeof(uint32_t))) {
++		ret = -EFAULT;
+ 		DRM_ERROR("Failed to copy in GEM handles\n");
+ 		goto fail;
+ 	}

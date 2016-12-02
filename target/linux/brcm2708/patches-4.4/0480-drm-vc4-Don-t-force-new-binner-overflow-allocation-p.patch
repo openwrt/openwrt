@@ -1,0 +1,28 @@
+From 05f81ea4c1f661703b4b2e59839a518c088e8824 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 2 Aug 2016 17:17:52 -0700
+Subject: [PATCH] drm/vc4: Don't force new binner overflow allocation per draw.
+
+This came from the initial bringup code, which always idled the GPU
+and always reset the overflow.  That massively increases the size of
+the working set when you're doing lots of small draws, though, as is
+common on X desktops or piglit.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -435,10 +435,6 @@ again:
+ 
+ 	vc4_flush_caches(dev);
+ 
+-	/* Disable the binner's pre-loaded overflow memory address */
+-	V3D_WRITE(V3D_BPOA, 0);
+-	V3D_WRITE(V3D_BPOS, 0);
+-
+ 	/* Either put the job in the binner if it uses the binner, or
+ 	 * immediately move it to the to-be-rendered queue.
+ 	 */

@@ -1,0 +1,106 @@
+From 2770e16422c3d3df76bb510a309877b507d4553f Mon Sep 17 00:00:00 2001
+From: Erdem MEYDANLI <erdem.meydanli@punica.com.tr>
+Date: Thu, 30 Jun 2016 21:05:08 +0300
+Subject: [PATCH] dts: Add overlay for NXP SC16IS752 Dual UART with SPI
+ Interface
+
+---
+ arch/arm/boot/dts/overlays/Makefile                |  1 +
+ arch/arm/boot/dts/overlays/README                  | 10 ++++
+ .../boot/dts/overlays/sc16is752-spi1-overlay.dts   | 61 ++++++++++++++++++++++
+ 3 files changed, 72 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/sc16is752-spi1-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -71,6 +71,7 @@ dtbo-$(RPI_DT_OVERLAYS) += rpi-ft5406.dt
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-proto.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-sense.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rra-digidac1-wm8741-audio.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += sc16is752-spi1.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdhost.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdio.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdio-1bit.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -888,6 +888,16 @@ Load:   dtoverlay=rra-digidac1-wm8741-au
+ Params: <None>
+ 
+ 
++Name:   sc16is752-spi1
++Info:   Overlay for the NXP SC16IS752 Dual UART with SPI Interface
++        Enables the chip on SPI1.
++        N.B.: spi1 is only accessible on devices with a 40pin header, eg:
++              A+, B+, Zero and PI2 B; as well as the Compute Module.
++
++Load:   dtoverlay=sc16is752-spi1,<param>=<val>
++Params: int_pin                 GPIO used for IRQ (default 24)
++
++
+ Name:   sdhost
+ Info:   Selects the bcm2835-sdhost SD/MMC driver, optionally with overclock.
+         N.B. This overlay is designed for situations where the mmc driver is
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/sc16is752-spi1-overlay.dts
+@@ -0,0 +1,61 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			spi1_pins: spi1_pins {
++				brcm,pins = <19 20 21>;
++				brcm,function = <3>; /* alt4 */
++			};
++
++			spi1_cs_pins: spi1_cs_pins {
++				brcm,pins = <18>;
++				brcm,function = <1>; /* output */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&spi1>;
++		frag1: __overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi1_pins &spi1_cs_pins>;
++			cs-gpios = <&gpio 18 1>;
++			status = "okay";
++
++			sc16is752: sc16is752@0 {
++				compatible = "nxp,sc16is752";
++				reg = <0>; /* CE0 */
++				clocks = <&sc16is752_clk>;
++				interrupt-parent = <&gpio>;
++				interrupts = <24 2>; /* IRQ_TYPE_EDGE_FALLING */
++				#gpio-controller;
++				#gpio-cells = <2>;
++				spi-max-frequency = <4000000>;
++
++				sc16is752_clk: sc16is752_clk {
++					compatible = "fixed-clock";
++					#clock-cells = <0>;
++					clock-frequency = <14745600>;
++				};
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&aux>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++    __overrides__ {
++      int_pin = <&sc16is752>,"interrupts:0";
++    };
++};

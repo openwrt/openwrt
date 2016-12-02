@@ -1,0 +1,29 @@
+From b80f025ee532fb183a1ebbf81fd1c5ceb386a019 Mon Sep 17 00:00:00 2001
+From: Blogs14 <masterwhite445@googlemail.com>
+Date: Fri, 23 Sep 2016 11:02:56 +0100
+Subject: [PATCH] Correct typos in spi-gpio35-39-overlay.dts (#1651)
+
+bcrm,pins corrected to brcm,pins
+---
+ arch/arm/boot/dts/overlays/spi-gpio35-39-overlay.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/spi-gpio35-39-overlay.dts
++++ b/arch/arm/boot/dts/overlays/spi-gpio35-39-overlay.dts
+@@ -18,14 +18,14 @@
+ 	fragment@1 {
+ 		target = <&spi0_cs_pins>;
+ 		__overlay__ {
+-			bcrm,pins = <36 35>;
++			brcm,pins = <36 35>;
+ 		};
+ 	};
+ 
+ 	fragment@2 {
+ 		target = <&spi0_pins>;
+ 		__overlay__ {
+-			bcrm,pins = <37 38 39>;
++			brcm,pins = <37 38 39>;
+ 		};
+ 	};
+ };

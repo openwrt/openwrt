@@ -1,0 +1,69 @@
+From 0583a0c3f173c327dff70ee9d7a0d70e50b5d120 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 1 Jul 2016 22:34:52 +0100
+Subject: [PATCH] BCM270X_DT: Overlay to re-enable HW CS on SPI0
+
+See: https://github.com/raspberrypi/linux/issues/1547
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/overlays/Makefile               |  1 +
+ arch/arm/boot/dts/overlays/README                 |  6 ++++++
+ arch/arm/boot/dts/overlays/spi0-hw-cs-overlay.dts | 26 +++++++++++++++++++++++
+ 3 files changed, 33 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/spi0-hw-cs-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -81,6 +81,7 @@ dtbo-$(RPI_DT_OVERLAYS) += smi-dev.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += smi-nand.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi-gpio35-39.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi-rtc.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi0-hw-cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi1-1cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi1-2cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi1-3cs.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -1006,6 +1006,12 @@ Load:   dtoverlay=spi-rtc,<param>=<val>
+ Params: pcf2123                 Select the PCF2123 device
+ 
+ 
++Name:   spi0-hw-cs
++Info:   Re-enables hardware CS/CE (chip selects) for SPI0
++Load:   dtoverlay=spi0-hw-cs
++Params: <None>
++
++
+ Name:   spi1-1cs
+ Info:   Enables spi1 with a single chip select (CS) line and associated spidev
+         dev node. The gpio pin number for the CS line and spidev device node
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi0-hw-cs-overlay.dts
+@@ -0,0 +1,26 @@
++/*
++ * Device tree overlay to re-enable hardware CS for SPI0
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2836", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			cs-gpios = <0>, <0>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&spi0_cs_pins>;
++		__overlay__ {
++			brcm,pins = <8 7>;
++			brcm,function = <4>; /* alt0 */
++		};
++	};
++};

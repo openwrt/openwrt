@@ -1,0 +1,81 @@
+From 0f34b495557223c0d129bf97a1fb89990cfd83ed Mon Sep 17 00:00:00 2001
+From: Georgii Staroselskii <gosha371@gmail.com>
+Date: Tue, 23 Aug 2016 17:40:05 +0400
+Subject: [PATCH] overlays: added sc16is750 UART over I2C (#1617)
+
+---
+ arch/arm/boot/dts/overlays/Makefile                |  1 +
+ arch/arm/boot/dts/overlays/README                  | 10 ++++++
+ .../boot/dts/overlays/sc16is750-i2c-overlay.dts    | 37 ++++++++++++++++++++++
+ 3 files changed, 48 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/sc16is750-i2c-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -75,6 +75,7 @@ dtbo-$(RPI_DT_OVERLAYS) += rpi-ft5406.dt
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-proto.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-sense.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rra-digidac1-wm8741-audio.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += sc16is750-i2c.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sc16is752-spi1.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdhost.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += sdio.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -935,6 +935,16 @@ Load:   dtoverlay=rra-digidac1-wm8741-au
+ Params: <None>
+ 
+ 
++Name:   sc16is750-i2c
++Info:   Overlay for the NXP SC16IS750 UART with I2C Interface
++        Enables the chip on I2C1 at 0x48. To select another address,
++        please refer to table 10 in reference manual.
++
++Load:   dtoverlay=sc16is750-i2c,<param>=<val>
++Params: int_pin                 GPIO used for IRQ (default 24)
++        addr                    Address (default 0x48)
++
++
+ Name:   sc16is752-spi1
+ Info:   Overlay for the NXP SC16IS752 Dual UART with SPI Interface
+         Enables the chip on SPI1.
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/sc16is750-i2c-overlay.dts
+@@ -0,0 +1,37 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&i2c_arm>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			sc16is750: sc16is750@48 {
++				compatible = "nxp,sc16is750";
++				reg = <0x48>; /* address */
++				clocks = <&sc16is750_clk>;
++				interrupt-parent = <&gpio>;
++				interrupts = <24 2>; /* IRQ_TYPE_EDGE_FALLING */
++				#gpio-cells = <2>;
++
++				sc16is750_clk: sc16is750_clk {
++					compatible = "fixed-clock";
++					#clock-cells = <0>;
++					clock-frequency = <14745600>;
++				};
++			};
++		};
++	};
++
++
++	__overrides__ {
++		int_pin = <&sc16is750>,"interrupts:0";
++		addr = <&sc16is750>,"reg:0";
++	};
++
++};

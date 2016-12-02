@@ -1,0 +1,30 @@
+From 30f69de2c6e1dedc4d071a24a0690e81118421d9 Mon Sep 17 00:00:00 2001
+From: Mario Kleiner <mario.kleiner.de@gmail.com>
+Date: Tue, 19 Jul 2016 20:58:59 +0200
+Subject: [PATCH] drm/vc4: Reject doublescan modes.
+
+We can't handle doublescan modes at the moment, so if
+userspace tries to set one, reject the mode set.
+
+Signed-off-by: Mario Kleiner <mario.kleiner.de@gmail.com>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -542,6 +542,13 @@ static bool vc4_crtc_mode_fixup(struct d
+ 				const struct drm_display_mode *mode,
+ 				struct drm_display_mode *adjusted_mode)
+ {
++	/* Do not allow doublescan modes from user space */
++	if (adjusted_mode->flags & DRM_MODE_FLAG_DBLSCAN) {
++		DRM_DEBUG_KMS("[CRTC:%d] Doublescan mode rejected.\n",
++			      crtc->base.id);
++		return false;
++	}
++
+ 	/*
+ 	 * Interlaced video modes got CRTC_INTERLACE_HALVE_V applied when
+ 	 * coming from user space. We don't want this, as it screws up

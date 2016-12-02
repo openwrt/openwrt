@@ -1,0 +1,27 @@
+From 773b6960e7937b504e5012efce4c85b1d4b2cc24 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Mon, 23 May 2016 17:06:08 +0100
+Subject: [PATCH] Revert "Revert "drm/vc4: Force HDMI to connected.""
+
+This reverts commit 7da44d06540b4a191ecc74e943f3203577fce0df.
+
+This breaks the driver on Pi3 as hotplug is implemented through a
+gpio expander owned by the GPU.
+
+We need to extend the virtual gpio driver to support this, but for
+now assume hotplug is always enabled.
+---
+ drivers/gpu/drm/vc4/vc4_hdmi.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_hdmi.c
++++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
+@@ -166,6 +166,8 @@ vc4_hdmi_connector_detect(struct drm_con
+ 	struct drm_device *dev = connector->dev;
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 
++	return connector_status_connected;
++
+ 	if (vc4->hdmi->hpd_gpio) {
+ 		if (gpio_get_value_cansleep(vc4->hdmi->hpd_gpio) ^
+ 		    vc4->hdmi->hpd_active_low)

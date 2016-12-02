@@ -1,0 +1,30 @@
+From 0444a6ca389812c715a59bb4c3ec4def409340ef Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 1 Nov 2016 13:10:05 +0000
+Subject: [PATCH] config: Add CONFIG_HTU21 module
+
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -1154,6 +1154,7 @@ CONFIG_IIO_KFIFO_BUF=m
+ CONFIG_MCP320X=m
+ CONFIG_MCP3422=m
+ CONFIG_DHT11=m
++CONFIG_HTU21=m
+ CONFIG_PWM_BCM2835=m
+ CONFIG_PWM_PCA9685=m
+ CONFIG_RASPBERRYPI_FIRMWARE=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -1161,6 +1161,7 @@ CONFIG_IIO_KFIFO_BUF=m
+ CONFIG_MCP320X=m
+ CONFIG_MCP3422=m
+ CONFIG_DHT11=m
++CONFIG_HTU21=m
+ CONFIG_PWM_BCM2835=m
+ CONFIG_PWM_PCA9685=m
+ CONFIG_RASPBERRYPI_FIRMWARE=y

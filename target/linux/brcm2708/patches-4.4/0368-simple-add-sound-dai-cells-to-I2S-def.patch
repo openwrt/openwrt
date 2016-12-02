@@ -1,0 +1,33 @@
+From 68b9ea24724f403ab475c2d8822c7dcd3ca5b875 Mon Sep 17 00:00:00 2001
+From: DigitalDreamtime <clive.messer@digitaldreamtime.co.uk>
+Date: Thu, 19 May 2016 00:00:00 +0100
+Subject: [PATCH] simple: add sound-dai-cells to I2S def
+
+Add '#sound-dai-cells = <0>;' to the I2S definition in
+bcm2708_common.dtsi
+
+Not having it specified, whilst not causing an issue right now with
+rpi-4.4.y, is going to cause an issue going forward with the use of
+simple-card driver. So it doesn't fall through the cracks, patch it
+in now.
+
+Hopefully Martin has taken care of getting a patch submitted for the
+upstream Pi dts, as it was he who first run into the issue with the
+current upstream kernel....
+https://github.com/msperl/linux-rpi/issues/3#issue-154916615
+
+Signed-off-by: DigitalDreamtime <clive.messer@digitaldreamtime.co.uk>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -137,6 +137,7 @@
+ 
+ 		i2s: i2s@7e203000 {
+ 			compatible = "brcm,bcm2835-i2s";
++			#sound-dai-cells = <0>;
+ 			reg = <0x7e203000 0x24>,
+ 			      <0x7e101098 0x08>;
+ 

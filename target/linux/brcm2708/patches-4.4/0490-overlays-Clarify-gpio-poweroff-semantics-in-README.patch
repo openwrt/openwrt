@@ -1,0 +1,24 @@
+From a8fe903c1e5c6655795cdef8dfe0977018adc99b Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 22 Aug 2016 11:56:04 +0100
+Subject: [PATCH] overlays: Clarify gpio-poweroff semantics in README
+
+1) GPIO pin is signalled on poweroff, not reboot.
+2) In RPi kernels, halt is equivalent to poweroff.
+
+See: https://github.com/raspberrypi/linux/issues/1600
+---
+ arch/arm/boot/dts/overlays/README | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -340,7 +340,7 @@ Params: gpio_pin                Input pi
+ 
+ 
+ Name:   gpio-poweroff
+-Info:   Drives a GPIO high or low on reboot
++Info:   Drives a GPIO high or low on poweroff (including halt)
+ Load:   dtoverlay=gpio-poweroff,<param>=<val>
+ Params: gpiopin                 GPIO for signalling (default 26)
+ 

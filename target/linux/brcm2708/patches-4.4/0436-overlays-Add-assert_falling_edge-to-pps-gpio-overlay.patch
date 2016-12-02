@@ -1,0 +1,31 @@
+From c430f79020084981d8cfeaee85caa1ee243919b6 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 9 Aug 2016 21:51:41 +0100
+Subject: [PATCH] overlays: Add assert_falling_edge to pps-gpio overlay
+
+See: https://github.com/raspberrypi/linux/issues/1590
+---
+ arch/arm/boot/dts/overlays/README               | 2 ++
+ arch/arm/boot/dts/overlays/pps-gpio-overlay.dts | 1 +
+ 2 files changed, 3 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -797,6 +797,8 @@ Name:   pps-gpio
+ Info:   Configures the pps-gpio (pulse-per-second time signal via GPIO).
+ Load:   dtoverlay=pps-gpio,<param>=<val>
+ Params: gpiopin                 Input GPIO (default "18")
++        assert_falling_edge     When present, assert is indicated by a falling
++                                edge, rather than by a rising edge
+ 
+ 
+ Name:   pwm
+--- a/arch/arm/boot/dts/overlays/pps-gpio-overlay.dts
++++ b/arch/arm/boot/dts/overlays/pps-gpio-overlay.dts
+@@ -30,5 +30,6 @@
+ 	__overrides__ {
+ 		gpiopin = <&pps>,"gpios:4",
+ 			  <&pps_pins>,"brcm,pins:0";
++		assert_falling_edge = <&pps>,"assert-falling-edge?";
+ 	};
+ };

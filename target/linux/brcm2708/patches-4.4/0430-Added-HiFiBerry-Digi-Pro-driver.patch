@@ -1,0 +1,187 @@
+From 1a770fa3b51e674ba573628b1ad08153d9dbc39b Mon Sep 17 00:00:00 2001
+From: "Daniel Matuschek (HiFiBerry)" <daniel@hifiberry.com>
+Date: Tue, 26 Jul 2016 19:16:25 +0200
+Subject: [PATCH] Added HiFiBerry Digi+ Pro driver
+
+Signed-off-by: Daniel Matuschek <daniel@hifiberry.com>
+---
+ arch/arm/boot/dts/overlays/Makefile                |  1 +
+ arch/arm/boot/dts/overlays/README                  |  8 +++-
+ .../dts/overlays/hifiberry-digi-pro-overlay.dts    | 41 +++++++++++++++++
+ sound/soc/bcm/hifiberry_digi.c                     | 51 ++++++++++++++++++++++
+ 4 files changed, 100 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/overlays/hifiberry-digi-pro-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -31,6 +31,7 @@ dtbo-$(RPI_DT_OVERLAYS) += hifiberry-amp
+ dtbo-$(RPI_DT_OVERLAYS) += hifiberry-dac.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += hifiberry-dacplus.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += hifiberry-digi.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += hifiberry-digi-pro.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += hy28a.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += hy28b.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += i2c-gpio.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -377,11 +377,17 @@ Params: 24db_digital_gain       Allow ga
+ 
+ 
+ Name:   hifiberry-digi
+-Info:   Configures the HifiBerry Digi audio card
++Info:   Configures the HifiBerry Digi and Digi+ audio card
+ Load:   dtoverlay=hifiberry-digi
+ Params: <None>
+ 
+ 
++Name:   hifiberry-digi-pro
++Info:   Configures the HifiBerry Digi+ Pro audio card
++Load:   dtoverlay=hifiberry-digi-pro
++Params: <None>
++
++
+ Name:   hy28a
+ Info:   HY28A - 2.8" TFT LCD Display Module by HAOYU Electronics
+         Default values match Texy's display shield
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/hifiberry-digi-pro-overlay.dts
+@@ -0,0 +1,41 @@
++// Definitions for HiFiBerry Digi Pro
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			wm8804@3b {
++				#sound-dai-cells = <0>;
++				compatible = "wlf,wm8804";
++				reg = <0x3b>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "hifiberry,hifiberry-digi";
++			i2s-controller = <&i2s>;
++			status = "okay";
++			clock44-gpio = <&gpio 5 0>;
++			clock48-gpio = <&gpio 6 0>;
++		};
++	};
++};
+--- a/sound/soc/bcm/hifiberry_digi.c
++++ b/sound/soc/bcm/hifiberry_digi.c
+@@ -23,6 +23,7 @@
+ #include <sound/pcm_params.h>
+ #include <sound/soc.h>
+ #include <sound/jack.h>
++#include <linux/gpio/consumer.h>
+ 
+ #include "../codecs/wm8804.h"
+ 
+@@ -30,9 +31,34 @@ static short int auto_shutdown_output =
+ module_param(auto_shutdown_output, short, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+ MODULE_PARM_DESC(auto_shutdown_output, "Shutdown SP/DIF output if playback is stopped");
+ 
++#define CLK_44EN_RATE 22579200UL
++#define CLK_48EN_RATE 24576000UL
++
++static bool snd_rpi_hifiberry_is_digipro;
++static struct gpio_desc *snd_rpi_hifiberry_clk44gpio;
++static struct gpio_desc *snd_rpi_hifiberry_clk48gpio;
+ 
+ static int samplerate=44100;
+ 
++static uint32_t snd_rpi_hifiberry_digi_enable_clock(int sample_rate)
++{
++	switch (sample_rate) {
++	case 11025:
++	case 22050:
++	case 44100:
++	case 88200:
++	case 176400:
++		gpiod_set_value_cansleep(snd_rpi_hifiberry_clk44gpio, 1);
++		gpiod_set_value_cansleep(snd_rpi_hifiberry_clk48gpio, 0);
++		return CLK_44EN_RATE;
++	default:
++		gpiod_set_value_cansleep(snd_rpi_hifiberry_clk48gpio, 1);
++		gpiod_set_value_cansleep(snd_rpi_hifiberry_clk44gpio, 0);
++		return CLK_48EN_RATE;
++	}
++}
++
++
+ static int snd_rpi_hifiberry_digi_init(struct snd_soc_pcm_runtime *rtd)
+ {
+ 	struct snd_soc_codec *codec = rtd->codec;
+@@ -40,6 +66,14 @@ static int snd_rpi_hifiberry_digi_init(s
+ 	/* enable TX output */
+ 	snd_soc_update_bits(codec, WM8804_PWRDN, 0x4, 0x0);
+ 
++	/* Initialize Digi+ Pro hardware */
++	if (snd_rpi_hifiberry_is_digipro) {
++		struct snd_soc_dai_link *dai = rtd->dai_link;
++
++		dai->name = "HiFiBerry Digi+ Pro";
++		dai->stream_name = "HiFiBerry Digi+ Pro HiFi";
++	}
++
+ 	return 0;
+ }
+ 
+@@ -87,6 +121,9 @@ static int snd_rpi_hifiberry_digi_hw_par
+ 		mclk_freq=samplerate*128;
+ 		mclk_div=WM8804_MCLKDIV_128FS;
+ 	}
++
++	if (snd_rpi_hifiberry_is_digipro)
++		sysclk = snd_rpi_hifiberry_digi_enable_clock(samplerate);
+ 	
+ 	switch (samplerate) {
+ 		case 32000:
+@@ -121,6 +158,7 @@ static int snd_rpi_hifiberry_digi_hw_par
+ 
+ 	ret = snd_soc_dai_set_sysclk(codec_dai, WM8804_TX_CLKSRC_PLL,
+ 					sysclk, SND_SOC_CLOCK_OUT);
++
+ 	if (ret < 0) {
+ 		dev_err(codec->dev,
+ 		"Failed to set WM8804 SYSCLK: %d\n", ret);
+@@ -187,6 +225,19 @@ static int snd_rpi_hifiberry_digi_probe(
+ 		dai->platform_name = NULL;
+ 		dai->platform_of_node = i2s_node;
+ 	    }
++
++	    snd_rpi_hifiberry_is_digipro = 1;
++
++	    snd_rpi_hifiberry_clk44gpio =
++		devm_gpiod_get(&pdev->dev, "clock44", GPIOD_OUT_LOW);
++	    if (IS_ERR(snd_rpi_hifiberry_clk44gpio))
++		snd_rpi_hifiberry_is_digipro = 0;
++
++	    snd_rpi_hifiberry_clk48gpio =
++		devm_gpiod_get(&pdev->dev, "clock48", GPIOD_OUT_LOW);
++	    if (IS_ERR(snd_rpi_hifiberry_clk48gpio))
++		snd_rpi_hifiberry_is_digipro = 0;
++
+ 	}
+ 
+ 	ret = snd_soc_register_card(&snd_rpi_hifiberry_digi);

@@ -1,0 +1,24 @@
+From 79b1ef832e3e73af4ec6c506ce01f8666d4c92bb Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 19 Aug 2016 11:12:28 +0100
+Subject: [PATCH] BCM270X_DT: Add audio_pins to CM dtb
+
+Bring the CM .dtb in line with other others.
+---
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -35,6 +35,11 @@
+ 		brcm,pins = <18 19 20 21>;
+ 		brcm,function = <4>; /* alt0 */
+ 	};
++
++	audio_pins: audio_pins {
++		brcm,pins;
++		brcm,function;
++	};
+ };
+ 
+ &spi0 {

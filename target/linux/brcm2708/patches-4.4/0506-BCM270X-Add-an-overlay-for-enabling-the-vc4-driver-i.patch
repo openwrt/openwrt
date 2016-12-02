@@ -1,0 +1,189 @@
+From 5395497a794d793f9657e3317634ad8e5003277f Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Wed, 14 Sep 2016 08:52:26 +0100
+Subject: [PATCH] BCM270X: Add an overlay for enabling the vc4 driver in
+ firmware-KMS mode.
+
+This gets us normal 3D support on top of the existing firmware display
+stack.  There's no real modesetting support, no async pageflips
+(hurting performance), etc., but it means that the desktop can at
+least run until we get full native modesetting.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi              | 31 +++++---
+ arch/arm/boot/dts/overlays/Makefile                |  1 +
+ arch/arm/boot/dts/overlays/README                  | 11 +++
+ .../arm/boot/dts/overlays/vc4-fkms-v3d-overlay.dts | 89 ++++++++++++++++++++++
+ 4 files changed, 121 insertions(+), 11 deletions(-)
+ create mode 100644 arch/arm/boot/dts/overlays/vc4-fkms-v3d-overlay.dts
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -284,6 +284,26 @@
+ 			status = "disabled";
+ 		};
+ 
++		firmwarekms: firmwarekms@7e600000 {
++			compatible = "raspberrypi,rpi-firmware-kms";
++			/* SMI interrupt reg */
++			reg = <0x7e600000 0x100>;
++			interrupts = <2 16>;
++			brcm,firmware = <&firmware>;
++			status = "disabled";
++		};
++
++		smi: smi@7e600000 {
++			compatible = "brcm,bcm2835-smi";
++			reg = <0x7e600000 0x44>, <0x7e1010b0 0x8>;
++			interrupts = <2 16>;
++			brcm,smi-clock-source = <6>;
++			brcm,smi-clock-divisor = <4>;
++			dmas = <&dma 4>;
++			dma-names = "rx-tx";
++			status = "disabled";
++		};
++
+ 		dsi1: dsi@7e700000 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+@@ -325,17 +345,6 @@
+ 			status = "disabled";
+ 		};
+ 
+-		smi: smi@7e600000 {
+-			compatible = "brcm,bcm2835-smi";
+-			reg = <0x7e600000 0x44>, <0x7e1010b0 0x8>;
+-			interrupts = <2 16>;
+-			brcm,smi-clock-source = <6>;
+-			brcm,smi-clock-divisor = <4>;
+-			dmas = <&dma 4>;
+-			dma-names = "rx-tx";
+-			status = "disabled";
+-		};
+-
+ 		pixelvalve2: pixelvalve@7e807000 {
+ 			compatible = "brcm,bcm2835-pixelvalve2";
+ 			reg = <0x7e807000 0x100>;
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -96,6 +96,7 @@ dtbo-$(RPI_DT_OVERLAYS) += spi2-2cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi2-3cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += tinylcd35.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += uart1.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += vc4-fkms-v3d.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += vc4-kms-v3d.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += vga666.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += w1-gpio.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -1215,6 +1215,17 @@ Params: txd1_pin                GPIO pin
+         rxd1_pin                GPIO pin for RXD1 (15, 33 or 41 - default 15)
+ 
+ 
++Name:   vc4-fkms-v3d
++Info:   Enable Eric Anholt's DRM VC4 V3D driver on top of the dispmanx
++        display stack.
++Load:   dtoverlay=vc4-fkms-v3d,<param>
++Params: cma-256                 CMA is 256MB, 256MB-aligned (needs 1GB)
++        cma-192                 CMA is 192MB, 256MB-aligned (needs 1GB)
++        cma-128                 CMA is 128MB, 128MB-aligned
++        cma-96                  CMA is 96MB, 128MB-aligned
++        cma-64                  CMA is 64MB, 64MB-aligned
++
++
+ Name:   vc4-kms-v3d
+ Info:   Enable Eric Anholt's DRM VC4 HDMI/HVS/V3D driver. Running startx or
+         booting to GUI while this overlay is in use will cause interesting
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/vc4-fkms-v3d-overlay.dts
+@@ -0,0 +1,89 @@
++/*
++ * vc4-fkms-v3d-overlay.dts
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target-path = "/chosen";
++		__overlay__ {
++			bootargs = "cma=256M@256M";
++		};
++	};
++
++	fragment@1 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=192M@256M";
++		};
++	};
++
++	fragment@2 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=128M@128M";
++		};
++	};
++
++	fragment@3 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=96M@128M";
++		};
++	};
++
++	fragment@4 {
++		target-path = "/chosen";
++		__dormant__ {
++			bootargs = "cma=64M@64M";
++		};
++	};
++
++	fragment@5 {
++		target = <&fb>;
++		__overlay__  {
++			status = "disabled";
++		};
++	};
++
++	fragment@6 {
++		target = <&firmwarekms>;
++		__overlay__  {
++			status = "okay";
++		};
++	};
++
++	fragment@7 {
++		target = <&v3d>;
++		__overlay__  {
++			interrupts = <1 10>;
++			status = "okay";
++		};
++	};
++
++	fragment@8 {
++		target = <&gpu>;
++		__overlay__  {
++			status = "okay";
++		};
++	};
++
++	fragment@9 {
++		target-path = "/soc/dma";
++		__overlay__ {
++			brcm,dma-channel-mask = <0x7f35>;
++		};
++	};
++
++	__overrides__ {
++		cma-256 = <0>,"+0-1-2-3-4";
++		cma-192 = <0>,"-0+1-2-3-4";
++		cma-128 = <0>,"-0-1+2-3-4";
++		cma-96  = <0>,"-0-1-2+3-4";
++		cma-64  = <0>,"-0-1-2-3+4";
++	};
++};

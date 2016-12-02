@@ -1,0 +1,58 @@
+From e7628e85cf049383e17688b1d4ed8e9e13980b0b Mon Sep 17 00:00:00 2001
+From: Nicolas Boullis <nboullis@debian.org>
+Date: Sun, 10 Apr 2016 13:23:05 +0200
+Subject: [PATCH] rtc: ds1307: ensure that any pending alarm is cleared before
+ a new alarm is enabled
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If a previously-set alarm was disabled and then triggered, it may still
+be pending when a new alarm is configured.
+
+Then, if the alarm is enabled before the pending alarm is cleared, then
+an interrupt is immediately raised.
+
+Unfortunately, when the alarm is cleared and enabled during the same I²C
+block write, the chip (at least the DS1339 I have) considers that the
+alarm is enabled before it is cleared, and raises an interrupt.
+
+This patch ensures that the pending alarm is cleared before the alarm is
+enabled.
+
+Signed-off-by: Nicolas Boullis <nboullis@debian.org>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+---
+ drivers/rtc/rtc-ds1307.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+--- a/drivers/rtc/rtc-ds1307.c
++++ b/drivers/rtc/rtc-ds1307.c
+@@ -540,12 +540,8 @@ static int ds1337_set_alarm(struct devic
+ 	buf[5] = 0;
+ 	buf[6] = 0;
+ 
+-	/* optionally enable ALARM1 */
++	/* disable alarms */
+ 	buf[7] = control & ~(DS1337_BIT_A1IE | DS1337_BIT_A2IE);
+-	if (t->enabled) {
+-		dev_dbg(dev, "alarm IRQ armed\n");
+-		buf[7] |= DS1337_BIT_A1IE;	/* only ALARM1 is used */
+-	}
+ 	buf[8] = status & ~(DS1337_BIT_A1I | DS1337_BIT_A2I);
+ 
+ 	ret = ds1307->write_block_data(client,
+@@ -555,6 +551,13 @@ static int ds1337_set_alarm(struct devic
+ 		return ret;
+ 	}
+ 
++	/* optionally enable ALARM1 */
++	if (t->enabled) {
++		dev_dbg(dev, "alarm IRQ armed\n");
++		buf[7] |= DS1337_BIT_A1IE;	/* only ALARM1 is used */
++		i2c_smbus_write_byte_data(client, DS1337_REG_CONTROL, buf[7]);
++	}
++
+ 	return 0;
+ }
+ 

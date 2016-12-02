@@ -1,0 +1,86 @@
+From 58c72d20f05a5943b48d834e8388a58332897ed8 Mon Sep 17 00:00:00 2001
+From: Michael Kaplan <m.kaplan@evva.com>
+Date: Tue, 24 May 2016 10:19:08 +0200
+Subject: [PATCH] Added Overlay for Microchip MCP23017 I2C gpio expander
+
+---
+ arch/arm/boot/dts/overlays/README               |  9 +++++
+ arch/arm/boot/dts/overlays/mcp23017-overlay.dts | 54 +++++++++++++++++++++++++
+ 2 files changed, 63 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/mcp23017-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -567,6 +567,15 @@ Params: gpio_out_pin            GPIO for
+                                 (default "off")
+ 
+ 
++Name:   mcp23017
++Info:   Configures the MCP23017 I2C port expander
++Load:   dtoverlay=mcp23017,<param>=<val>
++Params: gpiopin                 Gpio pin connected to the INTA output of the
++                                MCP23017 (default: 4)
++
++        addr                    I2C address of the MCP23017 (default: 0x20)
++
++
+ Name:   mcp2515-can0
+ Info:   Configures the MCP2515 CAN controller on spi0.0
+ Load:   dtoverlay=mcp2515-can0,<param>=<val>
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/mcp23017-overlay.dts
+@@ -0,0 +1,54 @@
++// Definitions for MCP23017 Gpio Extender from Microchip Semiconductor
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&i2c1>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			mcp23017_pins: mcp23017_pins {
++				brcm,pins = <4>;
++				brcm,function = <0>;
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			mcp23017: mcp@20 {
++				compatible = "microchip,mcp23017";
++				reg = <0x20>;
++				gpio-controller;
++				#gpio-cells = <2>;
++				#interrupt-cells=<2>;
++				interrupt-parent = <&gpio>;
++				interrupts = <4 2>;
++				interrupt-controller;
++				microchip,irq-mirror;
++
++				status = "okay";
++			};
++		};
++	};
++	
++	__overrides__ {
++		gpiopin = <&mcp23017_pins>,"brcm,pins:0",
++				<&mcp23017>,"interrupts:0";
++		addr = <&mcp23017>,"reg:0";
++	};
++};
++

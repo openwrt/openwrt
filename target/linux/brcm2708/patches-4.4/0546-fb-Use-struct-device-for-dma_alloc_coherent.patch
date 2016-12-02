@@ -1,0 +1,29 @@
+From aeef7a1c42f363b30a5a4c48f12301a5b46d8427 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Thu, 17 Nov 2016 16:49:33 +0000
+Subject: [PATCH] fb: Use struct device for dma_alloc_coherent
+
+---
+ drivers/video/fbdev/bcm2708_fb.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/video/fbdev/bcm2708_fb.c
++++ b/drivers/video/fbdev/bcm2708_fb.c
+@@ -507,7 +507,7 @@ static long vc_mem_copy(struct bcm2708_f
+ 		return -EFAULT;
+ 	}
+ 
+-	buf = dma_alloc_coherent(NULL, PAGE_ALIGN(size), &bus_addr,
++	buf = dma_alloc_coherent(fb->fb.device, PAGE_ALIGN(size), &bus_addr,
+ 				 GFP_ATOMIC);
+ 	if (!buf) {
+ 		pr_err("[%s]: failed to dma_alloc_coherent(%d)\n",
+@@ -531,7 +531,7 @@ static long vc_mem_copy(struct bcm2708_f
+ 	}
+ out:
+ 	if (buf)
+-		dma_free_coherent(NULL, PAGE_ALIGN(size), buf, bus_addr);
++		dma_free_coherent(fb->fb.device, PAGE_ALIGN(size), buf, bus_addr);
+ 	return rc;
+ }
+ 

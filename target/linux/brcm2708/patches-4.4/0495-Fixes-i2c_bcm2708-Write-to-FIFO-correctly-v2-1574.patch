@@ -1,0 +1,48 @@
+From 1bb11b1cfccb209ca841878ec650538e972a34ab Mon Sep 17 00:00:00 2001
+From: Simon Maes <simonn.maes@gmail.com>
+Date: Mon, 29 Aug 2016 21:11:01 +0200
+Subject: [PATCH] Fixes i2c_bcm2708: Write to FIFO correctly - v2 (#1574)
+
+* i2c: fix i2c_bcm2708: Clear FIFO before sending data
+
+Make sure FIFO gets cleared before trying to send
+data in case of a repeated start (COMBINED=Y).
+
+* i2c: fix i2c_bcm2708: Only write to FIFO when not full
+
+Check if FIFO can accept data before writing.
+To avoid a peripheral read on the last iteration of a loop,
+both bcm2708_bsc_fifo_fill and ~drain are changed as well.
+---
+ drivers/i2c/busses/i2c-bcm2708.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/i2c/busses/i2c-bcm2708.c
++++ b/drivers/i2c/busses/i2c-bcm2708.c
+@@ -115,13 +115,13 @@ static inline void bcm2708_bsc_reset(str
+ 
+ static inline void bcm2708_bsc_fifo_drain(struct bcm2708_i2c *bi)
+ {
+-	while ((bcm2708_rd(bi, BSC_S) & BSC_S_RXD) && (bi->pos < bi->msg->len))
++	while ((bi->pos < bi->msg->len) && (bcm2708_rd(bi, BSC_S) & BSC_S_RXD))
+ 		bi->msg->buf[bi->pos++] = bcm2708_rd(bi, BSC_FIFO);
+ }
+ 
+ static inline void bcm2708_bsc_fifo_fill(struct bcm2708_i2c *bi)
+ {
+-	while ((bcm2708_rd(bi, BSC_S) & BSC_S_TXD) && (bi->pos < bi->msg->len))
++	while ((bi->pos < bi->msg->len) && (bcm2708_rd(bi, BSC_S) & BSC_S_TXD))
+ 		bcm2708_wr(bi, BSC_FIFO, bi->msg->buf[bi->pos++]);
+ }
+ 
+@@ -155,6 +155,10 @@ static inline int bcm2708_bsc_setup(stru
+ 		if ( (bi->nmsgs > 1) &&
+ 			!(bi->msg[0].flags & I2C_M_RD) && (bi->msg[1].flags & I2C_M_RD) &&
+ 			 (bi->msg[0].addr == bi->msg[1].addr) && (bi->msg[0].len <= 16)) {
++
++			/* Clear FIFO */
++			bcm2708_wr(bi, BSC_C, BSC_C_CLEAR_1);
++
+ 			/* Fill FIFO with entire write message (16 byte FIFO) */
+ 			while (bi->pos < bi->msg->len) {
+ 				bcm2708_wr(bi, BSC_FIFO, bi->msg->buf[bi->pos++]);

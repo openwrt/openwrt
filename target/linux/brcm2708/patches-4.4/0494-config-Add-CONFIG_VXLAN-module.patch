@@ -1,0 +1,30 @@
+From c757e1201aee161e47b735b13cb2929a05e77c10 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 23 Aug 2016 14:08:55 +0100
+Subject: [PATCH] config: Add CONFIG_VXLAN module
+
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -449,6 +449,7 @@ CONFIG_DUMMY=m
+ CONFIG_IFB=m
+ CONFIG_MACVLAN=m
+ CONFIG_IPVLAN=m
++CONFIG_VXLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -442,6 +442,7 @@ CONFIG_DUMMY=m
+ CONFIG_IFB=m
+ CONFIG_MACVLAN=m
+ CONFIG_IPVLAN=m
++CONFIG_VXLAN=m
+ CONFIG_NETCONSOLE=m
+ CONFIG_TUN=m
+ CONFIG_VETH=m

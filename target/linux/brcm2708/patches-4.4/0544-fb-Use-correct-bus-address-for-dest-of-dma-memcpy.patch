@@ -1,0 +1,29 @@
+From 02baa554c7768e20668a466b35e479e8454d2d61 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 16 Nov 2016 21:17:27 +0000
+Subject: [PATCH] fb: Use correct bus address for dest of dma memcpy
+
+---
+ drivers/video/fbdev/bcm2708_fb.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/video/fbdev/bcm2708_fb.c
++++ b/drivers/video/fbdev/bcm2708_fb.c
+@@ -438,7 +438,7 @@ static void dma_memcpy(struct bcm2708_fb
+ 
+ 	cb->info = BCM2708_DMA_BURST(burst_size) | BCM2708_DMA_S_WIDTH |
+ 		   BCM2708_DMA_S_INC | BCM2708_DMA_D_WIDTH |
+-		   BCM2708_DMA_D_INC | BCM2708_DMA_TDMODE;
++		   BCM2708_DMA_D_INC;
+ 	cb->dst = dst;
+ 	cb->src = src;
+ 	cb->length = size;
+@@ -521,7 +521,7 @@ static long vc_mem_copy(struct bcm2708_f
+ 		size_t s = min(size, remaining);
+ 		unsigned char *p = (unsigned char *)ioparam.src + offset;
+ 		unsigned char *q = (unsigned char *)ioparam.dst + offset;
+-		dma_memcpy(fb, (dma_addr_t)buf, INTALIAS_L1L2_NONALLOCATING((dma_addr_t)p), size);
++		dma_memcpy(fb, bus_addr, INTALIAS_L1L2_NONALLOCATING((dma_addr_t)p), size);
+ 		if (copy_to_user(q, buf, s) != 0) {
+ 			pr_err("[%s]: failed to copy-to-user\n",
+ 					__func__);

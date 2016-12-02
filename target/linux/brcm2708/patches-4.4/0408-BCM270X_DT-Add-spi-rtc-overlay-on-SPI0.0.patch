@@ -1,0 +1,76 @@
+From 6790d3a4683d7e2e6e0fe1bbc7ab856f23e37885 Mon Sep 17 00:00:00 2001
+From: Thomas Kriechbaumer <thomas@kriechbaumer.name>
+Date: Fri, 3 Jun 2016 09:40:44 +0200
+Subject: [PATCH] BCM270X_DT: Add spi-rtc overlay on SPI0.0
+
+Initial version only supports PCF2123 RTC.
+
+See: https://github.com/raspberrypi/linux/pull/1510
+---
+ arch/arm/boot/dts/overlays/Makefile            |  1 +
+ arch/arm/boot/dts/overlays/README              |  6 +++++
+ arch/arm/boot/dts/overlays/spi-rtc-overlay.dts | 33 ++++++++++++++++++++++++++
+ 3 files changed, 40 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/spi-rtc-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -78,6 +78,7 @@ dtbo-$(RPI_DT_OVERLAYS) += smi.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += smi-dev.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += smi-nand.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi-gpio35-39.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += spi-rtc.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi1-1cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi1-2cs.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += spi1-3cs.dtbo
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -975,6 +975,12 @@ Load:   dtoverlay=spi-gpio35-39
+ Params: <None>
+ 
+ 
++Name:   spi-rtc
++Info:   Adds support for a number of SPI Real Time Clock devices
++Load:   dtoverlay=spi-rtc,<param>=<val>
++Params: pcf2123                 Select the PCF2123 device
++
++
+ Name:   spi1-1cs
+ Info:   Enables spi1 with a single chip select (CS) line and associated spidev
+         dev node. The gpio pin number for the CS line and spidev device node
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi-rtc-overlay.dts
+@@ -0,0 +1,33 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&spidev0>;
++		__dormant__ {
++			status = "disabled";
++		};
++	};
++
++	fragment@1 {
++		target = <&spi0>;
++		__dormant__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			rtc-pcf2123@0 {
++				compatible = "nxp,rtc-pcf2123";
++				spi-max-frequency = <5000000>;
++				spi-cs-high = <1>;
++				reg = <0>;
++			};
++		};
++	};
++
++	__overrides__ {
++		pcf2123 = <0>, "=0=1";
++	};
++};

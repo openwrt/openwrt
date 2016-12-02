@@ -1,0 +1,21 @@
+From 0b79cabd8b947db3b60904d6516776660af4247b Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 12 Aug 2016 10:55:53 -0700
+Subject: [PATCH] drm/panel: Drop debug printf from the Raspberry Pi
+ touchscreen.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/panel/panel-raspberrypi-touchscreen.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/gpu/drm/panel/panel-raspberrypi-touchscreen.c
++++ b/drivers/gpu/drm/panel/panel-raspberrypi-touchscreen.c
+@@ -106,7 +106,6 @@ struct regdump {
+ static int rpi_touchscreen_disable(struct drm_panel *panel)
+ {
+ 	struct rpi_touchscreen *ts = panel_to_ts(panel);
+-	pr_err("disable\n");
+ 
+ 	if (!ts->enabled)
+ 		return 0;

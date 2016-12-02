@@ -1,0 +1,43 @@
+From 4d372013a839ae71582004fbc1aa1905c73d1497 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Wed, 28 Sep 2016 17:58:52 -0700
+Subject: [PATCH] clk: bcm2835: Clamp the PLL's requested rate to the hardware
+ limits.
+
+Fixes setting low-resolution video modes on HDMI.  Now the PLLH_PIX
+divider adjusts itself until the PLLH is within bounds.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/clk/bcm/clk-bcm2835.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -523,8 +523,12 @@ static long bcm2835_pll_rate_from_diviso
+ static long bcm2835_pll_round_rate(struct clk_hw *hw, unsigned long rate,
+ 				   unsigned long *parent_rate)
+ {
++	struct bcm2835_pll *pll = container_of(hw, struct bcm2835_pll, hw);
++	const struct bcm2835_pll_data *data = pll->data;
+ 	u32 ndiv, fdiv;
+ 
++	rate = clamp(rate, data->min_rate, data->max_rate);
++
+ 	bcm2835_pll_choose_ndiv_and_fdiv(rate, *parent_rate, &ndiv, &fdiv);
+ 
+ 	return bcm2835_pll_rate_from_divisors(*parent_rate, ndiv, fdiv, 1);
+@@ -629,13 +633,6 @@ static int bcm2835_pll_set_rate(struct c
+ 	u32 ana[4];
+ 	int i;
+ 
+-	if (rate < data->min_rate || rate > data->max_rate) {
+-		dev_err(cprman->dev, "%s: rate out of spec: %lu vs (%lu, %lu)\n",
+-			clk_hw_get_name(hw), rate,
+-			data->min_rate, data->max_rate);
+-		return -EINVAL;
+-	}
+-
+ 	if (rate > data->max_fb_rate) {
+ 		use_fb_prediv = true;
+ 		rate /= 2;

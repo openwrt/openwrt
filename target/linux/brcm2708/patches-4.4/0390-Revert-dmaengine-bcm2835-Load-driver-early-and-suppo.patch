@@ -1,0 +1,90 @@
+From ef68b1e7c830c23cf87a927474b5e53da14d9bac Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Fri, 22 Apr 2016 17:17:30 +0000
+Subject: [PATCH] Revert "dmaengine: bcm2835: Load driver early and support
+ legacy API"
+
+This reverts commit 6f56fff39c811953809b011f59c49a2122c4d173.
+---
+ drivers/dma/Kconfig       |  2 +-
+ drivers/dma/bcm2835-dma.c | 30 ++++++------------------------
+ 2 files changed, 7 insertions(+), 25 deletions(-)
+
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -108,7 +108,7 @@ config COH901318
+ 
+ config DMA_BCM2835
+ 	tristate "BCM2835 DMA engine support"
+-	depends on ARCH_BCM2835 || ARCH_BCM2708 || ARCH_BCM2709
++	depends on ARCH_BCM2835
+ 	select DMA_ENGINE
+ 	select DMA_VIRTUAL_CHANNELS
+ 
+--- a/drivers/dma/bcm2835-dma.c
++++ b/drivers/dma/bcm2835-dma.c
+@@ -36,7 +36,6 @@
+ #include <linux/interrupt.h>
+ #include <linux/list.h>
+ #include <linux/module.h>
+-#include <linux/platform_data/dma-bcm2708.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+ #include <linux/io.h>
+@@ -787,10 +786,6 @@ static int bcm2835_dma_probe(struct plat
+ 	if (IS_ERR(base))
+ 		return PTR_ERR(base);
+ 
+-	rc = bcm_dmaman_probe(pdev, base, BCM2835_DMA_BULK_MASK);
+-	if (rc)
+-		dev_err(&pdev->dev, "Failed to initialize the legacy API\n");
+-
+ 	od->base = base;
+ 
+ 	dma_cap_set(DMA_SLAVE, od->ddev.cap_mask);
+@@ -823,8 +818,11 @@ static int bcm2835_dma_probe(struct plat
+ 		goto err_no_dma;
+ 	}
+ 
+-	/* Channel 0 is used by the legacy API */
+-	chans_available &= ~BCM2835_DMA_BULK_MASK;
++	/*
++	 * Do not use the FIQ and BULK channels,
++	 * because they are used by the GPU.
++	 */
++	chans_available &= ~(BCM2835_DMA_FIQ_MASK | BCM2835_DMA_BULK_MASK);
+ 
+ 	for (i = 0; i < pdev->num_resources; i++) {
+ 		irq = platform_get_irq(pdev, i);
+@@ -868,7 +866,6 @@ static int bcm2835_dma_remove(struct pla
+ {
+ 	struct bcm2835_dmadev *od = platform_get_drvdata(pdev);
+ 
+-	bcm_dmaman_remove(pdev);
+ 	dma_async_device_unregister(&od->ddev);
+ 	bcm2835_dma_free(od);
+ 
+@@ -884,22 +881,7 @@ static struct platform_driver bcm2835_dm
+ 	},
+ };
+ 
+-static int bcm2835_dma_init(void)
+-{
+-	return platform_driver_register(&bcm2835_dma_driver);
+-}
+-
+-static void bcm2835_dma_exit(void)
+-{
+-	platform_driver_unregister(&bcm2835_dma_driver);
+-}
+-
+-/*
+- * Load after serial driver (arch_initcall) so we see the messages if it fails,
+- * but before drivers (module_init) that need a DMA channel.
+- */
+-subsys_initcall(bcm2835_dma_init);
+-module_exit(bcm2835_dma_exit);
++module_platform_driver(bcm2835_dma_driver);
+ 
+ MODULE_ALIAS("platform:bcm2835-dma");
+ MODULE_DESCRIPTION("BCM2835 DMA engine driver");

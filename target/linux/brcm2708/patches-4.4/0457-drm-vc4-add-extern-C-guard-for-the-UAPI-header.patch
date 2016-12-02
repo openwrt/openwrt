@@ -1,0 +1,34 @@
+From 48b941386dcff591dd0ab086f548fa20b047e84e Mon Sep 17 00:00:00 2001
+From: Emil Velikov <emil.l.velikov@gmail.com>
+Date: Thu, 7 Apr 2016 19:36:57 +0100
+Subject: [PATCH] drm/vc4: add extern C guard for the UAPI header
+
+Cc: Eric Anholt <eric@anholt.net>
+Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+(cherry picked from commit 6a982350f892c286c645a6fe0e1da1f869a0c43f)
+---
+ include/uapi/drm/vc4_drm.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/include/uapi/drm/vc4_drm.h
++++ b/include/uapi/drm/vc4_drm.h
+@@ -26,6 +26,10 @@
+ 
+ #include "drm.h"
+ 
++#if defined(__cplusplus)
++extern "C" {
++#endif
++
+ #define DRM_VC4_SUBMIT_CL                         0x00
+ #define DRM_VC4_WAIT_SEQNO                        0x01
+ #define DRM_VC4_WAIT_BO                           0x02
+@@ -276,4 +280,8 @@ struct drm_vc4_get_hang_state {
+ 	__u32 pad[16];
+ };
+ 
++#if defined(__cplusplus)
++}
++#endif
++
+ #endif /* _UAPI_VC4_DRM_H_ */

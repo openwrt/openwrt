@@ -1,0 +1,63 @@
+From f491fbf4315a1d4a7210450f835a6fe93880cd5b Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 12 Aug 2016 15:46:21 +0100
+Subject: [PATCH] snd-bcm2835: Don't allow responses from VC to be interrupted
+ by user signals
+
+There should always be a response, and retry after a signal interruption is not handled, so don't report
+we are interruptible.
+
+See: https://github.com/raspberrypi/linux/issues/1560
+---
+ sound/arm/bcm2835-vchiq.c | 25 ++++++-------------------
+ 1 file changed, 6 insertions(+), 19 deletions(-)
+
+--- a/sound/arm/bcm2835-vchiq.c
++++ b/sound/arm/bcm2835-vchiq.c
+@@ -511,12 +511,7 @@ static int bcm2835_audio_set_ctls_chan(b
+ 	}
+ 
+ 	/* We are expecting a reply from the videocore */
+-	ret = wait_for_completion_interruptible(&instance->msg_avail_comp);
+-	if (ret) {
+-		LOG_DBG("%s: failed on waiting for event (status=%d)\n",
+-			__func__, success);
+-		goto unlock;
+-	}
++	wait_for_completion(&instance->msg_avail_comp);
+ 
+ 	if (instance->result != 0) {
+ 		LOG_ERR("%s: result=%d\n", __func__, instance->result);
+@@ -615,12 +610,7 @@ int bcm2835_audio_set_params(bcm2835_als
+ 	}
+ 
+ 	/* We are expecting a reply from the videocore */
+-	ret = wait_for_completion_interruptible(&instance->msg_avail_comp);
+-	if (ret) {
+-		LOG_DBG("%s: failed on waiting for event (status=%d)\n",
+-			__func__, success);
+-		goto unlock;
+-	}
++	wait_for_completion(&instance->msg_avail_comp);
+ 
+ 	if (instance->result != 0) {
+ 		LOG_ERR("%s: result=%d", __func__, instance->result);
+@@ -761,14 +751,11 @@ int bcm2835_audio_close(bcm2835_alsa_str
+ 		goto unlock;
+ 	}
+ 
+-	ret = wait_for_completion_interruptible(&instance->msg_avail_comp);
+-	if (ret) {
+-		LOG_DBG("%s: failed on waiting for event (status=%d)\n",
+-			__func__, success);
+-		goto unlock;
+-	}
++	/* We are expecting a reply from the videocore */
++	wait_for_completion(&instance->msg_avail_comp);
++
+ 	if (instance->result != 0) {
+-		LOG_ERR("%s: failed result (status=%d)\n",
++		LOG_ERR("%s: failed result (result=%d)\n",
+ 			__func__, instance->result);
+ 
+ 		ret = -1;

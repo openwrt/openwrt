@@ -1,0 +1,29 @@
+From 12588d06f8dca8bfdffae3d7e9c181160c2fbf6e Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 26 Jul 2016 13:47:13 -0700
+Subject: [PATCH] drm/vc4: Free hang state before destroying BO cache.
+
+The BO cache will complain if BOs are still allocated when we try to
+destroy it (since freeing those BOs would try to hit the cache).  You
+could hit this if you were to unload the module after a GPU hang.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Fixes: 214613656b51 ("drm/vc4: Add an interface for capturing the GPU state after a hang.")
+(cherry picked from commit def96527707e1978a0c88e75d13b082f51460d5c)
+---
+ drivers/gpu/drm/vc4/vc4_gem.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -968,8 +968,8 @@ vc4_gem_destroy(struct drm_device *dev)
+ 		vc4->overflow_mem = NULL;
+ 	}
+ 
+-	vc4_bo_cache_destroy(dev);
+-
+ 	if (vc4->hang_state)
+ 		vc4_free_hang_state(dev, vc4->hang_state);
++
++	vc4_bo_cache_destroy(dev);
+ }

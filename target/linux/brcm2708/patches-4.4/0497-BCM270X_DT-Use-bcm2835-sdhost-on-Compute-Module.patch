@@ -1,0 +1,30 @@
+From e69474ab771cd527c98a546bc0afc84d13662c04 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 2 Sep 2016 14:35:37 +0100
+Subject: [PATCH] BCM270X_DT: Use bcm2835-sdhost on Compute Module
+
+With the preceding commit:
+
+  bcm2835-sdhost: Don't exit cmd wait loop on error
+
+it is safe to use the bcm2835-sdhost driver on the Compute Module.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ arch/arm/boot/dts/bcm2708-rpi-cm.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
+@@ -23,9 +23,9 @@
+ };
+ 
+ 
+-&mmc {
++&sdhost {
+ 	pinctrl-names = "default";
+-	pinctrl-0 = <&mmc_pins>;
++	pinctrl-0 = <&sdhost_pins>;
+ 	non-removable;
+ 	bus-width = <4>;
+ 	status = "okay";

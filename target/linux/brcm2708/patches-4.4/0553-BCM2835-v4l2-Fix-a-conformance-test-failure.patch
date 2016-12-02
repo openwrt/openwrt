@@ -1,0 +1,25 @@
+From 05b2785cb7e1f40900dad84579c6f7fd4ad8aeda Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <6by9@users.noreply.github.com>
+Date: Wed, 30 Nov 2016 20:17:14 +0000
+Subject: [PATCH] BCM2835-v4l2: Fix a conformance test failure
+
+Format ioctls:
+	test VIDIOC_ENUM_FMT/FRAMESIZES/FRAMEINTERVALS: OK
+	warn: v4l2-test-formats.cpp(1195): S_PARM is supported but
+		doesn't report V4L2_CAP_TIMEPERFRAME.
+	fail: v4l2-test-formats.cpp(1118): node->has_frmintervals
+		&& !cap->capability
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -1397,6 +1397,7 @@ static int vidioc_s_parm(struct file *fi
+ 	dev->capture.timeperframe = tpf;
+ 	parm->parm.capture.timeperframe = tpf;
+ 	parm->parm.capture.readbuffers  = 1;
++	parm->parm.capture.capability   = V4L2_CAP_TIMEPERFRAME;
+ 
+ 	fps_param.num = 0;	/* Select variable fps, and then use
+ 				 * FPS_RANGE to select the actual limits.

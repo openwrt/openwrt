@@ -1,0 +1,205 @@
+From 70eecf52df7082d1b3bcc698de2de1b6ce31be08 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 5 Feb 2016 17:41:49 -0800
+Subject: [PATCH] drm/vc4: Enable runtime PM.
+
+This may actually get us a feature that the closed driver didn't have:
+turning off the GPU in between rendering jobs, while the V3D device is
+still opened by the client.
+
+There may be some tuning to be applied here to use autosuspend so that
+we don't bounce the device's power so much, but in steady-state
+GPU-bound rendering we keep the power on (since we keep multiple jobs
+outstanding) and even if we power cycle on every job we can still
+manage at least 680 fps.
+
+More importantly, though, runtime PM will allow us to power off the
+device to do a GPU reset.
+
+v2: Switch #ifdef to CONFIG_PM not CONFIG_PM_SLEEP (caught by kbuild
+    test robot)
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 001bdb55d9eb72a9e2d5b623bacfc52da74ae03e)
+---
+ drivers/gpu/drm/vc4/vc4_drv.h |  1 +
+ drivers/gpu/drm/vc4/vc4_gem.c | 10 ++++++++
+ drivers/gpu/drm/vc4/vc4_v3d.c | 59 ++++++++++++++++++++++++++-----------------
+ 3 files changed, 47 insertions(+), 23 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -155,6 +155,7 @@ struct vc4_seqno_cb {
+ };
+ 
+ struct vc4_v3d {
++	struct vc4_dev *vc4;
+ 	struct platform_device *pdev;
+ 	void __iomem *regs;
+ };
+--- a/drivers/gpu/drm/vc4/vc4_gem.c
++++ b/drivers/gpu/drm/vc4/vc4_gem.c
+@@ -23,6 +23,7 @@
+ 
+ #include <linux/module.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/device.h>
+ #include <linux/io.h>
+ 
+@@ -689,6 +690,7 @@ fail:
+ static void
+ vc4_complete_exec(struct drm_device *dev, struct vc4_exec_info *exec)
+ {
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
+ 	unsigned i;
+ 
+ 	/* Need the struct lock for drm_gem_object_unreference(). */
+@@ -707,6 +709,8 @@ vc4_complete_exec(struct drm_device *dev
+ 	}
+ 	mutex_unlock(&dev->struct_mutex);
+ 
++	pm_runtime_put(&vc4->v3d->pdev->dev);
++
+ 	kfree(exec);
+ }
+ 
+@@ -860,6 +864,12 @@ vc4_submit_cl_ioctl(struct drm_device *d
+ 		return -ENOMEM;
+ 	}
+ 
++	ret = pm_runtime_get_sync(&vc4->v3d->pdev->dev);
++	if (ret < 0) {
++		kfree(exec);
++		return ret;
++	}
++
+ 	exec->args = args;
+ 	INIT_LIST_HEAD(&exec->unref_list);
+ 
+--- a/drivers/gpu/drm/vc4/vc4_v3d.c
++++ b/drivers/gpu/drm/vc4/vc4_v3d.c
+@@ -17,7 +17,7 @@
+  */
+ 
+ #include "linux/component.h"
+-#include "soc/bcm2835/raspberrypi-firmware.h"
++#include "linux/pm_runtime.h"
+ #include "vc4_drv.h"
+ #include "vc4_regs.h"
+ 
+@@ -145,22 +145,6 @@ int vc4_v3d_debugfs_ident(struct seq_fil
+ }
+ #endif /* CONFIG_DEBUG_FS */
+ 
+-/*
+- * Asks the firmware to turn on power to the V3D engine.
+- *
+- * This may be doable with just the clocks interface, though this
+- * packet does some other register setup from the firmware, too.
+- */
+-int
+-vc4_v3d_set_power(struct vc4_dev *vc4, bool on)
+-{
+-	u32 packet = on;
+-
+-	return rpi_firmware_property(vc4->firmware,
+-				     RPI_FIRMWARE_SET_ENABLE_QPU,
+-				     &packet, sizeof(packet));
+-}
+-
+ static void vc4_v3d_init_hw(struct drm_device *dev)
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+@@ -172,6 +156,29 @@ static void vc4_v3d_init_hw(struct drm_d
+ 	V3D_WRITE(V3D_VPMBASE, 0);
+ }
+ 
++#ifdef CONFIG_PM
++static int vc4_v3d_runtime_suspend(struct device *dev)
++{
++	struct vc4_v3d *v3d = dev_get_drvdata(dev);
++	struct vc4_dev *vc4 = v3d->vc4;
++
++	vc4_irq_uninstall(vc4->dev);
++
++	return 0;
++}
++
++static int vc4_v3d_runtime_resume(struct device *dev)
++{
++	struct vc4_v3d *v3d = dev_get_drvdata(dev);
++	struct vc4_dev *vc4 = v3d->vc4;
++
++	vc4_v3d_init_hw(vc4->dev);
++	vc4_irq_postinstall(vc4->dev);
++
++	return 0;
++}
++#endif
++
+ static int vc4_v3d_bind(struct device *dev, struct device *master, void *data)
+ {
+ 	struct platform_device *pdev = to_platform_device(dev);
+@@ -184,6 +191,8 @@ static int vc4_v3d_bind(struct device *d
+ 	if (!v3d)
+ 		return -ENOMEM;
+ 
++	dev_set_drvdata(dev, v3d);
++
+ 	v3d->pdev = pdev;
+ 
+ 	v3d->regs = vc4_ioremap_regs(pdev, 0);
+@@ -191,10 +200,7 @@ static int vc4_v3d_bind(struct device *d
+ 		return PTR_ERR(v3d->regs);
+ 
+ 	vc4->v3d = v3d;
+-
+-	ret = vc4_v3d_set_power(vc4, true);
+-	if (ret)
+-		return ret;
++	v3d->vc4 = vc4;
+ 
+ 	if (V3D_READ(V3D_IDENT0) != V3D_EXPECTED_IDENT0) {
+ 		DRM_ERROR("V3D_IDENT0 read 0x%08x instead of 0x%08x\n",
+@@ -216,6 +222,8 @@ static int vc4_v3d_bind(struct device *d
+ 		return ret;
+ 	}
+ 
++	pm_runtime_enable(dev);
++
+ 	return 0;
+ }
+ 
+@@ -225,6 +233,8 @@ static void vc4_v3d_unbind(struct device
+ 	struct drm_device *drm = dev_get_drvdata(master);
+ 	struct vc4_dev *vc4 = to_vc4_dev(drm);
+ 
++	pm_runtime_disable(dev);
++
+ 	drm_irq_uninstall(drm);
+ 
+ 	/* Disable the binner's overflow memory address, so the next
+@@ -234,11 +244,13 @@ static void vc4_v3d_unbind(struct device
+ 	V3D_WRITE(V3D_BPOA, 0);
+ 	V3D_WRITE(V3D_BPOS, 0);
+ 
+-	vc4_v3d_set_power(vc4, false);
+-
+ 	vc4->v3d = NULL;
+ }
+ 
++static const struct dev_pm_ops vc4_v3d_pm_ops = {
++	SET_RUNTIME_PM_OPS(vc4_v3d_runtime_suspend, vc4_v3d_runtime_resume, NULL)
++};
++
+ static const struct component_ops vc4_v3d_ops = {
+ 	.bind   = vc4_v3d_bind,
+ 	.unbind = vc4_v3d_unbind,
+@@ -267,5 +279,6 @@ struct platform_driver vc4_v3d_driver =
+ 	.driver = {
+ 		.name = "vc4_v3d",
+ 		.of_match_table = vc4_v3d_dt_match,
++		.pm = &vc4_v3d_pm_ops,
+ 	},
+ };

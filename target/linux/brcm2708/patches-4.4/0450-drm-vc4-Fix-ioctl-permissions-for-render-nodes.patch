@@ -1,0 +1,39 @@
+From 590e54b9ca38b0700b1b61cdd414205cdc3eef8b Mon Sep 17 00:00:00 2001
+From: Herve Jourdain <herve.jourdain@neuf.fr>
+Date: Wed, 1 Jun 2016 02:24:46 +0800
+Subject: [PATCH] drm/vc4: Fix ioctl permissions for render nodes.
+
+Contrary to other flags to DRM_IOCTL_DEF_DRV(), which restrict usage,
+the flag for render node is an enabler (the IOCTL can't be used from
+render node if it's not present).  So DRM_RENDER_ALLOW needs to be
+added to all the flags that were previously 0.
+
+Signed-off-by: Herve Jourdain <herve.jourdain@neuf.fr>
+Reviewed-by: Eric Anholt <eric@anholt.net>
+Fixes: 0cd3e2747662 ("drm/vc4: Add missing render node support")
+(cherry picked from commit b10c22e5f9902a329450c2027e9291b71e9f1602)
+---
+ drivers/gpu/drm/vc4/vc4_drv.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -88,12 +88,12 @@ static const struct file_operations vc4_
+ };
+ 
+ static const struct drm_ioctl_desc vc4_drm_ioctls[] = {
+-	DRM_IOCTL_DEF_DRV(VC4_SUBMIT_CL, vc4_submit_cl_ioctl, 0),
+-	DRM_IOCTL_DEF_DRV(VC4_WAIT_SEQNO, vc4_wait_seqno_ioctl, 0),
+-	DRM_IOCTL_DEF_DRV(VC4_WAIT_BO, vc4_wait_bo_ioctl, 0),
+-	DRM_IOCTL_DEF_DRV(VC4_CREATE_BO, vc4_create_bo_ioctl, 0),
+-	DRM_IOCTL_DEF_DRV(VC4_MMAP_BO, vc4_mmap_bo_ioctl, 0),
+-	DRM_IOCTL_DEF_DRV(VC4_CREATE_SHADER_BO, vc4_create_shader_bo_ioctl, 0),
++	DRM_IOCTL_DEF_DRV(VC4_SUBMIT_CL, vc4_submit_cl_ioctl, DRM_RENDER_ALLOW),
++	DRM_IOCTL_DEF_DRV(VC4_WAIT_SEQNO, vc4_wait_seqno_ioctl, DRM_RENDER_ALLOW),
++	DRM_IOCTL_DEF_DRV(VC4_WAIT_BO, vc4_wait_bo_ioctl, DRM_RENDER_ALLOW),
++	DRM_IOCTL_DEF_DRV(VC4_CREATE_BO, vc4_create_bo_ioctl, DRM_RENDER_ALLOW),
++	DRM_IOCTL_DEF_DRV(VC4_MMAP_BO, vc4_mmap_bo_ioctl, DRM_RENDER_ALLOW),
++	DRM_IOCTL_DEF_DRV(VC4_CREATE_SHADER_BO, vc4_create_shader_bo_ioctl, DRM_RENDER_ALLOW),
+ 	DRM_IOCTL_DEF_DRV(VC4_GET_HANG_STATE, vc4_get_hang_state_ioctl,
+ 			  DRM_ROOT_ONLY),
+ };

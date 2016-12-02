@@ -1,0 +1,57 @@
+From 45d87c13cbba1dc247108ef485e4449ba2be1672 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 21 Jul 2016 13:39:11 -0700
+Subject: [PATCH] drm/vc4: Fix overflow mem unreferencing when the binner runs
+ dry.
+
+Overflow memory handling is tricky: While it's still referenced by the
+BPO registers, we want to keep it from being freed.  When we are
+putting a new set of overflow memory in the registers, we need to
+assign the old one to the last rendering job using it.
+
+We were looking at "what's currently running in the binner", but since
+the bin/render submission split, we may end up with the binner
+completing and having no new job while the renderer is still
+processing.  So, if we don't find a bin job at all, look at the
+highest-seqno (last) render job to attach our overflow to.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Fixes: ca26d28bbaa3 ("drm/vc4: improve throughput by pipelining binning and rendering jobs")
+Cc: stable@vger.kernel.org
+---
+ drivers/gpu/drm/vc4/vc4_drv.h | 9 +++++++++
+ drivers/gpu/drm/vc4/vc4_irq.c | 4 +++-
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.h
++++ b/drivers/gpu/drm/vc4/vc4_drv.h
+@@ -329,6 +329,15 @@ vc4_first_render_job(struct vc4_dev *vc4
+ 				struct vc4_exec_info, head);
+ }
+ 
++static inline struct vc4_exec_info *
++vc4_last_render_job(struct vc4_dev *vc4)
++{
++	if (list_empty(&vc4->render_job_list))
++		return NULL;
++	return list_last_entry(&vc4->render_job_list,
++			       struct vc4_exec_info, head);
++}
++
+ /**
+  * struct vc4_texture_sample_info - saves the offsets into the UBO for texture
+  * setup parameters.
+--- a/drivers/gpu/drm/vc4/vc4_irq.c
++++ b/drivers/gpu/drm/vc4/vc4_irq.c
+@@ -83,8 +83,10 @@ vc4_overflow_mem_work(struct work_struct
+ 
+ 		spin_lock_irqsave(&vc4->job_lock, irqflags);
+ 		current_exec = vc4_first_bin_job(vc4);
++		if (!current_exec)
++			current_exec = vc4_last_render_job(vc4);
+ 		if (current_exec) {
+-			vc4->overflow_mem->seqno = vc4->finished_seqno + 1;
++			vc4->overflow_mem->seqno = current_exec->seqno;
+ 			list_add_tail(&vc4->overflow_mem->unref_head,
+ 				      &current_exec->unref_list);
+ 			vc4->overflow_mem = NULL;

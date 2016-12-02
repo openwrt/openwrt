@@ -1,0 +1,124 @@
+From 03f4e4a6e625306671266db609b4f4d488b6cf6d Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Fri, 1 Jul 2016 13:10:38 -0700
+Subject: [PATCH] drm/vc4: Add a getparam ioctl for getting the V3D identity
+ regs.
+
+As I extend the driver to support different V3D revisions, userspace
+needs to know what version it's targeting.  This is most easily
+detected using the V3D identity registers.
+
+v2: Make sure V3D is runtime PM on when reading the registers.
+v3: Switch to a 64-bit param value (suggested by Rob Clark in review)
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Acked-by: Daniel Vetter <daniel.vetter@ffwll.ch> (v2)
+Reviewed-by: Rob Clark <robdclark@gmail.com> (v3, over irc)
+(cherry picked from commit af713795c59fea36161a7debf97dbc10bf652cf7)
+
+v4: Squashed in "drm/vc4: Fix handling of a pm_runtime_get_sync() success case."
+---
+ drivers/gpu/drm/vc4/vc4_drv.c | 42 ++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/drm/vc4_drm.h    | 12 ++++++++++++
+ 2 files changed, 54 insertions(+)
+
+--- a/drivers/gpu/drm/vc4/vc4_drv.c
++++ b/drivers/gpu/drm/vc4/vc4_drv.c
+@@ -15,6 +15,7 @@
+ #include <linux/module.h>
+ #include <linux/of_platform.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include "drm_fb_cma_helper.h"
+ 
+ #include "uapi/drm/vc4_drm.h"
+@@ -64,6 +65,46 @@ void vc4_dump_regs32(const struct debugf
+ 	}
+ }
+ 
++static int vc4_get_param_ioctl(struct drm_device *dev, void *data,
++			       struct drm_file *file_priv)
++{
++	struct vc4_dev *vc4 = to_vc4_dev(dev);
++	struct drm_vc4_get_param *args = data;
++	int ret;
++
++	if (args->pad != 0)
++		return -EINVAL;
++
++	switch (args->param) {
++	case DRM_VC4_PARAM_V3D_IDENT0:
++		ret = pm_runtime_get_sync(&vc4->v3d->pdev->dev);
++		if (ret < 0)
++			return ret;
++		args->value = V3D_READ(V3D_IDENT0);
++		pm_runtime_put(&vc4->v3d->pdev->dev);
++		break;
++	case DRM_VC4_PARAM_V3D_IDENT1:
++		ret = pm_runtime_get_sync(&vc4->v3d->pdev->dev);
++		if (ret < 0)
++			return ret;
++		args->value = V3D_READ(V3D_IDENT1);
++		pm_runtime_put(&vc4->v3d->pdev->dev);
++		break;
++	case DRM_VC4_PARAM_V3D_IDENT2:
++		ret = pm_runtime_get_sync(&vc4->v3d->pdev->dev);
++		if (ret < 0)
++			return ret;
++		args->value = V3D_READ(V3D_IDENT2);
++		pm_runtime_put(&vc4->v3d->pdev->dev);
++		break;
++	default:
++		DRM_DEBUG("Unknown parameter %d\n", args->param);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
+ static void vc4_lastclose(struct drm_device *dev)
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(dev);
+@@ -95,6 +136,7 @@ static const struct drm_ioctl_desc vc4_d
+ 	DRM_IOCTL_DEF_DRV(VC4_CREATE_SHADER_BO, vc4_create_shader_bo_ioctl, DRM_RENDER_ALLOW),
+ 	DRM_IOCTL_DEF_DRV(VC4_GET_HANG_STATE, vc4_get_hang_state_ioctl,
+ 			  DRM_ROOT_ONLY),
++	DRM_IOCTL_DEF_DRV(VC4_GET_PARAM, vc4_get_param_ioctl, DRM_RENDER_ALLOW),
+ };
+ 
+ static struct drm_driver vc4_drm_driver = {
+--- a/include/uapi/drm/vc4_drm.h
++++ b/include/uapi/drm/vc4_drm.h
+@@ -37,6 +37,7 @@ extern "C" {
+ #define DRM_VC4_MMAP_BO                           0x04
+ #define DRM_VC4_CREATE_SHADER_BO                  0x05
+ #define DRM_VC4_GET_HANG_STATE                    0x06
++#define DRM_VC4_GET_PARAM                         0x07
+ 
+ #define DRM_IOCTL_VC4_SUBMIT_CL           DRM_IOWR(DRM_COMMAND_BASE + DRM_VC4_SUBMIT_CL, struct drm_vc4_submit_cl)
+ #define DRM_IOCTL_VC4_WAIT_SEQNO          DRM_IOWR(DRM_COMMAND_BASE + DRM_VC4_WAIT_SEQNO, struct drm_vc4_wait_seqno)
+@@ -45,6 +46,7 @@ extern "C" {
+ #define DRM_IOCTL_VC4_MMAP_BO             DRM_IOWR(DRM_COMMAND_BASE + DRM_VC4_MMAP_BO, struct drm_vc4_mmap_bo)
+ #define DRM_IOCTL_VC4_CREATE_SHADER_BO    DRM_IOWR(DRM_COMMAND_BASE + DRM_VC4_CREATE_SHADER_BO, struct drm_vc4_create_shader_bo)
+ #define DRM_IOCTL_VC4_GET_HANG_STATE      DRM_IOWR(DRM_COMMAND_BASE + DRM_VC4_GET_HANG_STATE, struct drm_vc4_get_hang_state)
++#define DRM_IOCTL_VC4_GET_PARAM           DRM_IOWR(DRM_COMMAND_BASE + DRM_VC4_GET_PARAM, struct drm_vc4_get_param)
+ 
+ struct drm_vc4_submit_rcl_surface {
+ 	__u32 hindex; /* Handle index, or ~0 if not present. */
+@@ -280,6 +282,16 @@ struct drm_vc4_get_hang_state {
+ 	__u32 pad[16];
+ };
+ 
++#define DRM_VC4_PARAM_V3D_IDENT0		0
++#define DRM_VC4_PARAM_V3D_IDENT1		1
++#define DRM_VC4_PARAM_V3D_IDENT2		2
++
++struct drm_vc4_get_param {
++	__u32 param;
++	__u32 pad;
++	__u64 value;
++};
++
+ #if defined(__cplusplus)
+ }
+ #endif

@@ -1,0 +1,33 @@
+From a64be1e10c388d83ba98d8c9b737cf3064193690 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 18 Aug 2016 17:36:39 +0100
+Subject: [PATCH] config: Enable SERIAL_SC16IS7XX_SPI
+
+Previously only the I2C mode was supported.
+
+See: https://github.com/raspberrypi/linux/issues/1594
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -601,6 +601,7 @@ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_SERIAL_SC16IS7XX=m
++CONFIG_SERIAL_SC16IS7XX_SPI=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y
+ CONFIG_RAW_DRIVER=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -594,6 +594,7 @@ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_SERIAL_SC16IS7XX=m
++CONFIG_SERIAL_SC16IS7XX_SPI=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y
+ CONFIG_RAW_DRIVER=y

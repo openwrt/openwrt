@@ -1,0 +1,38 @@
+From 5c0d836a77af123123d7a4144d5069c2d675a23d Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Tue, 30 Aug 2016 13:57:38 -0700
+Subject: [PATCH] drm/vc4: Allow some more signals to be packed with uniform
+ resets.
+
+The intent was to make sure people don't sneak in a small immediate or
+something to change the interpretation of the uniform update args, but
+these signals are just fine.
+
+Fixes a validation failure in the current X server on some Render
+operation.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+(cherry picked from commit 313a61d30761217ce4383018de1cc0d5d503a376)
+---
+ drivers/gpu/drm/vc4/vc4_validate_shaders.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_validate_shaders.c
++++ b/drivers/gpu/drm/vc4/vc4_validate_shaders.c
+@@ -309,8 +309,14 @@ validate_uniform_address_write(struct vc
+ 	 * of uniforms on each side.  However, this scheme is easy to
+ 	 * validate so it's all we allow for now.
+ 	 */
+-
+-	if (QPU_GET_FIELD(inst, QPU_SIG) != QPU_SIG_NONE) {
++	switch (QPU_GET_FIELD(inst, QPU_SIG)) {
++	case QPU_SIG_NONE:
++	case QPU_SIG_SCOREBOARD_UNLOCK:
++	case QPU_SIG_COLOR_LOAD:
++	case QPU_SIG_LOAD_TMU0:
++	case QPU_SIG_LOAD_TMU1:
++		break;
++	default:
+ 		DRM_ERROR("uniforms address change must be "
+ 			  "normal math\n");
+ 		return false;

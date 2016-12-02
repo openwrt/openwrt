@@ -1,0 +1,24 @@
+From 91ed8882918caf0d80e822b1529b1e32e6eaa007 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 24 May 2016 16:20:09 +0100
+Subject: [PATCH] bcm2835-camera: Fix max/min error when looping over
+ cameras/resolutions
+
+See: https://github.com/raspberrypi/linux/issues/1447#issuecomment-221303506
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -1530,8 +1530,8 @@ static int get_num_cameras(struct vchiq_
+ 	}
+ 	for (i = 0;
+ 	     i < (cam_info.num_cameras > num_resolutions ?
+-			cam_info.num_cameras :
+-			num_resolutions);
++			num_resolutions :
++			cam_info.num_cameras);
+ 	     i++) {
+ 		resolutions[i][0] = cam_info.cameras[i].max_width;
+ 		resolutions[i][1] = cam_info.cameras[i].max_height;

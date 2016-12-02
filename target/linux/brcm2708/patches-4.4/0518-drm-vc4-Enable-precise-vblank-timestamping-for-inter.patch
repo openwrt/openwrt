@@ -1,0 +1,61 @@
+From f2494f314f8c71e41ddd6798315685ecb6fc7814 Mon Sep 17 00:00:00 2001
+From: Mario Kleiner <mario.kleiner.de@gmail.com>
+Date: Tue, 19 Jul 2016 20:59:00 +0200
+Subject: [PATCH] drm/vc4: Enable precise vblank timestamping for interlaced
+ modes.
+
+On top of the interlaced video mode fix and with some additional
+adjustments, this now works well. It has almost the same accuracy
+as on regular progressive scan modes.
+
+Signed-off-by: Mario Kleiner <mario.kleiner.de@gmail.com>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/gpu/drm/vc4/vc4_crtc.c | 21 ++++++++-------------
+ 1 file changed, 8 insertions(+), 13 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_crtc.c
++++ b/drivers/gpu/drm/vc4/vc4_crtc.c
+@@ -154,14 +154,6 @@ int vc4_crtc_get_scanoutpos(struct drm_d
+ 	if (vc4->firmware_kms)
+ 		return 0;
+ 
+-	/*
+-	 * XXX Doesn't work well in interlaced mode yet, partially due
+-	 * to problems in vc4 kms or drm core interlaced mode handling,
+-	 * so disable for now in interlaced mode.
+-	 */
+-	if (mode->flags & DRM_MODE_FLAG_INTERLACE)
+-		return ret;
+-
+ 	/* preempt_disable_rt() should go right here in PREEMPT_RT patchset. */
+ 
+ 	/* Get optional system timestamp before query. */
+@@ -182,10 +174,15 @@ int vc4_crtc_get_scanoutpos(struct drm_d
+ 
+ 	/* Vertical position of hvs composed scanline. */
+ 	*vpos = VC4_GET_FIELD(val, SCALER_DISPSTATX_LINE);
++	*hpos = 0;
++
++	if (mode->flags & DRM_MODE_FLAG_INTERLACE) {
++		*vpos /= 2;
+ 
+-	/* No hpos info available. */
+-	if (hpos)
+-		*hpos = 0;
++		/* Use hpos to correct for field offset in interlaced mode. */
++		if (VC4_GET_FIELD(val, SCALER_DISPSTATX_FRAME_COUNT) % 2)
++			*hpos += mode->crtc_htotal / 2;
++	}
+ 
+ 	/* This is the offset we need for translating hvs -> pv scanout pos. */
+ 	fifo_lines = vc4_crtc->cob_size / mode->crtc_hdisplay;
+@@ -208,8 +205,6 @@ int vc4_crtc_get_scanoutpos(struct drm_d
+ 		 * position of the PV.
+ 		 */
+ 		*vpos -= fifo_lines + 1;
+-		if (mode->flags & DRM_MODE_FLAG_INTERLACE)
+-			*vpos /= 2;
+ 
+ 		ret |= DRM_SCANOUTPOS_ACCURATE;
+ 		return ret;

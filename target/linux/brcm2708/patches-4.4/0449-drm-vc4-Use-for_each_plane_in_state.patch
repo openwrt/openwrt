@@ -1,0 +1,42 @@
+From 99f969c1fb2f9986973fe485528ca16556d0b1a1 Mon Sep 17 00:00:00 2001
+From: Daniel Vetter <daniel.vetter@ffwll.ch>
+Date: Thu, 2 Jun 2016 00:06:28 +0200
+Subject: [PATCH] drm/vc4: Use for_each_plane_in_state
+
+We want to hide drm_atomic_stat internals a bit better.
+
+Cc: Eric Anholt <eric@anholt.net>
+Reviewed-by: Maarten Lankhorst <maarten.lankhorst@linux.intel.com>
+Signed-off-by: Daniel Vetter <daniel.vetter@intel.com>
+Link: http://patchwork.freedesktop.org/patch/msgid/1464818821-5736-6-git-send-email-daniel.vetter@ffwll.ch
+(cherry picked from commit 833cd78adbc236db684f19e93121d4bf6659a8af)
+---
+ drivers/gpu/drm/vc4/vc4_kms.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_kms.c
++++ b/drivers/gpu/drm/vc4/vc4_kms.c
+@@ -111,6 +111,8 @@ static int vc4_atomic_commit(struct drm_
+ 	int i;
+ 	uint64_t wait_seqno = 0;
+ 	struct vc4_commit *c;
++	struct drm_plane *plane;
++	struct drm_plane_state *new_state;
+ 
+ 	c = commit_init(state);
+ 	if (!c)
+@@ -130,13 +132,7 @@ static int vc4_atomic_commit(struct drm_
+ 		return ret;
+ 	}
+ 
+-	for (i = 0; i < dev->mode_config.num_total_plane; i++) {
+-		struct drm_plane *plane = state->planes[i];
+-		struct drm_plane_state *new_state = state->plane_states[i];
+-
+-		if (!plane)
+-			continue;
+-
++	for_each_plane_in_state(state, plane, new_state, i) {
+ 		if ((plane->state->fb != new_state->fb) && new_state->fb) {
+ 			struct drm_gem_cma_object *cma_bo =
+ 				drm_fb_cma_get_gem_obj(new_state->fb, 0);
