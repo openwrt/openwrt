@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=polarssl
 SRC_PKG_NAME:=mbedtls
-PKG_VERSION:=1.3.17
+PKG_VERSION:=1.3.18
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(SRC_PKG_NAME)-$(PKG_VERSION)-gpl.tgz
 PKG_SOURCE_URL:=https://tls.mbed.org/download/
-PKG_MD5SUM:=f5beb43e850283915e3e0f8d37495eade3bfb5beedfb61e7b8da70d4c68edb82
+PKG_MD5SUM:=a229217182e024847deba3cb70bdd17e5ff4ffd9ff306cbbccfdbdff41950ea1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(SRC_PKG_NAME)-$(PKG_VERSION)
 

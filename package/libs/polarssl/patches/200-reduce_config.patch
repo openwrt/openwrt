@@ -99,8 +99,8 @@
 + */
  
  /**
-  * \def POLARSSL_SSL_AEAD_RANDOM_IV
-@@ -1151,8 +1151,8 @@
+  * \def POLARSSL_SSL_ALL_ALERT_MESSAGES
+@@ -1139,8 +1139,8 @@
   * Requires: POLARSSL_VERSION_C
   *
   * Comment this to disable run-time checking and save ROM space
@@ -110,7 +110,7 @@
  
  /**
   * \def POLARSSL_X509_ALLOW_EXTENSIONS_NON_V3
-@@ -1470,8 +1470,8 @@
+@@ -1469,8 +1469,8 @@
   *      TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384
   *      TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
   *      TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
@@ -120,7 +120,7 @@
  
  /**
   * \def POLARSSL_CCM_C
-@@ -1498,8 +1498,8 @@
+@@ -1497,8 +1497,8 @@
   * Requires: POLARSSL_PEM_PARSE_C
   *
   * This module is used for testing (ssl_client/server).
@@ -130,7 +130,7 @@
  
  /**
   * \def POLARSSL_CIPHER_C
-@@ -1538,8 +1538,8 @@
+@@ -1537,8 +1537,8 @@
   *          library/ssl_tls.c
   *
   * This module provides debugging functions.
@@ -140,7 +140,7 @@
  
  /**
   * \def POLARSSL_DES_C
-@@ -1594,8 +1594,8 @@
+@@ -1593,8 +1593,8 @@
   *      ECDHE-ECDSA, ECDHE-RSA, DHE-PSK
   *
   * Requires: POLARSSL_ECP_C
@@ -150,7 +150,7 @@
  
  /**
   * \def POLARSSL_ECDSA_C
-@@ -1609,8 +1609,8 @@
+@@ -1608,8 +1608,8 @@
   *      ECDHE-ECDSA
   *
   * Requires: POLARSSL_ECP_C, POLARSSL_ASN1_WRITE_C, POLARSSL_ASN1_PARSE_C
@@ -160,7 +160,7 @@
  
  /**
   * \def POLARSSL_ECP_C
-@@ -1622,8 +1622,8 @@
+@@ -1621,8 +1621,8 @@
   *          library/ecdsa.c
   *
   * Requires: POLARSSL_BIGNUM_C and at least one POLARSSL_ECP_DP_XXX_ENABLED
@@ -170,7 +170,7 @@
  
  /**
   * \def POLARSSL_ENTROPY_C
-@@ -1699,8 +1699,8 @@
+@@ -1698,8 +1698,8 @@
   * Requires: POLARSSL_MD_C
   *
   * Uncomment to enable the HMAC_DRBG random number geerator.
@@ -180,7 +180,7 @@
  
  /**
   * \def POLARSSL_MD_C
-@@ -1826,8 +1826,8 @@
+@@ -1825,8 +1825,8 @@
   * Requires: POLARSSL_HAVE_ASM
   *
   * This modules adds support for the VIA PadLock on x86.
@@ -190,7 +190,7 @@
  
  /**
   * \def POLARSSL_PBKDF2_C
-@@ -1992,8 +1992,8 @@
+@@ -1991,8 +1991,8 @@
   * Module:  library/ripemd160.c
   * Caller:  library/md.c
   *
@@ -200,7 +200,7 @@
  
  /**
   * \def POLARSSL_RSA_C
-@@ -2072,8 +2072,8 @@
+@@ -2071,8 +2071,8 @@
   * Caller:
   *
   * Requires: POLARSSL_SSL_CACHE_C
@@ -210,7 +210,7 @@
  
  /**
   * \def POLARSSL_SSL_CLI_C
-@@ -2149,8 +2149,8 @@
+@@ -2148,8 +2148,8 @@
   * Caller:  library/havege.c
   *
   * This module is used by the HAVEGE random number generator.
@@ -220,7 +220,7 @@
  
  /**
   * \def POLARSSL_VERSION_C
-@@ -2160,8 +2160,8 @@
+@@ -2159,8 +2159,8 @@
   * Module:  library/version.c
   *
   * This module provides run-time version information.
@@ -230,7 +230,7 @@
  
  /**
   * \def POLARSSL_X509_USE_C
-@@ -2270,8 +2270,8 @@
+@@ -2269,8 +2269,8 @@
   *
   * Module:  library/xtea.c
   * Caller:
