@@ -1,6 +1,6 @@
 --- a/lib/vtls/polarssl.c
 +++ b/lib/vtls/polarssl.c
-@@ -665,7 +665,7 @@ void Curl_polarssl_session_free(void *pt
+@@ -646,7 +646,7 @@ void Curl_polarssl_session_free(void *pt
  
  size_t Curl_polarssl_version(char *buffer, size_t size)
  {
@@ -11,7 +11,7 @@
                    version>>24, (version>>16)&0xff, (version>>8)&0xff);
 --- a/lib/vtls/mbedtls.c
 +++ b/lib/vtls/mbedtls.c
-@@ -713,7 +713,7 @@ void Curl_mbedtls_session_free(void *ptr
+@@ -712,7 +712,7 @@ void Curl_mbedtls_session_free(void *ptr
  
  size_t Curl_mbedtls_version(char *buffer, size_t size)
  {
