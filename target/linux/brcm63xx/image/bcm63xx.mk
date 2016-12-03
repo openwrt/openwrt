@@ -818,6 +818,21 @@ define Device/R5010UNv2
 endef
 TARGET_DEVICES += R5010UNv2
 
+### Observa ###
+define Device/VH4032N
+  $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
+  DEVICE_TITLE := Observa VH4032N
+  DEVICE_DTS := vh4032n
+  CFE_BOARD_ID := 96368VVW
+  CFE_CHIP_ID := 6368
+  BLOCK_SIZE := 0x20000
+  FLASH_MB := 32
+  DEVICE_PACKAGES := \
+    $(B43_PACKAGES) $(USB2_PACKAGES)
+endef
+TARGET_DEVICES += VH4032N
+
 ### Pirelli ###
 define Device/A226G
   $(Device/bcm63xx)
