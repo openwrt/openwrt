@@ -9,10 +9,6 @@
 	model = "EASY98020V18 - Lantiq Falcon Reference Board V1.8";
 	compatible = "lantiq,falcon-easy98020-V18", "lantiq,falcon-easy98020", "lantiq,falcon";
 
-	chosen {
-		bootargs-append = "console=ttyLTQ0,115200 init=/etc/preinit";
-	};
-
 	aliases {
 		spi0 = &ebu_cs0;
 	};

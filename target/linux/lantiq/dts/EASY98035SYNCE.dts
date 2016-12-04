@@ -7,10 +7,6 @@
 	model = "EASY98035SYNCE - Lantiq Falcon SFP Stick with SyncE";
 	compatible = "lantiq,falcon-easy98035synce", "lantiq,falcon-sfp", "lantiq,falcon";
 
-	chosen {
-		bootargs-append = "console=ttyLTQ0,115200 init=/etc/preinit";
-	};
-
 	aliases {
 		spi0 = &ebu_cs0;
 	};

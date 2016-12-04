@@ -5,10 +5,6 @@
 / {
 	compatible = "lantiq,falcon-easy98000", "lantiq,falcon";
 
-	chosen {
-		bootargs-append = "console=ttyLTQ0,115200 init=/etc/preinit";
-	};
-
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x4000000>;

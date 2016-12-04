@@ -7,10 +7,6 @@
 	model = "FALCON-SFP - Lantiq Falcon SFP Stick";
 	compatible = "lantiq,falcon-sfp", "lantiq,falcon";
 
-	chosen {
-		bootargs-append = "console=ttyLTQ0,115200 init=/etc/preinit";
-	};
-
 	aliases {
 		spi0 = &ebu_cs0;
 	};

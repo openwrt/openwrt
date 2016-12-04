@@ -9,10 +9,6 @@
 	model = "EASY98021 - Lantiq Falcon HGU Reference Board";
 	compatible = "lantiq,falcon-easy98021", "lantiq,falcon-easy98020", "lantiq,falcon";
 
-	chosen {
-		bootargs-append = "console=ttyLTQ0,115200 init=/etc/preinit";
-	};
-
 	aliases {
 		spi0 = &ebu_cs0;
 	};
