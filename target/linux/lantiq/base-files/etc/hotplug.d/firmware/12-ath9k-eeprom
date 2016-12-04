@@ -32,27 +32,39 @@ ath9k_eeprom_die() {
 ath9k_eeprom_extract_raw() {
 	local source=$1
 	local offset=$2
+	local swap=$3
 	local size=4096
+	local bs=1
+	local conv=
 
-	dd if=$source of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$size 2>/dev/null || \
+	if [ $swap -gt 0 ]; then
+		bs=2
+		conv="conv=swab"
+		size=$((size / bs))
+		offset=$((offset / bs))
+	fi
+
+	dd if=$source of=/lib/firmware/$FIRMWARE bs=$bs skip=$offset count=$size $conv 2>/dev/null || \
 			ath9k_eeprom_die "failed to extract from $mtd"
 }
 
 ath9k_eeprom_extract() {
 	local part=$1
 	local offset=$2
+	local swap=$3
 	local mtd
 
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || \
 		ath9k_eeprom_die "no mtd device found for partition $part"
 
-	ath9k_eeprom_extract_raw $mtd $offset
+	ath9k_eeprom_extract_raw $mtd $offset $swap
 }
 
 ath9k_ubi_eeprom_extract() {
 	local part=$1
 	local offset=$2
+	local swap=$3
 	local ubidev=$(nand_find_ubi $CI_UBIPART)
 	local ubi
 
@@ -60,7 +72,7 @@ ath9k_ubi_eeprom_extract() {
 	[ -n "$ubi" ] || \
 		ath9k_eeprom_die "no UBI volume found for $part"
 
-	ath9k_eeprom_extract_raw /dev/$ubi $offset
+	ath9k_eeprom_extract_raw /dev/$ubi $offset $swap
 }
 
 ath9k_patch_firmware_mac() {
@@ -101,37 +113,37 @@ case "$FIRMWARE" in
 
 		case "$board" in
 			ARV7518PW)
-				ath9k_eeprom_extract "boardconfig" 1024
+				ath9k_eeprom_extract "boardconfig" 1024 1
 				;;
 			ARV8539PW22)
-				ath9k_eeprom_extract "art" 1024
+				ath9k_eeprom_extract "art" 1024 1
 				;;
 			BTHOMEHUBV2B)
-				ath9k_eeprom_extract "art" 0
-				ath9k_patch_firmware_mac "00:00:00:00:00:00" 524 1 514
+				ath9k_eeprom_extract "art" 0 1
+				ath9k_patch_firmware_mac "00:00:00:00:00:00" 524 0 514
 				;;
 			BTHOMEHUBV3A)
-				ath9k_eeprom_extract "art-copy" 0
-				ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_ascii uboot-env ethaddr) +2) 268 1 258
+				ath9k_eeprom_extract "art-copy" 0 1
+				ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_ascii uboot-env ethaddr) +2) 268 0 258
 				;;
 			BTHOMEHUBV5A)
-				ath9k_ubi_eeprom_extract "caldata" 4096
+				ath9k_ubi_eeprom_extract "caldata" 4096 0
 				ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_binary_ubi caldata 4364) +2) 268 0 258
 				;;
 			DGN3500*)
-				ath9k_eeprom_extract "calibration" 61440
+				ath9k_eeprom_extract "calibration" 61440 0
 				ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_ascii uboot-env ethaddr) +2) 524 0 514
 				;;
 			FRITZ3370)
-				ath9k_eeprom_extract "urlader" 2437
+				ath9k_eeprom_extract "urlader" 2437 0
 				ath9k_patch_firmware_mac "00:00:00:00:00:00" 2 0
 				;;
 			FRITZ7320|FRITZ7360SL)
-				ath9k_eeprom_extract "urlader" 2437
+				ath9k_eeprom_extract "urlader" 2437 0
 				ath9k_patch_firmware_mac "00:00:00:00:00:00" 268 0 258
 				;;
 			TDW8970|TDW8980)
-				ath9k_eeprom_extract "boardconfig" 135168
+				ath9k_eeprom_extract "boardconfig" 135168 0
 				;;
 			*)
 				ath9k_eeprom_die "board $board is not supported yet"
