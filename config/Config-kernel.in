@@ -190,6 +190,14 @@ config KERNEL_MAGIC_SYSRQ
 	bool "Compile the kernel with SysRq support"
 	default y
 
+config KERNEL_DEBUG_PINCTRL
+	bool "Compile the kernel with pinctrl debugging"
+	select KERNEL_DEBUG_KERNEL
+
+config KERNEL_DEBUG_GPIO
+	bool "Compile the kernel with gpio debugging"
+	select KERNEL_DEBUG_KERNEL
+
 config KERNEL_COREDUMP
 	bool
 
