@@ -328,6 +328,36 @@ endef
 $(eval $(call KernelPackage,hwmon-gsc))
 
 
+define KernelPackage/hwmon-tmp102
+  TITLE:=Texas Instruments TMP102 monitoring support
+  KCONFIG:=CONFIG_SENSORS_TMP102
+  FILES:=$(LINUX_DIR)/drivers/hwmon/tmp102.ko
+  AUTOLOAD:=$(call AutoProbe,tmp102)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-tmp102/description
+ Kernel module for Texas Instruments TMP102 temperature sensors chip
+endef
+
+$(eval $(call KernelPackage,hwmon-tmp102))
+
+
+define KernelPackage/hwmon-tmp103
+  TITLE:=Texas Instruments TMP103 monitoring support
+  KCONFIG:=CONFIG_SENSORS_TMP103
+  FILES:=$(LINUX_DIR)/drivers/hwmon/tmp103.ko
+  AUTOLOAD:=$(call AutoProbe,tmp103)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap)
+endef
+
+define KernelPackage/hwmon-tmp103/description
+ Kernel module for Texas Instruments TMP103 temperature sensors chip
+endef
+
+$(eval $(call KernelPackage,hwmon-tmp103))
+
+
 define KernelPackage/hwmon-tmp421
   TITLE:=TI TMP421 and compatible monitoring support
   KCONFIG:=CONFIG_SENSORS_TMP421
