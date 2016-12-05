@@ -258,6 +258,15 @@ if VERSIONOPT
 		help
 			Enable this to include the version number in firmware image, SDK-
 			and Image Builder archive file names
+
+	config VERSION_CODE_FILENAMES
+		bool
+		prompt "Revision code in filenames"
+		default y
+		help
+			Enable this to include the revision identifier or the configured
+			version code into the firmware image, SDK- and Image Builder archive
+			file names
 endif
 
 
