@@ -35,7 +35,7 @@ hex_to_hostid() {
         export "$var=$(
                 printf "%0x:%0x"  \
                         $(((0x$hex >> 16) % 65536)) \
-                        $(( 0x$hex        % 256))
+                        $(( 0x$hex        % 65536))
         )"
 
         return 0
