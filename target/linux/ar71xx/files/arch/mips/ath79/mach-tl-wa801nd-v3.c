@@ -24,7 +24,7 @@
 #include "machtypes.h"
 
 #define TL_WA801NDV3_GPIO_LED_WLAN	12
-#define TL_WA801NDV3_GPIO_LED_QSS	13
+#define TL_WA801NDV3_GPIO_LED_SYSTEM	13
 #define TL_WA801NDV3_GPIO_LED_SECURITY_RED 11
 #define TL_WA801NDV3_GPIO_LED_SECURITY_GREEN 15
 #define TL_WA801NDV3_GPIO_LED_LAN 3
@@ -46,8 +46,8 @@ static struct flash_platform_data tl_wa801n_v3_flash_data = {
 
 static struct gpio_led tl_wa801n_v3_leds_gpio[] __initdata = {
   {
-		.name		= "tp-link:green:qss",
-		.gpio		= TL_WA801NDV3_GPIO_LED_QSS,
+		.name		= "tp-link:green:system",
+		.gpio		= TL_WA801NDV3_GPIO_LED_SYSTEM,
 		.active_low	= 1,
 	}, {
 		.name		= "tp-link:green:lan",

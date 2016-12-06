@@ -363,6 +363,7 @@ platform_check_image() {
 	tl-wa750re|\
 	tl-wa7510n|\
 	tl-wa801nd-v2|\
+	tl-wa801nd-v3|\
 	tl-wa830re-v2|\
 	tl-wa850re|\
 	tl-wa860re|\
