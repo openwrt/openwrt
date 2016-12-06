@@ -384,7 +384,7 @@ define KernelPackage/sdhci
 	$(LINUX_DIR)/drivers/mmc/host/sdhci.ko \
 	$(LINUX_DIR)/drivers/mmc/host/sdhci-pltfm.ko
 
-  AUTOLOAD:=$(call AutoProbe,sdhci sdhci-pltfm,1)
+  AUTOLOAD:=$(call AutoProbe,sdhci-pltfm,1)
 endef
 
 define KernelPackage/sdhci/description
