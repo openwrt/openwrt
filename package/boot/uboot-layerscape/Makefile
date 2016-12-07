@@ -36,6 +36,11 @@ define uboot/ls1043ardb
 	CONFIG=ls1043ardb
 endef
 
+define uboot/ls1046ardb
+	TITLE:=U-Boot $(PKG_NAME)-$(PKG_VERSION) for NXP ls1046ardb 64b Dev Board
+	CONFIG=ls1046ardb_qspi
+endef
+
 define uboot/ls1012ardb
 	TITLE:=U-Boot $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012ardb 64b Dev Board
 	CONFIG=ls1012ardb_qspi
@@ -44,6 +49,7 @@ endef
 
 UBOOTS := \
 	ls1043ardb \
+	ls1046ardb \
 	ls1012ardb
 
 define Package/uboot/template

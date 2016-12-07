@@ -35,8 +35,14 @@ define fman/ls1043ardb
 	CONFIG=fsl_fman_ucode_ls1043_r1.0_108_4_5.bin
 endef
 
+define fman/ls1046ardb
+	TITLE=FMAN UCODE $(PKG_NAME)-$(PKG_VERSION) for NXP ls1046ardb 64b/32b Dev Board
+	CONFIG=fsl_fman_ucode_t2080_r1.1_106_4_18.bin
+endef
+
 FMANS := \
-	ls1043ardb
+	ls1043ardb \
+	ls1046ardb
 
 define Package/fman/template
 define Package/fman-layerscape-$(1)
