@@ -96,7 +96,14 @@ ifeq ($(DUMP),)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
 
     ifeq ($(BUILD_VARIANT),$$(if $$(VARIANT),$$(VARIANT),$(BUILD_VARIANT)))
+    do_install=
     ifdef Package/$(1)/install
+      do_install=yes
+    endif
+    ifdef Package/$(1)/install-overlay
+      do_install=yes
+    endif
+    ifdef do_install
       ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
         IPKGS += $(1)
         compile: $$(IPKG_$(1)) $(PKG_INFO_DIR)/$(1).provides $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
@@ -178,6 +185,8 @@ $(_endef)
 	@rm -rf $$(IDIR_$(1)) $$(call opkg_package_files,$(1))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
+	$(if $(Package/$(1)/install-overlay),mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/rootfs-overlay)
+	$(call Package/$(1)/install-overlay,$$(IDIR_$(1))/rootfs-overlay)
 	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' -o -name '*~'| $(XARGS) rm -rf
 	@( \
 		find $$(IDIR_$(1)) -name lib\*.so\* -or -name \*.ko | awk -F/ '{ print $$$$NF }'; \

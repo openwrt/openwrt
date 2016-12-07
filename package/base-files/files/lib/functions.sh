@@ -230,6 +230,11 @@ default_postinst() {
 		ret=$?
 	fi
 
+	if [ -d "$root/rootfs-overlay" ]; then
+		cp -R $root/rootfs-overlay/. $root/
+		rm -fR $root/rootfs-overlay/
+	fi
+
 	if [ -z "$root" ] && grep -q -s "^/etc/uci-defaults/" "/usr/lib/opkg/info/${pkgname}.list"; then
 		. /lib/functions/system.sh
 		[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
