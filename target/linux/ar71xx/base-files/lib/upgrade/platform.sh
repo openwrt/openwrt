@@ -177,7 +177,6 @@ platform_check_image() {
 	airrouter|\
 	ap132|\
 	ap81|\
-	ap83|\
 	ap90q|\
 	bullet-m|\
 	c-55|\

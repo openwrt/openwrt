@@ -20,13 +20,6 @@ define LegacyDevice/AP81
 endef
 LEGACY_DEVICES += AP81
 
-define LegacyDevice/AP83
-  DEVICE_TITLE := Atheros AP83 reference board
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 \
-	  vsc7385-ucode-ap83 vsc7395-ucode-ap83
-endef
-LEGACY_DEVICES += AP83
-
 define LegacyDevice/AP96
   DEVICE_TITLE := Atheros AP96 reference board
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

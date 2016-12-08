@@ -34,32 +34,6 @@ define Package/vsc73x5/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(2) $(1)/lib/firmware/$(3)
 endef
 
-define Package/vsc7385-ucode-ap83
-  $(call Package/vsc73x5-defaults,Vitesse VSC7385 microcode for the Atheros AP83 boards)
-endef
-
-define Package/vsc7385-ucode-ap83/description
-  This package contains the Atheros AP83 board specific microcode for
-  the Vitesse VSC7385 ethernet switch.
-endef
-
-define Package/vsc7385-ucode-ap83/install
-  $(call Package/vsc73x5/install,$(1),g5_Plus1_2_31_unmanaged_Atheros_v3.bin,vsc7385_ucode_ap83.bin)
-endef
-
-define Package/vsc7395-ucode-ap83
-  $(call Package/vsc73x5-defaults, Vitesse VSC7395 microcode for the Atheros AP83 boards)
-endef
-
-define Package/vsc7395-ucode-ap83/description
-  This package contains the Atheros AP83 board specific microcode for
-  the Vitesse VSC7395 ethernet switch.
-endef
-
-define Package/vsc7395-ucode-ap83/install
-  $(call Package/vsc73x5/install,$(1),g5_Plus1_2_31_unmanaged_Atheros_v4.bin,vsc7395_ucode_ap83.bin)
-endef
-
 define Package/vsc7385-ucode-pb44
   $(call Package/vsc73x5-defaults, Vitesse VSC7395 microcode for the Atheros PB44 boards)
 endef
@@ -78,7 +52,7 @@ define Package/vsc7395-ucode-pb44
 endef
 
 define Package/vsc7395-ucode-pb44/description
-  This package contains the Atheros AP83 board specific microcode for
+  This package contains the Atheros PB44 board specific microcode for
   the Vitesse VSC7395 ethernet switch.
 endef
 
@@ -90,7 +64,5 @@ define Build/Compile
 
 endef
 
-$(eval $(call BuildPackage,vsc7385-ucode-ap83))
-$(eval $(call BuildPackage,vsc7395-ucode-ap83))
 $(eval $(call BuildPackage,vsc7385-ucode-pb44))
 $(eval $(call BuildPackage,vsc7395-ucode-pb44))

@@ -468,9 +468,6 @@ ar71xx_board_detect() {
 	*AP81)
 		name="ap81"
 		;;
-	*AP83)
-		name="ap83"
-		;;
 	*AP90Q)
 		name="ap90q"
 		;;
