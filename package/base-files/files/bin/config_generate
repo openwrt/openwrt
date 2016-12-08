@@ -401,7 +401,7 @@ generate_gpioswitch() {
 				set system.$cfg='gpio_switch'
 				set system.$cfg.name='$name'
 				set system.$cfg.gpio_pin='$pin'
-				set system.$cfg.default='$default'
+				set system.$cfg.value='$default'
 			EOF
 		json_select ..
 	json_select ..
