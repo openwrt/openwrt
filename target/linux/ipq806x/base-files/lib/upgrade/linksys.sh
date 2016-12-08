@@ -55,11 +55,36 @@ platform_do_upgrade_linksys() {
 			CI_UBIPART="rootfs2"
 		fi
 
+
+		# remove "squashfs" vol (in case we are flashing over a stock image, which is also UBI)
+
+		local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
+		if [ ! "$mtdnum" ]; then
+			echo "cannot find ubi mtd partition $CI_UBIPART"
+			return 1
+		fi
+
+		local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
+		if [ ! "$ubidev" ]; then
+			ubiattach -m "$mtdnum"
+			sync
+			ubidev="$( nand_find_ubi "$CI_UBIPART" )"
+		fi
+
+		if [ "$ubidev" ]; then
+
+			local squash_ubivol="$( nand_find_volume $ubidev squashfs )"
+
+			# kill volume
+			[ "$squash_ubivol" ] && ubirmvol /dev/$ubidev -N squashfs || true
+		fi
+
+
+		# complete std upgrade
 		nand_upgrade_tar "$1"
 	}
 	[ "$magic_long" = "27051956" ] && {
 		# check firmwares' rootfs types
-		local target_mtd=$(find_mtd_part $part_label)
 		local oldroot="$(linksys_get_root_magic $target_mtd)"
 		local newroot="$(linksys_get_root_magic "$1")"
 
@@ -80,9 +105,6 @@ linksys_preupgrade() {
 	export RAMFS_COPY_BIN="${RAMFS_COPY_BIN} /bin/mkdir /bin/touch"
 	export RAMFS_COPY_DATA="${RAMFS_COPY_DATA} /etc/fw_env.config /var/lock/fw_printenv.lock"
 
-	[ -f /tmp/sysupgrade.tgz ] && {
-		cp /tmp/sysupgrade.tgz /tmp/syscfg/sysupgrade.tgz
-	}
 }
 
 append sysupgrade_pre_upgrade linksys_preupgrade
