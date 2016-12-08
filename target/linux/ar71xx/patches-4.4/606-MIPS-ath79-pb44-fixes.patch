@@ -50,15 +50,10 @@
  #define PB44_GPIO_SW_RESET	(PB44_GPIO_EXP_BASE + 6)
  #define PB44_GPIO_SW_JUMP	(PB44_GPIO_EXP_BASE + 8)
  #define PB44_GPIO_LED_JUMP1	(PB44_GPIO_EXP_BASE + 9)
-@@ -92,21 +117,66 @@ static struct ath79_spi_controller_data
- 	.cs_line = 0,
+@@ -87,20 +112,59 @@ static struct gpio_keys_button pb44_gpio
+ 	}
  };
  
-+static struct ath79_spi_controller_data pb44_spi1_data = {
-+	.cs_type = ATH79_SPI_CS_TYPE_GPIO,
-+	.cs_line = PB44_GPIO_VSC7395_CS,
-+};
-+
 +static void pb44_vsc7395_reset(void)
 +{
 +	ath79_device_reset_set(AR71XX_RESET_GE1_PHY);
@@ -93,7 +88,6 @@
  		.max_speed_hz	= 25000000,
  		.modalias	= "m25p64",
 +		.platform_data	= &pb44_flash_data,
- 		.controller_data = &pb44_spi0_data,
  	},
 +	{
 +		.bus_num	= 0,
@@ -101,7 +95,6 @@
 +		.max_speed_hz	= 25000000,
 +		.modalias	= "spi-vsc7385",
 +		.platform_data	= &pb44_vsc7395_data,
-+		.controller_data = &pb44_spi1_data,
 +	}
  };
  
@@ -118,7 +111,7 @@
  static void __init pb44_init(void)
  {
  	i2c_register_board_info(0, pb44_i2c_board_info,
-@@ -122,6 +192,22 @@ static void __init pb44_init(void)
+@@ -116,6 +180,22 @@ static void __init pb44_init(void)
  			   ARRAY_SIZE(pb44_spi_info));
  	ath79_register_usb();
  	ath79_register_pci();

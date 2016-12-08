@@ -96,7 +96,7 @@ static struct gpio_keys_button c55_gpio_keys[] __initdata = {
 static void __init c55_setup(void)
 {
 	/* SPI Storage*/
-	ath79_register_m25p80_large(NULL);
+	ath79_register_m25p80(NULL);
 
 	/* MDIO Interface */
 	ath79_register_mdio(0, 0x0);

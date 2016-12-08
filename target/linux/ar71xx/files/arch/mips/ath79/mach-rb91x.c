@@ -152,17 +152,6 @@ static struct gen_74x164_chip_platform_data rb711gr100_ssr_data = {
 	.init_data = rb711gr100_ssr_initdata,
 };
 
-static struct ath79_spi_controller_data rb711gr100_spi0_cdata = {
-	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
-	.cs_line = 0,
-	.is_flash = true,
-};
-
-static struct ath79_spi_controller_data rb711gr100_spi1_cdata = {
-	.cs_type = ATH79_SPI_CS_TYPE_GPIO,
-	.cs_line = RB91X_GPIO_SSR_STROBE,
-};
-
 static struct spi_board_info rb711gr100_spi_info[] = {
 	{
 		.bus_num	= 0,
@@ -170,20 +159,24 @@ static struct spi_board_info rb711gr100_spi_info[] = {
 		.max_speed_hz	= 25000000,
 		.modalias	= "m25p80",
 		.platform_data  = &rb711gr100_spi_flash_data,
-		.controller_data = &rb711gr100_spi0_cdata
 	}, {
 		.bus_num	= 0,
 		.chip_select	= 1,
 		.max_speed_hz	= 10000000,
 		.modalias	= "74x164",
 		.platform_data	= &rb711gr100_ssr_data,
-		.controller_data = &rb711gr100_spi1_cdata
 	}
+};
+
+static int rb711gr100_spi_cs_gpios[2] = {
+	-ENOENT,
+	RB91X_GPIO_SSR_STROBE,
 };
 
 static struct ath79_spi_platform_data rb711gr100_spi_data __initdata = {
 	.bus_num = 0,
 	.num_chipselect = 2,
+	.cs_gpios = rb711gr100_spi_cs_gpios,
 };
 
 static struct gpio_led rb711gr100_leds[] __initdata = {

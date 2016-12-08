@@ -160,7 +160,7 @@ static void __init c60_setup(void)
 	ath79_register_nfc();
 
 	/* SPI Storage*/
-	ath79_register_m25p80_large(NULL);
+	ath79_register_m25p80(NULL);
 
 	/* AR8327 Switch Ethernet */
 

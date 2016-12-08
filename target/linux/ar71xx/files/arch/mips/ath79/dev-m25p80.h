@@ -12,7 +12,6 @@
 #include <linux/spi/flash.h>
 
 void ath79_register_m25p80(struct flash_platform_data *pdata) __init;
-void ath79_register_m25p80_large(struct flash_platform_data *pdata) __init;
 void ath79_register_m25p80_multi(struct flash_platform_data *pdata) __init;
 
 #endif /* _ATH79_DEV_M25P80_H */

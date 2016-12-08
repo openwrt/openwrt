@@ -16,32 +16,18 @@
 #include "dev-spi.h"
 #include "dev-m25p80.h"
 
-static struct ath79_spi_controller_data ath79_spi0_cdata =
-{
-	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
-	.cs_line = 0,
-};
-
-static struct ath79_spi_controller_data ath79_spi1_cdata =
-{
-	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
-	.cs_line = 1,
-};
-
 static struct spi_board_info ath79_spi_info[] = {
 	{
 		.bus_num	= 0,
 		.chip_select	= 0,
 		.max_speed_hz	= 25000000,
 		.modalias	= "m25p80",
-		.controller_data = &ath79_spi0_cdata,
 	},
 	{
 		.bus_num	= 0,
 		.chip_select	= 1,
 		.max_speed_hz   = 25000000,
 		.modalias	= "m25p80",
-		.controller_data = &ath79_spi1_cdata,
 	}
 };
 
@@ -51,7 +37,6 @@ void __init ath79_register_m25p80(struct flash_platform_data *pdata)
 {
 	ath79_spi_data.bus_num = 0;
 	ath79_spi_data.num_chipselect = 1;
-	ath79_spi0_cdata.is_flash = true;
 	ath79_spi_info[0].platform_data = pdata;
 	ath79_register_spi(&ath79_spi_data, ath79_spi_info, 1);
 }
@@ -106,21 +91,11 @@ static void add_mtd_concat_notifier(void)
 	register_mtd_user(&not);
 }
 
-void __init ath79_register_m25p80_large(struct flash_platform_data *pdata)
-{
-	ath79_spi_data.bus_num = 0;
-	ath79_spi_data.num_chipselect = 1;
-	ath79_spi0_cdata.is_flash = false;
-	ath79_spi_info[0].platform_data = pdata;
-	ath79_register_spi(&ath79_spi_data, ath79_spi_info, 1);
-}
-
 void __init ath79_register_m25p80_multi(struct flash_platform_data *pdata)
 {
 	multi_pdata = pdata;
 	add_mtd_concat_notifier();
 	ath79_spi_data.bus_num = 0;
 	ath79_spi_data.num_chipselect = 2;
-	ath79_spi0_cdata.is_flash = true;
 	ath79_register_spi(&ath79_spi_data, ath79_spi_info, 2);
 }

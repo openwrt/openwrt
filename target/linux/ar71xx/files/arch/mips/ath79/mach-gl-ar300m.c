@@ -97,27 +97,12 @@ static struct gpio_keys_button gl_ar300m_gpio_keys[] __initdata = {
     },
 };
 
-static struct ath79_spi_controller_data gl_ar300m_spi0_cdata =
-{
-    .cs_type    = ATH79_SPI_CS_TYPE_INTERNAL,
-    .is_flash   = true,
-    .cs_line    = 0,
-};
-
-static struct ath79_spi_controller_data gl_ar300m_spi1_cdata =
-{
-    .cs_type    = ATH79_SPI_CS_TYPE_INTERNAL,
-    .is_flash   = false,
-    .cs_line    = 1,
-};
-
 static struct spi_board_info gl_ar300m_spi_info[] = {
     {
         .bus_num    = 0,
         .chip_select    = 0,
         .max_speed_hz   = 25000000,
         .modalias   = "m25p80",
-        .controller_data = &gl_ar300m_spi0_cdata,
         .platform_data  = NULL,
     },
     {
@@ -125,7 +110,6 @@ static struct spi_board_info gl_ar300m_spi_info[] = {
         .chip_select    = 1,
         .max_speed_hz   = 25000000,
         .modalias   = "ath79-spinand",
-        .controller_data = &gl_ar300m_spi1_cdata,
         .platform_data  = NULL,
     }
 };
