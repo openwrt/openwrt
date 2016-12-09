@@ -886,3 +886,19 @@ define KernelPackage/spi-ks8995/description
 endef
 
 $(eval $(call KernelPackage,spi-ks8995))
+
+
+define KernelPackage/ethoc
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Opencore.org ethoc driver
+  DEPENDS:=+kmod-libphy
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/ethoc.ko
+  KCONFIG:=CONFIG_ETHOC
+  AUTOLOAD:=$(call AutoProbe,ethoc)
+endef
+
+define KernelPackage/ethoc/description
+  Kernel module for the Opencores.org ethernet adapter
+endef
+
+$(eval $(call KernelPackage,ethoc))
