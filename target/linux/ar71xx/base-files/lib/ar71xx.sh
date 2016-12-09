@@ -778,9 +778,6 @@ ar71xx_board_detect() {
 	*"PB44 reference board")
 		name="pb44"
 		;;
-	*PB92)
-		name="pb92"
-		;;
 	*"Qihoo 360 C301")
 		name="qihoo-c301"
 		;;

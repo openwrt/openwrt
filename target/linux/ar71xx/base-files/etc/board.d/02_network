@@ -146,7 +146,6 @@ ar71xx_setup_interfaces()
 	ubnt-unifi-outdoor)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
-	pb92|\
 	wzr-hp-g300nh2)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "2:wan"

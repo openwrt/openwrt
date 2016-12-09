@@ -182,15 +182,6 @@ config ATH79_MACH_PB42
 	select ATH79_DEV_GPIO_BUTTONS
 	select ATH79_DEV_M25P80
 
-config ATH79_MACH_PB92
-	bool "Atheros PB92 board support"
-	select SOC_AR724X
-	select ATH79_DEV_ETH
-	select ATH79_DEV_GPIO_BUTTONS
-	select ATH79_DEV_LEDS_GPIO
-	select ATH79_DEV_PB9X_PCI if PCI
-	select ATH79_DEV_USB
-
 config ATH79_MACH_C55
 	bool "AirTight Networks C-55 support"
 	select SOC_AR934X
