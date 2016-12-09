@@ -147,7 +147,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  	else
 --- a/arch/mips/ath79/common.c
 +++ b/arch/mips/ath79/common.c
-@@ -104,6 +104,8 @@ void ath79_device_reset_set(u32 mask)
+@@ -103,6 +103,8 @@ void ath79_device_reset_set(u32 mask)
  		reg = AR933X_RESET_REG_RESET_MODULE;
  	else if (soc_is_ar934x())
  		reg = AR934X_RESET_REG_RESET_MODULE;
@@ -156,7 +156,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  	else if (soc_is_qca955x())
  		reg = QCA955X_RESET_REG_RESET_MODULE;
  	else
-@@ -132,6 +134,8 @@ void ath79_device_reset_clear(u32 mask)
+@@ -131,6 +133,8 @@ void ath79_device_reset_clear(u32 mask)
  		reg = AR933X_RESET_REG_RESET_MODULE;
  	else if (soc_is_ar934x())
  		reg = AR934X_RESET_REG_RESET_MODULE;
