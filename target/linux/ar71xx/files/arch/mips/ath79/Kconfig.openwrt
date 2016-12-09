@@ -103,16 +103,6 @@ config ATH79_MACH_ARDUINO_YUN
 	  Say 'Y' here if you want your kernel to support the
 	  Arduino Yun.
 
-config ATH79_MACH_AP113
-	bool "Atheros AP113 board support"
-	select SOC_AR724X
-	select ATH79_DEV_M25P80
-	select ATH79_DEV_PB9X_PCI if PCI
-	select ATH79_DEV_GPIO_BUTTONS
-	select ATH79_DEV_LEDS_GPIO
-	select ATH79_DEV_USB
-	select ATH79_DEV_ETH
-
 config ATH79_MACH_AP132
 	bool "Atheros AP132 reference board"
 	select SOC_QCA955X

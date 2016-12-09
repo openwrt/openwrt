@@ -26,7 +26,6 @@ enum ath79_mach_type {
 	ATH79_MACH_ANTMINER_S1,			/* Antminer S1 */
 	ATH79_MACH_ANTMINER_S3,			/* Antminer S3 */
 	ATH79_MACH_ANTROUTER_R1,		/* Antrouter R1 */
-	ATH79_MACH_AP113,			/* Atheros AP113 reference board */
 	ATH79_MACH_AP121,			/* Atheros AP121 reference board */
 	ATH79_MACH_AP121_MINI,			/* Atheros AP121-MINI reference board */
 	ATH79_MACH_AP132,			/* Atheros AP132 reference board */

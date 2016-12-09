@@ -435,9 +435,6 @@ ar71xx_board_detect() {
 	*"Arduino Yun")
 		name="arduino-yun"
 		;;
-	*AP113)
-		name="ap113"
-		;;
 	*"AP121 reference board")
 		name="ap121"
 		;;
