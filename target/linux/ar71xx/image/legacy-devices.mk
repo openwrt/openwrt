@@ -14,12 +14,6 @@ define LegacyDevice/TUBE2H8M
 endef
 LEGACY_DEVICES += TUBE2H8M
 
-define LegacyDevice/AP81
-  DEVICE_TITLE := Atheros AP81 reference board
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-endef
-LEGACY_DEVICES += AP81
-
 define LegacyDevice/AP96
   DEVICE_TITLE := Atheros AP96 reference board
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

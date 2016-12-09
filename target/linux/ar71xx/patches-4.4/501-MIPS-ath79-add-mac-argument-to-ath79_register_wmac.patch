@@ -46,17 +46,6 @@
 +void ath79_register_wmac(u8 *cal_data, u8 *mac_addr);
  
  #endif /* _ATH79_DEV_WMAC_H */
---- a/arch/mips/ath79/mach-ap81.c
-+++ b/arch/mips/ath79/mach-ap81.c
-@@ -92,7 +92,7 @@ static void __init ap81_setup(void)
- 					ap81_gpio_keys);
- 	ath79_register_spi(&ap81_spi_data, ap81_spi_info,
- 			   ARRAY_SIZE(ap81_spi_info));
--	ath79_register_wmac(cal_data);
-+	ath79_register_wmac(cal_data, NULL);
- 	ath79_register_usb();
- }
- 
 --- a/arch/mips/ath79/mach-db120.c
 +++ b/arch/mips/ath79/mach-db120.c
 @@ -128,7 +128,7 @@ static void __init db120_setup(void)
