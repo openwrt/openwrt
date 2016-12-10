@@ -1,10 +1,10 @@
 --- a/src/openvpn/options.c
 +++ b/src/openvpn/options.c
-@@ -102,7 +102,6 @@ const char title_string[] =
-   " [MH]"
+@@ -107,7 +107,6 @@ const char title_string[] =
+ #ifdef HAVE_AEAD_CIPHER_MODES
+     " [AEAD]"
  #endif
-   " [IPv6]"
--  " built on " __DATE__
+-    " built on " __DATE__
  ;
  
  #ifndef ENABLE_SMALL
