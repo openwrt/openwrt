@@ -18,7 +18,7 @@
  
  /**
   * \def MBEDTLS_CIPHER_MODE_CTR
-@@ -441,13 +441,13 @@
+@@ -441,17 +441,17 @@
   *
   * Comment macros to disable the curve and functions for it
   */
@@ -27,15 +27,24 @@
 +//#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
 +//#define MBEDTLS_ECP_DP_SECP224R1_ENABLED
  #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
- #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
- #define MBEDTLS_ECP_DP_SECP521R1_ENABLED
+-#define MBEDTLS_ECP_DP_SECP384R1_ENABLED
+-#define MBEDTLS_ECP_DP_SECP521R1_ENABLED
 -#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
 -#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP384R1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP521R1_ENABLED
 +//#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
 +//#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
  #define MBEDTLS_ECP_DP_SECP256K1_ENABLED
- #define MBEDTLS_ECP_DP_BP256R1_ENABLED
- #define MBEDTLS_ECP_DP_BP384R1_ENABLED
+-#define MBEDTLS_ECP_DP_BP256R1_ENABLED
+-#define MBEDTLS_ECP_DP_BP384R1_ENABLED
+-#define MBEDTLS_ECP_DP_BP512R1_ENABLED
++//#define MBEDTLS_ECP_DP_BP256R1_ENABLED
++//#define MBEDTLS_ECP_DP_BP384R1_ENABLED
++//#define MBEDTLS_ECP_DP_BP512R1_ENABLED
+ #define MBEDTLS_ECP_DP_CURVE25519_ENABLED
+ 
+ /**
 @@ -476,8 +476,8 @@
   * Requires: MBEDTLS_HMAC_DRBG_C
   *
@@ -101,6 +110,15 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+@@ -823,7 +823,7 @@
+  * This option is only useful if both MBEDTLS_SHA256_C and
+  * MBEDTLS_SHA512_C are defined. Otherwise the available hash module is used.
+  */
+-//#define MBEDTLS_ENTROPY_FORCE_SHA256
++#define MBEDTLS_ENTROPY_FORCE_SHA256
+ 
+ /**
+  * \def MBEDTLS_ENTROPY_NV_SEED
 @@ -885,7 +885,7 @@
   *
   * Comment this macro to disable support for external private RSA keys.
@@ -136,6 +154,16 @@
  
  /**
   * \def MBEDTLS_SSL_ALL_ALERT_MESSAGES
+@@ -1059,8 +1059,8 @@
+  * misuse/misunderstand.
+  *
+  * Comment this to disable support for renegotiation.
+- */
+ #define MBEDTLS_SSL_RENEGOTIATION
++ */
+ 
+ /**
+  * \def MBEDTLS_SSL_SRV_SUPPORT_SSLV2_CLIENT_HELLO
 @@ -1234,8 +1234,8 @@
   * callbacks are provided by MBEDTLS_SSL_TICKET_C.
   *
@@ -210,6 +238,16 @@
  
  /**
   * \def MBEDTLS_DES_C
+@@ -1725,8 +1725,8 @@
+  *      MBEDTLS_TLS_PSK_WITH_3DES_EDE_CBC_SHA
+  *
+  * PEM_PARSE uses DES/3DES for decrypting encrypted keys.
+- */
+ #define MBEDTLS_DES_C
++ */
+ 
+ /**
+  * \def MBEDTLS_DHM_C
 @@ -1880,8 +1880,8 @@
   * Requires: MBEDTLS_MD_C
   *
