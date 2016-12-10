@@ -178,6 +178,20 @@ static struct flash_layout layouts[] = {
 		.kernel_ep	= 0xc0000000,
 		.rootfs_ofs	= 0x2a0000,
 	}, {
+		/*
+			Some devices (e.g. TL-WR1043 v4) use a mktplinkfw kernel image
+			embedded in a tplink-safeloader image as os-image partition.
+
+			We use a 1.5MB partition for the compressed kernel, which should
+			be sufficient, but not too wasteful (the flash of the TL-WR1043 v4
+			has 16MB in total).
+		*/
+		.id		= "16Msafeloader",
+		.fw_max_len	= 0x180000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0,
+	}, {
 		/* terminating entry */
 	}
 };

@@ -294,6 +294,42 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the TL-WR1043 v4 */
+	{
+		.id     = "TLWR1043NDV4",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:TL-WR1043ND,product_ver:4.0.0,special_id:45550000}\n",
+		.support_trail = '\x00',
+
+		/**
+		    We use a bigger os-image partition than the stock images (and thus
+		    smaller file-system), as our kernel doesn't fit in the stock firmware's
+		    1MB os-image.
+		*/
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"os-image", 0x20000, 0x180000},
+			{"file-system", 0x1a0000, 0xdb0000},
+			{"default-mac", 0xf50000, 0x00200},
+			{"pin", 0xf50200, 0x00200},
+			{"product-info", 0xf50400, 0x0fc00},
+			{"soft-version", 0xf60000, 0x0b000},
+			{"support-list", 0xf6b000, 0x04000},
+			{"profile", 0xf70000, 0x04000},
+			{"default-config", 0xf74000, 0x0b000},
+			{"user-config", 0xf80000, 0x40000},
+			{"partition-table", 0xfc0000, 0x10000},
+			{"log", 0xfd0000, 0x20000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	{}
 };
 
