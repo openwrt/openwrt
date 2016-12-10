@@ -25,7 +25,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ath10k-firmware-default
   SECTION:=firmware
   CATEGORY:=Firmware
-  SUBMENU:=$(WMENU)
   URL:=$(PKG_SOURCE_URL)
   DEPENDS:=
 endef
