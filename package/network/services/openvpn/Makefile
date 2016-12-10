@@ -65,6 +65,9 @@ CONFIGURE_VARS += \
 	IPROUTE=/sbin/ip \
 	NETSTAT=/sbin/netstat
 
+TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_LDFLAGS += -Wl,--gc-sections
+
 define Build/Configure
 	$(call Build/Configure/Default, \
 		$(if $(CONFIG_OPENVPN_$(BUILD_VARIANT)_ENABLE_SMALL),--enable-small) \
