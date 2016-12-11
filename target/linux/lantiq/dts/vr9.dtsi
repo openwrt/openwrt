@@ -5,6 +5,14 @@
 	#size-cells = <1>;
 	compatible = "lantiq,xway", "lantiq,vr9";
 
+	aliases {
+		serial0 = &asc1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
 	cpus {
 		cpu@0 {
 			compatible = "mips,mips34Kc";

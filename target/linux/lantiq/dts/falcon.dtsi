@@ -19,6 +19,10 @@
 		gpio4 = &gpio4;
 	};
 
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
 	clocks {
 		compatible = "simple-bus";
 
