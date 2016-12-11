@@ -18,7 +18,7 @@ proto_ncm_init_config() {
 	proto_config_add_string delay
 	proto_config_add_string mode
 	proto_config_add_string pdptype
-	proto_config_add_boolean ipv6
+	proto_config_add_int profile
 	proto_config_add_defaults
 }
 
@@ -27,22 +27,15 @@ proto_ncm_setup() {
 
 	local manufacturer initialize setmode connect ifname devname devpath
 
-	local device apn auth username password pincode delay mode pdptype ipv6 $PROTO_DEFAULT_OPTIONS
-	json_get_vars device apn auth username password pincode delay mode pdptype ipv6 $PROTO_DEFAULT_OPTIONS
-	
-	if [ "$ipv6" = 0 ]; then
-		ipv6=""
-	else
-		ipv6=1
-	fi
-	
-	[ -z "$pdptype" ] && {
-		if [ -n "$ipv6" ]; then
-			pdptype="IPV4V6"
-		else
-			pdptype="IP"
-		fi
-	}
+	local device apn auth username password pincode delay mode pdptype profile $PROTO_DEFAULT_OPTIONS
+	json_get_vars device apn auth username password pincode delay mode pdptype profile $PROTO_DEFAULT_OPTIONS
+
+	[ "$metric" = "" ] && metric="0"
+
+	[ -n "$profile" ] || profile=1
+
+	pdptype=`echo "$pdptype" | awk '{print toupper($0)}'`
+	[ "$pdptype" = "IP" -o "$pdptype" = "IPV6" -o "$pdptype" = "IPV4V6" ] || $pdptype="IP"
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
@@ -55,11 +48,6 @@ proto_ncm_setup() {
 	[ -e "$device" ] || {
 		echo "Control device not valid"
 		proto_set_available "$interface" 0
-		return 1
-	}
-	[ -n "$apn" ] || {
-		echo "No APN specified"
-		proto_notify_error "$interface" NO_APN
 		return 1
 	}
 
@@ -83,7 +71,7 @@ proto_ncm_setup() {
 
 	[ -n "$delay" ] && sleep "$delay"
 
-	manufacturer=`gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk '/Manufacturer/ { print tolower($2) }'`
+	manufacturer=`gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }'`
 	[ $? -ne 0 ] && {
 		echo "Failed to get modem information"
 		proto_notify_error "$interface" GETINFO_FAILED
@@ -126,6 +114,7 @@ proto_ncm_setup() {
 		json_select ..
 	}
 
+	echo "Starting network $interface"
 	json_get_vars connect
 	eval COMMAND="$connect" gcom -d "$device" -s /etc/gcom/runcommand.gcom || {
 		echo "Failed to connect"
@@ -133,19 +122,24 @@ proto_ncm_setup() {
 		return 1
 	}
 
-	echo "Connected, starting DHCP on $ifname"
+	echo "Setting up $ifname"
 	
 	proto_init_update "$ifname" 1
+	proto_add_data
+	json_add_string "manufacturer" "$manufacturer"
+	proto_close_data
 	proto_send_update "$interface"
 
-	json_init
-	json_add_string name "${interface}_4"
-	json_add_string ifname "@$interface"
-	json_add_string proto "dhcp"
-	proto_add_dynamic_defaults
-	ubus call network add_dynamic "$(json_dump)"
+	[ "$pdptype" = "IP" -o "$pdptype" = "IPV4V6" ] && {
+		json_init
+		json_add_string name "${interface}_4"
+		json_add_string ifname "@$interface"
+		json_add_string proto "dhcp"
+		proto_add_dynamic_defaults
+		ubus call network add_dynamic "$(json_dump)"
+	}
 
-	[ -n "$ipv6" ] && {
+	[ "$pdptype" = "IPV6" -o "$pdptype" = "IPV4V6" ] && {
 		json_init
 		json_add_string name "${interface}_6"
 		json_add_string ifname "@$interface"
@@ -161,17 +155,18 @@ proto_ncm_teardown() {
 
 	local manufacturer disconnect
 
-	local device
-	json_get_vars device
+	local device profile
+	json_get_vars device profile
 
-	echo "Stopping network"
+	[ -n "$ctl_device" ] && device=$ctl_device
 
-	manufacturer=`gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk '/Manufacturer/ { print tolower($2) }'`
-	[ $? -ne 0 ] && {
-		echo "Failed to get modem information"
-		proto_notify_error "$interface" GETINFO_FAILED
-		return 1
-	}
+	[ -n "$profile" ] || profile=1
+
+	echo "Stopping network $interface"
+
+	json_load "$(ubus call network.interface.$interface status)"
+	json_select data
+	json_get_vars manufacturer
 
 	json_load "$(cat /etc/gcom/ncm.json)"
 	json_select "$manufacturer" || {
@@ -181,7 +176,7 @@ proto_ncm_teardown() {
 	}
 
 	json_get_vars disconnect
-	COMMAND="$disconnect" gcom -d "$device" -s /etc/gcom/runcommand.gcom || {
+	eval COMMAND="$disconnect" gcom -d "$device" -s /etc/gcom/runcommand.gcom || {
 		echo "Failed to disconnect"
 		proto_notify_error "$interface" DISCONNECT_FAILED
 		return 1

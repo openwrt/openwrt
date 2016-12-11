@@ -7,7 +7,7 @@
 			"ATV1",
 			"ATE1",
 			"ATS0=0",
-			"AT+CGDCONT=1,\\\"${pdptype}\\\",\\\"${apn}\\\""
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}"
 		],
 		"modes": {
 			"preferlte": "AT^SYSCFGEX=\\\"030201\\\",3fffffff,2,4,7fffffffffffffff,,",
@@ -17,8 +17,8 @@
 			"gsm": "AT^SYSCFGEX=\\\"01\\\",3fffffff,2,4,7fffffffffffffff,,",
 			"auto": "AT^SYSCFGEX=\\\"00\\\",3fffffff,2,4,7fffffffffffffff,,"
 		},
-		"connect": "AT^NDISDUP=1,1,\\\"${apn}\\\"${username:+,\\\"$username\\\"}${password:+,\\\"$password\\\"}${auth:+,$auth}",
-		"disconnect": "AT^NDISDUP=1,0"
+		"connect": "AT^NDISDUP=${profile},1${apn:+,\\\"$apn\\\"}${username:+,\\\"$username\\\"}${password:+,\\\"$password\\\"}${auth:+,$auth}",
+		"disconnect": "AT^NDISDUP=${profile},0"
 	},
 	"samsung": {
 		"initialize": [
@@ -26,7 +26,7 @@
 			"AT+CGREG=2",
 			"AT+CFUN=5",
 			"AT+MODESELECT=3",
-			"AT+CGDCONT=1,\\\"${pdptype}\\\",\\\"${apn}\\\""
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}"
 		],
 		"modes": {
 			"umts": "AT+CHANGEALLPATH=1"
@@ -34,11 +34,11 @@
 		"connect": "AT+CGATT=1",
 		"disconnect": "AT+CGATT=0"
 	},
-	"sierra wireless, incorporated": {
+	"sierra": {
 		"initialize": [
 			"AT+CFUN=1",
-			"AT+CGDCONT=1,\\\"${pdptype}\\\",\\\"${apn}\\\"",
-			"AT$QCPDPP=1${auth:+,$auth}${password:+,\\\"$password\\\"}${username:+,\\\"$username\\\"}"
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}",
+			"AT$QCPDPP=${profile},${auth:-0}${password:+,\\\"$password\\\"}${username:+,\\\"$username\\\"}"
 		],
 		"modes": {
 			"preferlte": "AT!SELRAT=07",
@@ -48,20 +48,20 @@
 			"gsm": "AT!SELRAT=02",
 			"auto": "AT!SELRAT=00"
 		},
-		"connect": "AT!SCACT=1,1",
-		"disconnect": "AT!SCACT=0,1"
+		"connect": "AT!SCACT=1,${profile}",
+		"disconnect": "AT!SCACT=0,${profile}"
 	},
-	"sony ericsson": {
+	"sony": {
 		"initialize": [
 			"AT+CFUN=1",
-			"AT+CGDCONT=1,\\\"${pdptype}\\\",\\\"${apn}\\\"",
-			"AT*EIAAUW=1,1,\\\"${username}\\\",\\\"${password}\\\",${auth:-00111}"
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}",
+			"AT*EIAAUW=${profile},1,\\\"${username}\\\",\\\"${password}\\\",${auth:-00111}"
 		],
 		"modes": {
 			"umts": "AT+CFUN=6",
 			"gsm": "AT+CFUN=5"
 		},
-		"connect": "AT*ENAP=1,1",
+		"connect": "AT*ENAP=1,${profile}",
 		"disconnect": "AT*ENAP=0"
 	}
 }
