@@ -131,6 +131,7 @@ $(eval $(call KernelPackage,bluetooth-hci-h4p))
 
 
 define KernelPackage/dma-buf
+  SUBMENU:=$(OTHER_MENU)
   TITLE:=DMA shared buffer support
   HIDDEN:=1
   KCONFIG:=CONFIG_DMA_SHARED_BUFFER
