@@ -21,7 +21,7 @@ Tested-by: Fleming Andrew-AFLEMING <AFLEMING@freescale.com>
 
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
-@@ -290,8 +290,23 @@ static void dev_watchdog(unsigned long a
+@@ -334,8 +334,23 @@ static void dev_watchdog(unsigned long a
  				txq = netdev_get_tx_queue(dev, i);
  				/*
  				 * old device drivers set dev->trans_start
