@@ -350,27 +350,10 @@ tplink_pharos_get_model_string() {
 tplink_pharos_board_detect() {
 	local model_string="$(tplink_pharos_get_model_string | tr -d '\r')"
 	local oIFS="$IFS"; IFS=":"; set -- $model_string; IFS="$oIFS"
-	local model
 
-	case "$1" in
-	'CPE210(TP-LINK|UN|N300-2)')
-		model='TP-Link CPE210'
-		;;
-	'CPE220(TP-LINK|UN|N300-2)')
-		model='TP-Link CPE220'
-		;;
-	'CPE510(TP-LINK|UN|N300-5)')
-		model='TP-Link CPE510'
-		;;
-	'CPE520(TP-LINK|UN|N300-5)')
-		model='TP-Link CPE520'
-		;;
-	'EAP120(TP-LINK|UN|N300-2)')
-		model='TP-Link EAP120'
-		;;
-	esac
+	local model="${1%%\(*}"
 
-	[ -n "$model" ] && AR71XX_MODEL="$model v$2"
+	AR71XX_MODEL="TP-Link $model v$2"
 }
 
 gl_inet_board_detect() {
