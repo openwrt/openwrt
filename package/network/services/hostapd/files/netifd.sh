@@ -573,11 +573,8 @@ wpa_supplicant_add_network() {
 	local network_data=
 	local T="	"
 
-	local wpa_key_mgmt="WPA-PSK"
 	local scan_ssid="scan_ssid=1"
-	local freq
-
-	[ "$ieee80211r" -gt 0 ] && wpa_key_mgmt="FT-PSK $wpa_key_mgmt"
+	local freq wpa_key_mgmt
 
 	[[ "$_w_mode" = "adhoc" ]] && {
 		append network_data "mode=1" "$N$T"
@@ -589,7 +586,7 @@ wpa_supplicant_add_network() {
 
 		scan_ssid="scan_ssid=0"
 
-		[ "$_w_driver" = "nl80211" ] ||	wpa_key_mgmt="WPA-NONE"
+		[ "$_w_driver" = "nl80211" ] ||	append wpa_key_mgmt "WPA-NONE"
 	}
 
 	[[ "$_w_mode" = "mesh" ]] && {
@@ -601,7 +598,7 @@ wpa_supplicant_add_network() {
 			freq="$(get_freq "$phy" "$channel")"
 			append network_data "frequency=$freq" "$N$T"
 		}
-		wpa_key_mgmt="SAE"
+		append wpa_key_mgmt "SAE"
 		scan_ssid=""
 	}
 
@@ -617,7 +614,10 @@ wpa_supplicant_add_network() {
 		psk)
 			local passphrase
 
+			append wpa_key_mgmt "WPA-PSK"
+			[ "$ieee80211r" -gt 0 ] && append wpa_key_mgmt "FT-PSK"
 			key_mgmt="$wpa_key_mgmt"
+
 			if [ ${#key} -eq 64 ]; then
 				passphrase="psk=${key}"
 			else
@@ -626,8 +626,9 @@ wpa_supplicant_add_network() {
 			append network_data "$passphrase" "$N$T"
 		;;
 		eap)
-			key_mgmt='WPA-EAP'
-		        [ "$ieee80211r" -gt 0 ] && key_mgmt="FT-EAP $key_mgmt"
+			append wpa_key_mgmt "WPA-EAP"
+		        [ "$ieee80211r" -gt 0 ] && append wpa_key_mgmt "FT-EAP"
+			key_mgmt="$wpa_key_mgmt"
 
 			json_get_vars eap_type identity anonymous_identity ca_cert
 			[ -n "$ca_cert" ] && append network_data "ca_cert=\"$ca_cert\"" "$N$T"
