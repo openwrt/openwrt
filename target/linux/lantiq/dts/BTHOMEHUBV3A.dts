@@ -7,10 +7,6 @@
 / {
 	model = "BTHOMEHUBV3A - BT Home Hub 3A";  /* SoC: Lantiq ar9 @ 333MHz */
 
-	chosen {
-		bootargs = "init=/etc/preinit";
-	};
-
 	aliases {
 		led-boot = &power_orange;
 		led-failsafe = &power_red;
