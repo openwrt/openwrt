@@ -217,8 +217,13 @@ static const char cpe210_support_list[] =
 	"SupportList:\r\n"
 	"CPE210(TP-LINK|UN|N300-2):1.0\r\n"
 	"CPE210(TP-LINK|UN|N300-2):1.1\r\n"
-	"CPE220(TP-LINK|UN|N300-2):1.0\r\n"
-	"CPE220(TP-LINK|UN|N300-2):1.1\r\n";
+	"CPE210(TP-LINK|US|N300-2):1.1\r\n"
+	"CPE210(TP-LINK|EU|N300-2):1.1\r\n"
+	"CPE220(TP-LINK|UN|N300-2):1.1\r\n"
+	"CPE220(TP-LINK|US|N300-2):1.1\r\n"
+	"CPE220(TP-LINK|EU|N300-2):1.1\r\n"
+	;
+
 /**
    The support list for CPE210/220/510/520
 */
@@ -226,8 +231,13 @@ static const char cpe510_support_list[] =
 	"SupportList:\r\n"
 	"CPE510(TP-LINK|UN|N300-5):1.0\r\n"
 	"CPE510(TP-LINK|UN|N300-5):1.1\r\n"
-	"CPE520(TP-LINK|UN|N300-5):1.0\r\n"
-	"CPE520(TP-LINK|UN|N300-5):1.1\r\n";
+	"CPE510(TP-LINK|UN|N300-5):1.1\r\n"
+	"CPE510(TP-LINK|US|N300-5):1.1\r\n"
+	"CPE510(TP-LINK|EU|N300-5):1.1\r\n"
+	"CPE520(TP-LINK|UN|N300-5):1.1\r\n"
+	"CPE520(TP-LINK|US|N300-5):1.1\r\n"
+	"CPE520(TP-LINK|EU|N300-5):1.1\r\n"
+	;
 
 /**
    The support list for C2600
