@@ -250,6 +250,9 @@ tplink_board_detect() {
 	"090100"*)
 		model="TP-Link TL-WA901N/ND"
 		;;
+	"094000"*)
+		model="TP-Link TL-WR940N"
+		;;
 	"094100"*)
 		if [ "$hwid" = "09410002" -a "$mid" = "00420001" ]; then
 			model="Rosewill RNX-N360RT"
@@ -1028,6 +1031,9 @@ ar71xx_board_detect() {
 		;;
 	*"TL-WR941N/ND v6")
 		name="tl-wr941nd-v6"
+		;;
+	*"TL-WR940N v4")
+		name="tl-wr940n-v4"
 		;;
 	*"TL-WR703N v1")
 		name="tl-wr703n"

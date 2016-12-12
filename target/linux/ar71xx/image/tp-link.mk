@@ -712,6 +712,17 @@ define Device/tl-wr941nd-v6
     TPLINK_HWID := 0x09410006
 endef
 
+define Device/tl-wr940n-v4
+    $(Device/tplink-4mlzma)
+    DEVICE_TITLE := TP-LINK TL-WR940N v4
+    BOARDNAME := TL-WR940N-v4
+    DEVICE_PROFILE := TLWR941
+    TPLINK_HWID := 0x09400004
+    IMAGES += factory-us.bin factory-eu.bin
+    IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
+    IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
+endef
+
 # Chinese version (unlike European) is similar to the TL-WDR3500
 define Device/tl-wr941nd-v6-cn
     $(Device/tplink-4mlzma)
@@ -720,7 +731,7 @@ define Device/tl-wr941nd-v6-cn
     DEVICE_PROFILE := TLWR941
     TPLINK_HWID := 0x09410006
 endef
-TARGET_DEVICES += tl-wr941nd-v2 tl-wr941nd-v3 tl-wr941nd-v4 tl-wr941nd-v5 tl-wr941nd-v6 tl-wr941nd-v6-cn
+TARGET_DEVICES += tl-wr941nd-v2 tl-wr941nd-v3 tl-wr941nd-v4 tl-wr941nd-v5 tl-wr941nd-v6 tl-wr941nd-v6-cn tl-wr940n-v4
 
 define Device/tl-wr1041n-v2
     $(Device/tplink-4mlzma)

@@ -372,6 +372,7 @@ get_status_led() {
 	tl-wr720n-v3|\
 	tl-wr802n-v1|\
 	tl-wr810n|\
+	tl-wr940n-v4|\
 	tl-wr941nd-v6)
 		status_led="tp-link:blue:system"
 		;;
