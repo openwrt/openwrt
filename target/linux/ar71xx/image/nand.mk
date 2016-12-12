@@ -15,7 +15,7 @@ TARGET_DEVICES += c-60
 
 define Device/domywifi-dw33d
   DEVICE_TITLE := DomyWifi DW33D
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport kmod-ath10k
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = DW33D
   IMAGE_SIZE = 16000k
   CONSOLE = ttyS0,115200
