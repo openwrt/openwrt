@@ -59,6 +59,8 @@ CONFIGURE_ARGS += \
 	--without-emacs
 
 HOST_CONFIGURE_ARGS += \
+	--disable-shared \
+	--enable-static \
 	--disable-libasprintf \
 	--disable-rpath \
 	--disable-java \
