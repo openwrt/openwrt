@@ -246,6 +246,7 @@ static struct mtd_part_parser uimage_generic_parser = {
 	.type = MTD_PARSER_TYPE_FIRMWARE,
 };
 
+#define FW_MAGIC_WNR2000V1	0x32303031
 #define FW_MAGIC_WNR2000V3	0x32303033
 #define FW_MAGIC_WNR2000V4	0x32303034
 #define FW_MAGIC_WNR2200	0x32323030
@@ -265,6 +266,7 @@ static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len)
 	case FW_MAGIC_WNR612V2:
 	case FW_MAGIC_WNR1000V2:
 	case FW_MAGIC_WNR1000V2_VC:
+	case FW_MAGIC_WNR2000V1:
 	case FW_MAGIC_WNR2000V3:
 	case FW_MAGIC_WNR2200:
 	case FW_MAGIC_WNDR3700:

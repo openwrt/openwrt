@@ -32,49 +32,6 @@
 #define WNR2000_KEYS_POLL_INTERVAL	20	/* msecs */
 #define WNR2000_KEYS_DEBOUNCE_INTERVAL	(3 * WNR2000_KEYS_POLL_INTERVAL)
 
-static struct mtd_partition wnr2000_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x040000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "u-boot-env",
-		.offset		= 0x040000,
-		.size		= 0x010000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x050000,
-		.size		= 0x240000,
-	}, {
-		.name		= "user-config",
-		.offset		= 0x290000,
-		.size		= 0x010000,
-	}, {
-		.name		= "uImage",
-		.offset		= 0x2a0000,
-		.size		= 0x120000,
-	}, {
-		.name		= "language_table",
-		.offset		= 0x3c0000,
-		.size		= 0x020000,
-	}, {
-		.name		= "rootfs_checksum",
-		.offset		= 0x3e0000,
-		.size		= 0x010000,
-	}, {
-		.name		= "art",
-		.offset		= 0x3f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}
-};
-
-static struct flash_platform_data wnr2000_flash_data = {
-	.parts		= wnr2000_partitions,
-	.nr_parts	= ARRAY_SIZE(wnr2000_partitions),
-};
-
 static struct gpio_led wnr2000_leds_gpio[] __initdata = {
 	{
 		.name		= "netgear:green:power",
@@ -130,7 +87,7 @@ static void __init wnr2000_setup(void)
 	ath79_register_eth(0);
 	ath79_register_eth(1);
 
-	ath79_register_m25p80(&wnr2000_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr2000_leds_gpio),
 				 wnr2000_leds_gpio);
