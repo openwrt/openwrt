@@ -41,7 +41,7 @@ define dl_pack
 	$(if $(dl_pack/$(call ext,$(1))),$(dl_pack/$(call ext,$(1))),$(dl_pack/unknown))
 endef
 define dl_tar_pack
-	$(TAR) --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -c $(2) | $(call dl_pack,$(1))
+	$(TAR) --numeric-owner --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -c $(2) | $(call dl_pack,$(1))
 endef
 
 define DownloadMethod/unknown
