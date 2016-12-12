@@ -33,12 +33,15 @@ $(strip \
 endef
 
 # code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
-dl_pack/bz2=$(TAR) --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -cjf $(1) $(2)
-dl_pack/gz=$(TAR) --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -c $(2) | gzip -nc > $(1)
-dl_pack/xz=$(TAR) --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -c $(2) | xz -zc -7e > $(1)
+dl_pack/bz2=bzip2 -c > $(1)
+dl_pack/gz=gzip -nc > $(1)
+dl_pack/xz=xz -zc -7e > $(1)
 dl_pack/unknown=$(error ERROR: Unknown pack format for file $(1))
 define dl_pack
 	$(if $(dl_pack/$(call ext,$(1))),$(dl_pack/$(call ext,$(1))),$(dl_pack/unknown))
+endef
+define dl_tar_pack
+	$(TAR) --owner=0 --group=0 --sort=name $$$${TAR_TIMESTAMP:+--mtime="$$$$TAR_TIMESTAMP"} -c $(2) | $(call dl_pack,$(1))
 endef
 
 define DownloadMethod/unknown
@@ -62,7 +65,7 @@ define DownloadMethod/cvs
 		[ \! -d $(SUBDIR) ] && \
 		cvs -d $(URL) export $(VERSION) $(SUBDIR) && \
 		echo "Packing checkout..." && \
-		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \
 	)
@@ -80,7 +83,7 @@ define DownloadMethod/svn
 		svn export --non-interactive -r$(VERSION) $(URL) $(SUBDIR) ) && \
 		echo "Packing checkout..." && \
 		export TAR_TIMESTAMP="" && \
-		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \
 	)
@@ -99,7 +102,7 @@ define DownloadMethod/git
 		echo "Packing checkout..." && \
 		export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --format='@%ct'` && \
 		rm -rf $(SUBDIR)/.git && \
-		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \
 	)
@@ -115,7 +118,7 @@ define DownloadMethod/bzr
 		bzr export --per-file-timestamps -r$(VERSION) $(SUBDIR) $(URL) && \
 		echo "Packing checkout..." && \
 		export TAR_TIMESTAMP="" && \
-		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \
 	)
@@ -132,7 +135,7 @@ define DownloadMethod/hg
 		export TAR_TIMESTAMP=`cd $(SUBDIR) && hg log --template '@{date}' -l 1` && \
 		find $(SUBDIR) -name .hg | xargs rm -rf && \
 		echo "Packing checkout..." && \
-		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \
 	)
@@ -149,7 +152,7 @@ define DownloadMethod/darcs
 		export TAR_TIMESTAMP=`cd $(SUBDIR) && LC_ALL=C darcs log --last 1 | sed -ne 's!^Date: \+!!p'` && \
 		find $(SUBDIR) -name _darcs | xargs rm -rf && \
 		echo "Packing checkout..." && \
-		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \
 	)
