@@ -42,13 +42,12 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/swlib.h $(1)/usr/include/
 
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/libsw.so $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libsw.a $(1)/usr/lib/
 endef
 
 define Package/swconfig/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/lib/network
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/swconfig $(1)/sbin/swconfig
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libsw.so $(1)/lib
 	$(INSTALL_DATA) ./files/switch.sh $(1)/lib/network/
 endef
 

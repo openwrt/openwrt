@@ -8,8 +8,9 @@ all: swconfig
 %.o: %.c
 	$(CC) $(CFLAGS) -fPIC -c -o $@ $^
 
-libsw.so: swlib.o
-	$(CC) $(CFLAGS) -fPIC -shared -o $@ swlib.o
+libsw.a: swlib.o
+	$(AR) rcu $@ swlib.o
+	$(RANLIB) $@
 
-swconfig: libsw.so cli.o uci.o
+swconfig: libsw.a cli.o uci.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS) -L./ -lsw
