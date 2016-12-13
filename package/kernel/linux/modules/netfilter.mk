@@ -289,6 +289,28 @@ endef
 $(eval $(call KernelPackage,ipt-nat))
 
 
+define KernelPackage/ipt-raw
+  TITLE:=Netfilter IPv4 raw table support
+  KCONFIG:=CONFIG_IP_NF_RAW
+  FILES:=$(LINUX_DIR)/net/ipv4/netfilter/iptable_raw.ko
+  AUTOLOAD:=$(call AutoProbe,iptable_raw)
+  $(call AddDepends/ipt)
+endef
+
+$(eval $(call KernelPackage,ipt-raw))
+
+
+define KernelPackage/ipt-raw6
+  TITLE:=Netfilter IPv6 raw table support
+  KCONFIG:=CONFIG_IP6_NF_RAW
+  FILES:=$(LINUX_DIR)/net/ipv6/netfilter/ip6table_raw.ko
+  AUTOLOAD:=$(call AutoProbe,ip6table_raw)
+  $(call AddDepends/ipt,+kmod-ip6tables)
+endef
+
+$(eval $(call KernelPackage,ipt-raw6))
+
+
 define KernelPackage/ipt-nat6
   TITLE:=IPv6 NAT targets
   KCONFIG:=$(KCONFIG_IPT_NAT6)
