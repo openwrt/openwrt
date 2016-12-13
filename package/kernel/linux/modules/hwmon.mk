@@ -333,7 +333,7 @@ define KernelPackage/hwmon-tmp102
   KCONFIG:=CONFIG_SENSORS_TMP102
   FILES:=$(LINUX_DIR)/drivers/hwmon/tmp102.ko
   AUTOLOAD:=$(call AutoProbe,tmp102)
-  $(call AddDepends/hwmon,+kmod-i2c-core)
+  $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal)
 endef
 
 define KernelPackage/hwmon-tmp102/description
