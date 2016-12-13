@@ -11,22 +11,10 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/arch/arm/boot/dts/bcm53573.dtsi
 +++ b/arch/arm/boot/dts/bcm53573.dtsi
-@@ -44,6 +44,27 @@
+@@ -44,6 +44,15 @@
  		};
  	};
  
-+	pmu@18012000 {
-+		compatible = "simple-mfd", "syscon";
-+		reg = <0x18012000 0x00001000>;
-+
-+		ilp: ilp {
-+			compatible = "brcm,bcm53573-ilp";
-+			clocks = <&alp>;
-+			#clock-cells = <0>;
-+			clock-output-names = "ilp";
-+		};
-+	};
-+
 +	timer {
 +		compatible = "arm,armv7-timer";
 +		interrupts = <GIC_PPI 13 0>,
