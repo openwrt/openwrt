@@ -19,7 +19,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	bcm47094-dlink-dir-885l.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4709-netgear-r7900.dts
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,42 @@
 +/*
 + * Broadcom BCM470X / BCM5301X ARM platform code.
 + * DTS for Netgear R7900
@@ -43,7 +43,8 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	};
 +
 +	memory {
-+		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
 +	};
 +
 +	axi@18000000 {
