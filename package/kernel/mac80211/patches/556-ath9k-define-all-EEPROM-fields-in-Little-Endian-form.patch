@@ -349,16 +349,6 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 -
 -		integer = swab32(eep->modalHeader.antCtrlCommon);
 -		eep->modalHeader.antCtrlCommon = integer;
--
--		for (i = 0; i < AR5416_EEP4K_MAX_CHAINS; i++) {
--			integer = swab32(eep->modalHeader.antCtrlChain[i]);
--			eep->modalHeader.antCtrlChain[i] = integer;
--		}
--
--		for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++) {
--			word = swab16(eep->modalHeader.spurChans[i].spurChan);
--			eep->modalHeader.spurChans[i].spurChan = word;
--		}
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.length);
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.checksum);
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.version);
@@ -368,10 +358,18 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.blueToothOptions);
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.deviceCap);
 +		EEPROM_FIELD_SWAB32(eep->modalHeader.antCtrlCommon);
-+
+ 
+-		for (i = 0; i < AR5416_EEP4K_MAX_CHAINS; i++) {
+-			integer = swab32(eep->modalHeader.antCtrlChain[i]);
+-			eep->modalHeader.antCtrlChain[i] = integer;
+-		}
 +		for (i = 0; i < AR5416_EEP4K_MAX_CHAINS; i++)
 +			EEPROM_FIELD_SWAB32(eep->modalHeader.antCtrlChain[i]);
-+
+ 
+-		for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++) {
+-			word = swab16(eep->modalHeader.spurChans[i].spurChan);
+-			eep->modalHeader.spurChans[i].spurChan = word;
+-		}
 +		for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++)
 +			EEPROM_FIELD_SWAB16(
 +				eep->modalHeader.spurChans[i].spurChan);
@@ -542,16 +540,6 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 -
 -		integer = swab32(eep->modalHeader.antCtrlCommon);
 -		eep->modalHeader.antCtrlCommon = integer;
--
--		for (i = 0; i < AR9287_MAX_CHAINS; i++) {
--			integer = swab32(eep->modalHeader.antCtrlChain[i]);
--			eep->modalHeader.antCtrlChain[i] = integer;
--		}
--
--		for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++) {
--			word = swab16(eep->modalHeader.spurChans[i].spurChan);
--			eep->modalHeader.spurChans[i].spurChan = word;
--		}
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.length);
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.checksum);
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.version);
@@ -561,10 +549,18 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.blueToothOptions);
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.deviceCap);
 +		EEPROM_FIELD_SWAB32(eep->modalHeader.antCtrlCommon);
-+
+ 
+-		for (i = 0; i < AR9287_MAX_CHAINS; i++) {
+-			integer = swab32(eep->modalHeader.antCtrlChain[i]);
+-			eep->modalHeader.antCtrlChain[i] = integer;
+-		}
 +		for (i = 0; i < AR9287_MAX_CHAINS; i++)
 +			EEPROM_FIELD_SWAB32(eep->modalHeader.antCtrlChain[i]);
-+
+ 
+-		for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++) {
+-			word = swab16(eep->modalHeader.spurChans[i].spurChan);
+-			eep->modalHeader.spurChans[i].spurChan = word;
+-		}
 +		for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++)
 +			EEPROM_FIELD_SWAB16(
 +				eep->modalHeader.spurChans[i].spurChan);
@@ -716,8 +712,7 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
  	if (need_swap) {
 -		u32 integer, j;
 -		u16 word;
-+		u32 j;
- 
+-
 -		word = swab16(eep->baseEepHeader.length);
 -		eep->baseEepHeader.length = word;
 -
@@ -738,7 +733,8 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 -
 -		word = swab16(eep->baseEepHeader.blueToothOptions);
 -		eep->baseEepHeader.blueToothOptions = word;
--
++		u32 j;
+ 
 -		word = swab16(eep->baseEepHeader.deviceCap);
 -		eep->baseEepHeader.deviceCap = word;
 +		EEPROM_FIELD_SWAB16(eep->baseEepHeader.length);
