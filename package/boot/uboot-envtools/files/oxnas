@@ -15,8 +15,8 @@ board=$(oxnas_board_name)
 
 case "$board" in
 akitio | \
-stg212 | \
-kd20)
+kd20 | \
+stg212)
 	ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x4000" "0x1F000" "1"
 	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x4000" "0x1F000" "1"
 	;;

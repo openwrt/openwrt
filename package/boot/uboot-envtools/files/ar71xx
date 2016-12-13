@@ -36,10 +36,10 @@ mr600v2 | \
 mr900 | \
 mr900v2 | \
 nbg6716 | \
-om5p-an | \
+om5p | \
 om5p-ac | \
 om5p-acv2 | \
-om5p | \
+om5p-an | \
 sr3200 | \
 tube2h | \
 wndr3700 | \
@@ -49,19 +49,19 @@ xd3200)
 alfa-ap96 | \
 all0315n | \
 om2p | \
-om2pv2 | \
 om2p-hs | \
 om2p-hsv2 | \
 om2p-hsv3 | \
-om2p-lc)
+om2p-lc | \
+om2pv2)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
-	;;
-dr531)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0xf800" "0x10000"
 	;;
 dap-2695-a1 | \
 wzr-hp-ag300h)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
+	;;
+dr531)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0xf800" "0x10000"
 	;;
 qihoo-c301)
 	ubootenv_add_uci_config "/dev/mtd9" "0x0" "0x10000" "0x10000"
