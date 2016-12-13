@@ -14,49 +14,49 @@ touch /etc/config/ubootenv
 board=$(ar71xx_board_name)
 
 case "$board" in
-alfa-ap120c | \
-all0258n | \
-ap90q | \
-cap324 | \
-cap4200ag | \
-carambola2 | \
-cpe830 | \
-cpe870 | \
-cr3000 | \
-cr5000 | \
-eap300v2 | \
-gl-ar300m | \
-hornet-ub | \
-hornet-ub-x2 | \
-jwap230 | \
-mr1750 | \
-mr1750v2 | \
-mr600 | \
-mr600v2 | \
-mr900 | \
-mr900v2 | \
-nbg6716 | \
-om5p | \
-om5p-ac | \
-om5p-acv2 | \
-om5p-an | \
-sr3200 | \
-tube2h | \
-wndr3700 | \
+alfa-ap120c|\
+all0258n|\
+ap90q|\
+cap324|\
+cap4200ag|\
+carambola2|\
+cpe830|\
+cpe870|\
+cr3000|\
+cr5000|\
+eap300v2|\
+gl-ar300m|\
+hornet-ub|\
+hornet-ub-x2|\
+jwap230|\
+mr1750|\
+mr1750v2|\
+mr600|\
+mr600v2|\
+mr900|\
+mr900v2|\
+nbg6716|\
+om5p|\
+om5p-ac|\
+om5p-acv2|\
+om5p-an|\
+sr3200|\
+tube2h|\
+wndr3700|\
 xd3200)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
-alfa-ap96 | \
-all0315n | \
-om2p | \
-om2p-hs | \
-om2p-hsv2 | \
-om2p-hsv3 | \
-om2p-lc | \
+alfa-ap96|\
+all0315n|\
+om2p|\
+om2p-hs|\
+om2p-hsv2|\
+om2p-hsv3|\
+om2p-lc|\
 om2pv2)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
 	;;
-dap-2695-a1 | \
+dap-2695-a1|\
 wzr-hp-ag300h)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
 	;;

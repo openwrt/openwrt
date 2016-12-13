@@ -14,16 +14,16 @@ touch /etc/config/ubootenv
 board=$(kirkwood_board_name)
 
 case "$board" in
-"dockstar" | \
-"guruplug-server-plus" | \
-"ib62x0" | \
-"linksys-viper" | \
-"pogo_e02" | \
-"sheevaplug" | \
-"sheevaplug-esata" )
+dockstar|\
+guruplug-server-plus|\
+ib62x0|\
+linksys-viper|\
+pogo_e02|\
+sheevaplug|\
+sheevaplug-esata)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
-"linksys-audi")
+linksys-audi)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x4000" "0x4000"
 	;;
 esac
