@@ -5,6 +5,9 @@ project(mapcalc C)
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c99")
 
+FIND_PATH(ubus_include_dir libubus.h)
+INCLUDE_DIRECTORIES(${ubus_include_dir})
+
 add_definitions(-D_GNU_SOURCE -Wall -Wno-gnu -Wextra)
 
 add_executable(mapcalc mapcalc.c)
