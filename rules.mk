@@ -15,6 +15,11 @@ endif
 include $(TOPDIR)/include/debug.mk
 include $(TOPDIR)/include/verbose.mk
 
+ifneq ($(filter check,$(MAKECMDGOALS)),)
+CHECK:=1
+DUMP:=1
+endif
+
 export TMP_DIR:=$(TOPDIR)/tmp
 
 qstrip=$(strip $(subst ",,$(1)))
@@ -385,6 +390,9 @@ ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 all:
 FORCE: ;
 .PHONY: FORCE
+
+check: FORCE
+	@true
 
 val.%:
 	@$(if $(filter undefined,$(origin $*)),\

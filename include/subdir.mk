@@ -9,7 +9,7 @@ ifeq ($(MAKECMDGOALS),prereq)
   SUBTARGETS:=prereq
   PREREQ_ONLY:=1
 else
-  SUBTARGETS:=clean download prepare compile install update refresh prereq dist distcheck configure
+  SUBTARGETS:=clean download prepare compile install update refresh prereq dist distcheck configure check
 endif
 
 subtarget-default = $(filter-out ., \

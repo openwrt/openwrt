@@ -44,6 +44,7 @@ $(target/stamp-compile): $(toolchain/stamp-install) $(tools/stamp-install) $(BUI
 $(package/stamp-compile): $(target/stamp-compile) $(package/stamp-cleanup)
 $(package/stamp-install): $(package/stamp-compile)
 $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install)
+check: $(tools/stamp-check) $(toolchain/stamp-check) $(package/stamp-check)
 
 printdb:
 	@true
