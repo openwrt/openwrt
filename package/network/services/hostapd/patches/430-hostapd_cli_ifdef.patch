@@ -1,6 +1,6 @@
 --- a/hostapd/hostapd_cli.c
 +++ b/hostapd/hostapd_cli.c
-@@ -382,7 +382,6 @@ static int hostapd_cli_cmd_sa_query(stru
+@@ -447,7 +447,6 @@ static int hostapd_cli_cmd_sa_query(stru
  #endif /* CONFIG_IEEE80211W */
  
  
@@ -8,7 +8,7 @@
  static int hostapd_cli_cmd_wps_pin(struct wpa_ctrl *ctrl, int argc,
  				   char *argv[])
  {
-@@ -608,7 +607,6 @@ static int hostapd_cli_cmd_wps_config(st
+@@ -673,7 +672,6 @@ static int hostapd_cli_cmd_wps_config(st
  			 ssid_hex, argv[1]);
  	return wpa_ctrl_command(ctrl, buf);
  }
@@ -16,7 +16,7 @@
  
  
  static int hostapd_cli_cmd_disassoc_imminent(struct wpa_ctrl *ctrl, int argc,
-@@ -1275,7 +1273,6 @@ static const struct hostapd_cli_cmd host
+@@ -1367,7 +1365,6 @@ static const struct hostapd_cli_cmd host
  	{ "sa_query", hostapd_cli_cmd_sa_query, NULL,
  	  "<addr> = send SA Query to a station" },
  #endif /* CONFIG_IEEE80211W */
@@ -24,7 +24,7 @@
  	{ "wps_pin", hostapd_cli_cmd_wps_pin, NULL,
  	  "<uuid> <pin> [timeout] [addr] = add WPS Enrollee PIN" },
  	{ "wps_check_pin", hostapd_cli_cmd_wps_check_pin, NULL,
-@@ -1300,7 +1297,6 @@ static const struct hostapd_cli_cmd host
+@@ -1392,7 +1389,6 @@ static const struct hostapd_cli_cmd host
  	  "<SSID> <auth> <encr> <key> = configure AP" },
  	{ "wps_get_status", hostapd_cli_cmd_wps_get_status, NULL,
  	  "= show current WPS status" },
