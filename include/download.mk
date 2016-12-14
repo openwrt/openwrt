@@ -49,11 +49,11 @@ define DownloadMethod/unknown
 endef
 
 define DownloadMethod/default
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MD5SUM)" "$(URL_FILE)" $(foreach url,$(URL),"$(url)")
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" $(foreach url,$(URL),"$(url)")
 endef
 
 define wrap_mirror
-$(if $(if $(MIRROR),$(filter-out x,$(MIRROR_MD5SUM))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_MD5SUM)" "" || ( $(1) ),$(1))
+$(if $(if $(MIRROR),$(filter-out x,$(MIRROR_HASH))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_HASH)" "" || ( $(1) ),$(1))
 endef
 
 define DownloadMethod/cvs
@@ -170,9 +170,11 @@ define Download/Defaults
   FILE:=
   URL_FILE:=
   PROTO:=
+  HASH=$$(MD5SUM)
   MD5SUM:=
   SUBDIR:=
   MIRROR:=1
+  MIRROR_HASH=$$(MIRROR_MD5SUM)
   MIRROR_MD5SUM:=x
   VERSION:=
   OPTS:=
