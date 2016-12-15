@@ -119,6 +119,22 @@ $(Device/cpe510-520)
 endef
 TARGET_DEVICES += cpe210-220 cpe510-520
 
+define Device/re450
+  DEVICE_TITLE := TP-LINK RE450
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),4672k(rootfs),64k(pation-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro,6016k@0x20000(firmware)
+  IMAGE_SIZE := 7936k
+  BOARDNAME := RE450
+  TPLINK_BOARD_NAME := RE450
+  DEVICE_PROFILE := RE450
+  LOADER_TYPE := elf
+  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-kernel
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+TARGET_DEVICES += re450
+
 define Device/eap120
   DEVICE_TITLE := TP-LINK EAP120
   MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),14336k(rootfs),192k(config)ro,64k(ART)ro,15872k@0x40000(firmware)
