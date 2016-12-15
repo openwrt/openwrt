@@ -330,6 +330,48 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the RE450 */
+	{
+		.id = "RE450",
+		.vendor = "",
+		.support_list =
+			"SupportList:\r\n"
+			"{product_name:RE450,product_ver:1.0.0,special_id:00000000}\r\n"
+			"{product_name:RE450,product_ver:1.0.0,special_id:55530000}\r\n"
+			"{product_name:RE450,product_ver:1.0.0,special_id:45550000}\r\n"
+			"{product_name:RE450,product_ver:1.0.0,special_id:4A500000}\r\n"
+			"{product_name:RE450,product_ver:1.0.0,special_id:43410000}\r\n"
+			"{product_name:RE450,product_ver:1.0.0,special_id:41550000}\r\n"
+			"{product_name:RE450,product_ver:1.0.0,special_id:4B520000}\r\n"
+			"{product_name:RE450,product_ver:1.0.0,special_id:55534100}\r\n",
+		.support_trail = '\x00',
+
+		/**
+		   The flash partition table for RE450;
+		   it is almost the same as the one used by the stock images,
+		   576KB were moved from file-system to os-image.
+		*/
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"os-image", 0x20000, 0x150000},
+			{"file-system", 0x170000, 0x4a0000},
+			{"partition-table", 0x600000, 0x02000},
+			{"default-mac", 0x610000, 0x00020},
+			{"pin", 0x610100, 0x00020},
+			{"product-info", 0x611100, 0x01000},
+			{"soft-version", 0x620000, 0x01000},
+			{"support-list", 0x621000, 0x01000},
+			{"profile", 0x622000, 0x08000},
+			{"user-config", 0x630000, 0x10000},
+			{"default-config", 0x640000, 0x10000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	{}
 };
 
