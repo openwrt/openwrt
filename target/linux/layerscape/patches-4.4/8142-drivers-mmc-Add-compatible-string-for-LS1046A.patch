@@ -8,11 +8,9 @@ Signed-off-by: Yutang Jiang <yutang.jiang@nxp.com>
  drivers/mmc/host/sdhci-of-esdhc.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/mmc/host/sdhci-of-esdhc.c b/drivers/mmc/host/sdhci-of-esdhc.c
-index a04ed4e..1116d38 100644
 --- a/drivers/mmc/host/sdhci-of-esdhc.c
 +++ b/drivers/mmc/host/sdhci-of-esdhc.c
-@@ -607,6 +607,7 @@ static int sdhci_esdhc_probe(struct platform_device *pdev)
+@@ -607,6 +607,7 @@ static int sdhci_esdhc_probe(struct plat
  	    of_device_is_compatible(np, "fsl,p4080-esdhc") ||
  	    of_device_is_compatible(np, "fsl,p1020-esdhc") ||
  	    of_device_is_compatible(np, "fsl,t1040-esdhc") ||
@@ -20,6 +18,3 @@ index a04ed4e..1116d38 100644
  	    of_device_is_compatible(np, "fsl,ls1021a-esdhc"))
  		host->quirks &= ~SDHCI_QUIRK_BROKEN_CARD_DETECTION;
  
--- 
-1.7.9.5
-
