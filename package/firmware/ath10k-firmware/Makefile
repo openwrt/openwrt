@@ -88,7 +88,7 @@ define Download/ath10k-firmware-qca99x0-ct
 endef
 $(eval $(call Download,ath10k-firmware-qca99x0-ct))
 
-QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.006
+QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.005
 define Download/ath10k-firmware-qca9984-ct
   $(call Download/ct-firmware,QCA9984,ath10k-9984-10-4)
   MD5SUM:=b2427376dbfdb083b3d27cf42b2c525d
