@@ -246,12 +246,11 @@ push @mirrors, 'http://sources.lede-project.org';
 push @mirrors, 'http://mirror2.openwrt.org/sources';
 push @mirrors, 'http://downloads.openwrt.org/sources';
 
-while (!$ok) {
+while (!-f "$target/$filename") {
 	my $mirror = shift @mirrors;
 	$mirror or die "No more mirrors to try - giving up.\n";
 
 	download($mirror);
-	-f "$target/$filename" and $ok = 1;
 }
 
 $SIG{INT} = \&cleanup;
