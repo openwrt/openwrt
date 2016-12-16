@@ -78,6 +78,7 @@ proto_qmi_setup() {
 
 	uqmi -s -d "$device" --set-data-format 802.3
 	uqmi -s -d "$device" --wda-set-data-format 802.3
+	uqmi -s -d "$device" --sync
 
 	echo "Waiting for network registration"
 	while uqmi -s -d "$device" --get-serving-system | grep '"searching"' > /dev/null; do
