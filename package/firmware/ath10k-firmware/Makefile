@@ -66,27 +66,31 @@ $(Package/ath10k-firmware-default)
   CATEGORY:=Firmware
 endef
 
-QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin-18.rc2-lede
-QCA99X0_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.005
-QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.005
+CT_FIRMWARE_FILE = $(1)-$($(1)_FIRMWARE_FILE_CT)
 
+define Download/ct-firmware
+  URL:=https://www.candelatech.com/downloads/$(2)
+  FILE:=$(call CT_FIRMWARE_FILE,$(1))
+  URL_FILE:=$($(1)_FIRMWARE_FILE_CT)
+endef
+
+QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin-18.rc2-lede
 define Download/ath10k-firmware-qca988x-ct
-  URL:=https://www.candelatech.com/downloads/
-  FILE:=$(QCA988X_FIRMWARE_FILE_CT)
+  $(call Download/ct-firmware,QCA988X,)
   MD5SUM:=665482e1fd20a410627996c9a0b93411
 endef
 $(eval $(call Download,ath10k-firmware-qca988x-ct))
 
+QCA99X0_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.005
 define Download/ath10k-firmware-qca99x0-ct
-  URL:=https://www.candelatech.com/downloads/ath10k-10-4/
-  FILE:=$(QCA99X0_FIRMWARE_FILE_CT)
+  $(call Download/ct-firmware,QCA99X0,ath10k-10-4)
   MD5SUM:=a63d9651e884bbb38ed6ff722f6c6951
 endef
 $(eval $(call Download,ath10k-firmware-qca99x0-ct))
 
+QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.006
 define Download/ath10k-firmware-qca9984-ct
-  URL:=https://www.candelatech.com/downloads/ath10k-9984-10-4/
-  FILE:=$(QCA9984_FIRMWARE_FILE_CT)
+  $(call Download/ct-firmware,QCA9984,ath10k-9984-10-4)
   MD5SUM:=b2427376dbfdb083b3d27cf42b2c525d
 endef
 $(eval $(call Download,ath10k-firmware-qca9984-ct))
@@ -125,7 +129,7 @@ endef
 define Package/ath10k-firmware-qca9984-ct/description
 Alternative ath10k firmware for QCA9984 from Candela Technologies.
 Enables IBSS and other features.  See:
-http://www.candelatech.com/ath10k-10.4-9984.php
+http://www.candelatech.com/ath10k-10.4.php
 This firmware conflicts with the standard 9984 firmware, so select only
 one.
 endef
@@ -205,7 +209,7 @@ define Package/ath10k-firmware-qca988x-ct/install
 		$(PKG_BUILD_DIR)/QCA988X/hw2.0/board.bin \
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/
 	$(INSTALL_DATA) \
-		$(DL_DIR)/$(QCA988X_FIRMWARE_FILE_CT) \
+		$(DL_DIR)/$(call CT_FIRMWARE_FILE,QCA988X) \
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-2.bin
 endef
 
@@ -236,7 +240,7 @@ define Package/ath10k-firmware-qca99x0-ct/install
 		$(PKG_BUILD_DIR)/QCA99X0/hw2.0/boardData_AR900B_CUS239_5G_v2_001.bin \
 		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board.bin
 	$(INSTALL_DATA) \
-		$(DL_DIR)/$(QCA99X0_FIRMWARE_FILE_CT) \
+		$(DL_DIR)/$(call CT_FIRMWARE_FILE,QCA99X0) \
 		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/firmware-5.bin
 endef
 
@@ -262,7 +266,7 @@ define Package/ath10k-firmware-qca9984-ct/install
 		$(PKG_BUILD_DIR)/QCA9984/hw1.0/board-2.bin \
 		$(1)/lib/firmware/ath10k/QCA9984/hw1.0/board-2.bin
 	$(INSTALL_DATA) \
-		$(DL_DIR)/$(QCA9984_FIRMWARE_FILE_CT) \
+		$(DL_DIR)/$(call CT_FIRMWARE_FILE,QCA9984) \
 		$(1)/lib/firmware/ath10k/QCA9984/hw1.0/firmware-5.bin
 endef
 
