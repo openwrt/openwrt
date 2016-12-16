@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2006-2015 OpenWrt.org
+# Copyright (C) 2016 LEDE Project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,13 +13,14 @@ include $(INCLUDE_DIR)/feeds.mk
 PKG_NAME:=opkg
 PKG_REV:=9c97d5ecd795709c8584e972bfdf3aee3a5b846d
 PKG_VERSION:=$(PKG_REV)
-PKG_RELEASE:=12
+PKG_RELEASE:=15
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_SUBDIR:=opkg-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://git.yoctoproject.org/git/opkg
-PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
+PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.xz
+PKG_MIRROR_MD5SUM:=abba824695a7dd4acf2a6371c4e22142656b3d1f0fa93c04410116d2170ce1a9
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_FIXUP:=autoreconf
 PKG_REMOVE_FILES = autogen.sh aclocal.m4
@@ -26,8 +28,9 @@ PKG_REMOVE_FILES = autogen.sh aclocal.m4
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
 
-PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 
+PKG_FLAGS := nonshared
 PKG_CONFIG_DEPENDS := CONFIG_SIGNED_PACKAGES
 
 PKG_BUILD_PARALLEL:=1

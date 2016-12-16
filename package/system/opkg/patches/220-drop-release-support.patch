@@ -1,6 +1,6 @@
 --- a/libopkg/Makefile.am
 +++ b/libopkg/Makefile.am
-@@ -15,7 +15,6 @@
+@@ -15,7 +15,6 @@ opkg_cmd_sources = opkg_cmd.c opkg_cmd.h
  		   opkg_upgrade.c opkg_upgrade.h \
  		   opkg_remove.c opkg_remove.h
  opkg_db_sources = opkg_conf.c opkg_conf.h \
@@ -8,7 +8,7 @@
  		  opkg_utils.c opkg_utils.h pkg.c pkg.h hash_table.h \
  		  pkg_depends.c pkg_depends.h pkg_extract.c pkg_extract.h \
  		  hash_table.c pkg_hash.c pkg_hash.h pkg_parse.c pkg_parse.h \
-@@ -28,7 +27,6 @@
+@@ -28,7 +27,6 @@ opkg_list_sources = conffile.c conffile.
  		    active_list.c active_list.h list.h 
  opkg_util_sources = file_util.c file_util.h opkg_message.h opkg_message.c md5.c md5.h \
  		    parse_util.c parse_util.h \
@@ -719,7 +719,7 @@
  #include "pkg.h"
  #include "pkg_dest.h"
  #include "pkg_parse.h"
-@@ -114,39 +113,6 @@
+@@ -114,39 +113,6 @@ opkg_update_cmd(int argc, char **argv)
       }
  
  
@@ -769,7 +769,7 @@
  #include "pkg.h"
  #include "opkg_message.h"
  #include "pkg_vec.h"
-@@ -183,40 +182,6 @@
+@@ -183,40 +182,6 @@ pkg_hash_load_feeds(void)
  	lists_dir = conf->restrict_to_default_dest ?
  		conf->default_dest->lists_dir : conf->lists_dir;
  
