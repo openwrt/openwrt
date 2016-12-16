@@ -378,6 +378,7 @@ platform_check_image() {
 	tl-wpa8630|\
 	tl-wr1041n-v2|\
 	tl-wr1043nd-v2|\
+	tl-wr1043nd-v4|\
 	tl-wr1043nd|\
 	tl-wr2543n|\
 	tl-wr703n|\

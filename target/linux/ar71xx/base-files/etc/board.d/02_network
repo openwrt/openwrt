@@ -299,7 +299,8 @@ ar71xx_setup_interfaces()
 		;;
 	dir-869-a1|\
 	epg5000|\
-	esr1750)
+	esr1750|\
+	tl-wr1043nd-v4)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 		;;
@@ -458,6 +459,9 @@ ar71xx_setup_macs()
 	wndr4300)
 		lan_mac=$(mtd_get_mac_binary caldata 0)
 		wan_mac=$(mtd_get_mac_binary caldata 6)
+		;;
+	tl-wr1043nd-v4)
+		wan_mac=$(mtd_get_mac_binary config 0x1017c)
 		;;
 	esr900)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env "wanaddr")

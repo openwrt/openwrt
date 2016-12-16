@@ -179,6 +179,7 @@ obj-$(CONFIG_ATH79_MACH_TL_WPA8630)		+= mach-tl-wpa8630.o
 obj-$(CONFIG_ATH79_MACH_TL_WR1041N_V2)		+= mach-tl-wr1041n-v2.o
 obj-$(CONFIG_ATH79_MACH_TL_WR1043ND)		+= mach-tl-wr1043nd.o
 obj-$(CONFIG_ATH79_MACH_TL_WR1043ND_V2)		+= mach-tl-wr1043nd-v2.o
+obj-$(CONFIG_ATH79_MACH_TL_WR1043ND_V4)		+= mach-tl-wr1043nd-v4.o
 obj-$(CONFIG_ATH79_MACH_TL_WR2543N)		+= mach-tl-wr2543n.o
 obj-$(CONFIG_ATH79_MACH_TL_WR703N)		+= mach-tl-wr703n.o
 obj-$(CONFIG_ATH79_MACH_TL_WR720N_V3)		+= mach-tl-wr720n-v3.o
