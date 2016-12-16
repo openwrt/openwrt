@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
 PKG_VERSION:=3.9.10
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
 PKG_SOURCE_URL:=https://www.wolfssl.com/
@@ -43,10 +43,8 @@ endef
 TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
-	--enable-singlethreaded \
 	--enable-opensslextra \
 	--enable-sni \
-	--enable-stunnel \
 	--disable-examples
 
 ifeq ($(CONFIG_IPV6),y)
