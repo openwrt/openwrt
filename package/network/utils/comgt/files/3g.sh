@@ -31,6 +31,8 @@ proto_3g_setup() {
 	json_get_var dialnumber dialnumber
 
 	[ -n "$dat_device" ] && device=$dat_device
+
+	device="$(readlink -f $device)"
 	[ -e "$device" ] || {
 		proto_set_available "$interface" 0
 		return 1

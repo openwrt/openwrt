@@ -45,6 +45,8 @@ proto_ncm_setup() {
 		proto_set_available "$interface" 0
 		return 1
 	}
+
+	device="$(readlink -f $device)"
 	[ -e "$device" ] || {
 		echo "Control device not valid"
 		proto_set_available "$interface" 0
