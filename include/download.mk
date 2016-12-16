@@ -47,8 +47,21 @@ endef
 ifdef CHECK
 check_escape=$(subst ','\'',$(1))
 #')
-check_warn = $(info $(shell printf "$(_R)WARNING: %s$(_N)" '$(call check_escape,$(call C_$(1),$(2),$(3),$(4)))'))
+
+check_warn_nofix = $(info $(shell printf "$(_R)WARNING: %s$(_N)" '$(call check_escape,$(call C_$(1),$(2),$(3),$(4)))'))
+ifndef FIXUP
+  check_warn = $(check_warn_nofix)
+else
+  check_warn = $(if $(filter-out undefined,$(origin F_$(1))),$(filter ,$(shell $(call F_$(1),$(2),$(3),$(4)) >&2)),$(check_warn_nofix))
+endif
+
 gen_sha256sum = $(shell openssl dgst -sha256 $(DL_DIR)/$(1) | awk '{print $$2}')
+
+ifdef FIXUP
+F_hash_deprecated = $(SCRIPT_DIR)/fixup-makefile.pl $(CURDIR)/Makefile fix-hash $(3) $(call gen_sha256sum,$(1)) $(2)
+F_hash_mismatch = $(F_hash_deprecated)
+F_hash_missing = $(SCRIPT_DIR)/fixup-makefile.pl $(CURDIR)/Makefile add-hash $(3) $(call gen_sha256sum,$(1))
+endif
 
 C_download_missing = $(1) is missing, please run make download before re-running this check
 C_hash_mismatch = $(3) does not match $(1) hash $(call gen_sha256sum,$(1))
@@ -68,6 +81,10 @@ check_hash = \
     ), \
     $(call check_warn,download_missing,$(1),$(2),$(3)) \
   )
+
+ifdef FIXUP
+F_md5_deprecated = $(SCRIPT_DIR)/fixup-makefile.pl $(CURDIR)/Makefile rename-var $(2) $(3)
+endif
 
 C_md5_deprecated = Use of $(2) is deprecated, switch to $(3)
 
