@@ -110,6 +110,11 @@ tools-y += flock
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
 $(curdir)/builddirs-default := $(tools-y)
 
+ifdef CHECK_ALL
+$(curdir)/builddirs-check:=$($(curdir)/builddirs)
+$(curdir)/builddirs-download:=$($(curdir)/builddirs)
+endif
+
 ifndef DUMP_TARGET_DB
 define PrepareStaging
 	@for dir in $(1); do ( \

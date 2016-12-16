@@ -14,6 +14,10 @@ $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
 $(curdir)/builddirs-install:=.
 $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
 $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
+ifdef CHECK_ALL
+$(curdir)/builddirs-check:=$($(curdir)/builddirs)
+$(curdir)/builddirs-download:=$($(curdir)/builddirs)
+endif
 ifneq ($(IGNORE_ERRORS),)
   package-y-filter := $(package-y)
   package-m-filter := $(filter-out $(package-y),$(package-m))
