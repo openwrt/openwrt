@@ -171,7 +171,7 @@ define Download/Defaults
   URL_FILE:=
   PROTO:=
   HASH=$$(MD5SUM)
-  MD5SUM:=
+  MD5SUM:=x
   SUBDIR:=
   MIRROR:=1
   MIRROR_HASH=$$(MIRROR_MD5SUM)
