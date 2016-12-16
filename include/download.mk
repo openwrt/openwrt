@@ -180,6 +180,19 @@ define Download/Defaults
   OPTS:=
 endef
 
+define Download/default
+  FILE:=$(PKG_SOURCE)
+  URL:=$(PKG_SOURCE_URL)
+  SUBDIR:=$(PKG_SOURCE_SUBDIR)
+  PROTO:=$(PKG_SOURCE_PROTO)
+  $(if $(PKG_SOURCE_MIRROR),MIRROR:=$(filter 1,$(PKG_MIRROR)))
+  $(if $(PKG_MIRROR_MD5SUM),MIRROR_MD5SUM:=$(PKG_MIRROR_MD5SUM))
+  $(if $(PKG_MIRROR_HASH),MIRROR_HASH:=$(PKG_MIRROR_HASH))
+  VERSION:=$(PKG_SOURCE_VERSION)
+  $(if $(PKG_MD5SUM),MD5SUM:=$(PKG_MD5SUM))
+  $(if $(PKG_HASH),HASH:=$(PKG_HASH))
+endef
+
 define Download
   $(eval $(Download/Defaults))
   $(eval $(Download/$(1)))

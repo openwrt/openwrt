@@ -118,19 +118,6 @@ ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   endif
 endif
 
-define Download/default
-  FILE:=$(PKG_SOURCE)
-  URL:=$(PKG_SOURCE_URL)
-  SUBDIR:=$(PKG_SOURCE_SUBDIR)
-  PROTO:=$(PKG_SOURCE_PROTO)
-  $(if $(PKG_SOURCE_MIRROR),MIRROR:=$(filter 1,$(PKG_MIRROR)))
-  $(if $(PKG_MIRROR_MD5SUM),MIRROR_MD5SUM:=$(PKG_MIRROR_MD5SUM))
-  $(if $(PKG_MIRROR_HASH),MIRROR_HASH:=$(PKG_MIRROR_HASH))
-  VERSION:=$(PKG_SOURCE_VERSION)
-  $(if $(PKG_MD5SUM),MD5SUM:=$(PKG_MD5SUM))
-  $(if $(PKG_HASH),HASH:=$(PKG_HASH))
-endef
-
 ifdef USE_GIT_TREE
   define Build/Prepare/Default
 	mkdir -p $(PKG_BUILD_DIR)
