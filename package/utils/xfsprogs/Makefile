@@ -11,7 +11,7 @@ PKG_NAME:=xfsprogs
 PKG_RELEASE:=1
 PKG_VERSION:=3.1.7
 PKG_SOURCE_URL:=ftp://oss.sgi.com/projects/xfs/previous/
-PKG_MD5SUM:=049cf9873794ea49d0bb3f12d45748a4
+PKG_HASH:=e150914210ac5fd29c098ef0fd94bdec51d2fb231cf9faa765c16ec6d75c8eaa
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_INSTALL:=1

@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=gdb-arc-2016.03-gdb.tar.gz
 PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/$(PKG_VERSION)
-PKG_MD5SUM:=775caaf6385c16f20b6f53c0a2b95f79
+PKG_HASH:=6a91f86cc487c1548d3f5d4f29f7226d2019c0db8a63633aeabd5914a340f3f9
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/binutils-gdb-arc-2016.03-gdb
 

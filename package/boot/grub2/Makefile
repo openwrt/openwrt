@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=http://alpha.gnu.org/gnu/grub \
 	http://gnualpha.uib.no/grub/ \
 	http://mirrors.fe.up.pt/pub/gnu-alpha/grub/ \
 	http://www.nic.funet.fi/pub/gnu/alpha/gnu/grub/
-PKG_MD5SUM:=be62932eade308a364ea4bbc91295930
+PKG_HASH:=f6c702b2a8ea58f27a2b02928bb77973cb5a827af08f63db38c471c0a01b418d
 
 HOST_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=grub2/host

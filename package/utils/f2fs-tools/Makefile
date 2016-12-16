@@ -15,7 +15,7 @@ PKG_LICENSE:=GPLv2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://git.kernel.org/cgit/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/
-PKG_MD5SUM:=9db22274264f0c88dbee012f257917b1
+PKG_HASH:=33d454c2e95aabef5659949c4fff15f6c9877b48349e64411de502bc62b0cbd4
 
 PKG_FIXUP:=autoreconf
 PKG_BUILD_PARALLEL:=1

@@ -23,7 +23,7 @@ PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	http://www.openssl.org/source/old/$(PKG_BASE)/ \
 	ftp://ftp.funet.fi/pub/crypt/mirrors/ftp.openssl.org/source \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
-PKG_MD5SUM:=e7aff292be21c259c6af26469c7a9b3ba26e9abaaffd325e3dccc9785256c431
+PKG_HASH:=e7aff292be21c259c6af26469c7a9b3ba26e9abaaffd325e3dccc9785256c431
 
 PKG_LICENSE:=OpenSSL
 PKG_LICENSE_FILES:=LICENSE

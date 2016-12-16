@@ -13,7 +13,7 @@ PKG_VERSION:=1.9.0
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=d8eee8cba0edb28974cc1f8532e3bd18
+PKG_HASH:=707f515eb727c032418c4da67d7e86884bb56cdc2a606e8f6ded6057d8767e57
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
@@ -79,12 +79,12 @@ ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE)$(CONFIG_LTQ_VOICE_CPE_VMMC_WIT
   FW_SOURCE:=voip_R12.1.0.1.0-enc.bin
   FW_TARGET:=danube_firmware.bin
   FW_FILE=fw_voip_danube-12.1.0.1.0.tar.gz
-  FW_MD5SUM:=51868b88dee9dbc65d3dbba355ded91c
+  FW_HASH:=bb92a6f1b864f217863e435eab6e5bbf8fe9a06b1398fe5aa8542baf53f7d927
   FW_DOWNLOAD:=1
   COEF_SRC:=danube_bbd_fxs.bin
   COEF_TARGET:=danube_bbd_fxs.bin
   COEF_FILE:=coef_voip_danube-0.9.0.tar.gz
-  COEF_MD5SUM:=c8ac6592b304b03829a8123560e15710
+  COEF_HASH:=6578d6c8f4874b7e4bf10d10c7e5b7e913f6a7cdeba998fb04f28c41f94c82c1
   COEF_DOWNLOAD:=1
 endif
 
@@ -98,7 +98,7 @@ COEF_SRC:=$(COEF_TARGET)
 ifeq ($(CONFIG_VOICE_VMMC_WITH_DEVICE_FALCON),y)
   CONFIGURE_ARGS += --with-device=FALCON
   FW_SOURCE:=voip_R1.1.0.6.0-enc.bin
-  FW_MD5SUM:=cd4366a52a8010b76793e3810a4f14b3
+  FW_HASH:=5046a9df736ce302bb240f262c2557c4c9d9b214c22ea67910e3a01a3728c84a
   FW_TARGET:=falcon_voip_fw.bin
   FW_FILE=fw_voip_falcon-1.1.0.6.0.tar.gz
   FW_DOWNLOAD:=1
@@ -114,7 +114,7 @@ ifeq ($(CONFIG_LTQ_VOICE_CPE_VMMC_COEF_FALCON_USE_CUSTOM_FILE),y)
 	COEF_SRC:=$(CONFIG_LTQ_VOICE_CPE_VMMC_COEF_FALCON_CUSTOM_FILE)
 endif
   COEF_FILE:=coef_voip_falcon.tar.gz
-  COEF_MD5SUM:=56c5a838f2bb9bd87d0e8dce271f810b
+  COEF_HASH:=9b63b2cc7fefdad36d43c307227fc1aade3cf5600ee75fb572da6d908238cf60
   COEF_DOWNLOAD:=1
 endif
 
@@ -123,12 +123,12 @@ ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_VR9),y)
   FW_TARGET:=voice_ar9_firmware.bin
   FW_SOURCE:=voip_R2.3.1.7.0-enc.bin
   FW_FILE=fw_voip_vr9-2.3.1.7.0.tar.gz
-  FW_MD5SUM:=9d716b99349b56b619dbaf6647b227cb
+  FW_HASH:=bc64da5a44a5440d6008f80a5d3f6fdb15c90f9b4023795d1b5b8e35c50bd167
   FW_DOWNLOAD:=1
   COEF_SRC:=ETSI_3_10.BIN
   COEF_TARGET:=vr9_bbd_fxs.bin
   COEF_FILE:=coef_voip_vr9-0.9.3.tar.gz
-  COEF_MD5SUM:=66fa5c6a4110726b1f8658359b8008e6
+  COEF_HASH:=3264ed2ab0316bdda419b649fd0d6cadf02540c7e5dc0ea501a7fb680fb371e7
   COEF_DOWNLOAD:=1
 
   COEF_SRC_FXO:=FXO_ETSI_0_0.BIN
@@ -138,14 +138,14 @@ endif
 define Download/firmware
   FILE:=$(FW_FILE)
   URL:=$(FW_URL)
-  MD5SUM:=$(FW_MD5SUM)
+  HASH:=$(FW_HASH)
 endef
 $(eval $(if $(FW_DOWNLOAD),$(call Download,firmware)))
 
 define Download/coef
   FILE:=$(COEF_FILE)
   URL:=$(FW_URL)
-  MD5SUM:=$(COEF_MD5SUM)
+  HASH:=$(COEF_HASH)
 endef
 $(eval $(if $(COEF_DOWNLOAD),$(call Download,coef)))
 

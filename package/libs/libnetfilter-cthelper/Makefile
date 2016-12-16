@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libnetfilter_cthelper/files/ \
 	ftp://ftp.netfilter.org/pub/libnetfilter_cthelper/
-PKG_MD5SUM:=b2efab1a3a198a5add448960ba011acd
+PKG_HASH:=07618e71c4d9a6b6b3dc1986540486ee310a9838ba754926c7d14a17d8fccf3d
 
 PKG_FIXUP:=autoreconf
 PKG_LICENSE:=GPL-2.0+

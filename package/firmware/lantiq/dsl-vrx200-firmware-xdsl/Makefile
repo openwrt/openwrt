@@ -11,7 +11,7 @@ PKG_VERSION:=05.08.01.08.01.06_05.08.00.0B.01.01_osc
 PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=13868b2c24df8470dc26c45998166d04
+PKG_HASH:=44cd94130571fe42dfa8f0f9d44597d104e9e77962617fe38646b7a0b4184a2b
 PKG_BUILD_DEPENDS:=bsdiff/host
 
 PKG_FLAGS:=nonshared
@@ -28,7 +28,7 @@ ANNEX_B_VER:=579906_574402
 define Download/dsl_vr9_firmware_xdsl_b
   FILE:=$(PKG_B_SOURCE)
   URL:=$(PKG_SOURCE_URL)
-  MD5SUM:=e2f392d42aaf51e74f7c2ff2ef731072
+  HASH:=275c55e870205a5a75510d3ef3d3fb6b60010effebf4b2d1fbc72ffd46e855c0
 endef
 $(eval $(call Download,dsl_vr9_firmware_xdsl_b))
 

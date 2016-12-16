@@ -16,7 +16,7 @@ PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/conntrack-tools/files \
 	ftp://ftp.netfilter.org/pub/conntrack-tools \
 	http://mirrors.evolva.ro/netfilter.org/conntrack-tools
-PKG_MD5SUM:=b7caf4fcc4c03575df57d25e5216584d597fd916c891f191dac616ce68bdba6c
+PKG_HASH:=b7caf4fcc4c03575df57d25e5216584d597fd916c891f191dac616ce68bdba6c
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0

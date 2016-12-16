@@ -23,28 +23,28 @@ P54SPIFW:=2.13.0.0.a.13.14.arm
 define Download/prism54-firmware
   FILE:=$(PRISM54FW)
   URL:=$(PRG_URL)/fw-fullmac
-  MD5SUM:=8bd4310971772a486b9784c77f8a6df9
+  HASH:=dce24156c57234dba131429fbe8cd1de8ba818c9481ddc33cf7e5af9d57a737c
 endef
 $(eval $(call Download,prism54-firmware))
 
 define Download/p54-usb-firmware
   FILE:=$(P54USBFW)
   URL:=$(PRG_URL)/fw-usb
-  MD5SUM:=8e8ab005a4f8f0123bcdc51bc25b47f6
+  HASH:=b59793e00a042b2bd5e883a15847778db90f49a9a4bdd1368a6b4021e6c93979
 endef
 $(eval $(call Download,p54-usb-firmware))
 
 define Download/p54-pci-firmware
   FILE:=$(P54PCIFW)
   URL:=$(PRG_URL)/fw-softmac
-  MD5SUM:=ff7536af2092b1c4b21315bd103ef4c4
+  HASH:=3e62fe0c55fe4138dd10ef8fe8b4841908609d2cb2386ef71d3d0508b627170b
 endef
 $(eval $(call Download,p54-pci-firmware))
 
 define Download/p54-spi-firmware
   FILE:=$(P54SPIFW)
   URL:=$(PRG_URL)/stlc4560
-  MD5SUM:=42661f8ecbadd88012807493f596081d
+  HASH:=7fffaceb008b9beb5a1da4744c9a6d31c8d9eff54e3461cba925785f2ae1648d
 endef
 $(eval $(call Download,p54-spi-firmware))
 

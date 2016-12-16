@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://andrzejekiert.ovh.org/software/fconfig/
-PKG_MD5SUM:=dac355e9f2a0f48c414c52e2034b6346
+PKG_HASH:=4ff0e8f07e35e46b705c0dbe9d9544ede01ea092a69e3f7db03e55a3f2bb8eb7
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 

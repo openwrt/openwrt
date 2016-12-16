@@ -16,7 +16,7 @@ PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libnfnetlink/files/ \
 	ftp://ftp.netfilter.org/pub/libnfnetlink/ \
 	http://mirrors.evolva.ro/netfilter.org/libnfnetlink/
-PKG_MD5SUM:=98927583d2016a9fb1936fed992e2c5e
+PKG_HASH:=f270e19de9127642d2a11589ef2ec97ef90a649a74f56cf9a96306b04817b51a
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0+
 

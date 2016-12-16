@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.oberhumer.com/opensource/lzo/download/
-PKG_MD5SUM:=c7ffc9a103afe2d1bba0b015e7aa887f
+PKG_HASH:=f294a7ced313063c057c504257f437c8335c41bfeed23531ee4e6a2b87bcb34c
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1

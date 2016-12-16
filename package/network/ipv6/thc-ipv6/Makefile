@@ -14,7 +14,7 @@ PKG_LICENSE:=GPL-3.0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://freeworld.thc.org/releases/
-PKG_MD5SUM:=2975dd54be35b68c140eb2a6b8ef5e59
+PKG_HASH:=440a3ae98b57100c397ec4f8634468dbbb0c3b48788c6b74af2a597a90544a96
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 

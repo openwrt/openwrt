@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libmnl/files \
 	ftp://ftp.netfilter.org/pub/libmnl
-PKG_MD5SUM:=171f89699f286a5854b72b91d06e8f8e3683064c5901fb09d954a9ab6f551f81
+PKG_HASH:=171f89699f286a5854b72b91d06e8f8e3683064c5901fb09d954a9ab6f551f81
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 

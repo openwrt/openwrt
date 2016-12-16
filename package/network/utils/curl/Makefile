@@ -18,7 +18,7 @@ PKG_SOURCE_URL:=http://curl.haxx.se/download/ \
 	ftp://ftp.planetmirror.com/pub/curl/ \
 	http://www.mirrormonster.com/curl/download/ \
 	http://curl.mirrors.cyberservers.net/download/
-PKG_MD5SUM:=7f8240048907e5030f67be0a6129bc4b333783b9cca1391026d700835a788dde
+PKG_HASH:=7f8240048907e5030f67be0a6129bc4b333783b9cca1391026d700835a788dde
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING

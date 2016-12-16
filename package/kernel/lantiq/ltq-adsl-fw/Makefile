@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 PKG_BUILD_DIR:=$(BUILD_DIR)/ltq-dsl-fw-$(PKG_VERSION)
 PKG_SOURCE:=ltq-dsl-fw-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-PKG_MD5SUM:=4700a36b66b955b4c5544227267356f4
+PKG_HASH:=28676d41c4b76e5bf7a2c5eae106a61fb96b93eabc0cb71120575fff9997269f
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 PKG_FLAGS:=nonshared

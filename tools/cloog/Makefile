@@ -11,7 +11,7 @@ PKG_VERSION:=0.18.1
 
 PKG_SOURCE_URL:=http://www.bastoul.net/cloog/pages/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=e34fca0540d840e5d0f6427e98c92252
+PKG_HASH:=02500a4edd14875f94fe84cbeda4290425cb0c1c2474c6f75d75a303d64b4196
 
 HOST_FIXUP:=autoreconf
 

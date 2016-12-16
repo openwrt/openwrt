@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 PKG_SOURCE:=drv_dsl_cpe_api_danube-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/ltq-dsl-$(BUILD_VARIANT)/drv_dsl_cpe_api-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-PKG_MD5SUM:=c45bc531c1ed2ac80f68fb986b63bb87
+PKG_HASH:=eb2ed59715d3bf4e8a1460bbbe2f1660039e0a9f9d72afb1b2b16590094eb33c
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
 PKG_USE_MIPS16:=0

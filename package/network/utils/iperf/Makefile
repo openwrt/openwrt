@@ -18,7 +18,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)$(PKG_VERSION_SUFFIX).tar.gz
 # conflicts with existing mirrored files.
 # PKG_SOURCE_URL:=@SF/iperf2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=db02911f35686e808ed247160dfa766e08ae3f59d1e7dcedef0ffb2a6643f0bf
+PKG_HASH:=db02911f35686e808ed247160dfa766e08ae3f59d1e7dcedef0ffb2a6643f0bf
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause

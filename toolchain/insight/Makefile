@@ -10,7 +10,7 @@ PKG_NAME:=insight
 PKG_VERSION:=6.8-1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)a.tar.bz2
-PKG_MD5SUM:=f7dd764a102beb75c2bb6b8d83455f8e
+PKG_HASH:=51216df73adc4f68c67b60356270d5073f0ff094c1b477ecd96560f49707ea2a
 PKG_SOURCE_URL:=ftp://sourceware.org/pub/insight/releases
 PKG_CAT:=bzcat
 

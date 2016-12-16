@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libnetfilter_log/files/ \
 	ftp://ftp.netfilter.org/pub/libnetfilter_log/
-PKG_MD5SUM:=2a4bb0654ae675a52d2e8d1c06090b94
+PKG_HASH:=74e0fe75753dba3ac114531b5e73240452c789a3f3adccf5c51217da1d933b21
 PKG_MAINTAINER:=Yousong Zhou <yszhou4tech@gmail.com>
 
 PKG_FIXUP:=autoreconf

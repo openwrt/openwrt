@@ -13,7 +13,7 @@ PKG_RELEASE=1
 
 PKG_SOURCE_URL:=http://dl.2f30.org/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=678ebdac0c3278b934c6524cd1e3dc4c
+PKG_HASH:=afcd073d6d8d175eede2a28a7dd71b7150cb03290f99102261892c793f6b4cb1
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 

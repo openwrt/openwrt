@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=wl_apsta-$(PKG_VERSION).o
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
-PKG_MD5SUM:=e08665c5c5b66beb9c3b2dd54aa80cb3
+PKG_HASH:=7dba610b1d96dd14e901bcbce14cd6ecd1b1ac6f5c0035b0d6b6dc46a7c3ef90
 
 include $(INCLUDE_DIR)/package.mk
 

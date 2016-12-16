@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://arago-project.org/git/projects/am33x-cm3.git
 PKG_SOURCE_VERSION:=32cf44e25b5828b87af6dceebc3a49fed5d858ac
-PKG_MIRROR_MD5SUM:=71d4029eed4ef58a1e0beb299d5c876bf0b9a790ecac52aacf1d510f5841d959
+PKG_MIRROR_HASH:=71d4029eed4ef58a1e0beb299d5c876bf0b9a790ecac52aacf1d510f5841d959
 
 PKG_MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 

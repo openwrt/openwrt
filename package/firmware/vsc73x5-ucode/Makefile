@@ -15,7 +15,7 @@ PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_SOURCE:=vsc73x5-ucode.tar.bz2
 PKG_BUILD_DIR:=$(BUILD_DIR)/vsc73x5-ucode
 
-PKG_MD5SUM:=b32e3debcd118f263c79199a7b5afa68
+PKG_HASH:=9728cec2b5d49ddd52578a8c600f1fd9f878a34e7e00ed51c248e0d608dd763a
 
 PKG_FLAGS:=nonshared
 

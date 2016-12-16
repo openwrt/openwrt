@@ -17,7 +17,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=451c07271940016cec6f5ad8a155263b
+PKG_HASH:=6d094cafa7ecea8b671fbdcd21130b6a4f5744fc47dd263e101ed5d3629dffd4
 PKG_TARGETS:=bin
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+

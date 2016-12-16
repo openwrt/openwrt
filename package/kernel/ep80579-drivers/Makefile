@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=Embedded.L.1.0.34.ADI.R100.tar.gz
 PKG_SOURCE_URL:=ftp://ftp.adiengineering.com/Archive/OcracokeIsland/Drivers/Linux/1.0.34/
-PKG_MD5SUM:=61df9778f8c1f919257d2f48a0bcb000
+PKG_HASH:=f00684176a3dd1dc9ea8d96ecd1ecade5103f351ed93b9e3a5ff5f3f3295e2a9
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 

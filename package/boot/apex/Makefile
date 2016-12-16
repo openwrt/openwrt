@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
-PKG_MD5SUM:=9606cf2e3fd2c9a86fe0b61388509a30
+PKG_HASH:=1d2bc04c2c6bb3d2d6c1916b6dc559cda2b1ecb045d7801fd49af6af4234abeb
 PKG_TARGETS:=bin
 
 include $(INCLUDE_DIR)/package.mk

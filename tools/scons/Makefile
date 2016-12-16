@@ -13,7 +13,7 @@ PKG_VERSION:=2.5.1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/scons \
 		http://fossies.org/linux/misc/
-PKG_MD5SUM:=aaaf09e1351a598f98d17b0cf1103e7a
+PKG_HASH:=0b25218ae7b46a967db42f2a53721645b3d42874a65f9552ad16ce26d30f51f2
 
 include $(INCLUDE_DIR)/host-build.mk
 

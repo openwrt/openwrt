@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.daemonology.net/bsdiff/
-PKG_MD5SUM:=e6d812394f0e0ecc8d5df255aa1db22a
+PKG_HASH:=18821588b2dc5bf159aa37d3bcb7b885d85ffd1e19f23a0c57a58723fea85f48
 PKG_MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 HOST_BUILD_DEPENDS:=bzip2/host
 

@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/libnetfilter_cttimeout/files/ \
 	ftp://ftp.netfilter.org/pub/libnetfilter_cttimeout/
-PKG_MD5SUM:=7697437fc9ebb6f6b83df56a633db7f9
+PKG_HASH:=aeab12754f557cba3ce2950a2029963d817490df7edb49880008b34d7ff8feba
 
 PKG_FIXUP:=autoreconf
 PKG_LICENSE:=GPL-2.0+

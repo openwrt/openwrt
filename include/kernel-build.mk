@@ -43,7 +43,7 @@ endef
 define Download/kernel
   URL:=$(LINUX_SITE)
   FILE:=$(LINUX_SOURCE)
-  MD5SUM:=$(LINUX_KERNEL_MD5SUM)
+  HASH:=$(LINUX_KERNEL_HASH)
 endef
 
 KERNEL_GIT_OPTS:=

@@ -19,7 +19,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
 PKG_SOURCE_URL:=\
 	https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware \
 	https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
-PKG_MIRROR_MD5SUM:=762d7f4a87e944338c2871c953603377
+PKG_MIRROR_HASH:=d34a25ed8d87eeed54ddd7579205292f0223f9b78a6223134d0ba933fd3b033c
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
