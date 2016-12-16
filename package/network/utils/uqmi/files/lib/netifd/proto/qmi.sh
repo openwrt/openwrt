@@ -42,6 +42,8 @@ proto_qmi_setup() {
 		proto_set_available "$interface" 0
 		return 1
 	}
+
+	device="$(readlink -f $device)"
 	[ -c "$device" ] || {
 		echo "The specified control device does not exist"
 		proto_notify_error "$interface" NO_DEVICE
