@@ -81,6 +81,7 @@
 		partition@0 {
 			label = "u-boot";
 			reg = <0x0 0x30000>;
+			read-only;
 		};
 
 		partition@30000 {
@@ -97,7 +98,7 @@
 
 		partition@50000 {
 			label = "firmware";
-			reg = <0x50000 0xfb0000>;
+			reg = <0x50000 0xee0000>;
 		};
 	};
 };
@@ -109,16 +110,16 @@
 		mt76@0,0 {
 			reg = <0x0000 0 0 0 0>;
 			device_type = "pci";
-			mediatek,mtd-eeprom = <&factory 0x0004>;
+			mediatek,mtd-eeprom = <&factory 0x8000>;
 			mediatek,2ghz = <0>;
 		};
 	};
 
-	pcie2 {
-		mt76@2,0 {
-			reg = <0x1000 0 0 0 0>;
+	pcie1 {
+		mt76@1,0 {
+			reg = <0x0000 0 0 0 0>;
 			device_type = "pci";
-			mediatek,mtd-eeprom = <&factory 0x8004>;
+			mediatek,mtd-eeprom = <&factory 0x0000>;
 			mediatek,5ghz = <0>;
 		};
 	};
