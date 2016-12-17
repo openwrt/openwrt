@@ -28,13 +28,19 @@ endef
 
 $(eval $(call KernelPackage,pcmcia-core))
 
-define KernelPackage/pcmcia-rsrc
+
+define AddDepends/pcmcia
   SUBMENU:=$(PCMCIA_MENU)
+  DEPENDS+=kmod-pcmcia-core $(1)
+endef
+
+
+define KernelPackage/pcmcia-rsrc
   TITLE:=PCMCIA resource support
-  DEPENDS:=kmod-pcmcia-core
   KCONFIG:=CONFIG_PCCARD_NONSTATIC=y
   FILES:=$(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.ko
   AUTOLOAD:=$(call AutoLoad,26,pcmcia_rsrc)
+  $(call AddDepends/pcmcia)
 endef
 
 define KernelPackage/pcmcia-rsrc/description
@@ -45,26 +51,26 @@ $(eval $(call KernelPackage,pcmcia-rsrc))
 
 
 define KernelPackage/pcmcia-yenta
-  SUBMENU:=$(PCMCIA_MENU)
   TITLE:=yenta socket driver
-  DEPENDS:=kmod-pcmcia-rsrc
   KCONFIG:=CONFIG_YENTA
   FILES:=$(LINUX_DIR)/drivers/pcmcia/yenta_socket.ko
   AUTOLOAD:=$(call AutoLoad,41,yenta_socket)
+  DEPENDS:=+kmod-pcmcia-rsrc
+  $(call AddDepends/pcmcia)
 endef
 
 $(eval $(call KernelPackage,pcmcia-yenta))
 
 
 define KernelPackage/pcmcia-serial
-  SUBMENU:=$(PCMCIA_MENU)
   TITLE:=Serial devices support
-  DEPENDS:=kmod-pcmcia-core +kmod-serial-8250
   KCONFIG:= \
 	CONFIG_PCMCIA_SERIAL_CS \
 	CONFIG_SERIAL_8250_CS
-    FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/serial_cs.ko
+  FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/serial_cs.ko
   AUTOLOAD:=$(call AutoLoad,45,serial_cs)
+  DEPENDS:=+kmod-serial-8250
+  $(call AddDepends/pcmcia)
 endef
 
 define KernelPackage/pcmcia-serial/description
