@@ -745,3 +745,17 @@ menu "Filesystem ACL and attr support options"
 		default y if USE_FS_ACL_ATTR
 
 endmenu
+
+config KERNEL_DEVMEM
+	bool "/dev/mem virtual device support"
+	help
+	  Say Y here if you want to support the /dev/mem device.
+	  The /dev/mem device is used to access areas of physical
+	  memory.
+
+config KERNEL_DEVKMEM
+	bool "/dev/kmem virtual device support"
+	help
+	  Say Y here if you want to support the /dev/kmem device. The
+	  /dev/kmem device is rarely used, but can be used for certain
+	  kind of kernel debugging operations.
