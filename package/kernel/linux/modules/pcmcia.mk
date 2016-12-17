@@ -79,3 +79,19 @@ define KernelPackage/pcmcia-serial/description
 endef
 
 $(eval $(call KernelPackage,pcmcia-serial))
+
+
+define KernelPackage/pcmcia-pd6729
+  TITLE:=Cirrus PD6729 compatible bridge support
+  KCONFIG:=CONFIG_PD6729
+  FILES:=$(LINUX_DIR)/drivers/pcmcia/pd6729.ko
+  AUTOLOAD:=$(call AutoLoad,41,pd6729)
+  DEPENDS:=+kmod-pcmcia-rsrc
+  $(call AddDepends/pcmcia)
+endef
+
+define KernelPackage/pcmcia-pd6729/description
+ Kernel support for the Cirrus PD6729 PCI-to-PCMCIA bridge
+endef
+
+$(eval $(call KernelPackage,pcmcia-pd6729))
