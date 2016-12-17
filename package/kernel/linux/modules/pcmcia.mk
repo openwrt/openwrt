@@ -50,7 +50,7 @@ define KernelPackage/pcmcia-yenta
   DEPENDS:=kmod-pcmcia-rsrc
   KCONFIG:=CONFIG_YENTA
   FILES:=$(LINUX_DIR)/drivers/pcmcia/yenta_socket.ko
-  AUTOLOAD:=$(call AutoLoad,41,pcmcia_rsrc yenta_socket)
+  AUTOLOAD:=$(call AutoLoad,41,yenta_socket)
 endef
 
 $(eval $(call KernelPackage,pcmcia-yenta))
