@@ -95,3 +95,19 @@ define KernelPackage/pcmcia-pd6729/description
 endef
 
 $(eval $(call KernelPackage,pcmcia-pd6729))
+
+
+define KernelPackage/pcmcia-nozomi
+  TITLE:=Option Fusion+ card
+  KCONFIG:=CONFIG_NOZOMI
+  FILES:=$(LINUX_DIR)/drivers/tty/nozomi.ko
+  AUTOLOAD:=$(call AutoLoad,60,nozomi)
+  DEPENDS:=+kmod-pcmcia-rsrc
+  $(call AddDepends/pcmcia)
+endef
+
+define KernelPackage/pcmcia-nozomi/description
+ Kernel support for Option Fusion+ card
+endef
+
+$(eval $(call KernelPackage,pcmcia-nozomi))
