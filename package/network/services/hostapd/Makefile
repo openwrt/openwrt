@@ -193,10 +193,6 @@ define Package/wpa-supplicant
   VARIANT:=supplicant-full
 endef
 
-define Package/wpa-supplicant/Description
-  WPA Supplicant
-endef
-
 define Package/wpa-supplicant/config
 	source "$(SOURCE)/Config.in"
 endef
@@ -209,20 +205,12 @@ define Package/wpa-supplicant-p2p
   VARIANT:=supplicant-p2p
 endef
 
-define Package/wpa-supplicant-p2p/Description
-  WPA Supplicant (with Wi-Fi P2P support)
-endef
-
 define Package/wpa-supplicant-mesh
   $(Package/wpa-supplicant)
   TITLE:=WPA Supplicant (with 802.11s and SAE)
   DEPENDS:=$(DRV_DEPENDS) +PACKAGE_wpa-supplicant-mesh:libopenssl @PACKAGE_kmod-cfg80211 @(!TARGET_uml||BROKEN)
   CONFLICTS:=wpad wpad-mesh wpad-mesh
   VARIANT:=supplicant-mesh
-endef
-
-define Package/wpa-supplicant-mesh/Description
-  WPA Supplicant (variant with 802.11s and SAE support)
 endef
 
 define Package/wpa-supplicant-mini
@@ -233,19 +221,11 @@ define Package/wpa-supplicant-mini
   VARIANT:=supplicant-mini
 endef
 
-define Package/wpa-supplicant-mini/Description
-  WPA Supplicant (minimal version)
-endef
-
 define Package/wpa-cli
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=@PACKAGE_wpa-supplicant||PACKAGE_wpa-supplicant-p2p||PACKAGE_wpad-mini||PACKAGE_wpad||PACKAGE_wpad-mesh
-  TITLE:=WPA Supplicant command line interface
-endef
-
-define Package/wpa-cli/Description
-  WPA Supplicant control utility
+  TITLE:=WPA Supplicant command line control utility
 endef
 
 define Package/hostapd-common
