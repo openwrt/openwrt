@@ -61,6 +61,10 @@ ifdef CONFIG_PACKAGE_ATH_DEBUG
   NOSTDINC_FLAGS += -DCONFIG_ATH10K_DEBUG
 endif
 
+ifdef CONFIG_PACKAGE_ATH_DFS
+  NOSTDINC_FLAGS += -DCONFIG_ATH10K_DFS_CERTIFIED
+endif
+
 define Build/Configure
 	cp $(STAGING_DIR)/usr/include/mac80211/ath/*.h $(PKG_BUILD_DIR)
 endef
