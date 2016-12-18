@@ -40,7 +40,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  obj-$(CONFIG_GPIO_CLPS711X)	+= gpio-clps711x.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-bcm63xx.c
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,134 @@
 +/*
 + * Driver for BCM63XX memory-mapped GPIO controllers, based on
 + * Generic driver for memory-mapped GPIO controllers.
@@ -73,7 +73,16 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +#include <linux/mod_devicetable.h>
 +#include <linux/basic_mmio_gpio.h>
 +#include <linux/of.h>
++#include <linux/of_irq.h>
 +#include <linux/of_gpio.h>
++
++static int bcm63xx_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
++{
++	char irq_name[7]; /* "gpioXX" */
++
++	sprintf(irq_name, "gpio%d", gpio);
++	return of_irq_get_byname(chip->of_node, irq_name);
++}
 +
 +static int bcm63xx_gpio_probe(struct platform_device *pdev)
 +{
@@ -125,6 +134,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +
 +		if (!of_property_read_u32(dev->of_node, "ngpios", &ngpios))
 +			bgc->gc.ngpio = ngpios;
++
++		if (of_get_property(dev->of_node, "interrupt-names", NULL))
++			bgc->gc.to_irq = bcm63xx_gpio_to_irq;
 +
 +	} else if (pdata) {
 +		bgc->gc.base = pdata->base;

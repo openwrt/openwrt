@@ -94,6 +94,15 @@
 			#gpio-cells = <2>;
 
 			ngpios = <8>;
+
+			interrupts-extended = <&ext_intc1 0 0>,
+					      <&ext_intc1 1 0>,
+					      <&ext_intc0 0 0>,
+					      <&ext_intc0 1 0>,
+					      <&ext_intc0 2 0>,
+					      <&ext_intc0 3 0>;
+			interrupt-names = "gpio0", "gpio1", "gpio2", "gpio3",
+					  "gpio4", "gpio5";
 		};
 
 		gpio0: gpio-controller@fffe0084 {

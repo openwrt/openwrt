@@ -78,6 +78,10 @@
 			#gpio-cells = <2>;
 
 			ngpios = <5>;
+
+			interrupt-parent = <&ext_intc>;
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>;
+			interrupt-names = "gpio0", "gpio1", "gpio2", "gpio3";
 		};
 
 		gpio0: gpio-controller@fffe0404 {

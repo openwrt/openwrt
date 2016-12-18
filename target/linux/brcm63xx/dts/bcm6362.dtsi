@@ -80,6 +80,11 @@
 
 			gpio-controller;
 			#gpio-cells = <2>;
+
+			interrupt-parent = <&ext_intc>;
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>;
+			interrupt-names = "gpio24", "gpio25",
+					  "gpio26", "gpio27";
 		};
 	};
 };
