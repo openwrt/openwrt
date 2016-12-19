@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
-PKG_VERSION:=2.0.9
+PKG_VERSION:=2.0.14-rc1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/kexec
-PKG_HASH:=8ae34a9ceb76350954e1e1e3ca9ab51da15862bd5f2fd14392208e60fb454f71
+PKG_HASH:=3fc505ff8d8a2d24c68aac5e6b4783997d5a086966ff3de8b05a0ceb27e5e23b
 
 PKG_FIXUP:=autoreconf
 
@@ -55,7 +55,8 @@ CONFIGURE_ARGS = \
 		--libexecdir=/usr/lib \
 		--sysconfdir=/etc \
 		$(if $(CONFIG_KEXEC_ZLIB),--with,--without)-zlib \
-		$(if $(CONFIG_KEXEC_LZMA),--with,--without)-lzma
+		$(if $(CONFIG_KEXEC_LZMA),--with,--without)-lzma \
+		TARGET_LD="$(TARGET_CROSS)ld"
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
