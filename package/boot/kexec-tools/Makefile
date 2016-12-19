@@ -40,7 +40,7 @@ define Package/kexec-tools/config
 	source "$(SOURCE)/Config.in"
 endef
 
-KEXEC_TARGET_NAME:=$(call qstrip,$(CONFIG_KEXEC_TOOLS_TARGET_NAME))-linux-$(TARGET_SUFFIX)
+KEXEC_TARGET_NAME:=$(ARCH)-linux-$(TARGET_SUFFIX)
 
 CONFIGURE_ARGS = \
 		--target=$(KEXEC_TARGET_NAME) \
