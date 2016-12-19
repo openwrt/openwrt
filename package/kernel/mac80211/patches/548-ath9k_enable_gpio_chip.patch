@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  #include "common.h"
  #include "debug.h"
-@@ -973,6 +974,14 @@ struct ath_led {
+@@ -983,6 +984,14 @@ struct ath_led {
  	struct led_classdev cdev;
  };
  
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -1027,6 +1036,9 @@ struct ath_softc {
+@@ -1037,6 +1046,9 @@ struct ath_softc {
  #ifdef CPTCFG_MAC80211_LEDS
  	const char *led_default_trigger;
  	struct list_head leds;

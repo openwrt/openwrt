@@ -329,7 +329,7 @@ Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
  					       &ratesArray[0], cfgCtl,
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -1177,8 +1177,9 @@ static u8 ath_get_rate_txpower(struct at
+@@ -1165,8 +1165,9 @@ static u8 ath_get_rate_txpower(struct at
  		if (is_40) {
  			u8 power_ht40delta;
  			struct ar5416_eeprom_def *eep = &ah->eeprom.def;

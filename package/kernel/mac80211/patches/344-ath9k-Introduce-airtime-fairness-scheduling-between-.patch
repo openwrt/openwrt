@@ -1,0 +1,35 @@
+From: =?UTF-8?q?Toke=20H=C3=B8iland-J=C3=B8rgensen?= <toke@toke.dk>
+Date: Mon, 5 Dec 2016 13:27:37 +0200
+Subject: [PATCH] ath9k: Introduce airtime fairness scheduling between stations
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reworks the ath9k driver to schedule transmissions to connected
+stations in a way that enforces airtime fairness between them. It
+accomplishes this by measuring the time spent transmitting to or
+receiving from a station at TX and RX completion, and accounting this to
+a per-station, per-QoS level airtime deficit. Then, an FQ-CoDel based
+deficit scheduler is employed at packet dequeue time, to control which
+station gets the next transmission opportunity.
+
+Airtime fairness can significantly improve the efficiency of the network
+when station rates vary. The following throughput values are from a
+simple three-station test scenario, where two stations operate at the
+highest HT20 rate, and one station at the lowest, and the scheduler is
+employed at the access point:
+
+                  Before   /   After
+Fast station 1:    19.17   /   25.09 Mbps
+Fast station 2:    19.83   /   25.21 Mbps
+Slow station:       2.58   /    1.77 Mbps
+Total:             41.58   /   52.07 Mbps
+
+The benefit of airtime fairness goes up the more stations are present.
+In a 30-station test with one station artificially limited to 1 Mbps,
+we have seen aggregate throughput go from 2.14 to 17.76 Mbps.
+
+Signed-off-by: Toke Høiland-Jørgensen <toke@toke.dk>
+Signed-off-by: Kalle Valo <kvalo@qca.qualcomm.com>
+---
+
