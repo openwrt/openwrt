@@ -29,6 +29,9 @@
 # procd_kill(service, [instance]):
 #   Kill a service instance (or all instances)
 #
+# procd_send_signal(service, [instance], [signal])
+#   Send a signal to a service instance (or all instances)
+#
 
 . $IPKG_INSTROOT/usr/share/libubox/jshn.sh
 
@@ -373,6 +376,18 @@ _procd_kill() {
 	_procd_ubus_call delete
 }
 
+_procd_send_signal() {
+	local service="$1"
+	local instance="$2"
+	local signal="$3"
+
+	json_init
+	json_add_string name "$service"
+	[ -n "$instance" -a "$instance" != "*" ] && json_add_string instance "$instance"
+	[ -n "$signal" ] && json_add_int signal "$signal"
+	_procd_ubus_call signal
+}
+
 procd_open_data() {
 	local name="$1"
 	json_set_namespace procd __procd_old_cb
@@ -457,4 +472,5 @@ _procd_wrapper \
 	procd_append_param \
 	procd_add_validation \
 	procd_set_config_changed \
-	procd_kill
+	procd_kill \
+	procd_send_signal
