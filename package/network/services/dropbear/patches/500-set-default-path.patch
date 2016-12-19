@@ -1,0 +1,12 @@
+--- a/options.h
++++ b/options.h
+@@ -352,7 +352,9 @@ be overridden at runtime with -I. 0 disa
+ #define DEFAULT_IDLE_TIMEOUT 0
+ 
+ /* The default path. This will often get replaced by the shell */
++#ifndef DEFAULT_PATH
+ #define DEFAULT_PATH "/usr/bin:/bin"
++#endif
+ 
+ /* Some other defines (that mostly should be left alone) are defined
+  * in sysoptions.h */
