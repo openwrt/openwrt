@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -480,6 +480,22 @@
+@@ -480,6 +480,22 @@ config ATH79_MACH_DLAN_PRO_1200_AC
  	select ATH79_DEV_NFC
  	select ATH79_DEV_USB
  
@@ -25,7 +25,7 @@
  	select SOC_AR933X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -69,6 +69,7 @@
+@@ -69,6 +69,7 @@ obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= m
  obj-$(CONFIG_ATH79_MACH_DIR_615_I1)	+= mach-dir-615-i1.o
  obj-$(CONFIG_ATH79_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
  obj-$(CONFIG_ATH79_MACH_DIR_825_C1)	+= mach-dir-825-c1.o
@@ -35,7 +35,7 @@
  obj-$(CONFIG_ATH79_MACH_EW_DORIN)	+= mach-ew-dorin.o
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -57,6 +57,7 @@
+@@ -57,6 +57,7 @@ enum ath79_mach_type {
  	ATH79_MACH_DIR_835_A1,		/* D-Link DIR-835 rev. A1 */
  	ATH79_MACH_DLAN_PRO_500_WP,	/* devolo dLAN pro 500 Wireless+ */
  	ATH79_MACH_DLAN_PRO_1200_AC,	/* devolo dLAN pro 1200+ WiFi ac*/
