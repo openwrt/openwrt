@@ -157,7 +157,7 @@
  #include "drivers/driver.h"
  #include "eap_peer/eap.h"
  #include "wpa_supplicant_i.h"
-@@ -288,6 +289,10 @@ static void calculate_update_time(const
+@@ -290,6 +291,10 @@ static void calculate_update_time(const
  static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
  			     struct os_reltime *fetch_time)
  {
@@ -168,7 +168,7 @@
  	dst->flags = src->flags;
  	os_memcpy(dst->bssid, src->bssid, ETH_ALEN);
  	dst->freq = src->freq;
-@@ -300,6 +305,15 @@ static void wpa_bss_copy_res(struct wpa_
+@@ -302,6 +307,15 @@ static void wpa_bss_copy_res(struct wpa_
  	dst->est_throughput = src->est_throughput;
  	dst->snr = src->snr;
  
@@ -224,7 +224,7 @@
  			break;
 --- a/wpa_supplicant/bss.h
 +++ b/wpa_supplicant/bss.h
-@@ -79,6 +79,10 @@ struct wpa_bss {
+@@ -80,6 +80,10 @@ struct wpa_bss {
  	u8 ssid[SSID_MAX_LEN];
  	/** Length of SSID */
  	size_t ssid_len;
