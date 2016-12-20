@@ -522,6 +522,25 @@ endef
 $(eval $(call KernelPackage,igb))
 
 
+define KernelPackage/ixgbe
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp
+  KCONFIG:=CONFIG_IXGBE \
+    CONFIG_IXGBE_VXLAN=n \
+    CONFIG_IXGBE_HWMON=n \
+    CONFIG_IXGBE_DCA=n
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbe/ixgbe.ko
+  AUTOLOAD:=$(call AutoLoad,35,ixgbe)
+endef
+
+define KernelPackage/ixgbe/description
+ Kernel modules for Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,ixgbe))
+
+
 define KernelPackage/b44
   TITLE:=Broadcom 44xx driver
   KCONFIG:=CONFIG_B44

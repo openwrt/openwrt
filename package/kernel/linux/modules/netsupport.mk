@@ -993,3 +993,19 @@ define KernelPackage/nlmon/description
 endef
 
 $(eval $(call KernelPackage,nlmon))
+
+
+define KernelPackage/mdio
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=MDIO (clause 45) PHY support
+  KCONFIG:=CONFIG_MDIO
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/mdio.ko
+  AUTOLOAD:=$(call AutoLoad,32,mdio)
+endef
+
+define KernelPackage/mdio/description
+ Kernel modules for MDIO (clause 45) PHY support
+endef
+
+$(eval $(call KernelPackage,mdio))
