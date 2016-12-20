@@ -278,6 +278,7 @@ dhcp_host_add() {
 	config_get tag "$cfg" tag
 
 	if [ "$DHCPv6CAPABLE" -eq 1 ]; then
+		config_get duid "$cfg" duid
 		config_get hostid "$cfg" hostid
 		if [ -n "$hostid" ]; then
 			hex_to_hostid hostid "$hostid"
@@ -289,7 +290,7 @@ dhcp_host_add() {
 
 	config_get leasetime "$cfg" leasetime
 
-	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip${hostid:+,[::$hostid]}}${name:+,$name}${leasetime:+,$leasetime}"
+	xappend "--dhcp-host=$macs${duid:+,id:$duid}${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip${hostid:+,[::$hostid]}}${name:+,$name}${leasetime:+,$leasetime}"
 }
 
 dhcp_tag_add() {
