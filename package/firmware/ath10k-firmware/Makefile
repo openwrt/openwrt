@@ -179,6 +179,18 @@ define Download/qca99x0-board
 endef
 $(eval $(call Download,qca99x0-board))
 
+QCA9984_FIRMWARE_REV:=deb1832c56c706d0f6cb539113e09f0daaa52b5f
+QCA9984_FIRMWARE_FILE:=firmware-5.bin_10.4-3.3-00102
+QCA9984_FIRMWARE_FILE_DL:=$(QCA9984_FIRMWARE_FILE).$(QCA9984_FIRMWARE_REV)
+
+define Download/ath10k-qca9984-firmware
+  URL:=https://source.codeaurora.org/quic/qsdk/oss/firmware/ath10k-firmware/plain/ath10k/QCA9984/hw1.0/
+  URL_FILE:=$(QCA9984_FIRMWARE_FILE)?id=$(QCA9984_FIRMWARE_REV)
+  FILE:=$(QCA9984_FIRMWARE_FILE_DL)
+  HASH:=490ad52df76a4fa8004a3a8c21dd43bb8262dd2816df48a6408706b82491f299
+endef
+$(eval $(call Download,ath10k-qca9984-firmware))
+
 define Build/Compile
 
 endef
@@ -253,7 +265,7 @@ define Package/ath10k-firmware-qca9984/install
 		$(PKG_BUILD_DIR)/QCA9984/hw1.0/board-2.bin \
 		$(1)/lib/firmware/ath10k/QCA9984/hw1.0/board-2.bin
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/QCA9984/hw1.0/3.3/firmware-5.bin_10.4-3.3-00092 \
+		$(DL_DIR)/$(QCA9984_FIRMWARE_FILE_DL) \
 		$(1)/lib/firmware/ath10k/QCA9984/hw1.0/firmware-5.bin
 endef
 
