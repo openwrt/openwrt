@@ -8,12 +8,14 @@ See: https://github.com/raspberrypi/linux/issues/1054
  drivers/spi/spidev.c | 1 +
  1 file changed, 1 insertion(+)
 
---- a/drivers/spi/spidev.c
-+++ b/drivers/spi/spidev.c
-@@ -695,6 +695,7 @@ static struct class *spidev_class;
- static const struct of_device_id spidev_dt_ids[] = {
+Index: linux-4.4.39/drivers/spi/spidev.c
+===================================================================
+--- linux-4.4.39.orig/drivers/spi/spidev.c	2016-12-20 13:45:27.000000000 +0100
++++ linux-4.4.39/drivers/spi/spidev.c	2016-12-20 13:46:06.627326840 +0100
+@@ -696,6 +696,7 @@
  	{ .compatible = "rohm,dh2228fv" },
  	{ .compatible = "lineartechnology,ltc2488" },
+ 	{ .compatible = "siliconlabs,si3210" },
 +	{ .compatible = "spidev" },
  	{},
  };
