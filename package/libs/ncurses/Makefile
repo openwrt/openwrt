@@ -41,6 +41,7 @@ define Package/libncursesw
   URL:=http://www.gnu.org/software/ncurses/
   PROVIDES:=libncurses
   DEPENDS:= +terminfo
+  ABI_VERSION:=$(PKG_VERSION)
 endef
 
 TARGET_CFLAGS += $(FPIC)
