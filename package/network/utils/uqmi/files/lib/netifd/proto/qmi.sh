@@ -21,16 +21,17 @@ proto_qmi_init_config() {
 	proto_config_add_int profile
 	proto_config_add_boolean dhcpv6
 	proto_config_add_boolean autoconnect
+	proto_config_add_int plmn
 	proto_config_add_defaults
 }
 
 proto_qmi_setup() {
 	local interface="$1"
 
-	local device apn auth username password pincode delay modes pdptype profile dhcpv6 autoconnect $PROTO_DEFAULT_OPTIONS
+	local device apn auth username password pincode delay modes pdptype profile dhcpv6 autoconnect plmn $PROTO_DEFAULT_OPTIONS
 	local cid_4 pdh_4 cid_6 pdh_6
 	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
-	json_get_vars device apn auth username password pincode delay modes pdptype profile dhcpv6 autoconnect $PROTO_DEFAULT_OPTIONS
+	json_get_vars device apn auth username password pincode delay modes pdptype profile dhcpv6 autoconnect plmn $PROTO_DEFAULT_OPTIONS
 
 	[ "$metric" = "" ] && metric="0"
 
@@ -71,6 +72,25 @@ proto_qmi_setup() {
 		uqmi -s -d "$device" --verify-pin1 "$pincode" || {
 			echo "Unable to verify PIN"
 			proto_notify_error "$interface" PIN_FAILED
+			proto_block_restart "$interface"
+			return 1
+		}
+	}
+
+	[ -n "$plmn" ] && {
+		local mcc mnc
+		if [ "$plmn" = 0 ]; then
+			mcc=0
+			mnc=0
+			echo "Setting PLMN to auto"
+		else
+			mcc=${plmn:0:3}
+			mnc=${plmn:3}
+			echo "Setting PLMN to $plmn"
+		fi
+		uqmi -s -d "$device" --set-plmn --mcc "$mcc" --mnc "$mnc" || {
+			echo "Unable to set PLMN"
+			proto_notify_error "$interface" PLMN_FAILED
 			proto_block_restart "$interface"
 			return 1
 		}
