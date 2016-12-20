@@ -24,7 +24,7 @@ Signed-off-by: Yunhui Cui <yunhui.cui@nxp.com>
  
  struct flash_info {
  	char		*name;
-@@ -73,6 +77,8 @@ struct flash_info {
+@@ -74,6 +78,8 @@ struct flash_info {
  };
  
  #define JEDEC_MFR(info)	((info)->id[0])
@@ -33,7 +33,7 @@ Signed-off-by: Yunhui Cui <yunhui.cui@nxp.com>
  
  static const struct flash_info *spi_nor_match_id(const char *name);
  
-@@ -785,6 +791,7 @@ static const struct flash_info spi_nor_i
+@@ -786,6 +792,7 @@ static const struct flash_info spi_nor_i
  	 */
  	{ "s25sl032p",  INFO(0x010215, 0x4d00,  64 * 1024,  64, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
  	{ "s25sl064p",  INFO(0x010216, 0x4d00,  64 * 1024, 128, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
@@ -41,7 +41,7 @@ Signed-off-by: Yunhui Cui <yunhui.cui@nxp.com>
  	{ "s25fl256s0", INFO(0x010219, 0x4d00, 256 * 1024, 128, 0) },
  	{ "s25fl256s1", INFO(0x010219, 0x4d01,  64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
  	{ "s25fl512s",  INFO(0x010220, 0x4d00, 256 * 1024, 256, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
-@@ -909,6 +916,53 @@ static const struct flash_info *spi_nor_
+@@ -910,6 +917,53 @@ static const struct flash_info *spi_nor_
  	return ERR_PTR(-ENODEV);
  }
  
@@ -95,7 +95,7 @@ Signed-off-by: Yunhui Cui <yunhui.cui@nxp.com>
  static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
  			size_t *retlen, u_char *buf)
  {
-@@ -1247,6 +1301,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1248,6 +1302,12 @@ int spi_nor_scan(struct spi_nor *nor, co
  		write_sr(nor, ret);
  	}
  

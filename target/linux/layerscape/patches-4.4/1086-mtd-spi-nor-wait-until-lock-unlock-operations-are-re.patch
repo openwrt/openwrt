@@ -24,7 +24,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -481,6 +481,7 @@ static int stm_lock(struct spi_nor *nor,
+@@ -482,6 +482,7 @@ static int stm_lock(struct spi_nor *nor,
  	int status_old, status_new;
  	u8 mask = SR_BP2 | SR_BP1 | SR_BP0;
  	u8 shift = ffs(mask) - 1, pow, val;
@@ -32,7 +32,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  
  	status_old = read_sr(nor);
  	if (status_old < 0)
-@@ -519,7 +520,10 @@ static int stm_lock(struct spi_nor *nor,
+@@ -520,7 +521,10 @@ static int stm_lock(struct spi_nor *nor,
  		return -EINVAL;
  
  	write_enable(nor);
@@ -44,7 +44,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  }
  
  /*
-@@ -533,6 +537,7 @@ static int stm_unlock(struct spi_nor *no
+@@ -534,6 +538,7 @@ static int stm_unlock(struct spi_nor *no
  	int status_old, status_new;
  	u8 mask = SR_BP2 | SR_BP1 | SR_BP0;
  	u8 shift = ffs(mask) - 1, pow, val;
@@ -52,7 +52,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  
  	status_old = read_sr(nor);
  	if (status_old < 0)
-@@ -569,7 +574,10 @@ static int stm_unlock(struct spi_nor *no
+@@ -570,7 +575,10 @@ static int stm_unlock(struct spi_nor *no
  		return -EINVAL;
  
  	write_enable(nor);

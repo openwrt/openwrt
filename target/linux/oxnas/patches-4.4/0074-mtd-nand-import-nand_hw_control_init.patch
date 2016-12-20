@@ -25,11 +25,9 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  include/linux/mtd/nand.h             | 7 +++++++
  14 files changed, 20 insertions(+), 26 deletions(-)
 
-diff --git a/drivers/mtd/nand/bf5xx_nand.c b/drivers/mtd/nand/bf5xx_nand.c
-index 37da423..3962f55 100644
 --- a/drivers/mtd/nand/bf5xx_nand.c
 +++ b/drivers/mtd/nand/bf5xx_nand.c
-@@ -761,8 +761,7 @@ static int bf5xx_nand_probe(struct platform_device *pdev)
+@@ -748,8 +748,7 @@ static int bf5xx_nand_probe(struct platf
  
  	platform_set_drvdata(pdev, info);
  
@@ -39,11 +37,9 @@ index 37da423..3962f55 100644
  
  	info->device     = &pdev->dev;
  	info->platform   = plat;
-diff --git a/drivers/mtd/nand/brcmnand/brcmnand.c b/drivers/mtd/nand/brcmnand/brcmnand.c
-index 8eb2c64..82ec36b 100644
 --- a/drivers/mtd/nand/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/brcmnand/brcmnand.c
-@@ -2370,8 +2370,7 @@ int brcmnand_probe(struct platform_device *pdev, struct brcmnand_soc *soc)
+@@ -2156,8 +2156,7 @@ int brcmnand_probe(struct platform_devic
  
  	init_completion(&ctrl->done);
  	init_completion(&ctrl->dma_done);
@@ -53,11 +49,9 @@ index 8eb2c64..82ec36b 100644
  	INIT_LIST_HEAD(&ctrl->host_list);
  
  	/* NAND register range */
-diff --git a/drivers/mtd/nand/docg4.c b/drivers/mtd/nand/docg4.c
-index 4731699..7af2a3c 100644
 --- a/drivers/mtd/nand/docg4.c
 +++ b/drivers/mtd/nand/docg4.c
-@@ -1249,8 +1249,7 @@ static void __init init_mtd_structs(struct mtd_info *mtd)
+@@ -1227,8 +1227,7 @@ static void __init init_mtd_structs(stru
  	nand->options = NAND_BUSWIDTH_16 | NAND_NO_SUBPAGE_WRITE;
  	nand->IO_ADDR_R = nand->IO_ADDR_W = doc->virtadr + DOC_IOSPACE_DATA;
  	nand->controller = &nand->hwcontrol;
@@ -67,11 +61,9 @@ index 4731699..7af2a3c 100644
  
  	/* methods */
  	nand->cmdfunc = docg4_command;
-diff --git a/drivers/mtd/nand/fsl_elbc_nand.c b/drivers/mtd/nand/fsl_elbc_nand.c
-index 60a88f2..113f76e 100644
 --- a/drivers/mtd/nand/fsl_elbc_nand.c
 +++ b/drivers/mtd/nand/fsl_elbc_nand.c
-@@ -879,8 +879,7 @@ static int fsl_elbc_nand_probe(struct platform_device *pdev)
+@@ -866,8 +866,7 @@ static int fsl_elbc_nand_probe(struct pl
  		}
  		elbc_fcm_ctrl->counter++;
  
@@ -81,11 +73,9 @@ index 60a88f2..113f76e 100644
  		fsl_lbc_ctrl_dev->nand = elbc_fcm_ctrl;
  	} else {
  		elbc_fcm_ctrl = fsl_lbc_ctrl_dev->nand;
-diff --git a/drivers/mtd/nand/fsl_ifc_nand.c b/drivers/mtd/nand/fsl_ifc_nand.c
-index 4e9e5fd..0a177b1 100644
 --- a/drivers/mtd/nand/fsl_ifc_nand.c
 +++ b/drivers/mtd/nand/fsl_ifc_nand.c
-@@ -987,8 +987,7 @@ static int fsl_ifc_nand_probe(struct platform_device *dev)
+@@ -1073,8 +1073,7 @@ static int fsl_ifc_nand_probe(struct pla
  		ifc_nand_ctrl->addr = NULL;
  		fsl_ifc_ctrl_dev->nand = ifc_nand_ctrl;
  
@@ -95,11 +85,9 @@ index 4e9e5fd..0a177b1 100644
  	} else {
  		ifc_nand_ctrl = fsl_ifc_ctrl_dev->nand;
  	}
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 77533f7..53ea796 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -3191,8 +3191,7 @@ static void nand_set_defaults(struct nand_chip *chip, int busw)
+@@ -3202,8 +3202,7 @@ static void nand_set_defaults(struct nan
  
  	if (!chip->controller) {
  		chip->controller = &chip->hwcontrol;
@@ -109,11 +97,9 @@ index 77533f7..53ea796 100644
  	}
  
  }
-diff --git a/drivers/mtd/nand/ndfc.c b/drivers/mtd/nand/ndfc.c
-index 218c789..28e6118 100644
 --- a/drivers/mtd/nand/ndfc.c
 +++ b/drivers/mtd/nand/ndfc.c
-@@ -218,8 +218,7 @@ static int ndfc_probe(struct platform_device *ofdev)
+@@ -220,8 +220,7 @@ static int ndfc_probe(struct platform_de
  	ndfc = &ndfc_ctrl[cs];
  	ndfc->chip_select = cs;
  
@@ -123,11 +109,9 @@ index 218c789..28e6118 100644
  	ndfc->ofdev = ofdev;
  	dev_set_drvdata(&ofdev->dev, ndfc);
  
-diff --git a/drivers/mtd/nand/pxa3xx_nand.c b/drivers/mtd/nand/pxa3xx_nand.c
-index 436dd6d..b121bf4 100644
 --- a/drivers/mtd/nand/pxa3xx_nand.c
 +++ b/drivers/mtd/nand/pxa3xx_nand.c
-@@ -1810,8 +1810,7 @@ static int alloc_nand_resource(struct platform_device *pdev)
+@@ -1739,8 +1739,7 @@ static int alloc_nand_resource(struct pl
  		chip->cmdfunc		= nand_cmdfunc;
  	}
  
@@ -137,11 +121,9 @@ index 436dd6d..b121bf4 100644
  	info->clk = devm_clk_get(&pdev->dev, NULL);
  	if (IS_ERR(info->clk)) {
  		dev_err(&pdev->dev, "failed to get nand clock\n");
-diff --git a/drivers/mtd/nand/s3c2410.c b/drivers/mtd/nand/s3c2410.c
-index d9309cf..b1734d7 100644
 --- a/drivers/mtd/nand/s3c2410.c
 +++ b/drivers/mtd/nand/s3c2410.c
-@@ -977,8 +977,7 @@ static int s3c24xx_nand_probe(struct platform_device *pdev)
+@@ -955,8 +955,7 @@ static int s3c24xx_nand_probe(struct pla
  
  	platform_set_drvdata(pdev, info);
  
@@ -151,11 +133,9 @@ index d9309cf..b1734d7 100644
  
  	/* get the clock source and enable it */
  
-diff --git a/drivers/mtd/nand/sunxi_nand.c b/drivers/mtd/nand/sunxi_nand.c
-index e414b31..8b5dadc 100644
 --- a/drivers/mtd/nand/sunxi_nand.c
 +++ b/drivers/mtd/nand/sunxi_nand.c
-@@ -2175,8 +2175,7 @@ static int sunxi_nfc_probe(struct platform_device *pdev)
+@@ -1426,8 +1426,7 @@ static int sunxi_nfc_probe(struct platfo
  		return -ENOMEM;
  
  	nfc->dev = dev;
@@ -165,11 +145,9 @@ index e414b31..8b5dadc 100644
  	INIT_LIST_HEAD(&nfc->chips);
  
  	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-diff --git a/drivers/mtd/nand/txx9ndfmc.c b/drivers/mtd/nand/txx9ndfmc.c
-index 04d63f5..0a14fda 100644
 --- a/drivers/mtd/nand/txx9ndfmc.c
 +++ b/drivers/mtd/nand/txx9ndfmc.c
-@@ -303,8 +303,7 @@ static int __init txx9ndfmc_probe(struct platform_device *dev)
+@@ -304,8 +304,7 @@ static int __init txx9ndfmc_probe(struct
  	dev_info(&dev->dev, "CLK:%ldMHz HOLD:%d SPW:%d\n",
  		 (gbusclk + 500000) / 1000000, hold, spw);
  
@@ -179,11 +157,9 @@ index 04d63f5..0a14fda 100644
  
  	platform_set_drvdata(dev, drvdata);
  	txx9ndfmc_initialize(dev);
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index 8dd6e01..f6a2d5e 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -460,6 +460,13 @@ struct nand_hw_control {
+@@ -461,6 +461,13 @@ struct nand_hw_control {
  	wait_queue_head_t wq;
  };
  
@@ -197,6 +173,3 @@ index 8dd6e01..f6a2d5e 100644
  /**
   * struct nand_ecc_ctrl - Control structure for ECC
   * @mode:	ECC mode
--- 
-2.10.2
-

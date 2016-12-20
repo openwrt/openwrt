@@ -17,7 +17,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -478,11 +478,13 @@ static int stm_is_locked_sr(struct spi_n
+@@ -479,11 +479,13 @@ static int stm_is_locked_sr(struct spi_n
  static int stm_lock(struct spi_nor *nor, loff_t ofs, uint64_t len)
  {
  	struct mtd_info *mtd = &nor->mtd;
@@ -32,7 +32,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
  
  	/* SPI NOR always locks to the end */
  	if (ofs + len != mtd->size) {
-@@ -528,11 +530,13 @@ static int stm_lock(struct spi_nor *nor,
+@@ -529,11 +531,13 @@ static int stm_lock(struct spi_nor *nor,
  static int stm_unlock(struct spi_nor *nor, loff_t ofs, uint64_t len)
  {
  	struct mtd_info *mtd = &nor->mtd;
@@ -47,7 +47,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
  
  	/* Cannot unlock; would unlock larger region than requested */
  	if (stm_is_locked_sr(nor, ofs - mtd->erasesize, mtd->erasesize,
-@@ -1037,6 +1041,8 @@ static int macronix_quad_enable(struct s
+@@ -1038,6 +1042,8 @@ static int macronix_quad_enable(struct s
  	int ret, val;
  
  	val = read_sr(nor);

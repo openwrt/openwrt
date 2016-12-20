@@ -26,7 +26,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  
  struct flash_info {
  	char		*name;
-@@ -313,6 +314,29 @@ static void spi_nor_unlock_and_unprep(st
+@@ -314,6 +315,29 @@ static void spi_nor_unlock_and_unprep(st
  }
  
  /*
@@ -56,7 +56,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
   * Erase an address range on the nor chip.  The address range may extend
   * one or more erase sectors.  Return an error is there is a problem erasing.
   */
-@@ -371,10 +395,9 @@ static int spi_nor_erase(struct mtd_info
+@@ -372,10 +396,9 @@ static int spi_nor_erase(struct mtd_info
  		while (len) {
  			write_enable(nor);
  
@@ -69,7 +69,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  
  			addr += mtd->erasesize;
  			len -= mtd->erasesize;
-@@ -1099,7 +1122,7 @@ static int set_quad_mode(struct spi_nor
+@@ -1100,7 +1123,7 @@ static int set_quad_mode(struct spi_nor
  static int spi_nor_check(struct spi_nor *nor)
  {
  	if (!nor->dev || !nor->read || !nor->write ||
@@ -78,7 +78,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  		pr_err("spi-nor: please fill all the necessary fields!\n");
  		return -EINVAL;
  	}
-@@ -1300,6 +1323,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1303,6 +1326,12 @@ int spi_nor_scan(struct spi_nor *nor, co
  		nor->addr_width = 3;
  	}
  

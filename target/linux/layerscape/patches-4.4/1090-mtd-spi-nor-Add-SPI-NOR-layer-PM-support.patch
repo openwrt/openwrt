@@ -24,7 +24,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -1140,6 +1140,26 @@ static int spi_nor_check(struct spi_nor
+@@ -1141,6 +1141,26 @@ static int spi_nor_check(struct spi_nor
  	return 0;
  }
  
@@ -51,7 +51,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
  int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
  {
  	const struct flash_info *info = NULL;
-@@ -1187,18 +1207,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1188,19 +1208,9 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	mutex_init(&nor->lock);
  
@@ -63,7 +63,8 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
 -	if (JEDEC_MFR(info) == SNOR_MFR_ATMEL ||
 -	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||
 -	    JEDEC_MFR(info) == SNOR_MFR_MACRONIX ||
--	    JEDEC_MFR(info) == SNOR_MFR_SST) {
+-	    JEDEC_MFR(info) == SNOR_MFR_SST ||
+-	    info->flags & SPI_NOR_HAS_LOCK) {
 -		write_enable(nor);
 -		write_sr(nor, 0);
 -	}
@@ -73,7 +74,7 @@ Integrated-by: Jiang Yutang <yutang.jiang@nxp.com>
  
  	if (!mtd->name)
  		mtd->name = dev_name(dev);
-@@ -1364,6 +1375,45 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1367,6 +1377,45 @@ int spi_nor_scan(struct spi_nor *nor, co
  }
  EXPORT_SYMBOL_GPL(spi_nor_scan);
  
