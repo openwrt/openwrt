@@ -35,7 +35,7 @@ proto_ncm_setup() {
 	[ -n "$profile" ] || profile=1
 
 	pdptype=`echo "$pdptype" | awk '{print toupper($0)}'`
-	[ "$pdptype" = "IP" -o "$pdptype" = "IPV6" -o "$pdptype" = "IPV4V6" ] || $pdptype="IP"
+	[ "$pdptype" = "IP" -o "$pdptype" = "IPV6" -o "$pdptype" = "IPV4V6" ] || pdptype="IP"
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
