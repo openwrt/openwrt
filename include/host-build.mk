@@ -5,6 +5,8 @@
 # See /LICENSE for more information.
 #
 
+include $(INCLUDE_DIR)/download.mk
+
 HOST_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
 HOST_INSTALL_DIR ?= $(HOST_BUILD_DIR)/host-install
 HOST_BUILD_PARALLEL ?=
@@ -35,7 +37,6 @@ HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.$(PKG_NAME)_installed
 
 override MAKEFLAGS=
 
-include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
 include $(INCLUDE_DIR)/autotools.mk
 

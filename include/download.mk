@@ -9,6 +9,12 @@
 OPENWRT_GIT = http://git.openwrt.org
 LEDE_GIT = https://git.lede-project.org
 
+ifdef PKG_SOURCE_VERSION
+PKG_VERSION ?= $(if $(PKG_SOURCE_DATE),$(PKG_SOURCE_DATE)-)$(call version_abbrev,$(PKG_SOURCE_VERSION))
+PKG_SOURCE_SUBDIR ?= $(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE ?= $(PKG_SOURCE_SUBDIR).tar.xz
+endif
+
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Try to guess the download method from the URL
