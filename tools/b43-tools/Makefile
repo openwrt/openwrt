@@ -10,7 +10,6 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=b43-tools
 PKG_VERSION:=019
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://github.com/mbuesch/b43-tools.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)

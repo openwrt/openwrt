@@ -8,17 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=aarch64-boot-wrapper
-PKG_VERSION:=2013-01-10
-PKG_RELEASE:=$(PKG_SOURCE_VERSION)
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=\
 		https://kernel.googlesource.com/pub/scm/linux/kernel/git/mark/boot-wrapper-aarch64 \
 		https://git.kernel.org/pub/scm/linux/kernel/git/mark/boot-wrapper-aarch64.git
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_DATE:=2013-01-10
 PKG_SOURCE_VERSION:=c51dde817b5ed5b8f741b67ac51bd67bd87b4a2a
 PKG_MIRROR_HASH:=2f029a20c906af68e9fe067c1b0ed394e4c455e142454a039f41d1d82d6e17c8
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 include $(INCLUDE_DIR)/kernel.mk
