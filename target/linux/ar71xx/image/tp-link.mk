@@ -780,7 +780,7 @@ define Device/tl-wr1043nd-v4
     MTDPARTS := spi0.0:128k(u-boot)ro,1536k(kernel),14016k(rootfs),128k(product-info)ro,320k(config)ro,64k(partition-table)ro,128k(logs)ro,64k(ART)ro,15552k@0x20000(firmware)
     IMAGE_SIZE := 15552k
     TPLINK_BOARD_NAME := TLWR1043NDV4
-    KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-combined -j
+    KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-combined
     IMAGES := sysupgrade.bin factory.bin
     IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
     IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
