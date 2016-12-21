@@ -611,7 +611,42 @@ mac80211_setup_vif() {
 				mcval=
 				[ -n "$mcast_rate" ] && wpa_supplicant_add_rate mcval "$mcast_rate"
 
-				iw dev "$ifname" mesh join "$mesh_id" ${mcval:+mcast-rate $mcval}
+				case "$htmode" in
+					VHT20|HT20) mesh_htmode=HT20;;
+					HT40*|VHT40)
+						case "$hwmode" in
+							a)
+								case "$(( ($channel / 4) % 2 ))" in
+									1) mesh_htmode="HT40+" ;;
+									0) mesh_htmode="HT40-";;
+								esac
+							;;
+							*)
+								case "$htmode" in
+									HT40+) mesh_htmode="HT40+";;
+									HT40-) mesh_htmode="HT40-";;
+									*)
+										if [ "$channel" -lt 7 ]; then
+											mesh_htmode="HT40+"
+										else
+											mesh_htmode="HT40-"
+										fi
+									;;
+								esac
+							;;
+						esac
+					;;
+					VHT80)
+						mesh_htmode="80Mhz"
+					;;
+					VHT160)
+						mesh_htmode="160Mhz"
+					;;
+					*) mesh_htmode="NOHT" ;;
+				esac
+
+				freq="$(get_freq "$phy" "$channel")"
+				iw dev "$ifname" mesh join "$mesh_id" freq $freq $mesh_htmode ${mcval:+mcast-rate $mcval}
 			fi
 
 			for var in $MP_CONFIG_INT $MP_CONFIG_BOOL $MP_CONFIG_STRING; do
