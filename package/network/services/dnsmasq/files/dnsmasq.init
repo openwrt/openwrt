@@ -18,6 +18,8 @@ TRUSTANCHORSFILE="/usr/share/dnsmasq/trust-anchors.conf"
 TIMEVALIDFILE="/var/state/dnsmasqsec"
 BASEDHCPSTAMPFILE="/var/run/dnsmasq"
 
+DNSMASQ_DHCP_VER=4
+
 xappend() {
 	local value="$1"
 
@@ -182,6 +184,7 @@ dhcp_remoteid_add() {
 }
 
 dhcp_circuitid_add() {
+	# TODO: DHCPV6 does not have circuitid; catch "option6:"
 	local cfg="$1"
 
 	config_get networkid "$cfg" networkid
@@ -214,6 +217,7 @@ dhcp_userclass_add() {
 }
 
 dhcp_vendorclass_add() {
+	# TODO: DHCPV6 vendor class has stricter definitions; catch? fixup?
 	local cfg="$1"
 
 	config_get networkid "$cfg" networkid
@@ -247,6 +251,7 @@ dhcp_match_add() {
 
 dhcp_host_add() {
 	local cfg="$1"
+	local hosttag nametime addrs
 
 	config_get_bool force "$cfg" force 0
 
@@ -258,7 +263,9 @@ dhcp_host_add() {
 
 	config_get name "$cfg" name
 	config_get ip "$cfg" ip
-	[ -n "$ip" -o -n "$name" ] || return 0
+	config_get hostid "$cfg" hostid
+
+	[ -n "$ip" -o -n "$name" -o -n "$hostid" ] || return 0
 
 	config_get_bool dns "$cfg" dns 0
 	[ "$dns" = "1" -a -n "$ip" -a -n "$name" ] && {
@@ -266,33 +273,47 @@ dhcp_host_add() {
 	}
 
 	config_get mac "$cfg" mac
+	config_get duid "$cfg" duid
+	config_get tag "$cfg" tag
+
 	if [ -n "$mac" ]; then
 		# --dhcp-host=00:20:e0:3b:13:af,192.168.0.199,lap
+		# many MAC are possible to track a laptop ON/OFF dock
 		macs=""
 		for m in $mac; do append macs "$m" ","; done
-	else
-		# --dhcp-host=lap,192.168.0.199
+	fi
+
+	if [ $DNSMASQ_DHCP_VER -eq 6 -a -n "$duid" ]; then
+		# --dhcp-host=id:00:03:00:01:12:00:00:01:02:03,[::beef],lap
+		# one (virtual) machine gets one DUID per RFC3315
+		duids="id:${duid// */}"
+	fi
+
+	if [ -z "$macs" -a -z "$duids" ]; then
+		# --dhcp-host=lap,192.168.0.199,[::beef]
 		[ -n "$name" ] || return 0
 		macs="$name"
 		name=""
 	fi
 
-	config_get tag "$cfg" tag
-
-	if [ "$DHCPv6CAPABLE" -eq 1 ]; then
-		config_get duid "$cfg" duid
-		config_get hostid "$cfg" hostid
-		if [ -n "$hostid" ]; then
+	if [ -n "$hostid" ]; then
 			hex_to_hostid hostid "$hostid"
-		fi
 	fi
 
 	config_get_bool broadcast "$cfg" broadcast 0
-	[ "$broadcast" = "0" ] && broadcast=
-
 	config_get leasetime "$cfg" leasetime
 
-	xappend "--dhcp-host=$macs${duid:+,id:$duid}${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip${hostid:+,[::$hostid]}}${name:+,$name}${leasetime:+,$leasetime}"
+	[ "$broadcast" = "0" ] && broadcast= || broadcast=",set:needs-broadcast"
+
+	hosttag="${networkid:+,set:${networkid}}${tag:+,set:${tag}}$broadcast"
+	nametime="${name:+,$name}${leasetime:+,$leasetime}"
+
+	if [ $DNSMASQ_DHCP_VER -eq 6 ]; then
+		addrs="${ip:+,$ip}${hostid:+,[::$hostid]}"
+		xappend "--dhcp-host=$macs${duids:+,$duids}$hosttag$addrs$nametime"
+	else
+		xappend "--dhcp-host=$macs$hosttag${ip:+,$ip}$nametime"
+	fi
 }
 
 dhcp_this_host_add() {
@@ -345,6 +366,7 @@ dhcp_this_host_add() {
 }
 
 dhcp_tag_add() {
+	# NOTE: dnsmasq has explicit "option6:" prefix for DHCPv6 so no collisions
 	local cfg="$1"
 
 	tag="$cfg"
@@ -375,6 +397,7 @@ dhcp_mac_add() {
 }
 
 dhcp_boot_add() {
+	# TODO: BOOTURL is different between DHCPv4 and DHCPv6
 	local cfg="$1"
 
 	config_get networkid "$cfg" networkid
@@ -397,11 +420,11 @@ dhcp_boot_add() {
 
 dhcp_add() {
 	local cfg="$1"
+	local dhcp6range="::"
+	local nettag
+
 	config_get net "$cfg" interface
 	[ -n "$net" ] || return 0
-
-	config_get dhcpv4 "$cfg" dhcpv4
-	[ "$dhcpv4" != "disabled" ] || return 0
 
 	config_get networkid "$cfg" networkid
 	[ -n "$networkid" ] || networkid="$net"
@@ -430,27 +453,92 @@ dhcp_add() {
 	config_get_bool force "$cfg" force 0
 	[ $force -gt 0 ] || dhcp_check "$ifname" || return 0
 
-	config_get start "$cfg" start
-	config_get limit "$cfg" limit
-	config_get leasetime "$cfg" leasetime
+	config_get start "$cfg" start 100
+	config_get limit "$cfg" limit 150
+	config_get leasetime "$cfg" leasetime 12h
 	config_get options "$cfg" options
 	config_get_bool dynamicdhcp "$cfg" dynamicdhcp 1
+
+	config_get dhcpv4 "$cfg" dhcpv4
+	config_get dhcpv6 "$cfg" dhcpv6
+
+	config_get ra "$cfg" ra
+	config_get ra_management "$cfg" ra_management
+	config_get ra_preference "$cfg" ra_preference
 
 	# Put the router host name on this DHCP served interface address(es)
 	dhcp_this_host_add "$net" "$ifname" "$ADD_LOCAL_FQDN"
 
-	leasetime="${leasetime:-12h}"
-	start="$(dhcp_calc "${start:-100}")"
-	limit="${limit:-150}"
-	[ "$limit" -gt 0 ] && limit=$((limit-1))
+	start="$( dhcp_calc "$start" )"
+	nettag="${networkid:+set:${networkid},}"
+
+	if [ "$limit" -gt 0 ] ; then
+		limit=$((limit-1))
+	fi
+
 	eval "$(ipcalc.sh "${subnet%%/*}" $netmask $start $limit)"
-	if [ "$dynamicdhcp" = "0" ]; then END="static"; fi
-	xappend "--dhcp-range=$networkid,$START,$END,$NETMASK,$leasetime${options:+ $options}"
+
+	if [ "$dynamicdhcp" = "0" ] ; then
+		END="static"
+		dhcp6range="::,static"
+	else
+		dhcp6range="::1000,::ffff"
+	fi
+
+
+	if [ "$dhcpv4" != "disabled" ] ; then
+		xappend "--dhcp-range=$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
+	fi
+
+
+	if [ $DNSMASQ_DHCP_VER -eq 6 -a "$ra" = "server" ] ; then
+		# Note: dnsmasq cannot just be a DHCPv6 server (all-in-1)
+		# and let some other machine(s) send RA pointing to it.
+
+		case $ra_preference in
+		*high*)
+			xappend "--ra-param=$ifname,high,0,7200"
+			;;
+		*low*)
+			xappend "--ra-param=$ifname,low,0,7200"
+			;;
+		*)
+			# Send UNSOLICITED RA at default interval and live for 2 hours.
+			# TODO: convert flexible lease time into route life time (only seconds).
+			xappend "--ra-param=$ifname,0,7200"
+			;;
+		esac
+
+		if [ "$dhcpv6" = "disabled" ] ; then
+			ra_management="3"
+		fi
+
+
+		case $ra_management in
+		0)
+			# SLACC with DCHP for extended options
+			xappend "--dhcp-range=$nettag::,constructor:$ifname,ra-stateless,ra-names"
+			;;
+		2)
+			# DHCP address and RA only for management redirection
+			xappend "--dhcp-range=$nettag$dhcp6range,constructor:$ifname,$leasetime"
+			;;
+		3)
+			# SLAAC only but dnsmasq attempts to link HOSTNAME, DHCPv4 MAC, and SLAAC
+			xappend "--dhcp-range=$nettag::,constructor:$ifname,ra-only,ra-names"
+			;;
+		*)
+			# SLAAC and full DHCP
+			xappend "--dhcp-range=$nettag$dhcp6range,constructor:$ifname,slaac,ra-names,$leasetime"
+			;;
+		esac
+	fi
 
 	dhcp_option_add "$cfg" "$networkid"
 }
 
 dhcp_option_add() {
+	# NOTE: dnsmasq has explicit "option6:" prefix for DHCPv6 so no collisions
 	local cfg="$1"
 	local networkid="$2"
 	local force="$3"
@@ -604,6 +692,32 @@ dnsmasq_start()
 	}
 
 	$PROG --version | grep -osqE "^Compile time options:.* DHCPv6( |$)" && DHCPv6CAPABLE=1 || DHCPv6CAPABLE=0
+
+
+	if [ -x /usr/sbin/odhcpd -a -x /etc/init.d/odhcpd ] ; then
+		local odhcpd_is_main odhcpd_is_enabled
+		config_get odhcpd_is_main odhcpd maindhcp
+		/etc/init.d/odhcpd enabled && odhcpd_is_enabled=1 || odhcpd_is_enabled=0
+
+
+		if [ "$odhcpd_is_enabled" -eq 0 -a "$DHCPv6CAPABLE" -eq 1 ] ; then
+			# DHCP V4 and V6 in DNSMASQ
+			DNSMASQ_DHCP_VER=6
+		elif [ "$odhcpd_is_main" -gt 0 ] ; then
+			# ODHCPD is doing it all
+			DNSMASQ_DHCP_VER=0
+		else
+			# You have ODHCPD but use DNSMASQ for DHCPV4
+			DNSMASQ_DHCP_VER=4
+		fi
+
+	elif [ "$DHCPv6CAPABLE" -eq 1 ] ; then
+		# DHCP V4 and V6 in DNSMASQ
+		DNSMASQ_DHCP_VER=6
+	else
+		DNSMASQ_DHCP_VER=4
+	fi
+
 
 	append_bool "$cfg" authoritative "--dhcp-authoritative"
 	append_bool "$cfg" nodaemon "--no-daemon"
@@ -772,10 +886,19 @@ dnsmasq_start()
 	config_foreach filter_dnsmasq mxhost dhcp_mx_add "$cfg"
 	echo >> $CONFIGFILE_TMP
 
-	config_get odhcpd_is_active odhcpd maindhcp
-	if [ "$odhcpd_is_active" != "1" ]; then
-		config_foreach filter_dnsmasq dhcp dhcp_add "$cfg"
+
+	if [ "$DNSMASQ_DHCP_VER" -gt 4 ] ; then
+		# Enable RA feature for when/if it is constructed,
+		# and RA is selected per interface pool (RA, DHCP, or both),
+		# but no one (should) want RA broadcast in syslog
+		config_foreach dhcp_add dhcp
+		xappend "--enable-ra"
+		xappend "--quiet-ra"
+
+	elif [ "$DNSMASQ_DHCP_VER" -gt 0 ] ; then
+		config_foreach dhcp_add dhcp
 	fi
+
 
 	echo >> $CONFIGFILE_TMP
 	config_foreach filter_dnsmasq cname dhcp_cname_add "$cfg"
