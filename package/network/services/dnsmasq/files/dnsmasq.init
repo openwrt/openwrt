@@ -23,22 +23,22 @@ xappend() {
 }
 
 hex_to_hostid() {
-        local var="$1"
-        local hex="${2#0x}"     # strip optional "0x" prefix
+	local var="$1"
+	local hex="${2#0x}" # strip optional "0x" prefix
 
-        if [ -n "${hex//[0-9a-fA-F]/}" ]; then
-                # is invalid hex literal
-                return 1
-        fi
+	if [ -n "${hex//[0-9a-fA-F]/}" ]; then
+		# is invalid hex literal
+		return 1
+	fi
 
-        # convert into host id
-        export "$var=$(
-                printf "%0x:%0x"  \
-                        $(((0x$hex >> 16) % 65536)) \
-                        $(( 0x$hex        % 65536))
-        )"
+	# convert into host id
+	export "$var=$(
+		printf "%0x:%0x" \
+		$(((0x$hex >> 16) % 65536)) \
+		$(( 0x$hex        % 65536))
+		)"
 
-        return 0
+	return 0
 }
 
 dhcp_calc() {
