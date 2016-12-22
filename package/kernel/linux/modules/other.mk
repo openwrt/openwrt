@@ -498,22 +498,6 @@ endef
 $(eval $(call KernelPackage,wdt-omap))
 
 
-define KernelPackage/wdt-orion
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Marvell Orion Watchdog timer
-  DEPENDS:=@TARGET_orion
-  KCONFIG:=CONFIG_ORION_WATCHDOG
-  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/orion_wdt.ko
-  AUTOLOAD:=$(call AutoLoad,50,orion_wdt,1)
-endef
-
-define KernelPackage/wdt-orion/description
- Kernel module for Marvell Orion, Kirkwood and Armada XP/370 watchdog timer
-endef
-
-$(eval $(call KernelPackage,wdt-orion))
-
-
 define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
@@ -582,23 +566,6 @@ define KernelPackage/rtc-isl1208/description
 endef
 
 $(eval $(call KernelPackage,rtc-isl1208))
-
-
-define KernelPackage/rtc-marvell
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Marvell SoC built-in RTC support
-  DEPENDS:=@RTC_SUPPORT @TARGET_orion
-  KCONFIG:=CONFIG_RTC_DRV_MV \
-	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
-  AUTOLOAD:=$(call AutoProbe,rtc-mv)
-endef
-
-define KernelPackage/rtc-marvell/description
- Kernel module for Marvell SoC built-in RTC.
-endef
-
-$(eval $(call KernelPackage,rtc-marvell))
 
 
 define KernelPackage/rtc-pcf8563
@@ -790,22 +757,6 @@ define KernelPackage/zram/description
 endef
 
 $(eval $(call KernelPackage,zram))
-
-
-define KernelPackage/mvsdio
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Marvell SDIO support
-  DEPENDS:=@TARGET_orion +kmod-mmc
-  KCONFIG:=CONFIG_MMC_MVSDIO
-  FILES:=$(LINUX_DIR)/drivers/mmc/host/mvsdio.ko
-  AUTOLOAD:=$(call AutoProbe,mvsdio)
-endef
-
-define KernelPackage/mvsdio/description
- Kernel support for the Marvell SDIO controller
-endef
-
-$(eval $(call KernelPackage,mvsdio))
 
 
 define KernelPackage/pps
