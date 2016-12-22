@@ -1,0 +1,71 @@
+From 7cc3a28eed7e3b72a1ce4568fb55154bb0540726 Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Thu, 11 Aug 2016 18:36:46 -0400
+Subject: fix pread/pwrite syscall calling convention on sh
+
+despite sh not generally using register-pair alignment for 64-bit
+syscall arguments, there are arch-specific versions of the syscall
+entry points for pread and pwrite which include a dummy argument for
+alignment before the 64-bit offset argument.
+---
+ arch/sh/syscall_arch.h | 1 +
+ src/internal/syscall.h | 4 ++++
+ src/unistd/pread.c     | 2 +-
+ src/unistd/pwrite.c    | 2 +-
+ 4 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/syscall_arch.h b/arch/sh/syscall_arch.h
+index f63675a..84758fe 100644
+--- a/arch/sh/syscall_arch.h
++++ b/arch/sh/syscall_arch.h
+@@ -2,6 +2,7 @@
+ ((union { long long ll; long l[2]; }){ .ll = x }).l[0], \
+ ((union { long long ll; long l[2]; }){ .ll = x }).l[1]
+ #define __SYSCALL_LL_O(x) __SYSCALL_LL_E((x))
++#define __SYSCALL_LL_PRW(x) 0, __SYSCALL_LL_E((x))
+ 
+ /* The extra OR instructions are to work around a hardware bug:
+  * http://documentation.renesas.com/doc/products/mpumcu/tu/tnsh7456ae.pdf
+diff --git a/src/internal/syscall.h b/src/internal/syscall.h
+index ff3cf53..6d378a8 100644
+--- a/src/internal/syscall.h
++++ b/src/internal/syscall.h
+@@ -12,6 +12,10 @@
+ #define SYSCALL_MMAP2_UNIT 4096ULL
+ #endif
+ 
++#ifndef __SYSCALL_LL_PRW
++#define __SYSCALL_LL_PRW(x) __SYSCALL_LL_O(x)
++#endif
++
+ #ifndef __scc
+ #define __scc(X) ((long) (X))
+ typedef long syscall_arg_t;
+diff --git a/src/unistd/pread.c b/src/unistd/pread.c
+index 3d2799f..5483eb9 100644
+--- a/src/unistd/pread.c
++++ b/src/unistd/pread.c
+@@ -4,7 +4,7 @@
+ 
+ ssize_t pread(int fd, void *buf, size_t size, off_t ofs)
+ {
+-	return syscall_cp(SYS_pread, fd, buf, size, __SYSCALL_LL_O(ofs));
++	return syscall_cp(SYS_pread, fd, buf, size, __SYSCALL_LL_PRW(ofs));
+ }
+ 
+ LFS64(pread);
+diff --git a/src/unistd/pwrite.c b/src/unistd/pwrite.c
+index bbe4c34..4bf3d7d 100644
+--- a/src/unistd/pwrite.c
++++ b/src/unistd/pwrite.c
+@@ -4,7 +4,7 @@
+ 
+ ssize_t pwrite(int fd, const void *buf, size_t size, off_t ofs)
+ {
+-	return syscall_cp(SYS_pwrite, fd, buf, size, __SYSCALL_LL_O(ofs));
++	return syscall_cp(SYS_pwrite, fd, buf, size, __SYSCALL_LL_PRW(ofs));
+ }
+ 
+ LFS64(pwrite);
+-- 
+cgit v0.11.2

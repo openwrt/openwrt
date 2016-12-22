@@ -1,0 +1,35 @@
+From 3848a99f65952a77c03bbd905cae988f37f13ea6 Mon Sep 17 00:00:00 2001
+From: Daniel Sabogal <dsabogalcc@gmail.com>
+Date: Fri, 16 Sep 2016 13:34:24 -0400
+Subject: fix ifru_data and ifcu_buf types in net/if.h
+
+glibc, freebsd, and openbsd use character pointers (caddr_t) for
+these fields. only linux uses void pointer for the ifru_data type.
+---
+ include/net/if.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/net/if.h b/include/net/if.h
+index 1a4059d..2f2fcc1 100644
+--- a/include/net/if.h
++++ b/include/net/if.h
+@@ -89,7 +89,7 @@ struct ifreq {
+ 		struct ifmap ifru_map;
+ 		char ifru_slave[IFNAMSIZ];
+ 		char ifru_newname[IFNAMSIZ];
+-		void *ifru_data;
++		char *ifru_data;
+ 	} ifr_ifru;
+ };
+ 
+@@ -116,7 +116,7 @@ struct ifreq {
+ struct ifconf {
+ 	int ifc_len;		
+ 	union {
+-		void *ifcu_buf;
++		char *ifcu_buf;
+ 		struct ifreq *ifcu_req;
+ 	} ifc_ifcu;
+ };
+-- 
+cgit v0.11.2

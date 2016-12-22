@@ -1,0 +1,38 @@
+From 5505f6afae9acf37ef565c68a07ca3df7b1ae2cb Mon Sep 17 00:00:00 2001
+From: Daniel Sabogal <dsabogalcc@gmail.com>
+Date: Fri, 9 Sep 2016 21:23:17 -0400
+Subject: add missing *_unlocked and wcsftime_l prototypes to wchar.h
+
+these functions had been implemented, but prototypes were not made available
+---
+ include/wchar.h | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/include/wchar.h b/include/wchar.h
+index 0167dce..3e6db5f 100644
+--- a/include/wchar.h
++++ b/include/wchar.h
+@@ -136,6 +136,21 @@ size_t wcsftime (wchar_t *__restrict, size_t, const wchar_t *__restrict, const s
+ 
+ #undef iswdigit
+ 
++#if defined(_GNU_SOURCE)
++wint_t fgetwc_unlocked (FILE *);
++wint_t getwc_unlocked (FILE *);
++wint_t getwchar_unlocked (void);
++wint_t fputwc_unlocked (wchar_t, FILE *);
++wint_t putwc_unlocked (wchar_t, FILE *);
++wint_t putwchar_unlocked (wchar_t);
++wchar_t *fgetws_unlocked (wchar_t *__restrict, int, FILE *__restrict);
++int fputws_unlocked (const wchar_t *__restrict, FILE *__restrict);
++#endif
++
++#if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
++size_t wcsftime_l (wchar_t *__restrict, size_t, const wchar_t *__restrict, const struct tm *__restrict, locale_t);
++#endif
++
+ #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
+  || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE)  || defined(_BSD_SOURCE)
+ FILE *open_wmemstream(wchar_t **, size_t *);
+-- 
+cgit v0.11.2

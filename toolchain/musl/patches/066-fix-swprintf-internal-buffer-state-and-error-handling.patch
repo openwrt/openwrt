@@ -1,0 +1,36 @@
+From 7442442ccc665641a8827177e8e7ed45bbbd6584 Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Mon, 7 Nov 2016 20:39:59 -0500
+Subject: fix swprintf internal buffer state and error handling
+
+the swprintf write callback never reset its buffer pointers, so after
+its 256-byte buffer filled up, it would keep repeating those bytes
+over and over in the output until the destination buffer filled up. it
+also failed to set the error indicator for the stream on EILSEQ,
+potentially allowing output to continue after the error.
+---
+ src/stdio/vswprintf.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/src/stdio/vswprintf.c b/src/stdio/vswprintf.c
+index 7d237ba..6eb2f6a 100644
+--- a/src/stdio/vswprintf.c
++++ b/src/stdio/vswprintf.c
+@@ -24,7 +24,14 @@ static size_t sw_write(FILE *f, const unsigned char *s, size_t l)
+ 		c->ws++;
+ 	}
+ 	*c->ws = 0;
+-	return i<0 ? i : l0;
++	if (i < 0) {
++		f->wpos = f->wbase = f->wend = 0;
++		f->flags |= F_ERR;
++		return i;
++	}
++	f->wend = f->buf + f->buf_size;
++	f->wpos = f->wbase = f->buf;
++	return l0;
+ }
+ 
+ int vswprintf(wchar_t *restrict s, size_t n, const wchar_t *restrict fmt, va_list ap)
+-- 
+cgit v0.11.2

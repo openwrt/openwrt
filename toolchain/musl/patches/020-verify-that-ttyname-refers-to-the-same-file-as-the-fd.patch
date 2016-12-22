@@ -1,0 +1,49 @@
+From 0a950dcf15bb9f7274c804dca490e9e20e475f3e Mon Sep 17 00:00:00 2001
+From: Szabolcs Nagy <nsz@port70.net>
+Date: Sat, 20 Aug 2016 21:04:31 +0200
+Subject: verify that ttyname refers to the same file as the fd
+
+linux containers use separate mount namespace so the /proc
+symlink might not point to the right device if the fd was
+opened in the parent namespace, in this case return ENOENT.
+---
+ src/unistd/ttyname_r.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/src/unistd/ttyname_r.c b/src/unistd/ttyname_r.c
+index 8bac7b2..a38ba4f 100644
+--- a/src/unistd/ttyname_r.c
++++ b/src/unistd/ttyname_r.c
+@@ -1,10 +1,12 @@
+ #include <unistd.h>
+ #include <errno.h>
++#include <sys/stat.h>
+ 
+ void __procfdname(char *, unsigned);
+ 
+ int ttyname_r(int fd, char *name, size_t size)
+ {
++	struct stat st1, st2;
+ 	char procname[sizeof "/proc/self/fd/" + 3*sizeof(int) + 2];
+ 	ssize_t l;
+ 
+@@ -15,8 +17,13 @@ int ttyname_r(int fd, char *name, size_t size)
+ 
+ 	if (l < 0) return errno;
+ 	else if (l == size) return ERANGE;
+-	else {
+-		name[l] = 0;
+-		return 0;
+-	}
++
++	name[l] = 0;
++
++	if (stat(name, &st1) || fstat(fd, &st2))
++		return errno;
++	if (st1.st_dev != st2.st_dev || st1.st_ino != st2.st_ino)
++		return ENOENT;
++
++	return 0;
+ }
+-- 
+cgit v0.11.2

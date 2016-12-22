@@ -1,0 +1,36 @@
+From 32055d52ca43d867d6dbb763dc5213a8d3536a23 Mon Sep 17 00:00:00 2001
+From: Daniel Sabogal <dsabogalcc@gmail.com>
+Date: Thu, 15 Sep 2016 11:27:30 -0400
+Subject: fix if_indextoname error case
+
+posix requires errno to be set to ENXIO if the interface does not exist.
+linux returns ENODEV instead so we handle this.
+---
+ src/network/if_indextoname.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/network/if_indextoname.c b/src/network/if_indextoname.c
+index 6ee7f13..3b368bf 100644
+--- a/src/network/if_indextoname.c
++++ b/src/network/if_indextoname.c
+@@ -3,6 +3,7 @@
+ #include <sys/socket.h>
+ #include <sys/ioctl.h>
+ #include <string.h>
++#include <errno.h>
+ #include "syscall.h"
+ 
+ char *if_indextoname(unsigned index, char *name)
+@@ -14,5 +15,9 @@ char *if_indextoname(unsigned index, char *name)
+ 	ifr.ifr_ifindex = index;
+ 	r = ioctl(fd, SIOCGIFNAME, &ifr);
+ 	__syscall(SYS_close, fd);
+-	return r < 0 ? 0 : strncpy(name, ifr.ifr_name, IF_NAMESIZE);
++	if (r < 0) {
++		if (errno == ENODEV) errno = ENXIO;
++		return 0;
++	}
++	return strncpy(name, ifr.ifr_name, IF_NAMESIZE);
+ }
+-- 
+cgit v0.11.2

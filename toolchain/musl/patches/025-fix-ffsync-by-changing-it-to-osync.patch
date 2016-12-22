@@ -1,0 +1,25 @@
+From c1f4ed150137d793c9d07356305a89e8785e7e02 Mon Sep 17 00:00:00 2001
+From: Duncan Overbruck <duncaen@voidlinux.eu>
+Date: Thu, 18 Aug 2016 17:06:16 +0200
+Subject: fix FFSYNC by changing it to O_SYNC
+
+O_FSYNC was never defined and is legacy/wrong, nothing seems to use it.
+---
+ include/fcntl.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/fcntl.h b/include/fcntl.h
+index e683e4d..0e165ca 100644
+--- a/include/fcntl.h
++++ b/include/fcntl.h
+@@ -99,7 +99,7 @@ int posix_fallocate(int, off_t, off_t);
+ #define AT_EMPTY_PATH 0x1000
+ 
+ #define FAPPEND O_APPEND
+-#define FFSYNC O_FSYNC
++#define FFSYNC O_SYNC
+ #define FASYNC O_ASYNC
+ #define FNONBLOCK O_NONBLOCK
+ #define FNDELAY O_NDELAY
+-- 
+cgit v0.11.2

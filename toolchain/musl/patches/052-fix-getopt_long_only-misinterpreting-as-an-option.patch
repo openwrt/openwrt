@@ -1,0 +1,24 @@
+From b24f1d2520c87077cef21e085893e5f3c565a6df Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Thu, 20 Oct 2016 12:13:33 -0400
+Subject: fix getopt_long_only misinterpreting "--" as an option
+
+---
+ src/misc/getopt_long.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/misc/getopt_long.c b/src/misc/getopt_long.c
+index 480c001..c6e1462 100644
+--- a/src/misc/getopt_long.c
++++ b/src/misc/getopt_long.c
+@@ -53,7 +53,7 @@ static int __getopt_long_core(int argc, char *const *argv, const char *optstring
+ {
+ 	optarg = 0;
+ 	if (longopts && argv[optind][0] == '-' &&
+-		((longonly && argv[optind][1]) ||
++		((longonly && argv[optind][1] && argv[optind][1] != '-') ||
+ 		 (argv[optind][1] == '-' && argv[optind][2])))
+ 	{
+ 		int colon = optstring[optstring[0]=='+'||optstring[0]=='-']==':';
+-- 
+cgit v0.11.2

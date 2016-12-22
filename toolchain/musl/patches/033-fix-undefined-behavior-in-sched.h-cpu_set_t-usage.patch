@@ -1,0 +1,43 @@
+From 66570ec9c465e3c6c5d6dbd7dd42e45041a39288 Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Mon, 19 Sep 2016 11:15:51 -0400
+Subject: fix undefined behavior in sched.h cpu_set_t usage
+
+since cpu sets can be dynamically allocated and have variable size,
+accessing their contents via ->__bits is not valid; performing pointer
+arithmetic outside the range of the size of the declared __bits array
+results in undefined beahavior. instead, only use cpu_set_t for
+fixed-size cpu set objects (instantiated by the caller) and as an
+abstract pointer type for dynamically allocated ones. perform all
+accesses simply by casting the abstract pointer type cpuset_t * back
+to unsigned long *.
+---
+ include/sched.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/include/sched.h b/include/sched.h
+index af82d6c..d1cccb7 100644
+--- a/include/sched.h
++++ b/include/sched.h
+@@ -82,7 +82,7 @@ int sched_getaffinity(pid_t, size_t, cpu_set_t *);
+ int sched_setaffinity(pid_t, size_t, const cpu_set_t *);
+ 
+ #define __CPU_op_S(i, size, set, op) ( (i)/8U >= (size) ? 0 : \
+-	((set)->__bits[(i)/8/sizeof(long)] op (1UL<<((i)%(8*sizeof(long))))) )
++	(((unsigned long *)(set))[(i)/8/sizeof(long)] op (1UL<<((i)%(8*sizeof(long))))) )
+ 
+ #define CPU_SET_S(i, size, set) __CPU_op_S(i, size, set, |=)
+ #define CPU_CLR_S(i, size, set) __CPU_op_S(i, size, set, &=~)
+@@ -94,8 +94,8 @@ static __inline void __CPU_##func##_S(size_t __size, cpu_set_t *__dest, \
+ { \
+ 	size_t __i; \
+ 	for (__i=0; __i<__size/sizeof(long); __i++) \
+-		__dest->__bits[__i] = __src1->__bits[__i] \
+-			op __src2->__bits[__i] ; \
++		((unsigned long *)__dest)[__i] = ((unsigned long *)__src1)[__i] \
++			op ((unsigned long *)__src2)[__i] ; \
+ }
+ 
+ __CPU_op_func_S(AND, &)
+-- 
+cgit v0.11.2

@@ -1,0 +1,35 @@
+From 70d2687d85c314963cf280759b23fd4573ff0d82 Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Wed, 19 Oct 2016 20:17:16 -0400
+Subject: fix integer overflow in float printf needed-precision computation
+
+if the requested precision is close to INT_MAX, adding
+LDBL_MANT_DIG/3+8 overflows. in practice the resulting undefined
+behavior manifests as a large negative result, which is then used to
+compute the new end pointer (z) with a wildly out-of-bounds value
+(more overflow, more undefined behavior). the end result is at least
+incorrect output and character count (return value); worse things do
+not seem to happen, but detailed analysis has not been done.
+
+this patch fixes the overflow by performing the intermediate
+computation as unsigned; after division by 9, the final result
+necessarily fits in int.
+---
+ src/stdio/vfprintf.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/stdio/vfprintf.c b/src/stdio/vfprintf.c
+index e439a07..cd17ad7 100644
+--- a/src/stdio/vfprintf.c
++++ b/src/stdio/vfprintf.c
+@@ -312,7 +312,7 @@ static int fmt_fp(FILE *f, long double y, int w, int p, int fl, int t)
+ 	}
+ 	while (e2<0) {
+ 		uint32_t carry=0, *b;
+-		int sh=MIN(9,-e2), need=1+(p+LDBL_MANT_DIG/3+8)/9;
++		int sh=MIN(9,-e2), need=1+(p+LDBL_MANT_DIG/3U+8)/9;
+ 		for (d=a; d<z; d++) {
+ 			uint32_t rm = *d & (1<<sh)-1;
+ 			*d = (*d>>sh) + carry;
+-- 
+cgit v0.11.2

@@ -1,0 +1,32 @@
+From 4078a5c31fa67987051c2180db7a07702534032f Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Tue, 8 Nov 2016 18:03:42 -0500
+Subject: fix build regression on archs with variable page size
+
+commit 31fb174dd295e50f7c5cf18d31fcfd5fe5a063b7 used
+DEFAULT_GUARD_SIZE from pthread_impl.h in a static initializer,
+breaking build on archs where its definition, PAGE_SIZE, is not a
+constant. instead, just define DEFAULT_GUARD_SIZE as 4096, the minimal
+page size on any arch we support. pthread_create rounds up to whole
+pages anyway, so defining it to 1 would also work, but a moderately
+meaningful value is nicer to programs that use
+pthread_attr_getguardsize on default-initialized attribute objects.
+---
+ src/internal/pthread_impl.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/internal/pthread_impl.h b/src/internal/pthread_impl.h
+index 3890bb5..7a679db 100644
+--- a/src/internal/pthread_impl.h
++++ b/src/internal/pthread_impl.h
+@@ -143,7 +143,7 @@ void __block_app_sigs(void *);
+ void __restore_sigs(void *);
+ 
+ #define DEFAULT_STACK_SIZE 81920
+-#define DEFAULT_GUARD_SIZE PAGE_SIZE
++#define DEFAULT_GUARD_SIZE 4096
+ 
+ #define __ATTRP_C11_THREAD ((void*)(uintptr_t)-1)
+ 
+-- 
+cgit v0.11.2

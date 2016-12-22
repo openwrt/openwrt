@@ -1,0 +1,189 @@
+From aee6abb2400b9a955c2b41166db1c22f63ad42ef Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Thu, 6 Oct 2016 12:15:47 -0400
+Subject: fix regexec with haystack strings longer than INT_MAX
+
+we inherited from TRE regexec code that's utterly wrong with respect
+to the integer types it's using. while it doesn't appear that
+compilers are producing unsafe output, signed integer overflows seem
+to happen, and regexec fails to find matches past offset INT_MAX.
+
+this patch fixes the type of all variables/fields used to store
+offsets in the string from int to regoff_t. after the changes, basic
+testing showed that regexec can now find matches past 2GB (INT_MAX)
+and past 4GB on x86_64, and code generation is unchanged on i386.
+---
+ src/regex/regexec.c | 54 +++++++++++++++++++++++++++--------------------------
+ 1 file changed, 28 insertions(+), 26 deletions(-)
+
+diff --git a/src/regex/regexec.c b/src/regex/regexec.c
+index dd52319..5c4cb92 100644
+--- a/src/regex/regexec.c
++++ b/src/regex/regexec.c
+@@ -44,7 +44,7 @@
+ 
+ static void
+ tre_fill_pmatch(size_t nmatch, regmatch_t pmatch[], int cflags,
+-		const tre_tnfa_t *tnfa, int *tags, int match_eo);
++		const tre_tnfa_t *tnfa, regoff_t *tags, regoff_t match_eo);
+ 
+ /***********************************************************************
+  from tre-match-utils.h
+@@ -97,7 +97,7 @@ tre_fill_pmatch(size_t nmatch, regmatch_t pmatch[], int cflags,
+ /* Returns 1 if `t1' wins `t2', 0 otherwise. */
+ static int
+ tre_tag_order(int num_tags, tre_tag_direction_t *tag_directions,
+-	      int *t1, int *t2)
++	      regoff_t *t1, regoff_t *t2)
+ {
+   int i;
+   for (i = 0; i < num_tags; i++)
+@@ -157,25 +157,25 @@ tre_neg_char_classes_match(tre_ctype_t *classes, tre_cint_t wc, int icase)
+ 
+ typedef struct {
+   tre_tnfa_transition_t *state;
+-  int *tags;
++  regoff_t *tags;
+ } tre_tnfa_reach_t;
+ 
+ typedef struct {
+-  int pos;
+-  int **tags;
++  regoff_t pos;
++  regoff_t **tags;
+ } tre_reach_pos_t;
+ 
+ 
+ static reg_errcode_t
+ tre_tnfa_run_parallel(const tre_tnfa_t *tnfa, const void *string,
+-		      int *match_tags, int eflags,
+-		      int *match_end_ofs)
++		      regoff_t *match_tags, int eflags,
++		      regoff_t *match_end_ofs)
+ {
+   /* State variables required by GET_NEXT_WCHAR. */
+   tre_char_t prev_c = 0, next_c = 0;
+   const char *str_byte = string;
+-  int pos = -1;
+-  int pos_add_next = 1;
++  regoff_t pos = -1;
++  regoff_t pos_add_next = 1;
+ #ifdef TRE_MBSTATE
+   mbstate_t mbstate;
+ #endif /* TRE_MBSTATE */
+@@ -191,10 +191,10 @@ tre_tnfa_run_parallel(const tre_tnfa_t *tnfa, const void *string,
+   int *tag_i;
+   int num_tags, i;
+ 
+-  int match_eo = -1;	   /* end offset of match (-1 if no match found yet) */
++  regoff_t match_eo = -1;	   /* end offset of match (-1 if no match found yet) */
+   int new_match = 0;
+-  int *tmp_tags = NULL;
+-  int *tmp_iptr;
++  regoff_t *tmp_tags = NULL;
++  regoff_t *tmp_iptr;
+ 
+ #ifdef TRE_MBSTATE
+   memset(&mbstate, '\0', sizeof(mbstate));
+@@ -214,7 +214,7 @@ tre_tnfa_run_parallel(const tre_tnfa_t *tnfa, const void *string,
+ 
+     /* Ensure that tbytes and xbytes*num_states cannot overflow, and that
+      * they don't contribute more than 1/8 of SIZE_MAX to total_bytes. */
+-    if (num_tags > SIZE_MAX/(8 * sizeof(int) * tnfa->num_states))
++    if (num_tags > SIZE_MAX/(8 * sizeof(regoff_t) * tnfa->num_states))
+       goto error_exit;
+ 
+     /* Likewise check rbytes. */
+@@ -229,7 +229,7 @@ tre_tnfa_run_parallel(const tre_tnfa_t *tnfa, const void *string,
+     tbytes = sizeof(*tmp_tags) * num_tags;
+     rbytes = sizeof(*reach_next) * (tnfa->num_states + 1);
+     pbytes = sizeof(*reach_pos) * tnfa->num_states;
+-    xbytes = sizeof(int) * num_tags;
++    xbytes = sizeof(regoff_t) * num_tags;
+     total_bytes =
+       (sizeof(long) - 1) * 4 /* for alignment paddings */
+       + (rbytes + xbytes * tnfa->num_states) * 2 + tbytes + pbytes;
+@@ -490,12 +490,12 @@ error_exit:
+ */
+ 
+ typedef struct {
+-  int pos;
++  regoff_t pos;
+   const char *str_byte;
+   tre_tnfa_transition_t *state;
+   int state_id;
+   int next_c;
+-  int *tags;
++  regoff_t *tags;
+ #ifdef TRE_MBSTATE
+   mbstate_t mbstate;
+ #endif /* TRE_MBSTATE */
+@@ -591,13 +591,13 @@ typedef struct tre_backtrack_struct {
+ 
+ static reg_errcode_t
+ tre_tnfa_run_backtrack(const tre_tnfa_t *tnfa, const void *string,
+-		       int *match_tags, int eflags, int *match_end_ofs)
++		       regoff_t *match_tags, int eflags, regoff_t *match_end_ofs)
+ {
+   /* State variables required by GET_NEXT_WCHAR. */
+   tre_char_t prev_c = 0, next_c = 0;
+   const char *str_byte = string;
+-  int pos = 0;
+-  int pos_add_next = 1;
++  regoff_t pos = 0;
++  regoff_t pos_add_next = 1;
+ #ifdef TRE_MBSTATE
+   mbstate_t mbstate;
+ #endif /* TRE_MBSTATE */
+@@ -610,15 +610,16 @@ tre_tnfa_run_backtrack(const tre_tnfa_t *tnfa, const void *string,
+      started from. */
+   int next_c_start;
+   const char *str_byte_start;
+-  int pos_start = -1;
++  regoff_t pos_start = -1;
+ #ifdef TRE_MBSTATE
+   mbstate_t mbstate_start;
+ #endif /* TRE_MBSTATE */
+ 
+   /* End offset of best match so far, or -1 if no match found yet. */
+-  int match_eo = -1;
++  regoff_t match_eo = -1;
+   /* Tag arrays. */
+-  int *next_tags, *tags = NULL;
++  int *next_tags;
++  regoff_t *tags = NULL;
+   /* Current TNFA state. */
+   tre_tnfa_transition_t *state;
+   int *states_seen = NULL;
+@@ -768,8 +769,9 @@ tre_tnfa_run_backtrack(const tre_tnfa_t *tnfa, const void *string,
+ 	  /* This is a back reference state.  All transitions leaving from
+ 	     this state have the same back reference "assertion".  Instead
+ 	     of reading the next character, we match the back reference. */
+-	  int so, eo, bt = trans_i->u.backref;
+-	  int bt_len;
++	  regoff_t so, eo;
++	  int bt = trans_i->u.backref;
++	  regoff_t bt_len;
+ 	  int result;
+ 
+ 	  /* Get the substring we need to match against.  Remember to
+@@ -926,7 +928,7 @@ tre_tnfa_run_backtrack(const tre_tnfa_t *tnfa, const void *string,
+    endpoint values. */
+ static void
+ tre_fill_pmatch(size_t nmatch, regmatch_t pmatch[], int cflags,
+-		const tre_tnfa_t *tnfa, int *tags, int match_eo)
++		const tre_tnfa_t *tnfa, regoff_t *tags, regoff_t match_eo)
+ {
+   tre_submatch_data_t *submatch_data;
+   unsigned int i, j;
+@@ -996,7 +998,7 @@ regexec(const regex_t *restrict preg, const char *restrict string,
+ {
+   tre_tnfa_t *tnfa = (void *)preg->TRE_REGEX_T_FIELD;
+   reg_errcode_t status;
+-  int *tags = NULL, eo;
++  regoff_t *tags = NULL, eo;
+   if (tnfa->cflags & REG_NOSUB) nmatch = 0;
+   if (tnfa->num_tags > 0 && nmatch > 0)
+     {
+-- 
+cgit v0.11.2

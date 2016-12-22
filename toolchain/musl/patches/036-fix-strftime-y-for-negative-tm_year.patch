@@ -1,0 +1,23 @@
+From 583ea83541dcc6481c7a1bd1a9b485526bad84a1 Mon Sep 17 00:00:00 2001
+From: Szabolcs Nagy <nsz@port70.net>
+Date: Tue, 4 Oct 2016 17:14:57 +0000
+Subject: fix strftime %y for negative tm_year
+
+---
+ src/time/strftime.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/time/strftime.c b/src/time/strftime.c
+index f1ccc4d..e103e02 100644
+--- a/src/time/strftime.c
++++ b/src/time/strftime.c
+@@ -167,6 +167,7 @@ const char *__strftime_fmt_1(char (*s)[100], size_t *l, int f, const struct tm *
+ 		goto nl_strftime;
+ 	case 'y':
+ 		val = tm->tm_year % 100;
++		if (val<0) val += 100;
+ 		goto number;
+ 	case 'Y':
+ 		val = tm->tm_year + 1900LL;
+-- 
+cgit v0.11.2

@@ -1,0 +1,72 @@
+From c3edc06d1e1360f3570db9155d6b318ae0d0f0f7 Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Thu, 6 Oct 2016 18:34:58 -0400
+Subject: fix missing integer overflow checks in regexec buffer size
+ computations
+
+most of the possible overflows were already ruled out in practice by
+regcomp having already succeeded performing larger allocations.
+however at least the num_states*num_tags multiplication can clearly
+overflow in practice. for safety, check them all, and use the proper
+type, size_t, rather than int.
+
+also improve comments, use calloc in place of malloc+memset, and
+remove bogus casts.
+---
+ src/regex/regexec.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/src/regex/regexec.c b/src/regex/regexec.c
+index 16c5d0a..dd52319 100644
+--- a/src/regex/regexec.c
++++ b/src/regex/regexec.c
+@@ -34,6 +34,7 @@
+ #include <wchar.h>
+ #include <wctype.h>
+ #include <limits.h>
++#include <stdint.h>
+ 
+ #include <regex.h>
+ 
+@@ -206,11 +207,24 @@ tre_tnfa_run_parallel(const tre_tnfa_t *tnfa, const void *string,
+ 
+   /* Allocate memory for temporary data required for matching.	This needs to
+      be done for every matching operation to be thread safe.  This allocates
+-     everything in a single large block from the stack frame using alloca()
+-     or with malloc() if alloca is unavailable. */
++     everything in a single large block with calloc(). */
+   {
+-    int tbytes, rbytes, pbytes, xbytes, total_bytes;
++    size_t tbytes, rbytes, pbytes, xbytes, total_bytes;
+     char *tmp_buf;
++
++    /* Ensure that tbytes and xbytes*num_states cannot overflow, and that
++     * they don't contribute more than 1/8 of SIZE_MAX to total_bytes. */
++    if (num_tags > SIZE_MAX/(8 * sizeof(int) * tnfa->num_states))
++      goto error_exit;
++
++    /* Likewise check rbytes. */
++    if (tnfa->num_states+1 > SIZE_MAX/(8 * sizeof(*reach_next)))
++      goto error_exit;
++
++    /* Likewise check pbytes. */
++    if (tnfa->num_states > SIZE_MAX/(8 * sizeof(*reach_pos)))
++      goto error_exit;
++
+     /* Compute the length of the block we need. */
+     tbytes = sizeof(*tmp_tags) * num_tags;
+     rbytes = sizeof(*reach_next) * (tnfa->num_states + 1);
+@@ -221,10 +235,9 @@ tre_tnfa_run_parallel(const tre_tnfa_t *tnfa, const void *string,
+       + (rbytes + xbytes * tnfa->num_states) * 2 + tbytes + pbytes;
+ 
+     /* Allocate the memory. */
+-    buf = xmalloc((unsigned)total_bytes);
++    buf = calloc(total_bytes, 1);
+     if (buf == NULL)
+       return REG_ESPACE;
+-    memset(buf, 0, (size_t)total_bytes);
+ 
+     /* Get the various pointers within tmp_buf (properly aligned). */
+     tmp_tags = (void *)buf;
+-- 
+cgit v0.11.2
