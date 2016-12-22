@@ -501,7 +501,7 @@ $(eval $(call KernelPackage,wdt-omap))
 define KernelPackage/wdt-orion
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell Orion Watchdog timer
-  DEPENDS:=@TARGET_orion||TARGET_kirkwood
+  DEPENDS:=@TARGET_orion
   KCONFIG:=CONFIG_ORION_WATCHDOG
   FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/orion_wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,orion_wdt,1)
@@ -587,7 +587,7 @@ $(eval $(call KernelPackage,rtc-isl1208))
 define KernelPackage/rtc-marvell
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell SoC built-in RTC support
-  DEPENDS:=@RTC_SUPPORT @TARGET_kirkwood||TARGET_orion
+  DEPENDS:=@RTC_SUPPORT @TARGET_orion
   KCONFIG:=CONFIG_RTC_DRV_MV \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
@@ -795,7 +795,7 @@ $(eval $(call KernelPackage,zram))
 define KernelPackage/mvsdio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell SDIO support
-  DEPENDS:=@TARGET_orion||TARGET_kirkwood +kmod-mmc
+  DEPENDS:=@TARGET_orion +kmod-mmc
   KCONFIG:=CONFIG_MMC_MVSDIO
   FILES:=$(LINUX_DIR)/drivers/mmc/host/mvsdio.ko
   AUTOLOAD:=$(call AutoProbe,mvsdio)
@@ -973,23 +973,6 @@ define KernelPackage/thermal-imx/description
 endef
 
 $(eval $(call KernelPackage,thermal-imx))
-
-
-define KernelPackage/thermal-kirkwood
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=Temperature sensor on Marvell Kirkwood SoCs
-  DEPENDS:=@TARGET_kirkwood +kmod-thermal
-  KCONFIG:=CONFIG_KIRKWOOD_THERMAL
-  FILES:=$(LINUX_DIR)/drivers/thermal/kirkwood_thermal.ko
-  AUTOLOAD:=$(call AutoProbe,kirkwood_thermal)
-endef
-
-define KernelPackage/thermal-kirkwood/description
- Support for the Kirkwood thermal sensor driver into the Linux thermal
- framework. Only kirkwood 88F6282 and 88F6283 have this sensor.
-endef
-
-$(eval $(call KernelPackage,thermal-kirkwood))
 
 
 define KernelPackage/gpio-beeper
