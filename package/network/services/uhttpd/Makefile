@@ -49,40 +49,6 @@ define Package/uhttpd/config
 endef
 
 
-define Package/uhttpd-mod-tls
-  $(Package/uhttpd/default)
-  TITLE+= (TLS plugin)
-  DEPENDS:=uhttpd \
-	+PACKAGE_uhttpd-mod-tls_polarssl:libustream-polarssl \
-	+PACKAGE_uhttpd-mod-tls_mbedtls:libustream-mbedtls \
-	+PACKAGE_uhttpd-mod-tls_cyassl:libustream-cyassl \
-	+PACKAGE_uhttpd-mod-tls_openssl:libustream-openssl
-endef
-
-define Package/uhttpd-mod-tls/description
- The TLS plugin adds HTTPS support to uHTTPd.
-endef
-
-define Package/uhttpd-mod-tls/config
-  choice
-    depends on PACKAGE_uhttpd-mod-tls
-    prompt "TLS Provider"
-    default PACKAGE_uhttpd-mod-tls_polarssl
-
-    config PACKAGE_uhttpd-mod-tls_mbedtls
-      bool "mbedTLS"
-
-    config PACKAGE_uhttpd-mod-tls_polarssl
-      bool "PolarSSL"
-
-    config PACKAGE_uhttpd-mod-tls_cyassl
-      bool "CyaSSL"
-
-    config PACKAGE_uhttpd-mod-tls_openssl
-      bool "OpenSSL"
-  endchoice
-endef
-
 define Package/uhttpd-mod-lua
   $(Package/uhttpd/default)
   TITLE+= (Lua plugin)
@@ -129,10 +95,6 @@ define Package/uhttpd/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd $(1)/usr/sbin/uhttpd
 endef
 
-define Package/uhttpd-mod-tls/install
-	true
-endef
-
 define Package/uhttpd-mod-lua/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd_lua.so $(1)/usr/lib/
@@ -146,6 +108,5 @@ endef
 
 
 $(eval $(call BuildPackage,uhttpd))
-$(eval $(call BuildPackage,uhttpd-mod-tls))
 $(eval $(call BuildPackage,uhttpd-mod-lua))
 $(eval $(call BuildPackage,uhttpd-mod-ubus))
