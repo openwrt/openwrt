@@ -11,7 +11,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR:=0x8000
-TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome
+TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome iconnect pogo_e02 ib62x0
 
 UBI_OPTS := -m 2048 -p 128KiB -s 512
 UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
@@ -68,6 +68,24 @@ define Device/linksys-viper
   PROFILES := Generic VIPER
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+endef
+
+define Device/iconnect
+$(Device/dockstar)
+  PROFILES := Generic ICONNECT
+  DEVICE_DTS := kirkwood-iconnect
+endef
+
+define Device/pogo_e02
+$(Device/dockstar)
+  PROFILES := Generic POGOE02
+  DEVICE_DTS := kirkwood-pogo_e02
+endef
+
+define Device/ib62x0
+$(Device/dockstar)
+  PROFILES := Generic IB62X0
+  DEVICE_DTS := kirkwood-ib62x0
 endef
 
 define Image/BuildKernel/Template
@@ -144,11 +162,8 @@ IOMEGA_IX2_200_UBIFS_OPTS := -m 512 -e 15872 -c 2048
 IOMEGA_IX2_200_UBI_OPTS := -m 512 -p 16384 -s 256
 
 Image/BuildKernel/Template/Generic=$(call Image/BuildKernel/Template)
-Image/BuildKernel/Template/IB62X0=$(call Image/BuildKernel/Template,ib62x0)
-Image/BuildKernel/Template/ICONNECT=$(call Image/BuildKernel/Template,iconnect)
 Image/BuildKernel/Template/IOMEGA_IX2_200=$(call Image/BuildKernel/Template,iomega_ix2_200)
 Image/BuildKernel/Template/NSA310S=$(call Image/BuildKernel/Template,nsa310s)
-Image/BuildKernel/Template/POGOE02=$(call Image/BuildKernel/Template,pogo_e02)
 Image/BuildKernel/Template/SHEEVAPLUG=$(call Image/BuildKernel/Template,sheevaplug)
 Image/BuildKernel/Template/SHEEVAPLUGSATA=$(call Image/BuildKernel/Template,sheevaplug-esata)
 Image/BuildKernel/Template/GuruplugServerPlus=$(call Image/BuildKernel/Template,guruplug-server-plus)
