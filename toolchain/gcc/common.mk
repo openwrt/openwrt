@@ -80,11 +80,7 @@ ifdef CONFIG_INSTALL_GCCGO
 endif
 
 ifdef CONFIG_GCC_USE_GRAPHITE
-  ifdef CONFIG_GCC_VERSION_4_8
-    GRAPHITE_CONFIGURE=--with-cloog=$(REAL_STAGING_DIR_HOST)
-  else
-    GRAPHITE_CONFIGURE=--with-isl=$(REAL_STAGING_DIR_HOST)
-  endif
+  GRAPHITE_CONFIGURE=--with-isl=$(REAL_STAGING_DIR_HOST)
 else
   GRAPHITE_CONFIGURE=--without-isl --without-cloog
 endif

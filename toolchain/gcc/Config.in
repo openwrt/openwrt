@@ -23,14 +23,9 @@ choice
 endchoice
 
 config GCC_USE_GRAPHITE
+	depends on !GCC_VERSION_4_8_ARC
 	bool
 	prompt "Compile in support for the new Graphite framework in GCC 4.4+" if TOOLCHAINOPTS
-
-config GCC_USE_SYSTEM_PPL_CLOOG
-	bool
-	prompt "Use the system versions of PPL and CLooG"
-	depends on GCC_USE_GRAPHITE && GCC_VERSION_4_8
-	default n
 
 config EXTRA_GCC_CONFIG_OPTIONS
 	string
