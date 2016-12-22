@@ -34,12 +34,12 @@ define Package/terminfo
   URL:=http://www.gnu.org/software/ncurses/
 endef
 
-define Package/libncursesw
+define Package/libncurses
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Terminal handling library (Unicode)
   URL:=http://www.gnu.org/software/ncurses/
-  PROVIDES:=libncurses
+  PROVIDES:=libncursesw
   DEPENDS:= +terminfo
   ABI_VERSION:=$(PKG_VERSION)
 endef
@@ -116,7 +116,7 @@ ifneq ($(HOST_OS),FreeBSD)
 endif
 endef
 
-define Package/libncursesw/install
+define Package/libncurses/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	for lib in ncurses panel menu form; do \
 		$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib$$$${lib}w.so* $(1)/usr/lib/; \
@@ -149,4 +149,4 @@ endef
 
 $(eval $(call HostBuild))
 $(eval $(call BuildPackage,terminfo))
-$(eval $(call BuildPackage,libncursesw))
+$(eval $(call BuildPackage,libncurses))
