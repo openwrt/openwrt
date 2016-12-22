@@ -300,8 +300,8 @@ define Device/dwr-512-b
   DTS := DWR-512-B
   IMAGE_SIZE := 7700k
   DEVICE_TITLE := D-Link DWR-512 B
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev \
-			kmod-usb-serial kmod-usb-serial-option kmod-usb-serial-wwan comgt
+  DEVICE_PACKAGES := kmod-usb2 kmod-spi-dev kmod-usb-serial kmod-usb-serial-option \
+			kmod-usb-net kmod-usb-net-cdc-ether comgt-ncm
 endef
 TARGET_DEVICES += dwr-512-b
 
