@@ -4,7 +4,7 @@
 
 define Build/tplink-header
 	$(STAGING_DIR_HOST)/bin/mktplinkfw2 -a 0x4 -V "ver. 2.0" -B $(1) \
-		-o $@.new -k $@  && mv $@.new $@
+		-o $@.new -k $@ -r $(IMAGE_ROOTFS) && mv $@.new $@
 endef
 
 define Build/pad-kernel-ex2700
@@ -45,7 +45,7 @@ define Device/ArcherC20i
   DTS := ArcherC20i
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC20i -c
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC20i -j -r $(KDIR)/root.squashfs | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC20i -j | append-metadata
   DEVICE_TITLE := TP-Link ArcherC20i
 endef
 TARGET_DEVICES += ArcherC20i
@@ -54,16 +54,17 @@ define Device/ArcherC50
   DTS := ArcherC50
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC50 -c
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC50 -j -r $(KDIR)/root.squashfs | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC50 -j | append-metadata
   DEVICE_TITLE := TP-Link ArcherC50
 endef
 TARGET_DEVICES += ArcherC50
 
 define Device/ArcherMR200
   DTS := ArcherMR200
+  SUPPORTED_DEVICES := mr200
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherMR200 -c
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherMR200 -j -r $(KDIR)/root.squashfs
+  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherMR200 -j | append-metadata
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-net kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option adb
   DEVICE_TITLE := TP-Link ArcherMR200
 endef
