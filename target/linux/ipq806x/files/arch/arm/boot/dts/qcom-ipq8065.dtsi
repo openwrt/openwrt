@@ -863,6 +863,8 @@
 			clocks = <&gcc USB30_0_MASTER_CLK>;
 			clock-names = "core";
 
+			syscon-tcsr = <&tcsr 0xb0 1>;
+
 			ranges;
 
 			status = "disabled";
@@ -876,6 +878,7 @@
 				phys = <&hs_phy_0>, <&ss_phy_0>;
 				phy-names = "usb2-phy", "usb3-phy";
 				dr_mode = "host";
+				snps,dis_u3_susphy_quirk;
 			};
 		};
 
@@ -885,6 +888,8 @@
 			#size-cells = <1>;
 			clocks = <&gcc USB30_1_MASTER_CLK>;
 			clock-names = "core";
+
+			syscon-tcsr = <&tcsr 0xb0 0>;
 
 			ranges;
 
@@ -897,6 +902,7 @@
 				phys = <&hs_phy_1>, <&ss_phy_1>;
 				phy-names = "usb2-phy", "usb3-phy";
 				dr_mode = "host";
+				snps,dis_u3_susphy_quirk;
 			};
 		};
 
