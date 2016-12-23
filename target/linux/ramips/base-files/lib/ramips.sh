@@ -55,8 +55,11 @@ ramips_board_detect() {
 	*"AR725W")
 		name="ar725w"
 		;;
-	*"ASL26555")
-		name="asl26555"
+	*"ASL26555 (8M)")
+		name="asl26555-8M"
+		;;
+	*"ASL26555 (16M)")
+		name="asl26555-16M"
 		;;
 	*"ATP-52B")
 		name="atp-52b"
@@ -343,8 +346,11 @@ ramips_board_detect() {
 	*"NCS601W")
 		name="ncs601w"
 		;;
-	*"NixcoreX1")
-		name="nixcore-x1"
+	*"NixcoreX1 (8M)")
+		name="nixcore-x1-8M"
+		;;
+	*"NixcoreX1 (16M)")
+		name="nixcore-x1-16M"
 		;;
 	*"NW718")
 		name="nw718"
@@ -451,8 +457,11 @@ ramips_board_detect() {
 	*"V22RW-2X2")
 		name="v22rw-2x2"
 		;;
-	*"VoCore")
-		name="vocore"
+	*"VoCore (8M)")
+		name="vocore-8M"
+		;;
+	*"VoCore (16M)")
+		name="vocore-16M"
 		;;
 	*"VR500")
 		name="vr500"
@@ -556,8 +565,11 @@ ramips_board_detect() {
 	*"WT1520")
 		name="wt1520"
 		;;
-	*"WT3020")
-		name="wt3020"
+	*"WT3020 (4M)")
+		name="wt3020-4M"
+		;;
+	*"WT3020 (8M)")
+		name="wt3020-8M"
 		;;
 	*"WZR-AGL300NH")
 		name="wzr-agl300nh"
@@ -627,5 +639,5 @@ ramips_board_name() {
 	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
 	[ -z "$name" ] && name="unknown"
 
-	echo "$name"
+	echo "${name%-[0-9]*M}"
 }
