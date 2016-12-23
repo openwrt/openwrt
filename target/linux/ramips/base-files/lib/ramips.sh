@@ -14,7 +14,7 @@ ramips_board_detect() {
 
 	case "$machine" in
 	*"11AC NAS Router")
-		name="w2914nsv2"
+		name="11acnas"
 		;;
 	*"3G150B")
 		name="3g150b"

@@ -17,6 +17,16 @@ board=$(ramips_board_name)
 board_config_update
 
 case $board in
+11acnas|\
+all0239-3g|\
+hw550-3g|\
+mofi3500-3gn|\
+sap-g3200u3|\
+sk-wb8|\
+w2914nsv2|\
+wf-2881)
+	set_usb_led "$board:green:usb"
+	;;
 3g150b|\
 3g300m)
 	set_usb_led "$board:blue:3g"
@@ -44,14 +54,6 @@ ai-br100)
 air3gii)
 	set_wifi_led "$board:green:wlan"
 	set_usb_led "$board:green:mobile"
-	;;
-all0239-3g|\
-hw550-3g|\
-mofi3500-3gn|\
-sap-g3200u3|\
-sk-wb8|\
-wf-2881)
-	set_usb_led "$board:green:usb"
 	;;
 all0256n)
 	ucidef_set_rssimon "wlan0" "200000" "1"
@@ -314,9 +316,6 @@ tiny-ac)
 vocore)
 	ucidef_set_led_netdev "eth" "ETH" "$board:orange:eth" "eth0"
 	set_wifi_led "$board:green:status"
-	;;
-w2914nsv2)
-	set_usb_led "$board:green:usb"
 	;;
 w502u)
 	set_usb_led "$board:blue:usb"
