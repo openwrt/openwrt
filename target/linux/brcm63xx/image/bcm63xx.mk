@@ -200,6 +200,18 @@ define Device/A4001N1
 endef
 TARGET_DEVICES += A4001N1
 
+define Device/AV4202N
+  $(Device/bcm63xx)
+  IMAGE_OFFSET := 0x20000
+  DEVICE_TITLE := ADB P.DG AV4202N
+  DEVICE_DTS := av4202n
+  CFE_BOARD_ID := 96368_Swiss_S1
+  CFE_CHIP_ID := 6368
+  DEVICE_PACKAGES := \
+    $(USB2_PACKAGES) $(B43_PACKAGES)
+endef
+TARGET_DEVICES += AV4202N
+
 ### Alcatel ###
 define Device/RG100A
   $(Device/bcm63xx)

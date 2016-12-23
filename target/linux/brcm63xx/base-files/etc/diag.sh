@@ -18,6 +18,9 @@ set_state() {
 	ar-5387un)
 		status_led="AR-5387un:green:power"
 		;;
+	av4202n)
+		status_led="AV4202N:white:power"
+		;;
 	bcm96348gw)
 		status_led="96348GW:green:power"
 		;;
