@@ -975,7 +975,7 @@ ar8xxx_sw_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 
-	if (val->port_vlan >= AR8X16_MAX_PORTS)
+	if (val->port_vlan >= AR8X16_MAX_VLANS)
 		return -EINVAL;
 
 	priv->vlan_id[val->port_vlan] = val->value.i;
