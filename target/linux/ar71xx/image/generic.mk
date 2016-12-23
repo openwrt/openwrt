@@ -23,8 +23,6 @@ endef
 TARGET_DEVICES += cf-e316n-v2
 
 define Device/domywifi-dw33d
-  DEVICE_TITLE := DomyWifi DW33D
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ledtrig-usbdev kmod-ath10k
   BOARDNAME = DW33D
   IMAGE_SIZE = 16000k
   CONSOLE = ttyS0,115200
