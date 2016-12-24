@@ -24,7 +24,7 @@ for pkg in `find $pkg_dir -name '*.ipk' | sort`; do
 	tar -xzOf $pkg ./control.tar.gz | tar xzOf - ./control | sed -e "s/^Description:/Filename: $sed_safe_pkg\\
 Size: $file_size\\
 SHA256sum: $sha256sum\\
-Description:/" | grep -vE '^(Maintainer|LicenseFiles|Source|Require)'
+Description:/"
 	echo ""
 done
 [ -n "$empty" ] && echo
