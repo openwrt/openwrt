@@ -259,7 +259,7 @@ struct mtd_info * yaffs_get_mtd_device(dev_t sdev)
 		return NULL;	/* This isn't an mtd device */
 
 	/* Check it's NAND */
-	if (mtd->type != MTD_NANDFLASH) {
+	if (mtd->type != MTD_NANDFLASH && mtd->type != MTD_MLCNANDFLASH) {
 		yaffs_trace(YAFFS_TRACE_ALWAYS,
 			"yaffs: MTD device is not NAND it's type %d",
 			mtd->type);

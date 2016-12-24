@@ -2598,7 +2598,7 @@ static int yaffs_remount_fs(struct super_block *sb, int *flags, char *data)
 	}
 
 	/* Check it's NAND */
-	if (mtd->type != MTD_NANDFLASH) {
+	if (mtd->type != MTD_NANDFLASH && mtd->type != MTD_MLCNANDFLASH) {
 		yaffs_trace(YAFFS_TRACE_ALWAYS,
 			"MTD device is not NAND it's type %d",
 			mtd->type);
