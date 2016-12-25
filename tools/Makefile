@@ -72,6 +72,7 @@ $(curdir)/patchelf/compile := $(curdir)/libtool/install
 $(curdir)/dosfstools/compile := $(curdir)/autoconf/install $(curdir)/automake/install
 $(curdir)/mkimage/compile += $(curdir)/libressl/install
 $(curdir)/firmware-utils/compile += $(curdir)/libressl/install
+$(curdir)/cmake/compile += $(curdir)/libressl/install
 
 ifneq ($(HOST_OS),Linux)
   tools-y += coreutils
