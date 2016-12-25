@@ -26,7 +26,7 @@ tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
 tools-y += sstrip make-ext4fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-image patch quilt yaffs2 padjffs2
 tools-y += mm-macros missing-macros xz cmake scons bc findutils gengetopt patchelf
-tools-y += mtools dosfstools
+tools-y += mtools dosfstools libressl
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_powerpc) += upx
 tools-$(CONFIG_TARGET_x86) += qemu
@@ -70,11 +70,9 @@ $(curdir)/findutils/compile := $(curdir)/bison/install
 $(curdir)/gengetopt/compile := $(curdir)/libtool/install
 $(curdir)/patchelf/compile := $(curdir)/libtool/install
 $(curdir)/dosfstools/compile := $(curdir)/autoconf/install $(curdir)/automake/install
-ifeq ($(HOST_OS),Darwin)
-tools-y += libressl
 $(curdir)/mkimage/compile += $(curdir)/libressl/install
 $(curdir)/firmware-utils/compile += $(curdir)/libressl/install
-endif
+
 ifneq ($(HOST_OS),Linux)
   tools-y += coreutils
 endif
