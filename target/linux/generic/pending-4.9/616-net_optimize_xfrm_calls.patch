@@ -1,0 +1,25 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: kernel: add a small xfrm related performance optimization
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ net/netfilter/nf_nat_core.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/net/netfilter/nf_nat_core.c b/net/netfilter/nf_nat_core.c
+index 5b9c884a452e..4ea363755085 100644
+--- a/net/netfilter/nf_nat_core.c
++++ b/net/netfilter/nf_nat_core.c
+@@ -95,6 +95,9 @@ int nf_xfrm_me_harder(struct net *net, struct sk_buff *skb, unsigned int family)
+ 	struct dst_entry *dst;
+ 	int err;
+ 
++	if (skb->dev && !dev_net(skb->dev)->xfrm.policy_count[XFRM_POLICY_OUT])
++		return 0;
++
+ 	err = xfrm_decode_session(skb, &fl, family);
+ 	if (err < 0)
+ 		return err;
+-- 
+2.11.0
+

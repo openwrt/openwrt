@@ -1,0 +1,45 @@
+From: Gabor Juhos <juhosg@openwrt.org>
+Subject: generic: add detach callback to struct phy_driver
+
+lede-commit: fe61fc2d7d0b3fb348b502f68f98243b3ddf5867
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/net/phy/phy_device.c | 3 +++
+ include/linux/phy.h          | 6 ++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
+index 14d57d0d1c04..c37d3a27e372 100644
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1001,6 +1001,9 @@ void phy_detach(struct phy_device *phydev)
+ 	struct mii_bus *bus;
+ 	int i;
+ 
++	if (phydev->drv && phydev->drv->detach)
++		phydev->drv->detach(phydev);
++
+ 	phydev->attached_dev->phydev = NULL;
+ 	phydev->attached_dev = NULL;
+ 	phy_suspend(phydev);
+diff --git a/include/linux/phy.h b/include/linux/phy.h
+index 93c1e74afc44..d97a418f2cf7 100644
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -508,6 +508,12 @@ struct phy_driver {
+ 	 */
+ 	int (*did_interrupt)(struct phy_device *phydev);
+ 
++	/*
++	 * Called before an ethernet device is detached
++	 * from the PHY.
++	 */
++	void (*detach)(struct phy_device *phydev);
++
+ 	/* Clears up any memory if needed */
+ 	void (*remove)(struct phy_device *phydev);
+ 
+-- 
+2.11.0
+
