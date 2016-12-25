@@ -61,6 +61,7 @@ choice
 endchoice
 
 config VOICE_CPE_VMMC_PMC
+	depends on BROKEN
 	depends on (VOICE_CPE_VMMC_WITH_DEVICE_AR9 || VOICE_CPE_VMMC_WITH_DEVICE_VR9)
 	bool "Power Management Control support"
 	default n
