@@ -53,11 +53,6 @@ define Host/Prepare
   $(call Host/Prepare/Default)
 endef
 
-ifeq ($(HOST_OS),Darwin)
-  HOST_CFLAGS += -I/usr/local/opt/openssl/include
-  HOST_LDFLAGS += -L/usr/local/opt/openssl/lib
-endif
-
 HOST_CONFIGURE_VARS = \
 	CC="$(HOSTCC)" \
 	CFLAGS="$(HOST_CFLAGS)" \
