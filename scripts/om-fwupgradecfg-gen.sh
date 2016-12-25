@@ -41,16 +41,16 @@ esac
 CHECK_BS=65536
 
 KERNEL_SIZE=$(stat -c%s "$KERNEL_PATH")
-KERNEL_MD5=$(md5=$(md5sum $KERNEL_PATH); echo ${md5%% *})
-KERNEL_SHA256=$(openssl dgst -sha256 $KERNEL_PATH | awk '{print $2}')
+KERNEL_MD5=$(mkhash md5 $KERNEL_PATH)
+KERNEL_SHA256=$(mkhash sha256 $KERNEL_PATH)
 KERNEL_PART_SIZE=$(size=$(($KERNEL_SIZE / $FLASH_BS)); [ $(($size * $FLASH_BS)) -lt $KERNEL_SIZE ] && size=$(($size + 1)); echo $(($size * $FLASH_BS / 1024)))
 
 ROOTFS_FLASH_ADDR=$(addr=$(($KERNEL_FLASH_ADDR + ($KERNEL_PART_SIZE * 1024))); printf "0x%x" $addr)
 ROOTFS_SIZE=$(stat -c%s "$ROOTFS_PATH")
 ROOTFS_CHECK_BLOCKS=$((($ROOTFS_SIZE / $CHECK_BS) - $MD5_SKIP_BLOCKS))
-ROOTFS_MD5=$(md5=$(dd if=$ROOTFS_PATH bs=$CHECK_BS count=$ROOTFS_CHECK_BLOCKS 2>&- | md5sum); echo ${md5%% *})
-ROOTFS_MD5_FULL=$(md5=$(md5sum $ROOTFS_PATH); echo ${md5%% *})
-ROOTFS_SHA256_FULL=$(openssl dgst -sha256 $ROOTFS_PATH | awk '{print $2}')
+ROOTFS_MD5=$(dd if=$ROOTFS_PATH bs=$CHECK_BS count=$ROOTFS_CHECK_BLOCKS 2>&- | mkhash md5)
+ROOTFS_MD5_FULL=$(mkhash md5 $ROOTFS_PATH)
+ROOTFS_SHA256_FULL=$(mkhash sha256 $ROOTFS_PATH)
 ROOTFS_CHECK_SIZE=$(printf '0x%x' $(($ROOTFS_CHECK_BLOCKS * $CHECK_BS)))
 ROOTFS_PART_SIZE=$(($MAX_PART_SIZE - $KERNEL_PART_SIZE))
 

@@ -22,11 +22,9 @@ endef
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
 	( \
-		$(STAGING_DIR_HOST)/bin/md5sum $(KDIR)/v_0.0.0.bin | \
-			sed 's/ .*//' && \
+		mkhash md5 $(KDIR)/v_0.0.0.bin && \
 		echo 458 \
-	) | $(STAGING_DIR_HOST)/bin/md5sum | \
-		sed 's/ .*//' > $(KDIR)/v_0.0.0.md5
+	) | mkhash md5 > $(KDIR)/v_0.0.0.md5
 	$(STAGING_DIR_HOST)/bin/tar -cf $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 

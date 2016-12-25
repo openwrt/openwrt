@@ -383,7 +383,7 @@ endef
 # $(1) => Input directory
 define sha256sums
 	(cd $(1); find . -maxdepth 1 -type f -not -name 'sha256sums' -printf "%P\n" | sort | \
-		xargs openssl dgst -sha256 | sed -ne 's!^SHA256(\(.*\))= \(.*\)$$!\2 *\1!p' > sha256sums)
+		xargs -r $(STAGING_DIR_HOST)/bin/mkhash -n sha256 | sed -ne 's!^\(.*\) \(.*\)$$!\1 *\2!p' > sha256sums)
 endef
 
 # file extension

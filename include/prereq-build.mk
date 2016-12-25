@@ -127,11 +127,6 @@ $(eval $(call SetupHostCommand,stat,Cannot find a file stat utility, \
 	gstat -c%s $(TMP_DIR)/.host.mk, \
 	stat -c%s $(TMP_DIR)/.host.mk))
 
-$(eval $(call SetupHostCommand,md5sum,, \
-	gmd5sum /dev/null | grep d41d8cd98f00b204e9800998ecf8427e, \
-	md5sum /dev/null | grep d41d8cd98f00b204e9800998ecf8427e, \
-	$(SCRIPT_DIR)/md5sum /dev/null | grep d41d8cd98f00b204e9800998ecf8427e))
-
 $(eval $(call SetupHostCommand,unzip,Please install 'unzip', \
 	unzip 2>&1 | grep zipfile, \
 	unzip))

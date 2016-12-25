@@ -149,7 +149,8 @@ define Quilt/Template
 		echo "The source directory contains no quilt patches."; \
 		false; \
 	}
-	@[ -n "$$$$(ls $(1)/patches/series)" -o "$$$$(cat $(1)/patches/series | md5sum)" = "$$(sort $(1)/patches/series | md5sum)" ] || { \
+	@[ -n "$$$$(ls $(1)/patches/series)" -o \
+	   "$$$$(cat $(1)/patches/series | mkhash md5)" = "$$(sort $(1)/patches/series | mkhash md5)" ] || { \
 		echo "The patches are not sorted in the right order. Please fix."; \
 		false; \
 	}

@@ -61,7 +61,7 @@ else
   check_warn = $(if $(filter-out undefined,$(origin F_$(1))),$(filter ,$(shell $(call F_$(1),$(2),$(3),$(4)) >&2)),$(check_warn_nofix))
 endif
 
-gen_sha256sum = $(shell openssl dgst -sha256 $(DL_DIR)/$(1) | awk '{print $$2}')
+gen_sha256sum = $(shell mkhash sha256 $(DL_DIR)/$(1))
 
 ifdef FIXUP
 F_hash_deprecated = $(SCRIPT_DIR)/fixup-makefile.pl $(CURDIR)/Makefile fix-hash $(3) $(call gen_sha256sum,$(1)) $(2)
