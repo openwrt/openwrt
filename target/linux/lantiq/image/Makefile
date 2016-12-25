@@ -574,7 +574,7 @@ define Device/EASY98000NOR
   DEVICE_TITLE := EASY98000 - Lantiq Falcon Eval Board NOR
   DEVICE_PACKAGES := kmod-dm9000 kmod-i2c-lantiq kmod-eeprom-at24
 endef
-TARGET_DEVICES += EASY98000
+TARGET_DEVICES += EASY98000NOR
 
 define Device/EASY98000NAND
   IMAGE_SIZE := 3904k
