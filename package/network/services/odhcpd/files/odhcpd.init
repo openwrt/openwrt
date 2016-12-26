@@ -12,7 +12,7 @@ start_service() {
 }
 
 reload_service() {
-	killall -HUP odhcpd
+	procd_send_signal odhcpd
 }
 
 service_triggers()
