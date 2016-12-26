@@ -41,7 +41,7 @@ define Package/opkg/Default
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=opkg package manager
-  DEPENDS:=+uclient-fetch
+  DEPENDS:=+uclient-fetch +libpthread
   URL:=http://wiki.openmoko.org/wiki/Opkg
   MENU:=1
 endef
