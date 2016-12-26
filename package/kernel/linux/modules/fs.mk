@@ -82,7 +82,7 @@ $(eval $(call KernelPackage,fs-autofs4))
 define KernelPackage/fs-btrfs
   SUBMENU:=$(FS_MENU)
   TITLE:=BTRFS filesystem support
-  DEPENDS:=+kmod-lib-crc32c +kmod-lib-lzo +kmod-lib-zlib +kmod-lib-raid6 +kmod-lib-xor
+  DEPENDS:=+kmod-lib-crc32c +kmod-lib-lzo +kmod-lib-zlib-inflate +kmod-lib-zlib-deflate +kmod-lib-raid6 +kmod-lib-xor
   KCONFIG:=\
 	CONFIG_BTRFS_FS \
 	CONFIG_BTRFS_FS_POSIX_ACL=n \
@@ -144,7 +144,7 @@ $(eval $(call KernelPackage,fs-configfs))
 define KernelPackage/fs-cramfs
   SUBMENU:=$(FS_MENU)
   TITLE:=Compressed RAM/ROM filesystem support
-  DEPENDS:=+kmod-lib-zlib
+  DEPENDS:=+kmod-lib-zlib-inflate
   KCONFIG:= \
 	CONFIG_CRAMFS
   FILES:=$(LINUX_DIR)/fs/cramfs/cramfs.ko
@@ -268,7 +268,7 @@ $(eval $(call KernelPackage,fs-hfsplus))
 define KernelPackage/fs-isofs
   SUBMENU:=$(FS_MENU)
   TITLE:=ISO9660 filesystem support
-  DEPENDS:=+kmod-lib-zlib
+  DEPENDS:=+kmod-lib-zlib-inflate
   KCONFIG:=CONFIG_ISO9660_FS CONFIG_JOLIET=y CONFIG_ZISOFS=n
   FILES:=$(LINUX_DIR)/fs/isofs/isofs.ko
   AUTOLOAD:=$(call AutoLoad,30,isofs)

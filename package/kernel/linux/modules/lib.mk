@@ -195,20 +195,28 @@ endef
 $(eval $(call KernelPackage,lib-textsearch))
 
 
-define KernelPackage/lib-zlib
+define KernelPackage/lib-zlib-inflate
   SUBMENU:=$(LIB_MENU)
   TITLE:=Zlib support
   HIDDEN:=1
-  KCONFIG:= \
-    CONFIG_ZLIB_DEFLATE \
-    CONFIG_ZLIB_INFLATE
-  FILES:= \
-    $(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko \
-    $(LINUX_DIR)/lib/zlib_inflate/zlib_inflate.ko
-  AUTOLOAD:=$(call AutoProbe,zlib_deflate zlib_inflate)
+  KCONFIG:=CONFIG_ZLIB_INFLATE
+  FILES:=$(LINUX_DIR)/lib/zlib_inflate/zlib_inflate.ko
+  AUTOLOAD:=$(call AutoProbe,zlib_inflate)
 endef
 
-$(eval $(call KernelPackage,lib-zlib))
+$(eval $(call KernelPackage,lib-zlib-inflate))
+
+
+define KernelPackage/lib-zlib-deflate
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=Zlib support
+  HIDDEN:=1
+  KCONFIG:=CONFIG_ZLIB_DEFLATE
+  FILES:=$(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko
+  AUTOLOAD:=$(call AutoProbe,zlib_deflate)
+endef
+
+$(eval $(call KernelPackage,lib-zlib-deflate))
 
 
 define KernelPackage/lib-cordic
