@@ -20,6 +20,7 @@ validate_proto_relayd()
 resolve_ifname() {
 	grep -qs "^ *$1:" /proc/net/dev && {
 		procd_append_param command -I "$1"
+		procd_append_param netdev "$1"
 		append ifaces "$1"
 	}
 }
@@ -106,6 +107,7 @@ start_relay() {
 service_triggers()
 {
 	procd_add_reload_trigger "network"
+	procd_add_raw_trigger "interface.*" 2000 /etc/init.d/relayd reload
 }
 
 start_service() {
