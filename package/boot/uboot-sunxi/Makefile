@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2016.03
+PKG_VERSION:=2016.11
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
 
-PKG_MD5SUM:=973c1d896be751321cc3aafa564f64b2
+PKG_MD5SUM:=ca1f6e019d08aff8d0ca1beb2e66737d
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
@@ -102,6 +102,10 @@ define uboot/orangepi_2
   TITLE:=U-Boot for Orange Pi 2 (H3)
 endef
 
+define uboot/Merrii_A80_Optimus
+  TITLE:=U-Boot for Merrii_A80_Optimus (A80)
+endef
+
 UBOOTS:= \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
@@ -118,6 +122,7 @@ UBOOTS:= \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
 	Lamobo_R1 \
+	Merrii_A80_Optimus \
 	orangepi_plus \
 	orangepi_2 \
 	pangolin
