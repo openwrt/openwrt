@@ -196,6 +196,11 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth0" "1:wan"
 		;;
+	archer-c59-v1|\
+	archer-c60-v1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:4" "3:lan:3" "4:lan:2" "5:lan:1" "1:wan"
+		;;
 	arduino-yun|\
 	dir-505-a1|\
 	tl-wa801nd-v3)

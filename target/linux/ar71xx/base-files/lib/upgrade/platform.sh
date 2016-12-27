@@ -205,6 +205,8 @@ platform_check_image() {
 	airrouter|\
 	ap132|\
 	ap90q|\
+	archer-c59-v1|\
+	archer-c60-v1|\
 	bullet-m|\
 	c-55|\
 	carambola2|\

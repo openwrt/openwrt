@@ -293,6 +293,77 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the C59v1 */
+	{
+		.id	= "ARCHER-C59-V1",
+		.vendor	= "",
+		.support_list =
+			"SupportList:\r\n"
+			"{product_name:Archer C59,product_ver:1.0.0,special_id:00000000}\r\n"
+			"{product_name:Archer C59,product_ver:1.0.0,special_id:45550000}\r\n"
+			"{product_name:Archer C59,product_ver:1.0.0,special_id:55530000}\r\n",
+		.support_trail = '\x00',
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x10000},
+			{"default-mac", 0x10000, 0x00200},
+			{"pin", 0x10200, 0x00200},
+			{"device-id", 0x10400, 0x00100},
+			{"product-info", 0x10500, 0x0fb00},
+			{"os-image", 0x20000, 0x180000},
+			{"file-system", 0x1a0000, 0xcb0000},
+			{"partition-table", 0xe50000, 0x10000},
+			{"soft-version", 0xe60000, 0x10000},
+			{"support-list", 0xe70000, 0x10000},
+			{"profile", 0xe80000, 0x10000},
+			{"default-config", 0xe90000, 0x10000},
+			{"user-config", 0xea0000, 0x40000},
+			{"usb-config", 0xee0000, 0x10000},
+			{"certificate", 0xef0000, 0x10000},
+			{"qos-db", 0xf00000, 0x40000},
+			{"log", 0xfe0000, 0x10000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
+	/** Firmware layout for the C60v1 */
+	{
+		.id	= "ARCHER-C60-V1",
+		.vendor	= "",
+		.support_list =
+			"SupportList:\r\n"
+			"{product_name:Archer C60,product_ver:1.0.0,special_id:00000000}\r\n"
+			"{product_name:Archer C60,product_ver:1.0.0,special_id:45550000}\r\n"
+			"{product_name:Archer C60,product_ver:1.0.0,special_id:55530000}\r\n",
+		.support_trail = '\x00',
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x10000},
+			{"default-mac", 0x10000, 0x00200},
+			{"pin", 0x10200, 0x00200},
+			{"product-info", 0x10400, 0x00100},
+			{"partition-table", 0x10500, 0x00800},
+			{"soft-version", 0x11300, 0x00200},
+			{"support-list", 0x11500, 0x00100},
+			{"device-id", 0x11600, 0x00100},
+			{"profile", 0x11700, 0x03900},
+			{"default-config", 0x15000, 0x04000},
+			{"user-config", 0x19000, 0x04000},
+			{"os-image", 0x20000, 0x150000},
+			{"file-system", 0x170000, 0x678000},
+			{"certyficate", 0x7e8000, 0x08000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the C9 */
 	{
 		.id = "ARCHERC9",
