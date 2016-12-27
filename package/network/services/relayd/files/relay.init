@@ -83,7 +83,7 @@ start_relay() {
 
 	local expiry # = 30
 	config_get expiry "$cfg" expiry
-	[ -n "$expiry" ] && procd_append_param command "$expiry"
+	[ -n "$expiry" ] && procd_append_param command -t "$expiry"
 
 	local retry # = 5
 	config_get retry "$cfg" retry
