@@ -540,7 +540,7 @@ define Device/nixcore-x1-8M
   DEVICE_TITLE := NixcoreX1 (8M)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
 endef
-TARGET_DEVICES += nixcore-8M
+TARGET_DEVICES += nixcore-x1-8M
 
 define Device/nixcore-x1-16M
   DTS := NIXCORE-16M
@@ -548,7 +548,7 @@ define Device/nixcore-x1-16M
   DEVICE_TITLE := NixcoreX1 (16M)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-i2c-core kmod-i2c-ralink kmod-spi-dev
 endef
-TARGET_DEVICES += nixcore-16M
+TARGET_DEVICES += nixcore-x1-16M
 
 define Device/nw718
   DTS := NW718
