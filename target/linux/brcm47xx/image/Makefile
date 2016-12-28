@@ -7,6 +7,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+USB2_PACKAGES := kmod-usb2
+
 define Build/Clean
 	$(MAKE) -C lzma-loader clean
 endef
@@ -448,6 +450,7 @@ TARGET_DEVICES += netgear-wgr614-v8
 
 define Device/netgear-wgt634u
   DEVICE_TITLE := Netgear WGT634U
+  DEVICE_PACKAGES := kmod-ath5k $(USB2_PACKAGES)
   FILESYSTEMS := $(FS_128K)
   IMAGES := bin
   IMAGE/bin := append-rootfs | trx-with-loader | prepend-with-elf
