@@ -1228,13 +1228,14 @@
 				clocks          = <&gcc SDC1_CLK>, <&gcc SDC1_H_CLK>;
 				clock-names     = "mclk", "apb_pclk";
 				bus-width       = <8>;
-				max-frequency   = <48000000>;
+				max-frequency   = <96000000>;
 				non-removable;
 				cap-sd-highspeed;
 				cap-mmc-highspeed;
+				mmc-ddr-1_8v;
 				vmmc-supply = <&vsdcc_fixed>;
-				#dmas = <&sdcc1bam 2>, <&sdcc1bam 1>;
-				#dma-names = "tx", "rx";
+				dmas = <&sdcc1bam 2>, <&sdcc1bam 1>;
+				dma-names = "tx", "rx";
 			};
 
 			sdcc3: sdcc@12180000 {
@@ -1251,10 +1252,11 @@
 				cap-mmc-highspeed;
 				max-frequency   = <192000000>;
 				#mmc-ddr-1_8v;
-				sd-uhs-sdr50;
-				vmmc-supply = <&vsdcc_fixed>;
-				#dmas = <&sdcc3bam 2>, <&sdcc3bam 1>;
-				#dma-names = "tx", "rx";
+				sd-uhs-sdr104;
+				sd-uhs-ddr50;
+				vqmmc-supply = <&vsdcc_fixed>;
+				dmas = <&sdcc3bam 2>, <&sdcc3bam 1>;
+				dma-names = "tx", "rx";
 			};
 		};
 	};
