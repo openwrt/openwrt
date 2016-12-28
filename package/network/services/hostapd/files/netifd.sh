@@ -41,6 +41,7 @@ hostapd_append_wpa_key_mgmt() {
 
 	append wpa_key_mgmt "WPA-$auth_type"
 	[ "$ieee80211r" -gt 0 ] && append wpa_key_mgmt "FT-${auth_type}"
+	[ "$ieee80211w" -gt 0 ] && append wpa_key_mgmt "WPA-${auth_type}-SHA256"
 }
 
 hostapd_add_log_config() {
@@ -194,7 +195,7 @@ hostapd_set_bss_options() {
 		wps_device_type wps_device_name wps_manufacturer wps_pin \
 		macfilter ssid wmm uapsd hidden short_preamble rsn_preauth \
 		iapp_interface eapol_version acct_server acct_secret acct_port \
-		dynamic_vlan
+		dynamic_vlan ieee80211w
 
 	set_default isolate 0
 	set_default maxassoc 0
@@ -400,7 +401,6 @@ hostapd_set_bss_options() {
 		[ "$auth_cache" = 0 ] && append bss_conf "disable_pmksa_caching=1" "$N"
 
 		# RSN -> allow management frame protection
-		json_get_var ieee80211w ieee80211w
 		case "$ieee80211w" in
 			[012])
 				json_get_vars ieee80211w_max_timeout ieee80211w_retry_timeout
