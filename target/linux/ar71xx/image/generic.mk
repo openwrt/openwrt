@@ -755,3 +755,25 @@ define Device/bhr-4grv2
   IMAGE/factory.bin = append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | mkbuffaloimg
 endef
 TARGET_DEVICES += bhr-4grv2
+
+
+# factory image starts with a header of size 60 (0x3c) bytes.  The header is
+# only used for checking integrity of the firmware image without being written
+# to flash chip.  That means it's okay we include jffs2 pads when computing
+# checksums
+define Build/wrt400n-factory
+	cp $(IMAGE_ROOTFS) $(IMAGE_ROOTFS).tmp
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS).tmp $(BLOCKSIZE:%k=%)
+	$(STAGING_DIR_HOST)/bin/wrt400n $(IMAGE_KERNEL) $(IMAGE_ROOTFS).tmp $@
+	rm -f $(IMAGE_ROOTFS).tmp
+endef
+
+define Device/wrt400n
+  DEVICE_TITLE := Linksys WRT400N
+  BOARDNAME := WRT400N
+  CONSOLE := ttyS0,115200
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size 0x770000
+  IMAGE/factory.bin = wrt400n-factory | check-size 0x77003c
+endef
+TARGET_DEVICES += wrt400n

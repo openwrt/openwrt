@@ -582,11 +582,6 @@ define LegacyDevice/WLAEAG300N
 endef
 LEGACY_DEVICES += WLAEAG300N
 
-define LegacyDevice/WRT400N
-  DEVICE_TITLE := Linksys WRT400N
-endef
-LEGACY_DEVICES += WRT400N
-
 define LegacyDevice/WZRHPG300NH
   DEVICE_TITLE := Buffalo WZR-HP-G300NH
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport

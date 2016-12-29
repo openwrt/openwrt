@@ -48,13 +48,9 @@ static struct mtd_partition wrt400n_partitions[] = {
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
 	}, {
-		.name		= "linux",
+		.name		= "firmware",
 		.offset		= 0x040000,
-		.size		= 0x140000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x180000,
-		.size		= 0x630000,
+		.size		= 0x770000,
 	}, {
 		.name		= "nvram",
 		.offset		= 0x7b0000,
@@ -75,10 +71,6 @@ static struct mtd_partition wrt400n_partitions[] = {
 		.offset		= 0x7f0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x040000,
-		.size		= 0x770000,
 	}
 };
 

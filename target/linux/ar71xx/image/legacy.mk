@@ -307,15 +307,6 @@ define Image/BuildKernel/Initramfs
 	$(call Image/Build/Initramfs)
 endef
 
-Image/Build/WRT400N/buildkernel=$(call MkuImageLzma,$(2),$(3))
-
-define Image/Build/WRT400N
-	$(call Sysupgrade/KRuImage,$(1),$(2),1310720,6488064)
-	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		wrt400n $(KDIR_TMP)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call factoryname,$(1),$(2)); \
-	fi
-endef
-
 
 define Image/Build/CameoAP94/buildkernel
 	$(call MkuImageLzma,$(2),$(3) $(4))
@@ -1008,8 +999,6 @@ $(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRG301N,whr-g301n,WHR-G301N,ttyS0
 $(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRHPG300N,whr-hp-g300n,WHR-HP-G300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-G300N))
 $(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRHPGN,whr-hp-gn,WHR-HP-GN,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-HP-GN))
 $(eval $(call SingleProfile,WHRHPG300N,64kraw,WLAEAG300N,wlae-ag300n,WLAE-AG300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WLAE-AG300N))
-
-$(eval $(call SingleProfile,WRT400N,64k,WRT400N,wrt400n,WRT400N,ttyS0,115200))
 
 $(eval $(call SingleProfile,WZRHP128K,128kraw,WZRHPG300NH,wzr-hp-g300nh,WZR-HP-G300NH,ttyS0,115200,WZR-HP-G300NH))
 $(eval $(call SingleProfile,WZRHP64K,64kraw,WZRHPG300NH2,wzr-hp-g300nh2,WZR-HP-G300NH2,ttyS0,115200,WZR-HP-G300NH2))
