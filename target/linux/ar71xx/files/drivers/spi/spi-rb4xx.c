@@ -135,7 +135,6 @@ static void do_spi_byte_fast(void __iomem *base, unsigned char byte)
 
 static int rb4xx_spi_txrx(void __iomem *base, struct spi_transfer *t)
 {
-	const unsigned char *rxv_ptr = NULL;
 	const unsigned char *tx_ptr = t->tx_buf;
 	unsigned char *rx_ptr = t->rx_buf;
 	unsigned i;
@@ -145,92 +144,19 @@ static int rb4xx_spi_txrx(void __iomem *base, struct spi_transfer *t)
 	       (t->tx_buf ? 1 : 0),
 	       (t->rx_buf ? 1 : 0));
 
-	if (t->verify) {
-		rxv_ptr = tx_ptr;
-		tx_ptr = NULL;
-	}
-
 	for (i = 0; i < t->len; ++i) {
 		unsigned char sdata = tx_ptr ? tx_ptr[i] : 0;
 
-		if (t->fast_write)
+		if (t->tx_nbits == SPI_NBITS_DUAL)
 			do_spi_byte_fast(base, sdata);
 		else
 			do_spi_byte(base, sdata);
 
-		if (rx_ptr) {
+		if (rx_ptr)
 			rx_ptr[i] = __raw_readl(base + AR71XX_SPI_REG_RDS) & 0xff;
-		} else if (rxv_ptr) {
-			unsigned char c = __raw_readl(base + AR71XX_SPI_REG_RDS);
-			if (rxv_ptr[i] != c)
-				return i;
-		}
 	}
 
 	return i;
-}
-
-static int rb4xx_spi_read_fast(struct rb4xx_spi *rbspi,
-			       struct spi_message *m)
-{
-	struct spi_transfer *t;
-	const unsigned char *tx_ptr;
-	unsigned addr;
-	void __iomem *base = rbspi->base;
-
-	/* check for exactly two transfers */
-	if (list_empty(&m->transfers) ||
-	    list_is_last(m->transfers.next, &m->transfers) ||
-	    !list_is_last(m->transfers.next->next, &m->transfers)) {
-		return -1;
-	}
-
-	/* first transfer contains command and address  */
-	t = list_entry(m->transfers.next,
-		       struct spi_transfer, transfer_list);
-
-	if (t->len != 5 || t->tx_buf == NULL)
-		return -1;
-
-	tx_ptr = t->tx_buf;
-	if (tx_ptr[0] != CPLD_CMD_READ_FAST)
-		return -1;
-
-	addr = tx_ptr[1];
-	addr = tx_ptr[2] | (addr << 8);
-	addr = tx_ptr[3] | (addr << 8);
-	addr += (unsigned) base;
-
-	m->actual_length += t->len;
-
-	/* second transfer contains data itself */
-	t = list_entry(m->transfers.next->next,
-		       struct spi_transfer, transfer_list);
-
-	if (t->tx_buf && !t->verify)
-		return -1;
-
-	__raw_writel(AR71XX_SPI_FS_GPIO, base + AR71XX_SPI_REG_FS);
-	__raw_writel(rbspi->spi_ctrl_fread, base + AR71XX_SPI_REG_CTRL);
-	__raw_writel(0, base + AR71XX_SPI_REG_FS);
-
-	if (t->rx_buf) {
-		memcpy(t->rx_buf, (const void *)addr, t->len);
-	} else if (t->tx_buf) {
-		unsigned char buf[t->len];
-		memcpy(buf, (const void *)addr, t->len);
-		if (memcmp(t->tx_buf, buf, t->len) != 0)
-			m->status = -EMSGSIZE;
-	}
-	m->actual_length += t->len;
-
-	if (rbspi->spi_ctrl_flash != rbspi->spi_ctrl_fread) {
-		__raw_writel(AR71XX_SPI_FS_GPIO, base + AR71XX_SPI_REG_FS);
-		__raw_writel(rbspi->spi_ctrl_flash, base + AR71XX_SPI_REG_CTRL);
-		__raw_writel(0, base + AR71XX_SPI_REG_FS);
-	}
-
-	return 0;
 }
 
 static int rb4xx_spi_msg(struct rb4xx_spi *rbspi, struct spi_message *m)
@@ -241,10 +167,6 @@ static int rb4xx_spi_msg(struct rb4xx_spi *rbspi, struct spi_message *m)
 	m->status = 0;
 	if (list_empty(&m->transfers))
 		return -1;
-
-	if (m->fast_read)
-		if (rb4xx_spi_read_fast(rbspi, m) == 0)
-			return -1;
 
 	__raw_writel(AR71XX_SPI_FS_GPIO, base + AR71XX_SPI_REG_FS);
 	__raw_writel(SPI_CTRL_FASTEST, base + AR71XX_SPI_REG_CTRL);
@@ -402,6 +324,7 @@ static int rb4xx_spi_probe(struct platform_device *pdev)
 
 	master->bus_num = 0;
 	master->num_chipselect = 3;
+	master->mode_bits = SPI_TX_DUAL;
 	master->setup = rb4xx_spi_setup;
 	master->transfer = rb4xx_spi_transfer;
 

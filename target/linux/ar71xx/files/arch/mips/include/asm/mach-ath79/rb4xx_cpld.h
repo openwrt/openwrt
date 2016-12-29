@@ -39,10 +39,5 @@ struct rb4xx_cpld_platform_data {
 
 extern int rb4xx_cpld_change_cfg(unsigned mask, unsigned value);
 extern int rb4xx_cpld_read(unsigned char *rx_buf,
-			   const unsigned char *verify_buf,
 			   unsigned cnt);
-extern int rb4xx_cpld_read_from(unsigned addr,
-				unsigned char *rx_buf,
-				const unsigned char *verify_buf,
-				unsigned cnt);
 extern int rb4xx_cpld_write(const unsigned char *buf, unsigned count);

@@ -131,73 +131,7 @@ int rb4xx_cpld_change_cfg(unsigned mask, unsigned value)
 }
 EXPORT_SYMBOL_GPL(rb4xx_cpld_change_cfg);
 
-int rb4xx_cpld_read_from(unsigned addr, unsigned char *rx_buf,
-			 const unsigned char *verify_buf, unsigned count)
-{
-	const unsigned char cmd[5] = {
-		CPLD_CMD_READ_FAST,
-		(addr >> 16) & 0xff,
-		(addr >> 8) & 0xff,
-		 addr & 0xff,
-		 0
-	};
-	struct spi_transfer t[2] = {
-		{
-			.tx_buf = &cmd,
-			.len = 5,
-		},
-		{
-			.tx_buf = verify_buf,
-			.rx_buf = rx_buf,
-			.len = count,
-			.verify = (verify_buf != NULL),
-		},
-	};
-	struct spi_message m;
-
-	if (rb4xx_cpld == NULL)
-		return -ENODEV;
-
-	spi_message_init(&m);
-	m.fast_read = 1;
-	spi_message_add_tail(&t[0], &m);
-	spi_message_add_tail(&t[1], &m);
-	return spi_sync(rb4xx_cpld->spi, &m);
-}
-EXPORT_SYMBOL_GPL(rb4xx_cpld_read_from);
-
-#if 0
-int rb4xx_cpld_read(unsigned char *buf, unsigned char *verify_buf,
-		    unsigned count)
-{
-	struct spi_transfer t[2];
-	struct spi_message m;
-	unsigned char cmd[2];
-
-	if (rb4xx_cpld == NULL)
-		return -ENODEV;
-
-	spi_message_init(&m);
-	memset(&t, 0, sizeof(t));
-
-	/* send command */
-	t[0].tx_buf = cmd;
-	t[0].len = sizeof(cmd);
-	spi_message_add_tail(&t[0], &m);
-
-	cmd[0] = CPLD_CMD_READ_NAND;
-	cmd[1] = 0;
-
-	/* read data */
-	t[1].rx_buf = buf;
-	t[1].len = count;
-	spi_message_add_tail(&t[1], &m);
-
-	return spi_sync(rb4xx_cpld->spi, &m);
-}
-#else
-int rb4xx_cpld_read(unsigned char *rx_buf, const unsigned char *verify_buf,
-		    unsigned count)
+int rb4xx_cpld_read(unsigned char *rx_buf, unsigned count)
 {
 	static const unsigned char cmd[2] = { CPLD_CMD_READ_NAND, 0 };
 	struct spi_transfer t[2] = {
@@ -205,10 +139,8 @@ int rb4xx_cpld_read(unsigned char *rx_buf, const unsigned char *verify_buf,
 			.tx_buf = &cmd,
 			.len = 2,
 		}, {
-			.tx_buf = verify_buf,
 			.rx_buf = rx_buf,
 			.len = count,
-			.verify = (verify_buf != NULL),
 		},
 	};
 	struct spi_message m;
@@ -221,40 +153,10 @@ int rb4xx_cpld_read(unsigned char *rx_buf, const unsigned char *verify_buf,
 	spi_message_add_tail(&t[1], &m);
 	return spi_sync(rb4xx_cpld->spi, &m);
 }
-#endif
 EXPORT_SYMBOL_GPL(rb4xx_cpld_read);
 
 int rb4xx_cpld_write(const unsigned char *buf, unsigned count)
 {
-#if 0
-	struct spi_transfer t[3];
-	struct spi_message m;
-	unsigned char cmd[1];
-
-	if (rb4xx_cpld == NULL)
-		return -ENODEV;
-
-	memset(&t, 0, sizeof(t));
-	spi_message_init(&m);
-
-	/* send command */
-	t[0].tx_buf = cmd;
-	t[0].len = sizeof(cmd);
-	spi_message_add_tail(&t[0], &m);
-
-	cmd[0] = CPLD_CMD_WRITE_NAND;
-
-	/* write data */
-	t[1].tx_buf = buf;
-	t[1].len = count;
-	spi_message_add_tail(&t[1], &m);
-
-	/* send idle */
-	t[2].len = 1;
-	spi_message_add_tail(&t[2], &m);
-
-	return spi_sync(rb4xx_cpld->spi, &m);
-#else
 	static const unsigned char cmd = CPLD_CMD_WRITE_NAND;
 	struct spi_transfer t[3] = {
 		{
@@ -263,10 +165,10 @@ int rb4xx_cpld_write(const unsigned char *buf, unsigned count)
 		}, {
 			.tx_buf = buf,
 			.len = count,
-			.fast_write = 1,
+			.tx_nbits = SPI_NBITS_DUAL,
 		}, {
 			.len = 1,
-			.fast_write = 1,
+			.tx_nbits = SPI_NBITS_DUAL,
 		},
 	};
 	struct spi_message m;
@@ -279,7 +181,6 @@ int rb4xx_cpld_write(const unsigned char *buf, unsigned count)
 	spi_message_add_tail(&t[1], &m);
 	spi_message_add_tail(&t[2], &m);
 	return spi_sync(rb4xx_cpld->spi, &m);
-#endif
 }
 EXPORT_SYMBOL_GPL(rb4xx_cpld_write);
 
