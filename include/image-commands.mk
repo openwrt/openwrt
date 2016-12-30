@@ -67,6 +67,16 @@ define Build/netgear-dni
 	mv $@.new $@
 endef
 
+define Build/append-squashfs-fakeroot-be
+	rm -rf $@.fakefs $@.fakesquashfs
+	mkdir $@.fakefs
+	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
+		$@.fakefs $@.fakesquashfs \
+		-noappend -root-owned -be -nopad -b 65536 \
+		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
+	cat $@.fakesquashfs >> $@
+endef
+
 # append a fake/empty rootfs uImage header, to fool the bootloaders
 # rootfs integrity check
 define Build/append-uImage-fakeroot-hdr

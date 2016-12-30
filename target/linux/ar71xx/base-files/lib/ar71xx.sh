@@ -640,6 +640,9 @@ ar71xx_board_detect() {
 	*"ESR900")
 		name="esr900"
 		;;
+	*"FRITZ!WLAN Repeater 300E")
+		name="fritz300e"
+		;;
 	*"GL AR150")
 		name="gl-ar150"
 		;;

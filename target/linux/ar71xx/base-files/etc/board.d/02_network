@@ -75,6 +75,7 @@ ar71xx_setup_interfaces()
 	eap300v2|\
 	eap7660d|\
 	el-mini|\
+	fritz300e|\
 	hiveap-121|\
 	loco-m-xw|\
 	mr12|\
@@ -517,6 +518,9 @@ ar71xx_setup_macs()
 	wndr4300)
 		lan_mac=$(mtd_get_mac_binary caldata 0)
 		wan_mac=$(mtd_get_mac_binary caldata 6)
+		;;
+	fritz300e)
+		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		;;
 	tl-wr1043nd-v4)
 		wan_mac=$(mtd_get_mac_binary config 0x1017c)

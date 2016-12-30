@@ -54,6 +54,7 @@ get_status_led() {
 	archer-c25-v1|\
 	archer-c59-v1|\
 	archer-c60-v1|\
+	fritz300e|\
 	mr12|\
 	mr16|\
 	nbg6616|\

@@ -103,6 +103,7 @@ enum ath79_mach_type {
 	ATH79_MACH_EW_DORIN,			/* embedded wireless Dorin Platform */
 	ATH79_MACH_EW_DORIN_ROUTER,		/* embedded wireless Dorin Router Platform */
 	ATH79_MACH_F9K1115V2,			/* Belkin AC1750DB */
+	ATH79_MACH_FRITZ300E,			/* AVM FRITZ!WLAN Repeater 300E */
 	ATH79_MACH_GL_AR150,			/* GL-AR150 support */
 	ATH79_MACH_GL_AR300,			/* GL-AR300 */
 	ATH79_MACH_GL_AR300M,			/* GL-AR300M */

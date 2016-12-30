@@ -878,3 +878,16 @@ define Device/zbt-we1526
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += zbt-we1526
+
+define Device/fritz300e
+  DEVICE_TITLE := AVM FRITZ!WLAN Repeater 300E
+  DEVICE_PACKAGES := fritz-tffs rssileds -swconfig -uboot-envtools
+  BOARDNAME := FRITZ300E
+  SUPPORTED_DEVICES := fritz300e
+  IMAGE_SIZE := 15232k
+  KERNEL := kernel-bin | patch-cmdline | lzma | eva-image
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
+	append-squashfs-fakeroot-be | pad-to 256 | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += fritz300e

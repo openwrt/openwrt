@@ -40,6 +40,24 @@ ath9k_ubi_eeprom_extract() {
 		ath9k_eeprom_die "failed to extract from $ubi"
 }
 
+ath9k_eeprom_extract_reverse() {
+	local part=$1
+	local offset=$2
+	local count=$3
+	local mtd
+	local reversed
+	local caldata
+
+	mtd=$(find_mtd_chardev "$part")
+	reversed=$(hexdump -v -s $offset -n $count -e '/1 "%02x "' $mtd)
+
+	for byte in $reversed; do
+		caldata="\x${byte}${caldata}"
+	done
+
+	printf "%b" "$caldata" > /lib/firmware/$FIRMWARE
+}
+
 ath9k_patch_firmware_mac() {
 	local mac=$1
 
@@ -98,6 +116,9 @@ case "$FIRMWARE" in
 	c-55)
 		ath9k_eeprom_extract "art" 20480 2048
 		ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_binary art 0) +2)
+		;;
+	fritz300e)
+		ath9k_eeprom_extract_reverse "urloader" 5441 1088
 		;;
 	mr18)
 		. /lib/upgrade/nand.sh
