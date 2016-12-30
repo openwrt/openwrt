@@ -1544,8 +1544,32 @@ endef
 $(eval $(call KernelPackage,usbip-server))
 
 
+define KernelPackage/usb-chipidea
+  TITLE:=Host and device support for ChipIdea controllers
+  DEPENDS:=+kmod-extcon +USB_GADGET_SUPPORT:kmod-usb-gadget
+  KCONFIG:=\
+        CONFIG_NOP_USB_XCEIV=y \
+        CONFIG_EXTCON \
+	CONFIG_USB_CHIPIDEA \
+	CONFIG_USB_CHIPIDEA_HOST=y \
+	CONFIG_USB_CHIPIDEA_UDC=y \
+	CONFIG_USB_CHIPIDEA_DEBUG=y
+  FILES:=\
+	$(LINUX_DIR)/drivers/extcon/extcon.ko \
+	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko
+  AUTOLOAD:=$(call AutoLoad,51,ci_hdrc,0)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-chipidea/description
+ Kernel support for USB ChipIdea controllers
+endef
+
+$(eval $(call KernelPackage,usb-chipidea))
+
+
 define KernelPackage/usb-chipidea-imx
-  TITLE:=Support for ChipIdea controllers
+  TITLE:=Support for ChipIdea controllers on IMX boards
   DEPENDS:=@TARGET_imx6||TARGET_mxs +kmod-usb2 +USB_GADGET_SUPPORT:kmod-usb-gadget
   KCONFIG:=\
 	CONFIG_USB_CHIPIDEA \
