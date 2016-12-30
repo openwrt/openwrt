@@ -1375,6 +1375,29 @@ endef
 $(eval $(call KernelPackage,usbip-server))
 
 
+define KernelPackage/usb-chipidea
+  TITLE:=Host and device support for Chipidea controllers
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget
+  KCONFIG:= \
+	CONFIG_NOP_USB_XCEIV=y \
+	CONFIG_EXTCON \
+	CONFIG_USB_CHIPIDEA \
+	CONFIG_USB_CHIPIDEA_HOST=y \
+	CONFIG_USB_CHIPIDEA_UDC=y \
+	CONFIG_USB_CHIPIDEA_DEBUG=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/extcon/extcon.ko \
+	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko
+  AUTOLOAD:=$(call AutoLoad,51,ci_hdrc,0)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-chipidea/description
+ Kernel support for USB Chipidea controllers
+endef
+
+$(eval $(call KernelPackage,usb-chipidea))
+
 define KernelPackage/usbmon
   TITLE:=USB traffic monitor
   KCONFIG:=CONFIG_USB_MON

@@ -1,0 +1,80 @@
+Index: linux-4.4.4/drivers/usb/chipidea/ci.h
+===================================================================
+--- linux-4.4.4.orig/drivers/usb/chipidea/ci.h	2016-03-31 21:39:23.571126980 +0300
++++ linux-4.4.4/drivers/usb/chipidea/ci.h	2016-03-31 21:39:23.567126980 +0300
+@@ -199,6 +199,7 @@
+  * @in_lpm: if the core in low power mode
+  * @wakeup_int: if wakeup interrupt occur
+  * @rev: The revision number for controller
++ * @dp_always_pullup: keep dp always pullup at device mode
+  */
+ struct ci_hdrc {
+ 	struct device			*dev;
+@@ -248,6 +249,7 @@
+ 	bool				in_lpm;
+ 	bool				wakeup_int;
+ 	enum ci_revision		rev;
++	bool				dp_always_pullup;
+ };
+ 
+ static inline struct ci_role_driver *ci_role(struct ci_hdrc *ci)
+Index: linux-4.4.4/drivers/usb/chipidea/core.c
+===================================================================
+--- linux-4.4.4.orig/drivers/usb/chipidea/core.c	2016-03-31 21:39:23.571126980 +0300
++++ linux-4.4.4/drivers/usb/chipidea/core.c	2016-03-31 21:41:33.159130168 +0300
+@@ -883,7 +883,7 @@
+ {
+ 	ci_hdrc_gadget_destroy(ci);
+ 	ci_hdrc_host_destroy(ci);
+-	if (ci->is_otg)
++	if (!ci->dp_always_pullup && ci->roles[CI_ROLE_GADGET])
+ 		ci_hdrc_otg_destroy(ci);
+ }
+ 
+@@ -933,6 +933,9 @@
+ 	ci->supports_runtime_pm = !!(ci->platdata->flags &
+ 		CI_HDRC_SUPPORTS_RUNTIME_PM);
+ 
++	ci->dp_always_pullup = !!(ci->platdata->flags &
++					 CI_HDRC_DP_ALWAYS_PULLUP);
++
+ 	ret = hw_device_init(ci, base);
+ 	if (ret < 0) {
+ 		dev_err(dev, "can't initialize hardware\n");
+@@ -998,7 +1001,7 @@
+ 		goto deinit_phy;
+ 	}
+ 
+-	if (ci->is_otg && ci->roles[CI_ROLE_GADGET]) {
++	if (!ci->dp_always_pullup && ci->roles[CI_ROLE_GADGET]) {
+ 		ret = ci_hdrc_otg_init(ci);
+ 		if (ret) {
+ 			dev_err(dev, "init otg fails, ret = %d\n", ret);
+Index: linux-4.4.4/drivers/usb/chipidea/otg.c
+===================================================================
+--- linux-4.4.4.orig/drivers/usb/chipidea/otg.c	2016-03-31 21:39:23.571126980 +0300
++++ linux-4.4.4/drivers/usb/chipidea/otg.c	2016-03-31 21:39:23.567126980 +0300
+@@ -95,8 +95,10 @@
+ 
+ void ci_handle_vbus_change(struct ci_hdrc *ci)
+ {
+-	if (!ci->is_otg)
++	if (ci->dp_always_pullup) {
++		usb_gadget_vbus_connect(&ci->gadget);
+ 		return;
++	}
+ 
+ 	if (hw_read_otgsc(ci, OTGSC_BSV))
+ 		usb_gadget_vbus_connect(&ci->gadget);
+Index: linux-4.4.4/include/linux/usb/chipidea.h
+===================================================================
+--- linux-4.4.4.orig/include/linux/usb/chipidea.h	2016-03-31 21:39:23.571126980 +0300
++++ linux-4.4.4/include/linux/usb/chipidea.h	2016-03-31 21:39:23.567126980 +0300
+@@ -55,6 +55,7 @@
+ #define CI_HDRC_OVERRIDE_AHB_BURST	BIT(9)
+ #define CI_HDRC_OVERRIDE_TX_BURST	BIT(10)
+ #define CI_HDRC_OVERRIDE_RX_BURST	BIT(11)
++#define CI_HDRC_DP_ALWAYS_PULLUP BIT(12)
+ 	enum usb_dr_mode	dr_mode;
+ #define CI_HDRC_CONTROLLER_RESET_EVENT		0
+ #define CI_HDRC_CONTROLLER_STOPPED_EVENT	1
