@@ -273,7 +273,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
  Active  mips        mips32         vrx200      lantiq          easy80920           easy80920_norspl                     easy80920:SYS_BOOT_NORSPL                                                                                                         Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 --- /dev/null
 +++ b/include/configs/fb3370.h
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,80 @@
 +/*
 + * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@googlemail.com
 + *
@@ -307,6 +307,8 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +#define CONFIG_SPL_SPI_MODE		0
 +
 +#define CONFIG_SYS_DRAM_PROBE
++
++#define CONFIG_SYS_BOOTM_LEN          0x1000000       /* 16 MB */
 +
 +/* Environment */
 +#define CONFIG_ENV_SPI_BUS		CONFIG_SPL_SPI_BUS

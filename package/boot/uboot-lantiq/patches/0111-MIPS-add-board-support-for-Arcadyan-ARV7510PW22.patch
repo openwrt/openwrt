@@ -168,7 +168,7 @@
  Active  mips        mips32         danube      arcadyan        arv7518pw           arv7518pw_ram                        arv7518pw:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
 --- /dev/null
 +++ b/include/configs/arv7510pw22.h
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,69 @@
 +/*
 + * Copyright (C) 2014 Álvaro Fernández Rojas <noltari@gmail.com>
 + *
@@ -188,6 +188,8 @@
 +#define CONFIG_LTQ_SUPPORT_ETHERNET	/* Enable ethernet */
 +
 +#define CONFIG_LTQ_SUPPORT_NOR_FLASH	/* Have a parallel NOR flash */
++
++#define CONFIG_SYS_BOOTM_LEN		0x1000000	/* 16 MB */
 +
 +/* Switch devices */
 +#define CONFIG_SWITCH_MULTI

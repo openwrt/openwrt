@@ -231,7 +231,7 @@ Signed-off-by: Luka Perkov <luka@openwrt.org>
  Active  nds32       n1213          ag101       AndesTech       adp-ag101           adp-ag101                            -                                                                                                                                 Andes <uboot@andestech.com>
 --- /dev/null
 +++ b/include/configs/p2812hnufx.h
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,69 @@
 +/*
 + * Copyright (C) 2013 Luka Perkov <luka@openwrt.org>
 + *
@@ -264,6 +264,8 @@ Signed-off-by: Luka Perkov <luka@openwrt.org>
 +#define CONFIG_SYS_NAND_U_BOOT_OFFS	0x4000
 +
 +#define CONFIG_SYS_DRAM_PROBE
++
++#define CONFIG_SYS_BOOTM_LEN          0x1000000       /* 16 MB */
 +
 +/* Environment */
 +#if defined(CONFIG_SYS_BOOT_NANDSPL)
