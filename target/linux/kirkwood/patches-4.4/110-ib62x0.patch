@@ -11,9 +11,10 @@
  	};
  
 -	partition@700000 {
-+	partition@200000 {
- 		label = "root";
+-		label = "root";
 -		reg = <0x0700000 0xf900000>;
++	partition@200000 {
++		label = "ubi";
 +		reg = <0x200000 0xfe00000>;
  	};
  
