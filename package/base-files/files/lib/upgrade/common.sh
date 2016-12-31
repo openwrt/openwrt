@@ -206,6 +206,96 @@ get_magic_long() {
 	(get_image "$@" | dd bs=4 count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2>/dev/null
 }
 
+export_bootdevice() {
+	local cmdline uuid disk uevent
+	local MAJOR MINOR DEVNAME DEVTYPE
+
+	if read cmdline < /proc/cmdline; then
+		case "$cmdline" in
+			*block2mtd=*)
+				disk="${cmdline##*block2mtd=}"
+				disk="${disk%%,*}"
+			;;
+			*root=*)
+				disk="${cmdline##*root=}"
+				disk="${disk%% *}"
+			;;
+		esac
+
+		case "$disk" in
+			PARTUUID=[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-02)
+				uuid="${disk#PARTUUID=}"
+				uuid="${uuid%-02}"
+				for disk in $(find /dev -type b); do
+					set -- $(dd if=$disk bs=1 skip=440 count=4 2>/dev/null | hexdump -v -e '4/1 "%02x "')
+					if [ "$4$3$2$1" = "$uuid" ]; then
+						uevent="/sys/class/block/${disk##*/}/uevent"
+						break
+					fi
+				done
+			;;
+			/dev/*)
+				uevent="/sys/class/block/${disk##*/}/uevent"
+			;;
+		esac
+
+		if [ -e "$uevent" ]; then
+			. "$uevent"
+
+			export BOOTDEV_MAJOR=$MAJOR
+			export BOOTDEV_MINOR=$MINOR
+			return 0
+		fi
+	fi
+
+	return 1
+}
+
+export_partdevice() {
+	local var="$1" offset="$2"
+	local uevent MAJOR MINOR DEVNAME DEVTYPE
+
+	for uevent in /sys/class/block/*/uevent; do
+		. "$uevent"
+		if [ $BOOTDEV_MAJOR = $MAJOR -a $(($BOOTDEV_MINOR + $offset)) = $MINOR -a -b "/dev/$DEVNAME" ]; then
+			export "$var=$DEVNAME"
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+get_partitions() { # <device> <filename>
+	local disk="$1"
+	local filename="$2"
+
+	if [ -b "$disk" -o -f "$disk" ]; then
+		v "Reading partition table from $filename..."
+
+		local magic="$(hexdump -v -n 2 -s 0x1FE -e '1/2 "0x%04X"' "$disk")"
+		if [ "$magic" != 0xAA55 ]; then
+			v "Invalid partition table on $disk"
+			exit
+		fi
+
+		rm -f "/tmp/partmap.$filename"
+
+		local part
+		for part in 1 2 3 4; do
+			set -- $(hexdump -v -n 12 -s "$((0x1B2 + $part * 16))" -e '3/4 "0x%08X "' "$disk")
+
+			local type="$(($1 % 256))"
+			local lba="$(($2))"
+			local num="$(($3))"
+
+			[ $type -gt 0 ] || continue
+
+			printf "%2d %5d %7d\n" $part $lba $num >> "/tmp/partmap.$filename"
+		done
+	fi
+}
+
 jffs2_copy_config() {
 	if grep rootfs_data /proc/mtd >/dev/null; then
 		# squashfs+jffs2

@@ -4,9 +4,9 @@
 move_config() {
 	local partdev
 
-	. /lib/upgrade/platform.sh
+	. /lib/upgrade/common.sh
 
-	if platform_export_bootdevice && platform_export_partdevice partdev 1; then
+	if export_bootdevice && export_partdevice partdev 1; then
 		if mount -t ext4 -o rw,noatime "/dev/$partdev" /mnt; then
 			if [ -f /mnt/sysupgrade.tgz ]; then
 				mv -f /mnt/sysupgrade.tgz /
