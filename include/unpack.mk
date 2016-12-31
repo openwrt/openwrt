@@ -7,7 +7,7 @@
 
 HOST_TAR:=$(TAR)
 TAR_CMD=$(HOST_TAR) -C $(1)/.. $(TAR_OPTIONS)
-UNZIP_CMD=unzip -d $(1)/.. $(DL_DIR)/$(PKG_SOURCE)
+UNZIP_CMD=unzip -q -d $(1)/.. $(DL_DIR)/$(PKG_SOURCE)
 
 ifeq ($(PKG_SOURCE),)
   PKG_UNPACK ?= true
