@@ -96,7 +96,7 @@ define Image/Build/Profile/OLIMEX_A13_SOM
 endef
 
 define Image/Build/Profile/Mele_M9
-	$(call Image/Build/SDCard,$(1),sun6i-a31-hummingbird)
+	$(call Image/Build/SDCard,$(1),sun6i-a31-m9)
 endef
 
 define Image/Build/Profile/Linksprite_pcDuino
