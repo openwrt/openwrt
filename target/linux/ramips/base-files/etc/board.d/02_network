@@ -213,7 +213,7 @@ ramips_setup_interfaces()
 		;;
 	kn_rc|\
 	kn_rf)
-		ucidef_add_switch "switch" \
+		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6@eth0"
 		;;
 	kng_rc)
