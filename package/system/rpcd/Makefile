@@ -51,6 +51,8 @@ define Package/rpcd/conffiles
 /etc/config/rpcd
 endef
 
+TARGET_LDFLAGS += -lcrypt
+
 define Package/rpcd/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/rpcd.init $(1)/etc/init.d/rpcd
