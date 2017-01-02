@@ -9,12 +9,16 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iperf
 PKG_VERSION:=2.0.9
+PKG_VERSION_SUFFIX:=a
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/iperf2
-PKG_MD5SUM:=1bb3a1d98b1973aee6e8f171933c0f61
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)$(PKG_VERSION_SUFFIX).tar.gz
+# Temporary URL change - iperf upstream altered the already released target
+# without bumping the version number. The new tarball is renamed to avoid
+# conflicts with existing mirrored files.
+# PKG_SOURCE_URL:=@SF/iperf2
+PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
+PKG_MD5SUM:=db02911f35686e808ed247160dfa766e08ae3f59d1e7dcedef0ffb2a6643f0bf
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
@@ -42,7 +46,7 @@ TARGET_CFLAGS += -D_GNU_SOURCE
 CONFIGURE_ARGS += --disable-multicast
 
 CONFIGURE_VARS += CXXFLAGS="$$$$CXXFLAGS -fno-rtti"
-CONFIGURE_VARS += LIBS="-lpthread"
+CONFIGURE_VARS += LIBS="-lpthread -lm"
 
 define Package/iperf/install
 	$(INSTALL_DIR) $(1)/usr/bin
