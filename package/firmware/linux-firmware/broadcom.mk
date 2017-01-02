@@ -64,3 +64,12 @@ define Package/brcmsmac-firmware/install
 		$(1)/lib/firmware/brcm/
 endef
 $(eval $(call BuildPackage,brcmsmac-firmware))
+
+Package/bnx2-firmware = $(call Package/firmware-default,Broadcom BCM5706/5708/5709/5716 firmware)
+define Package/bnx2-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/bnx2
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/bnx2/* \
+		$(1)/lib/firmware/bnx2/
+endef
+$(eval $(call BuildPackage,bnx2-firmware))

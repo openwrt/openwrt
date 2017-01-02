@@ -902,3 +902,19 @@ define KernelPackage/ethoc/description
 endef
 
 $(eval $(call KernelPackage,ethoc))
+
+
+define KernelPackage/bnx2
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=BCM5706/5708/5709/5716 ethernet adapter driver
+  DEPENDS:=@PCI_SUPPORT +bnx2-firmware
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/bnx2.ko
+  KCONFIG:=CONFIG_BNX2
+  AUTOLOAD:=$(call AutoProbe,bnx2)
+endef
+
+define KernelPackage/bnx2/description
+  Kernel module for the BCM5706/5708/5709/5716 ethernet adapter
+endef
+
+$(eval $(call KernelPackage,bnx2))
