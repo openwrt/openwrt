@@ -533,7 +533,8 @@ define KernelPackage/crypto-sha1
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_SHA1 \
-	CONFIG_CRYPTO_SHA1_OCTEON
+	CONFIG_CRYPTO_SHA1_OCTEON \
+	CONFIG_CRYPTO_SHA1_SSSE3
   FILES:=$(LINUX_DIR)/crypto/sha1_generic.ko
   AUTOLOAD:=$(call AutoLoad,09,sha1_generic)
   $(call AddDepends/crypto)
@@ -542,6 +543,11 @@ endef
 define KernelPackage/crypto-sha1/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha1.ko
   AUTOLOAD:=$(call AutoLoad,09,octeon-sha1)
+endef
+
+define KernelPackage/crypto-sha1/x86/64
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/sha1-ssse3.ko
+  AUTOLOAD:=$(call AutoLoad,09,sha1-ssse3)
 endef
 
 $(eval $(call KernelPackage,crypto-sha1))
