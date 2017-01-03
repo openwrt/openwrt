@@ -34,7 +34,7 @@
 		#version	0x2020
 
 	Additionally since v2.4 an already complete image can be used:
-		:image		0	/path/to/openwrt-wrt350nv2-[squashfs|jffs2-64k].img
+		:image		0	/path/to/cshorewrt-wrt350nv2-[squashfs|jffs2-64k].img
 
 	args:
 		1	wrt350nv2.par		parameter file describing the image layout

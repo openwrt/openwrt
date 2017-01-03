@@ -1,5 +1,5 @@
-KERNEL_IMG="openwrt-au1000-au1500-vmlinux.bin"
-ROOTFS_IMG="openwrt-au1000-au1500-root.fs"
+KERNEL_IMG="cshorewrt-au1000-au1500-vmlinux.bin"
+ROOTFS_IMG="cshorewrt-au1000-au1500-root.fs"
 
 platform_check_image() {
 	[ "$#" -gt 1 ] && return 1

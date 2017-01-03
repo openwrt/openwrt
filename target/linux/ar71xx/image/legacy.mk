@@ -100,7 +100,7 @@ ifneq ($(SUBTARGET),mikrotik)
 # $(4): output file.
 define MkuImage
 	mkimage -A mips -O linux -T kernel -a 0x80060000 -C $(1) $(2) \
-		-e 0x80060000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-e 0x80060000 -n 'MIPS CShoreWrt Linux-$(LINUX_VERSION)' \
 		-d $(3) $(4)
 endef
 
@@ -541,11 +541,11 @@ define Image/Build/Belkin
 	$(eval rootsize=$(call mtdpartsize,rootfs,$(4)))
 	$(call Sysupgrade/RKuImage,$(1),$(2),$(kernsize),$(rootsize))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		edimax_fw_header -m $(5) -v "OpenWrt$(REVISION)" \
+		edimax_fw_header -m $(5) -v "CShoreWrt$(REVISION)" \
 			-n "uImage" \
 			-i $(KDIR_TMP)/vmlinux-$(2).uImage \
 			-o $(KDIR_TMP)/$(2)-uImage; \
-		edimax_fw_header -m $(5) -v "OpenWrt$(REVISION)" \
+		edimax_fw_header -m $(5) -v "CShoreWrt$(REVISION)" \
 			-n "rootfs" \
 			-i $(KDIR)/root.$(1) \
 			-o $(KDIR_TMP)/$(2)-rootfs; \
@@ -692,12 +692,12 @@ Image/Build/Senao/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 
 define Image/Build/Senao
 	mkdir -p $(KDIR_TMP)/$(2)/
-	touch $(KDIR_TMP)/$(2)/FWINFO-OpenWrt-$(REVISION)-$(2)
+	touch $(KDIR_TMP)/$(2)/FWINFO-CShoreWrt-$(REVISION)-$(2)
 	-$(CP) ./$(2)/* $(KDIR_TMP)/$(2)/
 	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage \
-		of=$(KDIR_TMP)/$(2)/openwrt-senao-$(2)-uImage-lzma.bin bs=64k conv=sync
+		of=$(KDIR_TMP)/$(2)/cshorewrt-senao-$(2)-uImage-lzma.bin bs=64k conv=sync
 	dd if=$(KDIR)/root.$(1) \
-		of=$(KDIR_TMP)/$(2)/openwrt-senao-$(2)-root.$(1) bs=64k conv=sync
+		of=$(KDIR_TMP)/$(2)/cshorewrt-senao-$(2)-root.$(1) bs=64k conv=sync
 	( \
 		cd $(KDIR_TMP)/$(2)/;  \
 		$(TAR) -cz -f $(call factoryname,$(1),$(2)) * \
@@ -750,7 +750,7 @@ define Image/Build/Netgear/buildkernel
 	) > $(KDIR_TMP)/vmlinux-$(2).uImage.squashfs.tmp2
 	mkimage -A mips -O linux -T filesystem -C none -M $(5) \
 		-a 0xbf070000 -e 0xbf070000 \
-		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-n 'MIPS CShoreWrt Linux-$(LINUX_VERSION)' \
 		-d $(KDIR_TMP)/vmlinux-$(2).uImage.squashfs.tmp2 \
 		$(KDIR_TMP)/vmlinux-$(2).uImage.squashfs
 endef
@@ -762,7 +762,7 @@ define Image/Build/Netgear
 		for r in $(7) ; do \
 			[ -n "$$$$r" ] && dashr="-$$$$r" || dashr= ; \
 			$(STAGING_DIR_HOST)/bin/mkdniimg \
-				-B $(6) -v OpenWrt.$(REVISION) -r "$$$$r" $(8) \
+				-B $(6) -v CShoreWrt.$(REVISION) -r "$$$$r" $(8) \
 				-i $(call sysupname,$(1),$(2)) \
 				-o $(call imgname,$(1),$(2))-factory$$$$dashr.img; \
 		done; \
@@ -799,7 +799,7 @@ define Image/Build/NetgearNAND/buildkernel
 	dd if=/dev/zero of=$(KDIR_TMP)/fakeroot-$(2) bs=131072 count=1
 	mkimage -A mips -O linux -T filesystem -C none \
 		-a 0xbf070000 -e 0xbf070000 \
-		-n 'MIPS OpenWrt fakeroot' \
+		-n 'MIPS CShoreWrt fakeroot' \
 		-d $(KDIR_TMP)/fakeroot-$(2) \
 		-M $(5) \
 		$(KDIR_TMP)/fakeroot-$(2).uImage
@@ -830,7 +830,7 @@ define Image/Build/NetgearNAND
 		dd if=$(KDIR_TMP)/$(2)-root.ubi \
 	) > $(imageraw)
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(6) -v OpenWrt.$(REVISION) -r "$$$$r" $(8) \
+		-B $(6) -v CShoreWrt.$(REVISION) -r "$$$$r" $(8) \
 		-i $(imageraw) \
 		-o $(call imgname,ubi,$(2))-factory.img
 

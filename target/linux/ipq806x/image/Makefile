@@ -12,7 +12,7 @@ define Image/Prepare
 	$(CP) $(LINUX_DIR)/vmlinux $(KDIR)/$(IMG_PREFIX)-vmlinux.elf
 	mkimage -A arm -O linux -T filesystem -C none \
 		-a $(KERNEL_LOADADDR) -e $(KERNEL_LOADADDR) \
-		-n 'ARM OpenWrt fakeroot' \
+		-n 'ARM CShoreWrt fakeroot' \
 		-s $(KDIR_TMP)/root.dummy-uImage.tmp
 	echo -ne '\xff' > $(KDIR_TMP)/root.dummy
 	cat $(KDIR_TMP)/root.dummy $(KDIR_TMP)/root.dummy-uImage.tmp > $(KDIR)/root.dummy

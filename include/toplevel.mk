@@ -165,11 +165,14 @@ staging_dir/host/.prereq-build: include/prereq-build.mk
 printdb: FORCE
 	@$(_SINGLE)$(NO_TRACE_MAKE) -p $@ V=99 DUMP_TARGET_DB=1 2>&1
 
+ifndef SDK
+  DOWNLOAD_DIRS = tools/download toolchain/download package/download target/download
+else
+  DOWNLOAD_DIRS = package/download
+endif
+
 download: .config FORCE
-	@+$(SUBMAKE) tools/download
-	@+$(SUBMAKE) toolchain/download
-	@+$(SUBMAKE) package/download
-	@+$(SUBMAKE) target/download
+	@+$(foreach dir,$(DOWNLOAD_DIRS),$(SUBMAKE) $(dir);)
 
 clean dirclean: .config
 	@+$(SUBMAKE) -r $@
@@ -228,7 +231,7 @@ docs/clean: FORCE
 	@$(_SINGLE)$(SUBMAKE) -C docs clean
 
 distclean:
-	rm -rf bin build_dir .config* dl feeds key-build* logs package/feeds package/openwrt-packages staging_dir tmp
+	rm -rf bin build_dir .config* dl feeds key-build* logs package/feeds package/openwwrt-packages staging_dir tmp
 	@$(_SINGLE)$(SUBMAKE) -C scripts/config clean
 
 ifeq ($(findstring v,$(DEBUG)),)

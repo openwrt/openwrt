@@ -16,7 +16,7 @@ define Image/BuildKernel
 
 	mkimage -A arm -O linux -T kernel -C none \
 		-a 0x40008000 -e 0x40008000 \
-		-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' \
+		-n 'ARM CShoreWrt Linux-$(LINUX_VERSION)' \
 		-d $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
 
     ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)

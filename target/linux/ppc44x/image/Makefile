@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/image.mk
 
 
 define Image/Prepare
-	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(DTS_DIR)/canyonlands.dts > $(KDIR)/openwrt-canyonlands.dtb
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(DTS_DIR)/canyonlands.dts > $(KDIR)/cshorewrt-canyonlands.dtb
 endef
 
 define Image/BuildKernel
@@ -38,7 +38,7 @@ define Image/Build/squashfs
 	) > $(BIN_DIR)/$(IMG_PREFIX)-taishan-$(1).img
 	( \
 		dd if=$(KDIR)/uImage bs=1920k conv=sync; \
-		dd if=$(KDIR)/openwrt-canyonlands.dtb bs=128k conv=sync; \
+		dd if=$(KDIR)/cshorewrt-canyonlands.dtb bs=128k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-canyonlands-$(1).img
 endef

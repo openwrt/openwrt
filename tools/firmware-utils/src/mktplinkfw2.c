@@ -691,9 +691,9 @@ static inline void inspect_fw_phexdef(char *label,
 	printf("%-23s: 0x%08x                  ", label, val);
 
 	if (val == defval)
-		printf("(== OpenWrt default)\n");
+		printf("(== CShoreWrt default)\n");
 	else
-		printf("(OpenWrt default: 0x%08x)\n", defval);
+		printf("(CShoreWrt default: 0x%08x)\n", defval);
 }
 
 static inline void inspect_fw_phexexp(char *label,
@@ -718,9 +718,9 @@ static inline void inspect_fw_phexdecdef(char *label,
 	printf("%-23s: 0x%08x / %8u bytes ", label, val, val);
 
 	if (val == defval)
-		printf("(== OpenWrt default)\n");
+		printf("(== CShoreWrt default)\n");
 	else
-		printf("(OpenWrt default: 0x%08x)\n", defval);
+		printf("(CShoreWrt default: 0x%08x)\n", defval);
 }
 
 static inline void inspect_fw_pmd5sum(char *label, uint8_t *val, char *text)

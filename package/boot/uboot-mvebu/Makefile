@@ -69,7 +69,7 @@ endef
 define Package/uboot/install/default
 	$(INSTALL_DIR) $(BIN_DIR)/uboot-$(BOARD)-$(1)
 	$(CP) $(PKG_BUILD_DIR)/u-boot-spl.kwb \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot-spl.kwb
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/cshorewrt-$(BOARD)-$(1)-u-boot-spl.kwb
 	$(INSTALL_DIR) $(BIN_DIR)/u-boot-kwboot/
 	$(CP) $(PKG_BUILD_DIR)/tools/kwboot \
 		$(BIN_DIR)/u-boot-kwboot/

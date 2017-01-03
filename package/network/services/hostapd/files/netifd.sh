@@ -331,8 +331,8 @@ hostapd_set_bss_options() {
 	[ -n "$wps_possible" -a -n "$config_methods" ] && {
 		set_default ext_registrar 0
 		set_default wps_device_type "6-0050F204-1"
-		set_default wps_device_name "OpenWrt AP"
-		set_default wps_manufacturer "openwrt.org"
+		set_default wps_device_name "CShoreWrt AP"
+		set_default wps_manufacturer "https://sourceforge.net/projects/cshorewrt/
 
 		wps_state=2
 		[ -n "$wps_configured" ] && wps_state=1

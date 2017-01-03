@@ -36,7 +36,7 @@ define Package/fstools
   SECTION:=base
   CATEGORY:=Base system
   DEPENDS:=+ubox +USE_GLIBC:librt +NAND_SUPPORT:ubi-utils
-  TITLE:=OpenWrt filesystem tools
+  TITLE:=CShoreWrt filesystem tools
   MENU:=1
 endef
 

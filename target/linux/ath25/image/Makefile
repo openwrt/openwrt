@@ -35,7 +35,7 @@ endef
 
 define Build/mkfwimage
 	$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(1).OpenWrt.$(REVISION) \
+		-B $(1).CShoreWrt.$(REVISION) \
 		-k $(KDIR)/$(KERNEL_IMAGE) \
 		-r $@ \
 		-o $@.new && \

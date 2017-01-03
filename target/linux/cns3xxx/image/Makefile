@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/Prepare
-	mkimage -A arm -O linux -T kernel -C none -a 0x20008000 -e 0x20008000 -n 'OpenWrt Linux-$(LINUX_VERSION)' -d $(KDIR)/zImage $(KDIR)/uImage
+	mkimage -A arm -O linux -T kernel -C none -a 0x20008000 -e 0x20008000 -n 'CShoreWrt Linux-$(LINUX_VERSION)' -d $(KDIR)/zImage $(KDIR)/uImage
 endef
 
 # Build sysupgrade image
@@ -22,7 +22,7 @@ define BuildFirmware/Generic
 endef
 
 define Image/BuildKernel/Initramfs
-	mkimage -A arm -O linux -T kernel -C none -a 0x20008000 -e 0x20008000 -n 'OpenWrt Linux-$(LINUX_VERSION)' -d $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-initramfs-uImage
+	mkimage -A arm -O linux -T kernel -C none -a 0x20008000 -e 0x20008000 -n 'CShoreWrt Linux-$(LINUX_VERSION)' -d $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-initramfs-uImage
 endef
 
 define Image/Build

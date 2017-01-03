@@ -39,12 +39,12 @@ endef
 
 define Image/Build/TPLINK
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) $(7) \
+		-H $(4) -W $(5) -F $(6) -N CShoreWrt -V $(REVISION) $(7) \
 		-k $(KDIR)/$(3) \
 		-r $(KDIR)/root.$(1) \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) $(7) -s \
+		-H $(4) -W $(5) -F $(6) -N CShoreWrt -V $(REVISION) $(7) -s \
 		-k $(KDIR)/$(3) \
 		-r $(KDIR)/root.$(1) \
 		-o $(call sysupname,$(1),$(2))

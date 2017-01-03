@@ -89,7 +89,7 @@ define Image/Build/Cellvision2
 	dd if=$(KDIR)/loader-$(2).gz of=$(call imgname,$(1),$(2)).bin bs=64k conv=sync
 	cat $(call imgname,$(1),$(2)).trx >> $(call imgname,$(1),$(2)).bin
 	echo -ne '\x14\x07\x24\x06$(2)' | dd bs=14 count=1 conv=sync >> $(call imgname,$(1),$(2)).bin
-	echo -ne 'OpenWrt\x00\x00\x00' >> $(call imgname,$(1),$(2)).bin
+	echo -ne 'CShoreWrt\x00\x00\x00' >> $(call imgname,$(1),$(2)).bin
 endef
 
 define Image/Build/MyLoader

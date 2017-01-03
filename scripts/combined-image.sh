@@ -7,7 +7,7 @@ BLKSZ=65536
 	exit 1
 }
 
-IMAGE=${3:-openwrt-combined.img}
+IMAGE=${3:-cshorewrt-combined.img}
 
 # Make sure provided images are 64k aligned.
 kern="${IMAGE}.kernel"

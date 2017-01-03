@@ -54,14 +54,14 @@ define Image/Build
 	$(call Image/Build/$(1),$(1))
 	-$(STAGING_DIR_HOST)/bin/mkfwimage2 \
 		-m GEOS -f 0x30000000 -z \
-		-v WILI-S.WILIBOARD.v5.00.SL3512.OpenWrt.00000.000000.000000 \
+		-v WILI-S.WILIBOARD.v5.00.SL3512.CShoreWrt.00000.000000.000000 \
 		-o $(BIN_DIR)/$(IMG_PREFIX)-wbd111-$(1).bin \
 		-p Kernel:0x020000:0x100000:0:0:$(BIN_DIR)/$(IMG_PREFIX)-wbd111-zImage \
 		-p Ramdisk:0x120000:0x500000:0:0:$(BIN_DIR)/$(IMG_PREFIX)-$(1).img
 
 	-$(STAGING_DIR_HOST)/bin/mkfwimage2 \
 		-m GEOS -f 0x30000000 -z \
-		-v WILI-S.WBD222.v5.00.SL3512.OpenWrt.00000.000000.000000 \
+		-v WILI-S.WBD222.v5.00.SL3512.CShoreWrt.00000.000000.000000 \
 		-o $(BIN_DIR)/$(IMG_PREFIX)-wbd222-$(1).bin \
 		-p Kernel:0x020000:0x100000:0:0:$(BIN_DIR)/$(IMG_PREFIX)-wbd222-zImage \
 		-p Ramdisk:0x120000:0x500000:0:0:$(BIN_DIR)/$(IMG_PREFIX)-$(1).img

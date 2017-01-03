@@ -11,7 +11,7 @@ define Image/BuildKernelMachId
 	$(STAGING_DIR_HOST)/bin/mkimage -A arm -O linux -T kernel \
 	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
 	-d $(KDIR)/$(1)-zImage $(KDIR)/$(1)-uImage
-	cp $(KDIR)/$(1)-uImage $(BIN_DIR)/openwrt-$(1)-uImage
+	cp $(KDIR)/$(1)-uImage $(BIN_DIR)/cshorewrt-$(1)-uImage
 endef
 
 define Image/BuildKernel
@@ -34,8 +34,8 @@ define Image/Build/Freecom
 	$(CP) $(KDIR)/dt2-uImage $(TARGET_DIR)/boot/uImage
 	$(INSTALL_DIR) $(TARGET_DIR)/var
  # create image
-	$(TAR) cfj $(BIN_DIR)/openwrt-$(2)-$(1).img --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
-	$(STAGING_DIR_HOST)/bin/encode_crc $(BIN_DIR)/openwrt-$(2)-$(1).img $(BIN_DIR)/openwrt-$(2)-$(1)-webupgrade.img $(3)
+	$(TAR) cfj $(BIN_DIR)/cshorewrt-$(2)-$(1).img --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+	$(STAGING_DIR_HOST)/bin/encode_crc $(BIN_DIR)/cshorewrt-$(2)-$(1).img $(BIN_DIR)/cshorewrt-$(2)-$(1)-webupgrade.img $(3)
  # remove extra files
 	rm -rf $(TARGET_DIR)/{boot,var}
  # recover unwanted files

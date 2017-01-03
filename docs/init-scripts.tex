@@ -1,4 +1,4 @@
-Because OpenWrt uses its own init script system, all init scripts must be installed
+Because CShoreWrt uses its own init script system, all init scripts must be installed
 as \texttt{/etc/init.d/\textit{name}} use \texttt{/etc/rc.common} as a wrapper.
 
 Example: \texttt{/etc/init.d/httpd}
@@ -9,7 +9,7 @@ Example: \texttt{/etc/init.d/httpd}
 
 START=50
 start() {
-    [ -d /www ] && httpd -p 80 -h /www -r OpenWrt
+    [ -d /www ] && httpd -p 80 -h /www -r CShoreWrt
 }
 
 stop() {

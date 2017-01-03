@@ -148,20 +148,20 @@ menuconfig VERSIONOPT
 	default n
 	help
 		These options allow to override the version information embedded in
-		the /etc/openwrt_version, /etc/openwrt_release, /etc/banner and
-		/etc/opkg.conf files. Usually there is no need to set these, but
-		they're useful for release builds or custom OpenWrt redistributions
-		that should carry custom version tags.
+		the /etc/openwrt_version, /etc/openwrt_release, /etc/banner,
+		/etc/opkg.conf, and /etc/os-release files. Usually there is no need
+		to set these, but they're useful for release builds or custom OpenWrt
+		redistributions that should carry custom version tags.
 
 if VERSIONOPT
 
 	config VERSION_DIST
 		string
 		prompt "Release distribution"
-		default "OpenWrt"
+		default "CShoreWrt"
 		help
 			This is the name of the release distribution.
-			If unspecified, it defaults to OpenWrt.
+			If unspecified, it defaults to CShoreWrt.
 
 	config VERSION_NICK
 		string
@@ -192,12 +192,12 @@ if VERSIONOPT
 			 %c .. Release version or "bleeding_edge", lowercase
 			 %N .. Release name, uppercase
 			 %n .. Release name, lowercase
-			 %D .. Distribution name or "OpenWrt", uppercase
-			 %d .. Distribution name or "openwrt", lowercase
+			 %D .. Distribution name or "CShoreWrt", uppercase
+			 %d .. Distribution name or "cshorewrt", lowercase
 			 %T .. Target name
 			 %S .. Target/Subtarget name
 			 %t .. Build taint flags, e.g. "no-all busybox"
-			 %M .. Manufacturer name or "OpenWrt"
+			 %M .. Manufacturer name or "CShoreWrt"
 			 %P .. Product name or "Generic"
 			 %h .. Hardware revision or "v0"
 
@@ -206,28 +206,40 @@ if VERSIONOPT
 		prompt "Manufacturer name"
 		help
 			This is the manufacturer name embedded in /etc/device_info
-			Useful for OEMs building OpenWrt based firmware
+			Useful for OEMs building CShoreWrt based firmware
 
 	config VERSION_MANUFACTURER_URL
 		string
 		prompt "Manufacturer URL"
 		help
 			This is an URL to the manufacturer's website embedded in /etc/device_info
-			Useful for OEMs building OpenWrt based firmware
+			Useful for OEMs building CShoreWrt based firmware
+
+	config VERSION_BUG_URL
+		string
+		prompt "Bug reporting URL"
+		help
+			This is an URL to provide users for providing bug reports
+
+	config VERSION_SUPPORT_URL
+		string
+		prompt "Support URL"
+		help
+			This an URL to provide users seeking support
 
 	config VERSION_PRODUCT
 		string
 		prompt "Product name"
 		help
 			This is the product name embedded in /etc/device_info
-			Useful for OEMs building OpenWrt based firmware
+			Useful for OEMs building CShoreWrt based firmware
 
 	config VERSION_HWREV
 		string
 		prompt "Hardware revision"
 		help
 			This is the hardware revision string embedded in /etc/device_info
-			Useful for OEMs building OpenWrt based firmware
+			Useful for OEMs building CShoreWrt based firmware
 
 	config VERSION_FILENAMES
 		bool

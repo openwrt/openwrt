@@ -33,7 +33,7 @@ define Package/base-files
   SECTION:=base
   CATEGORY:=Base system
   DEPENDS:=+netifd +libc +procd +jsonfilter +SIGNED_PACKAGES:usign +fstools
-  TITLE:=Base filesystem for OpenWrt
+  TITLE:=Base filesystem for CShoreWrt
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REVISION)
 endef
@@ -63,7 +63,7 @@ $(call $(TARGET)/conffiles)
 endef
 
 define Package/base-files/description
- This package contains a base filesystem and system scripts for OpenWrt.
+ This package contains a base filesystem and system scripts for CShoreWrt.
 endef
 
 ifneq ($(CONFIG_PREINITOPT),)
@@ -137,11 +137,13 @@ define Package/base-files/install
 
 	$(VERSION_SED) \
 		$(1)/etc/banner \
-		$(1)/etc/openwrt_version
+		$(1)/etc/openwrt_version \
+		$(1)/usr/lib/os-release
 
 	$(VERSION_SED_SCRIPT) \
 		$(1)/etc/openwrt_release \
-		$(1)/etc/device_info
+		$(1)/etc/device_info \
+		$(1)/usr/lib/os-release
 
 	$(SED) "s#%PATH%#$(TARGET_INIT_PATH)#g" \
 		$(1)/sbin/hotplug-call \

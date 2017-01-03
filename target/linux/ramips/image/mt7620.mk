@@ -15,7 +15,7 @@ endef
 
 define Build/netgear-header
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		$(1) -v OpenWrt -i $@ \
+		$(1) -v CShoreWrt -i $@ \
 		-o $@.new && mv $@.new $@
 endef
 

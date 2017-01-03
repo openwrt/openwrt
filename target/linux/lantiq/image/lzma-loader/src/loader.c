@@ -178,7 +178,7 @@ static void lzma_init_data(void)
 
 	flash_base = (unsigned char *) KSEG1ADDR(AR71XX_FLASH_START);
 
-	printf("Looking for OpenWrt image... ");
+	printf("Looking for CShoreWrt image... ");
 
 	for (flash_ofs = CONFIG_FLASH_OFFS;
 	     flash_ofs <= (CONFIG_FLASH_OFFS + CONFIG_FLASH_MAX);
@@ -219,7 +219,7 @@ void loader_main(unsigned long reg_a0, unsigned long reg_a1,
 
 	board_init();
 
-	printf("\n\nOpenWrt kernel loader for MIPS based SoC\n");
+	printf("\n\nCShoreWrt kernel loader for MIPS based SoC\n");
 	printf("Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>\n");
 
 	lzma_init_data();

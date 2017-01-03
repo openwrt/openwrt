@@ -101,7 +101,7 @@ endef
 ifdef BUILD_VARIANT
 $(eval $(call uboot/$(BUILD_VARIANT)))
 UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
-UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
+UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),cshorewrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
 endif
 
 define Build/Configure
@@ -118,7 +118,7 @@ define Package/uboot/install/default
 	$(INSTALL_DIR) $(BIN_DIR)/uboot-$(BOARD)-$(1)
 	$(CP) \
 		$(PKG_BUILD_DIR)/u-boot.imx \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.imx
+		$(BIN_DIR)/uboot-$(BOARD)-$(1)/cshorewrt-$(BOARD)-$(1)-u-boot.imx
 endef
 
 define Package/uboot/install/template

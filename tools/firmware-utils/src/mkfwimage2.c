@@ -33,7 +33,7 @@
 #include "fw.h"
 
 #undef VERSION
-#define VERSION "1.2-OpenWrt.1"
+#define VERSION "1.2-CShoreWrt.1"
 
 #define MAX_SECTIONS		8
 #define DEFAULT_OUTPUT_FILE 	"firmware-image.bin"

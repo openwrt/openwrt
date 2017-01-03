@@ -1,5 +1,5 @@
 # ===========================================================================
-# OpenWrt configuration targets
+# CShoreWrt configuration targets
 # These targets are used from top-level makefile
 
 # ===========================================================================
