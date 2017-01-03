@@ -62,6 +62,17 @@
 		};
 	};
 
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		usb_power {
+			gpio-export,name = "usb";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 	rtl8367rb {
 		compatible = "realtek,rtl8367b";
 		cpu_port = <7>;
