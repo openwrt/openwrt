@@ -106,6 +106,10 @@ define uboot/Merrii_A80_Optimus
   TITLE:=U-Boot for Merrii_A80_Optimus (A80)
 endef
 
+define uboot/Marsboard_A10
+  TITLE:=U-Boot for MarsBoard A10
+endef
+
 UBOOTS:= \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
@@ -125,7 +129,8 @@ UBOOTS:= \
 	Merrii_A80_Optimus \
 	orangepi_plus \
 	orangepi_2 \
-	pangolin
+	pangolin \
+	Marsboard_A10
 
 define Package/uboot/template
 define Package/uboot-sunxi-$(1)
