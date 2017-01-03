@@ -258,7 +258,7 @@ and abstracted to the point where you only need to specify a few variables.
     \item \texttt{PKG\_SOURCE} \\
         The filename of the original sources
     \item \texttt{PKG\_SOURCE\_URL} \\
-        Where to download the sources from (no trailing slash), you can add multiple download sources by separating them with a \\ and a carriage return.
+        Where to download the sources from (no trailing slash), you can add multiple download sources by separating them with a \textbackslash{} and a carriage return.
     \item \texttt{PKG\_MD5SUM} \\
         A checksum to validate the download
     \item \texttt{PKG\_CAT} \\
@@ -269,7 +269,7 @@ and abstracted to the point where you only need to specify a few variables.
 
 The \texttt{PKG\_*} variables define where to download the package from;
 \texttt{@SF} is a special keyword for downloading packages from sourceforge. There is also
-another keyword of \texttt{@GNU} for grabbing GNU source releases. If any of the above mentionned download source fails, the OpenWrt mirrors will be used as source.
+another keyword of \texttt{@GNU} for grabbing GNU source releases. If any of the above mentioned download source fails, the OpenWrt mirrors will be used as source.
 
 The md5sum (if present) is used to verify the package was downloaded correctly and
 \texttt{PKG\_BUILD\_DIR} defines where to find the package after the sources are
