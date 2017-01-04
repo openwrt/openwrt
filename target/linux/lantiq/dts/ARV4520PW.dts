@@ -7,6 +7,10 @@
 / {
 	model = "ARV4520PW - Easybox 800, WAV-281";
 
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
 	aliases {
 		led-boot = &power_blue;
 		led-failsafe = &power_red;

@@ -3,6 +3,10 @@
 #include <dt-bindings/input/input.h>
 
 / {
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
 	aliases {
 		/* the power led can't be controlled, use the wps led instead */
 		led-boot = &wps;

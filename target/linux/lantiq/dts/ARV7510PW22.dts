@@ -7,6 +7,10 @@
 / {
 	model = "ARV7510PW22 - Astoria Networks";
 
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
 	aliases {
 		led-boot = &power;
 		led-failsafe = &power;

@@ -7,6 +7,10 @@
 / {
 	model = "WBMR - Buffalo WBMR-HP-G300H";
 
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
 	aliases {
 		led-boot = &power_green;
 		led-failsafe = &power_red;

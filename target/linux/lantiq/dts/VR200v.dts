@@ -7,6 +7,10 @@
 / {
 	model = "VR200v - TP-LINK Archer VR200v";
 
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
 	aliases {
 		led-boot = &power;
 		led-failsafe = &power;

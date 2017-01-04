@@ -7,6 +7,10 @@
 / {
 	model = "ARV752DPW22 - Arcor 803";
 
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
 	aliases {
 		led-boot = &power_red;
 		led-failsafe = &power_blue;
