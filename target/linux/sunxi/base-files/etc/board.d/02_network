@@ -9,10 +9,10 @@
 board_config_update
 
 case "$( sunxi_board_name )" in
-"olinuxino-micro"*)
+"olimex,a20-olinuxino-micro")
 	ucidef_set_interface_lan 'wlan0'
 	;;
-"lamobo-r1")
+"lamobo,lamobo-r1")
 	ucidef_add_switch "switch0" \
 		"4:lan:1" "0:lan:2" "1:lan:3" "2:lan:4" "3:wan" "8@eth0"
 	;;
