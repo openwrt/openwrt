@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 #
 # Copyright (C) 2013 OpenWrt.org
 #
@@ -7,7 +6,7 @@
 # See /LICENSE for more information.
 #
 
-set -x 
+set -ex
 [ $# -eq 6 ] || {
     echo "SYNTAX: $0 <file> <bootfs image> <rootfs image> <bootfs size> <rootfs size> <u-boot image>"
     exit 1

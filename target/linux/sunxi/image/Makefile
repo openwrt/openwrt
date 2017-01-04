@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2013-2016 OpenWrt.org
+# Copyright (C) 2016 Yousong Zhou
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,111 +12,182 @@ include $(INCLUDE_DIR)/host.mk
 FAT32_BLOCK_SIZE=1024
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_SUNXI_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
-define Image/BuildKernel
-	-mkdir -p $(KDIR_TMP)
+KERNEL_LOADADDR:=0x40008000
 
-	mkimage -A arm -O linux -T kernel -C none \
-		-a 0x40008000 -e 0x40008000 \
-		-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
+define Build/sunxi-sdcard
+	rm -f $@.boot
+	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
 
-    ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(CP) $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
-	echo -ne '\x00\x00\x00\x00' >> $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
-	$(call Image/BuildKernel/MkuImage, \
-		none, 0x40008000, 0x40008000, \
-		$(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs, \
-		$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs \
-	)
-    endif
-endef
-
-define Image/Build/SDCard
-	rm -f $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img
-	mkfs.fat $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img -C $(FAT32_BLOCKS)
-
-	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(KDIR)/uboot-sunxi-$(PROFILE)-boot.scr ::boot.scr
-	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(DTS_DIR)/$(2).dtb ::dtb
-	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
-
-	./gen_sunxi_sdcard_img.sh \
-		$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-sdcard-vfat-$(1).img \
-		$(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img \
-		$(KDIR)/root.$(1) \
+	mcopy -i $@.boot $(KDIR)/uboot-sunxi-$(SUNXI_UBOOT)-boot.scr ::boot.scr
+	mcopy -i $@.boot $(DTS_DIR)/$(SUNXI_DTS).dtb ::dtb
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
+	./gen_sunxi_sdcard_img.sh $@ \
+		$@.boot \
+		$(IMAGE_ROOTFS) \
 		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
-		$(KDIR)/uboot-sunxi-$(PROFILE)-u-boot-with-spl.bin
-
-  ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
-	gzip -f9n $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-sdcard-vfat-$(1).img
-  endif
+		$(KDIR)/uboot-sunxi-$(SUNXI_UBOOT)-u-boot-with-spl.bin
+	rm -f $@.boot
 endef
 
-define Image/Build/Profile/A10-OLinuXino-Lime
-	$(call Image/Build/SDCard,$(1),sun4i-a10-olinuxino-lime)
+# why \x00\x00\x00\x00 for zImage-initramfs
+define Device/Default
+  PROFILES := Default
+  DEVICE_VARS := SUNXI_DTS SUNXI_UBOOT
+  KERNEL_NAME := zImage
+  KERNEL := kernel-bin | uImage none
+  IMAGES := sdcard.img.gz
+  IMAGE/sdcard.img.gz := sunxi-sdcard | gzip
 endef
 
-define Image/Build/Profile/A13-OLinuXino
-	$(call Image/Build/SDCard,$(1),sun5i-a13-olinuxino)
+define Device/sun4i-a10-olinuxino-lime
+  DEVICE_TITLE:=Olimex A10-OLinuXino-LIME
+  DEVICE_PACKAGES:=uboot-sunxi-A10-OLinuXino-Lime kmod-ata-core kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+  SUNXI_DTS:=sun4i-a10-olinuxino-lime
+  SUNXI_UBOOT:=A10-OLinuXino-Lime
 endef
 
-define Image/Build/Profile/A20-OLinuXino-Lime
-	$(call Image/Build/SDCard,$(1),sun7i-a20-olinuxino-lime)
+TARGET_DEVICES += sun4i-a10-olinuxino-lime
+
+
+define Device/sun5i-a13-olimex-som
+  DEVICE_TITLE:=Olimex A13 SOM
+  DEVICE_PACKAGES:=uboot-sunxi-OLIMEX_A13_SOM kmod-rtl8192cu
+  SUNXI_DTS:=sun5i-a13-olinuxino
+  SUNXI_UBOOT:=OLIMEX_A13_SOM
 endef
 
-define Image/Build/Profile/A20-OLinuXino_MICRO
-	$(call Image/Build/SDCard,$(1),sun7i-a20-olinuxino-micro)
+TARGET_DEVICES += sun5i-a13-olimex-som
+
+
+define Device/sun5i-a13-olinuxino
+  DEVICE_TITLE:=Olimex A13-Olinuxino
+  DEVICE_PACKAGES:=uboot-sunxi-A13-OLinuXino kmod-rtl8192cu
+  SUNXI_DTS:=sun5i-a13-olinuxino
+  SUNXI_UBOOT:=A13-OLinuXino
 endef
 
-define Image/Build/Profile/Bananapi
-	$(call Image/Build/SDCard,$(1),sun7i-a20-bananapi)
+TARGET_DEVICES += sun5i-a13-olinuxino
+
+
+define Device/sun7i-a20-olinuxino-lime
+  DEVICE_TITLE:=Olimex A20-OLinuXino-LIME
+  DEVICE_PACKAGES:=uboot-sunxi-A20-OLinuXino-Lime kmod-ata-core kmod-ata-sunxi kmod-rtc-sunxi
+  SUNXI_DTS:=sun7i-a20-olinuxino-lime
+  SUNXI_UBOOT:=A20-OLinuXino-Lime
 endef
 
-define Image/Build/Profile/Bananapro
-	$(call Image/Build/SDCard,$(1),sun7i-a20-bananapro)
+TARGET_DEVICES += sun7i-a20-olinuxino-lime
+
+
+define Device/sun7i-a20-olinuxino-micro
+  DEVICE_TITLE:=Olimex A20-Olinuxino Micro
+  DEVICE_PACKAGES:=uboot-sunxi-A20-OLinuXino_MICRO kmod-ata-core kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+  SUNXI_DTS:=sun7i-a20-olinuxino-micro
+  SUNXI_UBOOT:=A20-OLinuXino_MICRO
 endef
 
-define Image/Build/Profile/Lamobo_R1
-	$(call Image/Build/SDCard,$(1),sun7i-a20-lamobo-r1)
+TARGET_DEVICES += sun7i-a20-olinuxino-micro
+
+
+define Device/sun7i-a20-bananapi
+  DEVICE_TITLE:=LeMaker Banana Pi
+  DEVICE_PACKAGES:=uboot-sunxi-Bananapi kmod-rtc-sunxi kmod-ata-core kmod-ata-sunxi
+  SUNXI_DTS:=sun7i-a20-bananapi
+  SUNXI_UBOOT:=Bananapi
 endef
 
-define Image/Build/Profile/Cubieboard
-	$(call Image/Build/SDCard,$(1),sun4i-a10-cubieboard)
+TARGET_DEVICES += sun7i-a20-bananapi
+
+
+define Device/sun7i-a20-bananapro
+  DEVICE_TITLE:=LeMaker Banana Pro
+  DEVICE_PACKAGES:=uboot-sunxi-Bananapro kmod-rtc-sunxi kmod-ata-core kmod-ata-sunxi kmod-brcmfmac
+  SUNXI_DTS:=sun7i-a20-bananapro
+  SUNXI_UBOOT:=Bananapro
 endef
 
-define Image/Build/Profile/Cubieboard2
-	$(call Image/Build/SDCard,$(1),sun7i-a20-cubieboard2)
+TARGET_DEVICES += sun7i-a20-bananapro
+
+
+define Device/sun7i-a20-cubieboard2
+  DEVICE_TITLE:=Cubietech Cubieboard2
+  DEVICE_PACKAGES:=uboot-sunxi-Cubieboard2 kmod-ata-core kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+  SUNXI_DTS:=sun7i-a20-cubieboard2
+  SUNXI_UBOOT:=Cubieboard2
 endef
 
-define Image/Build/Profile/Cubietruck
-	$(call Image/Build/SDCard,$(1),sun7i-a20-cubietruck)
+TARGET_DEVICES += sun7i-a20-cubieboard2
+
+
+define Device/sun4i-a10-cubieboard
+  DEVICE_TITLE:=Cubietech Cubieboard
+  DEVICE_PACKAGES:=uboot-sunxi-Cubieboard kmod-ata-core kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+  SUNXI_DTS:=sun4i-a10-cubieboard
+  SUNXI_UBOOT:=Cubieboard
 endef
 
-define Image/Build/Profile/OLIMEX_A13_SOM
-	$(call Image/Build/SDCard,$(1),sun5i-a13-olinuxino)
+TARGET_DEVICES += sun4i-a10-cubieboard
+
+
+define Device/sun7i-a20-cubietruck
+  DEVICE_TITLE:=Cubietech Cubietruck
+  DEVICE_PACKAGES:=uboot-sunxi-Cubietruck kmod-ata-core kmod-ata-sunxi kmod-rtc-sunxi kmod-brcmfmac
+  SUNXI_DTS:=sun7i-a20-cubietruck
+  SUNXI_UBOOT:=Cubietruck
 endef
 
-define Image/Build/Profile/Mele_M9
-	$(call Image/Build/SDCard,$(1),sun6i-a31-m9)
+TARGET_DEVICES += sun7i-a20-cubietruck
+
+
+define Device/sun7i-a20-lamobo-r1
+  DEVICE_TITLE:=Lamobo R1
+  DEVICE_PACKAGES:=uboot-sunxi-Lamobo_R1 kmod-ata-sunxi kmod-rtl8192cu swconfig wpad-mini
+  SUNXI_DTS:=sun7i-a20-lamobo-r1
+  SUNXI_UBOOT:=Lamobo_R1
 endef
 
-define Image/Build/Profile/Linksprite_pcDuino
-	$(call Image/Build/SDCard,$(1),sun4i-a10-pcduino)
+TARGET_DEVICES += sun7i-a20-lamobo-r1
+
+
+define Device/sun6i-a31-m9
+  DEVICE_TITLE:=Mele M9 top set box
+  DEVICE_PACKAGES:=uboot-sunxi-Mele_M9 kmod-sun4i-emac kmod-rtc-sunxi kmod-rtl8192cu
+  SUNXI_DTS:=sun6i-a31-m9
+  SUNXI_UBOOT:=Mele_M9
 endef
 
-define Image/Build/Profile/Linksprite_pcDuino3
-	$(call Image/Build/SDCard,$(1),sun7i-a20-pcduino3)
+TARGET_DEVICES += sun6i-a31-m9
+
+
+define Device/sun8i-h3-orangepi-plus
+  DEVICE_TITLE:=Xunlong Orange Pi Plus
+  DEVICE_PACKAGES:=kmod-rtc-sunxi uboot-sunxi-orangepi_plus
+  SUNXI_DTS:=sun8i-h3-orangepi-plus
+  SUNXI_UBOOT:=orangepi_plus
 endef
 
-define Image/Build/Profile/orangepi_plus
-	$(call Image/Build/SDCard,$(1),sun8i-h3-orangepi-plus)
+TARGET_DEVICES += sun8i-h3-orangepi-plus
+
+
+define Device/sun7i-a20-pcduino3
+  DEVICE_TITLE:=LinkSprite pcDuino3
+  DEVICE_PACKAGES:=uboot-sunxi-Linksprite_pcDuino3 kmod-sun4i-emac kmod-rtc-sunxi kmod-ata-core kmod-ata-sunxi kmod-rtl8xxxu rtl8188eu-firmware
+  SUNXI_DTS:=sun7i-a20-pcduino3
+  SUNXI_UBOOT:=Linksprite_pcDuino3
 endef
 
-define Image/Build
-	$(call Image/Build/$(1),$(1))
-	$(call Image/Build/Profile/$(PROFILE),$(1))
+TARGET_DEVICES += sun7i-a20-pcduino3
 
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+
+define Device/sun4i-a10-pcduino
+  DEVICE_TITLE:=LinkSprite pcDuino
+  DEVICE_PACKAGES:=uboot-sunxi-Linksprite_pcDuino kmod-sun4i-emac kmod-rtc-sunxi kmod-rtl8192cu
+  SUNXI_DTS:=sun4i-a10-pcduino
+  SUNXI_UBOOT:=Linksprite_pcDuino
 endef
+
+TARGET_DEVICES += sun4i-a10-pcduino
+
 
 $(eval $(call BuildImage))
