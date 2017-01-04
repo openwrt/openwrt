@@ -12,6 +12,8 @@ RAMFS_COPY_DATA=/lib/ar71xx.sh
 CI_BLKSZ=65536
 CI_LDADR=0x80060000
 
+PLATFORM_DO_UPGRADE_COMBINED_SEPARATE_MTD=0
+
 platform_find_partitions() {
 	local first dev size erasesize name
 	while read dev size erasesize name; do
@@ -41,6 +43,13 @@ platform_find_kernelpart() {
 	done
 }
 
+platform_find_rootfspart() {
+	local part
+	for part in "${1%:*}" "${1#*:}"; do
+		[ "$part" != "$2" ] && echo "$part"; break
+	done
+}
+
 platform_do_upgrade_combined() {
 	local partitions=$(platform_find_partitions)
 	local kernelpart=$(platform_find_kernelpart "${partitions#*:}")
@@ -54,13 +63,22 @@ platform_do_upgrade_combined() {
 	   [ ${root_blocks:-0} -gt 0 ] && \
 	   [ ${erase_size:-0} -gt 0 ];
 	then
+		local rootfspart=$(platform_find_rootfspart "$partitions" "$kernelpart")
 		local append=""
 		[ -f "$CONF_TAR" -a "$SAVE_CONFIG" -eq 1 ] && append="-j $CONF_TAR"
 
-		( dd if="$1" bs=$CI_BLKSZ skip=1 count=$kern_blocks 2>/dev/null; \
-		  dd if="$1" bs=$CI_BLKSZ skip=$((1+$kern_blocks)) count=$root_blocks 2>/dev/null ) | \
-			mtd -r $append -F$kernelpart:$kern_length:$CI_LDADR,rootfs write - $partitions
+		if [ "$PLATFORM_DO_UPGRADE_COMBINED_SEPARATE_MTD" -ne 1 ]; then
+		    ( dd if="$1" bs=$CI_BLKSZ skip=1 count=$kern_blocks 2>/dev/null; \
+		      dd if="$1" bs=$CI_BLKSZ skip=$((1+$kern_blocks)) count=$root_blocks 2>/dev/null ) | \
+			    mtd -r $append -F$kernelpart:$kern_length:$CI_LDADR,rootfs write - $partitions
+		elif [ -n "$rootfspart" ]; then
+		    dd if="$1" bs=$CI_BLKSZ skip=1 count=$kern_blocks 2>/dev/null | \
+			    mtd write - $kernelpart
+		    dd if="$1" bs=$CI_BLKSZ skip=$((1+$kern_blocks)) count=$root_blocks 2>/dev/null | \
+			    mtd -r $append write - $rootfspart
+		fi
 	fi
+	PLATFORM_DO_UPGRADE_COMBINED_SEPARATE_MTD=0
 }
 
 tplink_get_image_hwid() {
@@ -318,6 +336,7 @@ platform_check_image() {
 	ls-sr71|\
 	pb42|\
 	pb44|\
+	rb-941-2nd|\
 	routerstation-pro|\
 	routerstation|\
 	wp543|\
@@ -618,6 +637,10 @@ platform_do_upgrade() {
 	local board=$(ar71xx_board_name)
 
 	case "$board" in
+	rb-941-2nd)
+		PLATFORM_DO_UPGRADE_COMBINED_SEPARATE_MTD=1
+		platform_do_upgrade_combined "$ARGV"
+		;;
 	all0258n)
 		platform_do_upgrade_allnet "0x9f050000" "$ARGV"
 		;;
