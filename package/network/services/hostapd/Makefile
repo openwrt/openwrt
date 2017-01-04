@@ -242,7 +242,7 @@ define Package/eapol-test
   SECTION:=net
   CATEGORY:=Network
   VARIANT:=supplicant-full
-  DEPENDS:=$(DRV_DEPENDS)
+  DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl
 endef
 
 
