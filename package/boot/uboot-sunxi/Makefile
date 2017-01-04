@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2013-2016 OpenWrt.org
+# Copyright (C) 2017 Yousong Zhou
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,178 +12,85 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=u-boot
 PKG_VERSION:=2016.03
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:= \
-	http://mirror2.openwrt.org/sources \
-	ftp://ftp.denx.de/pub/u-boot
-
+PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
 PKG_HASH:=e49337262ecac44dbdeac140f2c6ebd1eba345e0162b0464172e7f05583ed7bb
-
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
-
+PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
 
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+
 include $(INCLUDE_DIR)/package.mk
-
-define uboot/Default
-  TITLE:=
-  CONFIG:=
-  IMAGE:=
-endef
-
-define uboot/A10-OLinuXino-Lime
-  TITLE:=U-Boot for the A10 OLinuXino LIME
-endef
-
-define uboot/A13-OLinuXino
-  TITLE:=U-Boot for the A13 OlinuXino
-endef
-
-define uboot/A20-OLinuXino-Lime
-  TITLE:=U-Boot for the A20 OLinuXino LIME
-endef
-
-define uboot/A20-OLinuXino_MICRO
-  TITLE:=U-Boot for A20 OLinuXino MICRO
-endef
-
-define uboot/Bananapi
-  TITLE:=U-Boot for Bananapi
-endef
-
-define uboot/Bananapro
-  TITLE:=U-Boot for Bananapro
-endef
-
-define uboot/Cubieboard
-  TITLE:=U-Boot for Cubieboard
-endef
-
-define uboot/Cubieboard2
-  TITLE:=U-Boot for Cubieboard2
-endef
-
-define uboot/Cubietruck
-  TITLE:=U-Boot for Cubietruck
-endef
-
-define uboot/Hummingbird_A31
-  TITLE:=U-Boot for the Hummingbird A31 board
-endef
-
-define uboot/Mele_M9
-  TITLE:=U-Boot for the Mele M9 (A31)
-endef
-
-define uboot/OLIMEX_A13_SOM
-  TITLE:=U-Boot for the Olimex A13 SOM
-endef
-
-define uboot/Linksprite_pcDuino
-  TITLE:=U-Boot for Linksprite pcDuino
-endef  
-
-define uboot/Linksprite_pcDuino3
-  TITLE:=U-Boot for Linksprite pcDuino3
-endef  
-
-define uboot/Lamobo_R1
-  TITLE:=U-Boot for Lamobo R1
-endef
-
-define uboot/pangolin
-  TITLE:=U-Boot for Theobroma A31-yQ7 devboard
-endef
-
-define uboot/orangepi_plus
-  TITLE:=U-Boot for Orange Pi Plus (H3)
-endef
-
-UBOOTS:= \
-	A10-OLinuXino-Lime \
-	A13-OLinuXino \
-	A20-OLinuXino-Lime \
-	A20-OLinuXino_MICRO \
-	Bananapi \
-	Bananapro \
-	Cubieboard \
-	Cubieboard2 \
-	Cubietruck \
-	Hummingbird_A31 \
-	Mele_M9 \
-	OLIMEX_A13_SOM \
-	Linksprite_pcDuino \
-	Linksprite_pcDuino3 \
-	Lamobo_R1 \
-	orangepi_plus \
-	pangolin
 
 define Package/uboot/template
 define Package/uboot-sunxi-$(1)
   SECTION:=boot
   CATEGORY:=Boot Loaders
   DEPENDS:=@TARGET_sunxi
-  TITLE:=$(2)
+  TITLE:=U-Boot for $(2)
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)
-  MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
-endef
 endef
 
-define BuildUBootPackage
-	$(eval $(uboot/Default))
-	$(eval $(uboot/$(1)))
-	$(call Package/uboot/template,$(1),$(TITLE))
-endef
-
-ifdef BUILD_VARIANT
-$(eval $(call uboot/$(BUILD_VARIANT)))
-UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
-UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
-endif
-
-# check if any specialized uEnv bootconfig is required
-ifeq ($(UBOOT_CONFIG),pangolin)
-	UENV:=pangolin
-else
-	UENV:=default
-endif
-
-define Build/Configure
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		USE_PRIVATE_LIBGCC=yes $(UBOOT_CONFIG)_defconfig
-endef
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CROSS_COMPILE=$(TARGET_CROSS) \
-		DTCDIR=$(LINUX_DIR)/scripts/dtc/
-endef
-
-define Package/uboot/install/default
-	$(CP) $(PKG_BUILD_DIR)/u-boot.bin \
-		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot.bin
-	$(CP) $(PKG_BUILD_DIR)/spl/sunxi-spl.bin \
-		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-spl.bin
+define Package/uboot-sunxi-$(1)/install
 	$(CP) $(PKG_BUILD_DIR)/u-boot-sunxi-with-spl.bin \
 		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot-with-spl.bin
-	$(CP) uEnv-$(UENV).txt \
-		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-uEnv.txt
-	mkimage -C none -A arm -T script -d $(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-uEnv.txt \
+	mkimage -C none -A arm -T script -d uEnv-$(if $(3),$(3),default).txt \
 		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-boot.scr
 endef
 
-define Package/uboot/install/template
-define Package/uboot-sunxi-$(1)/install
-	$(call Package/uboot/install/default,$(2))
-endef
+UBOOT_SUNXI_PACKAGES += uboot-sunxi-$(1)
+
 endef
 
-$(foreach u,$(UBOOTS), \
-	$(eval $(call Package/uboot/install/template,$(u),$(u))) \
-)
+$(eval $(call Package/uboot/template,A10-OLinuXino-Lime,the A10 OLinuXino LIME))
+$(eval $(call Package/uboot/template,A13-OLinuXino,the A13 OlinuXino))
+$(eval $(call Package/uboot/template,A20-OLinuXino-Lime,the A20 OLinuXino LIME))
+$(eval $(call Package/uboot/template,A20-OLinuXino_MICRO,A20 OLinuXino MICRO))
+$(eval $(call Package/uboot/template,Bananapi,Bananapi))
+$(eval $(call Package/uboot/template,Bananapro,Bananapro))
+$(eval $(call Package/uboot/template,Cubieboard,Cubieboard))
+$(eval $(call Package/uboot/template,Cubieboard2,Cubieboard2))
+$(eval $(call Package/uboot/template,Cubietruck,Cubietruck))
+$(eval $(call Package/uboot/template,Hummingbird_A31,the Hummingbird A31 board))
+$(eval $(call Package/uboot/template,Mele_M9,the Mele M9 (A31)))
+$(eval $(call Package/uboot/template,OLIMEX_A13_SOM,the Olimex A13 SOM))
+$(eval $(call Package/uboot/template,Linksprite_pcDuino,Linksprite pcDuino))
+$(eval $(call Package/uboot/template,Linksprite_pcDuino3,Linksprite pcDuino3))
+$(eval $(call Package/uboot/template,Lamobo_R1,Lamobo R1))
+$(eval $(call Package/uboot/template,orangepi_plus,Orange Pi Plus (H3)))
+$(eval $(call Package/uboot/template,pangolin,Theobroma A31-yQ7 devboard,pangolin))
 
-$(foreach u,$(UBOOTS), \
-	$(eval $(call BuildUBootPackage,$(u))) \
-	$(eval $(call BuildPackage,uboot-sunxi-$(u))) \
+define Package/uboot-sunxi-all
+  SECTION:=boot
+  CATEGORY:=Boot Loaders
+  DEPENDS:=@TARGET_sunxi
+  TITLE:=Meta package for selecting all variants of uboot-sunxi
+  URL:=http://www.denx.de/wiki/U-Boot
+  DEPENDS:=$(patsubst %,+%,$(UBOOT_SUNXI_PACKAGES))
+endef
+
+ifdef BUILD_VARIANT
+define Build/Configure
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+		USE_PRIVATE_LIBGCC=yes $(BUILD_VARIANT)_defconfig
+endef
+
+define Build/Compile
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+		CROSS_COMPILE=$(TARGET_CROSS) \
+		DTCDIR=$(LINUX_DIR)/scripts/dtc/
+endef
+else	# BUILD_VARIANT
+define Build/Prepare
+endef
+define Build/Configure
+endef
+define Build/Compile
+endef
+endif	# BUILD_VARIANT
+
+$(foreach pkg,$(UBOOT_SUNXI_PACKAGES), \
+  $(eval $(call BuildPackage,$(pkg))) \
 )
+$(eval $(call BuildPackage,uboot-sunxi-all))
