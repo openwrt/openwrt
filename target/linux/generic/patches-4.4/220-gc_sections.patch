@@ -324,7 +324,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			VMLINUX_SYMBOL(__ctors_end) = .;
  #else
  #define KERNEL_CTORS()
-@@ -552,7 +553,7 @@
+@@ -556,7 +557,7 @@
  #define SBSS(sbss_align)						\
  	. = ALIGN(sbss_align);						\
  	.sbss : AT(ADDR(.sbss) - LOAD_OFFSET) {				\
@@ -333,7 +333,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		*(.scommon)						\
  	}
  
-@@ -570,7 +571,7 @@
+@@ -574,7 +575,7 @@
  		BSS_FIRST_SECTIONS					\
  		*(.bss..page_aligned)					\
  		*(.dynbss)						\
@@ -342,7 +342,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		*(COMMON)						\
  	}
  
-@@ -619,7 +620,7 @@
+@@ -623,7 +624,7 @@
  	. = ALIGN(8);							\
  	__bug_table : AT(ADDR(__bug_table) - LOAD_OFFSET) {		\
  		VMLINUX_SYMBOL(__start___bug_table) = .;		\
@@ -351,7 +351,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__stop___bug_table) = .;			\
  	}
  #else
-@@ -631,7 +632,7 @@
+@@ -635,7 +636,7 @@
  	. = ALIGN(4);							\
  	.tracedata : AT(ADDR(.tracedata) - LOAD_OFFSET) {		\
  		VMLINUX_SYMBOL(__tracedata_start) = .;			\
@@ -360,7 +360,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__tracedata_end) = .;			\
  	}
  #else
-@@ -648,17 +649,17 @@
+@@ -652,17 +653,17 @@
  #define INIT_SETUP(initsetup_align)					\
  		. = ALIGN(initsetup_align);				\
  		VMLINUX_SYMBOL(__setup_start) = .;			\
@@ -382,7 +382,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		INIT_CALLS_LEVEL(0)					\
  		INIT_CALLS_LEVEL(1)					\
  		INIT_CALLS_LEVEL(2)					\
-@@ -672,21 +673,21 @@
+@@ -676,21 +677,21 @@
  
  #define CON_INITCALL							\
  		VMLINUX_SYMBOL(__con_initcall_start) = .;		\

@@ -20,7 +20,7 @@ Subject: [PATCH 32/36] USB: fix roothub for IFXHCD
  choice
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -4358,7 +4358,7 @@ hub_port_init(struct usb_hub *hub, struc
+@@ -4356,7 +4356,7 @@ hub_port_init(struct usb_hub *hub, struc
  		udev->ttport = hdev->ttport;
  	} else if (udev->speed != USB_SPEED_HIGH
  			&& hdev->speed == USB_SPEED_HIGH) {

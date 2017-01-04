@@ -15,7 +15,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1382,6 +1382,127 @@ static const struct net_device_ops bgmac
+@@ -1385,6 +1385,127 @@ static const struct net_device_ops bgmac
   * ethtool_ops
   **************************************************/
  
@@ -143,7 +143,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int bgmac_get_settings(struct net_device *net_dev,
  			      struct ethtool_cmd *cmd)
  {
-@@ -1406,6 +1527,9 @@ static void bgmac_get_drvinfo(struct net
+@@ -1409,6 +1530,9 @@ static void bgmac_get_drvinfo(struct net
  }
  
  static const struct ethtool_ops bgmac_ethtool_ops = {
