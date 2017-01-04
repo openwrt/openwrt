@@ -155,6 +155,7 @@ define KernelPackage
   $(eval $(call KernelPackage/Defaults))
   $(eval $(call KernelPackage/$(1)))
   $(eval $(call KernelPackage/$(1)/$(BOARD)))
+  $(eval $(call KernelPackage/$(1)/$(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic)))
 
   define Package/kmod-$(1)
     TITLE:=$(TITLE)
@@ -166,6 +167,7 @@ define KernelPackage
     PKGFLAGS:=$(PKGFLAGS)
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(BOARD))
+    $(call KernelPackage/$(1)/$(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic))
   endef
 
   ifdef KernelPackage/$(1)/conffiles
