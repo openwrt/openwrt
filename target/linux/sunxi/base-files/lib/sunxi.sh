@@ -124,6 +124,10 @@ sunxi_board_detect() {
 		"Ippo Q8H Dual Core Tablet (v5)")
 			board="ippo-q8h-v5"
 			;;
+
+		"HAOYU Electronics Marsboard A10")
+			board="marsboard_a10"
+			;;
 	esac
 
 	if [ "$board" != "" ]; then
