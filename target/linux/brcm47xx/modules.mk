@@ -10,8 +10,11 @@ define KernelPackage/bgmac
   KCONFIG:=CONFIG_BGMAC CONFIG_BGMAC_BCMA
   DEPENDS:=@TARGET_brcm47xx @!TARGET_brcm47xx_legacy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac.ko
-  AUTOLOAD:=$(call AutoLoad,19,bgmac,1)
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac-bcma.ko \
+	$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac-bcma-mdio.ko \
+	$(LINUX_DIR)/drivers/net/ethernet/broadcom/bgmac.ko
+  AUTOLOAD:=$(call AutoProbe,bgmac-bcma)
 endef
 
 define KernelPackage/bgmac/description
