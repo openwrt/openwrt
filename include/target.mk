@@ -218,6 +218,11 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_arc700 = -marc700
     CPU_CFLAGS_archs = -marchs
   endif
+  ifneq ($(CPU_TYPE),)
+    ifndef CPU_CFLAGS_$(CPU_TYPE)
+      $(warning CPU_TYPE "$(CPU_TYPE)" doesn't correspond to a known type)
+    endif
+  endif
   DEFAULT_CFLAGS=$(strip $(CPU_CFLAGS) $(CPU_CFLAGS_$(CPU_TYPE)) $(CPU_CFLAGS_$(CPU_SUBTYPE)))
 
   ifneq ($(BOARD),)
