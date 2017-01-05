@@ -448,7 +448,7 @@ define Device/kn_rc
   DEVICE_TITLE := ZyXEL Keenetic Omni
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) | \
 	zyimage -d 4882 -v "ZyXEL Keenetic Omni"
 endef
 TARGET_DEVICES += kn_rc
@@ -458,7 +458,7 @@ define Device/kn_rf
   DEVICE_TITLE := ZyXEL Keenetic Omni II
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) | \
 	zyimage -d 2102034 -v "ZyXEL Keenetic Omni II"
 endef
 TARGET_DEVICES += kn_rf
