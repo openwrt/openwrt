@@ -31,7 +31,7 @@ define Package/lldpd
   SUBMENU:=Routing and Redirection
   TITLE:=Link Layer Discovery Protocol daemon
   URL:=https://github.com/vincentbernat/lldpd/wiki
-  DEPENDS:=+libevent2 +USE_GLIBC:libbsd +LLDPD_WITH_JSON:libjson-c
+  DEPENDS:=+libevent2 +USE_GLIBC:libbsd +LLDPD_WITH_JSON:libjson-c +LLDPD_WITH_SNMP:libnetsnmp
   USERID:=lldp=121:lldp=129
   MENU:=1
 endef
@@ -78,6 +78,9 @@ endif
 ifneq ($(CONFIG_LLDPD_WITH_SONMP),y)
 	sed -i -e '/sonmp/d' $(1)/etc/init.d/lldpd $(1)/etc/config/lldpd
 endif
+ifneq ($(CONFIG_LLDPD_WITH_SNMP),y)
+	sed -i -e '/agentxsocket/d' $(1)/etc/init.d/lldpd $(1)/etc/config/lldpd
+endif
 endef
 
 define Package/lldpd/conffiles
@@ -103,7 +106,8 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_DOT3),,--disable-dot3) \
 	$(if $(CONFIG_LLDPD_WITH_CUSTOM),,--disable-custom) \
 	$(if $(CONFIG_LLDPD_WITH_SONMP),,--disable-sonmp) \
-	$(if $(CONFIG_LLDPD_WITH_JSON),--with-json=json-c,--with-json=no)
+	$(if $(CONFIG_LLDPD_WITH_JSON),--with-json=json-c,--with-json=no) \
+	$(if $(CONFIG_LLDPD_WITH_SNMP),--with-snmp,)
 
 
 $(eval $(call BuildPackage,lldpd))

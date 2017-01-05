@@ -51,4 +51,8 @@ config LLDPD_WITH_JSON
 	prompt "Enable JSON output for the LLDP Command-Line Interface"
 	default n
 
+config LLDPD_WITH_SNMP
+	bool
+	default n
+	prompt "Enable the use of SNMP"
 endmenu

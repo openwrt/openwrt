@@ -57,6 +57,7 @@ start_service() {
 	local lldp_class
 	local lldp_location
 	local readonly_mode
+	local agentxsocket
 
 	config_load 'lldpd'
 	config_get_bool enable_cdp 'config' 'enable_cdp' 0
@@ -66,6 +67,7 @@ start_service() {
 	config_get lldp_class 'config' 'lldp_class'
 	config_get lldp_location 'config' 'lldp_location'
 	config_get_bool readonly_mode 'config' 'readonly_mode' 0
+	config_get agentxsocket 'config' 'agentxsocket'
 
 	mkdir -p /var/run/lldp
 	chown lldp:lldp /var/run/lldp
@@ -83,6 +85,7 @@ start_service() {
 	[ $enable_edp -gt 0 ] && procd_append_param command '-e'
 	[ $readonly_mode -gt 0 ] && procd_append_param command '-r'
 	[ -n "$lldp_class" ] && procd_append_param command -M "$lldp_class"
+	[ -n "$agentxsocket" ] && procd_append_param command -x -X "$agentxsocket"
 
 	# set auto respawn behavior
 	procd_set_param respawn
