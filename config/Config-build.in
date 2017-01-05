@@ -87,59 +87,6 @@ menu "Global build settings"
 		help
 		  Enables IPv6 support in kernel (builtin) and packages.
 
-	config PKG_BUILD_PARALLEL
-		bool
-		prompt "Compile certain packages parallelized"
-		default y
-		help
-		  This adds a -jX option to certain packages that are known to behave well
-		  for parallel build. By default, the package make processes use the main
-		  jobserver, in which case this option only takes effect when you add -jX
-		  to the make command.
-
-		  If you are unsure, select N.
-
-	config PKG_BUILD_USE_JOBSERVER
-		bool
-		prompt "Use top-level make jobserver for packages"
-		depends on PKG_BUILD_PARALLEL
-		default y
-		help
-		  This passes the main make process jobserver fds to package builds,
-		  enabling full parallelization across different packages.
-
-		  Note that disabling this may overcommit CPU resources depending on the
-		  -j level of the main make process, the number of package submake jobs
-		  selected below and the number of actual CPUs present.
-		  Example: If the main make is passed a -j4 and the submake -j
-		  is also set to 4, we may end up with 16 parallel make processes
-		  in the worst case.
-
-	config PKG_BUILD_JOBS
-		int
-		prompt "Number of package submake jobs (2-512)"
-		range 2 512
-		default 2
-		depends on PKG_BUILD_PARALLEL && !PKG_BUILD_USE_JOBSERVER
-		help
-		  The number of jobs (-jX) to pass to packages submake.
-
-	config PKG_DEFAULT_PARALLEL
-		bool
-		prompt "Parallelize the default package build rule (May break build)"
-		depends on PKG_BUILD_PARALLEL
-		depends on BROKEN
-		default n
-		help
-		  Always set the default package build rules to parallel build.
-
-		  WARNING: This may break build or kill your cat, as it builds packages
-		  with multiple jobs that are probably not tested in a parallel build
-		  environment.
-
-		  Only say Y if you don't mind fixing broken packages.  Before reporting
-		  build bugs, set this to N and re-run the build.
-
 	comment "Stripping options"
 
 	choice
