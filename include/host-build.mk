@@ -53,7 +53,7 @@ HOST_CONFIGURE_VARS = \
 	CFLAGS="$(HOST_CFLAGS)" \
 	CPPFLAGS="$(HOST_CPPFLAGS)" \
 	LDFLAGS="$(HOST_LDFLAGS)" \
-	SHELL="$(SHELL)"
+	CONFIG_SHELL="$(SHELL)"
 
 HOST_CONFIGURE_ARGS = \
 	--target=$(GNU_HOST_NAME) \
@@ -75,9 +75,9 @@ define Host/Configure/Default
 	$(if $(HOST_CONFIGURE_PARALLEL),+)(cd $(HOST_BUILD_DIR)/$(3); \
 		if [ -x configure ]; then \
 			$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/$(3)/ && \
+			$(HOST_CONFIGURE_VARS) \
 			$(2) \
 			$(HOST_CONFIGURE_CMD) \
-			$(HOST_CONFIGURE_VARS) \
 			$(HOST_CONFIGURE_ARGS) \
 			$(1); \
 		fi \
