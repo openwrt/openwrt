@@ -189,6 +189,68 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system",
 	},
 
+	{
+		.id	= "WBS210",
+		.vendor	= "CPE510(TP-LINK|UN|N300-5):1.0\r\n",
+		.support_list =
+			"SupportList:\r\n"
+			"WBS210(TP-LINK|UN|N300-2):1.20\r\n"
+			"WBS210(TP-LINK|US|N300-2):1.20\r\n"
+			"WBS210(TP-LINK|EU|N300-2):1.20\r\n",
+		.support_trail = '\xff',
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"partition-table", 0x20000, 0x02000},
+			{"default-mac", 0x30000, 0x00020},
+			{"product-info", 0x31100, 0x00100},
+			{"signature", 0x32000, 0x00400},
+			{"os-image", 0x40000, 0x170000},
+			{"soft-version", 0x1b0000, 0x00100},
+			{"support-list", 0x1b1000, 0x00400},
+			{"file-system", 0x1c0000, 0x600000},
+			{"user-config", 0x7c0000, 0x10000},
+			{"default-config", 0x7d0000, 0x10000},
+			{"log", 0x7e0000, 0x10000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
+	{
+		.id	= "WBS510",
+		.vendor	= "CPE510(TP-LINK|UN|N300-5):1.0\r\n",
+		.support_list =
+			"SupportList:\r\n"
+			"WBS510(TP-LINK|UN|N300-5):1.20\r\n"
+			"WBS510(TP-LINK|US|N300-5):1.20\r\n"
+			"WBS510(TP-LINK|EU|N300-5):1.20\r\n",
+		.support_trail = '\xff',
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"partition-table", 0x20000, 0x02000},
+			{"default-mac", 0x30000, 0x00020},
+			{"product-info", 0x31100, 0x00100},
+			{"signature", 0x32000, 0x00400},
+			{"os-image", 0x40000, 0x170000},
+			{"soft-version", 0x1b0000, 0x00100},
+			{"support-list", 0x1b1000, 0x00400},
+			{"file-system", 0x1c0000, 0x600000},
+			{"user-config", 0x7c0000, 0x10000},
+			{"default-config", 0x7d0000, 0x10000},
+			{"log", 0x7e0000, 0x10000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the C2600 */
 	{
 		.id = "C2600",
