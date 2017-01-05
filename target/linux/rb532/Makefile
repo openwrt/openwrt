@@ -14,6 +14,7 @@ FEATURES:=pci targz squashfs
 KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += wpad-mini kmod-ath5k kmod-input-rb532
+
+DEFAULT_PACKAGES += wpad-mini kmod-ath5k kmod-input-rb532 e2fsprogs mkf2fs
 
 $(eval $(call BuildTarget))

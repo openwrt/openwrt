@@ -43,34 +43,18 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 endif
 endef
 
-define Image/cmdline/jffs2-64k
-block2mtd.block2mtd=/dev/sda2,65536 root=/dev/mtdblock2 rootfstype=jffs2
-endef
-
-define Image/cmdline/jffs2-128k
-block2mtd.block2mtd=/dev/sda2,131072 root=/dev/mtdblock2 rootfstype=jffs2
-endef
-
-define Image/cmdline/ext4
-root=/dev/sda2 rootfstype=ext4
-endef
-
-define Image/cmdline/squashfs
-block2mtd.block2mtd=/dev/sda2,65536,rootfs root=/dev/mtdblock2 rootfstype=squashfs
-endef
-
 define Image/cmdline/yaffs2
 root=/dev/mtdblock1 rootfstype=yaffs2
 endef
 
 define Image/Build/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+	dd if=/dev/zero bs=128k count=1 >> $(KDIR)/root.squashfs
 endef
 
 define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(CP) $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel '$(strip $(call Image/cmdline/$(1))) '
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel 'root=/dev/sda2 '
 	./gen_image.sh $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).bin \
 		5 $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1) \
