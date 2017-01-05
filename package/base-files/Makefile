@@ -168,6 +168,10 @@ define Package/base-files/install
 				echo "$$$${conffile##$(1)}" >> $(1)/CONTROL/conffiles; \
 		fi \
 	done
+
+	$(if $(CONFIG_INCLUDE_CONFIG), \
+		echo -e "# Build configuration for board $(BOARD)/$(SUBTARGET)/$(PROFILE)\n" >$(1)/etc/build.config; \
+		cat $(BIN_DIR)/config.seed >>$(1)/etc/build.config)
 endef
 
 ifneq ($(DUMP),1)

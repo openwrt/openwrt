@@ -67,6 +67,12 @@ menu "Global build settings"
 		  This removes all ipkg/opkg status data files from the target directory
 		  before building the root filesystem.
 
+	config INCLUDE_CONFIG
+		bool "Include build configuration in firmware" if DEVEL
+		default n
+		help
+		  If enabled, config.seed will be stored in /etc/build.config of firmware.
+
 	config COLLECT_KERNEL_DEBUG
 		bool
 		prompt "Collect kernel debug information"
