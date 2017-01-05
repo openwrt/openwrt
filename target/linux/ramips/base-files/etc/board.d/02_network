@@ -346,8 +346,10 @@ ramips_setup_macs()
 		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
+	kn_rc|\
+	kn_rf|\
 	kng_rc)
-		wan_mac=$(mtd_get_mac_binary factory 28)
+		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 	linkits7688 | \
 	linkits7688d)
