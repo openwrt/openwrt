@@ -21,7 +21,8 @@ include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_CMD := MAKEFLAGS="$(HOST_JOBS)" $(BASH) ./configure
 
-HOST_CONFIGURE_VARS :=
+HOST_CONFIGURE_VARS := \
+	LDFLAGS="$$$$(pkg-config --static --libs libcrypto)"
 
 HOST_CONFIGURE_ARGS := \
 	--prefix=$(STAGING_DIR_HOST)
