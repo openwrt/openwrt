@@ -13,11 +13,40 @@ RAMSIZE = 0x00100000		# 1MB
 IMAGE_COPY = 1
 
 LOADER_MAKEOPTS= \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		PATH="$(TARGET_PATH)" \
+		CC="$(TARGET_CC)" \
 		KDIR=$(KDIR) \
 		LOADADDR=$(LOADADDR) \
 		KERNEL_ENTRY=$(KERNEL_ENTRY) \
 		RAMSIZE=$(RAMSIZE) \
 		IMAGE_COPY=$(IMAGE_COPY)
+
+
+LOADER_DIR = $(GENERIC_PLATFORM_DIR)/image/lzma-loader
+
+define Build/lzma-loader-elf
+	rm -rf $@.loader
+	mkdir -p $@.loader
+	$(CP) $(LOADER_DIR)/src/* $@.loader/
+	$(CP) $@ $@.loader/vmlinux.lzma
+	$(MAKE) -C $@.loader $(LOADER_MAKEOPTS)
+	cp $@.loader/lzma.elf $@
+	rm -rf $@.loader
+endef
+
+define Device/nand
+  CMDLINE := ubi.mtd=1 ubi.block=0,rootfs root=/dev/ubiblock0_1
+  BOARD_NAME := rb532
+  SUPPORTED_DEVICES := rb532
+  KERNEL_INITRAMFS := append-kernel | patch-cmdline | lzma | lzma-loader-elf
+  KERNEL := $$(KERNEL_INITRAMFS) | kernel2minor -s 2048 -i 0 -c
+  IMAGES := sysupgrade.bin
+  FILESYSTEMS := squashfs
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+TARGET_DEVICES := nand
 
 define Build/Clean
 	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean
