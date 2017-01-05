@@ -453,7 +453,9 @@ platform_check_image() {
 		;;
 	cpe210|\
 	cpe510|\
-	eap120)
+	eap120|\
+	wbs210|\
+	wbs510)
 		tplink_pharos_check_image "$1" && return 0
 		return 1
 		;;

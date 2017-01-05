@@ -251,6 +251,8 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR,		/* Ubiquiti UnifiAP Outdoor */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR_PLUS,	/* Ubiquiti UnifiAP Outdoor+ */
 	ATH79_MACH_UBNT_XM,			/* Ubiquiti Networks XM board rev 1.0 */
+	ATH79_MACH_WBS210,			/* TP-LINK WBS210 */
+	ATH79_MACH_WBS510,			/* TP-LINK WBS510 */
 	ATH79_MACH_WEIO,			/* WeIO board */
 	ATH79_MACH_WHR_G301N,			/* Buffalo WHR-G301N */
 	ATH79_MACH_WHR_HP_G300N,		/* Buffalo WHR-HP-G300N */

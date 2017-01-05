@@ -510,6 +510,14 @@ ar71xx_board_detect() {
 	*CPE870)
 		name="cpe870"
 		;;
+	*WBS210)
+		name="wbs210"
+		tplink_pharos_board_detect
+		;;
+	*WBS510)
+		name="wbs510"
+		tplink_pharos_board_detect
+		;;
 	*CR3000)
 		name="cr3000"
 		;;

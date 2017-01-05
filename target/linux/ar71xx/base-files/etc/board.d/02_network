@@ -212,7 +212,9 @@ ar71xx_setup_interfaces()
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	cpe210|\
-	cpe510)
+	cpe510|\
+	wbs210|\
+	wbs510)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:lan" "4:wan"
 		;;
