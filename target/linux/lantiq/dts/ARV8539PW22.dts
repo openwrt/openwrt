@@ -7,6 +7,10 @@
 / {
 	model = "ARV8539PW22 - Speedport W 504V Typ A";
 
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
 	aliases {
 		led-boot = &power_green;
 		led-failsafe = &power_red;

@@ -7,6 +7,10 @@
 / {
 	model = "ARV4525PW - Speedport W501V Typ A";
 
+	chosen {
+		bootargs = "console=ttyLTQ0,115200";
+	};
+
 	aliases {
 		/* we dont have a power led, lets use the online led */
 		led-boot = &online;
