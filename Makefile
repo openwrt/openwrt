@@ -88,6 +88,7 @@ checksum: FORCE
 	$(call sha256sums,$(BIN_DIR))
 
 diffconfig: FORCE
+	mkdir -p $(BIN_DIR)
 	$(SCRIPT_DIR)/diffconfig.sh > $(BIN_DIR)/config.seed
 
 prepare: .config $(tools/stamp-install) $(toolchain/stamp-install)
