@@ -686,7 +686,6 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 		case ATH79_SOC_AR7241:
 		case ATH79_SOC_AR9330:
 		case ATH79_SOC_AR9331:
-		case ATH79_SOC_QCA956X:
 		case ATH79_SOC_TP9343:
 			pdata->phy_if_mode = PHY_INTERFACE_MODE_GMII;
 			break;
@@ -698,6 +697,7 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 		case ATH79_SOC_AR9342:
 		case ATH79_SOC_AR9344:
 		case ATH79_SOC_QCA9533:
+		case ATH79_SOC_QCA956X:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_GMII:
@@ -810,6 +810,27 @@ void __init ath79_setup_qca955x_eth_cfg(u32 mask)
 	t |= mask;
 
 	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+}
+
+void __init ath79_setup_qca956x_eth_cfg(u32 mask)
+{
+	void __iomem *base;
+	u32 t;
+
+	base = ioremap(QCA956X_GMAC_BASE, QCA956X_GMAC_SIZE);
+
+	t = __raw_readl(base + QCA956X_GMAC_REG_ETH_CFG);
+
+	t &= ~(QCA956X_ETH_CFG_SW_ONLY_MODE |
+	       QCA956X_ETH_CFG_SW_PHY_SWAP);
+
+	t |= mask;
+
+	__raw_writel(t, base + QCA956X_GMAC_REG_ETH_CFG);
+	/* flush write */
+	__raw_readl(base + QCA956X_GMAC_REG_ETH_CFG);
 
 	iounmap(base);
 }
