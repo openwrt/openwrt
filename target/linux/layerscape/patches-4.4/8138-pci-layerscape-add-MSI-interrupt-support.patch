@@ -129,7 +129,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  static bool ls_pcie_is_bridge(struct ls_pcie *pcie)
  {
  	u32 header_type;
-@@ -276,10 +301,28 @@ static int __init ls_pcie_probe(struct p
+@@ -284,10 +309,28 @@ static int __init ls_pcie_probe(struct p
  
  	pcie->drvdata = match->data;
  	pcie->lut = pcie->dbi + pcie->drvdata->lut_offset;

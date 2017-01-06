@@ -3,8 +3,8 @@ Several device in ramips have this binding in the dts
 
 Signed-off-by: Giuseppe Lippolis <giu.lippolis@gmail.com>
 ---
---- a/drivers/spi/spidev.c	2016-12-11 09:43:30.502270523 +0100
-+++ b/drivers/spi/spidev.c	2016-12-11 09:45:54.688430012 +0100
+--- a/drivers/spi/spidev.c
++++ b/drivers/spi/spidev.c
 @@ -695,6 +695,7 @@ static struct class *spidev_class;
  static const struct of_device_id spidev_dt_ids[] = {
  	{ .compatible = "rohm,dh2228fv" },

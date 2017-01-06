@@ -10,11 +10,9 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  include/linux/clk.h          |    9 +++++++++
  3 files changed, 29 insertions(+)
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index f13c3f4..0f6bcf5 100644
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -359,6 +359,19 @@ static struct clk_core *clk_core_get_parent_by_index(struct clk_core *core,
+@@ -359,6 +359,19 @@ static struct clk_core *clk_core_get_par
  		return core->parents[index];
  }
  
@@ -34,7 +32,7 @@ index f13c3f4..0f6bcf5 100644
  struct clk_hw *
  clk_hw_get_parent_by_index(const struct clk_hw *hw, unsigned int index)
  {
-@@ -2033,6 +2046,12 @@ static const struct file_operations clk_summary_fops = {
+@@ -2033,6 +2046,12 @@ static const struct file_operations clk_
  	.release	= single_release,
  };
  
@@ -47,11 +45,9 @@ index f13c3f4..0f6bcf5 100644
  static void clk_dump_one(struct seq_file *s, struct clk_core *c, int level)
  {
  	if (!c)
-diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
-index 7cd0171..77dfd61 100644
 --- a/include/linux/clk-provider.h
 +++ b/include/linux/clk-provider.h
-@@ -650,6 +650,7 @@ unsigned int clk_hw_get_num_parents(const struct clk_hw *hw);
+@@ -656,6 +656,7 @@ unsigned int clk_hw_get_num_parents(cons
  struct clk_hw *clk_hw_get_parent(const struct clk_hw *hw);
  struct clk_hw *clk_hw_get_parent_by_index(const struct clk_hw *hw,
  					  unsigned int index);
@@ -59,11 +55,9 @@ index 7cd0171..77dfd61 100644
  unsigned int __clk_get_enable_count(struct clk *clk);
  unsigned long clk_hw_get_rate(const struct clk_hw *hw);
  unsigned long __clk_get_flags(struct clk *clk);
-diff --git a/include/linux/clk.h b/include/linux/clk.h
-index 0df4a51..1df90e3 100644
 --- a/include/linux/clk.h
 +++ b/include/linux/clk.h
-@@ -392,6 +392,15 @@ int clk_set_parent(struct clk *clk, struct clk *parent);
+@@ -392,6 +392,15 @@ int clk_set_parent(struct clk *clk, stru
  struct clk *clk_get_parent(struct clk *clk);
  
  /**
@@ -79,6 +73,3 @@ index 0df4a51..1df90e3 100644
   * clk_get_sys - get a clock based upon the device name
   * @dev_id: device name
   * @con_id: connection ID
--- 
-1.7.9.5
-

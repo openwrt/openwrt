@@ -8,11 +8,9 @@ Subject: [PATCH 229/238] drivers: clk: qoriq: Add ls2088a key to chipinfo
  drivers/clk/clk-qoriq.c |   11 +++++++++++
  1 file changed, 11 insertions(+)
 
-diff --git a/drivers/clk/clk-qoriq.c b/drivers/clk/clk-qoriq.c
-index 164ac41..6185d6a 100644
 --- a/drivers/clk/clk-qoriq.c
 +++ b/drivers/clk/clk-qoriq.c
-@@ -559,6 +559,17 @@ static const struct clockgen_chipinfo chipinfo[] = {
+@@ -559,6 +559,17 @@ static const struct clockgen_chipinfo ch
  		.flags = CG_VER3 | CG_LITTLE_ENDIAN,
  	},
  	{
@@ -30,6 +28,3 @@ index 164ac41..6185d6a 100644
  		.compat = "fsl,p2041-clockgen",
  		.guts_compat = "fsl,qoriq-device-config-1.0",
  		.init_periph = p2041_init_periph,
--- 
-1.7.9.5
-

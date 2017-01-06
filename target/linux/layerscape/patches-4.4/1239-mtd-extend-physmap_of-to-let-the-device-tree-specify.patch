@@ -17,11 +17,9 @@ Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
  drivers/mtd/maps/physmap_of.c |   46 ++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 45 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/maps/physmap_of.c b/drivers/mtd/maps/physmap_of.c
-index fef1d1b..e46b4e9 100644
 --- a/drivers/mtd/maps/physmap_of.c
 +++ b/drivers/mtd/maps/physmap_of.c
-@@ -112,9 +112,47 @@ static struct mtd_info *obsolete_probe(struct platform_device *dev,
+@@ -112,9 +112,47 @@ static struct mtd_info *obsolete_probe(s
  static const char * const part_probe_types_def[] = {
  	"cmdlinepart", "RedBoot", "ofpart", "ofoldpart", NULL };
  
@@ -69,7 +67,7 @@ index fef1d1b..e46b4e9 100644
  	const struct of_device_id *match;
  	struct device_node *dp = dev->dev.of_node;
  	struct resource res;
-@@ -273,8 +311,14 @@ static int of_flash_probe(struct platform_device *dev)
+@@ -273,8 +311,14 @@ static int of_flash_probe(struct platfor
  		goto err_out;
  
  	ppdata.of_node = dp;
@@ -85,6 +83,3 @@ index fef1d1b..e46b4e9 100644
  
  	kfree(mtd_list);
  
--- 
-1.7.9.5
-

@@ -14,11 +14,9 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  create mode 100644 arch/arm64/boot/dts/freescale/fsl-ls2088a-rdb.dts
  create mode 100644 arch/arm64/boot/dts/freescale/fsl-ls2088a.dtsi
 
-diff --git a/arch/arm64/boot/dts/freescale/Makefile b/arch/arm64/boot/dts/freescale/Makefile
-index b599645..e6c2a9f 100644
 --- a/arch/arm64/boot/dts/freescale/Makefile
 +++ b/arch/arm64/boot/dts/freescale/Makefile
-@@ -6,6 +6,8 @@ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1012a-rdb.dtb
+@@ -6,6 +6,8 @@ dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1
  dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1012a-frdm.dtb
  dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1046a-rdb.dtb
  dtb-$(CONFIG_ARCH_LAYERSCAPE) += fsl-ls1088a-rdb.dtb
@@ -27,9 +25,6 @@ index b599645..e6c2a9f 100644
   
  always		:= $(dtb-y)
  subdir-y	:= $(dts-dirs)
-diff --git a/arch/arm64/boot/dts/freescale/fsl-ls2088a-qds.dts b/arch/arm64/boot/dts/freescale/fsl-ls2088a-qds.dts
-new file mode 100644
-index 0000000..04d3726
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/fsl-ls2088a-qds.dts
 @@ -0,0 +1,241 @@
@@ -274,9 +269,6 @@ index 0000000..04d3726
 +&dpmac12 {
 +	phy-handle = <&mdio0_phy15>;
 +};
-diff --git a/arch/arm64/boot/dts/freescale/fsl-ls2088a-rdb.dts b/arch/arm64/boot/dts/freescale/fsl-ls2088a-rdb.dts
-new file mode 100644
-index 0000000..ce553fb
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/fsl-ls2088a-rdb.dts
 @@ -0,0 +1,207 @@
@@ -487,9 +479,6 @@ index 0000000..ce553fb
 +&dpmac8 {
 +	phy-handle = <&mdio2_phy4>;
 +};
-diff --git a/arch/arm64/boot/dts/freescale/fsl-ls2088a.dtsi b/arch/arm64/boot/dts/freescale/fsl-ls2088a.dtsi
-new file mode 100644
-index 0000000..bd69942
 --- /dev/null
 +++ b/arch/arm64/boot/dts/freescale/fsl-ls2088a.dtsi
 @@ -0,0 +1,854 @@
@@ -1347,6 +1336,3 @@ index 0000000..bd69942
 +		      /* DRAM space 1 - 2 GB DRAM */
 +	};
 +};
--- 
-1.7.9.5
-

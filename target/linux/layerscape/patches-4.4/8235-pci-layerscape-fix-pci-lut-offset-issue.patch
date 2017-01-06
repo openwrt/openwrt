@@ -8,22 +8,20 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  drivers/pci/host/pci-layerscape.c |   13 ++++---------
  1 file changed, 4 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/pci/host/pci-layerscape.c b/drivers/pci/host/pci-layerscape.c
-index f85ebcf..00feabf 100644
 --- a/drivers/pci/host/pci-layerscape.c
 +++ b/drivers/pci/host/pci-layerscape.c
-@@ -158,16 +158,11 @@ static void ls1021_pcie_host_init(struct pcie_port *pp)
+@@ -158,16 +158,11 @@ static void ls1021_pcie_host_init(struct
  static int ls_pcie_link_up(struct pcie_port *pp)
  {
  	struct ls_pcie *pcie = to_ls_pcie(pp);
 -	u32 state, offset;
--
++	u32 state;
+ 
 -	if (of_get_property(pp->dev->of_node, "fsl,lut_diff", NULL))
 -		offset = 0x407fc;
 -	else
 -		offset = PCIE_LUT_DBG;
-+	u32 state;
- 
+-
 -	state = (ioread32(pcie->lut + offset) >>
 -			pcie->drvdata->ltssm_shift) &
 -		LTSSM_STATE_MASK;
@@ -33,6 +31,3 @@ index f85ebcf..00feabf 100644
  
  	if (state < LTSSM_PCIE_L0)
  		return 0;
--- 
-1.7.9.5
-

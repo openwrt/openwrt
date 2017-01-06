@@ -21,8 +21,6 @@ Signed-off-by: Priyanka Jain <Priyanka.Jain@freescale.com>
  drivers/i2c/muxes/i2c-mux-pca954x.c |   38 +++++++++++++++++++++++++++++++++++
  1 file changed, 38 insertions(+)
 
-diff --git a/drivers/i2c/muxes/i2c-mux-pca954x.c b/drivers/i2c/muxes/i2c-mux-pca954x.c
-index acfcef3..386f86f 100644
 --- a/drivers/i2c/muxes/i2c-mux-pca954x.c
 +++ b/drivers/i2c/muxes/i2c-mux-pca954x.c
 @@ -63,6 +63,7 @@ struct pca954x {
@@ -33,7 +31,7 @@ index acfcef3..386f86f 100644
  };
  
  struct chip_desc {
-@@ -174,6 +175,13 @@ static int pca954x_deselect_mux(struct i2c_adapter *adap,
+@@ -174,6 +175,13 @@ static int pca954x_deselect_mux(struct i
  {
  	struct pca954x *data = i2c_get_clientdata(client);
  
@@ -47,7 +45,7 @@ index acfcef3..386f86f 100644
  	/* Deselect active channel */
  	data->last_chan = 0;
  	return pca954x_reg_write(adap, client, data->last_chan);
-@@ -201,6 +209,23 @@ static int pca954x_probe(struct i2c_client *client,
+@@ -201,6 +209,23 @@ static int pca954x_probe(struct i2c_clie
  	if (!data)
  		return -ENOMEM;
  
@@ -71,7 +69,7 @@ index acfcef3..386f86f 100644
  	i2c_set_clientdata(client, data);
  
  	/* Get the mux out of reset if a reset GPIO is specified. */
-@@ -212,13 +237,19 @@ static int pca954x_probe(struct i2c_client *client,
+@@ -212,13 +237,19 @@ static int pca954x_probe(struct i2c_clie
  	 * that the mux is in fact present. This also
  	 * initializes the mux to disconnected state.
  	 */
@@ -91,7 +89,7 @@ index acfcef3..386f86f 100644
  
  	idle_disconnect_dt = of_node &&
  		of_property_read_bool(of_node, "i2c-mux-idle-disconnect");
-@@ -289,6 +320,13 @@ static int pca954x_resume(struct device *dev)
+@@ -289,6 +320,13 @@ static int pca954x_resume(struct device
  	struct i2c_client *client = to_i2c_client(dev);
  	struct pca954x *data = i2c_get_clientdata(client);
  
@@ -105,6 +103,3 @@ index acfcef3..386f86f 100644
  	data->last_chan = 0;
  	return i2c_smbus_write_byte(client, 0);
  }
--- 
-1.7.9.5
-
