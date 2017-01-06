@@ -177,19 +177,21 @@
 
 		ifxhcd@E101000 {
 			status = "disabled";
-			compatible = "lantiq,ifxhcd-xrx200", "lantiq,ifxhcd-xrx200-dwc2";
+			compatible = "lantiq,xrx200-usb", "lantiq,ifxhcd-xrx200";
 			reg = <0xE101000 0x1000
 				0xE120000 0x3f000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <62 91>;
+			dr_mode = "host";
 		};
 
 		ifxhcd@E106000 {
 			status = "disabled";
-			compatible = "lantiq,ifxhcd-xrx200-dwc2";
+			compatible = "lantiq,xrx200-usb";
 			reg = <0xE106000 0x1000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <91>;
+			dr_mode = "host";
 		};
 
 		eth0: eth@E108000 {

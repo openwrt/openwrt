@@ -137,20 +137,22 @@
 		};
 
 		ifxhcd@E101000 {
-			compatible = "lantiq,ifxhcd-arx100", "lantiq,ifxhcd-arx100-dwc2";
+			compatible = "lantiq,arx100-usb", "lantiq,ifxhcd-arx100";
 			reg = <0xE101000 0x1000
 				0xE120000 0x3f000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <62 91>;
+			dr_mode = "host";
 			status = "disabled";
 		};
 
 		ifxhcd@E106000 {
-			compatible = "lantiq,ifxhcd-arx100-dwc2";
+			compatible = "lantiq,arx100-usb";
 			reg = <0xE106000 0x1000
 				0xE1E0000 0x3f000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <91>;
+			dr_mode = "host";
 			status = "disabled";
 		};
 
