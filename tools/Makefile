@@ -22,10 +22,10 @@ ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmwar
 endif
 
 tools-$(BUILD_TOOLCHAIN) += gmp mpfr mpc libelf expat
-tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
+tools-y += m4 libtool autoconf automake flex bison pkg-config mklibs
 tools-y += sstrip make-ext4fs e2fsprogs mtd-utils mkimage
-tools-y += firmware-utils patch-image patch quilt yaffs2 padjffs2
-tools-y += mm-macros missing-macros xz cmake scons bc findutils gengetopt patchelf
+tools-y += firmware-utils patch-image quilt yaffs2 padjffs2
+tools-y += mm-macros missing-macros cmake scons bc findutils gengetopt patchelf
 tools-y += mtools dosfstools libressl
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_powerpc) += upx
@@ -42,18 +42,16 @@ tools-$(CONFIG_TARGET_apm821xx) += genext2fs
 # builddir dependencies
 $(curdir)/bison/compile := $(curdir)/flex/install
 $(curdir)/flex/compile := $(curdir)/libtool/install
-$(curdir)/pkg-config/compile := $(curdir)/sed/install
-$(curdir)/libtool/compile := $(curdir)/sed/install $(curdir)/m4/install $(curdir)/autoconf/install $(curdir)/automake/install $(curdir)/missing-macros/install
+$(curdir)/libtool/compile := $(curdir)/m4/install $(curdir)/autoconf/install $(curdir)/automake/install $(curdir)/missing-macros/install
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
 $(curdir)/squashfs4/compile := $(curdir)/xz/install
-$(curdir)/quilt/compile := $(curdir)/sed/install $(curdir)/autoconf/install $(curdir)/findutils/install
+$(curdir)/quilt/compile := $(curdir)/autoconf/install $(curdir)/findutils/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install
 $(curdir)/automake/compile := $(curdir)/m4/install $(curdir)/autoconf/install $(curdir)/pkg-config/install $(curdir)/xz/install
 $(curdir)/gmp/compile := $(curdir)/libtool/install
 $(curdir)/mpc/compile := $(curdir)/mpfr/install $(curdir)/gmp/install
 $(curdir)/mpfr/compile := $(curdir)/gmp/install
 $(curdir)/mtd-utils/compile := $(curdir)/e2fsprogs/install
-$(curdir)/mkimage/compile := $(curdir)/sed/install
 $(curdir)/mklibs/compile := $(curdir)/libtool/install
 $(curdir)/qemu/compile := $(curdir)/e2fsprogs/install
 $(curdir)/upslug2/compile := $(curdir)/libtool/install
@@ -88,14 +86,19 @@ endif
 # dependency for tools which have patches directory
 $(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(curdir)/$(tool)/compile += $(curdir)/patch/install)))
 
-# make any tool (except xz itself) depend on XZ to ensure that *.tar.xz source archives can be unpacked
 $(foreach tool, $(filter-out xz,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/xz/install))
 
-$(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(curdir)/tar/install))
-tools-y += tar
+# make any tool depend on tar, xz and patch to ensure that archives can be unpacked and patched properly
+tools-core := tar xz patch
 
-$(curdir)/tar/compile := $(curdir)/flock/install
-tools-y += flock
+$(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/install,$(tools-core))))
+tools-y += $(tools-core)
+
+# make core tools depend on sed and flock
+$(foreach tool, $(tools-core), $(eval $(curdir)/$(tool)/compile += $(curdir)/sed/install))
+
+$(curdir)/sed/compile := $(curdir)/flock/install
+tools-y += flock sed
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
 $(curdir)/builddirs-default := $(tools-y)
