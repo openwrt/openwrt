@@ -109,7 +109,7 @@ static struct spi_board_info gl_ar300m_spi_info[] = {
 		.bus_num	= 0,
 		.chip_select	= 1,
 		.max_speed_hz	= 25000000,
-		.modalias	= "ath79-spinand",
+		.modalias	= "mt29f",
 		.platform_data	= NULL,
 	}
 };
