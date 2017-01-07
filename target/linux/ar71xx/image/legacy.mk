@@ -199,7 +199,7 @@ define Image/BuildLoader
 		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
 		LOADER_DATA="$(KDIR)/vmlinux$(5).bin.lzma" BOARD="$(1)" \
 		compile loader.$(2)
-	-$(CP) $(KDIR)/loader-$(1).$(2) $(KDIR)/loader-$(1)$(5).$(2)
+	-$(if $(5),$(CP) $(KDIR)/loader-$(1).$(2) $(KDIR)/loader-$(1)$(5).$(2))
 endef
 
 #
