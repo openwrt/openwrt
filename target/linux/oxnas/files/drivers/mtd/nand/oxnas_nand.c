@@ -120,7 +120,6 @@ static int oxnas_nand_probe(struct platform_device *pdev)
 
 	/* Only a single chip node is supported */
 	count = of_get_child_count(np);
-	pr_info("########### count: %d\n", count);
 	if (count > 1)
 		return -EINVAL;
 
@@ -150,12 +149,10 @@ static int oxnas_nand_probe(struct platform_device *pdev)
 
 		/* Scan to find existence of the device */
 		err = nand_scan(mtd, 1);
-		pr_info("########### nand_scan err: %d\n", err);
 		if (err)
 			return err;
 
 		err = mtd_device_register(mtd, NULL, 0);
-		pr_info("########### mtd_device_register err: %d\n", err);
 		if (err) {
 			nand_release(mtd);
 			return err;
@@ -164,8 +161,6 @@ static int oxnas_nand_probe(struct platform_device *pdev)
 		oxnas->chips[nchips] = chip;
 		++nchips;
 	}
-
-	pr_info("########### nchips: %d\n", nchips);
 
 	/* Exit if no chips found */
 	if (!nchips)
