@@ -546,6 +546,7 @@ define KernelPackage/ixgbe
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
   DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp
   KCONFIG:=CONFIG_IXGBE \
+    CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=n \
     CONFIG_IXGBE_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbe/ixgbe.ko
