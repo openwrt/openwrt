@@ -5,6 +5,7 @@
 . /lib/oxnas.sh
 
 RAMFS_COPY_DATA=/lib/oxnas.sh
+REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
 	local board=$(oxnas_board_name)
