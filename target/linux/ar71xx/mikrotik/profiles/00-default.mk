@@ -5,13 +5,13 @@
 # See /LICENSE for more information.
 #
 
-define Profile/DefaultNoWifi
-	NAME:=Default Profile (no WiFi)
-	PACKAGES:=
-	PRIORITY := 2
+define Profile/Default
+	NAME:=Default Profile
+	PACKAGES:= \
+		kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport nand-utils
 endef
 
-define Profile/DefaultNoWifi/Description
+define Profile/Default/Description
 	Default package set compatible with most boards.
 endef
-$(eval $(call Profile,DefaultNoWifi))
+$(eval $(call Profile,Default))
