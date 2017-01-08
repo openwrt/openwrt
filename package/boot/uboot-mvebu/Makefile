@@ -42,7 +42,7 @@ define Package/uboot/template
 define Package/uboot-mvebu-$(1)
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@(TARGET_DEVICE_mvebu_DEVICE_$(3)||TARGET_mvebu_DEVICE_$(3))
+  DEPENDS:=@(TARGET_DEVICE_mvebu_DEVICE_$(3)||TARGET_mvebu_DEVICE_$(3)||TARGET_mvebu_Default)
   DEFAULT:=m
   HIDDEN:=1
   TITLE:=$(2)
