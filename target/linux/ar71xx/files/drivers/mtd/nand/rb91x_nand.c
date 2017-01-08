@@ -321,6 +321,7 @@ static int rb91x_nand_probe(struct platform_device *pdev)
 
 	rbni->chip.chip_delay	= 25;
 	rbni->chip.ecc.mode	= NAND_ECC_SOFT;
+	rbni->chip.options = NAND_NO_SUBPAGE_WRITE;
 
 	platform_set_drvdata(pdev, rbni);
 
