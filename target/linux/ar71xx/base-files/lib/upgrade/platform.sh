@@ -7,6 +7,7 @@
 
 PART_NAME=firmware
 RAMFS_COPY_DATA=/lib/ar71xx.sh
+[ -x /usr/sbin/nandwrite ] && RAMFS_COPY_BIN=/usr/sbin/nandwrite
 
 CI_BLKSZ=65536
 CI_LDADR=0x80060000
@@ -162,6 +163,15 @@ alfa_check_image() {
 	esac
 
 	return 0
+}
+
+platform_nand_board_name() {
+	local board=$(ar71xx_board_name)
+
+	case "$board" in
+	rb*) echo "routerboard";;
+	*) echo "$board";;
+	esac
 }
 
 platform_check_image() {
@@ -443,6 +453,10 @@ platform_check_image() {
 	tew-673gru)
 		dir825b_check_image "$1" && return 0
 		;;
+	rb*)
+		nand_do_platform_check routerboard $1
+		return $?
+		;;
 	c-60|\
 	nbg6716|\
 	r6100|\
@@ -570,6 +584,7 @@ platform_pre_upgrade() {
 	local board=$(ar71xx_board_name)
 
 	case "$board" in
+	rb*|\
 	c-60|\
 	nbg6716|\
 	r6100|\
@@ -580,6 +595,21 @@ platform_pre_upgrade() {
 	mr18|\
 	z1)
 		merakinand_do_upgrade "$1"
+		;;
+	esac
+}
+
+platform_nand_pre_upgrade() {
+	local board=$(ar71xx_board_name)
+
+	case "$board" in
+	rb*)
+		CI_KERNPART=none
+		local fw_mtd=$(find_mtd_part kernel)
+		fw_mtd="${fw_mtd/block/}"
+		[ -n "$fw_mtd" ] || return
+		mtd erase kernel
+		tar xf "$1" sysupgrade-routerboard/kernel -O | nandwrite -o "$fw_mtd" -
 		;;
 	esac
 }
