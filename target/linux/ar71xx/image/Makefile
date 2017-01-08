@@ -21,6 +21,9 @@ endif
 ifeq ($(SUBTARGET),nand)
 include ./nand.mk
 endif
+ifeq ($(SUBTARGET),mikrotik)
+include ./mikrotik.mk
+endif
 include ./legacy.mk
 
 define Build/netgear-squashfs
