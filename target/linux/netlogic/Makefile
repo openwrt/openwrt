@@ -17,4 +17,6 @@ KERNEL_PATCHVER:=3.18
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += kmod-ledtrig-netdev
+
 $(eval $(call BuildTarget))

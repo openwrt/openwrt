@@ -16,6 +16,8 @@ KERNEL_PATCHVER:=3.18
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += kmod-ledtrig-netdev
+
 define Target/Description
 	Build firmware images for Infineon WildPass (ADM8668) based routers
 	(e.g. T-Mobile branded Linksys WRTU54G-TM)

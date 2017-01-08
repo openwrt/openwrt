@@ -16,7 +16,9 @@ KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-mini kmod-ath5k swconfig kmod-gpio-button-hotplug
+DEFAULT_PACKAGES += wpad-mini kmod-ath5k swconfig kmod-gpio-button-hotplug \
+		    kmod-ledtrig-netdev
+
 
 define Target/Description
 	Build firmware images for Atheros SoC boards

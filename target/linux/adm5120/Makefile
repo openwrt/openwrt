@@ -19,6 +19,6 @@ include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += admswconfig wpad-mini kmod-input-core \
 		    kmod-input-polldev kmod-input-gpio-keys-polled kmod-button-hotplug \
-		    kmod-leds-gpio kmod-ledtrig-adm5120-switch
+		    kmod-leds-gpio kmod-ledtrig-adm5120-switch kmod-ledtrig-netdev
 
 $(eval $(call BuildTarget))

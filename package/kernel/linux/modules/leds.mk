@@ -54,21 +54,6 @@ endef
 $(eval $(call KernelPackage,ledtrig-gpio))
 
 
-define KernelPackage/ledtrig-netdev
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED NETDEV Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_NETDEV
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-netdev.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-netdev)
-endef
-
-define KernelPackage/ledtrig-netdev/description
- Kernel module to drive LEDs based on network activity
-endef
-
-$(eval $(call KernelPackage,ledtrig-netdev))
-
-
 define KernelPackage/ledtrig-netfilter
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED NetFilter Trigger

@@ -35,7 +35,7 @@ endef
 
 LINUX_TARGET_CONFIG:=$(CURDIR)/config/$(ARCH)
 
-DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim
+DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim kmod-ledtrig-netdev
 
 endif
 

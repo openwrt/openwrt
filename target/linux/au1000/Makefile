@@ -16,7 +16,7 @@ MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 KERNEL_PATCHVER:=3.18
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += wpad-mini yamonenv
+DEFAULT_PACKAGES += wpad-mini yamonenv kmod-ledtrig-netdev
 
 define Target/Description
 	Build firmware for RMI/AMD Alchemy 1500,1550 boards

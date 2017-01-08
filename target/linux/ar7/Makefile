@@ -17,7 +17,7 @@ KERNEL_PATCHVER:=3.18
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES+= swconfig
+DEFAULT_PACKAGES+= swconfig kmod-ledtrig-netdev
 
 define Target/Description
 	Build firmware images for TI AR7 based routers.

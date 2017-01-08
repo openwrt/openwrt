@@ -17,7 +17,7 @@ KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += ixp4xx-microcode fconfig
+DEFAULT_PACKAGES += ixp4xx-microcode fconfig kmod-ledtrig-netdev
 KERNELNAME:=zImage
 
 $(eval $(call BuildTarget))

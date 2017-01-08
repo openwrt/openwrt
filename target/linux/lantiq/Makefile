@@ -22,4 +22,6 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += kmod-ledtrig-netdev
+
 $(eval $(call BuildTarget))

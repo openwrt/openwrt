@@ -16,6 +16,6 @@ KERNELNAME:=Image dtbs zImage
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
 	kmod-mt76 kmod-leds-gpio kmod-gpio-button-hotplug swconfig \
-	wpad-mini
+	wpad-mini kmod-ledtrig-netdev
 
 $(eval $(call BuildTarget))

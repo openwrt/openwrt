@@ -19,6 +19,8 @@ DEVICE_TYPE:=developerboard
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += kmod-ledtrig-netdev
+
 define Target/Description
 	Build multi-platform images for the ARMv8 instruction set architecture
 endef

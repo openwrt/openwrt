@@ -21,6 +21,6 @@ DEFAULT_PACKAGES += \
 	kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
 	kmod-usb3 kmod-usb-dwc3-qcom kmod-usb-phy-qcom-dwc3 \
 	kmod-ath10k wpad-mini \
-	uboot-envtools
+	uboot-envtools kmod-ledtrig-netdev
 
 $(eval $(call BuildTarget))
