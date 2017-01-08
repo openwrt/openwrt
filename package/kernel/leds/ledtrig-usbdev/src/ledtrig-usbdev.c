@@ -24,14 +24,11 @@
 #include <linux/list.h>
 #include <linux/spinlock.h>
 #include <linux/device.h>
-#include <linux/sysdev.h>
 #include <linux/timer.h>
 #include <linux/ctype.h>
 #include <linux/slab.h>
 #include <linux/leds.h>
 #include <linux/usb.h>
-
-#include "leds.h"
 
 #define DEV_BUS_ID_SIZE		32
 
@@ -83,6 +80,27 @@ static ssize_t usbdev_trig_name_show(struct device *dev,
 	return strlen(buf) + 1;
 }
 
+struct usbdev_trig_match {
+	char *device_name;
+	struct usb_device *usb_dev;
+};
+
+static int usbdev_trig_find_usb_dev(struct usb_device *usb_dev, void *data)
+{
+	struct usbdev_trig_match *match = data;
+
+	if (strcmp(dev_name(&usb_dev->dev), match->device_name) != 0)
+		return 0;
+
+	if (WARN_ON(match->usb_dev))
+		return 0;
+
+	dev_dbg(&usb_dev->dev, "matched this device!\n");
+	match->usb_dev = usb_get_dev(usb_dev);
+
+	return 0;
+}
+
 static ssize_t usbdev_trig_name_store(struct device *dev,
 				      struct device_attribute *attr,
 				      const char *buf,
@@ -101,16 +119,18 @@ static ssize_t usbdev_trig_name_store(struct device *dev,
 		td->device_name[size - 1] = 0;
 
 	if (td->device_name[0] != 0) {
-		struct usb_device *usb_dev;
+		struct usbdev_trig_match match = {
+			.device_name = td->device_name,
+		};
 
 		/* check for existing device to update from */
-		usb_dev = usb_find_device_by_name(td->device_name);
-		if (usb_dev) {
+		usb_for_each_dev(&match, usbdev_trig_find_usb_dev);
+		if (match.usb_dev) {
 			if (td->usb_dev)
 				usb_put_dev(td->usb_dev);
 
-			td->usb_dev = usb_dev;
-			td->last_urbnum = atomic_read(&usb_dev->urbnum);
+			td->usb_dev = match.usb_dev;
+			td->last_urbnum = atomic_read(&match.usb_dev->urbnum);
 		}
 
 		/* updates LEDs, may start timers */
@@ -125,7 +145,7 @@ static DEVICE_ATTR(device_name, 0644, usbdev_trig_name_show,
 		   usbdev_trig_name_store);
 
 static ssize_t usbdev_trig_interval_show(struct device *dev,
-				 	 struct device_attribute *attr,
+					 struct device_attribute *attr,
 					 char *buf)
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
