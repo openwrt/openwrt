@@ -133,6 +133,7 @@ platform_check_image() {
 	ur-336un|\
 	v22rw-2x2|\
 	vocore|\
+	vocore2|\
 	vr500|\
 	w150m|\
 	w2914nsv2|\

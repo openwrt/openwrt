@@ -311,6 +311,9 @@ vocore)
 	ucidef_set_led_netdev "eth" "ETH" "$board:orange:eth" "eth0"
 	set_wifi_led "$board:green:status"
 	;;
+vocore2)
+	set_wifi_led "$board:fuchsia:status"
+	;;
 w502u)
 	set_usb_led "$board:blue:usb"
 	set_wifi_led "rt2800pci-phy0::radio"
