@@ -93,6 +93,21 @@ endef
 $(eval $(call KernelPackage,hwmon-nct6775))
 
 
+define KernelPackage/hwmon-coretemp
+  TITLE:=Intel Core/Core2/Atom thermal monitoring support
+  KCONFIG:=CONFIG_SENSORS_CORETEMP
+  FILES:=$(LINUX_DIR)/drivers/hwmon/coretemp.ko
+  AUTOLOAD:=$(call AutoProbe,coretemp)
+  $(call AddDepends/hwmon,@TARGET_x86)
+endef
+
+define KernelPackage/hwmon-coretemp/description
+ Kernel module for Intel Core/Core2/Atom thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-coretemp))
+
+
 define KernelPackage/hwmon-ina2xx
   TITLE:=INA2XX monitoring support
   KCONFIG:=CONFIG_SENSORS_INA2XX
