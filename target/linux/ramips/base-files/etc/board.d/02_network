@@ -53,6 +53,8 @@ ramips_setup_interfaces()
 	microwrt|\
 	mpr-a2|\
 	ncs601w|\
+	omega2 | \
+	omega2p | \
 	timecloud|\
 	w150m|\
 	widora-neo|\
@@ -365,6 +367,11 @@ ramips_setup_macs()
 	newifi-d1)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_add "$lan_mac" 2)
+		;;
+	omega2|\
+	omega2p)
+		wan_mac=$(mtd_get_mac_binary factory 4)
+		lan_mac=$(mtd_get_mac_binary factory 46)
 		;;
 	oy-0001)
 		lan_mac=$(mtd_get_mac_binary factory 40)
