@@ -207,3 +207,4 @@ obj-$(CONFIG_ATH79_MACH_WZR_450HP2)	+= mach-wzr-450hp2.o
 obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
 obj-$(CONFIG_ATH79_MACH_CARAMBOLA2)	+= mach-carambola2.o
 obj-$(CONFIG_ATH79_MACH_NBG6716)	+= mach-nbg6716.o
+obj-$(CONFIG_ATH79_MACH_ZSUN_SDREADER)	+= mach-zsun-sdreader.o
