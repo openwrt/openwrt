@@ -42,13 +42,6 @@ define Package/libustream-cyassl
   VARIANT:=cyassl
 endef
 
-define Package/libustream-polarssl
-  $(Package/libustream/default)
-  TITLE += (polarssl)
-  DEPENDS += +libpolarssl
-  VARIANT:=polarssl
-endef
-
 define Package/libustream-mbedtls
   $(Package/libustream/default)
   TITLE += (mbedtls)
@@ -61,9 +54,6 @@ ifeq ($(BUILD_VARIANT),cyassl)
   TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include/cyassl -DHAVE_SNI
   CMAKE_OPTIONS += -DCYASSL=on
 endif
-ifeq ($(BUILD_VARIANT),polarssl)
-  CMAKE_OPTIONS += -DPOLARSSL=on
-endif
 ifeq ($(BUILD_VARIANT),mbedtls)
   CMAKE_OPTIONS += -DMBEDTLS=on
 endif
@@ -75,10 +65,8 @@ endef
 
 Package/libustream-openssl/install = $(Package/libustream/default/install)
 Package/libustream-cyassl/install = $(Package/libustream/default/install)
-Package/libustream-polarssl/install = $(Package/libustream/default/install)
 Package/libustream-mbedtls/install = $(Package/libustream/default/install)
 
-$(eval $(call BuildPackage,libustream-polarssl))
 $(eval $(call BuildPackage,libustream-mbedtls))
 $(eval $(call BuildPackage,libustream-cyassl))
 $(eval $(call BuildPackage,libustream-openssl))
