@@ -15,9 +15,9 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
 		$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 			$(if $($(PROFILE)_UBIFS_OPTS),$($(PROFILE)_UBIFS_OPTS),$(UBIFS_OPTS)) \
 			$(if $(CONFIG_TARGET_UBIFS_FREE_SPACE_FIXUP),--space-fixup) \
-			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_NONE),--force-compr=none) \
-			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--force-compr=lzo) \
-			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--force-compr=zlib) \
+			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_NONE),--compr=none) \
+			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--compr=lzo) \
+			$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--compr=zlib) \
 			$(if $(shell echo $(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)),--jrn-size=$(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)) \
 			--squash-uids \
 			-o $(KDIR)/root.ubifs \

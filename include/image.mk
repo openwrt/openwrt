@@ -233,9 +233,9 @@ define Image/mkfs/ubifs
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
 		$(UBIFS_OPTS) $(call param_unmangle,$(call param_get,fs,$(1))) \
 		$(if $(CONFIG_TARGET_UBIFS_FREE_SPACE_FIXUP),--space-fixup) \
-		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_NONE),--force-compr=none) \
-		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--force-compr=lzo) \
-		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--force-compr=zlib) \
+		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_NONE),--compr=none) \
+		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_LZO),--compr=lzo) \
+		$(if $(CONFIG_TARGET_UBIFS_COMPRESSION_ZLIB),--compr=zlib) \
 		$(if $(shell echo $(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)),--jrn-size=$(CONFIG_TARGET_UBIFS_JOURNAL_SIZE)) \
 		--squash-uids \
 		-o $@ -d $(call mkfs_target_dir,$(1))
