@@ -99,6 +99,7 @@ platform_check_image() {
 	oy-0001|\
 	pbr-m1|\
 	psg1208|\
+	psg1218|\
 	psr-680w|\
 	px-4885|\
 	re6500|\
