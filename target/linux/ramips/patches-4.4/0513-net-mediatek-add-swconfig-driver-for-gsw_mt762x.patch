@@ -61,7 +61,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	GSW_ATTR_ENABLE_VLAN,
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mt7530.c
-@@ -0,0 +1,886 @@
+@@ -0,0 +1,890 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -100,7 +100,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#define MT7530_CPU_PORT		6
 +#define MT7530_NUM_PORTS	8
++#ifdef CONFIG_SOC_MT7621
++#define MT7530_NUM_VLANS	4095
++#else
 +#define MT7530_NUM_VLANS	16
++#endif
 +#define MT7530_MAX_VID		4095
 +#define MT7530_MIN_VID		0
 +
