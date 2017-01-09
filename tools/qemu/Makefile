@@ -18,15 +18,13 @@ include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CFLAGS += -I$(STAGING_DIR_HOST)/include/e2fsprogs
 
-define Host/Configure
-	(cd $(HOST_BUILD_DIR); \
-		CFLAGS="$(HOST_CFLAGS)" \
-		LDFLAGS="$(HOST_LDFLAGS)" \
-		$(HOST_CONFIGURE_CMD) \
-		--extra-cflags="$(HOST_CFLAGS)" \
-		--enable-uuid \
-	)
-endef
+HOST_CONFIGURE_VARS := \
+	CFLAGS="$(HOST_CFLAGS)" \
+	LDFLAGS="$(HOST_LDFLAGS)"
+
+HOST_CONFIGURE_ARGS := \
+	--extra-cflags="$(HOST_CFLAGS)" \
+	--enable-uuid
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) qemu-img
