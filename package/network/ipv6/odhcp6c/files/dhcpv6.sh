@@ -30,14 +30,15 @@ proto_dhcpv6_init_config() {
 	proto_config_add_int "soltimeout"
 	proto_config_add_boolean fakeroutes
 	proto_config_add_boolean sourcefilter
+	proto_config_add_boolean keep_ra_dnslifetime
 }
 
 proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter
-	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter
+	local reqaddress reqprefix clientid reqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime
+	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime
 
 
 	# Configure
@@ -60,6 +61,8 @@ proto_dhcpv6_setup() {
 	[ -n "$vendorclass" ] && append opts "-V$vendorclass"
 
 	[ -n "$userclass" ] && append opts "-u$userclass"
+
+	[ "$keep_ra_dnslifetime" = "1" ] && append opts "-L"
 
 	for opt in $reqopts; do
 		append opts "-r$opt"
