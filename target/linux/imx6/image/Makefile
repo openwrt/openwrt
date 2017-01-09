@@ -34,7 +34,7 @@ define Build/boot-overlay
 		$@.boot/6x_bootscript-$(DEVICE_NAME)
 
 	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
-		--space-fixup --force-compr=zlib --squash-uids \
+		--space-fixup --compr=zlib --squash-uids \
 		$(MKUBIFS_OPTS) -c 8124 \
 		-o $@.boot.ubifs -d $@.boot
 
