@@ -30,20 +30,10 @@
 #include <fcntl.h>
 #include <stdbool.h>
 
-#ifdef MBEDTLS
 #include <mbedtls/bignum.h>
 #include <mbedtls/x509_crt.h>
 #include <mbedtls/rsa.h>
 #include <mbedtls/pk.h>
-#define lib_wrapper(x) mbedtls_##x
-#define MD_SHA256	MBEDTLS_MD_SHA256
-#else
-#include <polarssl/bignum.h>
-#include <polarssl/x509_crt.h>
-#include <polarssl/rsa.h>
-#define lib_wrapper(x)	x
-#define MD_SHA256	POLARSSL_MD_SHA256
-#endif
 
 #define PX5G_VERSION "0.2"
 #define PX5G_COPY "Copyright (c) 2009 Steven Barth <steven@midlink.org>"
@@ -83,15 +73,15 @@ static void write_file(const char *path, int len, bool pem)
 	fclose(f);
 }
 
-static void write_key(lib_wrapper(pk_context) *key, const char *path, bool pem)
+static void write_key(mbedtls_pk_context *key, const char *path, bool pem)
 {
 	int len = 0;
 
 	if (pem) {
-		if (lib_wrapper(pk_write_key_pem(key, (void *) buf, sizeof(buf)) == 0))
+		if (mbedtls_pk_write_key_pem(key, (void *) buf, sizeof(buf)) == 0)
 			len = strlen(buf);
 	} else {
-		len = lib_wrapper(pk_write_key_der(key, (void *) buf, sizeof(buf)));
+		len = mbedtls_pk_write_key_der(key, (void *) buf, sizeof(buf));
 		if (len < 0)
 			len = 0;
 	}
@@ -99,17 +89,12 @@ static void write_key(lib_wrapper(pk_context) *key, const char *path, bool pem)
 	write_file(path, len, pem);
 }
 
-static void gen_key(lib_wrapper(pk_context) *key, int ksize, int exp, bool pem)
+static void gen_key(mbedtls_pk_context *key, int ksize, int exp, bool pem)
 {
-	lib_wrapper(pk_init(key));
+	mbedtls_pk_init(key);
 	fprintf(stderr, "Generating RSA private key, %i bit long modulus\n", ksize);
-#ifdef MBEDTLS
 	mbedtls_pk_setup(key, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA));
 	if (mbedtls_rsa_gen_key(mbedtls_pk_rsa(*key), _urandom, NULL, ksize, exp)) {
-#else
-	pk_init_ctx(key, lib_wrapper(pk_info_from_type(POLARSSL_PK_RSA)));
-	if (rsa_gen_key(pk_rsa(*key), _urandom, NULL, ksize, exp)) {
-#endif
 		fprintf(stderr, "error: key generation failed\n");
 		exit(1);
 	}
@@ -117,7 +102,7 @@ static void gen_key(lib_wrapper(pk_context) *key, int ksize, int exp, bool pem)
 
 int rsakey(char **arg)
 {
-	lib_wrapper(pk_context) key;
+	mbedtls_pk_context key;
 	unsigned int ksize = 512;
 	int exp = 65537;
 	char *path = NULL;
@@ -141,16 +126,16 @@ int rsakey(char **arg)
 	gen_key(&key, ksize, exp, pem);
 	write_key(&key, path, pem);
 
-	lib_wrapper(pk_free(&key));
+	mbedtls_pk_free(&key);
 
 	return 0;
 }
 
 int selfsigned(char **arg)
 {
-	lib_wrapper(pk_context) key;
-	lib_wrapper(x509write_cert) cert;
-	lib_wrapper(mpi) serial;
+	mbedtls_pk_context key;
+	mbedtls_x509write_cert cert;
+	mbedtls_mpi serial;
 
 	char *subject = "";
 	unsigned int ksize = 512;
@@ -227,34 +212,34 @@ int selfsigned(char **arg)
 	fprintf(stderr, "Generating selfsigned certificate with subject '%s'"
 			" and validity %s-%s\n", subject, fstr, tstr);
 
-	lib_wrapper(x509write_crt_init(&cert));
-	lib_wrapper(x509write_crt_set_md_alg(&cert, MD_SHA256));
-	lib_wrapper(x509write_crt_set_issuer_key(&cert, &key));
-	lib_wrapper(x509write_crt_set_subject_key(&cert, &key));
-	lib_wrapper(x509write_crt_set_subject_name(&cert, subject));
-	lib_wrapper(x509write_crt_set_issuer_name(&cert, subject));
-	lib_wrapper(x509write_crt_set_validity(&cert, fstr, tstr));
-	lib_wrapper(x509write_crt_set_basic_constraints(&cert, 0, -1));
-	lib_wrapper(x509write_crt_set_subject_key_identifier(&cert));
-	lib_wrapper(x509write_crt_set_authority_key_identifier(&cert));
+	mbedtls_x509write_crt_init(&cert);
+	mbedtls_x509write_crt_set_md_alg(&cert, MBEDTLS_MD_SHA256);
+	mbedtls_x509write_crt_set_issuer_key(&cert, &key);
+	mbedtls_x509write_crt_set_subject_key(&cert, &key);
+	mbedtls_x509write_crt_set_subject_name(&cert, subject);
+	mbedtls_x509write_crt_set_issuer_name(&cert, subject);
+	mbedtls_x509write_crt_set_validity(&cert, fstr, tstr);
+	mbedtls_x509write_crt_set_basic_constraints(&cert, 0, -1);
+	mbedtls_x509write_crt_set_subject_key_identifier(&cert);
+	mbedtls_x509write_crt_set_authority_key_identifier(&cert);
 
 	_urandom(NULL, buf, 8);
 	for (len = 0; len < 8; len++)
 		sprintf(sstr + len*2, "%02x", (unsigned char) buf[len]);
 
-	lib_wrapper(mpi_init(&serial));
-	lib_wrapper(mpi_read_string(&serial, 16, sstr));
-	lib_wrapper(x509write_crt_set_serial(&cert, &serial));
+	mbedtls_mpi_init(&serial);
+	mbedtls_mpi_read_string(&serial, 16, sstr);
+	mbedtls_x509write_crt_set_serial(&cert, &serial);
 
 	if (pem) {
-		if (lib_wrapper(x509write_crt_pem(&cert, (void *) buf, sizeof(buf), _urandom, NULL) < 0)) {
+		if (mbedtls_x509write_crt_pem(&cert, (void *) buf, sizeof(buf), _urandom, NULL) < 0) {
 			fprintf(stderr, "Failed to generate certificate\n");
 			return 1;
 		}
 
 		len = strlen(buf);
 	} else {
-		len = lib_wrapper(x509write_crt_der(&cert, (void *) buf, sizeof(buf), _urandom, NULL));
+		len = mbedtls_x509write_crt_der(&cert, (void *) buf, sizeof(buf), _urandom, NULL);
 		if (len < 0) {
 			fprintf(stderr, "Failed to generate certificate: %d\n", len);
 			return 1;
@@ -262,9 +247,9 @@ int selfsigned(char **arg)
 	}
 	write_file(certpath, len, pem);
 
-	lib_wrapper(x509write_crt_free(&cert));
-	lib_wrapper(mpi_free(&serial));
-	lib_wrapper(pk_free(&key));
+	mbedtls_x509write_crt_free(&cert);
+	mbedtls_mpi_free(&serial);
+	mbedtls_pk_free(&key);
 
 	return 0;
 }
