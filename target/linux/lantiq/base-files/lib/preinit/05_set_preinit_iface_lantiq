@@ -7,7 +7,7 @@ set_preinit_iface() {
 	board=$(lantiq_board_name)
 
 	case "$board" in
-	TDW8970)
+	TDW8970|TDW8980)
 		ifname=eth0
 		;;
 	esac
