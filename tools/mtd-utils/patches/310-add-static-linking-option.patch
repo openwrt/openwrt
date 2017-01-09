@@ -32,12 +32,12 @@
  
  $(foreach v,$(MTD_BINS),$(eval $(call mkdep,,$(v))))
  
-@@ -119,7 +119,7 @@ else
-   XZLDLIBS = -llzma
+@@ -114,7 +114,7 @@ else
+   LZOLDLIBS = -llzo2
  endif
  
--LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) $(XZLDLIBS) -lm -luuid
-+LDLIBS_mkfs.ubifs = $(call static_link,-lz $(LZOLDLIBS) $(XZLDLIBS)) -lm $(call static_link,-luuid)
+-LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) -lm -luuid
++LDLIBS_mkfs.ubifs = $(call static_link,-lz $(LZOLDLIBS)) -lm $(call static_link,-luuid)
  $(call mkdep,mkfs.ubifs/,mkfs.ubifs,,ubi-utils/libubi.a)
  
  #
