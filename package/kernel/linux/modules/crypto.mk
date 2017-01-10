@@ -160,7 +160,7 @@ $(eval $(call KernelPackage,crypto-seqiv))
 
 define KernelPackage/crypto-hw-caam
   TITLE:=Freescale CAAM driver (SEC4)
-  DEPENDS:=@TARGET_imx6||TARGET_mpc85xx +kmod-crypto-aead +kmod-crypto-authenc +kmod-crypto-hash +kmod-random-core
+  DEPENDS:=@TARGET_mpc85xx +kmod-crypto-aead +kmod-crypto-authenc +kmod-crypto-hash +kmod-random-core
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_FSL_CAAM \
