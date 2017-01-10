@@ -1566,7 +1566,7 @@ $(eval $(call KernelPackage,usbip-server))
 
 define KernelPackage/usb-chipidea-imx
   TITLE:=Support for ChipIdea controllers
-  DEPENDS:=@TARGET_imx6||TARGET_mxs +kmod-usb2 +USB_GADGET_SUPPORT:kmod-usb-gadget
+  DEPENDS:=@TARGET_mxs +kmod-usb2 +USB_GADGET_SUPPORT:kmod-usb-gadget
   KCONFIG:=\
 	CONFIG_USB_CHIPIDEA \
 	CONFIG_USB_CHIPIDEA_HOST=y \
@@ -1589,7 +1589,7 @@ $(eval $(call KernelPackage,usb-chipidea-imx,1))
 
 define KernelPackage/usb-mxs-phy
   TITLE:=Support for Freescale MXS USB PHY
-  DEPENDS:=@TARGET_imx6||TARGET_mxs +TARGET_mxs:kmod-usb-chipidea-imx
+  DEPENDS:=@TARGET_mxs +kmod-usb-chipidea-imx
   KCONFIG:=CONFIG_USB_MXS_PHY
   FILES:=\
 	$(LINUX_DIR)/drivers/usb/phy/phy-mxs-usb.ko
