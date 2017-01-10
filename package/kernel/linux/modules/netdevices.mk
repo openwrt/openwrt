@@ -362,7 +362,7 @@ $(eval $(call KernelPackage,via-rhine))
 define KernelPackage/via-velocity
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=VIA Velocity Gigabit Ethernet Adapter kernel support
-  DEPENDS:=@TARGET_ixp4xx||TARGET_mpc83xx||PCI_SUPPORT +kmod-lib-crc-ccitt
+  DEPENDS:=@PCI_SUPPORT +kmod-lib-crc-ccitt
   KCONFIG:=CONFIG_VIA_VELOCITY
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/via/via-velocity.ko
   AUTOLOAD:=$(call AutoProbe,via-velocity)
