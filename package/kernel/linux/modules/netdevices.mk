@@ -805,38 +805,6 @@ endef
 $(eval $(call KernelPackage,of-mdio))
 
 
-define KernelPackage/fsl-pq-mdio
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Freescale PQ MDIO bus support
-  DEPENDS:=@TARGET_mpc85xx +kmod-of-mdio
-  KCONFIG:=CONFIG_FSL_PQ_MDIO
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/freescale/fsl_pq_mdio.ko
-  AUTOLOAD:=$(call AutoLoad,42,fsl_pq_mdio)
-endef
-
-define KernelPackage/fsl-pq-mdio/description
- Kernel driver for the Freescale PQ MDIO bus
-endef
-
-$(eval $(call KernelPackage,fsl-pq-mdio))
-
-
-define KernelPackage/gianfar
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Gianfar Ethernet support
-  DEPENDS:=@TARGET_mpc85xx +kmod-fsl-pq-mdio
-  KCONFIG:=CONFIG_GIANFAR
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/freescale/gianfar_driver.ko
-  AUTOLOAD:=$(call AutoProbe,gianfar_driver)
-endef
-
-define KernelPackage/gianfar/description
- Kernel driver for Freescale Gianfar Ethernet support
-endef
-
-$(eval $(call KernelPackage,gianfar))
-
-
 define KernelPackage/vmxnet3
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=VMware VMXNET3 ethernet driver 
