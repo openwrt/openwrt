@@ -1,0 +1,49 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sat, 7 Jan 2017 21:36:05 +0100
+Subject: [PATCH] brcmfmac: setup wiphy bands after registering it first
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+During bands setup we disable all channels that firmware doesn't support
+in the current regulatory setup. If we do this before wiphy_register
+it will result in copying set flags (including IEEE80211_CHAN_DISABLED)
+to the orig_flags which is supposed to be persistent. We don't want this
+as regulatory change may result in enabling some channels. We shouldn't
+mess with orig_flags then (by changing them or ignoring them) so it's
+better to just take care of their proper values.
+
+This patch cleanups code a bit (by taking orig_flags more seriously) and
+allows further improvements like disabling really unavailable channels.
+We will need that e.g. if some frequencies should be disabled for good
+due to hardware setup (design).
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -6564,8 +6564,7 @@ static int brcmf_setup_wiphy(struct wiph
+ 			wiphy->bands[NL80211_BAND_5GHZ] = band;
+ 		}
+ 	}
+-	err = brcmf_setup_wiphybands(wiphy);
+-	return err;
++	return 0;
+ }
+ 
+ static s32 brcmf_config_dongle(struct brcmf_cfg80211_info *cfg)
+@@ -6930,6 +6929,12 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+ 		goto priv_out;
+ 	}
+ 
++	err = brcmf_setup_wiphybands(wiphy);
++	if (err) {
++		brcmf_err("Setting wiphy bands failed (%d)\n", err);
++		goto wiphy_unreg_out;
++	}
++
+ 	/* If cfg80211 didn't disable 40MHz HT CAP in wiphy_register(),
+ 	 * setup 40MHz in 2GHz band and enable OBSS scanning.
+ 	 */

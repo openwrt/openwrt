@@ -1,0 +1,72 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sat, 7 Jan 2017 23:43:45 +0100
+Subject: [PATCH] brcmfmac: make brcmf_of_probe more generic
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We may want to use Open Firmware for other devices than just SDIO ones.
+In future we may want to support more Broadcom properties so there is
+really no reason for such limitation.
+
+Call brcmf_of_probe for all kind of devices & move extra conditions to
+the body of that funcion.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
+@@ -299,11 +299,9 @@ struct brcmf_mp_device *brcmf_get_module
+ 			}
+ 		}
+ 	}
+-	if ((bus_type == BRCMF_BUSTYPE_SDIO) && (!found)) {
+-		/* No platform data for this device. In case of SDIO try OF
+-		 * (Open Firwmare) Device Tree.
+-		 */
+-		brcmf_of_probe(dev, &settings->bus.sdio);
++	if (!found) {
++		/* No platform data for this device, try OF (Open Firwmare) */
++		brcmf_of_probe(dev, bus_type, settings);
+ 	}
+ 	return settings;
+ }
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c
+@@ -23,14 +23,17 @@
+ #include "common.h"
+ #include "of.h"
+ 
+-void brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_pd *sdio)
++void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
++		    struct brcmf_mp_device *settings)
+ {
++	struct brcmfmac_sdio_pd *sdio = &settings->bus.sdio;
+ 	struct device_node *np = dev->of_node;
+ 	int irq;
+ 	u32 irqf;
+ 	u32 val;
+ 
+-	if (!np || !of_device_is_compatible(np, "brcm,bcm4329-fmac"))
++	if (!np || bus_type != BRCMF_BUSTYPE_SDIO ||
++	    !of_device_is_compatible(np, "brcm,bcm4329-fmac"))
+ 		return;
+ 
+ 	if (of_property_read_u32(np, "brcm,drive-strength", &val) == 0)
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h
+@@ -14,9 +14,11 @@
+  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ #ifdef CONFIG_OF
+-void brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_pd *sdio);
++void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
++		    struct brcmf_mp_device *settings);
+ #else
+-static void brcmf_of_probe(struct device *dev, struct brcmfmac_sdio_pd *sdio)
++static void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
++			   struct brcmf_mp_device *settings)
+ {
+ }
+ #endif /* CONFIG_OF */

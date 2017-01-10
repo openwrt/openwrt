@@ -1,0 +1,34 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sat, 7 Jan 2017 21:36:04 +0100
+Subject: [PATCH] brcmfmac: don't preset all channels as disabled
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+During init we take care of regulatory stuff by disabling all
+unavailable channels (see brcmf_construct_chaninfo) so this predisabling
+them is not really required (and this patch won't change any behavior).
+It will on the other hand allow more detailed runtime control over
+channels which is the main reason for this change.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -147,7 +147,6 @@ static struct ieee80211_rate __wl_rates[
+ 	.band			= NL80211_BAND_2GHZ,		\
+ 	.center_freq		= (_freq),			\
+ 	.hw_value		= (_channel),			\
+-	.flags			= IEEE80211_CHAN_DISABLED,	\
+ 	.max_antenna_gain	= 0,				\
+ 	.max_power		= 30,				\
+ }
+@@ -156,7 +155,6 @@ static struct ieee80211_rate __wl_rates[
+ 	.band			= NL80211_BAND_5GHZ,		\
+ 	.center_freq		= 5000 + (5 * (_channel)),	\
+ 	.hw_value		= (_channel),			\
+-	.flags			= IEEE80211_CHAN_DISABLED,	\
+ 	.max_antenna_gain	= 0,				\
+ 	.max_power		= 30,				\
+ }
