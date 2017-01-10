@@ -51,7 +51,7 @@ $(OVERRIDELIST):
 ifeq ($(SCAN_NAME),target)
   GREP_STRING=BuildTarget
 else
-  GREP_STRING=(Build/DefaultTargets|BuildPackage)
+  GREP_STRING=(Build/DefaultTargets|BuildPackage|KernelPackage)
 endif
 
 $(FILELIST): $(OVERRIDELIST)
