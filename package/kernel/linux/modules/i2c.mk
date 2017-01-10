@@ -104,21 +104,6 @@ endef
 
 $(eval $(call KernelPackage,i2c-gpio))
 
-I2C_IBM_IIC_MODULES:=\
-  CONFIG_I2C_IBM_IIC:drivers/i2c/busses/i2c-ibm_iic
-
-define KernelPackage/i2c-ibm-iic
-  $(call i2c_defaults,$(OF_I2C_MODULES),59)
-  TITLE:=IBM PPC 4xx on-chip I2C interface support
-  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx +kmod-i2c-core
-endef
-
-define KernelPackage/i2c-ibm-iic/description
- Kernel module for IIC peripheral found on embedded IBM PPC4xx based systems
-endef
-
-$(eval $(call KernelPackage,i2c-ibm-iic))
-
 I2C_TINY_USB_MODULES:= \
   CONFIG_I2C_TINY_USB:drivers/i2c/busses/i2c-tiny-usb
 
