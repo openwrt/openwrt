@@ -7,7 +7,6 @@
 
 define Profile/Default
 	NAME:=Default Profile (all drivers)
-	PACKAGES:=kmod-usb-core kmod-usb2 kmod-usb2-fsl
 endef
 
 define Profile/Default/Description

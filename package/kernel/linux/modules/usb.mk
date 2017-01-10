@@ -400,23 +400,6 @@ endef
 $(eval $(call KernelPackage,usb-ohci-pci))
 
 
-define KernelPackage/usb2-fsl
-  TITLE:=Support for Freescale USB2 controllers
-  DEPENDS:=@TARGET_mpc85xx
-  HIDDEN:=1
-  KCONFIG:=CONFIG_USB_FSL_MPH_DR_OF
-  FILES:=$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
-  AUTOLOAD:=$(call AutoLoad,39,fsl-mph-dr-of,1)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb2-fsl/description
- Kernel support for Freescale USB2 (EHCI) controllers
-endef
-
-$(eval $(call KernelPackage,usb2-fsl))
-
-
 define KernelPackage/usb2-omap
   TITLE:=Support for USB2 for OMAP
   DEPENDS:=@TARGET_omap +kmod-usb-phy-nop +kmod-usb-phy-am335x +kmod-usb2
@@ -464,8 +447,7 @@ define KernelPackage/usb2
 	+TARGET_brcm47xx:kmod-usb-bcma \
 	+TARGET_brcm47xx:kmod-usb-ssb \
 	+TARGET_bcm53xx:kmod-usb-bcma \
-	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb2 \
-	+TARGET_mpc85xx:kmod-usb2-fsl
+	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb2
   KCONFIG:=\
 	CONFIG_USB_EHCI_HCD \
 	CONFIG_USB_EHCI_ATH79=y \
@@ -486,10 +468,7 @@ define KernelPackage/usb2
   ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko),)
     FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko
   endif
-  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko),)
-    FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko
-  endif
-  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel ehci-fsl,1)
+  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel,1)
   $(call AddDepends/usb)
 endef
 
