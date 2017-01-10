@@ -240,36 +240,6 @@ endef
 $(eval $(call KernelPackage,crypto-hw-hifn-795x))
 
 
-define KernelPackage/crypto-hw-omap
-  TITLE:=TI OMAP hardware crypto modules
-  DEPENDS:=@TARGET_omap
-  KCONFIG:= \
-	CONFIG_CRYPTO_HW=y \
-	CONFIG_CRYPTO_DEV_OMAP_AES \
-	CONFIG_CRYPTO_DEV_OMAP_DES \
-	CONFIG_CRYPTO_DEV_OMAP_SHAM
-ifneq ($(wildcard $(LINUX_DIR)/drivers/crypto/omap-des.ko),)
-  FILES:= \
-	$(LINUX_DIR)/drivers/crypto/omap-aes.ko \
-	$(LINUX_DIR)/drivers/crypto/omap-des.ko \
-	$(LINUX_DIR)/drivers/crypto/omap-sham.ko
-  AUTOLOAD:=$(call AutoLoad,90,omap-aes omap-des omap-sham)
-else
-  FILES:= \
-	$(LINUX_DIR)/drivers/crypto/omap-aes.ko \
-	$(LINUX_DIR)/drivers/crypto/omap-sham.ko
-  AUTOLOAD:=$(call AutoLoad,90,omap-aes omap-sham)
-endif
-  $(call AddDepends/crypto,+kmod-crypto-manager +kmod-crypto-hash)
-endef
-
-define KernelPackage/crypto-hw-omap/description
-  Kernel support for the TI OMAP HW crypto engine.
-endef
-
-$(eval $(call KernelPackage,crypto-hw-omap))
-
-
 define KernelPackage/crypto-authenc
   TITLE:=Combined mode wrapper for IPsec
   DEPENDS:=+kmod-crypto-manager +LINUX_4_4:kmod-crypto-null

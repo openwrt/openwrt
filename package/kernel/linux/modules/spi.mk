@@ -93,7 +93,7 @@ $(eval $(call KernelPackage,spi-dev))
 define KernelPackage/spi-omap-24xx
   SUBMENU:=$(SPI_MENU)
   TITLE:=SPI omap 24xx
-  DEPENDS:=@(TARGET_omap24xx||TARGET_omap)
+  DEPENDS:=@TARGET_omap24xx
   KCONFIG:=CONFIG_SPI_OMAP24XX \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y

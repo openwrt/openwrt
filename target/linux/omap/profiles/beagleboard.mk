@@ -7,7 +7,7 @@
 
 define Profile/BEAGLEBOARD
 	NAME:=EBV BeagleBoard
-	DEFAULT_PACKAGES += kmod-usb2 kmod-usb2-omap \
+	DEFAULT_PACKAGES += \
 			kmod-usb-net kmod-usb-net-asix \
 			kmod-usb-net-asix-ax88179 kmod-usb-net-hso \
 			kmod-usb-net-kaweth kmod-usb-net-pegasus \

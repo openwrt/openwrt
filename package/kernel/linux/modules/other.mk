@@ -485,7 +485,7 @@ $(eval $(call KernelPackage,bcma))
 define KernelPackage/wdt-omap
   SUBMENU:=$(OTHER_MENU)
   TITLE:=OMAP Watchdog timer
-  DEPENDS:=@(TARGET_omap24xx||TARGET_omap35xx)
+  DEPENDS:=@TARGET_omap24xx
   KCONFIG:=CONFIG_OMAP_WATCHDOG
   FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/omap_wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,omap_wdt,1)
@@ -849,7 +849,7 @@ define KernelPackage/random-omap
   TITLE:=Hardware Random Number Generator OMAP support
   KCONFIG:=CONFIG_HW_RANDOM_OMAP
   FILES:=$(LINUX_DIR)/drivers/char/hw_random/omap-rng.ko
-  DEPENDS:=@(TARGET_omap24xx||TARGET_omap) +kmod-random-core
+  DEPENDS:=@TARGET_omap24xx +kmod-random-core
   AUTOLOAD:=$(call AutoProbe,random-omap)
 endef
 
