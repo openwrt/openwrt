@@ -1,6 +1,6 @@
-From 72fc448c4c970bdbba604ab340f16080b4f3bb17 Mon Sep 17 00:00:00 2001
+From 2c81de771f38e54324ede3f24118f4852570b384 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Thu, 26 Nov 2015 08:52:09 +0100
+Date: Thu, 26 Nov 2015 09:05:04 +0100
 Subject: [PATCH] mtd: spi-nor: include mtd.h header for struct mtd_info
  definition
 MIME-Version: 1.0
@@ -13,6 +13,7 @@ embed whole struct so we need to include a proper header.
 
 Fixes: 1976367173a4 ("mtd: spi-nor: embed struct mtd_info within struct spi_nor")
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 ---
  include/linux/mtd/spi-nor.h | 3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
