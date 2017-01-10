@@ -47,11 +47,11 @@ define Host/Compile
 endef
 
 define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR)/host/include
-	$(INSTALL_DATA) ./src/include/libintl.h $(STAGING_DIR)/host/include/
+	$(INSTALL_DIR) $(STAGING_DIR_HOSTPKG)/include
+	$(INSTALL_DATA) ./src/include/libintl.h $(STAGING_DIR_HOSTPKG)/include/
 
-	$(INSTALL_DIR) $(STAGING_DIR)/host/share/aclocal
-	$(INSTALL_DATA) ./src/m4/* $(STAGING_DIR)/host/share/aclocal/
+	$(INSTALL_DIR) $(STAGING_DIR_HOSTPKG)/share/aclocal
+	$(INSTALL_DATA) ./src/m4/* $(STAGING_DIR_HOSTPKG)/share/aclocal/
 endef
 
 define Package/libintl/install
