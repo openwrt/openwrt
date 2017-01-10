@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath10k-firmware
-PKG_SOURCE_DATE:=2016-12-15
+PKG_SOURCE_DATE:=2017-01-10
 PKG_SOURCE_VERSION:=fead2ed867af4e107265059b9f578179d7409867
 PKG_MIRROR_HASH:=87fb1998a728b3182d208b978185232decf49d1c72d1ec37c529fa9139354dcb
 PKG_RELEASE:=1
@@ -72,24 +72,24 @@ define Download/ct-firmware
   URL_FILE:=$($(1)_FIRMWARE_FILE_CT)
 endef
 
-QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin-18.rc2-lede
+QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin-19.rc1-lede
 define Download/ath10k-firmware-qca988x-ct
   $(call Download/ct-firmware,QCA988X,)
-  HASH:=43ee2cdde42b765671152d6491e5e6730ad57290baea3412f2b1b75a73563b23
+  HASH:=ad41b29a9eebf1066f993beb571f3bd13f14ea89336ef9d4f3b31ee57e7abe54
 endef
 $(eval $(call Download,ath10k-firmware-qca988x-ct))
 
-QCA99X0_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.005
+QCA99X0_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-9.bin-lede.001
 define Download/ath10k-firmware-qca99x0-ct
   $(call Download/ct-firmware,QCA99X0,ath10k-10-4)
-  HASH:=e6c69d82439eee49cea9dd34bb0198733e9c46d6405e714f47882dd3e48baed3
+  HASH:=61ff2b52617ae805579f423d6539284f056aba2b9f7e3629d600f6a5077ab703
 endef
 $(eval $(call Download,ath10k-firmware-qca99x0-ct))
 
-QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-8.bin-lede.005
+QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-9.bin-lede.001
 define Download/ath10k-firmware-qca9984-ct
   $(call Download/ct-firmware,QCA9984,ath10k-9984-10-4)
-  HASH:=0c935362f25a164c71328c52c57ac25834cc04c6a3e13eddb3c0a7473615347d
+  HASH:=e079db5059cf28979ff50c7f6706df87e96a375e8048deeb4f6ede5357577f74
 endef
 $(eval $(call Download,ath10k-firmware-qca9984-ct))
 
