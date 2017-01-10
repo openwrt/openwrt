@@ -90,7 +90,7 @@ define Device/ventana
 	kmod-sound-core kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
 	kmod-can kmod-can-flexcan kmod-can-raw \
 	kmod-hwmon-gsc \
-	kmod-leds-gpio kmod-pps-gpio kmod-gw16083 \
+	kmod-leds-gpio kmod-pps-gpio \
 	kobs-ng
   KERNEL += | boot-overlay
   IMAGES := nand.ubi bootfs.tar.gz
