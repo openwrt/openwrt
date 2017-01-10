@@ -86,7 +86,7 @@ define Device/ventana
 	imx6q-gw551x \
 	imx6q-gw552x \
 	imx6q-gw553x
-  DEVICE_PACKAGES := kmod-thermal-imx kmod-sky2 kmod-usb-chipidea-imx kmod-usb-mxs-phy \
+  DEVICE_PACKAGES := kmod-sky2 kmod-usb-chipidea-imx kmod-usb-mxs-phy \
 	kmod-sound-core kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
 	kmod-can kmod-can-flexcan kmod-can-raw \
 	kmod-hwmon-gsc \
@@ -116,7 +116,7 @@ endef
 define Device/wandboard
   DEVICE_TITLE := Wandboard Dual
   DEVICE_DTS := imx6dl-wandboard
-  DEVICE_PACKAGES := kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy
+  DEVICE_PACKAGES := kmod-usb-chipidea-imx kmod-usb-mxs-phy
 endef
 
 TARGET_DEVICES += \
