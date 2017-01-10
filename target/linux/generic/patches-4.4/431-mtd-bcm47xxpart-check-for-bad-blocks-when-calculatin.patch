@@ -13,7 +13,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -61,6 +61,34 @@ static void bcm47xxpart_add_part(struct
+@@ -62,6 +62,34 @@ static void bcm47xxpart_add_part(struct
  	part->mask_flags = mask_flags;
  }
  
@@ -48,53 +48,29 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  static const char *bcm47xxpart_trx_data_part_name(struct mtd_info *master,
  						  size_t offset)
  {
-@@ -182,6 +210,8 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -113,19 +141,22 @@ static int bcm47xxpart_parse_trx(struct
+ 	if (header.offset[2]) {
+ 		part = &parts[curr_part++];
+ 		part->name = "loader";
+-		part->offset = trx->offset + header.offset[i];
++		part->offset = bcm47xxpart_real_offset(master, trx->offset,
++						       header.offset[i]);
+ 		i++;
+ 	}
  
- 		/* TRX */
- 		if (buf[0x000 / 4] == TRX_MAGIC) {
-+			uint32_t tmp;
-+
- 			if (BCM47XXPART_MAX_PARTS - curr_part < 4) {
- 				pr_warn("Not enough partitions left to register trx, scanning stopped!\n");
- 				break;
-@@ -196,18 +226,18 @@ static int bcm47xxpart_parse(struct mtd_
- 			i = 0;
- 			/* We have LZMA loader if offset[2] points to sth */
- 			if (trx->offset[2]) {
-+				tmp = bcm47xxpart_real_offset(master, offset,
-+							      trx->offset[i]);
- 				bcm47xxpart_add_part(&parts[curr_part++],
--						     "loader",
--						     offset + trx->offset[i],
--						     0);
-+						     "loader", tmp, 0);
- 				i++;
- 			}
+ 	if (header.offset[i]) {
+ 		part = &parts[curr_part++];
+ 		part->name = "linux";
+-		part->offset = trx->offset + header.offset[i];
++		part->offset = bcm47xxpart_real_offset(master, trx->offset,
++						       header.offset[i]);
+ 		i++;
+ 	}
  
- 			if (trx->offset[i]) {
-+				tmp = bcm47xxpart_real_offset(master, offset,
-+							      trx->offset[i]);
- 				bcm47xxpart_add_part(&parts[curr_part++],
--						     "linux",
--						     offset + trx->offset[i],
--						     0);
-+						     "linux", tmp, 0);
- 				i++;
- 			}
+ 	if (header.offset[i]) {
+-		size_t offset = trx->offset + header.offset[i];
++		size_t offset = bcm47xxpart_real_offset(master, trx->offset,
++							header.offset[i]);
  
-@@ -219,11 +249,11 @@ static int bcm47xxpart_parse(struct mtd_
- 			if (trx->offset[i]) {
- 				const char *name;
- 
--				name = bcm47xxpart_trx_data_part_name(master, offset + trx->offset[i]);
-+				tmp = bcm47xxpart_real_offset(master, offset,
-+							      trx->offset[i]);
-+				name = bcm47xxpart_trx_data_part_name(master, tmp);
- 				bcm47xxpart_add_part(&parts[curr_part++],
--						     name,
--						     offset + trx->offset[i],
--						     0);
-+						     name, tmp, 0);
- 				i++;
- 			}
- 
+ 		part = &parts[curr_part++];
+ 		part->name = bcm47xxpart_trx_data_part_name(master, offset);
