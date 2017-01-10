@@ -240,24 +240,6 @@ endef
 $(eval $(call KernelPackage,crypto-hw-hifn-795x))
 
 
-define KernelPackage/crypto-hw-ppc4xx
-  TITLE:=AMCC PPC4xx hardware crypto module
-  DEPENDS:=@TARGET_ppc40x||TARGET_ppc44x
-  KCONFIG:= \
-	CONFIG_CRYPTO_HW=y \
-	CONFIG_CRYPTO_DEV_PPC4XX
-  FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.ko
-  AUTOLOAD:=$(call AutoLoad,90,crypto4xx)
-  $(call AddDepends/crypto,+kmod-crypto-manager +kmod-crypto-hash)
-endef
-
-define KernelPackage/crypto-hw-ppc4xx/description
-  Kernel support for the AMCC PPC4xx HW crypto engine.
-endef
-
-$(eval $(call KernelPackage,crypto-hw-ppc4xx))
-
-
 define KernelPackage/crypto-hw-omap
   TITLE:=TI OMAP hardware crypto modules
   DEPENDS:=@TARGET_omap
