@@ -323,6 +323,17 @@ endef
 
 TARGET_DEVICES += cr5000-nocloud
 
+define Device/pqi-air-pen
+  DEVICE_TITLE := PQI Air Pen
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage
+  BOARDNAME = PQI-AIR-PEN
+  IMAGE_SIZE = 7744k
+  CONSOLE = ttyATH0,115200
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(art)ro,64k(NVRAM)ro,7680k(firmware),64k(CONF)
+endef
+
+TARGET_DEVICES += pqi-air-pen
+
 define Device/antminer-s1
   $(Device/tplink-8mlzma)
   DEVICE_TITLE := Antminer-S1

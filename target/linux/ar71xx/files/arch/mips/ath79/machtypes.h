@@ -141,6 +141,7 @@ enum ath79_mach_type {
 	ATH79_MACH_ONION_OMEGA,			/* ONION OMEGA */
 	ATH79_MACH_PB42,			/* Atheros PB42 */
 	ATH79_MACH_PB44,			/* Atheros PB44 reference board */
+	ATH79_MACH_PQI_AIR_PEN,			/* PQI Air Pen */
 	ATH79_MACH_QIHOO_C301,			/* Qihoo 360 C301 */
 	ATH79_MACH_R6100,			/* NETGEAR R6100 */
 	ATH79_MACH_RB_2011G,			/* Mikrotik RouterBOARD 2011UAS-2HnD */
