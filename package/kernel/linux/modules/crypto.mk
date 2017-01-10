@@ -158,32 +158,6 @@ endef
 $(eval $(call KernelPackage,crypto-seqiv))
 
 
-define KernelPackage/crypto-hw-caam
-  TITLE:=Freescale CAAM driver (SEC4)
-  DEPENDS:=@TARGET_mpc85xx +kmod-crypto-aead +kmod-crypto-authenc +kmod-crypto-hash +kmod-random-core
-  KCONFIG:= \
-	CONFIG_CRYPTO_HW=y \
-	CONFIG_CRYPTO_DEV_FSL_CAAM \
-	CONFIG_CRYPTO_DEV_FSL_CAAM_JR \
-	CONFIG_CRYPTO_DEV_FSL_CAAM_CRYPTO_API \
-	CONFIG_CRYPTO_DEV_FSL_CAAM_AHASH_API \
-	CONFIG_CRYPTO_DEV_FSL_CAAM_RNG_API \
-	CONFIG_CRYPTO_DEV_FSL_CAAM_RINGSIZE=9 \
-	CONFIG_CRYPTO_DEV_FSL_CAAM_INTC=n \
-	CONFIG_CRYPTO_DEV_FSL_CAAM_DEBUG=n
-  FILES:= \
-	$(LINUX_DIR)/drivers/crypto/caam/caam.ko \
-	$(LINUX_DIR)/drivers/crypto/caam/caamalg.ko \
-	$(LINUX_DIR)/drivers/crypto/caam/caamhash.ko \
-	$(LINUX_DIR)/drivers/crypto/caam/caam_jr.ko \
-	$(LINUX_DIR)/drivers/crypto/caam/caamrng.ko
-  AUTOLOAD:=$(call AutoLoad,09,caam caamalg caamhash caam_jr caamrng)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-hw-caam))
-
-
 define KernelPackage/crypto-hw-talitos
   TITLE:=Freescale integrated security engine (SEC) driver
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-hash +kmod-random-core +kmod-crypto-authenc
