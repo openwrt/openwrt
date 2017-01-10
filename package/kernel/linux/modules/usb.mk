@@ -1564,46 +1564,6 @@ endef
 $(eval $(call KernelPackage,usbip-server))
 
 
-define KernelPackage/usb-chipidea-imx
-  TITLE:=Support for ChipIdea controllers
-  DEPENDS:=@TARGET_mxs +kmod-usb2 +USB_GADGET_SUPPORT:kmod-usb-gadget
-  KCONFIG:=\
-	CONFIG_USB_CHIPIDEA \
-	CONFIG_USB_CHIPIDEA_HOST=y \
-	CONFIG_USB_CHIPIDEA_UDC=y \
-	CONFIG_USB_CHIPIDEA_DEBUG=y
-  FILES:=\
-	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko \
-	$(if $(CONFIG_OF),$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc_imx.ko) \
-	$(if $(CONFIG_OF),$(LINUX_DIR)/drivers/usb/chipidea/usbmisc_imx.ko)
-  AUTOLOAD:=$(call AutoLoad,51,ci_hdrc $(if $(CONFIG_OF),ci_hdrc_imx usbmisc_imx),1)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-chipidea-imx/description
- Kernel support for USB ChipIdea controllers
-endef
-
-$(eval $(call KernelPackage,usb-chipidea-imx,1))
-
-
-define KernelPackage/usb-mxs-phy
-  TITLE:=Support for Freescale MXS USB PHY
-  DEPENDS:=@TARGET_mxs +kmod-usb-chipidea-imx
-  KCONFIG:=CONFIG_USB_MXS_PHY
-  FILES:=\
-	$(LINUX_DIR)/drivers/usb/phy/phy-mxs-usb.ko
-  AUTOLOAD:=$(call AutoLoad,52,phy-mxs-usb,1)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-mxs-phy/description
- Kernel support for Freescale MXS USB PHY
-endef
-
-$(eval $(call KernelPackage,usb-mxs-phy,1))
-
-
 define KernelPackage/usbmon
   TITLE:=USB traffic monitor
   KCONFIG:=CONFIG_USB_MON
