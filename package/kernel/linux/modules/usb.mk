@@ -55,45 +55,6 @@ endef
 $(eval $(call KernelPackage,usb-ledtrig-usbport))
 
 
-define KernelPackage/usb-musb-hdrc
-  TITLE:=Support for Mentor Graphics silicon dual role USB
-  KCONFIG:= \
-	CONFIG_USB_MUSB_HDRC \
-	CONFIG_USB_INVENTRA_DMA=n \
-	CONFIG_USB_TI_CPPI41_DMA=n \
-	CONFIG_MUSB_PIO_ONLY=y \
-	CONFIG_USB_MUSB_DUAL_ROLE=y \
-	CONFIG_USB_MUSB_GADGET=n \
-	CONFIG_USB_MUSB_HOST=n \
-	CONFIG_USB_MUSB_DEBUG=y
-  DEPENDS:= \
-	@TARGET_omap24xx +kmod-usb-gadget +kmod-usb-musb-tusb6010
-  FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
-  AUTOLOAD:=$(call AutoLoad,46,musb_hdrc)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-musb-hdrc/description
-  Kernel support for Mentor Graphics silicon dual role USB device.
-endef
-
-$(eval $(call KernelPackage,usb-musb-hdrc))
-
-
-define KernelPackage/usb-musb-tusb6010
-  TITLE:=Support for TUSB 6010
-  KCONFIG:=CONFIG_USB_MUSB_TUSB6010
-  DEPENDS:=@TARGET_omap24xx
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-musb-tusb6010/description
-  TUSB6010 support
-endef
-
-$(eval $(call KernelPackage,usb-musb-tusb6010))
-
-
 define KernelPackage/usb-phy-nop
   TITLE:=Support for USB NOP transceiver
   KCONFIG:=CONFIG_NOP_USB_XCEIV
