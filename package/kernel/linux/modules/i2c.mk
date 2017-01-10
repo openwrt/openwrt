@@ -104,21 +104,6 @@ endef
 
 $(eval $(call KernelPackage,i2c-gpio))
 
-I2C_MPC_MODULES:=\
-  CONFIG_I2C_MPC:drivers/i2c/busses/i2c-mpc
-
-define KernelPackage/i2c-mpc
-  $(call i2c_defaults,$(I2C_MPC_MODULES),59)
-  TITLE:=MPC I2C accessors
-  DEPENDS:=@TARGET_mpc52xx||TARGET_mpc83xx||TARGET_mpc85xx +kmod-i2c-core
-endef
-
-define KernelPackage/i2c-mpc/description
- Kernel module for Freescale MPC52xx MPC83xx MPC85xx I2C accessors
-endef
-
-$(eval $(call KernelPackage,i2c-mpc))
-
 I2C_IBM_IIC_MODULES:=\
   CONFIG_I2C_IBM_IIC:drivers/i2c/busses/i2c-ibm_iic
 
