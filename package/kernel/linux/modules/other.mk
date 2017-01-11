@@ -1129,3 +1129,55 @@ endef
 $(eval $(call KernelPackage,tpm-i2c-infineon))
 
 
+define KernelPackage/gpio-ich
+  TITLE:=Intel ICH GPIO support
+  SUBMENU:=$(OTHER_MENU)
+  KCONFIG:= \
+    CONFIG_GPIO_ICH
+  FILES:= \
+    $(LINUX_DIR)/drivers/gpio/gpio-ich.ko
+  AUTOLOAD:=$(call AutoLoad,55,gpio-ich)
+  DEPENDS:=@GPIO_SUPPORT
+endef
+
+define KernelPackage/gpio-ich/description
+  Intel ICH GPIO support.
+endef
+
+$(eval $(call KernelPackage,gpio-ich))
+
+
+define KernelPackage/iTCO_wdt
+  TITLE:=Intel TCO Watchdog Timer
+  SUBMENU:=$(OTHER_MENU)
+  KCONFIG:= \
+	CONFIG_ITCO_WDT \
+	CONFIG_ITCO_VENDOR_SUPPORT=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/iTCO_wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,iTCO_wdt,1)
+  DEPENDS:=+kmod-i2c-core
+endef
+
+define KernelPackage/iTCO_wdt/description
+  Kernel module for Intel TCO Watchdog Timer
+endef
+
+$(eval $(call KernelPackage,iTCO_wdt))
+
+
+define KernelPackage/w83627hf-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Winbond 83627HF Watchdog Timer
+  KCONFIG:=CONFIG_W83627HF_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/w83627hf_wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,w83627hf-wdt,1)
+endef
+
+define KernelPackage/w83627hf-wdt/description
+  Kernel module for Winbond 83627HF Watchdog Timer
+endef
+
+$(eval $(call KernelPackage,w83627hf-wdt))
+
+
