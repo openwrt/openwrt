@@ -28,7 +28,6 @@ define Device/Default
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k
   IMAGES := sysupgrade.tar
-  UBINIZE_OPTS := -E 5
   IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
 
@@ -60,6 +59,7 @@ define Device/linksys-audi
   KERNEL_SIZE := 2624k
   FILESYSTEMS := squashfs
   IMAGES += factory.bin
+  UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
 endef
 
@@ -70,6 +70,7 @@ define Device/linksys-viper
   KERNEL_SIZE := 2688k
   FILESYSTEMS := squashfs
   IMAGES += factory.bin
+  UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
 endef
 
