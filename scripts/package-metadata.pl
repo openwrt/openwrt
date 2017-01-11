@@ -215,11 +215,13 @@ sub mconf_depends {
 				$flags =~ /@/ or $depend = "PACKAGE_$depend";
 			}
 		}
+
 		if ($condition) {
 			if ($m =~ /select/) {
 				next if $depend eq $condition;
 				$depend = "$depend if $condition";
 			} else {
+				next if $dep->{"$depend if $condition"};
 				$depend = "!($condition) || $depend" unless $dep->{$condition} eq 'select';
 			}
 		}
