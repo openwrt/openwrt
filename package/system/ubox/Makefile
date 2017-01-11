@@ -41,11 +41,11 @@ define Package/ubox/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/getrandom $(1)/usr/bin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libvalidate.so $(1)/lib
 
-	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/rmmod
-	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/insmod
-	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/lsmod
-	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/modinfo
-	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/modprobe
+	$(LN) kmodloader $(1)/sbin/rmmod
+	$(LN) kmodloader $(1)/sbin/insmod
+	$(LN) kmodloader $(1)/sbin/lsmod
+	$(LN) kmodloader $(1)/sbin/modinfo
+	$(LN) kmodloader $(1)/sbin/modprobe
 endef
 
 define Package/logd/install
