@@ -617,7 +617,10 @@ wpa_supplicant_add_network() {
 		psk)
 			local passphrase
 
-			hostapd_append_wpa_key_mgmt
+			if [ "$_w_mode" != "mesh" ]; then
+				hostapd_append_wpa_key_mgmt
+			fi
+
 			key_mgmt="$wpa_key_mgmt"
 
 			if [ ${#key} -eq 64 ]; then
