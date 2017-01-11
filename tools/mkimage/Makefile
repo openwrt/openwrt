@@ -31,8 +31,8 @@ define Host/Prepare
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) defconfig   HOSTCFLAGS="$(HOST_CPPFLAGS) $(HOST_CFLAGS)" HOSTLDFLAGS="$(HOST_LDFLAGS) $$$$(pkg-config --static --libs libcrypto)"
-	$(MAKE) -C $(HOST_BUILD_DIR) tools-only  HOSTCFLAGS="$(HOST_CPPFLAGS) $(HOST_CFLAGS)" HOSTLDFLAGS="$(HOST_LDFLAGS) $$$$(pkg-config --static --libs libcrypto)"
+	$(MAKE) -C $(HOST_BUILD_DIR) defconfig   HOSTCFLAGS="$(HOST_CPPFLAGS) $(HOST_CFLAGS)" HOSTLDFLAGS="$(HOST_LDFLAGS)" HOST_LOADLIBES="$$$$(pkg-config --static --libs libcrypto)"
+	$(MAKE) -C $(HOST_BUILD_DIR) tools-only  HOSTCFLAGS="$(HOST_CPPFLAGS) $(HOST_CFLAGS)" HOSTLDFLAGS="$(HOST_LDFLAGS)" HOST_LOADLIBES="$$$$(pkg-config --static --libs libcrypto)"
 endef
 
 define Host/Install
