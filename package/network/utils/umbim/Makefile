@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/cmake.mk
 define Package/umbim
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+libubox +kmod-usb-net +kmod-usb-net-cdc-mbim +wwan
+  DEPENDS:=+libubox +USB_SUPPORT:kmod-usb-net +USB_SUPPORT:kmod-usb-net-cdc-mbim +wwan
   TITLE:=Control utility for mobile broadband modems
 endef
 
