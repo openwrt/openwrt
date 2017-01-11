@@ -279,7 +279,7 @@ static int rb4xx_cpld_probe(struct spi_device *spi)
 	cpld->spi = spi_dev_get(spi);
 	dev_set_drvdata(&spi->dev, cpld);
 
-	spi->mode = SPI_MODE_0;
+	spi->mode = SPI_MODE_0 | SPI_TX_DUAL;
 	spi->bits_per_word = 8;
 	err = spi_setup(spi);
 	if (err) {
