@@ -71,7 +71,10 @@ HOST_CONFIGURE_ARGS += \
 
 
 HOST_CONFIGURE_VARS += \
-	EMACS="no"
+	EMACS="no" \
+	am_cv_lib_iconv=no \
+	am_cv_func_iconv=no \
+	ac_cv_header_iconv_h=no \
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib/libintl-full/include
