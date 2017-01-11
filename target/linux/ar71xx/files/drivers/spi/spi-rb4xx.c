@@ -261,7 +261,7 @@ static int rb4xx_spi_setup(struct spi_device *spi)
 	struct rb4xx_spi *rbspi = spi_master_get_devdata(spi->master);
 	unsigned long flags;
 
-	if (spi->mode & ~(SPI_CS_HIGH)) {
+	if (spi->mode & ~(SPI_CS_HIGH | SPI_TX_DUAL)) {
 		dev_err(&spi->dev, "mode %x not supported\n",
 			(unsigned) spi->mode);
 		return -EINVAL;
