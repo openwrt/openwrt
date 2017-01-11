@@ -20,9 +20,7 @@ HOST_CONFIGURE_PARALLEL:=1
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_CMD := \
-	MAKEFLAGS="$(HOST_JOBS)" \
-	LDFLAGS="$$$$(pkg-config --static --libs libcrypto)" \
-		$(BASH) ./configure
+	MAKEFLAGS="$(HOST_JOBS)" $(BASH) ./configure
 
 HOST_CONFIGURE_VARS :=
 
