@@ -37,7 +37,7 @@
 		};
 
 		partition@50000 {
-			label = "linux";
+			label = "firmware";
 			reg = <0x50000 0x3b0000>;
 		};
 	};
@@ -96,7 +96,16 @@
 	mtd-mac-address = <&factory 0x4>;
 
 	port@0 {
-		mediatek,fixed-link = <1000 1 1 1>;
+		mediatek,fixed-link = <100 1 1 1>;
+	};
+
+	mdio-bus {
+		status = "okay";
+
+		phy0: ethernet-phy@0 {
+			phy-mode = "mii";
+			reg = <0>;
+		};
 	};
 };
 
