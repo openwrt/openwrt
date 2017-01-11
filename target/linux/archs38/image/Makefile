@@ -40,6 +40,13 @@ DEVICE_DTS_LIST:= axs103_idu nsim_hs_idu
 FAT32_BLOCK_SIZE=1024
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_AXS10X_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
+define Image/Prepare
+	# Build .dtb for all boards we may run on
+	$(foreach dts,$(DEVICE_DTS_LIST),
+		$(call Image/BuildDTB,$(DTS_DIR)/$(dts).dts,$(DTS_DIR)/$(dts).dtb)
+	)
+endef
+
 define Image/Build/SDCard
 	rm -f $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img
 	mkfs.fat $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img -C $(FAT32_BLOCKS)
@@ -67,11 +74,6 @@ define Image/BuildKernel
 		none, $(KERNEL_LOADADDR), $(KERNEL_ENTRY), \
 		$(KDIR)/vmlinux, \
 		$(BIN_DIR)/$(IMG_PREFIX)-uImage \
-	)
-
-	# Build .dtb for all boards we may run on
-	$(foreach dts,$(DEVICE_DTS_LIST),
-		$(call Image/BuildDTB,$(DTS_DIR)/$(dts).dts,$(DTS_DIR)/$(dts).dtb)
 	)
 endef
 
