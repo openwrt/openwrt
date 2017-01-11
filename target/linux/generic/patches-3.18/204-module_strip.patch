@@ -5,18 +5,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/include/linux/module.h
 +++ b/include/linux/module.h
-@@ -84,9 +84,10 @@ void trim_init_extable(struct module *m)
+@@ -84,6 +84,7 @@ void trim_init_extable(struct module *m)
  
  /* Generic info of form tag = "info" */
  #define MODULE_INFO(tag, info) __MODULE_INFO(tag, tag, info)
 +#define MODULE_INFO_STRIP(tag, info) __MODULE_INFO_STRIP(tag, tag, info)
  
  /* For userspace: you can also call me... */
--#define MODULE_ALIAS(_alias) MODULE_INFO(alias, _alias)
-+#define MODULE_ALIAS(_alias) MODULE_INFO_STRIP(alias, _alias)
- 
- /* Soft module dependencies. See man modprobe.d for details.
-  * Example: MODULE_SOFTDEP("pre: module-foo module-bar post: module-baz")
+ #define MODULE_ALIAS(_alias) MODULE_INFO(alias, _alias)
 @@ -127,12 +128,12 @@ void trim_init_extable(struct module *m)
   * Author(s), use "Name <email>" or just "Name", for multiple
   * authors use multiple MODULE_AUTHOR() statements/lines.
