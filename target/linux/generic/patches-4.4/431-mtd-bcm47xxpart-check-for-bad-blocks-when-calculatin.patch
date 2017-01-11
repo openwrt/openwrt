@@ -48,29 +48,44 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  static const char *bcm47xxpart_trx_data_part_name(struct mtd_info *master,
  						  size_t offset)
  {
-@@ -113,19 +141,22 @@ static int bcm47xxpart_parse_trx(struct
+@@ -91,6 +119,7 @@ static int bcm47xxpart_parse_trx(struct
+ {
+ 	struct trx_header header;
+ 	size_t bytes_read;
++	size_t offset;
+ 	int curr_part = 0;
+ 	int i, err;
+ 
+@@ -110,21 +139,25 @@ static int bcm47xxpart_parse_trx(struct
+ 
+ 	/* We have LZMA loader if offset[2] points to sth */
  	if (header.offset[2]) {
- 		part = &parts[curr_part++];
- 		part->name = "loader";
--		part->offset = trx->offset + header.offset[i];
-+		part->offset = bcm47xxpart_real_offset(master, trx->offset,
-+						       header.offset[i]);
+-		bcm47xxpart_add_part(&parts[curr_part++], "loader",
+-				     trx->offset + header.offset[i], 0);
++		offset = bcm47xxpart_real_offset(master, trx->offset,
++						 header.offset[i]);
++		bcm47xxpart_add_part(&parts[curr_part++], "loader", offset, 0);
  		i++;
  	}
  
  	if (header.offset[i]) {
- 		part = &parts[curr_part++];
- 		part->name = "linux";
--		part->offset = trx->offset + header.offset[i];
-+		part->offset = bcm47xxpart_real_offset(master, trx->offset,
-+						       header.offset[i]);
+-		bcm47xxpart_add_part(&parts[curr_part++], "linux",
+-				     trx->offset + header.offset[i], 0);
++		offset = bcm47xxpart_real_offset(master, trx->offset,
++						 header.offset[i]);
++		bcm47xxpart_add_part(&parts[curr_part++], "linux", offset, 0);
  		i++;
  	}
  
  	if (header.offset[i]) {
 -		size_t offset = trx->offset + header.offset[i];
-+		size_t offset = bcm47xxpart_real_offset(master, trx->offset,
-+							header.offset[i]);
+-		const char *name = bcm47xxpart_trx_data_part_name(master,
+-								  offset);
++		const char *name;
++
++		offset = bcm47xxpart_real_offset(master, trx->offset,
++						 header.offset[i]);
++		name = bcm47xxpart_trx_data_part_name(master, offset);
  
- 		part = &parts[curr_part++];
- 		part->name = bcm47xxpart_trx_data_part_name(master, offset);
+ 		bcm47xxpart_add_part(&parts[curr_part++], name, offset, 0);
+ 		i++;

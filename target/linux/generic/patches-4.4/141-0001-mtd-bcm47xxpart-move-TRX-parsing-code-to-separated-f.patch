@@ -14,12 +14,12 @@ is more than 1 TRX partition.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
- drivers/mtd/bcm47xxpart.c | 124 ++++++++++++++++++++++++++++------------------
- 1 file changed, 77 insertions(+), 47 deletions(-)
+ drivers/mtd/bcm47xxpart.c | 121 ++++++++++++++++++++++++++++------------------
+ 1 file changed, 74 insertions(+), 47 deletions(-)
 
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -83,6 +83,70 @@ out_default:
+@@ -83,6 +83,67 @@ out_default:
  	return "rootfs";
  }
  
@@ -28,7 +28,6 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +				 struct mtd_partition *parts,
 +				 size_t parts_len)
 +{
-+	struct mtd_partition *part;
 +	struct trx_header header;
 +	size_t bytes_read;
 +	int curr_part = 0;
@@ -50,25 +49,23 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +	/* We have LZMA loader if offset[2] points to sth */
 +	if (header.offset[2]) {
-+		part = &parts[curr_part++];
-+		part->name = "loader";
-+		part->offset = trx->offset + header.offset[i];
++		bcm47xxpart_add_part(&parts[curr_part++], "loader",
++				     trx->offset + header.offset[i], 0);
 +		i++;
 +	}
 +
 +	if (header.offset[i]) {
-+		part = &parts[curr_part++];
-+		part->name = "linux";
-+		part->offset = trx->offset + header.offset[i];
++		bcm47xxpart_add_part(&parts[curr_part++], "linux",
++				     trx->offset + header.offset[i], 0);
 +		i++;
 +	}
 +
 +	if (header.offset[i]) {
 +		size_t offset = trx->offset + header.offset[i];
++		const char *name = bcm47xxpart_trx_data_part_name(master,
++								  offset);
 +
-+		part = &parts[curr_part++];
-+		part->name = bcm47xxpart_trx_data_part_name(master, offset);
-+		part->offset = offset;
++		bcm47xxpart_add_part(&parts[curr_part++], name, offset, 0);
 +		i++;
 +	}
 +
@@ -90,7 +87,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  static int bcm47xxpart_parse(struct mtd_info *master,
  			     struct mtd_partition **pparts,
  			     struct mtd_part_parser_data *data)
-@@ -93,9 +157,7 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -93,9 +154,7 @@ static int bcm47xxpart_parse(struct mtd_
  	size_t bytes_read;
  	uint32_t offset;
  	uint32_t blocksize = master->erasesize;
@@ -100,7 +97,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	int possible_nvram_sizes[] = { 0x8000, 0xF000, 0x10000, };
  	int err;
  
-@@ -182,54 +244,14 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -182,54 +241,14 @@ static int bcm47xxpart_parse(struct mtd_
  
  		/* TRX */
  		if (buf[0x000 / 4] == TRX_MAGIC) {
@@ -157,7 +154,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  			offset = roundup(offset + trx->length, blocksize);
  			/* Next loop iteration will increase the offset */
  			offset -= blocksize;
-@@ -307,9 +329,17 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -307,9 +326,17 @@ static int bcm47xxpart_parse(struct mtd_
  				       parts[i + 1].offset : master->size;
  
  		parts[i].size = next_part_offset - parts[i].offset;
