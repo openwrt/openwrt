@@ -14,10 +14,6 @@ define Build/calculate-ep
 	$(eval KERNEL_ENTRY=$(shell $(KERNEL_CROSS)readelf -h $(1) | grep "Entry point address" | grep -o 0x.*))
 endef
 
-define Build/build-dtb
-	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$(DTS_DIR)/$(DEVICE_DTS).dtb)
-endef
-
 define Build/patch-dtb
 	$(STAGING_DIR_HOST)/bin/patch-dtb $@ $(DTS_DIR)/$(DEVICE_DTS).dtb
 endef
@@ -26,7 +22,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 # Root FS built-in
 define Device/vmlinux
 	KERNEL_SUFFIX := .elf
-	KERNEL := kernel-bin | build-dtb | patch-dtb
+	KERNEL := kernel-bin | patch-dtb
 	KERNEL_INITRAMFS_NAME = vmlinux-initramfs.elf
 endef
 
@@ -40,7 +36,7 @@ endif
 
 # Root FS on SD-card
 KERNEL_LOADADDR := 0x80000000
-DEVICE_DTS_LIST:= axs103_idu
+DEVICE_DTS_LIST:= axs103_idu nsim_hs_idu
 FAT32_BLOCK_SIZE=1024
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_AXS10X_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
@@ -74,7 +70,9 @@ define Image/BuildKernel
 	)
 
 	# Build .dtb for all boards we may run on
-	$(foreach DEVICE_DTS,$(shell echo $(DEVICE_DTS_LIST)), $(call Build/build-dtb))
+	$(foreach dts,$(DEVICE_DTS_LIST),
+		$(call Image/BuildDTB,$(DTS_DIR)/$(dts).dts,$(DTS_DIR)/$(dts).dtb)
+	)
 endef
 
 define Image/Build
