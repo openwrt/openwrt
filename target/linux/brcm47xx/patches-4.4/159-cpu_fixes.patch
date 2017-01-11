@@ -260,7 +260,7 @@
  #endif /* _ASM_R4KCACHE_H */
 --- a/arch/mips/include/asm/stackframe.h
 +++ b/arch/mips/include/asm/stackframe.h
-@@ -358,6 +358,10 @@
+@@ -365,6 +365,10 @@
  		.macro	RESTORE_SP_AND_RET
  		LONG_L	sp, PT_R29(sp)
  		.set	arch=r4000
