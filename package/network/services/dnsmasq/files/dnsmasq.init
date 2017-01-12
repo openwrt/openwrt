@@ -8,7 +8,6 @@ PROG=/usr/sbin/dnsmasq
 
 ADD_LOCAL_DOMAIN=1
 ADD_LOCAL_HOSTNAME=1
-ADD_WAN_HOSTNAME=0
 
 BASECONFIGFILE="/var/etc/dnsmasq.conf"
 BASEHOSTFILE="/tmp/hosts/dhcp"
@@ -294,26 +293,6 @@ dhcp_host_add() {
 	xappend "--dhcp-host=$macs${duid:+,id:$duid}${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip${hostid:+,[::$hostid]}}${name:+,$name}${leasetime:+,$leasetime}"
 }
 
-dhcp_this_host_add() {
-	# TODO: case-in do/not short-host or FQDN; UCI already intended ...
-	local ifname="$1"
-	local do_enable="$2"
-	local routerstub routername ifdashname
-
-
-	if [ "$do_enable" -gt 0 ] ; then
-		# All IP addresses discovered by dnsmasq will be labeled robustly (except fe80::)
-		ifdashname="${ifname//./-}"
-		routerstub="$( md5sum /etc/os-release )"
-		routerstub="router-${routerstub// */}"
-		routername="$( uci_get system @system[0] hostname $routerstub )"
-
-		xappend "--interface-name=$ifdashname.$routername.$DOMAIN,$ifname"
-		xappend "--interface-name=$routername.$DOMAIN,$ifname"
-		xappend "--interface-name=$routername,$ifname"
-	fi
-}
-
 dhcp_tag_add() {
 	local cfg="$1"
 
@@ -384,11 +363,7 @@ dhcp_add() {
 		DNS_SERVERS="$DNS_SERVERS $dnsserver"
 	}
 
-	append_bool "$cfg" ignore "--no-dhcp-interface=$ifname" && {
-		# Many ISP do not have useful names for DHCP customers (your WAN).
-		dhcp_this_host_add $ifname $ADD_WAN_HOSTNAME
-		return 0
-	}
+	append_bool "$cfg" ignore "--no-dhcp-interface=$ifname" && return 0
 
 	# Do not support non-static interfaces for now
 	[ static = "$proto" ] || return 0
@@ -405,9 +380,6 @@ dhcp_add() {
 	config_get leasetime "$cfg" leasetime
 	config_get options "$cfg" options
 	config_get_bool dynamicdhcp "$cfg" dynamicdhcp 1
-
-	# Put the router host name on this DHCP served interface address(es)
-	dhcp_this_host_add $ifname $ADD_LOCAL_HOSTNAME
 
 	leasetime="${leasetime:-12h}"
 	start="$(dhcp_calc "${start:-100}")"
@@ -633,7 +605,6 @@ dnsmasq_start()
 
 	config_get_bool ADD_LOCAL_DOMAIN "$cfg" add_local_domain 1
 	config_get_bool ADD_LOCAL_HOSTNAME "$cfg" add_local_hostname 1
-	config_get_bool ADD_WAN_HOSTNAME "$cfg" add_wan_hostname 0
 
 	config_get_bool readethers "$cfg" readethers
 	[ "$readethers" = "1" -a \! -e "/etc/ethers" ] && touch /etc/ethers
@@ -730,6 +701,27 @@ dnsmasq_start()
 	config_foreach filter_dnsmasq domain dhcp_domain_add "$cfg"
 	config_foreach filter_dnsmasq hostrecord dhcp_hostrecord_add "$cfg"
 	config_foreach filter_dnsmasq relay dhcp_relay_add "$cfg"
+
+	# add own hostname
+	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && {
+		local lanaddr lanaddr6
+		local ulaprefix="$(uci_get network @globals[0] ula_prefix)"
+		local hostname="$(uci_get system @system[0] hostname Lede)"
+
+		network_get_ipaddr lanaddr "lan" && {
+			dhcp_domain_add "" "$hostname" "$lanaddr"
+		}
+
+		[ -n "$ulaprefix" ] && network_get_ipaddrs6 lanaddr6 "lan" && {
+			for lanaddr6 in $lanaddr6; do
+				case "$lanaddr6" in
+					"${ulaprefix%%:/*}"*)
+						dhcp_domain_add "" "$hostname" "$lanaddr6"
+					;;
+				esac
+			done
+		}
+	}
 
 	echo >> $CONFIGFILE_TMP
 	config_foreach filter_dnsmasq srvhost dhcp_srv_add "$cfg"
