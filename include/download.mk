@@ -94,13 +94,10 @@ endif
 
 C_md5_deprecated = Use of $(2) is deprecated, switch to $(3)
 
-# Skip MD5SUM check in feeds until OpenWrt is updated
-ifneq ($(filter $(foreach dir,package tools toolchain, $(TOPDIR)/$(dir)/%),$(CURDIR)),)
 check_md5 = \
   $(if $(filter-out x,$(1)), \
     $(call check_warn,md5_deprecated,$(1),$(2),$(3)) \
   )
-endif
 
 hash_var = $(if $(filter-out x,$(1)),MD5SUM,HASH)
 endif
