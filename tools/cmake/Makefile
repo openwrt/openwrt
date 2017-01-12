@@ -29,4 +29,8 @@ HOST_CONFIGURE_VARS :=
 HOST_CONFIGURE_ARGS := \
 	--prefix=$(STAGING_DIR_HOST)
 
+ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
+  HOST_MAKE_FLAGS += VERBOSE=1
+endif
+
 $(eval $(call HostBuild))
