@@ -232,6 +232,9 @@ enum {
 #define MV_IDENT_VALUE_6176		0x1760
 #define MV_IDENT_STR_6176		"MV88E6176"
 
+#define MV_IDENT_VALUE_6352		0x3520
+#define MV_IDENT_STR_6352		"MV88E6352"
+
 #define MV_PVID_MASK			0x0fff
 
 #define MV_FDB_HI_MASK			0x00ff

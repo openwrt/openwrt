@@ -851,6 +851,9 @@ static int mvsw61xx_probe(struct platform_device *pdev)
 	case MV_IDENT_VALUE_6176:
 		model_str = MV_IDENT_STR_6176;
 		break;
+	case MV_IDENT_VALUE_6352:
+		model_str = MV_IDENT_STR_6352;
+		break;
 	default:
 		dev_err(&pdev->dev, "No compatible switch found at 0x%02x\n",
 				state->base_addr);
@@ -916,6 +919,7 @@ static const struct of_device_id mvsw61xx_match[] = {
 	{ .compatible = "marvell,88e6171" },
 	{ .compatible = "marvell,88e6172" },
 	{ .compatible = "marvell,88e6176" },
+	{ .compatible = "marvell,88e6352" },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, mvsw61xx_match);
