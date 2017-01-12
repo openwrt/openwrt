@@ -7,6 +7,12 @@
 
 OPENWRT_GIT = http://git.openwrt.org
 
+ifdef PKG_SOURCE_VERSION
+PKG_VERSION ?= $(if $(PKG_SOURCE_DATE),$(PKG_SOURCE_DATE)-)$(call version_abbrev,$(PKG_SOURCE_VERSION))
+PKG_SOURCE_SUBDIR ?= $(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE ?= $(PKG_SOURCE_SUBDIR).tar.xz
+endif
+
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Try to guess the download method from the URL
@@ -44,11 +50,11 @@ define DownloadMethod/unknown
 endef
 
 define DownloadMethod/default
-	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MD5SUM)" "$(URL_FILE)" $(foreach url,$(URL),"$(url)")
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" $(foreach url,$(URL),"$(url)")
 endef
 
 define wrap_mirror
-$(if $(if $(MIRROR),$(filter-out x,$(MIRROR_MD5SUM))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_MD5SUM)" "" || ( $(1) ),$(1))
+$(if $(if $(MIRROR),$(filter-out x,$(MIRROR_HASH))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_HASH)" "" || ( $(1) ),$(1))
 endef
 
 define DownloadMethod/cvs
@@ -160,11 +166,26 @@ define Download/Defaults
   FILE:=
   URL_FILE:=
   PROTO:=
-  MD5SUM:=
+  HASH=$$(MD5SUM)
+  MD5SUM:=x
   SUBDIR:=
   MIRROR:=1
+  MIRROR_HASH=$$(MIRROR_MD5SUM)
   MIRROR_MD5SUM:=x
   VERSION:=
+endef
+
+define Download/default
+  FILE:=$(PKG_SOURCE)
+  URL:=$(PKG_SOURCE_URL)
+  SUBDIR:=$(PKG_SOURCE_SUBDIR)
+  PROTO:=$(PKG_SOURCE_PROTO)
+  $(if $(PKG_SOURCE_MIRROR),MIRROR:=$(filter 1,$(PKG_MIRROR)))
+  $(if $(PKG_MIRROR_MD5SUM),MIRROR_MD5SUM:=$(PKG_MIRROR_MD5SUM))
+  $(if $(PKG_MIRROR_HASH),MIRROR_HASH:=$(PKG_MIRROR_HASH))
+  VERSION:=$(PKG_SOURCE_VERSION)
+  $(if $(PKG_MD5SUM),MD5SUM:=$(PKG_MD5SUM))
+  $(if $(PKG_HASH),HASH:=$(PKG_HASH))
 endef
 
 define Download

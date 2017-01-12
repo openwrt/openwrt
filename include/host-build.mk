@@ -5,6 +5,8 @@
 # See /LICENSE for more information.
 #
 
+include $(INCLUDE_DIR)/download.mk
+
 HOST_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
 HOST_INSTALL_DIR ?= $(HOST_BUILD_DIR)/host-install
 HOST_BUILD_PARALLEL ?=
@@ -35,7 +37,6 @@ HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.$(PKG_NAME)_installed
 
 override MAKEFLAGS=
 
-include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
 include $(INCLUDE_DIR)/autotools.mk
 
@@ -121,16 +122,6 @@ ifneq ($(if $(HOST_QUILT),,$(CONFIG_AUTOREBUILD)),)
     $(if $(if $(Host/Compile),$(filter prepare,$(MAKECMDGOALS)),1),,$(call rdep,$(HOST_BUILD_DIR),$(HOST_STAMP_BUILT)))
   endef
 endif
-
-define Download/default
-  FILE:=$(PKG_SOURCE)
-  URL:=$(PKG_SOURCE_URL)
-  PROTO:=$(PKG_SOURCE_PROTO)
-  SUBDIR:=$(PKG_SOURCE_SUBDIR)
-  VERSION:=$(PKG_SOURCE_VERSION)
-  MD5SUM:=$(PKG_MD5SUM)
-  MIRROR_MD5SUM:=$(PKG_MIRROR_MD5SUM)
-endef
 
 define Host/Exports/Default
   $(1) : export ACLOCAL_INCLUDE=$$(foreach p,$$(wildcard $$(STAGING_DIR_HOST)/share/aclocal $$(STAGING_DIR_HOST)/share/aclocal-* $(if $(IS_PACKAGE_BUILD),$$(STAGING_DIR)/host/share/aclocal $$(STAGING_DIR)/host/share/aclocal-*)),-I $$(p))
