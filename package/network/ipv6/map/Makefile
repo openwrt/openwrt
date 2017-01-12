@@ -20,7 +20,7 @@ define Package/map
   CATEGORY:=Network
   DEPENDS:=@IPV6 +kmod-ip6-tunnel +libubox +libubus +iptables-mod-conntrack-extra
   TITLE:=MAP-E and Lightweight 4over6 configuration support
-  MAINTAINER:=Steven Barth <steven@midlink.org>
+  MAINTAINER:=Hans Dedecker <dedeckeh@gmail.com>
 endef
 
 define Package/map/description
