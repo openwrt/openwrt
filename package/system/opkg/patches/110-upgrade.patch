@@ -1,6 +1,6 @@
 --- a/libopkg/opkg_install.c
 +++ b/libopkg/opkg_install.c
-@@ -1405,9 +1405,10 @@
+@@ -1405,9 +1405,11 @@ opkg_install_pkg(pkg_t *pkg, int from_up
  	  opkg_state_changed++;
  	  pkg->state_flag |= SF_FILELIST_CHANGED;
  
@@ -8,12 +8,13 @@
 +	  if (old_pkg) {
                 pkg_remove_orphan_dependent(pkg, old_pkg);
 -
++	       old_pkg->is_upgrade = 1;
 +	       pkg->is_upgrade = 1;
 +	  }
  	  /* XXX: BUG: we really should treat replacement more like an upgrade
  	   *      Instead, we're going to remove the replacees
  	   */
-@@ -1466,7 +1467,7 @@
+@@ -1466,7 +1468,7 @@ opkg_install_pkg(pkg_t *pkg, int from_up
  	  }
  
  
@@ -24,7 +25,7 @@
  			       " Package debris may remain!\n",
 --- a/libopkg/pkg.c
 +++ b/libopkg/pkg.c
-@@ -1285,6 +1285,12 @@
+@@ -1285,6 +1285,12 @@ pkg_run_script(pkg_t *pkg, const char *s
       setenv("PKG_ROOT",
  	    pkg->dest ? pkg->dest->root_dir : conf->default_dest->root_dir, 1);
  
@@ -39,7 +40,7 @@
  	  return 0;
 --- a/libopkg/pkg.h
 +++ b/libopkg/pkg.h
-@@ -184,6 +184,7 @@
+@@ -184,6 +184,7 @@ struct pkg
       /* this flag specifies whether the package was installed to satisfy another
        * package's dependancies */
       int auto_installed;
