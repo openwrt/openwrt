@@ -20,7 +20,9 @@ HOST_CONFIGURE_PARALLEL:=1
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_CMD := \
-	MAKEFLAGS="$(HOST_JOBS)" $(BASH) ./configure
+	MAKEFLAGS="$(HOST_JOBS)" \
+	$(BASH) ./configure \
+		$(if $(MAKE_JOBSERVER),--parallel="$(MAKE_JOBSERVER)")
 
 HOST_CONFIGURE_VARS :=
 
