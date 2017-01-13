@@ -29,7 +29,8 @@ EXCLUDE_DIRS:=*/ccache/* \
 	*.install.clean \
 	*.install.flags \
 	*.install \
-	*/doc
+	*/doc \
+	*/share/locale
 
 SDK_DIRS = \
 		$(STAGING_SUBDIR_HOST) \
