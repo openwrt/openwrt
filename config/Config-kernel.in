@@ -26,7 +26,7 @@ config KERNEL_PRINTK
 
 config KERNEL_CRASHLOG
 	bool "Crash logging"
-	depends on !(arm || powerpc || sparc || TARGET_uml)
+	depends on !(arm || powerpc || sparc || TARGET_uml || i386 || x86_64)
 	default y
 
 config KERNEL_SWAP
