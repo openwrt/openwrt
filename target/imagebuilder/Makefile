@@ -67,6 +67,7 @@ endif
 	-cp $(KERNEL_BUILD_DIR)/* $(IB_KDIR)/ # don't copy subdirectories here
 	-cp $(LINUX_DIR)/.config $(IB_LDIR)/
 	rm -f $(IB_KDIR)/root.*
+	rm -f $(IB_KDIR)/vmlinux.debug
 	if [ -x $(LINUX_DIR)/scripts/dtc/dtc ]; then \
 		$(INSTALL_DIR) $(IB_LDIR)/scripts/dtc; \
 		$(INSTALL_BIN) $(LINUX_DIR)/scripts/dtc/dtc $(IB_LDIR)/scripts/dtc/dtc; \
