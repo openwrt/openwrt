@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=armvirt
 BOARDNAME:=QEMU ARM Virtual Machine
-FEATURES:=fpu pci rtc
+FEATURES:=fpu pci rtc usb
 FEATURES+=cpiogz ext4 ramdisk squashfs targz
 CPU_TYPE:=cortex-a15
 CPU_SUBTYPE:=neon-vfpv4
