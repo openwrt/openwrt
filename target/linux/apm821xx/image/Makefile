@@ -232,7 +232,6 @@ endef
 
 define Build/hdd-img
 	./mbl_gen_hdd_img.sh $@ $@.boot $(IMAGE_ROOTFS)
-	$(if $(CONFIG_TARGET_IMAGES_GZIP),gzip -9n -c $@ > $(BIN_DIR)/$(notdir $@).gz)
 endef
 
 define Device/MyBookLiveDefault
