@@ -30,7 +30,7 @@ define Device/11acnas
   DTS := 11ACNAS
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := WeVO 11AC NAS Router
-  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621 kmod-mt76
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-mt76
 endef
 TARGET_DEVICES += 11acnas
 
@@ -83,7 +83,7 @@ define Device/newifi-d1
   DTS := Newifi-D1
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := Newifi D1
-  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += newifi-d1
 
@@ -91,8 +91,7 @@ define Device/pbr-m1
   DTS := PBR-M1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := PBR-M1
-  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci \
-	kmod-i2c-mt7621
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci
 endef
 TARGET_DEVICES += pbr-m1
 
@@ -157,7 +156,7 @@ define Device/w2914nsv2
   DTS := W2914NSV2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := WeVO W2914NS v2
-  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-i2c-mt7621 kmod-mt76
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-mt76
 endef
 TARGET_DEVICES += w2914nsv2
 
@@ -179,8 +178,7 @@ define Device/witi
   DTS := WITI
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := MQmaker WiTi
-  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci \
-	kmod-i2c-mt7621
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci
 endef
 TARGET_DEVICES += witi
 
