@@ -27,7 +27,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	bool is_vpu_clock;
  	bool is_mash_clock;
  };
-@@ -1242,7 +1244,7 @@ static struct clk *bcm2835_register_cloc
+@@ -1244,7 +1246,7 @@ static struct clk *bcm2835_register_cloc
  	init.parent_names = parents;
  	init.num_parents = data->num_mux_parents;
  	init.name = data->name;
@@ -36,7 +36,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  
  	if (data->is_vpu_clock) {
  		init.ops = &bcm2835_vpu_clock_clk_ops;
-@@ -1661,6 +1663,7 @@ static const struct bcm2835_clk_desc clk
+@@ -1663,6 +1665,7 @@ static const struct bcm2835_clk_desc clk
  		.div_reg = CM_VPUDIV,
  		.int_bits = 12,
  		.frac_bits = 8,

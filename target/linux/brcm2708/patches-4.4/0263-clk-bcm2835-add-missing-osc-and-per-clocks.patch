@@ -26,7 +26,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  #define CM_EMMCCTL		0x1c0
  #define CM_EMMCDIV		0x1c4
  
-@@ -1610,6 +1612,12 @@ static const struct bcm2835_clk_desc clk
+@@ -1612,6 +1614,12 @@ static const struct bcm2835_clk_desc clk
  		.div_reg = CM_TSENSDIV,
  		.int_bits = 5,
  		.frac_bits = 0),
@@ -39,7 +39,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  
  	/* clocks with vpu parent mux */
  	[BCM2835_CLOCK_H264]	= REGISTER_VPU_CLK(
-@@ -1624,6 +1632,7 @@ static const struct bcm2835_clk_desc clk
+@@ -1626,6 +1634,7 @@ static const struct bcm2835_clk_desc clk
  		.div_reg = CM_ISPDIV,
  		.int_bits = 4,
  		.frac_bits = 8),
@@ -47,7 +47,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  	/*
  	 * Secondary SDRAM clock.  Used for low-voltage modes when the PLL
  	 * in the SDRAM controller can't be used.
-@@ -1655,6 +1664,36 @@ static const struct bcm2835_clk_desc clk
+@@ -1657,6 +1666,36 @@ static const struct bcm2835_clk_desc clk
  		.is_vpu_clock = true),
  
  	/* clocks with per parent mux */
@@ -84,7 +84,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  
  	/* Arasan EMMC clock */
  	[BCM2835_CLOCK_EMMC]	= REGISTER_PER_CLK(
-@@ -1663,6 +1702,29 @@ static const struct bcm2835_clk_desc clk
+@@ -1665,6 +1704,29 @@ static const struct bcm2835_clk_desc clk
  		.div_reg = CM_EMMCDIV,
  		.int_bits = 4,
  		.frac_bits = 8),
@@ -114,7 +114,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  	/* HDMI state machine */
  	[BCM2835_CLOCK_HSM]	= REGISTER_PER_CLK(
  		.name = "hsm",
-@@ -1684,12 +1746,26 @@ static const struct bcm2835_clk_desc clk
+@@ -1686,12 +1748,26 @@ static const struct bcm2835_clk_desc clk
  		.int_bits = 12,
  		.frac_bits = 12,
  		.is_mash_clock = true),
@@ -141,7 +141,7 @@ Reviewed-by: Eric Anholt <eric@anholt.net>
  	/* TV encoder clock.  Only operating frequency is 108Mhz.  */
  	[BCM2835_CLOCK_VEC]	= REGISTER_PER_CLK(
  		.name = "vec",
-@@ -1698,6 +1774,20 @@ static const struct bcm2835_clk_desc clk
+@@ -1700,6 +1776,20 @@ static const struct bcm2835_clk_desc clk
  		.int_bits = 4,
  		.frac_bits = 0),
  

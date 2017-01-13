@@ -103,7 +103,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  };
  
  struct bcm2835_pll_divider {
-@@ -1151,6 +1204,26 @@ static int bcm2835_pll_divider_set_rate(
+@@ -1153,6 +1206,26 @@ static int bcm2835_pll_divider_set_rate(
  	return 0;
  }
  
@@ -130,7 +130,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  static const struct clk_ops bcm2835_pll_divider_clk_ops = {
  	.is_prepared = bcm2835_pll_divider_is_on,
  	.prepare = bcm2835_pll_divider_on,
-@@ -1158,6 +1231,7 @@ static const struct clk_ops bcm2835_pll_
+@@ -1160,6 +1233,7 @@ static const struct clk_ops bcm2835_pll_
  	.recalc_rate = bcm2835_pll_divider_get_rate,
  	.set_rate = bcm2835_pll_divider_set_rate,
  	.round_rate = bcm2835_pll_divider_round_rate,
@@ -138,7 +138,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  };
  
  /*
-@@ -1399,6 +1473,31 @@ static u8 bcm2835_clock_get_parent(struc
+@@ -1401,6 +1475,31 @@ static u8 bcm2835_clock_get_parent(struc
  	return (src & CM_SRC_MASK) >> CM_SRC_SHIFT;
  }
  
@@ -170,7 +170,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  static const struct clk_ops bcm2835_clock_clk_ops = {
  	.is_prepared = bcm2835_clock_is_on,
  	.prepare = bcm2835_clock_on,
-@@ -1408,6 +1507,7 @@ static const struct clk_ops bcm2835_cloc
+@@ -1410,6 +1509,7 @@ static const struct clk_ops bcm2835_cloc
  	.determine_rate = bcm2835_clock_determine_rate,
  	.set_parent = bcm2835_clock_set_parent,
  	.get_parent = bcm2835_clock_get_parent,
@@ -178,7 +178,7 @@ Acked-by: Eric Anholt <eric@anholt.net>
  };
  
  static int bcm2835_vpu_clock_is_on(struct clk_hw *hw)
-@@ -1426,6 +1526,7 @@ static const struct clk_ops bcm2835_vpu_
+@@ -1428,6 +1528,7 @@ static const struct clk_ops bcm2835_vpu_
  	.determine_rate = bcm2835_clock_determine_rate,
  	.set_parent = bcm2835_clock_set_parent,
  	.get_parent = bcm2835_clock_get_parent,

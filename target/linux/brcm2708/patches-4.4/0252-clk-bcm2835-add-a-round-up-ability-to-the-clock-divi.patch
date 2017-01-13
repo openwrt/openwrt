@@ -16,7 +16,7 @@ Signed-off-by: Michael Turquette <mturquette@baylibre.com>
 
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1164,22 +1164,24 @@ static int bcm2835_clock_is_on(struct cl
+@@ -1166,22 +1166,24 @@ static int bcm2835_clock_is_on(struct cl
  
  static u32 bcm2835_clock_choose_div(struct clk_hw *hw,
  				    unsigned long rate,
@@ -49,7 +49,7 @@ Signed-off-by: Michael Turquette <mturquette@baylibre.com>
  
  	/* clamp to min divider of 1 */
  	div = max_t(u32, div, 1 << CM_DIV_FRAC_BITS);
-@@ -1219,7 +1221,7 @@ static long bcm2835_clock_round_rate(str
+@@ -1221,7 +1223,7 @@ static long bcm2835_clock_round_rate(str
  				     unsigned long *parent_rate)
  {
  	struct bcm2835_clock *clock = bcm2835_clock_from_hw(hw);
@@ -58,7 +58,7 @@ Signed-off-by: Michael Turquette <mturquette@baylibre.com>
  
  	return bcm2835_clock_rate_from_divisor(clock, *parent_rate, div);
  }
-@@ -1288,7 +1290,7 @@ static int bcm2835_clock_set_rate(struct
+@@ -1290,7 +1292,7 @@ static int bcm2835_clock_set_rate(struct
  	struct bcm2835_clock *clock = bcm2835_clock_from_hw(hw);
  	struct bcm2835_cprman *cprman = clock->cprman;
  	const struct bcm2835_clock_data *data = clock->data;

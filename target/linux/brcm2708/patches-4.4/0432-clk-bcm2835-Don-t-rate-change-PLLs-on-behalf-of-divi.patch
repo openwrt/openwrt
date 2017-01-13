@@ -16,7 +16,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
 
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1209,7 +1209,7 @@ bcm2835_register_pll_divider(struct bcm2
+@@ -1211,7 +1211,7 @@ bcm2835_register_pll_divider(struct bcm2
  	init.num_parents = 1;
  	init.name = divider_name;
  	init.ops = &bcm2835_pll_divider_clk_ops;

@@ -11,7 +11,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
 
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -934,6 +934,9 @@ static long bcm2835_clock_rate_from_divi
+@@ -936,6 +936,9 @@ static long bcm2835_clock_rate_from_divi
  	const struct bcm2835_clock_data *data = clock->data;
  	u64 temp;
  
@@ -21,7 +21,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	/*
  	 * The divisor is a 12.12 fixed point field, but only some of
  	 * the bits are populated in any given clock.
-@@ -957,7 +960,12 @@ static unsigned long bcm2835_clock_get_r
+@@ -959,7 +962,12 @@ static unsigned long bcm2835_clock_get_r
  	struct bcm2835_clock *clock = bcm2835_clock_from_hw(hw);
  	struct bcm2835_cprman *cprman = clock->cprman;
  	const struct bcm2835_clock_data *data = clock->data;
@@ -35,7 +35,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  
  	return bcm2835_clock_rate_from_divisor(clock, parent_rate, div);
  }
-@@ -1403,6 +1411,28 @@ static const char *const bcm2835_clock_v
+@@ -1405,6 +1413,28 @@ static const char *const bcm2835_clock_v
  	__VA_ARGS__)
  
  /*
@@ -64,7 +64,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
   * the real definition of all the pll, pll_dividers and clocks
   * these make use of the above REGISTER_* macros
   */
-@@ -1847,7 +1877,12 @@ static const struct bcm2835_clk_desc clk
+@@ -1849,7 +1879,12 @@ static const struct bcm2835_clk_desc clk
  		.div_reg = CM_DSI1EDIV,
  		.int_bits = 4,
  		.frac_bits = 8),

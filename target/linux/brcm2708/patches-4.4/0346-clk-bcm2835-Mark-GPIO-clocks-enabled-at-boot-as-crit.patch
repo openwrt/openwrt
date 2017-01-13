@@ -19,7 +19,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
 
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1246,6 +1246,15 @@ static struct clk *bcm2835_register_cloc
+@@ -1248,6 +1248,15 @@ static struct clk *bcm2835_register_cloc
  	init.name = data->name;
  	init.flags = data->flags | CLK_IGNORE_UNUSED;
  
@@ -35,7 +35,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	if (data->is_vpu_clock) {
  		init.ops = &bcm2835_vpu_clock_clk_ops;
  	} else {
-@@ -1720,13 +1729,15 @@ static const struct bcm2835_clk_desc clk
+@@ -1722,13 +1731,15 @@ static const struct bcm2835_clk_desc clk
  		.div_reg = CM_GP1DIV,
  		.int_bits = 12,
  		.frac_bits = 12,

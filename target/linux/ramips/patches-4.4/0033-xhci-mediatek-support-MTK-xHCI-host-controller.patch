@@ -1420,7 +1420,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  /*
   * Returns zero if the TRB isn't in this segment, otherwise it returns the DMA
-@@ -3088,17 +3089,22 @@ static u32 xhci_td_remainder(struct xhci
+@@ -3121,17 +3122,22 @@ static u32 xhci_td_remainder(struct xhci
  {
  	u32 maxp, total_packet_count;
  
@@ -1447,7 +1447,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	/* Queueing functions don't count the current TRB into transferred */
  	return (total_packet_count - ((transferred + trb_buff_len) / maxp));
  }
-@@ -3486,7 +3492,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
+@@ -3519,7 +3525,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
  		field |= 0x1;
  
  	/* xHCI 1.0/1.1 6.4.1.2.1: Transfer Type field */
@@ -1507,11 +1507,11 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1631,6 +1631,7 @@ struct xhci_hcd {
+@@ -1634,6 +1634,7 @@ struct xhci_hcd {
  /* For controllers with a broken beyond repair streams implementation */
  #define XHCI_BROKEN_STREAMS	(1 << 19)
  #define XHCI_PME_STUCK_QUIRK	(1 << 20)
 +#define XHCI_MTK_HOST		(1 << 21)
+ #define XHCI_MISSING_CAS	(1 << 24)
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;
- 	/* There are two roothubs to keep track of bus suspend info for */

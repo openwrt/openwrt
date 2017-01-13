@@ -64,7 +64,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  
  	struct clk_onecell_data onecell;
  	struct clk *clks[];
-@@ -1168,7 +1186,7 @@ static struct clk *bcm2835_register_pll(
+@@ -1170,7 +1188,7 @@ static struct clk *bcm2835_register_pll(
  	memset(&init, 0, sizeof(init));
  
  	/* All of the PLLs derive from the external oscillator. */
@@ -73,7 +73,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	init.num_parents = 1;
  	init.name = data->name;
  	init.ops = &bcm2835_pll_clk_ops;
-@@ -1251,17 +1269,21 @@ static struct clk *bcm2835_register_cloc
+@@ -1253,17 +1271,21 @@ static struct clk *bcm2835_register_cloc
  	struct bcm2835_clock *clock;
  	struct clk_init_data init;
  	const char *parents[1 << CM_SRC_BITS];
@@ -102,7 +102,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	}
  
  	memset(&init, 0, sizeof(init));
-@@ -1883,8 +1905,18 @@ static int bcm2835_clk_probe(struct plat
+@@ -1885,8 +1907,18 @@ static int bcm2835_clk_probe(struct plat
  	if (IS_ERR(cprman->regs))
  		return PTR_ERR(cprman->regs);
  

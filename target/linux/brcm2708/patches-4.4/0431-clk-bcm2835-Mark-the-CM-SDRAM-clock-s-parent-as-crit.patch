@@ -26,7 +26,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  #include <linux/clk/bcm2835.h>
  #include <linux/debugfs.h>
  #include <linux/module.h>
-@@ -1839,6 +1840,25 @@ static const struct bcm2835_clk_desc clk
+@@ -1841,6 +1842,25 @@ static const struct bcm2835_clk_desc clk
  		.ctl_reg = CM_PERIICTL),
  };
  
@@ -52,7 +52,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  static int bcm2835_clk_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
-@@ -1848,6 +1868,7 @@ static int bcm2835_clk_probe(struct plat
+@@ -1850,6 +1870,7 @@ static int bcm2835_clk_probe(struct plat
  	const struct bcm2835_clk_desc *desc;
  	const size_t asize = ARRAY_SIZE(clk_desc_array);
  	size_t i;
@@ -60,7 +60,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  
  	cprman = devm_kzalloc(dev,
  			      sizeof(*cprman) + asize * sizeof(*clks),
-@@ -1878,6 +1899,10 @@ static int bcm2835_clk_probe(struct plat
+@@ -1880,6 +1901,10 @@ static int bcm2835_clk_probe(struct plat
  			clks[i] = desc->clk_register(cprman, desc->data);
  	}
  

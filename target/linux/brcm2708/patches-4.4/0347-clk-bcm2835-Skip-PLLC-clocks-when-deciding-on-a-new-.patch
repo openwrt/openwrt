@@ -22,7 +22,7 @@ Fixes: 41691b8862e2 ("clk: bcm2835: Add support for programming the audio domain
 
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1020,16 +1020,28 @@ static int bcm2835_clock_set_rate(struct
+@@ -1022,16 +1022,28 @@ static int bcm2835_clock_set_rate(struct
  	return 0;
  }
  
@@ -51,7 +51,7 @@ Fixes: 41691b8862e2 ("clk: bcm2835: Add support for programming the audio domain
  	/*
  	 * Select parent clock that results in the closest but lower rate
  	 */
-@@ -1037,6 +1049,17 @@ static int bcm2835_clock_determine_rate(
+@@ -1039,6 +1051,17 @@ static int bcm2835_clock_determine_rate(
  		parent = clk_hw_get_parent_by_index(hw, i);
  		if (!parent)
  			continue;

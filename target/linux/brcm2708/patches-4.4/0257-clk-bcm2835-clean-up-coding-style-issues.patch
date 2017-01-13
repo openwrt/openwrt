@@ -33,7 +33,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	const char *osc_name;
  
  	struct clk_onecell_data onecell;
-@@ -1344,7 +1341,7 @@ static int bcm2835_clock_set_rate(struct
+@@ -1346,7 +1343,7 @@ static int bcm2835_clock_set_rate(struct
  }
  
  static int bcm2835_clock_determine_rate(struct clk_hw *hw,
@@ -42,7 +42,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  {
  	struct bcm2835_clock *clock = bcm2835_clock_from_hw(hw);
  	struct clk_hw *parent, *best_parent = NULL;
-@@ -1402,7 +1399,6 @@ static u8 bcm2835_clock_get_parent(struc
+@@ -1404,7 +1401,6 @@ static u8 bcm2835_clock_get_parent(struc
  	return (src & CM_SRC_MASK) >> CM_SRC_SHIFT;
  }
  

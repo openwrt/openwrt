@@ -8,11 +8,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  arch/mips/ralink/rt3883.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/mips/ralink/rt3883.c b/arch/mips/ralink/rt3883.c
-index 4cef9162bd9b..47f9849bda3a 100644
 --- a/arch/mips/ralink/rt3883.c
 +++ b/arch/mips/ralink/rt3883.c
-@@ -36,7 +36,7 @@ static struct rt2880_pmx_func uartlite_func[] = { FUNC("uartlite", 0, 15, 2) };
+@@ -36,7 +36,7 @@ static struct rt2880_pmx_func uartlite_f
  static struct rt2880_pmx_func jtag_func[] = { FUNC("jtag", 0, 17, 5) };
  static struct rt2880_pmx_func mdio_func[] = { FUNC("mdio", 0, 22, 2) };
  static struct rt2880_pmx_func lna_a_func[] = { FUNC("lna a", 0, 32, 3) };
@@ -21,6 +19,3 @@ index 4cef9162bd9b..47f9849bda3a 100644
  static struct rt2880_pmx_func pci_func[] = {
  	FUNC("pci-dev", 0, 40, 32),
  	FUNC("pci-host2", 1, 40, 32),
--- 
-2.11.0
-
