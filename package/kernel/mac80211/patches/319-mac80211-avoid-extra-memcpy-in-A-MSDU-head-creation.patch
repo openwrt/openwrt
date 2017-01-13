@@ -34,22 +34,23 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 -	amsdu_hdr.h_proto = cpu_to_be16(subframe_len);
 -	memcpy(amsdu_hdr.h_source, skb->data + fast_tx->sa_offs, ETH_ALEN);
 -	memcpy(amsdu_hdr.h_dest, skb->data + fast_tx->da_offs, ETH_ALEN);
+-
+-	data = skb_push(skb, sizeof(amsdu_hdr));
+-	memmove(data, data + sizeof(amsdu_hdr), hdr_len);
+-	memcpy(data + hdr_len, &amsdu_hdr, sizeof(amsdu_hdr));
+-
 +	data = skb_push(skb, sizeof(*amsdu_hdr));
 +	memmove(data, data + sizeof(*amsdu_hdr), hdr_len);
-+	hdr = data;
+ 	hdr = data;
 +	amsdu_hdr = data + hdr_len;
 +	/* h_80211_src/dst is addr* field within hdr */
 +	h_80211_src = data + fast_tx->sa_offs;
 +	h_80211_dst = data + fast_tx->da_offs;
- 
--	data = skb_push(skb, sizeof(amsdu_hdr));
--	memmove(data, data + sizeof(amsdu_hdr), hdr_len);
--	memcpy(data + hdr_len, &amsdu_hdr, sizeof(amsdu_hdr));
++
 +	amsdu_hdr->h_proto = cpu_to_be16(subframe_len);
 +	ether_addr_copy(amsdu_hdr->h_source, h_80211_src);
 +	ether_addr_copy(amsdu_hdr->h_dest, h_80211_dst);
- 
--	hdr = data;
++
  	qc = ieee80211_get_qos_ctl(hdr);
  	*qc |= IEEE80211_QOS_CTL_A_MSDU_PRESENT;
  

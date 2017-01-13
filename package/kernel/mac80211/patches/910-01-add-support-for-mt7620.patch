@@ -91,8 +91,7 @@
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_REGNUM_MT7620, word);
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_WRITE_MT7620, 1);
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_BUSY_MT7620, 1);
- 
--		rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
++
 +			rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
 +		}
 +		break;
@@ -104,7 +103,8 @@
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_REGNUM, word);
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_WRITE, 1);
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_BUSY, 1);
-+
+ 
+-		rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
 +			rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
 +		}
 +		break;

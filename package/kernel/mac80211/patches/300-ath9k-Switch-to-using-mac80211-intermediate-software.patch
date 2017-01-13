@@ -875,10 +875,10 @@ Signed-off-by: Toke Høiland-Jørgensen <toke@toke.dk>
 -		ath_txq_lock(sc, txq);
 -	} else if (txctl->an && queue) {
 -		WARN_ON(tid->txq != txctl->txq);
--
+ 
 -		if (info->flags & IEEE80211_TX_CTL_CLEAR_PS_FILT)
 -			tid->clear_ps_filter = true;
- 
+-
 -		/*
 -		 * Add this frame to software queue for scheduling later
 -		 * for aggregation.
