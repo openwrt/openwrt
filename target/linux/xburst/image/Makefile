@@ -20,15 +20,10 @@ endif
 
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage.bin
 
-define kernel_entry
-0x$(shell $(TARGET_CROSS)nm $(1) 2>/dev/null | grep " kernel_entry" | cut -f1 -d ' ')
-endef
-
-
 define MkImageGzip
 	gzip -9n -c $(1) > $(1).gz
 	mkimage -A mips -O linux -T kernel -a 0x80010000 -C gzip \
-		-e $(call kernel_entry,$(KDIR)/vmlinux.debug) -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-e 0x80010000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
 		-d $(1).gz $(2)
 endef
 
