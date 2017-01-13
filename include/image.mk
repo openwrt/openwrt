@@ -147,6 +147,13 @@ define Image/BuildKernel/MkFIT
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/fit-$(1).its $(KDIR)/fit-$(1)$(7).itb
 endef
 
+ifdef CONFIG_TARGET_IMAGES_GZIP
+  define Image/Gzip
+	rm -f $(1).gz
+	gzip -9n $(1)
+  endef
+endif
+
 # $(1) source dts file
 # $(2) target dtb file
 # $(3) extra CPP flags
