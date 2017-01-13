@@ -213,8 +213,11 @@ _procd_set_param() {
 			json_add_string "" "$@"
 			json_close_array
 		;;
-		nice|reload_signal)
+		nice)
 			json_add_int "$type" "$1"
+		;;
+		reload_signal)
+			json_add_int "$type" $(kill -l "$1")
 		;;
 		pidfile|user|seccomp|capabilities)
 			json_add_string "$type" "$1"
