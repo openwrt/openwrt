@@ -45,6 +45,7 @@ define Image/Build/SDCard-vfat-ext4
 		$(KDIR)/root.$(1) \
 		$(CONFIG_TARGET_BOOTFS_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+	$(call Image/Gzip,$(BIN_DIR)/$(2))
 endef
 
 define Image/Build/SDCard-ext4-ext4
@@ -53,6 +54,7 @@ define Image/Build/SDCard-ext4-ext4
 		$(BIN_DIR)/uboot-mxs-$(4)/uboot-mxs-$(4).sb \
 		$(KDIR)/root.$(1) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+	$(call Image/Gzip,$(BIN_DIR)/$(2))
 endef
 
 define Image/Build/Profile/olinuxino-maxi
@@ -71,6 +73,7 @@ define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Profile/$(PROFILE),$(1),$(IMG_PREFIX)-$(PROFILE)-sdcard.img)
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+	$(call Image/Gzip,$(BIN_DIR)/$(IMG_PREFIX)-root.$(1))
 endef
 
 $(eval $(call BuildImage))
