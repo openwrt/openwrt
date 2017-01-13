@@ -17,17 +17,6 @@ define Build/dtb
         $(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb)
 endef
 
-define Build/clearfog-bundle
-	rm -f $@.new
-	$(TAR) -cp --numeric-owner --owner=0 --group=0 --sort=name \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		--file=$@.new -C $(TARGET_DIR)/ .
-	$(TAR) -rp --numeric-owner --owner=0 --group=0 --sort=name \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		--file=$@.new -C $(dir $(IMAGE_KERNEL)) $(notdir $(IMAGE_KERNEL)) $(notdir $(IMAGE_KERNEL).dtb)
-	gzip -9n -c $@.new > $@
-endef
-
 # SD-Card Images:
 # these values are optimized for a 4GB labeled sdcard that actually holds 7744512 sectors of 512 byte
 # MBR:            2048 sectors
@@ -186,8 +175,7 @@ define Device/armada-388-clearfog
   KERNEL := dtb | kernel-bin
   DEVICE_TITLE := SolidRun ClearFog
   DEVICE_PACKAGES := mkf2fs e2fsprogs swconfig kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
-  IMAGES := bundle.tar.gz sdcard.img.gz
-  IMAGE/bundle.tar.gz := clearfog-bundle
+  IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img | sdcard-img | gzip
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
 endef
