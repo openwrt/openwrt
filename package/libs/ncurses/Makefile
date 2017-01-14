@@ -135,7 +135,7 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/ncursesw6-config $(2)/bin/
 	$(SED) 's,^\(prefix\|exec_prefix\)=.*,\1=$(STAGING_DIR)/usr,g' -e 's/$$$$INCS //g' \
 		$(2)/bin/ncursesw6-config
-	ln -sf $(STAGING_DIR_HOSTPKG)/bin/ncursesw6-config $(1)/usr/bin/ncursesw6-config
+	ln -sf $(STAGING_DIR)/host/bin/ncursesw6-config $(1)/usr/bin/ncursesw6-config
 endef
 
 define Host/Compile
