@@ -329,6 +329,7 @@ hostapd_set_bss_options() {
 		set_default wps_device_type "6-0050F204-1"
 		set_default wps_device_name "Lede AP"
 		set_default wps_manufacturer "www.lede-project.org"
+		set_default wps_independent 1
 
 		wps_state=2
 		[ -n "$wps_configured" ] && wps_state=1
@@ -342,8 +343,8 @@ hostapd_set_bss_options() {
 		append bss_conf "device_name=$wps_device_name" "$N"
 		append bss_conf "manufacturer=$wps_manufacturer" "$N"
 		append bss_conf "config_methods=$config_methods" "$N"
+		append bss_conf "wps_independent=$wps_independent" "$N"
 		[ -n "$wps_ap_setup_locked" ] && append bss_conf "ap_setup_locked=$wps_ap_setup_locked" "$N"
-		[ -n "$wps_independent" ] && append bss_conf "wps_independent=$wps_independent" "$N"
 		[ "$wps_pbc_in_m1" -gt 0 ] && append bss_conf "pbc_in_m1=$wps_pbc_in_m1" "$N"
 	}
 
