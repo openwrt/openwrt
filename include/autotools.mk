@@ -85,11 +85,11 @@ endef
 
 define gettext_version_target
 	(cd $(PKG_BUILD_DIR) && \
-		GETTEXT_VERSION=$(shell $(STAGING_DIR)/host/bin/gettext -V | $(STAGING_DIR_HOST)/bin/sed -ne '1s/.*\([0-9]\.[0-9]\{2\}\.[0-9]\).*/\1/p' ) && \
+		GETTEXT_VERSION=$(shell $(STAGING_DIR_HOSTPKG)/bin/gettext -V | $(STAGING_DIR_HOST)/bin/sed -ne '1s/.*\([0-9]\.[0-9]\{2\}\.[0-9]\).*/\1/p' ) && \
 		$(STAGING_DIR_HOST)/bin/sed \
 			-i $(PKG_BUILD_DIR)/configure.ac \
 			-e "s/AM_GNU_GETTEXT_VERSION(.*)/AM_GNU_GETTEXT_VERSION(\[$$$$GETTEXT_VERSION\])/g" && \
-		$(STAGING_DIR)/host/bin/autopoint --force \
+		$(STAGING_DIR_HOSTPKG)/bin/autopoint --force \
 	);
 endef
 
