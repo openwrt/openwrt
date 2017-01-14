@@ -8,6 +8,8 @@ PROG=/usr/sbin/dnsmasq
 
 ADD_LOCAL_DOMAIN=1
 ADD_LOCAL_HOSTNAME=1
+ADD_WAN_FQDN=0
+ADD_LOCAL_FQDN=""
 
 BASECONFIGFILE="/var/etc/dnsmasq.conf"
 BASEHOSTFILE="/tmp/hosts/dhcp"
@@ -293,6 +295,55 @@ dhcp_host_add() {
 	xappend "--dhcp-host=$macs${duid:+,id:$duid}${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip${hostid:+,[::$hostid]}}${name:+,$name}${leasetime:+,$leasetime}"
 }
 
+dhcp_this_host_add() {
+	local net="$1"
+	local ifname="$2"
+	local mode="$3"
+	local routerstub routername ifdashname
+	local lanaddr lanaddr6 lanaddrs6 ulaprefix
+
+	if [ "$mode" -gt 0 ] ; then
+		ifdashname="${ifname//./-}"
+		routerstub="$( md5sum /etc/os-release )"
+		routerstub="router-${routerstub// */}"
+		routername="$( uci_get system @system[0] hostname $routerstub )"
+
+		if [ "$mode" -gt 1 ] ; then
+			if [ "$mode" -gt 2 ] ; then
+				if [ "$mode" -gt 3 ] ; then
+					xappend "--interface-name=$ifdashname.$routername.$DOMAIN,$ifname"
+				fi
+
+				xappend "--interface-name=$routername.$DOMAIN,$ifname"
+			fi
+
+			# All IP addresses discovered by dnsmasq will be labeled (except fe80::)
+			xappend "--interface-name=$routername,$ifname"
+
+		else
+			# This uses a static host file entry for only limited addresses.
+			# Use dnsmasq option "--expandhosts" to enable FQDN on host files.
+			ulaprefix="$(uci_get network @globals[0] ula_prefix)"
+			network_get_ipaddr lanaddr "$net"
+			network_get_ipaddrs6 lanaddrs6 "$net"
+
+			if [ -n "$lanaddr" ] ; then
+				dhcp_domain_add "" "$routername" "$lanaddr"
+			fi
+
+			if [ -n "$ulaprefix" -a -n "$lanaddrs6" ] ; then
+				for lanaddr6 in $lanaddrs6 ; do
+					case "$lanaddr6" in
+					"${ulaprefix%%:/*}"*)
+							dhcp_domain_add "" "$routername" "$lanaddr6"
+							;;
+					esac
+				done
+			fi
+		fi
+	fi
+}
+
 dhcp_tag_add() {
 	local cfg="$1"
 
@@ -363,7 +414,11 @@ dhcp_add() {
 		DNS_SERVERS="$DNS_SERVERS $dnsserver"
 	}
 
-	append_bool "$cfg" ignore "--no-dhcp-interface=$ifname" && return 0
+	append_bool "$cfg" ignore "--no-dhcp-interface=$ifname" && {
+		# Many ISP do not have useful names for DHCP customers (your WAN).
+		dhcp_this_host_add "$net" "$ifname" "$ADD_WAN_FQDN"
+		return 0
+	}
 
 	# Do not support non-static interfaces for now
 	[ static = "$proto" ] || return 0
@@ -380,6 +435,9 @@ dhcp_add() {
 	config_get leasetime "$cfg" leasetime
 	config_get options "$cfg" options
 	config_get_bool dynamicdhcp "$cfg" dynamicdhcp 1
+
+	# Put the router host name on this DHCP served interface address(es)
+	dhcp_this_host_add "$net" "$ifname" "$ADD_LOCAL_FQDN"
 
 	leasetime="${leasetime:-12h}"
 	start="$(dhcp_calc "${start:-100}")"
@@ -605,6 +663,13 @@ dnsmasq_start()
 
 	config_get_bool ADD_LOCAL_DOMAIN "$cfg" add_local_domain 1
 	config_get_bool ADD_LOCAL_HOSTNAME "$cfg" add_local_hostname 1
+	config_get ADD_LOCAL_FQDN "$cfg" add_local_fqdn ""
+	config_get ADD_WAN_FQDN "$cfg" add_wan_fqdn 0
+
+	if [ -z "$ADD_LOCAL_FQDN" ] ; then
+		# maintain support for previous UCI
+		ADD_LOCAL_FQDN="$ADD_LOCAL_HOSTNAME"
+	fi
 
 	config_get_bool readethers "$cfg" readethers
 	[ "$readethers" = "1" -a \! -e "/etc/ethers" ] && touch /etc/ethers
@@ -701,27 +766,6 @@ dnsmasq_start()
 	config_foreach filter_dnsmasq domain dhcp_domain_add "$cfg"
 	config_foreach filter_dnsmasq hostrecord dhcp_hostrecord_add "$cfg"
 	config_foreach filter_dnsmasq relay dhcp_relay_add "$cfg"
-
-	# add own hostname
-	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && {
-		local lanaddr lanaddr6
-		local ulaprefix="$(uci_get network @globals[0] ula_prefix)"
-		local hostname="$(uci_get system @system[0] hostname Lede)"
-
-		network_get_ipaddr lanaddr "lan" && {
-			dhcp_domain_add "" "$hostname" "$lanaddr"
-		}
-
-		[ -n "$ulaprefix" ] && network_get_ipaddrs6 lanaddr6 "lan" && {
-			for lanaddr6 in $lanaddr6; do
-				case "$lanaddr6" in
-					"${ulaprefix%%:/*}"*)
-						dhcp_domain_add "" "$hostname" "$lanaddr6"
-					;;
-				esac
-			done
-		}
-	}
 
 	echo >> $CONFIGFILE_TMP
 	config_foreach filter_dnsmasq srvhost dhcp_srv_add "$cfg"
