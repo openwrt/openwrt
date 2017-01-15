@@ -134,7 +134,8 @@ else
     GNU_TARGET_NAME=$(shell gcc -dumpmachine)
   endif
   REAL_GNU_TARGET_NAME=$(GNU_TARGET_NAME)
-  TARGET_DIR_NAME:=target-$(GNU_TARGET_NAME)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
+  LIBC:=$(call qstrip,$(CONFIG_LIBC))
+  TARGET_DIR_NAME:=target-$(GNU_TARGET_NAME)_$(LIBC)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
   TOOLCHAIN_DIR_NAME:=toolchain-$(GNU_TARGET_NAME)
 endif
 
