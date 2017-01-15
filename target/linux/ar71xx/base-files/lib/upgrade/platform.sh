@@ -254,6 +254,7 @@ platform_check_image() {
 	rocket-m-xw|\
 	rocket-m|\
 	rw2458n|\
+	sc1750|\
 	sc300m|\
 	sc450|\
 	sr3200|\

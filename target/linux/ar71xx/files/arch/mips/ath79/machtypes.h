@@ -169,6 +169,7 @@ enum ath79_mach_type {
 	ATH79_MACH_RB_SXTLITE5ND,		/* Mikrotik RouterBOARD SXT Lite 5nD */
 	ATH79_MACH_RE450,			/* TP-LINK RE450 */
 	ATH79_MACH_RW2458N,			/* Redwave RW2458N */
+	ATH79_MACH_SC1750,			/* Abicom SC1750 */
 	ATH79_MACH_SC300M,			/* Abicom SC300M */
 	ATH79_MACH_SC450,			/* Abicom SC450 */
 	ATH79_MACH_SMART_300,			/* NC-LINK SMART-300 */
