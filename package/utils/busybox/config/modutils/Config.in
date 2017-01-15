@@ -6,13 +6,6 @@
 
 menu "Linux Module Utilities"
 
-config BUSYBOX_CONFIG_MODINFO
-	bool "modinfo"
-	default BUSYBOX_DEFAULT_MODINFO
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  Show information about a Linux Kernel module
-
 config BUSYBOX_CONFIG_MODPROBE_SMALL
 	bool "Simplified modutils"
 	default BUSYBOX_DEFAULT_MODPROBE_SMALL
@@ -44,6 +37,42 @@ config BUSYBOX_CONFIG_MODPROBE_SMALL
 	  - rmmod is an alias to modprobe -r
 	  - depmod generates modules.dep.bb
 
+config BUSYBOX_CONFIG_DEPMOD
+	bool "depmod"
+	default BUSYBOX_DEFAULT_DEPMOD
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  depmod generates modules.dep (and potentially modules.alias
+	  and modules.symbols) that contain dependency information
+	  for modprobe.
+config BUSYBOX_CONFIG_INSMOD
+	bool "insmod"
+	default BUSYBOX_DEFAULT_INSMOD
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  insmod is used to load specified modules in the running kernel.
+config BUSYBOX_CONFIG_LSMOD
+	bool "lsmod"
+	default BUSYBOX_DEFAULT_LSMOD
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  lsmod is used to display a list of loaded modules.
+
+config BUSYBOX_CONFIG_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
+	bool "Pretty output"
+	default BUSYBOX_DEFAULT_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
+	depends on BUSYBOX_CONFIG_LSMOD && !BUSYBOX_CONFIG_MODPROBE_SMALL
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  This option makes output format of lsmod adjusted to
+	  the format of module-init-tools for Linux kernel 2.6.
+	  Increases size somewhat.
+config BUSYBOX_CONFIG_MODINFO
+	bool "modinfo"
+	default BUSYBOX_DEFAULT_MODINFO
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  Show information about a Linux Kernel module
 config BUSYBOX_CONFIG_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE
 	bool "Accept module options on modprobe command line"
 	default BUSYBOX_DEFAULT_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE
@@ -58,45 +87,9 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_SMALL_CHECK_ALREADY_LOADED
 	depends on BUSYBOX_CONFIG_MODPROBE_SMALL
 	help
 	  Check if the module is already loaded.
-
-config BUSYBOX_CONFIG_INSMOD
-	bool "insmod"
-	default BUSYBOX_DEFAULT_INSMOD
-	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  insmod is used to load specified modules in the running kernel.
-
-config BUSYBOX_CONFIG_RMMOD
-	bool "rmmod"
-	default BUSYBOX_DEFAULT_RMMOD
-	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  rmmod is used to unload specified modules from the kernel.
-
-config BUSYBOX_CONFIG_LSMOD
-	bool "lsmod"
-	default BUSYBOX_DEFAULT_LSMOD
-	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  lsmod is used to display a list of loaded modules.
-
-config BUSYBOX_CONFIG_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
-	bool "Pretty output"
-	default BUSYBOX_DEFAULT_FEATURE_LSMOD_PRETTY_2_6_OUTPUT
-	depends on BUSYBOX_CONFIG_LSMOD
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  This option makes output format of lsmod adjusted to
-	  the format of module-init-tools for Linux kernel 2.6.
-	  Increases size somewhat.
-
 config BUSYBOX_CONFIG_MODPROBE
 	bool "modprobe"
 	default BUSYBOX_DEFAULT_MODPROBE
-	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Handle the loading of modules, and their dependencies on a high
@@ -105,7 +98,7 @@ config BUSYBOX_CONFIG_MODPROBE
 config BUSYBOX_CONFIG_FEATURE_MODPROBE_BLACKLIST
 	bool "Blacklist support"
 	default BUSYBOX_DEFAULT_FEATURE_MODPROBE_BLACKLIST
-	depends on BUSYBOX_CONFIG_MODPROBE
+	depends on BUSYBOX_CONFIG_MODPROBE && !BUSYBOX_CONFIG_MODPROBE_SMALL
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Say 'y' here to enable support for the 'blacklist' command in
@@ -113,16 +106,12 @@ config BUSYBOX_CONFIG_FEATURE_MODPROBE_BLACKLIST
 	  blacklisted modules. This is useful if you want to prevent your
 	  hardware autodetection scripts to load modules like evdev, frame
 	  buffer drivers etc.
-
-config BUSYBOX_CONFIG_DEPMOD
-	bool "depmod"
-	default BUSYBOX_DEFAULT_DEPMOD
-	depends on !BUSYBOX_CONFIG_MODPROBE_SMALL
+config BUSYBOX_CONFIG_RMMOD
+	bool "rmmod"
+	default BUSYBOX_DEFAULT_RMMOD
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
-	  depmod generates modules.dep (and potentially modules.alias
-	  and modules.symbols) that contain dependency information
-	  for modprobe.
+	  rmmod is used to unload specified modules from the kernel.
 
 comment "Options common to multiple modutils"
 

@@ -194,28 +194,22 @@ config BUSYBOX_CONFIG_GREP
 	help
 	  grep is used to search files for a specified pattern.
 
-config BUSYBOX_CONFIG_FEATURE_GREP_EGREP_ALIAS
-	bool "Enable extended regular expressions (egrep & grep -E)"
-	default BUSYBOX_DEFAULT_FEATURE_GREP_EGREP_ALIAS
-	depends on BUSYBOX_CONFIG_GREP
+config BUSYBOX_CONFIG_EGREP
+	bool "egrep"
+	default BUSYBOX_DEFAULT_EGREP
 	help
-	  Enabled support for extended regular expressions. Extended
-	  regular expressions allow for alternation (foo|bar), grouping,
-	  and various repetition operators.
+	  Alias to "grep -E"
 
-config BUSYBOX_CONFIG_FEATURE_GREP_FGREP_ALIAS
-	bool "Alias fgrep to grep -F"
-	default BUSYBOX_DEFAULT_FEATURE_GREP_FGREP_ALIAS
-	depends on BUSYBOX_CONFIG_GREP
+config BUSYBOX_CONFIG_FGREP
+	bool "fgrep"
+	default BUSYBOX_DEFAULT_FGREP
 	help
-	  fgrep sees the search pattern as a normal string rather than
-	  regular expressions.
-	  grep -F always works, this just creates the fgrep alias.
+	  Alias to "grep -F"
 
 config BUSYBOX_CONFIG_FEATURE_GREP_CONTEXT
 	bool "Enable before and after context flags (-A, -B and -C)"
 	default BUSYBOX_DEFAULT_FEATURE_GREP_CONTEXT
-	depends on BUSYBOX_CONFIG_GREP
+	depends on BUSYBOX_CONFIG_GREP || BUSYBOX_CONFIG_EGREP
 	help
 	  Print the specified number of leading (-B) and/or trailing (-A)
 	  context surrounding our matching lines.

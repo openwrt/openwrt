@@ -31,7 +31,7 @@ config BUSYBOX_CONFIG_FEATURE_SEAMLESS_GZ
 	  Make tar, rpm, modprobe etc understand .gz data.
 
 config BUSYBOX_CONFIG_FEATURE_SEAMLESS_Z
-	bool "tar, rpm, modprobe etc understand .Z data"
+	bool "Make tar, rpm, modprobe etc understand .Z data"
 	default BUSYBOX_DEFAULT_FEATURE_SEAMLESS_Z  # it is ancient
 	help
 	  Make tar, rpm, modprobe etc understand .Z data.
@@ -79,10 +79,16 @@ config BUSYBOX_CONFIG_GUNZIP
 	  You can use the `-t' option to test the integrity of
 	  an archive, without decompressing it.
 
+config BUSYBOX_CONFIG_ZCAT
+	bool "zcat"
+	default BUSYBOX_DEFAULT_ZCAT
+	help
+	  Alias to "gunzip -c".
+
 config BUSYBOX_CONFIG_FEATURE_GUNZIP_LONG_OPTIONS
 	bool "Enable long options"
 	default BUSYBOX_DEFAULT_FEATURE_GUNZIP_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_GUNZIP && BUSYBOX_CONFIG_LONG_OPTS
+	depends on (BUSYBOX_CONFIG_GUNZIP || BUSYBOX_CONFIG_ZCAT) && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Enable use of long options.
 config BUSYBOX_CONFIG_BUNZIP2
@@ -97,6 +103,12 @@ config BUSYBOX_CONFIG_BUNZIP2
 
 	  Unless you have a specific application which requires bunzip2, you
 	  should probably say N here.
+
+config BUSYBOX_CONFIG_BZCAT
+	bool "bzcat"
+	default BUSYBOX_DEFAULT_BZCAT
+	help
+	  Alias to "bunzip2 -c".
 config BUSYBOX_CONFIG_UNLZMA
 	bool "unlzma"
 	default BUSYBOX_DEFAULT_UNLZMA
@@ -109,31 +121,47 @@ config BUSYBOX_CONFIG_UNLZMA
 	  The BusyBox unlzma applet is limited to decompression only.
 	  On an x86 system, this applet adds about 4K.
 
-config BUSYBOX_CONFIG_FEATURE_LZMA_FAST
-	bool "Optimize unlzma for speed"
-	default BUSYBOX_DEFAULT_FEATURE_LZMA_FAST
-	depends on BUSYBOX_CONFIG_UNLZMA
+config BUSYBOX_CONFIG_LZCAT
+	bool "lzcat"
+	default BUSYBOX_DEFAULT_LZCAT
 	help
-	  This option reduces decompression time by about 25% at the cost of
-	  a 1K bigger binary.
+	  unlzma is a compression utility using the Lempel-Ziv-Markov chain
+	  compression algorithm, and range coding. Compression
+	  is generally considerably better than that achieved by the bzip2
+	  compressors.
+
+	  The BusyBox unlzma applet is limited to decompression only.
+	  On an x86 system, this applet adds about 4K.
 
 config BUSYBOX_CONFIG_LZMA
-	bool "Provide lzma alias which supports only unpacking"
+	bool "lzma -d"
 	default BUSYBOX_DEFAULT_LZMA
-	depends on BUSYBOX_CONFIG_UNLZMA
 	help
 	  Enable this option if you want commands like "lzma -d" to work.
 	  IOW: you'll get lzma applet, but it will always require -d option.
+
+config BUSYBOX_CONFIG_FEATURE_LZMA_FAST
+	bool "Optimize unlzma for speed"
+	default BUSYBOX_DEFAULT_FEATURE_LZMA_FAST
+	depends on BUSYBOX_CONFIG_UNLZMA || BUSYBOX_CONFIG_LZCAT || BUSYBOX_CONFIG_LZMA
+	help
+	  This option reduces decompression time by about 25% at the cost of
+	  a 1K bigger binary.
 config BUSYBOX_CONFIG_UNXZ
 	bool "unxz"
 	default BUSYBOX_DEFAULT_UNXZ
 	help
 	  unxz is a unlzma successor.
 
+config BUSYBOX_CONFIG_XZCAT
+	bool "xzcat"
+	default BUSYBOX_DEFAULT_XZCAT
+	help
+	  Alias to "unxz -c".
+
 config BUSYBOX_CONFIG_XZ
-	bool "Provide xz alias which supports only unpacking"
+	bool "xz -d"
 	default BUSYBOX_DEFAULT_XZ
-	depends on BUSYBOX_CONFIG_UNXZ
 	help
 	  Enable this option if you want commands like "xz -d" to work.
 	  IOW: you'll get xz applet, but it will always require -d option.
@@ -158,7 +186,7 @@ config BUSYBOX_CONFIG_CPIO
 	  cpio has 110 bytes of overheads for every stored file.
 
 	  This implementation of cpio can extract cpio archives created in the
-	  "newc" or "crc" format, it cannot create or modify them.
+	  "newc" or "crc" format.
 
 	  Unless you have a specific application which requires cpio, you
 	  should probably say N here.
@@ -198,16 +226,6 @@ config BUSYBOX_CONFIG_DPKG_DEB
 
 	  Unless you have a specific application which requires dpkg-deb,
 	  say N here.
-
-config BUSYBOX_CONFIG_FEATURE_DPKG_DEB_EXTRACT_ONLY
-	bool "Extract only (-x)"
-	default BUSYBOX_DEFAULT_FEATURE_DPKG_DEB_EXTRACT_ONLY
-	depends on BUSYBOX_CONFIG_DPKG_DEB
-	help
-	  This reduces dpkg-deb to the equivalent of
-	  "ar -p <deb> data.tar.gz | tar -zx". However it saves space as none
-	  of the extra dpkg-deb, ar or tar options are needed, they are linked
-	  to internally.
 config BUSYBOX_CONFIG_GZIP
 	bool "gzip"
 	default BUSYBOX_DEFAULT_GZIP
@@ -249,10 +267,22 @@ config BUSYBOX_CONFIG_LZOP
 	help
 	  Lzop compression/decompresion.
 
+config BUSYBOX_CONFIG_UNLZOP
+	bool "unlzop"
+	default BUSYBOX_DEFAULT_UNLZOP
+	help
+	  Lzop decompresion.
+
+config BUSYBOX_CONFIG_LZOPCAT
+	bool "lzopcat"
+	default BUSYBOX_DEFAULT_LZOPCAT
+	help
+	  Alias to "unlzop -c".
+
 config BUSYBOX_CONFIG_LZOP_COMPR_HIGH
 	bool "lzop compression levels 7,8,9 (not very useful)"
 	default BUSYBOX_DEFAULT_LZOP_COMPR_HIGH
-	depends on BUSYBOX_CONFIG_LZOP
+	depends on BUSYBOX_CONFIG_LZOP || BUSYBOX_CONFIG_UNLZOP || BUSYBOX_CONFIG_LZOPCAT
 	help
 	  High levels (7,8,9) of lzop compression. These levels
 	  are actually slower than gzip at equivalent compression ratios

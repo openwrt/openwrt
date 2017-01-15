@@ -10,15 +10,18 @@ config BUSYBOX_CONFIG_HAVE_DOT_CONFIG
 
 menu "Busybox Settings"
 
-menu "General Configuration"
-
 config BUSYBOX_CONFIG_DESKTOP
 	bool "Enable options for full-blown desktop systems"
 	default BUSYBOX_DEFAULT_DESKTOP
 	help
 	  Enable options and features which are not essential.
-	  Select this only if you plan to use busybox on full-blown
-	  desktop machine with common Linux distro, not on an embedded box.
+	  Select this if you plan to use busybox on full-blown desktop machine
+	  with common Linux distro, which needs higher level of command-line
+	  compatibility.
+
+	  If you are preparing your build to be used on an embedded box
+	  where you have tighter control over the entire set of userspace
+	  tools, you can unselect this option for smaller code size.
 
 config BUSYBOX_CONFIG_EXTRA_COMPAT
 	bool "Provide compatible behavior for rare corner cases (bigger code)"
@@ -56,30 +59,6 @@ config BUSYBOX_CONFIG_PLATFORM_LINUX
 
 	  Answering 'N' here will disable such applets and hide the
 	  corresponding configuration options.
-
-choice
-	prompt "Buffer allocation policy"
-	default BUSYBOX_CONFIG_FEATURE_BUFFERS_GO_ON_STACK
-	help
-	  There are 3 ways BusyBox can handle buffer allocations:
-	  - Use malloc. This costs code size for the call to xmalloc.
-	  - Put them on stack. For some very small machines with limited stack
-	    space, this can be deadly. For most folks, this works just fine.
-	  - Put them in BSS. This works beautifully for computers with a real
-	    MMU (and OS support), but wastes runtime RAM for uCLinux. This
-	    behavior was the only one available for BusyBox versions 0.48 and
-	    earlier.
-
-config BUSYBOX_CONFIG_FEATURE_BUFFERS_USE_MALLOC
-	bool "Allocate with Malloc"
-
-config BUSYBOX_CONFIG_FEATURE_BUFFERS_GO_ON_STACK
-	bool "Allocate on the Stack"
-
-config BUSYBOX_CONFIG_FEATURE_BUFFERS_GO_IN_BSS
-	bool "Allocate in the .bss section"
-
-endchoice
 
 config BUSYBOX_CONFIG_SHOW_USAGE
 	bool "Show applet usage messages"
@@ -143,150 +122,12 @@ config BUSYBOX_CONFIG_INSTALL_NO_USR
 	  will install applets only to /bin and /sbin,
 	  never to /usr/bin or /usr/sbin.
 
-config BUSYBOX_CONFIG_LOCALE_SUPPORT
-	bool "Enable locale support (system needs locale for this to work)"
-	default BUSYBOX_DEFAULT_LOCALE_SUPPORT
-	help
-	  Enable this if your system has locale support and you would like
-	  busybox to support locale settings.
-
-config BUSYBOX_CONFIG_UNICODE_SUPPORT
-	bool "Support Unicode"
-	default BUSYBOX_DEFAULT_UNICODE_SUPPORT
-	help
-	  This makes various applets aware that one byte is not
-	  one character on screen.
-
-	  Busybox aims to eventually work correctly with Unicode displays.
-	  Any older encodings are not guaranteed to work.
-	  Probably by the time when busybox will be fully Unicode-clean,
-	  other encodings will be mainly of historic interest.
-
-config BUSYBOX_CONFIG_UNICODE_USING_LOCALE
-	bool "Use libc routines for Unicode (else uses internal ones)"
-	default BUSYBOX_DEFAULT_UNICODE_USING_LOCALE
-	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT && BUSYBOX_CONFIG_LOCALE_SUPPORT
-	help
-	  With this option on, Unicode support is implemented using libc
-	  routines. Otherwise, internal implementation is used.
-	  Internal implementation is smaller.
-
-config BUSYBOX_CONFIG_FEATURE_CHECK_UNICODE_IN_ENV
-	bool "Check $LC_ALL, $LC_CTYPE and $LANG environment variables"
-	default BUSYBOX_DEFAULT_FEATURE_CHECK_UNICODE_IN_ENV
-	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT && !BUSYBOX_CONFIG_UNICODE_USING_LOCALE
-	help
-	  With this option on, Unicode support is activated
-	  only if locale-related variables have the value of the form
-	  "xxxx.utf8"
-
-	  Otherwise, Unicode support will be always enabled and active.
-
-config BUSYBOX_CONFIG_SUBST_WCHAR
-	int "Character code to substitute unprintable characters with"
-	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
-	default BUSYBOX_DEFAULT_SUBST_WCHAR
-	help
-	  Typical values are 63 for '?' (works with any output device),
-	  30 for ASCII substitute control code,
-	  65533 (0xfffd) for Unicode replacement character.
-
-config BUSYBOX_CONFIG_LAST_SUPPORTED_WCHAR
-	int "Range of supported Unicode characters"
-	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
-	default BUSYBOX_DEFAULT_LAST_SUPPORTED_WCHAR
-	help
-	  Any character with Unicode value bigger than this is assumed
-	  to be non-printable on output device. Many applets replace
-	  such chars with substitution character.
-
-	  The idea is that many valid printable Unicode chars are
-	  nevertheless are not displayed correctly. Think about
-	  combining charachers, double-wide hieroglyphs, obscure
-	  characters in dozens of ancient scripts...
-	  Many terminals, terminal emulators, xterms etc will fail
-	  to handle them correctly. Choose the smallest value
-	  which suits your needs.
-
-	  Typical values are:
-	  126 - ASCII only
-	  767 (0x2ff) - there are no combining chars in [0..767] range
-			(the range includes Latin 1, Latin Ext. A and B),
-			code is ~700 bytes smaller for this case.
-	  4351 (0x10ff) - there are no double-wide chars in [0..4351] range,
-			code is ~300 bytes smaller for this case.
-	  12799 (0x31ff) - nearly all non-ideographic characters are
-			available in [0..12799] range, including
-			East Asian scripts like katakana, hiragana, hangul,
-			bopomofo...
-	  0 - off, any valid printable Unicode character will be printed.
-
-config BUSYBOX_CONFIG_UNICODE_COMBINING_WCHARS
-	bool "Allow zero-width Unicode characters on output"
-	default BUSYBOX_DEFAULT_UNICODE_COMBINING_WCHARS
-	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
-	help
-	  With this option off, any Unicode char with width of 0
-	  is substituted on output.
-
-config BUSYBOX_CONFIG_UNICODE_WIDE_WCHARS
-	bool "Allow wide Unicode characters on output"
-	default BUSYBOX_DEFAULT_UNICODE_WIDE_WCHARS
-	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
-	help
-	  With this option off, any Unicode char with width > 1
-	  is substituted on output.
-
-config BUSYBOX_CONFIG_UNICODE_BIDI_SUPPORT
-	bool "Bidirectional character-aware line input"
-	default BUSYBOX_DEFAULT_UNICODE_BIDI_SUPPORT
-	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT && !BUSYBOX_CONFIG_UNICODE_USING_LOCALE
-	help
-	  With this option on, right-to-left Unicode characters
-	  are treated differently on input (e.g. cursor movement).
-
-config BUSYBOX_CONFIG_UNICODE_NEUTRAL_TABLE
-	bool "In bidi input, support non-ASCII neutral chars too"
-	default BUSYBOX_DEFAULT_UNICODE_NEUTRAL_TABLE
-	depends on BUSYBOX_CONFIG_UNICODE_BIDI_SUPPORT
-	help
-	  In most cases it's enough to treat only ASCII non-letters
-	  (i.e. punctuation, numbers and space) as characters
-	  with neutral directionality.
-	  With this option on, more extensive (and bigger) table
-	  of neutral chars will be used.
-
-config BUSYBOX_CONFIG_UNICODE_PRESERVE_BROKEN
-	bool "Make it possible to enter sequences of chars which are not Unicode"
-	default BUSYBOX_DEFAULT_UNICODE_PRESERVE_BROKEN
-	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
-	help
-	  With this option on, on line-editing input (such as used by shells)
-	  invalid UTF-8 bytes are not substituted with the selected
-	  substitution character.
-	  For example, this means that entering 'l', 's', ' ', 0xff, [Enter]
-	  at shell prompt will list file named 0xff (single char name
-	  with char value 255), not file named '?'.
-
 config BUSYBOX_CONFIG_PAM
 	bool "Support for PAM (Pluggable Authentication Modules)"
 	default BUSYBOX_DEFAULT_PAM
 	help
 	  Use PAM in some busybox applets (currently login and httpd) instead
 	  of direct access to password database.
-
-config BUSYBOX_CONFIG_FEATURE_USE_SENDFILE
-	bool "Use sendfile system call"
-	default BUSYBOX_DEFAULT_FEATURE_USE_SENDFILE
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  When enabled, busybox will use the kernel sendfile() function
-	  instead of read/write loops to copy data between file descriptors
-	  (for example, cp command does this a lot).
-	  If sendfile() doesn't work, copying code falls back to read/write
-	  loop. sendfile() was originally implemented for faster I/O
-	  from files to sockets, but since Linux 2.6.33 it was extended
-	  to work for many more file types.
 
 config BUSYBOX_CONFIG_LONG_OPTS
 	bool "Support for --long-options"
@@ -496,9 +337,7 @@ config BUSYBOX_CONFIG_FEATURE_HAVE_RPC
 	#  This is automatically selected if any of enabled applets need it.
 	#  You do not need to select it manually.
 
-endmenu
-
-menu 'Build Options'
+comment 'Build Options'
 
 config BUSYBOX_CONFIG_STATIC
 	bool "Build BusyBox as a static binary (no shared libs)"
@@ -673,9 +512,73 @@ config BUSYBOX_CONFIG_EXTRA_LDLIBS
 	help
 	  Additional LDLIBS to pass to the linker with -l.
 
-endmenu
+comment 'Installation Options ("make install" behavior)'
 
-menu 'Debugging Options'
+choice
+	prompt "What kind of applet links to install"
+	default BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
+	help
+	  Choose what kind of links to applets are created by "make install".
+
+config BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
+	bool "as soft-links"
+	help
+	  Install applets as soft-links to the busybox binary. This needs some
+	  free inodes on the filesystem, but might help with filesystem
+	  generators that can't cope with hard-links.
+
+config BUSYBOX_CONFIG_INSTALL_APPLET_HARDLINKS
+	bool "as hard-links"
+	help
+	  Install applets as hard-links to the busybox binary. This might
+	  count on a filesystem with few inodes.
+
+config BUSYBOX_CONFIG_INSTALL_APPLET_SCRIPT_WRAPPERS
+	bool "as script wrappers"
+	help
+	  Install applets as script wrappers that call the busybox binary.
+
+config BUSYBOX_CONFIG_INSTALL_APPLET_DONT
+	bool "not installed"
+	help
+	  Do not install applet links. Useful when you plan to use
+	  busybox --install for installing links, or plan to use
+	  a standalone shell and thus don't need applet links.
+
+endchoice
+
+choice
+	prompt "/bin/sh applet link"
+	default BUSYBOX_CONFIG_INSTALL_SH_APPLET_SYMLINK
+	depends on BUSYBOX_CONFIG_INSTALL_APPLET_SCRIPT_WRAPPERS
+	help
+	  Choose how you install /bin/sh applet link.
+
+config BUSYBOX_CONFIG_INSTALL_SH_APPLET_SYMLINK
+	bool "as soft-link"
+	help
+	  Install /bin/sh applet as soft-link to the busybox binary.
+
+config BUSYBOX_CONFIG_INSTALL_SH_APPLET_HARDLINK
+	bool "as hard-link"
+	help
+	  Install /bin/sh applet as hard-link to the busybox binary.
+
+config BUSYBOX_CONFIG_INSTALL_SH_APPLET_SCRIPT_WRAPPER
+	bool "as script wrapper"
+	help
+	  Install /bin/sh applet as script wrapper that calls
+	  the busybox binary.
+
+endchoice
+
+config BUSYBOX_CONFIG_PREFIX
+	string "BusyBox installation prefix"
+	default BUSYBOX_DEFAULT_PREFIX
+	help
+	  Define your directory to install BusyBox files/subdirs in.
+
+comment 'Debugging Options'
 
 config BUSYBOX_CONFIG_DEBUG
 	bool "Build BusyBox with extra Debugging symbols"
@@ -769,77 +672,7 @@ endchoice
 
 endmenu
 
-menu 'Installation Options ("make install" behavior)'
-
-choice
-	prompt "What kind of applet links to install"
-	default BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
-	help
-	  Choose what kind of links to applets are created by "make install".
-
-config BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
-	bool "as soft-links"
-	help
-	  Install applets as soft-links to the busybox binary. This needs some
-	  free inodes on the filesystem, but might help with filesystem
-	  generators that can't cope with hard-links.
-
-config BUSYBOX_CONFIG_INSTALL_APPLET_HARDLINKS
-	bool "as hard-links"
-	help
-	  Install applets as hard-links to the busybox binary. This might
-	  count on a filesystem with few inodes.
-
-config BUSYBOX_CONFIG_INSTALL_APPLET_SCRIPT_WRAPPERS
-	bool "as script wrappers"
-	help
-	  Install applets as script wrappers that call the busybox binary.
-
-config BUSYBOX_CONFIG_INSTALL_APPLET_DONT
-	bool "not installed"
-	help
-	  Do not install applet links. Useful when you plan to use
-	  busybox --install for installing links, or plan to use
-	  a standalone shell and thus don't need applet links.
-
-endchoice
-
-choice
-	prompt "/bin/sh applet link"
-	default BUSYBOX_CONFIG_INSTALL_SH_APPLET_SYMLINK
-	depends on BUSYBOX_CONFIG_INSTALL_APPLET_SCRIPT_WRAPPERS
-	help
-	  Choose how you install /bin/sh applet link.
-
-config BUSYBOX_CONFIG_INSTALL_SH_APPLET_SYMLINK
-	bool "as soft-link"
-	help
-	  Install /bin/sh applet as soft-link to the busybox binary.
-
-config BUSYBOX_CONFIG_INSTALL_SH_APPLET_HARDLINK
-	bool "as hard-link"
-	help
-	  Install /bin/sh applet as hard-link to the busybox binary.
-
-config BUSYBOX_CONFIG_INSTALL_SH_APPLET_SCRIPT_WRAPPER
-	bool "as script wrapper"
-	help
-	  Install /bin/sh applet as script wrapper that calls
-	  the busybox binary.
-
-endchoice
-
-config BUSYBOX_CONFIG_PREFIX
-	string "BusyBox installation prefix"
-	default BUSYBOX_DEFAULT_PREFIX
-	help
-	  Define your directory to install BusyBox files/subdirs in.
-
-endmenu
-
 source libbb/Config.in
-
-endmenu
 
 comment "Applets"
 
