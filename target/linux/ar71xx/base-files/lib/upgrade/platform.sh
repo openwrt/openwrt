@@ -254,6 +254,7 @@ platform_check_image() {
 	rocket-m-xw|\
 	rocket-m|\
 	rw2458n|\
+	sc300m|\
 	sr3200|\
 	tew-632brp|\
 	tew-712br|\

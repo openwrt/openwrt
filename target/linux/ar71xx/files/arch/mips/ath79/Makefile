@@ -152,6 +152,7 @@ obj-$(CONFIG_ATH79_MACH_RB95X)			+= mach-rb95x.o
 obj-$(CONFIG_ATH79_MACH_RBSXTLITE)		+= mach-rbsxtlite.o
 obj-$(CONFIG_ATH79_MACH_RE450)			+= mach-re450.o
 obj-$(CONFIG_ATH79_MACH_RW2458N)		+= mach-rw2458n.o
+obj-$(CONFIG_ATH79_MACH_SC300M)			+= mach-sc300m.o
 obj-$(CONFIG_ATH79_MACH_SMART_300)		+= mach-smart-300.o
 obj-$(CONFIG_ATH79_MACH_SOM9331)		+= mach-som9331.o
 obj-$(CONFIG_ATH79_MACH_SR3200)			+= mach-sr3200.o
