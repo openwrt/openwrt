@@ -53,6 +53,17 @@ config ATH79_MACH_SC300M
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_SC450
+	bool "Abicom SC450 board support"
+	select SOC_QCA955X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_ALL0258N
 	bool "Allnet ALL0258N support"
 	select SOC_AR724X

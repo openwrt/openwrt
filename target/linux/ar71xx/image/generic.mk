@@ -474,6 +474,16 @@ define Device/sc300m
 endef
 TARGET_DEVICES += sc300m
 
+define Device/sc450
+  DEVICE_TITLE := Abicom SC450
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  BOARDNAME = SC450
+  IMAGE_SIZE = 15744k
+  CONSOLE = ttyS0,115200
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),15744k(firmware),128k(APConfig),128k(kplog),64k(ART)
+endef
+TARGET_DEVICES += sc450
+
 define Device/smart-300
   $(Device/tplink-8mlzma)
   DEVICE_TITLE := NC-LINK SMART-300

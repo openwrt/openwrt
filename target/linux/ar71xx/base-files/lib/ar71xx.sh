@@ -887,6 +887,9 @@ ar71xx_board_detect() {
 	*SC300M)
 		name="sc300m"
 		;;
+	*SC450)
+		name="sc450"
+		;;
 	*"SMART-300")
 		name="smart-300"
 		;;

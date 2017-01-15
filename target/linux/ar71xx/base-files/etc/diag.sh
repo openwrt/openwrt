@@ -44,6 +44,7 @@ get_status_led() {
 	mr12|\
 	mr16|\
 	nbg6616|\
+	sc450|\
 	tl-wpa8630)
 		status_led="$board:green:power"
 		;;
