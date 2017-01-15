@@ -1,0 +1,31 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Subject: [PATCH] brcmfmac: use wiphy_read_of_freq_limits
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -5974,6 +5974,9 @@ static int brcmf_construct_chaninfo(stru
+ 			continue;
+ 		}
+ 
++		if (channel->orig_flags & IEEE80211_CHAN_DISABLED)
++			continue;
++
+ 		/* assuming the chanspecs order is HT20,
+ 		 * HT40 upper, HT40 lower, and VHT80.
+ 		 */
+@@ -6564,6 +6567,9 @@ static int brcmf_setup_wiphy(struct wiph
+ 			wiphy->bands[NL80211_BAND_5GHZ] = band;
+ 		}
+ 	}
++
++	wiphy_read_of_freq_limits(wiphy);
++
+ 	return 0;
+ }
+ 
