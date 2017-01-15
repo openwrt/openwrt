@@ -156,7 +156,7 @@
  	/*
  	 * sta->capability is used in check_assoc_ies() for RRM enabled
  	 * capability element.
-@@ -3023,7 +3049,7 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -3025,7 +3051,7 @@ int ieee802_11_mgmt(struct hostapd_data
  
  
  	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
@@ -165,7 +165,7 @@
  		return 1;
  	}
  
-@@ -3041,17 +3067,17 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -3043,17 +3069,17 @@ int ieee802_11_mgmt(struct hostapd_data
  	switch (stype) {
  	case WLAN_FC_STYPE_AUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::auth");
