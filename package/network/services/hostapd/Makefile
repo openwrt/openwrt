@@ -318,19 +318,19 @@ define Build/Compile/wpad
 endef
 
 define Build/Compile/hostapd
-	$(call Build/RunMake,hostapd, \
+	+$(call Build/RunMake,hostapd, \
 		hostapd hostapd_cli \
 	)
 endef
 
 define Build/Compile/supplicant
-	$(call Build/RunMake,wpa_supplicant, \
+	+$(call Build/RunMake,wpa_supplicant, \
 		wpa_cli wpa_supplicant \
 	)
 endef
 
 define Build/Compile/supplicant-full
-	$(call Build/RunMake,wpa_supplicant, \
+	+$(call Build/RunMake,wpa_supplicant, \
 		eapol_test \
 	)
 endef
