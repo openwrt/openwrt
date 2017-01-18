@@ -553,6 +553,9 @@ ramips_board_detect() {
 	*"WMR-300")
 		name="wmr-300"
 		;;
+	*"WN3000RPv3")
+		name="wn3000rpv3"
+		;;
 	*"WNCE2001")
 		name="wnce2001"
 		;;

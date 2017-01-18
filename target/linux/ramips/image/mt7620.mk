@@ -75,6 +75,17 @@ define Device/ex2700
 endef
 TARGET_DEVICES += ex2700
 
+define Device/wn3000rpv3
+  DTS := WN3000RPV3
+  BLOCKSIZE := 4k
+  IMAGES += factory.bin
+  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-kernel-ex2700
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+	netgear-header -B WN3000RPv3 -H 29764836+8+0+32+2x2+0
+  DEVICE_TITLE := Netgear WN3000RPv3
+endef
+TARGET_DEVICES += wn3000rpv3
+
 define Device/wt3020-4M
   DTS := WT3020-4M
   BLOCKSIZE := 4k
