@@ -40,64 +40,64 @@ tools-$(CONFIG_USE_SPARSE) += sparse
 tools-$(CONFIG_TARGET_apm821xx) += genext2fs
 
 # builddir dependencies
-$(curdir)/bison/compile := $(curdir)/flex/install
-$(curdir)/flex/compile := $(curdir)/libtool/install
-$(curdir)/libtool/compile := $(curdir)/m4/install $(curdir)/autoconf/install $(curdir)/automake/install $(curdir)/missing-macros/install
-$(curdir)/squashfs/compile := $(curdir)/lzma-old/install
-$(curdir)/squashfs4/compile := $(curdir)/xz/install
-$(curdir)/quilt/compile := $(curdir)/autoconf/install $(curdir)/findutils/install
-$(curdir)/autoconf/compile := $(curdir)/m4/install
-$(curdir)/automake/compile := $(curdir)/m4/install $(curdir)/autoconf/install $(curdir)/pkg-config/install $(curdir)/xz/install
-$(curdir)/gmp/compile := $(curdir)/libtool/install
-$(curdir)/mpc/compile := $(curdir)/mpfr/install $(curdir)/gmp/install
-$(curdir)/mpfr/compile := $(curdir)/gmp/install
-$(curdir)/mtd-utils/compile := $(curdir)/e2fsprogs/install
-$(curdir)/mklibs/compile := $(curdir)/libtool/install
-$(curdir)/qemu/compile := $(curdir)/e2fsprogs/install
-$(curdir)/upslug2/compile := $(curdir)/libtool/install
-$(curdir)/mm-macros/compile := $(curdir)/libtool/install
-$(curdir)/missing-macros/compile := $(curdir)/autoconf/install
-$(curdir)/e2fsprogs/compile := $(curdir)/libtool/install
-$(curdir)/libelf/compile := $(curdir)/libtool/install
-$(curdir)/sdcc/compile := $(curdir)/bison/install
-$(curdir)/b43-tools/compile := $(curdir)/bison/install
-$(curdir)/padjffs2/compile := $(curdir)/findutils/install
-$(curdir)/isl/compile := $(curdir)/gmp/install
-$(curdir)/bc/compile := $(curdir)/bison/install
-$(curdir)/findutils/compile := $(curdir)/bison/install
-$(curdir)/gengetopt/compile := $(curdir)/libtool/install
-$(curdir)/patchelf/compile := $(curdir)/libtool/install
-$(curdir)/dosfstools/compile := $(curdir)/autoconf/install $(curdir)/automake/install
-$(curdir)/libressl/compile := $(curdir)/pkg-config/install
-$(curdir)/mkimage/compile += $(curdir)/libressl/install
-$(curdir)/firmware-utils/compile += $(curdir)/libressl/install
-$(curdir)/cmake/compile += $(curdir)/libressl/install
+$(curdir)/bison/compile := $(curdir)/flex/compile
+$(curdir)/flex/compile := $(curdir)/libtool/compile
+$(curdir)/libtool/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/automake/compile $(curdir)/missing-macros/compile
+$(curdir)/squashfs/compile := $(curdir)/lzma-old/compile
+$(curdir)/squashfs4/compile := $(curdir)/xz/compile
+$(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
+$(curdir)/autoconf/compile := $(curdir)/m4/compile
+$(curdir)/automake/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/pkg-config/compile $(curdir)/xz/compile
+$(curdir)/gmp/compile := $(curdir)/libtool/compile
+$(curdir)/mpc/compile := $(curdir)/mpfr/compile $(curdir)/gmp/compile
+$(curdir)/mpfr/compile := $(curdir)/gmp/compile
+$(curdir)/mtd-utils/compile := $(curdir)/e2fsprogs/compile
+$(curdir)/mklibs/compile := $(curdir)/libtool/compile
+$(curdir)/qemu/compile := $(curdir)/e2fsprogs/compile
+$(curdir)/upslug2/compile := $(curdir)/libtool/compile
+$(curdir)/mm-macros/compile := $(curdir)/libtool/compile
+$(curdir)/missing-macros/compile := $(curdir)/autoconf/compile
+$(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
+$(curdir)/libelf/compile := $(curdir)/libtool/compile
+$(curdir)/sdcc/compile := $(curdir)/bison/compile
+$(curdir)/b43-tools/compile := $(curdir)/bison/compile
+$(curdir)/padjffs2/compile := $(curdir)/findutils/compile
+$(curdir)/isl/compile := $(curdir)/gmp/compile
+$(curdir)/bc/compile := $(curdir)/bison/compile
+$(curdir)/findutils/compile := $(curdir)/bison/compile
+$(curdir)/gengetopt/compile := $(curdir)/libtool/compile
+$(curdir)/patchelf/compile := $(curdir)/libtool/compile
+$(curdir)/dosfstools/compile := $(curdir)/autoconf/compile $(curdir)/automake/compile
+$(curdir)/libressl/compile := $(curdir)/pkg-config/compile
+$(curdir)/mkimage/compile += $(curdir)/libressl/compile
+$(curdir)/firmware-utils/compile += $(curdir)/libressl/compile
+$(curdir)/cmake/compile += $(curdir)/libressl/compile
 
 ifneq ($(HOST_OS),Linux)
   tools-y += coreutils
 endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
-$(foreach tool, $(filter-out xz patch,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/install))
+$(foreach tool, $(filter-out xz patch,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
 tools-y += ccache
 endif
 
 # in case there is no patch tool on the host we need to make patch tool a
 # dependency for tools which have patches directory
-$(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(curdir)/$(tool)/compile += $(curdir)/patch/install)))
+$(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(curdir)/$(tool)/compile += $(curdir)/patch/compile)))
 
-$(foreach tool, $(filter-out xz,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/xz/install))
+$(foreach tool, $(filter-out xz,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/xz/compile))
 
 # make any tool depend on tar, xz and patch to ensure that archives can be unpacked and patched properly
 tools-core := tar xz patch
 
-$(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/install,$(tools-core))))
+$(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
 tools-y += $(tools-core)
 
 # make core tools depend on sed and flock
-$(foreach tool, $(tools-core), $(eval $(curdir)/$(tool)/compile += $(curdir)/sed/install))
+$(foreach tool, $(tools-core), $(eval $(curdir)/$(tool)/compile += $(curdir)/sed/compile))
 
-$(curdir)/sed/compile := $(curdir)/flock/install
+$(curdir)/sed/compile := $(curdir)/flock/compile
 tools-y += flock sed
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
@@ -139,9 +139,10 @@ $(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
-$(curdir)//install = $(1)/compile
+
+$(curdir)/install: $(curdir)/compile
 
 tools_enabled = $(foreach tool,$(sort $(tools-y) $(tools-)),$(if $(filter $(tool),$(tools-y)),y,n))
-$(eval $(call stampfile,$(curdir),tools,install,,_$(subst $(space),,$(tools_enabled))))
+$(eval $(call stampfile,$(curdir),tools,compile,,_$(subst $(space),,$(tools_enabled))))
 $(eval $(call stampfile,$(curdir),tools,check,$(TMP_DIR)/.build))
 $(eval $(call subdir,$(curdir)))

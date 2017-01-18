@@ -177,8 +177,7 @@ ifndef DUMP
 
   .host-prepare: $(HOST_STAMP_PREPARED)
   .host-configure: $(HOST_STAMP_CONFIGURED)
-  .host-compile: $(HOST_STAMP_BUILT) $(if $(STAMP_BUILT),$(HOST_STAMP_INSTALLED))
-  .host-install: $(HOST_STAMP_INSTALLED)
+  .host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED)
   host-clean: FORCE
 	$(call Host/Clean)
 	$(call Host/Uninstall)
