@@ -99,7 +99,6 @@ static struct mtd_partition rb941_spi_partitions[] = {
             .name = "soft_config",
             .offset = RB_SOFT_CFG_OFFSET,
             .size = RB_SOFT_CFG_SIZE,
-            .mask_flags = MTD_WRITEABLE,
     }, {
             .name = "rootfs",
             .offset = RB_ROOTFS_OFFSET,
