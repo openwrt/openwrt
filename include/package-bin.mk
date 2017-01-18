@@ -10,6 +10,7 @@ ifeq ($(DUMP),)
     ifeq ($(if $(VARIANT),$(BUILD_VARIANT)),$(VARIANT))
     ifdef Package/$(1)/install
       ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
+        .compile: $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
         compile: install-bin-$(1)
       else
         compile: $(1)-disabled
@@ -19,10 +20,16 @@ ifeq ($(DUMP),)
     endif
     endif
 
-    install-bin-$(1): $(STAMP_BUILT)
+    $(PKG_BUILD_DIR)/.pkgdir/$(1).installed: $(STAMP_BUILT)
+		rm -rf $(PKG_BUILD_DIR)/.pkgdir/$(1) $$@
+		mkdir -p $(PKG_BUILD_DIR)/.pkgdir/$(1)
+		$(call Package/$(1)/install,$(PKG_BUILD_DIR)/.pkgdir/$(1))
+		touch $$@
+
+    install-bin-$(1): $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
 	  rm -rf $(BIN_DIR)/$(1)
 	  $(INSTALL_DIR) $(BIN_DIR)/$(1)
-	  $(call Package/$(1)/install,$(BIN_DIR)/$(1))
+	  $(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(BIN_DIR)/$(1)/
 
     clean-$(1):
 	  rm -rf $(BIN_DIR)/$(1)
