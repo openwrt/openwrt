@@ -143,6 +143,7 @@ Build/Exports=$(Build/Exports/Default)
 define Build/CoreTargets
   $(if $(QUILT),$(Build/Quilt))
   $(call Build/Autoclean)
+  $(call DefaultTargets)
 
   download:
 	$(foreach hook,$(Hooks/Download),
@@ -287,10 +288,6 @@ prepare-package-install:
 $(PACKAGE_DIR):
 	mkdir -p $@
 
-dumpinfo:
-download:
-prepare:
-configure:
 compile: prepare-package-install
 install: compile
 

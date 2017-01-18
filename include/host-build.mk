@@ -168,13 +168,11 @@ ifndef DUMP
 		touch $(HOST_STAMP_BUILT)
 		touch $$@
 
+  $(call DefaultTargets,$(patsubst %,host-%,$(DEFAULT_SUBDIR_TARGETS)))
   ifndef STAMP_BUILT
-    prepare: host-prepare
-    compile: host-compile
-    install: host-install
-    clean: host-clean
-    update: host-update
-    refresh: host-refresh
+    $(foreach t,$(DEFAULT_SUBDIR_TARGETS),
+      $(t): host-$(t)
+    )
   endif
 
   host-prepare: $(HOST_STAMP_PREPARED)
@@ -187,13 +185,6 @@ ifndef DUMP
 	rm -rf $(HOST_BUILD_DIR) $(HOST_STAMP_INSTALLED) $(HOST_STAMP_BUILT)
 
   endef
-
-  download:
-  prepare:
-  compile:
-  install:
-  clean:
-
 endif
 
 define HostBuild

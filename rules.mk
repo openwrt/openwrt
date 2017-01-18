@@ -101,6 +101,15 @@ ifdef CONFIG_MIPS64_ABI
   endif
 endif
 
+DEFAULT_SUBDIR_TARGETS:=clean download prepare compile install update refresh prereq dist distcheck configure check
+
+define DefaultTargets
+$(foreach t,$(DEFAULT_SUBDIR_TARGETS),
+  $(t):
+  .PHONY: $(t)
+)
+endef
+
 DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)
 OUTPUT_DIR:=$(if $(call qstrip,$(CONFIG_BINARY_FOLDER)),$(call qstrip,$(CONFIG_BINARY_FOLDER)),$(TOPDIR)/bin)
 BIN_DIR:=$(OUTPUT_DIR)/targets/$(BOARD)/$(SUBTARGET)
