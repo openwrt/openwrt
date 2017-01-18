@@ -10,6 +10,7 @@ curdir:=package
 include $(INCLUDE_DIR)/rootfs.mk
 
 -include $(TMP_DIR)/.packagedeps
+$(curdir)/autoremove:=1
 $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
 $(curdir)/builddirs-install:=.
 $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))

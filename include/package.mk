@@ -211,6 +211,12 @@ define Build/CoreTargets
   .configure: $(STAMP_CONFIGURED)
   .dist: $(STAMP_CONFIGURED)
   .distcheck: $(STAMP_CONFIGURED)
+
+  ifneq ($(CONFIG_AUTOREMOVE),)
+    compile:
+		$(FIND) $(PKG_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -and -not -name '.pkgdir' | \
+			$(XARGS) rm -rf
+  endif
 endef
 
 define Build/DefaultTargets
