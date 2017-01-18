@@ -107,9 +107,6 @@ ifeq ($(DUMP),)
       ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
         IPKGS += $(1)
         .compile: $$(IPKG_$(1)) $(PKG_INFO_DIR)/$(1).provides $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
-        ifneq ($(ABI_VERSION),)
-        .compile: $(PKG_INFO_DIR)/$(1).version
-        endif
       else
         $(if $(CONFIG_PACKAGE_$(1)),$$(info WARNING: skipping $(1) -- package not selected))
       endif
@@ -144,15 +141,12 @@ ifeq ($(DUMP),)
     $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(STAMP_BUILT)
 	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
 	mkdir -p $(STAGING_DIR_ROOT)/stamp $(STAGING_DIR_ROOT)/tmp-$(1)
+	$(if $(ABI_VERSION),echo '$(ABI_VERSION)' | cmp -s - $$@ || echo '$(ABI_VERSION)' > $$@)
 	$(call Package/$(1)/install,$(STAGING_DIR_ROOT)/tmp-$(1))
 	$(call Package/$(1)/install_lib,$(STAGING_DIR_ROOT)/tmp-$(1))
 	$(call locked,$(CP) $(STAGING_DIR_ROOT)/tmp-$(1)/. $(STAGING_DIR_ROOT)/,root-copy)
 	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
 	touch $$@
-
-    $(PKG_INFO_DIR)/$(1).version: $$(IPKG_$(1))
-	echo '$(ABI_VERSION)' | cmp -s - $$@ || \
-		echo '$(ABI_VERSION)' > $$@
 
     Package/$(1)/DEPENDS := $$(call mergelist,$$(filter-out @%,$$(IDEPEND_$(1))))
     ifneq ($$(EXTRA_DEPENDS),)
