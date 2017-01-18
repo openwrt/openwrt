@@ -1,10 +1,13 @@
+From 514647c9af870bd2df2e579134a26bff8d17b6b9 Mon Sep 17 00:00:00 2001
 From: Dan Haab <dhaab@luxul.com>
+Date: Sat, 14 Jan 2017 19:29:28 -0700
 Subject: [PATCH] ARM: BCM5301X: Add DT for Luxul XWR-1200
 
 Luxul XWR-1200 in a dual-band router based on BCM47081. It uses serial
 flash (for bootloader and NVRAM) and NAND flash (for firmware).
 
 Signed-off-by: Dan Haab <dhaab@luxul.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  arch/arm/boot/dts/Makefile                    |   1 +
  arch/arm/boot/dts/bcm47081-luxul-xwr-1200.dts | 107 ++++++++++++++++++++++++++

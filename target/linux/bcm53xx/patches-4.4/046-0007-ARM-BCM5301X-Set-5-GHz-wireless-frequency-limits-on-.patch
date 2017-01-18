@@ -1,4 +1,6 @@
+From d3af86018715ebb19f4111f80e545405b208f09b Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sat, 14 Jan 2017 00:58:57 +0100
 Subject: [PATCH] ARM: BCM5301X: Set 5 GHz wireless frequency limits on Netgear
  R8000
 MIME-Version: 1.0
@@ -42,6 +44,7 @@ entries that I needed to put in DT.
    └─ 0001:02:1f.0	000d:0000	0x000000
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  arch/arm/boot/dts/bcm4709-netgear-r8000.dts | 48 +++++++++++++++++++++++++++++
  arch/arm/boot/dts/bcm5301x.dtsi             |  8 +++++
