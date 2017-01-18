@@ -75,7 +75,7 @@ define autoreconf_target
   $(strip $(call autoreconf, \
     $(PKG_BUILD_DIR), $(PKG_REMOVE_FILES), \
     $(PKG_AUTOMAKE_PATHS), $(PKG_LIBTOOL_PATHS), \
-    $(STAGING_DIR)/host/share/aclocal $(STAGING_DIR)/usr/share/aclocal $(PKG_MACRO_PATHS)))
+    $(STAGING_DIR)/host/share/aclocal $(STAGING_DIR_HOSTPKG)/share/aclocal $(STAGING_DIR)/usr/share/aclocal $(PKG_MACRO_PATHS)))
 endef
 
 define patch_libtool_target

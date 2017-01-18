@@ -122,7 +122,7 @@ ifneq ($(if $(HOST_QUILT),,$(CONFIG_AUTOREBUILD)),)
 endif
 
 define Host/Exports/Default
-  $(1) : export ACLOCAL_INCLUDE=$$(foreach p,$$(wildcard $$(STAGING_DIR_HOST)/share/aclocal $$(STAGING_DIR_HOST)/share/aclocal-* $(if $(IS_PACKAGE_BUILD),$$(STAGING_DIR)/host/share/aclocal $$(STAGING_DIR)/host/share/aclocal-*)),-I $$(p))
+  $(1) : export ACLOCAL_INCLUDE=$$(foreach p,$$(wildcard $$(STAGING_DIR_HOST)/share/aclocal $$(STAGING_DIR_HOST)/share/aclocal-* $(if $(IS_PACKAGE_BUILD),$$(STAGING_DIR)/host/share/aclocal $$(STAGING_DIR_HOSTPKG)/share/aclocal $$(STAGING_DIR)/host/share/aclocal-*)),-I $$(p))
   $(1) : export STAGING_PREFIX=$$(HOST_BUILD_PREFIX)
   $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig:$$(HOST_BUILD_PREFIX)/lib/pkgconfig
   $(1) : export PKG_CONFIG_LIBDIR=$$(HOST_BUILD_PREFIX)/lib/pkgconfig
