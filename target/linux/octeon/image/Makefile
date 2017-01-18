@@ -35,7 +35,7 @@ define Device/er
 endef
 TARGET_DEVICES += er
 
-ERLITE_CMDLINE:=-mtdparts=phys_mapped_flash:512k(boot0),512k(boot1),64k@1024k(eeprom) root=/dev/sda2 rootfstype=squashfs,ext4 rootwait
+ERLITE_CMDLINE:=-mtdparts=phys_mapped_flash:512k(boot0)ro,512k(boot1)ro,64k(eeprom)ro root=/dev/sda2 rootfstype=squashfs,ext4 rootwait
 define Device/erlite
   CMDLINE := $(ERLITE_CMDLINE) 
   DEVICE_TITLE := Ubiquiti EdgeRouter Lite
