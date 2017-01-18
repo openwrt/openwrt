@@ -92,7 +92,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		find \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/lib \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/usr/lib \
-			-type f -name \*.so\* -or -name \*.a; \
+			-type f -name \*.so\*; \
 	) | xargs strip 2>/dev/null >/dev/null
 
 	mkdir -p $(SDK_BUILD_DIR)/target/linux
