@@ -204,13 +204,13 @@ define Build/CoreTargets
 	touch $$@
 
   ifdef Build/InstallDev
-    compile: $(STAMP_INSTALLED)
+    .compile: $(STAMP_INSTALLED)
   endif
 
-  prepare: $(STAMP_PREPARED)
-  configure: $(STAMP_CONFIGURED)
-  dist: $(STAMP_CONFIGURED)
-  distcheck: $(STAMP_CONFIGURED)
+  .prepare: $(STAMP_PREPARED)
+  .configure: $(STAMP_CONFIGURED)
+  .dist: $(STAMP_CONFIGURED)
+  .distcheck: $(STAMP_CONFIGURED)
 endef
 
 define Build/DefaultTargets
@@ -289,6 +289,7 @@ $(PACKAGE_DIR):
 	mkdir -p $@
 
 compile: prepare-package-install
+.install: .compile
 install: compile
 
 clean: FORCE

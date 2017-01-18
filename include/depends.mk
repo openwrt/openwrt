@@ -20,6 +20,7 @@ define rdep
   .SILENT: $(2)_check
 
   $(2): $(2)_check
+  check-depends: $(2)_check
 
 ifneq ($(wildcard $(2)),)
   $(2)_check::
@@ -46,3 +47,8 @@ endif
 
 endef
 
+ifeq ($(filter .%,$(MAKECMDGOALS)),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),x))
+  define rdep
+    $(2): $(2)_check
+  endef
+endif
