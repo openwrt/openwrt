@@ -100,6 +100,7 @@ $(foreach tool, $(tools-core), $(eval $(curdir)/$(tool)/compile += $(curdir)/sed
 $(curdir)/sed/compile := $(curdir)/flock/compile
 tools-y += flock sed
 
+$(curdir)/autoremove := 1
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
 $(curdir)/builddirs-default := $(tools-y)
 

@@ -172,6 +172,7 @@ ifndef DUMP
   ifndef STAMP_BUILT
     $(foreach t,$(DEFAULT_SUBDIR_TARGETS),
       $(t): host-$(t)
+      .$(t): .host-$(t)
     )
   endif
 
@@ -183,6 +184,11 @@ ifndef DUMP
 	$(call Host/Uninstall)
 	rm -rf $(HOST_BUILD_DIR) $(HOST_STAMP_INSTALLED) $(HOST_STAMP_BUILT)
 
+    ifneq ($(CONFIG_AUTOREMOVE),)
+      host-compile:
+		$(FIND) $(HOST_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' | \
+			$(XARGS) rm -rf
+    endif
   endef
 endif
 
