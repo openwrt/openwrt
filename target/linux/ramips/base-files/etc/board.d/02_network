@@ -358,6 +358,10 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_binary factory_info 13)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
+	miwifi-mini)
+		wan_mac=$(cat /sys/class/net/eth0/address)
+		lan_mac=$(macaddr_setbit_la "$wan_mac")
+		;;
 	m3|\
 	m4|\
 	x5|\
