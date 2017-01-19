@@ -25,6 +25,8 @@ PKG_BUILD_DEPENDS:=grub2/host
 
 PKG_SSP:=0
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
