@@ -22,7 +22,6 @@ endef
 TARGET_DEVICES += nand-64m nand-large
 
 define Device/rb-nor-flash-16M
-  DEVICE_PROFILE := Default
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16000k
   LOADER_TYPE := elf
@@ -35,7 +34,9 @@ endef
 
 define Device/rb-941-2nd
 $(Device/rb-nor-flash-16M)
+  DEVICE_TITLE := hAP lite
+  DEVICE_PACKAGES:= rbcfg
   BOARDNAME:= rb-941-2nd
 endef
 
-TARGET_DEVICES += rb-941-2nd
+TARGET_DEVICES += rb-nor-flash-16M rb-941-2nd
