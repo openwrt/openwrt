@@ -64,6 +64,7 @@ ifneq ($(PKG_BUILD_DIR),)
   ifneq ($(QUILT),)
     STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
     override CONFIG_AUTOREBUILD=
+    override CONFIG_AUTOREMOVE=
     quilt-check: $(STAMP_CHECKED)
   endif
 endif
@@ -73,6 +74,7 @@ ifneq ($(HOST_BUILD_DIR),)
   ifneq ($(HOST_QUILT),)
     HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked
     override CONFIG_AUTOREBUILD=
+    override CONFIG_AUTOREMOVE=
     host-quilt-check: $(HOST_STAMP_CHECKED)
   endif
 endif

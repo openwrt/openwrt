@@ -35,6 +35,8 @@ override MAKEFLAGS=
 include $(INCLUDE_DIR)/quilt.mk
 include $(INCLUDE_DIR)/autotools.mk
 
+_host_target:=$(if $(HOST_QUILT),,.)
+
 Host/Patch:=$(Host/Patch/Default)
 ifneq ($(strip $(HOST_UNPACK)),)
   define Host/Prepare/Default
@@ -176,9 +178,9 @@ ifndef DUMP
     )
   endif
 
-  .host-prepare: $(HOST_STAMP_PREPARED)
-  .host-configure: $(HOST_STAMP_CONFIGURED)
-  .host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED)
+  $(_host_target)host-prepare: $(HOST_STAMP_PREPARED)
+  $(_host_target)host-configure: $(HOST_STAMP_CONFIGURED)
+  $(_host_target)host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED)
   host-clean: FORCE
 	$(call Host/Clean)
 	$(call Host/Uninstall)

@@ -96,6 +96,8 @@ include $(INCLUDE_DIR)/package-ipkg.mk
 include $(INCLUDE_DIR)/package-bin.mk
 include $(INCLUDE_DIR)/autotools.mk
 
+_pkg_target:=$(if $(QUILT),,.)
+
 override MAKEFLAGS=
 CONFIG_SITE:=$(INCLUDE_DIR)/site/$(ARCH)
 CUR_MAKEFILE:=$(filter-out Makefile,$(firstword $(MAKEFILE_LIST)))
@@ -204,13 +206,13 @@ define Build/CoreTargets
 	touch $$@
 
   ifdef Build/InstallDev
-    .compile: $(STAMP_INSTALLED)
+    $(_pkg_target)compile: $(STAMP_INSTALLED)
   endif
 
-  .prepare: $(STAMP_PREPARED)
-  .configure: $(STAMP_CONFIGURED)
-  .dist: $(STAMP_CONFIGURED)
-  .distcheck: $(STAMP_CONFIGURED)
+  $(_pkg_target)prepare: $(STAMP_PREPARED)
+  $(_pkg_target)configure: $(STAMP_CONFIGURED)
+  $(_pkg_target)dist: $(STAMP_CONFIGURED)
+  $(_pkg_target)distcheck: $(STAMP_CONFIGURED)
 
   ifneq ($(CONFIG_AUTOREMOVE),)
     compile:

@@ -10,7 +10,7 @@ ifeq ($(DUMP),)
     ifeq ($(if $(VARIANT),$(BUILD_VARIANT)),$(VARIANT))
     ifdef Package/$(1)/install
       ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
-        .compile: $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
+        $(_pkg_target)compile: $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
         compile: install-bin-$(1)
       else
         compile: $(1)-disabled
