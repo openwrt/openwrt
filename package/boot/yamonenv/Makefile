@@ -17,6 +17,8 @@ PKG_HASH:=466eca9cdad2c15e957fb9ce7d0b6927ecd17d85c4cc2dff37e97a3e6b209c67
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/yamonenv

@@ -26,6 +26,8 @@ PKG_CONFIG_DEPENDS:=\
 
 PKG_BUILD_DEPENDS:=TARGET_lantiq_xway:kmod-ltq-adsl-danube TARGET_lantiq_xway_legacy:kmod-ltq-adsl-danube TARGET_lantiq_ase:kmod-ltq-adsl-ase
 
+PKG_FLAGS:=nonshared
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ltq-adsl-app
