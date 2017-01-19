@@ -607,6 +607,8 @@ platform_pre_upgrade() {
 	local board=$(ar71xx_board_name)
 
 	case "$board" in
+	rb-941-2nd)
+		;;
 	rb*|\
 	c-60|\
 	nbg6716|\
