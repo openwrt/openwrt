@@ -36,7 +36,7 @@ SDK_DIRS = \
 		$(STAGING_SUBDIR_HOST) \
 		$(STAGING_SUBDIR_TOOLCHAIN)
 
-BASE_FEED:=$(shell git config --get remote.origin.url 2>/dev/null | sed -ne 's/^/src-git base /p')
+BASE_FEED:=$(shell git config --get remote.origin.url 2>/dev/null | sed -ne '\#\(git\|http\|https\)://#s/^/src-git base /p')
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C git svn info 2>/dev/null | sed -ne 's/^URL: /src-gitsvn base /p'))
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C svn info 2>/dev/null | sed -ne 's/^URL: /src-svn base /p'))
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git base https://git.lede-project.org/source.git$(filter-out ;master,;$(shell git rev-parse --abbrev-ref HEAD)))
