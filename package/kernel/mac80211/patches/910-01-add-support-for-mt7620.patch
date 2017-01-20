@@ -210,7 +210,7 @@
  	case RT5592:
  		*txwi_size = TXWI_DESC_SIZE_5WORDS;
  		*rxwi_size = RXWI_DESC_SIZE_6WORDS;
-@@ -3303,6 +3376,312 @@ static void rt2800_config_channel_rf55xx
+@@ -3303,6 +3376,318 @@ static void rt2800_config_channel_rf55xx
  	rt2800_bbp_write(rt2x00dev, 196, (rf->channel <= 14) ? 0x19 : 0x7F);
  }
  
@@ -470,13 +470,19 @@
 +		bbp = 0x40;
 +		rt2800_bbp_write(rt2x00dev, 30, bbp);
 +		rt2800_rfcsr_write(rt2x00dev, 39, 0);
-+		rt2800_rfcsr_write(rt2x00dev, 42, 0x7b);
++		if (rt2x00_has_cap_external_lna_bg(rt2x00dev))
++			rt2800_rfcsr_write(rt2x00dev, 42, 0xfb);
++		else
++			rt2800_rfcsr_write(rt2x00dev, 42, 0x7b);
 +	} else {
 +		rt2800_bbp_read(rt2x00dev, 30, &bbp);
 +		bbp = 0x1f;
 +		rt2800_bbp_write(rt2x00dev, 30, bbp);
 +		rt2800_rfcsr_write(rt2x00dev, 39, 0x80);
-+		rt2800_rfcsr_write(rt2x00dev, 42, 0x5b);
++		if (rt2x00_has_cap_external_lna_bg(rt2x00dev))
++			rt2800_rfcsr_write(rt2x00dev, 42, 0xdb);
++		else
++			rt2800_rfcsr_write(rt2x00dev, 42, 0x5b);
 +	}
 +
 +	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, mac_sys_ctrl);
