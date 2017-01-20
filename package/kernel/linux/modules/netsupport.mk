@@ -736,7 +736,7 @@ $(eval $(call KernelPackage,mppe))
 
 
 SCHED_MODULES = $(patsubst $(LINUX_DIR)/net/sched/%.ko,%,$(wildcard $(LINUX_DIR)/net/sched/*.ko))
-SCHED_MODULES_CORE = sch_ingress sch_fq_codel sch_hfsc cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_skbedit
+SCHED_MODULES_CORE = sch_ingress sch_fq_codel sch_hfsc sch_htb sch_tbf cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_skbedit
 SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark sch_netem
 SCHED_MODULES_EXTRA = $(filter-out $(SCHED_MODULES_FILTER),$(SCHED_MODULES))
 SCHED_FILES = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(filter $(SCHED_MODULES_CORE),$(SCHED_MODULES)))
@@ -748,6 +748,8 @@ define KernelPackage/sched-core
   KCONFIG:= \
 	CONFIG_NET_SCHED=y \
 	CONFIG_NET_SCH_HFSC \
+	CONFIG_NET_SCH_HTB \
+	CONFIG_NET_SCH_TBF \
 	CONFIG_NET_SCH_INGRESS \
 	CONFIG_NET_SCH_FQ_CODEL \
 	CONFIG_NET_CLS=y \
@@ -789,12 +791,10 @@ define KernelPackage/sched
   KCONFIG:= \
 	CONFIG_NET_SCH_CODEL \
 	CONFIG_NET_SCH_DSMARK \
-	CONFIG_NET_SCH_HTB \
 	CONFIG_NET_SCH_FIFO \
 	CONFIG_NET_SCH_GRED \
 	CONFIG_NET_SCH_PRIO \
 	CONFIG_NET_SCH_RED \
-	CONFIG_NET_SCH_TBF \
 	CONFIG_NET_SCH_SFQ \
 	CONFIG_NET_SCH_TEQL \
 	CONFIG_NET_SCH_FQ \
