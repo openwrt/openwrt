@@ -1377,7 +1377,7 @@ $(eval $(call KernelPackage,usbip-server))
 
 define KernelPackage/usb-chipidea
   TITLE:=Host and device support for Chipidea controllers
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ar71xx +kmod-usb2
   KCONFIG:= \
 	CONFIG_NOP_USB_XCEIV=y \
 	CONFIG_EXTCON \
