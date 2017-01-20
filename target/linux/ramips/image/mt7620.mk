@@ -469,7 +469,7 @@ define Device/kng_rc
   DEVICE_TITLE := ZyXEL Keenetic Viva
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) | \
 	zyimage -d 8997 -v "ZyXEL Keenetic Viva"
 endef
 TARGET_DEVICES += kng_rc
