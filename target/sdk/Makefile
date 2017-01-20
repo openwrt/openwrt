@@ -36,10 +36,13 @@ SDK_DIRS = \
 		$(STAGING_SUBDIR_HOST) \
 		$(STAGING_SUBDIR_TOOLCHAIN)
 
-BASE_FEED:=$(shell git config --get remote.origin.url 2>/dev/null | sed -ne '\#\(git\|http\|https\)://#s/^/src-git base /p')
+GIT_URL:=$(filter git://% http://% https://%,$(shell git config --get remote.origin.url 2>/dev/null))
+GIT_BRANCH:=$(filter-out master,$(shell git rev-parse --abbrev-ref HEAD 2>/dev/null))
+
+BASE_FEED:=$(if $(GIT_URL),src-git base $(GIT_URL)$(if $(GIT_BRANCH),;$(GIT_BRANCH)))
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C git svn info 2>/dev/null | sed -ne 's/^URL: /src-gitsvn base /p'))
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C svn info 2>/dev/null | sed -ne 's/^URL: /src-svn base /p'))
-BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git base https://git.lede-project.org/source.git$(filter-out ;master,;$(shell git rev-parse --abbrev-ref HEAD)))
+BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git base https://git.lede-project.org/source.git$(if $(GIT_BRANCH),;$(GIT_BRANCH)))
 
 KDIR_BASE = $(patsubst $(TOPDIR)/%,%,$(LINUX_DIR))
 
