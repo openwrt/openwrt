@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libtool
 PKG_VERSION:=2.4
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/libtool
@@ -34,14 +34,14 @@ endef
 
 define Build/InstallDev
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		bindir="$(2)/bin" \
-		datadir="$(2)/share" \
-		prefix="$(2)" \
-		exec_prefix="$(2)" \
+		bindir="$(2)/libltdl/bin" \
+		datadir="$(2)/libltdl/share" \
+		prefix="$(2)/libltdl" \
+		exec_prefix="$(2)/libltdl" \
 		install
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/include
-	mv $(2)/lib/* $(1)/usr/lib/
-	mv $(2)/include/* $(1)/usr/include/
+	mv $(2)/libltdl/lib/* $(1)/usr/lib/
+	mv $(2)/libltdl/include/* $(1)/usr/include/
 endef
 
 define Package/libltdl/install
