@@ -1420,7 +1420,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  /*
   * Returns zero if the TRB isn't in this segment, otherwise it returns the DMA
-@@ -3121,17 +3122,22 @@ static u32 xhci_td_remainder(struct xhci
+@@ -3110,17 +3111,22 @@ static u32 xhci_td_remainder(struct xhci
  {
  	u32 maxp, total_packet_count;
  
@@ -1447,7 +1447,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	/* Queueing functions don't count the current TRB into transferred */
  	return (total_packet_count - ((transferred + trb_buff_len) / maxp));
  }
-@@ -3519,7 +3525,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
+@@ -3508,7 +3514,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
  		field |= 0x1;
  
  	/* xHCI 1.0/1.1 6.4.1.2.1: Transfer Type field */
@@ -1479,7 +1479,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -1704,6 +1709,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1691,6 +1696,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -1489,7 +1489,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1799,6 +1807,15 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1786,6 +1794,15 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  

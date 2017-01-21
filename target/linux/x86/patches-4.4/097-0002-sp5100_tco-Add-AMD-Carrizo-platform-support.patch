@@ -14,11 +14,9 @@ Signed-off-by: Wim Van Sebroeck <wim@iguana.be>
  drivers/watchdog/sp5100_tco.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/watchdog/sp5100_tco.c b/drivers/watchdog/sp5100_tco.c
-index ef039f8..0ccadb4 100644
 --- a/drivers/watchdog/sp5100_tco.c
 +++ b/drivers/watchdog/sp5100_tco.c
-@@ -308,6 +308,8 @@ static const struct pci_device_id sp5100_tco_pci_tbl[] = {
+@@ -308,6 +308,8 @@ static const struct pci_device_id sp5100
  	  PCI_ANY_ID, },
  	{ PCI_VENDOR_ID_AMD, PCI_DEVICE_ID_AMD_HUDSON2_SMBUS, PCI_ANY_ID,
  	  PCI_ANY_ID, },
@@ -27,5 +25,3 @@ index ef039f8..0ccadb4 100644
  	{ 0, },			/* End of list */
  };
  MODULE_DEVICE_TABLE(pci, sp5100_tco_pci_tbl);
---
-2.7.4

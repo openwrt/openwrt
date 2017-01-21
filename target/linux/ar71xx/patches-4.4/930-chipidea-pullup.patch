@@ -1,8 +1,6 @@
-Index: linux-4.4.4/drivers/usb/chipidea/ci.h
-===================================================================
---- linux-4.4.4.orig/drivers/usb/chipidea/ci.h	2016-03-31 21:39:23.571126980 +0300
-+++ linux-4.4.4/drivers/usb/chipidea/ci.h	2016-03-31 21:39:23.567126980 +0300
-@@ -199,6 +199,7 @@
+--- a/drivers/usb/chipidea/ci.h
++++ b/drivers/usb/chipidea/ci.h
+@@ -199,6 +199,7 @@ struct hw_bank {
   * @in_lpm: if the core in low power mode
   * @wakeup_int: if wakeup interrupt occur
   * @rev: The revision number for controller
@@ -10,7 +8,7 @@ Index: linux-4.4.4/drivers/usb/chipidea/ci.h
   */
  struct ci_hdrc {
  	struct device			*dev;
-@@ -248,6 +249,7 @@
+@@ -248,6 +249,7 @@ struct ci_hdrc {
  	bool				in_lpm;
  	bool				wakeup_int;
  	enum ci_revision		rev;
@@ -18,11 +16,9 @@ Index: linux-4.4.4/drivers/usb/chipidea/ci.h
  };
  
  static inline struct ci_role_driver *ci_role(struct ci_hdrc *ci)
-Index: linux-4.4.4/drivers/usb/chipidea/core.c
-===================================================================
---- linux-4.4.4.orig/drivers/usb/chipidea/core.c	2016-03-31 21:39:23.571126980 +0300
-+++ linux-4.4.4/drivers/usb/chipidea/core.c	2016-03-31 21:41:33.159130168 +0300
-@@ -883,7 +883,7 @@
+--- a/drivers/usb/chipidea/core.c
++++ b/drivers/usb/chipidea/core.c
+@@ -883,7 +883,7 @@ static inline void ci_role_destroy(struc
  {
  	ci_hdrc_gadget_destroy(ci);
  	ci_hdrc_host_destroy(ci);
@@ -31,7 +27,7 @@ Index: linux-4.4.4/drivers/usb/chipidea/core.c
  		ci_hdrc_otg_destroy(ci);
  }
  
-@@ -933,6 +933,9 @@
+@@ -934,6 +934,9 @@ static int ci_hdrc_probe(struct platform
  	ci->supports_runtime_pm = !!(ci->platdata->flags &
  		CI_HDRC_SUPPORTS_RUNTIME_PM);
  
@@ -41,7 +37,7 @@ Index: linux-4.4.4/drivers/usb/chipidea/core.c
  	ret = hw_device_init(ci, base);
  	if (ret < 0) {
  		dev_err(dev, "can't initialize hardware\n");
-@@ -998,7 +1001,7 @@
+@@ -999,7 +1002,7 @@ static int ci_hdrc_probe(struct platform
  		goto deinit_phy;
  	}
  
@@ -50,11 +46,9 @@ Index: linux-4.4.4/drivers/usb/chipidea/core.c
  		ret = ci_hdrc_otg_init(ci);
  		if (ret) {
  			dev_err(dev, "init otg fails, ret = %d\n", ret);
-Index: linux-4.4.4/drivers/usb/chipidea/otg.c
-===================================================================
---- linux-4.4.4.orig/drivers/usb/chipidea/otg.c	2016-03-31 21:39:23.571126980 +0300
-+++ linux-4.4.4/drivers/usb/chipidea/otg.c	2016-03-31 21:39:23.567126980 +0300
-@@ -95,8 +95,10 @@
+--- a/drivers/usb/chipidea/otg.c
++++ b/drivers/usb/chipidea/otg.c
+@@ -95,8 +95,10 @@ enum ci_role ci_otg_role(struct ci_hdrc
  
  void ci_handle_vbus_change(struct ci_hdrc *ci)
  {
@@ -66,11 +60,9 @@ Index: linux-4.4.4/drivers/usb/chipidea/otg.c
  
  	if (hw_read_otgsc(ci, OTGSC_BSV))
  		usb_gadget_vbus_connect(&ci->gadget);
-Index: linux-4.4.4/include/linux/usb/chipidea.h
-===================================================================
---- linux-4.4.4.orig/include/linux/usb/chipidea.h	2016-03-31 21:39:23.571126980 +0300
-+++ linux-4.4.4/include/linux/usb/chipidea.h	2016-03-31 21:39:23.567126980 +0300
-@@ -55,6 +55,7 @@
+--- a/include/linux/usb/chipidea.h
++++ b/include/linux/usb/chipidea.h
+@@ -55,6 +55,7 @@ struct ci_hdrc_platform_data {
  #define CI_HDRC_OVERRIDE_AHB_BURST	BIT(9)
  #define CI_HDRC_OVERRIDE_TX_BURST	BIT(10)
  #define CI_HDRC_OVERRIDE_RX_BURST	BIT(11)

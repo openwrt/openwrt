@@ -16,11 +16,9 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  drivers/tty/serial/imx.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/tty/serial/imx.c b/drivers/tty/serial/imx.c
-index 231e7d5..bfc4555 100644
 --- a/drivers/tty/serial/imx.c
 +++ b/drivers/tty/serial/imx.c
-@@ -797,9 +797,9 @@ static unsigned int imx_get_hwmctrl(struct imx_port *sport)
+@@ -817,9 +817,9 @@ static unsigned int imx_get_mctrl(struct
  	if (!(usr1 & USR2_DCDIN))
  		tmp |= TIOCM_CAR;
  
@@ -33,6 +31,3 @@ index 231e7d5..bfc4555 100644
  
  	return tmp;
  }
--- 
-1.9.1
-

@@ -25,11 +25,9 @@ Signed-off-by: Wim Van Sebroeck <wim@iguana.be>
  drivers/watchdog/sp5100_tco.c | 15 ++++++++++-----
  1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/watchdog/sp5100_tco.c b/drivers/watchdog/sp5100_tco.c
-index 6467b91..028618c 100644
 --- a/drivers/watchdog/sp5100_tco.c
 +++ b/drivers/watchdog/sp5100_tco.c
-@@ -73,6 +73,13 @@ MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started."
+@@ -73,6 +73,13 @@ MODULE_PARM_DESC(nowayout, "Watchdog can
  /*
   * Some TCO specific functions
   */
@@ -46,13 +44,13 @@ index 6467b91..028618c 100644
 @@ -129,7 +136,7 @@ static void tco_timer_enable(void)
  {
  	int val;
-
+ 
 -	if (sp5100_tco_pci->revision >= 0x40) {
 +	if (!tco_has_sp5100_reg_layout(sp5100_tco_pci)) {
  		/* For SB800 or later */
  		/* Set the Watchdog timer resolution to 1 sec */
  		outb(SB800_PM_WATCHDOG_CONFIG, SB800_IO_PM_INDEX_REG);
-@@ -342,8 +349,7 @@ static unsigned char sp5100_tco_setupdevice(void)
+@@ -342,8 +349,7 @@ static unsigned char sp5100_tco_setupdev
  	/*
  	 * Determine type of southbridge chipset.
  	 */
@@ -62,7 +60,7 @@ index 6467b91..028618c 100644
  		dev_name = SP5100_DEVNAME;
  		index_reg = SP5100_IO_PM_INDEX_REG;
  		data_reg = SP5100_IO_PM_DATA_REG;
-@@ -388,8 +394,7 @@ static unsigned char sp5100_tco_setupdevice(void)
+@@ -388,8 +394,7 @@ static unsigned char sp5100_tco_setupdev
  	 * Secondly, Find the watchdog timer MMIO address
  	 * from SBResource_MMIO register.
  	 */
@@ -72,5 +70,3 @@ index 6467b91..028618c 100644
  		/* Read SBResource_MMIO from PCI config(PCI_Reg: 9Ch) */
  		pci_read_config_dword(sp5100_tco_pci,
  				      SP5100_SB_RESOURCE_MMIO_BASE, &val);
---
-2.7.4
