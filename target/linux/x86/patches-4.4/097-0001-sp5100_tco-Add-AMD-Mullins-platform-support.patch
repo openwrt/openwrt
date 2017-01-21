@@ -13,11 +13,9 @@ Signed-off-by: Wim Van Sebroeck <wim@iguana.be>
  drivers/watchdog/sp5100_tco.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/watchdog/sp5100_tco.c b/drivers/watchdog/sp5100_tco.c
-index eb8044e..ef039f8 100644
 --- a/drivers/watchdog/sp5100_tco.c
 +++ b/drivers/watchdog/sp5100_tco.c
-@@ -306,6 +306,8 @@ static struct miscdevice sp5100_tco_miscdev = {
+@@ -306,6 +306,8 @@ static struct miscdevice sp5100_tco_misc
  static const struct pci_device_id sp5100_tco_pci_tbl[] = {
  	{ PCI_VENDOR_ID_ATI, PCI_DEVICE_ID_ATI_SBX00_SMBUS, PCI_ANY_ID,
  	  PCI_ANY_ID, },
@@ -26,5 +24,3 @@ index eb8044e..ef039f8 100644
  	{ 0, },			/* End of list */
  };
  MODULE_DEVICE_TABLE(pci, sp5100_tco_pci_tbl);
---
-2.7.4

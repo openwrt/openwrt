@@ -18,11 +18,9 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  drivers/tty/serial/imx.c | 23 ++++++++++++++++++++++-
  1 file changed, 22 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/imx.c b/drivers/tty/serial/imx.c
-index 5ced61e..fcd48fd 100644
 --- a/drivers/tty/serial/imx.c
 +++ b/drivers/tty/serial/imx.c
-@@ -1221,11 +1221,32 @@ static int imx_startup(struct uart_port *port)
+@@ -1184,11 +1184,32 @@ static int imx_startup(struct uart_port
  	temp |= (UCR2_RXEN | UCR2_TXEN);
  	if (!sport->have_rtscts)
  		temp |= UCR2_IRTS;
@@ -56,6 +54,3 @@ index 5ced61e..fcd48fd 100644
  		writel(temp, sport->port.membase + UCR3);
  	}
  
--- 
-1.9.1
-

@@ -16,11 +16,9 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  drivers/tty/serial/imx.c | 17 +++++++++++++----
  1 file changed, 13 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/tty/serial/imx.c b/drivers/tty/serial/imx.c
-index bfc4555..5ced61e 100644
 --- a/drivers/tty/serial/imx.c
 +++ b/drivers/tty/serial/imx.c
-@@ -734,6 +734,7 @@ static irqreturn_t imx_int(int irq, void *dev_id)
+@@ -753,6 +753,7 @@ static irqreturn_t imx_int(int irq, void
  	struct imx_port *sport = dev_id;
  	unsigned int sts;
  	unsigned int sts2;
@@ -28,7 +26,7 @@ index bfc4555..5ced61e 100644
  
  	sts = readl(sport->port.membase + USR1);
  	sts2 = readl(sport->port.membase + USR2);
-@@ -743,26 +744,34 @@ static irqreturn_t imx_int(int irq, void *dev_id)
+@@ -762,26 +763,34 @@ static irqreturn_t imx_int(int irq, void
  			imx_dma_rxint(sport);
  		else
  			imx_rxint(irq, dev_id);
@@ -67,6 +65,3 @@ index bfc4555..5ced61e 100644
  }
  
  /*
--- 
-1.9.1
-
