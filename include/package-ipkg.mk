@@ -148,7 +148,7 @@ ifeq ($(DUMP),)
 
     $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
 	mkdir -p $(STAGING_DIR_ROOT)/stamp
-	$(if $(ABI_VERSION),echo '$(ABI_VERSION)' | cmp -s - $$@ || echo '$(ABI_VERSION)' > $$@)
+	$(if $(ABI_VERSION),echo '$(ABI_VERSION)' | cmp -s - $(PKG_INFO_DIR)/$(1).version || echo '$(ABI_VERSION)' > $(PKG_INFO_DIR)/$(1).version)
 	$(call locked,$(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(STAGING_DIR_ROOT)/,root-copy)
 	touch $$@
 
