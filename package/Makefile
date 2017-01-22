@@ -49,8 +49,6 @@ PACKAGE_INSTALL_FILES:= \
 $(curdir)/cleanup: $(TMP_DIR)/.build
 	rm -rf $(STAGING_DIR_ROOT)
 
-$(curdir)/compile: $(curdir)/cleanup
-
 $(curdir)/merge:
 	rm -rf $(PACKAGE_DIR_ALL)
 	mkdir -p $(PACKAGE_DIR_ALL)
@@ -100,6 +98,7 @@ $(curdir)/preconfig:
 $(curdir)/flags-install:= -j1
 
 $(eval $(call stampfile,$(curdir),package,prereq,.config))
+$(eval $(call stampfile,$(curdir),package,cleanup,$(TMP_DIR)/.build))
 $(eval $(call stampfile,$(curdir),package,compile,$(TMP_DIR)/.build))
 $(eval $(call stampfile,$(curdir),package,install,$(TMP_DIR)/.build))
 $(eval $(call stampfile,$(curdir),package,check,$(TMP_DIR)/.build))
