@@ -300,12 +300,14 @@ compile: prepare-package-install
 .install: .compile
 install: compile
 
-clean: FORCE
+clean-build: FORCE
+	rm -rf $(PKG_BUILD_DIR)
+
+clean: clean-build
 	$(CleanStaging)
 	$(call Build/UninstallDev,$(STAGING_DIR),$(STAGING_DIR_HOST))
 	$(Build/Clean)
 	rm -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) $(STAGING_DIR_HOST)/packages/$(STAGING_FILES_LIST)
-	rm -rf $(PKG_BUILD_DIR)
 
 dist:
 	$(Build/Dist)

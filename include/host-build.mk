@@ -176,15 +176,20 @@ ifndef DUMP
       $(t): host-$(t)
       .$(t): .host-$(t)
     )
+    clean-build: host-clean-build
   endif
 
   $(_host_target)host-prepare: $(HOST_STAMP_PREPARED)
   $(_host_target)host-configure: $(HOST_STAMP_CONFIGURED)
   $(_host_target)host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED)
-  host-clean: FORCE
+
+  host-clean-build: FORCE
+	rm -rf $(HOST_BUILD_DIR) $(HOST_STAMP_BUILT)
+
+  host-clean: host-clean-build
 	$(call Host/Clean)
 	$(call Host/Uninstall)
-	rm -rf $(HOST_BUILD_DIR) $(HOST_STAMP_INSTALLED) $(HOST_STAMP_BUILT)
+	rm -rf $(HOST_STAMP_INSTALLED)
 
     ifneq ($(CONFIG_AUTOREMOVE),)
       host-compile:
