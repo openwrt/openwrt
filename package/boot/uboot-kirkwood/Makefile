@@ -58,6 +58,10 @@ define uboot/iconnect_second_stage
   TITLE:=second stage U-Boot for Iomega iConnect Wireless
 endef
 
+define uboot/nsa310
+  TITLE:=U-Boot for Zyxel NSA310
+endef
+
 define uboot/pogo_e02
   TITLE:=U-Boot for Cloud Engines Pogoplug E02
 endef
@@ -75,6 +79,7 @@ UBOOTS:= \
 	goflexhome \
 	ib62x0 ib62x0_second_stage \
 	iconnect iconnect_second_stage \
+	nsa310 \
 	pogo_e02 pogo_e02_second_stage \
 	sheevaplug
 
