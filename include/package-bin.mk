@@ -29,10 +29,10 @@ ifeq ($(DUMP),)
     install-bin-$(1): $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
 	rm -rf $(BIN_DIR)/$(1)
 	-rmdir $(PKG_BUILD_DIR)/.pkgdir/$(1) >/dev/null 2>/dev/null
-	[ -d $(PKG_BUILD_DIR)/.pkgdir/$(1) ] && { \
+	if [ -d $(PKG_BUILD_DIR)/.pkgdir/$(1) ]; then \
 		$(INSTALL_DIR) $(BIN_DIR)/$(1) && \
 		$(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(BIN_DIR)/$(1)/; \
-	}
+	fi
 
     clean-$(1):
 	  rm -rf $(BIN_DIR)/$(1)
