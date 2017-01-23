@@ -216,6 +216,7 @@ define Build/CoreTargets
 
   ifneq ($(CONFIG_AUTOREMOVE),)
     compile:
+		touch $(PKG_BUILD_DIR)/.autoremove
 		$(FIND) $(PKG_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -and -not -name '.pkgdir' | \
 			$(XARGS) rm -rf
   endif
@@ -300,10 +301,12 @@ compile: prepare-package-install
 .install: .compile
 install: compile
 
-clean-build: FORCE
+force-clean-build: FORCE
 	rm -rf $(PKG_BUILD_DIR)
 
-clean: clean-build
+clean-build: $(if $(wildcard $(PKG_BUILD_DIR)/.autoremove),force-clean-build)
+
+clean: force-clean-build
 	$(CleanStaging)
 	$(call Build/UninstallDev,$(STAGING_DIR),$(STAGING_DIR_HOST))
 	$(Build/Clean)
