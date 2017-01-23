@@ -7,18 +7,6 @@ define Build/tplink-header
 		-o $@.new -k $@ -r $(IMAGE_ROOTFS) && mv $@.new $@
 endef
 
-define Build/pad-kernel-ex2700
-	cp $@ $@.tmp && dd if=/dev/zero bs=64 count=1 >> $@.tmp \
-		&& dd if=$@.tmp of=$@.new bs=64k conv=sync && truncate -s -64 $@.new \
-		&& cat ex2700-fakeroot.uImage >> $@.new && rm $@.tmp && mv $@.new $@
-endef
-
-define Build/netgear-header
-	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		$(1) -v OpenWrt -i $@ \
-		-o $@.new && mv $@.new $@
-endef
-
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
 	( \
@@ -64,24 +52,28 @@ endef
 TARGET_DEVICES += ArcherMR200
 
 define Device/ex2700
+  NETGEAR_HW_ID := 29764623+4+0+32+2x2+0
+  NETGEAR_BOARD_ID := EX2700
   DTS := EX2700
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
-  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-kernel-ex2700
+  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | append-file netgear-fake-uImage-hdr.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
-	netgear-header -B EX2700 -H 29764623+4+0+32+2x2+0
+	netgear-dni
   DEVICE_TITLE := Netgear EX2700
 endef
 TARGET_DEVICES += ex2700
 
 define Device/wn3000rpv3
+  NETGEAR_HW_ID := 29764836+8+0+32+2x2+0
+  NETGEAR_BOARD_ID := WN3000RPv3
   DTS := WN3000RPV3
   BLOCKSIZE := 4k
   IMAGES += factory.bin
-  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-kernel-ex2700
+  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | append-file netgear-fake-uImage-hdr.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
-	netgear-header -B WN3000RPv3 -H 29764836+8+0+32+2x2+0
+	netgear-dni
   DEVICE_TITLE := Netgear WN3000RPv3
 endef
 TARGET_DEVICES += wn3000rpv3
