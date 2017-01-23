@@ -38,6 +38,9 @@ case "$board" in
 "guruplug-server-plus")
 	ucidef_set_led_timer "health" "health" "guruplug:red:health" "200" "800"
 	;;
+"nsa310b")
+	ucidef_set_led_default "health" "health" "nsa310:green:sys" "1"
+	;;
 "sheevaplug" | \
 "sheevaplug-esata")
 	ucidef_set_led_timer "health" "health" "sheevaplug:blue:health" "200" "800"

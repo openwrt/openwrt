@@ -57,6 +57,10 @@ kirkwood_board_detect() {
 		name="sheevaplug-esata"
 		;;
 
+	"ZyXEL NSA310b")
+		name="nsa310b"
+		;;
+
 	"ZyXEL NSA310S")
 		name="nsa310s"
 		;;
