@@ -28,8 +28,9 @@ ifeq ($(DUMP),)
 
     install-bin-$(1): $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
 	  rm -rf $(BIN_DIR)/$(1)
-	  $(INSTALL_DIR) $(BIN_DIR)/$(1)
-	  $(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(BIN_DIR)/$(1)/
+	  $(if $(wildcard $(PKG_BUILD_DIR)/.pkgdir/$(1)/*), \
+		$(INSTALL_DIR) $(BIN_DIR)/$(1) && $(CP) $(PKG_BUILD_DIR)/.pkgdir/$(1)/. $(BIN_DIR)/$(1)/ \
+	  )
 
     clean-$(1):
 	  rm -rf $(BIN_DIR)/$(1)
