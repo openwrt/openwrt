@@ -761,24 +761,24 @@ define Image/Build/NetgearNAND
 	$(call Image/Build/SysupgradeNAND,$(2),squashfs,$(KDIR_TMP)/vmlinux-$(2).uImage)
 endef
 
+ZYXEL_UBOOT = $(KDIR)/u-boot-nbg460n_550n_550nh.bin
+ZYXEL_UBOOT_BIN = $(wildcard $(BIN_DIR)/u-boot-nbg460n_550n_550nh/u-boot.bin)
 
-ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
-  Image/Build/ZyXEL/buildkernel=$(call MkuImageLzma,$(2),$(3))
+Image/Build/ZyXEL/buildkernel=$(call MkuImageLzma,$(2),$(3))
 
-  define Image/Build/ZyXEL
+define Image/Build/ZyXEL
 	$(call Sysupgrade/KRuImage,$(1),$(2),917504,2752512)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		if [ ! -f $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin ]; then \
-			echo "Warning: $(IMG_PREFIX)-$(2)-u-boot.bin not found" >&2; \
+		if [ ! -f $(ZYXEL_UBOOT) ]; then \
+			echo "Warning: $(ZYXEL_UBOOT) not found" >&2; \
 		else \
 			$(STAGING_DIR_HOST)/bin/mkzynfw \
 				-B $(4) \
-				-b $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin \
+				-b $(ZYXEL_UBOOT) \
 				-r $(call sysupname,$(1),$(2)):0x10000 \
 				-o $(call factoryname,$(1),$(2)); \
 	fi; fi
-  endef
-endif
+endef
 
 define	Image/Build/ZyXELNAND/buildkernel
 	$(eval kernelsize=$(call mtdpartsize,kernel,$(5)))
@@ -1044,6 +1044,7 @@ define Image/Build/squashfs
 endef
 
 define Image/Prepare
+	$(if $(wildcard $(ZYXEL_UBOOT_BIN)),cp $(ZYXEL_UBOOT_BIN) $(ZYXEL_UBOOT))
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call CompressLzma,$(KDIR)/vmlinux-initramfs,$(KDIR)/vmlinux-initramfs.bin.lzma)
