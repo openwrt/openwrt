@@ -226,6 +226,7 @@ define U-Boot/easy50712_norspl
   BUILD_SUBTARGET:=xway
   BUILD_DEVICES:=EASY50712
   UBOOT_IMAGE:=u-boot.ltq.lzo.norspl
+  DEPENDS+=@BROKEN
 endef
 
 define U-Boot/easy80920_ram
@@ -246,6 +247,7 @@ define U-Boot/easy80920_norspl
   BUILD_SUBTARGET:=xrx200
   BUILD_DEVICES:=EASY80920NOR EASY80920NAND
   UBOOT_IMAGE:=u-boot.ltq.lzo.norspl
+  DEPENDS+=@BROKEN
 endef
 
 define U-Boot/easy80920_sfspl
@@ -253,6 +255,7 @@ define U-Boot/easy80920_sfspl
   BUILD_SUBTARGET:=xrx200
   BUILD_DEVICES:=EASY80920NOR EASY80920NAND
   UBOOT_IMAGE:=u-boot.ltq.lzo.sfspl
+  DEPENDS+=@BROKEN
 endef
 
 define U-Boot/fb3370_eva
@@ -273,6 +276,7 @@ define U-Boot/fb3370_sfspl
   BUILD_SUBTARGET:=xrx200
   BUILD_DEVICES:=FRITZ3370
   UBOOT_IMAGE:=u-boot.ltq.lzo.sfspl
+  DEPENDS+=@BROKEN
 endef
 
 define U-Boot/p2812hnufx_ram
@@ -287,6 +291,7 @@ define U-Boot/p2812hnufx_nandspl
   BUILD_SUBTARGET:=xrx200
   BUILD_DEVICES:=P2812HNUF1
   UBOOT_IMAGE:=u-boot.ltq.lzo.nandspl
+  DEPENDS+=@BROKEN
 endef
 
 define U-Boot/vgv7510kw22_brn
