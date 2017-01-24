@@ -24,8 +24,8 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		{ "JP", "JP", 78 },
 +		{ "US", "Q2", 86 },
 +	};
-+	struct brcmfmac_pd_cc_entry *cc_ent;
-+	int table_size;
++	struct brcmfmac_pd_cc_entry *cc_ent = NULL;
++	int table_size = 0;
 +
 +	if (of_machine_is_compatible("netgear,r8000")) {
 +		cc_ent = netgear_r8000_cc_ent;
