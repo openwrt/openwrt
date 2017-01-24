@@ -14,8 +14,6 @@ MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.4
 
-CPU_TYPE:=mips32r2
-
 define Target/Description
 	Build firmware images for Lantiq SoC
 endef
