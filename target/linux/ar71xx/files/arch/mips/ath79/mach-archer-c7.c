@@ -74,22 +74,22 @@ static struct flash_platform_data archer_c7_flash_data = {
 
 static struct gpio_led archer_c7_leds_gpio[] __initdata = {
 	{
-		.name		= "tp-link:blue:qss",
+		.name		= "tp-link:green:qss",
 		.gpio		= ARCHER_C7_GPIO_LED_QSS,
 		.active_low	= 1,
 	},
 	{
-		.name		= "tp-link:blue:system",
+		.name		= "tp-link:green:system",
 		.gpio		= ARCHER_C7_GPIO_LED_SYSTEM,
 		.active_low	= 1,
 	},
 	{
-		.name		= "tp-link:blue:wlan2g",
+		.name		= "tp-link:green:wlan2g",
 		.gpio		= ARCHER_C7_GPIO_LED_WLAN2G,
 		.active_low	= 1,
 	},
 	{
-		.name		= "tp-link:blue:wlan5g",
+		.name		= "tp-link:green:wlan5g",
 		.gpio		= ARCHER_C7_GPIO_LED_WLAN5G,
 		.active_low	= 1,
 	},
