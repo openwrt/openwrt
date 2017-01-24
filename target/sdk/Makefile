@@ -17,6 +17,7 @@ SDK_NAME:=$(VERSION_DIST_SANITIZED)-sdk-$(if $(CONFIG_VERSION_FILENAMES),$(VERSI
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 
 STAGING_SUBDIR_HOST := staging_dir/host
+STAGING_SUBDIR_TARGET := staging_dir/$(TARGET_DIR_NAME)
 STAGING_SUBDIR_TOOLCHAIN := staging_dir/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi)
 
 EXCLUDE_DIRS:=*/ccache/* \
@@ -117,6 +118,11 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		$(TOPDIR)/package/libs/toolchain \
 		$(TOPDIR)/package/kernel/linux \
 		$(SDK_BUILD_DIR)/package/
+
+	-rm -rf \
+		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/ccache \
+		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TARGET)/ccache \
+		$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/ccache
 
 	-rm -f $(SDK_BUILD_DIR)/feeds.conf.default
 	$(if $(BASE_FEED),echo "$(BASE_FEED)" > $(SDK_BUILD_DIR)/feeds.conf.default)
