@@ -4,7 +4,7 @@
 
 SUBTARGET:=rt288x
 BOARDNAME:=RT288x based boards
-CPU_TYPE:=mips32r2
+CPU_TYPE:=24kc
 
 DEFAULT_PACKAGES += kmod-rt2800-soc
 
