@@ -1,7 +1,7 @@
 ARCH:=mips
 SUBTARGET:=falcon
 BOARDNAME:=Falcon
-FEATURES:=squashfs mips16 nand
+FEATURES:=squashfs nand
 CPU_TYPE:=24kc
 
 DEFAULT_PACKAGES+= kmod-leds-gpio \

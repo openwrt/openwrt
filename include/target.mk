@@ -258,6 +258,9 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_VIRTIO),)
       FEATURES += virtio
     endif
+    ifneq ($(CONFIG_CPU_MIPS32_R2),)
+      FEATURES += mips16
+    endif
     FEATURES += $(foreach v,6 7,$(if $(CONFIG_CPU_V$(v)),arm_v$(v)))
 
     # remove duplicates
