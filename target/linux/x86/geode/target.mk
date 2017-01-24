@@ -7,8 +7,6 @@ DEFAULT_PACKAGES += \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
 			kmod-ledtrig-netdev hwclock wpad-mini
 
-CPU_TYPE := geode
-
 define Target/Description
 	Build firmware images for AMD Geode GX/LX based systems (net5501, alix, geos)
 endef
