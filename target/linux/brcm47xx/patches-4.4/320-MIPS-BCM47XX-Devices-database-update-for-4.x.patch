@@ -8,9 +8,9 @@
  	{{BCM47XX_BOARD_LINKSYS_WRT54G3GV2, "Linksys WRT54G3GV2-VF"}, "WRT54G3GV2-VF", "1.0"},
  	{{BCM47XX_BOARD_LINKSYS_WRT610NV1, "Linksys WRT610N V1"}, "WRT610N", "1.0"},
  	{{BCM47XX_BOARD_LINKSYS_WRT610NV2, "Linksys WRT610N V2"}, "WRT610N", "2.0"},
-@@ -150,9 +151,12 @@ struct bcm47xx_board_type_list2 bcm47xx_
- static const
- struct bcm47xx_board_type_list1 bcm47xx_board_list_board_id[] __initconst = {
+@@ -159,9 +160,12 @@ struct bcm47xx_board_type_list1 bcm47xx_
+ 	{{BCM47XX_BOARD_LUXUL_XVW_P30_V1, "Luxul XVW-P30 V1"}, "luxul_xvwp30_v1"},
+ 	{{BCM47XX_BOARD_LUXUL_XWR_600_V1, "Luxul XWR-600 V1"}, "luxul_xwr600_v1"},
  	{{BCM47XX_BOARD_LUXUL_XWR_1750_V1, "Luxul XWR-1750 V1"}, "luxul_xwr1750_v1"},
 +	{{BCM47XX_BOARD_NETGEAR_R6300_V1, "Netgear R6300 V1"}, "U12H218T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WGR614V8, "Netgear WGR614 V8"}, "U12H072T00_NETGEAR"},
@@ -21,7 +21,7 @@
  	{{BCM47XX_BOARD_NETGEAR_WNDR3300, "Netgear WNDR3300"}, "U12H093T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WNDR3400V1, "Netgear WNDR3400 V1"}, "U12H155T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WNDR3400V2, "Netgear WNDR3400 V2"}, "U12H187T00_NETGEAR"},
-@@ -162,6 +166,7 @@ struct bcm47xx_board_type_list1 bcm47xx_
+@@ -171,6 +175,7 @@ struct bcm47xx_board_type_list1 bcm47xx_
  	{{BCM47XX_BOARD_NETGEAR_WNDR4000, "Netgear WNDR4000"}, "U12H181T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WNDR4500V1, "Netgear WNDR4500 V1"}, "U12H189T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WNDR4500V2, "Netgear WNDR4500 V2"}, "U12H224T00_NETGEAR"},
@@ -63,7 +63,7 @@
  bcm47xx_buttons_linksys_wrt54g3gv2[] __initconst = {
  	BCM47XX_GPIO_KEY(5, KEY_WIMAX),
  	BCM47XX_GPIO_KEY(6, KEY_RESTART),
-@@ -333,6 +351,17 @@ bcm47xx_buttons_motorola_wr850gv2v3[] __
+@@ -378,6 +396,17 @@ bcm47xx_buttons_motorola_wr850gv2v3[] __
  /* Netgear */
  
  static const struct gpio_keys_button
@@ -81,7 +81,7 @@
  bcm47xx_buttons_netgear_wndr3400v1[] __initconst = {
  	BCM47XX_GPIO_KEY(4, KEY_RESTART),
  	BCM47XX_GPIO_KEY(6, KEY_WPS_BUTTON),
-@@ -360,6 +389,11 @@ bcm47xx_buttons_netgear_wndr4500v1[] __i
+@@ -405,6 +434,11 @@ bcm47xx_buttons_netgear_wndr4500v1[] __i
  };
  
  static const struct gpio_keys_button
@@ -93,7 +93,7 @@
  bcm47xx_buttons_netgear_wnr3500lv1[] __initconst = {
  	BCM47XX_GPIO_KEY(4, KEY_RESTART),
  	BCM47XX_GPIO_KEY(6, KEY_WPS_BUTTON),
-@@ -413,6 +447,9 @@ int __init bcm47xx_buttons_register(void
+@@ -458,6 +492,9 @@ int __init bcm47xx_buttons_register(void
  	int err;
  
  	switch (board) {
@@ -103,7 +103,7 @@
  	case BCM47XX_BOARD_ASUS_RTN12:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_asus_rtn12);
  		break;
-@@ -543,6 +580,12 @@ int __init bcm47xx_buttons_register(void
+@@ -588,6 +625,12 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt310nv1);
  		break;
@@ -116,7 +116,7 @@
  	case BCM47XX_BOARD_LINKSYS_WRT54G3GV2:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt54g3gv2);
  		break;
-@@ -579,6 +622,12 @@ int __init bcm47xx_buttons_register(void
+@@ -651,6 +694,12 @@ int __init bcm47xx_buttons_register(void
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_motorola_wr850gv2v3);
  		break;
  
@@ -129,7 +129,7 @@
  	case BCM47XX_BOARD_NETGEAR_WNDR3400V1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr3400v1);
  		break;
-@@ -591,6 +640,9 @@ int __init bcm47xx_buttons_register(void
+@@ -663,6 +712,9 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_NETGEAR_WNDR4500V1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr4500v1);
  		break;
@@ -149,7 +149,7 @@
  	BCM47XX_BOARD_LINKSYS_WRT54G3GV2,
  	BCM47XX_BOARD_LINKSYS_WRT54G_TYPE_0101,
  	BCM47XX_BOARD_LINKSYS_WRT54G_TYPE_0467,
-@@ -88,9 +89,12 @@ enum bcm47xx_board {
+@@ -97,9 +98,12 @@ enum bcm47xx_board {
  	BCM47XX_BOARD_MOTOROLA_WR850GP,
  	BCM47XX_BOARD_MOTOROLA_WR850GV2V3,
  
@@ -162,7 +162,7 @@
  	BCM47XX_BOARD_NETGEAR_WNDR3300,
  	BCM47XX_BOARD_NETGEAR_WNDR3400V1,
  	BCM47XX_BOARD_NETGEAR_WNDR3400V2,
-@@ -100,6 +104,7 @@ enum bcm47xx_board {
+@@ -109,6 +113,7 @@ enum bcm47xx_board {
  	BCM47XX_BOARD_NETGEAR_WNDR4000,
  	BCM47XX_BOARD_NETGEAR_WNDR4500V1,
  	BCM47XX_BOARD_NETGEAR_WNDR4500V2,
@@ -201,7 +201,7 @@
  bcm47xx_leds_linksys_wrt54g_generic[] __initconst = {
  	BCM47XX_GPIO_LED(0, "unk", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
  	BCM47XX_GPIO_LED(1, "unk", "power", 0, LEDS_GPIO_DEFSTATE_ON),
-@@ -478,6 +493,9 @@ void __init bcm47xx_leds_register(void)
+@@ -532,6 +547,9 @@ void __init bcm47xx_leds_register(void)
  	enum bcm47xx_board board = bcm47xx_board_get();
  
  	switch (board) {
@@ -211,7 +211,7 @@
  	case BCM47XX_BOARD_ASUS_RTN12:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn12);
  		break;
-@@ -611,6 +629,9 @@ void __init bcm47xx_leds_register(void)
+@@ -665,6 +683,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt310nv1);
  		break;
