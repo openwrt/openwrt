@@ -170,10 +170,9 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_octeon = -march=octeon -mabi=64
   endif
   ifeq ($(ARCH),i386)
-    CPU_TYPE ?= i486
-    CPU_CFLAGS_i486 = -march=i486
+    CPU_TYPE ?= pentium
+    CPU_CFLAGS_pentium = -march=pentium-mmx
     CPU_CFLAGS_pentium4 = -march=pentium4
-    CPU_CFLAGS_geode = -march=geode -mmmx -m3dnow
   endif
   ifneq ($(findstring arm,$(ARCH)),)
     CPU_TYPE ?= xscale
