@@ -47,6 +47,14 @@ opkg = \
 
 TARGET_DIR_ORIG := $(TARGET_ROOTFS_DIR)/root.orig-$(BOARD)
 
+ifdef CONFIG_CLEAN_IPKG
+  define clean_ipkg
+	-find $(1)/usr/lib/opkg -type f -and -not -name '*.control' | $(XARGS) rm -rf
+	-sed -i -ne '/^Require-User: /p' $(1)/usr/lib/opkg/info/*.control
+	-find $(1)/usr/lib/opkg -empty | $(XARGS) rm -rf
+  endef
+endif
+
 define prepare_rootfs
 	@if [ -d $(TOPDIR)/files ]; then \
 		$(call file_copy,$(TOPDIR)/files/.,$(1)); \
@@ -75,6 +83,6 @@ define prepare_rootfs
 	rm -f $(1)/usr/lib/opkg/lists/*
 	rm -f $(1)/usr/lib/opkg/info/*.postinst*
 	rm -f $(1)/usr/lib/opkg/info/*.prerm*
-	$(if $(CONFIG_CLEAN_IPKG),rm -rf $(1)/usr/lib/opkg)
+	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))
 endef
