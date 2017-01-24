@@ -10,7 +10,7 @@ ARCH:=mipsel
 BOARD:=ramips
 BOARDNAME:=MediaTek Ralink MIPS
 SUBTARGETS:=rt305x mt7620 mt7621 mt7628 mt7688 rt3883 rt288x
-FEATURES:=squashfs gpio mips16
+FEATURES:=squashfs gpio
 MAINTAINER:=John Crispin <john@phrozen.org>
 
 KERNEL_PATCHVER:=4.4
