@@ -40,7 +40,7 @@ define Image/Build/SDCard-vfat-ext4
 
 	./gen_sdcard_vfat_ext4.sh \
 		$(BIN_DIR)/$(2) \
-		$(BIN_DIR)/uboot-mxs-$(4)/uboot-mxs-$(4).sb \
+		$(KDIR)/$(4)-u-boot.sb \
 		$(KDIR)/boot.img \
 		$(KDIR)/root.$(1) \
 		$(CONFIG_TARGET_BOOTFS_PARTSIZE) \
@@ -51,7 +51,7 @@ endef
 define Image/Build/SDCard-ext4-ext4
 	./gen_sdcard_ext4_ext4.sh \
 		$(BIN_DIR)/$(2) \
-		$(BIN_DIR)/uboot-mxs-$(4)/uboot-mxs-$(4).sb \
+		$(KDIR)/$(4)-u-boot.sb \
 		$(KDIR)/root.$(1) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 	$(call Image/Gzip,$(BIN_DIR)/$(2))

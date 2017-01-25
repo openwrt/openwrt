@@ -6,6 +6,7 @@
 #
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2016.01
 PKG_RELEASE:=1
@@ -18,6 +19,8 @@ include $(INCLUDE_DIR)/package.mk
 define U-Boot/Default
   BUILD_TARGET:=mxs
   UBOOT_IMAGE:=u-boot.sb
+  DEFAULT:=y
+  HIDDEN:=1
 endef
 
 define U-Boot/mx23_olinuxino
@@ -32,9 +35,10 @@ UBOOT_TARGETS := \
 	mx23_olinuxino \
 	duckbill
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CROSS_COMPILE=$(TARGET_CROSS) $(UBOOT_IMAGE)
+UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE)
+
+define Build/InstallDev
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(KERNEL_BUILD_DIR)/$(BUILD_VARIANT)-$(UBOOT_IMAGE)
 endef
 
 $(eval $(call BuildPackage/U-Boot))
