@@ -13,6 +13,7 @@
 #include "mt7620a.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	compatible = "ralink,mt7620a-soc";
@@ -27,38 +28,38 @@
 
 		power_g {
 			label = "ex2700:green:power";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		power_r {
 			label = "ex2700:red:power";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		device_g {
 			label = "ex2700:green:device";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 
 		device_r {
 			label = "ex2700:red:device";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 
 		router_g {
 			label = "ex2700:green:router";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		router_r {
 			label = "ex2700:red:router";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
 			label = "ex2700:green:wps";
-			gpios = <&gpio1 15 1>;
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -70,13 +71,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 2 1>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
@@ -98,7 +99,6 @@
 		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		linux,modalias = "m25p80", "mx25l3205d";
 		spi-max-frequency = <10000000>;
 
 		partition@0 {
@@ -131,15 +131,13 @@
 };
 
 &wmac {
+	mtd-mac-address = <&art 0x6>;
 	ralink,mtd-eeprom = <&art 0x1000>;
 };
 
 &pinctrl {
 	state_default: pinctrl0 {
 		default {
-			//  spi refclk: pins 37, 38, 39
-			//       uartf: pins 8, 9, 10, 11, 12, 13, 14
-			//         i2c: pins 1, 2
 			ralink,group = "i2c", "uartf", "spi refclk";
 			ralink,function = "gpio";
 		};
