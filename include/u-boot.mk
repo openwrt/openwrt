@@ -32,6 +32,7 @@ define U-Boot/Init
   NAME:=
   DEPENDS:=
   HIDDEN:=
+  DEFAULT:=
   VARIANT:=$(1)
   UBOOT_CONFIG:=$(1)
   UBOOT_IMAGE:=u-boot.bin
@@ -59,6 +60,7 @@ define Build/U-Boot/Target
 		$(patsubst %,|| $(patsubst TARGET_%,TARGET_DEVICE_%,$(TARGET_DEP))_DEVICE_%,$(BUILD_DEVICES)))
       endif
     endif
+    $(if $(DEFAULT),DEFAULT:=$(DEFAULT))
     URL:=http://www.denx.de/wiki/U-Boot
   endef
 
