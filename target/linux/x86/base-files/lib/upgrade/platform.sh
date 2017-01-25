@@ -21,19 +21,12 @@ platform_copy_config() {
 }
 
 platform_do_upgrade() {
-	local diskdev partdev ibs diff
+	local diskdev partdev diff
 
 	if export_bootdevice && export_partdevice diskdev 0; then
 		sync
 		if [ "$SAVE_PARTITIONS" = "1" ]; then
 			get_partitions "/dev/$diskdev" bootdisk
-
-			#get block size
-			if [ -f "/sys/block/$diskdev/queue/physical_block_size" ]; then
-				ibs="$(cat "/sys/block/$diskdev/queue/physical_block_size")"
-			else
-				ibs=512
-			fi
 
 			#extract the boot sector from the image
 			get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b
@@ -54,7 +47,7 @@ platform_do_upgrade() {
 			while read part start size; do
 				if export_partdevice partdev $part; then
 					echo "Writing image to /dev/$partdev..."
-					get_image "$@" | dd of="/dev/$partdev" ibs="$ibs" obs=1M skip="$start" count="$size" conv=fsync
+					get_image "$@" | dd of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
 				else
 					echo "Unable to find partition $part device, skipped."
 				fi
