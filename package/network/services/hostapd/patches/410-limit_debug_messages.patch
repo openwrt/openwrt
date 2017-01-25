@@ -84,7 +84,7 @@
  	char *buf;
 --- a/src/utils/wpa_debug.h
 +++ b/src/utils/wpa_debug.h
-@@ -49,6 +49,17 @@ int wpa_debug_reopen_file(void);
+@@ -52,6 +52,17 @@ int wpa_debug_reopen_file(void);
  void wpa_debug_close_file(void);
  void wpa_debug_setup_stdout(void);
  
@@ -102,7 +102,7 @@
  /**
   * wpa_debug_printf_timestamp - Print timestamp for debug output
   *
-@@ -69,9 +80,15 @@ void wpa_debug_print_timestamp(void);
+@@ -72,9 +83,15 @@ void wpa_debug_print_timestamp(void);
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -119,7 +119,7 @@
  /**
   * wpa_hexdump - conditional hex dump
   * @level: priority level (MSG_*) of the message
-@@ -83,7 +100,13 @@ PRINTF_FORMAT(2, 3);
+@@ -86,7 +103,13 @@ PRINTF_FORMAT(2, 3);
   * output may be directed to stdout, stderr, and/or syslog based on
   * configuration. The contents of buf is printed out has hex dump.
   */
@@ -134,7 +134,7 @@
  
  static inline void wpa_hexdump_buf(int level, const char *title,
  				   const struct wpabuf *buf)
-@@ -105,7 +128,13 @@ static inline void wpa_hexdump_buf(int l
+@@ -108,7 +131,13 @@ static inline void wpa_hexdump_buf(int l
   * like wpa_hexdump(), but by default, does not include secret keys (passwords,
   * etc.) in debug output.
   */
@@ -149,7 +149,7 @@
  
  static inline void wpa_hexdump_buf_key(int level, const char *title,
  				       const struct wpabuf *buf)
-@@ -127,8 +156,14 @@ static inline void wpa_hexdump_buf_key(i
+@@ -130,8 +159,14 @@ static inline void wpa_hexdump_buf_key(i
   * the hex numbers and ASCII characters (for printable range) are shown. 16
   * bytes per line will be shown.
   */
@@ -166,7 +166,7 @@
  
  /**
   * wpa_hexdump_ascii_key - conditional hex dump, hide keys
-@@ -144,8 +179,14 @@ void wpa_hexdump_ascii(int level, const
+@@ -147,8 +182,14 @@ void wpa_hexdump_ascii(int level, const
   * bytes per line will be shown. This works like wpa_hexdump_ascii(), but by
   * default, does not include secret keys (passwords, etc.) in debug output.
   */
@@ -183,7 +183,7 @@
  
  /*
   * wpa_dbg() behaves like wpa_msg(), but it can be removed from build to reduce
-@@ -182,7 +223,12 @@ void wpa_hexdump_ascii_key(int level, co
+@@ -185,7 +226,12 @@ void wpa_hexdump_ascii_key(int level, co
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -197,7 +197,7 @@
  
  /**
   * wpa_msg_ctrl - Conditional printf for ctrl_iface monitors
-@@ -196,8 +242,13 @@ void wpa_msg(void *ctx, int level, const
+@@ -199,8 +245,13 @@ void wpa_msg(void *ctx, int level, const
   * attached ctrl_iface monitors. In other words, it can be used for frequent
   * events that do not need to be sent to syslog.
   */
