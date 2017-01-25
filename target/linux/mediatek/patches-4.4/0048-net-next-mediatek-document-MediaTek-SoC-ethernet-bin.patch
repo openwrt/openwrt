@@ -27,7 +27,7 @@ Cc: devicetree@vger.kernel.org
 +* Ethernet controller node
 +
 +Required properties:
-+- compatible: Should be "mediatek,mt7623-eth"
++- compatible: Should be "mediatek,mt2701-eth"
 +- reg: Address and length of the register set for the device
 +- interrupts: Should contain the frame engines interrupt
 +- clocks: the clock used by the core
@@ -55,7 +55,7 @@ Cc: devicetree@vger.kernel.org
 +Example:
 +
 +eth: ethernet@1b100000 {
-+	compatible = "mediatek,mt7623-eth";
++	compatible = "mediatek,mt2701-eth";
 +	reg = <0 0x1b100000 0 0x20000>;
 +	clocks = <&topckgen CLK_TOP_ETHIF_SEL>,
 +		 <&ethsys CLK_ETHSYS_ESW>,
