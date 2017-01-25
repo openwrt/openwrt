@@ -254,16 +254,41 @@ static int rtl8366s_setup(struct rtl8366_smi *smi)
 {
 	struct rtl8366_platform_data *pdata;
 	int err;
+	unsigned i;
+#ifdef CONFIG_OF
+	struct device_node *np;
+	unsigned num_initvals;
+	const __be32 *paddr;
+#endif
 
 	pdata = smi->parent->platform_data;
 	if (pdata && pdata->num_initvals && pdata->initvals) {
-		unsigned i;
-
 		dev_info(smi->parent, "applying initvals\n");
 		for (i = 0; i < pdata->num_initvals; i++)
 			REG_WR(smi, pdata->initvals[i].reg,
 			       pdata->initvals[i].val);
 	}
+
+#ifdef CONFIG_OF
+	np = smi->parent->of_node;
+
+	paddr = of_get_property(np, "realtek,initvals", &num_initvals);
+	if (paddr) {
+		dev_info(smi->parent, "applying initvals from DTS\n");
+
+		if (num_initvals < (2 * sizeof(*paddr)))
+			return -EINVAL;
+
+		num_initvals /= sizeof(*paddr);
+
+		for (i = 0; i < num_initvals - 1; i += 2) {
+			u32 reg = be32_to_cpup(paddr + i);
+			u32 val = be32_to_cpup(paddr + i + 1);
+
+			REG_WR(smi, reg, val);
+		}
+	}
+#endif
 
 	/* set maximum packet length to 1536 bytes */
 	REG_RMW(smi, RTL8366S_SGCR, RTL8366S_SGCR_MAX_LENGTH_MASK,
