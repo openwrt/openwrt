@@ -177,7 +177,8 @@ define Device/linksys-ea6300-v1
   DEVICE_TITLE := Linksys EA6300 V1
   DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
 endef
-TARGET_DEVICES += linksys-ea6300-v1
+# Disabled due to problems with 2 TRX partitions
+# TARGET_DEVICES += linksys-ea6300-v1
 
 define Device/netgear
   IMAGES := chk
