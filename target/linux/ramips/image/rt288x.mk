@@ -61,6 +61,7 @@ define Device/wli-tx4-ag300n
   BLOCKSIZE := 64k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := Buffalo WLI-TX4-AG300N
+  DEVICE_PACKAGES := kmod-switch-ip17xx
 endef
 TARGET_DEVICES += wli-tx4-ag300n
 
