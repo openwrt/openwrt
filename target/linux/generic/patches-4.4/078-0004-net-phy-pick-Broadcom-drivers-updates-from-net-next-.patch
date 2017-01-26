@@ -1,0 +1,136 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Subject: [PATCH 2/2] net: phy: pick Broadcom drivers updates from net-next for
+ 4.11
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+
+--- a/drivers/net/phy/bcm7xxx.c
++++ b/drivers/net/phy/bcm7xxx.c
+@@ -163,12 +163,43 @@ static int bcm7xxx_28nm_e0_plus_afe_conf
+ 	return 0;
+ }
+ 
++static int bcm7xxx_28nm_a0_patch_afe_config_init(struct phy_device *phydev)
++{
++	/* +1 RC_CAL codes for RL centering for both LT and HT conditions */
++	bcm_phy_write_misc(phydev, AFE_RXCONFIG_2, 0xd003);
++
++	/* Cut master bias current by 2% to compensate for RC_CAL offset */
++	bcm_phy_write_misc(phydev, DSP_TAP10, 0x791b);
++
++	/* Improve hybrid leakage */
++	bcm_phy_write_misc(phydev, AFE_HPF_TRIM_OTHERS, 0x10e3);
++
++	/* Change rx_on_tune 8 to 0xf */
++	bcm_phy_write_misc(phydev, 0x21, 0x2, 0x87f6);
++
++	/* Change 100Tx EEE bandwidth */
++	bcm_phy_write_misc(phydev, 0x22, 0x2, 0x017d);
++
++	/* Enable ffe zero detection for Vitesse interoperability */
++	bcm_phy_write_misc(phydev, 0x26, 0x2, 0x0015);
++
++	r_rc_cal_reset(phydev);
++
++	return 0;
++}
++
+ static int bcm7xxx_28nm_config_init(struct phy_device *phydev)
+ {
+ 	u8 rev = PHY_BRCM_7XXX_REV(phydev->dev_flags);
+ 	u8 patch = PHY_BRCM_7XXX_PATCH(phydev->dev_flags);
+ 	int ret = 0;
+ 
++	/* Newer devices have moved the revision information back into a
++	 * standard location in MII_PHYS_ID[23]
++	 */
++	if (rev == 0)
++		rev = phydev->phy_id & ~phydev->drv->phy_id_mask;
++
+ 	pr_info_once("%s: %s PHY revision: 0x%02x, patch: %d\n",
+ 		     dev_name(&phydev->dev), phydev->drv->name, rev, patch);
+ 
+@@ -192,6 +223,9 @@ static int bcm7xxx_28nm_config_init(stru
+ 	case 0x10:
+ 		ret = bcm7xxx_28nm_e0_plus_afe_config_init(phydev);
+ 		break;
++	case 0x01:
++		ret = bcm7xxx_28nm_a0_patch_afe_config_init(phydev);
++		break;
+ 	default:
+ 		break;
+ 	}
+@@ -336,6 +370,7 @@ static int bcm7xxx_suspend(struct phy_de
+ 
+ static struct phy_driver bcm7xxx_driver[] = {
+ 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7250, "Broadcom BCM7250"),
++	BCM7XXX_28NM_GPHY(PHY_ID_BCM7278, "Broadcom BCM7278"),
+ 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7364, "Broadcom BCM7364"),
+ 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7366, "Broadcom BCM7366"),
+ 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7439, "Broadcom BCM7439"),
+@@ -350,6 +385,7 @@ static struct phy_driver bcm7xxx_driver[
+ 
+ static struct mdio_device_id __maybe_unused bcm7xxx_tbl[] = {
+ 	{ PHY_ID_BCM7250, 0xfffffff0, },
++	{ PHY_ID_BCM7278, 0xfffffff0, },
+ 	{ PHY_ID_BCM7364, 0xfffffff0, },
+ 	{ PHY_ID_BCM7366, 0xfffffff0, },
+ 	{ PHY_ID_BCM7346, 0xfffffff0, },
+--- a/drivers/net/phy/broadcom.c
++++ b/drivers/net/phy/broadcom.c
+@@ -395,12 +395,10 @@ static int bcm54612e_config_aneg(struct
+ 	    (phydev->interface != PHY_INTERFACE_MODE_RGMII_RXID)) {
+ 		u16 reg;
+ 
+-		/* Errata: reads require filling in the write selector field */
+-		bcm54xx_auxctl_write(phydev, MII_BCM54XX_AUXCTL_SHDWSEL_MISC,
+-				     MII_BCM54XX_AUXCTL_MISC_RDSEL_MISC);
+-		reg = phy_read(phydev, MII_BCM54XX_AUX_CTL);
++		reg = bcm54xx_auxctl_read(phydev,
++					  MII_BCM54XX_AUXCTL_SHDWSEL_MISC);
+ 		/* Disable RXD to RXC delay (default set) */
+-		reg &= ~MII_BCM54XX_AUXCTL_MISC_RXD_RXC_SKEW;
++		reg &= ~MII_BCM54XX_AUXCTL_SHDWSEL_MISC_RGMII_SKEW_EN;
+ 		/* Clear shadow selector field */
+ 		reg &= ~MII_BCM54XX_AUXCTL_SHDWSEL_MASK;
+ 		bcm54xx_auxctl_write(phydev, MII_BCM54XX_AUXCTL_SHDWSEL_MISC,
+--- a/include/linux/brcmphy.h
++++ b/include/linux/brcmphy.h
+@@ -24,6 +24,7 @@
+ #define PHY_ID_BCM57780			0x03625d90
+ 
+ #define PHY_ID_BCM7250			0xae025280
++#define PHY_ID_BCM7278			0xae0251a0
+ #define PHY_ID_BCM7364			0xae025260
+ #define PHY_ID_BCM7366			0x600d8490
+ #define PHY_ID_BCM7346			0x600d8650
+@@ -103,18 +104,17 @@
+ /*
+  * AUXILIARY CONTROL SHADOW ACCESS REGISTERS.  (PHY REG 0x18)
+  */
+-#define MII_BCM54XX_AUXCTL_SHDWSEL_AUXCTL	0x0000
++#define MII_BCM54XX_AUXCTL_SHDWSEL_AUXCTL	0x00
+ #define MII_BCM54XX_AUXCTL_ACTL_TX_6DB		0x0400
+ #define MII_BCM54XX_AUXCTL_ACTL_SMDSP_ENA	0x0800
+ 
+-#define MII_BCM54XX_AUXCTL_MISC_WREN	0x8000
+-#define MII_BCM54XX_AUXCTL_MISC_RXD_RXC_SKEW	0x0100
+-#define MII_BCM54XX_AUXCTL_MISC_FORCE_AMDIX	0x0200
+-#define MII_BCM54XX_AUXCTL_MISC_RDSEL_MISC	0x7000
+-#define MII_BCM54XX_AUXCTL_SHDWSEL_MISC	0x0007
+-#define MII_BCM54XX_AUXCTL_SHDWSEL_READ_SHIFT	12
+-#define MII_BCM54XX_AUXCTL_SHDWSEL_MISC_RGMII_SKEW_EN	(1 << 8)
++#define MII_BCM54XX_AUXCTL_SHDWSEL_MISC			0x07
++#define MII_BCM54XX_AUXCTL_SHDWSEL_MISC_WIRESPEED_EN	0x0010
++#define MII_BCM54XX_AUXCTL_SHDWSEL_MISC_RGMII_SKEW_EN	0x0100
++#define MII_BCM54XX_AUXCTL_MISC_FORCE_AMDIX		0x0200
++#define MII_BCM54XX_AUXCTL_MISC_WREN			0x8000
+ 
++#define MII_BCM54XX_AUXCTL_SHDWSEL_READ_SHIFT	12
+ #define MII_BCM54XX_AUXCTL_SHDWSEL_MASK	0x0007
+ 
+ /*
