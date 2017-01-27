@@ -81,3 +81,32 @@
  
  	adev->channel = channel;
  
+--- a/merge.c
++++ b/merge.c
+@@ -2776,7 +2776,10 @@ void acx_irq_work(struct work_struct *wo
+ 		/* HOST_INT_SCAN_COMPLETE */
+ 		if (irqmasked & HOST_INT_SCAN_COMPLETE) {
+ 			if (test_bit(ACX_FLAG_SCANNING, &adev->flags)) {
+-				ieee80211_scan_completed(adev->hw, false);
++				struct cfg80211_scan_info info = {
++					.aborted = false
++				};
++				ieee80211_scan_completed(adev->hw, &info);
+ 				log(L_INIT, "scan completed\n");
+ 				clear_bit(ACX_FLAG_SCANNING, &adev->flags);
+ 			}
+@@ -3138,10 +3141,13 @@ int acx_op_start(struct ieee80211_hw *hw
+ 
+ void acx_stop(acx_device_t *adev)
+ {
++	struct cfg80211_scan_info info = {
++		.aborted = true
++	};
+ 	acxmem_lock_flags;
+ 
+ 	if (test_bit(ACX_FLAG_SCANNING, &adev->flags)) {
+-		ieee80211_scan_completed(adev->hw, true);
++		ieee80211_scan_completed(adev->hw, &info);
+ 		acx_issue_cmd(adev, ACX1xx_CMD_STOP_SCAN, NULL, 0);
+ 		clear_bit(ACX_FLAG_SCANNING, &adev->flags);
+ 	}
