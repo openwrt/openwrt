@@ -9,7 +9,7 @@
  
  # as we stick to -e, CLEARENV ensures that local variables in lower
  # Makefiles remain local and variable. $${VAR+VAR} is tribute to Korn
-@@ -403,11 +403,6 @@ openssl.pc: Makefile
+@@ -404,11 +404,6 @@ openssl.pc: Makefile
  	    echo 'Version: '$(VERSION); \
  	    echo 'Requires: libssl libcrypto' ) > openssl.pc
  
