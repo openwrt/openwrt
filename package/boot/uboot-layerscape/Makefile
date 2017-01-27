@@ -49,7 +49,8 @@ UBOOT_TARGETS := \
 	ls1012ardb
 
 define Build/InstallDev
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(KERNEL_BUILD_DIR)/$(BUILD_VARIANT)-64b-uboot.bin
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-64b-uboot.bin
 endef
 
 define Package/u-boot/install/default

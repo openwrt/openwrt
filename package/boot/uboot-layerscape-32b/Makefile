@@ -42,9 +42,10 @@ define Build/Compile
 endef
 
 define Build/InstallDev
-	$(CP) $(PKG_BUILD_DIR)/ls1043ardb-uboot.bin $(KERNEL_BUILD_DIR)/ls1043ardb-32b-uboot.bin
-	$(CP) $(PKG_BUILD_DIR)/ls1046ardb-uboot.bin $(KERNEL_BUILD_DIR)/ls1046ardb-32b-uboot.bin
-	$(CP) $(PKG_BUILD_DIR)/ls1012ardb-uboot.bin.swap $(KERNEL_BUILD_DIR)/ls1012ardb-32b-uboot.bin
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(CP) $(PKG_BUILD_DIR)/ls1043ardb-uboot.bin $(STAGING_DIR_IMAGE)/ls1043ardb-32b-uboot.bin
+	$(CP) $(PKG_BUILD_DIR)/ls1046ardb-uboot.bin $(STAGING_DIR_IMAGE)/ls1046ardb-32b-uboot.bin
+	$(CP) $(PKG_BUILD_DIR)/ls1012ardb-uboot.bin.swap $(STAGING_DIR_IMAGE)/ls1012ardb-32b-uboot.bin
 endef
 
 $(eval $(call BuildPackage,uboot-layerscape-32b))

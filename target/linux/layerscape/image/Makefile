@@ -9,15 +9,15 @@ include $(INCLUDE_DIR)/image.mk
 
 define Build/append-ls-rcw
 	rm -f $@
-	dd if=$(KDIR)/$(1)-rcw.bin >> $@
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-rcw.bin >> $@
 endef
 
 define Build/append-ls-uboot
-	dd if=$(KDIR)/$(1)-$(SUBTARGET)-uboot.bin >> $@
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-$(SUBTARGET)-uboot.bin >> $@
 endef
 
 define Build/append-ls-fman
-	dd if=$(KDIR)/$(1)-fman.bin >> $@
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-fman.bin >> $@
 endef
 
 define Build/append-ls-dtb

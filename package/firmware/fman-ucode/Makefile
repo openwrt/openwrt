@@ -72,7 +72,8 @@ define Build/Compile
 endef
 
 define Package/fman/install/default
-	$(CP) $(PKG_BUILD_DIR)/$(FMAN_CONFIG) $(KDIR)/$(1)-fman.bin
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(CP) $(PKG_BUILD_DIR)/$(FMAN_CONFIG) $(STAGING_DIR_IMAGE)/$(1)-fman.bin
 endef
 
 define Package/fman/install/template
