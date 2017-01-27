@@ -118,7 +118,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -375,9 +375,14 @@ void ath9k_tasklet(unsigned long data)
+@@ -375,21 +375,20 @@ void ath9k_tasklet(unsigned long data)
  	struct ath_common *common = ath9k_hw_common(ah);
  	enum ath_reset_type type;
  	unsigned long flags;
@@ -134,7 +134,39 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ath9k_ps_wakeup(sc);
  	spin_lock(&sc->sc_pcu_lock);
  
-@@ -480,7 +485,7 @@ void ath9k_tasklet(unsigned long data)
+ 	if (status & ATH9K_INT_FATAL) {
+ 		type = RESET_TYPE_FATAL_INT;
+ 		ath9k_queue_reset(sc, type);
+-
+-		/*
+-		 * Increment the ref. counter here so that
+-		 * interrupts are enabled in the reset routine.
+-		 */
+-		atomic_inc(&ah->intr_ref_cnt);
+ 		ath_dbg(common, RESET, "FATAL: Skipping interrupts\n");
+ 		goto out;
+ 	}
+@@ -405,11 +404,6 @@ void ath9k_tasklet(unsigned long data)
+ 			type = RESET_TYPE_BB_WATCHDOG;
+ 			ath9k_queue_reset(sc, type);
+ 
+-			/*
+-			 * Increment the ref. counter here so that
+-			 * interrupts are enabled in the reset routine.
+-			 */
+-			atomic_inc(&ah->intr_ref_cnt);
+ 			ath_dbg(common, RESET,
+ 				"BB_WATCHDOG: Skipping interrupts\n");
+ 			goto out;
+@@ -422,7 +416,6 @@ void ath9k_tasklet(unsigned long data)
+ 		if ((sc->gtt_cnt >= MAX_GTT_CNT) && !ath9k_hw_check_alive(ah)) {
+ 			type = RESET_TYPE_TX_GTT;
+ 			ath9k_queue_reset(sc, type);
+-			atomic_inc(&ah->intr_ref_cnt);
+ 			ath_dbg(common, RESET,
+ 				"GTT: Skipping interrupts\n");
+ 			goto out;
+@@ -480,7 +473,7 @@ void ath9k_tasklet(unsigned long data)
  	ath9k_btcoex_handle_interrupt(sc, status);
  
  	/* re-enable hardware interrupt */
@@ -143,7 +175,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  out:
  	spin_unlock(&sc->sc_pcu_lock);
  	ath9k_ps_restore(sc);
-@@ -544,7 +549,9 @@ irqreturn_t ath_isr(int irq, void *dev)
+@@ -544,7 +537,9 @@ irqreturn_t ath_isr(int irq, void *dev)
  		return IRQ_NONE;
  
  	/* Cache the status */
@@ -154,7 +186,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (status & SCHED_INTR)
  		sched = true;
-@@ -590,7 +597,7 @@ chip_reset:
+@@ -590,7 +585,7 @@ chip_reset:
  
  	if (sched) {
  		/* turn off every interrupt */
