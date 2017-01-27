@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath10k-firmware
-PKG_SOURCE_DATE:=2017-01-11
+PKG_SOURCE_DATE:=2017-01-26
 PKG_SOURCE_VERSION:=ab432c60437931a165f0aff1a6e3371f358b75dd
 PKG_MIRROR_HASH:=e3188ecd4d7470d3cdde89fefa6258f9ec4f404b23558d1474e5014679b28101
 PKG_RELEASE:=1
@@ -30,6 +30,11 @@ endef
 define Package/ath10k-firmware-qca9887
 $(Package/ath10k-firmware-default)
   TITLE:=ath10k firmware for QCA9887 devices
+endef
+
+define Package/ath10k-firmware-qca9887-ct
+$(Package/ath10k-firmware-default)
+  TITLE:=ath10k-CT firmware for QCA9887 devices
 endef
 
 QCA9887_REV:=3cce88e245f2d685e49411c4f80998f94baf67b8
@@ -72,12 +77,19 @@ define Download/ct-firmware
   URL_FILE:=$($(1)_FIRMWARE_FILE_CT)
 endef
 
-QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin-19.rc1-lede
+QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin-19-rc3-lede
 define Download/ath10k-firmware-qca988x-ct
   $(call Download/ct-firmware,QCA988X,)
-  HASH:=ad41b29a9eebf1066f993beb571f3bd13f14ea89336ef9d4f3b31ee57e7abe54
+  HASH:=4112d78161a2c20e7a9490ea8d04e9f919508bafb097d88761dcce026c26f93f
 endef
 $(eval $(call Download,ath10k-firmware-qca988x-ct))
+
+QCA9887_FIRMWARE_FILE_CT:=firmware-2-ct-full-community.bin-19-rc3-lede
+define Download/ath10k-firmware-qca9887-ct
+  $(call Download/ct-firmware,QCA9887,ath10k-9887)
+  HASH:=18b61875726d4384de46f75dec1d42fea31aa6d66dba4940cb9d375bc98732e4
+endef
+$(eval $(call Download,ath10k-firmware-qca9887-ct))
 
 QCA99X0_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-9.bin-lede.001
 define Download/ath10k-firmware-qca99x0-ct
@@ -107,6 +119,13 @@ $(Package/ath10k-firmware-default)
   CATEGORY:=Firmware
 endef
 
+define Package/ath10k-firmware-qca9887-ct
+$(Package/ath10k-firmware-default)
+  TITLE:=ath10k CT 10.1 firmware for QCA9887 devices
+  SECTION:=firmware
+  CATEGORY:=Firmware
+endef
+
 define Package/ath10k-firmware-qca988x-ct/description
 Alternative ath10k firmware for QCA988X from Candela Technologies.
 Enables IBSS and other features.  See:
@@ -114,6 +133,14 @@ http://www.candelatech.com/ath10k-10.1.php
 This firmware will NOT be used unless the standard ath10k-firmware-qca988x
 is un-selected since the driver will try to load firmware-5.bin before
 firmware-2.bin
+endef
+
+define Package/ath10k-firmware-qca9887-ct/description
+Alternative ath10k firmware for QCA9887 from Candela Technologies.
+Enables IBSS and other features.  See:
+http://www.candelatech.com/ath10k-10.1.php
+This firmware conflicts with the standard 9887 firmware, so select only
+one.
 endef
 
 define Package/ath10k-firmware-qca99x0-ct/description
@@ -224,6 +251,16 @@ define Package/ath10k-firmware-qca988x/install
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-5.bin
 endef
 
+define Package/ath10k-firmware-qca9887-ct/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA9887/hw1.0
+	$(INSTALL_DATA) \
+		$(DL_DIR)/$(call CT_FIRMWARE_FILE,QCA9887) \
+		$(1)/lib/firmware/ath10k/QCA9887/hw1.0/firmware-2.bin
+	$(INSTALL_DATA) \
+		$(DL_DIR)/$(QCA9887_BOARD_FILE_DL) \
+		$(1)/lib/firmware/ath10k/QCA9887/hw1.0/board.bin
+endef
+
 define Package/ath10k-firmware-qca988x-ct/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA988X/hw2.0
 	$(INSTALL_DATA) \
@@ -297,6 +334,7 @@ $(eval $(call BuildPackage,ath10k-firmware-qca99x0))
 $(eval $(call BuildPackage,ath10k-firmware-qca6174))
 $(eval $(call BuildPackage,ath10k-firmware-qca9984))
 
+$(eval $(call BuildPackage,ath10k-firmware-qca9887-ct))
 $(eval $(call BuildPackage,ath10k-firmware-qca988x-ct))
 $(eval $(call BuildPackage,ath10k-firmware-qca99x0-ct))
 $(eval $(call BuildPackage,ath10k-firmware-qca9984-ct))
