@@ -194,7 +194,11 @@ static int gpio_apu2_probe (struct platform_device *dev)
 		}
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
 	gpio_apu2_chip.dev = &dev->dev;
+#else
+	gpio_apu2_chip.parent = &dev->dev;
+#endif
 	ret = gpiochip_add (&gpio_apu2_chip);
 	if (ret) {
 		pr_err ("%s: adding gpiochip failed\n", DEVNAME);
