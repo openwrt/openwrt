@@ -29,8 +29,8 @@ endef
 UBOOT_TARGETS:=ox820
 
 define Build/InstallDev
-	$(CP) $(PKG_BUILD_DIR)/u-boot.bin \
-		$(KERNEL_BUILD_DIR)/u-boot.bin
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(CP) $(PKG_BUILD_DIR)/u-boot.bin $(STAGING_DIR_IMAGE)/u-boot.bin
 endef
 
 $(eval $(call BuildPackage/U-Boot))

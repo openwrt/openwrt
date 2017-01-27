@@ -15,7 +15,7 @@ DEVICE_VARS += DTS UBIFS_OPTS
 KERNEL_LOADADDR := 0x60008000
 
 define Build/ubootable
-	(dd if="$(KDIR)/u-boot.bin" bs=128k conv=sync; \
+	(dd if="$(STAGING_DIR_IMAGE)/u-boot.bin" bs=128k conv=sync; \
 	 dd if="$@" bs=128k conv=sync ) >> $@.new
 	@mv "$@.new" "$@"
 endef
