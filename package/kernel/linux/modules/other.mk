@@ -129,6 +129,7 @@ define KernelPackage/nvmem
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Non Volatile Memory support
   KCONFIG:=CONFIG_NVMEM
+  HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/nvmem/nvmem_core.ko@ge4.9
 endef
 
