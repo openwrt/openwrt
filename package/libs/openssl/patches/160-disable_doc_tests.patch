@@ -27,7 +27,7 @@
  WDIRS=  windows
  LIBS=   libcrypto.a libssl.a
  SHARED_CRYPTO=libcrypto$(SHLIB_EXT)
-@@ -275,7 +275,7 @@ reflect:
+@@ -276,7 +276,7 @@ reflect:
  
  sub_all: build_all
  
@@ -36,7 +36,7 @@
  
  build_libs: build_libcrypto build_libssl openssl.pc
  
-@@ -533,7 +533,7 @@ dist:
+@@ -534,7 +534,7 @@ dist:
  	@$(MAKE) SDIRS='$(SDIRS)' clean
  	@$(MAKE) TAR='$(TAR)' TARFLAGS='$(TARFLAGS)' $(DISTTARVARS) tar
  
@@ -47,7 +47,7 @@
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -531,7 +531,7 @@ dist:
+@@ -532,7 +532,7 @@ dist:
  	@$(MAKE) SDIRS='$(SDIRS)' clean
  	@$(MAKE) TAR='$(TAR)' TARFLAGS='$(TARFLAGS)' $(DISTTARVARS) tar
  
