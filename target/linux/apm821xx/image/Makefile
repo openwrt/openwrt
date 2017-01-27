@@ -129,23 +129,6 @@ define Build/create-uImage-dtb
 	@mv $@.new $@
 endef
 
-define Build/append-fakerootfs
-	rm -rf $@.fakerootsquashfs $@.fakefs
-
-	# append a fake/empty rootfs to fool netgear's uboot
-	# CHECK_DNI_FIRMWARE_ROOTFS_INTEGRITY in do_chk_dniimg()
-	dd if=/dev/zero of=$@.fakerd bs=16 count=1 conv=sync
-
-	-$(STAGING_DIR_HOST)/bin/mkimage \
-		-A $(LINUX_KARCH) -O linux -T filesystem -C none \
-		-a 0x00000000 -e 0x00000000 \
-		-n '$(DEVICE_PROFILE) fakerootfs' \
-		-d $@.fakerd $@.fakefs
-
-	cat $@.fakefs >> $@
-	rm -rf $@.fakerootsquashfs $@.fakefs
-endef
-
 define Build/wndr4700-specialImage
 	rm -rf $@.fakerd $@.new
 
@@ -192,7 +175,8 @@ define Device/WNDR4700
   IMAGE_SIZE := 24960k
   IMAGES := factory.img sysupgrade.tar kernel.dtb
   KERNEL_SIZE := 1920k
-  KERNEL := dtb | kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | append-fakerootfs
+  KERNEL := dtb | kernel-bin | lzma | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | \
+	  append-uImage-fakeroot-hdr
   KERNEL_INITRAMFS := kernel-bin | gzip | dtb | wndr4700-specialImage gzip
   IMAGE/factory.img := create-uImage-dtb | append-kernel | pad-to 2M | append-ubi | \
 		       netgear-dni | check-size $$$$(IMAGE_SIZE)

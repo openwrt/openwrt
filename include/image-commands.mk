@@ -62,6 +62,18 @@ define Build/netgear-dni
 	mv $@.new $@
 endef
 
+# append a fake/empty rootfs uImage header, to fool the bootloaders
+# rootfs integrity check
+define Build/append-uImage-fakeroot-hdr
+	rm -f $@.fakeroot
+	$(STAGING_DIR_HOST)/bin/mkimage \
+		-A $(LINUX_KARCH) -O linux -T filesystem -C none \
+		-n '$(call toupper,$(LINUX_KARCH)) LEDE fakeroot' \
+		-s \
+		$@.fakeroot
+	cat $@.fakeroot >> $@
+endef
+
 define Build/tplink-safeloader
        -$(STAGING_DIR_HOST)/bin/tplink-safeloader \
 		-B $(TPLINK_BOARD_NAME) \
@@ -141,10 +153,6 @@ endef
 
 define Build/append-rootfs
 	dd if=$(IMAGE_ROOTFS) >> $@
-endef
-
-define Build/append-file
-	cat "$(1)" >> "$@"
 endef
 
 define Build/append-ubi
