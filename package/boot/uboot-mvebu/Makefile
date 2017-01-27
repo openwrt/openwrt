@@ -31,8 +31,8 @@ UBOOT_TARGETS:= \
 	clearfog
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(KERNEL_BUILD_DIR)/
-	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(KERNEL_BUILD_DIR)/$(BUILD_VARIANT)-u-boot-spl.kwb
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot-spl.kwb
 endef
 
 $(eval $(call BuildPackage/U-Boot))

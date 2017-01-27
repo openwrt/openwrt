@@ -39,7 +39,7 @@ endef
 define Build/sdcard-img
 	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
 	./gen_mvebu_sdcard_img.sh $@ \
-		"$(KDIR)/clearfog-u-boot-spl.kwb" \
+		"$(STAGING_DIR_IMAGE)/clearfog-u-boot-spl.kwb" \
 		c 32768 $@.boot \
 		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
 endef
