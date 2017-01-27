@@ -131,9 +131,10 @@ UBOOT_TARGETS := \
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
 define Build/InstallDev
-	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(KERNEL_BUILD_DIR)/$(BUILD_DEVICES)-u-boot-with-spl.bin
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot-with-spl.bin
 	mkimage -C none -A arm -T script -d uEnv-$(UENV).txt \
-		$(KERNEL_BUILD_DIR)/$(BUILD_DEVICES)-boot.scr
+		$(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.scr
 endef
 
 define Package/u-boot/install/default

@@ -18,7 +18,7 @@ define Build/sunxi-sdcard
 	rm -f $@.boot
 	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
 
-	mcopy -i $@.boot $(KDIR)/$(DEVICE_NAME)-boot.scr ::boot.scr
+	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot.scr ::boot.scr
 	mcopy -i $@.boot $(DTS_DIR)/$(SUNXI_DTS).dtb ::dtb
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
 	./gen_sunxi_sdcard_img.sh $@ \
@@ -26,7 +26,7 @@ define Build/sunxi-sdcard
 		$(IMAGE_ROOTFS) \
 		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
-		$(KDIR)/$(DEVICE_NAME)-u-boot-with-spl.bin
+		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin
 	rm -f $@.boot
 endef
 
