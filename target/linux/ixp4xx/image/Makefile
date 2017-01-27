@@ -10,12 +10,12 @@ include $(INCLUDE_DIR)/image.mk
 ifdef CONFIG_PACKAGE_apex
   define Image/Build/Linksys
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-L $(KDIR)/apex-$(2)-armeb.bin \
+		-L $(STAGING_DIR_IMAGE)/apex-$(2)-armeb.bin \
 		-k $(BIN_DIR)/$(IMG_PREFIX)-$(2)-zImage \
 		-r rootfs:$(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
 		-p -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).bin
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
-		-F -L $(KDIR)/apex-$(2)-16mb-armeb.bin \
+		-F -L $(STAGING_DIR_IMAGE)/apex-$(2)-16mb-armeb.bin \
 		-k $(BIN_DIR)/$(IMG_PREFIX)-$(2)-zImage \
 		-r rootfs:$(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
 		-p -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1)-16mb.bin
