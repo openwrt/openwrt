@@ -18,6 +18,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(IB_NAME)
 IB_KDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(KERNEL_BUILD_DIR))
 IB_LDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(LINUX_DIR))
 IB_DTSDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(LINUX_DIR))/arch/$(ARCH)/boot/dts/
+IB_IDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(STAGING_DIR_IMAGE))
 
 all: compile
 
@@ -78,6 +79,8 @@ endif
 	$(SED) 's,^# REVISION:=.*,REVISION:=$(REVISION),g' $(PKG_BUILD_DIR)/include/version.mk
 	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn \
 	  | $(XARGS) rm -rf
+	$(INSTALL_DIR) $(IB_IDIR)
+	-$(CP) $(STAGING_DIR_IMAGE)/* $(IB_IDIR)/
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/staging_dir/host/bin
 	$(CP) $(STAGING_DIR_HOST)/bin/* $(PKG_BUILD_DIR)/staging_dir/host/bin/
 	(cd $(PKG_BUILD_DIR); find staging_dir/host/bin/ $(IB_LDIR)/scripts/dtc/ -type f | \
