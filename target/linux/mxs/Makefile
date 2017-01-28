@@ -22,6 +22,4 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += kmod-wdt-stmp3xxx
-
 $(eval $(call BuildTarget))
