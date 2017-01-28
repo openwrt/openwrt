@@ -3,7 +3,7 @@ do_sysinfo_generic() {
 	mkdir -p /tmp/sysinfo
 	[ -e /tmp/sysinfo/board_name ] || \
 		echo "$(strings /proc/device-tree/compatible | head -1)" > /tmp/sysinfo/board_name
-	[ -n /tmp/sysinfo/model -a -e /proc/device-tree/model ] && \
+	[ ! -e /tmp/sysinfo/model -a -e /proc/device-tree/model ] && \
 		echo "$(cat /proc/device-tree/model)" > /tmp/sysinfo/model
 }
 
