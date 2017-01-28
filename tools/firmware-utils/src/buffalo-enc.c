@@ -35,6 +35,7 @@ static char *product;
 static char *version;
 static int do_decrypt;
 static int offset;
+static int size;
 
 void usage(int status)
 {
@@ -54,6 +55,7 @@ void usage(int status)
 "  -v <version>    set version to <version>\n"
 "  -h              show this screen\n"
 "  -O              Offset of encrypted data in file (decryption)\n"
+"  -S              Size of unencrypted data in file (encryption)\n"
 	);
 
 	exit(status);
@@ -118,7 +120,7 @@ out:
 static int encrypt_file(void)
 {
 	struct enc_param ep;
-	ssize_t src_len;
+	ssize_t src_len, tail_dst, tail_len, tail_src;
 	unsigned char *buf;
 	uint32_t hdrlen;
 	ssize_t totlen = 0;
@@ -131,8 +133,12 @@ static int encrypt_file(void)
 		goto out;
 	}
 
-	totlen = enc_compute_buf_len(product, version, src_len);
-	hdrlen = enc_compute_header_len(product, version);
+	if (size) {
+		tail_dst = enc_compute_buf_len(product, version, size);
+		tail_len = src_len - size;
+		totlen = tail_dst + tail_len;
+	} else
+		totlen = enc_compute_buf_len(product, version, src_len);
 
 	buf = malloc(totlen);
 	if (buf == NULL) {
@@ -140,10 +146,19 @@ static int encrypt_file(void)
 		goto out;
 	}
 
+	hdrlen = enc_compute_header_len(product, version);
+
 	err = read_file_to_buf(ifname, &buf[hdrlen], src_len);
 	if (err) {
 		ERR("unable to read from file '%s'", ofname);
 		goto free_buf;
+	}
+
+	if (size) {
+		tail_src = hdrlen + size;
+		memmove(&buf[tail_dst], &buf[tail_src], tail_len);
+		memset(&buf[tail_src], 0, tail_dst - tail_src);
+		src_len = size;
 	}
 
 	memset(&ep, '\0', sizeof(ep));
@@ -241,7 +256,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "adi:m:o:hlp:v:k:O:r:s:");
+		c = getopt(argc, argv, "adi:m:o:hlp:v:k:O:r:s:S:");
 		if (c == -1)
 			break;
 
@@ -275,6 +290,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'O':
 			offset = strtoul(optarg, NULL, 0);
+			break;
+		case 'S':
+			size = strtoul(optarg, NULL, 0);
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);

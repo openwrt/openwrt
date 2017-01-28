@@ -80,6 +80,7 @@ define Host/Compile
 	$(call cc,jcgimage, -lz -Wall)
 	$(call cc,mkbuffaloimg, -Wall)
 	$(call cc,zyimage, -Wall)
+	$(call cc,mkdhpimg buffalo-lib, -Wall)
 endef
 
 define Host/Install

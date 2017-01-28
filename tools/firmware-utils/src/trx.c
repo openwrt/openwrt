@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 	int c, i, append = 0;
 	size_t n;
 	ssize_t n2;
-	uint32_t cur_len, fsmark=0;
+	uint32_t cur_len, fsmark=0, magic;
 	unsigned long maxlen = TRX_MAX_LEN;
 	struct trx_header *p;
 	char trx_version = 1;
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 	in = NULL;
 	i = 0;
 
-	while ((c = getopt(argc, argv, "-:2o:m:a:x:b:f:A:F:")) != -1) {
+	while ((c = getopt(argc, argv, "-:2o:m:a:x:b:f:A:F:M:")) != -1) {
 		switch (c) {
 			case '2':
 				/* take care that nothing was written to buf so far */
@@ -242,6 +242,15 @@ int main(int argc, char **argv)
 					cur_len += n2;
 				}
 
+				break;
+			case 'M':
+				errno = 0;
+				magic = strtoul(optarg, &e, 0);
+				if (errno || (e == optarg) || *e) {
+					fprintf(stderr, "illegal numeric string\n");
+					usage();
+				}
+				p->magic = STORE32_LE(magic);
 				break;
 			default:
 				usage();

@@ -48,6 +48,7 @@ static uint32_t base2;
 static char *region_code;
 static uint32_t region_mask;
 static int num_regions;
+static int dhp;
 
 void usage(int status)
 {
@@ -63,6 +64,7 @@ void usage(int status)
 "  -d <base2>\n"
 "  -f <flag>       set flag to <flag>\n"
 "  -i <file>       read input from the file <file>\n"
+"  -I <file>       read input from the file <file> for DHP series\n"
 "  -l <language>   set language to <language>\n"
 "  -m <version>    set minor version to <version>\n"
 "  -o <file>       write output to the file <file>\n"
@@ -227,6 +229,37 @@ static void fixup_tag2(unsigned char *buf, ssize_t buflen)
 		tag->crc = htonl(buffalo_crc(buf, buflen));
 }
 
+static void fixup_tag3(unsigned char *buf, ssize_t totlen)
+{
+	struct buffalo_tag3 *tag = (struct buffalo_tag3 *) buf;
+
+	memset(tag, '\0', sizeof(*tag));
+
+	memcpy(tag->brand, brand, strlen(brand));
+	memcpy(tag->product, product, strlen(product));
+	memcpy(tag->platform, platform, strlen(platform));
+	memcpy(tag->ver_major, major, strlen(major));
+	memcpy(tag->ver_minor, minor, strlen(minor));
+	memcpy(tag->language, language, strlen(language));
+
+	if (num_regions > 1) {
+		tag->region_code[0] = 'M';
+		tag->region_code[1] = '_';
+		tag->region_mask = htonl(region_mask);
+	} else {
+		memcpy(tag->region_code, region_code, 2);
+	}
+
+	tag->total_len = htonl(totlen);
+	tag->len1 = htonl(fsize[0]);
+	tag->base2 = htonl(base2);
+
+	if (hwver) {
+		memcpy(tag->hwv, "hwv", 3);
+		memcpy(tag->hwv_val, hwver, strlen(hwver));
+	}
+}
+
 static int tag_file(void)
 {
 	unsigned char *buf;
@@ -237,7 +270,9 @@ static int tag_file(void)
 	int ret = -1;
 	int i;
 
-	if (num_files == 1)
+	if (dhp)
+		hdrlen = sizeof(struct buffalo_tag3);
+	else if (num_files == 1)
 		hdrlen = sizeof(struct buffalo_tag);
 	else
 		hdrlen = sizeof(struct buffalo_tag2);
@@ -270,7 +305,9 @@ static int tag_file(void)
 		offset += fsize[i];
 	}
 
-	if (num_files == 1)
+	if (dhp)
+		fixup_tag3(buf, fsize[0] + 200);
+	else if (num_files == 1)
 		fixup_tag(buf, buflen);
 	else
 		fixup_tag2(buf, buflen);
@@ -299,7 +336,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:b:c:d:f:hi:l:m:o:p:r:sv:w:");
+		c = getopt(argc, argv, "a:b:c:d:f:hi:l:m:o:p:r:sv:w:I:");
 		if (c == -1)
 			break;
 
@@ -319,6 +356,9 @@ int main(int argc, char *argv[])
 		case 'f':
 			flag = strtoul(optarg, NULL, 2);
 			break;
+		case 'I':
+			dhp = 1;
+			/* FALLTHROUGH */
 		case 'i':
 			err = process_ifname(optarg);
 			if (err)

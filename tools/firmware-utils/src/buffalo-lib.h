@@ -69,6 +69,26 @@ struct buffalo_tag2 {
 	uint8_t		unknown2[3];
 } __attribute ((packed));
 
+struct buffalo_tag3 {
+	unsigned char	product[TAG_PRODUCT_LEN];
+	unsigned char	brand[TAG_BRAND_LEN];
+	unsigned char	ver_major[TAG_VERSION_LEN];
+	unsigned char	ver_minor[TAG_VERSION_LEN];
+	unsigned char	region_code[2];
+	uint32_t	region_mask;
+	unsigned char	unknown0[2];
+	unsigned char	language[TAG_LANGUAGE_LEN];
+	unsigned char	platform[TAG_PLATFORM_LEN];
+	unsigned char	hwv[TAG_HWVER_LEN];
+	unsigned char	hwv_val[TAG_HWVER_VAL_LEN];
+	uint8_t		unknown1[24];
+
+	uint32_t	total_len;
+	uint32_t	crc;
+	uint32_t	len1;
+	uint32_t	base2;
+} __attribute ((packed));
+
 #define ENC_PRODUCT_LEN		32
 #define ENC_VERSION_LEN		8
 #define ENC_MAGIC_LEN		6
