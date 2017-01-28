@@ -1190,8 +1190,8 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		if ((desc->ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) == LTQ_DMA_C) {
 +#ifdef SW_ROUTING
 +			struct sk_buff *skb = ch->skb[ch->dma.desc];
-+			u32 *special_tag = (u32*)skb->data;
-+			int port = (special_tag[1] >> SPPID_SHIFT) & SPPID_MASK;
++			u8 *special_tag = (u8*)skb->data;
++			int port = (special_tag[7] >> SPPID_SHIFT) & SPPID_MASK;
 +			xrx200_hw_receive(ch, priv->hw->port_map[port]);
 +#else
 +			xrx200_hw_receive(ch, 0);
