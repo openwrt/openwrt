@@ -1,3 +1,5 @@
+diff --git a/include/linux/pkt_sched.h b/include/linux/pkt_sched.h
+index 8d2530d..c55a9a8 100644
 --- a/include/linux/pkt_sched.h
 +++ b/include/linux/pkt_sched.h
 @@ -850,4 +850,60 @@ struct tc_pie_xstats {
@@ -13,7 +15,6 @@
 +	TCA_CAKE_ATM,
 +	TCA_CAKE_FLOW_MODE,
 +	TCA_CAKE_OVERHEAD,
-+	TCA_CAKE_MPU,
 +	TCA_CAKE_RTT,
 +	TCA_CAKE_TARGET,
 +	TCA_CAKE_AUTORATE,
@@ -21,6 +22,7 @@
 +	TCA_CAKE_NAT,
 +	TCA_CAKE_ETHERNET,
 +	TCA_CAKE_WASH,
++	TCA_CAKE_MPU,
 +	__TCA_CAKE_MAX
 +};
 +#define TCA_CAKE_MAX	(__TCA_CAKE_MAX - 1)
@@ -61,6 +63,8 @@
 +};
 +
  #endif
+diff --git a/tc/Makefile b/tc/Makefile
+index 56acbaa..d421b8e 100644
 --- a/tc/Makefile
 +++ b/tc/Makefile
 @@ -63,6 +63,7 @@ TCMODULES += q_codel.o
@@ -71,9 +75,12 @@
  TCMODULES += q_hhf.o
  TCMODULES += e_bpf.o
  
+diff --git a/tc/q_cake.c b/tc/q_cake.c
+new file mode 100644
+index 0000000..acbe56c
 --- /dev/null
 +++ b/tc/q_cake.c
-@@ -0,0 +1,686 @@
+@@ -0,0 +1,692 @@
 +/*
 + * Common Applications Kept Enhanced  --  CAKE
 + *
@@ -127,14 +134,20 @@
 +
 +static void explain(void)
 +{
-+	fprintf(stderr, "Usage: ... cake [ bandwidth RATE | unlimited* | autorate_ingress ]\n"
-+	                "                [ rtt TIME | datacentre | lan | metro | regional | internet* | oceanic | satellite | interplanetary ]\n"
-+	                "                [ besteffort | precedence | diffserv8 | diffserv4 | diffserv-llt | diffserv3* ]\n"
-+	                "                [ flowblind | srchost | dsthost | hosts | flows | dual-srchost | dual-dsthost | triple-isolate* ] [ nat | nonat* ]\n"
-+	                "                [ ptm | atm | noatm* ] [ overhead N | conservative | raw* ] [ mpu N ]\n"
-+	                "                [ wash | nowash* ]\n"
-+	                "                [ memlimit LIMIT ]\n"
-+	                "    (* marks defaults)\n");
++	fprintf(stderr,
++"Usage: ... cake [ bandwidth RATE | unlimited* | autorate_ingress ]\n"
++"                [ rtt TIME | datacentre | lan | metro | regional |\n"
++"                  internet* | oceanic | satellite | interplanetary ]\n"
++"                [ besteffort | diffserv8 | diffserv4 | diffserv-llt |\n"
++"                  diffserv3* ]\n"
++"                [ flowblind | srchost | dsthost | hosts | flows |\n"
++"                  dual-srchost | dual-dsthost | triple-isolate* ]\n"
++"                [ nat | nonat* ]\n"
++"                [ wash | nowash * ]\n"
++"                [ memlimit LIMIT ]\n"
++"                [ ptm | atm | noatm* ] [ overhead N | conservative | raw* ]\n"
++"                [ mpu N ]\n"
++"                (* marks defaults)\n");
 +}
 +
 +static int cake_parse_opt(struct qdisc_util *qu, int argc, char **argv,
