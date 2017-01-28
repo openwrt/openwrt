@@ -538,9 +538,9 @@ TARGET_DEVICES += VGV7510KW22NOR
 define Device/VGV7510KW22BRN
   $(Device/lantiqBrnImage)
   IMAGE_SIZE := 7168k
-  SIGNATURE := 5D00008000
+  SIGNATURE := BRNDA6431
   MAGIC := 0x12345678
-  CRC32_POLY := 0x2083b8ed
+  CRC32_POLY := 0x04c11db7
   DEVICE_TITLE := o2 Box 6431 / Arcadyan VGV7510KW22 (BRN)
   DEVICE_PACKAGES := kmod-rt2800-pci wpad-mini kmod-usb-dwc2 kmod-ltq-tapi kmod-ltq-vmmc
 endef
