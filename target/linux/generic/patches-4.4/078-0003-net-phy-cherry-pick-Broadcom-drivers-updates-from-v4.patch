@@ -16,27 +16,14 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
  #define BRCM_PHY_MODEL(phydev) \
  	((phydev)->drv->phy_id & (phydev)->drv->phy_id_mask)
-@@ -30,11 +30,49 @@ MODULE_DESCRIPTION("Broadcom PHY driver"
+@@ -30,9 +30,32 @@ MODULE_DESCRIPTION("Broadcom PHY driver"
  MODULE_AUTHOR("Maciej W. Rozycki");
  MODULE_LICENSE("GPL");
  
-+static int bcm54xx_auxctl_read(struct phy_device *phydev, u16 regnum)
-+{
-+	/* The register must be written to both the Shadow Register Select and
-+	 * the Shadow Read Register Selector
-+	 */
-+	phy_write(phydev, MII_BCM54XX_AUX_CTL, regnum |
-+		  regnum << MII_BCM54XX_AUXCTL_SHDWSEL_READ_SHIFT);
-+	return phy_read(phydev, MII_BCM54XX_AUX_CTL);
-+}
-+
- static int bcm54xx_auxctl_write(struct phy_device *phydev, u16 regnum, u16 val)
- {
- 	return phy_write(phydev, MII_BCM54XX_AUX_CTL, regnum | val);
- }
- 
+-static int bcm54xx_auxctl_write(struct phy_device *phydev, u16 regnum, u16 val)
 +static int bcm54810_config(struct phy_device *phydev)
-+{
+ {
+-	return phy_write(phydev, MII_BCM54XX_AUX_CTL, regnum | val);
 +	int rc, val;
 +
 +	val = bcm_phy_read_exp(phydev, BCM54810_EXP_BROADREACH_LRE_MISC_CTL);
@@ -61,12 +48,10 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		return rc;
 +
 +	return 0;
-+}
-+
+ }
+ 
  /* Needs SMDSP clock enabled via bcm54xx_phydsp_config() */
- static int bcm50610_a0_workaround(struct phy_device *phydev)
- {
-@@ -207,6 +245,12 @@ static int bcm54xx_config_init(struct ph
+@@ -207,6 +230,12 @@ static int bcm54xx_config_init(struct ph
  	    (phydev->dev_flags & PHY_BRCM_AUTO_PWRDWN_ENABLE))
  		bcm54xx_adjust_rxrefclk(phydev);
  
@@ -79,7 +64,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	bcm54xx_phydsp_config(phydev);
  
  	return 0;
-@@ -304,6 +348,7 @@ static int bcm5482_read_status(struct ph
+@@ -304,6 +333,7 @@ static int bcm5482_read_status(struct ph
  
  static int bcm5481_config_aneg(struct phy_device *phydev)
  {
@@ -87,7 +72,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	int ret;
  
  	/* Aneg firsly. */
-@@ -334,6 +379,49 @@ static int bcm5481_config_aneg(struct ph
+@@ -334,6 +364,49 @@ static int bcm5481_config_aneg(struct ph
  		phy_write(phydev, 0x18, reg);
  	}
  
@@ -137,7 +122,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	return ret;
  }
  
-@@ -488,6 +576,19 @@ static struct phy_driver broadcom_driver
+@@ -488,6 +561,19 @@ static struct phy_driver broadcom_driver
  	.config_intr	= bcm_phy_config_intr,
  	.driver		= { .owner = THIS_MODULE },
  }, {
@@ -157,7 +142,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	.phy_id		= PHY_ID_BCM54616S,
  	.phy_id_mask	= 0xfffffff0,
  	.name		= "Broadcom BCM54616S",
-@@ -527,6 +628,19 @@ static struct phy_driver broadcom_driver
+@@ -527,6 +613,19 @@ static struct phy_driver broadcom_driver
  	.config_intr	= bcm_phy_config_intr,
  	.driver		= { .owner = THIS_MODULE },
  }, {
@@ -177,7 +162,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	.phy_id		= PHY_ID_BCM5482,
  	.phy_id_mask	= 0xfffffff0,
  	.name		= "Broadcom BCM5482",
-@@ -612,9 +726,11 @@ static struct mdio_device_id __maybe_unu
+@@ -612,9 +711,11 @@ static struct mdio_device_id __maybe_unu
  	{ PHY_ID_BCM5411, 0xfffffff0 },
  	{ PHY_ID_BCM5421, 0xfffffff0 },
  	{ PHY_ID_BCM5461, 0xfffffff0 },
@@ -253,3 +238,41 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
  config BCM_CYGNUS_PHY
  	tristate "Drivers for Broadcom Cygnus SoC internal PHY"
+--- a/drivers/net/phy/bcm-phy-lib.c
++++ b/drivers/net/phy/bcm-phy-lib.c
+@@ -50,6 +50,23 @@ int bcm_phy_read_exp(struct phy_device *
+ }
+ EXPORT_SYMBOL_GPL(bcm_phy_read_exp);
+ 
++int bcm54xx_auxctl_read(struct phy_device *phydev, u16 regnum)
++{
++	/* The register must be written to both the Shadow Register Select and
++	 * the Shadow Read Register Selector
++	 */
++	phy_write(phydev, MII_BCM54XX_AUX_CTL, regnum |
++		  regnum << MII_BCM54XX_AUXCTL_SHDWSEL_READ_SHIFT);
++	return phy_read(phydev, MII_BCM54XX_AUX_CTL);
++}
++EXPORT_SYMBOL_GPL(bcm54xx_auxctl_read);
++
++int bcm54xx_auxctl_write(struct phy_device *phydev, u16 regnum, u16 val)
++{
++	return phy_write(phydev, MII_BCM54XX_AUX_CTL, regnum | val);
++}
++EXPORT_SYMBOL(bcm54xx_auxctl_write);
++
+ int bcm_phy_write_misc(struct phy_device *phydev,
+ 		       u16 reg, u16 chl, u16 val)
+ {
+--- a/drivers/net/phy/bcm-phy-lib.h
++++ b/drivers/net/phy/bcm-phy-lib.h
+@@ -19,6 +19,9 @@
+ int bcm_phy_write_exp(struct phy_device *phydev, u16 reg, u16 val);
+ int bcm_phy_read_exp(struct phy_device *phydev, u16 reg);
+ 
++int bcm54xx_auxctl_write(struct phy_device *phydev, u16 regnum, u16 val);
++int bcm54xx_auxctl_read(struct phy_device *phydev, u16 regnum);
++
+ int bcm_phy_write_misc(struct phy_device *phydev,
+ 		       u16 reg, u16 chl, u16 value);
+ int bcm_phy_read_misc(struct phy_device *phydev,
