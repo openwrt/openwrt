@@ -55,3 +55,19 @@ define Device/mac1200r-v2
   DEVICE_TITLE := Mercury MAC1200R v2.0
 endef
 TARGET_DEVICES += mac1200r-v2
+
+define Device/wcr-1166ds
+  DTS := WCR-1166DS
+  BUFFALO_TAG_PLATFORM := MTK
+  BUFFALO_TAG_VERSION := 9.99
+  BUFFALO_TAG_MINOR := 9.99
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
+  IMAGE/factory.bin := \
+	trx -M 0x746f435c | pad-rootfs | append-metadata | \
+	buffalo-enc WCR-1166DS $$(BUFFALO_TAG_VERSION) -l | \
+	buffalo-tag-dhp WCR-1166DS JP JP | buffalo-enc-tag -l | \
+	buffalo-dhp-image
+  DEVICE_TITLE := Buffalo WCR-1166DS
+endef
+TARGET_DEVICES += wcr-1166ds

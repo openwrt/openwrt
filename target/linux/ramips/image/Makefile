@@ -23,6 +23,7 @@ define Image/Build/Initramfs
 endef
 
 DEVICE_VARS += DTS IMAGE_SIZE NETGEAR_BOARD_ID NETGEAR_HW_ID
+DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 
 loadaddr-y := 0x80000000
 loadaddr-$(CONFIG_TARGET_ramips_rt288x) := 0x88000000
@@ -48,7 +49,7 @@ define Build/patch-dtb
 endef
 
 define Build/trx
-	$(STAGING_DIR_HOST)/bin/trx \
+	$(STAGING_DIR_HOST)/bin/trx $(1) \
 		-o $@ \
 		-m $(IMAGE_SIZE) \
 		-f $(IMAGE_KERNEL) \

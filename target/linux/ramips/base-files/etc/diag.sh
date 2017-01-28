@@ -219,6 +219,12 @@ get_status_led() {
 	zbt-wr8305rt)
 		status_led="$board:green:sys"
 		;;
+	wcr-1166ds|\
+	whr-300hp2|\
+	wsr-1166|\
+	wsr-600)
+		status_led="$board:green:power"
+		;;
 	wcr-150gn|\
 	wl-351)
 		status_led="$board:amber:power"
@@ -232,11 +238,6 @@ get_status_led() {
 		;;
 	wizfi630a)
 		status_led="$board::run"
-		;;
-	whr-300hp2|\
-	wsr-1166|\
-	wsr-600)
-		status_led="$board:green:power"
 		;;
 	wrtnode2r | \
 	wrtnode2p | \

@@ -263,6 +263,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5@eth0"
 		;;
+	wcr-1166ds)
+		ucidef_add_switch "switch0" \
+			"3:lan" "4:wan" "6@eth0"
+		;;
 	wcr-150gn)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6t@eth0"
@@ -410,6 +414,12 @@ ramips_setup_macs()
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 5)
 		;;
+	wcr-1166ds|\
+	wsr-1166)
+		local index="$(find_mtd_index "board_data")"
+		wan_mac="$(grep -m1 mac= "/dev/mtd${index}" | cut -d= -f2)"
+		lan_mac=$wan_mac
+		;;
 	wcr-150gn)
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
@@ -426,11 +436,6 @@ ramips_setup_macs()
 		;;
 	wlr-6000)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 32772)" 2)
-		;;
-	wsr-1166)
-		local index="$(find_mtd_index "board_data")"
-		wan_mac="$(grep -m1 mac= "/dev/mtd${index}" | cut -d= -f2)"
-		lan_mac=$wan_mac
 		;;
 	*)
 		lan_mac=$(cat /sys/class/net/eth0/address)

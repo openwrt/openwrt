@@ -226,16 +226,17 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	ubnt-erx)
+		nand_do_platform_check "$board" "$1"
+		return $?;
+		;;
+	wcr-1166ds|\
 	wsr-1166)
 		[ "$magic" != "48445230" ] && {
 			echo "Invalid image type."
 			return 1
 		}
 		return 0
-		;;
-	ubnt-erx)
-		nand_do_platform_check "$board" "$1"
-		return $?;
 		;;
 	esac
 
