@@ -418,14 +418,14 @@ config ATH79_MACH_WPJ344
 	select ATH79_DEV_WMAC
 
 config ATH79_MACH_WPJ531
-       bool "Compex WPJ531 board support"
-       select SOC_QCA953X
-       select ATH79_DEV_ETH
-       select ATH79_DEV_GPIO_BUTTONS
-       select ATH79_DEV_LEDS_GPIO
-       select ATH79_DEV_M25P80
-       select ATH79_DEV_USB
-       select ATH79_DEV_WMAC
+	bool "Compex WPJ531 board support"
+	select SOC_QCA953X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
 
 config ATH79_MACH_WPJ558
 	bool "Compex WPJ558 board support"
@@ -754,14 +754,14 @@ config ATH79_MACH_GS_MINIBOX_V1
 	select ATH79_DEV_WMAC
 
 config ATH79_MACH_GS_OOLITE
-       bool "GS Oolite V1 support"
-       select SOC_AR933X
-       select ARH79_DEV_ETH
-       select ARH79_DEV_GPIO_BUTTONS
-       select ATH79_DEV_LEDS_GPIO
-       select ATH79_DEV_M25P80
-       select ATH79_DEV_USB
-       select ATH79_DEV_WMAC
+	bool "GS Oolite V1 support"
+	select SOC_AR933X
+	select ARH79_DEV_ETH
+	select ARH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
 
 config ATH79_MACH_HIWIFI_HC6361
 	bool "HiWiFi HC6361 board support"
@@ -896,13 +896,13 @@ config ATH79_MACH_RB941
 	select ATH79_ROUTERBOOT
 
 config ATH79_MACH_RB95X
-       bool "MikroTik RouterBOARD 95X support"
-       select SOC_AR934X
-       select ATH79_DEV_ETH
-       select ATH79_DEV_NFC
-       select ATH79_DEV_WMAC
-       select ATH79_DEV_USB
-       select ATH79_ROUTERBOOT
+	bool "MikroTik RouterBOARD 95X support"
+	select SOC_AR934X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_NFC
+	select ATH79_DEV_WMAC
+	select ATH79_DEV_USB
+	select ATH79_ROUTERBOOT
 
 config ATH79_MACH_RB2011
 	bool "MikroTik RouterBOARD 2011 support"
@@ -1356,22 +1356,24 @@ config ATH79_MACH_TL_WA701ND_V2
 	select ATH79_DEV_WMAC
 
 config ATH79_MACH_TL_WA7210N_V2
-       bool "TP-LINK TL-WA7210N v2 support"
-       select SOC_AR724X
-       select ATH79_DEV_AP9X_PCI if PCI
-       select ATH79_DEV_ETH
-       select ATH79_DEV_LEDS_GPIO
-       select ATH79_DEV_GPIO_BUTTONS
-       select ATH79_DEV_M25P80
-       select ATH79_DEV_WMAC
+	bool "TP-LINK TL-WA7210N v2 support"
+	select SOC_AR724X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_TL_WA801ND_V3
-       bool "TP-LINK TL-WA801ND v3 support"
-       select SOC_QCA953X
-       select ATH79_DEV_ETH
-       select ATH79_DEV_GPIO_BUTTONS
-       select ATH79_DEV_LEDS_GPIO
-       select ATH79_DEV_M25P80
-       select ATH79_DEV_WMAC
+	bool "TP-LINK TL-WA801ND v3 support"
+	select SOC_QCA953X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_TL_WA830RE_V2
 	bool "TP-LINK TL-WA830RE v2 support"
 	select SOC_AR934X
