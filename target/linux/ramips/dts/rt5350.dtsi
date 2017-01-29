@@ -229,6 +229,19 @@
 			interrupts = <7>;
 		};
 
+		pcm: pcm@2000 {
+			compatible = "ralink,rt5350-pcm";
+			reg = <0x2000 0x800>;
+
+			resets = <&rstctrl 11>;
+			reset-names = "pcm";
+
+			interrupt-parent = <&intc>;
+			interrupts = <4>;
+
+			status = "disabled";
+                };
+
 		gdma: gdma@2800 {
 			compatible = "ralink,rt3883-gdma";
 			reg = <0x2800 0x800>;
