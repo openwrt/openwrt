@@ -267,12 +267,12 @@ static int netdev_trig_notify(struct notifier_block *nb,
 	if (evt != NETDEV_UP && evt != NETDEV_DOWN && evt != NETDEV_CHANGE && evt != NETDEV_REGISTER && evt != NETDEV_UNREGISTER && evt != NETDEV_CHANGENAME)
 		return NOTIFY_DONE;
 
+	if (strcmp(dev->name, trigger_data->device_name))
+		return NOTIFY_DONE;
+
 	cancel_delayed_work_sync(&trigger_data->work);
 
 	spin_lock_bh(&trigger_data->lock);
-
-	if (strcmp(dev->name, trigger_data->device_name))
-		goto done;
 
 	if (evt == NETDEV_REGISTER || evt == NETDEV_CHANGENAME) {
 		if (trigger_data->net_dev != NULL)
