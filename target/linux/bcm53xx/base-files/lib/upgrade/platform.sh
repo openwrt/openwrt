@@ -60,7 +60,7 @@ platform_identify() {
 		return
 	}
 
-	if osafeloader info "$1" > /dev/null; then
+	if osafeloader info "$1" > /dev/null 2>&1; then
 		echo "safeloader"
 		return
 	fi
