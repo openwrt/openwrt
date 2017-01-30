@@ -145,6 +145,12 @@ wifi_reload() {
 	wifi_reload_legacy
 }
 
+wifi_detect_notice() {
+	>&2 echo "WARNING: Wifi detect is deprecated. Use wifi config instead"
+	>&2 echo "For more information, see commit 5f8f8a366136a07df661e31decce2458357c167a"
+	exit 1
+}
+
 wifi_config() {
 	[ ! -f /etc/config/wireless ] && touch /etc/config/wireless
 
@@ -229,7 +235,7 @@ scan_wifi
 
 case "$1" in
 	down) wifi_updown "disable" "$2";;
-	detect) ;;
+	detect) wifi_detect_notice ;;
 	config) wifi_config ;;
 	status) ubus_wifi_cmd "status" "$2";;
 	reload) wifi_reload "$2";;
