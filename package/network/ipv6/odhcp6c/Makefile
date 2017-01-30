@@ -10,8 +10,8 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=odhcp6c
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=git://git.lede-project.org/project/odhcp6c.git
 PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=$(LEDE_GIT)/project/odhcp6c.git
 PKG_SOURCE_DATE:=2017-01-30
 PKG_SOURCE_VERSION:=c13b6a05dbd9174356cc4b7fd1edf39445efd982
 PKG_MIRROR_HASH:=001e58f1ab6eb8903d9e47060ae037a2e4f021f1fef5032347b767f56f4664f6
