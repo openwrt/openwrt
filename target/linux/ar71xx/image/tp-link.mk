@@ -602,7 +602,7 @@ endef
 
 define Device/tl-wr810n
     $(Device/tplink-8mlzma)
-    DEVICE_TITLE := TP-Link TL-WR810N
+    DEVICE_TITLE := TP-LINK TL-WR810N
     DEVICE_PACKAGES := kmod-usb-core kmod-usb2
     BOARDNAME := TL-WR810N
     DEVICE_PROFILE := TLWR810

@@ -427,7 +427,7 @@ TARGET_DEVICES += rnx-n360rt
 
 define Device/mc-mac1200r
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := MERCURY MAC1200R
+  DEVICE_TITLE := Mercury MAC1200R
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME := MC-MAC1200R
   DEVICE_PROFILE := MAC1200R

@@ -328,7 +328,7 @@ endef
 LEGACY_DEVICES += WRT160NL
 
 define LegacyDevice/MYNETREXT
-  DEVICE_TITLE := WD My Net Wi-Fi Range Extender
+  DEVICE_TITLE := Western Digital My Net Wi-Fi Range Extender
   DEVICE_PACKAGES := rssileds
 endef
 LEGACY_DEVICES += MYNETREXT
@@ -640,7 +640,7 @@ endef
 LEGACY_DEVICES += ZCN1523H516
 
 define LegacyDevice/NBG_460N_550N_550NH
-  DEVICE_TITLE := Zyxel NBG 460N/550N/550NH
+  DEVICE_TITLE := ZyXEL NBG 460N/550N/550NH
   DEVICE_PACKAGES := kmod-rtc-pcf8563
 endef
 LEGACY_DEVICES += NBG_460N_550N_550NH
