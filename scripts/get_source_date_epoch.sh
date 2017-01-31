@@ -17,9 +17,14 @@ try_git() {
 
 try_hg() {
 	[ -d .hg ] || return 1
-	SOURCE_DATE_EPOCH=""
+	SOURCE_DATE_EPOCH="$(hg log --template '{date}' -l 1 | cut -d. -f1)"
 	[ -n "$SOURCE_DATE_EPOCH" ]
 }
 
-try_version || try_git || try_hg || SOURCE_DATE_EPOCH=""
+try_mtime() {
+	perl -e 'print((stat $ARGV[0])[9])' "$0"
+	[ -n "$SOURCE_DATE_EPOCH" ]
+}
+
+try_version || try_git || try_hg || try_mtime || SOURCE_DATE_EPOCH=""
 echo "$SOURCE_DATE_EPOCH"
