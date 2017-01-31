@@ -276,10 +276,10 @@ define KernelPackage/drm-imx-hdmi
   KCONFIG:=CONFIG_DRM_IMX_HDMI \
 	CONFIG_DRM_DW_HDMI_AHB_AUDIO
   FILES:= \
-	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw_hdmi.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw_hdmi-ahb-audio.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw-hdmi.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw-hdmi-ahb-audio.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/dw_hdmi-imx.ko
-  AUTOLOAD:=$(call AutoLoad,05,dw_hdmi dw_hdmi-ahb-audio.ko dw_hdmi-imx)
+  AUTOLOAD:=$(call AutoLoad,05,dw-hdmi dw-hdmi-ahb-audio.ko dw_hdmi-imx)
 endef
 
 define KernelPackage/drm-imx-hdmi/description
