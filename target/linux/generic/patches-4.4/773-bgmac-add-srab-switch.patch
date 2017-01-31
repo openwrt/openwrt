@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * MII
   **************************************************/
-@@ -1539,6 +1551,14 @@ int bgmac_enet_probe(struct bgmac *info)
+@@ -1549,6 +1561,14 @@ int bgmac_enet_probe(struct bgmac *bgmac
  	net_dev->hw_features = net_dev->features;
  	net_dev->vlan_features = net_dev->features;
  
@@ -45,7 +45,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		dev_err(bgmac->dev, "Cannot register net device\n");
-@@ -1562,6 +1582,10 @@ EXPORT_SYMBOL_GPL(bgmac_enet_probe);
+@@ -1571,6 +1591,10 @@ EXPORT_SYMBOL_GPL(bgmac_enet_probe);
  
  void bgmac_enet_remove(struct bgmac *bgmac)
  {
@@ -75,10 +75,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct platform_device *b53_device;
  };
  
- int bgmac_enet_probe(struct bgmac *info);
+ struct bgmac *bgmac_alloc(struct device *dev);
 --- a/drivers/net/ethernet/broadcom/bgmac-bcma.c
 +++ b/drivers/net/ethernet/broadcom/bgmac-bcma.c
-@@ -231,6 +231,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -230,6 +230,7 @@ static int bgmac_probe(struct bcma_devic
  		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
  		bgmac->feature_flags |= BGMAC_FEAT_NO_RESET;
  		bgmac->feature_flags |= BGMAC_FEAT_FORCE_SPEED_2500;
