@@ -50,6 +50,12 @@ netgear,r8500)
 	ifname=eth0
 	ucidef_add_switch "switch0" \
 		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5t@$ifname"
+
+	# These devices should use eth2 so their eth0 interface often has no MAC
+	# assigned. Manually assign eth2's MAC to the LAN.
+	et2macaddr="$(nvram get et2macaddr)"
+	[ -n "$et2macaddr" ] && ucidef_set_interface_macaddr "lan" "$et2macaddr"
+
 	board_config_flush
 	exit 0
 	;;
