@@ -1,5 +1,6 @@
+From cdb26d3387f0cdf7b2a2eea581385173547ef21f Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Mon, 7 Nov 2016 13:19:42 +0100
+Date: Mon, 7 Nov 2016 13:53:27 +0100
 Subject: [PATCH] net: bgmac: fix reversed checks for clock control flag
 
 This fixes regression introduced by patch adding feature flags. It was
@@ -12,6 +13,8 @@ BCM47186B0.
 Fixes: db791eb2970b ("net: ethernet: bgmac: convert to feature flags")
 Fixes: 4af1474e6198 ("net: bgmac: Fix errant feature flag check")
 Cc: Jon Mason <jon.mason@broadcom.com>
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/ethernet/broadcom/bgmac.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
