@@ -29,7 +29,7 @@ struct eva_image_header {
 };
 
 static int mtdsplit_parse_eva(struct mtd_info *master,
-				struct mtd_partition **pparts,
+				const struct mtd_partition **pparts,
 				struct mtd_part_parser_data *data)
 {
 	struct mtd_partition *parts;

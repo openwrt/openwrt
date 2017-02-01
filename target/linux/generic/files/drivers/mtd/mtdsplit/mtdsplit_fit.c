@@ -45,7 +45,8 @@ struct fdt_header {
 };
 
 static int
-mtdsplit_fit_parse(struct mtd_info *mtd, struct mtd_partition **pparts,
+mtdsplit_fit_parse(struct mtd_info *mtd,
+		   const struct mtd_partition **pparts,
 	           struct mtd_part_parser_data *data)
 {
 	struct fdt_header hdr;

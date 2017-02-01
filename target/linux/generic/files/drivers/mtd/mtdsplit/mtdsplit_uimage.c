@@ -81,7 +81,7 @@ read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
  *      of a valid uImage header if found
  */
 static int __mtdsplit_parse_uimage(struct mtd_info *master,
-				   struct mtd_partition **pparts,
+				   const struct mtd_partition **pparts,
 				   struct mtd_part_parser_data *data,
 				   ssize_t (*find_header)(u_char *buf, size_t len))
 {
@@ -232,7 +232,7 @@ static ssize_t uimage_verify_default(u_char *buf, size_t len)
 
 static int
 mtdsplit_uimage_parse_generic(struct mtd_info *master,
-			      struct mtd_partition **pparts,
+			      const struct mtd_partition **pparts,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,
@@ -289,7 +289,7 @@ static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len)
 
 static int
 mtdsplit_uimage_parse_netgear(struct mtd_info *master,
-			      struct mtd_partition **pparts,
+			      const struct mtd_partition **pparts,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,
@@ -331,7 +331,7 @@ static ssize_t uimage_find_edimax(u_char *buf, size_t len)
 
 static int
 mtdsplit_uimage_parse_edimax(struct mtd_info *master,
-			      struct mtd_partition **pparts,
+			      const struct mtd_partition **pparts,
 			      struct mtd_part_parser_data *data)
 {
 	return __mtdsplit_parse_uimage(master, pparts, data,

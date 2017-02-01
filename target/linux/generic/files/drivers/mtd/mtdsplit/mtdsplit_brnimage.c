@@ -27,7 +27,7 @@
 #define BRNIMAGE_MAX_OVERHEAD	(BRNIMAGE_ALIGN_BYTES + BRNIMAGE_FOOTER_SIZE)
 
 static int mtdsplit_parse_brnimage(struct mtd_info *master,
-				struct mtd_partition **pparts,
+				const struct mtd_partition **pparts,
 				struct mtd_part_parser_data *data)
 {
 	struct mtd_partition *parts;
