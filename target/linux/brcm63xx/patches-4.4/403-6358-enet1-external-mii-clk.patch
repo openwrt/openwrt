@@ -8,7 +8,7 @@
 +			val |= GPIO_MODE_6358_ENET1_MII_CLK_INV;
  	}
  
- 	bcm_gpio_writel(val, GPIO_MODE_REG);
+ 	if (BCMCPU_IS_6368() && board.has_enetsw) {
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 @@ -651,6 +651,8 @@

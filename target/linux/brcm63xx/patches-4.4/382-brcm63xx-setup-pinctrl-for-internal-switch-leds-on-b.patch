@@ -1,0 +1,27 @@
+From 8940437e017d446d61a035e847c2a1d7a57a4354 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Wed, 1 Feb 2017 12:17:13 +0100
+Subject: [PATCH] brcm63xx: setup pinctrl for internal switch leds on bcm6368
+
+---
+ arch/mips/bcm63xx/boards/board_common.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/arch/mips/bcm63xx/boards/board_common.c
++++ b/arch/mips/bcm63xx/boards/board_common.c
+@@ -104,6 +104,15 @@ void __init board_early_setup(const stru
+ 				GPIO_MODE_6348_G0_EXT_MII;
+ 	}
+ 
++	if (BCMCPU_IS_6368() && board.has_enetsw) {
++		int i;
++
++		for (i = 0; i < 4; i++) {
++			if (board.enetsw.used_ports[i].used)
++				val |= (GPIO_MODE_6368_EPHY0_LED << i);
++		}
++	}
++
+ 	bcm_gpio_writel(val, GPIO_MODE_REG);
+ 
+ #if IS_ENABLED(CONFIG_USB)
