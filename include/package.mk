@@ -156,6 +156,7 @@ define Build/CoreTargets
   $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
+	touch $$@_check
 	$(foreach hook,$(Hooks/Prepare/Pre),$(call $(hook))$(sep))
 	$(Build/Prepare)
 	$(foreach hook,$(Hooks/Prepare/Post),$(call $(hook))$(sep))
@@ -172,6 +173,8 @@ define Build/CoreTargets
 
   $(call Build/Exports,$(STAMP_BUILT))
   $(STAMP_BUILT): $(STAMP_CONFIGURED) $(STAMP_BUILT_DEPENDS)
+	rm -f $$@
+	touch $$@_check
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
 	$(Build/Compile)
 	$(foreach hook,$(Hooks/Compile/Post),$(call $(hook))$(sep))
