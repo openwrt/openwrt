@@ -25,21 +25,27 @@ buffalo,wzr-1750dhp)
 	;;
 esac
 
+wan_macaddr="$(nvram get wan_hwaddr)"
 case "$board" in
 asus,rt-ac87u)
 	ifname=eth1
+	etXmacaddr=$(nvram get et1macaddr)
 	;;
 dlink,dir-885l | \
 netgear,r7900 | \
 netgear,r8000 | \
 netgear,r8500)
-
 	ifname=eth2
+	etXmacaddr=$(nvram get et2macaddr)
 	;;
 *)
 	ifname=eth0
+	etXmacaddr=$(nvram get et0macaddr)
 	;;
 esac
+
+# If WAN MAC isn't explicitly set, calculate it using base MAC as reference.
+[ -z "$wan_macaddr" -a -n "$etXmacaddr" ] && wan_macaddr=$(macaddr_add "$etXmacaddr" 1)
 
 # Workaround for devices using eth2 connected to (CPU) switch port 8
 case "$board" in
@@ -55,6 +61,7 @@ netgear,r8500)
 	# assigned. Manually assign eth2's MAC to the LAN.
 	et2macaddr="$(nvram get et2macaddr)"
 	[ -n "$et2macaddr" ] && ucidef_set_interface_macaddr "lan" "$et2macaddr"
+	[ -n "$wan_macaddr" ] && ucidef_set_interface_macaddr "wan" "$wan_macaddr"
 
 	board_config_flush
 	exit 0
@@ -84,6 +91,8 @@ else
 	ucidef_add_switch "switch0" \
 		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5t@$ifname"
 fi
+
+[ -n "$wan_macaddr" ] && ucidef_set_interface_macaddr "wan" "$wan_macaddr"
 
 board_config_flush
 
