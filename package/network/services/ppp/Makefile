@@ -30,7 +30,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ppp/Default
   SECTION:=net
   CATEGORY:=Network
-  URL:=http://ppp.samba.org/
+  URL:=https://ppp.samba.org/
 endef
 
 define Package/ppp
