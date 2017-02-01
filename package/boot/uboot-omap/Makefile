@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2015.10
+PKG_VERSION:=2017.01
 PKG_RELEASE:=1
 
-PKG_HASH:=bdc68d5f9455ad933b059c735d983f2c8b6b552dafb062e5ff1444f623021955
+PKG_HASH:=6c425175f93a4bcf2ec9faf5658ef279633dbd7856a293d95bd1ff516528ecf2
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -38,6 +38,5 @@ define U-Boot/omap3_beagle
 endef
 
 UBOOT_TARGETS:=omap4_panda am335x_evm omap3_overo omap3_beagle
-UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
 $(eval $(call BuildPackage/U-Boot))
