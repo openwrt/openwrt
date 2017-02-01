@@ -72,20 +72,19 @@
 	status = "okay";
 
 	pcie0 {
-		wifi@14c3,7662 {
-			compatible = "pci14c3,7662";
+		wifi@14c3,7603 {
+			compatible = "pci14c3,7603";
 			reg = <0x0000 0 0 0 0>;
 			mediatek,mtd-eeprom = <&factory 0x0000>;
-			mediatek,5ghz = <0>;
 		};
 	};
 
 	pcie1 {
-		wifi@14c3,7603 {
-			compatible = "pci14c3,7603";
+		wifi@14c3,7662 {
+			compatible = "pci14c3,7662";
 			reg = <0x0000 0 0 0 0>;
 			mediatek,mtd-eeprom = <&factory 0x8000>;
-			mediatek,2ghz = <0>;
+			ieee80211-freq-limit = <5000000 6000000>;
 		};
 	};
 };
