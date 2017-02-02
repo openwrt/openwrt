@@ -1458,7 +1458,7 @@ static int rtl8366rb_remove(struct platform_device *pdev)
 
 #ifdef CONFIG_OF
 static const struct of_device_id rtl8366rb_match[] = {
-	{ .compatible = "rtl8366rb" },
+	{ .compatible = "realtek,rtl8366rb" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, rtl8366rb_match);
