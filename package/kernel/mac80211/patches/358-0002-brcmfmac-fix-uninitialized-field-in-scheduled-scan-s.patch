@@ -1,0 +1,29 @@
+From 2b66325d5ea7c2a39ac69ed83b6979afe480d81a Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Fri, 9 Dec 2016 11:34:14 +0000
+Subject: [PATCH] brcmfmac: fix uninitialized field in scheduled scan ssid
+ configuration
+
+The scheduled scan ssid configuration in firmware has a flags field that
+was not initialized resulting in unexpected behaviour.
+
+Fixes: e3bdb7cc0300 ("brcmfmac: fix handling ssids in .sched_scan_start() callback")
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c
+@@ -137,6 +137,7 @@ static int brcmf_pno_add_ssid(struct brc
+ 	pfn.wpa_auth = cpu_to_le32(BRCMF_PNO_WPA_AUTH_ANY);
+ 	pfn.wsec = cpu_to_le32(0);
+ 	pfn.infra = cpu_to_le32(1);
++	pfn.flags = 0;
+ 	if (active)
+ 		pfn.flags = cpu_to_le32(1 << BRCMF_PNO_HIDDEN_BIT);
+ 	pfn.ssid.SSID_len = cpu_to_le32(ssid->ssid_len);
