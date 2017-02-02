@@ -1,0 +1,93 @@
+From e8cd47501fa0c0a591bb07d5878dcc8d63d60e57 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Wed, 18 Jan 2017 11:48:54 +0100
+Subject: [PATCH] brcmfmac: rename brcmf_bus_start function to
+ brcmf_bus_started
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This intends to make init/attach process slightly easier to follow.
+
+What driver was doing in brcmf_bus_start wasn't bus specific at all and
+function brcmf_bus_stop wasn't undoing things done there. This function
+is supposed to be called by bus specific code when the bus is ready.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h    | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c   | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c   | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c   | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c    | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
+@@ -238,7 +238,7 @@ void brcmf_txcomplete(struct device *dev
+ /* Configure the "global" bus state used by upper layers */
+ void brcmf_bus_change_state(struct brcmf_bus *bus, enum brcmf_bus_state state);
+ 
+-int brcmf_bus_start(struct device *dev);
++int brcmf_bus_started(struct device *dev);
+ s32 brcmf_iovar_data_set(struct device *dev, char *name, void *data, u32 len);
+ void brcmf_bus_add_txhdrlen(struct device *dev, uint len);
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
+@@ -74,7 +74,7 @@ module_param_named(roamoff, brcmf_roamof
+ MODULE_PARM_DESC(roamoff, "Do not use internal roaming engine");
+ 
+ #ifdef DEBUG
+-/* always succeed brcmf_bus_start() */
++/* always succeed brcmf_bus_started() */
+ static int brcmf_ignore_probe_fail;
+ module_param_named(ignore_probe_fail, brcmf_ignore_probe_fail, int, 0);
+ MODULE_PARM_DESC(ignore_probe_fail, "always succeed probe for debugging");
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
+@@ -966,7 +966,7 @@ static int brcmf_revinfo_read(struct seq
+ 	return 0;
+ }
+ 
+-int brcmf_bus_start(struct device *dev)
++int brcmf_bus_started(struct device *dev)
+ {
+ 	int ret = -1;
+ 	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
+@@ -1572,7 +1572,7 @@ static int brcmf_pcie_attach_bus(struct
+ 	if (ret) {
+ 		brcmf_err("brcmf_attach failed\n");
+ 	} else {
+-		ret = brcmf_bus_start(&devinfo->pdev->dev);
++		ret = brcmf_bus_started(&devinfo->pdev->dev);
+ 		if (ret)
+ 			brcmf_err("dongle is not responding\n");
+ 	}
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -4065,7 +4065,7 @@ static void brcmf_sdio_firmware_callback
+ 
+ 	sdio_release_host(sdiodev->func[1]);
+ 
+-	err = brcmf_bus_start(dev);
++	err = brcmf_bus_started(dev);
+ 	if (err != 0) {
+ 		brcmf_err("dongle is not responding\n");
+ 		goto fail;
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
+@@ -1148,7 +1148,7 @@ static int brcmf_usb_bus_setup(struct br
+ 	if (ret)
+ 		goto fail;
+ 
+-	ret = brcmf_bus_start(devinfo->dev);
++	ret = brcmf_bus_started(devinfo->dev);
+ 	if (ret)
+ 		goto fail;
+ 

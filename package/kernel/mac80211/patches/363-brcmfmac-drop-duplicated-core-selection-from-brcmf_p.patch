@@ -1,0 +1,30 @@
+From b3d75a81f07c757ab73c9022631170c3baefe380 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Thu, 19 Jan 2017 10:51:25 +0100
+Subject: [PATCH] brcmfmac: drop duplicated core selection from
+ brcmf_pcie_attach
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It was left after reworking PCIe reset in commit 07fe2e38c7fd
+("brcmfmac: Reset PCIE devices after recognition.").
+
+Cc: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pcie.c
+@@ -601,7 +601,6 @@ static void brcmf_pcie_attach(struct brc
+ {
+ 	u32 config;
+ 
+-	brcmf_pcie_select_core(devinfo, BCMA_CORE_PCIE2);
+ 	/* BAR1 window may not be sized properly */
+ 	brcmf_pcie_select_core(devinfo, BCMA_CORE_PCIE2);
+ 	brcmf_pcie_write_reg32(devinfo, BRCMF_PCIE_PCIE2REG_CONFIGADDR, 0x4e0);
