@@ -11,7 +11,7 @@
 -ath-$(CPTCFG_ATH_DEBUG) += debug.o
  ath-$(CPTCFG_ATH_TRACEPOINTS) += trace.o
  
- ccflags-y += -D__CHECK_ENDIAN__
+ CFLAGS_trace.o := -I$(src)
 --- a/drivers/net/wireless/ath/ath.h
 +++ b/drivers/net/wireless/ath/ath.h
 @@ -318,14 +318,7 @@ void _ath_dbg(struct ath_common *common,

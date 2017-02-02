@@ -7,4 +7,4 @@
 +	{ .max = 1,	.types = BIT(NL80211_IFTYPE_ADHOC) },
  };
  
- static const struct ieee80211_iface_limit wds_limits[] = {
+ #ifdef CPTCFG_WIRELESS_WDS
