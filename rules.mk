@@ -139,7 +139,7 @@ else
 endif
 
 ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_GCC_VERSION_4_8),$(CONFIG_TARGET_uml)),)
-  iremap = -iremap $(1):$(2)
+  iremap = -iremap$(1):$(2)
 endif
 
 PACKAGE_DIR:=$(BIN_DIR)/packages
