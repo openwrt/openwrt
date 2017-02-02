@@ -234,7 +234,7 @@
 			compatible = "virtual,mdio-gpio";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			gpios = <&qcom_pinmux 1 GPIO_ACTIVE_LOW &qcom_pinmux 0 GPIO_ACTIVE_LOW>;
+			gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
 			pinctrl-0 = <&mdio0_pins>;
 			pinctrl-names = "default";
 
@@ -323,8 +323,6 @@
 		amba {
 			sdcc1: sdcc@12400000 {
 				status = "okay";
-				dmas = <&sdcc1bam 2>, <&sdcc1bam 1>;
-				dma-names = "tx", "rx";
 			};
 		};
 	};
