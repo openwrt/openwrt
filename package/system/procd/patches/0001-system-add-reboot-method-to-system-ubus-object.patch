@@ -1,0 +1,66 @@
+From 02d56c03115276aa4e2203ddbd411c3e587cf08f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 6 Jul 2016 13:55:48 +0200
+Subject: [PATCH] system: add reboot method to system ubus object
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Sometimes, for various reasons, user may want to reboot a device. This
+is a common task and it makes sense to support it with something common
+like a procd.
+
+Right now both: LuCI and LuCI2 implement this feature on their own with
+luci-rpc-luci2-system reboot and luci-rpc-sys reboot. This leads to code
+duplication and situation may become even worse with more software
+controlling system with ubus.
+
+Othen than that procd already has support for rebooting so one may
+consider this ubus method even cleaner.
+
+Once we get this patch in place we may consider switching LuCI and LuCI2
+to this new method.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ system.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/system.c b/system.c
+index 569a75d..1e31ce6 100644
+--- a/system.c
++++ b/system.c
+@@ -18,6 +18,7 @@
+ #endif
+ #include <sys/ioctl.h>
+ #include <sys/types.h>
++#include <sys/reboot.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ #include <signal.h>
+@@ -242,6 +243,14 @@ static int system_upgrade(struct ubus_context *ctx, struct ubus_object *obj,
+ 	return 0;
+ }
+ 
++static int system_reboot(struct ubus_context *ctx, struct ubus_object *obj,
++			 struct ubus_request_data *req, const char *method,
++			 struct blob_attr *msg)
++{
++	procd_shutdown(RB_AUTOBOOT);
++	return 0;
++}
++
+ enum {
+ 	WDT_FREQUENCY,
+ 	WDT_TIMEOUT,
+@@ -388,6 +397,7 @@ static const struct ubus_method system_methods[] = {
+ 	UBUS_METHOD_NOARG("board", system_board),
+ 	UBUS_METHOD_NOARG("info",  system_info),
+ 	UBUS_METHOD_NOARG("upgrade", system_upgrade),
++	UBUS_METHOD_NOARG("reboot", system_reboot),
+ 	UBUS_METHOD("watchdog", watchdog_set, watchdog_policy),
+ 	UBUS_METHOD("signal", proc_signal, signal_policy),
+ 
+-- 
+2.7.4
+
