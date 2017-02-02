@@ -11,7 +11,8 @@ PKG_NAME:=ccache
 PKG_VERSION:=3.3.2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=http://samba.org/ftp/ccache/
+PKG_SOURCE_URL:=https://download.samba.org/pub/ccache/ \
+                https://samba.org/ftp/ccache/
 PKG_MD5SUM:=2767d8f88f5ec218983a2f05c9e20df2
 
 include $(INCLUDE_DIR)/host-build.mk
