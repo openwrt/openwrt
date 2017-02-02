@@ -1,0 +1,30 @@
+From 2ef0359031b9ed891ca381b2687186fb52b277f8 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Fri, 27 Jan 2017 12:27:45 +0000
+Subject: [PATCH] brcmfmac: provide a value for struct
+ wowlan_support::max_nd_match_sets
+
+The driver advertises support for WOWLAN_NETDETECT but did not specify
+maximum amount of netdetect match sets. This was no issue due to a bug
+in nl80211. As that has been fixed, brcmfmac also needs fixing.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -6356,6 +6356,8 @@ static void brcmf_wiphy_wowl_params(stru
+ 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_PNO)) {
+ 		if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_WOWL_ND)) {
+ 			brcmf_wowlan_support.flags |= WIPHY_WOWLAN_NET_DETECT;
++			brcmf_wowlan_support.max_nd_match_sets =
++				BRCMF_PNO_MAX_PFN_COUNT;
+ 			init_waitqueue_head(&cfg->wowl.nd_data_wait);
+ 		}
+ 	}

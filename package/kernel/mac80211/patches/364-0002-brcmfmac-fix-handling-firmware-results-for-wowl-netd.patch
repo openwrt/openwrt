@@ -1,0 +1,39 @@
+From d29afe91af5995306d940b3dfee2419e0bb24a51 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Fri, 27 Jan 2017 12:27:46 +0000
+Subject: [PATCH] brcmfmac: fix handling firmware results for wowl netdetect
+
+For wowl netdetect the event data changed for newer chips. This
+was recently fixed for scheduled scan, but same change is needed
+for wowl netdetect. Removing now pointles += operation from both
+result handlers.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -3328,7 +3328,6 @@ brcmf_notify_sched_scan_results(struct b
+ 		goto out_err;
+ 	}
+ 
+-	data += sizeof(struct brcmf_pno_scanresults_le);
+ 	netinfo_start = brcmf_get_netinfo_array(pfn_result);
+ 
+ 	for (i = 0; i < result_count; i++) {
+@@ -3476,8 +3475,7 @@ brcmf_wowl_nd_results(struct brcmf_if *i
+ 		return -EINVAL;
+ 	}
+ 
+-	data += sizeof(struct brcmf_pno_scanresults_le);
+-	netinfo = (struct brcmf_pno_net_info_le *)data;
++	netinfo = brcmf_get_netinfo_array(pfn_result);
+ 	memcpy(cfg->wowl.nd->ssid.ssid, netinfo->SSID, netinfo->SSID_len);
+ 	cfg->wowl.nd->ssid.ssid_len = netinfo->SSID_len;
+ 	cfg->wowl.nd->n_channels = 1;
