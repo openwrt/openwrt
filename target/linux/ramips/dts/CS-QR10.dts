@@ -8,17 +8,6 @@
 	compatible = "ralink,mt7620a-soc";
 	model = "Planex CS-QR10";
 
-	sound {
-		compatible = "mediatek,mt7620-audio-wm8960";
-		model = "mt7620-wm8960";
-		i2s-controller = <&i2s>;
-		audio-routing =
-			"Ext Spk", "SPK_LP",
-			"Ext Spk", "SPK_LN",
-			"Ext Spk", "SPK_RP",
-			"Ext Spk", "SPK_RN";
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
