@@ -1,0 +1,32 @@
+--- a/language.c
++++ b/language.c
+@@ -37,14 +37,18 @@ static const struct {
+ 	{".m",   "objective-c"},
+ 	{".M",   "objective-c++"},
+ 	{".mm",  "objective-c++"},
++#if 0
+ 	{".sx",  "assembler-with-cpp"},
+ 	{".S",   "assembler-with-cpp"},
++#endif
+ 	// Preprocessed:
+ 	{".i",   "cpp-output"},
+ 	{".ii",  "c++-cpp-output"},
+ 	{".mi",  "objective-c-cpp-output"},
+ 	{".mii", "objective-c++-cpp-output"},
++#if 0
+ 	{".s",   "assembler"},
++#endif
+ 	// Header file (for precompilation):
+ 	{".h",   "c-header"},
+ 	{".H",   "c++-header"},
+@@ -109,8 +113,10 @@ static const struct {
+ 	{"objective-c++-header",     "objective-c++-cpp-output"},
+ 	{"objective-c++-cpp-output", "objective-c++-cpp-output"},
+ 	{"cuda",                     "cuda-output"},
++#if 0
+ 	{"assembler-with-cpp",       "assembler"},
+ 	{"assembler",                "assembler"},
++#endif
+ 	{"f77-cpp-input",            "f77"},
+ 	{"f77",                      "f77"},
+ #if 0 // Could generate module files, ignore for now!
