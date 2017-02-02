@@ -1,0 +1,47 @@
+From cb853da3a368c40300a0e940f86be582037bb082 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Fri, 9 Dec 2016 11:34:13 +0000
+Subject: [PATCH] brcmfmac: fix memory leak in brcmf_cfg80211_attach()
+
+In brcmf_cfg80211_attach() there was one error path not properly
+handled as it leaked memory allocated in brcmf_btcoex_attach().
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -6866,7 +6866,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+ 
+ 	err = brcmf_p2p_attach(cfg, p2pdev_forced);
+ 	if (err) {
+-		brcmf_err("P2P initilisation failed (%d)\n", err);
++		brcmf_err("P2P initialisation failed (%d)\n", err);
+ 		goto wiphy_unreg_out;
+ 	}
+ 	err = brcmf_btcoex_attach(cfg);
+@@ -6891,7 +6891,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+ 	err = brcmf_fweh_activate_events(ifp);
+ 	if (err) {
+ 		brcmf_err("FWEH activation failed (%d)\n", err);
+-		goto wiphy_unreg_out;
++		goto detach;
+ 	}
+ 
+ 	/* Fill in some of the advertised nl80211 supported features */
+@@ -6906,6 +6906,9 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+ 
+ 	return cfg;
+ 
++detach:
++	brcmf_btcoex_detach(cfg);
++	brcmf_p2p_detach(&cfg->p2p);
+ wiphy_unreg_out:
+ 	wiphy_unregister(cfg->wiphy);
+ priv_out:
