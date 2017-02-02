@@ -248,7 +248,7 @@ define KernelPackage/ath9k/config
 		depends on PACKAGE_kmod-ath9k
 
        config ATH9K_TX99
-               bool "Enable TX99 support"
+               bool "Enable TX99 support (WARNING: testing only, breaks normal operation!)"
                depends on PACKAGE_kmod-ath9k
 
 	config ATH9K_UBNTHSR
