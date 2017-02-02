@@ -1,0 +1,34 @@
+From 8e290cecdd0178f3d4cf7d463c51dc7e462843b4 Mon Sep 17 00:00:00 2001
+From: Gavin Li <git@thegavinli.com>
+Date: Tue, 17 Jan 2017 15:24:05 -0800
+Subject: [PATCH] brcmfmac: fix incorrect event channel deduction
+
+brcmf_sdio_fromevntchan() was being called on the the data frame
+rather than the software header, causing some frames to be
+mischaracterized as on the event channel rather than the data channel.
+
+This fixes a major performance regression (due to dropped packets). With
+this patch the download speed jumped from 1Mbit/s back up to 40MBit/s due
+to the sheer amount of packets being incorrectly processed.
+
+Fixes: c56caa9db8ab ("brcmfmac: screening firmware event packet")
+Signed-off-by: Gavin Li <git@thegavinli.com>
+Cc: <stable@vger.kernel.org> # 4.7+
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+[kvalo@codeaurora.org: improve commit logs based on email discussion]
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -1661,7 +1661,7 @@ static u8 brcmf_sdio_rxglom(struct brcmf
+ 					   pfirst->len, pfirst->next,
+ 					   pfirst->prev);
+ 			skb_unlink(pfirst, &bus->glom);
+-			if (brcmf_sdio_fromevntchan(pfirst->data))
++			if (brcmf_sdio_fromevntchan(&dptr[SDPCM_HWHDR_LEN]))
+ 				brcmf_rx_event(bus->sdiodev->dev, pfirst);
+ 			else
+ 				brcmf_rx_frame(bus->sdiodev->dev, pfirst,

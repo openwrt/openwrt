@@ -1,0 +1,63 @@
+From c8d870794d5dd42d6e05a78cc92d1ff7acf11f6a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Wed, 18 Jan 2017 11:48:51 +0100
+Subject: [PATCH] brcmfmac: drop unneeded function declarations from headers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Functions brcmf_c_prec_enq and brcmf_sdio_init don't exist so we
+really don't need their declarations. Function brcmf_parse_tlvs is used
+in cfg80211.c only so make it static and drop from header as well.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h      | 4 ----
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 2 +-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h | 2 --
+ 3 files changed, 1 insertion(+), 7 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bus.h
+@@ -218,9 +218,6 @@ int brcmf_bus_get_memdump(struct brcmf_b
+  * interface functions from common layer
+  */
+ 
+-bool brcmf_c_prec_enq(struct device *dev, struct pktq *q, struct sk_buff *pkt,
+-		      int prec);
+-
+ /* Receive frame for delivery to OS.  Callee disposes of rxp. */
+ void brcmf_rx_frame(struct device *dev, struct sk_buff *rxp, bool handle_event);
+ /* Receive async event packet from firmware. Callee disposes of rxp. */
+@@ -247,7 +244,6 @@ void brcmf_bus_add_txhdrlen(struct devic
+ 
+ #ifdef CPTCFG_BRCMFMAC_SDIO
+ void brcmf_sdio_exit(void);
+-void brcmf_sdio_init(void);
+ void brcmf_sdio_register(void);
+ #endif
+ #ifdef CPTCFG_BRCMFMAC_USB
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -326,7 +326,7 @@ u16 channel_to_chanspec(struct brcmu_d11
+  * triples, returning a pointer to the substring whose first element
+  * matches tag
+  */
+-const struct brcmf_tlv *
++static const struct brcmf_tlv *
+ brcmf_parse_tlvs(const void *buf, int buflen, uint key)
+ {
+ 	const struct brcmf_tlv *elt = buf;
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.h
+@@ -396,8 +396,6 @@ void brcmf_free_vif(struct brcmf_cfg8021
+ s32 brcmf_vif_set_mgmt_ie(struct brcmf_cfg80211_vif *vif, s32 pktflag,
+ 			  const u8 *vndr_ie_buf, u32 vndr_ie_len);
+ s32 brcmf_vif_clear_mgmt_ies(struct brcmf_cfg80211_vif *vif);
+-const struct brcmf_tlv *
+-brcmf_parse_tlvs(const void *buf, int buflen, uint key);
+ u16 channel_to_chanspec(struct brcmu_d11inf *d11inf,
+ 			struct ieee80211_channel *ch);
+ bool brcmf_get_vif_state_any(struct brcmf_cfg80211_info *cfg,

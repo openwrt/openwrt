@@ -1,0 +1,41 @@
+From f5611e038172101561b570554c81e290a39517ed Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Wed, 18 Jan 2017 11:48:52 +0100
+Subject: [PATCH] brcmfmac: move brcmf_c_set_joinpref_default declaration to
+ common.h
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Function brcmf_c_set_joinpref_default is in common.c, so move it to the
+related header.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h | 2 ++
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h   | 1 -
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.h
+@@ -65,6 +65,8 @@ struct brcmf_mp_device {
+ 	} bus;
+ };
+ 
++void brcmf_c_set_joinpref_default(struct brcmf_if *ifp);
++
+ struct brcmf_mp_device *brcmf_get_module_param(struct device *dev,
+ 					       enum brcmf_bus_type bus_type,
+ 					       u32 chip, u32 chiprev);
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.h
+@@ -216,7 +216,6 @@ void brcmf_txflowblock_if(struct brcmf_i
+ void brcmf_txfinalize(struct brcmf_if *ifp, struct sk_buff *txp, bool success);
+ void brcmf_netif_rx(struct brcmf_if *ifp, struct sk_buff *skb);
+ void brcmf_net_setcarrier(struct brcmf_if *ifp, bool on);
+-void brcmf_c_set_joinpref_default(struct brcmf_if *ifp);
+ int __init brcmf_core_init(void);
+ void __exit brcmf_core_exit(void);
+ 

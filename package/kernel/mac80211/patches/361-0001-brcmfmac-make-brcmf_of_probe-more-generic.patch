@@ -1,3 +1,4 @@
+From e457a8a01a19277e96830d3d95887e0e3c1e2f26 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
 Date: Sat, 7 Jan 2017 23:43:45 +0100
 Subject: [PATCH] brcmfmac: make brcmf_of_probe more generic
@@ -13,7 +14,12 @@ Call brcmf_of_probe for all kind of devices & move extra conditions to
 the body of that funcion.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c | 8 +++-----
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.c     | 7 +++++--
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h     | 6 ++++--
+ 3 files changed, 12 insertions(+), 9 deletions(-)
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/common.c
