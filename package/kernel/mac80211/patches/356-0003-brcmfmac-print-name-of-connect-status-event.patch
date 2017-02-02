@@ -1,0 +1,62 @@
+From e1c122d55f9ec5608ca98a9a846fd39cdf3ed7d7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 14 Oct 2016 09:45:59 +0200
+Subject: [PATCH] brcmfmac: print name of connect status event
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This simplifies debugging. Format %s (%u) comes from similar debugging
+message in brcmf_fweh_event_worker.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 3 ++-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c     | 4 ++--
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.h     | 2 ++
+ 3 files changed, 6 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -5506,7 +5506,8 @@ brcmf_notify_connect_status_ap(struct br
+ 	u32 reason = e->reason;
+ 	struct station_info sinfo;
+ 
+-	brcmf_dbg(CONN, "event %d, reason %d\n", event, reason);
++	brcmf_dbg(CONN, "event %s (%u), reason %d\n",
++		  brcmf_fweh_event_name(event), event, reason);
+ 	if (event == BRCMF_E_LINK && reason == BRCMF_E_REASON_LINK_BSSCFG_DIS &&
+ 	    ndev != cfg_to_ndev(cfg)) {
+ 		brcmf_dbg(CONN, "AP mode link down\n");
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.c
+@@ -69,7 +69,7 @@ static struct brcmf_fweh_event_name fweh
+  *
+  * @code: code to lookup.
+  */
+-static const char *brcmf_fweh_event_name(enum brcmf_fweh_event_code code)
++const char *brcmf_fweh_event_name(enum brcmf_fweh_event_code code)
+ {
+ 	int i;
+ 	for (i = 0; i < ARRAY_SIZE(fweh_event_names); i++) {
+@@ -79,7 +79,7 @@ static const char *brcmf_fweh_event_name
+ 	return "unknown";
+ }
+ #else
+-static const char *brcmf_fweh_event_name(enum brcmf_fweh_event_code code)
++const char *brcmf_fweh_event_name(enum brcmf_fweh_event_code code)
+ {
+ 	return "nodebug";
+ }
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.h
+@@ -287,6 +287,8 @@ struct brcmf_fweh_info {
+ 					 void *data);
+ };
+ 
++const char *brcmf_fweh_event_name(enum brcmf_fweh_event_code code);
++
+ void brcmf_fweh_attach(struct brcmf_pub *drvr);
+ void brcmf_fweh_detach(struct brcmf_pub *drvr);
+ int brcmf_fweh_register(struct brcmf_pub *drvr, enum brcmf_fweh_event_code code,

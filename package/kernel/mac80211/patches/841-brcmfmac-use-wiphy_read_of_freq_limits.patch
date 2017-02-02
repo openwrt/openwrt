@@ -9,7 +9,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -5974,6 +5974,9 @@ static int brcmf_construct_chaninfo(stru
+@@ -5976,6 +5976,9 @@ static int brcmf_construct_chaninfo(stru
  			continue;
  		}
  
@@ -19,7 +19,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  		/* assuming the chanspecs order is HT20,
  		 * HT40 upper, HT40 lower, and VHT80.
  		 */
-@@ -6564,6 +6567,9 @@ static int brcmf_setup_wiphy(struct wiph
+@@ -6566,6 +6569,9 @@ static int brcmf_setup_wiphy(struct wiph
  			wiphy->bands[NL80211_BAND_5GHZ] = band;
  		}
  	}
