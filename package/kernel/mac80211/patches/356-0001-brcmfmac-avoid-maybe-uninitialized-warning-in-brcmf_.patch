@@ -1,0 +1,43 @@
+From d3532ea6ce4ea501e421d130555e59edc2945f99 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 18 Oct 2016 00:13:40 +0200
+Subject: [PATCH] brcmfmac: avoid maybe-uninitialized warning in
+ brcmf_cfg80211_start_ap
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+A bugfix added a sanity check around the assignment and use of the
+'is_11d' variable, which looks correct to me, but as the function is
+rather complex already, this confuses the compiler to the point where
+it can no longer figure out if the variable is always initialized
+correctly:
+
+brcm80211/brcmfmac/cfg80211.c: In function ‘brcmf_cfg80211_start_ap’:
+brcm80211/brcmfmac/cfg80211.c:4586:10: error: ‘is_11d’ may be used uninitialized in this function [-Werror=maybe-uninitialized]
+
+This adds an initialization for the newly introduced case in which
+the variable should not really be used, in order to make the warning
+go away.
+
+Fixes: b3589dfe0212 ("brcmfmac: ignore 11d configuration errors")
+Cc: Hante Meuleman <hante.meuleman@broadcom.com>
+Cc: Arend van Spriel <arend.vanspriel@broadcom.com>
+Cc: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -4516,7 +4516,7 @@ brcmf_cfg80211_start_ap(struct wiphy *wi
+ 	/* store current 11d setting */
+ 	if (brcmf_fil_cmd_int_get(ifp, BRCMF_C_GET_REGULATORY,
+ 				  &ifp->vif->is_11d)) {
+-		supports_11d = false;
++		is_11d = supports_11d = false;
+ 	} else {
+ 		country_ie = brcmf_parse_tlvs((u8 *)settings->beacon.tail,
+ 					      settings->beacon.tail_len,
