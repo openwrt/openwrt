@@ -28,7 +28,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -5915,7 +5915,6 @@ static int brcmf_construct_chaninfo(stru
+@@ -5823,7 +5823,6 @@ static int brcmf_construct_chaninfo(stru
  	u32 i, j;
  	u32 total;
  	u32 chaninfo;
@@ -36,7 +36,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	pbuf = kzalloc(BRCMF_DCMD_MEDLEN, GFP_KERNEL);
  
-@@ -5963,33 +5962,36 @@ static int brcmf_construct_chaninfo(stru
+@@ -5871,33 +5870,36 @@ static int brcmf_construct_chaninfo(stru
  		    ch.bw == BRCMU_CHAN_BW_80)
  			continue;
  
@@ -85,7 +85,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  			ch.bw = BRCMU_CHAN_BW_20;
  			cfg->d11inf.encchspec(&ch);
  			chaninfo = ch.chspec;
-@@ -5997,11 +5999,11 @@ static int brcmf_construct_chaninfo(stru
+@@ -5905,11 +5907,11 @@ static int brcmf_construct_chaninfo(stru
  						       &chaninfo);
  			if (!err) {
  				if (chaninfo & WL_CHAN_RADAR)

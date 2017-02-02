@@ -17,7 +17,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -147,7 +147,6 @@ static struct ieee80211_rate __wl_rates[
+@@ -138,7 +138,6 @@ static struct ieee80211_rate __wl_rates[
  	.band			= NL80211_BAND_2GHZ,		\
  	.center_freq		= (_freq),			\
  	.hw_value		= (_channel),			\
@@ -25,7 +25,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	.max_antenna_gain	= 0,				\
  	.max_power		= 30,				\
  }
-@@ -156,7 +155,6 @@ static struct ieee80211_rate __wl_rates[
+@@ -147,7 +146,6 @@ static struct ieee80211_rate __wl_rates[
  	.band			= NL80211_BAND_5GHZ,		\
  	.center_freq		= 5000 + (5 * (_channel)),	\
  	.hw_value		= (_channel),			\

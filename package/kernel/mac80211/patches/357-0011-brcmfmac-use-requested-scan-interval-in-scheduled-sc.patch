@@ -1,0 +1,67 @@
+From c6989fd55ceb633d2f18c12ffae01b9123125c89 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Wed, 23 Nov 2016 10:25:30 +0000
+Subject: [PATCH] brcmfmac: use requested scan interval in scheduled scan
+
+User-space can specify the interval for the scheduled scan. This
+interval is found in scheduled scan plan. The driver supports only
+one plan, which is legacy behaviour.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 1 +
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c      | 6 +++++-
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.h      | 6 ++++--
+ 3 files changed, 10 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -6312,6 +6312,7 @@ static void brcmf_wiphy_pno_params(struc
+ 	wiphy->max_sched_scan_ssids = BRCMF_PNO_MAX_PFN_COUNT;
+ 	wiphy->max_match_sets = BRCMF_PNO_MAX_PFN_COUNT;
+ 	wiphy->max_sched_scan_ie_len = BRCMF_SCAN_IE_LEN_MAX;
++	wiphy->max_sched_scan_plan_interval = BRCMF_PNO_SCHED_SCAN_MAX_PERIOD;
+ 	wiphy->flags |= WIPHY_FLAG_SUPPORTS_SCHED_SCAN;
+ }
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c
+@@ -63,6 +63,10 @@ static int brcmf_pno_config(struct brcmf
+ 	pfn_param.exp = BRCMF_PNO_FREQ_EXPO_MAX;
+ 
+ 	/* set up pno scan fr */
++	if (scan_freq < BRCMF_PNO_SCHED_SCAN_MIN_PERIOD) {
++		brcmf_dbg(SCAN, "scan period too small, using minimum\n");
++		scan_freq = BRCMF_PNO_SCHED_SCAN_MIN_PERIOD;
++	}
+ 	pfn_param.scan_freq = cpu_to_le32(scan_freq);
+ 
+ 	if (mscan) {
+@@ -191,7 +195,7 @@ int brcmf_pno_start_sched_scan(struct br
+ 	}
+ 
+ 	/* configure pno */
+-	ret = brcmf_pno_config(ifp, BRCMF_PNO_SCHED_SCAN_PERIOD, 0, 0);
++	ret = brcmf_pno_config(ifp, req->scan_plans[0].interval, 0, 0);
+ 	if (ret < 0)
+ 		return ret;
+ 
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.h
+@@ -16,8 +16,10 @@
+ #ifndef _BRCMF_PNO_H
+ #define _BRCMF_PNO_H
+ 
+-#define BRCMF_PNO_SCAN_COMPLETE		1
+-#define BRCMF_PNO_MAX_PFN_COUNT		16
++#define BRCMF_PNO_SCAN_COMPLETE			1
++#define BRCMF_PNO_MAX_PFN_COUNT			16
++#define BRCMF_PNO_SCHED_SCAN_MIN_PERIOD	10
++#define BRCMF_PNO_SCHED_SCAN_MAX_PERIOD	508
+ 
+ /**
+  * brcmf_pno_clean - disable and clear pno in firmware.
