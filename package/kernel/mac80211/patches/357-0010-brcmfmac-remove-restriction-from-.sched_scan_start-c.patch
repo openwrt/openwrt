@@ -1,0 +1,34 @@
+From dfe5b0d52d5880bd9d4b427e1a53c9e9e4c3c820 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Wed, 23 Nov 2016 10:25:29 +0000
+Subject: [PATCH] brcmfmac: remove restriction from .sched_scan_start()
+ callback
+
+In the .sched_scan_start() callback a condition was checked whether a
+normal scan was ongoing. However, there is no need for this check as
+it is ok to start the scheduled scan irrespective whether or not a
+normal scan is ongoing.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -3351,10 +3351,7 @@ brcmf_cfg80211_sched_scan_start(struct w
+ 
+ 	brcmf_dbg(SCAN, "Enter n_match_sets:%d n_ssids:%d\n",
+ 		  req->n_match_sets, req->n_ssids);
+-	if (test_bit(BRCMF_SCAN_STATUS_BUSY, &cfg->scan_status)) {
+-		brcmf_err("Scanning already: status (%lu)\n", cfg->scan_status);
+-		return -EAGAIN;
+-	}
++
+ 	if (test_bit(BRCMF_SCAN_STATUS_SUPPRESS, &cfg->scan_status)) {
+ 		brcmf_err("Scanning suppressed: status (%lu)\n",
+ 			  cfg->scan_status);

@@ -1,0 +1,292 @@
+From 3e48611d31dd333be01576902f2dc11adefc9a06 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Wed, 23 Nov 2016 10:25:27 +0000
+Subject: [PATCH] brcmfmac: move scheduled scan activation to pno source file
+
+Rework .sched_scan_start() callback moving actual configuration of
+the device in pno source file.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ .../broadcom/brcm80211/brcmfmac/cfg80211.c         |  65 +-----------
+ .../net/wireless/broadcom/brcm80211/brcmfmac/pno.c | 110 +++++++++++++++++----
+ .../net/wireless/broadcom/brcm80211/brcmfmac/pno.h |  29 +-----
+ 3 files changed, 94 insertions(+), 110 deletions(-)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
+@@ -42,7 +42,6 @@
+ #include "common.h"
+ 
+ #define BRCMF_SCAN_IE_LEN_MAX		2048
+-#define BRCMF_SCHED_SCAN_PERIOD		30
+ 
+ #define WPA_OUI				"\x00\x50\xF2"	/* WPA OUI */
+ #define WPA_OUI_TYPE			1
+@@ -3342,24 +3341,6 @@ free_req:
+ 	return err;
+ }
+ 
+-static bool brcmf_is_ssid_active(struct cfg80211_ssid *ssid,
+-				 struct cfg80211_sched_scan_request *req)
+-{
+-	int i;
+-
+-	if (!ssid || !req->ssids || !req->n_ssids)
+-		return false;
+-
+-	for (i = 0; i < req->n_ssids; i++) {
+-		if (ssid->ssid_len == req->ssids[i].ssid_len) {
+-			if (!strncmp(ssid->ssid, req->ssids[i].ssid,
+-				     ssid->ssid_len))
+-				return true;
+-		}
+-	}
+-	return false;
+-}
+-
+ static int
+ brcmf_cfg80211_sched_scan_start(struct wiphy *wiphy,
+ 				struct net_device *ndev,
+@@ -3367,9 +3348,6 @@ brcmf_cfg80211_sched_scan_start(struct w
+ {
+ 	struct brcmf_if *ifp = netdev_priv(ndev);
+ 	struct brcmf_cfg80211_info *cfg = wiphy_priv(wiphy);
+-	struct cfg80211_ssid *ssid;
+-	int i;
+-	int ret = 0;
+ 
+ 	brcmf_dbg(SCAN, "Enter n_match_sets:%d n_ssids:%d\n",
+ 		  req->n_match_sets, req->n_ssids);
+@@ -3389,48 +3367,7 @@ brcmf_cfg80211_sched_scan_start(struct w
+ 		return -EINVAL;
+ 	}
+ 
+-	/* clean up everything */
+-	ret = brcmf_pno_clean(ifp);
+-	if  (ret < 0) {
+-		brcmf_err("failed error=%d\n", ret);
+-		return ret;
+-	}
+-
+-	/* configure pno */
+-	ret = brcmf_pno_config(ifp, BRCMF_SCHED_SCAN_PERIOD, 0, 0);
+-	if (ret < 0)
+-		return ret;
+-
+-	/* configure random mac */
+-	if (req->flags & NL80211_SCAN_FLAG_RANDOM_ADDR) {
+-		ret = brcmf_pno_set_random(ifp, req->mac_addr,
+-					   req->mac_addr_mask);
+-		if (ret < 0)
+-			return ret;
+-	}
+-
+-	/* configure each match set */
+-	for (i = 0; i < req->n_match_sets; i++) {
+-
+-		ssid = &req->match_sets[i].ssid;
+-
+-		if (!ssid->ssid_len) {
+-			brcmf_err("skip broadcast ssid\n");
+-			continue;
+-		}
+-
+-		ret = brcmf_pno_add_ssid(ifp, ssid,
+-					 brcmf_is_ssid_active(ssid, req));
+-		if (ret < 0)
+-			brcmf_dbg(SCAN, ">>> PNO filter %s for ssid (%s)\n",
+-				  ret == 0 ? "set" : "failed", ssid->ssid);
+-	}
+-	/* Enable the PNO */
+-	ret = brcmf_fil_iovar_int_set(ifp, "pfn", 1);
+-	if (ret < 0)
+-		brcmf_err("PNO enable failed!! ret=%d\n", ret);
+-
+-	return ret;
++	return brcmf_pno_start_sched_scan(ifp, req);
+ }
+ 
+ static int brcmf_cfg80211_sched_scan_stop(struct wiphy *wiphy,
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.c
+@@ -32,25 +32,10 @@
+ #define BRCMF_PNO_SCAN_INCOMPLETE	0
+ #define BRCMF_PNO_WPA_AUTH_ANY		0xFFFFFFFF
+ #define BRCMF_PNO_HIDDEN_BIT		2
++#define BRCMF_PNO_SCHED_SCAN_PERIOD	30
+ 
+-int brcmf_pno_clean(struct brcmf_if *ifp)
+-{
+-	int ret;
+-
+-	/* Disable pfn */
+-	ret = brcmf_fil_iovar_int_set(ifp, "pfn", 0);
+-	if (ret == 0) {
+-		/* clear pfn */
+-		ret = brcmf_fil_iovar_data_set(ifp, "pfnclear", NULL, 0);
+-	}
+-	if (ret < 0)
+-		brcmf_err("failed code %d\n", ret);
+-
+-	return ret;
+-}
+-
+-int brcmf_pno_config(struct brcmf_if *ifp, u32 scan_freq,
+-		     u32 mscan, u32 bestn)
++static int brcmf_pno_config(struct brcmf_if *ifp, u32 scan_freq,
++			    u32 mscan, u32 bestn)
+ {
+ 	struct brcmf_pno_param_le pfn_param;
+ 	u16 flags;
+@@ -102,7 +87,8 @@ exit:
+ 	return err;
+ }
+ 
+-int brcmf_pno_set_random(struct brcmf_if *ifp, u8 *mac_addr, u8 *mac_mask)
++static int brcmf_pno_set_random(struct brcmf_if *ifp, u8 *mac_addr,
++				u8 *mac_mask)
+ {
+ 	struct brcmf_pno_macaddr_le pfn_mac;
+ 	int err, i;
+@@ -128,8 +114,8 @@ int brcmf_pno_set_random(struct brcmf_if
+ 	return err;
+ }
+ 
+-int brcmf_pno_add_ssid(struct brcmf_if *ifp, struct cfg80211_ssid *ssid,
+-		       bool active)
++static int brcmf_pno_add_ssid(struct brcmf_if *ifp, struct cfg80211_ssid *ssid,
++			      bool active)
+ {
+ 	struct brcmf_pno_net_param_le pfn;
+ 
+@@ -144,3 +130,85 @@ int brcmf_pno_add_ssid(struct brcmf_if *
+ 	return brcmf_fil_iovar_data_set(ifp, "pfn_add", &pfn, sizeof(pfn));
+ }
+ 
++static bool brcmf_is_ssid_active(struct cfg80211_ssid *ssid,
++				 struct cfg80211_sched_scan_request *req)
++{
++	int i;
++
++	if (!ssid || !req->ssids || !req->n_ssids)
++		return false;
++
++	for (i = 0; i < req->n_ssids; i++) {
++		if (ssid->ssid_len == req->ssids[i].ssid_len) {
++			if (!strncmp(ssid->ssid, req->ssids[i].ssid,
++				     ssid->ssid_len))
++				return true;
++		}
++	}
++	return false;
++}
++
++int brcmf_pno_clean(struct brcmf_if *ifp)
++{
++	int ret;
++
++	/* Disable pfn */
++	ret = brcmf_fil_iovar_int_set(ifp, "pfn", 0);
++	if (ret == 0) {
++		/* clear pfn */
++		ret = brcmf_fil_iovar_data_set(ifp, "pfnclear", NULL, 0);
++	}
++	if (ret < 0)
++		brcmf_err("failed code %d\n", ret);
++
++	return ret;
++}
++
++int brcmf_pno_start_sched_scan(struct brcmf_if *ifp,
++			       struct cfg80211_sched_scan_request *req)
++{
++	struct cfg80211_ssid *ssid;
++	int i, ret;
++
++	/* clean up everything */
++	ret = brcmf_pno_clean(ifp);
++	if  (ret < 0) {
++		brcmf_err("failed error=%d\n", ret);
++		return ret;
++	}
++
++	/* configure pno */
++	ret = brcmf_pno_config(ifp, BRCMF_PNO_SCHED_SCAN_PERIOD, 0, 0);
++	if (ret < 0)
++		return ret;
++
++	/* configure random mac */
++	if (req->flags & NL80211_SCAN_FLAG_RANDOM_ADDR) {
++		ret = brcmf_pno_set_random(ifp, req->mac_addr,
++					   req->mac_addr_mask);
++		if (ret < 0)
++			return ret;
++	}
++
++	/* configure each match set */
++	for (i = 0; i < req->n_match_sets; i++) {
++		ssid = &req->match_sets[i].ssid;
++		if (!ssid->ssid_len) {
++			brcmf_err("skip broadcast ssid\n");
++			continue;
++		}
++
++		ret = brcmf_pno_add_ssid(ifp, ssid,
++					 brcmf_is_ssid_active(ssid, req));
++		if (ret < 0)
++			brcmf_dbg(SCAN, ">>> PNO filter %s for ssid (%s)\n",
++				  ret == 0 ? "set" : "failed", ssid->ssid);
++	}
++	/* Enable the PNO */
++	ret = brcmf_fil_iovar_int_set(ifp, "pfn", 1);
++	if (ret < 0)
++		brcmf_err("PNO enable failed!! ret=%d\n", ret);
++
++	return ret;
++}
++
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.h
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/pno.h
+@@ -27,33 +27,12 @@
+ int brcmf_pno_clean(struct brcmf_if *ifp);
+ 
+ /**
+- * brcmf_pno_config - configure pno parameters.
++ * brcmf_pno_start_sched_scan - initiate scheduled scan on device.
+  *
+  * @ifp: interface object used.
+- * @scan_freq: scan frequency period in seconds.
+- * @mscan: maximum number of scans stored in firmware.
+- * @bestn: maximum number of APs per scan stored in firmware.
++ * @req: configuration parameters for scheduled scan.
+  */
+-int brcmf_pno_config(struct brcmf_if *ifp, u32 scan_freq,
+-		     u32 mscan, u32 bestn);
+-
+-/**
+- * brcmf_pno_set_random - setup randomisation mac address for pno.
+- *
+- * @ifp: interface object used.
+- * @mac_addr: MAC address used with randomisation.
+- * @mac_mask: MAC address mask used for randomisation.
+- */
+-int brcmf_pno_set_random(struct brcmf_if *ifp, u8 *mac_addr, u8 *mac_mask);
+-
+-/**
+- * brcmf_pno_add_ssid - add ssid for pno in firmware.
+- *
+- * @ifp: interface object used.
+- * @ssid: ssid information.
+- * @active: indicate this ssid needs to be actively probed.
+- */
+-int brcmf_pno_add_ssid(struct brcmf_if *ifp, struct cfg80211_ssid *ssid,
+-		       bool active);
++int brcmf_pno_start_sched_scan(struct brcmf_if *ifp,
++			       struct cfg80211_sched_scan_request *req);
+ 
+ #endif /* _BRCMF_PNO_H */

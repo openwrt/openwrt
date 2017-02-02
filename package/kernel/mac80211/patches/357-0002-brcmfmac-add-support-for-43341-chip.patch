@@ -1,0 +1,39 @@
+From dc630dc5c753ccba97ce174f9c2894f802f9bd93 Mon Sep 17 00:00:00 2001
+From: Arend Van Spriel <arend.vanspriel@broadcom.com>
+Date: Wed, 23 Nov 2016 10:25:21 +0000
+Subject: [PATCH] brcmfmac: add support for 43341 chip
+
+This chip was already supported, but seems a device came up giving
+a different chip identifier. So adding that effectively mapping to
+the same firmware file as for 43340 chip.
+
+Reviewed-by: Hante Meuleman <hante.meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieter-paul.giesberts@broadcom.com>
+Reviewed-by: Franky Lin <franky.lin@broadcom.com>
+Signed-off-by: Arend van Spriel <arend.vanspriel@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c       | 1 +
+ drivers/net/wireless/broadcom/brcm80211/include/brcm_hw_ids.h | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
+@@ -621,6 +621,7 @@ static struct brcmf_firmware_mapping brc
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4330_CHIP_ID, 0xFFFFFFFF, 4330),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4334_CHIP_ID, 0xFFFFFFFF, 4334),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43340_CHIP_ID, 0xFFFFFFFF, 43340),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43341_CHIP_ID, 0xFFFFFFFF, 43340),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4335_CHIP_ID, 0xFFFFFFFF, 4335),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43362_CHIP_ID, 0xFFFFFFFE, 43362),
+ 	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4339_CHIP_ID, 0xFFFFFFFF, 4339),
+--- a/drivers/net/wireless/broadcom/brcm80211/include/brcm_hw_ids.h
++++ b/drivers/net/wireless/broadcom/brcm80211/include/brcm_hw_ids.h
+@@ -36,6 +36,7 @@
+ #define BRCM_CC_4330_CHIP_ID		0x4330
+ #define BRCM_CC_4334_CHIP_ID		0x4334
+ #define BRCM_CC_43340_CHIP_ID		43340
++#define BRCM_CC_43341_CHIP_ID		43341
+ #define BRCM_CC_43362_CHIP_ID		43362
+ #define BRCM_CC_4335_CHIP_ID		0x4335
+ #define BRCM_CC_4339_CHIP_ID		0x4339
