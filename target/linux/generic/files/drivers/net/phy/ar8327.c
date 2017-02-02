@@ -619,11 +619,11 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	if (!priv->chip_data)
 		return -ENOMEM;
 
-	if (priv->phy->dev.of_node)
-		ret = ar8327_hw_config_of(priv, priv->phy->dev.of_node);
+	if (priv->phy->mdio.dev.of_node)
+		ret = ar8327_hw_config_of(priv, priv->phy->mdio.dev.of_node);
 	else
 		ret = ar8327_hw_config_pdata(priv,
-					     priv->phy->dev.platform_data);
+					     priv->phy->mdio.dev.platform_data);
 
 	if (ret)
 		return ret;
@@ -1028,6 +1028,7 @@ ar8327_sw_get_eee(struct switch_dev *dev,
 	return 0;
 }
 
+#if 0
 static void
 ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
 {
@@ -1040,7 +1041,6 @@ ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
 		pr_err("ar8327: timeout waiting for atu to become ready\n");
 }
 
-#if 0
 static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 				 struct arl_entry *a, u32 *status, enum arl_op op)
 {

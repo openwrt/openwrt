@@ -287,7 +287,7 @@ static u16
 adm6996_read_mii_reg(struct adm6996_priv *priv, enum admreg reg)
 {
 	struct phy_device *phydev = priv->priv;
-	struct mii_bus *bus = phydev->bus;
+	struct mii_bus *bus = phydev->mdio.bus;
 
 	return bus->read(bus, PHYADDR(reg));
 }
@@ -296,7 +296,7 @@ static void
 adm6996_write_mii_reg(struct adm6996_priv *priv, enum admreg reg, u16 val)
 {
 	struct phy_device *phydev = priv->priv;
-	struct mii_bus *bus = phydev->bus;
+	struct mii_bus *bus = phydev->mdio.bus;
 
 	bus->write(bus, PHYADDR(reg), val);
 }
@@ -1019,13 +1019,13 @@ static int adm6996_config_init(struct phy_device *pdev)
 	pdev->supported = ADVERTISED_100baseT_Full;
 	pdev->advertising = ADVERTISED_100baseT_Full;
 
-	if (pdev->addr != 0) {
+	if (pdev->mdio.addr != 0) {
 		pr_info ("%s: PHY overlaps ADM6996, providing fixed PHY 0x%x.\n"
-				, pdev->attached_dev->name, pdev->addr);
+				, pdev->attached_dev->name, pdev->mdio.addr);
 		return 0;
 	}
 
-	priv = devm_kzalloc(&pdev->dev, sizeof(struct adm6996_priv), GFP_KERNEL);
+	priv = devm_kzalloc(&pdev->mdio.dev, sizeof(struct adm6996_priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
@@ -1045,7 +1045,7 @@ static int adm6996_config_init(struct phy_device *pdev)
 }
 
 /*
- * Warning: phydev->priv is NULL if phydev->addr != 0
+ * Warning: phydev->priv is NULL if phydev->mdio.addr != 0
  */
 static int adm6996_read_status(struct phy_device *phydev)
 {
@@ -1061,7 +1061,7 @@ static int adm6996_read_status(struct phy_device *phydev)
 }
 
 /*
- * Warning: phydev->priv is NULL if phydev->addr != 0
+ * Warning: phydev->priv is NULL if phydev->mdio.addr != 0
  */
 static int adm6996_config_aneg(struct phy_device *phydev)
 {
@@ -1070,11 +1070,11 @@ static int adm6996_config_aneg(struct phy_device *phydev)
 
 static int adm6996_fixup(struct phy_device *dev)
 {
-	struct mii_bus *bus = dev->bus;
+	struct mii_bus *bus = dev->mdio.bus;
 	u16 reg;
 
 	/* Our custom registers are at PHY addresses 0-10. Claim those. */
-	if (dev->addr > 10)
+	if (dev->mdio.addr > 10)
 		return 0;
 
 	/* look for the switch on the bus */
@@ -1121,7 +1121,6 @@ static struct phy_driver adm6996_phy_driver = {
 	.config_aneg	= &adm6996_config_aneg,
 	.read_status	= &adm6996_read_status,
 	.soft_reset	= adm6996_soft_reset,
-	.driver		= { .owner = THIS_MODULE,},
 };
 
 static int adm6996_gpio_probe(struct platform_device *pdev)
@@ -1132,7 +1131,7 @@ static int adm6996_gpio_probe(struct platform_device *pdev)
 
 	if (!pdata)
 		return -EINVAL;
-				  
+
 	priv = devm_kzalloc(&pdev->dev, sizeof(struct adm6996_priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
@@ -1194,7 +1193,7 @@ static int __init adm6996_init(void)
 	int err;
 
 	phy_register_fixup_for_id(PHY_ANY_ID, adm6996_fixup);
-	err =  phy_driver_register(&adm6996_phy_driver);
+	err = phy_driver_register(&adm6996_phy_driver, THIS_MODULE);
 	if (err)
 		return err;
 

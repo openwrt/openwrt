@@ -1273,7 +1273,7 @@ static int ip17xx_probe(struct phy_device *pdev)
 	int err;
 
 	/* We only attach to PHY 0, but use all available PHYs */
-	if (pdev->addr != 0)
+	if (pdev->mdio.addr != 0)
 		return -ENODEV;
 
 	state = kzalloc(sizeof(*state), GFP_KERNEL);
@@ -1283,7 +1283,7 @@ static int ip17xx_probe(struct phy_device *pdev)
 	dev = &state->dev;
 
 	pdev->priv = state;
-	state->mii_bus = pdev->bus;
+	state->mii_bus = pdev->mdio.bus;
 
 	err = get_model(state);
 	if (err < 0)
@@ -1295,7 +1295,7 @@ static int ip17xx_probe(struct phy_device *pdev)
 	dev->name = state->regs->NAME;
 	dev->ops = &ip17xx_ops;
 
-	pr_info("IP17xx: Found %s at %s\n", dev->name, dev_name(&pdev->dev));
+	pr_info("IP17xx: Found %s at %s\n", dev->name, dev_name(&pdev->mdio.dev));
 	return 0;
 
 error:
@@ -1353,58 +1353,25 @@ static int ip17xx_read_status(struct phy_device *pdev)
 	return 0;
 }
 
-static struct phy_driver ip17xx_driver = {
-	.name		= "IC+ IP17xx",
-	.phy_id		= 0x02430c00,
-	.phy_id_mask	= 0x0ffffc00,
-	.features	= PHY_BASIC_FEATURES,
-	.probe		= ip17xx_probe,
-	.remove		= ip17xx_remove,
-	.config_init	= ip17xx_config_init,
-	.config_aneg	= ip17xx_config_aneg,
-	.aneg_done	= ip17xx_aneg_done,
-	.update_link	= ip17xx_update_link,
-	.read_status	= ip17xx_read_status,
-	.driver		= { .owner = THIS_MODULE },
+static struct phy_driver ip17xx_driver[] = {
+	{
+		.name		= "IC+ IP17xx",
+		.phy_id		= 0x02430c00,
+		.phy_id_mask	= 0x0ffffc00,
+		.features	= PHY_BASIC_FEATURES,
+		.probe		= ip17xx_probe,
+		.remove		= ip17xx_remove,
+		.config_init	= ip17xx_config_init,
+		.config_aneg	= ip17xx_config_aneg,
+		.aneg_done	= ip17xx_aneg_done,
+		.update_link	= ip17xx_update_link,
+		.read_status	= ip17xx_read_status,
+	}
 };
 
-static struct phy_driver ip175a_driver = {
-	.name		= "IC+ IP175A",
-	.phy_id		= 0x02430c50,
-	.phy_id_mask	= 0x0ffffff0,
-	.features	= PHY_BASIC_FEATURES,
-	.probe		= ip17xx_probe,
-	.remove		= ip17xx_remove,
-	.config_init	= ip17xx_config_init,
-	.config_aneg	= ip17xx_config_aneg,
-	.aneg_done	= ip17xx_aneg_done,
-	.update_link	= ip17xx_update_link,
-	.read_status	= ip17xx_read_status,
-	.driver		= { .owner = THIS_MODULE },
-};
-
-
-int __init ip17xx_init(void)
-{
-	int ret;
-
-	ret = phy_driver_register(&ip175a_driver);
-	if (ret < 0)
-		return ret;
-
-	return phy_driver_register(&ip17xx_driver);
-}
-
-void __exit ip17xx_exit(void)
-{
-	phy_driver_unregister(&ip17xx_driver);
-	phy_driver_unregister(&ip175a_driver);
-}
+module_phy_driver(ip17xx_driver);
 
 MODULE_AUTHOR("Patrick Horn <patrick.horn@gmail.com>");
 MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
 MODULE_AUTHOR("Martin Mares <mj@ucw.cz>");
 MODULE_LICENSE("GPL");
-
-module_init(ip17xx_init);
-module_exit(ip17xx_exit);

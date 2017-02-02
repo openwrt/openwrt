@@ -872,7 +872,7 @@ rtl8306_config_init(struct phy_device *pdev)
 	int err;
 
 	/* Only init the switch for the primary PHY */
-	if (pdev->addr != 0)
+	if (pdev->mdio.addr != 0)
 		return 0;
 
 	val.value.i = 1;
@@ -882,7 +882,7 @@ rtl8306_config_init(struct phy_device *pdev)
 	priv->dev.ops = &rtl8306_ops;
 	priv->do_cpu = 0;
 	priv->page = -1;
-	priv->bus = pdev->bus;
+	priv->bus = pdev->mdio.bus;
 
 	chipid = rtl_get(dev, RTL_REG_CHIPID);
 	chipver = rtl_get(dev, RTL_REG_CHIPVER);
@@ -928,13 +928,13 @@ rtl8306_fixup(struct phy_device *pdev)
 	u16 chipid;
 
 	/* Attach to primary LAN port and WAN port */
-	if (pdev->addr != 0 && pdev->addr != 4)
+	if (pdev->mdio.addr != 0 && pdev->mdio.addr != 4)
 		return 0;
 
 	memset(&priv, 0, sizeof(priv));
 	priv.fixup = true;
 	priv.page = -1;
-	priv.bus = pdev->bus;
+	priv.bus = pdev->mdio.bus;
 	chipid = rtl_get(&priv.dev, RTL_REG_CHIPID);
 	if (chipid == 0x5988)
 		pdev->phy_id = RTL8306_MAGIC;
@@ -952,14 +952,14 @@ rtl8306_probe(struct phy_device *pdev)
 		 * share one rtl_priv instance between virtual phy
 		 * devices on the same bus
 		 */
-		if (priv->bus == pdev->bus)
+		if (priv->bus == pdev->mdio.bus)
 			goto found;
 	}
 	priv = kzalloc(sizeof(struct rtl_priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
-	priv->bus = pdev->bus;
+	priv->bus = pdev->mdio.bus;
 
 found:
 	pdev->priv = priv;
@@ -980,7 +980,7 @@ rtl8306_config_aneg(struct phy_device *pdev)
 	struct rtl_priv *priv = pdev->priv;
 
 	/* Only for WAN */
-	if (pdev->addr == 0)
+	if (pdev->mdio.addr == 0)
 		return 0;
 
 	/* Restart autonegotiation */
@@ -996,7 +996,7 @@ rtl8306_read_status(struct phy_device *pdev)
 	struct rtl_priv *priv = pdev->priv;
 	struct switch_dev *dev = &priv->dev;
 
-	if (pdev->addr == 4) {
+	if (pdev->mdio.addr == 4) {
 		/* WAN */
 		pdev->speed = rtl_get(dev, RTL_PORT_REG(4, SPEED)) ? SPEED_100 : SPEED_10;
 		pdev->duplex = rtl_get(dev, RTL_PORT_REG(4, DUPLEX)) ? DUPLEX_FULL : DUPLEX_HALF;
@@ -1037,7 +1037,6 @@ static struct phy_driver rtl8306_driver = {
 	.config_init	= &rtl8306_config_init,
 	.config_aneg	= &rtl8306_config_aneg,
 	.read_status	= &rtl8306_read_status,
-	.driver		= { .owner = THIS_MODULE,},
 };
 
 
@@ -1045,7 +1044,7 @@ static int __init
 rtl_init(void)
 {
 	phy_register_fixup_for_id(PHY_ANY_ID, rtl8306_fixup);
-	return phy_driver_register(&rtl8306_driver);
+	return phy_driver_register(&rtl8306_driver, THIS_MODULE);
 }
 
 static void __exit
