@@ -18,7 +18,7 @@ $(eval $(call Profile,OM5P))
 
 define Profile/OM5PAC
 	NAME:=OpenMesh OM5P-AC
-	PACKAGES:=kmod-ath9k kmod-ath10k om-watchdog
+	PACKAGES:=kmod-ath9k kmod-ath10k om-watchdog ath10k-firmware-qca988x
 endef
 
 define Profile/OM5PAC/Description
@@ -51,7 +51,7 @@ $(eval $(call Profile,MR900))
 
 define Profile/MR1750
         NAME:=OpenMesh MR1750
-        PACKAGES:=kmod-ath9k kmod-ath10k
+        PACKAGES:=kmod-ath9k kmod-ath10k ath10k-firmware-qca988x
 endef
 
 define Profile/MR1750/Description
