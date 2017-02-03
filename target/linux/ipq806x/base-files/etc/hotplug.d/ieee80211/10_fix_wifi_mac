@@ -16,7 +16,7 @@ case "$board" in
 		echo $(macaddr_add $(mtd_get_mac_binary default-mac 8)  $(($PHYNBR - 1)) ) > /sys${DEVPATH}/macaddress
 		;;
 	d7800 |\
-	r7500v2 |\	
+	r7500v2 |\
 	r7800)
 		echo $(macaddr_add $(mtd_get_mac_binary art 6)  $(($PHYNBR + 1)) ) > /sys${DEVPATH}/macaddress
 		;;
