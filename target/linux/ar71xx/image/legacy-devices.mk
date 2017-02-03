@@ -507,7 +507,7 @@ LEGACY_DEVICES += MR900
 
 define LegacyDevice/MR1750
   DEVICE_TITLE := OpenMesh MR1750
-  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := om-watchdog kmod-ath10k ath10k-firmware-qca988x
 endef
 LEGACY_DEVICES += MR1750
 
