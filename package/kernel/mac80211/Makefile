@@ -1022,7 +1022,7 @@ endef
 define KernelPackage/mac80211-hwsim
   $(call KernelPackage/mac80211/Default)
   TITLE:=mac80211 HW simulation device
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT
+  DEPENDS+= +kmod-mac80211 +@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT +@DRIVER_11W_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mac80211_hwsim.ko
   AUTOLOAD:=$(call AutoProbe,mac80211_hwsim)
 endef
