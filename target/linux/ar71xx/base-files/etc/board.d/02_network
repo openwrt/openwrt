@@ -310,6 +310,11 @@ ar71xx_setup_interfaces()
 			"0u@eth0" "2:lan" "3:lan" "4:lan"
 		ucidef_add_switch_attr "switch0" "enable" "false"
 		;;
+	ebr-2310-c1)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:1" "2:lan:2" "3:lan:3" "4:lan:4"
+		;;
 	el-m150)
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 		ucidef_add_switch "switch0" \

@@ -232,6 +232,11 @@ define LegacyDevice/FR54RTR
 endef
 LEGACY_DEVICES += FR54RTR
 
+define LegacyDevice/EBR2310C1
+  DEVICE_TITLE := D-Link EBR-2310 rev. C1
+endef
+LEGACY_DEVICES += EBR2310C1
+
 define LegacyDevice/DIR615E1
   DEVICE_TITLE := D-Link DIR-615 rev. E1
 endef

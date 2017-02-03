@@ -141,6 +141,9 @@ static void __init dir_600_a1_setup(void)
 MIPS_MACHINE(ATH79_MACH_DIR_600_A1, "DIR-600-A1", "D-Link DIR-600 rev. A1",
 	     dir_600_a1_setup);
 
+MIPS_MACHINE(ATH79_MACH_EBR_2310_C1, "EBR-2310-C1", "D-Link EBR-2310 rev. C1",
+	     dir_600_a1_setup);
+
 static void __init dir_615_e1_setup(void)
 {
 	dir_600_a1_setup();

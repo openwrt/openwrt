@@ -613,6 +613,9 @@ ar71xx_board_detect() {
 	*EAP7660D)
 		name="eap7660d"
 		;;
+	*"EBR-2310 rev. C1")
+		name="ebr-2310-c1"
+		;;
 	*EL-M150)
 		name="el-m150"
 		;;

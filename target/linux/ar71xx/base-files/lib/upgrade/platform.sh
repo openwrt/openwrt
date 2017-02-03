@@ -233,6 +233,7 @@ platform_check_image() {
 	dlan-pro-500-wp|\
 	dr531|\
 	dragino2|\
+	ebr-2310-c1|\
 	epg5000|\
 	esr1750|\
 	esr900|\
