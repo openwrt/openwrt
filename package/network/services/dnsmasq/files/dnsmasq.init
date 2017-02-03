@@ -894,6 +894,7 @@ dnsmasq_start()
 		config_foreach dhcp_add dhcp
 		xappend "--enable-ra"
 		xappend "--quiet-ra"
+		append_bool "$cfg" quietdhcp "--quiet-dhcp6"
 
 	elif [ "$DNSMASQ_DHCP_VER" -gt 0 ] ; then
 		config_foreach dhcp_add dhcp
