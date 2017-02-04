@@ -2,7 +2,6 @@ define Device/ap90q
   DEVICE_TITLE := YunCore AP90Q
   BOARDNAME = AP90Q
   IMAGE_SIZE = 16000k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += ap90q
@@ -31,7 +30,6 @@ define Device/cf-e316n-v2
   DEVICE_TITLE := COMFAST CF-E316N v2
   BOARDNAME = CF-E316N-V2
   IMAGE_SIZE = 16192k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:64k(u-boot)ro,64k(art)ro,16192k(firmware),64k(art-backup)ro
 endef
 TARGET_DEVICES += cf-e316n-v2
@@ -49,7 +47,6 @@ define Device/cf-e380ac-v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = CF-E380AC-V1
   IMAGE_SIZE = 16128k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:128k(u-boot)ro,64k(art)ro,16128k(firmware),64k(art-backup)ro
 endef
 TARGET_DEVICES += cf-e380ac-v1
@@ -68,7 +65,6 @@ define Device/cf-e520n
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = CF-E520N
   IMAGE_SIZE = 8000k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:64k(u-boot)ro,64k(art)ro,8000k(firmware),64k(art-backup)ro
 endef
 TARGET_DEVICES += cf-e520n
@@ -93,7 +89,6 @@ define Device/cpe870
   DEVICE_PACKAGES := rssileds
   BOARDNAME = CPE870
   IMAGE_SIZE = 7936k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:64k(u-boot)ro,64k(u-boot-env),7936k(firmware),64k(config)ro,64k(art)ro
 endef
 TARGET_DEVICES += cpe870
@@ -133,7 +128,6 @@ define Device/gl-ar300
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = GL-AR300
   IMAGE_SIZE = 16000k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += gl-ar300
@@ -143,7 +137,6 @@ define Device/gl-ar300m
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 uboot-envtools
   BOARDNAME = GL-AR300M
   IMAGE_SIZE = 16000k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += gl-ar300m
@@ -480,7 +473,6 @@ define Device/sc1750
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME = SC1750
   IMAGE_SIZE = 15744k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),15744k(firmware),128k(APConfig),128k(kplog),64k(ART)
 endef
 TARGET_DEVICES += sc1750
@@ -490,7 +482,6 @@ define Device/sc300m
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME = SC300M
   IMAGE_SIZE = 15744k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),15744k(firmware),128k(APConfig),128k(kplog),64k(ART)
 endef
 TARGET_DEVICES += sc300m
@@ -500,7 +491,6 @@ define Device/sc450
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME = SC450
   IMAGE_SIZE = 15744k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),15744k(firmware),128k(APConfig),128k(kplog),64k(ART)
 endef
 TARGET_DEVICES += sc450
@@ -530,7 +520,6 @@ define Device/sr3200
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = SR3200
   IMAGE_SIZE = 16000k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += sr3200
@@ -648,7 +637,6 @@ define Build/seama-seal
 endef
 
 define Device/seama
-  CONSOLE := ttyS0,115200
   LOADER_TYPE := bin
   BLOCKSIZE := 64k
   KERNEL := kernel-bin | patch-cmdline | relocate-kernel | lzma

@@ -193,7 +193,6 @@ define Device/ubnt-air-gateway-pro
   BOARDNAME := UBNT-AGWP
   UBNT_TYPE := AirGWP
   UBNT_CHIP := ar934x
-  CONSOLE = ttyS0,115200
 endef
 TARGET_DEVICES += ubnt-air-gateway-pro
 

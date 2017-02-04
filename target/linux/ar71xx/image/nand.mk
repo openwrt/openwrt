@@ -18,7 +18,6 @@ define Device/domywifi-dw33d
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = DW33D
   IMAGE_SIZE = 16000k
-  CONSOLE = ttyS0,115200
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14528k(rootfs),1472k(kernel),64k(art)ro,16000k@0x50000(firmware);ar934x-nfc:96m(rootfs_data),32m(backup)ro
   IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to 14528k | append-kernel | check-size $$$$(IMAGE_SIZE)
 endef
@@ -37,7 +36,6 @@ define Device/mr18
   DEVICE_PACKAGES := kmod-spi-gpio kmod-ath9k
   BOARDNAME = MR18
   BLOCKSIZE := 64k
-  CONSOLE = ttyS0,115200
   MTDPARTS = ar934x-nfc:512k(nandloader)ro,8M(kernel),8M(recovery),113664k(ubi),128k@130944k(odm-caldata)ro
   IMAGES := sysupgrade.tar
   KERNEL := kernel-bin | patch-cmdline | MerakiNAND
@@ -59,7 +57,6 @@ define Device/z1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-spi-gpio kmod-ath9k kmod-owl-loader
   BOARDNAME = Z1
   BLOCKSIZE := 64k
-  CONSOLE = ttyS0,115200
   MTDPARTS = ar934x-nfc:128K(loader1)ro,8064K(kernel),128K(loader2)ro,8064K(recovery),114560K(ubi),128K(origcaldata)ro
   IMAGES := sysupgrade.tar
   KERNEL := kernel-bin | patch-cmdline | MerakiNAND-old
