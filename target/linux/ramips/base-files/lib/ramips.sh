@@ -112,6 +112,9 @@ ramips_board_detect() {
 	*"D105")
 		name="d105"
 		;;
+	*"D240")
+		name="d240"
+		;;
 	*"DAP-1350")
 		name="dap-1350"
 		;;

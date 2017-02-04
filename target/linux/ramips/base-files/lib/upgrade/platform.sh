@@ -35,6 +35,7 @@ platform_check_image() {
 	cf-wr800n|\
 	cs-qr10|\
 	d105|\
+	d240|\
 	dap-1350|\
 	db-wrt01|\
 	dcs-930|\
