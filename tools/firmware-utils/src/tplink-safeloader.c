@@ -108,6 +108,9 @@ static const char cpe510_vendor[] = "CPE510(TP-LINK|UN|N300-5):1.0\r\n";
 /** Vendor information for C2600 */
 static const char c2600_vendor[] = "";
 
+/** Vendor information for C2600 */
+static const char tl1043ndv4_vendor[] = "";
+
 /**
     The flash partition table for CPE210/220/510/520;
     it is the same as the one used by the stock images.
@@ -163,6 +166,28 @@ static const struct flash_partition_entry c2600_partitions[] = {
 };
 
 /**
+    The flash partition table for TL1043NDv4;
+    it is the same as the one used by the stock images.
+*/
+static const struct flash_partition_entry tl1043ndv4_partitions[] = {
+	{"fs-uboot", 0x00000, 0x20000},
+	{"os-image", 0x20000, 0x180000},
+	{"file-system", 0x1a0000, 0xdb0000},
+	{"default-mac", 0xf50000, 0x00200},
+	{"pin", 0xf50200, 0x00200},
+	{"product-info", 0xf50400, 0x0fc00},
+	{"soft-version", 0xf60000, 0x0b000},
+	{"support-list", 0xf6b000, 0x04000},
+	{"profile", 0xf70000, 0x04000},
+	{"default-config", 0xf74000, 0x0b000},
+	{"user-config", 0xf80000, 0x40000},
+	{"partition-table", 0xfc0000, 0x10000},
+	{"log", 0xfd0000, 0x20000},
+	{"radio", 0xff0000, 0x10000},
+	{NULL, 0, 0}
+};
+
+/**
    The support list for CPE210/220/510/520
 */
 static const char cpe510_support_list[] =
@@ -182,6 +207,14 @@ static const char cpe510_support_list[] =
 static const char c2600_support_list[] =
 	"SupportList:\r\n"
 	"{product_name:Archer C2600,product_ver:1.0.0,special_id:00000000}\r\n";
+
+/**
+   The support list for TL1043NDv4
+*/
+static const char tl1043ndv4_support_list[] =
+	"SupportList:\r\n"
+	"{product_name:TL-WR1043ND,product_ver:4.0.0,special_id:45550000}\r\n";
+
 
 #define error(_ret, _errno, _str, ...)				\
 	do {							\
@@ -510,6 +543,38 @@ static void * generate_sysupgrade_image_c2600(const struct flash_partition_entry
 	return image;
 }
 
+static void * generate_sysupgrade_image_tl1043ndv4(const struct flash_partition_entry *flash_parts, const struct image_partition_entry *image_parts, size_t *len) {
+	const struct flash_partition_entry *flash_os_image = &flash_parts[1];
+	const struct flash_partition_entry *flash_file_system = &flash_parts[2];
+
+	const struct image_partition_entry *image_os_image = &image_parts[3];
+	const struct image_partition_entry *image_file_system = &image_parts[4];
+
+	assert(strcmp(flash_os_image->name, "os-image") == 0);
+	assert(strcmp(flash_file_system->name, "file-system") == 0);
+
+	assert(strcmp(image_os_image->name, "os-image") == 0);
+	assert(strcmp(image_file_system->name, "file-system") == 0);
+
+	if (image_os_image->size > flash_os_image->size)
+		error(1, 0, "kernel image too big (more than %u bytes)", (unsigned)flash_os_image->size);
+	if (image_file_system->size > flash_file_system->size)
+		error(1, 0, "rootfs image too big (more than %u bytes)", (unsigned)flash_file_system->size);
+
+	*len = flash_file_system->base - flash_os_image->base + image_file_system->size;
+
+	uint8_t *image = malloc(*len);
+	if (!image)
+		error(1, errno, "malloc");
+
+	memset(image, 0xff, *len);
+
+	memcpy(image, image_os_image->data, image_os_image->size);
+	memcpy(image + flash_file_system->base - flash_os_image->base, image_file_system->data, image_file_system->size);
+
+	return image;
+}
+
 /** Generates an image for CPE210/220/510/520 and writes it to a file */
 static void do_cpe510(const char *output, const char *kernel_image, const char *rootfs_image, uint32_t rev, bool add_jffs2_eof, bool sysupgrade) {
 	struct image_partition_entry parts[6] = {};
@@ -559,6 +624,39 @@ static void do_c2600(const char *output, const char *kernel_image, const char *r
 		image = generate_sysupgrade_image_c2600(c2600_partitions, parts, &len);
 	else
 		image = generate_factory_image(c2600_vendor, parts, &len);
+
+	FILE *file = fopen(output, "wb");
+	if (!file)
+		error(1, errno, "unable to open output file");
+
+	if (fwrite(image, len, 1, file) != 1)
+		error(1, 0, "unable to write output file");
+
+	fclose(file);
+
+	free(image);
+
+	size_t i;
+	for (i = 0; parts[i].name; i++)
+		free_image_partition(parts[i]);
+}
+
+/** Generates an image for TL1043NDv4 and writes it to a file */
+static void do_tl1043ndv4(const char *output, const char *kernel_image, const char *rootfs_image, uint32_t rev, bool add_jffs2_eof, bool sysupgrade) {
+	struct image_partition_entry parts[6] = {};
+
+	parts[0] = make_partition_table(tl1043ndv4_partitions);
+	parts[1] = make_soft_version(rev);
+	parts[2] = make_support_list(tl1043ndv4_support_list,true);
+	parts[3] = read_file("os-image", kernel_image, false);
+	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof);
+
+	size_t len;
+	void *image;
+	if (sysupgrade)
+		image = generate_sysupgrade_image_tl1043ndv4(tl1043ndv4_partitions, parts, &len);
+	else
+		image = generate_factory_image(tl1043ndv4_vendor, parts, &len);
 
 	FILE *file = fopen(output, "wb");
 	if (!file)
@@ -660,6 +758,8 @@ int main(int argc, char *argv[]) {
 		do_cpe510(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade);
 	else if (strcmp(board, "C2600") == 0)
 		do_c2600(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade);
+	else if (strcmp(board, "TLWR1043NDV4") == 0)
+		do_tl1043ndv4(output, kernel_image, rootfs_image, rev, add_jffs2_eof, sysupgrade);
 	else
 		error(1, 0, "unsupported board %s", board);
 
