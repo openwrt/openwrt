@@ -23,7 +23,7 @@ TARGET_DEVICES += ar670w
 
 define Device/ar725w
   DTS := AR725W
-  DEVICE_TITLE := Gemtek AR725W
+  DEVICE_TITLE := Airlink AR725W
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size 3328k | \
 	gemtek-header ar725w
