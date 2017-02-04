@@ -21,6 +21,20 @@ define Build/mktplinkfw
 		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && mv $@.new $@ || rm -f $@
 endef
 
+# mktplinkfw-combined
+#
+# -c combined image
+define Build/mktplinkfw-combined
+	$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) $(1) \
+		-m $(TPLINK_HEADER_VERSION) \
+		-k $@ \
+		-o $@.new \
+		-s -S \
+		-c
+	@mv $@.new $@
+endef
+
 # mktplinkfw-initramfs <optional extra arguments to mktplinkfw binary>
 #
 # -c combined image
@@ -592,7 +606,23 @@ define Device/tl-wr1043nd-v3
     DEVICE_PROFILE := TLWR1043
     TPLINK_HWID := 0x10430003
 endef
-TARGET_DEVICES += tl-wr1043nd-v1 tl-wr1043nd-v2 tl-wr1043nd-v3
+
+define Device/tl-wr1043nd-v4
+  MTDPARTS := spi0.0:128k(u-boot)ro,1536k(kernel),14016k(rootfs),128k(product-info)ro,320k(config)ro,64k(partition-table)ro,128k(logs)ro,64k(ART)ro,15552k@0x20000(firmware)
+  IMAGE_SIZE := 15552k
+  BOARDNAME := TL-WR1043ND-v4
+  TPLINK_BOARD_NAME := TLWR1043NDV4
+  TPLINK_HWID :=  0x10430004
+  TPLINK_FLASHLAYOUT := 16Msafeloader
+  DEVICE_PROFILE := TLWR1043
+  LOADER_TYPE := elf
+  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-combined
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+
+TARGET_DEVICES += tl-wr1043nd-v1 tl-wr1043nd-v2 tl-wr1043nd-v3 tl-wr1043nd-v4
 
 define Device/tl-wr2543-v1
     $(Device/tplink-8mlzma)
