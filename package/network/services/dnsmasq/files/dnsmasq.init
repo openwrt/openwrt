@@ -891,13 +891,13 @@ dnsmasq_start()
 		# Enable RA feature for when/if it is constructed,
 		# and RA is selected per interface pool (RA, DHCP, or both),
 		# but no one (should) want RA broadcast in syslog
-		config_foreach dhcp_add dhcp
+		config_foreach filter_dnsmasq dhcp dhcp_add "$cfg"
 		xappend "--enable-ra"
 		xappend "--quiet-ra"
 		append_bool "$cfg" quietdhcp "--quiet-dhcp6"
 
 	elif [ "$DNSMASQ_DHCP_VER" -gt 0 ] ; then
-		config_foreach dhcp_add dhcp
+		config_foreach filter_dnsmasq dhcp dhcp_add "$cfg"
 	fi
 
 
