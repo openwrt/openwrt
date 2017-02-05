@@ -1,6 +1,6 @@
 --- a/drivers/leds/trigger/Kconfig
 +++ b/drivers/leds/trigger/Kconfig
-@@ -119,4 +119,11 @@ config LEDS_TRIGGER_NETDEV
+@@ -115,4 +115,11 @@ config LEDS_TRIGGER_NETDEV
  	  This allows LEDs to be controlled by network device activity.
  	  If unsure, say Y.
  
@@ -14,9 +14,9 @@
  endif # LEDS_TRIGGERS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -64,3 +64,4 @@ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-d
+@@ -63,3 +63,4 @@ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-d
+ # LED Triggers
  obj-$(CONFIG_LEDS_TRIGGERS)		+= trigger/
- obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
  obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= ledtrig-netdev.o
 +obj-$(CONFIG_LEDS_TRIGGER_USBDEV)	+= ledtrig-usbdev.o
 --- a/drivers/leds/ledtrig-usbdev.c
