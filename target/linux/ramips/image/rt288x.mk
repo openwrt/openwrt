@@ -14,7 +14,7 @@ define Device/ar670w
   BLOCKSIZE := 64k
   DEVICE_TITLE := Airlink AR670W
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
-  KERNEL := $(KERNEL_DTB)
+  KERNEL := $(KERNEL_DTB) | pad-to $$(BLOCKSIZE)
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	wrg-header wrgn16a_airlink_ar670w
