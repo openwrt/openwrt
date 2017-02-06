@@ -192,6 +192,7 @@ define Device/netgear-r6250
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H245T00_NETGEAR
 endef
+TARGET_DEVICES += netgear-r6250
 
 define Device/netgear-r6300-v2
   DEVICE_TITLE := Netgear R6300 V2
@@ -199,6 +200,7 @@ define Device/netgear-r6300-v2
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H240T00_NETGEAR
 endef
+TARGET_DEVICES += netgear-r6300-v2
 
 define Device/netgear-r7000
   DEVICE_TITLE := Netgear R7000
@@ -222,6 +224,7 @@ define Device/netgear-r8000
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H315T00_NETGEAR
 endef
+TARGET_DEVICES += netgear-r8000
 
 define Device/netgear-r8500
   DEVICE_TITLE := Netgear R8500
@@ -237,6 +240,7 @@ define Device/smartrg-sr400ac
   IMAGES := trx
   IMAGE/trx := append-rootfs | trx-serial
 endef
+TARGET_DEVICES += smartrg-sr400ac
 
 define Device/tenda-ac9
   DEVICE_TITLE := Tenda AC9
@@ -254,9 +258,5 @@ define Device/tplink-archer-c9-v1
   TPLINK_BOARD := ARCHERC9
 endef
 TARGET_DEVICES += tplink-archer-c9-v1
-
-TARGET_DEVICES += \
-	netgear-r6250 netgear-r6300-v2 netgear-r8000 \
-	smartrg-sr400ac
 
 $(eval $(call BuildImage))
