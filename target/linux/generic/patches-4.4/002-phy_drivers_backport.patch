@@ -550,3 +550,91 @@
  }
  
  static void __exit
+--- a/drivers/net/phy/b53/b53_mdio.c
++++ b/drivers/net/phy/b53/b53_mdio.c
+@@ -277,11 +277,11 @@ static int b53_phy_probe(struct phy_devi
+ 	int ret;
+ 
+ 	/* allow the generic phy driver to take over */
+-	if (phydev->mdio.addr != B53_PSEUDO_PHY && phydev->mdio.addr != 0)
++	if (phydev->addr != B53_PSEUDO_PHY && phydev->addr != 0)
+ 		return -ENODEV;
+ 
+ 	dev.current_page = 0xff;
+-	dev.priv = phydev->mdio.bus;
++	dev.priv = phydev->bus;
+ 	dev.ops = &b53_mdio_ops;
+ 	dev.pdata = NULL;
+ 	mutex_init(&dev.reg_mutex);
+@@ -305,7 +305,7 @@ static int b53_phy_config_init(struct ph
+ 	struct b53_device *dev;
+ 	int ret;
+ 
+-	dev = b53_switch_alloc(&phydev->mdio.dev, &b53_mdio_ops, phydev->mdio.bus);
++	dev = b53_switch_alloc(&phydev->dev, &b53_mdio_ops, phydev->bus);
+ 	if (!dev)
+ 		return -ENOMEM;
+ 
+@@ -372,6 +372,9 @@ static struct phy_driver b53_phy_driver_
+ 	.config_aneg	= b53_phy_config_aneg,
+ 	.config_init	= b53_phy_config_init,
+ 	.read_status	= b53_phy_read_status,
++	.driver = {
++		.owner = THIS_MODULE,
++	},
+ };
+ 
+ /* BCM53125, BCM53128 */
+@@ -385,6 +388,9 @@ static struct phy_driver b53_phy_driver_
+ 	.config_aneg	= b53_phy_config_aneg,
+ 	.config_init	= b53_phy_config_init,
+ 	.read_status	= b53_phy_read_status,
++	.driver = {
++		.owner = THIS_MODULE,
++	},
+ };
+ 
+ /* BCM5365 */
+@@ -398,21 +404,24 @@ static struct phy_driver b53_phy_driver_
+ 	.config_aneg	= b53_phy_config_aneg,
+ 	.config_init	= b53_phy_config_init,
+ 	.read_status	= b53_phy_read_status,
++	.driver = {
++		.owner = THIS_MODULE,
++	},
+ };
+ 
+ int __init b53_phy_driver_register(void)
+ {
+ 	int ret;
+ 
+-	ret = phy_driver_register(&b53_phy_driver_id1, THIS_MODULE);
++	ret = phy_driver_register(&b53_phy_driver_id1);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = phy_driver_register(&b53_phy_driver_id2, THIS_MODULE);
++	ret = phy_driver_register(&b53_phy_driver_id2);
+ 	if (ret)
+ 		goto err1;
+ 
+-	ret = phy_driver_register(&b53_phy_driver_id3, THIS_MODULE);
++	ret = phy_driver_register(&b53_phy_driver_id3);
+ 	if (!ret)
+ 		return 0;
+ 
+--- a/drivers/net/phy/b53/b53_phy_fixup.c
++++ b/drivers/net/phy/b53/b53_phy_fixup.c
+@@ -28,10 +28,10 @@
+ 
+ static int b53_phy_fixup(struct phy_device *dev)
+ {
+-	struct mii_bus *bus = dev->mdio.bus;
+ 	u32 phy_id;
++	struct mii_bus *bus = dev->bus;
+ 
+-	if (dev->mdio.addr != B53_PSEUDO_PHY)
++	if (dev->addr != B53_PSEUDO_PHY)
+ 		return 0;
+ 
+ 	/* read the first port's id */
