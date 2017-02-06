@@ -28,10 +28,10 @@
 
 static int b53_phy_fixup(struct phy_device *dev)
 {
+	struct mii_bus *bus = dev->mdio.bus;
 	u32 phy_id;
-	struct mii_bus *bus = dev->bus;
 
-	if (dev->addr != B53_PSEUDO_PHY)
+	if (dev->mdio.addr != B53_PSEUDO_PHY)
 		return 0;
 
 	/* read the first port's id */
