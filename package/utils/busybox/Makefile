@@ -112,9 +112,13 @@ endef
 define Package/busybox/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
+ifneq ($(CONFIG_BUSYBOX_CONFIG_CROND),)
 	$(INSTALL_BIN) ./files/cron $(1)/etc/init.d/cron
+endif
+ifneq ($(CONFIG_BUSYBOX_CONFIG_NTPD),)
 	$(INSTALL_BIN) ./files/sysntpd $(1)/etc/init.d/sysntpd
 	$(INSTALL_BIN) ./files/ntpd-hotplug $(1)/usr/sbin/ntpd-hotplug
+endif
 	-rm -rf $(1)/lib64
 endef
 
