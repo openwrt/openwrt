@@ -297,7 +297,7 @@ static struct gpio_led_platform_data laguna_gpio_leds_data = {
 
 static struct platform_device laguna_gpio_leds_device = {
 	.name = "leds-gpio",
-	.id = -1,
+	.id = PLATFORM_DEVID_NONE,
 	.dev.platform_data = &laguna_gpio_leds_data,
 };
 
@@ -641,7 +641,7 @@ static struct resource laguna_watchdog_resources[] = {
 
 static struct platform_device laguna_watchdog = {
 	.name		= "mpcore_wdt",
-	.id		= -1,
+	.id		= PLATFORM_DEVID_NONE,
 	.num_resources	= ARRAY_SIZE(laguna_watchdog_resources),
 	.resource	= laguna_watchdog_resources,
 };
@@ -658,7 +658,7 @@ static struct pps_gpio_platform_data laguna_pps_data = {
 
 static struct platform_device laguna_pps_device = {
 	.name = "pps-gpio",
-	.id = -1,
+	.id = PLATFORM_DEVID_NONE,
 	.dev.platform_data = &laguna_pps_data,
 };
 
