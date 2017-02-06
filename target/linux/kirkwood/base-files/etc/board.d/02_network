@@ -32,7 +32,7 @@ case "$board" in
 	;;
 "nsa310b")
 	ucidef_set_interface_lan "eth0" "dhcp"
-	ucidef_set_interface_macaddr "lan" $( fw_printenv ethaddr | awk -F"=" '{print $2}' )
+	ucidef_set_interface_macaddr "lan" $( mtd_get_mac_ascii uboot_env ethaddr )
 	;;
 *)
 	ucidef_set_interface_lan "eth0"
