@@ -212,8 +212,8 @@
 +		crashlog_printf("Modules:");
 +		list_for_each_entry(m, crashlog_modules, list) {
 +			crashlog_printf("\t%s@%p+%x", m->name,
-+			m->module_core, m->core_size,
-+			m->module_init, m->init_size);
++			m->core_layout.base, m->core_layout.size,
++			m->init_layout.base, m->init_layout.size);
 +		}
 +		crashlog_printf("\n");
 +		first = false;
