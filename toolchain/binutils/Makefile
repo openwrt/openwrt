@@ -13,25 +13,8 @@ BIN_VERSION:=$(PKG_VERSION)
 PKG_SOURCE_URL:=@GNU/binutils/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-ifeq ($(PKG_VERSION),2.25.1)
-  PKG_HASH:=b5b14added7d78a8d1ca70b5cb75fef57ce2197264f4f5835326b0df22ac9f22
-endif
-
-ifeq ($(PKG_VERSION),2.26.1)
-  PKG_HASH:=39c346c87aa4fb14b2f786560aec1d29411b6ec34dce3fe7309fe3dd56949fd8
-endif
-
 ifeq ($(PKG_VERSION),2.27)
   PKG_HASH:=369737ce51587f92466041a97ab7d2358c6d9e1b6490b3940eb09fb0a9a6ac88
-endif
-
-ifeq ($(findstring linaro, $(CONFIG_BINUTILS_VERSION)),linaro)
-  PKG_SOURCE_URL:=https://releases.linaro.org/14.09/components/toolchain/binutils-linaro/
-  PKG_REV:=2.24.0-2014.09
-  PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.xz
-  PKG_HASH:=e8bdf80bd6a5f3fc7df53245dfc0a678803d4f19c1c7ba2af3f98c8249e612b0
-  BINUTILS_DIR:=$(PKG_NAME)-linaro-$(PKG_REV)
-  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
 endif
 
 ifneq ($(CONFIG_BINUTILS_VERSION_2_26_ARC),)
