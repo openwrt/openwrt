@@ -10,7 +10,7 @@
 -	"bootm 0x800000"
 +	"ubi part ubi; " \
 +	"ubi read 0x800000 kernel; " \
-+	"bootz 0x800000"
++	"bootm 0x800000"
  
  #define CONFIG_MTDPARTS \
 -	"mtdparts=orion_nand:1m(uboot),6M(uImage),-(root)\0"
