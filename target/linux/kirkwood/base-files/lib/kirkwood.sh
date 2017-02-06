@@ -65,6 +65,10 @@ kirkwood_board_detect() {
 		name="nsa310s"
 		;;
 
+	"ZyXEL NSA325")
+		name="nsa325"
+		;;
+
 	*)
 		name="generic"
 		;;

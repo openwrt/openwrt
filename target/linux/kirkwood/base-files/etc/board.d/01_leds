@@ -41,6 +41,9 @@ case "$board" in
 "nsa310b")
 	ucidef_set_led_default "health" "health" "nsa310:green:sys" "1"
 	;;
+"nsa325")
+	ucidef_set_led_default "health" "health" "nsa325:green:sys" "1"
+	;;
 "sheevaplug" | \
 "sheevaplug-esata")
 	ucidef_set_led_timer "health" "health" "sheevaplug:blue:health" "200" "800"
