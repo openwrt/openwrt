@@ -52,6 +52,10 @@ define U-Boot/nsa310
   NAME:=Zyxel NSA310
 endef
 
+define U-Boot/nsa325
+  NAME:=Zyxel NSA325v1 and v2
+endef
+
 define U-Boot/pogo_e02
   NAME:=Cloud Engines Pogoplug E02
 endef
@@ -70,6 +74,7 @@ UBOOT_TARGETS := \
 	ib62x0 ib62x0_second_stage \
 	iconnect iconnect_second_stage \
 	nsa310 \
+	nsa325 \
 	pogo_e02 pogo_e02_second_stage \
 	sheevaplug
 
