@@ -1,0 +1,90 @@
+From f8bd38ac8b299bf55497f678e65babdd99d7e9f1 Mon Sep 17 00:00:00 2001
+From: Alex Tucker <alex@floop.org.uk>
+Date: Tue, 3 Jan 2017 21:30:41 +0000
+Subject: [PATCH] Add support for Silicon Labs Si7013/20/21
+ humidity/temperature sensor. (#1765)
+
+---
+ arch/arm/boot/dts/overlays/README                 |  3 ++
+ arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts | 49 +++++++++++++----------
+ 2 files changed, 31 insertions(+), 21 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -543,6 +543,9 @@ Params: bmp085                  Select t
+ 
+         bmp280                  Select the Bosch sensortronic BMP280
+ 
++        si7020                  Select the Silicon Labs Si7013/20/21 humidity/
++                                temperature sensor
++
+ 
+ Name:   i2c0-bcm2708
+ Info:   Enable the i2c_bcm2708 driver for the i2c0 bus. Not all pin combinations
+--- a/arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c-sensor-overlay.dts
+@@ -1,34 +1,41 @@
+-// Definitions for a few digital barometric pressure and temperature sensors
++// Definitions for I2C based sensors using the Industrial IO interface.
+ /dts-v1/;
+ /plugin/;
+ 
+ / {
+-        compatible = "brcm,bcm2708";
++	compatible = "brcm,bcm2708";
+ 
+-        fragment@0 {
+-                target = <&i2c_arm>;
+-                __overlay__ {
+-                        #address-cells = <1>;
+-                        #size-cells = <0>;
+-                        status = "okay";
+-
+-                        bmp085: bmp085@77 {
+-                                compatible = "bosch,bmp085";
+-                                reg = <0x77>;
+-                                default-oversampling = <3>;
+-                                status = "disable";
+-                        };
+-
+-                        bmp280: bmp280@76 {
+-                                compatible = "bosch,bmp280";
+-                                reg = <0x76>;
+-                                status = "disable";
+-                        };
+-                };
+-        };
++	fragment@0 {
++		target = <&i2c_arm>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			bmp085: bmp085@77 {
++				compatible = "bosch,bmp085";
++				reg = <0x77>;
++				default-oversampling = <3>;
++				status = "disable";
++			};
++
++			bmp280: bmp280@76 {
++				compatible = "bosch,bmp280";
++				reg = <0x76>;
++				status = "disable";
++			};
++
++			si7020: si7020@40 {
++				compatible = "si7020";
++				reg = <0x40>;
++				status = "disable";
++			};
++		};
++	};
+ 
+ 	__overrides__ {
+ 		bmp085 = <&bmp085>,"status";
+ 		bmp280 = <&bmp280>,"status";
++		si7020 = <&si7020>,"status";
+ 	};
+ };

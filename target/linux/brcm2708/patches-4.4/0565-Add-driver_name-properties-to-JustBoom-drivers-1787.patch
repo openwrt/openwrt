@@ -1,0 +1,32 @@
+From 23bd0578bdaf97a05a29fff25850d3fde26cb686 Mon Sep 17 00:00:00 2001
+From: Aaron Shaw <shawaj@gmail.com>
+Date: Tue, 10 Jan 2017 16:22:53 +0000
+Subject: [PATCH] Add driver_name properties to JustBoom drivers (#1787)
+
+Add driver name properties for use with 5.1 passthrough audio in LibreElec
+and other Kodi based OSs
+---
+ sound/soc/bcm/justboom-dac.c  | 1 +
+ sound/soc/bcm/justboom-digi.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/sound/soc/bcm/justboom-dac.c
++++ b/sound/soc/bcm/justboom-dac.c
+@@ -98,6 +98,7 @@ static struct snd_soc_dai_link snd_rpi_j
+ /* audio machine driver */
+ static struct snd_soc_card snd_rpi_justboom_dac = {
+ 	.name         = "snd_rpi_justboom_dac",
++	.driver_name  = "JustBoomDac",
+ 	.owner        = THIS_MODULE,
+ 	.dai_link     = snd_rpi_justboom_dac_dai,
+ 	.num_links    = ARRAY_SIZE(snd_rpi_justboom_dac_dai),
+--- a/sound/soc/bcm/justboom-digi.c
++++ b/sound/soc/bcm/justboom-digi.c
+@@ -154,6 +154,7 @@ static struct snd_soc_dai_link snd_rpi_j
+ /* audio machine driver */
+ static struct snd_soc_card snd_rpi_justboom_digi = {
+ 	.name         = "snd_rpi_justboom_digi",
++	.driver_name  = "JustBoomDigi",
+ 	.owner        = THIS_MODULE,
+ 	.dai_link     = snd_rpi_justboom_digi_dai,
+ 	.num_links    = ARRAY_SIZE(snd_rpi_justboom_digi_dai),
