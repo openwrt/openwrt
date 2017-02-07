@@ -1,6 +1,6 @@
 # 
 # Copyright (C) 2012-2015 OpenWrt.org
-# Copyright (C) 2016 LEDE project
+# Copyright (C) 2016-2017 LEDE project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -63,8 +63,9 @@ ifeq ($(SUBTARGET),bcm2708)
 endif
 
 define Device/rpi-2
-  DEVICE_TITLE := Raspberry Pi 2 B
-  DEVICE_DTS := bcm2709-rpi-2-b
+  DEVICE_TITLE := Raspberry Pi 2B/3B/3CM
+  DEVICE_DTS := bcm2709-rpi-2-b bcm2710-rpi-3-b bcm2710-rpi-cm3
+  DEVICE_PACKAGES := brcmfmac-firmware-43430-sdio kmod-brcmfmac wpad-mini
 endef
 ifeq ($(SUBTARGET),bcm2709)
   TARGET_DEVICES += rpi-2
