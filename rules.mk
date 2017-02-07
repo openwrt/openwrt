@@ -120,10 +120,9 @@ BUILD_DIR_BASE:=$(TOPDIR)/build_dir
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   GCCV:=$(call qstrip,$(CONFIG_GCC_VERSION))
   LIBC:=$(call qstrip,$(CONFIG_LIBC))
-  LIBCV:=$(call qstrip,$(CONFIG_LIBC_VERSION))
   REAL_GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-openwrt-linux$(if $(TARGET_SUFFIX),-$(TARGET_SUFFIX))
   GNU_TARGET_NAME=$(OPTIMIZE_FOR_CPU)-openwrt-linux
-  DIR_SUFFIX:=_$(LIBC)-$(LIBCV)$(if $(CONFIG_arm),_eabi)
+  DIR_SUFFIX:=_$(LIBC)$(if $(CONFIG_arm),_eabi)
   BIN_DIR:=$(BIN_DIR)$(if $(CONFIG_USE_MUSL),,-$(LIBC))
   TARGET_DIR_NAME = target-$(ARCH)$(ARCH_SUFFIX)$(DIR_SUFFIX)$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
   TOOLCHAIN_DIR_NAME = toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)$(DIR_SUFFIX)
