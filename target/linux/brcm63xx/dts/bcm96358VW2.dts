@@ -34,3 +34,9 @@
 		};
 	};
 };
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+};

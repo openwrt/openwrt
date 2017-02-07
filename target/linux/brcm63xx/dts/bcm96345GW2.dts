@@ -12,3 +12,9 @@
 		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 	};
 };
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+};

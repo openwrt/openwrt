@@ -66,3 +66,25 @@
 		};
 	};
 };
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+
+	cfe@0 {
+		label = "CFE";
+		reg = <0x000000 0x020000>;
+		read-only;
+	};
+
+	linux@20000 {
+		label = "linux";
+		reg = <0x010000 0xfe0000>;
+	};
+
+	nvram@fe0000 {
+		label = "nvram";
+		reg = <0xfe0000 0x020000>;
+	};
+};
