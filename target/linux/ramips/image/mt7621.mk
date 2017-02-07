@@ -103,14 +103,26 @@ define Device/sap-g3200u3
 endef
 TARGET_DEVICES += sap-g3200u3
 
+witi_device_packages = kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci \
+	kmod-rtc-pcf8563 kmod-i2c-mt7621
 define Device/witi
-  DTS := WITI
+  DTS := WITI-SPI
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := MQmaker WiTi
-  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci \
-	kmod-rtc-pcf8563 kmod-i2c-mt7621
+  DEVICE_PACKAGES := ${witi_device_packages}
 endef
 TARGET_DEVICES += witi
+
+define Device/witi-nand
+  DTS := WITI-NAND
+  FILESYSTEMS := squashfs
+  IMAGE_SIZE := 132382720
+  KERNEL := $(KERNEL_DTB) | pad-offset 131072 64 | uImage lzma
+  IMAGE/sysupgrade.bin := append-kernel | append-ubi | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := MQmaker WiTi (NAND)
+  DEVICE_PACKAGES := ${witi_device_packages}
+endef
+TARGET_DEVICES += witi-nand
 
 define Device/wndr3700v5
   DTS := WNDR3700V5
