@@ -794,7 +794,9 @@ define KernelPackage/of-mdio
   TITLE:=OpenFirmware MDIO support
   DEPENDS:=+kmod-libphy
   KCONFIG:=CONFIG_OF_MDIO
-  FILES:=$(LINUX_DIR)/drivers/of/of_mdio.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/phy/fixed_phy.ko@ge4.9 \
+	$(LINUX_DIR)/drivers/of/of_mdio.ko
   AUTOLOAD:=$(call AutoLoad,41,of_mdio)
 endef
 
