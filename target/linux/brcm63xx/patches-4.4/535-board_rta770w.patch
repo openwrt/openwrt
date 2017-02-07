@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -542,6 +542,27 @@ static struct board_info __initdata boar
+@@ -537,6 +537,27 @@ static struct board_info __initdata boar
  		.force_duplex_full	= 1,
  	},
  };
@@ -28,7 +28,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6345 */
  
  /*
-@@ -1795,6 +1816,7 @@ static const struct board_info __initcon
+@@ -1755,6 +1776,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6345
  	&board_96345gw2,
  	&board_rta770bw,
@@ -36,7 +36,7 @@
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
-@@ -1869,6 +1891,7 @@ static struct of_device_id const bcm963x
+@@ -1829,6 +1851,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6345
  	{ .compatible = "brcm,bcm96345gw2", .data = &board_96345gw2, },
  	{ .compatible = "dynalink,rta770bw", .data = &board_rta770bw, },

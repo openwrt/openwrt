@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1717,6 +1717,60 @@ static struct board_info __initdata boar
+@@ -1677,6 +1677,60 @@ static struct board_info __initdata boar
  	.has_ehci0 = 1,
  };
  
@@ -61,7 +61,7 @@
  static struct b53_platform_data WAP5813n_b53_pdata = {
  	.alias = "eth0",
  };
-@@ -2011,6 +2065,7 @@ static const struct board_info __initcon
+@@ -1971,6 +2025,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
@@ -69,7 +69,7 @@
  	&board_WAP5813n,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268
-@@ -2104,6 +2159,7 @@ static struct of_device_id const bcm963x
+@@ -2064,6 +2119,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6368
  	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },

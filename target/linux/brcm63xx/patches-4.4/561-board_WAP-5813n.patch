@@ -1,16 +1,15 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -14,7 +14,9 @@
+@@ -13,6 +13,8 @@
+ #include <linux/kernel.h>
  #include <linux/string.h>
  #include <linux/pci_ids.h>
- #include <linux/platform_device.h>
 +#include <linux/platform_data/b53.h>
- #include <linux/rtl8367.h>
 +#include <linux/spi/spi.h>
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -1714,6 +1716,65 @@ static struct board_info __initdata boar
+@@ -1674,6 +1676,65 @@ static struct board_info __initdata boar
  	.has_ohci0 = 1,
  	.has_ehci0 = 1,
  };
@@ -76,7 +75,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
-@@ -1950,6 +2011,7 @@ static const struct board_info __initcon
+@@ -1910,6 +1971,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
@@ -84,7 +83,7 @@
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268
  	&board_963268bu_p300,
-@@ -2042,6 +2104,7 @@ static struct of_device_id const bcm963x
+@@ -2002,6 +2064,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6368
  	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },

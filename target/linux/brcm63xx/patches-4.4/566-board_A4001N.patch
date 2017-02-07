@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -363,6 +363,50 @@ static struct board_info __initdata boar
+@@ -358,6 +358,50 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -51,7 +51,7 @@
  static struct board_info __initdata board_A4001N1 = {
  	.name					= "963281T_TEF",
  	.expected_cpu_id			= 0x6328,
-@@ -2128,6 +2172,7 @@ static const struct board_info __initcon
+@@ -2088,6 +2132,7 @@ static const struct board_info __initcon
  	&board_AR5381u,
  	&board_AR5387un,
  	&board_963281TAN,
@@ -59,7 +59,7 @@
  	&board_A4001N1,
  	&board_dsl_274xb_f1,
  	&board_FAST2704V2,
-@@ -2216,6 +2261,7 @@ static struct of_device_id const bcm963x
+@@ -2176,6 +2221,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96318ref_p300", .data = &board_96318ref_p300, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328

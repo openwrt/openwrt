@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -58,6 +58,56 @@ static struct board_info __initdata boar
+@@ -53,6 +53,56 @@ static struct board_info __initdata boar
  #endif /* CONFIG_BCM63XX_CPU_3368 */
  
  /*
@@ -57,7 +57,7 @@
   * known 6328 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_6328
-@@ -1612,6 +1662,9 @@ static const struct board_info __initcon
+@@ -1572,6 +1622,9 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_3368
  	&board_cvg834g,
  #endif
@@ -67,7 +67,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_AR5381u,
-@@ -1689,6 +1742,9 @@ static struct of_device_id const bcm963x
+@@ -1649,6 +1702,9 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_3368
  	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
  #endif
