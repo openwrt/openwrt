@@ -42,3 +42,20 @@
 		};
 	};
 };
+
+&hsspi {
+	status = "ok";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <16666667>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+		reg = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		linux,part-probe = "bcm63xxpart";
+	};
+};
