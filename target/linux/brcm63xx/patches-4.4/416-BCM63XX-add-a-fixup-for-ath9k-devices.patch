@@ -24,7 +24,7 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
  obj-y		+= boards/
 --- /dev/null
 +++ b/arch/mips/bcm63xx/pci-ath9k-fixup.c
-@@ -0,0 +1,199 @@
+@@ -0,0 +1,201 @@
 +/*
 + *  Broadcom BCM63XX Ath9k EEPROM fixup helper.
 + *
@@ -41,11 +41,13 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
 + *  by the Free Software Foundation.
 + */
 +
++#include <linux/if_ether.h>
 +#include <linux/pci.h>
 +#include <linux/delay.h>
 +#include <linux/ath9k_platform.h>
 +
 +#include <bcm63xx_cpu.h>
++#include <bcm63xx_regs.h>
 +#include <bcm63xx_io.h>
 +#include <bcm63xx_nvram.h>
 +#include <bcm63xx_dev_pci.h>
