@@ -95,7 +95,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -195,8 +232,17 @@ int __init bcm63xx_flash_register(void)
+@@ -195,8 +232,14 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:
@@ -106,9 +106,6 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +			bcm63xx_spi_flash_info[0].bus_num = 1;
 +			bcm63xx_spi_flash_info[0].mode = SPI_RX_DUAL;
 +		}
-+
-+		if (BCMCPU_IS_6358() || BCMCPU_IS_6368())
-+			bcm63xx_flash_data.max_transfer_len = SPI_6358_MSG_DATA_SIZE;
 +
 +		return spi_register_board_info(bcm63xx_spi_flash_info,
 +					ARRAY_SIZE(bcm63xx_spi_flash_info));

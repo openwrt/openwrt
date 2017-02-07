@@ -10,7 +10,7 @@ Subject: [PATCH 64/79] MTD: m25p80: allow passing pp_data
 
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -276,7 +276,8 @@ static int m25p_probe(struct spi_device
+@@ -261,7 +261,8 @@ static int m25p_probe(struct spi_device
  		return ret;
  
  	return mtd_device_parse_register(&nor->mtd,
@@ -28,13 +28,13 @@ Subject: [PATCH 64/79] MTD: m25p80: allow passing pp_data
   *	partitioning
 + * @pp_data: optional partition parser data.
   *
-  * @max_transfer_len: option maximum read/write length limitation for
-  *	SPI controllers not able to transfer any length commands.
-@@ -30,6 +31,7 @@ struct flash_platform_data {
+  * Board init code (in arch/.../mach-xxx/board-yyy.c files) can
+  * provide information about SPI flash parts (such as DataFlash) to
+@@ -28,6 +29,7 @@ struct flash_platform_data {
  	char		*type;
  
  	const char	**part_probe_types;
 +	struct mtd_part_parser_data *pp_data;
- 
- 	unsigned int	max_transfer_len;
  	/* we'll likely add more ... use JEDEC IDs, etc */
+ };
+ 
