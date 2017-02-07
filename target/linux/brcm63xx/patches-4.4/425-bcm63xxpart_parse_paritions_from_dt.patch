@@ -342,7 +342,7 @@
 +				    struct mtd_partition **pparts,
 +				    struct mtd_part_parser_data *data)
 +{
-+	if (mtd_get_of_node(master))
++	if (mtd_get_of_node(master) && of_get_child_count(mtd_get_of_node(master)))
 +		return bcm63xx_parse_cfe_partitions_of(master, pparts, data);
 +	else
 +		return bcm63xx_parse_cfe_partitions(master, pparts, data);
