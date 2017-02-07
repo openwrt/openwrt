@@ -2,6 +2,7 @@
  *  MikroTik SPI-NOR RouterBOARDs support
  *
  *  - MikroTik RouterBOARD mAP L-2nD
+ *  - MikroTik RouterBOARD 941L-2nD
  *
  *  Copyright (C) 2017 Thibaut VARENE <varenet@parisc-linux.org>
  *
@@ -155,6 +156,16 @@ static struct gpio_led rbmapl_leds[] __initdata = {
 	},
 };
 
+/* RB 941L-2nD gpios */
+#define RBHAPL_GPIO_LED_USER   14
+static struct gpio_led rbhapl_leds[] __initdata = {
+	{
+		.name = "rb:green:user",
+		.gpio = RBHAPL_GPIO_LED_USER,
+		.active_low = 1,
+	},
+};
+
 void __init rbspi_wlan_init(int wmac_offset)
 {
 	char *art_buf;
@@ -276,4 +287,32 @@ static void __init rbmapl_setup(void)
 	ath79_gpio_output_select(RBMAPL_GPIO_LED_POWER, AR934X_GPIO_OUT_GPIO);
 }
 
+/*
+ * Init the hAP lite hardware.
+ * The 941-2nD (hAP lite) has 4 ethernet ports, with port 2-4
+ * being assigned to LAN on the casing, and port 1 being assigned
+ * to "internet" (WAN) on the casing. Port 1 is connected to PHY3.
+ * Since WAN is neither PHY0 nor PHY4, we cannot use GMAC0 with this device.
+ */
+static void __init rbhapl_setup(void)
+{
+	u32 flags = RBSPI_HAS_WLAN;
+
+	if (rbspi_platform_setup())
+		return;
+
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC, WLAN MAC is HW MAC + 4 */
+	rbspi_network_setup(flags, 0, 4);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbhapl_leds), rbhapl_leds);
+
+	/* hAP lite has a single reset button as gpio 16 */
+	ath79_register_gpio_keys_polled(-1, RBSPI_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(rbspi_gpio_keys_reset16),
+					rbspi_gpio_keys_reset16);
+}
+
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);

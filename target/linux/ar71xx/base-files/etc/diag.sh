@@ -298,10 +298,11 @@ get_status_led() {
 	rb-911g-5hpnd|\
 	rb-912uag-2hpnd|\
 	rb-912uag-5hpnd|\
+	rb-941-2nd|\
 	rb-mapl-2nd)
 		status_led="rb:green:user"
 		;;
-	rb-951ui-2hnd | rb-941-2nd)
+	rb-951ui-2hnd)
 		status_led="rb:green:act"
 		;;
 	rb-sxt2n|\

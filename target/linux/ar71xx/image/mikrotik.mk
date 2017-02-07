@@ -37,10 +37,4 @@ define Device/rb-nor-flash-16M
   IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | combined-image | check-size $$$$(IMAGE_SIZE)
 endef
 
-define Device/rb-941-2nd
-$(Device/rb-nor-flash-16M)
-  DEVICE_TITLE := hAP lite
-  BOARDNAME:= rb-941-2nd
-endef
-
-TARGET_DEVICES += rb-nor-flash-16M rb-941-2nd
+TARGET_DEVICES += rb-nor-flash-16M
