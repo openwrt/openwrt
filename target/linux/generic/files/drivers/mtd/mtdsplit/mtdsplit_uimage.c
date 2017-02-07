@@ -262,7 +262,7 @@ static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len)
 	struct uimage_header *header = (struct uimage_header *)buf;
 	uint8_t expected_type = IH_TYPE_FILESYSTEM;
 
-	switch be32_to_cpu(header->ih_magic) {
+	switch (be32_to_cpu(header->ih_magic)) {
 	case FW_MAGIC_WNR612V2:
 	case FW_MAGIC_WNR1000V2:
 	case FW_MAGIC_WNR1000V2_VC:
