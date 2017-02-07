@@ -203,6 +203,11 @@ menu "Target Images"
 		default 38400 if TARGET_x86_generic
 		default 115200
 
+	config GRUB_FLOWCONTROL
+		bool "Use RTE/CTS on serial console"
+		depends on GRUB_SERIAL != ""
+		default n
+
 	config GRUB_BOOTOPTS
 		string "Extra kernel boot options"
 		depends on GRUB_IMAGES
