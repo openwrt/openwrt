@@ -95,16 +95,6 @@
 						reg = <0x1>;
 					};
 
-					wlan_2g@2 {
-						label = "rango:white:wlan_2g";
-						reg = <0x2>;
-					};
-
-					wlan_5g@3 {
-						label = "rango:white:wlan_5g";
-						reg = <0x3>;
-					};
-
 					usb2@5 {
 						label = "rango:white:usb2";
 						reg = <0x5>;
@@ -340,17 +330,28 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&power_led_pin &sata_led_pin>;
+		pinctrl-0 = <&power_led_pin &sata_led_pin &wlan_2g_led_pin &wlan_5g_led_pin>;
 		pinctrl-names = "default";
 
-		power {
+		sata {
+                        label = "rango:white:sata";
+                        gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+                };
+ 
+                wlan_2g {
+                        label = "rango:white:wlan_2g";
+                        gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+                };
+ 
+                wlan_5g {
+                        label = "rango:white:wlan_5g";
+                        gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+                };
+ 
+                power {
+ 			label = "rango:white:power";power {
 			gpios = <&gpio1 25 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
-		};
-
-		sata {
-			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 	};
 
@@ -396,16 +397,6 @@
 				reg = <5>;
 				label = "cpu";
 			};
-		};
-	};
-
-	gpio-leds {
-		power {
-			label = "rango:white:power";
-		};
-
-		sata {
-			label = "rango:white:sata";
 		};
 	};
 
