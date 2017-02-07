@@ -18,8 +18,8 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	 * preference in cfg struct to apply this to
  	 * FW later while initializing the dongle
  	 */
-+#if defined(CONFIG_BCM2708) || defined(CONFIG_BCM2709)
-+	pr_info("power management disabled\n");
++#if defined(CONFIG_ARCH_BCM2708) || defined(CONFIG_ARCH_BCM2709)
++	brcmf_dbg(INFO, "power management disabled\n");
 +	enabled = false;
 +#endif
  	cfg->pwr_save = enabled;
