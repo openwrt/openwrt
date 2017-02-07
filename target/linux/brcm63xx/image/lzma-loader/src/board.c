@@ -71,7 +71,7 @@ void board_init(void)
 		if ((prid & 0xff) == 0x04)
 			chipid_reg = 0xfff8c000;
 		else if ((prid & 0xff) == 0x70)
-			chipid_reg = 0xb4e00000;
+			return;	/* FIXME: 0002a070 can be 6362 and 3380 */
 		else if ((prid & 0xff) >= 0x30)
 			chipid_reg = 0xb0000000;
 		else
