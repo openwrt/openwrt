@@ -1,0 +1,11 @@
+--- a/arch/arm/mach-cns3xxx/laguna.c
++++ b/arch/arm/mach-cns3xxx/laguna.c
+@@ -812,7 +812,7 @@ static void __init laguna_init(void)
+ 	u32 __iomem *reg;
+ 
+ 	clk = clk_register_fixed_rate(NULL, "cpu", NULL,
+-				      CLK_IS_ROOT | CLK_IGNORE_UNUSED,
++				      CLK_IGNORE_UNUSED,
+ 				      cns3xxx_cpu_clock() * (1000000 / 8));
+ 	clk_register_clkdev(clk, "cpu", NULL);
+ 
