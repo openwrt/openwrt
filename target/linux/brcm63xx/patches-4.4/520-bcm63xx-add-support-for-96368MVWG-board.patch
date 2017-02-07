@@ -91,7 +91,7 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
  #endif
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -86,12 +86,25 @@ void __init board_early_setup(const stru
+@@ -84,12 +84,25 @@ void __init board_early_setup(const stru
  		bcm63xx_pci_enabled = 1;
  		if (BCMCPU_IS_6348())
  			val |= GPIO_MODE_6348_G2_PCI;

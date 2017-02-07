@@ -6,6 +6,7 @@
 	aliases {
 		pflash = &pflash;
 		gpio0 = &gpio0;
+		spi0 = &lsspi;
 	};
 
 	cpus {
@@ -44,6 +45,7 @@
 		#size-cells = <1>;
 		ranges;
 		compatible = "simple-bus";
+		interrupt-parent = <&periph_intc>;
 
 		periph_intc: interrupt-controller@fffe000c {
 			compatible = "brcm,bcm6345-l1-intc";
@@ -75,6 +77,15 @@
 			#gpio-cells = <2>;
 
 			ngpios = <8>;
+		};
+
+		lsspi: spi@fffe0c00 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6348-spi";
+			reg = <0xfffe0c00 0x40>;
+			interrupts = <1>;
+			/* clocks = <&clkctl 9>; */
 		};
 	};
 };

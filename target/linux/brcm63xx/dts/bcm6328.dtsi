@@ -5,6 +5,7 @@
 
 	aliases {
 		gpio0 = &gpio0;
+		spi1 = &hsspi;
 	};
 
 	cpus {
@@ -33,6 +34,7 @@
 		#size-cells = <1>;
 		ranges;
 		compatible = "simple-bus";
+		interrupt-parent = <&periph_intc>;
 
 		ext_intc: interrupt-controller@10000018 {
 			compatible = "brcm,bcm6345-ext-intc";
@@ -41,7 +43,6 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
-			interrupt-parent = <&periph_intc>;
 			interrupts = <24>, <25>, <26>, <27>;
 		};
 
@@ -67,6 +68,15 @@
 			interrupts = <3 0>, <2 0>, <0 0>, <1 0>;
 			interrupt-names = "gpio12", "gpio15",
 					  "gpio23", "gpio24";
+		};
+
+		hsspi: spi@10001000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6328-hsspi";
+			reg = <0x10001000 0x600>;
+			interrupts = <29>;
+			/* clocks = <&clkctl 9>; */
 		};
 	};
 };

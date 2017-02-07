@@ -7,6 +7,7 @@
 		pflash = &pflash;
 		gpio0 = &gpio0;
 		gpio1 = &gpio1;
+		spi0 = &lsspi;
 	};
 
 	cpus {
@@ -51,6 +52,7 @@
 		#size-cells = <1>;
 		ranges;
 		compatible = "simple-bus";
+		interrupt-parent = <&periph_intc>;
 
 		periph_intc: interrupt-controller@fff8c00c {
 			compatible = "brcm,bcm6345-l1-intc";
@@ -70,7 +72,6 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
-			interrupt-parent = <&periph_intc>;
 			interrupts = <25>, <26>, <27>, <28>;
 		};
 
@@ -90,6 +91,15 @@
 
 			gpio-controller;
 			#gpio-cells = <2>;
+		};
+
+		lsspi: spi@fff8c800 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6358-spi";
+			reg = <0xfff8c800 0x70c>;
+			interrupts = <1>;
+			/* clocks = <&clkctl 9>; */
 		};
 	};
 };

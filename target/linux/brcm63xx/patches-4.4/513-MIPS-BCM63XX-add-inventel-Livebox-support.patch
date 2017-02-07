@@ -33,7 +33,7 @@ Subject: [PATCH] MIPS: BCM63XX: add inventel Livebox support
 +obj-$(CONFIG_BOARD_LIVEBOX)		+= board_livebox.o
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -59,7 +59,7 @@ void __init board_prom_init(void)
+@@ -57,7 +57,7 @@ void __init board_prom_init(void)
  	if (fw_arg3 == CFE_EPTSEAL)
  		board_bcm963xx_init();
  	else
