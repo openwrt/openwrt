@@ -1,7 +1,7 @@
 From 28b8b26b308e656edfa9467867d5f79212da2ec3 Mon Sep 17 00:00:00 2001
 From: Brian Norris <computersforpeace@gmail.com>
 Date: Fri, 30 Oct 2015 20:33:20 -0700
-Subject: [PATCH] mtd: add get/set of_node/flash_node helpers
+Subject: [PATCH 01/11] mtd: add get/set of_node/flash_node helpers
 
 We are going to begin using the mtd->dev.of_node field for MTD device
 nodes, so let's add helpers for it. Also, we'll be making some
