@@ -201,10 +201,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		break;
 +
 +	case IRQ_TYPE_EDGE_RISING:
++		sense = 1;
 +		break;
 +
 +	case IRQ_TYPE_EDGE_FALLING:
-+		sense = 1;
 +		break;
 +
 +	case IRQ_TYPE_LEVEL_HIGH:
