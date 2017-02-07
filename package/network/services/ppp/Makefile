@@ -158,6 +158,17 @@ define Package/pppstats/description
 This package contains an utility to report PPP statistics.
 endef
 
+define Package/pppoe-discovery
+$(call Package/ppp/Default)
+  DEPENDS:=@(PACKAGE_ppp||PACKAGE_ppp-multilink) +ppp-mod-pppoe
+  TITLE:=Perform a PPPoE-discovery process
+endef
+
+define Package/pppoe-discovery/description
+This tool performs the same discovery process as pppoe, but does
+not initiate a session. Can be useful to debug pppoe.
+endef
+
 
 define Build/Configure
 $(call Build/Configure/Default,, \
@@ -274,6 +285,11 @@ define Package/pppstats/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppstats $(1)/usr/sbin/
 endef
 
+define Package/pppoe-discovery/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppoe-discovery $(1)/usr/sbin/
+endef
+
 $(eval $(call BuildPackage,ppp))
 $(eval $(call BuildPackage,ppp-multilink))
 $(eval $(call BuildPackage,ppp-mod-pppoa))
@@ -285,3 +301,4 @@ $(eval $(call BuildPackage,ppp-mod-passwordfd))
 $(eval $(call BuildPackage,chat))
 $(eval $(call BuildPackage,pppdump))
 $(eval $(call BuildPackage,pppstats))
+$(eval $(call BuildPackage,pppoe-discovery))
