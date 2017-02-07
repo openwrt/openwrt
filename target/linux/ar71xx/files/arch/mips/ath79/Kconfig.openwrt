@@ -924,6 +924,19 @@ config ATH79_MACH_RB2011
 	select ATH79_DEV_WMAC
 	select ATH79_ROUTERBOOT
 
+config ATH79_MACH_RBSPI
+	bool "MikroTik RouterBOARD SPI-NOR support"
+	select SOC_QCA953X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+	select ATH79_ROUTERBOOT
+	help
+	  Say 'Y' here if you want your kernel to support the
+	  MikroTik RouterBOARD mAP lite
+
 config ATH79_MACH_RBSXTLITE
 	bool "MikroTik RouterBOARD SXT Lite"
 	select SOC_AR934X

@@ -236,6 +236,11 @@ rb-2011uias-2hnd)
 	ucidef_set_led_switch "eth9" "ETH9" "rb:green:eth9" "switch1" "0x04"
 	ucidef_set_led_switch "eth10" "ETH10" "rb:green:eth10" "switch1" "0x02"
 	;;
+rb-mapl-2nd)
+	ucidef_set_led_default "power" "POWER" "rb:green:power" "1"
+	ucidef_set_led_netdev "lan" "LAN" "rb:green:eth" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "rb:green:wlan" "phy0tpt"
+	;;
 dap-2695-a1)
 	ucidef_set_led_default "power" "POWER" "d-link:green:power" "1"
 	ucidef_set_led_default "diag" "DIAG" "d-link:red:power" "0"
