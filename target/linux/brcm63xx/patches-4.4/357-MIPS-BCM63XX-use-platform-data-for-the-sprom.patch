@@ -91,5 +91,5 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	struct fallback_sprom_data fallback_sprom;
 +
  	/* Additional platform devices */
- 	struct platform_device **devs;
- 	unsigned int	num_devs;
+ 	struct spi_board_info *spis;
+ 	unsigned int	num_spis;

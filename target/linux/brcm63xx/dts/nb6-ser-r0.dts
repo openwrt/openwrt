@@ -40,4 +40,12 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
+
+	switch {
+		compatible = "realtek,rtl8367";
+		gpio-sda = <&gpio0 18 0>;
+		gpio-sck = <&gpio0 20 0>;
+
+		realtek,extif0 = <1 5 1 1 1 1 1 1 2>;
+	};
 };
