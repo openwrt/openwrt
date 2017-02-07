@@ -25,14 +25,10 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_regs.h>
  #include <bcm63xx_io.h>
  
-@@ -66,6 +70,46 @@ void __init bcm63xx_flash_force_phys_bas
+@@ -66,6 +70,41 @@ void __init bcm63xx_flash_force_phys_bas
  	mtd_resources[0].end = end;
  }
  
-+static struct flash_platform_data bcm63xx_flash_data = {
-+	.part_probe_types	= bcm63xx_part_types,
-+};
-+
 +static struct spi_board_info bcm63xx_spi_flash_info[] = {
 +	{
 +		.bus_num	= 0,
@@ -40,7 +36,6 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +		.mode		= 0,
 +		.max_speed_hz	= 781000,
 +		.modalias	= "m25p80",
-+		.platform_data	= &bcm63xx_flash_data,
 +	},
 +};
 +
@@ -72,7 +67,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static int __init bcm63xx_detect_flash_type(void)
  {
  	u32 val;
-@@ -73,9 +117,15 @@ static int __init bcm63xx_detect_flash_t
+@@ -73,9 +112,15 @@ static int __init bcm63xx_detect_flash_t
  	switch (bcm63xx_get_cpu_id()) {
  	case BCM6318_CPU_ID:
  		/* only support serial flash */
@@ -88,7 +83,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -94,12 +144,20 @@ static int __init bcm63xx_detect_flash_t
+@@ -94,12 +139,20 @@ static int __init bcm63xx_detect_flash_t
  			return BCM63XX_FLASH_TYPE_SERIAL;
  	case BCM6362_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_6362_REG);
@@ -109,7 +104,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
  		case STRAPBUS_6368_BOOT_SEL_NAND:
  			return BCM63XX_FLASH_TYPE_NAND;
-@@ -110,6 +168,11 @@ static int __init bcm63xx_detect_flash_t
+@@ -110,6 +163,11 @@ static int __init bcm63xx_detect_flash_t
  		}
  	case BCM63268_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_63268_REG);
@@ -121,7 +116,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -176,6 +239,7 @@ void __init bcm63xx_flash_detect(void)
+@@ -176,6 +234,7 @@ void __init bcm63xx_flash_detect(void)
  
  int __init bcm63xx_flash_register(void)
  {
@@ -129,7 +124,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	u32 val;
  
  	switch (flash_type) {
-@@ -195,8 +259,21 @@ int __init bcm63xx_flash_register(void)
+@@ -195,8 +254,14 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:
@@ -141,14 +136,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +			of_node_put(np);
 +			return 0;
 +		} else {
-+			if (BCMCPU_IS_6318() || BCMCPU_IS_6328() ||
-+			    BCMCPU_IS_6362() || BCMCPU_IS_63268()) {
-+				bcm63xx_spi_flash_info[0].bus_num = 1;
-+				bcm63xx_spi_flash_info[0].mode = SPI_RX_DUAL;
-+			}
-+
-+			return spi_register_board_info(bcm63xx_spi_flash_info,
-+						ARRAY_SIZE(bcm63xx_spi_flash_info));
++			return -ENODEV;
 +		}
  	case BCM63XX_FLASH_TYPE_NAND:
  		pr_warn("unsupported NAND flash detected\n");
