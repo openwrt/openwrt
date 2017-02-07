@@ -3,6 +3,7 @@
  *
  *  - MikroTik RouterBOARD mAP L-2nD
  *  - MikroTik RouterBOARD 941L-2nD
+ *  - MikroTik RouterBOARD 951Ui-2nD
  *
  *  Copyright (C) 2017 Thibaut VARENE <varenet@parisc-linux.org>
  *
@@ -15,6 +16,9 @@
 #include <linux/phy.h>
 #include <linux/routerboot.h>
 #include <linux/gpio.h>
+
+#include <linux/spi/spi.h>
+#include <linux/spi/74x164.h>
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
@@ -40,6 +44,7 @@
 #define RBSPI_HAS_USB		BIT(0)
 #define RBSPI_HAS_WLAN		BIT(1)
 #define RBSPI_HAS_WAN4		BIT(2)	/* has WAN port on PHY4 */
+#define RBSPI_HAS_SSR		BIT(3)	/* has an SSR on SPI bus 0 */
 
 #define RB_ROUTERBOOT_OFFSET    0x0000
 #define RB_BIOS_SIZE            0x1000
@@ -166,6 +171,96 @@ static struct gpio_led rbhapl_leds[] __initdata = {
 	},
 };
 
+/* common RB SSRs */
+#define RBSPI_SSR_GPIO_BASE	40
+#define RBSPI_SSR_GPIO(bit)	(RBSPI_SSR_GPIO_BASE + (bit))
+
+/* RB 951Ui-2nD gpios */
+#define RB952_SSR_BIT_LED_LAN1	0
+#define RB952_SSR_BIT_LED_LAN2	1
+#define RB952_SSR_BIT_LED_LAN3	2
+#define RB952_SSR_BIT_LED_LAN4	3
+#define RB952_SSR_BIT_LED_LAN5	4
+#define RB952_SSR_BIT_USB_POWER	5
+#define RB952_SSR_BIT_LED_WLAN	6
+#define RB952_GPIO_SSR_CS	11
+#define RB952_GPIO_LED_USER	4
+#define RB952_GPIO_POE_POWER	14
+#define RB952_GPIO_USB_POWER	RBSPI_SSR_GPIO(RB952_SSR_BIT_USB_POWER)
+#define RB952_GPIO_LED_LAN1	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN1)
+#define RB952_GPIO_LED_LAN2	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN2)
+#define RB952_GPIO_LED_LAN3	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN3)
+#define RB952_GPIO_LED_LAN4	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN4)
+#define RB952_GPIO_LED_LAN5	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN5)
+#define RB952_GPIO_LED_WLAN	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_WLAN)
+
+static struct gpio_led rb952_leds[] __initdata = {
+	{
+		.name = "rb:green:user",
+		.gpio = RB952_GPIO_LED_USER,
+		.active_low = 0,
+	}, {
+		.name = "rb:blue:wlan",
+		.gpio = RB952_GPIO_LED_WLAN,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:port1",
+		.gpio = RB952_GPIO_LED_LAN1,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:port2",
+		.gpio = RB952_GPIO_LED_LAN2,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:port3",
+		.gpio = RB952_GPIO_LED_LAN3,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:port4",
+		.gpio = RB952_GPIO_LED_LAN4,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:port5",
+		.gpio = RB952_GPIO_LED_LAN5,
+		.active_low = 1,
+	},
+};
+
+static struct gen_74x164_chip_platform_data rbspi_ssr_data = {
+	.base = RBSPI_SSR_GPIO_BASE,
+};
+
+/* the spi-ath79 driver can only natively handle CS0. Other CS are bit-banged */
+static int rbspi_spi_cs_gpios[] = {
+	-ENOENT,	/* CS0 is always -ENOENT: natively handled */
+	-ENOENT,	/* CS1 can be updated by the code as necessary */
+};
+
+static struct ath79_spi_platform_data rbspi_ath79_spi_data = {
+	.bus_num = 0,
+	.cs_gpios = rbspi_spi_cs_gpios,
+};
+
+/*
+ * Global spi_board_info: devices that don't have an SSR only have the SPI NOR
+ * flash on bus0 CS0, while devices that have an SSR add it on the same bus CS1
+ */
+static struct spi_board_info rbspi_spi_info[] = {
+	{
+		.bus_num	= 0,
+		.chip_select	= 0,
+		.max_speed_hz	= 25000000,
+		.modalias	= "m25p80",
+		.platform_data	= &rbspi_spi_flash_data,
+	}, {
+		.bus_num	= 0,
+		.chip_select	= 1,
+		.max_speed_hz	= 25000000,
+		.modalias	= "74x164",
+		.platform_data	= &rbspi_ssr_data,
+	}
+};
+
 void __init rbspi_wlan_init(int wmac_offset)
 {
 	char *art_buf;
@@ -209,7 +304,16 @@ static int __init rbspi_platform_setup(void)
  */
 static void __init rbspi_peripherals_setup(u32 flags)
 {
-	ath79_register_m25p80(&rbspi_spi_flash_data);
+	unsigned spi_n;
+
+	if (flags & RBSPI_HAS_SSR)
+		spi_n = ARRAY_SIZE(rbspi_spi_info);
+	else
+		spi_n = 1;     /* only one device on bus0 */
+
+	rbspi_ath79_spi_data.num_chipselect = spi_n;
+	rbspi_ath79_spi_data.cs_gpios = rbspi_spi_cs_gpios;
+	ath79_register_spi(&rbspi_ath79_spi_data, rbspi_spi_info, spi_n);
 
 	if (flags & RBSPI_HAS_USB)
 		ath79_register_usb();
@@ -314,5 +418,46 @@ static void __init rbhapl_setup(void)
 					rbspi_gpio_keys_reset16);
 }
 
+/*
+ * Init the hAP hardware.
+ * The 951Ui-2nD (hAP) has 5 ethernet ports, with ports 2-5 being assigned
+ * to LAN on the casing, and port 1 being assigned to "internet" (WAN).
+ * Port 1 is connected to PHY4 (the ports are labelled in reverse physical
+ * number), so the SoC can be set to connect GMAC0 to PHY4 and GMAC1 to the
+ * internal switch for the LAN ports.
+ * The device also has USB, PoE output and an SSR used for LED multiplexing.
+ */
+static void __init rb952_setup(void)
+{
+	u32 flags = RBSPI_HAS_WLAN | RBSPI_HAS_WAN4 | RBSPI_HAS_USB |
+			RBSPI_HAS_SSR;
+
+	if (rbspi_platform_setup())
+		return;
+
+	rbspi_spi_cs_gpios[1] = RB952_GPIO_SSR_CS;
+
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC + 1, WLAN MAC IS HW MAC + 5 */
+	rbspi_network_setup(flags, 1, 5);
+
+	gpio_request_one(RB952_GPIO_USB_POWER,
+			GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			"USB power");
+
+	gpio_request_one(RB952_GPIO_POE_POWER,
+			GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			"POE power");
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb952_leds), rb952_leds);
+
+	/* hAP has a single reset button as gpio 16 */
+	ath79_register_gpio_keys_polled(-1, RBSPI_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(rbspi_gpio_keys_reset16),
+					rbspi_gpio_keys_reset16);
+}
+
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_952, "952-hb", rb952_setup);

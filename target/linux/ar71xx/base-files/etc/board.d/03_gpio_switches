@@ -27,6 +27,10 @@ rb-912uag-2hpnd|\
 rb-912uag-5hpnd)
 	ucidef_add_gpio_switch "usb_power_switch" "USB Power Switch" "52" "1"
 	;;
+rb-951ui-2nd)
+	ucidef_add_gpio_switch "usb_power_switch" "USB Power Switch" "45" "1"
+	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "14"
+	;;
 esac
 
 board_config_flush
