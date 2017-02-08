@@ -88,6 +88,15 @@ define Device/wt3020-8M
 endef
 TARGET_DEVICES += wt3020-8M
 
+define Device/u25awf
+  DTS := U25AWF
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin)
+  DEVICE_TITLE := Kimax U-25AWF (16MB)
+endef
+TARGET_DEVICES += u25awf
+
 define Device/wrh-300cr
   DTS := WRH-300CR
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

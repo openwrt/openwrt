@@ -511,6 +511,9 @@ ramips_board_detect() {
 	*"WT3020")
 		name="wt3020"
 		;;
+	*"U-25AWF")
+		name="u25awf"
+		;;
 	*"WZR-AGL300NH")
 		name="wzr-agl300nh"
 		;;
