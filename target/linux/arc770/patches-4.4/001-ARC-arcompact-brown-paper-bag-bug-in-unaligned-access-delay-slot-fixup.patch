@@ -1,0 +1,38 @@
+From patchwork Tue Feb  7 17:44:58 2017
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: ARC: [arcompact] brown paper bag bug in unaligned access delay slot
+ fixup
+From: Vineet Gupta <Vineet.Gupta1@synopsys.com>
+X-Patchwork-Id: 725238
+Message-Id: <1486489498-9221-1-git-send-email-vgupta@synopsys.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Vineet Gupta <Vineet.Gupta1@synopsys.com>,
+ linux-snps-arc@lists.infradead.org, Jo-Philipp Wich <jo@mein.io>,
+ linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Date: Tue, 7 Feb 2017 09:44:58 -0800
+
+Reported-by: Jo-Philipp Wich <jo@mein.io>
+Fixes: 9aed02feae57bf7 ("ARC: [arcompact] handle unaligned access delay slot")
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-snps-arc@lists.infradead.org
+Cc: stable@vger.kernel.org
+Signed-off-by: Vineet Gupta <vgupta@synopsys.com>
+---
+ arch/arc/kernel/unaligned.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arc/kernel/unaligned.c b/arch/arc/kernel/unaligned.c
+index 91ebe382147f..5f69c3bd59bb 100644
+--- a/arch/arc/kernel/unaligned.c
++++ b/arch/arc/kernel/unaligned.c
+@@ -243,7 +243,7 @@ int misaligned_fixup(unsigned long address, struct pt_regs *regs,
+ 
+ 	/* clear any remanants of delay slot */
+ 	if (delay_mode(regs)) {
+-		regs->ret = regs->bta ~1U;
++		regs->ret = regs->bta & ~1U;
+ 		regs->status32 &= ~STATUS_DE_MASK;
+ 	} else {
+ 		regs->ret += state.instr_len;
