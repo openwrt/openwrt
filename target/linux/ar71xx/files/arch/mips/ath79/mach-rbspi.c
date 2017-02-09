@@ -4,6 +4,7 @@
  *  - MikroTik RouterBOARD mAP L-2nD
  *  - MikroTik RouterBOARD 941L-2nD
  *  - MikroTik RouterBOARD 951Ui-2nD
+ *  - MikroTik RouterBOARD 750UP r2
  *
  *  Copyright (C) 2017 Thibaut VARENE <varenet@parisc-linux.org>
  *
@@ -45,6 +46,7 @@
 #define RBSPI_HAS_WLAN		BIT(1)
 #define RBSPI_HAS_WAN4		BIT(2)	/* has WAN port on PHY4 */
 #define RBSPI_HAS_SSR		BIT(3)	/* has an SSR on SPI bus 0 */
+#define RBSPI_HAS_POE		BIT(4)
 
 #define RB_ROUTERBOOT_OFFSET    0x0000
 #define RB_BIOS_SIZE            0x1000
@@ -419,6 +421,37 @@ static void __init rbhapl_setup(void)
 }
 
 /*
+ * The hAP, hEX lite and hEX PoE lite share the same platform
+ */
+static void __init rbspi_952_750r2_setup(u32 flags)
+{
+	if (flags & RBSPI_HAS_SSR)
+		rbspi_spi_cs_gpios[1] = RB952_GPIO_SSR_CS;
+
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC + 1, WLAN MAC IS HW MAC + 5 */
+	rbspi_network_setup(flags, 1, 5);
+
+	if (flags & RBSPI_HAS_USB)
+		gpio_request_one(RB952_GPIO_USB_POWER,
+				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+				"USB power");
+
+	if (flags & RBSPI_HAS_POE)
+		gpio_request_one(RB952_GPIO_POE_POWER,
+				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+				"POE power");
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb952_leds), rb952_leds);
+
+	/* These devices have a single reset button as gpio 16 */
+	ath79_register_gpio_keys_polled(-1, RBSPI_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(rbspi_gpio_keys_reset16),
+					rbspi_gpio_keys_reset16);
+}
+
+/*
  * Init the hAP hardware.
  * The 951Ui-2nD (hAP) has 5 ethernet ports, with ports 2-5 being assigned
  * to LAN on the casing, and port 1 being assigned to "internet" (WAN).
@@ -430,34 +463,31 @@ static void __init rbhapl_setup(void)
 static void __init rb952_setup(void)
 {
 	u32 flags = RBSPI_HAS_WLAN | RBSPI_HAS_WAN4 | RBSPI_HAS_USB |
-			RBSPI_HAS_SSR;
+			RBSPI_HAS_SSR | RBSPI_HAS_POE;
 
 	if (rbspi_platform_setup())
 		return;
 
-	rbspi_spi_cs_gpios[1] = RB952_GPIO_SSR_CS;
+	rbspi_952_750r2_setup(flags);
+}
 
-	rbspi_peripherals_setup(flags);
+/*
+ * Init the hEX PoE lite hardware.
+ * The 750UP r2 (hEX PoE lite) is nearly identical to the hAP, only without
+ * WLAN.
+ */
+static void __init rb750upr2_setup(void)
+{
+	u32 flags = RBSPI_HAS_WAN4 | RBSPI_HAS_USB |
+			RBSPI_HAS_SSR | RBSPI_HAS_POE;
 
-	/* GMAC1 is HW MAC + 1, WLAN MAC IS HW MAC + 5 */
-	rbspi_network_setup(flags, 1, 5);
+	if (rbspi_platform_setup())
+		return;
 
-	gpio_request_one(RB952_GPIO_USB_POWER,
-			GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
-			"USB power");
-
-	gpio_request_one(RB952_GPIO_POE_POWER,
-			GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
-			"POE power");
-
-	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb952_leds), rb952_leds);
-
-	/* hAP has a single reset button as gpio 16 */
-	ath79_register_gpio_keys_polled(-1, RBSPI_KEYS_POLL_INTERVAL,
-					ARRAY_SIZE(rbspi_gpio_keys_reset16),
-					rbspi_gpio_keys_reset16);
+	rbspi_952_750r2_setup(flags);
 }
 
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_952, "952-hb", rb952_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_750UPR2, "750-hb", rb750upr2_setup);

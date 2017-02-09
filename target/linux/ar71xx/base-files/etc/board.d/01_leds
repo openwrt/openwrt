@@ -222,6 +222,14 @@ rb-750)
 	ucidef_set_led_switch "port4" "port4" "rb750:green:port4" "switch0" "0x04"
 	ucidef_set_led_switch "port5" "port5" "rb750:green:port5" "switch0" "0x02"
 	;;
+rb-750up-r2)
+	ucidef_set_led_timer "user" "USER" "rb:green:user" "1000" "1000"
+	ucidef_set_led_netdev "port1" "port1" "rb:green:port1" "eth0"
+	ucidef_set_led_switch "port2" "port2" "rb:green:port2" "switch0" "0x10"
+	ucidef_set_led_switch "port3" "port2" "rb:green:port3" "switch0" "0x08"
+	ucidef_set_led_switch "port4" "port3" "rb:green:port4" "switch0" "0x04"
+	ucidef_set_led_switch "port5" "port5" "rb:green:port5" "switch0" "0x02"
+	;;
 rb-941-2nd)
 	ucidef_set_led_timer "user" "USR/ACT" "rb:green:user" "1000" "1000"
 	;;
