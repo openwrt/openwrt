@@ -21,6 +21,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/spi/spi.h>
+#include <linux/of.h>
 #include <linux/platform_data/b53.h>
 
 #include "b53_priv.h"
@@ -313,11 +314,24 @@ static int b53_spi_remove(struct spi_device *spi)
 	return 0;
 }
 
+static const struct of_device_id b53_of_match[] = {
+	{ .compatible = "brcm,bcm5325" },
+	{ .compatible = "brcm,bcm53115" },
+	{ .compatible = "brcm,bcm53125" },
+	{ .compatible = "brcm,bcm53128" },
+	{ .compatible = "brcm,bcm5365" },
+	{ .compatible = "brcm,bcm5395" },
+	{ .compatible = "brcm,bcm5397" },
+	{ .compatible = "brcm,bcm5398" },
+	{ /* sentinel */ },
+};
+
 static struct spi_driver b53_spi_driver = {
 	.driver = {
 		.name	= "b53-switch",
 		.bus	= &spi_bus_type,
 		.owner	= THIS_MODULE,
+		.of_match_table = b53_of_match,
 	},
 	.probe	= b53_spi_probe,
 	.remove	= b53_spi_remove,

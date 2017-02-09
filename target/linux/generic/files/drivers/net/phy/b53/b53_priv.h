@@ -170,6 +170,14 @@ static inline int is_cpu_port(struct b53_device *dev, int port)
 	return dev->sw_dev.cpu_port == port;
 }
 
+static inline int is_imp_port(struct b53_device *dev, int port)
+{
+	if (is5325(dev) || is5365(dev))
+		return port == B53_CPU_PORT_25;
+	else
+		return port == B53_CPU_PORT;
+}
+
 static inline struct b53_device *sw_to_b53(struct switch_dev *sw)
 {
 	return container_of(sw, struct b53_device, sw_dev);
