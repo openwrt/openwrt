@@ -61,7 +61,7 @@ define subdir
   $(call warn,$(1),d,D $(1))
   $(foreach bd,$($(1)/builddirs),
     $(call warn,$(1),d,BD $(1)/$(bd))
-    $(foreach target,$(SUBTARGETS),
+    $(foreach target,$(SUBTARGETS) $($(1)/subtargets),
       $(foreach btype,$(buildtypes-$(bd)),
         $(call warn_eval,$(1)/$(bd),t,T,$(1)/$(bd)/$(btype)/$(target): $(if $(QUILT),,$($(1)/$(bd)/$(btype)/$(target)) $(call $(1)//$(btype)/$(target),$(1)/$(bd)/$(btype))))
 		  $(call log_make,$(1)/$(bd),$(target),$(btype),$(filter-out __default,$(variant))) \
@@ -81,7 +81,7 @@ define subdir
 	  )
 	)
   )
-  $(foreach target,$(SUBTARGETS),$(call subtarget,$(1),$(target)))
+  $(foreach target,$(SUBTARGETS) $($(1)/subtargets),$(call subtarget,$(1),$(target)))
 endef
 
 ifndef DUMP_TARGET_DB
