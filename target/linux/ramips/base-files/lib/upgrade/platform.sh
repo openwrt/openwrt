@@ -19,6 +19,7 @@ platform_check_image() {
 	3g-6200n|\
 	3g-6200nl|\
 	a5-v11|\
+	afoundry-ew1200|\
 	ai-br100|\
 	air3gii|\
 	all0239-3g|\

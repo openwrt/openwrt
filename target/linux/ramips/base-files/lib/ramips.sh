@@ -28,6 +28,9 @@ ramips_board_detect() {
 	*"A5-V11")
 		name="a5-v11"
 		;;
+	*"AFOUNDRY-EW1200")
+		name="afoundry-ew1200"
+		;;
 	*"Ai-BR100")
 		name="ai-br100"
 		;;

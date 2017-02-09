@@ -171,6 +171,14 @@ define Device/sk-wb8
 endef
 TARGET_DEVICES += sk-wb8
 
+define Device/afoundry-ew1200
+  DTS := AFOUNDRY-EW1200
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := AFOUNDRY EW1200
+  DEVICE_PACKAGES := kmod-usb3 kmod-ledtrig-usbdev kmod-ata-core kmod-ata-ahci
+endef
+TARGET_DEVICES += afoundry-ew1200
+
 # FIXME: is this still needed?
 define Image/Prepare
 #define Build/Compile

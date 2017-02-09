@@ -73,6 +73,7 @@ get_status_led() {
 	zbt-wg3526)
 		status_led="$board:green:status"
 		;;
+	afoundry-ew1200|\
 	atp-52b|\
 	ip2202)
 		status_led="$board:green:run"
