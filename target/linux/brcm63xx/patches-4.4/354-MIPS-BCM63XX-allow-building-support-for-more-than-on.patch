@@ -46,16 +46,16 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	u8 *boot_addr, *cfe;
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -14,6 +14,8 @@
+@@ -13,6 +13,8 @@
+ #include <linux/platform_device.h>
  #include <linux/ssb/ssb.h>
- #include <linux/spi/spi.h>
  #include <asm/addrspace.h>
 +#include <asm/bootinfo.h>
 +#include <asm/fw/cfe/cfe_api.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_dev_uart.h>
-@@ -32,6 +34,8 @@
+@@ -31,6 +33,8 @@
  #include <bcm63xx_dev_usb_usbd.h>
  #include <board_bcm963xx.h>
  
@@ -64,7 +64,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #define PFX	"board: "
  
  static struct board_info board;
-@@ -82,6 +86,15 @@ const char *board_get_name(void)
+@@ -81,6 +85,15 @@ const char *board_get_name(void)
  	return board.name;
  }
  

@@ -12,7 +12,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -29,9 +29,7 @@
+@@ -28,9 +28,7 @@
  #include <bcm63xx_dev_enet.h>
  #include <bcm63xx_dev_dsp.h>
  #include <bcm63xx_dev_flash.h>
@@ -22,7 +22,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_dev_usb_ehci.h>
  #include <bcm63xx_dev_usb_ohci.h>
  #include <bcm63xx_dev_usb_usbd.h>
-@@ -241,10 +239,6 @@ int __init board_register_devices(void)
+@@ -240,10 +238,6 @@ int __init board_register_devices(void)
  	     bcm63xx_register_fallback_sprom(&board.fallback_sprom)))
  		pr_err(PFX "failed to register fallback SPROM\n");
  
@@ -30,6 +30,6 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 -
 -	bcm63xx_hsspi_register();
 -
- 	if (board.num_spis)
- 		spi_register_board_info(board.spis, board.num_spis);
+ 	bcm63xx_flash_register();
  
+ 	bcm63xx_led_data.num_leds = ARRAY_SIZE(board.leds);

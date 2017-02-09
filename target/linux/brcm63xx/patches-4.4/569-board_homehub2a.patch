@@ -33,7 +33,7 @@
  static struct board_info __initdata board_HW520 = {
  	.name				= "HW6358GW_B",
  	.expected_cpu_id		= 0x6358,
-@@ -2301,6 +2327,7 @@ static const struct board_info __initcon
+@@ -2267,6 +2293,7 @@ static const struct board_info __initcon
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
  	&board_ct6373_1,
@@ -41,7 +41,7 @@
  	&board_HW520,
  	&board_HW553,
  	&board_HW556_A,
-@@ -2410,6 +2437,7 @@ static struct of_device_id const bcm963x
+@@ -2376,6 +2403,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "sfr,nb4-fxc-r1", .data = &board_nb4_fxc_r1, },
  	{ .compatible = "t-com,spw303v", .data = &board_spw303v, },
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },

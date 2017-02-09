@@ -25,7 +25,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	select SSB
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -10,12 +10,15 @@
+@@ -10,11 +10,14 @@
  #include <linux/init.h>
  #include <linux/kernel.h>
  #include <linux/string.h>
@@ -33,7 +33,6 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +#include <linux/of_platform.h>
  #include <linux/platform_device.h>
  #include <linux/ssb/ssb.h>
- #include <linux/spi/spi.h>
  #include <asm/addrspace.h>
  #include <asm/bootinfo.h>
  #include <asm/fw/cfe/cfe_api.h>
@@ -41,7 +40,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_dev_uart.h>
-@@ -127,8 +130,23 @@ void __init board_setup(void)
+@@ -126,8 +129,23 @@ void __init board_setup(void)
  	/* make sure we're running on expected cpu */
  	if (bcm63xx_get_cpu_id() != board.expected_cpu_id)
  		panic("unexpected CPU for bcm963xx board");
@@ -65,7 +64,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static struct gpio_led_platform_data bcm63xx_led_data;
  
  static struct platform_device bcm63xx_gpio_leds = {
-@@ -137,6 +155,13 @@ static struct platform_device bcm63xx_gp
+@@ -136,6 +154,13 @@ static struct platform_device bcm63xx_gp
  	.dev.platform_data	= &bcm63xx_led_data,
  };
  
@@ -79,7 +78,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  /*
   * third stage init callback, register all board devices.
   */
-@@ -144,6 +169,15 @@ int __init board_register_devices(void)
+@@ -143,6 +168,15 @@ int __init board_register_devices(void)
  {
  	int usbh_ports = 0;
  

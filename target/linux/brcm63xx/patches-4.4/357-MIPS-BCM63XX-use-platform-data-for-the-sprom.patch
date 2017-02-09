@@ -17,7 +17,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -143,7 +143,6 @@ static struct platform_device bcm63xx_gp
+@@ -142,7 +142,6 @@ static struct platform_device bcm63xx_gp
  int __init board_register_devices(void)
  {
  	int usbh_ports = 0;
@@ -25,7 +25,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -189,8 +188,8 @@ int __init board_register_devices(void)
+@@ -188,8 +187,8 @@ int __init board_register_devices(void)
  	 * do this after registering enet devices
  	 */
  
@@ -83,13 +83,13 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  /*
   * flash mapping
-@@ -55,6 +56,9 @@ struct board_info {
+@@ -54,6 +55,9 @@ struct board_info {
+ 
  	/* External PHY reset GPIO flags from gpio.h */
  	unsigned long ephy_reset_gpio_flags;
- 
++
 +	/* fallback sprom config */
 +	struct fallback_sprom_data fallback_sprom;
-+
- 	/* Additional platform devices */
- 	struct spi_board_info *spis;
- 	unsigned int	num_spis;
+ };
+ 
+ #endif /* ! BOARD_BCM963XX_H_ */
