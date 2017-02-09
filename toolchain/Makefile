@@ -79,7 +79,6 @@ endif
 $(curdir)/ := .config prereq
 $(curdir)//prepare = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk $(tools/stamp-compile)
 $(curdir)//compile = $(1)/prepare
-$(curdir)//compile = $(1)/compile
 
 ifndef DUMP_TARGET_DB
 $(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed:
