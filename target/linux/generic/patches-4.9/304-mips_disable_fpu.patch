@@ -26,7 +26,7 @@ v2: incorporated changes suggested by Jonas Gorski
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -2891,6 +2891,20 @@ config MIPS_O32_FP64_SUPPORT
+@@ -2891,6 +2891,20 @@
  
  	  If unsure, say N.
  
@@ -49,7 +49,7 @@ v2: incorporated changes suggested by Jonas Gorski
  	select OF
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -287,7 +287,7 @@ OBJCOPYFLAGS		+= --remove-section=.regin
+@@ -287,7 +287,7 @@
  head-y := arch/mips/kernel/head.o
  
  libs-y			+= arch/mips/lib/
@@ -60,7 +60,7 @@ v2: incorporated changes suggested by Jonas Gorski
  core-y += arch/mips/
 --- a/arch/mips/include/asm/fpu.h
 +++ b/arch/mips/include/asm/fpu.h
-@@ -227,8 +227,10 @@ static inline int init_fpu(void)
+@@ -227,8 +227,10 @@
  		/* Restore FRE */
  		write_c0_config5(config5);
  		enable_fpu_hazard();
@@ -82,16 +82,11 @@ v2: incorporated changes suggested by Jonas Gorski
  #ifdef CONFIG_DEBUG_FS
  
  struct mips_fpu_emulator_stats {
-@@ -63,6 +64,21 @@ do {									\
+@@ -63,6 +64,16 @@
  extern int fpu_emulator_cop1Handler(struct pt_regs *xcp,
  				    struct mips_fpu_struct *ctx, int has_fpu,
  				    void *__user *fault_addr);
 +#else	/* no CONFIG_MIPS_FPU_EMULATOR */
-+static inline int do_dsemulret(struct pt_regs *xcp)
-+{
-+	return 0;	/* 0 means error, should never get here anyway */
-+}
-+
 +static inline int fpu_emulator_cop1Handler(struct pt_regs *xcp,
 +				struct mips_fpu_struct *ctx, int has_fpu,
 +				void *__user *fault_addr)
@@ -104,3 +99,41 @@ v2: incorporated changes suggested by Jonas Gorski
  void force_fcr31_sig(unsigned long fcr31, void __user *fault_addr,
  		     struct task_struct *tsk);
  int process_fpemu_return(int sig, void __user *fault_addr,
+--- a/arch/mips/include/asm/dsemul.h
++++ b/arch/mips/include/asm/dsemul.h
+@@ -41,6 +41,7 @@
+ extern int mips_dsemul(struct pt_regs *regs, mips_instruction ir,
+ 		       unsigned long branch_pc, unsigned long cont_pc);
+ 
++#ifdef CONFIG_MIPS_FPU_EMULATOR
+ /**
+  * do_dsemulret() - Return from a delay slot 'emulation' frame
+  * @xcp:	User thread register context.
+@@ -88,5 +89,27 @@
+  * before @mm is freed in order to avoid memory leaks.
+  */
+ extern void dsemul_mm_cleanup(struct mm_struct *mm);
++#else
++static inline bool do_dsemulret(struct pt_regs *xcp)
++{
++	return false;
++}
++
++static inline bool dsemul_thread_cleanup(struct task_struct *tsk)
++{
++	return false;
++}
++
++static inline bool dsemul_thread_rollback(struct pt_regs *regs)
++{
++	return false;
++}
++
++static inline void dsemul_mm_cleanup(struct mm_struct *mm)
++{
++
++}
++
++#endif
+ 
+ #endif /* __MIPS_ASM_DSEMUL_H__ */
