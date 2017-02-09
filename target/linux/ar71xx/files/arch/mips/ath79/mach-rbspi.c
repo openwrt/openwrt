@@ -5,6 +5,7 @@
  *  - MikroTik RouterBOARD 941L-2nD
  *  - MikroTik RouterBOARD 951Ui-2nD
  *  - MikroTik RouterBOARD 750UP r2
+ *  - MikroTik RouterBOARD 750 r2
  *
  *  Copyright (C) 2017 Thibaut VARENE <varenet@parisc-linux.org>
  *
@@ -472,17 +473,21 @@ static void __init rb952_setup(void)
 }
 
 /*
- * Init the hEX PoE lite hardware.
+ * Init the hEX (PoE) lite hardware.
  * The 750UP r2 (hEX PoE lite) is nearly identical to the hAP, only without
- * WLAN.
+ * WLAN. The 750 r2 (hEX lite) is nearly identical to the 750UP r2, only
+ * without USB and POE. It shares the same bootloader board identifier.
  */
 static void __init rb750upr2_setup(void)
 {
-	u32 flags = RBSPI_HAS_WAN4 | RBSPI_HAS_USB |
-			RBSPI_HAS_SSR | RBSPI_HAS_POE;
+	u32 flags = RBSPI_HAS_WAN4 | RBSPI_HAS_SSR;
 
 	if (rbspi_platform_setup())
 		return;
+
+	/* differentiate the hEX lite from the hEX PoE lite */
+	if (strstr(mips_get_machine_name(), "750UP r2"))
+		flags |= RBSPI_HAS_USB | RBSPI_HAS_POE;
 
 	rbspi_952_750r2_setup(flags);
 }
