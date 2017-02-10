@@ -119,12 +119,8 @@ platform_do_upgrade() {
 		if [ "$SAVE_PARTITIONS" = "1" ]; then
 			get_partitions "/dev/$diskdev" bootdisk
 
-			#get block size
-			if [ -f "/sys/block/$diskdev/queue/physical_block_size" ]; then
-				ibs="$(cat "/sys/block/$diskdev/queue/physical_block_size")"
-			else
-				ibs=512
-			fi
+			#it is fixed to 512
+			ibs=512
 
 			#extract the boot sector from the image
 			get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b
