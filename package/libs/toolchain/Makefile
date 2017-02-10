@@ -323,9 +323,6 @@ LIBGCC_SO=$(lastword $(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so.*))
 define Build/Compile/uClibc
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libuClibc-*.so \
-		$(TOOLCHAIN_DIR)/lib/libcrypt-*.so \
-		$(TOOLCHAIN_DIR)/lib/libm-*.so \
-		$(TOOLCHAIN_DIR)/lib/libpthread-*.so \
 		$(PKG_BUILD_DIR)/
 endef
 ifneq ($(LIBGCC_SO),)
@@ -395,17 +392,8 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 		$(TOOLCHAIN_DIR)/lib/libc.so.* \
 		$(TOOLCHAIN_DIR)/lib/libuClibc-$(LIBC_SO_VERSION).so \
 		$(1)/lib/
-	for file in libcrypt libdl libm libutil; do \
-		$(CP) \
-			$(TOOLCHAIN_DIR)/lib/$$$$file.so.* \
-			$(TOOLCHAIN_DIR)/lib/$$$$file-$(LIBC_SO_VERSION).so \
-			$(1)/lib/; \
-	done
-
 	$(CP) \
 		$(PKG_BUILD_DIR)/libuClibc-* \
-		$(PKG_BUILD_DIR)/libm-* \
-		$(PKG_BUILD_DIR)/libcrypt-* \
 		$(1)/lib/
   endef
 
@@ -437,7 +425,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/libpthread/install
 	$(INSTALL_DIR) $(1)/lib
-  ifneq ($(CONFIG_USE_MUSL),y)
+  ifneq ($(CONFIG_USE_MUSL)$(CONFIG_USE_UCLIBC),y)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libpthread.so.* \
 		$(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_SO_VERSION).so \
@@ -462,7 +450,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/librt/install
 	$(INSTALL_DIR) $(1)/lib
-  ifneq ($(CONFIG_USE_MUSL),y)
+  ifneq ($(CONFIG_USE_MUSL)$(CONFIG_USE_UCLIBC),y)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/librt.so.* \
 		$(TOOLCHAIN_DIR)/lib/librt-$(LIBC_SO_VERSION).so \
