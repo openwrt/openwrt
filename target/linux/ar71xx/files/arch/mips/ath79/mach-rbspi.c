@@ -7,6 +7,14 @@
  *  - MikroTik RouterBOARD 750UP r2
  *  - MikroTik RouterBOARD 750 r2
  *
+ *  Preliminary support for the following hardware
+ *  - MikroTik RouterBOARD wAP2nD
+ *  - MikroTik RouterBOARD cAP2nD
+ *  - MikroTik RouterBOARD mAP2nD
+ *  Furthermore, the cAP lite (cAPL2nD) appears to feature the exact same
+ *  hardware as the mAP L-2nD. It is unknown if they share the same board
+ *  identifier.
+ *
  *  Copyright (C) 2017 Thibaut VARENE <varenet@parisc-linux.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -189,6 +197,7 @@ static struct gpio_led rbhapl_leds[] __initdata = {
 #define RB952_GPIO_SSR_CS	11
 #define RB952_GPIO_LED_USER	4
 #define RB952_GPIO_POE_POWER	14
+#define RB952_GPIO_POE_STATUS	12
 #define RB952_GPIO_USB_POWER	RBSPI_SSR_GPIO(RB952_SSR_BIT_USB_POWER)
 #define RB952_GPIO_LED_LAN1	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN1)
 #define RB952_GPIO_LED_LAN2	RBSPI_SSR_GPIO(RB952_SSR_BIT_LED_LAN2)
@@ -228,6 +237,103 @@ static struct gpio_led rb952_leds[] __initdata = {
 		.active_low = 1,
 	},
 };
+
+/* RB wAP-2nD gpios */
+#define RBWAP_GPIO_LED_USER	14
+#define RBWAP_GPIO_LED_WLAN	11
+
+static struct gpio_led rbwap_leds[] __initdata = {
+	{
+		.name = "rb:green:user",
+		.gpio = RBWAP_GPIO_LED_USER,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:wlan",
+		.gpio = RBWAP_GPIO_LED_WLAN,
+		.active_low = 1,
+	},
+};
+
+/* RB cAP-2nD gpios */
+#define RBCAP_GPIO_LED_1	14
+#define RBCAP_GPIO_LED_2	12
+#define RBCAP_GPIO_LED_3	11
+#define RBCAP_GPIO_LED_4	4
+#define RBCAP_GPIO_LED_ALL	13
+
+static struct gpio_led rbcap_leds[] __initdata = {
+	{
+		.name = "rb:green:rssi1",
+		.gpio = RBCAP_GPIO_LED_1,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:rssi2",
+		.gpio = RBCAP_GPIO_LED_2,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:rssi3",
+		.gpio = RBCAP_GPIO_LED_3,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:rssi4",
+		.gpio = RBCAP_GPIO_LED_4,
+		.active_low = 1,
+	},
+};
+
+/* RB mAP-2nD gpios */
+#define RBMAP_SSR_BIT_LED_LAN1	0
+#define RBMAP_SSR_BIT_LED_LAN2	1
+#define RBMAP_SSR_BIT_LED_POEO	2
+#define RBMAP_SSR_BIT_LED_USER	3
+#define RBMAP_SSR_BIT_LED_WLAN	4
+#define RBMAP_SSR_BIT_USB_POWER	5
+#define RBMAP_SSR_BIT_LED_APCAP	6
+#define RBMAP_GPIO_SSR_CS	11
+#define RBMAP_GPIO_LED_POWER	4
+#define RBMAP_GPIO_POE_POWER	14
+#define RBMAP_GPIO_POE_STATUS	12
+#define RBMAP_GPIO_USB_POWER	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_USB_POWER)
+#define RBMAP_GPIO_LED_LAN1	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_LAN1)
+#define RBMAP_GPIO_LED_LAN2	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_LAN2)
+#define RBMAP_GPIO_LED_POEO	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_POEO)
+#define RBMAP_GPIO_LED_USER	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_USER)
+#define RBMAP_GPIO_LED_WLAN	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_WLAN)
+#define RBMAP_GPIO_LED_APCAP	RBSPI_SSR_GPIO(RBMAP_SSR_BIT_LED_APCAP)
+
+static struct gpio_led rbmap_leds[] __initdata = {
+	{
+		.name = "rb:green:power",
+		.gpio = RBMAP_GPIO_LED_POWER,
+		.active_low = 1,
+		.default_state = LEDS_GPIO_DEFSTATE_ON,
+	}, {
+		.name = "rb:green:eth1",
+		.gpio = RBMAP_GPIO_LED_LAN1,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:eth2",
+		.gpio = RBMAP_GPIO_LED_WLAN,
+		.active_low = 1,
+	}, {
+		.name = "rb:red:poe_out",
+		.gpio = RBMAP_GPIO_LED_POEO,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:user",
+		.gpio = RBMAP_GPIO_LED_USER,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:wlan",
+		.gpio = RBMAP_GPIO_LED_WLAN,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:ap_cap",
+		.gpio = RBMAP_GPIO_LED_APCAP,
+		.active_low = 1,
+	},
+};
+
 
 static struct gen_74x164_chip_platform_data rbspi_ssr_data = {
 	.base = RBSPI_SSR_GPIO_BASE,
@@ -492,7 +598,79 @@ static void __init rb750upr2_setup(void)
 	rbspi_952_750r2_setup(flags);
 }
 
+/*
+ * Init the wAP hardware (EXPERIMENTAL).
+ * The wAP 2nD has a single ethernet port.
+ */
+static void __init rbwap_setup(void)
+{
+	u32 flags = RBSPI_HAS_WLAN;
+
+	if (rbspi_platform_setup())
+		return;
+
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC, WLAN MAC is HW MAC + 1 */
+	rbspi_network_setup(flags, 0, 1);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbwap_leds), rbwap_leds);
+}
+
+/*
+ * Init the cAP hardware (EXPERIMENTAL).
+ * The cAP 2nD has a single ethernet port, and a global LED switch.
+ */
+static void __init rbcap_setup(void)
+{
+	u32 flags = RBSPI_HAS_WLAN;
+
+	if (rbspi_platform_setup())
+		return;
+
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC, WLAN MAC is HW MAC + 1 */
+	rbspi_network_setup(flags, 0, 1);
+
+	gpio_request_one(RBCAP_GPIO_LED_ALL,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "LEDs enable");
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbcap_leds), rbcap_leds);
+}
+
+/*
+ * Init the mAP hardware (EXPERIMENTAL).
+ * The mAP 2nD has two ethernet ports, PoE output and an SSR for LED
+ * multiplexing.
+ */
+static void __init rbmap_setup(void)
+{
+	u32 flags = RBSPI_HAS_WLAN | RBSPI_HAS_SSR | RBSPI_HAS_POE;
+
+	if (rbspi_platform_setup())
+		return;
+
+	rbspi_spi_cs_gpios[1] = RBMAP_GPIO_SSR_CS;
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC, WLAN MAC is HW MAC + 2 */
+	rbspi_network_setup(flags, 0, 2);
+
+	if (flags & RBSPI_HAS_POE)
+		gpio_request_one(RBMAP_GPIO_POE_POWER,
+				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+				"POE power");
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbmap_leds), rbmap_leds);
+}
+
+
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_952, "952-hb", rb952_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_750UPR2, "750-hb", rb750upr2_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAP, "wap-hb", rbwap_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_CAP, "cap-hb", rbcap_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAP, "map2-hb", rbmap_setup);
