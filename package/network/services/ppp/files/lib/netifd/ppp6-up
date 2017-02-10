@@ -22,6 +22,7 @@ if [ -n "$AUTOIPV6" ]; then
 	json_add_string ifname "@$PPP_IPPARAM"
 	json_add_string proto "dhcpv6"
 	[ -n "$EXTENDPREFIX" ] && json_add_string extendprefix 1
+	[ -n "$IP6TABLE" ] && json_add_string ip6table $IP6TABLE
 	json_close_object
 	ubus call network add_dynamic "$(json_dump)"
 fi
