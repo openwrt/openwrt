@@ -574,7 +574,8 @@ tl-wa801nd-v3)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
 	;;
-tl-wa850re)
+tl-wa850re|\
+tl-wa850re-v2)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:blue:lan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:blue:wlan" "phy0tpt"
 	ucidef_set_rssimon "wlan0" "200000" "1"

@@ -341,7 +341,8 @@ get_status_led() {
 	tl-wa750re)
 		status_led="tp-link:orange:re"
 		;;
-	tl-wa850re)
+	tl-wa850re|\
+	tl-wa850re-v2)
 		status_led="tp-link:blue:re"
 		;;
 	tl-wa860re)
