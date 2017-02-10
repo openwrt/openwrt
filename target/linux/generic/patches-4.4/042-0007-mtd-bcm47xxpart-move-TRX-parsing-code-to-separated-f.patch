@@ -1,6 +1,7 @@
+From b522d7b0ebe3539340c2a6d46d787ae3d33bcb92 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Subject: [PATCH 1/2] mtd: bcm47xxpart: move TRX parsing code to separated
- function
+Date: Tue, 10 Jan 2017 23:15:24 +0100
+Subject: [PATCH] mtd: bcm47xxpart: move TRX parsing code to separated function
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -13,6 +14,8 @@ better flash layout knowledge. It may be useful e.g. if it appears there
 is more than 1 TRX partition.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Marek Vasut <marek.vasut@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 ---
  drivers/mtd/bcm47xxpart.c | 121 ++++++++++++++++++++++++++++------------------
  1 file changed, 74 insertions(+), 47 deletions(-)
@@ -85,7 +88,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +}
 +
  static int bcm47xxpart_parse(struct mtd_info *master,
- 			     const struct mtd_partition **pparts,
+ 			     struct mtd_partition **pparts,
  			     struct mtd_part_parser_data *data)
 @@ -93,9 +154,7 @@ static int bcm47xxpart_parse(struct mtd_
  	size_t bytes_read;

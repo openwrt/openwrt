@@ -1,5 +1,7 @@
+From 89a0d9a9f1941a086a82bc7cd73d275cec98ba14 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Subject: [PATCH 2/2] mtd: bcm47xxpart: support layouts with multiple TRX
+Date: Tue, 10 Jan 2017 23:15:25 +0100
+Subject: [PATCH] mtd: bcm47xxpart: support layouts with multiple TRX
  partitions
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -10,6 +12,8 @@ we detect such partition we should set a proper name for it and don't
 parse it.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Marek Vasut <marek.vasut@gmail.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 ---
  drivers/mtd/bcm47xxpart.c | 56 ++++++++++++++++++++++++++++++++++++++---------
  1 file changed, 46 insertions(+), 10 deletions(-)
