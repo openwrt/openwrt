@@ -924,8 +924,8 @@ define KernelPackage/rxrpc
 	CONFIG_AF_RXRPC_DEBUG=n
   FILES:= \
 	$(LINUX_DIR)/net/rxrpc/af-rxrpc.ko \
-	$(LINUX_DIR)/net/rxrpc/rxkad.ko
-  AUTOLOAD:=$(call AutoLoad,30,rxkad af-rxrpc)
+	$(LINUX_DIR)/net/rxrpc/rxkad.ko@lt4.7
+  AUTOLOAD:=$(call AutoLoad,30,rxkad@lt4.7 af-rxrpc)
   DEPENDS:= +kmod-crypto-manager +kmod-crypto-pcbc +kmod-crypto-fcrypt
 endef
 
