@@ -237,11 +237,8 @@ ramips_setup_interfaces()
 			"0:lan" "4:lan" "6t@eth0"
 		;;
 	newifi-d1)
-		ucidef_set_interface_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "3:lan" "5:wan" "6t@eth0" "7t@eth0"
-		ucidef_add_switch "switch1" \
-			"4:lan" "6t@eth0" "7t@eth0"
+		"1:lan:2" "2:lan:1" "4:wan" "6@eth0"
 		;;
 	rt-n56u)
 		ucidef_add_switch "switch0" \
