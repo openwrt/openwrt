@@ -562,34 +562,34 @@ static struct platform_device laguna_i2c_controller = {
 	.resource = laguna_i2c_resource,
 };
 
-static struct memory_accessor *at24_mem_acc;
+static struct nvmem_device *at24_nvmem;
 
-static void at24_setup(struct memory_accessor *mem_acc, void *context)
+static void at24_setup(struct nvmem_device *mem_acc, void *context)
 {
 	char buf[16];
 
-	at24_mem_acc = mem_acc;
+	at24_nvmem = mem_acc;
 
 	/* Read MAC addresses */
-	if (at24_mem_acc->read(at24_mem_acc, buf, 0x100, 6) == 6)
+	if (nvmem_device_read(at24_nvmem, 0x100, 6, buf) == 6)
 		memcpy(&laguna_net_data.hwaddr[0], buf, ETH_ALEN);
-	if (at24_mem_acc->read(at24_mem_acc, buf, 0x106, 6) == 6)
+	if (nvmem_device_read(at24_nvmem, 0x106, 6, buf) == 6)
 		memcpy(&laguna_net_data.hwaddr[1], buf, ETH_ALEN);
-	if (at24_mem_acc->read(at24_mem_acc, buf, 0x10C, 6) == 6)
+	if (nvmem_device_read(at24_nvmem, 0x10C, 6, buf) == 6)
 		memcpy(&laguna_net_data.hwaddr[2], buf, ETH_ALEN);
-	if (at24_mem_acc->read(at24_mem_acc, buf, 0x112, 6) == 6)
+	if (nvmem_device_read(at24_nvmem, 0x112, 6, buf) == 6)
 		memcpy(&laguna_net_data.hwaddr[3], buf, ETH_ALEN);
 
 	/* Read out Model Information */
-	if (at24_mem_acc->read(at24_mem_acc, buf, 0x130, 16) == 16)
+	if (nvmem_device_read(at24_nvmem, 0x130, 16, buf) == 16)
 		memcpy(&laguna_info.model, buf, 16);
-	if (at24_mem_acc->read(at24_mem_acc, buf, 0x140, 1) == 1)
+	if (nvmem_device_read(at24_nvmem, 0x140, 1, buf) == 1)
 		memcpy(&laguna_info.nor_flash_size, buf, 1);
-	if (at24_mem_acc->read(at24_mem_acc, buf, 0x141, 1) == 1)
+	if (nvmem_device_read(at24_nvmem, 0x141, 1, buf) == 1)
 		memcpy(&laguna_info.spi_flash_size, buf, 1);
-	if (at24_mem_acc->read(at24_mem_acc, buf, 0x142, 4) == 4)
+	if (nvmem_device_read(at24_nvmem, 0x142, 4, buf) == 4)
 		memcpy(&laguna_info.config_bitmap, buf, 4);
-	if (at24_mem_acc->read(at24_mem_acc, buf, 0x146, 4) == 4)
+	if (nvmem_device_read(at24_nvmem, 0x146, 4, buf) == 4)
 		memcpy(&laguna_info.config2_bitmap, buf, 4);
 };
 
@@ -812,7 +812,7 @@ static void __init laguna_init(void)
 	u32 __iomem *reg;
 
 	clk = clk_register_fixed_rate(NULL, "cpu", NULL,
-				      CLK_IS_ROOT | CLK_IGNORE_UNUSED,
+				      CLK_IGNORE_UNUSED,
 				      cns3xxx_cpu_clock() * (1000000 / 8));
 	clk_register_clkdev(clk, "cpu", NULL);
 
