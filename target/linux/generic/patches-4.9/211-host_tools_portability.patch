@@ -1,0 +1,28 @@
+--- a/tools/perf/pmu-events/jevents.c
++++ b/tools/perf/pmu-events/jevents.c
+@@ -35,6 +35,7 @@
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <string.h>
++#include <strings.h>
+ #include <ctype.h>
+ #include <unistd.h>
+ #include <stdarg.h>
+--- a/tools/perf/pmu-events/json.c
++++ b/tools/perf/pmu-events/json.c
+@@ -38,7 +38,6 @@
+ #include <unistd.h>
+ #include "jsmn.h"
+ #include "json.h"
+-#include <linux/kernel.h>
+ 
+ 
+ static char *mapfile(const char *fn, size_t *size)
+--- a/tools/build/Build.include
++++ b/tools/build/Build.include
+@@ -95,4 +95,4 @@ cxx_flags = -Wp,-MD,$(depfile),-MT,$@ $(
+ ###
+ ## HOSTCC C flags
+ 
+-host_c_flags = -Wp,-MD,$(depfile),-MT,$@ $(CHOSTFLAGS) -D"BUILD_STR(s)=\#s" $(CHOSTFLAGS_$(basetarget).o) $(CHOSTFLAGS_$(obj))
++host_c_flags = -MD -MF $(depfile) -MT $@ $(CHOSTFLAGS) -D"BUILD_STR(s)=\#s" $(CHOSTFLAGS_$(basetarget).o) $(CHOSTFLAGS_$(obj))
