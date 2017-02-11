@@ -8,15 +8,15 @@
 +static int cns3xxx_l2x0_enable = 1;
 +
 +static int __init cns3xxx_l2x0_disable(char *s)
-+{
+ {
+-	void __iomem *base = ioremap(CNS3XXX_L2C_BASE, SZ_4K);
 +	cns3xxx_l2x0_enable = 0;
 +	return 1;
 +}
 +__setup("nol2x0", cns3xxx_l2x0_disable);
 +
 +static int __init cns3xxx_l2x0_init(void)
- {
--	void __iomem *base = ioremap(CNS3XXX_L2C_BASE, SZ_4K);
++{
 +	void __iomem *base;
  	u32 val;
  
@@ -43,7 +43,7 @@
  
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -239,8 +239,6 @@ static struct platform_device *cns3420_p
+@@ -217,8 +217,6 @@ static struct platform_device *cns3420_p
  
  static void __init cns3420_init(void)
  {

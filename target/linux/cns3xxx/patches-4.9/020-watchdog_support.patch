@@ -1,59 +1,150 @@
-1. Made the connection between CNS3xxx SOCs(ARCH_CNS3xxx) and MPcore watchdog
-   since the CNS3xxx SOCs have ARM11 MPcore CPU.
-2. Enable mpcore_watchdog option as module to default configuration at
-   arch/arm/configs/cns3420vb_defconfig.
+Add a watchdog driver for ARM MPcore processors.
 
-Signed-off-by: Tommy Lin <tommy.lin@caviumnetworks.com>
-
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
-arch/arm/Kconfig                     |    1 +
- arch/arm/configs/cns3420vb_defconfig |    2 ++
- arch/arm/mach-cns3xxx/cns3420vb.c    |   22 ++++++++++++++++++++++
- 3 files changed, 25 insertions(+), 0 deletions(-)
-
---- a/arch/arm/configs/cns3420vb_defconfig
-+++ b/arch/arm/configs/cns3420vb_defconfig
-@@ -56,6 +56,8 @@ CONFIG_LEGACY_PTY_COUNT=16
- # CONFIG_HW_RANDOM is not set
- # CONFIG_HWMON is not set
- # CONFIG_VGA_CONSOLE is not set
-+CONFIG_WATCHDOG=y
-+CONFIG_MPCORE_WATCHDOG=m
- # CONFIG_HID_SUPPORT is not set
- # CONFIG_USB_SUPPORT is not set
- CONFIG_MMC=y
---- a/arch/arm/mach-cns3xxx/cns3420vb.c
-+++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -206,10 +206,32 @@ static struct platform_device cns3xxx_us
- 	},
- };
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -324,6 +324,13 @@ config KS8695_WATCHDOG
+ 	  Watchdog timer embedded into KS8695 processor. This will reboot your
+ 	  system when the timeout is reached.
  
-+/* Watchdog */
-+static struct resource cns3xxx_watchdog_resources[] = {
-+	[0] = {
-+		.start = CNS3XXX_TC11MP_TWD_BASE,
-+		.end   = CNS3XXX_TC11MP_TWD_BASE + PAGE_SIZE - 1,
-+		.flags = IORESOURCE_MEM,
++config MPCORE_WATCHDOG
++	tristate "MPcore watchdog"
++	depends on HAVE_ARM_TWD
++	select WATCHDOG_CORE
++	help
++	  Watchdog timer embedded into the MPcore system
++
+ config HAVE_S3C2410_WATCHDOG
+ 	bool
+ 	help
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -47,6 +47,7 @@ obj-$(CONFIG_21285_WATCHDOG) += wdt285.o
+ obj-$(CONFIG_977_WATCHDOG) += wdt977.o
+ obj-$(CONFIG_IXP4XX_WATCHDOG) += ixp4xx_wdt.o
+ obj-$(CONFIG_KS8695_WATCHDOG) += ks8695_wdt.o
++obj-$(CONFIG_MPCORE_WATCHDOG) += mpcore_wdt.o
+ obj-$(CONFIG_S3C2410_WATCHDOG) += s3c2410_wdt.o
+ obj-$(CONFIG_SA1100_WATCHDOG) += sa1100_wdt.o
+ obj-$(CONFIG_SAMA5D4_WATCHDOG) += sama5d4_wdt.o
+--- /dev/null
++++ b/drivers/watchdog/mpcore_wdt.c
+@@ -0,0 +1,117 @@
++/*
++ * Watchdog driver for ARM MPcore
++ *
++ * Copyright (C) 2017 Felix Fietkau <nbd@nbd.name>
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/watchdog.h>
++#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <asm/smp_twd.h>
++
++static void __iomem *wdt_base;
++static int wdt_timeout = 60;
++
++static int mpcore_wdt_keepalive(struct watchdog_device *wdd)
++{
++	static int perturb;
++	u32 count;
++
++	count = ioread32(wdt_base + TWD_WDOG_COUNTER);
++	count = (~0U - count) * HZ / 5;
++	count /= 256; /* prescale */
++	count *= wdt_timeout;
++
++	/* Reload register needs a different value on each refresh */
++	count += perturb;
++	perturb = !perturb;
++
++	iowrite32(count, wdt_base + TWD_WDOG_LOAD);
++
++	return 0;
++}
++
++static int mpcore_wdt_start(struct watchdog_device *wdd)
++{
++	mpcore_wdt_keepalive(wdd);
++
++	/* prescale = 256, mode = 1, enable = 1 */
++	iowrite32(0x0000FF09, wdt_base + TWD_WDOG_CONTROL);
++
++	return 0;
++}
++
++static int mpcore_wdt_stop(struct watchdog_device *wdd)
++{
++	iowrite32(0x12345678, wdt_base + TWD_WDOG_DISABLE);
++	iowrite32(0x87654321, wdt_base + TWD_WDOG_DISABLE);
++	iowrite32(0x0, wdt_base + TWD_WDOG_CONTROL);
++
++	return 0;
++}
++
++static int mpcore_wdt_set_timeout(struct watchdog_device *wdd,
++				 unsigned int timeout)
++{
++	mpcore_wdt_stop(wdd);
++	wdt_timeout = timeout;
++	mpcore_wdt_start(wdd);
++
++	return 0;
++}
++
++static const struct watchdog_info mpcore_wdt_info = {
++	.options = WDIOF_SETTIMEOUT | WDIOF_KEEPALIVEPING | WDIOF_MAGICCLOSE,
++	.identity = "MPcore Watchdog",
++};
++
++static const struct watchdog_ops mpcore_wdt_ops = {
++	.owner = THIS_MODULE,
++	.start = mpcore_wdt_start,
++	.stop  = mpcore_wdt_stop,
++	.ping  = mpcore_wdt_keepalive,
++	.set_timeout = mpcore_wdt_set_timeout,
++};
++
++static struct watchdog_device mpcore_wdt = {
++	.info = &mpcore_wdt_info,
++	.ops = &mpcore_wdt_ops,
++	.min_timeout = 1,
++	.max_timeout = 65535,
++};
++
++static int mpcore_wdt_probe(struct platform_device *pdev)
++{
++	struct resource *res;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return -ENODEV;
++
++	wdt_base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(wdt_base))
++		return PTR_ERR(wdt_base);
++
++	watchdog_register_device(&mpcore_wdt);
++	return 0;
++}
++
++static int mpcore_wdt_remove(struct platform_device *dev)
++{
++	watchdog_unregister_device(&mpcore_wdt);
++	return 0;
++}
++
++static struct platform_driver mpcore_wdt_driver = {
++	.probe		= mpcore_wdt_probe,
++	.remove		= mpcore_wdt_remove,
++	.driver		= {
++		.name	= "mpcore_wdt",
 +	},
-+	[1] = {
-+		.start = IRQ_LOCALWDOG,
-+		.end   = IRQ_LOCALWDOG,
-+		.flags = IORESOURCE_IRQ,
-+	}
 +};
 +
-+static struct platform_device cns3xxx_watchdog_device = {
-+	.name		= "mpcore_wdt",
-+	.id		= -1,
-+	.num_resources	= ARRAY_SIZE(cns3xxx_watchdog_resources),
-+	.resource	= cns3xxx_watchdog_resources,
-+};
-+
- /*
-  * Initialization
-  */
- static struct platform_device *cns3420_pdevs[] __initdata = {
-+	&cns3xxx_watchdog_device,
- 	&cns3420_nor_pdev,
- 	&cns3xxx_usb_ehci_device,
- 	&cns3xxx_usb_ohci_device,
++module_platform_driver(mpcore_wdt_driver);
++MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
++MODULE_LICENSE("GPL");
