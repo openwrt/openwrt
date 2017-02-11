@@ -1,0 +1,42 @@
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -1013,6 +1013,20 @@ static int spi_transfer_one_message(stru
+ 								 msecs_to_jiffies(ms));
+ 			}
+ 
++			if (master->transfer_status) {
++				ret = master->transfer_status(master, ms);
++				if (ret) {
++					SPI_STATISTICS_INCREMENT_FIELD(statm,
++								       errors);
++					SPI_STATISTICS_INCREMENT_FIELD(stats,
++								       errors);
++					dev_err(&msg->spi->dev,
++						"SPI transfer status: %d\n",
++						ret);
++					goto out;
++				}
++			}
++
+ 			if (ms == 0) {
+ 				SPI_STATISTICS_INCREMENT_FIELD(statm,
+ 							       timedout);
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -370,6 +370,8 @@ static inline void spi_unregister_driver
+  *                    transfer_one_message are mutually exclusive; when both
+  *                    are set, the generic subsystem does not call your
+  *                    transfer_one callback.
++ * @transfer_status: This callback allows the driver to return an error code
++ *		     in case the scheduled single spi transfer failed.
+  * @handle_err: the subsystem calls the driver to handle an error that occurs
+  *		in the generic implementation of transfer_one_message().
+  * @unprepare_message: undo any work done by prepare_message().
+@@ -546,6 +548,7 @@ struct spi_master {
+ 	void (*set_cs)(struct spi_device *spi, bool enable);
+ 	int (*transfer_one)(struct spi_master *master, struct spi_device *spi,
+ 			    struct spi_transfer *transfer);
++	int (*transfer_status)(struct spi_master *master, unsigned long timeout);
+ 	void (*handle_err)(struct spi_master *master,
+ 			   struct spi_message *message);
+ 

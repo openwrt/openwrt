@@ -135,7 +135,7 @@
 		};
 
 		spi: spi@E100800 {
-			compatible = "lantiq,xrx200-spi";
+			compatible = "lantiq,xrx200-spi", "lantiq,xrx100-spi";
 			reg = <0xE100800 0x100>;
 			interrupt-parent = <&icu0>;
 			interrupts = <22 23 24>;
