@@ -254,7 +254,7 @@
 +IFX_void_t ifx_mps_release (IFX_void_t);
 +extern IFX_uint32_t ifx_mps_reset_structures (mps_comm_dev * pMPSDev);
 +extern IFX_int32_t ifx_mps_bufman_close (IFX_void_t);
-+IFX_int32_t ifx_mps_wdog_callback (IFX_uint32_t wdog_cleared_ok_count);
++IFX_int32_t ifx_mps_wdog_callback (IFX_ulong_t wdog_cleared_ok_count);
 +extern IFXOS_event_t fw_ready_evt;
 +/* ============================= */
 +/* Local function declaration    */
@@ -586,7 +586,7 @@
 + * \return  0        IFX_SUCCESS, cannot fail
 + * \ingroup Internal
 + */
-+IFX_int32_t ifx_mps_wdog_callback (IFX_uint32_t wdog_cleared_ok_count)
++IFX_int32_t ifx_mps_wdog_callback (IFX_ulong_t wdog_cleared_ok_count)
 +{
 +#ifdef DEBUG
 +   TRACE (MPS, DBG_LEVEL_HIGH,
