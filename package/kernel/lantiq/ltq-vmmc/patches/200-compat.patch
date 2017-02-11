@@ -3,7 +3,7 @@
 @@ -54,6 +54,8 @@
  #include "drv_vmmc_res.h"
  #endif /* (VMMC_CFG_FEATURES & VMMC_FEAT_HDLC) */
-
+ 
 +#undef VMMC_USE_PROC
 +
  /* ============================= */
@@ -14,14 +14,14 @@
 @@ -80,11 +80,15 @@
  /* ============================= */
  #define IFX_MPS_DEV_NAME       "ifx_mps"
-
+ 
 +#undef CONFIG_MPS_HISTORY_SIZE
 +#define CONFIG_MPS_HISTORY_SIZE 0
  #ifndef CONFIG_MPS_HISTORY_SIZE
  #define CONFIG_MPS_HISTORY_SIZE 128
  #warning CONFIG_MPS_HISTORY_SIZE should have been set via cofigure - setting to default 128
  #endif
-
+ 
 +#undef CONFIG_PROC_FS
 +
  /* ============================= */

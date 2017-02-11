@@ -124,7 +124,7 @@
  {
     IFX_int32_t retvalue = -EINVAL;
     mps_message rw_struct;
-@@ -613,17 +644,30 @@ IFX_int32_t ifx_mps_ioctl (struct inode 
+@@ -613,17 +644,30 @@ IFX_int32_t ifx_mps_ioctl (struct inode
        'mps_devices' enum type, which in fact is [0..8]; So, if inode value is
        [0..NUM_VOICE_CHANNEL+1], then we make sure that we are calling from
        kernel space. */
