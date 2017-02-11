@@ -8,6 +8,7 @@ define Host/Compile
 	+$(MAKE) -C $(CUR_BUILD_DIR) \
 		PARALLELMFLAGS="$(HOST_JOBS)" \
 		BUILD_CFLAGS="$(HOST_CFLAGS)" \
+		default-rpath="/lib:/usr/lib" \
 		all
 endef
 
