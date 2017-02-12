@@ -47,7 +47,7 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
 
-TARGET_LDFLAGS := -lmbedtls -lmbedx509 -lmbedcrypto
+TARGET_LDFLAGS += -lmbedtls -lmbedx509 -lmbedcrypto
 
 ifeq ($(BUILD_VARIANT),standalone)
   TARGET_LDFLAGS := -Wl,-Bstatic $(TARGET_LDFLAGS) -Wl,-Bdynamic
@@ -56,7 +56,7 @@ endif
 TARGET_CFLAGS += -Wl,--gc-sections
 
 define Build/Compile
-	$(TARGET_CC) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/px5g px5g.c $(TARGET_LDFLAGS)
+	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -o $(PKG_BUILD_DIR)/px5g px5g.c $(TARGET_LDFLAGS)
 endef
 
 define Package/px5g-mbedtls/install
