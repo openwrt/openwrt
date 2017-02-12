@@ -350,7 +350,7 @@ endef
 
 define Package/hostapd-common/install
 	$(INSTALL_DIR) $(1)/lib/netifd
-	$(INSTALL_DATA) ./files/netifd.sh $(1)/lib/netifd/hostapd.sh
+	$(INSTALL_DATA) ./files/hostapd.sh $(1)/lib/netifd/hostapd.sh
 endef
 
 define Package/hostapd/install
