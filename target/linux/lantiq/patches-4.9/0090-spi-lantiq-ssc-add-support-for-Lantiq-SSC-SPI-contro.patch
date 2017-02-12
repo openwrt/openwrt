@@ -1,3 +1,36 @@
+From 941ab0bc001fe24e5f8ce88eed27f2a1b89f3e20 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Tue, 14 Feb 2017 00:31:11 +0100
+Subject: spi: lantiq-ssc: add support for Lantiq SSC SPI controller
+
+This driver supports the Lantiq SSC SPI controller in master
+mode. This controller is found on Intel (former Lantiq) SoCs like
+the Danube, Falcon, xRX200, xRX300.
+
+The hardware uses two hardware FIFOs one for received and one for
+transferred bytes. When the driver writes data into the transmit FIFO
+the complete word is taken from the FIFO into a shift register. The
+data from this shift register is then written to the wire. This driver
+uses the interrupts signaling the status of the FIFOs and not the shift
+register. It is also possible to use the interrupts for the shift
+register, but they will send a signal after every word. When using the
+interrupts for the shift register we get a signal when the last word is
+written into the shift register and not when it is written to the wire.
+After all FIFOs are empty the driver busy waits till the hardware is
+not busy any more and returns the transfer status.
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ .../devicetree/bindings/spi/spi-lantiq-ssc.txt     |  29 +
+ drivers/spi/Kconfig                                |   8 +
+ drivers/spi/Makefile                               |   1 +
+ drivers/spi/spi-lantiq-ssc.c                       | 983 +++++++++++++++++++++
+ 4 files changed, 1021 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/spi/spi-lantiq-ssc.txt
+ create mode 100644 drivers/spi/spi-lantiq-ssc.c
+
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/spi/spi-lantiq-ssc.txt
 @@ -0,0 +1,29 @@
@@ -59,7 +92,7 @@
  obj-$(CONFIG_SPI_LP8841_RTC)		+= spi-lp8841-rtc.o
 --- /dev/null
 +++ b/drivers/spi/spi-lantiq-ssc.c
-@@ -0,0 +1,952 @@
+@@ -0,0 +1,983 @@
 +/*
 + * Copyright (C) 2011-2015 Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 + * Copyright (C) 2016 Hauke Mehrtens <hauke@hauke-m.de>
@@ -84,7 +117,9 @@
 +#include <linux/pm_runtime.h>
 +#include <linux/spi/spi.h>
 +
++#ifdef CONFIG_LANTIQ
 +#include <lantiq_soc.h>
++#endif
 +
 +#define SPI_RX_IRQ_NAME		"spi_rx"
 +#define SPI_TX_IRQ_NAME		"spi_tx"
@@ -231,6 +266,8 @@
 +	const struct lantiq_ssc_hwcfg	*hwcfg;
 +
 +	spinlock_t			lock;
++	struct workqueue_struct		*wq;
++	struct work_struct		work;
 +
 +	const u8			*tx;
 +	u8				*rx;
@@ -238,7 +275,6 @@
 +	unsigned int			rx_todo;
 +	unsigned int			bits_per_word;
 +	unsigned int			speed_hz;
-+	int				status;
 +	unsigned int			tx_fifo_size;
 +	unsigned int			rx_fifo_size;
 +	unsigned int			base_cs;
@@ -520,6 +556,8 @@
 +{
 +	struct lantiq_ssc_spi *spi = spi_master_get_devdata(master);
 +
++	flush_workqueue(spi->wq);
++
 +	/* Disable transmitter and receiver while idle */
 +	lantiq_ssc_maskl(spi, 0, SPI_CON_TXOFF | SPI_CON_RXOFF, SPI_CON);
 +
@@ -691,8 +729,7 @@
 +	return IRQ_HANDLED;
 +
 +completed:
-+	spi->status = 0;
-+	spi_finalize_current_transfer(spi->master);
++	queue_work(spi->wq, &spi->work);
 +
 +	return IRQ_HANDLED;
 +}
@@ -722,8 +759,9 @@
 +	lantiq_ssc_maskl(spi, 0, SPI_WHBSTATE_CLR_ERRORS, SPI_WHBSTATE);
 +
 +	/* set bad status so it can be retried */
-+	spi->status = -EIO;
-+	spi_finalize_current_transfer(spi->master);
++	if (spi->master->cur_msg)
++		spi->master->cur_msg->status = -EIO;
++	queue_work(spi->wq, &spi->work);
 +
 +	return IRQ_HANDLED;
 +}
@@ -737,7 +775,6 @@
 +
 +	spi->tx = t->tx_buf;
 +	spi->rx = t->rx_buf;
-+	spi->status = -EINPROGRESS;
 +
 +	if (t->tx_buf) {
 +		spi->tx_todo = t->len;
@@ -759,30 +796,39 @@
 +	return t->len;
 +}
 +
-+static int lantiq_ssc_transfer_status(struct spi_master *master,
-+				      unsigned long timeout)
++/*
++ * The driver only gets an interrupt when the FIFO is empty, but there
++ * is an additional shift register from which the data is written to
++ * the wire. We get the last interrupt when the controller starts to
++ * write the last word to the wire, not when it is finished. Do busy
++ * waiting till it finishes.
++ */
++static void lantiq_ssc_bussy_work(struct work_struct *work)
 +{
-+	struct lantiq_ssc_spi *spi = spi_master_get_devdata(master);
++	struct lantiq_ssc_spi *spi;
++	unsigned long long timeout = 8LL * 1000LL;
 +	unsigned long end;
 +
-+	/*
-+	 * The driver only gets an interrupt when the FIFO is empty, but there
-+	 * is an additional shift register from which the data is written to
-+	 * the wire. We get the last interrupt when the controller starts to
-+	 * write the last word to the wire, not when it is finished. Do busy
-+	 * waiting till it finishes.
-+	 */
-+	end = jiffies + timeout;
++	spi = container_of(work, typeof(*spi), work);
++
++	do_div(timeout, spi->speed_hz);
++	timeout += timeout + 100; /* some tolerance */
++
++	end = jiffies + msecs_to_jiffies(timeout);
 +	do {
 +		u32 stat = lantiq_ssc_readl(spi, SPI_STAT);
 +
-+		if (!(stat & SPI_STAT_BSY))
-+			return spi->status;
++		if (!(stat & SPI_STAT_BSY)) {
++			spi_finalize_current_transfer(spi->master);
++			return;
++		}
 +
 +		cond_resched();
 +	} while (!time_after_eq(jiffies, end));
 +
-+	return -ETIMEDOUT;
++	if (spi->master->cur_msg)
++		spi->master->cur_msg->status = -EIO;
++	spi_finalize_current_transfer(spi->master);
 +}
 +
 +static void lantiq_ssc_handle_err(struct spi_master *master,
@@ -840,6 +886,7 @@
 +
 +static int lantiq_ssc_probe(struct platform_device *pdev)
 +{
++	struct device *dev = &pdev->dev;
 +	struct spi_master *master;
 +	struct resource *res;
 +	struct lantiq_ssc_spi *spi;
@@ -849,69 +896,69 @@
 +	u32 id, supports_dma, revision;
 +	unsigned int num_cs;
 +
-+	match = of_match_device(lantiq_ssc_match, &pdev->dev);
++	match = of_match_device(lantiq_ssc_match, dev);
 +	if (!match) {
-+		dev_err(&pdev->dev, "no device match\n");
++		dev_err(dev, "no device match\n");
 +		return -EINVAL;
 +	}
 +	hwcfg = match->data;
 +
 +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	if (!res) {
-+		dev_err(&pdev->dev, "failed to get resources\n");
++		dev_err(dev, "failed to get resources\n");
 +		return -ENXIO;
 +	}
 +
 +	rx_irq = platform_get_irq_byname(pdev, SPI_RX_IRQ_NAME);
 +	if (rx_irq < 0) {
-+		dev_err(&pdev->dev, "failed to get %s\n", SPI_RX_IRQ_NAME);
++		dev_err(dev, "failed to get %s\n", SPI_RX_IRQ_NAME);
 +		return -ENXIO;
 +	}
 +
 +	tx_irq = platform_get_irq_byname(pdev, SPI_TX_IRQ_NAME);
 +	if (tx_irq < 0) {
-+		dev_err(&pdev->dev, "failed to get %s\n", SPI_TX_IRQ_NAME);
++		dev_err(dev, "failed to get %s\n", SPI_TX_IRQ_NAME);
 +		return -ENXIO;
 +	}
 +
 +	err_irq = platform_get_irq_byname(pdev, SPI_ERR_IRQ_NAME);
 +	if (err_irq < 0) {
-+		dev_err(&pdev->dev, "failed to get %s\n", SPI_ERR_IRQ_NAME);
++		dev_err(dev, "failed to get %s\n", SPI_ERR_IRQ_NAME);
 +		return -ENXIO;
 +	}
 +
-+	master = spi_alloc_master(&pdev->dev, sizeof(struct lantiq_ssc_spi));
++	master = spi_alloc_master(dev, sizeof(struct lantiq_ssc_spi));
 +	if (!master)
 +		return -ENOMEM;
 +
 +	spi = spi_master_get_devdata(master);
 +	spi->master = master;
-+	spi->dev = &pdev->dev;
++	spi->dev = dev;
 +	spi->hwcfg = hwcfg;
 +	platform_set_drvdata(pdev, spi);
 +
-+	spi->regbase = devm_ioremap_resource(&pdev->dev, res);
++	spi->regbase = devm_ioremap_resource(dev, res);
 +	if (IS_ERR(spi->regbase)) {
 +		err = PTR_ERR(spi->regbase);
 +		goto err_master_put;
 +	}
 +
-+	err = devm_request_irq(&pdev->dev, rx_irq, lantiq_ssc_xmit_interrupt,
++	err = devm_request_irq(dev, rx_irq, lantiq_ssc_xmit_interrupt,
 +			       0, SPI_RX_IRQ_NAME, spi);
 +	if (err)
 +		goto err_master_put;
 +
-+	err = devm_request_irq(&pdev->dev, tx_irq, lantiq_ssc_xmit_interrupt,
++	err = devm_request_irq(dev, tx_irq, lantiq_ssc_xmit_interrupt,
 +			       0, SPI_TX_IRQ_NAME, spi);
 +	if (err)
 +		goto err_master_put;
 +
-+	err = devm_request_irq(&pdev->dev, err_irq, lantiq_ssc_err_interrupt,
++	err = devm_request_irq(dev, err_irq, lantiq_ssc_err_interrupt,
 +			       0, SPI_ERR_IRQ_NAME, spi);
 +	if (err)
 +		goto err_master_put;
 +
-+	spi->spi_clk = devm_clk_get(&pdev->dev, NULL);
++	spi->spi_clk = devm_clk_get(dev, "gate");
 +	if (IS_ERR(spi->spi_clk)) {
 +		err = PTR_ERR(spi->spi_clk);
 +		goto err_master_put;
@@ -920,7 +967,15 @@
 +	if (err)
 +		goto err_master_put;
 +
++	/*
++	 * Use the old clk_get_fpi() function on Lantiq platform, till it
++	 * supports common clk.
++	 */
++#if defined(CONFIG_LANTIQ) && !defined(CONFIG_COMMON_CLK)
 +	spi->fpi_clk = clk_get_fpi();
++#else
++	spi->fpi_clk = clk_get(dev, "freq");
++#endif
 +	if (IS_ERR(spi->fpi_clk)) {
 +		err = PTR_ERR(spi->fpi_clk);
 +		goto err_clk_disable;
@@ -944,11 +999,17 @@
 +	master->prepare_message = lantiq_ssc_prepare_message;
 +	master->unprepare_message = lantiq_ssc_unprepare_message;
 +	master->transfer_one = lantiq_ssc_transfer_one;
-+	master->transfer_status = lantiq_ssc_transfer_status;
 +	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_LSB_FIRST | SPI_CS_HIGH |
 +				SPI_LOOP;
 +	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(2, 8) |
 +				     SPI_BPW_MASK(16) | SPI_BPW_MASK(32);
++
++	spi->wq = alloc_ordered_workqueue(dev_name(dev), 0);
++	if (!spi->wq) {
++		err = -ENOMEM;
++		goto err_clk_put;
++	}
++	INIT_WORK(&spi->work, lantiq_ssc_bussy_work);
 +
 +	id = lantiq_ssc_readl(spi, SPI_ID);
 +	spi->tx_fifo_size = (id & SPI_ID_TXFS_M) >> SPI_ID_TXFS_S;
@@ -958,18 +1019,20 @@
 +
 +	lantiq_ssc_hw_init(spi);
 +
-+	dev_info(&pdev->dev,
++	dev_info(dev,
 +		"Lantiq SSC SPI controller (Rev %i, TXFS %u, RXFS %u, DMA %u)\n",
 +		revision, spi->tx_fifo_size, spi->rx_fifo_size, supports_dma);
 +
-+	err = devm_spi_register_master(&pdev->dev, master);
++	err = devm_spi_register_master(dev, master);
 +	if (err) {
-+		dev_err(&pdev->dev, "failed to register spi_master\n");
-+		goto err_clk_put;
++		dev_err(dev, "failed to register spi_master\n");
++		goto err_wq_destroy;
 +	}
 +
 +	return 0;
 +
++err_wq_destroy:
++	destroy_workqueue(spi->wq);
 +err_clk_put:
 +	clk_put(spi->fpi_clk);
 +err_clk_disable:
@@ -990,6 +1053,7 @@
 +	tx_fifo_flush(spi);
 +	hw_enter_config_mode(spi);
 +
++	destroy_workqueue(spi->wq);
 +	clk_disable_unprepare(spi->spi_clk);
 +	clk_put(spi->fpi_clk);
 +
