@@ -161,6 +161,15 @@ define Device/gl-mifi
 endef
 TARGET_DEVICES += gl-mifi
 
+define Device/lima
+  DEVICE_TITLE := Lima board from 8Devices
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = LIMA
+  IMAGE_SIZE = 15616k
+  MTDPARTS = spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,256k(art)ro,-(firmware)
+endef
+TARGET_DEVICES += lima
+
 define Device/mr12
   DEVICE_TITLE := Meraki MR12
   DEVICE_PACKAGES := kmod-spi-gpio
