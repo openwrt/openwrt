@@ -1,0 +1,35 @@
+From de856416e7143e32afc4849625616554aa060f7a Mon Sep 17 00:00:00 2001
+From: Matt Redfearn <matt.redfearn@imgtec.com>
+Date: Wed, 25 Jan 2017 17:00:25 +0000
+Subject: [PATCH] MIPS: IRQ Stack: Fix erroneous jal to plat_irq_dispatch
+
+Commit dda45f701c9d ("MIPS: Switch to the irq_stack in interrupts")
+changed both the normal and vectored interrupt handlers. Unfortunately
+the vectored version, "except_vec_vi_handler", was incorrectly modified
+to unconditionally jal to plat_irq_dispatch, rather than doing a jalr to
+the vectored handler that has been set up. This is ok for many platforms
+which set the vectored handler to plat_irq_dispatch anyway, but will
+cause problems with platforms that use other handlers.
+
+Fixes: dda45f701c9d ("MIPS: Switch to the irq_stack in interrupts")
+Signed-off-by: Matt Redfearn <matt.redfearn@imgtec.com>
+Cc: Ralf Baechle <ralf@linux-mips.org>
+Cc: Paul Burton <paul.burton@imgtec.com>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/15110/
+Signed-off-by: James Hogan <james.hogan@imgtec.com>
+---
+ arch/mips/kernel/genex.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/kernel/genex.S
++++ b/arch/mips/kernel/genex.S
+@@ -329,7 +329,7 @@ NESTED(except_vec_vi_handler, 0, sp)
+ 	PTR_ADD sp, t0, t1
+ 
+ 2:
+-	jal	plat_irq_dispatch
++	jalr	v0
+ 
+ 	/* Restore sp */
+ 	move	sp, s1
