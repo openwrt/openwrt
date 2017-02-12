@@ -132,7 +132,7 @@ prepare_kernel_conf: .config FORCE
 
 ifeq ($(wildcard staging_dir/host/bin/quilt),)
   prepare_kernel_conf:
-	@+$(SUBMAKE) -r tools/quilt/install
+	@+$(SUBMAKE) -r tools/quilt/compile
 else
   prepare_kernel_conf: ;
 endif
