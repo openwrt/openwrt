@@ -23,6 +23,7 @@ PKG_BUILD_DEPENDS = ustream-ssl
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
+include $(INCLUDE_DIR)/version.mk
 
 define Package/uhttpd/default
   SECTION:=net
@@ -124,6 +125,7 @@ define Package/uhttpd/install
 	$(INSTALL_BIN) ./files/uhttpd.init $(1)/etc/init.d/uhttpd
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/uhttpd.config $(1)/etc/config/uhttpd
+	$(VERSION_SED_SCRIPT) $(1)/etc/config/uhttpd
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd $(1)/usr/sbin/uhttpd
 endef
