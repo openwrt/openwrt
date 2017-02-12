@@ -46,7 +46,7 @@
  }
  
 -static int __init ifx_pcie_bios_init(void)
-+static int __init ifx_pcie_bios_probe(struct platform_device *pdev)
++static int ifx_pcie_bios_probe(struct platform_device *pdev)
  {
 +    struct device_node *node = pdev->dev.of_node;
      void __iomem *io_map_base;
