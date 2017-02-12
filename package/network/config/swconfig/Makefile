@@ -34,7 +34,7 @@ define Build/Compile
 	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		LIBS="$(TARGET_LDFLAGS) -lnl-tiny -lm -luci"
+		LIBS="$(TARGET_LDFLAGS) -lnl-tiny -lm -luci -lubox"
 endef
 
 define Build/InstallDev
