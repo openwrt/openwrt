@@ -40,10 +40,10 @@ endef
 
 
 define Build/Compile
-	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) \
+	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS) \
 		-o $(PKG_BUILD_DIR)/bsdiff \
 		$(PKG_BUILD_DIR)/bsdiff.c -lbz2
-	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) \
+	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS) \
 		-o $(PKG_BUILD_DIR)/bspatch \
 		$(PKG_BUILD_DIR)/bspatch.c -lbz2
 endef
