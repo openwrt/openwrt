@@ -129,7 +129,7 @@ case "$FIRMWARE" in
 				;;
 			BTHOMEHUBV3A)
 				ath9k_eeprom_extract "art-copy" 0 1
-				ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_ascii uboot-env ethaddr) +2) 268
+				ath9k_patch_fw_mac_crc $(macaddr_add $(mtd_get_mac_ascii uboot_env ethaddr) +2) 268
 				;;
 			BTHOMEHUBV5A)
 				ath9k_ubi_eeprom_extract "caldata" 4096 0
