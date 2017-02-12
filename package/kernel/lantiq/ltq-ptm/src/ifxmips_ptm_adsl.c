@@ -405,7 +405,7 @@ static int ptm_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
     /*  allocate descriptor */
     desc_base = get_tx_desc(ndev, &f_full);
     if ( f_full ) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
         netif_trans_update(dev);
 #else
         dev->trans_start = jiffies;
@@ -443,7 +443,7 @@ static int ptm_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
     g_ptm_priv_data.itf[ndev].stats.tx_packets++;
     g_ptm_priv_data.itf[ndev].stats.tx_bytes += reg_desc.datalen;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
     netif_trans_update(dev);
 #else
     dev->trans_start = jiffies;
