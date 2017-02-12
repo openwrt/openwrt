@@ -1,3 +1,4 @@
+
 arm: kirkwood: add ZyXEL NSA310 device
 
 This patch add ZyXEL NSA310 1-Bay Media Server
@@ -527,7 +528,7 @@ new file mode 100644
 index 0000000..d26ef35
 --- /dev/null
 +++ b/configs/nsa310_defconfig
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,19 @@
 +CONFIG_ARM=y
 +CONFIG_KIRKWOOD=y
 +CONFIG_TARGET_NSA310=y
@@ -545,6 +546,7 @@ index 0000000..d26ef35
 +CONFIG_CMD_USB=y
 +CONFIG_CMD_EXT2=y
 +CONFIG_CMD_FAT=y
++CONFIG_USB=y
 +CONFIG_USB_STORAGE=y
 diff --git a/include/configs/nsa310.h b/include/configs/nsa310.h
 new file mode 100644
