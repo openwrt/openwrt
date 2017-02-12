@@ -843,7 +843,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void rt2800_init_bbp(struct rt2x00_dev *rt2x00dev)
  {
  	unsigned int i;
-@@ -6117,7 +6735,10 @@ static void rt2800_init_bbp(struct rt2x0
+@@ -6117,7 +6734,10 @@ static void rt2800_init_bbp(struct rt2x0
  		return;
  	case RT5390:
  	case RT5392:
@@ -855,7 +855,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		break;
  	case RT5592:
  		rt2800_init_bbp_5592(rt2x00dev);
-@@ -7331,6 +7952,277 @@ static void rt2800_init_rfcsr_5592(struc
+@@ -7331,6 +7951,277 @@ static void rt2800_init_rfcsr_5592(struc
  	rt2800_led_open_drain_enable(rt2x00dev);
  }
  
@@ -1133,7 +1133,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void rt2800_init_rfcsr(struct rt2x00_dev *rt2x00dev)
  {
  	if (rt2800_is_305x_soc(rt2x00dev)) {
-@@ -7366,7 +8258,10 @@ static void rt2800_init_rfcsr(struct rt2
+@@ -7366,7 +8257,10 @@ static void rt2800_init_rfcsr(struct rt2
  		rt2800_init_rfcsr_5350(rt2x00dev);
  		break;
  	case RT5390:
@@ -1145,7 +1145,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		break;
  	case RT5392:
  		rt2800_init_rfcsr_5392(rt2x00dev);
-@@ -7780,6 +8675,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7780,6 +8674,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF5390:
  	case RF5392:
  	case RF5592:
@@ -1153,7 +1153,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		break;
  	default:
  		rt2x00_err(rt2x00dev, "Invalid RF chipset 0x%04x detected\n",
-@@ -8258,6 +9154,24 @@ static const struct rf_channel rf_vals_5
+@@ -8258,6 +9153,24 @@ static const struct rf_channel rf_vals_5
  	{196, 83, 0, 12, 1},
  };
  
@@ -1178,7 +1178,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  {
  	struct hw_mode_spec *spec = &rt2x00dev->spec;
-@@ -8361,6 +9275,11 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8361,6 +9274,11 @@ static int rt2800_probe_hw_mode(struct r
  			spec->channels = rf_vals_3x;
  		break;
  
@@ -1190,7 +1190,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	case RF3052:
  	case RF3053:
  		spec->num_channels = ARRAY_SIZE(rf_vals_3x);
-@@ -8498,6 +9417,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8498,6 +9416,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5390:
  	case RF5392:
  	case RF5592:
