@@ -12,7 +12,7 @@
  #endif
  
  	if (fmt[1] == 'R')
-@@ -684,11 +686,15 @@ char *symbol_string(char *buf, char *end
+@@ -684,11 +686,16 @@ char *symbol_string(char *buf, char *end
  		sprint_symbol(sym, value);
  	else
  		sprint_symbol_no_offset(sym, value);
@@ -25,7 +25,8 @@
 +	mod = __module_address(value);
 +	if (mod)
 +		snprintf(sym + len, sizeof(sym) - len, " [%s@%p+0x%x]",
-+			 mod->name, mod->module_core, mod->core_size);
++			 mod->name, mod->core_layout.base,
++			 mod->core_layout.size);
  #endif
 +	return string(buf, end, sym, spec);
  }
