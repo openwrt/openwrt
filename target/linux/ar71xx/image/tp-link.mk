@@ -631,12 +631,24 @@ TARGET_DEVICES += tl-wr740n-v1 tl-wr740n-v3 tl-wr740n-v4 tl-wr740n-v5 tl-wr740n-
 define Device/tl-wr802n-v1
     $(Device/tplink-4mlzma)
     DEVICE_TITLE := TP-LINK TL-WR802N v1
-	BOARDNAME := TL-WR802N-v1
+    BOARDNAME := TL-WR802N-v1
     DEVICE_PROFILE := TLWR802
     TPLINK_HWID := 0x08020001
     TPLINK_HWREV := 1
 endef
-TARGET_DEVICES += tl-wr802n-v1
+
+define Device/tl-wr802n-v2
+    $(Device/tplink-4mlzma)
+    DEVICE_TITLE := TP-LINK TL-WR802N v2
+    BOARDNAME := TL-WR802N-v2
+    DEVICE_PROFILE := TLWR802
+    TPLINK_HWID := 0x08020002
+    TPLINK_HWREV := 2
+    IMAGES += factory-us.bin factory-eu.bin
+    IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
+    IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
+endef
+TARGET_DEVICES += tl-wr802n-v1 tl-wr802n-v2
 
 define Device/tl-wr841-v1.5
     $(Device/tplink-4m)

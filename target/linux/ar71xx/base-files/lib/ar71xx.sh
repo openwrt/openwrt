@@ -220,6 +220,10 @@ tplink_board_detect() {
 		;;
 	"080200"*)
 		model="TP-Link TL-WR802N"
+
+		if [ "$hwid" = '08020002' -a "$mid" = '00000002' ]; then
+			hwver=' v2'
+		fi
 		;;
 	"083000"*)
 		model="TP-Link TL-WA830RE"
@@ -1030,6 +1034,9 @@ ar71xx_board_detect() {
 		;;
 	*"TL-WR802N v1")
 		name="tl-wr802n-v1"
+		;;
+	*"TL-WR802N v2")
+		name="tl-wr802n-v2"
 		;;
 	*TL-WA901ND)
 		name="tl-wa901nd"

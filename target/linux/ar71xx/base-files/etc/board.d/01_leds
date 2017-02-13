@@ -667,6 +667,9 @@ tl-wpa8630)
 tl-wr802n-v1)
 	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:blue:system" "phy0tpt"
 	;;
+tl-wr802n-v2)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:system" "phy0tpt"
+	;;
 tl-wr940n-v4|\
 tl-wr941nd-v6)
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:blue:wan" "eth0"
