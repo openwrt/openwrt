@@ -29,9 +29,11 @@ endef
 define Build/Configure
 endef
 
+TARGET_LDFLAGS += -liwinfo -luci -lubox -lnl-tiny
+
 define Build/Compile
-	$(TARGET_CC) $(TARGET_CFLAGS) -Wall -liwinfo \
-		-o $(PKG_BUILD_DIR)/rssileds $(PKG_BUILD_DIR)/rssileds.c
+	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -Wall \
+		-o $(PKG_BUILD_DIR)/rssileds $(PKG_BUILD_DIR)/rssileds.c $(TARGET_LDFLAGS)
 endef
 
 define Package/rssileds/install
