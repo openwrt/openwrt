@@ -11,6 +11,9 @@ board_config_update
 board="$(cat /tmp/sysinfo/board_name)" 2>/dev/null
 
 case "$board" in
+pc-engines-apu2)
+	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
+	;;
 traverse-technologies-geos)
 	ucidef_set_interface_lan "eth0 eth1"
 	ucidef_add_atm_bridge "0" "35" "llc" "bridged"
