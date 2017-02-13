@@ -13,7 +13,7 @@ case "$board" in
 traverse-technologies-geos)
 	ucidef_set_led_netdev "lan" "LAN" "geos:1" "br-lan" "tx rx"
 	ucidef_set_led_netdev "wlan" "WiFi" "geos:2" "phy0tpt"
-	ucidef_set_led_default "diag" "DIAG" "geos:3" "0"
+	ucidef_set_led_default "diag" "DIAG" "geos:3" "1"
 	;;
 esac
 board_config_flush
