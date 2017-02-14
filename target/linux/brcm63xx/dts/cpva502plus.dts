@@ -12,17 +12,31 @@
 		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 	};
 
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 4 1>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power_green {
+		phone_green {
 			label = "CPVA502+:green:phone";
 			gpios = <&gpio0 0 1>;
 		};
 
-		status {
+		link_amber {
 			label = "CPVA502+:amber:link";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 5 1>;
 		};
 	};
 };
