@@ -49,10 +49,6 @@ int main(int argc, char **argv)
 		search_space = dtb_max_size = atoi(argv[3]);
 	}
 
-	fddtb = open(argv[1], O_RDONLY);
-	if (!fddtb)
-		goto err1;
-
 	if (stat(argv[2], &s)) {
 		fprintf(stderr, "DTB not found\n");
 		goto err1;
