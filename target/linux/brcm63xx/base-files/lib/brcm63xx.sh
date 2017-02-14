@@ -240,7 +240,7 @@ brcm63xx_dt_detect() {
 	"TECOM GW6200")
 		board_name="g6200"
 		;;
-	"Telsey CVPA502+")
+	"Telsey CPVA502+")
 		board_name="cpva502p"
 		;;
 	"Telsey CPVA642-type (CPA-ZNTE60T)")
