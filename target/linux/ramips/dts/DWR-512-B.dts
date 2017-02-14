@@ -61,6 +61,10 @@
 		compatible = "gpio-export";
 		#size-cells = <0>;
 
+		slic_int {
+			gpio-export,name = "slic_int";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		};
 		modem3g_enable {
 			gpio-export,name = "modem3g_enable";
 			gpio-export,output = <1>;
