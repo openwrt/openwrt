@@ -1,5 +1,6 @@
 define Device/mikrotik
   PROFILES := Default
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport nand-utils
   BOARD_NAME := routerboard
   KERNEL_INITRAMFS :=
   KERNEL_NAME := loader-generic.elf
@@ -25,6 +26,7 @@ TARGET_DEVICES += nand-64m nand-large
 
 define Device/rb-nor-flash-16M
   DEVICE_TITLE := MikroTik RouterBoard with 16 MB NOR flash
+  DEVICE_PACKAGES := rbcfg
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16000k
   LOADER_TYPE := elf
@@ -38,7 +40,6 @@ endef
 define Device/rb-941-2nd
 $(Device/rb-nor-flash-16M)
   DEVICE_TITLE := hAP lite
-  DEVICE_PACKAGES:= rbcfg
   BOARDNAME:= rb-941-2nd
 endef
 
