@@ -251,9 +251,8 @@ _procd_add_interface_trigger() {
 	json_close_array
 
 	json_close_array
-	json_close_array
-
 	_procd_add_timeout
+	json_close_array
 }
 
 _procd_add_reload_interface_trigger() {
@@ -283,10 +282,8 @@ _procd_add_config_trigger() {
 	json_close_array
 
 	json_close_array
-
-	json_close_array
-
 	_procd_add_timeout
+	json_close_array
 }
 
 _procd_add_raw_trigger() {
