@@ -14,6 +14,14 @@ define Device/carambola2
 endef
 TARGET_DEVICES += carambola2
 
+define Device/cf-e214n-v2
+  BOARDNAME = CF-E214N-V2
+  IMAGE_SIZE = 16192k
+  CONSOLE = ttyS0,115200
+  MTDPARTS = spi0.0:64k(u-boot)ro,64k(art)ro,16192k(firmware),64k(nvram)ro
+endef
+TARGET_DEVICES += cf-e214n-v2
+
 define Device/cf-e316n-v2
   BOARDNAME = CF-E316N-V2
   IMAGE_SIZE = 16192k
