@@ -300,7 +300,7 @@ TARGET_DEVICES += asus-wl-500gp-v2
 
 define Device/asus-wl-500w
   DEVICE_TITLE := Asus WL-500W
-  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  DEVICE_PACKAGES := kmod-b43 kmod-usb-uhci kmod-usb2-pci
   $(Device/asus)
   PRODUCTID := "WL500W      "
 endef
