@@ -286,7 +286,7 @@ menuconfig PER_FEED_REPO
 
 	config PER_FEED_REPO_ADD_COMMENTED
 		bool "Comment out not enabled feeds"
-		default y
+		default !BUILDBOT
 		depends on PER_FEED_REPO && PER_FEED_REPO_ADD_DISABLED
 		help
 		  Add not enabled feeds as commented out source lines to opkg.conf.

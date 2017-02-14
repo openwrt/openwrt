@@ -203,13 +203,14 @@ endchoice
 
 choice
 	prompt "Target Profile"
+	default TARGET_MULTI_PROFILE if BUILDBOT
 
 EOF
 	foreach my $target (@target) {
 		my $profile = $target->{profiles}->[0];
 		$profile or next;
 		print <<EOF;
-	default TARGET_$target->{conf}_$profile->{id} if TARGET_$target->{conf}
+	default TARGET_$target->{conf}_$profile->{id} if TARGET_$target->{conf} && !BUILDBOT
 EOF
 	}
 
@@ -256,9 +257,11 @@ menu "Target Devices"
 
 	config TARGET_ALL_PROFILES
 		bool "Enable all profiles by default"
+		default BUILDBOT
 
 	config TARGET_PER_DEVICE_ROOTFS
 		bool "Use a per-device root filesystem that adds profile packages"
+		default BUILDBOT
 		help
 		When disabled, all device packages from all selected devices
 		will be included in all images by default. (Marked as <*>) You will

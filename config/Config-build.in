@@ -9,7 +9,7 @@ menu "Global build settings"
 
 	config ALL_NONSHARED
 		bool "Select all target specific packages by default"
-		default ALL
+		default ALL || BUILDBOT
 
 	config ALL_KMODS
 		bool "Select all kernel module packages by default"
@@ -18,6 +18,16 @@ menu "Global build settings"
 	config ALL
 		bool "Select all userspace packages by default"
 		default n
+
+	config BUILDBOT
+		bool "Set build defaults for automatic builds (e.g. via buildbot)"
+		default n
+		help
+		  This option changes several defaults to be more suitable for
+		  automatic builds. This includes the following changes:
+		  - Deleting build directories after compiling (to save space)
+		  - Enabling per-device rootfs support
+		  ...
 
 	config SIGNED_PACKAGES
 		bool "Cryptographically signed package lists"
@@ -61,7 +71,7 @@ menu "Global build settings"
 		bool
 		prompt "Collect kernel debug information"
 		select KERNEL_DEBUG_INFO
-		default n
+		default BUILDBOT
 		help
 		  This collects debugging symbols from the kernel and all compiled modules.
 		  Useful for release builds, so that kernel issues can be debugged offline

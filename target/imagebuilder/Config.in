@@ -1,6 +1,7 @@
 config IB
 	bool "Build the LEDE Image Builder"
 	depends on !EXTERNAL_TOOLCHAIN
+	default BUILDBOT
 	help
 	  This is essentially a stripped-down version of the buildroot
 	  with precompiled packages, kernel image and image building tools.
@@ -8,7 +9,7 @@ config IB
 
 config IB_STANDALONE
 	bool "Include package repositories"
-	default y
+	default y if !BUILDBOT
 	depends on IB
 	help
 	  Disabling this option will cause the ImageBuilder to embed only

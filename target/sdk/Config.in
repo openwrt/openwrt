@@ -1,6 +1,7 @@
 config SDK
 	bool "Build the LEDE SDK"
 	depends on !EXTERNAL_TOOLCHAIN
+	default BUILDBOT
 	help
 	  This is essentially a stripped-down version of the buildroot
 	  with a precompiled toolchain. It can be used to develop and
