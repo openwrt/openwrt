@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1357,6 +1357,37 @@ static struct board_info __initdata boar
+@@ -1364,6 +1364,37 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -38,7 +38,7 @@
  static struct board_info __initdata board_HW553 = {
  	.name                           = "HW553",
  	.expected_cpu_id                = 0x6358,
-@@ -2106,6 +2137,7 @@ static const struct board_info __initcon
+@@ -2113,6 +2144,7 @@ static const struct board_info __initcon
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
  	&board_ct6373_1,
@@ -46,7 +46,7 @@
  	&board_HW553,
  	&board_HW556_A,
  	&board_HW556_B,
-@@ -2198,6 +2230,7 @@ static struct of_device_id const bcm963x
+@@ -2205,6 +2237,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "d-link,dsl-274xb-c2", .data = &board_dsl_274xb_rev_c, },
  	{ .compatible = "d-link,dsl-2650u", .data = &board_96358vw2, },
  	{ .compatible = "d-link,dva-g3810bn/tl", .data = &board_DVAG3810BN, },
