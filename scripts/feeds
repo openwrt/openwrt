@@ -129,6 +129,7 @@ my %update_method = (
 		'init_branch'   => "git clone --depth 1 --branch '%s' '%s' '%s'",
 		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
 		'update'	=> "git pull --ff",
+		'update_force'	=> "git pull --ff || (git reset --hard HEAD; git pull --ff; exit 1)",
 		'controldir'	=> ".git",
 		'revision'	=> "git rev-parse --short HEAD | tr -d '\n'"},
 	'src-git-full' => {
@@ -136,6 +137,7 @@ my %update_method = (
 		'init_branch'   => "git clone --branch '%s' '%s' '%s'",
 		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
 		'update'	=> "git pull --ff",
+		'update_force'	=> "git pull --ff || (git reset --hard HEAD; git pull --ff; exit 1)",
 		'controldir'	=> ".git",
 		'revision'	=> "git rev-parse --short HEAD | tr -d '\n'"},
 	'src-gitsvn' => {
@@ -160,11 +162,12 @@ my %update_method = (
 # src-git: pull broken
 # src-cpy: broken if `basename $src` != $name
 
-sub update_feed_via($$$$) {
+sub update_feed_via($$$$$) {
 	my $type = shift;
 	my $name = shift;
 	my $src = shift;
 	my $relocate = shift;
+	my $force = shift;
 
 	my $m = $update_method{$type};
 	my $localpath = "./feeds/$name";
@@ -185,7 +188,11 @@ sub update_feed_via($$$$) {
 	} elsif ($m->{'init_commit'} and $commit) {
 		# in case git hash has been provided don't update the feed
 	} else {
-		system("cd '$safepath'; $m->{'update'}") == 0 or return 1;
+		my $update_cmd = $m->{'update'};
+		if ($force && exists $m->{'update_force'}) {
+			$update_cmd = $m->{'update_force'};
+		}
+		system("cd '$safepath'; $update_cmd") == 0 or return 1;
 	}
 
 	return 0;
@@ -663,13 +670,15 @@ sub uninstall {
 	return 0;
 }
 
-sub update_feed($$$$)
+sub update_feed($$$$$)
 {
 	my $type=shift;
 	my $name=shift;
 	my $src=shift;
 	my $perform_update=shift;
+	my $force_update=shift;
 	my $force_relocate=update_location( $name, "@$src" );
+	my $rv=0;
 
 	if( $force_relocate ) {
 		warn "Source of feed $name has changed, replacing copy\n";
@@ -682,9 +691,16 @@ sub update_feed($$$$)
 		my $failed = 1;
 		foreach my $feedsrc (@$src) {
 			warn "Updating feed '$name' from '$feedsrc' ...\n";
-			next unless update_feed_via($type, $name, $feedsrc, $force_relocate) == 0;
+			if (update_feed_via($type, $name, $feedsrc, $force_relocate, $force_update) != 0) {
+				if ($force_update) {
+					$rv=1;
+					$failed=0;
+					warn "failed, ignore.\n";
+					next;
+				}
+				last;
+			}
 			$failed = 0;
-			last;
 		}
 		$failed and do {
 			warn "failed.\n";
@@ -696,7 +712,7 @@ sub update_feed($$$$)
 		warn "failed.\n";
 		return 1;
 	};
-	return 0;
+	return $rv;
 }
 
 sub update {
@@ -708,7 +724,7 @@ sub update {
 	$ENV{SCAN_COOKIE} = $$;
 	$ENV{OPENWRT_VERBOSE} = 's';
 
-	getopts('ahi', \%opts);
+	getopts('ahif', \%opts);
 
 	if ($opts{h}) {
 		usage();
@@ -728,7 +744,7 @@ sub update {
 	if ( ($#ARGV == -1) or $opts{a}) {
 		foreach my $feed (@feeds) {
 			my ($type, $name, $src) = @$feed;
-			update_feed($type, $name, $src, $perform_update) == 0 or $failed=1;
+			update_feed($type, $name, $src, $perform_update, $opts{f}) == 0 or $failed=1;
 		}
 	} else {
 		while ($feed_name = shift @ARGV) {
@@ -737,7 +753,7 @@ sub update {
 				if($feed_name ne $name) {
 					next;
 				}
-				update_feed($type, $name, $src, $perform_update) == 0 or $failed=1;
+				update_feed($type, $name, $src, $perform_update, $opts{f}) == 0 or $failed=1;
 			}
 		}
 	}
@@ -795,6 +811,7 @@ Commands:
 	Options:
 	    -a :           Update all feeds listed within feeds.conf. Otherwise the specified feeds will be updated.
 	    -i :           Recreate the index only. No feed update from repository is performed.
+	    -f :           Force updating feeds even if there are changed, uncommitted files.
 
 	clean:             Remove downloaded/generated files.
 
