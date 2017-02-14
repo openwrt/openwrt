@@ -9,3 +9,4 @@ obj-$(CONFIG_MTD_SPLIT_TRX_FW) += mtdsplit_trx.o
 obj-$(CONFIG_MTD_SPLIT_BRNIMAGE_FW) += mtdsplit_brnimage.o
 obj-$(CONFIG_MTD_SPLIT_EVA_FW) += mtdsplit_eva.o
 obj-$(CONFIG_MTD_SPLIT_WRGG_FW) += mtdsplit_wrgg.o
+obj-$(CONFIG_MTD_SPLIT_MINOR_FW) += mtdsplit_minor.o
