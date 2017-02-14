@@ -1030,18 +1030,17 @@ endef
 TARGET_DEVICES += GW6200
 
 ### Telsey ###
-define Device/CVPA502PLUS
+define Device/CPVA502PLUS
   $(Device/bcm63xx)
-  IMAGES :=
   DEVICE_TITLE := Telsey CPVA502+
   DEVICE_DTS := cpva502plus
   CFE_BOARD_ID := CPVA502+
   CFE_CHIP_ID := 6348
-  CFE_EXTRAS += --signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0"
+  CFE_EXTRAS += --signature "Telsey Tlc" --signature2 "99.99.999"
   DEVICE_PACKAGES := \
     $(B43_PACKAGES)
 endef
-TARGET_DEVICES += CVPA502PLUS
+TARGET_DEVICES += CPVA502PLUS
 
 define Device/CPA-ZNTE60T
   $(Device/bcm63xx)
