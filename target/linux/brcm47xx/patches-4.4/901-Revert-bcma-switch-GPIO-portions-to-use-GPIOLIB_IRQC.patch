@@ -223,7 +223,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  }
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -649,6 +649,7 @@ struct bcma_drv_cc {
+@@ -646,6 +646,7 @@ struct bcma_drv_cc {
  	spinlock_t gpio_lock;
  #ifdef CONFIG_BCMA_DRIVER_GPIO
  	struct gpio_chip gpio;

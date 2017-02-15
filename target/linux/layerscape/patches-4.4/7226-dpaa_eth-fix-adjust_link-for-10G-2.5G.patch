@@ -10,11 +10,9 @@ Signed-off-by: Shaohui Xie <Shaohui.Xie@nxp.com>
  drivers/net/ethernet/freescale/sdk_dpaa/mac-api.c | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/freescale/sdk_dpaa/mac-api.c b/drivers/net/ethernet/freescale/sdk_dpaa/mac-api.c
-index aaedaae..c092afb 100644
 --- a/drivers/net/ethernet/freescale/sdk_dpaa/mac-api.c
 +++ b/drivers/net/ethernet/freescale/sdk_dpaa/mac-api.c
-@@ -409,6 +409,10 @@ void get_pause_cfg(struct mac_device *mac_dev, bool *rx_pause, bool *tx_pause)
+@@ -409,6 +409,10 @@ void get_pause_cfg(struct mac_device *ma
  }
  EXPORT_SYMBOL(get_pause_cfg);
  
@@ -25,7 +23,7 @@ index aaedaae..c092afb 100644
  static void adjust_link(struct net_device *net_dev)
  {
  	struct dpa_priv_s *priv = netdev_priv(net_dev);
-@@ -473,7 +477,7 @@ static int xgmac_init_phy(struct net_device *net_dev,
+@@ -473,7 +477,7 @@ static int xgmac_init_phy(struct net_dev
  				     mac_dev->phy_if);
  	else
  		phy_dev = of_phy_connect(net_dev, mac_dev->phy_node,
@@ -34,7 +32,7 @@ index aaedaae..c092afb 100644
  	if (unlikely(phy_dev == NULL) || IS_ERR(phy_dev)) {
  		netdev_err(net_dev, "Could not attach to PHY %s\n",
  				mac_dev->phy_node ?
-@@ -506,7 +510,7 @@ static int memac_init_phy(struct net_device *net_dev,
+@@ -506,7 +510,7 @@ static int memac_init_phy(struct net_dev
  			return 0;
  		} else
  			phy_dev = of_phy_connect(net_dev, mac_dev->phy_node,
@@ -43,6 +41,3 @@ index aaedaae..c092afb 100644
  						 mac_dev->phy_if);
  	} else {
  		if (!mac_dev->phy_node)
--- 
-2.1.0.27.g96db324
-
