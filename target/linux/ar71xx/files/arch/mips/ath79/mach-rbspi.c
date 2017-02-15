@@ -60,7 +60,6 @@
 #define RB_ROUTERBOOT_OFFSET    0x0000
 #define RB_BIOS_SIZE            0x1000
 #define RB_SOFT_CFG_SIZE        0x1000
-#define RB_KERNEL_SIZE          (2 * 1024 * 1024)	/* 2MB kernel */
 
 /* Flash partitions indexes */
 enum {
@@ -69,8 +68,7 @@ enum {
 	RBSPI_PART_BIOS,
 	RBSPI_PART_RBOOT2,
 	RBSPI_PART_SCONF,
-	RBSPI_PART_KERN,
-	RBSPI_PART_ROOT,
+	RBSPI_PART_FIRMW,
 	RBSPI_PARTS
 };
 
@@ -79,8 +77,6 @@ static struct mtd_partition rbspi_spi_partitions[RBSPI_PARTS];
 /*
  * Setup the SPI flash partition table based on initial parsing.
  * The kernel can be at any aligned position and have any size.
- * The size of the kernel partition is the desired RB_KERNEL_SIZE
- * minus the size of the preceding partitions (128KB).
  */
 static void __init rbspi_init_partitions(const struct rb_info *info)
 {
@@ -114,16 +110,10 @@ static void __init rbspi_init_partitions(const struct rb_info *info)
 	parts[RBSPI_PART_SCONF].offset = info->soft_cfg_offs;
 	parts[RBSPI_PART_SCONF].size = RB_SOFT_CFG_SIZE;
 
-	parts[RBSPI_PART_KERN].name = "kernel";
-	parts[RBSPI_PART_KERN].offset = parts[RBSPI_PART_SCONF].offset
+	parts[RBSPI_PART_FIRMW].name = "firmware";
+	parts[RBSPI_PART_FIRMW].offset = parts[RBSPI_PART_SCONF].offset
 					+ parts[RBSPI_PART_SCONF].size;
-	parts[RBSPI_PART_KERN].size = RB_KERNEL_SIZE
-					- parts[RBSPI_PART_KERN].offset;
-
-	parts[RBSPI_PART_ROOT].name = "rootfs";
-	parts[RBSPI_PART_ROOT].offset = parts[RBSPI_PART_KERN].offset
-					+ parts[RBSPI_PART_KERN].size;
-	parts[RBSPI_PART_ROOT].size = MTDPART_SIZ_FULL;
+	parts[RBSPI_PART_FIRMW].size = MTDPART_SIZ_FULL;
 }
 
 static struct flash_platform_data rbspi_spi_flash_data = {

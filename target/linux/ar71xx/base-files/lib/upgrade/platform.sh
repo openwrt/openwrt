@@ -344,11 +344,6 @@ platform_check_image() {
 	ls-sr71|\
 	pb42|\
 	pb44|\
-	rb-750-r2|\
-	rb-750up-r2|\
-	rb-941-2nd|\
-	rb-951ui-2nd|\
-	rb-mapl-2nd|\
 	routerstation-pro|\
 	routerstation|\
 	wp543|\
@@ -637,6 +632,14 @@ platform_check_image() {
 
 		return 0;
 		;;
+	# these boards use metadata images
+	rb-750-r2|\
+	rb-750up-r2|\
+	rb-941-2nd|\
+	rb-951ui-2nd|\
+	rb-mapl-2nd)
+		return 0
+		;;
 	esac
 
 	echo "Sysupgrade is not yet supported on $board."
@@ -707,14 +710,6 @@ platform_do_upgrade() {
 	local board=$(ar71xx_board_name)
 
 	case "$board" in
-	rb-750-r2|\
-	rb-750up-r2|\
-	rb-941-2nd|\
-	rb-951ui-2nd|\
-	rb-mapl-2nd)
-		PLATFORM_DO_UPGRADE_COMBINED_SEPARATE_MTD=1
-		platform_do_upgrade_combined "$ARGV"
-		;;
 	all0258n)
 		platform_do_upgrade_allnet "0x9f050000" "$ARGV"
 		;;
