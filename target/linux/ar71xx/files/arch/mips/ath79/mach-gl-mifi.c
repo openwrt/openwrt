@@ -41,27 +41,27 @@
 
 static struct gpio_led gl_mifi_leds_gpio[] __initdata = {
 	{
-		.name = "gl-mifi:wan",
+		.name = "gl-mifi:greeen:wan",
 		.gpio = GL_MIFI_GPIO_LED_WAN,
 		.active_low = 0,
 	},
 	{
-		.name = "gl-mifi:lan",
+		.name = "gl-mifi:green:lan",
 		.gpio = GL_MIFI_GPIO_LED_LAN,
 		.active_low = 0,
 	},
 	{
-		.name = "gl-mifi:wlan",
+		.name = "gl-mifi:green:wlan",
 		.gpio = GL_MIFI_GPIO_LED_WLAN,
 		.active_low = 0,
 	},
 	{
-		.name = "gl-mifi:net",
+		.name = "gl-mifi:green:net",
 		.gpio = GL_MIFI_GPIO_LED_NET,
 		.active_low = 0,
 	},
 	{
-		.name = "gl-mifi:3gcontrol",
+		.name = "gl-mifi:green:3gcontrol",
 		.gpio = GL_MIFI_GPIO_LED_3GCONTROL,
 		.active_low = 0,
 	}

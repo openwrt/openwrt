@@ -61,7 +61,9 @@ get_status_led() {
 	ap90q|\
 	cpe830|\
 	cpe870|\
-	gl-inet)
+	gl-inet|\
+	gl-mifi|\
+	gl-ar300m)
 		status_led="$board:green:lan"
 		;;
 	ap96)

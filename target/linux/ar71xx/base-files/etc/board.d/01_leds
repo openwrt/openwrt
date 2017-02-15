@@ -312,19 +312,18 @@ dlan-pro-1200-ac)
 	ucidef_set_led_gpio "plcw" "dLAN" "devolo:status:dlan" "17" "0"
 	ucidef_set_led_gpio "plcr" "dLAN" "devolo:error:dlan" "16" "0"
 	;;
-gl-ar150|\
-gl-ar300|\
-gl-ar300m|\
+gl-ar300m)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:red:wlan" "phy0tpt"
+	;;
 gl-mifi)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
+	ucidef_set_led_netdev "3gnet" "3GNET" "$board:green:net" "3g-wan"
+	;;
+gl-ar150|\
+gl-ar300)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:wlan" "phy0tpt"
-
-	case "$board" in
-	gl-mifi)
-		ucidef_set_led_netdev "wan" "WAN" "$board:wan" "eth0"
-		ucidef_set_led_netdev "lan" "LAN" "$board:lan" "eth1"
-		ucidef_set_led_netdev "3gnet" "3GNET" "$board:net" "3g-wan"
-		;;
-	esac
 	;;
 gl-domino|\
 sc300m|\
