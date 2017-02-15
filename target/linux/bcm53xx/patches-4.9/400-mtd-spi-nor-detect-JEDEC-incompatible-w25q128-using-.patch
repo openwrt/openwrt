@@ -13,9 +13,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -875,6 +875,18 @@ static const struct flash_info *spi_nor_
+@@ -1190,6 +1190,18 @@ static const struct flash_info *spi_nor_
  	}
- 	dev_err(nor->dev, "unrecognized JEDEC id bytes: %02x, %2x, %2x\n",
+ 	dev_err(nor->dev, "unrecognized JEDEC id bytes: %02x, %02x, %02x\n",
  		id[0], id[1], id[2]);
 +
 +	tmp = nor->read_reg(nor, 0x90, id, SPI_NOR_MAX_ID_LEN);

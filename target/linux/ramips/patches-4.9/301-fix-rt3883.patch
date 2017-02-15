@@ -1,6 +1,6 @@
 --- a/arch/mips/ralink/rt3883.c
 +++ b/arch/mips/ralink/rt3883.c
-@@ -63,16 +63,6 @@
+@@ -63,16 +63,6 @@ static struct rt2880_pmx_group rt3883_pi
  	{ 0 }
  };
  
@@ -17,7 +17,7 @@
  void __init ralink_clk_init(void)
  {
  	unsigned long cpu_rate, sys_rate;
-@@ -157,5 +147,5 @@
+@@ -157,5 +147,5 @@ void prom_soc_init(struct ralink_soc_inf
  
  	rt2880_pinmux_data = rt3883_pinmux_data;
  

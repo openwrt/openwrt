@@ -19,7 +19,7 @@ it on BCM4708 family.
 
 --- a/drivers/usb/host/xhci-plat.c
 +++ b/drivers/usb/host/xhci-plat.c
-@@ -38,12 +38,18 @@ static const struct xhci_driver_override
+@@ -56,12 +56,18 @@ static int xhci_priv_init_quirk(struct u
  
  static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
  {
@@ -40,7 +40,7 @@ it on BCM4708 family.
  /* called during probe() after chip reset completes */
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -152,6 +152,49 @@ static int xhci_start(struct xhci_hcd *x
+@@ -153,6 +153,49 @@ static int xhci_start(struct xhci_hcd *x
  	return ret;
  }
  
@@ -90,7 +90,7 @@ it on BCM4708 family.
  /*
   * Reset a halted HC.
   *
-@@ -568,10 +611,20 @@ int xhci_init(struct usb_hcd *hcd)
+@@ -565,10 +608,20 @@ int xhci_init(struct usb_hcd *hcd)
  
  static int xhci_run_finished(struct xhci_hcd *xhci)
  {
@@ -114,7 +114,7 @@ it on BCM4708 family.
  	xhci->shared_hcd->state = HC_STATE_RUNNING;
  	xhci->cmd_ring_state = CMD_RING_STATE_RUNNING;
  
-@@ -581,6 +634,10 @@ static int xhci_run_finished(struct xhci
+@@ -578,6 +631,10 @@ static int xhci_run_finished(struct xhci
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  			"Finished xhci_run for USB3 roothub");
  	return 0;
@@ -127,9 +127,9 @@ it on BCM4708 family.
  /*
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1635,6 +1635,7 @@ struct xhci_hcd {
- #define XHCI_BROKEN_STREAMS	(1 << 19)
- #define XHCI_PME_STUCK_QUIRK	(1 << 20)
+@@ -1657,6 +1657,7 @@ struct xhci_hcd {
+ #define XHCI_SSIC_PORT_UNUSED	(1 << 22)
+ #define XHCI_NO_64BIT_SUPPORT	(1 << 23)
  #define XHCI_MISSING_CAS	(1 << 24)
 +#define XHCI_FAKE_DOORBELL	(1 << 25)
  	unsigned int		num_active_eps;

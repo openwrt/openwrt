@@ -26,7 +26,7 @@ v2: incorporated changes suggested by Jonas Gorski
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -2891,6 +2891,20 @@
+@@ -2891,6 +2891,20 @@ config MIPS_O32_FP64_SUPPORT
  
  	  If unsure, say N.
  
@@ -49,7 +49,7 @@ v2: incorporated changes suggested by Jonas Gorski
  	select OF
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -287,7 +287,7 @@
+@@ -287,7 +287,7 @@ OBJCOPYFLAGS		+= --remove-section=.regin
  head-y := arch/mips/kernel/head.o
  
  libs-y			+= arch/mips/lib/
@@ -60,7 +60,7 @@ v2: incorporated changes suggested by Jonas Gorski
  core-y += arch/mips/
 --- a/arch/mips/include/asm/fpu.h
 +++ b/arch/mips/include/asm/fpu.h
-@@ -227,8 +227,10 @@
+@@ -227,8 +227,10 @@ static inline int init_fpu(void)
  		/* Restore FRE */
  		write_c0_config5(config5);
  		enable_fpu_hazard();
@@ -82,7 +82,7 @@ v2: incorporated changes suggested by Jonas Gorski
  #ifdef CONFIG_DEBUG_FS
  
  struct mips_fpu_emulator_stats {
-@@ -63,6 +64,16 @@
+@@ -63,6 +64,16 @@ do {									\
  extern int fpu_emulator_cop1Handler(struct pt_regs *xcp,
  				    struct mips_fpu_struct *ctx, int has_fpu,
  				    void *__user *fault_addr);
@@ -101,7 +101,7 @@ v2: incorporated changes suggested by Jonas Gorski
  int process_fpemu_return(int sig, void __user *fault_addr,
 --- a/arch/mips/include/asm/dsemul.h
 +++ b/arch/mips/include/asm/dsemul.h
-@@ -41,6 +41,7 @@
+@@ -41,6 +41,7 @@ struct task_struct;
  extern int mips_dsemul(struct pt_regs *regs, mips_instruction ir,
  		       unsigned long branch_pc, unsigned long cont_pc);
  
@@ -109,7 +109,7 @@ v2: incorporated changes suggested by Jonas Gorski
  /**
   * do_dsemulret() - Return from a delay slot 'emulation' frame
   * @xcp:	User thread register context.
-@@ -88,5 +89,27 @@
+@@ -88,5 +89,27 @@ extern bool dsemul_thread_rollback(struc
   * before @mm is freed in order to avoid memory leaks.
   */
  extern void dsemul_mm_cleanup(struct mm_struct *mm);

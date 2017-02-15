@@ -19,7 +19,7 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
 
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -107,7 +107,7 @@
+@@ -107,7 +107,7 @@ config LANTIQ_ETOP
  	  Support for the MII0 inside the Lantiq SoC
  
  source "drivers/net/ethernet/marvell/Kconfig"
@@ -30,7 +30,7 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
  source "drivers/net/ethernet/microchip/Kconfig"
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -47,7 +47,7 @@
+@@ -47,7 +47,7 @@ obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
  obj-$(CONFIG_NET_VENDOR_MARVELL) += marvell/
