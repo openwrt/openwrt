@@ -201,7 +201,6 @@ menu "Target Images"
 		int "Serial port baud rate"
 		depends on GRUB_IMAGES
 		default 38400 if TARGET_x86_generic
-		default 38400 if TARGET_x86_geode
 		default 115200
 
 	config GRUB_BOOTOPTS
