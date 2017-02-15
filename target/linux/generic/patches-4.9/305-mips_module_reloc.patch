@@ -315,7 +315,7 @@
  
  	return 0;
  }
-@@ -349,9 +591,33 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -349,9 +591,36 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}
@@ -336,6 +336,9 @@
  
 +void module_arch_freeing_init(struct module *mod)
 +{
++	if (mod->state == MODULE_STATE_LIVE)
++		return;
++
 +	if (mod->arch.phys_plt_tbl) {
 +		__module_free(mod->arch.phys_plt_tbl);
 +		mod->arch.phys_plt_tbl = NULL;
