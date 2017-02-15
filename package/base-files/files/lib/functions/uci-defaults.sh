@@ -35,7 +35,7 @@ _ucidef_set_interface() {
 	json_select_object "$name"
 	json_add_string ifname "$iface"
 
-	if ! json_is_a protocol string; then
+	if ! json_is_a protocol string || [ -n "$proto" ]; then
 		case "$proto" in
 			static|dhcp|none|pppoe) : ;;
 			*)
