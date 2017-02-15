@@ -69,6 +69,18 @@ ifneq ($(ARCH),)
 endif
 endif
 
+ifdef CONFIG_BUILDBOT
+  $(STAGING_DIR)/.toolchain_ver_check: $(TMP_DIR)/.build
+	cd "$(TOPDIR)"; git log --format=%h -1 > $(TMP_DIR)/.toolchain_ver_check
+	cmp -s $(TMP_DIR)/.toolchain_ver_check $@ || \
+		rm -rf $(BUILD_DIR) $(STAGING_DIR) $(TOOLCHAIN_DIR) $(BUILD_DIR_TOOLCHAIN)
+	mkdir -p $(STAGING_DIR)
+	mv $(TMP_DIR)/.toolchain_ver_check $@
+
+$(STAGING_DIR)/.prepared: $(STAGING_DIR)/.toolchain_ver_check
+$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed: $(STAGING_DIR)/.prepared
+endif
+
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
 $(curdir)//compile = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk $(tools/stamp-compile)
