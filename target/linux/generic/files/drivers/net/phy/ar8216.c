@@ -1194,6 +1194,7 @@ ar8xxx_sw_reset_switch(struct switch_dev *dev)
 	priv->arl_age_time = AR8XXX_DEFAULT_ARL_AGE_TIME;
 
 	chip->init_globals(priv);
+	chip->atu_flush(priv);
 
 	mutex_unlock(&priv->reg_mutex);
 
