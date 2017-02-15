@@ -7,14 +7,14 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=mdns
+PKG_NAME:=umdns
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL=$(LEDE_GIT)/project/mdnsd.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2017-01-31
-PKG_SOURCE_VERSION:=9cbbb141068c12ed032736e20f982e2a0fb43edc
-PKG_MIRROR_HASH:=2b981bd2f695f4da63b51be33b42dcda132c6adab227eda2f68a5c534284aea9
+PKG_SOURCE_DATE:=2017-02-15
+PKG_SOURCE_VERSION:=0d545ed7287026584722a3f9aa855c29bd24d59f
+PKG_MIRROR_HASH:=9670680a31f8eca5724da4cd12efedcbc27563b09ed4d94218f5debee1673abc
 
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_LICENSE:=LGPL-2.1
@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package-seccomp.mk
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-define Package/mdns
+define Package/umdns
   SECTION:=net
   CATEGORY:=Network
   TITLE:=OpenWrt Multicast DNS Daemon
@@ -32,16 +32,16 @@ endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 
-define Package/mdns/conffiles
-/etc/config/mdns
+define Package/umdns/conffiles
+/etc/config/umdns
 endef
 
-define Package/mdns/install
+define Package/umdns/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mdns $(1)/usr/sbin/
-	$(INSTALL_BIN) ./files/mdns.init $(1)/etc/init.d/mdns
-	$(INSTALL_CONF) ./files/mdns.config $(1)/etc/config/mdns
-	$(call InstallSeccomp,$(1),./files/mdns.json)
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/umdns $(1)/usr/sbin/
+	$(INSTALL_BIN) ./files/umdns.init $(1)/etc/init.d/umdns
+	$(INSTALL_CONF) ./files/umdns.config $(1)/etc/config/umdns
+	$(call InstallSeccomp,$(1),./files/umdns.json)
 endef
 
-$(eval $(call BuildPackage,mdns))
+$(eval $(call BuildPackage,umdns))
