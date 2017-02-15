@@ -42,5 +42,3 @@ $(Device/rb-nor-flash-16M)
   DEVICE_TITLE := hAP lite
   BOARDNAME:= rb-941-2nd
 endef
-
-TARGET_DEVICES += rb-nor-flash-16M rb-941-2nd
