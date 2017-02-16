@@ -312,7 +312,7 @@
 		compatible = "gpio-keys";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		pinctrl-0 = <&keys_pin>;
+		pinctrl-0 = <&reset_key_pin &wps_key_pin>;
 		pinctrl-names = "default";
 
 		button@1 {
@@ -440,6 +440,7 @@
         wlan_5g_led_pin: wlan-5g-led-pin {
                 marvell,pins = "mpp46";
 		marvell,function = "gpio";
+	};
 
 	xhci0_vbus_pins: xhci0-vbus-pins {
 		marvell,pins = "mpp47";
