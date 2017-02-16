@@ -9,7 +9,8 @@ use strict;
 use Cwd 'abs_path';
 
 chdir "$FindBin::Bin/..";
-$ENV{TOPDIR}=getcwd();
+$ENV{TOPDIR} //= getcwd();
+chdir $ENV{TOPDIR};
 $ENV{GIT_CONFIG_PARAMETERS}="'core.autocrlf=false'";
 $ENV{GREP_OPTIONS}="";
 
