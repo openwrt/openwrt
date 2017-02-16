@@ -21,7 +21,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
 
 --- a/drivers/clk/mediatek/Kconfig
 +++ b/drivers/clk/mediatek/Kconfig
-@@ -6,6 +6,14 @@ config COMMON_CLK_MEDIATEK
+@@ -6,6 +6,14 @@
  	---help---
  	  Mediatek SoCs' clock support.
  
@@ -35,7 +35,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
 +
  config COMMON_CLK_MT8135
  	bool "Clock driver for Mediatek MT8135"
- 	depends on COMMON_CLK
+ 	depends on ARCH_MEDIATEK || COMPILE_TEST
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
 @@ -1,4 +1,5 @@
@@ -46,13 +46,13 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
 --- a/drivers/clk/mediatek/clk-gate.c
 +++ b/drivers/clk/mediatek/clk-gate.c
-@@ -61,6 +61,26 @@ static void mtk_cg_clr_bit(struct clk_hw
+@@ -61,6 +61,26 @@
  	regmap_write(cg->regmap, cg->clr_ofs, BIT(cg->bit));
  }
  
 +static void mtk_cg_set_bit_no_setclr(struct clk_hw *hw)
 +{
-+	struct mtk_clk_gate *cg = to_clk_gate(hw);
++	struct mtk_clk_gate *cg = to_mtk_clk_gate(hw);
 +	u32 val;
 +
 +	regmap_read(cg->regmap, cg->sta_ofs, &val);
@@ -62,7 +62,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
 +
 +static void mtk_cg_clr_bit_no_setclr(struct clk_hw *hw)
 +{
-+	struct mtk_clk_gate *cg = to_clk_gate(hw);
++	struct mtk_clk_gate *cg = to_mtk_clk_gate(hw);
 +	u32 val;
 +
 +	regmap_read(cg->regmap, cg->sta_ofs, &val);
@@ -73,7 +73,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  static int mtk_cg_enable(struct clk_hw *hw)
  {
  	mtk_cg_clr_bit(hw);
-@@ -85,6 +105,30 @@ static void mtk_cg_disable_inv(struct cl
+@@ -85,6 +105,30 @@
  	mtk_cg_clr_bit(hw);
  }
  
@@ -104,7 +104,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  const struct clk_ops mtk_clk_gate_ops_setclr = {
  	.is_enabled	= mtk_cg_bit_is_cleared,
  	.enable		= mtk_cg_enable,
-@@ -97,6 +141,18 @@ const struct clk_ops mtk_clk_gate_ops_se
+@@ -97,6 +141,18 @@
  	.disable	= mtk_cg_disable_inv,
  };
  
@@ -120,12 +120,12 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
 +	.disable	= mtk_cg_disable_inv_no_setclr,
 +};
 +
- struct clk * __init mtk_clk_register_gate(
+ struct clk *mtk_clk_register_gate(
  		const char *name,
  		const char *parent_name,
 --- a/drivers/clk/mediatek/clk-gate.h
 +++ b/drivers/clk/mediatek/clk-gate.h
-@@ -36,6 +36,8 @@ static inline struct mtk_clk_gate *to_cl
+@@ -36,6 +36,8 @@
  
  extern const struct clk_ops mtk_clk_gate_ops_setclr;
  extern const struct clk_ops mtk_clk_gate_ops_setclr_inv;
@@ -1349,7 +1349,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
 +							mtk_apmixedsys_init);
 --- a/drivers/clk/mediatek/clk-mtk.c
 +++ b/drivers/clk/mediatek/clk-mtk.c
-@@ -242,3 +242,28 @@ void __init mtk_clk_register_composites(
+@@ -244,3 +244,28 @@
  			clk_data->clks[mc->id] = clk;
  	}
  }
@@ -1380,7 +1380,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
 +}
 --- a/drivers/clk/mediatek/clk-mtk.h
 +++ b/drivers/clk/mediatek/clk-mtk.h
-@@ -110,7 +110,8 @@ struct mtk_composite {
+@@ -121,7 +121,8 @@
  		.flags = CLK_SET_RATE_PARENT,				\
  	}
  
@@ -1390,7 +1390,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  		.id = _id,						\
  		.parent = _parent,					\
  		.name = _name,						\
-@@ -145,8 +146,36 @@ struct mtk_gate {
+@@ -156,8 +157,36 @@
  	const struct clk_ops *ops;
  };
  

@@ -376,7 +376,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +int mt7623_gsw_config(struct mtk_eth *eth)
 +{
-+	if (eth->mii_bus && eth->mii_bus->phy_map[0x1f])
++	if (eth->mii_bus && mdiobus_get_phy(eth->mii_bus, 0x1f))
 +		mt7530_probe(eth->dev, NULL, eth->mii_bus, 1);
 +
 +	return 0;
@@ -2203,7 +2203,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -24,6 +24,9 @@
+@@ -25,6 +25,9 @@
  
  #include "mtk_eth_soc.h"
  
@@ -2213,7 +2213,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int mtk_msg_level = -1;
  module_param_named(msg_level, mtk_msg_level, int, 0);
  MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
-@@ -69,7 +72,7 @@ static int mtk_mdio_busy_wait(struct mtk
+@@ -74,14 +77,14 @@
  			return 0;
  		if (time_after(jiffies, t_start + PHY_IAC_TIMEOUT))
  			break;
@@ -2222,9 +2222,35 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	}
  
  	dev_err(eth->dev, "mdio: MDIO timeout\n");
-@@ -1421,15 +1424,6 @@ static int __init mtk_hw_init(struct mtk
- 	reset_control_deassert(eth->rstc);
- 	usleep_range(10, 20);
+ 	return -1;
+ }
+ 
+-static u32 _mtk_mdio_write(struct mtk_eth *eth, u32 phy_addr,
++u32 _mtk_mdio_write(struct mtk_eth *eth, u32 phy_addr,
+ 			   u32 phy_register, u32 write_data)
+ {
+ 	if (mtk_mdio_busy_wait(eth))
+@@ -100,7 +103,7 @@
+ 	return 0;
+ }
+ 
+-static u32 _mtk_mdio_read(struct mtk_eth *eth, int phy_addr, int phy_reg)
++u32 _mtk_mdio_read(struct mtk_eth *eth, int phy_addr, int phy_reg)
+ {
+ 	u32 d;
+ 
+@@ -155,7 +158,7 @@
+ 
+ 	val = (speed == SPEED_1000) ?
+ 		RCK_CTRL_RGMII_1000 : RCK_CTRL_RGMII_10_100;
+-	mtk_w32(eth, val, TRGMII_RCK_CTRL);
++	mtk_w32(eth, val, _TRGMII_RCK_CTRL);
+ 
+ 	val = (speed == SPEED_1000) ?
+ 		TCK_CTRL_RGMII_1000 : TCK_CTRL_RGMII_10_100;
+@@ -1833,15 +1836,6 @@
+ 	}
+ 	regmap_write(eth->ethsys, ETHSYS_SYSCFG0, val);
  
 -	/* Set GE2 driving and slew rate */
 -	regmap_write(eth->pctl, GPIO_DRV_SEL10, 0xa00);
@@ -2238,16 +2264,16 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* GE1, Force 1000M/FD, FC ON */
  	mtk_w32(eth, MAC_MCR_FIXED_LINK, MTK_MAC_MCR(0));
  
-@@ -1452,6 +1446,8 @@ static int __init mtk_hw_init(struct mtk
- 	if (err)
- 		return err;
+@@ -1851,6 +1845,8 @@
+ 	/* Enable RX VLan Offloading */
+ 	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
  
 +	mtk_gsw_init(eth);
 +
  	/* disable delay and normal interrupt */
  	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
- 	mtk_irq_disable(eth, ~0);
-@@ -1479,6 +1475,8 @@ static int __init mtk_hw_init(struct mtk
+ 	mtk_w32(eth, 0, MTK_PDMA_DELAY_INT);
+@@ -1879,6 +1875,8 @@
  		mtk_w32(eth, val, MTK_GDMA_FWD_CFG(i));
  	}
  
@@ -2256,102 +2282,38 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	return 0;
  }
  
-@@ -1734,7 +1732,7 @@ static int mtk_add_mac(struct mtk_eth *e
- {
- 	struct mtk_mac *mac;
- 	const __be32 *_id = of_get_property(np, "reg", NULL);
--	int id, err;
-+	int id;
- 
- 	if (!_id) {
- 		dev_err(eth->dev, "missing mac id\n");
-@@ -1768,8 +1766,8 @@ static int mtk_add_mac(struct mtk_eth *e
- 				     GFP_KERNEL);
- 	if (!mac->hw_stats) {
- 		dev_err(eth->dev, "failed to allocate counter memory\n");
--		err = -ENOMEM;
--		goto free_netdev;
-+		free_netdev(eth->netdev[id]);
-+		return -ENOMEM;
- 	}
- 	spin_lock_init(&mac->hw_stats->stats_lock);
- 	mac->hw_stats->reg_offset = id * MTK_STAT_OFFSET;
-@@ -1783,21 +1781,9 @@ static int mtk_add_mac(struct mtk_eth *e
- 	eth->netdev[id]->features |= MTK_HW_FEATURES;
- 	eth->netdev[id]->ethtool_ops = &mtk_ethtool_ops;
- 
--	err = register_netdev(eth->netdev[id]);
--	if (err) {
--		dev_err(eth->dev, "error bringing up device\n");
--		goto free_netdev;
--	}
- 	eth->netdev[id]->irq = eth->irq[0];
--	netif_info(eth, probe, eth->netdev[id],
--		   "mediatek frame engine at 0x%08lx, irq %d\n",
--		   eth->netdev[id]->base_addr, eth->irq[0]);
- 
- 	return 0;
--
--free_netdev:
--	free_netdev(eth->netdev[id]);
--	return err;
- }
- 
- static int mtk_probe(struct platform_device *pdev)
-@@ -1865,14 +1851,13 @@ static int mtk_probe(struct platform_dev
- 	clk_prepare_enable(eth->clk_gp1);
- 	clk_prepare_enable(eth->clk_gp2);
+@@ -2379,6 +2377,9 @@
+ 	if (!eth)
+ 		return -ENOMEM;
  
 +	eth->switch_np = of_parse_phandle(pdev->dev.of_node,
 +					  "mediatek,switch", 0);
 +
  	eth->dev = &pdev->dev;
- 	eth->msg_enable = netif_msg_init(mtk_msg_level, MTK_DEFAULT_MSG_ENABLE);
- 	INIT_WORK(&eth->pending_work, mtk_pending_work);
- 
--	err = mtk_hw_init(eth);
--	if (err)
--		return err;
--
- 	for_each_child_of_node(pdev->dev.of_node, mac_np) {
- 		if (!of_device_is_compatible(mac_np,
- 					     "mediatek,eth-mac"))
-@@ -1886,6 +1871,22 @@ static int mtk_probe(struct platform_dev
- 			goto err_free_dev;
- 	}
- 
-+	err = mtk_hw_init(eth);
-+	if (err)
-+		return err;
-+
-+	for (i = 0; i < MTK_MAX_DEVS; i++) {
-+		if (!eth->netdev[i])
-+			continue;
-+		err = register_netdev(eth->netdev[i]);
-+		if (err)
-+			dev_err(eth->dev, "error bringing up device\n");
-+		else
-+			netif_info(eth, probe, eth->netdev[i],
-+				   "mediatek frame engine at 0x%08lx, irq %d\n",
-+				   eth->netdev[i]->base_addr, eth->irq[0]);
-+	}
-+
- 	/* we run 2 devices on the same DMA ring so we need a dummy device
- 	 * for NAPI to work
- 	 */
+ 	eth->base = devm_ioremap_resource(&pdev->dev, res);
+ 	if (IS_ERR(eth->base))
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -407,6 +407,9 @@ struct mtk_eth {
- 	struct clk			*clk_gp2;
+@@ -314,7 +314,7 @@
+ 				 MAC_MCR_FORCE_DPX | MAC_MCR_FORCE_LINK)
+ 
+ /* TRGMII RXC control register */
+-#define TRGMII_RCK_CTRL		0x10300
++#define _TRGMII_RCK_CTRL		0x10300
+ #define DQSI0(x)		((x << 0) & GENMASK(6, 0))
+ #define DQSI1(x)		((x << 8) & GENMASK(14, 8))
+ #define RXCTL_DMWTLAT(x)	((x << 16) & GENMASK(18, 16))
+@@ -554,6 +554,9 @@
  	struct mii_bus			*mii_bus;
  	struct work_struct		pending_work;
+ 	unsigned long			state;
 +
 +	struct device_node		*switch_np;
 +	void				*sw_priv;
  };
  
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
-@@ -434,4 +437,6 @@ void mtk_stats_update_mac(struct mtk_mac
+@@ -586,4 +589,6 @@
  void mtk_w32(struct mtk_eth *eth, u32 val, unsigned reg);
  u32 mtk_r32(struct mtk_eth *eth, unsigned reg);
  

@@ -60,14 +60,14 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
 +	u8		shift;
 +};
 +
-+static inline struct mtk_clk_cpumux *to_clk_mux(struct clk_hw *_hw)
++static inline struct mtk_clk_cpumux *to_mtk_clk_mux(struct clk_hw *_hw)
 +{
 +	return container_of(_hw, struct mtk_clk_cpumux, hw);
 +}
 +
 +static u8 clk_cpumux_get_parent(struct clk_hw *hw)
 +{
-+	struct mtk_clk_cpumux *mux = to_clk_mux(hw);
++	struct mtk_clk_cpumux *mux = to_mtk_clk_mux(hw);
 +	int num_parents = clk_hw_get_num_parents(hw);
 +	unsigned int val;
 +
@@ -84,7 +84,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
 +
 +static int clk_cpumux_set_parent(struct clk_hw *hw, u8 index)
 +{
-+	struct mtk_clk_cpumux *mux = to_clk_mux(hw);
++	struct mtk_clk_cpumux *mux = to_mtk_clk_mux(hw);
 +	u32 mask, val;
 +
 +	val = index << mux->shift;
@@ -193,7 +193,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  
  #include <dt-bindings/clock/mt2701-clk.h>
  
-@@ -465,6 +466,10 @@ static const char * const cpu_parents[]
+@@ -465,6 +466,10 @@
  	"mmpll"
  };
  
@@ -204,7 +204,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  static const struct mtk_composite top_muxes[] __initconst = {
  	MUX_GATE(CLK_TOP_AXI_SEL, "axi_sel", axi_parents,
  		0x0040, 0, 3, INVALID_MUX_GATE_BIT),
-@@ -677,6 +682,9 @@ static void __init mtk_infrasys_init(str
+@@ -677,6 +682,9 @@
  	mtk_clk_register_factors(infra_fixed_divs, ARRAY_SIZE(infra_fixed_divs),
  						clk_data);
  
@@ -224,7 +224,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  
  #include <dt-bindings/clock/mt8173-clk.h>
  
-@@ -526,6 +527,25 @@ static const char * const i2s3_b_ck_pare
+@@ -525,6 +526,25 @@
  	"apll2_div5"
  };
  
@@ -250,7 +250,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  static const struct mtk_composite top_muxes[] __initconst = {
  	/* CLK_CFG_0 */
  	MUX(CLK_TOP_AXI_SEL, "axi_sel", axi_parents, 0x0040, 0, 3),
-@@ -945,6 +965,9 @@ static void __init mtk_infrasys_init(str
+@@ -948,6 +968,9 @@
  						clk_data);
  	mtk_clk_register_factors(infra_divs, ARRAY_SIZE(infra_divs), clk_data);
  
@@ -262,10 +262,10 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  		pr_err("%s(): could not register clock provider: %d\n",
 --- a/include/dt-bindings/clock/mt2701-clk.h
 +++ b/include/dt-bindings/clock/mt2701-clk.h
-@@ -217,7 +217,8 @@
+@@ -221,7 +221,8 @@
  #define CLK_INFRA_PMICWRAP			17
  #define CLK_INFRA_DDCCI				18
- #define CLK_INFRA_CLK_13M                       19
+ #define CLK_INFRA_CLK_13M			19
 -#define CLK_INFRA_NR				20
 +#define CLK_INFRA_CPUSEL			20
 +#define CLK_INFRA_NR				21
@@ -274,7 +274,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  
 --- a/include/dt-bindings/clock/mt8173-clk.h
 +++ b/include/dt-bindings/clock/mt8173-clk.h
-@@ -192,7 +192,9 @@
+@@ -193,7 +193,9 @@
  #define CLK_INFRA_PMICSPI		10
  #define CLK_INFRA_PMICWRAP		11
  #define CLK_INFRA_CLK_13M		12

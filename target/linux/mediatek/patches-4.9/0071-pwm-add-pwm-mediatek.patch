@@ -15,11 +15,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/arch/arm/boot/dts/mt7623-evb.dts
 +++ b/arch/arm/boot/dts/mt7623-evb.dts
-@@ -341,6 +341,17 @@
- 			output-low;
- 		};
+@@ -26,8 +26,25 @@
+ 	memory {
+ 		reg = <0 0x80000000 0 0x40000000>;
  	};
-+
++/*
 +	pwm_pins: pwm {
 +		pins_pwm1 {
 +			pinmux = <MT7623_PIN_204_PWM1_FUNC_PWM1>;
@@ -28,55 +28,22 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +		pins_pwm2 {
 +			pinmux = <MT7623_PIN_205_PWM2_FUNC_PWM2>;
 +		};
-+	};
++	};*/
 +
  };
  
- &nandc {
-@@ -419,3 +430,9 @@
- 	mediatek,reset-pin = <&pio 15 0>;
+ &uart2 {
  	status = "okay";
  };
 +
-+&pwm {
++/*&pwm {
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&pwm_pins>;
 +	status = "okay";
-+};
---- a/arch/arm/boot/dts/mt7623.dtsi
-+++ b/arch/arm/boot/dts/mt7623.dtsi
-@@ -324,6 +324,28 @@
- 		status = "disabled";
- 	};
- 
-+	pwm: pwm@11006000 {
-+		compatible = "mediatek,mt7623-pwm";
-+	
-+		reg = <0 0x11006000 0 0x1000>;
-+		
-+		resets = <&pericfg MT2701_PERI_PWM_SW_RST>;
-+		reset-names = "pwm";
-+
-+		#pwm-cells = <2>;
-+		clocks = <&topckgen CLK_TOP_PWM_SEL>,
-+			 <&pericfg CLK_PERI_PWM>,
-+			 <&pericfg CLK_PERI_PWM1>,
-+			 <&pericfg CLK_PERI_PWM2>,
-+			 <&pericfg CLK_PERI_PWM3>,
-+			 <&pericfg CLK_PERI_PWM4>,
-+			 <&pericfg CLK_PERI_PWM5>;
-+		clock-names = "top", "main", "pwm1", "pwm2",
-+			      "pwm3", "pwm4", "pwm5";
-+	
-+		status = "disabled";
-+	};
-+
- 	spi: spi@1100a000 {
- 		compatible = "mediatek,mt7623-spi", "mediatek,mt6589-spi";
- 		reg = <0 0x1100a000 0 0x1000>;
++};*/
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -260,6 +260,15 @@ config PWM_MTK_DISP
+@@ -282,6 +282,15 @@
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-mtk-disp.
  
@@ -94,14 +61,14 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	depends on ARCH_MXS && OF
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -22,6 +22,7 @@ obj-$(CONFIG_PWM_LPC32XX)	+= pwm-lpc32xx
- obj-$(CONFIG_PWM_LPSS)		+= pwm-lpss.o
+@@ -25,6 +25,7 @@
  obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-pci.o
  obj-$(CONFIG_PWM_LPSS_PLATFORM)	+= pwm-lpss-platform.o
+ obj-$(CONFIG_PWM_MESON)		+= pwm-meson.o
 +obj-$(CONFIG_PWM_MEDIATEK)	+= pwm-mediatek.o
  obj-$(CONFIG_PWM_MTK_DISP)	+= pwm-mtk-disp.o
  obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
- obj-$(CONFIG_PWM_PCA9685)	+= pwm-pca9685.o
+ obj-$(CONFIG_PWM_OMAP_DMTIMER)	+= pwm-omap-dmtimer.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-mediatek.c
 @@ -0,0 +1,230 @@

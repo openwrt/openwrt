@@ -19,7 +19,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/arm/mach-mediatek/Kconfig
 +++ b/arch/arm/mach-mediatek/Kconfig
-@@ -24,6 +24,7 @@ config MACH_MT6592
+@@ -29,6 +29,7 @@
  config MACH_MT7623
  	bool "MediaTek MT7623 SoCs support"
  	default ARCH_MEDIATEK
@@ -29,9 +29,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	bool "MediaTek MT8127 SoCs support"
 --- a/drivers/pci/host/Kconfig
 +++ b/drivers/pci/host/Kconfig
-@@ -173,4 +173,15 @@ config PCI_HISI
- 	help
- 	  Say Y here if you want PCIe controller support on HiSilicon HIP05 SoC
+@@ -301,4 +301,15 @@
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called vmd.
  
 +config PCIE_MTK
 +	bool "Mediatek PCIe Controller"
@@ -47,10 +47,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  endmenu
 --- a/drivers/pci/host/Makefile
 +++ b/drivers/pci/host/Makefile
-@@ -20,3 +20,4 @@ obj-$(CONFIG_PCIE_IPROC_BCMA) += pcie-ip
- obj-$(CONFIG_PCIE_ALTERA) += pcie-altera.o
- obj-$(CONFIG_PCIE_ALTERA_MSI) += pcie-altera-msi.o
- obj-$(CONFIG_PCI_HISI) += pcie-hisi.o
+@@ -33,3 +33,4 @@
+ obj-$(CONFIG_PCIE_ARTPEC6) += pcie-artpec6.o
+ obj-$(CONFIG_PCIE_ROCKCHIP) += pcie-rockchip.o
+ obj-$(CONFIG_VMD) += vmd.o
 +obj-$(CONFIG_PCIE_MTK) += pcie-mediatek.o
 --- /dev/null
 +++ b/drivers/pci/host/pcie-mediatek.c
