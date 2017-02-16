@@ -194,18 +194,32 @@ static void __init archer_c59_v1_setup(void)
 					ARRAY_SIZE(archer_c59_v1_gpio_keys),
 					archer_c59_v1_gpio_keys);
 
+	ath79_setup_qca956x_eth_cfg(QCA956X_ETH_CFG_SW_PHY_SWAP |
+				   QCA956X_ETH_CFG_SW_PHY_ADDR_SWAP);
+
+	ath79_register_mdio(0, 0x0);
 	ath79_register_mdio(1, 0x0);
 
-	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 1);
 	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 0);
+
+	/* WAN port */
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ath79_eth0_data.speed = SPEED_100;
+	ath79_eth0_data.duplex = DUPLEX_FULL;
+	ath79_eth0_data.phy_mask = BIT(0);
+	ath79_register_eth(0);
+
+	/* LAN ports */
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ath79_eth1_data.speed = SPEED_1000;
 	ath79_eth1_data.duplex = DUPLEX_FULL;
-	ath79_eth1_data.phy_mask = BIT(4);
+	ath79_switch_data.phy_poll_mask |= BIT(4);
+	ath79_switch_data.phy4_mii_en = 1;
 	ath79_register_eth(1);
 
 	ath79_register_wmac(art + ARCHER_C59_V1_WMAC_CALDATA_OFFSET, mac);
 	ap91_pci_init(art + ARCHER_C59_V1_PCI_CALDATA_OFFSET, NULL);
-
 
 	ath79_register_usb();
 	gpio_request_one(ARCHER_C59_V1_GPIO_USB_POWER,

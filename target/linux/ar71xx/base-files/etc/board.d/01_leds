@@ -51,8 +51,8 @@ antrouter-r1)
 	;;
 archer-c59-v1|\
 archer-c60-v1)
-	ucidef_set_led_switch "lan" "LAN" "$board:green:lan" "switch0" "0x3C"
-	ucidef_set_led_switch "wan" "WAN" "$board:green:wan" "switch0" "0x02"
+	ucidef_set_led_switch "lan" "LAN" "$board:green:lan" "switch0" "0x1E"
+	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:green:wlan5g" "phy0tpt"
 
