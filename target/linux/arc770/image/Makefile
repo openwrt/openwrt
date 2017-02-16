@@ -10,9 +10,7 @@ include $(INCLUDE_DIR)/image.mk
 # On ARC initramfs is put before entry point and so entry point moves
 # in memory from build to built. Thus we need to extract EP from vmlinux
 # every time before generation of uImage.
-define Build/calculate-ep
-	$(eval KERNEL_ENTRY=$(shell $(KERNEL_CROSS)readelf -h $(1) | grep "Entry point address" | grep -o 0x.*))
-endef
+kernel_ep = `$(KERNEL_CROSS)readelf -h $(1) | grep "Entry point address" | grep -o 0x.*`
 
 define Build/patch-dtb
 	$(STAGING_DIR_HOST)/bin/patch-dtb $@ $(DTS_DIR)/$(DEVICE_DTS).dtb
@@ -69,9 +67,8 @@ endef
 
 define Image/BuildKernel
 	# Build unified uImage
-	$(call Build/calculate-ep, $(KDIR)/vmlinux.elf)
 	$(call Image/BuildKernel/MkuImage, \
-		none, $(KERNEL_LOADADDR), $(KERNEL_ENTRY), \
+		none, $(KERNEL_LOADADDR),$(call kernel_ep,$(KDIR)/vmlinux.elf) , \
 		$(KDIR)/vmlinux, \
 		$(BIN_DIR)/$(IMG_PREFIX)-uImage \
 	)
