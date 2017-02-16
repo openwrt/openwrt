@@ -1,0 +1,74 @@
+From f8d0939eca47f56449ec583810a6ff41a1caaa91 Mon Sep 17 00:00:00 2001
+From: Thomas Pedersen <twp@codeaurora.org>
+Date: Mon, 16 May 2016 17:58:54 -0700
+Subject: [PATCH 05/37] arm: qcom: dts: Enable NAND node on IPQ8064 AP148
+ platform
+
+Original patch by Archit Taneja.
+
+Enable the NAND controller node on the AP148 platform. Provide pinmux
+information.
+
+Signed-off-by: Archit Taneja <architt@codeaurora.org>
+Signed-off-by: Thomas Pedersen <twp@codeaurora.org>
+---
+ arch/arm/boot/dts/qcom-ipq8064-ap148.dts |   42 ++++++++++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+
+--- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
++++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
+@@ -38,6 +38,28 @@
+ 					bias-none;
+ 				};
+ 			};
++			nand_pins: nand_pins {
++				mux {
++					pins = "gpio34", "gpio35", "gpio36",
++					       "gpio37", "gpio38", "gpio39",
++					       "gpio40", "gpio41", "gpio42",
++					       "gpio43", "gpio44", "gpio45",
++					       "gpio46", "gpio47";
++					function = "nand";
++					drive-strength = <10>;
++					bias-disable;
++				};
++				pullups {
++					pins = "gpio39";
++					bias-pull-up;
++				};
++				hold {
++					pins = "gpio40", "gpio41", "gpio42",
++					       "gpio43", "gpio44", "gpio45",
++					       "gpio46", "gpio47";
++					bias-bus-hold;
++				};
++			};
+ 		};
+ 
+ 		gsbi@16300000 {
+@@ -98,5 +120,25 @@
+ 			ports-implemented = <0x1>;
+ 			status = "ok";
+ 		};
++
++		nand@1ac00000 {
++			status = "ok";
++
++			pinctrl-0 = <&nand_pins>;
++			pinctrl-names = "default";
++
++			nandcs@0 {
++				compatible = "qcom,nandcs";
++				reg = <0>;
++
++				nand-ecc-strength = <4>;
++				nand-ecc-step-size = <512>;
++				nand-bus-width = <8>;
++			};
++		};
+ 	};
+ };
++
++&adm_dma {
++	status = "ok";
++};
