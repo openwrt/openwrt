@@ -168,7 +168,7 @@ if [ -n "$(ls /lib/modules/`uname -r`/ltq_atm*)" ]; then
 	ucidef_add_atm_bridge "$vpi" "$vci" "$encaps" "$payload"
 fi
 
-if grep -qE "system type.*: (VR9|xRX200)" /proc/cpuinfo; then
+if lantiq_is_vdsl_system; then
 	interface_wan="ptm0"
 	ucidef_add_vdsl_modem "$annex" "av" "ptm"
 else
