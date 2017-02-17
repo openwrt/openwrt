@@ -1,0 +1,51 @@
+From 07f0633ca7ed00e0937340883aa0b9079cffd116 Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Date: Fri, 15 May 2015 11:04:20 -0300
+Subject: mips: pistachio: Add CPUFreq support
+
+This commit adds a cpufreq-dt platform device and enables CPUFreq
+support.
+
+Change-Id: Ic40acc8b4672ff5ca295fa866bd5c0d14ba4d221
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+---
+ arch/mips/Kconfig          | 1 +
+ arch/mips/pistachio/init.c | 3 +++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index db45961..cd3b14d 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -392,6 +392,7 @@ config MACH_PISTACHIO
+ 	select MIPS_GIC
+ 	select PINCTRL
+ 	select REGULATOR
++	select CPU_SUPPORTS_CPUFREQ
+ 	select SYS_HAS_CPU_MIPS32_R2
+ 	select SYS_SUPPORTS_32BIT_KERNEL
+ 	select SYS_SUPPORTS_LITTLE_ENDIAN
+diff --git a/arch/mips/pistachio/init.c b/arch/mips/pistachio/init.c
+index 96ba2cc..cee8932 100644
+--- a/arch/mips/pistachio/init.c
++++ b/arch/mips/pistachio/init.c
+@@ -13,6 +13,7 @@
+ #include <linux/of_address.h>
+ #include <linux/of_fdt.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_device.h>
+ 
+ #include <asm/cacheflush.h>
+ #include <asm/dma-coherence.h>
+@@ -131,6 +132,8 @@ static int __init plat_of_setup(void)
+ 	if (of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL))
+ 		panic("Failed to populate DT");
+ 
++	platform_device_register_simple("cpufreq-dt", -1, NULL, 0);
++
+ 	return 0;
+ }
+ arch_initcall(plat_of_setup);
+-- 
+2.6.2
+

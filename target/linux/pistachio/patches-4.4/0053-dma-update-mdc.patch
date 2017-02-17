@@ -1,0 +1,142 @@
+From 1fab01072d3633ff8540c9ea0556da7659d9f64a Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Tue, 27 Oct 2015 12:43:48 +0000
+Subject: dma: update mdc
+
+This include following changes :-
+
+1. dma: mdc: add suspend resume support.
+Add support for mdc dev pm ops with suspend-resume,
+mdc clocks can be gated when device suspends.
+
+2. dma: img: Revert channel enable/disable
+Revert a previous patch that changed the ordering of SoC level
+enable/disable of channels to match upstream.
+
+Both orderings are valid.
+
+3. dma: mdc: Correct event check comparison
+The event count check should be >= to cause a return
+of 0 for no new events
+
+Presently it returns the maximum number of events
+when there are no new events
+
+Change-Id: I09afba598bfb45bdfea7b64b78ff313e06e506ed
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/dma/img-mdc-dma.c | 39 ++++++++++++++++++++++++++++++---------
+ 1 file changed, 30 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/dma/img-mdc-dma.c b/drivers/dma/img-mdc-dma.c
+index f3ba232..5c3fc9d 100644
+--- a/drivers/dma/img-mdc-dma.c
++++ b/drivers/dma/img-mdc-dma.c
+@@ -545,6 +545,8 @@ static void mdc_issue_desc(struct mdc_chan *mchan)
+ 	dev_dbg(mdma2dev(mdma), "Issuing descriptor on channel %d\n",
+ 		mchan->chan_nr);
+ 
++	mdma->soc->enable_chan(mchan);
++
+ 	val = mdc_chan_readl(mchan, MDC_GENERAL_CONFIG);
+ 	val |= MDC_GENERAL_CONFIG_LIST_IEN | MDC_GENERAL_CONFIG_IEN |
+ 		MDC_GENERAL_CONFIG_LEVEL_INT | MDC_GENERAL_CONFIG_PHYSICAL_W |
+@@ -558,8 +560,6 @@ static void mdc_issue_desc(struct mdc_chan *mchan)
+ 	val = mdc_chan_readl(mchan, MDC_CONTROL_AND_STATUS);
+ 	val |= MDC_CONTROL_AND_STATUS_LIST_EN;
+ 	mdc_chan_writel(mchan, val, MDC_CONTROL_AND_STATUS);
+-
+-	mdma->soc->enable_chan(mchan);
+ }
+ 
+ static void mdc_issue_pending(struct dma_chan *chan)
+@@ -678,7 +678,7 @@ static unsigned int mdc_get_new_events(struct mdc_chan *mchan)
+ 			MDC_CMDS_PROCESSED_CMDS_DONE_MASK;
+ 	} while (done1 != done2);
+ 
+-	if(done1 > processed)
++	if (done1 >= processed)
+ 		ret = done1 - processed;
+ 	else
+ 		ret = ((MDC_CMDS_PROCESSED_CMDS_PROCESSED_MASK + 1) -
+@@ -690,15 +690,12 @@ static unsigned int mdc_get_new_events(struct mdc_chan *mchan)
+ static int mdc_terminate_all(struct dma_chan *chan)
+ {
+ 	struct mdc_chan *mchan = to_mdc_chan(chan);
+-	struct mdc_dma *mdma = mchan->mdma;
+ 	struct mdc_tx_desc *mdesc;
+ 	unsigned long flags;
+ 	LIST_HEAD(head);
+ 
+ 	spin_lock_irqsave(&mchan->vc.lock, flags);
+ 
+-	mdma->soc->disable_chan(mchan);
+-
+ 	mdc_chan_writel(mchan, MDC_CONTROL_AND_STATUS_CANCEL,
+ 			MDC_CONTROL_AND_STATUS);
+ 
+@@ -743,7 +740,6 @@ static void mdc_free_chan_resources(struct dma_chan *chan)
+ static irqreturn_t mdc_chan_irq(int irq, void *dev_id)
+ {
+ 	struct mdc_chan *mchan = (struct mdc_chan *)dev_id;
+-	struct mdc_dma *mdma = mchan->mdma;
+ 	struct mdc_tx_desc *mdesc;
+ 	unsigned int i, new_events;
+ 
+@@ -753,7 +749,7 @@ static irqreturn_t mdc_chan_irq(int irq, void *dev_id)
+ 
+ 	new_events = mdc_get_new_events(mchan);
+ 
+-	if(!new_events)
++	if (!new_events)
+ 		goto out;
+ 
+ 	mdesc = mchan->desc;
+@@ -783,7 +779,6 @@ static irqreturn_t mdc_chan_irq(int irq, void *dev_id)
+ 		} else if (mdesc->list_cmds_done == mdesc->list_len) {
+ 			mchan->desc = NULL;
+ 			vchan_cookie_complete(&mdesc->vd);
+-			mdma->soc->disable_chan(mchan);
+ 			mdc_issue_desc(mchan);
+ 			break;
+ 		}
+@@ -1014,9 +1009,35 @@ static int mdc_dma_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_PM_SLEEP
++static int img_mdc_suspend(struct device *dev)
++{
++	struct mdc_dma *mdma = dev_get_drvdata(dev);
++
++	clk_disable_unprepare(mdma->clk);
++
++	return 0;
++}
++
++static int img_mdc_resume(struct device *dev)
++{
++	struct mdc_dma *mdma = dev_get_drvdata(dev);
++	int ret = 0;
++
++	ret = clk_prepare_enable(mdma->clk);
++
++	return ret;
++}
++#endif /* CONFIG_PM_SLEEP */
++
++static const struct dev_pm_ops img_mdc_pm_ops = {
++	SET_SYSTEM_SLEEP_PM_OPS(img_mdc_suspend, img_mdc_resume)
++};
++
+ static struct platform_driver mdc_dma_driver = {
+ 	.driver = {
+ 		.name = "img-mdc-dma",
++		.pm	= &img_mdc_pm_ops,
+ 		.of_match_table = of_match_ptr(mdc_dma_of_match),
+ 	},
+ 	.probe = mdc_dma_probe,
+-- 
+2.6.2
+

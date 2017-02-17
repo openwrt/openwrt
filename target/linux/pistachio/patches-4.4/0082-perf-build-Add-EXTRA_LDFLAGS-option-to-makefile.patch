@@ -1,0 +1,32 @@
+From 7dcaddd1d7a0e91dd0d56a871d26b43583a1c6e6 Mon Sep 17 00:00:00 2001
+From: Zubair Lutfullah Kakakhel <Zubair.Kakakhel@imgtec.com>
+Date: Fri, 12 Feb 2016 11:04:40 +0000
+Subject: perf build: Add EXTRA_LDFLAGS option to makefile
+
+To compile for little-endian systems, you need to pass -EL to CC
+and LD.
+
+EXTRA_CFLAGS works to pass -EL to CC.
+Add EXTRA_LDFLAGS to pass -EL to LD.
+
+Signed-off-by: Zubair Lutfullah Kakakhel <Zubair.Kakakhel@imgtec.com>
+---
+ tools/perf/Makefile.perf | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tools/perf/Makefile.perf b/tools/perf/Makefile.perf
+index 0d19d54..fb45fad 100644
+--- a/tools/perf/Makefile.perf
++++ b/tools/perf/Makefile.perf
+@@ -135,6 +135,8 @@ $(call allow-override,LD,$(CROSS_COMPILE)ld)
+ 
+ PKG_CONFIG = $(CROSS_COMPILE)pkg-config
+ 
++LD += $(EXTRA_LDFLAGS)
++
+ RM      = rm -f
+ LN      = ln -f
+ MKDIR   = mkdir
+-- 
+2.6.2
+

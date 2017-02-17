@@ -1,0 +1,26 @@
+From 4e61c3d527b83c2ac549a15206124fef6feead3b Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Wed, 23 Mar 2016 16:46:17 +0000
+Subject: TPM: configure support for the TPM and add to device tree
+
+Change-Id: I2445dce1f61440541207cf642c3ba7daa228f115
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ arch/mips/configs/pistachio_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/mips/configs/pistachio_defconfig b/arch/mips/configs/pistachio_defconfig
+index 8c15098..136ef7d 100644
+--- a/arch/mips/configs/pistachio_defconfig
++++ b/arch/mips/configs/pistachio_defconfig
+@@ -190,6 +190,7 @@ CONFIG_SERIAL_8250_DW=y
+ CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_HW_RANDOM=y
+ CONFIG_TCG_TPM=y
++CONFIG_TCG_TIS_I2C_INFINEON=y
+ CONFIG_I2C=y
+ CONFIG_I2C_CHARDEV=m
+ CONFIG_I2C_IMG=y
+-- 
+2.6.2
+

@@ -1,0 +1,93 @@
+From 1f017218fe290205feab32e46fbb1832e2fb3f84 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Mon, 21 Mar 2016 17:05:47 +0000
+Subject: ASoC: img: Fix compilation issue caused when selecting
+ EVENT_TIMER_LOCAL
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When event timer local is selected it causes below compilation failures.
+
+[..]
+
+sound/soc/img/pistachio-event-timer-local.c: In function ‘pistachio_evt_get_time_cyc’:
+sound/soc/img/pistachio-event-timer-local.c:55:2: error: implicit declaration of function ‘_pistachio_evt_read_ns’ [-Werror=implicit-function-declaration]
+  ret = _pistachio_evt_read_ns(evt, cyc);
+  ^
+sound/soc/img/pistachio-event-timer-local.c: In function ‘pistachio_evt_clk_notifier_cb’:
+sound/soc/img/pistachio-event-timer-local.c:143:3: error: implicit declaration of function ‘pistachio_evt_read_ns’ [-Werror=implicit-function-declaration]
+   pistachio_evt_read_ns(evt, NULL);
+   ^
+sound/soc/img/pistachio-event-timer-local.c:147:3: error: implicit declaration of function ‘pistachio_evt_clk_rate_change’ [-Werror=implicit-function-declaration]
+   pistachio_evt_clk_rate_change(evt);
+
+[..]
+
+Fix the compilation issue by using the right api's
+as available part of event timer local.
+
+Issue ID: 74511
+
+Change-Id: Id03fc41283a303815632a140fb2ba1fd282f8a63
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ sound/soc/img/pistachio-event-timer-internal.h | 1 +
+ sound/soc/img/pistachio-event-timer-local.c    | 6 +++---
+ sound/soc/img/pistachio-event-timer.c          | 2 +-
+ 3 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/sound/soc/img/pistachio-event-timer-internal.h b/sound/soc/img/pistachio-event-timer-internal.h
+index 562d14b..afc6928 100644
+--- a/sound/soc/img/pistachio-event-timer-internal.h
++++ b/sound/soc/img/pistachio-event-timer-internal.h
+@@ -66,4 +66,5 @@ int pistachio_evt_time_to_reg(struct pistachio_evt *evt, u64 time,
+ int pistachio_evt_init(struct pistachio_evt *evt);
+ void pistachio_evt_deinit(struct pistachio_evt *evt);
+ 
++void pistachio_evt_clk_rate_change(struct pistachio_evt *evt);
+ #endif
+diff --git a/sound/soc/img/pistachio-event-timer-local.c b/sound/soc/img/pistachio-event-timer-local.c
+index 33ad48d..e775a7a 100644
+--- a/sound/soc/img/pistachio-event-timer-local.c
++++ b/sound/soc/img/pistachio-event-timer-local.c
+@@ -52,7 +52,7 @@ static u64 pistachio_evt_get_time_cyc(struct pistachio_evt *evt, u32 *cyc)
+ 	u64 ret;
+ 
+ 	spin_lock_irqsave(&evt->lock, flags);
+-	ret = _pistachio_evt_read_ns(evt, cyc);
++	ret = _pistachio_evt_get_time_cyc(evt, cyc);
+ 	spin_unlock_irqrestore(&evt->lock, flags);
+ 
+ 	return ret;
+@@ -140,12 +140,12 @@ static int pistachio_evt_clk_notifier_cb(struct notifier_block *nb,
+ 
+ 	switch (event) {
+ 	case PRE_RATE_CHANGE:
+-		pistachio_evt_read_ns(evt, NULL);
++		pistachio_evt_get_time_cyc(evt, NULL);
+ 		return NOTIFY_OK;
+ 	case POST_RATE_CHANGE:
+ 		hrtimer_cancel(&evt->poll_timer);
+ 		pistachio_evt_clk_rate_change(evt);
+-		pistachio_evt_read_ns(evt, NULL);
++		pistachio_evt_get_time_cyc(evt, NULL);
+ 		pistachio_evt_start_poll_timer(evt);
+ 		return NOTIFY_OK;
+ 	case ABORT_RATE_CHANGE:
+diff --git a/sound/soc/img/pistachio-event-timer.c b/sound/soc/img/pistachio-event-timer.c
+index 29f81ce..4f2c750 100644
+--- a/sound/soc/img/pistachio-event-timer.c
++++ b/sound/soc/img/pistachio-event-timer.c
+@@ -726,7 +726,7 @@ void pistachio_evt_abort_measurements(struct pistachio_evt *evt)
+ }
+ EXPORT_SYMBOL_GPL(pistachio_evt_abort_measurements);
+ 
+-static void pistachio_evt_clk_rate_change(struct pistachio_evt *evt)
++void pistachio_evt_clk_rate_change(struct pistachio_evt *evt)
+ {
+ 	u64 tmp;
+ 	unsigned long flags;
+-- 
+2.6.2
+

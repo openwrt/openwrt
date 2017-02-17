@@ -1,0 +1,29 @@
+From 389b87901ff4f6d76f224e16184e95a0cd4d7795 Mon Sep 17 00:00:00 2001
+From: Chaitanya Tata <Chaitanya.Tata@imgtec.com>
+Date: Fri, 22 Jul 2016 14:22:53 +0530
+Subject: [PATCH] mac80211: minstrel_ht: fix uninitialized variable ldpc
+
+variable ldpc is uninitialized causing it to enable LDPC
+even when the peer doesn't support it.
+
+Change-Id: I6a4b1f9bcfba0444695ecfb499e595929fb60fa1
+---
+ net/mac80211/rc80211_minstrel_ht.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/mac80211/rc80211_minstrel_ht.c b/net/mac80211/rc80211_minstrel_ht.c
+index a8b9ae5..b17766f 100644
+--- a/net/mac80211/rc80211_minstrel_ht.c
++++ b/net/mac80211/rc80211_minstrel_ht.c
+@@ -1173,7 +1173,7 @@ minstrel_ht_update_caps(void *priv, struct ieee80211_supported_band *sband,
+ 	int ack_dur;
+ 	int stbc;
+ 	int i;
+-	bool ldpc;
++	bool ldpc = false;
+ 
+ 	/* fall back to the old minstrel for legacy stations */
+ 	if (!sta->ht_cap.ht_supported)
+-- 
+2.7.4
+

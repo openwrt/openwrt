@@ -1,0 +1,140 @@
+From 2ff961f12e006b7b473bc44183db8169b25e89c8 Mon Sep 17 00:00:00 2001
+From: Tim Sheridan <Tim.Sheridan@imgtec.com>
+Date: Thu, 14 Jan 2016 12:08:31 +0000
+Subject: atu: Move UAPI header into "misc/"
+
+UAPI headers need to be in a directory to be installed using
+"make headers_install" for userspace access.
+
+Change-Id: I26390d26b7ed91e0e352666358f2b0191c086d46
+---
+ drivers/misc/atu/atu_clk_maintainer.c |  2 +-
+ include/uapi/atu_ioctl.h              | 43 -----------------------------------
+ include/uapi/misc/Kbuild              |  1 +
+ include/uapi/misc/atu_ioctl.h         | 43 +++++++++++++++++++++++++++++++++++
+ 4 files changed, 45 insertions(+), 44 deletions(-)
+ delete mode 100644 include/uapi/atu_ioctl.h
+ create mode 100644 include/uapi/misc/atu_ioctl.h
+
+diff --git a/drivers/misc/atu/atu_clk_maintainer.c b/drivers/misc/atu/atu_clk_maintainer.c
+index 297dff8..4b48c91 100644
+--- a/drivers/misc/atu/atu_clk_maintainer.c
++++ b/drivers/misc/atu/atu_clk_maintainer.c
+@@ -22,7 +22,7 @@
+ #include <linux/timer.h>
+ #include <linux/uaccess.h>
+ 
+-#include <uapi/atu_ioctl.h>
++#include <uapi/misc/atu_ioctl.h>
+ 
+ #include "atu_clk_maintainer.h"
+ #include "atu_clk_ntp.h"
+diff --git a/include/uapi/atu_ioctl.h b/include/uapi/atu_ioctl.h
+deleted file mode 100644
+index 70063dc..0000000
+--- a/include/uapi/atu_ioctl.h
++++ /dev/null
+@@ -1,43 +0,0 @@
+-/*
+- * Atu Ioctl Header file
+- *
+- * Copyright (C) 2015 Imagination Technologies Ltd.
+- *
+- * This program is free software; you can redistribute it and/or modify it
+- * under the terms and conditions of the GNU General Public License,
+- * version 2, as published by the Free Software Foundation.
+- */
+-
+-#ifndef ATU_IOCTL_H
+-#define ATU_IOCTL_H
+-
+-#include <linux/time.h>
+-#include <linux/types.h>
+-
+-#define ATU_MAX_COUNTERS	6
+-#define ATU_PAST		0
+-#define ATU_FUTURE		1
+-
+-struct atu_event {
+-	u32	counter;
+-	u32	source;
+-	u32	timestamp;
+-	u32	timestamp_counter;
+-	u32	txtimer;
+-	u32	timeofday_sec;
+-	u32	timeofday_ns;
+-	u32	timekeeping_shift;
+-	u32	timekeeping_mult;
+-};
+-
+-#define ATUIO	(0xF2)
+-/*get event timestamp*/
+-#define ATUIO_GETEVTS		_IOWR(ATUIO, 0x42, struct atu_event)
+-/*set timex adjustments*/
+-#define ATUIO_ADJTIMEX		_IOWR(ATUIO, 0x43, struct timex)
+-/*set timeofday*/
+-#define ATUIO_SETTIMEOFDAY	_IOWR(ATUIO, 0x44, struct timex)
+-/*get timespec of atu clock*/
+-#define ATUIO_GETTIMESPEC	_IOWR(ATUIO, 0x45, struct timex)
+-
+-#endif /* ATU_IOCTL_H */
+diff --git a/include/uapi/misc/Kbuild b/include/uapi/misc/Kbuild
+index e96cae7..2d44fe1 100644
+--- a/include/uapi/misc/Kbuild
++++ b/include/uapi/misc/Kbuild
+@@ -1,2 +1,3 @@
+ # misc Header export list
++header-y += atu_ioctl.h
+ header-y += cxl.h
+diff --git a/include/uapi/misc/atu_ioctl.h b/include/uapi/misc/atu_ioctl.h
+new file mode 100644
+index 0000000..70063dc
+--- /dev/null
++++ b/include/uapi/misc/atu_ioctl.h
+@@ -0,0 +1,43 @@
++/*
++ * Atu Ioctl Header file
++ *
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ */
++
++#ifndef ATU_IOCTL_H
++#define ATU_IOCTL_H
++
++#include <linux/time.h>
++#include <linux/types.h>
++
++#define ATU_MAX_COUNTERS	6
++#define ATU_PAST		0
++#define ATU_FUTURE		1
++
++struct atu_event {
++	u32	counter;
++	u32	source;
++	u32	timestamp;
++	u32	timestamp_counter;
++	u32	txtimer;
++	u32	timeofday_sec;
++	u32	timeofday_ns;
++	u32	timekeeping_shift;
++	u32	timekeeping_mult;
++};
++
++#define ATUIO	(0xF2)
++/*get event timestamp*/
++#define ATUIO_GETEVTS		_IOWR(ATUIO, 0x42, struct atu_event)
++/*set timex adjustments*/
++#define ATUIO_ADJTIMEX		_IOWR(ATUIO, 0x43, struct timex)
++/*set timeofday*/
++#define ATUIO_SETTIMEOFDAY	_IOWR(ATUIO, 0x44, struct timex)
++/*get timespec of atu clock*/
++#define ATUIO_GETTIMESPEC	_IOWR(ATUIO, 0x45, struct timex)
++
++#endif /* ATU_IOCTL_H */
+-- 
+2.6.2
+

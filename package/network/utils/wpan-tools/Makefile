@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wpan-tools
-PKG_VERSION:=0.5
+PKG_VERSION:=0.6
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://wpan.cakelab.org/releases/
-PKG_MD5SUM:=6226df405a98c13ec41bf4d1f0777d6b
+PKG_MD5SUM:=dd5367fe36ad8269263a29edad073bf7
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -31,6 +31,7 @@ endef
 define Package/wpan-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/iwpan $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpan-ping/wpan-ping $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,wpan-tools))

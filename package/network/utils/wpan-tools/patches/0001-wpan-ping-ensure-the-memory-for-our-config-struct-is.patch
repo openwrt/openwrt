@@ -1,0 +1,33 @@
+From e93f6e23b7035d6a76ca9988fdfb5c46dd06cd0f Mon Sep 17 00:00:00 2001
+From: Stefan Schmidt <stefan@datenfreihafen.org>
+Date: Sat, 16 Apr 2016 23:50:46 +0200
+Subject: [PATCH 1/2] wpan-ping: ensure the memory for our config struct is
+ initialized.
+
+This came up on one embedded system which went into daemon mode no
+matter what options given on the commandline. Turns out we never made
+sure our config struct is actually set to zeor and thus the server
+mode flag had random values. Make sure we have a clean start by using
+calloc.
+
+Signed-off-by: Stefan Schmidt <stefan@datenfreihafen.org>
+---
+ wpan-ping/wpan-ping.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/wpan-ping/wpan-ping.c b/wpan-ping/wpan-ping.c
+index 92f4cf8..cbad1fc 100644
+--- a/wpan-ping/wpan-ping.c
++++ b/wpan-ping/wpan-ping.c
+@@ -438,7 +438,7 @@ int main(int argc, char *argv[]) {
+ 	struct config *conf;
+ 	char *dst_addr = NULL;
+ 
+-	conf = malloc(sizeof(struct config));
++	conf = calloc(1, sizeof(struct config));
+ 
+ 	/* Default to interface wpan0 if nothing else is given */
+ 	conf->interface = "wpan0";
+-- 
+2.5.5
+

@@ -1,0 +1,36 @@
+/*
+ * Copyright (C) 2015 Imagination Technologies Ltd.
+ * Copyright (C) 2015 Google, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+
+#include "pistachio_marduk_common.dtsi"
+
+/ {
+	model = "IMG Marduk - Ci40 with cc2520";
+};
+
+&spfi0 {
+	cc2520: cc2520@0 {
+		compatible = "ti,cc2520";
+		reg = <0>;
+		spi-max-frequency = <4000000>;
+		fifo-gpio = <&gpio3 4 GPIO_ACTIVE_HIGH>;
+		fifop-gpio = <&gpio3 5 GPIO_ACTIVE_HIGH>;
+		sfd-gpio = <&gpio4 15 GPIO_ACTIVE_HIGH>;
+		cca-gpio = <&gpio3 6 GPIO_ACTIVE_HIGH>;
+		vreg-gpio = <&gpio2 12 GPIO_ACTIVE_HIGH>;
+		reset-gpio = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		#clock-cells = <0>;
+		extclock-freq = <16000000>;
+	};
+
+	sc16is752: sc16is752@1 {
+		clocks = <&cc2520 0>;
+	};
+};
