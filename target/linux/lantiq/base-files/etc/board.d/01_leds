@@ -21,6 +21,7 @@ led_usb2="$(lantiq_get_dt_led usb2)"
 led_internet="$(lantiq_get_dt_led internet)"
 [ -n "$led_internet" ] && {
 	interface="nas0"
+	lantiq_is_vdsl_system && interface="ptm0"
 
 	led_dsl="$(lantiq_get_dt_led dsl)"
 	[ -n "$led_dsl" ] && {
