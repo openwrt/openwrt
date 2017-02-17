@@ -1,0 +1,57 @@
+diff -uh mt76-2016-09-04/mt7603_debugfs.c mt76-2016-09-04.bak/mt7603_debugfs.c
+--- mt76-2016-09-04/mt7603_debugfs.c	2016-10-20 13:55:44.000000000 +0200
++++ mt76-2016-09-04.bak/mt7603_debugfs.c	2016-10-20 13:55:44.308951527 +0200
+@@ -26,6 +26,7 @@
+ 		[RESET_CAUSE_RX_BUSY] = "RX DMA busy stuck",
+ 		[RESET_CAUSE_RX_PSE_BUSY] = "RX PSE busy stuck",
+ 		[RESET_CAUSE_BEACON_STUCK] = "Beacon stuck",
++		[RESET_CAUSE_TXS_FAILED] = "TXS Failurers",
+ 	};
+ 	int i;
+ 
+diff -uh mt76-2016-09-04/mt7603.h mt76-2016-09-04.bak/mt7603.h
+--- mt76-2016-09-04/mt7603.h	2016-10-20 13:55:44.000000000 +0200
++++ mt76-2016-09-04.bak/mt7603.h	2016-10-20 13:55:44.308951527 +0200
+@@ -96,6 +96,7 @@
+ 	RESET_CAUSE_RX_BUSY,
+ 	RESET_CAUSE_BEACON_STUCK,
+ 	RESET_CAUSE_RX_PSE_BUSY,
++	RESET_CAUSE_TXS_FAILED,
+ 	__RESET_CAUSE_MAX
+ };
+ 
+diff -uh mt76-2016-09-04/mt7603_mac.c mt76-2016-09-04.bak/mt7603_mac.c
+--- mt76-2016-09-04/mt7603_mac.c	2016-10-20 13:55:44.000000000 +0200
++++ mt76-2016-09-04.bak/mt7603_mac.c	2016-10-24 09:31:19.471027935 +0200
+@@ -717,8 +717,6 @@
+ 	if (!msta)
+ 		return 0;
+ 
+-	if (info->flags & IEEE80211_TX_CTL_NO_ACK)
+-		return 0;
+ 
+ 	if (!(info->flags & (IEEE80211_TX_CTL_REQ_TX_STATUS |
+ 			  IEEE80211_TX_CTL_RATE_CTRL_PROBE)) &&
+@@ -915,14 +916,21 @@
+ 	u32 txs;
+ 	u8 wcidx;
+ 	u8 pid;
++	u32 ack;
+ 
++	txs = le32_to_cpu(txs_data[0]);
++	ack = MT76_GET(MT_TXS0_ACK_TIMEOUT, txs);
+ 	txs = le32_to_cpu(txs_data[4]);
+ 	pid = MT76_GET(MT_TXS4_PID, txs);
+ 	txs = le32_to_cpu(txs_data[3]);
+ 	wcidx = MT76_GET(MT_TXS3_WCID, txs);
+ 
+-	if (pid == MT_PID_NOACK)
++	if (pid == MT_PID_NOACK) {
++		if(ack) {
++			dev->reset_cause[RESET_CAUSE_TXS_FAILED]++;
++		}
+ 		return;
++	}
+ 
+ 	if (wcidx >= ARRAY_SIZE(dev->wcid))
+ 		return;
