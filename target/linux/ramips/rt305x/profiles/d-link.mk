@@ -30,6 +30,16 @@ define Profile/DCS930LB1/Description
 endef
 $(eval $(call Profile,DCS930LB1))
 
+define Profile/DIR600B5
+	NAME:=D-Link DIR-600 B5
+	PACKAGES:=kmod-ledtrig-netdev kmod-ledtrig-timer
+endef
+
+define Profile/DIR600B5/Description
+	Package set for D-Link DIR600 B5 board
+endef
+$(eval $(call Profile,DIR600B5))
+
 
 define Profile/DIR610A1
 	NAME:=D-Link DIR-610 A1
