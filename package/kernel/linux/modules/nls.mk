@@ -147,6 +147,38 @@ endef
 $(eval $(call KernelPackage,nls-cp932))
 
 
+define KernelPackage/nls-cp936
+  SUBMENU:=Native Language Support
+  TITLE:=Codepage 936 (Simplified Chinese)
+  KCONFIG:=CONFIG_NLS_CODEPAGE_936
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp936.ko
+  AUTOLOAD:=$(call AutoLoad,25,nls_cp936)
+  $(call AddDepends/nls)
+endef
+
+define KernelPackage/nls-cp936/description
+  Kernel module for NLS Codepage 936 (Simplified Chinese)
+endef
+
+$(eval $(call KernelPackage,nls-cp936))
+
+
+define KernelPackage/nls-cp950
+  SUBMENU:=Native Language Support
+  TITLE:=Codepage 950 (Traditional Chinese)
+  KCONFIG:=CONFIG_NLS_CODEPAGE_950
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp950.ko
+  AUTOLOAD:=$(call AutoLoad,25,nls_cp950)
+  $(call AddDepends/nls)
+endef
+
+define KernelPackage/nls-cp950/description
+  Kernel module for NLS Codepage 950 (Traditional Chinese)
+endef
+
+$(eval $(call KernelPackage,nls-cp950))
+
+
 define KernelPackage/nls-cp1250
   SUBMENU:=Native Language Support
   TITLE:=Codepage 1250 (Eastern Europe)
