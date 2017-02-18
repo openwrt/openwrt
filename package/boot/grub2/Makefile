@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=grub
-PKG_VERSION:=2.02~beta3
+PKG_VERSION:=2.02~rc1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=http://alpha.gnu.org/gnu/grub \
 	http://gnualpha.uib.no/grub/ \
 	http://mirrors.fe.up.pt/pub/gnu-alpha/grub/ \
 	http://www.nic.funet.fi/pub/gnu/alpha/gnu/grub/
-PKG_HASH:=30ec3d555e52a702c3eef449872ef874eff28b320f40b55ffc47f70db8e5ada1
+PKG_HASH:=445239e9b96d1143c194c1d37851cf4196b83701c60172e49665e9d453d80278
 
 PKG_FIXUP:=autoreconf
 HOST_BUILD_PARALLEL:=1
