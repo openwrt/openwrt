@@ -21,6 +21,9 @@ brcm63xx_dt_detect() {
 	"ADB P.DG AV4202N")
 		board_name="av4202n"
 		;;
+	"Actiontec R1000H")
+		board_name="r1000h"
+		;;
 	"Alcatel RG100A")
 		board_name="rg100a"
 		;;
