@@ -267,16 +267,16 @@
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/ip6_gre.c
 +++ b/net/ipv6/ip6_gre.c
-@@ -394,7 +394,7 @@ static void ip6gre_err(struct sk_buff *s
+@@ -395,7 +395,7 @@ static void ip6gre_err(struct sk_buff *s
+ 		return;
+ 	ipv6h = (const struct ipv6hdr *)skb->data;
+ 	greh = (const struct gre_base_hdr *)(skb->data + offset);
+-	key = key_off ? *(__be32 *)(skb->data + key_off) : 0;
++	key = key_off ? net_hdr_word((__be32 *)(skb->data + key_off)) : 0;
  
  	t = ip6gre_tunnel_lookup(skb->dev, &ipv6h->daddr, &ipv6h->saddr,
- 				flags & GRE_KEY ?
--				*(((__be32 *)p) + (grehlen / 4) - 1) : 0,
-+				net_hdr_word(((__be32 *)p) + (grehlen / 4) - 1) : 0,
- 				p[1]);
- 	if (!t)
- 		return;
-@@ -476,11 +476,11 @@ static int ip6gre_rcv(struct sk_buff *sk
+ 				 key, greh->protocol);
+@@ -479,11 +479,11 @@ static int ip6gre_rcv(struct sk_buff *sk
  			offset += 4;
  		}
  		if (flags&GRE_KEY) {
@@ -290,7 +290,7 @@
  			offset += 4;
  		}
  	}
-@@ -742,7 +742,7 @@ static netdev_tx_t ip6gre_xmit2(struct s
+@@ -745,7 +745,7 @@ static netdev_tx_t ip6gre_xmit2(struct s
  
  		if (tunnel->parms.o_flags&GRE_SEQ) {
  			++tunnel->o_seqno;
@@ -299,7 +299,7 @@
  			ptr--;
  		}
  		if (tunnel->parms.o_flags&GRE_KEY) {
-@@ -838,7 +838,7 @@ static inline int ip6gre_xmit_ipv6(struc
+@@ -841,7 +841,7 @@ static inline int ip6gre_xmit_ipv6(struc
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
@@ -310,7 +310,7 @@
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
 --- a/net/ipv6/ip6_tunnel.c
 +++ b/net/ipv6/ip6_tunnel.c
-@@ -1397,7 +1397,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1407,7 +1407,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
