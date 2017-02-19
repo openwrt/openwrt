@@ -238,6 +238,9 @@ get_status_led() {
 	sap-g3200u3)
 		status_led="$board:green:usb"
 		;;
+	u25awf-h1)
+		status_led="u25awf:red:wifi"
+		;;
 	v22rw-2x2)
 		status_led="$board:green:security"
 		;;

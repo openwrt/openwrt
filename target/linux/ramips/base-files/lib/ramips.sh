@@ -505,6 +505,9 @@ ramips_board_detect() {
 	*"TL-WR841N v13")
 		name="tl-wr841n-v13"
 		;;
+	*"U25AWF-H1")
+		name="u25awf-h1"
+		;;
 	*"UBNT-ERX")
 		name="ubnt-erx"
 		;;
