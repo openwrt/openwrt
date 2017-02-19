@@ -522,6 +522,24 @@ endef
 $(eval $(call KernelPackage,igb))
 
 
+define KernelPackage/igbvf
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel(R) 82576 Virtual Function Ethernet support
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-algo-bit +kmod-ptp
+  KCONFIG:=CONFIG_IGBVF \
+    CONFIG_IGB_HWMON=n \
+    CONFIG_IGB_DCA=n
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igbvf/igbvf.ko
+  AUTOLOAD:=$(call AutoLoad,35,igbvf)
+endef
+
+define KernelPackage/igbvf/description
+ Kernel modules for Intel(R) 82576 Virtual Function Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,igbvf))
+
+
 define KernelPackage/ixgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
