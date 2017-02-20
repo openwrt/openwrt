@@ -41,11 +41,6 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		echo "HOST_OS:=$$HOST_OS" > $@; \
 		echo "HOST_ARCH:=$$HOST_ARCH" >> $@; \
 		echo "GNU_HOST_NAME:=$$GNU_HOST_NAME" >> $@; \
-		if gfind -L /dev/null || find -L /dev/null; then \
-			echo "FIND_L=find -L \$$(1)" >> $@; \
-		else \
-			echo "FIND_L=find \$$(1) -follow" >> $@; \
-		fi \
 	) >/dev/null 2>/dev/null
 
 endif
