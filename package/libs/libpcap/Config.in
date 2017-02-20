@@ -10,4 +10,8 @@ config PCAP_HAS_BT
 	depends on BROKEN
 	default n
 
+config PCAP_HAS_NETFILTER
+	bool "Include netfilter support"
+	default n
+
 endmenu
