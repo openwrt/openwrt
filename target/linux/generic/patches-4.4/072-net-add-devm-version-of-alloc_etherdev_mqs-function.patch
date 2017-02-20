@@ -33,7 +33,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  int eth_gro_complete(struct sk_buff *skb, int nhoff);
 --- a/net/ethernet/eth.c
 +++ b/net/ethernet/eth.c
-@@ -387,6 +387,34 @@ struct net_device *alloc_etherdev_mqs(in
+@@ -388,6 +388,34 @@ struct net_device *alloc_etherdev_mqs(in
  }
  EXPORT_SYMBOL(alloc_etherdev_mqs);
  
