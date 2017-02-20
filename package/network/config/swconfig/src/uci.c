@@ -165,7 +165,7 @@ found:
 		s = uci_to_section(e);
 
 		if (!strcmp(s->type, "switch_port")) {
-			char *devn, *port, *port_err = NULL;
+			char *devn = NULL, *port = NULL, *port_err = NULL;
 			int port_n;
 
 			uci_foreach_element(&s->options, os) {
@@ -190,7 +190,7 @@ found:
 
 			swlib_map_settings(dev, SWLIB_ATTR_GROUP_PORT, port_n, s);
 		} else if (!strcmp(s->type, "switch_vlan")) {
-			char *devn, *vlan, *vlan_err = NULL;
+			char *devn = NULL, *vlan = NULL, *vlan_err = NULL;
 			int vlan_n;
 
 			uci_foreach_element(&s->options, os) {
