@@ -96,13 +96,6 @@ CMAKE_HOST_OPTIONS += \
 	-DBUILD_LUA=OFF \
 	-DBUILD_EXAMPLES=OFF \
 
-define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/include/libubox
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/*.h $(STAGING_DIR_HOST)/include/libubox/
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/lib
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/libubox.{a,so} $(STAGING_DIR_HOST)/lib/
-endef
-
 $(eval $(call BuildPackage,libubox))
 $(eval $(call BuildPackage,libblobmsg-json))
 $(eval $(call BuildPackage,jshn))
