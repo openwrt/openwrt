@@ -107,3 +107,7 @@ define Host/Configure/Default
 		$(HOST_CMAKE_SOURCE_DIR) \
 	)
 endef
+
+MAKE_FLAGS += \
+	CMAKE_COMMAND='$$(if $$(CMAKE_DISABLE_$$@),:,$(STAGING_DIR_HOST)/bin/cmake)' \
+	CMAKE_DISABLE_cmake_check_build_system=1
