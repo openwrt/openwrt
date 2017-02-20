@@ -20,7 +20,6 @@ define Package/px5g-standalone
   SUBMENU:=Encryption
   TITLE:=X.509 certificate generator (standalone version)
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
-  PROVIDES:=px5g
 endef
 
 define Package/px5g-standalone/description
