@@ -136,11 +136,11 @@ static struct ar8327_pad_cfg wndr4300_ar8327_pad0_cfg = {
 };
 
 static struct ar8327_led_cfg wndr4300_ar8327_led_cfg = {
-	.led_ctrl0 = 0xc737c737,
-	.led_ctrl1 = 0x00000000,
+	.led_ctrl0 = 0xcc35cc35,
+	.led_ctrl1 = 0xcb37cb37,
 	.led_ctrl2 = 0x00000000,
-	.led_ctrl3 = 0x0030c300,
-	.open_drain = false,
+	.led_ctrl3 = 0x00f3cf00,
+	.open_drain = true,
 };
 
 static struct ar8327_platform_data wndr4300_ar8327_data = {
