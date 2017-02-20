@@ -17,6 +17,7 @@ BASETIMESTAMPFILE="/etc/dnsmasq.time"
 TRUSTANCHORSFILE="/usr/share/dnsmasq/trust-anchors.conf"
 TIMEVALIDFILE="/var/state/dnsmasqsec"
 BASEDHCPSTAMPFILE="/var/run/dnsmasq"
+RFC6761FILE="/usr/share/dnsmasq/rfc6761.conf"
 
 DNSMASQ_DHCP_VER=4
 
@@ -731,7 +732,6 @@ dnsmasq_start()
 	append_bool "$cfg" localise_queries "--localise-queries"
 	append_bool "$cfg" readethers "--read-ethers"
 	append_bool "$cfg" dbus "--enable-dbus"
-	append_bool "$cfg" boguspriv "--bogus-priv"
 	append_bool "$cfg" expandhosts "--expand-hosts"
 	config_get tftp_root "$cfg" "tftp_root"
 	[ -d "$tftp_root" ] && append_bool "$cfg" enable_tftp "--enable-tftp"
@@ -886,6 +886,11 @@ dnsmasq_start()
 	config_foreach filter_dnsmasq mxhost dhcp_mx_add "$cfg"
 	echo >> $CONFIGFILE_TMP
 
+	config_get_bool boguspriv "$cfg" boguspriv 1
+	[ "$boguspriv" -gt 0 ] && {
+		xappend "--bogus-priv"
+		[ -r "$RFC6761FILE" ] && xappend "--conf-file=$RFC6761FILE"
+	}
 
 	if [ "$DNSMASQ_DHCP_VER" -gt 4 ] ; then
 		# Enable RA feature for when/if it is constructed,
@@ -930,7 +935,7 @@ dnsmasq_start()
 	fi
 
 	procd_add_jail dnsmasq ubus log
-	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE /etc/passwd /etc/group /etc/TZ /dev/null /dev/urandom $dnsmasqconffile $dnsmasqconfdir $resolvfile $dhcpscript /etc/hosts /etc/ethers $EXTRA_MOUNT
+	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE $RFC6761FILE /etc/passwd /etc/group /etc/TZ /dev/null /dev/urandom $dnsmasqconffile $dnsmasqconfdir $resolvfile $dhcpscript /etc/hosts /etc/ethers $EXTRA_MOUNT
 	procd_add_jail_mount_rw /var/run/dnsmasq/ $leasefile
 
 	procd_close_instance
