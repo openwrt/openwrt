@@ -5,7 +5,6 @@
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/host.mk
 
 # UML only makes sense on linux
 ifeq ($(HOST_OS),Linux)

@@ -14,7 +14,7 @@ export TOPDIR LC_ALL LANG SDK
 
 world:
 
-include $(TOPDIR)/include/host.mk
+export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
 
 ifneq ($(OPENWRT_BUILD),1)
   override OPENWRT_BUILD=1

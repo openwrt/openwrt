@@ -4,7 +4,6 @@
 #
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
-include $(INCLUDE_DIR)/host.mk
 
 DEVICE_VARS += DEVICE_PROFILE IMAGE_SIZE DTB_SIZE
 

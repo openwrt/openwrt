@@ -18,7 +18,7 @@ $(if $(findstring $(space),$(TOPDIR)),$(error ERROR: The path to the LEDE direct
 
 world:
 
-include $(TOPDIR)/include/host.mk
+export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
 
 ifneq ($(OPENWRT_BUILD),1)
   _SINGLE=export MAKEFLAGS=$(space);
