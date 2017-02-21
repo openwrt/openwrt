@@ -293,13 +293,13 @@ Build/DistCheck=$(call Build/DistCheck/Default,)
 .PHONY: prepare-package-install
 prepare-package-install:
 	@mkdir -p $(PKG_INFO_DIR)
-	@touch $(PKG_INSTALL_STAMP).clean
+	@rm -f $(PKG_INSTALL_STAMP)
 	@echo "$(filter-out essential nonshared,$(PKG_FLAGS))" > $(PKG_INSTALL_STAMP).flags
 
 $(PACKAGE_DIR):
 	mkdir -p $@
 
-compile: prepare-package-install
+compile:
 .install: .compile
 install: compile
 
