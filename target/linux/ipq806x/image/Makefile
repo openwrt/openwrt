@@ -58,8 +58,8 @@ define Device/DniImage
 	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
 	KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
-	KERNEL = kernel-bin | append-dtb | uImage none | pad-offset $$(KERNEL_SIZE) 64 | \
-		append-uImage-fakeroot-hdr
+	KERNEL = kernel-bin | append-dtb | uImage none | pad-offset $$(BLOCKSIZE) 64 | append-uImage-fakeroot-hdr | \
+		pad-to $$(KERNEL_SIZE)
 	KERNEL_NAME := zImage
 	NETGEAR_BOARD_ID :=
 	NETGEAR_HW_ID :=
