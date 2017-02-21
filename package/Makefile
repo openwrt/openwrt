@@ -56,7 +56,9 @@ $(curdir)/merge:
 $(curdir)/merge-index: $(curdir)/merge
 	(cd $(PACKAGE_DIR_ALL) && $(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages; )
 
-$(curdir)/compile: $(curdir)/system/opkg/host/compile
+ifndef SDK
+  $(curdir)/compile: $(curdir)/system/opkg/host/compile
+endif
 
 $(curdir)/install: $(TMP_DIR)/.build $(curdir)/merge $(if $(CONFIG_TARGET_PER_DEVICE_ROOTFS),$(curdir)/merge-index)
 	- find $(STAGING_DIR_ROOT) -type d | $(XARGS) chmod 0755
