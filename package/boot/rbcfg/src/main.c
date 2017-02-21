@@ -101,6 +101,10 @@ static const struct rbcfg_value rbcfg_boot_device[] = {
 		RB_BOOT_DEVICE_ETHONCE),
 	CFG_U32("nand", "boot from NAND only",
 		RB_BOOT_DEVICE_NANDONLY),
+	CFG_U32("flash", "boot in flash configuration mode",
+		RB_BOOT_DEVICE_FLASHCFG),
+	CFG_U32("flashnand", "boot in flash configuration mode once, then NAND",
+		RB_BOOT_DEVICE_FLSHONCE),
 };
 
 static const struct rbcfg_value rbcfg_boot_key[] = {
