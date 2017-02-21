@@ -57,15 +57,14 @@ define Device/DniImage
 	PROFILES += $$(DEVICE_NAME)
 	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
-	KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
-	KERNEL = kernel-bin | append-dtb | uImage none | pad-offset $$(BLOCKSIZE) 64 | append-uImage-fakeroot-hdr | \
-		pad-to $$(KERNEL_SIZE)
+	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
 	NETGEAR_BOARD_ID :=
 	NETGEAR_HW_ID :=
 	UBINIZE_OPTS := -E 5
 	IMAGES := factory.img sysupgrade.tar
-	IMAGE/factory.img := append-kernel | append-ubi | netgear-dni
+	IMAGE/factory.img := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakeroot-hdr | pad-to $$$$(KERNEL_SIZE) | append-ubi | netgear-dni
+	IMAGE/sysupgrade.tar := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakeroot-hdr | sysupgrade-tar kernel=$$$$@ | append-metadata
 endef
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
