@@ -71,6 +71,21 @@ define Device/firewrt
 endef
 TARGET_DEVICES += firewrt
 
+define Device/hc5962
+  DTS := HC5962
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 2097152
+  UBINIZE_OPTS := -E 5
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := HiWiFi HC5962
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt76
+endef
+TARGET_DEVICES += hc5962
+
 define Device/mt7621
   DTS := MT7621
   BLOCKSIZE := 64k

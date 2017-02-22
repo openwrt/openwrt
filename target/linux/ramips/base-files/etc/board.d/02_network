@@ -80,6 +80,7 @@ ramips_setup_interfaces()
 	dir-615-h1|\
 	firewrt|\
 	hc5661a|\
+	hc5962|\
 	hlk-rm04|\
 	mac1200rv2|\
 	miwifi-mini|\
@@ -345,7 +346,8 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
 	hc5*61|\
-	hc5661a)
+	hc5661a|\
+	hc5962)
 		lan_mac=`mtd_get_mac_ascii bdinfo "Vfac_mac "`
 		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)

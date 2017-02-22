@@ -228,6 +228,10 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	hc5962)
+		# these boards use metadata images
+		return 0
+		;;
 	ubnt-erx)
 		nand_do_platform_check "$board" "$1"
 		return $?;
@@ -260,6 +264,7 @@ platform_pre_upgrade() {
 	local board=$(ramips_board_name)
 
 	case "$board" in
+	hc5962|\
     	ubnt-erx)
 		nand_do_upgrade "$ARGV"
 		;;
