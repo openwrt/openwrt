@@ -19,8 +19,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/irqchip/irq-ls-scfg-msi.c | 168 +++++++++++++++++++++++++++++---------
  1 file changed, 131 insertions(+), 37 deletions(-)
 
-diff --git a/drivers/irqchip/irq-ls-scfg-msi.c b/drivers/irqchip/irq-ls-scfg-msi.c
-index 5b16f4a..6586076 100644
 --- a/drivers/irqchip/irq-ls-scfg-msi.c
 +++ b/drivers/irqchip/irq-ls-scfg-msi.c
 @@ -17,13 +17,24 @@
@@ -65,7 +63,7 @@ index 5b16f4a..6586076 100644
  };
  
  static struct irq_chip ls_scfg_msi_irq_chip = {
-@@ -55,7 +69,7 @@ static void ls_scfg_msi_compose_msg(struct irq_data *data, struct msi_msg *msg)
+@@ -55,7 +69,7 @@ static void ls_scfg_msi_compose_msg(stru
  
  	msg->address_hi = upper_32_bits(msi_data->msiir_addr);
  	msg->address_lo = lower_32_bits(msi_data->msiir_addr);
@@ -74,7 +72,7 @@ index 5b16f4a..6586076 100644
  }
  
  static int ls_scfg_msi_set_affinity(struct irq_data *irq_data,
-@@ -81,8 +95,8 @@ static int ls_scfg_msi_domain_irq_alloc(struct irq_domain *domain,
+@@ -81,8 +95,8 @@ static int ls_scfg_msi_domain_irq_alloc(
  	WARN_ON(nr_irqs != 1);
  
  	spin_lock(&msi_data->lock);
@@ -85,7 +83,7 @@ index 5b16f4a..6586076 100644
  		__set_bit(pos, msi_data->used);
  	else
  		err = -ENOSPC;
-@@ -106,7 +120,7 @@ static void ls_scfg_msi_domain_irq_free(struct irq_domain *domain,
+@@ -106,7 +120,7 @@ static void ls_scfg_msi_domain_irq_free(
  	int pos;
  
  	pos = d->hwirq;
@@ -94,7 +92,7 @@ index 5b16f4a..6586076 100644
  		pr_err("failed to teardown msi. Invalid hwirq %d\n", pos);
  		return;
  	}
-@@ -123,15 +137,17 @@ static const struct irq_domain_ops ls_scfg_msi_domain_ops = {
+@@ -123,15 +137,17 @@ static const struct irq_domain_ops ls_sc
  
  static void ls_scfg_msi_irq_handler(struct irq_desc *desc)
  {
@@ -117,7 +115,7 @@ index 5b16f4a..6586076 100644
  		if (virq)
  			generic_handle_irq(virq);
  	}
-@@ -143,7 +159,7 @@ static int ls_scfg_msi_domains_init(struct ls_scfg_msi *msi_data)
+@@ -143,7 +159,7 @@ static int ls_scfg_msi_domains_init(stru
  {
  	/* Initialize MSI domain parent */
  	msi_data->parent = irq_domain_add_linear(NULL,
@@ -126,7 +124,7 @@ index 5b16f4a..6586076 100644
  						 &ls_scfg_msi_domain_ops,
  						 msi_data);
  	if (!msi_data->parent) {
-@@ -164,16 +180,88 @@ static int ls_scfg_msi_domains_init(struct ls_scfg_msi *msi_data)
+@@ -164,16 +180,88 @@ static int ls_scfg_msi_domains_init(stru
  	return 0;
  }
  
@@ -216,7 +214,7 @@ index 5b16f4a..6586076 100644
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	msi_data->regs = devm_ioremap_resource(&pdev->dev, res);
  	if (IS_ERR(msi_data->regs)) {
-@@ -182,23 +270,37 @@ static int ls_scfg_msi_probe(struct platform_device *pdev)
+@@ -182,23 +270,37 @@ static int ls_scfg_msi_probe(struct plat
  	}
  	msi_data->msiir_addr = res->start;
  
@@ -264,7 +262,7 @@ index 5b16f4a..6586076 100644
  	platform_set_drvdata(pdev, msi_data);
  
  	return 0;
-@@ -207,8 +309,10 @@ static int ls_scfg_msi_probe(struct platform_device *pdev)
+@@ -207,8 +309,10 @@ static int ls_scfg_msi_probe(struct plat
  static int ls_scfg_msi_remove(struct platform_device *pdev)
  {
  	struct ls_scfg_msi *msi_data = platform_get_drvdata(pdev);
@@ -276,7 +274,7 @@ index 5b16f4a..6586076 100644
  
  	irq_domain_remove(msi_data->msi_domain);
  	irq_domain_remove(msi_data->parent);
-@@ -218,16 +322,6 @@ static int ls_scfg_msi_remove(struct platform_device *pdev)
+@@ -218,16 +322,6 @@ static int ls_scfg_msi_remove(struct pla
  	return 0;
  }
  
@@ -293,6 +291,3 @@ index 5b16f4a..6586076 100644
  static struct platform_driver ls_scfg_msi_driver = {
  	.driver = {
  		.name = "ls-scfg-msi",
--- 
-2.1.0.27.g96db324
-

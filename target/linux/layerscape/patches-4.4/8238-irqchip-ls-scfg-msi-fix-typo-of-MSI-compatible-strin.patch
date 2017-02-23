@@ -16,8 +16,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/irqchip/irq-ls-scfg-msi.c                                   | 6 ++++--
  2 files changed, 7 insertions(+), 5 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/interrupt-controller/fsl,ls-scfg-msi.txt b/Documentation/devicetree/bindings/interrupt-controller/fsl,ls-scfg-msi.txt
-index 9e38949..2755cd1 100644
 --- a/Documentation/devicetree/bindings/interrupt-controller/fsl,ls-scfg-msi.txt
 +++ b/Documentation/devicetree/bindings/interrupt-controller/fsl,ls-scfg-msi.txt
 @@ -4,8 +4,8 @@ Required properties:
@@ -40,11 +38,9 @@ index 9e38949..2755cd1 100644
  		reg = <0x0 0x1571000 0x0 0x8>,
  		msi-controller;
  		interrupts = <0 116 0x4>;
-diff --git a/drivers/irqchip/irq-ls-scfg-msi.c b/drivers/irqchip/irq-ls-scfg-msi.c
-index 47520fa..5b16f4a 100644
 --- a/drivers/irqchip/irq-ls-scfg-msi.c
 +++ b/drivers/irqchip/irq-ls-scfg-msi.c
-@@ -220,8 +220,10 @@ static int ls_scfg_msi_remove(struct platform_device *pdev)
+@@ -220,8 +220,10 @@ static int ls_scfg_msi_remove(struct pla
  
  static const struct of_device_id ls_scfg_msi_id[] = {
  	{ .compatible = "fsl,ls1012a-msi", },
@@ -57,6 +53,3 @@ index 47520fa..5b16f4a 100644
  	{ .compatible = "fsl,ls1046a-msi", },
  	{},
  };
--- 
-2.1.0.27.g96db324
-
