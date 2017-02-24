@@ -13,7 +13,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  module_param_named(fcmode, brcmf_fcmode, int, 0);
  MODULE_PARM_DESC(fcmode, "Mode of firmware signalled flow control");
  
-+#if defined(CONFIG_ARCH_BCM2708) || defined(CONFIG_ARCH_BCM2709)
++#if defined(CONFIG_ARCH_BCM2835)
 +static int brcmf_roamoff = 1;
 +#else
  static int brcmf_roamoff;

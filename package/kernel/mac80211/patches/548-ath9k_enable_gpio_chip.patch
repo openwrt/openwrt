@@ -123,6 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!gc)
 +		return;
 +
++	gc->sc = sc;
 +	snprintf(gc->label, sizeof(gc->label), "ath9k-%s",
 +		 wiphy_name(sc->hw->wiphy));
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
@@ -146,7 +147,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	gc->gchip.owner = NULL;
 +	sc->gpiochip = gc;
-+	gc->sc = sc;
 +}
 +
 +/* remove GPIO chip */
