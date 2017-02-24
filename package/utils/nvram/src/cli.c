@@ -133,6 +133,18 @@ static int do_info(nvram_handle_t *nvram)
 	return 0;
 }
 
+static void usage(void)
+{
+	fprintf(stderr,
+		"Usage:\n"
+		"	nvram show\n"
+		"	nvram info\n"
+		"	nvram get variable\n"
+		"	nvram set variable=value [set ...]\n"
+		"	nvram unset variable [unset ...]\n"
+		"	nvram commit\n"
+	);
+}
 
 int main( int argc, const char *argv[] )
 {
@@ -233,16 +245,7 @@ int main( int argc, const char *argv[] )
 	}
 	else if( !done )
 	{
-		fprintf(stderr,
-			"Usage:\n"
-			"	nvram show\n"
-			"	nvram info\n"
-			"	nvram get variable\n"
-			"	nvram set variable=value [set ...]\n"
-			"	nvram unset variable [unset ...]\n"
-			"	nvram commit\n"
-		);
-
+		usage();
 		stat = 1;
 	}
 
