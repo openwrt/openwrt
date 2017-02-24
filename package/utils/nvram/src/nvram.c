@@ -380,7 +380,9 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 
 			if( offset < 0 )
 			{
+				munmap(mmap_area, nvram_part_size);
 				free(mtd);
+				close(fd);
 				return NULL;
 			}
 			else if( (h = malloc(sizeof(nvram_handle_t))) != NULL )
@@ -410,6 +412,7 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 	}
 
 	free(mtd);
+	close(fd);
 	return NULL;
 }
 
