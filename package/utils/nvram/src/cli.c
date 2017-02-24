@@ -155,15 +155,16 @@ int main( int argc, const char *argv[] )
 	int done = 0;
 	int i;
 
+	if( argc < 2 ) {
+		usage();
+		return 1;
+	}
+
 	/* Ugly... iterate over arguments to see whether we can expect a write */
-	for( i = 1; i < argc; i++ )
-		if( ( !strcmp(argv[i], "set")   && ++i < argc ) ||
-			( !strcmp(argv[i], "unset") && ++i < argc ) ||
-			!strcmp(argv[i], "commit") )
-		{
-			write = 1;
-			break;
-		}
+	if( ( !strcmp(argv[1], "set")  && 2 < argc ) ||
+		( !strcmp(argv[1], "unset") && 2 < argc ) ||
+		!strcmp(argv[1], "commit") )
+		write = 1;
 
 
 	nvram = write ? nvram_open_staging() : nvram_open_rdonly();
