@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1851 @@
+@@ -0,0 +1,1852 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -1262,7 +1262,6 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	struct xrx200_chan *ch;
 +	struct ltq_dma_desc *desc;
 +	u32 byte_offset;
-+	u16 port_map = 0;
 +	int ret = NETDEV_TX_OK;
 +	int len;
 +#ifdef SW_ROUTING
@@ -1280,10 +1279,13 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +#ifdef SW_ROUTING
 +	if (is_multicast_ether_addr(eth_hdr(skb)->h_dest)) {
-+		if (skb->protocol == htons(ETH_P_8021Q)) {
++		u16 port_map = priv->port_map;
++
++		if (priv->sw && skb->protocol == htons(ETH_P_8021Q)) {
 +			u16 vid;
 +			int i;
 +
++			port_map = 0;
 +			if (!__vlan_get_tag(skb, &vid)) {
 +				for (i = 0; i < XRX200_MAX_VLAN; i++) {
 +					if (priv->hw->vlan_vid[i] != vid)
@@ -1293,8 +1295,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +				}
 +			}
 +		}
-+	}
-+	if (port_map) {
++
 +		special_tag |= (port_map << PORT_MAP_SHIFT) |
 +			       PORT_MAP_SEL | PORT_MAP_EN;
 +	}
