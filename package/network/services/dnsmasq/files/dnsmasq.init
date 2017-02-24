@@ -103,8 +103,10 @@ append_bool() {
 	local section="$1"
 	local option="$2"
 	local value="$3"
+	local default="$4"
 	local _loctmp
-	config_get_bool _loctmp "$section" "$option" 0
+	[ -z "$default" ] && default="0"
+	config_get_bool _loctmp "$section" "$option" "$default"
 	[ $_loctmp -gt 0 ] && xappend "$value"
 }
 
@@ -791,7 +793,7 @@ dnsmasq_start()
 	config_get tftp_root "$cfg" "tftp_root"
 	[ -n "$tftp_root" ] && mkdir -p "$tftp_root" && append_bool "$cfg" enable_tftp "--enable-tftp"
 	append_bool "$cfg" tftp_no_fail "--tftp-no-fail"
-	append_bool "$cfg" nonwildcard "--bind-dynamic"
+	append_bool "$cfg" nonwildcard "--bind-dynamic" 1
 	append_bool "$cfg" fqdn "--dhcp-fqdn"
 	append_bool "$cfg" proxydnssec "--proxy-dnssec"
 	append_bool "$cfg" localservice "--local-service"
