@@ -27,13 +27,17 @@
 
 static nvram_handle_t * nvram_open_rdonly(void)
 {
-	const char *file = nvram_find_staging();
+	char *file = nvram_find_staging();
 
 	if( file == NULL )
 		file = nvram_find_mtd();
 
-	if( file != NULL )
-		return nvram_open(file, NVRAM_RO);
+	if( file != NULL ) {
+		nvram_handle_t *h = nvram_open(file, NVRAM_RO);
+		if( strcmp(file, NVRAM_STAGING) )
+			free(file);
+		return h;
+	}
 
 	return NULL;
 }
