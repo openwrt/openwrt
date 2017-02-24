@@ -140,6 +140,7 @@ get_status_led() {
 		status_led="$board:orange:status"
 		;;
 	hc5*61|\
+	hc5661a|\
 	jhr-n805r|\
 	jhr-n926r|\
 	mlw221|\
