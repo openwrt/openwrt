@@ -240,6 +240,7 @@ int main( int argc, const char *argv[] )
 			"	- Insufficient permissions to open mtd device\n"
 			"	- Insufficient memory to complete operation\n"
 			"	- Memory mapping failed or not supported\n"
+			"	- Nvram magic not found in specific nvram partition\n"
 		);
 
 		stat = 1;
