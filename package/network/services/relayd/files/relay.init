@@ -21,7 +21,6 @@ resolve_ifname() {
 	grep -qs "^ *$1:" /proc/net/dev && {
 		procd_append_param command -I "$1"
 		procd_append_param netdev "$1"
-		append ifaces "$1"
 	}
 }
 
@@ -36,25 +35,11 @@ resolve_network() {
 start_relay() {
 	local cfg="$1"
 
-	local args=""
-	local ifaces=""
-
 	config_get proto "$cfg" proto
 	[ "$proto" = "relay" ] || return 0
 
 	config_get_bool disabled "$cfg" disabled 0
 	[ "$disabled" -gt 0 ] && return 0
-
-	SERVICE_DAEMONIZE=1
-	SERVICE_WRITE_PID=1
-	SERVICE_PID_FILE="/var/run/relay-$cfg.pid"
-	[ -f "$SERVICE_PID_FILE" ] && {
-		if grep -q relayd "/proc/$(cat $SERVICE_PID_FILE)/cmdline"; then
-			return 0
-		else
-			rm -f "$SERVICE_PID_FILE"
-		fi
-	}
 
 	procd_open_instance
 	procd_set_param command "$PROG"
