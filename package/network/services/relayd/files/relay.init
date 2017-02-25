@@ -19,8 +19,7 @@ validate_proto_relayd()
 
 resolve_ifname() {
 	grep -qs "^ *$1:" /proc/net/dev && {
-		procd_append_param command -I "$1"
-		procd_append_param netdev "$1"
+		append resolved_ifnames "$1"
 	}
 }
 
@@ -34,6 +33,7 @@ resolve_network() {
 
 start_relay() {
 	local cfg="$1"
+	local proto disabled
 
 	config_get proto "$cfg" proto
 	[ "$proto" = "relay" ] || return 0
@@ -41,9 +41,7 @@ start_relay() {
 	config_get_bool disabled "$cfg" disabled 0
 	[ "$disabled" -gt 0 ] && return 0
 
-	procd_open_instance
-	procd_set_param command "$PROG"
-
+	local resolved_ifnames
 	local net networks
 	config_get networks "$cfg" network
 	for net in $networks; do
@@ -55,9 +53,18 @@ start_relay() {
 	local ifn ifnames
 	config_get ifnames "$cfg" ifname
 	for ifn in $ifnames; do
-		resolve_ifname "$ifn"
+		resolve_ifname "$ifn" || {
+			return 1
+		}
 	done
 
+	procd_open_instance
+	procd_set_param command "$PROG"
+
+	for ifn in $resolved_ifnames; do
+		procd_append_param command -I "$ifn"
+		procd_append_param netdev "$ifn"
+	done
 	local ipaddr
 	config_get ipaddr "$cfg" ipaddr
 	[ -n "$ipaddr" ] && procd_append_param command -L "$ipaddr"
