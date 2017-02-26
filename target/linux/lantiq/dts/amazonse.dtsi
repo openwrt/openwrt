@@ -19,6 +19,10 @@
 		};
 	};
 
+	memory@0 {
+		device_type = "memory";
+	};
+
 	biu@1F800000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -52,6 +56,7 @@
 
 		eiu0: eiu@101000 {
 			#interrupt-cells = <1>;
+			interrupt-controller;
 			compatible = "lantiq,eiu-xway";
 			reg = <0x101000 0x1000>;
 			interrupt-parent = <&icu0>;
@@ -82,6 +87,14 @@
 		ranges = <0x0 0x10000000 0xEEFFFFF>;
 		reg = <0x10000000 0xEF00000>;
 
+		localbus@0 {
+			#address-cells = <2>;
+			#size-cells = <1>;
+			ranges = <0 0 0x0 0x3ffffff /* addrsel0 */
+				1 0 0x4000000 0x4000010>; /* addsel1 */
+			compatible = "lantiq,localbus", "simple-bus";
+		};
+
 		spi@E100800 {
 			compatible = "lantiq,ase-spi";
 			reg = <0xE100800 0x100>;
@@ -97,8 +110,7 @@
 			compatible = "lantiq,gptu-xway";
 			reg = <0xE100A00 0x100>;
 			interrupt-parent = <&icu0>;
-			interrupts = <97 98 99 100 101 102>;
-			status = "disabled";
+			interrupts = <33 34 35 36 37 38>;
 		};
 
 		gpio: pinmux@E100B10 {
@@ -118,7 +130,7 @@
 		mei@E116000 {
 			compatible = "lantiq,mei-xway";
 			interrupt-parent = <&icu0>;
-			interrupts = <63>;
+			interrupts = <81>;
 		};
 
 		ifxhcd@E101000 {
