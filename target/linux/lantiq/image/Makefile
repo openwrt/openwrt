@@ -524,7 +524,7 @@ include tp-link.mk
 define Device/WBMR300
   IMAGE_SIZE := 15616k
   DEVICE_TITLE := Buffalo WBMR-300HPD
-  DEVICE_PACKAGES := kmod-mt76 wpad-mini kmod-usb-dwc2
+  DEVICE_PACKAGES := kmod-mt7603 wpad-mini kmod-usb-dwc2
 endef
 TARGET_DEVICES += WBMR300
 
