@@ -26,6 +26,13 @@ ACMP252|GIGASX76X)
 		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5t@eth0"
 	;;
 
+ALL0333CJ)
+	annex="b"
+	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_set_interface_lan 'eth0'
+	;;
+
 ARV4510PW)
 	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)

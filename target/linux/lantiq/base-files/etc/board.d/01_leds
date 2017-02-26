@@ -35,6 +35,9 @@ led_internet="$(lantiq_get_dt_led internet)"
 board=$(board_name)
 
 case "$board" in
+ALL0333CJ)
+	ucidef_set_led_netdev "lan" "lan" "all0333cj:green:lan" "eth0.1"
+	;;
 ARV4525PW)
 	ucidef_set_led_netdev "wifi" "wifi" "arv4525pw:green:wlan" "wlan0"
 	;;

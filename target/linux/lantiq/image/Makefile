@@ -108,6 +108,16 @@ endef
 
 ifeq ($(SUBTARGET),ase)
 
+define Device/ALL0333CJ
+  IMAGE_SIZE := 3700k
+  DEVICE_DTS := ALL0333CJ
+  DEVICE_TITLE := Allnet ALL0333CJ
+  DEVICE_PACKAGES := kmod-ltq-adsl-ase kmod-ltq-adsl-ase-mei \
+	kmod-ltq-adsl-ase-fw-b kmod-ltq-atm-ase \
+	ltq-adsl-app ppp-mod-pppoe
+endef
+TARGET_DEVICES += ALL0333CJ
+
 define Device/DGN1000B
   IMAGE_SIZE := 6000k
   DEVICE_DTS := DGN1000B
