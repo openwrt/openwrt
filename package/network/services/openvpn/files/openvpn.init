@@ -93,40 +93,14 @@ start_instance() {
 	[ ! -d "/var/etc" ] && mkdir -p "/var/etc"
 	[ -f "/var/etc/openvpn-$s.conf" ] && rm "/var/etc/openvpn-$s.conf"
 
-	# append flags
-	append_bools "$s" \
-		allow_recursive_routing auth_nocache auth_user_pass_optional bind ccd_exclusive client client_cert_not_required \
-		client_to_client comp_noadapt disable disable_occ down_pre duplicate_cn fast_io float http_proxy_retry \
-		ifconfig_noexec ifconfig_nowarn ifconfig_pool_linear management_forget_disconnect management_hold \
-		management_query_passwords management_signal mktun mlock mtu_test multihome mute_replay_warnings \
-		ncp_disable nobind no_iv no_name_remapping no_replay opt_verify passtos persist_key persist_local_ip \
-		persist_remote_ip persist_tun ping_timer_rem pull push_reset remote_random rmtun route_noexec route_nopull \
-		single_session socks_proxy_retry suppress_timestamps tcp_nodelay test_crypto tls_client tls_exit tls_server \
-		tun_ipv6 up_delay up_restart username_as_common_name
-
-	# append params
-	append_params "$s" \
-		cd askpass auth auth_retry auth_user_pass auth_user_pass_verify bcast_buffers ca cert capath \
-		chroot cipher client_config_dir client_connect client_disconnect comp_lzo compress connect_freq \
-		connect_retry connect_timeout connect_retry_max crl_verify dev dev_node dev_type dh \
-		ecdh_curve echo engine explicit_exit_notify fragment group hand_window hash_size http_proxy \
-		http_proxy_option http_proxy_timeout ifconfig ifconfig_pool ifconfig_pool_persist ifconfig_push \
-		inactive ipchange iroute keepalive key key_direction key_method keysize learn_address link_mtu lladdr \
-		local log log_append lport management management_log_cache max_clients max_routes_per_client mode \
-		mssfix mtu_disc mute ncp_ciphers nice ns_cert_type ping ping_exit ping_restart pkcs12 plugin \
-		port port_share prng proto pull_filter rcvbuf redirect_gateway remap_usr1 remote remote_cert_eku \
-		remote_cert_ku remote_cert_tls reneg_bytes reneg_pkts reneg_sec replay_persist replay_window \
-		resolv_retry route route_delay route_gateway route_metric route_pre_down route_up rport \
-		script_security secret server server_bridge setenv shaper sndbuf socks_proxy status status_version \
-		syslog tcp_queue_limit tls_auth tls_crypt tls_version_min tls_cipher tls_timeout \
-		tls_verify tmp_dir topology tran_window tun_mtu tun_mtu_extra txqueuelen user verb \
-		down push up verify_x509_name x509_username_field ifconfig_ipv6 route_ipv6 server_ipv6 \
-		ifconfig_ipv6_pool ifconfig_ipv6_push iroute_ipv6
+	append_bools "$s" $OPENVPN_BOOLS
+	append_params "$s" $OPENVPN_PARAMS
 
 	openvpn_add_instance "$s" "/var/etc" "openvpn-$s.conf"
 }
 
 start_service() {
+	. /usr/share/openvpn/openvpn.options
 	config_load 'openvpn'
 	config_foreach start_instance 'openvpn'
 
