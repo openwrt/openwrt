@@ -106,6 +106,20 @@ define Device/AVM
   KERNEL := kernel-bin | append-dtb | lzma | eva-image
 endef
 
+ifeq ($(SUBTARGET),ase)
+
+define Device/DGN1000B
+  IMAGE_SIZE := 6000k
+  DEVICE_DTS := DGN1000B
+  DEVICE_TITLE := Netgear DGN1000B
+  DEVICE_PACKAGES := kmod-ltq-adsl-ase kmod-ltq-adsl-ase-mei \
+	kmod-ltq-adsl-ase-fw-b kmod-ltq-atm-ase \
+	ltq-adsl-app ppp-mod-pppoe
+endef
+TARGET_DEVICES += DGN1000B
+
+endif
+
 ifeq ($(SUBTARGET),xway_legacy)
 
 define Device/ARV4520PW
