@@ -459,6 +459,17 @@ config ATH79_MACH_WPJ558
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_WPJ563
+	bool "Compex WPJ563 board support"
+	select SOC_QCA956X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_XD3200
 	bool "YunCore XD3200 support"
 	select SOC_QCA956X

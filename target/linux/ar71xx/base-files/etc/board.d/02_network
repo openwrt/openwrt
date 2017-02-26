@@ -466,6 +466,10 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"5:lan" "1:wan" "6@eth0"
 		;;
+	wpj563)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan" "3:wan"
+		;;
 	wrt160nl)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
 		ucidef_add_switch "switch0" \

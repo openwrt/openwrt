@@ -1240,6 +1240,9 @@ ar71xx_board_detect() {
 	*"WPJ558")
 		name="wpj558"
 		;;
+	*"WPJ563")
+		name="wpj563"
+		;;
 	*"WPN824N")
 		name="wpn824n"
 		;;

@@ -469,6 +469,9 @@ get_status_led() {
 	wpj558)
 		status_led="$board:green:sig3"
 		;;
+	wpj563)
+		status_led="$board:green:sig1"
+		;;
 	wrt400n|\
 	wrt160nl)
 		status_led="$board:blue:wps"

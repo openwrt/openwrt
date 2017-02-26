@@ -825,3 +825,12 @@ define Device/wpj558
   IMAGE_SIZE := 16128k
 endef
 TARGET_DEVICES += wpj558
+
+define Device/wpj563
+  DEVICE_TITLE := Compex WPJ563 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  BOARDNAME := WPJ563
+  MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
+  IMAGE_SIZE := 16128k
+endef
+TARGET_DEVICES += wpj563

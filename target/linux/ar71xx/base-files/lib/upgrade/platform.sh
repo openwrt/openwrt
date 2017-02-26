@@ -283,6 +283,7 @@ platform_check_image() {
 	wpj342|\
 	wpj344|\
 	wpj531|\
+	wpj563|\
 	wrt400n|\
 	wrtnode2q|\
 	wzr-450hp2|\
