@@ -63,6 +63,14 @@ define Device/dir-860l-b1
 endef
 TARGET_DEVICES += dir-860l-b1
 
+define Device/ew1200
+  DTS := EW1200
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := AFOUNDRY EW1200
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci
+endef
+TARGET_DEVICES += ew1200
+
 define Device/firewrt
   DTS := FIREWRT
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

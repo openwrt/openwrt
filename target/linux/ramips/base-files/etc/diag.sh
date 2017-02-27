@@ -88,6 +88,7 @@ get_status_led() {
 		status_led="$board:blue:wlan"
 		;;
 	atp-52b|\
+	ew1200|\
 	ip2202)
 		status_led="$board:green:run"
 		;;
