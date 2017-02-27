@@ -1,7 +1,7 @@
 --- a/gcc/config/arm/linux-eabi.h
 +++ b/gcc/config/arm/linux-eabi.h
-@@ -131,10 +131,6 @@
- #define ENDFILE_SPEC \
+@@ -132,10 +132,6 @@
+   "%{Ofast|ffast-math|funsafe-math-optimizations:crtfastmath.o%s} "	\
    LINUX_OR_ANDROID_LD (GNU_USER_TARGET_ENDFILE_SPEC, ANDROID_ENDFILE_SPEC)
  
 -/* Use the default LIBGCC_SPEC, not the version in linux-elf.h, as we
@@ -13,7 +13,7 @@
     is used.  */
 --- a/gcc/config/linux.h
 +++ b/gcc/config/linux.h
-@@ -51,6 +51,10 @@ see the files COPYING3 and COPYING.RUNTI
+@@ -53,6 +53,10 @@ see the files COPYING3 and COPYING.RUNTI
  	builtin_assert ("system=posix");			\
      } while (0)
  
@@ -22,8 +22,8 @@
 +#endif
 +
  /* Determine which dynamic linker to use depending on whether GLIBC or
-    uClibc or Bionic is the default C library and whether
-    -muclibc or -mglibc or -mbionic has been passed to change the default.  */
+    uClibc or Bionic or musl is the default C library and whether
+    -muclibc or -mglibc or -mbionic or -mmusl has been passed to change
 --- a/libgcc/mkmap-symver.awk
 +++ b/libgcc/mkmap-symver.awk
 @@ -132,5 +132,5 @@ function output(lib) {
@@ -35,9 +35,9 @@
  }
 --- a/gcc/config/rs6000/linux.h
 +++ b/gcc/config/rs6000/linux.h
-@@ -61,6 +61,9 @@
- #undef  CPLUSPLUS_CPP_SPEC
- #define CPLUSPLUS_CPP_SPEC "-D_GNU_SOURCE %(cpp)"
+@@ -60,6 +60,9 @@
+ #undef	CPP_OS_DEFAULT_SPEC
+ #define CPP_OS_DEFAULT_SPEC "%(cpp_os_linux)"
  
 +#undef LIBGCC_SPEC
 +#define LIBGCC_SPEC "%{!static:%{!static-libgcc:-lgcc_s}} -lgcc"

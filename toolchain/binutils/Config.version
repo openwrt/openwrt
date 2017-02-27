@@ -5,7 +5,7 @@ config BINUTILS_VERSION_2_27
 config BINUTILS_VERSION_2_28
 	bool
 
-config BINUTILS_VERSION_2_26_ARC
+config BINUTILS_VERSION_2_27_ARC
 	default y if (!TOOLCHAINOPTS && arc)
 	bool
 
@@ -13,5 +13,4 @@ config BINUTILS_VERSION
 	string
 	default "2.27"		       if BINUTILS_VERSION_2_27
 	default "2.28"		       if BINUTILS_VERSION_2_28
-	default "arc-2016.03"          if BINUTILS_VERSION_2_26_ARC
-
+	default "arc-2016.09"          if BINUTILS_VERSION_2_27_ARC

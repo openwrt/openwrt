@@ -14,7 +14,7 @@ Date:   Thu Sep 5 14:09:07 2013 +0000
 
 --- a/gcc/reginfo.c
 +++ b/gcc/reginfo.c
-@@ -620,35 +620,40 @@ choose_hard_reg_mode (unsigned int regno
+@@ -625,35 +625,40 @@ choose_hard_reg_mode (unsigned int regno
         mode = GET_MODE_WIDER_MODE (mode))
      if ((unsigned) hard_regno_nregs[regno][mode] == nregs
  	&& HARD_REGNO_MODE_OK (regno, mode)

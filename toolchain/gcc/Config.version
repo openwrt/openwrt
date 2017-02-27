@@ -1,13 +1,13 @@
-config GCC_VERSION_4_8_ARC
+config GCC_VERSION_6_2_ARC
 	default y if (!TOOLCHAINOPTS && arc)
 	bool
 
 config GCC_VERSION
 	string
-	default "arc-2016.03"   if GCC_VERSION_4_8_ARC
+	default "arc-2016.09-release"   if GCC_VERSION_6_2_ARC
 	default "6.3.0"         if GCC_USE_VERSION_6
 	default "5.4.0"
 
-config GCC_VERSION_4_8
+config GCC_VERSION_6_2
 	bool
-	default y	if GCC_VERSION_4_8_ARC
+	default y	if GCC_VERSION_6_2_ARC

@@ -2,14 +2,14 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_USE_VERSION_4_8_ARC if arc
+	default GCC_USE_VERSION_6_2_ARC if arc
 	default GCC_USE_VERSION_5
 	help
 	  Select the version of gcc you wish to use.
 
-	config GCC_USE_VERSION_4_8_ARC
-		select GCC_VERSION_4_8_ARC
-		bool "gcc 4.8.x with support of ARC cores"
+	config GCC_USE_VERSION_6_2_ARC
+		select GCC_VERSION_6_2_ARC
+		bool "gcc 6.2.x with support of ARC cores"
 		depends on arc
 
 	config GCC_USE_VERSION_5
@@ -23,7 +23,6 @@ choice
 endchoice
 
 config GCC_USE_GRAPHITE
-	depends on !GCC_VERSION_4_8_ARC
 	bool
 	prompt "Compile in support for the new Graphite framework in GCC 4.4+" if TOOLCHAINOPTS
 
@@ -69,7 +68,7 @@ config INSTALL_GFORTRAN
 config INSTALL_GCCGO
 	bool
 	prompt "Build/install Go compiler?" if TOOLCHAINOPTS
-	depends on !GCC_VERSION_4_8 && (USE_GLIBC || BROKEN)
+	depends on USE_GLIBC || BROKEN
 	default n
 	help
 	    Build/install GNU gccgo compiler ?
