@@ -50,14 +50,6 @@
 
 #include <lantiq_soc.h>
 
-#define EMA_CMD_BUF_LEN      0x0040
-#define EMA_CMD_BASE_ADDR    (0x00001580 << 2)
-#define EMA_DATA_BUF_LEN     0x0100
-#define EMA_DATA_BASE_ADDR   (0x00001900 << 2)
-#define EMA_WRITE_BURST      0x2
-#define EMA_READ_BURST       0x2
-
-
 
 /*
  * ####################################
