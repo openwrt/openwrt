@@ -1,9 +1,10 @@
 --- a/arch/mips/include/asm/string.h
 +++ b/arch/mips/include/asm/string.h
-@@ -133,11 +133,44 @@ strncmp(__const__ char *__cs, __const__
+@@ -140,4 +140,42 @@ extern void *memcpy(void *__to, __const_
+ #define __HAVE_ARCH_MEMMOVE
+ extern void *memmove(void *__dest, __const__ void *__src, size_t __n);
  
- #define __HAVE_ARCH_MEMSET
- extern void *memset(void *__s, int __c, size_t __count);
++#ifndef __ZBOOT__
 +#define memset(__s, __c, len)					\
 +({								\
 +	size_t __len = (len);					\
@@ -14,9 +15,7 @@
 +		__ret = __builtin_memset((__s), (__c), __len);	\
 +	__ret;							\
 +})
- 
- #define __HAVE_ARCH_MEMCPY
- extern void *memcpy(void *__to, __const__ void *__from, size_t __n);
++
 +#define memcpy(dst, src, len)					\
 +({								\
 +	size_t __len = (len);					\
@@ -27,9 +26,7 @@
 +		__ret = __builtin_memcpy((dst), (src), __len);	\
 +	__ret;							\
 +})
- 
- #define __HAVE_ARCH_MEMMOVE
- extern void *memmove(void *__dest, __const__ void *__src, size_t __n);
++
 +#define memmove(dst, src, len)					\
 +({								\
 +	size_t __len = (len);					\
@@ -43,7 +40,8 @@
 +
 +#define __HAVE_ARCH_MEMCMP
 +#define memcmp(src1, src2, len) __builtin_memcmp((src1), (src2), (len))
- 
++#endif
++
  #endif /* _ASM_STRING_H */
 --- a/arch/mips/lib/Makefile
 +++ b/arch/mips/lib/Makefile
@@ -81,3 +79,15 @@
 +}
 +EXPORT_SYMBOL(memcmp);
 +
+--- a/arch/mips/boot/compressed/Makefile
++++ b/arch/mips/boot/compressed/Makefile
+@@ -23,7 +23,8 @@ KBUILD_CFLAGS := $(shell echo $(KBUILD_C
+ KBUILD_CFLAGS := $(filter-out -fstack-protector, $(KBUILD_CFLAGS))
+ 
+ KBUILD_CFLAGS := $(LINUXINCLUDE) $(KBUILD_CFLAGS) -D__KERNEL__ \
+-	-DBOOT_HEAP_SIZE=$(BOOT_HEAP_SIZE) -D"VMLINUX_LOAD_ADDRESS_ULL=$(VMLINUX_LOAD_ADDRESS)ull"
++	-DBOOT_HEAP_SIZE=$(BOOT_HEAP_SIZE) -D"VMLINUX_LOAD_ADDRESS_ULL=$(VMLINUX_LOAD_ADDRESS)ull" \
++	-D__ZBOOT__
+ 
+ KBUILD_AFLAGS := $(LINUXINCLUDE) $(KBUILD_AFLAGS) -D__ASSEMBLY__ \
+ 	-DBOOT_HEAP_SIZE=$(BOOT_HEAP_SIZE) \
