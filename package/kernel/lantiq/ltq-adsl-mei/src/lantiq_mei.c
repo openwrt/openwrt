@@ -79,13 +79,33 @@
 #define ltq_w32_mask(clear, set, reg)       ltq_w32((ltq_r32(reg) & ~clear) | set, reg)
 */
 
-#define LTQ_RCU_BASE_ADDR   0x1F203000
+#define LTQ_RCU_BASE_ADDR       0x1F203000
 #define LTQ_ICU_BASE_ADDR       0x1F880200
 #define LTQ_MEI_BASE_ADDR       0x1E116000
 #define LTQ_PMU_BASE_ADDR       0x1F102000
-#define LTQ_MEI_DYING_GASP_INT  (INT_NUM_IM1_IRL0 + 21)
-#define LTQ_USB_OC_INT          (INT_NUM_IM4_IRL0 + 23)
-#define LTQ_MEI_INT             (INT_NUM_IM1_IRL0 + 23)
+
+
+#ifdef CONFIG_DANUBE
+# define LTQ_MEI_INT             (INT_NUM_IM1_IRL0 + 23)
+# define LTQ_MEI_DYING_GASP_INT  (INT_NUM_IM1_IRL0 + 21)
+# define LTQ_USB_OC_INT          (INT_NUM_IM4_IRL0 + 23)
+#endif
+
+#ifdef CONFIG_AMAZON_SE
+# define LTQ_MEI_INT             (INT_NUM_IM2_IRL0 + 9)
+# define LTQ_MEI_DYING_GASP_INT  (INT_NUM_IM2_IRL0 + 11)
+# define LTQ_USB_OC_INT          (INT_NUM_IM2_IRL0 + 20)
+#endif
+
+#ifdef CONFIG_AR9
+# define LTQ_MEI_INT             (INT_NUM_IM1_IRL0 + 23)
+# define LTQ_MEI_DYING_GASP_INT  (INT_NUM_IM1_IRL0 + 21)
+# define LTQ_USB_OC_INT          (INT_NUM_IM1_IRL0 + 28)
+#endif
+
+#ifndef LTQ_MEI_INT
+#error "Unknown Lantiq ARCH!"
+#endif
 
 #define LTQ_RCU_RST_REQ_DFE		(1 << 7)
 #define LTQ_RCU_RST_REQ_AFE		(1 << 11)
@@ -1327,37 +1347,16 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 
 	im0_register = (*LTQ_ICU_IM0_IER) & (1 << 20);
 	im2_register = (*LTQ_ICU_IM2_IER) & (1 << 20);
+
 	/* Turn off irq */
-	#ifdef CONFIG_SOC_AMAZON_SE
-#define	IFXMIPS_USB_OC_INT0 (INT_NUM_IM4_IRL0 + 23)
-	disable_irq (IFXMIPS_USB_OC_INT0);
-//	disable_irq (IFXMIPS_USB_OC_INT2);
-	#elif defined(CONFIG_SOC_AR9)
-#define	IFXMIPS_USB_OC_INT0 (INT_NUM_IM4_IRL1 + 28)
-	disable_irq (IFXMIPS_USB_OC_INT0);
-//	disable_irq (IFXMIPS_USB_OC_INT2);
-	#elif defined(CONFIG_SOC_XWAY)
 	disable_irq (LTQ_USB_OC_INT);
-	#else
-	#error unkonwn arch
-	#endif
 	disable_irq (pDev->nIrq[IFX_DYING_GASP]);
 
 	IFX_MEI_RunArc (pDev);
 
 	MEI_WAIT_EVENT_TIMEOUT (DSL_DEV_PRIVATE(pDev)->wait_queue_modemready, 1000);
 
-	#ifdef CONFIG_SOC_AMAZON_SE
-	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT0);
-//	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT2);
-	#elif defined(CONFIG_SOC_AR9)
-	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT0);
-//	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT2);
-	#elif defined(CONFIG_SOC_XWAY)
 	MEI_MASK_AND_ACK_IRQ (LTQ_USB_OC_INT);
-	#else
-	#error unkonwn arch
-	#endif
 	MEI_MASK_AND_ACK_IRQ (pDev->nIrq[IFX_DYING_GASP]);
 
 	/* Re-enable irq */
@@ -2307,12 +2306,11 @@ IFX_MEI_InitDevice (int num)
                 /* Power up MEI */
 #ifdef CONFIG_LANTIQ_AMAZON_SE
 		*LTQ_PMU_PWDCR &= ~(1 << 9);  // enable dsl
-                *LTQ_PMU_PWDCR &= ~(1 << 15); // enable AHB base
-#else
-        	temp = ltq_r32(LTQ_PMU_PWDCR);
-        	temp &= 0xffff7dbe;
-        	ltq_w32(temp, LTQ_PMU_PWDCR);
+		*LTQ_PMU_PWDCR &= ~(1 << 15); // enable AHB base
 #endif
+		temp = ltq_r32(LTQ_PMU_PWDCR);
+		temp &= 0xffff7dbe;
+		ltq_w32(temp, LTQ_PMU_PWDCR);
 	}
 	pDev->nInUse = 0;
 	DSL_DEV_PRIVATE(pDev)->modem_ready = 0;
