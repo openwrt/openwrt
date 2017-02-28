@@ -114,6 +114,7 @@ define Device/linksys-wrt3200acm
   $(call Device/linksys,WRT3200ACM (Rango))
   $(Device/armada-385-linksys)
   DEVICE_DTS := armada-385-linksys-rango
+  DEVICE_PACKAGES += kmod-mwifiex-sdio
 endef
 TARGET_DEVICES += linksys-wrt3200acm
 
