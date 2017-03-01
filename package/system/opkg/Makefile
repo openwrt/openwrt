@@ -12,6 +12,7 @@ include $(INCLUDE_DIR)/feeds.mk
 
 PKG_NAME:=opkg
 PKG_RELEASE:=1
+PKG_FLAGS:=essential
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.lede-project.org/project/opkg-lede.git
