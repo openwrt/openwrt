@@ -7,6 +7,8 @@
 # conf:	  Used for defconfig, oldconfig and related targets
 # mconf:  Used for the mconfig target.
 #         Utilizes the lxdialog package
+# nconf:  Used for the nconfig target.
+#         Utilizes ncurses
 # object files used by all kconfig flavours
 
 
@@ -16,23 +18,31 @@
 
 check_lxdialog = $(shell $(SHELL) $(CURDIR)/lxdialog/check-lxdialog.sh -$(1))
 export CFLAGS += -DKBUILD_NO_NLS -I. $(call check_lxdialog,ccflags)
+PKG-CONFIG := $(shell which -a pkg-config | grep -E '^\/usr' | head -n 1)
+nconf-libs-flags = $(shell \
+		$(PKG-CONFIG) --libs menu panel ncurses 2>/dev/null \
+		|| echo "-lmenu -lpanel -lncurses"  )
 
 conf-objs	:= conf.o zconf.tab.o
 mconf-objs	:= mconf.o zconf.tab.o
+nconf-objs	:= nconf.o zconf.tab.o nconf.gui.o
 lxdialog-objs := \
 	lxdialog/checklist.o lxdialog/util.o lxdialog/inputbox.o \
 	lxdialog/textbox.o lxdialog/yesno.o lxdialog/menubox.o
 
 clean-files	:= zconf.tab.c lex.zconf.c zconf.hash.c
 
-all: conf mconf
+all: conf mconf nconf
 
 conf: $(conf-objs)
 mconf: $(mconf-objs) $(lxdialog-objs)
 	$(CC) -o $@ $^ $(call check_lxdialog,ldflags $(CC))
+nconf: $(nconf-objs)
+	echo $(nconf-libs-flags)
+	$(CC) -o $@ $^ $(nconf-libs-flags)
 
 clean:
-	rm -f *.o lxdialog/*.o $(clean-files) conf mconf
+	rm -f *.o lxdialog/*.o $(clean-files) conf mconf nconf
 
 zconf.tab.o: zconf.lex.c zconf.hash.c confdata.c
 
