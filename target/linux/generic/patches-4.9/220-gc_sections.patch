@@ -63,6 +63,15 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			 VMLINUX_SYMBOL(__stop_syscalls_metadata) = .;
  #else
  #define TRACE_SYSCALLS()
+@@ -156,7 +156,7 @@
+ #ifdef CONFIG_SERIAL_EARLYCON
+ #define EARLYCON_TABLE() STRUCT_ALIGN();			\
+ 			 VMLINUX_SYMBOL(__earlycon_table) = .;	\
+-			 *(__earlycon_table)			\
++			 KEEP(*(__earlycon_table))		\
+ 			 VMLINUX_SYMBOL(__earlycon_table_end) = .;
+ #else
+ #define EARLYCON_TABLE()
 @@ -169,8 +169,8 @@
  #define _OF_TABLE_1(name)						\
  	. = ALIGN(8);							\
