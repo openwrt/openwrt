@@ -168,7 +168,7 @@ else
   endif
 endif
 
-STAMP_CONFIGURED := $(STAMP_CONFIGURED)_$(subst $(space),_,$(OPENSSL_OPTIONS))
+STAMP_CONFIGURED := $(STAMP_CONFIGURED)_$(shell echo $(OPENSSL_OPTIONS) | mkhash md5)
 
 define Build/Configure
 	[ -f $(STAMP_CONFIGURED) ] || { \
