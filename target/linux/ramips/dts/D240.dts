@@ -46,6 +46,17 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		power_mpcie2 {
+			gpio-export,name = "power_mpcie2";
+			gpio-export,output = <GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
