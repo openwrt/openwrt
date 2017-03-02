@@ -474,7 +474,6 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 			dev_err(dev, "missing platform data\n");
 			return -EINVAL;
 		}
-		pdev->dev.platform_data = pdata;
 	}
 
 	if (polled && !pdata->poll_interval) {
@@ -559,7 +558,7 @@ static int gpio_keys_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	pdata = pdev->dev.platform_data;
+	pdata = bdev->pdata;
 	for (i = 0; i < pdata->nbuttons; i++) {
 		struct gpio_keys_button *button = &pdata->buttons[i];
 		struct gpio_keys_button_data *bdata = &bdev->data[i];
