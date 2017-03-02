@@ -49,6 +49,11 @@ antrouter-r1)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	ucidef_set_led_default "btc" "BTC" "$board:green:btc" "0"
 	;;
+ap531b0|\
+sc1750|\
+sc450)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	;;
 archer-c59-v1|\
 archer-c60-v1)
 	ucidef_set_led_switch "lan" "LAN" "$board:green:lan" "switch0" "0x1E"
@@ -489,10 +494,6 @@ re450)
 	ucidef_set_led_netdev "lan_link" "LAN Link" "$board:green:lan_link" "eth0" "link"
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "$board:blue:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "$board:blue:wlan5g" "phy0tpt"
-	;;
-sc1750|\
-sc450)
-	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	;;
 smart-300)
 	ucidef_set_led_netdev "wan" "WAN" "nc-link:green:wan" "eth0"

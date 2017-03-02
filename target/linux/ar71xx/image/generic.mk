@@ -1,3 +1,12 @@
+define Device/ap531b0
+  DEVICE_TITLE := Rockeetech AP531B0
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = AP531B0
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += ap531b0
+
 define Device/ap90q
   DEVICE_TITLE := YunCore AP90Q
   BOARDNAME = AP90Q

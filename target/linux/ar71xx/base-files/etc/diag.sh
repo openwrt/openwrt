@@ -31,6 +31,7 @@ get_status_led() {
 		status_led="$board:green:system"
 		;;
 	ap132|\
+	ap531b0|\
 	db120|\
 	dr344|\
 	tew-632brp|\

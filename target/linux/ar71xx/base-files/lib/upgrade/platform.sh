@@ -204,6 +204,7 @@ platform_check_image() {
 	airgateway|\
 	airrouter|\
 	ap132|\
+	ap531b0|\
 	ap90q|\
 	archer-c59-v1|\
 	archer-c60-v1|\
