@@ -202,6 +202,26 @@ $(call Package/libc/Default)
   TITLE:=POSIX thread library debugging support
 endef
 
+define Package/libthread-db/config
+	menu "Configuration"
+	depends on EXTERNAL_TOOLCHAIN && PACKAGE_libthread-db
+
+	config LIBTHREAD_DB_ROOT_DIR
+		string
+		prompt "POSIX thread debugging shared library base directory"
+		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libthread-db
+		default TOOLCHAIN_ROOT  if !NATIVE_TOOLCHAIN
+		default "/"  if NATIVE_TOOLCHAIN
+
+	config LIBTHREAD_DB_FILE_SPEC
+		string
+		prompt "POSIX thread debugging shared library files (use wildcards)"
+		depends on EXTERNAL_TOOLCHAIN && PACKAGE_libthread-db
+		default "./lib/libthread_db{-*.so,.so.*}"
+
+	endmenu
+endef
+
 define Package/librt
 $(call Package/libc/Default)
   TITLE:=POSIX.1b RealTime extension library
@@ -513,6 +533,14 @@ else
 	for file in $(call qstrip,$(CONFIG_LIBPTHREAD_FILE_SPEC)); do \
 		$(INSTALL_DIR) $(1)/lib ; \
 		$(CP) $(call qstrip,$(CONFIG_LIBPTHREAD_ROOT_DIR))/$$$$file $(1)/lib/ ; \
+	done ; \
+	exit 0
+  endef
+
+  define Package/libthread-db/install
+	for file in $(call qstrip,$(CONFIG_LIBTHREAD_DB_FILE_SPEC)); do \
+		$(INSTALL_DIR) $(1)/lib ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBTHREAD_DB_ROOT_DIR))/$$$$file $(1)/lib/ ; \
 	done ; \
 	exit 0
   endef
