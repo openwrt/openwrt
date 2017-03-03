@@ -242,7 +242,7 @@ define Device/hc5661
   DTS := HC5661
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := HiWiFi HC5661
-  DEVICE_PACKAGES := kmod-usb2 kmod-sdhci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += hc5661
 
@@ -250,7 +250,7 @@ define Device/hc5761
   DTS := HC5761
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := HiWiFi HC5761 
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += hc5761
 
@@ -258,7 +258,7 @@ define Device/hc5861
   DTS := HC5861
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := HiWiFi HC5861
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += hc5861
 
