@@ -165,6 +165,10 @@ wn3000rpv3)
 	ucidef_set_led_default "power_r" "POWER (red)" "$board:red:power" "0"
 	set_wifi_led "$board:green:router"
 	;;
+ex3700)
+	ucidef_set_led_netdev "wlan5g" "ROUTER (green)" "$board:green:router" "wlan0"
+	ucidef_set_led_netdev "wlan2g" "DEVICE (green)" "$board:green:device" "wlan1"
+	;;
 f5d8235-v1)
 	ucidef_set_led_default "lan" "lan" "$board:blue:wired" "0"
 	set_usb_led "$board:blue:storage"

@@ -79,6 +79,18 @@ define Device/wn3000rpv3
 endef
 TARGET_DEVICES += wn3000rpv3
 
+define Device/ex3700
+  NETGEAR_BOARD_ID := U12H319T00_NETGEAR
+  DTS := EX3700
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | netgear-chk
+  DEVICE_PACKAGES := -kmod-mt76 kmod-mt76x2
+  DEVICE_TITLE := Netgear EX3700
+endef
+TARGET_DEVICES += ex3700
+
 define Device/wt3020-4M
   DTS := WT3020-4M
   BLOCKSIZE := 4k

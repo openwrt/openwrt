@@ -55,6 +55,7 @@ platform_check_image() {
 	esr-9753|\
 	ew1200|\
 	ex2700|\
+	ex3700|\
 	f7c027|\
 	firewrt|\
 	fonera20n|\
