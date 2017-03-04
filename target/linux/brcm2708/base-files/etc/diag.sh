@@ -12,8 +12,7 @@ set_state() {
 		status_led="led0"
 		;;
 	rpi-b-plus |\
-	rpi-2-b |\
-	rpi-3-b)
+	rpi-2-b)
 		status_led="led1"
 		;;
 	esac

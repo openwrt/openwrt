@@ -1,4 +1,4 @@
-From a9a8a1127418a342cfd7409d10137cbe4e20b951 Mon Sep 17 00:00:00 2001
+From 0f11b0757d5950ee7a8ba00e49ebefd2c649a6ba Mon Sep 17 00:00:00 2001
 From: Daniel Matuschek <info@crazy-audio.com>
 Date: Mon, 4 Aug 2014 11:09:58 +0200
 Subject: [PATCH] Added driver for HiFiBerry Amp amplifier add-on board
@@ -16,15 +16,19 @@ reported correctly by a non-zero return code.
 HiFiBerry Amp: fix device-tree problems
 
 Some code to load the driver based on device-tree-overlays was missing. This is added by this patch.
+
+hifiberry-amp: Adjust for ALSA object refactoring
+
+See: https://github.com/raspberrypi/linux/issues/1775
 ---
  sound/soc/bcm/Kconfig         |   7 +
  sound/soc/bcm/Makefile        |   2 +
  sound/soc/bcm/hifiberry_amp.c | 129 +++++++++++++++
  sound/soc/codecs/Kconfig      |   4 +
  sound/soc/codecs/Makefile     |   2 +
- sound/soc/codecs/tas5713.c    | 369 ++++++++++++++++++++++++++++++++++++++++++
+ sound/soc/codecs/tas5713.c    | 371 ++++++++++++++++++++++++++++++++++++++++++
  sound/soc/codecs/tas5713.h    | 210 ++++++++++++++++++++++++
- 7 files changed, 723 insertions(+)
+ 7 files changed, 725 insertions(+)
  create mode 100644 sound/soc/bcm/hifiberry_amp.c
  create mode 100644 sound/soc/codecs/tas5713.c
  create mode 100644 sound/soc/codecs/tas5713.h
@@ -47,20 +51,21 @@ Some code to load the driver based on device-tree-overlays was missing. This is 
          depends on SND_BCM2708_SOC_I2S || SND_BCM2835_SOC_I2S
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -12,11 +12,13 @@ obj-$(CONFIG_SND_SOC_CYGNUS) += snd-soc-
+@@ -9,12 +9,14 @@ snd-soc-cygnus-objs := cygnus-pcm.o cygn
+ obj-$(CONFIG_SND_SOC_CYGNUS) += snd-soc-cygnus.o
+ 
+ # BCM2708 Machine Support
++snd-soc-hifiberry-amp-objs := hifiberry_amp.o
  snd-soc-hifiberry-dac-objs := hifiberry_dac.o
  snd-soc-hifiberry-dacplus-objs := hifiberry_dacplus.o
  snd-soc-hifiberry-digi-objs := hifiberry_digi.o
-+snd-soc-hifiberry-amp-objs := hifiberry_amp.o
  snd-soc-rpi-dac-objs := rpi-dac.o
  snd-soc-iqaudio-dac-objs := iqaudio-dac.o
  
++obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP) += snd-soc-hifiberry-amp.o
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) += snd-soc-hifiberry-dac.o
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS) += snd-soc-hifiberry-dacplus.o
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) += snd-soc-hifiberry-digi.o
-+obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP) += snd-soc-hifiberry-amp.o
- obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
- obj-$(CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC) += snd-soc-iqaudio-dac.o
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_amp.c
 @@ -0,0 +1,129 @@
@@ -233,7 +238,7 @@ Some code to load the driver based on device-tree-overlays was missing. This is 
  obj-$(CONFIG_SND_SOC_TLV320AIC23_SPI)	+= snd-soc-tlv320aic23-spi.o
 --- /dev/null
 +++ b/sound/soc/codecs/tas5713.c
-@@ -0,0 +1,369 @@
+@@ -0,0 +1,371 @@
 +/*
 + * ASoC Driver for TAS5713
 + *
@@ -468,8 +473,10 @@ Some code to load the driver based on device-tree-overlays was missing. This is 
 +static struct snd_soc_codec_driver soc_codec_dev_tas5713 = {
 +	.probe = tas5713_probe,
 +	.remove = tas5713_remove,
-+	.controls = tas5713_snd_controls,
-+	.num_controls = ARRAY_SIZE(tas5713_snd_controls),
++	.component_driver = {
++		.controls = tas5713_snd_controls,
++		.num_controls = ARRAY_SIZE(tas5713_snd_controls),
++	},
 +};
 +
 +
