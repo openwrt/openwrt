@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2012-2016 OpenWrt.org
+# Copyright (C) 2017 LEDE project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -21,7 +22,12 @@ define Target/Description
 endef
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += brcm2708-gpu-fw kmod-usb-hid kmod-sound-core kmod-sound-arm-bcm2835 kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
+DEFAULT_PACKAGES += \
+	brcm2708-gpu-fw \
+	kmod-usb-hid \
+	kmod-sound-core kmod-sound-arm-bcm2835 \
+	kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
+	brcmfmac-firmware-43430-sdio kmod-brcmfmac wpad-mini
 
 KERNELNAME:=Image dtbs
 

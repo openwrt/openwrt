@@ -55,8 +55,8 @@ define Device/Default
 endef
 
 define Device/rpi
-  DEVICE_TITLE := Raspberry Pi B/B+/CM/Zero
-  DEVICE_DTS := bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm
+  DEVICE_TITLE := Raspberry Pi B/B+/CM/Zero/ZeroW
+  DEVICE_DTS := bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm bcm2708-rpi-0-w
 endef
 ifeq ($(SUBTARGET),bcm2708)
   TARGET_DEVICES += rpi
@@ -65,7 +65,6 @@ endif
 define Device/rpi-2
   DEVICE_TITLE := Raspberry Pi 2B/3B/3CM
   DEVICE_DTS := bcm2709-rpi-2-b bcm2710-rpi-3-b bcm2710-rpi-cm3
-  DEVICE_PACKAGES := brcmfmac-firmware-43430-sdio kmod-brcmfmac wpad-mini
 endef
 ifeq ($(SUBTARGET),bcm2709)
   TARGET_DEVICES += rpi-2
@@ -75,7 +74,6 @@ define Device/rpi-3
   KERNEL_IMG := kernel8.img
   DEVICE_TITLE := Raspberry Pi 3B (64 bit)
   DEVICE_DTS := broadcom/bcm2710-rpi-3-b
-  DEVICE_PACKAGES := brcmfmac-firmware-43430-sdio kmod-brcmfmac wpad-mini
 endef
 ifeq ($(SUBTARGET),bcm2710)
   TARGET_DEVICES += rpi-3
