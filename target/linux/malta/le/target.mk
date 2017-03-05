@@ -1,5 +1,6 @@
 ARCH:=mipsel
 SUBTARGET:=le
+FEATURES+=source-only
 BOARDNAME:=Little Endian
 
 define Target/Description
