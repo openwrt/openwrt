@@ -18,6 +18,9 @@ rpi-b |\
 rpi-b-plus)
 	ucidef_set_interface_lan "eth0"
 	;;
+rpi-zero-w)
+	ucidef_set_interface_lan "wlan0"
+	;;
 esac
 
 board_config_flush
