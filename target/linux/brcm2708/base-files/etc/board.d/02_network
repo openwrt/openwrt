@@ -1,5 +1,6 @@
 #!/bin/sh
 # Copyright (C) 2014-2016 OpenWrt.org
+# Copyright (C) 2017 LEDE project
 
 . /lib/functions/uci-defaults.sh
 . /lib/brcm2708.sh
@@ -11,10 +12,10 @@ board_config_update
 board=$(brcm2708_board_name)
 
 case "$board" in
-rpi-b |\
-rpi-b-plus |\
 rpi-2-b |\
-rpi-3-b)
+rpi-3-b |\
+rpi-b |\
+rpi-b-plus)
 	ucidef_set_interface_lan "eth0"
 	;;
 esac
