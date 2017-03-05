@@ -14,11 +14,15 @@ start_service() {
 	local tty="$(uci get gps.@gps[-1].tty)"
 	local atime="$(uci get gps.@gps[-1].adjust_time)"
 
-	[ -d "/sys/class/tty/$tty/" ] || return
+	[ -c "$tty" ] || {
+		tty="/dev/$tty"
+		[ -c "$tty" ] || return
+	}
 
 	procd_open_instance
-	procd_set_param command "$PROG" "/dev/$tty"
+	procd_set_param command "$PROG"
 	[ "$atime" -eq 0 ] || procd_append_param command "-a"
+	procd_append_param command "$tty"
 	procd_set_param respawn
 	procd_close_instance
 }
