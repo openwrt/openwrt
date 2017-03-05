@@ -13,7 +13,8 @@ set_state() {
 		;;
 	rpi-b |\
 	rpi-cm |\
-	rpi-zero)
+	rpi-zero |\
+	rpi-zero-w)
 		status_led="led0"
 		;;
 	esac
