@@ -6,6 +6,7 @@
  *  - MikroTik RouterBOARD 951Ui-2nD
  *  - MikroTik RouterBOARD 750UP r2
  *  - MikroTik RouterBOARD 750 r2
+ *  - MikroTik RouterBOARD LHG 5nD
  *
  *  Preliminary support for the following hardware
  *  - MikroTik RouterBOARD wAP2nD
@@ -52,10 +53,12 @@
 #define RBSPI_KEYS_DEBOUNCE_INTERVAL (3 * RBSPI_KEYS_POLL_INTERVAL)
 
 #define RBSPI_HAS_USB		BIT(0)
-#define RBSPI_HAS_WLAN		BIT(1)
-#define RBSPI_HAS_WAN4		BIT(2)	/* has WAN port on PHY4 */
-#define RBSPI_HAS_SSR		BIT(3)	/* has an SSR on SPI bus 0 */
-#define RBSPI_HAS_POE		BIT(4)
+#define RBSPI_HAS_WLAN0		BIT(1)
+#define RBSPI_HAS_WLAN1		BIT(2)
+#define RBSPI_HAS_WAN4		BIT(3)	/* has WAN port on PHY4 */
+#define RBSPI_HAS_SSR		BIT(4)	/* has an SSR on SPI bus 0 */
+#define RBSPI_HAS_POE		BIT(5)
+#define RBSPI_HAS_MDIO1		BIT(6)
 
 #define RB_ROUTERBOOT_OFFSET    0x0000
 #define RB_BIOS_SIZE            0x1000
@@ -324,6 +327,65 @@ static struct gpio_led rbmap_leds[] __initdata = {
 	},
 };
 
+/* RB LHG 5nD gpios */
+#define RBLHG_GPIO_LED_0	13
+#define RBLHG_GPIO_LED_1	12
+#define RBLHG_GPIO_LED_2	4
+#define RBLHG_GPIO_LED_3	21
+#define RBLHG_GPIO_LED_4	18
+#define RBLHG_GPIO_LED_ETH	14
+#define RBLHG_GPIO_LED_POWER	11
+#define RBLHG_GPIO_LED_USER	20
+#define RBLHG_GPIO_BTN_RESET	15
+
+static struct gpio_led rblhg_leds[] __initdata = {
+	{
+		.name = "rb:green:rssi0",
+		.gpio = RBLHG_GPIO_LED_0,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:rssi1",
+		.gpio = RBLHG_GPIO_LED_1,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:rssi2",
+		.gpio = RBLHG_GPIO_LED_2,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:rssi3",
+		.gpio = RBLHG_GPIO_LED_3,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:rssi4",
+		.gpio = RBLHG_GPIO_LED_4,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:eth",
+		.gpio = RBLHG_GPIO_LED_ETH,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:user",
+		.gpio = RBLHG_GPIO_LED_USER,
+		.active_low = 1,
+	}, {
+		.name = "rb:blue:power",
+		.gpio = RBLHG_GPIO_LED_POWER,
+		.active_low = 0,
+		.default_state = LEDS_GPIO_DEFSTATE_ON,
+	},
+};
+
+static struct gpio_keys_button rblhg_gpio_keys[] __initdata = {
+	{
+		.desc = "Reset button",
+		.type = EV_KEY,
+		.code = KEY_RESTART,
+		.debounce_interval = RBSPI_KEYS_DEBOUNCE_INTERVAL,
+		.gpio = RBLHG_GPIO_BTN_RESET,
+		.active_low = 1,
+	},
+};
+
 
 static struct gen_74x164_chip_platform_data rbspi_ssr_data = {
 	.base = RBSPI_SSR_GPIO_BASE,
@@ -360,12 +422,12 @@ static struct spi_board_info rbspi_spi_info[] = {
 	}
 };
 
-void __init rbspi_wlan_init(int wmac_offset)
+void __init rbspi_wlan_init(u16 id, int wmac_offset)
 {
 	char *art_buf;
 	u8 wlan_mac[ETH_ALEN];
 
-	art_buf = rb_get_wlan_data();
+	art_buf = rb_get_ext_wlan_data(id);
 	if (!art_buf)
 		return;
 
@@ -423,10 +485,12 @@ static void __init rbspi_peripherals_setup(u32 flags)
  * Sets LAN/WAN/WLAN.
  */
 static void __init rbspi_network_setup(u32 flags, int gmac1_offset,
-					int wmac_offset)
+					int wmac0_offset, int wmac1_offset)
 {
 	/* for QCA953x that will init mdio1_device/data */
 	ath79_register_mdio(0, 0x0);
+	if (flags & RBSPI_HAS_MDIO1)
+		ath79_register_mdio(1, 0x0);
 
 	if (flags & RBSPI_HAS_WAN4) {
 		ath79_setup_ar934x_eth_cfg(0);
@@ -455,12 +519,15 @@ static void __init rbspi_network_setup(u32 flags, int gmac1_offset,
 	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ath79_register_eth(1);
 
-	if (flags & RBSPI_HAS_WLAN)
-		rbspi_wlan_init(wmac_offset);
+	if (flags & RBSPI_HAS_WLAN0)
+		rbspi_wlan_init(0, wmac0_offset);
+
+	if (flags & RBSPI_HAS_WLAN1)
+		rbspi_wlan_init(1, wmac1_offset);
 }
 
 /* 
- * Init the mAP lite hardware.
+ * Init the mAP lite hardware (QCA953x).
  * The mAP L-2nD (mAP lite) has a single ethernet port, connected to PHY0.
  * Trying to use GMAC0 in direct mode was unsucessful, so we're
  * using SW_ONLY_MODE, which connects PHY0 to MAC1 on the internal
@@ -468,15 +535,15 @@ static void __init rbspi_network_setup(u32 flags, int gmac1_offset,
  */
 static void __init rbmapl_setup(void)
 {
-	u32 flags = RBSPI_HAS_WLAN;
+	u32 flags = RBSPI_HAS_WLAN0;
 
 	if (rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
 
-	/* GMAC1 is HW MAC, WLAN MAC is HW MAC + 1 */
-	rbspi_network_setup(flags, 0, 1);
+	/* GMAC1 is HW MAC, WLAN0 MAC is HW MAC + 1 */
+	rbspi_network_setup(flags, 0, 1, 0);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbmapl_leds), rbmapl_leds);
 
@@ -491,7 +558,7 @@ static void __init rbmapl_setup(void)
 }
 
 /*
- * Init the hAP lite hardware.
+ * Init the hAP lite hardware (QCA953x).
  * The 941-2nD (hAP lite) has 4 ethernet ports, with port 2-4
  * being assigned to LAN on the casing, and port 1 being assigned
  * to "internet" (WAN) on the casing. Port 1 is connected to PHY3.
@@ -499,15 +566,15 @@ static void __init rbmapl_setup(void)
  */
 static void __init rbhapl_setup(void)
 {
-	u32 flags = RBSPI_HAS_WLAN;
+	u32 flags = RBSPI_HAS_WLAN0;
 
 	if (rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
 
-	/* GMAC1 is HW MAC, WLAN MAC is HW MAC + 4 */
-	rbspi_network_setup(flags, 0, 4);
+	/* GMAC1 is HW MAC, WLAN0 MAC is HW MAC + 4 */
+	rbspi_network_setup(flags, 0, 4, 0);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbhapl_leds), rbhapl_leds);
 
@@ -527,8 +594,8 @@ static void __init rbspi_952_750r2_setup(u32 flags)
 
 	rbspi_peripherals_setup(flags);
 
-	/* GMAC1 is HW MAC + 1, WLAN MAC IS HW MAC + 5 */
-	rbspi_network_setup(flags, 1, 5);
+	/* GMAC1 is HW MAC + 1, WLAN0 MAC IS HW MAC + 5 */
+	rbspi_network_setup(flags, 1, 5, 0);
 
 	if (flags & RBSPI_HAS_USB)
 		gpio_request_one(RB952_GPIO_USB_POWER,
@@ -549,7 +616,7 @@ static void __init rbspi_952_750r2_setup(u32 flags)
 }
 
 /*
- * Init the hAP hardware.
+ * Init the hAP hardware (QCA953x).
  * The 951Ui-2nD (hAP) has 5 ethernet ports, with ports 2-5 being assigned
  * to LAN on the casing, and port 1 being assigned to "internet" (WAN).
  * Port 1 is connected to PHY4 (the ports are labelled in reverse physical
@@ -559,7 +626,7 @@ static void __init rbspi_952_750r2_setup(u32 flags)
  */
 static void __init rb952_setup(void)
 {
-	u32 flags = RBSPI_HAS_WLAN | RBSPI_HAS_WAN4 | RBSPI_HAS_USB |
+	u32 flags = RBSPI_HAS_WLAN0 | RBSPI_HAS_WAN4 | RBSPI_HAS_USB |
 			RBSPI_HAS_SSR | RBSPI_HAS_POE;
 
 	if (rbspi_platform_setup())
@@ -569,7 +636,7 @@ static void __init rb952_setup(void)
 }
 
 /*
- * Init the hEX (PoE) lite hardware.
+ * Init the hEX (PoE) lite hardware (QCA953x).
  * The 750UP r2 (hEX PoE lite) is nearly identical to the hAP, only without
  * WLAN. The 750 r2 (hEX lite) is nearly identical to the 750UP r2, only
  * without USB and POE. It shares the same bootloader board identifier.
@@ -589,20 +656,44 @@ static void __init rb750upr2_setup(void)
 }
 
 /*
- * Init the wAP hardware (EXPERIMENTAL).
- * The wAP 2nD has a single ethernet port.
+ * Init the LHG hardware (AR9344).
+ * The LHG 5nD has a single ethernet port connected to PHY0.
+ * Wireless is provided via 5GHz WLAN1.
  */
-static void __init rbwap_setup(void)
+static void __init rblhg_setup(void)
 {
-	u32 flags = RBSPI_HAS_WLAN;
+	u32 flags = RBSPI_HAS_WLAN1 | RBSPI_HAS_MDIO1;
 
 	if (rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
 
-	/* GMAC1 is HW MAC, WLAN MAC is HW MAC + 1 */
-	rbspi_network_setup(flags, 0, 1);
+	/* GMAC1 is HW MAC, WLAN1 MAC is HW MAC + 1 */
+	rbspi_network_setup(flags, 0, 0, 1);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rblhg_leds), rblhg_leds);
+
+	ath79_register_gpio_keys_polled(-1, RBSPI_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(rblhg_gpio_keys),
+					rblhg_gpio_keys);
+}
+
+/*
+ * Init the wAP hardware (EXPERIMENTAL).
+ * The wAP 2nD has a single ethernet port.
+ */
+static void __init rbwap_setup(void)
+{
+	u32 flags = RBSPI_HAS_WLAN0;
+
+	if (rbspi_platform_setup())
+		return;
+
+	rbspi_peripherals_setup(flags);
+
+	/* GMAC1 is HW MAC, WLAN0 MAC is HW MAC + 1 */
+	rbspi_network_setup(flags, 0, 1, 0);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbwap_leds), rbwap_leds);
 }
@@ -613,15 +704,15 @@ static void __init rbwap_setup(void)
  */
 static void __init rbcap_setup(void)
 {
-	u32 flags = RBSPI_HAS_WLAN;
+	u32 flags = RBSPI_HAS_WLAN0;
 
 	if (rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
 
-	/* GMAC1 is HW MAC, WLAN MAC is HW MAC + 1 */
-	rbspi_network_setup(flags, 0, 1);
+	/* GMAC1 is HW MAC, WLAN0 MAC is HW MAC + 1 */
+	rbspi_network_setup(flags, 0, 1, 0);
 
 	gpio_request_one(RBCAP_GPIO_LED_ALL,
 			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
@@ -637,7 +728,7 @@ static void __init rbcap_setup(void)
  */
 static void __init rbmap_setup(void)
 {
-	u32 flags = RBSPI_HAS_WLAN | RBSPI_HAS_SSR | RBSPI_HAS_POE;
+	u32 flags = RBSPI_HAS_WLAN0 | RBSPI_HAS_SSR | RBSPI_HAS_POE;
 
 	if (rbspi_platform_setup())
 		return;
@@ -645,8 +736,8 @@ static void __init rbmap_setup(void)
 	rbspi_spi_cs_gpios[1] = RBMAP_GPIO_SSR_CS;
 	rbspi_peripherals_setup(flags);
 
-	/* GMAC1 is HW MAC, WLAN MAC is HW MAC + 2 */
-	rbspi_network_setup(flags, 0, 2);
+	/* GMAC1 is HW MAC, WLAN0 MAC is HW MAC + 2 */
+	rbspi_network_setup(flags, 0, 2, 0);
 
 	if (flags & RBSPI_HAS_POE)
 		gpio_request_one(RBMAP_GPIO_POE_POWER,
@@ -661,6 +752,7 @@ MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_952, "952-hb", rb952_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_750UPR2, "750-hb", rb750upr2_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_LHG5, "lhg", rblhg_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAP, "wap-hb", rbwap_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_CAP, "cap-hb", rbcap_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAP, "map2-hb", rbmap_setup);

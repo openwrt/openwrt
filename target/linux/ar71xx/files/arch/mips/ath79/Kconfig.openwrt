@@ -928,6 +928,7 @@ config ATH79_MACH_RB2011
 
 config ATH79_MACH_RBSPI
 	bool "MikroTik RouterBOARD SPI-NOR support"
+	select SOC_AR934X
 	select SOC_QCA953X
 	select ATH79_DEV_ETH
 	select ATH79_DEV_GPIO_BUTTONS
@@ -943,6 +944,7 @@ config ATH79_MACH_RBSPI
 	  MikroTik RouterBOARD hAP
 	  MikroTik RouterBOARD hEX PoE lite
 	  MikroTik RouterBOARD hEX lite
+	  MikroTik RouterBOARD LHG 5
 	  MikroTik RouterBOARD cAP (EXPERIMENTAL)
 	  MikroTik RouterBOARD mAP (EXPERIMENTAL)
 	  MikroTik RouterBOARD wAP (EXPERIMENTAL)
