@@ -88,7 +88,7 @@ ppp_generic_setup() {
 	local config="$1"; shift
 	local localip
 
-	json_get_vars ipv6 ip6table demand keepalive keepalive_adaptive username password pppd_options pppname unnumbered persist maxfail holdoff
+	json_get_vars ipv6 ip6table demand keepalive keepalive_adaptive username password pppd_options pppname unnumbered persist maxfail holdoff peerdns
 	if [ "$ipv6" = 0 ]; then
 		ipv6=""
 	elif [ -z "$ipv6" -o "$ipv6" = auto ]; then
@@ -137,6 +137,7 @@ ppp_generic_setup() {
 		${ipv6:++ipv6} \
 		${autoipv6:+set AUTOIPV6=1} \
 		${ip6table:+set IP6TABLE=$ip6table} \
+		${peerdns:+set PEERDNS=$peerdns} \
 		nodefaultroute \
 		usepeerdns \
 		$demand $persist maxfail $maxfail \
