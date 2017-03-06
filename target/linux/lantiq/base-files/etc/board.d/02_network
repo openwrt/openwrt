@@ -61,6 +61,13 @@ ARV7519RW22)
 		"0:lan:5" "2:lan:3" "3:lan:4" "4:lan:1" "5:lan:2" "6t@eth0"
 	;;
 
+ASL56026)
+	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
+	wan_mac=$(mtd_get_mac_ascii uboot_env wanmac)
+	ucidef_add_switch "switch0"\
+		"2:lan" "3:lan" "6t@eth0"
+	;;
+
 BTHOMEHUBV2B)
 	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
