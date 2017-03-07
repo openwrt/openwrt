@@ -60,7 +60,7 @@ define KernelPackage/usb-phy-nop
   KCONFIG:=CONFIG_NOP_USB_XCEIV
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-generic.ko
-  AUTOLOAD:=$(call AutoLoad,43,phy-generic)
+  AUTOLOAD:=$(call AutoLoad,21,phy-generic,1)
   $(call AddDepends/usb)
 endef
 
@@ -77,7 +77,7 @@ define KernelPackage/usb-gadget
   HIDDEN:=1
   FILES:=\
 	$(LINUX_DIR)/drivers/usb/gadget/udc/udc-core.ko
-  AUTOLOAD:=$(call AutoLoad,45,udc-core)
+  AUTOLOAD:=$(call AutoLoad,21,udc-core,1)
   DEPENDS:=@USB_GADGET_SUPPORT
   $(call AddDepends/usb)
 endef
@@ -273,25 +273,36 @@ define KernelPackage/usb-ssb
 endef
 $(eval $(call KernelPackage,usb-ssb))
 
+define KernelPackage/usb-ehci
+  TITLE:=EHCI controller support
+  HIDDEN:=1
+  KCONFIG:= \
+	CONFIG_USB_EHCI_HCD
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/host/ehci-hcd.ko
+  AUTOLOAD:=$(call AutoLoad,35,ehci-hcd,1)
+  $(call AddDepends/usb)
+endef
+$(eval $(call KernelPackage,usb-ehci))
+
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   DEPENDS:=\
 	+TARGET_brcm47xx:kmod-usb-bcma \
 	+TARGET_brcm47xx:kmod-usb-ssb \
 	+TARGET_bcm53xx:kmod-usb-bcma \
-	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb2
+	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb2 \
+	+kmod-usb-ehci
   KCONFIG:=\
-	CONFIG_USB_EHCI_HCD \
+	CONFIG_USB_EHCI_HCD_PLATFORM \
 	CONFIG_USB_EHCI_BCM63XX=y \
 	CONFIG_USB_IMX21_HCD=y \
 	CONFIG_USB_EHCI_MXC=y \
 	CONFIG_USB_OCTEON_EHCI=y \
 	CONFIG_USB_EHCI_HCD_ORION=y \
-	CONFIG_USB_EHCI_HCD_PLATFORM=y \
 	CONFIG_USB_EHCI_HCD_AT91=y \
 	CONFIG_USB_EHCI_FSL
   FILES:= \
-	$(LINUX_DIR)/drivers/usb/host/ehci-hcd.ko \
 	$(LINUX_DIR)/drivers/usb/host/ehci-platform.ko
   ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-orion.ko),)
     FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-orion.ko
@@ -1376,7 +1387,7 @@ $(eval $(call KernelPackage,usbip-server))
 
 define KernelPackage/usb-chipidea
   TITLE:=Host and device support for Chipidea controllers
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ar71xx +kmod-usb2
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget @TARGET_ar71xx +kmod-usb-ehci
   KCONFIG:= \
 	CONFIG_NOP_USB_XCEIV=y \
 	CONFIG_EXTCON \
@@ -1388,7 +1399,7 @@ define KernelPackage/usb-chipidea
 	$(LINUX_DIR)/drivers/extcon/extcon.ko@lt4.9 \
 	$(LINUX_DIR)/drivers/extcon/extcon-core.ko@ge4.9 \
 	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc.ko
-  AUTOLOAD:=$(call AutoLoad,51,ci_hdrc,0)
+  AUTOLOAD:=$(call AutoLoad,39,ci_hdrc,1)
   $(call AddDepends/usb)
 endef
 
