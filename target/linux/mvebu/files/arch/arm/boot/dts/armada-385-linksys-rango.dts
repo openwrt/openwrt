@@ -326,6 +326,7 @@
 		sata {
 			label = "rango:white:sata";
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "disk-activity";
 		};
 
 		wlan_2g {
