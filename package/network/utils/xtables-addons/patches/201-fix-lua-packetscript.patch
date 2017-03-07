@@ -105,3 +105,14 @@
  #endif
  
  #if defined(__cplusplus)
+--- a/extensions/LUA/lua/llex.h
++++ b/extensions/LUA/lua/llex.h
+@@ -10,6 +10,8 @@
+ #include "lobject.h"
+ #include "lzio.h"
+ 
++/* prevent conflict with definition from asm/current.h */
++#undef current
+ 
+ #define FIRST_RESERVED	257
+ 
