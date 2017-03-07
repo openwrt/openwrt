@@ -282,7 +282,6 @@ define KernelPackage/usb2
 	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb2
   KCONFIG:=\
 	CONFIG_USB_EHCI_HCD \
-	CONFIG_USB_EHCI_ATH79=y \
 	CONFIG_USB_EHCI_BCM63XX=y \
 	CONFIG_USB_IMX21_HCD=y \
 	CONFIG_USB_EHCI_MXC=y \
