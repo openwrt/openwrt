@@ -1,0 +1,63 @@
+# Sample Configuration v2.1
+# 
+# please see the documentation at www.linuxvirtualserver.org to learn how to
+# configure real servers.
+# This configuration is used by /etc/init.d/ipvsadm to setup and load balance
+# virtual servers to available real servers.
+# A cron job is used to activate/deactivate real servers based on their availability (ping)
+#
+# If virtual and real servers have internet static IPs, the wan interface must be part of a static IP Subnet
+# ipvsadm is fully functional for manual configuration
+
+config vipvs globals
+	option enabled '0'
+# role master|slave
+	option role 'master'
+# If my role is backup, specify the master's IP for IPs failover
+	# option role 'backup'
+# master is a list of IPs pointing to the master for heartbeat checks
+# if the mater IP is unreachable the backup server takes over the floating IPs
+	# option master 'X.X.X.X'
+# multicast interface
+	option interface 'lan'
+# synchronization id: if 0 or not specified synchronize with all servers
+	option syncid '0'
+# if an alias number is not specified in virtual, aliases are created by default starting from 100
+# alias offset specifies a custom offset 0 to 100
+   	option alias_offset '0'
+
+# for each vip an alias ip is initialized on the wan/lan router interface
+# the vip must not be the same as the router's ip
+config virtual 'virtual_example'
+	option enabled 0
+	option vip '192.168.10.10'
+	option interface lan
+	option alias 10
+	option scheduler 'wlc'
+# persistent: if set, 0=default timeout of 300s any other number specifies a custom timeout
+	option persistent '1'
+# list of real servers associated with this virtual server
+	list real 'real_example'
+
+# lists protocols/ports for related virtual server with name admin
+config virtual_example
+	option protocol tcp
+	option src_port 80
+	option dest_port 80
+
+config virtual_example
+	option protocol udp
+# if only 'port' is specified then source and destination ports are the same
+# port 0 means all ports are forwarded to the real servers
+	option port 0
+
+# configure options specific to a real server
+# must have ip with _ instead of dots to comply with uci syntax. The script re-converts these to IP
+# packet_forwarding (direct, tunnel, nat), weight (numeric), u_threshold (numeric), l_threshold (numeric)
+config real 'real_example'
+	option ipaddr '192.168.10.100'
+	option packet_forwarding 'direct' 
+	option weight '1'
+# probe method ping or wget if wget specify URL path
+	option probe_method 'wget'
+	option probe_url 'index.html'

@@ -1,0 +1,295 @@
+#!/bin/sh /etc/rc.common
+
+################################################################################
+# ipvsadm v2.1
+# Author: Mauro Mozzarelli <mauro@ezplanet.org>
+# License: Released under the LGPL (GNU Lesser General Public License)
+# Description: builds ipvs configuration from uci openwrt parameters
+#              load/unload ip_vs kernel modules
+#              start/stop ipvs scheduler
+#              start/stop cron job scheduler
+# Dependencies: /etc/config/ipvs; ipvsadm; ip_vs Kernel modules; cron
+# Notes: Firewall must be configured separately
+#	Configuration files in /tmp/ipvsadm.d:
+#	virt.*  = virtual servers
+#   *.stop  = real server in down state ipvs table
+#   *.start = real server in up state ipvs table
+#   vserv.* = virtual servers ipvs table 
+################################################################################
+
+START=70
+STOP=10
+
+USE_PROCD=1
+
+BASE_DIR=/tmp/ipvsadm.d
+TMP_DIR=$BASE_DIR
+REAL_SERVERS=realServers
+KERNEL_RELEASE=`uname -r`
+MODULES=/lib/modules/$KERNEL_RELEASE
+IPVSMOD=ip_vs
+SCHED=rr
+# Reserve first 100 aliases for automated allocation
+ALIAS_NEXT=100
+# Cron job used to check if real servers are available and update ipvs
+# scheduler accordingly
+CRON_SCHEDULER='*		*	*	*	*	/usr/sbin/checkRealServers		# IPVS_SCHEDULER'
+
+# Get parameters for real servers (repetitive cycle)
+get_real_parameters () {
+	real=$1
+	ip=`uci -q get ipvs.$real.ipaddr`
+	param=`uci -q get ipvs.$real.packet_forwarding`
+	case $param in
+		direct)		param="-g" ;;
+		tunnel)		param="-i" ;;
+		nat)		param="-m" ;;
+	esac
+	for i in weight u_threshold l_threshold; do
+		value=`uci -q get ipvs.$real.$i`
+		case $i in
+			weight)			switch="-w" ;;
+			u_threshold)	switch="-x" ;;
+			l_threshold)	switch="-y" ;;
+		esac
+		if [ ! -z $value ]; then
+			let $value 2>/dev/null
+			isNumeric=$?
+			if [ $isNumeric -eq 0 ]; then
+				param="$param $switch $value"
+			else
+				param="$param $switch"
+			fi
+		fi
+	done
+	echo $param
+}
+
+# Check if real server is in the list and add if not present
+update_real_server () {
+	r_ipaddr=`uci -q get ipvs.$1.ipaddr`
+	gotit=0
+	for s in `cat $BASE_DIR/$REAL_SERVERS`; do
+		if [ $r == $s ]; then
+			gotit=1
+			break
+		fi
+	done
+	if [ $gotit -eq 0 ]; then
+		echo $r >> $BASE_DIR/$REAL_SERVERS
+	fi
+	echo $r_ipaddr
+}
+
+get_schedulers () {
+	for i in $1; do
+		schedulers=`uci -q get ipvs.${i}.scheduler`
+	done
+	schedulers=`echo $schedulers|xargs -n1|sort -u|xargs`
+	echo $schedulers
+}
+
+get_real_servers () {
+	for i in `uci show ipvs|grep "=real"`; do
+		s=${i%=*}
+		s="${s##*.}"
+		reals="$reals $s"
+	done
+}
+
+get_virtual_servers () {
+	for i in `uci show ipvs|grep "=virtual"`; do
+		s=${i%=*}
+		s="${s##*.}"
+		virtuals="$virtuals $s"
+	done
+	echo $virtuals
+}
+
+start_service () {
+
+	enabled=`uci -q get ipvs.globals.enabled`
+	case $enabled in
+		0)
+			exit
+			;;
+		1)
+			;;
+		*)
+			echo Invalid initialization parameter: enabled=$enabled
+			exit
+			;;
+	esac
+	if [ -d $BASE_DIR ]; then
+		cd $BASE_DIR
+	else
+		mkdir -p $BASE_DIR
+		cd $BASE_DIR
+	fi
+	rm -f $BASE_DIR/*
+	rm -f $TMP_DIR/*.down
+	touch $BASE_DIR/$REAL_SERVERS
+	modprobe $IPVSMOD
+	virtuals="$(get_virtual_servers)"
+	schedulers="$(get_schedulers $virtuals)"
+	cm=0
+	for i in $schedulers; do
+		cm=$((cm+1))
+		modprobe ${IPVSMOD}_$i
+	done
+	# Default to SCHED if no schedulers
+	if [ $cm -eq 0 ]; then
+		modprobe ${IPVSMOD}_${SCHED}
+	fi
+	offset=`uci -q get ipvs.globals.alias_offset`
+	if [ ! -z "$offset" ]; then
+		let $offset 2>/dev/null
+		isNumeric=$?
+		if [ $isNumeric -eq 0 ]; then
+			ALIAS_NEXT=$offset
+		fi
+	fi
+	cv=0
+	for virtual in $virtuals ; do
+		enabled=`uci get ipvs.${virtual}.enabled`
+		if [ $enabled -eq 0 ]; then
+			continue
+		fi
+		vip=`uci get ipvs.${virtual}.vip`
+		interface=`uci get ipvs.${virtual}.interface`
+		device=`uci -P /var/state get network.${interface}.ifname`
+		ipaddr=`uci -P /var/state get network.${interface}.ipaddr`
+		alias=`uci -q get ipvs.${virtual}.alias`
+		scheduler=`uci -q get ipvs.${virtual}.scheduler`
+		persistent=`uci -q get ipvs.${virtual}.persistent`
+		v_params=`uci -q get ipvs.${virtual}.parameters`
+		# ifconfig: get alias number or use a the default
+		if [ "$vip" != "$ipaddr" ] ; then
+			let $alias 2>/dev/null
+			isNumeric=$?
+			if [ -z "$alias" ] || [ $isNumeric -gt 0 ]; then
+				alias=$ALIAS_NEXT
+				let ALIAS_NEXT=$ALIAS_NEXT+1
+			fi
+			echo "ifconfig $device:$alias $vip netmask 255.255.255.255 up" >> $BASE_DIR/ifconfig_${interface}_up.sh
+			echo "ifconfig $device:$alias down" >> $BASE_DIR/ifconfig_${interface}_down.sh
+		fi
+		if [ -z "$scheduler" ]; then
+			scheduler=$SCHED
+		fi
+		if [ ! -z $persistent ]; then
+			let $persistent 2>/dev/null
+			isNumeric=$?
+			# if numeric and greater than 0 set timeout to value, otherwise use default
+			if [ $isNumeric -eq 0 ] && [ $persistent -gt 0 ]; then
+				persistent="-p $persistent"
+			else
+				persistent="-p"
+			fi
+		fi
+		#
+		real=`uci -q get ipvs.${virtual}.real`	
+		if [ ! -z "$real" -a "$real" != " " ]; then
+			vip_done=no
+			for r in $real; do
+				r_ipaddr="$(update_real_server $r)"
+				r_params="$(get_real_parameters $r)"
+				cd=0
+				while [ x`uci -q get ipvs.@${virtual}[$cd]` == x$virtual ]; do
+					protocol=`uci -q get ipvs.@$virtual[$cd].protocol`
+					src_port=`uci -q get ipvs.@$virtual[$cd].src_port`
+					dest_port=`uci -q get ipvs.@$virtual[$cd].dest_port`
+					case $protocol in
+						tcp)
+							protocol="-t"
+							;;
+						udp)
+							protocol="-u"
+							;;
+						*)
+							# Default to tcp protocol
+							protocol="-t"
+							;;
+					esac
+					if [ -z $src_port ]; then
+						port=`uci -q get ipvs.@$virtual[$cd].port`
+						if [ -z $port ]; then
+							port=0
+						fi
+						src_port=$port
+					fi
+					if [ -z $dest_port ]; then
+						dest_port=$src_port
+					fi
+					if [ x$vip_done == x'no' ];then 
+						echo "-A $protocol $vip:$src_port -s $scheduler $persistent $v_params" >> $BASE_DIR/vserv.start.$interface
+						echo "-D $protocol $vip:$src_port" >> $BASE_DIR/vserv.stop.$interface
+					fi
+					echo "-a $protocol $vip:$src_port -r $r_ipaddr:$dest_port $r_params" >> $BASE_DIR/$r.start
+					echo "-d $protocol $vip:$src_port -r $r_ipaddr" >> $BASE_DIR/$r.stop
+					cd=$((cd+1))
+				done
+				vip_done=yes
+			done
+		fi
+		let cv=$cv+1
+	done
+	for i in `cat $BASE_DIR/$REAL_SERVERS`; do
+		date > $TMP_DIR/$i.down
+	done
+	for i in ${BASE_DIR}/vserv.start.* ; do
+		ipvsadm -R < $i
+	done
+
+	grole=`uci -q get ipvs.globals.role`
+	gintf=`uci -q get ipvs.globals.interface`
+	gsync=`uci -q get ipvs.globals.syncid`
+	if [ ! -z $gsync ]; then
+		if [ $gsync -gt 0 ]; then
+			gsync="--syncid $gsync"
+		fi
+	fi
+	if [ $grole == 'master' ] ; then
+		for i in ${BASE_DIR}/ifconfig_*_up.sh ; do
+			/bin/sh $i
+		done
+	fi
+	ipvsadm --start-daemon $grole --mcast-interface `uci -P /var/state get network.$gintf.ifname` $gsync
+	if [ $? -gt 0 ]; then
+		logger -p info "ERROR: IPVSADM daemon failed to start"
+		exit
+	fi
+	logger -p info "IPVSADM daemon started as $grole"
+
+	# Clean up any left over crontab entry
+	# Add real server check scheduler to cron
+	(crontab -l|grep -v IPVS_SCHEDULER ; echo "$CRON_SCHEDULER")|crontab -
+}
+
+stop_service () {
+	if [ -d ${BASE_DIR} ]; then
+		for i in ${BASE_DIR}/*.stop ; do
+			ipvsadm -R < $i
+		done
+		for i in ${BASE_DIR}/vserv.stop.* ; do
+			ipvsadm -R < $i
+		done
+		for i in ${BASE_DIR}/ifconfig_*_down.sh ; do
+			/bin/sh $i
+		done
+		ipvsadm --stop-daemon `uci -q get ipvs.globals.role`
+		rm -f $TMP_DIR/*.down
+		rm -rf $BASE_DIR
+	fi
+	virtuals="$(get_virtual_servers)"
+	schedulers="$(get_schedulers $virtuals)"
+	for m in $schedulers; do
+			rmmod ${IPVSMOD}_${m}
+	done
+	# Default to SCHED if no schedulers
+	if [ -z $m ]; then
+		rmmod ${IPVSMOD}_${SCHED}
+	fi
+	rmmod $IPVSMOD
+	crontab -l |grep -v IPVS_SCHEDULER|crontab -
+}

@@ -1,0 +1,43 @@
+--- a/Makefile
++++ b/Makefile
+@@ -84,7 +84,7 @@ DEFINES		+= $(shell if [ ! -f ../ip_vs.h
+ all:            libs ipvsadm
+ 
+ libs:
+-		make -C libipvs
++		$(MAKE) -C libipvs
+ 
+ ipvsadm:	$(OBJS) $(STATIC_LIBS)
+ 		$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+--- a/libipvs/Makefile
++++ b/libipvs/Makefile
+@@ -1,5 +1,6 @@
+ # Makefile for libipvs
+ 
++AR		= ar
+ CC		= gcc
+ CFLAGS		= -Wall -Wunused -Wstrict-prototypes -g -fPIC
+ ifneq (0,$(HAVE_NL))
+@@ -17,11 +18,13 @@ INCLUDE		+= $(shell if [ -f ../../ip_vs.
+ 		     echo "-I../../."; fi;)
+ DEFINES		= $(shell if [ ! -f ../../ip_vs.h ]; then	\
+ 		    echo "-DHAVE_NET_IP_VS_H"; fi;)
++ifneq (0,$(HAVE_NL))
+ DEFINES		+= $(shell if which pkg-config > /dev/null 2>&1; then \
+ 			 if   pkg-config --exists libnl-3.0; then :; \
+ 			 elif pkg-config --exists libnl-2.0; then :; \
+ 			 elif pkg-config --exists libnl-1; \
+ 			 then echo "-DFALLBACK_LIBNL1"; fi; fi)
++endif
+ 
+ .PHONY		= all clean install dist distclean rpm rpms
+ STATIC_LIB	= libipvs.a
+@@ -30,7 +33,7 @@ SHARED_LIB	= libipvs.so
+ all:		$(STATIC_LIB) $(SHARED_LIB)
+ 
+ $(STATIC_LIB):	libipvs.o ip_vs_nl_policy.o
+-		ar rv $@ $^
++		$(AR) rv $@ $^
+ 
+ $(SHARED_LIB):	libipvs.o ip_vs_nl_policy.o
+ 		$(CC) -shared -Wl,-soname,$@ -o $@ $^

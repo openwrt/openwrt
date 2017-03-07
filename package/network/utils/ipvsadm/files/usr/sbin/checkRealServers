@@ -1,0 +1,91 @@
+#!/bin/sh
+################################################################################
+# Author: Mauro Mozzarelli <mauro@ezplanet.org>
+# License: Released under the LGPL (GNU Lesser General Public License)
+# Description: checks whether a real server is up and running and if it is
+#              then it starts the services
+#              if this is the backup, monitor the master and float VIPs
+# Dependencies: /tmp/ipvsadm.d 
+#               configuration files created by /etc/init.d/ipvsadm
+#   virt.*  = virtual servers
+#   *.stop  = real server in down state ipvs table
+#   *.start = real server in up state ipvs table
+#   *.down  = real server down status 
+#   ifconfig_${interface}_up acquire IPs
+#   ifconfig_${interface}_down.sh release IPs
+################################################################################
+
+BASE_DIR=/tmp/ipvsadm.d
+TMP_DIR=$BASE_DIR
+REAL_SERVERS=realServers
+LOGFILE=/tmp/loadbalancer.log
+LOCKFILE=/tmp/ipvs_master.lock
+PROBE_COUNT=3
+
+logthis () {
+	MSG=$1
+	logger -p info $MSG
+	echo "`date +'%F %T'` - $MSG" >> $LOGFILE
+}
+
+### main ###
+
+role=`uci -q get ipvs.globals.role`
+if [ $role == 'backup' ] ; then
+	master=`uci -q get ipvs.globals.master`
+	RESULT=0
+	COUNT=0
+	for i in $master ; do
+		ping -qc 3 $i > /dev/null
+		RESULT=$(($RESULT + $?))
+		COUNT=$(($COUNT + 1))
+	done
+	if [ $COUNT -eq $RESULT ]; then
+		if [ ! -f $LOCKFILE ] ; then
+			logthis "Load Balancer $master is DOWN"
+			for i in ${BASE_DIR}/ifconfig_*_up.sh ; do
+				/bin/sh $i
+			done
+			date > $LOCKFILE
+			logthis "Master Load Balancer $master is DOWN: acquired floating IPs"
+		fi
+	else
+		if [ -f $LOCKFILE ] ; then
+			logthis "Load Balancer $master is UP"
+			for i in ${BASE_DIR}/ifconfig_*_down.sh ; do
+				/bin/sh $i
+			done
+			rm -f $LOCKFILE
+			logthis "Master Load Balancer $master is UP: released floating IPs"
+		fi
+	fi
+fi
+if [ -f $BASE_DIR/$REAL_SERVERS ]; then
+	for i in `cat $BASE_DIR/$REAL_SERVERS`; do
+		s_ipaddr=`uci -q get ipvs.$i.ipaddr`
+		s_probe_method=`uci -q get ipvs.$i.probe_method`
+		case $s_probe_method in
+			ping)
+				ping -qc $PROBE_COUNT $s_ipaddr > /dev/null
+				;;
+			wget)
+				s_probe_url=`uci -q get ipvs.$i.probe_url`
+				wget -q -O /dev/null http://$s_ipaddr/$s_probe_url
+				;;
+		esac
+		RESULT=$?
+		if [ $RESULT -gt 0 ]; then
+			if [ ! -f $TMP_DIR/$i.down ]; then
+				ipvsadm -R < $BASE_DIR/$i.stop
+				date > $TMP_DIR/$i.down
+				logthis "IPVS Server $i is down"
+			fi
+		else
+			if [ -f $TMP_DIR/$i.down ]; then
+				ipvsadm -R < $BASE_DIR/$i.start
+				rm $TMP_DIR/$i.down
+				logthis "IPVS Server $i $s_ipaddr is on-line"
+			fi
+		fi
+	done
+fi
