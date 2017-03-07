@@ -29,7 +29,7 @@
  
  #include <asm/mach-ath79/ath79.h>
  #include <asm/mach-ath79/ar71xx_regs.h>
-@@ -170,6 +173,54 @@ static void __init ar913x_usb_setup(void
+@@ -170,6 +173,51 @@ static void __init ar913x_usb_setup(void
  			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
  }
  
@@ -48,10 +48,9 @@
 +
 +static void __init ar933x_ci_usb_setup(void)
 +{
-+	u32 bootstrap;
-+	enum usb_dr_mode dr_mode;
 +	struct ci_hdrc_platform_data ci_pdata;
-+	struct platform_device *phy;
++	enum usb_dr_mode dr_mode;
++	u32 bootstrap;
 +
 +	bootstrap = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
 +	if (bootstrap & AR933X_BOOTSTRAP_USB_MODE_HOST) {
@@ -70,10 +69,8 @@
 +	ci_pdata.id_extcon.edev = ERR_PTR(-ENODEV);
 +	ci_pdata.itc_setting = 1;
 +
-+	/* register a nop PHY */
-+	phy = usb_phy_generic_register();
-+	if (IS_ERR(phy))
-+		return;
++	platform_device_register_simple("usb_phy_generic",
++					PLATFORM_DEVID_AUTO, NULL, 0);
 +
 +	ath79_usb_register("ci_hdrc", -1,
 +			   AR933X_EHCI_BASE, AR933X_EHCI_SIZE,
@@ -84,7 +81,7 @@
  static void __init ar933x_usb_setup(void)
  {
  	ath79_device_reset_set(AR933X_RESET_USBSUS_OVERRIDE);
-@@ -185,6 +236,8 @@ static void __init ar933x_usb_setup(void
+@@ -185,6 +233,8 @@ static void __init ar933x_usb_setup(void
  			   AR933X_EHCI_BASE, AR933X_EHCI_SIZE,
  			   ATH79_CPU_IRQ(3),
  			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
