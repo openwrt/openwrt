@@ -49,11 +49,11 @@ Signed-off-by: Andy Gross <andy.gross@linaro.org>
 -	int idx, shift, w_size;
 -
 -	w_size = controller->w_size;
+-
+-	while (controller->rx_bytes < xfer->len) {
 +	int i, shift, num_bytes;
 +	u32 word;
  
--	while (controller->rx_bytes < xfer->len) {
--
 -		state = readl_relaxed(controller->base + QUP_OPERATIONAL);
 -		if (0 == (state & QUP_OP_IN_FIFO_NOT_EMPTY))
 -			break;
@@ -95,16 +95,20 @@ Signed-off-by: Andy Gross <andy.gross@linaro.org>
 -	int idx, w_size;
 +	u32 remainder, words_per_block, num_words;
 +	bool is_block_mode = controller->mode == QUP_IO_M_MODE_BLOCK;
-+
+ 
+-	w_size = controller->w_size;
 +	remainder = DIV_ROUND_UP(xfer->len - controller->rx_bytes,
 +				 controller->w_size);
 +	words_per_block = controller->in_blk_sz >> 2;
-+
+ 
+-	while (controller->tx_bytes < xfer->len) {
 +	do {
 +		/* ACK by clearing service flag */
 +		writel_relaxed(QUP_OP_IN_SERVICE_FLAG,
 +			       controller->base + QUP_OPERATIONAL);
-+
+ 
+-		state = readl_relaxed(controller->base + QUP_OPERATIONAL);
+-		if (state & QUP_OP_OUT_FIFO_FULL)
 +		if (is_block_mode) {
 +			num_words = (remainder > words_per_block) ?
 +					words_per_block : remainder;
@@ -112,19 +116,15 @@ Signed-off-by: Andy Gross <andy.gross@linaro.org>
 +			if (!spi_qup_is_flag_set(controller,
 +						 QUP_OP_IN_FIFO_NOT_EMPTY))
 +				break;
- 
--	w_size = controller->w_size;
++
 +			num_words = 1;
 +		}
 +
 +		/* read up to the maximum transfer size available */
 +		spi_qup_read_from_fifo(controller, xfer, num_words);
- 
--	while (controller->tx_bytes < xfer->len) {
++
 +		remainder -= num_words;
- 
--		state = readl_relaxed(controller->base + QUP_OPERATIONAL);
--		if (state & QUP_OP_OUT_FIFO_FULL)
++
 +		/* if block mode, check to see if next block is available */
 +		if (is_block_mode && !spi_qup_is_flag_set(controller,
 +					QUP_OP_IN_BLOCK_READ_REQ))

@@ -173,37 +173,37 @@ Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
 +			qup->n_words = SPI_MAX_XFER;
 +		else
 +			qup->n_words = n_words % SPI_MAX_XFER;
-+
-+		if (qup->tx_buf && offset)
-+			qup->tx_buf = xfer->tx_buf + offset * SPI_MAX_XFER;
-+
-+		if (qup->rx_buf && offset)
-+			qup->rx_buf = xfer->rx_buf + offset * SPI_MAX_XFER;
-+
-+		/* if the transaction is small enough, we need
-+		 * to fallback to FIFO mode */
-+		if (qup->n_words <= (qup->in_fifo_sz / sizeof(u32)))
-+			qup->mode = QUP_IO_M_MODE_FIFO;
  
 -	if (qup->mode == QUP_IO_M_MODE_FIFO)
 -		spi_qup_write(qup, xfer);
-+		ret = spi_qup_io_config(spi, xfer);
-+		if (ret)
-+			return ret;
++		if (qup->tx_buf && offset)
++			qup->tx_buf = xfer->tx_buf + offset * SPI_MAX_XFER;
  
 -	ret = spi_qup_set_state(qup, QUP_STATE_RUN);
 -	if (ret) {
 -		dev_warn(qup->dev, "cannot set RUN state\n");
 -		return ret;
 -	}
++		if (qup->rx_buf && offset)
++			qup->rx_buf = xfer->rx_buf + offset * SPI_MAX_XFER;
+ 
+-	if (!wait_for_completion_timeout(&qup->done, timeout))
+-		return -ETIMEDOUT;
++		/* if the transaction is small enough, we need
++		 * to fallback to FIFO mode */
++		if (qup->n_words <= (qup->in_fifo_sz / sizeof(u32)))
++			qup->mode = QUP_IO_M_MODE_FIFO;
++
++		ret = spi_qup_io_config(spi, xfer);
++		if (ret)
++			return ret;
++
 +		ret = spi_qup_set_state(qup, QUP_STATE_RUN);
 +		if (ret) {
 +			dev_warn(qup->dev, "cannot set RUN state\n");
 +			return ret;
 +		}
- 
--	if (!wait_for_completion_timeout(&qup->done, timeout))
--		return -ETIMEDOUT;
++
 +		ret = spi_qup_set_state(qup, QUP_STATE_PAUSE);
 +		if (ret) {
 +			dev_warn(qup->dev, "cannot set PAUSE state\n");

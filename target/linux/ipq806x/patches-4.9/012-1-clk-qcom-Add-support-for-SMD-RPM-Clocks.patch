@@ -85,7 +85,7 @@ More majordomo info at  http://vger.kernel.org/majordomo-info.html
 +	};
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
-@@ -2,6 +2,9 @@
+@@ -2,6 +2,9 @@ config QCOM_GDSC
  	bool
  	select PM_GENERIC_DOMAINS if PM
  
@@ -95,7 +95,7 @@ More majordomo info at  http://vger.kernel.org/majordomo-info.html
  config COMMON_CLK_QCOM
  	tristate "Support for Qualcomm's clock controllers"
  	depends on OF
-@@ -9,6 +12,19 @@
+@@ -9,6 +12,19 @@ config COMMON_CLK_QCOM
  	select REGMAP_MMIO
  	select RESET_CONTROLLER
  
@@ -117,7 +117,7 @@ More majordomo info at  http://vger.kernel.org/majordomo-info.html
  	select QCOM_GDSC
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -29,3 +29,4 @@
+@@ -29,3 +29,4 @@ obj-$(CONFIG_MSM_LCC_8960) += lcc-msm896
  obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8960.o
  obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8974.o
  obj-$(CONFIG_MSM_MMCC_8996) += mmcc-msm8996.o

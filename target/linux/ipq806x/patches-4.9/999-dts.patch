@@ -1,6 +1,6 @@
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -573,92 +573,61 @@
+@@ -573,92 +573,61 @@ dtb-$(CONFIG_ARCH_OMAP4) += \
  	omap4-var-stk-om44.dtb
  dtb-$(CONFIG_SOC_AM43XX) += \
  	am43x-epos-evm.dtb \
@@ -281,7 +281,10 @@
 +					0x00094 0x4e        /* PORT6_STATUS */
 +					>;
 +			};
-+
+ 
+-				nand-ecc-strength = <4>;
+-				nand-ecc-step-size = <512>;
+-				nand-bus-width = <8>;
 +			phy4: ethernet-phy@4 {
 +				device_type = "ethernet-phy";
 +				reg = <4>;
@@ -306,10 +309,7 @@
 +			status = "ok";
 +			phy-mode = "sgmii";
 +			qcom,id = <2>;
- 
--				nand-ecc-strength = <4>;
--				nand-ecc-step-size = <512>;
--				nand-bus-width = <8>;
++
 +			fixed-link {
 +				speed = <1000>;
 +				full-duplex;
