@@ -106,6 +106,9 @@ case "$FIRMWARE" in
 	unifiac-pro)
 		ath10kcal_extract "EEPROM" 20480 2116
 		;;
+	rb-952ui-5ac2nd)
+		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
+		;;
 	esac
 	;;
 "ath10k/cal-pci-0000:01:00.0.bin")

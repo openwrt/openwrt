@@ -4,6 +4,7 @@
  *  - MikroTik RouterBOARD mAP L-2nD
  *  - MikroTik RouterBOARD 941L-2nD
  *  - MikroTik RouterBOARD 951Ui-2nD
+ *  - MikroTik RouterBOARD 952Ui-5ac2nD
  *  - MikroTik RouterBOARD 750UP r2
  *  - MikroTik RouterBOARD 750 r2
  *  - MikroTik RouterBOARD LHG 5nD
@@ -23,6 +24,7 @@
  *  by the Free Software Foundation.
  */
 
+#include <linux/pci.h>
 #include <linux/platform_device.h>
 #include <linux/phy.h>
 #include <linux/routerboot.h>
@@ -47,6 +49,7 @@
 #include "dev-usb.h"
 #include "dev-wmac.h"
 #include "machtypes.h"
+#include "pci.h"
 #include "routerboot.h"
 
 #define RBSPI_KEYS_POLL_INTERVAL 20 /* msecs */
@@ -59,6 +62,7 @@
 #define RBSPI_HAS_SSR		BIT(4)	/* has an SSR on SPI bus 0 */
 #define RBSPI_HAS_POE		BIT(5)
 #define RBSPI_HAS_MDIO1		BIT(6)
+#define RBSPI_HAS_PCI		BIT(7)
 
 #define RB_ROUTERBOOT_OFFSET    0x0000
 #define RB_BIOS_SIZE            0x1000
@@ -490,6 +494,9 @@ static void __init rbspi_peripherals_setup(u32 flags)
 
 	if (flags & RBSPI_HAS_USB)
 		ath79_register_usb();
+
+	if (flags & RBSPI_HAS_PCI)
+		ath79_register_pci();
 }
 
 /*
@@ -597,7 +604,7 @@ static void __init rbhapl_setup(void)
 }
 
 /*
- * The hAP, hEX lite and hEX PoE lite share the same platform
+ * The hAP, hAP ac lite, hEX lite and hEX PoE lite share the same platform
  */
 static void __init rbspi_952_750r2_setup(u32 flags)
 {
@@ -606,8 +613,11 @@ static void __init rbspi_952_750r2_setup(u32 flags)
 
 	rbspi_peripherals_setup(flags);
 
-	/* GMAC1 is HW MAC + 1, WLAN0 MAC IS HW MAC + 5 */
-	rbspi_network_setup(flags, 1, 5, 0);
+	/*
+	 * GMAC1 is HW MAC + 1, WLAN0 MAC IS HW MAC + 5 (hAP),
+	 * WLAN1 MAC IS HW MAC + 6 (hAP ac lite)
+	 */
+	rbspi_network_setup(flags, 1, 5, 6);
 
 	if (flags & RBSPI_HAS_USB)
 		gpio_request_one(RB952_GPIO_USB_POWER,
@@ -628,21 +638,29 @@ static void __init rbspi_952_750r2_setup(u32 flags)
 }
 
 /*
- * Init the hAP hardware (QCA953x).
+ * Init the hAP (ac lite) hardware (QCA953x).
  * The 951Ui-2nD (hAP) has 5 ethernet ports, with ports 2-5 being assigned
  * to LAN on the casing, and port 1 being assigned to "internet" (WAN).
  * Port 1 is connected to PHY4 (the ports are labelled in reverse physical
  * number), so the SoC can be set to connect GMAC0 to PHY4 and GMAC1 to the
  * internal switch for the LAN ports.
  * The device also has USB, PoE output and an SSR used for LED multiplexing.
+ * The 952Ui-5ac2nD (hAP ac lite) is nearly identical to the hAP, it adds a
+ * QCA9887 5GHz radio via PCI and moves 2.4GHz from WLAN0 to WLAN1.
  */
 static void __init rb952_setup(void)
 {
-	u32 flags = RBSPI_HAS_WLAN0 | RBSPI_HAS_WAN4 | RBSPI_HAS_USB |
+	u32 flags = RBSPI_HAS_WAN4 | RBSPI_HAS_USB |
 			RBSPI_HAS_SSR | RBSPI_HAS_POE;
 
 	if (rbspi_platform_setup())
 		return;
+
+	/* differentiate the hAP from the hAP ac lite */
+	if (strstr(mips_get_machine_name(), "952Ui-5ac2nD"))
+		flags |= RBSPI_HAS_WLAN1 | RBSPI_HAS_PCI;
+	else
+		flags |= RBSPI_HAS_WLAN0;
 
 	rbspi_952_750r2_setup(flags);
 }
