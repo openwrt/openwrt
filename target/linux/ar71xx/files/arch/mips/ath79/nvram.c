@@ -13,6 +13,7 @@
 #include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/string.h>
+#include <linux/etherdevice.h>
 
 #include "nvram.h"
 
@@ -67,7 +68,11 @@ int ath79_nvram_parse_mac_addr(const char *nvram, unsigned nvram_len,
 	t = sscanf(mac_str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
 		   &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 
-	if (t != 6) {
+	if (t != ETH_ALEN)
+		t = sscanf(mac_str, "%02hhx-%02hhx-%02hhx-%02hhx-%02hhx-%02hhx",
+			&mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+
+	if (t != ETH_ALEN) {
 		ret = -EINVAL;
 		goto free;
 	}

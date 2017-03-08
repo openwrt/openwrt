@@ -553,6 +553,43 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the TL-WR942N V1 */
+	{
+		.id     = "TLWR942NV1",
+		.vendor = "",
+		.support_list =
+			"SupportList:\r\n"
+			"{product_name:TL-WR942N,product_ver:1.0.0,special_id:00000000}\r\n"
+			"{product_name:TL-WR942N,product_ver:1.0.0,special_id:52550000}\r\n",
+		.support_trail = '\x00',
+		.soft_ver = NULL,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"os-image", 0x20000, 0x150000},
+			{"file-system", 0x170000, 0xcd0000},
+			{"default-mac", 0xe40000, 0x00200},
+			{"pin", 0xe40200, 0x00200},
+			{"product-info", 0xe40400, 0x0fc00},
+			{"partition-table", 0xe50000, 0x10000},
+			{"soft-version", 0xe60000, 0x10000},
+			{"support-list", 0xe70000, 0x10000},
+			{"profile", 0xe80000, 0x10000},
+			{"default-config", 0xe90000, 0x10000},
+			{"user-config", 0xea0000, 0x40000},
+			{"qos-db", 0xee0000, 0x40000},
+			{"certificate", 0xf20000, 0x10000},
+			{"usb-config", 0xfb0000, 0x10000},
+			{"log", 0xfc0000, 0x20000},
+			{"radio-bk", 0xfe0000, 0x10000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the RE450 */
 	{
 		.id = "RE450",
