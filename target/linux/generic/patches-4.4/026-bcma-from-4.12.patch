@@ -1,0 +1,12 @@
+--- a/drivers/bcma/driver_gpio.c
++++ b/drivers/bcma/driver_gpio.c
+@@ -190,8 +190,7 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+ 	chip->owner		= THIS_MODULE;
+ 	chip->dev		= bcma_bus_get_host_dev(bus);
+ #if IS_BUILTIN(CONFIG_OF)
+-	if (cc->core->bus->hosttype == BCMA_HOSTTYPE_SOC)
+-		chip->of_node	= cc->core->dev.of_node;
++	chip->of_node		= cc->core->dev.of_node;
+ #endif
+ 	switch (bus->chipinfo.id) {
+ 	case BCMA_CHIP_ID_BCM4707:
