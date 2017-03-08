@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2012-2016 OpenWrt.org
+# Copyright (C) 2017 LEDE project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -126,8 +127,8 @@ define KernelPackage/sound-soc-digidac1-soundcard
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8741.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-snd-soc-wm8741 \
-	snd-soc-snd-soc-wm8804 snd-soc-snd-soc-wm8804-i2c \
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8741 \
+	snd-soc-wm8804 snd-soc-wm8804-i2c \
 	snd-soc-digidac1-soundcard)
   DEPENDS:= \
 	kmod-sound-soc-bcm2835-i2s \
@@ -149,7 +150,7 @@ define KernelPackage/sound-soc-dionaudio-loco
   FILES:= \
 	$(LINUX_DIR)/sound/soc/bcm/snd-soc-dionaudio-loco.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm5102a.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-snd-soc-pcm5102a \
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm5102a \
 	snd-soc-dionaudio-loco)
   DEPENDS:= \
 	kmod-sound-soc-bcm2835-i2s

@@ -1,4 +1,4 @@
-From 1efce478669516e7a0fad7fa9943c889fcc21d2e Mon Sep 17 00:00:00 2001
+From 70af0eca2c4a2a80a8edd6ce4c4c7a9eac038893 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Sun, 27 Nov 2016 21:45:55 +0000
 Subject: [PATCH] BCM270X_DT: Update UART0 clock-frequency
@@ -16,6 +16,8 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  arch/arm/boot/dts/bcm2708_common.dtsi | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/arch/arm/boot/dts/bcm2708_common.dtsi b/arch/arm/boot/dts/bcm2708_common.dtsi
+index c449493..a9fd97e 100644
 --- a/arch/arm/boot/dts/bcm2708_common.dtsi
 +++ b/arch/arm/boot/dts/bcm2708_common.dtsi
 @@ -456,7 +456,7 @@
@@ -27,3 +29,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  		};
  
  		clk_apb_p: clock@3 {
+-- 
+2.1.4
+

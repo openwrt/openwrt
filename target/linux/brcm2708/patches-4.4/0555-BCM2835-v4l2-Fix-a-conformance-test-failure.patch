@@ -1,4 +1,4 @@
-From 05b2785cb7e1f40900dad84579c6f7fd4ad8aeda Mon Sep 17 00:00:00 2001
+From e94e99c9650e48f0de0399cf04ec3ae597f05ed2 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <6by9@users.noreply.github.com>
 Date: Wed, 30 Nov 2016 20:17:14 +0000
 Subject: [PATCH] BCM2835-v4l2: Fix a conformance test failure
@@ -13,9 +13,11 @@ Format ioctls:
  drivers/media/platform/bcm2835/bcm2835-camera.c | 1 +
  1 file changed, 1 insertion(+)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
+index a2cfff9..23ba458 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.c
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
-@@ -1397,6 +1397,7 @@ static int vidioc_s_parm(struct file *fi
+@@ -1397,6 +1397,7 @@ static int vidioc_s_parm(struct file *file, void *priv,
  	dev->capture.timeperframe = tpf;
  	parm->parm.capture.timeperframe = tpf;
  	parm->parm.capture.readbuffers  = 1;
@@ -23,3 +25,6 @@ Format ioctls:
  
  	fps_param.num = 0;	/* Select variable fps, and then use
  				 * FPS_RANGE to select the actual limits.
+-- 
+2.1.4
+

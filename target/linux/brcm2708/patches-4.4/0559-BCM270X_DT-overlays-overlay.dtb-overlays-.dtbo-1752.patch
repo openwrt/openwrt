@@ -1,0 +1,26 @@
+From 32b74f9dc3caa9d3422ffa735db0ecf088dbffbe Mon Sep 17 00:00:00 2001
+From: Georgii Staroselskii <gosha371@gmail.com>
+Date: Wed, 7 Dec 2016 15:10:27 +0300
+Subject: [PATCH] BCM270X_DT: overlays/*-overlay.dtb -> overlays/*.dtbo (#1752)
+
+We now create overlays as .dtbo files.
+---
+ arch/arm/boot/dts/overlays/README | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
+index 80ea3de..7aee1af 100644
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -61,7 +61,7 @@ this becomes a line in config.txt:
+ 
+     dtoverlay=lirc-rpi
+ 
+-This causes the file /boot/overlays/lirc-rpi-overlay.dtb to be loaded. By
++This causes the file /boot/overlays/lirc-rpi.dtbo to be loaded. By
+ default it will use GPIOs 17 (out) and 18 (in), but this can be modified using
+ DT parameters:
+ 
+-- 
+2.1.4
+

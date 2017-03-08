@@ -1,0 +1,54 @@
+From b928add95c9ddaa70b591da00d129558535d14d3 Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marex@denx.de>
+Date: Wed, 18 May 2016 16:16:51 +0200
+Subject: [PATCH] configfs: Remove ppos increment in configfs_write_bin_file
+
+[ Back-port of f8608985f851c917b3884b692d8e326b0210d34e ]
+
+The simple_write_to_buffer() already increments the @ppos on success,
+see fs/libfs.c simple_write_to_buffer() comment:
+
+"
+On success, the number of bytes written is returned and the offset @ppos
+advanced by this number, or negative value is returned on error.
+"
+
+If the configfs_write_bin_file() is invoked with @count smaller than the
+total length of the written binary file, it will be invoked multiple times.
+Since configfs_write_bin_file() increments @ppos on success, after calling
+simple_write_to_buffer(), the @ppos is incremented twice.
+
+Subsequent invocation of configfs_write_bin_file() will result in the next
+piece of data being written to the offset twice as long as the length of
+the previous write, thus creating buffer with "holes" in it.
+
+The simple testcase using DTO follows:
+  $ mkdir /sys/kernel/config/device-tree/overlays/1
+  $ dd bs=1 if=foo.dtbo of=/sys/kernel/config/device-tree/overlays/1/dtbo
+Without this patch, the testcase will result in twice as big buffer in the
+kernel, which is then passed to the cfs_overlay_item_dtbo_write() .
+
+Signed-off-by: Marek Vasut <marex@denx.de>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Christoph Hellwig <hch@lst.de>
+Cc: Pantelis Antoniou <pantelis.antoniou@konsulko.com>
+---
+ fs/configfs/file.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/fs/configfs/file.c b/fs/configfs/file.c
+index 3687187..6e322f2 100644
+--- a/fs/configfs/file.c
++++ b/fs/configfs/file.c
+@@ -357,8 +357,6 @@ configfs_write_bin_file(struct file *file, const char __user *buf,
+ 
+ 	len = simple_write_to_buffer(buffer->bin_buffer,
+ 			buffer->bin_buffer_size, ppos, buf, count);
+-	if (len > 0)
+-		*ppos += len;
+ out:
+ 	mutex_unlock(&buffer->mutex);
+ 	return len;
+-- 
+2.1.4
+

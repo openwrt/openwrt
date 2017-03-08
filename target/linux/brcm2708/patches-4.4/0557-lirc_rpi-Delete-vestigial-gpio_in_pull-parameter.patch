@@ -1,0 +1,43 @@
+From a5cf7bed6a2d7267e2f0a3109807051e166930fb Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 5 Dec 2016 09:58:16 +0000
+Subject: [PATCH] lirc_rpi: Delete vestigial gpio_in_pull parameter
+
+The RPi GPIO no longer support run-time "pull" settings - one should
+Device Tree and pinctrl instead - so remove the parameter to avoid
+confusion.
+
+See: https://github.com/raspberrypi/linux/issues/1711
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/staging/media/lirc/lirc_rpi.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/drivers/staging/media/lirc/lirc_rpi.c b/drivers/staging/media/lirc/lirc_rpi.c
+index 6132896..ebbf0d6 100644
+--- a/drivers/staging/media/lirc/lirc_rpi.c
++++ b/drivers/staging/media/lirc/lirc_rpi.c
+@@ -64,8 +64,6 @@
+ 
+ /* set the default GPIO input pin */
+ static int gpio_in_pin = 18;
+-/* set the default pull behaviour for input pin */
+-static int gpio_in_pull = BCM2708_PULL_DOWN;
+ /* set the default GPIO output pin */
+ static int gpio_out_pin = 17;
+ /* enable debugging messages */
+@@ -716,10 +714,6 @@ module_param(gpio_in_pin, int, S_IRUGO);
+ MODULE_PARM_DESC(gpio_in_pin, "GPIO input pin number of the BCM processor."
+ 		 " (default 18");
+ 
+-module_param(gpio_in_pull, int, S_IRUGO);
+-MODULE_PARM_DESC(gpio_in_pull, "GPIO input pin pull configuration."
+-		 " (0 = off, 1 = up, 2 = down, default down)");
+-
+ module_param(sense, int, S_IRUGO);
+ MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
+ 		 " (0 = active high, 1 = active low )");
+-- 
+2.1.4
+

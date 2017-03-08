@@ -1,4 +1,4 @@
-From 49b92b33aa6681e75f579b7369f34a53e9376e6c Mon Sep 17 00:00:00 2001
+From 192835cf562bf63050f3f4b3dab768f3481eb93d Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Sat, 26 Nov 2016 14:01:52 +0000
 Subject: [PATCH] ARM: dts: Restore dtbs_install functionality
@@ -8,6 +8,8 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  arch/arm/boot/dts/Makefile | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index cbfc8ba..14a491c 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -806,10 +806,11 @@ dtstree		:= $(srctree)/$(src)
@@ -23,3 +25,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	DTC_FLAGS ?= -@ -H epapr
 +	dts-dirs += overlays
  endif
+-- 
+2.1.4
+

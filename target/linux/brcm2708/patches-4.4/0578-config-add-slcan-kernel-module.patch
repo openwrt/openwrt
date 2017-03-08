@@ -1,0 +1,38 @@
+From 7342071952322e209c40dd3474c020c673814ada Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 27 Jan 2017 18:49:30 +0000
+Subject: [PATCH] config: add slcan kernel module
+
+See: https://github.com/raspberrypi/linux/issues/1819
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/bcm2709_defconfig b/arch/arm/configs/bcm2709_defconfig
+index 19daca4..783d2c2 100644
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -358,6 +358,7 @@ CONFIG_BAYCOM_SER_HDX=m
+ CONFIG_YAM=m
+ CONFIG_CAN=m
+ CONFIG_CAN_VCAN=m
++CONFIG_CAN_SLCAN=m
+ CONFIG_CAN_MCP251X=m
+ CONFIG_IRDA=m
+ CONFIG_IRLAN=m
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index ca52c36..be7bf41 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -351,6 +351,7 @@ CONFIG_BAYCOM_SER_HDX=m
+ CONFIG_YAM=m
+ CONFIG_CAN=m
+ CONFIG_CAN_VCAN=m
++CONFIG_CAN_SLCAN=m
+ CONFIG_CAN_MCP251X=m
+ CONFIG_IRDA=m
+ CONFIG_IRLAN=m
+-- 
+2.1.4
+
