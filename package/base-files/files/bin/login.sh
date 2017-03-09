@@ -10,8 +10,7 @@ then
 else
 cat << EOF
  === IMPORTANT ============================
-  Use 'passwd' to set your login password
-  this will disable telnet and enable SSH
+  Use 'passwd' to set your login password!
  ------------------------------------------
 EOF
 fi

@@ -37,7 +37,6 @@ validate_section_dropbear()
 		'RootPasswordAuth:bool:1' \
 		'RootLogin:bool:1' \
 		'rsakeyfile:file' \
-		'dsskeyfile:file' \
 		'BannerFile:file' \
 		'Port:list(port):22' \
 		'SSHKeepAlive:uinteger:300' \
@@ -49,7 +48,7 @@ dropbear_instance()
 {
 	local PasswordAuth enable Interface GatewayPorts \
 		RootPasswordAuth RootLogin rsakeyfile \
-		dsskeyfile BannerFile Port SSHKeepAlive IdleTimeout \
+		BannerFile Port SSHKeepAlive IdleTimeout \
 		mdns ipaddrs
 
 	validate_section_dropbear "${1}" || {
@@ -75,18 +74,18 @@ dropbear_instance()
 	[ "${RootPasswordAuth}" -eq 0 ] && procd_append_param command -g
 	[ "${RootLogin}" -eq 0 ] && procd_append_param command -w
 	[ -n "${rsakeyfile}" ] && procd_append_param command -r "${rsakeyfile}"
-	[ -n "${dsskeyfile}" ] && procd_append_param command -d "${dsskeyfile}"
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
 	append_ports "${ipaddrs}" "${Port}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
 	[ "${SSHKeepAlive}" -ne 0 ] && procd_append_param command -K "${SSHKeepAlive}"
 	[ "${mdns}" -ne 0 ] && procd_add_mdns "ssh" "tcp" "$Port" "daemon=dropbear"
+	procd_set_param respawn
 	procd_close_instance
 }
 
 keygen()
 {
-	for keytype in rsa dss; do
+	for keytype in rsa; do
 		# check for keys
 		key=dropbear/dropbear_${keytype}_host_key
 		[ -f /tmp/$key -o -s /etc/$key ] || {
@@ -107,10 +106,15 @@ keygen()
 	chmod 0700 /etc/dropbear
 }
 
+load_interfaces()
+{
+	config_get interface "$1" Interface
+	interfaces=" ${interface} ${interfaces}"
+}
+
 start_service()
 {
-	[ -s /etc/dropbear/dropbear_rsa_host_key -a \
-	  -s /etc/dropbear/dropbear_dss_host_key ] || keygen
+	[ -s /etc/dropbear/dropbear_rsa_host_key ] || keygen
 
 	. /lib/functions.sh
 	. /lib/functions/network.sh
@@ -121,7 +125,21 @@ start_service()
 
 service_triggers()
 {
-	procd_add_reload_trigger "dropbear"
+	local interfaces
+
+	procd_open_trigger
+	procd_add_config_trigger "config.change" "dropbear" /etc/init.d/dropbear reload
+
+	config_load "${NAME}"
+	config_foreach load_interfaces dropbear
+
+	[ -n "${interfaces}" ] & {
+		for n in $interfaces ; do
+			procd_add_interface_trigger "interface.*" $n /etc/init.d/dropbear reload
+		done
+	}
+	procd_close_trigger
+
 	procd_add_validation validate_section_dropbear
 }
 
