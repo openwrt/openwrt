@@ -367,10 +367,10 @@ gl_inet_board_detect() {
 	local size="$(mtd_get_part_size 'firmware')"
 
 	case "$size" in
-	8192000)
+	"8192000")
 		AR71XX_MODEL='GL-iNet 6408A v1'
 		;;
-	16580608)
+	"16580608")
 		AR71XX_MODEL='GL-iNet 6416A v1'
 		;;
 	esac
@@ -413,19 +413,19 @@ ar71xx_board_detect() {
 	*"ALFA Network N2/N5")
 		name="alfa-nx"
 		;;
-	*ALL0258N)
+	*"ALL0258N")
 		name="all0258n"
 		;;
-	*ALL0305)
+	*"ALL0305")
 		name="all0305"
 		;;
-	*ALL0315N)
+	*"ALL0315N")
 		name="all0315n"
 		;;
-	*Antminer-S1)
+	*"Antminer-S1")
 		name="antminer-s1"
 		;;
-	*Antminer-S3)
+	*"Antminer-S3")
 		name="antminer-s3"
 		;;
 	*"Arduino Yun")
@@ -434,7 +434,7 @@ ar71xx_board_detect() {
 	*"AP121 reference board")
 		name="ap121"
 		;;
-	*AP121-MINI)
+	*"AP121-MINI")
 		name="ap121-mini"
 		;;
 	*"AP132 reference board")
@@ -458,10 +458,10 @@ ar71xx_board_detect() {
 	*"AP152 reference board")
 		name="ap152"
 		;;
-	*AP531B0)
+	*"AP531B0")
 		name="ap531b0"
 		;;
-	*AP90Q)
+	*"AP90Q")
 		name="ap90q"
 		;;
 	*"Archer C5")
@@ -479,22 +479,22 @@ ar71xx_board_detect() {
 	*"Atheros AP96")
 		name="ap96"
 		;;
-	*AW-NR580)
+	*"AW-NR580")
 		name="aw-nr580"
 		;;
-	*BHR-4GRV2)
+	*"BHR-4GRV2")
 		name="bhr-4grv2"
 		;;
-	*CAP324)
+	*"CAP324")
 		name="cap324"
 		;;
-	*C-55)
+	*"C-55")
 		name="c-55"
 		;;
-	*C-60)
+	*"C-60")
 		name="c-60"
 		;;
-	*CAP4200AG)
+	*"CAP4200AG")
 		name="cap4200ag"
 		;;
 	*"CF-E316N v2")
@@ -509,10 +509,10 @@ ar71xx_board_detect() {
 	*"CF-E380AC v2")
 		name="cf-e380ac-v2"
 		;;
-	*CF-E520N)
+	*"CF-E520N")
 		name="cf-e520n"
 		;;
-	*CF-E530N)
+	*"CF-E530N")
 		name="cf-e530n"
 		;;
 	*"CPE210/220")
@@ -523,24 +523,24 @@ ar71xx_board_detect() {
 		name="cpe510"
 		tplink_pharos_board_detect
 		;;
-	*CPE830)
+	*"CPE830")
 		name="cpe830"
 		;;
-	*CPE870)
+	*"CPE870")
 		name="cpe870"
 		;;
-	*WBS210)
+	*"WBS210")
 		name="wbs210"
 		tplink_pharos_board_detect
 		;;
-	*WBS510)
+	*"WBS510")
 		name="wbs510"
 		tplink_pharos_board_detect
 		;;
-	*CR3000)
+	*"CR3000")
 		name="cr3000"
 		;;
-	*CR5000)
+	*"CR5000")
 		name="cr5000"
 		;;
 	*"DAP-2695 rev. A1")
@@ -592,10 +592,10 @@ ar71xx_board_detect() {
 	*"dLAN pro 1200+ WiFi ac")
 		name="dlan-pro-1200-ac"
 		;;
-	*DR344)
+	*"DR344")
 		name="dr344"
 		;;
-	*DR531)
+	*"DR531")
 		name="dr531"
 		;;
 	*"Dragino v2")
@@ -607,7 +607,7 @@ ar71xx_board_detect() {
 	*"DW33D")
 		name="dw33d"
 		;;
-	*E2100L)
+	*"E2100L")
 		name="e2100l"
 		;;
 	*"EAP120")
@@ -617,16 +617,16 @@ ar71xx_board_detect() {
 	*"EAP300 v2")
 		name="eap300v2"
 		;;
-	*EAP7660D)
+	*"EAP7660D")
 		name="eap7660d"
 		;;
 	*"EBR-2310 rev. C1")
 		name="ebr-2310-c1"
 		;;
-	*EL-M150)
+	*"EL-M150")
 		name="el-m150"
 		;;
-	*EL-MINI)
+	*"EL-MINI")
 		name="el-mini"
 		;;
 	*"GL-CONNECT INET v1")
@@ -654,10 +654,10 @@ ar71xx_board_detect() {
 	*"EnGenius ESR900")
 		name="esr900"
 		;;
-	*JA76PF)
+	*"JA76PF")
 		name="ja76pf"
 		;;
-	*JA76PF2)
+	*"JA76PF2")
 		name="ja76pf2"
 		;;
 	*"Bullet M")
@@ -674,10 +674,10 @@ ar71xx_board_detect() {
 	*"Nanostation M XW")
 		name="nanostation-m-xw"
 		;;
-	*JWAP003)
+	*"JWAP003")
 		name="jwap003"
 		;;
-	*JWAP230)
+	*"JWAP230")
 		name="jwap230"
 		;;
 	*"Hornet-UB")
@@ -692,7 +692,7 @@ ar71xx_board_detect() {
 			name="hornet-ub-x2"
 		fi
 		;;
-	*LS-SR71)
+	*"LS-SR71")
 		name="ls-sr71"
 		;;
 	*"MAC1200R")
@@ -701,31 +701,31 @@ ar71xx_board_detect() {
 	*"MiniBox V1.0")
 		name="minibox-v1"
 		;;
-	*MR12)
+	*"MR12")
 		name="mr12"
 		;;
-	*MR16)
+	*"MR16")
 		name="mr16"
 		;;
-	*MR18)
+	*"MR18")
 		name="mr18"
 		;;
-	*MR600v2)
+	*"MR600v2")
 		name="mr600v2"
 		;;
-	*MR1750)
+	*"MR1750")
 		name="mr1750"
 		;;
-	*MR1750v2)
+	*"MR1750v2")
 		name="mr1750v2"
 		;;
-	*MR600)
+	*"MR600")
 		name="mr600"
 		;;
-	*MR900)
+	*"MR900")
 		name="mr900"
 		;;
-	*MR900v2)
+	*"MR900v2")
 		name="mr900v2"
 		;;
 	*"My Net N600")
@@ -737,10 +737,10 @@ ar71xx_board_detect() {
 	*"WD My Net Wi-Fi Range Extender")
 		name="mynet-rext"
 		;;
-	*MZK-W04NU)
+	*"MZK-W04NU")
 		name="mzk-w04nu"
 		;;
-	*MZK-W300NH)
+	*"MZK-W300NH")
 		name="mzk-w300nh"
 		;;
 	*"NBG460N/550N/550NH")
@@ -752,13 +752,13 @@ ar71xx_board_detect() {
 	*"Zyxel NBG6716")
 		name="nbg6716"
 		;;
-	*OM2P)
+	*"OM2P")
 		name="om2p"
 		;;
-	*OM2Pv2)
+	*"OM2Pv2")
 		name="om2pv2"
 		;;
-	*OM2Pv4)
+	*"OM2Pv4")
 		name="om2pv4"
 		;;
 	*"OM2P HS")
@@ -776,7 +776,7 @@ ar71xx_board_detect() {
 	*"OM2P LC")
 		name="om2p-lc"
 		;;
-	*OM5P)
+	*"OM5P")
 		name="om5p"
 		;;
 	*"OM5P AN")
@@ -797,7 +797,7 @@ ar71xx_board_detect() {
 	*"Onion Omega")
 		name="onion-omega"
 		;;
-	*PB42)
+	*"PB42")
 		name="pb42"
 		;;
 	*"PB44 reference board")
@@ -881,7 +881,7 @@ ar71xx_board_detect() {
 	*"RouterBOARD 951Ui-2HnD")
 		name="rb-951ui-2hnd"
 		;;
-	*"951Ui-2nD")
+	*"RouterBOARD 951Ui-2nD")
 		name="rb-951ui-2nd"
 		;;
 	*"RouterBOARD 2011L")
@@ -918,22 +918,22 @@ ar71xx_board_detect() {
 	*"Rocket M XW")
 		name="rocket-m-xw"
 		;;
-	*RouterStation)
+	*"RouterStation")
 		name="routerstation"
 		;;
 	*"RouterStation Pro")
 		name="routerstation-pro"
 		;;
-	*RW2458N)
+	*"RW2458N")
 		name="rw2458n"
 		;;
-	*SC1750)
+	*"SC1750")
 		name="sc1750"
 		;;
-	*SC300M)
+	*"SC300M")
 		name="sc300m"
 		;;
-	*SC450)
+	*"SC450")
 		name="sc450"
 		;;
 	*"SMART-300")
@@ -945,31 +945,31 @@ ar71xx_board_detect() {
 	*"Telldus TellStick ZNet Lite")
 		name="tellstick-znet-lite"
 		;;
-	*SOM9331)
+	*"SOM9331")
 		name="som9331"
 		;;
-	*SR3200)
+	*"SR3200")
 		name="sr3200"
 		;;
-	*TEW-632BRP)
+	*"TEW-632BRP")
 		name="tew-632brp"
 		;;
-	*TEW-673GRU)
+	*"TEW-673GRU")
 		name="tew-673gru"
 		;;
-	*TEW-712BR)
+	*"TEW-712BR")
 		name="tew-712br"
 		;;
-	*TEW-732BR)
+	*"TEW-732BR")
 		name="tew-732br"
 		;;
-	*TEW-823DRU)
+	*"TEW-823DRU")
 		name="tew-823dru"
 		;;
 	*"TL-WR1041N v2")
 		name="tl-wr1041n-v2"
 		;;
-	*TL-WR1043ND)
+	*"TL-WR1043ND")
 		name="tl-wr1043nd"
 		;;
 	*"TL-WR1043ND v2")
@@ -978,28 +978,28 @@ ar71xx_board_detect() {
 	*"TL-WR1043ND v4")
 		name="tl-wr1043nd-v4"
 		;;
-	*TL-WR2543N*)
+	*"TL-WR2543N"*)
 		name="tl-wr2543n"
 		;;
 	*"DIR-615 rev. C1")
 		name="dir-615-c1"
 		;;
-	*TL-MR3020)
+	*"TL-MR3020")
 		name="tl-mr3020"
 		;;
-	*TL-MR3040)
+	*"TL-MR3040")
 		name="tl-mr3040"
 		;;
 	*"TL-MR3040 v2")
 		name="tl-mr3040-v2"
 		;;
-	*TL-MR3220)
+	*"TL-MR3220")
 		name="tl-mr3220"
 		;;
 	*"TL-MR3220 v2")
 		name="tl-mr3220-v2"
 		;;
-	*TL-MR3420)
+	*"TL-MR3420")
 		name="tl-mr3420"
 		;;
 	*"TL-MR3420 v2")
@@ -1011,19 +1011,19 @@ ar71xx_board_detect() {
 	*"TL-WA7210N v2")
 		name="tl-wa7210n-v2"
 		;;
-	*TL-WA750RE)
+	*"TL-WA750RE")
 		name="tl-wa750re"
 		;;
 	*"TL-WA7510N v1")
 		name="tl-wa7510n"
 		;;
-	*TL-WA850RE)
+	*"TL-WA850RE")
 		name="tl-wa850re"
 		;;
 	*"TL-WA850RE v2")
 		name="tl-wa850re-v2"
 		;;
-	*TL-WA860RE)
+	*"TL-WA860RE")
 		name="tl-wa860re"
 		;;
 	*"TL-WA830RE v2")
@@ -1041,7 +1041,7 @@ ar71xx_board_detect() {
 	*"TL-WR802N v2")
 		name="tl-wr802n-v2"
 		;;
-	*TL-WA901ND)
+	*"TL-WA901ND")
 		name="tl-wa901nd"
 		;;
 	*"TL-WA901ND v2")
@@ -1068,10 +1068,10 @@ ar71xx_board_detect() {
 	*"TL-WDR6500 v2")
 		name="tl-wdr6500-v2"
 		;;
-	*TL-WPA8630)
+	*"TL-WPA8630")
 		name="tl-wpa8630"
 		;;
-	*TL-WR741ND)
+	*"TL-WR741ND")
 		name="tl-wr741nd"
 		;;
 	*"TL-WR741ND v4")
@@ -1098,7 +1098,7 @@ ar71xx_board_detect() {
 	*"TL-WR842N/ND v3")
 		name="tl-wr842n-v3"
 		;;
-	*TL-WR941ND)
+	*"TL-WR941ND")
 		name="tl-wr941nd"
 		;;
 	*"TL-WR941N/ND v5")
@@ -1137,7 +1137,7 @@ ar71xx_board_detect() {
 	*"Tube2H")
 		name="tube2h"
 		;;
-	*UniFi)
+	*"UniFi")
 		name="unifi"
 		;;
 	*"UniFi-AC-LITE")
@@ -1152,13 +1152,13 @@ ar71xx_board_detect() {
 	"WeIO"*)
 		name="weio"
 		;;
-	*WHR-G301N)
+	*"WHR-G301N")
 		name="whr-g301n"
 		;;
-	*WHR-HP-GN)
+	*"WHR-HP-GN")
 		name="whr-hp-gn"
 		;;
-	*WLAE-AG300N)
+	*"WLAE-AG300N")
 		name="wlae-ag300n"
 		;;
 	*"UniFiAP Outdoor")
@@ -1167,25 +1167,25 @@ ar71xx_board_detect() {
 	*"UniFiAP Outdoor+")
 		name="unifi-outdoor-plus"
 		;;
-	*WP543)
+	*"WP543")
 		name="wp543"
 		;;
-	*WPE72)
+	*"WPE72")
 		name="wpe72"
 		;;
-	*WPJ342)
+	*"WPJ342")
 		name="wpj342"
 		;;
-	*WPJ344)
+	*"WPJ344")
 		name="wpj344"
 		;;
-	*WPJ531)
+	*"WPJ531")
 		name="wpj531"
 		;;
-	*WPJ558)
+	*"WPJ558")
 		name="wpj558"
 		;;
-	*WNDAP360)
+	*"WNDAP360")
 		name="wndap360"
 		;;
 	*"WNDR3700/WNDR3800/WNDRMAC")
@@ -1206,10 +1206,10 @@ ar71xx_board_detect() {
 	*"WNR2000 V3")
 		name="wnr2000-v3"
 		;;
-	*WNR2000)
+	*"WNR2000")
 		name="wnr2000"
 		;;
-	*WNR2200)
+	*"WNR2200")
 		name="wnr2200"
 		;;
 	*"WNR612 V2")
@@ -1218,13 +1218,13 @@ ar71xx_board_detect() {
 	*"WNR1000 V2")
 		name="wnr1000-v2"
 		;;
-	*WPN824N)
+	*"WPN824N")
 		name="wpn824n"
 		;;
-	*WRT160NL)
+	*"WRT160NL")
 		name="wrt160nl"
 		;;
-	*WRT400N)
+	*"WRT400N")
 		name="wrt400n"
 		;;
 	*"WRTnode2Q board")
@@ -1236,37 +1236,37 @@ ar71xx_board_detect() {
 	*"WZR-HP-AG300H/WZR-600DHP")
 		name="wzr-hp-ag300h"
 		;;
-	*WZR-HP-G300NH)
+	*"WZR-HP-G300NH")
 		name="wzr-hp-g300nh"
 		;;
-	*WZR-HP-G450H)
+	*"WZR-HP-G450H")
 		name="wzr-hp-g450h"
 		;;
-	*WZR-HP-G300NH2)
+	*"WZR-HP-G300NH2")
 		name="wzr-hp-g300nh2"
 		;;
-	*WHR-HP-G300N)
+	*"WHR-HP-G300N")
 		name="whr-hp-g300n"
 		;;
-	*XD3200)
+	*"XD3200")
 		name="xd3200"
 		;;
-	*Z1)
+	*"Z1")
 		name="z1"
 		;;
-	*ZBT-WE1526)
+	*"ZBT-WE1526")
 		name="zbt-we1526"
 		;;
-	*ZCN-1523H-2)
+	*"ZCN-1523H-2")
 		name="zcn-1523h-2"
 		;;
-	*ZCN-1523H-5)
+	*"ZCN-1523H-5")
 		name="zcn-1523h-5"
 		;;
-	*EmbWir-Dorin)
+	*"EmbWir-Dorin")
 		name="ew-dorin"
 		;;
-	*EmbWir-Dorin-Router)
+	*"EmbWir-Dorin-Router")
 		name="ew-dorin-router"
 		;;
 	"8devices Carambola2"*)
