@@ -230,9 +230,9 @@ static void __init rbsxtlite_setup(void)
 }
 
 
-MIPS_MACHINE(ATH79_MACH_RB_SXTLITE2ND, "sxt2n", "Mikrotik RouterBOARD SXT Lite2",
+MIPS_MACHINE(ATH79_MACH_RB_SXTLITE2ND, "sxt2n", "MikroTik RouterBOARD SXT Lite2",
 	    rbsxtlite_setup);
 
-MIPS_MACHINE(ATH79_MACH_RB_SXTLITE5ND, "sxt5n", "Mikrotik RouterBOARD SXT Lite5",
+MIPS_MACHINE(ATH79_MACH_RB_SXTLITE5ND, "sxt5n", "MikroTik RouterBOARD SXT Lite5",
 	    rbsxtlite_setup);
 

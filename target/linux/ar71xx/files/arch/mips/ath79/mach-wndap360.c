@@ -102,4 +102,4 @@ static void __init wndap360_setup(void)
 		      art + WNDAP360_WMAC1_MAC_OFFSET);
 }
 
-MIPS_MACHINE(ATH79_MACH_WNDAP360, "WNDAP360", "Netgear WNDAP360", wndap360_setup);
+MIPS_MACHINE(ATH79_MACH_WNDAP360, "WNDAP360", "NETGEAR WNDAP360", wndap360_setup);
