@@ -79,6 +79,7 @@ define Device/ventana
 	imx6dl-gw551x \
 	imx6dl-gw552x \
 	imx6dl-gw553x \
+	imx6dl-gw5904 \
 	imx6q-gw51xx \
 	imx6q-gw52xx \
 	imx6q-gw53xx \
@@ -86,7 +87,8 @@ define Device/ventana
 	imx6q-gw5400-a \
 	imx6q-gw551x \
 	imx6q-gw552x \
-	imx6q-gw553x
+	imx6q-gw553x \
+	imx6q-gw5904
   DEVICE_PACKAGES := kmod-sky2 kmod-sound-core kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
 	kmod-can kmod-can-flexcan kmod-can-raw \
 	kmod-hwmon-gsc \
