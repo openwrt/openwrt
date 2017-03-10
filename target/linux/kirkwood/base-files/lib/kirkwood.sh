@@ -41,11 +41,11 @@ kirkwood_board_detect() {
 		name="pogo_e02"
 		;;
 
-	"Linksys EA3500")
+	"Linksys Audi (EA3500)")
 		name="linksys-audi"
 		;;
 
-	"Linksys E4200v2 / EA4500")
+	"Linksys Viper (E4200v2 / EA4500)")
 		name="linksys-viper"
 		;;
 

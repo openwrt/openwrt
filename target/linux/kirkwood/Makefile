@@ -13,7 +13,7 @@ FEATURES:=usb nand squashfs ramdisk
 CPU_TYPE:=xscale
 MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
-KERNEL_PATCHVER:=4.4
+KERNEL_PATCHVER:=4.9
 
 include $(INCLUDE_DIR)/target.mk
 
