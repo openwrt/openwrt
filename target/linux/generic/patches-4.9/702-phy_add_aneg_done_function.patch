@@ -19,7 +19,7 @@
  {
  	int status;
  
-+	if (phydev->drv->update_link)
++	if (phydev->drv && phydev->drv->update_link)
 +		return phydev->drv->update_link(phydev);
 +
  	/* Do a fake read */
