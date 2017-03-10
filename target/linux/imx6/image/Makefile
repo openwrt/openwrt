@@ -78,6 +78,7 @@ define Device/ventana
 	imx6dl-gw54xx \
 	imx6dl-gw551x \
 	imx6dl-gw552x \
+	imx6dl-gw553x \
 	imx6q-gw51xx \
 	imx6q-gw52xx \
 	imx6q-gw53xx \
