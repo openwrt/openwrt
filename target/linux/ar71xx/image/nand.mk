@@ -68,7 +68,7 @@ TARGET_DEVICES += z1
 
 define LegacyDevice/R6100
   DEVICE_TITLE := NETGEAR R6100
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += R6100
 
