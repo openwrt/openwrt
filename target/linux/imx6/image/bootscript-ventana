@@ -61,12 +61,15 @@ setenv bootargs "${bootargs}" "${root}" "${video}" "${extra}"
 if ${fsload} ${loadaddr} ${bootdir}/uImage; then
 	if ${fsload} ${fdt_addr} ${bootdir}/${fdt_file}; then
 		echo Loaded DTB from ${bootdir}/${fdt_file}
+		test -n "$fixfdt" && run fixfdt
 		bootm ${loadaddr} - ${fdt_addr}
 	elif ${fsload} ${fdt_addr} ${bootdir}/${fdt_file1}; then
 		echo Loaded DTB from ${bootdir}/${fdt_file1}
+		test -n "$fixfdt" && run fixfdt
 		bootm ${loadaddr} - ${fdt_addr}
 	elif ${fsload} ${fdt_addr} ${bootdir}/${fdt_file2}; then
 		echo Loaded DTB from ${bootdir}/${fdt_file2}
+		test -n "$fixfdt" && run fixfdt
 		bootm ${loadaddr} - ${fdt_addr}
 	else
 		echo "Error loading device-tree"
