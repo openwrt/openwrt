@@ -1070,7 +1070,7 @@ define KernelPackage/mwifiex-sdio
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for Marvell 802.11n/802.11ac SDIO Wireless cards
   URL:=http://wireless.kernel.org/en/users/Drivers/mwifiex
-  DEPENDS+= +kmod-mmc +kmod-mac80211 +@DRIVER_11N_SUPPORT +mwifiex-sdio-firmware
+  DEPENDS+= +kmod-mmc +kmod-mac80211 +@DRIVER_11N_SUPPORT +@DRIVER_11AC_SUPPORT +mwifiex-sdio-firmware
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mwifiex/mwifiex.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/mwifiex/mwifiex_sdio.ko
