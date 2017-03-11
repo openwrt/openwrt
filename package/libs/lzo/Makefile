@@ -35,12 +35,9 @@ define Package/liblzo/description
  in real-time. This means it favours speed over compression ratio.
 endef
 
-define Build/Configure
-	$(call Build/Configure/Default, \
-		--enable-shared \
-		--enable-static \
-	)
-endef
+CONFIGURE_ARGS += \
+	--enable-shared \
+	--enable-static \
 
 TARGET_CFLAGS += $(FPIC)
 MAKE_FLAGS += CFLAGS_O="$(TARGET_CFLAGS)"
