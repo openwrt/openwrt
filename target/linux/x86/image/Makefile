@@ -97,8 +97,6 @@ ifneq ($(CONFIG_GRUB_IMAGES),)
   endef
 endif
 
-ROOTDELAY=10
-
 define Image/Build/squashfs
 	dd if=/dev/zero bs=128k count=1 >> $(KDIR)/root.squashfs
 endef
