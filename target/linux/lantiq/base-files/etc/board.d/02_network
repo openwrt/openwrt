@@ -119,7 +119,7 @@ P2812HNUF*)
 	lan_mac=$(mtd_get_mac_ascii uboot-env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_add_switch "switch0" \
-		"0:lan" "1:lan" "2:lan" "4:lan" "5:lan" "6t@eth0"
+		"0:lan" "1:lan" "2:lan" "4:lan" "5:wan" "6t@eth0"
 	;;
 
 TDW8970|TDW8980)
