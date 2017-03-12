@@ -100,6 +100,7 @@ DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 
 BRCMFMAC_43602A1 := kmod-brcmfmac brcmfmac-firmware-43602a1-pcie
 BRCMFMAC_4366B1 := kmod-brcmfmac brcmfmac-firmware-4366b1-pcie
+BRCMFMAC_4366C0 := kmod-brcmfmac
 USB2_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-phy-bcm-ns-usb2
 USB2_PACKAGES += kmod-usb-ledtrig-usbport
 USB3_PACKAGES := $(USB2_PACKAGES) kmod-usb3 kmod-phy-bcm-ns-usb3
@@ -199,12 +200,26 @@ define Device/dlink-dir-885l
 endef
 TARGET_DEVICES += dlink-dir-885l
 
+# Linksys devices are disabled due to problem with 2 TRX partitions
+
 define Device/linksys-ea6300-v1
   DEVICE_TITLE := Linksys EA6300 V1
   DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
 endef
-# Disabled due to problems with 2 TRX partitions
 # TARGET_DEVICES += linksys-ea6300-v1
+
+define Device/linksys-ea9200
+  DEVICE_TITLE := Linksys EA9200 V1
+  DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
+endef
+# TARGET_DEVICES += linksys-ea9200
+
+define Device/linksys-ea9500
+  DEVICE_TITLE := Linksys EA9500
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  DEVICE_DTS := bcm47094-linksys-panamera
+endef
+# TARGET_DEVICES += linksys-ea9500
 
 define Device/netgear
   IMAGES := chk
