@@ -134,6 +134,7 @@ static struct mdio_board_info dr344_mdio0_info[] = {
 static void __init dr344_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f03f810);
 
 	ath79_register_m25p80(NULL);
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(dr344_leds_gpio),
@@ -158,8 +159,8 @@ static void __init dr344_setup(void)
 	ath79_register_mdio(1, 0x0);
 	ath79_register_mdio(0, 0x0);
 
-	ath79_init_mac(ath79_eth0_data.mac_addr, art + DR344_MAC0_OFFSET, 0);
-       ath79_init_mac(ath79_eth1_data.mac_addr, art + DR344_MAC1_OFFSET, 0);
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac + DR344_MAC0_OFFSET, 0);
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac + DR344_MAC1_OFFSET, 0);
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
 				   AR934X_ETH_CFG_SW_ONLY_MODE);
