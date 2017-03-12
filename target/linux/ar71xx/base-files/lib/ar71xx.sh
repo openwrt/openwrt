@@ -187,9 +187,7 @@ tplink_board_detect() {
 	"071000"*)
 		model="TP-Link TL-WR710N"
 
-		if [ "$hwid" = '07100002' -a "$mid" = '00000002' ]; then
-			hwver=' v2.1'
-		fi
+		[ "$hwid" = '07100002' -a "$mid" = '00000002' ] && hwver=' v2.1'
 		;;
 	"072001"*)
 		model="TP-Link TL-WR720N"
@@ -215,23 +213,17 @@ tplink_board_detect() {
 	"080200"*)
 		model="TP-Link TL-WR802N"
 
-		if [ "$hwid" = '08020002' -a "$mid" = '00000002' ]; then
-			hwver=' v2'
-		fi
+		[ "$hwid" = '08020002' -a "$mid" = '00000002' ] && hwver=' v2'
 		;;
 	"083000"*)
 		model="TP-Link TL-WA830RE"
 
-		if [ "$hwver" = ' v10' ]; then
-			hwver=' v1'
-		fi
+		[ "$hwver" = ' v10' ] && hwver=' v1'
 		;;
 	"084100"*)
 		model="TP-Link TL-WR841N/ND"
 
-		if [ "$hwid" = '08410002' -a "$mid" = '00000002' ]; then
-			hwver=' v1.5'
-		fi
+		[ "$hwid" = '08410002' -a "$mid" = '00000002' ] && hwver=' v1.5'
 		;;
 	"084200"*)
 		model="TP-Link TL-WR842N/ND"
@@ -252,12 +244,12 @@ tplink_board_detect() {
 		model="TP-Link TL-WR940N"
 		;;
 	"094100"*)
-		if [ "$hwid" = "09410002" -a "$mid" = "00420001" ]; then
+		model="TP-Link TL-WR941N/ND"
+
+		[ "$hwid" = "09410002" -a "$mid" = "00420001" ] && {
 			model="Rosewill RNX-N360RT"
 			hwver=""
-		else
-			model="TP-Link TL-WR941N/ND"
-		fi
+		}
 		;;
 	"104100"*)
 		model="TP-Link TL-WR1041N/ND"
@@ -361,19 +353,6 @@ tplink_pharos_board_detect() {
 	local model="${1%%\(*}"
 
 	AR71XX_MODEL="TP-Link $model v$2"
-}
-
-gl_inet_board_detect() {
-	local size="$(mtd_get_part_size 'firmware')"
-
-	case "$size" in
-	"8192000")
-		AR71XX_MODEL='GL-iNet 6408A v1'
-		;;
-	"16580608")
-		AR71XX_MODEL='GL-iNet 6416A v1'
-		;;
-	esac
 }
 
 ar71xx_board_detect() {
@@ -660,7 +639,11 @@ ar71xx_board_detect() {
 		;;
 	*"GL-CONNECT INET v1")
 		name="gl-inet"
-		gl_inet_board_detect
+
+		local size="$(mtd_get_part_size 'firmware')"
+
+		[ "$size" = "8192000" ] && AR71XX_MODEL="GL-iNet 6408A v1"
+		[ "$size" = "16580608" ] && AR71XX_MODEL="GL-iNet 6416A v1"
 		;;
 	*"GL-MIFI")
 		name="gl-mifi"
@@ -669,16 +652,10 @@ ar71xx_board_detect() {
 		name="hiwifi-hc6361"
 		;;
 	*"Hornet-UB")
-		local size
-		size=$(awk '/firmware/ { print $2 }' /proc/mtd)
+		local size="$(mtd_get_part_size 'firmware')"
 
-		if [ "x$size" = "x00790000" ]; then
-			name="hornet-ub"
-		fi
-
-		if [ "x$size" = "x00f90000" ]; then
-			name="hornet-ub-x2"
-		fi
+		[ "$size" = "7929856" ] && name="hornet-ub"
+		[ "$size" = "16318464" ] && name="hornet-ub-x2"
 		;;
 	*"JA76PF")
 		name="ja76pf"
