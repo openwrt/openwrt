@@ -21,7 +21,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
 
 --- a/drivers/clk/mediatek/Kconfig
 +++ b/drivers/clk/mediatek/Kconfig
-@@ -6,6 +6,14 @@
+@@ -6,6 +6,14 @@ config COMMON_CLK_MEDIATEK
  	---help---
  	  Mediatek SoCs' clock support.
  
@@ -46,7 +46,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  obj-$(CONFIG_COMMON_CLK_MT8173) += clk-mt8173.o
 --- a/drivers/clk/mediatek/clk-gate.c
 +++ b/drivers/clk/mediatek/clk-gate.c
-@@ -61,6 +61,26 @@
+@@ -61,6 +61,26 @@ static void mtk_cg_clr_bit(struct clk_hw
  	regmap_write(cg->regmap, cg->clr_ofs, BIT(cg->bit));
  }
  
@@ -73,7 +73,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  static int mtk_cg_enable(struct clk_hw *hw)
  {
  	mtk_cg_clr_bit(hw);
-@@ -85,6 +105,30 @@
+@@ -85,6 +105,30 @@ static void mtk_cg_disable_inv(struct cl
  	mtk_cg_clr_bit(hw);
  }
  
@@ -104,7 +104,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  const struct clk_ops mtk_clk_gate_ops_setclr = {
  	.is_enabled	= mtk_cg_bit_is_cleared,
  	.enable		= mtk_cg_enable,
-@@ -97,6 +141,18 @@
+@@ -97,6 +141,18 @@ const struct clk_ops mtk_clk_gate_ops_se
  	.disable	= mtk_cg_disable_inv,
  };
  
@@ -125,7 +125,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  		const char *parent_name,
 --- a/drivers/clk/mediatek/clk-gate.h
 +++ b/drivers/clk/mediatek/clk-gate.h
-@@ -36,6 +36,8 @@
+@@ -36,6 +36,8 @@ static inline struct mtk_clk_gate *to_mt
  
  extern const struct clk_ops mtk_clk_gate_ops_setclr;
  extern const struct clk_ops mtk_clk_gate_ops_setclr_inv;
@@ -1349,7 +1349,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
 +							mtk_apmixedsys_init);
 --- a/drivers/clk/mediatek/clk-mtk.c
 +++ b/drivers/clk/mediatek/clk-mtk.c
-@@ -244,3 +244,28 @@
+@@ -244,3 +244,28 @@ void mtk_clk_register_composites(const s
  			clk_data->clks[mc->id] = clk;
  	}
  }
@@ -1380,7 +1380,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
 +}
 --- a/drivers/clk/mediatek/clk-mtk.h
 +++ b/drivers/clk/mediatek/clk-mtk.h
-@@ -121,7 +121,8 @@
+@@ -121,7 +121,8 @@ struct mtk_composite {
  		.flags = CLK_SET_RATE_PARENT,				\
  	}
  
@@ -1390,7 +1390,7 @@ Signed-off-by: James Liao <jamesjj.liao@mediatek.com>
  		.id = _id,						\
  		.parent = _parent,					\
  		.name = _name,						\
-@@ -156,8 +157,36 @@
+@@ -156,8 +157,36 @@ struct mtk_gate {
  	const struct clk_ops *ops;
  };
  

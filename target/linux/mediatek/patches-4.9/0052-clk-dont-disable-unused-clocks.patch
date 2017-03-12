@@ -10,8 +10,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -233,7 +233,7 @@ unlock_out:
- 	clk_enable_unlock(flags);
+@@ -796,7 +796,7 @@ unlock_out:
+ 		clk_core_disable_unprepare(core->parent);
  }
  
 -static bool clk_ignore_unused;

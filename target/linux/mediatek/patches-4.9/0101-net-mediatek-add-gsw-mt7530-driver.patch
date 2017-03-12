@@ -2213,7 +2213,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int mtk_msg_level = -1;
  module_param_named(msg_level, mtk_msg_level, int, 0);
  MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
-@@ -74,14 +77,14 @@
+@@ -74,14 +77,14 @@ static int mtk_mdio_busy_wait(struct mtk
  			return 0;
  		if (time_after(jiffies, t_start + PHY_IAC_TIMEOUT))
  			break;
@@ -2230,7 +2230,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			   u32 phy_register, u32 write_data)
  {
  	if (mtk_mdio_busy_wait(eth))
-@@ -100,7 +103,7 @@
+@@ -100,7 +103,7 @@ static u32 _mtk_mdio_write(struct mtk_et
  	return 0;
  }
  
@@ -2239,7 +2239,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	u32 d;
  
-@@ -155,7 +158,7 @@
+@@ -155,7 +158,7 @@ static void mtk_gmac0_rgmii_adjust(struc
  
  	val = (speed == SPEED_1000) ?
  		RCK_CTRL_RGMII_1000 : RCK_CTRL_RGMII_10_100;
@@ -2248,7 +2248,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	val = (speed == SPEED_1000) ?
  		TCK_CTRL_RGMII_1000 : TCK_CTRL_RGMII_10_100;
-@@ -1833,15 +1836,6 @@
+@@ -1833,15 +1836,6 @@ static int mtk_hw_init(struct mtk_eth *e
  	}
  	regmap_write(eth->ethsys, ETHSYS_SYSCFG0, val);
  
@@ -2264,7 +2264,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* GE1, Force 1000M/FD, FC ON */
  	mtk_w32(eth, MAC_MCR_FIXED_LINK, MTK_MAC_MCR(0));
  
-@@ -1851,6 +1845,8 @@
+@@ -1851,6 +1845,8 @@ static int mtk_hw_init(struct mtk_eth *e
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
  
@@ -2273,7 +2273,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* disable delay and normal interrupt */
  	mtk_w32(eth, 0, MTK_QDMA_DELAY_INT);
  	mtk_w32(eth, 0, MTK_PDMA_DELAY_INT);
-@@ -1879,6 +1875,8 @@
+@@ -1879,6 +1875,8 @@ static int mtk_hw_init(struct mtk_eth *e
  		mtk_w32(eth, val, MTK_GDMA_FWD_CFG(i));
  	}
  
@@ -2282,7 +2282,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	return 0;
  }
  
-@@ -2379,6 +2377,9 @@
+@@ -2379,6 +2377,9 @@ static int mtk_probe(struct platform_dev
  	if (!eth)
  		return -ENOMEM;
  
@@ -2303,7 +2303,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #define DQSI0(x)		((x << 0) & GENMASK(6, 0))
  #define DQSI1(x)		((x << 8) & GENMASK(14, 8))
  #define RXCTL_DMWTLAT(x)	((x << 16) & GENMASK(18, 16))
-@@ -554,6 +554,9 @@
+@@ -554,6 +554,9 @@ struct mtk_eth {
  	struct mii_bus			*mii_bus;
  	struct work_struct		pending_work;
  	unsigned long			state;
@@ -2313,7 +2313,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  };
  
  /* struct mtk_mac -	the structure that holds the info about the MACs of the
-@@ -586,4 +589,6 @@
+@@ -586,4 +589,6 @@ void mtk_stats_update_mac(struct mtk_mac
  void mtk_w32(struct mtk_eth *eth, u32 val, unsigned reg);
  u32 mtk_r32(struct mtk_eth *eth, unsigned reg);
  

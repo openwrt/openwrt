@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
-@@ -81,6 +81,15 @@ config ARM_KIRKWOOD_CPUFREQ
+@@ -74,6 +74,15 @@ config ARM_KIRKWOOD_CPUFREQ
  	  This adds the CPUFreq driver for Marvell Kirkwood
  	  SoCs.
  
@@ -27,11 +27,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +	  This adds the CPUFreq driver support for Mediatek MT7623 SoC.
 +
  config ARM_MT8173_CPUFREQ
- 	bool "Mediatek MT8173 CPUFreq support"
+ 	tristate "Mediatek MT8173 CPUFreq support"
  	depends on ARCH_MEDIATEK && REGULATOR
 --- a/drivers/cpufreq/Makefile
 +++ b/drivers/cpufreq/Makefile
-@@ -57,6 +57,7 @@ obj-$(CONFIG_ARM_HISI_ACPU_CPUFREQ)	+= h
+@@ -58,6 +58,7 @@ obj-$(CONFIG_ARM_HIGHBANK_CPUFREQ)	+= hi
  obj-$(CONFIG_ARM_IMX6Q_CPUFREQ)		+= imx6q-cpufreq.o
  obj-$(CONFIG_ARM_INTEGRATOR)		+= integrator-cpufreq.o
  obj-$(CONFIG_ARM_KIRKWOOD_CPUFREQ)	+= kirkwood-cpufreq.o

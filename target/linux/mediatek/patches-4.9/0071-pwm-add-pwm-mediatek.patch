@@ -43,7 +43,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +};*/
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -282,6 +282,15 @@
+@@ -282,6 +282,15 @@ config PWM_MTK_DISP
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-mtk-disp.
  
@@ -61,7 +61,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	depends on ARCH_MXS && OF
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -25,6 +25,7 @@
+@@ -25,6 +25,7 @@ obj-$(CONFIG_PWM_LPSS)		+= pwm-lpss.o
  obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-pci.o
  obj-$(CONFIG_PWM_LPSS_PLATFORM)	+= pwm-lpss-platform.o
  obj-$(CONFIG_PWM_MESON)		+= pwm-meson.o

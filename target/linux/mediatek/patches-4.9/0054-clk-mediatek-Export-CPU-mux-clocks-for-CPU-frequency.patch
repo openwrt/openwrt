@@ -193,7 +193,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  
  #include <dt-bindings/clock/mt2701-clk.h>
  
-@@ -465,6 +466,10 @@
+@@ -465,6 +466,10 @@ static const char * const cpu_parents[]
  	"mmpll"
  };
  
@@ -204,7 +204,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  static const struct mtk_composite top_muxes[] __initconst = {
  	MUX_GATE(CLK_TOP_AXI_SEL, "axi_sel", axi_parents,
  		0x0040, 0, 3, INVALID_MUX_GATE_BIT),
-@@ -677,6 +682,9 @@
+@@ -677,6 +682,9 @@ static void __init mtk_infrasys_init(str
  	mtk_clk_register_factors(infra_fixed_divs, ARRAY_SIZE(infra_fixed_divs),
  						clk_data);
  
@@ -224,7 +224,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  
  #include <dt-bindings/clock/mt8173-clk.h>
  
-@@ -525,6 +526,25 @@
+@@ -525,6 +526,25 @@ static const char * const i2s3_b_ck_pare
  	"apll2_div5"
  };
  
@@ -250,7 +250,7 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  static const struct mtk_composite top_muxes[] __initconst = {
  	/* CLK_CFG_0 */
  	MUX(CLK_TOP_AXI_SEL, "axi_sel", axi_parents, 0x0040, 0, 3),
-@@ -948,6 +968,9 @@
+@@ -948,6 +968,9 @@ static void __init mtk_infrasys_init(str
  						clk_data);
  	mtk_clk_register_factors(infra_divs, ARRAY_SIZE(infra_divs), clk_data);
  

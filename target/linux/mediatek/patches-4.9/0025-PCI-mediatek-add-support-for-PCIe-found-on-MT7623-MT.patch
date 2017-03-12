@@ -19,7 +19,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/arm/mach-mediatek/Kconfig
 +++ b/arch/arm/mach-mediatek/Kconfig
-@@ -29,6 +29,7 @@
+@@ -29,6 +29,7 @@ config MACH_MT6592
  config MACH_MT7623
  	bool "MediaTek MT7623 SoCs support"
  	default ARCH_MEDIATEK
@@ -29,7 +29,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	bool "MediaTek MT8127 SoCs support"
 --- a/drivers/pci/host/Kconfig
 +++ b/drivers/pci/host/Kconfig
-@@ -301,4 +301,15 @@
+@@ -301,4 +301,15 @@ config VMD
  	  To compile this driver as a module, choose M here: the
  	  module will be called vmd.
  
@@ -47,7 +47,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  endmenu
 --- a/drivers/pci/host/Makefile
 +++ b/drivers/pci/host/Makefile
-@@ -33,3 +33,4 @@
+@@ -33,3 +33,4 @@ obj-$(CONFIG_PCIE_ARMADA_8K) += pcie-arm
  obj-$(CONFIG_PCIE_ARTPEC6) += pcie-artpec6.o
  obj-$(CONFIG_PCIE_ROCKCHIP) += pcie-rockchip.o
  obj-$(CONFIG_VMD) += vmd.o

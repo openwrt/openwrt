@@ -11,7 +11,7 @@ Subject: [PATCH 026/102] scpsys: various fixes
 
 --- a/drivers/clk/mediatek/clk-mt2701.c
 +++ b/drivers/clk/mediatek/clk-mt2701.c
-@@ -1043,6 +1043,8 @@
+@@ -1043,6 +1043,8 @@ static void __init mtk_ethsys_init(struc
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);

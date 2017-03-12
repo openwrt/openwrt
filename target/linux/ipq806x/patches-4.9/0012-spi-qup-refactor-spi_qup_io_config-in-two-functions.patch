@@ -67,14 +67,10 @@ Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
 -		/* must be zero for BLOCK and BAM */
 -		writel_relaxed(0, controller->base + QUP_MX_READ_CNT);
 -		writel_relaxed(0, controller->base + QUP_MX_WRITE_CNT);
-+	else
-+		controller->mode = QUP_IO_M_MODE_BLOCK;
- 
+-
 -		if (!controller->qup_v1) {
 -			void __iomem *input_cnt;
-+	return 0;
-+}
- 
+-
 -			input_cnt = controller->base + QUP_MX_INPUT_CNT;
 -			/*
 -			 * for DMA transfers, both QUP_MX_INPUT_CNT and
@@ -86,13 +82,19 @@ Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
 -				writel_relaxed(0, input_cnt);
 -			else
 -				writel_relaxed(n_words, input_cnt);
++	else
++		controller->mode = QUP_IO_M_MODE_BLOCK;
++
++	return 0;
++}
+ 
 +/* prep qup for another spi transaction of specific type */
 +static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
 +{
 +	struct spi_qup *controller = spi_master_get_devdata(spi->master);
 +	u32 config, iomode, control;
 +	unsigned long flags;
- 
++
 +	reinit_completion(&controller->done);
 +	reinit_completion(&controller->dma_tx_done);
 +

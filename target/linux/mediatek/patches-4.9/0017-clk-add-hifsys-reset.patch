@@ -20,7 +20,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/clk/mediatek/clk-mt2701.c
 +++ b/drivers/clk/mediatek/clk-mt2701.c
-@@ -1000,6 +1000,8 @@
+@@ -1000,6 +1000,8 @@ static void __init mtk_hifsys_init(struc
  	if (r)
  		pr_err("%s(): could not register clock provider: %d\n",
  			__func__, r);
