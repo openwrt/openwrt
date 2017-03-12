@@ -42,7 +42,7 @@
  	} while (word != stop);
  
  	return csum_fold(csum);
-@@ -212,73 +216,6 @@ static inline __sum16 ip_compute_csum(co
+@@ -214,73 +218,6 @@ static inline __sum16 ip_compute_csum(co
  	return csum_fold(csum_partial(buff, len, 0));
  }
  

@@ -19,7 +19,7 @@ Signed-off-by: Matt Redfearn <matt.redfearn@imgtec.com>
  #include <asm/msa.h>
  #include <asm/pgtable.h>
  #include <asm/mipsregs.h>
-@@ -507,7 +508,19 @@ EXPORT_SYMBOL(unwind_stack_by_address);
+@@ -552,7 +553,19 @@ EXPORT_SYMBOL(unwind_stack_by_address);
  unsigned long unwind_stack(struct task_struct *task, unsigned long *sp,
  			   unsigned long pc, unsigned long *ra)
  {

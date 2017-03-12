@@ -193,9 +193,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	chip->to_irq		= bcma_gpio_to_irq;
 +#endif
  #if IS_BUILTIN(CONFIG_OF)
- 	if (cc->core->bus->hosttype == BCMA_HOSTTYPE_SOC)
- 		chip->of_node	= cc->core->dev.of_node;
-@@ -217,13 +249,13 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+ 	chip->of_node		= cc->core->dev.of_node;
+ #endif
+@@ -216,13 +248,13 @@ int bcma_gpio_init(struct bcma_drv_cc *c
  	else
  		chip->base		= -1;
  
@@ -212,7 +212,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		return err;
  	}
  
-@@ -232,7 +264,7 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+@@ -231,7 +263,7 @@ int bcma_gpio_init(struct bcma_drv_cc *c
  
  int bcma_gpio_unregister(struct bcma_drv_cc *cc)
  {
