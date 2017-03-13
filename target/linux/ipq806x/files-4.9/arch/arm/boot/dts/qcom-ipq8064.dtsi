@@ -941,12 +941,22 @@
 			reg = <0x1bb00000 0x000001FF>;
 		};
 
+		stmmac_axi_setup: stmmac-axi-config {
+			snps,wr_osr_lmt = <7>;
+			snps,rd_osr_lmt = <7>;
+			snps,blen = <16 0 0 0 0 0 0>;
+		};
+
 		gmac0: ethernet@37000000 {
 			device_type = "network";
 			compatible = "qcom,ipq806x-gmac";
 			reg = <0x37000000 0x200000>;
 			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "macirq";
+
+			snps,axi-config = <&stmmac_axi_setup>;
+			snps,pbl = <32>;
+			snps,aal = <1>;
 
 			qcom,nss-common = <&nss_common>;
 			qcom,qsgmii-csr = <&qsgmii_csr>;
@@ -967,6 +977,10 @@
 			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "macirq";
 
+			snps,axi-config = <&stmmac_axi_setup>;
+			snps,pbl = <32>;
+			snps,aal = <1>;
+
 			qcom,nss-common = <&nss_common>;
 			qcom,qsgmii-csr = <&qsgmii_csr>;
 
@@ -986,6 +1000,10 @@
 			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "macirq";
 
+			snps,axi-config = <&stmmac_axi_setup>;
+			snps,pbl = <32>;
+			snps,aal = <1>;
+
 			qcom,nss-common = <&nss_common>;
 			qcom,qsgmii-csr = <&qsgmii_csr>;
 
@@ -1004,6 +1022,10 @@
 			reg = <0x37600000 0x200000>;
 			interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "macirq";
+
+			snps,axi-config = <&stmmac_axi_setup>;
+			snps,pbl = <32>;
+			snps,aal = <1>;
 
 			qcom,nss-common = <&nss_common>;
 			qcom,qsgmii-csr = <&qsgmii_csr>;
