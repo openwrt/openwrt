@@ -49,7 +49,7 @@ Signed-off-by: Thomas Pedersen <twp@codeaurora.org>
 +obj-$(CONFIG_QCOM_ADM) += qcom_adm.o
 --- /dev/null
 +++ b/drivers/dma/qcom/qcom_adm.c
-@@ -0,0 +1,900 @@
+@@ -0,0 +1,914 @@
 +/*
 + * Copyright (c) 2013-2015, The Linux Foundation. All rights reserved.
 + *
@@ -406,6 +406,7 @@ Signed-off-by: Thomas Pedersen <twp@codeaurora.org>
 +	struct adm_device *adev = achan->adev;
 +	struct adm_async_desc *async_desc;
 +	struct scatterlist *sg;
++	dma_addr_t cple_addr;
 +	u32 i, burst;
 +	u32 single_count = 0, box_count = 0, crci = 0;
 +	void *desc;
@@ -454,7 +455,7 @@ Signed-off-by: Thomas Pedersen <twp@codeaurora.org>
 +		}
 +	}
 +
-+	async_desc = kzalloc(sizeof(*async_desc), GFP_NOWAIT);
++	async_desc = kzalloc(sizeof(*async_desc), GFP_ATOMIC);
 +	if (!async_desc)
 +		return ERR_PTR(-ENOMEM);
 +
@@ -467,23 +468,15 @@ Signed-off-by: Thomas Pedersen <twp@codeaurora.org>
 +				box_count * sizeof(struct adm_desc_hw_box) +
 +				sizeof(*cple) + 2 * ADM_DESC_ALIGN;
 +
-+	async_desc->cpl = dma_alloc_writecombine(adev->dev, async_desc->dma_len,
-+				&async_desc->dma_addr, GFP_NOWAIT);
-+
-+	if (!async_desc->cpl) {
-+		kfree(async_desc);
-+		return ERR_PTR(-ENOMEM);
-+	}
++	async_desc->cpl = kzalloc(async_desc->dma_len, GFP_ATOMIC);
++	if (!async_desc->cpl)
++		goto free;
 +
 +	async_desc->adev = adev;
 +
 +	/* both command list entry and descriptors must be 8 byte aligned */
 +	cple = PTR_ALIGN(async_desc->cpl, ADM_DESC_ALIGN);
 +	desc = PTR_ALIGN(cple + 1, ADM_DESC_ALIGN);
-+
-+	/* init cmd list */
-+	*cple = ADM_CPLE_LP;
-+	*cple |= (desc - async_desc->cpl + async_desc->dma_addr) >> 3;
 +
 +	for_each_sg(sgl, sg, sg_len, i) {
 +		async_desc->length += sg_dma_len(sg);
@@ -496,7 +489,27 @@ Signed-off-by: Thomas Pedersen <twp@codeaurora.org>
 +							   direction);
 +	}
 +
++	async_desc->dma_addr = dma_map_single(adev->dev, async_desc->cpl,
++					      async_desc->dma_len,
++					      DMA_TO_DEVICE);
++	if (dma_mapping_error(adev->dev, async_desc->dma_addr))
++		goto free;
++
++	cple_addr = async_desc->dma_addr + ((void *)cple - async_desc->cpl);
++
++	/* init cmd list */
++	dma_sync_single_for_cpu(adev->dev, cple_addr, sizeof(*cple),
++				DMA_TO_DEVICE);
++	*cple = ADM_CPLE_LP;
++	*cple |= (async_desc->dma_addr + ADM_DESC_ALIGN) >> 3;
++	dma_sync_single_for_device(adev->dev, cple_addr, sizeof(*cple),
++				   DMA_TO_DEVICE);
++
 +	return vchan_tx_prep(&achan->vc, &async_desc->vd, flags);
++
++free:
++	kfree(async_desc);
++	return ERR_PTR(-ENOMEM);
 +}
 +
 +/**
@@ -721,8 +734,9 @@ Signed-off-by: Thomas Pedersen <twp@codeaurora.org>
 +	struct adm_async_desc *async_desc = container_of(vd,
 +			struct adm_async_desc, vd);
 +
-+	dma_free_writecombine(async_desc->adev->dev, async_desc->dma_len,
-+		async_desc->cpl, async_desc->dma_addr);
++	dma_unmap_single(async_desc->adev->dev, async_desc->dma_addr,
++			 async_desc->dma_len, DMA_TO_DEVICE);
++	kfree(async_desc->cpl);
 +	kfree(async_desc);
 +}
 +
