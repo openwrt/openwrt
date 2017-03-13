@@ -1,0 +1,46 @@
+From 3064376aa3e8dae03dc2c5c3c064e2283c4337d8 Mon Sep 17 00:00:00 2001
+From: Pavel Kubelun <be.dissent@gmail.com>
+Date: Tue, 22 Nov 2016 17:37:56 +0300
+Subject: [PATCH 63/69] ipq806x: clk: gcc: add tsens child node
+
+Thermal sensors in ipq806x are inside a Global clock controller.
+Add a child node into it to be used by the TSENS driver.
+
+Signed-off-by: Pavel Kubelun <be.dissent@gmail.com>
+---
+ drivers/clk/qcom/gcc-ipq806x.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/qcom/gcc-ipq806x.c
++++ b/drivers/clk/qcom/gcc-ipq806x.c
+@@ -970,7 +970,7 @@ static struct clk_branch gsbi1_h_clk = {
+ 		.hw.init = &(struct clk_init_data){
+ 			.name = "gsbi1_h_clk",
+ 			.ops = &clk_branch_ops,
+-+			.flags = CLK_IGNORE_UNUSED,
++			.flags = CLK_IGNORE_UNUSED,
+ 		},
+ 	},
+ };
+@@ -3073,6 +3073,7 @@ MODULE_DEVICE_TABLE(of, gcc_ipq806x_matc
+ static int gcc_ipq806x_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
++	struct platform_device *tsens;
+ 	struct regmap *regmap;
+ 	int ret;
+ 
+@@ -3102,6 +3103,13 @@ static int gcc_ipq806x_probe(struct plat
+ 	regmap_write(regmap, 0x3cf8, 8);
+ 	regmap_write(regmap, 0x3d18, 8);
+ 
++	tsens = platform_device_register_data(&pdev->dev, "qcom-tsens", -1,
++					      NULL, 0);
++	if (IS_ERR(tsens))
++		return PTR_ERR(tsens);
++
++	platform_set_drvdata(pdev, tsens);
++
+ 	return 0;
+ }
+ 

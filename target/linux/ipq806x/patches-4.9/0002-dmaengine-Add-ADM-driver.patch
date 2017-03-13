@@ -1,7 +1,7 @@
-From 1d32bf93c8e83db0aca04d2961badef7e86d663b Mon Sep 17 00:00:00 2001
+From 563fa24db4e529c5a3311928d73a8a90531ee527 Mon Sep 17 00:00:00 2001
 From: Thomas Pedersen <twp@codeaurora.org>
 Date: Mon, 16 May 2016 17:58:51 -0700
-Subject: [PATCH 02/37] dmaengine: Add ADM driver
+Subject: [PATCH 02/69] dmaengine: Add ADM driver
 
 Original patch by Andy Gross.
 
@@ -18,9 +18,9 @@ and also incorporates CRCI (client rate control interface) flow control.
 Signed-off-by: Andy Gross <agross@codeaurora.org>
 Signed-off-by: Thomas Pedersen <twp@codeaurora.org>
 ---
- drivers/dma/qcom/Kconfig    |   10 +
- drivers/dma/qcom/Makefile   |    1 +
- drivers/dma/qcom/qcom_adm.c |  900 +++++++++++++++++++++++++++++++++++++++++++
+ drivers/dma/qcom/Kconfig    |  10 +
+ drivers/dma/qcom/Makefile   |   1 +
+ drivers/dma/qcom/qcom_adm.c | 900 ++++++++++++++++++++++++++++++++++++++++++++
  3 files changed, 911 insertions(+)
  create mode 100644 drivers/dma/qcom/qcom_adm.c
 

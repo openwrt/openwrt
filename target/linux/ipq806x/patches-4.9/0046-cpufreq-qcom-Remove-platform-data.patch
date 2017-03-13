@@ -1,0 +1,46 @@
+From f3a327717565cadc8ce5c148860ce0baeb4fbe20 Mon Sep 17 00:00:00 2001
+From: Georgi Djakov <georgi.djakov@linaro.org>
+Date: Thu, 14 Jul 2016 14:48:21 +0300
+Subject: [PATCH 46/69] cpufreq: qcom: Remove platform data
+
+Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
+---
+ drivers/cpufreq/qcom-cpufreq.c | 12 +++---------
+ 1 file changed, 3 insertions(+), 9 deletions(-)
+
+--- a/drivers/cpufreq/qcom-cpufreq.c
++++ b/drivers/cpufreq/qcom-cpufreq.c
+@@ -20,7 +20,6 @@
+ #include <linux/platform_device.h>
+ #include <linux/pm_opp.h>
+ #include <linux/slab.h>
+-#include <linux/cpufreq-dt.h>
+ 
+ static void __init get_krait_bin_format_a(int *speed, int *pvs, int *pvs_ver)
+ {
+@@ -168,12 +167,6 @@ static int __init qcom_cpufreq_populate_
+ 
+ static int __init qcom_cpufreq_driver_init(void)
+ {
+-	struct cpufreq_dt_platform_data pdata = { .independent_clocks = true };
+-	struct platform_device_info devinfo = {
+-		.name = "cpufreq-dt",
+-		.data = &pdata,
+-		.size_data = sizeof(pdata),
+-	};
+ 	struct device *cpu_dev;
+ 	struct device_node *np;
+ 	int ret;
+@@ -196,9 +189,10 @@ static int __init qcom_cpufreq_driver_in
+ 	if (ret)
+ 		return ret;
+ 
+-	return PTR_ERR_OR_ZERO(platform_device_register_full(&devinfo));
++	return PTR_ERR_OR_ZERO(platform_device_register_simple("cpufreq-dt", -1,
++							       NULL, 0));
+ }
+-module_init(qcom_cpufreq_driver_init);
++late_initcall(qcom_cpufreq_driver_init);
+ 
+ MODULE_DESCRIPTION("Qualcomm CPUfreq driver");
+ MODULE_LICENSE("GPL v2");
