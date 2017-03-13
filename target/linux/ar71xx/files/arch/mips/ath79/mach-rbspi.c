@@ -437,20 +437,32 @@ void __init rbspi_wlan_init(u16 id, int wmac_offset)
 	kfree(art_buf);
 }
 
+#define RBSPI_MACH_BUFLEN	64
 /* 
  * Common platform init routine for all SPI NOR devices.
  */
 static int __init rbspi_platform_setup(void)
 {
 	const struct rb_info *info;
-	char buf[64];
+	char buf[RBSPI_MACH_BUFLEN] = "MikroTik ";
+	char *str;
+	int len = RBSPI_MACH_BUFLEN - strlen(buf) - 1;
 
 	info = rb_init_info((void *)(KSEG1ADDR(AR71XX_SPI_BASE)), 0x20000);
 	if (!info)
 		return -ENODEV;
 
-	scnprintf(buf, sizeof(buf), "MikroTik %s",
-		(info->board_name) ? info->board_name : "");
+	if (info->board_name) {
+		str = "RouterBOARD ";
+		if (strncmp(info->board_name, str, strlen(str))) {
+			strncat(buf, str, len);
+			len -= strlen(str);
+		}
+		strncat(buf, info->board_name, len);
+	}
+	else
+		strncat(buf, "UNKNOWN", len);
+
 	mips_set_machine_name(buf);
 
 	/* fix partitions based on flash parsing */
