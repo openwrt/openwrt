@@ -62,6 +62,16 @@ define Package/base-files/conffiles
 $(call $(TARGET)/conffiles)
 endef
 
+define Package/base-files/config
+config PERSISTENT_VAR
+	depends on PACKAGE_base-files
+	bool "Persistent /var directory"
+	default n
+	help
+		Makes /var persistent across reboots, by creating it as a real directory,
+		instead of a symlink to /tmp
+endef
+
 define Package/base-files/description
  This package contains a base filesystem and system scripts for OpenWrt.
 endef
@@ -165,8 +175,8 @@ define Package/base-files/install
 	mkdir -p $(1)/www
 	mkdir -p $(1)/root
 	$(LN) /proc/mounts $(1)/etc/mtab
-	rm -f $(1)/var
-	$(LN) /tmp $(1)/var
+	rm -rf $(1)/var
+	$(if $(CONFIG_PERSISTENT_VAR), mkdir -p $(1)/var/run, $(LN) /tmp $(1)/var)
 	mkdir -p $(1)/etc
 	$(LN) /tmp/resolv.conf /tmp/fstab /tmp/TZ /tmp/localtime $(1)/etc/
 

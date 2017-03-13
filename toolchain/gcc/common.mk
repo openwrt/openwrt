@@ -69,7 +69,7 @@ HOST_STAMP_CONFIGURED:=$(GCC_BUILD_DIR)/.configured
 HOST_STAMP_INSTALLED:=$(STAGING_DIR_HOST)/stamp/.gcc_$(GCC_VARIANT)_installed
 
 SEP:=,
-TARGET_LANGUAGES:="c,c++$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)$(if $(CONFIG_INSTALL_GFORTRAN),$(SEP)fortran)"
+TARGET_LANGUAGES:="c,c++$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)$(if $(CONFIG_INSTALL_GFORTRAN),$(SEP)fortran)$(if $(CONFIG_INSTALL_GCCGO),$(SEP)go)"
 
 export libgcc_cv_fixed_point=no
 ifdef CONFIG_USE_UCLIBC
@@ -161,6 +161,10 @@ ifneq ($(CONFIG_SOFT_FLOAT),y)
     GCC_CONFIGURE+= \
 		--with-float=hard
   endif
+endif
+
+ifeq ($(CONFIG_TARGET_x86)$(CONFIG_USE_GLIBC)$(CONFIG_GCC_VERSION_5)$(CONFIG_INSTALL_GCCGO),yyyy)
+	TARGET_CFLAGS+=-fno-split-stack
 endif
 
 GCC_MAKE:= \
