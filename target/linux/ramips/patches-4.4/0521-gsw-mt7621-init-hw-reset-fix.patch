@@ -1,0 +1,48 @@
+diff -uprN a/drivers/net/ethernet/mediatek/gsw_mt7620.h b/drivers/net/ethernet/mediatek/gsw_mt7620.h
+--- a/drivers/net/ethernet/mediatek/gsw_mt7620.h
++++ b/drivers/net/ethernet/mediatek/gsw_mt7620.h
+@@ -47,7 +47,12 @@
+ 
+ #define SYSC_REG_CHIP_REV_ID	0x0c
+ #define SYSC_REG_CFG1		0x14
++#ifdef CONFIG_SOC_MT7621
++#define SYSC_REG_RSTCTRL  0x34
++#define RST_CTRL_HSDMA		BIT(2)
++#else
+ #define RST_CTRL_MCM		BIT(2)
++#endif
+ #define SYSC_PAD_RGMII2_MDIO	0x58
+ #define SYSC_GPIO_MODE		0x60
+ 
+diff -uprN a/drivers/net/ethernet/mediatek/gsw_mt7621.c b/drivers/net/ethernet/mediatek/gsw_mt7621.c
+--- a/drivers/net/ethernet/mediatek/gsw_mt7621.c
++++ b/drivers/net/ethernet/mediatek/gsw_mt7621.c
+@@ -72,8 +72,26 @@ static void mt7621_hw_init(struct mt7620
+ 	u32 val;
+ 
+ 	/* wardware reset the switch */
+-	fe_reset(RST_CTRL_MCM);
+-	mdelay(10);
++	val = rt_sysc_r32(SYSC_REG_RSTCTRL);
++	val |= RST_CTRL_HSDMA;
++	rt_sysc_w32(val, SYSC_REG_RSTCTRL);
++	usleep_range(1000, 1500);
++
++	val &= ~RST_CTRL_HSDMA;
++	rt_sysc_w32(val, SYSC_REG_RSTCTRL);
++	usleep_range(1000, 1500);
++	/* Wait for Switch Reset Completed*/
++	for(i=0;i<100;i++)
++	{
++		mdelay(10);
++		val = mt7530_mdio_r32(gsw, 0x7800);
++		if(val != 0){
++			printk("MT7530 Reset Completed!!\n");
++			break;
++		}
++		if(i == 99)
++			printk("MT7530 Reset Timeout!!\n");
++	}
+ 
+ 	/* reduce RGMII2 PAD driving strength */
+ 	rt_sysc_m32(3 << 4, 0, SYSC_PAD_RGMII2_MDIO);
