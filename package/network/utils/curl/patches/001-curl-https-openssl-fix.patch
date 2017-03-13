@@ -12,11 +12,9 @@ Bug: #1174
  lib/vtls/vtls.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/lib/vtls/vtls.c b/lib/vtls/vtls.c
-index b808e1c..707f24b 100644
 --- a/lib/vtls/vtls.c
 +++ b/lib/vtls/vtls.c
-@@ -484,7 +484,7 @@ void Curl_ssl_close_all(struct Curl_easy *data)
+@@ -484,7 +484,7 @@ void Curl_ssl_close_all(struct Curl_easy
    curlssl_close_all(data);
  }
  
@@ -25,7 +23,7 @@ index b808e1c..707f24b 100644
      defined(USE_DARWINSSL) || defined(USE_NSS)
  /* This function is for OpenSSL, GnuTLS, darwinssl, and schannel only. */
  int Curl_ssl_getsock(struct connectdata *conn, curl_socket_t *socks,
-@@ -518,7 +518,7 @@ int Curl_ssl_getsock(struct connectdata *conn,
+@@ -518,7 +518,7 @@ int Curl_ssl_getsock(struct connectdata
    (void)numsocks;
    return GETSOCK_BLANK;
  }
