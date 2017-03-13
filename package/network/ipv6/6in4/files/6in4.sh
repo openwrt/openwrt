@@ -86,7 +86,7 @@ proto_6in4_setup() {
 		local urlget_opts="-qO-"
 		local ca_path="${SSL_CERT_DIR-/etc/ssl/certs}"
 
-		[ -f /lib/libustream-ssl.so ] && http=https
+		[ -f /lib/libustream-ssl.so ] && http="https"
 		[ "$http" = "https" -a -z "$(find $ca_path -name "*.0" 2>/dev/null)" ] && {
 			urlget_opts="$urlget_opts --no-check-certificate"
 		}
