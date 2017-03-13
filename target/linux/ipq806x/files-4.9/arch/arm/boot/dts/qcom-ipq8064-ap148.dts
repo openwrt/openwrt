@@ -175,10 +175,16 @@
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
 
-			nand-ecc-strength = <4>;
-			nand-bus-width = <8>;
+			cs0 {
+				reg = <0>;
+				compatible = "qcom,nandcs";
 
-			linux,part-probe = "qcom-smem";
+				nand-ecc-strength = <4>;
+				nand-bus-width = <8>;
+				nand-ecc-step-size = <512>;
+
+				linux,part-probe = "qcom-smem";
+			};
 		};
 
 		mdio0: mdio {

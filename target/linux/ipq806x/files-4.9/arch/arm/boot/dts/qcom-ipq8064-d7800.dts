@@ -201,67 +201,79 @@
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
 
-			nand-ecc-strength = <4>;
-			nand-bus-width = <8>;
-
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			qcadata@0 {
-				label = "qcadata";
-				reg = <0x0000000 0x0c80000>;
-				read-only;
-			};
+			cs0 {
+				reg = <0>;
+				compatible = "qcom,nandcs";
 
-			APPSBL@c80000 {
-				label = "APPSBL";
-				reg = <0x0c80000 0x0500000>;
-				read-only;
-			};
+				nand-ecc-strength = <4>;
+				nand-bus-width = <8>;
+				nand-ecc-step-size = <512>;
 
-			APPSBLENV@1180000 {
-				label = "APPSBLENV";
-				reg = <0x1180000 0x0080000>;
-				read-only;
-			};
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-			art: art@1200000 {
-				label = "art";
-				reg = <0x1200000 0x0140000>;
-				read-only;
-			};
+					qcadata@0 {
+						label = "qcadata";
+						reg = <0x0000000 0x0c80000>;
+						read-only;
+					};
 
-			artbak: art@1340000 {
-				label = "artbak";
-				reg = <0x1340000 0x0140000>;
-				read-only;
-			};
+					APPSBL@c80000 {
+						label = "APPSBL";
+						reg = <0x0c80000 0x0500000>;
+						read-only;
+					};
 
-			kernel@1480000 {
-				label = "kernel";
-				reg = <0x1480000 0x0200000>;
-			};
+					APPSBLENV@1180000 {
+						label = "APPSBLENV";
+						reg = <0x1180000 0x0080000>;
+						read-only;
+					};
 
-			ubi@1680000 {
-				label = "ubi";
-				reg = <0x1680000 0x1E00000>;
-			};
+					art: art@1200000 {
+						label = "art";
+						reg = <0x1200000 0x0140000>;
+						read-only;
+					};
 
-			netgear@3480000 {
-				label = "netgear";
-				reg = <0x3480000 0x4480000>;
-				read-only;
-			};
+					artbak: art@1340000 {
+						label = "artbak";
+						reg = <0x1340000 0x0140000>;
+						read-only;
+					};
 
-			reserve@7900000 {
-				label = "reserve";
-				reg = <0x7900000 0x0700000>;
-				read-only;
-			};
+					kernel@1480000 {
+						label = "kernel";
+						reg = <0x1480000 0x0200000>;
+					};
 
-			firmware@1480000 {
-				label = "firmware";
-				reg = <0x1480000 0x2000000>;
+					ubi@1680000 {
+						label = "ubi";
+						reg = <0x1680000 0x1E00000>;
+					};
+
+					netgear@3480000 {
+						label = "netgear";
+						reg = <0x3480000 0x4480000>;
+						read-only;
+					};
+
+					reserve@7900000 {
+						label = "reserve";
+						reg = <0x7900000 0x0700000>;
+						read-only;
+					};
+
+					firmware@1480000 {
+						label = "firmware";
+						reg = <0x1480000 0x2000000>;
+					};
+				};
 			};
 		};
 
