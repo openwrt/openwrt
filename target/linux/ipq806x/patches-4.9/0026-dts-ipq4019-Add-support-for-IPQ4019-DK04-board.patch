@@ -32,40 +32,6 @@ Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
  	qcom-ipq8064-ap148.dtb \
  	qcom-msm8660-surf.dtb \
  	qcom-msm8960-cdp.dtb \
---- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk01.1.dtsi
-@@ -109,11 +109,7 @@
- 			status = "ok";
- 		};
- 
--                usb3_ss_phy: ssphy@0 {
--                        status = "ok";
--                };
--
--                dummy_ss_phy: ssphy@1 {
-+                usb3_ss_phy: ssphy@9a000 {
-                         status = "ok";
-                 };
- 
-@@ -121,15 +117,15 @@
-                         status = "ok";
-                 };
- 
--                usb2_hs_phy: hsphy@a8000 {
-+                usb3@0 {
-                         status = "ok";
-                 };
- 
--                usb3: usb3@8a00000 {
-+                usb2_hs_phy: hsphy@a8000 {
-                         status = "ok";
-                 };
- 
--                usb2: usb2@6000000 {
-+                usb2@0{
-                         status = "ok";
-                 };
- 	};
 --- /dev/null
 +++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk04.1-c1.dts
 @@ -0,0 +1,21 @@
@@ -142,13 +108,13 @@ Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
 +				};
 +			};
 +
-+                        serial_1_pins: serial1_pinmux {
-+                                mux {
-+                                        pins = "gpio8", "gpio9";
-+                                        function = "blsp_uart1";
-+                                        bias-disable;
-+                                };
-+                        };
++                       serial_1_pins: serial1_pinmux {
++				mux {
++					pins = "gpio8", "gpio9";
++					function = "blsp_uart1";
++					bias-disable;
++				};
++			};
 +
 +			spi_0_pins: spi_0_pinmux {
 +				pinmux {
@@ -204,12 +170,12 @@ Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
 +			};
 +		};
 +
-+                i2c_0: i2c@78b7000 { /* BLSP1 QUP2 */
-+                        pinctrl-0 = <&i2c_0_pins>;
-+                        pinctrl-names = "default";
++		i2c_0: i2c@78b7000 { /* BLSP1 QUP2 */
++			pinctrl-0 = <&i2c_0_pins>;
++			pinctrl-names = "default";
 +
 +			status = "ok";
-+                };
++		};
 +
 +		serial@78af000 {
 +			pinctrl-0 = <&serial_0_pins>;
@@ -217,31 +183,31 @@ Signed-off-by: Matthew McClintock <mmcclint@codeaurora.org>
 +			status = "ok";
 +		};
 +
-+                serial@78b0000 {
-+                        pinctrl-0 = <&serial_1_pins>;
-+                        pinctrl-names = "default";
-+                        status = "ok";
-+                };
++		serial@78b0000 {
++			pinctrl-0 = <&serial_1_pins>;
++			pinctrl-names = "default";
++			status = "ok";
++		};
 +
-+                usb3_ss_phy: ssphy@9a000 {
-+                        status = "ok";
-+                };
++		usb3_ss_phy: ssphy@9a000 {
++			status = "ok";
++		};
 +
-+                usb3_hs_phy: hsphy@a6000 {
-+                        status = "ok";
-+                };
++		usb3_hs_phy: hsphy@a6000 {
++			status = "ok";
++		};
 +
-+                usb3: usb3@0 {
-+                        status = "ok";
-+                };
++		usb3: usb3@8af8800 {
++			status = "ok";
++		};
 +
-+                usb2_hs_phy: hsphy@a8000 {
-+                        status = "ok";
-+                };
++		usb2_hs_phy: hsphy@a8000 {
++			status = "ok";
++		};
 +
-+                usb2: usb2@6000000 {
-+                        status = "ok";
-+                };
++		usb2: usb2@60f8800 {
++			status = "ok";
++		};
 +
 +		cryptobam: dma@8e04000 {
 +			status = "ok";

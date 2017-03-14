@@ -1,18 +1,24 @@
-From 04d3f9be0ce80fac99d4ca1f46faf3605258ca1f Mon Sep 17 00:00:00 2001
+From e73682ec4455c34f3f3edc7f40d90ed297521012 Mon Sep 17 00:00:00 2001
 From: Senthilkumar N L <snlakshm@codeaurora.org>
 Date: Tue, 6 Jan 2015 12:52:23 +0530
-Subject: [PATCH 23/69] qcom: ipq4019: Add IPQ4019 USB HS/SS PHY drivers
+Subject: [PATCH] qcom: ipq4019: Add IPQ4019 USB HS/SS PHY drivers
 
 These drivers handles control and configuration of the HS
 and SS USB PHY transceivers.
 
 Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
+Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
+
+---
+Changed:
+	- replaced spaces with tabs
+	- remove emulation and host variables
 ---
  drivers/usb/phy/Kconfig          |  11 ++
  drivers/usb/phy/Makefile         |   2 +
- drivers/usb/phy/phy-qca-baldur.c | 262 +++++++++++++++++++++++++++++++++++++++
- drivers/usb/phy/phy-qca-uniphy.c | 171 +++++++++++++++++++++++++
- 4 files changed, 446 insertions(+)
+ drivers/usb/phy/phy-qca-baldur.c | 233 +++++++++++++++++++++++++++++++++++++++
+ drivers/usb/phy/phy-qca-uniphy.c | 141 +++++++++++++++++++++++
+ 4 files changed, 387 insertions(+)
  create mode 100644 drivers/usb/phy/phy-qca-baldur.c
  create mode 100644 drivers/usb/phy/phy-qca-uniphy.c
 
@@ -42,14 +48,14 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
  obj-$(CONFIG_USB_ISP1301)		+= phy-isp1301.o
  obj-$(CONFIG_USB_MSM_OTG)		+= phy-msm-usb.o
  obj-$(CONFIG_USB_QCOM_8X16_PHY)	+= phy-qcom-8x16-usb.o
-+obj-$(CONFIG_USB_IPQ4019_PHY)           += phy-qca-baldur.o
-+obj-$(CONFIG_USB_IPQ4019_PHY)           += phy-qca-uniphy.o
++obj-$(CONFIG_USB_IPQ4019_PHY)		+= phy-qca-baldur.o
++obj-$(CONFIG_USB_IPQ4019_PHY)		+= phy-qca-uniphy.o
  obj-$(CONFIG_USB_MV_OTG)		+= phy-mv-usb.o
  obj-$(CONFIG_USB_MXS_PHY)		+= phy-mxs-usb.o
  obj-$(CONFIG_USB_ULPI)			+= phy-ulpi.o
 --- /dev/null
 +++ b/drivers/usb/phy/phy-qca-baldur.c
-@@ -0,0 +1,262 @@
+@@ -0,0 +1,233 @@
 +/* Copyright (c) 2015, The Linux Foundation. All rights reserved.
 + *
 + * Permission to use, copy, modify, and/or distribute this software for any
@@ -88,29 +94,13 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +#define PHY_MISC_ADDR	0x024
 +#define PHY_IPG_ADDR	0x030
 +
-+#define PHY_CTRL0_EMU_ADDR	0x180
-+#define PHY_CTRL1_EMU_ADDR	0x184
-+#define PHY_CTRL2_EMU_ADDR	0x188
-+#define PHY_CTRL3_EMU_ADDR	0x18C
-+#define PHY_CTRL4_EMU_ADDR	0x190
-+#define PHY_MISC_EMU_ADDR	0x1A4
-+#define PHY_IPG_EMU_ADDR	0x1B0
-+
 +#define PHY_CTRL0_VAL	0xA4600015
 +#define PHY_CTRL1_VAL	0x09500000
 +#define PHY_CTRL2_VAL	0x00058180
 +#define PHY_CTRL3_VAL	0x6DB6DCD6
 +#define PHY_CTRL4_VAL	0x836DB6DB
 +#define PHY_MISC_VAL	0x3803FB0C
-+#define PHY_IPG_VAL		0x47323232
-+
-+#define PHY_CTRL0_EMU_VAL	0xb4000015
-+#define PHY_CTRL1_EMU_VAL	0x09500000
-+#define PHY_CTRL2_EMU_VAL	0x00058180
-+#define PHY_CTRL3_EMU_VAL	0x6DB6DCD6
-+#define PHY_CTRL4_EMU_VAL	0x836DB6DB
-+#define PHY_MISC_EMU_VAL	0x3803FB0C
-+#define PHY_IPG_EMU_VAL		0x47323232
++#define PHY_IPG_VAL	0x47323232
 +
 +#define USB30_HS_PHY_HOST_MODE	(0x01 << 21)
 +#define USB20_HS_PHY_HOST_MODE	(0x01 << 5)
@@ -131,12 +121,10 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +	struct reset_control *por_rst;
 +	struct reset_control *srif_rst;
 +
-+	unsigned int host;
-+	unsigned int emulation;
 +	const struct qca_baldur_hs_data *data;
 +};
 +
-+#define	phy_to_dw_phy(x)	container_of((x), struct qca_baldur_hs_phy, phy)
++#define phy_to_dw_phy(x) container_of((x), struct qca_baldur_hs_phy, phy)
 +
 +static int qca_baldur_phy_read(struct usb_phy *x, u32 reg)
 +{
@@ -155,7 +143,7 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +
 +static int qca_baldur_hs_phy_init(struct usb_phy *x)
 +{
-+	struct qca_baldur_hs_phy	*phy = phy_to_dw_phy(x);
++	struct qca_baldur_hs_phy *phy = phy_to_dw_phy(x);
 +
 +	/* assert HS PHY POR reset */
 +	reset_control_assert(phy->por_rst);
@@ -169,25 +157,14 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +	reset_control_deassert(phy->srif_rst);
 +	msleep(10);
 +
-+	if (!phy->emulation) {
-+		/* perform PHY register writes */
-+		writel(PHY_CTRL0_VAL, phy->base + PHY_CTRL0_ADDR);
-+		writel(PHY_CTRL1_VAL, phy->base + PHY_CTRL1_ADDR);
-+		writel(PHY_CTRL2_VAL, phy->base + PHY_CTRL2_ADDR);
-+		writel(PHY_CTRL3_VAL, phy->base + PHY_CTRL3_ADDR);
-+		writel(PHY_CTRL4_VAL, phy->base + PHY_CTRL4_ADDR);
-+		writel(PHY_MISC_VAL, phy->base + PHY_MISC_ADDR);
-+		writel(PHY_IPG_VAL, phy->base + PHY_IPG_ADDR);
-+	} else {
-+		/* perform PHY register writes */
-+		writel(PHY_CTRL0_EMU_VAL, phy->base + PHY_CTRL0_EMU_ADDR);
-+		writel(PHY_CTRL1_EMU_VAL, phy->base + PHY_CTRL1_EMU_ADDR);
-+		writel(PHY_CTRL2_EMU_VAL, phy->base + PHY_CTRL2_EMU_ADDR);
-+		writel(PHY_CTRL3_EMU_VAL, phy->base + PHY_CTRL3_EMU_ADDR);
-+		writel(PHY_CTRL4_EMU_VAL, phy->base + PHY_CTRL4_EMU_ADDR);
-+		writel(PHY_MISC_EMU_VAL, phy->base + PHY_MISC_EMU_ADDR);
-+		writel(PHY_IPG_EMU_VAL, phy->base + PHY_IPG_EMU_ADDR);
-+	}
++	/* perform PHY register writes */
++	writel(PHY_CTRL0_VAL, phy->base + PHY_CTRL0_ADDR);
++	writel(PHY_CTRL1_VAL, phy->base + PHY_CTRL1_ADDR);
++	writel(PHY_CTRL2_VAL, phy->base + PHY_CTRL2_ADDR);
++	writel(PHY_CTRL3_VAL, phy->base + PHY_CTRL3_ADDR);
++	writel(PHY_CTRL4_VAL, phy->base + PHY_CTRL4_ADDR);
++	writel(PHY_MISC_VAL, phy->base + PHY_MISC_ADDR);
++	writel(PHY_IPG_VAL, phy->base + PHY_IPG_ADDR);
 +
 +	msleep(10);
 +
@@ -234,7 +211,7 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +
 +static void qca_baldur_hs_phy_shutdown(struct usb_phy *x)
 +{
-+	struct qca_baldur_hs_phy   *phy = phy_to_dw_phy(x);
++	struct qca_baldur_hs_phy *phy = phy_to_dw_phy(x);
 +
 +	qca_baldur_hs_put_resources(phy);
 +}
@@ -286,12 +263,12 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +		return err;
 +	}
 +
-+	phy->phy.dev		= phy->dev;
-+	phy->phy.label		= "qca-baldur-hsphy";
-+	phy->phy.init		= qca_baldur_hs_phy_init;
-+	phy->phy.shutdown	= qca_baldur_hs_phy_shutdown;
-+	phy->phy.type		= USB_PHY_TYPE_USB2;
-+	phy->phy.io_ops		= &qca_baldur_io_ops;
++	phy->phy.dev = phy->dev;
++	phy->phy.label = "qca-baldur-hsphy";
++	phy->phy.init = qca_baldur_hs_phy_init;
++	phy->phy.shutdown = qca_baldur_hs_phy_shutdown;
++	phy->phy.type = USB_PHY_TYPE_USB2;
++	phy->phy.io_ops = &qca_baldur_io_ops;
 +
 +	err = usb_add_phy_dev(&phy->phy);
 +	return err;
@@ -314,7 +291,7 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +MODULE_DESCRIPTION("USB3 QCA BALDUR HSPHY driver");
 --- /dev/null
 +++ b/drivers/usb/phy/phy-qca-uniphy.c
-@@ -0,0 +1,171 @@
+@@ -0,0 +1,135 @@
 +/* Copyright (c) 2015, The Linux Foundation. All rights reserved.
 + *
 + * Permission to use, copy, modify, and/or distribute this software for any
@@ -349,37 +326,9 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +	void __iomem *base;
 +
 +	struct reset_control *por_rst;
-+
-+	unsigned int host;
 +};
 +
-+#define	phy_to_dw_phy(x)	container_of((x), struct qca_uni_ss_phy, phy)
-+
-+/**
-+ * Write register
-+ *
-+ * @base - PHY base virtual address.
-+ * @offset - register offset.
-+ */
-+static u32 qca_uni_ss_read(void __iomem *base, u32 offset)
-+{
-+	u32 value;
-+	value = readl_relaxed(base + offset);
-+	return value;
-+}
-+
-+/**
-+ * Write register
-+ *
-+ * @base - PHY base virtual address.
-+ * @offset - register offset.
-+ * @val - value to write.
-+ */
-+static void qca_uni_ss_write(void __iomem *base, u32 offset, u32 val)
-+{
-+	writel(val, base + offset);
-+	udelay(100);
-+}
++#define phy_to_dw_phy(x) container_of((x), struct qca_uni_ss_phy, phy)
 +
 +static void qca_uni_ss_phy_shutdown(struct usb_phy *x)
 +{
@@ -396,9 +345,7 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +	/* assert SS PHY POR reset */
 +	reset_control_assert(phy->por_rst);
 +
-+	msleep(10);
-+
-+	msleep(10);
++	msleep(20);
 +
 +	/* deassert SS PHY POR reset */
 +	reset_control_deassert(phy->por_rst);
@@ -439,14 +386,8 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +
 +static int qca_uni_ss_probe(struct platform_device *pdev)
 +{
-+	const struct of_device_id *match;
-+	struct device_node *np = pdev->dev.of_node;
-+	struct qca_uni_ss_phy  *phy;
++	struct qca_uni_ss_phy *phy;
 +	int ret;
-+
-+	match = of_match_device(qca_uni_ss_id_table, &pdev->dev);
-+	if (!match)
-+		return -ENODEV;
 +
 +	phy = devm_kzalloc(&pdev->dev, sizeof(*phy), GFP_KERNEL);
 +	if (!phy)
@@ -461,22 +402,22 @@ Signed-off-by: Senthilkumar N L <snlakshm@codeaurora.org>
 +		return ret;
 +	}
 +
-+	phy->phy.dev        = phy->dev;
-+	phy->phy.label      = "qca-uni-ssphy";
-+	phy->phy.init       = qca_uni_ss_phy_init;
-+	phy->phy.shutdown   = qca_uni_ss_phy_shutdown;
-+	phy->phy.type       = USB_PHY_TYPE_USB3;
++	phy->phy.dev = phy->dev;
++	phy->phy.label = "qca-uni-ssphy";
++	phy->phy.init = qca_uni_ss_phy_init;
++	phy->phy.shutdown = qca_uni_ss_phy_shutdown;
++	phy->phy.type = USB_PHY_TYPE_USB3;
 +
 +	ret = usb_add_phy_dev(&phy->phy);
 +	return ret;
 +}
 +
 +static struct platform_driver qca_uni_ss_driver = {
-+	.probe		= qca_uni_ss_probe,
-+	.remove		= qca_uni_ss_remove,
-+	.driver		= {
-+		.name	= "qca-uni-ssphy",
-+		.owner	= THIS_MODULE,
++	.probe = qca_uni_ss_probe,
++	.remove	= qca_uni_ss_remove,
++	.driver = {
++		.name = "qca-uni-ssphy",
++		.owner = THIS_MODULE,
 +		.of_match_table = qca_uni_ss_id_table,
 +	},
 +};
