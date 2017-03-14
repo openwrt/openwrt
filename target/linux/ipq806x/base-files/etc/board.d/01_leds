@@ -26,6 +26,11 @@ r7800)
 	ucidef_set_led_netdev "wan" "WAN" "${board}:white:wan" "eth0"
 	ucidef_set_led_ide "esata" "eSATA" "${board}:white:esata"
 	;;
+fritz4040)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt" "phy1tpt"
+	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth1"
+	ucidef_set_led_switch "lan" "LAN" "${board}:green:lan" "switch0" "0x1e"
+	;;
 nbg6817)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:amber:wifi2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:amber:wifi5g" "phy0tpt"

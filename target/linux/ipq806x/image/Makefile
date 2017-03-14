@@ -5,8 +5,6 @@ include $(INCLUDE_DIR)/image.mk
 
 UBIFS_OPTS = -m 2048 -e 124KiB -c 4096 -U -F
 
-KERNEL_LOADADDR := 0x42208000
-
 define Image/Prepare
 	$(CP) $(LINUX_DIR)/vmlinux $(KDIR)/$(IMG_PREFIX)-vmlinux.elf
 endef
@@ -30,6 +28,7 @@ define Device/Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
+	KERNEL_LOADADDR = 0x42208000
 	SUPPORTED_DEVICES = $$(BOARD_NAME)
 	IMAGE/sysupgrade.tar = sysupgrade-tar | append-metadata
 endef
@@ -43,6 +42,12 @@ endef
 define Device/FitImage
 	KERNEL_SUFFIX := -fit-uImage.itb
 	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+	KERNEL_NAME := Image
+endef
+
+define Device/FitImageLzma
+	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 
@@ -165,6 +170,20 @@ define Device/EA8500
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
 
+define Device/FRITZ4040
+	$(call Device/FitImageLzma)
+	DEVICE_DTS := qcom-ipq4019-fritz4040
+	KERNEL_LOADADDR := 0x80208000
+	BLOCKSIZE := 4k
+	PAGESIZE := 256
+	BOARD_NAME := fritz4040
+	DEVICE_TITLE := AVM Fritz!Box 4040
+	IMAGE_SIZE := 29753344
+	IMAGES = sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := kmod-usb-phy-qcom-ipq4019 ipq-wifi-fritz4040 fritz-tools u-boot-fritz4040
+endef
+
 define Device/R7500
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8064-r7500
@@ -231,6 +250,7 @@ define Device/VR2600v
 	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
 endef
 
-TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 R7500 R7500v2 R7800 NBG6817 VR2600v
+TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 FRITZ4040 R7500 \
+		  R7500v2 R7800 NBG6817 VR2600v
 
 $(eval $(call BuildImage))
