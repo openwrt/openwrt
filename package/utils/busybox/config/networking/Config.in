@@ -704,6 +704,19 @@ config BUSYBOX_CONFIG_NSLOOKUP
 	default BUSYBOX_DEFAULT_NSLOOKUP
 	help
 	  nslookup is a tool to query Internet name servers.
+config BUSYBOX_CONFIG_NSLOOKUP_LEDE
+	bool "nslookup_lede"
+	depends on !BUSYBOX_CONFIG_NSLOOKUP
+	default BUSYBOX_DEFAULT_NSLOOKUP_LEDE
+	help
+	  nslookup is a tool to query Internet name servers (LEDE flavor).
+
+config BUSYBOX_CONFIG_FEATURE_NSLOOKUP_LEDE_LONG_OPTIONS
+       bool "Enable long options"
+       default BUSYBOX_DEFAULT_FEATURE_NSLOOKUP_LEDE_LONG_OPTIONS
+       depends on BUSYBOX_CONFIG_NSLOOKUP_LEDE && BUSYBOX_CONFIG_LONG_OPTS
+       help
+         Support long options for the nslookup applet.
 config BUSYBOX_CONFIG_NTPD
 	bool "ntpd"
 	default BUSYBOX_DEFAULT_NTPD
@@ -1091,7 +1104,7 @@ source udhcp/Config.in
 config BUSYBOX_CONFIG_IFUPDOWN_UDHCPC_CMD_OPTIONS
 	string "ifup udhcpc command line options"
 	default BUSYBOX_DEFAULT_IFUPDOWN_UDHCPC_CMD_OPTIONS
-	depends on BUSYBOX_CONFIG_IFUPDOWN && BUSYBOX_CONFIG_UDHCPC
+	depends on BUSYBOX_CONFIG_IFUP || BUSYBOX_CONFIG_IFDOWN
 	help
 	  Command line options to pass to udhcpc from ifup.
 	  Intended to alter options not available in /etc/network/interfaces.
