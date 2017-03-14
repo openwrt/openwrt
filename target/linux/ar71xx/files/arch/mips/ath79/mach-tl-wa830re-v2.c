@@ -24,12 +24,12 @@
 #include "machtypes.h"
 
 #define TL_WA830REV2_GPIO_LED_WLAN	13
+#define TL_WA830REV2_GPIO_LED_SYSTEM	14
 #define TL_WA830REV2_GPIO_LED_QSS	15
 #define TL_WA830REV2_GPIO_LED_LAN	18
-#define TL_WA830REV2_GPIO_LED_SYSTEM	14
 
+#define TL_WA830REV2_GPIO_BTN_RAEXT	16
 #define TL_WA830REV2_GPIO_BTN_RESET	17
-#define TL_WA830REV2_GPIO_SW_RFKILL	16	/* WPS for MR3420 v2 */
 
 #define TL_WA830REV2_GPIO_USB_POWER	4
 
@@ -74,12 +74,12 @@ static struct gpio_keys_button tl_wa830re_v2_gpio_keys[] __initdata = {
 		.gpio		= TL_WA830REV2_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
-		.desc		= "RFKILL switch",
-		.type		= EV_SW,
+		.desc		= "Range Ext. button",
+		.type		= EV_KEY,
 		.code		= KEY_RFKILL,
 		.debounce_interval = TL_WA830REV2_KEYS_DEBOUNCE_INTERVAL,
-		.gpio		= TL_WA830REV2_GPIO_SW_RFKILL,
-		.active_low	= 0,
+		.gpio		= TL_WA830REV2_GPIO_BTN_RAEXT,
+		.active_low	= 1,
 	}
 };
 
@@ -120,7 +120,7 @@ static void __init tl_wa830re_v2_setup(void)
 {
 	tl_ap123_setup();
 
-	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa830re_v2_leds_gpio) - 1,
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa830re_v2_leds_gpio),
 				 tl_wa830re_v2_leds_gpio);
 
 	ath79_register_gpio_keys_polled(1, TL_WA830REV2_KEYS_POLL_INTERVAL,
