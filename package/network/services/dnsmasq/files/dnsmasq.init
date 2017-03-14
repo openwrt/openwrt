@@ -661,7 +661,7 @@ dhcp_relay_add() {
 
 dnsmasq_start()
 {
-	local cfg="$1" disabled
+	local cfg="$1" disabled resolvfile
 
 	config_get_bool disabled "$cfg" disabled 0
 	[ "$disabled" -gt 0 ] && return 0
@@ -766,7 +766,6 @@ dnsmasq_start()
 	config_list_foreach "$cfg" "addnhosts" append_addnhosts
 	config_list_foreach "$cfg" "bogusnxdomain" append_bogusnxdomain
 	append_parm "$cfg" "leasefile" "--dhcp-leasefile" "/tmp/dhcp.leases"
-	append_parm "$cfg" "resolvfile" "--resolv-file" "/tmp/resolv.conf.auto"
 	append_parm "$cfg" "serversfile" "--servers-file"
 	append_parm "$cfg" "tftp_root" "--tftp-root"
 	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
@@ -788,7 +787,6 @@ dnsmasq_start()
 	config_get_bool readethers "$cfg" readethers
 	[ "$readethers" = "1" -a \! -e "/etc/ethers" ] && touch /etc/ethers
 
-	config_get resolvfile $cfg resolvfile
 	config_get dhcpscript $cfg dhcpscript
 
 	config_get leasefile $cfg leasefile "/tmp/dhcp.leases"
@@ -801,6 +799,8 @@ dnsmasq_start()
 		# So jail doesn't complain if file missing
 		[ -n "$resolvfile" -a \! -e "$resolvfile" ] && touch "$resolvfile"
 	fi
+
+	[ -n "$resolvfile" ] && xappend "--resolv-file=$resolvfile"
 
 	config_get hostsfile "$cfg" dhcphostsfile
 	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
