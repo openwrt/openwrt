@@ -322,6 +322,9 @@ ramips_board_detect() {
 	*"NCS601W")
 		name="ncs601w"
 		;;
+    *"Netprotection NP-A105003201")
+        name="netprotection"
+        ;;
 	*"NW718")
 		name="nw718"
 		;;
