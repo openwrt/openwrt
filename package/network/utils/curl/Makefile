@@ -12,12 +12,10 @@ PKG_VERSION:=7.53.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://curl.haxx.se/download/ \
-	http://www.mirrorspace.org/curl/ \
-	ftp://ftp.sunet.se/pub/www/utilities/curl/ \
-	ftp://ftp.planetmirror.com/pub/curl/ \
-	http://www.mirrormonster.com/curl/download/ \
-	http://curl.mirrors.cyberservers.net/download/
+PKG_SOURCE_URL:=https://dl.uxnr.de/mirror/curl/ \
+	http://curl.mirror.anstey.ca/ \
+	http://curl.askapache.com/download/ \
+	https://curl.haxx.se/download/
 PKG_HASH:=1c7207c06d75e9136a944a2e0528337ce76f15b9ec9ae4bb30d703b59bf530e8
 
 PKG_LICENSE:=MIT
