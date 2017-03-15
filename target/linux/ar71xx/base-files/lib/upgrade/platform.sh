@@ -217,6 +217,7 @@ platform_check_image() {
 	cf-e380ac-v2|\
 	cf-e520n|\
 	cf-e530n|\
+	cpe505n|\
 	cpe830|\
 	cpe870|\
 	dgl-5500-a1|\
@@ -256,6 +257,7 @@ platform_check_image() {
 	nanostation-m|\
 	nbg460n_550n_550nh|\
 	pqi-air-pen|\
+	r602n|\
 	rocket-m-ti|\
 	rocket-m-xw|\
 	rocket-m|\

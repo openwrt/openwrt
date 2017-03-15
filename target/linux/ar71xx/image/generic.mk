@@ -85,6 +85,14 @@ define Device/cf-e530n
 endef
 TARGET_DEVICES += cf-e530n
 
+define Device/cpe505n
+  DEVICE_TITLE := P&W CPE505N
+  BOARDNAME = CPE505N
+  IMAGE_SIZE = 16000k
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += cpe505n
+
 define Device/cpe830
   $(Device/ap90q)
   DEVICE_TITLE := YunCore CPE830
@@ -425,6 +433,15 @@ define Device/jwap230
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += jwap230
+
+define Device/r602n
+  DEVICE_TITLE := P&W R602N
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = R602N
+  IMAGE_SIZE = 16000k
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += r602n
 
 define Device/rnx-n360rt
   $(Device/tplink-4m)

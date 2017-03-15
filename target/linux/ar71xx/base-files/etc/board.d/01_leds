@@ -83,6 +83,7 @@ ap147-010)
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "ap147:green:wlan-2g" "phy0tpt"
 	;;
 ap90q|\
+cpe505n|\
 cpe830|\
 cpe870|\
 dr531)
@@ -92,6 +93,9 @@ dr531)
 	case "$board" in
 	ap90q)
 		ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+		;;
+	cpe505n)
+		ucidef_set_led_wlan "wlan" "WLAN" "$board:blue:wlan" "phy0tpt"
 		;;
 	cpe830|\
 	cpe870)
@@ -502,6 +506,15 @@ pqi-air-pen)
 qihoo-c301)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "qihoo:red:status" "phy1tpt"
 	;;
+r602n|\
+zbt-we1526)
+	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "$board:green:lan1" "switch0" "0x10"
+	ucidef_set_led_switch "lan2" "LAN2" "$board:green:lan2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "$board:green:lan3" "switch0" "0x04"
+	ucidef_set_led_switch "lan4" "LAN4" "$board:green:lan4" "switch0" "0x02"
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	;;
 re450)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "$board:green:lan_data" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LAN Link" "$board:green:lan_link" "eth0" "link"
@@ -845,14 +858,6 @@ xd3200)
 	;;
 z1)
 	ucidef_set_led_netdev "wlan1" "WLAN1" "$board:blue:tricolor0" "wlan1"
-	;;
-zbt-we1526)
-	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth1"
-	ucidef_set_led_switch "lan1" "LAN1" "$board:green:lan1" "switch0" "0x10"
-	ucidef_set_led_switch "lan2" "LAN2" "$board:green:lan2" "switch0" "0x08"
-	ucidef_set_led_switch "lan3" "LAN3" "$board:green:lan3" "switch0" "0x04"
-	ucidef_set_led_switch "lan4" "LAN4" "$board:green:lan4" "switch0" "0x02"
-	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	;;
 zcn-1523h-2)
 	ucidef_set_led_netdev "lan1" "lan1" "zcn-1523h:green:lan1" "eth0"

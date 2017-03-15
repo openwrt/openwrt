@@ -32,6 +32,7 @@ get_status_led() {
 		;;
 	ap132|\
 	ap531b0|\
+	cpe505n|\
 	db120|\
 	dr344|\
 	tew-632brp|\
@@ -279,6 +280,9 @@ get_status_led() {
 		;;
 	pb44)
 		status_led="$board:amber:jump1"
+		;;
+	r602n)
+		status_led="$board:green:wan"
 		;;
 	rb-2011l|\
 	rb-2011uas|\

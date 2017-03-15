@@ -508,6 +508,9 @@ ar71xx_board_detect() {
 		name="cpe210"
 		tplink_pharos_board_detect
 		;;
+	*"CPE505N")
+		name="cpe505n"
+		;;
 	*"CPE510/520")
 		name="cpe510"
 		tplink_pharos_board_detect
@@ -801,6 +804,9 @@ ar71xx_board_detect() {
 		;;
 	*"Qihoo 360 C301")
 		name="qihoo-c301"
+		;;
+	*"R602N")
+		name="r602n"
 		;;
 	*"R6100")
 		name="r6100"
