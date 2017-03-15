@@ -467,6 +467,12 @@ define Device/zbt-wa05
 endef
 TARGET_DEVICES += zbt-wa05
 
+define Device/zbt-we2026
+  DTS := ZBT-WE2026
+  DEVICE_TITLE := Zbtlink ZBT-WE2026
+endef
+TARGET_DEVICES += zbt-we2026
+
 define Device/zbt-we826
   DTS := ZBT-WE826
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

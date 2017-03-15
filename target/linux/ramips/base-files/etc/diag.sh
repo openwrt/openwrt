@@ -238,7 +238,8 @@ get_status_led() {
 		status_led="$board:amber:power"
 		;;
 	whr-g300n|\
-	wlr-6000)
+	wlr-6000|\
+	zbt-we2026)
 		status_led="$board:red:power"
 		;;
 	wzr-agl300nh)
