@@ -1659,18 +1659,13 @@ config-y += RTL8XXXU_UNTESTED
 config-$(CONFIG_LEDS_TRIGGERS) += MAC80211_LEDS B43_LEDS B43LEGACY_LEDS
 
 MAKE_OPTS:= -C "$(PKG_BUILD_DIR)" \
-	CROSS_COMPILE="$(KERNEL_CROSS)" \
-	ARCH="$(LINUX_KARCH)" \
+	$(KERNEL_MAKE_FLAGS) \
 	EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include $(IREMAP_CFLAGS)" \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=true \
 	KLIB=$(TARGET_MODULES_DIR) \
 	KERNEL_SUBLEVEL=$(lastword $(subst ., ,$(KERNEL_PATCHVER))) \
 	KBUILD_LDFLAGS_MODULE_PREREQ=
-
-ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
-  MAKE_OPTS += V=1
-endif
 
 define ConfigVars
 $(subst $(space),,$(foreach opt,$(config-$(1)),CPTCFG_$(opt)=$(1)
