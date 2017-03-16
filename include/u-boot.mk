@@ -40,6 +40,11 @@ endef
 
 TARGET_DEP = TARGET_$(BUILD_TARGET)$(if $(BUILD_SUBTARGET),_$(BUILD_SUBTARGET))
 
+UBOOT_MAKE_FLAGS = \
+	HOSTCC="$(HOSTCC)" \
+	HOSTCFLAGS='$(HOST_CFLAGS) $$$$(HOSTCPPFLAGS)' \
+	HOSTLDFLAGS=""
+
 define Build/U-Boot/Target
   $(eval $(call U-Boot/Init,$(1)))
   $(eval $(call U-Boot/Default,$(1)))

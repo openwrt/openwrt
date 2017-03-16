@@ -366,6 +366,8 @@ define Build/Prepare
 	$(call CompressVR9Firmware,22f,2)
 endef
 
+UBOOT_MAKE_FLAGS :=
+
 ifeq ($(SUBTARGET),xway)
   SOC:=danube
 else
