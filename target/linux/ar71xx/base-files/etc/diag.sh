@@ -379,6 +379,8 @@ get_status_led() {
 	tl-wr741nd|\
 	tl-wr741nd-v4|\
 	tl-wa801nd-v3|\
+	tl-wr840n-v2|\
+	tl-wr840n-v3|\
 	tl-wr841n-v1|\
 	tl-wr841n-v7|\
 	tl-wr841n-v8|\

@@ -692,6 +692,12 @@ tl-wr941nd-v6)
 	ucidef_set_led_switch "lan4" "LAN4" "tp-link:blue:lan4" "switch0" "0x02"
 	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:blue:wlan" "phy0tpt"
 	;;
+tl-wr840n-v2|\
+tl-wr840n-v3)
+	ucidef_set_led_netdev "wan" "WAN" "tp-link:green:wan" "eth1"
+	ucidef_set_led_switch "lan" "LAN" "tp-link:green:lan" "switch0" "0x1E"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
+	;;
 tl-wr841n-v9|\
 tl-wr841n-v11|\
 tl-wr842n-v3)

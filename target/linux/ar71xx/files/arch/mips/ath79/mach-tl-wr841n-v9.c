@@ -1,9 +1,10 @@
 /*
- *  TP-LINK TL-WR841N/ND v9/v11 / TL-WR842N/ND v3
+ *  TP-LINK TL-WR840N v2/v3 / TL-WR841N/ND v9/v11 / TL-WR842N/ND v3
  *
  *  Copyright (C) 2014 Matthias Schiffer <mschiffer@universe-factory.net>
  *  Copyright (C) 2016 Cezary Jackiewicz <cezary@eko.one.pl>
  *  Copyright (C) 2016 Stijn Segers <francesco.borromini@gmail.com>
+ *  Copyright (C) 2017 Vaclav Svoboda <svoboda@neng.cz>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -24,6 +25,14 @@
 #include "dev-usb.h"
 #include "dev-wmac.h"
 #include "machtypes.h"
+
+#define TL_WR840NV2_GPIO_LED_SYSTEM	15
+#define TL_WR840NV2_GPIO_LED_WLAN	13
+#define TL_WR840NV2_GPIO_LED_WPS	3
+#define TL_WR840NV2_GPIO_LED_WAN	4
+#define TL_WR840NV2_GPIO_LED_LAN	16
+
+#define TL_WR840NV2_GPIO_BTN_RESET	12
 
 #define TL_WR841NV9_GPIO_LED_WLAN	13
 #define TL_WR841NV9_GPIO_LED_QSS	3
@@ -73,6 +82,41 @@ static const char *tl_wr841n_v9_part_probes[] = {
 
 static struct flash_platform_data tl_wr841n_v9_flash_data = {
 	.part_probes	= tl_wr841n_v9_part_probes,
+};
+
+static struct gpio_led tl_wr840n_v2_leds_gpio[] __initdata = {
+	{
+		.name		= "tp-link:green:system",
+		.gpio		= TL_WR840NV2_GPIO_LED_SYSTEM,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:lan",
+		.gpio		= TL_WR840NV2_GPIO_LED_LAN,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:wps",
+		.gpio		= TL_WR840NV2_GPIO_LED_WPS,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:wan",
+		.gpio		= TL_WR840NV2_GPIO_LED_WAN,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:wlan",
+		.gpio		= TL_WR840NV2_GPIO_LED_WLAN,
+		.active_low	= 1,
+	},
+};
+
+static struct gpio_keys_button tl_wr840n_v2_gpio_keys[] __initdata = {
+	{
+		.desc		= "Reset button",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = TL_WR841NV9_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= TL_WR840NV2_GPIO_BTN_RESET,
+		.active_low	= 1,
+	}
 };
 
 static struct gpio_led tl_wr841n_v9_leds_gpio[] __initdata = {
@@ -259,6 +303,25 @@ static void __init tl_ap143_setup(void)
 	ath79_init_mac(tmpmac, mac, 0);
 	ath79_register_wmac(ee, tmpmac);
 }
+
+
+static void __init tl_wr840n_v2_setup(void)
+{
+	tl_ap143_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr840n_v2_leds_gpio),
+				 tl_wr840n_v2_leds_gpio);
+
+	ath79_register_gpio_keys_polled(1, TL_WR841NV9_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wr840n_v2_gpio_keys),
+					tl_wr840n_v2_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WR840N_V2, "TL-WR840N-v2", "TP-LINK TL-WR840N v2",
+	     tl_wr840n_v2_setup);
+
+MIPS_MACHINE(ATH79_MACH_TL_WR840N_V3, "TL-WR840N-v3", "TP-LINK TL-WR840N v3",
+	     tl_wr840n_v2_setup);
 
 static void __init tl_wr841n_v9_setup(void)
 {
