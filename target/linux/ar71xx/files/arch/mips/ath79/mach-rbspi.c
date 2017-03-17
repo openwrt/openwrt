@@ -5,6 +5,7 @@
  *  - MikroTik RouterBOARD 941L-2nD
  *  - MikroTik RouterBOARD 951Ui-2nD
  *  - MikroTik RouterBOARD 952Ui-5ac2nD
+ *  - MikroTik RouterBOARD 962UiGS-5HacT2HnT
  *  - MikroTik RouterBOARD 750UP r2
  *  - MikroTik RouterBOARD 750 r2
  *  - MikroTik RouterBOARD LHG 5nD
@@ -18,6 +19,8 @@
  *  identifier.
  *
  *  Copyright (C) 2017 Thibaut VARENE <varenet@parisc-linux.org>
+ *  Copyright (C) 2016 David Hutchison <dhutchison@bluemesh.net>
+ *  Copyright (C) 2017 Ryan Mounce <ryan@mounce.com.au>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -35,6 +38,8 @@
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+
+#include <linux/ar8216_platform.h>
 
 #include <asm/prom.h>
 #include <asm/mach-ath79/ar71xx_regs.h>
@@ -130,6 +135,7 @@ static struct flash_platform_data rbspi_spi_flash_data = {
 
 /* Several boards only have a single reset button wired to GPIO 16 */
 #define RBSPI_GPIO_BTN_RESET16	16
+#define RBSPI_GPIO_BTN_RESET20	20
 
 static struct gpio_keys_button rbspi_gpio_keys_reset16[] __initdata = {
 	{
@@ -138,6 +144,17 @@ static struct gpio_keys_button rbspi_gpio_keys_reset16[] __initdata = {
 		.code = KEY_RESTART,
 		.debounce_interval = RBSPI_KEYS_DEBOUNCE_INTERVAL,
 		.gpio = RBSPI_GPIO_BTN_RESET16,
+		.active_low = 1,
+	},
+};
+
+static struct gpio_keys_button rbspi_gpio_keys_reset20[] __initdata = {
+	{
+		.desc = "Reset button",
+		.type = EV_KEY,
+		.code = KEY_RESTART,
+		.debounce_interval = RBSPI_KEYS_DEBOUNCE_INTERVAL,
+		.gpio = RBSPI_GPIO_BTN_RESET20,
 		.active_low = 1,
 	},
 };
@@ -233,6 +250,83 @@ static struct gpio_led rb952_leds[] __initdata = {
 		.gpio = RB952_GPIO_LED_LAN5,
 		.active_low = 1,
 	},
+};
+
+
+/* RB 962UiGS-5HacT2HnT gpios */
+#define RB962_GPIO_POE_STATUS	2
+#define RB962_GPIO_POE_POWER	3
+#define RB962_GPIO_LED_USER	12
+#define RB962_GPIO_USB_POWER	13
+
+static struct gpio_led rb962_leds_gpio[] __initdata = {
+	{
+		.name		= "rb:green:user",
+		.gpio		= RB962_GPIO_LED_USER,
+		.active_low	= 1,
+	},
+};
+
+static const struct ar8327_led_info rb962_leds_ar8327[] __initconst = {
+		AR8327_LED_INFO(PHY0_0, HW, "rb:green:port1"),
+		AR8327_LED_INFO(PHY1_0, HW, "rb:green:port2"),
+		AR8327_LED_INFO(PHY2_0, HW, "rb:green:port3"),
+		AR8327_LED_INFO(PHY3_0, HW, "rb:green:port4"),
+		AR8327_LED_INFO(PHY4_0, HW, "rb:green:port5"),
+};
+
+static struct ar8327_pad_cfg rb962_ar8327_pad0_cfg = {
+		.mode = AR8327_PAD_MAC_RGMII,
+		.txclk_delay_en = true,
+		.rxclk_delay_en = true,
+		.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
+		.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+		.mac06_exchange_dis = true,
+};
+
+static struct ar8327_pad_cfg rb962_ar8327_pad6_cfg = {
+		/* Use SGMII interface for GMAC6 of the AR8337 switch */
+		.mode = AR8327_PAD_MAC_SGMII,
+		.rxclk_delay_en = true,
+		.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0,
+};
+
+static struct ar8327_led_cfg rb962_ar8327_led_cfg = {
+		.led_ctrl0 = 0xc737c737,
+		.led_ctrl1 = 0x00000000,
+		.led_ctrl2 = 0x00000000,
+		.led_ctrl3 = 0x0030c300,
+		.open_drain = false,
+};
+
+static struct ar8327_platform_data rb962_ar8327_data = {
+		.pad0_cfg = &rb962_ar8327_pad0_cfg,
+		.pad6_cfg = &rb962_ar8327_pad6_cfg,
+		.port0_cfg = {
+				.force_link = 1,
+				.speed = AR8327_PORT_SPEED_1000,
+				.duplex = 1,
+				.txpause = 1,
+				.rxpause = 1,
+		},
+		.port6_cfg = {
+				.force_link = 1,
+				.speed = AR8327_PORT_SPEED_1000,
+				.duplex = 1,
+				.txpause = 1,
+				.rxpause = 1,
+		},
+		.led_cfg = &rb962_ar8327_led_cfg,
+		.num_leds = ARRAY_SIZE(rb962_leds_ar8327),
+		.leds = rb962_leds_ar8327,
+};
+
+static struct mdio_board_info rb962_mdio0_info[] = {
+		{
+				.bus_id = "ag71xx-mdio.0",
+				.phy_addr = 0,
+				.platform_data = &rb962_ar8327_data,
+		},
 };
 
 /* RB wAP-2nD gpios */
@@ -686,6 +780,68 @@ static void __init rb750upr2_setup(void)
 }
 
 /*
+ * Init the hAP ac / 962UiGS-5HacT2HnT hardware (QCA9558).
+ * The hAP ac has 5 ethernet ports provided by an AR8337 switch. Port 1 is
+ * assigned to WAN, ports 2-5 are assigned to LAN. Port 0 is connected to the
+ * SoC, ports 1-5 of the switch are connected to physical ports 1-5 in order.
+ * The SFP cage is not assigned by default on RouterOS. Extra work is required
+ * to support this interface as it is directly connected to the SoC (eth1).
+ * Wireless is provided by a 2.4GHz radio on the SoC (WLAN1) and a 5GHz radio
+ * attached via PCI (QCA9880). Red and green WLAN LEDs are populated however
+ * they are not attached to GPIOs, extra work is required to support these.
+ * PoE and USB output power control is supported.
+ */
+static void __init rb962_setup(void)
+{
+	u32 flags = RBSPI_HAS_USB | RBSPI_HAS_POE | RBSPI_HAS_PCI;
+
+	if (rbspi_platform_setup())
+		return;
+
+	rbspi_peripherals_setup(flags);
+
+	/* Do not call rbspi_network_setup as we have a discrete switch chip */
+	ath79_eth0_pll_data.pll_1000 = 0xae000000;
+	ath79_eth0_pll_data.pll_100 = 0xa0000101;
+	ath79_eth0_pll_data.pll_10 = 0xa0001313;
+
+	ath79_register_mdio(0, 0x0);
+	mdiobus_register_board_info(rb962_mdio0_info,
+					ARRAY_SIZE(rb962_mdio0_info));
+
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+
+	ath79_init_mac(ath79_eth0_data.mac_addr, ath79_mac_base, 0);
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ath79_eth0_data.phy_mask = BIT(0);
+	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
+	ath79_register_eth(0);
+
+	/* WLAN1 MAC is HW MAC + 7 */
+	rbspi_wlan_init(1, 7);
+
+	if (flags & RBSPI_HAS_USB)
+		gpio_request_one(RB962_GPIO_USB_POWER,
+				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+				"USB power");
+
+	/* PoE output GPIO is inverted, set GPIOF_ACTIVE_LOW for consistency */
+	if (flags & RBSPI_HAS_POE)
+		gpio_request_one(RB962_GPIO_POE_POWER,
+				GPIOF_OUT_INIT_HIGH | GPIOF_ACTIVE_LOW |
+					GPIOF_EXPORT_DIR_FIXED,
+				"POE power");
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb962_leds_gpio),
+				rb962_leds_gpio);
+
+	/* This device has a single reset button as gpio 20 */
+	ath79_register_gpio_keys_polled(-1, RBSPI_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(rbspi_gpio_keys_reset20),
+					rbspi_gpio_keys_reset20);
+}
+
+/*
  * Init the LHG hardware (AR9344).
  * The LHG 5nD has a single ethernet port connected to PHY0.
  * Wireless is provided via 5GHz WLAN1.
@@ -781,6 +937,7 @@ static void __init rbmap_setup(void)
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_952, "952-hb", rb952_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_962, "962", rb962_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_750UPR2, "750-hb", rb750upr2_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_LHG5, "lhg", rblhg_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_WAP, "wap-hb", rbwap_setup);

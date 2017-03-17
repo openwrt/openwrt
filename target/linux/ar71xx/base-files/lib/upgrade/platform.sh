@@ -639,6 +639,7 @@ platform_check_image() {
 	rb-941-2nd|\
 	rb-951ui-2nd|\
 	rb-952ui-5ac2nd|\
+	rb-962uigs-5hact2hnt|\
 	rb-lhg-5nd|\
 	rb-mapl-2nd)
 		return 0
@@ -692,6 +693,7 @@ platform_pre_upgrade() {
 	rb-941-2nd|\
 	rb-951ui-2nd|\
 	rb-952ui-5ac2nd|\
+	rb-962uigs-5hact2hnt|\
 	rb-lhg-5nd|\
 	rb-mapl-2nd)
 		# erase firmware if booted from initramfs

@@ -127,7 +127,8 @@ case "$FIRMWARE" in
 		ath10kcal_extract "ART" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
 		;;
-	rb-911g-5hpacd)
+	rb-911g-5hpacd | \
+	rb-962uigs-5hact2hnt)
 		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
 		;;
 	esac
