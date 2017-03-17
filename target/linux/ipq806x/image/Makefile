@@ -194,7 +194,7 @@ define Device/R7500
 	PAGESIZE := 2048
 	BOARD_NAME := r7500
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+	DEVICE_PACKAGES := ath10k-firmware-qca988x
 endef
 
 define Device/R7500v2
