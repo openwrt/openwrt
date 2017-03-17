@@ -1,14 +1,5 @@
 #!/bin/sh
 
-lantiq_board_model() {
-	local model
-
-	[ -f /tmp/sysinfo/model ] && model=$(cat /tmp/sysinfo/model)
-	[ -z "$model" ] && model="unknown"
-
-	echo "$model"
-}
-
 lantiq_get_dt_led() {
 	local label
 	local ledpath
