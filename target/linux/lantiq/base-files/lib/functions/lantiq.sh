@@ -9,15 +9,6 @@ lantiq_board_model() {
 	echo "$model"
 }
 
-lantiq_board_name() {
-	local name
-
-	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
-	[ -z "$name" ] && name="unknown"
-
-	echo "$name"
-}
-
 lantiq_get_dt_led() {
 	local label
 	local ledpath
