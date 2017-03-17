@@ -176,6 +176,7 @@ platform_check_image() {
 	widora,neo-32m|\
 	mqmaker,witi-256m|\
 	mqmaker,witi-512m|\
+	u35wf |\
 	wizfi630a|\
 	wl-330n|\
 	wl-330n3g|\

@@ -478,6 +478,21 @@ define Device/tplink_c20-v1
 endef
 TARGET_DEVICES += tplink_c20-v1
 
+define Device/u35wf
+  DTS := U35WF
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin)
+  DEVICE_TITLE := Kimax U35WF
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ohci kmod-mt76 \
+  			kmod-usb-ledtrig-usbport kmod-ata-core kmod-scsi-core kmod-usb-storage  \
+  			kmod-usb-storage-extras swap-utils wipefs mount-utils kmod-nls-utf8  \
+  			kmod-nls-base kmod-fs-btrfs kmod-fs-ext4 kmod-fs-exfat kmod-fs-msdos  \
+  			kmod-fs-ntfs kmod-fs-vfat mkdosfs ntfs-3g fdisk cfdisk hdparm e2fsprogs  \
+  			btrfs-progs block-mount blkid usbutils 
+endef
+TARGET_DEVICES += u35wf
+
 define Device/vonets_var11n-300
   DTS := VAR11N-300
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
