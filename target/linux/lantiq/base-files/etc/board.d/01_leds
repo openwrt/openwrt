@@ -32,7 +32,7 @@ led_internet="$(lantiq_get_dt_led internet)"
 	ucidef_set_led_netdev "internet" "internet" "$led_internet" "$interface"
 }
 
-board=$(lantiq_board_name)
+board=$(board_name)
 
 case "$board" in
 ARV4525PW)

@@ -5,7 +5,6 @@
 
 . /lib/functions.sh
 . /lib/functions/system.sh
-. /lib/functions/lantiq.sh
 . /lib/upgrade/nand.sh
 
 # xor multiple hex values of the same length
@@ -114,7 +113,7 @@ case "$FIRMWARE" in
 	"ath9k-eeprom-pci-0000:00:0e.0.bin" | \
 	"ath9k-eeprom-pci-0000:01:00.0.bin" | \
 	"ath9k-eeprom-pci-0000:02:00.0.bin")
-		board=$(lantiq_board_name)
+		board=$(board_name)
 
 		case "$board" in
 			ARV7518PW)

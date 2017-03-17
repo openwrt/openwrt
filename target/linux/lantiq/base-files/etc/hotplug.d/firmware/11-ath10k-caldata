@@ -5,7 +5,6 @@
 
 . /lib/functions.sh
 . /lib/functions/system.sh
-. /lib/functions/lantiq.sh
 . /lib/upgrade/nand.sh
 
 ath10k_caldata_die() {
@@ -37,7 +36,7 @@ ath10k_caldata_set_macaddr() {
 
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:02:00.0.bin")
-	board=$(lantiq_board_name)
+	board=$(board_name)
 	case $board in
 		BTHOMEHUBV5A)
 			ath10k_caldata_extract_ubi "caldata" 20480 2116
