@@ -6,15 +6,13 @@
 # See /LICENSE for more information.
 #
 
-. /lib/pistachio.sh
-
 RAMFS_COPY_BIN="/usr/sbin/fw_printenv /usr/sbin/fw_setenv /bin/mkdir /bin/dmesg /bin/sed /bin/grep"
 RAMFS_COPY_DATA="/etc/fw_env.config"
 REQUIRE_IMAGE_METADATA=0
 
 platform_check_image()
 {
-	local board=$(pistachio_board_name)
+	local board=$(board_name)
 
 	nand_do_platform_check $board $1
 	return $?
@@ -32,7 +30,7 @@ platform_pre_upgrade() {
 }
 
 platform_nand_pre_upgrade() {
-	local board=$(pistachio_board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	marduk)

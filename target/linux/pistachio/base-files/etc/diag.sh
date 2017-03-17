@@ -7,7 +7,6 @@
 #
 
 . /lib/functions/leds.sh
-. /lib/pistachio.sh
 
 status_led="marduk:red:heartbeat"
 

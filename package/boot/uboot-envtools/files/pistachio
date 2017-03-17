@@ -10,11 +10,10 @@
 
 touch /etc/config/ubootenv
 
-. /lib/pistachio.sh
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
 
-board=$(pistachio_board_name)
+board=$(board_name)
 
 case "$board" in
 marduk)
