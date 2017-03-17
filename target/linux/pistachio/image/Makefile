@@ -24,6 +24,7 @@ define Device/Default
 endef
 
 define Device/marduk
+  BOARD_NAME := img,pistachio-marduk
   DEVICE_DTS := img/pistachio_marduk
   BLOCKSIZE := 256KiB
   PAGESIZE := 4KiB

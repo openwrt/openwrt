@@ -33,7 +33,7 @@ platform_nand_pre_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	marduk)
+	img,pistachio-marduk)
 		local boot_partition=$(dmesg | grep "ubi0: attached.*" | sed "s/^.*\(firmware[0-1]\).*/\1/g")
 
 		echo "Current boot partiton $boot_partition (/dev/mtd$(find_mtd_index $boot_partition))"
