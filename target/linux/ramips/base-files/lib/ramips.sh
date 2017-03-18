@@ -415,6 +415,12 @@ ramips_board_detect() {
 	*"ZTE Q7")
 		name="zte-q7"
 		;;
+	*"PHICOMM PSG1218/K2")
+ 		name="psg1218"
+		;;
+ 	*"PHICOMM PSG1218/K2")
+ 		name="psg1218-16m"
+ 		;;
 	*"Lenovo Y1")
 		name="y1"
 		;;
