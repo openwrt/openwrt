@@ -33,7 +33,8 @@ ramips_setup_interfaces()
 
 	case $board in
 	11acnas|\
-	w2914nsv2)
+	w2914nsv2|\
+	zbt-we2026)
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan:5" "6@eth0"
 		;;
@@ -107,7 +108,6 @@ ramips_setup_interfaces()
 	y1|\
 	youku-yk1|\
 	zbt-ape522ii|\
-	zbt-we2026|\
 	zbt-we826|\
 	zbt-wg2626|\
 	zbt-wg3526|\
