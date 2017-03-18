@@ -127,6 +127,8 @@ platform_check_image() {
 	xiaomi-miwifi-mini |\
 	y1 |\
 	y1s |\
+	psg1218 |\
+ 	psg1218-16m |\
 	zbt-wa05 |\
 	zbt-wg2626 |\
 	zte-q7)
