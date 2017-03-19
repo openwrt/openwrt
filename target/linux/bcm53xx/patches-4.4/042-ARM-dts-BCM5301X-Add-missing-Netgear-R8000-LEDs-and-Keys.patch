@@ -1,0 +1,57 @@
+From: Aditya Xavier <adityaxavier@gmail.com>
+
+Added two WAN status LEDs and a GPIO Key for Brightness which were missing.
+
+Signed-off-by: Aditya Xavier <adityaxavier@gmail.com>
+---
+ arch/arm/boot/dts/bcm4709-netgear-r8000.dts | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
+@@ -27,18 +27,30 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		power0 {
++		power-white {
+ 			label = "bcm53xx:white:power";
+ 			gpios = <&chipcommon 2 GPIO_ACTIVE_LOW>;
+ 			linux,default-trigger = "default-on";
+ 		};
+ 
+-		power1 {
++		power-amber {
+ 			label = "bcm53xx:amber:power";
+ 			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
+ 			linux,default-trigger = "default-off";
+ 		};
+ 
++		wan-white {
++			label = "bcm53xx:white:wan";
++			gpios = <&chipcommon 8 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		wan-amber {
++			label = "bcm53xx:amber:wan";
++			gpios = <&chipcommon 9 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "default-off";
++		};
++
+ 		5ghz-1 {
+ 			label = "bcm53xx:white:5ghz-1";
+ 			gpios = <&chipcommon 12 GPIO_ACTIVE_LOW>;
+@@ -104,6 +116,12 @@
+ 			linux,code = <KEY_RESTART>;
+ 			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
+ 		};
++
++		brightness {
++			label = "Backlight";
++			linux,code = <KEY_BRIGHTNESS_ZERO>;
++			gpios = <&chipcommon 19 GPIO_ACTIVE_LOW>;
++		};
+ 	};
+ };
+ 
