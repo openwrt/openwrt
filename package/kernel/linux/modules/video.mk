@@ -186,7 +186,7 @@ define KernelPackage/drm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Direct Rendering Manager (DRM) support
   HIDDEN:=1
-  DEPENDS:=+kmod-dma-buf
+  DEPENDS:=+kmod-dma-buf +kmod-i2c-core
   KCONFIG:=CONFIG_DRM \
 	CONFIG_DRM_FBDEV_EMULATION=n \
 	CONFIG_DRM_LOAD_EDID_FIRMWARE=n \
