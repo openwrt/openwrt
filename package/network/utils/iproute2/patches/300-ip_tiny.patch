@@ -1,6 +1,6 @@
 --- a/ip/Makefile
 +++ b/ip/Makefile
-@@ -17,6 +17,13 @@ ifeq ($(IP_CONFIG_SETNS),y)
+@@ -19,6 +19,13 @@ ifeq ($(IP_CONFIG_SETNS),y)
  	CFLAGS += -DHAVE_SETNS
  endif
  
@@ -14,7 +14,7 @@
  ALLOBJ=$(IPOBJ) $(RTMONOBJ)
  SCRIPTS=ifcfg rtpr routel routef
  TARGETS=ip rtmon
-@@ -44,7 +51,7 @@ else
+@@ -48,7 +55,7 @@ else
  
  ip: static-syms.o
  static-syms.o: static-syms.h
@@ -25,7 +25,7 @@
  		sed -n '/'$$s'[^ ]* =/{s:.* \([^ ]*'$$s'[^ ]*\) .*:extern char \1[] __attribute__((weak)); if (!strcmp(sym, "\1")) return \1;:;p}' $$files ; \
 --- a/ip/ip.c
 +++ b/ip/ip.c
-@@ -73,30 +73,42 @@ static const struct cmd {
+@@ -74,32 +74,44 @@ static const struct cmd {
  	int (*func)(int argc, char **argv);
  } cmds[] = {
  	{ "address",	do_ipaddr },
@@ -46,6 +46,8 @@
  	{ "l2tp",	do_ipl2tp },
  	{ "fou",	do_ipfou },
 +#endif
+ 	{ "ila",	do_ipila },
+ 	{ "macsec",	do_ipmacsec },
  	{ "tunnel",	do_iptunnel },
  	{ "tunl",	do_iptunnel },
 +#ifndef IPROUTE2_TINY
@@ -65,12 +67,12 @@
 +#ifndef IPROUTE2_TINY
  	{ "netconf",	do_ipnetconf },
 +#endif
+ 	{ "vrf",	do_ipvrf},
  	{ "help",	do_help },
  	{ 0 }
- };
 --- a/lib/utils.c
 +++ b/lib/utils.c
-@@ -710,6 +710,7 @@ const char *rt_addr_n2a(int af, int len,
+@@ -777,6 +777,7 @@ const char *rt_addr_n2a_r(int af, int le
  		return inet_ntop(af, addr, buf, buflen);
  	case AF_MPLS:
  		return mpls_ntop(af, addr, buf, buflen);
@@ -78,7 +80,7 @@
  	case AF_IPX:
  		return ipx_ntop(af, addr, buf, buflen);
  	case AF_DECnet:
-@@ -718,6 +719,7 @@ const char *rt_addr_n2a(int af, int len,
+@@ -786,6 +787,7 @@ const char *rt_addr_n2a_r(int af, int le
  		memcpy(dna.a_addr, addr, 2);
  		return dnet_ntop(af, &dna, buf, buflen);
  	}
