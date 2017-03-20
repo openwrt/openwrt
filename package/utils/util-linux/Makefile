@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.28
+PKG_VERSION:=2.29.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.28
-PKG_HASH:=395847e2a18a2c317170f238892751e73a57104565344f8644090c8b091014bb
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.29
+PKG_HASH:=accea4d678209f97f634f40a93b7e9fcad5915d1f4749f6c47bee6bf110fe8e3
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=	COPYING					\
@@ -440,7 +440,8 @@ CONFIGURE_ARGS += \
 	--without-python	\
 	--without-udev		\
 	--without-readline	\
-	$(if $(CONFIG_PACKAGE_cal)$(CONFIG_PACKAGE_cfdisk)$(CONFIG_PACKAGE_setterm),--with-ncurses,--without-ncurses)
+	--disable-more		\
+	$(if $(CONFIG_PACKAGE_cal)$(CONFIG_PACKAGE_cfdisk)$(CONFIG_PACKAGE_setterm),--with-ncursesw,--without-ncurses)
 
 TARGET_CFLAGS += $(FPIC) -std=gnu99
 
