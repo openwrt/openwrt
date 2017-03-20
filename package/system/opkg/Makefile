@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2006-2015 OpenWrt.org
-# Copyright (C) 2016 LEDE Project
+# Copyright (C) 2016-2017 LEDE Project
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -16,9 +16,9 @@ PKG_FLAGS:=essential
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.lede-project.org/project/opkg-lede.git
-PKG_SOURCE_DATE:=2017-03-23
-PKG_SOURCE_VERSION:=1d0263bb40e3c099501fc1f2431907636230e7f2
-PKG_MIRROR_HASH:=1f527179e60b9404affa5f3c9c506d4249e085bf521f770819b8648273a1010c
+PKG_SOURCE_DATE:=2017-05-02
+PKG_SOURCE_VERSION:=546bc72356c7a6b435540852b10625b7531f2117
+PKG_MIRROR_HASH:=a85976f659d6b5fd30e56e7e2e0ba3ce98582ce8cecc3e134301b40790a1b677
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
