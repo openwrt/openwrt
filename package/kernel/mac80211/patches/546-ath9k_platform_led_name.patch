@@ -7,15 +7,15 @@ Enable platform-supplied WLAN LED name for ath9k device. It replaces generic
 
 Signed-off-by: Michal Cieslakiewicz <michal.cieslakiewicz@wp.pl>
 ---
- drivers/net/wireless/ath/ath9k/gpio.c |   10 +++++++---
- include/linux/ath9k_platform.h        |    1 +
- 2 files changed, 8 insertions(+), 3 deletions(-)
+ drivers/net/wireless/ath/ath9k/gpio.c | 7 +++++--
+ include/linux/ath9k_platform.h        | 1 +
+ 2 files changed, 6 insertions(+), 2 deletions(-)
 
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -155,8 +155,11 @@ void ath_init_leds(struct ath_softc *sc)
- 
- 	ath_fill_led_pin(sc);
+@@ -166,8 +166,11 @@ void ath_init_leds(struct ath_softc *sc)
+ 	if (sc->sc_ah->led_pin < 0)
+ 		return;
  
 -	snprintf(led_name, sizeof(led_name), "ath9k-%s",
 -		 wiphy_name(sc->hw->wiphy));

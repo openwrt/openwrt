@@ -123,17 +123,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ath9k_register_gpio_chip(sc);
 +	ath9k_init_buttons(sc);
  
- 	if (pdata && pdata->led_name)
- 		strncpy(led_name, pdata->led_name, sizeof(led_name));
-@@ -308,7 +378,7 @@ void ath_init_leds(struct ath_softc *sc)
- 	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger,
- 			   !sc->sc_ah->config.led_active_high);
- 
--	if (!pdata)
-+	if (!pdata || !pdata->leds || !pdata->num_leds)
- 		return;
- 
- 	for (i = 0; i < pdata->num_leds; i++)
+ 	if (pdata && pdata->leds && pdata->num_leds)
+ 		for (i = 0; i < pdata->num_leds; i++) {
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
 @@ -50,6 +50,10 @@ struct ath9k_platform_data {

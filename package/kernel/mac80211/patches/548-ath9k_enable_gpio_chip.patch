@@ -221,12 +221,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 +	ath9k_register_gpio_chip(sc);
 +
- 	if (pdata && pdata->led_name)
- 		strncpy(led_name, pdata->led_name, sizeof(led_name));
- 	else
-@@ -178,6 +314,7 @@ void ath_init_leds(struct ath_softc *sc)
- 	for (i = 0; i < pdata->num_leds; i++)
- 		ath_create_platform_led(sc, &pdata->leds[i]);
+ 	if (pdata && pdata->leds && pdata->num_leds)
+ 		for (i = 0; i < pdata->num_leds; i++) {
+ 			if (pdata->leds[i].gpio == sc->sc_ah->led_pin)
+@@ -183,6 +319,7 @@ void ath_init_leds(struct ath_softc *sc)
+ 	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger,
+ 			   !sc->sc_ah->config.led_active_high);
  }
 +
  #endif
