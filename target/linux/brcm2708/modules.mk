@@ -5,6 +5,24 @@
 # See /LICENSE for more information.
 #
 
+define KernelPackage/drm-vc4
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Broadcom VC4 Graphics
+  DEPENDS:=@TARGET_brcm2708 +kmod-drm
+  KCONFIG:=CONFIG_DRM_VC4
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/vc4/vc4.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/drm_kms_helper.ko
+  AUTOLOAD:=$(call AutoProbe,vc4)
+endef
+
+define KernelPackage/drm-vc4/description
+  Direct Rendering Manager (DRM) support for Broadcom VideoCore IV GPU
+  used in BCM2835, BCM2836 and BCM2837 SoCs (e.g. Raspberry Pi).
+endef
+
+$(eval $(call KernelPackage,drm-vc4))
+
 define KernelPackage/sound-arm-bcm2835
   TITLE:=BCM2835 ALSA driver
   KCONFIG:= \
