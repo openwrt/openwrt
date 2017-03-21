@@ -11,7 +11,7 @@
 +#endif
 +
 +#include <lantiq_soc.h>
-+#include <vpe.h>
++#include <asm/vpe.h>
  
  /* device specific headers */
  #include "drv_mps_vmmc.h"
@@ -25,7 +25,7 @@
  /* ============================= */
  /* Local Macros & Definitions    */
  /* ============================= */
-@@ -98,6 +107,7 @@ IFX_int32_t (*ifx_wdog_callback) (IFX_ui
+@@ -98,47 +107,48 @@ IFX_int32_t (*ifx_wdog_callback) (IFX_ui
   */
  IFX_int32_t ifx_mps_fw_wdog_start_ar9()
  {
@@ -33,6 +33,76 @@
     /* vpe1_wdog_ctr should be set up in u-boot as
        "vpe1_wdog_ctr_addr=0xBF2001B0"; protection from incorrect or missing
        setting */
+-   if (vpe1_wdog_ctr != VPE1_WDOG_CTR_ADDR)
+-   {
+-      vpe1_wdog_ctr = VPE1_WDOG_CTR_ADDR;
+-   }
++//   if (vpe1_wdog_ctr != VPE1_WDOG_CTR_ADDR)
++//   {
++//      vpe1_wdog_ctr = VPE1_WDOG_CTR_ADDR;
++//   }
+ 
+    /* vpe1_wdog_timeout should be set up in u-boot as "vpe1_wdog_timeout =
+       <value in ms>"; protection from insane setting */
+-   if (vpe1_wdog_timeout < VPE1_WDOG_TMOUT_MIN)
+-   {
+-      vpe1_wdog_timeout = VPE1_WDOG_TMOUT_MIN;
+-   }
+-   if (vpe1_wdog_timeout > VPE1_WDOG_TMOUT_MAX)
+-   {
+-      vpe1_wdog_timeout = VPE1_WDOG_TMOUT_MAX;
+-   }
++//   if (vpe1_wdog_timeout < VPE1_WDOG_TMOUT_MIN)
++//   {
++//      vpe1_wdog_timeout = VPE1_WDOG_TMOUT_MIN;
++//   }
++//   if (vpe1_wdog_timeout > VPE1_WDOG_TMOUT_MAX)
++//   {
++//      vpe1_wdog_timeout = VPE1_WDOG_TMOUT_MAX;
++//   }
+ 
+    /* recalculate in jiffies */
+-   vpe1_wdog_timeout = vpe1_wdog_timeout * HZ / 1000;
++//   vpe1_wdog_timeout = vpe1_wdog_timeout * HZ / 1000;
+ 
+    /* register BSP callback function */
+-   if (IFX_SUCCESS !=
+-       vpe1_sw_wdog_register_reset_handler (ifx_mps_wdog_callback))
+-   {
+-      TRACE (MPS, DBG_LEVEL_HIGH,
+-             (KERN_ERR "[%s %s %d]: Unable to register WDT callback.\r\n",
+-              __FILE__, __func__, __LINE__));
+-      return IFX_ERROR;;
+-   }
++//   if (IFX_SUCCESS !=
++//       vpe1_sw_wdog_register_reset_handler (ifx_mps_wdog_callback))
++//   {
++//      TRACE (MPS, DBG_LEVEL_HIGH,
++//             (KERN_ERR "[%s %s %d]: Unable to register WDT callback.\r\n",
++//              __FILE__, __func__, __LINE__));
++//      return IFX_ERROR;;
++//   }
+ 
+    /* start software watchdog timer */
+-   if (IFX_SUCCESS != vpe1_sw_wdog_start (0))
+-   {
+-      TRACE (MPS, DBG_LEVEL_HIGH,
+-             (KERN_ERR
+-              "[%s %s %d]: Error starting software watchdog timer.\r\n",
+-              __FILE__, __func__, __LINE__));
+-      return IFX_ERROR;
+-   }
++//   if (IFX_SUCCESS != vpe1_sw_wdog_start (0))
++//   {
++//      TRACE (MPS, DBG_LEVEL_HIGH,
++//             (KERN_ERR
++//              "[%s %s %d]: Error starting software watchdog timer.\r\n",
++//              __FILE__, __func__, __LINE__));
++//      return IFX_ERROR;
++//   }
+    return IFX_SUCCESS;
+ }
+ 
 @@ -292,6 +302,18 @@ IFX_int32_t ifx_mps_download_firmware (m
           decryption. Subtract sizeof(u32) from length to avoid decryption
           of data beyond the FW image code */
@@ -57,10 +127,31 @@
                  ("MPS: FW checksum error: img=0x%08x calc=0x%08x\r\n",
                  pFW_img_data->crc32, cksum));
 -         return IFX_ERROR;
-+         /* return IFX_ERROR; -- FIXME */ 
++         /* return IFX_ERROR; -- FIXME */
        }
     }
     else
+@@ -362,9 +384,9 @@ IFX_void_t ifx_mps_shutdown (IFX_void_t)
+    if (vpe1_started)
+    {
+       /* stop software watchdog timer */
+-      vpe1_sw_wdog_stop (0);
++//      vpe1_sw_wdog_stop (0);
+       /* clean up the BSP callback function */
+-      vpe1_sw_wdog_register_reset_handler (IFX_NULL);
++//      vpe1_sw_wdog_register_reset_handler (IFX_NULL);
+       /* stop VPE1 */
+       vpe1_sw_stop (0);
+       vpe1_started = 0;
+@@ -388,7 +410,7 @@ IFX_void_t ifx_mps_reset (IFX_void_t)
+    if (vpe1_started)
+    {
+       /* stop software watchdog timer first */
+-      vpe1_sw_wdog_stop (0);
++//      vpe1_sw_wdog_stop (0);
+       vpe1_sw_stop (0);
+       vpe1_started = 0;
+    }
 @@ -454,62 +476,62 @@ IFX_int32_t ifx_mps_wdog_callback (IFX_u
  #endif /* DEBUG */
  
