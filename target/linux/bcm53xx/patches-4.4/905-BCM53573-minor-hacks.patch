@@ -29,7 +29,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  		#size-cells = <1>;
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -352,14 +352,6 @@ static int bcma_register_devices(struct
+@@ -348,14 +348,6 @@ static int bcma_register_devices(struct
  	}
  #endif
  
@@ -44,7 +44,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  #ifdef CONFIG_BCMA_NFLASH
  	if (bus->drv_cc.nflash.present) {
  		err = platform_device_register(&bcma_nflash_dev);
-@@ -440,6 +432,14 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -436,6 +428,14 @@ int bcma_bus_register(struct bcma_bus *b
  			bcma_register_core(bus, core);
  	}
  
