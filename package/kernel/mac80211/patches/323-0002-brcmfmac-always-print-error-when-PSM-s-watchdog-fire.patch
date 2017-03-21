@@ -1,6 +1,6 @@
-From e374cb32e98fb49e17594424b0445d8438825413 Mon Sep 17 00:00:00 2001
+From f1ac3aa212af6dd0a36dc07a63f95f91be6f4935 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Fri, 24 Feb 2017 17:18:47 +0100
+Date: Fri, 24 Feb 2017 17:32:46 +0100
 Subject: [PATCH] brcmfmac: always print error when PSM's watchdog fires
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -20,6 +20,7 @@ In the future we may also try to extend this listener by trying to
 recover from the error or at least signal it to the cfg80211.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
  .../wireless/broadcom/brcm80211/brcmfmac/core.c    | 22 ++++++++++++++++++
  .../wireless/broadcom/brcm80211/brcmfmac/debug.c   | 26 +++-------------------
@@ -28,7 +29,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -748,6 +748,24 @@ void brcmf_remove_interface(struct brcmf
+@@ -738,6 +738,24 @@ void brcmf_remove_interface(struct brcmf
  	brcmf_del_if(ifp->drvr, ifp->bsscfgidx, rtnl_locked);
  }
  
@@ -53,7 +54,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  #ifdef CONFIG_INET
  #define ARPOL_MAX_ENTRIES	8
  static int brcmf_inetaddr_changed(struct notifier_block *nb,
-@@ -927,6 +945,10 @@ int brcmf_attach(struct device *dev, str
+@@ -917,6 +935,10 @@ int brcmf_attach(struct device *dev, str
  		goto fail;
  	}
  
