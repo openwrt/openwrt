@@ -221,21 +221,23 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	char led_name[32];
  	const char *trigger;
  	int i;
-@@ -156,6 +291,13 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -156,6 +291,15 @@ void ath_init_leds(struct ath_softc *sc)
  	if (AR_SREV_9100(sc->sc_ah))
  		return;
  
 +	if (!np)
 +		ath9k_register_gpio_chip(sc);
 +
-+	/* setup gpio controller only if requested */
-+	if (of_property_read_bool(np, "gpio-controller"))
++	/* setup gpio controller only if requested and skip the led_pin setup */
++	if (of_property_read_bool(np, "gpio-controller")) {
 +		ath9k_register_gpio_chip(sc);
++		return;
++	}
 +
  	ath_fill_led_pin(sc);
  
  	if (pdata && pdata->leds && pdata->num_leds)
-@@ -183,6 +325,7 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -183,6 +327,7 @@ void ath_init_leds(struct ath_softc *sc)
  	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger,
  			   !sc->sc_ah->config.led_active_high);
  }
