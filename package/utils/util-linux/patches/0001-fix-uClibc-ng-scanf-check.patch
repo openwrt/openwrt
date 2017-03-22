@@ -1,0 +1,34 @@
+From 180c908e2e80552b19bf3552667fc197d6edf7b3 Mon Sep 17 00:00:00 2001
+From: Waldemar Brodkorb <wbx@uclibc-ng.org>
+Date: Fri, 3 Jun 2016 04:13:08 +0200
+Subject: [PATCH] fix uClibc-ng scanf check
+
+uClibc-ng tries to be compatible with GNU libc and defines
+__GLIBC__ and pretend to be version 2.2.
+We once changed it to 2.10, but then some hard to fix problems
+in different software packages (gcc) occured.
+It would be better if we disable the special GNU libc checks
+for uClibc-ng here. uClibc-ng implements the required scanf
+functionality.
+
+Signed-off-by: Waldemar Brodkorb <wbx@uclibc-ng.org>
+---
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index f36b18c..4661c0d 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -581,7 +581,7 @@ AC_CACHE_VAL([scanf_cv_alloc_modifier],
+      #include <stdio.h>
+      #include <unistd.h>
+ 
+-     #ifdef __GLIBC__
++     #if defined(__GLIBC__) && !defined(__UCLIBC__)
+ 
+      #if !(__GLIBC_PREREQ(2, 7))
+      #error %m is not available
+-- 
+2.1.4
+
