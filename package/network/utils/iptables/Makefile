@@ -9,17 +9,16 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
-PKG_VERSION:=1.4.21
-PKG_RELEASE:=2
+PKG_VERSION:=1.6.1
+PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
-	ftp://ftp.be.netfilter.org/pub/netfilter/iptables/ \
-	ftp://ftp.de.netfilter.org/pub/netfilter/iptables/ \
-	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
-PKG_HASH:=52004c68021da9a599feed27f65defcfb22128f7da2c0531c0f75de0f479d3e0
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://git.netfilter.org/iptables
+PKG_SOURCE_VERSION:=7df66f1c13563cfbab75246b009ce36f69ee4487
+PKG_MIRROR_HASH:=22f15ef41fd8e3724bedcee666b7b6a3491d2d038d580ef1fb032718dcb73f14
 
 PKG_FIXUP:=autoreconf
+
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0
@@ -49,6 +48,20 @@ $(call Package/iptables/Default)
   TITLE:=IP firewall administration tool
   MENU:=1
   DEPENDS+= +kmod-ipt-core +libip4tc +IPV6:libip6tc +libxtables
+endef
+
+define Package/iptables/config
+  config IPTABLES_CONNLABEL
+	bool "Enable Connlabel support"
+	default n
+	help
+		This enable connlabel support in iptables.
+
+  config IPTABLES_NFTABLES
+	bool "Enable Nftables support"
+	default n
+	help
+		This enable nftables support in iptables.
 endef
 
 define Package/iptables/description
@@ -413,6 +426,9 @@ define Package/libxtables
  SECTION:=libs
  CATEGORY:=Libraries
  TITLE:=IPv4/IPv6 firewall - shared xtables library
+ DEPENDS:= \
+	+IPTABLES_CONNLABEL:libnetfilter-conntrack \
+	+IPTABLES_NFTABLES:libnfnetlink
 endef
 
 TARGET_CPPFLAGS := \
@@ -431,10 +447,12 @@ TARGET_LDFLAGS += \
 
 CONFIGURE_ARGS += \
 	--enable-shared \
+	--enable-static \
 	--enable-devel \
 	--with-kernel="$(LINUX_DIR)/user_headers" \
 	--with-xtlibdir=/usr/lib/iptables \
-	--enable-static \
+	$(if $(CONFIG_IPTABLES_CONNLABEL),,--disable-connlabel) \
+	$(if $(CONFIG_IPTABLES_NFTABLES),,--disable-nftables) \
 	$(if $(CONFIG_IPV6),,--disable-ipv6)
 
 MAKE_FLAGS := \
