@@ -788,7 +788,7 @@ wnr1000-v2|\
 wnr2000-v3)
 	ucidef_set_led_netdev "wan-amber" "WAN (amber)" "netgear:amber:wan" "eth0"
 	ucidef_set_led_default "wan-green" "WAN (green)" "netgear:green:wan" "0"
-	ucidef_set_led_netdev "wlan" "WLAN" "netgear:blue:wlan" "wlan0"
+	ucidef_set_led_wlan "wlan" "WLAN" "netgear:blue:wlan" "phy0tpt"
 	ucidef_set_led_switch "lan1green" "LAN1 (green)" "netgear:green:lan1" "switch0" "0x02" "0x04"
 	ucidef_set_led_switch "lan2green" "LAN2 (green)" "netgear:green:lan2" "switch0" "0x04" "0x04"
 	ucidef_set_led_switch "lan3green" "LAN3 (green)" "netgear:green:lan3" "switch0" "0x08" "0x04"
@@ -810,7 +810,7 @@ wnr2000-v4)
 wnr2200)
 	ucidef_set_led_netdev "wan-amber" "WAN (amber)" "netgear:amber:wan" "eth0"
 	ucidef_set_led_default "wan-green" "WAN (green)" "netgear:green:wan" "0"
-	ucidef_set_led_netdev "wlan" "WLAN" "netgear:blue:wlan" "wlan0"
+	ucidef_set_led_wlan "wlan" "WLAN" "netgear:blue:wlan" "phy0tpt"
 	ucidef_set_led_switch "lan1green" "LAN1 (green)" "netgear:green:lan1" "switch0" "0x02" "0x04"
 	ucidef_set_led_switch "lan2green" "LAN2 (green)" "netgear:green:lan2" "switch0" "0x04" "0x04"
 	ucidef_set_led_switch "lan3green" "LAN3 (green)" "netgear:green:lan3" "switch0" "0x08" "0x04"
@@ -823,7 +823,7 @@ wnr2200)
 	;;
 wnr612-v2)
 	ucidef_set_led_netdev "wan" "WAN" "netgear:green:wan" "eth0"
-	ucidef_set_led_netdev "wlan" "WLAN" "netgear:green:wlan" "wlan0"
+	ucidef_set_led_wlan "wlan" "WLAN" "netgear:green:wlan" "phy0tpt"
 	ucidef_set_led_switch "lan1" "LAN1" "netgear:green:lan1" "switch0" "0x02" "0x0f"
 	ucidef_set_led_switch "lan2" "LAN2" "netgear:green:lan2" "switch0" "0x04" "0x0f"
 	;;

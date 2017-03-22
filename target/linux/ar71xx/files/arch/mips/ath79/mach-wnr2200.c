@@ -109,8 +109,6 @@ static struct gpio_led wnr2200_leds_gpio[] __initdata = {
 	}
 };
 
-static const char *wnr2200_wmac_led_name = "netgear:blue:wlan";
-
 static struct gpio_led wnr2200_wmac_leds_gpio[] = {
 	{
 		.name		= "netgear:amber:test",
@@ -121,6 +119,10 @@ static struct gpio_led wnr2200_wmac_leds_gpio[] = {
 		.gpio		= WNR2200_GPIO_WMAC_LED_POWER_GREEN,
 		.active_low	= 1,
 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+	}, {
+		.name		= "netgear:blue:wlan",
+		.gpio		= WNR2200_GPIO_WMAC_LED_WLAN_BLUE,
+		.active_low	= 1,
 	}
 };
 
@@ -224,9 +226,6 @@ static void __init wnr2200_setup(void)
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr2200_leds_gpio),
 				 wnr2200_leds_gpio);
-
-	ap9x_pci_setup_wmac_led_pin(0, WNR2200_GPIO_WMAC_LED_WLAN_BLUE);
-	ap9x_pci_setup_wmac_led_name(0, wnr2200_wmac_led_name);
 
 	ap9x_pci_setup_wmac_leds(0, wnr2200_wmac_leds_gpio,
 				 ARRAY_SIZE(wnr2200_wmac_leds_gpio));

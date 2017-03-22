@@ -170,11 +170,12 @@ static struct gpio_led wnr2000v3_wmac_leds_gpio[] = {
 		.name		= "netgear:amber:test",
 		.gpio		= WNR2000V3_GPIO_WMAC_LED_TEST_AMBER,
 		.active_low	= 1,
+	}, {
+		.name		= "netgear:blue:wlan",
+		.gpio		= WNR2000V3_GPIO_WMAC_LED_WLAN_BLUE,
+		.active_low	= 1,
 	}
 };
-
-/* Blue WLAN LED for: WNR2000v3, WNR1000v2, WPN824N */
-static const char *wnr2000v3_wmac_led_name = "netgear:blue:wlan";
 
 static struct gpio_led wnr612v2_leds_gpio[] __initdata = {
 	{
@@ -196,7 +197,13 @@ static struct gpio_led wnr612v2_leds_gpio[] __initdata = {
 	}
 };
 
-static const char *wnr612v2_wmac_led_name = "netgear:green:wlan";
+static struct gpio_led wnr612v2_wmac_leds_gpio[] __initdata = {
+	{
+		.name		= "netgear:green:wlan",
+		.gpio		= WNR612V2_GPIO_WMAC_LED_WLAN_GREEN,
+		.active_low	= 1,
+	}
+};
 
 static struct gpio_led wnr1000v2_leds_gpio[] __initdata = {
 	{
@@ -254,6 +261,10 @@ static struct gpio_led wnr1000v2_wmac_leds_gpio[] = {
 	{
 		.name		= "netgear:green:wps",
 		.gpio		= WNR1000V2_GPIO_WMAC_LED_WPS_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:blue:wlan",
+		.gpio		= WNR1000V2_GPIO_WMAC_LED_WLAN_BLUE,
 		.active_low	= 1,
 	}
 };
@@ -322,6 +333,10 @@ static struct gpio_led wpn824n_wmac_leds_gpio[] = {
 	}, {
 		.name		= "netgear:amber:test",
 		.gpio		= WPN824N_WGPIO_LED_TEST_AMBER,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:blue:wlan",
+		.gpio		= WPN824N_WGPIO_LED_WLAN_BLUE,
 		.active_low	= 1,
 	}
 };
@@ -504,9 +519,6 @@ static void __init wnr2000v3_setup(void)
 					ARRAY_SIZE(wnr2000v3_keys_gpio),
 					wnr2000v3_keys_gpio);
 
-	ap9x_pci_setup_wmac_led_pin(0, WNR2000V3_GPIO_WMAC_LED_WLAN_BLUE);
-	ap9x_pci_setup_wmac_led_name(0, wnr2000v3_wmac_led_name);
-
 	ap9x_pci_setup_wmac_leds(0, wnr2000v3_wmac_leds_gpio,
 				 ARRAY_SIZE(wnr2000v3_wmac_leds_gpio));
 
@@ -548,14 +560,8 @@ static void __init wnr612v2_setup(void)
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr612v2_leds_gpio),
 				 wnr612v2_leds_gpio);
 
-	/*
-	 * This device has no buttons on AR7241 GPIO and no extra LEDs
-	 * connected to AR9285 so setup is simpler than for WNR2000v3.
-	 */
-	ap9x_pci_setup_wmac_led_pin(0, WNR612V2_GPIO_WMAC_LED_WLAN_GREEN);
-	ap9x_pci_setup_wmac_led_name(0, wnr612v2_wmac_led_name);
-
-	ap9x_pci_setup_wmac_leds(0, NULL, 0);
+	ap9x_pci_setup_wmac_leds(0, wnr612v2_wmac_leds_gpio,
+				 ARRAY_SIZE(wnr612v2_leds_gpio));
 
 	ap9x_pci_setup_wmac_btns(0, wnr612v2_wmac_keys_gpio,
 				 ARRAY_SIZE(wnr612v2_wmac_keys_gpio),
@@ -595,9 +601,6 @@ static void __init wnr1000v2_setup(void)
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr1000v2_leds_gpio),
 				 wnr1000v2_leds_gpio);
 
-	ap9x_pci_setup_wmac_led_pin(0, WNR1000V2_GPIO_WMAC_LED_WLAN_BLUE);
-	ap9x_pci_setup_wmac_led_name(0, wnr2000v3_wmac_led_name);
-
 	ap9x_pci_setup_wmac_leds(0, wnr1000v2_wmac_leds_gpio,
 				 ARRAY_SIZE(wnr1000v2_wmac_leds_gpio));
 
@@ -624,8 +627,6 @@ static void __init wpn824n_setup(void)
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wpn824n_leds_gpio),
 				 wpn824n_leds_gpio);
 
-	ap9x_pci_setup_wmac_led_pin(0, WPN824N_WGPIO_LED_WLAN_BLUE);
-	ap9x_pci_setup_wmac_led_name(0, wnr2000v3_wmac_led_name);
 	ap9x_pci_setup_wmac_leds(0, wpn824n_wmac_leds_gpio,
 				 ARRAY_SIZE(wpn824n_wmac_leds_gpio));
 	ap9x_pci_setup_wmac_btns(0, wpn824n_wmac_keys_gpio,

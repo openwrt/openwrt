@@ -20,7 +20,6 @@ void ap9x_pci_setup_wmac_led_pin(unsigned wmac, int pin);
 void ap9x_pci_setup_wmac_gpio(unsigned wmac, u32 mask, u32 val);
 void ap9x_pci_setup_wmac_leds(unsigned wmac, struct gpio_led *leds,
 			      int num_leds);
-void ap9x_pci_setup_wmac_led_name(unsigned wmac, const char *led_name);
 void ap9x_pci_setup_wmac_btns(unsigned wmac, struct gpio_keys_button *btns,
 			      unsigned num_btns, unsigned poll_interval);
 struct ath9k_platform_data *ap9x_pci_get_wmac_data(unsigned wmac);
@@ -37,8 +36,6 @@ static inline void ap9x_pci_setup_wmac_gpio(unsigned wmac,
 static inline void ap9x_pci_setup_wmac_leds(unsigned wmac,
 					    struct gpio_led *leds,
 					    int num_leds) {}
-static inline void ap9x_pci_setup_wmac_led_name(unsigned wmac,
-						const char *led_name) {}
 static inline void ap9x_pci_setup_wmac_btns(unsigned wmac,
 					    struct gpio_keys_button *btns,
 					    unsigned num_btns,

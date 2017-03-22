@@ -39,18 +39,6 @@ __init void ap9x_pci_setup_wmac_led_pin(unsigned wmac, int pin)
 	}
 }
 
-__init void ap9x_pci_setup_wmac_led_name(unsigned wmac, const char *led_name)
-{
-	switch (wmac) {
-	case 0:
-		ap9x_wmac0_data.led_name = led_name;
-		break;
-	case 1:
-		ap9x_wmac1_data.led_name = led_name;
-		break;
-	}
-}
-
 __init struct ath9k_platform_data *ap9x_pci_get_wmac_data(unsigned wmac)
 {
 	switch (wmac) {
