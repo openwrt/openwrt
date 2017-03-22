@@ -239,7 +239,7 @@ define Device/wndr3700
 endef
 
 define Device/wndr3700v2
-$(Device/wndr3700)
+  $(Device/wndr3700)
   DEVICE_TITLE := NETGEAR WNDR3700 v2
   NETGEAR_BOARD_ID = WNDR3700v2
   NETGEAR_KERNEL_MAGIC = 0x33373031
@@ -250,26 +250,26 @@ $(Device/wndr3700)
 endef
 
 define Device/wndr3800
-$(Device/wndr3700v2)
+  $(Device/wndr3700v2)
   DEVICE_TITLE := NETGEAR WNDR3800
   NETGEAR_BOARD_ID = WNDR3800
   NETGEAR_HW_ID = 29763654+16+128
 endef
 
 define Device/wndr3800ch
-$(Device/wndr3800)
+  $(Device/wndr3800)
   DEVICE_TITLE := NETGEAR WNDR3800 (Ch)
   NETGEAR_BOARD_ID = WNDR3800CH
 endef
 
 define Device/wndrmac
-$(Device/wndr3700v2)
+  $(Device/wndr3700v2)
   DEVICE_TITLE := NETGEAR WNDRMAC
   NETGEAR_BOARD_ID = WNDRMAC
 endef
 
 define Device/wndrmacv2
-$(Device/wndr3800)
+  $(Device/wndr3800)
   DEVICE_TITLE := NETGEAR WNDRMAC v2
   NETGEAR_BOARD_ID = WNDRMACv2
 endef
@@ -695,7 +695,7 @@ define Device/seama
 endef
 
 define Device/dir-869-a1
-$(Device/seama)
+  $(Device/seama)
   DEVICE_TITLE := D-Link DIR-869 rev. A1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = DIR-869-A1
@@ -709,7 +709,7 @@ $(Device/seama)
 endef
 
 define Device/mynet-n600
-$(Device/seama)
+  $(Device/seama)
   DEVICE_TITLE := Western Digital My Net N600
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = MYNET-N600
@@ -719,7 +719,7 @@ $(Device/seama)
 endef
 
 define Device/mynet-n750
-$(Device/seama)
+  $(Device/seama)
   DEVICE_TITLE := Western Digital My Net N750
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = MYNET-N750
@@ -729,7 +729,7 @@ $(Device/seama)
 endef
 
 define Device/qihoo-c301
-$(Device/seama)
+  $(Device/seama)
   DEVICE_TITLE := Qihoo C301
   DEVICE_PACKAGES :=  kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME = QIHOO-C301

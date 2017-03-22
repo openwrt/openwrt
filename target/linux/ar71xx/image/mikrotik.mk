@@ -11,14 +11,14 @@ define Device/mikrotik
 endef
 
 define Device/nand-64m
+  $(Device/mikrotik)
   DEVICE_TITLE := MikroTik RouterBoard with 64 MB NAND flash
-$(Device/mikrotik)
   KERNEL := kernel-bin | kernel2minor -s 512 -e -c
 endef
 
 define Device/nand-large
+  $(Device/mikrotik)
   DEVICE_TITLE := MikroTik RouterBoard with >= 128 MB NAND flash
-$(Device/mikrotik)
   KERNEL := kernel-bin | kernel2minor -s 2048 -e -c
 endef
 

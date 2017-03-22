@@ -219,7 +219,7 @@ define Device/ubnt-routerstation
 endef
 
 define Device/ubnt-rs
-$(Device/ubnt-routerstation)
+  $(Device/ubnt-routerstation)
   DEVICE_TITLE := Ubiquiti RouterStation
   BOARDNAME := UBNT-RS
   DEVICE_PROFILE := UBNT UBNTRS
@@ -229,7 +229,7 @@ $(Device/ubnt-routerstation)
 endef
 
 define Device/ubnt-rspro
-$(Device/ubnt-routerstation)
+  $(Device/ubnt-routerstation)
   DEVICE_TITLE := Ubiquiti RouterStation Pro
   BOARDNAME := UBNT-RSPRO
   DEVICE_PROFILE := UBNT UBNTRSPRO
@@ -239,7 +239,7 @@ $(Device/ubnt-routerstation)
 endef
 
 define Device/ubnt-ls-sr71
-$(Device/ubnt-routerstation)
+  $(Device/ubnt-routerstation)
   DEVICE_TITLE := Ubiquiti LS-SR71
   BOARDNAME := UBNT-LS-SR71
   DEVICE_PROFILE := UBNT
@@ -266,7 +266,7 @@ define Device/ubnt-uap-pro
 endef
 
 define Device/ubnt-unifi-outdoor-plus
-$(Device/ubnt-uap-pro)
+  $(Device/ubnt-uap-pro)
   DEVICE_TITLE := Ubiquiti UniFi Outdoor Plus
   UBNT_CHIP := ar7240
   BOARDNAME := UBNT-UOP
