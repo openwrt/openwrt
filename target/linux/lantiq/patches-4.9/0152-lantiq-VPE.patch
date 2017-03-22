@@ -15,7 +15,7 @@
  	default "y"
 --- a/arch/mips/include/asm/vpe.h
 +++ b/arch/mips/include/asm/vpe.h
-@@ -127,4 +127,23 @@ void cleanup_tc(struct tc *tc);
+@@ -127,4 +127,13 @@ void cleanup_tc(struct tc *tc);
  
  int __init vpe_module_init(void);
  void __exit vpe_module_exit(void);
@@ -27,16 +27,6 @@
 +int32_t vpe1_sw_stop(uint32_t flags);
 +uint32_t vpe1_get_load_addr(uint32_t flags);
 +uint32_t vpe1_get_max_mem(uint32_t flags);
-+
-+/* Watchdog APIs */
-+extern uint32_t vpe1_wdog_ctr;
-+extern uint32_t vpe1_wdog_timeout;
-+
-+unsigned long vpe1_sw_wdog_start(unsigned long);
-+unsigned long vpe1_sw_wdog_stop(unsigned long);
-+
-+typedef int (*VPE_SW_WDOG_RESET)(unsigned long wdog_cleared_ok_count);
-+int32_t vpe1_sw_wdog_register_reset_handler(VPE_SW_WDOG_RESET reset_fn);
 +
  #endif /* _ASM_VPE_H */
 --- a/arch/mips/kernel/vpe-mt.c
@@ -108,7 +98,7 @@
 +#endif
 --- a/arch/mips/kernel/vpe.c
 +++ b/arch/mips/kernel/vpe.c
-@@ -49,6 +49,59 @@ struct vpe_control vpecontrol = {
+@@ -49,6 +49,41 @@ struct vpe_control vpecontrol = {
  	.tc_list	= LIST_HEAD_INIT(vpecontrol.tc_list)
  };
  
@@ -129,24 +119,6 @@
 +	return 1;
 +}
 +__setup("vpe1_mem=", vpe1mem);
-+
-+uint32_t vpe1_wdog_ctr;
-+static int __init wdog_ctr(char *str)
-+{
-+	get_option(&str, &vpe1_wdog_ctr);
-+	return 1;
-+}
-+EXPORT_SYMBOL(vpe1_wdog_ctr);
-+__setup("vpe1_wdog_ctr_addr=", wdog_ctr);
-+
-+uint32_t vpe1_wdog_timeout;
-+static int __init wdog_timeout(char *str)
-+{
-+	get_option(&str, &vpe1_wdog_timeout);
-+	return 1;
-+}
-+EXPORT_SYMBOL(vpe1_wdog_timeout);
-+__setup("vpe1_wdog_timeout=", wdog_timeout);
 +
 +uint32_t vpe1_get_load_addr(uint32_t flags)
 +{
