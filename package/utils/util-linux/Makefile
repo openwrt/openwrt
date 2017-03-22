@@ -27,11 +27,6 @@ PKG_LICENSE_FILES:=	COPYING					\
 
 PKG_BUILD_PARALLEL:=0
 
-PKG_CONFIG_DEPENDS:= \
-	CONFIG_PACKAGE_cal \
-	CONFIG_PACKAGE_cfdisk \
-	CONFIG_PACKAGE_setterm
-
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
@@ -441,7 +436,7 @@ CONFIGURE_ARGS += \
 	--without-udev		\
 	--without-readline	\
 	--disable-more		\
-	$(if $(CONFIG_PACKAGE_cal)$(CONFIG_PACKAGE_cfdisk)$(CONFIG_PACKAGE_setterm),--with-ncursesw,--without-ncurses)
+	--with-ncursesw
 
 TARGET_CFLAGS += $(FPIC) -std=gnu99
 
