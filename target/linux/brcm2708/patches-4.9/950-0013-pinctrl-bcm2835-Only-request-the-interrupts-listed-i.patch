@@ -16,7 +16,7 @@ interface, is unlikely to be a problem.
 
 --- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
 +++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
-@@ -1042,6 +1042,8 @@ static int bcm2835_pinctrl_probe(struct
+@@ -1036,6 +1036,8 @@ static int bcm2835_pinctrl_probe(struct
  		int len;
  		char *name;
  		pc->irq[i] = irq_of_parse_and_map(np, i);

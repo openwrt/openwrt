@@ -31,7 +31,7 @@ the pins are often used for I2S instead.
  
  #define BCM2835_PIN_BITMAP_SZ \
  	DIV_ROUND_UP(BCM2835_NUM_GPIOS, sizeof(unsigned long) * 8)
-@@ -88,13 +89,13 @@ enum bcm2835_pinconf_pull {
+@@ -82,13 +83,13 @@ enum bcm2835_pinconf_param {
  
  struct bcm2835_gpio_irqdata {
  	struct bcm2835_pinctrl *pc;
@@ -47,7 +47,7 @@ the pins are often used for I2S instead.
  
  	/* note: locking assumes each bank will have its own unsigned long */
  	unsigned long enabled_irq_map[BCM2835_NUM_BANKS];
-@@ -105,7 +106,7 @@ struct bcm2835_pinctrl {
+@@ -99,7 +100,7 @@ struct bcm2835_pinctrl {
  	struct gpio_chip gpio_chip;
  	struct pinctrl_gpio_range gpio_range;
  
@@ -56,7 +56,7 @@ the pins are often used for I2S instead.
  	spinlock_t irq_lock[BCM2835_NUM_BANKS];
  };
  
-@@ -391,17 +392,16 @@ static struct gpio_chip bcm2835_gpio_chi
+@@ -385,17 +386,16 @@ static struct gpio_chip bcm2835_gpio_chi
  	.can_sleep = false,
  };
  
@@ -77,7 +77,7 @@ the pins are often used for I2S instead.
  	events &= pc->enabled_irq_map[bank];
  	for_each_set_bit(offset, &events, 32) {
  		gpio = (32 * bank) + offset;
-@@ -409,7 +409,30 @@ static irqreturn_t bcm2835_gpio_irq_hand
+@@ -403,7 +403,30 @@ static irqreturn_t bcm2835_gpio_irq_hand
  
  		generic_handle_irq(irq_linear_revmap(pc->irq_domain, gpio));
  	}
@@ -109,7 +109,7 @@ the pins are often used for I2S instead.
  }
  
  static inline void __bcm2835_gpio_irq_config(struct bcm2835_pinctrl *pc,
-@@ -998,8 +1021,6 @@ static int bcm2835_pinctrl_probe(struct
+@@ -992,8 +1015,6 @@ static int bcm2835_pinctrl_probe(struct
  	for (i = 0; i < BCM2835_NUM_BANKS; i++) {
  		unsigned long events;
  		unsigned offset;
@@ -118,7 +118,7 @@ the pins are often used for I2S instead.
  
  		/* clear event detection flags */
  		bcm2835_gpio_wr(pc, GPREN0 + i * 4, 0);
-@@ -1014,10 +1035,15 @@ static int bcm2835_pinctrl_probe(struct
+@@ -1008,10 +1029,15 @@ static int bcm2835_pinctrl_probe(struct
  		for_each_set_bit(offset, &events, 32)
  			bcm2835_gpio_wr(pc, GPEDS0 + i * 4, BIT(offset));
  
@@ -136,7 +136,7 @@ the pins are often used for I2S instead.
  
  		len = strlen(dev_name(pc->dev)) + 16;
  		name = devm_kzalloc(pc->dev, len, GFP_KERNEL);
-@@ -1074,6 +1100,7 @@ static struct platform_driver bcm2835_pi
+@@ -1068,6 +1094,7 @@ static struct platform_driver bcm2835_pi
  	.remove = bcm2835_pinctrl_remove,
  	.driver = {
  		.name = MODULE_NAME,

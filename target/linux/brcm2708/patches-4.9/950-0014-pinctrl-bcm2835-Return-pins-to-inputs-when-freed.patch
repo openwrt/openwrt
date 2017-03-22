@@ -14,7 +14,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
 +++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
-@@ -844,6 +844,16 @@ static const struct pinctrl_ops bcm2835_
+@@ -838,6 +838,16 @@ static const struct pinctrl_ops bcm2835_
  	.dt_free_map = bcm2835_pctl_dt_free_map,
  };
  
@@ -31,7 +31,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  static int bcm2835_pmx_get_functions_count(struct pinctrl_dev *pctldev)
  {
  	return BCM2835_FSEL_COUNT;
-@@ -903,6 +913,7 @@ static int bcm2835_pmx_gpio_set_directio
+@@ -897,6 +907,7 @@ static int bcm2835_pmx_gpio_set_directio
  }
  
  static const struct pinmux_ops bcm2835_pmx_ops = {

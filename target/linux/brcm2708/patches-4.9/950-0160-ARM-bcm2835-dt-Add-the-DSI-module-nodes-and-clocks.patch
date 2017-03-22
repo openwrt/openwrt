@@ -14,8 +14,8 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
 
 --- a/arch/arm/boot/dts/bcm2835-rpi.dtsi
 +++ b/arch/arm/boot/dts/bcm2835-rpi.dtsi
-@@ -84,3 +84,11 @@
- 	power-domains = <&power RPI_POWER_DOMAIN_HDMI>;
+@@ -92,3 +92,11 @@
+ 	power-domains = <&power RPI_POWER_DOMAIN_VEC>;
  	status = "okay";
  };
 +
@@ -45,8 +45,8 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  		};
  
  		rng@7e104000 {
-@@ -188,6 +191,26 @@
- 			interrupts = <2 14>; /* pwa1 */
+@@ -398,6 +401,26 @@
+ 			status = "disabled";
  		};
  
 +		dsi0: dsi@7e209000 {
@@ -72,7 +72,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  		aux: aux@0x7e215000 {
  			compatible = "brcm,bcm2835-aux";
  			#clock-cells = <1>;
-@@ -247,6 +270,26 @@
+@@ -457,6 +480,26 @@
  			interrupts = <2 1>;
  		};
  
