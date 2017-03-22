@@ -12,8 +12,8 @@ PKG_VERSION:=4.9.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.tcpdump.org/release/ \
-	http://www.at.tcpdump.org/
+PKG_SOURCE_URL:=http://www.us.tcpdump.org/release/ \
+	http://www.tcpdump.org/release/
 PKG_HASH:=eae98121cbb1c9adbedd9a777bf2eae9fa1c1c676424a54740311c8abcee5a5e
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
