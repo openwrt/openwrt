@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/regd.c
 +++ b/drivers/net/wireless/ath/regd.c
-@@ -114,6 +114,16 @@ static const struct ieee80211_regdomain
+@@ -115,6 +115,16 @@ static const struct ieee80211_regdomain
  	)
  };
  
@@ -17,7 +17,7 @@
  static bool dynamic_country_user_possible(struct ath_regulatory *reg)
  {
  	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
-@@ -122,6 +132,9 @@ static bool dynamic_country_user_possibl
+@@ -123,6 +133,9 @@ static bool dynamic_country_user_possibl
  	if (IS_ENABLED(CPTCFG_ATH_REG_DYNAMIC_USER_CERT_TESTING))
  		return true;
  
@@ -27,7 +27,7 @@
  	switch (reg->country_code) {
  	case CTRY_UNITED_STATES:
  	case CTRY_JAPAN1:
-@@ -207,11 +220,6 @@ static inline bool is_wwr_sku(u16 regd)
+@@ -208,11 +221,6 @@ static inline bool is_wwr_sku(u16 regd)
  		(regd == WORLD));
  }
  
@@ -39,7 +39,7 @@
  bool ath_is_world_regd(struct ath_regulatory *reg)
  {
  	return is_wwr_sku(ath_regd_get_eepromRD(reg));
-@@ -652,6 +660,9 @@ ath_regd_init_wiphy(struct ath_regulator
+@@ -658,6 +666,9 @@ ath_regd_init_wiphy(struct ath_regulator
  	if (IS_ENABLED(CPTCFG_ATH_USER_REGD))
  		return 0;
  
