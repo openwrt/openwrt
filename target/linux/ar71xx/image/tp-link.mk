@@ -134,8 +134,8 @@ define Device/archer-c60-v1
 endef
 TARGET_DEVICES += archer-c60-v1
 
-define Device/cpe510-520
-  DEVICE_TITLE := TP-LINK CPE510/520
+define Device/cpe510-520-v1
+  DEVICE_TITLE := TP-LINK CPE510/520 v1
   DEVICE_PACKAGES := rssileds
   MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),6144k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
   IMAGE_SIZE := 7680k
@@ -149,33 +149,33 @@ define Device/cpe510-520
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
 
-define Device/cpe210-220
-  $(Device/cpe510-520)
-  DEVICE_TITLE := TP-LINK CPE210/220
+define Device/cpe210-220-v1
+  $(Device/cpe510-520-v1)
+  DEVICE_TITLE := TP-LINK CPE210/220 v1
   DEVICE_PACKAGES := rssileds
   BOARDNAME := CPE210
   TPLINK_BOARD_NAME := CPE210
 endef
 
-define Device/wbs210
-  $(Device/cpe510-520)
-  DEVICE_TITLE := TP-LINK WBS210
+define Device/wbs210-v1
+  $(Device/cpe510-520-v1)
+  DEVICE_TITLE := TP-LINK WBS210 v1
   DEVICE_PACKAGES := rssileds
   BOARDNAME := WBS210
   TPLINK_BOARD_NAME := WBS210
 endef
 
-define Device/wbs510
-  $(Device/cpe510-520)
-  DEVICE_TITLE := TP-LINK WBS510
+define Device/wbs510-v1
+  $(Device/cpe510-520-v1)
+  DEVICE_TITLE := TP-LINK WBS510 v1
   DEVICE_PACKAGES := rssileds
   BOARDNAME := WBS510
   TPLINK_BOARD_NAME := WBS510
 endef
-TARGET_DEVICES += cpe210-220 cpe510-520 wbs210 wbs510
+TARGET_DEVICES += cpe210-220-v1 cpe510-520-v1 wbs210-v1 wbs510-v1
 
-define Device/re450
-  DEVICE_TITLE := TP-LINK RE450
+define Device/re450-v1
+  DEVICE_TITLE := TP-LINK RE450 v1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),4672k(rootfs),64k(pation-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro,6016k@0x20000(firmware)
   IMAGE_SIZE := 7936k
@@ -188,10 +188,10 @@ define Device/re450
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
-TARGET_DEVICES += re450
+TARGET_DEVICES += re450-v1
 
-define Device/eap120
-  DEVICE_TITLE := TP-LINK EAP120
+define Device/eap120-v1
+  DEVICE_TITLE := TP-LINK EAP120 v1
   MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),14336k(rootfs),192k(config)ro,64k(ART)ro,15872k@0x40000(firmware)
   IMAGE_SIZE := 15872k
   BOARDNAME := EAP120
@@ -203,7 +203,7 @@ define Device/eap120
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 endef
-TARGET_DEVICES += eap120
+TARGET_DEVICES += eap120-v1
 
 define Device/tl-wdr4300-v1
   $(Device/tplink-8mlzma)
@@ -236,7 +236,7 @@ endef
 
 define Device/tl-wdr4300-v1-il
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := TP-LINK TL-WDR4300 v1 IL
+  DEVICE_TITLE := TP-LINK TL-WDR4300 v1 (IL)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-WDR4300
   DEVICE_PROFILE := TLWDR4300
@@ -261,7 +261,7 @@ TARGET_DEVICES += tl-wdr3500-v1 tl-wdr3600-v1 tl-wdr4300-v1 tl-wdr4300-v1-il tl-
 
 define Device/tl-wdr6500-v2
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := TP-LINK TL-WDR6500v2
+  DEVICE_TITLE := TP-LINK TL-WDR6500 v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | uImage lzma | mktplinkfw-combined
@@ -274,7 +274,7 @@ TARGET_DEVICES += tl-wdr6500-v2
 
 define Device/tl-wdr3320-v2
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-WDR3320v2
+  DEVICE_TITLE := TP-LINK TL-WDR3320 v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME = TL-WDR3320-v2
   DEVICE_PROFILE = TLWDR3320V2
@@ -285,7 +285,7 @@ TARGET_DEVICES += tl-wdr3320-v2
 
 define Device/archer-c5-v1
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := TP-LINK Archer C5
+  DEVICE_TITLE := TP-LINK Archer C5 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME := ARCHER-C5
   DEVICE_PROFILE := ARCHERC7
@@ -315,7 +315,7 @@ endef
 
 define Device/archer-c7-v2-il
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := TP-LINK Archer C7 v2 IL
+  DEVICE_TITLE := TP-LINK Archer C7 v2 (IL)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME := ARCHER-C7-V2
   DEVICE_PROFILE := ARCHERC7
@@ -335,7 +335,7 @@ TARGET_DEVICES += archer-c5-v1 archer-c7-v1 archer-c7-v2 archer-c7-v2-il tl-wdr7
 
 define Device/tl-mr10u-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-MR10U
+  DEVICE_TITLE := TP-LINK TL-MR10U v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := TL-MR10U
   DEVICE_PROFILE := TLMR10U
@@ -345,7 +345,7 @@ endef
 
 define Device/tl-mr11u-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-MR11U
+  DEVICE_TITLE := TP-LINK TL-MR11U v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-MR11U
   DEVICE_PROFILE := TLMR11U
@@ -365,7 +365,7 @@ endef
 
 define Device/tl-mr12u-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-MR12U
+  DEVICE_TITLE := TP-LINK TL-MR12U v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-MR13U
   DEVICE_PROFILE := TLMR12U
@@ -375,7 +375,7 @@ endef
 
 define Device/tl-mr13u-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-MR13U
+  DEVICE_TITLE := TP-LINK TL-MR13U v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-MR13U
   DEVICE_PROFILE := TLMR13U
@@ -386,7 +386,7 @@ TARGET_DEVICES += tl-mr10u-v1 tl-mr11u-v1 tl-mr11u-v2 tl-mr12u-v1 tl-mr13u-v1
 
 define Device/tl-mr3020-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-MR3020
+  DEVICE_TITLE := TP-LINK TL-MR3020 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-MR3020
   DEVICE_PROFILE := TLMR3020
@@ -396,7 +396,7 @@ endef
 
 define Device/tl-mr3040-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-MR3040
+  DEVICE_TITLE := TP-LINK TL-MR3040 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-MR3040
   DEVICE_PROFILE := TLMR3040
@@ -406,7 +406,7 @@ endef
 
 define Device/tl-mr3040-v2
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-MR3040
+  DEVICE_TITLE := TP-LINK TL-MR3040 v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-MR3040-v2
   DEVICE_PROFILE := TLMR3040
@@ -416,7 +416,7 @@ endef
 
 define Device/tl-mr3220-v1
   $(Device/tplink-4m)
-  DEVICE_TITLE := TP-LINK TL-MR3220
+  DEVICE_TITLE := TP-LINK TL-MR3220 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-MR3220
   DEVICE_PROFILE := TLMR3220
@@ -435,7 +435,7 @@ endef
 
 define Device/tl-mr3420-v1
   $(Device/tplink-4m)
-  DEVICE_TITLE := TP-LINK TL-MR3420
+  DEVICE_TITLE := TP-LINK TL-MR3420 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-MR3420
   DEVICE_PROFILE := TLMR3420
@@ -452,19 +452,19 @@ define Device/tl-mr3420-v2
 endef
 TARGET_DEVICES += tl-mr3020-v1 tl-mr3040-v1 tl-mr3040-v2 tl-mr3220-v1 tl-mr3220-v2 tl-mr3420-v1 tl-mr3420-v2
 
-define Device/tl-wpa8630
+define Device/tl-wpa8630-v1
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := TP-LINK TL-WPA8630
+  DEVICE_TITLE := TP-LINK TL-WPA8630 v1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME := TL-WPA8630
   DEVICE_PROFILE := TL-WPA8630
   TPLINK_HWID := 0x86300001
 endef
-TARGET_DEVICES += tl-wpa8630
+TARGET_DEVICES += tl-wpa8630-v1
 
 define Device/tl-wr703n-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-WR703N
+  DEVICE_TITLE := TP-LINK TL-WR703N v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := TL-WR703N
   DEVICE_PROFILE := TLWR703
@@ -474,7 +474,7 @@ endef
 
 define Device/tl-wr710n-v1
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := TP-LINK TL-WR710N
+  DEVICE_TITLE := TP-LINK TL-WR710N v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := TL-WR710N
   DEVICE_PROFILE := TLWR710
@@ -600,15 +600,15 @@ define Device/tl-wr741nd-v5
   CONSOLE := ttyATH0,115200
 endef
 
-define Device/tl-wr810n
+define Device/tl-wr810n-v1
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := TP-LINK TL-WR810N
+  DEVICE_TITLE := TP-LINK TL-WR810N v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := TL-WR810N
   DEVICE_PROFILE := TLWR810
   TPLINK_HWID := 0x08100001
 endef
-TARGET_DEVICES += tl-wr810n
+TARGET_DEVICES += tl-wr810n-v1
 
 define Device/tl-wr743nd-v1
   $(Device/tplink-4m)
@@ -771,7 +771,7 @@ endef
 
 define Device/tl-wr843nd-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-WR843N/ND
+  DEVICE_TITLE := TP-LINK TL-WR843N/ND v1
   BOARDNAME := TL-WR841N-v8
   DEVICE_PROFILE := TLWR843
   TPLINK_HWID := 0x08430001
@@ -851,7 +851,7 @@ TARGET_DEVICES += tl-wr941nd-v2 tl-wr941nd-v3 tl-wr941nd-v4 tl-wr941nd-v5 tl-wr9
 
 define Device/tl-wr1041n-v2
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-WR1041N
+  DEVICE_TITLE := TP-LINK TL-WR1041N v2
   BOARDNAME := TL-WR1041N-v2
   DEVICE_PROFILE := TLWR1041
   TPLINK_HWID := 0x10410002
@@ -905,7 +905,7 @@ TARGET_DEVICES += tl-wr1043nd-v1 tl-wr1043nd-v2 tl-wr1043nd-v3 tl-wr1043nd-v4
 
 define Device/tl-wr2543-v1
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := TP-LINK TL-WR2543N/ND
+  DEVICE_TITLE := TP-LINK TL-WR2543N/ND v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-WR2543N
   DEVICE_PROFILE := TLWR2543
@@ -917,7 +917,7 @@ TARGET_DEVICES += tl-wr2543-v1
 
 define Device/tl-wdr4900-v2
   $(Device/tplink-8mlzma)
-  DEVICE_TITLE := TP-LINK TL-WDR4900v2
+  DEVICE_TITLE := TP-LINK TL-WDR4900 v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-WDR4900-v2
   DEVICE_PROFILE := TLWDR4900V2
@@ -944,7 +944,7 @@ endef
 
 define Device/tl-wa730re-v1
   $(Device/tplink-4m)
-  DEVICE_TITLE := TP-LINK TL-WA730RE
+  DEVICE_TITLE := TP-LINK TL-WA730RE v1
   BOARDNAME := TL-WA901ND
   DEVICE_PROFILE := TLWA730RE
   TPLINK_HWID := 0x07300001
@@ -952,21 +952,21 @@ endef
 
 define Device/tl-wa750re-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-WA750RE
+  DEVICE_TITLE := TP-LINK TL-WA750RE v1
   DEVICE_PACKAGES := rssileds
   BOARDNAME := TL-WA750RE
   DEVICE_PROFILE := TLWA750
   TPLINK_HWID := 0x07500001
 endef
 
-define Device/tl-wa7510n
+define Device/tl-wa7510n-v1
   $(Device/tplink-4m)
-  DEVICE_TITLE := TP-LINK TL-WA7510N
+  DEVICE_TITLE := TP-LINK TL-WA7510N v1
   BOARDNAME := TL-WA7510N
   DEVICE_PROFILE := TLWA7510
   TPLINK_HWID := 0x75100001
 endef
-TARGET_DEVICES += tl-wa701nd-v1 tl-wa701nd-v2 tl-wa730re-v1 tl-wa750re-v1 tl-wa7510n
+TARGET_DEVICES += tl-wa701nd-v1 tl-wa701nd-v2 tl-wa730re-v1 tl-wa750re-v1 tl-wa7510n-v1
 
 define Device/tl-wa801nd-v1
   $(Device/tplink-4m)
@@ -994,7 +994,7 @@ endef
 
 define Device/tl-wa830re-v1
   $(Device/tplink-4m)
-  DEVICE_TITLE := TP-LINK TL-WA830RE
+  DEVICE_TITLE := TP-LINK TL-WA830RE v1
   BOARDNAME := TL-WA901ND
   DEVICE_PROFILE := TLWA830
   TPLINK_HWID := 0x08300010
@@ -1002,7 +1002,7 @@ endef
 
 define Device/tl-wa830re-v2
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-WA830RE
+  DEVICE_TITLE := TP-LINK TL-WA830RE v2
   BOARDNAME := TL-WA830RE-v2
   DEVICE_PROFILE := TLWA830
   TPLINK_HWID := 0x08300002
@@ -1010,7 +1010,7 @@ endef
 
 define Device/tl-wa850re-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-WA850RE
+  DEVICE_TITLE := TP-LINK TL-WA850RE v1
   BOARDNAME := TL-WA850RE
   DEVICE_PROFILE := TLWA850
   TPLINK_HWID := 0x08500001
@@ -1032,7 +1032,7 @@ endef
 
 define Device/tl-wa860re-v1
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-WA860RE
+  DEVICE_TITLE := TP-LINK TL-WA860RE v1
   BOARDNAME := TL-WA860RE
   DEVICE_PROFILE := TLWA860
   TPLINK_HWID := 0x08600001
@@ -1076,7 +1076,7 @@ TARGET_DEVICES += tl-wa901nd-v1 tl-wa901nd-v2 tl-wa901nd-v3 tl-wa901nd-v4
 
 define Device/tl-wa7210n-v2
   $(Device/tplink-4mlzma)
-  DEVICE_TITLE := TP-LINK TL-WA7210N
+  DEVICE_TITLE := TP-LINK TL-WA7210N v2
   DEVICE_PACKAGES := rssileds kmod-ledtrig-netdev
   BOARDNAME := TL-WA7210N-v2
   DEVICE_PROFILE := TLWA7210
