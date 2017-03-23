@@ -41,7 +41,7 @@
  		HAPD_IFACE_DISABLED,
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -284,6 +284,7 @@ static void hostapd_free_hapd_data(struc
+@@ -302,6 +302,7 @@ static void hostapd_free_hapd_data(struc
  	hapd->started = 0;
  
  	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
@@ -49,7 +49,7 @@
  	iapp_deinit(hapd->iapp);
  	hapd->iapp = NULL;
  	accounting_deinit(hapd);
-@@ -1142,6 +1143,8 @@ static int hostapd_setup_bss(struct host
+@@ -1160,6 +1161,8 @@ static int hostapd_setup_bss(struct host
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -58,7 +58,7 @@
  	return 0;
  }
  
-@@ -1665,6 +1668,7 @@ static int hostapd_setup_interface_compl
+@@ -1683,6 +1686,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
  
@@ -66,7 +66,7 @@
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->conf->channel) {
  #ifdef NEED_AP_MLME
-@@ -1844,6 +1848,7 @@ dfs_offload:
+@@ -1862,6 +1866,7 @@ dfs_offload:
  
  fail:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -74,7 +74,7 @@
  	hostapd_set_state(iface, HAPD_IFACE_DISABLED);
  	wpa_msg(hapd->msg_ctx, MSG_INFO, AP_EVENT_DISABLED);
  #ifdef CONFIG_FST
-@@ -2292,6 +2297,7 @@ void hostapd_interface_deinit_free(struc
+@@ -2310,6 +2315,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;
