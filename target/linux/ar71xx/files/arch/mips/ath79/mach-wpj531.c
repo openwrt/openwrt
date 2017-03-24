@@ -35,10 +35,10 @@
 #include "dev-wmac.h"
 #include "machtypes.h"
 
-#define WPJ531_GPIO_LED_SIG1    14
-#define WPJ531_GPIO_LED_SIG2    15
-#define WPJ531_GPIO_LED_SIG3    22
-#define WPJ531_GPIO_LED_SIG4    23
+#define WPJ531_GPIO_LED_SIG1    13
+#define WPJ531_GPIO_LED_SIG2    14
+#define WPJ531_GPIO_LED_SIG3    15
+#define WPJ531_GPIO_LED_SIG4    16
 #define WPJ531_GPIO_BUZZER      4
 
 #define WPJ531_GPIO_BTN_RESET   17
