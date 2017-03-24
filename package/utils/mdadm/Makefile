@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mdadm
-PKG_VERSION:=3.2.5
-PKG_RELEASE:=2
+PKG_VERSION:=4.0
+PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=@KERNEL/linux/utils/raid/mdadm
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_HASH:=ec1d264e4126309aafe76d76067e8f3fd6649941cff6cb0242d467a1e66a01e0
+PKG_HASH:=1d6ae7f24ced3a0fa7b5613b32f4a589bb4881e3946a5a2c3724056254ada3a9
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
@@ -27,11 +27,14 @@ define Package/mdadm
   SUBMENU:=Disc
   TITLE:=A tool for managing Soft RAID under Linux
   URL:=http://www.kernel.org/pub/linux/utils/raid/mdadm/
-  DEPENDS:=+@KERNEL_DIRECT_IO
+  DEPENDS:=+@KERNEL_DIRECT_IO +libpthread +kmod-md-mod +kmod-md-raid0 +kmod-md-raid10 +kmod-md-raid1
 endef
 
 define Package/mdadm/description
  A tool for managing Linux Software RAID arrays.
+ RAID 0, 1 and 10 support included. 
+ If you need RAID 4,5 or 6 functionality please 
+ install kmod-md-raid456 .
 endef
 
 define Package/mdadm/conffiles
@@ -39,7 +42,7 @@ define Package/mdadm/conffiles
 /etc/config/mdadm
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_CFLAGS += -ffunction-sections -fdata-sections -DNO_COROSYNC -DNO_DLM -DUSE_PTHREADS
 TARGET_LDFLAGS += -Wl,--gc-sections
 
 define Build/Compile
