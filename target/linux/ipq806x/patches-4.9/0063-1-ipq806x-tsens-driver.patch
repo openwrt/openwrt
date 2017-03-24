@@ -109,7 +109,7 @@ index 0000000..c52888f
 +
 +#define THRESHOLD_ADDR		0x3624
 +/* THRESHOLD_ADDR bitmasks */
-+#define THRESHOLD_MAX_CODE		0xff
++#define THRESHOLD_MAX_CODE		0x20000
 +#define THRESHOLD_MIN_CODE		0
 +#define THRESHOLD_MAX_LIMIT_SHIFT	24
 +#define THRESHOLD_MIN_LIMIT_SHIFT	16
@@ -163,7 +163,7 @@ index 0000000..c52888f
 +
 +#define TSENS_8064_SEQ_SENSORS	5
 +#define TSENS_8064_S4_S5_OFFSET	40
-+#define TSENS_FACTOR		1000
++#define TSENS_FACTOR		1
 +
 +/* Trips: from very hot to very cold */
 +enum tsens_trip_type {
