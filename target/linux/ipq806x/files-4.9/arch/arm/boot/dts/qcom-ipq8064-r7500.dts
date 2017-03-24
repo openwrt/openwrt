@@ -1,6 +1,7 @@
 #include "qcom-ipq8064-v1.0.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
 	model = "Netgear Nighthawk X4 R7500";
@@ -374,6 +375,11 @@
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
+
+&tcsr {
+	qcom,usb-ctrl-select = <TCSR_USB_SELECT_USB3_DUAL>;
+	compatible = "qcom,tcsr";
 };
 
 &adm_dma {

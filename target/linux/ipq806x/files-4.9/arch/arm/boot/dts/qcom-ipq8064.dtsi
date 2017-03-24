@@ -965,8 +965,6 @@
 			clocks = <&gcc USB30_0_MASTER_CLK>;
 			clock-names = "core";
 
-			syscon-tcsr = <&tcsr 0xb0 1>;
-
 			ranges;
 
 			status = "disabled";
@@ -988,8 +986,6 @@
 			#size-cells = <1>;
 			clocks = <&gcc USB30_1_MASTER_CLK>;
 			clock-names = "core";
-
-			syscon-tcsr = <&tcsr 0xb0 0>;
 
 			ranges;
 
