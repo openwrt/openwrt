@@ -307,6 +307,17 @@ endef
 
 $(eval $(call KernelPackage,crypto-crc32c))
 
+define KernelPackage/crypto-crc32
+  TITLE:=CRC32 CRC module
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:=CONFIG_CRYPTO_CRC32
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/crypto/crc32_generic.ko@ge4.9
+  AUTOLOAD:=$(call AutoLoad,04,crc32_generic@ge4.9,1)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-crc32))
 
 define KernelPackage/crypto-des
   TITLE:=DES/3DES cipher CryptoAPI module
