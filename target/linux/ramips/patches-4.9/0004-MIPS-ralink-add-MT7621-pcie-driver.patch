@@ -10,8 +10,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 814 insertions(+)
  create mode 100644 arch/mips/pci/pci-mt7621.c
 
---- a/arch/mips/pci/Makefile
-+++ b/arch/mips/pci/Makefile
+Index: linux-4.9.14/arch/mips/pci/Makefile
+===================================================================
+--- linux-4.9.14.orig/arch/mips/pci/Makefile
++++ linux-4.9.14/arch/mips/pci/Makefile
 @@ -46,6 +46,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -20,9 +22,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
+Index: linux-4.9.14/arch/mips/pci/pci-mt7621.c
+===================================================================
 --- /dev/null
-+++ b/arch/mips/pci/pci-mt7621.c
-@@ -0,0 +1,832 @@
++++ linux-4.9.14/arch/mips/pci/pci-mt7621.c
+@@ -0,0 +1,836 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -77,6 +81,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/delay.h>
 +#include <linux/of.h>
 +#include <linux/of_pci.h>
++#include <linux/of_irq.h>
 +#include <linux/platform_device.h>
 +
 +#include <ralink_regs.h>
@@ -98,12 +103,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#define RALINK_PCI_CONFIG_ADDR                         0x20
 +#define RALINK_PCI_CONFIG_DATA_VIRTUAL_REG     0x24
-+#define SURFBOARDINT_PCIE0       11      /* PCIE0 */
-+#define RALINK_INT_PCIE0         SURFBOARDINT_PCIE0
-+#define RALINK_INT_PCIE1         SURFBOARDINT_PCIE1
-+#define RALINK_INT_PCIE2         SURFBOARDINT_PCIE2
-+#define SURFBOARDINT_PCIE1       31     /* PCIE1 */
-+#define SURFBOARDINT_PCIE2       32     /* PCIE2 */
++#define RALINK_INT_PCIE0         pcie_irq[0]
++#define RALINK_INT_PCIE1         pcie_irq[1]
++#define RALINK_INT_PCIE2         pcie_irq[2]
 +#define RALINK_PCI_MEMBASE              *(volatile u32 *)(RALINK_PCI_BASE + 0x0028)
 +#define RALINK_PCI_IOBASE               *(volatile u32 *)(RALINK_PCI_BASE + 0x002C)
 +#define RALINK_PCIE0_RST                (1<<24)
@@ -220,6 +222,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define PCI_ACCESS_WRITE_1 3
 +#define PCI_ACCESS_WRITE_2 4
 +#define PCI_ACCESS_WRITE_4 5
++
++static int pcie_irq[3];
 +
 +static int config_access(unsigned char access_type, struct pci_bus *bus,
 +			unsigned int devfn, unsigned int where, u32 * data)
@@ -599,6 +603,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static int mt7621_pci_probe(struct platform_device *pdev)
 +{
 +	unsigned long val = 0;
++	int i;
++
++	for (i = 0; i < 3; i++)
++		pcie_irq[i] = irq_of_parse_and_map(pdev->dev.of_node, i);
 +
 +	iomem_resource.start = 0;
 +	iomem_resource.end= ~0;
