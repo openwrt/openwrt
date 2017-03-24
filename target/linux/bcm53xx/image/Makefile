@@ -49,6 +49,15 @@ define Build/buffalo-wzr-header
 	mv $@.new $@
 endef
 
+# TRX with only one (kernel) partition
+define Build/trx
+	$(STAGING_DIR_HOST)/bin/trx \
+		-o $@.new \
+		-m 33554432 \
+		-f $@
+	mv $@.new $@
+endef
+
 define Build/trx-serial
 	$(STAGING_DIR_HOST)/bin/trx \
 		-o $@.new \
@@ -111,6 +120,8 @@ define Device/Default
   DEVICE_DTS := $(patsubst %.dtb,%,$(notdir $(wildcard $(if $(IB),$(KDIR),$(DTS_DIR))/*-$(1).dtb)))
   KERNEL := kernel-bin | append-dtb | lzma-d16
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
+  KERNEL_INITRAMFS_SUFFIX := .trx
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma-d16 | trx
   FILESYSTEMS := squashfs
   KERNEL_NAME := zImage
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
@@ -149,19 +160,32 @@ define Device/asus-rt-n18u
 endef
 TARGET_DEVICES += asus-rt-n18u
 
+# Buffalo devices have TFTP recovery mode which can work nicely with initramfs
+# kernels.
+# We should have two initramfs images for Buffalo: plain initramfs kernel and
+# TRX with initramfs kernel. It's not possible right now so let's just build
+# plain initramfs kernel as it may be more useful.
+define Device/buffalo/Default
+  KERNEL_INITRAMFS_SUFFIX = $$(KERNEL_SUFFIX)
+  KERNEL_INITRAMFS = $$(KERNEL)
+endef
+
 define Device/buffalo-wxr-1900dhp
+  $(call Device/buffalo/Default)
   DEVICE_TITLE := Buffalo WXR-1900DHP
   DEVICE_PACKAGES := $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += buffalo-wxr-1900dhp
 
 define Device/buffalo-wzr-600dhp2
+  $(call Device/buffalo/Default)
   DEVICE_TITLE := Buffalo WZR-600DHP2
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
 endef
 TARGET_DEVICES += buffalo-wzr-600dhp2
 
 define Device/buffalo-wzr-900dhp
+  $(call Device/buffalo/Default)
   DEVICE_TITLE := Buffalo WZR-900DHP
   DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
   BUFFALO_TAG_PLATFORM := bcm
@@ -182,6 +206,7 @@ endef
 TARGET_DEVICES += buffalo-wzr-900dhp
 
 define Device/buffalo-wzr-1750dhp
+  $(call Device/buffalo/Default)
   DEVICE_TITLE := Buffalo WZR-1750DHP
   DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
 endef
