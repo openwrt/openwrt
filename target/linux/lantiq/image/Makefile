@@ -20,9 +20,8 @@ else
   UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
 endif
 
-define Build/eva-image
-	lzma2eva $(KERNEL_LOADADDR) $(KERNEL_LOADADDR) $@ $@.new
-	( dd if=$@.new bs=64k conv=sync; cat ./eva.dummy.squashfs; ) > $@
+define Build/append-avm-fakeroot
+	cat ./eva.dummy.squashfs >> $@
 endef
 
 define Build/dgn3500-sercom-footer
@@ -104,6 +103,8 @@ endef
 
 define Device/AVM
   KERNEL := kernel-bin | append-dtb | lzma | eva-image
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-avm-fakeroot | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 
 ifeq ($(SUBTARGET),ase)

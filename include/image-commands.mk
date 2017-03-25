@@ -44,6 +44,11 @@ define Build/buffalo-dhp-image
 	mv $@.new $@
 endef
 
+define Build/eva-image
+	$(STAGING_DIR_HOST)/bin/lzma2eva $(KERNEL_LOADADDR) $(KERNEL_LOADADDR) $@ $@.new
+	mv $@.new $@
+endef
+
 define Build/netgear-chk
 	$(STAGING_DIR_HOST)/bin/mkchkimg \
 		-o $@.new \
