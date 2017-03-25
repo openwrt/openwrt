@@ -155,7 +155,7 @@
  	printf("\t\t * RIFS: %d\n", (data[1] & 0x8)>>3);
  	printf("\t\t * HT protection: %s\n", protection[data[2] & 0x3]);
  	printf("\t\t * non-GF present: %d\n", (data[2] & 0x4) >> 2);
-@@ -1380,6 +1381,13 @@ static void print_ie(const struct ie_pri
+@@ -1380,6 +1381,14 @@ static void print_ie(const struct ie_pri
  
  static const struct ie_print ieprinters[] = {
  	[0] = { "SSID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
@@ -163,13 +163,14 @@
 +	[48] = { "RSN", print_rsn, 2, 255, BIT(PRINT_SCAN), },
 +	[61] = { "HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN), },
 +	[62] = { "Secondary Channel Offset", print_secchan_offs, 1, 1, BIT(PRINT_SCAN), },
++	[114] = { "MESH ID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
 +	[191] = { "VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN), },
 +	[192] = { "VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN), },
 +#if 0
  	[1] = { "Supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
  	[3] = { "DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN), },
  	[5] = { "TIM", print_tim, 4, 255, BIT(PRINT_SCAN), },
-@@ -1389,14 +1397,8 @@ static const struct ie_print ieprinters[
+@@ -1389,21 +1398,15 @@ static const struct ie_print ieprinters[
  	[32] = { "Power constraint", print_powerconstraint, 1, 1, BIT(PRINT_SCAN), },
  	[35] = { "TPC report", print_tpcreport, 2, 2, BIT(PRINT_SCAN), },
  	[42] = { "ERP", print_erp, 1, 255, BIT(PRINT_SCAN), },
@@ -183,8 +184,8 @@
 -	[48] = { "RSN", print_rsn, 2, 255, BIT(PRINT_SCAN), },
  	[50] = { "Extended supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
  	[113] = { "MESH Configuration", print_mesh_conf, 7, 7, BIT(PRINT_SCAN), },
- 	[114] = { "MESH ID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
-@@ -1404,6 +1406,7 @@ static const struct ie_print ieprinters[
+-	[114] = { "MESH ID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
+ 	[127] = { "Extended capabilities", print_capabilities, 0, 255, BIT(PRINT_SCAN), },
  	[107] = { "802.11u Interworking", print_interworking, 0, 255, BIT(PRINT_SCAN), },
  	[108] = { "802.11u Advertisement", print_11u_advert, 0, 255, BIT(PRINT_SCAN), },
  	[111] = { "802.11u Roaming Consortium", print_11u_rcon, 0, 255, BIT(PRINT_SCAN), },
