@@ -528,10 +528,11 @@ new file mode 100644
 index 0000000..d26ef35
 --- /dev/null
 +++ b/configs/nsa310_defconfig
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,22 @@
 +CONFIG_ARM=y
 +CONFIG_KIRKWOOD=y
 +CONFIG_TARGET_NSA310=y
++CONFIG_IDENT_STRING="\nZyXEL NSA310 1-Bay Power Media Server"
 +CONFIG_BOOTDELAY=3
 +CONFIG_SYS_PROMPT="NSA310> "
 +# CONFIG_CMD_IMLS is not set
@@ -541,11 +542,13 @@ index 0000000..d26ef35
 +CONFIG_OF_LIBFDT=y
 +CONFIG_CMD_SETEXPR=y
 +CONFIG_CMD_DHCP=y
-+CONFIG_CMD_NAND=y
++CONFIG_CMD_MII=y
 +CONFIG_CMD_PING=y
 +CONFIG_CMD_USB=y
 +CONFIG_CMD_EXT2=y
 +CONFIG_CMD_FAT=y
++CONFIG_EFI_PARTITION=y
++CONFIG_CMD_UBI=y
 +CONFIG_USB=y
 +CONFIG_USB_STORAGE=y
 diff --git a/include/configs/nsa310.h b/include/configs/nsa310.h
@@ -553,7 +556,7 @@ new file mode 100644
 index 0000000..86ef825
 --- /dev/null
 +++ b/include/configs/nsa310.h
-@@ -0,0 +1,168 @@
+@@ -0,0 +1,144 @@
 +/* Copyright (C) 2015-2016 bodhi <mibodhi@gmail.com>
 + *
 + * Based on
@@ -587,12 +590,6 @@ index 0000000..86ef825
 +#define _CONFIG_NSA310_H
 +
 +/*
-+ * Version number information
-+ */
-+
-+#define CONFIG_IDENT_STRING	"\nZyXEL NSA310 1-Bay Power Media Server \n"
-+
-+/*
 + * High Level Configuration Options (easy to change)
 + */
 +#define CONFIG_FEROCEON_88FR131		/* CPU Core subversion */
@@ -608,15 +605,9 @@ index 0000000..86ef825
 +/*
 + * Commands configuration
 + */
-+#define CONFIG_SYS_NO_FLASH		/* Declare no flash (NOR/SPI) */
-+#define CONFIG_SYS_MVFS                 /* Picks up Filesystem from mv-common.h */
-+#define CONFIG_CMD_DHCP
 +#define CONFIG_CMD_ENV
 +#define CONFIG_CMD_IDE
-+#define CONFIG_CMD_MII
 +#define CONFIG_CMD_NAND
-+#define CONFIG_CMD_PING
-+#define CONFIG_CMD_USB
 +#define CONFIG_CMD_DATE
 +#define CONFIG_SYS_LONGHELP
 +#define CONFIG_PREBOOT
@@ -628,10 +619,6 @@ index 0000000..86ef825
 + * to enable certain macros
 + */
 +#include "mv-common.h"
-+
-+/* Remove or override few declarations from mv-common.h */
-+#undef CONFIG_SYS_PROMPT	/* previously defined in mv-common.h */
-+#define CONFIG_SYS_PROMPT	"NSA310> "	/* Command Prompt */
 +
 +/*
 + * Environment variables configurations
@@ -693,24 +680,16 @@ index 0000000..86ef825
 +/*
 + * File system
 + */
-+#define CONFIG_CMD_EXT2
 +#define CONFIG_CMD_EXT4
-+#define CONFIG_CMD_FAT
 +#define CONFIG_CMD_JFFS2
 +#define CONFIG_JFFS2_NAND
 +#define CONFIG_JFFS2_LZO
-+#define CONFIG_CMD_UBI
 +#define CONFIG_CMD_UBIFS
 +#define CONFIG_RBTREE
 +#define CONFIG_MTD_DEVICE               /* needed for mtdparts commands */
 +#define CONFIG_MTD_PARTITIONS
 +#define CONFIG_CMD_MTDPARTS
 +#define CONFIG_LZO
-+
-+/*
-+ * EFI partition
-+ */
-+#define CONFIG_EFI_PARTITION
 +
 +/*
 + *  Date Time
