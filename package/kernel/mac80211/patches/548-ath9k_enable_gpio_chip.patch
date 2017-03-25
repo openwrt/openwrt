@@ -237,7 +237,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ath_fill_led_pin(sc);
  
  	if (pdata && pdata->leds && pdata->num_leds)
-@@ -183,6 +327,7 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -180,6 +324,7 @@ void ath_init_leds(struct ath_softc *sc)
  	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger,
  			   !sc->sc_ah->config.led_active_high);
  }

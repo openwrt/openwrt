@@ -127,10 +127,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		for (i = 0; i < pdata->num_leds; i++) {
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
-@@ -50,6 +50,10 @@ struct ath9k_platform_data {
+@@ -49,6 +49,10 @@ struct ath9k_platform_data {
+ 
  	int num_leds;
  	const struct gpio_led *leds;
- 	const char *led_name;
 +
 +	unsigned num_btns;
 +	const struct gpio_keys_button *btns;
