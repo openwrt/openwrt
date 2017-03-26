@@ -155,7 +155,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0>;
-		mac-address = [ 00 11 22 33 44 55 ];
+		mtd-mac-address = <&urlader 0xa91>;
+		mtd-mac-address-increment = <(-2)>;
 		lantiq,switch;
 
 		ethernet@0 {

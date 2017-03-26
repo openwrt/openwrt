@@ -90,6 +90,8 @@
 
 		etop@E180000 {
 			phy-mode = "mii";
+			mtd-mac-address = <&ath9k_cal 0xa91>;
+			mtd-mac-address-increment = <(-2)>;
 		};
 
 		ifxhcd@E101000 {
