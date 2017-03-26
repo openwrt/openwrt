@@ -28,7 +28,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  	if (IS_ENABLED(CONFIG_USB) && is_mt76x8()) {
 --- a/arch/mips/ralink/rt305x.c
 +++ b/arch/mips/ralink/rt305x.c
-@@ -201,6 +201,7 @@ void __init ralink_clk_init(void)
+@@ -190,6 +190,7 @@ void __init ralink_clk_init(void)
  	ralink_clk_add("cpu", cpu_rate);
  	ralink_clk_add("sys", sys_rate);
  	ralink_clk_add("10000b00.spi", sys_rate);
@@ -38,7 +38,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  	ralink_clk_add("10000500.uart", uart_rate);
 --- a/arch/mips/ralink/rt3883.c
 +++ b/arch/mips/ralink/rt3883.c
-@@ -109,6 +109,7 @@ void __init ralink_clk_init(void)
+@@ -99,6 +99,7 @@ void __init ralink_clk_init(void)
  	ralink_clk_add("10000120.watchdog", sys_rate);
  	ralink_clk_add("10000500.uart", 40000000);
  	ralink_clk_add("10000b00.spi", sys_rate);

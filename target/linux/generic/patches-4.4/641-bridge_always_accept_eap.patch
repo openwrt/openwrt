@@ -6,7 +6,7 @@ issues with WDS.
 ---
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -152,7 +152,7 @@ int br_handle_frame_finish(struct net *n
+@@ -153,7 +153,7 @@ int br_handle_frame_finish(struct net *n
  	    br_multicast_rcv(br, p, skb, vid))
  		goto drop;
  
