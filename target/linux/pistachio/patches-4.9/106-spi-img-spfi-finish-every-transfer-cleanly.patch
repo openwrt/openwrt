@@ -22,8 +22,6 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  drivers/spi/spi-img-spfi.c | 49 +++++++++++++++++++++++++++++++++-------------
  1 file changed, 35 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
-index 8ad6c75..a124423 100644
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
 @@ -83,6 +83,14 @@
@@ -41,7 +39,7 @@ index 8ad6c75..a124423 100644
  /*
   * There are four parallel FIFOs of 16 bytes each.  The word buffer
   * (*_32BIT_VALID_DATA) accesses all four FIFOs at once, resulting in an
-@@ -144,6 +152,23 @@ static inline void spfi_reset(struct img_spfi *spfi)
+@@ -144,6 +152,23 @@ static inline void spfi_reset(struct img
  	spfi_writel(spfi, 0, SPFI_CONTROL);
  }
  
@@ -65,7 +63,7 @@ index 8ad6c75..a124423 100644
  static int spfi_wait_all_done(struct img_spfi *spfi)
  {
  	unsigned long timeout = jiffies + msecs_to_jiffies(50);
-@@ -152,19 +177,9 @@ static int spfi_wait_all_done(struct img_spfi *spfi)
+@@ -152,19 +177,9 @@ static int spfi_wait_all_done(struct img
  		return 0;
  
  	while (time_before(jiffies, timeout)) {
@@ -87,7 +85,7 @@ index 8ad6c75..a124423 100644
  		cpu_relax();
  	}
  
-@@ -296,6 +311,8 @@ static int img_spfi_start_pio(struct spi_master *master,
+@@ -296,6 +311,8 @@ static int img_spfi_start_pio(struct spi
  	}
  
  	ret = spfi_wait_all_done(spfi);
@@ -96,7 +94,7 @@ index 8ad6c75..a124423 100644
  	if (ret < 0)
  		return ret;
  
-@@ -311,8 +328,10 @@ static void img_spfi_dma_rx_cb(void *data)
+@@ -311,8 +328,10 @@ static void img_spfi_dma_rx_cb(void *dat
  
  	spin_lock_irqsave(&spfi->lock, flags);
  	spfi->rx_dma_busy = false;
@@ -108,7 +106,7 @@ index 8ad6c75..a124423 100644
  	spin_unlock_irqrestore(&spfi->lock, flags);
  }
  
-@@ -325,8 +344,10 @@ static void img_spfi_dma_tx_cb(void *data)
+@@ -325,8 +344,10 @@ static void img_spfi_dma_tx_cb(void *dat
  
  	spin_lock_irqsave(&spfi->lock, flags);
  	spfi->tx_dma_busy = false;
@@ -120,6 +118,3 @@ index 8ad6c75..a124423 100644
  	spin_unlock_irqrestore(&spfi->lock, flags);
  }
  
--- 
-2.7.4
-

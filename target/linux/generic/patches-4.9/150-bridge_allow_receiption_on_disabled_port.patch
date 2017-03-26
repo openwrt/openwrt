@@ -15,7 +15,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -232,7 +232,8 @@ static int br_handle_local_finish(struct
+@@ -233,7 +233,8 @@ static int br_handle_local_finish(struct
  {
  	struct net_bridge_port *p = br_port_get_rcu(skb->dev);
  
@@ -25,7 +25,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	BR_INPUT_SKB_CB(skb)->brdev = p->br->dev;
  	br_pass_frame_up(skb);
-@@ -315,6 +316,15 @@ rx_handler_result_t br_handle_frame(stru
+@@ -316,6 +317,15 @@ rx_handler_result_t br_handle_frame(stru
  
  forward:
  	switch (p->state) {

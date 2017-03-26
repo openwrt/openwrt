@@ -37,9 +37,6 @@ Acked-by: James Hartley <james.hartley@imgtec.com>
  create mode 100644 arch/mips/boot/dts/img/Makefile
  create mode 100644 arch/mips/boot/dts/img/pistachio_marduk.dts
 
-diff --git a/Documentation/devicetree/bindings/mips/img/pistachio-marduk.txt b/Documentation/devicetree/bindings/mips/img/pistachio-marduk.txt
-new file mode 100644
-index 0000000..2d5126d
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/mips/img/pistachio-marduk.txt
 @@ -0,0 +1,10 @@
@@ -53,9 +50,6 @@ index 0000000..2d5126d
 +
 +It is also known as Creator Ci40. Marduk is legacy name and will
 +be there for decades.
-diff --git a/arch/mips/boot/dts/img/Makefile b/arch/mips/boot/dts/img/Makefile
-new file mode 100644
-index 0000000..69a65f0
 --- /dev/null
 +++ b/arch/mips/boot/dts/img/Makefile
 @@ -0,0 +1,9 @@
@@ -68,9 +62,6 @@ index 0000000..69a65f0
 +
 +always				:= $(dtb-y)
 +clean-files			:= *.dtb *.dtb.S
-diff --git a/arch/mips/boot/dts/img/pistachio_marduk.dts b/arch/mips/boot/dts/img/pistachio_marduk.dts
-new file mode 100644
-index 0000000..cf9cebd
 --- /dev/null
 +++ b/arch/mips/boot/dts/img/pistachio_marduk.dts
 @@ -0,0 +1,163 @@
@@ -237,6 +228,3 @@ index 0000000..cf9cebd
 +	status = "okay";
 +	clock-frequency = <400000>;
 +};
--- 
-2.7.4
-

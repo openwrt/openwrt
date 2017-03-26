@@ -26,7 +26,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	vc4_hdmi.o \
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -163,6 +163,9 @@ int vc4_crtc_get_scanoutpos(struct drm_d
+@@ -162,6 +162,9 @@ int vc4_crtc_get_scanoutpos(struct drm_d
  	int vblank_lines;
  	int ret = 0;
  
@@ -36,7 +36,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	/* preempt_disable_rt() should go right here in PREEMPT_RT patchset. */
  
  	/* Get optional system timestamp before query. */
-@@ -656,6 +659,11 @@ int vc4_enable_vblank(struct drm_device
+@@ -655,6 +658,11 @@ int vc4_enable_vblank(struct drm_device
  	struct vc4_dev *vc4 = to_vc4_dev(dev);
  	struct vc4_crtc *vc4_crtc = vc4->crtc[crtc_id];
  
@@ -48,7 +48,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	CRTC_WRITE(PV_INTEN, PV_INT_VFP_START);
  
  	return 0;
-@@ -666,6 +674,11 @@ void vc4_disable_vblank(struct drm_devic
+@@ -665,6 +673,11 @@ void vc4_disable_vblank(struct drm_devic
  	struct vc4_dev *vc4 = to_vc4_dev(dev);
  	struct vc4_crtc *vc4_crtc = vc4->crtc[crtc_id];
  
@@ -82,7 +82,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	struct vc4_hdmi *hdmi;
  	struct vc4_hvs *hvs;
  	struct vc4_crtc *crtc[3];
-@@ -460,6 +463,10 @@ void __iomem *vc4_ioremap_regs(struct pl
+@@ -462,6 +465,10 @@ void __iomem *vc4_ioremap_regs(struct pl
  extern struct platform_driver vc4_dpi_driver;
  int vc4_dpi_debugfs_regs(struct seq_file *m, void *unused);
  

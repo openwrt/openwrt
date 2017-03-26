@@ -16,7 +16,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -955,6 +955,16 @@ void phy_start(struct phy_device *phydev
+@@ -959,6 +959,16 @@ void phy_start(struct phy_device *phydev
  }
  EXPORT_SYMBOL(phy_start);
  
@@ -33,7 +33,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  /**
   * phy_state_machine - Handle the state machine
   * @work: work_struct that describes the work to be done
-@@ -996,8 +1006,7 @@ void phy_state_machine(struct work_struc
+@@ -1000,8 +1010,7 @@ void phy_state_machine(struct work_struc
  		/* If the link is down, give up on negotiation for now */
  		if (!phydev->link) {
  			phydev->state = PHY_NOLINK;
@@ -43,7 +43,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  			break;
  		}
  
-@@ -1009,9 +1018,7 @@ void phy_state_machine(struct work_struc
+@@ -1013,9 +1022,7 @@ void phy_state_machine(struct work_struc
  		/* If AN is done, we're running */
  		if (err > 0) {
  			phydev->state = PHY_RUNNING;
@@ -54,7 +54,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  		} else if (0 == phydev->link_timeout--)
  			needs_aneg = true;
  		break;
-@@ -1036,8 +1043,7 @@ void phy_state_machine(struct work_struc
+@@ -1040,8 +1047,7 @@ void phy_state_machine(struct work_struc
  				}
  			}
  			phydev->state = PHY_RUNNING;
@@ -64,7 +64,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  		}
  		break;
  	case PHY_FORCING:
-@@ -1047,13 +1053,12 @@ void phy_state_machine(struct work_struc
+@@ -1051,13 +1057,12 @@ void phy_state_machine(struct work_struc
  
  		if (phydev->link) {
  			phydev->state = PHY_RUNNING;
@@ -80,7 +80,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  		break;
  	case PHY_RUNNING:
  		/* Only register a CHANGE if we are polling and link changed
-@@ -1076,14 +1081,12 @@ void phy_state_machine(struct work_struc
+@@ -1080,14 +1085,12 @@ void phy_state_machine(struct work_struc
  
  		if (phydev->link) {
  			phydev->state = PHY_RUNNING;
@@ -97,7 +97,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  		if (phy_interrupt_is_valid(phydev))
  			err = phy_config_interrupt(phydev,
  						   PHY_INTERRUPT_ENABLED);
-@@ -1091,8 +1094,7 @@ void phy_state_machine(struct work_struc
+@@ -1095,8 +1098,7 @@ void phy_state_machine(struct work_struc
  	case PHY_HALTED:
  		if (phydev->link) {
  			phydev->link = 0;
@@ -107,7 +107,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  			do_suspend = true;
  		}
  		break;
-@@ -1112,11 +1114,11 @@ void phy_state_machine(struct work_struc
+@@ -1116,11 +1118,11 @@ void phy_state_machine(struct work_struc
  
  				if (phydev->link) {
  					phydev->state = PHY_RUNNING;
@@ -121,7 +121,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  			} else {
  				phydev->state = PHY_AN;
  				phydev->link_timeout = PHY_AN_TIMEOUT;
-@@ -1128,11 +1130,11 @@ void phy_state_machine(struct work_struc
+@@ -1132,11 +1134,11 @@ void phy_state_machine(struct work_struc
  
  			if (phydev->link) {
  				phydev->state = PHY_RUNNING;

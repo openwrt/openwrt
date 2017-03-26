@@ -19,11 +19,9 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  drivers/mtd/nand/nand_base.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 3bde96a..69b5cac 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -3964,7 +3964,8 @@ static bool find_full_id_nand(struct mtd_info *mtd, struct nand_chip *chip,
+@@ -3964,7 +3964,8 @@ static bool find_full_id_nand(struct mtd
  		mtd->erasesize = type->erasesize;
  		mtd->oobsize = type->oobsize;
  
@@ -33,6 +31,3 @@ index 3bde96a..69b5cac 100644
  		chip->chipsize = (uint64_t)type->chipsize << 20;
  		chip->options |= type->options;
  		chip->ecc_strength_ds = NAND_ECC_STRENGTH(type);
--- 
-2.7.4
-

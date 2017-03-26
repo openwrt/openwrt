@@ -44,11 +44,9 @@ Signed-off-by: Ian Pozella <Ian.Pozella@imgtec.com>
  create mode 100644 drivers/mtd/spi-nand/spi-nand-base.c
  create mode 100644 include/linux/mtd/spi-nand.h
 
-diff --git a/drivers/mtd/Kconfig b/drivers/mtd/Kconfig
-index e83a279..9163d7f 100644
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -334,6 +334,8 @@ source "drivers/mtd/onenand/Kconfig"
+@@ -369,6 +369,8 @@ source "drivers/mtd/onenand/Kconfig"
  
  source "drivers/mtd/lpddr/Kconfig"
  
@@ -57,20 +55,15 @@ index e83a279..9163d7f 100644
  source "drivers/mtd/spi-nor/Kconfig"
  
  source "drivers/mtd/ubi/Kconfig"
-diff --git a/drivers/mtd/Makefile b/drivers/mtd/Makefile
-index 99bb9a1..38a4756 100644
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -32,5 +32,6 @@ inftl-objs		:= inftlcore.o inftlmount.o
+@@ -35,5 +35,6 @@ inftl-objs		:= inftlcore.o inftlmount.o
  
  obj-y		+= chips/ lpddr/ maps/ devices/ nand/ onenand/ tests/
  
 +obj-$(CONFIG_MTD_SPI_NAND)	+= spi-nand/
  obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor/
  obj-$(CONFIG_MTD_UBI)		+= ubi/
-diff --git a/drivers/mtd/spi-nand/Kconfig b/drivers/mtd/spi-nand/Kconfig
-new file mode 100644
-index 0000000..17b31e1
 --- /dev/null
 +++ b/drivers/mtd/spi-nand/Kconfig
 @@ -0,0 +1,7 @@
@@ -81,16 +74,10 @@ index 0000000..17b31e1
 +	help
 +	  This is the framework for the SPI NAND.
 +
-diff --git a/drivers/mtd/spi-nand/Makefile b/drivers/mtd/spi-nand/Makefile
-new file mode 100644
-index 0000000..d454c52
 --- /dev/null
 +++ b/drivers/mtd/spi-nand/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_MTD_SPI_NAND)		+= spi-nand-base.o
-diff --git a/drivers/mtd/spi-nand/spi-nand-base.c b/drivers/mtd/spi-nand/spi-nand-base.c
-new file mode 100644
-index 0000000..5d79f85
 --- /dev/null
 +++ b/drivers/mtd/spi-nand/spi-nand-base.c
 @@ -0,0 +1,566 @@
@@ -660,9 +647,6 @@ index 0000000..5d79f85
 +MODULE_AUTHOR("Ezequiel Garcia <ezequiel.garcia@imgtec.com>");
 +MODULE_DESCRIPTION("Framework for SPI NAND");
 +MODULE_LICENSE("GPL v2");
-diff --git a/include/linux/mtd/spi-nand.h b/include/linux/mtd/spi-nand.h
-new file mode 100644
-index 0000000..b5cc99f
 --- /dev/null
 +++ b/include/linux/mtd/spi-nand.h
 @@ -0,0 +1,54 @@
@@ -720,6 +704,3 @@ index 0000000..b5cc99f
 +void spi_nand_unregister(struct spi_nand *snand);
 +
 +#endif
--- 
-2.7.4
-

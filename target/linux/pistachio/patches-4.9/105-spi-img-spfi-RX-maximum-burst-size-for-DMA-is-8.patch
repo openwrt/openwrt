@@ -27,11 +27,9 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  drivers/spi/spi-img-spfi.c | 6 ++----
  1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
-index 231b59c..8ad6c75 100644
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
-@@ -346,12 +346,11 @@ static int img_spfi_start_dma(struct spi_master *master,
+@@ -346,12 +346,11 @@ static int img_spfi_start_dma(struct spi
  		if (xfer->len % 4 == 0) {
  			rxconf.src_addr = spfi->phys + SPFI_RX_32BIT_VALID_DATA;
  			rxconf.src_addr_width = 4;
@@ -45,7 +43,7 @@ index 231b59c..8ad6c75 100644
  		dmaengine_slave_config(spfi->rx_ch, &rxconf);
  
  		rxdesc = dmaengine_prep_slave_sg(spfi->rx_ch, xfer->rx_sg.sgl,
-@@ -370,12 +369,11 @@ static int img_spfi_start_dma(struct spi_master *master,
+@@ -370,12 +369,11 @@ static int img_spfi_start_dma(struct spi
  		if (xfer->len % 4 == 0) {
  			txconf.dst_addr = spfi->phys + SPFI_TX_32BIT_VALID_DATA;
  			txconf.dst_addr_width = 4;
@@ -59,6 +57,3 @@ index 231b59c..8ad6c75 100644
  		dmaengine_slave_config(spfi->tx_ch, &txconf);
  
  		txdesc = dmaengine_prep_slave_sg(spfi->tx_ch, xfer->tx_sg.sgl,
--- 
-2.7.4
-

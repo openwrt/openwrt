@@ -13,11 +13,9 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  drivers/spi/spi-img-spfi.c | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
-index c845a50..0d73d31 100644
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
-@@ -438,6 +438,9 @@ static int img_spfi_prepare(struct spi_master *master, struct spi_message *msg)
+@@ -438,6 +438,9 @@ static int img_spfi_prepare(struct spi_m
  	u32 val;
  
  	val = spfi_readl(spfi, SPFI_PORT_STATE);
@@ -27,6 +25,3 @@ index c845a50..0d73d31 100644
  	if (msg->spi->mode & SPI_CPHA)
  		val |= SPFI_PORT_STATE_CK_PHASE(msg->spi->chip_select);
  	else
--- 
-2.7.4
-

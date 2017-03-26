@@ -26,8 +26,6 @@ Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
  drivers/spi/spi-img-spfi.c | 96 ++++++++++++++++++++++++++++++++++++++++------
  1 file changed, 85 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
-index 7a37090..c845a50 100644
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
 @@ -40,7 +40,8 @@
@@ -68,7 +66,7 @@ index 7a37090..c845a50 100644
  };
  
  struct img_spfi_device_data {
-@@ -123,9 +131,11 @@ static inline void spfi_start(struct img_spfi *spfi)
+@@ -123,9 +131,11 @@ static inline void spfi_start(struct img
  {
  	u32 val;
  
@@ -83,7 +81,7 @@ index 7a37090..c845a50 100644
  }
  
  static inline void spfi_reset(struct img_spfi *spfi)
-@@ -138,12 +148,21 @@ static int spfi_wait_all_done(struct img_spfi *spfi)
+@@ -138,12 +148,21 @@ static int spfi_wait_all_done(struct img
  {
  	unsigned long timeout = jiffies + msecs_to_jiffies(50);
  
@@ -105,7 +103,7 @@ index 7a37090..c845a50 100644
  			return 0;
  		}
  		cpu_relax();
-@@ -494,9 +513,32 @@ static void img_spfi_config(struct spi_master *master, struct spi_device *spi,
+@@ -494,9 +513,32 @@ static void img_spfi_config(struct spi_m
  			    struct spi_transfer *xfer)
  {
  	struct img_spfi *spfi = spi_master_get_devdata(spi->master);
@@ -139,7 +137,7 @@ index 7a37090..c845a50 100644
  	 * output = spfi_clk * (BITCLK / 512), where BITCLK must be a
  	 * power of 2 up to 128
  	 */
-@@ -509,20 +551,52 @@ static void img_spfi_config(struct spi_master *master, struct spi_device *spi,
+@@ -509,20 +551,52 @@ static void img_spfi_config(struct spi_m
  	val |= div << SPFI_DEVICE_PARAMETER_BITCLK_SHIFT;
  	spfi_writel(spfi, val, SPFI_DEVICE_PARAMETER(spi->chip_select));
  
@@ -198,6 +196,3 @@ index 7a37090..c845a50 100644
  		 xfer->rx_nbits == SPI_NBITS_QUAD)
  		val |= SPFI_CONTROL_TMODE_QUAD << SPFI_CONTROL_TMODE_SHIFT;
  	val |= SPFI_CONTROL_SE;
--- 
-2.7.4
-

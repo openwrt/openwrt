@@ -26,11 +26,9 @@ Signed-off-by: James Hogan <james.hogan@imgtec.com>
  kernel/time/clockevents.c | 26 +++++++++++++++++++-------
  1 file changed, 19 insertions(+), 7 deletions(-)
 
-diff --git a/kernel/time/clockevents.c b/kernel/time/clockevents.c
-index 2c5bc77..ddd7e82 100644
 --- a/kernel/time/clockevents.c
 +++ b/kernel/time/clockevents.c
-@@ -281,16 +281,28 @@ static int clockevents_program_min_delta(struct clock_event_device *dev)
+@@ -281,16 +281,28 @@ static int clockevents_program_min_delta
  {
  	unsigned long long clc;
  	int64_t delta;
@@ -66,6 +64,3 @@ index 2c5bc77..ddd7e82 100644
  }
  
  #endif /* CONFIG_GENERIC_CLOCKEVENTS_MIN_ADJUST */
--- 
-2.7.4
-

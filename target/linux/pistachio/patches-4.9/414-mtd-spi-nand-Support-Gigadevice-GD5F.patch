@@ -26,8 +26,6 @@ Signed-off-by: Ian Pozella <Ian.Pozella@imgtec.com>
  3 files changed, 483 insertions(+)
  create mode 100644 drivers/mtd/spi-nand/spi-nand-device.c
 
-diff --git a/drivers/mtd/spi-nand/Kconfig b/drivers/mtd/spi-nand/Kconfig
-index 17b31e1..ab6bb6c 100644
 --- a/drivers/mtd/spi-nand/Kconfig
 +++ b/drivers/mtd/spi-nand/Kconfig
 @@ -5,3 +5,13 @@ menuconfig MTD_SPI_NAND
@@ -44,16 +42,11 @@ index 17b31e1..ab6bb6c 100644
 +	  Select this option if you require support for SPI NAND devices.
 +
 +endif # MTD_SPI_NAND
-diff --git a/drivers/mtd/spi-nand/Makefile b/drivers/mtd/spi-nand/Makefile
-index d454c52..6e460d1 100644
 --- a/drivers/mtd/spi-nand/Makefile
 +++ b/drivers/mtd/spi-nand/Makefile
 @@ -1 +1,2 @@
  obj-$(CONFIG_MTD_SPI_NAND)		+= spi-nand-base.o
 +obj-$(CONFIG_MTD_SPI_NAND_DEVICES)     += spi-nand-device.o
-diff --git a/drivers/mtd/spi-nand/spi-nand-device.c b/drivers/mtd/spi-nand/spi-nand-device.c
-new file mode 100644
-index 0000000..95db20b
 --- /dev/null
 +++ b/drivers/mtd/spi-nand/spi-nand-device.c
 @@ -0,0 +1,472 @@
@@ -529,6 +522,3 @@ index 0000000..95db20b
 +MODULE_AUTHOR("Ezequiel Garcia <ezequiel.garcia@imgtec.com>");
 +MODULE_DESCRIPTION("SPI NAND device support");
 +MODULE_LICENSE("GPL v2");
--- 
-2.7.4
-

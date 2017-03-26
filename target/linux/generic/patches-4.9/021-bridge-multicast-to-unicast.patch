@@ -81,7 +81,7 @@ Signed-off-by: Linus LÃ¼ssing <linus.luessing@c0d3.blue>
  /* called under rcu_read_lock */
  void br_flood(struct net_bridge *br, struct sk_buff *skb,
  	      enum br_pkt_type pkt_type, bool local_rcv, bool local_orig)
-@@ -241,10 +264,20 @@ void br_multicast_flood(struct net_bridg
+@@ -242,10 +265,20 @@ void br_multicast_flood(struct net_bridg
  		rport = rp ? hlist_entry(rp, struct net_bridge_port, rlist) :
  			     NULL;
  

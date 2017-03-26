@@ -63,7 +63,7 @@ Signed-off-by: Georgi Djakov <georgi.djakov@linaro.org>
  
  	cpu_dev = get_cpu_device(policy->cpu);
  	if (!cpu_dev) {
-@@ -318,6 +350,13 @@ static int cpufreq_init(struct cpufreq_p
+@@ -321,6 +353,13 @@ static int cpufreq_init(struct cpufreq_p
  		policy->suspend_freq = dev_pm_opp_get_freq(suspend_opp) / 1000;
  	rcu_read_unlock();
  

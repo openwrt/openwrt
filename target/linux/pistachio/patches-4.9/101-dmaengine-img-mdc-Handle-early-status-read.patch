@@ -14,11 +14,9 @@ Signed-off-by: Damien Horsley <damien.horsley@imgtec.com>
  drivers/dma/img-mdc-dma.c | 40 ++++++++++++++++++++++++----------------
  1 file changed, 24 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/dma/img-mdc-dma.c b/drivers/dma/img-mdc-dma.c
-index 624f1e1..0216e2c 100644
 --- a/drivers/dma/img-mdc-dma.c
 +++ b/drivers/dma/img-mdc-dma.c
-@@ -623,25 +623,33 @@ static enum dma_status mdc_tx_status(struct dma_chan *chan,
+@@ -623,25 +623,33 @@ static enum dma_status mdc_tx_status(str
  			(MDC_CMDS_PROCESSED_CMDS_DONE_MASK + 1);
  
  		/*
@@ -68,6 +66,3 @@ index 624f1e1..0216e2c 100644
  		}
  	}
  	spin_unlock_irqrestore(&mchan->vc.lock, flags);
--- 
-2.7.4
-

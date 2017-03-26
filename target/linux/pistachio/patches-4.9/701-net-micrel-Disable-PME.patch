@@ -11,11 +11,9 @@ Signed-off-by: Xue Liu <liuxuenetmail@gmail.com>
  drivers/net/phy/micrel.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/net/phy/micrel.c b/drivers/net/phy/micrel.c
-index ea92d52..73401fb 100644
 --- a/drivers/net/phy/micrel.c
 +++ b/drivers/net/phy/micrel.c
-@@ -273,6 +273,7 @@ static int kszphy_config_init(struct phy_device *phydev)
+@@ -273,6 +273,7 @@ static int kszphy_config_init(struct phy
  	struct kszphy_priv *priv = phydev->priv;
  	const struct kszphy_type *type;
  	int ret;
@@ -23,7 +21,7 @@ index ea92d52..73401fb 100644
  
  	if (!priv)
  		return 0;
-@@ -308,6 +309,11 @@ static int kszphy_config_init(struct phy_device *phydev)
+@@ -308,6 +309,11 @@ static int kszphy_config_init(struct phy
  			return ret;
  	}
  
@@ -35,6 +33,3 @@ index ea92d52..73401fb 100644
  	return 0;
  }
  
--- 
-2.7.4
-

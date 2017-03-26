@@ -13,11 +13,9 @@ Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
  drivers/spi/spi-img-spfi.c | 23 ++++++++++++++++-------
  1 file changed, 16 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
-index 0d73d31..231b59c 100644
 --- a/drivers/spi/spi-img-spfi.c
 +++ b/drivers/spi/spi-img-spfi.c
-@@ -437,18 +437,23 @@ static int img_spfi_prepare(struct spi_master *master, struct spi_message *msg)
+@@ -437,18 +437,23 @@ static int img_spfi_prepare(struct spi_m
  	struct img_spfi *spfi = spi_master_get_devdata(master);
  	u32 val;
  
@@ -46,7 +44,7 @@ index 0d73d31..231b59c 100644
  	spfi_writel(spfi, val, SPFI_PORT_STATE);
  
  	return 0;
-@@ -548,11 +553,15 @@ static void img_spfi_config(struct spi_master *master, struct spi_device *spi,
+@@ -548,11 +553,15 @@ static void img_spfi_config(struct spi_m
  	div = DIV_ROUND_UP(clk_get_rate(spfi->spfi_clk), xfer->speed_hz);
  	div = clamp(512 / (1 << get_count_order(div)), 1, 128);
  
@@ -64,6 +62,3 @@ index 0d73d31..231b59c 100644
  
  	if (!list_is_last(&xfer->transfer_list, &master->cur_msg->transfers) &&
  		/*
--- 
-2.7.4
-
