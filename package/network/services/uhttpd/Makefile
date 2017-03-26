@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(LEDE_GIT)/project/uhttpd.git
@@ -46,8 +46,11 @@ define Package/uhttpd/config
   config PACKAGE_uhttpd_debug
     bool "Build with debug messages"
     default n
+  config uhttpd_lua
+    depends on PACKAGE_uhttpd-mod-lua
+    bool "Enable Integrated Lua interpreter"
+	default y
 endef
-
 
 define Package/uhttpd-mod-lua
   $(Package/uhttpd/default)
@@ -104,6 +107,16 @@ define Package/uhttpd-mod-ubus/install
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/etc/uci-defaults
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd_ubus.so $(1)/usr/lib/
 	$(INSTALL_DATA) ./files/ubus.default $(1)/etc/uci-defaults/00_uhttpd_ubus
+endef
+
+define Package/uhttpd-mod-lua/postinst
+	$(if $(CONFIG_uhttpd_lua),
+	#!/bin/sh
+	if [ -f $${IPKG_INSTROOT}/www/index.html ]
+	then
+		sed -e 's:/cgi-bin::g' -i $${IPKG_INSTROOT}/www/index.html
+	fi
+	,)
 endef
 
 
