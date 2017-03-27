@@ -74,8 +74,6 @@ define Device/rt-n56u
   BLOCKSIZE := 64k
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin += | mkrtn56uimg -s
-  IMAGE/factory.bin := 	$$(sysupgrade_bin) | \
-	check-size $$$$(IMAGE_SIZE) | mkrtn56uimg -f
   DEVICE_TITLE := Asus RT-N56U
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
