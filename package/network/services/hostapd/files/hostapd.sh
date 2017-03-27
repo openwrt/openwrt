@@ -64,6 +64,7 @@ hostapd_common_add_device_config() {
 	config_add_string country
 	config_add_boolean country_ie doth
 	config_add_string require_mode
+	config_add_boolean legacy_rates
 
 	hostapd_add_log_config
 }
@@ -75,12 +76,15 @@ hostapd_prepare_device_config() {
 	local base="${config%%.conf}"
 	local base_cfg=
 
-	json_get_vars country country_ie beacon_int doth require_mode
+	json_get_vars country country_ie beacon_int doth require_mode legacy_rates
 
 	hostapd_set_log_options base_cfg
 
 	set_default country_ie 1
 	set_default doth 1
+	set_default legacy_rates 1
+
+	[ "$hwmode" = "b" ] && legacy_rates=1
 
 	[ -n "$country" ] && {
 		append base_cfg "country_code=$country" "$N"
@@ -88,23 +92,31 @@ hostapd_prepare_device_config() {
 		[ "$country_ie" -gt 0 ] && append base_cfg "ieee80211d=1" "$N"
 		[ "$hwmode" = "a" -a "$doth" -gt 0 ] && append base_cfg "ieee80211h=1" "$N"
 	}
-	[ -n "$hwmode" ] && append base_cfg "hw_mode=$hwmode" "$N"
 
 	local brlist= br
 	json_get_values basic_rate_list basic_rate
-	for br in $basic_rate_list; do
-		hostapd_add_rate brlist "$br"
-	done
+	local rlist= r
+	json_get_values rate_list supported_rates
+
+	[ -n "$hwmode" ] && append base_cfg "hw_mode=$hwmode" "$N"
+	[ "$legacy_rates" -eq 0 ] && set_default require_mode g
+
+	[ "$hwmode" = "g" ] && {
+		[ "$legacy_rates" -eq 0 ] && set_default rate_list "6000 9000 12000 18000 24000 36000 48000 54000"
+		[ -n "$require_mode" ] && set_default basic_rate_list "6000 12000 24000"
+	}
+
 	case "$require_mode" in
-		g) brlist="60 120 240" ;;
 		n) append base_cfg "require_ht=1" "$N";;
 		ac) append base_cfg "require_vht=1" "$N";;
 	esac
 
-	local rlist= r
-	json_get_values rate_list supported_rates
 	for r in $rate_list; do
 		hostapd_add_rate rlist "$r"
+	done
+
+	for br in $basic_rate_list; do
+		hostapd_add_rate brlist "$br"
 	done
 
 	[ -n "$rlist" ] && append base_cfg "supported_rates=$rlist" "$N"
