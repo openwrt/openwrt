@@ -29,12 +29,6 @@ opkg_package_files = $(wildcard \
 	$(foreach dir,$(PACKAGE_SUBDIRS), \
 	  $(foreach pkg,$(1), $(dir)/$(pkg)_*.ipk)))
 
-PKG_CONFIG_DEPENDS += \
-	CONFIG_PER_FEED_REPO \
-	CONFIG_PER_FEED_REPO_ADD_DISABLED \
-	CONFIG_PER_FEED_REPO_ADD_COMMENTED \
-	$(foreach feed,$(FEEDS_INSTALLED),CONFIG_FEED_$(feed))
-
 # 1: package name
 define FeedPackageDir
 $(strip $(if $(CONFIG_PER_FEED_REPO), \
