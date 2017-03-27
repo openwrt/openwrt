@@ -242,7 +242,7 @@ menu "Target Images"
 
 	config TARGET_IMAGES_GZIP
 		bool "GZip images"
-		depends on TARGET_IMAGES_PAD || TARGET_ROOTFS_EXT4FS
+		depends on TARGET_IMAGES_PAD || TARGET_ROOTFS_EXT4FS || TARGET_x86
 		default y
 
 	comment "Image Options"

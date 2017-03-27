@@ -153,11 +153,9 @@ ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
   define Image/Build/gzip/ext4
 	$(call Image/Build/gzip,ext4)
   endef
-  ifneq ($(CONFIG_TARGET_IMAGES_PAD),)
-    define Image/Build/gzip/squashfs
+  define Image/Build/gzip/squashfs
 	$(call Image/Build/gzip,squashfs)
-    endef
-  endif
+  endef
 endif
 
 define Image/BuildKernel
