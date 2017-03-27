@@ -420,7 +420,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +	qcom_dwc3_phy_write_readback(phy_dwc3, SSUSB_PHY_CTRL_REG,
 +		SSUSB_CTRL_REF_USE_PAD, 0x0);
 +	qcom_dwc3_phy_write_readback(phy_dwc3, SSUSB_PHY_CTRL_REG,
-+		0x0, SSUSB_CTRL_TEST_POWERDOWN);
++		SSUSB_CTRL_TEST_POWERDOWN, 0x0);
 +
 +	return 0;
 +}
