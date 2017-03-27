@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 #
 # Clean a text file -- or directory of text files -- of stealth whitespace.
 # WARNING: this can be a highly destructive operation.  Use with caution.
@@ -6,6 +6,7 @@
 
 use bytes;
 use File::Basename;
+use warnings;
 
 # Default options
 $max_width = 79;
