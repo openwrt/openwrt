@@ -790,6 +790,16 @@ define Device/bhr-4grv2
 endef
 TARGET_DEVICES += bhr-4grv2
 
+define Device/wpj531
+  DEVICE_TITLE := Compex WPJ531 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  BOARDNAME := WPJ531
+  MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
+  IMAGE_SIZE := 16128k
+  CONSOLE := ttyS0,115200
+endef
+TARGET_DEVICES += wpj531
+
 define Device/wpj558
   DEVICE_TITLE := Compex WPJ558 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport

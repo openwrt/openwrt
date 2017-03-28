@@ -182,11 +182,6 @@ define LegacyDevice/DR344
 endef
 LEGACY_DEVICES += DR344
 
-define LegacyDevice/WPJ531_16M
-  DEVICE_TITLE := Compex WPJ531 (16MB flash)
-endef
-LEGACY_DEVICES += WPJ531_16M
-
 define LegacyDevice/WRTNODE2Q
   DEVICE_TITLE := WRTnode2Q board
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage
