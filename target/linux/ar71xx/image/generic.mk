@@ -789,3 +789,13 @@ define Device/bhr-4grv2
   IMAGE/factory.bin = append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | mkbuffaloimg
 endef
 TARGET_DEVICES += bhr-4grv2
+
+define Device/wpj558
+  DEVICE_TITLE := Compex WPJ558 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  BOARDNAME := WPJ558
+  MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
+  IMAGE_SIZE := 16128k
+  CONSOLE := ttyS0,115200
+endef
+TARGET_DEVICES += wpj558

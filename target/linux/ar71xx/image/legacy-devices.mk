@@ -187,11 +187,6 @@ define LegacyDevice/WPJ531_16M
 endef
 LEGACY_DEVICES += WPJ531_16M
 
-define LegacyDevice/WPJ558_16M
-  DEVICE_TITLE := Compex WPJ558 (16MB flash)
-endef
-LEGACY_DEVICES += WPJ558_16M
-
 define LegacyDevice/WRTNODE2Q
   DEVICE_TITLE := WRTnode2Q board
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage
