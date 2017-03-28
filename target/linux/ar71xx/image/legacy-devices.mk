@@ -167,11 +167,6 @@ define LegacyDevice/WLR8100
 endef
 LEGACY_DEVICES += WLR8100
 
-define LegacyDevice/WPJ342_16M
-  DEVICE_TITLE := Compex WPJ342 (16MB flash)
-endef
-LEGACY_DEVICES += WPJ342_16M
-
 define LegacyDevice/DR344
   DEVICE_TITLE := Wallys DR344
 endef

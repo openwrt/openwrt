@@ -790,6 +790,16 @@ define Device/bhr-4grv2
 endef
 TARGET_DEVICES += bhr-4grv2
 
+define Device/wpj342
+  DEVICE_TITLE := Compex WPJ342 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  BOARDNAME := WPJ342
+  MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
+  IMAGE_SIZE := 16128k
+  CONSOLE := ttyS0,115200
+endef
+TARGET_DEVICES += wpj342
+
 define Device/wpj344
   DEVICE_TITLE := Compex WPJ344 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
