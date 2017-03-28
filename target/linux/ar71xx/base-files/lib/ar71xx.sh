@@ -824,6 +824,9 @@ ar71xx_board_detect() {
 	*"Rocket M XW")
 		name="rocket-m-xw"
 		;;
+	*"RouterBOARD 2011iL")
+		name="rb-2011il"
+		;;
 	*"RouterBOARD 2011L")
 		name="rb-2011l"
 		;;
