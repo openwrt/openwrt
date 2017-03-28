@@ -270,7 +270,6 @@ ubdev_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7488k(firmware)
 whrhpg300n_mtdlayout=mtdparts=spi0.0:248k(u-boot)ro,8k(u-boot-env)ro,3712k(firmware),64k(art)ro
 wlr8100_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,1408k(kernel),14080k(rootfs),192k(unknown)ro,64k(art)ro,384k(unknown2)ro,15488k@0x40000(firmware)
 wpj342_mtdlayout_16M=mtdparts=spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
-wpj344_mtdlayout_16M=mtdparts=spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
 dr344_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 wndap360_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),64k(nvram)ro,64k(art)ro
 wnr2200_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7808k(firmware),64k(art)ro
@@ -908,7 +907,6 @@ $(eval $(call SingleProfile,AthLzma,64k,HORNETUBx2,hornet-ub-x2,HORNET-UB,ttyATH
 $(eval $(call SingleProfile,AthLzma,64k,TUBE2H16M,tube2h-16M,TUBE2H,ttyATH0,115200,$$(alfa_mtdlayout_16M),KRuImage,65536))
 $(eval $(call SingleProfile,AthLzma,64k,WLR8100,wlr8100,WLR8100,ttyS0,115200,$$(wlr8100_mtdlayout),KRuImage))
 $(eval $(call SingleProfile,AthLzma,64k,WPJ342_16M,wpj342-16M,WPJ342,ttyS0,115200,$$(wpj342_mtdlayout_16M),KRuImage,65536))
-$(eval $(call SingleProfile,AthLzma,64k,WPJ344_16M,wpj344-16M,WPJ344,ttyS0,115200,$$(wpj344_mtdlayout_16M),KRuImage,65536))
 $(eval $(call SingleProfile,AthLzma,64k,DR344,dr344,DR344,ttyS0,115200,$$(dr344_mtdlayout),RKuImage))
 $(eval $(call SingleProfile,AthLzma,64k,WRTNODE2Q,wrtnode2q,WRTNODE2Q,ttyS0,115200,$$(wrtnode2q_mtdlayout),KRuImage))
 $(eval $(call SingleProfile,AthLzma,64k,YUN_8M,yun-8M,Yun,ttyATH0,250000,$$(yun_mtdlayout_8M),RKuImage))
