@@ -5,6 +5,28 @@
 # See /LICENSE for more information.
 #
 
+define KernelPackage/efi-vars
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=EFI VARS modules
+  DEPENDS:=@EFI_IMAGES
+  KCONFIG:= \
+	CONFIG_EFI=y \
+	CONFIG_EFI_STUB=n \
+	CONFIG_ACPI_BGRT=y \
+	CONFIG_EFI_FAKE_MEMMAP=y \
+	CONFIG_EFI_MAX_FAKE_MEM=8 \
+	CONFIG_EFI_VARS=m \
+	CONFIG_EFIVAR_FS=y \
+	CONFIG_EFI_PGT_DUMP=n \
+	CONFIG_EARLY_PRINTK_EFI=y \
+	CONFIG_FB_EFI=y \
+	CONFIG_FB_SIMPLE=y
+  FILES:=$(LINUX_DIR)/fs/efivarfs/efivarfs.ko
+  AUTOLOAD:=$(call AutoLoad,0,efi-vars)
+endef
+
+$(eval $(call KernelPackage,efi-vars))
+
 define KernelPackage/rdc321x-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RDC321x watchdog

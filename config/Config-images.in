@@ -224,6 +224,14 @@ menu "Target Images"
 		help
 		  If you don't know, 5 seconds is a reasonable default.
 
+	config EFI_IMAGES
+		bool "Build EFI GRUB images (Linux x86 or x86_64 host only)"
+		depends on TARGET_x86_64 || (TARGET_x86 && !TARGET_x86_rdc)
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+		select GRUB_IMAGES
+		select PACKAGE_grub2-efi
+		default y
+
 	config VDI_IMAGES
 		bool "Build VirtualBox image files (VDI)"
 		depends on TARGET_x86 || TARGET_x86_64
