@@ -655,7 +655,8 @@ dhcp_relay_add() {
 	if [ -z "$interface" ]; then
 		xappend "--dhcp-relay=$local_addr,$server_addr"
 	else
-		xappend "--dhcp-relay=$local_addr,$server_addr,$interface"
+		network_get_device ifname "$interface" || return
+		xappend "--dhcp-relay=$local_addr,$server_addr,$ifname"
 	fi
 }
 
