@@ -796,7 +796,6 @@ define Device/wpj342
   BOARDNAME := WPJ342
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k
-  CONSOLE := ttyS0,115200
 endef
 TARGET_DEVICES += wpj342
 
@@ -806,7 +805,6 @@ define Device/wpj344
   BOARDNAME := WPJ344
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k
-  CONSOLE := ttyS0,115200
 endef
 TARGET_DEVICES += wpj344
 
@@ -816,7 +814,6 @@ define Device/wpj531
   BOARDNAME := WPJ531
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k
-  CONSOLE := ttyS0,115200
 endef
 TARGET_DEVICES += wpj531
 
@@ -826,6 +823,5 @@ define Device/wpj558
   BOARDNAME := WPJ558
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k
-  CONSOLE := ttyS0,115200
 endef
 TARGET_DEVICES += wpj558
