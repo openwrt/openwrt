@@ -459,7 +459,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  /*
   * PLL block
   */
-@@ -286,6 +307,44 @@
+@@ -289,6 +310,44 @@
  
  #define AR934X_PLL_SWITCH_CLOCK_CONTROL_MDIO_CLK_SEL	BIT(6)
  
@@ -504,7 +504,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define QCA955X_PLL_CPU_CONFIG_REG		0x00
  #define QCA955X_PLL_DDR_CONFIG_REG		0x04
  #define QCA955X_PLL_CLK_CTRL_REG		0x08
-@@ -362,6 +421,10 @@
+@@ -365,6 +424,10 @@
  #define AR934X_RESET_REG_BOOTSTRAP		0xb0
  #define AR934X_RESET_REG_PCIE_WMAC_INT_STATUS	0xac
  
@@ -515,7 +515,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define QCA955X_RESET_REG_RESET_MODULE		0x1c
  #define QCA955X_RESET_REG_BOOTSTRAP		0xb0
  #define QCA955X_RESET_REG_EXT_INT_STATUS	0xac
-@@ -457,6 +520,27 @@
+@@ -460,6 +523,27 @@
  #define AR934X_RESET_MBOX		BIT(1)
  #define AR934X_RESET_I2S		BIT(0)
  
@@ -543,7 +543,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define QCA955X_RESET_HOST		BIT(31)
  #define QCA955X_RESET_SLIC		BIT(30)
  #define QCA955X_RESET_HDMA		BIT(29)
-@@ -510,6 +594,13 @@
+@@ -513,6 +597,13 @@
  #define AR934X_BOOTSTRAP_SDRAM_DISABLED BIT(1)
  #define AR934X_BOOTSTRAP_DDR1		BIT(0)
  
@@ -557,7 +557,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define QCA955X_BOOTSTRAP_REF_CLK_40	BIT(4)
  
  #define AR934X_PCIE_WMAC_INT_WMAC_MISC		BIT(0)
-@@ -530,6 +621,24 @@
+@@ -533,6 +624,24 @@
  	 AR934X_PCIE_WMAC_INT_PCIE_RC1 | AR934X_PCIE_WMAC_INT_PCIE_RC2 | \
  	 AR934X_PCIE_WMAC_INT_PCIE_RC3)
  
@@ -582,7 +582,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define QCA955X_EXT_INT_WMAC_MISC		BIT(0)
  #define QCA955X_EXT_INT_WMAC_TX			BIT(1)
  #define QCA955X_EXT_INT_WMAC_RXLP		BIT(2)
-@@ -572,6 +681,8 @@
+@@ -575,6 +684,8 @@
  #define REV_ID_MAJOR_AR9341		0x0120
  #define REV_ID_MAJOR_AR9342		0x1120
  #define REV_ID_MAJOR_AR9344		0x2120
@@ -591,7 +591,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define REV_ID_MAJOR_QCA9556		0x0130
  #define REV_ID_MAJOR_QCA9558		0x1130
  
-@@ -594,6 +705,8 @@
+@@ -597,6 +708,8 @@
  
  #define AR934X_REV_ID_REVISION_MASK	0xf
  
@@ -600,7 +600,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define QCA955X_REV_ID_REVISION_MASK	0xf
  
  /*
-@@ -641,6 +754,25 @@
+@@ -644,6 +757,25 @@
  #define AR934X_GPIO_REG_OUT_FUNC5	0x40
  #define AR934X_GPIO_REG_FUNC		0x6c
  
@@ -626,7 +626,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define QCA955X_GPIO_REG_OUT_FUNC0	0x2c
  #define QCA955X_GPIO_REG_OUT_FUNC1	0x30
  #define QCA955X_GPIO_REG_OUT_FUNC2	0x34
-@@ -655,6 +787,7 @@
+@@ -658,6 +790,7 @@
  #define AR913X_GPIO_COUNT		22
  #define AR933X_GPIO_COUNT		30
  #define AR934X_GPIO_COUNT		23
@@ -634,7 +634,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define QCA955X_GPIO_COUNT		24
  
  /*
-@@ -678,6 +811,24 @@
+@@ -681,6 +814,24 @@
  #define AR934X_SRIF_DPLL2_OUTDIV_SHIFT	13
  #define AR934X_SRIF_DPLL2_OUTDIV_MASK	0x7
  
@@ -659,7 +659,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  #define AR71XX_GPIO_FUNC_STEREO_EN		BIT(17)
  #define AR71XX_GPIO_FUNC_SLIC_EN		BIT(16)
  #define AR71XX_GPIO_FUNC_SPI_CS2_EN		BIT(13)
-@@ -884,6 +1035,16 @@
+@@ -887,6 +1038,16 @@
  #define AR934X_ETH_CFG_RDV_DELAY_SHIFT  16
  
  /*
