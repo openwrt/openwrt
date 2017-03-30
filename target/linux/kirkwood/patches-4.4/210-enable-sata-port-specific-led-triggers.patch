@@ -1,0 +1,10 @@
+--- a/arch/arm/mach-mvebu/Kconfig
++++ b/arch/arm/mach-mvebu/Kconfig
+@@ -105,6 +105,7 @@ config MACH_DOVE
+ config MACH_KIRKWOOD
+ 	bool "Marvell Kirkwood boards" if ARCH_MULTI_V5
+ 	select ARCH_REQUIRE_GPIOLIB
++	select ARCH_WANT_LIBATA_LEDS
+ 	select CPU_FEROCEON
+ 	select KIRKWOOD_CLK
+ 	select MACH_MVEBU_ANY
