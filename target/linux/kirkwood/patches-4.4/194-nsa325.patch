@@ -10,7 +10,7 @@
  	kirkwood-openrd-base.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-nsa325.dts
-@@ -0,0 +1,225 @@
+@@ -0,0 +1,220 @@
 +/*
 + * Device tree file for Zyxel NSA325 and NSA325v2 NAS
 + */
@@ -140,7 +140,6 @@
 +		green-sata2 {
 +			label = "nsa325:green:sata2";
 +			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
-+                        linux,default-trigger = "ide-disk2";
 +		};
 +
 +		red-sata2 {
@@ -151,19 +150,16 @@
 +		green-usb {
 +			label = "nsa325:green:usb";
 +			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
-+                        linux,default-trigger = "usb-host";
 +		};
 +
 +		green-sys {
 +			label = "nsa325:green:sys";
 +			gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
-+			linux,default-trigger = "default-on";
 +		};
 +
 +		orange-sys {
 +			label = "nsa325:orange:sys";
 +			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
-+			linux,default-trigger = "cpu0";
 +		};
 +
 +		green-copy {
@@ -179,7 +175,6 @@
 +		green-sata1 {
 +			label = "nsa325:green:sata1";
 +			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
-+			linux,default-trigger = "ide-disk1";
 +		};
 +
 +		red-sata1 {
