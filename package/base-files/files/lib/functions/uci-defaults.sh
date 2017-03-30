@@ -358,6 +358,10 @@ ucidef_add_vdsl_modem() {
 	json_select ..
 }
 
+ucidef_set_led_ataport() {
+	_ucidef_set_led_trigger "$1" "$2" "$3" ata"$4"
+}
+
 _ucidef_set_led_common() {
 	local cfg="led_$1"
 	local name="$2"
@@ -508,6 +512,10 @@ ucidef_set_led_usbdev() {
 	json_select ..
 
 	json_select ..
+}
+
+ucidef_set_led_usbhost() {
+	_ucidef_set_led_trigger "$1" "$2" "$3" usb-host
 }
 
 ucidef_set_led_usbport() {
