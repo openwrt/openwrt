@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -2584,6 +2584,211 @@ static void rt2800_config_channel_rf3053
+@@ -2709,6 +2709,211 @@ static void rt2800_config_channel_rf3053
  	}
  }
  
@@ -223,7 +223,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  #define POWER_BOUND		0x27
  #define POWER_BOUND_5G		0x2b
  
-@@ -3203,6 +3408,9 @@ static void rt2800_config_channel(struct
+@@ -3565,6 +3770,9 @@ static void rt2800_config_channel(struct
  	case RF3322:
  		rt2800_config_channel_rf3322(rt2x00dev, conf, rf, info);
  		break;

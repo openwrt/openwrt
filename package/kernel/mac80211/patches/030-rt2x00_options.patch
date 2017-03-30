@@ -29,7 +29,7 @@
  config RT2X00_LIB_SOC
 -	tristate
 +	tristate "RT2x00 SoC support"
-+	depends on SOC_RT288X || SOC_RT305X
++	depends on SOC_RT288X || SOC_RT305X || SOC_MT7620
  	depends on m
  	select RT2X00_LIB
  

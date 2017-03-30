@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -4596,7 +4596,8 @@ static void rt2800_config_txpower(struct
+@@ -5085,7 +5085,8 @@ static void rt2800_config_txpower(struct
  				  struct ieee80211_channel *chan,
  				  int power_level)
  {
@@ -19,5 +19,5 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +	if (rt2x00_rt(rt2x00dev, RT3593) ||
 +	    rt2x00_rt(rt2x00dev, RT3883))
  		rt2800_config_txpower_rt3593(rt2x00dev, chan, power_level);
- 	else
- 		rt2800_config_txpower_rt28xx(rt2x00dev, chan, power_level);
+ 	else if (rt2x00_rt(rt2x00dev, RT6352))
+ 		rt2800_config_txpower_rt6352(rt2x00dev, chan, power_level);
