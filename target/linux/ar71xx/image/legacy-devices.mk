@@ -615,12 +615,6 @@ define LegacyDevice/WZR450HP2
 endef
 LEGACY_DEVICES += WZR450HP2
 
-define LegacyDevice/ZBTWE1526
-  DEVICE_TITLE := Zbtlink ZBT-WE1526
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-endef
-LEGACY_DEVICES += ZBTWE1526
-
 define LegacyDevice/ZCN1523H28
   DEVICE_TITLE := Zcomax ZCN-1523H-2-8
 endef
