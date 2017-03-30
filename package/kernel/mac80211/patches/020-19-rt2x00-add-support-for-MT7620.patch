@@ -1,15 +1,7 @@
-From 5a53fd87e4691343fdb60be147ee859975071df6 Mon Sep 17 00:00:00 2001
-In-Reply-To: <20170311103750.GA17556@redhat.com>
-References: <20170311103750.GA17556@redhat.com>
-From: Daniel Golle <daniel@makrotopia.org>
-Date: Tue, 1 Jul 2014 10:26:18 +0000
-Subject: [PATCH] mac80211: rt2x00: add support for MT7620
-To: Stanislaw Gruszka <sgruszka@redhat.com>
-Cc: Helmut Schaa <helmut.schaa@googlemail.com>,
-    linux-wireless@vger.kernel.org,
-    Kalle Valo <kvalo@codeaurora.org>
-
+From 41977e86c984fcdddb454a3d7887de5d47b5f530 Mon Sep 17 00:00:00 2001
 From: Roman Yeryomin <roman@advem.lv>
+Date: Tue, 21 Mar 2017 00:43:00 +0100
+Subject: [PATCH 19/19] rt2x00: add support for MT7620
 
 Basic support for MT7620 built-in wireless radio was added to
 OpenWrt in r41441. It has seen some heavy cleaning and refactoring
@@ -17,16 +9,34 @@ since in order to match the Kernel's code quality standards.
 
 Signed-off-by: Roman Yeryomin <roman@advem.lv>
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Acked-by: Stanislaw Gruszka <sgruszka@redhat.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
+ drivers/net/wireless/ralink/rt2x00/Kconfig     |    2 +-
  drivers/net/wireless/ralink/rt2x00/rt2800.h    |  177 +++
  drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 1421 +++++++++++++++++++++++-
  drivers/net/wireless/ralink/rt2x00/rt2800lib.h |    4 +
  drivers/net/wireless/ralink/rt2x00/rt2x00.h    |    1 +
- 4 files changed, 1577 insertions(+), 26 deletions(-)
+ 5 files changed, 1578 insertions(+), 27 deletions(-)
 
+diff --git a/drivers/net/wireless/ralink/rt2x00/Kconfig b/drivers/net/wireless/ralink/rt2x00/Kconfig
+index de62f5dcb62f..a1d1cfe214d2 100644
+--- a/drivers/net/wireless/ralink/rt2x00/Kconfig
++++ b/drivers/net/wireless/ralink/rt2x00/Kconfig
+@@ -210,7 +210,7 @@ endif
+ config RT2800SOC
+ 	tristate "Ralink WiSoC support"
+ 	depends on m
+-	depends on SOC_RT288X || SOC_RT305X
++	depends on SOC_RT288X || SOC_RT305X || SOC_MT7620
+ 	select RT2X00_LIB_SOC
+ 	select RT2X00_LIB_MMIO
+ 	select RT2X00_LIB_CRYPTO
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800.h b/drivers/net/wireless/ralink/rt2x00/rt2800.h
+index fd1dbd956bad..6a8c93fb6a43 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
-@@ -81,6 +81,7 @@
+@@ -79,6 +79,7 @@
  #define RF5372				0x5372
  #define RF5390				0x5390
  #define RF5392				0x5392
@@ -34,7 +44,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * Chipset revisions.
-@@ -641,6 +642,24 @@
+@@ -639,6 +640,24 @@
  #define RF_CSR_CFG_BUSY			FIELD32(0x00020000)
  
  /*
@@ -59,7 +69,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * EFUSE_CSR: RT30x0 EEPROM
   */
  #define EFUSE_CTRL			0x0580
-@@ -1024,6 +1043,16 @@
+@@ -1022,6 +1041,16 @@
  #define AUTOWAKEUP_CFG_AUTOWAKE		FIELD32(0x00008000)
  
  /*
@@ -76,7 +86,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * EDCA_AC0_CFG:
   */
  #define EDCA_AC0_CFG			0x1300
-@@ -1097,6 +1126,12 @@
+@@ -1095,6 +1124,12 @@
  #define TX_PWR_CFG_0_OFDM6_CH1		FIELD32(0x00f00000)
  #define TX_PWR_CFG_0_OFDM12_CH0		FIELD32(0x0f000000)
  #define TX_PWR_CFG_0_OFDM12_CH1		FIELD32(0xf0000000)
@@ -89,7 +99,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * TX_PWR_CFG_1:
-@@ -1119,6 +1154,11 @@
+@@ -1117,6 +1152,11 @@
  #define TX_PWR_CFG_1_MCS0_CH1		FIELD32(0x00f00000)
  #define TX_PWR_CFG_1_MCS2_CH0		FIELD32(0x0f000000)
  #define TX_PWR_CFG_1_MCS2_CH1		FIELD32(0xf0000000)
@@ -101,7 +111,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * TX_PWR_CFG_2:
-@@ -1141,6 +1181,11 @@
+@@ -1139,6 +1179,11 @@
  #define TX_PWR_CFG_2_MCS8_CH1		FIELD32(0x00f00000)
  #define TX_PWR_CFG_2_MCS10_CH0		FIELD32(0x0f000000)
  #define TX_PWR_CFG_2_MCS10_CH1		FIELD32(0xf0000000)
@@ -113,7 +123,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * TX_PWR_CFG_3:
-@@ -1163,6 +1208,11 @@
+@@ -1161,6 +1206,11 @@
  #define TX_PWR_CFG_3_STBC0_CH1		FIELD32(0x00f00000)
  #define TX_PWR_CFG_3_STBC2_CH0		FIELD32(0x0f000000)
  #define TX_PWR_CFG_3_STBC2_CH1		FIELD32(0xf0000000)
@@ -125,17 +135,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * TX_PWR_CFG_4:
-@@ -1177,6 +1227,9 @@
- #define TX_PWR_CFG_3_STBC4_CH1		FIELD32(0x000000f0)
- #define TX_PWR_CFG_3_STBC6_CH0		FIELD32(0x00000f00)
- #define TX_PWR_CFG_3_STBC6_CH1		FIELD32(0x0000f000)
+@@ -1175,6 +1225,9 @@
+ #define TX_PWR_CFG_4_STBC4_CH1		FIELD32(0x000000f0)
+ #define TX_PWR_CFG_4_STBC6_CH0		FIELD32(0x00000f00)
+ #define TX_PWR_CFG_4_STBC6_CH1		FIELD32(0x0000f000)
 +/* bits for new 2T devices */
 +#define TX_PWR_CFG_4B_STBC_MCS4_MCS5	FIELD32(0x000000ff)
 +#define TX_PWR_CFG_4B_STBC_MCS6		FIELD32(0x0000ff00)
  
  /*
   * TX_PIN_CFG:
-@@ -1203,6 +1256,8 @@
+@@ -1201,6 +1254,8 @@
  #define TX_PIN_CFG_RFTR_POL		FIELD32(0x00020000)
  #define TX_PIN_CFG_TRSW_EN		FIELD32(0x00040000)
  #define TX_PIN_CFG_TRSW_POL		FIELD32(0x00080000)
@@ -144,7 +154,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define TX_PIN_CFG_PA_PE_A2_EN		FIELD32(0x01000000)
  #define TX_PIN_CFG_PA_PE_G2_EN		FIELD32(0x02000000)
  #define TX_PIN_CFG_PA_PE_A2_POL		FIELD32(0x04000000)
-@@ -1549,6 +1604,95 @@
+@@ -1547,6 +1602,95 @@
  #define TX_PWR_CFG_4_EXT_STBC4_CH2	FIELD32(0x0000000f)
  #define TX_PWR_CFG_4_EXT_STBC6_CH2	FIELD32(0x00000f00)
  
@@ -240,7 +250,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /* TX_PWR_CFG_7 */
  #define TX_PWR_CFG_7			0x13d4
  #define TX_PWR_CFG_7_OFDM54_CH0		FIELD32(0x0000000f)
-@@ -1557,6 +1701,10 @@
+@@ -1555,6 +1699,10 @@
  #define TX_PWR_CFG_7_MCS7_CH0		FIELD32(0x000f0000)
  #define TX_PWR_CFG_7_MCS7_CH1		FIELD32(0x00f00000)
  #define TX_PWR_CFG_7_MCS7_CH2		FIELD32(0x0f000000)
@@ -251,7 +261,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /* TX_PWR_CFG_8 */
  #define TX_PWR_CFG_8			0x13d8
-@@ -1566,12 +1714,17 @@
+@@ -1564,12 +1712,17 @@
  #define TX_PWR_CFG_8_MCS23_CH0		FIELD32(0x000f0000)
  #define TX_PWR_CFG_8_MCS23_CH1		FIELD32(0x00f00000)
  #define TX_PWR_CFG_8_MCS23_CH2		FIELD32(0x0f000000)
@@ -268,8 +278,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#define TX_PWR_CFG_9B_STBC_MCS7		FIELD32(0x000000ff)
  
  /*
-  * TX_TXBF_CFG:
-@@ -2151,12 +2304,15 @@ struct mac_iveiv_entry {
+  * RX_FILTER_CFG: RX configuration register.
+@@ -2137,11 +2290,14 @@ struct mac_iveiv_entry {
  #define RFCSR1_TX1_PD			FIELD8(0x20)
  #define RFCSR1_RX2_PD			FIELD8(0x40)
  #define RFCSR1_TX2_PD			FIELD8(0x80)
@@ -278,14 +288,13 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /*
   * RFCSR 2:
   */
- #define RFCSR2_RESCAL_BP		FIELD8(0x40)
  #define RFCSR2_RESCAL_EN		FIELD8(0x80)
 +#define RFCSR2_RX2_EN_MT7620		FIELD8(0x02)
 +#define RFCSR2_TX2_EN_MT7620		FIELD8(0x20)
  
  /*
   * RFCSR 3:
-@@ -2175,6 +2331,12 @@ struct mac_iveiv_entry {
+@@ -2160,6 +2316,12 @@ struct mac_iveiv_entry {
  #define RFCSR3_BIT5			FIELD8(0x20)
  
  /*
@@ -298,7 +307,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * FRCSR 5:
   */
  #define RFCSR5_R1			FIELD8(0x0c)
-@@ -2229,6 +2391,7 @@ struct mac_iveiv_entry {
+@@ -2214,6 +2376,7 @@ struct mac_iveiv_entry {
   */
  #define RFCSR13_TX_POWER		FIELD8(0x1f)
  #define RFCSR13_DR0			FIELD8(0xe0)
@@ -306,7 +315,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * RFCSR 15:
-@@ -2239,6 +2402,8 @@ struct mac_iveiv_entry {
+@@ -2224,6 +2387,8 @@ struct mac_iveiv_entry {
   * RFCSR 16:
   */
  #define RFCSR16_TXMIXER_GAIN		FIELD8(0x07)
@@ -315,7 +324,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * RFCSR 17:
-@@ -2251,6 +2416,8 @@ struct mac_iveiv_entry {
+@@ -2236,6 +2401,8 @@ struct mac_iveiv_entry {
  /* RFCSR 18 */
  #define RFCSR18_XO_TUNE_BYPASS		FIELD8(0x40)
  
@@ -324,7 +333,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * RFCSR 20:
-@@ -2261,11 +2428,14 @@ struct mac_iveiv_entry {
+@@ -2246,11 +2413,14 @@ struct mac_iveiv_entry {
   * RFCSR 21:
   */
  #define RFCSR21_RX_LO2_EN		FIELD8(0x08)
@@ -339,7 +348,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * RFCSR 23:
-@@ -2288,6 +2458,11 @@ struct mac_iveiv_entry {
+@@ -2273,6 +2443,11 @@ struct mac_iveiv_entry {
  #define RFCSR27_R4			FIELD8(0x40)
  
  /*
@@ -351,7 +360,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * RFCSR 29:
   */
  #define RFCSR29_ADC6_TEST		FIELD8(0x01)
-@@ -2348,6 +2523,7 @@ struct mac_iveiv_entry {
+@@ -2333,6 +2508,7 @@ struct mac_iveiv_entry {
   */
  #define RFCSR42_BIT1			FIELD8(0x01)
  #define RFCSR42_BIT4			FIELD8(0x08)
@@ -359,7 +368,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  /*
   * RFCSR 49:
-@@ -2450,6 +2626,7 @@ enum rt2800_eeprom_word {
+@@ -2435,6 +2611,7 @@ enum rt2800_eeprom_word {
  	EEPROM_TSSI_BOUND_BG5,
  	EEPROM_TXPOWER_A1,
  	EEPROM_TXPOWER_A2,
@@ -367,20 +376,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	EEPROM_TSSI_BOUND_A1,
  	EEPROM_TSSI_BOUND_A2,
  	EEPROM_TSSI_BOUND_A3,
-@@ -3019,6 +3196,10 @@ enum rt2800_eeprom_word {
- struct rt2800_drv_data {
- 	u8 calibration_bw20;
- 	u8 calibration_bw40;
-+	char rx_calibration_bw20;
-+	char rx_calibration_bw40;
-+	char tx_calibration_bw20;
-+	char tx_calibration_bw40;
- 	u8 bbp25;
- 	u8 bbp26;
- 	u8 txmixer_gain_24g;
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+index 8d00c599e47a..201b12ed90c6 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -60,6 +60,9 @@
+@@ -59,6 +59,9 @@
  	rt2800_regbusy_read((__dev), BBP_CSR_CFG, BBP_CSR_CFG_BUSY, (__reg))
  #define WAIT_FOR_RFCSR(__dev, __reg) \
  	rt2800_regbusy_read((__dev), RF_CSR_CFG, RF_CSR_CFG_BUSY, (__reg))
@@ -390,7 +390,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define WAIT_FOR_RF(__dev, __reg) \
  	rt2800_regbusy_read((__dev), RF_CSR_CFG0, RF_CSR_CFG0_BUSY, (__reg))
  #define WAIT_FOR_MCU(__dev, __reg) \
-@@ -151,19 +154,56 @@ static void rt2800_rfcsr_write(struct rt
+@@ -150,19 +153,56 @@ static void rt2800_rfcsr_write(struct rt2x00_dev *rt2x00dev,
  	 * Wait until the RFCSR becomes available, afterwards we
  	 * can safely write the new data into the register.
  	 */
@@ -413,7 +413,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
 +		}
 +		break;
-+
+ 
+-		rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
 +	default:
 +		if (WAIT_FOR_RFCSR(rt2x00dev, &reg)) {
 +			reg = 0;
@@ -421,8 +422,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_REGNUM, word);
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_WRITE, 1);
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_BUSY, 1);
- 
--		rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
++
 +			rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
 +		}
 +		break;
@@ -454,7 +454,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void rt2800_rfcsr_read(struct rt2x00_dev *rt2x00dev,
  			      const unsigned int word, u8 *value)
  {
-@@ -179,22 +219,48 @@ static void rt2800_rfcsr_read(struct rt2
+@@ -178,22 +218,48 @@ static void rt2800_rfcsr_read(struct rt2x00_dev *rt2x00dev,
  	 * doesn't become available in time, reg will be 0xffffffff
  	 * which means we return 0xff to the caller.
  	 */
@@ -479,11 +479,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 -	}
 +			WAIT_FOR_RFCSR_MT7620(rt2x00dev, &reg);
 +		}
-+
-+		*value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA_MT7620);
-+		break;
  
 -	*value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA);
++		*value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA_MT7620);
++		break;
++
 +	default:
 +		if (WAIT_FOR_RFCSR(rt2x00dev, &reg)) {
 +			reg = 0;
@@ -512,7 +512,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void rt2800_rf_write(struct rt2x00_dev *rt2x00dev,
  			    const unsigned int word, const u32 value)
  {
-@@ -251,6 +317,7 @@ static const unsigned int rt2800_eeprom_
+@@ -250,6 +316,7 @@ static const unsigned int rt2800_eeprom_map[EEPROM_WORD_COUNT] = {
  	[EEPROM_TSSI_BOUND_BG5]		= 0x003b,
  	[EEPROM_TXPOWER_A1]		= 0x003c,
  	[EEPROM_TXPOWER_A2]		= 0x0053,
@@ -520,7 +520,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	[EEPROM_TSSI_BOUND_A1]		= 0x006a,
  	[EEPROM_TSSI_BOUND_A2]		= 0x006b,
  	[EEPROM_TSSI_BOUND_A3]		= 0x006c,
-@@ -527,6 +594,7 @@ void rt2800_get_txwi_rxwi_size(struct rt
+@@ -524,6 +591,7 @@ void rt2800_get_txwi_rxwi_size(struct rt2x00_dev *rt2x00dev,
  		break;
  
  	case RT5592:
@@ -528,7 +528,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		*txwi_size = TXWI_DESC_SIZE_5WORDS;
  		*rxwi_size = RXWI_DESC_SIZE_6WORDS;
  		break;
-@@ -2964,7 +3032,8 @@ static void rt2800_config_channel_rf53xx
+@@ -2810,7 +2878,8 @@ static void rt2800_config_channel_rf53xx(struct rt2x00_dev *rt2x00dev,
  				rt2800_rfcsr_write(rt2x00dev, 59,
  						   r59_nonbt_rev[idx]);
  			} else if (rt2x00_rt(rt2x00dev, RT5390) ||
@@ -538,7 +538,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  				static const char r59_non_bt[] = {0x8f, 0x8f,
  					0x8f, 0x8f, 0x8f, 0x8f, 0x8f, 0x8d,
  					0x8a, 0x88, 0x88, 0x87, 0x87, 0x86};
-@@ -3258,6 +3327,242 @@ static void rt2800_config_channel_rf55xx
+@@ -3104,6 +3173,242 @@ static void rt2800_config_channel_rf55xx(struct rt2x00_dev *rt2x00dev,
  	rt2800_bbp_write(rt2x00dev, 196, (rf->channel <= 14) ? 0x19 : 0x7F);
  }
  
@@ -781,7 +781,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void rt2800_bbp_write_with_rx_chain(struct rt2x00_dev *rt2x00dev,
  					   const unsigned int word,
  					   const u8 value)
-@@ -3414,7 +3719,7 @@ static void rt2800_config_channel(struct
+@@ -3228,7 +3533,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
  				  struct channel_info *info)
  {
  	u32 reg;
@@ -790,7 +790,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	u8 bbp, rfcsr;
  
  	info->default_power1 = rt2800_txpower_to_dev(rt2x00dev, rf->channel,
-@@ -3468,6 +3773,9 @@ static void rt2800_config_channel(struct
+@@ -3273,6 +3578,9 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
  	case RF5592:
  		rt2800_config_channel_rf55xx(rt2x00dev, conf, rf, info);
  		break;
@@ -800,7 +800,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	default:
  		rt2800_config_channel_rf2xxx(rt2x00dev, conf, rf, info);
  	}
-@@ -3551,7 +3859,8 @@ static void rt2800_config_channel(struct
+@@ -3347,7 +3655,8 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
  
  	if (rf->channel <= 14) {
  		if (!rt2x00_rt(rt2x00dev, RT5390) &&
@@ -809,17 +809,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		    !rt2x00_rt(rt2x00dev, RT6352)) {
  			if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {
  				rt2800_bbp_write(rt2x00dev, 82, 0x62);
- 				rt2800_bbp_write(rt2x00dev, 82, 0x62);
-@@ -3574,7 +3883,7 @@ static void rt2800_config_channel(struct
- 		else if (rt2x00_rt(rt2x00dev, RT3593) ||
- 			 rt2x00_rt(rt2x00dev, RT3883))
+ 				rt2800_bbp_write(rt2x00dev, 75, 0x46);
+@@ -3367,7 +3676,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
+ 			rt2800_bbp_write(rt2x00dev, 82, 0x94);
+ 		else if (rt2x00_rt(rt2x00dev, RT3593))
  			rt2800_bbp_write(rt2x00dev, 82, 0x82);
 -		else
 +		else if (!rt2x00_rt(rt2x00dev, RT6352))
  			rt2800_bbp_write(rt2x00dev, 82, 0xf2);
  
- 		if (rt2x00_rt(rt2x00dev, RT3593) ||
-@@ -3596,7 +3905,7 @@ static void rt2800_config_channel(struct
+ 		if (rt2x00_rt(rt2x00dev, RT3593))
+@@ -3388,7 +3697,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
  	if (rt2x00_rt(rt2x00dev, RT3572))
  		rt2800_rfcsr_write(rt2x00dev, 8, 0);
  
@@ -828,7 +828,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	switch (rt2x00dev->default_ant.tx_chain_num) {
  	case 3:
-@@ -3645,6 +3954,7 @@ static void rt2800_config_channel(struct
+@@ -3437,6 +3746,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
  
  	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_RFTR_EN, 1);
  	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_TRSW_EN, 1);
@@ -836,7 +836,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	rt2800_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
  
-@@ -3720,7 +4030,7 @@ static void rt2800_config_channel(struct
+@@ -3495,7 +3805,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
  		usleep_range(1000, 1500);
  	}
  
@@ -845,7 +845,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		rt2800_bbp_write(rt2x00dev, 195, 141);
  		rt2800_bbp_write(rt2x00dev, 196, conf_is_ht40(conf) ? 0x10 : 0x1a);
  
-@@ -4410,6 +4720,128 @@ static void rt2800_config_txpower_rt3593
+@@ -4182,6 +4492,128 @@ static void rt2800_config_txpower_rt3593(struct rt2x00_dev *rt2x00dev,
  			   (unsigned long) regs[i]);
  }
  
@@ -974,16 +974,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  /*
   * We configure transmit power using MAC TX_PWR_CFG_{0,...,N} registers and
   * BBP R1 register. TX_PWR_CFG_X allow to configure per rate TX power values,
-@@ -4607,6 +5039,8 @@ static void rt2800_config_txpower(struct
- 	if (rt2x00_rt(rt2x00dev, RT3593) ||
- 	    rt2x00_rt(rt2x00dev, RT3883))
+@@ -4378,6 +4810,8 @@ static void rt2800_config_txpower(struct rt2x00_dev *rt2x00dev,
+ {
+ 	if (rt2x00_rt(rt2x00dev, RT3593))
  		rt2800_config_txpower_rt3593(rt2x00dev, chan, power_level);
 +	else if (rt2x00_rt(rt2x00dev, RT6352))
 +		rt2800_config_txpower_rt6352(rt2x00dev, chan, power_level);
  	else
  		rt2800_config_txpower_rt28xx(rt2x00dev, chan, power_level);
  }
-@@ -4622,6 +5056,7 @@ void rt2800_vco_calibration(struct rt2x0
+@@ -4393,6 +4827,7 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
  {
  	u32	tx_pin;
  	u8	rfcsr;
@@ -991,7 +991,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/*
  	 * A voltage-controlled oscillator(VCO) is an electronic oscillator
-@@ -4661,6 +5096,15 @@ void rt2800_vco_calibration(struct rt2x0
+@@ -4431,6 +4866,15 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
  		rt2800_rfcsr_read(rt2x00dev, 3, &rfcsr);
  		rt2x00_set_field8(&rfcsr, RFCSR3_VCOCAL_EN, 1);
  		rt2800_rfcsr_write(rt2x00dev, 3, rfcsr);
@@ -1007,7 +1007,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		break;
  	default:
  		WARN_ONCE(1, "Not supported RF chipet %x for VCO recalibration",
-@@ -4668,7 +5112,8 @@ void rt2800_vco_calibration(struct rt2x0
+@@ -4438,7 +4882,8 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
  		return;
  	}
  
@@ -1017,7 +1017,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	rt2800_register_read(rt2x00dev, TX_PIN_CFG, &tx_pin);
  	if (rt2x00dev->rf_channel <= 14) {
-@@ -4700,6 +5145,42 @@ void rt2800_vco_calibration(struct rt2x0
+@@ -4470,6 +4915,42 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
  	}
  	rt2800_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
  
@@ -1060,7 +1060,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  EXPORT_SYMBOL_GPL(rt2800_vco_calibration);
  
-@@ -4798,7 +5279,8 @@ static u8 rt2800_get_default_vgc(struct
+@@ -4568,7 +5049,8 @@ static u8 rt2800_get_default_vgc(struct rt2x00_dev *rt2x00dev)
  		    rt2x00_rt(rt2x00dev, RT3593) ||
  		    rt2x00_rt(rt2x00dev, RT5390) ||
  		    rt2x00_rt(rt2x00dev, RT5392) ||
@@ -1070,9 +1070,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			vgc = 0x1c + (2 * rt2x00dev->lna_gain);
  		else
  			vgc = 0x2e + rt2x00dev->lna_gain;
-@@ -5038,7 +5520,8 @@ static int rt2800_init_registers(struct
- 		rt2800_register_write(rt2x00dev, TX_TXBF_CFG_0, 0x8000fc21);
- 		rt2800_register_write(rt2x00dev, TX_TXBF_CFG_3, 0x00009c40);
+@@ -4795,7 +5277,8 @@ static int rt2800_init_registers(struct rt2x00_dev *rt2x00dev)
+ 					      0x00000000);
+ 		}
  	} else if (rt2x00_rt(rt2x00dev, RT5390) ||
 -		   rt2x00_rt(rt2x00dev, RT5392)) {
 +		   rt2x00_rt(rt2x00dev, RT5392) ||
@@ -1080,7 +1080,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
-@@ -5048,6 +5531,24 @@ static int rt2800_init_registers(struct
+@@ -4805,6 +5288,24 @@ static int rt2800_init_registers(struct rt2x00_dev *rt2x00dev)
  		rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
  	} else if (rt2x00_rt(rt2x00dev, RT5350)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
@@ -1105,7 +1105,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	} else {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000000);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
-@@ -6075,6 +6576,231 @@ static void rt2800_init_bbp_5592(struct
+@@ -5786,6 +6287,231 @@ static void rt2800_init_bbp_5592(struct rt2x00_dev *rt2x00dev)
  		rt2800_bbp_write(rt2x00dev, 103, 0xc0);
  }
  
@@ -1337,7 +1337,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void rt2800_init_bbp(struct rt2x00_dev *rt2x00dev)
  {
  	unsigned int i;
-@@ -6122,6 +6848,9 @@ static void rt2800_init_bbp(struct rt2x0
+@@ -5830,6 +6556,9 @@ static void rt2800_init_bbp(struct rt2x00_dev *rt2x00dev)
  	case RT5592:
  		rt2800_init_bbp_5592(rt2x00dev);
  		return;
@@ -1347,7 +1347,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	for (i = 0; i < EEPROM_BBP_SIZE; i++) {
-@@ -7331,6 +8060,615 @@ static void rt2800_init_rfcsr_5592(struc
+@@ -6901,6 +7630,615 @@ static void rt2800_init_rfcsr_5592(struct rt2x00_dev *rt2x00dev)
  	rt2800_led_open_drain_enable(rt2x00dev);
  }
  
@@ -1963,7 +1963,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void rt2800_init_rfcsr(struct rt2x00_dev *rt2x00dev)
  {
  	if (rt2800_is_305x_soc(rt2x00dev)) {
-@@ -7374,6 +8712,9 @@ static void rt2800_init_rfcsr(struct rt2
+@@ -6941,6 +8279,9 @@ static void rt2800_init_rfcsr(struct rt2x00_dev *rt2x00dev)
  	case RT5592:
  		rt2800_init_rfcsr_5592(rt2x00dev);
  		break;
@@ -1973,7 +1973,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  }
  
-@@ -7745,7 +9086,8 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7307,7 +8648,8 @@ static int rt2800_init_eeprom(struct rt2x00_dev *rt2x00dev)
  	 */
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT5390) ||
@@ -1983,7 +1983,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
  	else if (rt2x00_rt(rt2x00dev, RT3352))
  		rf = RF3322;
-@@ -7780,6 +9122,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7339,6 +8681,7 @@ static int rt2800_init_eeprom(struct rt2x00_dev *rt2x00dev)
  	case RF5390:
  	case RF5392:
  	case RF5592:
@@ -1991,7 +1991,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		break;
  	default:
  		rt2x00_err(rt2x00dev, "Invalid RF chipset 0x%04x detected\n",
-@@ -8258,6 +9601,23 @@ static const struct rf_channel rf_vals_5
+@@ -7746,6 +9089,23 @@ static const struct rf_channel rf_vals_5592_xtal40[] = {
  	{196, 83, 0, 12, 1},
  };
  
@@ -2015,7 +2015,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  {
  	struct hw_mode_spec *spec = &rt2x00dev->spec;
-@@ -8361,6 +9721,11 @@ static int rt2800_probe_hw_mode(struct r
+@@ -7849,6 +9209,11 @@ static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  			spec->channels = rf_vals_3x;
  		break;
  
@@ -2027,7 +2027,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	case RF3052:
  	case RF3053:
  		spec->num_channels = ARRAY_SIZE(rf_vals_3x);
-@@ -8498,6 +9863,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -7980,6 +9345,7 @@ static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  	case RF5390:
  	case RF5392:
  	case RF5592:
@@ -2035,7 +2035,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		__set_bit(CAPABILITY_VCO_RECALIBRATION, &rt2x00dev->cap_flags);
  		break;
  	}
-@@ -8543,6 +9909,9 @@ static int rt2800_probe_rt(struct rt2x00
+@@ -8024,6 +9390,9 @@ static int rt2800_probe_rt(struct rt2x00_dev *rt2x00dev)
  		return -ENODEV;
  	}
  
@@ -2045,9 +2045,26 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	rt2x00_set_rt(rt2x00dev, rt, rev);
  
  	return 0;
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
+index d9ef260d542a..f357531d9488 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
+@@ -33,6 +33,10 @@
+ struct rt2800_drv_data {
+ 	u8 calibration_bw20;
+ 	u8 calibration_bw40;
++	char rx_calibration_bw20;
++	char rx_calibration_bw40;
++	char tx_calibration_bw20;
++	char tx_calibration_bw40;
+ 	u8 bbp25;
+ 	u8 bbp26;
+ 	u8 txmixer_gain_24g;
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00.h b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+index ce340bfd71a0..8fdd2f9726ee 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-@@ -175,6 +175,7 @@ struct rt2x00_chip {
+@@ -174,6 +174,7 @@ struct rt2x00_chip {
  #define RT5390		0x5390  /* 2.4GHz */
  #define RT5392		0x5392  /* 2.4GHz */
  #define RT5592		0x5592
@@ -2055,3 +2072,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	u16 rf;
  	u16 rev;
+-- 
+2.12.1
+
