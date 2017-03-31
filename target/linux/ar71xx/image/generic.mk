@@ -75,6 +75,19 @@ define Build/wrgg-pad-rootfs
 endef
 
 
+define Device/ap121f
+  DEVICE_TITLE := ALFA Network AP121F
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage -swconfig
+  BOARDNAME := AP121F
+  IMAGE_SIZE := 16064k
+  CONSOLE := ttyATH0,115200
+  MTDPARTS := spi0.0:192k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
+  SUPPORTED_DEVICES := ap121f
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += ap121f
+
 define Device/ap531b0
   DEVICE_TITLE := Rockeetech AP531B0
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

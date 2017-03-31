@@ -48,6 +48,10 @@ antrouter-r1)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	ucidef_set_led_default "btc" "BTC" "$board:green:btc" "0"
 	;;
+ap121f)
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
+	;;
 ap531b0|\
 sc1750|\
 sc450)

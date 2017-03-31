@@ -203,6 +203,7 @@ platform_check_image() {
 	airgatewaypro|\
 	airgateway|\
 	airrouter|\
+	ap121f|\
 	ap132|\
 	ap531b0|\
 	ap90q|\
