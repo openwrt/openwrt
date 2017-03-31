@@ -30,6 +30,7 @@ enum ath79_mach_type {
 	ATH79_MACH_ANTROUTER_R1,		/* Antrouter R1 */
 	ATH79_MACH_AP121,			/* Atheros AP121 reference board */
 	ATH79_MACH_AP121_MINI,			/* Atheros AP121-MINI reference board */
+	ATH79_MACH_AP121F,			/* ALFA Network AP121F */
 	ATH79_MACH_AP132,			/* Atheros AP132 reference board */
 	ATH79_MACH_AP135_020,			/* Atheros AP135-020 reference board */
 	ATH79_MACH_AP136_010,			/* Atheros AP136-010 reference board */

@@ -29,6 +29,9 @@ get_status_led() {
 	xd3200)
 		status_led="$board:green:system"
 		;;
+	ap121f)
+		status_led="$board:green:vpn"
+		;;
 	ap132|\
 	db120|\
 	dr344|\
