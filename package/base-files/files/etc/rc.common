@@ -17,7 +17,7 @@ stop() {
 }
 
 reload() {
-	return 1
+	restart
 }
 
 restart() {
@@ -68,7 +68,7 @@ Available commands:
 	start	Start the service
 	stop	Stop the service
 	restart	Restart the service
-	reload	Reload configuration files (or restart if that fails)
+	reload	Reload configuration files (or restart if service does not implement reload)
 	enable	Enable service autostart
 	disable	Disable service autostart
 $EXTRA_HELP
@@ -130,7 +130,7 @@ ${INIT_TRACE:+set -x}
 		if eval "type reload_service" 2>/dev/null >/dev/null; then
 			reload_service "$@"
 		else
-			start
+			restart
 		fi
 	}
 
@@ -141,5 +141,4 @@ ${INIT_TRACE:+set -x}
 
 ALL_COMMANDS="start stop reload restart boot shutdown enable disable enabled depends ${EXTRA_COMMANDS}"
 list_contains ALL_COMMANDS "$action" || action=help
-[ "$action" = "reload" ] && action='eval reload "$@" || restart "$@" && :'
 $action "$@"
