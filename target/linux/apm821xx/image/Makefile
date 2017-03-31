@@ -88,7 +88,7 @@ endef
 TARGET_DEVICES += mr24
 
 define Device/mx60
-  DEVICE_TITLE := Cisco Meraki MX60
+  DEVICE_TITLE := Cisco Meraki MX60/MX60W
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
   kmod-usb-storage block-mount
   DEVICE_PROFILE := MX60
@@ -111,12 +111,6 @@ define Device/mx60
   UBINIZE_OPTS := -E 5
 endef
 TARGET_DEVICES += mx60
-
-define Device/mx60w
-$(Device/mx60)
-  DEVICE_TITLE := Cisco Meraki MX60W
-endef
-TARGET_DEVICES += mx60w
 
 define Build/create-uImage-dtb
 	# flat_dt target expect FIT image - which WNDR4700's uboot doesn't support
