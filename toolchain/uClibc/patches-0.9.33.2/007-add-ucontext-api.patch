@@ -1,0 +1,2411 @@
+diff -ruN a/extra/Configs/Config.arm b/extra/Configs/Config.arm
+--- a/extra/Configs/Config.arm	2012-05-15 15:20:09.000000000 +0800
++++ b/extra/Configs/Config.arm	2017-04-01 15:12:55.552359554 +0800
+@@ -11,6 +11,9 @@
+ 	bool
+ 	default y
+ 	select ARCH_ANY_ENDIAN
++	select ARCH_HAS_UCONTEXT
++	select UCLIBC_SUSV3_LEGACY
++	select UCLIBC_HAS_CONTEXT_FUNCS
+ 
+ config CONFIG_ARM_EABI
+ 	bool "Build for EABI"
+diff -ruN a/extra/Configs/Config.i386 b/extra/Configs/Config.i386
+--- a/extra/Configs/Config.i386	2012-05-15 15:20:09.000000000 +0800
++++ b/extra/Configs/Config.i386	2017-04-01 15:13:19.510360714 +0800
+@@ -12,6 +12,9 @@
+ 	default y
+ 	select ARCH_LITTLE_ENDIAN
+ 	select ARCH_HAS_MMU
++	select ARCH_HAS_UCONTEXT
++	select UCLIBC_SUSV3_LEGACY
++	select UCLIBC_HAS_CONTEXT_FUNCS
+ 
+ choice
+ 	prompt "Target x86 Processor Family"
+diff -ruN a/extra/Configs/Config.in b/extra/Configs/Config.in
+--- a/extra/Configs/Config.in	2012-05-15 15:20:09.000000000 +0800
++++ b/extra/Configs/Config.in	2017-04-01 14:06:02.573430989 +0800
+@@ -261,6 +261,9 @@
+ 	bool
+ 	select ARCH_HAS_NO_SHARED
+ 
++config ARCH_HAS_UCONTEXT
++	bool
++
+ config HAVE_SHARED
+ 	bool "Enable shared libraries"
+ 	depends on !ARCH_HAS_NO_SHARED
+@@ -670,6 +673,19 @@
+ 
+ 	  WARNING! ABI incompatibility.
+ 
++config UCLIBC_HAS_CONTEXT_FUNCS
++	bool "Use obsolescent context control functions"
++	depends on UCLIBC_SUSV3_LEGACY && ARCH_HAS_UCONTEXT
++	help
++	  Add into library the SuSv3 obsolescent functions used for context
++	  control. The setcontext family allows the implementation in C of
++	  advanced control flow patterns such as iterators, fibers, and
++	  coroutines. They may be viewed as an advanced version of
++	  setjmp/longjmp; whereas the latter allows only a single non-local jump
++	  up the stack, setcontext allows the creation of multiple cooperative
++	  threads of control, each with its own stack.
++	  These functions are: setcontext, getcontext, makecontext, swapcontext.
++
+ config UCLIBC_SUSV3_LEGACY_MACROS
+ 	bool "Enable SuSv3 LEGACY macros"
+ 	help
+diff -ruN a/extra/Configs/Config.mips b/extra/Configs/Config.mips
+--- a/extra/Configs/Config.mips	2012-05-15 15:20:09.000000000 +0800
++++ b/extra/Configs/Config.mips	2017-04-01 15:13:46.543362022 +0800
+@@ -11,6 +11,9 @@
+ 	bool
+ 	default y
+ 	select ARCH_ANY_ENDIAN
++	select ARCH_HAS_UCONTEXT
++	select UCLIBC_SUSV3_LEGACY
++	select UCLIBC_HAS_CONTEXT_FUNCS
+ 
+ choice
+ 	prompt "Target ABI"
+diff -ruN a/extra/Configs/Config.x86_64 b/extra/Configs/Config.x86_64
+--- a/extra/Configs/Config.x86_64	2012-05-15 15:20:09.000000000 +0800
++++ b/extra/Configs/Config.x86_64	2017-04-01 15:14:13.268363316 +0800
+@@ -12,3 +12,6 @@
+ 	default y
+ 	select ARCH_LITTLE_ENDIAN
+ 	select ARCH_HAS_MMU
++	select ARCH_HAS_UCONTEXT
++	select UCLIBC_SUSV3_LEGACY
++	select UCLIBC_HAS_CONTEXT_FUNCS
+diff -ruN a/include/ucontext.h b/include/ucontext.h
+--- a/include/ucontext.h	2012-05-15 15:20:09.000000000 +0800
++++ b/include/ucontext.h	2017-04-01 14:08:32.495438245 +0800
+@@ -16,17 +16,43 @@
+    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+    02111-1307 USA.  */
+ 
++/* The System V ABI user-level context switching support functions
++   are marked obsolescent by SuSv3.  */
++
+ #ifndef _UCONTEXT_H
+ #define _UCONTEXT_H	1
+ 
+ #include <features.h>
+ 
++#ifdef __UCLIBC_HAS_CONTEXT_FUNCS__
++
+ /* Get machine dependent definition of data structures.  */
+ #include <sys/ucontext.h>
+ 
+-/* The System V ABI user-level context switching support functions
+- * are marked obsolescent by SuSv3, and are not implemented by
+- * uClibc.  This header is therefore empty.  */
++__BEGIN_DECLS
++
++/* Get user context and store it in variable pointed to by UCP.  */
++extern int getcontext (ucontext_t *__ucp) __THROW;
++
++/* Set user context from information of variable pointed to by UCP.  */
++extern int setcontext (const ucontext_t *__ucp) __THROW;
+ 
++/* Save current context in context variable pointed to by OUCP and set
++   context from variable pointed to by UCP.  */
++extern int swapcontext (ucontext_t *__restrict __oucp,
++			const ucontext_t *__restrict __ucp) __THROW;
++
++/* Manipulate user context UCP to continue with calling functions FUNC
++   and the ARGC-1 parameters following ARGC when the context is used
++   the next time in `setcontext' or `swapcontext'.
++
++   We cannot say anything about the parameters FUNC takes; `void'
++   is as good as any other choice.  */
++extern void makecontext (ucontext_t *__ucp, void (*__func) (void),
++			 int __argc, ...) __THROW;
++
++__END_DECLS
++ 
++#endif
+ 
+ #endif /* ucontext.h */
+diff -ruN a/libc/sysdeps/linux/arm/getcontext.S b/libc/sysdeps/linux/arm/getcontext.S
+--- a/libc/sysdeps/linux/arm/getcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/arm/getcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,80 @@
++/* Copyright (C) 2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++	.syntax unified
++	.text
++
++/* int getcontext (ucontext_t *ucp) */
++
++ENTRY(__getcontext)
++	/* No need to save r0-r3, d0-d7, or d16-d31.  */
++	add	r1, r0, #MCONTEXT_ARM_R4
++	stmia   r1, {r4-r11}
++
++	/* Save R13 separately as Thumb can't STM it.  */
++	str     r13, [r0, #MCONTEXT_ARM_SP]
++	str     r14, [r0, #MCONTEXT_ARM_LR]
++	/* Return to LR */
++	str     r14, [r0, #MCONTEXT_ARM_PC]
++	/* Return zero */
++	mov     r2, #0
++	str     r2, [r0, #MCONTEXT_ARM_R0]
++
++	/* Save ucontext_t * across the next call.  */
++	mov	r4, r0
++
++	/* __sigprocmask(SIG_BLOCK, NULL, &(ucontext->uc_sigmask)) */
++	mov     r0, #SIG_BLOCK
++	mov     r1, #0
++	add     r2, r4, #UCONTEXT_SIGMASK
++	bl      PLTJMP(sigprocmask)
++
++#if defined __UCLIBC_HAS_FLOATS__ && ! defined __UCLIBC_HAS_SOFT_FLOAT__
++# ifdef __VFP_FP__
++	/* Store the VFP registers.  */
++	/* Following instruction is fstmiax ip!, {d8-d15}.  */
++	stc     p11, cr8, [r0], #64
++	/* Store the floating-point status register.  */
++	/* Following instruction is fmrx r2, fpscr.  */
++	mrc     p10, 7, r1, cr1, cr0, 0
++	str     r1, [r0], #4
++# endif
++#endif
++#ifdef __IWMMXT__
++	/* Save the call-preserved iWMMXt registers.  */
++	/* Following instructions are wstrd wr10, [r0], #8 (etc.)  */
++	stcl    p1, cr10, [r0], #8
++	stcl    p1, cr11, [r0], #8
++	stcl    p1, cr12, [r0], #8
++	stcl    p1, cr13, [r0], #8
++	stcl    p1, cr14, [r0], #8
++	stcl    p1, cr15, [r0], #8
++#endif
++
++	/* Restore the clobbered R4 and LR.  */
++	ldr	r14, [r4, #MCONTEXT_ARM_LR]
++	ldr	r4, [r4, #MCONTEXT_ARM_R4]
++
++	mov	r0, #0
++	DO_RET(r14)
++
++END(__getcontext)
++weak_alias(__getcontext, getcontext)
+diff -ruN a/libc/sysdeps/linux/arm/makecontext.c b/libc/sysdeps/linux/arm/makecontext.c
+--- a/libc/sysdeps/linux/arm/makecontext.c	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/arm/makecontext.c	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,73 @@
++/* Copyright (C) 2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <stdarg.h>
++#include <ucontext.h>
++
++/* Number of arguments that go in registers.  */
++#define NREG_ARGS  4
++
++/* Take a context previously prepared via getcontext() and set to
++   call func() with the given int only args.  */
++void
++__makecontext (ucontext_t *ucp, void (*func) (void), int argc, ...)
++{
++  extern void __startcontext (void);
++  unsigned long *funcstack;
++  va_list vl;
++  unsigned long *regptr;
++  unsigned int reg;
++  int misaligned;
++
++  /* Start at the top of stack.  */
++  funcstack = (unsigned long *) (ucp->uc_stack.ss_sp + ucp->uc_stack.ss_size);
++
++  /* Ensure the stack stays eight byte aligned.  */
++  misaligned = ((unsigned long) funcstack & 4) != 0;
++
++  if ((argc > NREG_ARGS) && (argc & 1) != 0)
++    misaligned = !misaligned;
++
++  if (misaligned)
++    funcstack -= 1;
++
++  va_start (vl, argc);
++
++  /* Reserve space for the on-stack arguments.  */
++  if (argc > NREG_ARGS)
++    funcstack -= (argc - NREG_ARGS);
++
++  ucp->uc_mcontext.arm_sp = (unsigned long) funcstack;
++  ucp->uc_mcontext.arm_pc = (unsigned long) func;
++
++  /* Exit to startcontext() with the next context in R4 */
++  ucp->uc_mcontext.arm_r4 = (unsigned long) ucp->uc_link;
++  ucp->uc_mcontext.arm_lr = (unsigned long) __startcontext;
++
++  /* The first four arguments go into registers.  */
++  regptr = &(ucp->uc_mcontext.arm_r0);
++
++  for (reg = 0; (reg < argc) && (reg < NREG_ARGS); reg++)
++    *regptr++ = va_arg (vl, unsigned long);
++
++  /* And the remainder on the stack.  */
++  for (; reg < argc; reg++)
++    *funcstack++ = va_arg (vl, unsigned long);
++
++  va_end (vl);
++}
++weak_alias (__makecontext, makecontext)
+diff -ruN a/libc/sysdeps/linux/arm/Makefile.arch b/libc/sysdeps/linux/arm/Makefile.arch
+--- a/libc/sysdeps/linux/arm/Makefile.arch	2012-05-15 15:20:09.000000000 +0800
++++ b/libc/sysdeps/linux/arm/Makefile.arch	2017-04-01 14:10:27.663443818 +0800
+@@ -44,3 +44,8 @@
+ libc-nonshared-y += $(ARCH_OUT)/aeabi_lcsts.os $(ARCH_OUT)/aeabi_math.os \
+ 	$(ARCH_OUT)/aeabi_sighandlers.os $(ARCH_OUT)/aeabi_unwind_cpp_pr1.o
+ endif
++
++ifeq ($(UCLIBC_HAS_CONTEXT_FUNCS),y)
++CSRC += makecontext.c
++SSRC += getcontext.S setcontext.S swapcontext.S
++endif
+diff -ruN a/libc/sysdeps/linux/arm/setcontext.S b/libc/sysdeps/linux/arm/setcontext.S
+--- a/libc/sysdeps/linux/arm/setcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/arm/setcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,76 @@
++/* Copyright (C) 2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++	.syntax unified
++	.text
++
++/* int setcontext (const ucontext_t *ucp) */
++
++ENTRY(__setcontext)
++	mov	r4, r0
++
++#if defined __UCLIBC_HAS_FLOATS__ && ! defined __UCLIBC_HAS_SOFT_FLOAT__
++# ifdef __VFP_FP__
++	/* Following instruction is vldmia r0!, {d8-d15}.  */
++	ldc     p11, cr8, [r0], #64
++	/* Restore the floating-point status register.  */
++	ldr     r1, [r0], #4
++	/* Following instruction is fmxr fpscr, r1.  */
++	mcr     p10, 7, r1, cr1, cr0, 0
++# endif
++#endif
++
++#ifdef __IWMMXT__
++	/* Restore the call-preserved iWMMXt registers.  */
++	/* Following instructions are wldrd wr10, [r0], #8 (etc.)  */
++	ldcl    p1, cr10, [r0], #8
++	ldcl    p1, cr11, [r0], #8
++	ldcl    p1, cr12, [r0], #8
++	ldcl    p1, cr13, [r0], #8
++	ldcl    p1, cr14, [r0], #8
++	ldcl    p1, cr15, [r0], #8
++#endif
++
++	/* Now bring back the signal status.  */
++	mov	r0, #SIG_SETMASK
++	add	r1, r4, #UCONTEXT_SIGMASK
++	mov	r2, #0
++	bl	PLTJMP(sigprocmask)
++
++        /* Loading r0-r3 makes makecontext easier.  */
++        add     r14, r4, #MCONTEXT_ARM_R0
++        ldmia   r14, {r0-r11}
++        ldr     r13, [r14, #(MCONTEXT_ARM_SP - MCONTEXT_ARM_R0)]
++        add     r14, r14, #(MCONTEXT_ARM_LR - MCONTEXT_ARM_R0)
++        ldmia   r14, {r14, pc}
++
++END(setcontext)
++weak_alias(__setcontext, setcontext)
++
++	/* Called when a makecontext() context returns.  Start the
++	   context in R4 or fall through to exit().  */
++ENTRY(__startcontext)
++        movs    r0, r4
++        bne     PLTJMP(__setcontext)
++
++        @ New context was 0 - exit
++        b       PLTJMP(_exit)
++END(__startcontext)
+diff -ruN a/libc/sysdeps/linux/arm/swapcontext.S b/libc/sysdeps/linux/arm/swapcontext.S
+--- a/libc/sysdeps/linux/arm/swapcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/arm/swapcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,63 @@
++/* Copyright (C) 2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++	.syntax unified
++	.text
++
++/* int swapcontext (ucontext_t *oucp, const ucontext_t *ucp) */
++
++ENTRY(swapcontext)
++
++	/* Have getcontext() do most of the work then fix up
++	   LR afterwards.  Save R3 to keep the stack aligned.  */
++	push	{r0,r1,r3,r14}
++	cfi_adjust_cfa_offset (16)
++	cfi_rel_offset (r0,0)
++	cfi_rel_offset (r1,4)
++	cfi_rel_offset (r3,8)
++	cfi_rel_offset (r14,12)
++
++	bl	__getcontext
++	mov	r4, r0
++
++	pop	{r0,r1,r3,r14}
++	cfi_adjust_cfa_offset (-16)
++	cfi_restore (r0)
++	cfi_restore (r1)
++	cfi_restore (r3)
++	cfi_restore (r14)
++
++	/* Exit if getcontext() failed.  */
++	cmp 	r4, #0
++	itt	ne
++	movne	r0, r4
++	RETINSTR(ne, r14)
++
++	/* Fix up LR and the PC.  */
++	str	r13,[r0, #MCONTEXT_ARM_SP]
++	str	r14,[r0, #MCONTEXT_ARM_LR]
++	str	r14,[r0, #MCONTEXT_ARM_PC]
++
++	/* And swap using swapcontext().  */
++	mov	r0, r1
++	b	__setcontext
++
++END(swapcontext)
+diff -ruN a/libc/sysdeps/linux/arm/ucontext_i.sym b/libc/sysdeps/linux/arm/ucontext_i.sym
+--- a/libc/sysdeps/linux/arm/ucontext_i.sym	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/arm/ucontext_i.sym	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,30 @@
++#include <inttypes.h>
++#include <signal.h>
++#include <stddef.h>
++#include <sys/ucontext.h>
++
++SIG_BLOCK
++SIG_SETMASK
++
++-- Offsets of the fields in the ucontext_t structure.
++#define ucontext(member)	offsetof (ucontext_t, member)
++#define mcontext(member)	ucontext (uc_mcontext.member)
++
++UCONTEXT_FLAGS			ucontext (uc_flags)
++UCONTEXT_LINK			ucontext (uc_link)
++UCONTEXT_STACK			ucontext (uc_stack)
++UCONTEXT_MCONTEXT		ucontext (uc_mcontext)
++UCONTEXT_SIGMASK		ucontext (uc_sigmask)
++
++UCONTEXT_REGSPACE		ucontext (uc_regspace)
++
++MCONTEXT_TRAP_NO		mcontext (trap_no)
++MCONTEXT_ERROR_CODE		mcontext (error_code)
++MCONTEXT_OLDMASK		mcontext (oldmask)
++MCONTEXT_ARM_R0		mcontext (arm_r0)
++MCONTEXT_ARM_R4		mcontext (arm_r4)
++MCONTEXT_ARM_SP		mcontext (arm_sp)
++MCONTEXT_ARM_LR		mcontext (arm_lr)
++MCONTEXT_ARM_PC		mcontext (arm_pc)
++MCONTEXT_ARM_CPSR		mcontext (arm_cpsr)
++MCONTEXT_FAULT_ADDRESS		mcontext (fault_address)
+diff -ruN a/libc/sysdeps/linux/i386/getcontext.S b/libc/sysdeps/linux/i386/getcontext.S
+--- a/libc/sysdeps/linux/i386/getcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/i386/getcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,84 @@
++/* Save current context.
++   Copyright (C) 2001-2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Ulrich Drepper <drepper@redhat.com>, 2001.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++
++ENTRY(__getcontext)
++	/* Load address of the context data structure.  */
++	movl	4(%esp), %eax
++
++	/* Return value of getcontext.  EAX is the only register whose
++	   value is not preserved.  */
++	movl	$0, oEAX(%eax)
++
++	/* Save the 32-bit register values and the return address.  */
++	movl	%ecx, oECX(%eax)
++	movl	%edx, oEDX(%eax)
++	movl	%edi, oEDI(%eax)
++	movl	%esi, oESI(%eax)
++	movl	%ebp, oEBP(%eax)
++	movl	(%esp), %ecx
++	movl	%ecx, oEIP(%eax)
++	leal	4(%esp), %ecx		/* Exclude the return address.  */
++	movl	%ecx, oESP(%eax)
++	movl	%ebx, oEBX(%eax)
++
++	/* Save the FS segment register.  We don't touch the GS register
++	   since it is used for threads.  */
++	xorl	%edx, %edx
++	movw	%fs, %dx
++	movl	%edx, oFS(%eax)
++
++	/* We have separate floating-point register content memory on the
++	   stack.  We use the __fpregs_mem block in the context.  Set the
++	   links up correctly.  */
++	leal	oFPREGSMEM(%eax), %ecx
++	movl	%ecx, oFPREGS(%eax)
++	/* Save the floating-point context.  */
++	fnstenv	(%ecx)
++	/* And load it right back since the processor changes the mask.
++	   Intel thought this opcode to be used in interrupt handlers which
++	   would block all exceptions.  */
++	fldenv	(%ecx)
++
++	/* Save the current signal mask.  */
++	pushl	%ebx
++	cfi_adjust_cfa_offset (4)
++	cfi_rel_offset (ebx, 0)
++	leal	oSIGMASK(%eax), %edx
++	xorl	%ecx, %ecx
++	movl	$SIG_BLOCK, %ebx
++	movl	$__NR_sigprocmask, %eax
++	ENTER_KERNEL
++	popl	%ebx
++	cfi_adjust_cfa_offset (-4)
++	cfi_restore (ebx)
++	cmpl	$-4095, %eax		/* Check %eax for error.  */
++	jae	SYSCALL_ERROR_LABEL	/* Jump to error handler if error.  */
++
++	/* All done, return 0 for success.  */
++	xorl	%eax, %eax
++L(pseudo_end):
++	ret
++PSEUDO_END(__getcontext)
++
++weak_alias (__getcontext, getcontext)
+diff -ruN a/libc/sysdeps/linux/i386/makecontext.S b/libc/sysdeps/linux/i386/makecontext.S
+--- a/libc/sysdeps/linux/i386/makecontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/i386/makecontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,123 @@
++/* Create new context.
++   Copyright (C) 2001,2002,2005,2007,2008,2009 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Ulrich Drepper <drepper@redhat.com>, 2001.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++
++ENTRY(__makecontext)
++	movl	4(%esp), %eax
++
++	/* Load the address of the function we are supposed to run.  */
++	movl	8(%esp), %ecx
++
++	/* Compute the address of the stack.  The information comes from
++	   to us_stack element.  */
++	movl	oSS_SP(%eax), %edx
++	movl	%ecx, oEIP(%eax)
++	addl	oSS_SIZE(%eax), %edx
++
++	/* Remember the number of parameters for the exit handler since
++	   it has to remove them.  We store the number in the EBX register
++	   which the function we will call must preserve.  */
++	movl	12(%esp), %ecx
++	movl	%ecx, oEBX(%eax)
++
++	/* Make room on the new stack for the parameters.
++	   Room for the arguments, return address (== L(exitcode)) and
++	   oLINK pointer is needed.  One of the pointer sizes is subtracted
++	   after aligning the stack.  */
++	negl	%ecx
++	leal	-4(%edx,%ecx,4), %edx
++	negl	%ecx
++
++	/* Align the stack.  */
++	andl	$0xfffffff0, %edx
++	subl	$4, %edx
++
++	/* Store the future stack pointer.  */
++	movl	%edx, oESP(%eax)
++
++	/* Put the next context on the new stack (from the uc_link
++	   element).  */
++	movl	oLINK(%eax), %eax
++	movl	%eax, 4(%edx,%ecx,4)
++
++	/* Copy all the parameters.  */
++	jecxz	2f
++1:	movl	12(%esp,%ecx,4), %eax
++	movl	%eax, (%edx,%ecx,4)
++	decl	%ecx
++	jnz	1b
++2:
++
++	/* If the function we call returns we must continue with the
++	   context which is given in the uc_link element.  To do this
++	   set the return address for the function the user provides
++	   to a little bit of helper code which does the magic (see
++	   below).  */
++#ifdef __PIC__
++	call	1f
++	cfi_adjust_cfa_offset (4)
++1:	popl	%ecx
++	cfi_adjust_cfa_offset (-4)
++	addl	$L(exitcode)-1b, %ecx
++	movl	%ecx, (%edx)
++#else
++	movl	$L(exitcode), (%edx)
++#endif
++	/* 'makecontext' returns no value.  */
++L(pseudo_end):
++	ret
++
++	/* This is the helper code which gets called if a function which
++	   is registered with 'makecontext' returns.  In this case we
++	   have to install the context listed in the uc_link element of
++	   the context 'makecontext' manipulated at the time of the
++	   'makecontext' call.  If the pointer is NULL the process must
++	   terminate.  */
++	cfi_endproc
++L(exitcode):
++	/* This removes the parameters passed to the function given to
++	   'makecontext' from the stack.  EBX contains the number of
++	   parameters (see above).  */
++	leal	(%esp,%ebx,4), %esp
++
++#ifdef	__PIC__
++	call	1f
++1:	popl	%ebx
++	addl	$_GLOBAL_OFFSET_TABLE_+[.-1b], %ebx
++#endif
++	cmpl	$0, (%esp)		/* Check the next context.  */
++	je	2f			/* If it is zero exit.  */
++
++	call	JUMPTARGET(__setcontext)
++	/* If this returns (which can happen if the syscall fails) we'll
++	   exit the program with the return error value (-1).  */
++
++	movl	%eax, (%esp)
++2:	call	HIDDEN_JUMPTARGET(exit)
++	/* The 'exit' call should never return.  In case it does cause
++	   the process to terminate.  */
++	hlt
++	cfi_startproc
++END(__makecontext)
++
++weak_alias (__makecontext, makecontext)
+diff -ruN a/libc/sysdeps/linux/i386/Makefile.arch b/libc/sysdeps/linux/i386/Makefile.arch
+--- a/libc/sysdeps/linux/i386/Makefile.arch	2012-05-15 15:20:09.000000000 +0800
++++ b/libc/sysdeps/linux/i386/Makefile.arch	2017-04-01 14:14:05.352454354 +0800
+@@ -15,3 +15,7 @@
+ ifneq ($(UCLIBC_HAS_THREADS_NATIVE),y)
+ SSRC += vfork.S clone.S
+ endif
++
++ifeq ($(UCLIBC_HAS_CONTEXT_FUNCS),y)
++SSRC += makecontext.S setcontext.S getcontext.S swapcontext.S
++endif
+diff -ruN a/libc/sysdeps/linux/i386/setcontext.S b/libc/sysdeps/linux/i386/setcontext.S
+--- a/libc/sysdeps/linux/i386/setcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/i386/setcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,96 @@
++/* Install given context.
++   Copyright (C) 2001-2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Ulrich Drepper <drepper@redhat.com>, 2001.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++
++ENTRY(__setcontext)
++	/* Load address of the context data structure.  */
++	movl	4(%esp), %eax
++
++	/* Get the current signal mask.  Note that we preserve EBX in case
++	   the system call fails and we return from the function with an
++	   error.  */
++	pushl	%ebx
++	cfi_adjust_cfa_offset (4)
++	xorl	%edx, %edx
++	leal	oSIGMASK(%eax), %ecx
++	movl	$SIG_SETMASK, %ebx
++	cfi_rel_offset (ebx, 0)
++	movl	$__NR_sigprocmask, %eax
++	ENTER_KERNEL
++	popl	%ebx
++	cfi_adjust_cfa_offset (-4)
++	cfi_restore (ebx)
++	cmpl	$-4095, %eax		/* Check %eax for error.  */
++	jae	SYSCALL_ERROR_LABEL	/* Jump to error handler if error.  */
++
++	/* EAX was modified, reload it.  */
++	movl	4(%esp), %eax
++
++	/* Restore the floating-point context.  Not the registers, only the
++	   rest.  */
++	movl	oFPREGS(%eax), %ecx
++	fldenv	(%ecx)
++
++	/* Restore the FS segment register.  We don't touch the GS register
++	   since it is used for threads.  */
++	movl	oFS(%eax), %ecx
++	movw	%cx, %fs
++
++	/* Fetch the address to return to.  */
++	movl	oEIP(%eax), %ecx
++
++	/* Load the new stack pointer.  */
++	cfi_def_cfa (eax, 0)
++	cfi_offset (edi, oEDI)
++	cfi_offset (esi, oESI)
++	cfi_offset (ebp, oEBP)
++	cfi_offset (ebx, oEBX)
++	cfi_offset (edx, oEDX)
++	cfi_offset (ecx, oECX)
++	movl	oESP(%eax), %esp
++
++	/* Push the return address on the new stack so we can return there.  */
++	pushl	%ecx
++
++	/* Load the values of all the 32-bit registers (except ESP).
++	   Since we are loading from EAX, it must be last.  */
++	movl	oEDI(%eax), %edi
++	movl	oESI(%eax), %esi
++	movl	oEBP(%eax), %ebp
++	movl	oEBX(%eax), %ebx
++	movl	oEDX(%eax), %edx
++	movl	oECX(%eax), %ecx
++	movl	oEAX(%eax), %eax
++
++	/* End FDE here, we fall into another context.  */
++	cfi_endproc
++	cfi_startproc
++
++	/* The following 'ret' will pop the address of the code and jump
++	   to it.  */
++
++L(pseudo_end):
++	ret
++PSEUDO_END(__setcontext)
++
++weak_alias (__setcontext, setcontext)
+diff -ruN a/libc/sysdeps/linux/i386/swapcontext.S b/libc/sysdeps/linux/i386/swapcontext.S
+--- a/libc/sysdeps/linux/i386/swapcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/i386/swapcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,110 @@
++/* Save current context and install the given one.
++   Copyright (C) 2001-2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Ulrich Drepper <drepper@redhat.com>, 2001.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++
++ENTRY(__swapcontext)
++	/* Load address of the context data structure we save in.  */
++	movl	4(%esp), %eax
++
++	/* Return value of swapcontext.  EAX is the only register whose
++	   value is not preserved.  */
++	movl	$0, oEAX(%eax)
++
++	/* Save the 32-bit register values and the return address.  */
++	movl	%ecx, oECX(%eax)
++	movl	%edx, oEDX(%eax)
++	movl	%edi, oEDI(%eax)
++	movl	%esi, oESI(%eax)
++	movl	%ebp, oEBP(%eax)
++	movl	(%esp), %ecx
++	movl	%ecx, oEIP(%eax)
++	leal	4(%esp), %ecx
++	movl	%ecx, oESP(%eax)
++	movl	%ebx, oEBX(%eax)
++
++	/* Save the FS segment register.  */
++	xorl	%edx, %edx
++	movw	%fs, %dx
++	movl	%edx, oFS(%eax)
++
++	/* We have separate floating-point register content memory on the
++	   stack.  We use the __fpregs_mem block in the context.  Set the
++	   links up correctly.  */
++	leal	oFPREGSMEM(%eax), %ecx
++	movl	%ecx, oFPREGS(%eax)
++	/* Save the floating-point context.  */
++	fnstenv	(%ecx)
++
++	/* Load address of the context data structure we have to load.  */
++	movl	8(%esp), %ecx
++
++	/* Save the current signal mask and install the new one.  */
++	pushl	%ebx
++	leal	oSIGMASK(%eax), %edx
++	leal	oSIGMASK(%ecx), %ecx
++	movl	$SIG_SETMASK, %ebx
++	movl	$__NR_sigprocmask, %eax
++	ENTER_KERNEL
++	popl	%ebx
++	cmpl	$-4095, %eax		/* Check %eax for error.  */
++	jae	SYSCALL_ERROR_LABEL	/* Jump to error handler if error.  */
++
++	/* EAX was modified, reload it.  */
++	movl	8(%esp), %eax
++
++	/* Restore the floating-point context.  Not the registers, only the
++	   rest.  */
++	movl	oFPREGS(%eax), %ecx
++	fldenv	(%ecx)
++
++	/* Restore the FS segment register.  We don't touch the GS register
++	   since it is used for threads.  */
++	movl	oFS(%eax), %edx
++	movw	%dx, %fs
++
++	/* Fetch the address to return to.  */
++	movl	oEIP(%eax), %ecx
++
++	/* Load the new stack pointer.  */
++	movl	oESP(%eax), %esp
++
++	/* Push the return address on the new stack so we can return there.  */
++	pushl	%ecx
++
++	/* Load the values of all the 32-bit registers (except ESP).
++	   Since we are loading from EAX, it must be last.  */
++	movl	oEDI(%eax), %edi
++	movl	oESI(%eax), %esi
++	movl	oEBP(%eax), %ebp
++	movl	oEBX(%eax), %ebx
++	movl	oEDX(%eax), %edx
++	movl	oECX(%eax), %ecx
++	movl	oEAX(%eax), %eax
++
++	/* The following 'ret' will pop the address of the code and jump
++	   to it.  */
++L(pseudo_end):
++	ret
++PSEUDO_END(__swapcontext)
++
++weak_alias (__swapcontext, swapcontext)
+diff -ruN a/libc/sysdeps/linux/i386/ucontext_i.sym b/libc/sysdeps/linux/i386/ucontext_i.sym
+--- a/libc/sysdeps/linux/i386/ucontext_i.sym	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/i386/ucontext_i.sym	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,30 @@
++#include <stddef.h>
++#include <signal.h>
++#include <sys/ucontext.h>
++
++--
++
++SIG_BLOCK
++SIG_SETMASK
++
++#define ucontext(member)	offsetof (ucontext_t, member)
++#define mcontext(member)	ucontext (uc_mcontext.member)
++#define mreg(reg)		mcontext (gregs[REG_##reg])
++
++oLINK		ucontext (uc_link)
++oSS_SP		ucontext (uc_stack.ss_sp)
++oSS_SIZE	ucontext (uc_stack.ss_size)
++oGS		mreg (GS)
++oFS		mreg (FS)
++oEDI		mreg (EDI)
++oESI		mreg (ESI)
++oEBP		mreg (EBP)
++oESP		mreg (ESP)
++oEBX		mreg (EBX)
++oEDX		mreg (EDX)
++oECX		mreg (ECX)
++oEAX		mreg (EAX)
++oEIP		mreg (EIP)
++oFPREGS		mcontext (fpregs)
++oSIGMASK	ucontext (uc_sigmask)
++oFPREGSMEM	ucontext (__fpregs_mem)
+diff -ruN a/libc/sysdeps/linux/Makefile.commonarch b/libc/sysdeps/linux/Makefile.commonarch
+--- a/libc/sysdeps/linux/Makefile.commonarch	2012-05-15 15:20:09.000000000 +0800
++++ b/libc/sysdeps/linux/Makefile.commonarch	2017-04-01 14:09:46.723441837 +0800
+@@ -39,3 +39,22 @@
+ 	$(do_rm) $(ARCH_HEADERS_OUT)
+ 
+ endif
++
++CFLAGS-ucontext_i.c = -S
++
++$(ARCH_OUT)/ucontext_i.c: $(ARCH_DIR)/ucontext_i.sym
++	$(do_awk) $(top_srcdir)extra/scripts/gen-as-const.awk $< > $@
++
++$(ARCH_OUT)/ucontext_i.s: $(ARCH_OUT)/ucontext_i.c
++	$(compile.c)
++
++$(ARCH_OUT)/ucontext_i.h: $(ARCH_OUT)/ucontext_i.s
++	$(do_sed) $(PTHREAD_GENERATE_MANGLE) $< > $@
++
++pregen-headers-$(UCLIBC_HAS_CONTEXT_FUNCS) += $(ARCH_OUT)/ucontext_i.h
++
++headers_clean-$(UCLIBC_HAS_CONTEXT_FUNCS) += \
++	HEADERCLEAN_$(subst $(top_builddir),,$(ARCH_OUT)/ucontext_i)
++
++HEADERCLEAN_$(subst $(top_builddir),,$(ARCH_OUT)/ucontext_i):
++	$(do_rm) $(addprefix $(ARCH_OUT)/ucontext_i., c h s)
+diff -ruN a/libc/sysdeps/linux/mips/getcontext.S b/libc/sysdeps/linux/mips/getcontext.S
+--- a/libc/sysdeps/linux/mips/getcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/mips/getcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,148 @@
++/* Save current context.
++   Copyright (C) 2009 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Maciej W. Rozycki <macro@codesourcery.com>.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++#include <sys/asm.h>
++#include <sys/fpregdef.h>
++#include <sys/regdef.h>
++
++#include "ucontext_i.h"
++
++/* int getcontext (ucontext_t *ucp) */
++
++	.text
++LOCALSZ = 0
++MASK = 0x00000000
++#ifdef __PIC__
++LOCALSZ = 1						/* save gp */
++# if _MIPS_SIM != _ABIO32
++MASK = 0x10000000
++# endif
++#endif
++FRAMESZ = ((LOCALSZ * SZREG) + ALSZ) & ALMASK
++GPOFF = FRAMESZ - (1 * SZREG)
++
++NESTED (__getcontext, FRAMESZ, ra)
++	.mask	MASK, 0
++	.fmask	0x00000000, 0
++
++#ifdef __PIC__
++	SETUP_GP
++
++	move	a2, sp
++# define _SP a2
++
++# if _MIPS_SIM != _ABIO32
++	move	a3, gp
++#  define _GP a3
++# endif
++
++	PTR_ADDIU sp, -FRAMESZ
++	SETUP_GP64 (GPOFF, __getcontext)
++	SAVE_GP (GPOFF)
++
++#else  /* ! __PIC__ */
++# define _SP sp
++# define _GP gp
++
++#endif /* ! __PIC__ */
++
++#ifdef PROF
++	.set	noat
++	move	AT, ra
++	jal	_mcount
++	.set	at
++#endif
++
++	/* Store a magic flag.	*/
++	li	v1, 1
++	REG_S	v1, (0 * SZREG + MCONTEXT_GREGS)(a0)	/* zero */
++
++	REG_S	s0, (16 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s1, (17 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s2, (18 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s3, (19 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s4, (20 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s5, (21 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s6, (22 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s7, (23 * SZREG + MCONTEXT_GREGS)(a0)
++#if ! defined (__PIC__) || _MIPS_SIM != _ABIO32
++	REG_S	_GP, (28 * SZREG + MCONTEXT_GREGS)(a0)
++#endif
++	REG_S	_SP, (29 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	fp, (30 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	ra, (31 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	ra, MCONTEXT_PC(a0)
++
++#ifdef __mips_hard_float
++# if _MIPS_SIM == _ABI64
++	s.d	fs0, (24 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs1, (25 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs2, (26 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs3, (27 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs4, (28 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs5, (29 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs6, (30 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs7, (31 * SZREG + MCONTEXT_FPREGS)(a0)
++
++# else  /* _MIPS_SIM != _ABI64 */
++	s.d	fs0, (20 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs1, (22 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs2, (24 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs3, (26 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs4, (28 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs5, (30 * SZREG + MCONTEXT_FPREGS)(a0)
++
++# endif /* _MIPS_SIM != _ABI64 */
++
++	cfc1	v1, fcr31
++	sw	v1, MCONTEXT_FPC_CSR(a0)
++#endif /* __mips_hard_float */
++
++/* rt_sigprocmask (SIG_BLOCK, NULL, &ucp->uc_sigmask, _NSIG8) */
++	li	a3, _NSIG8
++	PTR_ADDU a2, a0, UCONTEXT_SIGMASK
++	move	a1, zero
++	li	a0, SIG_BLOCK
++
++	li	v0, SYS_ify (rt_sigprocmask)
++	syscall
++	bnez	a3, 99f
++
++#ifdef __PIC__
++	RESTORE_GP64
++	PTR_ADDIU sp, FRAMESZ
++#endif
++	move	v0, zero
++	jr	ra
++
++99:
++#ifdef __PIC__
++	PTR_LA	t9, JUMPTARGET (__syscall_error)
++	RESTORE_GP64
++	PTR_ADDIU sp, FRAMESZ
++	jr	t9
++
++#else  /* ! __PIC__ */
++
++	j	JUMPTARGET (__syscall_error)
++#endif /* ! __PIC__ */
++PSEUDO_END (__getcontext)
++
++weak_alias (__getcontext, getcontext)
+diff -ruN a/libc/sysdeps/linux/mips/kernel_rt_sigframe.h b/libc/sysdeps/linux/mips/kernel_rt_sigframe.h
+--- a/libc/sysdeps/linux/mips/kernel_rt_sigframe.h	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/mips/kernel_rt_sigframe.h	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,10 @@
++/* Linux kernel RT signal frame. */
++typedef struct kernel_rt_sigframe
++  {
++    uint32_t rs_ass[4];
++    uint32_t rs_code[2];
++    siginfo_t rs_info;
++    struct ucontext rs_uc;
++    uint32_t rs_altcode[8] __attribute__ ((__aligned__ (1 << 7)));
++  }
++kernel_rt_sigframe_t;
+diff -ruN a/libc/sysdeps/linux/mips/makecontext.S b/libc/sysdeps/linux/mips/makecontext.S
+--- a/libc/sysdeps/linux/mips/makecontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/mips/makecontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,188 @@
++/* Modify saved context.
++   Copyright (C) 2009 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Maciej W. Rozycki <macro@codesourcery.com>.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++#include <sys/asm.h>
++#include <sys/fpregdef.h>
++#include <sys/regdef.h>
++
++#include "ucontext_i.h"
++
++/* int makecontext (ucontext_t *ucp, (void *func) (), int argc, ...) */
++
++	.text
++LOCALSZ = 0
++ARGSZ = 0
++MASK = 0x00000000
++#ifdef __PIC__
++LOCALSZ = 1						/* save gp */
++#endif
++#if _MIPS_SIM != _ABIO32
++ARGSZ = 5						/* save a3-a7 */
++# ifdef __PIC__
++MASK = 0x10000000
++# endif
++#endif
++FRAMESZ = (((ARGSZ + LOCALSZ) * SZREG) + ALSZ) & ALMASK
++GPOFF = FRAMESZ - ((ARGSZ + 1) * SZREG)
++#if _MIPS_SIM != _ABIO32
++A3OFF = FRAMESZ - (5 * SZREG)				/* callee-allocated */
++A4OFF = FRAMESZ - (4 * SZREG)
++A5OFF = FRAMESZ - (3 * SZREG)
++A6OFF = FRAMESZ - (2 * SZREG)
++A7OFF = FRAMESZ - (1 * SZREG)
++NARGREGS = 8
++#else
++A3OFF = FRAMESZ + (3 * SZREG)				/* caller-allocated */
++NARGREGS = 4
++#endif
++
++NESTED (__makecontext, FRAMESZ, ra)
++	.mask	MASK, -(ARGSZ * SZREG)
++	.fmask	0x00000000, 0
++
++98:
++#ifdef __PIC__
++	SETUP_GP
++#endif
++
++	PTR_ADDIU sp, -FRAMESZ
++
++#ifdef __PIC__
++	SETUP_GP64 (GPOFF, __makecontext)
++	SAVE_GP (GPOFF)
++#endif
++
++#ifdef PROF
++	.set	noat
++	move	AT, ra
++	jal	_mcount
++	.set	at
++#endif
++
++	/* Store args to be passed.  */
++	REG_S	a3, A3OFF(sp)
++#if _MIPS_SIM != _ABIO32
++	REG_S	a4, A4OFF(sp)
++	REG_S	a5, A5OFF(sp)
++	REG_S	a6, A6OFF(sp)
++	REG_S	a7, A7OFF(sp)
++#endif
++
++	/* Store a magic flag.  */
++	li	v1, 1
++	REG_S	v1, (0 * SZREG + MCONTEXT_GREGS)(a0)	/* zero */
++
++	/* Set up the stack.  */
++	PTR_L	t0, STACK_SP(a0)
++	PTR_L	t2, STACK_SIZE(a0)
++	PTR_ADDIU t1, sp, A3OFF
++	PTR_ADDU t0, t2
++	and	t0, ALMASK
++	blez	a2, 2f					/* no arguments */
++
++	/* Store register arguments.  */
++	PTR_ADDIU t2, a0, MCONTEXT_GREGS + 4 * SZREG
++	move	t3, zero
++0:
++	addiu	t3, 1
++	REG_L	v1, (t1)
++	PTR_ADDIU t1, SZREG
++	REG_S	v1, (t2)
++	PTR_ADDIU t2, SZREG
++	bgeu	t3, a2, 2f				/* all done */
++	bltu	t3, NARGREGS, 0b			/* next */
++
++	/* Make room for stack arguments.  */
++	PTR_SUBU t2, a2, t3
++	PTR_SLL	t2, 3
++	PTR_SUBU t0, t2
++	and	t0, ALMASK
++
++	/* Store stack arguments.  */
++	move	t2, t0
++1:
++	addiu	t3, 1
++	REG_L	v1, (t1)
++	PTR_ADDIU t1, SZREG
++	REG_S	v1, (t2)
++	PTR_ADDIU t2, SZREG
++	bltu	t3, a2, 1b				/* next */
++
++2:
++#if _MIPS_SIM == _ABIO32
++	/* Make room for a0-a3 storage.  */
++	PTR_ADDIU t0, -(NARGSAVE * SZREG)
++#endif
++	PTR_L	v1, UCONTEXT_LINK(a0)
++#ifdef __PIC__
++	PTR_ADDIU t9, 99f - 98b
++#else
++	PTR_LA	t9, 99f
++#endif
++	REG_S	t0, (29 * SZREG + MCONTEXT_GREGS)(a0)	/* sp */
++	REG_S	v1, (16 * SZREG + MCONTEXT_GREGS)(a0)	/* s0 */
++#ifdef __PIC__
++	REG_S	gp, (17 * SZREG + MCONTEXT_GREGS)(a0)	/* s1 */
++#endif
++	REG_S	t9, (31 * SZREG + MCONTEXT_GREGS)(a0)	/* ra */
++	REG_S	a1, MCONTEXT_PC(a0)
++
++#ifdef __PIC__
++	RESTORE_GP64
++	PTR_ADDIU sp, FRAMESZ
++#endif
++	jr	ra
++
++99:
++#ifdef __PIC__
++	move	gp, s1
++#endif
++	move	a0, zero
++	beqz	s0, 0f
++
++	/* setcontext (ucp) */
++	move	a0, s0
++#ifdef __PIC__
++	PTR_LA	t9, JUMPTARGET (__setcontext)
++	jalr	t9
++# if _MIPS_SIM == _ABIO32
++	move	gp, s1
++# endif
++#else
++	jal	JUMPTARGET (__setcontext)
++#endif
++	move	a0, v0
++
++0:
++	/* exit (a0) */
++#ifdef __PIC__
++	PTR_LA	t9, HIDDEN_JUMPTARGET (exit)
++	jalr	t9
++#else
++	jal	HIDDEN_JUMPTARGET (exit)
++#endif
++
++	/* You don't exist, you won't feel anything.  */
++1:
++	lb	zero, (zero)
++	b	1b
++PSEUDO_END (__makecontext)
++
++weak_alias (__makecontext, makecontext)
+diff -ruN a/libc/sysdeps/linux/mips/Makefile.arch b/libc/sysdeps/linux/mips/Makefile.arch
+--- a/libc/sysdeps/linux/mips/Makefile.arch	2012-05-15 15:20:09.000000000 +0800
++++ b/libc/sysdeps/linux/mips/Makefile.arch	2017-04-01 14:15:40.452458956 +0800
+@@ -24,3 +24,7 @@
+ 
+ ARCH_HEADERS := sgidefs.h
+ # regdef.h
++
++ifeq ($(UCLIBC_HAS_CONTEXT_FUNCS),y)
++SSRC += makecontext.S setcontext.S getcontext.S swapcontext.S
++endif
+diff -ruN a/libc/sysdeps/linux/mips/setcontext.S b/libc/sysdeps/linux/mips/setcontext.S
+--- a/libc/sysdeps/linux/mips/setcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/mips/setcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,191 @@
++/* Set current context.
++   Copyright (C) 2009 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Maciej W. Rozycki <macro@codesourcery.com>.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++#include <sys/asm.h>
++#include <sys/fpregdef.h>
++#include <sys/regdef.h>
++
++#include "ucontext_i.h"
++
++/* int setcontext (const ucontext_t *ucp) */
++
++	.text
++LOCALSZ = 0
++ARGSZ = 0
++MASK = 0x00000000
++#ifdef __PIC__
++LOCALSZ = 1						/* save gp */
++#endif
++#if _MIPS_SIM != _ABIO32
++ARGSZ = 1						/* save a0 */
++# ifdef __PIC__
++MASK = 0x10000000
++# endif
++#endif
++FRAMESZ = (((ARGSZ + LOCALSZ) * SZREG) + ALSZ) & ALMASK
++GPOFF = FRAMESZ - ((ARGSZ + 1) * SZREG)
++#if _MIPS_SIM != _ABIO32
++A0OFF = FRAMESZ - (1 * SZREG)				/* callee-allocated */
++#else
++A0OFF = FRAMESZ + (0 * SZREG)				/* caller-allocated */
++#endif
++
++NESTED (__setcontext, FRAMESZ, ra)
++	.mask	MASK, -(ARGSZ * SZREG)
++	.fmask	0x00000000, 0
++
++#ifdef __PIC__
++	SETUP_GP
++#endif
++
++	PTR_ADDIU sp, -FRAMESZ
++
++#ifdef __PIC__
++	SETUP_GP64 (GPOFF, __setcontext)
++	SAVE_GP (GPOFF)
++#endif
++
++#ifdef PROF
++	.set	noat
++	move	AT, ra
++	jal	_mcount
++	.set	at
++#endif
++
++	/* Check for the magic flag.  */
++	li	v0, 1
++	REG_L	v1, (0 * SZREG + MCONTEXT_GREGS)(a0)	/* zero */
++	bne	v0, v1, 98f
++
++	REG_S	a0, A0OFF(sp)
++
++/* rt_sigprocmask (SIG_SETMASK, &ucp->uc_sigmask, NULL, _NSIG8) */
++	li	a3, _NSIG8
++	move	a2, zero
++	PTR_ADDU a1, a0, UCONTEXT_SIGMASK
++	li	a0, SIG_SETMASK
++
++	li	v0, SYS_ify (rt_sigprocmask)
++	syscall
++	bnez	a3, 99f
++
++	REG_L	v0, A0OFF(sp)
++
++#ifdef __mips_hard_float
++# if _MIPS_SIM == _ABI64
++	l.d	fs0, (24 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs1, (25 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs2, (26 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs3, (27 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs4, (28 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs5, (29 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs6, (30 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs7, (31 * SZREG + MCONTEXT_FPREGS)(v0)
++
++# else  /* _MIPS_SIM != _ABI64 */
++	l.d	fs0, (20 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs1, (22 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs2, (24 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs3, (26 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs4, (28 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs5, (30 * SZREG + MCONTEXT_FPREGS)(v0)
++
++# endif /* _MIPS_SIM != _ABI64 */
++
++	lw	v1, MCONTEXT_FPC_CSR(v0)
++	ctc1	v1, fcr31
++#endif /* __mips_hard_float */
++
++	/* Note the contents of argument registers will be random
++	   unless makecontext() has been called.  */
++	REG_L	a0, (4 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a1, (5 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a2, (6 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a3, (7 * SZREG + MCONTEXT_GREGS)(v0)
++#if _MIPS_SIM != _ABIO32
++	REG_L	a4, (8 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a5, (9 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a6, (10 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a7, (11 * SZREG + MCONTEXT_GREGS)(v0)
++#endif
++
++	REG_L	s0, (16 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s1, (17 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s2, (18 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s3, (19 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s4, (20 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s5, (21 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s6, (22 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s7, (23 * SZREG + MCONTEXT_GREGS)(v0)
++#if ! defined (__PIC__) || _MIPS_SIM != _ABIO32
++	REG_L	gp, (28 * SZREG + MCONTEXT_GREGS)(v0)
++#endif
++	REG_L	sp, (29 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	fp, (30 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	ra, (31 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	t9, MCONTEXT_PC(v0)
++
++	move	v0, zero
++	jr	t9
++
++98:
++	/* This is a context obtained from a signal handler.
++	   Perform a full restore by pushing the context
++	   passed onto a simulated signal frame on the stack
++	   and call the signal return syscall as if a signal
++	   handler exited normally.  */
++	PTR_ADDIU sp, -((RT_SIGFRAME_SIZE + ALSZ) & ALMASK)
++
++	/* Only ucontext is referred to from rt_sigreturn,
++	   copy it.  */
++	PTR_ADDIU t1, sp, RT_SIGFRAME_UCONTEXT
++	li	t3, ((UCONTEXT_SIZE + SZREG - 1) / SZREG) - 1
++0:
++	REG_L	t2, (a0)
++	PTR_ADDIU a0, SZREG
++	REG_S	t2, (t1)
++	PTR_ADDIU t1, SZREG
++	.set	noreorder
++	bgtz	t3, 0b
++	 addiu	t3, -1
++	.set	reorder
++
++/* rt_sigreturn () -- no arguments, sp points to struct rt_sigframe.  */
++	li	v0, SYS_ify (rt_sigreturn)
++	syscall
++
++	/* Restore the stack and fall through to the error
++	   path.  Successful rt_sigreturn never returns to
++	   its calling place.  */
++	PTR_ADDIU sp, ((RT_SIGFRAME_SIZE + ALSZ) & ALMASK)
++99:
++#ifdef __PIC__
++	PTR_LA	t9, JUMPTARGET (__syscall_error)
++	RESTORE_GP64
++	PTR_ADDIU sp, FRAMESZ
++	jr	t9
++
++#else  /* ! __PIC__ */
++
++	j	JUMPTARGET (__syscall_error)
++#endif /* ! __PIC__ */
++PSEUDO_END (__setcontext)
++
++weak_alias (__setcontext, setcontext)
+diff -ruN a/libc/sysdeps/linux/mips/swapcontext.S b/libc/sysdeps/linux/mips/swapcontext.S
+--- a/libc/sysdeps/linux/mips/swapcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/mips/swapcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,211 @@
++/* Save and set current context.
++   Copyright (C) 2009 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Maciej W. Rozycki <macro@codesourcery.com>.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++#include <sys/asm.h>
++#include <sys/fpregdef.h>
++#include <sys/regdef.h>
++
++#include "ucontext_i.h"
++
++/* int swapcontext (ucontext_t *oucp, const ucontext_t *ucp) */
++
++	.text
++LOCALSZ = 0
++ARGSZ = 0
++MASK = 0x00000000
++#ifdef __PIC__
++LOCALSZ = 1						/* save gp */
++#endif
++#if _MIPS_SIM != _ABIO32
++ARGSZ = 1						/* save a1 */
++# ifdef __PIC__
++MASK = 0x10000000
++# endif
++#endif
++FRAMESZ = (((ARGSZ + LOCALSZ) * SZREG) + ALSZ) & ALMASK
++GPOFF = FRAMESZ - ((ARGSZ + 1) * SZREG)
++#if _MIPS_SIM != _ABIO32
++A1OFF = FRAMESZ - (1 * SZREG)				/* callee-allocated */
++#else
++A1OFF = FRAMESZ + (1 * SZREG)				/* caller-allocated */
++#endif
++
++NESTED (__swapcontext, FRAMESZ, ra)
++	.mask	MASK, -(ARGSZ * SZREG)
++	.fmask	0x00000000, 0
++
++#ifdef __PIC__
++	SETUP_GP
++
++	move	a2, sp
++# define _SP a2
++
++# if _MIPS_SIM != _ABIO32
++	move	a3, gp
++#  define _GP a3
++# endif
++
++	PTR_ADDIU sp, -FRAMESZ
++	SETUP_GP64 (GPOFF, __swapcontext)
++	SAVE_GP (GPOFF)
++
++#else  /* ! __PIC__ */
++# define _SP sp
++# define _GP gp
++
++#endif /* ! __PIC__ */
++
++#ifdef PROF
++	.set	noat
++	move	AT, ra
++	jal	_mcount
++	.set	at
++#endif
++
++	/* Store a magic flag.	*/
++	li	v1, 1
++	REG_S	v1, (0 * SZREG + MCONTEXT_GREGS)(a0)	/* zero */
++
++	REG_S	s0, (16 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s1, (17 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s2, (18 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s3, (19 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s4, (20 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s5, (21 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s6, (22 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	s7, (23 * SZREG + MCONTEXT_GREGS)(a0)
++#if ! defined (__PIC__) || _MIPS_SIM != _ABIO32
++	REG_S	_GP, (28 * SZREG + MCONTEXT_GREGS)(a0)
++#endif
++	REG_S	_SP, (29 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	fp, (30 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	ra, (31 * SZREG + MCONTEXT_GREGS)(a0)
++	REG_S	ra, MCONTEXT_PC(a0)
++
++#ifdef __mips_hard_float
++# if _MIPS_SIM == _ABI64
++	s.d	fs0, (24 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs1, (25 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs2, (26 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs3, (27 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs4, (28 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs5, (29 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs6, (30 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs7, (31 * SZREG + MCONTEXT_FPREGS)(a0)
++
++# else  /* _MIPS_SIM != _ABI64 */
++	s.d	fs0, (20 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs1, (22 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs2, (24 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs3, (26 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs4, (28 * SZREG + MCONTEXT_FPREGS)(a0)
++	s.d	fs5, (30 * SZREG + MCONTEXT_FPREGS)(a0)
++
++# endif /* _MIPS_SIM != _ABI64 */
++
++	cfc1	v1, fcr31
++	sw	v1, MCONTEXT_FPC_CSR(a0)
++#endif /* __mips_hard_float */
++
++	REG_S	a1, A1OFF(sp)
++
++/* rt_sigprocmask (SIG_SETMASK, &ucp->uc_sigmask, &oucp->uc_sigmask, _NSIG8) */
++	li	a3, _NSIG8
++	PTR_ADDU a2, a0, UCONTEXT_SIGMASK
++	PTR_ADDU a1, a1, UCONTEXT_SIGMASK
++	li	a0, SIG_SETMASK
++
++	li	v0, SYS_ify (rt_sigprocmask)
++	syscall
++	bnez	a3, 99f
++
++	REG_L	v0, A1OFF(sp)
++
++#ifdef __mips_hard_float
++# if _MIPS_SIM == _ABI64
++	l.d	fs0, (24 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs1, (25 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs2, (26 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs3, (27 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs4, (28 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs5, (29 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs6, (30 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs7, (31 * SZREG + MCONTEXT_FPREGS)(v0)
++
++# else  /* _MIPS_SIM != _ABI64 */
++	l.d	fs0, (20 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs1, (22 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs2, (24 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs3, (26 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs4, (28 * SZREG + MCONTEXT_FPREGS)(v0)
++	l.d	fs5, (30 * SZREG + MCONTEXT_FPREGS)(v0)
++
++# endif /* _MIPS_SIM != _ABI64 */
++
++	lw	v1, MCONTEXT_FPC_CSR(v0)
++	ctc1	v1, fcr31
++#endif /* __mips_hard_float */
++
++	/* Note the contents of argument registers will be random
++	   unless makecontext() has been called.  */
++	REG_L	a0, (4 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a1, (5 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a2, (6 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a3, (7 * SZREG + MCONTEXT_GREGS)(v0)
++#if _MIPS_SIM != _ABIO32
++	REG_L	a4, (8 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a5, (9 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a6, (10 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	a7, (11 * SZREG + MCONTEXT_GREGS)(v0)
++#endif
++
++	REG_L	s0, (16 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s1, (17 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s2, (18 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s3, (19 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s4, (20 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s5, (21 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s6, (22 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	s7, (23 * SZREG + MCONTEXT_GREGS)(v0)
++#if ! defined (__PIC__) || _MIPS_SIM != _ABIO32
++	REG_L	gp, (28 * SZREG + MCONTEXT_GREGS)(v0)
++#endif
++	REG_L	sp, (29 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	fp, (30 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	ra, (31 * SZREG + MCONTEXT_GREGS)(v0)
++	REG_L	t9, MCONTEXT_PC(v0)
++
++	move	v0, zero
++	jr	t9
++
++99:
++#ifdef __PIC__
++	PTR_LA	t9, JUMPTARGET (__syscall_error)
++	RESTORE_GP64
++	PTR_ADDIU sp, FRAMESZ
++	jr	t9
++
++#else  /* ! __PIC__ */
++
++	j	JUMPTARGET (__syscall_error)
++#endif /* ! __PIC__ */
++PSEUDO_END (__swapcontext)
++
++weak_alias (__swapcontext, swapcontext)
+diff -ruN a/libc/sysdeps/linux/mips/ucontext_i.sym b/libc/sysdeps/linux/mips/ucontext_i.sym
+--- a/libc/sysdeps/linux/mips/ucontext_i.sym	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/mips/ucontext_i.sym	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,52 @@
++#include <inttypes.h>
++#include <signal.h>
++#include <stddef.h>
++#include <sys/ucontext.h>
++
++#include <kernel_rt_sigframe.h>
++
++-- Constants used by the rt_sigprocmask call.
++
++SIG_BLOCK
++SIG_SETMASK
++
++_NSIG8				(_NSIG / 8)
++
++-- Offsets of the fields in the kernel rt_sigframe_t structure.
++#define rt_sigframe(member)	offsetof (kernel_rt_sigframe_t, member)
++
++RT_SIGFRAME_UCONTEXT		rt_sigframe (rs_uc)
++
++RT_SIGFRAME_SIZE		sizeof (kernel_rt_sigframe_t)
++
++-- Offsets of the fields in the ucontext_t structure.
++#define ucontext(member)	offsetof (ucontext_t, member)
++#define stack(member)		ucontext (uc_stack.member)
++#define mcontext(member)	ucontext (uc_mcontext.member)
++
++UCONTEXT_FLAGS			ucontext (uc_flags)
++UCONTEXT_LINK			ucontext (uc_link)
++UCONTEXT_STACK			ucontext (uc_stack)
++UCONTEXT_MCONTEXT		ucontext (uc_mcontext)
++UCONTEXT_SIGMASK		ucontext (uc_sigmask)
++
++STACK_SP			stack (ss_sp)
++STACK_SIZE			stack (ss_size)
++STACK_FLAGS			stack (ss_flags)
++
++MCONTEXT_GREGS			mcontext (gregs)
++MCONTEXT_FPREGS			mcontext (fpregs)
++MCONTEXT_MDHI			mcontext (mdhi)
++MCONTEXT_HI1			mcontext (hi1)
++MCONTEXT_HI2			mcontext (hi2)
++MCONTEXT_HI3			mcontext (hi3)
++MCONTEXT_MDLO			mcontext (mdlo)
++MCONTEXT_LO1			mcontext (lo1)
++MCONTEXT_LO2			mcontext (lo2)
++MCONTEXT_LO3			mcontext (lo3)
++MCONTEXT_PC			mcontext (pc)
++MCONTEXT_FPC_CSR		mcontext (fpc_csr)
++MCONTEXT_USED_MATH		mcontext (used_math)
++MCONTEXT_DSP			mcontext (dsp)
++
++UCONTEXT_SIZE			sizeof (ucontext_t)
+diff -ruN a/libc/sysdeps/linux/x86_64/getcontext.S b/libc/sysdeps/linux/x86_64/getcontext.S
+--- a/libc/sysdeps/linux/x86_64/getcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/x86_64/getcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,88 @@
++/* Save current context.
++   Copyright (C) 2002-2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Andreas Jaeger <aj@suse.de>, 2002.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++/*  int __getcontext (ucontext_t *ucp)
++
++  Saves the machine context in UCP such that when it is activated,
++  it appears as if __getcontext() returned again.
++
++  This implementation is intended to be used for *synchronous* context
++  switches only.  Therefore, it does not have to save anything
++  other than the PRESERVED state.  */
++
++
++ENTRY(__getcontext)
++	/* Save the preserved registers, the registers used for passing
++	   args, and the return address.  */
++	movq	%rbx, oRBX(%rdi)
++	movq	%rbp, oRBP(%rdi)
++	movq	%r12, oR12(%rdi)
++	movq	%r13, oR13(%rdi)
++	movq	%r14, oR14(%rdi)
++	movq	%r15, oR15(%rdi)
++
++	movq	%rdi, oRDI(%rdi)
++	movq	%rsi, oRSI(%rdi)
++	movq	%rdx, oRDX(%rdi)
++	movq	%rcx, oRCX(%rdi)
++	movq	%r8, oR8(%rdi)
++	movq	%r9, oR9(%rdi)
++
++	movq	(%rsp), %rcx
++	movq	%rcx, oRIP(%rdi)
++	leaq	8(%rsp), %rcx		/* Exclude the return address.  */
++	movq	%rcx, oRSP(%rdi)
++
++	/* We have separate floating-point register content memory on the
++	   stack.  We use the __fpregs_mem block in the context.  Set the
++	   links up correctly.  */
++
++	leaq	oFPREGSMEM(%rdi), %rcx
++	movq	%rcx, oFPREGS(%rdi)
++	/* Save the floating-point environment.  */
++	fnstenv	(%rcx)
++	fldenv	(%rcx)
++	stmxcsr oMXCSR(%rdi)
++
++	/* Save the current signal mask with
++	   rt_sigprocmask (SIG_BLOCK, NULL, set,_NSIG/8).  */
++	leaq	oSIGMASK(%rdi), %rdx
++	xorl	%esi,%esi
++#if SIG_BLOCK == 0
++	xorl	%edi, %edi
++#else
++	movl	$SIG_BLOCK, %edi
++#endif
++	movl	$_NSIG8,%r10d
++	movl	$__NR_rt_sigprocmask, %eax
++	syscall
++	cmpq	$-4095, %rax		/* Check %rax for error.  */
++	jae	SYSCALL_ERROR_LABEL	/* Jump to error handler if error.  */
++
++	/* All done, return 0 for success.  */
++	xorl	%eax, %eax
++L(pseudo_end):
++	ret
++PSEUDO_END(__getcontext)
++
++weak_alias (__getcontext, getcontext)
+diff -ruN a/libc/sysdeps/linux/x86_64/makecontext.c b/libc/sysdeps/linux/x86_64/makecontext.c
+--- a/libc/sysdeps/linux/x86_64/makecontext.c	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/x86_64/makecontext.c	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,121 @@
++/* Create new context.
++   Copyright (C) 2002, 2004, 2005, 2008 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Andreas Jaeger <aj@suse.de>, 2002.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++#include <stdarg.h>
++#include <stdint.h>
++#include <ucontext.h>
++
++#include "ucontext_i.h"
++
++/* This implementation can handle any ARGC value but only
++   normal integer parameters.
++   makecontext sets up a stack and the registers for the
++   user context. The stack looks like this:
++               +-----------------------+
++               | next context          |
++               +-----------------------+
++               | parameter 7-n         |
++	       +-----------------------+
++	       | trampoline address    |
++    %rsp ->    +-----------------------+
++
++   The registers are set up like this:
++     %rdi,%rsi,%rdx,%rcx,%r8,%r9: parameter 1 to 6
++     %rbx   : address of next context
++     %rsp   : stack pointer.
++*/
++
++/* XXX: This implementation currently only handles integer arguments.
++   To handle long int and pointer arguments the va_arg arguments needs
++   to be changed to long and also the stdlib/tst-setcontext.c file needs
++   to be changed to pass long arguments to makecontext.  */
++
++
++void
++__makecontext (ucontext_t *ucp, void (*func) (void), int argc, ...)
++{
++  extern void __start_context (void);
++  greg_t *sp;
++  unsigned int idx_uc_link;
++  va_list ap;
++  int i;
++
++  /* Generate room on stack for parameter if needed and uc_link.  */
++  sp = (greg_t *) ((uintptr_t) ucp->uc_stack.ss_sp
++		   + ucp->uc_stack.ss_size);
++  sp -= (argc > 6 ? argc - 6 : 0) + 1;
++  /* Align stack and make space for trampoline address.  */
++  sp = (greg_t *) ((((uintptr_t) sp) & -16L) - 8);
++
++  idx_uc_link = (argc > 6 ? argc - 6 : 0) + 1;
++
++  /* Setup context ucp.  */
++  /* Address to jump to.  */
++  ucp->uc_mcontext.gregs[REG_RIP] = (uintptr_t) func;
++  /* Setup rbx.*/
++  ucp->uc_mcontext.gregs[REG_RBX] = (uintptr_t) &sp[idx_uc_link];
++  ucp->uc_mcontext.gregs[REG_RSP] = (uintptr_t) sp;
++
++  /* Setup stack.  */
++  sp[0] = (uintptr_t) &__start_context;
++  sp[idx_uc_link] = (uintptr_t) ucp->uc_link;
++
++  va_start (ap, argc);
++  /* Handle arguments.
++
++     The standard says the parameters must all be int values.  This is
++     an historic accident and would be done differently today.  For
++     x86-64 all integer values are passed as 64-bit values and
++     therefore extending the API to copy 64-bit values instead of
++     32-bit ints makes sense.  It does not break existing
++     functionality and it does not violate the standard which says
++     that passing non-int values means undefined behavior.  */
++  for (i = 0; i < argc; ++i)
++    switch (i)
++      {
++      case 0:
++	ucp->uc_mcontext.gregs[REG_RDI] = va_arg (ap, greg_t);
++	break;
++      case 1:
++	ucp->uc_mcontext.gregs[REG_RSI] = va_arg (ap, greg_t);
++	break;
++      case 2:
++	ucp->uc_mcontext.gregs[REG_RDX] = va_arg (ap, greg_t);
++	break;
++      case 3:
++	ucp->uc_mcontext.gregs[REG_RCX] = va_arg (ap, greg_t);
++	break;
++      case 4:
++	ucp->uc_mcontext.gregs[REG_R8] = va_arg (ap, greg_t);
++	break;
++      case 5:
++	ucp->uc_mcontext.gregs[REG_R9] = va_arg (ap, greg_t);
++	break;
++      default:
++	/* Put value on stack.  */
++	sp[i - 5] = va_arg (ap, greg_t);
++	break;
++      }
++  va_end (ap);
++
++}
++
++
++weak_alias (__makecontext, makecontext)
+diff -ruN a/libc/sysdeps/linux/x86_64/Makefile.arch b/libc/sysdeps/linux/x86_64/Makefile.arch
+--- a/libc/sysdeps/linux/x86_64/Makefile.arch	2012-05-15 15:20:09.000000000 +0800
++++ b/libc/sysdeps/linux/x86_64/Makefile.arch	2017-04-01 14:17:22.493463895 +0800
+@@ -20,3 +20,8 @@
+ SSRC += sched_getcpu.S
+ endif
+ endif
++
++ifeq ($(UCLIBC_HAS_CONTEXT_FUNCS),y)
++CSRC += makecontext.c
++SSRC += setcontext.S getcontext.S swapcontext.S __start_context.S
++endif
+diff -ruN a/libc/sysdeps/linux/x86_64/setcontext.S b/libc/sysdeps/linux/x86_64/setcontext.S
+--- a/libc/sysdeps/linux/x86_64/setcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/x86_64/setcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,103 @@
++/* Install given context.
++   Copyright (C) 2002-2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Andreas Jaeger <aj@suse.de>, 2002.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++
++/*  int __setcontext (const ucontext_t *ucp)
++
++  Restores the machine context in UCP and thereby resumes execution
++  in that context.
++
++  This implementation is intended to be used for *synchronous* context
++  switches only.  Therefore, it does not have to restore anything
++  other than the PRESERVED state.  */
++
++ENTRY(__setcontext)
++	/* Save argument since syscall will destroy it.  */
++	pushq	%rdi
++	cfi_adjust_cfa_offset(8)
++
++	/* Set the signal mask with
++	   rt_sigprocmask (SIG_SETMASK, mask, NULL, _NSIG/8).  */
++	leaq	oSIGMASK(%rdi), %rsi
++	xorl	%edx, %edx
++	movl	$SIG_SETMASK, %edi
++	movl	$_NSIG8,%r10d
++	movl	$__NR_rt_sigprocmask, %eax
++	syscall
++	popq	%rdi			/* Reload %rdi, adjust stack.  */
++	cfi_adjust_cfa_offset(-8)
++	cmpq	$-4095, %rax		/* Check %rax for error.  */
++	jae	SYSCALL_ERROR_LABEL	/* Jump to error handler if error.  */
++
++	/* Restore the floating-point context.  Not the registers, only the
++	   rest.  */
++	movq	oFPREGS(%rdi), %rcx
++	fldenv	(%rcx)
++	ldmxcsr oMXCSR(%rdi)
++
++
++	/* Load the new stack pointer, the preserved registers and
++	   registers used for passing args.  */
++	cfi_def_cfa(%rdi, 0)
++	cfi_offset(%rbx,oRBX)
++	cfi_offset(%rbp,oRBP)
++	cfi_offset(%r12,oR12)
++	cfi_offset(%r13,oR13)
++	cfi_offset(%r14,oR14)
++	cfi_offset(%r15,oR15)
++	cfi_offset(%rsp,oRSP)
++	cfi_offset(%rip,oRIP)
++
++	movq	oRSP(%rdi), %rsp
++	movq	oRBX(%rdi), %rbx
++	movq	oRBP(%rdi), %rbp
++	movq	oR12(%rdi), %r12
++	movq	oR13(%rdi), %r13
++	movq	oR14(%rdi), %r14
++	movq	oR15(%rdi), %r15
++
++	/* The following ret should return to the address set with
++	getcontext.  Therefore push the address on the stack.  */
++	movq	oRIP(%rdi), %rcx
++	pushq	%rcx
++
++	movq	oRSI(%rdi), %rsi
++	movq	oRDX(%rdi), %rdx
++	movq	oRCX(%rdi), %rcx
++	movq	oR8(%rdi), %r8
++	movq	oR9(%rdi), %r9
++
++	/* Setup finally  %rdi.  */
++	movq	oRDI(%rdi), %rdi
++
++	/* End FDE here, we fall into another context.  */
++	cfi_endproc
++	cfi_startproc
++
++	/* Clear rax to indicate success.  */
++	xorl	%eax, %eax
++L(pseudo_end):
++	ret
++PSEUDO_END(__setcontext)
++
++weak_alias (__setcontext, setcontext)
+diff -ruN a/libc/sysdeps/linux/x86_64/__start_context.S b/libc/sysdeps/linux/x86_64/__start_context.S
+--- a/libc/sysdeps/linux/x86_64/__start_context.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/x86_64/__start_context.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,49 @@
++/* Copyright (C) 2002-2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Andreas Jaeger <aj@suse.de>, 2002.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++/* This is the helper code which gets called if a function which is
++   registered with 'makecontext' returns.  In this case we have to
++   install the context listed in the uc_link element of the context
++   'makecontext' manipulated at the time of the 'makecontext' call.
++   If the pointer is NULL the process must terminate.  */
++
++
++ENTRY(__start_context)
++	/* This removes the parameters passed to the function given to
++	   'makecontext' from the stack.  RBX contains the address
++	   on the stack pointer for the next context.  */
++	movq	%rbx, %rsp
++
++	popq	%rdi			/* This is the next context.  */
++	cfi_adjust_cfa_offset(-8)
++	testq	%rdi, %rdi
++	je	2f			/* If it is zero exit.  */
++
++	call	JUMPTARGET(__setcontext)
++	/* If this returns (which can happen if the syscall fails) we'll
++	   exit the program with the return error value (-1).  */
++	movq	%rax,%rdi
++
++2:
++	call	HIDDEN_JUMPTARGET(exit)
++	/* The 'exit' call should never return.  In case it does cause
++	   the process to terminate.  */
++	hlt
++END(__start_context)
+diff -ruN a/libc/sysdeps/linux/x86_64/swapcontext.S b/libc/sysdeps/linux/x86_64/swapcontext.S
+--- a/libc/sysdeps/linux/x86_64/swapcontext.S	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/x86_64/swapcontext.S	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,121 @@
++/* Save current context and install the given one.
++   Copyright (C) 2002-2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++   Contributed by Andreas Jaeger <aj@suse.de>, 2002.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#include <sysdep.h>
++
++#include "ucontext_i.h"
++
++
++/* int __swapcontext (ucontext_t *oucp, const ucontext_t *ucp);
++
++  Saves the machine context in oucp such that when it is activated,
++  it appears as if __swapcontextt() returned again, restores the
++  machine context in ucp and thereby resumes execution in that
++  context.
++
++  This implementation is intended to be used for *synchronous* context
++  switches only.  Therefore, it does not have to save anything
++  other than the PRESERVED state.  */
++
++ENTRY(__swapcontext)
++	/* Save the preserved registers, the registers used for passing args,
++	   and the return address.  */
++	movq	%rbx, oRBX(%rdi)
++	movq	%rbp, oRBP(%rdi)
++	movq	%r12, oR12(%rdi)
++	movq	%r13, oR13(%rdi)
++	movq	%r14, oR14(%rdi)
++	movq	%r15, oR15(%rdi)
++
++	movq	%rdi, oRDI(%rdi)
++	movq	%rsi, oRSI(%rdi)
++	movq	%rdx, oRDX(%rdi)
++	movq	%rcx, oRCX(%rdi)
++	movq	%r8, oR8(%rdi)
++	movq	%r9, oR9(%rdi)
++
++	movq	(%rsp), %rcx
++	movq	%rcx, oRIP(%rdi)
++	leaq	8(%rsp), %rcx		/* Exclude the return address.  */
++	movq	%rcx, oRSP(%rdi)
++
++	/* We have separate floating-point register content memory on the
++	   stack.  We use the __fpregs_mem block in the context.  Set the
++	   links up correctly.  */
++	leaq	oFPREGSMEM(%rdi), %rcx
++	movq	%rcx, oFPREGS(%rdi)
++	/* Save the floating-point environment.  */
++	fnstenv	(%rcx)
++	stmxcsr oMXCSR(%rdi)
++
++
++	/* The syscall destroys some registers, save them.  */
++	movq	%rsi, %r12
++
++	/* Save the current signal mask and install the new one with
++	   rt_sigprocmask (SIG_BLOCK, newset, oldset,_NSIG/8).  */
++	leaq	oSIGMASK(%rdi), %rdx
++	leaq	oSIGMASK(%rsi), %rsi
++	movl	$SIG_SETMASK, %edi
++	movl	$_NSIG8,%r10d
++	movl	$__NR_rt_sigprocmask, %eax
++	syscall
++	cmpq	$-4095, %rax		/* Check %rax for error.  */
++	jae	SYSCALL_ERROR_LABEL	/* Jump to error handler if error.  */
++
++	/* Restore destroyed registers.  */
++	movq	%r12, %rsi
++
++	/* Restore the floating-point context.  Not the registers, only the
++	   rest.  */
++	movq	oFPREGS(%rsi), %rcx
++	fldenv	(%rcx)
++	ldmxcsr oMXCSR(%rsi)
++
++	/* Load the new stack pointer and the preserved registers.  */
++	movq	oRSP(%rsi), %rsp
++	movq	oRBX(%rsi), %rbx
++	movq	oRBP(%rsi), %rbp
++	movq	oR12(%rsi), %r12
++	movq	oR13(%rsi), %r13
++	movq	oR14(%rsi), %r14
++	movq	oR15(%rsi), %r15
++
++	/* The following ret should return to the address set with
++	getcontext.  Therefore push the address on the stack.  */
++	movq	oRIP(%rsi), %rcx
++	pushq	%rcx
++
++	/* Setup registers used for passing args.  */
++	movq	oRDI(%rsi), %rdi
++	movq	oRDX(%rsi), %rdx
++	movq	oRCX(%rsi), %rcx
++	movq	oR8(%rsi), %r8
++	movq	oR9(%rsi), %r9
++
++	/* Setup finally  %rsi.  */
++	movq	oRSI(%rsi), %rsi
++
++	/* Clear rax to indicate success.  */
++	xorl	%eax, %eax
++L(pseudo_end):
++	ret
++PSEUDO_END(__swapcontext)
++
++weak_alias (__swapcontext, swapcontext)
+diff -ruN a/libc/sysdeps/linux/x86_64/ucontext_i.sym b/libc/sysdeps/linux/x86_64/ucontext_i.sym
+--- a/libc/sysdeps/linux/x86_64/ucontext_i.sym	1970-01-01 08:00:00.000000000 +0800
++++ b/libc/sysdeps/linux/x86_64/ucontext_i.sym	2015-07-06 04:09:46.000000000 +0800
+@@ -0,0 +1,37 @@
++#include <stddef.h>
++#include <signal.h>
++#include <sys/ucontext.h>
++
++--
++
++SIG_BLOCK
++SIG_SETMASK
++
++_NSIG8		(_NSIG / 8)
++
++#define ucontext(member)	offsetof (ucontext_t, member)
++#define mcontext(member)	ucontext (uc_mcontext.member)
++#define mreg(reg)		mcontext (gregs[REG_##reg])
++
++oRBP		mreg (RBP)
++oRSP		mreg (RSP)
++oRBX		mreg (RBX)
++oR8		mreg (R8)
++oR9		mreg (R9)
++oR10		mreg (R10)
++oR11		mreg (R11)
++oR12		mreg (R12)
++oR13		mreg (R13)
++oR14		mreg (R14)
++oR15		mreg (R15)
++oRDI		mreg (RDI)
++oRSI		mreg (RSI)
++oRDX		mreg (RDX)
++oRAX		mreg (RAX)
++oRCX		mreg (RCX)
++oRIP		mreg (RIP)
++oEFL		mreg (EFL)
++oFPREGS		mcontext (fpregs)
++oSIGMASK	ucontext (uc_sigmask)
++oFPREGSMEM	ucontext (__fpregs_mem)
++oMXCSR		ucontext (__fpregs_mem.mxcsr)
+diff -ruN a/libpthread/nptl/sysdeps/Makefile.commonarch b/libpthread/nptl/sysdeps/Makefile.commonarch
+--- a/libpthread/nptl/sysdeps/Makefile.commonarch	2012-05-15 15:20:09.000000000 +0800
++++ b/libpthread/nptl/sysdeps/Makefile.commonarch	2017-04-01 14:19:46.284470854 +0800
+@@ -47,9 +47,8 @@
+ $(libpthread_arch_OUT)/gen_tcb-offsets.s: $(libpthread_arch_OUT)/gen_tcb-offsets.c | headers
+ 	$(compile.c)
+ libpthread-generated-y += $(libpthread_arch_OUT)/gen_tcb-offsets.s
+-PTHREAD_TCB_OFFSET_MANGLE ?= -n "s/^.*@@@name@@@\([^@]*\)@@@value@@@[^0-9Xxa-fA-F-]*\([0-9Xxa-fA-F-][0-9Xxa-fA-F-]*\).*@@@end@@@.*\$$/\#define \1 \2/p"
+ $(libpthread_arch_OUT)/tcb-offsets.h: $(libpthread_arch_OUT)/gen_tcb-offsets.s
+-	$(do_sed) $(PTHREAD_TCB_OFFSET_MANGLE) $< > $@
++	$(do_sed) $(PTHREAD_GENERATE_MANGLE) $< > $@
+ 	@if test ! -s $@ ; then rm -f $@ ; false ; fi
+ 
+ pregen-headers-$(UCLIBC_HAS_THREADS_NATIVE) += $(libpthread_arch_OUT)/tcb-offsets.h
+diff -ruN a/libpthread/nptl/sysdeps/unix/sysv/linux/Makefile.commonarch b/libpthread/nptl/sysdeps/unix/sysv/linux/Makefile.commonarch
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/Makefile.commonarch	2012-05-15 15:20:09.000000000 +0800
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/Makefile.commonarch	2017-04-01 14:20:14.575472223 +0800
+@@ -174,8 +174,6 @@
+ CFLAGS-gen_structsem.c = -S
+ CFLAGS-gen_unwindbuf.c = -S
+ 
+-PTHREAD_GENERATE_MANGLE ?= -n "s/^.*@@@name@@@\([^@]*\)@@@value@@@[^0-9Xxa-fA-F-]*\([0-9Xxa-fA-F-][0-9Xxa-fA-F-]*\).*@@@end@@@.*\$$/\#define \1 \2/p"
+-
+ PTHREAD_LINUX_SYM   := $(notdir $(wildcard $(libpthread_linux_DIR)/*.sym))
+ PTHREAD_LINUX_SYM_C := $(addprefix $(libpthread_linux_OUT)/gen_,$(PTHREAD_LINUX_SYM:.sym=.c))
+ PTHREAD_LINUX_SYM_S := $(PTHREAD_LINUX_SYM_C:.c=.s)
+diff -ruN a/Rules.mak b/Rules.mak
+--- a/Rules.mak	2012-05-15 15:20:09.000000000 +0800
++++ b/Rules.mak	2017-04-01 14:02:50.065421672 +0800
+@@ -795,3 +795,5 @@
+ endif
+ 
+ LOCAL_INSTALL_PATH := install_dir
++
++PTHREAD_GENERATE_MANGLE ?= -n "s/^.*@@@name@@@\([^@]*\)@@@value@@@[^0-9Xxa-fA-F-]*\([0-9Xxa-fA-F-][0-9Xxa-fA-F-]*\).*@@@end@@@.*\$$/\#define \1 \2/p"
