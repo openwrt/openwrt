@@ -72,7 +72,6 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "eth0.2"
 		;;
 	3g-6200n|\
-	ac1200pro|\
 	ai-br100|\
 	d240|\
 	db-wrt01|\
@@ -116,6 +115,7 @@ ramips_setup_interfaces()
 	zbt-we826|\
 	zbt-wg2626|\
 	zbt-wg3526-16M|\
+	zbt-wg3526-32M|\
 	zbt-wr8305rt)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"

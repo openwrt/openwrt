@@ -130,9 +130,6 @@ ramips_board_detect() {
 	*"DCS-930L B1")
 		name="dcs-930l-b1"
 		;;
-	*"Digineo AC1200 Pro")
-		name="ac1200pro"
-		;;
 	*"DIR-300 B1")
 		name="dir-300-b1"
 		;;
@@ -663,6 +660,9 @@ ramips_board_detect() {
 		;;
 	*"ZBT-WG3526 (16M)")
 		name="zbt-wg3526-16M"
+		;;
+	*"ZBT-WG3526 (32M)")
+		name="zbt-wg3526-32M"
 		;;
 	*"ZBT-WR8305RT")
 		name="zbt-wr8305rt"

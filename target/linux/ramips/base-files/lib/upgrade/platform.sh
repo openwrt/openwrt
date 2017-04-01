@@ -17,7 +17,6 @@ platform_check_image() {
 	3g150b|\
 	3g300m|\
 	a5-v11|\
-	ac1200pro|\
 	ai-br100|\
 	air3gii|\
 	all0239-3g|\
@@ -197,6 +196,7 @@ platform_check_image() {
 	zbt-we826|\
 	zbt-wg2626|\
 	zbt-wg3526-16M|\
+	zbt-wg3526-32M|\
 	zbt-wr8305rt|\
 	zte-q7|\
 	youku-yk1)

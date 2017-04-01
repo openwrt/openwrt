@@ -35,7 +35,8 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		status_led: status {
+		status {
+			label = "zbt-wg3526:green:status";
 			gpios = <&gpio0 24 1>;
 		};
 	};
