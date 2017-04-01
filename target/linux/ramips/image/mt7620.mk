@@ -418,6 +418,7 @@ define Device/wt3020-4M
   BLOCKSIZE := 4k
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   IMAGES += factory.bin
+  SUPPORTED_DEVICES += wt3020
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	poray-header -B WT3020 -F 4M
   DEVICE_TITLE := Nexx WT3020 (4MB)
@@ -427,6 +428,7 @@ TARGET_DEVICES += wt3020-4M
 define Device/wt3020-8M
   DTS := WT3020-8M
   IMAGES += factory.bin
+  SUPPORTED_DEVICES += wt3020
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | \
 	poray-header -B WT3020 -F 8M
   DEVICE_TITLE := Nexx WT3020 (8MB)
