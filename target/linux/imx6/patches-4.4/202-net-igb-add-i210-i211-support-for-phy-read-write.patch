@@ -10,7 +10,7 @@ Date:   Thu May 15 00:12:26 2014 -0700
 
 --- a/drivers/net/ethernet/intel/igb/e1000_phy.c
 +++ b/drivers/net/ethernet/intel/igb/e1000_phy.c
-@@ -129,7 +129,7 @@ out:
+@@ -133,7 +133,7 @@ out:
  s32 igb_read_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 *data)
  {
  	struct e1000_phy_info *phy = &hw->phy;
@@ -19,7 +19,7 @@ Date:   Thu May 15 00:12:26 2014 -0700
  	s32 ret_val = 0;
  
  	if (offset > MAX_PHY_REG_ADDRESS) {
-@@ -142,11 +142,25 @@ s32 igb_read_phy_reg_mdic(struct e1000_h
+@@ -146,11 +146,25 @@ s32 igb_read_phy_reg_mdic(struct e1000_h
  	 * Control register.  The MAC will take care of interfacing with the
  	 * PHY to retrieve the desired data.
  	 */
@@ -48,7 +48,7 @@ Date:   Thu May 15 00:12:26 2014 -0700
  
  	/* Poll the ready bit to see if the MDI read completed
  	 * Increasing the time out as testing showed failures with
-@@ -171,6 +185,18 @@ s32 igb_read_phy_reg_mdic(struct e1000_h
+@@ -175,6 +189,18 @@ s32 igb_read_phy_reg_mdic(struct e1000_h
  	*data = (u16) mdic;
  
  out:
@@ -67,7 +67,7 @@ Date:   Thu May 15 00:12:26 2014 -0700
  	return ret_val;
  }
  
-@@ -185,7 +211,7 @@ out:
+@@ -189,7 +215,7 @@ out:
  s32 igb_write_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 data)
  {
  	struct e1000_phy_info *phy = &hw->phy;
@@ -76,7 +76,7 @@ Date:   Thu May 15 00:12:26 2014 -0700
  	s32 ret_val = 0;
  
  	if (offset > MAX_PHY_REG_ADDRESS) {
-@@ -198,12 +224,27 @@ s32 igb_write_phy_reg_mdic(struct e1000_
+@@ -202,12 +228,27 @@ s32 igb_write_phy_reg_mdic(struct e1000_
  	 * Control register.  The MAC will take care of interfacing with the
  	 * PHY to retrieve the desired data.
  	 */
@@ -108,7 +108,7 @@ Date:   Thu May 15 00:12:26 2014 -0700
  
  	/* Poll the ready bit to see if the MDI read completed
  	 * Increasing the time out as testing showed failures with
-@@ -227,6 +268,18 @@ s32 igb_write_phy_reg_mdic(struct e1000_
+@@ -231,6 +272,18 @@ s32 igb_write_phy_reg_mdic(struct e1000_
  	}
  
  out:

@@ -36,7 +36,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  
 --- a/drivers/net/ethernet/intel/igb/e1000_phy.c
 +++ b/drivers/net/ethernet/intel/igb/e1000_phy.c
-@@ -126,9 +126,8 @@ out:
+@@ -130,9 +130,8 @@ out:
   *  Reads the MDI control regsiter in the PHY at offset and stores the
   *  information read to data.
   **/
@@ -47,7 +47,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  	u32 i, mdicnfg, mdic = 0;
  	s32 ret_val = 0;
  
-@@ -147,14 +146,14 @@ s32 igb_read_phy_reg_mdic(struct e1000_h
+@@ -151,14 +150,14 @@ s32 igb_read_phy_reg_mdic(struct e1000_h
  	case e1000_i211:
  		mdicnfg = rd32(E1000_MDICNFG);
  		mdicnfg &= ~(E1000_MDICNFG_PHY_MASK);
@@ -64,7 +64,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  			(E1000_MDIC_OP_READ));
  		break;
  	}
-@@ -208,9 +207,8 @@ out:
+@@ -212,9 +211,8 @@ out:
   *
   *  Writes data to MDI control register in the PHY at offset.
   **/
@@ -75,7 +75,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  	u32 i, mdicnfg, mdic = 0;
  	s32 ret_val = 0;
  
-@@ -229,7 +227,7 @@ s32 igb_write_phy_reg_mdic(struct e1000_
+@@ -233,7 +231,7 @@ s32 igb_write_phy_reg_mdic(struct e1000_
  		case e1000_i211:
  			mdicnfg = rd32(E1000_MDICNFG);
  			mdicnfg &= ~(E1000_MDICNFG_PHY_MASK);
@@ -84,7 +84,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  			wr32(E1000_MDICNFG, mdicnfg);
  			mdic = (((u32)data) |
  				(offset << E1000_MDIC_REG_SHIFT) |
-@@ -238,7 +236,7 @@ s32 igb_write_phy_reg_mdic(struct e1000_
+@@ -242,7 +240,7 @@ s32 igb_write_phy_reg_mdic(struct e1000_
  		default:
  			mdic = (((u32)data) |
  				(offset << E1000_MDIC_REG_SHIFT) |
@@ -93,7 +93,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  				(E1000_MDIC_OP_WRITE));
  			break;
  	}
-@@ -458,7 +456,7 @@ s32 igb_read_phy_reg_igp(struct e1000_hw
+@@ -462,7 +460,7 @@ s32 igb_read_phy_reg_igp(struct e1000_hw
  		goto out;
  
  	if (offset > MAX_PHY_MULTI_PAGE_REG) {
@@ -102,7 +102,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  						 IGP01E1000_PHY_PAGE_SELECT,
  						 (u16)offset);
  		if (ret_val) {
-@@ -467,8 +465,8 @@ s32 igb_read_phy_reg_igp(struct e1000_hw
+@@ -471,8 +469,8 @@ s32 igb_read_phy_reg_igp(struct e1000_hw
  		}
  	}
  
@@ -113,7 +113,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  
  	hw->phy.ops.release(hw);
  
-@@ -497,7 +495,7 @@ s32 igb_write_phy_reg_igp(struct e1000_h
+@@ -501,7 +499,7 @@ s32 igb_write_phy_reg_igp(struct e1000_h
  		goto out;
  
  	if (offset > MAX_PHY_MULTI_PAGE_REG) {
@@ -122,7 +122,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  						 IGP01E1000_PHY_PAGE_SELECT,
  						 (u16)offset);
  		if (ret_val) {
-@@ -506,8 +504,8 @@ s32 igb_write_phy_reg_igp(struct e1000_h
+@@ -510,8 +508,8 @@ s32 igb_write_phy_reg_igp(struct e1000_h
  		}
  	}
  
@@ -133,7 +133,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  
  	hw->phy.ops.release(hw);
  
-@@ -2547,8 +2545,9 @@ out:
+@@ -2551,8 +2549,9 @@ out:
  }
  
  /**
@@ -144,7 +144,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
   *  @offset: lower half is register offset to write to
   *     upper half is page to use.
   *  @data: data to write at register offset
-@@ -2556,7 +2555,7 @@ out:
+@@ -2560,7 +2559,7 @@ out:
   *  Acquires semaphore, if necessary, then writes the data to PHY register
   *  at the offset.  Release any acquired semaphores before exiting.
   **/
@@ -153,7 +153,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  {
  	s32 ret_val;
  	u16 page = offset >> GS40G_PAGE_SHIFT;
-@@ -2566,10 +2565,10 @@ s32 igb_write_phy_reg_gs40g(struct e1000
+@@ -2570,10 +2569,10 @@ s32 igb_write_phy_reg_gs40g(struct e1000
  	if (ret_val)
  		return ret_val;
  
@@ -166,7 +166,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  
  release:
  	hw->phy.ops.release(hw);
-@@ -2577,8 +2576,24 @@ release:
+@@ -2581,8 +2580,24 @@ release:
  }
  
  /**
@@ -192,7 +192,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
   *  @offset: lower half is register offset to read to
   *     upper half is page to use.
   *  @data: data to read at register offset
-@@ -2586,7 +2601,7 @@ release:
+@@ -2590,7 +2605,7 @@ release:
   *  Acquires semaphore, if necessary, then reads the data in the PHY register
   *  at the offset.  Release any acquired semaphores before exiting.
   **/
@@ -201,7 +201,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  {
  	s32 ret_val;
  	u16 page = offset >> GS40G_PAGE_SHIFT;
-@@ -2596,10 +2611,10 @@ s32 igb_read_phy_reg_gs40g(struct e1000_
+@@ -2600,10 +2615,10 @@ s32 igb_read_phy_reg_gs40g(struct e1000_
  	if (ret_val)
  		return ret_val;
  
@@ -214,7 +214,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  
  release:
  	hw->phy.ops.release(hw);
-@@ -2607,6 +2622,21 @@ release:
+@@ -2611,6 +2626,21 @@ release:
  }
  
  /**
