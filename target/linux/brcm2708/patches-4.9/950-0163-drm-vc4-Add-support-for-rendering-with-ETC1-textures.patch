@@ -19,8 +19,8 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
 
 --- a/drivers/gpu/drm/vc4/vc4_drv.c
 +++ b/drivers/gpu/drm/vc4/vc4_drv.c
-@@ -78,6 +78,7 @@ static int vc4_get_param_ioctl(struct dr
- 		pm_runtime_put(&vc4->v3d->pdev->dev);
+@@ -81,6 +81,7 @@ static int vc4_get_param_ioctl(struct dr
+ 		pm_runtime_put_autosuspend(&vc4->v3d->pdev->dev);
  		break;
  	case DRM_VC4_PARAM_SUPPORTS_BRANCHES:
 +	case DRM_VC4_PARAM_SUPPORTS_ETC1:

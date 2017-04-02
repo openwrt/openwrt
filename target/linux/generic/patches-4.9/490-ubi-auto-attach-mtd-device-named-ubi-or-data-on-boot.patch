@@ -9,10 +9,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  drivers/mtd/ubi/build.c | 36 ++++++++++++++++++++++++++++++++++++
  1 file changed, 36 insertions(+)
 
-Index: linux-4.9.17/drivers/mtd/ubi/build.c
-===================================================================
---- linux-4.9.17.orig/drivers/mtd/ubi/build.c
-+++ linux-4.9.17/drivers/mtd/ubi/build.c
+--- a/drivers/mtd/ubi/build.c
++++ b/drivers/mtd/ubi/build.c
 @@ -1212,6 +1212,49 @@ static struct mtd_info * __init open_mtd
  	return mtd;
  }

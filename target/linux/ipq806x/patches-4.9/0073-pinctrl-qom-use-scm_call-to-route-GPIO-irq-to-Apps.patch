@@ -105,7 +105,7 @@ Signed-off-by: Ajay Kishore <akisho@codeaurora.org>
  #include "../core.h"
  #include "../pinconf.h"
  #include "pinctrl-msm.h"
-@@ -639,6 +640,9 @@ static int msm_gpio_irq_set_type(struct
+@@ -635,6 +636,9 @@ static int msm_gpio_irq_set_type(struct
  	const struct msm_pingroup *g;
  	unsigned long flags;
  	u32 val;
@@ -115,7 +115,7 @@ Signed-off-by: Ajay Kishore <akisho@codeaurora.org>
  
  	g = &pctrl->soc->groups[d->hwirq];
  
-@@ -652,11 +656,30 @@ static int msm_gpio_irq_set_type(struct
+@@ -648,11 +652,30 @@ static int msm_gpio_irq_set_type(struct
  	else
  		clear_bit(d->hwirq, pctrl->dual_edge_irqs);
  
@@ -150,7 +150,7 @@ Signed-off-by: Ajay Kishore <akisho@codeaurora.org>
  
  	/* Update configuration for gpio.
  	 * RAW_STATUS_EN is left on for all gpio irqs. Due to the
-@@ -930,4 +953,3 @@ int msm_pinctrl_remove(struct platform_d
+@@ -926,4 +949,3 @@ int msm_pinctrl_remove(struct platform_d
  	return 0;
  }
  EXPORT_SYMBOL(msm_pinctrl_remove);

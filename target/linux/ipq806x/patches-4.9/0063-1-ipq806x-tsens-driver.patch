@@ -32,8 +32,6 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  5 files changed, 558 insertions(+), 2 deletions(-)
  create mode 100644 drivers/thermal/qcom/tsens-ipq8064.c
 
-diff --git a/Documentation/devicetree/bindings/thermal/qcom-tsens.txt b/Documentation/devicetree/bindings/thermal/qcom-tsens.txt
-index 292ed89..f4a76f6 100644
 --- a/Documentation/devicetree/bindings/thermal/qcom-tsens.txt
 +++ b/Documentation/devicetree/bindings/thermal/qcom-tsens.txt
 @@ -5,6 +5,7 @@ Required properties:
@@ -44,8 +42,6 @@ index 292ed89..f4a76f6 100644
  
  - reg: Address range of the thermal registers
  - #thermal-sensor-cells : Should be 1. See ./thermal.txt for a description.
-diff --git a/drivers/thermal/qcom/Makefile b/drivers/thermal/qcom/Makefile
-index 2cc2193..cc07cf4 100644
 --- a/drivers/thermal/qcom/Makefile
 +++ b/drivers/thermal/qcom/Makefile
 @@ -1,2 +1,3 @@
@@ -53,9 +49,6 @@ index 2cc2193..cc07cf4 100644
 -qcom_tsens-y			+= tsens.o tsens-common.o tsens-8916.o tsens-8974.o tsens-8960.o tsens-8996.o
 +qcom_tsens-y			+= tsens.o tsens-common.o tsens-8916.o tsens-8974.o tsens-8960.o tsens-8996.o \
 +				tsens-ipq8064.o
-diff --git a/drivers/thermal/qcom/tsens-ipq8064.c b/drivers/thermal/qcom/tsens-ipq8064.c
-new file mode 100644
-index 0000000..c52888f
 --- /dev/null
 +++ b/drivers/thermal/qcom/tsens-ipq8064.c
 @@ -0,0 +1,551 @@
@@ -610,11 +603,9 @@ index 0000000..c52888f
 +	.num_sensors	= 11,
 +	.ops		= &ops_ipq8064,
 +};
-diff --git a/drivers/thermal/qcom/tsens.c b/drivers/thermal/qcom/tsens.c
-index 3f9fe6a..2d25593 100644
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -72,6 +72,9 @@ static const struct of_device_id tsens_table[] = {
+@@ -72,6 +72,9 @@ static const struct of_device_id tsens_t
  	}, {
  		.compatible = "qcom,msm8996-tsens",
  		.data = &data_8996,
@@ -624,11 +615,9 @@ index 3f9fe6a..2d25593 100644
  	},
  	{}
  };
-diff --git a/drivers/thermal/qcom/tsens.h b/drivers/thermal/qcom/tsens.h
-index 911c197..31279a2 100644
 --- a/drivers/thermal/qcom/tsens.h
 +++ b/drivers/thermal/qcom/tsens.h
-@@ -89,6 +89,6 @@ void compute_intercept_slope(struct tsens_device *, u32 *, u32 *, u32);
+@@ -89,6 +89,6 @@ void compute_intercept_slope(struct tsen
  int init_common(struct tsens_device *);
  int get_temp_common(struct tsens_device *, int, int *);
  

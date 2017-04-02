@@ -10,10 +10,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 814 insertions(+)
  create mode 100644 arch/mips/pci/pci-mt7621.c
 
-Index: linux-4.9.14/arch/mips/pci/Makefile
-===================================================================
---- linux-4.9.14.orig/arch/mips/pci/Makefile
-+++ linux-4.9.14/arch/mips/pci/Makefile
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
 @@ -46,6 +46,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -22,10 +20,8 @@ Index: linux-4.9.14/arch/mips/pci/Makefile
  obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
-Index: linux-4.9.14/arch/mips/pci/pci-mt7621.c
-===================================================================
 --- /dev/null
-+++ linux-4.9.14/arch/mips/pci/pci-mt7621.c
++++ b/arch/mips/pci/pci-mt7621.c
 @@ -0,0 +1,836 @@
 +/**************************************************************************
 + *

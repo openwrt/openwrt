@@ -21,8 +21,6 @@ Signed-off-by: Rajith Cherian <rajith@codeaurora.org>
  include/linux/thermal.h                            | 14 +++++
  6 files changed, 162 insertions(+), 17 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/thermal/qcom-tsens.txt b/Documentation/devicetree/bindings/thermal/qcom-tsens.txt
-index f4a76f6..7c0a6a7 100644
 --- a/Documentation/devicetree/bindings/thermal/qcom-tsens.txt
 +++ b/Documentation/devicetree/bindings/thermal/qcom-tsens.txt
 @@ -12,11 +12,15 @@ Required properties:
@@ -41,11 +39,9 @@ index f4a76f6..7c0a6a7 100644
 +		interrupts = <0 178 0>;
  		#thermal-sensor-cells = <1>;
  	};
-diff --git a/drivers/thermal/of-thermal.c b/drivers/thermal/of-thermal.c
-index d04ec3b..d83697e 100644
 --- a/drivers/thermal/of-thermal.c
 +++ b/drivers/thermal/of-thermal.c
-@@ -95,7 +95,7 @@ static int of_thermal_get_temp(struct thermal_zone_device *tz,
+@@ -95,7 +95,7 @@ static int of_thermal_get_temp(struct th
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -54,7 +50,7 @@ index d04ec3b..d83697e 100644
  		return -EINVAL;
  
  	return data->ops->get_temp(data->sensor_data, temp);
-@@ -106,7 +106,8 @@ static int of_thermal_set_trips(struct thermal_zone_device *tz,
+@@ -106,7 +106,8 @@ static int of_thermal_set_trips(struct t
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -64,7 +60,7 @@ index d04ec3b..d83697e 100644
  		return -EINVAL;
  
  	return data->ops->set_trips(data->sensor_data, low, high);
-@@ -192,6 +193,9 @@ static int of_thermal_set_emul_temp(struct thermal_zone_device *tz,
+@@ -192,6 +193,9 @@ static int of_thermal_set_emul_temp(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -74,7 +70,7 @@ index d04ec3b..d83697e 100644
  	return data->ops->set_emul_temp(data->sensor_data, temp);
  }
  
-@@ -200,7 +204,7 @@ static int of_thermal_get_trend(struct thermal_zone_device *tz, int trip,
+@@ -200,7 +204,7 @@ static int of_thermal_get_trend(struct t
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -83,7 +79,7 @@ index d04ec3b..d83697e 100644
  		return -EINVAL;
  
  	return data->ops->get_trend(data->sensor_data, trip, trend);
-@@ -286,7 +290,9 @@ static int of_thermal_set_mode(struct thermal_zone_device *tz,
+@@ -286,7 +290,9 @@ static int of_thermal_set_mode(struct th
  	mutex_unlock(&tz->lock);
  
  	data->mode = mode;
@@ -94,7 +90,7 @@ index d04ec3b..d83697e 100644
  
  	return 0;
  }
-@@ -296,7 +302,8 @@ static int of_thermal_get_trip_type(struct thermal_zone_device *tz, int trip,
+@@ -296,7 +302,8 @@ static int of_thermal_get_trip_type(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -104,7 +100,7 @@ index d04ec3b..d83697e 100644
  		return -EDOM;
  
  	*type = data->trips[trip].type;
-@@ -304,12 +311,39 @@ static int of_thermal_get_trip_type(struct thermal_zone_device *tz, int trip,
+@@ -304,12 +311,39 @@ static int of_thermal_get_trip_type(stru
  	return 0;
  }
  
@@ -145,7 +141,7 @@ index d04ec3b..d83697e 100644
  		return -EDOM;
  
  	*temp = data->trips[trip].temperature;
-@@ -322,7 +356,8 @@ static int of_thermal_set_trip_temp(struct thermal_zone_device *tz, int trip,
+@@ -322,7 +356,8 @@ static int of_thermal_set_trip_temp(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -155,7 +151,7 @@ index d04ec3b..d83697e 100644
  		return -EDOM;
  
  	if (data->ops->set_trip_temp) {
-@@ -344,7 +379,8 @@ static int of_thermal_get_trip_hyst(struct thermal_zone_device *tz, int trip,
+@@ -344,7 +379,8 @@ static int of_thermal_get_trip_hyst(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -165,7 +161,7 @@ index d04ec3b..d83697e 100644
  		return -EDOM;
  
  	*hyst = data->trips[trip].hysteresis;
-@@ -357,7 +393,8 @@ static int of_thermal_set_trip_hyst(struct thermal_zone_device *tz, int trip,
+@@ -357,7 +393,8 @@ static int of_thermal_set_trip_hyst(stru
  {
  	struct __thermal_zone *data = tz->devdata;
  
@@ -175,7 +171,7 @@ index d04ec3b..d83697e 100644
  		return -EDOM;
  
  	/* thermal framework should take care of data->mask & (1 << trip) */
-@@ -432,6 +469,9 @@ thermal_zone_of_add_sensor(struct device_node *zone,
+@@ -432,6 +469,9 @@ thermal_zone_of_add_sensor(struct device
  	if (ops->set_emul_temp)
  		tzd->ops->set_emul_temp = of_thermal_set_emul_temp;
  
@@ -185,7 +181,7 @@ index d04ec3b..d83697e 100644
  	mutex_unlock(&tzd->lock);
  
  	return tzd;
-@@ -726,7 +766,10 @@ static const char * const trip_types[] = {
+@@ -726,7 +766,10 @@ static const char * const trip_types[] =
  	[THERMAL_TRIP_ACTIVE]	= "active",
  	[THERMAL_TRIP_PASSIVE]	= "passive",
  	[THERMAL_TRIP_HOT]	= "hot",
@@ -197,11 +193,9 @@ index d04ec3b..d83697e 100644
  };
  
  /**
-diff --git a/drivers/thermal/qcom/tsens.c b/drivers/thermal/qcom/tsens.c
-index 2d25593..ac68af3 100644
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -31,7 +31,7 @@ static int tsens_get_temp(void *data, int *temp)
+@@ -31,7 +31,7 @@ static int tsens_get_temp(void *data, in
  
  static int tsens_get_trend(void *p, int trip, enum thermal_trend *trend)
  {
@@ -210,7 +204,7 @@ index 2d25593..ac68af3 100644
  	struct tsens_device *tmdev = s->tmdev;
  
  	if (tmdev->ops->get_trend)
-@@ -40,9 +40,10 @@ static int tsens_get_trend(void *p, int trip, enum thermal_trend *trend)
+@@ -40,9 +40,10 @@ static int tsens_get_trend(void *p, int
  	return -ENOTSUPP;
  }
  
@@ -223,7 +217,7 @@ index 2d25593..ac68af3 100644
  
  	if (tmdev->ops && tmdev->ops->suspend)
  		return tmdev->ops->suspend(tmdev);
-@@ -50,9 +51,10 @@ static int  __maybe_unused tsens_suspend(struct device *dev)
+@@ -50,9 +51,10 @@ static int  __maybe_unused tsens_suspend
  	return 0;
  }
  
@@ -236,7 +230,7 @@ index 2d25593..ac68af3 100644
  
  	if (tmdev->ops && tmdev->ops->resume)
  		return tmdev->ops->resume(tmdev);
-@@ -60,6 +62,30 @@ static int __maybe_unused tsens_resume(struct device *dev)
+@@ -60,6 +62,30 @@ static int __maybe_unused tsens_resume(s
  	return 0;
  }
  
@@ -276,7 +270,7 @@ index 2d25593..ac68af3 100644
  };
  
  static int tsens_register(struct tsens_device *tmdev)
-@@ -131,7 +159,7 @@ static int tsens_probe(struct platform_device *pdev)
+@@ -131,7 +159,7 @@ static int tsens_probe(struct platform_d
  	if (id)
  		data = id->data;
  	else
@@ -285,7 +279,7 @@ index 2d25593..ac68af3 100644
  
  	if (data->num_sensors <= 0) {
  		dev_err(dev, "invalid number of sensors\n");
-@@ -146,6 +174,9 @@ static int tsens_probe(struct platform_device *pdev)
+@@ -146,6 +174,9 @@ static int tsens_probe(struct platform_d
  	tmdev->dev = dev;
  	tmdev->num_sensors = data->num_sensors;
  	tmdev->ops = data->ops;
@@ -295,8 +289,6 @@ index 2d25593..ac68af3 100644
  	for (i = 0;  i < tmdev->num_sensors; i++) {
  		if (data->hw_ids)
  			tmdev->sensor[i].hw_id = data->hw_ids[i];
-diff --git a/drivers/thermal/qcom/tsens.h b/drivers/thermal/qcom/tsens.h
-index 31279a2..54bbdc0 100644
 --- a/drivers/thermal/qcom/tsens.h
 +++ b/drivers/thermal/qcom/tsens.h
 @@ -24,9 +24,12 @@ struct tsens_device;
@@ -346,11 +338,9 @@ index 31279a2..54bbdc0 100644
  	struct tsens_sensor		sensor[0];
  };
  
-diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
-index 226b0b4..20bd624 100644
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -732,12 +732,48 @@ trip_point_type_show(struct device *dev, struct device_attribute *attr,
+@@ -732,12 +732,48 @@ trip_point_type_show(struct device *dev,
  		return sprintf(buf, "passive\n");
  	case THERMAL_TRIP_ACTIVE:
  		return sprintf(buf, "active\n");
@@ -399,7 +389,7 @@ index 226b0b4..20bd624 100644
  trip_point_temp_store(struct device *dev, struct device_attribute *attr,
  		     const char *buf, size_t count)
  {
-@@ -1321,7 +1357,7 @@ thermal_cooling_device_weight_store(struct device *dev,
+@@ -1321,7 +1357,7 @@ thermal_cooling_device_weight_store(stru
   */
  int thermal_zone_bind_cooling_device(struct thermal_zone_device *tz,
  				     int trip,
@@ -408,7 +398,7 @@ index 226b0b4..20bd624 100644
  				     unsigned long upper, unsigned long lower,
  				     unsigned int weight)
  {
-@@ -1772,6 +1808,12 @@ static int create_trip_attrs(struct thermal_zone_device *tz, int mask)
+@@ -1772,6 +1808,12 @@ static int create_trip_attrs(struct ther
  		tz->trip_type_attrs[indx].attr.attr.mode = S_IRUGO;
  		tz->trip_type_attrs[indx].attr.show = trip_point_type_show;
  
@@ -421,8 +411,6 @@ index 226b0b4..20bd624 100644
  		device_create_file(&tz->device,
  				   &tz->trip_type_attrs[indx].attr);
  
-diff --git a/include/linux/thermal.h b/include/linux/thermal.h
-index 511182a..510a087 100644
 --- a/include/linux/thermal.h
 +++ b/include/linux/thermal.h
 @@ -77,11 +77,19 @@ enum thermal_device_mode {
