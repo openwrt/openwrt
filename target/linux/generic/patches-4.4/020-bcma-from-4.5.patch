@@ -1,6 +1,6 @@
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -668,11 +668,36 @@ static int bcma_device_uevent(struct dev
+@@ -672,11 +672,36 @@ static int bcma_device_uevent(struct dev
  			      core->id.rev, core->id.class);
  }
  
@@ -38,7 +38,7 @@
  	if (err)
  		return err;
  
-@@ -691,7 +716,7 @@ static int __init bcma_modinit(void)
+@@ -695,7 +720,7 @@ static int __init bcma_modinit(void)
  
  	return err;
  }

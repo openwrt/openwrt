@@ -25,7 +25,7 @@
  obj-$(CONFIG_PROC_FS) += net-procfs.o
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -1469,9 +1469,11 @@ void sk_destruct(struct sock *sk)
+@@ -1474,9 +1474,11 @@ void sk_destruct(struct sock *sk)
  
  static void __sk_free(struct sock *sk)
  {
@@ -59,7 +59,7 @@
  	  Support for UNIX socket monitoring interface used by the ss tool.
 --- a/net/netlink/Kconfig
 +++ b/net/netlink/Kconfig
-@@ -13,6 +13,7 @@ config NETLINK_MMAP
+@@ -4,6 +4,7 @@
  
  config NETLINK_DIAG
  	tristate "NETLINK: socket monitoring interface"

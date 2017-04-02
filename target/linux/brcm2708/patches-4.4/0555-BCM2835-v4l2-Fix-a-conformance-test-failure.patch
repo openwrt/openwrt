@@ -13,11 +13,9 @@ Format ioctls:
  drivers/media/platform/bcm2835/bcm2835-camera.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
-index a2cfff9..23ba458 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.c
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
-@@ -1397,6 +1397,7 @@ static int vidioc_s_parm(struct file *file, void *priv,
+@@ -1397,6 +1397,7 @@ static int vidioc_s_parm(struct file *fi
  	dev->capture.timeperframe = tpf;
  	parm->parm.capture.timeperframe = tpf;
  	parm->parm.capture.readbuffers  = 1;
@@ -25,6 +23,3 @@ index a2cfff9..23ba458 100644
  
  	fps_param.num = 0;	/* Select variable fps, and then use
  				 * FPS_RANGE to select the actual limits.
--- 
-2.1.4
-

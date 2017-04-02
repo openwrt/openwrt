@@ -11,11 +11,9 @@ in urb->actual_length. Fixes raspberrypi/linux#903
  drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-index 2ceed42..5011750 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-@@ -325,10 +325,12 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
+@@ -325,10 +325,12 @@ static int _complete(dwc_otg_hcd_t * hcd
  		int i;
  
  		urb->error_count = dwc_otg_hcd_urb_get_error_count(dwc_otg_urb);
@@ -28,6 +26,3 @@ index 2ceed42..5011750 100644
  			urb->iso_frame_desc[i].status =
  			    dwc_otg_hcd_urb_get_iso_desc_status(dwc_otg_urb, i);
  		}
--- 
-2.1.4
-

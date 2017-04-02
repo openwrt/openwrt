@@ -9,11 +9,9 @@ called, so have removed call completely.
  drivers/char/broadcom/bcm2835-gpiomem.c | 2 --
  1 file changed, 2 deletions(-)
 
-diff --git a/drivers/char/broadcom/bcm2835-gpiomem.c b/drivers/char/broadcom/bcm2835-gpiomem.c
-index 911f5b7..f5e7f1b 100644
 --- a/drivers/char/broadcom/bcm2835-gpiomem.c
 +++ b/drivers/char/broadcom/bcm2835-gpiomem.c
-@@ -76,8 +76,6 @@ static int bcm2835_gpiomem_open(struct inode *inode, struct file *file)
+@@ -76,8 +76,6 @@ static int bcm2835_gpiomem_open(struct i
  	int dev = iminor(inode);
  	int ret = 0;
  
@@ -22,6 +20,3 @@ index 911f5b7..f5e7f1b 100644
  	if (dev != DEVICE_MINOR) {
  		dev_err(inst->dev, "Unknown minor device: %d", dev);
  		ret = -ENXIO;
--- 
-2.1.4
-

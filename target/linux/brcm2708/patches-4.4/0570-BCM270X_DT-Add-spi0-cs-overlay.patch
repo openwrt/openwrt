@@ -12,8 +12,6 @@ using the cs0_pin and cs1_pin parameters.
  3 files changed, 38 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm/boot/dts/overlays/spi0-cs-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index 05eda03..72f2d90a 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -93,6 +93,7 @@ dtbo-$(RPI_DT_OVERLAYS) += smi-dev.dtbo
@@ -24,8 +22,6 @@ index 05eda03..72f2d90a 100644
  dtbo-$(RPI_DT_OVERLAYS) += spi0-hw-cs.dtbo
  dtbo-$(RPI_DT_OVERLAYS) += spi1-1cs.dtbo
  dtbo-$(RPI_DT_OVERLAYS) += spi1-2cs.dtbo
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index adb86bc..7f4bd29 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -1131,7 +1131,7 @@ Params: <None>
@@ -51,9 +47,6 @@ index adb86bc..7f4bd29 100644
  Name:   spi0-hw-cs
  Info:   Re-enables hardware CS/CE (chip selects) for SPI0
  Load:   dtoverlay=spi0-hw-cs
-diff --git a/arch/arm/boot/dts/overlays/spi0-cs-overlay.dts b/arch/arm/boot/dts/overlays/spi0-cs-overlay.dts
-new file mode 100644
-index 0000000..7f79029
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/spi0-cs-overlay.dts
 @@ -0,0 +1,29 @@
@@ -86,6 +79,3 @@ index 0000000..7f79029
 +			   <&frag1>,"cs-gpios:16";
 +	};
 +};
--- 
-2.1.4
-

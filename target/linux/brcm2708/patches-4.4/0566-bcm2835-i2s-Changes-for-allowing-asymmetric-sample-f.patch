@@ -13,11 +13,9 @@ Signed-off-by: Giedrius Trainavicius <giedrius@blokas.io>
  sound/soc/bcm/bcm2835-i2s.c | 54 +++++++++++++++++++++++++++++++--------------
  1 file changed, 38 insertions(+), 16 deletions(-)
 
-diff --git a/sound/soc/bcm/bcm2835-i2s.c b/sound/soc/bcm/bcm2835-i2s.c
-index aedb01f..d2b0801 100644
 --- a/sound/soc/bcm/bcm2835-i2s.c
 +++ b/sound/soc/bcm/bcm2835-i2s.c
-@@ -310,6 +310,7 @@ static int bcm2835_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -310,6 +310,7 @@ static int bcm2835_i2s_hw_params(struct
  	unsigned int sampling_rate = params_rate(params);
  	unsigned int data_length, data_delay, bclk_ratio;
  	unsigned int ch1pos, ch2pos, mode, format;
@@ -25,7 +23,7 @@ index aedb01f..d2b0801 100644
  	unsigned int mash = BCM2835_CLK_MASH_1;
  	unsigned int divi, divf, target_frequency;
  	int clk_src = -1;
-@@ -320,6 +321,7 @@ static int bcm2835_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -320,6 +321,7 @@ static int bcm2835_i2s_hw_params(struct
  	bool frame_master =	(master == SND_SOC_DAIFMT_CBS_CFS
  					|| master == SND_SOC_DAIFMT_CBM_CFS);
  	uint32_t csreg;
@@ -33,7 +31,7 @@ index aedb01f..d2b0801 100644
  
  	/*
  	 * If a stream is already enabled,
-@@ -465,26 +467,46 @@ static int bcm2835_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -465,26 +467,46 @@ static int bcm2835_i2s_hw_params(struct
  		return -EINVAL;
  	}
  
@@ -96,6 +94,3 @@ index aedb01f..d2b0801 100644
  	}
  
  	mode |= BCM2835_I2S_FLEN(bclk_ratio - 1);
--- 
-2.1.4
-

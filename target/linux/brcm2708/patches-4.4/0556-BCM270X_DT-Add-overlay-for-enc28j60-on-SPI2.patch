@@ -11,8 +11,6 @@ Works on SPI2 for compute module
  3 files changed, 57 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm/boot/dts/overlays/enc28j60-spi2-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index 57d60a4..c4186aa 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -28,6 +28,7 @@ dtbo-$(RPI_DT_OVERLAYS) += dpi24.dtbo
@@ -23,11 +21,9 @@ index 57d60a4..c4186aa 100644
  dtbo-$(RPI_DT_OVERLAYS) += gpio-ir.dtbo
  dtbo-$(RPI_DT_OVERLAYS) += gpio-poweroff.dtbo
  dtbo-$(RPI_DT_OVERLAYS) += hifiberry-amp.dtbo
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 35c0cec1..4a77ee6 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -344,13 +344,21 @@ Params: dr_mode                 Dual role mode: "host", "peripheral" or "otg"
+@@ -344,12 +344,20 @@ Params: dr_mode                 Dual rol
  
  
  Name:   enc28j60
@@ -38,7 +34,7 @@ index 35c0cec1..4a77ee6 100644
  
          speed                   SPI bus speed (default 12000000)
  
- 
++
 +Name:   enc28j60-spi2
 +Info:   Overlay for the Microchip ENC28J60 Ethernet Controller on SPI2
 +Load:   dtoverlay=enc28j60-spi2,<param>=<val>
@@ -46,13 +42,9 @@ index 35c0cec1..4a77ee6 100644
 +
 +        speed                   SPI bus speed (default 12000000)
 +
-+
+ 
  Name:   gpio-ir
  Info:   Use GPIO pin as rc-core style infrared receiver input. The rc-core-
-         based gpio_ir_recv driver maps received keys directly to a
-diff --git a/arch/arm/boot/dts/overlays/enc28j60-spi2-overlay.dts b/arch/arm/boot/dts/overlays/enc28j60-spi2-overlay.dts
-new file mode 100644
-index 0000000..946c9d2
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/enc28j60-spi2-overlay.dts
 @@ -0,0 +1,47 @@
@@ -103,6 +95,3 @@ index 0000000..946c9d2
 +		speed   = <&eth1>, "spi-max-frequency:0";
 +	};
 +};
--- 
-2.1.4
-

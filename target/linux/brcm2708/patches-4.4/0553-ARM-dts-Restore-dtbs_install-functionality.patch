@@ -8,8 +8,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  arch/arm/boot/dts/Makefile | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index cbfc8ba..14a491c 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -806,10 +806,11 @@ dtstree		:= $(srctree)/$(src)
@@ -25,6 +23,3 @@ index cbfc8ba..14a491c 100644
  	DTC_FLAGS ?= -@ -H epapr
 +	dts-dirs += overlays
  endif
--- 
-2.1.4
-

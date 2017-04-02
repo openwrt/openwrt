@@ -11,8 +11,6 @@ Print a logline when the kernel module is removed.
  sound/soc/bcm/pisound.c                        |  2 +
  2 files changed, 52 insertions(+), 44 deletions(-)
 
-diff --git a/arch/arm/boot/dts/overlays/pisound-overlay.dts b/arch/arm/boot/dts/overlays/pisound-overlay.dts
-index 7cdfc29..5197e65 100644
 --- a/arch/arm/boot/dts/overlays/pisound-overlay.dts
 +++ b/arch/arm/boot/dts/overlays/pisound-overlay.dts
 @@ -26,6 +26,54 @@
@@ -133,11 +131,9 @@ index 7cdfc29..5197e65 100644
 -		};
 -	};
  };
-diff --git a/sound/soc/bcm/pisound.c b/sound/soc/bcm/pisound.c
-index a3cd089..30903fcf 100644
 --- a/sound/soc/bcm/pisound.c
 +++ b/sound/soc/bcm/pisound.c
-@@ -954,6 +954,8 @@ static int pisnd_probe(struct platform_device *pdev)
+@@ -954,6 +954,8 @@ static int pisnd_probe(struct platform_d
  
  static int pisnd_remove(struct platform_device *pdev)
  {
@@ -146,6 +142,3 @@ index a3cd089..30903fcf 100644
  	if (pisnd_kobj) {
  		kobject_put(pisnd_kobj);
  		pisnd_kobj = NULL;
--- 
-2.1.4
-

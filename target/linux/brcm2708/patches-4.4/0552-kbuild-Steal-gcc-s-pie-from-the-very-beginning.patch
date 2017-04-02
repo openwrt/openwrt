@@ -36,8 +36,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  Makefile | 2 --
  1 file changed, 2 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index c17219e..1099371 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -619,8 +619,6 @@ include arch/$(SRCARCH)/Makefile
@@ -48,7 +46,4 @@ index c17219e..1099371 100644
 -KBUILD_AFLAGS	+= $(call cc-option,-fno-PIE)
  
  ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
- KBUILD_CFLAGS	+= -Os
--- 
-2.1.4
-
+ KBUILD_CFLAGS	+= -Os $(EXTRA_OPTIMIZATION)

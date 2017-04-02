@@ -16,11 +16,9 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  drivers/gpu/drm/vc4/vc4_firmware_kms.c | 15 +++++++++++++++
  1 file changed, 15 insertions(+)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_firmware_kms.c b/drivers/gpu/drm/vc4/vc4_firmware_kms.c
-index a1b6511..8f74382 100644
 --- a/drivers/gpu/drm/vc4/vc4_firmware_kms.c
 +++ b/drivers/gpu/drm/vc4/vc4_firmware_kms.c
-@@ -312,6 +312,21 @@ static int vc4_crtc_atomic_check(struct drm_crtc *crtc,
+@@ -312,6 +312,21 @@ static int vc4_crtc_atomic_check(struct
  static void vc4_crtc_atomic_flush(struct drm_crtc *crtc,
  				  struct drm_crtc_state *old_state)
  {
@@ -42,6 +40,3 @@ index a1b6511..8f74382 100644
  }
  
  static void vc4_crtc_handle_page_flip(struct vc4_crtc *vc4_crtc)
--- 
-2.1.4
-

@@ -8,11 +8,9 @@ Avoids the 0x40000 cycles of warmup again if firmware has already used it
  drivers/char/hw_random/bcm2835-rng.c | 7 ++++---
  1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/char/hw_random/bcm2835-rng.c b/drivers/char/hw_random/bcm2835-rng.c
-index 7192ec2..2ff49c1 100644
 --- a/drivers/char/hw_random/bcm2835-rng.c
 +++ b/drivers/char/hw_random/bcm2835-rng.c
-@@ -62,9 +62,10 @@ static int bcm2835_rng_probe(struct platform_device *pdev)
+@@ -62,9 +62,10 @@ static int bcm2835_rng_probe(struct plat
  	bcm2835_rng_ops.priv = (unsigned long)rng_base;
  
  	/* set warm-up count & enable */
@@ -26,6 +24,3 @@ index 7192ec2..2ff49c1 100644
  	/* register driver */
  	err = hwrng_register(&bcm2835_rng_ops);
  	if (err) {
--- 
-2.1.4
-

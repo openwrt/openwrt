@@ -20,11 +20,9 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  drivers/gpu/drm/vc4/vc4_bo.c | 13 +++++++------
  1 file changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/gpu/drm/vc4/vc4_bo.c b/drivers/gpu/drm/vc4/vc4_bo.c
-index 56b779c..ce8a5fd 100644
 --- a/drivers/gpu/drm/vc4/vc4_bo.c
 +++ b/drivers/gpu/drm/vc4/vc4_bo.c
-@@ -208,22 +208,23 @@ struct drm_gem_object *vc4_create_object(struct drm_device *dev, size_t size)
+@@ -208,22 +208,23 @@ struct drm_gem_object *vc4_create_object
  }
  
  struct vc4_bo *vc4_bo_create(struct drm_device *dev, size_t unaligned_size,
@@ -54,6 +52,3 @@ index 56b779c..ce8a5fd 100644
  	}
  
  	/* Otherwise, make a new BO. */
--- 
-2.1.4
-

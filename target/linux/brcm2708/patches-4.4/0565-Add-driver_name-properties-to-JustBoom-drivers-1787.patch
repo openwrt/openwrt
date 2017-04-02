@@ -10,11 +10,9 @@ and other Kodi based OSs
  sound/soc/bcm/justboom-digi.c | 1 +
  2 files changed, 2 insertions(+)
 
-diff --git a/sound/soc/bcm/justboom-dac.c b/sound/soc/bcm/justboom-dac.c
-index 8fd50db..05a224e 100644
 --- a/sound/soc/bcm/justboom-dac.c
 +++ b/sound/soc/bcm/justboom-dac.c
-@@ -98,6 +98,7 @@ static struct snd_soc_dai_link snd_rpi_justboom_dac_dai[] = {
+@@ -98,6 +98,7 @@ static struct snd_soc_dai_link snd_rpi_j
  /* audio machine driver */
  static struct snd_soc_card snd_rpi_justboom_dac = {
  	.name         = "snd_rpi_justboom_dac",
@@ -22,11 +20,9 @@ index 8fd50db..05a224e 100644
  	.owner        = THIS_MODULE,
  	.dai_link     = snd_rpi_justboom_dac_dai,
  	.num_links    = ARRAY_SIZE(snd_rpi_justboom_dac_dai),
-diff --git a/sound/soc/bcm/justboom-digi.c b/sound/soc/bcm/justboom-digi.c
-index 91acb66..abfdc5c 100644
 --- a/sound/soc/bcm/justboom-digi.c
 +++ b/sound/soc/bcm/justboom-digi.c
-@@ -154,6 +154,7 @@ static struct snd_soc_dai_link snd_rpi_justboom_digi_dai[] = {
+@@ -154,6 +154,7 @@ static struct snd_soc_dai_link snd_rpi_j
  /* audio machine driver */
  static struct snd_soc_card snd_rpi_justboom_digi = {
  	.name         = "snd_rpi_justboom_digi",
@@ -34,6 +30,3 @@ index 91acb66..abfdc5c 100644
  	.owner        = THIS_MODULE,
  	.dai_link     = snd_rpi_justboom_digi_dai,
  	.num_links    = ARRAY_SIZE(snd_rpi_justboom_digi_dai),
--- 
-2.1.4
-

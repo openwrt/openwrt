@@ -43,7 +43,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  	{{BCM47XX_BOARD_NETGEAR_WGR614V9, "Netgear WGR614 V9"}, "U12H094T00_NETGEAR"},
 --- a/arch/mips/bcm47xx/buttons.c
 +++ b/arch/mips/bcm47xx/buttons.c
-@@ -302,6 +302,51 @@ bcm47xx_buttons_linksys_wrtsl54gs[] __in
+@@ -308,6 +308,51 @@ bcm47xx_buttons_linksys_wrtsl54gs[] __in
  /* Luxul */
  
  static const struct gpio_keys_button
@@ -95,7 +95,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  bcm47xx_buttons_luxul_xwr_1750_v1[] = {
  	BCM47XX_GPIO_KEY(14, BTN_TASK),
  };
-@@ -561,6 +606,33 @@ int __init bcm47xx_buttons_register(void
+@@ -567,6 +612,33 @@ int __init bcm47xx_buttons_register(void
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrtsl54gs);
  		break;
  

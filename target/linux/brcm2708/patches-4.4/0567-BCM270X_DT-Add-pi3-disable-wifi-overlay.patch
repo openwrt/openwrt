@@ -13,8 +13,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  3 files changed, 20 insertions(+)
  create mode 100644 arch/arm/boot/dts/overlays/pi3-disable-wifi-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index bc7f4a9..05eda03 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -61,6 +61,7 @@ dtbo-$(RPI_DT_OVERLAYS) += mmc.dtbo
@@ -25,8 +23,6 @@ index bc7f4a9..05eda03 100644
  dtbo-$(RPI_DT_OVERLAYS) += pi3-miniuart-bt.dtbo
  dtbo-$(RPI_DT_OVERLAYS) += piscreen.dtbo
  dtbo-$(RPI_DT_OVERLAYS) += piscreen2r.dtbo
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 44ad21f..adb86bc 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
 @@ -793,6 +793,12 @@ Load:   dtoverlay=pi3-disable-bt
@@ -42,9 +38,6 @@ index 44ad21f..adb86bc 100644
  Name:   pi3-miniuart-bt
  Info:   Switch Pi3 Bluetooth function to use the mini-UART (ttyS0) and restore
          UART0/ttyAMA0 over GPIOs 14 & 15. Note that this may reduce the maximum
-diff --git a/arch/arm/boot/dts/overlays/pi3-disable-wifi-overlay.dts b/arch/arm/boot/dts/overlays/pi3-disable-wifi-overlay.dts
-new file mode 100644
-index 0000000..0171995
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/pi3-disable-wifi-overlay.dts
 @@ -0,0 +1,13 @@
@@ -61,6 +54,3 @@ index 0000000..0171995
 +		};
 +	};
 +};
--- 
-2.1.4
-

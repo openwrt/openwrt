@@ -26,11 +26,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  arch/x86/kernel/apic/io_apic.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
-index 8ca533b..1e5d2f0 100644
 --- a/arch/x86/kernel/apic/io_apic.c
 +++ b/arch/x86/kernel/apic/io_apic.c
-@@ -1875,6 +1875,7 @@ static struct irq_chip ioapic_chip __read_mostly = {
+@@ -1875,6 +1875,7 @@ static struct irq_chip ioapic_chip __rea
  	.irq_ack		= irq_chip_ack_parent,
  	.irq_eoi		= ioapic_ack_level,
  	.irq_set_affinity	= ioapic_set_affinity,
@@ -38,7 +36,7 @@ index 8ca533b..1e5d2f0 100644
  	.flags			= IRQCHIP_SKIP_SET_WAKE,
  };
  
-@@ -1886,6 +1887,7 @@ static struct irq_chip ioapic_ir_chip __read_mostly = {
+@@ -1886,6 +1887,7 @@ static struct irq_chip ioapic_ir_chip __
  	.irq_ack		= irq_chip_ack_parent,
  	.irq_eoi		= ioapic_ir_ack_level,
  	.irq_set_affinity	= ioapic_set_affinity,
@@ -46,6 +44,3 @@ index 8ca533b..1e5d2f0 100644
  	.flags			= IRQCHIP_SKIP_SET_WAKE,
  };
  
--- 
-2.1.4
-

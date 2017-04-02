@@ -23,8 +23,6 @@ Signed-off-by: Jiri Kosina <jkosina@suse.cz>
  drivers/hid/hid-dr.c | 58 ----------------------------------------------------
  1 file changed, 58 deletions(-)
 
-diff --git a/drivers/hid/hid-dr.c b/drivers/hid/hid-dr.c
-index 1d78ba3..ce06444 100644
 --- a/drivers/hid/hid-dr.c
 +++ b/drivers/hid/hid-dr.c
 @@ -234,58 +234,6 @@ static __u8 pid0011_rdesc_fixed[] = {
@@ -86,7 +84,7 @@ index 1d78ba3..ce06444 100644
  static __u8 *dr_report_fixup(struct hid_device *hdev, __u8 *rdesc,
  				unsigned int *rsize)
  {
-@@ -296,12 +244,6 @@ static __u8 *dr_report_fixup(struct hid_device *hdev, __u8 *rdesc,
+@@ -296,12 +244,6 @@ static __u8 *dr_report_fixup(struct hid_
  			*rsize = sizeof(pid0011_rdesc_fixed);
  		}
  		break;
@@ -99,6 +97,3 @@ index 1d78ba3..ce06444 100644
  	}
  	return rdesc;
  }
--- 
-2.1.4
-

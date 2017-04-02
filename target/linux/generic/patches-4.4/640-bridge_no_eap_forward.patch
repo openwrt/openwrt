@@ -8,7 +8,7 @@ each other via bridges.
 ---
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -168,7 +168,11 @@ int br_handle_frame_finish(struct net *n
+@@ -169,7 +169,11 @@ int br_handle_frame_finish(struct net *n
  	if (IS_ENABLED(CONFIG_INET) && skb->protocol == htons(ETH_P_ARP))
  		br_do_proxy_arp(skb, br, vid, p);
  

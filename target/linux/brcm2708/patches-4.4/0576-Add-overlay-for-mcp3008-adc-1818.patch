@@ -43,8 +43,6 @@ dtoverlay=mcp3008:spi0-0-present,spi0-0-speed=2000000
  3 files changed, 215 insertions(+)
  create mode 100755 arch/arm/boot/dts/overlays/mcp3008-overlay.dts
 
-diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
-index 72f2d90a..b13e340 100644
 --- a/arch/arm/boot/dts/overlays/Makefile
 +++ b/arch/arm/boot/dts/overlays/Makefile
 @@ -57,6 +57,7 @@ dtbo-$(RPI_DT_OVERLAYS) += mcp23017.dtbo
@@ -55,11 +53,9 @@ index 72f2d90a..b13e340 100644
  dtbo-$(RPI_DT_OVERLAYS) += mmc.dtbo
  dtbo-$(RPI_DT_OVERLAYS) += mz61581.dtbo
  dtbo-$(RPI_DT_OVERLAYS) += pi3-act-led.dtbo
-diff --git a/arch/arm/boot/dts/overlays/README b/arch/arm/boot/dts/overlays/README
-index 7f4bd29..72601f8 100644
 --- a/arch/arm/boot/dts/overlays/README
 +++ b/arch/arm/boot/dts/overlays/README
-@@ -736,6 +736,15 @@ Params: oscillator              Clock frequency for the CAN controller (Hz)
+@@ -736,6 +736,15 @@ Params: oscillator              Clock fr
          interrupt               GPIO for interrupt signal
  
  
@@ -75,9 +71,6 @@ index 7f4bd29..72601f8 100644
  Name:   mmc
  Info:   Selects the bcm2835-mmc SD/MMC driver, optionally with overclock
  Load:   dtoverlay=mmc,<param>=<val>
-diff --git a/arch/arm/boot/dts/overlays/mcp3008-overlay.dts b/arch/arm/boot/dts/overlays/mcp3008-overlay.dts
-new file mode 100755
-index 0000000..06bf426
 --- /dev/null
 +++ b/arch/arm/boot/dts/overlays/mcp3008-overlay.dts
 @@ -0,0 +1,205 @@
@@ -286,6 +279,3 @@ index 0000000..06bf426
 +		spi2-2-speed = <&mcp3008_22>, "spi-max-frequency:0";
 +	};
 +};
--- 
-2.1.4
-

@@ -59,11 +59,9 @@ Signed-off-by: Christopher Alexander Tobias Schulze <cat.schulze@alice-dsl.net>
  arch/arm/vfp/vfpmodule.c | 27 ++++++++++++++++++++-------
  1 file changed, 20 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/vfp/vfpmodule.c b/arch/arm/vfp/vfpmodule.c
-index 2a61e4b..7675518 100644
 --- a/arch/arm/vfp/vfpmodule.c
 +++ b/arch/arm/vfp/vfpmodule.c
-@@ -183,8 +183,11 @@ static int vfp_notifier(struct notifier_block *self, unsigned long cmd, void *v)
+@@ -183,8 +183,11 @@ static int vfp_notifier(struct notifier_
  		 * case the thread migrates to a different CPU. The
  		 * restoring is done lazily.
  		 */
@@ -95,7 +93,7 @@ index 2a61e4b..7675518 100644
  		vfp_save_state(vfp_current_hw_state[ti->cpu], fpexc);
  		fmxr(FPEXC, fpexc);
  #endif
-@@ -536,7 +542,8 @@ void vfp_sync_hwstate(struct thread_info *thread)
+@@ -536,7 +542,8 @@ void vfp_sync_hwstate(struct thread_info
  		/*
  		 * Save the last VFP state on this CPU.
  		 */
@@ -105,7 +103,7 @@ index 2a61e4b..7675518 100644
  		vfp_save_state(&thread->vfpstate, fpexc | FPEXC_EN);
  		fmxr(FPEXC, fpexc);
  	}
-@@ -608,6 +615,7 @@ int vfp_restore_user_hwstate(struct user_vfp __user *ufp,
+@@ -608,6 +615,7 @@ int vfp_restore_user_hwstate(struct user
  	struct vfp_hard_struct *hwstate = &thread->vfpstate.hard;
  	unsigned long fpexc;
  	int err = 0;
@@ -113,7 +111,7 @@ index 2a61e4b..7675518 100644
  
  	/* Disable VFP to avoid corrupting the new thread state. */
  	vfp_flush_hwstate(thread);
-@@ -631,8 +639,12 @@ int vfp_restore_user_hwstate(struct user_vfp __user *ufp,
+@@ -631,8 +639,12 @@ int vfp_restore_user_hwstate(struct user
  	/* Ensure the VFP is enabled. */
  	fpexc |= FPEXC_EN;
  
@@ -138,6 +136,3 @@ index 2a61e4b..7675518 100644
  
  	/*
  	 * Save the userland NEON/VFP state. Under UP,
--- 
-2.1.4
-

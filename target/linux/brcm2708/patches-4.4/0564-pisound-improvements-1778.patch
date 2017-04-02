@@ -15,8 +15,6 @@ Signed-off-by: Giedrius Trainavicius <giedrius@blokas.io>
  sound/soc/bcm/pisound.c | 175 ++++++++++++++++++++++++++++++++++++++++++------
  1 file changed, 154 insertions(+), 21 deletions(-)
 
-diff --git a/sound/soc/bcm/pisound.c b/sound/soc/bcm/pisound.c
-index 30903fcf..d317eb9 100644
 --- a/sound/soc/bcm/pisound.c
 +++ b/sound/soc/bcm/pisound.c
 @@ -36,6 +36,7 @@
@@ -37,7 +35,7 @@ index 30903fcf..d317eb9 100644
  DEFINE_KFIFO(spi_fifo_in,  uint8_t, FIFO_SIZE);
  DEFINE_KFIFO(spi_fifo_out, uint8_t, FIFO_SIZE);
  
-@@ -396,8 +400,13 @@ static void pisnd_work_handler(struct work_struct *work)
+@@ -396,8 +400,13 @@ static void pisnd_work_handler(struct wo
  			val = 0;
  			tx = 0;
  
@@ -52,7 +50,7 @@ index 30903fcf..d317eb9 100644
  
  			rx = spi_transfer16(tx);
  
-@@ -410,6 +419,7 @@ static void pisnd_work_handler(struct work_struct *work)
+@@ -410,6 +419,7 @@ static void pisnd_work_handler(struct wo
  		} while (rx != 0
  			|| !kfifo_is_empty(&spi_fifo_out)
  			|| pisnd_spi_has_more()
@@ -60,7 +58,7 @@ index 30903fcf..d317eb9 100644
  			);
  
  		if (!kfifo_is_empty(&spi_fifo_in) && g_recvCallback)
-@@ -569,7 +579,7 @@ static int pisnd_spi_init(struct device *dev)
+@@ -569,7 +579,7 @@ static int pisnd_spi_init(struct device
  	}
  
  	/* Flash the LEDs. */
@@ -84,7 +82,7 @@ index 30903fcf..d317eb9 100644
  static void pisnd_spi_send(uint8_t val)
  {
  	kfifo_put(&spi_fifo_out, val);
-@@ -658,6 +676,83 @@ static const struct of_device_id pisound_of_match[] = {
+@@ -658,6 +676,83 @@ static const struct of_device_id pisound
  	{},
  };
  
@@ -183,7 +181,7 @@ index 30903fcf..d317eb9 100644
  	printd("rate   = %d\n", params_rate(params));
  	printd("ch     = %d\n", params_channels(params));
  	printd("bits   = %u\n",
-@@ -711,16 +814,6 @@ static struct snd_pcm_hw_constraint_list constraints_rates = {
+@@ -711,16 +814,6 @@ static struct snd_pcm_hw_constraint_list
  	.mask = 0,
  };
  
@@ -200,7 +198,7 @@ index 30903fcf..d317eb9 100644
  static int pisnd_startup(struct snd_pcm_substream *substream)
  {
  	int err = snd_pcm_hw_constraint_list(
-@@ -733,11 +826,21 @@ static int pisnd_startup(struct snd_pcm_substream *substream)
+@@ -733,11 +826,21 @@ static int pisnd_startup(struct snd_pcm_
  	if (err < 0)
  		return err;
  
@@ -226,7 +224,7 @@ index 30903fcf..d317eb9 100644
  		);
  
  	if (err < 0)
-@@ -771,14 +874,23 @@ static int pisnd_card_probe(struct snd_soc_card *card)
+@@ -771,14 +874,23 @@ static int pisnd_card_probe(struct snd_s
  {
  	int err = pisnd_midi_init(card->snd_card);
  
@@ -294,6 +292,3 @@ index 30903fcf..d317eb9 100644
  	NULL
  };
  
--- 
-2.1.4
-

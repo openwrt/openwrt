@@ -83,23 +83,3 @@
  		} else {
  			core->dev.dma_mask = &core->dev.coherent_dma_mask;
  			core->dma_dev = &core->dev;
-@@ -633,8 +634,11 @@ static int bcma_device_probe(struct devi
- 					       drv);
- 	int err = 0;
- 
-+	get_device(dev);
- 	if (adrv->probe)
- 		err = adrv->probe(core);
-+	if (err)
-+		put_device(dev);
- 
- 	return err;
- }
-@@ -647,6 +651,7 @@ static int bcma_device_remove(struct dev
- 
- 	if (adrv->remove)
- 		adrv->remove(core);
-+	put_device(dev);
- 
- 	return 0;
- }

@@ -22,8 +22,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  drivers/clk/bcm/clk-bcm2835.c | 67 ++++++++++++++++++++++++++++++++++++++++---
  1 file changed, 63 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index 3fbd2e8..5f0e2f3 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
 @@ -457,6 +457,9 @@ struct bcm2835_clock_data {
@@ -98,7 +96,7 @@ index 3fbd2e8..5f0e2f3 100644
  	struct clk_hw *parent, *best_parent = NULL;
  	bool current_parent_is_pllc;
  	unsigned long rate, best_rate = 0;
-@@ -1086,9 +1139,8 @@ static int bcm2835_clock_determine_rate(struct clk_hw *hw,
+@@ -1086,9 +1139,8 @@ static int bcm2835_clock_determine_rate(
  		if (bcm2835_clk_is_pllc(parent) && !current_parent_is_pllc)
  			continue;
  
@@ -110,7 +108,7 @@ index 3fbd2e8..5f0e2f3 100644
  		if (rate > best_rate && rate <= req->rate) {
  			best_parent = parent;
  			best_prate = prate;
-@@ -1308,6 +1360,13 @@ static struct clk *bcm2835_register_clock(struct bcm2835_cprman *cprman,
+@@ -1308,6 +1360,13 @@ static struct clk *bcm2835_register_cloc
  	if ((cprman_read(cprman, data->ctl_reg) & CM_ENABLE) == 0)
  		init.flags &= ~CLK_IS_CRITICAL;
  
@@ -124,6 +122,3 @@ index 3fbd2e8..5f0e2f3 100644
  	if (data->is_vpu_clock) {
  		init.ops = &bcm2835_vpu_clock_clk_ops;
  	} else {
--- 
-2.1.4
-

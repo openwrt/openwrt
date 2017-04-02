@@ -14,11 +14,9 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  drivers/clk/bcm/clk-bcm2835.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
-index e9e8c25..3fbd2e8 100644
 --- a/drivers/clk/bcm/clk-bcm2835.c
 +++ b/drivers/clk/bcm/clk-bcm2835.c
-@@ -1657,7 +1657,7 @@ static const struct bcm2835_clk_desc clk_desc_array[] = {
+@@ -1657,7 +1657,7 @@ static const struct bcm2835_clk_desc clk
  		.a2w_reg = A2W_PLLH_AUX,
  		.load_mask = CM_PLLH_LOADAUX,
  		.hold_mask = 0,
@@ -27,6 +25,3 @@ index e9e8c25..3fbd2e8 100644
  	[BCM2835_PLLH_PIX]	= REGISTER_PLL_DIV(
  		.name = "pllh_pix",
  		.source_pll = "pllh",
--- 
-2.1.4
-

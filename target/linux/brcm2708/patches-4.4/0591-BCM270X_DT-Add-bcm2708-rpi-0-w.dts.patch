@@ -13,8 +13,6 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  2 files changed, 201 insertions(+)
  create mode 100644 arch/arm/boot/dts/bcm2708-rpi-0-w.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 14a491c..bd963ef 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -2,6 +2,7 @@ ifeq ($(CONFIG_OF),y)
@@ -25,9 +23,6 @@ index 14a491c..bd963ef 100644
  dtb-$(CONFIG_ARCH_BCM2708) += bcm2708-rpi-cm.dtb
  dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-cm.dtb
  dtb-$(CONFIG_ARCH_BCM2709) += bcm2709-rpi-2-b.dtb
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-0-w.dts b/arch/arm/boot/dts/bcm2708-rpi-0-w.dts
-new file mode 100644
-index 0000000..9f7de60
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm2708-rpi-0-w.dts
 @@ -0,0 +1,200 @@
@@ -231,6 +226,3 @@ index 0000000..9f7de60
 +		sd_debug     = <&sdhost>,"brcm,debug";
 +	};
 +};
--- 
-2.1.4
-
