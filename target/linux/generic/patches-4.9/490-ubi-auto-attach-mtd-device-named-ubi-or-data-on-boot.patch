@@ -9,8 +9,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  drivers/mtd/ubi/build.c | 36 ++++++++++++++++++++++++++++++++++++
  1 file changed, 36 insertions(+)
 
---- a/drivers/mtd/ubi/build.c
-+++ b/drivers/mtd/ubi/build.c
+Index: linux-4.9.17/drivers/mtd/ubi/build.c
+===================================================================
+--- linux-4.9.17.orig/drivers/mtd/ubi/build.c
++++ linux-4.9.17/drivers/mtd/ubi/build.c
 @@ -1212,6 +1212,49 @@ static struct mtd_info * __init open_mtd
  	return mtd;
  }
@@ -47,7 +49,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		    mtd->type == MTD_DATAFLASH ||
 +		    mtd->type == MTD_MLCNANDFLASH) {
 +			mutex_lock(&ubi_devices_mutex);
-+			pr_notice("UBI: auto-attach mtd%d", mtd->index);
++			pr_notice("UBI: auto-attach mtd%d\n", mtd->index);
 +			err = ubi_attach_mtd_dev(mtd, UBI_DEV_NUM_AUTO, 0, 0);
 +			mutex_unlock(&ubi_devices_mutex);
 +			if (err < 0) {
