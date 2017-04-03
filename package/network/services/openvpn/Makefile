@@ -19,6 +19,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_HASH:=fde9e22c6df7a335d2d58c6a4d5967be76df173c766a5c51ece57fd044c76ee5
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 PKG_INSTALL:=1
 PKG_FIXUP:=autoreconf
@@ -41,7 +42,6 @@ ifeq ($(1),nossl)
 else
   PROVIDES:=openvpn openvpn-crypto
 endif
-  MAINTAINER:=Mirko Vogt <mirko@openwrt.org>
 endef
 
 Package/openvpn-openssl=$(call Package/openvpn/Default,openssl,OpenSSL,+PACKAGE_openvpn-openssl:libopenssl)
