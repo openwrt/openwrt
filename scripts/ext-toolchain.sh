@@ -38,6 +38,7 @@ LIB_SPECS="
 	gcc:      libgcc_s
 	ssp:      libssp
 	gfortran: libgfortran
+	gomp:	  libgomp
 "
 
 # Binary specs
@@ -361,7 +362,7 @@ print_config() {
 	fi
 
 	local lib
-	for lib in C RT PTHREAD GCC STDCPP SSP GFORTRAN; do
+	for lib in C RT PTHREAD GCC STDCPP SSP GFORTRAN GOMP; do
 		local file
 		local spec=""
 		local llib="$(echo "$lib" | sed -e 's#.*#\L&#')"
