@@ -166,7 +166,7 @@ sub download
 		$sum = $1;
 
 		if ($sum ne $file_hash) {
-			print STDERR "MD5 sum of the downloaded file does not match (file: $sum, requested: $file_hash) - deleting download.\n";
+			print STDERR "Hash of the downloaded file does not match (file: $sum, requested: $file_hash) - deleting download.\n";
 			cleanup();
 			return;
 		}
