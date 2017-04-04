@@ -35,6 +35,7 @@ LIB_SPECS="
 	rt:       librt-* librt
 	pthread:  libpthread-* libpthread
 	stdcpp:   libstdc++
+	thread_db: libthread-db
 	gcc:      libgcc_s
 	ssp:      libssp
 	gfortran: libgfortran
