@@ -720,6 +720,15 @@ dnsmasq_start()
 		DNSMASQ_DHCP_VER=4
 	fi
 
+	# Allow DHCP/DHCPv6 to be handled by ISC DHCPD
+	if [ -x /usr/sbin/dhcpd ] ; then
+		if [ -x /etc/init.d/dhcpd ] ; then
+			/etc/init.d/dhcpd enabled && DNSMASQ_DHCP_VER=0
+		fi
+		if [ -x /etc/init.d/dhcpd6 -a "$DNSMASQ_DHCP_VER" -gt 0 ] ; then
+			/etc/init.d/dhcpd6 enabled && DNSMASQ_DHCP_VER=4
+		fi
+	fi
 
 	append_bool "$cfg" authoritative "--dhcp-authoritative"
 	append_bool "$cfg" nodaemon "--no-daemon"
