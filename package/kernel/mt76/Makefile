@@ -82,6 +82,10 @@ define Build/Compile
 		modules
 endef
 
+define Package/kmod-mt76/install
+	true
+endef
+
 define KernelPackage/mt76x2/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	cp \
