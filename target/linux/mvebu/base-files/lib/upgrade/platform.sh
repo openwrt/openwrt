@@ -22,6 +22,9 @@ platform_do_upgrade() {
 	armada-388-clearfog-pro)
 		platform_do_upgrade_clearfog "$ARGV"
 		;;
+	armada-388-clearfog-base)
+		platform_do_upgrade_clearfog "$ARGV"
+		;;
 	*)
 		default_do_upgrade "$ARGV"
 		;;

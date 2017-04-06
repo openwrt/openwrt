@@ -28,6 +28,11 @@ define Build/boot-scr-cfpro
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d cfpro-boot.script $@.bootscript
 endef
 
+define Build/boot-scr-cfbase
+	rm -f $@.bootscript
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d cfbase-boot.script $@.bootscript
+endef
+
 define Build/boot-img
 	rm -f $@.boot
 	mkfs.fat -C $@.boot 16384
@@ -181,6 +186,21 @@ define Device/armada-388-clearfog-pro
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
 endef
 TARGET_DEVICES += armada-388-clearfog-pro
+
+define Device/armada-388-clearfog-base
+  KERNEL_INSTALL := 1
+  KERNEL := dtb | kernel-bin
+  DEVICE_TITLE := SolidRun ClearFog Base
+  DEVICE_PACKAGES := \
+	  kmod-nls-cp437 kmod-nls-iso8859-1 \
+	  mkf2fs e2fsprogs kmod-fs-vfat kmod-fuse kmod-fs-f2fs \
+	  kmod-ata-core kmod-ata-ahci kmod-ata-marvell-sata kmod-scsi-core kmod-scsi-generic \
+	  kmod-button-hotplug kmod-gpio-button-hotplug
+  IMAGES := sdcard.img.gz
+  IMAGE/sdcard.img.gz := boot-scr-cfbase | boot-img | sdcard-img | gzip
+  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
+endef
+TARGET_DEVICES += armada-388-clearfog-base
 
 define Device/globalscale-mirabox
   $(Device/NAND-512K)

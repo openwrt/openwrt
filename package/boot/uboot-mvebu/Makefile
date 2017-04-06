@@ -23,7 +23,7 @@ endef
 
 define U-Boot/clearfog
   NAME:=SolidRun ClearFog A1
-  BUILD_DEVICES:=armada-388-clearfog-pro
+  BUILD_DEVICES:=armada-388-clearfog-base armada-388-clearfog-pro
   UBOOT_IMAGE:=u-boot-spl.kwb
 endef
 
