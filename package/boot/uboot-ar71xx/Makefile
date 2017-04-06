@@ -26,6 +26,8 @@ define U-Boot/nbg460n_550n_550nh
   HIDDEN:=y
 endef
 
+UBOOT_MAKE_FLAGS :=
+
 UBOOT_TARGETS:=nbg460n_550n_550nh
 
 $(eval $(call BuildPackage/U-Boot))
