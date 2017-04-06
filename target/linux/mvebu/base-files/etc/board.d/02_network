@@ -27,7 +27,7 @@ armada-385-db-ap)
 armada-xp-gp)
 	ucidef_set_interface_lan "eth0 eth1 eth2 eth3"
 	;;
-armada-388-clearfog)
+armada-388-clearfog-pro)
 	ucidef_set_interfaces_lan_wan "eth0 eth1" "eth2"
 	swconfig list 2>&1 | grep -q switch0 && \
 		ucidef_add_switch "switch0" \

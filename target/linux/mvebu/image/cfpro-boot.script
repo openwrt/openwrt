@@ -2,6 +2,6 @@ setenv bootargs console=ttyS0,115200n8 root=/dev/mmcblk0p2 rootfstype=squashfs r
 setenv fdt_high 0x07a12000
 
 fatload mmc 0:1 0x02000000 zImage
-fatload mmc 0:1 0x05F00000 armada-388-clearfog.dtb
+fatload mmc 0:1 0x05F00000 armada-388-clearfog-pro.dtb
 
 bootz 0x02000000 - 0x05F00000
