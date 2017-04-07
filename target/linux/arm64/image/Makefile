@@ -8,14 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/Prepare
-	-rm -rf $(KDIR)/linux-system.axf
 	cp $(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/Image $(KDIR)/Image
-	$(MAKE) -C boot-wrapper clean
-	$(MAKE) -C boot-wrapper compile
-endef
-
-define Build/Clean
-	$(MAKE) -C boot-wrapper clean
 endef
 
 define Image/Build/QemuVirt
@@ -25,13 +18,8 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endef
 
-define Image/Build/VexpressFoundation
-	$(CP) $(KDIR)/linux-system.axf $(BIN_DIR)/$(IMG_PREFIX)-vexpress-foundation.axf
-endef
-
 define Image/BuildKernel
 	$(call Image/Build/QemuVirt)
-	$(call Image/Build/VexpressFoundation)
 endef
 
 define Image/Build/squashfs
