@@ -79,8 +79,7 @@ get_status_led() {
 	rut5xx|\
 	v11st-fe|\
 	wmr-300|\
-	zbt-wg2626|\
-	zbt-wg3526)
+	zbt-wg2626)
 		status_led="$board:green:status"
 		;;
 	ai-br100|\
@@ -274,6 +273,9 @@ get_status_led() {
 		;;
 	zbt-cpe102)
 		status_led="$board:green:4g-0"
+		;;
+	zbt-wg3526-16M)
+		status_led="zbt-wg3526:green:status"
 		;;
 	esac
 }

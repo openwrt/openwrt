@@ -261,13 +261,14 @@ define Device/zbt-wg2626
 endef
 TARGET_DEVICES += zbt-wg2626
 
-define Device/zbt-wg3526
-  DTS := ZBT-WG3526
+define Device/zbt-wg3526-16M
+  DTS := ZBT-WG3526-16M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := ZBT WG3526
+  SUPPORTED_DEVICES += zbt-wg3526
+  DEVICE_TITLE := ZBT WG3526 (16MB flash)
   DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620
 endef
-TARGET_DEVICES += zbt-wg3526
+TARGET_DEVICES += zbt-wg3526-16M
 
 # FIXME: is this still needed?
 define Image/Prepare

@@ -196,7 +196,7 @@ platform_check_image() {
 	zbt-we2026|\
 	zbt-we826|\
 	zbt-wg2626|\
-	zbt-wg3526|\
+	zbt-wg3526-16M|\
 	zbt-wr8305rt|\
 	zte-q7|\
 	youku-yk1)
