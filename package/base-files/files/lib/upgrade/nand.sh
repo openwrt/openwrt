@@ -239,15 +239,6 @@ nand_upgrade_ubifs() {
 	nand_do_upgrade_success
 }
 
-nand_board_name() {
-	if type 'platform_nand_board_name' >/dev/null 2>/dev/null; then
-		platform_nand_board_name
-		return
-	fi
-
-	cat /tmp/sysinfo/board_name
-}
-
 nand_upgrade_tar() {
 	local tar_file="$1"
 	local kernel_mtd="$(find_mtd_index $CI_KERNPART)"
