@@ -183,15 +183,6 @@ alfa_check_image() {
 	return 0
 }
 
-platform_nand_board_name() {
-	local board=$(board_name)
-
-	case "$board" in
-	rb*) echo "routerboard";;
-	*) echo "$board";;
-	esac
-}
-
 platform_check_image() {
 	local board=$(board_name)
 	local magic="$(get_magic_word "$1")"
