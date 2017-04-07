@@ -21,13 +21,16 @@ platform_check_image() {
 	ai-br100|\
 	air3gii|\
 	all0239-3g|\
-	all0256n|\
+	all0256n-4M|\
+	all0256n-8M|\
 	all5002|\
 	all5003|\
 	ar725w|\
-	asl26555|\
+	asl26555-8M|\
+	asl26555-16M|\
 	awapn2403|\
-	awm002-evb|\
+	awm002-evb-4M|\
+	awm002-evb-8M|\
 	awm003-evb|\
 	bc2|\
 	broadway|\
@@ -81,7 +84,8 @@ platform_check_image() {
 	linkits7688d|\
 	m2m|\
 	m3|\
-	m4|\
+	m4-4M|\
+	m4-8M|\
 	mac1200rv2|\
 	microwrt|\
 	miniembplug|\
@@ -104,7 +108,8 @@ platform_check_image() {
 	nbg-419n|\
 	nbg-419n2|\
 	newifi-d1|\
-	nixcore|\
+	nixcore-x1-8M|\
+	nixcore-x1-16M|\
 	nw718|\
 	omega2|\
 	omega2p|\
@@ -115,7 +120,8 @@ platform_check_image() {
 	psg1218a|\
 	psg1218b|\
 	psr-680w|\
-	px-4885|\
+	px-4885-4M|\
+	px-4885-8M|\
 	rb750gr3|\
 	re6500|\
 	rp-n53|\
@@ -139,7 +145,8 @@ platform_check_image() {
 	ur-326n4g|\
 	ur-336un|\
 	v22rw-2x2|\
-	vocore|\
+	vocore-8M|\
+	vocore-16M|\
 	vocore2|\
 	vr500|\
 	w150m|\
@@ -165,15 +172,18 @@ platform_check_image() {
 	wn3000rpv3|\
 	wnce2001|\
 	wndr3700v5|\
-	wr512-3gn|\
+	wr512-3gn-4M|\
+	wr512-3gn-8M|\
 	wr6202|\
 	wrh-300cr|\
 	wrtnode|\
 	wrtnode2r |\
 	wrtnode2p |\
 	wsr-600|\
-	wt1520|\
-	wt3020|\
+	wt1520-4M|\
+	wt1520-8M|\
+	wt3020-4M|\
+	wt3020-8M|\
 	wzr-agl300nh|\
 	x5|\
 	x8|\

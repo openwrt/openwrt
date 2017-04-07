@@ -15,7 +15,8 @@ board=$(ramips_board_name)
 
 case "$board" in
 all0239-3g|\
-all0256n|\
+all0256n-4M|\
+all0256n-8M|\
 all5002)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	;;
