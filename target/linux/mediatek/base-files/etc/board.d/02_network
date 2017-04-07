@@ -1,7 +1,6 @@
 #!/bin/sh
 
 . /lib/functions.sh
-. /lib/mediatek.sh
 . /lib/functions/uci-defaults.sh
 . /lib/functions/system.sh
 
@@ -10,18 +9,16 @@ mediatek_setup_interfaces()
 	local board="$1"
 
 	case $board in
-	eMMC | \
-	NAND | \
-	mt7623_evb)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth1.2"
-		ucidef_add_switch "switch0" \
-			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0" "5@eth1"
+	'mediatek,mt7623-rfb-emmc' | \
+	'mediatek,mt7623-rfb-nand')
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+		ucidef_set_interface_wan wan
 		;;
 	esac
 }
 
 board_config_update
-board=$(mediatek_board_name)
+board=$(board_name)
 mediatek_setup_interfaces $board
 board_config_flush
 

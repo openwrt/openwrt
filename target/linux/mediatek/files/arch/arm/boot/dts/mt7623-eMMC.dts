@@ -18,8 +18,8 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	model = "MediaTek MT7623 eMMC evaluation board";
-	compatible = "mediatek,mt7623-evb", "mediatek,mt7623";
+	model = "MediaTek MT7623 eMMC reference board";
+	compatible = "mediatek,mt7623-rfb-emmc", "mediatek,mt7623";
 
 	chosen {
 		stdout-path = &uart2;
@@ -430,7 +430,7 @@
 				 <MT7623_PIN_273_ESW_INT_FUNC_ESW_INT>,
 				 <MT7623_PIN_274_G2_RXDV_FUNC_G2_RXDV>;
 		};
-		
+
 		pins_eth_rst {
 			pinmux = <MT7623_PIN_15_GPIO15_FUNC_GPIO15>;
 			output-low;
@@ -473,14 +473,6 @@
 
 &gmac2 {
 	mac-address = [00 11 22 33 44 55];
-	status = "okay";
-	phy-handle = <&phy5>;
-};
-
-&gsw {
-	pinctrl-names = "default";
-	pinctrl-0 = <&eth_default>;
-	mediatek,reset-pin = <&pio 15 0>;
 	status = "okay";
 };
 

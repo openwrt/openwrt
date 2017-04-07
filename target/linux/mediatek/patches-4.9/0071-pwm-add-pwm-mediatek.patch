@@ -13,36 +13,10 @@ Signed-off-by: John Crispin <john@phrozen.org>
  5 files changed, 279 insertions(+)
  create mode 100644 drivers/pwm/pwm-mediatek.c
 
---- a/arch/arm/boot/dts/mt7623-evb.dts
-+++ b/arch/arm/boot/dts/mt7623-evb.dts
-@@ -26,8 +26,25 @@
- 	memory {
- 		reg = <0 0x80000000 0 0x40000000>;
- 	};
-+/*
-+	pwm_pins: pwm {
-+		pins_pwm1 {
-+			pinmux = <MT7623_PIN_204_PWM1_FUNC_PWM1>;
-+		};
-+
-+		pins_pwm2 {
-+			pinmux = <MT7623_PIN_205_PWM2_FUNC_PWM2>;
-+		};
-+	};*/
-+
- };
- 
- &uart2 {
- 	status = "okay";
- };
-+
-+/*&pwm {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&pwm_pins>;
-+	status = "okay";
-+};*/
---- a/drivers/pwm/Kconfig
-+++ b/drivers/pwm/Kconfig
+Index: linux-4.9.17/drivers/pwm/Kconfig
+===================================================================
+--- linux-4.9.17.orig/drivers/pwm/Kconfig
++++ linux-4.9.17/drivers/pwm/Kconfig
 @@ -282,6 +282,15 @@ config PWM_MTK_DISP
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-mtk-disp.
@@ -59,8 +33,10 @@ Signed-off-by: John Crispin <john@phrozen.org>
  config PWM_MXS
  	tristate "Freescale MXS PWM support"
  	depends on ARCH_MXS && OF
---- a/drivers/pwm/Makefile
-+++ b/drivers/pwm/Makefile
+Index: linux-4.9.17/drivers/pwm/Makefile
+===================================================================
+--- linux-4.9.17.orig/drivers/pwm/Makefile
++++ linux-4.9.17/drivers/pwm/Makefile
 @@ -25,6 +25,7 @@ obj-$(CONFIG_PWM_LPSS)		+= pwm-lpss.o
  obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-pci.o
  obj-$(CONFIG_PWM_LPSS_PLATFORM)	+= pwm-lpss-platform.o
@@ -69,8 +45,10 @@ Signed-off-by: John Crispin <john@phrozen.org>
  obj-$(CONFIG_PWM_MTK_DISP)	+= pwm-mtk-disp.o
  obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
  obj-$(CONFIG_PWM_OMAP_DMTIMER)	+= pwm-omap-dmtimer.o
+Index: linux-4.9.17/drivers/pwm/pwm-mediatek.c
+===================================================================
 --- /dev/null
-+++ b/drivers/pwm/pwm-mediatek.c
++++ linux-4.9.17/drivers/pwm/pwm-mediatek.c
 @@ -0,0 +1,230 @@
 +/*
 + * Mediatek Pulse Width Modulator driver

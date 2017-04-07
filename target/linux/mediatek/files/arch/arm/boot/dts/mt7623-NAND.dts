@@ -18,8 +18,8 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	model = "MediaTek MT7623 NAND evaluation board";
-	compatible = "mediatek,mt7623-evb", "mediatek,mt7623";
+	model = "MediaTek MT7623 NAND reference board";
+	compatible = "mediatek,mt7623-rfb-nand", "mediatek,mt7623";
 
 	chosen {
 		stdout-path = &uart2;
@@ -280,6 +280,34 @@
 				regulator-enable-ramp-delay = <216>;
 			};
 		};
+
+		mt6323led: leds {
+			compatible = "mediatek,mt6323-led";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				label = "LED0";
+				linux,default-trigger = "timer";
+				default-state = "on";
+			};
+			led@1 {
+				reg = <1>;
+				label = "LED1";
+				default-state = "off";
+			};
+			led@2 {
+				reg = <2>;
+				label = "LED2";
+				default-state = "on";
+			};
+			led@3 {
+				reg = <3>;
+				label = "LED3";
+				default-state = "on";
+			};
+		};
 	};
 };
 
@@ -332,10 +360,16 @@
 				 <MT7623_PIN_270_G2_RXD1_FUNC_G2_RXD1>,
 				 <MT7623_PIN_271_G2_RXD2_FUNC_G2_RXD2>,
 				 <MT7623_PIN_272_G2_RXD3_FUNC_G2_RXD3>,
-				 <MT7623_PIN_273_ESW_INT_FUNC_ESW_INT>,
 				 <MT7623_PIN_274_G2_RXDV_FUNC_G2_RXDV>;
 		};
-		
+
+		pins_eth_esw {
+			pinmux = <MT7623_PIN_273_ESW_INT_FUNC_ESW_INT>;
+			input-enable;
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up;
+		};
+
 		pins_eth_rst {
 			pinmux = <MT7623_PIN_15_GPIO15_FUNC_GPIO15>;
 			output-low;
@@ -426,7 +460,7 @@
 	mac-address = [00 11 22 33 44 55];
 	status = "okay";
 
-	phy-mode = "rgmii";
+	phy-mode = "trgmii";
 
 	fixed-link {
 		speed = <1000>;
@@ -435,12 +469,63 @@
 	};
 };
 
-&gsw {
-	pinctrl-names = "default";
-	pinctrl-0 = <&eth_default>;
-	mediatek,reset-pin = <&pio 15 0>;
-	status = "okay";
+&mdio0 {
+	switch@0 {
+		compatible = "mediatek,mt7530";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&eth_default>;
+
+		core-supply = <&mt6323_vpa_reg>;
+		io-supply = <&mt6323_vemc3v3_reg>;
+		reset-gpios = <&pio 33 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			port@0 {
+				reg = <0>;
+				label = "lan0";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "wan";
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "trgmii";
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
 };
+
 
 &pwm {
 	pinctrl-names = "default";
