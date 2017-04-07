@@ -1,9 +1,9 @@
 #!/bin/sh
-#
-# Copyright (C) 2012 OpenWrt.org
-#
 
-cns3xxx_board_name() {
+CNS3XXX_BOARD_NAME=
+CNS3XXX_MODEL=
+
+cns3xxx_board_detect() {
 	local machine
 	local name
 
@@ -17,6 +17,21 @@ cns3xxx_board_name() {
 			name="generic";
 			;;
 	esac
-	
-	echo $name
+
+	[ -z "$CNS3XXX_BOARD_NAME" ] && CNS3XXX_BOARD_NAME="$name"
+	[ -z "$CNS3XXX_MODEL" ] && CNS3XXX_MODEL="$machine"
+
+	[ -e "/tmp/sysinfo/" ] || mkdir -p "/tmp/sysinfo/"
+
+	echo "$CNS3XXX_BOARD_NAME" > /tmp/sysinfo/board_name
+	echo "$CNS3XXX_MODEL" > /tmp/sysinfo/model
+}
+
+cns3xxx_board_name() {
+	local name
+
+	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
+	[ -z "$name" ] && name="unknown"
+
+	echo "$name"
 }

@@ -75,7 +75,6 @@ imx6_board_detect() {
 imx6_board_name() {
 	local name
 
-	[ -f /tmp/sysinfo/board_name ] || imx6_board_detect
 	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
 	[ -z "$name" ] && name="unknown"
 
