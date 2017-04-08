@@ -19,6 +19,20 @@ endef
 $(eval $(call Profile,A20-OLinuXino-Lime))
 
 
+define Profile/A20-OLinuXino-Lime2
+	NAME:=A20 OLinuXino Lime2
+	PACKAGES:=\
+		uboot-sunxi-A20-OLinuXino-Lime2 kmod-ata-core kmod-ata-sunxi \
+		kmod-rtc-sunxi
+endef
+
+define Profile/A20-OLinuXino-Lime2/Description
+	Package set optimized for the Olimex A20 OLinuXino Lime2
+endef
+
+$(eval $(call Profile,A20-OLinuXino-Lime2))
+
+
 define Profile/A20-OLinuXino_MICRO
 	NAME:=A20 OLinuXino Micro
 	PACKAGES:=\

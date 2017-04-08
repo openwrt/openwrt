@@ -42,6 +42,10 @@ define uboot/A20-OLinuXino-Lime
   TITLE:=U-Boot for the A20 OLinuXino LIME
 endef
 
+define uboot/A20-OLinuXino-Lime2
+  TITLE:=U-Boot for the A20 OLinuXino LIME2
+endef
+
 define uboot/A20-OLinuXino_MICRO
   TITLE:=U-Boot for A20 OLinuXino MICRO
 endef
@@ -114,6 +118,7 @@ UBOOTS:= \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
 	A20-OLinuXino-Lime \
+	A20-OLinuXino-Lime2 \
 	A20-OLinuXino_MICRO \
 	Bananapi \
 	Bananapro \
