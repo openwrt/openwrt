@@ -97,7 +97,7 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_BUILD_DIR)/include/libnetlink.h $(1)/usr/include/
+	$(CP) $(PKG_BUILD_DIR)/include/{libgenl,libnetlink,ll_map}.h $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/lib/libnetlink.a $(1)/usr/lib/
 endef
