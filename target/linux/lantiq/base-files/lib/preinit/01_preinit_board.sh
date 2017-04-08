@@ -1,7 +1,7 @@
 #!/bin/sh
 
 lantiq_board_detect() {
-	name=`grep "^machine" /proc/cpuinfo | sed "s/machine.*: \(.*\)/\1/g" | sed "s/\(.*\) - .*/\1/g"`
+	name="$(strings /proc/device-tree/compatible | head -1)"
 	model=`grep "^machine" /proc/cpuinfo | sed "s/machine.*: \(.*\)/\1/g" | sed "s/.* - \(.*\)/\1/g"`
 	[ -z "$name" ] && name="unknown"
 	[ -z "$model" ] && model="unknown"

@@ -20,6 +20,7 @@ define Device/TDW8970
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := TP-LINK TD-W8970
   DEVICE_PACKAGES:= kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += tplink,tdw8970
 endef
 TARGET_DEVICES += TDW8970
 
@@ -32,6 +33,7 @@ define Device/TDW8980
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := TP-LINK TD-W8980
   DEVICE_PACKAGES:= kmod-ath9k kmod-owl-loader wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += tplink,tdw8980
 endef
 TARGET_DEVICES += TDW8980
 
@@ -45,6 +47,7 @@ define Device/VR200v
   IMAGE_SIZE := 15808k
   DEVICE_TITLE := TP-LINK Archer VR200v
   DEVICE_PACKAGES:= kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += tplink,vr200v
 endef
 TARGET_DEVICES += VR200v
 
