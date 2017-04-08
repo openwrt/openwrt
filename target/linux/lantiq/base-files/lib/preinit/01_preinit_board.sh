@@ -2,7 +2,7 @@
 
 lantiq_board_detect() {
 	name="$(strings /proc/device-tree/compatible | head -1)"
-	model=`grep "^machine" /proc/cpuinfo | sed "s/machine.*: \(.*\)/\1/g" | sed "s/.* - \(.*\)/\1/g"`
+	model="$(cat /proc/device-tree/model)"
 	[ -z "$name" ] && name="unknown"
 	[ -z "$model" ] && model="unknown"
 	[ -e "/tmp/sysinfo/" ] || mkdir -p "/tmp/sysinfo/"
