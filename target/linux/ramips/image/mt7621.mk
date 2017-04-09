@@ -131,7 +131,7 @@ define Device/r6220
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := Netgear R6220
-  DEVICE_PACKAGES := kmod-usb2 kmod-mt76
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += r6220
 
