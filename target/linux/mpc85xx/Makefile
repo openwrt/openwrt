@@ -14,7 +14,7 @@ FEATURES:=squashfs
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 SUBTARGETS:=generic p1020
 
-KERNEL_PATCHVER:=4.4
+KERNEL_PATCHVER:=4.9
 
 define Target/Description
 	Build images for the Freescale MPC85xx based boards.
