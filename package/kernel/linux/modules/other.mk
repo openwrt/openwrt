@@ -349,6 +349,7 @@ $(eval $(call KernelPackage,lp))
 define KernelPackage/mmc
   SUBMENU:=$(OTHER_MENU)
   TITLE:=MMC/SD Card Support
+  DEPENDS:=@!TARGET_uml
   KCONFIG:= \
 	CONFIG_MMC \
 	CONFIG_MMC_BLOCK \
