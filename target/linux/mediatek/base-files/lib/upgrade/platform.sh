@@ -20,11 +20,12 @@ platform_check_image() {
 	local board=$(cat /tmp/sysinfo/board_name)
 
 	case "$board" in
-	NAND)
+	mediatek,mt7623-rfb-nand-ephy |\
+	mediatek,mt7623-rfb-nand)
 		nand_do_platform_check $board $1
 		return $?
 		;;
-	eMMC)
+	mediatek,mt7623-rfb-emmc)
 		local kernel_length=`(tar xf $tar_file sysupgrade-$board/kernel -O | wc -c) 2> /dev/null`
 		local rootfs_length=`(tar xf $tar_file sysupgrade-$board/root -O | wc -c) 2> /dev/null`
 		;;
@@ -46,7 +47,8 @@ platform_check_image() {
 platform_pre_upgrade() {
 	local board=$(cat /tmp/sysinfo/board_name)
 	case "$board" in
-	NAND)
+	mediatek,mt7623-rfb-nand-ephy |\
+	mediatek,mt7623-rfb-nand)
 		nand_do_upgrade $1
 		;;
 	esac
