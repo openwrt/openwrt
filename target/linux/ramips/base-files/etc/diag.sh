@@ -274,7 +274,7 @@ get_status_led() {
 		;;
 	zbt-we826-16M|\
 	zbt-we826-32M)
-		status_led="zbt-we826:green:wifi"
+		status_led="zbt-we826:green:power"
 		;;
 	zbt-wg3526-16M|\
 	zbt-wg3526-32M)
