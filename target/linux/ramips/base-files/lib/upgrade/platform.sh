@@ -193,7 +193,8 @@ platform_check_image() {
 	zbt-wa05|\
 	zbt-we1326|\
 	zbt-we2026|\
-	zbt-we826|\
+	zbt-we826-16M|\
+	zbt-we826-32M|\
 	zbt-wg2626|\
 	zbt-wg3526-16M|\
 	zbt-wg3526-32M|\

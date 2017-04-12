@@ -189,8 +189,7 @@ get_status_led() {
 		status_led="$board:amber:system"
 		;;
 	oy-0001|\
-	sl-r7205|\
-	zbt-we826)
+	sl-r7205)
 		status_led="$board:green:wifi"
 		;;
 	psr-680w)
@@ -272,6 +271,10 @@ get_status_led() {
 		;;
 	zbt-cpe102)
 		status_led="$board:green:4g-0"
+		;;
+	zbt-we826-16M|\
+	zbt-we826-32M)
+		status_led="zbt-we826:green:wifi"
 		;;
 	zbt-wg3526-16M|\
 	zbt-wg3526-32M)
