@@ -85,6 +85,12 @@ ifdef CONFIG_BUSYBOX_CONFIG_PAM
   LDLIBS += pam pam_misc pthread
 endif
 
+ifdef CONFIG_BUSYBOX_DEFAULT_NSLOOKUP_LEDE
+  ifeq ($(CONFIG_USE_GLIBC),y)
+	LDLIBS += resolv
+  endif
+endif
+
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \

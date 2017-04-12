@@ -12,28 +12,10 @@ and the libresolv primitives to parse received DNS responses.
 
 Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 ---
- Makefile.flags             |   6 +
  networking/nslookup_lede.c | 869 +++++++++++++++++++++++++++++++++++++++++++++
  2 files changed, 875 insertions(+)
  create mode 100644 networking/nslookup_lede.c
 
-diff --git a/Makefile.flags b/Makefile.flags
-index 65021de..096ab77 100644
---- a/Makefile.flags
-+++ b/Makefile.flags
-@@ -134,6 +134,12 @@ else
- LDLIBS += m
- endif
- 
-+# nslookup_lede might need the resolv library
-+RESOLV_AVAILABLE := $(shell echo 'int main(void){res_init();return 0;}' >resolvtest.c; $(CC) $(CFLAGS) -include resolv.h -lresolv -o /dev/null resolvtest.c >/dev/null 2>&1 && echo "y"; rm resolvtest.c)
-+ifeq ($(RESOLV_AVAILABLE),y)
-+LDLIBS += resolv
-+endif
-+
- # libpam may use libpthread, libdl and/or libaudit.
- # On some platforms that requires an explicit -lpthread, -ldl, -laudit.
- # However, on *other platforms* it fails when some of those flags
 diff --git a/networking/nslookup_lede.c b/networking/nslookup_lede.c
 new file mode 100644
 index 0000000..fe927ad
