@@ -30,13 +30,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_SAMA5D4_WATCHDOG) += sama5d4_wdt.o
 --- /dev/null
 +++ b/drivers/watchdog/mpcore_wdt.c
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,118 @@
 +/*
 + * Watchdog driver for ARM MPcore
 + *
 + * Copyright (C) 2017 Felix Fietkau <nbd@nbd.name>
 + */
 +
++#include <linux/export.h>
 +#include <linux/module.h>
 +#include <linux/kernel.h>
 +#include <linux/watchdog.h>
@@ -52,10 +53,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	static int perturb;
 +	u32 count;
 +
-+	count = ioread32(wdt_base + TWD_WDOG_COUNTER);
-+	count = (~0U - count) * HZ / 5;
-+	count /= 256; /* prescale */
-+	count *= wdt_timeout;
++	count = (twd_timer_get_rate() / 256) * wdt_timeout;
 +
 +	/* Reload register needs a different value on each refresh */
 +	count += perturb;
@@ -118,6 +116,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +static int mpcore_wdt_probe(struct platform_device *pdev)
 +{
 +	struct resource *res;
++	unsigned long rate = twd_timer_get_rate();
++
++	pr_info("MPCore WD init. clockrate: %u prescaler: %u countrate: %u timeout: %us\n", rate, 256, rate / 256, wdt_timeout);
 +
 +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	if (!res)
@@ -148,3 +149,37 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +module_platform_driver(mpcore_wdt_driver);
 +MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
 +MODULE_LICENSE("GPL");
+--- a/arch/arm/include/asm/smp_twd.h
++++ b/arch/arm/include/asm/smp_twd.h
+@@ -33,5 +33,6 @@ struct twd_local_timer name __initdata =
+ };
+ 
+ int twd_local_timer_register(struct twd_local_timer *);
++unsigned long twd_timer_get_rate(void);
+ 
+ #endif
+--- a/arch/arm/kernel/smp_twd.c
++++ b/arch/arm/kernel/smp_twd.c
+@@ -15,6 +15,7 @@
+ #include <linux/delay.h>
+ #include <linux/device.h>
+ #include <linux/err.h>
++#include <linux/export.h>
+ #include <linux/smp.h>
+ #include <linux/jiffies.h>
+ #include <linux/clockchips.h>
+@@ -380,6 +381,14 @@ int __init twd_local_timer_register(stru
+ 	return twd_local_timer_common_register(NULL);
+ }
+ 
++/* Needed by mpcore_wdt */
++unsigned long twd_timer_get_rate(void)
++{
++	return twd_timer_rate;
++}
++EXPORT_SYMBOL_GPL(twd_timer_get_rate);
++
++
+ #ifdef CONFIG_OF
+ static int __init twd_local_timer_of_register(struct device_node *np)
+ {
