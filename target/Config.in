@@ -34,7 +34,8 @@ config USB_GADGET_SUPPORT
 	bool
 
 config RTC_SUPPORT
-	bool
+	tristate
+	depends on m
 
 config BIG_ENDIAN
 	bool

@@ -485,7 +485,8 @@ $(eval $(call KernelPackage,bcma))
 define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
-  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_DS1307 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1307.ko
@@ -503,7 +504,8 @@ $(eval $(call KernelPackage,rtc-ds1307))
 define KernelPackage/rtc-ds1374
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1374 RTC support
-  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_DS1374 \
 	CONFIG_RTC_DRV_DS1374_WDT=n \
 	CONFIG_RTC_CLASS=y
@@ -521,7 +523,8 @@ $(eval $(call KernelPackage,rtc-ds1374))
 define KernelPackage/rtc-ds1672
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1672 RTC support
-  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_DS1672 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1672.ko
@@ -538,7 +541,8 @@ $(eval $(call KernelPackage,rtc-ds1672))
 define KernelPackage/rtc-isl1208
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intersil ISL1208 RTC support
-  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_ISL1208 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-isl1208.ko
@@ -555,7 +559,8 @@ $(eval $(call KernelPackage,rtc-isl1208))
 define KernelPackage/rtc-pcf8563
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support
-  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_PCF8563 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf8563.ko
@@ -573,7 +578,7 @@ $(eval $(call KernelPackage,rtc-pcf8563))
 define KernelPackage/rtc-pcf2123
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF2123 RTC support
-  DEPENDS:=@RTC_SUPPORT
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
   KCONFIG:=CONFIG_RTC_DRV_PCF2123 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2123.ko
@@ -589,7 +594,8 @@ $(eval $(call KernelPackage,rtc-pcf2123))
 define KernelPackage/rtc-pt7c4338
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Pericom PT7C4338 RTC support
-  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_PT7C4338 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pt7c4338.ko
@@ -605,7 +611,8 @@ $(eval $(call KernelPackage,rtc-pt7c4338))
 define KernelPackage/rtc-rs5c372a
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Ricoh R2025S/D, RS5C372A/B, RV5C386, RV5C387A
-  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_RS5C372 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-rs5c372.ko
