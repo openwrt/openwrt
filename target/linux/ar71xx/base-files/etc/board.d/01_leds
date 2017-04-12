@@ -743,6 +743,7 @@ tl-wr1043nd-v4)
 	ucidef_set_led_switch "lan4" "LAN4" "tp-link:green:lan4" "switch0" "0x02"
 	;;
 tl-wr2543n)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "tp-link:green:wlan2g" "phy0tpt"
 	ucidef_set_led_usbdev "usb" "USB" "tp-link:green:usb" "1-1"
 	;;
 tube2h)
@@ -847,12 +848,18 @@ wpn824n)
 wzr-hp-ag300h)
 	ucidef_set_led_default "diag" "DIAG" "buffalo:red:diag" "0"
 	ucidef_set_led_netdev "router" "ROUTER" "buffalo:green:router" "eth1"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "buffalo:amber:band2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "buffalo:amber:band5g" "phy1tpt"
 	ucidef_set_led_usbdev "usb" "USB" "buffalo:green:usb" "1-1"
 	;;
 wzr-hp-g300nh)
 	ucidef_set_led_wlan "wlan" "Wireless" "buffalo:green:wireless" "phy0tpt"
 	ucidef_set_led_netdev "router" "Router" "buffalo:green:router" "eth1"
 	ucidef_set_led_usbdev "usb" "USB" "buffalo:blue:usb" "1-1"
+	;;
+wzr-hp-g300nh2|\
+wzr-hp-g450h)
+	ucidef_set_led_wlan "wlan" "Wireless" "buffalo:green:wireless" "phy0tpt"
 	;;
 xd3200)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:blue:wlan2g" "phy1tpt"

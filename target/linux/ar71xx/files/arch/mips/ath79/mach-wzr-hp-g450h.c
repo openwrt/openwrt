@@ -84,6 +84,11 @@ static struct gpio_led wzrhpg450h_wmac_leds_gpio[] = {
 		.gpio		= 14,
 		.active_low	= 1,
 	},
+	{
+		.name		= "buffalo:green:wireless",
+		.gpio		= 15,
+		.active_low	= 1,
+	},
 };
 
 static struct gpio_keys_button wzrhpg450h_gpio_keys[] __initdata = {
@@ -156,7 +161,6 @@ static void __init wzrhpg450h_init(void)
 	ap91_pci_init(ee, NULL);
 	ap9x_pci_get_wmac_data(0)->tx_gain_buffalo = true;
 	ap9x_pci_get_wmac_data(1)->tx_gain_buffalo = true;
-	ap9x_pci_setup_wmac_led_pin(0, 15);
 	ap9x_pci_setup_wmac_leds(0, wzrhpg450h_wmac_leds_gpio,
 				 ARRAY_SIZE(wzrhpg450h_wmac_leds_gpio));
 }

@@ -60,6 +60,11 @@ static struct gpio_led tl_wr2543n_leds_gpio[] __initdata = {
 
 static struct gpio_led tl_wr2543n_wmac_leds_gpio[] = {
 	{
+		.name		= "tp-link:green:wlan2g",
+		.gpio		= TL_WR2543N_GPIO_WMAC_LED_WLAN2G,
+		.active_low	= 1,
+	},
+	{
 		.name		= "tp-link:green:wlan5g",
 		.gpio		= TL_WR2543N_GPIO_WMAC_LED_WLAN5G,
 		.active_low	= 1,
@@ -125,17 +130,6 @@ static void __init tl_wr2543n_setup(void)
 					tl_wr2543n_gpio_keys);
 	ath79_register_usb();
 
-	/*
-	 * The ath9k driver uses this pin for its default led device, which is
-	 * named ath9k-phy0, and reflects activity on either the 2 GHz or 5 GHz
-	 * bands. This pin is connected to the WR2543's 2GHz WLAN LED.
-	 */
-	ap9x_pci_setup_wmac_led_pin(0, TL_WR2543N_GPIO_WMAC_LED_WLAN2G);
-
-	/*
-	 * We also have the driver set up an led device for the WR2543's
-	 * separate 5 GHz WLAN LED in case the user wants it.
-	 */
 	ap9x_pci_setup_wmac_leds(0, tl_wr2543n_wmac_leds_gpio,
 				 ARRAY_SIZE(tl_wr2543n_wmac_leds_gpio));
 	ap91_pci_init(eeprom, mac);
