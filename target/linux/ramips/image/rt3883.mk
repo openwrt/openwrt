@@ -72,7 +72,6 @@ TARGET_DEVICES += hpm
 define Device/rt-n56u
   DTS := RT-N56U
   BLOCKSIZE := 64k
-  IMAGES += factory.bin
   IMAGE/sysupgrade.bin += | mkrtn56uimg -s
   DEVICE_TITLE := Asus RT-N56U
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
