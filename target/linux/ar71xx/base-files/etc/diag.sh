@@ -175,6 +175,9 @@ get_status_led() {
 	eap300v2)
 		status_led="engenius:blue:power"
 		;;
+	ens202ext)
+		status_led="engenius:amber:power"
+		;;
 	eap7660d)
 		status_led="$board:green:ds4"
 		;;

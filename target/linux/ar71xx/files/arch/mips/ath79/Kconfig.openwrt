@@ -767,6 +767,15 @@ config ATH79_MACH_EAP120
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_ENS202EXT
+	bool "EnGenius ENS202EXT support"
+	select SOC_AR934X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_EAP300V2
 	bool "EnGenius EAP300 v2 support"
 	select SOC_AR934X

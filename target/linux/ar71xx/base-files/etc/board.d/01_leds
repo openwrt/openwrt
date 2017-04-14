@@ -220,6 +220,13 @@ eap300v2)
 	ucidef_set_led_netdev "lan" "LAN" "engenius:blue:lan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "engenius:blue:wlan" "phy0tpt"
 	;;
+ens202ext)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "engenius:amber:wlan1" "wlan0" "1"  "100" "0" "13"
+	ucidef_set_led_rssi "rssimedium" "RSSIMEDIUM" "engenius:red:wlan2" "wlan0" "25" "100" "-39" "13"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "engenius:amber:wlan3" "wlan0" "50" "100" "-59" "13"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "engenius:green:wlan4" "wlan0" "75" "100" "-79" "13"
+	;;
 f9k1115v2)
 	ucidef_set_led_usbdev "usb2" "USB2" "belkin:green:usb2" "1-1"
 	;;
