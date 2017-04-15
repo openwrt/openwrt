@@ -18,16 +18,17 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=omap
-  BUILD_DEVICES:=Default
   UBOOT_IMAGE:=u-boot.img MLO
 endef
 
 define U-Boot/omap4_panda
   NAME:=Pandaboard
+  BUILD_DEVICES:=omap4-panda
 endef
 
 define U-Boot/am335x_evm
   NAME:=AM335x EVM
+  BUILD_DEVICES:=am335x-evm
 endef
 
 define U-Boot/omap3_overo
@@ -36,6 +37,7 @@ endef
 
 define U-Boot/omap3_beagle
   NAME:=BeagleBoard
+  BUILD_DEVICES:=omap3-beagle
 endef
 
 UBOOT_TARGETS:=omap4_panda am335x_evm omap3_overo omap3_beagle
