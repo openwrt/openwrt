@@ -42,4 +42,9 @@ endef
 
 UBOOT_TARGETS:=omap4_panda am335x_evm omap3_overo omap3_beagle
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)
+	$(CP) $(patsubst %,$(PKG_BUILD_DIR)/%,$(UBOOT_IMAGE)) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)/
+endef
+
 $(eval $(call BuildPackage/U-Boot))
