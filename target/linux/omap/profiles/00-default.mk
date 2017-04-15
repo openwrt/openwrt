@@ -6,7 +6,14 @@
 #
 
 define Profile/Default
-	NAME:=Default Profile
+  NAME:=Default Profile
+  PACKAGES:= \
+	kmod-usb-net \
+	kmod-usb-net-asix kmod-usb-net-asix-ax88179 kmod-usb-net-hso \
+	kmod-usb-net-kaweth kmod-usb-net-pegasus kmod-usb-net-mcs7830 \
+	kmod-usb-net-smsc95xx kmod-usb-net-dm9601-ether \
+	wpad-mini
+  PRIORITY := 1
 endef
 
 define Profile/Default/Description

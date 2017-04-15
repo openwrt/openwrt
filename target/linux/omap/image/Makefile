@@ -7,35 +7,74 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+FAT32_BLOCK_SIZE=1024
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_OMAP_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
+
 UBIFS_OPTS = -F -m 2048 -e 124KiB -c 4096 -U
 UBI_OPTS = -m 2048 -p 128KiB -s 512 -O 2048
 
-define Image/BuildKernel
-	$(CP) $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
- ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(CP) $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
- endif
-	-mkdir $(BIN_DIR)/dtbs
-	-$(CP) $(DTS_DIR)/am335x*.dtb $(BIN_DIR)/dtbs/
-	-$(CP) $(DTS_DIR)/omap3*.dtb $(BIN_DIR)/dtbs/
-	-$(CP) $(DTS_DIR)/omap4*.dtb $(BIN_DIR)/dtbs/
+define Build/omap-sdcard
+	rm -f $@.boot
+	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
+
+	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)/MLO ::MLO
+	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)/u-boot.img ::u-boot.img
+	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)/uEnv.txt ::uEnv.txt
+	mmd -i $@.boot ::/dtbs
+	mcopy -i $@.boot $(DTS_DIR)/$(DEVICE_DTS).dtb ::/dtbs/$(DEVICE_DTS).dtb
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::/zImage
+	./gen_omap_sdcard_img.sh $@ \
+		$@.boot \
+		$(IMAGE_ROOTFS) \
+		$(CONFIG_OMAP_SD_BOOT_PARTSIZE) \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+	rm -f $@.boot
 endef
 
-define Image/Build
-	$(call Image/Build/$(1),$(1))
+define Device/Default
+  PROFILES := Default
+  DEVICE_VARS :=
+  KERNEL_NAME := zImage
+  KERNEL := kernel-bin
+  IMAGES := sdcard.img.gz
+  IMAGE/sdcard.img.gz := omap-sdcard | append-metadata | gzip
+  SUPPORTED_DEVICES = $$(DEVICE_DTS)
 endef
 
-define Image/Build/jffs2-64k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=65536 conv=sync
+#uboot-omap-am335x_evm uboot-omap-omap3_beagle uboot-omap-omap3_overo uboot-omap-omap4_panda
+
+define Device/am335x-evm
+  DEVICE_TITLE := TI AM335x EVM
+  DEVICE_DTS := am335x-evm
 endef
 
-define Image/Build/jffs2-128k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=131072 conv=sync
+TARGET_DEVICES += am335x-evm
+
+define Device/am335x-boneblack
+  DEVICE_TITLE := TI AM335x BeagleBone Black
+  DEVICE_DTS := am335x-boneblack
 endef
 
-define Image/Build/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=131072 conv=sync
+TARGET_DEVICES += am335x-boneblack
+
+define Device/omap4-panda
+  DEVICE_TITLE := OMAP4 TI pandaboard
+  DEVICE_DTS := omap4-panda
+  DEVICE_PACKAGES := kmod-usb-net-smsc95xx
 endef
+
+TARGET_DEVICES += omap4-panda
+
+define Device/omap3-beagle
+  DEVICE_TITLE := OMAP3 TI beagleboard
+  DEVICE_DTS := omap3-beagle
+  # beagleboard doesn't have a network interface, support most common usb net
+  DEVICE_PACKAGES := kmod-usb-net \
+	kmod-usb-net-asix kmod-usb-net-asix-ax88179 kmod-usb-net-hso \
+	kmod-usb-net-kaweth kmod-usb-net-pegasus kmod-usb-net-mcs7830 \
+	kmod-usb-net-smsc95xx kmod-usb-net-dm9601-ether
+endef
+
+TARGET_DEVICES += omap3-beagle
 
 $(eval $(call BuildImage))
