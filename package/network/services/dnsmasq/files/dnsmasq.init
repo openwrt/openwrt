@@ -698,7 +698,7 @@ dnsmasq_start()
 
 	if [ -x /usr/sbin/odhcpd -a -x /etc/init.d/odhcpd ] ; then
 		local odhcpd_is_main odhcpd_is_enabled
-		config_get odhcpd_is_main odhcpd maindhcp
+		config_get odhcpd_is_main odhcpd maindhcp 0
 		/etc/init.d/odhcpd enabled && odhcpd_is_enabled=1 || odhcpd_is_enabled=0
 
 
