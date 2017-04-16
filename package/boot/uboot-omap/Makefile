@@ -27,6 +27,11 @@ define U-Boot/omap4_panda
   BUILD_DEVICES:=omap4-panda
 endef
 
+define U-Boot/am335x_boneblack
+  NAME:=TI AM335x BeagleBone Black
+  BUILD_DEVICES:=am335x-boneblack
+endef
+
 define U-Boot/am335x_evm
   NAME:=AM335x EVM
   BUILD_DEVICES:=am335x-evm
@@ -41,7 +46,7 @@ define U-Boot/omap3_beagle
   BUILD_DEVICES:=omap3-beagle
 endef
 
-UBOOT_TARGETS:=omap4_panda am335x_evm omap3_overo omap3_beagle
+UBOOT_TARGETS:=omap4_panda am335x_evm omap3_overo omap3_beagle am335x_boneblack
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)
