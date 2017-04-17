@@ -15,7 +15,7 @@
 		led-dsl = &dsl;
 		led-internet = &internet;
 		led-usb = &usb;
-		led-wifi = &wifi;
+		led-wifi = &wifi_green;
 	};
 
 	memory@0 {
@@ -106,9 +106,10 @@
 			label = "dgn3500:green:internet";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
-		/*
-			internet red is missing
-		*/
+		internet2 {
+			label = "dgn3500:red:internet";
+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+		};
 		dsl: dsl {
 			label = "dgn3500:green:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
@@ -126,11 +127,12 @@
 			label = "dgn3500:red:power";
 			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
 		};
-		/*
-			power amber is missing
-		*/
-		wifi: wifi {
-			label = "dgn3500:blue:wireless";
+		wifi_green: wifi {
+			label = "dgn3500:green:wireless";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+		wifi2 {
+			label = "dgn3500:amber:wireless";
 			gpios = <&gpio 51 GPIO_ACTIVE_LOW>;
 		};
 		wps {
