@@ -1,8 +1,0 @@
-This multi-platform ARMv8 target can be used with QEMU:
-
-qemu-system-aarch64 -machine virt -cpu cortex-a57 -machine type=virt -nographic \
-	-smp 1 -m 2048 \
-	-kernel bin/targets/arm64/generic/lede-arm64-qemu-virt-initramfs.Image \
-	--append "console=ttyAMA0"
-
-and enjoy the system booting.

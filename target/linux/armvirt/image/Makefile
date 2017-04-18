@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016 Yousong Zhou <yszhou4tech@gmail.com>
+# Copyright (C) 2016-2017 Yousong Zhou <yszhou4tech@gmail.com>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,11 +8,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Image/BuildKernel
-	cp $(KDIR)/$(KERNELNAME) $(BIN_DIR)/$(IMG_PREFIX)-$(KERNELNAME)
+	$(foreach k,$(filter zImage Image,$(KERNELNAME)), \
+		cp $(KDIR)/$(KERNELNAME) $(BIN_DIR)/$(IMG_PREFIX)-$(k) \
+	)
 endef
 
 define Image/Build/Initramfs
-	cp $(KDIR)/$(KERNELNAME)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(KERNELNAME)-initramfs
+	$(foreach k,$(filter zImage Image,$(KERNELNAME)), \
+		cp $(KDIR)/$(k)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(k)-initramfs \
+	)
 endef
 
 define Image/Build
