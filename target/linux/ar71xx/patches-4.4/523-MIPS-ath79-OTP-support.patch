@@ -1,18 +1,30 @@
 --- a/arch/mips/ath79/dev-wmac.c
 +++ b/arch/mips/ath79/dev-wmac.c
-@@ -167,6 +167,137 @@ static void qca955x_wmac_setup(void)
+@@ -167,6 +167,149 @@ static void qca955x_wmac_setup(void)
  		ath79_wmac_data.is_clk_25mhz = true;
  }
  
++#define AR93XX_WMAC_SIZE \
++	(soc_is_ar934x() ? AR934X_WMAC_SIZE : AR933X_WMAC_SIZE)
++#define AR93XX_WMAC_BASE \
++	(soc_is_ar934x() ? AR934X_WMAC_BASE : AR933X_WMAC_BASE)
++
++#define AR93XX_OTP_BASE \
++	(soc_is_ar934x() ? AR934X_OTP_BASE : AR9300_OTP_BASE)
++#define AR93XX_OTP_STATUS \
++	(soc_is_ar934x() ? AR934X_OTP_STATUS : AR9300_OTP_STATUS)
++#define AR93XX_OTP_READ_DATA \
++	(soc_is_ar934x() ? AR934X_OTP_READ_DATA : AR9300_OTP_READ_DATA)
++
 +static bool __init
 +ar93xx_wmac_otp_read_word(void __iomem *base, int addr, u32 *data)
 +{
 +	int timeout = 1000;
 +	u32 val;
 +
-+	__raw_readl(base + AR9300_OTP_BASE + (4 * addr));
++	__raw_readl(base + AR93XX_OTP_BASE + (4 * addr));
 +	while (timeout--) {
-+		val = __raw_readl(base + AR9300_OTP_STATUS);
++		val = __raw_readl(base + AR93XX_OTP_STATUS);
 +		if ((val & AR9300_OTP_STATUS_TYPE) == AR9300_OTP_STATUS_VALID)
 +			break;
 +
@@ -22,7 +34,7 @@
 +	if (!timeout)
 +		return false;
 +
-+	*data = __raw_readl(base + AR9300_OTP_READ_DATA);
++	*data = __raw_readl(base + AR93XX_OTP_READ_DATA);
 +	return true;
 +}
 +
@@ -98,7 +110,7 @@
 +	int mac_start = 2, mac_end = 8;
 +
 +	BUG_ON(!soc_is_ar933x() && !soc_is_ar934x());
-+	base = ioremap_nocache(AR933X_WMAC_BASE, AR933X_WMAC_SIZE);
++	base = ioremap_nocache(AR93XX_WMAC_BASE, AR93XX_WMAC_SIZE);
 +	while (addr > sizeof(hdr)) {
 +		if (!ar93xx_wmac_otp_read(base, addr, hdr, sizeof(hdr)))
 +			break;
@@ -163,4 +175,18 @@
 +
  /*
   * DDR_CTRL block
+  */
+@@ -149,6 +157,13 @@
+ #define AR934X_DDR_REG_FLUSH_PCIE	0xa8
+ #define AR934X_DDR_REG_FLUSH_WMAC	0xac
+ 
++#define AR934X_OTP_BASE					0x30000
++#define AR934X_OTP_STATUS				0x31018
++#define AR934X_OTP_READ_DATA				0x3101c
++#define AR934X_OTP_INTF2_ADDRESS			0x31008
++#define AR934X_OTP_INTF3_ADDRESS			0x3100c
++#define AR934X_OTP_PGENB_SETUP_HOLD_TIME_ADDRESS	0x31034
++
+ /*
+  * PLL block
   */
