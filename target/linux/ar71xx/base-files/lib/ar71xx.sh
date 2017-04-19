@@ -184,6 +184,9 @@ tplink_board_detect() {
 	"001301"*)
 		model="TP-Link TL-MR13U"
 		;;
+	"002201"*)
+		model="TP-Link TL-MR22U"
+		;;
 	"007260"*)
 		model="TellStick ZNet Lite"
 		;;
@@ -1230,6 +1233,9 @@ ar71xx_board_detect() {
 		;;
 	*"TL-MR13U v1")
 		name="tl-mr13u"
+		;;
+	*"TL-MR22U v1")
+		name="tl-mr22u"
 		;;
 	*"TL-MR3020")
 		name="tl-mr3020"

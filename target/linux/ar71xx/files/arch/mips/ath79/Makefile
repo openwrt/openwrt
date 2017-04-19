@@ -211,6 +211,7 @@ obj-$(CONFIG_ATH79_MACH_TEW_732BR)		+= mach-tew-732br.o
 obj-$(CONFIG_ATH79_MACH_TEW_823DRU)		+= mach-tew-823dru.o
 obj-$(CONFIG_ATH79_MACH_TL_MR11U)		+= mach-tl-mr11u.o
 obj-$(CONFIG_ATH79_MACH_TL_MR13U)		+= mach-tl-mr13u.o
+obj-$(CONFIG_ATH79_MACH_TL_MR22U)		+= mach-tl-mr22u.o
 obj-$(CONFIG_ATH79_MACH_TL_MR3020)		+= mach-tl-mr3020.o
 obj-$(CONFIG_ATH79_MACH_TL_MR3X20)		+= mach-tl-mr3x20.o
 obj-$(CONFIG_ATH79_MACH_TL_MR6400)		+= mach-tl-mr6400.o

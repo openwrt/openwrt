@@ -49,6 +49,17 @@ define Device/tl-mr13u-v1
 endef
 TARGET_DEVICES += tl-mr13u-v1
 
+define Device/tl-mr22u-v1
+  $(Device/tplink-8mlzma)
+  DEVICE_TITLE := TP-LINK TL-MR22U v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+  BOARDNAME := TL-MR22U
+  DEVICE_PROFILE := TLMR22U
+  TPLINK_HWID := 0x00220101
+  CONSOLE := ttyS0,115200
+endef
+TARGET_DEVICES += tl-mr22u-v1
+
 define Device/tl-mr3020-v1
   $(Device/tplink-4mlzma)
   DEVICE_TITLE := TP-LINK TL-MR3020 v1
