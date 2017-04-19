@@ -1,5 +1,5 @@
 Linux is now one of the most widespread operating system for embedded devices due
-to its openess as well as the wide variety of platforms it can run on. Many
+to its openness as well as the wide variety of platforms it can run on. Many
 manufacturer actually use it in firmware you can find on many devices: DVB-T 
 decoders, routers, print servers, DVD players ... Most of the time the stock 
 firmware is not really open to the consumer, even if it uses open source software.
@@ -283,7 +283,7 @@ booting servers on your development station, and keep the original firmware on t
 till you are sure you can replace it. This also prevents your device from being flashed,
 and potentially bricked every time you want to test a modification on the kernel/filesystem.
 
-If your device needs to be flashed every time you load a firmware, the bootlader might
+If your device needs to be flashed every time you load a firmware, the bootloader might
 only accept a specific firmware format to be loaded, so that you will have to 
 understand the firmware format as well.
 
@@ -398,7 +398,7 @@ static void __exit device_mtd_cleanup(void);
 
 static struct mtd_info *device_mtd_info;
 
-static struct map_info devicd_map = {
+static struct map_info device_map = {
        .name = "device",
        .size = WINDOW_SIZE,
        .bankwidth = BUSWIDTH,
@@ -439,7 +439,7 @@ static int __init device_mtd_init(void)
                                }
                        }
 
-                       add_mtd_partitions(devicd_mtd_info, parsed_parts, parsed_nr_parts);
+                       add_mtd_partitions(device_mtd_info, parsed_parts, parsed_nr_parts);
 
                        return 0;
                }
@@ -539,7 +539,7 @@ A partial kernel configuration which is either named \texttt{config-default} or 
 This kernel configuration will only contain the relevant symbols to support your target and can be changed using \texttt{make kernel\_menuconfig}.
 
 To patch the kernel sources with the patches required to support your hardware, you will have to drop them in \texttt{patches} or in \texttt{patches-2.6.x} if there are specific
-changes between kernel versions. Additionnaly, if you want to avoid creating a patch that will create files, you can put those files into \texttt{files} or \texttt{files-2.6.x}
+changes between kernel versions. Additionally, if you want to avoid creating a patch that will create files, you can put those files into \texttt{files} or \texttt{files-2.6.x}
 with the same directory structure that the kernel uses (e.g: drivers/mtd/maps, arch/mips ..).
 
 The build system will require you to create a \texttt{target/linux/board/image/Makefile}:
