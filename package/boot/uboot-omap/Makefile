@@ -19,6 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define U-Boot/Default
   BUILD_TARGET:=omap
   UBOOT_IMAGE:=u-boot.img MLO
+  UENV:=default
 endef
 
 define U-Boot/omap4_panda
@@ -45,6 +46,7 @@ UBOOT_TARGETS:=omap4_panda am335x_evm omap3_overo omap3_beagle
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)
 	$(CP) $(patsubst %,$(PKG_BUILD_DIR)/%,$(UBOOT_IMAGE)) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)/
+	$(CP) ./files/uEnv-$(UENV).txt $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)/uEnv.txt
 endef
 
 $(eval $(call BuildPackage/U-Boot))
