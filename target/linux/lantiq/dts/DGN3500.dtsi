@@ -75,7 +75,22 @@
 		compatible = "realtek,rtl8366rb";
 		gpio-sda = <&gpio 35 GPIO_ACTIVE_HIGH>;
 		gpio-sck = <&gpio 37 GPIO_ACTIVE_HIGH>;
+
+		realtek,initvals = <
+			0x0000 0x0830
+			0x0400 0x8130
+			0x000A 0x83ED
+			0x0F51 0x0017
+			0x02F5 0x0048
+			0x02FA 0xFFDF
+			0x02FB 0xFFE0
+			0x0450 0x0000
+			0x0401 0x0000
+			0x0431 0x0960
+		>;
 	};
+
+
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
