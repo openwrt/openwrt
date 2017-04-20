@@ -3,23 +3,23 @@
 #include "PSG1218.dtsi"
 
 / {
-	compatible = "PSG1218", "ralink,mt7620a-soc";
-	model = "Phicomm PSG1218";
+	compatible = "PSG1218K2C", "ralink,mt7620a-soc";
+	model = "Phicomm PSG1218K2C";
 
 	gpio-leds {
 		compatible = "gpio-leds";
 		blue {
-			label = "psg1218:blue:status";
+			label = "psg1218k2c:blue:status";
 			gpios = <&gpio0 10 1>;
 		};
 
 		yellow {
-			label = "psg1218:yellow:status";
+			label = "psg1218k2c:yellow:status";
 			gpios = <&gpio0 11 1>;
 		};
 
 		red {
-			label = "psg1218:red:status";
+			label = "psg1218k2c:red:status";
 				gpios = <&gpio0 8 0>;
 		};
 	};
@@ -28,8 +28,13 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd", "pa";
+			ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd";
 			ralink,function = "gpio";
+		};
+
+		pa {
+			ralink,group = "pa";
+			ralink,function = "pa";
 		};
 	};
 };

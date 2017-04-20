@@ -113,6 +113,7 @@ platform_check_image() {
 	pbr-m1|\
 	psg1208|\
 	psg1218|\
+	psg1218k2c|\
 	psr-680w|\
 	px-4885|\
 	rb750gr3|\
