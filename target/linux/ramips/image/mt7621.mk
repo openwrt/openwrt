@@ -245,6 +245,14 @@ define Device/wsr-600
 endef
 TARGET_DEVICES += wsr-600
 
+define Device/zbt-we1326
+  DTS := ZBT-WE1326
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := ZBT WE1326
+  DEVICE_PACKAGES := kmod-usb3 kmod-sdhci-mt7620
+endef
+TARGET_DEVICES += zbt-we1326
+
 define Device/zbt-wg2626
   DTS := ZBT-WG2626
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
