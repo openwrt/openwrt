@@ -503,6 +503,45 @@ endef
 $(eval $(call KernelPackage,usb-serial-ch341))
 
 
+define KernelPackage/usb-serial-edgeport
+  TITLE:=Support for Digi Edgeport devices
+  KCONFIG:=CONFIG_USB_SERIAL_EDGEPORT
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/io_edgeport.ko
+  AUTOLOAD:=$(call AutoProbe,io_edgeport)
+  $(call AddDepends/usb-serial)
+endef
+
+define KernelPackage/usb-serial-edgeport/description
+ Kernel support for Inside Out Networks (Digi)
+	Edgeport/4
+	Rapidport/4
+	Edgeport/4t
+	Edgeport/2
+	Edgeport/4i
+	Edgeport/2i
+	Edgeport/421
+	Edgeport/21
+	Edgeport/8
+	Edgeport/8 Dual
+	Edgeport/2D8
+	Edgeport/4D8
+	Edgeport/8i
+	Edgeport/2 DIN
+	Edgeport/4 DIN
+	Edgeport/16 Dual
+endef
+
+define KernelPackage/usb-serial-edgeport/install
+	$(INSTALL_DIR) $(1)/lib/firmware/edgeport
+	$(INSTALL_DATA) $(LINUX_DIR)/firmware/edgeport/boot.fw $(1)/lib/firmware/edgeport/
+	$(INSTALL_DATA) $(LINUX_DIR)/firmware/edgeport/boot2.fw $(1)/lib/firmware/edgeport/
+	$(INSTALL_DATA) $(LINUX_DIR)/firmware/edgeport/down.fw $(1)/lib/firmware/edgeport/
+	$(INSTALL_DATA) $(LINUX_DIR)/firmware/edgeport/down2.fw $(1)/lib/firmware/edgeport/
+endef
+
+$(eval $(call KernelPackage,usb-serial-edgeport))
+
+
 define KernelPackage/usb-serial-ftdi
   TITLE:=Support for FTDI devices
   KCONFIG:=CONFIG_USB_SERIAL_FTDI_SIO
