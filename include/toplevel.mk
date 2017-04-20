@@ -129,7 +129,7 @@ menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
 	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
 		cp $(HOME)/.openwrt/defconfig .config; \
 	fi
-	$< Config.in
+	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; $< Config.in
 
 prepare_kernel_conf: .config FORCE
 
