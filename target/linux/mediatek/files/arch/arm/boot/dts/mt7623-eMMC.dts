@@ -474,6 +474,65 @@
 &gmac2 {
 	mac-address = [00 11 22 33 44 55];
 	status = "okay";
+
+	phy-handle = <&phy5>;
+};
+
+&mdio0 {
+	switch@0 {
+		compatible = "mediatek,mt7530";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&eth_default>;
+
+		core-supply = <&mt6323_vpa_reg>;
+		io-supply = <&mt6323_vemc3v3_reg>;
+		reset-gpios = <&pio 33 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			port@0 {
+				reg = <0>;
+				label = "lan0";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "trgmii";
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+
+	phy5: ethernet-phy@5 {
+		reg = <5>;
+		phy-mode = "rgmii-rxid";
+	};
 };
 
 &pwm {
