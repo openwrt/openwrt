@@ -1,4 +1,4 @@
-From 8c1440a0934dd8b3ad6aae48d6653b5ba6fce8a1 Mon Sep 17 00:00:00 2001
+From 2285cd400a10b1bde5472fe1cec3311300ee943c Mon Sep 17 00:00:00 2001
 From: Jo-Philipp Wich <jo@mein.io>
 Date: Tue, 14 Mar 2017 22:21:34 +0100
 Subject: [PATCH] networking: add LEDE nslookup applet
@@ -12,16 +12,16 @@ and the libresolv primitives to parse received DNS responses.
 
 Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 ---
- networking/nslookup_lede.c | 869 +++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 875 insertions(+)
+ networking/nslookup_lede.c | 893 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 893 insertions(+)
  create mode 100644 networking/nslookup_lede.c
 
 diff --git a/networking/nslookup_lede.c b/networking/nslookup_lede.c
 new file mode 100644
-index 0000000..fe927ad
+index 000000000..6f1f86502
 --- /dev/null
 +++ b/networking/nslookup_lede.c
-@@ -0,0 +1,869 @@
+@@ -0,0 +1,893 @@
 +/*
 + * nslookup_lede - musl compatible replacement for busybox nslookup
 + *
@@ -109,7 +109,9 @@ index 0000000..fe927ad
 +	{ ns_t_soa,   "SOA"   },
 +	{ ns_t_ns,    "NS"    },
 +	{ ns_t_a,     "A"     },
++#if ENABLE_FEATURE_IPV6
 +	{ ns_t_aaaa,  "AAAA"  },
++#endif
 +	{ ns_t_cname, "CNAME" },
 +	{ ns_t_mx,    "MX"    },
 +	{ ns_t_txt,   "TXT"   },
@@ -176,6 +178,7 @@ index 0000000..fe927ad
 +			printf("Name:\t%s\nAddress: %s\n", ns_rr_name(rr), astr);
 +			break;
 +
++#if ENABLE_FEATURE_IPV6
 +		case ns_t_aaaa:
 +			if (rdlen != 16) {
 +				//fprintf(stderr, "Unexpected AAAA record length\n");
@@ -184,6 +187,7 @@ index 0000000..fe927ad
 +			inet_ntop(AF_INET6, ns_rr_rdata(rr), astr, sizeof(astr));
 +			printf("%s\thas AAAA address %s\n", ns_rr_name(rr), astr);
 +			break;
++#endif
 +
 +		case ns_t_ns:
 +			if (!format)
@@ -326,6 +330,7 @@ index 0000000..fe927ad
 +		}
 +	}
 +
++#if ENABLE_FEATURE_IPV6
 +	if (inet_pton(AF_INET6, addrstr, &lsa->u.sin6.sin6_addr)) {
 +		lsa->u.sin6.sin6_family = AF_INET6;
 +		lsa->u.sin6.sin6_port = htons(port);
@@ -333,6 +338,7 @@ index 0000000..fe927ad
 +		lsa->len = sizeof(lsa->u.sin6);
 +		return 0;
 +	}
++#endif
 +
 +	if (!scope && inet_pton(AF_INET, addrstr, &lsa->u.sin.sin_addr)) {
 +		lsa->u.sin.sin_family = AF_INET;
@@ -387,6 +393,7 @@ index 0000000..fe927ad
 +	return (unsigned long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 +}
 +
++#if ENABLE_FEATURE_IPV6
 +static void to_v4_mapped(len_and_sockaddr *a)
 +{
 +	if (a->u.sa.sa_family != AF_INET)
@@ -403,6 +410,7 @@ index 0000000..fe927ad
 +	a->u.sin6.sin6_scope_id = 0;
 +	a->len = sizeof(a->u.sin6);
 +}
++#endif
 +
 +
 +/*
@@ -414,7 +422,9 @@ index 0000000..fe927ad
 +	int fd;
 +	int timeout = default_timeout * 1000, retry_interval, servfail_retry = 0;
 +	len_and_sockaddr from = { };
++#if ENABLE_FEATURE_IPV6
 +	int one = 1;
++#endif
 +	int recvlen = 0;
 +	int n_replies = 0;
 +	struct pollfd pfd;
@@ -424,6 +434,7 @@ index 0000000..fe927ad
 +	from.u.sa.sa_family = AF_INET;
 +	from.len = sizeof(from.u.sin);
 +
++#if ENABLE_FEATURE_IPV6
 +	for (nn = 0; nn < n_ns; nn++) {
 +		if (ns[nn].addr.u.sa.sa_family == AF_INET6) {
 +			from.u.sa.sa_family = AF_INET6;
@@ -431,15 +442,18 @@ index 0000000..fe927ad
 +			break;
 +		}
 +	}
++#endif
 +
 +	/* Get local address and open/bind a socket */
 +	fd = socket(from.u.sa.sa_family, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
 +
++#if ENABLE_FEATURE_IPV6
 +	/* Handle case where system lacks IPv6 support */
 +	if (fd < 0 && from.u.sa.sa_family == AF_INET6 && errno == EAFNOSUPPORT) {
 +		fd = socket(AF_INET, SOCK_DGRAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0);
 +		from.u.sa.sa_family = AF_INET;
 +	}
++#endif
 +
 +	if (fd < 0)
 +		return -1;
@@ -449,6 +463,7 @@ index 0000000..fe927ad
 +		return -1;
 +	}
 +
++#if ENABLE_FEATURE_IPV6
 +	/* Convert any IPv4 addresses in a mixed environment to v4-mapped */
 +	if (from.u.sa.sa_family == AF_INET6) {
 +		setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &one, sizeof(one));
@@ -456,6 +471,7 @@ index 0000000..fe927ad
 +		for (nn = 0; nn < n_ns; nn++)
 +			to_v4_mapped(&ns[nn].addr);
 +	}
++#endif
 +
 +	pfd.fd = fd;
 +	pfd.events = POLLIN;
@@ -585,7 +601,12 @@ index 0000000..fe927ad
 +			for (aip = ai; aip; aip = aip->ai_next) {
 +				if (aip->ai_addr->sa_family != AF_INET &&
 +				    aip->ai_addr->sa_family != AF_INET6)
-+				    continue;
++					continue;
++
++#if ! ENABLE_FEATURE_IPV6
++				if (aip->ai_addr->sa_family != AF_INET)
++					continue;
++#endif
 +
 +				tmp = realloc(*ns, sizeof(**ns) * (*n_ns + 1));
 +
@@ -685,6 +706,7 @@ index 0000000..fe927ad
 +	static char buf[INET6_ADDRSTRLEN + 1 + IFNAMSIZ + 1 + 5 + 1];
 +	char *p = buf;
 +
++#if ENABLE_FEATURE_IPV6
 +	if (a->u.sa.sa_family == AF_INET6) {
 +		inet_ntop(AF_INET6, &a->u.sin6.sin6_addr, buf, sizeof(buf));
 +		p += strlen(p);
@@ -696,12 +718,14 @@ index 0000000..fe927ad
 +			}
 +		}
 +	}
-+	else {
++	else
++#endif
++	{
 +		inet_ntop(AF_INET, &a->u.sin.sin_addr, buf, sizeof(buf));
 +		p += strlen(p);
 +	}
 +
-+	sprintf(p, "#%hu", ntohs(a->u.sin6.sin6_port));
++	sprintf(p, "#%hu", ntohs(a->u.sin.sin_port));
 +
 +	return buf;
 +}
@@ -892,5 +916,5 @@ index 0000000..fe927ad
 +	return rc;
 +}
 -- 
-2.1.4
+2.11.0
 
