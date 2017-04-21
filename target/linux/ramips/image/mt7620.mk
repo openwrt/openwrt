@@ -326,6 +326,7 @@ define Device/psg1218a
   DTS := PSG1218A
   DEVICE_TITLE := Phicomm PSG1218 rev.Ax
   DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += psg1218
 endef
 TARGET_DEVICES += psg1218a
 
@@ -333,6 +334,7 @@ define Device/psg1218b
   DTS := PSG1218B
   DEVICE_TITLE := Phicomm PSG1218 rev.Bx
   DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += psg1218
 endef
 TARGET_DEVICES += psg1218b
 
