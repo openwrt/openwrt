@@ -32,11 +32,15 @@ define Image/Build/squashfs
 	$(call Image/Build/SysupgradeCombined,eMMC,squashfs)
 
 	$(call Image/BuilduImage,NAND)
+	$(call Image/BuilduImage,NAND-ePHY)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/BuilduImage,NAND,-initramfs)
+	$(call Image/BuilduImage,NAND-ePHY,-initramfs)
 	$(CP) $(KDIR)/uImage-NAND-initramfs $(BIN_DIR)/$(IMG_PREFIX)-uImage-NAND-initramfs
+	$(CP) $(KDIR)/uImage-NAND-ePHY-initramfs $(BIN_DIR)/$(IMG_PREFIX)-uImage-NAND-ePHY-initramfs
 endif
 	$(call Image/Build/SysupgradeNAND,NAND,$(1),$(KDIR)/uImage-NAND)
+	$(call Image/Build/SysupgradeNAND,NAND-ePHY,$(1),$(KDIR)/uImage-NAND-ePHY)
 endef
 
 define Image/Build
