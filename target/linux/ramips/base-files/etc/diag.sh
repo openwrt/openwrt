@@ -104,8 +104,8 @@ get_status_led() {
 	psg1208)
 		status_led="$board:white:wps"
 		;;
-	psg1218|\
-	psg1218k2c)
+	psg1218a|\
+	psg1218b)
 		status_led="$board:yellow:status"
 		;;
 	cy-swr1100|\

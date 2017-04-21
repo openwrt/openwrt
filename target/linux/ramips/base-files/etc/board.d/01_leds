@@ -287,8 +287,8 @@ pbr-m1)
 psg1208)
 	set_wifi_led "$board:white:wlan2g"
 	;;
-psg1218\|
-psg1218k2c)
+psg1218a\|
+psg1218b)
 	ucidef_set_led_netdev "Network" "Network" "$board:blue:status" "eth0"
 	ucidef_set_led_default "status" "STATUS" "$board:yellow:status" "0"
 	;;

@@ -322,19 +322,19 @@ define Device/psg1208
 endef
 TARGET_DEVICES += psg1208
 
-define Device/psg1218
-  DTS := PSG1218
-  DEVICE_TITLE := Phicomm PSG1218
+define Device/psg1218a
+  DTS := PSG1218A
+  DEVICE_TITLE := Phicomm PSG1218 rev.Ax
   DEVICE_PACKAGES := kmod-mt76x2
 endef
-TARGET_DEVICES += psg1218
+TARGET_DEVICES += psg1218a
 
-define Device/psg1218k2c
-  DTS := PSG1218K2C
-  DEVICE_TITLE := Phicomm PSG1218K2C
+define Device/psg1218b
+  DTS := PSG1218B
+  DEVICE_TITLE := Phicomm PSG1218 rev.Bx
   DEVICE_PACKAGES := kmod-mt76x2
 endef
-TARGET_DEVICES += psg1218k2c
+TARGET_DEVICES += psg1218b
 
 define Device/rp-n53
   DTS := RP-N53

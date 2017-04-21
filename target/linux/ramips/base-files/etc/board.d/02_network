@@ -95,7 +95,7 @@ ramips_setup_interfaces()
 	oy-0001|\
 	pbr-m1|\
 	psg1208|\
-	psg1218k2c|\
+	psg1218a|\
 	r6220|\
 	sap-g3200u3|\
 	sk-wb8|\
@@ -115,7 +115,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
-	psg1218)
+	psg1218b)
 		ucidef_add_switch "switch0" \
 			"0:lan:3" "1:lan:2" "2:lan:1" "3:wan" "6@eth0"
 		;;
