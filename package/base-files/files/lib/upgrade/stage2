@@ -1,0 +1,50 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+export IMAGE="$1"
+COMMAND="$2"
+
+export ARGV="$IMAGE"
+export ARGC=1
+
+export SAVE_CONFIG=1
+export SAVE_PARTITIONS=1
+
+export INTERACTIVE=0
+export VERBOSE=1
+export CONFFILES=/tmp/sysupgrade.conffiles
+export CONF_TAR=/tmp/sysupgrade.tgz
+
+
+[ -f "$CONF_TAR" ] || export SAVE_CONFIG=0
+[ -f /tmp/sysupgrade.always.overwrite.bootdisk.partmap ] && export SAVE_PARTITIONS=0
+
+include /lib/upgrade
+
+
+killall -9 telnetd
+killall -9 dropbear
+killall -9 ash
+
+kill_remaining TERM
+sleep 3
+kill_remaining KILL 1
+
+sleep 1
+
+
+if [ -n "$IMAGE" ] && type 'platform_pre_upgrade' >/dev/null 2>/dev/null; then
+	IS_PRE_UPGRADE=1 platform_pre_upgrade "$IMAGE"
+
+	# Needs to be unset again because of busybox weirdness ...
+	IS_PRE_UPGRADE=
+fi
+
+if [ -n "$(rootfs_type)" ]; then
+	echo "Switching to ramdisk..."
+	run_ramfs "$COMMAND"
+else
+	exec /bin/busybox ash -c "$COMMAND"
+fi

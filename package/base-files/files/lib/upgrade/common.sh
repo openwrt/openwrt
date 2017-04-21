@@ -56,7 +56,6 @@ run_ramfs() { # <command> [...]
 		/bin/rm /usr/bin/basename /bin/kill /bin/chmod /usr/bin/find \
 		/bin/mknod
 
-	install_bin /bin/uclient-fetch /bin/wget
 	install_bin /sbin/mtd
 	install_bin /sbin/mount_root
 	install_bin /sbin/snapshot
@@ -96,51 +95,37 @@ run_ramfs() { # <command> [...]
 	exec /bin/busybox ash -c "$*"
 }
 
-kill_remaining() { # [ <signal> ]
+kill_remaining() { # [ <signal> [ <loop> ] ]
 	local sig="${1:-TERM}"
+	local loop="${2:-0}"
+	local run=true
+	local stat
+
 	echo -n "Sending $sig to remaining processes ... "
 
-	local my_pid=$$
-	local my_ppid=$(cut -d' ' -f4  /proc/$my_pid/stat)
-	local my_ppisupgraded=
-	grep -q upgraded /proc/$my_ppid/cmdline >/dev/null && {
-		local my_ppisupgraded=1
-	}
-	
-	local stat
-	for stat in /proc/[0-9]*/stat; do
-		[ -f "$stat" ] || continue
+	while $run; do
+		run=false
+		for stat in /proc/[0-9]*/stat; do
+			[ -f "$stat" ] || continue
 
-		local pid name state ppid rest
-		read pid name state ppid rest < $stat
-		name="${name#(}"; name="${name%)}"
+			local pid name state ppid rest
+			read pid name state ppid rest < $stat
+			name="${name#(}"; name="${name%)}"
 
-		local cmdline
-		read cmdline < /proc/$pid/cmdline
+			# Skip PID1, ourself and our children
+			[ $pid -ne 1 -a $pid -ne $$ -a $ppid -ne $$ ] || continue
 
-		# Skip kernel threads
-		[ -n "$cmdline" ] || continue
+			local cmdline
+			read cmdline < /proc/$pid/cmdline
 
-		if [ $$ -eq 1 ] || [ $my_ppid -eq 1 ] && [ -n "$my_ppisupgraded" ]; then
-			# Running as init process, kill everything except me
-			if [ $pid -ne $$ ] && [ $pid -ne $my_ppid ]; then
-				echo -n "$name "
-				kill -$sig $pid 2>/dev/null
-			fi
-		else 
-			case "$name" in
-				# Skip essential services
-				*procd*|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*|*hostapd*|*wpa_supplicant*|*nas*|*relayd*) : ;;
+			# Skip kernel threads
+			[ -n "$cmdline" ] || continue
 
-				# Killable process
-				*)
-					if [ $pid -ne $$ ] && [ $ppid -ne $$ ]; then
-						echo -n "$name "
-						kill -$sig $pid 2>/dev/null
-					fi
-				;;
-			esac
-		fi
+			echo -n "$name "
+			kill -$sig $pid 2>/dev/null
+
+			[ $loop -eq 1 ] && run=true
+		done
 	done
 	echo ""
 }
@@ -175,28 +160,31 @@ v() {
 	[ "$VERBOSE" -ge 1 ] && echo "$@"
 }
 
+json_string() {
+	local v="$1"
+	v="${v//\\/\\\\}"
+	v="${v//\"/\\\"}"
+	echo "\"$v\""
+}
+
 rootfs_type() {
 	/bin/mount | awk '($3 ~ /^\/$/) && ($5 !~ /rootfs/) { print $5 }'
 }
 
 get_image() { # <source> [ <command> ]
 	local from="$1"
-	local conc="$2"
-	local cmd
+	local cat="$2"
 
-	case "$from" in
-		http://*|ftp://*) cmd="wget -O- -q";;
-		*) cmd="cat";;
-	esac
-	if [ -z "$conc" ]; then
-		local magic="$(eval $cmd \"$from\" 2>/dev/null | dd bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"')"
+	if [ -z "$cat" ]; then
+		local magic="$(dd if="$from" bs=2 count=1 2>/dev/null | hexdump -n 2 -e '1/1 "%02x"')"
 		case "$magic" in
-			1f8b) conc="zcat";;
-			425a) conc="bzcat";;
+			1f8b) cat="zcat";;
+			425a) cat="bzcat";;
+			*) cat="cat";;
 		esac
 	fi
 
-	eval "$cmd \"$from\" 2>/dev/null ${conc:+| $conc}"
+	$cat "$from" 2>/dev/null
 }
 
 get_magic_word() {
@@ -320,12 +308,14 @@ default_do_upgrade() {
 	fi
 }
 
-do_upgrade() {
+do_upgrade_stage2() {
 	v "Performing system upgrade..."
-	if type 'platform_do_upgrade' >/dev/null 2>/dev/null; then
-		platform_do_upgrade "$ARGV"
+	if [ -n "$do_upgrade" ]; then
+		$do_upgrade "$IMAGE"
+	elif type 'platform_do_upgrade' >/dev/null 2>/dev/null; then
+		platform_do_upgrade "$IMAGE"
 	else
-		default_do_upgrade "$ARGV"
+		default_do_upgrade "$IMAGE"
 	fi
 
 	if [ "$SAVE_CONFIG" -eq 1 ] && type 'platform_copy_config' >/dev/null 2>/dev/null; then
@@ -333,12 +323,11 @@ do_upgrade() {
 	fi
 
 	v "Upgrade completed"
-	[ -n "$DELAY" ] && sleep "$DELAY"
-	ask_bool 1 "Reboot" && {
-		v "Rebooting system..."
-		umount -a
-		reboot -f
-		sleep 5
-		echo b 2>/dev/null >/proc/sysrq-trigger
-	}
+	sleep 1
+
+	v "Rebooting system..."
+	umount -a
+	reboot -f
+	sleep 5
+	echo b 2>/dev/null >/proc/sysrq-trigger
 }
