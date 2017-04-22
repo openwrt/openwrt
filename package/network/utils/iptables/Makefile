@@ -432,7 +432,7 @@ define Package/libxtables
  ABI_VERSION:=$(PKG_VERSION)
  DEPENDS:= \
 	+IPTABLES_CONNLABEL:libnetfilter-conntrack \
-	+IPTABLES_NFTABLES:libnfnetlink
+	+IPTABLES_NFTABLES:libnftnl
 endef
 
 TARGET_CPPFLAGS := \
