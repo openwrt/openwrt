@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2013 OpenWrt.org
+# Copyright (C) 2006-2017 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
-PKG_VERSION:=1.2.8
+PKG_VERSION:=1.2.11
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.zlib.net @SF/libpng
-PKG_MD5SUM:=44d667c142d7cda120332623eab69f40
+PKG_MD5SUM:=1c9f62f0778697a09d36121ead88e08e
 
 PKG_LICENSE:=Zlib
 PKG_LICENSE_FILES:=README
