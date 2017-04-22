@@ -13,17 +13,17 @@
 
 		wan {
 			label = "kn_rc:green:wan";
-			gpios = <&gpio0 38 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
 			label = "kn_rc:green:usb";
-			gpios = <&gpio0 39 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi {
 			label = "kn_rc:green:wifi";
-			gpios = <&gpio0 72 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
 		power {
@@ -67,6 +67,14 @@
 			gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
 };
 
 &spi0 {
