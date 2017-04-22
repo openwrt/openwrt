@@ -85,6 +85,7 @@ ramips_setup_interfaces()
 	hc5661a|\
 	hc5962|\
 	hlk-rm04|\
+	kn_rc|\
 	mac1200rv2|\
 	miwifi-mini|\
 	miwifi-nano|\
@@ -227,7 +228,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "0:wan" "6@eth0"
 		;;
-	kn_rc|\
 	kn_rf)
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6@eth0"
