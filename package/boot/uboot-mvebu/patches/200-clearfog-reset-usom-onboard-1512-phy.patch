@@ -1,4 +1,4 @@
-From 15d52c4067b8d8a1d7a002aec41c5e6c0a8678cd Mon Sep 17 00:00:00 2001
+From 98848106b9558244ae36a85229caabcdb57d0f7b Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
 Date: Fri, 23 Sep 2016 13:58:14 +0200
 Subject: [PATCH] clearfog: reset usom onboard 1512 phy
@@ -15,6 +15,8 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  board/solidrun/clearfog/clearfog.c | 4 ++++
  1 file changed, 4 insertions(+)
 
+diff --git a/board/solidrun/clearfog/clearfog.c b/board/solidrun/clearfog/clearfog.c
+index 2773f5957e..3a8257cac3 100644
 --- a/board/solidrun/clearfog/clearfog.c
 +++ b/board/solidrun/clearfog/clearfog.c
 @@ -131,8 +131,12 @@ int board_init(void)
@@ -30,3 +32,6 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	mdelay(10);
  
  	/* Init I2C IO expanders */
+-- 
+2.12.2
+

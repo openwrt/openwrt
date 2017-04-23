@@ -1,6 +1,20 @@
+diff --git a/configs/clearfog_defconfig b/configs/clearfog_defconfig
+index 41e94e6daf..f23e65e345 100644
+--- a/configs/clearfog_defconfig
++++ b/configs/clearfog_defconfig
+@@ -11,6 +11,7 @@ CONFIG_DEFAULT_DEVICE_TREE="armada-388-clearfog"
+ CONFIG_BOOTDELAY=3
+ CONFIG_SYS_CONSOLE_INFO_QUIET=y
+ # CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_HUSH_PARSER=y
+ CONFIG_SPL=y
+ CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x141
+ CONFIG_SPL_I2C_SUPPORT=y
+diff --git a/include/configs/clearfog.h b/include/configs/clearfog.h
+index 0c51d2a288..e52ba8145f 100644
 --- a/include/configs/clearfog.h
 +++ b/include/configs/clearfog.h
-@@ -107,7 +107,18 @@
+@@ -82,7 +82,18 @@
  /* Keep device tree and initrd in lower memory so the kernel can access them */
  #define CONFIG_EXTRA_ENV_SETTINGS	\
  	"fdt_high=0x10000000\0"		\
@@ -20,13 +34,3 @@
  
  /* SPL */
  /*
---- a/configs/clearfog_defconfig
-+++ b/configs/clearfog_defconfig
-@@ -3,6 +3,7 @@ CONFIG_ARCH_MVEBU=y
- CONFIG_SYS_MALLOC_F_LEN=0x2000
- CONFIG_TARGET_CLEARFOG=y
- CONFIG_DEFAULT_DEVICE_TREE="armada-388-clearfog"
-+CONFIG_HUSH_PARSER=y
- CONFIG_SPL=y
- # CONFIG_CMD_IMLS is not set
- # CONFIG_CMD_FLASH is not set
