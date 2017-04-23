@@ -1,7 +1,22 @@
-setenv bootargs console=ttyS0,115200n8 root=/dev/mmcblk0p2 rootfstype=squashfs rootwait overlay=/dev/mmcblk0p3
-setenv fdt_high 0x07a12000
+# Standard Boot-Script
+# use only well-known variable names provided by U-Boot Distro boot
+# This script assumes that there is a boot partition, 
+# and that the root partition is always the next one.
 
-fatload mmc 0:1 0x02000000 zImage
-fatload mmc 0:1 0x05F00000 armada-388-clearfog-pro.dtb
+# generate bootargs for rootfs on MMC
+if test "${devtype}" = "mmc"; then
+	setexpr lede_rootpart ${distro_bootpart} + 1
+	setenv bootargs ${bootargs} root=/dev/mmcblk${devnum}p${lede_rootpart} rootfstype=auto rootwait
+fi
 
-bootz 0x02000000 - 0x05F00000
+# here one could add logic for other rootfs device types such as scsi and usb
+
+# add console= option to bootargs, if any
+if test -n "${console}"; then
+	setenv bootargs ${bootargs} console=${console}
+fi
+
+echo "Booting Linux with ${bootargs}"
+load ${devtype} ${devnum}:${distro_bootpart} ${fdt_addr_r} ${fdtfile}
+load ${devtype} ${devnum}:${distro_bootpart} ${kernel_addr_r} zImage
+bootz ${kernel_addr_r} - ${fdt_addr_r}
