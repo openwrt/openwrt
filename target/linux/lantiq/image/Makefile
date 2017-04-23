@@ -513,6 +513,17 @@ define Device/BTHOMEHUBV5A
 endef
 TARGET_DEVICES += BTHOMEHUBV5A
 
+define Device/DM200
+  IMAGES := sysupgrade.bin factory.img
+  IMAGE/factory.img := $$(IMAGE/sysupgrade.bin) | netgear-dni
+  IMAGE_SIZE := 7872k
+  DEVICE_TITLE := Netgear DM200
+  NETGEAR_BOARD_ID := DM200
+  NETGEAR_HW_ID := 29765233+8+0+64+0+0
+endef
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+TARGET_DEVICES += DM200
+
 define Device/EASY80920NAND
   $(Device/lantiqFullImage)
   IMAGE_SIZE := 64512k

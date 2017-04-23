@@ -50,6 +50,9 @@ ARV7519RW22)
 BTHOMEHUBV5A)
 	ucidef_set_led_default "dimmed" "dimmed" "dimmed" "0"
 	;;
+DM200)
+	ucidef_set_led_netdev "lan" "lan" "dm200:green:lan" "eth0"
+	;;
 FRITZ7320)
 	ucidef_set_led_netdev "wifi" "wifi" "fritz7320:green:wlan" "wlan0"
 	;;
