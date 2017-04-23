@@ -7,9 +7,6 @@
 -	int delta;
 -
  	WARN_ON(skb->sk != NULL);
--	if (netlink_skb_is_mmaped(skb))
--		return skb;
--
 -	delta = skb->end - skb->tail;
 -	if (is_vmalloc_addr(skb->head) || delta * 2 < skb->truesize)
 -		return skb;
