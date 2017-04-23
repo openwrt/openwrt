@@ -251,8 +251,16 @@ run_hooks "" $sysupgrade_pre_upgrade
 
 install_bin /sbin/upgraded
 v "Commencing upgrade. All shell sessions will be closed now."
-ubus call system sysupgrade "{
-	\"prefix\": \"$RAM_ROOT\",
-	\"path\": $(json_string "$IMAGE"),
-	\"command\": \". /lib/functions.sh; include /lib/upgrade; do_upgrade_stage2\"
-}"
+
+COMMAND='. /lib/functions.sh; include /lib/upgrade; do_upgrade_stage2'
+
+if [ -n "$FAILSAFE" ]; then
+	printf '%s\x00%s\x00%s' "$RAM_ROOT" "$IMAGE" "$COMMAND" >/tmp/sysupgrade
+	lock -u /tmp/.failsafe
+else
+	ubus call system sysupgrade "{
+		\"prefix\": $(json_string "$RAM_ROOT"),
+		\"path\": $(json_string "$IMAGE"),
+		\"command\": $(json_string "$COMMAND")
+	}"
+fi
