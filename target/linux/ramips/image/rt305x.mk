@@ -639,6 +639,7 @@ TARGET_DEVICES += rt-n13u
 define Device/rut5xx
   DTS := RUT5XX
   DEVICE_TITLE := Teltonika RUT5XX
+  DEVICE_PACKAGES := om-watchdog
 endef
 TARGET_DEVICES += rut5xx
 
