@@ -1,4 +1,4 @@
-From 2285cd400a10b1bde5472fe1cec3311300ee943c Mon Sep 17 00:00:00 2001
+From 1188f159e0b0a9c07bed835c7313bedf5322a9e3 Mon Sep 17 00:00:00 2001
 From: Jo-Philipp Wich <jo@mein.io>
 Date: Tue, 14 Mar 2017 22:21:34 +0100
 Subject: [PATCH] networking: add LEDE nslookup applet
@@ -12,16 +12,16 @@ and the libresolv primitives to parse received DNS responses.
 
 Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 ---
- networking/nslookup_lede.c | 893 +++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 893 insertions(+)
+ networking/nslookup_lede.c | 894 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 894 insertions(+)
  create mode 100644 networking/nslookup_lede.c
 
 diff --git a/networking/nslookup_lede.c b/networking/nslookup_lede.c
 new file mode 100644
-index 000000000..6f1f86502
+index 000000000..f3e42d3bb
 --- /dev/null
 +++ b/networking/nslookup_lede.c
-@@ -0,0 +1,893 @@
+@@ -0,0 +1,894 @@
 +/*
 + * nslookup_lede - musl compatible replacement for busybox nslookup
 + *
@@ -760,6 +760,7 @@ index 000000000..6f1f86502
 +	applet_long_options = nslookup_longopts;
 +#endif
 +
++	opt_complementary = "q::";
 +	opts = getopt32(argv, "+q:*p:+r:+t:+s",
 +	                &type_strings, &default_port,
 +	                &default_retry, &default_timeout);
