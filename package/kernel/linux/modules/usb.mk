@@ -1322,6 +1322,19 @@ endef
 
 $(eval $(call KernelPackage,usb-net-kalmia))
 
+define KernelPackage/usb-net-pl
+  TITLE:=Prolific PL-2301/2302/25A1 based cables
+  KCONFIG:=CONFIG_USB_NET_PLUSB
+  FILES:=$(LINUX_DIR)/drivers/net/usb/plusb.ko
+  AUTOLOAD:=$(call AutoProbe,plusb)
+  $(call AddDepends/usb-net)
+endef
+
+define KernelPackage/usb-net-pl/description
+ Kernel support for Prolific PL-2301/2302/25A1 based cables
+endef
+
+$(eval $(call KernelPackage,usb-net-pl))
 
 define KernelPackage/usb-hid
   TITLE:=Support for USB Human Input Devices
