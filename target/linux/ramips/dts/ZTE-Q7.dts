@@ -89,8 +89,6 @@
 };
 
 &ethernet {
-	pinctrl-names = "default";
-	pinctrl-0 = <&ephy_pins>;
 	mtd-mac-address = <&factory 0x4>;
 	mediatek,portmap = "wllll";
 };
@@ -109,4 +107,8 @@
 
 &ohci {
 	status = "okay";
+};
+
+&gsw {
+	mediatek,port4 = "ephy";
 };
