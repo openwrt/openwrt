@@ -48,6 +48,15 @@ get_gpio() {
 			return 17
 			;;
 		esac
+	elif [ -r /lib/ramips.sh ]; then
+		. /lib/ramips.sh
+		local board=$(ramips_board_name)
+
+		case "$board" in
+		"rut5xx")
+			return 11
+			;;
+		esac
 	else
 		#we assume it is om1p in this case
 		return 3
