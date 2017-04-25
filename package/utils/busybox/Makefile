@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.25.1
+PKG_VERSION:=1.25.2
 PKG_RELEASE:=3
 PKG_FLAGS:=essential
 
