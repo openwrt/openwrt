@@ -77,6 +77,7 @@
 
 #define AR7240_REG_CPU_PORT		0x78
 #define AR7240_MIRROR_PORT_S		4
+#define AR7240_MIRROR_PORT_M		BITM(4)
 #define AR7240_CPU_PORT_EN		BIT(8)
 
 #define AR7240_REG_MIB_FUNCTION0	0x80
@@ -1013,6 +1014,134 @@ ar7240_get_port_stats(struct switch_dev *dev, int port,
 	return 0;
 }
 
+static int
+ar7240_set_mirror_monitor_port(struct switch_dev *dev,
+				const struct switch_attr *attr,
+				struct switch_val *val)
+{
+	struct ar7240sw *as = sw_to_ar7240(dev);
+	struct mii_bus *mii = as->mii_bus;
+
+	int port = val->value.i;
+
+	if (port > 15)
+		return -EINVAL;
+
+	ar7240sw_reg_rmw(mii, AR7240_REG_CPU_PORT,
+		AR7240_MIRROR_PORT_M << AR7240_MIRROR_PORT_S,
+		port << AR7240_MIRROR_PORT_S);
+
+	return 0;
+}
+
+static int
+ar7240_get_mirror_monitor_port(struct switch_dev *dev,
+				const struct switch_attr *attr,
+				struct switch_val *val)
+{
+	struct ar7240sw *as = sw_to_ar7240(dev);
+	struct mii_bus *mii = as->mii_bus;
+
+	u32 ret;
+
+	ret = ar7240sw_reg_read(mii, AR7240_REG_CPU_PORT);
+	val->value.i = (ret >> AR7240_MIRROR_PORT_S) & AR7240_MIRROR_PORT_M;
+
+	return 0;
+}
+
+static int
+ar7240_set_mirror_rx(struct switch_dev *dev, const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar7240sw *as = sw_to_ar7240(dev);
+	struct mii_bus *mii = as->mii_bus;
+
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	if (val && val->value.i == 1)
+		ar7240sw_reg_set(mii, AR7240_REG_PORT_CTRL(port),
+			AR7240_PORT_CTRL_MIRROR_RX);
+	else
+		ar7240sw_reg_rmw(mii, AR7240_REG_PORT_CTRL(port),
+			AR7240_PORT_CTRL_MIRROR_RX, 0);
+
+	return 0;
+}
+
+static int
+ar7240_get_mirror_rx(struct switch_dev *dev, const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar7240sw *as = sw_to_ar7240(dev);
+	struct mii_bus *mii = as->mii_bus;
+
+	u32 ctrl;
+
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	ctrl = ar7240sw_reg_read(mii, AR7240_REG_PORT_CTRL(port));
+
+	if ((ctrl & AR7240_PORT_CTRL_MIRROR_RX) == AR7240_PORT_CTRL_MIRROR_RX)
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+
+	return 0;
+}
+
+static int
+ar7240_set_mirror_tx(struct switch_dev *dev, const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar7240sw *as = sw_to_ar7240(dev);
+	struct mii_bus *mii = as->mii_bus;
+
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	if (val && val->value.i == 1)
+		ar7240sw_reg_set(mii, AR7240_REG_PORT_CTRL(port),
+			AR7240_PORT_CTRL_MIRROR_TX);
+	else
+		ar7240sw_reg_rmw(mii, AR7240_REG_PORT_CTRL(port),
+			AR7240_PORT_CTRL_MIRROR_TX, 0);
+
+	return 0;
+}
+
+static int
+ar7240_get_mirror_tx(struct switch_dev *dev, const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar7240sw *as = sw_to_ar7240(dev);
+	struct mii_bus *mii = as->mii_bus;
+
+	u32 ctrl;
+
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	ctrl = ar7240sw_reg_read(mii, AR7240_REG_PORT_CTRL(port));
+
+	if ((ctrl & AR7240_PORT_CTRL_MIRROR_TX) == AR7240_PORT_CTRL_MIRROR_TX)
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+
+	return 0;
+}
+
 static struct switch_attr ar7240_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1022,9 +1151,33 @@ static struct switch_attr ar7240_globals[] = {
 		.get = ar7240_get_vlan,
 		.max = 1
 	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "mirror_monitor_port",
+		.description = "Mirror monitor port",
+		.set = ar7240_set_mirror_monitor_port,
+		.get = ar7240_get_mirror_monitor_port,
+		.max = 15
+	},
 };
 
 static struct switch_attr ar7240_port[] = {
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_mirror_rx",
+		.description = "Enable mirroring of RX packets",
+		.set = ar7240_set_mirror_rx,
+		.get = ar7240_get_mirror_rx,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_mirror_tx",
+		.description = "Enable mirroring of TX packets",
+		.set = ar7240_set_mirror_tx,
+		.get = ar7240_get_mirror_tx,
+		.max = 1
+	},
 };
 
 static struct switch_attr ar7240_vlan[] = {
