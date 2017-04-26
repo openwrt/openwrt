@@ -109,7 +109,9 @@ keygen()
 load_interfaces()
 {
 	config_get interface "$1" Interface
-	interfaces=" ${interface} ${interfaces}"
+	config_get enable "$1" enable 1
+
+	[ "${enable}" = "1" ] && interfaces=" ${interface} ${interfaces}"
 }
 
 start_service()
