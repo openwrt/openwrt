@@ -14,11 +14,11 @@ set_classless_routes() {
 }
 
 setup_interface () {
-	local i r
 	proto_init_update "*" 1
 	proto_add_ipv4_address "$ip" "${subnet:-255.255.255.0}"
 	# TODO: apply $broadcast
 
+	local i r
 	for i in $router; do
 		proto_add_ipv4_route "$i" 32 "" "$ip"
 		proto_add_ipv4_route 0.0.0.0 0 "$i" "$ip"
