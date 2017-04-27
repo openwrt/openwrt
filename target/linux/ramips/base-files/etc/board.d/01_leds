@@ -222,6 +222,11 @@ ht-tm02)
 	ucidef_set_led_netdev "eth" "Ethernet" "$board:green:lan" "eth0"
 	set_wifi_led "$board:blue:wlan"
 	;;
+kn|\
+nbg-419n2)
+	set_usb_led "$board:green:usb"
+	set_wifi_led "rt2800pci-phy0::radio"
+	;;
 kn_rc|\
 kn_rf|\
 kng_rc)
@@ -264,10 +269,6 @@ mzk-ex750np)
 	;;
 na930)
 	set_usb_led "$board:blue:status"
-	;;
-nbg-419n2)
-	set_usb_led "$board:green:usb"
-	set_wifi_led "rt2800pci-phy0::radio"
 	;;
 newifi-d1)
 	set_usb_led "$board:red:status"

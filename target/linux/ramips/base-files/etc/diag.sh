@@ -24,6 +24,7 @@ get_status_led() {
 	e1700|\
 	ex3700|\
 	fonera20n|\
+	kn|\
 	kn_rc|\
 	kn_rf|\
 	kng_rc|\
