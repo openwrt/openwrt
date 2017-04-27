@@ -1154,6 +1154,9 @@ ar71xx_board_detect() {
 	*"TL-WR941ND")
 		name="tl-wr941nd"
 		;;
+	*"TLT-RUT900")
+		name="tlt-rut900"
+		;;
 	*"Tube2H")
 		name="tube2h"
 		;;

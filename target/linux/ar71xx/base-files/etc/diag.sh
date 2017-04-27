@@ -423,6 +423,9 @@ get_status_led() {
 	tl-wdr6500-v2)
 		status_led="tp-link:white:system"
 		;;
+	tlt-rut900)
+		status_led="tlt:green:status"
+		;;
 	tube2h)
 		status_led="alfa:green:signal4"
 		;;

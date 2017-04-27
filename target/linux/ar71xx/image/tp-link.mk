@@ -1084,3 +1084,14 @@ define Device/tl-wa7210n-v2
   CONSOLE := ttyATH0,115200
 endef
 TARGET_DEVICES += tl-wa7210n-v2
+
+define Device/tlt-rut900
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Teltonika RUT900
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+  BOARDNAME := TLT-RUT900
+  DEVICE_PROFILE := TLTRUT900
+  TPLINK_HWID := 0x35000001
+  CONSOLE := ttyS0,115200
+endef
+TARGET_DEVICES += tlt-rut900
