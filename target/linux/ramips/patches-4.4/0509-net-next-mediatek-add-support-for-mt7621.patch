@@ -163,7 +163,7 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
 +
 +	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET |
 +		FE_FLAG_RX_SG_DMA | FE_FLAG_NAPI_WEIGHT |
-+		FE_FLAG_HAS_SWITCH;
++		FE_FLAG_HAS_SWITCH | FE_FLAG_JUMBO_FRAME;
 +
 +	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
 +		NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_SG | NETIF_F_TSO |
