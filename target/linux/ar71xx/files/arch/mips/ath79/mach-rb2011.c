@@ -270,6 +270,7 @@ static int __init rb2011_setup(u32 flags)
 	rb2011_nand_init();
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
+				   AR934X_ETH_CFG_RXD_DELAY |
 				   AR934X_ETH_CFG_SW_ONLY_MODE);
 
 	ath79_register_mdio(1, 0x0);
@@ -283,7 +284,7 @@ static int __init rb2011_setup(u32 flags)
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ath79_eth0_data.phy_mask = BIT(0);
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
-	ath79_eth0_pll_data.pll_1000 = 0x06000000;
+	ath79_eth0_pll_data.pll_1000 = 0x6f000000;
 
 	ath79_register_eth(0);
 
