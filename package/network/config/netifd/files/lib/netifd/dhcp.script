@@ -14,6 +14,7 @@ set_classless_routes() {
 }
 
 setup_interface () {
+	local i r
 	proto_init_update "*" 1
 	proto_add_ipv4_address "$ip" "${subnet:-255.255.255.0}"
 	# TODO: apply $broadcast
@@ -31,11 +32,11 @@ setup_interface () {
 	[ -n "$staticroutes" ] && set_classless_routes $staticroutes
 	[ -n "$msstaticroutes" ] && set_classless_routes $msstaticroutes
 
-	for dns in $dns; do
-		proto_add_dns_server "$dns"
+	for i in $dns; do
+		proto_add_dns_server "$i"
 	done
-	for domain in $domain; do
-		proto_add_dns_search "$domain"
+	for i in $domain; do
+		proto_add_dns_search "$i"
 	done
 
 	proto_add_data
