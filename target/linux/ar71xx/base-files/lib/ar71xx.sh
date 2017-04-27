@@ -651,6 +651,9 @@ ar71xx_board_detect() {
 	*"GL-MIFI")
 		name="gl-mifi"
 		;;
+	*"HiveAP-121")
+		name="hiveap-121"
+		;;
 	*"HiWiFi HC6361")
 		name="hiwifi-hc6361"
 		;;
