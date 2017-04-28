@@ -87,6 +87,9 @@ deconfig_interface() {
 	proto_send_update "$INTERFACE"
 }
 
+# user rules to execute before network configuration
+[ -f /etc/udhcpc-pre.user ] && . /etc/udhcpc-pre.user "$@"
+
 case "$1" in
 	deconfig)
 		deconfig_interface
@@ -96,7 +99,7 @@ case "$1" in
 	;;
 esac
 
-# user rules
+# user rules to execute after network configuration
 [ -f /etc/udhcpc.user ] && . /etc/udhcpc.user "$@"
 
 exit 0
