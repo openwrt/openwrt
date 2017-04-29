@@ -489,7 +489,10 @@
 
 		core-supply = <&mt6323_vpa_reg>;
 		io-supply = <&mt6323_vemc3v3_reg>;
-		reset-gpios = <&pio 33 0>;
+
+		mediatek,mcm;
+		resets = <&ethsys 2>;
+		reset-names = "mcm";
 
 		ports {
 			#address-cells = <1>;
