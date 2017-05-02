@@ -142,6 +142,10 @@ append_pxe_service() {
 	xappend "--pxe-service=$1"
 }
 
+append_interface_name() {
+	xappend "--interface-name=$1,$2"
+}
+
 filter_dnsmasq() {
 	local cfg="$1" func="$2" match_cfg="$3" found_cfg
 
@@ -466,6 +470,8 @@ dhcp_add() {
 	config_get ra "$cfg" ra
 	config_get ra_management "$cfg" ra_management
 	config_get ra_preference "$cfg" ra_preference
+
+	config_list_foreach "$cfg" "interface_name" append_interface_name "$ifname"
 
 	# Put the router host name on this DHCP served interface address(es)
 	dhcp_this_host_add "$net" "$ifname" "$ADD_LOCAL_FQDN"
