@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.26.2
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -44,7 +44,19 @@ define Package/busybox
   URL:=http://busybox.net/
   DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc +BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
   MENU:=1
-  ALTERNATIVES:=100:/sbin/ip:/bin/busybox
+  ALTERNATIVES:=\
+    $(if $(CONFIG_BUSYBOX_DEFAULT_KILL),	100:/bin/kill:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_PS),		100:/bin/ps:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_WATCH),	100:/bin/watch:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_IP),		100:/sbin/ip:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_FREE),	100:/usr/bin/free:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_PGREP),	100:/usr/bin/pgrep:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_PKILL),	100:/usr/bin/pkill:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_PMAP),	100:/usr/bin/pmap:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_PWDX),	100:/usr/bin/pwdx:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_TOP),		100:/usr/bin/top:/bin/busybox) \
+    $(if $(CONFIG_BUSYBOX_DEFAULT_UPTIME),	100:/usr/bin/uptime:/bin/busybox) \
+
 endef
 
 define Package/busybox/description
