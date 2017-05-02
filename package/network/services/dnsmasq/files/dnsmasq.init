@@ -762,7 +762,7 @@ dnsmasq_start()
 	append_bool "$cfg" dbus "--enable-dbus"
 	append_bool "$cfg" expandhosts "--expand-hosts"
 	config_get tftp_root "$cfg" "tftp_root"
-	[ -d "$tftp_root" ] && append_bool "$cfg" enable_tftp "--enable-tftp"
+	[ -n "$tftp_root" ] && mkdir -p "$tftp_root" && append_bool "$cfg" enable_tftp "--enable-tftp"
 	append_bool "$cfg" tftp_no_fail "--tftp-no-fail"
 	append_bool "$cfg" nonwildcard "--bind-dynamic"
 	append_bool "$cfg" fqdn "--dhcp-fqdn"
