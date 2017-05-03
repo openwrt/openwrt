@@ -1,13 +1,37 @@
 platform_check_image() {
+	local diskdev partdev diff
 	[ "$#" -gt 1 ] && return 1
 
 	case "$(get_magic_word "$1")" in
-		eb48|eb63) return 0;;
+		eb48|eb63) ;;
 		*)
 			echo "Invalid image type"
 			return 1
 		;;
 	esac
+
+	export_bootdevice && export_partdevice diskdev 0 || {
+		echo "Unable to determine upgrade device"
+		return 1
+	}
+
+	get_partitions "/dev/$diskdev" bootdisk
+
+	#extract the boot sector from the image
+	get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b 2>/dev/null
+
+	get_partitions /tmp/image.bs image
+
+	#compare tables
+	diff="$(grep -F -x -v -f /tmp/partmap.bootdisk /tmp/partmap.image)"
+
+	rm -f /tmp/image.bs /tmp/partmap.bootdisk /tmp/partmap.image
+
+	if [ -n "$diff" ]; then
+		echo "Partition layout has changed. Full image will be written."
+		ask_bool 0 "Abort" && exit 1
+		return 0
+	fi
 }
 
 platform_copy_config() {
@@ -36,9 +60,6 @@ platform_do_upgrade() {
 			#compare tables
 			diff="$(grep -F -x -v -f /tmp/partmap.bootdisk /tmp/partmap.image)"
 			if [ -n "$diff" ]; then
-				echo "Partition layout is changed.  Full image will be written."
-				ask_bool 0 "Abort" && exit
-
 				get_image "$@" | dd of="/dev/$diskdev" bs=4096 conv=fsync
 				return 0
 			fi
