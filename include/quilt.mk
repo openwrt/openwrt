@@ -15,7 +15,7 @@ FILES_DIR?=./files
 HOST_PATCH_DIR?=$(PATCH_DIR)
 HOST_FILES_DIR?=$(FILES_DIR)
 
-ifeq ($(MAKECMDGOALS),refresh)
+ifneq ($(filter host-refresh refresh,$(MAKECMDGOALS)),)
   override QUILT=1
   override HOST_QUILT=1
 endif
