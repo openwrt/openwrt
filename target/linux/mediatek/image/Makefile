@@ -15,16 +15,17 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/BuilduImage,$1,-initramfs)
 	$(CP) $(KDIR)/uImage-$(1)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-uImage-$(1)-initramfs
 endif
-	mkdir -p "$(KDIR_TMP)/sysupgrade-$(1)/"
-	echo "BOARD=$(1)" > "$(KDIR_TMP)/sysupgrade-$(1)/CONTROL"
-	$(CP) "$(KDIR)/root.$(2)" "$(KDIR_TMP)/sysupgrade-$(1)/root"
-	$(CP) "$(KDIR)/uImage-$(1)" "$(KDIR_TMP)/sysupgrade-$(1)/kernel"
+	mkdir -p "$(KDIR_TMP)/sysupgrade-$(3)/"
+	echo "BOARD=$(3)" > "$(KDIR_TMP)/sysupgrade-$(3)/CONTROL"
+	$(CP) "$(KDIR)/root.$(2)" "$(KDIR_TMP)/sysupgrade-$(3)/root"
+	$(CP) "$(KDIR)/uImage-$(1)" "$(KDIR_TMP)/sysupgrade-$(3)/kernel"
 	(cd "$(KDIR_TMP)"; $(TAR) cvf \
-		"$(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade.tar" sysupgrade-$(1) \
+		"$(BIN_DIR)/$(IMG_PREFIX)-$(3)-sysupgrade.tar" sysupgrade-$(3) \
 			$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 	)
 endef
 
+COMPAT_EMMC:=mediatek,mt7623-rfb-emmc
 COMPAT_NAND:=mediatek,mt7623-rfb-nand
 COMPAT_NAND_EPHY:=mediatek,mt7623-rfb-nand-ephy
 
@@ -32,7 +33,7 @@ define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	$(CP) $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs
 
-	$(call Image/Build/SysupgradeCombined,eMMC,squashfs)
+	$(call Image/Build/SysupgradeCombined,eMMC,squashfs,$$(COMPAT_EMMC))
 
 	$(call Image/BuilduImage,NAND)
 	$(call Image/BuilduImage,NAND-ePHY)

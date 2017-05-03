@@ -23,6 +23,7 @@
 
 	chosen {
 		stdout-path = &uart2;
+		bootargs = "earlyprintk block2mtd.block2mtd=/dev/mmcblk0,65536,eMMC,5 mtdparts=eMMC:256k(mbr)ro,512k(uboot)ro,256k(config)ro,256k(factory)ro,32M(kernel),32M(recovery),1024M(rootfs),2048M(usrdata),-(bmtpool) rootfstype=squashfs,jffs2";
 	};
 
 	memory {
