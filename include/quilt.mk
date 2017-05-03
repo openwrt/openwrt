@@ -4,12 +4,33 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 
-ifneq ($(if $(DUMP),1,$(__quilt_inc)),1)
-__quilt_inc:=1
-
 ifeq ($(TARGET_BUILD),1)
   PKG_BUILD_DIR:=$(LINUX_DIR)
 endif
+
+ifneq ($(PKG_BUILD_DIR),)
+  QUILT?=$(if $(wildcard $(PKG_BUILD_DIR)/.quilt_used),y)
+  ifneq ($(QUILT),)
+    STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
+    override CONFIG_AUTOREBUILD=
+    override CONFIG_AUTOREMOVE=
+    quilt-check: $(STAMP_CHECKED)
+  endif
+endif
+
+ifneq ($(HOST_BUILD_DIR),)
+  HOST_QUILT?=$(if $(findstring command,$(origin QUILT)),$(QUILT),$(if $(wildcard $(HOST_BUILD_DIR)/.quilt_used),y))
+  ifneq ($(HOST_QUILT),)
+    HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked
+    override CONFIG_AUTOREBUILD=
+    override CONFIG_AUTOREMOVE=
+    host-quilt-check: $(HOST_STAMP_CHECKED)
+  endif
+endif
+
+ifneq ($(if $(DUMP),1,$(__quilt_inc)),1)
+__quilt_inc:=1
+
 PATCH_DIR?=./patches
 FILES_DIR?=./files
 HOST_PATCH_DIR?=$(PATCH_DIR)
@@ -58,26 +79,6 @@ endef
 define HostPatchDir
 $(call PatchDir/$(if $(strip $(HOST_QUILT)),Quilt,Default),$(strip $(1)),$(strip $(2)),$(strip $(3)))
 endef
-
-ifneq ($(PKG_BUILD_DIR),)
-  QUILT?=$(if $(wildcard $(PKG_BUILD_DIR)/.quilt_used),y)
-  ifneq ($(QUILT),)
-    STAMP_CHECKED:=$(PKG_BUILD_DIR)/.quilt_checked
-    override CONFIG_AUTOREBUILD=
-    override CONFIG_AUTOREMOVE=
-    quilt-check: $(STAMP_CHECKED)
-  endif
-endif
-
-ifneq ($(HOST_BUILD_DIR),)
-  HOST_QUILT?=$(if $(findstring command,$(origin QUILT)),$(QUILT),$(if $(wildcard $(HOST_BUILD_DIR)/.quilt_used),y))
-  ifneq ($(HOST_QUILT),)
-    HOST_STAMP_CHECKED:=$(HOST_BUILD_DIR)/.quilt_checked
-    override CONFIG_AUTOREBUILD=
-    override CONFIG_AUTOREMOVE=
-    host-quilt-check: $(HOST_STAMP_CHECKED)
-  endif
-endif
 
 define Host/Patch/Default
 	$(if $(HOST_QUILT),rm -rf $(HOST_BUILD_DIR)/patches; mkdir -p $(HOST_BUILD_DIR)/patches)
