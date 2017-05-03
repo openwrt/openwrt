@@ -47,40 +47,43 @@ platform_copy_config() {
 platform_do_upgrade() {
 	local diskdev partdev diff
 
-	if export_bootdevice && export_partdevice diskdev 0; then
-		sync
-		if [ "$SAVE_PARTITIONS" = "1" ]; then
-			get_partitions "/dev/$diskdev" bootdisk
+	export_bootdevice && export_partdevice diskdev 0 || {
+		echo "Unable to determine upgrade device"
+		return 1
+	}
 
-			#extract the boot sector from the image
-			get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b
+	sync
 
-			get_partitions /tmp/image.bs image
+	if [ "$SAVE_PARTITIONS" = "1" ]; then
+		get_partitions "/dev/$diskdev" bootdisk
 
-			#compare tables
-			diff="$(grep -F -x -v -f /tmp/partmap.bootdisk /tmp/partmap.image)"
-			if [ -n "$diff" ]; then
-				get_image "$@" | dd of="/dev/$diskdev" bs=4096 conv=fsync
-				return 0
-			fi
+		#extract the boot sector from the image
+		get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b
 
-			#iterate over each partition from the image and write it to the boot disk
-			while read part start size; do
-				if export_partdevice partdev $part; then
-					echo "Writing image to /dev/$partdev..."
-					get_image "$@" | dd of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
-				else
-					echo "Unable to find partition $part device, skipped."
-				fi
-			done < /tmp/partmap.image
+		get_partitions /tmp/image.bs image
 
-			#copy partition uuid
-			echo "Writing new UUID to /dev/$diskdev..."
-			get_image "$@" | dd of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
-		else
-			get_image "$@" | dd of="/dev/$diskdev" bs=4096 conv=fsync
-		fi
-
-		sleep 1
+		#compare tables
+		diff="$(grep -F -x -v -f /tmp/partmap.bootdisk /tmp/partmap.image)"
+	else
+		diff=1
 	fi
+
+	if [ -n "$diff" ]; then
+		get_image "$@" | dd of="/dev/$diskdev" bs=4096 conv=fsync
+		return 0
+	fi
+
+	#iterate over each partition from the image and write it to the boot disk
+	while read part start size; do
+		if export_partdevice partdev $part; then
+			echo "Writing image to /dev/$partdev..."
+			get_image "$@" | dd of="/dev/$partdev" ibs="512" obs=1M skip="$start" count="$size" conv=fsync
+		else
+			echo "Unable to find partition $part device, skipped."
+		fi
+	done < /tmp/partmap.image
+
+	#copy partition uuid
+	echo "Writing new UUID to /dev/$diskdev..."
+	get_image "$@" | dd of="/dev/$diskdev" bs=1 skip=440 count=4 seek=440 conv=fsync
 }
