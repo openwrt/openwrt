@@ -56,6 +56,7 @@ define Package/Default
   VARIANT:=
   DEFAULT_VARIANT:=
   USERID:=
+  ALTERNATIVES:=
 endef
 
 Build/Patch:=$(Build/Patch/Default)
