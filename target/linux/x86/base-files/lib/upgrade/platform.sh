@@ -70,6 +70,12 @@ platform_do_upgrade() {
 
 	if [ -n "$diff" ]; then
 		get_image "$@" | dd of="/dev/$diskdev" bs=4096 conv=fsync
+
+		# Separate removal and addtion is necessary; otherwise, partition 1
+		# will be missing if it overlaps with the old partition 2
+		partx -d - "/dev/$diskdev"
+		partx -a - "/dev/$diskdev"
+
 		return 0
 	fi
 
