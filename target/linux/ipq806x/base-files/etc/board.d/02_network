@@ -32,7 +32,7 @@ ea8500)
 
 	hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 	ucidef_add_switch "switch0" \
-		"1:lan" "2:lan" "3:lan" "4:lan" "0t@eth0" "5:wan" "0t@eth0"
+		"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 	ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
 	ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
 	;;
