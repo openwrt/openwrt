@@ -333,7 +333,7 @@ nand_upgrade_stage1() {
 		[ "$SAVE_CONFIG" != 1 -a -f "$CONF_TAR" ] &&
 			rm $CONF_TAR
 
-		ubus call system nandupgrade "{\"path\": \"$path\" }"
+		ubus call system nandupgrade "{\"prefix\": \"$RAM_ROOT\", \"path\": \"$path\" }"
 		exit 0
 	}
 }
@@ -370,6 +370,7 @@ nand_do_platform_check() {
 # $(1): file to be used for upgrade
 nand_do_upgrade() {
 	echo -n $1 > /tmp/sysupgrade-nand-path
-	cp /sbin/upgraded /tmp/
+	install_bin /sbin/upgraded
+	ln -s "$RAM_ROOT"/sbin/upgraded /tmp/upgraded
 	nand_upgrade_stage1
 }
