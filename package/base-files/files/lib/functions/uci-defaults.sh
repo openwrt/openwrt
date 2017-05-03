@@ -619,6 +619,26 @@ ucidef_add_gpio_switch() {
 	json_select ..
 }
 
+ucidef_set_hostname() {
+	local hostname="$1"
+
+	json_select_object system
+		json_add_string hostname "$hostname"
+	json_select ..
+}
+
+ucidef_set_ntpserver() {
+	local server
+
+	json_select_object system
+		json_select_array ntpserver
+			for server in "$@"; do
+				json_add_string "" "$server"
+			done
+		json_select ..
+	json_select ..
+}
+
 board_config_update() {
 	json_init
 	[ -f ${CFG} ] && json_load "$(cat ${CFG})"
