@@ -42,7 +42,7 @@ do_snapshot_upgrade() {
 
 	opkg list-upgradable
 	[ $? -eq 0 ] || exit 2
-	
+
 	UPDATES=`opkg list-upgradable | cut -d" " -f1`
 	[ -z "${UPDATES}" ] && exit 0
 
