@@ -560,8 +560,9 @@ dhcp_option_add() {
 	if [ -n "$list_len" ]; then
 		config_list_foreach "$cfg" dhcp_option dhcp_option_append "$networkid" "$force"
 	else
-		echo "Warning: the 'option dhcp_option' syntax is deprecated, use 'list dhcp_option'" >&2
 		config_get dhcp_option "$cfg" dhcp_option
+
+		[ -n "$dhcp_option" ] && echo "Warning: the 'option dhcp_option' syntax is deprecated, use 'list dhcp_option'" >&2
 
 		local option
 		for option in $dhcp_option; do
