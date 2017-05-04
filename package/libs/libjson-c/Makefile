@@ -27,7 +27,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 include $(INCLUDE_DIR)/package.mk
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += $(FPIC) -Wno-implicit-fallthrough
 
 define Package/libjson-c
   SECTION:=libs
