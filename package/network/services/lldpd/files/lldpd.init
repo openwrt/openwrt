@@ -89,9 +89,6 @@ start_service() {
 
 	# set auto respawn behavior
 	procd_set_param respawn
-	procd_append_param respawn 3600
-	procd_append_param respawn 5
-	procd_append_param respawn -1
 	procd_close_instance
 }
 
