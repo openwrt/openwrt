@@ -43,7 +43,7 @@ platform_do_upgrade() {
 			fi
 
 			#write uboot image
-			get_image "$@" | dd of="$diskdev" bs=1024 skip=8 seek=8 conv=notrunc
+			get_image "$@" | dd of="$diskdev" bs=1024 skip=8 seek=8 count=1016 conv=fsync
 			#iterate over each partition from the image and write it to the boot disk
 			while read part start size; do
 				part="$(($part - 2))"
