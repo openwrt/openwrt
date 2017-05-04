@@ -21,6 +21,6 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
-	kmod-leds-gpio kmod-gpio-button-hotplug wpad-mini swconfig
+	kmod-leds-gpio kmod-gpio-button-hotplug swconfig
 
 $(eval $(call BuildTarget))
