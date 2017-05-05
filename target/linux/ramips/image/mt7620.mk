@@ -34,7 +34,7 @@ define Device/ArcherC20i
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC20i -c
   IMAGE/factory.bin := append-kernel | tplink-header ArcherC20i -j
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC20i -j | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC20i -j -s | append-metadata
   IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC20i
 endef
@@ -46,7 +46,7 @@ define Device/ArcherC50
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC50 -c
   IMAGE/factory.bin := append-kernel | tplink-header ArcherC50 -j
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC50 -j | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC50 -j -s | append-metadata
   IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC50
 endef
@@ -57,7 +57,7 @@ define Device/ArcherMR200
   SUPPORTED_DEVICES := mr200
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherMR200 -c
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherMR200 -j | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherMR200 -j -s | append-metadata
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-net kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option adb
   DEVICE_TITLE := TP-Link ArcherMR200
 endef
