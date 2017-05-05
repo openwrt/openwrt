@@ -33,7 +33,9 @@ define Device/ArcherC20i
   SUPPORTED_DEVICES := c20i
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC20i -c
+  IMAGE/factory.bin := append-kernel | tplink-header ArcherC20i -j
   IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC20i -j | append-metadata
+  IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC20i
 endef
 TARGET_DEVICES += ArcherC20i
@@ -43,7 +45,9 @@ define Device/ArcherC50
   SUPPORTED_DEVICES := c50
   KERNEL := $(KERNEL_DTB)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC50 -c
+  IMAGE/factory.bin := append-kernel | tplink-header ArcherC50 -j
   IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC50 -j | append-metadata
+  IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC50
 endef
 TARGET_DEVICES += ArcherC50
