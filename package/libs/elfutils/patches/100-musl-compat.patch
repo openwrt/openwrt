@@ -1,30 +1,44 @@
 https://sourceware.org/bugzilla/show_bug.cgi?id=21002
 
---- a/lib/system.h
-+++ b/lib/system.h
-@@ -140,6 +140,19 @@ pread_retry (int fd, void *buf, size_t l
-   return recvd;
- }
+Index: elfutils-0.169/lib/system.h
+===================================================================
+--- elfutils-0.169.orig/lib/system.h
++++ elfutils-0.169/lib/system.h
+@@ -29,7 +29,18 @@
+ #ifndef LIB_SYSTEM_H
+ #define LIB_SYSTEM_H	1
  
 +#ifdef HAVE_ERROR_H
 +#include "error.h"
 +#else
 +#include "err.h"
+ #include <errno.h>
++#include <stdio.h>
 +#define error(status, errno, ...) \
 +	fflush(stdout); \
 +	warn(__VA_ARGS__); \
 +	if (status) exit(status)
 +#endif
 +
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <sys/param.h>
+@@ -37,6 +48,10 @@
+ #include <byteswap.h>
+ #include <unistd.h>
+ 
 +#ifndef __GLIBC__
 +#define canonicalize_file_name(name) realpath(name,NULL)
 +#endif
- 
- /* We need define two variables, argp_program_version_hook and
-    argp_program_bug_address, in all programs.  argp.h declares these
---- a/lib/color.c
-+++ b/lib/color.c
-@@ -32,12 +32,12 @@
++
+ #if __BYTE_ORDER == __LITTLE_ENDIAN
+ # define LE32(n)	(n)
+ # define LE64(n)	(n)
+Index: elfutils-0.169/lib/color.c
+===================================================================
+--- elfutils-0.169.orig/lib/color.c
++++ elfutils-0.169/lib/color.c
+@@ -32,13 +32,13 @@
  #endif
  
  #include <argp.h>
@@ -34,12 +48,15 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  #include <unistd.h>
  #include "libeu.h"
+ #include "color.h"
 +#include "system.h"
  
- 
  /* Prototype for option handler.  */
---- a/lib/xmalloc.c
-+++ b/lib/xmalloc.c
+ static error_t parse_opt (int key, char *arg, struct argp_state *state);
+Index: elfutils-0.169/lib/xmalloc.c
+===================================================================
+--- elfutils-0.169.orig/lib/xmalloc.c
++++ elfutils-0.169/lib/xmalloc.c
 @@ -30,7 +30,6 @@
  # include <config.h>
  #endif
@@ -48,8 +65,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <libintl.h>
  #include <stddef.h>
  #include <stdlib.h>
---- a/src/addr2line.c
-+++ b/src/addr2line.c
+Index: elfutils-0.169/src/addr2line.c
+===================================================================
+--- elfutils-0.169.orig/src/addr2line.c
++++ elfutils-0.169/src/addr2line.c
 @@ -23,7 +23,6 @@
  #include <argp.h>
  #include <assert.h>
@@ -58,8 +77,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <inttypes.h>
  #include <libdwfl.h>
---- a/src/ar.c
-+++ b/src/ar.c
+Index: elfutils-0.169/src/ar.c
+===================================================================
+--- elfutils-0.169.orig/src/ar.c
++++ elfutils-0.169/src/ar.c
 @@ -22,7 +22,6 @@
  
  #include <argp.h>
@@ -68,8 +89,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <libintl.h>
---- a/src/arlib2.c
-+++ b/src/arlib2.c
+Index: elfutils-0.169/src/arlib2.c
+===================================================================
+--- elfutils-0.169.orig/src/arlib2.c
++++ elfutils-0.169/src/arlib2.c
 @@ -20,7 +20,6 @@
  # include <config.h>
  #endif
@@ -78,8 +101,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <libintl.h>
  #include <limits.h>
  #include <string.h>
---- a/src/arlib.c
-+++ b/src/arlib.c
+Index: elfutils-0.169/src/arlib.c
+===================================================================
+--- elfutils-0.169.orig/src/arlib.c
++++ elfutils-0.169/src/arlib.c
 @@ -21,7 +21,6 @@
  #endif
  
@@ -88,8 +113,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <gelf.h>
  #include <inttypes.h>
  #include <libintl.h>
---- a/src/elfcmp.c
-+++ b/src/elfcmp.c
+Index: elfutils-0.169/src/elfcmp.c
+===================================================================
+--- elfutils-0.169.orig/src/elfcmp.c
++++ elfutils-0.169/src/elfcmp.c
 @@ -23,7 +23,6 @@
  #include <argp.h>
  #include <assert.h>
@@ -98,8 +125,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <locale.h>
  #include <libintl.h>
---- a/src/elflint.c
-+++ b/src/elflint.c
+Index: elfutils-0.169/src/elflint.c
+===================================================================
+--- elfutils-0.169.orig/src/elflint.c
++++ elfutils-0.169/src/elflint.c
 @@ -24,7 +24,6 @@
  #include <assert.h>
  #include <byteswap.h>
@@ -108,8 +137,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <inttypes.h>
---- a/src/findtextrel.c
-+++ b/src/findtextrel.c
+Index: elfutils-0.169/src/findtextrel.c
+===================================================================
+--- elfutils-0.169.orig/src/findtextrel.c
++++ elfutils-0.169/src/findtextrel.c
 @@ -23,7 +23,6 @@
  #include <argp.h>
  #include <assert.h>
@@ -118,8 +149,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <libdw.h>
---- a/src/nm.c
-+++ b/src/nm.c
+Index: elfutils-0.169/src/nm.c
+===================================================================
+--- elfutils-0.169.orig/src/nm.c
++++ elfutils-0.169/src/nm.c
 @@ -26,7 +26,6 @@
  #include <ctype.h>
  #include <dwarf.h>
@@ -128,8 +161,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <inttypes.h>
---- a/src/objdump.c
-+++ b/src/objdump.c
+Index: elfutils-0.169/src/objdump.c
+===================================================================
+--- elfutils-0.169.orig/src/objdump.c
++++ elfutils-0.169/src/objdump.c
 @@ -21,7 +21,6 @@
  #endif
  
@@ -138,8 +173,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <inttypes.h>
  #include <libintl.h>
---- a/src/ranlib.c
-+++ b/src/ranlib.c
+Index: elfutils-0.169/src/ranlib.c
+===================================================================
+--- elfutils-0.169.orig/src/ranlib.c
++++ elfutils-0.169/src/ranlib.c
 @@ -24,7 +24,6 @@
  #include <argp.h>
  #include <assert.h>
@@ -148,8 +185,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <libintl.h>
---- a/src/readelf.c
-+++ b/src/readelf.c
+Index: elfutils-0.169/src/readelf.c
+===================================================================
+--- elfutils-0.169.orig/src/readelf.c
++++ elfutils-0.169/src/readelf.c
 @@ -25,7 +25,6 @@
  #include <ctype.h>
  #include <dwarf.h>
@@ -158,8 +197,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <inttypes.h>
---- a/src/size.c
-+++ b/src/size.c
+Index: elfutils-0.169/src/size.c
+===================================================================
+--- elfutils-0.169.orig/src/size.c
++++ elfutils-0.169/src/size.c
 @@ -21,7 +21,6 @@
  #endif
  
@@ -168,8 +209,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <inttypes.h>
---- a/src/stack.c
-+++ b/src/stack.c
+Index: elfutils-0.169/src/stack.c
+===================================================================
+--- elfutils-0.169.orig/src/stack.c
++++ elfutils-0.169/src/stack.c
 @@ -18,7 +18,6 @@
  #include <config.h>
  #include <assert.h>
@@ -178,8 +221,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <stdlib.h>
  #include <inttypes.h>
  #include <stdio.h>
---- a/src/strings.c
-+++ b/src/strings.c
+Index: elfutils-0.169/src/strings.c
+===================================================================
+--- elfutils-0.169.orig/src/strings.c
++++ elfutils-0.169/src/strings.c
 @@ -25,7 +25,6 @@
  #include <ctype.h>
  #include <endian.h>
@@ -188,8 +233,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <inttypes.h>
---- a/src/strip.c
-+++ b/src/strip.c
+Index: elfutils-0.169/src/strip.c
+===================================================================
+--- elfutils-0.169.orig/src/strip.c
++++ elfutils-0.169/src/strip.c
 @@ -24,7 +24,6 @@
  #include <assert.h>
  #include <byteswap.h>
@@ -198,8 +245,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <libelf.h>
---- a/src/unstrip.c
-+++ b/src/unstrip.c
+Index: elfutils-0.169/src/unstrip.c
+===================================================================
+--- elfutils-0.169.orig/src/unstrip.c
++++ elfutils-0.169/src/unstrip.c
 @@ -31,7 +31,6 @@
  #include <argp.h>
  #include <assert.h>
@@ -208,8 +257,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <fnmatch.h>
  #include <libintl.h>
---- a/tests/addrscopes.c
-+++ b/tests/addrscopes.c
+Index: elfutils-0.169/tests/addrscopes.c
+===================================================================
+--- elfutils-0.169.orig/tests/addrscopes.c
++++ elfutils-0.169/tests/addrscopes.c
 @@ -25,7 +25,6 @@
  #include <stdio_ext.h>
  #include <locale.h>
@@ -218,8 +269,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  
  
---- a/tests/allregs.c
-+++ b/tests/allregs.c
+Index: elfutils-0.169/tests/allregs.c
+===================================================================
+--- elfutils-0.169.orig/tests/allregs.c
++++ elfutils-0.169/tests/allregs.c
 @@ -21,7 +21,6 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -228,8 +281,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <locale.h>
  #include <argp.h>
  #include <assert.h>
---- a/tests/backtrace.c
-+++ b/tests/backtrace.c
+Index: elfutils-0.169/tests/backtrace.c
+===================================================================
+--- elfutils-0.169.orig/tests/backtrace.c
++++ elfutils-0.169/tests/backtrace.c
 @@ -24,7 +24,6 @@
  #include <dirent.h>
  #include <stdlib.h>
@@ -238,8 +293,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <unistd.h>
  #include <dwarf.h>
  #ifdef __linux__
---- a/tests/backtrace-data.c
-+++ b/tests/backtrace-data.c
+Index: elfutils-0.169/tests/backtrace-data.c
+===================================================================
+--- elfutils-0.169.orig/tests/backtrace-data.c
++++ elfutils-0.169/tests/backtrace-data.c
 @@ -27,7 +27,6 @@
  #include <dirent.h>
  #include <stdlib.h>
@@ -248,8 +305,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <unistd.h>
  #include <dwarf.h>
  #if defined(__x86_64__) && defined(__linux__)
---- a/tests/buildid.c
-+++ b/tests/buildid.c
+Index: elfutils-0.169/tests/buildid.c
+===================================================================
+--- elfutils-0.169.orig/tests/buildid.c
++++ elfutils-0.169/tests/buildid.c
 @@ -23,7 +23,6 @@
  #include ELFUTILS_HEADER(elf)
  #include ELFUTILS_HEADER(dwelf)
@@ -258,8 +317,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  #include <stdlib.h>
  #include <sys/types.h>
---- a/tests/debugaltlink.c
-+++ b/tests/debugaltlink.c
+Index: elfutils-0.169/tests/debugaltlink.c
+===================================================================
+--- elfutils-0.169.orig/tests/debugaltlink.c
++++ elfutils-0.169/tests/debugaltlink.c
 @@ -23,7 +23,6 @@
  #include ELFUTILS_HEADER(dw)
  #include ELFUTILS_HEADER(dwelf)
@@ -268,8 +329,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  #include <stdlib.h>
  #include <sys/types.h>
---- a/tests/debuglink.c
-+++ b/tests/debuglink.c
+Index: elfutils-0.169/tests/debuglink.c
+===================================================================
+--- elfutils-0.169.orig/tests/debuglink.c
++++ elfutils-0.169/tests/debuglink.c
 @@ -21,7 +21,6 @@
  #include <errno.h>
  #include ELFUTILS_HEADER(dwelf)
@@ -278,8 +341,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  #include <stdlib.h>
  #include <sys/types.h>
---- a/tests/dwfl-addr-sect.c
-+++ b/tests/dwfl-addr-sect.c
+Index: elfutils-0.169/tests/dwfl-addr-sect.c
+===================================================================
+--- elfutils-0.169.orig/tests/dwfl-addr-sect.c
++++ elfutils-0.169/tests/dwfl-addr-sect.c
 @@ -23,7 +23,6 @@
  #include <stdio_ext.h>
  #include <stdlib.h>
@@ -288,8 +353,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <locale.h>
  #include <argp.h>
  #include ELFUTILS_HEADER(dwfl)
---- a/tests/dwfl-bug-addr-overflow.c
-+++ b/tests/dwfl-bug-addr-overflow.c
+Index: elfutils-0.169/tests/dwfl-bug-addr-overflow.c
+===================================================================
+--- elfutils-0.169.orig/tests/dwfl-bug-addr-overflow.c
++++ elfutils-0.169/tests/dwfl-bug-addr-overflow.c
 @@ -20,7 +20,6 @@
  #include <inttypes.h>
  #include <stdio.h>
@@ -298,8 +365,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <locale.h>
  #include ELFUTILS_HEADER(dwfl)
  
---- a/tests/dwfl-bug-fd-leak.c
-+++ b/tests/dwfl-bug-fd-leak.c
+Index: elfutils-0.169/tests/dwfl-bug-fd-leak.c
+===================================================================
+--- elfutils-0.169.orig/tests/dwfl-bug-fd-leak.c
++++ elfutils-0.169/tests/dwfl-bug-fd-leak.c
 @@ -24,7 +24,6 @@
  #include <dirent.h>
  #include <stdlib.h>
@@ -308,8 +377,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <unistd.h>
  #include <dwarf.h>
  
---- a/tests/dwfl-bug-getmodules.c
-+++ b/tests/dwfl-bug-getmodules.c
+Index: elfutils-0.169/tests/dwfl-bug-getmodules.c
+===================================================================
+--- elfutils-0.169.orig/tests/dwfl-bug-getmodules.c
++++ elfutils-0.169/tests/dwfl-bug-getmodules.c
 @@ -18,7 +18,6 @@
  #include <config.h>
  #include ELFUTILS_HEADER(dwfl)
@@ -318,8 +389,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  
  static const Dwfl_Callbacks callbacks =
    {
---- a/tests/dwfllines.c
-+++ b/tests/dwfllines.c
+Index: elfutils-0.169/tests/dwfllines.c
+===================================================================
+--- elfutils-0.169.orig/tests/dwfllines.c
++++ elfutils-0.169/tests/dwfllines.c
 @@ -27,7 +27,6 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -328,8 +401,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  
  int
  main (int argc, char *argv[])
---- a/tests/dwflmodtest.c
-+++ b/tests/dwflmodtest.c
+Index: elfutils-0.169/tests/dwflmodtest.c
+===================================================================
+--- elfutils-0.169.orig/tests/dwflmodtest.c
++++ elfutils-0.169/tests/dwflmodtest.c
 @@ -23,7 +23,6 @@
  #include <stdio_ext.h>
  #include <stdlib.h>
@@ -338,8 +413,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <locale.h>
  #include <argp.h>
  #include ELFUTILS_HEADER(dwfl)
---- a/tests/dwfl-report-elf-align.c
-+++ b/tests/dwfl-report-elf-align.c
+Index: elfutils-0.169/tests/dwfl-report-elf-align.c
+===================================================================
+--- elfutils-0.169.orig/tests/dwfl-report-elf-align.c
++++ elfutils-0.169/tests/dwfl-report-elf-align.c
 @@ -20,7 +20,6 @@
  #include <inttypes.h>
  #include <stdio.h>
@@ -348,8 +425,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <locale.h>
  #include <string.h>
  #include <stdlib.h>
---- a/tests/dwflsyms.c
-+++ b/tests/dwflsyms.c
+Index: elfutils-0.169/tests/dwflsyms.c
+===================================================================
+--- elfutils-0.169.orig/tests/dwflsyms.c
++++ elfutils-0.169/tests/dwflsyms.c
 @@ -25,7 +25,6 @@
  #include <stdio.h>
  #include <stdio_ext.h>
@@ -358,8 +437,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  
  static const char *
---- a/tests/early-offscn.c
-+++ b/tests/early-offscn.c
+Index: elfutils-0.169/tests/early-offscn.c
+===================================================================
+--- elfutils-0.169.orig/tests/early-offscn.c
++++ elfutils-0.169/tests/early-offscn.c
 @@ -19,7 +19,6 @@
  #endif
  
@@ -368,8 +449,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <stdio.h>
---- a/tests/ecp.c
-+++ b/tests/ecp.c
+Index: elfutils-0.169/tests/ecp.c
+===================================================================
+--- elfutils-0.169.orig/tests/ecp.c
++++ elfutils-0.169/tests/ecp.c
 @@ -20,7 +20,6 @@
  #endif
  
@@ -378,8 +461,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <stdlib.h>
---- a/tests/find-prologues.c
-+++ b/tests/find-prologues.c
+Index: elfutils-0.169/tests/find-prologues.c
+===================================================================
+--- elfutils-0.169.orig/tests/find-prologues.c
++++ elfutils-0.169/tests/find-prologues.c
 @@ -25,7 +25,6 @@
  #include <stdio_ext.h>
  #include <locale.h>
@@ -388,8 +473,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  #include <fnmatch.h>
  
---- a/tests/funcretval.c
-+++ b/tests/funcretval.c
+Index: elfutils-0.169/tests/funcretval.c
+===================================================================
+--- elfutils-0.169.orig/tests/funcretval.c
++++ elfutils-0.169/tests/funcretval.c
 @@ -25,7 +25,6 @@
  #include <stdio_ext.h>
  #include <locale.h>
@@ -398,8 +485,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  #include <fnmatch.h>
  
---- a/tests/funcscopes.c
-+++ b/tests/funcscopes.c
+Index: elfutils-0.169/tests/funcscopes.c
+===================================================================
+--- elfutils-0.169.orig/tests/funcscopes.c
++++ elfutils-0.169/tests/funcscopes.c
 @@ -25,7 +25,6 @@
  #include <stdio_ext.h>
  #include <locale.h>
@@ -408,8 +497,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  #include <fnmatch.h>
  
---- a/tests/line2addr.c
-+++ b/tests/line2addr.c
+Index: elfutils-0.169/tests/line2addr.c
+===================================================================
+--- elfutils-0.169.orig/tests/line2addr.c
++++ elfutils-0.169/tests/line2addr.c
 @@ -26,7 +26,6 @@
  #include <locale.h>
  #include <stdlib.h>
@@ -418,8 +509,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  
  
  static void
---- a/tests/low_high_pc.c
-+++ b/tests/low_high_pc.c
+Index: elfutils-0.169/tests/low_high_pc.c
+===================================================================
+--- elfutils-0.169.orig/tests/low_high_pc.c
++++ elfutils-0.169/tests/low_high_pc.c
 @@ -25,7 +25,6 @@
  #include <stdio_ext.h>
  #include <locale.h>
@@ -428,8 +521,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  #include <fnmatch.h>
  
---- a/tests/md5-sha1-test.c
-+++ b/tests/md5-sha1-test.c
+Index: elfutils-0.169/tests/md5-sha1-test.c
+===================================================================
+--- elfutils-0.169.orig/tests/md5-sha1-test.c
++++ elfutils-0.169/tests/md5-sha1-test.c
 @@ -19,7 +19,6 @@
  #endif
  
@@ -438,8 +533,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  
  #include "md5.h"
  #include "sha1.h"
---- a/tests/rdwrmmap.c
-+++ b/tests/rdwrmmap.c
+Index: elfutils-0.169/tests/rdwrmmap.c
+===================================================================
+--- elfutils-0.169.orig/tests/rdwrmmap.c
++++ elfutils-0.169/tests/rdwrmmap.c
 @@ -19,7 +19,6 @@
  #endif
  
@@ -448,8 +545,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <stdio.h>
  #include <fcntl.h>
  #include <unistd.h>
---- a/tests/saridx.c
-+++ b/tests/saridx.c
+Index: elfutils-0.169/tests/saridx.c
+===================================================================
+--- elfutils-0.169.orig/tests/saridx.c
++++ elfutils-0.169/tests/saridx.c
 @@ -17,7 +17,6 @@
  
  #include <config.h>
@@ -458,8 +557,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <stdio.h>
---- a/tests/sectiondump.c
-+++ b/tests/sectiondump.c
+Index: elfutils-0.169/tests/sectiondump.c
+===================================================================
+--- elfutils-0.169.orig/tests/sectiondump.c
++++ elfutils-0.169/tests/sectiondump.c
 @@ -18,7 +18,6 @@
  #include <config.h>
  
@@ -468,8 +569,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <fcntl.h>
  #include <gelf.h>
  #include <inttypes.h>
---- a/tests/varlocs.c
-+++ b/tests/varlocs.c
+Index: elfutils-0.169/tests/varlocs.c
+===================================================================
+--- elfutils-0.169.orig/tests/varlocs.c
++++ elfutils-0.169/tests/varlocs.c
 @@ -25,7 +25,6 @@
  #include <dwarf.h>
  #include <stdio.h>
@@ -478,8 +581,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <string.h>
  #include <sys/types.h>
  #include <sys/stat.h>
---- a/libasm/asm_end.c
-+++ b/libasm/asm_end.c
+Index: elfutils-0.169/libasm/asm_end.c
+===================================================================
+--- elfutils-0.169.orig/libasm/asm_end.c
++++ elfutils-0.169/libasm/asm_end.c
 @@ -32,7 +32,6 @@
  #endif
  
@@ -488,8 +593,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <libintl.h>
  #include <stdio.h>
  #include <stdlib.h>
---- a/libasm/asm_newscn.c
-+++ b/libasm/asm_newscn.c
+Index: elfutils-0.169/libasm/asm_newscn.c
+===================================================================
+--- elfutils-0.169.orig/libasm/asm_newscn.c
++++ elfutils-0.169/libasm/asm_newscn.c
 @@ -32,7 +32,6 @@
  #endif
  
@@ -498,8 +605,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <libintl.h>
  #include <stdlib.h>
  #include <string.h>
---- a/libcpu/i386_gendis.c
-+++ b/libcpu/i386_gendis.c
+Index: elfutils-0.169/libcpu/i386_gendis.c
+===================================================================
+--- elfutils-0.169.orig/libcpu/i386_gendis.c
++++ elfutils-0.169/libcpu/i386_gendis.c
 @@ -31,7 +31,6 @@
  # include <config.h>
  #endif
@@ -508,8 +617,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <errno.h>
  #include <stdio.h>
  #include <stdlib.h>
---- a/libcpu/i386_lex.c
-+++ b/libcpu/i386_lex.c
+Index: elfutils-0.169/libcpu/i386_lex.c
+===================================================================
+--- elfutils-0.169.orig/libcpu/i386_lex.c
++++ elfutils-0.169/libcpu/i386_lex.c
 @@ -592,7 +592,6 @@ char *i386_text;
  #endif
  
@@ -518,8 +629,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <libintl.h>
  
  #include <libeu.h>
---- a/libcpu/i386_lex.l
-+++ b/libcpu/i386_lex.l
+Index: elfutils-0.169/libcpu/i386_lex.l
+===================================================================
+--- elfutils-0.169.orig/libcpu/i386_lex.l
++++ elfutils-0.169/libcpu/i386_lex.l
 @@ -31,7 +31,6 @@
  #endif
  
@@ -528,8 +641,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <libintl.h>
  
  #include <libeu.h>
---- a/libcpu/i386_parse.c
-+++ b/libcpu/i386_parse.c
+Index: elfutils-0.169/libcpu/i386_parse.c
+===================================================================
+--- elfutils-0.169.orig/libcpu/i386_parse.c
++++ elfutils-0.169/libcpu/i386_parse.c
 @@ -107,7 +107,6 @@
  #include <assert.h>
  #include <ctype.h>
@@ -538,8 +653,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <inttypes.h>
  #include <libintl.h>
  #include <math.h>
---- a/libdw/libdw_alloc.c
-+++ b/libdw/libdw_alloc.c
+Index: elfutils-0.169/libdw/libdw_alloc.c
+===================================================================
+--- elfutils-0.169.orig/libdw/libdw_alloc.c
++++ elfutils-0.169/libdw/libdw_alloc.c
 @@ -31,7 +31,6 @@
  # include <config.h>
  #endif
@@ -555,8 +672,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
 -    error (EXIT_FAILURE, ENOMEM, "libdw");
 +    error (EXIT_FAILURE, errno, gettext ("cannot allocate memory"));
  }
---- a/libebl/eblopenbackend.c
-+++ b/libebl/eblopenbackend.c
+Index: elfutils-0.169/libebl/eblopenbackend.c
+===================================================================
+--- elfutils-0.169.orig/libebl/eblopenbackend.c
++++ elfutils-0.169/libebl/eblopenbackend.c
 @@ -32,7 +32,6 @@
  
  #include <assert.h>
@@ -565,8 +684,10 @@ https://sourceware.org/bugzilla/show_bug.cgi?id=21002
  #include <libelfP.h>
  #include <dwarf.h>
  #include <stdlib.h>
---- a/libdwfl/dwfl_error.c
-+++ b/libdwfl/dwfl_error.c
+Index: elfutils-0.169/libdwfl/dwfl_error.c
+===================================================================
+--- elfutils-0.169.orig/libdwfl/dwfl_error.c
++++ elfutils-0.169/libdwfl/dwfl_error.c
 @@ -140,6 +140,7 @@ __libdwfl_seterrno (Dwfl_Error error)
  const char *
  dwfl_errmsg (int error)
