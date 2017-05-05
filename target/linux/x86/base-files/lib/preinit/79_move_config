@@ -7,11 +7,14 @@ move_config() {
 	. /lib/upgrade/common.sh
 
 	if export_bootdevice && export_partdevice partdev 1; then
-		if mount -t ext4 -o rw,noatime "/dev/$partdev" /mnt; then
-			if [ -f /mnt/sysupgrade.tgz ]; then
-				mv -f /mnt/sysupgrade.tgz /
+		mkdir -p /boot
+		if mount -t ext4 -o ro,noatime "/dev/$partdev" /boot; then
+			if [ -f /boot/sysupgrade.tgz ]; then
+				mount /boot -o remount,rw,noatime
+				mv -f /boot/sysupgrade.tgz /
+				mount /boot -o remount,ro,noatime
 			fi
-			umount /mnt
+			mount --bind /boot/boot /boot
 		fi
 	fi
 }
