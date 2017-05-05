@@ -354,6 +354,14 @@ define Device/rt-n14u
 endef
 TARGET_DEVICES += rt-n14u
 
+define Device/rt-ac51u
+  DTS := RT-AC51U
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Asus RT-AC51U
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ehci kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += rt-ac51u
+
 define Device/tiny-ac
   DTS := TINY-AC
   DEVICE_TITLE := Dovado Tiny AC

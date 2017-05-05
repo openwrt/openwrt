@@ -314,6 +314,10 @@ rp-n53)
 	ucidef_set_led_netdev "eth" "Network" "$board:white:back" "eth0"
 	set_wifi_led "$board:blue:wifi"
 	;;
+rt-ac51u)
+	set_wifi_led "$board:blue:wifi"
+	set_usb_led "$board:blue:usb" "1-1"
+	;;
 rt-n14u)
 	ucidef_set_led_default "power" "power" "$board:blue:power" "1"
 	ucidef_set_led_netdev "lan" "lan" "$board:blue:lan" eth0.1
