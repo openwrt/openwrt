@@ -172,9 +172,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif /* __DANUBE_GPTU_DEV_H__2005_07_26__10_19__ */
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -1,4 +1,4 @@
+@@ -1,4 +1,10 @@
 -obj-y := prom.o sysctrl.o clk.o reset.o dma.o gptu.o dcdc.o
-+obj-y := prom.o sysctrl.o clk.o reset.o dma.o timer.o dcdc.o
++obj-y := prom.o sysctrl.o clk.o reset.o dma.o dcdc.o
++
++ifdef CONFIG_SOC_AMAZON_SE
++obj-y += gptu.o
++else
++obj-y += timer.o
++endif
  
  obj-y += vmmc.o
  
