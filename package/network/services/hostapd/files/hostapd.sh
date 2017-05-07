@@ -67,6 +67,7 @@ hostapd_common_add_device_config() {
 	config_add_boolean legacy_rates
 
 	config_add_string acs_chan_bias
+	config_add_array hostapd_options
 
 	hostapd_add_log_config
 }
@@ -126,6 +127,11 @@ hostapd_prepare_device_config() {
 	[ -n "$rlist" ] && append base_cfg "supported_rates=$rlist" "$N"
 	[ -n "$brlist" ] && append base_cfg "basic_rates=$brlist" "$N"
 	append base_cfg "beacon_int=$beacon_int" "$N"
+
+	json_get_values opts hostapd_options
+	for val in $opts; do
+		append base_cfg "$val" "$N"
+	done
 
 	cat > "$config" <<EOF
 driver=$driver
