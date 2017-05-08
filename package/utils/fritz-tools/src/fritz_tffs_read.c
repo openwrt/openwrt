@@ -259,7 +259,7 @@ static void parse_options(int argc, char *argv[])
 	{
 		int c;
 
-		c = getopt(argc, argv, "abhi:ln:s");
+		c = getopt(argc, argv, "abhi:ln:s:");
 		if (c == -1)
 			break;
 
