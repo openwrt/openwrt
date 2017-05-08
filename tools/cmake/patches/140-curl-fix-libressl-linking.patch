@@ -19,7 +19,7 @@ and unconditionally link the rt library when the symbol is found.
 Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 --- a/Utilities/cmcurl/CMakeLists.txt
 +++ b/Utilities/cmcurl/CMakeLists.txt
-@@ -362,6 +362,10 @@ set(HAVE_LIBSSL OFF)
+@@ -374,6 +374,10 @@ set(HAVE_LIBSSL OFF)
  if(CMAKE_USE_OPENSSL)
    find_package(OpenSSL)
    if(OPENSSL_FOUND)
