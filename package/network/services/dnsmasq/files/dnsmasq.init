@@ -337,14 +337,14 @@ dhcp_this_host_add() {
 		if [ "$mode" -gt 1 ] ; then
 			if [ "$mode" -gt 2 ] ; then
 				if [ "$mode" -gt 3 ] ; then
-					xappend "--interface-name=$ifdashname.$routername.$DOMAIN,$ifname"
+					append_interface_name "$ifdashname.$routername.$DOMAIN" "$ifname"
 				fi
 
-				xappend "--interface-name=$routername.$DOMAIN,$ifname"
+				append_interface_name "$routername.$DOMAIN" "$ifname"
 			fi
 
 			# All IP addresses discovered by dnsmasq will be labeled (except fe80::)
-			xappend "--interface-name=$routername,$ifname"
+			append_interface_name "$routername" "$ifname"
 
 		else
 			# This uses a static host file entry for only limited addresses.
