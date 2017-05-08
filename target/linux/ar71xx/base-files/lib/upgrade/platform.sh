@@ -521,6 +521,7 @@ platform_check_image() {
 	c-60|\
 	nbg6716|\
 	r6100|\
+	rambutan|\
 	wndr3700v4|\
 	wndr4300)
 		nand_do_platform_check $board $1
@@ -663,6 +664,7 @@ platform_pre_upgrade() {
 	c-60|\
 	nbg6716|\
 	r6100|\
+	rambutan|\
 	rb-411|\
 	rb-411u|\
 	rb-433|\

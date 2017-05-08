@@ -74,6 +74,9 @@ case "$FIRMWARE" in
 		ath9k_eeprom_extract "caldata" 4096 2048
 		ath9k_patch_firmware_mac $(mtd_get_mac_binary caldata 0)
 		;;
+	rambutan)
+		ath9k_eeprom_extract "art" 4096 2048
+		;;
 	z1)
 		. /lib/upgrade/nand.sh
 

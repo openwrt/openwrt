@@ -1897,6 +1897,16 @@ config ATH79_MACH_LIMA
 	select ATH79_DEV_WMAC
 	select ATH79_DEV_ETH
 
+config ATH79_MACH_RAMBUTAN
+	bool "8devices Rambutan board"
+	select SOC_QCA955X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_NFC
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_CF_E316N_V2
 	bool "COMFAST CF-E316N v2 support"
 	select SOC_AR934X

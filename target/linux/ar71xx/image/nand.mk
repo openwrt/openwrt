@@ -52,6 +52,20 @@ define Build/MerakiNAND-old
 	@mv $@.new $@
 endef
 
+define Device/rambutan
+  DEVICE_TITLE := 8devices Rambutan
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME = RAMBUTAN
+  BLOCKSIZE = 128KiB
+  MTDPARTS = ar934x-nfc:3M(u-boot)ro,2M(u-boot-env),1M(art),122M(ubi)
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  IMAGES := factory.ubi sysupgrade.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar
+  IMAGE/factory.ubi := append-ubi
+endef
+TARGET_DEVICES += rambutan
+
 define Device/z1
   DEVICE_TITLE := Meraki Z1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-spi-gpio kmod-ath9k kmod-owl-loader

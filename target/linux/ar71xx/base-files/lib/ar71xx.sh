@@ -811,6 +811,9 @@ ar71xx_board_detect() {
 	*"R6100")
 		name="r6100"
 		;;
+	*"Rambutan"*)
+		name="rambutan"
+		;;
 	*"RE450")
 		name="re450"
 		;;
