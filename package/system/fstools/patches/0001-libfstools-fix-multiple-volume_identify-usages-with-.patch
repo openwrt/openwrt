@@ -1,0 +1,56 @@
+From 633a8d0981fed0c90f6d16ee2257858b04514dc8 Mon Sep 17 00:00:00 2001
+From: Pieter Smith <pieter.smith@philips.com>
+Date: Wed, 29 Mar 2017 18:21:56 +0200
+Subject: [PATCH] libfstools: fix multiple volume_identify usages with the same
+ volume
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes e.g. factory-flashed startup issue with jffs2 on ubi overlay
+
+Commit ba019965 ("libfstools: accept volume as argument in most calls")
+broke startup for factory-flashed jffs2 on ubi systems, causing substantial
+slowdown in factory environments.
+
+When starting up with a factory-flashed jffs2 on ubi system, the "rootfs_data"
+volume contains a deadcode marker. In the start phase, mount_root then mounts a
+tmpfs overlay, and postpones remounting of the jffs2 overlay until the done
+phase of the startup.
+
+The refactoring in ba019965 eliminated an unneeded call to volume_find() when
+done() called jffs2_switch(). Unfortunately the refactoring did not take into
+account that volume_identify() does not function correctly when called twice in
+a row on the same struct volume when using an mtd driver.
+
+mtd_volume_identify() uses mtd_volume_load() to open an fd to the mtd device
+and reads a potential deadcode marker from the fd. The first time this works,
+and FS_DEADCODE is returned.
+
+When volume_identify() is called a second time however, mtd_volume_load()
+notices that we already have an open fd, does nothing further and returns 0
+without resetting the file offset to 0. mtd_volume_identify() now reads past
+the deadcode marker and now returns FS_JFFS2 if the mtd device is a UBIVOLUME.
+
+jffs2_switch() then handles the wrong case, either pulling the root out from
+under user-space in Chaos Calmer, or indefinitely sticking to a tmpfs overlay
+in later OpenWRT builds.
+
+Signed-off-by: Pieter Smith <pieter.smith@philips.com>
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+
+--- a/libfstools/mtd.c
++++ b/libfstools/mtd.c
+@@ -76,8 +76,10 @@ static int mtd_volume_load(struct mtd_vo
+ 	struct mtd_info_user mtdInfo;
+ 	struct erase_info_user mtdLockInfo;
+ 
+-	if (p->fd)
++	if (p->fd) {
++		lseek(p->fd, 0, SEEK_SET);
+ 		return 0;
++	}
+ 
+ 	if (!p->chr)
+ 		return -1;
