@@ -139,6 +139,7 @@ sub download
 		};
 	} else {
 		my @cmd = download_cmd("$mirror/$url_filename");
+		print STDERR "+ ".join(" ",@cmd)."\n";
 		open(FETCH_FD, '-|', @cmd) or die "Cannot launch curl or wget.\n";
 		$hash_cmd and do {
 			open MD5SUM, "| $hash_cmd > '$target/$filename.hash'" or die "Cannot launch $hash_cmd.\n";
