@@ -256,7 +256,7 @@ dhcp_match_add() {
 
 dhcp_host_add() {
 	local cfg="$1"
-	local hosttag nametime addrs
+	local hosttag nametime addrs duids
 
 	config_get_bool force "$cfg" force 0
 
