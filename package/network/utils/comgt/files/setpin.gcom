@@ -7,6 +7,7 @@ opengt
 
  let c=0
 :start
+ send "AT+CFUN=1^m"
  send "AT+CPIN?^m"
  waitfor 15 "SIM PUK","SIM PIN","READY","ERROR","ERR"
  if % = -1 goto timeout
