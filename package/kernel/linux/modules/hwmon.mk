@@ -313,6 +313,23 @@ endef
 $(eval $(call KernelPackage,hwmon-w83627hf))
 
 
+define KernelPackage/hwmon-w83627ehf
+  TITLE:=Winbond W83627EHF/EHG/DHG/UHG, W83667HG monitoring support
+  KCONFIG:=CONFIG_SENSORS_W83627EHF
+  FILES:=$(LINUX_DIR)/drivers/hwmon/w83627ehf.ko
+  AUTOLOAD:=$(call AutoProbe,w83627ehf)
+  $(call AddDepends/hwmon,@TARGET_x86 +kmod-hwmon-vid)
+endef
+
+define KernelPackage/hwmon-w83627ehf/description
+ Kernel module for Winbond W83627EHF/EHG/DHG/UHG and W83667HG thermal monitor chip
+ Support for NCT6775F and NCT6776F has been removed from this driver in favour of
+ using the nct6775 driver to handle those chips.
+endef
+
+$(eval $(call KernelPackage,hwmon-w83627ehf))
+
+
 define KernelPackage/hwmon-w83793
   TITLE:=Winbond W83793G/R monitoring support
   KCONFIG:=CONFIG_SENSORS_W83793
