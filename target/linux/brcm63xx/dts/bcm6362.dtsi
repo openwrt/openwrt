@@ -254,5 +254,13 @@
 			interrupts = <5>;
 			/* clocks = <&clkctl 16>; */
 		};
+
+		leds: led-controller@10001900 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6328-leds";
+			reg = <0x10001900 0x24>;
+			status = "disabled";
+		};
 	};
 };

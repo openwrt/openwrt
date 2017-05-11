@@ -12,26 +12,6 @@
 		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 	};
 
-	spi-gpio {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "spi-gpio";
-
-		gpio-mosi = <&pinctrl 7 0>;
-		gpio-sck = <&pinctrl 6 0>;
-		num-chipselects = <0>;
-
-		hc595: gpio-spi-controller@0 {
-			compatible = "fairchild,74hc595";
-			reg = <0>;
-			registers-number = <1>;
-			spi-max-frequency = <100000>;
-
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -62,22 +42,37 @@
 			label = "CT6373-1:green:wlan";
 			gpios = <&pinctrl 9 1>;
 		};
-		dsl_green {
-			label = "CT6373-1:green:adsl";
-			gpios = <&hc595 0 1>;
-		};
-		line_green {
-			label = "CT6373-1:green:line";
-			gpios = <&hc595 1 1>;
-		};
-		fxs1_green {
-			label = "CT6373-1:green:fxs1";
-			gpios = <&hc595 2 1>;
-		};
-		fxs2_green {
-			label = "CT6373-1:green:fxs2";
-			gpios = <&hc595 3 1>;
-		};
+	};
+};
+
+&leds {
+	status = "ok";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_serial_led>;
+
+	led@0 {
+		reg = <0>;
+		active-low;
+		label = "CT6373-1:green:adsl";
+	};
+
+	led@1 {
+		reg = <1>;
+		active-low;
+		label = "CT6373-1:green:line";
+	};
+
+	led@2 {
+		reg = <2>;
+		active-low;
+		label = "CT6373-1:green:fxs1";
+	};
+
+	led@3 {
+		reg = <3>;
+		active-low;
+		label = "CT6373-1:green:fxs2";
 	};
 };
 

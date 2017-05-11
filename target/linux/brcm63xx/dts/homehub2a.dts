@@ -12,27 +12,6 @@
 		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 	};
 
-	spi-gpio {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "spi-gpio";
-
-		gpio-mosi = <&pinctrl 7 0>;
-		gpio-sck = <&pinctrl 6 0>;
-		cs-gpios = <&pinctrl 5 0>;
-		num-chipselects = <1>;
-
-		hc595: gpio-spi-controller@0 {
-			compatible = "fairchild,74hc595";
-			reg = <0>;
-			registers-number = <2>;
-			spi-max-frequency = <100000>;
-
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -56,71 +35,103 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
+};
 
-	gpio-leds {
-		compatible = "gpio-leds";
+&leds {
+	status = "ok";
 
-		power_red {
-			label = "HOMEHUB2A:red:power";
-			gpios = <&hc595 0 1>;
-		};
-		power_green {
-			label = "HOMEHUB2A:green:power";
-			gpios = <&hc595 1 1>;
-			default-state = "on";
-		};
-		power_blue {
-			label = "HOMEHUB2A:blue:power";
-			gpios = <&hc595 2 1>;
-		};
-		broadband_red {
-			label = "HOMEHUB2A:red:broadband";
-			gpios = <&hc595 3 1>;
-		};
-		broadband_green {
-			label = "HOMEHUB2A:green:broadband";
-			gpios = <&hc595 4 1>;
-		};
-		broadband_blue {
-			label = "HOMEHUB2A:blue:broadband";
-			gpios = <&hc595 5 1>;
-		};
-		wireless_red {
-			label = "HOMEHUB2A:red:wireless";
-			gpios = <&hc595 6 1>;
-		};
-		wireless_green {
-			label = "HOMEHUB2A:green:wireless";
-			gpios = <&hc595 7 1>;
-		};
-		wireless_blue {
-			label = "HOMEHUB2A:blue:wireless";
-			gpios = <&hc595 8 1>;
-		};
-		phone_red {
-			label = "HOMEHUB2A:red:phone";
-			gpios = <&hc595 9 1>;
-		};
-		phone_green {
-			label = "HOMEHUB2A:green:phone";
-			gpios = <&hc595 10 1>;
-		};
-		phone_blue {
-			label = "HOMEHUB2A:blue:phone";
-			gpios = <&hc595 11 1>;
-		};
-		upgrading_red {
-			label = "HOMEHUB2A:red:upgrading";
-			gpios = <&hc595 12 1>;
-		};
-		upgrading_green {
-			label = "HOMEHUB2A:green:upgrading";
-			gpios = <&hc595 13 1>;
-		};
-		upgrading_blue {
-			label = "HOMEHUB2A:blue:upgrading";
-			gpios = <&hc595 14 1>;
-		};
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_serial_led>;
+
+	led@0 {
+		reg = <0>;
+		active-low;
+		label = "HOMEHUB2A:red:power";
+	};
+
+	led@1 {
+		reg = <0>;
+		active-low;
+		label = "HOMEHUB2A:green:power";
+		default-state = "on";
+	};
+
+	led@2 {
+		reg = <2>;
+		active-low;
+		label = "HOMEHUB2A:blue:power";
+	};
+
+	led@3 {
+		reg = <3>;
+		active-low;
+		label = "HOMEHUB2A:red:broadband";
+	};
+
+	led@4 {
+		reg = <4>;
+		active-low;
+		label = "HOMEHUB2A:green:broadband";
+	};
+
+	led@5 {
+		reg = <5>;
+		active-low;
+		label = "HOMEHUB2A:blue:broadband";
+	};
+
+	led@6 {
+		reg = <6>;
+		active-low;
+		label = "HOMEHUB2A:red:wireless";
+	};
+
+	led@7 {
+		reg = <7>;
+		active-low;
+		label = "HOMEHUB2A:green:wireless";
+	};
+
+	led@8 {
+		reg = <8>;
+		active-low;
+		label = "HOMEHUB2A:blue:wireless";
+	};
+
+	led@9 {
+		reg = <9>;
+		active-low;
+		label = "HOMEHUB2A:red:phone";
+	};
+
+	led@10 {
+		reg = <10>;
+		active-low;
+		label = "HOMEHUB2A:green:phone";
+	};
+
+	led@11 {
+		reg = <11>;
+		active-low;
+		label = "HOMEHUB2A:blue:phone";
+	};
+
+	led@12 {
+		reg = <12>;
+		active-low;
+		label = "HOMEHUB2A:red:upgrading";
+	};
+
+	led@13 {
+		reg = <13>;
+		active-low;
+		label = "HOMEHUB2A:green:upgrading";
+	};
+
+	led@14 {
+		reg = <14>;
+		active-low;
+		label = "HOMEHUB2A:blue:upgrading";
 	};
 };
 

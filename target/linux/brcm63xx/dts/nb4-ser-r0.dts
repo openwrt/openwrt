@@ -12,26 +12,6 @@
 		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
 	};
 
-	spi-gpio {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "spi-gpio";
-
-		gpio-mosi = <&pinctrl 7 0>;
-		gpio-sck = <&pinctrl 6 0>;
-		num-chipselects = <0>;
-
-		hc595: gpio-spi-controller@0 {
-			compatible = "fairchild,74hc595";
-			reg = <0>;
-			registers-number = <1>;
-			spi-max-frequency = <100000>;
-
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -84,22 +64,37 @@
 			label = "NB4-SER-r0:green:service";
 			gpios = <&pinctrl 30 1>;
 		};
-		alarm_white {
-			label = "NB4-SER-r0:white:alarm";
-			gpios = <&hc595 0 1>;
-		};
-		tv_white {
-			label = "NB4-SER-r0:white:tv";
-			gpios = <&hc595 2 1>;
-		};
-		tel_white {
-			label = "NB4-SER-r0:white:tel";
-			gpios = <&hc595 3 1>;
-		};
-		adsl_white {
-			label = "NB4-SER-r0:white:adsl";
-			gpios = <&hc595 4 1>;
-		};
+	};
+};
+
+&leds {
+	status = "ok";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_serial_led>;
+
+	led@0 {
+		reg = <0>;
+		active-low;
+		label = "NB4-SER-r0:white:alarm";
+	};
+
+	led@2 {
+		reg = <2>;
+		active-low;
+		label = "NB4-SER-r0:white:tv";
+	};
+
+	led@3 {
+		reg = <3>;
+		active-low;
+		label = "NB4-SER-r0:white:tel";
+	};
+
+	led@4 {
+		reg = <4>;
+		active-low;
+		label = "NB4-SER-r0:white:adsl";
 	};
 };
 

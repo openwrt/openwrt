@@ -155,6 +155,14 @@
 			reg = <0xfffe0098 0x4>;
 		};
 
+		leds: led-controller@fffe00d0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6358-leds";
+			reg = <0xfffe00d0 0x8>;
+			status = "disabled";
+		};
+
 		lsspi: spi@fffe0800 {
 			#address-cells = <1>;
 			#size-cells = <0>;

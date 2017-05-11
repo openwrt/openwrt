@@ -166,6 +166,14 @@
 			};
 		};
 
+		leds: led-controller@10000200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "brcm,bcm6328-leds";
+			reg = <0x10000200 0x24>;
+			status = "disabled";
+		};
+
 		hsspi: spi@10003000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
