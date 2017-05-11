@@ -16,37 +16,37 @@ get_gpio() {
 		local board=$(ar71xx_board_name)
 
 		case "$board" in
-			"om2p" | \
-			"om2pv4" | \
-			"om2p-hs" | \
-			"om2p-hsv2" | \
-			"om2p-hsv3" | \
-			"om2p-hsv4" | \
-			"om5p-acv2")
-				return 12
-				;;
-			"om2pv2" | \
-			"om2p-lc")
-				return 26
-				;;
-			"om5p" | \
-			"om5p-an")
-				return 11
-				;;
-			"om5p-ac")
-				return 17
-				;;
-			"mr600v2")
-				return 15
-				;;
-			"mr900" | \
-			"mr900v2" | \
-			"mr1750" | \
-			"mr1750v2" | \
-			"a40" | \
-			"a60")
-				return 16
-				;;
+		"a40"|\
+		"a60"|\
+		"mr1750"|\
+		"mr1750v2"|\
+		"mr900"|\
+		"mr900v2")
+			return 16
+			;;
+		"mr600v2")
+			return 15
+			;;
+		"om2p"|\
+		"om2p-hs"|\
+		"om2p-hsv2"|\
+		"om2p-hsv3"|\
+		"om2p-hsv4"|\
+		"om2pv4"|\
+		"om5p-acv2")
+			return 12
+			;;
+		"om2p-lc"|\
+		"om2pv2")
+			return 26
+			;;
+		"om5p"|\
+		"om5p-an")
+			return 11
+			;;
+		"om5p-ac")
+			return 17
+			;;
 		esac
 	else
 		#we assume it is om1p in this case
