@@ -571,7 +571,7 @@ endef
 define Device/tl-wr740n-v6
   $(Device/tplink-4mlzma)
   DEVICE_TITLE := TP-LINK TL-WR740N/ND v6
-  BOARDNAME := TL-WR841N-v9
+  BOARDNAME := TL-WR740N-v6
   DEVICE_PROFILE := TLWR740
   TPLINK_HWID := 0x07400006
 endef

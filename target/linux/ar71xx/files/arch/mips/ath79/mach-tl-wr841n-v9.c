@@ -5,6 +5,7 @@
  *  Copyright (C) 2016 Cezary Jackiewicz <cezary@eko.one.pl>
  *  Copyright (C) 2016 Stijn Segers <francesco.borromini@gmail.com>
  *  Copyright (C) 2017 Vaclav Svoboda <svoboda@neng.cz>
+ *  Copyright (C) 2017 Andrey Polischuk <androld.b@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -71,6 +72,19 @@
 
 #define TL_WR842NV3_GPIO_BTN_RESET	1
 #define TL_WR842NV3_GPIO_BTN_WIFI	0
+
+#define TL_WR740NV6_GPIO_LED_SYSTEM	1
+#define TL_WR740NV6_GPIO_LED_QSS	3
+#define TL_WR740NV6_GPIO_LED_WAN_ORANGE	2
+#define TL_WR740NV6_GPIO_LED_WAN_GREEN	4
+#define TL_WR740NV6_GPIO_LED_LAN1	16
+#define TL_WR740NV6_GPIO_LED_LAN2	15
+#define TL_WR740NV6_GPIO_LED_LAN3	14
+#define TL_WR740NV6_GPIO_LED_LAN4	11
+#define TL_WR740NV6_GPIO_LED_WLAN	13
+
+#define TL_WR740NV6_GPIO_BTN_RESET	12
+#define TL_WR740NV6_GPIO_BTN_WIFI	17
 
 #define TL_WR841NV9_KEYS_POLL_INTERVAL	20	/* msecs */
 #define TL_WR841NV9_KEYS_DEBOUNCE_INTERVAL (3 * TL_WR841NV9_KEYS_POLL_INTERVAL)
@@ -271,6 +285,63 @@ static struct gpio_keys_button tl_wr842n_v3_gpio_keys[] __initdata = {
 	}
 };
 
+static struct gpio_led tl_wr740n_v6_leds_gpio[] __initdata = {
+	{
+		.name		= "tp-link:green:lan1",
+		.gpio		= TL_WR740NV6_GPIO_LED_LAN1,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:lan2",
+		.gpio		= TL_WR740NV6_GPIO_LED_LAN2,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:lan3",
+		.gpio		= TL_WR740NV6_GPIO_LED_LAN3,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:lan4",
+		.gpio		= TL_WR740NV6_GPIO_LED_LAN4,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:system",
+		.gpio		= TL_WR740NV6_GPIO_LED_SYSTEM,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:qss",
+		.gpio		= TL_WR740NV6_GPIO_LED_QSS,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:wan",
+		.gpio		= TL_WR740NV6_GPIO_LED_WAN_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:orange:wan",
+		.gpio		= TL_WR740NV6_GPIO_LED_WAN_ORANGE,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:wlan",
+		.gpio		= TL_WR740NV6_GPIO_LED_WLAN,
+		.active_low	= 1,
+	},
+};
+
+static struct gpio_keys_button tl_wr740n_v6_gpio_keys[] __initdata = {
+	{
+		.desc		= "Reset button",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = TL_WR841NV9_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= TL_WR740NV6_GPIO_BTN_RESET,
+		.active_low	= 1,
+	}, {
+		.desc		= "WIFI button",
+		.type		= EV_KEY,
+		.code		= KEY_RFKILL,
+		.debounce_interval = TL_WR841NV9_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= TL_WR740NV6_GPIO_BTN_WIFI,
+		.active_low	= 1,
+	}
+};
 
 static void __init tl_ap143_setup(void)
 {
@@ -369,3 +440,18 @@ static void __init tl_wr842n_v3_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_TL_WR842N_V3, "TL-WR842N-v3", "TP-LINK TL-WR842N/ND v3",
 	     tl_wr842n_v3_setup);
+
+static void __init tl_wr740n_v6_setup(void)
+{
+	tl_ap143_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wr740n_v6_leds_gpio),
+				 tl_wr740n_v6_leds_gpio);
+
+	ath79_register_gpio_keys_polled(1, TL_WR841NV9_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wr740n_v6_gpio_keys),
+					tl_wr740n_v6_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WR740N_V6, "TL-WR740N-v6", "TP-LINK TL-WR740N/ND v6",
+	     tl_wr740n_v6_setup);
