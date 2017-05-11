@@ -42,10 +42,6 @@ ifdef CONFIG_USE_SPARSE
   KERNEL_MAKEOPTS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
 endif
 
-ifneq ($(strip $(CONFIG_KERNEL_GIT_CLONE_URI)),"")
- KERNEL_MAKEOPTS += LOCALVERSION=
-endif
-
 export HOST_EXTRACFLAGS=-I$(STAGING_DIR_HOST)/include
 
 # defined in quilt.mk
