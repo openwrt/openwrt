@@ -24,12 +24,6 @@ define Package/om-watchdog/description
  This package contains the hw watchdog script for the OM1P and OM2P device.
 endef
 
-define Build/Prepare
-endef
-
-define Build/Compile
-endef
-
 define Build/Compile
 endef
 
@@ -40,6 +34,4 @@ define Package/om-watchdog/install
 	$(INSTALL_BIN) ./files/om-watchdog $(1)/sbin/om-watchdog
 endef
 
-
 $(eval $(call BuildPackage,om-watchdog))
-
