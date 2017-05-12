@@ -470,6 +470,7 @@ dhcp_add() {
 	config_get ra "$cfg" ra
 	config_get ra_management "$cfg" ra_management
 	config_get ra_preference "$cfg" ra_preference
+	config_get dns "$cfg" dns
 
 	config_list_foreach "$cfg" "interface_name" append_interface_name "$ifname"
 
@@ -539,6 +540,15 @@ dhcp_add() {
 			xappend "--dhcp-range=$nettag$dhcp6range,constructor:$ifname,slaac,ra-names,$leasetime"
 			;;
 		esac
+
+		if [ -n "$dns" ]; then
+			dnss=""
+			for d in $dns; do append dnss "[$d]" ","; done
+		else
+			dnss="[::]"
+		fi
+
+		dhcp_option_append "option6:dns-server,$dnss" "$networkid"
 	fi
 
 	dhcp_option_add "$cfg" "$networkid"
