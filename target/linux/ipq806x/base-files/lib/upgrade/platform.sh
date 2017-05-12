@@ -1,5 +1,3 @@
-. /lib/ipq806x.sh
-
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
@@ -11,9 +9,7 @@ platform_check_image() {
 }
 
 platform_do_upgrade() {
-	local board=$(ipq806x_board_name)
-
-	case "$board" in
+	case "$(board_name)" in
 	ap148 |\
 	ap-dk04.1-c1 |\
 	d7800 |\
@@ -43,9 +39,7 @@ platform_do_upgrade() {
 }
 
 platform_nand_pre_upgrade() {
-	local board=$(ipq806x_board_name)
-
-	case "$board" in
+	case "$(board_name)" in
 	nbg6817)
 		zyxel_do_upgrade "$1"
 		;;

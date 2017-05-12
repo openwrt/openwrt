@@ -1,10 +1,10 @@
 #!/bin/sh
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
-. /lib/apm821xx.sh
 
 get_status_led() {
-	local board=$(apm821xx_board_name)
+	local board=$(board_name)
 
 	case $board in
 	mbl|\

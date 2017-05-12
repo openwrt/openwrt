@@ -4,10 +4,10 @@
 # Copyright (C) 2009 OpenWrt.org
 #
 
-. /lib/ar71xx.sh
-
 set_preinit_iface() {
-	case $(ar71xx_board_name) in
+	. /lib/functions.sh
+
+	case $(board_name) in
 	alfa-ap96 |\
 	alfa-nx |\
 	ap135-020 |\

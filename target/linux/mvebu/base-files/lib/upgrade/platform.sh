@@ -3,10 +3,8 @@
 # Copyright (C) 2016 LEDE-Project.org
 #
 
-. /lib/mvebu.sh
-
 RAMFS_COPY_BIN='fw_printenv fw_setenv'
-RAMFS_COPY_DATA='/lib/mvebu.sh /etc/fw_env.config /var/lock/fw_printenv.lock'
+RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
@@ -14,9 +12,7 @@ platform_check_image() {
 }
 
 platform_do_upgrade() {
-	local board=$(mvebu_board_name)
-
-	case "$board" in
+	case "$(board_name)" in
 	armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-rango|armada-385-linksys-shelby|armada-xp-linksys-mamba)
 		platform_do_upgrade_linksys "$ARGV"
 		;;
@@ -32,9 +28,7 @@ platform_do_upgrade() {
 	esac
 }
 platform_copy_config() {
-	local board=$(mvebu_board_name)
-
-	case "$board" in
+	case "$(board_name)" in
 	armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-rango|armada-385-linksys-shelby|armada-xp-linksys-mamba)
 		platform_copy_config_linksys
 		;;

@@ -1,11 +1,9 @@
-. /lib/kirkwood.sh
-
 RAMFS_COPY_BIN='fw_printenv fw_setenv'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
-	local board="$(kirkwood_board_name)"
+	local board="$(board_name)"
 	local magic="$(get_magic_long "$1")"
 
 	case "$board" in
@@ -28,7 +26,7 @@ platform_check_image() {
 }
 
 platform_do_upgrade() {
-	local board="$(kirkwood_board_name)"
+	local board="$(board_name)"
 
 	case "$board" in
 	"linksys-audi"|\

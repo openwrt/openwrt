@@ -4,11 +4,10 @@
 #
 
 . /lib/functions/uci-defaults.sh
-. /lib/kirkwood.sh
 
 board_config_update
 
-board=$(kirkwood_board_name)
+board=$(board_name)
 
 case "$board" in
 "dockstar")

@@ -6,9 +6,8 @@
 preinit_mount_syscfg() {
 
 	. /lib/functions.sh
-	. /lib/mvebu.sh
 
-	case $(mvebu_board_name) in
+	case $(board_name) in
 	armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-rango|armada-385-linksys-shelby|armada-xp-linksys-mamba)
 		needs_recovery=0
 		syscfg_part=$(grep syscfg /proc/mtd |cut -c4)

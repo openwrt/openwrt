@@ -1,7 +1,3 @@
-. /lib/ixp4xx.sh
-
-RAMFS_COPY_DATA="/lib/ixp4xx.sh"
-
 CI_BLKSZ=65536
 CI_LDADR=0x00800000
 
@@ -86,7 +82,7 @@ platform_do_upgrade_combined() {
 }
 
 platform_check_image() {
-	local board=$(ixp4xx_board_name)
+	local board=$(board_name)
 	local magic="$(get_magic_word "$1")"
 	local partitions=$(platform_find_partitions)
 	local kernelpart=$(platform_find_kernelpart "${partitions#*:}")
@@ -127,7 +123,7 @@ platform_check_image() {
 }
 
 platform_do_upgrade() {
-	local board=$(ixp4xx_board_name)
+	local board=$(board_name)
 
 	v "board=$board"
 	case "$board" in

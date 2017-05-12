@@ -4,9 +4,8 @@
 START=97
 boot() {
 . /lib/functions.sh
-. /lib/ipq806x.sh
 
-case $(ipq806x_board_name) in
+case $(board_name) in
 	ea8500)
 		# make sure auto_recovery in uboot is always on
 		AUTO_RECOVERY_ENA="`fw_printenv -n auto_recovery`"

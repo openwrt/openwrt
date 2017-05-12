@@ -13,9 +13,6 @@ ath9k_eeprom_extract() {
 	local count=$3
 	local mtd
 
-	. /lib/functions.sh
-	. /lib/functions/system.sh
-
 	mtd=$(find_mtd_chardev $part)
 	[ -n "$mtd" ] || \
 		ath9k_eeprom_die "no mtd device found for partition $part"
@@ -29,9 +26,6 @@ tpl_set_wireless_mac()
 	local offset=$1
 	local mac
 
-	. /lib/functions.sh
-	. /lib/functions/system.sh
-
 	mac=$(mtd_get_mac_binary u-boot 326656)
 	mac=$(macaddr_add $mac $offset)
 
@@ -40,9 +34,10 @@ tpl_set_wireless_mac()
 
 [ -e $FW_FILE ] && exit 0
 
-. /lib/mpc85xx.sh
+. /lib/functions.sh
+. /lib/functions/system.sh
 
-board=$(mpc85xx_board_name)
+board=$(board_name)
 
 case "$FIRMWARE" in
 "pci_wmac0.eeprom")

@@ -4,11 +4,10 @@
 #
 
 . /lib/functions/uci-defaults.sh
-. /lib/at91.sh
 
 board_config_update
 
-case "$(at91_board_name)" in
+case "$(board_name)" in
 
 sama5d3_xplained)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"

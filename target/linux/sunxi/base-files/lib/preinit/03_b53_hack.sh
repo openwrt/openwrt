@@ -1,9 +1,10 @@
 #!/bin/sh
-. /lib/sunxi.sh
 
 do_b53_hack() {
+	. /lib/functions.sh
+
 	# hack: enable switch on Lamobo R1 and reset counters
-	case "$( sunxi_board_name )" in
+	case "$(board_name)" in
 	"lamobo,lamobo-r1")
 		ifconfig eth0 up
 		sleep 1

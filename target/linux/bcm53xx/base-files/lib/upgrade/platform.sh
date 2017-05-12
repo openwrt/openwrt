@@ -8,10 +8,6 @@ get_magic_long_at() {
 	dd if="$1" skip=$2 bs=1 count=4 2>/dev/null | hexdump -v -e '1/1 "%02x"'
 }
 
-platform_machine() {
-	cat /proc/device-tree/compatible | tr '\0' '\t' | cut -f 1
-}
-
 platform_flash_type() {
 	# On NAND devices "rootfs" is UBI volume, so won't be find in /proc/mtd
 	grep -q "\"rootfs\"" /proc/mtd && {
@@ -23,7 +19,7 @@ platform_flash_type() {
 }
 
 platform_expected_image() {
-	local machine=$(platform_machine)
+	local machine=$(board_name)
 
 	case "$machine" in
 		"dlink,dir-885l")	echo "seama wrgac42_dlink.2015_dir885l"; return;;

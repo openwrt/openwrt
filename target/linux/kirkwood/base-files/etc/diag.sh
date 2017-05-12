@@ -1,11 +1,11 @@
 #!/bin/sh
 # Copyright (C) 2014 OpenWrt.org
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
-. /lib/kirkwood.sh
 
 get_status_led() {
-	case $(kirkwood_board_name) in
+	case $(board_name) in
 	dockstar|\
 	goflexhome|\
 	goflexnet)

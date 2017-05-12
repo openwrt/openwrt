@@ -38,11 +38,10 @@ ath10kcal_patch_mac() {
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
-. /lib/ar71xx.sh
 . /lib/functions.sh
 . /lib/functions/system.sh
 
-board=$(ar71xx_board_name)
+board=$(board_name)
 
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")

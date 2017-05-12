@@ -2,11 +2,11 @@
 # Copyright (C) 2015-2016 OpenWrt.org
 # Copyright (C) 2017 LEDE project
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
-. /lib/brcm2708.sh
 
 set_state() {
-	case "$(brcm2708_board_name)" in
+	case "$(board_name)" in
 	rpi-2-b |\
 	rpi-b-plus)
 		status_led="led1"

@@ -3,9 +3,9 @@
 START=99
 
 start() {
-	. /lib/ramips.sh
+	. /lib/functions.sh
 
-	local board=$(ramips_board_name)
+	local board=$(board_name)
 	if [ $board = "sk-wb8" ]; then
 		fw_setenv bootcount 0
 	fi

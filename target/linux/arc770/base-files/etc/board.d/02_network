@@ -3,12 +3,11 @@
 # Copyright (C) 2015 OpenWrt.org
 #
 
-. /lib/arc.sh
 . /lib/functions/uci-defaults.sh
 
 board_config_update
 
-case "$( arc_board_name )" in
+case "$(board_name)" in
 "arc-sdp"*)
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;

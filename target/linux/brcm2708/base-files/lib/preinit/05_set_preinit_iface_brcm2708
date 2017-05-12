@@ -2,10 +2,10 @@
 # Copyright (C) 2015-2016 OpenWrt.org
 # Copyright (C) 2017 LEDE project
 
-. /lib/brcm2708.sh
-
 set_preinit_iface() {
-	case "$(brcm2708_board_name)" in
+	. /lib/functions.sh
+
+	case "$(board_name)" in
 	rpi-2-b |\
 	rpi-3-b |\
 	rpi-b |\

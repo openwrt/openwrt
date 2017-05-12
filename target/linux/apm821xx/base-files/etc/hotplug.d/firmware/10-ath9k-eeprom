@@ -2,7 +2,6 @@
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
-. /lib/apm821xx.sh
 . /lib/functions.sh
 . /lib/functions/system.sh
 
@@ -48,7 +47,7 @@ ath9k_patch_firmware_mac() {
         macaddr_2bin $mac | dd of=/lib/firmware/$FIRMWARE conv=notrunc bs=1 seek=2 count=6
 }
 
-board=$(apm821xx_board_name)
+board=$(board_name)
 
 case "$FIRMWARE" in
 "pci_wmac0.eeprom")

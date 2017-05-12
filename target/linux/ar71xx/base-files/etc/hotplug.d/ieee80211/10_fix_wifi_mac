@@ -6,10 +6,10 @@ PHYNBR=${DEVPATH##*/phy}
 
 [ -n $PHYNBR ] || exit 0
 
-. /lib/ar71xx.sh
+. /lib/functions.sh
 . /lib/functions/system.sh
 
-board=$(ar71xx_board_name)
+board=$(board_name)
 
 case "$board" in
 	archer-c58-v1)

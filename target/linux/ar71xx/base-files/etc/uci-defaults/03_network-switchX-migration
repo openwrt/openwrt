@@ -5,6 +5,8 @@
 
 SWITCH_NAME_CHANGED=
 
+. /lib/functions.sh
+
 do_change_switch_name() {
 	local config="$1"
 	local option=$2
@@ -25,8 +27,6 @@ migrate_switch_name() {
 	local oldname=$1
 	local newname=$2
 
-	. /lib/functions.sh
-
 	config_load network
 
 	logger -t migrate-switchX "Updating switch names in network configuration"
@@ -40,9 +40,7 @@ migrate_switch_name() {
 	}
 }
 
-. /lib/ar71xx.sh
-
-board=$(ar71xx_board_name)
+board=$(board_name)
 
 case "$board" in
 dir-825-c1|\

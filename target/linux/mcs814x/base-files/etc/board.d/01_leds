@@ -4,11 +4,10 @@
 #
 
 . /lib/functions/uci-defaults.sh
-. /lib/mcs814x.sh
 
 board_config_update
 
-board=$(mcs814x_board_name)
+board=$(board_name)
 
 case "$board" in
 dlan-usb-extender)

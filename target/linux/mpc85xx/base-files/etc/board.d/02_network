@@ -2,13 +2,12 @@
 # Copyright (C) 2014-2015 OpenWrt.org
 
 . /lib/functions/uci-defaults.sh
-. /lib/mpc85xx.sh
 . /lib/functions.sh
 . /lib/functions/system.sh
 
 board_config_update
 
-board=$(mpc85xx_board_name)
+board=$(board_name)
 
 case "$board" in
 tl-wdr4900-v1)

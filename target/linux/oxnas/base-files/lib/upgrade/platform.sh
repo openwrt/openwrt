@@ -2,13 +2,10 @@
 # Copyright (C) 2014 OpenWrt.org
 #
 
-. /lib/oxnas.sh
-
-RAMFS_COPY_DATA=/lib/oxnas.sh
 REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
-	local board=$(oxnas_board_name)
+	local board=$(board_name)
 
 	[ "$ARGC" -gt 1 ] && return 1
 

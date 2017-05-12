@@ -7,11 +7,10 @@
 
 touch /etc/config/ubootenv
 
-. /lib/kirkwood.sh
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
 
-board=$(kirkwood_board_name)
+board=$(board_name)
 
 case "$board" in
 dockstar|\

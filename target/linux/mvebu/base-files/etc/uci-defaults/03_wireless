@@ -5,10 +5,10 @@
 
 [ ! -e /etc/config/wireless ] && exit 0
 
+. /lib/functions.sh
 . /lib/functions/system.sh
-. /lib/mvebu.sh
 
-board=$(mvebu_board_name)
+board=$(board_name)
 
 case "$board" in
 armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-shelby|armada-xp-linksys-mamba)

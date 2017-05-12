@@ -1,9 +1,9 @@
 #!/bin/sh
 
-. /lib/apm821xx.sh
-
 preinit_set_mac_address() {
-	case $(apm821xx_board_name) in
+	. /lib/functions.sh
+
+	case $(board_name) in
 		mr24|\
 		mx60)
 			mac_lan=$(mtd_get_mac_binary_ubi board-config 102)

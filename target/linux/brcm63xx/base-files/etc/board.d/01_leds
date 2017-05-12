@@ -4,11 +4,10 @@
 #
 
 . /lib/functions/uci-defaults.sh
-. /lib/brcm63xx.sh
 
 board_config_update
 
-case "$(brcm63xx_board_name)" in
+case "$(board_name)" in
 a4001n1)
 	ucidef_set_led_netdev "lan" "LAN" "A4001N1:green:eth" "eth0"
 	ucidef_set_led_usbdev "usb" "USB" "A4001N1:green:3g" "1-1"

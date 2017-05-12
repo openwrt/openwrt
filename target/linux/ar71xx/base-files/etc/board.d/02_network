@@ -5,7 +5,6 @@
 
 . /lib/functions/system.sh
 . /lib/functions/uci-defaults.sh
-. /lib/ar71xx.sh
 
 ar71xx_setup_interfaces()
 {
@@ -545,7 +544,7 @@ ar71xx_setup_macs()
 }
 
 board_config_update
-board=$(ar71xx_board_name)
+board=$(board_name)
 ar71xx_setup_interfaces $board
 ar71xx_setup_macs $board
 board_config_flush

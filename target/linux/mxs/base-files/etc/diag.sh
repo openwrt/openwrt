@@ -1,11 +1,11 @@
 #!/bin/sh
 # Copyright (C) 2013-2014 OpenWrt.org
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
-. /lib/mxs.sh
 
 get_status_led() {
-	case $(mxs_board_name) in
+	case $(board_name) in
 	duckbill)
 		status_led="duckbill:green:status"
 		;;

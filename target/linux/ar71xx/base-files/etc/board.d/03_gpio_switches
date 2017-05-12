@@ -4,11 +4,10 @@
 #
 
 . /lib/functions/uci-defaults.sh
-. /lib/ar71xx.sh
 
 board_config_update
 
-board=$(ar71xx_board_name)
+board=$(board_name)
 
 case "$board" in
 nanostation-m)

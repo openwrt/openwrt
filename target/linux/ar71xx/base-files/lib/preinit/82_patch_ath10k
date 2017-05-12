@@ -1,8 +1,7 @@
 #!/bin/sh
 
+. /lib/functions.sh
 . /lib/functions/system.sh
-. /lib/ar71xx.sh
-
 
 do_patch_ath10k_firmware() {
 	local firmware_file="/lib/firmware/ath10k/QCA988X/hw2.0/firmware-5.bin"
@@ -25,7 +24,7 @@ do_patch_ath10k_firmware() {
 	# some boards have bogus mac in otp (= directly in the PCIe card's EEPROM).
 	# we have to patch the default mac in the firmware because we cannot change
 	# the otp.
-	case $(ar71xx_board_name) in
+	case $(board_name) in
 		dgl-5500-a1 | tew-823dru)
 			local mac
 			mac=$(mtd_get_mac_ascii nvram wlan1_mac)
@@ -44,7 +43,7 @@ do_patch_ath10k_firmware() {
 }
 
 check_patch_ath10k_firmware() {
-	case $(ar71xx_board_name) in
+	case $(board_name) in
 		dgl-5500-a1 | tew-823dru)
 			do_patch_ath10k_firmware
 		;;

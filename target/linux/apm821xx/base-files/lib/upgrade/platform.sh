@@ -1,12 +1,9 @@
 #!/bin/sh
 
-. /lib/apm821xx.sh
-
 PART_NAME=firmware
-RAMFS_COPY_DATA=/lib/apm821xx.sh
 
 platform_check_image() {
-	local board=$(apm821xx_board_name)
+	local board=$(board_name)
 
 	[ "$#" -gt 1 ] && return 1
 
@@ -36,7 +33,7 @@ platform_check_image() {
 }
 
 platform_pre_upgrade() {
-	local board=$(apm821xx_board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	mr24|\
@@ -54,7 +51,7 @@ platform_pre_upgrade() {
 }
 
 platform_do_upgrade() {
-	local board=$(apm821xx_board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	mbl)
@@ -68,7 +65,7 @@ platform_do_upgrade() {
 }
 
 platform_copy_config() {
-	local board=$(apm821xx_board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	mbl)

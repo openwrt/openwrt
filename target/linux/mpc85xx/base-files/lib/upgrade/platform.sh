@@ -2,10 +2,7 @@
 # Copyright (C) 2011 OpenWrt.org
 #
 
-. /lib/mpc85xx.sh
-
 PART_NAME=firmware
-RAMFS_COPY_DATA=/lib/mpc85xx.sh
 
 tplink_get_hwid() {
 	local part
@@ -25,7 +22,7 @@ tplink_get_image_boot_size() {
 }
 
 platform_check_image() {
-	local board=$(mpc85xx_board_name)
+	local board=$(board_name)
 	local magic="$(get_magic_long "$1")"
 
 	[ "$#" -gt 1 ] && return 1
@@ -65,7 +62,7 @@ platform_check_image() {
 }
 
 platform_do_upgrade() {
-	local board=$(mpc85xx_board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	*)

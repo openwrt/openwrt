@@ -2,10 +2,8 @@
 # Copyright (C) 2010-2015 OpenWrt.org
 #
 
-. /lib/imx6.sh
-
 platform_check_image() {
-	local board=$(imx6_board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	*gw5*)
@@ -19,7 +17,7 @@ platform_check_image() {
 }
 
 platform_pre_upgrade() {
-	local board=$(imx6_board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	*gw5*)

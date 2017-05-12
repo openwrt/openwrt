@@ -3,9 +3,9 @@
 # Copyright (C) 2010 OpenWrt.org
 #
 
-. /lib/ar71xx.sh
+. /lib/functions.sh
 
-board=$(ar71xx_board_name)
+board=$(board_name)
 
 fixtrx() {
 	mtd -o 32 fixtrx firmware

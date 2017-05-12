@@ -2,11 +2,10 @@
 
 . /lib/functions/system.sh
 . /lib/functions/uci-defaults.sh
-. /lib/apm821xx.sh
 
 board_config_update
 
-board=$(apm821xx_board_name)
+board=$(board_name)
 
 case "$board" in
 mbl|\

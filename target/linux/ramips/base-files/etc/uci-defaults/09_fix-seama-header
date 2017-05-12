@@ -3,7 +3,7 @@
 # Copyright (C) 2012 OpenWrt.org
 #
 
-. /lib/ramips.sh
+. /lib/functions.sh
 
 fix_seama_header() {
 	local kernel_size=$(sed -n 's/mtd[0-9]*: \([0-9a-f]*\).*"kernel".*/\1/p' /proc/mtd)
@@ -11,7 +11,7 @@ fix_seama_header() {
 	[ "$kernel_size" ] && mtd -c 0x$kernel_size fixseama firmware
 }
 
-board=$(ramips_board_name)
+board=$(board_name)
 
 case "$board" in
 cy-swr1100 | \

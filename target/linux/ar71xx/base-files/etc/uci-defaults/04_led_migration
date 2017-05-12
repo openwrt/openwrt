@@ -41,9 +41,7 @@ migrate_leds()
 	config_foreach do_led_update_sysfs led "$@"
 }
 
-. /lib/ar71xx.sh
-
-board=$(ar71xx_board_name)
+board=$(board_name)
 
 case "$board" in
 dhp-1565-a1|\

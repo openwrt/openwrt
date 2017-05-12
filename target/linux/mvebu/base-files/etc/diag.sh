@@ -2,11 +2,11 @@
 # Copyright (C) 2014-2016 OpenWrt.org
 # Copyright (C) 2016 LEDE-Project.org
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
-. /lib/mvebu.sh
 
 get_status_led() {
-	case $(mvebu_board_name) in
+	case $(board_name) in
 	armada-385-linksys-caiman)
 		status_led="caiman:white:power"
 		;;

@@ -11,10 +11,9 @@ NAME=om-watchdog
 PROG=/sbin/om-watchdog
 
 get_gpio() {
-	if [ -r /lib/ar71xx.sh ]; then
-		. /lib/ar71xx.sh
-		local board=$(ar71xx_board_name)
+	local board=$(board_name)
 
+	if [ -r /lib/ar71xx.sh ]; then
 		case "$board" in
 		"a40"|\
 		"a60"|\
@@ -49,9 +48,6 @@ get_gpio() {
 			;;
 		esac
 	elif [ -r /lib/ramips.sh ]; then
-		. /lib/ramips.sh
-		local board=$(ramips_board_name)
-
 		case "$board" in
 		"rut5xx")
 			return 11

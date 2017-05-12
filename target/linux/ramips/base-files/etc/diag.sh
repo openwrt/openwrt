@@ -1,11 +1,11 @@
 #!/bin/sh
 # Copyright (C) 2010-2013 OpenWrt.org
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
-. /lib/ramips.sh
 
 get_status_led() {
-	board=$(ramips_board_name)
+	board=$(board_name)
 
 	case $board in
 	3g150b|\

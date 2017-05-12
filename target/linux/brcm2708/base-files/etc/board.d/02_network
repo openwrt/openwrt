@@ -3,13 +3,12 @@
 # Copyright (C) 2017 LEDE project
 
 . /lib/functions/uci-defaults.sh
-. /lib/brcm2708.sh
 . /lib/functions.sh
 . /lib/functions/system.sh
 
 board_config_update
 
-board=$(brcm2708_board_name)
+board=$(board_name)
 
 case "$board" in
 rpi-2-b |\

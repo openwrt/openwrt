@@ -2,13 +2,10 @@
 # Copyright (C) 2010 OpenWrt.org
 #
 
-. /lib/ramips.sh
-
 PART_NAME=firmware
-RAMFS_COPY_DATA=/lib/ramips.sh
 
 platform_check_image() {
-	local board=$(ramips_board_name)
+	local board=$(board_name)
 	local magic="$(get_magic_long "$1")"
 
 	[ "$#" -gt 1 ] && return 1
@@ -275,7 +272,7 @@ platform_check_image() {
 }
 
 platform_nand_pre_upgrade() {
-	local board=$(ramips_board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	ubnt-erx|\
@@ -286,7 +283,7 @@ platform_nand_pre_upgrade() {
 }
 
 platform_do_upgrade() {
-	local board=$(ramips_board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	hc5962|\

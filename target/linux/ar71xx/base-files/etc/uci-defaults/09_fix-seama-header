@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. /lib/ar71xx.sh
+. /lib/functions.sh
 
 fix_seama_header() {
 	local kernel_size=$(sed -n 's/mtd[0-9]*: \([0-9a-f]*\).*"kernel".*/\1/p' /proc/mtd)
@@ -8,7 +8,7 @@ fix_seama_header() {
 	[ "$kernel_size" ] && mtd -c 0x$kernel_size fixseama firmware
 }
 
-board=$(ar71xx_board_name)
+board=$(board_name)
 
 case "$board" in
 dir-869-a1)

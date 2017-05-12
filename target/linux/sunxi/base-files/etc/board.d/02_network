@@ -3,12 +3,11 @@
 # Copyright (C) 2013-2015 OpenWrt.org
 #
 
-. /lib/sunxi.sh
 . /lib/functions/uci-defaults.sh
 
 board_config_update
 
-case "$( sunxi_board_name )" in
+case "$(board_name)" in
 "olimex,a20-olinuxino-micro")
 	ucidef_set_interface_lan 'wlan0'
 	;;

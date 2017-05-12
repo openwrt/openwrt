@@ -1,11 +1,11 @@
 #!/bin/sh
 # Copyright (C) 2009-2013 OpenWrt.org
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
-. /lib/oxnas.sh
 
 get_status_led() {
-	case $(oxnas_board_name) in
+	case $(board_name) in
 	akitio)
 		status_led="akitio:red:status"
 		;;

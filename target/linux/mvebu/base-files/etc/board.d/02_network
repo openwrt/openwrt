@@ -5,11 +5,10 @@
 #
 
 . /lib/functions/uci-defaults.sh
-. /lib/mvebu.sh
 
 board_config_update
 
-board=$(mvebu_board_name)
+board=$(board_name)
 
 case "$board" in
 armada-385-linksys-caiman|\

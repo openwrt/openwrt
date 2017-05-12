@@ -1,11 +1,11 @@
 #!/bin/sh
 # Copyright (C) 2007-2013 OpenWrt.org
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
-. /lib/brcm63xx.sh
 
 set_state() {
-	case "$(brcm63xx_board_name)" in
+	case "$(board_name)" in
 	a4001n1)
 		status_led="A4001N1:green:power"
 		;;

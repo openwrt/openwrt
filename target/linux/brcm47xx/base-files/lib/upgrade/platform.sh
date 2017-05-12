@@ -6,12 +6,8 @@ get_magic_long_at() {
 	dd if="$1" skip=$2 bs=1 count=4 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
-platform_machine() {
-	grep "machine" /proc/cpuinfo | sed "s/.*:[ \t]*//"
-}
-
 platform_expected_image() {
-	local machine=$(platform_machine)
+	local machine=$(board_name)
 
 	case "$machine" in
 		"Netgear WGR614 V8")	echo "chk U12H072T00_NETGEAR"; return;;

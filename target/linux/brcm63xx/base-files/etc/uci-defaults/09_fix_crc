@@ -4,13 +4,13 @@
 #
 #
 
-. /lib/brcm63xx.sh
+. /lib/functions.sh
 
 do_fixcrc() {
 	mtd fixtrx linux
 }
 
-case "$(brcm63xx_board_name)" in
+case "$(board_name)" in
 	a4001n |\
 	a4001n1 |\
 	ar-5381u |\

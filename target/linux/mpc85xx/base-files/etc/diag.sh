@@ -1,11 +1,11 @@
 #!/bin/sh
 # Copyright (C) 2013 OpenWrt.org
 
+. /lib/functions.sh
 . /lib/functions/leds.sh
-. /lib/mpc85xx.sh
 
 get_status_led() {
-        case $(mpc85xx_board_name) in
+        case $(board_name) in
         tl-wdr4900-v1)
                 status_led="tp-link:blue:system"
                 ;;

@@ -38,11 +38,10 @@ ath10kcal_patch_mac() {
 
 [ -e /lib/firmware/$FIRMWARE ] && exit 0
 
-. /lib/ipq806x.sh
 . /lib/functions.sh
 . /lib/functions/system.sh
 
-board=$(ipq806x_board_name)
+board=$(board_name)
 
 
 case "$FIRMWARE" in

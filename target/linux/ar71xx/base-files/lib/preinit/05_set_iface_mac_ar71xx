@@ -2,8 +2,6 @@
 # Copyright (C) 2009 OpenWrt.org
 #
 
-. /lib/ar71xx.sh
-
 fetch_mac_from_mtd() {
 	local mtd_part=$1
 	local lan_env=$2
@@ -21,7 +19,9 @@ fetch_mac_from_mtd() {
 }
 
 preinit_set_mac_address() {
-	case $(ar71xx_board_name) in
+	. /lib/functions.sh
+
+	case $(board_name) in
 		c-55|\
 		c-60)
 			mac_lan=$(mtd_get_mac_binary art 0)

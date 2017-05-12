@@ -1,11 +1,10 @@
 #!/bin/sh
 
 . /lib/functions/uci-defaults.sh
-. /lib/ramips.sh
 
 board_config_update
 
-board=$(ramips_board_name)
+board=$(board_name)
 
 case "$board" in
 ubnt-erx)

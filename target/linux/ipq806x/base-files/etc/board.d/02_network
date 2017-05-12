@@ -5,12 +5,11 @@
 #
 
 . /lib/functions/uci-defaults.sh
-. /lib/ipq806x.sh
 . /lib/functions/system.sh
 
 board_config_update
 
-board=$(ipq806x_board_name)
+board=$(board_name)
 
 case "$board" in
 ap148 |\

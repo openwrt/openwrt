@@ -7,11 +7,10 @@
 
 touch /etc/config/ubootenv
 
-. /lib/ar71xx.sh
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
 
-board=$(ar71xx_board_name)
+board=$(board_name)
 
 case "$board" in
 a40|\
