@@ -1,6 +1,6 @@
 define Device/mikrotik
   PROFILES := Default
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport nand-utils
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   BOARD_NAME := routerboard
   KERNEL_INITRAMFS :=
   KERNEL_NAME := loader-generic.elf
@@ -26,7 +26,7 @@ TARGET_DEVICES += nand-64m nand-large
 
 define Device/rb-nor-flash-16M
   DEVICE_TITLE := MikroTik RouterBoard with 16 MB SPI NOR flash
-  DEVICE_PACKAGES := rbcfg rssileds
+  DEVICE_PACKAGES := rbcfg rssileds -nand-utils
   IMAGE_SIZE := 16000k
   LOADER_TYPE := elf
   KERNEL_INSTALL := 1
