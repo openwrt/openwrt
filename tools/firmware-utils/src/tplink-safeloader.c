@@ -299,6 +299,48 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the C25v1 */
+	{
+		.id = "ARCHER-C25-V1",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:ArcherC25,product_ver:1.0.0,special_id:00000000}\n"
+			"{product_name:ArcherC25,product_ver:1.0.0,special_id:55530000}\n"
+			"{product_name:ArcherC25,product_ver:1.0.0,special_id:45550000}\n",
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:1.0.0\n",
+
+		/**
+		    We use a bigger os-image partition than the stock images (and thus
+		    smaller file-system), as our kernel doesn't fit in the stock firmware's
+		    1MB os-image.
+		*/
+		.partitions = {
+			{"factory-boot", 0x00000, 0x20000},
+			{"fs-uboot", 0x20000, 0x10000},
+			{"os-image", 0x30000, 0x180000},	/* Stock: base 0x30000 size 0x100000 */
+			{"file-system", 0x1b0000, 0x620000},	/* Stock: base 0x130000 size 0x6a0000 */
+			{"user-config", 0x7d0000, 0x04000},
+			{"default-mac", 0x7e0000, 0x00100},
+			{"device-id", 0x7e0100, 0x00100},
+			{"extra-para", 0x7e0200, 0x00100},
+			{"pin", 0x7e0300, 0x00100},
+			{"support-list", 0x7e0400, 0x00400},
+			{"soft-version", 0x7e0800, 0x00400},
+			{"product-info", 0x7e0c00, 0x01400},
+			{"partition-table", 0x7e2000, 0x01000},
+			{"profile", 0x7e3000, 0x01000},
+			{"default-config", 0x7e4000, 0x04000},
+			{"merge-config", 0x7ec000, 0x02000},
+			{"qos-db", 0x7ee000, 0x02000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the C59v1 */
 	{
 		.id	= "ARCHER-C59-V1",
@@ -797,6 +839,15 @@ static struct image_partition_entry read_file(const char *part_name, const char 
 	return entry;
 }
 
+/** Creates a new image partition from arbitrary data */
+static struct image_partition_entry put_data(const char *part_name, const char *datain, size_t len) {
+
+	struct image_partition_entry entry = alloc_image_partition(part_name, len);
+
+	memcpy(entry.data, datain, len);
+
+	return entry;
+}
 
 /**
    Copies a list of image partitions into an image buffer and generates the image partition table while doing so
@@ -978,7 +1029,8 @@ static void build_image(const char *output,
 		bool add_jffs2_eof,
 		bool sysupgrade,
 		const struct device_info *info) {
-	struct image_partition_entry parts[6] = {};
+
+	struct image_partition_entry parts[7] = {};
 
 	parts[0] = make_partition_table(info->partitions);
 	if (info->soft_ver)
@@ -989,6 +1041,11 @@ static void build_image(const char *output,
 	parts[2] = make_support_list(info);
 	parts[3] = read_file("os-image", kernel_image, false);
 	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof);
+
+	if (strcasecmp(info->id, "ARCHER-C25-V1") == 0) {
+		const char mdat[11] = {0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00};
+		parts[5] = put_data("extra-para", mdat, 11);
+	}
 
 	size_t len;
 	void *image;
