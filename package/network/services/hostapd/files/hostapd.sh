@@ -708,7 +708,6 @@ wpa_supplicant_add_network() {
 			;;
 		esac
 	}
-	local beacon_int brates mrate
 	[ -n "$bssid" ] && append network_data "bssid=$bssid" "$N$T"
 	[ -n "$beacon_int" ] && append network_data "beacon_int=$beacon_int" "$N$T"
 
