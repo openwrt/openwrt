@@ -76,7 +76,7 @@ hostapd_prepare_device_config() {
 	local base="${config%%.conf}"
 	local base_cfg=
 
-	json_get_vars country country_ie beacon_int doth require_mode legacy_rates
+	json_get_vars country country_ie beacon_int:100 doth require_mode legacy_rates
 
 	hostapd_set_log_options base_cfg
 
@@ -121,7 +121,7 @@ hostapd_prepare_device_config() {
 
 	[ -n "$rlist" ] && append base_cfg "supported_rates=$rlist" "$N"
 	[ -n "$brlist" ] && append base_cfg "basic_rates=$brlist" "$N"
-	[ -n "$beacon_int" ] && append base_cfg "beacon_int=$beacon_int" "$N"
+	append base_cfg "beacon_int=$beacon_int" "$N"
 
 	cat > "$config" <<EOF
 driver=$driver
@@ -709,7 +709,6 @@ wpa_supplicant_add_network() {
 		esac
 	}
 	[ -n "$bssid" ] && append network_data "bssid=$bssid" "$N$T"
-	[ -n "$beacon_int" ] && append network_data "beacon_int=$beacon_int" "$N$T"
 
 	local bssid_blacklist bssid_whitelist
 	json_get_values bssid_blacklist bssid_blacklist
