@@ -429,6 +429,12 @@ mac80211_iw_interface_add() {
 		rc="$?"
 	}
 
+	[ "$rc" = 233 ] && {
+		# Device might not support virtual interfaces, so the interface never got deleted in the first place.
+		# Check if the interface already exists, and avoid failing in this case.
+		ip link show dev "$ifname" >/dev/null 2>/dev/null && rc=0
+	}
+
 	[ "$rc" != 0 ] && wireless_setup_failed INTERFACE_CREATION_FAILED
 	return $rc
 }
