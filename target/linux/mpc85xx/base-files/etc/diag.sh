@@ -6,13 +6,13 @@
 
 get_status_led() {
 	case $(board_name) in
-	hiveap-330)
+	aerohive,hiveap-330)
 		status_led="hiveap-330:green:tricolor0"
 		;;
-	tl-wdr4900-v1)
+	tplink,tl-wdr4900-v1)
 		status_led="tp-link:blue:system"
 		;;
-esac
+	esac
 }
 
 set_state() {

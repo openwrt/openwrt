@@ -32,7 +32,7 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case $board in
-	hiveap-330)
+	aerohive,hiveap-330)
 		local init_magic=$(get_magic_long_at "$1" "65536")
 		local root_magic=$(get_magic_long_at "$1" "131072")
 		local kernel_magic=$(get_magic_long_at "$1" "10551296")
@@ -55,7 +55,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	tl-wdr4900-v1)
+	tplink,tl-wdr4900-v1)
 		[ "$magic" != "01000000" ] && {
 			echo "Invalid image type."
 			return 1
