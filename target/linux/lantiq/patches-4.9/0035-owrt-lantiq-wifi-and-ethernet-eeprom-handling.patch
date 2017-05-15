@@ -29,7 +29,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -2,4 +2,7 @@ obj-y := prom.o sysctrl.o clk.o reset.o
  
- obj-y += vmmc.o tffs.o
+ obj-y += vmmc.o
  
 +obj-y += eth_mac.o
 +obj-$(CONFIG_PCI) += ath5k_eep.o

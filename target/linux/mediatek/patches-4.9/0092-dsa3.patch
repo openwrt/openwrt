@@ -33,11 +33,9 @@ Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h | 4 ++++
  2 files changed, 10 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 9e75768..c21ed99 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1846,6 +1846,12 @@ static int mtk_hw_init(struct mtk_eth *eth)
+@@ -1855,6 +1855,12 @@ static int mtk_hw_init(struct mtk_eth *e
  	/* GE2, Force 1000M/FD, FC ON */
  	mtk_w32(eth, MAC_MCR_FIXED_LINK, MTK_MAC_MCR(1));
  
@@ -50,8 +48,6 @@ index 9e75768..c21ed99 100644
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
  
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-index 99b1c8e..996024d 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -70,6 +70,10 @@

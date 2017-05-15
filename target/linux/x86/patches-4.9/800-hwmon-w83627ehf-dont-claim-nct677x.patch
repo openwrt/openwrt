@@ -1,8 +1,6 @@
-diff --git a/drivers/hwmon/w83627ehf.c b/drivers/hwmon/w83627ehf.c
-index 697007afb99c..4a4e0b4c077c 100644
 --- a/drivers/hwmon/w83627ehf.c
 +++ b/drivers/hwmon/w83627ehf.c
-@@ -2707,8 +2707,8 @@ static int __init w83627ehf_find(int sioaddr, unsigned short *addr,
+@@ -2707,8 +2707,8 @@ static int __init w83627ehf_find(int sio
  	static const char sio_name_W83627UHG[] __initconst = "W83627UHG";
  	static const char sio_name_W83667HG[] __initconst = "W83667HG";
  	static const char sio_name_W83667HG_B[] __initconst = "W83667HG-B";
@@ -13,7 +11,7 @@ index 697007afb99c..4a4e0b4c077c 100644
  
  	u16 val;
  	const char *sio_name;
-@@ -2749,14 +2749,14 @@ static int __init w83627ehf_find(int sioaddr, unsigned short *addr,
+@@ -2749,14 +2749,14 @@ static int __init w83627ehf_find(int sio
  		sio_data->kind = w83667hg_b;
  		sio_name = sio_name_W83667HG_B;
  		break;

@@ -16,10 +16,8 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  2 files changed, 35 insertions(+), 5 deletions(-)
  create mode 100644 include/dt-bindings/power/mt2701-power.h
 
-Index: linux-4.9.14/Documentation/devicetree/bindings/soc/mediatek/scpsys.txt
-===================================================================
---- linux-4.9.14.orig/Documentation/devicetree/bindings/soc/mediatek/scpsys.txt
-+++ linux-4.9.14/Documentation/devicetree/bindings/soc/mediatek/scpsys.txt
+--- a/Documentation/devicetree/bindings/soc/mediatek/scpsys.txt
++++ b/Documentation/devicetree/bindings/soc/mediatek/scpsys.txt
 @@ -9,17 +9,20 @@ domain control.
  
  The driver implements the Generic PM domain bindings described in
@@ -46,10 +44,8 @@ Index: linux-4.9.14/Documentation/devicetree/bindings/soc/mediatek/scpsys.txt
  
  Optional properties:
  - vdec-supply: Power supply for the vdec power domain
-Index: linux-4.9.14/include/dt-bindings/power/mt2701-power.h
-===================================================================
 --- /dev/null
-+++ linux-4.9.14/include/dt-bindings/power/mt2701-power.h
++++ b/include/dt-bindings/power/mt2701-power.h
 @@ -0,0 +1,26 @@
 +/*
 + * Copyright (C) 2015 MediaTek Inc.

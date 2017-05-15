@@ -36,11 +36,9 @@ Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
  6 files changed, 127 insertions(+)
  create mode 100644 net/dsa/tag_mtk.c
 
-diff --git a/include/net/dsa.h b/include/net/dsa.h
-index 4e13e69..3276547 100644
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -31,6 +31,7 @@ enum dsa_tag_protocol {
+@@ -27,6 +27,7 @@ enum dsa_tag_protocol {
  	DSA_TAG_PROTO_EDSA,
  	DSA_TAG_PROTO_BRCM,
  	DSA_TAG_PROTO_QCA,
@@ -48,31 +46,25 @@ index 4e13e69..3276547 100644
  	DSA_TAG_LAST,		/* MUST BE LAST */
  };
  
-diff --git a/net/dsa/Kconfig b/net/dsa/Kconfig
-index 9649238..d78789b 100644
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
-@@ -31,4 +31,6 @@ config NET_DSA_TAG_TRAILER
+@@ -41,4 +41,6 @@ config NET_DSA_TAG_TRAILER
  config NET_DSA_TAG_QCA
  	bool
  
 +config NET_DSA_TAG_MTK
 +	bool
  endif
-diff --git a/net/dsa/Makefile b/net/dsa/Makefile
-index 31d3437..9b1d478 100644
 --- a/net/dsa/Makefile
 +++ b/net/dsa/Makefile
-@@ -8,3 +8,4 @@ dsa_core-$(CONFIG_NET_DSA_TAG_DSA) += tag_dsa.o
+@@ -8,3 +8,4 @@ dsa_core-$(CONFIG_NET_DSA_TAG_DSA) += ta
  dsa_core-$(CONFIG_NET_DSA_TAG_EDSA) += tag_edsa.o
  dsa_core-$(CONFIG_NET_DSA_TAG_TRAILER) += tag_trailer.o
  dsa_core-$(CONFIG_NET_DSA_TAG_QCA) += tag_qca.o
 +dsa_core-$(CONFIG_NET_DSA_TAG_MTK) += tag_mtk.o
-diff --git a/net/dsa/dsa.c b/net/dsa/dsa.c
-index b6d4f6a..617f736 100644
 --- a/net/dsa/dsa.c
 +++ b/net/dsa/dsa.c
-@@ -53,6 +53,9 @@ static struct sk_buff *dsa_slave_notag_xmit(struct sk_buff *skb,
+@@ -57,6 +57,9 @@ const struct dsa_device_ops *dsa_device_
  #ifdef CONFIG_NET_DSA_TAG_QCA
  	[DSA_TAG_PROTO_QCA] = &qca_netdev_ops,
  #endif
@@ -82,11 +74,9 @@ index b6d4f6a..617f736 100644
  	[DSA_TAG_PROTO_NONE] = &none_ops,
  };
  
-diff --git a/net/dsa/dsa_priv.h b/net/dsa/dsa_priv.h
-index 0706a51..2a31399 100644
 --- a/net/dsa/dsa_priv.h
 +++ b/net/dsa/dsa_priv.h
-@@ -85,4 +85,7 @@ int dsa_slave_create(struct dsa_switch *ds, struct device *parent,
+@@ -84,4 +84,7 @@ extern const struct dsa_device_ops brcm_
  /* tag_qca.c */
  extern const struct dsa_device_ops qca_netdev_ops;
  
@@ -94,9 +84,6 @@ index 0706a51..2a31399 100644
 +extern const struct dsa_device_ops mtk_netdev_ops;
 +
  #endif
-diff --git a/net/dsa/tag_mtk.c b/net/dsa/tag_mtk.c
-new file mode 100644
-index 0000000..833a9d6
 --- /dev/null
 +++ b/net/dsa/tag_mtk.c
 @@ -0,0 +1,117 @@

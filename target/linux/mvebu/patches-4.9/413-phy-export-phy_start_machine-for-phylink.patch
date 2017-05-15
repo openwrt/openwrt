@@ -12,7 +12,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -580,6 +580,7 @@ void phy_start_machine(struct phy_device
+@@ -612,6 +612,7 @@ void phy_start_machine(struct phy_device
  {
  	queue_delayed_work(system_power_efficient_wq, &phydev->state_queue, HZ);
  }

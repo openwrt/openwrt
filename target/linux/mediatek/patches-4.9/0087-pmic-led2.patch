@@ -30,10 +30,8 @@ Reviewed-by: Jacek Anaszewski <jacek.anaszewski@gmail.com>
  3 files changed, 511 insertions(+)
  create mode 100644 drivers/leds/leds-mt6323.c
 
-Index: linux-4.9.17/drivers/leds/Kconfig
-===================================================================
---- linux-4.9.17.orig/drivers/leds/Kconfig
-+++ linux-4.9.17/drivers/leds/Kconfig
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
 @@ -117,6 +117,14 @@ config LEDS_MIKROTIK_RB532
  	  This option enables support for the so called "User LED" of
  	  Mikrotik's Routerboard 532.
@@ -49,10 +47,8 @@ Index: linux-4.9.17/drivers/leds/Kconfig
  config LEDS_S3C24XX
  	tristate "LED Support for Samsung S3C24XX GPIO LEDs"
  	depends on LEDS_CLASS
-Index: linux-4.9.17/drivers/leds/leds-mt6323.c
-===================================================================
 --- /dev/null
-+++ linux-4.9.17/drivers/leds/leds-mt6323.c
++++ b/drivers/leds/leds-mt6323.c
 @@ -0,0 +1,502 @@
 +/*
 + * LED driver for Mediatek MT6323 PMIC

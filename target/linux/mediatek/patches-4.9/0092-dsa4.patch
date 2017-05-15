@@ -31,11 +31,9 @@ Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index c21ed99..84b09a4 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -2323,6 +2323,8 @@ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
+@@ -2333,6 +2333,8 @@ static int mtk_add_mac(struct mtk_eth *e
  	eth->netdev[id]->ethtool_ops = &mtk_ethtool_ops;
  
  	eth->netdev[id]->irq = eth->irq[0];

@@ -12,8 +12,6 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  drivers/soc/mediatek/mtk-scpsys.c | 348 +++++++++++++++++++++++---------------
  1 file changed, 210 insertions(+), 138 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-scpsys.c b/drivers/soc/mediatek/mtk-scpsys.c
-index 837effe19907..722aac80e611 100644
 --- a/drivers/soc/mediatek/mtk-scpsys.c
 +++ b/drivers/soc/mediatek/mtk-scpsys.c
 @@ -11,17 +11,15 @@
@@ -181,7 +179,7 @@ index 837effe19907..722aac80e611 100644
  	struct genpd_onecell_data pd_data;
  	struct device *dev;
  	void __iomem *base;
-@@ -408,57 +324,55 @@ static bool scpsys_active_wakeup(struct device *dev)
+@@ -408,57 +324,55 @@ static bool scpsys_active_wakeup(struct
  	return scpd->data->active_wakeup;
  }
  
@@ -262,7 +260,7 @@ index 837effe19907..722aac80e611 100644
  		struct scp_domain *scpd = &scp->domains[i];
  		const struct scp_domain_data *data = &scp_domain_data[i];
  
-@@ -467,13 +381,15 @@ static int scpsys_probe(struct platform_device *pdev)
+@@ -467,13 +381,15 @@ static int scpsys_probe(struct platform_
  			if (PTR_ERR(scpd->supply) == -ENODEV)
  				scpd->supply = NULL;
  			else
@@ -273,15 +271,15 @@ index 837effe19907..722aac80e611 100644
  
 -	pd_data->num_domains = NUM_DOMAINS;
 +	pd_data->num_domains = num;
++
++	init_clks(pdev, clk);
  
 -	for (i = 0; i < NUM_DOMAINS; i++) {
-+	init_clks(pdev, clk);
-+
 +	for (i = 0; i < num; i++) {
  		struct scp_domain *scpd = &scp->domains[i];
  		struct generic_pm_domain *genpd = &scpd->genpd;
  		const struct scp_domain_data *data = &scp_domain_data[i];
-@@ -482,13 +398,37 @@ static int scpsys_probe(struct platform_device *pdev)
+@@ -482,13 +398,37 @@ static int scpsys_probe(struct platform_
  		scpd->scp = scp;
  
  		scpd->data = data;
@@ -321,7 +319,7 @@ index 837effe19907..722aac80e611 100644
  
  		/*
  		 * Initially turn on all domains to make the domains usable
-@@ -507,6 +447,123 @@ static int scpsys_probe(struct platform_device *pdev)
+@@ -507,6 +447,123 @@ static int scpsys_probe(struct platform_
  	 * valid.
  	 */
  
@@ -445,7 +443,7 @@ index 837effe19907..722aac80e611 100644
  	ret = pm_genpd_add_subdomain(pd_data->domains[MT8173_POWER_DOMAIN_MFG_ASYNC],
  		pd_data->domains[MT8173_POWER_DOMAIN_MFG_2D]);
  	if (ret && IS_ENABLED(CONFIG_PM))
-@@ -517,21 +574,36 @@ static int scpsys_probe(struct platform_device *pdev)
+@@ -517,21 +574,36 @@ static int scpsys_probe(struct platform_
  	if (ret && IS_ENABLED(CONFIG_PM))
  		dev_err(&pdev->dev, "Failed to add subdomain: %d\n", ret);
  
@@ -486,6 +484,3 @@ index 837effe19907..722aac80e611 100644
  static struct platform_driver scpsys_drv = {
  	.probe = scpsys_probe,
  	.driver = {
--- 
-2.11.0
-

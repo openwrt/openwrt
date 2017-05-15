@@ -1,7 +1,5 @@
-Index: linux-4.9.17/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.9.17.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.9.17/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -2459,15 +2459,23 @@ static int mtk_probe(struct platform_dev
  			goto err_deinit_hw;
  	}
@@ -26,10 +24,8 @@ Index: linux-4.9.17/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  
  	err = mtk_mdio_init(eth);
  	if (err)
-Index: linux-4.9.17/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-===================================================================
---- linux-4.9.17.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-+++ linux-4.9.17/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -539,6 +539,7 @@ struct mtk_eth {
  	struct net_device		*netdev[MTK_MAX_DEVS];
  	struct mtk_mac			*mac[MTK_MAX_DEVS];

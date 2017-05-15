@@ -1,7 +1,5 @@
-Index: linux-4.9.17/drivers/net/dsa/mt7530.c
-===================================================================
---- linux-4.9.17.orig/drivers/net/dsa/mt7530.c
-+++ linux-4.9.17/drivers/net/dsa/mt7530.c
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
 @@ -834,6 +834,7 @@ mt7530_port_bridge_join(struct dsa_switc
  	int i;
  
@@ -70,10 +68,8 @@ Index: linux-4.9.17/drivers/net/dsa/mt7530.c
  }
  
  static void
-Index: linux-4.9.17/drivers/net/dsa/mt7530.h
-===================================================================
---- linux-4.9.17.orig/drivers/net/dsa/mt7530.h
-+++ linux-4.9.17/drivers/net/dsa/mt7530.h
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
 @@ -379,6 +379,8 @@ struct mt7530_priv {
  	struct mt7530_port	ports[MT7530_NUM_PORTS];
  	/* protect among processes for registers access*/
@@ -83,10 +79,8 @@ Index: linux-4.9.17/drivers/net/dsa/mt7530.h
  };
  
  struct mt7530_hw_stats {
-Index: linux-4.9.17/net/dsa/tag_mtk.c
-===================================================================
---- linux-4.9.17.orig/net/dsa/tag_mtk.c
-+++ linux-4.9.17/net/dsa/tag_mtk.c
+--- a/net/dsa/tag_mtk.c
++++ b/net/dsa/tag_mtk.c
 @@ -35,7 +35,7 @@ static struct sk_buff *mtk_tag_xmit(stru
  	/* Build the tag after the MAC Source Address */
  	mtk_tag = skb->data + 2 * ETH_ALEN;

@@ -17,10 +17,8 @@ Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
  drivers/soc/mediatek/mtk-scpsys.c | 117 +++++++++++++++++++++++++++++++++++++-
  2 files changed, 117 insertions(+), 2 deletions(-)
 
-Index: linux-4.9.14/drivers/soc/mediatek/Kconfig
-===================================================================
---- linux-4.9.14.orig/drivers/soc/mediatek/Kconfig
-+++ linux-4.9.14/drivers/soc/mediatek/Kconfig
+--- a/drivers/soc/mediatek/Kconfig
++++ b/drivers/soc/mediatek/Kconfig
 @@ -23,7 +23,7 @@ config MTK_PMIC_WRAP
  config MTK_SCPSYS
  	bool "MediaTek SCPSYS Support"
@@ -30,10 +28,8 @@ Index: linux-4.9.14/drivers/soc/mediatek/Kconfig
  	select REGMAP
  	select MTK_INFRACFG
  	select PM_GENERIC_DOMAINS if PM
-Index: linux-4.9.14/drivers/soc/mediatek/mtk-scpsys.c
-===================================================================
---- linux-4.9.14.orig/drivers/soc/mediatek/mtk-scpsys.c
-+++ linux-4.9.14/drivers/soc/mediatek/mtk-scpsys.c
+--- a/drivers/soc/mediatek/mtk-scpsys.c
++++ b/drivers/soc/mediatek/mtk-scpsys.c
 @@ -20,6 +20,7 @@
  #include <linux/regulator/consumer.h>
  #include <linux/soc/mediatek/infracfg.h>

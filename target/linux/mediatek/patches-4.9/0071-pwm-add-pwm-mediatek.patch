@@ -13,10 +13,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  5 files changed, 279 insertions(+)
  create mode 100644 drivers/pwm/pwm-mediatek.c
 
-Index: linux-4.9.17/drivers/pwm/Kconfig
-===================================================================
---- linux-4.9.17.orig/drivers/pwm/Kconfig
-+++ linux-4.9.17/drivers/pwm/Kconfig
+--- a/drivers/pwm/Kconfig
++++ b/drivers/pwm/Kconfig
 @@ -282,6 +282,15 @@ config PWM_MTK_DISP
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-mtk-disp.
@@ -33,10 +31,8 @@ Index: linux-4.9.17/drivers/pwm/Kconfig
  config PWM_MXS
  	tristate "Freescale MXS PWM support"
  	depends on ARCH_MXS && OF
-Index: linux-4.9.17/drivers/pwm/Makefile
-===================================================================
---- linux-4.9.17.orig/drivers/pwm/Makefile
-+++ linux-4.9.17/drivers/pwm/Makefile
+--- a/drivers/pwm/Makefile
++++ b/drivers/pwm/Makefile
 @@ -25,6 +25,7 @@ obj-$(CONFIG_PWM_LPSS)		+= pwm-lpss.o
  obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-pci.o
  obj-$(CONFIG_PWM_LPSS_PLATFORM)	+= pwm-lpss-platform.o
@@ -45,10 +41,8 @@ Index: linux-4.9.17/drivers/pwm/Makefile
  obj-$(CONFIG_PWM_MTK_DISP)	+= pwm-mtk-disp.o
  obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
  obj-$(CONFIG_PWM_OMAP_DMTIMER)	+= pwm-omap-dmtimer.o
-Index: linux-4.9.17/drivers/pwm/pwm-mediatek.c
-===================================================================
 --- /dev/null
-+++ linux-4.9.17/drivers/pwm/pwm-mediatek.c
++++ b/drivers/pwm/pwm-mediatek.c
 @@ -0,0 +1,230 @@
 +/*
 + * Mediatek Pulse Width Modulator driver

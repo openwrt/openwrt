@@ -1,7 +1,5 @@
-Index: linux-4.9.20/drivers/net/dsa/mt7530.c
-===================================================================
---- linux-4.9.20.orig/drivers/net/dsa/mt7530.c
-+++ linux-4.9.20/drivers/net/dsa/mt7530.c
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
 @@ -629,6 +629,11 @@ mt7530_setup(struct dsa_switch *ds)
  	val = mt7530_read(priv, MT7530_MHWTRAP);
  	val &= ~MHWTRAP_P6_DIS & ~MHWTRAP_PHY_ACCESS;
@@ -14,10 +12,8 @@ Index: linux-4.9.20/drivers/net/dsa/mt7530.c
  	mt7530_write(priv, MT7530_MHWTRAP, val);
  
  	/* Enable and reset MIB counters */
-Index: linux-4.9.20/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.9.20.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.9.20/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -221,6 +221,9 @@ static void mtk_phy_link_adjust(struct n
  		netif_carrier_on(dev);
  	else

@@ -26,11 +26,9 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  drivers/mfd/mt6397-core.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/mfd/mt6397-core.c b/drivers/mfd/mt6397-core.c
-index e14d8b0..8e601c8 100644
 --- a/drivers/mfd/mt6397-core.c
 +++ b/drivers/mfd/mt6397-core.c
-@@ -48,6 +48,10 @@
+@@ -48,6 +48,10 @@ static const struct mfd_cell mt6323_devs
  		.name = "mt6323-regulator",
  		.of_compatible = "mediatek,mt6323-regulator"
  	},

@@ -1,7 +1,5 @@
-Index: linux-4.9.20/drivers/net/dsa/mt7530.c
-===================================================================
---- linux-4.9.20.orig/drivers/net/dsa/mt7530.c
-+++ linux-4.9.20/drivers/net/dsa/mt7530.c
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
 @@ -996,15 +996,7 @@ err:
  static enum dsa_tag_protocol
  mtk_get_tag_protocol(struct dsa_switch *ds)
@@ -19,10 +17,8 @@ Index: linux-4.9.20/drivers/net/dsa/mt7530.c
  }
  
  static struct dsa_switch_ops mt7530_switch_ops = {
-Index: linux-4.9.20/include/net/dsa.h
-===================================================================
---- linux-4.9.20.orig/include/net/dsa.h
-+++ linux-4.9.20/include/net/dsa.h
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
 @@ -145,6 +145,8 @@ struct dsa_port {
  	struct device_node	*dn;
  	unsigned int		ageing_time;
@@ -72,10 +68,8 @@ Index: linux-4.9.20/include/net/dsa.h
  struct switchdev_trans;
  struct switchdev_obj;
  struct switchdev_obj_port_fdb;
-Index: linux-4.9.20/net/dsa/dsa2.c
-===================================================================
---- linux-4.9.20.orig/net/dsa/dsa2.c
-+++ linux-4.9.20/net/dsa/dsa2.c
+--- a/net/dsa/dsa2.c
++++ b/net/dsa/dsa2.c
 @@ -248,8 +248,6 @@ static int dsa_cpu_port_apply(struct dev
  		return err;
  	}
@@ -151,10 +145,8 @@ Index: linux-4.9.20/net/dsa/dsa2.c
  	}
  
  	pr_info("DSA: switch %d %d parsed\n", dst->tree, ds->index);
-Index: linux-4.9.20/net/dsa/dsa_priv.h
-===================================================================
---- linux-4.9.20.orig/net/dsa/dsa_priv.h
-+++ linux-4.9.20/net/dsa/dsa_priv.h
+--- a/net/dsa/dsa_priv.h
++++ b/net/dsa/dsa_priv.h
 @@ -43,6 +43,7 @@ struct dsa_slave_priv {
  	int			old_duplex;
  
@@ -163,10 +155,8 @@ Index: linux-4.9.20/net/dsa/dsa_priv.h
  #ifdef CONFIG_NET_POLL_CONTROLLER
  	struct netpoll		*netpoll;
  #endif
-Index: linux-4.9.20/net/dsa/slave.c
-===================================================================
---- linux-4.9.20.orig/net/dsa/slave.c
-+++ linux-4.9.20/net/dsa/slave.c
+--- a/net/dsa/slave.c
++++ b/net/dsa/slave.c
 @@ -61,7 +61,7 @@ static int dsa_slave_get_iflink(const st
  {
  	struct dsa_slave_priv *p = netdev_priv(dev);

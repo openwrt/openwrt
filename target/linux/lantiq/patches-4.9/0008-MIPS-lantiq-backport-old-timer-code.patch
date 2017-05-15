@@ -176,7 +176,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -obj-y := prom.o sysctrl.o clk.o reset.o dma.o gptu.o dcdc.o
 +obj-y := prom.o sysctrl.o clk.o reset.o dma.o timer.o dcdc.o
  
- obj-y += vmmc.o tffs.o
+ obj-y += vmmc.o
  
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/timer.c

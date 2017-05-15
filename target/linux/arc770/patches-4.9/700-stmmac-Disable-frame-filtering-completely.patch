@@ -20,8 +20,8 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
 
 --- a/drivers/net/ethernet/stmicro/stmmac/common.h
 +++ b/drivers/net/ethernet/stmicro/stmmac/common.h
-@@ -42,7 +42,7 @@
- #define	DWMAC_CORE_3_50	0x35
+@@ -49,7 +49,7 @@
+ #define STMMAC_GET_ENTRY(x, size)	((x + 1) & (size - 1))
  
  #undef FRAME_FILTER_DEBUG
 -/* #define FRAME_FILTER_DEBUG */

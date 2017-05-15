@@ -49,8 +49,6 @@ Signed-off-by: Landen Chao <Landen.Chao@mediatek.com>
  create mode 100644 drivers/net/dsa/mt7530.c
  create mode 100644 drivers/net/dsa/mt7530.h
 
-diff --git a/drivers/net/dsa/Kconfig b/drivers/net/dsa/Kconfig
-index 0659846..5b322b4 100644
 --- a/drivers/net/dsa/Kconfig
 +++ b/drivers/net/dsa/Kconfig
 @@ -34,4 +34,12 @@ config NET_DSA_QCA8K
@@ -66,21 +64,16 @@ index 0659846..5b322b4 100644
 +	  chip.
 +
  endmenu
-diff --git a/drivers/net/dsa/Makefile b/drivers/net/dsa/Makefile
-index a3c9416..8e629c1 100644
 --- a/drivers/net/dsa/Makefile
 +++ b/drivers/net/dsa/Makefile
-@@ -2,6 +2,6 @@ obj-$(CONFIG_NET_DSA_MV88E6060) += mv88e6060.o
- obj-$(CONFIG_NET_DSA_BCM_SF2)	+= bcm-sf2.o
- bcm-sf2-objs			:= bcm_sf2.o bcm_sf2_cfp.o
+@@ -1,6 +1,6 @@
+ obj-$(CONFIG_NET_DSA_MV88E6060) += mv88e6060.o
+ obj-$(CONFIG_NET_DSA_BCM_SF2)	+= bcm_sf2.o
  obj-$(CONFIG_NET_DSA_QCA8K)	+= qca8k.o
 -
 +obj-$(CONFIG_NET_DSA_MT7530) += mt7530.o
  obj-y				+= b53/
  obj-y				+= mv88e6xxx/
-diff --git a/drivers/net/dsa/mt7530.c b/drivers/net/dsa/mt7530.c
-new file mode 100644
-index 0000000..ad2e6f8
 --- /dev/null
 +++ b/drivers/net/dsa/mt7530.c
 @@ -0,0 +1,1126 @@
@@ -1210,9 +1203,6 @@ index 0000000..ad2e6f8
 +MODULE_DESCRIPTION("Driver for Mediatek MT7530 Switch");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:mediatek-mt7530");
-diff --git a/drivers/net/dsa/mt7530.h b/drivers/net/dsa/mt7530.h
-new file mode 100644
-index 0000000..05a612f
 --- /dev/null
 +++ b/drivers/net/dsa/mt7530.h
 @@ -0,0 +1,390 @@
