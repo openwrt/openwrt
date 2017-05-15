@@ -45,7 +45,7 @@
  			/* disable */
  			ltq_eiu_w32(ltq_eiu_r32(LTQ_EIU_EXIN_INEN) & ~BIT(i),
  				LTQ_EIU_EXIN_INEN);
-@@ -344,10 +344,10 @@ static int icu_map(struct irq_domain *d,
+@@ -343,10 +343,10 @@ static int icu_map(struct irq_domain *d,
  		return 0;
  
  	for (i = 0; i < exin_avail; i++)
@@ -58,7 +58,7 @@
  
  	return 0;
  }
-@@ -437,14 +437,14 @@ int __init icu_of_init(struct device_nod
+@@ -441,14 +441,14 @@ int __init icu_of_init(struct device_nod
  	eiu_node = of_find_compatible_node(NULL, NULL, "lantiq,eiu-xway");
  	if (eiu_node && !of_address_to_resource(eiu_node, 0, &res)) {
  		/* find out how many external irq sources we have */
