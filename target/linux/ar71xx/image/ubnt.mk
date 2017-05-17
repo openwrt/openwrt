@@ -6,7 +6,7 @@
 # routerboard creates partitions out of the ubnt header
 define Build/mkubntimage
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
+		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-$(VERSION_DIST)-$(REVISION) \
 		-k $(IMAGE_KERNEL) \
 		-r $@ \
 		-o $@
@@ -19,7 +19,7 @@ define Build/mkubntimage-split
 	dd if=$@ of=$@.old1 bs=1024k count=1; \
 	dd if=$@ of=$@.old2 bs=1024k skip=1; \
 	$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
+		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-$(VERSION_DIST)-$(REVISION) \
 		-k $@.old1 \
 		-r $@.old2 \
 		-o $@; \
@@ -28,7 +28,7 @@ endef
 
 define Build/mkubntimage2
 	-$(STAGING_DIR_HOST)/bin/mkfwimage2 -f 0x9f000000 \
-		-v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
+		-v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-$(VERSION_DIST)-$(REVISION) \
 		-p jffs2:0x50000:0xf60000:0:0:$@ \
 		-o $@.new
 	@mv $@.new $@
