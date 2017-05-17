@@ -166,6 +166,9 @@ get_status_led() {
 	miwifi-nano)
 		status_led="$board:blue:status"
 		;;
+	gl-mt300n-v2)
+		status_led="$board:red:wlan"
+		;;
 	m4-4M|\
 	m4-8M)
 		status_led="m4:blue:status"

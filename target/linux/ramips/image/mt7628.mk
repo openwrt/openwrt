@@ -26,6 +26,14 @@ define Device/miwifi-nano
 endef
 TARGET_DEVICES += miwifi-nano
 
+define Device/gl-mt300n-v2
+  DTS := GL-MT300N-V2
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := GL-iNet GL-MT300N-V2
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += gl-mt300n-v2
+
 define Device/vocore2
   DTS := VOCORE2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
