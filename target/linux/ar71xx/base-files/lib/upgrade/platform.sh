@@ -443,8 +443,7 @@ platform_check_image() {
 	tl-wr941nd-v5|\
 	tl-wr941nd-v6|\
 	tl-wr940n-v4|\
-	tl-wr941nd|\
-	tlt-rut900)
+	tl-wr941nd)
 		local magic_ver="0100"
 
 		case "$board" in
