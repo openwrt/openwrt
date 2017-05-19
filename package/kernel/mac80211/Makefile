@@ -42,8 +42,8 @@ PKG_DRIVERS = \
 	rt2800-lib rt2800-mmio rt2800-pci rt2800-soc rt2800-usb \
 	rt61-pci rt73-usb \
 	rtl8180 rtl8187 \
-	rtlwifi rtlwifi-pci rtlwifi-usb rtl8192c-common rtl8192ce rtl8192se \
-	rtl8192de rtl8192cu \
+	rtlwifi rtlwifi-pci rtlwifi-btcoexist rtlwifi-usb rtl8192c-common \
+	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8821ae \
 	rtl8xxxu \
 	wlcore wl12xx wl18xx \
 	zd1211rw
@@ -1314,6 +1314,15 @@ define KernelPackage/rtlwifi-pci
   HIDDEN:=1
 endef
 
+define KernelPackage/rtlwifi-btcoexist
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek BT coexist support
+  DEPENDS+= +kmod-rtlwifi
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/btcoexist/btcoexist.ko
+  AUTOLOAD:=$(call AutoProbe,btcoexist)
+  HIDDEN:=1
+endef
+
 define KernelPackage/rtlwifi-usb
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek common driver part (USB support)
@@ -1363,6 +1372,13 @@ define KernelPackage/rtl8192cu
   AUTOLOAD:=$(call AutoProbe,rtl8192cu)
 endef
 
+define KernelPackage/rtl8821ae
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8821AE support
+  DEPENDS+= +kmod-rtlwifi-btcoexist +kmod-rtlwifi-pci +rtl8821ae-firmware
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8821ae/rtl8821ae.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8821ae)
+endef
 
 define KernelPackage/rtl8xxxu
   $(call KernelPackage/mac80211/Default)
@@ -1627,12 +1643,14 @@ config-$(call config_package,zd1211rw) += ZD1211RW
 
 config-$(call config_package,rtlwifi) += RTL_CARDS RTLWIFI
 config-$(call config_package,rtlwifi-pci) += RTLWIFI_PCI
+config-$(call config_package,rtlwifi-btcoexist) += RTLBTCOEXIST
 config-$(call config_package,rtlwifi-usb) += RTLWIFI_USB
 config-$(call config_package,rtl8192c-common) += RTL8192C_COMMON
 config-$(call config_package,rtl8192ce) += RTL8192CE
 config-$(call config_package,rtl8192se) += RTL8192SE
 config-$(call config_package,rtl8192de) += RTL8192DE
 config-$(call config_package,rtl8192cu) += RTL8192CU
+config-$(call config_package,rtl8821ae) += RTL8821AE
 config-$(CONFIG_PACKAGE_RTLWIFI_DEBUG) += RTLWIFI_DEBUG
 
 config-$(call config_package,rtl8xxxu) += RTL8XXXU
@@ -1835,12 +1853,14 @@ $(eval $(call KernelPackage,rtl8180))
 $(eval $(call KernelPackage,rtl8187))
 $(eval $(call KernelPackage,rtlwifi))
 $(eval $(call KernelPackage,rtlwifi-pci))
+$(eval $(call KernelPackage,rtlwifi-btcoexist))
 $(eval $(call KernelPackage,rtlwifi-usb))
 $(eval $(call KernelPackage,rtl8192c-common))
 $(eval $(call KernelPackage,rtl8192ce))
 $(eval $(call KernelPackage,rtl8192se))
 $(eval $(call KernelPackage,rtl8192de))
 $(eval $(call KernelPackage,rtl8192cu))
+$(eval $(call KernelPackage,rtl8821ae))
 $(eval $(call KernelPackage,rtl8xxxu))
 $(eval $(call KernelPackage,wlcore))
 $(eval $(call KernelPackage,wl12xx))
