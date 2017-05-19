@@ -18,6 +18,16 @@ endef
 TARGET_DEVICES += sun7i-a20-olinuxino-lime
 
 
+define Device/sun7i-a20-olinuxino-lime2
+  DEVICE_TITLE:=Olimex A20-OLinuXino-LIME2
+  DEVICE_PACKAGES:=kmod-ata-core kmod-ata-sunxi kmod-rtc-sunxi kmod-usb-hid
+  SUPPORTED_DEVICES:=olimex,a20-olinuxino-lime2
+  SUNXI_DTS:=sun7i-a20-olinuxino-lime2
+endef
+
+TARGET_DEVICES += sun7i-a20-olinuxino-lime2
+
+
 define Device/sun7i-a20-olinuxino-micro
   DEVICE_TITLE:=Olimex A20-Olinuxino Micro
   DEVICE_PACKAGES:=kmod-ata-core kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi

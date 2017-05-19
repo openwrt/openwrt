@@ -43,6 +43,12 @@ define U-Boot/A20-OLinuXino-Lime
   BUILD_DEVICES:=sun7i-a20-olinuxino-lime
 endef
 
+define U-Boot/A20-OLinuXino-Lime2
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=A20 OLinuXino LIME2
+  BUILD_DEVICES:=sun7i-a20-olinuxino-lime2
+endef
+
 define U-Boot/A20-OLinuXino_MICRO
   BUILD_SUBTARGET:=cortexa7
   NAME:=A20 OLinuXino MICRO
@@ -138,6 +144,7 @@ UBOOT_TARGETS := \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
 	A20-OLinuXino-Lime \
+	A20-OLinuXino-Lime2 \
 	A20-OLinuXino_MICRO \
 	Bananapi \
 	Bananapro \
