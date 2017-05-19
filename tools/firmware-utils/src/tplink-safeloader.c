@@ -75,6 +75,7 @@ struct device_info {
 	const char *vendor;
 	const char *support_list;
 	char support_trail;
+	const char *soft_ver;
 	const struct flash_partition_entry partitions[MAX_PARTITIONS+1];
 	const char *first_sysupgrade_partition;
 	const char *last_sysupgrade_partition;
@@ -130,6 +131,7 @@ static struct device_info boards[] = {
 			"CPE220(TP-LINK|US|N300-2):1.1\r\n"
 			"CPE220(TP-LINK|EU|N300-2):1.1\r\n",
 		.support_trail = '\xff',
+		.soft_ver = NULL,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -167,6 +169,7 @@ static struct device_info boards[] = {
 			"CPE520(TP-LINK|US|N300-5):1.1\r\n"
 			"CPE520(TP-LINK|EU|N300-5):1.1\r\n",
 		.support_trail = '\xff',
+		.soft_ver = NULL,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -198,6 +201,7 @@ static struct device_info boards[] = {
 			"WBS210(TP-LINK|US|N300-2):1.20\r\n"
 			"WBS210(TP-LINK|EU|N300-2):1.20\r\n",
 		.support_trail = '\xff',
+		.soft_ver = NULL,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -229,6 +233,7 @@ static struct device_info boards[] = {
 			"WBS510(TP-LINK|US|N300-5):1.20\r\n"
 			"WBS510(TP-LINK|EU|N300-5):1.20\r\n",
 		.support_trail = '\xff',
+		.soft_ver = NULL,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -259,6 +264,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"{product_name:Archer C2600,product_ver:1.0.0,special_id:00000000}\r\n",
 		.support_trail = '\x00',
+		.soft_ver = NULL,
 
 		.partitions = {
 			{"SBL1", 0x00000, 0x20000},
@@ -303,6 +309,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:55530000}\r\n",
 		.support_trail = '\x00',
+		.soft_ver = "soft_ver:1.0.0\n",
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x10000},
@@ -340,6 +347,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:45550000}\r\n"
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:55530000}\r\n",
 		.support_trail = '\x00',
+		.soft_ver = "soft_ver:1.0.0\n",
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x10000},
@@ -374,6 +382,7 @@ static struct device_info boards[] = {
 			"product_ver:2.0.0,"
 			"special_id:00000000}\r\n",
 		.support_trail = '\x00',
+		.soft_ver = NULL,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x40000},
@@ -408,6 +417,7 @@ static struct device_info boards[] = {
 			"product_ver:1.0.0,"
 			"special_id:00000000}\n",
 		.support_trail = '\x00',
+		.soft_ver = NULL,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x40000},
@@ -440,6 +450,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"EAP120(TP-LINK|UN|N300-2):1.0\r\n",
 		.support_trail = '\xff',
+		.soft_ver = NULL,
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -478,6 +489,7 @@ static struct device_info boards[] = {
 			"{product_name:TL-WA850RE,product_ver:2.0.0,special_id:41550000}\n"
 			"{product_name:TL-WA850RE,product_ver:2.0.0,special_id:52550000}\n",
 		.support_trail = '\x00',
+		.soft_ver = NULL,
 
 		/**
 		   576KB were moved from file-system to os-image
@@ -512,6 +524,7 @@ static struct device_info boards[] = {
 			"SupportList:\n"
 			"{product_name:TL-WR1043ND,product_ver:4.0.0,special_id:45550000}\n",
 		.support_trail = '\x00',
+		.soft_ver = NULL,
 
 		/**
 		    We use a bigger os-image partition than the stock images (and thus
@@ -555,6 +568,7 @@ static struct device_info boards[] = {
 			"{product_name:RE450,product_ver:1.0.0,special_id:4B520000}\r\n"
 			"{product_name:RE450,product_ver:1.0.0,special_id:55534100}\r\n",
 		.support_trail = '\x00',
+		.soft_ver = NULL,
 
 		/**
 		   The flash partition table for RE450;
@@ -679,6 +693,23 @@ static struct image_partition_entry make_soft_version(uint32_t rev) {
 	s->rev = htonl(rev);
 
 	s->pad2 = 0xff;
+
+	return entry;
+}
+
+static struct image_partition_entry make_soft_version_from_string(const char *soft_ver) {
+	/** String length _including_ the terminating zero byte */
+	uint32_t ver_len = strlen(soft_ver) + 1;
+	/** Partition contains 64 bit header, the version string, and one additional null byte */
+	size_t partition_len = 2*sizeof(uint32_t) + ver_len + 1;
+	struct image_partition_entry entry = alloc_image_partition("soft-version", partition_len);
+
+	uint32_t *len = (uint32_t *)entry.data;
+	len[0] = htonl(ver_len);
+	len[1] = 0;
+	memcpy(&len[2], soft_ver, ver_len);
+
+	entry.data[partition_len - 1] = 0;
 
 	return entry;
 }
@@ -913,7 +944,11 @@ static void build_image(const char *output,
 	struct image_partition_entry parts[6] = {};
 
 	parts[0] = make_partition_table(info->partitions);
-	parts[1] = make_soft_version(rev);
+	if (info->soft_ver)
+		parts[1] = make_soft_version_from_string(info->soft_ver);
+	else
+		parts[1] = make_soft_version(rev);
+
 	parts[2] = make_support_list(info);
 	parts[3] = read_file("os-image", kernel_image, false);
 	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof);
