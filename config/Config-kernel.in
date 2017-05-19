@@ -231,6 +231,16 @@ config KERNEL_RELAY
 config KERNEL_KEXEC
 	bool "Enable kexec support"
 
+config KERNEL_PROC_VMCORE
+	bool
+
+config KERNEL_CRASH_DUMP
+	depends on i386 || x86_64 || arm || armeb
+	select KERNEL_KEXEC
+	select KERNEL_PROC_VMCORE
+	bool "Enable support for kexec crashdump"
+	default y
+
 config USE_RFKILL
 	bool "Enable rfkill support"
 	default RFKILL_SUPPORT
