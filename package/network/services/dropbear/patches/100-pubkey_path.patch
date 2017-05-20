@@ -1,6 +1,6 @@
 --- a/svr-authpubkey.c
 +++ b/svr-authpubkey.c
-@@ -218,17 +218,21 @@ static int checkpubkey(char* algo, unsig
+@@ -220,14 +220,20 @@ static int checkpubkey(char* algo, unsig
  		goto out;
  	}
  
@@ -12,9 +12,6 @@
 -	filename = m_malloc(len + 22);
 -	snprintf(filename, len + 22, "%s/.ssh/authorized_keys", 
 -				ses.authstate.pw_dir);
--
--	/* open the file */
--	authfile = fopen(filename, "r");
 +	if (ses.authstate.pw_uid != 0) {
 +		/* we don't need to check pw and pw_dir for validity, since
 +		 * its been done in checkpubkeyperms. */
@@ -22,18 +19,17 @@
 +		/* allocate max required pathname storage,
 +		 * = path + "/.ssh/authorized_keys" + '\0' = pathlen + 22 */
 +		filename = m_malloc(len + 22);
-+		snprintf(filename, len + 22, "%s/.ssh/authorized_keys", 
-+		         ses.authstate.pw_dir);
-+
-+		/* open the file */
-+		authfile = fopen(filename, "r");
++		snprintf(filename, len + 22, "%s/.ssh/authorized_keys",
++					ses.authstate.pw_dir);
 +	} else {
-+		authfile = fopen("/etc/dropbear/authorized_keys","r");
++		filename = m_malloc(30);
++		strncpy(filename, "/etc/dropbear/authorized_keys", 30);
 +	}
- 	if (authfile == NULL) {
- 		goto out;
- 	}
-@@ -381,26 +385,35 @@ static int checkpubkeyperms() {
++
+ 
+ 	/* open the file as the authenticating user. */
+ 	origuid = getuid();
+@@ -396,26 +402,35 @@ static int checkpubkeyperms() {
  		goto out;
  	}
  
