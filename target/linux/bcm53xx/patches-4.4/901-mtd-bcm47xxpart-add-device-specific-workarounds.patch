@@ -17,7 +17,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
  #include <uapi/linux/magic.h>
  
-@@ -249,6 +250,28 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -249,6 +250,36 @@ static int bcm47xxpart_parse(struct mtd_
  			break;
  		}
  
@@ -32,6 +32,14 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +			 * we don't want to as this could affect other devices.
 +			 */
 +			bcm47xxpart_add_part(&parts[curr_part++], "asus", offset, MTD_WRITEABLE);
++			continue;
++		} else  if (of_machine_is_compatible("tplink,archer-c5-v2") && offset == 0xe40000) {
++			/*
++			 * There is a whole set of partitions (not even listed
++			 * by original firmware): "default-mac", "pin",
++			 * "partition-table", etc.
++			 */
++			bcm47xxpart_add_part(&parts[curr_part++], "tplink", offset, MTD_WRITEABLE);
 +			continue;
 +		} else  if (of_machine_is_compatible("tplink,archer-c9-v1") && offset == 0xe40000) {
 +			/*
