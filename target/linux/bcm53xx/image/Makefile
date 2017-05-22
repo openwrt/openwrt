@@ -107,9 +107,11 @@ endef
 DEVICE_VARS += PRODUCTID SIGNATURE NETGEAR_BOARD_ID NETGEAR_REGION TPLINK_BOARD
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 
-BRCMFMAC_43602A1 := kmod-brcmfmac brcmfmac-firmware-43602a1-pcie
-BRCMFMAC_4366B1 := kmod-brcmfmac brcmfmac-firmware-4366b1-pcie
-BRCMFMAC_4366C0 := kmod-brcmfmac
+IEEE8021X := wpad-mini
+B43 := $(IEEE8021X) kmod-b43
+BRCMFMAC_43602A1 := $(IEEE8021X) kmod-brcmfmac brcmfmac-firmware-43602a1-pcie
+BRCMFMAC_4366B1 := $(IEEE8021X) kmod-brcmfmac brcmfmac-firmware-4366b1-pcie
+BRCMFMAC_4366C0 := $(IEEE8021X) kmod-brcmfmac
 USB2_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-phy-bcm-ns-usb2
 USB2_PACKAGES += kmod-usb-ledtrig-usbport
 USB3_PACKAGES := $(USB2_PACKAGES) kmod-usb3 kmod-phy-bcm-ns-usb3
@@ -138,7 +140,7 @@ endef
 
 define Device/asus-rt-ac56u
   DEVICE_TITLE := Asus RT-AC56U
-  DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += asus-rt-ac56u
 
@@ -180,14 +182,14 @@ TARGET_DEVICES += buffalo-wxr-1900dhp
 define Device/buffalo-wzr-600dhp2
   $(call Device/buffalo/Default)
   DEVICE_TITLE := Buffalo WZR-600DHP2
-  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
 endef
 TARGET_DEVICES += buffalo-wzr-600dhp2
 
 define Device/buffalo-wzr-900dhp
   $(call Device/buffalo/Default)
   DEVICE_TITLE := Buffalo WZR-900DHP
-  DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
   BUFFALO_TAG_PLATFORM := bcm
   BUFFALO_TAG_VERSION := 9.99
   BUFFALO_TAG_MINOR := 9.99
@@ -208,7 +210,7 @@ TARGET_DEVICES += buffalo-wzr-900dhp
 define Device/buffalo-wzr-1750dhp
   $(call Device/buffalo/Default)
   DEVICE_TITLE := Buffalo WZR-1750DHP
-  DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
 endef
 TARGET_DEVICES += buffalo-wzr-1750dhp
 
@@ -229,7 +231,7 @@ TARGET_DEVICES += dlink-dir-885l
 
 define Device/linksys-ea6300-v1
   DEVICE_TITLE := Linksys EA6300 V1
-  DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
 endef
 # TARGET_DEVICES += linksys-ea6300-v1
 
@@ -254,7 +256,7 @@ endef
 
 define Device/netgear-r6250
   DEVICE_TITLE := Netgear R6250
-  DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H245T00_NETGEAR
 endef
@@ -262,7 +264,7 @@ TARGET_DEVICES += netgear-r6250
 
 define Device/netgear-r6300-v2
   DEVICE_TITLE := Netgear R6300 V2
-  DEVICE_PACKAGES := kmod-b43 $(USB3_PACKAGES)
+  DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H240T00_NETGEAR
 endef
@@ -310,7 +312,7 @@ TARGET_DEVICES += smartrg-sr400ac
 
 define Device/tenda-ac9
   DEVICE_TITLE := Tenda AC9
-  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
   IMAGES := trx
   IMAGE/trx := append-rootfs | trx-serial
 endef
@@ -318,7 +320,7 @@ TARGET_DEVICES += tenda-ac9
 
 define Device/tplink-archer-c5-v2
   DEVICE_TITLE := TP-LINK Archer C5 V2
-  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  DEVICE_PACKAGES := $(B43) $(USB2_PACKAGES)
   IMAGES := bin
   IMAGE/bin := append-rootfs | bcm53xx-tplink-safeloader
   TPLINK_BOARD := ARCHER-C5-V2
