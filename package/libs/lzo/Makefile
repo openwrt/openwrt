@@ -12,8 +12,8 @@ PKG_VERSION:=2.09
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.oberhumer.com/opensource/lzo/download/
-PKG_MD5SUM:=c7ffc9a103afe2d1bba0b015e7aa887f
+PKG_SOURCE_URL:=http://download.openpkg.org/components/cache/lzo/
+PKG_MD5SUM:=fcec64c26a0f4f4901468f360029678f
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
