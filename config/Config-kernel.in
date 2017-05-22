@@ -48,7 +48,7 @@ config KERNEL_ARM_PMU
 	depends on (arm || arm64)
 
 config KERNEL_PERF_EVENTS
-	bool
+	bool "Compile the kernel with performance events and counters"
 	default n
 	select KERNEL_ARM_PMU if (arm || arm64)
 
