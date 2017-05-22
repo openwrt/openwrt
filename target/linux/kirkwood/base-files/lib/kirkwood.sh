@@ -61,9 +61,9 @@ kirkwood_board_detect() {
 		name="nsa310s"
 		;;
 
-        "Cisco Systems ON-100")
+	"Cisco Systems ON-100")
 	        name="cisco-on100"
-                ;;
+		;;
 
 	*)
 		name="generic"
