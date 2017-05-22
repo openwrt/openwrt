@@ -31,7 +31,7 @@ armada-388-clearfog-*)
 	# eth0 is standalone ethernet
 	# eth1 is switch (-pro) or standalone ethernet (-base)
 	# eth2 is SFP
-	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
+	ucidef_set_interfaces_lan_wan "eth1" "eth0 eth2"
 
 	# if switch exists (clearfog-pro)
 	# switch port 5 is connected to eth1
