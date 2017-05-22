@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-ciscoon100.dts
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,139 @@
 +/dts-v1/;
 +
 +#include "kirkwood.dtsi"
@@ -28,6 +28,14 @@
 +			};
 +			pmx_led_health_g: pmx-led-health-g {
 +				marvell,pins = "mpp44";
++				marvell,function = "gpio";
++			};
++			pmx_led_health2_r: pmx-led-health2-r {
++				marvell,pins = "mpp47";
++				marvell,function = "gpio";
++			};
++			pmx_led_health2_g: pmx-led-health2-g {
++				marvell,pins = "mpp46";
 +				marvell,function = "gpio";
 +			};
 +			pmx_btn_reset: pmx-led-reset {
@@ -67,6 +75,14 @@
 +		health-g {
 +			label = "ciscoon100:green:health";
 +			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
++		};
++		health2-r {
++			label = "ciscoon100:red:health2";
++			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
++		};
++		health2-g {
++			label = "ciscoon100:green:health2";
++			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +};
