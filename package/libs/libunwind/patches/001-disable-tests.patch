@@ -1,22 +1,11 @@
 --- a/Makefile.am
 +++ b/Makefile.am
-@@ -36,7 +36,7 @@
+@@ -42,7 +42,7 @@ endif
  
  nodist_include_HEADERS = include/libunwind-common.h
  
--SUBDIRS = src tests doc
-+SUBDIRS = src doc
+-SUBDIRS = src tests
++SUBDIRS = src
  
- noinst_HEADERS = include/dwarf.h include/dwarf_i.h include/dwarf-eh.h	\
- 	include/compiler.h include/libunwind_i.h include/mempool.h	\
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -313,7 +313,7 @@
- 	$(am__append_7) $(am__append_8) $(am__append_9) \
- 	$(am__append_10)
- nodist_include_HEADERS = include/libunwind-common.h
--SUBDIRS = src tests doc
-+SUBDIRS = src doc
- noinst_HEADERS = include/dwarf.h include/dwarf_i.h include/dwarf-eh.h	\
- 	include/compiler.h include/libunwind_i.h include/mempool.h	\
- 	include/remote.h						\
+ if CONFIG_DOCS
+ SUBDIRS += doc
