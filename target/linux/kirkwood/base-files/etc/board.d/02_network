@@ -35,6 +35,9 @@ case "$board" in
 "sheevaplug-esata")
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
+"ciscoon100" )
+	ucidef_set_interface_lan "eth0 eth1" "dhcp"
+	;;
 *)
 	ucidef_set_interface_lan "eth0" "static"
 	;;
