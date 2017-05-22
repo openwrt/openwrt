@@ -68,7 +68,7 @@ endif
 CONFIGURE_ARGS += \
 	--without-lzma
 
-TARGET_CFLAGS += -D_GNU_SOURCE
+TARGET_CFLAGS += -D_GNU_SOURCE -Wno-unused-result
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
