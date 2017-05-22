@@ -203,8 +203,8 @@ Image/InstallKernel/Template/GuruplugServerPlus=$(call Image/InstallKernel/Templ
 Image/BuildKernel/Template/Topkick1281P2=$(call Image/BuildKernel/Template,topkick)
 Image/InstallKernel/Template/Topkick1281P2=$(call Image/InstallKernel/Template,topkick)
 
-Image/BuildKernel/Template/CiscoON100=$(call Image/BuildKernel/Template,CiscoON100)
-Image/InstallKernel/Template/CiscoON100=$(call Image/InstallKernel/Template,CiscoON100)
+Image/BuildKernel/Template/CiscoON100=$(call Image/BuildKernel/Template,ciscoon100)
+Image/InstallKernel/Template/CiscoON100=$(call Image/InstallKernel/Template,ciscoon100)
 
 define Image/BuildKernel
 	$(call Image/BuildKernel/Template/$(PROFILE))
