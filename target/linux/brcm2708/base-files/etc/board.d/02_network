@@ -11,6 +11,9 @@ board_config_update
 board=$(brcm2708_board_name)
 
 case "$board" in
+rpi-0-w)
+    ucidef_set_interface_lan "wlan0"
+    ;;
 rpi-b |\
 rpi-b-plus |\
 rpi-2-b |\

@@ -1,4 +1,13 @@
 # Put your custom commands here that should be executed once
 # the system init finished. By default this file does nothing.
 
+model=`cat /proc/device-tree/model`
+case "$model" in
+"Raspberry Pi Zero W Rev"* |\
+"Raspberry Pi 3 Model B Rev"*)
+    /usr/bin/hciattach /dev/ttyAMA0 bcm43xx 3000000 flow -
+    ;;
+esac
+/usr/bin/hciconfig hci0 up
+
 exit 0

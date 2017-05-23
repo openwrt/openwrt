@@ -68,7 +68,7 @@ endef
 ### BCM2708/BCM2835 ###
 ifeq ($(SUBTARGET),bcm2708)
   # Raspberry Pi Models B/B+/CM
-  $(eval $(call bcm27xx,RaspberryPi,rpi,bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm))
+  $(eval $(call bcm27xx,RaspberryPi,rpi,bcm2708-rpi-b bcm2708-rpi-b-plus bcm2708-rpi-cm bcm2708-rpi-0-w))
 endif
 
 ### BCM2709/BCM2836 ###

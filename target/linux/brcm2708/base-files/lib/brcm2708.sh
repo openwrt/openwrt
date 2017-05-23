@@ -21,6 +21,9 @@ brcm2708_detect() {
 	"Raspberry Pi Zero Rev"*)
 		board_name="rpi-zero"
 		;;
+        "Raspberry Pi Zero W Rev"*)
+                board_name="rpi-0-w"
+                ;;
 	"Raspberry Pi 2 Model B Rev"*)
 		board_name="rpi-2-b"
 		;;
