@@ -18,6 +18,9 @@ get_status_led() {
 	linksys-viper)
 		status_led="viper:white:health"
 		;;
+	ciscoon100)
+		status_led="ciscoon100:green:health"
+		;;
 	esac
 }
 
