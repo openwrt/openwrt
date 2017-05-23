@@ -12,7 +12,7 @@ PKG_VERSION:=2.09
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://download.openpkg.org/components/cache/lzo/
+PKG_SOURCE_URL:=https://ftp.osuosl.org/pub/blfs/conglomeration/lzo/
 PKG_MD5SUM:=c7ffc9a103afe2d1bba0b015e7aa887f
 
 PKG_FIXUP:=autoreconf
