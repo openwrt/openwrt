@@ -40,8 +40,13 @@ endef
 define Build/Prepare
 	$(Build/Prepare/Default)
 	tar xvfj $(DL_DIR)/$(PKG_DATA_FILENAME) -C $(PKG_BUILD_DIR)
-	rm -f \
-		$(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/05c6:1000:sVe=GT
+	#remove devices with unsupported modes
+	for filevar in $(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/* ; \
+	do \
+		if grep -q -E '(Quanta|Option|Blackberry|Pantech)Mode' "$$$$filevar" ; then \
+			rm "$$$$filevar" ; \
+		fi \
+	done
 	cp ./data/* $(PKG_BUILD_DIR)/$(PKG_DATA_PATH)/usb_modeswitch.d/
 	#in order to keep the Lede GIT repo free of filenames with colons,
 	#we name the files xxxx-yyyy
