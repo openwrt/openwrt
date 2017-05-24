@@ -49,7 +49,7 @@ Signed-off-by: Felipe Balbi <balbi@kernel.org>
  	/* Adjust Frame Length */
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -1634,10 +1634,13 @@ static int dwc3_gadget_start(struct usb_
+@@ -1647,10 +1647,13 @@ static int dwc3_gadget_start(struct usb_
  		case USB_SPEED_HIGH:
  			reg |= DWC3_DSTS_HIGHSPEED;
  			break;

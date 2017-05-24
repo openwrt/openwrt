@@ -4672,7 +4672,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  int INFTL_mount(struct INFTLrecord *s);
 --- a/include/linux/mtd/map.h
 +++ b/include/linux/mtd/map.h
-@@ -142,7 +142,9 @@
+@@ -137,7 +137,9 @@
  #endif
  
  #ifndef map_bankwidth
@@ -4682,7 +4682,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static inline int map_bankwidth(void *map)
  {
  	BUG();
-@@ -238,8 +240,11 @@ struct map_info {
+@@ -233,8 +235,11 @@ struct map_info {
  	   If there is no cache to care about this can be set to NULL. */
  	void (*inval_cache)(struct map_info *, unsigned long, ssize_t);
  
