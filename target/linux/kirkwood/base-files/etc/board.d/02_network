@@ -35,6 +35,9 @@ case "$board" in
 	ucidef_set_interface_lan "eth0" "dhcp"
 	ucidef_set_interface_macaddr "lan" $( mtd_get_mac_ascii uboot_env ethaddr )
 	;;
+"on100")
+	ucidef_set_interface_lan "eth0 eth1"
+	;;
 *)
 	ucidef_set_interface_lan "eth0"
 	;;

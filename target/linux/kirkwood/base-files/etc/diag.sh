@@ -23,6 +23,9 @@ get_status_led() {
 	nsa310b)
 		status_led="nsa310:green:sys"
 		;;
+	on100)
+		status_led="on100:green:health"
+		;;
 	esac
 }
 

@@ -33,6 +33,10 @@ kirkwood_board_detect() {
 		name="ib62x0"
 		;;
 
+	"Cisco Systems ON100")
+		name="on100"
+		;;
+
 	"Cloud Engines Pogoplug E02")
 		name="pogo_e02"
 		;;

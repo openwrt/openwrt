@@ -11,7 +11,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR:=0x8000
-TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome iconnect pogo_e02 ib62x0 nsa310b nsa325
+TARGET_DEVICES = linksys-audi linksys-viper dockstar goflexnet goflexhome iconnect pogo_e02 ib62x0 nsa310b nsa325 on100
 
 UBI_OPTS := -m 2048 -p 128KiB -s 512
 UBIFS_OPTS := -m 2048 -e 126KiB -c 4096
@@ -92,6 +92,17 @@ $(Device/dockstar)
   DEVICE_TITLE := ZyXEL NSA325 (v1 and v2)
   DEVICE_DTS := kirkwood-nsa325
   DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-rtc-pcf8563 kmod-usb3
+endef
+
+define Device/on100
+  DEVICE_TITLE := Cisco Systems ON100
+  DEVICE_DTS := kirkwood-on100
+#  DEVICE_PACKAGES := kmod-mvsdio kmod-usb-storage kmod-i2c-core kmod-i2c-mv64xxx kmod-ata-core kmod-btmrvl kmod-btmrvl-sdio kmod-libertas kmod-libertas-sdio
+  DEVICE_PACKAGES := kmod-i2c-mv64xxx
+  KERNEL_SIZE := 5376k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  UBINIZE_OPTS := -E 5
 endef
 
 define Device/pogo_e02
