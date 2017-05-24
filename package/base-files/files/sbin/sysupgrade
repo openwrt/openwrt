@@ -47,6 +47,20 @@ while [ -n "$1" ]; do
 	shift;
 done
 
+# just one instance
+if  ! lock -n /tmp/sysupgrade.lock
+then
+	echo "Another instance of sysupgrade already running"
+	echo "If you are sure this is wrong remove file /tmp/sysupgrade.lock"
+	exit 1
+fi
+
+# make sure the lock is removed when done even when killed
+finish() {
+	lock -u /var/sysupgrade.lock
+}
+trap finish EXIT INT TERM
+
 export CONFFILES=/tmp/sysupgrade.conffiles
 export CONF_TAR=/tmp/sysupgrade.tgz
 
