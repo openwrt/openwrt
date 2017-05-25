@@ -603,6 +603,12 @@ tl-wr941nd-v5)
 		;;
 	esac
 	;;
+tl-mr6400)
+	ucidef_set_led_netdev "lan" "LAN" "tp-link:white:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "tp-link:white:wan" "eth1"
+	ucidef_set_led_netdev "4g" "4G" "tp-link:white:4g" "usb0"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:white:wlan" "phy0tpt"
+	;;
 tl-wa7210n-v2)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
 	ucidef_set_rssimon "wlan0" "200000" "1"
