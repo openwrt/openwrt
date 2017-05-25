@@ -47,7 +47,7 @@ define KernelPackage/backlight-pwm
 	AUTOLOAD:=$(call AutoProbe,video pwm_bl)
 endef
 
-define KernelPackage/backlight/backlight-pwm
+define KernelPackage/backlight-pwm/description
 	Kernel module for PWM based Backlight support.
 endef
 
