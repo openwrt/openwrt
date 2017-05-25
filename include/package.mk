@@ -39,6 +39,18 @@ include $(INCLUDE_DIR)/hardening.mk
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/unpack.mk
 include $(INCLUDE_DIR)/depends.mk
+
+ifneq ($(if $(CONFIG_SRC_TREE_OVERRIDE),$(wildcard ./git-src)),)
+  USE_GIT_TREE:=1
+  QUILT:=1
+endif
+ifdef USE_SOURCE_DIR
+  QUILT:=1
+endif
+ifneq ($(wildcard $(PKG_BUILD_DIR)/.source_dir),)
+  QUILT:=1
+endif
+
 include $(INCLUDE_DIR)/quilt.mk
 
 find_library_dependencies = $(wildcard $(patsubst %,$(STAGING_DIR)/pkginfo/%.version, \
@@ -76,16 +88,6 @@ define CleanStaging
 	)
 endef
 
-ifneq ($(if $(CONFIG_SRC_TREE_OVERRIDE),$(wildcard ./git-src)),)
-  USE_GIT_TREE:=1
-  QUILT:=1
-endif
-ifdef USE_SOURCE_DIR
-  QUILT:=1
-endif
-ifneq ($(wildcard $(PKG_BUILD_DIR)/.source_dir),)
-  QUILT:=1
-endif
 
 PKG_INSTALL_STAMP:=$(PKG_INFO_DIR)/$(PKG_DIR_NAME).$(if $(BUILD_VARIANT),$(BUILD_VARIANT),default).install
 
