@@ -67,7 +67,7 @@ define KernelPackage/sound-core/uml
   FILES:= \
 	$(LINUX_DIR)/sound/soundcore.ko \
 	$(LINUX_DIR)/arch/um/drivers/hostaudio.ko
-  AUTOLOAD:=$(call AutoLoad,30,soundcore hostaudio)
+  AUTOLOAD+=$(call AutoLoad,30,soundcore hostaudio)
 endef
 
 define KernelPackage/sound-core/description
