@@ -7257,7 +7257,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
 +static struct phy_driver pef7071_driver = {
 +	.name = "Lantiq XWAY PEF7071",
 +	.uid = 0xd565a400,
-+	.mask = 0xFFFFFFFF,
++	.mask = 0xFFFFFFF8,
 +	.features = PHY_GBIT_FEATURES,
 +	.config = ltq_phy_config,
 +	.startup = ltq_phy_startup,
