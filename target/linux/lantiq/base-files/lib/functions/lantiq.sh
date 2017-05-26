@@ -3,7 +3,7 @@
 lantiq_get_dt_led() {
 	local label
 	local ledpath
-	local basepath="/proc/device-tree/base"
+	local basepath="/proc/device-tree"
 	local nodepath="$basepath/aliases/led-$1"
 
 	[ -f "$nodepath" ] && ledpath=$(cat "$nodepath")
