@@ -487,6 +487,9 @@ ramips_board_detect() {
 	*"UBNT-ERX")
 		name="ubnt-erx"
 		;;
+	*"UBNT-ERX-SFP")
+		name="ubnt-erx-sfp"
+		;;
 	*"UR-326N4G")
 		name="ur-326n4g"
 		;;

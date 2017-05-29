@@ -184,6 +184,19 @@ define Device/ubnt-erx
 endef
 TARGET_DEVICES += ubnt-erx
 
+define Device/ubnt-erx-sfp
+  DTS := UBNT-ERX-SFP
+  FILESYSTEMS := squashfs
+  KERNEL_SIZE := 3145728
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGES := sysupgrade.tar
+  KERNEL_INITRAMFS := $$(KERNEL) | ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  DEVICE_TITLE := Ubiquiti EdgeRouter X-SFP
+  DEVICE_PACKAGES := -kmod-mt76 -kmod-rt2x00-lib -kmod-mac80211 -kmod-cfg80211 -wpad-mini -iwinfo kmod-i2c-algo-pca kmod-gpio-pca953x kmod-i2c-gpio-custom
+endef
+TARGET_DEVICES += ubnt-erx-sfp
+
 define Device/vr500
   DTS := VR500
   IMAGE_SIZE := 66453504

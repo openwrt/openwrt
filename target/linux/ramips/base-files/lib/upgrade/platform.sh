@@ -252,7 +252,8 @@ platform_check_image() {
 		# these boards use metadata images
 		return 0
 		;;
-	ubnt-erx)
+	ubnt-erx|\
+	ubnt-erx-sfp)
 		nand_do_platform_check "$board" "$1"
 		return $?;
 		;;
@@ -274,7 +275,8 @@ platform_nand_pre_upgrade() {
 	local board=$(ramips_board_name)
 
 	case "$board" in
-	ubnt-erx)
+	ubnt-erx|\
+	ubnt-erx-sfp)
 		platform_upgrade_ubnt_erx "$ARGV"
 		;;
 	esac
@@ -286,7 +288,8 @@ platform_do_upgrade() {
 	case "$board" in
 	hc5962|\
 	r6220|\
-    	ubnt-erx)
+	ubnt-erx|\
+	ubnt-erx-sfp)
 		nand_do_upgrade "$ARGV"
 		;;
 	*)
