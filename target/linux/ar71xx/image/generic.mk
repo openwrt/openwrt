@@ -213,6 +213,16 @@ define Device/mr16
 endef
 TARGET_DEVICES += mr16
 
+define Device/dr344
+  DEVICE_TITLE := Wallys DR344
+  BOARDNAME = DR344
+  KERNEL_SIZE := 1408k
+  IMAGE_SIZE = 7744k
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
+  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to 6336k | append-kernel | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += dr344
+
 define Device/dr531
   DEVICE_TITLE := Wallys DR531
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
