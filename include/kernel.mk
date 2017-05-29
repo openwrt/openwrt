@@ -133,7 +133,7 @@ define ModuleAutoLoad
 	}; \
 	$(3) \
 	if [ -n "$$$$$$$$modules" ]; then \
-		modules="$$$$$$$$(echo "$$$$$$$$modules" | tr ' ' '\n' | sort | uniq | paste -s -d' ')"; \
+		modules="$$$$$$$$(echo "$$$$$$$$modules" | tr ' ' '\n' | sort | uniq | paste -s -d' ' -)"; \
 		mkdir -p $(2)/etc/modules.d; \
 		mkdir -p $(2)/CONTROL; \
 		echo "#!/bin/sh" > $(2)/CONTROL/postinst-pkg; \
