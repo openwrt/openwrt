@@ -22,7 +22,7 @@
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/ath9k_platform.h>
-#include <linux/ar8216_platform.h>
+#include <linux/platform_data/phy-at803x.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 
@@ -95,39 +95,17 @@ static struct gpio_keys_button dr344_gpio_keys[] __initdata = {
 	},
 };
 
-static struct ar8327_pad_cfg dr344_ar8327_pad0_cfg = {
-	.mode = AR8327_PAD_MAC_RGMII,
-	.txclk_delay_en = true,
-	.rxclk_delay_en = true,
-	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
-	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
-};
-
-static struct ar8327_led_cfg dr344_ar8327_led_cfg = {
-	.led_ctrl0 = 0x00000000,
-	.led_ctrl1 = 0xc737c737,
-	.led_ctrl2 = 0x00000000,
-	.led_ctrl3 = 0x00c30c00,
-	.open_drain = true,
-};
-
-static struct ar8327_platform_data dr344_ar8327_data = {
-	.pad0_cfg = &dr344_ar8327_pad0_cfg,
-	.port0_cfg = {
-		.force_link = 1,
-		.speed = AR8327_PORT_SPEED_1000,
-		.duplex = 1,
-		.txpause = 1,
-		.rxpause = 1,
-	},
-	.led_cfg = &dr344_ar8327_led_cfg,
+static struct at803x_platform_data dr344_at803x_data = {
+	.disable_smarteee = 1,
+	.enable_rgmii_rx_delay = 1,
+	.enable_rgmii_tx_delay = 1,
 };
 
 static struct mdio_board_info dr344_mdio0_info[] = {
 	{
 		.bus_id = "ag71xx-mdio.0",
 		.phy_addr = 0,
-		.platform_data = &dr344_ar8327_data,
+		.platform_data = &dr344_at803x_data,
 	},
 };
 
@@ -165,11 +143,11 @@ static void __init dr344_setup(void)
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
 				   AR934X_ETH_CFG_SW_ONLY_MODE);
 
-	/* GMAC0 is connected to an AR8327 switch */
+	/* GMAC0 is connected to an AR8035 Gbps PHY */
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ath79_eth0_data.phy_mask = BIT(0);
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
-	ath79_eth0_pll_data.pll_1000 = 0x0e000000;
+	ath79_eth0_pll_data.pll_1000 = 0x02000000;
 	ath79_eth0_pll_data.pll_100 = 0x0101;
 	ath79_eth0_pll_data.pll_10 = 0x1313;
 
