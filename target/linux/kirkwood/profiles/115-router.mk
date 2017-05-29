@@ -30,3 +30,24 @@ define Profile/VIPER/Description
 endef
 
 $(eval $(call Profile,VIPER))
+
+
+
+define Profile/CiscoON100
+  NAME:=Cisco Systems ON100
+  PACKAGES:= \
+        kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
+        kmod-i2c-core kmod-i2c-mv64xxx \
+        kmod-ata-core \
+        kmod-btmrvl kmod-btmrvl-sdio kmod-libertas kmod-libertas-sdio \
+        wpad-mini
+endef
+
+define Profile/CiscoON100/Description
+ Package set compatible with Cisco Systems ON100.
+endef
+
+CiscoON100_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+CiscoON100_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+
+$(eval $(call Profile,CiscoON100))
