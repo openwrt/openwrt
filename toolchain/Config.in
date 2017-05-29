@@ -276,14 +276,6 @@ config GDB
 	help
 	  Enable if you want to build the gdb.
 
-config INSIGHT
-	bool
-	prompt "Build insight-gdb" if TOOLCHAINOPTS
-	select GDB
-	default n
-	help
-	  Enable if you want to build insight-gdb.
-
 config USE_GLIBC
 	bool
 
