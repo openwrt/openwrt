@@ -205,6 +205,9 @@ cr5000)
 	ucidef_set_led_wlan "wlan" "WLAN" "pcs:blue:wlan" "phy0tpt"
 	ucidef_set_led_usbdev "usb" "USB" "pcs:white:wps" "1-1"
 	;;
+dr344)
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
+	;;
 dragino2)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:red:wlan" "phy0tpt"
 	ucidef_set_led_netdev "lan" "LAN" "$board:red:lan" "eth0"
