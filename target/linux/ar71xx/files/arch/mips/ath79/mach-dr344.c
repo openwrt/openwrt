@@ -19,6 +19,7 @@
  *
  */
 
+#include <linux/gpio.h>
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/ath9k_platform.h>
@@ -38,15 +39,16 @@
 #include "dev-wmac.h"
 #include "machtypes.h"
 
-#define DR344_GPIO_LED_SIG1	15
-#define DR344_GPIO_LED_SIG2	11
-#define DR344_GPIO_LED_SIG3	12
-#define DR344_GPIO_LED_SIG4	13
-#define DR344_GPIO_EXTERNAL_LNA0       18
-#define DR344_GPIO_EXTERNAL_LNA1       19
-#define DR344_GPIO_LED_STATUS	14
+#define DR344_GPIO_LED_SIG1		12
+#define DR344_GPIO_LED_SIG2		13
+#define DR344_GPIO_LED_SIG3		14
+#define DR344_GPIO_LED_SIG4		15
+#define DR344_GPIO_LED_STATUS		11
+#define DR344_GPIO_LED_LAN		17
+#define DR344_GPIO_EXTERNAL_LNA0	18
+#define DR344_GPIO_EXTERNAL_LNA1	19
 
-#define DR344_GPIO_BTN_RESET	12
+#define DR344_GPIO_BTN_RESET		16
 
 #define DR344_KEYS_POLL_INTERVAL	20	/* msecs */
 #define DR344_KEYS_DEBOUNCE_INTERVAL	(3 * DR344_KEYS_POLL_INTERVAL)
@@ -58,17 +60,22 @@
 
 static struct gpio_led dr344_leds_gpio[] __initdata = {
 	{
+		.name		= "dr344:green:lan",
+		.gpio		= DR344_GPIO_LED_LAN,
+		.active_low	= 1,
+	},
+	{
 		.name		= "dr344:green:status",
 		.gpio		= DR344_GPIO_LED_STATUS,
 		.active_low	= 1,
 	},
 	{
-		.name		= "dr344:red:sig1",
+		.name		= "dr344:green:sig1",
 		.gpio		= DR344_GPIO_LED_SIG1,
 		.active_low	= 1,
 	},
 	{
-		.name		= "dr344:yellow:sig2",
+		.name		= "dr344:green:sig2",
 		.gpio		= DR344_GPIO_LED_SIG2,
 		.active_low	= 1,
 	},
@@ -115,6 +122,15 @@ static void __init dr344_setup(void)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f03f810);
 
 	ath79_register_m25p80(NULL);
+
+	ath79_gpio_direction_select(DR344_GPIO_LED_STATUS, true);
+	gpio_set_value(DR344_GPIO_LED_STATUS, 1);
+	ath79_gpio_output_select(DR344_GPIO_LED_STATUS, 0);
+
+	ath79_gpio_direction_select(DR344_GPIO_LED_LAN, true);
+	gpio_set_value(DR344_GPIO_LED_LAN, 1);
+	ath79_gpio_output_select(DR344_GPIO_LED_LAN, 0);
+
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(dr344_leds_gpio),
 				 dr344_leds_gpio);
 	ath79_register_gpio_keys_polled(-1, DR344_KEYS_POLL_INTERVAL,
