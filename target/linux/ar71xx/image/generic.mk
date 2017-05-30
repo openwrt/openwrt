@@ -151,7 +151,7 @@ TARGET_DEVICES += gl-ar300
 
 define Device/gl-ar300m
   DEVICE_TITLE := GL AR300M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 uboot-envtools
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = GL-AR300M
   IMAGE_SIZE = 16000k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
@@ -288,7 +288,6 @@ TARGET_DEVICES += wndr3700 wndr3700v2 wndr3800 wndr3800ch wndrmac wndrmacv2
 
 define Device/cap324
   DEVICE_TITLE := PowerCloud CAP324 Cloud AP
-  DEVICE_PACKAGES := uboot-envtools
   BOARDNAME := CAP324
   DEVICE_PROFILE := CAP324
   IMAGE_SIZE = 15296k
@@ -299,7 +298,6 @@ TARGET_DEVICES += cap324
 
 define Device/cap324-nocloud
   DEVICE_TITLE := PowerCloud CAP324 Cloud AP (No-Cloud)
-  DEVICE_PACKAGES := uboot-envtools
   BOARDNAME := CAP324
   DEVICE_PROFILE := CAP324
   IMAGE_SIZE = 16000k
@@ -310,7 +308,6 @@ TARGET_DEVICES += cap324-nocloud
 
 define Device/cr3000
   DEVICE_TITLE := PowerCloud CR3000 Cloud Router
-  DEVICE_PACKAGES := uboot-envtools
   BOARDNAME := CR3000
   DEVICE_PROFILE := CR3000
   IMAGE_SIZE = 7104k
@@ -321,7 +318,6 @@ TARGET_DEVICES += cr3000
 
 define Device/cr3000-nocloud
   DEVICE_TITLE := PowerCloud CR3000 (No-Cloud)
-  DEVICE_PACKAGES := uboot-envtools
   BOARDNAME := CR3000
   DEVICE_PROFILE := CR3000
   IMAGE_SIZE = 7808k
@@ -332,7 +328,7 @@ TARGET_DEVICES += cr3000-nocloud
 
 define Device/cr5000
   DEVICE_TITLE := PowerCloud CR5000 Cloud Router
-  DEVICE_PACKAGES := uboot-envtools kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-core
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-core
   BOARDNAME := CR5000
   DEVICE_PROFILE := CR5000
   IMAGE_SIZE = 7104k
@@ -343,7 +339,7 @@ TARGET_DEVICES += cr5000
 
 define Device/cr5000-nocloud
   DEVICE_TITLE := PowerCloud CR5000 (No-Cloud)
-  DEVICE_PACKAGES := uboot-envtools kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-core
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-core
   BOARDNAME := CR5000
   DEVICE_PROFILE := CR5000
   IMAGE_SIZE = 7808k
@@ -764,7 +760,7 @@ endef
 
 define Device/dap-2695-a1
   DEVICE_TITLE := D-Link DAP-2695 rev. A1
-  DEVICE_PACKAGES := ath10k-firmware-qca988x kmod-ath10k uboot-envtools
+  DEVICE_PACKAGES := ath10k-firmware-qca988x kmod-ath10k
   BOARDNAME = DAP-2695-A1
   IMAGES := factory.img sysupgrade.bin
   IMAGE_SIZE = 15360k
