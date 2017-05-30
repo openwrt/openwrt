@@ -7,6 +7,11 @@
 START=90
 STOP=10
 
+EXTRA_COMMANDS="prepare"
+EXTRA_HELP="\
+        prepare Build config from uci\
+"
+
 USE_PROCD=1
 PROG=/usr/sbin/openvpn
 
@@ -163,4 +168,57 @@ start_service() {
 
 service_triggers() {
 	procd_add_reload_trigger openvpn
+}
+
+LOG="logger -t openvpn-prepare -p"
+prepare() {
+	local s="$1"
+
+	local log="logger -t openvpn-prepare -p"
+
+	[ -z "$s" ] && {
+		$log error "Config not specified"
+		exit 1
+	}
+
+	uci -q get openvpn.$s > /dev/null || {
+		$log error "Config $s not found"
+		exit 2
+	}
+
+	. /usr/share/openvpn/openvpn.options
+
+	config_load 'openvpn'
+	config_get enabled "$s" 'enabled' 0
+	config_get config "$s" 'config'
+
+	[ "$enabled" != 0 ] && {
+		$log warning "This config $s is enabled and is started by the openvpn service"
+		exit 3
+	}
+
+	if [ ! -z "$config" ]; then
+		readlink -f "$config"
+		[ "$?" -ne 0 ] && {
+			$log error "Config file '$config' does not exist"
+			exit 4
+		}
+		local name=${config##*/}
+		if [ "${name%%.*}" != "$s" ]; then
+			$log error "Pre generated config file name '${config}' is not equal to openvpn section name '$s'"
+			exit 5
+		else
+			$log notice "Using pre generated config $config"
+			exit 0
+		fi
+	fi
+
+	[ ! -d "/var/etc" ] && mkdir -p "/var/etc"
+	[ -f "/var/etc/openvpn-${s}.conf" ] && rm "/var/etc/openvpn-${s}.conf"
+
+	append_bools "$s" $OPENVPN_BOOLS
+	append_params "$s" $OPENVPN_PARAMS
+
+	$log notice "Config $s generated"
+	exit 0
 }
