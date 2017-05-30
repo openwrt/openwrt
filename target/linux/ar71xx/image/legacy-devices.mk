@@ -117,7 +117,7 @@ LEGACY_DEVICES += AP152_16M
 
 define LegacyDevice/BXU2000N2
   DEVICE_TITLE := BHU BXU2000n-2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-storage
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage
 endef
 LEGACY_DEVICES += BXU2000N2
 
@@ -134,19 +134,19 @@ LEGACY_DEVICES += DB120
 
 define LegacyDevice/EWDORINAP
   DEVICE_TITLE := Embedded Wireless Dorin Platform (4MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage
 endef
 LEGACY_DEVICES += EWDORINAP
 
 define LegacyDevice/EWDORINRT
   DEVICE_TITLE := Embedded Wireless Dorin Router
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage
 endef
 LEGACY_DEVICES += EWDORINRT
 
 define LegacyDevice/EWDORIN16M
   DEVICE_TITLE := Embedded Wireless Dorin Platform (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage
 endef
 LEGACY_DEVICES += EWDORIN16M
 

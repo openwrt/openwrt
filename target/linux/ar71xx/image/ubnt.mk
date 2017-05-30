@@ -53,7 +53,7 @@ define Device/ubnt-xm
 endef
 
 define Device/ubnt-xw
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7552k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
@@ -66,7 +66,7 @@ define Device/ubnt-xw
 endef
 
 define Device/ubnt-bz
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7552k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
@@ -79,7 +79,7 @@ define Device/ubnt-bz
 endef
 
 define Device/ubnt-unifiac
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7744k
   MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
@@ -141,7 +141,7 @@ endef
 define Device/ubnt-unifiac-pro
   $(Device/ubnt-unifiac)
   DEVICE_TITLE := Ubiquiti UniFi AC-Pro
-  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x kmod-usb-core kmod-usb-ohci kmod-usb2
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x kmod-usb-core kmod-usb2
   DEVICE_PROFILE := UBNT UBNTUNIFIACPRO
   BOARDNAME := UBNT-UF-AC-PRO
 endef

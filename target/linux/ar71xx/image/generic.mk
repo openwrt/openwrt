@@ -113,7 +113,7 @@ TARGET_DEVICES += cpe870
 define Device/dragino2
   BOARDNAME := DRAGINO2
   CONSOLE := ttyATH0,115200
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   DEVICE_TITLE := Dragino 2 (MS14)
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,16000k(firmware),64k(config)ro,64k(art)ro
@@ -328,7 +328,7 @@ TARGET_DEVICES += cr3000-nocloud
 
 define Device/cr5000
   DEVICE_TITLE := PowerCloud CR5000 Cloud Router
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-core
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-core
   BOARDNAME := CR5000
   DEVICE_PROFILE := CR5000
   IMAGE_SIZE = 7104k
@@ -339,7 +339,7 @@ TARGET_DEVICES += cr5000
 
 define Device/cr5000-nocloud
   DEVICE_TITLE := PowerCloud CR5000 (No-Cloud)
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-core
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-core
   BOARDNAME := CR5000
   DEVICE_PROFILE := CR5000
   IMAGE_SIZE = 7808k
@@ -511,7 +511,7 @@ TARGET_DEVICES += onion-omega
 
 define Device/sc1750
   DEVICE_TITLE := Abicom SC1750
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME = SC1750
   IMAGE_SIZE = 15744k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),15744k(firmware),128k(APConfig),128k(kplog),64k(ART)
@@ -520,7 +520,7 @@ TARGET_DEVICES += sc1750
 
 define Device/sc300m
   DEVICE_TITLE := Abicom SC300M
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME = SC300M
   IMAGE_SIZE = 15744k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),15744k(firmware),128k(APConfig),128k(kplog),64k(ART)
@@ -529,7 +529,7 @@ TARGET_DEVICES += sc300m
 
 define Device/sc450
   DEVICE_TITLE := Abicom SC450
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME = SC450
   IMAGE_SIZE = 15744k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),15744k(firmware),128k(APConfig),128k(kplog),64k(ART)
@@ -798,7 +798,7 @@ TARGET_DEVICES += bhr-4grv2
 
 define Device/wpj342
   DEVICE_TITLE := Compex WPJ342 (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := WPJ342
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k
@@ -807,7 +807,7 @@ TARGET_DEVICES += wpj342
 
 define Device/wpj344
   DEVICE_TITLE := Compex WPJ344 (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := WPJ344
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k
@@ -816,7 +816,7 @@ TARGET_DEVICES += wpj344
 
 define Device/wpj531
   DEVICE_TITLE := Compex WPJ531 (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := WPJ531
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k
@@ -825,7 +825,7 @@ TARGET_DEVICES += wpj531
 
 define Device/wpj558
   DEVICE_TITLE := Compex WPJ558 (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := WPJ558
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k
@@ -834,7 +834,7 @@ TARGET_DEVICES += wpj558
 
 define Device/wpj563
   DEVICE_TITLE := Compex WPJ563 (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := WPJ563
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k

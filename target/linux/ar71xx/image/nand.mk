@@ -100,19 +100,19 @@ TARGET_DEVICES += z1
 
 define LegacyDevice/R6100
   DEVICE_TITLE := NETGEAR R6100
-  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += R6100
 
 define LegacyDevice/WNDR3700V4
   DEVICE_TITLE := NETGEAR WNDR3700v4
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WNDR3700V4
 
 define LegacyDevice/WNDR4300V1
   DEVICE_TITLE := NETGEAR WNDR4300v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 LEGACY_DEVICES += WNDR4300V1
 
