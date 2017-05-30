@@ -112,7 +112,9 @@ define Package/openvpn-$(BUILD_VARIANT)/install
 		$(1)/etc/init.d \
 		$(1)/etc/config \
 		$(1)/etc/openvpn \
-		$(1)/lib/upgrade/keep.d
+		$(1)/lib/upgrade/keep.d \
+		$(1)/lib/netifd \
+		$(1)/lib/netifd/proto
 
 	$(INSTALL_BIN) \
 		$(PKG_INSTALL_DIR)/usr/sbin/openvpn \
@@ -131,6 +133,18 @@ define Package/openvpn-$(BUILD_VARIANT)/install
 	$(INSTALL_DATA) \
 		files/openvpn.upgrade \
 		$(1)/lib/upgrade/keep.d/openvpn
+
+	$(INSTALL_BIN) \
+		files/lib/netifd/openvpn-down \
+		$(1)/lib/netifd/openvpn-down
+
+	$(INSTALL_BIN) \
+		files/lib/netifd/openvpn-up \
+		$(1)/lib/netifd/openvpn-up
+
+	$(INSTALL_BIN) \
+		files/lib/netifd/proto/openvpn.sh \
+		$(1)/lib/netifd/proto/openvpn.sh
 endef
 
 $(eval $(call BuildPackage,openvpn-openssl))

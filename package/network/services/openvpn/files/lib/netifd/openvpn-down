@@ -1,0 +1,25 @@
+#!/bin/sh
+
+#DBG=1
+
+[ -n "$INTERFACE" ] || {
+	echo "openvpn-down no INTERFACE variable appended"
+	exit 1
+}
+
+[ -n "$DBG" ] && {
+	env > /tmp/openvpn-down-${INTERFACE}-env.log
+}
+
+. /lib/netifd/netifd-proto.sh
+proto_init_update "$dev" 0
+proto_send_update "$INTERFACE"
+
+[ -d /etc/openvpn/ip-down.d ] && {
+	for SCRIPT in /etc/openvpn/ip-down.d/*
+	do
+		[ -x "$SCRIPT" ] && "$SCRIPT" "$@"
+	done
+}
+
+exit 0

@@ -1,0 +1,87 @@
+#!/bin/sh
+
+#DBG=1
+
+[ -n "$INTERFACE" ] || {
+	echo "openvpn-up no INTERFACE variable appended"
+	exit 1
+}
+
+[ -n "$DBG" ] && {
+	env > /tmp/openvpn-up-${INTERFACE}-env.log
+}
+
+. /lib/netifd/netifd-proto.sh
+proto_init_update "$dev" 1 1
+proto_set_keep 1
+[ -n "$ifconfig_local" ] && proto_add_ipv4_address "$ifconfig_local" 32
+[ -n "$ifconfig_ipv6_local" ] && proto_add_ipv6_address "$ifconfig_ipv6_local" 128
+
+# set ipv4 routen
+c=1
+while true ; do
+	v=route_network_$c
+	eval "network=\$$v"
+	[ -n "$network" ] || break
+	v=route_gateway_$c
+	eval "gw=\$$v"
+	v=route_netmask_$c
+	eval "mask=\$$v"
+	v=route_metric_$c
+	eval "metric=\$$v"
+	[ -n "$metric" ] || metric="$METRIC"
+
+	proto_add_ipv4_route "$network" "$mask" "$gw" "" "$metric"
+	c=$(( $c+1 ))
+done
+
+# set default route
+[ -n "$DEFAULTROUTE" ] && {
+	proto_add_ipv4_route "0.0.0.0" "0" "$gw" "0.0.0.0/0" "$METRIC"
+}
+
+# set ipv6 routen
+c=1
+while true ; do
+	v=route_ipv6_network_$c
+	eval "network=\$$v"
+	[ -n "$network" ] || break
+	v=route_ipv6_gateway_$c
+	eval "gw=\$$v"
+
+	pref=${network%%/*}
+	preff=$pref/
+	preflen=${network#$preff}
+
+	proto_add_ipv6_route "$pref" "$preflen" "$gw"
+	c=$(( $c+1 ))
+done
+
+# set dns server
+c=1
+while true ; do
+	v=foreign_option_$c
+	eval "fo=\$$v"
+	[ -n "$fo" ] || break
+	[ "${fo%% *}" = "dhcp-option" ] && {
+		s=${fo#dhcp-option }
+		[ "${s%% *}" = "DNS" ] && {
+			dns=${s#DNS }
+			[ -n "$PEERDNS" ] && {
+				proto_add_dns_server "$dns"
+			}
+		}
+	}
+	c=$(( $c+1 ))
+done
+
+proto_send_update "$INTERFACE"
+
+[ -d /etc/openvpn/ip-up.d ] && {
+	for SCRIPT in /etc/openvpn/ip-up.d/*
+	do
+		[ -x "$SCRIPT" ] && "$SCRIPT" "$@"
+	done
+}
+
+exit 0
