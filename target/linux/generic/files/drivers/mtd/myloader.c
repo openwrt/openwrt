@@ -33,7 +33,7 @@ struct part_data {
 };
 
 static int myloader_parse_partitions(struct mtd_info *master,
-				     struct mtd_partition **pparts,
+				     const struct mtd_partition **pparts,
 				     struct mtd_part_parser_data *data)
 {
 	struct part_data *buf;
