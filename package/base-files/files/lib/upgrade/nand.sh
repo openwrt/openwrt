@@ -142,7 +142,7 @@ nand_upgrade_prepare_ubi() {
 		}
 	fi
 
-	local kern_ubivol="$( nand_find_volume $ubidev kernel )"
+	local kern_ubivol="$( nand_find_volume $ubidev $CI_KERNPART )"
 	local root_ubivol="$( nand_find_volume $ubidev rootfs )"
 	local data_ubivol="$( nand_find_volume $ubidev rootfs_data )"
 
@@ -157,13 +157,13 @@ nand_upgrade_prepare_ubi() {
 	fi
 
 	# kill volumes
-	[ "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N kernel || true
+	[ "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N $CI_KERNPART || true
 	[ "$root_ubivol" ] && ubirmvol /dev/$ubidev -N rootfs || true
 	[ "$data_ubivol" ] && ubirmvol /dev/$ubidev -N rootfs_data || true
 
 	# update kernel
 	if [ "$has_kernel" = "1" ]; then
-		if ! ubimkvol /dev/$ubidev -N kernel -s $kernel_length; then
+		if ! ubimkvol /dev/$ubidev -N $CI_KERNPART -s $kernel_length; then
 			echo "cannot create kernel volume"
 			return 1;
 		fi
@@ -270,7 +270,7 @@ nand_upgrade_tar() {
 
 	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
 	[ "$has_kernel" = "1" ] && {
-		local kern_ubivol="$(nand_find_volume $ubidev kernel)"
+		local kern_ubivol="$(nand_find_volume $ubidev $CI_KERNPART)"
 	 	tar xf $tar_file sysupgrade-$board_name/kernel -O | \
 			ubiupdatevol /dev/$kern_ubivol -s $kernel_length -
 	}
