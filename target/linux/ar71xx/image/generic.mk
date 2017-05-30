@@ -796,50 +796,42 @@ define Device/bhr-4grv2
 endef
 TARGET_DEVICES += bhr-4grv2
 
-define Device/wpj342
-  DEVICE_TITLE := Compex WPJ342 (16MB flash)
+define Device/wpj-16m
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
-  BOARDNAME := WPJ342
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
   IMAGE_SIZE := 16128k
 endef
-TARGET_DEVICES += wpj342
+
+define Device/wpj342
+  $(Device/wpj-16m)
+  DEVICE_TITLE := Compex WPJ342 (16MB flash)
+  BOARDNAME := WPJ342
+endef
 
 define Device/wpj344
+  $(Device/wpj-16m)
   DEVICE_TITLE := Compex WPJ344 (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := WPJ344
-  MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
-  IMAGE_SIZE := 16128k
 endef
-TARGET_DEVICES += wpj344
 
 define Device/wpj531
+  $(Device/wpj-16m)
   DEVICE_TITLE := Compex WPJ531 (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := WPJ531
-  MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
-  IMAGE_SIZE := 16128k
 endef
-TARGET_DEVICES += wpj531
 
 define Device/wpj558
+  $(Device/wpj-16m)
   DEVICE_TITLE := Compex WPJ558 (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := WPJ558
-  MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
-  IMAGE_SIZE := 16128k
 endef
-TARGET_DEVICES += wpj558
 
 define Device/wpj563
+  $(Device/wpj-16m)
   DEVICE_TITLE := Compex WPJ563 (16MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := WPJ563
-  MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
-  IMAGE_SIZE := 16128k
 endef
-TARGET_DEVICES += wpj563
+TARGET_DEVICES += wpj342 wpj344 wpj531 wpj558 wpj563
 
 define Device/zbt-we1526
   DEVICE_TITLE := Zbtlink ZBT-WE1526
