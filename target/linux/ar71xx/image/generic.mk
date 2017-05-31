@@ -208,7 +208,7 @@ endef
 TARGET_DEVICES += weio
 
 define Device/gl-ar150
-  DEVICE_TITLE := GL AR150
+  DEVICE_TITLE := GL.iNet GL-AR150
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = GL-AR150
   IMAGE_SIZE = 16000k
@@ -218,7 +218,7 @@ endef
 TARGET_DEVICES += gl-ar150
 
 define Device/gl-ar300
-  DEVICE_TITLE := GL AR300
+  DEVICE_TITLE := GL.iNet GL-AR300
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = GL-AR300
   IMAGE_SIZE = 16000k
@@ -227,7 +227,7 @@ endef
 TARGET_DEVICES += gl-ar300
 
 define Device/gl-ar300m
-  DEVICE_TITLE := GL AR300M
+  DEVICE_TITLE := GL.iNet GL-AR300M
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = GL-AR300M
   IMAGE_SIZE = 16000k
@@ -236,7 +236,7 @@ endef
 TARGET_DEVICES += gl-ar300m
 
 define Device/gl-domino
-  DEVICE_TITLE := GL Domino Pi
+  DEVICE_TITLE := GL.iNet Domino Pi
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = DOMINO
   IMAGE_SIZE = 16000k
@@ -246,7 +246,7 @@ endef
 TARGET_DEVICES += gl-domino
 
 define Device/gl-mifi
-  DEVICE_TITLE := GL MIFI
+  DEVICE_TITLE := GL.iNet GL-MiFi
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = GL-MIFI
   IMAGE_SIZE = 16000k
