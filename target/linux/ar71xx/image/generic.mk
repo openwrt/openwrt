@@ -103,7 +103,7 @@ endef
 TARGET_DEVICES += bsb
 
 define Device/carambola2
-  DEVICE_TITLE := Carambola2 board from 8Devices
+  DEVICE_TITLE := 8devices Carambola2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = CARAMBOLA2
   IMAGE_SIZE = 16000k
@@ -256,7 +256,7 @@ endef
 TARGET_DEVICES += gl-mifi
 
 define Device/lima
-  DEVICE_TITLE := Lima board from 8Devices
+  DEVICE_TITLE := 8devices Lima
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME = LIMA
   IMAGE_SIZE = 15616k
