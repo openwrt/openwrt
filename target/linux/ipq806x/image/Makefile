@@ -250,7 +250,20 @@ define Device/VR2600v
 	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
 endef
 
+define Device/AP-DK04.1-C1
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_DTS := qcom-ipq4019-ap.dk04.1-c1
+	KERNEL_LOADADDR := 0x80208000
+	KERNEL_INSTALL := 1
+	KERNEL_SIZE := 4048k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := ap-dk04.1-c1
+	DEVICE_TITLE := QCA AP-DK04.1-C1
+endef
+
 TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 FRITZ4040 R7500 \
-		  R7500v2 R7800 NBG6817 VR2600v
+		  R7500v2 R7800 NBG6817 VR2600v AP-DK04.1-C1
 
 $(eval $(call BuildImage))
