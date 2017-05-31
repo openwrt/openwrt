@@ -165,6 +165,8 @@ static int rb95x_nand_scan_fixup(struct mtd_info *mtd)
 		chip->ecc.layout = &rb95x_nand_ecclayout;
 	}
 
+	chip->options = NAND_NO_SUBPAGE_WRITE;
+
 	return 0;
 }
 
