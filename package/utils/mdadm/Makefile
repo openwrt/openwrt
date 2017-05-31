@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mdadm
 PKG_VERSION:=4.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=@KERNEL/linux/utils/raid/mdadm
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -50,6 +50,7 @@ define Build/Compile
 		CC="$(TARGET_CC)" \
 		CFLAGS="$(TARGET_CFLAGS) -DHAVE_STDINT_H" \
 		LDFLAGS="$(TARGET_LDFLAGS)" \
+		CHECK_RUN_DIR=0 \
 		mdadm
 endef
 
