@@ -1,3 +1,20 @@
+define Build/MerakiNAND
+	-$(STAGING_DIR_HOST)/bin/mkmerakifw \
+		-B $(BOARDNAME) -s \
+		-i $@ \
+		-o $@.new
+	@mv $@.new $@
+endef
+
+define Build/MerakiNAND-old
+	-$(STAGING_DIR_HOST)/bin/mkmerakifw-old \
+		-B $(BOARDNAME) -s \
+		-i $@ \
+		-o $@.new
+	@mv $@.new $@
+endef
+
+
 define Device/c-60
   DEVICE_TITLE := AirTight C-60
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-core kmod-usb2 kmod-ath9k
@@ -41,14 +58,6 @@ define Device/hiveap-121
 endef
 TARGET_DEVICES += hiveap-121
 
-define Build/MerakiNAND
-	-$(STAGING_DIR_HOST)/bin/mkmerakifw \
-		-B $(BOARDNAME) -s \
-		-i $@ \
-		-o $@.new
-	@mv $@.new $@
-endef
-
 define Device/mr18
   DEVICE_TITLE := Meraki MR18
   DEVICE_PACKAGES := kmod-spi-gpio kmod-ath9k
@@ -61,14 +70,6 @@ define Device/mr18
   IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
 TARGET_DEVICES += mr18
-
-define Build/MerakiNAND-old
-	-$(STAGING_DIR_HOST)/bin/mkmerakifw-old \
-		-B $(BOARDNAME) -s \
-		-i $@ \
-		-o $@.new
-	@mv $@.new $@
-endef
 
 define Device/rambutan
   DEVICE_TITLE := 8devices Rambutan

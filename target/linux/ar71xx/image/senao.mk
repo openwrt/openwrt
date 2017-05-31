@@ -12,6 +12,7 @@ define Build/senao-factory-image
 	rm -rf $@.senao
 endef
 
+
 define Device/ens202ext
   DEVICE_TITLE := EnGenius ENS202EXT
   BOARDNAME := ENS202EXT

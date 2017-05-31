@@ -1,6 +1,4 @@
-# UBNT_BOARD e.g. one of (XS2, XS5, RS, XM)
-# UBNT_TYPE e.g. one of (BZ, XM, XW)
-# UBNT_CHIP e.g. one of (ar7240, ar933x, ar934x)
+DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE
 
 # mkubntimage is using the kernel image direct
 # routerboard creates partitions out of the ubnt header
@@ -34,7 +32,6 @@ define Build/mkubntimage2
 	@mv $@.new $@
 endef
 
-DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE
 
 # UBNT_BOARD e.g. one of (XS2, XS5, RS, XM)
 # UBNT_TYPE e.g. one of (BZ, XM, XW)
