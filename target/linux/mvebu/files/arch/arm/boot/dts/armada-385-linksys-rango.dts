@@ -95,16 +95,6 @@
 						reg = <0x1>;
 					};
 
-					wlan_2g@2 {
-						label = "rango:white:wlan_2g";
-						reg = <0x2>;
-					};
-
-					wlan_5g@3 {
-						label = "rango:white:wlan_5g";
-						reg = <0x3>;
-					};
-
 					usb2@5 {
 						label = "rango:white:usb2";
 						reg = <0x5>;
@@ -170,16 +160,6 @@
 			};
 
 			sata@a8000 {
-				status = "okay";
-			};
-
-			sdhci@d8000 {
-				pinctrl-names = "default";
-				pinctrl-0 = <&sdhci_pins>;
-				no-1-8-v;
-				broken-cd;
-				wp-inverted;
-				bus-width = <8>;
 				status = "okay";
 			};
 
@@ -315,14 +295,14 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		enable-active-high;
-		gpio = <&gpio1 16 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		pinctrl-0 = <&keys_pin>;
+		pinctrl-0 = <&reset_key_pin &wps_key_pin>;
 		pinctrl-names = "default";
 
 		button@1 {
@@ -340,17 +320,28 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&power_led_pin &sata_led_pin>;
+		pinctrl-0 = <&power_led_pin &sata_led_pin &wlan_2g_led_pin &wlan_5g_led_pin>;
 		pinctrl-names = "default";
 
-		power {
-			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
+		sata {
+			label = "rango:white:sata";
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		};
 
-		sata {
-			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-			default-state = "off";
+		wlan_2g {
+			label = "rango:white:wlan_2g";
+			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan_5g {
+			label = "rango:white:wlan_5g";
+			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+		};
+
+		power {
+			label = "rango:white:power";
+			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
 		};
 	};
 
@@ -399,16 +390,6 @@
 		};
 	};
 
-	gpio-leds {
-		power {
-			label = "rango:white:power";
-		};
-
-		sata {
-			label = "rango:white:sata";
-		};
-	};
-
 	mvsw61xx {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -424,23 +405,38 @@
 };
 
 &pinctrl {
-	keys_pin: keys-pin {
-		marvell,pins = "mpp24", "mpp29";
-		marvell,function = "gpio";
-	};
-
-	power_led_pin: power-led-pin {
-		marvell,pins = "mpp56";
-		marvell,function = "gpio";
-	};
-
 	sata_led_pin: sata-led-pin {
 		marvell,pins = "mpp21";
 		marvell,function = "gpio";
 	};
 
+	wps_key_pin: wps-key-pin {
+		marvell,pins = "mpp24";
+		marvell,function = "gpio";
+	};
+
+	reset_key_pin: reset-key-pin {
+		marvell,pins = "mpp29";
+		marvell,function = "gpio";
+	};
+
+	wlan_2g_led_pin: wlan-2g-led-pin {
+		marvell,pins = "mpp45";
+		marvell,function = "gpio";
+	};
+
+	wlan_5g_led_pin: wlan-5g-led-pin {
+		marvell,pins = "mpp46";
+		marvell,function = "gpio";
+	};
+
 	xhci0_vbus_pins: xhci0-vbus-pins {
 		marvell,pins = "mpp47";
+		marvell,function = "gpio";
+	};
+
+	power_led_pin: power-led-pin {
+		marvell,pins = "mpp56";
 		marvell,function = "gpio";
 	};
 };
