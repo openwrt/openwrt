@@ -27,7 +27,6 @@ define Device/c-60
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
   IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
-
 TARGET_DEVICES += c-60
 
 define Device/domywifi-dw33d
@@ -96,7 +95,6 @@ define Device/z1
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | MerakiNAND-old
   IMAGE/sysupgrade.tar := sysupgrade-tar
 endef
-
 TARGET_DEVICES += z1
 
 define LegacyDevice/R6100

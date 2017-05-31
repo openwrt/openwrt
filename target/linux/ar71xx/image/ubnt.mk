@@ -207,7 +207,6 @@ define Device/ubdev01
   UBNT_TYPE := XM
   UBNT_CHIP := ar7240
 endef
-
 TARGET_DEVICES += ubdev01
 
 define Device/ubnt-routerstation
@@ -249,7 +248,6 @@ define Device/ubnt-ls-sr71
   UBNT_TYPE := LS-SR71
   UBNT_CHIP := ar7100
 endef
-
 TARGET_DEVICES += ubnt-rs ubnt-rspro ubnt-ls-sr71
 
 define Device/ubnt-uap-pro
@@ -274,5 +272,4 @@ define Device/ubnt-unifi-outdoor-plus
   BOARDNAME := UBNT-UOP
   DEVICE_PROFILE := UBNT
 endef
-
 TARGET_DEVICES += ubnt-uap-pro ubnt-unifi-outdoor-plus

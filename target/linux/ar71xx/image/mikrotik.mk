@@ -21,7 +21,6 @@ define Device/nand-large
   DEVICE_TITLE := MikroTik RouterBoard with >= 128 MB NAND flash
   KERNEL := kernel-bin | kernel2minor -s 2048 -e -c
 endef
-
 TARGET_DEVICES += nand-64m nand-large
 
 define Device/rb-nor-flash-16M
@@ -41,5 +40,4 @@ define Device/rb-nor-flash-16M-ac
   DEVICE_TITLE := MikroTik RouterBoard with 16 MB SPI NOR flash and ac
   DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x ath10k-firmware-qca9887
 endef
-
 TARGET_DEVICES += rb-nor-flash-16M rb-nor-flash-16M-ac

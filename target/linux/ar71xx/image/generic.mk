@@ -363,7 +363,6 @@ define Device/wndrmacv2
   DEVICE_TITLE := NETGEAR WNDRMAC v2
   NETGEAR_BOARD_ID = WNDRMACv2
 endef
-
 TARGET_DEVICES += wndr3700 wndr3700v2 wndr3800 wndr3800ch wndrmac wndrmacv2
 
 define Device/cap324
@@ -373,7 +372,6 @@ define Device/cap324
   IMAGE_SIZE = 15296k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,15296k(firmware),640k(certs),64k(nvram),64k(art)ro
 endef
-
 TARGET_DEVICES += cap324
 
 define Device/cap324-nocloud
@@ -383,7 +381,6 @@ define Device/cap324-nocloud
   IMAGE_SIZE = 16000k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
 endef
-
 TARGET_DEVICES += cap324-nocloud
 
 define Device/cr3000
@@ -393,7 +390,6 @@ define Device/cr3000
   IMAGE_SIZE = 7104k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7104k(firmware),640k(certs),64k(nvram),64k(art)ro
 endef
-
 TARGET_DEVICES += cr3000
 
 define Device/cr3000-nocloud
@@ -403,7 +399,6 @@ define Device/cr3000-nocloud
   IMAGE_SIZE = 7808k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7808k(firmware),64k(art)ro
 endef
-
 TARGET_DEVICES += cr3000-nocloud
 
 define Device/cr5000
@@ -414,7 +409,6 @@ define Device/cr5000
   IMAGE_SIZE = 7104k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7104k(firmware),640k(certs),64k(nvram),64k(art)ro
 endef
-
 TARGET_DEVICES += cr5000
 
 define Device/cr5000-nocloud
@@ -425,7 +419,6 @@ define Device/cr5000-nocloud
   IMAGE_SIZE = 7808k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7808k(firmware),64k(art)ro
 endef
-
 TARGET_DEVICES += cr5000-nocloud
 
 define Device/pqi-air-pen
@@ -436,7 +429,6 @@ define Device/pqi-air-pen
   CONSOLE = ttyATH0,115200
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(art)ro,64k(NVRAM)ro,7680k(firmware),64k(CONF)
 endef
-
 TARGET_DEVICES += pqi-air-pen
 
 define Device/antminer-s1
@@ -675,7 +667,6 @@ define Device/oolite
 endef
 TARGET_DEVICES += oolite
 
-
 define Device/NBG6616
   DEVICE_TITLE := ZyXEL NBG6616
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-rtc-pcf8563 kmod-ath10k ath10k-firmware-qca988x
@@ -709,7 +700,6 @@ define Device/NBG6616
   #
   # The header is padded with 0xff to the erase block size of the device.
 endef
-
 TARGET_DEVICES += NBG6616
 
 define Device/c-55
@@ -721,9 +711,7 @@ define Device/c-55
   MTDPARTS = spi0.0:256k(u-boot)ro,128k(u-boot-env)ro,2048k(kernel),13824k(rootfs),13824k(opt)ro,2624k(failsafe)ro,64k(art)ro,15872k@0x60000(firmware)
   IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
-
 TARGET_DEVICES += c-55
-
 
 define Device/hiwifi-hc6361
   DEVICE_TITLE := HiWiFi HC6361
@@ -737,7 +725,6 @@ define Device/hiwifi-hc6361
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(bdinfo)ro,16128k(firmware),64k(backup)ro,64k(art)ro
 endef
 TARGET_DEVICES += hiwifi-hc6361
-
 
 define Device/seama
   LOADER_TYPE := bin
@@ -804,7 +791,6 @@ define Device/qihoo-c301
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(devdata),64k(devconf),15744k(firmware),64k(warm_start),64k(action_image_config),64k(radiocfg)ro;spi0.1:15360k(upgrade2),1024k(privatedata)
   SEAMA_SIGNATURE := wrgac26_qihoo360_360rg
 endef
-
 TARGET_DEVICES += dir-869-a1 mynet-n600 mynet-n750 qihoo-c301
 
 define Device/dap-2695-a1
@@ -820,7 +806,6 @@ define Device/dap-2695-a1
   MTDPARTS = spi0.0:256k(bootloader)ro,64k(bdcfg)ro,64k(rgdb)ro,64k(langpack)ro,15360k(firmware),448k(captival)ro,64k(certificate)ro,64k(radiocfg)ro
   DAP_SIGNATURE := wapac02_dkbs_dap2695
 endef
-
 TARGET_DEVICES += dap-2695-a1
 
 define Device/bhr-4grv2
