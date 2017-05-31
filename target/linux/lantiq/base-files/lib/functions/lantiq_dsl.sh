@@ -623,23 +623,23 @@ line_data() {
 	sattndru=$(scale $attndru)
 	
 	if [ "$action" = "lucistat" ]; then
-		echo "dsl.line_attenuation_down=$latnd"
-		echo "dsl.line_attenuation_up=$latnu"
-		echo "dsl.noise_margin_down=$snrd"
-		echo "dsl.noise_margin_up=$snru"
-		echo "dsl.signal_attenuation_down=$satnd"
-		echo "dsl.signal_attenuation_up=$satnu"
-		echo "dsl.actatp_down=$actatpd"
-		echo "dsl.actatp_up=$actatpu"
+		echo "dsl.line_attenuation_down=\"$latnd\""
+		echo "dsl.line_attenuation_up=\"$latnu\""
+		echo "dsl.noise_margin_down=\"$snrd\""
+		echo "dsl.noise_margin_up=\"$snru\""
+		echo "dsl.signal_attenuation_down=\"$satnd\""
+		echo "dsl.signal_attenuation_up=\"$satnu\""
+		echo "dsl.actatp_down=\"$actatpd\""
+		echo "dsl.actatp_up=\"$actatpu\""
 		echo "dsl.max_data_rate_down=$attndrd"
 		echo "dsl.max_data_rate_up=$attndru"
 		echo "dsl.max_data_rate_down_s=\"$sattndrd\""
 		echo "dsl.max_data_rate_up_s=\"$sattndru\""
 	else
-		echo "Line Attenuation (LATN):                  Down: ${latnd}dB / Up: ${latnu}dB"
-		echo "Signal Attenuation (SATN):                Down: ${satnd}dB / Up: ${satnu}dB"
-		echo "Noise Margin (SNR):                       Down: ${snrd}dB / Up: ${snru}dB"
-		echo "Aggregate Transmit Power (ACTATP):        Down: ${actatpd}dB / Up: ${actatpu}dB"
+		echo "Line Attenuation (LATN):                  Down: ${latnd} dB / Up: ${latnu} dB"
+		echo "Signal Attenuation (SATN):                Down: ${satnd} dB / Up: ${satnu} dB"
+		echo "Noise Margin (SNR):                       Down: ${snrd} dB / Up: ${snru} dB"
+		echo "Aggregate Transmit Power (ACTATP):        Down: ${actatpd} dB / Up: ${actatpu} dB"
 		echo "Max. Attainable Data Rate (ATTNDR):       Down: ${sattndrd}/s / Up: ${sattndru}/s"
 	fi
 }
