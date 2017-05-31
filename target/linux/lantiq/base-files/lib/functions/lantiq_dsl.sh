@@ -435,7 +435,7 @@ latency_delay() {
 		echo "dsl.latency_s_down=\"$idd_s\""
 		echo "dsl.latency_s_up=\"$idu_s\""
 	else
-		echo "Latency / Interleave Delay:               Down: ${idd_s} (${sidd}) / Up: ${idu_s} (${sidu})"
+		echo "Latency [Interleave Delay]:               ${sidd} [${idd_s}]   ${sidu} [${idu_s}]"
 	fi
 }
 
