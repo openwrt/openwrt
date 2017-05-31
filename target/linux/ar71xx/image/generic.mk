@@ -1,4 +1,4 @@
-DEVICE_VARS += DAP_SIGNATURE NETGEAR_BOARD_ID NETGEAR_HW_ID NETGEAR_KERNEL_MAGIC SEAMA_SIGNATURE
+DEVICE_VARS += DAP_SIGNATURE NETGEAR_BOARD_ID NETGEAR_HW_ID NETGEAR_KERNEL_MAGIC ROOTFS_SIZE SEAMA_SIGNATURE
 
 define Build/mkbuffaloimg
 	$(STAGING_DIR_HOST)/bin/mkbuffaloimg -B $(BOARDNAME) \
@@ -268,11 +268,12 @@ define Device/mr12
   DEVICE_TITLE := Meraki MR12
   DEVICE_PACKAGES := kmod-spi-gpio
   BOARDNAME = MR12
+  ROOTFS_SIZE := 13440k
   IMAGE_SIZE = 15680k
   MTDPARTS = spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13440k(rootfs),2240k(kernel),64k(mac),128k(art)ro,15680k@0x80000(firmware)
   IMAGE/kernel.bin = append-kernel
   IMAGE/rootfs.bin = append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to 13440k | append-kernel | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
   IMAGES := kernel.bin rootfs.bin sysupgrade.bin
 endef
 TARGET_DEVICES += mr12
@@ -281,11 +282,12 @@ define Device/mr16
   DEVICE_TITLE := Meraki MR16
   DEVICE_PACKAGES := kmod-spi-gpio
   BOARDNAME = MR16
+  ROOTFS_SIZE := 13440k
   IMAGE_SIZE = 15680k
   MTDPARTS = spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13440k(rootfs),2240k(kernel),64k(mac),128k(art)ro,15680k@0x80000(firmware)
   IMAGE/kernel.bin = append-kernel
   IMAGE/rootfs.bin = append-rootfs | pad-rootfs
-  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to 13440k | append-kernel | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
   IMAGES := kernel.bin rootfs.bin sysupgrade.bin
 endef
 TARGET_DEVICES += mr16
@@ -294,9 +296,10 @@ define Device/dr344
   DEVICE_TITLE := Wallys DR344
   BOARDNAME = DR344
   KERNEL_SIZE := 1408k
+  ROOTFS_SIZE := 6336k
   IMAGE_SIZE = 7744k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
-  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to 6336k | append-kernel | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += dr344
 
