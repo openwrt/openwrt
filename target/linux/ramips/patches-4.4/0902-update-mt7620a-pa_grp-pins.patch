@@ -1,0 +1,11 @@
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -61,7 +61,7 @@ static struct rt2880_pmx_func refclk_grp
+ static struct rt2880_pmx_func ephy_grp[] = { FUNC("ephy", 0, 40, 5) };
+ static struct rt2880_pmx_func rgmii2_grp[] = { FUNC("rgmii2", 0, 60, 12) };
+ static struct rt2880_pmx_func wled_grp[] = { FUNC("wled", 0, 72, 1) };
+-static struct rt2880_pmx_func pa_grp[] = { FUNC("pa", 0, 18, 4) };
++static struct rt2880_pmx_func pa_grp[] = { FUNC("pa", 0, 20, 2) };
+ static struct rt2880_pmx_func uartf_grp[] = {
+ 	FUNC("uartf", MT7620_GPIO_MODE_UARTF, 7, 8),
+ 	FUNC("pcm uartf", MT7620_GPIO_MODE_PCM_UARTF, 7, 8),
