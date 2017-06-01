@@ -1,6 +1,6 @@
---- a/drivers/net/wireless/ath/ath10k/pci.c	2016-12-12 16:29:42.310053558 +0100
-+++ b/drivers/net/wireless/ath/ath10k/pci.c	2016-12-12 16:34:46.667203800 +0100
-@@ -127,7 +127,7 @@ static struct ce_attr host_ce_config_wla
+--- a/drivers/net/wireless/ath/ath10k/pci.c
++++ b/drivers/net/wireless/ath/ath10k/pci.c
+@@ -128,7 +128,7 @@ static struct ce_attr host_ce_config_wla
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 2048,
@@ -9,7 +9,7 @@
  		.recv_cb = ath10k_pci_htt_htc_rx_cb,
  	},
  
-@@ -136,7 +136,7 @@ static struct ce_attr host_ce_config_wla
+@@ -137,7 +137,7 @@ static struct ce_attr host_ce_config_wla
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 2048,
@@ -18,7 +18,7 @@
  		.recv_cb = ath10k_pci_htc_rx_cb,
  	},
  
-@@ -163,7 +163,7 @@ static struct ce_attr host_ce_config_wla
+@@ -164,7 +164,7 @@ static struct ce_attr host_ce_config_wla
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 512,
@@ -27,7 +27,7 @@
  		.recv_cb = ath10k_pci_htt_rx_cb,
  	},
  
-@@ -188,7 +188,7 @@ static struct ce_attr host_ce_config_wla
+@@ -189,7 +189,7 @@ static struct ce_attr host_ce_config_wla
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 2048,
