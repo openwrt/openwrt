@@ -47,6 +47,12 @@
 #define GSW_REG_ISR		0x700c
 #define GSW_REG_GPC1		0x7014
 
+#define GSW_REG_MAC_P0_MCR	0x100
+#define GSW_REG_MAC_P1_MCR	0x200
+
+// Global MAC control register
+#define GSW_REG_GMACCR		0x30E0
+
 #define SYSC_REG_CHIP_REV_ID	0x0c
 #define SYSC_REG_CFG1		0x14
 #define RST_CTRL_MCM		BIT(2)

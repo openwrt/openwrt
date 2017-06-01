@@ -1350,6 +1350,10 @@ static int fe_change_mtu(struct net_device *dev, int new_mtu)
 	if (!(priv->flags & FE_FLAG_JUMBO_FRAME))
 		return eth_change_mtu(dev, new_mtu);
 
+	if (IS_ENABLED(CONFIG_SOC_MT7621))
+		if (new_mtu > 2048)
+			return -EINVAL;
+
 	frag_size = fe_max_frag_size(new_mtu);
 	if (new_mtu < 68 || frag_size > PAGE_SIZE)
 		return -EINVAL;
@@ -1373,15 +1377,17 @@ static int fe_change_mtu(struct net_device *dev, int new_mtu)
 		return 0;
 
 	fe_stop(dev);
-	fwd_cfg = fe_r32(FE_GDMA1_FWD_CFG);
-	if (new_mtu <= ETH_DATA_LEN) {
-		fwd_cfg &= ~FE_GDM1_JMB_EN;
-	} else {
-		fwd_cfg &= ~(FE_GDM1_JMB_LEN_MASK << FE_GDM1_JMB_LEN_SHIFT);
-		fwd_cfg |= (DIV_ROUND_UP(frag_size, 1024) <<
-				FE_GDM1_JMB_LEN_SHIFT) | FE_GDM1_JMB_EN;
+	if (!IS_ENABLED(CONFIG_SOC_MT7621)) {
+		fwd_cfg = fe_r32(FE_GDMA1_FWD_CFG);
+		if (new_mtu <= ETH_DATA_LEN) {
+			fwd_cfg &= ~FE_GDM1_JMB_EN;
+		} else {
+			fwd_cfg &= ~(FE_GDM1_JMB_LEN_MASK << FE_GDM1_JMB_LEN_SHIFT);
+			fwd_cfg |= (DIV_ROUND_UP(frag_size, 1024) <<
+			FE_GDM1_JMB_LEN_SHIFT) | FE_GDM1_JMB_EN;
+		}
+		fe_w32(fwd_cfg, FE_GDMA1_FWD_CFG);
 	}
-	fe_w32(fwd_cfg, FE_GDMA1_FWD_CFG);
 
 	return fe_open(dev);
 }

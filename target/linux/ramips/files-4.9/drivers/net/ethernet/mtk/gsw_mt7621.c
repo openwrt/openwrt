@@ -100,16 +100,19 @@ static void mt7621_hw_init(struct mt7620_gsw *gsw, struct device_node *np)
 
 	if ((rt_sysc_r32(SYSC_REG_CHIP_REV_ID) & 0xFFFF) == 0x0101) {
 		/* (GE1, Force 1000M/FD, FC ON, MAX_RX_LENGTH 1536) */
-		mtk_switch_w32(gsw, 0x2105e30b, 0x100);
+		mtk_switch_w32(gsw, 0x2305e30b, GSW_REG_MAC_P0_MCR);
 		mt7530_mdio_w32(gsw, 0x3600, 0x5e30b);
 	} else {
 		/* (GE1, Force 1000M/FD, FC ON, MAX_RX_LENGTH 1536) */
-		mtk_switch_w32(gsw, 0x2105e33b, 0x100);
+		mtk_switch_w32(gsw, 0x2305e33b, GSW_REG_MAC_P0_MCR);
 		mt7530_mdio_w32(gsw, 0x3600, 0x5e33b);
 	}
 
 	/* (GE2, Link down) */
-	mtk_switch_w32(gsw, 0x8000, 0x200);
+	mtk_switch_w32(gsw, 0x8000, GSW_REG_MAC_P1_MCR);
+
+	/* Set switch max RX frame length to 2k */
+	mt7530_mdio_w32(gsw, GSW_REG_GMACCR, 0x3F0B);
 
 	/* Enable Port 6, P5 as GMAC5, P5 disable */
 	val = mt7530_mdio_r32(gsw, 0x7804);
