@@ -1,3 +1,10 @@
+define Device/default-nand
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 126KiB -c 2048
+endef
+
 define Device/at91sam9263ek
   $(Device/evaluation-dtb)
   DEVICE_TITLE := Atmel AT91SAM9263-EK

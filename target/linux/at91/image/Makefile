@@ -11,29 +11,19 @@ KERNEL_LOADADDR := 0x20008000
 
 ifeq ($(SUBTARGET),legacy)
 include ./legacy.mk
-UBIFS_OPTS := -m 2048 -e 126KiB -c 2048
 endif
-
 ifeq ($(SUBTARGET),sama5)
 include ./sama5.mk
-ifeq ($(TARGET_DEVICES),at91-sama5d4_xplained)
-  UBIFS_OPTS := -e 0x3e000 -c 2082 -m 0x1000 -x lzo
-  UBINIZE_OPTS := -m 0x1000 -p 0x40000
-else
-  UBIFS_OPTS := -m 2048 -e 124KiB -c 2048
-endif
 endif
 
 define Device/Default
+  $(Device/default-nand)
   PROFILES := Default
   FILESYSTEMS := squashfs ubifs
   DEVICE_DTS := $(1)
   KERNEL_NAME := zImage
   KERNEL_SIZE := 4096k
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  SUBPAGESIZE := 512
   DTB_SIZE :=
 endef
 
