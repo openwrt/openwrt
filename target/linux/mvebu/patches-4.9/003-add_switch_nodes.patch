@@ -38,3 +38,23 @@
  };
  
  &pinctrl {
+--- a/arch/arm/boot/dts/armada-385-turris-omnia.dts
++++ b/arch/arm/boot/dts/armada-385-turris-omnia.dts
+@@ -115,6 +115,17 @@
+ 			};
+ 		};
+ 	};
++
++	mvsw61xx {
++		compatible = "marvell,88e6176";
++		status = "okay";
++		reg = <0x10>;
++		is-indirect;
++
++		mii-bus = <&mdio>;
++		cpu-port-0 = <6>;
++		cpu-port-1 = <5>;
++	};
+ };
+ 
+ /* Connected to 88E6176 switch, port 6 */

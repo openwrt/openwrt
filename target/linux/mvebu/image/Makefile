@@ -33,6 +33,10 @@ define Build/boot-scr-cfbase
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d cfbase-boot.script $@.bootscript
 endef
 
+define Build/boot-scr-dummy
+	echo "# Boot script not used for this target" > $@.bootscript
+endef
+
 define Build/boot-img
 	rm -f $@.boot
 	mkfs.fat -C $@.boot 16384
@@ -41,10 +45,29 @@ define Build/boot-img
 	mcopy -i $@.boot $@.bootscript ::boot.scr
 endef
 
+define Build/omnia-medkit-initramfs
+	$(TAR) -c -T /dev/null -f $@
+	rm -rf $(dir $(IMAGE_KERNEL))boot
+	mkdir -p $(dir $(IMAGE_KERNEL))boot/boot/
+	cp $(KDIR)/zImage-initramfs $(dir $(IMAGE_KERNEL))boot/boot/zImage
+	cp $(DTS_DIR)/$(DEVICE_DTS).dtb $(dir $(IMAGE_KERNEL))boot/boot/dtb
+	$(TAR) -rp --numeric-owner --owner=0 --group=0 --sort=name \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		--file=$@ -C $(dir $(IMAGE_KERNEL))boot/ .
+endef
+
+define Build/sdcard-u-boot-clearfog
+	cp "$(STAGING_DIR_IMAGE)/clearfog-u-boot-spl.kwb" $@.kwb
+endef
+
+define Build/sdcard-u-boot-dummy
+	touch $@.kwb
+endef
+
 define Build/sdcard-img
 	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
 	./gen_mvebu_sdcard_img.sh $@ \
-		"$(STAGING_DIR_IMAGE)/clearfog-u-boot-spl.kwb" \
+		$@.kwb \
 		c 32768 $@.boot \
 		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
 endef
@@ -196,7 +219,7 @@ define Device/armada-388-clearfog-pro
   DEVICE_TITLE := SolidRun ClearFog Pro
   DEVICE_PACKAGES := mkf2fs e2fsprogs swconfig kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-cfpro | boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr-cfpro | boot-img | sdcard-u-boot-clearfog | sdcard-img | gzip | append-metadata
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
 endef
@@ -208,7 +231,7 @@ define Device/armada-388-clearfog-base
   DEVICE_TITLE := SolidRun ClearFog Base
   DEVICE_PACKAGES := mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-cfbase | boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr-cfbase | boot-img | sdcard-u-boot-clearfog | sdcard-img | gzip | append-metadata
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
 endef
@@ -221,5 +244,21 @@ define Device/globalscale-mirabox
   DEVICE_TITLE := Globalscale Mirabox
 endef
 TARGET_DEVICES += globalscale-mirabox
+
+define Device/turris-omnia
+  KERNEL_INSTALL := 1
+  KERNEL := kernel-bin
+  KERNEL_INITRAMFS := kernel-bin
+  DEVICE_TITLE := Turris Omnia
+  DEVICE_PACKAGES :=  \
+  	  mkf2fs e2fsprogs swconfig kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
+  	  wpad-mini kmod-ath9k kmod-ath10k ath10k-firmware-qca988x
+  IMAGES := $$(IMAGE_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz
+  IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-scr-dummy | boot-img | sdcard-u-boot-dummy | sdcard-img | gzip | append-metadata
+  IMAGE/omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
+  IMAGE_NAME = $$(2)
+  DEVICE_DTS := armada-385-turris-omnia
+endef
+TARGET_DEVICES += turris-omnia
 
 $(eval $(call BuildImage))
