@@ -48,6 +48,17 @@ define Build/sdcard-img
 		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
 endef
 
+define Build/omnia-medkit-initramfs
+	$(TAR) -c -T /dev/null -f $@
+	rm -rf $(dir $(IMAGE_KERNEL))boot
+	mkdir -p $(dir $(IMAGE_KERNEL))boot/boot/
+	cp $(KDIR)/zImage-initramfs $(dir $(IMAGE_KERNEL))boot/boot/zImage
+	cp $(DTS_DIR)/$(DEVICE_DTS).dtb $(dir $(IMAGE_KERNEL))boot/boot/dtb
+	$(TAR) -rp --numeric-owner --owner=0 --group=0 --sort=name \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		--file=$@ -C $(dir $(IMAGE_KERNEL))boot/ .
+endef
+
 define Device/Default
   PROFILES := Default
   DEVICE_DTS := $(1)
@@ -225,5 +236,22 @@ define Device/globalscale-mirabox
   DEVICE_TITLE := Globalscale Mirabox
 endef
 TARGET_DEVICES += globalscale-mirabox
+
+define Device/turris-omnia
+  KERNEL_INSTALL := 1
+  KERNEL := kernel-bin
+  KERNEL_INITRAMFS := kernel-bin
+  DEVICE_TITLE := Turris Omnia
+  DEVICE_PACKAGES :=  \
+    mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
+    wpad-mini kmod-ath9k kmod-ath10k ath10k-firmware-qca988x
+  IMAGES := $$(IMAGE_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz
+  IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
+  IMAGE_NAME = $$(2)
+  DEVICE_DTS := armada-385-turris-omnia
+  UBOOT :=
+endef
+TARGET_DEVICES += turris-omnia
 
 $(eval $(call BuildImage))
