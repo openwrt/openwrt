@@ -8,6 +8,11 @@ ifeq ($(TARGET_BUILD),1)
   PKG_BUILD_DIR:=$(LINUX_DIR)
 endif
 
+ifneq ($(filter host-refresh refresh,$(MAKECMDGOALS)),)
+  override QUILT=1
+  override HOST_QUILT=1
+endif
+
 ifneq ($(PKG_BUILD_DIR),)
   QUILT?=$(if $(wildcard $(PKG_BUILD_DIR)/.quilt_used),y)
   ifneq ($(QUILT),)
@@ -35,11 +40,6 @@ PATCH_DIR?=./patches
 FILES_DIR?=./files
 HOST_PATCH_DIR?=$(PATCH_DIR)
 HOST_FILES_DIR?=$(FILES_DIR)
-
-ifneq ($(filter host-refresh refresh,$(MAKECMDGOALS)),)
-  override QUILT=1
-  override HOST_QUILT=1
-endif
 
 QUILT_CMD:=quilt --quiltrc=-
 
