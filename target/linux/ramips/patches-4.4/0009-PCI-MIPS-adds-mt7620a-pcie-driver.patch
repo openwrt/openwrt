@@ -24,7 +24,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
 --- /dev/null
 +++ b/arch/mips/pci/pci-mt7620.c
-@@ -0,0 +1,396 @@
+@@ -0,0 +1,397 @@
 +/*
 + *  Ralink MT7620A SoC PCI support
 + *
@@ -319,6 +319,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		break;
 +
 +	case MT762X_SOC_MT7628AN:
++	case MT762X_SOC_MT7688:
 +		if (mt7628_pci_hw_init(pdev))
 +			return -1;
 +		break;
