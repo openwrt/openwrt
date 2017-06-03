@@ -18,7 +18,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/include/uapi/linux/if_ether.h
 +++ b/include/uapi/linux/if_ether.h
-@@ -22,6 +22,7 @@
+@@ -23,6 +23,7 @@
  #define _UAPI_LINUX_IF_ETHER_H
  
  #include <linux/types.h>
@@ -26,7 +26,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  /*
   *	IEEE 802.3 Ethernet magic constants.  The frame sizes omit the preamble
-@@ -134,11 +135,13 @@
+@@ -149,11 +150,13 @@
   *	This is an Ethernet frame header.
   */
  
@@ -42,7 +42,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #endif /* _UAPI_LINUX_IF_ETHER_H */
 --- a/include/uapi/linux/libc-compat.h
 +++ b/include/uapi/linux/libc-compat.h
-@@ -161,4 +161,10 @@
+@@ -264,4 +264,10 @@
  
  #endif /* __GLIBC__ */
  
