@@ -310,7 +310,7 @@
 +	if (IS_ERR(ar2315_mem))
 +		return PTR_ERR(ar2315_mem);
 +
-+	ar2315_gpio_chip.dev = dev;
++	ar2315_gpio_chip.parent = dev;
 +	ret = gpiochip_add(&ar2315_gpio_chip);
 +	if (ret) {
 +		dev_err(dev, "failed to add gpiochip\n");
