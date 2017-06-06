@@ -7,7 +7,7 @@ preinit_ip() {
 			if [ -e "/sys/bus/mdio_bus/drivers/Infineon ADM6996/0:00" -o \
 			     -e "/sys/bus/mdio_bus/drivers/Marvell 88E6060/0:10" ]; then
 				vconfig set_name_type DEV_PLUS_VID_NO_PAD
-				ifconfig eth0 up		
+				ifconfig eth0 up
 				vconfig add eth0 1
 				ifname=eth0.1
 			else
@@ -18,7 +18,7 @@ preinit_ip() {
 	fi
 	[ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
 		ifconfig $pi_ifname $pi_ip netmask $pi_netmask broadcast $pi_broadcast up
-    	}
+	}
 }
 
 
@@ -26,7 +26,7 @@ preinit_ip() {
 
 preinit_ip_deconfig() {
 	if [ -e "/sys/bus/mdio_bus/drivers/Infineon ADM6996/0:00" -o \
-	        -e "/sys/bus/mdio_bus/drivers/Marvell 88E6060/0:10" ]; then
+	     -e "/sys/bus/mdio_bus/drivers/Marvell 88E6060/0:10" ]; then
 		vconfig rem eth0.1 2>/dev/null
 		ifconfig $pi_ifname down
 	elif [ -n "$pi_ifname" ]; then
