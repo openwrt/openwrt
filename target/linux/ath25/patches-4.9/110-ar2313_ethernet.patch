@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1198 @@
+@@ -0,0 +1,1119 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -318,9 +318,6 @@
 +		return -ENODEV;
 +	}
 +
-+	/* start link poll timer */
-+	ar231x_setup_timer(dev);
-+
 +	return 0;
 +}
 +
@@ -495,93 +492,6 @@
 +		}
 +		kfree(sp->tx_skb);
 +		sp->tx_skb = NULL;
-+	}
-+}
-+
-+static int ar231x_setup_timer(struct net_device *dev)
-+{
-+	struct ar231x_private *sp = netdev_priv(dev);
-+
-+	init_timer(&sp->link_timer);
-+
-+	sp->link_timer.function = ar231x_link_timer_fn;
-+	sp->link_timer.data = (int)dev;
-+	sp->link_timer.expires = jiffies + HZ;
-+
-+	add_timer(&sp->link_timer);
-+	return 0;
-+}
-+
-+static void ar231x_link_timer_fn(unsigned long data)
-+{
-+	struct net_device *dev = (struct net_device *)data;
-+	struct ar231x_private *sp = netdev_priv(dev);
-+
-+	/**
-+	 * See if the link status changed.
-+	 * This was needed to make sure we set the PHY to the
-+	 * autonegotiated value of half or full duplex.
-+	 */
-+	ar231x_check_link(dev);
-+
-+	/**
-+	 * Loop faster when we don't have link.
-+	 * This was needed to speed up the AP bootstrap time.
-+	 */
-+	if (sp->link == 0)
-+		mod_timer(&sp->link_timer, jiffies + HZ / 2);
-+	else
-+		mod_timer(&sp->link_timer, jiffies + LINK_TIMER);
-+}
-+
-+static void ar231x_check_link(struct net_device *dev)
-+{
-+	struct ar231x_private *sp = netdev_priv(dev);
-+	u16 phy_data;
-+
-+	phy_data = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_BMSR);
-+	if (sp->phy_data != phy_data) {
-+		if (phy_data & BMSR_LSTATUS) {
-+			/**
-+			 * Link is present, ready link partner ability to
-+			 * deterine duplexity.
-+			 */
-+			int duplex = 0;
-+			u16 reg;
-+
-+			sp->link = 1;
-+			reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy,
-+						  MII_BMCR);
-+			if (reg & BMCR_ANENABLE) {
-+				/* auto neg enabled */
-+				reg = ar231x_mdiobus_read(sp->mii_bus, sp->phy,
-+							  MII_LPA);
-+				duplex = reg & (LPA_100FULL | LPA_10FULL) ?
-+					 1 : 0;
-+			} else {
-+				/* no auto neg, just read duplex config */
-+				duplex = (reg & BMCR_FULLDPLX) ? 1 : 0;
-+			}
-+
-+			printk(KERN_INFO "%s: Configuring MAC for %s duplex\n",
-+			       dev->name, (duplex) ? "full" : "half");
-+
-+			if (duplex) {
-+				/* full duplex */
-+				sp->eth_regs->mac_control =
-+					(sp->eth_regs->mac_control |
-+					 MAC_CONTROL_F) & ~MAC_CONTROL_DRO;
-+			} else {
-+				/* half duplex */
-+				sp->eth_regs->mac_control =
-+					(sp->eth_regs->mac_control |
-+					 MAC_CONTROL_DRO) & ~MAC_CONTROL_F;
-+			}
-+		} else {
-+			/* no link */
-+			sp->link = 0;
-+		}
-+		sp->phy_data = phy_data;
 +	}
 +}
 +
@@ -996,6 +906,8 @@
 +
 +	sp->eth_regs->mac_control |= MAC_CONTROL_RE;
 +
++	phy_start(sp->phy_dev);
++
 +	return 0;
 +}
 +
@@ -1055,6 +967,7 @@
 + */
 +static int ar231x_close(struct net_device *dev)
 +{
++	struct ar231x_private *sp = netdev_priv(dev);
 +#if 0
 +	/* Disable interrupts */
 +	disable_irq(dev->irq);
@@ -1073,6 +986,9 @@
 +	free_irq(dev->irq, dev);
 +
 +#endif
++
++	phy_stop(sp->phy_dev);
++
 +	return 0;
 +}
 +
@@ -1131,21 +1047,28 @@
 +static void ar231x_adjust_link(struct net_device *dev)
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
-+	unsigned int mc;
++	struct phy_device *phydev = sp->phy_dev;
++	u32 mc;
 +
-+	if (!sp->phy_dev->link)
++	if (!phydev->link) {
++		if (sp->link) {
++			pr_info("%s: link down\n", dev->name);
++			sp->link = 0;
++		}
 +		return;
-+
-+	if (sp->phy_dev->duplex != sp->oldduplex) {
-+		mc = readl(&sp->eth_regs->mac_control);
-+		mc &= ~(MAC_CONTROL_F | MAC_CONTROL_DRO);
-+		if (sp->phy_dev->duplex)
-+			mc |= MAC_CONTROL_F;
-+		else
-+			mc |= MAC_CONTROL_DRO;
-+		writel(mc, &sp->eth_regs->mac_control);
-+		sp->oldduplex = sp->phy_dev->duplex;
 +	}
++	sp->link = 1;
++
++	pr_info("%s: link up (%uMbps/%s duplex)\n", dev->name,
++		phydev->speed, phydev->duplex ? "full" : "half");
++
++	mc = sp->eth_regs->mac_control;
++	if (phydev->duplex)
++		mc = (mc | MAC_CONTROL_F) & ~MAC_CONTROL_DRO;
++	else
++		mc = (mc | MAC_CONTROL_DRO) & ~MAC_CONTROL_F;
++	sp->eth_regs->mac_control = mc;
++	sp->duplex = phydev->duplex;
 +}
 +
 +#define MII_ADDR(phy, reg) \
@@ -1222,9 +1145,7 @@
 +
 +	phydev->advertising = phydev->supported;
 +
-+	sp->oldduplex = -1;
 +	sp->phy_dev = phydev;
-+	sp->phy = phydev->mdio.addr;
 +
 +	printk(KERN_INFO "%s: attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
 +	       dev->name, phydev->drv->name, phydev_name(phydev));
@@ -1234,7 +1155,7 @@
 +
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.h
-@@ -0,0 +1,288 @@
+@@ -0,0 +1,281 @@
 +/*
 + * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -1491,18 +1412,14 @@
 +		char *mapping;
 +	} desc;
 +
-+	struct timer_list link_timer;
-+	unsigned short phy;		/* merlot phy = 1, samsung phy = 0x1f */
-+	unsigned short mac;
 +	unsigned short link;		/* 0 - link down, 1 - link up */
-+	u16 phy_data;
++	unsigned short duplex;		/* 0 - half, 1 - full */
 +
 +	struct tasklet_struct rx_tasklet;
 +	int unloading;
 +
 +	struct phy_device *phy_dev;
 +	struct mii_bus *mii_bus;
-+	int oldduplex;
 +};
 +
 +/* Prototypes */
@@ -1518,9 +1435,6 @@
 +static int ar231x_close(struct net_device *dev);
 +static int ar231x_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
 +static void ar231x_init_cleanup(struct net_device *dev);
-+static int ar231x_setup_timer(struct net_device *dev);
-+static void ar231x_link_timer_fn(unsigned long data);
-+static void ar231x_check_link(struct net_device *dev);
 +
 +#endif	/* _AR2313_H_ */
 --- a/arch/mips/ath25/ar2315_regs.h
