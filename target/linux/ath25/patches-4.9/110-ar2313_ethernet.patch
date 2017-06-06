@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1206 @@
+@@ -0,0 +1,1198 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -221,6 +221,8 @@
 +
 +	platform_set_drvdata(pdev, dev);
 +
++	SET_NETDEV_DEV(dev, &pdev->dev);
++
 +	sp = netdev_priv(dev);
 +	sp->dev = dev;
 +	sp->cfg = pdev->dev.platform_data;
@@ -304,8 +306,6 @@
 +	sp->mii_bus->reset = ar231x_mdiobus_reset;
 +	sp->mii_bus->name = "ar231x_eth_mii";
 +	snprintf(sp->mii_bus->id, MII_BUS_ID_SIZE, "%d", pdev->id);
-+	sp->mii_bus->irq = kmalloc(sizeof(int), GFP_KERNEL);
-+	*sp->mii_bus->irq = PHY_POLL;
 +
 +	mdiobus_register(sp->mii_bus);
 +
@@ -1192,28 +1192,19 @@
 +{
 +	struct ar231x_private *const sp = netdev_priv(dev);
 +	struct phy_device *phydev = NULL;
-+	int phy_addr;
 +
 +	/* find the first (lowest address) PHY on the current MAC's MII bus */
-+	for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++)
-+		if (sp->mii_bus->phy_map[phy_addr]) {
-+			phydev = sp->mii_bus->phy_map[phy_addr];
-+			sp->phy = phy_addr;
-+			break; /* break out with first one found */
-+		}
-+
++	phydev = phy_find_first(sp->mii_bus);
 +	if (!phydev) {
 +		printk(KERN_ERR "ar231x: %s: no PHY found\n", dev->name);
 +		return -1;
 +	}
 +
 +	/* now we are supposed to have a proper phydev, to attach to... */
-+	BUG_ON(!phydev);
 +	BUG_ON(phydev->attached_dev);
 +
-+	phydev = phy_connect(dev, dev_name(&phydev->dev), &ar231x_adjust_link,
++	phydev = phy_connect(dev, phydev_name(phydev), &ar231x_adjust_link,
 +			     PHY_INTERFACE_MODE_MII);
-+
 +	if (IS_ERR(phydev)) {
 +		printk(KERN_ERR "%s: Could not attach to PHY\n", dev->name);
 +		return PTR_ERR(phydev);
@@ -1233,9 +1224,10 @@
 +
 +	sp->oldduplex = -1;
 +	sp->phy_dev = phydev;
++	sp->phy = phydev->mdio.addr;
 +
 +	printk(KERN_INFO "%s: attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
-+	       dev->name, phydev->drv->name, dev_name(&phydev->dev));
++	       dev->name, phydev->drv->name, phydev_name(phydev));
 +
 +	return 0;
 +}
