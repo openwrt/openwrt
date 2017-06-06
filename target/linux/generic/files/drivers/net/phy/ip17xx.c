@@ -1334,7 +1334,7 @@ static int ip17xx_config_aneg(struct phy_device *pdev)
 
 static int ip17xx_aneg_done(struct phy_device *pdev)
 {
-	return BMSR_ANEGCOMPLETE;
+	return 1;	/* Return any positive value */
 }
 
 static int ip17xx_update_link(struct phy_device *pdev)
