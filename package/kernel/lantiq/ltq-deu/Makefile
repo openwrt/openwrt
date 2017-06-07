@@ -11,6 +11,7 @@ PKG_RELEASE:=1
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/ltq-deu-$(BUILD_VARIANT)
 
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
+PKG_LICENSE:=GPL-2.0+
 
 include $(INCLUDE_DIR)/package.mk
 

@@ -20,6 +20,9 @@ PKG_FIXUP:=autoreconf
 PKG_FLAGS:=nonshared
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_USE_MIPS16:=0
+PKG_LICENSE:=GPL-2.0 BSD-2-Clause
+PKG_LICENSE_FILES:=LICENSE
+
 
 include $(INCLUDE_DIR)/package.mk
 

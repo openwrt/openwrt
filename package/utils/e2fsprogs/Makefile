@@ -14,6 +14,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/tytso/e2fsprogs/v$(PKG_VERSION)/
+PKG_LICENSE:=GPL-2.0
 
 PKG_BUILD_DEPENDS:=util-linux
 PKG_INSTALL:=1

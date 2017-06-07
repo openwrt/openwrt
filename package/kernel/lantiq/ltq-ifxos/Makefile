@@ -14,6 +14,9 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=https://github.com/xdarklight/$(PKG_NAME)/archive/v$(PKG_VERSION)
 PKG_HASH:=ed7fe39311d7a4a13d23ed0ae2445c0d825b472b5a98da9b72bcaabcf5ed2d5f
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
+PKG_LICENSE:=GPL-2.0 BSD-2-Clause
+PKG_LICENSE_FILES:=LICENSE
+
 
 PKG_USE_MIPS16:=0
 PKG_FIXUP:=autoreconf
