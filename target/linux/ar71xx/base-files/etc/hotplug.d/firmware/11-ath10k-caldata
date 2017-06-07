@@ -47,6 +47,21 @@ board=$(ar71xx_board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
+	a40|\
+	a60|\
+	mr1750|\
+	mr1750v2|\
+	om5p-acv2)
+		ath10kcal_extract "ART" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
+		;;
+	archer-c25-v1|\
+	archer-c59-v1|\
+	archer-c60-v1|\
+	tl-wdr6500-v2)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
+		;;
 	cf-e380ac-v1|\
 	cf-e380ac-v2|\
 	dlan-pro-1200-ac|\
@@ -58,7 +73,7 @@ case "$FIRMWARE" in
 		ath10kcal_extract "radiocfg" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_ascii bdcfg wlanmac_a)
 		;;
-	dir-869-a1 | \
+	dir-869-a1|\
 	qihoo-c301)
 		ath10kcal_extract "radiocfg" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
@@ -67,7 +82,7 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(mtd_get_mac_binary art 18)
 		;;
-	epg5000 | \
+	epg5000|\
 	esr1750)
 		ath10kcal_extract "caldata" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
@@ -76,50 +91,35 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
 		;;
-	a40 | \
-	a60 | \
-	mr1750 | \
-	mr1750v2 | \
-	om5p-acv2)
-		ath10kcal_extract "ART" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
-		;;
 	r6100)
 		ath10kcal_extract "caldata" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) +2)
+		;;
+	rb-952ui-5ac2nd)
+		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
 		;;
 	re450)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
 		;;
-	archer-c25-v1|\
-	archer-c59-v1|\
-	archer-c60-v1|\
-	tl-wdr6500-v2)
-		ath10kcal_extract "art" 20480 2116
-		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
-		;;
 	tl-wpa8630)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +1)
 		;;
-	unifiac-lite | \
+	unifiac-lite|\
 	unifiac-pro)
 		ath10kcal_extract "EEPROM" 20480 2116
-		;;
-	rb-952ui-5ac2nd)
-		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
 		;;
 	esac
 	;;
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case $board in
-	archer-c5 | \
+	archer-c5|\
 	archer-c7)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
 		;;
-	nbg6616 | \
+	nbg6616|\
 	nbg6716)
 		ath10kcal_extract "RFdata" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
@@ -128,7 +128,7 @@ case "$FIRMWARE" in
 		ath10kcal_extract "ART" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
 		;;
-	rb-911g-5hpacd | \
+	rb-911g-5hpacd|\
 	rb-962uigs-5hact2hnt)
 		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
 		;;
