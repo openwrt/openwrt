@@ -363,7 +363,7 @@
  }
  
  
-@@ -392,13 +388,12 @@ mvswitch_probe(struct phy_device *pdev)
+@@ -398,13 +394,12 @@ mvswitch_probe(struct phy_device *pdev)
  static int
  mvswitch_fixup(struct phy_device *dev)
  {
@@ -379,9 +379,9 @@
  	if (reg != MV_IDENT_VALUE)
  		return 0;
  
-@@ -418,13 +413,14 @@ static struct phy_driver mvswitch_driver
- 	.config_init	= &mvswitch_config_init,
+@@ -425,13 +420,14 @@ static struct phy_driver mvswitch_driver
  	.config_aneg	= &mvswitch_config_aneg,
+ 	.aneg_done	= &mvswitch_aneg_done,
  	.read_status	= &mvswitch_read_status,
 +	.driver		= { .owner = THIS_MODULE,},
  };

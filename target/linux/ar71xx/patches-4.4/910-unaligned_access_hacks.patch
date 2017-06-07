@@ -610,7 +610,7 @@
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -222,7 +222,7 @@ static struct sk_buff **ipv6_gro_receive
+@@ -223,7 +223,7 @@ static struct sk_buff **ipv6_gro_receive
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
@@ -838,7 +838,7 @@
  
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3818,14 +3818,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3819,14 +3819,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
