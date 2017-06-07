@@ -29,10 +29,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/mtd/nand/nand_device_list.h
  create mode 100644 drivers/mtd/nand/partition.h
 
-Index: linux-4.9.30/drivers/mtd/nand/Kconfig
-===================================================================
---- linux-4.9.30.orig/drivers/mtd/nand/Kconfig
-+++ linux-4.9.30/drivers/mtd/nand/Kconfig
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
 @@ -569,4 +569,10 @@ config MTD_NAND_MTK
  	  Enables support for NAND controller on MTK SoCs.
  	  This controller is found on mt27xx, mt81xx, mt65xx SoCs.
@@ -44,10 +42,8 @@ Index: linux-4.9.30/drivers/mtd/nand/Kconfig
 +	select MTD_NAND_ECC
 +
  endif # MTD_NAND
-Index: linux-4.9.30/drivers/mtd/nand/Makefile
-===================================================================
---- linux-4.9.30.orig/drivers/mtd/nand/Makefile
-+++ linux-4.9.30/drivers/mtd/nand/Makefile
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
 @@ -58,5 +58,6 @@ obj-$(CONFIG_MTD_NAND_HISI504)	        +
  obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand/
  obj-$(CONFIG_MTD_NAND_QCOM)		+= qcom_nandc.o
@@ -55,10 +51,8 @@ Index: linux-4.9.30/drivers/mtd/nand/Makefile
 +obj-$(CONFIG_MTK_MTD_NAND)		+= mtk_nand2.o bmt.o
  
  nand-objs := nand_base.o nand_bbt.o nand_timings.o
-Index: linux-4.9.30/drivers/mtd/nand/bmt.c
-===================================================================
 --- /dev/null
-+++ linux-4.9.30/drivers/mtd/nand/bmt.c
++++ b/drivers/mtd/nand/bmt.c
 @@ -0,0 +1,750 @@
 +#include "bmt.h"
 +
@@ -810,10 +804,8 @@ Index: linux-4.9.30/drivers/mtd/nand/bmt.c
 +MODULE_AUTHOR("MediaTek");
 +MODULE_DESCRIPTION("Bad Block mapping management for MediaTek NAND Flash Driver");
 +#endif
-Index: linux-4.9.30/drivers/mtd/nand/bmt.h
-===================================================================
 --- /dev/null
-+++ linux-4.9.30/drivers/mtd/nand/bmt.h
++++ b/drivers/mtd/nand/bmt.h
 @@ -0,0 +1,80 @@
 +#ifndef __BMT_H__
 +#define __BMT_H__
@@ -895,10 +887,8 @@ Index: linux-4.9.30/drivers/mtd/nand/bmt.h
 +unsigned short get_mapping_block_index(int index);
 +
 +#endif                          // #ifndef __BMT_H__
-Index: linux-4.9.30/drivers/mtd/nand/dev-nand.c
-===================================================================
 --- /dev/null
-+++ linux-4.9.30/drivers/mtd/nand/dev-nand.c
++++ b/drivers/mtd/nand/dev-nand.c
 @@ -0,0 +1,63 @@
 +#include <linux/init.h>
 +#include <linux/kernel.h>
@@ -963,10 +953,8 @@ Index: linux-4.9.30/drivers/mtd/nand/dev-nand.c
 +	return retval;
 +}
 +arch_initcall(mtk_nand_register);
-Index: linux-4.9.30/drivers/mtd/nand/mt6575_typedefs.h
-===================================================================
 --- /dev/null
-+++ linux-4.9.30/drivers/mtd/nand/mt6575_typedefs.h
++++ b/drivers/mtd/nand/mt6575_typedefs.h
 @@ -0,0 +1,340 @@
 +/* Copyright Statement:
 + *
@@ -1308,10 +1296,8 @@ Index: linux-4.9.30/drivers/mtd/nand/mt6575_typedefs.h
 +
 +#endif  // _MT6575_TYPEDEFS_H
 +
-Index: linux-4.9.30/drivers/mtd/nand/mtk_nand2.c
-===================================================================
 --- /dev/null
-+++ linux-4.9.30/drivers/mtd/nand/mtk_nand2.c
++++ b/drivers/mtd/nand/mtk_nand2.c
 @@ -0,0 +1,2363 @@
 +/******************************************************************************
 +* mtk_nand2.c - MTK NAND Flash Device Driver
@@ -3676,10 +3662,8 @@ Index: linux-4.9.30/drivers/mtd/nand/mtk_nand2.c
 +module_init(mtk_nand_init);
 +module_exit(mtk_nand_exit);
 +MODULE_LICENSE("GPL");
-Index: linux-4.9.30/drivers/mtd/nand/mtk_nand2.h
-===================================================================
 --- /dev/null
-+++ linux-4.9.30/drivers/mtd/nand/mtk_nand2.h
++++ b/drivers/mtd/nand/mtk_nand2.h
 @@ -0,0 +1,452 @@
 +#ifndef __MTK_NAND_H
 +#define __MTK_NAND_H
@@ -4133,10 +4117,8 @@ Index: linux-4.9.30/drivers/mtd/nand/mtk_nand2.h
 +extern u32	CFG_BLOCKSIZE;
 +#endif
 +#endif
-Index: linux-4.9.30/drivers/mtd/nand/nand_base.c
-===================================================================
---- linux-4.9.30.orig/drivers/mtd/nand/nand_base.c
-+++ linux-4.9.30/drivers/mtd/nand/nand_base.c
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
 @@ -47,7 +47,7 @@
  #include <linux/mtd/partitions.h>
  #include <linux/of.h>
@@ -4164,10 +4146,8 @@ Index: linux-4.9.30/drivers/mtd/nand/nand_base.c
  nand_get_device(struct mtd_info *mtd, int new_state)
  {
  	struct nand_chip *chip = mtd_to_nand(mtd);
-Index: linux-4.9.30/drivers/mtd/nand/nand_bbt.c
-===================================================================
---- linux-4.9.30.orig/drivers/mtd/nand/nand_bbt.c
-+++ linux-4.9.30/drivers/mtd/nand/nand_bbt.c
+--- a/drivers/mtd/nand/nand_bbt.c
++++ b/drivers/mtd/nand/nand_bbt.c
 @@ -1215,6 +1215,25 @@ err:
  	return res;
  }
@@ -4194,10 +4174,8 @@ Index: linux-4.9.30/drivers/mtd/nand/nand_bbt.c
  /**
   * nand_update_bbt - update bad block table(s)
   * @mtd: MTD device structure
-Index: linux-4.9.30/drivers/mtd/nand/nand_def.h
-===================================================================
 --- /dev/null
-+++ linux-4.9.30/drivers/mtd/nand/nand_def.h
++++ b/drivers/mtd/nand/nand_def.h
 @@ -0,0 +1,123 @@
 +#ifndef __NAND_DEF_H__
 +#define __NAND_DEF_H__
@@ -4322,10 +4300,8 @@ Index: linux-4.9.30/drivers/mtd/nand/nand_def.h
 +#include "mt6575_typedefs.h"
 +
 +#endif /* __NAND_DEF_H__ */
-Index: linux-4.9.30/drivers/mtd/nand/nand_device_list.h
-===================================================================
 --- /dev/null
-+++ linux-4.9.30/drivers/mtd/nand/nand_device_list.h
++++ b/drivers/mtd/nand/nand_device_list.h
 @@ -0,0 +1,55 @@
 +/* Copyright Statement:
 + *
@@ -4382,10 +4358,8 @@ Index: linux-4.9.30/drivers/mtd/nand/nand_device_list.h
 +
 +
 +#endif
-Index: linux-4.9.30/drivers/mtd/nand/partition.h
-===================================================================
 --- /dev/null
-+++ linux-4.9.30/drivers/mtd/nand/partition.h
++++ b/drivers/mtd/nand/partition.h
 @@ -0,0 +1,115 @@
 +/* Copyright Statement:
 + *

@@ -15,7 +15,7 @@ Signed-off-by: Marko Ratkaj <marko.ratkaj@sartura.hr>
 
 --- a/drivers/net/phy/marvell.c
 +++ b/drivers/net/phy/marvell.c
-@@ -361,7 +361,7 @@ static int m88e1111_config_aneg(struct p
+@@ -369,7 +369,7 @@ static int m88e1111_config_aneg(struct p
  static int marvell_of_reg_init(struct phy_device *phydev)
  {
  	const __be32 *paddr;
@@ -24,7 +24,7 @@ Signed-off-by: Marko Ratkaj <marko.ratkaj@sartura.hr>
  
  	if (!phydev->mdio.dev.of_node)
  		return 0;
-@@ -374,7 +374,6 @@ static int marvell_of_reg_init(struct ph
+@@ -382,7 +382,6 @@ static int marvell_of_reg_init(struct ph
  	saved_page = phy_read(phydev, MII_MARVELL_PHY_PAGE);
  	if (saved_page < 0)
  		return saved_page;
@@ -32,7 +32,7 @@ Signed-off-by: Marko Ratkaj <marko.ratkaj@sartura.hr>
  	current_page = saved_page;
  
  	ret = 0;
-@@ -388,7 +387,6 @@ static int marvell_of_reg_init(struct ph
+@@ -396,7 +395,6 @@ static int marvell_of_reg_init(struct ph
  
  		if (reg_page != current_page) {
  			current_page = reg_page;
@@ -40,7 +40,7 @@ Signed-off-by: Marko Ratkaj <marko.ratkaj@sartura.hr>
  			ret = phy_write(phydev, MII_MARVELL_PHY_PAGE, reg_page);
  			if (ret < 0)
  				goto err;
-@@ -411,7 +409,7 @@ static int marvell_of_reg_init(struct ph
+@@ -419,7 +417,7 @@ static int marvell_of_reg_init(struct ph
  
  	}
  err:
@@ -49,7 +49,7 @@ Signed-off-by: Marko Ratkaj <marko.ratkaj@sartura.hr>
  		i = phy_write(phydev, MII_MARVELL_PHY_PAGE, saved_page);
  		if (ret == 0)
  			ret = i;
-@@ -1192,7 +1190,8 @@ static int marvell_read_status(struct ph
+@@ -1200,7 +1198,8 @@ static int marvell_read_status(struct ph
  	int err;
  
  	/* Check the fiber mode first */

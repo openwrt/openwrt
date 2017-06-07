@@ -1,7 +1,5 @@
-Index: linux-4.9.30/drivers/mtd/nand/nand_base.c
-===================================================================
---- linux-4.9.30.orig/drivers/mtd/nand/nand_base.c
-+++ linux-4.9.30/drivers/mtd/nand/nand_base.c
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
 @@ -2014,6 +2014,9 @@ static int nand_do_read_ops(struct mtd_i
  						 __func__, buf);
  
@@ -33,7 +31,7 @@ Index: linux-4.9.30/drivers/mtd/nand/nand_base.c
  		/*
  		 * See if operation failed and additional status checks are
  		 * available
-@@ -4404,6 +4411,7 @@ int nand_scan_ident(struct mtd_info *mtd
+@@ -4390,6 +4397,7 @@ int nand_scan_ident(struct mtd_info *mtd
  		 * cmdfunc() both expect cmd_ctrl() to be populated,
  		 * so we need to check that that's the case
  		 */
@@ -41,10 +39,8 @@ Index: linux-4.9.30/drivers/mtd/nand/nand_base.c
  		pr_err("chip.cmd_ctrl() callback is not provided");
  		return -EINVAL;
  	}
-Index: linux-4.9.30/drivers/mtd/nand/nand_device_list.h
-===================================================================
---- linux-4.9.30.orig/drivers/mtd/nand/nand_device_list.h
-+++ linux-4.9.30/drivers/mtd/nand/nand_device_list.h
+--- a/drivers/mtd/nand/nand_device_list.h
++++ b/drivers/mtd/nand/nand_device_list.h
 @@ -43,6 +43,8 @@ static const flashdev_info gen_FlashTabl
  	{0xADBC, 0x905554, 5, 16, 512, 128, 2048, 64, 0x10801011, "H9DA4GH4JJAMC", 0},
      {0x01F1, 0x801D01, 4, 8, 128, 128, 2048, 64, 0x30C77fff, "S34ML01G100TF", 0},
@@ -54,10 +50,8 @@ Index: linux-4.9.30/drivers/mtd/nand/nand_device_list.h
  	{0xECD3, 0x519558, 5, 8, 1024, 128, 2048, 64, 0x44333, "K9K8G8000", 0},
      {0xC2F1, 0x801DC2, 4, 8, 128, 128, 2048, 64, 0x30C77fff, "MX30LF1G08AA", 0},
      {0x98D3, 0x902676, 5, 8, 1024, 256, 4096, 224, 0x00C25332, "TC58NVG3S0F", 0},
-Index: linux-4.9.30/include/linux/mtd/nand.h
-===================================================================
---- linux-4.9.30.orig/include/linux/mtd/nand.h
-+++ linux-4.9.30/include/linux/mtd/nand.h
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
 @@ -825,6 +825,10 @@ struct nand_chip {
  				    const struct nand_data_interface *conf,
  				    bool check_only);

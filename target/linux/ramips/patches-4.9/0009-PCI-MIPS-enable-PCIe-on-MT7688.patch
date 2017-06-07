@@ -16,11 +16,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  arch/mips/pci/pci-mt7620.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/mips/pci/pci-mt7620.c b/arch/mips/pci/pci-mt7620.c
-index 628c5132b3d8..cd8e2b87efd5 100644
 --- a/arch/mips/pci/pci-mt7620.c
 +++ b/arch/mips/pci/pci-mt7620.c
-@@ -316,6 +316,7 @@ static int mt7620_pci_probe(struct platform_device *pdev)
+@@ -316,6 +316,7 @@ static int mt7620_pci_probe(struct platf
  		break;
  
  	case MT762X_SOC_MT7628AN:
@@ -28,6 +26,3 @@ index 628c5132b3d8..cd8e2b87efd5 100644
  		if (mt7628_pci_hw_init(pdev))
  			return -1;
  		break;
--- 
-2.13.0
-

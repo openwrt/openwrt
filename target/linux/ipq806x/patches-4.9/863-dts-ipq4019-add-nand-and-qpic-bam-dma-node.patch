@@ -13,14 +13,12 @@ Signed-off-by: Ram Chandra Jangir <rjangir@codeaurora.org>
  arch/arm/boot/dts/qcom-ipq4019.dtsi           | 38 ++++++++++++++
  2 files changed, 113 insertions(+)
 
-diff --git a/arch/arm/boot/dts/qcom-ipq4019-ap.dk04.1.dtsi b/arch/arm/boot/dts/qcom-ipq4019-ap.dk04.1.dtsi
-index 09fb047..e94954e 100644
 --- a/arch/arm/boot/dts/qcom-ipq4019-ap.dk04.1.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq4019-ap.dk04.1.dtsi
-@@ -101,6 +101,86 @@
-					bias-bus-hold;
-				};
-			};
+@@ -88,6 +88,86 @@
+ 					bias-disable;
+ 				};
+ 			};
 +
 +			nand_pins: nand_pins {
 +
@@ -101,13 +99,13 @@ index 09fb047..e94954e 100644
 +					bias-pull-down;
 +				};
 +			};
-		};
-
-		blsp_dma: dma@7884000 {
-@@ -204,5 +269,15 @@
-		wifi@a800000 {
-			status = "ok";
-		};
+ 		};
+ 
+ 		blsp_dma: dma@7884000 {
+@@ -159,5 +239,15 @@
+ 		watchdog@b017000 {
+ 			status = "ok";
+ 		};
 +
 +		qpic_bam: dma@7984000 {
 +			status = "ok";
@@ -118,16 +116,14 @@ index 09fb047..e94954e 100644
 +			pinctrl-names = "default";
 +			status = "ok";
 +		};
-	};
+ 	};
  };
-diff --git a/arch/arm/boot/dts/qcom-ipq4019.dtsi b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-index 52a64e7..740808b 100644
 --- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-@@ -593,5 +593,43 @@
-					  "legacy";
-			status = "disabled";
-		};
+@@ -586,5 +586,43 @@
+ 					  "legacy";
+ 			status = "disabled";
+ 		};
 +
 +		qpic_bam: dma@7984000 {
 +			compatible = "qcom,bam-v1.7.0";
@@ -166,7 +162,5 @@ index 52a64e7..740808b 100644
 +				nand-bus-width = <8>;
 +			};
 +		};
-	};
+ 	};
  };
---
-2.7.2

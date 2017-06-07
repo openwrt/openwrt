@@ -17,13 +17,11 @@ Signed-off-by: Ram Chandra Jangir <rjangir@codeaurora.org>
  drivers/mtd/nand/qcom_nandc.c                      | 160 +++++++++++++++++----
  2 files changed, 190 insertions(+), 39 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/mtd/qcom_nandc.txt b/Documentation/devicetree/bindings/mtd/qcom_nandc.txt
-index 70dd511..9e5c9be 100644
 --- a/Documentation/devicetree/bindings/mtd/qcom_nandc.txt
 +++ b/Documentation/devicetree/bindings/mtd/qcom_nandc.txt
 @@ -1,21 +1,26 @@
  * Qualcomm NAND controller
-
+ 
  Required properties:
 -- compatible:		should be "qcom,ipq806x-nand"
 +- compatible:		"qcom,ipq806x-nand" for IPQ8064 which uses
@@ -33,7 +31,7 @@ index 70dd511..9e5c9be 100644
  - reg:			MMIO address range
  - clocks:		must contain core clock and always on clock
  - clock-names:		must contain "core" for the core clock and "aon" for the
-			always on clock
+ 			always on clock
  - dmas:			DMA specifier, consisting of a phandle to the ADM DMA
 -			controller node and the channel number to be used for
 -			NAND. Refer to dma.txt and qcom_adm.txt for more details
@@ -57,36 +55,20 @@ index 70dd511..9e5c9be 100644
 +			controller on the given platform.
  - #address-cells:	<1> - subnodes give the chip-select number
  - #size-cells:		<0>
-
+ 
 @@ -44,7 +49,7 @@ partition.txt for more detail.
  Example:
-
+ 
  nand@1ac00000 {
 -	compatible = "qcom,ebi2-nandc";
 +	compatible = "qcom,ipq806x-nand","qcom.qcom_nand";
-	reg = <0x1ac00000 0x800>;
-
-	clocks = <&gcc EBI2_CLK>,
-@@ -84,3 +89,45 @@ nand@1ac00000 {
-		};
-	};
- };
-+
-+nand@79B0000 {
-+	compatible = "qcom,ebi2-nandc-bam";
-+	reg = <0x79B0000 0x1000>;
-+
-+	clocks = <&gcc EBI2_CLK>,
-+		 <&gcc EBI2_AON_CLK>;
-+	clock-names = "core", "aon";
-+
-+	dmas = <&qpicbam 0>,
-+		<&qpicbam 1>,
-+		<&qpicbam 2>;
-+	dma-names = "tx", "rx", "cmd";
-+
-+	#address-cells = <1>;
-+	#size-cells = <0>;
+ 	reg = <0x1ac00000 0x800>;
+ 
+ 	clocks = <&gcc EBI2_CLK>,
+@@ -58,6 +63,48 @@ nand@1ac00000 {
+ 
+ 	#address-cells = <1>;
+ 	#size-cells = <0>;
 +
 +	nandcs@0 {
 +		compatible = "qcom,nandcs";
@@ -113,8 +95,25 @@ index 70dd511..9e5c9be 100644
 +		};
 +	};
 +};
-diff --git a/drivers/mtd/nand/qcom_nandc.c b/drivers/mtd/nand/qcom_nandc.c
-index 57d483a..76a0ffc 100644
++
++nand@79B0000 {
++	compatible = "qcom,ebi2-nandc-bam";
++	reg = <0x79B0000 0x1000>;
++
++	clocks = <&gcc EBI2_CLK>,
++		 <&gcc EBI2_AON_CLK>;
++	clock-names = "core", "aon";
++
++	dmas = <&qpicbam 0>,
++		<&qpicbam 1>,
++		<&qpicbam 2>;
++	dma-names = "tx", "rx", "cmd";
++
++	#address-cells = <1>;
++	#size-cells = <0>;
+ 
+ 	nandcs@0 {
+ 		compatible = "qcom,nandcs";
 --- a/drivers/mtd/nand/qcom_nandc.c
 +++ b/drivers/mtd/nand/qcom_nandc.c
 @@ -226,6 +226,7 @@ struct nandc_regs {
@@ -135,16 +134,16 @@ index 57d483a..76a0ffc 100644
 + *				bam dma
 +*/
  struct qcom_nand_controller {
-	struct nand_hw_control controller;
-	struct list_head host_list;
+ 	struct nand_hw_control controller;
+ 	struct list_head host_list;
 @@ -247,17 +251,28 @@ struct qcom_nand_controller {
-	struct clk *core_clk;
-	struct clk *aon_clk;
-
+ 	struct clk *core_clk;
+ 	struct clk *aon_clk;
+ 
 -	struct dma_chan *chan;
 -	unsigned int cmd_crci;
 -	unsigned int data_crci;
-	struct list_head desc_list;
+ 	struct list_head desc_list;
 +	union {
 +		struct {
 +			struct dma_chan *tx_chan;
@@ -157,22 +156,22 @@ index 57d483a..76a0ffc 100644
 +			unsigned int data_crci;
 +		};
 +	};
-
-	u8		*data_buffer;
+ 
+ 	u8		*data_buffer;
 +	bool            dma_bam_enabled;
-	int		buf_size;
-	int		buf_count;
-	int		buf_start;
-
-	__le32 *reg_read_buf;
+ 	int		buf_size;
+ 	int		buf_count;
+ 	int		buf_start;
+ 
+ 	__le32 *reg_read_buf;
 +	dma_addr_t reg_read_buf_phys;
-	int reg_read_pos;
-
-	struct nandc_regs *regs;
+ 	int reg_read_pos;
+ 
+ 	struct nandc_regs *regs;
 @@ -316,6 +331,17 @@ struct qcom_nand_host {
-	u32 clrreadstatus;
+ 	u32 clrreadstatus;
  };
-
+ 
 +/*
 + * This data type corresponds to the nand driver data which will be used at
 + * driver probe time
@@ -186,20 +185,20 @@ index 57d483a..76a0ffc 100644
 +
  static inline struct qcom_nand_host *to_qcom_nand_host(struct nand_chip *chip)
  {
-	return container_of(chip, struct qcom_nand_host, chip);
-@@ -1893,7 +1919,7 @@ static int qcom_nand_host_setup(struct qcom_nand_host *host)
-				| wide_bus << WIDE_FLASH
-				| 1 << DEV0_CFG1_ECC_DISABLE;
-
+ 	return container_of(chip, struct qcom_nand_host, chip);
+@@ -1893,7 +1919,7 @@ static int qcom_nand_host_setup(struct q
+ 				| wide_bus << WIDE_FLASH
+ 				| 1 << DEV0_CFG1_ECC_DISABLE;
+ 
 -	host->ecc_bch_cfg = host->bch_enabled << ECC_CFG_ECC_DISABLE
 +	host->ecc_bch_cfg = !host->bch_enabled << ECC_CFG_ECC_DISABLE
-				| 0 << ECC_SW_RESET
-				| host->cw_data << ECC_NUM_DATA_BYTES
-				| 1 << ECC_FORCE_CLK_OPEN
-@@ -1942,16 +1968,46 @@ static int qcom_nandc_alloc(struct qcom_nand_controller *nandc)
-	if (!nandc->regs)
-		return -ENOMEM;
-
+ 				| 0 << ECC_SW_RESET
+ 				| host->cw_data << ECC_NUM_DATA_BYTES
+ 				| 1 << ECC_FORCE_CLK_OPEN
+@@ -1942,16 +1968,46 @@ static int qcom_nandc_alloc(struct qcom_
+ 	if (!nandc->regs)
+ 		return -ENOMEM;
+ 
 -	nandc->reg_read_buf = devm_kzalloc(nandc->dev,
 -				MAX_REG_RD * sizeof(*nandc->reg_read_buf),
 -				GFP_KERNEL);
@@ -210,7 +209,7 @@ index 57d483a..76a0ffc 100644
 +					MAX_REG_RD *
 +					sizeof(*nandc->reg_read_buf),
 +					GFP_KERNEL);
-
+ 
 -	nandc->chan = dma_request_slave_channel(nandc->dev, "rxtx");
 -	if (!nandc->chan) {
 -		dev_err(nandc->dev, "failed to request slave channel\n");
@@ -249,11 +248,11 @@ index 57d483a..76a0ffc 100644
 +			dev_err(nandc->dev, "failed to request cmd channel\n");
 +			return -ENODEV;
 +		}
-	}
-
-	INIT_LIST_HEAD(&nandc->desc_list);
-@@ -1964,8 +2020,35 @@ static int qcom_nandc_alloc(struct qcom_nand_controller *nandc)
-
+ 	}
+ 
+ 	INIT_LIST_HEAD(&nandc->desc_list);
+@@ -1964,8 +2020,35 @@ static int qcom_nandc_alloc(struct qcom_
+ 
  static void qcom_nandc_unalloc(struct qcom_nand_controller *nandc)
  {
 -	dma_release_channel(nandc->chan);
@@ -287,22 +286,22 @@ index 57d483a..76a0ffc 100644
 +	if (nandc->data_buffer)
 +		devm_kfree(nandc->dev, nandc->data_buffer);
 + }
-
+ 
  /* one time setup of a few nand controller registers */
  static int qcom_nandc_setup(struct qcom_nand_controller *nandc)
-@@ -2002,6 +2085,8 @@ static int qcom_nand_host_init(struct qcom_nand_controller *nandc,
-	mtd->name = devm_kasprintf(dev, GFP_KERNEL, "qcom_nand.%d", host->cs);
-	mtd->owner = THIS_MODULE;
-	mtd->dev.parent = dev;
+@@ -2002,6 +2085,8 @@ static int qcom_nand_host_init(struct qc
+ 	mtd->name = devm_kasprintf(dev, GFP_KERNEL, "qcom_nand.%d", host->cs);
+ 	mtd->owner = THIS_MODULE;
+ 	mtd->dev.parent = dev;
 +	mtd->priv = chip;
 +	chip->priv = nandc;
-
-	chip->cmdfunc		= qcom_nandc_command;
-	chip->select_chip	= qcom_nandc_select_chip;
-@@ -2049,16 +2134,20 @@ static int qcom_nandc_parse_dt(struct platform_device *pdev)
-	struct device_node *np = nandc->dev->of_node;
-	int ret;
-
+ 
+ 	chip->cmdfunc		= qcom_nandc_command;
+ 	chip->select_chip	= qcom_nandc_select_chip;
+@@ -2049,16 +2134,20 @@ static int qcom_nandc_parse_dt(struct pl
+ 	struct device_node *np = nandc->dev->of_node;
+ 	int ret;
+ 
 -	ret = of_property_read_u32(np, "qcom,cmd-crci", &nandc->cmd_crci);
 -	if (ret) {
 -		dev_err(nandc->dev, "command CRCI unspecified\n");
@@ -315,7 +314,7 @@ index 57d483a..76a0ffc 100644
 +			dev_err(nandc->dev, "command CRCI unspecified\n");
 +			return ret;
 +		}
-
+ 
 -	ret = of_property_read_u32(np, "qcom,data-crci", &nandc->data_crci);
 -	if (ret) {
 -		dev_err(nandc->dev, "data CRCI unspecified\n");
@@ -326,33 +325,33 @@ index 57d483a..76a0ffc 100644
 +			dev_err(nandc->dev, "data CRCI unspecified\n");
 +			return ret;
 +		}
-	}
-
-	return 0;
-@@ -2073,6 +2162,7 @@ static int qcom_nandc_probe(struct platform_device *pdev)
-	struct device_node *dn = dev->of_node, *child;
-	struct resource *res;
-	int ret;
+ 	}
+ 
+ 	return 0;
+@@ -2073,6 +2162,7 @@ static int qcom_nandc_probe(struct platf
+ 	struct device_node *dn = dev->of_node, *child;
+ 	struct resource *res;
+ 	int ret;
 +	struct qcom_nand_driver_data *driver_data;
-
-	nandc = devm_kzalloc(&pdev->dev, sizeof(*nandc), GFP_KERNEL);
-	if (!nandc)
-@@ -2087,7 +2177,10 @@ static int qcom_nandc_probe(struct platform_device *pdev)
-		return -ENODEV;
-	}
-
+ 
+ 	nandc = devm_kzalloc(&pdev->dev, sizeof(*nandc), GFP_KERNEL);
+ 	if (!nandc)
+@@ -2087,7 +2177,10 @@ static int qcom_nandc_probe(struct platf
+ 		return -ENODEV;
+ 	}
+ 
 -	nandc->ecc_modes = (unsigned long)dev_data;
 +	driver_data = (struct qcom_nand_driver_data *)dev_data;
 +
 +	nandc->ecc_modes = driver_data->ecc_modes;
 +	nandc->dma_bam_enabled = driver_data->dma_bam_enabled;
-
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	nandc->base = devm_ioremap_resource(dev, res);
-@@ -2179,7 +2272,15 @@ static int qcom_nandc_remove(struct platform_device *pdev)
-	return 0;
+ 
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	nandc->base = devm_ioremap_resource(dev, res);
+@@ -2179,7 +2272,15 @@ static int qcom_nandc_remove(struct plat
+ 	return 0;
  }
-
+ 
 -#define EBI2_NANDC_ECC_MODES	(ECC_RS_4BIT | ECC_BCH_8BIT)
 +struct qcom_nand_driver_data ebi2_nandc_bam_data = {
 +	.ecc_modes = (ECC_BCH_4BIT | ECC_BCH_8BIT),
@@ -363,20 +362,18 @@ index 57d483a..76a0ffc 100644
 +	.ecc_modes = (ECC_RS_4BIT | ECC_BCH_8BIT),
 +	.dma_bam_enabled = false,
 +};
-
+ 
  /*
   * data will hold a struct pointer containing more differences once we support
-@@ -2187,7 +2288,10 @@ static int qcom_nandc_remove(struct platform_device *pdev)
+@@ -2187,7 +2288,10 @@ static int qcom_nandc_remove(struct plat
   */
  static const struct of_device_id qcom_nandc_of_match[] = {
-	{	.compatible = "qcom,ipq806x-nand",
+ 	{	.compatible = "qcom,ipq806x-nand",
 -		.data = (void *)EBI2_NANDC_ECC_MODES,
 +		.data = (void *) &ebi2_nandc_data,
 +	},
 +	{	.compatible = "qcom,ebi2-nandc-bam",
 +		.data = (void *) &ebi2_nandc_bam_data,
-	},
-	{}
+ 	},
+ 	{}
  };
---
-2.7.2

@@ -10,13 +10,11 @@ Signed-off-by: Ram Chandra Jangir <rjangir@codeaurora.org>
  drivers/pinctrl/qcom/pinctrl-ipq4019.c | 1189 +++++++++++++++++++++++++++++---
  1 file changed, 1111 insertions(+), 78 deletions(-)
 
-diff --git a/drivers/pinctrl/qcom/pinctrl-ipq4019.c b/drivers/pinctrl/qcom/pinctrl-ipq4019.c
-index 743d1f4..571eb51 100644
 --- a/drivers/pinctrl/qcom/pinctrl-ipq4019.c
 +++ b/drivers/pinctrl/qcom/pinctrl-ipq4019.c
 @@ -276,16 +276,531 @@ DECLARE_QCA_GPIO_PINS(99);
-
-
+ 
+ 
  enum ipq4019_functions {
 +	qca_mux_rmii0_refclk,
 +	qca_mux_wifi0_rfsilient0,
@@ -122,7 +120,7 @@ index 743d1f4..571eb51 100644
 +	qca_mux_wifi034,
 +	qca_mux_wifi134,
 +	qca_mux_jtag_tdi,
-	qca_mux_gpio,
+ 	qca_mux_gpio,
 +	qca_mux_i2s_rx_bclk,
 +	qca_mux_jtag_tck,
 +	qca_mux_i2s_rx_fsync,
@@ -139,7 +137,7 @@ index 743d1f4..571eb51 100644
 +	qca_mux_mdc,
 +	qca_mux_wcss0_dbg19,
 +	qca_mux_wcss1_dbg19,
-	qca_mux_blsp_uart1,
+ 	qca_mux_blsp_uart1,
 +	qca_mux_wifi0_uart,
 +	qca_mux_wifi1_uart,
 +	qca_mux_smart1,
@@ -149,13 +147,13 @@ index 743d1f4..571eb51 100644
 +	qca_mux_wifi1_uart0,
 +	qca_mux_wcss0_dbg21,
 +	qca_mux_wcss1_dbg21,
-	qca_mux_blsp_i2c0,
+ 	qca_mux_blsp_i2c0,
 +	qca_mux_wcss0_dbg22,
 +	qca_mux_wcss1_dbg22,
 +	qca_mux_wcss0_dbg23,
 +	qca_mux_wcss1_dbg23,
 +	qca_mux_blsp_spi0,
-	qca_mux_blsp_i2c1,
+ 	qca_mux_blsp_i2c1,
 +	qca_mux_wcss0_dbg24,
 +	qca_mux_wcss1_dbg24,
 +	qca_mux_wcss0_dbg25,
@@ -164,7 +162,7 @@ index 743d1f4..571eb51 100644
 +	qca_mux_wcss1_dbg26,
 +	qca_mux_wcss0_dbg,
 +	qca_mux_wcss1_dbg,
-	qca_mux_blsp_uart0,
+ 	qca_mux_blsp_uart0,
 -	qca_mux_blsp_spi1,
 -	qca_mux_blsp_spi0,
 +	qca_mux_led0,
@@ -229,9 +227,9 @@ index 743d1f4..571eb51 100644
 +	qca_mux_pcie_clk1,
 +	qca_mux_led3,
 +	qca_mux_sdio_cd,
-	qca_mux_NA,
+ 	qca_mux_NA,
  };
-
+ 
 +static const char * const rmii0_refclk_groups[] = {
 +	"gpio40",
 +};
@@ -546,11 +544,11 @@ index 743d1f4..571eb51 100644
 +	"gpio0",
 +};
  static const char * const gpio_groups[] = {
-	"gpio0", "gpio1", "gpio2", "gpio3", "gpio4", "gpio5", "gpio6", "gpio7",
-	"gpio8", "gpio9", "gpio10", "gpio11", "gpio12", "gpio13", "gpio14",
-@@ -303,13 +818,103 @@ static const char * const gpio_groups[] = {
-	"gpio92", "gpio93", "gpio94", "gpio95", "gpio96", "gpio97", "gpio98",
-	"gpio99",
+ 	"gpio0", "gpio1", "gpio2", "gpio3", "gpio4", "gpio5", "gpio6", "gpio7",
+ 	"gpio8", "gpio9", "gpio10", "gpio11", "gpio12", "gpio13", "gpio14",
+@@ -303,13 +818,103 @@ static const char * const gpio_groups[]
+ 	"gpio92", "gpio93", "gpio94", "gpio95", "gpio96", "gpio97", "gpio98",
+ 	"gpio99",
  };
 -
 +static const char * const i2s_rx_bclk_groups[] = {
@@ -605,7 +603,7 @@ index 743d1f4..571eb51 100644
 +	"gpio7", "gpio23", "gpio40",
 +};
  static const char * const blsp_uart1_groups[] = {
-	"gpio8", "gpio9", "gpio10", "gpio11",
+ 	"gpio8", "gpio9", "gpio10", "gpio11",
  };
 +static const char * const wifi0_uart_groups[] = {
 +	"gpio8", "gpio9", "gpio11", "gpio19", "gpio62",
@@ -636,7 +634,7 @@ index 743d1f4..571eb51 100644
 +	"gpio9", "gpio25", "gpio42",
 +};
  static const char * const blsp_i2c0_groups[] = {
-	"gpio10", "gpio11", "gpio20", "gpio21", "gpio58", "gpio59",
+ 	"gpio10", "gpio11", "gpio20", "gpio21", "gpio58", "gpio59",
  };
 +static const char * const wcss0_dbg22_groups[] = {
 +	"gpio10", "gpio26", "gpio43",
@@ -651,11 +649,11 @@ index 743d1f4..571eb51 100644
 +	"gpio11", "gpio27", "gpio44",
 +};
  static const char * const blsp_spi0_groups[] = {
-	"gpio12", "gpio13", "gpio14", "gpio15", "gpio45",
-	"gpio54", "gpio55", "gpio56", "gpio57",
-@@ -317,94 +922,582 @@ static const char * const blsp_spi0_groups[] = {
+ 	"gpio12", "gpio13", "gpio14", "gpio15", "gpio45",
+ 	"gpio54", "gpio55", "gpio56", "gpio57",
+@@ -317,94 +922,582 @@ static const char * const blsp_spi0_grou
  static const char * const blsp_i2c1_groups[] = {
-	"gpio12", "gpio13", "gpio34", "gpio35",
+ 	"gpio12", "gpio13", "gpio34", "gpio35",
  };
 +static const char * const wcss0_dbg24_groups[] = {
 +	"gpio12", "gpio28", "gpio45",
@@ -682,7 +680,7 @@ index 743d1f4..571eb51 100644
 +	"gpio15",
 +};
  static const char * const blsp_uart0_groups[] = {
-	"gpio16", "gpio17", "gpio60", "gpio61",
+ 	"gpio16", "gpio17", "gpio60", "gpio61",
  };
 -static const char * const blsp_spi1_groups[] = {
 -	"gpio44", "gpio45", "gpio46", "gpio47",
@@ -872,7 +870,7 @@ index 743d1f4..571eb51 100644
 +static const char * const sdio_cd_groups[] = {
 +	"gpio22",
  };
-
+ 
  static const struct msm_function ipq4019_functions[] = {
 +	FUNCTION(rmii0_refclk),
 +	FUNCTION(wifi0_rfsilient0),
@@ -978,7 +976,7 @@ index 743d1f4..571eb51 100644
 +	FUNCTION(wifi034),
 +	FUNCTION(wifi134),
 +	FUNCTION(jtag_tdi),
-	FUNCTION(gpio),
+ 	FUNCTION(gpio),
 +	FUNCTION(i2s_rx_bclk),
 +	FUNCTION(jtag_tck),
 +	FUNCTION(i2s_rx_fsync),
@@ -995,7 +993,7 @@ index 743d1f4..571eb51 100644
 +	FUNCTION(mdc),
 +	FUNCTION(wcss0_dbg19),
 +	FUNCTION(wcss1_dbg19),
-	FUNCTION(blsp_uart1),
+ 	FUNCTION(blsp_uart1),
 +	FUNCTION(wifi0_uart),
 +	FUNCTION(wifi1_uart),
 +	FUNCTION(smart1),
@@ -1005,13 +1003,13 @@ index 743d1f4..571eb51 100644
 +	FUNCTION(wifi1_uart0),
 +	FUNCTION(wcss0_dbg21),
 +	FUNCTION(wcss1_dbg21),
-	FUNCTION(blsp_i2c0),
+ 	FUNCTION(blsp_i2c0),
 +	FUNCTION(wcss0_dbg22),
 +	FUNCTION(wcss1_dbg22),
 +	FUNCTION(wcss0_dbg23),
 +	FUNCTION(wcss1_dbg23),
 +	FUNCTION(blsp_spi0),
-	FUNCTION(blsp_i2c1),
+ 	FUNCTION(blsp_i2c1),
 +	FUNCTION(wcss0_dbg24),
 +	FUNCTION(wcss1_dbg24),
 +	FUNCTION(wcss0_dbg25),
@@ -1020,7 +1018,7 @@ index 743d1f4..571eb51 100644
 +	FUNCTION(wcss1_dbg26),
 +	FUNCTION(wcss0_dbg),
 +	FUNCTION(wcss1_dbg),
-	FUNCTION(blsp_uart0),
+ 	FUNCTION(blsp_uart0),
 -	FUNCTION(blsp_spi1),
 -	FUNCTION(blsp_spi0),
 +	FUNCTION(led0),
@@ -1086,7 +1084,7 @@ index 743d1f4..571eb51 100644
 +	FUNCTION(led3),
 +	FUNCTION(sdio_cd),
  };
-
+ 
  static const struct msm_pingroup ipq4019_groups[] = {
 -	PINGROUP(0, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 -	PINGROUP(1, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
@@ -1307,26 +1305,24 @@ index 743d1f4..571eb51 100644
 +		 NA, NA, NA, NA, NA, NA),
 +	PINGROUP(69, qpic_pad, NA, wcss0_dbg, NA, NA, NA, NA, NA, NA, NA, NA,
 +		 NA, NA, NA),
-	PINGROUP(70, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-	PINGROUP(71, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-	PINGROUP(72, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-@@ -433,7 +1526,8 @@ static const struct msm_pingroup ipq4019_groups[] = {
-	PINGROUP(95, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-	PINGROUP(96, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-	PINGROUP(97, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+ 	PINGROUP(70, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+ 	PINGROUP(71, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+ 	PINGROUP(72, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+@@ -433,7 +1526,8 @@ static const struct msm_pingroup ipq4019
+ 	PINGROUP(95, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+ 	PINGROUP(96, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+ 	PINGROUP(97, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 -	PINGROUP(98, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 +	PINGROUP(98, wifi034, wifi134, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,
 +		 NA, NA),
-	PINGROUP(99, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+ 	PINGROUP(99, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
  };
-
-@@ -460,6 +1554,7 @@ static const struct of_device_id ipq4019_pinctrl_of_match[] = {
+ 
+@@ -460,6 +1554,7 @@ static const struct of_device_id ipq4019
  static struct platform_driver ipq4019_pinctrl_driver = {
-	.driver = {
-		.name = "ipq4019-pinctrl",
+ 	.driver = {
+ 		.name = "ipq4019-pinctrl",
 +		.owner = THIS_MODULE,
-		.of_match_table = ipq4019_pinctrl_of_match,
-	},
-	.probe = ipq4019_pinctrl_probe,
---
-2.7.2
+ 		.of_match_table = ipq4019_pinctrl_of_match,
+ 	},
+ 	.probe = ipq4019_pinctrl_probe,

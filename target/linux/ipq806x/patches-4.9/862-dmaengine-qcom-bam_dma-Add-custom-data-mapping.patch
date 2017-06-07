@@ -14,8 +14,6 @@ Signed-off-by: Ram Chandra Jangir <rjangir@codeaurora.org>
  include/linux/dmaengine.h        | 14 ++++++
  3 files changed, 119 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/dma/qcom/bam_dma.c b/drivers/dma/qcom/bam_dma.c
-index 03c4eb3..bde8d70 100644
 --- a/drivers/dma/qcom/bam_dma.c
 +++ b/drivers/dma/qcom/bam_dma.c
 @@ -49,6 +49,7 @@
@@ -23,24 +21,24 @@ index 03c4eb3..bde8d70 100644
  #include <linux/dmaengine.h>
  #include <linux/pm_runtime.h>
 +#include <linux/dma/qcom_bam_dma.h>
-
+ 
  #include "../dmaengine.h"
  #include "../virt-dma.h"
 @@ -61,11 +62,6 @@ struct bam_desc_hw {
-
+ 
  #define BAM_DMA_AUTOSUSPEND_DELAY 100
-
+ 
 -#define DESC_FLAG_INT BIT(15)
 -#define DESC_FLAG_EOT BIT(14)
 -#define DESC_FLAG_EOB BIT(13)
 -#define DESC_FLAG_NWD BIT(12)
 -
  struct bam_async_desc {
-	struct virt_dma_desc vd;
-
-@@ -670,6 +666,93 @@ static struct dma_async_tx_descriptor *bam_prep_slave_sg(struct dma_chan *chan,
+ 	struct virt_dma_desc vd;
+ 
+@@ -670,6 +666,93 @@ err_out:
  }
-
+ 
  /**
 + * bam_prep_dma_custom_mapping - Prep DMA descriptor from custom data
 + *
@@ -132,31 +130,29 @@ index 03c4eb3..bde8d70 100644
   * bam_dma_terminate_all - terminate all transactions on a channel
   * @bchan: bam dma channel
   *
-@@ -960,7 +1043,7 @@ static void bam_start_dma(struct bam_chan *bchan)
-
-	/* set any special flags on the last descriptor */
-	if (async_desc->num_desc == async_desc->xfer_len)
+@@ -960,7 +1043,7 @@ static void bam_start_dma(struct bam_cha
+ 
+ 	/* set any special flags on the last descriptor */
+ 	if (async_desc->num_desc == async_desc->xfer_len)
 -		desc[async_desc->xfer_len - 1].flags =
 +		desc[async_desc->xfer_len - 1].flags |=
-					cpu_to_le16(async_desc->flags);
-	else
-		desc[async_desc->xfer_len - 1].flags |=
-@@ -1237,6 +1320,8 @@ static int bam_dma_probe(struct platform_device *pdev)
-	bdev->common.device_alloc_chan_resources = bam_alloc_chan;
-	bdev->common.device_free_chan_resources = bam_free_chan;
-	bdev->common.device_prep_slave_sg = bam_prep_slave_sg;
+ 					cpu_to_le16(async_desc->flags);
+ 	else
+ 		desc[async_desc->xfer_len - 1].flags |=
+@@ -1237,6 +1320,8 @@ static int bam_dma_probe(struct platform
+ 	bdev->common.device_alloc_chan_resources = bam_alloc_chan;
+ 	bdev->common.device_free_chan_resources = bam_free_chan;
+ 	bdev->common.device_prep_slave_sg = bam_prep_slave_sg;
 +	bdev->common.device_prep_dma_custom_mapping =
 +		bam_prep_dma_custom_mapping;
-	bdev->common.device_config = bam_slave_config;
-	bdev->common.device_pause = bam_pause;
-	bdev->common.device_resume = bam_resume;
-diff --git a/include/linux/dma/qcom_bam_dma.h b/include/linux/dma/qcom_bam_dma.h
-index 7e87a85..7113c77 100644
+ 	bdev->common.device_config = bam_slave_config;
+ 	bdev->common.device_pause = bam_pause;
+ 	bdev->common.device_resume = bam_resume;
 --- a/include/linux/dma/qcom_bam_dma.h
 +++ b/include/linux/dma/qcom_bam_dma.h
 @@ -65,6 +65,19 @@ enum bam_command_type {
  };
-
+ 
  /*
 + * QCOM BAM DMA custom data
 + *
@@ -174,8 +170,6 @@ index 7e87a85..7113c77 100644
   * qcom_bam_sg_init_table - Init QCOM BAM SGL
   * @bam_sgl: bam sgl
   * @nents: number of entries in bam sgl
-diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
-index cc535a4..627c125 100644
 --- a/include/linux/dmaengine.h
 +++ b/include/linux/dmaengine.h
 @@ -692,6 +692,8 @@ struct dma_filter {
@@ -188,19 +182,19 @@ index cc535a4..627c125 100644
   *	code
   * @device_pause: Pauses any transfer happening on a channel. Returns
 @@ -783,6 +785,9 @@ struct dma_device {
-	struct dma_async_tx_descriptor *(*device_prep_dma_imm_data)(
-		struct dma_chan *chan, dma_addr_t dst, u64 data,
-		unsigned long flags);
+ 	struct dma_async_tx_descriptor *(*device_prep_dma_imm_data)(
+ 		struct dma_chan *chan, dma_addr_t dst, u64 data,
+ 		unsigned long flags);
 +	struct dma_async_tx_descriptor *(*device_prep_dma_custom_mapping)(
 +		struct dma_chan *chan, void *data,
 +		unsigned long flags);
-
-	int (*device_config)(struct dma_chan *chan,
-			     struct dma_slave_config *config);
-@@ -899,6 +904,15 @@ static inline struct dma_async_tx_descriptor *dmaengine_prep_dma_sg(
-			src_sg, src_nents, flags);
+ 
+ 	int (*device_config)(struct dma_chan *chan,
+ 			     struct dma_slave_config *config);
+@@ -899,6 +904,15 @@ static inline struct dma_async_tx_descri
+ 			src_sg, src_nents, flags);
  }
-
+ 
 +static inline struct dma_async_tx_descriptor *dmaengine_prep_dma_custom_mapping(
 +		struct dma_chan *chan,
 +		void *data,
@@ -213,5 +207,3 @@ index cc535a4..627c125 100644
  /**
   * dmaengine_terminate_all() - Terminate all active DMA transfers
   * @chan: The channel for which to terminate the transfers
---
-2.7.2
