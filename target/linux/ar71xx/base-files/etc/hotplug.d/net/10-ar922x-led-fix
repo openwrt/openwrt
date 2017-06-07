@@ -9,12 +9,12 @@
 # Manipulate the $DEVPATH to reach the corresponding phyN.
 #
 
-devdir=`dirname $DEVPATH`
-devdir=`dirname $devdir`
+devdir=$(dirname $DEVPATH)
+devdir=$(dirname $devdir)
 phydir=/sys$devdir/ieee80211
-phyname=`cat $phydir/phy*/name`
+phyname=$(cat $phydir/phy*/name)
 
-if [ -z $phyname -o $ACTION != "add" ]; then exit 0; fi
+[ -z $phyname -o $ACTION != "add" ] && exit 0
 
 #
 # ar922x_disable_gpio_jtag():
@@ -24,28 +24,26 @@ if [ -z $phyname -o $ACTION != "add" ]; then exit 0; fi
 # for AR9220 and AR9223.
 #
 
-ar922x_disable_gpio_jtag()                 
-{                                          
-        local regidx=0x4054               
-        
-	[ -f /sys/kernel/debug/ieee80211/$1/ath9k/regidx ] && {
-		echo $regidx > /sys/kernel/debug/ieee80211/$1/ath9k/regidx
-        	regval=`cat /sys/kernel/debug/ieee80211/$1/ath9k/regval`
-        	regval=$((regval | 0x20000))
-        	echo regval $regval
-    		echo $regval > /sys/kernel/debug/ieee80211/$1/ath9k/regval
-        }
+ar922x_disable_gpio_jtag() {
+	local regidx=0x4054
+
+	[ -f /sys/kernel/debug/ieee80211/$1/ath9k/regidx ] || return
+
+	echo $regidx > /sys/kernel/debug/ieee80211/$1/ath9k/regidx
+	regval=$(cat /sys/kernel/debug/ieee80211/$1/ath9k/regval)
+	regval=$((regval | 0x20000))
+	echo regval $regval
+	echo $regval > /sys/kernel/debug/ieee80211/$1/ath9k/regval
 }
 
-if [ $phyname -a $ACTION = "add" ]; then
-
+[ $phyname -a $ACTION = "add" ] && {
 	. /lib/ar71xx.sh
-	
+
 	case $(ar71xx_board_name) in
-		wzr-hp-ag300h)
-			ar922x_disable_gpio_jtag $phyname
-			;;
+	wzr-hp-ag300h)
+		ar922x_disable_gpio_jtag $phyname
+		;;
 	esac;
-fi
+}
 
 exit 0
