@@ -159,7 +159,9 @@ define BuildKernel
 	rm -f $(LINUX_DIR)/.config.prev
 	rm -f $(STAMP_CONFIGURED)
 	$(LINUX_RECONF_CMD) > $(LINUX_DIR)/.config
-	$(_SINGLE)$(KERNEL_MAKE) HOST_LOADLIBES="-L$(STAGING_DIR_HOST)/lib -lncurses" $$@
+	$(_SINGLE)$(KERNEL_MAKE) \
+		$(if $(findstring Darwin,$(HOST_OS)),HOST_LOADLIBES="-L$(STAGING_DIR_HOST)/lib -lncurses") \
+		$$@
 	$(LINUX_RECONF_DIFF) $(LINUX_DIR)/.config > $(LINUX_RECONFIG_TARGET)
 
   install: $(LINUX_DIR)/.image
