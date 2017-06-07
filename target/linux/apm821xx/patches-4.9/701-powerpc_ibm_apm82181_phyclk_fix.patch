@@ -30,15 +30,14 @@
  #endif
  }
  
-@@ -2617,7 +2626,7 @@ static int emac_init_config(struct emac_
+@@ -2617,6 +2626,7 @@ static int emac_init_config(struct emac_
  		if (of_device_is_compatible(np, "ibm,emac-apm821xx")) {
  			dev->features |= (EMAC_APM821XX_REQ_JUMBO_FRAME_SIZE |
  					  EMAC_FTR_APM821XX_NO_HALF_DUPLEX |
--					  EMAC_FTR_460EX_PHY_CLK_FIX);
-+					  EMAC_FTR_APM821XX_PHY_CLK_FIX);
++					  EMAC_FTR_APM821XX_PHY_CLK_FIX |
+ 					  EMAC_FTR_460EX_PHY_CLK_FIX);
  		}
  	} else if (of_device_is_compatible(np, "ibm,emac4")) {
- 		dev->features |= EMAC_FTR_EMAC4;
 --- a/drivers/net/ethernet/ibm/emac/core.h
 +++ b/drivers/net/ethernet/ibm/emac/core.h
 @@ -333,6 +333,8 @@ struct emac_instance {

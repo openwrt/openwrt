@@ -300,7 +300,7 @@ Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
  	/* Init PHY */
  	if (dev->phy.def->ops->init)
  		dev->phy.def->ops->init(&dev->phy);
-@@ -2987,6 +3228,12 @@ static int emac_remove(struct platform_d
+@@ -2988,6 +3229,12 @@ static int emac_remove(struct platform_d
  	if (emac_has_feature(dev, EMAC_FTR_HAS_ZMII))
  		zmii_detach(dev->zmii_dev, dev->zmii_port);
  
