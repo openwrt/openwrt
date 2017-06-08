@@ -176,7 +176,7 @@ else
   DOWNLOAD_DIRS = package/download
 endif
 
-download: .config FORCE
+download: .config FORCE $(if $(wildcard $(TOPDIR)/staging_dir/host/bin/flock),,tools/flock/compile)
 	@+$(foreach dir,$(DOWNLOAD_DIRS),$(SUBMAKE) $(dir);)
 
 clean dirclean: .config
