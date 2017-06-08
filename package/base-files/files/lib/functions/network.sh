@@ -45,7 +45,36 @@ network_get_subnet() {
 # 1: destination variable
 # 2: interface
 network_get_subnet6() {
-	__network_ifstatus "$1" "$2" "['ipv6-address'][0]['address','mask']" "/"
+	local __nets __addr
+
+	if network_get_subnets6 __nets "$2"; then
+		# Attempt to return first non-fe80::/10, non-fc::/7 range
+		for __addr in $__nets; do
+			case "$__addr" in fe[8ab]?:*|f[cd]??:*)
+				continue
+			esac
+			export "$1=$__addr"
+			return 0
+		done
+
+		# Attempt to return first non-fe80::/10 range
+		for __addr in $__nets; do
+			case "$__addr" in fe[8ab]?:*)
+				continue
+			esac
+			export "$1=$__addr"
+			return 0
+		done
+
+		# Return first item
+		for __addr in $__nets; do
+			export "$1=$__addr"
+			return 0
+		done
+	fi
+
+	unset "$1"
+	return 1
 }
 
 # determine first IPv6 prefix of given logical interface
@@ -94,18 +123,13 @@ network_get_ipaddrs6() {
 # 1: destination variable
 # 2: interface
 network_get_ipaddrs_all() {
-	local __addr
-	local __list=""
+	local __addr __addr6
 
-	if __network_ifstatus "__addr" "$2" "['ipv4-address','ipv6-address','ipv6-prefix-assignment'][*].address"; then
-		for __addr in $__addr; do
-			case "$__addr" in
-				*:) __list="${__list:+$__list }${__addr}1" ;;
-				*)  __list="${__list:+$__list }${__addr}"  ;;
-			esac
-		done
+	network_get_ipaddrs __addr "$2"
+	network_get_ipaddrs6 __addr6 "$2"
 
-		export "$1=$__list"
+	if [ -n "$__addr" -o -n "$__addr6" ]; then
+		export "$1=${__addr:+$__addr }$__addr6"
 		return 0
 	fi
 
@@ -124,17 +148,24 @@ network_get_subnets() {
 # 1: destination variable
 # 2: interface
 network_get_subnets6() {
-	local __addr
+	local __addr __mask
 	local __list=""
 
-	if __network_ifstatus "__addr" "$2" "['ipv6-address','ipv6-prefix-assignment'][*]['address','mask']" "/ "; then
+	if __network_ifstatus "__addr" "$2" "['ipv6-address'][*]['address','mask']" "/ "; then
 		for __addr in $__addr; do
-			case "$__addr" in
-				*:/*) __list="${__list:+$__list }${__addr%/*}1/${__addr##*/}" ;;
-				*)    __list="${__list:+$__list }${__addr}"                   ;;
-			esac
+			__list="${__list:+$__list }${__addr}"
 		done
+	fi
 
+	if __network_ifstatus "__addr" "$2" "['ipv6-prefix-assignment'][*]['local-address'].address" && \
+	   __network_ifstatus "__mask" "$2" "['ipv6-prefix-assignment'][*].mask"; then
+		for __addr in $__addr; do
+			__list="${__list:+$__list }${__addr}/${__mask%% *}"
+			__mask="${__mask#* }"
+		done
+	fi
+
+	if [ -n "$__list" ]; then
 		export "$1=$__list"
 		return 0
 	fi
