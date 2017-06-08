@@ -29,18 +29,9 @@ network_get_ipaddr() {
 # 1: destination variable
 # 2: interface
 network_get_ipaddr6() {
-	local __addr
-
-	if __network_ifstatus "__addr" "$2" "['ipv6-address','ipv6-prefix-assignment'][0].address"; then
-		case "$__addr" in
-			*:)	export "$1=${__addr}1" ;;
-			*)	export "$1=${__addr}" ;;
-		esac
-		return 0
-	fi
-
-	unset $1
-	return 1
+	__network_ifstatus "$1" "$2" "['ipv6-address'][0].address" || \
+		__network_ifstatus "$1" "$2" "['ipv6-prefix-assignment'][0]['local-address'].address" || \
+		return 1
 }
 
 # determine first IPv4 subnet of given logical interface
@@ -78,14 +69,19 @@ network_get_ipaddrs6() {
 	local __addr
 	local __list=""
 
-	if __network_ifstatus "__addr" "$2" "['ipv6-address','ipv6-prefix-assignment'][*].address"; then
+	if __network_ifstatus "__addr" "$2" "['ipv6-address'][*].address"; then
 		for __addr in $__addr; do
-			case "$__addr" in
-				*:) __list="${__list:+$__list }${__addr}1" ;;
-				*)  __list="${__list:+$__list }${__addr}"  ;;
-			esac
+			__list="${__list:+$__list }${__addr}"
 		done
+	fi
 
+	if __network_ifstatus "__addr" "$2" "['ipv6-prefix-assignment'][*]['local-address'].address"; then
+		for __addr in $__addr; do
+			__list="${__list:+$__list }${__addr}"
+		done
+	fi
+
+	if [ -n "$__list" ]; then
 		export "$1=$__list"
 		return 0
 	fi
