@@ -53,7 +53,7 @@ define Device/Default
   PROFILES = Default Minimal $$(DEVICE_PROFILE)
   MTDPARTS :=
   BLOCKSIZE := 64k
-  CONSOLE = ttyS0,115200
+  CONSOLE := ttyS0,115200
   CMDLINE = $$(if $$(BOARDNAME),board=$$(BOARDNAME)) $$(if $$(MTDPARTS),mtdparts=$$(MTDPARTS)) $$(if $$(CONSOLE),console=$$(CONSOLE))
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
   COMPILE :=

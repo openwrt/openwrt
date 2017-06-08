@@ -262,7 +262,7 @@ define Device/tl-wdr4310-v1
   DEVICE_TITLE := TP-LINK TL-WDR4310 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-WDR4300
-  DEVICE_PROFILE = TLWDR4300
+  DEVICE_PROFILE := TLWDR4300
   TPLINK_HWID := 0x43100001
 endef
 
@@ -279,8 +279,8 @@ define Device/tl-wdr6500-v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | uImage lzma | mktplinkfw-combined
-  BOARDNAME = TL-WDR6500-v2
-  DEVICE_PROFILE = TLWDR6500V2
+  BOARDNAME := TL-WDR6500-v2
+  DEVICE_PROFILE := TLWDR6500V2
   TPLINK_HWID := 0x65000002
   TPLINK_HEADER_VERSION := 2
 endef
@@ -290,8 +290,8 @@ define Device/tl-wdr3320-v2
   $(Device/tplink-4mlzma)
   DEVICE_TITLE := TP-LINK TL-WDR3320 v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
-  BOARDNAME = TL-WDR3320-v2
-  DEVICE_PROFILE = TLWDR3320V2
+  BOARDNAME := TL-WDR3320-v2
+  DEVICE_PROFILE := TLWDR3320V2
   TPLINK_HWID := 0x33200002
   TPLINK_HEADER_VERSION := 2
 endef

@@ -40,48 +40,48 @@ define Device/ubnt-xm
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7552k
-  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
   UBNT_TYPE := XM
   UBNT_BOARD := XM
   UBNT_CHIP := ar7240
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage-split
-  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 
 define Device/ubnt-xw
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7552k
-  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
   UBNT_TYPE := XW
   UBNT_BOARD := XM
   UBNT_CHIP := ar934x
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage-split
-  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 
 define Device/ubnt-bz
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7552k
-  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7552k(firmware),256k(cfg)ro,64k(EEPROM)ro
   UBNT_TYPE := BZ
   UBNT_BOARD := XM
   UBNT_CHIP := ar934x
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage-split
-  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
 endef
 
 define Device/ubnt-unifiac
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   DEVICE_PROFILE := UBNT
   IMAGE_SIZE := 7744k
-  MTDPARTS = spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
+  MTDPARTS := spi0.0:384k(u-boot)ro,64k(u-boot-env)ro,7744k(firmware),7744k(ubnt-airos)ro,128k(bs)ro,256k(cfg)ro,64k(EEPROM)ro
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/rw2458n
@@ -185,7 +185,7 @@ define Device/ubnt-air-gateway
   UBNT_BOARD := XM
   UBNT_TYPE := AirGW
   UBNT_CHIP := ar933x
-  CONSOLE = ttyATH0,115200
+  CONSOLE := ttyATH0,115200
 endef
 TARGET_DEVICES += ubnt-air-gateway
 
@@ -214,8 +214,8 @@ define Device/ubnt-routerstation
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2
   IMAGE_SIZE := 16128k
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/factory.bin = append-rootfs | pad-rootfs | mkubntimage
-  IMAGE/sysupgrade.bin = append-rootfs | pad-rootfs | combined-image | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := append-rootfs | pad-rootfs | mkubntimage
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | combined-image | check-size $$$$(IMAGE_SIZE)
   KERNEL := kernel-bin | patch-cmdline | lzma | pad-to $$(BLOCKSIZE)
 endef
 
@@ -261,8 +261,8 @@ define Device/ubnt-uap-pro
   DEVICE_PROFILE := UBNT UAPPRO
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma | jffs2 kernel0
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage2
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage2
 endef
 
 define Device/ubnt-unifi-outdoor-plus
