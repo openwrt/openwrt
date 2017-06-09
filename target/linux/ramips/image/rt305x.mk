@@ -196,6 +196,7 @@ Image/Build/Profile/3G300M=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),3g3
 Image/Build/Profile/A5-V11=$(call BuildFirmware/Poray4M/$(1),$(1),a5-v11,A5-V11)
 Image/Build/Profile/AIR3GII=$(call BuildFirmware/Default4M/$(1),$(1),air3gii,AIR3GII)
 Image/Build/Profile/ALL0256N=$(call BuildFirmware/DefaultDualSize/$(1),$(1),all0256n,ALL0256N)
+Image/Build/Profile/MT2681=$(call BuildFirmware/Default8M/$(1),$(1),mt2681,MT2681)
 allnet_all5002_mtd_size=33226752
 Image/Build/Profile/ALL5002=$(call BuildFirmware/CustomFlash/$(1),$(1),all5002,ALL5002,$(allnet_all5002_mtd_size))
 Image/Build/Profile/ALL5003=$(call BuildFirmware/CustomFlash/$(1),$(1),all5003,ALL5003,$(allnet_all5002_mtd_size))
@@ -305,6 +306,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AIR3GII,$(1))
 	$(call Image/Build/Profile/ALL02393G,$(1))
 	$(call Image/Build/Profile/ALL0256N,$(1))
+	$(call Image/Build/Profile/MT2681,$(1))
 	$(call Image/Build/Profile/ALL5002,$(1))
 	$(call Image/Build/Profile/ALL5003,$(1))
 	$(call Image/Build/Profile/ASL26555,$(1))

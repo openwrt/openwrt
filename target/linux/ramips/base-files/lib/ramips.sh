@@ -40,6 +40,9 @@ ramips_board_detect() {
 	*"ALL0256N")
 		name="all0256n"
 		;;
+	*"MT2681")
+		name="mt2681"
+		;;
 	*"ALL5002")
 		name="all5002"
 		;;

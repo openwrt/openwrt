@@ -23,6 +23,7 @@ platform_check_image() {
 	air3gii|\
 	all0239-3g|\
 	all0256n|\
+	mt2681|\
 	all5002|\
 	all5003|\
 	ar725w|\
