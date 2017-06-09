@@ -558,6 +558,45 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the TL-WA855RE v1 */
+	{
+		.id     = "TLWA855REV1",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:00000000}\n"
+			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:55530000}\n"
+			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:45550000}\n"
+			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:4B520000}\n"
+			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:42520000}\n"
+			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:4A500000}\n"
+			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:43410000}\n"
+			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:41550000}\n"
+			"{product_name:TL-WA855RE,product_ver:1.0.0,special_id:52550000}\n",
+		.support_trail = '\x00',
+		.soft_ver = NULL,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"os-image", 0x20000, 0x150000},
+			{"file-system", 0x170000, 0x240000},
+			{"partition-table", 0x3b0000, 0x02000},
+			{"default-mac", 0x3c0000, 0x00020},
+			{"pin", 0x3c0100, 0x00020},
+			{"product-info", 0x3c1000, 0x01000},
+			{"soft-version", 0x3c2000, 0x00100},
+			{"support-list", 0x3c3000, 0x01000},
+			{"profile", 0x3c4000, 0x08000},
+			{"user-config", 0x3d0000, 0x10000},
+			{"default-config", 0x3e0000, 0x10000},
+			{"radio", 0x3f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the TL-WR1043 v4 */
 	{
 		.id     = "TLWR1043NDV4",

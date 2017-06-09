@@ -496,18 +496,31 @@ define Device/tl-wa850re-v1
   TPLINK_HWID := 0x08500001
 endef
 
-define Device/tl-wa850re-v2
+define Device/tl-wa85xre
   $(Device/tplink)
+  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-kernel
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+  MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),2304k(rootfs),256k(config)ro,64k(art)ro,3648k@0x20000(firmware)
+endef
+
+define Device/tl-wa850re-v2
+  $(Device/tl-wa85xre)
   DEVICE_TITLE := TP-LINK TL-WA850RE v2
   DEVICE_PACKAGES := rssileds
   BOARDNAME := TL-WA850RE-V2
   DEVICE_PROFILE := TLWA850
   TPLINK_BOARD_NAME := TLWA850REV2
   TPLINK_HWID := 0x08500002
-  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-kernel
-  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
-  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
-  MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),2304k(rootfs),256k(config)ro,64k(art)ro,3648k@0x20000(firmware)
+endef
+
+define Device/tl-wa855re-v1
+  $(Device/tl-wa85xre)
+  DEVICE_TITLE := TP-LINK TL-WA855RE v1
+  BOARDNAME := TL-WA855RE-v1
+  DEVICE_PROFILE := TLWA855RE
+  TPLINK_HWID := 0x08550001
+  TPLINK_BOARD_NAME := TLWA855REV1
 endef
 
 define Device/tl-wa860re-v1
@@ -517,7 +530,7 @@ define Device/tl-wa860re-v1
   DEVICE_PROFILE := TLWA860
   TPLINK_HWID := 0x08600001
 endef
-TARGET_DEVICES += tl-wa801nd-v1 tl-wa801nd-v2 tl-wa801nd-v3 tl-wa830re-v1 tl-wa830re-v2 tl-wa850re-v1 tl-wa850re-v2 tl-wa860re-v1
+TARGET_DEVICES += tl-wa801nd-v1 tl-wa801nd-v2 tl-wa801nd-v3 tl-wa830re-v1 tl-wa830re-v2 tl-wa850re-v1 tl-wa850re-v2 tl-wa855re-v1 tl-wa860re-v1
 
 define Device/tl-wa901nd-v1
   $(Device/tplink-4m)

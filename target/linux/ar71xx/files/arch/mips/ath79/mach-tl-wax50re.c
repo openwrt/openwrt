@@ -3,11 +3,14 @@
  *  - TL-WA750RE v1
  *  - TL-WA801ND v2
  *  - TL-WA850RE v1/v2
+ *  - TL-WA855RE v1
  *  - TL-WA901ND v3
  *
  *  Copyright (C) 2013 Martijn Zilverschoon <thefriedzombie@gmail.com>
  *  Copyright (C) 2013 Jiri Pirko <jiri@resnulli.us>
  *  Copyright (C) 2017 Piotr Dymacz <pepe2k@gmail.com>
+ *  Copyright (C) 2017 Federico Cappon <dududede371@gmail.com>
+ *  Copyright (C) 2017 Nicolò Veronese <nicveronese@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -47,6 +50,9 @@
 #define TL_WA850RE_V2_GPIO_LED_WLAN	13
 
 #define TL_WA850RE_V2_GPIO_ENABLE_LEDS	15
+
+#define TL_WA855REV1_GPIO_LED_RED	11
+#define TL_WA855REV1_GPIO_LED_GREEN	12
 
 #define TL_WA860RE_GPIO_LED_WLAN_ORANGE	0
 #define TL_WA860RE_GPIO_LED_WLAN_GREEN	2
@@ -181,6 +187,18 @@ static struct gpio_led tl_wa850re_v2_leds_gpio[] __initdata = {
 		.name		= "tp-link:blue:wlan",
 		.gpio		= TL_WA850RE_V2_GPIO_LED_WLAN,
 		.active_low	= 1,
+	},
+};
+
+static struct gpio_led tl_wa855re_v1_leds_gpio[] __initdata = {
+	 {
+		.name		= "tp-link:green:power",
+		.gpio		= TL_WA855REV1_GPIO_LED_GREEN,
+		.active_low	= 0,
+	}, {
+		.name		= "tp-link:red:power",
+		.gpio		= TL_WA855REV1_GPIO_LED_RED,
+		.active_low	= 0,
 	},
 };
 
@@ -382,6 +400,21 @@ static void  __init tl_wa850re_v2_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_TL_WA850RE_V2, "TL-WA850RE-V2",
 	     "TP-LINK TL-WA850RE v2", tl_wa850re_v2_setup);
+
+static void __init tl_wa855re_v1_setup(void)
+{
+	tl_ap143_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa855re_v1_leds_gpio),
+				 tl_wa855re_v1_leds_gpio);
+
+	ath79_register_gpio_keys_polled(-1, TL_WAX50RE_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wax50re_gpio_keys),
+					tl_wax50re_gpio_keys);
+}
+
+MIPS_MACHINE(ATH79_MACH_TL_WA855RE_V1, "TL-WA855RE-v1", "TP-LINK TL-WA855RE v1",
+	     tl_wa855re_v1_setup);
 
 static void  __init tl_wa860re_setup(void)
 {

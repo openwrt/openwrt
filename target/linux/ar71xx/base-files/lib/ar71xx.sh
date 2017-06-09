@@ -234,6 +234,9 @@ tplink_board_detect() {
 	"085000"*)
 		model="TP-Link TL-WA850RE"
 		;;
+	"085500"*)
+		model="TP-Link TL-WA855RE"
+		;;
 	"086000"*)
 		model="TP-Link TL-WA860RE"
 		;;
@@ -1057,6 +1060,9 @@ ar71xx_board_detect() {
 		;;
 	*"TL-WA850RE v2")
 		name="tl-wa850re-v2"
+		;;
+	*"TL-WA855RE v1")
+		name="tl-wa855re-v1"
 		;;
 	*"TL-WA860RE")
 		name="tl-wa860re"
