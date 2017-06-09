@@ -1,16 +1,14 @@
-/dts-v1/;
-
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
-	compatible = "avm,fritz3370", "lantiq,xway", "lantiq,vr9";
-	model = "Fritz!Box WLAN 3370";
+	compatible = "avm,fritz3370-rev2", "lantiq,xway", "lantiq,vr9";
+	model = "AVM Fritz!Box WLAN 3370 Rev. 2";
 
 	chosen {
-		bootargs = "console=ttyLTQ0,115200 ubi.mtd=1,512 root=/dev/mtdblock9";
+		bootargs = "console=ttyLTQ0,115200";
 	};
 
 	aliases {
@@ -27,21 +25,28 @@
 		reg = <0x0 0x8000000>;
 	};
 
+	gpio-poweroff {
+		compatible = "gpio-poweroff";
+		gpios = <&gpio 45 GPIO_ACTIVE_HIGH>;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
+
 		power {
 			label = "power";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 			linux,code = <KEY_POWER>;
 		};
-/*		wifi {
-			label = "wifi";
+
+		wifi {
+			label = "wlan";
 			gpios = <&gpio 29 GPIO_ACTIVE_HIGH>;
-			linux,code = <BTN_1>;
-		};*/
+			linux,code = <KEY_WLAN>;
+		};
 	};
 
 	gpio-leds {
@@ -52,30 +57,60 @@
 			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
+
 		power_red: power2 {
 			label = "fritz3370:red:power";
 			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
 		};
+
 		info_red {
 			label = "fritz3370:red:info";
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 		};
+
 		wifi: wifi {
 			label = "fritz3370:green:wlan";
 			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 		};
+
 		dsl: dsl {
 			label = "fritz3370:green:dsl";
 			gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
 		};
+
 		lan {
 			label = "fritz3370:green:lan";
 			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 		};
+
 		info_green: info_green {
 			label = "fritz3370:green:info";
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	usb0_vbus: regulator-usb0-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB0_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	usb1_vbus: regulator-usb1-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB1_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 };
 
@@ -85,8 +120,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0>;
-		mtd-mac-address = <&urlader 0x987>;
-		mtd-mac-address-increment = <(-2)>;
 		lantiq,switch;
 
 		ethernet@0 {
@@ -96,6 +129,7 @@
 			phy-handle = <&phy0>;
 			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		};
+
 		ethernet@1 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <1>;
@@ -103,13 +137,15 @@
 			phy-handle = <&phy1>;
 			gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
 		};
+
 		ethernet@2 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <2>;
 			phy-mode = "gmii";
 			phy-handle = <&phy11>;
 		};
-		ethernet@3 {
+
+		ethernet@4 {
 			compatible = "lantiq,xrx200-pdi-port";
 			reg = <4>;
 			phy-mode = "gmii";
@@ -127,14 +163,17 @@
 			reg = <0x0>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy1: ethernet-phy@1 {
 			reg = <0x1>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy11: ethernet-phy@11 {
 			reg = <0x11>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
+
 		phy13: ethernet-phy@13 {
 			reg = <0x13>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
@@ -159,29 +198,34 @@
 			lantiq,groups = "mdio";
 			lantiq,function = "mdio";
 		};
+
 		nand {
 			lantiq,groups = "nand cle", "nand ale",
 					"nand rd", "nand cs1", "nand rdy";
 			lantiq,function = "ebu";
 			lantiq,pull = <1>;
 		};
+
 		phy-rst {
 			lantiq,pins = "io37", "io44";
 			lantiq,pull = <0>;
 			lantiq,open-drain = <0>;
 			lantiq,output = <1>;
 		};
+
 		pcie-rst {
-			lantiq,pins = "io38";
+			lantiq,pins = "io21";
 			lantiq,pull = <0>;
 			lantiq,output = <1>;
 		};
 	};
+
 	pins_spi_default: pins_spi_default {
 		spi_in {
 			lantiq,groups = "spi_di";
 			lantiq,function = "spi";
 		};
+
 		spi_out {
 			lantiq,groups = "spi_do", "spi_clk",
 				"spi_cs4";
@@ -191,50 +235,9 @@
 	};
 };
 
-&localbus {
-	nand@1 {
-		compatible = "lantiq,nand-xway";
-		bank-width = <2>;
-		reg = <1 0x0 0x2000000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				label = "kernel";
-				reg = <0x0 0x400000>;
-			};
-
-			partition@400000 {
-				label = "rootfs_ubi";
-				reg = <0x400000 0x3000000>;
-			};
-
-			partition@3400000 {
-				label = "vr9_firmware";
-				reg = <0x3400000 0x400000>;
-			};
-			partition@3800000 {
-				label = "reserved";
-				reg = <0x3800000 0x3000000>;
-			};
-			partition@6800000 {
-				label = "config";
-				reg = <0x6800000 0x200000>;
-			};
-			partition@6a00000 {
-				label = "nand-filesystem";
-				reg = <0x6a00000 0x1600000>;
-			};
-		};
-	};
-};
-
 &pcie0 {
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
 	pcie@0 {
 		reg = <0 0 0 0 0>;
 		#interrupt-cells = <1>;
@@ -283,14 +286,20 @@
 	};
 };
 
-/*
- * TODO: add phy-supply, gpio 5 GPIO_ACTIVE_HIGH and gpio 14 GPIO_ACTIVE_HIGH are
- * related
- */
 &usb_phy0 {
 	status = "okay";
+	phy-supply = <&usb0_vbus>;
+};
+
+&usb_phy1 {
+	status = "okay";
+	phy-supply = <&usb1_vbus>;
 };
 
 &usb0 {
+	status = "okay";
+};
+
+&usb1 {
 	status = "okay";
 };
