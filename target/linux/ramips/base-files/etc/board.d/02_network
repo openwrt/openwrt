@@ -276,6 +276,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "8@eth0"
 		;;
+	tew-638apb-v2)
+		ucidef_add_switch "switch0" \
+			"4:lan" "6@eth0"
+		;;
 	tew-691gr|\
 	tew-692gr|\
 	wlr-6000)

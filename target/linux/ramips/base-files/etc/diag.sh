@@ -212,6 +212,7 @@ get_status_led() {
 		;;
 	mzk-ex300np|\
 	rt-n10-plus|\
+	tew-638apb-v2|\
 	tew-691gr|\
 	tew-692gr|\
 	ur-326n4g|\

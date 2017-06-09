@@ -651,6 +651,16 @@ define Device/sl-r7205
 endef
 TARGET_DEVICES += sl-r7205
 
+define Device/tew-638apb-v2
+  DTS := TEW-638APB-V2
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  IMAGE/sysupgrade.bin := $$(sysupgrade_bin) | umedia-header 0x026382 | \
+        append-metadata | check-size $$$$(IMAGE_SIZE)
+  DEVICE_TITLE := TRENDnet TEW-638APB v2
+endef
+TARGET_DEVICES += tew-638apb-v2
+
 define Device/tew-714tru
   DTS := TEW-714TRU
   DEVICE_TITLE := TRENDnet TEW-714TRU
