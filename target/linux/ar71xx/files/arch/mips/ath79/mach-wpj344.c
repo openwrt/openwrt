@@ -150,11 +150,9 @@ static void __init wpj344_setup(void)
 	mdiobus_register_board_info(wpj344_mdio0_info,
 					ARRAY_SIZE(wpj344_mdio0_info));
 
-	ath79_register_mdio(1, 0x0);
 	ath79_register_mdio(0, 0x0);
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac + WPJ344_MAC0_OFFSET, 0);
-	ath79_init_mac(ath79_eth1_data.mac_addr, mac + WPJ344_MAC1_OFFSET, 0);
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
 				   AR934X_ETH_CFG_SW_ONLY_MODE);
@@ -165,13 +163,7 @@ static void __init wpj344_setup(void)
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
 	ath79_eth0_pll_data.pll_1000 = 0x06000000;
 
-	/* GMAC1 is connected to the internal switch */
-	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ath79_eth1_data.speed = SPEED_1000;
-	ath79_eth1_data.duplex = DUPLEX_FULL;
-
 	ath79_register_eth(0);
-	ath79_register_eth(1);
 }
 
 MIPS_MACHINE(ATH79_MACH_WPJ344, "WPJ344", "Compex WPJ344", wpj344_setup);
