@@ -89,6 +89,16 @@ log_once() {
 		logger -t dnsmasq "$@"
 }
 
+has_handler() {
+	local file
+
+	for file in /etc/hotplug.d/dhcp/* /etc/hotplug.d/tftp/* /etc/hotplug.d/neigh/*; do
+		[ -f "$file" ] && return 0
+	done
+
+	return 1
+}
+
 append_bool() {
 	local section="$1"
 	local option="$2"
@@ -832,8 +842,10 @@ dnsmasq_start()
 	config_get_bool readethers "$cfg" readethers
 	[ "$readethers" = "1" -a \! -e "/etc/ethers" ] && touch /etc/ethers
 
-	xappend "--dhcp-script=$DHCPSCRIPT"
 	config_get user_dhcpscript $cfg dhcpscript
+	if has_handler || [ -n "$user_dhcpscript" ]; then
+		xappend "--dhcp-script=$DHCPSCRIPT"
+	fi
 
 	config_get leasefile $cfg leasefile "/tmp/dhcp.leases"
 	[ -n "$leasefile" -a \! -e "$leasefile" ] && touch "$leasefile"
