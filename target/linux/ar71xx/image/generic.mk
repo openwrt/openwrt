@@ -858,6 +858,15 @@ define Device/wpj563
 endef
 TARGET_DEVICES += wpj342 wpj344 wpj531 wpj558 wpj563
 
+define Device/wrtnode2q
+  DEVICE_TITLE := WRTnode2Q
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage
+  BOARDNAME := WRTNODE2Q
+  IMAGE_SIZE := 16064k
+  MTDPARTS := spi0.0:192k(u-boot)ro,64k(u-boot-env),64k(art)ro,16064k(firmware),16384k@0x0(fullflash)
+endef
+TARGET_DEVICES += wrtnode2q
+
 define Device/zbt-we1526
   DEVICE_TITLE := Zbtlink ZBT-WE1526
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
