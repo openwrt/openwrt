@@ -1,3 +1,5 @@
+RAMFS_COPY_BIN='/usr/bin/osafeloader /usr/bin/oseama'
+
 PART_NAME=firmware
 
 # $(1): file to read magic from
@@ -260,8 +262,6 @@ platform_pre_upgrade_seama() {
 }
 
 platform_pre_upgrade() {
-	export RAMFS_COPY_BIN="${RAMFS_COPY_BIN} /usr/bin/osafeloader /usr/bin/oseama /bin/sed"
-
 	local file_type=$(platform_identify "$1")
 
 	[ "$(platform_flash_type)" != "nand" ] && return
