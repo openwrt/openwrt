@@ -18,11 +18,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-index 86cffee6876a..8585cdc3de53 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8145,9 +8145,11 @@ static void rt2800_init_rfcsr_6352(struct rt2x00_dev *rt2x00dev)
+@@ -8145,9 +8145,11 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 44, 0xB3);
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 45, 0xD5);
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 46, 0x27);
@@ -36,6 +34,3 @@ index 86cffee6876a..8585cdc3de53 100644
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 55, 0x66);
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 56, 0xFF);
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 57, 0x1C);
--- 
-2.12.2
-

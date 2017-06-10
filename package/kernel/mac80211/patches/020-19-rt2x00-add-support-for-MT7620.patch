@@ -19,8 +19,6 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  drivers/net/wireless/ralink/rt2x00/rt2x00.h    |    1 +
  5 files changed, 1578 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/Kconfig b/drivers/net/wireless/ralink/rt2x00/Kconfig
-index de62f5dcb62f..a1d1cfe214d2 100644
 --- a/drivers/net/wireless/ralink/rt2x00/Kconfig
 +++ b/drivers/net/wireless/ralink/rt2x00/Kconfig
 @@ -210,7 +210,7 @@ endif
@@ -32,8 +30,6 @@ index de62f5dcb62f..a1d1cfe214d2 100644
  	select RT2X00_LIB_SOC
  	select RT2X00_LIB_MMIO
  	select RT2X00_LIB_CRYPTO
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800.h b/drivers/net/wireless/ralink/rt2x00/rt2800.h
-index fd1dbd956bad..6a8c93fb6a43 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
 @@ -79,6 +79,7 @@
@@ -376,8 +372,6 @@ index fd1dbd956bad..6a8c93fb6a43 100644
  	EEPROM_TSSI_BOUND_A1,
  	EEPROM_TSSI_BOUND_A2,
  	EEPROM_TSSI_BOUND_A3,
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-index 8d00c599e47a..201b12ed90c6 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -59,6 +59,9 @@
@@ -390,7 +384,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  #define WAIT_FOR_RF(__dev, __reg) \
  	rt2800_regbusy_read((__dev), RF_CSR_CFG0, RF_CSR_CFG0_BUSY, (__reg))
  #define WAIT_FOR_MCU(__dev, __reg) \
-@@ -150,19 +153,56 @@ static void rt2800_rfcsr_write(struct rt2x00_dev *rt2x00dev,
+@@ -150,19 +153,56 @@ static void rt2800_rfcsr_write(struct rt
  	 * Wait until the RFCSR becomes available, afterwards we
  	 * can safely write the new data into the register.
  	 */
@@ -413,8 +407,7 @@ index 8d00c599e47a..201b12ed90c6 100644
 +			rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
 +		}
 +		break;
- 
--		rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
++
 +	default:
 +		if (WAIT_FOR_RFCSR(rt2x00dev, &reg)) {
 +			reg = 0;
@@ -422,7 +415,8 @@ index 8d00c599e47a..201b12ed90c6 100644
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_REGNUM, word);
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_WRITE, 1);
 +			rt2x00_set_field32(&reg, RF_CSR_CFG_BUSY, 1);
-+
+ 
+-		rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
 +			rt2800_register_write_lock(rt2x00dev, RF_CSR_CFG, reg);
 +		}
 +		break;
@@ -454,7 +448,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  static void rt2800_rfcsr_read(struct rt2x00_dev *rt2x00dev,
  			      const unsigned int word, u8 *value)
  {
-@@ -178,22 +218,48 @@ static void rt2800_rfcsr_read(struct rt2x00_dev *rt2x00dev,
+@@ -178,22 +218,48 @@ static void rt2800_rfcsr_read(struct rt2
  	 * doesn't become available in time, reg will be 0xffffffff
  	 * which means we return 0xff to the caller.
  	 */
@@ -479,11 +473,11 @@ index 8d00c599e47a..201b12ed90c6 100644
 -	}
 +			WAIT_FOR_RFCSR_MT7620(rt2x00dev, &reg);
 +		}
- 
--	*value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA);
++
 +		*value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA_MT7620);
 +		break;
-+
+ 
+-	*value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA);
 +	default:
 +		if (WAIT_FOR_RFCSR(rt2x00dev, &reg)) {
 +			reg = 0;
@@ -512,7 +506,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  static void rt2800_rf_write(struct rt2x00_dev *rt2x00dev,
  			    const unsigned int word, const u32 value)
  {
-@@ -250,6 +316,7 @@ static const unsigned int rt2800_eeprom_map[EEPROM_WORD_COUNT] = {
+@@ -250,6 +316,7 @@ static const unsigned int rt2800_eeprom_
  	[EEPROM_TSSI_BOUND_BG5]		= 0x003b,
  	[EEPROM_TXPOWER_A1]		= 0x003c,
  	[EEPROM_TXPOWER_A2]		= 0x0053,
@@ -520,7 +514,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  	[EEPROM_TSSI_BOUND_A1]		= 0x006a,
  	[EEPROM_TSSI_BOUND_A2]		= 0x006b,
  	[EEPROM_TSSI_BOUND_A3]		= 0x006c,
-@@ -524,6 +591,7 @@ void rt2800_get_txwi_rxwi_size(struct rt2x00_dev *rt2x00dev,
+@@ -524,6 +591,7 @@ void rt2800_get_txwi_rxwi_size(struct rt
  		break;
  
  	case RT5592:
@@ -528,7 +522,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  		*txwi_size = TXWI_DESC_SIZE_5WORDS;
  		*rxwi_size = RXWI_DESC_SIZE_6WORDS;
  		break;
-@@ -2810,7 +2878,8 @@ static void rt2800_config_channel_rf53xx(struct rt2x00_dev *rt2x00dev,
+@@ -2810,7 +2878,8 @@ static void rt2800_config_channel_rf53xx
  				rt2800_rfcsr_write(rt2x00dev, 59,
  						   r59_nonbt_rev[idx]);
  			} else if (rt2x00_rt(rt2x00dev, RT5390) ||
@@ -538,7 +532,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  				static const char r59_non_bt[] = {0x8f, 0x8f,
  					0x8f, 0x8f, 0x8f, 0x8f, 0x8f, 0x8d,
  					0x8a, 0x88, 0x88, 0x87, 0x87, 0x86};
-@@ -3104,6 +3173,242 @@ static void rt2800_config_channel_rf55xx(struct rt2x00_dev *rt2x00dev,
+@@ -3104,6 +3173,242 @@ static void rt2800_config_channel_rf55xx
  	rt2800_bbp_write(rt2x00dev, 196, (rf->channel <= 14) ? 0x19 : 0x7F);
  }
  
@@ -781,7 +775,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  static void rt2800_bbp_write_with_rx_chain(struct rt2x00_dev *rt2x00dev,
  					   const unsigned int word,
  					   const u8 value)
-@@ -3228,7 +3533,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -3228,7 +3533,7 @@ static void rt2800_config_channel(struct
  				  struct channel_info *info)
  {
  	u32 reg;
@@ -790,7 +784,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  	u8 bbp, rfcsr;
  
  	info->default_power1 = rt2800_txpower_to_dev(rt2x00dev, rf->channel,
-@@ -3273,6 +3578,9 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -3273,6 +3578,9 @@ static void rt2800_config_channel(struct
  	case RF5592:
  		rt2800_config_channel_rf55xx(rt2x00dev, conf, rf, info);
  		break;
@@ -800,7 +794,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  	default:
  		rt2800_config_channel_rf2xxx(rt2x00dev, conf, rf, info);
  	}
-@@ -3347,7 +3655,8 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -3347,7 +3655,8 @@ static void rt2800_config_channel(struct
  
  	if (rf->channel <= 14) {
  		if (!rt2x00_rt(rt2x00dev, RT5390) &&
@@ -810,7 +804,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  			if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {
  				rt2800_bbp_write(rt2x00dev, 82, 0x62);
  				rt2800_bbp_write(rt2x00dev, 75, 0x46);
-@@ -3367,7 +3676,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -3367,7 +3676,7 @@ static void rt2800_config_channel(struct
  			rt2800_bbp_write(rt2x00dev, 82, 0x94);
  		else if (rt2x00_rt(rt2x00dev, RT3593))
  			rt2800_bbp_write(rt2x00dev, 82, 0x82);
@@ -819,7 +813,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  			rt2800_bbp_write(rt2x00dev, 82, 0xf2);
  
  		if (rt2x00_rt(rt2x00dev, RT3593))
-@@ -3388,7 +3697,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -3388,7 +3697,7 @@ static void rt2800_config_channel(struct
  	if (rt2x00_rt(rt2x00dev, RT3572))
  		rt2800_rfcsr_write(rt2x00dev, 8, 0);
  
@@ -828,7 +822,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  
  	switch (rt2x00dev->default_ant.tx_chain_num) {
  	case 3:
-@@ -3437,6 +3746,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -3437,6 +3746,7 @@ static void rt2800_config_channel(struct
  
  	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_RFTR_EN, 1);
  	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_TRSW_EN, 1);
@@ -836,7 +830,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  
  	rt2800_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
  
-@@ -3495,7 +3805,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
+@@ -3495,7 +3805,7 @@ static void rt2800_config_channel(struct
  		usleep_range(1000, 1500);
  	}
  
@@ -845,7 +839,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  		rt2800_bbp_write(rt2x00dev, 195, 141);
  		rt2800_bbp_write(rt2x00dev, 196, conf_is_ht40(conf) ? 0x10 : 0x1a);
  
-@@ -4182,6 +4492,128 @@ static void rt2800_config_txpower_rt3593(struct rt2x00_dev *rt2x00dev,
+@@ -4182,6 +4492,128 @@ static void rt2800_config_txpower_rt3593
  			   (unsigned long) regs[i]);
  }
  
@@ -974,7 +968,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  /*
   * We configure transmit power using MAC TX_PWR_CFG_{0,...,N} registers and
   * BBP R1 register. TX_PWR_CFG_X allow to configure per rate TX power values,
-@@ -4378,6 +4810,8 @@ static void rt2800_config_txpower(struct rt2x00_dev *rt2x00dev,
+@@ -4378,6 +4810,8 @@ static void rt2800_config_txpower(struct
  {
  	if (rt2x00_rt(rt2x00dev, RT3593))
  		rt2800_config_txpower_rt3593(rt2x00dev, chan, power_level);
@@ -983,7 +977,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  	else
  		rt2800_config_txpower_rt28xx(rt2x00dev, chan, power_level);
  }
-@@ -4393,6 +4827,7 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
+@@ -4393,6 +4827,7 @@ void rt2800_vco_calibration(struct rt2x0
  {
  	u32	tx_pin;
  	u8	rfcsr;
@@ -991,7 +985,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  
  	/*
  	 * A voltage-controlled oscillator(VCO) is an electronic oscillator
-@@ -4431,6 +4866,15 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
+@@ -4431,6 +4866,15 @@ void rt2800_vco_calibration(struct rt2x0
  		rt2800_rfcsr_read(rt2x00dev, 3, &rfcsr);
  		rt2x00_set_field8(&rfcsr, RFCSR3_VCOCAL_EN, 1);
  		rt2800_rfcsr_write(rt2x00dev, 3, rfcsr);
@@ -1007,7 +1001,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  		break;
  	default:
  		WARN_ONCE(1, "Not supported RF chipet %x for VCO recalibration",
-@@ -4438,7 +4882,8 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
+@@ -4438,7 +4882,8 @@ void rt2800_vco_calibration(struct rt2x0
  		return;
  	}
  
@@ -1017,7 +1011,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  
  	rt2800_register_read(rt2x00dev, TX_PIN_CFG, &tx_pin);
  	if (rt2x00dev->rf_channel <= 14) {
-@@ -4470,6 +4915,42 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
+@@ -4470,6 +4915,42 @@ void rt2800_vco_calibration(struct rt2x0
  	}
  	rt2800_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
  
@@ -1060,7 +1054,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  }
  EXPORT_SYMBOL_GPL(rt2800_vco_calibration);
  
-@@ -4568,7 +5049,8 @@ static u8 rt2800_get_default_vgc(struct rt2x00_dev *rt2x00dev)
+@@ -4568,7 +5049,8 @@ static u8 rt2800_get_default_vgc(struct
  		    rt2x00_rt(rt2x00dev, RT3593) ||
  		    rt2x00_rt(rt2x00dev, RT5390) ||
  		    rt2x00_rt(rt2x00dev, RT5392) ||
@@ -1070,7 +1064,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  			vgc = 0x1c + (2 * rt2x00dev->lna_gain);
  		else
  			vgc = 0x2e + rt2x00dev->lna_gain;
-@@ -4795,7 +5277,8 @@ static int rt2800_init_registers(struct rt2x00_dev *rt2x00dev)
+@@ -4795,7 +5277,8 @@ static int rt2800_init_registers(struct
  					      0x00000000);
  		}
  	} else if (rt2x00_rt(rt2x00dev, RT5390) ||
@@ -1080,7 +1074,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
-@@ -4805,6 +5288,24 @@ static int rt2800_init_registers(struct rt2x00_dev *rt2x00dev)
+@@ -4805,6 +5288,24 @@ static int rt2800_init_registers(struct
  		rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
  	} else if (rt2x00_rt(rt2x00dev, RT5350)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
@@ -1105,7 +1099,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  	} else {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000000);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
-@@ -5786,6 +6287,231 @@ static void rt2800_init_bbp_5592(struct rt2x00_dev *rt2x00dev)
+@@ -5786,6 +6287,231 @@ static void rt2800_init_bbp_5592(struct
  		rt2800_bbp_write(rt2x00dev, 103, 0xc0);
  }
  
@@ -1337,7 +1331,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  static void rt2800_init_bbp(struct rt2x00_dev *rt2x00dev)
  {
  	unsigned int i;
-@@ -5830,6 +6556,9 @@ static void rt2800_init_bbp(struct rt2x00_dev *rt2x00dev)
+@@ -5830,6 +6556,9 @@ static void rt2800_init_bbp(struct rt2x0
  	case RT5592:
  		rt2800_init_bbp_5592(rt2x00dev);
  		return;
@@ -1347,7 +1341,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  	}
  
  	for (i = 0; i < EEPROM_BBP_SIZE; i++) {
-@@ -6901,6 +7630,615 @@ static void rt2800_init_rfcsr_5592(struct rt2x00_dev *rt2x00dev)
+@@ -6901,6 +7630,615 @@ static void rt2800_init_rfcsr_5592(struc
  	rt2800_led_open_drain_enable(rt2x00dev);
  }
  
@@ -1963,7 +1957,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  static void rt2800_init_rfcsr(struct rt2x00_dev *rt2x00dev)
  {
  	if (rt2800_is_305x_soc(rt2x00dev)) {
-@@ -6941,6 +8279,9 @@ static void rt2800_init_rfcsr(struct rt2x00_dev *rt2x00dev)
+@@ -6941,6 +8279,9 @@ static void rt2800_init_rfcsr(struct rt2
  	case RT5592:
  		rt2800_init_rfcsr_5592(rt2x00dev);
  		break;
@@ -1973,7 +1967,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  	}
  }
  
-@@ -7307,7 +8648,8 @@ static int rt2800_init_eeprom(struct rt2x00_dev *rt2x00dev)
+@@ -7307,7 +8648,8 @@ static int rt2800_init_eeprom(struct rt2
  	 */
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
  	    rt2x00_rt(rt2x00dev, RT5390) ||
@@ -1983,7 +1977,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
  	else if (rt2x00_rt(rt2x00dev, RT3352))
  		rf = RF3322;
-@@ -7339,6 +8681,7 @@ static int rt2800_init_eeprom(struct rt2x00_dev *rt2x00dev)
+@@ -7339,6 +8681,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF5390:
  	case RF5392:
  	case RF5592:
@@ -1991,7 +1985,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  		break;
  	default:
  		rt2x00_err(rt2x00dev, "Invalid RF chipset 0x%04x detected\n",
-@@ -7746,6 +9089,23 @@ static const struct rf_channel rf_vals_5592_xtal40[] = {
+@@ -7746,6 +9089,23 @@ static const struct rf_channel rf_vals_5
  	{196, 83, 0, 12, 1},
  };
  
@@ -2015,7 +2009,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  {
  	struct hw_mode_spec *spec = &rt2x00dev->spec;
-@@ -7849,6 +9209,11 @@ static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
+@@ -7849,6 +9209,11 @@ static int rt2800_probe_hw_mode(struct r
  			spec->channels = rf_vals_3x;
  		break;
  
@@ -2027,7 +2021,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  	case RF3052:
  	case RF3053:
  		spec->num_channels = ARRAY_SIZE(rf_vals_3x);
-@@ -7980,6 +9345,7 @@ static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
+@@ -7980,6 +9345,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5390:
  	case RF5392:
  	case RF5592:
@@ -2035,7 +2029,7 @@ index 8d00c599e47a..201b12ed90c6 100644
  		__set_bit(CAPABILITY_VCO_RECALIBRATION, &rt2x00dev->cap_flags);
  		break;
  	}
-@@ -8024,6 +9390,9 @@ static int rt2800_probe_rt(struct rt2x00_dev *rt2x00dev)
+@@ -8024,6 +9390,9 @@ static int rt2800_probe_rt(struct rt2x00
  		return -ENODEV;
  	}
  
@@ -2045,8 +2039,6 @@ index 8d00c599e47a..201b12ed90c6 100644
  	rt2x00_set_rt(rt2x00dev, rt, rev);
  
  	return 0;
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
-index d9ef260d542a..f357531d9488 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 @@ -33,6 +33,10 @@
@@ -2060,8 +2052,6 @@ index d9ef260d542a..f357531d9488 100644
  	u8 bbp25;
  	u8 bbp26;
  	u8 txmixer_gain_24g;
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00.h b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-index ce340bfd71a0..8fdd2f9726ee 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 @@ -174,6 +174,7 @@ struct rt2x00_chip {
@@ -2072,6 +2062,3 @@ index ce340bfd71a0..8fdd2f9726ee 100644
  
  	u16 rf;
  	u16 rev;
--- 
-2.12.1
-

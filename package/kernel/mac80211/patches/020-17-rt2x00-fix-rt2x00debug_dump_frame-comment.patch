@@ -10,11 +10,9 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  drivers/net/wireless/ralink/rt2x00/rt2x00.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00.h b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-index 91ba10fdf732..ce340bfd71a0 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-@@ -1396,7 +1396,7 @@ void rt2x00queue_flush_queues(struct rt2x00_dev *rt2x00dev, bool drop);
+@@ -1396,7 +1396,7 @@ void rt2x00queue_flush_queues(struct rt2
   * rt2x00debug_dump_frame - Dump a frame to userspace through debugfs.
   * @rt2x00dev: Pointer to &struct rt2x00_dev.
   * @type: The type of frame that is being dumped.
@@ -23,6 +21,3 @@ index 91ba10fdf732..ce340bfd71a0 100644
   */
  #ifdef CPTCFG_RT2X00_LIB_DEBUGFS
  void rt2x00debug_dump_frame(struct rt2x00_dev *rt2x00dev,
--- 
-2.12.1
-

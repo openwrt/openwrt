@@ -21,8 +21,6 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  drivers/net/wireless/ralink/rt2x00/rt2800lib.h | 23 +++++++++++++++++++++++
  2 files changed, 23 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800.h b/drivers/net/wireless/ralink/rt2x00/rt2800.h
-index 256496bfbafb..0e7051d8132f 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
 @@ -2987,29 +2987,4 @@ enum rt2800_eeprom_word {
@@ -55,8 +53,6 @@ index 256496bfbafb..0e7051d8132f 100644
 -};
 -
  #endif /* RT2800_H */
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
-index 0a8b4df665fe..8e1ae138c3f1 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 @@ -20,6 +20,29 @@
@@ -89,6 +85,3 @@ index 0a8b4df665fe..8e1ae138c3f1 100644
  struct rt2800_ops {
  	void (*register_read)(struct rt2x00_dev *rt2x00dev,
  			      const unsigned int offset, u32 *value);
--- 
-2.12.1
-

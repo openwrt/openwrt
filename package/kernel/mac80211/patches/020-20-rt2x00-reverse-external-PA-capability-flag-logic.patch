@@ -16,11 +16,9 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  drivers/net/wireless/ralink/rt2x00/rt2x00.h    |  4 +--
  2 files changed, 22 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-index 201b12ed90c6..ba06ac2d876d 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -7014,9 +7014,9 @@ static void rt2800_init_rfcsr_3290(struct rt2x00_dev *rt2x00dev)
+@@ -7014,9 +7014,9 @@ static void rt2800_init_rfcsr_3290(struc
  
  static void rt2800_init_rfcsr_3352(struct rt2x00_dev *rt2x00dev)
  {
@@ -32,7 +30,7 @@ index 201b12ed90c6..ba06ac2d876d 100644
  				  &rt2x00dev->cap_flags);
  	u8 rfcsr;
  
-@@ -7056,9 +7056,9 @@ static void rt2800_init_rfcsr_3352(struct rt2x00_dev *rt2x00dev)
+@@ -7056,9 +7056,9 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 32, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 33, 0x00);
  	rfcsr = 0x01;
@@ -44,7 +42,7 @@ index 201b12ed90c6..ba06ac2d876d 100644
  		rt2x00_set_field8(&rfcsr, RFCSR34_TX1_EXT_PA, 1);
  	rt2800_rfcsr_write(rt2x00dev, 34, rfcsr);
  	rt2800_rfcsr_write(rt2x00dev, 35, 0x03);
-@@ -7068,13 +7068,13 @@ static void rt2800_init_rfcsr_3352(struct rt2x00_dev *rt2x00dev)
+@@ -7068,13 +7068,13 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 39, 0xc5);
  	rt2800_rfcsr_write(rt2x00dev, 40, 0x33);
  	rfcsr = 0x52;
@@ -60,7 +58,7 @@ index 201b12ed90c6..ba06ac2d876d 100644
  		rt2x00_set_field8(&rfcsr, RFCSR42_BIT1, 1);
  		rt2x00_set_field8(&rfcsr, RFCSR42_BIT4, 1);
  	}
-@@ -7087,19 +7087,19 @@ static void rt2800_init_rfcsr_3352(struct rt2x00_dev *rt2x00dev)
+@@ -7087,19 +7087,19 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 48, 0x14);
  	rt2800_rfcsr_write(rt2x00dev, 49, 0x00);
  	rfcsr = 0x2d;
@@ -90,7 +88,7 @@ index 201b12ed90c6..ba06ac2d876d 100644
  	rt2800_rfcsr_write(rt2x00dev, 59, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 60, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 61, 0x00);
-@@ -8782,13 +8782,13 @@ static int rt2800_init_eeprom(struct rt2x00_dev *rt2x00dev)
+@@ -8782,13 +8782,13 @@ static int rt2800_init_eeprom(struct rt2
  	rt2800_eeprom_read(rt2x00dev, EEPROM_NIC_CONF1, &eeprom);
  
  	if (rt2x00_rt(rt2x00dev, RT3352)) {
@@ -108,8 +106,6 @@ index 201b12ed90c6..ba06ac2d876d 100644
  			      &rt2x00dev->cap_flags);
  	}
  
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00.h b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-index 8fdd2f9726ee..1bc353eafe37 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 @@ -719,8 +719,8 @@ enum rt2x00_capability_flags {
@@ -123,6 +119,3 @@ index 8fdd2f9726ee..1bc353eafe37 100644
  };
  
  /*
--- 
-2.12.2
-

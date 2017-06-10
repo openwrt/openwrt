@@ -73,11 +73,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 [daniel@makrotopia.org: fixed white-space so patch applies]
 ---
 
-Index: compat-wireless-2017-01-31/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-===================================================================
---- compat-wireless-2017-01-31.orig/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-+++ compat-wireless-2017-01-31/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -4137,38 +4137,22 @@ static void rt2800_config_channel(struct
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -4127,38 +4127,22 @@ static void rt2800_config_channel(struct
  			reg |= 0x00000101;
  			rt2800_register_write(rt2x00dev, RF_BYPASS3, reg);
  

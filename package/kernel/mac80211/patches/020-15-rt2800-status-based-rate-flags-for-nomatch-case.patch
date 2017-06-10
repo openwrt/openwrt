@@ -17,8 +17,6 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 35 +++++++++++++++++++++++++-
  2 files changed, 36 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800.h b/drivers/net/wireless/ralink/rt2x00/rt2800.h
-index 0e7051d8132f..480b08601785 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
 @@ -1760,6 +1760,8 @@
@@ -30,11 +28,9 @@ index 0e7051d8132f..480b08601785 100644
  #define TX_STA_FIFO_PHYMODE		FIELD32(0xc0000000)
  
  /*
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-index 4a7bec708a13..8d00c599e47a 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -852,6 +852,39 @@ void rt2800_process_rxwi(struct queue_entry *entry,
+@@ -852,6 +852,39 @@ void rt2800_process_rxwi(struct queue_en
  }
  EXPORT_SYMBOL_GPL(rt2800_process_rxwi);
  
@@ -74,7 +70,7 @@ index 4a7bec708a13..8d00c599e47a 100644
  void rt2800_txdone_entry(struct queue_entry *entry, u32 status, __le32 *txwi,
  			 bool match)
  {
-@@ -898,7 +931,7 @@ void rt2800_txdone_entry(struct queue_entry *entry, u32 status, __le32 *txwi,
+@@ -898,7 +931,7 @@ void rt2800_txdone_entry(struct queue_en
  	 * and provide retry count.
   	 */
  	if (unlikely((aggr == 1 && ampdu == 0 && real_mcs != mcs)) || !match) {
@@ -83,6 +79,3 @@ index 4a7bec708a13..8d00c599e47a 100644
  		mcs = real_mcs;
  	}
  
--- 
-2.12.1
-

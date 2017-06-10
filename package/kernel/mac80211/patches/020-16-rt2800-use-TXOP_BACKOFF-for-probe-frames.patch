@@ -14,11 +14,9 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  drivers/net/wireless/ralink/rt2x00/rt2x00queue.c | 7 ++++---
  1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
-index e1660b92b20c..a2c1ca5c76d1 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00queue.c
-@@ -372,15 +372,16 @@ static void rt2x00queue_create_tx_descriptor_ht(struct rt2x00_dev *rt2x00dev,
+@@ -372,15 +372,16 @@ static void rt2x00queue_create_tx_descri
  
  	/*
  	 * Determine IFS values
@@ -38,6 +36,3 @@ index e1660b92b20c..a2c1ca5c76d1 100644
  		txdesc->u.ht.txop = TXOP_BACKOFF;
  	else if (!(tx_info->flags & IEEE80211_TX_CTL_FIRST_FRAGMENT))
  		txdesc->u.ht.txop = TXOP_SIFS;
--- 
-2.12.1
-

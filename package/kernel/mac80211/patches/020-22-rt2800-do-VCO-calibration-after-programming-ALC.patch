@@ -16,11 +16,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-index 7135519a638c..870bf315f98b 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -3407,6 +3407,8 @@ static void rt2800_config_alc(struct rt2x00_dev *rt2x00dev,
+@@ -3407,6 +3407,8 @@ static void rt2800_config_alc(struct rt2
  			rt2800_rfcsr_write(rt2x00dev, 42, 0x5b);
  	}
  	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, mac_sys_ctrl);
@@ -29,6 +27,3 @@ index 7135519a638c..870bf315f98b 100644
  }
  
  static void rt2800_bbp_write_with_rx_chain(struct rt2x00_dev *rt2x00dev,
--- 
-2.12.2
-

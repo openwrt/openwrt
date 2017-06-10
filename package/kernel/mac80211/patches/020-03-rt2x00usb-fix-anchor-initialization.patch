@@ -36,11 +36,9 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  drivers/net/wireless/ralink/rt2x00/rt2x00usb.c | 13 ++++++++-----
  1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00usb.c b/drivers/net/wireless/ralink/rt2x00/rt2x00usb.c
-index fe13dd07cc2a..c696f0ad6a68 100644
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00usb.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00usb.c
-@@ -825,10 +825,6 @@ int rt2x00usb_probe(struct usb_interface *usb_intf,
+@@ -825,10 +825,6 @@ int rt2x00usb_probe(struct usb_interface
  	if (retval)
  		goto exit_free_device;
  
@@ -51,7 +49,7 @@ index fe13dd07cc2a..c696f0ad6a68 100644
  	rt2x00dev->anchor = devm_kmalloc(&usb_dev->dev,
  					sizeof(struct usb_anchor),
  					GFP_KERNEL);
-@@ -836,10 +832,17 @@ int rt2x00usb_probe(struct usb_interface *usb_intf,
+@@ -836,10 +832,17 @@ int rt2x00usb_probe(struct usb_interface
  		retval = -ENOMEM;
  		goto exit_free_reg;
  	}
@@ -70,6 +68,3 @@ index fe13dd07cc2a..c696f0ad6a68 100644
  exit_free_reg:
  	rt2x00usb_free_reg(rt2x00dev);
  
--- 
-2.12.1
-
