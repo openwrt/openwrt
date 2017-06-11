@@ -113,7 +113,7 @@ static ssize_t led_device_name_store(struct device *dev,
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct led_netdev_data *trigger_data = led_cdev->trigger_data;
 
-	if (size < 0 || size >= IFNAMSIZ)
+	if (size >= IFNAMSIZ)
 		return -EINVAL;
 
 	cancel_delayed_work_sync(&trigger_data->work);
