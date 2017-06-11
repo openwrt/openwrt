@@ -111,8 +111,8 @@
 +
 +	BUG_ON(!soc_is_ar933x() && !soc_is_ar934x());
 +	base = ioremap_nocache(AR93XX_WMAC_BASE, AR93XX_WMAC_SIZE);
-+	while (addr > sizeof(hdr)) {
-+		if (!ar93xx_wmac_otp_read(base, addr, hdr, sizeof(hdr)))
++	while (addr > sizeof(hdr_u32)) {
++		if (!ar93xx_wmac_otp_read(base, addr, hdr, sizeof(hdr_u32)))
 +			break;
 +
 +		if (hdr_u32 == 0 || hdr_u32 == ~0)
