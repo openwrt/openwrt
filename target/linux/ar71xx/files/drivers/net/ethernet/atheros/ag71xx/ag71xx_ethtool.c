@@ -86,7 +86,7 @@ static int ag71xx_ethtool_set_ringparam(struct net_device *dev,
 	struct ag71xx *ag = netdev_priv(dev);
 	unsigned tx_size;
 	unsigned rx_size;
-	int err;
+	int err = 0;
 
 	if (er->rx_mini_pending != 0||
 	    er->rx_jumbo_pending != 0 ||
