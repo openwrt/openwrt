@@ -234,7 +234,7 @@ static int ag71xx_mdio_probe(struct platform_device *pdev)
 	if (!res) {
 		dev_err(&pdev->dev, "no iomem resource found\n");
 		err = -ENXIO;
-		goto err_out;
+		goto err_free_mdio;
 	}
 
 	am->mdio_base = ioremap_nocache(res->start, res->end - res->start + 1);
