@@ -963,7 +963,7 @@ ar7240_get_port_link(struct switch_dev *dev, int port,
 	struct mii_bus *mii = as->mii_bus;
 	u32 status;
 
-	if (port > AR7240_NUM_PORTS)
+	if (port >= AR7240_NUM_PORTS)
 		return -EINVAL;
 
 	status = ar7240sw_reg_read(mii, AR7240_REG_PORT_STATUS(port));
@@ -1000,7 +1000,7 @@ ar7240_get_port_stats(struct switch_dev *dev, int port,
 {
 	struct ar7240sw *as = sw_to_ar7240(dev);
 
-	if (port > AR7240_NUM_PORTS)
+	if (port >= AR7240_NUM_PORTS)
 		return -EINVAL;
 
 	ar7240sw_capture_stats(as);
