@@ -754,7 +754,7 @@ define Device/tl-wr710n-v2
   $(Device/tplink-4mlzma)
   DEVICE_TITLE := TP-LINK TL-WR710N v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-  BOARDNAME := TL-WR710N v2
+  BOARDNAME := TL-WR710N
   DEVICE_PROFILE := TLWR710
   TPLINK_HWID := 0x07100002
   CONSOLE := ttyATH0,115200
@@ -764,7 +764,7 @@ define Device/tl-wr710n-v2.1
   $(Device/tplink-8mlzma)
   DEVICE_TITLE := TP-LINK TL-WR710N v2.1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-  BOARDNAME := TL-WR710N v2.1
+  BOARDNAME := TL-WR710N
   DEVICE_PROFILE := TLWR710
   TPLINK_HWID := 0x07100002
   TPLINK_HWREV := 0x00000002
