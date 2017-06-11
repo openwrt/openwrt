@@ -893,7 +893,7 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 	default:
 		pr_debug("invalid type in attribute\n");
 		err = -EINVAL;
-		goto error;
+		goto nla_put_failure;
 	}
 	genlmsg_end(msg, hdr);
 	err = msg->len;
