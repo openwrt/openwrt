@@ -43,7 +43,10 @@ preinit_config_switch() {
 			json_select ..
 
 			if [ "$device" = "$lan_if" ]; then
-				swconfig dev $name set reset $reset
+				if [ "$reset" -eq "1" ]; then
+					swconfig dev $name set reset
+				fi
+
 				swconfig dev $name set enable_vlan $enable
 				swconfig dev $name vlan $role set ports "$ports"
 				swconfig dev $name set apply
