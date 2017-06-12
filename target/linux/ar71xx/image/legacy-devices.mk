@@ -167,12 +167,6 @@ define LegacyDevice/WLR8100
 endef
 LEGACY_DEVICES += WLR8100
 
-define LegacyDevice/YUN_8M
-  DEVICE_TITLE := Arduino Yun based on Atheros AR9331 (8MB flash)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
-endef
-LEGACY_DEVICES += YUN_8M
-
 define LegacyDevice/YUN_16M
   DEVICE_TITLE := Arduino Yun based on Atheros AR9331 (16MB flash)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
