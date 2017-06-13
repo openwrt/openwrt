@@ -632,6 +632,16 @@ sub gen_version_filtered_list() {
 	}
 }
 
+sub gen_usergroup_list() {
+	parse_package_metadata($ARGV[0]) or exit 1;
+	for my $name (keys %usernames) {
+		print "user $name $usernames{$name}{id} $usernames{$name}{makefile}\n";
+	}
+	for my $name (keys %groupnames) {
+		print "group $name $groupnames{$name}{id} $groupnames{$name}{makefile}\n";
+	}
+}
+
 sub parse_command() {
 	GetOptions("ignore=s", \@ignore);
 	my $cmd = shift @ARGV;
@@ -643,6 +653,7 @@ sub parse_command() {
 		/^subdirs$/ and return gen_package_subdirs();
 		/^license$/ and return gen_package_license(0);
 		/^licensefull$/ and return gen_package_license(1);
+		/^usergroup$/ and return gen_usergroup_list();
 		/^version_filter$/ and return gen_version_filtered_list();
 	}
 	die <<EOF
@@ -654,6 +665,7 @@ Available Commands:
 	$0 subdirs [file]			Package subdir information in makefile format
 	$0 license [file] 			Package license information
 	$0 licensefull [file] 			Package license information (full list)
+	$0 usergroup [file]			Package usergroup allocation list
 	$0 version_filter [patchver] [list...]	Filter list of version tagged strings
 
 Options:

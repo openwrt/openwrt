@@ -2,7 +2,7 @@ package metadata;
 use base 'Exporter';
 use strict;
 use warnings;
-our @EXPORT = qw(%package %srcpackage %category %subdir %preconfig %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore);
+our @EXPORT = qw(%package %srcpackage %category %subdir %preconfig %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore %usernames %groupnames);
 
 our %package;
 our %preconfig;
@@ -12,6 +12,11 @@ our %subdir;
 our %features;
 our %overrides;
 our @ignore;
+
+our %usernames;
+our %groupnames;
+our %userids;
+our %groupids;
 
 sub get_multiline {
 	my $fh = shift;
@@ -29,6 +34,58 @@ sub confstr($) {
 	my $conf = shift;
 	$conf =~ tr#/\.\-/#___#;
 	return $conf;
+}
+
+sub parse_package_metadata_usergroup($$$$$) {
+	my $makefile = shift;
+	my $typename = shift;
+	my $names = shift;
+	my $ids = shift;
+	my $spec = shift;
+	my $name;
+	my $id;
+
+	# the regex for name is taken from is_valid_name() of package shadow
+	if ($spec =~ /^([a-z_][a-z0-9_-]*\$?)$/) {
+		$name = $spec;
+		$id = -1;
+	} elsif ($spec =~ /^([a-z_][a-z0-9_-]*\$?)=(\d+)$/) {
+		$name = $1;
+		$id = $2;
+	} else {
+		warn "$makefile: invalid $typename spec $spec\n";
+		return 0;
+	}
+
+	if ($id =~ /^[1-9]\d*$/) {
+		if ($id >= 65536) {
+			warn "$makefile: $typename $name id $id >= 65536";
+			return 0;
+		}
+		if (not exists $ids->{$id}) {
+			$ids->{$id} = {
+				name => $name,
+				makefile => $makefile,
+			};
+		} elsif ($ids->{$id}{name} ne $name) {
+			warn "$makefile: $typename $name id $id is already taken by $ids->{$id}{makefile}\n";
+			return 0;
+		}
+	} elsif ($id != -1) {
+		warn "$makefile: $typename $name has invalid id $id\n";
+		return 0;
+	}
+
+	if (not exists $names->{$name}) {
+		$names->{$name} = {
+			id => $id,
+			makefile => $makefile,
+		};
+	} elsif ($names->{$name}{id} != $id) {
+		warn "$makefile: id of $typename $name collides with that defined defined in $names->{$name}{makefile}\n";
+		return 0;
+	}
+	return 1;
 }
 
 sub parse_target_metadata($) {
@@ -128,6 +185,8 @@ sub clear_packages() {
 	%category = ();
 	%features = ();
 	%overrides = ();
+	%usernames = ();
+	%groupnames = ();
 }
 
 sub parse_package_metadata($) {
@@ -262,6 +321,17 @@ sub parse_package_metadata($) {
 		/^Preconfig-Type:\s*(.*?)\s*$/ and $preconfig->{type} = $1;
 		/^Preconfig-Label:\s*(.*?)\s*$/ and $preconfig->{label} = $1;
 		/^Preconfig-Default:\s*(.*?)\s*$/ and $preconfig->{default} = $1;
+		/^Require-User:\s*(.*?)\s*$/ and do {
+			my @ugspecs = split /\s+/, $1;
+
+			for my $ugspec (@ugspecs) {
+				my @ugspec = split /:/, $ugspec, 2;
+				parse_package_metadata_usergroup($makefile, "user", \%usernames, \%userids, $ugspec[0]) or return 0;
+				if (@ugspec > 1) {
+					parse_package_metadata_usergroup($makefile, "group", \%groupnames, \%groupids, $ugspec[1]) or return 0;
+				}
+			}
+		};
 	}
 	close FILE;
 	return 1;
