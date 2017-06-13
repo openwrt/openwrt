@@ -111,13 +111,7 @@ _call_image: staging_dir/host/.prereq-build
 	echo
 	rm -rf $(TARGET_DIR)
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
-	if [ ! -f "$(PACKAGE_DIR)/Packages" ] || [ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || [ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ]; then \
-		echo "Package list missing or not up-to-date, generating it.";\
-		$(MAKE) package_index; \
-	else \
-		mkdir -p $(TARGET_DIR)/tmp; \
-		$(OPKG) update || true; \
-	fi
+	$(MAKE) package_reload
 	$(MAKE) package_install
 ifneq ($(USER_FILES),)
 	$(MAKE) copy_files
@@ -134,6 +128,19 @@ package_index: FORCE
 		gzip -9nc Packages > Packages.gz \
 	) >/dev/null 2>/dev/null
 	$(OPKG) update || true
+
+package_reload:
+	if [ ! -f "$(PACKAGE_DIR)/Packages" ] || [ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || [ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ]; then \
+		echo "Package list missing or not up-to-date, generating it.";\
+		$(MAKE) package_index; \
+	else \
+		mkdir -p $(TARGET_DIR)/tmp; \
+		$(OPKG) update || true; \
+	fi
+
+package_list: FORCE
+	@$(MAKE) -s package_reload
+	@$(OPKG) list --size 2>/dev/null | awk -F" - " '{printf "%s %s %s\n", $$1, $$2, $$3}'
 
 package_install: FORCE
 	@echo
