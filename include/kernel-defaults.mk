@@ -5,12 +5,6 @@
 # See /LICENSE for more information.
 #
 
-ifneq ($(SOURCE_DATE_EPOCH),)
-  ifndef DUMP
-    KBUILD_BUILD_TIMESTAMP:=$(shell perl -e 'print scalar gmtime($(SOURCE_DATE_EPOCH))')
-  endif
-endif
-
 ifdef CONFIG_STRIP_KERNEL_EXPORTS
   KERNEL_MAKEOPTS += \
 	EXTRA_LDSFLAGS="-I$(KERNEL_BUILD_DIR) -include symtab.h"

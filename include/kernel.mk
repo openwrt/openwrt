@@ -10,6 +10,12 @@ CHECK:=1
 DUMP:=1
 endif
 
+ifneq ($(SOURCE_DATE_EPOCH),)
+  ifndef DUMP
+    KBUILD_BUILD_TIMESTAMP:=$(shell perl -e 'print scalar gmtime($(SOURCE_DATE_EPOCH))')
+  endif
+endif
+
 ifeq ($(__target_inc),)
   ifndef CHECK
     include $(INCLUDE_DIR)/target.mk
