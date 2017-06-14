@@ -707,21 +707,6 @@ dhcp_relay_add() {
 	fi
 }
 
-dnsmasq_ismain()
-{
-	local cfg="$1"
-	local port notinterfaces
-
-	config_get port "$cfg" port "53"
-	[ $port = "53" ] || return 1
-
-	config_get notinterfaces "$cfg" notinterface ""
-	[ -n $notinterfaces ] && list_contains $notinterfaces "loopback" || return 1
-
-	# dnsmasq instance is designated to listen on 127.0.0.1#53.
-	return 0
-}
-
 dnsmasq_start()
 {
 	local cfg="$1" disabled resolvfile user_dhcpscript
@@ -868,10 +853,14 @@ dnsmasq_start()
 	[ -n "$leasefile" -a \! -e "$leasefile" ] && touch "$leasefile"
 	config_get_bool cachelocal "$cfg" cachelocal 1
 
-	config_get resolvfile "$cfg" resolvfile "/tmp/resolv.conf.auto"
-	xappend "--resolv-file=$resolvfile"
-	# So jail doesn't complain if file missing
-	[ \! -e "$resolvfile" ] && touch "$resolvfile"
+	config_get_bool noresolv "$cfg" noresolv 0
+	if [ "$noresolv" != "1" ]; then
+		config_get resolvfile "$cfg" resolvfile "/tmp/resolv.conf.auto"
+		# So jail doesn't complain if file missing
+		[ -n "$resolvfile" -a \! -e "$resolvfile" ] && touch "$resolvfile"
+	fi
+
+	[ -n "$resolvfile" ] && xappend "--resolv-file=$resolvfile"
 
 	config_get hostsfile "$cfg" dhcphostsfile
 	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
@@ -984,6 +973,16 @@ dnsmasq_start()
 	echo >> $CONFIGFILE_TMP
 	mv -f $CONFIGFILE_TMP $CONFIGFILE
 
+	[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && {
+		rm -f /tmp/resolv.conf
+		[ $ADD_LOCAL_DOMAIN -eq 1 ] && [ -n "$DOMAIN" ] && {
+			echo "search $DOMAIN" >> /tmp/resolv.conf
+		}
+		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
+		for DNS_SERVER in $DNS_SERVERS ; do
+			echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
+		done
+	}
 
 	procd_open_instance $cfg
 	procd_set_param command $PROG -C $CONFIGFILE -k -x /var/run/dnsmasq/dnsmasq."${cfg}".pid
@@ -1001,29 +1000,20 @@ dnsmasq_start()
 	procd_add_jail_mount_rw /var/run/dnsmasq/ $leasefile
 
 	procd_close_instance
-
-
-	# write /tmp/resolve.conf only for main instance
-	dnsmasq_ismain $cfg && {
-		rm -f /tmp/resolv.conf
-		[ $ADD_LOCAL_DOMAIN -eq 1 ] && [ -n "$DOMAIN" ] && {
-			echo "search $DOMAIN" >> /tmp/resolv.conf
-		}
-		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
-		for DNS_SERVER in $DNS_SERVERS ; do
-			echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
-		done
-	}
 }
 
 dnsmasq_stop()
 {
 	local cfg="$1"
 
+	config_get resolvfile "$cfg" "resolvfile"
+
 	#relink /tmp/resolve.conf only for main instance
-	dnsmasq_ismain $cfg && {
-		[ -f /tmp/resolv.conf ] && rm -f /tmp/resolv.conf
-		ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
+	[ "$resolvfile" = "/tmp/resolv.conf.auto" ] && {
+		[ -f /tmp/resolv.conf ] && {
+			rm -f /tmp/resolv.conf
+			ln -s "$resolvfile" /tmp/resolv.conf
+		}
 	}
 
 	rm -f ${BASEDHCPSTAMPFILE}.${cfg}.*.dhcp
