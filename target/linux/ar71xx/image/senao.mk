@@ -20,12 +20,12 @@ endef
 define Device/ens202ext
   DEVICE_TITLE := EnGenius ENS202EXT
   BOARDNAME := ENS202EXT
-  DEVICE_PACKAGES += rssileds
+  DEVICE_PACKAGES := rssileds
   KERNEL_SIZE := 1536k
-  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma | check-size $$(KERNEL_SIZE)
-  IMAGE_SIZE := 12096k
+  IMAGE_SIZE := 13632k
   IMAGES += factory.bin
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe)ro,64k(art)ro,13632k@0xa0000(firmware)
   IMAGE/factory.bin/squashfs := append-rootfs | pad-rootfs | senao-factory-image ens202ext $$$$@
-  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),320k(custom)ro,13632k(firmware),2048k(failsafe)ro,64k(art)ro
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += ens202ext
