@@ -349,6 +349,7 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:00000000}\r\n"
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:45550000}\r\n"
+			"{product_name:Archer C59,product_ver:1.0.0,special_id:52550000}\r\n"
 			"{product_name:Archer C59,product_ver:1.0.0,special_id:55530000}\r\n",
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
@@ -387,6 +388,8 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:00000000}\r\n"
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:45550000}\r\n"
+			"{product_name:Archer C60,product_ver:1.0.1,special_id:45550000}\r\n"
+			"{product_name:Archer C60,product_ver:1.0.0,special_id:52550000}\r\n"
 			"{product_name:Archer C60,product_ver:1.0.0,special_id:55530000}\r\n",
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:1.0.0\n",
