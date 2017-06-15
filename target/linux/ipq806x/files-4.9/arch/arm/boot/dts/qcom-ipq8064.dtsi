@@ -968,7 +968,7 @@
 			ranges;
 
 			resets = <&gcc USB30_0_MASTER_RESET>;
-			reset-names = "usb30_mstr_rst";
+			reset-names = "usb30_0_mstr_rst";
 
 			status = "disabled";
 
@@ -991,6 +991,9 @@
 			clock-names = "core";
 
 			ranges;
+
+			resets = <&gcc USB30_1_MASTER_RESET>;
+			reset-names = "usb30_1_mstr_rst";
 
 			status = "disabled";
 
