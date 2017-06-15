@@ -967,6 +967,9 @@
 
 			ranges;
 
+			resets = <&gcc USB30_0_MASTER_RESET>;
+			reset-names = "usb30_mstr_rst";
+
 			status = "disabled";
 
 			dwc3@11000000 {
