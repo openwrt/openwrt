@@ -39,7 +39,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +obj-$(CONFIG_PHY_QCOM_DWC3)		+= phy-qcom-dwc3.o
 --- /dev/null
 +++ b/drivers/phy/phy-qcom-dwc3.c
-@@ -0,0 +1,492 @@
+@@ -0,0 +1,484 @@
 +/* Copyright (c) 2014-2015, Code Aurora Forum. All rights reserved.
 + *
 + * This program is free software; you can redistribute it and/or modify
@@ -99,7 +99,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +
 +/* PHY_CTRL_REG */
 +#define SSUSB_CTRL_REF_USE_PAD		BIT(28)
-+#define SSUSB_CTRL_TEST_POWERDOWN	BIT(26)
++#define SSUSB_CTRL_TEST_POWERDOWN	BIT(27)
 +#define SSUSB_CTRL_LANE0_PWR_PRESENT	BIT(24)
 +#define SSUSB_CTRL_SS_PHY_EN		BIT(8)
 +#define SSUSB_CTRL_SS_PHY_RESET		BIT(7)
@@ -331,14 +331,6 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +
 +	/* reset phy */
 +	data = readl(phy_dwc3->base + SSUSB_PHY_CTRL_REG);
-+
-+       /* Test and clear SSUSB_CTRL_TEST_POWERDOWN */
-+       if (data & SSUSB_CTRL_TEST_POWERDOWN) {
-+               qcom_dwc3_phy_write_readback(phy_dwc3, SSUSB_PHY_CTRL_REG,
-+                               SSUSB_CTRL_TEST_POWERDOWN, 0x0);
-+               data = readl(phy_dwc3->base + SSUSB_PHY_CTRL_REG);
-+       }
-+
 +	writel(data | SSUSB_CTRL_SS_PHY_RESET,
 +		phy_dwc3->base + SSUSB_PHY_CTRL_REG);
 +	usleep_range(2000, 2200);
@@ -428,7 +420,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +	qcom_dwc3_phy_write_readback(phy_dwc3, SSUSB_PHY_CTRL_REG,
 +		SSUSB_CTRL_REF_USE_PAD, 0x0);
 +	qcom_dwc3_phy_write_readback(phy_dwc3, SSUSB_PHY_CTRL_REG,
-+		SSUSB_CTRL_TEST_POWERDOWN, SSUSB_CTRL_TEST_POWERDOWN);
++		0x0, SSUSB_CTRL_TEST_POWERDOWN);
 +
 +	return 0;
 +}
