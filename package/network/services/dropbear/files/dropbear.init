@@ -134,7 +134,7 @@ service_triggers()
 	config_load "${NAME}"
 	config_foreach load_interfaces dropbear
 
-	[ -n "${interfaces}" ] & {
+	[ -n "${interfaces}" ] && {
 		for n in $interfaces ; do
 			procd_add_interface_trigger "interface.*" $n /etc/init.d/dropbear reload
 		done
