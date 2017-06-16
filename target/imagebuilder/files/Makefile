@@ -140,7 +140,7 @@ package_reload:
 
 package_list: FORCE
 	@$(MAKE) -s package_reload
-	@$(OPKG) list --size 2>/dev/null | awk -F" - " '{printf "%s %s %s\n", $$1, $$2, $$3}'
+	@$(OPKG) list --size 2>/dev/null
 
 package_install: FORCE
 	@echo
