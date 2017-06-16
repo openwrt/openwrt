@@ -439,8 +439,8 @@ ucidef_set_led_rssi() {
 	local iface="$4"
 	local minq="$5"
 	local maxq="$6"
-	local offset="$7"
-	local factor="$8"
+	local offset="${7:-0}"
+	local factor="${8:-1}"
 
 	_ucidef_set_led_common "$1" "$2" "$3"
 
