@@ -298,6 +298,13 @@ fritz300e)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "$board:green:rssi3" "wlan0" "60" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$board:green:rssi4" "wlan0" "80" "100"
 	;;
+dap-1330-a1)
+	ucidef_set_rssimon "wlan0" "2000000" "2"
+	ucidef_set_led_rssi "wifi-low" "wifi-low" "d-link:red:wifi" "wlan0" "1" "29"
+	ucidef_set_led_rssi "wifi-medium" "wifi-medium" "d-link:green:wifi" "wlan0" "30" "100"
+	ucidef_set_led_rssi "wifi-high" "wifi-high" "d-link:green:signal1" "wlan0" "50" "100"
+	ucidef_set_led_rssi "wifi-max" "wifi-max" "d-link:green:signal2" "wlan0" "70" "100"
+	;;
 dap-2695-a1)
 	ucidef_set_led_default "power" "POWER" "d-link:green:power" "1"
 	ucidef_set_led_default "diag" "DIAG" "d-link:red:power" "0"
