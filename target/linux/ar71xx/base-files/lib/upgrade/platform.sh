@@ -207,6 +207,7 @@ platform_check_image() {
 	ap531b0|\
 	ap90q|\
 	archer-c25-v1|\
+	archer-c58-v1|\
 	archer-c59-v1|\
 	archer-c60-v1|\
 	bullet-m|\

@@ -137,6 +137,17 @@ define Device/archer-c25-v1
   MTDPARTS := spi0.0:128k(factory-uboot)ro,64k(u-boot)ro,1536k(kernel),6272k(rootfs),128k(config)ro,64k(art)ro,7808k@0x30000(firmware)
 endef
 
+define Device/archer-c58-v1
+  $(Device/archer-cxx)
+  DEVICE_TITLE := TP-LINK Archer C58 v1
+  DEVICE_PACKAGES := kmod-ath10k
+  BOARDNAME := ARCHER-C58-V1
+  TPLINK_BOARD_NAME := ARCHER-C58-V1
+  DEVICE_PROFILE := ARCHERC58V1
+  IMAGE_SIZE := 7936k
+  MTDPARTS := spi0.0:64k(u-boot)ro,64k(mac)ro,1344k(kernel),6592k(rootfs),64k(tplink)ro,64k(art)ro,7936k@0x20000(firmware)
+endef
+
 define Device/archer-c59-v1
   $(Device/archer-cxx)
   DEVICE_TITLE := TP-LINK Archer C59 v1
@@ -158,7 +169,7 @@ define Device/archer-c60-v1
   IMAGE_SIZE := 7936k
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(mac)ro,1344k(kernel),6592k(rootfs),64k(tplink)ro,64k(art)ro,7936k@0x20000(firmware)
 endef
-TARGET_DEVICES += archer-c25-v1 archer-c59-v1 archer-c60-v1
+TARGET_DEVICES += archer-c25-v1 archer-c58-v1 archer-c59-v1 archer-c60-v1
 
 define Device/archer-c5-v1
   $(Device/tplink-16mlzma)
