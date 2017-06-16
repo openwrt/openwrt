@@ -63,6 +63,7 @@ define Host/Compile
 	$(call cc,mkbrncmdline)
 	$(call cc,mkbrnimg)
 	$(call cc,mkdapimg)
+	$(call cc,mkdapimg2)
 	$(call cc, mkcameofw, -Wall)
 	$(call cc,seama md5)
 	$(call cc,oseama md5, -Wall)
