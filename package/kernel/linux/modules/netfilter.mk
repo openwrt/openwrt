@@ -836,6 +836,24 @@ endef
 
 $(eval $(call KernelPackage,ipt-hashlimit))
 
+define KernelPackage/ipt-rpfilter
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter rpfilter match
+  DEPENDS:=+kmod-ipt-core
+  KCONFIG:=$(KCONFIG_IPT_RPFILTER)
+  FILES:=$(realpath \
+	$(LINUX_DIR)/net/ipv4/netfilter/ipt_rpfilter.ko \
+	$(LINUX_DIR)/net/ipv6/netfilter/ip6t_rpfilter.ko)
+  AUTOLOAD:=$(call AutoProbe,ipt_rpfilter ip6t_rpfilter)
+  $(call KernelPackage/ipt)
+endef
+
+define KernelPackage/ipt-rpfilter/description
+ Kernel modules support for the Netfilter rpfilter match
+endef
+
+$(eval $(call KernelPackage,ipt-rpfilter))
+
 
 define KernelPackage/nft-core
   SUBMENU:=$(NF_MENU)
