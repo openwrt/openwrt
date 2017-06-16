@@ -71,6 +71,7 @@ define Host/Configure/post/mipsel
 endef
 
 define Host/Prepare
+	rm -rf $(BUILD_DIR_TOOLCHAIN)/linux-*
 	$(call Kernel/Prepare/Default)
 	rm -f $(BUILD_DIR_TOOLCHAIN)/linux
 	ln -s linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
