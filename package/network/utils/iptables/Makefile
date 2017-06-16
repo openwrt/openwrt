@@ -242,6 +242,19 @@ iptables extensions for hashlimit matching
 
 endef
 
+define Package/iptables-mod-rpfilter
+$(call Package/iptables/Module, +kmod-ipt-rpfilter)
+  TITLE:=rpfilter iptables extension
+endef
+
+define Package/iptables-mod-rpfilter/description
+iptables extensions for reverse path filter test on a packet
+
+ Matches:
+  - rpfilter
+
+endef
+
 define Package/iptables-mod-iprange
 $(call Package/iptables/Module, +kmod-ipt-iprange)
   TITLE:=IP range extension
@@ -565,6 +578,7 @@ $(eval $(call BuildPlugin,iptables-mod-cluster,$(IPT_CLUSTER-m)))
 $(eval $(call BuildPlugin,iptables-mod-clusterip,$(IPT_CLUSTERIP-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
 $(eval $(call BuildPlugin,iptables-mod-hashlimit,$(IPT_HASHLIMIT-m)))
+$(eval $(call BuildPlugin,iptables-mod-rpfilter,$(IPT_RPFILTER-m)))
 $(eval $(call BuildPlugin,iptables-mod-led,$(IPT_LED-m)))
 $(eval $(call BuildPlugin,iptables-mod-tproxy,$(IPT_TPROXY-m)))
 $(eval $(call BuildPlugin,iptables-mod-tee,$(IPT_TEE-m)))
