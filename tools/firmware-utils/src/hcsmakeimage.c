@@ -5,7 +5,8 @@
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
-#include <sys/time.h>
+#include <errno.h>
+#include <time.h>
 #include <sys/stat.h>
 #include <libgen.h>
 #include "bcmalgo.h"
@@ -42,6 +43,19 @@ static void print_help ( const char* ename )
 	printf ( "\n" );
 }
 
+static time_t source_date_epoch = -1;
+static void set_source_date_epoch() {
+	char *env = getenv("SOURCE_DATE_EPOCH");
+	char *endptr = env;
+	errno = 0;
+        if (env && *env) {
+		source_date_epoch = strtoull(env, &endptr, 10);
+		if (errno || (endptr && *endptr != '\0')) {
+			fprintf(stderr, "Invalid SOURCE_DATE_EPOCH");
+			exit(1);
+		}
+        }
+}
 
 int main ( int argc, char** argv )
 {
@@ -149,11 +163,19 @@ int main ( int argc, char** argv )
 	{
 		fname = filename;
 	}
-	struct timeval tm;
-	gettimeofday ( &tm,NULL );
+
+	time_t t = -1;
+	set_source_date_epoch();
+	if (source_date_epoch != -1) {
+		t = source_date_epoch;
+	} else if ((time(&t) == (time_t)(-1))) {
+		fprintf(stderr, "time call failed\n");
+		return EXIT_FAILURE;
+	}
+
 	struct stat buf;
 	stat ( input,&buf );
-	ldr_header_t* head = construct_header ( magicnum, (uint16_t) majrev, (uint16_t) minrev, ( uint32_t ) tm.tv_sec, ( uint32_t ) buf.st_size, ldaddress, fname, get_file_crc ( input ) );
+	ldr_header_t* head = construct_header ( magicnum, (uint16_t) majrev, (uint16_t) minrev, ( uint32_t ) t, ( uint32_t ) buf.st_size, ldaddress, fname, get_file_crc ( input ) );
 	free(dupe);
 	//uint32_t magic, uint16_t rev_maj,uint16_t rev_min, uint32_t build_date, uint32_t filelen, uint32_t ldaddress, const char* filename, uint32_t crc
 	//FILE* fd = fopen ("/tftpboot/haxorware11rev32.bin","r");

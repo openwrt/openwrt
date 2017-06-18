@@ -158,6 +158,20 @@ opensize(char *name, size_t *size)
 	return fd;
 }
 
+static time_t source_date_epoch = -1;
+static void set_source_date_epoch() {
+	char *env = getenv("SOURCE_DATE_EPOCH");
+	char *endptr = env;
+	errno = 0;
+        if (env && *env) {
+		source_date_epoch = strtoull(env, &endptr, 10);
+		if (errno || (endptr && *endptr != '\0')) {
+			fprintf(stderr, "Invalid SOURCE_DATE_EPOCH");
+			exit(1);
+		}
+        }
+}
+
 /*
  * Write the JCG header
  */
@@ -167,6 +181,13 @@ mkjcgheader(struct jcg_header *h, size_t psize, char *version)
 	uLong crc;
 	uint16_t major = 0, minor = 0;
 	void *payload = (void *)h + sizeof(*h);
+	time_t t;
+
+	if (source_date_epoch != -1) {
+		t = source_date_epoch;
+	} else if ((time(&t) == (time_t)(-1))) {
+		err(1, "time call failed");
+	}
 
 	if (version != NULL) {
 		if (sscanf(version, "%hu.%hu", &major, &minor) != 2) {
@@ -177,7 +198,7 @@ mkjcgheader(struct jcg_header *h, size_t psize, char *version)
 	memset(h, 0, sizeof(*h));
 	h->jh_magic = htonl(JH_MAGIC);
 	h->jh_type  = htonl(1);
-	h->jh_time  = htonl(time(NULL));
+	h->jh_time  = htonl(t);
 	h->jh_major = htons(major);
 	h->jh_minor = htons(minor);
 
@@ -303,6 +324,7 @@ main(int argc, char **argv)
 	/* Make sure the headers have the right size */
 	assert(sizeof(struct jcg_header) == 512);
 	assert(sizeof(struct uimage_header) == 64);
+	set_source_date_epoch();
 
 	while ((c = getopt(argc, argv, "o:k:f:u:v:h")) != -1) {
 		switch (c) {

@@ -709,6 +709,20 @@ static void free_image_partition(struct image_partition_entry entry) {
 	free(entry.data);
 }
 
+static time_t source_date_epoch = -1;
+static void set_source_date_epoch() {
+	char *env = getenv("SOURCE_DATE_EPOCH");
+	char *endptr = env;
+	errno = 0;
+        if (env && *env) {
+		source_date_epoch = strtoull(env, &endptr, 10);
+		if (errno || (endptr && *endptr != '\0')) {
+			fprintf(stderr, "Invalid SOURCE_DATE_EPOCH");
+			exit(1);
+		}
+        }
+}
+
 /** Generates the partition-table partition */
 static struct image_partition_entry make_partition_table(const struct flash_partition_entry *p) {
 	struct image_partition_entry entry = alloc_image_partition("partition-table", 0x800);
@@ -752,7 +766,9 @@ static struct image_partition_entry make_soft_version(uint32_t rev) {
 
 	time_t t;
 
-	if (time(&t) == (time_t)(-1))
+	if (source_date_epoch != -1)
+		t = source_date_epoch;
+	else if (time(&t) == (time_t)(-1))
 		error(1, errno, "time");
 
 	struct tm *tm = localtime(&t);
@@ -1105,6 +1121,7 @@ int main(int argc, char *argv[]) {
 	bool add_jffs2_eof = false, sysupgrade = false;
 	unsigned rev = 0;
 	const struct device_info *info;
+	set_source_date_epoch();
 
 	while (true) {
 		int c;
