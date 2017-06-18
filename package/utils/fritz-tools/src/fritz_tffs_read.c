@@ -36,14 +36,12 @@
 #include <sys/stat.h>
 #include <arpa/inet.h>
 
-#define DEFAULT_TFFS_SIZE	(256 * 1024)
-
 #define TFFS_ID_END		0xffff
 #define TFFS_ID_TABLE_NAME	0x01ff
 
 static char *progname;
 static char *input_file;
-static unsigned long tffs_size = DEFAULT_TFFS_SIZE;
+static unsigned long tffs_size;
 static char *name_filter = NULL;
 static bool show_all = false;
 static bool print_all_key_names = false;
@@ -332,6 +330,12 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "ERROR: Failed to open tffs input file %s\n",
 			input_file);
 		goto out;
+	}
+
+	if (tffs_size == 0) {
+		fseek(fp, 0L, SEEK_END);
+		tffs_size = ftell(fp);
+		fseek(fp, 0L, SEEK_SET);
 	}
 
 	buffer = malloc(tffs_size);
