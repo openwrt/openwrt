@@ -108,11 +108,10 @@ KERNEL_MAKE_FLAGS := \
 	CONFIG_SHELL="$(BASH)" \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
 	$(if $(PKG_BUILD_ID),LDFLAGS_MODULE=--build-id=0x$(PKG_BUILD_ID)) \
-	KERNELRELEASE=$(LINUX_VERSION) \
 	cmd_syscalls=
 
 ifeq ($(call qstrip,$(CONFIG_EXTERNAL_KERNEL_TREE))$(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
-  KERNEL_MAKEOPTS += \
+  KERNEL_MAKE_FLAGS += \
 	KERNELRELEASE=$(LINUX_VERSION)
 endif
 
