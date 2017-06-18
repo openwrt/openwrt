@@ -589,7 +589,10 @@ define Image/Build/ALFA
 		cd $(KDIR)/$(1); \
 		cp $(KDIR_TMP)/vmlinux-$(2).uImage $(KDIR)/$(1)/$(7); \
 		cp $(KDIR)/root.$(1) $(KDIR)/$(1)/$(8); \
-		$(TAR) zcf $(call factoryname,$(1),$(2)) -C $(KDIR)/$(1) $(7) $(8); \
+		$(TAR) c \
+			$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+			-C $(KDIR)/$(1) $(7) $(8) \
+				| gzip -9nc > $(call factoryname,$(1),$(2)); \
 		( \
 			echo WRM7222C | dd bs=32 count=1 conv=sync; \
 			echo -ne '\xfe'; \
@@ -611,7 +614,9 @@ define Image/Build/Senao
 		of=$(KDIR_TMP)/$(2)/openwrt-senao-$(2)-root.$(1) bs=64k conv=sync
 	( \
 		cd $(KDIR_TMP)/$(2)/;  \
-		$(TAR) -cz -f $(call factoryname,$(1),$(2)) * \
+		$(TAR) -c \
+			$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+			* | gzip -9nc > $(call factoryname,$(1),$(2)) \
 	)
 	-rm -rf $(KDIR_TMP)/$(2)/
 	-sh $(TOPDIR)/scripts/combined-image.sh \
