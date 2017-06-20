@@ -440,6 +440,7 @@ dhcp_add() {
 	local cfg="$1"
 	local dhcp6range="::"
 	local nettag
+	local tags
 
 	config_get net "$cfg" interface
 	[ -n "$net" ] || return 0
@@ -491,6 +492,12 @@ dhcp_add() {
 	dhcp_this_host_add "$net" "$ifname" "$ADD_LOCAL_FQDN"
 
 	start="$( dhcp_calc "$start" )"
+
+	add_tag() {
+		tags="${tags}tag:$1,"
+	}
+	config_list_foreach "$cfg" tag add_tag
+
 	nettag="${networkid:+set:${networkid},}"
 
 	if [ "$limit" -gt 0 ] ; then
@@ -508,7 +515,7 @@ dhcp_add() {
 
 
 	if [ "$dhcpv4" != "disabled" ] ; then
-		xappend "--dhcp-range=$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
+		xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
 	fi
 
 
