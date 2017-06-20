@@ -213,7 +213,7 @@ _procd_set_param() {
 			json_add_string "" "$@"
 			json_close_array
 		;;
-		nice)
+		nice|term_timeout)
 			json_add_int "$type" "$1"
 		;;
 		reload_signal)
