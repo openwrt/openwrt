@@ -487,6 +487,12 @@ ramips_board_detect() {
 	*"Timecloud")
 		name="timecloud"
 		;;
+	*"TL-WR840N v4")
+		name="tl-wr840n-v4"
+		;;
+	*"TL-WR841N v13")
+		name="tl-wr841n-v13"
+		;;
 	*"UBNT-ERX")
 		name="ubnt-erx"
 		;;

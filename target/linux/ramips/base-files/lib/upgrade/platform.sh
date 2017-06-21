@@ -230,7 +230,9 @@ platform_check_image() {
 		;;
 	c20i|\
 	c50|\
-	mr200)
+	mr200|\
+	tl-wr840n-v4|\
+	tl-wr841n-v13)
 		[ "$magic" != "03000000" ] && {
 			echo "Invalid image type."
 			return 1

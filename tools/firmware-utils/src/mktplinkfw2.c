@@ -208,6 +208,22 @@ static struct board_info boards[] = {
 		.hdr_ver	= 3,
 		.endian_swap	= true,
 	}, {
+		.id		= "TL-WR840NV4",
+		.hw_id		= 0x08400004,
+		.hw_rev		= 0x1,
+		.hw_ver_add	= 0x4,
+		.layout_id	= "8Mmtk",
+		.hdr_ver	= 3,
+		.endian_swap	= true,
+	}, {
+		.id		= "TL-WR841NV13",
+		.hw_id		= 0x08410013,
+		.hw_rev		= 0x268,
+		.hw_ver_add	= 0x13,
+		.layout_id	= "8Mmtk",
+		.hdr_ver	= 3,
+		.endian_swap	= true,
+	}, {
 		/* terminating entry */
 	}
 };
