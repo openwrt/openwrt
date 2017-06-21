@@ -575,7 +575,8 @@ dhcp_add() {
 		dhcp_option_append "option6:dns-server,$dnss" "$networkid"
 	fi
 
-	dhcp_option_add "$cfg" "$networkid"
+	dhcp_option_add "$cfg" "$networkid" 0
+	dhcp_option_add "$cfg" "$networkid" 2
 }
 
 dhcp_option_append() {
@@ -591,18 +592,20 @@ dhcp_option_add() {
 	local cfg="$1"
 	local networkid="$2"
 	local force="$3"
+	local opt="dhcp_option"
 
 	[ "$force" = "0" ] && force=
+	[ "$force" = "2" ] && opt="dhcp_option_force"
 
 	local list_len
-	config_get list_len "$cfg" dhcp_option_LENGTH
+	config_get list_len "$cfg" "${opt}_LENGTH"
 
 	if [ -n "$list_len" ]; then
-		config_list_foreach "$cfg" dhcp_option dhcp_option_append "$networkid" "$force"
+		config_list_foreach "$cfg" "$opt" dhcp_option_append "$networkid" "$force"
 	else
-		config_get dhcp_option "$cfg" dhcp_option
+		config_get dhcp_option "$cfg" "$opt"
 
-		[ -n "$dhcp_option" ] && echo "Warning: the 'option dhcp_option' syntax is deprecated, use 'list dhcp_option'" >&2
+		[ -n "$dhcp_option" ] && echo "Warning: the 'option $opt' syntax is deprecated, use 'list $opt'" >&2
 
 		local option
 		for option in $dhcp_option; do
@@ -920,6 +923,7 @@ dnsmasq_start()
 	}
 
 	dhcp_option_add "$cfg" "" 0
+	dhcp_option_add "$cfg" "" 2
 
 	xappend "--dhcp-broadcast=tag:needs-broadcast"
 
