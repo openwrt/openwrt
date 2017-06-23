@@ -1,24 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -493,14 +493,12 @@ static struct mtd_part *allocate_partiti
- 	if (slave->offset == MTDPART_OFS_APPEND)
- 		slave->offset = cur_offset;
- 	if (slave->offset == MTDPART_OFS_NXTBLK) {
--		slave->offset = cur_offset;
--		if (mtd_mod_by_eb(cur_offset, master) != 0) {
--			/* Round up to next erasesize */
--			slave->offset = (mtd_div_by_eb(cur_offset, master) + 1) * master->erasesize;
-+		/* Round up to next erasesize */
-+		slave->offset = mtd_roundup_to_eb(cur_offset, master);
-+		if (slave->offset != cur_offset)
- 			printk(KERN_NOTICE "Moving partition %d: "
- 			       "0x%012llx -> 0x%012llx\n", partno,
- 			       (unsigned long long)cur_offset, (unsigned long long)slave->offset);
--		}
- 	}
- 	if (slave->offset == MTDPART_OFS_RETAIN) {
- 		slave->offset = cur_offset;
-@@ -717,6 +715,17 @@ run_parsers_by_type(struct mtd_part *sla
+@@ -717,6 +717,17 @@ run_parsers_by_type(struct mtd_part *sla
  	return nr_parts;
  }
  
@@ -36,7 +18,7 @@
  #ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #else
-@@ -1055,6 +1064,24 @@ int mtd_is_partition(const struct mtd_in
+@@ -1055,6 +1066,24 @@ int mtd_is_partition(const struct mtd_in
  }
  EXPORT_SYMBOL_GPL(mtd_is_partition);
  

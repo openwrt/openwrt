@@ -97,7 +97,7 @@
  
  		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
  			instr->fail_addr -= part->offset;
-@@ -562,17 +631,20 @@ static struct mtd_part *allocate_partiti
+@@ -564,17 +633,20 @@ static struct mtd_part *allocate_partiti
  	if ((slave->mtd.flags & MTD_WRITEABLE) &&
  	    mtd_mod_by_eb(slave->offset, &slave->mtd)) {
  		/* Doesn't start on a boundary of major erase size */
