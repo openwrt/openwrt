@@ -60,7 +60,7 @@ define Device/ew1200
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
   DEVICE_TITLE := AFOUNDRY EW1200
   DEVICE_PACKAGES := \
-	kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-usb3 \
+	kmod-ata-core kmod-ata-ahci kmod-mt76x2 kmod-mt7603 kmod-usb3 \
 	kmod-usb-ledtrig-usbport wpad-mini
 endef
 TARGET_DEVICES += ew1200
