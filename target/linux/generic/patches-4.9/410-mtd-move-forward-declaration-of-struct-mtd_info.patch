@@ -1,6 +1,6 @@
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
-@@ -35,6 +35,7 @@
+@@ -41,6 +41,7 @@
   * Note: writeable partitions require their size and offset be
   * erasesize aligned (e.g. use MTDPART_OFS_NEXTBLK).
   */
@@ -8,7 +8,7 @@
  
  struct mtd_partition {
  	const char *name;		/* identifier string */
-@@ -50,7 +51,6 @@ struct mtd_partition {
+@@ -57,7 +58,6 @@ struct mtd_partition {
  #define MTDPART_SIZ_FULL	(0)
  
  
