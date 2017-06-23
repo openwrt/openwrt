@@ -2,10 +2,7 @@
 # MT7620A Profiles
 #
 
-define Build/tplink-header
-	$(STAGING_DIR_HOST)/bin/mktplinkfw2 -a 0x4 -V "ver. 2.0" -B $(1) \
-		-o $@.new -k $@ -r $(IMAGE_ROOTFS) && mv $@.new $@
-endef
+DEVICE_VARS += TPLINK_BOARD_ID
 
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
@@ -31,10 +28,11 @@ TARGET_DEVICES += ai-br100
 define Device/ArcherC20i
   DTS := ArcherC20i
   SUPPORTED_DEVICES := c20i
+  TPLINK_BOARD_ID := ArcherC20i
   KERNEL := $(KERNEL_DTB)
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC20i -c
-  IMAGE/factory.bin := append-kernel | tplink-header ArcherC20i -j
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC20i -j -s | append-metadata
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v2-header
+  IMAGE/factory.bin := tplink-v2-image
+  IMAGE/sysupgrade.bin := tplink-v2-image -s | append-metadata
   IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC20i
 endef
@@ -43,10 +41,11 @@ TARGET_DEVICES += ArcherC20i
 define Device/ArcherC50
   DTS := ArcherC50
   SUPPORTED_DEVICES := c50
+  TPLINK_BOARD_ID := ArcherC50
   KERNEL := $(KERNEL_DTB)
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherC50 -c
-  IMAGE/factory.bin := append-kernel | tplink-header ArcherC50 -j
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherC50 -j -s | append-metadata
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v2-header
+  IMAGE/factory.bin := tplink-v2-image
+  IMAGE/sysupgrade.bin := tplink-v2-image -s | append-metadata
   IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC50
 endef
@@ -55,9 +54,10 @@ TARGET_DEVICES += ArcherC50
 define Device/ArcherMR200
   DTS := ArcherMR200
   SUPPORTED_DEVICES := mr200
+  TPLINK_BOARD_ID := ArcherMR200
   KERNEL := $(KERNEL_DTB)
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-header ArcherMR200 -c
-  IMAGE/sysupgrade.bin := append-kernel | tplink-header ArcherMR200 -j -s | append-metadata
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v2-header
+  IMAGE/sysupgrade.bin := tplink-v2-image -s | append-metadata
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-net kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option adb-enablemodem
   DEVICE_TITLE := TP-Link ArcherMR200
 endef

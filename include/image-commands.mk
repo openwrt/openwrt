@@ -233,6 +233,20 @@ define Build/sysupgrade-tar
 		$@
 endef
 
+define Build/tplink-v2-header
+	$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
+		-c -V "ver. 2.0" -B $(TPLINK_BOARD_ID) $(1) -k $@ -o $@.new
+	@mv $@.new $@
+endef
+
+define Build/tplink-v2-image
+	$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
+		-a 0x4 -j -V "ver. 2.0" -B $(TPLINK_BOARD_ID) $(1) \
+		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new
+	cat $@.new >> $@
+	rm -rf $@.new
+endef
+
 json_quote=$(subst ','\'',$(subst ",\",$(1)))
 #")')
 metadata_devices=$(if $(1),$(subst "$(space)","$(comma)",$(strip $(foreach v,$(1),"$(call json_quote,$(v))"))))
