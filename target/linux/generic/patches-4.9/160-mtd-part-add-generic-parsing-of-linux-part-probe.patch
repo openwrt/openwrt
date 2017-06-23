@@ -116,7 +116,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <linux/err.h>
  
  #include "mtdcore.h"
-@@ -779,6 +780,42 @@ void deregister_mtd_parser(struct mtd_pa
+@@ -815,6 +816,42 @@ void deregister_mtd_parser(struct mtd_pa
  EXPORT_SYMBOL_GPL(deregister_mtd_parser);
  
  /*
@@ -159,7 +159,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
   * Do not forget to update 'parse_mtd_partitions()' kerneldoc comment if you
   * are changing this array!
   */
-@@ -815,6 +852,13 @@ int parse_mtd_partitions(struct mtd_info
+@@ -872,6 +909,13 @@ int parse_mtd_partitions(struct mtd_info
  {
  	struct mtd_part_parser *parser;
  	int ret, err = 0;
@@ -173,7 +173,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	if (!types)
  		types = default_mtd_part_types;
-@@ -846,6 +890,7 @@ int parse_mtd_partitions(struct mtd_info
+@@ -897,6 +941,7 @@ int parse_mtd_partitions(struct mtd_info
  		if (ret < 0 && !err)
  			err = ret;
  	}

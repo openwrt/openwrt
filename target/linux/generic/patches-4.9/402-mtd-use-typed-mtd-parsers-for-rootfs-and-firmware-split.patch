@@ -1,6 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -687,6 +687,36 @@ int mtd_del_partition(struct mtd_info *m
+@@ -723,6 +723,36 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -23,7 +23,7 @@
 +		/* adjust partition offsets */
 +		parts[i].offset += slave->offset;
 +
-+		mtd_add_partition(slave->master,
++		mtd_add_partition(slave->parent,
 +				  parts[i].name,
 +				  parts[i].offset,
 +				  parts[i].size);
@@ -37,7 +37,7 @@
  #ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #else
-@@ -695,6 +725,7 @@ EXPORT_SYMBOL_GPL(mtd_del_partition);
+@@ -731,6 +761,7 @@ EXPORT_SYMBOL_GPL(mtd_del_partition);
  
  static void split_firmware(struct mtd_info *master, struct mtd_part *part)
  {
@@ -45,7 +45,7 @@
  }
  
  void __weak arch_split_mtd_part(struct mtd_info *master, const char *name,
-@@ -709,6 +740,12 @@ static void mtd_partition_split(struct m
+@@ -745,6 +776,12 @@ static void mtd_partition_split(struct m
  	if (rootfs_found)
  		return;
  
@@ -60,7 +60,7 @@
  		split_firmware(master, part);
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
-@@ -66,6 +66,8 @@ struct mtd_part_parser_data {
+@@ -67,6 +67,8 @@ struct mtd_part_parser_data {
  
  enum mtd_parser_type {
  	MTD_PARSER_TYPE_DEVICE = 0,

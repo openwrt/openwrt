@@ -9,7 +9,7 @@
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
  static DEFINE_MUTEX(mtd_partitions_mutex);
-@@ -235,13 +237,61 @@ static int part_erase(struct mtd_info *m
+@@ -241,13 +243,61 @@ static int part_erase(struct mtd_info *m
  	struct mtd_part *part = mtd_to_part(mtd);
  	int ret;
  
@@ -19,33 +19,33 @@
 +		size_t readlen = 0;
 +		u64 mtd_ofs;
 +
-+		instr->erase_buf = kmalloc(part->master->erasesize, GFP_ATOMIC);
++		instr->erase_buf = kmalloc(part->parent->erasesize, GFP_ATOMIC);
 +		if (!instr->erase_buf)
 +			return -ENOMEM;
 +
 +		mtd_ofs = part->offset + instr->addr;
-+		instr->erase_buf_ofs = do_div(mtd_ofs, part->master->erasesize);
++		instr->erase_buf_ofs = do_div(mtd_ofs, part->parent->erasesize);
 +
 +		if (instr->erase_buf_ofs > 0) {
 +			instr->addr -= instr->erase_buf_ofs;
-+			ret = mtd_read(part->master,
++			ret = mtd_read(part->parent,
 +				instr->addr + part->offset,
-+				part->master->erasesize,
++				part->parent->erasesize,
 +				&readlen, instr->erase_buf);
 +
 +			instr->len += instr->erase_buf_ofs;
 +			instr->partial_start = true;
 +		} else {
 +			mtd_ofs = part->offset + part->mtd.size;
-+			instr->erase_buf_ofs = part->master->erasesize -
-+				do_div(mtd_ofs, part->master->erasesize);
++			instr->erase_buf_ofs = part->parent->erasesize -
++				do_div(mtd_ofs, part->parent->erasesize);
 +
 +			if (instr->erase_buf_ofs > 0) {
 +				instr->len += instr->erase_buf_ofs;
-+				ret = mtd_read(part->master,
++				ret = mtd_read(part->parent,
 +					part->offset + instr->addr +
-+					instr->len - part->master->erasesize,
-+					part->master->erasesize, &readlen,
++					instr->len - part->parent->erasesize,
++					part->parent->erasesize, &readlen,
 +					instr->erase_buf);
 +			} else {
 +				ret = 0;
@@ -59,7 +59,7 @@
 +	}
 +
  	instr->addr += part->offset;
- 	ret = part->master->_erase(part->master, instr);
+ 	ret = part->parent->_erase(part->parent, instr);
  	if (ret) {
  		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
  			instr->fail_addr -= part->offset;
@@ -71,7 +71,7 @@
  	return ret;
  }
  
-@@ -249,6 +299,25 @@ void mtd_erase_callback(struct erase_inf
+@@ -255,6 +305,25 @@ void mtd_erase_callback(struct erase_inf
  {
  	if (instr->mtd->_erase == part_erase) {
  		struct mtd_part *part = mtd_to_part(instr->mtd);
@@ -79,17 +79,17 @@
 +
 +		if (instr->mtd->flags & MTD_ERASE_PARTIAL) {
 +			if (instr->partial_start) {
-+				part->master->_write(part->master,
++				part->parent->_write(part->parent,
 +					instr->addr, instr->erase_buf_ofs,
 +					&wrlen, instr->erase_buf);
 +				instr->addr += instr->erase_buf_ofs;
 +			} else {
 +				instr->len -= instr->erase_buf_ofs;
-+				part->master->_write(part->master,
++				part->parent->_write(part->parent,
 +					instr->addr + instr->len,
 +					instr->erase_buf_ofs, &wrlen,
 +					instr->erase_buf +
-+					part->master->erasesize -
++					part->parent->erasesize -
 +					instr->erase_buf_ofs);
 +			}
 +			kfree(instr->erase_buf);
@@ -97,30 +97,32 @@
  
  		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
  			instr->fail_addr -= part->offset;
-@@ -564,17 +633,20 @@ static struct mtd_part *allocate_partiti
- 	if ((slave->mtd.flags & MTD_WRITEABLE) &&
- 	    mtd_mod_by_eb(slave->offset, &slave->mtd)) {
+@@ -561,19 +630,22 @@ static struct mtd_part *allocate_partiti
+ 	remainder = do_div(tmp, wr_alignment);
+ 	if ((slave->mtd.flags & MTD_WRITEABLE) && remainder) {
  		/* Doesn't start on a boundary of major erase size */
 -		/* FIXME: Let it be writable if it is on a boundary of
 -		 * _minor_ erase size though */
 -		slave->mtd.flags &= ~MTD_WRITEABLE;
--		printk(KERN_WARNING"mtd: partition \"%s\" doesn't start on an erase block boundary -- force read-only\n",
+-		printk(KERN_WARNING"mtd: partition \"%s\" doesn't start on an erase/write block boundary -- force read-only\n",
 -			part->name);
 +		slave->mtd.flags |= MTD_ERASE_PARTIAL;
-+		if (((u32) slave->mtd.size) > master->erasesize)
++		if (((u32)slave->mtd.size) > parent->erasesize)
 +			slave->mtd.flags &= ~MTD_WRITEABLE;
 +		else
 +			slave->mtd.erasesize = slave->mtd.size;
  	}
- 	if ((slave->mtd.flags & MTD_WRITEABLE) &&
--	    mtd_mod_by_eb(slave->mtd.size, &slave->mtd)) {
+ 
+-	tmp = slave->mtd.size;
++	tmp = slave->offset + slave->mtd.size;
+ 	remainder = do_div(tmp, wr_alignment);
+ 	if ((slave->mtd.flags & MTD_WRITEABLE) && remainder) {
 -		slave->mtd.flags &= ~MTD_WRITEABLE;
--		printk(KERN_WARNING"mtd: partition \"%s\" doesn't end on an erase block -- force read-only\n",
+-		printk(KERN_WARNING"mtd: partition \"%s\" doesn't end on an erase/write block -- force read-only\n",
 -			part->name);
-+	    mtd_mod_by_eb(slave->offset + slave->mtd.size, &slave->mtd)) {
 +		slave->mtd.flags |= MTD_ERASE_PARTIAL;
 +
-+		if ((u32) slave->mtd.size > master->erasesize)
++		if ((u32)slave->mtd.size > parent->erasesize)
 +			slave->mtd.flags &= ~MTD_WRITEABLE;
 +		else
 +			slave->mtd.erasesize = slave->mtd.size;

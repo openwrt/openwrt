@@ -1,6 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -717,6 +717,17 @@ run_parsers_by_type(struct mtd_part *sla
+@@ -753,6 +753,17 @@ run_parsers_by_type(struct mtd_part *sla
  	return nr_parts;
  }
  
@@ -18,7 +18,7 @@
  #ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #else
-@@ -1055,6 +1066,24 @@ int mtd_is_partition(const struct mtd_in
+@@ -1106,6 +1117,24 @@ int mtd_is_partition(const struct mtd_in
  }
  EXPORT_SYMBOL_GPL(mtd_is_partition);
  
@@ -27,7 +27,7 @@
 +	if (!mtd_is_partition(mtd))
 +		return (struct mtd_info *)mtd;
 +
-+	return mtd_to_part(mtd)->master;
++	return mtd_to_part(mtd)->parent;
 +}
 +EXPORT_SYMBOL_GPL(mtdpart_get_master);
 +
@@ -45,7 +45,7 @@
  {
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
-@@ -106,6 +106,8 @@ int mtd_is_partition(const struct mtd_in
+@@ -107,6 +107,8 @@ int mtd_is_partition(const struct mtd_in
  int mtd_add_partition(struct mtd_info *master, const char *name,
  		      long long offset, long long length);
  int mtd_del_partition(struct mtd_info *master, int partno);
@@ -56,7 +56,7 @@
  				       const char *name, int offset, int size);
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -472,6 +472,24 @@ static inline uint32_t mtd_mod_by_eb(uin
+@@ -485,6 +485,24 @@ static inline uint32_t mtd_mod_by_eb(uin
  	return do_div(sz, mtd->erasesize);
  }
  
