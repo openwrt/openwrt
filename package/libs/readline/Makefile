@@ -23,6 +23,7 @@ PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/libreadline
   SECTION:=libs
@@ -69,4 +70,5 @@ define Package/libreadline/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{history,readline}.{so,so.7,so.7.0} $(1)/usr/lib/
 endef
 
+$(eval $(call HostBuild))
 $(eval $(call BuildPackage,libreadline))
