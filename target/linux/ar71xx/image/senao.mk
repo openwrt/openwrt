@@ -9,6 +9,7 @@ define Build/senao-factory-image
 	$(CP) $(rootfs) $@.senao/openwrt-senao-$(board)-root.squashfs
 
 	$(TAR) -c \
+		--numeric-owner --owner=0 --group=0 --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-C $@.senao . | gzip -9nc > $@
 
