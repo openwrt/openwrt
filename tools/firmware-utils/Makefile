@@ -73,7 +73,7 @@ define Host/Compile
 	$(call cc,mkdcs932, -Wall)
 	$(call cc,mkheader_gemtek,-lz)
 	$(call cc,mkrtn56uimg, -lz)
-	$(call cc,dgn3500sum)
+	$(call cc,dgn3500sum, -Wall)
 	$(call cc,edimax_fw_header, -Wall)
 	$(call cc,mkmerakifw sha1, -Wall)
 	$(call cc,mkmerakifw-old, -Wall)
