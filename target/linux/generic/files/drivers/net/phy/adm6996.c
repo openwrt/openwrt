@@ -67,7 +67,6 @@ struct adm6996_priv {
 	u8 eecs;
 	u8 eesk;
 	u8 eedi;
-	u8 eerc;
 
 	enum adm6996_model model;
 
@@ -1141,7 +1140,6 @@ static int adm6996_gpio_probe(struct platform_device *pdev)
 
 	priv->eecs = pdata->eecs;
 	priv->eedi = pdata->eedi;
-	priv->eerc = pdata->eerc;
 	priv->eesk = pdata->eesk;
 
 	priv->model = pdata->model;
@@ -1152,9 +1150,6 @@ static int adm6996_gpio_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 	ret = devm_gpio_request(&pdev->dev, priv->eedi, "adm_eedi");
-	if (ret)
-		return ret;
-	ret = devm_gpio_request(&pdev->dev, priv->eerc, "adm_eerc");
 	if (ret)
 		return ret;
 	ret = devm_gpio_request(&pdev->dev, priv->eesk, "adm_eesk");

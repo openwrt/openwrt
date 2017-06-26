@@ -23,7 +23,6 @@ struct adm6996_gpio_platform_data {
 	u8 eecs;
 	u8 eesk;
 	u8 eedi;
-	u8 eerc;
 	enum adm6996_model model;
 };
 

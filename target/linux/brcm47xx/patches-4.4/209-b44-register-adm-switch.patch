@@ -19,7 +19,7 @@ Subject: [PATCH 210/210] b44: register adm switch
  
  #include <asm/uaccess.h>
  #include <asm/io.h>
-@@ -2240,6 +2242,70 @@ static void b44_adjust_link(struct net_d
+@@ -2240,6 +2242,69 @@ static void b44_adjust_link(struct net_d
  	}
  }
  
@@ -50,11 +50,10 @@ Subject: [PATCH 210/210] b44: register adm switch
 +	else
 +		adm_data.eedi = 4;
 +
-+	gpio = bcm47xx_nvram_gpio_pin("adm_rc");
-+	if (gpio >= 0)
-+		adm_data.eerc = gpio;
-+	else
-+		adm_data.eerc = 5;
++	/*
++	 * We ignore the "adm_rc" GPIO here. The driver does not use it,
++	 * and it conflicts with the Reset button GPIO on the Linksys WRT54GSv1.
++	 */
 +
 +	info.parent = bp->sdev->dev;
 +	info.name = "adm6996_gpio";
@@ -90,7 +89,7 @@ Subject: [PATCH 210/210] b44: register adm switch
  static int b44_register_phy_one(struct b44 *bp)
  {
  	struct mii_bus *mii_bus;
-@@ -2283,6 +2349,9 @@ static int b44_register_phy_one(struct b
+@@ -2283,6 +2348,9 @@ static int b44_register_phy_one(struct b
  	if (!bp->mii_bus->phy_map[bp->phy_addr] &&
  	    (sprom->boardflags_lo & (B44_BOARDFLAG_ROBO | B44_BOARDFLAG_ADM))) {
  
@@ -100,7 +99,7 @@ Subject: [PATCH 210/210] b44: register adm switch
  		dev_info(sdev->dev,
  			 "could not find PHY at %i, use fixed one\n",
  			 bp->phy_addr);
-@@ -2479,6 +2548,7 @@ static void b44_remove_one(struct ssb_de
+@@ -2479,6 +2547,7 @@ static void b44_remove_one(struct ssb_de
  	unregister_netdev(dev);
  	if (bp->flags & B44_FLAG_EXTERNAL_PHY)
  		b44_unregister_phy_one(bp);
