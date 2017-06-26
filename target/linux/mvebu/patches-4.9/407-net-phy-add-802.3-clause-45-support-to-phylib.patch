@@ -258,7 +258,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 +EXPORT_SYMBOL_GPL(genphy_c45_read_pma);
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1390,27 +1390,19 @@ EXPORT_SYMBOL(genphy_read_status);
+@@ -1410,27 +1410,19 @@ EXPORT_SYMBOL(genphy_read_status);
  
  static int gen10g_read_status(struct phy_device *phydev)
  {

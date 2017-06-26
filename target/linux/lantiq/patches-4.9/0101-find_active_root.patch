@@ -60,7 +60,7 @@
  		return -ENOMEM;
  
  	i = 0;
-@@ -120,12 +155,22 @@ static int parse_ofpart_partitions(struc
+@@ -121,12 +156,22 @@ static int parse_ofpart_partitions(struc
  		if (of_get_property(pp, "lock", &len))
  			parts[i].mask_flags |= MTD_POWERUP_LOCK;
  
@@ -83,7 +83,7 @@
  	*pparts = parts;
  	return nr_parts;
  
-@@ -136,6 +181,7 @@ ofpart_fail:
+@@ -137,6 +182,7 @@ ofpart_fail:
  ofpart_none:
  	of_node_put(pp);
  	kfree(parts);

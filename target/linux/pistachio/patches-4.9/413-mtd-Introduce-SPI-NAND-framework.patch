@@ -46,7 +46,7 @@ Signed-off-by: Ian Pozella <Ian.Pozella@imgtec.com>
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -369,6 +369,8 @@ source "drivers/mtd/onenand/Kconfig"
+@@ -373,6 +373,8 @@ source "drivers/mtd/onenand/Kconfig"
  
  source "drivers/mtd/lpddr/Kconfig"
  
@@ -57,7 +57,7 @@ Signed-off-by: Ian Pozella <Ian.Pozella@imgtec.com>
  source "drivers/mtd/ubi/Kconfig"
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -35,5 +35,6 @@ inftl-objs		:= inftlcore.o inftlmount.o
+@@ -36,5 +36,6 @@ inftl-objs		:= inftlcore.o inftlmount.o
  
  obj-y		+= chips/ lpddr/ maps/ devices/ nand/ onenand/ tests/
  
