@@ -41,6 +41,7 @@ validate_section_dropbear()
 		'Port:list(port):22' \
 		'SSHKeepAlive:uinteger:300' \
 		'IdleTimeout:uinteger:0' \
+		'MaxAuthTries:uinteger:3' \
 		'mdns:bool:1'
 }
 
@@ -49,7 +50,7 @@ dropbear_instance()
 	local PasswordAuth enable Interface GatewayPorts \
 		RootPasswordAuth RootLogin rsakeyfile \
 		BannerFile Port SSHKeepAlive IdleTimeout \
-		mdns ipaddrs
+		MaxAuthTries mdns ipaddrs
 
 	validate_section_dropbear "${1}" || {
 		echo "validation failed"
@@ -78,6 +79,7 @@ dropbear_instance()
 	append_ports "${ipaddrs}" "${Port}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
 	[ "${SSHKeepAlive}" -ne 0 ] && procd_append_param command -K "${SSHKeepAlive}"
+	[ "${MaxAuthTries}" -ne 0 ] && procd_append_param command -T "${MaxAuthTries}"
 	[ "${mdns}" -ne 0 ] && procd_add_mdns "ssh" "tcp" "$Port" "daemon=dropbear"
 	procd_set_param respawn
 	procd_close_instance
