@@ -26,7 +26,7 @@
  endif
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -2717,6 +2717,7 @@ enum {
+@@ -2722,6 +2722,7 @@ enum {
  	DIO_SKIP_DIO_COUNT = 0x08,
  };
  
@@ -34,7 +34,7 @@
  void dio_end_io(struct bio *bio, int error);
  
  ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
-@@ -2724,6 +2725,18 @@ ssize_t __blockdev_direct_IO(struct kioc
+@@ -2729,6 +2730,18 @@ ssize_t __blockdev_direct_IO(struct kioc
  			     loff_t offset, get_block_t get_block,
  			     dio_iodone_t end_io, dio_submit_t submit_io,
  			     int flags);
