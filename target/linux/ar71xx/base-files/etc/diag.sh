@@ -459,6 +459,9 @@ get_status_led() {
 	airgatewaypro)
 		status_led="ubnt:white:status"
 		;;
+	wi2a-ac200i)
+		status_led="nokia:green:ctrl"
+		;;
 	whr-g301n|\
 	whr-hp-g300n|\
 	whr-hp-gn|\
@@ -528,6 +531,9 @@ set_state() {
 		qihoo-c301)
 			local n=$(fw_printenv activeregion | cut -d = -f 2)
 			fw_setenv "image${n}trynum" 0
+			;;
+		wi2a-ac200i)
+			fw_setenv PKRstCnt 0
 			;;
 		esac
 		;;

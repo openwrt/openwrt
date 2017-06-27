@@ -534,6 +534,7 @@ platform_check_image() {
 	nbg6716|\
 	r6100|\
 	rambutan|\
+	wi2a-ac200i|\
 	wndr3700v4|\
 	wndr4300)
 		nand_do_platform_check $board $1
@@ -708,6 +709,7 @@ platform_pre_upgrade() {
 	rb-2011uias-2hnd|\
 	rb-sxt2n|\
 	rb-sxt5n|\
+	wi2a-ac200i|\
 	wndr3700v4|\
 	wndr4300)
 		nand_do_upgrade "$1"
@@ -742,6 +744,23 @@ platform_nand_pre_upgrade() {
 		[ -n "$fw_mtd" ] || return
 		mtd erase kernel
 		tar xf "$1" sysupgrade-routerboard/kernel -O | nandwrite -o "$fw_mtd" -
+		;;
+	wi2a-ac200i)
+		case "$(fw_printenv -n dualPartition)" in
+			imgA)
+				fw_setenv dualPartition imgB
+				fw_setenv ActImg NokiaImageB
+			;;
+			imgB)
+				fw_setenv dualPartition imgA
+				fw_setenv ActImg NokiaImageA
+			;;
+		esac
+		ubiblock -r /dev/ubiblock0_0 2>/dev/null >/dev/null
+		rm -f /dev/ubiblock0_0
+		ubidetach -d 0 2>/dev/null >/dev/null
+		CI_UBIPART=ubi_alt
+		CI_KERNPART=kernel_alt
 		;;
 	esac
 }

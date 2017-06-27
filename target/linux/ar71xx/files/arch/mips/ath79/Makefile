@@ -39,6 +39,7 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= routerboot.o
 # Machines
 #
 obj-$(CONFIG_ATH79_MACH_A60)			+= mach-a60.o
+obj-$(CONFIG_ATH79_MACH_WI2A_AC200I)		+= mach-wi2a-ac200i.o
 obj-$(CONFIG_ATH79_MACH_ALFA_AP120C)		+= mach-alfa-ap120c.o
 obj-$(CONFIG_ATH79_MACH_ALFA_AP96)		+= mach-alfa-ap96.o
 obj-$(CONFIG_ATH79_MACH_ALFA_NX)		+= mach-alfa-nx.o

@@ -824,6 +824,12 @@ r6100)
 	ucidef_set_led_usbdev "usb" "USB" "netgear:blue:usb" "1-1"
 	ucidef_set_led_wlan "wlan" "WLAN" "netgear:blue:wlan" "phy1tpt"
 	;;
+wi2a-ac200i)
+	ucidef_set_led_default "power" "Power (green)" "nokia:green:power" "1"
+	ucidef_set_led_default "wan" "Ethernet LED (green)" "nokia:green:wan" "1"
+	ucidef_set_led_wlan "wlan5g" "WLAN" "nokia:green:wlan-5g" "phy0tpt"
+	ucidef_set_led_wlan "wlan2g" "WLAN" "nokia:green:wlan-2g" "phy1tpt"
+	;;
 wndr3700v4|\
 wndr4300)
 	ucidef_set_led_switch "wan-green" "WAN (green)" "netgear:green:wan" "switch0" "0x20" "0x08"
