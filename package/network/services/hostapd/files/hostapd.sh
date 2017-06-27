@@ -155,6 +155,7 @@ hostapd_common_add_bss_config() {
 	config_add_string acct_server
 	config_add_string acct_secret
 	config_add_int acct_port
+	config_add_int acct_interval
 
 	config_add_string dae_client
 	config_add_string dae_secret
@@ -211,8 +212,8 @@ hostapd_set_bss_options() {
 		wps_pushbutton wps_label ext_registrar wps_pbc_in_m1 wps_ap_setup_locked \
 		wps_independent wps_device_type wps_device_name wps_manufacturer wps_pin \
 		macfilter ssid wmm uapsd hidden short_preamble rsn_preauth \
-		iapp_interface eapol_version acct_server acct_secret acct_port \
-		dynamic_vlan ieee80211w
+		iapp_interface eapol_version dynamic_vlan ieee80211w \
+		acct_server acct_secret acct_port acct_interval
 
 	set_default isolate 0
 	set_default maxassoc 0
@@ -253,6 +254,8 @@ hostapd_set_bss_options() {
 		append bss_conf "acct_server_port=$acct_port" "$N"
 		[ -n "$acct_secret" ] && \
 			append bss_conf "acct_server_shared_secret=$acct_secret" "$N"
+		[ -n "$acct_interval" ] && \
+			append bss_conf "radius_acct_interim_interval=$acct_interval" "$N"
 	}
 
 	local vlan_possible=""
