@@ -63,9 +63,9 @@ Signed-off-by: Zhang Rui <rui.zhang@intel.com>
 +	};
 --- a/drivers/thermal/Kconfig
 +++ b/drivers/thermal/Kconfig
-@@ -391,4 +391,9 @@ config QCOM_SPMI_TEMP_ALARM
- 	  real time die temperature if an ADC is present or an estimate of the
- 	  temperature based upon the over temperature stage value.
+@@ -404,4 +404,9 @@ config BCM2835_THERMAL
+ 	help
+ 	  Support for thermal sensors on Broadcom bcm2835 SoCs.
  
 +menu "Qualcomm thermal drivers"
 +depends on (ARCH_QCOM && OF) || COMPILE_TEST
@@ -75,10 +75,10 @@ Signed-off-by: Zhang Rui <rui.zhang@intel.com>
  endif
 --- a/drivers/thermal/Makefile
 +++ b/drivers/thermal/Makefile
-@@ -48,3 +48,4 @@ obj-$(CONFIG_INTEL_PCH_THERMAL)	+= intel
- obj-$(CONFIG_ST_THERMAL)	+= st/
+@@ -50,3 +50,4 @@ obj-$(CONFIG_ST_THERMAL)	+= st/
  obj-$(CONFIG_TEGRA_SOCTHERM)	+= tegra_soctherm.o
  obj-$(CONFIG_HISI_THERMAL)     += hisi_thermal.o
+ obj-$(CONFIG_BCM2835_THERMAL) += bcm2835_thermal.o
 +obj-$(CONFIG_QCOM_TSENS)	+= qcom/
 --- /dev/null
 +++ b/drivers/thermal/qcom/Kconfig
