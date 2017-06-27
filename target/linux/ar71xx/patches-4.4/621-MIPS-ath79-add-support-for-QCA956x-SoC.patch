@@ -219,7 +219,7 @@
  }
 --- a/arch/mips/ath79/dev-wmac.c
 +++ b/arch/mips/ath79/dev-wmac.c
-@@ -201,6 +201,26 @@ static void qca955x_wmac_setup(void)
+@@ -200,6 +200,26 @@ static void qca955x_wmac_setup(void)
  #define AR93XX_OTP_READ_DATA \
  	(soc_is_ar934x() ? AR934X_OTP_READ_DATA : AR9300_OTP_READ_DATA)
  
@@ -246,7 +246,7 @@
  static bool __init
  ar93xx_wmac_otp_read_word(void __iomem *base, int addr, u32 *data)
  {
-@@ -404,6 +424,8 @@ void __init ath79_register_wmac(u8 *cal_
+@@ -403,6 +423,8 @@ void __init ath79_register_wmac(u8 *cal_
  		qca953x_wmac_setup();
  	else if (soc_is_qca955x())
  		qca955x_wmac_setup();

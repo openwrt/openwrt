@@ -214,7 +214,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -781,10 +782,10 @@ static void tcp_v6_send_response(const s
+@@ -786,10 +787,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -241,7 +241,7 @@
   */
 --- a/net/ipv6/datagram.c
 +++ b/net/ipv6/datagram.c
-@@ -429,7 +429,7 @@ int ipv6_recv_error(struct sock *sk, str
+@@ -433,7 +433,7 @@ int ipv6_recv_error(struct sock *sk, str
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
  		} else {
@@ -250,7 +250,7 @@
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -766,12 +766,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -770,12 +770,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -610,7 +610,7 @@
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -223,7 +223,7 @@ static struct sk_buff **ipv6_gro_receive
+@@ -225,7 +225,7 @@ static struct sk_buff **ipv6_gro_receive
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
@@ -711,7 +711,7 @@
  		if (xb)
  			return i * 32 + 31 - __fls(ntohl(xb));
  	}
-@@ -799,17 +803,18 @@ static inline int ip6_default_np_autolab
+@@ -804,17 +808,18 @@ static inline int ip6_default_np_autolab
  static inline void ip6_flow_hdr(struct ipv6hdr *hdr, unsigned int tclass,
  				__be32 flowlabel)
  {
