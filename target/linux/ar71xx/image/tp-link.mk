@@ -282,6 +282,7 @@ define Device/re450-v1
   TPLINK_BOARD_ID := RE450
   DEVICE_PROFILE := RE450
   LOADER_TYPE := elf
+  TPLINK_HWID := 0x0
   KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-kernel
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
