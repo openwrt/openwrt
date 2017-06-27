@@ -91,7 +91,7 @@ endef
 
 define Build/tplink-safeloader
        -$(STAGING_DIR_HOST)/bin/tplink-safeloader \
-		-B $(TPLINK_BOARD_NAME) \
+		-B $(TPLINK_BOARD_ID) \
 		-V $(REVISION) \
 		-k $(IMAGE_KERNEL) \
 		-r $@ \

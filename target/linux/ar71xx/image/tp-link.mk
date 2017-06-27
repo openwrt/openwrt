@@ -1,4 +1,4 @@
-DEVICE_VARS += LOADER_FLASH_OFFS TPLINK_BOARD_NAME TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION TPLINK_HWID TPLINK_HWREV
+DEVICE_VARS += LOADER_FLASH_OFFS TPLINK_BOARD_ID TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION TPLINK_HWID TPLINK_HWREV
 
 define Build/copy-file
 	cat "$(1)" > "$@"
@@ -130,7 +130,7 @@ define Device/archer-c25-v1
   DEVICE_TITLE := TP-LINK Archer C25 v1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887
   BOARDNAME := ARCHER-C25-V1
-  TPLINK_BOARD_NAME := ARCHER-C25-V1
+  TPLINK_BOARD_ID := ARCHER-C25-V1
   DEVICE_PROFILE := ARCHERC25V1
   IMAGE_SIZE := 7808k
   LOADER_TYPE := elf
@@ -153,7 +153,7 @@ define Device/archer-c59-v1
   DEVICE_TITLE := TP-LINK Archer C59 v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME := ARCHER-C59-V1
-  TPLINK_BOARD_NAME := ARCHER-C59-V1
+  TPLINK_BOARD_ID := ARCHER-C59-V1
   DEVICE_PROFILE := ARCHERC59V1
   IMAGE_SIZE := 14528k
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(mac)ro,1536k(kernel),12992k(rootfs),1664k(tplink)ro,64k(art)ro,14528k@0x20000(firmware)
@@ -164,7 +164,7 @@ define Device/archer-c60-v1
   DEVICE_TITLE := TP-LINK Archer C60 v1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
   BOARDNAME := ARCHER-C60-V1
-  TPLINK_BOARD_NAME := ARCHER-C60-V1
+  TPLINK_BOARD_ID := ARCHER-C60-V1
   DEVICE_PROFILE := ARCHERC60V1
   IMAGE_SIZE := 7936k
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(mac)ro,1344k(kernel),6592k(rootfs),64k(tplink)ro,64k(art)ro,7936k@0x20000(firmware)
@@ -227,7 +227,7 @@ define Device/cpe510-520-v1
   MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),6144k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
   IMAGE_SIZE := 7680k
   BOARDNAME := CPE510
-  TPLINK_BOARD_NAME := CPE510
+  TPLINK_BOARD_ID := CPE510
   DEVICE_PROFILE := CPE510
   LOADER_TYPE := elf
   KERNEL := kernel-bin | patch-cmdline | lzma | loader-kernel
@@ -240,21 +240,21 @@ define Device/cpe210-220-v1
   $(Device/cpe510-520-v1)
   DEVICE_TITLE := TP-LINK CPE210/220 v1
   BOARDNAME := CPE210
-  TPLINK_BOARD_NAME := CPE210
+  TPLINK_BOARD_ID := CPE210
 endef
 
 define Device/wbs210-v1
   $(Device/cpe510-520-v1)
   DEVICE_TITLE := TP-LINK WBS210 v1
   BOARDNAME := WBS210
-  TPLINK_BOARD_NAME := WBS210
+  TPLINK_BOARD_ID := WBS210
 endef
 
 define Device/wbs510-v1
   $(Device/cpe510-520-v1)
   DEVICE_TITLE := TP-LINK WBS510 v1
   BOARDNAME := WBS510
-  TPLINK_BOARD_NAME := WBS510
+  TPLINK_BOARD_ID := WBS510
 endef
 TARGET_DEVICES += cpe210-220-v1 cpe510-520-v1 wbs210-v1 wbs510-v1
 
@@ -263,7 +263,7 @@ define Device/eap120-v1
   MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),14336k(rootfs),192k(config)ro,64k(ART)ro,15872k@0x40000(firmware)
   IMAGE_SIZE := 15872k
   BOARDNAME := EAP120
-  TPLINK_BOARD_NAME := EAP120
+  TPLINK_BOARD_ID := EAP120
   DEVICE_PROFILE := EAP120
   LOADER_TYPE := elf
   KERNEL := kernel-bin | patch-cmdline | lzma | loader-kernel
@@ -279,7 +279,7 @@ define Device/re450-v1
   MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),4672k(rootfs),64k(pation-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro,6016k@0x20000(firmware)
   IMAGE_SIZE := 7936k
   BOARDNAME := RE450
-  TPLINK_BOARD_NAME := RE450
+  TPLINK_BOARD_ID := RE450
   DEVICE_PROFILE := RE450
   LOADER_TYPE := elf
   KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-kernel
@@ -521,7 +521,7 @@ define Device/tl-wa850re-v2
   DEVICE_PACKAGES := rssileds
   BOARDNAME := TL-WA850RE-V2
   DEVICE_PROFILE := TLWA850
-  TPLINK_BOARD_NAME := TLWA850REV2
+  TPLINK_BOARD_ID := TLWA850REV2
   TPLINK_HWID := 0x08500002
 endef
 
@@ -704,7 +704,7 @@ define Device/tl-wr1043nd-v4
   TPLINK_FLASHLAYOUT := 16Msafeloader
   MTDPARTS := spi0.0:128k(u-boot)ro,1536k(kernel),14016k(rootfs),128k(product-info)ro,320k(config)ro,64k(partition-table)ro,128k(logs)ro,64k(ART)ro,15552k@0x20000(firmware)
   IMAGE_SIZE := 15552k
-  TPLINK_BOARD_NAME := TLWR1043NDV4
+  TPLINK_BOARD_ID := TLWR1043NDV4
   KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-combined
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
@@ -1087,7 +1087,7 @@ define Device/tl-wr942n-v1
   DEVICE_TITLE := TP-LINK TL-WR942N v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   BOARDNAME := TL-WR942N-V1
-  TPLINK_BOARD_NAME := TLWR942NV1
+  TPLINK_BOARD_ID := TLWR942NV1
   DEVICE_PROFILE := TLWR942
   IMAGE_SIZE := 14464k
   KERNEL := kernel-bin | patch-cmdline | lzma | uImageArcher lzma

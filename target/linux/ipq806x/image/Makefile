@@ -79,12 +79,12 @@ define Device/TpSafeImage
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
-	TPLINK_BOARD_NAME :=
+	TPLINK_BOARD_ID :=
 	IMAGES := factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
 	IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata
 endef
-DEVICE_VARS += TPLINK_BOARD_NAME
+DEVICE_VARS += TPLINK_BOARD_ID
 
 define Device/ZyXELImage
 	PROFILES += $$(DEVICE_NAME)
@@ -126,7 +126,7 @@ define Device/C2600
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := c2600
-	TPLINK_BOARD_NAME := C2600
+	TPLINK_BOARD_ID := C2600
 	DEVICE_TITLE := TP-Link Archer C2600
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
