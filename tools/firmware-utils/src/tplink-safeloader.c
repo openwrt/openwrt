@@ -423,9 +423,9 @@ static struct device_info boards[] = {
 		.vendor = "",
 		.support_list =
 			"SupportList:\r\n"
-			"{product_name:ArcherC5,"
-			"product_ver:2.0.0,"
-			"special_id:00000000}\r\n",
+			"{product_name:ArcherC5,product_ver:2.0.0,special_id:00000000}\r\n"
+			"{product_name:ArcherC5,product_ver:2.0.0,special_id:55530000}\r\n"
+			"{product_name:ArcherC5,product_ver:2.0.0,special_id:4A500000}\r\n", /* JP version */
 		.support_trail = '\x00',
 		.soft_ver = NULL,
 
