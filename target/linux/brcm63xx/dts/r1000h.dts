@@ -79,17 +79,24 @@
 
 	linux,part-probe = "bcm63xxpart";
 
-	CFE@0 {
-		reg = <0x000000 0x020000>;
-		read-only;
-	};
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	linux@20000 {
-		reg = <0x020000 0x1fc0000>;
-	};
+		CFE@0 {
+			reg = <0x000000 0x020000>;
+			read-only;
+		};
 
-	nvram@1fe0000 {
-		reg = <0x1fe0000 0x20000>;
+		linux@20000 {
+			reg = <0x020000 0x1fc0000>;
+			compatible = "brcm,bcm963xx-imagetag";
+		};
+
+		nvram@1fe0000 {
+			reg = <0x1fe0000 0x20000>;
+		};
 	};
 };
 

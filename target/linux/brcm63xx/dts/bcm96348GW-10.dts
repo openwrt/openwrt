@@ -58,6 +58,10 @@
 	status = "ok";
 
 	linux,part-probe = "bcm63xxpart";
+
+	partitions {
+		compatible = "brcm,bcm963xx-cfe-nor-partitions";
+	};
 };
 
 &pinctrl {
