@@ -29,3 +29,17 @@ define Device/at91-sama5d4_xplained
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 248KiB -c 2082 -x lzo
 endef
 TARGET_DEVICES += at91-sama5d4_xplained
+
+define Device/wb50n
+  $(Device/evaluation-fit)
+  DEVICE_TITLE := Laird WB50N
+  DEVICE_PACKAGES := \
+	  kmod-mmc-at91 kmod-ath6kl-sdio ath6k-firmware \
+	  kmod-usb-storage kmod-fs-vfat kmod-fs-msdos \
+	  kmod-leds-gpio
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 2048
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB -c 955
+endef
+TARGET_DEVICES += wb50n
