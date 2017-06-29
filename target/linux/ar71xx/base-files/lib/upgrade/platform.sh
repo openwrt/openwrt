@@ -216,6 +216,7 @@ platform_check_image() {
 	carambola2|\
 	cf-e316n-v2|\
 	cf-e320n-v2|\
+	cf-e355ac|\
 	cf-e380ac-v1|\
 	cf-e380ac-v2|\
 	cf-e520n|\
