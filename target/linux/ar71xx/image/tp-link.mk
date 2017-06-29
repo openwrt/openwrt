@@ -118,7 +118,7 @@ endef
 define Device/archer-c58-v1
   $(Device/archer-cxx)
   DEVICE_TITLE := TP-LINK Archer C58 v1
-  DEVICE_PACKAGES := kmod-ath10k
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9888
   BOARDNAME := ARCHER-C58-V1
   TPLINK_BOARD_ID := ARCHER-C58-V1
   DEVICE_PROFILE := ARCHERC58V1
@@ -130,7 +130,7 @@ endef
 define Device/archer-c59-v1
   $(Device/archer-cxx)
   DEVICE_TITLE := TP-LINK Archer C59 v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca9888
   BOARDNAME := ARCHER-C59-V1
   TPLINK_BOARD_ID := ARCHER-C59-V1
   DEVICE_PROFILE := ARCHERC59V1
@@ -142,7 +142,7 @@ endef
 define Device/archer-c60-v1
   $(Device/archer-cxx)
   DEVICE_TITLE := TP-LINK Archer C60 v1
-  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9888
   BOARDNAME := ARCHER-C60-V1
   TPLINK_BOARD_ID := ARCHER-C60-V1
   DEVICE_PROFILE := ARCHERC60V1
