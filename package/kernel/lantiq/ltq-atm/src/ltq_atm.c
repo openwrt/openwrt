@@ -1866,15 +1866,11 @@ static int ltq_atm_probe(struct platform_device *pdev)
 	port_cell.port_num = ATM_PORT_NUMBER;
 	ifx_mei_atm_showtime_check(&g_showtime, &port_cell, &g_xdata_addr);
 	if ( g_showtime ) {
-		for ( i = 0; i < ATM_PORT_NUMBER; i++ )
-			if ( port_cell.tx_link_rate[i] != 0 )
-				break;
-		for ( j = 0; j < ATM_PORT_NUMBER; j++ )
-			g_atm_priv_data.port[j].tx_max_cell_rate =
-				port_cell.tx_link_rate[j] != 0 ? port_cell.tx_link_rate[j] : port_cell.tx_link_rate[i];
+		atm_showtime_enter(&port_cell, &g_xdata_addr);
+	} else {
+		qsb_global_set();
 	}
 
-	qsb_global_set();
 	validate_oam_htu_entry();
 
 	ifx_mei_atm_showtime_enter = atm_showtime_enter;

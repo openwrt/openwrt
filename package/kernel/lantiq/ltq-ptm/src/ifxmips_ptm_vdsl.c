@@ -1022,7 +1022,10 @@ static int ifx_ptm_init(void)
     enable_irq(PPE_MAILBOX_IGU1_INT);
 
     ifx_mei_atm_showtime_check(&g_showtime, &port_cell, &g_xdata_addr);
-    
+    if ( g_showtime ) {
+	ptm_showtime_enter(&port_cell, &g_xdata_addr);
+    }
+
     ifx_mei_atm_showtime_enter = ptm_showtime_enter;
     ifx_mei_atm_showtime_exit  = ptm_showtime_exit;
 
