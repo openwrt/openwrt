@@ -6,9 +6,8 @@
 #
 
 ARCH:=aarch64
-BOARDNAME:=layerscape 64b boards
+BOARDNAME:=ARMv8 64-bit based boards
 
 define Target/Description
-	Build firmware images for $(BOARDNAME) SoC devices.
+	Build firmware images for NXP Layerscape ARMv8 64-bit based boards.
 endef
-

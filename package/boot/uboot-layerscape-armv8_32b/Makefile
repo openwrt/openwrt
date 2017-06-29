@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=uboot-layerscape-32bit
+PKG_NAME:=uboot-layerscape-armv8_32b
 PKG_VERSION:=v1.0
 PKG_RELEASE:=1
 
@@ -24,11 +24,11 @@ PKG_MAINTAINER:=Jiang Yutang <jiangyutang1978@gmail.com>
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-define Package/uboot-layerscape-32b
+define Package/uboot-layerscape-armv8_32b
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_layerscape_32b
-  TITLE:=32-bit U-Boot for Layerscape boards
+  DEPENDS:=@TARGET_layerscape_armv8_32b
+  TITLE:=U-Boot for ARMv8 32-bit based Layerscape boards
   DEFAULT:=y
   HIDDEN:=1
 endef
@@ -43,9 +43,9 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/ls1043ardb-uboot.bin $(STAGING_DIR_IMAGE)/ls1043ardb-32b-uboot.bin
-	$(CP) $(PKG_BUILD_DIR)/ls1046ardb-uboot.bin $(STAGING_DIR_IMAGE)/ls1046ardb-32b-uboot.bin
-	$(CP) $(PKG_BUILD_DIR)/ls1012ardb-uboot.bin.swap $(STAGING_DIR_IMAGE)/ls1012ardb-32b-uboot.bin
+	$(CP) $(PKG_BUILD_DIR)/ls1043ardb-uboot.bin $(STAGING_DIR_IMAGE)/ls1043ardb-armv8_32b-uboot.bin
+	$(CP) $(PKG_BUILD_DIR)/ls1046ardb-uboot.bin $(STAGING_DIR_IMAGE)/ls1046ardb-armv8_32b-uboot.bin
+	$(CP) $(PKG_BUILD_DIR)/ls1012ardb-uboot.bin.swap $(STAGING_DIR_IMAGE)/ls1012ardb-armv8_32b-uboot.bin
 endef
 
-$(eval $(call BuildPackage,uboot-layerscape-32b))
+$(eval $(call BuildPackage,uboot-layerscape-armv8_32b))

@@ -6,9 +6,9 @@
 #
 
 ARCH:=arm
-BOARDNAME:=layerscape 32b boards
+BOARDNAME:=ARMv8 32-bit based boards
 CPU_TYPE:=cortex-a9
 
 define Target/Description
-	Build firmware images for $(BOARDNAME) SoC devices.
+	Build firmware images for NXP Layerscape ARMv8 32-bit based boards.
 endef

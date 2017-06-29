@@ -22,7 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=layerscape
-  BUILD_SUBTARGET:=64b
+  BUILD_SUBTARGET:=armv8_64b
   BUILD_DEVICES:=$(1)
   UBOOT_IMAGE:=u-boot-dtb.bin
   HIDDEN:=y
@@ -50,7 +50,7 @@ UBOOT_TARGETS := \
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-64b-uboot.bin
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(BUILD_SUBTARGET)-uboot.bin
 endef
 
 define Package/u-boot/install/default
