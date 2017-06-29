@@ -214,6 +214,6 @@ case "$2" in
 esac
 
 # user rules
-[ -f /etc/odhcp6c.user ] && . /etc/odhcp6c.user "@"
+[ -f /etc/odhcp6c.user ] && . /etc/odhcp6c.user "$@"
 
 exit 0
