@@ -13,7 +13,7 @@ KERNEL_PATCHVER:=4.4
 KERNELNAME:=Image dtbs
 FEATURES:=squashfs nand usb pcie gpio
 SUBTARGETS:=64b 32b
-MAINTAINER:=Jiang Yutang <jiangyutang1978@gmail.com>
+MAINTAINER:=Yangbo Lu <yangbo.lu@nxp.com>
 
 include $(INCLUDE_DIR)/target.mk
 
