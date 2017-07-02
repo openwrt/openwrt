@@ -97,16 +97,15 @@ static char *fw_ver = "0.0.0";
 static char *sver = "1.0";
 static uint32_t hdr_ver = 2;
 
+static struct board_info custom_board;
+
 static char *board_id;
 static struct board_info *board;
 static char *layout_id;
 static struct flash_layout *layout;
 static char *opt_hw_id;
-static uint32_t hw_id;
 static char *opt_hw_rev;
-static uint32_t hw_rev;
 static char *opt_hw_ver_add;
-static uint32_t hw_ver_add;
 static int fw_ver_lo;
 static int fw_ver_mid;
 static int fw_ver_hi;
@@ -127,7 +126,6 @@ static unsigned char jffs2_eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
 
 static struct file_info inspect_info;
 static int extract = 0;
-static bool endian_swap = false;
 
 char md5salt_normal[MD5SUM_LEN] = {
 	0xdc, 0xd7, 0x3a, 0xa5, 0xc3, 0x95, 0x98, 0xfb,
@@ -412,28 +410,27 @@ static int check_options(void)
 		if (layout_id == NULL)
 			layout_id = board->layout_id;
 
-		hw_id = board->hw_id;
-		hw_rev = board->hw_rev;
-		hw_ver_add = board->hw_ver_add;
 		if (board->hdr_ver)
 			hdr_ver = board->hdr_ver;
-		endian_swap = board->endian_swap;
 	} else {
+		board = &custom_board;
+
 		if (layout_id == NULL) {
 			ERR("flash layout is not specified");
 			return -1;
 		}
-		hw_id = strtoul(opt_hw_id, NULL, 0);
+
+		board->hw_id = strtoul(opt_hw_id, NULL, 0);
 
 		if (opt_hw_rev)
-			hw_rev = strtoul(opt_hw_rev, NULL, 0);
+			board->hw_rev = strtoul(opt_hw_rev, NULL, 0);
 		else
-			hw_rev = 1;
+			board->hw_rev = 1;
 
 		if (opt_hw_ver_add)
-			hw_ver_add = strtoul(opt_hw_ver_add, NULL, 0);
+			board->hw_ver_add = strtoul(opt_hw_ver_add, NULL, 0);
 		else
-			hw_ver_add = 0;
+			board->hw_ver_add = 0;
 	}
 
 	layout = find_layout(layout_id);
@@ -538,9 +535,9 @@ static void fill_header(char *buf, int len)
 	memcpy(hdr->fw_version, version, ver_len);
 	hdr->fw_version[ver_len] = 0;
 
-	hdr->hw_id = htonl(hw_id);
-	hdr->hw_rev = htonl(hw_rev);
-	hdr->hw_ver_add = htonl(hw_ver_add);
+	hdr->hw_id = htonl(board->hw_id);
+	hdr->hw_rev = htonl(board->hw_rev);
+	hdr->hw_ver_add = htonl(board->hw_ver_add);
 
 	if (boot_info.file_size == 0) {
 		memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
@@ -577,7 +574,7 @@ static void fill_header(char *buf, int len)
 	hdr->ver_mid = fw_ver_mid;
 	hdr->ver_lo = fw_ver_lo;
 
-	if (endian_swap) {
+	if (board->endian_swap) {
 		hdr->kernel_la = bswap_32(hdr->kernel_la);
 		hdr->kernel_ep = bswap_32(hdr->kernel_ep);
 	}
@@ -1021,7 +1018,7 @@ int main(int argc, char *argv[])
 			hdr_ver = atoi(optarg);
 			break;
 		case 'e':
-			endian_swap = true;
+			custom_board.endian_swap = true;
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
