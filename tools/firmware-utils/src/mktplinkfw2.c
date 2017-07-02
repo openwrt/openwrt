@@ -428,7 +428,7 @@ static int check_options(void)
 			hw_rev = 1;
 
 		if (opt_hw_ver_add)
-			hw_ver_add = strtoul(opt_hw_rev, NULL, 0);
+			hw_ver_add = strtoul(opt_hw_ver_add, NULL, 0);
 		else
 			hw_ver_add = 0;
 	}
