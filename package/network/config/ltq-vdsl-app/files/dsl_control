@@ -225,6 +225,20 @@ start_service() {
 		;;
 	esac
 
+	local annexgpio="/sys/class/gpio/annex"
+	if [ -d "${annexgpio}a" ] && [ -d "${annexgpio}b" ]; then
+		case "${annex}" in
+			a*|l*|m*)
+				echo 1 > "${annexgpio}a/value"
+				echo 0 > "${annexgpio}b/value"
+				;;
+			b*|j*)
+				echo 0 > "${annexgpio}a/value"
+				echo 1 > "${annexgpio}b/value"
+				;;
+		esac
+	fi
+
 	if [ -z "${firmware}" ]; then
 		# search for the firmware provided by dsl-vrx200-firmware-xdsl-*
 		if grep -qE "system type.*: (VR9|xRX200)" /proc/cpuinfo; then
