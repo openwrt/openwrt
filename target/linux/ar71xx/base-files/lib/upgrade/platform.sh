@@ -657,7 +657,8 @@ platform_check_image() {
 	rb-952ui-5ac2nd|\
 	rb-962uigs-5hact2hnt|\
 	rb-lhg-5nd|\
-	rb-mapl-2nd)
+	rb-mapl-2nd|\
+	tl-wr902ac-v1)
 		return 0
 		;;
 	esac

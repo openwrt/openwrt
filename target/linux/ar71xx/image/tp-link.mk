@@ -1026,6 +1026,25 @@ define Device/tl-wr847n-v8
 endef
 TARGET_DEVICES += tl-wr842n-v1 tl-wr842n-v2 tl-wr842n-v3 tl-wr843nd-v1 tl-wr847n-v8
 
+define Device/tl-wr902ac-v1
+  DEVICE_TITLE := TP-LINK TL-WR902AC v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport \
+	kmod-ath10k ath10k-firmware-qca9887 -swconfig -uboot-envtools
+  BOARDNAME := TL-WR902AC-V1
+  DEVICE_PROFILE := TLWR902
+  TPLINK_BOARD_ID := TL-WR902AC-V1
+  TPLINK_HWID := 0x0
+  SUPPORTED_DEVICES := tl-wr902ac-v1
+  IMAGE_SIZE := 7360k
+  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-kernel
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
+	append-metadata | check-size $$$$(IMAGE_SIZE)
+  MTDPARTS := spi0.0:128k(u-boot)ro,7360k(firmware),640k(tplink)ro,64k(art)ro
+endef
+TARGET_DEVICES += tl-wr902ac-v1
+
 define Device/tl-wr940n-v4
   $(Device/tplink-4mlzma)
   DEVICE_TITLE := TP-LINK TL-WR940N v4

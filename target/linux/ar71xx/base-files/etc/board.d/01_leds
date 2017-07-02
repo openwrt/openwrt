@@ -750,6 +750,11 @@ tl-wr802n-v1)
 tl-wr802n-v2)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:system" "phy0tpt"
 	;;
+tl-wr902ac-v1)
+	ucidef_set_led_netdev "wan" "WAN" "$board:green:lan" "eth0"
+	ucidef_set_led_usbdev "usb" "USB" "$board:green:usb" "1-1"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:green:wlan2g" "phy1tpt"
+	;;
 tl-wr940n-v4|\
 tl-wr941nd-v6)
 	ucidef_set_led_netdev "wan" "WAN" "tp-link:blue:wan" "eth0"

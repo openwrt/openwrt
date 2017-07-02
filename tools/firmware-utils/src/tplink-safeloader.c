@@ -672,6 +672,42 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system"
 	},
 
+	/** Firmware layout for the TL-WR902AC v1 */
+	{
+		.id     = "TL-WR902AC-V1",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:TL-WR902AC,product_ver:1.0.0,special_id:45550000}\n",
+		.support_trail = '\x00',
+		.soft_ver = NULL,
+
+		/**
+		   384KB were moved from file-system to os-image
+		   in comparison to the stock image
+		*/
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"os-image", 0x20000, 0x160000},
+			{"file-system", 0x180000, 0x5d0000},
+			{"default-mac", 0x750000, 0x00200},
+			{"pin", 0x750200, 0x00200},
+			{"product-info", 0x750400, 0x0fc00},
+			{"soft-version", 0x760000, 0x0b000},
+			{"support-list", 0x76b000, 0x04000},
+			{"profile", 0x770000, 0x04000},
+			{"default-config", 0x774000, 0x0b000},
+			{"user-config", 0x780000, 0x40000},
+			{"partition-table", 0x7c0000, 0x10000},
+			{"log", 0x7d0000, 0x20000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system",
+	},
+
 	/** Firmware layout for the TL-WR942N V1 */
 	{
 		.id     = "TLWR942NV1",

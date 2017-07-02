@@ -98,7 +98,8 @@ case "$FIRMWARE" in
 	rb-952ui-5ac2nd)
 		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116
 		;;
-	re450)
+	re450|\
+	tl-wr902ac-v1)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
 		;;

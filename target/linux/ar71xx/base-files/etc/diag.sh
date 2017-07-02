@@ -61,7 +61,8 @@ get_status_led() {
 	nbg6616|\
 	sc1750|\
 	sc450|\
-	tl-wpa8630)
+	tl-wpa8630|\
+	tl-wr902ac-v1)
 		status_led="$board:green:power"
 		;;
 	ap90q|\
