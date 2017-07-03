@@ -744,6 +744,47 @@ static struct device_info boards[] = {
 		.last_sysupgrade_partition = "file-system",
 	},
 
+	/** Firmware layout for the RE350 v1 */
+	{
+		.id = "RE350-V1",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:RE350,product_ver:1.0.0,special_id:45550000}\n"
+			"{product_name:RE350,product_ver:1.0.0,special_id:00000000}\n"
+			"{product_name:RE350,product_ver:1.0.0,special_id:41550000}\n"
+			"{product_name:RE350,product_ver:1.0.0,special_id:55530000}\n"
+			"{product_name:RE350,product_ver:1.0.0,special_id:43410000}\n"
+			"{product_name:RE350,product_ver:1.0.0,special_id:4b520000}\n"
+			"{product_name:RE350,product_ver:1.0.0,special_id:4a500000}\n",
+		.support_trail = '\x00',
+		.soft_ver = NULL,
+
+		/**
+			The original os-image partition is too small,
+			so we enlarge it to 1.6M
+		*/
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x20000},
+			{"os-image", 0x20000, 0x1a0000},
+			{"file-system", 0x1c0000, 0x440000},
+			{"partition-table", 0x600000, 0x02000},
+			{"default-mac", 0x610000, 0x00020},
+			{"pin", 0x610100, 0x00020},
+			{"product-info", 0x611100, 0x01000},
+			{"soft-version", 0x620000, 0x01000},
+			{"support-list", 0x621000, 0x01000},
+			{"profile", 0x622000, 0x08000},
+			{"user-config", 0x630000, 0x10000},
+			{"default-config", 0x640000, 0x10000},
+			{"radio", 0x7f0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
 	/** Firmware layout for the RE450 */
 	{
 		.id = "RE450",
