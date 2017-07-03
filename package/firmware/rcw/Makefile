@@ -9,18 +9,18 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 PKG_NAME:=rcw
-PKG_VERSION:=v1.0
+PKG_VERSION:=2017.09
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_MIRROR_HASH:=8082979dbdef57e36a3096986aa426ef678c152403eb1dbd132da28f01490b6d
-PKG_SOURCE_URL:=https://github.com/fsl-jyt/rcw.git
-PKG_SOURCE_VERSION:=17e09e19bd5cf94e5ebc84916b4607743c29723e
+PKG_SOURCE_URL:=https://github.com/qoriq-open-source/rcw.git
+PKG_SOURCE_VERSION:=1a6236a34166219de324a105971eb9de05cde76e
+PKG_MIRROR_HASH:=6da17ad6b4d148bd991a85bf601f845a41231d6f0bf20153ba1a7a387727aef0
 
 PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
-PKG_LICENSE:=GPL-2.0 GPL-2.0+
-PKG_LICENSE_FILES:=Licenses/README
+PKG_LICENSE:=BSD-3-Clause
+PKG_LICENSE_FILES:=LICENSE
 
 PKG_FLAGS:=nonshared
 
@@ -33,17 +33,17 @@ endef
 
 define rcw/ls1043ardb
 	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1043ardb 64b/32b Dev Board
-	CONFIG=ls1043ardb-rcw.bin
+	CONFIG=ls1043ardb/RR_FQPP_1455/rcw_1600.bin
 endef
 
 define rcw/ls1046ardb
 	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1046ardb 64b/32b Dev Board
-	CONFIG=ls1046ardb-rcw.bin
+	CONFIG=ls1046ardb/RR_FFSSPPPH_1133_5559/rcw_1800_qspiboot_swap.bin
 endef
 
 define rcw/ls1012ardb
 	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012ardb 64b/32b Dev Board
-	CONFIG=ls1012ardb-rcw.bin
+	CONFIG=ls1012ardb/R_SPNH_3508/PBL_0x35_0x08_800_250_1000_default.bin
 endef
 
 RCWS := \
@@ -75,9 +75,6 @@ RCW_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
 endif
 
 define Build/Configure
-endef
-
-define Build/Compile
 endef
 
 define Package/rcw/install/default

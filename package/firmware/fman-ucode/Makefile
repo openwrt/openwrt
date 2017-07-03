@@ -9,18 +9,15 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 PKG_NAME:=fman-ucode
-PKG_VERSION:=fsl-sdk-v2.0
+PKG_VERSION:=2017.09
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_MIRROR_HASH:=209c60e4efaa3ce9c9a954266a7210fa0047a2de47ce00a412aa0318d94d0d88
-PKG_SOURCE_URL:=https://github.com/fsl-jyt/fm-ucode.git
-PKG_SOURCE_VERSION:=b19c645821941493fbef32e616b5a16404259976
+PKG_SOURCE_URL:=https://github.com/qoriq-open-source/fm-ucode.git
+PKG_SOURCE_VERSION:=c275e91392e2adab1ed22f3867b8269ca3c54014
+PKG_MIRROR_HASH:=80d8d2454063b7f730ef49d7a44be8f8870711ee5109c53a0881b62026037a37
 
 PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
-
-PKG_LICENSE:=GPL-2.0 GPL-2.0+
-PKG_LICENSE_FILES:=Licenses/README
 
 PKG_FLAGS:=nonshared
 
@@ -33,12 +30,12 @@ endef
 
 define fman/ls1043ardb
 	TITLE=FMAN UCODE $(PKG_NAME)-$(PKG_VERSION) for NXP ls1043ardb 64b/32b Dev Board
-	CONFIG=fsl_fman_ucode_ls1043_r1.0_108_4_5.bin
+	CONFIG=fsl_fman_ucode_ls1043_r1.1_106_4_18.bin
 endef
 
 define fman/ls1046ardb
 	TITLE=FMAN UCODE $(PKG_NAME)-$(PKG_VERSION) for NXP ls1046ardb 64b/32b Dev Board
-	CONFIG=fsl_fman_ucode_t2080_r1.1_106_4_18.bin
+	CONFIG=fsl_fman_ucode_ls1046_r1.0_106_4_18.bin
 endef
 
 FMANS := \
@@ -51,7 +48,7 @@ define Package/fman-layerscape-$(1)
 	CATEGORY:=Firmware
 	DEPENDS:=@TARGET_layerscape
 	TITLE:=$(2)
-	URL:=http://git.freescale.com/git/cgit.cgi/ppc/sdk/fm-ucode.git
+	URL:=https://github.com/qoriq-open-source/fm-ucode.git
 	VARIANT:=$(1)
 	MAINTAINER:=Jiang Yutang <jiangyutang1978@gmail.com>
 endef
