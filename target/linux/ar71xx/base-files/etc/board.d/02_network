@@ -265,8 +265,7 @@ ar71xx_setup_interfaces()
 	dir-835-a1|\
 	esr900|\
 	mynet-n750|\
-	sr3200|\
-	wndr3700v4)
+	sr3200)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 		;;
@@ -349,6 +348,7 @@ ar71xx_setup_interfaces()
 	epg5000|\
 	esr1750|\
 	tl-wr1043nd-v4|\
+	wndr3700v4|\
 	wndr4300)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
