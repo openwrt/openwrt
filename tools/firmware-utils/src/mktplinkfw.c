@@ -19,6 +19,8 @@
 #include <libgen.h>
 #include <getopt.h>     /* for getopt() */
 #include <stdarg.h>
+#include <stdbool.h>
+#include <endian.h>
 #include <errno.h>
 #include <sys/stat.h>
 
@@ -123,6 +125,7 @@ static uint32_t reserved_space;
 
 static struct file_info inspect_info;
 static int extract = 0;
+static bool endian_swap = false;
 
 static const char md5salt_normal[MD5SUM_LEN] = {
 	0xdc, 0xd7, 0x3a, 0xa5, 0xc3, 0x95, 0x98, 0xfb,
@@ -256,6 +259,7 @@ static void usage(int status)
 "\n"
 "Options:\n"
 "  -c              use combined kernel image\n"
+"  -e              swap endianness in kernel load address and entry point\n"
 "  -E <ep>         overwrite kernel entry point with <ep> (hexval prefixed with 0x)\n"
 "  -L <la>         overwrite kernel load address with <la> (hexval prefixed with 0x)\n"
 "  -H <hwid>       use hardware id specified with <hwid>\n"
@@ -519,6 +523,11 @@ static void fill_header(char *buf, int len)
 			hdr->region_str2, sizeof(hdr->region_str2), "%02X%02X%02X%02X",
 			region->name[0], region->name[1], region->name[2], region->name[3]
 		);
+	}
+
+	if (endian_swap) {
+		hdr->kernel_la = bswap_32(hdr->kernel_la);
+		hdr->kernel_ep = bswap_32(hdr->kernel_ep);
 	}
 
 	get_md5(buf, len, hdr->md5sum1);
@@ -805,7 +814,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:H:E:F:L:m:V:N:W:C:ci:k:r:R:o:xX:hsSjv:");
+		c = getopt(argc, argv, "a:H:E:F:L:m:V:N:W:C:ci:k:r:R:o:xX:ehsSjv:");
 		if (c == -1)
 			break;
 
@@ -872,6 +881,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'x':
 			extract = 1;
+			break;
+		case 'e':
+			endian_swap = true;
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
