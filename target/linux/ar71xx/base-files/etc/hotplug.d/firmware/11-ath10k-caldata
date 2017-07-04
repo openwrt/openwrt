@@ -70,6 +70,11 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 0x5000 0x844
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
 		;;
+	ap147-010|\
+	ap152)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
+		;;
 	cf-e355ac-v1|\
 	cf-e380ac-v1|\
 	cf-e380ac-v2|\
