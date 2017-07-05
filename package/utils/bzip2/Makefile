@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bzip2
 PKG_VERSION:=1.0.6
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.bzip.org/$(PKG_VERSION)
@@ -82,6 +82,8 @@ endef
 define Package/bzip2/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bzip2-shared $(1)/usr/bin/bzip2
+	$(INSTALL_DIR) $(1)/bin/
+	$(LN) ../usr/bin/bzip2 $(1)/bin/bzip2
 endef
 
 HOST_CFLAGS += \
