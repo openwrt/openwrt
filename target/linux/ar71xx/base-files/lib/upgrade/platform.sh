@@ -447,6 +447,7 @@ platform_check_image() {
 	tl-wr841n-v9|\
 	tl-wr842n-v2|\
 	tl-wr842n-v3|\
+	tl-wr902ac-v1|\
 	tl-wr941nd-v5|\
 	tl-wr941nd-v6|\
 	tl-wr940n-v4|\
@@ -657,8 +658,7 @@ platform_check_image() {
 	rb-952ui-5ac2nd|\
 	rb-962uigs-5hact2hnt|\
 	rb-lhg-5nd|\
-	rb-mapl-2nd|\
-	tl-wr902ac-v1)
+	rb-mapl-2nd)
 		return 0
 		;;
 	esac
