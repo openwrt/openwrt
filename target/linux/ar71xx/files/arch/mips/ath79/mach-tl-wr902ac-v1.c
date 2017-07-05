@@ -25,7 +25,8 @@
 #include "machtypes.h"
 
 
-#define TL_WR902AC_V1_GPIO_LED_LAN	12
+#define TL_WR902AC_V1_GPIO_LED_INTERNET	12
+#define TL_WR902AC_V1_GPIO_LED_LAN	15
 #define TL_WR902AC_V1_GPIO_LED_POWER	13
 #define TL_WR902AC_V1_GPIO_LED_USB	4
 #define TL_WR902AC_V1_GPIO_LED_WLAN2G	11
@@ -44,9 +45,13 @@
 
 static struct gpio_led tl_wr902ac_v1_leds_gpio[] __initdata = {
 	{
+		.name		= "tl-wr902ac-v1:green:internet",
+		.gpio		= TL_WR902AC_V1_GPIO_LED_INTERNET,
+		.active_low	= 1,
+	}, {
 		.name		= "tl-wr902ac-v1:green:lan",
 		.gpio		= TL_WR902AC_V1_GPIO_LED_LAN,
-		.active_low	= 1,
+		.active_low	= 0,
 	}, {
 		.name		= "tl-wr902ac-v1:green:power",
 		.gpio		= TL_WR902AC_V1_GPIO_LED_POWER,
