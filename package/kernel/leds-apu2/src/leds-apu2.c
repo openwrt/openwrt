@@ -228,21 +228,21 @@ static struct platform_driver gpio_apu2_driver = {
 };
 
 static struct gpio_led apu2_leds_gpio[] = {
-        {
-                .name           = "apu2:green:power",
-                .gpio           = 509,
-                .active_low     = 1,
-        },
-        {
-                .name           = "apu2:green:led2",
-                .gpio           = 510,
-                .active_low     = 1,
-        },
-        {
-                .name           = "apu2:green:led3",
-                .gpio           = 511,
-                .active_low     = 1,
-        },
+	{
+		.name           = "apu2:green:power",
+		.gpio           = 509,
+		.active_low     = 1,
+	},
+	{
+		.name           = "apu2:green:led2",
+		.gpio           = 510,
+		.active_low     = 1,
+	},
+	{
+		.name           = "apu2:green:led3",
+		.gpio           = 511,
+		.active_low     = 1,
+	},
 };
 
 static struct gpio_keys_button apu2_gpio_keys[] = {
