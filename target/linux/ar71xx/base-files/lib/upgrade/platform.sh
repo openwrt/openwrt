@@ -287,6 +287,7 @@ platform_check_image() {
 	wpj342|\
 	wpj344|\
 	wpj531|\
+	wpj558|\
 	wpj563|\
 	wrt400n|\
 	wrtnode2q|\
@@ -323,7 +324,6 @@ platform_check_image() {
 	hornet-ub|\
 	mr12|\
 	mr16|\
-	wpj558|\
 	zbt-we1526|\
 	zcn-1523h-2|\
 	zcn-1523h-5)
