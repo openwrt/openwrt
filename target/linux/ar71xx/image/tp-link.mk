@@ -35,16 +35,6 @@ define Build/mktplinkfw
 		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && mv $@.new $@ || rm -f $@
 endef
 
-# add RE450 and similar header to the kernel image
-define Build/mktplinkfw-kernel
-	$(STAGING_DIR_HOST)/bin/mktplinkfw-kernel \
-		-H $(TPLINK_HWID) -N OpenWrt -V $(REVISION) \
-		-L $(KERNEL_LOADADDR) -E $(KERNEL_LOADADDR) \
-		-k $@ \
-		-o $@.new
-	@mv $@.new $@
-endef
-
 define Build/uImageArcher
 	mkimage -A $(LINUX_KARCH) \
 		-O linux -T kernel \
@@ -274,7 +264,9 @@ define Device/re450-v1
   DEVICE_PROFILE := RE450
   LOADER_TYPE := elf
   TPLINK_HWID := 0x0
-  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-kernel
+  TPLINK_HWREV := 0
+  TPLINK_HEADER_VERSION := 1
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
@@ -501,7 +493,8 @@ endef
 
 define Device/tl-wa85xre
   $(Device/tplink)
-  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-kernel
+  TPLINK_HWREV := 0
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
   MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),2304k(rootfs),256k(config)ro,64k(art)ro,3648k@0x20000(firmware)
@@ -1025,9 +1018,11 @@ define Device/tl-wr902ac-v1
   DEVICE_PROFILE := TLWR902
   TPLINK_BOARD_ID := TL-WR902AC-V1
   TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  TPLINK_HEADER_VERSION := 1
   SUPPORTED_DEVICES := tl-wr902ac-v1
   IMAGE_SIZE := 7360k
-  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-kernel
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
   IMAGES += factory.bin
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | \
