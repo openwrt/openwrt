@@ -35,20 +35,6 @@ define Build/mktplinkfw
 		$(if $(findstring sysupgrade,$(word 1,$(1))),-s) && mv $@.new $@ || rm -f $@
 endef
 
-# mktplinkfw-combined
-#
-# -c combined image
-define Build/mktplinkfw-combined
-	$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -N OpenWrt -V $(REVISION) $(1) \
-		-L $(KERNEL_LOADADDR) -m $(TPLINK_HEADER_VERSION) \
-		-E $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
-		-k $@ \
-		-o $@.new \
-		-c
-	@mv $@.new $@
-endef
-
 # add RE450 and similar header to the kernel image
 define Build/mktplinkfw-kernel
 	$(STAGING_DIR_HOST)/bin/mktplinkfw-kernel \
@@ -73,7 +59,7 @@ define Device/tplink
   TPLINK_HEADER_VERSION := 1
   LOADER_TYPE := gz
   KERNEL := kernel-bin | patch-cmdline | lzma
-  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | mktplinkfw-combined
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade
   IMAGE/factory.bin := append-rootfs | mktplinkfw factory
@@ -85,7 +71,7 @@ define Device/tplink-nolzma
   COMPILE := loader-$(1).gz
   COMPILE/loader-$(1).gz := loader-okli-compile
   KERNEL := copy-file $(KDIR)/vmlinux.bin.lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1)
-  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs.bin.lzma | loader-kernel-cmdline | mktplinkfw-combined
+  KERNEL_INITRAMFS := copy-file $(KDIR)/vmlinux-initramfs.bin.lzma | loader-kernel-cmdline | tplink-v1-header
 endef
 
 define Device/tplink-4m
@@ -643,7 +629,7 @@ define Device/tl-wdr6500-v2
   DEVICE_TITLE := TP-LINK TL-WDR6500 v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k ath10k-firmware-qca988x
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
-  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | uImage lzma | mktplinkfw-combined
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | uImage lzma | tplink-v1-header
   BOARDNAME := TL-WDR6500-v2
   DEVICE_PROFILE := TLWDR6500V2
   TPLINK_HWID := 0x65000002
@@ -710,7 +696,7 @@ define Device/tl-wr1043nd-v4
   MTDPARTS := spi0.0:128k(u-boot)ro,1536k(kernel),14016k(rootfs),128k(product-info)ro,320k(config)ro,64k(partition-table)ro,128k(logs)ro,64k(ART)ro,15552k@0x20000(firmware)
   IMAGE_SIZE := 15552k
   TPLINK_BOARD_ID := TLWR1043NDV4
-  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-combined
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
