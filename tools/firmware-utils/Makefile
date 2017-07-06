@@ -41,7 +41,6 @@ define Host/Compile
 	$(call cc,mkplanexfw sha1)
 	$(call cc,mktplinkfw md5, -Wall)
 	$(call cc,mktplinkfw2 md5)
-	$(call cc,mktplinkfw-kernel)
 	$(call cc,tplink-safeloader md5, -Wall)
 	$(call cc,pc1crypt)
 	$(call cc,osbridge-crc)
