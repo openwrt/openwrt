@@ -332,7 +332,10 @@ static int __init gpio_apu2_init (void)
 	const char *board_name = dmi_get_system_info(DMI_BOARD_NAME);
 
 	/* Match the device name/model */
-	if (!board_name || !board_vendor || strcasecmp(board_vendor, "PC Engines") || strcasecmp(board_name, "apu2")) {
+	if (!board_name \
+			|| !board_vendor \
+			|| strcasecmp(board_vendor, "PC Engines") \
+			|| (strcasecmp(board_name, "apu2") && strcasecmp(board_name, "apu3"))) {
 		err = -ENODEV;
 		goto exit;
 	}
