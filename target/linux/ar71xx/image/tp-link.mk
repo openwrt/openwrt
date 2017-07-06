@@ -40,11 +40,11 @@ endef
 # -c combined image
 define Build/mktplinkfw-combined
 	$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) $(1) \
-		-m $(TPLINK_HEADER_VERSION) \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -N OpenWrt -V $(REVISION) $(1) \
+		-L $(KERNEL_LOADADDR) -m $(TPLINK_HEADER_VERSION) \
+		-E $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		-k $@ \
 		-o $@.new \
-		-s -S \
 		-c
 	@mv $@.new $@
 endef
@@ -707,7 +707,6 @@ define Device/tl-wr1043nd-v4
   BOARDNAME := TL-WR1043ND-v4
   DEVICE_PROFILE := TLWR1043
   TPLINK_HWID :=  0x10430004
-  TPLINK_FLASHLAYOUT := 16Msafeloader
   MTDPARTS := spi0.0:128k(u-boot)ro,1536k(kernel),14016k(rootfs),128k(product-info)ro,320k(config)ro,64k(partition-table)ro,128k(logs)ro,64k(ART)ro,15552k@0x20000(firmware)
   IMAGE_SIZE := 15552k
   TPLINK_BOARD_ID := TLWR1043NDV4

@@ -117,7 +117,6 @@ static uint32_t rootfs_align;
 static struct file_info boot_info;
 static int combined;
 static int strip_padding;
-static int ignore_size;
 static int add_jffs2_eof;
 static unsigned char jffs2_eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
 static uint32_t fw_max_len;
@@ -180,20 +179,6 @@ static struct flash_layout layouts[] = {
 		.kernel_la	= 0x00000000 ,
 		.kernel_ep	= 0xc0000000,
 		.rootfs_ofs	= 0x2a0000,
-	}, {
-		/*
-			Some devices (e.g. TL-WR1043 v4) use a mktplinkfw kernel image
-			embedded in a tplink-safeloader image as os-image partition.
-
-			We use a 1.5MB partition for the compressed kernel, which should
-			be sufficient, but not too wasteful (the flash of the TL-WR1043 v4
-			has 16MB in total).
-		*/
-		.id		= "16Msafeloader",
-		.fw_max_len	= 0x180000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0,
 	}, {
 		/* terminating entry */
 	}
@@ -272,7 +257,6 @@ static void usage(int status)
 "  -R <offset>     overwrite rootfs offset with <offset> (hexval prefixed with 0x)\n"
 "  -o <file>       write output to the file <file>\n"
 "  -s              strip padding from the end of the image\n"
-"  -S              ignore firmware size limit (only for combined images)\n"
 "  -j              add jffs2 end-of-filesystem markers\n"
 "  -N <vendor>     set image vendor to <vendor>\n"
 "  -V <version>    set image version to <version>\n"
@@ -362,7 +346,7 @@ static int check_options(void)
 	}
 	hw_id = strtoul(opt_hw_id, NULL, 0);
 
-	if (layout_id == NULL) {
+	if (!combined && layout_id == NULL) {
 		ERR("flash layout is not specified");
 		return -1;
 	}
@@ -380,25 +364,30 @@ static int check_options(void)
 		}
 	}
 
-	layout = find_layout(layout_id);
-	if (layout == NULL) {
-		ERR("unknown flash layout \"%s\"", layout_id);
-		return -1;
+	if (combined) {
+		if (!kernel_la || !kernel_ep) {
+			ERR("kernel loading address and entry point must be specified for combined image");
+			return -1;
+		}
+	} else {
+		layout = find_layout(layout_id);
+		if (layout == NULL) {
+			ERR("unknown flash layout \"%s\"", layout_id);
+			return -1;
+		}
+
+		if (!kernel_la)
+			kernel_la = layout->kernel_la;
+		if (!kernel_ep)
+			kernel_ep = layout->kernel_ep;
+		if (!rootfs_ofs)
+			rootfs_ofs = layout->rootfs_ofs;
+
+		if (reserved_space > layout->fw_max_len) {
+			ERR("reserved space is not valid");
+			return -1;
+		}
 	}
-
-	if (!kernel_la)
-		kernel_la = layout->kernel_la;
-	if (!kernel_ep)
-		kernel_ep = layout->kernel_ep;
-	if (!rootfs_ofs)
-		rootfs_ofs = layout->rootfs_ofs;
-
-	if (reserved_space > layout->fw_max_len) {
-		ERR("reserved space is not valid");
-		return -1;
-	}
-
-	fw_max_len = layout->fw_max_len - reserved_space;
 
 	if (kernel_info.file_name == NULL) {
 		ERR("no kernel image specified");
@@ -411,18 +400,9 @@ static int check_options(void)
 
 	kernel_len = kernel_info.file_size;
 
-	if (combined) {
-		exceed_bytes = kernel_info.file_size - (fw_max_len - sizeof(struct fw_header));
-		if (exceed_bytes > 0) {
-			if (!ignore_size) {
-				ERR("kernel image is too big by %i bytes", exceed_bytes);
-				return -1;
-			}
-			layout->fw_max_len = sizeof(struct fw_header) +
-					     kernel_info.file_size +
-					     reserved_space;
-		}
-	} else {
+	if (!combined) {
+		fw_max_len = layout->fw_max_len - reserved_space;
+
 		if (rootfs_info.file_name == NULL) {
 			ERR("no rootfs image specified");
 			return -1;
@@ -494,17 +474,18 @@ static void fill_header(char *buf, int len)
 	hdr->hw_id = htonl(hw_id);
 	hdr->hw_rev = htonl(hw_rev);
 
-	if (boot_info.file_size == 0)
-		memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
-	else
-		memcpy(hdr->md5sum1, md5salt_boot, sizeof(hdr->md5sum1));
-
 	hdr->kernel_la = htonl(kernel_la);
 	hdr->kernel_ep = htonl(kernel_ep);
-	hdr->fw_length = htonl(layout->fw_max_len);
 	hdr->kernel_ofs = htonl(sizeof(struct fw_header));
 	hdr->kernel_len = htonl(kernel_len);
+
 	if (!combined) {
+		if (boot_info.file_size == 0)
+			memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
+		else
+			memcpy(hdr->md5sum1, md5salt_boot, sizeof(hdr->md5sum1));
+
+		hdr->fw_length = htonl(layout->fw_max_len);
 		hdr->rootfs_ofs = htonl(rootfs_ofs);
 		hdr->rootfs_len = htonl(rootfs_info.file_size);
 	}
@@ -530,7 +511,8 @@ static void fill_header(char *buf, int len)
 		hdr->kernel_ep = bswap_32(hdr->kernel_ep);
 	}
 
-	get_md5(buf, len, hdr->md5sum1);
+	if (!combined)
+		get_md5(buf, len, hdr->md5sum1);
 }
 
 static int pad_jffs2(char *buf, int currlen)
@@ -607,7 +589,12 @@ static int build_fw(void)
 	int ret = EXIT_FAILURE;
 	int writelen = 0;
 
-	buflen = layout->fw_max_len;
+	writelen = sizeof(struct fw_header) + kernel_len;
+
+	if (combined)
+		buflen = writelen;
+	else
+		buflen = layout->fw_max_len;
 
 	buf = malloc(buflen);
 	if (!buf) {
@@ -621,7 +608,6 @@ static int build_fw(void)
 	if (ret)
 		goto out_free_buf;
 
-	writelen = sizeof(struct fw_header) + kernel_len;
 
 	if (!combined) {
 		if (rootfs_align)
@@ -814,7 +800,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:H:E:F:L:m:V:N:W:C:ci:k:r:R:o:xX:ehsSjv:");
+		c = getopt(argc, argv, "a:H:E:F:L:m:V:N:W:C:ci:k:r:R:o:xX:ehsjv:");
 		if (c == -1)
 			break;
 
@@ -869,9 +855,6 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			strip_padding = 1;
-			break;
-		case 'S':
-			ignore_size = 1;
 			break;
 		case 'i':
 			inspect_info.file_name = optarg;
