@@ -114,6 +114,27 @@ endef
 $(eval $(call KernelPackage,bluetooth_6lowpan))
 
 
+define KernelPackage/btmrvl
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Marvell Bluetooth Kernel Module support
+  DEPENDS:=+kmod-bluetooth +mwifiex-sdio-firmware
+  KCONFIG:= \
+	CONFIG_BT_MRVL \
+	CONFIG_BT_MRVL_SDIO
+  $(call AddDepends/bluetooth)
+  FILES:= \
+	$(LINUX_DIR)/drivers/bluetooth/btmrvl.ko \
+	$(LINUX_DIR)/drivers/bluetooth/btmrvl_sdio.ko
+  AUTOLOAD:=$(call AutoProbe,btmrvl btmrvl_sdio)
+endef
+
+define KernelPackage/btmrvl/description
+ Kernel support for Marvell SDIO Bluetooth Module
+endef
+
+$(eval $(call KernelPackage,btmrvl))
+
+
 define KernelPackage/dma-buf
   SUBMENU:=$(OTHER_MENU)
   TITLE:=DMA shared buffer support
