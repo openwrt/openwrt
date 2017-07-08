@@ -20,7 +20,7 @@ PKG_INSTALL:=1
 
 PKG_FLAGS:=nonshared
 
-PKG_BUILD_DEPENDS:=util-linux liblzo zlib
+PKG_BUILD_DEPENDS:=util-linux lzo zlib
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
