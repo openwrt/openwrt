@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1851 @@
+@@ -0,0 +1,1852 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -1110,14 +1110,15 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	for (i = 0; i < XRX200_MAX_DMA; i++) {
 +		if (!priv->hw->chan[i].dma.irq)
 +			continue;
-+		spin_lock_bh(&priv->hw->chan[i].lock);
++
 +		priv->hw->chan[i].refcount--;
 +		if (!priv->hw->chan[i].refcount) {
 +			if (XRX200_DMA_IS_RX(i))
 +				napi_disable(&priv->hw->chan[i].napi);
++			spin_lock_bh(&priv->hw->chan[i].lock);
 +			ltq_dma_close(&priv->hw->chan[XRX200_DMA_RX].dma);
++			spin_unlock_bh(&priv->hw->chan[i].lock);
 +		}
-+		spin_unlock_bh(&priv->hw->chan[i].lock);
 +	}
 +
 +	return 0;
