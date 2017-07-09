@@ -5,7 +5,7 @@
 
 board_config_update
 
-case "$(cat /tmp/sysinfo/board_name)" in
+case "$(board_name)" in
 	xlnx,zynq-zc702|xlnx,zynq-zed|xlnx,zynq-zybo)
 		ucidef_set_interface_lan 'eth0'
 		;;

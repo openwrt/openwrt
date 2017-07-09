@@ -30,9 +30,9 @@ usb_led_off() {
 }
 
 get_usb_led() {
-	local hardware=`sed -n /Hardware/s/.*:.//p /proc/cpuinfo`
+	. /lib/functions.sh
 
-	case "${hardware}" in
+	case "$(board_name)" in
 	 'Linksys WRT350N v2')
 		usb_led='wrt350nv2:green:usb'
 		usb_device='1-1:1.0'

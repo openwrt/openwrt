@@ -8,7 +8,7 @@
 
 board_config_update
 
-board=$(cat /proc/device-tree/compatible | tr '\0' '\t' | cut -f 1)
+board=$(board_name)
 
 case "$board" in
 tenda,ac9)

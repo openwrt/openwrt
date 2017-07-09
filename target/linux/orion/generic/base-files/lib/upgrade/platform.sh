@@ -8,7 +8,7 @@
 platform_check_image() {
 	[ "${ARGC}" -gt 1 ] && { echo 'Too many arguments. Only flash file expected.'; return 1; }
 
-	local hardware=`sed -n /Hardware/s/.*:.//p /proc/cpuinfo`
+	local hardware="$(board_name)"
 	local magic="$(get_magic_word "$1")"
 	local magic_long="$(get_magic_long "$1")"
 

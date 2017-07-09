@@ -2,7 +2,9 @@
 # Copyright (C) 2014 OpenWrt.org
 
 move_config() {
-	case "$(cat /tmp/sysinfo/board_name)" in
+	. /lib/functions.sh
+
+	case "$(board_name)" in
 		erlite)
 			mount -t vfat /dev/sda1 /mnt
 			[ -f /mnt/sysupgrade.tgz ] && mv -f /mnt/sysupgrade.tgz /

@@ -10,7 +10,7 @@
 # This script sets system defaults for the hardware on firstboot
 #
 
-hardware=`sed -n /Hardware/s/.*:.//p /proc/cpuinfo`
+. /lib/functions.sh
 
 wrt350nv2_default() {
 # leds
@@ -47,7 +47,7 @@ __EOF
 	}
 }
 
-case "${hardware}" in
+case "$(board_name)" in
  'Linksys WRT350N v2')
 	wrt350nv2_default
 	;;

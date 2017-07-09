@@ -22,8 +22,10 @@ p54spi_eeprom_extract() {
 	}
 }
 
+. /lib/functions.sh
+
 [ "$FIRMWARE" = "3826.eeprom" ] && {
-	[ -z "$(grep -e 'Nokia N810' /proc/cpuinfo)" ] || {
+	[ "$(board_name)" != "nokia,n810" ] || {
 		[ -e /lib/firmware/3826.eeprom ] ||\
 			p54spi_eeprom_extract
 	}

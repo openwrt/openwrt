@@ -52,7 +52,7 @@ merakinand_do_platform_check() {
 
 merakinand_do_upgrade() {
 	local tar_file="$1"
-	local board_name="$(cat /tmp/sysinfo/board_name)"
+	local board_name="$(board_name)"
 
 	# Do we need to do any platform tweaks?
 	case "$board_name" in

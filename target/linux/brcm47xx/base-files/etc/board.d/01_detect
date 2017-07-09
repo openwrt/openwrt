@@ -175,7 +175,7 @@ detect_by_model() {
 }
 
 
-model="$(sed -ne 's/^machine[ \t]*: //p' /proc/cpuinfo)"
+model="$(board_name)"
 boardtype="$(nvram get boardtype)"
 boardnum="$(nvram get boardnum)"
 

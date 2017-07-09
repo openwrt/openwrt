@@ -68,7 +68,7 @@ zyxel_do_flash() {
 
 zyxel_do_upgrade() {
 	local tar_file="$1"
-	local board=$(cat /tmp/sysinfo/board_name)
+	local board=$(board_name)
 	local rootfs="$(zyxel_get_rootfs)"
 	local kernel=
 

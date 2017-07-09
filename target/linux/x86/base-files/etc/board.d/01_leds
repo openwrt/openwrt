@@ -7,9 +7,7 @@
 
 board_config_update
 
-board=$(cat /tmp/sysinfo/board_name) 2>/dev/null
-
-case "$board" in
+case "$(board_name)" in
 pc-engines-apu|pc-engines-apu2)
 	ucidef_set_led_netdev "wan" "WAN" "apu2:green:led3" "eth0"
 	ucidef_set_led_netdev "lan" "LAN" "apu2:green:led2" "br-lan"

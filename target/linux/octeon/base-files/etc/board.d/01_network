@@ -7,7 +7,7 @@
 
 board_config_update
 
-case "$(cat /tmp/sysinfo/board_name)" in
+case "$(board_name)" in
 erlite)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;

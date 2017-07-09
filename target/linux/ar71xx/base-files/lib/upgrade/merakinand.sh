@@ -51,7 +51,7 @@ merakinand_copy_caldata() {
 	local cal_src=$1
 	local cal_dst=$2
 	local ubidev="$(nand_find_ubi $CI_UBIPART)"
-	local board_name="$(cat /tmp/sysinfo/board_name)"
+	local board_name="$(board_name)"
 	local rootfs_size="$(ubinfo /dev/ubi0 -N rootfs_data | grep "Size" | awk '{ print $6 }')"
 
 	# Setup partitions using board name, in case of future platforms
@@ -143,7 +143,7 @@ merakinand_do_platform_check() {
 
 merakinand_do_upgrade() {
 	local tar_file="$1"
-	local board_name="$(cat /tmp/sysinfo/board_name)"
+	local board_name="$(board_name)"
 
 	# Do we need to do any platform tweaks?
 	case "$board_name" in

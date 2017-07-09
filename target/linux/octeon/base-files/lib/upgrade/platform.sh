@@ -22,9 +22,7 @@ platform_get_rootfs() {
 }
 
 platform_copy_config() {
-	local board="$(cat /tmp/sysinfo/board_name)"
-
-	case "$board" in
+	case "$(board_name)" in
 	erlite)
 		mount -t vfat /dev/sda1 /mnt
 		cp -af "$CONF_TAR" /mnt/
@@ -58,7 +56,7 @@ platform_do_flash() {
 
 platform_do_upgrade() {
 	local tar_file="$1"
-	local board=$(cat /tmp/sysinfo/board_name)
+	local board=$(board_name)
 	local rootfs="$(platform_get_rootfs)"
 	local kernel=
 
@@ -81,7 +79,7 @@ platform_do_upgrade() {
 }
 
 platform_check_image() {
-	local board=$(cat /tmp/sysinfo/board_name)
+	local board=$(board_name)
 
 	case "$board" in
 	erlite | \
