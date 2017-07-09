@@ -32,12 +32,3 @@ ixp4xx_board_detect() {
 	echo "$IXP4XX_BOARD_NAME" > /tmp/sysinfo/board_name
 	echo "$IXP4XX_MODEL" > /tmp/sysinfo/model
 }
-
-ixp4xx_board_name() {
-	local name
-
-	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
-	[ -z "$name" ] && name="unknown"
-
-	echo $name
-}

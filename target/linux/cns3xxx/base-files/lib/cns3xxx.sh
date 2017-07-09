@@ -26,12 +26,3 @@ cns3xxx_board_detect() {
 	echo "$CNS3XXX_BOARD_NAME" > /tmp/sysinfo/board_name
 	echo "$CNS3XXX_MODEL" > /tmp/sysinfo/model
 }
-
-cns3xxx_board_name() {
-	local name
-
-	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
-	[ -z "$name" ] && name="unknown"
-
-	echo "$name"
-}

@@ -86,12 +86,3 @@ kirkwood_board_detect() {
 	echo "$KIRKWOOD_BOARD_NAME" > /tmp/sysinfo/board_name
 	echo "$KIRKWOOD_MODEL" > /tmp/sysinfo/model
 }
-
-kirkwood_board_name() {
-	local name
-
-	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
-	[ -z "$name" ] && name="unknown"
-
-	echo "$name"
-}

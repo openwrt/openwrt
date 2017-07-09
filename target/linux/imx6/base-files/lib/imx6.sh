@@ -71,12 +71,3 @@ imx6_board_detect() {
 	echo "$IMX6_BOARD_NAME" > /tmp/sysinfo/board_name
 	echo "$IMX6_MODEL" > /tmp/sysinfo/model
 }
-
-imx6_board_name() {
-	local name
-
-	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
-	[ -z "$name" ] && name="unknown"
-
-	echo "$name"
-}

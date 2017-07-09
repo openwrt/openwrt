@@ -79,12 +79,3 @@ at91_board_detect() {
 	echo "$AT91_BOARD_NAME" > /tmp/sysinfo/board_name
 	echo "$AT91_MODEL" > /tmp/sysinfo/model
 }
-
-at91_board_name() {
-	local name
-
-	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
-	[ -n "$name" ] || name="unknown"
-
-	echo "$name"
-}

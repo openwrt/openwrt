@@ -31,12 +31,3 @@ mcs814x_board_detect() {
 	echo "$MCS814X_BOARD_NAME" > /tmp/sysinfo/board_name
 	echo "$MCS814X_MODEL" > /tmp/sysinfo/model
 }
-
-mcs814x_board_name() {
-	local name
-
-	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
-	[ -z "$name" ] && name="unknown"
-
-	echo "$name"
-}
