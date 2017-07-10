@@ -1,5 +1,5 @@
 REQUIRE_IMAGE_METADATA=1
-RAMFS_COPY_BIN=/usr/sbin/nandwrite
+RAMFS_COPY_BIN='nandwrite'
 CI_KERNPART=none
 
 platform_check_image() {

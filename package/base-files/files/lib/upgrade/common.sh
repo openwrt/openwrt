@@ -6,28 +6,33 @@ RAM_ROOT=/tmp/root
 libs() { ldd $* 2>/dev/null | sed -r 's/(.* => )?(.*) .*/\2/'; }
 
 install_file() { # <file> [ <file> ... ]
+	local target dest dir
 	for file in "$@"; do
+		if [ -L "$file" ]; then
+			target="$(readlink -f "$file")"
+			dest="$RAM_ROOT/$file"
+			[ ! -f "$dest" ] && {
+				dir="$(dirname "$dest")"
+				mkdir -p "$dir"
+				ln -s "$target" "$dest"
+			}
+			file="$target"
+		fi
 		dest="$RAM_ROOT/$file"
-		[ -f $file -a ! -f $dest ] && {
-			dir="$(dirname $dest)"
+		[ -f "$file" -a ! -f "$dest" ] && {
+			dir="$(dirname "$dest")"
 			mkdir -p "$dir"
-			cp $file $dest
+			cp "$file" "$dest"
 		}
 	done
 }
 
-install_bin() { # <file> [ <symlink> ... ]
+install_bin() {
+	local src files
 	src=$1
 	files=$1
 	[ -x "$src" ] && files="$src $(libs $src)"
 	install_file $files
-	shift
-	for link in "$@"; do {
-		dest="$RAM_ROOT/$link"
-		dir="$(dirname $dest)"
-		mkdir -p "$dir"
-		[ -f "$dest" ] || ln -s $src $dest
-	}; done
 }
 
 run_hooks() {

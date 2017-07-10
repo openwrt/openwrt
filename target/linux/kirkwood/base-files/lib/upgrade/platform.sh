@@ -1,6 +1,6 @@
 . /lib/kirkwood.sh
 
-RAMFS_COPY_BIN='/usr/sbin/fw_printenv /usr/sbin/fw_setenv'
+RAMFS_COPY_BIN='fw_printenv fw_setenv'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {

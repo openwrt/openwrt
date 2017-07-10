@@ -5,7 +5,7 @@
 
 . /lib/mvebu.sh
 
-RAMFS_COPY_BIN='/usr/sbin/fw_printenv /usr/sbin/fw_setenv'
+RAMFS_COPY_BIN='fw_printenv fw_setenv'
 RAMFS_COPY_DATA='/lib/mvebu.sh /etc/fw_env.config /var/lock/fw_printenv.lock'
 REQUIRE_IMAGE_METADATA=1
 

@@ -1,4 +1,4 @@
-RAMFS_COPY_BIN='/usr/bin/osafeloader /usr/bin/oseama'
+RAMFS_COPY_BIN='osafeloader oseama'
 
 PART_NAME=firmware
 

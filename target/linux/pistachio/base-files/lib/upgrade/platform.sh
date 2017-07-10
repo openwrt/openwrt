@@ -6,7 +6,7 @@
 # See /LICENSE for more information.
 #
 
-RAMFS_COPY_BIN="/usr/sbin/fw_printenv /usr/sbin/fw_setenv /bin/mkdir /bin/dmesg /bin/sed /bin/grep"
+RAMFS_COPY_BIN='fw_printenv fw_setenv dmesg'
 RAMFS_COPY_DATA="/etc/fw_env.config"
 REQUIRE_IMAGE_METADATA=0
 
