@@ -211,7 +211,7 @@ default_do_upgrade() {
 do_upgrade_stage2() {
 	v "Performing system upgrade..."
 	if [ -n "$do_upgrade" ]; then
-		$do_upgrade "$IMAGE"
+		eval "$do_upgrade"
 	elif type 'platform_do_upgrade' >/dev/null 2>/dev/null; then
 		platform_do_upgrade "$IMAGE"
 	else

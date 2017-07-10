@@ -289,7 +289,7 @@ nand_do_upgrade() {
 		# hook; this piece of code handles scripts that haven't been
 		# updated. All scripts should gradually move to call nand_do_upgrade
 		# from platform_do_upgrade instead.
-		export do_upgrade=nand_do_upgrade
+		export do_upgrade="nand_do_upgrade '$1'"
 		return
 	fi
 
