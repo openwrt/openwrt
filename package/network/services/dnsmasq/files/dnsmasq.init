@@ -138,12 +138,12 @@ append_ipset() {
 }
 
 append_interface() {
-	network_get_device ifname "$1" || return
+	network_get_device ifname "$1" || ifname="$1"
 	xappend "--interface=$ifname"
 }
 
 append_notinterface() {
-	network_get_device ifname "$1" || return
+	network_get_device ifname "$1" || ifname="$1"
 	xappend "--except-interface=$ifname"
 }
 
