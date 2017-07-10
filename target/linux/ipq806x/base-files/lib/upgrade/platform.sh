@@ -3,11 +3,14 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
+RAMFS_COPY_BIN='/usr/sbin/fw_printenv /usr/sbin/fw_setenv'
+RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
+
 platform_check_image() {
 	return 0;
 }
 
-platform_pre_upgrade() {
+platform_do_upgrade() {
 	local board=$(ipq806x_board_name)
 
 	case "$board" in
@@ -18,18 +21,8 @@ platform_pre_upgrade() {
 	r7500 |\
 	r7500v2 |\
 	r7800)
-		nand_do_upgrade "$1"
+		nand_do_upgrade "$ARGV"
 		;;
-	ea8500)
-		linksys_preupgrade "$1"
-		;;
-	esac
-}
-
-platform_do_upgrade() {
-	local board=$(ipq806x_board_name)
-
-	case "$board" in
 	c2600)
 		PART_NAME="os-image:rootfs"
 		MTD_CONFIG_ARGS="-s 0x200000"
