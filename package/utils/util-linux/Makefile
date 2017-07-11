@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.29.2
+PKG_VERSION:=2.30.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.29
-PKG_HASH:=accea4d678209f97f634f40a93b7e9fcad5915d1f4749f6c47bee6bf110fe8e3
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.30
+PKG_HASH:=1be4363a91ac428c9e43fc04dc6d2c66a19ec1e36f1105bd4b481540be13b841
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=	COPYING					\
@@ -172,7 +172,7 @@ endef
 define Package/fdisk
 $(call Package/util-linux/Default)
   TITLE:=manipulate disk partition table
-  DEPENDS:= +libblkid +libsmartcols +libfdisk
+  DEPENDS:= +libblkid +libsmartcols +libfdisk +libncursesw
   SUBMENU=Disc
 endef
 
