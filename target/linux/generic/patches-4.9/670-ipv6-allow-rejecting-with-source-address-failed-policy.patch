@@ -88,7 +88,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	default:
 --- a/net/ipv6/fib6_rules.c
 +++ b/net/ipv6/fib6_rules.c
-@@ -88,6 +88,10 @@ static int fib6_rule_action(struct fib_r
+@@ -77,6 +77,10 @@ static int fib6_rule_action(struct fib_r
  		err = -EACCES;
  		rt = net->ipv6.ip6_prohibit_entry;
  		goto discard_pkt;

@@ -67,7 +67,7 @@
  static int macronix_quad_enable(struct spi_nor *nor)
  {
  	int ret, val;
-@@ -1623,10 +1683,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1630,10 +1690,12 @@ int spi_nor_scan(struct spi_nor *nor, co
  	}
  
  	/* sst nor chips use AAI word program */
@@ -82,7 +82,7 @@
  
  	if (info->flags & USE_FSR)
  		nor->flags |= SNOR_F_USE_FSR;
-@@ -1656,11 +1718,20 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1663,11 +1725,20 @@ int spi_nor_scan(struct spi_nor *nor, co
  	mtd->writebufsize = nor->page_size;
  
  	if (np) {

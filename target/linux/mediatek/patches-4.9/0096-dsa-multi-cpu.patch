@@ -229,7 +229,7 @@
  	struct netpoll *netpoll;
  	int err = 0;
  
-@@ -1235,11 +1235,16 @@ int dsa_slave_create(struct dsa_switch *
+@@ -1233,11 +1233,16 @@ int dsa_slave_create(struct dsa_switch *
  	struct net_device *master;
  	struct net_device *slave_dev;
  	struct dsa_slave_priv *p;
@@ -248,7 +248,7 @@
  
  	slave_dev = alloc_netdev(sizeof(struct dsa_slave_priv), name,
  				 NET_NAME_UNKNOWN, ether_setup);
-@@ -1265,6 +1270,7 @@ int dsa_slave_create(struct dsa_switch *
+@@ -1263,6 +1268,7 @@ int dsa_slave_create(struct dsa_switch *
  	p->parent = ds;
  	p->port = port;
  	p->xmit = dst->tag_ops->xmit;
