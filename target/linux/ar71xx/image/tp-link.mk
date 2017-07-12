@@ -747,6 +747,7 @@ define Device/tl-wr710n-v1
   DEVICE_PROFILE := TLWR710
   TPLINK_HWID := 0x07100001
   CONSOLE := ttyATH0,115200
+  IMAGE/factory.bin := append-rootfs | mktplinkfw factory -C US
 endef
 
 define Device/tl-wr710n-v2
