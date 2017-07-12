@@ -2,14 +2,14 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_USE_VERSION_6_2_ARC if arc
+	default GCC_USE_VERSION_6_3_ARC if arc
 	default GCC_USE_VERSION_5
 	help
 	  Select the version of gcc you wish to use.
 
-	config GCC_USE_VERSION_6_2_ARC
-		select GCC_VERSION_6_2_ARC
-		bool "gcc 6.2.x with support of ARC cores"
+	config GCC_USE_VERSION_6_3_ARC
+		select GCC_VERSION_6_3_ARC
+		bool "gcc 6.3.x with support of ARC cores"
 		depends on arc
 
 	config GCC_USE_VERSION_5

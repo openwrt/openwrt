@@ -9,11 +9,11 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=gdb
 
 ifeq ($(CONFIG_arc),y)
-PKG_VERSION:=arc-2016.09-gdb
+PKG_VERSION:=arc-2017.03-gdb
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/arc-2016.09-gdb
-PKG_HASH:=b7601f8953055c6768304da7f7ee48abc0fc0ad2bec8f93bbefb29780467f21d
+PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/arc-2017.03-gdb
+PKG_HASH:=f47930161e9e99c46ab018dabbf56024739dda29c51f92495eaa0d4d7e3511f6
 GDB_DIR:=binutils-$(PKG_NAME)-$(PKG_VERSION)
 PATCH_DIR:=./patches-arc
 else

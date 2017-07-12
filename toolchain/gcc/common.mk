@@ -40,12 +40,12 @@ ifeq ($(PKG_VERSION),7.1.0)
   PKG_HASH:=8a8136c235f64c6fef69cac0d73a46a1a09bb250776a050aec8f9fc880bebc17
 endif
 
-ifneq ($(CONFIG_GCC_VERSION_6_2_ARC),)
-    PKG_VERSION:=6.2.1
+ifneq ($(CONFIG_GCC_VERSION_6_3_ARC),)
+    PKG_VERSION:=6.3.0
     PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/gcc/archive/$(GCC_VERSION)
     PKG_SOURCE:=$(PKG_NAME)-$(GCC_VERSION).tar.gz
-    PKG_HASH:=d6f842dd266ccb0d5a53b51e2b2951503569f2ff3c84f81b2a1d9fea109ec077
-    PKG_REV:=2016.09
+    PKG_HASH:=b7223e134199b1a6f71de629da6aa845790e55d28e9892143dde09b1bc878110
+    PKG_REV:=2017.03-release
     GCC_DIR:=gcc-arc-$(PKG_REV)
     HOST_BUILD_DIR = $(BUILD_DIR_HOST)/$(PKG_NAME)-$(GCC_VERSION)
 endif
