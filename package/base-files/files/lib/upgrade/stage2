@@ -78,6 +78,8 @@ switch_to_ramfs() {
 }
 
 kill_remaining() { # [ <signal> [ <loop> ] ]
+	local loop_limit=10
+
 	local sig="${1:-TERM}"
 	local loop="${2:-0}"
 	local run=true
@@ -108,8 +110,15 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 
 			[ $loop -eq 1 ] && run=true
 		done
+
+		let loop_limit--
+		[ $loop_limit -eq 0 ] && {
+			echo
+			echo "Failed to kill all processes."
+			exit 1
+		}
 	done
-	echo ""
+	echo
 }
 
 
