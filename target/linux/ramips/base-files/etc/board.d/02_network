@@ -381,6 +381,9 @@ ramips_setup_macs()
 	e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
+	gl-mt300n-v2)
+		wan_mac=$(mtd_get_mac_binary factory 4)
+		;;
 	hc5*61|\
 	hc5661a|\
 	hc5962)
