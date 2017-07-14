@@ -48,6 +48,7 @@ endef
 ifdef TARGET_PER_DEVICE_ROOTFS
   define Image/Build/Profile/Filesystem
 	cp $(KDIR)/root.$(2)+pkg=$(3) $(KDIR)/root.$(2)
+	$(call Image/Build/$(2),$(2))
 	$(call Image/Build/Profile,$(1),$(2))
   endef
 else
