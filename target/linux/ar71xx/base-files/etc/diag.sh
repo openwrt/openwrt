@@ -316,8 +316,6 @@ get_status_led() {
 	rb-911g-2hpnd|\
 	rb-911g-5hpacd|\
 	rb-911g-5hpnd|\
-	rb-912uag-2hpnd|\
-	rb-912uag-5hpnd|\
 	rb-941-2nd|\
 	rb-951ui-2nd|\
 	rb-952ui-5ac2nd|\
@@ -329,6 +327,8 @@ get_status_led() {
 	rb-951ui-2hnd)
 		status_led="rb:green:act"
 		;;
+	rb-912uag-2hpnd|\
+	rb-912uag-5hpnd|\
 	rb-sxt2n|\
 	rb-sxt5n)
 		status_led="rb:green:power"
