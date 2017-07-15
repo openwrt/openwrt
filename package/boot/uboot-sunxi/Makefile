@@ -126,6 +126,14 @@ define U-Boot/pangolin
   UENV:=pangolin
 endef
 
+define U-Boot/pine64_plus
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Pine64 Plus A64
+  BUILD_DEVICES:=sun50i-a64-pine64-plus
+  DEPENDS:=+PACKAGE_u-boot-pine64_plus:arm-trusted-firmware-sunxi
+  UENV:=a64
+endef
+
 UBOOT_TARGETS := \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
@@ -143,13 +151,21 @@ UBOOT_TARGETS := \
 	Linksprite_pcDuino3 \
 	Lamobo_R1 \
 	orangepi_plus \
-	pangolin
+	pangolin \
+	pine64_plus
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
+UBOOT_MAKE_FLAGS += \
+	BL31=$(STAGING_DIR_IMAGE)/bl31.bin
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+ifeq ($(SUBTARGET),cortexa53)
+	cat $(PKG_BUILD_DIR)/spl/sunxi-spl.bin $(PKG_BUILD_DIR)/u-boot.itb > $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot-with-spl.bin
+else
 	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot-with-spl.bin
+endif
 	mkimage -C none -A arm -T script -d uEnv-$(UENV).txt \
 		$(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.scr
 endef
