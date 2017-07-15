@@ -15,7 +15,7 @@ CPU_TYPE:=cortex-a8
 CPU_SUBTYPE:=vfpv3
 MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
-KERNEL_PATCHVER:=4.4
+KERNEL_PATCHVER:=4.9
 KERNELNAME:=zImage dtbs
 
 # A10: Cortex-A8
