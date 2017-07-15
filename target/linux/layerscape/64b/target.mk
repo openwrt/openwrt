@@ -7,7 +7,6 @@
 
 ARCH:=aarch64
 BOARDNAME:=layerscape 64b boards
-CFLAGS:=-Os -pipe -fno-caller-saves
 
 define Target/Description
 	Build firmware images for $(BOARDNAME) SoC devices.
