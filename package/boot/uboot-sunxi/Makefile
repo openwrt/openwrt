@@ -26,85 +26,102 @@ define U-Boot/Default
 endef
 
 define U-Boot/A10-OLinuXino-Lime
+  BUILD_SUBTARGET:=cortexa8
   NAME:=A10 OLinuXino LIME
   BUILD_DEVICES:=sun4i-a10-olinuxino-lime
 endef
 
 define U-Boot/A13-OLinuXino
+  BUILD_SUBTARGET:=cortexa8
   NAME:=A13 OlinuXino
   BUILD_DEVICES:=sun5i-a13-olinuxino
 endef
 
 define U-Boot/A20-OLinuXino-Lime
+  BUILD_SUBTARGET:=cortexa7
   NAME:=A20 OLinuXino LIME
   BUILD_DEVICES:=sun7i-a20-olinuxino-lime
 endef
 
 define U-Boot/A20-OLinuXino_MICRO
+  BUILD_SUBTARGET:=cortexa7
   NAME:=A20 OLinuXino MICRO
   BUILD_DEVICES:=sun7i-a20-olinuxino-micro
 endef
 
 define U-Boot/Bananapi
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi
   BUILD_DEVICES:=sun7i-a20-bananapi
 endef
 
 define U-Boot/Bananapro
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapro
   BUILD_DEVICES:=sun7i-a20-bananapro
 endef
 
 define U-Boot/Cubieboard
+  BUILD_SUBTARGET:=cortexa8
   NAME:=Cubieboard
   BUILD_DEVICES:=sun4i-a10-cubieboard
 endef
 
 define U-Boot/Cubieboard2
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Cubieboard2
   BUILD_DEVICES:=sun7i-a20-cubieboard2
 endef
 
 define U-Boot/Cubietruck
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Cubietruck
   BUILD_DEVICES:=sun7i-a20-cubietruck
 endef
 
 define U-Boot/Hummingbird_A31
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Hummingbird A31 board
 endef
 
 define U-Boot/Mele_M9
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Mele M9 (A31)
   BUILD_DEVICES:=sun6i-a31-m9
 endef
 
 define U-Boot/OLIMEX_A13_SOM
+  BUILD_SUBTARGET:=cortexa8
   NAME:=Olimex A13 SOM
   BUILD_DEVICES:=sun5i-a13-olimex-som
 endef
 
 define U-Boot/Linksprite_pcDuino
+  BUILD_SUBTARGET:=cortexa8
   NAME:=Linksprite pcDuino
   BUILD_DEVICES:=sun4i-a10-pcduino
 endef
 
 define U-Boot/Linksprite_pcDuino3
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Linksprite pcDuino3
   BUILD_DEVICES:=sun7i-a20-pcduino3
 endef
 
 define U-Boot/Lamobo_R1
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Lamobo R1
   BUILD_DEVICES:=sun7i-a20-lamobo-r1
 endef
 
 define U-Boot/orangepi_plus
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Orange Pi Plus (H3)
   BUILD_DEVICES:=sun8i-h3-orangepi-plus
 endef
 
 define U-Boot/pangolin
+  BUILD_SUBTARGET:=cortexa7
   NAME:=Theobroma A31-yQ7 devboard
   UENV:=pangolin
 endef
