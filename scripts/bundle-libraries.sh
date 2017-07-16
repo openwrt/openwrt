@@ -70,26 +70,27 @@ _relpath() {
 	done
 }
 
-_wrapper() {
-	cat <<-EOT | ${CC:-gcc} -x c -o "$1" -
+_runas_so() {
+	cat <<-EOT | ${CC:-gcc} -x c -fPIC -shared -o "$1" -
 		#include <unistd.h>
 		#include <stdio.h>
+		#include <stdlib.h>
 
-		int main(int argc, char **argv) {
-			const char *self   = argv[0];
-			const char *target = argv[1];
+		int mangle_arg0(int argc, char **argv, char **env) {
+			char *arg0 = getenv("RUNAS_ARG0");
 
-			if (argc < 3) {
-				fprintf(stderr, "Usage: %s executable arg0 [args...]\n", self);
-				return 1;
-			}
+			if (arg0)
+				argv[0] = arg0;
 
-			return execv(target, argv + 2);
+			return 0;
 		}
+
+		__attribute__((section(".init_array")))
+		static void *mangle_arg0_constructor = &mangle_arg0;
 	EOT
 
 	[ -x "$1" ] || {
-		echo "compiling wrapper failed" >&2
+		echo "compiling preload library failed" >&2
 		exit 5
 	}
 }
@@ -113,13 +114,13 @@ for BIN in "$@"; do
 		_ln "../lib" "$DIR/usr/lib"
 	}
 
-	[ ! -x "$DIR/lib/runas" ] && {
-		_wrapper "$DIR/lib/runas"
+	[ ! -x "$DIR/lib/runas.so" ] && {
+		_runas_so "$DIR/lib/runas.so"
 	}
 
 	LDSO=""
 
-	[ -n "$LDD" ] && [ -x "$BIN" ] && file "$BIN" | grep -sqE "ELF.*executable" && {
+	[ -n "$LDD" ] && [ -x "$BIN" ] && file "$BIN" | grep -sqE "ELF.*(executable|interpreter)" && {
 		for token in $("$LDD" "$BIN" 2>/dev/null); do
 			case "$token" in */*.so*)
 				case "$token" in
@@ -150,7 +151,9 @@ for BIN in "$@"; do
 		cat <<-EOF > "$BIN"
 			#!/usr/bin/env bash
 			dir="\$(dirname "\$0")"
-			exec "\$dir/${REL:+$REL/}$LDSO" --library-path "\$dir/${REL:+$REL/}" "\$dir/${REL:+$REL/}runas" "\$dir/.${BIN##*/}.bin" "\$0" "\$@"
+			export RUNAS_ARG0="\$0"
+			export LD_PRELOAD="\$dir/${REL:+$REL/}runas.so"
+			exec "\$dir/${REL:+$REL/}$LDSO" --library-path "\$dir/${REL:+$REL/}" "\$dir/.${BIN##*/}.bin" "\$@"
 		EOF
 
 		chmod ${VERBOSE:+-v} 0755 "$BIN"
