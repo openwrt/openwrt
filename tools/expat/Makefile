@@ -18,6 +18,9 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOST_CONFIGURE_VARS += \
+	CPPFLAGS="$(HOST_CFLAGS) -DXML_POOR_ENTROPY"
+
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) install
 endef
