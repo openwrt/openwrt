@@ -157,16 +157,17 @@ get_status_led() {
 	hc5962)
 		status_led="$board:white:status"
 		;;
+	k2p|\
+	m3|\
+	miwifi-nano)
+		status_led="$board:blue:status"
+		;;
 	linkits7688| \
 	linkits7688d)
 		[ "$1" = "upgrade" ] && status_led="mediatek:orange:wifi"
 		;;
 	m2m)
 		status_led="$board:blue:wifi"
-		;;
-	m3|\
-	miwifi-nano)
-		status_led="$board:blue:status"
 		;;
 	gl-mt300n-v2)
 		status_led="$board:red:wlan"
