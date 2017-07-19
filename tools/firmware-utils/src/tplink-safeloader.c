@@ -676,7 +676,8 @@ static struct device_info boards[] = {
 		.vendor = "",
 		.support_list =
 			"SupportList:\n"
-			"{product_name:TL-WR902AC,product_ver:1.0.0,special_id:45550000}\n",
+			"{product_name:TL-WR902AC,product_ver:1.0.0,special_id:45550000}\n"
+			"{product_name:TL-WR902AC,product_ver:1.0.0,special_id:55530000}\n",
 		.support_trail = '\x00',
 		.soft_ver = NULL,
 
