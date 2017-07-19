@@ -144,6 +144,7 @@ detect_by_model() {
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 
+	"Asus RT-N12"* | \
 	"Asus WL500GP V2" | \
 	"Buffalo WHR-G125" | \
 	"Motorola WR850G" | \
@@ -163,6 +164,7 @@ detect_by_model() {
 			"0:lan" "1:lan" "2:lan" "3:lan" "5@eth0"
 		;;
 
+	"Asus RT-N16"* | \
 	"Linksys E3000 V1")
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "8@eth0"
