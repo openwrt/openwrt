@@ -123,6 +123,32 @@ ifdef CONFIG_USE_SPARSE
   KERNEL_MAKEOPTS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
 endif
 
+PKG_EXTMOD_SUBDIRS ?= .
+
+define populate_module_symvers
+	cat /dev/null > $(PKG_INFO_DIR)/$(PKG_NAME).symvers; \
+	for subdir in $(PKG_EXTMOD_SUBDIRS); do \
+		cat $(PKG_INFO_DIR)/*.symvers 2>/dev/null > $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers; \
+	done
+endef
+
+define collect_module_symvers
+	for subdir in $(PKG_EXTMOD_SUBDIRS); do \
+		grep -F $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
+	done; \
+	sort -u $(PKG_BUILD_DIR)/Module.symvers.tmp > $(PKG_BUILD_DIR)/Module.symvers; \
+	mv $(PKG_BUILD_DIR)/Module.symvers $(PKG_INFO_DIR)/$(PKG_NAME).symvers
+endef
+
+define KernelPackage/hooks
+  ifneq ($(PKG_NAME),kernel)
+    Hooks/Compile/Pre += populate_module_symvers
+    Hooks/Compile/Post += collect_module_symvers
+  endif
+  define KernelPackage/hooks
+  endef
+endef
+
 define KernelPackage/Defaults
   FILES:=
   AUTOLOAD:=
@@ -230,6 +256,7 @@ $(call KernelPackage/$(1)/config)
   endif
 
   $(call KernelPackage/depends)
+  $(call KernelPackage/hooks)
 
   ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m y,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     ifneq ($(strip $(FILES)),)
