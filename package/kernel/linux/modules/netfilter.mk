@@ -360,8 +360,6 @@ define KernelPackage/nf-nathelper/description
  Default Netfilter (IPv4) Conntrack and NAT helpers
  Includes:
  - ftp
- - irc
- - tftp
 endef
 
 $(eval $(call KernelPackage,nf-nathelper))
@@ -381,11 +379,13 @@ define KernelPackage/nf-nathelper-extra/description
  Includes:
  - amanda
  - h323
+ - irc
  - mms
  - pptp
  - proto_gre
  - sip
  - snmp_basic
+ - tftp
  - broadcast
 endef
 
