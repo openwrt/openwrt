@@ -230,6 +230,7 @@ ramips_setup_interfaces()
 	na930|\
 	pbr-d1|\
 	wli-tx4-ag300n|\
+	wmdr-143n|\
 	wmr-300|\
 	wn3000rpv3|\
 	wrh-300cr)
@@ -345,7 +346,8 @@ ramips_setup_macs()
 
 	case $board in
 	a5-v11|\
-	ht-tm02)
+	ht-tm02|\
+	wmdr-143n)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		;;
 	all0239-3g|\

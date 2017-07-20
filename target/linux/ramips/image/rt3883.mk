@@ -114,3 +114,11 @@ define Device/wlr-6000
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig
 endef
 TARGET_DEVICES += wlr-6000
+
+
+define Device/wmdr-143n
+  DTS := WMDR-143N
+  BLOCKSIZE := 64k
+  DEVICE_TITLE := Loewe WMDR-143N
+endef
+TARGET_DEVICES += wmdr-143n

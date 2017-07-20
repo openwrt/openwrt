@@ -598,6 +598,9 @@ ramips_board_detect() {
 	*"WLR-6000")
 		name="wlr-6000"
 		;;
+	*"WMDR-143N")
+		name="wmdr-143n"
+		;;
 	*"WMR-300")
 		name="wmr-300"
 		;;
