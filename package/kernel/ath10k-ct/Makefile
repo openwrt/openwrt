@@ -14,6 +14,7 @@ PKG_MIRROR_HASH:=616174650e12a82edb6b6bd18ac186e2c6a48fdad0082df9d2011ab20940814
 
 PKG_MAINTAINER:=Ben Greear <greearb@candelatech.com>
 PKG_BUILD_PARALLEL:=1
+PKG_EXTMOD_SUBDIRS:=ath10k
 
 # Build the 4.13 ath10k-ct driver version.  Other options are "-4.9", or
 # leave un-defined for 4.7 kernel.  Probably this should match as closely as
