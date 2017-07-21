@@ -22,6 +22,8 @@ ifeq ($(ARCH),mips)
 PKG_HASH:=ca6a86ca3e3e9c85b6dbb665b35bcbf338c37829c1b2f1994487d55664886045
 endif
 
+PKG_EXTMOD_SUBDIRS:=driver driver-mini glue
+
 PKG_USE_MIPS16:=0
 PKG_FLAGS:=nonshared
 
