@@ -112,22 +112,24 @@ define Build/Prepare
 endef
 
 define Build/Compile
+	# Compile glue driver
+	$(MAKE_KMOD) -C "$(LINUX_DIR)" \
+		SUBDIRS="$(PKG_BUILD_DIR)/glue" \
+		modules
+
 	# Compile the kernel part
 	$(MAKE_KMOD) \
 		SUBDIRS="$(PKG_BUILD_DIR)/driver" \
 		MODFLAGS="-DMODULE -mlong-calls" \
+		KBUILD_EXTRA_SYMBOLS="$(PKG_BUILD_DIR)/glue/Module.symvers" \
 		modules
 
 	$(MAKE_KMOD) \
 		SUBDIRS="$(PKG_BUILD_DIR)/driver-mini" \
 		MODFLAGS="-DMODULE -mlong-calls" \
 		BUILD_TYPE="wl_apsta_mini" \
+		KBUILD_EXTRA_SYMBOLS="$(PKG_BUILD_DIR)/glue/Module.symvers" \
 		modules
-
-	# Compile glue driver
-	$(MAKE_KMOD) -C "$(LINUX_DIR)" \
-		SUBDIRS="$(PKG_BUILD_DIR)/glue" \
-		modules                                        
 
 	# Compile libshared
 	$(MAKE) -C $(PKG_BUILD_DIR)/shared \
