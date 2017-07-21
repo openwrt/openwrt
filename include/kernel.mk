@@ -136,7 +136,6 @@ define ModuleAutoLoad
 		local mod; \
 		shift 2; \
 		for mod in $$$$$$$$mods; do \
-			[ -e $(2)/$(MODULES_SUBDIR)/$$$$$$$$mod.ko ] || continue; \
 			mkdir -p $(2)/etc/modules.d; \
 			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$(1); \
 		done; \
@@ -155,7 +154,6 @@ define ModuleAutoLoad
 		local mod; \
 		shift 3; \
 		for mod in $$$$$$$$mods; do \
-			[ -e $(2)/$(MODULES_SUBDIR)/$$$$$$$$mod.ko ] || continue; \
 			mkdir -p $(2)/etc/modules.d; \
 			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
 		done; \
