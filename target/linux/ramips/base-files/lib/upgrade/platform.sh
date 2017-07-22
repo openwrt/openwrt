@@ -59,6 +59,7 @@ platform_check_image() {
 	firewrt|\
 	fonera20n|\
 	freestation5|\
+	gb-pc1|\
 	gl-mt300a|\
 	gl-mt300n|\
 	gl-mt750|\
