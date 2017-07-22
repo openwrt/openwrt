@@ -15,7 +15,7 @@
 
 	memory@0 {
 		device_type = "memory";
-		reg = <0x0 0x4000000>;
+		reg = <0x0 0x8000000>;
 	};
 
 	gpio-leds {
@@ -23,7 +23,7 @@
 
 		status {
 			label = "vocore2:fuchsia:status";
-			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -31,27 +31,8 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "refclk", "gpio";
+			ralink,group = "wled_an", "perst", "wdt";
 			ralink,function = "gpio";
-		};
-
-		agpio {
-			ralink,group = "agpio";
-			ralink,function = "uart2";
-		};
-	};
-
-	uart1_pins: uart1 {
-		uart1 {
-			ralink,group = "uart1";
-			ralink,function = "uart1";
-		};
-	};
-
-	uart2_pins: uart2 {
-		uart2 {
-			ralink,group = "spis";
-			ralink,function = "pwm";
 		};
 	};
 };
