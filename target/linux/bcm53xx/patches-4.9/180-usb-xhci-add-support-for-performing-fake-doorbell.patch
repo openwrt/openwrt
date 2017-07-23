@@ -90,7 +90,7 @@ it on BCM4708 family.
  /*
   * Reset a halted HC.
   *
-@@ -565,10 +608,20 @@ int xhci_init(struct usb_hcd *hcd)
+@@ -568,10 +611,20 @@ int xhci_init(struct usb_hcd *hcd)
  
  static int xhci_run_finished(struct xhci_hcd *xhci)
  {
@@ -114,7 +114,7 @@ it on BCM4708 family.
  	xhci->shared_hcd->state = HC_STATE_RUNNING;
  	xhci->cmd_ring_state = CMD_RING_STATE_RUNNING;
  
-@@ -578,6 +631,10 @@ static int xhci_run_finished(struct xhci
+@@ -581,6 +634,10 @@ static int xhci_run_finished(struct xhci
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  			"Finished xhci_run for USB3 roothub");
  	return 0;
@@ -127,11 +127,11 @@ it on BCM4708 family.
  /*
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1661,6 +1661,7 @@ struct xhci_hcd {
- #define XHCI_BROKEN_PORT_PED	(1 << 25)
+@@ -1662,6 +1662,7 @@ struct xhci_hcd {
  #define XHCI_LIMIT_ENDPOINT_INTERVAL_7	(1 << 26)
  #define XHCI_U2_DISABLE_WAKE	(1 << 27)
-+#define XHCI_FAKE_DOORBELL	(1 << 28)
+ #define XHCI_ASMEDIA_MODIFY_FLOWCONTROL	(1 << 28)
++#define XHCI_FAKE_DOORBELL	(1 << 29)
  
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;

@@ -1,7 +1,7 @@
 
 --- a/drivers/usb/host/pci-quirks.c
 +++ b/drivers/usb/host/pci-quirks.c
-@@ -96,6 +96,8 @@ struct amd_chipset_type {
+@@ -106,6 +106,8 @@ struct amd_chipset_type {
  	u8 rev;
  };
  
@@ -10,7 +10,7 @@
  static struct amd_chipset_info {
  	struct pci_dev	*nb_dev;
  	struct pci_dev	*smbus_dev;
-@@ -449,6 +451,10 @@ void usb_amd_dev_put(void)
+@@ -503,6 +505,10 @@ void usb_amd_dev_put(void)
  }
  EXPORT_SYMBOL_GPL(usb_amd_dev_put);
  
@@ -21,7 +21,7 @@
  /*
   * Make sure the controller is completely inactive, unable to
   * generate interrupts or do DMA.
-@@ -528,8 +534,17 @@ reset_needed:
+@@ -582,8 +588,17 @@ reset_needed:
  	uhci_reset_hc(pdev, base);
  	return 1;
  }
@@ -39,7 +39,7 @@
  static inline int io_type_enabled(struct pci_dev *pdev, unsigned int mask)
  {
  	u16 cmd;
-@@ -1096,3 +1111,4 @@ static void quirk_usb_early_handoff(stru
+@@ -1150,3 +1165,4 @@ static void quirk_usb_early_handoff(stru
  }
  DECLARE_PCI_FIXUP_CLASS_FINAL(PCI_ANY_ID, PCI_ANY_ID,
  			PCI_CLASS_SERIAL_USB, 8, quirk_usb_early_handoff);
@@ -56,7 +56,7 @@
  int usb_amd_find_chipset_info(void);
  int usb_hcd_amd_remote_wakeup_quirk(struct pci_dev *pdev);
  bool usb_amd_hang_symptom_quirk(void);
-@@ -16,11 +19,24 @@ void usb_disable_xhci_ports(struct pci_d
+@@ -17,12 +20,25 @@ void usb_disable_xhci_ports(struct pci_d
  void sb800_prefetch(struct device *dev, int on);
  #else
  struct pci_dev;
@@ -74,6 +74,7 @@
 +}
  static inline void usb_amd_quirk_pll_disable(void) {}
  static inline void usb_amd_quirk_pll_enable(void) {}
+ static inline void usb_asmedia_modifyflowcontrol(struct pci_dev *pdev) {}
  static inline void usb_amd_dev_put(void) {}
  static inline void usb_disable_xhci_ports(struct pci_dev *xhci_pdev) {}
  static inline void sb800_prefetch(struct device *dev, int on) {}

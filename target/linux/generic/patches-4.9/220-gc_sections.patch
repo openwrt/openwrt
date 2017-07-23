@@ -398,9 +398,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  # Read KERNELRELEASE from include/config/kernel.release (if it exists)
  KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
  KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
-@@ -630,11 +635,6 @@ include arch/$(SRCARCH)/Makefile
- KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
- KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
+@@ -633,11 +638,6 @@ KBUILD_CFLAGS	+= $(call cc-disable-warni
+ KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
+ KBUILD_CFLAGS	+= $(call cc-disable-warning, int-in-bool-context)
  
 -ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
 -KBUILD_CFLAGS	+= $(call cc-option,-ffunction-sections,)
