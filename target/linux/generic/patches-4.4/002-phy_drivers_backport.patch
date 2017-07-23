@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/adm6996.c
 +++ b/drivers/net/phy/adm6996.c
-@@ -287,7 +287,7 @@ static u16
+@@ -286,7 +286,7 @@ static u16
  adm6996_read_mii_reg(struct adm6996_priv *priv, enum admreg reg)
  {
  	struct phy_device *phydev = priv->priv;
@@ -9,7 +9,7 @@
  
  	return bus->read(bus, PHYADDR(reg));
  }
-@@ -296,7 +296,7 @@ static void
+@@ -295,7 +295,7 @@ static void
  adm6996_write_mii_reg(struct adm6996_priv *priv, enum admreg reg, u16 val)
  {
  	struct phy_device *phydev = priv->priv;
@@ -18,7 +18,7 @@
  
  	bus->write(bus, PHYADDR(reg), val);
  }
-@@ -1019,13 +1019,13 @@ static int adm6996_config_init(struct ph
+@@ -1018,13 +1018,13 @@ static int adm6996_config_init(struct ph
  	pdev->supported = ADVERTISED_100baseT_Full;
  	pdev->advertising = ADVERTISED_100baseT_Full;
  
@@ -35,7 +35,7 @@
  	if (!priv)
  		return -ENOMEM;
  
-@@ -1045,7 +1045,7 @@ static int adm6996_config_init(struct ph
+@@ -1044,7 +1044,7 @@ static int adm6996_config_init(struct ph
  }
  
  /*
@@ -44,7 +44,7 @@
   */
  static int adm6996_read_status(struct phy_device *phydev)
  {
-@@ -1061,7 +1061,7 @@ static int adm6996_read_status(struct ph
+@@ -1060,7 +1060,7 @@ static int adm6996_read_status(struct ph
  }
  
  /*
@@ -53,7 +53,7 @@
   */
  static int adm6996_config_aneg(struct phy_device *phydev)
  {
-@@ -1070,11 +1070,11 @@ static int adm6996_config_aneg(struct ph
+@@ -1069,11 +1069,11 @@ static int adm6996_config_aneg(struct ph
  
  static int adm6996_fixup(struct phy_device *dev)
  {
@@ -67,7 +67,7 @@
  		return 0;
  
  	/* look for the switch on the bus */
-@@ -1121,6 +1121,7 @@ static struct phy_driver adm6996_phy_dri
+@@ -1120,6 +1120,7 @@ static struct phy_driver adm6996_phy_dri
  	.config_aneg	= &adm6996_config_aneg,
  	.read_status	= &adm6996_read_status,
  	.soft_reset	= adm6996_soft_reset,
@@ -75,7 +75,7 @@
  };
  
  static int adm6996_gpio_probe(struct platform_device *pdev)
-@@ -1193,7 +1194,7 @@ static int __init adm6996_init(void)
+@@ -1188,7 +1189,7 @@ static int __init adm6996_init(void)
  	int err;
  
  	phy_register_fixup_for_id(PHY_ANY_ID, adm6996_fixup);

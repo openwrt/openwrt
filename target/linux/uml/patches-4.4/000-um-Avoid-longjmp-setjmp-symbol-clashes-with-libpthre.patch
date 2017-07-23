@@ -33,11 +33,9 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  arch/x86/um/setjmp_64.S | 16 ++++++++--------
  3 files changed, 20 insertions(+), 16 deletions(-)
 
-diff --git a/arch/um/Makefile b/arch/um/Makefile
-index 0ca46ededfc7..6ca4f66085c1 100644
 --- a/arch/um/Makefile
 +++ b/arch/um/Makefile
-@@ -59,10 +59,14 @@ KBUILD_CPPFLAGS += -I$(srctree)/$(HOST_DIR)/um
+@@ -59,10 +59,14 @@ KBUILD_CPPFLAGS += -I$(srctree)/$(HOST_D
  # Same things for in6addr_loopback and mktime - found in libc. For these two we
  # only get link-time error, luckily.
  #
@@ -52,8 +50,6 @@ index 0ca46ededfc7..6ca4f66085c1 100644
  	-Din6addr_loopback=kernel_in6addr_loopback \
  	-Din6addr_any=kernel_in6addr_any -Dstrrchr=kernel_strrchr
  
-diff --git a/arch/x86/um/setjmp_32.S b/arch/x86/um/setjmp_32.S
-index b766792c9933..39053192918d 100644
 --- a/arch/x86/um/setjmp_32.S
 +++ b/arch/x86/um/setjmp_32.S
 @@ -16,9 +16,9 @@
@@ -93,8 +89,6 @@ index b766792c9933..39053192918d 100644
  
 -	.size longjmp,.-longjmp
 +	.size kernel_longjmp,.-kernel_longjmp
-diff --git a/arch/x86/um/setjmp_64.S b/arch/x86/um/setjmp_64.S
-index 45f547b4043e..c56942e1a38c 100644
 --- a/arch/x86/um/setjmp_64.S
 +++ b/arch/x86/um/setjmp_64.S
 @@ -18,9 +18,9 @@
@@ -134,6 +128,3 @@ index 45f547b4043e..c56942e1a38c 100644
  
 -	.size longjmp,.-longjmp
 +	.size kernel_longjmp,.-kernel_longjmp
--- 
-2.13.0
-

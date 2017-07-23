@@ -27,7 +27,7 @@ Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  			return ret;
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -1221,6 +1221,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1228,6 +1228,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  		mtd->flags |= MTD_NO_ERASE;
  
  	mtd->dev.parent = dev;

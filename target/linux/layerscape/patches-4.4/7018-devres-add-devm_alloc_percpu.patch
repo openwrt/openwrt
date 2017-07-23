@@ -110,7 +110,7 @@ Conflicts:
 +EXPORT_SYMBOL_GPL(devm_free_percpu);
 --- a/include/linux/device.h
 +++ b/include/linux/device.h
-@@ -681,6 +681,25 @@ void __iomem *devm_ioremap_resource(stru
+@@ -683,6 +683,25 @@ void __iomem *devm_ioremap_resource(stru
  int devm_add_action(struct device *dev, void (*action)(void *), void *data);
  void devm_remove_action(struct device *dev, void (*action)(void *), void *data);
  

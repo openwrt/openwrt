@@ -95,7 +95,7 @@ Signed-off-by: Yunhui Cui <yunhui.cui@nxp.com>
  static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
  			size_t *retlen, u_char *buf)
  {
-@@ -1248,6 +1302,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1255,6 +1309,12 @@ int spi_nor_scan(struct spi_nor *nor, co
  		write_sr(nor, ret);
  	}
  
