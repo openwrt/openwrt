@@ -793,6 +793,13 @@ static int inspect_fw(void)
 		goto out_free_buf;
 	hdr = (struct fw_header *)buf;
 
+	board = find_board_by_hwid(ntohl(hdr->hw_id));
+
+	if (board && board->flags & FLAG_LE_KERNEL_LA_EP) {
+		hdr->kernel_la = bswap_32(hdr->kernel_la);
+		hdr->kernel_ep = bswap_32(hdr->kernel_ep);
+	}
+
 	inspect_fw_pstr("File name", inspect_info.file_name);
 	inspect_fw_phexdec("File size", inspect_info.file_size);
 
@@ -838,7 +845,6 @@ static int inspect_fw(void)
 
 	inspect_fw_pstr("Firmware version", hdr->fw_version);
 
-	board = find_board_by_hwid(ntohl(hdr->hw_id));
 	if (board) {
 		layout = find_layout(board->layout_id);
 		inspect_fw_phexpost("Hardware ID",
