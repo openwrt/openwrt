@@ -794,8 +794,10 @@ static int inspect_fw(void)
 	hdr = (struct fw_header *)buf;
 
 	board = find_board_by_hwid(ntohl(hdr->hw_id));
+	if (!board)
+		board = &custom_board;
 
-	if (board && board->flags & FLAG_LE_KERNEL_LA_EP) {
+	if (board->flags & FLAG_LE_KERNEL_LA_EP) {
 		hdr->kernel_la = bswap_32(hdr->kernel_la);
 		hdr->kernel_ep = bswap_32(hdr->kernel_ep);
 	}
@@ -845,7 +847,7 @@ static int inspect_fw(void)
 
 	inspect_fw_pstr("Firmware version", hdr->fw_version);
 
-	if (board) {
+	if (board != &custom_board) {
 		layout = find_layout(board->layout_id);
 		inspect_fw_phexpost("Hardware ID",
 		                    ntohl(hdr->hw_id), board->id);
@@ -872,7 +874,7 @@ static int inspect_fw(void)
 	                   ntohl(hdr->kernel_ofs));
 	inspect_fw_phexdec("Kernel data length",
 	                   ntohl(hdr->kernel_len));
-	if (board) {
+	if (board != &custom_board) {
 		inspect_fw_phexdef("Kernel load address",
 		                   ntohl(hdr->kernel_la),
 		                   layout ? layout->kernel_la : 0xffffffff);
