@@ -76,6 +76,8 @@ struct flash_layout {
 	uint32_t	rootfs_ofs;
 };
 
+#define FLAG_LE_KERNEL_LA_EP			0x00000001	/* Little-endian used for kernel load address & entry point */
+
 struct board_info {
 	char		*id;
 	uint32_t	hw_id;
@@ -83,7 +85,7 @@ struct board_info {
 	uint32_t	hw_ver_add;
 	char		*layout_id;
 	uint32_t	hdr_ver;
-	bool		endian_swap;
+	uint32_t	flags;
 };
 
 /*
@@ -184,7 +186,7 @@ static struct board_info boards[] = {
 		.hw_rev		= 58,
 		.layout_id	= "8Mmtk",
 		.hdr_ver	= 3,
-		.endian_swap	= true,
+		.flags		= FLAG_LE_KERNEL_LA_EP,
 	}, {
 		.id		= "ArcherVR200V",
 		.hw_id		= 0x73b70801,
@@ -197,14 +199,14 @@ static struct board_info boards[] = {
 		.hw_rev		= 69,
 		.layout_id	= "8Mmtk",
 		.hdr_ver	= 3,
-		.endian_swap	= true,
+		.flags		= FLAG_LE_KERNEL_LA_EP,
 	}, {
 		.id		= "ArcherMR200",
 		.hw_id		= 0xd7500001,
 		.hw_rev		= 0x4a,
 		.layout_id	= "8MLmtk",
 		.hdr_ver	= 3,
-		.endian_swap	= true,
+		.flags		= FLAG_LE_KERNEL_LA_EP,
 	}, {
 		.id		= "TL-WR840NV4",
 		.hw_id		= 0x08400004,
@@ -212,7 +214,7 @@ static struct board_info boards[] = {
 		.hw_ver_add	= 0x4,
 		.layout_id	= "8Mmtk",
 		.hdr_ver	= 3,
-		.endian_swap	= true,
+		.flags		= FLAG_LE_KERNEL_LA_EP,
 	}, {
 		.id		= "TL-WR841NV13",
 		.hw_id		= 0x08410013,
@@ -220,7 +222,7 @@ static struct board_info boards[] = {
 		.hw_ver_add	= 0x13,
 		.layout_id	= "8Mmtk",
 		.hdr_ver	= 3,
-		.endian_swap	= true,
+		.flags		= FLAG_LE_KERNEL_LA_EP,
 	}, {
 		/* terminating entry */
 	}
@@ -574,7 +576,7 @@ static void fill_header(char *buf, int len)
 	hdr->ver_mid = fw_ver_mid;
 	hdr->ver_lo = fw_ver_lo;
 
-	if (board->endian_swap) {
+	if (board->flags & FLAG_LE_KERNEL_LA_EP) {
 		hdr->kernel_la = bswap_32(hdr->kernel_la);
 		hdr->kernel_ep = bswap_32(hdr->kernel_ep);
 	}
@@ -1018,7 +1020,7 @@ int main(int argc, char *argv[])
 			hdr_ver = atoi(optarg);
 			break;
 		case 'e':
-			custom_board.endian_swap = true;
+			custom_board.flags = FLAG_LE_KERNEL_LA_EP;
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
