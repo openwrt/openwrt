@@ -119,6 +119,7 @@ get_status_led() {
 	dap-1350|\
 	na930|\
 	pbr-m1|\
+	re350-v1|\
 	rt-ac51u|\
 	rt-n13u|\
 	rt-n14u|\

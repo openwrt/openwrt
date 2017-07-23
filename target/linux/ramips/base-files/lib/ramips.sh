@@ -427,6 +427,9 @@ ramips_board_detect() {
 	*"RB750Gr3")
 		name="rb750gr3"
 		;;
+	*"RE350 v1")
+		name="re350-v1"
+		;;
 	*"RE6500")
 		name="re6500"
 		;;

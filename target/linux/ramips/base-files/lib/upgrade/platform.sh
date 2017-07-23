@@ -253,6 +253,13 @@ platform_check_image() {
 		# these boards use metadata images
 		return 0
 		;;
+	re350-v1)
+		[ "$magic" != "01000000" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
 	ubnt-erx|\
 	ubnt-erx-sfp)
 		nand_do_platform_check "$board" "$1"

@@ -2,6 +2,8 @@
 # MT7621 Profiles
 #
 
+DEVICE_VARS += TPLINK_BOARD_ID TPLINK_HEADER_VERSION TPLINK_HWID TPLINK_HWREV
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:6' > $(1).compat; \
@@ -147,6 +149,22 @@ define Device/rb750gr3
   DEVICE_PACKAGES := kmod-usb3 uboot-envtools
 endef
 TARGET_DEVICES += rb750gr3
+
+define Device/re350-v1
+  DTS := RE350
+  DEVICE_TITLE := TP-LINK RE350 v1
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 wpad-mini
+  TPLINK_BOARD_ID := RE350-V1
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  TPLINK_HEADER_VERSION := 1
+  IMAGE_SIZE := 6016k
+  KERNEL := $(KERNEL_DTB) | tplink-v1-header -e
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade | append-metadata | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+TARGET_DEVICES += re350-v1
 
 define Device/re6500
   DTS := RE6500

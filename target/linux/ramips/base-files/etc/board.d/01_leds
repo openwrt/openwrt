@@ -308,6 +308,12 @@ r6220)
 	set_wifi_led "$board:green:wifi"
 	set_usb_led "$board:green:usb"
 	;;
+re350-v1)
+	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "$board:blue:wifi2G" "wlan0"
+	ucidef_set_led_netdev "wifi5g" "Wifi 5G" "$board:blue:wifi5G" "wlan1"
+	ucidef_set_led_netdev "eth_act" "LAN act" "$board:green:eth_act" "eth0" "tx rx"
+	ucidef_set_led_switch "eth_link" "LAN link" "$board:green:eth_link" "switch0" "0x01"
+	;;
 re6500)
 	ucidef_set_led_default "power" "power" "$board:white:power" "1"
 	ucidef_set_led_default "wifi" "wifi" "$board:orange:wifi" "1"
