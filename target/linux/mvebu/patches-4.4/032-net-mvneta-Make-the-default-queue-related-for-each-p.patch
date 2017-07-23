@@ -120,7 +120,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	for_each_online_cpu(cpu) {
  		if (i == online_cpu_idx)
-@@ -3363,6 +3364,8 @@ static int mvneta_probe(struct platform_
+@@ -3361,6 +3362,8 @@ static int mvneta_probe(struct platform_
  				 strcmp(managed, "in-band-status") == 0);
  	pp->cpu_notifier.notifier_call = mvneta_percpu_notifier;
  

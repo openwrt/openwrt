@@ -4370,7 +4370,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	write_enable(nor);
  
  	write_sr(nor, val | SR_QUAD_EN_MX);
-@@ -1100,7 +1247,7 @@ static int set_quad_mode(struct spi_nor
+@@ -1107,7 +1254,7 @@ static int set_quad_mode(struct spi_nor
  static int spi_nor_check(struct spi_nor *nor)
  {
  	if (!nor->dev || !nor->read || !nor->write ||
@@ -4379,7 +4379,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		pr_err("spi-nor: please fill all the necessary fields!\n");
  		return -EINVAL;
  	}
-@@ -1113,7 +1260,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1120,7 +1267,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	const struct flash_info *info = NULL;
  	struct device *dev = nor->dev;
  	struct mtd_info *mtd = &nor->mtd;
@@ -4388,7 +4388,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	int ret;
  	int i;
  
-@@ -1167,6 +1314,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1174,6 +1321,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	    info->flags & SPI_NOR_HAS_LOCK) {
  		write_enable(nor);
  		write_sr(nor, 0);
@@ -4396,7 +4396,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	}
  
  	if (!mtd->name)
-@@ -1201,6 +1349,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1208,6 +1356,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	if (info->flags & USE_FSR)
  		nor->flags |= SNOR_F_USE_FSR;
@@ -4405,7 +4405,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
  	/* prefer "small sector" erase if possible */
-@@ -1303,6 +1453,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1310,6 +1460,12 @@ int spi_nor_scan(struct spi_nor *nor, co
  		nor->addr_width = 3;
  	}
  

@@ -62,7 +62,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static void mvneta_start_dev(struct mvneta_port *pp)
  {
  	unsigned int cpu;
-@@ -3231,6 +3250,106 @@ static int mvneta_ethtool_get_sset_count
+@@ -3229,6 +3248,106 @@ static int mvneta_ethtool_get_sset_count
  	return -EOPNOTSUPP;
  }
  
@@ -169,7 +169,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static const struct net_device_ops mvneta_netdev_ops = {
  	.ndo_open            = mvneta_open,
  	.ndo_stop            = mvneta_stop,
-@@ -3255,6 +3374,10 @@ const struct ethtool_ops mvneta_eth_tool
+@@ -3253,6 +3372,10 @@ const struct ethtool_ops mvneta_eth_tool
  	.get_strings	= mvneta_ethtool_get_strings,
  	.get_ethtool_stats = mvneta_ethtool_get_stats,
  	.get_sset_count	= mvneta_ethtool_get_sset_count,
@@ -180,7 +180,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  /* Initialize hw */
-@@ -3446,6 +3569,8 @@ static int mvneta_probe(struct platform_
+@@ -3444,6 +3567,8 @@ static int mvneta_probe(struct platform_
  
  	pp->rxq_def = rxq_def;
  

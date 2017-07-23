@@ -1420,7 +1420,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  /*
   * Returns zero if the TRB isn't in this segment, otherwise it returns the DMA
-@@ -3110,17 +3111,22 @@ static u32 xhci_td_remainder(struct xhci
+@@ -3113,17 +3114,22 @@ static u32 xhci_td_remainder(struct xhci
  {
  	u32 maxp, total_packet_count;
  
@@ -1447,7 +1447,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	/* Queueing functions don't count the current TRB into transferred */
  	return (total_packet_count - ((transferred + trb_buff_len) / maxp));
  }
-@@ -3508,7 +3514,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
+@@ -3511,7 +3517,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
  		field |= 0x1;
  
  	/* xHCI 1.0/1.1 6.4.1.2.1: Transfer Type field */
