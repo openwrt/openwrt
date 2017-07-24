@@ -29,7 +29,7 @@ define KernelPackage/acx-mac80211
   TITLE:=ACX1xx mac80211 driver
   DEPENDS:=@(PCI_SUPPORT||TARGET_ar7) @mipsel @LINUX_3_18||LINUX_4_4 +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.ko
-  AUTOLOAD:=$(call AutoLoad,50,mac80211 acx-mac80211)
+  AUTOLOAD:=$(call AutoProbe,acx-mac80211)
   MAINTAINER:=Florian Fainelli <florian@openwrt.org>
   MENU:=1
 endef
