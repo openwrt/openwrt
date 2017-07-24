@@ -79,8 +79,10 @@ _runas_so() {
 		int mangle_arg0(int argc, char **argv, char **env) {
 			char *arg0 = getenv("RUNAS_ARG0");
 
-			if (arg0)
+			if (arg0) {
 				argv[0] = arg0;
+				unsetenv("RUNAS_ARG0");
+			}
 
 			return 0;
 		}
