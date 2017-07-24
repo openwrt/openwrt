@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tcpdump
-PKG_VERSION:=4.9.0
+PKG_VERSION:=4.9.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.us.tcpdump.org/release/ \
 	http://www.tcpdump.org/release/
-PKG_HASH:=eae98121cbb1c9adbedd9a777bf2eae9fa1c1c676424a54740311c8abcee5a5e
+PKG_HASH:=f9448cf4deb2049acf713655c736342662e652ef40dbe0a8f6f8d5b9ce5bd8f3
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_BUILD_PARALLEL:=1
