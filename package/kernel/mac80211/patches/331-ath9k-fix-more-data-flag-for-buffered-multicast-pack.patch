@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ath_buf *bf_tail = NULL;
  	struct ath_buf *bf;
  	LIST_HEAD(bf_q);
-@@ -2495,14 +2494,8 @@ void ath_tx_cabq(struct ieee80211_hw *hw
+@@ -2495,15 +2494,10 @@ void ath_tx_cabq(struct ieee80211_hw *hw
  	if (list_empty(&bf_q))
  		return;
  
@@ -34,5 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	bf = list_last_entry(&bf_q, struct ath_buf, list);
 +	ath9k_set_moredata(sc, bf, false);
  
++	bf = list_first_entry(&bf_q, struct ath_buf, list);
  	ath_txq_lock(sc, txctl.txq);
  	ath_tx_fill_desc(sc, bf, txctl.txq, 0);
+ 	ath_tx_txqaddbuf(sc, txctl.txq, &bf_q, false);
