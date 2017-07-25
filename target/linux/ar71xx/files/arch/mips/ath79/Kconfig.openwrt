@@ -1393,6 +1393,7 @@ config ATH79_MACH_ARCHER_C60_V1
 config ATH79_MACH_ARCHER_C7
 	bool "TP-LINK Archer C5/C7/TL-WDR4900 v2 board support"
 	select SOC_QCA955X
+	select SOC_QCA956X
 	select ATH79_DEV_AP9X_PCI if PCI
 	select ATH79_DEV_ETH
 	select ATH79_DEV_GPIO_BUTTONS

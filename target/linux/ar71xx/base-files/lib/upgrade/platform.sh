@@ -211,6 +211,7 @@ platform_check_image() {
 	archer-c58-v1|\
 	archer-c59-v1|\
 	archer-c60-v1|\
+	archer-c7-v4|\
 	bullet-m|\
 	c-55|\
 	carambola2|\
