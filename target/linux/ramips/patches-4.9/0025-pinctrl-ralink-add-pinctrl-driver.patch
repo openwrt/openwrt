@@ -193,7 +193,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	if (!max_maps)
-+		return max_maps;
++		return -EINVAL;
 +
 +	*map = kzalloc(max_maps * sizeof(struct pinctrl_map), GFP_KERNEL);
 +	if (!*map)
