@@ -1,0 +1,119 @@
+Index: linux-4.9.37/arch/mips/kernel/smp-cmp.c
+===================================================================
+--- linux-4.9.37.orig/arch/mips/kernel/smp-cmp.c
++++ linux-4.9.37/arch/mips/kernel/smp-cmp.c
+@@ -43,6 +43,10 @@ static void cmp_init_secondary(void)
+ {
+ 	struct cpuinfo_mips *c __maybe_unused = &current_cpu_data;
+ 
++	printk("%s:%s[%d]%x\n", __FILE__, __func__, __LINE__, c->core);
++	c->core = (read_c0_ebase() & 0x3ff) >> (fls(smp_num_siblings)-1);
++	printk("%s:%s[%d]%x\n", __FILE__, __func__, __LINE__, c->core);
++
+ 	/* Assume GIC is present */
+ 	change_c0_status(ST0_IM, STATUSF_IP2 | STATUSF_IP3 | STATUSF_IP4 |
+ 				 STATUSF_IP5 | STATUSF_IP6 | STATUSF_IP7);
+Index: linux-4.9.37/arch/mips/ralink/mt7621.c
+===================================================================
+--- linux-4.9.37.orig/arch/mips/ralink/mt7621.c
++++ linux-4.9.37/arch/mips/ralink/mt7621.c
+@@ -18,6 +18,7 @@
+ #include <asm/mach-ralink/ralink_regs.h>
+ #include <asm/mach-ralink/mt7621.h>
+ #include <asm/mips-boards/launch.h>
++#include <asm/delay.h>
+ 
+ #include <pinmux.h>
+ 
+@@ -179,6 +180,58 @@ bool plat_cpu_core_present(int core)
+ 	return true;
+ }
+ 
++#define LPS_PREC 8
++/*
++*  Re-calibration lpj(loop-per-jiffy).
++*  (derived from kernel/calibrate.c)
++*/
++static int udelay_recal(void)
++{
++	unsigned int i, lpj = 0;
++	unsigned long ticks, loopbit;
++	int lps_precision = LPS_PREC;
++
++	lpj = (1<<12);
++
++	while ((lpj <<= 1) != 0) {
++		/* wait for "start of" clock tick */
++		ticks = jiffies;
++		while (ticks == jiffies)
++			/* nothing */;
++
++		/* Go .. */
++		ticks = jiffies;
++		__delay(lpj);
++		ticks = jiffies - ticks;
++		if (ticks)
++			break;
++	}
++
++	/*
++	 * Do a binary approximation to get lpj set to
++	 * equal one clock (up to lps_precision bits)
++	 */
++	lpj >>= 1;
++	loopbit = lpj;
++	while (lps_precision-- && (loopbit >>= 1)) {
++		lpj |= loopbit;
++		ticks = jiffies;
++		while (ticks == jiffies)
++			/* nothing */;
++		ticks = jiffies;
++		__delay(lpj);
++		if (jiffies != ticks)   /* longer than 1 tick */
++			lpj &= ~loopbit;
++	}
++	printk(KERN_INFO "%d CPUs re-calibrate udelay(lpj = %d)\n", NR_CPUS, lpj);
++
++	for(i=0; i< NR_CPUS; i++)
++		cpu_data[i].udelay_val = lpj;
++
++	return 0;
++}
++device_initcall(udelay_recal);
++
+ void prom_soc_init(struct ralink_soc_info *soc_info)
+ {
+ 	void __iomem *sysc = (void __iomem *) KSEG1ADDR(MT7621_SYSC_BASE);
+Index: linux-4.9.37/arch/mips/ralink/Kconfig
+===================================================================
+--- linux-4.9.37.orig/arch/mips/ralink/Kconfig
++++ linux-4.9.37/arch/mips/ralink/Kconfig
+@@ -56,6 +56,7 @@ choice
+ 		select COMMON_CLK
+ 		select CLKSRC_MIPS_GIC
+ 		select HW_HAS_PCI
++		select GENERIC_CLOCKEVENTS_BROADCAST
+ endchoice
+ 
+ choice
+Index: linux-4.9.37/arch/mips/ralink/timer-gic.c
+===================================================================
+--- linux-4.9.37.orig/arch/mips/ralink/timer-gic.c
++++ linux-4.9.37/arch/mips/ralink/timer-gic.c
+@@ -12,6 +12,7 @@
+ #include <linux/of.h>
+ #include <linux/clk-provider.h>
+ #include <linux/clocksource.h>
++#include <asm/time.h>
+ 
+ #include "common.h"
+ 
+@@ -19,6 +20,8 @@ void __init plat_time_init(void)
+ {
+ 	ralink_of_remap();
+ 
++	mips_hpt_frequency = 880000000 / 2;
++
+ 	of_clk_init(NULL);
+ 	clocksource_probe();
+ }
