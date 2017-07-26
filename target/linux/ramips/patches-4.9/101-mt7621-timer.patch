@@ -1,22 +1,5 @@
-Index: linux-4.9.37/arch/mips/kernel/smp-cmp.c
-===================================================================
---- linux-4.9.37.orig/arch/mips/kernel/smp-cmp.c
-+++ linux-4.9.37/arch/mips/kernel/smp-cmp.c
-@@ -43,6 +43,10 @@ static void cmp_init_secondary(void)
- {
- 	struct cpuinfo_mips *c __maybe_unused = &current_cpu_data;
- 
-+	printk("%s:%s[%d]%x\n", __FILE__, __func__, __LINE__, c->core);
-+	c->core = (read_c0_ebase() & 0x3ff) >> (fls(smp_num_siblings)-1);
-+	printk("%s:%s[%d]%x\n", __FILE__, __func__, __LINE__, c->core);
-+
- 	/* Assume GIC is present */
- 	change_c0_status(ST0_IM, STATUSF_IP2 | STATUSF_IP3 | STATUSF_IP4 |
- 				 STATUSF_IP5 | STATUSF_IP6 | STATUSF_IP7);
-Index: linux-4.9.37/arch/mips/ralink/mt7621.c
-===================================================================
---- linux-4.9.37.orig/arch/mips/ralink/mt7621.c
-+++ linux-4.9.37/arch/mips/ralink/mt7621.c
+--- a/arch/mips/ralink/mt7621.c
++++ b/arch/mips/ralink/mt7621.c
 @@ -18,6 +18,7 @@
  #include <asm/mach-ralink/ralink_regs.h>
  #include <asm/mach-ralink/mt7621.h>
@@ -84,10 +67,8 @@ Index: linux-4.9.37/arch/mips/ralink/mt7621.c
  void prom_soc_init(struct ralink_soc_info *soc_info)
  {
  	void __iomem *sysc = (void __iomem *) KSEG1ADDR(MT7621_SYSC_BASE);
-Index: linux-4.9.37/arch/mips/ralink/Kconfig
-===================================================================
---- linux-4.9.37.orig/arch/mips/ralink/Kconfig
-+++ linux-4.9.37/arch/mips/ralink/Kconfig
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
 @@ -56,6 +56,7 @@ choice
  		select COMMON_CLK
  		select CLKSRC_MIPS_GIC
@@ -96,10 +77,8 @@ Index: linux-4.9.37/arch/mips/ralink/Kconfig
  endchoice
  
  choice
-Index: linux-4.9.37/arch/mips/ralink/timer-gic.c
-===================================================================
---- linux-4.9.37.orig/arch/mips/ralink/timer-gic.c
-+++ linux-4.9.37/arch/mips/ralink/timer-gic.c
+--- a/arch/mips/ralink/timer-gic.c
++++ b/arch/mips/ralink/timer-gic.c
 @@ -12,6 +12,7 @@
  #include <linux/of.h>
  #include <linux/clk-provider.h>
