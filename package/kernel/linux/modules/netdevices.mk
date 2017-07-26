@@ -110,6 +110,26 @@ endef
 $(eval $(call KernelPackage,mii))
 
 
+define KernelPackage/mdio-gpio
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:= Supports GPIO lib-based MDIO busses
+  DEPENDS:=+kmod-libphy @GPIO_SUPPORT
+  KCONFIG:= \
+	CONFIG_MDIO_BITBANG \
+	CONFIG_MDIO_GPIO
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/phy/mdio-gpio.ko \
+	$(LINUX_DIR)/drivers/net/phy/mdio-bitbang.ko
+  AUTOLOAD:=$(call AutoProbe,mdio-gpio)
+endef
+
+define KernelPackage/mdio-gpio/description
+ Supports GPIO lib-based MDIO busses
+endef
+
+$(eval $(call KernelPackage,mdio-gpio))
+
+
 define KernelPackage/et131x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Agere ET131x Gigabit Ethernet driver
