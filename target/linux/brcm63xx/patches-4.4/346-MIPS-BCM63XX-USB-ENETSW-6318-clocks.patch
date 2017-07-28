@@ -42,7 +42,7 @@
  
  	if (enable)
  		msleep(100);
-@@ -405,9 +413,9 @@ struct clk *clk_get(struct device *dev,
+@@ -408,9 +416,9 @@ struct clk *clk_get(struct device *dev,
  		return &clk_enetsw;
  	if (!strcmp(id, "ephy"))
  		return &clk_ephy;

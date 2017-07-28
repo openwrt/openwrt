@@ -57,7 +57,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  		mask = CKCTL_6328_HSSPI_EN;
  	else if (BCMCPU_IS_6362())
  		mask = CKCTL_6362_HSSPI_EN;
-@@ -417,12 +419,16 @@ void clk_put(struct clk *clk)
+@@ -420,12 +422,16 @@ void clk_put(struct clk *clk)
  
  EXPORT_SYMBOL(clk_put);
  
