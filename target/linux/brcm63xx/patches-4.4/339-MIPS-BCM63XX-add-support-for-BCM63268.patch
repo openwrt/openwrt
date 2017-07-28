@@ -107,7 +107,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  }
  
  static struct clk clk_pcie = {
-@@ -386,9 +400,11 @@ struct clk *clk_get(struct device *dev,
+@@ -389,9 +403,11 @@ struct clk *clk_get(struct device *dev,
  		return &clk_periph;
  	if ((BCMCPU_IS_3368() || BCMCPU_IS_6358()) && !strcmp(id, "pcm"))
  		return &clk_pcm;
@@ -121,7 +121,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		return &clk_pcie;
  	return ERR_PTR(-ENOENT);
  }
-@@ -411,6 +427,7 @@ static int __init bcm63xx_clk_init(void)
+@@ -414,6 +430,7 @@ static int __init bcm63xx_clk_init(void)
  		clk_hsspi.rate = HSSPI_PLL_HZ_6328;
  		break;
  	case BCM6362_CPU_ID:

@@ -53,7 +53,7 @@ Subject: [PATCH 53/53] MIPS: BCM63XX: add PCIe support for BCM6318
  }
  
  static struct clk clk_pcie = {
-@@ -405,7 +422,7 @@ struct clk *clk_get(struct device *dev,
+@@ -408,7 +425,7 @@ struct clk *clk_get(struct device *dev,
  	if ((BCMCPU_IS_6362() || BCMCPU_IS_6368() || BCMCPU_IS_63268()) &&
  	    !strcmp(id, "ipsec"))
  		return &clk_ipsec;
