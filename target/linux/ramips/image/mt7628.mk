@@ -92,6 +92,7 @@ TARGET_DEVICES += duzun-dm06
 define Device/mac1200r-v2
   DTS := MAC1200RV2
   DEVICE_TITLE := Mercury MAC1200R v2.0
+  SUPPORTED_DEVICES := mac1200rv2
 endef
 TARGET_DEVICES += mac1200r-v2
 
