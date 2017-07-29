@@ -2,8 +2,11 @@
 
 #include "mt7628an.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
 / {
-	compatible = "mercury,mac1200rv2", "mediatek,mt7628an-soc";
+	compatible = "mercury,mac1200r-v2", "mediatek,mt7628an-soc";
 	model = "Mercury MAC1200R v2";
 
 	chosen {
@@ -19,7 +22,7 @@
 		compatible = "gpio-leds";
 		status {
 			label = "mac1200rv2:green:status";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

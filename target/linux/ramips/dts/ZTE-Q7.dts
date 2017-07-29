@@ -2,10 +2,11 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ZTE-Q7", "ralink,mt7620a-soc";
+	compatible = "zte,q7", "ralink,mt7620a-soc";
 	model = "ZTE Q7";
 
 	gpio-leds {
@@ -13,12 +14,12 @@
 
 		statred {
 			label = "zte-q7:red:status";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 
 		statblue {
 			label = "zte-q7:blue:status";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -30,7 +31,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 2 1>;
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

@@ -1,9 +1,9 @@
 /dts-v1/;
 
-#include "HC5XXX.dtsi"
+#include "HC5X61.dtsi"
 
 / {
-	compatible = "HC5761", "ralink,mt7620a-soc";
+	compatible = "hiwifi,hc5761", "hiwifi,hc5x61", "ralink,mt7620a-soc";
 	model = "HiWiFi HC5761";
 
 	gpio-leds {
@@ -11,22 +11,22 @@
 
 		system {
 			label = "hc5761:blue:system";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		internet {
 			label = "hc5761:blue:internet";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan2g {
 			label = "hc5761:blue:wlan2g";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan5g {
 			label = "hc5761:blue:wlan5g";
-			gpios = <&gpio0 7 1>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

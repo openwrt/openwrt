@@ -2,10 +2,11 @@
 
 #include "rt5350.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "X8", "ralink,rt5350-soc";
+	compatible = "poray,x8", "ralink,rt5350-soc";
 	model = "Poray X8";
 
 	gpio-leds {
@@ -13,7 +14,7 @@
 
 		power {
 			label = "x8:green:power";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -25,7 +26,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

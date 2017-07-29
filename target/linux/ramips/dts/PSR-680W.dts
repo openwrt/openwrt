@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "PSR-680W", "ralink,rt3052-soc";
+	compatible = "petatel,psr-680w", "ralink,rt3052-soc";
 	model = "Petatel PSR-680W Wireless 3G Router";
 
 	chosen {
@@ -49,7 +50,7 @@
 
 		wan {
 			label = "psr-680w:red:wan";
-			gpios = <&gpio0 19 1>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -61,7 +62,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

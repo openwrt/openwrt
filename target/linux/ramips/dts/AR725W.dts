@@ -2,10 +2,11 @@
 
 #include "rt2880.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "AR725W", "ralink,rt2880-soc";
+	compatible = "airlink101,ar725w", "ralink,rt2880-soc";
 	model = "Airlink101 AR725W";
 
 	cfi@bdc00000 {
@@ -43,17 +44,17 @@
 
 		status {
 			label = "ar725w:green:power";
-			gpios = <&gpio0 7 0>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		wpsred {
 			label = "ar725w:red:wps";
-			gpios = <&gpio0 8 1>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
 		wpsblue {
 			label = "ar725w:blue:wps";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -65,13 +66,13 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

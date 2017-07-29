@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "AWAPN2403", "ralink,rt3052-soc";
+	compatible = "asiarf,awapn2403", "ralink,rt3052-soc";
 	model = "AsiaRF AWAPN2403";
 
 	gpio-leds {
@@ -13,7 +14,7 @@
 
 		link {
 			label = "awapn2403:green:wps";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -25,7 +26,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

@@ -3,7 +3,7 @@
 #include "Y1.dtsi"
 
 / {
-	compatible = "lenovo,Y1", "ralink,mt7620a-soc";
+	compatible = "lenovo,y1", "ralink,mt7620a-soc";
 	model = "Lenovo Y1";
 
 	gpio-leds {
@@ -11,32 +11,32 @@
 
 		power1 {
 			label = "y1:blue:power";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan1 {
 			label = "y1:blue:wifi";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan2 {
 			label = "y1:blue:wifi5g";
-			gpios = <&gpio2 10 1>;
+			gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
 			label = "y1:blue:usb";
-			gpios = <&gpio2 12 1>;
+			gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
 			label = "y1:blue:lan";
-			gpios = <&gpio2 15 1>;
+			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
 		};
 
 		internet {
 			label = "y1:blue:internet";
-			gpios = <&gpio2 11 1>;
+			gpios = <&gpio2 11 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

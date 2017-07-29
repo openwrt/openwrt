@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "WL-341V3", "ralink,rt3052-soc";
+	compatible = "sitecom,wl-341-v3", "ralink,rt3052-soc";
 	model = "Sitecom WL-341 v3";
 
 	cfi@1f000000 {
@@ -45,37 +46,37 @@
 
 		first {
 			label = "wl-341v3:amber:first";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		first2 {
 			label = "wl-341v3:blue:first";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 
 		third {
 			label = "wl-341v3:amber:third";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		third2 {
 			label = "wl-341v3:blue:third";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
 		fourth {
 			label = "wl-341v3:blue:fourth";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 
 		fifth {
 			label = "wl-341v3:amber:fifth";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		fifth2 {
 			label = "wl-341v3:blue:fifth";
-			gpios = <&gpio0 8 1>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -87,13 +88,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 7 1>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 5 1>;
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};

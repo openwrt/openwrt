@@ -2,10 +2,11 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ralink,mt7620a-soc";
+	compatible = "planex,cs-qr10", "ralink,mt7620a-soc";
 	model = "Planex CS-QR10";
 
 	gpio-leds {
@@ -13,7 +14,7 @@
 
 		power {
 			label = "cs-qr10:red:power";
-			gpios = <&gpio1 4 1>;
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -25,13 +26,13 @@
 
 		s1 {
 			label = "reset";
-			gpios = <&gpio1 1 1>;
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		s2 {
 			label = "wps";
-			gpios = <&gpio1 3 1>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};

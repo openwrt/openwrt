@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "XDXRN502J", "ralink,rt3052-soc";
+	compatible = "unbranded,xdxrn502j", "ralink,rt3052-soc";
 	model = "XDX RN502J";
 
 	cfi@1f000000 {
@@ -45,12 +46,12 @@
 
 		wifi {
 			label = "xdxrn502j:green:wifi";
-			gpios = <&gpio0 7 1>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
 		power {
 			label = "xdxrn502j:green:power";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -62,7 +63,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

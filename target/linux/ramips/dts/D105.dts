@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "D105", "ralink,rt3050-soc";
+	compatible = "huawei,d105", "ralink,rt3050-soc";
 	model = "Huawei D105";
 
 	cfi@1f000000 {
@@ -45,12 +46,12 @@
 
 		power {
 			label = "d105:red:power";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
 			label = "d105:green:usb";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -62,7 +63,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

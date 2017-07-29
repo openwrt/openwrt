@@ -2,10 +2,11 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "GL-MT750", "ralink,mt7620a-soc";
+	compatible = "glinet,gl-mt750", "ralink,mt7620a-soc";
 	model = "GL-MT750";
 
 	chosen {
@@ -17,17 +18,17 @@
 
 		wan {
 			label = "gl-mt750:wan";
-			gpios = <&gpio2 0 1>;
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
 			label = "gl-mt750:lan";
-			gpios = <&gpio2 1 1>;
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
 			label = "gl-mt750:wlan";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
 	};
@@ -39,19 +40,19 @@
 		poll-interval = <20>;
 		reset {
 			label = "reset";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		BTN_0 {
 			label = "BTN_0";
-			gpios = <&gpio2 2 1>;
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
 		};
 
   	    BTN_1 {
 			label = "BTN_1";
-			gpios = <&gpio2 3 1>;
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
 		};
  	};

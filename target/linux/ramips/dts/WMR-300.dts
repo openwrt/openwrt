@@ -2,6 +2,7 @@
 
 #include "mt7620n.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
@@ -13,17 +14,17 @@
 
 		aoss1 {
 			label = "wmr-300:red:aoss";
-			gpios = <&gpio2 1 1>;
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
 		};
 
 		aoss2 {
 			label = "wmr-300:green:aoss";
-			gpios = <&gpio2 2 1>;
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
 		};
 
 		power {
 			label = "wmr-300:green:status";
-			gpios = <&gpio2 4 1>;
+			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -35,13 +36,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		aoss {
 			label = "aoss";
-			gpios = <&gpio0 2 1>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};

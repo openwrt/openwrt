@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "JHR-N805R", "ralink,rt3050-soc";
+	compatible = "jcg,jhr-n805r", "ralink,rt3050-soc";
 	model = "JCG JHR-N805R";
 
 	gpio-leds {
@@ -13,7 +14,7 @@
 
 		system {
 			label = "jhr-n805r:blue:system";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -25,7 +26,7 @@
 
                 reset {
                         label = "reset";
-                        gpios = <&gpio0 10 1>;
+                        gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
                         linux,code = <KEY_RESTART>;
                 };
 	};

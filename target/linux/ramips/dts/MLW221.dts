@@ -2,10 +2,11 @@
 
 #include "mt7620n.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "mlw221", "ralink,mt7620n-soc";
+	compatible = "kingston,mlw221", "ralink,mt7620n-soc";
 	model = "Kingston MLW221";
 
 	gpio-leds {
@@ -13,12 +14,12 @@
 
 		system {
 			label = "mlw221:blue:system";
-			gpios = <&gpio2 3 1>;
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi {
 			label = "mlw221:blue:wifi";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -30,13 +31,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		system {
 			label = "system";
-			gpios = <&gpio0 2 1>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 		};
 	};

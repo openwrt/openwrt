@@ -2,10 +2,11 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ralink,mt7620a-soc";
+	compatible = "tplink,c20i", "ralink,mt7620a-soc";
 	model = "TP-Link Archer C20i";
 
 	chosen {
@@ -16,23 +17,23 @@
 		compatible = "gpio-leds";
 		lan {
 			label = "c20i:blue:lan";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 		};
 		usb {
 			label = "c20i:blue:usb";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 		wps {
 			label = "c20i:blue:wps";
-			gpios = <&gpio1 15 1>;
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 		wan {
 			label = "c20i:blue:wan";
-			gpios = <&gpio2 0 1>;
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};
 		wlan {
 			label = "c20i:blue:wlan";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -42,12 +43,12 @@
 		#size-cells = <0>;
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio0 2 1>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 		};
 		reset_wps {
 			label = "reset_wps";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ALL0239-3G", "ralink,rt3052-soc";
+	compatible = "allnet,all0239-3g", "ralink,rt3052-soc";
 	model = "Allnet ALL0239-3G";
 
 
@@ -46,22 +47,22 @@
 
 		usb {
 			label = "all0239-3g:green:usb";
-			gpios = <&gpio0 8 1>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
 		3g {
 			label = "all0239-3g:green:3g";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		status {
 			label = "all0239-3g:green:status";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
 			label = "all0239-3g:green:wps";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -73,19 +74,19 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		connect {
 			label = "connect";
-			gpios = <&gpio0 7 1>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_CONNECT>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};

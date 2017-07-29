@@ -2,10 +2,11 @@
 
 #include "rt5350.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "M4", "ralink,rt5350-soc";
+	compatible = "poray,m4-8m", "poray,m4", "ralink,rt5350-soc";
 	model = "Poray M4 (8M)";
 
 	gpio-leds {
@@ -13,7 +14,7 @@
 
 		status {
 			label = "m4:blue:status";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -25,7 +26,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

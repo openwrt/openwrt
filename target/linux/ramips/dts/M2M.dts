@@ -2,10 +2,11 @@
 
 #include "rt5350.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "M2M", "ralink,rt5350-soc";
+	compatible = "intenso,memory2move", "ralink,rt5350-soc";
 	model = "Intenso Memory 2 Move";
 
 	chosen {
@@ -17,12 +18,12 @@
 
 		wifi {
 			label = "m2m:blue:wifi";
-			gpios = <&gpio0 7 1>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
 			label = "m2m:green:wan";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -34,13 +35,13 @@
 
 		power {
 			label = "power";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_POWER>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

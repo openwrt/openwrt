@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "JHR-N825R", "ralink,rt3052-soc";
+	compatible = "jcg,jhr-n825r", "ralink,rt3052-soc";
 	model = "JCG JHR-N825R";
 
 	cfi@1f000000 {
@@ -44,7 +45,7 @@
 		compatible = "gpio-leds";
 		system {
 			label = "jhr-n825r:red:power";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -55,7 +56,7 @@
 		poll-interval = <20>;
 		reset_wps {
 			label = "reset_wps";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

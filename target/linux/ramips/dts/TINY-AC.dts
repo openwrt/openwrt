@@ -2,10 +2,11 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "TINY-AC", "ralink,mt7620a-soc";
+	compatible = "dovado,tiny-ac", "ralink,mt7620a-soc";
 	model = "Dovado Tiny AC";
 
 	chosen {
@@ -17,12 +18,12 @@
 
 		usb {
 			label = "tiny-ac:green:usb";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi {
 			label = "tiny-ac:orange:wifi";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
 	};
@@ -35,7 +36,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
@@ -48,7 +49,7 @@
 		usbpower {
 			gpio-export,name = "usbpower";
 			gpio-export,output = <1>;
-			gpios = <&gpio2 5 0>;
+			gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

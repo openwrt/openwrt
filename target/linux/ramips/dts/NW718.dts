@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "NW718", "ralink,rt3050-soc";
+	compatible = "netcore,nw718", "ralink,rt3050-soc";
 	model = "Netcore NW718";
 
 	gpio-leds {
@@ -13,17 +14,17 @@
 
 		cpu {
 			label = "nw718:amber:cpu";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
 			label = "nw718:amber:usb";
-			gpios = <&gpio0 8 1>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
 			label = "nw718:amber:wps";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -35,13 +36,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};

@@ -2,10 +2,11 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ralink,mt7620a-soc";
+	compatible = "ohyeah,oy-0001", "ralink,mt7620a-soc";
 	model = "OY-0001";
 
 	chosen {
@@ -17,12 +18,12 @@
 
 		powerled {
 			label = "oy-0001:green:power";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		wifiled {
 			label = "oy-0001:green:wifi";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -34,7 +35,7 @@
 
 		s1 {
 			label = "reset";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

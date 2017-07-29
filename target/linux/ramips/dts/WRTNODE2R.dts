@@ -3,7 +3,7 @@
 #include "WRTNODE2.dtsi"
 
 / {
-	compatible = "mediatek,wrtnode2r", "mediatek,mt7628an-soc";
+	compatible = "wrtnode,wrtnode2r", "wrtnode,wrtnode2", "mediatek,mt7628an-soc";
 	model = "WRTnode2R";
 
 	gpio-leds {
@@ -11,7 +11,7 @@
 
 		indicator {
 			label = "wrtnode:blue:indicator";
-			gpios = <&gpio1 12 1>;
+			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 		};
 	}; 
 };

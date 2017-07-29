@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "3G-6200N", "ralink,rt3050-soc";
+	compatible = "edimax,3g-6200n", "ralink,rt3050-soc";
 	model = "Edimax 3g-6200n";
 
 	cfi@1f000000 {
@@ -51,17 +52,17 @@
 
 		power {
 			label = "3g-6200n:green:power";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
 			label = "3g-6200n:amber:wlan";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
 		3g {
 			label = "3g-6200n:blue:3g";
-			gpios = <&gpio0 7 1>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -73,13 +74,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		rfkill {
 			label = "wlanswitch";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 		};
 	};

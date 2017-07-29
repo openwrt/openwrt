@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "W306R_V20", "ralink,rt3052-soc";
+	compatible = "tenda,w306r-v2", "ralink,rt3052-soc";
 	model = "Tenda W306R V2.0";
 
 	cfi@1f000000 {
@@ -45,12 +46,12 @@
 
 		sys {
 			label = "w306r-v20:green:sys";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
 			label = "w306r-v20:green:wps";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -62,7 +63,7 @@
 
 		reset {
 			label = "RESET/WPS";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

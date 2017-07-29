@@ -2,8 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
 / {
-	compatible = "FREESTATION5", "ralink,rt3050-soc";
+	compatible = "arcwireless,freestation5", "ralink,rt3050-soc";
 	model = "ARC FreeStation5";
 
 	chosen {
@@ -50,7 +53,7 @@
 		poe {
 			gpio-export,name = "poe-passthrough";
 			gpio-export,output = <1>; // OUT_INIT_HIGH
-			gpios = <&gpio0 11 1>;    // GPIO 11, ACTIVE_LOW
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;    // GPIO 11, ACTIVE_LOW
 		};
 	};
 
@@ -61,17 +64,17 @@
 		// not present in the Freestation5 device.
 		wifi {
 			label = "freestation5:unknown:wifi";
-			gpios = <&gpio0 7 1>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
 		powerg {
 			label = "freestation5:unknown:powerg";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
 			label = "freestation5:unknown:usb";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

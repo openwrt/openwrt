@@ -2,6 +2,7 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
@@ -17,17 +18,17 @@
 
 		blue {
 			label = "miwifi-mini:blue:status";
-			gpios = <&gpio1 0 1>;
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
 		};
 
 		yellow {
 			label = "miwifi-mini:yellow:status";
-			gpios = <&gpio1 2 1>;
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
 
 		red {
 			label = "miwifi-mini:red:status";
-			gpios = <&gpio1 5 1>;
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -39,7 +40,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio1 6 0>;
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

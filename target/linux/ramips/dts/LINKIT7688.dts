@@ -2,6 +2,7 @@
 
 #include "mt7628an.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
@@ -32,7 +33,7 @@
 
 		wifi {
 			label = "mediatek:orange:wifi";
-			gpios = <&wgpio 0 0>;
+			gpios = <&wgpio 0 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 	};
@@ -45,7 +46,7 @@
 
 		wps {
 			label = "reset";
-			gpios = <&gpio1 6 1>;
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};

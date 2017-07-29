@@ -2,8 +2,10 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
+
 / {
-	compatible = "MZK-WDPR", "ralink,rt3052-soc";
+	compatible = "planex,mzk-wdpr", "ralink,rt3052-soc";
 	model = "Planex MZK-WDPR";
 
 	chosen {
@@ -55,7 +57,7 @@
 		lcd_ctrl1 {
 			gpio-export,name = "lcd_ctrl1";
 			gpio-export,output = <0>;
-			gpios = <&gpio0 1 0>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

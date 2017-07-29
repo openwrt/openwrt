@@ -2,10 +2,11 @@
 
 #include "mt7620n.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "cf-wr800n", "ralink,mt7620n-soc";
+	compatible = "comfast,cf-wr800n", "ralink,mt7620n-soc";
 	model = "Comfast CF-WR800N";
 
 	chosen {
@@ -17,17 +18,17 @@
 
 		ethernet {
 			label = "cf-wr800n:white:ethernet";
-			gpios = <&gpio2 4 1>;
+			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi {
 			label = "cf-wr800n:white:wifi";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
 			label = "cf-wr800n:white:wps";
-			gpios = <&gpio1 15 1>;
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -39,7 +40,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 2 1>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

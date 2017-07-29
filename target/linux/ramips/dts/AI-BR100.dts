@@ -2,10 +2,11 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "AI-BR100", "ralink,mt7620a-soc";
+	compatible = "aigale,ai-br100", "ralink,mt7620a-soc";
 	model = "Aigale Ai-BR100";
 
 	gpio-leds {
@@ -13,12 +14,12 @@
 
 		wan {
 			label = "ai-br100:blue:wan";
-			gpios = <&gpio2 4 1>;
+			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
 			label = "ai-br100:blue:wlan";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -30,7 +31,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

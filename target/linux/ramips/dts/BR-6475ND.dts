@@ -2,10 +2,11 @@
 
 #include "rt3883.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "BR-6475ND", "ralink,rt3883-soc";
+	compatible = "edimax,br-6475nd", "ralink,rt3883-soc";
 	model = "Edimax BR-6475nD";
 
 	gpio-keys-polled {
@@ -16,13 +17,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 7 1>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			linux,input-type = <EV_SW>;
 			linux,code = <KEY_RFKILL>;
 		};
@@ -33,17 +34,17 @@
 
 		power {
 			label = "br-6475nd:green:power";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
 			label = "br-6475nd:amber:wlan";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan_5ghz {
 			label = "br-6475nd:amber:wlan_5ghz";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -86,8 +87,8 @@
 
 	rtl8367 {
 		compatible = "realtek,rtl8367";
-		gpio-sda = <&gpio0 5 0>;
-		gpio-sck = <&gpio0 4 0>;
+		gpio-sda = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		gpio-sck = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 		realtek,extif0 = <1 0 1 1 1 1 1 1 2>;
 	};
 
@@ -102,7 +103,7 @@
 		usb {
 			gpio-export,name="usb";
 			gpio-export,output=<0>;
-			gpios = <&gpio0 19 0>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 		};
 	};
 	*/

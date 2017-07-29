@@ -1,7 +1,9 @@
 #include "rt5350.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
+
 / {
-	compatible = "VoCore", "ralink,rt5350-soc";
+	compatible = "vocore,vocore", "ralink,rt5350-soc";
 
 	gpio-export {
 		compatible = "gpio-export";
@@ -10,7 +12,7 @@
 		gpio0 {
 			gpio-export,name = "gpio0";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 0 0>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		};
 
 		/* UARTF */
@@ -18,42 +20,42 @@
 			/* UARTF_RTS_N */
 			gpio-export,name = "gpio7";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 7 0>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio8 {
 			/* UARTF_TXD */
 			gpio-export,name = "gpio8";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 8 0>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio9 {
 			/* UARTF_CTS_N */
 			gpio-export,name = "gpio9";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 9 0>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio12 {
 			/* UARTF_DCD_N */
 			gpio-export,name = "gpio12";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 12 0>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio13 {
 			/* UARTF_DSR_N */
 			gpio-export,name = "gpio13";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 13 0>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio14 {
 			/* UARTF_RIN */
 			gpio-export,name = "gpio14";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 14 0>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		};
 
 		/* JTAG */
@@ -61,35 +63,35 @@
 			/* JTAG_TDO */
 			gpio-export,name = "gpio17";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 17 0>;
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio18 {
 			/* JTAG_TDI */
 			gpio-export,name = "gpio18";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 18 0>;
+			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio19 {
 			/* JTAG_TMS */
 			gpio-export,name = "gpio19";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 19 0>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio20 {
 			/* JTAG_TCLK */
 			gpio-export,name = "gpio20";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 20 0>;
+			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio21 {
 			/* JTAG_TRST_N */
 			gpio-export,name = "gpio21";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio0 21 0>;
+			gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 		};
 
 		/* ETH LEDs */
@@ -97,35 +99,35 @@
 			/* ETH0_LED */
 			gpio-export,name = "gpio22";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio1 0 0>;
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio23 {
 			/* ETH1_LED */
 			gpio-export,name = "gpio23";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio1 1 0>;
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio24 {
 			/* ETH2_LED */
 			gpio-export,name = "gpio24";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio1 2 0>;
+			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio25 {
 			/* ETH3_LED */
 			gpio-export,name = "gpio25";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio1 3 0>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 		};
 
 		gpio26 {
 			/* ETH4_LED */
 			gpio-export,name = "gpio26";
 			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio1 4 0>;
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -135,13 +137,13 @@
 		status {
 			/* UARTF_RXD */
 			label = "vocore:green:status";
-			gpios = <&gpio0 10 0>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 		};
 
 		eth {
 			/* UARTF_DTR_N */
 			label = "vocore:orange:eth";
-			gpios = <&gpio0 11 0>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

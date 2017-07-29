@@ -2,12 +2,13 @@
 
 #include "rt2880.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
-	compatible = "WZR-AGL300NH", "ralink,rt2880-soc";
+	compatible = "buffalo,wzr-agl300nh", "ralink,rt2880-soc";
 	model = "Buffalo WZR-AGL300NH";
 
 	pci@440000 {
@@ -48,8 +49,8 @@
 
 	rtl8366s {
 		compatible = "realtek,rtl8366s";
-		gpio-sda = <&gpio0 1 0>;
-		gpio-sck = <&gpio0 2 0>;
+		gpio-sda = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		gpio-sck = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 	};
 
 	gpio-keys-polled {
@@ -60,19 +61,19 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		router {
 			label = "router_switch";
-			gpios = <&gpio0 7 0>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 			linux,code = <BTN_0>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -82,22 +83,22 @@
 
 		router {
 			label = "wzr-agl300nh:green:router";
-			gpios = <&gpio0 8 1>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
 		diag {
 			label = "wzr-agl300nh:red:diag";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		security_g {
 			label = "wzr-agl300nh:orange:security_g";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
 		security_n {
 			label = "wzr-agl300nh:orange:security_n";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

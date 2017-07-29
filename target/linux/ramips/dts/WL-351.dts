@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "WL-351", "ralink,rt3052-soc";
+	compatible = "sitecom,wl-351", "ralink,rt3052-soc";
 	model = "Sitecom WL-351 v1 002";
 
 	cfi@1f000000 {
@@ -45,17 +46,17 @@
 
 		power {
 			label = "wl-351:amber:power";
-			gpios = <&gpio0 8 1>;
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
 		unpopulated {
 			label = "wl-351:amber:unpopulated";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		unpopulated2 {
 			label = "wl-351:blue:unpopulated";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -67,21 +68,21 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 
 	rtl8366rb {
 		compatible = "realtek,rtl8366rb";
-		gpio-sda = <&gpio0 1 0>;
-		gpio-sck = <&gpio0 2 0>;
+		gpio-sda = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		gpio-sck = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 	};
 };
 

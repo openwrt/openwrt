@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "RUT5XX", "ralink,rt3050-soc";
+	compatible = "teltonika,rut5xx", "ralink,rt3050-soc";
 	model = "Teltonika RUT5XX";
 
 	gpio-leds {
@@ -13,7 +14,7 @@
 
 		status {
 			label = "rut5xx:green:status";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -25,7 +26,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

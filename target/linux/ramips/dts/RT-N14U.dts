@@ -2,6 +2,7 @@
 
 #include "mt7620n.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
@@ -13,27 +14,27 @@
 
 		wan {
 			label = "rt-n14u:blue:wan";
-			gpios = <&gpio2 0 1>;
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
 			label = "rt-n14u:blue:lan";
-			gpios = <&gpio2 1 1>;
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
 			label = "rt-n14u:blue:usb";
-			gpios = <&gpio2 2 1>;
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
 		};
 
 		power {
 			label = "rt-n14u:blue:power";
-			gpios = <&gpio2 3 1>;
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
 		};
 
 		air {
 			label = "rt-n14u:blue:air";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -45,13 +46,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio0 2 1>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};

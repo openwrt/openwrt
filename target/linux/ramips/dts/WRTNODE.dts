@@ -2,8 +2,10 @@
 
 #include "mt7620n.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
+
 / {
-	compatible = "wrtnode", "ralink,mt7620n-soc";
+	compatible = "wrtnode,wrtnode", "ralink,mt7620n-soc";
 	model = "WRTNODE";
 
 	gpio-leds {
@@ -11,7 +13,7 @@
 
 		indicator {
 			label = "wrtnode:blue:indicator";
-			gpios = <&gpio1 14 1>;
+			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

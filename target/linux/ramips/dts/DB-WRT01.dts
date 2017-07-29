@@ -2,10 +2,11 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ralink,mt7620a-soc";
+	compatible = "planex,db-wrt01", "ralink,mt7620a-soc";
 	model = "Planex DB-WRT01";
 
 	gpio-leds {
@@ -13,7 +14,7 @@
 
 		power {
 			label = "db-wrt01:orange:power";
-			gpios = <&gpio1 1 1>;
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -25,7 +26,7 @@
 
 		s1 {
 			label = "wps";
-			gpios = <&gpio0 2 1>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};

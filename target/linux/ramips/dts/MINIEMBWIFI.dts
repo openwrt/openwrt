@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "MINIEMBWIFI", "ralink,rt3052-soc";
+	compatible = "omnima,miniembwifi", "ralink,rt3052-soc";
 	model = "Omnima MiniEMBWiFi";
 
 	gpio-leds {
@@ -13,12 +14,12 @@
 
 		status {
 			label = "miniembwifi:green:status";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
 			label = "miniembwifi:green:wlan";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -30,7 +31,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

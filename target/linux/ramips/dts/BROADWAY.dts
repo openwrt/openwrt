@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "BROADWAY", "ralink,rt3052-soc";
+	compatible = "hauppauge,broadway", "ralink,rt3052-soc";
 	model = "Hauppauge Broadway";
 
 	cfi@1f000000 {
@@ -45,12 +46,12 @@
 
 		diskmounted {
 			label = "broadway:red:diskmounted";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
 		wps_active {
 			label = "broadway:red:wps_active";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -62,7 +63,7 @@
 
 		factory {
 			label = "Factory Reset button";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

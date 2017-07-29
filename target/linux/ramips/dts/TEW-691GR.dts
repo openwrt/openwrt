@@ -2,10 +2,11 @@
 
 #include "rt3883.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "TEW-691GR", "ralink,rt3883-soc";
+	compatible = "trendnet,tew-691gr", "ralink,rt3883-soc";
 	model = "TRENDnet TEW-691GR";
 
 	nor-flash@1c000000 {
@@ -47,19 +48,19 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio1 2 1>;
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
 		};
 	};
@@ -69,7 +70,7 @@
 
 		wps {
 			label = "tew-691gr:green:wps";
-			gpios = <&gpio0 9 1>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

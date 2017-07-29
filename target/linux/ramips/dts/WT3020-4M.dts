@@ -2,10 +2,11 @@
 
 #include "mt7620n.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "wt3020", "ralink,mt7620n-soc";
+	compatible = "nexx,wt3020-4m", "nexx,wt3020", "ralink,mt7620n-soc";
 	model = "Nexx WT3020 (4M)";
 
 	gpio-keys-polled {
@@ -16,7 +17,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -26,7 +27,7 @@
 
 		power {
 			label = "wt3020:blue:power";
-			gpios = <&gpio3 0 0>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };

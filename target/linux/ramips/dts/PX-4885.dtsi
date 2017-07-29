@@ -1,9 +1,10 @@
 #include "rt5350.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "PX-4885", "ralink,rt5350-soc";
+	compatible = "7links,px-4885", "ralink,rt5350-soc";
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
@@ -13,7 +14,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 10 1>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -23,12 +24,12 @@
 
 		orange {
 			label = "px-4885:orange:wifi";
-			gpios = <&gpio0 18 1>;
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 		};
 
 		blue {
 			label = "px-4885:blue:storage";
-			gpios = <&gpio0 19 1>;
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 		};
 	};
 };

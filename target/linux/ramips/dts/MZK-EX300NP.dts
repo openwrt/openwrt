@@ -2,10 +2,11 @@
 
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ralink,mt7620a-soc";
+	compatible = "planex,mzk-ex300np", "ralink,mt7620a-soc";
 	model = "Planex MZK-EX300NP";
 
 	gpio-leds {
@@ -13,32 +14,32 @@
 
 		wifi {
 			label = "mzk-ex300np:green:wifi";
-			gpios = <&gpio3 0 1>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
 			label = "mzk-ex300np:green:wps";
-			gpios = <&gpio1 5 1>;
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};
 
 		rep {
 			label = "mzk-ex300np:blue:rep";
-			gpios = <&gpio1 4 1>;
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi1 {
 			label = "mzk-ex300np:blue:wifi1";
-			gpios = <&gpio1 1 1>;
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi2 {
 			label = "mzk-ex300np:blue:wifi2";
-			gpios = <&gpio1 2 1>;
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
 
 		wifi3 {
 			label = "mzk-ex300np:blue:wifi3";
-			gpios = <&gpio1 0 1>;
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -50,13 +51,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 1 1>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio1 3 0>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 			linux,code = <KEY_RFKILL>;
 		};
 	};

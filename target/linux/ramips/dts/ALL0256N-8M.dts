@@ -2,10 +2,11 @@
 
 #include "rt3050.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ALL0256N", "ralink,rt3050-soc";
+	compatible = "allnet,all0256n-8m", "allnet,all0256n", "ralink,rt3050-soc";
 	model = "Allnet ALL0256N (8M)";
 
 	gpio-leds {
@@ -13,17 +14,17 @@
 
 		rssilow {
 			label = "all0256n:green:rssilow";
-			gpios = <&gpio0 14 1>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimed {
 			label = "all0256n:green:rssimed";
-			gpios = <&gpio0 12 1>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		rssihigh {
 			label = "all0256n:green:rssihigh";
-			gpios = <&gpio0 13 1>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -35,7 +36,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 0 1>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};

@@ -1,8 +1,11 @@
 #include "mt7620a.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 
 / {
+	compatible = "lenovo,y1", "ralink,mt7620a-soc";
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -15,7 +18,7 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio0 11 1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
