@@ -137,7 +137,7 @@ define Device/awm002-evb-4M
   DTS := AWM002-EVB-4M
   IMAGE_SIZE := $(ralink_default_fw_size_4M)
   DEVICE_TITLE := AsiaRF AWM002-EVB (4M)
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-gpio
 endef
 TARGET_DEVICES += awm002-evb-4M
@@ -145,7 +145,7 @@ TARGET_DEVICES += awm002-evb-4M
 define Device/awm002-evb-8M
   DTS := AWM002-EVB-8M
   DEVICE_TITLE := AsiaRF AWM002-EVB (8M)/AsiaRF AWM003 EVB
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-gpio
 endef
 TARGET_DEVICES += awm002-evb-8M

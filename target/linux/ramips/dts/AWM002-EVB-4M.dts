@@ -1,55 +1,43 @@
 /dts-v1/;
 
-#include "AWM002-4M.dtsi"
-
-#include <dt-bindings/input/input.h>
+#include "AWM002-EVB.dtsi"
 
 / {
+	compatible = "asiarf,awm002-evb-4m", "ralink,rt5350-soc";
 	model = "AsiaRF AWM002 EVB (4M)";
+};
 
-	gpio-leds {
-		compatible = "gpio-leds";
+&spi0 {
+	status = "okay";
 
-		tx {
-			label = "awm002-evb:green:tx";
-			gpios = <&gpio0 15 1>;
-		};
-
-		rx {
-			label = "awm002-evb:green:rx";
-			gpios = <&gpio0 16 1>;
-		};
-
-		wps {
-			label = "awm002-evb:green:wps";
-			gpios = <&gpio0 21 1>;
-		};
-	};
-
-	gpio-keys-polled {
-		compatible = "gpio-keys-polled";
+	m25p80: m25p80@0 {
 		#address-cells = <1>;
-		#size-cells = <0>;
-		poll-interval = <20>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <10000000>;
 
-		reset_wps {
-			label = "reset_wps";
-			gpios = <&gpio0 0 1>;
-			linux,code = <KEY_RESTART>;
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
 		};
 
-		mode {
-			label = "mode";
-			gpios = <&gpio0 20 1>;
-			linux,code = <BTN_0>;
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		factory: partition@40000 {
+			label = "factory";
+			reg = <0x40000 0x10000>;
+			read-only;
+		};
+
+		partition@50000 {
+			label = "firmware";
+			reg = <0x50000 0x3b0000>;
 		};
 	};
-};
-
-&ethernet {
-	mtd-mac-address = <&factory 0x28>;
-};
-
-&wmac {
-	ralink,mtd-eeprom = <&factory 0>;
 };
