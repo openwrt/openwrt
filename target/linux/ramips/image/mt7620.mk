@@ -145,8 +145,8 @@ define Device/ex3700
   DTS := EX3700
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7744k
-  IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | netgear-chk
+  IMAGES += factory.chk
+  IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | netgear-chk
   DEVICE_PACKAGES := -kmod-mt76 kmod-mt76x2
   DEVICE_TITLE := Netgear EX3700
 endef
