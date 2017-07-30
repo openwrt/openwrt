@@ -21,6 +21,7 @@ get_status_led() {
 	dch-m225|\
 	dir-860l-b1|\
 	e1700|\
+	ex2700|\
 	ex3700|\
 	fonera20n|\
 	kn|\
@@ -41,7 +42,8 @@ get_status_led() {
 	wndr3700v5|\
 	x5|\
 	x8|\
-	xdxrn502j)
+	xdxrn502j|\
+	wn3000rpv3)
 		status_led="$board:green:power"
 		;;
 	3g-6200nl)
@@ -51,13 +53,11 @@ get_status_led() {
 	cs-qr10|\
 	d105|\
 	dcs-930l-b1|\
-	ex2700|\
 	hlk-rm04|\
 	jhr-n825r|\
 	mpr-a1|\
 	mpr-a2|\
-	mzk-ex750np|\
-	wn3000rpv3)
+	mzk-ex750np)
 		status_led="$board:red:power"
 		;;
 	ai-br100|\
