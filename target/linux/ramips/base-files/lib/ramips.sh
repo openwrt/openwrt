@@ -76,9 +76,6 @@ ramips_board_detect() {
 	*"AWM002 EVB (8M)")
 		name="awm002-evb-8M"
 		;;
-	*"AWM003 EVB")
-		name="awm003-evb"
-		;;
 	*"BC2")
 		name="bc2"
 		;;

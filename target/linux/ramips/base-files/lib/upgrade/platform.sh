@@ -27,7 +27,6 @@ platform_check_image() {
 	awapn2403|\
 	awm002-evb-4M|\
 	awm002-evb-8M|\
-	awm003-evb|\
 	bc2|\
 	broadway|\
 	carambola|\

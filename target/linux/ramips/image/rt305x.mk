@@ -144,17 +144,11 @@ TARGET_DEVICES += awm002-evb-4M
 
 define Device/awm002-evb-8M
   DTS := AWM002-EVB-8M
-  DEVICE_TITLE := AsiaRF AWM002-EVB (8M)
+  DEVICE_TITLE := AsiaRF AWM002-EVB (8M)/AsiaRF AWM003 EVB
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 		kmod-i2c-core kmod-i2c-gpio
 endef
 TARGET_DEVICES += awm002-evb-8M
-
-define Device/awm003-evb
-  DTS := AWM003-EVB
-  DEVICE_TITLE := AsiaRF AWM003 EVB
-endef
-TARGET_DEVICES += awm003-evb
 
 define Device/awapn2403
   DTS := AWAPN2403
