@@ -140,7 +140,7 @@ define Device/ex2700
 endef
 TARGET_DEVICES += ex2700
 
-define Device/ex3700
+define Device/ex3700-ex3800
   NETGEAR_BOARD_ID := U12H319T00_NETGEAR
   DTS := EX3700
   BLOCKSIZE := 4k
@@ -148,9 +148,10 @@ define Device/ex3700
   IMAGES += factory.chk
   IMAGE/factory.chk := $$(sysupgrade_bin) | check-size $$$$(IMAGE_SIZE) | netgear-chk
   DEVICE_PACKAGES := -kmod-mt76 kmod-mt76x2
-  DEVICE_TITLE := Netgear EX3700
+  DEVICE_TITLE := Netgear EX3700/EX3800
+  SUPPORTED_DEVICES := ex3700
 endef
-TARGET_DEVICES += ex3700
+TARGET_DEVICES += ex3700-ex3800
 
 define Device/gl-mt300a
   DTS := GL-MT300A

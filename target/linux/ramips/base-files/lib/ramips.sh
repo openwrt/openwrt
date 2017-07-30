@@ -181,7 +181,7 @@ ramips_board_detect() {
 	*"EX2700")
 		name="ex2700";
 		;;
-	*"EX3700")
+	*"EX3700/EX3800")
 		name="ex3700"
 		;;
 	*"F5D8235 v1")
