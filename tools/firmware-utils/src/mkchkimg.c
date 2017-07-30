@@ -31,6 +31,20 @@
 
 #define MAX_BOARD_ID_LEN (64)
 
+/*
+ * Note on the reserved field of the chk_header:
+ * OFW naming scheme is typically: DEVICENAME-VA.B.C.D_E.F.G.chk, with A-G
+ * between 0 and 255. For instance: EX3700_EX3800-V1.0.0.58_1.0.38.chk
+ * The reserved field works like this:
+ * reserved[0]: region code. 1 for WW (WorldWide) and 2 for NA (North America)
+ * reserved[1]: A
+ * reserved[2]: B
+ * reserved[3]: C
+ * reserved[4]: D
+ * reserved[5]: E
+ * reserved[6]: F
+ * reserved[7]: G
+ */
 struct chk_header {
 	uint32_t magic;
 	uint32_t header_len;
@@ -248,10 +262,10 @@ main (int argc, char * argv[])
 	hdr->reserved[1] = 1;		/* Major */
 	hdr->reserved[2] = 1;		/* Minor */
 	hdr->reserved[3] = 99;		/* Build */
-	hdr->reserved[4] = 0;		/* Unknown t1 ? was 1 */
-	hdr->reserved[5] = 0;		/* Unknonw t2 ? was 0 */
-	hdr->reserved[6] = 0;		/* Unknonw t3 ? was 1 */
-	hdr->reserved[7] = 0;		/* Unused ? */
+	hdr->reserved[4] = 0;
+	hdr->reserved[5] = 0;
+	hdr->reserved[6] = 0;
+	hdr->reserved[7] = 0;
 	message ("       Board Id: %s", board_id);
 	message ("         Region: %s", region == 1 ? "World Wide (WW)" 
 			: (region == 2 ? "North America (NA)" : "Unknown"));
