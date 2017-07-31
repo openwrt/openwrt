@@ -16,7 +16,6 @@ get_status_led() {
 	3g-6200n|\
 	ar670w|\
 	ar725w|\
-	br-6425|\
 	br-6475nd|\
 	c50|\
 	dch-m225|\
