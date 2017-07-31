@@ -488,7 +488,7 @@ define KernelPackage/rtc-ds1307
   KCONFIG:=CONFIG_RTC_DRV_DS1307 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1307.ko
-  AUTOLOAD:=$(call AutoProbe,rtc-ds1307)
+  AUTOLOAD:=$(call AutoProbe,rtc-ds1307,1)
 endef
 
 define KernelPackage/rtc-ds1307/description
