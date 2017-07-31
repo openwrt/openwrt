@@ -15,6 +15,29 @@
 		device-width = <2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x30000>;
+			read-only;
+		};
+
+		partition@30000 {
+			label = "u-boot-env";
+			reg = <0x30000 0x10000>;
+			read-only;
+		};
+
+		factory: partition@40000 {
+			label = "factory";
+			reg = <0x40000 0x10000>;
+			read-only;
+		};
+
+		partition@50000 {
+			label = "firmware";
+			reg = <0x50000 0x7b0000>;
+		};
 	};
 
 	gpio-leds {
@@ -75,20 +98,18 @@
 	};
 };
 
-/* FIXME: no partitions defined */
-/*&ethernet {
+&ethernet {
 	mtd-mac-address = <&factory 0x4004>;
 };
-*/
+
 &esw {
 	mediatek,portmap = <0x2f>;
 };
 
-/* FIXME: no partitions defined */
-/*&wmac {
+&wmac {
 	ralink,mtd-eeprom = <&factory 0>;
 };
-*/
+
 &otg {
 	status = "okay";
 };
