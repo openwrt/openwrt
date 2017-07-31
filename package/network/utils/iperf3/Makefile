@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iperf
-PKG_VERSION:=3.1.7
+PKG_VERSION:=3.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://downloads.es.net/pub/iperf
-PKG_HASH:=a4ef73406fe92250602b8da2ae89ec53211f805df97a1d1d629db5a14043734f
+PKG_HASH:=f207b36f861485845dbdf09f909c62f3d2222a3cf3d2682095aede8213cd9c1d
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
@@ -23,15 +23,19 @@ PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
+DISABLE_NLS:=
+
 define Package/iperf3
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Internet Protocol bandwidth measuring tool
   URL:=https://github.com/esnet/iperf
+  DEPENDS:= +libopenssl
 endef
 
 TARGET_CFLAGS += -D_GNU_SOURCE
-CONFIGURE_ARGS += --disable-shared
+CONFIGURE_ARGS += --disable-shared \
+                  --with-openssl="$(STAGING_DIR)/usr"
 
 MAKE_FLAGS += noinst_PROGRAMS=
 
