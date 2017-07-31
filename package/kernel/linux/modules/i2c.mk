@@ -25,7 +25,7 @@ I2C_CORE_MODULES:= \
   CONFIG_I2C_CHARDEV:drivers/i2c/i2c-dev
 
 define KernelPackage/i2c-core
-  $(call i2c_defaults,$(I2C_CORE_MODULES),51)
+  $(call i2c_defaults,$(I2C_CORE_MODULES),51,1)
   TITLE:=I2C support
 endef
 
@@ -40,7 +40,7 @@ I2C_ALGOBIT_MODULES:= \
   CONFIG_I2C_ALGOBIT:drivers/i2c/algos/i2c-algo-bit
 
 define KernelPackage/i2c-algo-bit
-  $(call i2c_defaults,$(I2C_ALGOBIT_MODULES),55)
+  $(call i2c_defaults,$(I2C_ALGOBIT_MODULES),55,1)
   TITLE:=I2C bit-banging interfaces
   DEPENDS:=kmod-i2c-core
 endef
@@ -88,7 +88,7 @@ I2C_GPIO_MODULES:= \
   CONFIG_I2C_GPIO:drivers/i2c/busses/i2c-gpio
 
 define KernelPackage/i2c-gpio
-  $(call i2c_defaults,$(I2C_GPIO_MODULES),59)
+  $(call i2c_defaults,$(I2C_GPIO_MODULES),59,1)
   TITLE:=GPIO-based bitbanging I2C
   DEPENDS:=@GPIO_SUPPORT +kmod-i2c-algo-bit
 endef
