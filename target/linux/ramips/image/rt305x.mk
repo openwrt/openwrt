@@ -345,6 +345,13 @@ define Device/freestation5
 endef
 TARGET_DEVICES += freestation5
 
+define Device/hg255d
+  DTS := HG255D
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := HuaWei HG255D
+endef
+TARGET_DEVICES += hg255d
+
 define Device/hlk-rm04
   DTS := HLKRM04
   IMAGES += factory.bin
