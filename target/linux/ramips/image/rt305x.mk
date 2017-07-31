@@ -460,6 +460,7 @@ endef
 TARGET_DEVICES += miniembplug
 
 define Device/miniembwifi
+  DTS := MINIEMBWIFI
   DEVICE_TITLE := Omnima MiniEMBWiFi
 endef
 TARGET_DEVICES += miniembwifi
