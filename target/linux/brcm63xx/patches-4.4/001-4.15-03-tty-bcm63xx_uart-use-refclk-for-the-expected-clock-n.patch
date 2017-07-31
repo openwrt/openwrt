@@ -15,7 +15,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/drivers/tty/serial/bcm63xx_uart.c
 +++ b/drivers/tty/serial/bcm63xx_uart.c
-@@ -838,7 +838,7 @@ static int bcm_uart_probe(struct platfor
+@@ -842,7 +842,7 @@ static int bcm_uart_probe(struct platfor
  		return -ENODEV;
  
  	clk = pdev->dev.of_node ? of_clk_get(pdev->dev.of_node, 0) :
