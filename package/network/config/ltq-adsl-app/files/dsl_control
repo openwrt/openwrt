@@ -45,8 +45,6 @@ start() {
 		return 1
 	}
 
-	esi $(printf '%012X' $((1+0x$(tr -d : </sys/class/net/eth0/address))))
-
 	service_start /sbin/dsl_cpe_control -i${xtu} \
 			-n /sbin/dsl_notify.sh \
 			-f ${firmware}
