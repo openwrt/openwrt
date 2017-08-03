@@ -198,16 +198,10 @@ start_service() {
 
 	case "${xfer_mode}" in
 	atm)
-		LOAD=ltq_atm_vr9
-		UNLOAD=ltq_ptm_vr9
-
 		# in most cases atm is used on top of adsl
 		[ -z "${line_mode}" ] && line_mode=adsl
 		;;
 	*)
-		LOAD=ltq_ptm_vr9
-		UNLOAD=ltq_atm_vr9
-
 		# in most cases ptm is used on top of vdsl
 		[ -z "${line_mode}" ] && line_mode=vdsl
 		;;
@@ -301,14 +295,13 @@ start_service() {
 	}
 
 	procd_open_instance
-	procd_set_param command /sbin/vdsl_cpe_control_wrapper \
+	procd_set_param command /sbin/vdsl_cpe_control \
 			-i$xtse \
 			-n /sbin/dsl_notify.sh \
 			-f ${firmware} \
 			$lowlevel \
 			-M ${mode} \
 			$autoboot
-	procd_append_param env "LOAD=$LOAD" "UNLOAD=$UNLOAD"
 	procd_close_instance
 }
 
