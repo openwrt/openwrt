@@ -211,11 +211,14 @@ start_service() {
 	adsl)
 		mode=1
 
-		# mask out VDSL bits when ATM is requested
+		# mask out VDSL bits when ADSL is requested
 		xtse="${xtse%_*}_00"
 		;;
 	*)
 		mode=2
+
+		# mask out ADSL bits when VDSL is requested
+		xtse="00_00_00_00_00_00_00_${xtse##*_}"
 		;;
 	esac
 
