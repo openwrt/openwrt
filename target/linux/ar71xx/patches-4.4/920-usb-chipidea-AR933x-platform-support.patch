@@ -29,7 +29,7 @@
  
  #include <asm/mach-ath79/ath79.h>
  #include <asm/mach-ath79/ar71xx_regs.h>
-@@ -170,6 +173,51 @@ static void __init ar913x_usb_setup(void
+@@ -170,6 +173,67 @@ static void __init ar913x_usb_setup(void
  			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
  }
  
@@ -46,22 +46,29 @@
 +	iounmap(usb_ctrl_base);
 +}
 +
-+static void __init ar933x_ci_usb_setup(void)
++static void __init ar9xxx_ci_usb_setup(void)
 +{
 +	struct ci_hdrc_platform_data ci_pdata;
 +	enum usb_dr_mode dr_mode;
-+	u32 bootstrap;
++	bool host_mode = true;
 +
-+	bootstrap = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
-+	if (bootstrap & AR933X_BOOTSTRAP_USB_MODE_HOST) {
++	if (soc_is_ar933x())
++		host_mode = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP) &
++			    AR933X_BOOTSTRAP_USB_MODE_HOST;
++	else if (soc_is_ar934x() || soc_is_qca955x())
++		host_mode = !(ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP) &
++			      AR934X_BOOTSTRAP_USB_MODE_DEVICE);
++
++	if (host_mode) {
 +		dr_mode = USB_DR_MODE_HOST;
 +	} else {
 +		dr_mode = USB_DR_MODE_PERIPHERAL;
-+		ar933x_usb_setup_ctrl_config();
++		if (soc_is_ar933x())
++			ar933x_usb_setup_ctrl_config();
 +	}
 +
 +	memset(&ci_pdata, 0, sizeof(ci_pdata));
-+	ci_pdata.name = "ci_hdrc_ar933x";
++	ci_pdata.name = "ci_hdrc_ar9xxx";
 +	ci_pdata.capoffset = DEF_CAPOFFSET;
 +	ci_pdata.dr_mode = dr_mode;
 +	ci_pdata.flags = CI_HDRC_DUAL_ROLE_NOT_OTG | CI_HDRC_DP_ALWAYS_PULLUP;
@@ -76,17 +83,41 @@
 +			   AR933X_EHCI_BASE, AR933X_EHCI_SIZE,
 +			   ATH79_CPU_IRQ(3),
 +			   &ci_pdata, sizeof(ci_pdata));
++
++	if (!host_mode)
++		return;
++
++	ath79_usb_register("ehci-platform", -1,
++			   AR934X_EHCI_BASE, AR934X_EHCI_SIZE,
++			   ATH79_CPU_IRQ(3),
++			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
++
 +}
 +
  static void __init ar933x_usb_setup(void)
  {
  	ath79_device_reset_set(AR933X_RESET_USBSUS_OVERRIDE);
-@@ -185,6 +233,8 @@ static void __init ar933x_usb_setup(void
- 			   AR933X_EHCI_BASE, AR933X_EHCI_SIZE,
- 			   ATH79_CPU_IRQ(3),
- 			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
-+
-+	ar933x_ci_usb_setup();
+@@ -181,10 +245,7 @@ static void __init ar933x_usb_setup(void
+ 	ath79_device_reset_clear(AR933X_RESET_USB_PHY);
+ 	mdelay(10);
+ 
+-	ath79_usb_register("ehci-platform", -1,
+-			   AR933X_EHCI_BASE, AR933X_EHCI_SIZE,
+-			   ATH79_CPU_IRQ(3),
+-			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
++	ar9xxx_ci_usb_setup();
  }
  
  static void enable_tx_tx_idp_violation_fix(unsigned base)
+@@ -230,10 +291,7 @@ static void __init ar934x_usb_setup(void
+ 	if (ath79_soc_rev >= 3)
+ 		ath79_ehci_pdata_v2.reset_notifier = ar934x_usb_reset_notifier;
+ 
+-	ath79_usb_register("ehci-platform", -1,
+-			   AR934X_EHCI_BASE, AR934X_EHCI_SIZE,
+-			   ATH79_CPU_IRQ(3),
+-			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
++	ar9xxx_ci_usb_setup();
+ }
+ 
+ static void __init qca953x_usb_setup(void)
