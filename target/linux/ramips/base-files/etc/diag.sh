@@ -240,6 +240,9 @@ get_status_led() {
 	vocore2)
 		status_led="$board:fuchsia:status"
 		;;
+	vocore2lite)
+		status_led="$board:green:status"
+		;;
 	w306r-v20|\
 	witi|\
 	zbt-wr8305rt)

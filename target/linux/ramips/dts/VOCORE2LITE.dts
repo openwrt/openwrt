@@ -5,14 +5,14 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-	compatible = "vocore,vocore2", "mediatek,mt7628an-soc";
-	model = "VoCore2";
+	compatible = "vocore,vocore2lite", "vocore,vocore2", "mediatek,mt7628an-soc";
+	model = "VoCore2-Lite";
 
 	gpio-leds {
 		compatible = "gpio-leds";
 
 		status {
-			label = "vocore2:fuchsia:status";
+			label = "vocore2lite:green:status";
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -49,7 +49,7 @@
 
 		partition@50000 {
 			label = "firmware";
-			reg = <0x50000 0xfb0000>;
+			reg = <0x50000 0x7b0000>;
 		};
 	};
 };

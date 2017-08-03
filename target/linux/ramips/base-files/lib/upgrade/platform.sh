@@ -149,6 +149,7 @@ platform_check_image() {
 	vocore-8M|\
 	vocore-16M|\
 	vocore2|\
+	vocore2lite|\
 	vr500|\
 	w150m|\
 	w2914nsv2|\
