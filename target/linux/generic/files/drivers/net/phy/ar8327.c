@@ -1411,6 +1411,7 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.apply_config = ar8327_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
+	.get_port_stats = ar8xxx_sw_get_port_stats,
 };
 
 const struct ar8xxx_chip ar8327_chip = {
