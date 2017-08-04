@@ -1030,6 +1030,33 @@ int rtl8366_sw_get_port_mib(struct switch_dev *dev,
 }
 EXPORT_SYMBOL_GPL(rtl8366_sw_get_port_mib);
 
+int rtl8366_sw_get_port_stats(struct switch_dev *dev, int port,
+				struct switch_port_stats *stats,
+				int txb_id, int rxb_id)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	unsigned long long counter = 0;
+	int ret;
+
+	if (port >= smi->num_ports)
+		return -EINVAL;
+
+	ret = smi->ops->get_mib_counter(smi, txb_id, port, &counter);
+	if (ret)
+		return ret;
+
+	stats->tx_bytes = counter;
+
+	ret = smi->ops->get_mib_counter(smi, rxb_id, port, &counter);
+	if (ret)
+		return ret;
+
+	stats->rx_bytes = counter;
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_get_port_stats);
+
 int rtl8366_sw_get_vlan_info(struct switch_dev *dev,
 			     const struct switch_attr *attr,
 			     struct switch_val *val)

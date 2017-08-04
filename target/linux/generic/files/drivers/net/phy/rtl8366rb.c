@@ -205,6 +205,9 @@
 #define RTL8366RB_QOS_DEFAULT_PREIFG	1
 
 
+#define RTL8366RB_MIB_RXB_ID		0	/* IfInOctets */
+#define RTL8366RB_MIB_TXB_ID		20	/* IfOutOctets */
+
 static struct rtl8366_mib_counter rtl8366rb_mib_counters[] = {
 	{ 0,  0, 4, "IfInOctets"				},
 	{ 0,  4, 4, "EtherStatsOctets"				},
@@ -1146,6 +1149,13 @@ static int rtl8366rb_sw_reset_port_mibs(struct switch_dev *dev,
 				RTL8366RB_MIB_CTRL_PORT_RESET(val->port_vlan));
 }
 
+static int rtl8366rb_sw_get_port_stats(struct switch_dev *dev, int port,
+					struct switch_port_stats *stats)
+{
+	return (rtl8366_sw_get_port_stats(dev, port, stats,
+				RTL8366RB_MIB_TXB_ID, RTL8366RB_MIB_RXB_ID));
+}
+
 static struct switch_attr rtl8366rb_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1317,6 +1327,7 @@ static const struct switch_dev_ops rtl8366_ops = {
 	.set_port_pvid = rtl8366_sw_set_port_pvid,
 	.reset_switch = rtl8366_sw_reset_switch,
 	.get_port_link = rtl8366rb_sw_get_port_link,
+	.get_port_stats = rtl8366rb_sw_get_port_stats,
 };
 
 static int rtl8366rb_switch_init(struct rtl8366_smi *smi)

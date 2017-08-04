@@ -146,6 +146,9 @@ int rtl8366_sw_get_vlan_enable(struct switch_dev *dev,
 int rtl8366_sw_set_vlan_enable(struct switch_dev *dev,
 			       const struct switch_attr *attr,
 			       struct switch_val *val);
+int rtl8366_sw_get_port_stats(struct switch_dev *dev, int port,
+				struct switch_port_stats *stats,
+				int txb_id, int rxb_id);
 
 struct rtl8366_smi* rtl8366_smi_probe(struct platform_device *pdev);
 

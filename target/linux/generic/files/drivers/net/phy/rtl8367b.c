@@ -235,6 +235,9 @@ struct rtl8367b_initval {
 	u16 val;
 };
 
+#define RTL8367B_MIB_RXB_ID		0	/* IfInOctets */
+#define RTL8367B_MIB_TXB_ID		28	/* IfOutOctets */
+
 static struct rtl8366_mib_counter
 rtl8367b_mib_counters[RTL8367B_NUM_MIB_COUNTERS] = {
 	{0,   0, 4, "ifInOctets"			},
@@ -1302,6 +1305,13 @@ static int rtl8367b_sw_reset_port_mibs(struct switch_dev *dev,
 				RTL8367B_MIB_CTRL0_PORT_RESET_MASK(port % 8));
 }
 
+static int rtl8367b_sw_get_port_stats(struct switch_dev *dev, int port,
+                                        struct switch_port_stats *stats)
+{
+	return (rtl8366_sw_get_port_stats(dev, port, stats,
+				RTL8367B_MIB_TXB_ID, RTL8367B_MIB_RXB_ID));
+}
+
 static struct switch_attr rtl8367b_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1382,6 +1392,7 @@ static const struct switch_dev_ops rtl8367b_sw_ops = {
 	.set_port_pvid = rtl8366_sw_set_port_pvid,
 	.reset_switch = rtl8366_sw_reset_switch,
 	.get_port_link = rtl8367b_sw_get_port_link,
+	.get_port_stats = rtl8367b_sw_get_port_stats,
 };
 
 static int rtl8367b_switch_init(struct rtl8366_smi *smi)
