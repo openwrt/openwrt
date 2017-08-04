@@ -40,7 +40,6 @@ struct b53_mib_desc {
 	const char *name;
 };
 
-
 /* BCM5365 MIB counters */
 static const struct b53_mib_desc b53_mibs_65[] = {
 	{ 8, 0x00, "TxOctets" },
@@ -77,6 +76,9 @@ static const struct b53_mib_desc b53_mibs_65[] = {
 	{ 4, 0x98, "RxFragments" },
 	{ },
 };
+
+#define B63XX_MIB_TXB_ID	0	/* TxOctets */
+#define B63XX_MIB_RXB_ID	14	/* RxOctets */
 
 /* BCM63xx MIB counters */
 static const struct b53_mib_desc b53_mibs_63xx[] = {
@@ -124,6 +126,9 @@ static const struct b53_mib_desc b53_mibs_63xx[] = {
 	{ 4, 0xc0, "RxDiscarded" },
 	{ }
 };
+
+#define B53XX_MIB_TXB_ID	0	/* TxOctets */
+#define B53XX_MIB_RXB_ID	12	/* RxOctets */
 
 /* MIB counters */
 static const struct b53_mib_desc b53_mibs[] = {
@@ -1047,6 +1052,54 @@ static int b53_port_get_mib(struct switch_dev *sw_dev,
 	return 0;
 }
 
+static int b53_port_get_stats(struct switch_dev *sw_dev, int port,
+				struct switch_port_stats *stats)
+{
+	struct b53_device *dev = sw_to_b53(sw_dev);
+	const struct b53_mib_desc *mibs;
+	int txb_id, rxb_id;
+	u64 rxb, txb;
+
+	if (!(BIT(port) & dev->enabled_ports))
+		return -EINVAL;
+
+	txb_id = B53XX_MIB_TXB_ID;
+	rxb_id = B53XX_MIB_RXB_ID;
+
+	if (is5365(dev)) {
+		if (port == 5)
+			port = 8;
+
+		mibs = b53_mibs_65;
+	} else if (is63xx(dev)) {
+		mibs = b53_mibs_63xx;
+		txb_id = B63XX_MIB_TXB_ID;
+		rxb_id = B63XX_MIB_RXB_ID;
+	} else {
+		mibs = b53_mibs;
+	}
+
+	dev->buf[0] = 0;
+
+	if (mibs->size == 8) {
+		b53_read64(dev, B53_MIB_PAGE(port), mibs[txb_id].offset, &txb);
+		b53_read64(dev, B53_MIB_PAGE(port), mibs[rxb_id].offset, &rxb);
+	} else {
+		u32 val32;
+
+		b53_read32(dev, B53_MIB_PAGE(port), mibs[txb_id].offset, &val32);
+		txb = val32;
+
+		b53_read32(dev, B53_MIB_PAGE(port), mibs[rxb_id].offset, &val32);
+		rxb = val32;
+	}
+
+	stats->tx_bytes = txb;
+	stats->rx_bytes = rxb;
+
+	return 0;
+}
+
 static struct switch_attr b53_global_ops_25[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1160,6 +1213,7 @@ static const struct switch_dev_ops b53_switch_ops_25 = {
 	.reset_switch = b53_global_reset_switch,
 	.get_port_link = b53_port_get_link,
 	.set_port_link = b53_port_set_link,
+	.get_port_stats = b53_port_get_stats,
 	.phy_read16 = b53_phy_read16,
 	.phy_write16 = b53_phy_write16,
 };
@@ -1186,6 +1240,7 @@ static const struct switch_dev_ops b53_switch_ops_65 = {
 	.reset_switch = b53_global_reset_switch,
 	.get_port_link = b53_port_get_link,
 	.set_port_link = b53_port_set_link,
+	.get_port_stats = b53_port_get_stats,
 	.phy_read16 = b53_phy_read16,
 	.phy_write16 = b53_phy_write16,
 };
@@ -1212,6 +1267,7 @@ static const struct switch_dev_ops b53_switch_ops = {
 	.reset_switch = b53_global_reset_switch,
 	.get_port_link = b53_port_get_link,
 	.set_port_link = b53_port_set_link,
+	.get_port_stats = b53_port_get_stats,
 	.phy_read16 = b53_phy_read16,
 	.phy_write16 = b53_phy_write16,
 };
