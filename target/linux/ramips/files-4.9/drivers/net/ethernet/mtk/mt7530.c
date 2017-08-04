@@ -44,6 +44,12 @@
 #define MT7530_MAX_VID		4095
 #define MT7530_MIN_VID		0
 
+#define MT7530_PORT_MIB_TXB_ID	2	/* TxGOC */
+#define MT7530_PORT_MIB_RXB_ID	6	/* RxGOC */
+
+#define MT7621_PORT_MIB_TXB_ID	18	/* TxByte */
+#define MT7621_PORT_MIB_RXB_ID	37	/* RxByte */
+
 /* registers */
 #define REG_ESW_VLAN_VTCR		0x90
 #define REG_ESW_VLAN_VAWD1		0x94
@@ -744,6 +750,34 @@ static int mt7530_sw_get_port_mib(struct switch_dev *dev,
 	return 0;
 }
 
+static int mt7530_get_port_stats(struct switch_dev *dev, int port,
+					struct switch_port_stats *stats)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+
+	if (port < 0 || port >= MT7530_NUM_PORTS)
+		return -EINVAL;
+
+	stats->tx_bytes = get_mib_counter_port_7620(priv, MT7530_PORT_MIB_TXB_ID, port);
+	stats->rx_bytes = get_mib_counter_port_7620(priv, MT7530_PORT_MIB_RXB_ID, port);
+
+	return 0;
+}
+
+static int mt7621_get_port_stats(struct switch_dev *dev, int port,
+					struct switch_port_stats *stats)
+{
+	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
+
+	if (port < 0 || port >= MT7530_NUM_PORTS)
+		return -EINVAL;
+
+	stats->tx_bytes = get_mib_counter(priv, MT7621_PORT_MIB_TXB_ID, port);
+	stats->rx_bytes = get_mib_counter(priv, MT7621_PORT_MIB_RXB_ID, port);
+
+	return 0;
+}
+
 static const struct switch_attr mt7530_global[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -811,6 +845,7 @@ static const struct switch_dev_ops mt7621_ops = {
 	.get_port_pvid = mt7530_get_port_pvid,
 	.set_port_pvid = mt7530_set_port_pvid,
 	.get_port_link = mt7530_get_port_link,
+	.get_port_stats = mt7621_get_port_stats,
 	.apply_config = mt7530_apply_config,
 	.reset_switch = mt7530_reset_switch,
 };
@@ -833,6 +868,7 @@ static const struct switch_dev_ops mt7530_ops = {
 	.get_port_pvid = mt7530_get_port_pvid,
 	.set_port_pvid = mt7530_set_port_pvid,
 	.get_port_link = mt7530_get_port_link,
+	.get_port_stats = mt7530_get_port_stats,
 	.apply_config = mt7530_apply_config,
 	.reset_switch = mt7530_reset_switch,
 };
