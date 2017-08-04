@@ -59,8 +59,8 @@ struct switch_port_link {
 };
 
 struct switch_port_stats {
-	unsigned long tx_bytes;
-	unsigned long rx_bytes;
+	unsigned long long tx_bytes;
+	unsigned long long rx_bytes;
 };
 
 /**

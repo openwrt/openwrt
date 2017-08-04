@@ -36,7 +36,7 @@ struct switch_led_trigger {
 	struct delayed_work sw_led_work;
 	u32 port_mask;
 	u32 port_link;
-	unsigned long port_traffic[SWCONFIG_LED_NUM_PORTS];
+	unsigned long long port_traffic[SWCONFIG_LED_NUM_PORTS];
 	u8 link_speed[SWCONFIG_LED_NUM_PORTS];
 };
 
