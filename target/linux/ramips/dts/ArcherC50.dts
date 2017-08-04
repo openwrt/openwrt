@@ -170,6 +170,8 @@
 
 &wmac {
 	ralink,mtd-eeprom = <&radio 0>;
+	mtd-mac-address = <&rom 0xf100>;
+	mtd-mac-address-increment = <(-2)>;
 };
 
 &pcie {
