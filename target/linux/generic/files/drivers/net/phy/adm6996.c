@@ -112,6 +112,9 @@ static const struct adm6996_mib_desc adm6996_mibs[] = {
 	MIB_DESC(ADM_CL30, "Error"),
 };
 
+#define ADM6996_MIB_RXB_ID	1
+#define ADM6996_MIB_TXB_ID	3
+
 static inline u16
 r16(struct adm6996_priv *priv, enum admreg reg)
 {
@@ -888,6 +891,34 @@ adm6996_sw_get_port_mib(struct switch_dev *dev,
 	return 0;
 }
 
+static int
+adm6996_get_port_stats(struct switch_dev *dev, int port,
+			struct switch_port_stats *stats)
+{
+	struct adm6996_priv *priv = to_adm(dev);
+	int id;
+	u32 reg = 0;
+
+	if (port >= ADM_NUM_PORTS)
+		return -EINVAL;
+
+	mutex_lock(&priv->mib_lock);
+
+	id = ADM6996_MIB_TXB_ID;
+	reg = r16(priv, adm6996_mibs[id].offset + ADM_OFFSET_PORT(port));
+	reg += r16(priv, adm6996_mibs[id].offset + ADM_OFFSET_PORT(port) + 1) << 16;
+	stats->tx_bytes = reg;
+
+	id = ADM6996_MIB_RXB_ID;
+	reg = r16(priv, adm6996_mibs[id].offset + ADM_OFFSET_PORT(port));
+	reg += r16(priv, adm6996_mibs[id].offset + ADM_OFFSET_PORT(port) + 1) << 16;
+	stats->rx_bytes = reg;
+
+	mutex_unlock(&priv->mib_lock);
+
+	return 0;
+}
+
 static struct switch_attr adm6996_globals[] = {
 	{
 	 .type = SWITCH_TYPE_INT,
@@ -956,6 +987,7 @@ static struct switch_dev_ops adm6996_ops = {
 	.apply_config = adm6996_hw_apply,
 	.reset_switch = adm6996_reset_switch,
 	.get_port_link = adm6996_get_port_link,
+	.get_port_stats = adm6996_get_port_stats,
 };
 
 static int adm6996_switch_init(struct adm6996_priv *priv, const char *alias, struct net_device *netdev)
