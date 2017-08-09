@@ -39,7 +39,8 @@ platform_do_upgrade() {
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
-	openmesh,a42)
+	openmesh,a42 |\
+	openmesh,a62)
 		PART_NAME="inactive"
 		platform_do_upgrade_openmesh "$ARGV"
 		;;

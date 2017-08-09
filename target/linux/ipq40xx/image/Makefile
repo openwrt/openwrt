@@ -160,6 +160,22 @@ define Device/openmesh_a42
 endef
 TARGET_DEVICES += openmesh_a42
 
+define Device/openmesh_a62
+	$(call Device/FitImageLzma)
+	DEVICE_DTS := qcom-ipq4019-a62
+	DEVICE_DTS_CONFIG := config@om.a62
+	BLOCKSIZE := 64k
+	DEVICE_TITLE := OpenMesh A62
+	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
+	IMAGE_SIZE := 15552k
+	IMAGES = factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A62
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca9888 uboot-envtools
+endef
+
+TARGET_DEVICES += openmesh_a62
+
 define Device/qcom_ap-dk01.1-c1
 	DEVICE_TITLE := QCA AP-DK01.1-C1
 	BOARD_NAME := ap-dk01.1-c1
