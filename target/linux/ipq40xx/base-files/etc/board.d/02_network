@@ -38,7 +38,8 @@ glinet,gl-b1300)
 	ucidef_add_switch "switch0" \
 		"0u@eth0" "3:lan" "4:lan"
 	;;
-openmesh,a42)
+openmesh,a42 |\
+openmesh,a62)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
 meraki,mr33 |\

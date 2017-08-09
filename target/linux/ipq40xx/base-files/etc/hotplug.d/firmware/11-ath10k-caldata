@@ -110,6 +110,13 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
+"ath10k/pre-cal-pci-0000:01:00.0.bin")
+	case "$board" in
+	openmesh,a62)
+		ath10kcal_extract "0:ART" 36864 12064
+		;;
+	esac
+	;;
 "ath10k/pre-cal-ahb-a000000.wifi.bin")
 	case "$board" in
 	8dev,jalapeno |\
@@ -135,7 +142,8 @@ case "$FIRMWARE" in
 		ath10kcal_patch_mac_crc $(mtd_get_mac_binary dnidata 0)
 		;;
 	compex,wpj428 |\
-	openmesh,a42)
+	openmesh,a42 |\
+	openmesh,a62)
 		ath10kcal_extract "0:ART" 4096 12064
 		;;
 	esac
@@ -165,7 +173,8 @@ case "$FIRMWARE" in
 		ath10kcal_patch_mac_crc $(mtd_get_mac_binary dnidata 12)
 		;;
 	compex,wpj428 |\
-	openmesh,a42)
+	openmesh,a42 |\
+	openmesh,a62)
 		ath10kcal_extract "0:ART" 20480 12064
 		;;
 	esac
