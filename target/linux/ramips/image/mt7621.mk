@@ -105,6 +105,26 @@ define Device/k2p
 endef
 TARGET_DEVICES += k2p
 
+define Device/mir3g
+  DTS := MIR3G
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 32768k
+  UBINIZE_OPTS := -E 5
+  IMAGES := sysupgrade.tar kernel1.bin rootfs0.bin
+  IMAGE/kernel1.bin := append-kernel
+  IMAGE/rootfs0.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
+  DEVICE_TITLE := Xiaomi Mi Router 3G
+  SUPPORTED_DEVICES += R3G
+  DEVICE_PACKAGES := \
+	kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini \
+	kmod-softdog
+endef
+TARGET_DEVICES += mir3g
+
 define Device/mt7621
   DTS := MT7621
   BLOCKSIZE := 64k
