@@ -87,6 +87,9 @@ brcm63xx_dt_detect() {
 	"BT Voyager V2500V")
 		board_name="v2500v_bb"
 		;;
+	"Comtrend AR-5315u")
+		board_name="ar-5315u"
+		;;
 	"Comtrend AR-5381u")
 		board_name="ar-5381u"
 		;;

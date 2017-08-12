@@ -357,6 +357,19 @@ endef
 TARGET_DEVICES += BTV2500V
 
 ### Comtrend ###
+define Device/AR5315u
+  $(Device/bcm63xx)
+  IMAGES += sysupgrade.bin
+  DEVICE_TITLE := Comtrend AR-5315u
+  DEVICE_DTS := ar-5315u
+  CFE_BOARD_ID := 96318A-1441N1
+  CFE_CHIP_ID := 6318
+  FLASH_MB := 16
+  DEVICE_PACKAGES := \
+    $(B43_PACKAGES) $(USB2_PACKAGES)
+endef
+TARGET_DEVICES += AR5315u
+
 define Device/AR5381u
   $(Device/bcm63xx)
   IMAGES += sysupgrade.bin
