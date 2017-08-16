@@ -1519,7 +1519,7 @@ static int ifx_ptm_init(void)
     port_cell.port_num = 1;
     ifx_mei_atm_showtime_check(&g_showtime, &port_cell, &xdata_addr);
     if ( g_showtime ) {
-	ptm_showtime_enter(&port_cell, &g_xdata_addr);
+	ptm_showtime_enter(&port_cell, &xdata_addr);
     }
 
     ifx_mei_atm_showtime_enter = ptm_showtime_enter;
