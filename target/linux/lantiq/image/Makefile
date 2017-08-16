@@ -214,10 +214,13 @@ TARGET_DEVICES += EASY50712
 define Device/ACMP252
   IMAGE_SIZE := 14848k
   DEVICE_TITLE := AudioCodes MediaPack MP-252
-  DEVICE_PACKAGES := kmod-rt2x00-pci wpad-mini \
-	kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
-	kmod-ltq-adsl-danube-fw-a kmod-ltq-ptm-danube \
-	ltq-adsl-app -swconfig
+  DEVICE_PACKAGES :=  kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+	kmod-ltq-adsl-danube-fw-a kmod-ltq-atm-danube \
+	kmod-ltq-tapi kmod-ltq-vmmc \
+	kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
+	kmod-rt2800-pci \
+	ltq-adsl-app ppp-mod-pppoa \
+	wpad-mini
 endef
 TARGET_DEVICES += ACMP252
 
