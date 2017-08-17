@@ -28,7 +28,8 @@ get_status_led() {
 	som9331|\
 	sr3200|\
 	tl-wr802n-v2|\
-	xd3200)
+	xd3200|\
+	xd6700)
 		status_led="$board:green:system"
 		;;
 	ap121f)
