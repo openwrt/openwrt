@@ -14,8 +14,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/unix/Kconfig    | 1 +
  7 files changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/net/Kconfig b/net/Kconfig
-index 38a0c857eb52..b4621e1f3470 100644
 --- a/net/Kconfig
 +++ b/net/Kconfig
 @@ -95,6 +95,9 @@ source "net/netlabel/Kconfig"
@@ -28,11 +26,9 @@ index 38a0c857eb52..b4621e1f3470 100644
  config NETWORK_SECMARK
  	bool "Security Marking"
  	help
-diff --git a/net/core/Makefile b/net/core/Makefile
-index d6508c2ddca5..bee4adde14d8 100644
 --- a/net/core/Makefile
 +++ b/net/core/Makefile
-@@ -9,8 +9,9 @@ obj-$(CONFIG_SYSCTL) += sysctl_net_core.o
+@@ -9,8 +9,9 @@ obj-$(CONFIG_SYSCTL) += sysctl_net_core.
  
  obj-y		     += dev.o ethtool.o dev_addr_lists.o dst.o netevent.o \
  			neighbour.o rtnetlink.o utils.o link_watch.o filter.o \
@@ -43,8 +39,6 @@ index d6508c2ddca5..bee4adde14d8 100644
  obj-$(CONFIG_XFRM) += flow.o
  obj-y += net-sysfs.o
  obj-$(CONFIG_PROC_FS) += net-procfs.o
-diff --git a/net/core/sock.c b/net/core/sock.c
-index 1989b3dd6d17..d4ca8db4166a 100644
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
 @@ -1457,9 +1457,11 @@ void sk_destruct(struct sock *sk)
@@ -59,8 +53,6 @@ index 1989b3dd6d17..d4ca8db4166a 100644
  		sk_destruct(sk);
  }
  
-diff --git a/net/ipv4/Kconfig b/net/ipv4/Kconfig
-index b54b3ca939db..74ecf598622c 100644
 --- a/net/ipv4/Kconfig
 +++ b/net/ipv4/Kconfig
 @@ -408,6 +408,7 @@ config INET_XFRM_MODE_BEET
@@ -71,8 +63,6 @@ index b54b3ca939db..74ecf598622c 100644
  	default y
  	---help---
  	  Support for INET (TCP, DCCP, etc) socket monitoring interface used by
-diff --git a/net/netlink/Kconfig b/net/netlink/Kconfig
-index 5d6e8c05b3d4..8a2696d66c20 100644
 --- a/net/netlink/Kconfig
 +++ b/net/netlink/Kconfig
 @@ -4,6 +4,7 @@
@@ -83,8 +73,6 @@ index 5d6e8c05b3d4..8a2696d66c20 100644
  	default n
  	---help---
  	  Support for NETLINK socket monitoring interface used by the ss tool.
-diff --git a/net/packet/Kconfig b/net/packet/Kconfig
-index cc55b35f80e5..9a83c86f5480 100644
 --- a/net/packet/Kconfig
 +++ b/net/packet/Kconfig
 @@ -18,6 +18,7 @@ config PACKET
@@ -95,8 +83,6 @@ index cc55b35f80e5..9a83c86f5480 100644
  	default n
  	---help---
  	  Support for PF_PACKET sockets monitoring interface used by the ss tool.
-diff --git a/net/unix/Kconfig b/net/unix/Kconfig
-index 8b31ab85d050..6548cf3ea7f1 100644
 --- a/net/unix/Kconfig
 +++ b/net/unix/Kconfig
 @@ -22,6 +22,7 @@ config UNIX
@@ -107,6 +93,3 @@ index 8b31ab85d050..6548cf3ea7f1 100644
  	default n
  	---help---
  	  Support for UNIX socket monitoring interface used by the ss tool.
--- 
-2.11.0
-

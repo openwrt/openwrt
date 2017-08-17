@@ -27,10 +27,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/ipv4/route.c         |  3 +++
  20 files changed, 105 insertions(+), 17 deletions(-)
 
-Index: linux-4.9.34/fs/locks.c
-===================================================================
---- linux-4.9.34.orig/fs/locks.c
-+++ linux-4.9.34/fs/locks.c
+--- a/fs/locks.c
++++ b/fs/locks.c
 @@ -2802,6 +2802,8 @@ static const struct file_operations proc
  
  static int __init proc_locks_init(void)
@@ -40,10 +38,8 @@ Index: linux-4.9.34/fs/locks.c
  	proc_create("locks", 0, NULL, &proc_locks_operations);
  	return 0;
  }
-Index: linux-4.9.34/fs/proc/Kconfig
-===================================================================
---- linux-4.9.34.orig/fs/proc/Kconfig
-+++ linux-4.9.34/fs/proc/Kconfig
+--- a/fs/proc/Kconfig
++++ b/fs/proc/Kconfig
 @@ -81,3 +81,8 @@ config PROC_CHILDREN
  
  	  Say Y if you are running any user-space software which takes benefit from
@@ -53,10 +49,8 @@ Index: linux-4.9.34/fs/proc/Kconfig
 +	default n
 +	depends on EXPERT
 +	bool "Strip non-essential /proc functionality to reduce code size"
-Index: linux-4.9.34/fs/proc/consoles.c
-===================================================================
---- linux-4.9.34.orig/fs/proc/consoles.c
-+++ linux-4.9.34/fs/proc/consoles.c
+--- a/fs/proc/consoles.c
++++ b/fs/proc/consoles.c
 @@ -106,6 +106,9 @@ static const struct file_operations proc
  
  static int __init proc_consoles_init(void)
@@ -67,10 +61,8 @@ Index: linux-4.9.34/fs/proc/consoles.c
  	proc_create("consoles", 0, NULL, &proc_consoles_operations);
  	return 0;
  }
-Index: linux-4.9.34/fs/proc/proc_tty.c
-===================================================================
---- linux-4.9.34.orig/fs/proc/proc_tty.c
-+++ linux-4.9.34/fs/proc/proc_tty.c
+--- a/fs/proc/proc_tty.c
++++ b/fs/proc/proc_tty.c
 @@ -143,7 +143,10 @@ static const struct file_operations proc
  void proc_tty_register_driver(struct tty_driver *driver)
  {
@@ -103,10 +95,8 @@ Index: linux-4.9.34/fs/proc/proc_tty.c
  	if (!proc_mkdir("tty", NULL))
  		return;
  	proc_mkdir("tty/ldisc", NULL);	/* Preserved: it's userspace visible */
-Index: linux-4.9.34/include/net/snmp.h
-===================================================================
---- linux-4.9.34.orig/include/net/snmp.h
-+++ linux-4.9.34/include/net/snmp.h
+--- a/include/net/snmp.h
++++ b/include/net/snmp.h
 @@ -123,6 +123,21 @@ struct linux_xfrm_mib {
  #define DECLARE_SNMP_STAT(type, name)	\
  	extern __typeof__(type) __percpu *name
@@ -140,10 +130,8 @@ Index: linux-4.9.34/include/net/snmp.h
  
  #define __SNMP_ADD_STATS64(mib, field, addend) 				\
  	do {								\
-Index: linux-4.9.34/ipc/msg.c
-===================================================================
---- linux-4.9.34.orig/ipc/msg.c
-+++ linux-4.9.34/ipc/msg.c
+--- a/ipc/msg.c
++++ b/ipc/msg.c
 @@ -1058,6 +1058,9 @@ void __init msg_init(void)
  {
  	msg_init_ns(&init_ipc_ns);
@@ -154,10 +142,8 @@ Index: linux-4.9.34/ipc/msg.c
  	ipc_init_proc_interface("sysvipc/msg",
  				"       key      msqid perms      cbytes       qnum lspid lrpid   uid   gid  cuid  cgid      stime      rtime      ctime\n",
  				IPC_MSG_IDS, sysvipc_msg_proc_show);
-Index: linux-4.9.34/ipc/sem.c
-===================================================================
---- linux-4.9.34.orig/ipc/sem.c
-+++ linux-4.9.34/ipc/sem.c
+--- a/ipc/sem.c
++++ b/ipc/sem.c
 @@ -205,6 +205,8 @@ void sem_exit_ns(struct ipc_namespace *n
  void __init sem_init(void)
  {
@@ -167,10 +153,8 @@ Index: linux-4.9.34/ipc/sem.c
  	ipc_init_proc_interface("sysvipc/sem",
  				"       key      semid perms      nsems   uid   gid  cuid  cgid      otime      ctime\n",
  				IPC_SEM_IDS, sysvipc_sem_proc_show);
-Index: linux-4.9.34/ipc/shm.c
-===================================================================
---- linux-4.9.34.orig/ipc/shm.c
-+++ linux-4.9.34/ipc/shm.c
+--- a/ipc/shm.c
++++ b/ipc/shm.c
 @@ -118,6 +118,8 @@ pure_initcall(ipc_ns_init);
  
  void __init shm_init(void)
@@ -180,10 +164,8 @@ Index: linux-4.9.34/ipc/shm.c
  	ipc_init_proc_interface("sysvipc/shm",
  #if BITS_PER_LONG <= 32
  				"       key      shmid perms       size  cpid  lpid nattch   uid   gid  cuid  cgid      atime      dtime      ctime        rss       swap\n",
-Index: linux-4.9.34/ipc/util.c
-===================================================================
---- linux-4.9.34.orig/ipc/util.c
-+++ linux-4.9.34/ipc/util.c
+--- a/ipc/util.c
++++ b/ipc/util.c
 @@ -121,6 +121,9 @@ void __init ipc_init_proc_interface(cons
  	struct proc_dir_entry *pde;
  	struct ipc_proc_iface *iface;
@@ -194,10 +176,8 @@ Index: linux-4.9.34/ipc/util.c
  	iface = kmalloc(sizeof(*iface), GFP_KERNEL);
  	if (!iface)
  		return;
-Index: linux-4.9.34/kernel/exec_domain.c
-===================================================================
---- linux-4.9.34.orig/kernel/exec_domain.c
-+++ linux-4.9.34/kernel/exec_domain.c
+--- a/kernel/exec_domain.c
++++ b/kernel/exec_domain.c
 @@ -41,6 +41,8 @@ static const struct file_operations exec
  
  static int __init proc_execdomains_init(void)
@@ -207,10 +187,8 @@ Index: linux-4.9.34/kernel/exec_domain.c
  	proc_create("execdomains", 0, NULL, &execdomains_proc_fops);
  	return 0;
  }
-Index: linux-4.9.34/kernel/irq/proc.c
-===================================================================
---- linux-4.9.34.orig/kernel/irq/proc.c
-+++ linux-4.9.34/kernel/irq/proc.c
+--- a/kernel/irq/proc.c
++++ b/kernel/irq/proc.c
 @@ -326,6 +326,9 @@ void register_irq_proc(unsigned int irq,
  	static DEFINE_MUTEX(register_lock);
  	char name [MAX_NAMELEN];
@@ -241,10 +219,8 @@ Index: linux-4.9.34/kernel/irq/proc.c
  	/* create /proc/irq */
  	root_irq_dir = proc_mkdir("irq", NULL);
  	if (!root_irq_dir)
-Index: linux-4.9.34/kernel/time/timer_list.c
-===================================================================
---- linux-4.9.34.orig/kernel/time/timer_list.c
-+++ linux-4.9.34/kernel/time/timer_list.c
+--- a/kernel/time/timer_list.c
++++ b/kernel/time/timer_list.c
 @@ -393,6 +393,8 @@ static int __init init_timer_list_procfs
  {
  	struct proc_dir_entry *pe;
@@ -254,11 +230,9 @@ Index: linux-4.9.34/kernel/time/timer_list.c
  	pe = proc_create("timer_list", 0444, NULL, &timer_list_fops);
  	if (!pe)
  		return -ENOMEM;
-Index: linux-4.9.34/mm/vmalloc.c
-===================================================================
---- linux-4.9.34.orig/mm/vmalloc.c
-+++ linux-4.9.34/mm/vmalloc.c
-@@ -2703,6 +2703,8 @@ static const struct file_operations proc
+--- a/mm/vmalloc.c
++++ b/mm/vmalloc.c
+@@ -2713,6 +2713,8 @@ static const struct file_operations proc
  
  static int __init proc_vmalloc_init(void)
  {
@@ -267,10 +241,8 @@ Index: linux-4.9.34/mm/vmalloc.c
  	proc_create("vmallocinfo", S_IRUSR, NULL, &proc_vmalloc_operations);
  	return 0;
  }
-Index: linux-4.9.34/mm/vmstat.c
-===================================================================
---- linux-4.9.34.orig/mm/vmstat.c
-+++ linux-4.9.34/mm/vmstat.c
+--- a/mm/vmstat.c
++++ b/mm/vmstat.c
 @@ -1791,10 +1791,12 @@ static int __init setup_vmstat(void)
  	cpu_notifier_register_done();
  #endif
@@ -287,10 +259,8 @@ Index: linux-4.9.34/mm/vmstat.c
  #endif
  	return 0;
  }
-Index: linux-4.9.34/net/8021q/vlanproc.c
-===================================================================
---- linux-4.9.34.orig/net/8021q/vlanproc.c
-+++ linux-4.9.34/net/8021q/vlanproc.c
+--- a/net/8021q/vlanproc.c
++++ b/net/8021q/vlanproc.c
 @@ -127,6 +127,9 @@ void vlan_proc_cleanup(struct net *net)
  {
  	struct vlan_net *vn = net_generic(net, vlan_net_id);
@@ -311,10 +281,8 @@ Index: linux-4.9.34/net/8021q/vlanproc.c
  	vn->proc_vlan_dir = proc_net_mkdir(net, name_root, net->proc_net);
  	if (!vn->proc_vlan_dir)
  		goto err;
-Index: linux-4.9.34/net/core/net-procfs.c
-===================================================================
---- linux-4.9.34.orig/net/core/net-procfs.c
-+++ linux-4.9.34/net/core/net-procfs.c
+--- a/net/core/net-procfs.c
++++ b/net/core/net-procfs.c
 @@ -319,10 +319,12 @@ static int __net_init dev_proc_net_init(
  
  	if (!proc_create("dev", S_IRUGO, net->proc_net, &dev_seq_fops))
@@ -357,10 +325,8 @@ Index: linux-4.9.34/net/core/net-procfs.c
  	remove_proc_entry("dev", net->proc_net);
  }
  
-Index: linux-4.9.34/net/core/sock.c
-===================================================================
---- linux-4.9.34.orig/net/core/sock.c
-+++ linux-4.9.34/net/core/sock.c
+--- a/net/core/sock.c
++++ b/net/core/sock.c
 @@ -3082,6 +3082,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
@@ -370,10 +336,8 @@ Index: linux-4.9.34/net/core/sock.c
  	return register_pernet_subsys(&proto_net_ops);
  }
  
-Index: linux-4.9.34/net/ipv4/fib_trie.c
-===================================================================
---- linux-4.9.34.orig/net/ipv4/fib_trie.c
-+++ linux-4.9.34/net/ipv4/fib_trie.c
+--- a/net/ipv4/fib_trie.c
++++ b/net/ipv4/fib_trie.c
 @@ -2667,10 +2667,12 @@ static const struct file_operations fib_
  
  int __net_init fib_proc_init(struct net *net)
@@ -415,10 +379,8 @@ Index: linux-4.9.34/net/ipv4/fib_trie.c
  	remove_proc_entry("route", net->proc_net);
  }
  
-Index: linux-4.9.34/net/ipv4/proc.c
-===================================================================
---- linux-4.9.34.orig/net/ipv4/proc.c
-+++ linux-4.9.34/net/ipv4/proc.c
+--- a/net/ipv4/proc.c
++++ b/net/ipv4/proc.c
 @@ -564,6 +564,9 @@ static __net_initdata struct pernet_oper
  
  int __init ip_misc_proc_init(void)
@@ -429,10 +391,8 @@ Index: linux-4.9.34/net/ipv4/proc.c
  	return register_pernet_subsys(&ip_proc_ops);
  }
  
-Index: linux-4.9.34/net/ipv4/route.c
-===================================================================
---- linux-4.9.34.orig/net/ipv4/route.c
-+++ linux-4.9.34/net/ipv4/route.c
+--- a/net/ipv4/route.c
++++ b/net/ipv4/route.c
 @@ -420,6 +420,9 @@ static struct pernet_operations ip_rt_pr
  
  static int __init ip_rt_proc_init(void)

@@ -18,11 +18,9 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  drivers/mtd/mtdpart.c | 11 ++++++++++-
  1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/mtdpart.c b/drivers/mtd/mtdpart.c
-index 0238b0babe2f..d41418524833 100644
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -343,7 +343,16 @@ static int part_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
+@@ -343,7 +343,16 @@ static int part_lock(struct mtd_info *mt
  static int part_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
  {
  	struct mtd_part *part = mtd_to_part(mtd);
@@ -40,6 +38,3 @@ index 0238b0babe2f..d41418524833 100644
  }
  
  static int part_is_locked(struct mtd_info *mtd, loff_t ofs, uint64_t len)
--- 
-2.11.0
-

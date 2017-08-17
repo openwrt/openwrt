@@ -12,8 +12,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/sched/sch_generic.c   | 4 ++--
  5 files changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/include/net/sch_generic.h b/include/net/sch_generic.h
-index e6aa0a249672..9eeb368d7eea 100644
 --- a/include/net/sch_generic.h
 +++ b/include/net/sch_generic.h
 @@ -339,12 +339,13 @@ extern struct Qdisc_ops noop_qdisc_ops;
@@ -31,8 +29,6 @@ index e6aa0a249672..9eeb368d7eea 100644
  }
  
  struct Qdisc_class_common {
-diff --git a/net/sched/Kconfig b/net/sched/Kconfig
-index 87956a768d1b..89c6db93cb63 100644
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
 @@ -3,8 +3,9 @@
@@ -46,11 +42,9 @@ index 87956a768d1b..89c6db93cb63 100644
  	---help---
  	  When the kernel has several packets to send out over a network
  	  device, it has to decide which ones to send first, which ones to
-diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
-index 206dc24add3a..9b5cfb6ac64b 100644
 --- a/net/sched/sch_api.c
 +++ b/net/sched/sch_api.c
-@@ -1976,7 +1976,7 @@ static int __init pktsched_init(void)
+@@ -1979,7 +1979,7 @@ static int __init pktsched_init(void)
  		return err;
  	}
  
@@ -59,11 +53,9 @@ index 206dc24add3a..9b5cfb6ac64b 100644
  	register_qdisc(&pfifo_qdisc_ops);
  	register_qdisc(&bfifo_qdisc_ops);
  	register_qdisc(&pfifo_head_drop_qdisc_ops);
-diff --git a/net/sched/sch_fq_codel.c b/net/sched/sch_fq_codel.c
-index 4467b95795bf..2ebbf50658e5 100644
 --- a/net/sched/sch_fq_codel.c
 +++ b/net/sched/sch_fq_codel.c
-@@ -705,7 +705,7 @@ static const struct Qdisc_class_ops fq_codel_class_ops = {
+@@ -705,7 +705,7 @@ static const struct Qdisc_class_ops fq_c
  	.walk		=	fq_codel_walk,
  };
  
@@ -72,7 +64,7 @@ index 4467b95795bf..2ebbf50658e5 100644
  	.cl_ops		=	&fq_codel_class_ops,
  	.id		=	"fq_codel",
  	.priv_size	=	sizeof(struct fq_codel_sched_data),
-@@ -720,6 +720,7 @@ static struct Qdisc_ops fq_codel_qdisc_ops __read_mostly = {
+@@ -720,6 +720,7 @@ static struct Qdisc_ops fq_codel_qdisc_o
  	.dump_stats =	fq_codel_dump_stats,
  	.owner		=	THIS_MODULE,
  };
@@ -80,8 +72,6 @@ index 4467b95795bf..2ebbf50658e5 100644
  
  static int __init fq_codel_module_init(void)
  {
-diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
-index 6cfb6e9038c2..97de97e3c5e2 100644
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
 @@ -31,7 +31,7 @@
@@ -93,7 +83,7 @@ index 6cfb6e9038c2..97de97e3c5e2 100644
  EXPORT_SYMBOL(default_qdisc_ops);
  
  /* Main transmission queue. */
-@@ -759,7 +759,7 @@ static void attach_one_default_qdisc(struct net_device *dev,
+@@ -759,7 +759,7 @@ static void attach_one_default_qdisc(str
  				     void *_unused)
  {
  	struct Qdisc *qdisc;
@@ -102,6 +92,3 @@ index 6cfb6e9038c2..97de97e3c5e2 100644
  
  	if (dev->priv_flags & IFF_NO_QUEUE)
  		ops = &noqueue_qdisc_ops;
--- 
-2.11.0
-

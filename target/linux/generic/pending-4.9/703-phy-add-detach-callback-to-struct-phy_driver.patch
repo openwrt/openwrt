@@ -9,11 +9,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  include/linux/phy.h          | 6 ++++++
  2 files changed, 9 insertions(+)
 
-diff --git a/drivers/net/phy/phy_device.c b/drivers/net/phy/phy_device.c
-index 14d57d0d1c04..c37d3a27e372 100644
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1001,6 +1001,9 @@ void phy_detach(struct phy_device *phydev)
+@@ -1001,6 +1001,9 @@ void phy_detach(struct phy_device *phyde
  	struct mii_bus *bus;
  	int i;
  
@@ -23,11 +21,9 @@ index 14d57d0d1c04..c37d3a27e372 100644
  	phydev->attached_dev->phydev = NULL;
  	phydev->attached_dev = NULL;
  	phy_suspend(phydev);
-diff --git a/include/linux/phy.h b/include/linux/phy.h
-index 93c1e74afc44..d97a418f2cf7 100644
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -508,6 +508,12 @@ struct phy_driver {
+@@ -511,6 +511,12 @@ struct phy_driver {
  	 */
  	int (*did_interrupt)(struct phy_device *phydev);
  
@@ -40,6 +36,3 @@ index 93c1e74afc44..d97a418f2cf7 100644
  	/* Clears up any memory if needed */
  	void (*remove)(struct phy_device *phydev);
  
--- 
-2.11.0
-

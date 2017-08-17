@@ -16,11 +16,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  usr/Makefile | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/usr/Makefile b/usr/Makefile
-index e767f019accf..17328d3c11cc 100644
 --- a/usr/Makefile
 +++ b/usr/Makefile
-@@ -53,6 +53,8 @@ ifneq ($(wildcard $(obj)/.initramfs_data.cpio.d),)
+@@ -53,6 +53,8 @@ ifneq ($(wildcard $(obj)/.initramfs_data
  	include $(obj)/.initramfs_data.cpio.d
  endif
  
@@ -29,7 +27,7 @@ index e767f019accf..17328d3c11cc 100644
  quiet_cmd_initfs = GEN     $@
        cmd_initfs = $(initramfs) -o $@ $(ramfs-args) $(ramfs-input)
  
-@@ -61,14 +63,14 @@ targets := initramfs_data.cpio.gz initramfs_data.cpio.bz2 \
+@@ -61,14 +63,14 @@ targets := initramfs_data.cpio.gz initra
  	initramfs_data.cpio.lzo initramfs_data.cpio.lz4 \
  	initramfs_data.cpio
  # do not try to update files included in initramfs
@@ -47,6 +45,3 @@ index e767f019accf..17328d3c11cc 100644
 +$(obj)/initramfs_data.cpio$(suffix_y): $(obj)/gen_init_cpio $(deps_initramfs_sane) klibcdirs
  	$(Q)$(initramfs) -l $(ramfs-input) > $(obj)/.initramfs_data.cpio.d
  	$(call if_changed,initfs)
--- 
-2.11.0
-

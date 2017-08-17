@@ -7,11 +7,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  include/linux/skbuff.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index 32810f279f8e..5f3343ae25ef 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -2298,7 +2298,7 @@ static inline int pskb_network_may_pull(struct sk_buff *skb, unsigned int len)
+@@ -2298,7 +2298,7 @@ static inline int pskb_network_may_pull(
   * NET_IP_ALIGN(2) + ethernet_header(14) + IP_header(20/40) + ports(8)
   */
  #ifndef NET_SKB_PAD
@@ -20,6 +18,3 @@ index 32810f279f8e..5f3343ae25ef 100644
  #endif
  
  int ___pskb_trim(struct sk_buff *skb, unsigned int len);
--- 
-2.11.0
-

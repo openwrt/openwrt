@@ -6,8 +6,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  drivers/mtd/devices/block2mtd.c | 30 ++++++++++++++++++++----------
  1 file changed, 20 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/mtd/devices/block2mtd.c b/drivers/mtd/devices/block2mtd.c
-index 7c887f111a7d..22135cc48879 100644
 --- a/drivers/mtd/devices/block2mtd.c
 +++ b/drivers/mtd/devices/block2mtd.c
 @@ -26,6 +26,7 @@
@@ -18,7 +16,7 @@ index 7c887f111a7d..22135cc48879 100644
  #include <linux/mutex.h>
  #include <linux/mount.h>
  #include <linux/slab.h>
-@@ -219,7 +220,7 @@ static void block2mtd_free_device(struct block2mtd_dev *dev)
+@@ -219,7 +220,7 @@ static void block2mtd_free_device(struct
  
  
  static struct block2mtd_dev *add_device(char *devname, int erase_size,
@@ -27,7 +25,7 @@ index 7c887f111a7d..22135cc48879 100644
  {
  #ifndef MODULE
  	int i;
-@@ -227,6 +228,7 @@ static struct block2mtd_dev *add_device(char *devname, int erase_size,
+@@ -227,6 +228,7 @@ static struct block2mtd_dev *add_device(
  	const fmode_t mode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
  	struct block_device *bdev = ERR_PTR(-ENODEV);
  	struct block2mtd_dev *dev;
@@ -35,7 +33,7 @@ index 7c887f111a7d..22135cc48879 100644
  	char *name;
  
  	if (!devname)
-@@ -283,13 +285,16 @@ static struct block2mtd_dev *add_device(char *devname, int erase_size,
+@@ -283,13 +285,16 @@ static struct block2mtd_dev *add_device(
  
  	/* Setup the MTD structure */
  	/* make the name contain the block device in */
@@ -54,7 +52,7 @@ index 7c887f111a7d..22135cc48879 100644
  	dev->mtd.erasesize = erase_size;
  	dev->mtd.writesize = 1;
  	dev->mtd.writebufsize = PAGE_SIZE;
-@@ -302,7 +307,11 @@ static struct block2mtd_dev *add_device(char *devname, int erase_size,
+@@ -302,7 +307,11 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
  
@@ -67,7 +65,7 @@ index 7c887f111a7d..22135cc48879 100644
  		/* Device didn't get added, so free the entry */
  		goto err_destroy_mutex;
  	}
-@@ -310,8 +319,7 @@ static struct block2mtd_dev *add_device(char *devname, int erase_size,
+@@ -310,8 +319,7 @@ static struct block2mtd_dev *add_device(
  	list_add(&dev->list, &blkmtd_device_list);
  	pr_info("mtd%d: [%s] erase_size = %dKiB [%d]\n",
  		dev->mtd.index,
@@ -77,7 +75,7 @@ index 7c887f111a7d..22135cc48879 100644
  	return dev;
  
  err_destroy_mutex:
-@@ -384,7 +392,7 @@ static int block2mtd_setup2(const char *val)
+@@ -384,7 +392,7 @@ static int block2mtd_setup2(const char *
  	/* 80 for device, 12 for erase size, 80 for name, 8 for timeout */
  	char buf[80 + 12 + 80 + 8];
  	char *str = buf;
@@ -86,7 +84,7 @@ index 7c887f111a7d..22135cc48879 100644
  	char *name;
  	size_t erase_size = PAGE_SIZE;
  	unsigned long timeout = MTD_DEFAULT_TIMEOUT;
-@@ -398,7 +406,7 @@ static int block2mtd_setup2(const char *val)
+@@ -398,7 +406,7 @@ static int block2mtd_setup2(const char *
  	strcpy(str, val);
  	kill_final_newline(str);
  
@@ -95,7 +93,7 @@ index 7c887f111a7d..22135cc48879 100644
  		token[i] = strsep(&str, ",");
  
  	if (str) {
-@@ -424,8 +432,10 @@ static int block2mtd_setup2(const char *val)
+@@ -424,8 +432,10 @@ static int block2mtd_setup2(const char *
  			return 0;
  		}
  	}
@@ -107,7 +105,7 @@ index 7c887f111a7d..22135cc48879 100644
  
  	return 0;
  }
-@@ -459,7 +469,7 @@ static int block2mtd_setup(const char *val, struct kernel_param *kp)
+@@ -459,7 +469,7 @@ static int block2mtd_setup(const char *v
  
  
  module_param_call(block2mtd, block2mtd_setup, NULL, NULL, 0200);
@@ -116,6 +114,3 @@ index 7c887f111a7d..22135cc48879 100644
  
  static int __init block2mtd_init(void)
  {
--- 
-2.11.0
-

@@ -9,11 +9,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  arch/mips/Makefile | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/mips/Makefile b/arch/mips/Makefile
-index 1a6bac7b076f..5b656d9a1bbe 100644
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -90,7 +90,7 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlinuz
+@@ -90,7 +90,7 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
  # machines may also.  Since BFD is incredibly buggy with respect to
  # crossformat linking we rely on the elf2ecoff tool for format conversion.
  #
@@ -22,6 +20,3 @@ index 1a6bac7b076f..5b656d9a1bbe 100644
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
  KBUILD_AFLAGS_MODULE		+= -mlong-calls
--- 
-2.11.0
-

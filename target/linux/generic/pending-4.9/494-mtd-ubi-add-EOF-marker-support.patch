@@ -7,8 +7,6 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  drivers/mtd/ubi/ubi.h    |  1 +
  2 files changed, 23 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mtd/ubi/attach.c b/drivers/mtd/ubi/attach.c
-index 93ceea4f27d5..a4f849d69104 100644
 --- a/drivers/mtd/ubi/attach.c
 +++ b/drivers/mtd/ubi/attach.c
 @@ -939,6 +939,13 @@ static bool vol_ignored(int vol_id)
@@ -25,7 +23,7 @@ index 93ceea4f27d5..a4f849d69104 100644
  /**
   * scan_peb - scan and process UBI headers of a PEB.
   * @ubi: UBI device description object
-@@ -971,9 +978,21 @@ static int scan_peb(struct ubi_device *ubi, struct ubi_attach_info *ai,
+@@ -971,9 +978,21 @@ static int scan_peb(struct ubi_device *u
  		return 0;
  	}
  
@@ -50,8 +48,6 @@ index 93ceea4f27d5..a4f849d69104 100644
  	switch (err) {
  	case 0:
  		break;
-diff --git a/drivers/mtd/ubi/ubi.h b/drivers/mtd/ubi/ubi.h
-index 697dbcba7371..92d207ff2458 100644
 --- a/drivers/mtd/ubi/ubi.h
 +++ b/drivers/mtd/ubi/ubi.h
 @@ -779,6 +779,7 @@ struct ubi_attach_info {
@@ -62,6 +58,3 @@ index 697dbcba7371..92d207ff2458 100644
  	struct kmem_cache *aeb_slab_cache;
  	struct ubi_ec_hdr *ech;
  	struct ubi_vid_io_buf *vidb;
--- 
-2.11.0
-

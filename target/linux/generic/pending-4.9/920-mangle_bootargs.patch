@@ -11,8 +11,6 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  init/main.c  | 24 ++++++++++++++++++++++++
  2 files changed, 33 insertions(+)
 
-diff --git a/init/Kconfig b/init/Kconfig
-index 9063c81b9665..fb66d3ef78e0 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -1687,6 +1687,15 @@ config EMBEDDED
@@ -31,11 +29,9 @@ index 9063c81b9665..fb66d3ef78e0 100644
  config HAVE_PERF_EVENTS
  	bool
  	help
-diff --git a/init/main.c b/init/main.c
-index ae3996ae9bac..3855fa4ffb95 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -352,6 +352,29 @@ static inline void setup_nr_cpu_ids(void) { }
+@@ -352,6 +352,29 @@ static inline void setup_nr_cpu_ids(void
  static inline void smp_prepare_cpus(unsigned int maxcpus) { }
  #endif
  
@@ -65,7 +61,7 @@ index ae3996ae9bac..3855fa4ffb95 100644
  /*
   * We need to store the untouched command line for future reference.
   * We also need to store the touched command line since the parameter
-@@ -504,6 +527,7 @@ asmlinkage __visible void __init start_kernel(void)
+@@ -504,6 +527,7 @@ asmlinkage __visible void __init start_k
  	pr_notice("%s", linux_banner);
  	setup_arch(&command_line);
  	mm_init_cpumask(&init_mm);
@@ -73,6 +69,3 @@ index ae3996ae9bac..3855fa4ffb95 100644
  	setup_command_line(command_line);
  	setup_nr_cpu_ids();
  	setup_per_cpu_areas();
--- 
-2.11.0
-

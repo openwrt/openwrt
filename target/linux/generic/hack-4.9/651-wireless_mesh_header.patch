@@ -9,11 +9,9 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  include/linux/netdevice.h | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 780e7171f548..6e0f2c79f79a 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -137,8 +137,8 @@ static inline bool dev_xmit_complete(int rc)
+@@ -137,8 +137,8 @@ static inline bool dev_xmit_complete(int
  
  #if defined(CONFIG_HYPERV_NET)
  # define LL_MAX_HEADER 128
@@ -24,6 +22,3 @@ index 780e7171f548..6e0f2c79f79a 100644
  #  define LL_MAX_HEADER 128
  # else
  #  define LL_MAX_HEADER 96
--- 
-2.11.0
-

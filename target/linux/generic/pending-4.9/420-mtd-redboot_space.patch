@@ -9,11 +9,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  drivers/mtd/redboot.c | 19 +++++++++++++------
  1 file changed, 13 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/mtd/redboot.c b/drivers/mtd/redboot.c
-index 7623ac5fc586..181ea0fb3c91 100644
 --- a/drivers/mtd/redboot.c
 +++ b/drivers/mtd/redboot.c
-@@ -265,14 +265,21 @@ static int parse_redboot_partitions(struct mtd_info *master,
+@@ -265,14 +265,21 @@ static int parse_redboot_partitions(stru
  #endif
  		names += strlen(names)+1;
  
@@ -41,6 +39,3 @@ index 7623ac5fc586..181ea0fb3c91 100644
  		tmp_fl = fl;
  		fl = fl->next;
  		kfree(tmp_fl);
--- 
-2.11.0
-

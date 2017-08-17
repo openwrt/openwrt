@@ -12,8 +12,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  3 files changed, 30 insertions(+)
  create mode 100644 tools/include/tools/linux_types.h
 
-diff --git a/tools/include/tools/be_byteshift.h b/tools/include/tools/be_byteshift.h
-index 84c17d836578..ed9932e97bd4 100644
 --- a/tools/include/tools/be_byteshift.h
 +++ b/tools/include/tools/be_byteshift.h
 @@ -1,6 +1,10 @@
@@ -27,8 +25,6 @@ index 84c17d836578..ed9932e97bd4 100644
  #include <stdint.h>
  
  static inline uint16_t __get_unaligned_be16(const uint8_t *p)
-diff --git a/tools/include/tools/le_byteshift.h b/tools/include/tools/le_byteshift.h
-index 8fe9f2488ec7..2e387b5226d9 100644
 --- a/tools/include/tools/le_byteshift.h
 +++ b/tools/include/tools/le_byteshift.h
 @@ -1,6 +1,10 @@
@@ -42,9 +38,6 @@ index 8fe9f2488ec7..2e387b5226d9 100644
  #include <stdint.h>
  
  static inline uint16_t __get_unaligned_le16(const uint8_t *p)
-diff --git a/tools/include/tools/linux_types.h b/tools/include/tools/linux_types.h
-new file mode 100644
-index 000000000000..f07ef8293ebc
 --- /dev/null
 +++ b/tools/include/tools/linux_types.h
 @@ -0,0 +1,22 @@
@@ -70,6 +63,3 @@ index 000000000000..f07ef8293ebc
 +typedef uint64_t __le64;
 +
 +#endif
--- 
-2.11.0
-

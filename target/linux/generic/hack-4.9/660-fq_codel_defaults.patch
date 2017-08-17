@@ -8,11 +8,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/sched/sch_fq_codel.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/net/sched/sch_fq_codel.c b/net/sched/sch_fq_codel.c
-index a5ea0e9b6be4..4467b95795bf 100644
 --- a/net/sched/sch_fq_codel.c
 +++ b/net/sched/sch_fq_codel.c
-@@ -479,7 +479,7 @@ static int fq_codel_init(struct Qdisc *sch, struct nlattr *opt)
+@@ -479,7 +479,7 @@ static int fq_codel_init(struct Qdisc *s
  
  	sch->limit = 10*1024;
  	q->flows_cnt = 1024;
@@ -21,6 +19,3 @@ index a5ea0e9b6be4..4467b95795bf 100644
  	q->drop_batch_size = 64;
  	q->quantum = psched_mtu(qdisc_dev(sch));
  	q->perturbation = prandom_u32();
--- 
-2.11.0
-

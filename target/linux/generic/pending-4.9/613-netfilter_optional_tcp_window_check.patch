@@ -6,8 +6,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/netfilter/nf_conntrack_proto_tcp.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
-diff --git a/net/netfilter/nf_conntrack_proto_tcp.c b/net/netfilter/nf_conntrack_proto_tcp.c
-index 69f687740c76..f24b62668dc8 100644
 --- a/net/netfilter/nf_conntrack_proto_tcp.c
 +++ b/net/netfilter/nf_conntrack_proto_tcp.c
 @@ -33,6 +33,9 @@
@@ -20,7 +18,7 @@ index 69f687740c76..f24b62668dc8 100644
  /* "Be conservative in what you do,
      be liberal in what you accept from others."
      If it's non-zero, we mark only out of window RST segments as INVALID. */
-@@ -513,6 +516,9 @@ static bool tcp_in_window(const struct nf_conn *ct,
+@@ -513,6 +516,9 @@ static bool tcp_in_window(const struct n
  	s32 receiver_offset;
  	bool res, in_recv_win;
  
@@ -30,7 +28,7 @@ index 69f687740c76..f24b62668dc8 100644
  	/*
  	 * Get the required data from the packet.
  	 */
-@@ -1479,6 +1485,13 @@ static struct ctl_table tcp_sysctl_table[] = {
+@@ -1479,6 +1485,13 @@ static struct ctl_table tcp_sysctl_table
  		.mode		= 0644,
  		.proc_handler	= proc_dointvec,
  	},
@@ -44,6 +42,3 @@ index 69f687740c76..f24b62668dc8 100644
  	{ }
  };
  #endif /* CONFIG_SYSCTL */
--- 
-2.11.0
-

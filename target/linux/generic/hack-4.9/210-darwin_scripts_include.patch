@@ -13,11 +13,9 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  4 files changed, 3018 insertions(+)
  create mode 100644 scripts/mod/elf.h
 
-diff --git a/scripts/kconfig/Makefile b/scripts/kconfig/Makefile
-index 90a091b6ae4d..f9620652e70a 100644
 --- a/scripts/kconfig/Makefile
 +++ b/scripts/kconfig/Makefile
-@@ -163,6 +163,9 @@ check-lxdialog  := $(srctree)/$(src)/lxdialog/check-lxdialog.sh
+@@ -163,6 +163,9 @@ check-lxdialog  := $(srctree)/$(src)/lxd
  # we really need to do so. (Do not call gcc as part of make mrproper)
  HOST_EXTRACFLAGS += $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags) \
                      -DLOCALE
@@ -27,9 +25,6 @@ index 90a091b6ae4d..f9620652e70a 100644
  
  # ===========================================================================
  # Shared Makefile for the various kconfig executables:
-diff --git a/scripts/mod/elf.h b/scripts/mod/elf.h
-new file mode 100644
-index 000000000000..036a176345eb
 --- /dev/null
 +++ b/scripts/mod/elf.h
 @@ -0,0 +1,3007 @@
@@ -3040,8 +3035,6 @@ index 000000000000..036a176345eb
 +#define R_TILEGX_NUM		130
 +
 +#endif	/* elf.h */
-diff --git a/scripts/mod/mk_elfconfig.c b/scripts/mod/mk_elfconfig.c
-index a4fd71d71d65..5ec3740ebb3c 100644
 --- a/scripts/mod/mk_elfconfig.c
 +++ b/scripts/mod/mk_elfconfig.c
 @@ -1,7 +1,11 @@
@@ -3056,8 +3049,6 @@ index a4fd71d71d65..5ec3740ebb3c 100644
  
  int
  main(int argc, char **argv)
-diff --git a/scripts/mod/modpost.h b/scripts/mod/modpost.h
-index 6a5e1515123b..237c50d2ec6c 100644
 --- a/scripts/mod/modpost.h
 +++ b/scripts/mod/modpost.h
 @@ -7,7 +7,11 @@
@@ -3072,6 +3063,3 @@ index 6a5e1515123b..237c50d2ec6c 100644
  
  #include "elfconfig.h"
  
--- 
-2.11.0
-

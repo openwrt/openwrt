@@ -11,8 +11,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  include/uapi/linux/spi/spidev.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/include/uapi/linux/spi/spidev.h b/include/uapi/linux/spi/spidev.h
-index dd5f21e75805..e5e8fea8b068 100644
 --- a/include/uapi/linux/spi/spidev.h
 +++ b/include/uapi/linux/spi/spidev.h
 @@ -111,7 +111,7 @@ struct spi_ioc_transfer {
@@ -24,6 +22,3 @@ index dd5f21e75805..e5e8fea8b068 100644
  		? ((N)*(sizeof (struct spi_ioc_transfer))) : 0)
  #define SPI_IOC_MESSAGE(N) _IOW(SPI_IOC_MAGIC, 0, char[SPI_MSGSIZE(N)])
  
--- 
-2.11.0
-

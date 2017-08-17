@@ -4128,7 +4128,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  static int nand_do_write_oob(struct mtd_info *mtd, loff_t to,
  			     struct mtd_oob_ops *ops);
-@@ -233,7 +233,7 @@ static int check_offs_len(struct mtd_inf
+@@ -239,7 +239,7 @@ static int check_offs_len(struct mtd_inf
   *
   * Release chip lock and wake up anyone waiting on the device.
   */
@@ -4137,7 +4137,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	struct nand_chip *chip = mtd_to_nand(mtd);
  
-@@ -915,7 +915,7 @@ static void panic_nand_get_device(struct
+@@ -921,7 +921,7 @@ static void panic_nand_get_device(struct
   *
   * Get the device and lock it for exclusive access
   */

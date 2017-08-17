@@ -8,8 +8,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  include/linux/mtd/mtd.h |  4 +++
  2 files changed, 85 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/mtd/mtdpart.c b/drivers/mtd/mtdpart.c
-index fce83882fd4e..0238b0babe2f 100644
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
 @@ -36,6 +36,8 @@
@@ -21,7 +19,7 @@ index fce83882fd4e..0238b0babe2f 100644
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
  static DEFINE_MUTEX(mtd_partitions_mutex);
-@@ -241,13 +243,61 @@ static int part_erase(struct mtd_info *mtd, struct erase_info *instr)
+@@ -241,13 +243,61 @@ static int part_erase(struct mtd_info *m
  	struct mtd_part *part = mtd_to_part(mtd);
  	int ret;
  
@@ -83,7 +81,7 @@ index fce83882fd4e..0238b0babe2f 100644
  	return ret;
  }
  
-@@ -255,6 +305,25 @@ void mtd_erase_callback(struct erase_info *instr)
+@@ -255,6 +305,25 @@ void mtd_erase_callback(struct erase_inf
  {
  	if (instr->mtd->_erase == part_erase) {
  		struct mtd_part *part = mtd_to_part(instr->mtd);
@@ -109,7 +107,7 @@ index fce83882fd4e..0238b0babe2f 100644
  
  		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
  			instr->fail_addr -= part->offset;
-@@ -590,19 +659,22 @@ static struct mtd_part *allocate_partition(struct mtd_info *parent,
+@@ -590,19 +659,22 @@ static struct mtd_part *allocate_partiti
  	remainder = do_div(tmp, wr_alignment);
  	if ((slave->mtd.flags & MTD_WRITEABLE) && remainder) {
  		/* Doesn't start on a boundary of major erase size */
@@ -141,8 +139,6 @@ index fce83882fd4e..0238b0babe2f 100644
  	}
  
  	mtd_set_ooblayout(&slave->mtd, &part_ooblayout_ops);
-diff --git a/include/linux/mtd/mtd.h b/include/linux/mtd/mtd.h
-index e7d5091bb447..0db85491f085 100644
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
 @@ -55,6 +55,10 @@ struct erase_info {
@@ -156,6 +152,3 @@ index e7d5091bb447..0db85491f085 100644
  };
  
  struct mtd_erase_region_info {
--- 
-2.11.0
-

@@ -19,8 +19,6 @@ Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
  drivers/misc/Makefile |  1 +
  2 files changed, 13 insertions(+)
 
-diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
-index 64971baf11fa..50d2eaa75d41 100644
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
 @@ -151,6 +151,18 @@ config SGI_IOC4
@@ -42,11 +40,9 @@ index 64971baf11fa..50d2eaa75d41 100644
  config TIFM_CORE
  	tristate "TI Flash Media interface support"
  	depends on PCI
-diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index 31983366090a..48c7e74a6e5a 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib.o
+@@ -12,6 +12,7 @@ obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib
  obj-$(CONFIG_DUMMY_IRQ)		+= dummy-irq.o
  obj-$(CONFIG_ICS932S401)	+= ics932s401.o
  obj-$(CONFIG_LKDTM)		+= lkdtm.o
@@ -54,6 +50,3 @@ index 31983366090a..48c7e74a6e5a 100644
  obj-$(CONFIG_TIFM_CORE)       	+= tifm_core.o
  obj-$(CONFIG_TIFM_7XX1)       	+= tifm_7xx1.o
  obj-$(CONFIG_PHANTOM)		+= phantom.o
--- 
-2.11.0
-

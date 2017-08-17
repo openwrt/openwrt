@@ -13,11 +13,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  lib/Kconfig.debug           | 5 +++++
  2 files changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/include/linux/serial_core.h b/include/linux/serial_core.h
-index 344201437017..7e6165bc1cef 100644
 --- a/include/linux/serial_core.h
 +++ b/include/linux/serial_core.h
-@@ -448,7 +448,7 @@ extern void uart_handle_cts_change(struct uart_port *uport,
+@@ -448,7 +448,7 @@ extern void uart_handle_cts_change(struc
  extern void uart_insert_char(struct uart_port *port, unsigned int status,
  		 unsigned int overrun, unsigned int ch, unsigned int flag);
  
@@ -26,8 +24,6 @@ index 344201437017..7e6165bc1cef 100644
  static inline int
  uart_handle_sysrq_char(struct uart_port *port, unsigned int ch)
  {
-diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
-index a6c8db1d62f6..062c580cdd68 100644
 --- a/lib/Kconfig.debug
 +++ b/lib/Kconfig.debug
 @@ -397,6 +397,11 @@ config MAGIC_SYSRQ_DEFAULT_ENABLE
@@ -42,6 +38,3 @@ index a6c8db1d62f6..062c580cdd68 100644
  config DEBUG_KERNEL
  	bool "Kernel debugging"
  	help
--- 
-2.11.0
-

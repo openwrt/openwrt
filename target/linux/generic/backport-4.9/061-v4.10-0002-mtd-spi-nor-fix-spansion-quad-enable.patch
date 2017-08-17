@@ -26,8 +26,8 @@ Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
 
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -1256,6 +1256,13 @@ static int spansion_quad_enable(struct s
- 		return -EINVAL;
+@@ -1263,6 +1263,13 @@ static int spansion_quad_enable(struct s
+ 		return ret;
  	}
  
 +	ret = spi_nor_wait_till_ready(nor);

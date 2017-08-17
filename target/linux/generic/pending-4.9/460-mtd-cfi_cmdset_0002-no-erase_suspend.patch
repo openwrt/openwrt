@@ -12,11 +12,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  drivers/mtd/chips/cfi_cmdset_0002.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/chips/cfi_cmdset_0002.c b/drivers/mtd/chips/cfi_cmdset_0002.c
-index 9dca881bb378..ea4db1917334 100644
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -807,7 +807,7 @@ static int get_chip(struct map_info *map, struct flchip *chip, unsigned long adr
+@@ -807,7 +807,7 @@ static int get_chip(struct map_info *map
  		return 0;
  
  	case FL_ERASING:
@@ -25,6 +23,3 @@ index 9dca881bb378..ea4db1917334 100644
  		    !(mode == FL_READY || mode == FL_POINT ||
  		    (mode == FL_WRITING && (cfip->EraseSuspend & 0x2))))
  			goto sleep;
--- 
-2.11.0
-

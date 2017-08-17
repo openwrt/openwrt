@@ -11,8 +11,6 @@ Signed-off-by: Roman Yeryomin <roman@advem.lv>
  drivers/net/phy/at803x.c | 25 +++++++++++++++++++++++++
  1 file changed, 25 insertions(+)
 
-diff --git a/drivers/net/phy/at803x.c b/drivers/net/phy/at803x.c
-index 4a55130dcb1c..434efb68bc5d 100644
 --- a/drivers/net/phy/at803x.c
 +++ b/drivers/net/phy/at803x.c
 @@ -55,6 +55,10 @@
@@ -26,7 +24,7 @@ index 4a55130dcb1c..434efb68bc5d 100644
  #define AT803X_MODE_CFG_MASK			0x0F
  #define AT803X_MODE_CFG_SGMII			0x01
  
-@@ -295,6 +299,27 @@ static int at803x_config_init(struct phy_device *phydev)
+@@ -295,6 +299,27 @@ static int at803x_config_init(struct phy
  {
  	struct at803x_platform_data *pdata;
  	int ret;
@@ -54,6 +52,3 @@ index 4a55130dcb1c..434efb68bc5d 100644
  
  	ret = genphy_config_init(phydev);
  	if (ret < 0)
--- 
-2.11.0
-

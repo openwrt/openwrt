@@ -13,10 +13,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/bridge/br_sysfs_if.c  | 2 ++
  4 files changed, 11 insertions(+)
 
-Index: linux-4.9.34/include/linux/if_bridge.h
-===================================================================
---- linux-4.9.34.orig/include/linux/if_bridge.h
-+++ linux-4.9.34/include/linux/if_bridge.h
+--- a/include/linux/if_bridge.h
++++ b/include/linux/if_bridge.h
 @@ -47,6 +47,7 @@ struct br_ip_list {
  #define BR_PROXYARP_WIFI	BIT(10)
  #define BR_MCAST_FLOOD		BIT(11)
@@ -25,10 +23,8 @@ Index: linux-4.9.34/include/linux/if_bridge.h
  
  #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
  
-Index: linux-4.9.34/net/bridge/br_forward.c
-===================================================================
---- linux-4.9.34.orig/net/bridge/br_forward.c
-+++ linux-4.9.34/net/bridge/br_forward.c
+--- a/net/bridge/br_forward.c
++++ b/net/bridge/br_forward.c
 @@ -141,6 +141,9 @@ static int deliver_clone(const struct ne
  void br_forward(const struct net_bridge_port *to,
  		struct sk_buff *skb, bool local_rcv, bool local_orig)
@@ -48,10 +44,8 @@ Index: linux-4.9.34/net/bridge/br_forward.c
  		/* Do not flood unicast traffic to ports that turn it off */
  		if (pkt_type == BR_PKT_UNICAST && !(p->flags & BR_FLOOD))
  			continue;
-Index: linux-4.9.34/net/bridge/br_input.c
-===================================================================
---- linux-4.9.34.orig/net/bridge/br_input.c
-+++ linux-4.9.34/net/bridge/br_input.c
+--- a/net/bridge/br_input.c
++++ b/net/bridge/br_input.c
 @@ -175,6 +175,9 @@ int br_handle_frame_finish(struct net *n
  	if (IS_ENABLED(CONFIG_INET) && skb->protocol == htons(ETH_P_ARP))
  		br_do_proxy_arp(skb, br, vid, p);
@@ -62,10 +56,8 @@ Index: linux-4.9.34/net/bridge/br_input.c
  	switch (pkt_type) {
  	case BR_PKT_MULTICAST:
  		mdst = br_mdb_get(br, skb, vid);
-Index: linux-4.9.34/net/bridge/br_sysfs_if.c
-===================================================================
---- linux-4.9.34.orig/net/bridge/br_sysfs_if.c
-+++ linux-4.9.34/net/bridge/br_sysfs_if.c
+--- a/net/bridge/br_sysfs_if.c
++++ b/net/bridge/br_sysfs_if.c
 @@ -172,6 +172,7 @@ BRPORT_ATTR_FLAG(unicast_flood, BR_FLOOD
  BRPORT_ATTR_FLAG(proxyarp, BR_PROXYARP);
  BRPORT_ATTR_FLAG(proxyarp_wifi, BR_PROXYARP_WIFI);

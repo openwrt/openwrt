@@ -8,11 +8,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  include/linux/usb/hcd.h       |  7 +++++++
  3 files changed, 40 insertions(+), 1 deletion(-)
 
-Index: linux-4.9.40/drivers/usb/host/pci-quirks.c
-===================================================================
---- linux-4.9.40.orig/drivers/usb/host/pci-quirks.c
-+++ linux-4.9.40/drivers/usb/host/pci-quirks.c
-@@ -106,6 +106,8 @@ struct amd_chipset_type {
+--- a/drivers/usb/host/pci-quirks.c
++++ b/drivers/usb/host/pci-quirks.c
+@@ -107,6 +107,8 @@ struct amd_chipset_type {
  	u8 rev;
  };
  
@@ -21,7 +19,7 @@ Index: linux-4.9.40/drivers/usb/host/pci-quirks.c
  static struct amd_chipset_info {
  	struct pci_dev	*nb_dev;
  	struct pci_dev	*smbus_dev;
-@@ -503,6 +505,10 @@ void usb_amd_dev_put(void)
+@@ -510,6 +512,10 @@ void usb_amd_dev_put(void)
  }
  EXPORT_SYMBOL_GPL(usb_amd_dev_put);
  
@@ -32,7 +30,7 @@ Index: linux-4.9.40/drivers/usb/host/pci-quirks.c
  /*
   * Make sure the controller is completely inactive, unable to
   * generate interrupts or do DMA.
-@@ -582,8 +588,17 @@ reset_needed:
+@@ -589,8 +595,17 @@ reset_needed:
  	uhci_reset_hc(pdev, base);
  	return 1;
  }
@@ -50,15 +48,13 @@ Index: linux-4.9.40/drivers/usb/host/pci-quirks.c
  static inline int io_type_enabled(struct pci_dev *pdev, unsigned int mask)
  {
  	u16 cmd;
-@@ -1150,3 +1165,4 @@ static void quirk_usb_early_handoff(stru
+@@ -1157,3 +1172,4 @@ static void quirk_usb_early_handoff(stru
  }
  DECLARE_PCI_FIXUP_CLASS_FINAL(PCI_ANY_ID, PCI_ANY_ID,
  			PCI_CLASS_SERIAL_USB, 8, quirk_usb_early_handoff);
 +#endif
-Index: linux-4.9.40/drivers/usb/host/pci-quirks.h
-===================================================================
---- linux-4.9.40.orig/drivers/usb/host/pci-quirks.h
-+++ linux-4.9.40/drivers/usb/host/pci-quirks.h
+--- a/drivers/usb/host/pci-quirks.h
++++ b/drivers/usb/host/pci-quirks.h
 @@ -4,6 +4,9 @@
  #ifdef CONFIG_PCI
  void uhci_reset_hc(struct pci_dev *pdev, unsigned long base);
@@ -95,10 +91,8 @@ Index: linux-4.9.40/drivers/usb/host/pci-quirks.h
  #endif  /* CONFIG_PCI */
  
  #endif  /*  __LINUX_USB_PCI_QUIRKS_H  */
-Index: linux-4.9.40/include/linux/usb/hcd.h
-===================================================================
---- linux-4.9.40.orig/include/linux/usb/hcd.h
-+++ linux-4.9.40/include/linux/usb/hcd.h
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
 @@ -461,7 +461,14 @@ extern int usb_hcd_pci_probe(struct pci_
  extern void usb_hcd_pci_remove(struct pci_dev *dev);
  extern void usb_hcd_pci_shutdown(struct pci_dev *dev);

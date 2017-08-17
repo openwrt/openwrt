@@ -12,8 +12,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  include/linux/regmap.h       |  2 +-
  4 files changed, 22 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/base/regmap/Kconfig b/drivers/base/regmap/Kconfig
-index 48b3fc1ee514..c4cb7592392b 100644
 --- a/drivers/base/regmap/Kconfig
 +++ b/drivers/base/regmap/Kconfig
 @@ -3,9 +3,8 @@
@@ -56,8 +54,6 @@ index 48b3fc1ee514..c4cb7592392b 100644
  config REGMAP_IRQ
 +	select REGMAP
  	bool
-diff --git a/drivers/base/regmap/Makefile b/drivers/base/regmap/Makefile
-index 6271ea9b758a..f23c58a050aa 100644
 --- a/drivers/base/regmap/Makefile
 +++ b/drivers/base/regmap/Makefile
 @@ -1,10 +1,14 @@
@@ -79,8 +75,6 @@ index 6271ea9b758a..f23c58a050aa 100644
  obj-$(CONFIG_REGMAP_AC97) += regmap-ac97.o
  obj-$(CONFIG_REGMAP_I2C) += regmap-i2c.o
  obj-$(CONFIG_REGMAP_SPI) += regmap-spi.o
-diff --git a/drivers/base/regmap/regmap.c b/drivers/base/regmap/regmap.c
-index ae63bb0875ea..2ac56b4f525e 100644
 --- a/drivers/base/regmap/regmap.c
 +++ b/drivers/base/regmap/regmap.c
 @@ -13,6 +13,7 @@
@@ -97,8 +91,6 @@ index ae63bb0875ea..2ac56b4f525e 100644
  postcore_initcall(regmap_initcall);
 +
 +MODULE_LICENSE("GPL");
-diff --git a/include/linux/regmap.h b/include/linux/regmap.h
-index f6673132431d..95c7db29448b 100644
 --- a/include/linux/regmap.h
 +++ b/include/linux/regmap.h
 @@ -135,7 +135,7 @@ struct reg_sequence {
@@ -110,6 +102,3 @@ index f6673132431d..95c7db29448b 100644
  
  enum regmap_endian {
  	/* Unspecified -> 0 -> Backwards compatible default */
--- 
-2.11.0
-

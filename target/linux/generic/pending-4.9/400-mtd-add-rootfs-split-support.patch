@@ -9,8 +9,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  include/linux/mtd/partitions.h |  2 ++
  3 files changed, 54 insertions(+)
 
-diff --git a/drivers/mtd/Kconfig b/drivers/mtd/Kconfig
-index 5a2d71729b9a..f5ac04e288eb 100644
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -12,6 +12,23 @@ menuconfig MTD
@@ -37,8 +35,6 @@ index 5a2d71729b9a..f5ac04e288eb 100644
  config MTD_TESTS
  	tristate "MTD tests support (DANGEROUS)"
  	depends on m
-diff --git a/drivers/mtd/mtdpart.c b/drivers/mtd/mtdpart.c
-index dd86b430e46e..33d152d1876a 100644
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
 @@ -29,10 +29,12 @@
@@ -63,7 +59,7 @@ index dd86b430e46e..33d152d1876a 100644
  /*
   * Given a pointer to the MTD object in the mtd_part structure, we can retrieve
   * the pointer to that structure.
-@@ -678,6 +682,7 @@ int mtd_add_partition(struct mtd_info *parent, const char *name,
+@@ -678,6 +682,7 @@ int mtd_add_partition(struct mtd_info *p
  	mutex_unlock(&mtd_partitions_mutex);
  
  	add_mtd_device(&new->mtd);
@@ -71,7 +67,7 @@ index dd86b430e46e..33d152d1876a 100644
  
  	mtd_add_partition_attrs(new);
  
-@@ -756,6 +761,35 @@ int mtd_del_partition(struct mtd_info *mtd, int partno)
+@@ -756,6 +761,35 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -107,7 +103,7 @@ index dd86b430e46e..33d152d1876a 100644
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -787,6 +821,7 @@ int add_mtd_partitions(struct mtd_info *master,
+@@ -787,6 +821,7 @@ int add_mtd_partitions(struct mtd_info *
  		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);
@@ -115,11 +111,9 @@ index dd86b430e46e..33d152d1876a 100644
  		mtd_add_partition_attrs(slave);
  		if (parts[i].types)
  			mtd_parse_part(slave, parts[i].types);
-diff --git a/include/linux/mtd/partitions.h b/include/linux/mtd/partitions.h
-index c4beb70dacbd..320a791290c5 100644
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
-@@ -109,5 +109,7 @@ int mtd_add_partition(struct mtd_info *master, const char *name,
+@@ -109,5 +109,7 @@ int mtd_add_partition(struct mtd_info *m
  		      long long offset, long long length);
  int mtd_del_partition(struct mtd_info *master, int partno);
  uint64_t mtd_get_device_size(const struct mtd_info *mtd);
@@ -127,6 +121,3 @@ index c4beb70dacbd..320a791290c5 100644
 +				       const char *name, int offset, int size);
  
  #endif
--- 
-2.11.0
-

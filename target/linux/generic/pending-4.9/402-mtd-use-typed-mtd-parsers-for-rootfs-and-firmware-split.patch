@@ -8,11 +8,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  include/linux/mtd/partitions.h |  2 ++
  2 files changed, 39 insertions(+)
 
-diff --git a/drivers/mtd/mtdpart.c b/drivers/mtd/mtdpart.c
-index f20207e32075..28f76315dfa0 100644
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -761,6 +761,36 @@ int mtd_del_partition(struct mtd_info *mtd, int partno)
+@@ -761,6 +761,36 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -57,7 +55,7 @@ index f20207e32075..28f76315dfa0 100644
  }
  
  void __weak arch_split_mtd_part(struct mtd_info *master, const char *name,
-@@ -783,6 +814,12 @@ static void mtd_partition_split(struct mtd_info *master, struct mtd_part *part)
+@@ -783,6 +814,12 @@ static void mtd_partition_split(struct m
  	if (rootfs_found)
  		return;
  
@@ -70,8 +68,6 @@ index f20207e32075..28f76315dfa0 100644
  	if (!strcmp(part->mtd.name, SPLIT_FIRMWARE_NAME) &&
  	    IS_ENABLED(CONFIG_MTD_SPLIT_FIRMWARE))
  		split_firmware(master, part);
-diff --git a/include/linux/mtd/partitions.h b/include/linux/mtd/partitions.h
-index baafd542432e..356e29815aa2 100644
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
 @@ -74,6 +74,8 @@ struct mtd_part_parser_data {
@@ -83,6 +79,3 @@ index baafd542432e..356e29815aa2 100644
  };
  
  struct mtd_part_parser {
--- 
-2.11.0
-

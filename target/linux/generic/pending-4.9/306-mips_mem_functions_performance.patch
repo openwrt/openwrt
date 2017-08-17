@@ -11,11 +11,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  4 files changed, 63 insertions(+), 2 deletions(-)
  create mode 100644 arch/mips/lib/memcmp.c
 
-diff --git a/arch/mips/boot/compressed/Makefile b/arch/mips/boot/compressed/Makefile
-index 90aca95fe314..3cd3b391ef49 100644
 --- a/arch/mips/boot/compressed/Makefile
 +++ b/arch/mips/boot/compressed/Makefile
-@@ -23,7 +23,8 @@ KBUILD_CFLAGS := $(shell echo $(KBUILD_CFLAGS) | sed -e "s/-pg//")
+@@ -23,7 +23,8 @@ KBUILD_CFLAGS := $(shell echo $(KBUILD_C
  KBUILD_CFLAGS := $(filter-out -fstack-protector, $(KBUILD_CFLAGS))
  
  KBUILD_CFLAGS := $(LINUXINCLUDE) $(KBUILD_CFLAGS) -D__KERNEL__ \
@@ -25,11 +23,9 @@ index 90aca95fe314..3cd3b391ef49 100644
  
  KBUILD_AFLAGS := $(LINUXINCLUDE) $(KBUILD_AFLAGS) -D__ASSEMBLY__ \
  	-DBOOT_HEAP_SIZE=$(BOOT_HEAP_SIZE) \
-diff --git a/arch/mips/include/asm/string.h b/arch/mips/include/asm/string.h
-index 29030cb398ee..7b737f9b6d58 100644
 --- a/arch/mips/include/asm/string.h
 +++ b/arch/mips/include/asm/string.h
-@@ -140,4 +140,42 @@ extern void *memcpy(void *__to, __const__ void *__from, size_t __n);
+@@ -140,4 +140,42 @@ extern void *memcpy(void *__to, __const_
  #define __HAVE_ARCH_MEMMOVE
  extern void *memmove(void *__dest, __const__ void *__src, size_t __n);
  
@@ -72,8 +68,6 @@ index 29030cb398ee..7b737f9b6d58 100644
 +#endif
 +
  #endif /* _ASM_STRING_H */
-diff --git a/arch/mips/lib/Makefile b/arch/mips/lib/Makefile
-index 0344e575f522..33a0211e954a 100644
 --- a/arch/mips/lib/Makefile
 +++ b/arch/mips/lib/Makefile
 @@ -4,7 +4,7 @@
@@ -85,9 +79,6 @@ index 0344e575f522..33a0211e954a 100644
  
  obj-y			+= iomap.o
  obj-$(CONFIG_PCI)	+= iomap-pci.o
-diff --git a/arch/mips/lib/memcmp.c b/arch/mips/lib/memcmp.c
-new file mode 100644
-index 000000000000..35ef1646286e
 --- /dev/null
 +++ b/arch/mips/lib/memcmp.c
 @@ -0,0 +1,22 @@
@@ -113,6 +104,3 @@ index 000000000000..35ef1646286e
 +}
 +EXPORT_SYMBOL(memcmp);
 +
--- 
-2.11.0
-

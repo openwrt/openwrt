@@ -8,8 +8,6 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  drivers/mtd/Makefile | 2 ++
  2 files changed, 4 insertions(+)
 
-diff --git a/drivers/mtd/Kconfig b/drivers/mtd/Kconfig
-index f5ac04e288eb..4185e04760dd 100644
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -27,6 +27,8 @@ config MTD_SPLIT_FIRMWARE_NAME
@@ -21,8 +19,6 @@ index f5ac04e288eb..4185e04760dd 100644
  endmenu
  
  config MTD_TESTS
-diff --git a/drivers/mtd/Makefile b/drivers/mtd/Makefile
-index 151d60df303a..48fd01e9f6e3 100644
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
 @@ -6,6 +6,8 @@
@@ -34,6 +30,3 @@ index 151d60df303a..48fd01e9f6e3 100644
  obj-$(CONFIG_MTD_OF_PARTS)	+= ofpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
  obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
--- 
-2.11.0
-

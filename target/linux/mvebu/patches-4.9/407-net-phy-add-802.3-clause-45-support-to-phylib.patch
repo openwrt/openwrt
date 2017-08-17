@@ -304,10 +304,10 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  int genphy_config_init(struct phy_device *phydev);
  int genphy_setup_forced(struct phy_device *phydev);
  int genphy_restart_aneg(struct phy_device *phydev);
-@@ -820,6 +822,16 @@ int genphy_read_status(struct phy_device
- int genphy_suspend(struct phy_device *phydev);
- int genphy_resume(struct phy_device *phydev);
- int genphy_soft_reset(struct phy_device *phydev);
+@@ -824,6 +826,16 @@ static inline int genphy_no_soft_reset(s
+ {
+ 	return 0;
+ }
 +
 +/* Clause 45 PHY */
 +int genphy_c45_restart_aneg(struct phy_device *phydev);

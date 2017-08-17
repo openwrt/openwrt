@@ -12,10 +12,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  drivers/net/ethernet/broadcom/bgmac.h      |  4 ++++
  3 files changed, 29 insertions(+)
 
-Index: linux-4.9.34/drivers/net/ethernet/broadcom/bgmac-bcma.c
-===================================================================
---- linux-4.9.34.orig/drivers/net/ethernet/broadcom/bgmac-bcma.c
-+++ linux-4.9.34/drivers/net/ethernet/broadcom/bgmac-bcma.c
+--- a/drivers/net/ethernet/broadcom/bgmac-bcma.c
++++ b/drivers/net/ethernet/broadcom/bgmac-bcma.c
 @@ -230,6 +230,7 @@ static int bgmac_probe(struct bcma_devic
  		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
  		bgmac->feature_flags |= BGMAC_FEAT_NO_RESET;
@@ -24,10 +22,8 @@ Index: linux-4.9.34/drivers/net/ethernet/broadcom/bgmac-bcma.c
  		break;
  	case BCMA_CHIP_ID_BCM53573:
  		bgmac->feature_flags |= BGMAC_FEAT_CLKCTLST;
-Index: linux-4.9.34/drivers/net/ethernet/broadcom/bgmac.c
-===================================================================
---- linux-4.9.34.orig/drivers/net/ethernet/broadcom/bgmac.c
-+++ linux-4.9.34/drivers/net/ethernet/broadcom/bgmac.c
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
 @@ -11,6 +11,7 @@
  
  #include <linux/bcma/bcma.h>
@@ -80,10 +76,8 @@ Index: linux-4.9.34/drivers/net/ethernet/broadcom/bgmac.c
  	unregister_netdev(bgmac->net_dev);
  	phy_disconnect(bgmac->net_dev->phydev);
  	netif_napi_del(&bgmac->napi);
-Index: linux-4.9.34/drivers/net/ethernet/broadcom/bgmac.h
-===================================================================
---- linux-4.9.34.orig/drivers/net/ethernet/broadcom/bgmac.h
-+++ linux-4.9.34/drivers/net/ethernet/broadcom/bgmac.h
+--- a/drivers/net/ethernet/broadcom/bgmac.h
++++ b/drivers/net/ethernet/broadcom/bgmac.h
 @@ -409,6 +409,7 @@
  #define BGMAC_FEAT_CC4_IF_SW_TYPE	BIT(17)
  #define BGMAC_FEAT_CC4_IF_SW_TYPE_RGMII	BIT(18)

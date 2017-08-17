@@ -36,8 +36,6 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  create mode 100644 lib/lzma/LzmaEnc.c
  create mode 100644 lib/lzma/Makefile
 
-diff --git a/fs/jffs2/Kconfig b/fs/jffs2/Kconfig
-index d8bb6c411e96..74bf4b162e36 100644
 --- a/fs/jffs2/Kconfig
 +++ b/fs/jffs2/Kconfig
 @@ -139,6 +139,15 @@ config JFFS2_LZO
@@ -56,11 +54,9 @@ index d8bb6c411e96..74bf4b162e36 100644
  config JFFS2_RTIME
  	bool "JFFS2 RTIME compression support" if JFFS2_COMPRESSION_OPTIONS
  	depends on JFFS2_FS
-diff --git a/fs/jffs2/Makefile b/fs/jffs2/Makefile
-index 60e5d49ca03e..23ba6efd1f3f 100644
 --- a/fs/jffs2/Makefile
 +++ b/fs/jffs2/Makefile
-@@ -18,4 +18,7 @@ jffs2-$(CONFIG_JFFS2_RUBIN)	+= compr_rubin.o
+@@ -18,4 +18,7 @@ jffs2-$(CONFIG_JFFS2_RUBIN)	+= compr_rub
  jffs2-$(CONFIG_JFFS2_RTIME)	+= compr_rtime.o
  jffs2-$(CONFIG_JFFS2_ZLIB)	+= compr_zlib.o
  jffs2-$(CONFIG_JFFS2_LZO)	+= compr_lzo.o
@@ -68,8 +64,6 @@ index 60e5d49ca03e..23ba6efd1f3f 100644
  jffs2-$(CONFIG_JFFS2_SUMMARY)   += summary.o
 +
 +CFLAGS_compr_lzma.o += -Iinclude/linux -Ilib/lzma
-diff --git a/fs/jffs2/compr.c b/fs/jffs2/compr.c
-index 4849a4c9a0e2..6ec806abb7b9 100644
 --- a/fs/jffs2/compr.c
 +++ b/fs/jffs2/compr.c
 @@ -378,6 +378,9 @@ int __init jffs2_compressors_init(void)
@@ -92,8 +86,6 @@ index 4849a4c9a0e2..6ec806abb7b9 100644
  #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_exit();
  #endif
-diff --git a/fs/jffs2/compr.h b/fs/jffs2/compr.h
-index 5e91d578f4ed..32db2e1ec610 100644
 --- a/fs/jffs2/compr.h
 +++ b/fs/jffs2/compr.h
 @@ -29,9 +29,9 @@
@@ -119,9 +111,6 @@ index 5e91d578f4ed..32db2e1ec610 100644
 +#endif
  
  #endif /* __JFFS2_COMPR_H__ */
-diff --git a/fs/jffs2/compr_lzma.c b/fs/jffs2/compr_lzma.c
-new file mode 100644
-index 000000000000..0fe3b75d7dcc
 --- /dev/null
 +++ b/fs/jffs2/compr_lzma.c
 @@ -0,0 +1,128 @@
@@ -253,8 +242,6 @@ index 000000000000..0fe3b75d7dcc
 +	jffs2_unregister_compressor(&jffs2_lzma_comp);
 +	lzma_free_workspace();
 +}
-diff --git a/fs/jffs2/super.c b/fs/jffs2/super.c
-index 5ef21f4c4c77..62e730216e7d 100644
 --- a/fs/jffs2/super.c
 +++ b/fs/jffs2/super.c
 @@ -372,14 +372,41 @@ static int __init init_jffs2_fs(void)
@@ -302,9 +289,6 @@ index 5ef21f4c4c77..62e730216e7d 100644
  
  	jffs2_inode_cachep = kmem_cache_create("jffs2_i",
  					     sizeof(struct jffs2_inode_info),
-diff --git a/include/linux/lzma.h b/include/linux/lzma.h
-new file mode 100644
-index 000000000000..5f31334dfc31
 --- /dev/null
 +++ b/include/linux/lzma.h
 @@ -0,0 +1,62 @@
@@ -370,9 +354,6 @@ index 000000000000..5f31334dfc31
 +static ISzAlloc lzma_alloc = {p_lzma_malloc, p_lzma_free};
 +
 +#endif
-diff --git a/include/linux/lzma/LzFind.h b/include/linux/lzma/LzFind.h
-new file mode 100644
-index 000000000000..010c4b92ba33
 --- /dev/null
 +++ b/include/linux/lzma/LzFind.h
 @@ -0,0 +1,115 @@
@@ -491,9 +472,6 @@ index 000000000000..010c4b92ba33
 +#endif
 +
 +#endif
-diff --git a/include/linux/lzma/LzHash.h b/include/linux/lzma/LzHash.h
-new file mode 100644
-index 000000000000..f3e89966cc70
 --- /dev/null
 +++ b/include/linux/lzma/LzHash.h
 @@ -0,0 +1,54 @@
@@ -551,9 +529,6 @@ index 000000000000..f3e89966cc70
 +  hash4Value = (temp ^ ((UInt32)cur[2] << 8) ^ (p->crc[cur[3]] << 5)) & (kHash4Size - 1); }
 +
 +#endif
-diff --git a/include/linux/lzma/LzmaDec.h b/include/linux/lzma/LzmaDec.h
-new file mode 100644
-index 000000000000..bf7f084ba3dd
 --- /dev/null
 +++ b/include/linux/lzma/LzmaDec.h
 @@ -0,0 +1,231 @@
@@ -788,9 +763,6 @@ index 000000000000..bf7f084ba3dd
 +#endif
 +
 +#endif
-diff --git a/include/linux/lzma/LzmaEnc.h b/include/linux/lzma/LzmaEnc.h
-new file mode 100644
-index 000000000000..200d60eb83cd
 --- /dev/null
 +++ b/include/linux/lzma/LzmaEnc.h
 @@ -0,0 +1,80 @@
@@ -874,9 +846,6 @@ index 000000000000..200d60eb83cd
 +#endif
 +
 +#endif
-diff --git a/include/linux/lzma/Types.h b/include/linux/lzma/Types.h
-new file mode 100644
-index 000000000000..4751acde0722
 --- /dev/null
 +++ b/include/linux/lzma/Types.h
 @@ -0,0 +1,226 @@
@@ -1106,8 +1075,6 @@ index 000000000000..4751acde0722
 +EXTERN_C_END
 +
 +#endif
-diff --git a/include/uapi/linux/jffs2.h b/include/uapi/linux/jffs2.h
-index a18b719f49d4..f3431a5ff4ff 100644
 --- a/include/uapi/linux/jffs2.h
 +++ b/include/uapi/linux/jffs2.h
 @@ -46,6 +46,7 @@
@@ -1118,8 +1085,6 @@ index a18b719f49d4..f3431a5ff4ff 100644
  /* Compatibility flags. */
  #define JFFS2_COMPAT_MASK 0xc000      /* What do to if an unknown nodetype is found */
  #define JFFS2_NODE_ACCURATE 0x2000
-diff --git a/lib/Kconfig b/lib/Kconfig
-index 260a80e313b9..2e20b2b1ba02 100644
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
 @@ -241,6 +241,12 @@ config LZ4_DECOMPRESS
@@ -1135,8 +1100,6 @@ index 260a80e313b9..2e20b2b1ba02 100644
  #
  # These all provide a common interface (hence the apparent duplication with
  # ZLIB_INFLATE; DECOMPRESS_GZIP is just a wrapper.)
-diff --git a/lib/Makefile b/lib/Makefile
-index 50144a3aeebd..603630df298d 100644
 --- a/lib/Makefile
 +++ b/lib/Makefile
 @@ -2,6 +2,16 @@
@@ -1165,9 +1128,6 @@ index 50144a3aeebd..603630df298d 100644
  
  lib-$(CONFIG_DECOMPRESS_GZIP) += decompress_inflate.o
  lib-$(CONFIG_DECOMPRESS_BZIP2) += decompress_bunzip2.o
-diff --git a/lib/lzma/LzFind.c b/lib/lzma/LzFind.c
-new file mode 100644
-index 000000000000..e3ecb05420eb
 --- /dev/null
 +++ b/lib/lzma/LzFind.c
 @@ -0,0 +1,761 @@
@@ -1932,9 +1892,6 @@ index 000000000000..e3ecb05420eb
 +    vTable->Skip = (Mf_Skip_Func)Bt4_MatchFinder_Skip;
 +  }
 +}
-diff --git a/lib/lzma/LzmaDec.c b/lib/lzma/LzmaDec.c
-new file mode 100644
-index 000000000000..2036761bf146
 --- /dev/null
 +++ b/lib/lzma/LzmaDec.c
 @@ -0,0 +1,999 @@
@@ -2937,9 +2894,6 @@ index 000000000000..2036761bf146
 +  LzmaDec_FreeProbs(&p, alloc);
 +  return res;
 +}
-diff --git a/lib/lzma/LzmaEnc.c b/lib/lzma/LzmaEnc.c
-new file mode 100644
-index 000000000000..6dadf00dfab2
 --- /dev/null
 +++ b/lib/lzma/LzmaEnc.c
 @@ -0,0 +1,2271 @@
@@ -5214,9 +5168,6 @@ index 000000000000..6dadf00dfab2
 +  LzmaEnc_Destroy(p, alloc, allocBig);
 +  return res;
 +}
-diff --git a/lib/lzma/Makefile b/lib/lzma/Makefile
-new file mode 100644
-index 000000000000..02e799c99381
 --- /dev/null
 +++ b/lib/lzma/Makefile
 @@ -0,0 +1,7 @@
@@ -5227,6 +5178,3 @@ index 000000000000..02e799c99381
 +obj-$(CONFIG_LZMA_DECOMPRESS) += lzma_decompress.o
 +
 +EXTRA_CFLAGS += -Iinclude/linux -Iinclude/linux/lzma -include types.h
--- 
-2.11.0
-

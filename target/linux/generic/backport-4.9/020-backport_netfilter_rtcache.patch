@@ -35,8 +35,6 @@ Signed-off-by: Florian Westphal <fw@strlen.de>
  create mode 100644 include/net/netfilter/nf_conntrack_rtcache.h
  create mode 100644 net/netfilter/nf_conntrack_rtcache.c
 
-diff --git a/include/net/netfilter/nf_conntrack_extend.h b/include/net/netfilter/nf_conntrack_extend.h
-index 1c3035dda31f..0988c7dfa604 100644
 --- a/include/net/netfilter/nf_conntrack_extend.h
 +++ b/include/net/netfilter/nf_conntrack_extend.h
 @@ -27,6 +27,9 @@ enum nf_ct_ext_id {
@@ -57,9 +55,6 @@ index 1c3035dda31f..0988c7dfa604 100644
  
  /* Extensions: optional stuff which isn't permanently in struct. */
  struct nf_ct_ext {
-diff --git a/include/net/netfilter/nf_conntrack_rtcache.h b/include/net/netfilter/nf_conntrack_rtcache.h
-new file mode 100644
-index 000000000000..e2fb30243354
 --- /dev/null
 +++ b/include/net/netfilter/nf_conntrack_rtcache.h
 @@ -0,0 +1,34 @@
@@ -97,8 +92,6 @@ index 000000000000..e2fb30243354
 +{
 +	return rtc->cached_dst[dir].iif;
 +}
-diff --git a/net/netfilter/Kconfig b/net/netfilter/Kconfig
-index e8d56d9a4df2..82af5ba64088 100644
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
 @@ -114,6 +114,18 @@ config NF_CONNTRACK_EVENTS
@@ -120,11 +113,9 @@ index e8d56d9a4df2..82af5ba64088 100644
  config NF_CONNTRACK_TIMEOUT
  	bool  'Connection tracking timeout'
  	depends on NETFILTER_ADVANCED
-diff --git a/net/netfilter/Makefile b/net/netfilter/Makefile
-index c23c3c84416f..8adef51367f9 100644
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -16,6 +16,9 @@ obj-$(CONFIG_NETFILTER_NETLINK_LOG) += nfnetlink_log.o
+@@ -16,6 +16,9 @@ obj-$(CONFIG_NETFILTER_NETLINK_LOG) += n
  # connection tracking
  obj-$(CONFIG_NF_CONNTRACK) += nf_conntrack.o
  
@@ -134,9 +125,6 @@ index c23c3c84416f..8adef51367f9 100644
  # SCTP protocol connection tracking
  obj-$(CONFIG_NF_CT_PROTO_DCCP) += nf_conntrack_proto_dccp.o
  obj-$(CONFIG_NF_CT_PROTO_GRE) += nf_conntrack_proto_gre.o
-diff --git a/net/netfilter/nf_conntrack_rtcache.c b/net/netfilter/nf_conntrack_rtcache.c
-new file mode 100644
-index 000000000000..fb073d01960d
 --- /dev/null
 +++ b/net/netfilter/nf_conntrack_rtcache.c
 @@ -0,0 +1,413 @@
@@ -553,6 +541,3 @@ index 000000000000..fb073d01960d
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Florian Westphal <fw@strlen.de>");
 +MODULE_DESCRIPTION("Conntrack route cache extension");
--- 
-2.11.0
-

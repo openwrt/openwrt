@@ -14,8 +14,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
  sound/core/Kconfig    |  4 ++--
  7 files changed, 25 insertions(+), 20 deletions(-)
 
-diff --git a/crypto/Kconfig b/crypto/Kconfig
-index 84d71482bf08..e3552d1c1b84 100644
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
 @@ -32,7 +32,7 @@ config CRYPTO_FIPS
@@ -63,8 +61,6 @@ index 84d71482bf08..e3552d1c1b84 100644
  	select CRYPTO_RNG2
  	select CRYPTO_ALGAPI
  
-diff --git a/drivers/bcma/Kconfig b/drivers/bcma/Kconfig
-index b5c48a8d485f..6cb52081b9ef 100644
 --- a/drivers/bcma/Kconfig
 +++ b/drivers/bcma/Kconfig
 @@ -17,6 +17,7 @@ config BCMA
@@ -75,8 +71,6 @@ index b5c48a8d485f..6cb52081b9ef 100644
  
  config BCMA_HOST_PCI_POSSIBLE
  	bool
-diff --git a/drivers/ssb/Kconfig b/drivers/ssb/Kconfig
-index d8e4219c2324..a20c168cb7c2 100644
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
 @@ -29,6 +29,7 @@ config SSB_SPROM
@@ -96,11 +90,9 @@ index d8e4219c2324..a20c168cb7c2 100644
  
  config SSB_PCMCIAHOST_POSSIBLE
  	bool
-diff --git a/lib/Kconfig b/lib/Kconfig
-index 260a80e313b9..d1b788fff727 100644
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -334,16 +334,16 @@ config BCH_CONST_T
+@@ -340,16 +340,16 @@ config BCH_CONST_T
  # Textsearch support is select'ed if needed
  #
  config TEXTSEARCH
@@ -121,8 +113,6 @@ index 260a80e313b9..d1b788fff727 100644
  
  config BTREE
  	bool
-diff --git a/net/netfilter/Kconfig b/net/netfilter/Kconfig
-index e8d56d9a4df2..0fb924661988 100644
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
 @@ -10,7 +10,7 @@ config NETFILTER_INGRESS
@@ -134,8 +124,6 @@ index e8d56d9a4df2..0fb924661988 100644
  
  config NETFILTER_NETLINK_ACCT
  tristate "Netfilter NFACCT over NFNETLINK interface"
-diff --git a/net/wireless/Kconfig b/net/wireless/Kconfig
-index 6c606120abfe..bd299de9440c 100644
 --- a/net/wireless/Kconfig
 +++ b/net/wireless/Kconfig
 @@ -1,5 +1,5 @@
@@ -187,8 +175,6 @@ index 6c606120abfe..bd299de9440c 100644
  
  config LIB80211_DEBUG
  	bool "lib80211 debugging messages"
-diff --git a/sound/core/Kconfig b/sound/core/Kconfig
-index 9749f9e8b45c..9639a67e7e9b 100644
 --- a/sound/core/Kconfig
 +++ b/sound/core/Kconfig
 @@ -16,13 +16,13 @@ config SND_DMAENGINE_PCM
@@ -207,6 +193,3 @@ index 9749f9e8b45c..9639a67e7e9b 100644
  
  config SND_JACK
  	bool
--- 
-2.11.0
-

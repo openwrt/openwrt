@@ -9,11 +9,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  include/linux/mtd/partitions.h |  2 ++
  3 files changed, 49 insertions(+)
 
-diff --git a/drivers/mtd/mtdpart.c b/drivers/mtd/mtdpart.c
-index 28f76315dfa0..fce83882fd4e 100644
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -791,6 +791,17 @@ run_parsers_by_type(struct mtd_part *slave, enum mtd_parser_type type)
+@@ -791,6 +791,17 @@ run_parsers_by_type(struct mtd_part *sla
  	return nr_parts;
  }
  
@@ -31,7 +29,7 @@ index 28f76315dfa0..fce83882fd4e 100644
  #ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #else
-@@ -1146,6 +1157,24 @@ int mtd_is_partition(const struct mtd_info *mtd)
+@@ -1146,6 +1157,24 @@ int mtd_is_partition(const struct mtd_in
  }
  EXPORT_SYMBOL_GPL(mtd_is_partition);
  
@@ -56,11 +54,9 @@ index 28f76315dfa0..fce83882fd4e 100644
  /* Returns the size of the entire flash chip */
  uint64_t mtd_get_device_size(const struct mtd_info *mtd)
  {
-diff --git a/include/linux/mtd/mtd.h b/include/linux/mtd/mtd.h
-index 5bb42c6dacdc..e7d5091bb447 100644
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -485,6 +485,24 @@ static inline uint32_t mtd_mod_by_eb(uint64_t sz, struct mtd_info *mtd)
+@@ -485,6 +485,24 @@ static inline uint32_t mtd_mod_by_eb(uin
  	return do_div(sz, mtd->erasesize);
  }
  
@@ -85,11 +81,9 @@ index 5bb42c6dacdc..e7d5091bb447 100644
  static inline uint32_t mtd_div_by_ws(uint64_t sz, struct mtd_info *mtd)
  {
  	if (mtd->writesize_shift)
-diff --git a/include/linux/mtd/partitions.h b/include/linux/mtd/partitions.h
-index 356e29815aa2..c0937ff4797b 100644
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
-@@ -114,6 +114,8 @@ int mtd_is_partition(const struct mtd_info *mtd);
+@@ -114,6 +114,8 @@ int mtd_is_partition(const struct mtd_in
  int mtd_add_partition(struct mtd_info *master, const char *name,
  		      long long offset, long long length);
  int mtd_del_partition(struct mtd_info *master, int partno);
@@ -98,6 +92,3 @@ index 356e29815aa2..c0937ff4797b 100644
  uint64_t mtd_get_device_size(const struct mtd_info *mtd);
  extern void __weak arch_split_mtd_part(struct mtd_info *master,
  				       const char *name, int offset, int size);
--- 
-2.11.0
-

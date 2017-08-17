@@ -14,8 +14,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  lib/lzma/LzmaEnc.c           | 172 ++------------------------
  6 files changed, 42 insertions(+), 641 deletions(-)
 
-diff --git a/include/linux/lzma/LzFind.h b/include/linux/lzma/LzFind.h
-index 010c4b92ba33..6d4f8e239028 100644
 --- a/include/linux/lzma/LzFind.h
 +++ b/include/linux/lzma/LzFind.h
 @@ -55,11 +55,6 @@ typedef struct _CMatchFinder
@@ -30,7 +28,7 @@ index 010c4b92ba33..6d4f8e239028 100644
  void MatchFinder_Construct(CMatchFinder *p);
  
  /* Conditions:
-@@ -70,12 +65,6 @@ int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
+@@ -70,12 +65,6 @@ int MatchFinder_Create(CMatchFinder *p,
      UInt32 keepAddBufferBefore, UInt32 matchMaxLen, UInt32 keepAddBufferAfter,
      ISzAlloc *alloc);
  void MatchFinder_Free(CMatchFinder *p, ISzAlloc *alloc);
@@ -56,8 +54,6 @@ index 010c4b92ba33..6d4f8e239028 100644
  #ifdef __cplusplus
  }
  #endif
-diff --git a/include/linux/lzma/LzmaDec.h b/include/linux/lzma/LzmaDec.h
-index bf7f084ba3dd..c90f95e9fbaf 100644
 --- a/include/linux/lzma/LzmaDec.h
 +++ b/include/linux/lzma/LzmaDec.h
 @@ -31,14 +31,6 @@ typedef struct _CLzmaProps
@@ -182,8 +178,6 @@ index bf7f084ba3dd..c90f95e9fbaf 100644
  /* ---------- One Call Interface ---------- */
  
  /* LzmaDecode
-diff --git a/include/linux/lzma/LzmaEnc.h b/include/linux/lzma/LzmaEnc.h
-index 200d60eb83cd..2986c0460be4 100644
 --- a/include/linux/lzma/LzmaEnc.h
 +++ b/include/linux/lzma/LzmaEnc.h
 @@ -31,9 +31,6 @@ typedef struct _CLzmaEncProps
@@ -196,7 +190,7 @@ index 200d60eb83cd..2986c0460be4 100644
  
  /* ---------- CLzmaEncHandle Interface ---------- */
  
-@@ -53,26 +50,9 @@ CLzmaEncHandle LzmaEnc_Create(ISzAlloc *alloc);
+@@ -53,26 +50,9 @@ CLzmaEncHandle LzmaEnc_Create(ISzAlloc *
  void LzmaEnc_Destroy(CLzmaEncHandle p, ISzAlloc *alloc, ISzAlloc *allocBig);
  SRes LzmaEnc_SetProps(CLzmaEncHandle p, const CLzmaEncProps *props);
  SRes LzmaEnc_WriteProperties(CLzmaEncHandle p, Byte *properties, SizeT *size);
@@ -223,8 +217,6 @@ index 200d60eb83cd..2986c0460be4 100644
  #ifdef __cplusplus
  }
  #endif
-diff --git a/lib/lzma/LzFind.c b/lib/lzma/LzFind.c
-index e3ecb05420eb..86251ccedfda 100644
 --- a/lib/lzma/LzFind.c
 +++ b/lib/lzma/LzFind.c
 @@ -14,9 +14,15 @@
@@ -244,7 +236,7 @@ index e3ecb05420eb..86251ccedfda 100644
    {
      alloc->Free(alloc, p->bufferBase);
      p->bufferBase = 0;
-@@ -28,7 +34,7 @@ static void LzInWindow_Free(CMatchFinder *p, ISzAlloc *alloc)
+@@ -28,7 +34,7 @@ static void LzInWindow_Free(CMatchFinder
  static int LzInWindow_Create(CMatchFinder *p, UInt32 keepSizeReserv, ISzAlloc *alloc)
  {
    UInt32 blockSize = p->keepSizeBefore + p->keepSizeAfter + keepSizeReserv;
@@ -253,7 +245,7 @@ index e3ecb05420eb..86251ccedfda 100644
    {
      p->blockSize = blockSize;
      return 1;
-@@ -42,12 +48,12 @@ static int LzInWindow_Create(CMatchFinder *p, UInt32 keepSizeReserv, ISzAlloc *a
+@@ -42,12 +48,12 @@ static int LzInWindow_Create(CMatchFinde
    return (p->bufferBase != 0);
  }
  
@@ -270,7 +262,7 @@ index e3ecb05420eb..86251ccedfda 100644
  {
    p->posLimit -= subValue;
    p->pos -= subValue;
-@@ -58,7 +64,7 @@ static void MatchFinder_ReadBlock(CMatchFinder *p)
+@@ -58,7 +64,7 @@ static void MatchFinder_ReadBlock(CMatch
  {
    if (p->streamEndWasReached || p->result != SZ_OK)
      return;
@@ -279,7 +271,7 @@ index e3ecb05420eb..86251ccedfda 100644
    {
      UInt32 curSize = 0xFFFFFFFF - p->streamPos;
      if (curSize > p->directInputRem)
-@@ -89,7 +95,7 @@ static void MatchFinder_ReadBlock(CMatchFinder *p)
+@@ -89,7 +95,7 @@ static void MatchFinder_ReadBlock(CMatch
    }
  }
  
@@ -288,7 +280,7 @@ index e3ecb05420eb..86251ccedfda 100644
  {
    memmove(p->bufferBase,
      p->buffer - p->keepSizeBefore,
-@@ -97,22 +103,14 @@ void MatchFinder_MoveBlock(CMatchFinder *p)
+@@ -97,22 +103,14 @@ void MatchFinder_MoveBlock(CMatchFinder
    p->buffer = p->bufferBase + p->keepSizeBefore;
  }
  
@@ -313,7 +305,7 @@ index e3ecb05420eb..86251ccedfda 100644
  static void MatchFinder_CheckAndMoveAndRead(CMatchFinder *p)
  {
    if (MatchFinder_NeedMove(p))
-@@ -268,7 +266,7 @@ static void MatchFinder_SetLimits(CMatchFinder *p)
+@@ -268,7 +266,7 @@ static void MatchFinder_SetLimits(CMatch
    p->posLimit = p->pos + limit;
  }
  
@@ -322,7 +314,7 @@ index e3ecb05420eb..86251ccedfda 100644
  {
    UInt32 i;
    for (i = 0; i < p->hashSizeSum; i++)
-@@ -287,7 +285,7 @@ static UInt32 MatchFinder_GetSubValue(CMatchFinder *p)
+@@ -287,7 +285,7 @@ static UInt32 MatchFinder_GetSubValue(CM
    return (p->pos - p->historySize - 1) & kNormalizeMask;
  }
  
@@ -331,7 +323,7 @@ index e3ecb05420eb..86251ccedfda 100644
  {
    UInt32 i;
    for (i = 0; i < numItems; i++)
-@@ -319,38 +317,7 @@ static void MatchFinder_CheckLimits(CMatchFinder *p)
+@@ -319,38 +317,7 @@ static void MatchFinder_CheckLimits(CMat
    MatchFinder_SetLimits(p);
  }
  
@@ -371,7 +363,7 @@ index e3ecb05420eb..86251ccedfda 100644
      UInt32 _cyclicBufferPos, UInt32 _cyclicBufferSize, UInt32 cutValue,
      UInt32 *distances, UInt32 maxLen)
  {
-@@ -460,10 +427,10 @@ static void SkipMatchesSpec(UInt32 lenLimit, UInt32 curMatch, UInt32 pos, const
+@@ -460,10 +427,10 @@ static void SkipMatchesSpec(UInt32 lenLi
    p->buffer++; \
    if (++p->pos == p->posLimit) MatchFinder_CheckLimits(p);
  
@@ -384,7 +376,7 @@ index e3ecb05420eb..86251ccedfda 100644
  #define GET_MATCHES_HEADER2(minLen, ret_op) \
    UInt32 lenLimit; UInt32 hashValue; const Byte *cur; UInt32 curMatch; \
    lenLimit = p->lenLimit; { if (lenLimit < minLen) { MatchFinder_MovePos(p); ret_op; }} \
-@@ -479,62 +446,7 @@ static void MatchFinder_MovePos(CMatchFinder *p) { MOVE_POS; }
+@@ -479,62 +446,7 @@ static void MatchFinder_MovePos(CMatchFi
    distances + offset, maxLen) - distances); MOVE_POS_RET;
  
  #define SKIP_FOOTER \
@@ -448,7 +440,7 @@ index e3ecb05420eb..86251ccedfda 100644
  
  static UInt32 Bt4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
  {
-@@ -583,108 +495,6 @@ static UInt32 Bt4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
+@@ -583,108 +495,6 @@ static UInt32 Bt4_MatchFinder_GetMatches
    GET_MATCHES_FOOTER(offset, maxLen)
  }
  
@@ -557,7 +549,7 @@ index e3ecb05420eb..86251ccedfda 100644
  static void Bt4_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
  {
    do
-@@ -701,61 +511,12 @@ static void Bt4_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
+@@ -701,61 +511,12 @@ static void Bt4_MatchFinder_Skip(CMatchF
    while (--num != 0);
  }
  
@@ -621,11 +613,9 @@ index e3ecb05420eb..86251ccedfda 100644
 +  vTable->GetMatches = (Mf_GetMatches_Func)Bt4_MatchFinder_GetMatches;
 +  vTable->Skip = (Mf_Skip_Func)Bt4_MatchFinder_Skip;
  }
-diff --git a/lib/lzma/LzmaDec.c b/lib/lzma/LzmaDec.c
-index 2036761bf146..7666e3f82067 100644
 --- a/lib/lzma/LzmaDec.c
 +++ b/lib/lzma/LzmaDec.c
-@@ -682,7 +682,7 @@ static void LzmaDec_InitRc(CLzmaDec *p, const Byte *data)
+@@ -682,7 +682,7 @@ static void LzmaDec_InitRc(CLzmaDec *p,
    p->needFlush = 0;
  }
  
@@ -634,7 +624,7 @@ index 2036761bf146..7666e3f82067 100644
  {
    p->needFlush = 1;
    p->remainLen = 0;
-@@ -698,7 +698,7 @@ void LzmaDec_InitDicAndState(CLzmaDec *p, Bool initDic, Bool initState)
+@@ -698,7 +698,7 @@ void LzmaDec_InitDicAndState(CLzmaDec *p
      p->needInitState = 1;
  }
  
@@ -643,7 +633,7 @@ index 2036761bf146..7666e3f82067 100644
  {
    p->dicPos = 0;
    LzmaDec_InitDicAndState(p, True, True);
-@@ -716,7 +716,7 @@ static void LzmaDec_InitStateReal(CLzmaDec *p)
+@@ -716,7 +716,7 @@ static void LzmaDec_InitStateReal(CLzmaD
    p->needInitState = 0;
  }
  
@@ -652,7 +642,7 @@ index 2036761bf146..7666e3f82067 100644
      ELzmaFinishMode finishMode, ELzmaStatus *status)
  {
    SizeT inSize = *srcLen;
-@@ -837,65 +837,13 @@ SRes LzmaDec_DecodeToDic(CLzmaDec *p, SizeT dicLimit, const Byte *src, SizeT *sr
+@@ -837,65 +837,13 @@ SRes LzmaDec_DecodeToDic(CLzmaDec *p, Si
    return (p->code == 0) ? SZ_OK : SZ_ERROR_DATA;
  }
  
@@ -720,26 +710,26 @@ index 2036761bf146..7666e3f82067 100644
  {
    UInt32 dicSize;
    Byte d;
-@@ -935,33 +883,11 @@ static SRes LzmaDec_AllocateProbs2(CLzmaDec *p, const CLzmaProps *propNew, ISzAl
+@@ -935,7 +883,7 @@ static SRes LzmaDec_AllocateProbs2(CLzma
    return SZ_OK;
  }
  
 -SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
--{
--  CLzmaProps propNew;
--  RINOK(LzmaProps_Decode(&propNew, props, propsSize));
--  RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
--  p->prop = propNew;
--  return SZ_OK;
--}
--
--SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
 +static SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
  {
    CLzmaProps propNew;
--  SizeT dicBufSize;
    RINOK(LzmaProps_Decode(&propNew, props, propsSize));
-   RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
+@@ -943,28 +891,6 @@ SRes LzmaDec_AllocateProbs(CLzmaDec *p,
+   p->prop = propNew;
+   return SZ_OK;
+ }
+-
+-SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
+-{
+-  CLzmaProps propNew;
+-  SizeT dicBufSize;
+-  RINOK(LzmaProps_Decode(&propNew, props, propsSize));
+-  RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
 -  dicBufSize = propNew.dicSize;
 -  if (p->dic == 0 || dicBufSize != p->dicBufSize)
 -  {
@@ -752,11 +742,12 @@ index 2036761bf146..7666e3f82067 100644
 -    }
 -  }
 -  p->dicBufSize = dicBufSize;
-   p->prop = propNew;
-   return SZ_OK;
- }
-diff --git a/lib/lzma/LzmaEnc.c b/lib/lzma/LzmaEnc.c
-index 6dadf00dfab2..943965647bad 100644
+-  p->prop = propNew;
+-  return SZ_OK;
+-}
+ 
+ SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
+     const Byte *propData, unsigned propSize, ELzmaFinishMode finishMode,
 --- a/lib/lzma/LzmaEnc.c
 +++ b/lib/lzma/LzmaEnc.c
 @@ -53,7 +53,7 @@ void LzmaEncProps_Init(CLzmaEncProps *p)
@@ -768,7 +759,7 @@ index 6dadf00dfab2..943965647bad 100644
  {
    int level = p->level;
    if (level < 0) level = 5;
-@@ -76,7 +76,7 @@ void LzmaEncProps_Normalize(CLzmaEncProps *p)
+@@ -76,7 +76,7 @@ void LzmaEncProps_Normalize(CLzmaEncProp
        #endif
  }
  
@@ -777,7 +768,7 @@ index 6dadf00dfab2..943965647bad 100644
  {
    CLzmaEncProps props = *props2;
    LzmaEncProps_Normalize(&props);
-@@ -93,7 +93,7 @@ UInt32 LzmaEncProps_GetDictSize(const CLzmaEncProps *props2)
+@@ -93,7 +93,7 @@ UInt32 LzmaEncProps_GetDictSize(const CL
  
  #define BSR2_RET(pos, res) { unsigned long i; _BitScanReverse(&i, (pos)); res = (i + i) + ((pos >> (i - 1)) & 1); }
  
@@ -854,7 +845,7 @@ index 6dadf00dfab2..943965647bad 100644
  SRes LzmaEnc_SetProps(CLzmaEncHandle pp, const CLzmaEncProps *props2)
  {
    CLzmaEnc *p = (CLzmaEnc *)pp;
-@@ -600,7 +548,7 @@ static void LitEnc_EncodeMatched(CRangeEnc *p, CLzmaProb *probs, UInt32 symbol,
+@@ -600,7 +548,7 @@ static void LitEnc_EncodeMatched(CRangeE
    while (symbol < 0x10000);
  }
  
@@ -863,7 +854,7 @@ index 6dadf00dfab2..943965647bad 100644
  {
    UInt32 i;
    for (i = (1 << kNumMoveReducingBits) / 2; i < kBitModelTotal; i += (1 << kNumMoveReducingBits))
-@@ -1676,7 +1624,7 @@ static void FillDistancesPrices(CLzmaEnc *p)
+@@ -1676,7 +1624,7 @@ static void FillDistancesPrices(CLzmaEnc
    p->matchPriceCount = 0;
  }
  
@@ -872,7 +863,7 @@ index 6dadf00dfab2..943965647bad 100644
  {
    RangeEnc_Construct(&p->rc);
    MatchFinder_Construct(&p->matchFinderBase);
-@@ -1709,7 +1657,7 @@ CLzmaEncHandle LzmaEnc_Create(ISzAlloc *alloc)
+@@ -1709,7 +1657,7 @@ CLzmaEncHandle LzmaEnc_Create(ISzAlloc *
    return p;
  }
  
@@ -881,7 +872,7 @@ index 6dadf00dfab2..943965647bad 100644
  {
    alloc->Free(alloc, p->litProbs);
    alloc->Free(alloc, p->saveState.litProbs);
-@@ -1717,7 +1665,7 @@ void LzmaEnc_FreeLits(CLzmaEnc *p, ISzAlloc *alloc)
+@@ -1717,7 +1665,7 @@ void LzmaEnc_FreeLits(CLzmaEnc *p, ISzAl
    p->saveState.litProbs = 0;
  }
  
@@ -890,7 +881,7 @@ index 6dadf00dfab2..943965647bad 100644
  {
    #ifndef _7ZIP_ST
    MatchFinderMt_Destruct(&p->matchFinderMt, allocBig);
-@@ -1947,7 +1895,7 @@ static SRes LzmaEnc_Alloc(CLzmaEnc *p, UInt32 keepWindowSize, ISzAlloc *alloc, I
+@@ -1947,7 +1895,7 @@ static SRes LzmaEnc_Alloc(CLzmaEnc *p, U
    return SZ_OK;
  }
  
@@ -908,7 +899,7 @@ index 6dadf00dfab2..943965647bad 100644
  {
    if (!p->fastMode)
    {
-@@ -2037,26 +1985,6 @@ static SRes LzmaEnc_AllocAndInit(CLzmaEnc *p, UInt32 keepWindowSize, ISzAlloc *a
+@@ -2037,26 +1985,6 @@ static SRes LzmaEnc_AllocAndInit(CLzmaEn
    return SZ_OK;
  }
  
@@ -935,7 +926,7 @@ index 6dadf00dfab2..943965647bad 100644
  static void LzmaEnc_SetInputBuf(CLzmaEnc *p, const Byte *src, SizeT srcLen)
  {
    p->matchFinderBase.directInput = 1;
-@@ -2064,7 +1992,7 @@ static void LzmaEnc_SetInputBuf(CLzmaEnc *p, const Byte *src, SizeT srcLen)
+@@ -2064,7 +1992,7 @@ static void LzmaEnc_SetInputBuf(CLzmaEnc
    p->matchFinderBase.directInputRem = srcLen;
  }
  
@@ -944,7 +935,7 @@ index 6dadf00dfab2..943965647bad 100644
      UInt32 keepWindowSize, ISzAlloc *alloc, ISzAlloc *allocBig)
  {
    CLzmaEnc *p = (CLzmaEnc *)pp;
-@@ -2074,7 +2002,7 @@ SRes LzmaEnc_MemPrepare(CLzmaEncHandle pp, const Byte *src, SizeT srcLen,
+@@ -2074,7 +2002,7 @@ SRes LzmaEnc_MemPrepare(CLzmaEncHandle p
    return LzmaEnc_AllocAndInit(p, keepWindowSize, alloc, allocBig);
  }
  
@@ -953,7 +944,7 @@ index 6dadf00dfab2..943965647bad 100644
  {
    #ifndef _7ZIP_ST
    CLzmaEnc *p = (CLzmaEnc *)pp;
-@@ -2107,53 +2035,6 @@ static size_t MyWrite(void *pp, const void *data, size_t size)
+@@ -2107,53 +2035,6 @@ static size_t MyWrite(void *pp, const vo
    return size;
  }
  
@@ -1007,7 +998,7 @@ index 6dadf00dfab2..943965647bad 100644
  static SRes LzmaEnc_Encode2(CLzmaEnc *p, ICompressProgress *progress)
  {
    SRes res = SZ_OK;
-@@ -2184,13 +2065,6 @@ static SRes LzmaEnc_Encode2(CLzmaEnc *p, ICompressProgress *progress)
+@@ -2184,13 +2065,6 @@ static SRes LzmaEnc_Encode2(CLzmaEnc *p,
    return res;
  }
  
@@ -1021,7 +1012,7 @@ index 6dadf00dfab2..943965647bad 100644
  SRes LzmaEnc_WriteProperties(CLzmaEncHandle pp, Byte *props, SizeT *size)
  {
    CLzmaEnc *p = (CLzmaEnc *)pp;
-@@ -2247,25 +2121,3 @@ SRes LzmaEnc_MemEncode(CLzmaEncHandle pp, Byte *dest, SizeT *destLen, const Byte
+@@ -2247,25 +2121,3 @@ SRes LzmaEnc_MemEncode(CLzmaEncHandle pp
      return SZ_ERROR_OUTPUT_EOF;
    return res;
  }
@@ -1047,6 +1038,3 @@ index 6dadf00dfab2..943965647bad 100644
 -  LzmaEnc_Destroy(p, alloc, allocBig);
 -  return res;
 -}
--- 
-2.11.0
-

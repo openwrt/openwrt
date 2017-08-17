@@ -7,8 +7,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/netfilter/nf_conntrack_standalone.c | 59 ++++++++++++++++++++++++++++++++-
  1 file changed, 58 insertions(+), 1 deletion(-)
 
-diff --git a/net/netfilter/nf_conntrack_standalone.c b/net/netfilter/nf_conntrack_standalone.c
-index 5f446cd9f3fd..4c1856b5151f 100644
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
 @@ -17,6 +17,7 @@
@@ -19,7 +17,7 @@ index 5f446cd9f3fd..4c1856b5151f 100644
  #include <net/net_namespace.h>
  #ifdef CONFIG_SYSCTL
  #include <linux/sysctl.h>
-@@ -298,10 +299,66 @@ static int ct_open(struct inode *inode, struct file *file)
+@@ -298,10 +299,66 @@ static int ct_open(struct inode *inode,
  			sizeof(struct ct_iter_state));
  }
  
@@ -86,7 +84,7 @@ index 5f446cd9f3fd..4c1856b5151f 100644
  	.llseek  = seq_lseek,
  	.release = seq_release_net,
  };
-@@ -405,7 +462,7 @@ static int nf_conntrack_standalone_init_proc(struct net *net)
+@@ -405,7 +462,7 @@ static int nf_conntrack_standalone_init_
  	kuid_t root_uid;
  	kgid_t root_gid;
  
@@ -95,6 +93,3 @@ index 5f446cd9f3fd..4c1856b5151f 100644
  	if (!pde)
  		goto out_nf_conntrack;
  
--- 
-2.11.0
-

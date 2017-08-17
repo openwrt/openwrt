@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
  net/rfkill/Makefile    |  2 +-
  4 files changed, 12 insertions(+), 8 deletions(-)
 
-diff --git a/include/linux/rfkill.h b/include/linux/rfkill.h
-index e6a0031d1b1f..21cf4dab0b9a 100644
 --- a/include/linux/rfkill.h
 +++ b/include/linux/rfkill.h
 @@ -64,7 +64,7 @@ struct rfkill_ops {
@@ -26,8 +24,6 @@ index e6a0031d1b1f..21cf4dab0b9a 100644
  /**
   * rfkill_alloc - allocate rfkill structure
   * @name: name of the struct -- the string is not copied internally
-diff --git a/net/Makefile b/net/Makefile
-index 4cafaa2b4667..6566175e6c0a 100644
 --- a/net/Makefile
 +++ b/net/Makefile
 @@ -51,7 +51,7 @@ obj-$(CONFIG_MAC80211)		+= mac80211/
@@ -39,8 +35,6 @@ index 4cafaa2b4667..6566175e6c0a 100644
  obj-$(CONFIG_NET_9P)		+= 9p/
  obj-$(CONFIG_CAIF)		+= caif/
  ifneq ($(CONFIG_DCB),)
-diff --git a/net/rfkill/Kconfig b/net/rfkill/Kconfig
-index 868f1ad0415a..159b6ebeacd8 100644
 --- a/net/rfkill/Kconfig
 +++ b/net/rfkill/Kconfig
 @@ -1,7 +1,11 @@
@@ -88,8 +82,6 @@ index 868f1ad0415a..159b6ebeacd8 100644
  	depends on GPIOLIB || COMPILE_TEST
  	default n
  	help
-diff --git a/net/rfkill/Makefile b/net/rfkill/Makefile
-index 311768783f4a..dbb01a8645af 100644
 --- a/net/rfkill/Makefile
 +++ b/net/rfkill/Makefile
 @@ -4,6 +4,6 @@
@@ -100,6 +92,3 @@ index 311768783f4a..dbb01a8645af 100644
 +obj-$(CONFIG_RFKILL_FULL)	+= rfkill.o
  obj-$(CONFIG_RFKILL_REGULATOR)	+= rfkill-regulator.o
  obj-$(CONFIG_RFKILL_GPIO)	+= rfkill-gpio.o
--- 
-2.11.0
-

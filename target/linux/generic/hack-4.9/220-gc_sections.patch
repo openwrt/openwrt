@@ -19,11 +19,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  include/asm-generic/vmlinux.lds.h | 63 ++++++++++++++++++++-------------------
  7 files changed, 55 insertions(+), 51 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 42435dfa5fc3..66cdf6a59b53 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -410,6 +410,11 @@ KBUILD_AFLAGS_MODULE  := -DMODULE
+@@ -409,6 +409,11 @@ KBUILD_AFLAGS_MODULE  := -DMODULE
  KBUILD_CFLAGS_MODULE  := -DMODULE
  KBUILD_LDFLAGS_MODULE = -T $(srctree)/scripts/module-common.lds $(if $(CONFIG_PROFILING),,-s)
  
@@ -35,9 +33,9 @@ index 42435dfa5fc3..66cdf6a59b53 100644
  # Read KERNELRELEASE from include/config/kernel.release (if it exists)
  KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
  KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
-@@ -631,11 +636,6 @@ include arch/$(SRCARCH)/Makefile
- KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
- KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
+@@ -633,11 +638,6 @@ KBUILD_CFLAGS	+= $(call cc-disable-warni
+ KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
+ KBUILD_CFLAGS	+= $(call cc-disable-warning, int-in-bool-context)
  
 -ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
 -KBUILD_CFLAGS	+= $(call cc-option,-ffunction-sections,)
@@ -47,8 +45,6 @@ index 42435dfa5fc3..66cdf6a59b53 100644
  ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
  KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,) $(EXTRA_OPTIMIZATION)
  else
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index b5d529fdffab..7f69418bf02c 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -81,6 +81,7 @@ config ARM
@@ -59,8 +55,6 @@ index b5d529fdffab..7f69418bf02c 100644
  	select MODULES_USE_ELF_REL
  	select NO_BOOTMEM
  	select OF_EARLY_FLATTREE if OF
-diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
-index d50430c40045..6bdeb009a46d 100644
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
 @@ -102,6 +102,7 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
@@ -71,8 +65,6 @@ index d50430c40045..6bdeb009a46d 100644
  
  # -fstack-protector-strong triggers protection checks in this code,
  # but it is being used too early to link to meaningful stack_chk logic.
-diff --git a/arch/arm/kernel/vmlinux.lds.S b/arch/arm/kernel/vmlinux.lds.S
-index f7f55df0bf7b..e9d70c92d99f 100644
 --- a/arch/arm/kernel/vmlinux.lds.S
 +++ b/arch/arm/kernel/vmlinux.lds.S
 @@ -17,7 +17,7 @@
@@ -177,8 +169,6 @@ index f7f55df0bf7b..e9d70c92d99f 100644
  		__pv_table_end = .;
  	}
  	.init.data : {
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 3a97487b8b81..05e7bfeab2f9 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -55,6 +55,7 @@ config MIPS
@@ -189,8 +179,6 @@ index 3a97487b8b81..05e7bfeab2f9 100644
  	select CPU_PM if CPU_IDLE
  	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
  	select ARCH_BINFMT_ELF_STATE
-diff --git a/arch/mips/kernel/vmlinux.lds.S b/arch/mips/kernel/vmlinux.lds.S
-index d5de67591735..de5f682b5597 100644
 --- a/arch/mips/kernel/vmlinux.lds.S
 +++ b/arch/mips/kernel/vmlinux.lds.S
 @@ -71,7 +71,7 @@ SECTIONS
@@ -211,8 +199,6 @@ index d5de67591735..de5f682b5597 100644
  		__mips_machines_end = .;
  	}
  
-diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
-index 31e1d639abed..83784d9492b1 100644
 --- a/include/asm-generic/vmlinux.lds.h
 +++ b/include/asm-generic/vmlinux.lds.h
 @@ -114,7 +114,7 @@
@@ -433,6 +419,3 @@ index 31e1d639abed..83784d9492b1 100644
  		VMLINUX_SYMBOL(__setup_end) = .;
  
  #define INIT_CALLS_LEVEL(level)						\
--- 
-2.11.0
-

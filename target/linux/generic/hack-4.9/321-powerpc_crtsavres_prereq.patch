@@ -14,8 +14,6 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  arch/powerpc/Makefile | 1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/arch/powerpc/Makefile b/arch/powerpc/Makefile
-index 617dece67924..1146daa8e4c2 100644
 --- a/arch/powerpc/Makefile
 +++ b/arch/powerpc/Makefile
 @@ -179,7 +179,6 @@ else
@@ -26,6 +24,3 @@ index 617dece67924..1146daa8e4c2 100644
  
  ifeq ($(CONFIG_476FPE_ERR46),y)
  	KBUILD_LDFLAGS_MODULE += --ppc476-workaround \
--- 
-2.11.0
-

@@ -6,11 +6,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/ipv4/netfilter/ip_tables.c | 79 +++++++++++++++++++++++++++++++-----------
  1 file changed, 58 insertions(+), 21 deletions(-)
 
-diff --git a/net/ipv4/netfilter/ip_tables.c b/net/ipv4/netfilter/ip_tables.c
-index d919350a0e8b..9178930fca17 100644
 --- a/net/ipv4/netfilter/ip_tables.c
 +++ b/net/ipv4/netfilter/ip_tables.c
-@@ -254,6 +254,33 @@ struct ipt_entry *ipt_next_entry(const struct ipt_entry *entry)
+@@ -254,6 +254,33 @@ struct ipt_entry *ipt_next_entry(const s
  	return (void *)entry + entry->next_offset;
  }
  
@@ -119,6 +117,3 @@ index d919350a0e8b..9178930fca17 100644
  
  	do {
  		const struct xt_entry_target *t;
--- 
-2.11.0
-

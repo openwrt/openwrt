@@ -11,8 +11,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  scripts/Makefile.build            |  2 +-
  3 files changed, 24 insertions(+), 5 deletions(-)
 
-diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
-index 83784d9492b1..189b5c7a0758 100644
 --- a/include/asm-generic/vmlinux.lds.h
 +++ b/include/asm-generic/vmlinux.lds.h
 @@ -54,6 +54,16 @@
@@ -67,8 +65,6 @@ index 83784d9492b1..189b5c7a0758 100644
  	*(.discard)							\
  	*(.discard.*)							\
  	}
-diff --git a/include/linux/export.h b/include/linux/export.h
-index 2a0f61fbc731..889331d9643d 100644
 --- a/include/linux/export.h
 +++ b/include/linux/export.h
 @@ -53,12 +53,19 @@ extern struct module __this_module;
@@ -92,11 +88,9 @@ index 2a0f61fbc731..889331d9643d 100644
  	= VMLINUX_SYMBOL_STR(sym);					\
  	static const struct kernel_symbol __ksymtab_##sym		\
  	__used								\
-diff --git a/scripts/Makefile.build b/scripts/Makefile.build
-index 108d73273788..76a0e450123c 100644
 --- a/scripts/Makefile.build
 +++ b/scripts/Makefile.build
-@@ -398,7 +398,7 @@ targets += $(extra-y) $(MAKECMDGOALS) $(always)
+@@ -398,7 +398,7 @@ targets += $(extra-y) $(MAKECMDGOALS) $(
  # Linker scripts preprocessor (.lds.S -> .lds)
  # ---------------------------------------------------------------------------
  quiet_cmd_cpp_lds_S = LDS     $@
@@ -105,6 +99,3 @@ index 108d73273788..76a0e450123c 100644
  	                     -D__ASSEMBLY__ -DLINKER_SCRIPT -o $@ $<
  
  $(obj)/%.lds: $(src)/%.lds.S FORCE
--- 
-2.11.0
-

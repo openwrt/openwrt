@@ -8,11 +8,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  Makefile | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index dd0a67d6e392..6e37f6bb669a 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -420,8 +420,8 @@ KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
+@@ -414,8 +414,8 @@ KERNELRELEASE = $(shell cat include/conf
  KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
  
  export VERSION PATCHLEVEL SUBLEVEL KERNELRELEASE KERNELVERSION
@@ -23,6 +21,3 @@ index dd0a67d6e392..6e37f6bb669a 100644
  export MAKE AWK GENKSYMS INSTALLKERNEL PERL PYTHON UTS_MACHINE
  export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
  
--- 
-2.11.0
-

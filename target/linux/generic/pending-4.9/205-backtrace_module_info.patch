@@ -9,11 +9,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  lib/vsprintf.c | 15 +++++++++++----
  1 file changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/lib/vsprintf.c b/lib/vsprintf.c
-index 0967771d8f7f..5d27eae49198 100644
 --- a/lib/vsprintf.c
 +++ b/lib/vsprintf.c
-@@ -669,8 +669,10 @@ char *symbol_string(char *buf, char *end, void *ptr,
+@@ -669,8 +669,10 @@ char *symbol_string(char *buf, char *end
  		    struct printf_spec spec, const char *fmt)
  {
  	unsigned long value;
@@ -25,7 +23,7 @@ index 0967771d8f7f..5d27eae49198 100644
  #endif
  
  	if (fmt[1] == 'R')
-@@ -684,11 +686,16 @@ char *symbol_string(char *buf, char *end, void *ptr,
+@@ -684,11 +686,16 @@ char *symbol_string(char *buf, char *end
  		sprint_symbol(sym, value);
  	else
  		sprint_symbol_no_offset(sym, value);
@@ -45,6 +43,3 @@ index 0967771d8f7f..5d27eae49198 100644
  }
  
  static noinline_for_stack
--- 
-2.11.0
-

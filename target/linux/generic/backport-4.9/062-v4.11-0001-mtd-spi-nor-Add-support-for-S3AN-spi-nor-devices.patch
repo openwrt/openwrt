@@ -206,7 +206,7 @@ Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
  		if (ret < 0)
  			goto write_err;
  		written = ret;
-@@ -1312,6 +1401,47 @@ static int spi_nor_check(struct spi_nor
+@@ -1319,6 +1408,47 @@ static int spi_nor_check(struct spi_nor
  	return 0;
  }
  
@@ -254,7 +254,7 @@ Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
  int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
  {
  	const struct flash_info *info = NULL;
-@@ -1360,6 +1490,14 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1367,6 +1497,14 @@ int spi_nor_scan(struct spi_nor *nor, co
  	mutex_init(&nor->lock);
  
  	/*
@@ -269,7 +269,7 @@ Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
  	 * Atmel, SST, Intel/Numonyx, and others serial NOR tend to power up
  	 * with the software protection bits set
  	 */
-@@ -1517,6 +1655,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1524,6 +1662,12 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	nor->read_dummy = spi_nor_read_dummy_cycles(nor);
  

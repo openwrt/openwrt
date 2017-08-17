@@ -11,8 +11,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  scripts/link-vmlinux.sh |  4 ++++
  4 files changed, 35 insertions(+)
 
-diff --git a/init/Kconfig b/init/Kconfig
-index 34407f15e6d3..9063c81b9665 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -1370,6 +1370,17 @@ config SYSCTL_ARCH_UNALIGN_ALLOW
@@ -33,11 +31,9 @@ index 34407f15e6d3..9063c81b9665 100644
  config HAVE_PCSPKR_PLATFORM
  	bool
  
-diff --git a/kernel/kallsyms.c b/kernel/kallsyms.c
-index fafd1a3ef0da..abe49579212f 100644
 --- a/kernel/kallsyms.c
 +++ b/kernel/kallsyms.c
-@@ -113,6 +113,11 @@ static unsigned int kallsyms_expand_symbol(unsigned int off,
+@@ -113,6 +113,11 @@ static unsigned int kallsyms_expand_symb
  	 * For every byte on the compressed symbol data, copy the table
  	 * entry for that byte.
  	 */
@@ -49,7 +45,7 @@ index fafd1a3ef0da..abe49579212f 100644
  	while (len) {
  		tptr = &kallsyms_token_table[kallsyms_token_index[*data]];
  		data++;
-@@ -145,6 +150,9 @@ static unsigned int kallsyms_expand_symbol(unsigned int off,
+@@ -145,6 +150,9 @@ tail:
   */
  static char kallsyms_get_symbol_type(unsigned int off)
  {
@@ -59,11 +55,9 @@ index fafd1a3ef0da..abe49579212f 100644
  	/*
  	 * Get just the first code, look it up in the token table,
  	 * and return the first char from this token.
-diff --git a/scripts/kallsyms.c b/scripts/kallsyms.c
-index 1f22a186c18c..e7f0f19e39a9 100644
 --- a/scripts/kallsyms.c
 +++ b/scripts/kallsyms.c
-@@ -61,6 +61,7 @@ static struct addr_range percpu_range = {
+@@ -61,6 +61,7 @@ static struct addr_range percpu_range =
  static struct sym_entry *table;
  static unsigned int table_size, table_cnt;
  static int all_symbols = 0;
@@ -81,7 +75,7 @@ index 1f22a186c18c..e7f0f19e39a9 100644
  	output_label("kallsyms_token_table");
  	off = 0;
  	for (i = 0; i < 256; i++) {
-@@ -504,6 +508,9 @@ static void *find_token(unsigned char *str, int len, unsigned char *token)
+@@ -504,6 +508,9 @@ static void *find_token(unsigned char *s
  {
  	int i;
  
@@ -110,8 +104,6 @@ index 1f22a186c18c..e7f0f19e39a9 100644
  			else
  				usage();
  		}
-diff --git a/scripts/link-vmlinux.sh b/scripts/link-vmlinux.sh
-index f742c65108b9..6aabf1d71bb6 100755
 --- a/scripts/link-vmlinux.sh
 +++ b/scripts/link-vmlinux.sh
 @@ -136,6 +136,10 @@ kallsyms()
@@ -125,6 +117,3 @@ index f742c65108b9..6aabf1d71bb6 100755
  	local aflags="${KBUILD_AFLAGS} ${KBUILD_AFLAGS_KERNEL}               \
  		      ${NOSTDINC_FLAGS} ${LINUXINCLUDE} ${KBUILD_CPPFLAGS}"
  
--- 
-2.11.0
-

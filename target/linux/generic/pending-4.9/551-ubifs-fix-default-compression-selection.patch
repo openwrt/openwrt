@@ -6,8 +6,6 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  fs/ubifs/sb.c | 13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/fs/ubifs/sb.c b/fs/ubifs/sb.c
-index 3cbb904a6d7d..460cb9e3b4ea 100644
 --- a/fs/ubifs/sb.c
 +++ b/fs/ubifs/sb.c
 @@ -63,6 +63,17 @@
@@ -28,7 +26,7 @@ index 3cbb904a6d7d..460cb9e3b4ea 100644
  /**
   * create_default_filesystem - format empty UBI volume.
   * @c: UBIFS file-system description object
-@@ -183,7 +194,7 @@ static int create_default_filesystem(struct ubifs_info *c)
+@@ -183,7 +194,7 @@ static int create_default_filesystem(str
  	if (c->mount_opts.override_compr)
  		sup->default_compr = cpu_to_le16(c->mount_opts.compr_type);
  	else
@@ -37,6 +35,3 @@ index 3cbb904a6d7d..460cb9e3b4ea 100644
  
  	generate_random_uuid(sup->uuid);
  
--- 
-2.11.0
-

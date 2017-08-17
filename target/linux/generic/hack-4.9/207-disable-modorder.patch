@@ -13,11 +13,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  scripts/Makefile.build | 2 +-
  2 files changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 984eb5907d00..cce1c68e48ae 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -1193,7 +1193,6 @@ all: modules
+@@ -1196,7 +1196,6 @@ all: modules
  
  PHONY += modules
  modules: $(vmlinux-dirs) $(if $(KBUILD_BUILTIN),vmlinux) modules.builtin
@@ -25,7 +23,7 @@ index 984eb5907d00..cce1c68e48ae 100644
  	@$(kecho) '  Building modules, stage 2.';
  	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
  	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.fwinst obj=firmware __fw_modbuild
-@@ -1223,7 +1222,6 @@ _modinst_:
+@@ -1226,7 +1225,6 @@ _modinst_:
  		rm -f $(MODLIB)/build ; \
  		ln -s $(CURDIR) $(MODLIB)/build ; \
  	fi
@@ -33,8 +31,6 @@ index 984eb5907d00..cce1c68e48ae 100644
  	@cp -f $(objtree)/modules.builtin $(MODLIB)/
  	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modinst
  
-diff --git a/scripts/Makefile.build b/scripts/Makefile.build
-index 7675d11ee65e..108d73273788 100644
 --- a/scripts/Makefile.build
 +++ b/scripts/Makefile.build
 @@ -93,7 +93,7 @@ modorder-target := $(obj)/modules.order
@@ -46,6 +42,3 @@ index 7675d11ee65e..108d73273788 100644
  	 $(subdir-ym) $(always)
  	@:
  
--- 
-2.11.0
-

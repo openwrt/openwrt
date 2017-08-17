@@ -7,11 +7,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  arch/arm/kernel/module.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/kernel/module.c b/arch/arm/kernel/module.c
-index 4f14b5ce6535..4b4b0461663f 100644
 --- a/arch/arm/kernel/module.c
 +++ b/arch/arm/kernel/module.c
-@@ -88,6 +88,10 @@ apply_relocate(Elf32_Shdr *sechdrs, const char *strtab, unsigned int symindex,
+@@ -88,6 +88,10 @@ apply_relocate(Elf32_Shdr *sechdrs, cons
  			return -ENOEXEC;
  		}
  
@@ -22,6 +20,3 @@ index 4f14b5ce6535..4b4b0461663f 100644
  		loc = dstsec->sh_addr + rel->r_offset;
  
  		switch (ELF32_R_TYPE(rel->r_info)) {
--- 
-2.11.0
-

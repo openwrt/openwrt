@@ -10,8 +10,6 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  drivers/mtd/Makefile |  1 +
  2 files changed, 17 insertions(+)
 
-diff --git a/drivers/mtd/Kconfig b/drivers/mtd/Kconfig
-index 4185e04760dd..cb55144d4db6 100644
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -178,6 +178,22 @@ menu "Partition parsers"
@@ -37,8 +35,6 @@ index 4185e04760dd..cb55144d4db6 100644
  comment "User Modules And Translation Layers"
  
  #
-diff --git a/drivers/mtd/Makefile b/drivers/mtd/Makefile
-index 48fd01e9f6e3..5bca69c63bdc 100644
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
 @@ -15,6 +15,7 @@ obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
@@ -49,6 +45,3 @@ index 48fd01e9f6e3..5bca69c63bdc 100644
  obj-y				+= parsers/
  
  # 'Users' - code which presents functionality to userspace.
--- 
-2.11.0
-

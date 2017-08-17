@@ -8,11 +8,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  arch/mips/kernel/head.S | 6 ++++++
  2 files changed, 10 insertions(+)
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 6a56d75f7e8b..03fbb7b46e7f 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1149,6 +1149,10 @@ config SYNC_R4K
+@@ -1150,6 +1150,10 @@ config SYNC_R4K
  config MIPS_MACHINE
  	def_bool n
  
@@ -23,8 +21,6 @@ index 6a56d75f7e8b..03fbb7b46e7f 100644
  config NO_IOPORT_MAP
  	def_bool n
  
-diff --git a/arch/mips/kernel/head.S b/arch/mips/kernel/head.S
-index cf052204eb0a..f7327fae5473 100644
 --- a/arch/mips/kernel/head.S
 +++ b/arch/mips/kernel/head.S
 @@ -79,6 +79,12 @@ FEXPORT(__kernel_entry)
@@ -40,6 +36,3 @@ index cf052204eb0a..f7327fae5473 100644
  	__REF
  
  NESTED(kernel_entry, 16, sp)			# kernel entry point
--- 
-2.11.0
-

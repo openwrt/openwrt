@@ -8,11 +8,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/sched/sch_generic.c | 140 ------------------------------------------------
  1 file changed, 140 deletions(-)
 
-diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
-index 97de97e3c5e2..a62de9e4e897 100644
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
-@@ -449,146 +449,6 @@ struct Qdisc_ops noqueue_qdisc_ops __read_mostly = {
+@@ -449,146 +449,6 @@ struct Qdisc_ops noqueue_qdisc_ops __rea
  	.owner		=	THIS_MODULE,
  };
  
@@ -159,6 +157,3 @@ index 97de97e3c5e2..a62de9e4e897 100644
  static struct lock_class_key qdisc_tx_busylock;
  static struct lock_class_key qdisc_running_key;
  
--- 
-2.11.0
-

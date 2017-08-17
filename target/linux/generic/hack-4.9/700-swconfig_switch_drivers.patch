@@ -10,8 +10,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  include/uapi/linux/Kbuild |  1 +
  3 files changed, 99 insertions(+)
 
-diff --git a/drivers/net/phy/Kconfig b/drivers/net/phy/Kconfig
-index 2651c8d8de2f..a920adb78fea 100644
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
 @@ -147,6 +147,89 @@ config MDIO_XGENE
@@ -104,8 +102,6 @@ index 2651c8d8de2f..a920adb78fea 100644
  comment "MII PHY device drivers"
  
  config AMD_PHY
-diff --git a/drivers/net/phy/Makefile b/drivers/net/phy/Makefile
-index e58667d111e7..542b6be8953a 100644
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
 @@ -5,6 +5,21 @@ libphy-$(CONFIG_SWPHY)		+= swphy.o
@@ -130,8 +126,6 @@ index e58667d111e7..542b6be8953a 100644
  obj-$(CONFIG_MDIO_BCM_IPROC)	+= mdio-bcm-iproc.o
  obj-$(CONFIG_MDIO_BCM_UNIMAC)	+= mdio-bcm-unimac.o
  obj-$(CONFIG_MDIO_BITBANG)	+= mdio-bitbang.o
-diff --git a/include/uapi/linux/Kbuild b/include/uapi/linux/Kbuild
-index cd2be1c8e9fb..ccdd8d586ab8 100644
 --- a/include/uapi/linux/Kbuild
 +++ b/include/uapi/linux/Kbuild
 @@ -399,6 +399,7 @@ header-y += stddef.h
@@ -142,6 +136,3 @@ index cd2be1c8e9fb..ccdd8d586ab8 100644
  header-y += synclink.h
  header-y += sync_file.h
  header-y += sysctl.h
--- 
-2.11.0
-

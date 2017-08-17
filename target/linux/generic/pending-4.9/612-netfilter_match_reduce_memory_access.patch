@@ -6,8 +6,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/ipv4/netfilter/ip_tables.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/net/ipv4/netfilter/ip_tables.c b/net/ipv4/netfilter/ip_tables.c
-index 9178930fca17..35d1db7b78f1 100644
 --- a/net/ipv4/netfilter/ip_tables.c
 +++ b/net/ipv4/netfilter/ip_tables.c
 @@ -61,9 +61,9 @@ ip_packet_match(const struct iphdr *ip,
@@ -22,6 +20,3 @@ index 9178930fca17..35d1db7b78f1 100644
  		    (ip->daddr & ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr))
  		return false;
  
--- 
-2.11.0
-

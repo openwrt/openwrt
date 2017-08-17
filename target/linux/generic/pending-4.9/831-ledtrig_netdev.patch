@@ -51,17 +51,13 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
  drivers/leds/trigger/Kconfig | 7 +++++++
  2 files changed, 8 insertions(+)
 
-diff --git a/drivers/leds/Makefile b/drivers/leds/Makefile
-index 3965070190f5..6273d7e29eab 100644
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -77,3 +77,4 @@ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-dac124s085.o
+@@ -77,3 +77,4 @@ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-d
  
  # LED Triggers
  obj-$(CONFIG_LEDS_TRIGGERS)		+= trigger/
 +obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= ledtrig-netdev.o
-diff --git a/drivers/leds/trigger/Kconfig b/drivers/leds/trigger/Kconfig
-index 3f9ddb9fafa7..4ec185389324 100644
 --- a/drivers/leds/trigger/Kconfig
 +++ b/drivers/leds/trigger/Kconfig
 @@ -126,4 +126,11 @@ config LEDS_TRIGGER_PANIC
@@ -76,6 +72,3 @@ index 3f9ddb9fafa7..4ec185389324 100644
 +	  If unsure, say Y.
 +
  endif # LEDS_TRIGGERS
--- 
-2.11.0
-

@@ -27,7 +27,7 @@ Signed-off-by: Archit Taneja <architt@codeaurora.org>
 
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -482,7 +482,11 @@ static int nand_default_block_markbad(st
+@@ -488,7 +488,11 @@ static int nand_default_block_markbad(st
  	} else {
  		ops.len = ops.ooblen = 1;
  	}

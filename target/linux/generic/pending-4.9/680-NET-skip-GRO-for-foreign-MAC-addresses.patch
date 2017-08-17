@@ -9,8 +9,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  net/ethernet/eth.c        | 18 +++++++++++++++++-
  4 files changed, 69 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 780e7171f548..6b738c662bc1 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -1749,6 +1749,8 @@ struct net_device {
@@ -22,8 +20,6 @@ index 780e7171f548..6b738c662bc1 100644
  #ifdef CONFIG_SYSFS
  	struct kset		*queues_kset;
  #endif
-diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index 5f3343ae25ef..3a04baab9b28 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
 @@ -742,7 +742,8 @@ struct sk_buff {
@@ -36,11 +32,9 @@ index 5f3343ae25ef..3a04baab9b28 100644
  
  #ifdef CONFIG_NET_SCHED
  	__u16			tc_index;	/* traffic control index */
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 2e04fd188081..c7c96308bc84 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4512,6 +4512,9 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff
+@@ -4520,6 +4520,9 @@ static enum gro_result dev_gro_receive(s
  	enum gro_result ret;
  	int grow;
  
@@ -50,7 +44,7 @@ index 2e04fd188081..c7c96308bc84 100644
  	if (!(skb->dev->features & NETIF_F_GRO))
  		goto normal;
  
-@@ -5789,6 +5792,48 @@ static void __netdev_adjacent_dev_unlink_neighbour(struct net_device *dev,
+@@ -5807,6 +5810,48 @@ static void __netdev_adjacent_dev_unlink
  					   &upper_dev->adj_list.lower);
  }
  
@@ -99,7 +93,7 @@ index 2e04fd188081..c7c96308bc84 100644
  static int __netdev_upper_dev_link(struct net_device *dev,
  				   struct net_device *upper_dev, bool master,
  				   void *upper_priv, void *upper_info)
-@@ -5987,6 +6032,8 @@ void netdev_upper_dev_unlink(struct net_device *dev,
+@@ -6005,6 +6050,8 @@ void netdev_upper_dev_unlink(struct net_
  	list_for_each_entry(i, &upper_dev->all_adj_list.upper, list)
  		__netdev_adjacent_dev_unlink(dev, i->dev, i->ref_nr);
  
@@ -108,7 +102,7 @@ index 2e04fd188081..c7c96308bc84 100644
  	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
  				      &changeupper_info.info);
  }
-@@ -6587,6 +6634,7 @@ int dev_set_mac_address(struct net_device *dev, struct sockaddr *sa)
+@@ -6605,6 +6652,7 @@ int dev_set_mac_address(struct net_devic
  	if (err)
  		return err;
  	dev->addr_assign_type = NET_ADDR_SET;
@@ -116,11 +110,9 @@ index 2e04fd188081..c7c96308bc84 100644
  	call_netdevice_notifiers(NETDEV_CHANGEADDR, dev);
  	add_device_randomness(dev->dev_addr, dev->addr_len);
  	return 0;
-diff --git a/net/ethernet/eth.c b/net/ethernet/eth.c
-index fbf1de965a9a..6a6d90b9a880 100644
 --- a/net/ethernet/eth.c
 +++ b/net/ethernet/eth.c
-@@ -143,6 +143,18 @@ u32 eth_get_headlen(void *data, unsigned int len)
+@@ -143,6 +143,18 @@ u32 eth_get_headlen(void *data, unsigned
  }
  EXPORT_SYMBOL(eth_get_headlen);
  
@@ -139,7 +131,7 @@ index fbf1de965a9a..6a6d90b9a880 100644
  /**
   * eth_type_trans - determine the packet's protocol ID.
   * @skb: received socket data
-@@ -171,8 +183,12 @@ __be16 eth_type_trans(struct sk_buff *skb, struct net_device *dev)
+@@ -171,8 +183,12 @@ __be16 eth_type_trans(struct sk_buff *sk
  			skb->pkt_type = PACKET_MULTICAST;
  	}
  	else if (unlikely(!ether_addr_equal_64bits(eth->h_dest,
@@ -153,6 +145,3 @@ index fbf1de965a9a..6a6d90b9a880 100644
  
  	/*
  	 * Some variants of DSA tagging don't have an ethertype field
--- 
-2.11.0
-

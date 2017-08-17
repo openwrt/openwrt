@@ -9,11 +9,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  arch/mips/kernel/module.c      | 279 ++++++++++++++++++++++++++++++++++++++++-
  3 files changed, 284 insertions(+), 5 deletions(-)
 
-diff --git a/arch/mips/Makefile b/arch/mips/Makefile
-index 48dc1a9c3e42..77bf5db20d65 100644
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -93,8 +93,13 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlinuz
+@@ -93,8 +93,13 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
@@ -27,8 +25,6 @@ index 48dc1a9c3e42..77bf5db20d65 100644
  
  ifeq ($(CONFIG_RELOCATABLE),y)
  LDFLAGS_vmlinux			+= --emit-relocs
-diff --git a/arch/mips/include/asm/module.h b/arch/mips/include/asm/module.h
-index 702c273e67a9..1d4f3b37cefe 100644
 --- a/arch/mips/include/asm/module.h
 +++ b/arch/mips/include/asm/module.h
 @@ -11,6 +11,11 @@ struct mod_arch_specific {
@@ -43,8 +39,6 @@ index 702c273e67a9..1d4f3b37cefe 100644
  };
  
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
-diff --git a/arch/mips/kernel/module.c b/arch/mips/kernel/module.c
-index 94627a3a6a0d..947981a9aa72 100644
 --- a/arch/mips/kernel/module.c
 +++ b/arch/mips/kernel/module.c
 @@ -44,14 +44,221 @@ struct mips_hi16 {
@@ -270,7 +264,7 @@ index 94627a3a6a0d..947981a9aa72 100644
  
  int apply_r_mips_none(struct module *me, u32 *location, Elf_Addr v)
  {
-@@ -65,8 +272,39 @@ static int apply_r_mips_32_rel(struct module *me, u32 *location, Elf_Addr v)
+@@ -65,8 +272,39 @@ static int apply_r_mips_32_rel(struct mo
  	return 0;
  }
  
@@ -310,7 +304,7 @@ index 94627a3a6a0d..947981a9aa72 100644
  	if (v % 4) {
  		pr_err("module %s: dangerous R_MIPS_26 REL relocation\n",
  		       me->name);
-@@ -74,13 +312,17 @@ static int apply_r_mips_26_rel(struct module *me, u32 *location, Elf_Addr v)
+@@ -74,13 +312,17 @@ static int apply_r_mips_26_rel(struct mo
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -369,6 +363,3 @@ index 94627a3a6a0d..947981a9aa72 100644
  void module_arch_cleanup(struct module *mod)
  {
  	spin_lock_irq(&dbe_lock);
--- 
-2.11.0
-
