@@ -25,6 +25,7 @@ platform_check_image() {
 		nand_do_platform_check $board $1
 		return $?
 		;;
+	bananapi,bpi-r2 |\
 	mediatek,mt7623-rfb-emmc)
 		local kernel_length=`(tar xf $tar_file sysupgrade-$board/kernel -O | wc -c) 2> /dev/null`
 		local rootfs_length=`(tar xf $tar_file sysupgrade-$board/root -O | wc -c) 2> /dev/null`

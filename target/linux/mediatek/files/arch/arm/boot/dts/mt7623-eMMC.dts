@@ -38,6 +38,61 @@
 		gpio = <&pio 135 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
+
+	switch {
+		compatible = "mediatek,mt7530";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		dsa,mii-bus = <&mdio0>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&eth_default>;
+
+		core-supply = <&mt6323_vpa_reg>;
+		io-supply = <&mt6323_vemc3v3_reg>;
+
+		mediatek,mcm;
+		resets = <&ethsys 2>;
+		reset-names = "mcm";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+			port@0 {
+				reg = <0>;
+				label = "lan0";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "trgmii";
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
 };
 
 &cpu0 {
@@ -428,7 +483,6 @@
 				 <MT7623_PIN_270_G2_RXD1_FUNC_G2_RXD1>,
 				 <MT7623_PIN_271_G2_RXD2_FUNC_G2_RXD2>,
 				 <MT7623_PIN_272_G2_RXD3_FUNC_G2_RXD3>,
-				 <MT7623_PIN_273_ESW_INT_FUNC_ESW_INT>,
 				 <MT7623_PIN_274_G2_RXDV_FUNC_G2_RXDV>;
 		};
 
@@ -480,59 +534,6 @@
 };
 
 &mdio0 {
-	switch@0 {
-		compatible = "mediatek,mt7530";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0>;
-
-		pinctrl-names = "default";
-		pinctrl-0 = <&eth_default>;
-
-		core-supply = <&mt6323_vpa_reg>;
-		io-supply = <&mt6323_vemc3v3_reg>;
-
-		mediatek,mcm;
-		resets = <&ethsys 2>;
-		reset-names = "mcm";
-
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0>;
-			port@0 {
-				reg = <0>;
-				label = "lan0";
-			};
-
-			port@1 {
-				reg = <1>;
-				label = "lan1";
-			};
-
-			port@2 {
-				reg = <2>;
-				label = "lan2";
-			};
-
-			port@3 {
-				reg = <3>;
-				label = "lan3";
-			};
-
-			port@6 {
-				reg = <6>;
-				label = "cpu";
-				ethernet = <&gmac1>;
-				phy-mode = "trgmii";
-				fixed-link {
-					speed = <1000>;
-					full-duplex;
-				};
-			};
-		};
-	};
-
 	phy5: ethernet-phy@5 {
 		reg = <5>;
 		phy-mode = "rgmii-rxid";

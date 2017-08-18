@@ -19,6 +19,7 @@
 #include <dt-bindings/phy/phy.h>
 #include <dt-bindings/reset/mt2701-resets.h>
 #include <dt-bindings/pinctrl/mt7623-pinfunc.h>
+#include <dt-bindings/gpio/gpio.h>
 #include "skeleton64.dtsi"
 
 
@@ -151,7 +152,7 @@
 	};
 
 	pio: pinctrl@10005000 {
-		compatible = "mediatek,mt2701-pinctrl";
+		compatible = "mediatek,mt7623-pinctrl";
 		reg = <0 0x1000b000 0 0x1000>;
 		mediatek,pctl-regmap = <&syscfg_pctl_a>;
 		pins-are-numbered;
@@ -211,6 +212,15 @@
 		clock-names = "spi", "wrap";
 	};
 
+	cir: cir@10013000 {
+		compatible = "mediatek,mt7623-cir";
+		reg = <0 0x10013000 0 0x1000>;
+		interrupts = <GIC_SPI 87 IRQ_TYPE_LEVEL_LOW>;
+		clocks = <&infracfg CLK_INFRA_IRRX>;
+		clock-names = "clk";
+		status = "disabled";
+	};
+
 	sysirq: interrupt-controller@10200100 {
 		compatible = "mediatek,mt7623-sysirq",
 			     "mediatek,mt6577-sysirq";
@@ -238,6 +248,13 @@
 			     "mediatek,mt2701-apmixedsys";
 		reg = <0 0x10209000 0 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	rng: rng@1020f000 {
+		compatible = "mediatek,mt7623-rng";
+		reg = <0 0x1020f000 0 0x1000>;
+		clocks = <&infracfg CLK_INFRA_TRNG>;
+		clock-names = "rng";
 	};
 
 	gic: interrupt-controller@10211000 {
@@ -370,7 +387,7 @@
 		status = "disabled";
 	};
 
-	spi: spi@1100a000 {
+	spi0: spi@1100a000 {
 		compatible = "mediatek,mt7623-spi",
 			     "mediatek,mt6589-spi";
 		reg = <0 0x1100a000 0 0x1000>;
@@ -399,6 +416,34 @@
 		nvmem-cell-names = "calibration-data";
 	};
 
+	spi1: spi@11016000 {
+		compatible = "mediatek,mt7623-spi",
+			     "mediatek,mt2701-spi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0 0x11016000 0 0x100>;
+		interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_LOW>;
+		clocks = <&topckgen CLK_TOP_SYSPLL3_D2>,
+			 <&topckgen CLK_TOP_SPI1_SEL>,
+			 <&pericfg CLK_PERI_SPI1>;
+		clock-names = "parent-clk", "sel-clk", "spi-clk";
+		status = "disabled";
+	};
+
+	spi2: spi@11017000 {
+		compatible = "mediatek,mt7623-spi",
+			"mediatek,mt2701-spi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0 0x11017000 0 0x1000>;
+		interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL_LOW>;
+		clocks = <&topckgen CLK_TOP_SYSPLL3_D2>,
+			 <&topckgen CLK_TOP_SPI2_SEL>,
+			 <&pericfg CLK_PERI_SPI2>;
+		clock-names = "parent-clk", "sel-clk", "spi-clk";
+		status = "disabled";
+	};
+
 	nandc: nfi@1100d000 {
 		compatible = "mediatek,mt7623-nfc",
 			     "mediatek,mt2701-nfc";
@@ -422,6 +467,104 @@
 		clocks = <&pericfg CLK_PERI_NFI_ECC>;
 		clock-names = "nfiecc_clk";
 		status = "disabled";
+	};
+
+	afe: audio-controller@11220000 {
+	compatible = "mediatek,mt7623-audio",
+		     "mediatek,mt2701-audio";
+	reg = <0 0x11220000 0 0x2000>,
+	      <0 0x112a0000 0 0x20000>;
+	interrupts = <GIC_SPI 132 IRQ_TYPE_LEVEL_LOW>;
+	power-domains = <&scpsys MT2701_POWER_DOMAIN_IFR_MSC>;
+	
+	clocks = <&infracfg CLK_INFRA_AUDIO>,
+		 <&topckgen CLK_TOP_AUD_MUX1_SEL>,
+		 <&topckgen CLK_TOP_AUD_MUX2_SEL>,
+		 <&topckgen CLK_TOP_AUD_MUX1_DIV>,
+		 <&topckgen CLK_TOP_AUD_MUX2_DIV>,
+		 <&topckgen CLK_TOP_AUD_48K_TIMING>,
+		 <&topckgen CLK_TOP_AUD_44K_TIMING>,
+		 <&topckgen CLK_TOP_AUDPLL_MUX_SEL>,
+		 <&topckgen CLK_TOP_APLL_SEL>,
+		 <&topckgen CLK_TOP_AUD1PLL_98M>,
+		 <&topckgen CLK_TOP_AUD2PLL_90M>,
+		 <&topckgen CLK_TOP_HADDS2PLL_98M>,
+		 <&topckgen CLK_TOP_HADDS2PLL_294M>,
+		 <&topckgen CLK_TOP_AUDPLL>,
+		 <&topckgen CLK_TOP_AUDPLL_D4>,
+		 <&topckgen CLK_TOP_AUDPLL_D8>,
+		 <&topckgen CLK_TOP_AUDPLL_D16>,
+		 <&topckgen CLK_TOP_AUDPLL_D24>,
+		 <&topckgen CLK_TOP_AUDINTBUS_SEL>,
+		 <&clk26m>,
+		 <&topckgen CLK_TOP_SYSPLL1_D4>,
+		 <&topckgen CLK_TOP_AUD_K1_SRC_SEL>,
+		 <&topckgen CLK_TOP_AUD_K2_SRC_SEL>,
+		 <&topckgen CLK_TOP_AUD_K3_SRC_SEL>,
+		 <&topckgen CLK_TOP_AUD_K4_SRC_SEL>,
+		 <&topckgen CLK_TOP_AUD_K5_SRC_SEL>,
+		 <&topckgen CLK_TOP_AUD_K6_SRC_SEL>,
+		 <&topckgen CLK_TOP_AUD_K1_SRC_DIV>,
+		 <&topckgen CLK_TOP_AUD_K2_SRC_DIV>,
+		 <&topckgen CLK_TOP_AUD_K3_SRC_DIV>,
+		 <&topckgen CLK_TOP_AUD_K4_SRC_DIV>,
+		 <&topckgen CLK_TOP_AUD_K5_SRC_DIV>,
+		 <&topckgen CLK_TOP_AUD_K6_SRC_DIV>,
+		 <&topckgen CLK_TOP_AUD_I2S1_MCLK>,
+		 <&topckgen CLK_TOP_AUD_I2S2_MCLK>,
+		 <&topckgen CLK_TOP_AUD_I2S3_MCLK>,
+		 <&topckgen CLK_TOP_AUD_I2S4_MCLK>,
+		 <&topckgen CLK_TOP_AUD_I2S5_MCLK>,
+		 <&topckgen CLK_TOP_AUD_I2S6_MCLK>,
+		 <&topckgen CLK_TOP_ASM_M_SEL>,
+		 <&topckgen CLK_TOP_ASM_H_SEL>,
+		 <&topckgen CLK_TOP_UNIVPLL2_D4>,
+		 <&topckgen CLK_TOP_UNIVPLL2_D2>,
+		 <&topckgen CLK_TOP_SYSPLL_D5>;
+	clock-names = "infra_sys_audio_clk",
+		"top_audio_mux1_sel",
+		"top_audio_mux2_sel",
+		"top_audio_mux1_div",
+		"top_audio_mux2_div",
+		"top_audio_48k_timing",
+		"top_audio_44k_timing",
+		"top_audpll_mux_sel",
+		"top_apll_sel",
+		"top_aud1_pll_98M",
+		"top_aud2_pll_90M",
+		"top_hadds2_pll_98M",
+		"top_hadds2_pll_294M",
+		"top_audpll",
+		"top_audpll_d4",
+		"top_audpll_d8",
+		"top_audpll_d16",
+		"top_audpll_d24",
+		"top_audintbus_sel",
+		"clk_26m",
+		"top_syspll1_d4",
+		"top_aud_k1_src_sel",
+		"top_aud_k2_src_sel",
+		"top_aud_k3_src_sel",
+		"top_aud_k4_src_sel",
+		"top_aud_k5_src_sel",
+		"top_aud_k6_src_sel",
+		"top_aud_k1_src_div",
+		"top_aud_k2_src_div",
+		"top_aud_k3_src_div",
+		"top_aud_k4_src_div",
+		"top_aud_k5_src_div",
+		"top_aud_k6_src_div",
+		"top_aud_i2s1_mclk",
+		"top_aud_i2s2_mclk",
+		"top_aud_i2s3_mclk",
+		"top_aud_i2s4_mclk",
+		"top_aud_i2s5_mclk",
+		"top_aud_i2s6_mclk",
+		"top_asm_m_sel",
+		"top_asm_h_sel",
+		"top_univpll2_d4",
+		"top_univpll2_d2",
+		"top_syspll_d5";
 	};
 
 	mmc0: mmc@11230000 {
@@ -635,5 +778,27 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+	};
+
+	hnat: hnat@1b000000 {
+		compatible = "mediatek,mt7623-hnat";
+		reg = <0 0x1b100000 0 0x3000>;
+		mtketh-wan = "eth1";
+		resets = <&ethsys 0>;
+		reset-names = "mtketh";
+	};
+
+	crypto: crypto@1b240000 {
+		compatible = "mediatek,mt7623-crypto", "mediatek,eip97-crypto";
+		reg = <0 0x1b240000 0 0x20000>;
+		interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_SPI 83 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_SPI 84 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_SPI 91 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_SPI 97 IRQ_TYPE_LEVEL_LOW>;
+		clocks = <&topckgen CLK_TOP_ETHIF_SEL>,
+			 <&ethsys CLK_ETHSYS_CRYPTO>;
+		clock-names = "ethif","cryp";
+		power-domains = <&scpsys MT2701_POWER_DOMAIN_ETH>;
 	};
 };

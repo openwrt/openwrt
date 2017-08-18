@@ -9,6 +9,7 @@ mediatek_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	'bananapi,bpi-r2' | \
 	'mediatek,mt7623-rfb-emmc' | \
 	'mediatek,mt7623-rfb-nand-ephy')
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
