@@ -120,6 +120,7 @@ obj-$(CONFIG_ATH79_MACH_GL_AR300M)		+= mach-gl-ar300m.o
 obj-$(CONFIG_ATH79_MACH_GL_DOMINO)		+= mach-gl-domino.o
 obj-$(CONFIG_ATH79_MACH_GL_INET)		+= mach-gl-inet.o
 obj-$(CONFIG_ATH79_MACH_GL_MIFI)		+= mach-gl-mifi.o
+obj-$(CONFIG_ATH79_MACH_GL_USB150)		+= mach-gl-usb150.o
 obj-$(CONFIG_ATH79_MACH_GS_MINIBOX_V1)		+= mach-gs-minibox-v1.o
 obj-$(CONFIG_ATH79_MACH_GS_OOLITE)		+= mach-gs-oolite.o
 obj-$(CONFIG_ATH79_MACH_HIVEAP_121)		+= mach-hiveap-121.o

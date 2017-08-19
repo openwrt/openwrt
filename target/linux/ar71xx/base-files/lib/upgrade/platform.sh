@@ -250,6 +250,7 @@ platform_check_image() {
 	gl-ar300|\
 	gl-domino|\
 	gl-mifi|\
+	gl-usb150|\
 	hiwifi-hc6361|\
 	hornet-ub-x2|\
 	jwap230|\

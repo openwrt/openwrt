@@ -672,6 +672,9 @@ ar71xx_board_detect() {
 	*"GL-MIFI")
 		name="gl-mifi"
 		;;
+	*"GL-USB150")
+		name="gl-usb150"
+		;;
 	*"HiveAP-121")
 		name="hiveap-121"
 		;;
