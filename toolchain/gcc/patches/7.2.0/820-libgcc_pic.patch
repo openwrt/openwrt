@@ -1,3 +1,11 @@
+commit c96312958c0621e72c9b32da5bc224ffe2161384
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Mon Oct 19 23:26:09 2009 +0000
+
+    gcc: create a proper libgcc_pic.a static library for relinking (4.3.3+ for now, backport will follow)
+    
+    SVN-Revision: 18086
+
 --- a/libgcc/Makefile.in
 +++ b/libgcc/Makefile.in
 @@ -920,11 +920,12 @@ $(libgcov-driver-objects): %$(objext): $

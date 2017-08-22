@@ -1,3 +1,13 @@
+commit 331735a357a73c7b8adc205241ac3cc6543d985e
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Tue Nov 17 12:38:22 2015 +0000
+
+    gcc: add a patch to 5.x that supports translation of __FILE__ paths
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+    
+    SVN-Revision: 47490
+
 Forward ported from attachment to https://gcc.gnu.org/bugzilla/show_bug.cgi?id=47047
 
 --- a/gcc/c-family/c-opts.c
@@ -53,7 +63,7 @@ Forward ported from attachment to https://gcc.gnu.org/bugzilla/show_bug.cgi?id=4
  When preprocessing, handle directives, but do not expand macros.
 --- a/gcc/doc/invoke.texi
 +++ b/gcc/doc/invoke.texi
-@@ -11861,6 +11861,12 @@ by @option{-fplugin=@var{name}} instead
+@@ -11863,6 +11863,12 @@ by @option{-fplugin=@var{name}} instead
  @option{-fplugin=@var{path}/@var{name}.so}.  This option is not meant
  to be used by the user, but only passed by the driver.
  

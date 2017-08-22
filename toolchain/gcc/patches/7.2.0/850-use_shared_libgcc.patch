@@ -1,3 +1,10 @@
+commit dcfc40358b5a3cae7320c17f8d1cebd5ad5540cd
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sun Feb 12 20:25:47 2012 +0000
+
+    gcc 4.6: port over the missing patch 850-use_shared_libgcc.patch to prevent libgcc crap from leaking into every single binary
+    
+    SVN-Revision: 30486
 --- a/gcc/config/arm/linux-eabi.h
 +++ b/gcc/config/arm/linux-eabi.h
 @@ -126,10 +126,6 @@
