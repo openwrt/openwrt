@@ -183,6 +183,37 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 enum {
+	NOTIFY_RESPONSE,
+	__NOTIFY_MAX
+};
+
+static const struct blobmsg_policy notify_policy[__NOTIFY_MAX] = {
+	[NOTIFY_RESPONSE] = { "notify_response", BLOBMSG_TYPE_INT32 },
+};
+
+static int
+hostapd_notify_response(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	struct blob_attr *tb[__NOTIFY_MAX];
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct wpabuf *elems;
+	const char *pos;
+	size_t len;
+
+	blobmsg_parse(notify_policy, __NOTIFY_MAX, tb,
+		      blob_data(msg), blob_len(msg));
+
+	if (!tb[NOTIFY_RESPONSE])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	hapd->ubus.notify_response = blobmsg_get_u32(tb[NOTIFY_RESPONSE]);
+
+	return UBUS_STATUS_OK;
+}
+
+enum {
 	DEL_CLIENT_ADDR,
 	DEL_CLIENT_REASON,
 	DEL_CLIENT_DEAUTH,
@@ -427,6 +458,7 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD("switch_chan", hostapd_switch_chan, csa_policy),
 #endif
 	UBUS_METHOD("set_vendor_elements", hostapd_vendor_elements, ve_policy),
+	UBUS_METHOD("notify_response", hostapd_notify_response, notify_policy),
 };
 
 static struct ubus_object_type bss_object_type =
@@ -523,6 +555,11 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 		blobmsg_add_u32(&b, "signal", req->frame_info->ssi_signal);
 	blobmsg_add_u32(&b, "freq", hapd->iface->freq);
 
+	if (!hapd->ubus.notify_response) {
+		ubus_notify(ctx, &hapd->ubus.obj, type, b.head, -1);
+		return 0;
+	}
+
 	if (ubus_notify_async(ctx, &hapd->ubus.obj, type, b.head, &ureq.nreq))
 		return 0;
 
@@ -533,4 +570,22 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 		return -1;
 
 	return 0;
+}
+
+void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *addr)
+{
+	char mac[18];
+
+	if (!hapd->ubus.obj.has_subscribers)
+		return;
+
+	if (!addr)
+		return;
+
+	snprintf(mac, sizeof(mac), MACSTR, MAC2STR(addr));
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", mac);
+
+	ubus_notify(ctx, &hapd->ubus.obj, type, b.head, -1);
 }
