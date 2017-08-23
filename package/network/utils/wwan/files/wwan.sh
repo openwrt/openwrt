@@ -35,17 +35,24 @@ proto_wwan_init_config() {
 }
 
 proto_wwan_setup() {
-	local driver usb devicename desc
+	local cfg="$1"
+	local driver usb devicename desc ifname
+
+	json_get_var ifname ifname
 
 	for a in `ls /sys/bus/usb/devices`; do
 		local vendor product
 		[ -z "$usb" -a -f /sys/bus/usb/devices/$a/idVendor -a -f /sys/bus/usb/devices/$a/idProduct ] || continue
 		vendor=$(cat /sys/bus/usb/devices/$a/idVendor)
 		product=$(cat /sys/bus/usb/devices/$a/idProduct)
-		[ -f /lib/network/wwan/$vendor:$product ] && {
-			usb=/lib/network/wwan/$vendor:$product
-			devicename=$a
-		}
+		for endpoint in "/sys/bus/usb/devices/$a/"*/; do
+			[ -d "${endpoint}net/${ifname}" ] && {
+				[ -f /lib/network/wwan/$vendor:$product ] && {
+					usb="/lib/network/wwan/$vendor:$product"
+					devicename="$a"
+				}
+			}
+		done
 	done
 
 	[ -n "$usb" ] && {
@@ -67,7 +74,7 @@ proto_wwan_setup() {
 	}
 
 	[ -z "$ctl_device" ] && for net in $(ls /sys/class/net/ | grep -e wwan -e usb); do
-		[ -z "$ctl_device" ] || continue
+		[ "$net" = "$ifname" ] || continue
 		driver=$(grep DRIVER /sys/class/net/$net/device/uevent | cut -d= -f2)
 		case "$driver" in
 		qmi_wwan|cdc_mbim)
