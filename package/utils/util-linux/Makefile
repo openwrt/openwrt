@@ -163,6 +163,7 @@ endef
 define Package/dmesg
 $(call Package/util-linux/Default)
   TITLE:=print or control the kernel ring buffer
+  DEPENDS:= +libncursesw
 endef
 
 define Package/dmesg/description
@@ -349,7 +350,7 @@ define Package/sfdisk
 $(call Package/util-linux/Default)
   TITLE:=partition table manipulator for Linux
   SUBMENU=Disc
-  DEPENDS:= +libblkid +libfdisk +libsmartcols
+  DEPENDS:= +libblkid +libfdisk +libsmartcols +libncursesw
 endef
 
 define Package/sfdisk/description
