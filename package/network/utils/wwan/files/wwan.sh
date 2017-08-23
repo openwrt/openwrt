@@ -32,21 +32,45 @@ proto_wwan_init_config() {
 	proto_config_add_string pincode
 	proto_config_add_string delay
 	proto_config_add_string modes
+	proto_config_add_string bus
 }
 
 proto_wwan_setup() {
-	local driver usb devicename desc
+	local driver usb devicename desc bus
 
-	for a in `ls /sys/bus/usb/devices`; do
-		local vendor product
-		[ -z "$usb" -a -f /sys/bus/usb/devices/$a/idVendor -a -f /sys/bus/usb/devices/$a/idProduct ] || continue
-		vendor=$(cat /sys/bus/usb/devices/$a/idVendor)
-		product=$(cat /sys/bus/usb/devices/$a/idProduct)
-		[ -f /lib/network/wwan/$vendor:$product ] && {
-			usb=/lib/network/wwan/$vendor:$product
-			devicename=$a
-		}
-	done
+	json_get_vars bus
+
+	if [ -L "/sys/bus/usb/devices/${bus}" ]; then
+		if [ -f "/sys/bus/usb/devices/${bus}/idVendor" ] \
+			&& [ -f "/sys/bus/usb/devices/${bus}/idProduct" ]; then
+			local vendor product
+			vendor=$(cat /sys/bus/usb/devices/${bus}/idVendor)
+			product=$(cat /sys/bus/usb/devices/${bus}/idProduct)
+			[ -f /lib/network/wwan/$vendor:$product ] && {
+				usb=/lib/network/wwan/$vendor:$product
+				devicename=$bus
+			}
+		else
+			echo "wwan[$$]" "Specified usb bus ${bus} was not found"
+			proto_notify_error "$interface" NO_USB
+			proto_block_restart "$interface"
+			return 1
+		fi
+	else
+		echo "wwan[$$]" "Searching for a valid wwan usb device..."
+		for a in `ls /sys/bus/usb/devices`; do
+			local vendor product
+			[ -z "$usb" -a -f /sys/bus/usb/devices/$a/idVendor -a  -f /sys/bus/usb/devices/$a/idProduct ] || continue
+			vendor=$(cat /sys/bus/usb/devices/$a/idVendor)
+			product=$(cat /sys/bus/usb/devices/$a/idProduct)
+			[ -f /lib/network/wwan/$vendor:$product ] && {
+				usb=/lib/network/wwan/$vendor:$product
+				devicename=$a
+			}
+		done
+	fi
+
+	echo "wwan[$$]" "Using wwan usb device on bus $devicename"
 
 	[ -n "$usb" ] && {
 		local old_cb control data
@@ -68,6 +92,9 @@ proto_wwan_setup() {
 
 	[ -z "$ctl_device" ] && for net in $(ls /sys/class/net/ | grep -e wwan -e usb); do
 		[ -z "$ctl_device" ] || continue
+		[ -n "$bus" ] && {
+			[ $(readlink /sys/class/net/$net | grep $bus) ] || continue
+		}
 		driver=$(grep DRIVER /sys/class/net/$net/device/uevent | cut -d= -f2)
 		case "$driver" in
 		qmi_wwan|cdc_mbim)
