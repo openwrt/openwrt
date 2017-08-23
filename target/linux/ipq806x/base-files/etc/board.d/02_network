@@ -14,7 +14,6 @@ board=$(ipq806x_board_name)
 
 case "$board" in
 ap148 |\
-c2600 |\
 d7800 |\
 r7500 |\
 r7500v2 |\
@@ -22,6 +21,10 @@ r7800 |\
 vr2600v)
 	ucidef_add_switch "switch0" \
 		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
+	;;
+c2600)
+	ucidef_add_switch "switch0" \
+		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "6@eth1" "5:wan" "0@eth0"
 	;;
 db149)
 	ucidef_set_interface_lan "eth1 eth2 eth3"
