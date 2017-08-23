@@ -108,23 +108,12 @@ config BUSYBOX_CONFIG_FEATURE_FAST_TOP
 	  but code size is slightly bigger.
 
 config BUSYBOX_CONFIG_FEATURE_ETC_NETWORKS
-	bool "Support for /etc/networks"
+	bool "Support /etc/networks"
 	default BUSYBOX_DEFAULT_FEATURE_ETC_NETWORKS
 	help
 	  Enable support for network names in /etc/networks. This is
 	  a rarely used feature which allows you to use names
 	  instead of IP/mask pairs in route command.
-
-config BUSYBOX_CONFIG_FEATURE_USE_TERMIOS
-	bool "Use termios to manipulate the screen"
-	default BUSYBOX_DEFAULT_FEATURE_USE_TERMIOS
-	depends on BUSYBOX_CONFIG_MORE || BUSYBOX_CONFIG_TOP || BUSYBOX_CONFIG_POWERTOP
-	help
-	  This option allows utilities such as 'more' and 'top' to determine
-	  the size of the screen. If you leave this disabled, your utilities
-	  that display things on the screen will be especially primitive and
-	  will be unable to determine the current screen size, and will be
-	  unable to move the cursor.
 
 config BUSYBOX_CONFIG_FEATURE_EDITING
 	bool "Command line editing"
@@ -185,15 +174,11 @@ config BUSYBOX_CONFIG_FEATURE_TAB_COMPLETION
 	bool "Tab completion"
 	default BUSYBOX_DEFAULT_FEATURE_TAB_COMPLETION
 	depends on BUSYBOX_CONFIG_FEATURE_EDITING
-	help
-	  Enable tab completion.
 
 config BUSYBOX_CONFIG_FEATURE_USERNAME_COMPLETION
 	bool "Username completion"
 	default BUSYBOX_DEFAULT_FEATURE_USERNAME_COMPLETION
 	depends on BUSYBOX_CONFIG_FEATURE_TAB_COMPLETION
-	help
-	  Enable username completion.
 
 config BUSYBOX_CONFIG_FEATURE_EDITING_FANCY_PROMPT
 	bool "Fancy shell prompts"

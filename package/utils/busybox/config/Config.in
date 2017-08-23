@@ -32,6 +32,19 @@ config BUSYBOX_CONFIG_EXTRA_COMPAT
 	  some GNU extensions in libc. You probably only need this option
 	  if you plan to run busybox on desktop.
 
+config BUSYBOX_CONFIG_FEDORA_COMPAT
+	bool "Building for Fedora distribution"
+	default BUSYBOX_DEFAULT_FEDORA_COMPAT
+	help
+	This option makes some tools behave like they do on Fedora.
+
+	At the time of this writing (2017-08) this only affects uname:
+	normally, uname -p (processor) and uname -i (platform)
+	are shown as "unknown", but with this option uname -p
+	shows the same string as uname -m (machine type),
+	and so does uname -i unless machine type is i486/i586/i686 -
+	then uname -i shows "i386".
+
 config BUSYBOX_CONFIG_INCLUDE_SUSv2
 	bool "Enable obsolete features removed before SUSv3"
 	default BUSYBOX_DEFAULT_INCLUDE_SUSv2
@@ -48,17 +61,6 @@ config BUSYBOX_CONFIG_USE_PORTABLE_CODE
 	  Use this option if you are trying to compile busybox with
 	  compiler other than gcc.
 	  If you do use gcc, this option may needlessly increase code size.
-
-config BUSYBOX_CONFIG_PLATFORM_LINUX
-	bool "Enable Linux-specific applets and features"
-	default BUSYBOX_DEFAULT_PLATFORM_LINUX
-	help
-	  For the most part, busybox requires only POSIX compatibility
-	  from the target system, but some applets and features use
-	  Linux-specific interfaces.
-
-	  Answering 'N' here will disable such applets and hide the
-	  corresponding configuration options.
 
 config BUSYBOX_CONFIG_SHOW_USAGE
 	bool "Show applet usage messages"
@@ -123,14 +125,14 @@ config BUSYBOX_CONFIG_INSTALL_NO_USR
 	  never to /usr/bin or /usr/sbin.
 
 config BUSYBOX_CONFIG_PAM
-	bool "Support for PAM (Pluggable Authentication Modules)"
+	bool "Support PAM (Pluggable Authentication Modules)"
 	default BUSYBOX_DEFAULT_PAM
 	help
 	  Use PAM in some busybox applets (currently login and httpd) instead
 	  of direct access to password database.
 
 config BUSYBOX_CONFIG_LONG_OPTS
-	bool "Support for --long-options"
+	bool "Support --long-options"
 	default BUSYBOX_DEFAULT_LONG_OPTS
 	help
 	  Enable this if you want busybox applets to use the gnu --long-option
@@ -197,7 +199,7 @@ config BUSYBOX_CONFIG_PID_FILE_PATH
 	  specify a pidfile path.
 
 config BUSYBOX_CONFIG_FEATURE_SUID
-	bool "Support for SUID/SGID handling"
+	bool "Support SUID/SGID handling"
 	default BUSYBOX_DEFAULT_FEATURE_SUID
 	help
 	  With this option you can install the busybox binary belonging
@@ -336,6 +338,17 @@ config BUSYBOX_CONFIG_FEATURE_HAVE_RPC
 	#help
 	#  This is automatically selected if any of enabled applets need it.
 	#  You do not need to select it manually.
+
+config BUSYBOX_CONFIG_PLATFORM_LINUX
+	bool #No description makes it a hidden option
+	default BUSYBOX_DEFAULT_PLATFORM_LINUX
+	#help
+	#  For the most part, busybox requires only POSIX compatibility
+	#  from the target system, but some applets and features use
+	#  Linux-specific interfaces.
+	#
+	#  This is automatically selected if any applet or feature requires
+	#  Linux-specific interfaces. You do not need to select it manually.
 
 comment 'Build Options'
 
@@ -610,6 +623,8 @@ config BUSYBOX_CONFIG_DEBUG_SANITIZE
 	  catch bad memory accesses (e.g. buffer overflows), but will make
 	  the executable larger and slow down runtime a bit.
 
+	  This adds -fsanitize=foo options to gcc command line.
+
 	  If you aren't developing/testing busybox, say N here.
 
 config BUSYBOX_CONFIG_UNIT_TEST
@@ -624,7 +639,7 @@ config BUSYBOX_CONFIG_WERROR
 	bool "Abort compilation on any warning"
 	default BUSYBOX_DEFAULT_WERROR
 	help
-	  Selecting this will add -Werror to gcc command line.
+	  This adds -Werror to gcc command line.
 
 	  Most people should answer N.
 

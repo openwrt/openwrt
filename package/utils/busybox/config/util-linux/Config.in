@@ -54,6 +54,17 @@ config BUSYBOX_CONFIG_BLOCKDEV
 	default BUSYBOX_DEFAULT_BLOCKDEV
 	help
 	  Performs some ioctls with block devices.
+config BUSYBOX_CONFIG_CAL
+	bool "cal"
+	default BUSYBOX_DEFAULT_CAL
+	help
+	  cal is used to display a monthly calendar.
+config BUSYBOX_CONFIG_CHRT
+	bool "chrt"
+	default BUSYBOX_DEFAULT_CHRT
+	help
+	  manipulate real-time attributes of a process.
+	  This requires sched_{g,s}etparam support in your libc.
 config BUSYBOX_CONFIG_DMESG
 	bool "dmesg"
 	default BUSYBOX_DEFAULT_DMESG
@@ -68,7 +79,7 @@ config BUSYBOX_CONFIG_DMESG
 	  wish to enable the 'dmesg' utility.
 
 config BUSYBOX_CONFIG_FEATURE_DMESG_PRETTY
-	bool "Pretty dmesg output"
+	bool "Pretty output"
 	default BUSYBOX_DEFAULT_FEATURE_DMESG_PRETTY
 	depends on BUSYBOX_CONFIG_DMESG
 	help
@@ -87,6 +98,25 @@ config BUSYBOX_CONFIG_FEATURE_DMESG_PRETTY
 	    <5>Linux version 2.6.17.4 .....
 	    <6>BIOS-provided physical RAM map:
 	    <6> BIOS-e820: 0000000000000000 - 000000000009f000 (usable)
+config BUSYBOX_CONFIG_EJECT
+	bool "eject"
+	default BUSYBOX_DEFAULT_EJECT
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  Used to eject cdroms. (defaults to /dev/cdrom)
+
+config BUSYBOX_CONFIG_FEATURE_EJECT_SCSI
+	bool "SCSI support"
+	default BUSYBOX_DEFAULT_FEATURE_EJECT_SCSI
+	depends on BUSYBOX_CONFIG_EJECT
+	help
+	  Add the -s option to eject, this allows to eject SCSI-Devices and
+	  usb-storage devices.
+config BUSYBOX_CONFIG_FALLOCATE
+	bool "fallocate"
+	default BUSYBOX_DEFAULT_FALLOCATE
+	help
+	  Preallocate space for files.
 config BUSYBOX_CONFIG_FATATTR
 	bool "fatattr"
 	default BUSYBOX_DEFAULT_FATATTR
@@ -104,7 +134,7 @@ config BUSYBOX_CONFIG_FBSET
 	  if you wish to enable the 'fbset' utility.
 
 config BUSYBOX_CONFIG_FEATURE_FBSET_FANCY
-	bool "Turn on extra fbset options"
+	bool "Enable extra options"
 	default BUSYBOX_DEFAULT_FEATURE_FBSET_FANCY
 	depends on BUSYBOX_CONFIG_FBSET
 	help
@@ -114,7 +144,7 @@ config BUSYBOX_CONFIG_FEATURE_FBSET_FANCY
 	  options.
 
 config BUSYBOX_CONFIG_FEATURE_FBSET_READMODE
-	bool "Turn on fbset readmode support"
+	bool "Enable readmode support"
 	default BUSYBOX_DEFAULT_FEATURE_FBSET_READMODE
 	depends on BUSYBOX_CONFIG_FBSET
 	help
@@ -142,8 +172,6 @@ config BUSYBOX_CONFIG_FDISK_SUPPORT_LARGE_DISKS
 	default BUSYBOX_DEFAULT_FDISK_SUPPORT_LARGE_DISKS
 	depends on BUSYBOX_CONFIG_FDISK
 	depends on !BUSYBOX_CONFIG_LFS   # with LFS no special code is needed
-	help
-	  Enable this option to support large disks > 4GB.
 
 config BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
 	bool "Write support"
@@ -251,6 +279,13 @@ config BUSYBOX_CONFIG_FSCK_MINIX
 	  power goes off in the middle of a write. This utility allows you to
 	  check for and attempt to repair any corruption that occurs to a minix
 	  filesystem.
+config BUSYBOX_CONFIG_FSFREEZE
+	bool "fsfreeze"
+	default BUSYBOX_DEFAULT_FSFREEZE
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Halt new accesses and flush writes on a mounted filesystem.
 config BUSYBOX_CONFIG_FSTRIM
 	bool "fstrim"
 	default BUSYBOX_DEFAULT_FSTRIM
@@ -296,6 +331,12 @@ config BUSYBOX_CONFIG_HD
 	default BUSYBOX_DEFAULT_HD
 	help
 	  hd is an alias to hexdump -C.
+config BUSYBOX_CONFIG_XXD
+	bool "xxd"
+	default BUSYBOX_DEFAULT_XXD
+	help
+	  The xxd utility is used to display binary data in a readable
+	  way that is comparable to the output from most hex editors.
 config BUSYBOX_CONFIG_HWCLOCK
 	bool "hwclock"
 	default BUSYBOX_DEFAULT_HWCLOCK
@@ -310,10 +351,6 @@ config BUSYBOX_CONFIG_FEATURE_HWCLOCK_LONG_OPTIONS
 	bool "Support long options (--hctosys,...)"
 	default BUSYBOX_DEFAULT_FEATURE_HWCLOCK_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_HWCLOCK && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	  By default, the hwclock utility only uses short options. If you
-	  are overly fond of its long options, such as --hctosys, --utc, etc)
-	  then enable this option.
 
 config BUSYBOX_CONFIG_FEATURE_HWCLOCK_ADJTIME_FHS
 	bool "Use FHS /var/lib/hwclock/adjtime"
@@ -326,6 +363,13 @@ config BUSYBOX_CONFIG_FEATURE_HWCLOCK_ADJTIME_FHS
 	  classic /etc/adjtime path.
 
 	  pathname.com/fhs/pub/fhs-2.3.html#VARLIBHWCLOCKSTATEDIRECTORYFORHWCLO
+config BUSYBOX_CONFIG_IONICE
+	bool "ionice"
+	default BUSYBOX_DEFAULT_IONICE
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  Set/set program io scheduling class and priority
+	  Requires kernel >= 2.6.13
 config BUSYBOX_CONFIG_IPCRM
 	bool "ipcrm"
 	default BUSYBOX_DEFAULT_IPCRM
@@ -340,6 +384,20 @@ config BUSYBOX_CONFIG_IPCS
 	help
 	  The ipcs utility is used to provide information on the currently
 	  allocated System V interprocess (IPC) objects in the system.
+config BUSYBOX_CONFIG_LAST
+	bool "last"
+	default BUSYBOX_DEFAULT_LAST
+	depends on BUSYBOX_CONFIG_FEATURE_WTMP
+	help
+	  'last' displays a list of the last users that logged into the system.
+
+config BUSYBOX_CONFIG_FEATURE_LAST_FANCY
+	bool "Output extra information"
+	default BUSYBOX_DEFAULT_FEATURE_LAST_FANCY
+	depends on BUSYBOX_CONFIG_LAST
+	help
+	  'last' displays detailed information about the last users that
+	  logged into the system (mimics sysvinit last). +900 bytes.
 config BUSYBOX_CONFIG_LOSETUP
 	bool "losetup"
 	default BUSYBOX_DEFAULT_LOSETUP
@@ -423,6 +481,24 @@ config BUSYBOX_CONFIG_FEATURE_MDEV_LOAD_FIRMWARE
 	  These devices will request userspace look up the files in
 	  /lib/firmware/ and if it exists, send it to the kernel for
 	  loading into the hardware.
+config BUSYBOX_CONFIG_MESG
+	bool "mesg"
+	default BUSYBOX_DEFAULT_MESG
+	help
+	  Mesg controls access to your terminal by others. It is typically
+	  used to allow or disallow other users to write to your terminal
+
+config BUSYBOX_CONFIG_FEATURE_MESG_ENABLE_ONLY_GROUP
+	bool "Enable writing to tty only by group, not by everybody"
+	default BUSYBOX_DEFAULT_FEATURE_MESG_ENABLE_ONLY_GROUP
+	depends on BUSYBOX_CONFIG_MESG
+	help
+	  Usually, ttys are owned by group "tty", and "write" tool is
+	  setgid to this group. This way, "mesg y" only needs to enable
+	  "write by owning group" bit in tty mode.
+
+	  If you set this option to N, "mesg y" will enable writing
+	  by anybody at all. This is not recommended.
 config BUSYBOX_CONFIG_MKE2FS
 	bool "mke2fs"
 	default BUSYBOX_DEFAULT_MKE2FS
@@ -574,7 +650,7 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_CIFS
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_FLAGS
 	depends on BUSYBOX_CONFIG_MOUNT
-	bool "Support lots of -o flags in mount"
+	bool "Support lots of -o flags"
 	default BUSYBOX_DEFAULT_FEATURE_MOUNT_FLAGS
 	help
 	  Without this, mount only supports ro/rw/remount. With this, it
@@ -595,6 +671,11 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_OTHERTAB
 	default BUSYBOX_DEFAULT_FEATURE_MOUNT_OTHERTAB
 	help
 	  Support mount -T (specifying an alternate fstab)
+config BUSYBOX_CONFIG_MOUNTPOINT
+	bool "mountpoint"
+	default BUSYBOX_DEFAULT_MOUNTPOINT
+	help
+	  mountpoint checks if the directory is a mountpoint.
 config BUSYBOX_CONFIG_NSENTER
 	bool "nsenter"
 	default BUSYBOX_DEFAULT_NSENTER
@@ -640,6 +721,12 @@ config BUSYBOX_CONFIG_READPROFILE
 	#select PLATFORM_LINUX
 	help
 	  This allows you to parse /proc/profile for basic profiling.
+config BUSYBOX_CONFIG_RENICE
+	bool "renice"
+	default BUSYBOX_DEFAULT_RENICE
+	help
+	  Renice alters the scheduling priority of one or more running
+	  processes.
 config BUSYBOX_CONFIG_REV
 	bool "rev"
 	default BUSYBOX_DEFAULT_REV
@@ -685,6 +772,19 @@ config BUSYBOX_CONFIG_LINUX64
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Alias to "setarch linux64".
+config BUSYBOX_CONFIG_SETPRIV
+	bool "setpriv"
+	default BUSYBOX_DEFAULT_SETPRIV
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Run a program with different Linux privilege settings.
+	  Requires kernel >= 3.5
+config BUSYBOX_CONFIG_SETSID
+	bool "setsid"
+	default BUSYBOX_DEFAULT_SETSID
+	help
+	  setsid runs a program in a new session
 config BUSYBOX_CONFIG_SWAPON
 	bool "swapon"
 	default BUSYBOX_DEFAULT_SWAPON
@@ -738,6 +838,21 @@ config BUSYBOX_CONFIG_SWITCH_ROOT
 	  * Because the Linux kernel uses rootfs internally as the starting
 	  and ending point for searching through the kernel's doubly linked
 	  list of active mount points. That's why.
+config BUSYBOX_CONFIG_TASKSET
+	bool "taskset"
+	default BUSYBOX_DEFAULT_TASKSET
+	help
+	  Retrieve or set a processes's CPU affinity.
+	  This requires sched_{g,s}etaffinity support in your libc.
+
+config BUSYBOX_CONFIG_FEATURE_TASKSET_FANCY
+	bool "Fancy output"
+	default BUSYBOX_DEFAULT_FEATURE_TASKSET_FANCY
+	depends on BUSYBOX_CONFIG_TASKSET
+	help
+	  Needed for machines with more than 32-64 CPUs:
+	  affinity parameter 0xHHHHHHHHHHHHHHHHHHHH can be arbitrarily long
+	  in this case. Otherwise, it is limited to sizeof(long).
 config BUSYBOX_CONFIG_UEVENT
 	bool "uevent"
 	default BUSYBOX_DEFAULT_UEVENT
@@ -764,10 +879,17 @@ config BUSYBOX_CONFIG_FEATURE_UMOUNT_ALL
 config BUSYBOX_CONFIG_UNSHARE
 	bool "unshare"
 	default BUSYBOX_DEFAULT_UNSHARE
-	depends on BUSYBOX_CONFIG_LONG_OPTS && !BUSYBOX_CONFIG_NOMMU
+	depends on !BUSYBOX_CONFIG_NOMMU
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Run program with some namespaces unshared from parent.
+config BUSYBOX_CONFIG_WALL
+	bool "wall"
+	default BUSYBOX_DEFAULT_WALL
+	depends on BUSYBOX_CONFIG_FEATURE_UTMP
+	help
+	  Write a message to all users that are logged in.
 
 comment "Common options for mount/umount"
 	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
@@ -802,7 +924,7 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP_CREATE
 	  if it does not find a free one.
 
 config BUSYBOX_CONFIG_FEATURE_MTAB_SUPPORT
-	bool "Support for the old /etc/mtab file"
+	bool "Support old /etc/mtab file"
 	default BUSYBOX_DEFAULT_FEATURE_MTAB_SUPPORT
 	depends on BUSYBOX_CONFIG_MOUNT || BUSYBOX_CONFIG_UMOUNT
 	select BUSYBOX_CONFIG_FEATURE_MOUNT_FAKE

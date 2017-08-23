@@ -76,18 +76,14 @@ comment "Common options for loadfont and setfont"
 	depends on BUSYBOX_CONFIG_LOADFONT || BUSYBOX_CONFIG_SETFONT
 
 config BUSYBOX_CONFIG_FEATURE_LOADFONT_PSF2
-	bool "Support for PSF2 console fonts"
+	bool "Support PSF2 console fonts"
 	default BUSYBOX_DEFAULT_FEATURE_LOADFONT_PSF2
 	depends on BUSYBOX_CONFIG_LOADFONT || BUSYBOX_CONFIG_SETFONT
-	help
-	  Support PSF2 console fonts.
 
 config BUSYBOX_CONFIG_FEATURE_LOADFONT_RAW
-	bool "Support for old (raw) console fonts"
+	bool "Support old (raw) console fonts"
 	default BUSYBOX_DEFAULT_FEATURE_LOADFONT_RAW
 	depends on BUSYBOX_CONFIG_LOADFONT || BUSYBOX_CONFIG_SETFONT
-	help
-	  Support old (raw) console fonts.
 config BUSYBOX_CONFIG_LOADKMAP
 	bool "loadkmap"
 	default BUSYBOX_DEFAULT_LOADKMAP
@@ -136,8 +132,6 @@ config BUSYBOX_CONFIG_FEATURE_SETCONSOLE_LONG_OPTIONS
 	bool "Enable long options"
 	default BUSYBOX_DEFAULT_FEATURE_SETCONSOLE_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_SETCONSOLE && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	  Support long options for the setconsole applet.
 config BUSYBOX_CONFIG_SETKEYCODES
 	bool "setkeycodes"
 	default BUSYBOX_DEFAULT_SETKEYCODES

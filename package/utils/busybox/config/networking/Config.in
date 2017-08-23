@@ -101,7 +101,7 @@ config BUSYBOX_CONFIG_FTPD
 	bool "ftpd"
 	default BUSYBOX_DEFAULT_FTPD
 	help
-	  simple FTP daemon. You have to run it via inetd.
+	  Simple FTP daemon. You have to run it via inetd.
 
 config BUSYBOX_CONFIG_FEATURE_FTPD_WRITE
 	bool "Enable upload commands"
@@ -143,8 +143,6 @@ config BUSYBOX_CONFIG_FEATURE_FTPGETPUT_LONG_OPTIONS
 	bool "Enable long options in ftpget/ftpput"
 	default BUSYBOX_DEFAULT_FEATURE_FTPGETPUT_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_LONG_OPTS && (BUSYBOX_CONFIG_FTPGET || BUSYBOX_CONFIG_FTPPUT)
-	help
-	  Support long options for the ftpget/ftpput applet.
 config BUSYBOX_CONFIG_HOSTNAME
 	bool "hostname"
 	default BUSYBOX_DEFAULT_HOSTNAME
@@ -160,7 +158,7 @@ config BUSYBOX_CONFIG_HTTPD
 	bool "httpd"
 	default BUSYBOX_DEFAULT_HTTPD
 	help
-	  Serve web pages via an HTTP server.
+	  HTTP server.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_RANGES
 	bool "Support 'Ranges:' header"
@@ -214,7 +212,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	  when specific URLs are requested.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
-	bool "Support for running scripts through an interpreter"
+	bool "Support running scripts through an interpreter"
 	default BUSYBOX_DEFAULT_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
 	depends on BUSYBOX_CONFIG_FEATURE_HTTPD_CGI
 	help
@@ -243,7 +241,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_ENCODE_URL_STR
 	  "&#60Hello&#32World&#62".
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_ERROR_PAGES
-	bool "Support for custom error pages"
+	bool "Support custom error pages"
 	default BUSYBOX_DEFAULT_FEATURE_HTTPD_ERROR_PAGES
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
@@ -256,7 +254,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_ERROR_PAGES
 	  message.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_PROXY
-	bool "Support for reverse proxy"
+	bool "Support reverse proxy"
 	default BUSYBOX_DEFAULT_FEATURE_HTTPD_PROXY
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
@@ -268,7 +266,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_PROXY
 	  http://hostname[:port]/new/path/myfile.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_GZIP
-	bool "Support for GZIP content encoding"
+	bool "Support GZIP content encoding"
 	default BUSYBOX_DEFAULT_FEATURE_HTTPD_GZIP
 	depends on BUSYBOX_CONFIG_HTTPD
 	help
@@ -383,14 +381,14 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP
 	  utilities, or enable these applets in Busybox.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV4
-	bool "Support for IPv4"
+	bool "Support IPv4"
 	default BUSYBOX_DEFAULT_FEATURE_IFUPDOWN_IPV4
 	depends on BUSYBOX_CONFIG_IFUP || BUSYBOX_CONFIG_IFDOWN
 	help
 	  If you want ifup/ifdown to talk IPv4, leave this on.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV6
-	bool "Support for IPv6"
+	bool "Support IPv6"
 	default BUSYBOX_DEFAULT_FEATURE_IFUPDOWN_IPV6
 	depends on (BUSYBOX_CONFIG_IFUP || BUSYBOX_CONFIG_IFDOWN) && BUSYBOX_CONFIG_FEATURE_IPV6
 	help
@@ -406,7 +404,7 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_MAPPING
 	  a weird network setup you don't need it.
 
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_EXTERNAL_DHCP
-	bool "Support for external dhcp clients"
+	bool "Support external DHCP clients"
 	default BUSYBOX_DEFAULT_FEATURE_IFUPDOWN_EXTERNAL_DHCP
 	depends on BUSYBOX_CONFIG_IFUP || BUSYBOX_CONFIG_IFDOWN
 	help
@@ -585,6 +583,11 @@ config BUSYBOX_CONFIG_IPCALC
 	  ipcalc takes an IP address and netmask and calculates the
 	  resulting broadcast, network, and host range.
 
+config BUSYBOX_CONFIG_FEATURE_IPCALC_LONG_OPTIONS
+	bool "Enable long options"
+	default BUSYBOX_DEFAULT_FEATURE_IPCALC_LONG_OPTIONS
+	depends on BUSYBOX_CONFIG_IPCALC && BUSYBOX_CONFIG_LONG_OPTS
+
 config BUSYBOX_CONFIG_FEATURE_IPCALC_FANCY
 	bool "Fancy IPCALC, more options, adds 1 kbyte"
 	default BUSYBOX_DEFAULT_FEATURE_IPCALC_FANCY
@@ -592,13 +595,6 @@ config BUSYBOX_CONFIG_FEATURE_IPCALC_FANCY
 	help
 	  Adds the options hostname, prefix and silent to the output of
 	  "ipcalc".
-
-config BUSYBOX_CONFIG_FEATURE_IPCALC_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_IPCALC_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_IPCALC && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	  Support long options for the ipcalc applet.
 config BUSYBOX_CONFIG_FAKEIDENTD
 	bool "fakeidentd"
 	default BUSYBOX_DEFAULT_FAKEIDENTD
@@ -685,7 +681,7 @@ config BUSYBOX_CONFIG_NETSTAT
 	  netstat prints information about the Linux networking subsystem.
 
 config BUSYBOX_CONFIG_FEATURE_NETSTAT_WIDE
-	bool "Enable wide netstat output"
+	bool "Enable wide output"
 	default BUSYBOX_DEFAULT_FEATURE_NETSTAT_WIDE
 	depends on BUSYBOX_CONFIG_NETSTAT
 	help
@@ -779,6 +775,12 @@ config BUSYBOX_CONFIG_SLATTACH
 	help
 	  slattach is a small utility to attach network interfaces to serial
 	  lines.
+config BUSYBOX_CONFIG_SSL_CLIENT
+	bool "ssl_client"
+	default BUSYBOX_DEFAULT_SSL_CLIENT
+	select BUSYBOX_CONFIG_TLS
+	help
+	  This tool pipes data to/from a socket, TLS-encrypting it.
 config BUSYBOX_CONFIG_TCPSVD
 	bool "tcpsvd"
 	default BUSYBOX_DEFAULT_TCPSVD
@@ -817,6 +819,11 @@ config BUSYBOX_CONFIG_FEATURE_TELNET_AUTOLOGIN
 	  remote host you are connecting to. This is useful when you need to
 	  log into a machine without telling the username (autologin). This
 	  option enables `-a' and `-l USER' arguments.
+
+config BUSYBOX_CONFIG_FEATURE_TELNET_WIDTH
+	bool "Enable window size autodetection"
+	default BUSYBOX_DEFAULT_FEATURE_TELNET_WIDTH
+	depends on BUSYBOX_CONFIG_TELNET
 config BUSYBOX_CONFIG_TELNETD
 	bool "telnetd"
 	default BUSYBOX_DEFAULT_TELNETD
@@ -936,11 +943,9 @@ config BUSYBOX_CONFIG_FEATURE_TFTP_BLOCKSIZE
 	  "blksize" and "tsize" options.
 
 config BUSYBOX_CONFIG_FEATURE_TFTP_PROGRESS_BAR
-	bool "Enable tftp progress meter"
+	bool "Enable progress bar"
 	default BUSYBOX_DEFAULT_FEATURE_TFTP_PROGRESS_BAR
 	depends on BUSYBOX_CONFIG_TFTP && BUSYBOX_CONFIG_FEATURE_TFTP_BLOCKSIZE
-	help
-	  Show progress bar.
 
 config BUSYBOX_CONFIG_TFTP_DEBUG
 	bool "Enable debug"
@@ -949,6 +954,9 @@ config BUSYBOX_CONFIG_TFTP_DEBUG
 	help
 	  Make tftp[d] print debugging messages on stderr.
 	  This is useful if you are diagnosing a bug in tftp[d].
+config BUSYBOX_CONFIG_TLS
+	bool #No description makes it a hidden option
+	default BUSYBOX_DEFAULT_TLS
 config BUSYBOX_CONFIG_TRACEROUTE
 	bool "traceroute"
 	default BUSYBOX_DEFAULT_TRACEROUTE
@@ -975,8 +983,6 @@ config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_USE_ICMP
 	bool "Enable -I option (use ICMP instead of UDP)"
 	default BUSYBOX_DEFAULT_FEATURE_TRACEROUTE_USE_ICMP
 	depends on BUSYBOX_CONFIG_TRACEROUTE || BUSYBOX_CONFIG_TRACEROUTE6
-	help
-	  Add option -I to use ICMP ECHO instead of UDP datagrams.
 config BUSYBOX_CONFIG_TUNCTL
 	bool "tunctl"
 	default BUSYBOX_DEFAULT_TUNCTL
@@ -1004,12 +1010,15 @@ config BUSYBOX_CONFIG_WGET
 	  wget is a utility for non-interactive download of files from HTTP
 	  and FTP servers.
 
+config BUSYBOX_CONFIG_FEATURE_WGET_LONG_OPTIONS
+	bool "Enable long options"
+	default BUSYBOX_DEFAULT_FEATURE_WGET_LONG_OPTIONS
+	depends on BUSYBOX_CONFIG_WGET && BUSYBOX_CONFIG_LONG_OPTS
+
 config BUSYBOX_CONFIG_FEATURE_WGET_STATUSBAR
-	bool "Enable a nifty process meter (+2k)"
+	bool "Enable progress bar (+2k)"
 	default BUSYBOX_DEFAULT_FEATURE_WGET_STATUSBAR
 	depends on BUSYBOX_CONFIG_WGET
-	help
-	  Enable the transfer progress bar for wget transfers.
 
 config BUSYBOX_CONFIG_FEATURE_WGET_AUTHENTICATION
 	bool "Enable HTTP authentication"
@@ -1017,13 +1026,6 @@ config BUSYBOX_CONFIG_FEATURE_WGET_AUTHENTICATION
 	depends on BUSYBOX_CONFIG_WGET
 	help
 	  Support authenticated HTTP transfers.
-
-config BUSYBOX_CONFIG_FEATURE_WGET_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_WGET_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_WGET && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	  Support long options for the wget applet.
 
 config BUSYBOX_CONFIG_FEATURE_WGET_TIMEOUT
 	bool "Enable timeout option -T SEC"
@@ -1039,18 +1041,59 @@ config BUSYBOX_CONFIG_FEATURE_WGET_TIMEOUT
 	  FEATURE_WGET_LONG_OPTIONS is also enabled, the --timeout option
 	  will work in addition to -T.
 
+config BUSYBOX_CONFIG_FEATURE_WGET_HTTPS
+	bool "Support HTTPS using internal TLS code"
+	default BUSYBOX_DEFAULT_FEATURE_WGET_HTTPS
+	depends on BUSYBOX_CONFIG_WGET
+	select BUSYBOX_CONFIG_TLS
+	help
+	  wget will use internal TLS code to connect to https:// URLs.
+	  Note:
+	  On NOMMU machines, ssl_helper applet should be available
+	  in the $PATH for this to work. Make sure to select that applet.
+
+	  Note: currently, TLS code only makes TLS I/O work, it
+	  does *not* check that the peer is who it claims to be, etc.
+	  IOW: it uses peer-supplied public keys to establish encryption
+	  and signing keys, then encrypts and signs outgoing data and
+	  decrypts incoming data.
+	  It does not check signature hashes on the incoming data:
+	  this means that attackers manipulating TCP packets can
+	  send altered data and we unknowingly receive garbage.
+	  (This check might be relatively easy to add).
+	  It does not check public key's certificate:
+	  this means that the peer may be an attacker impersonating
+	  the server we think we are talking to.
+
+	  If you think this is unacceptable, consider this. As more and more
+	  servers switch to HTTPS-only operation, without such "crippled"
+	  TLS code it is *impossible* to simply download a kernel source
+	  from kernel.org. Which can in real world translate into
+	  "my small automatic tooling to build cross-compilers from sources
+	  no longer works, I need to additionally keep a local copy
+	  of ~4 megabyte source tarball of a SSL library and ~2 megabyte
+	  source of wget, need to compile and built both before I can
+	  download anything. All this despite the fact that the build
+	  is done in a QEMU sandbox on a machine with absolutely nothing
+	  worth stealing, so I don't care if someone would go to a lot
+	  of trouble to intercept my HTTPS download to send me an altered
+	  kernel tarball".
+
+	  If you still think this is unacceptable, send patches.
+
+	  If you still think this is unacceptable, do not want to send
+	  patches, but do want to waste bandwidth expaining how wrong
+	  it is, you will be ignored.
+
 config BUSYBOX_CONFIG_FEATURE_WGET_OPENSSL
 	bool "Try to connect to HTTPS using openssl"
 	default BUSYBOX_DEFAULT_FEATURE_WGET_OPENSSL
 	depends on BUSYBOX_CONFIG_WGET
 	help
-	  Choose how wget establishes SSL connection for https:// URLs.
-
-	  Busybox itself contains no SSL code. wget will spawn
-	  a helper program to talk over HTTPS.
+	  Try to use openssl to handle HTTPS.
 
 	  OpenSSL has a simple SSL client for debug purposes.
-	  If you select "openssl" helper, wget will effectively run:
+	  If you select this option, wget will effectively run:
 	  "openssl s_client -quiet -connect hostname:443
 	  -servername hostname 2>/dev/null" and pipe its data
 	  through it. -servername is not used if hostname is numeric.
@@ -1063,24 +1106,9 @@ config BUSYBOX_CONFIG_FEATURE_WGET_OPENSSL
 	  openssl is also a big binary, often dynamically linked
 	  against ~15 libraries.
 
-config BUSYBOX_CONFIG_FEATURE_WGET_SSL_HELPER
-	bool "Try to connect to HTTPS using ssl_helper"
-	default BUSYBOX_DEFAULT_FEATURE_WGET_SSL_HELPER
-	depends on BUSYBOX_CONFIG_WGET
-	help
-	  Choose how wget establishes SSL connection for https:// URLs.
-
-	  Busybox itself contains no SSL code. wget will spawn
-	  a helper program to talk over HTTPS.
-
-	  ssl_helper is a tool which can be built statically
-	  from busybox sources against a small embedded SSL library.
-	  Please see networking/ssl_helper/README.
-	  It does not require double host resolution and emits
-	  error messages to stderr.
-
-	  Precompiled static binary may be available at
-	  http://busybox.net/downloads/binaries/
+	  If openssl can't be executed, internal TLS code will be used
+	  (if you enabled it); if openssl can be executed but fails later,
+	  wget can't detect this, and download will fail.
 config BUSYBOX_CONFIG_WHOIS
 	bool "whois"
 	default BUSYBOX_DEFAULT_WHOIS

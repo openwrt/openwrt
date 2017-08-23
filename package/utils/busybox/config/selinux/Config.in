@@ -18,8 +18,6 @@ config BUSYBOX_CONFIG_FEATURE_CHCON_LONG_OPTIONS
 	bool "Enable long options"
 	default BUSYBOX_DEFAULT_FEATURE_CHCON_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_CHCON && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	  Support long options for the chcon applet.
 config BUSYBOX_CONFIG_GETENFORCE
 	bool "getenforce"
 	default BUSYBOX_DEFAULT_GETENFORCE
@@ -56,8 +54,6 @@ config BUSYBOX_CONFIG_FEATURE_RUNCON_LONG_OPTIONS
 	bool "Enable long options"
 	default BUSYBOX_DEFAULT_FEATURE_RUNCON_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_RUNCON && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	  Support long options for the runcon applet.
 config BUSYBOX_CONFIG_SELINUXENABLED
 	bool "selinuxenabled"
 	default BUSYBOX_DEFAULT_SELINUXENABLED
