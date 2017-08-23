@@ -153,58 +153,23 @@ endef
 define KernelPackage/Defaults
   FILES:=
   AUTOLOAD:=
+  MODPARAMS:=
   PKGFLAGS+=nonshared
 endef
 
+# 1: name
+# 2: install prefix
+# 3: module priority prefix
+# 4: required for boot
+# 5: module list
 define ModuleAutoLoad
-	$(SH_FUNC) \
-	export modules=; \
-	probe_module() { \
-		local mods="$$$$$$$$1"; \
-		local boot="$$$$$$$$2"; \
-		local mod; \
-		shift 2; \
-		for mod in $$$$$$$$mods; do \
-			mkdir -p $(2)/etc/modules.d; \
-			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$(1); \
-		done; \
-		if [ -e $(2)/etc/modules.d/$(1) ]; then \
-			if [ "$$$$$$$$boot" = "1" -a ! -e $(2)/etc/modules-boot.d/$(1) ]; then \
-				mkdir -p $(2)/etc/modules-boot.d; \
-				ln -s ../modules.d/$(1) $(2)/etc/modules-boot.d/; \
-			fi; \
-			modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$mods"; \
-		fi; \
-	}; \
-	add_module() { \
-		local priority="$$$$$$$$1"; \
-		local mods="$$$$$$$$2"; \
-		local boot="$$$$$$$$3"; \
-		local mod; \
-		shift 3; \
-		for mod in $$$$$$$$mods; do \
-			mkdir -p $(2)/etc/modules.d; \
-			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
-		done; \
-		if [ -e $(2)/etc/modules.d/$$$$$$$$priority-$(1) ]; then \
-			if [ "$$$$$$$$boot" = "1" -a ! -e $(2)/etc/modules-boot.d/$$$$$$$$priority-$(1) ]; then \
-				mkdir -p $(2)/etc/modules-boot.d; \
-				ln -s ../modules.d/$$$$$$$$priority-$(1) $(2)/etc/modules-boot.d/; \
-			fi; \
-			modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$priority-$(1)"; \
-		fi; \
-	}; \
-	$(3) \
-	if [ -n "$$$$$$$$modules" ]; then \
-		modules="$$$$$$$$(echo "$$$$$$$$modules" | tr ' ' '\n' | sort | uniq | paste -s -d' ' -)"; \
-		mkdir -p $(2)/etc/modules.d; \
-		mkdir -p $(2)/CONTROL; \
-		echo "#!/bin/sh" > $(2)/CONTROL/postinst-pkg; \
-		echo "[ -z \"\$$$$$$$$IPKG_INSTROOT\" ] || exit 0" >> $(2)/CONTROL/postinst-pkg; \
-		echo ". /lib/functions.sh" >> $(2)/CONTROL/postinst-pkg; \
-		echo "insert_modules $$$$$$$$modules" >> $(2)/CONTROL/postinst-pkg; \
-		chmod 0755 $(2)/CONTROL/postinst-pkg; \
-	fi
+  $(if $(5), \
+    mkdir -p $(2)/etc/modules.d; \
+    ($(foreach mod,$(5), \
+      echo "$(mod)$(if $(MODPARAMS.$(mod)), $(MODPARAMS.$(mod)),$(if $(MODPARAMS), $(MODPARAMS)))"; )) > $(2)/etc/modules.d/$(3)$(1); \
+    $(if $(4), \
+      mkdir -p $(2)/etc/modules-boot.d; \
+      ln -sf ../modules.d/$(3)$(1) $(2)/etc/modules-boot.d/;))
 endef
 
 ifeq ($(DUMP)$(TARGET_BUILD),)
@@ -273,7 +238,7 @@ $(call KernelPackage/$(1)/config)
 				exit 1; \
 			fi; \
 		  done;
-		  $(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
+		  $(call ModuleAutoLoad,$(1),$$(1),$(filter-out 0-,$(word 1,$(AUTOLOAD))-),$(filter-out 0,$(word 2,$(AUTOLOAD))),$(wordlist 3,99,$(AUTOLOAD)))
 		  $(call KernelPackage/$(1)/install,$$(1))
       endef
     endif
@@ -295,12 +260,17 @@ endef
 
 version_filter=$(if $(findstring @,$(1)),$(shell $(SCRIPT_DIR)/package-metadata.pl version_filter $(KERNEL_PATCHVER) $(1)),$(1))
 
+# 1: priority (optional)
+# 2: module list
+# 3: boot flag
 define AutoLoad
-  add_module "$(1)" "$(call version_filter,$(2))" "$(3)";
+  $(if $(1),$(1),0) $(if $(3),1,0) $(call version_filter,$(2))
 endef
 
+# 1: module list
+# 2: boot flag
 define AutoProbe
-  probe_module "$(call version_filter,$(1))" "$(2)";
+  $(call AutoLoad,,$(1),$(2))
 endef
 
 version_field=$(if $(word $(1),$(2)),$(word $(1),$(2)),0)
