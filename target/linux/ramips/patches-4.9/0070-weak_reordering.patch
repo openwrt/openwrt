@@ -1,0 +1,12 @@
+Index: linux-4.9.44/arch/mips/ralink/Kconfig
+===================================================================
+--- linux-4.9.44.orig/arch/mips/ralink/Kconfig
++++ linux-4.9.44/arch/mips/ralink/Kconfig
+@@ -57,6 +57,7 @@ choice
+ 		select CLKSRC_MIPS_GIC
+ 		select HW_HAS_PCI
+ 		select GENERIC_CLOCKEVENTS_BROADCAST
++		select WEAK_REORDERING_BEYOND_LLSC
+ endchoice
+ 
+ choice
