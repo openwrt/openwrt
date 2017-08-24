@@ -1,5 +1,7 @@
---- a/arch/mips/ralink/mt7621.c
-+++ b/arch/mips/ralink/mt7621.c
+Index: linux-4.9.44/arch/mips/ralink/mt7621.c
+===================================================================
+--- linux-4.9.44.orig/arch/mips/ralink/mt7621.c
++++ linux-4.9.44/arch/mips/ralink/mt7621.c
 @@ -18,6 +18,7 @@
  #include <asm/mach-ralink/ralink_regs.h>
  #include <asm/mach-ralink/mt7621.h>
@@ -67,18 +69,22 @@
  void prom_soc_init(struct ralink_soc_info *soc_info)
  {
  	void __iomem *sysc = (void __iomem *) KSEG1ADDR(MT7621_SYSC_BASE);
---- a/arch/mips/ralink/Kconfig
-+++ b/arch/mips/ralink/Kconfig
-@@ -56,6 +56,7 @@ choice
- 		select COMMON_CLK
+Index: linux-4.9.44/arch/mips/ralink/Kconfig
+===================================================================
+--- linux-4.9.44.orig/arch/mips/ralink/Kconfig
++++ linux-4.9.44/arch/mips/ralink/Kconfig
+@@ -57,6 +57,7 @@ choice
  		select CLKSRC_MIPS_GIC
  		select HW_HAS_PCI
+ 		select WEAK_REORDERING_BEYOND_LLSC
 +		select GENERIC_CLOCKEVENTS_BROADCAST
  endchoice
  
  choice
---- a/arch/mips/ralink/timer-gic.c
-+++ b/arch/mips/ralink/timer-gic.c
+Index: linux-4.9.44/arch/mips/ralink/timer-gic.c
+===================================================================
+--- linux-4.9.44.orig/arch/mips/ralink/timer-gic.c
++++ linux-4.9.44/arch/mips/ralink/timer-gic.c
 @@ -12,6 +12,7 @@
  #include <linux/of.h>
  #include <linux/clk-provider.h>
