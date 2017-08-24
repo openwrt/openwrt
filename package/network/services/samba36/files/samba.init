@@ -15,12 +15,7 @@ smb_header() {
 		for net in $samba_iface; do
 			local device
 			network_is_up $net || continue
-			network_get_device device "$net" && {
-				local subnet
-				network_get_subnet  subnet "$net" && echo -n "$subnet "
-				network_get_subnet6 subnet "$net" && echo -n "$subnet "
-			}
-
+			network_get_device device "$net"
 			echo -n "${device:-$net} "
 		done
 	)
