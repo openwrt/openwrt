@@ -23,22 +23,22 @@ PKG_LICENSE:=GPL-2.0+
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/libcyassl
+define Package/libwolfssl
   SECTION:=libs
   SUBMENU:=SSL
   CATEGORY:=Libraries
-  TITLE:=CyaSSL library
+  TITLE:=wolfSSL library
   URL:=http://www.wolfssl.com/
   MENU:=1
   PROVIDES:=libcyassl
 endef
 
-define Package/libcyassl/description
-CyaSSL is an SSL library optimized for small footprint, both on disk and for
-memory use.
+define Package/libwolfssl/description
+wolfSSL (formerly CyaSSL) is an SSL library optimized for small
+footprint, both on disk and for memory use.
 endef
 
-define Package/libcyassl/config
+define Package/libwolfssl/config
 	source "$(SOURCE)/Config.in"
 endef
 
@@ -56,58 +56,58 @@ CONFIGURE_ARGS += \
         --enable-ipv6
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_AES_CCM),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_AES_CCM),y)
 CONFIGURE_ARGS += \
 	--enable-aesccm
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_AES_GCM),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_AES_GCM),y)
 CONFIGURE_ARGS += \
 	--enable-aesgcm
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_CHACHA),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_CHACHA),y)
 CONFIGURE_ARGS += \
 	--enable-chacha
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_ECC),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_ECC),y)
 CONFIGURE_ARGS += \
 	--enable-ecc \
 	--enable-supportedcurves
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_DH),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_DH),y)
 CONFIGURE_ARGS += \
 	--enable-dh
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_ARC4),n)
+ifeq ($(CONFIG_WOLFSSL_HAS_ARC4),n)
 CONFIGURE_ARGS += \
 	--disable-arc4
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_DES3),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_DES3),y)
 CONFIGURE_ARGS += \
 	--disable-des3
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_PSK),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_PSK),y)
 CONFIGURE_ARGS += \
 	--enable-psk
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_DTLS),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_DTLS),y)
 CONFIGURE_ARGS += \
 	--enable-dtls
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_ECC25519),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_ECC25519),y)
 CONFIGURE_ARGS += \
 	--enable-ecc25519
 endif
 
-ifeq ($(CONFIG_CYASSL_HAS_POLY1305),y)
+ifeq ($(CONFIG_WOLFSSL_HAS_POLY1305),y)
 CONFIGURE_ARGS += \
 	--enable-poly1305
 endif
@@ -131,10 +131,10 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/*.pc $(1)/usr/lib/pkgconfig
 endef
 
-define Package/libcyassl/install
+define Package/libwolfssl/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libwolfssl.so* $(1)/usr/lib/
 	ln -s libwolfssl.so $(1)/usr/lib/libcyassl.so
 endef
 
-$(eval $(call BuildPackage,libcyassl))
+$(eval $(call BuildPackage,libwolfssl))
