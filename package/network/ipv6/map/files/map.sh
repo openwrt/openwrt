@@ -216,6 +216,7 @@ proto_map_init_config() {
 	proto_config_add_string "ip6prefix"
 	proto_config_add_int "ip6prefixlen"
 	proto_config_add_string "peeraddr"
+	proto_config_add_int "ealen"
 	proto_config_add_int "psidlen"
 	proto_config_add_int "psid"
 	proto_config_add_int "offset"
