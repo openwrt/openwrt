@@ -59,6 +59,9 @@ endef
 CONFIGURE_ARGS += \
 	--without-selinux
 
+CONFIGURE_VARS += \
+	ac_cv_file__git=no
+
 define Package/libf2fs/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) \
