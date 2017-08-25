@@ -30,6 +30,7 @@ define Package/libcyassl
   TITLE:=CyaSSL library
   URL:=http://www.wolfssl.com/
   MENU:=1
+  PROVIDES:=libcyassl
 endef
 
 define Package/libcyassl/description
