@@ -322,12 +322,17 @@ dhcp_host_add() {
 			hex_to_hostid hostid "$hostid"
 	fi
 
+	tags=""
+	if [ -n "$tag" ]; then
+		for t in $tag; do append tags "$t" ",set:"; done
+	fi
+
 	config_get_bool broadcast "$cfg" broadcast 0
 	config_get leasetime "$cfg" leasetime
 
 	[ "$broadcast" = "0" ] && broadcast= || broadcast=",set:needs-broadcast"
 
-	hosttag="${networkid:+,set:${networkid}}${tag:+,set:${tag}}$broadcast"
+	hosttag="${networkid:+,set:${networkid}}${tags:+,set:${tags}}$broadcast"
 	nametime="${name:+,$name}${leasetime:+,$leasetime}"
 
 	if [ $DNSMASQ_DHCP_VER -eq 6 ]; then
