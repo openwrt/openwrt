@@ -61,14 +61,14 @@ CONFIGURE_ARGS += \
 	--enable-aesccm
 endif
 
-ifeq ($(CONFIG_WOLFSSL_HAS_AES_GCM),y)
+ifneq ($(CONFIG_WOLFSSL_HAS_AES_GCM),y)
 CONFIGURE_ARGS += \
-	--enable-aesgcm
+	--disable-aesgcm
 endif
 
-ifeq ($(CONFIG_WOLFSSL_HAS_CHACHA),y)
+ifneq ($(CONFIG_WOLFSSL_HAS_CHACHA),y)
 CONFIGURE_ARGS += \
-	--enable-chacha
+	--disable-chacha
 endif
 
 ifeq ($(CONFIG_WOLFSSL_HAS_ECC),y)
@@ -77,7 +77,7 @@ CONFIGURE_ARGS += \
 	--enable-supportedcurves
 endif
 
-ifeq ($(CONFIG_WOLFSSL_HAS_DH),y)
+ifneq ($(CONFIG_WOLFSSL_HAS_DH),y)
 CONFIGURE_ARGS += \
 	--enable-dh
 endif
@@ -104,10 +104,10 @@ endif
 
 ifeq ($(CONFIG_WOLFSSL_HAS_ECC25519),y)
 CONFIGURE_ARGS += \
-	--enable-ecc25519
+	--enable-curve25519
 endif
 
-ifeq ($(CONFIG_WOLFSSL_HAS_POLY1305),y)
+ifneq ($(CONFIG_WOLFSSL_HAS_POLY1305),y)
 CONFIGURE_ARGS += \
 	--enable-poly1305
 endif
