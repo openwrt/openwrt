@@ -319,7 +319,7 @@ dhcp_host_add() {
 	fi
 
 	if [ -n "$hostid" ]; then
-			hex_to_hostid hostid "$hostid"
+		hex_to_hostid hostid "$hostid"
 	fi
 
 	tags=""
@@ -383,8 +383,8 @@ dhcp_this_host_add() {
 				for lanaddr6 in $lanaddrs6 ; do
 					case "$lanaddr6" in
 					"${ulaprefix%%:/*}"*)
-							dhcp_domain_add "" "$routername" "$lanaddr6"
-							;;
+						dhcp_domain_add "" "$routername" "$lanaddr6"
+						;;
 					esac
 				done
 			fi
