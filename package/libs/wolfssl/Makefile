@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2016 OpenWrt.org
+# Copyright (C) 2006-2017 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
-PKG_VERSION:=3.10.0
+PKG_VERSION:=3.12.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
 PKG_SOURCE_URL:=https://www.wolfssl.com/
-PKG_HASH:=66f7f2a8b8ee37d6b4beab3cb0dcb6a6980fd4674373bfd3bf1214b9d0d2c02e
+PKG_HASH:=5bb196056ac0086efbf07ecea7d3e73b1c31722eb52a88b85879f920428a9a0f
 
 PKG_FIXUP:=libtool
 PKG_INSTALL:=1
@@ -29,6 +29,7 @@ define Package/libwolfssl
   CATEGORY:=Libraries
   TITLE:=wolfSSL library
   URL:=http://www.wolfssl.com/
+  MAINTAINER:=Alexandru Ardelean <ardeleanalex@gmail.com>
   MENU:=1
   PROVIDES:=libcyassl
 endef
