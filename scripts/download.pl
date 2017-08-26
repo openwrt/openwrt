@@ -16,7 +16,7 @@ use Text::ParseWords;
 @ARGV > 2 or die "Syntax: $0 <target dir> <filename> <hash> <url filename> [<mirror> ...]\n";
 
 my $url_filename;
-my $target = shift @ARGV;
+my $target = glob(shift @ARGV);
 my $filename = shift @ARGV;
 my $file_hash = shift @ARGV;
 $url_filename = shift @ARGV unless $ARGV[0] =~ /:\/\//;
