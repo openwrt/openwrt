@@ -212,12 +212,8 @@ ifeq ($(SUBTARGET),mt7621)
 include mt7621.mk
 endif
 
-ifeq ($(SUBTARGET),mt7628)
-include mt7628.mk
-endif
-
-ifeq ($(SUBTARGET),mt7688)
-include mt7688.mk
+ifeq ($(SUBTARGET),mt76x8)
+include mt76x8.mk
 endif
 
 ifdef LEGACY_DEVICES
