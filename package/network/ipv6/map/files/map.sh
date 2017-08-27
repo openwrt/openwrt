@@ -86,15 +86,19 @@ proto_map_setup() {
 		json_add_string link $(eval "echo \$RULE_${k}_PD6IFACE")
 
 		if [ "$type" = "map-e" ]; then
-			json_add_array "fmrs"
+			json_add_object "data"
+				json_add_array "fmrs"
 				for i in $(seq $RULE_COUNT); do
 					[ "$(eval "echo \$RULE_${i}_FMR")" != 1 ] && continue
-					fmr="$(eval "echo \$RULE_${i}_IPV6PREFIX")/$(eval "echo \$RULE_${i}_PREFIX6LEN")"
-					fmr="$fmr,$(eval "echo \$RULE_${i}_IPV4PREFIX")/$(eval "echo \$RULE_${i}_PREFIX4LEN")"
-					fmr="$fmr,$(eval "echo \$RULE_${i}_EALEN"),$(eval "echo \$RULE_${i}_OFFSET")"
-					json_add_string "" "$fmr"
+					json_add_object ""
+					json_add_string prefix6 "$(eval "echo \$RULE_${i}_IPV6PREFIX")/$(eval "echo \$RULE_${i}_PREFIX6LEN")"
+					json_add_string prefix4 "$(eval "echo \$RULE_${i}_IPV4PREFIX")/$(eval "echo \$RULE_${i}_PREFIX4LEN")"
+					json_add_int ealen $(eval "echo \$RULE_${i}_EALEN")
+					json_add_int offset $(eval "echo \$RULE_${i}_OFFSET")
+					json_close_object
 				done
-			json_close_array
+				json_close_array
+			json_close_object
 		fi
 
 		proto_close_tunnel
