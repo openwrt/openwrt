@@ -83,7 +83,17 @@ Index: libpcap-1.8.1/Makefile.in
  scanner.c: $(srcdir)/scanner.l
  	$(LEX) -P pcap_ --header-file=scanner.h --nounput -o scanner.c $<
  scanner.h: scanner.c
-@@ -472,9 +493,16 @@ grammar.o: grammar.c
+@@ -455,6 +476,9 @@ scanner.h: scanner.c
+ scanner.o: scanner.c grammar.h
+ 	$(CC) $(FULL_CFLAGS) -c scanner.c
+ 
++scanner_pic.o: scanner.c
++	$(CC) -fPIC $(FULL_CFLAGS) -o $@ -c scanner.c
++
+ pcap.o: pcap_version.h
+ 
+ grammar.c: $(srcdir)/grammar.y
+@@ -472,9 +496,16 @@ grammar.o: grammar.c
  gencode.o: $(srcdir)/gencode.c grammar.h scanner.h
  	$(CC) $(FULL_CFLAGS) -c $(srcdir)/gencode.c
  
@@ -100,7 +110,7 @@ Index: libpcap-1.8.1/Makefile.in
  snprintf.o: $(srcdir)/missing/snprintf.c
  	$(CC) $(FULL_CFLAGS) -o $@ -c $(srcdir)/missing/snprintf.c
  
-@@ -501,6 +529,9 @@ bpf_filter.c: $(srcdir)/bpf/net/bpf_filt
+@@ -501,6 +532,9 @@ bpf_filter.c: $(srcdir)/bpf/net/bpf_filt
  bpf_filter.o: bpf_filter.c
  	$(CC) $(FULL_CFLAGS) -c bpf_filter.c
  
@@ -110,7 +120,7 @@ Index: libpcap-1.8.1/Makefile.in
  #
  # Generate the pcap-config script.
  #
-@@ -626,11 +657,9 @@ install-shared: install-shared-$(DYEXT)
+@@ -626,11 +660,9 @@ install-shared: install-shared-$(DYEXT)
  install-shared-so: libpcap.so
  	[ -d $(DESTDIR)$(libdir) ] || \
  	    (mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir))
