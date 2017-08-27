@@ -43,7 +43,7 @@ define KernelPackage/brcm-wl/Default
   DEPENDS:=@TARGET_brcm47xx||TARGET_brcm63xx +wireless-tools
   TITLE:=Kernel driver for BCM43xx chipsets
   FILES:=$(PKG_BUILD_DIR)/driver$(1)/wl.ko $(PKG_BUILD_DIR)/glue/wl_glue.ko
-  AUTOLOAD:=$(call AutoLoad,30,wl_glue wl)
+  AUTOLOAD:=$(call AutoProbe,wl)
 endef
 
 define KernelPackage/brcm-wl/Default/description
