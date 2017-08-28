@@ -318,7 +318,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  #include <asm/sections.h>
  #include <linux/io.h>
-@@ -499,6 +500,8 @@ static void __init_memblock memblock_ins
+@@ -495,6 +496,8 @@ static void __init_memblock memblock_ins
  	memblock_set_region_node(rgn, nid);
  	type->cnt++;
  	type->total_size += size;
@@ -327,7 +327,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  /**
-@@ -538,6 +541,8 @@ int __init_memblock memblock_add_range(s
+@@ -534,6 +537,8 @@ int __init_memblock memblock_add_range(s
  		type->regions[0].flags = flags;
  		memblock_set_region_node(&type->regions[0], nid);
  		type->total_size = size;
