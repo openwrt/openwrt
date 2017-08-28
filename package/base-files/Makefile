@@ -40,27 +40,27 @@ define Package/base-files
 endef
 
 define Package/base-files/conffiles
+/etc/config/
 /etc/config/network
 /etc/config/system
+/etc/crontabs/
+/etc/dropbear/
+/etc/group
 /etc/hosts
 /etc/inittab
-/etc/group
+/etc/iproute2/rt_protos
+/etc/iproute2/rt_tables
 /etc/passwd
-/etc/shadow
 /etc/profile
 /etc/protocols
+/etc/rc.local
 /etc/services
+/etc/shadow
 /etc/shells
 /etc/sysctl.conf
-/etc/rc.local
-/etc/sysupgrade.conf
-/etc/config/
-/etc/dropbear/
-/etc/crontabs/
-/etc/sysctl.d/local.conf
 /etc/sysctl.d/
-/etc/iproute2/rt_tables
-/etc/iproute2/rt_protos
+/etc/sysctl.d/local.conf
+/etc/sysupgrade.conf
 $(call $(TARGET)/conffiles)
 endef
 
