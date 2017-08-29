@@ -77,10 +77,10 @@ proto_wwan_setup() {
 
 		json_set_namespace wwan old_cb
 		json_init
-		json_load "$(cat $usb)"
+		json_load "$(cat "$usb")"
 		json_select
 		json_get_vars desc control data
-		json_set_namespace $old_cb
+		json_set_namespace "$old_cb"
 
 		[ -n "$control" -a -n "$data" ] && {
 			ttys=$(ls -d /sys/bus/usb/devices/$devicename/${devicename}*/tty?* /sys/bus/usb/devices/$devicename/${devicename}*/tty/tty?* | sed "s/.*\///g" | tr "\n" " ")
@@ -115,9 +115,9 @@ proto_wwan_setup() {
 		return 1
 	}
 
-	uci_set_state network $interface driver "$driver"
-	uci_set_state network $interface ctl_device "$ctl_device"
-	uci_set_state network $interface dat_device "$dat_device"
+	uci_set_state network "$interface" driver "$driver"
+	uci_set_state network "$interface" ctl_device "$ctl_device"
+	uci_set_state network "$interface" dat_device "$dat_device"
 
 	case $driver in
 	qmi_wwan)		proto_qmi_setup $@ ;;
@@ -130,9 +130,9 @@ proto_wwan_setup() {
 
 proto_wwan_teardown() {
 	local interface=$1
-	local driver=$(uci_get_state network $interface driver)
-	ctl_device=$(uci_get_state network $interface ctl_device)
-	dat_device=$(uci_get_state network $interface dat_device)
+	local driver=$(uci_get_state network "$interface" driver)
+	ctl_device=$(uci_get_state network "$interface" ctl_device)
+	dat_device=$(uci_get_state network "$interface" dat_device)
 
 	case $driver in
 	qmi_wwan)		proto_qmi_teardown $@ ;;
