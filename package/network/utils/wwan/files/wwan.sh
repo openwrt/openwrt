@@ -100,11 +100,11 @@ proto_wwan_setup() {
 	uci_set_state network $interface dat_device "$dat_device"
 
 	case $driver in
-	qmi_wwan)		proto_qmi_setup $@ ;;
-	cdc_mbim)		proto_mbim_setup $@ ;;
-	sierra_net)		proto_directip_setup $@ ;;
-	comgt)			proto_3g_setup $@ ;;
-	cdc_ether|*cdc_ncm)	proto_ncm_setup $@ ;;
+	qmi_wwan)		proto_qmi_setup "$@" ;;
+	cdc_mbim)		proto_mbim_setup "$@" ;;
+	sierra_net)		proto_directip_setup "$@" ;;
+	comgt)			proto_3g_setup "$@" ;;
+	cdc_ether|*cdc_ncm)	proto_ncm_setup "$@" ;;
 	esac
 }
 
@@ -115,11 +115,11 @@ proto_wwan_teardown() {
 	dat_device=$(uci_get_state network $interface dat_device)
 
 	case $driver in
-	qmi_wwan)		proto_qmi_teardown $@ ;;
-	cdc_mbim)		proto_mbim_teardown $@ ;;
-	sierra_net)		proto_mbim_teardown $@ ;;
-	comgt)			proto_3g_teardown $@ ;;
-	cdc_ether|*cdc_ncm)	proto_ncm_teardown $@ ;;
+	qmi_wwan)		proto_qmi_teardown "$@" ;;
+	cdc_mbim)		proto_mbim_teardown "$@" ;;
+	sierra_net)		proto_mbim_teardown "$@" ;;
+	comgt)			proto_3g_teardown "$@" ;;
+	cdc_ether|*cdc_ncm)	proto_ncm_teardown "$@" ;;
 	esac
 }
 
