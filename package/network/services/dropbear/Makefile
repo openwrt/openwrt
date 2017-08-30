@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=2017.75
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -126,8 +126,8 @@ define Package/dropbear/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearmulti $(1)/usr/sbin/dropbear
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(LN) ../sbin/dropbear $(1)/usr/bin/scp
-	$(LN) ../sbin/dropbear $(1)/usr/bin/ssh
+	$(LN) ../sbin/dropbear $(1)/bin/scp
+	$(LN) ../sbin/dropbear $(1)/bin/ssh
 	$(LN) ../sbin/dropbear $(1)/usr/bin/dbclient
 	$(LN) ../sbin/dropbear $(1)/usr/bin/dropbearkey
 	$(INSTALL_DIR) $(1)/etc/config
