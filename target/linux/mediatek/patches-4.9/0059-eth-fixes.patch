@@ -1,5 +1,7 @@
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+===================================================================
+--- linux-4.9.44.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -24,6 +24,7 @@
  #include <linux/tcp.h>
  
@@ -400,28 +402,10 @@
  	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
  	eth->netdev[id]->base_addr = (unsigned long)eth->base;
  
-@@ -2584,15 +2665,19 @@ static int mtk_probe(struct platform_dev
- 			goto err_deinit_hw;
- 	}
- 
-+	cpumask_set_cpu(1, &eth->affinity_mask[1]);
-+	cpumask_set_cpu(0, &eth->affinity_mask[2]);
- 	err = devm_request_irq(eth->dev, eth->irq[1], mtk_handle_irq_tx, 0,
- 			       dev_name(eth->dev), eth);
- 	if (err)
- 		goto err_free_dev;
-+	irq_set_affinity_hint(eth->irq[1], &eth->affinity_mask[1]);
- 
- 	err = devm_request_irq(eth->dev, eth->irq[2], mtk_handle_irq_rx, 0,
- 			       dev_name(eth->dev), eth);
- 	if (err)
- 		goto err_free_dev;
-+	irq_set_affinity_hint(eth->irq[2], &eth->affinity_mask[2]);
- 
- 	err = mtk_mdio_init(eth);
- 	if (err)
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+===================================================================
+--- linux-4.9.44.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -80,7 +80,6 @@
  
  /* CDMP Ingress Control Register */
