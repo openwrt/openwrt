@@ -142,6 +142,12 @@ ar71xx_setup_interfaces()
 	wrtnode2q)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	rb-750-r2|\
+	rb-750up-r2)
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
 	all0258n|\
 	all0315n|\
 	dlan-hotspot|\
