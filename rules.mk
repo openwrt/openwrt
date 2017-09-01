@@ -260,7 +260,6 @@ endif
 BUILD_KEY=$(TOPDIR)/key-build
 
 TARGET_CC:=$(TARGET_CROSS)gcc
-TARGET_CPP:=$(TARGET_CROSS)cpp
 TARGET_CXX:=$(TARGET_CROSS)g++
 KPATCH:=$(SCRIPT_DIR)/patch-kernel.sh
 SED:=$(STAGING_DIR_HOST)/bin/sed -i -e
@@ -301,7 +300,6 @@ TARGET_CONFIGURE_OPTS = \
   NM="$(TARGET_NM)" \
   CC="$(TARGET_CC)" \
   GCC="$(TARGET_CC)" \
-  CPP="$(TARGET_CPP)" \
   CXX="$(TARGET_CXX)" \
   RANLIB="$(TARGET_RANLIB)" \
   STRIP=$(TARGET_CROSS)strip \
