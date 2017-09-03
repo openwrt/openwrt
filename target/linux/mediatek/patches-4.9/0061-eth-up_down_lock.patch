@@ -1,7 +1,5 @@
-Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.9.44.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -1904,12 +1904,16 @@ static int mtk_open(struct net_device *d
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
@@ -62,10 +60,8 @@ Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  	spin_lock_init(&eth->page_lock);
  	spin_lock_init(&eth->tx_irq_lock);
  	spin_lock_init(&eth->rx_irq_lock);
-Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-===================================================================
---- linux-4.9.44.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-+++ linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -573,6 +573,7 @@ struct mtk_rx_ring {
  struct mtk_eth {
  	struct device			*dev;

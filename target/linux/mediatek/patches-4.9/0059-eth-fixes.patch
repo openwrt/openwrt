@@ -1,7 +1,5 @@
-Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.9.44.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -24,6 +24,7 @@
  #include <linux/tcp.h>
  
@@ -402,10 +400,8 @@ Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
  	eth->netdev[id]->base_addr = (unsigned long)eth->base;
  
-Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-===================================================================
---- linux-4.9.44.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-+++ linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -80,7 +80,6 @@
  
  /* CDMP Ingress Control Register */

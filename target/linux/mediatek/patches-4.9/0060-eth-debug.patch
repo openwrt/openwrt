@@ -1,7 +1,5 @@
-Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.9.44.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -851,6 +851,7 @@ static void mtk_stop_queue(struct mtk_et
  			continue;
  		netif_stop_queue(eth->netdev[i]);
@@ -58,10 +56,8 @@ Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.c
  	eth->netdev[id]->netdev_ops = &mtk_netdev_ops;
  	eth->netdev[id]->base_addr = (unsigned long)eth->base;
  
-Index: linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-===================================================================
---- linux-4.9.44.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-+++ linux-4.9.44/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -601,6 +601,8 @@ struct mtk_eth {
  	struct mii_bus			*mii_bus;
  	struct work_struct		pending_work;
