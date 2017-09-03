@@ -32,6 +32,7 @@
 
 
 #define TL_WA801NDV4_GPIO_BTN_RESET	17
+#define TL_WA801NDV4_GPIO_BTN_QSS	12
 
 #define TL_WA801NDV4_KEYS_POLL_INTERVAL	20	/* msecs */
 #define TL_WA801NDV4_KEYS_DEBOUNCE_INTERVAL (3 * TL_WA801NDV4_KEYS_POLL_INTERVAL)
@@ -77,6 +78,13 @@ static struct gpio_keys_button tl_wa801n_v4_gpio_keys[] __initdata = {
 		.code		= KEY_RESTART,
 		.debounce_interval = TL_WA801NDV4_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= TL_WA801NDV4_GPIO_BTN_RESET,
+		.active_low	= 1,
+	}, {
+		.desc		= "qss",
+		.type		= EV_KEY,
+		.code		= KEY_WPS_BUTTON,
+		.debounce_interval = TL_WA801NDV4_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= TL_WA801NDV4_GPIO_BTN_QSS,
 		.active_low	= 1,
 	}
 };
