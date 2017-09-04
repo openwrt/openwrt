@@ -33,15 +33,17 @@ endef
 define Device/Default
   PROFILES = Default
   FILESYSTEMS := squashfs
-  KERNEL := kernel-bin | gzip | uImage gzip
   DEVICE_DTS :=
   IMAGES = firmware.bin
 
 ifeq ($(SUBTARGET),armv8_64b)
+  KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_LOADADDR = 0x80080000
   KERNEL_ENTRY_POINT = 0x80080000
 endif
 ifeq ($(SUBTARGET),armv8_32b)
+  KERNEL := kernel-bin | uImage none
+  KERNEL_NAME := zImage
   KERNEL_LOADADDR = 0x80008000
   KERNEL_ENTRY_POINT = 0x80008000
 endif
