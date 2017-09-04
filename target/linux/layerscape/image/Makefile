@@ -52,7 +52,7 @@ endef
 define Device/ls1043ardb
   DEVICE_TITLE := ls1043ardb-$(SUBTARGET)
   DEVICE_PACKAGES += rcw-layerscape-ls1043ardb uboot-layerscape-$(SUBTARGET)-ls1043ardb fman-layerscape-ls1043ardb
-  DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1043a-rdb
+  DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1043a-rdb-sdk
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
 			append-ls-uboot $(1) | pad-to 9M | \
 			append-ls-fman $(1) | pad-to 15M | \
@@ -65,7 +65,7 @@ TARGET_DEVICES += ls1043ardb
 define Device/ls1046ardb
   DEVICE_TITLE := ls1046ardb-$(SUBTARGET)
   DEVICE_PACKAGES += rcw-layerscape-ls1046ardb uboot-layerscape-$(SUBTARGET)-ls1046ardb fman-layerscape-ls1046ardb
-  DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1046a-rdb
+  DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1046a-rdb-sdk
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
 			append-ls-uboot $(1) | pad-to 9M | \
 			append-ls-fman $(1) | pad-to 15M | \
