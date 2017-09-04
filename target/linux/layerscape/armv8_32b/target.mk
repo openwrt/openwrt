@@ -7,7 +7,8 @@
 
 ARCH:=arm
 BOARDNAME:=ARMv8 32-bit based boards
-CPU_TYPE:=cortex-a9
+CPU_TYPE:=cortex-a15
+CPU_SUBTYPE:=neon-vfpv4
 KERNELNAME:=zImage dtbs
 
 define Target/Description
