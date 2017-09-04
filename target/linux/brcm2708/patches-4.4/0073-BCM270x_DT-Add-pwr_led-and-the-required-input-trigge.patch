@@ -31,7 +31,7 @@ See: https://github.com/raspberrypi/linux/issues/1064
 
 --- a/drivers/leds/leds-gpio.c
 +++ b/drivers/leds/leds-gpio.c
-@@ -42,6 +42,13 @@ static void gpio_led_work(struct work_st
+@@ -41,6 +41,13 @@ static void gpio_led_work(struct work_st
  		led_dat->platform_gpio_blink_set(led_dat->gpiod,
  					led_dat->new_level, NULL, NULL);
  		led_dat->blinking = 0;
@@ -45,7 +45,7 @@ See: https://github.com/raspberrypi/linux/issues/1064
  	} else
  		gpiod_set_value_cansleep(led_dat->gpiod, led_dat->new_level);
  }
-@@ -62,7 +69,8 @@ static void gpio_led_set(struct led_clas
+@@ -61,7 +68,8 @@ static void gpio_led_set(struct led_clas
  	 * seem to have a reliable way to know if we're already in one; so
  	 * let's just assume the worst.
  	 */
@@ -55,7 +55,7 @@ See: https://github.com/raspberrypi/linux/issues/1064
  		led_dat->new_level = level;
  		schedule_work(&led_dat->work);
  	} else {
-@@ -75,6 +83,13 @@ static void gpio_led_set(struct led_clas
+@@ -74,6 +82,13 @@ static void gpio_led_set(struct led_clas
  	}
  }
  
@@ -69,7 +69,7 @@ See: https://github.com/raspberrypi/linux/issues/1064
  static int gpio_blink_set(struct led_classdev *led_cdev,
  	unsigned long *delay_on, unsigned long *delay_off)
  {
-@@ -131,6 +146,7 @@ static int create_gpio_led(const struct
+@@ -129,6 +144,7 @@ static int create_gpio_led(const struct
  		led_dat->cdev.blink_set = gpio_blink_set;
  	}
  	led_dat->cdev.brightness_set = gpio_led_set;
