@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
 PKG_VERSION:=1.2.11
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@SF/libpng http://www.zlib.net
@@ -48,6 +48,11 @@ define Package/zlib-dev/description
 endef
 
 TARGET_CFLAGS += $(FPIC)
+
+ifneq ($(findstring neon,$(CONFIG_TARGET_OPTIMIZATION)),)
+	CMAKE_OPTIONS += \
+		-DARMv8=ON
+endif
 
 define Build/InstallDev
 	mkdir -p $(1)/usr/include
