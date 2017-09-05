@@ -19,6 +19,8 @@ PKG_LICENSE:=Zlib
 PKG_LICENSE_FILES:=README
 PKG_CPE_ID:=cpe:/a:gnu:zlib
 
+PKG_CONFIG_DEPENDS:= CONFIG_ZLIB_OPTIMIZE_SPEED
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
@@ -47,7 +49,15 @@ define Package/zlib-dev/description
  This package includes the development support files.
 endef
 
+define Package/zlib/config
+	source "$(SOURCE)/Config.in"
+endef
+
 TARGET_CFLAGS += $(FPIC)
+
+ifeq ($(CONFIG_ZLIB_OPTIMIZE_SPEED),y)
+	TARGET_CFLAGS := $(filter-out -O%,$(TARGET_CFLAGS)) -O3
+endif
 
 ifneq ($(findstring neon,$(CONFIG_TARGET_OPTIMIZATION)),)
 	CMAKE_OPTIONS += \
