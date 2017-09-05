@@ -20,6 +20,7 @@ PKG_LICENSE_FILES:=README
 PKG_CPE_ID:=cpe:/a:gnu:zlib
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 define Package/zlib
   SECTION:=libs
@@ -46,26 +47,7 @@ define Package/zlib-dev/description
  This package includes the development support files.
 endef
 
-CONFIGURE_VARS := \
-	$(TARGET_CONFIGURE_OPTS) \
-	LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
-	CFLAGS="$(TARGET_CFLAGS) $(FPIC)" \
-
-CONFIGURE_ARGS := \
-	--prefix=/usr \
-	--shared \
-	--uname=Linux \
-
-define Build/Compile
-	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		libz.a libz.so.$(PKG_VERSION)
-	mkdir -p $(PKG_INSTALL_DIR)
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		install
-endef
+TARGET_CFLAGS += $(FPIC)
 
 define Build/InstallDev
 	mkdir -p $(1)/usr/include
@@ -75,7 +57,7 @@ define Build/InstallDev
 	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libz.{a,so*} \
 		$(1)/usr/lib/
 	mkdir -p $(1)/usr/lib/pkgconfig
-	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/zlib.pc \
+	$(CP)	$(PKG_INSTALL_DIR)/usr/share/pkgconfig/zlib.pc \
 		$(1)/usr/lib/pkgconfig/
 endef
 
@@ -95,7 +77,7 @@ define Package/zlib-dev/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.a $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/zlib.pc \
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/pkgconfig/zlib.pc \
 	  $(1)/usr/lib/pkgconfig/
 endef
 
