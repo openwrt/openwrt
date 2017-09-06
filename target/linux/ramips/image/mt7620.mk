@@ -62,6 +62,14 @@ define Device/ArcherMR200
 endef
 TARGET_DEVICES += ArcherMR200
 
+define Device/c108
+  DTS := C108
+  IMAGE_SIZE := 16777216
+  DEVICE_TITLE := HNET C108
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+endef
+TARGET_DEVICES += c108
+
 define Device/cf-wr800n
   DTS := CF-WR800N
   DEVICE_TITLE := Comfast CF-WR800N
