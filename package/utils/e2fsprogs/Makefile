@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.43.5
-PKG_HASH:=261f3d9ade383fbf032a19140c9c25e998cc0f71a1ae686614fb3ae0eb955a17
+PKG_VERSION:=1.43.6
+PKG_HASH:=c9b226234ee878a8d89951f3b155cec7416dd0ec09c932c855f1b1df8ad93402
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -45,7 +45,7 @@ define Package/libext2fs
 $(call Package/e2fsprogs/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libuuid
+  DEPENDS:=+libuuid +libblkid
   TITLE:=ext2/3/4 filesystem library
 endef
 
@@ -109,18 +109,17 @@ endef
 
 TARGET_CFLAGS += $(FPIC) -ffunction-sections -fdata-sections
 
-CONFIGURE_VARS += \
-	ac_cv_lib_pthread_sem_init=no
-
 CONFIGURE_ARGS += \
 	--disable-testio-debug \
 	--enable-elf-shlibs	\
 	--disable-libuuid	\
-	--enable-libblkid	\
+	--disable-libblkid	\
 	--disable-uuidd		\
 	--disable-tls		\
 	--disable-nls		\
-	--disable-rpath
+	--disable-rpath		\
+	--disable-threads	\
+	--disable-fuse2fs
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
@@ -139,7 +138,6 @@ define Build/Compile
 		LDFLAGS=-Wl,--gc-sections \
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		LIBBLKID="$(PKG_BUILD_DIR)/lib/libblkid.a -luuid" \
 		ELF_OTHER_LIBS="$(TARGET_LDFLAGS) -luuid" \
 		SYSLIBS="$(TARGET_LDFLAGS) -ldl -L$(PKG_BUILD_DIR)/lib/ -l:libcom_err.so.0.0" \
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,) \
