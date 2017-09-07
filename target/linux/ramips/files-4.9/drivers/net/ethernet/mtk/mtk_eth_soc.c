@@ -1003,7 +1003,7 @@ static int fe_poll(struct napi_struct *napi, int budget)
 			goto poll_again;
 		}
 
-		napi_complete(napi);
+		napi_complete_done(napi, rx_done);
 		fe_int_enable(tx_intr | rx_intr);
 	} else {
 		rx_done = budget;
