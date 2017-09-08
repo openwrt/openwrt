@@ -32,6 +32,17 @@ define Device/Archer
   IMAGE/sysupgrade.bin := tplink-v2-image -s | append-metadata
 endef
 
+define Device/ArcherC20
+  $(Device/Archer)
+  DTS := ArcherC20
+  SUPPORTED_DEVICES := c20
+  TPLINK_BOARD_ID := ArcherC20
+  IMAGES += factory.bin
+  DEVICE_TITLE := TP-Link ArcherC20
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += ArcherC20
+
 define Device/ArcherC20i
   $(Device/Archer)
   DTS := ArcherC20i

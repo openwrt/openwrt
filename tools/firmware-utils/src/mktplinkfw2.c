@@ -181,6 +181,14 @@ static struct board_info boards[] = {
 		.hw_rev		= 14,
 		.layout_id	= "8Mltq",
 	}, {
+		.id		= "ArcherC20",
+		.hw_id		= 0xc2000001,
+		.hw_rev		= 0x44,
+		.hw_ver_add	= 0x1,
+		.layout_id	= "8Mmtk",
+		.hdr_ver	= 3,
+		.flags		= FLAG_LE_KERNEL_LA_EP
+	}, {
 		.id		= "ArcherC20i",
 		.hw_id		= 0xc2000001,
 		.hw_rev		= 58,

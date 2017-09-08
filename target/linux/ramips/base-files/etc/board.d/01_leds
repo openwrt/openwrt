@@ -86,6 +86,12 @@ c108)
 	ucidef_set_led_netdev "lan" "lan" "$board:green:lan" "eth0"
 	ucidef_set_led_netdev "modem" "modem" "$board:green:modem" "wwan0"
 	;;
+c20)
+	ucidef_set_led_switch "lan" "lan" "$board:blue:lan" "switch0" "0x1e"
+	ucidef_set_led_switch "wan" "wan" "$board:blue:wan" "switch0" "0x01"
+	set_usb_led "$board:blue:usb"
+	ucidef_set_led_netdev "wlan2g" "wlan2g" "$board:blue:wlan2g" "wlan0"
+	;;
 c20i)
 	ucidef_set_led_switch "lan" "lan" "$board:blue:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "$board:blue:wan" "switch0" "0x01"
