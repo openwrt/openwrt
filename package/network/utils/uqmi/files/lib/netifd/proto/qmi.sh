@@ -279,10 +279,15 @@ qmi_wds_stop() {
 
 	uqmi -s -d "$device" --set-client-id wds,"$cid" \
 		--stop-network 0xffffffff \
-		--autoconnect > /dev/null
+		--autoconnect > /dev/null 2>&1
 
-	[ -n "$pdh" ] && uqmi -s -d "$device" --set-client-id wds,"$cid" --stop-network "$pdh"
-	uqmi -s -d "$device" --set-client-id wds,"$cid" --release-client-id wds
+	[ -n "$pdh" ] && {
+		uqmi -s -d "$device" --set-client-id wds,"$cid" \
+			--stop-network "$pdh" > /dev/null 2>&1
+	}
+
+	uqmi -s -d "$device" --set-client-id wds,"$cid" \
+		--release-client-id wds > /dev/null 2>&1
 }
 
 proto_qmi_teardown() {
