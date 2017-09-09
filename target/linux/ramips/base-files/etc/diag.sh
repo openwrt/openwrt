@@ -24,6 +24,7 @@ get_status_led() {
 	dir-860l-b1|\
 	e1700|\
 	fonera20n|\
+	hg255d|\
 	kn_rc|\
 	kn_rf|\
 	kng_rc|\
