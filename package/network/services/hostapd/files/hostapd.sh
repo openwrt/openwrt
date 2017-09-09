@@ -372,7 +372,7 @@ hostapd_set_bss_options() {
 	[ -n "$network_bridge" ] && append bss_conf "bridge=$network_bridge" "$N"
 	[ -n "$iapp_interface" ] && {
 		local ifname
-		network_get_device ifname "$iapp_interface" || ifname = "$iapp_interface"
+		network_get_device ifname "$iapp_interface" || ifname="$iapp_interface"
 		append bss_conf "iapp_interface=$ifname" "$N"
 	}
 
