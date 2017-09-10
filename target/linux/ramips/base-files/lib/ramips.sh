@@ -553,6 +553,9 @@ ramips_board_detect() {
 	*"WCR-150GN")
 		name="wcr-150gn"
 		;;
+	*"WE1026-5G (16M)")
+		name="we1026-5g-16m"
+		;;
 	*"WF-2881")
 		name="wf-2881"
 		;;

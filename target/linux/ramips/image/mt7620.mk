@@ -480,6 +480,15 @@ define Device/youku-yk1
 endef
 TARGET_DEVICES += youku-yk1
 
+define Device/we1026-5g-16m
+  DTS := WE1026-5G-16M
+  IMAGE_SIZE := 16777216
+  SUPPORTED_DEVICES += we1026-5g-16m
+  DEVICE_TITLE := Zbtlink ZBT-WE1026-5G (16M)
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-mt76 kmod-sdhci-mt7620
+endef
+TARGET_DEVICES += we1026-5g-16m
+
 define Device/zbt-ape522ii
   DTS := ZBT-APE522II
   DEVICE_TITLE := Zbtlink ZBT-APE522II

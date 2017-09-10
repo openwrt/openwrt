@@ -323,7 +323,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
 		;;
-	wcr-150gn)
+	wcr-150gn|\
+	we1026-5g-16m)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6t@eth0"
 		;;
