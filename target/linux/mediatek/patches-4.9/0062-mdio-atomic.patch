@@ -1,7 +1,5 @@
-Index: linux-4.9.47/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.9.47.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.9.47/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -97,7 +97,10 @@ static int mtk_mdio_busy_wait(struct mtk
  			return 0;
  		if (time_after(jiffies, t_start + PHY_IAC_TIMEOUT))
