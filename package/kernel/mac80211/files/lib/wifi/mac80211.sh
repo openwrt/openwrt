@@ -92,7 +92,7 @@ detect_mac80211() {
 			htmode="VHT80"
 		}
 
-		[ -n $htmode ] && ht_capab="set wireless.radio${devidx}.htmode=$htmode"
+		[ -n "$htmode" ] && ht_capab="set wireless.radio${devidx}.htmode=$htmode"
 
 		if [ -x /usr/bin/readlink -a -h /sys/class/ieee80211/${dev} ]; then
 			path="$(readlink -f /sys/class/ieee80211/${dev}/device)"

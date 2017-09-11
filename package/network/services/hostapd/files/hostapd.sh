@@ -627,7 +627,7 @@ wpa_supplicant_add_network() {
 		scan_ssid=""
 	}
 
-	[[ "$_w_mode" = "adhoc" -o "$_w_mode" = "mesh" ]] && append network_data "$_w_modestr" "$N$T"
+	[ "$_w_mode" = "adhoc" -o "$_w_mode" = "mesh" ] && append network_data "$_w_modestr" "$N$T"
 
 	case "$auth_type" in
 		none) ;;
