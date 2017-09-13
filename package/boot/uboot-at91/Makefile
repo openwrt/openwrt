@@ -54,14 +54,34 @@ define uboot/sama5d2_xplained_mmc
   BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
+define uboot/sama5d4_xplained_spiflash
+  TITLE:=U-Boot for the SAMA5D4 Xplained board (SPI Flash)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=at91-sama5d4_xplained
+endef
+
+define uboot/sama5d4_xplained_mmc
+  TITLE:=U-Boot for the SAMA5D4 Xplained board (SDcard)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=at91-sama5d4_xplained
+endef
+
+define uboot/sama5d4_xplained_nandflash
+  TITLE:=U-Boot for the SAMA5D4 Xplained board (NandFlash)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=at91-sama5d4_xplained
+endef
+
 UBOOT_TARGETS := \
 	at91sam9m10g45ek_nandflash \
 	at91sam9x5ek_nandflash \
     sama5d3_xplained_nandflash \
     sama5d3_xplained_mmc \
     sama5d2_xplained_mmc \
-    sama5d2_xplained_spiflash
-
+    sama5d2_xplained_spiflash \
+    sama5d4_xplained_mmc \
+    sama5d4_xplained_spiflash \
+    sama5d4_xplained_nandflash
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
