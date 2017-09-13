@@ -17,16 +17,17 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=at91
-  BUILD_SUBTARGET:=legacy
   UBOOT_IMAGE:=u-boot.bin boot.bin
 endef
 
 define U-Boot/at91sam9m10g45ek_nandflash
   NAME:=AT91SAM9M10G45-EK board (NandFlash)
+  BUILD_SUBTARGET:=legacy
 endef
 
 define U-Boot/at91sam9x5ek_nandflash
   NAME:=AT91SAM9X5-EK board (NandFlash)
+  BUILD_SUBTARGET:=legacy
 endef
 
 UBOOT_TARGETS := \
