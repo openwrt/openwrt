@@ -42,11 +42,26 @@ define uboot/sama5d3_xplained_mmc
   BUILD_DEVICES:=at91-sama5d3_xplained
 endef
 
+define uboot/sama5d2_xplained_spiflash
+  TITLE:=U-Boot for the SAMA5D2 Xplained board (SPI Flash)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=at91-sama5d2_xplained
+endef
+
+define uboot/sama5d2_xplained_mmc
+  TITLE:=U-Boot for the SAMA5D2 Xplained board (SDcard/EMMC)
+  BUILD_SUBTARGET:=sama5
+  BUILD_DEVICES:=at91-sama5d2_xplained
+endef
+
 UBOOT_TARGETS := \
 	at91sam9m10g45ek_nandflash \
 	at91sam9x5ek_nandflash \
     sama5d3_xplained_nandflash \
-    sama5d3_xplained_mmc
+    sama5d3_xplained_mmc \
+    sama5d2_xplained_mmc \
+    sama5d2_xplained_spiflash
+
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
