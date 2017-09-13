@@ -13,8 +13,9 @@ ifeq ($(SUBTARGET),legacy)
 include ./legacy.mk
 UBIFS_OPTS := -m 2048 -e 126KiB -c 2048
 endif
-ifeq ($(SUBTARGET),sama5d3)
-include ./sama5d3.mk
+
+ifeq ($(SUBTARGET),sama5)
+include ./sama5.mk
 UBIFS_OPTS := -m 2048 -e 124KiB -c 2048
 endif
 
