@@ -46,6 +46,9 @@ at91_board_detect() {
 	*"SAMA5D2 Xplained")
 		name="sama5d2_xplained"
 		;;
+	*"SAMA5D4 Xplained")
+		name="sama5d4_xplained"
+		;;
 	*"CalAmp LMU5000")
 		name="lmu5000"
 		;;
