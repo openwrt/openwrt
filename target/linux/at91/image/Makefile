@@ -43,9 +43,15 @@ define Device/evaluation
   IMAGE/root.ubi := append-ubi
 endef
 
+define Device/evaluation-zImage
+  IMAGES += zImage
+  IMAGE/zImage := install-zImage
+endef
+
 define Device/evaluation-dtb
   $(Device/evaluation)
   $(Device/dtb)
+  $(Device/evaluation-zImage)
   IMAGES += dtb
   IMAGE/dtb := install-dtb
 endef
