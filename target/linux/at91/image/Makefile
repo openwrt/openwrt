@@ -16,7 +16,12 @@ endif
 
 ifeq ($(SUBTARGET),sama5)
 include ./sama5.mk
-UBIFS_OPTS := -m 2048 -e 124KiB -c 2048
+ifeq ($(TARGET_DEVICES),at91-sama5d4_xplained)
+  UBIFS_OPTS := -e 0x3e000 -c 2082 -m 0x1000 -x lzo
+  UBINIZE_OPTS := -m 0x1000 -p 0x40000
+else
+  UBIFS_OPTS := -m 2048 -e 124KiB -c 2048
+endif
 endif
 
 define Device/Default
