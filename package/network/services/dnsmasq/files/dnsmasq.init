@@ -457,9 +457,7 @@ dhcp_add() {
 	config_get networkid "$cfg" networkid
 	[ -n "$networkid" ] || networkid="$net"
 
-	network_get_subnet subnet "$net" || return 0
 	network_get_device ifname "$net" || return 0
-	network_get_protocol proto "$net" || return 0
 
 	[ "$cachelocal" = "0" ] && network_get_dnsserver dnsserver "$net" && {
 		DNS_SERVERS="$DNS_SERVERS $dnsserver"
@@ -470,6 +468,9 @@ dhcp_add() {
 		dhcp_this_host_add "$net" "$ifname" "$ADD_WAN_FQDN"
 		return 0
 	}
+
+	network_get_subnet subnet "$net" || return 0
+	network_get_protocol proto "$net" || return 0
 
 	# Do not support non-static interfaces for now
 	[ static = "$proto" ] || return 0
