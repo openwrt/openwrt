@@ -34,6 +34,7 @@ platform_expected_image() {
 		"Linksys E1000 V1")	echo "cybertan E100"; return;;
 		"Linksys E1000 V2")	echo "cybertan E100"; return;;
 		"Linksys E1000 V2.1")	echo "cybertan E100"; return;;
+		"Linksys E1200 V1")	echo "cybetran E120"; return;;
 		"Linksys E1200 V2")	echo "cybertan E122"; return;;
 		"Linksys E2000 V1")	echo "cybertan 32XN"; return;;
 		"Linksys E3000 V1")	echo "cybertan 61XN"; return;;
