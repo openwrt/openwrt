@@ -178,7 +178,7 @@ hostapd_common_add_bss_config() {
 	config_add_int wps_ap_setup_locked wps_independent
 	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
 
-	config_add_boolean ieee80211r pmk_r1_push
+	config_add_boolean ieee80211r pmk_r1_push ft_psk_generate_local
 	config_add_int r0_key_lifetime reassociation_deadline
 	config_add_string mobility_domain r1_key_holder
 	config_add_array r0kh r1kh
@@ -382,7 +382,7 @@ hostapd_set_bss_options() {
 
 		if [ "$ieee80211r" -gt "0" ]; then
 			json_get_vars mobility_domain r0_key_lifetime r1_key_holder \
-			reassociation_deadline pmk_r1_push
+				reassociation_deadline pmk_r1_push ft_psk_generate_local
 			json_get_values r0kh r0kh
 			json_get_values r1kh r1kh
 
@@ -391,12 +391,14 @@ hostapd_set_bss_options() {
 			set_default r1_key_holder "00004f577274"
 			set_default reassociation_deadline 1000
 			set_default pmk_r1_push 0
+			set_default ft_psk_generate_local 0
 
 			append bss_conf "mobility_domain=$mobility_domain" "$N"
 			append bss_conf "r0_key_lifetime=$r0_key_lifetime" "$N"
 			append bss_conf "r1_key_holder=$r1_key_holder" "$N"
 			append bss_conf "reassociation_deadline=$reassociation_deadline" "$N"
 			append bss_conf "pmk_r1_push=$pmk_r1_push" "$N"
+			append bss_conf "ft_psk_generate_local=$ft_psk_generate_local" "$N"
 
 			for kh in $r0kh; do
 				append bss_conf "r0kh=${kh//,/ }" "$N"
