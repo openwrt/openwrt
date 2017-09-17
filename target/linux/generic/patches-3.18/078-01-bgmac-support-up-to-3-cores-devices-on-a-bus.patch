@@ -44,7 +44,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		pr_err("Unsupported core_unit %d\n", core->core_unit);
  		return -ENOTSUPP;
  	}
-@@ -1588,8 +1597,17 @@ static int bgmac_probe(struct bcma_devic
+@@ -1593,8 +1602,17 @@ static int bgmac_probe(struct bcma_devic
  	}
  	bgmac->cmn = core->bus->drv_gmac_cmn.core;
  

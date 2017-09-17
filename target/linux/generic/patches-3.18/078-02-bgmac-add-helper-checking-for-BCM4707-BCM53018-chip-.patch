@@ -94,7 +94,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct net_device *net_dev;
  	struct bgmac *bgmac;
  	struct ssb_sprom *sprom = &core->bus->sprom;
-@@ -1626,8 +1629,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1631,8 +1634,7 @@ static int bgmac_probe(struct bcma_devic
  	bgmac_chip_reset(bgmac);
  
  	/* For Northstar, we have to take all GMAC core out of reset */
