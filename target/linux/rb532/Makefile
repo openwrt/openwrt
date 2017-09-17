@@ -11,7 +11,7 @@ BOARD:=rb532
 BOARDNAME:=Mikrotik RouterBoard 532
 FEATURES:=pci targz squashfs minor nand
 
-KERNEL_PATCHVER:=4.4
+KERNEL_PATCHVER:=4.9
 
 include $(INCLUDE_DIR)/target.mk
 
