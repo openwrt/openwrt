@@ -117,7 +117,7 @@ $(eval $(call KernelPackage,bluetooth_6lowpan))
 define KernelPackage/btmrvl
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell Bluetooth Kernel Module support
-  DEPENDS:=+kmod-bluetooth +mwifiex-sdio-firmware
+  DEPENDS:=+kmod-mmc +kmod-bluetooth +mwifiex-sdio-firmware
   KCONFIG:= \
 	CONFIG_BT_MRVL \
 	CONFIG_BT_MRVL_SDIO
