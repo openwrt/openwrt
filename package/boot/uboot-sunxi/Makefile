@@ -49,6 +49,12 @@ define U-Boot/A20-OLinuXino-Lime2
   BUILD_DEVICES:=sun7i-a20-olinuxino-lime2
 endef
 
+define U-Boot/A20-OLinuXino-Lime2-eMMC
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=A20 OLinuXino LIME2 eMMC
+  BUILD_DEVICES:=sun7i-a20-olinuxino-lime2-emmc
+endef
+
 define U-Boot/A20-OLinuXino_MICRO
   BUILD_SUBTARGET:=cortexa7
   NAME:=A20 OLinuXino MICRO
@@ -145,6 +151,7 @@ UBOOT_TARGETS := \
 	A13-OLinuXino \
 	A20-OLinuXino-Lime \
 	A20-OLinuXino-Lime2 \
+	A20-OLinuXino-Lime2-eMMC \
 	A20-OLinuXino_MICRO \
 	Bananapi \
 	Bananapro \
