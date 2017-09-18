@@ -1,6 +1,6 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -70,6 +70,87 @@ DEPENDENCY_CFLAG = @DEPENDENCY_CFLAG@
+@@ -70,6 +70,82 @@ DEPENDENCY_CFLAG = @DEPENDENCY_CFLAG@
  	@rm -f $@
  	$(CC) $(FULL_CFLAGS) -c $(srcdir)/$*.c
  
@@ -30,15 +30,12 @@
 +	print-aodv.c \
 +	print-arp.c \
 +	print-ascii.c \
-+	print-bgp.c \
 +	print-bootp.c \
-+	print-cdp.c \
 +	print-dhcp6.c \
 +	print-domain.c \
 +	print-eap.c \
 +	print-ether.c \
 +	print-ftp.c \
-+	print-forces.c \
 +	print-gre.c \
 +	print-http.c \
 +	print-icmp.c \
@@ -52,7 +49,6 @@
 +	print-llc.c \
 +	print-lldp.c \
 +	print-loopback.c \
-+	print-m3ua.c \
 +	print-nfs.c \
 +	print-ntp.c \
 +	print-null.c \
@@ -67,7 +63,6 @@
 +	print-rsvp.c \
 +	print-rt6.c \
 +	print-rtsp.c \
-+	print-sctp.c \
 +	print-sip.c \
 +	print-sll.c \
 +	print-smtp.c \
@@ -88,7 +83,7 @@
  CSRC =	setsignal.c tcpdump.c util.c
  
  LIBNETDISSECT_SRC=\
-@@ -236,12 +317,16 @@ LIBNETDISSECT_SRC=\
+@@ -236,12 +312,16 @@ LIBNETDISSECT_SRC=\
  	strtoaddr.c \
  	util-print.c
  
@@ -105,7 +100,7 @@
  
  
  SRC =	$(CSRC) $(GENSRC) $(LOCALSRC) $(LIBNETDISSECT_SRC)
-@@ -367,10 +452,12 @@ $(PROG): $(OBJ) @V_PCAPDEP@
+@@ -367,10 +447,12 @@ $(PROG): $(OBJ) @V_PCAPDEP@
  	@rm -f $@
  	$(CC) $(FULL_CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LIBS)
  
@@ -348,7 +343,7 @@
  		case IPPROTO_FRAGMENT:
  			advance = frag6_print(ndo, cp, (const u_char *)ip6);
  			if (ndo->ndo_snapend <= cp + advance)
-@@ -318,6 +319,7 @@ ip6_print(netdissect_options *ndo, const
+@@ -318,16 +319,19 @@ ip6_print(netdissect_options *ndo, const
  			advance = mobility_print(ndo, cp, (const u_char *)ip6);
  			nh = *cp;
  			return;
@@ -356,11 +351,11 @@
  		case IPPROTO_ROUTING:
  			advance = rt6_print(ndo, cp, (const u_char *)ip6);
  			nh = *cp;
-@@ -325,9 +327,11 @@ ip6_print(netdissect_options *ndo, const
+ 			break;
++#ifndef TCPDUMP_MINI
  		case IPPROTO_SCTP:
  			sctp_print(ndo, cp, (const u_char *)ip6, len);
  			return;
-+#ifndef TCPDUMP_MINI
  		case IPPROTO_DCCP:
  			dccp_print(ndo, cp, (const u_char *)ip6, len);
  			return;
@@ -406,17 +401,17 @@
  	case IPPROTO_AH:
  		ipds->nh = *ipds->cp;
  		ipds->advance = ah_print(ndo, ipds->cp);
-@@ -361,14 +362,17 @@ again:
+@@ -361,7 +362,9 @@ again:
  		ipds->nh = enh & 0xff;
  		goto again;
  	}
 +#endif
  
++#ifndef TCPDUMP_MINI
  	case IPPROTO_SCTP:
  		sctp_print(ndo, ipds->cp, (const u_char *)ipds->ip, ipds->len);
  		break;
- 
-+#ifndef TCPDUMP_MINI
+@@ -369,6 +372,7 @@ again:
  	case IPPROTO_DCCP:
  		dccp_print(ndo, ipds->cp, (const u_char *)ipds->ip, ipds->len);
  		break;
@@ -514,13 +509,13 @@
  
  	if (!ndo->ndo_eflag) {
  		if (ssap == dsap) {
-@@ -461,6 +467,7 @@ snap_print(netdissect_options *ndo, cons
+@@ -458,6 +464,7 @@ snap_print(netdissect_options *ndo, cons
+ 
+ 	case OUI_CISCO:
+                 switch (et) {
++#ifndef TCPDUMP_MINI
                  case PID_CISCO_CDP:
                          cdp_print(ndo, p, length, caplen);
-                         return (1);
-+#ifndef TCPDUMP_MINI
-                 case PID_CISCO_DTP:
-                         dtp_print(ndo, p, length);
                          return (1);
 @@ -470,6 +477,7 @@ snap_print(netdissect_options *ndo, cons
                  case PID_CISCO_VTP:
@@ -669,7 +664,7 @@
          if (ndo->ndo_packettype) {
                  switch (ndo->ndo_packettype) {
                  case PT_ZMTP1:
-@@ -656,6 +659,7 @@ tcp_print(netdissect_options *ndo,
+@@ -656,28 +659,36 @@ tcp_print(netdissect_options *ndo,
                  }
                  return;
          }
@@ -677,8 +672,15 @@
  
          if (IS_SRC_OR_DST_PORT(TELNET_PORT)) {
                  telnet_print(ndo, bp, length);
-@@ -666,18 +670,22 @@ tcp_print(netdissect_options *ndo,
+         } else if (IS_SRC_OR_DST_PORT(SMTP_PORT)) {
+                 ND_PRINT((ndo, ": "));
+                 smtp_print(ndo, bp, length);
+-        } else if (IS_SRC_OR_DST_PORT(BGP_PORT))
++        }
++#ifndef TCPDUMP_MINI
++        else if (IS_SRC_OR_DST_PORT(BGP_PORT))
                  bgp_print(ndo, bp, length);
++#endif
          else if (IS_SRC_OR_DST_PORT(PPTP_PORT))
                  pptp_print(ndo, bp);
 +#ifndef TCPDUMP_MINI
@@ -700,7 +702,7 @@
          else if (IS_SRC_OR_DST_PORT(FTP_PORT)) {
                  ND_PRINT((ndo, ": "));
                  ftp_print(ndo, bp, length);
-@@ -694,6 +702,7 @@ tcp_print(netdissect_options *ndo,
+@@ -694,6 +705,7 @@ tcp_print(netdissect_options *ndo,
                   * XXX packet could be unaligned, it can go strange
                   */
                  ns_print(ndo, bp + 2, length - 2, 0);
@@ -708,7 +710,7 @@
          } else if (IS_SRC_OR_DST_PORT(MSDP_PORT)) {
                  msdp_print(ndo, bp, length);
          } else if (IS_SRC_OR_DST_PORT(RPKI_RTR_PORT)) {
-@@ -701,6 +710,7 @@ tcp_print(netdissect_options *ndo,
+@@ -701,6 +713,7 @@ tcp_print(netdissect_options *ndo,
          }
          else if (length > 0 && (IS_SRC_OR_DST_PORT(LDP_PORT))) {
                  ldp_print(ndo, bp, length);
