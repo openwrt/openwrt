@@ -2,7 +2,13 @@
 
 / {
 	compatible = "olimex,rt5350f-olinuxino", "ralink,rt5350-soc";
+
+    aliases {
+        serial0 = &uartlite;
+        serial1 = &uart;
+    };
 };
+
 
 &spi0 {
 	status = "okay";
@@ -46,8 +52,12 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "jtag", "rgmii", "mdio", "uartf";
+			ralink,group = "jtag", "rgmii", "mdio";
 			ralink,function = "gpio";
+		};
+		uartf_gpio {
+			ralink,group = "uartf";
+			ralink,function = "gpio uartf";
 		};
 	};
 };
@@ -77,3 +87,8 @@
 &i2c {
 	status = "okay";
 };
+
+&uart {
+	status = "okay";
+};
+
