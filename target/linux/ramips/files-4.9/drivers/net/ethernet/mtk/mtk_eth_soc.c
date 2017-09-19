@@ -1536,7 +1536,7 @@ static int fe_probe(struct platform_device *pdev)
 	priv->rx_ring.rx_ring_size = NUM_DMA_DESC;
 	INIT_WORK(&priv->pending_work, fe_pending_work);
 
-	napi_weight = 32;
+	napi_weight = 16;
 	if (priv->flags & FE_FLAG_NAPI_WEIGHT) {
 		napi_weight *= 4;
 		priv->tx_ring.tx_ring_size *= 4;
