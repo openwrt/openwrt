@@ -895,6 +895,25 @@ endef
 $(eval $(call KernelPackage,usb-storage-extras))
 
 
+define KernelPackage/usb-storage-uas
+  SUBMENU:=$(USB_MENU)
+  TITLE:=USB Attached SCSI (UASP) support
+  DEPENDS:=+kmod-usb-storage
+  KCONFIG:=CONFIG_USB_UAS
+  FILES:=$(LINUX_DIR)/drivers/usb/storage/uas.ko
+  AUTOLOAD:=$(call AutoProbe,uas)
+endef
+
+define KernelPackage/usb-storage-uas/description
+ Say Y here if you want to include support for
+ USB Attached SCSI (UAS/UASP), a higher
+ performance protocol available on many
+ newer USB 3.0 storage devices
+endef
+
+$(eval $(call KernelPackage,usb-storage-uas))
+
+
 define KernelPackage/usb-atm
   TITLE:=Support for ATM on USB bus
   DEPENDS:=+kmod-atm
