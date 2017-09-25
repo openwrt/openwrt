@@ -277,7 +277,8 @@ ar71xx_setup_interfaces()
 	dir-835-a1|\
 	esr900|\
 	mynet-n750|\
-	sr3200)
+	sr3200|\
+	tl-wr1043n-v5)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 		;;
@@ -542,6 +543,7 @@ ar71xx_setup_macs()
 	fritz300e)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		;;
+	tl-wr1043n-v5|\
 	tl-wr1043nd-v4)
 		lan_mac=$(mtd_get_mac_binary product-info 8)
 		wan_mac=$(macaddr_add "$lan_mac" 1)

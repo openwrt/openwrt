@@ -676,6 +676,17 @@ define Device/tl-wr1041n-v2
 endef
 TARGET_DEVICES += tl-wr1041n-v2
 
+define Device/tl-wr1043n-v5
+  $(Device/archer-cxx)
+  DEVICE_TITLE := TP-LINK TL-WR1043N v5
+  BOARDNAME := TL-WR1043N-v5
+  SUPPORTED_DEVICES := tl-wr1043n-v5
+  DEVICE_PROFILE := TLWR1043
+  MTDPARTS := spi0.0:128k(factory-uboot)ro,128k(u-boot)ro,15104k(firmware),128k(product-info)ro,640k(config)ro,64k(partition-table)ro,128k(logs)ro,64k(art)ro
+  IMAGE_SIZE := 15104k
+  TPLINK_BOARD_ID := TLWR1043NV5
+endef
+
 define Device/tl-wr1043nd-v1
   $(Device/tplink-8m)
   DEVICE_TITLE := TP-LINK TL-WR1043N/ND v1
@@ -726,7 +737,7 @@ define Device/tl-wr2543-v1
   IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade -v 3.13.99
   IMAGE/factory.bin := append-rootfs | mktplinkfw factory -v 3.13.99
 endef
-TARGET_DEVICES += tl-wr1043nd-v1 tl-wr1043nd-v2 tl-wr1043nd-v3 tl-wr1043nd-v4 tl-wr2543-v1
+TARGET_DEVICES += tl-wr1043nd-v1 tl-wr1043nd-v2 tl-wr1043nd-v3 tl-wr1043nd-v4 tl-wr1043n-v5 tl-wr2543-v1
 
 define Device/tl-wr703n-v1
   $(Device/tplink-4mlzma)
