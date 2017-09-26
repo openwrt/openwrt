@@ -108,6 +108,16 @@ endef
 TARGET_DEVICES += sun6i-a31-m9
 
 
+define Device/sun8i-h2-plus-orangepi-r1
+  DEVICE_TITLE:=Xunlong Orange Pi R1
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-usb-net kmod-usb-net-rtl8152
+  SUPPORTED_DEVICES:=xunlong,orangepi-r1
+  SUNXI_DTS:=sun8i-h2-plus-orangepi-r1
+endef
+
+TARGET_DEVICES += sun8i-h2-plus-orangepi-r1
+
+
 define Device/sun8i-h3-orangepi-plus
   DEVICE_TITLE:=Xunlong Orange Pi Plus
   DEVICE_PACKAGES:=kmod-rtc-sunxi

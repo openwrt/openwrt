@@ -126,6 +126,12 @@ define U-Boot/Lamobo_R1
   BUILD_DEVICES:=sun7i-a20-lamobo-r1
 endef
 
+define U-Boot/orangepi_r1
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Orange Pi R1 (H2+)
+  BUILD_DEVICES:=sun8i-h2-plus-orangepi-r1
+endef
+
 define U-Boot/orangepi_plus
   BUILD_SUBTARGET:=cortexa7
   NAME:=Orange Pi Plus (H3)
@@ -164,6 +170,7 @@ UBOOT_TARGETS := \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
 	Lamobo_R1 \
+	orangepi_r1 \
 	orangepi_plus \
 	pangolin \
 	pine64_plus
