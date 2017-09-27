@@ -1,0 +1,36 @@
+From 3cb4bb6b5fb8a936cb69e2e9ea6a4e692122abb9 Mon Sep 17 00:00:00 2001
+From: Jakub Zakrzewski <slither.jz@gmail.com>
+Date: Tue, 15 Aug 2017 13:21:33 -0400
+Subject: [PATCH] curl-confopts.m4: fix --disable-threaded-resolver
+
+Closes https://github.com/curl/curl/issues/1784
+---
+ m4/curl-confopts.m4 | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/m4/curl-confopts.m4 b/m4/curl-confopts.m4
+index d77a884..6dcd0f1 100644
+--- a/m4/curl-confopts.m4
++++ b/m4/curl-confopts.m4
+@@ -37,14 +37,14 @@ AC_HELP_STRING([--enable-threaded-resolver],[Enable threaded resolver])
+ AC_HELP_STRING([--disable-threaded-resolver],[Disable threaded resolver]),
+   OPT_THRES=$enableval)
+   case "$OPT_THRES" in
+-    *)
+-      dnl configure option not specified
+-      want_thres="yes"
+-      ;;
+     no)
+       dnl --disable-threaded-resolver option used
+       want_thres="no"
+       ;;
++    *)
++      dnl configure option not specified
++      want_thres="yes"
++      ;;
+   esac
+   AC_MSG_RESULT([$want_thres])
+ ])
+-- 
+1.9.1
+
