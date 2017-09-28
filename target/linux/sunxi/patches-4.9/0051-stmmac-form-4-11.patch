@@ -1736,15 +1736,6 @@
  			 *  (preallocated during init) then the packet is
  			 *  ignored
  			 */
-@@ -2669,7 +2667,7 @@ static int stmmac_poll(struct napi_struc
- 
- 	work_done = stmmac_rx(priv, budget);
- 	if (work_done < budget) {
--		napi_complete(napi);
-+		napi_complete_done(napi, work_done);
- 		stmmac_enable_dma_irq(priv);
- 	}
- 	return work_done;
 @@ -2762,7 +2760,7 @@ static netdev_features_t stmmac_fix_feat
  	/* Some GMAC devices have a bugged Jumbo frame support that
  	 * needs to have the Tx COE disabled for oversized frames
