@@ -8,6 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mpfr
 PKG_VERSION:=3.1.6
+PKG_CPE_ID:=cpe:/a:mpfr:gnu_mpfr
 
 PKG_SOURCE_URL:=http://www.mpfr.org/mpfr-$(PKG_VERSION) \
 		@GNU/mpfr

@@ -19,6 +19,7 @@ PKG_SOURCE_URL:=@SF/$(PKG_NAME)
 
 PKG_LICENSE:=BSD-3c
 PKG_LICENSE_FILES:=COPYRIGHT
+PKG_CPE_ID:=cpe:/a:paul_kranenburg:strace
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 

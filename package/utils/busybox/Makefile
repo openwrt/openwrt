@@ -23,6 +23,7 @@ PKG_CHECK_FORMAT_SECURITY:=0
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=LICENSE archival/libarchive/bz/LICENSE
+PKG_CPE_ID:=cpe:/a:busybox:busybox
 
 include $(INCLUDE_DIR)/package.mk
 

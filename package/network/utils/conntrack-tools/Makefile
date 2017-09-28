@@ -18,6 +18,7 @@ PKG_MIRROR_HASH:=1c207c3e423d741fbb31e3c29486a811e6dad493f26ec47a2df75b6262a1b4b
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0
+PKG_CPE_ID:=cpe:/a:conntrack-tools_project:conntrack-tools
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1

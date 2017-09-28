@@ -8,6 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=expat
+PKG_CPE_ID:=cpe:/a:libexpat:expat
 PKG_VERSION:=2.2.4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2

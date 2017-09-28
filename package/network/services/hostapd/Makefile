@@ -17,6 +17,7 @@ PKG_MIRROR_HASH:=c6ad9a73fc1ae0ba8bc48f71cf14394b274bc9c2c1d1b53c2775f08312597e7
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
+PKG_CPE_ID:=cpe:/a:w1.fi:hostapd
 
 PKG_BUILD_PARALLEL:=1
 

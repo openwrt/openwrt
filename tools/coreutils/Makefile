@@ -7,6 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=coreutils
+PKG_CPE_ID:=cpe:/a:gnu:coreutils
 PKG_VERSION:=8.27
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
