@@ -36,7 +36,7 @@ Reviewed-by: Jagan Teki <jagan@openedev.com>
  S:	Maintained
 --- /dev/null
 +++ b/configs/A20-OLinuXino-Lime2-eMMC_defconfig
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,37 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_SUNXI=y
 +CONFIG_MACH_SUN7I=y
@@ -64,6 +64,7 @@ Reviewed-by: Jagan Teki <jagan@openedev.com>
 +CONFIG_ETH_DESIGNWARE=y
 +CONFIG_RGMII=y
 +CONFIG_SUN7I_GMAC=y
++CONFIG_GMAC_TX_DELAY=1
 +CONFIG_AXP_ALDO3_VOLT=2800
 +CONFIG_AXP_ALDO4_VOLT=2800
 +CONFIG_USB_EHCI_HCD=y
