@@ -21,7 +21,18 @@ endef
 
 zImage:=$(BIN_DIR)/$(IMG_PREFIX)-zImage
 
-DTS_TARGETS = fsl/p1010rdb-pa tl-wdr4900-v1 fsl/p1020rdb
+DTS_TARGETS = hiveap-330 fsl/p1010rdb-pa tl-wdr4900-v1 fsl/p1020rdb
+
+define Build/empty-initramfs
+	-mkdir $(KDIR_TMP)/empty-initramfs; \
+		cd $(KDIR_TMP)/empty-initramfs; \
+		find . | cpio -o -H newc | gzip -9n > $(KDIR_TMP)/empty-initramfs.gpio.gz
+
+	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) -O linux -T ramdisk \
+		-C gzip -n "empty initramfs" \
+		-d $(KDIR_TMP)/empty-initramfs.gpio.gz \
+		$(KDIR_TMP)/$(IMG_PREFIX)-empty-initramfs.image
+endef
 
 define Image/BuildKernel
 	cp $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
@@ -34,6 +45,21 @@ define Image/BuildKernel/Initramfs
 	cp $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-initramfs-zImage
 ifeq ($(SUBTARGET),generic)
 	cp $(KDIR)/cuImage.tl-wdr4900-v1-initramfs $(BIN_DIR)/$(IMG_PREFIX)-tl-wdr4900-v1-initramfs.uImage
+endif
+ifeq ($(SUBTARGET),p1020)
+	cp $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-hiveap-330-initramfs.zImage
+endif
+endef
+
+define Image/Build/Aerohive
+	$(call Build/empty-initramfs)
+ifeq ($(2),hiveap-330)
+	( \
+		dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(2).fdt bs=256k conv=sync; \
+		dd if=$(KDIR_TMP)/$(IMG_PREFIX)-empty-initramfs.image bs=256k conv=sync; \
+		dd if=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=40704k conv=sync; \
+		dd if=$(KDIR)/zImage conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-sysupgrade.img
 endif
 endef
 
@@ -48,6 +74,10 @@ define Image/Build/TPLINK
 		-k $(KDIR)/$(3) \
 		-r $(KDIR)/root.$(1) \
 		-o $(call sysupname,$(1),$(2))
+endef
+
+define Image/Build/Profile/hiveap-330
+	$(call Image/Build/Aerohive,$(1),hiveap-330)
 endef
 
 define Image/Build/Profile/TLWDR4900

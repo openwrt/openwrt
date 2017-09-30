@@ -13,6 +13,9 @@ mpc85xx_board_detect() {
 	model=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /model/ {print $2}' /proc/cpuinfo)
 
 	case "$model" in
+	*"HiveAP-330")
+		name="hiveap-330"
+		;;
 	*"TL-WDR4900 v1")
 		name="tl-wdr4900-v1"
 		;;
