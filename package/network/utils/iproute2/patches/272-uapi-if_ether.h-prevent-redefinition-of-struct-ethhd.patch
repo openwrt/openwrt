@@ -65,15 +65,3 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  /* Definitions for in.h */
  #define __UAPI_DEF_IN_ADDR		1
  #define __UAPI_DEF_IN_IPPROTO		1
---- a/ip/iplink_bridge.c
-+++ b/ip/iplink_bridge.c
-@@ -14,8 +14,8 @@
- #include <string.h>
- #include <netinet/in.h>
- #include <linux/if_link.h>
--#include <linux/if_bridge.h>
- #include <netinet/ether.h>
-+#include <linux/if_bridge.h>
- #include <net/if.h>
- 
- #include "rt_names.h"

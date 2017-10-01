@@ -1,7 +1,7 @@
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -4,7 +4,7 @@ ifeq ($(IP_CONFIG_SETNS),y)
- 	CFLAGS += -DHAVE_SETNS
+@@ -12,7 +12,7 @@ ifeq ($(HAVE_MNL),y)
+ 	CFLAGS += -DHAVE_LIBMNL $(shell $(PKG_CONFIG) libmnl --cflags)
  endif
  
 -CFLAGS += -fPIC
