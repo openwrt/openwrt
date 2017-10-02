@@ -72,6 +72,31 @@ define Build/mktplinkfw-initramfs
 	@mv $@.new $@
 endef
 
+# mktplinkfw-combined
+#
+# -c combined image
+define Build/mktplinkfw-combined
+	$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) $(1) \
+		-k $@ \
+		-o $@.new \
+		-s -S \
+		-c
+	@mv $@.new $@
+endef
+
+define Build/tplink-safeloader
+	-$(STAGING_DIR_HOST)/bin/tplink-safeloader \
+		-B $(TPLINK_BOARD_NAME) \
+		-V $(REVISION) \
+		-k $(word 1,$^) \
+		-r $@ \
+		-o $@.new \
+		-j \
+		$(wordlist 2,$(words $(1)),$(1)) \
+		$(if $(findstring sysupgrade,$(word 1,$(1))),-S) && mv $@.new $@ || rm -f $@
+endef
+
 define Build/loader-common
 	rm -rf $@.src
 	$(MAKE) -C lzma-loader \
@@ -266,6 +291,24 @@ define Device/tl-wdr4310-v1
 $(Device/tl-wdr4300-v1)
   TPLINK_HWID := 0x43100001
 endef
+
+define Device/tl-wr1043nd-v4
+$(Device/tplink)
+  IMAGE_SIZE := 15552k
+  MTDPARTS=spi0.0:128k(u-boot)ro,1536k(kernel),14016k(rootfs),128k(product-info)ro,320k(config)ro,64k(partition-table)ro,128k(logs)ro,64k(ART)ro,15552k@0x20000(firmware)
+  BOARDNAME := TL-WR1043ND-v4
+  TPLINK_BOARD_NAME := TLWR1043NDV4
+  TPLINK_HWID :=  0x10430004
+  TPLINK_FLASHLAYOUT := 16Msafeloader
+  DEVICE_PROFILE := TLWR1043
+  LOADER_TYPE := elf
+  KERNEL := kernel-bin | patch-cmdline | lzma | mktplinkfw-combined
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+
+TARGET_DEVICES += tl-wr1043nd-v4
 
 define Device/mw4530r-v1
 $(Device/tl-wdr4300-v1)
@@ -1020,6 +1063,7 @@ cameo_db120_mtdlayout=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,15936k(firmware)
 cameo_db120_mtdlayout_8M=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,7872k(firmware),128k(lang)ro,64k(art)ro
 cap4200ag_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe),64k(art),13632k@0xa0000(firmware)
 cpe510_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),6144k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
+tl-1043ndv4_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,1536k(kernel),14016k(rootfs),128k(product-info)ro,320k(config)ro,64k(partition-table)ro,128k(logs)ro,64k(ART)ro,15552k@0x20000(firmware)
 eap300v2_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),320k(custom),13632k(firmware),2048k(failsafe),64k(art)ro
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 dgl_5500_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,15296k(firmware),192k(lang)ro,512k(my-dlink)ro,64k(mac)ro,64k(art)ro
@@ -2063,7 +2107,6 @@ $(eval $(call SingleProfile,TPLINK,64kraw,TLWR941NV2,tl-wr941nd-v2,TL-WR941ND,tt
 $(eval $(call SingleProfile,TPLINK,64kraw,TLWR941NV3,tl-wr941nd-v3,TL-WR941ND,ttyS0,115200,0x09410002,2,4M))
 $(eval $(call SingleProfile,TPLINK,64kraw,TLWR941NV4,tl-wr941nd-v4,TL-WR741ND,ttyS0,115200,0x09410004,1,4M))
 $(eval $(call SingleProfile,TPLINK,64kraw,TLWR1043V1,tl-wr1043nd-v1,TL-WR1043ND,ttyS0,115200,0x10430001,1,8M))
-
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR1043V2,tl-wr1043nd-v2,TL-WR1043ND-v2,ttyS0,115200,0x10430002,1,8M))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR1043V3,tl-wr1043nd-v3,TL-WR1043ND-v2,ttyS0,115200,0x10430003,1,8M))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR2543,tl-wr2543-v1,TL-WR2543N,ttyS0,115200,0x25430001,1,8Mlzma,-v 3.13.99))
@@ -2130,7 +2173,7 @@ $(eval $(call MultiProfile,TLWR743,TLWR743NV1))
 $(eval $(call MultiProfile,TLWR841,TLWR841NV15 TLWR841NV3 TLWR841NV5 TLWR841NV7))
 $(eval $(call MultiProfile,TLWR842,TLWR842V1))
 $(eval $(call MultiProfile,TLWR941,TLWR941NV2 TLWR941NV3 TLWR941NV4))
-$(eval $(call MultiProfile,TLWR1043,TLWR1043V1 TLWR1043V2 TLWR1043V3))
+$(eval $(call MultiProfile,TLWR1043,TLWR1043V1 TLWR1043V2 TLWR1043V3 TLWR1043V4))
 $(eval $(call MultiProfile,TLWDR4300,TLWDR3500V1 TLWDR3600V1 TLWDR4300V1 TLWDR4300V1IL TLWDR4310V1 MW4530RV1))
 $(eval $(call MultiProfile,TUBE2H,TUBE2H8M TUBE2H16M))
 $(eval $(call MultiProfile,UBNT,UBNTAIRROUTER UBNTRS UBNTRSPRO UBNTLSSR71 UBNTBULLETM UBNTROCKETM UBNTROCKETMXW UBNTNANOM UBNTNANOMXW UBNTLOCOXW UBNTUNIFI UBNTUNIFIOUTDOOR UBNTUNIFIOUTDOORPLUS UAPPRO UBNTAIRGW))

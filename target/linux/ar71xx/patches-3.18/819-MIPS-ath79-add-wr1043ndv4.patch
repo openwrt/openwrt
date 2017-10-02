@@ -1,0 +1,43 @@
+diff -ruN a/arch/mips/ath79/Kconfig b/arch/mips/ath79/Kconfig
+--- a/arch/mips/ath79/Kconfig	2017-09-19 10:04:15.000000000 +0200
++++ b/arch/mips/ath79/Kconfig	2017-09-19 11:18:34.311041392 +0200
+@@ -1227,6 +1227,17 @@
+ 	select ATH79_DEV_USB
+ 	select ATH79_DEV_WMAC
+ 
++config ATH79_MACH_TL_WR1043ND_V4
++	bool "TP-LINK TL-WR1043ND v4 support"
++	select SOC_QCA956X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_TL_WR2543N
+ 	bool "TP-LINK TL-WR2543N/ND support"
+ 	select SOC_AR724X
+diff -ruN a/arch/mips/ath79/machtypes.h b/arch/mips/ath79/machtypes.h
+--- a/arch/mips/ath79/machtypes.h	2017-09-19 10:04:15.000000000 +0200
++++ b/arch/mips/ath79/machtypes.h	2017-09-19 11:21:00.021631079 +0200
+@@ -165,6 +165,7 @@
+ 	ATH79_MACH_TL_WR1041N_V2,	/* TP-LINK TL-WR1041N v2 */
+ 	ATH79_MACH_TL_WR1043ND,		/* TP-LINK TL-WR1043ND */
+ 	ATH79_MACH_TL_WR1043ND_V2,	/* TP-LINK TL-WR1043ND v2 */
++	ATH79_MACH_TL_WR1043ND_V4,	/* TP-LINK TL-WR1043ND v4 */
+ 	ATH79_MACH_TL_WR2543N,		/* TP-LINK TL-WR2543N/ND */
+ 	ATH79_MACH_TL_WR703N,		/* TP-LINK TL-WR703N */
+ 	ATH79_MACH_TL_WR710N,		/* TP-LINK TL-WR710N */
+diff -ruN a/arch/mips/ath79/Makefile b/arch/mips/ath79/Makefile
+--- a/arch/mips/ath79/Makefile	2017-09-19 10:04:15.000000000 +0200
++++ b/arch/mips/ath79/Makefile	2017-09-19 11:19:40.502400735 +0200
+@@ -145,6 +145,7 @@
+ obj-$(CONFIG_ATH79_MACH_TL_WR1041N_V2)	+= mach-tl-wr1041n-v2.o
+ obj-$(CONFIG_ATH79_MACH_TL_WR1043ND)	+= mach-tl-wr1043nd.o
+ obj-$(CONFIG_ATH79_MACH_TL_WR1043ND_V2)	+= mach-tl-wr1043nd-v2.o
++obj-$(CONFIG_ATH79_MACH_TL_WR1043ND_V4) += mach-tl-wr1043nd-v4.o
+ obj-$(CONFIG_ATH79_MACH_TL_WR2543N)	+= mach-tl-wr2543n.o
+ obj-$(CONFIG_ATH79_MACH_TL_WR703N)	+= mach-tl-wr703n.o
+ obj-$(CONFIG_ATH79_MACH_TL_WR720N_V3)	+= mach-tl-wr720n-v3.o
