@@ -1,16 +1,14 @@
-Index: dnsmasq-2.77/src/dnsmasq.c
-===================================================================
---- dnsmasq-2.77.orig/src/dnsmasq.c
-+++ dnsmasq-2.77/src/dnsmasq.c
-@@ -17,6 +17,8 @@
- /* Declare static char *compiler_opts  in config.h */
- #define DNSMASQ_COMPILE_OPTS
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -19,6 +19,8 @@
+ 
+ #include "dnsmasq.h"
  
 +#include <libubus.h>
 +
- #include "dnsmasq.h"
- 
  struct daemon *daemon;
+ 
+ static volatile pid_t pid = 0;
 @@ -32,6 +34,62 @@ static void fatal_event(struct event_des
  static int read_event(int fd, struct event_desc *evp, char **msg);
  static void poll_resolv(int force, int do_reload, time_t now);
@@ -91,10 +89,8 @@ Index: dnsmasq-2.77/src/dnsmasq.c
        check_dns_listeners(now);
  
  #ifdef HAVE_TFTP
-Index: dnsmasq-2.77/Makefile
-===================================================================
---- dnsmasq-2.77.orig/Makefile
-+++ dnsmasq-2.77/Makefile
+--- a/Makefile
++++ b/Makefile
 @@ -85,7 +85,7 @@ all : $(BUILDDIR)
  	@cd $(BUILDDIR) && $(MAKE) \
   top="$(top)" \
@@ -104,11 +100,9 @@ Index: dnsmasq-2.77/Makefile
   -f $(top)/Makefile dnsmasq 
  
  mostly_clean :
-Index: dnsmasq-2.77/src/dnsmasq.h
-===================================================================
---- dnsmasq-2.77.orig/src/dnsmasq.h
-+++ dnsmasq-2.77/src/dnsmasq.h
-@@ -1389,6 +1389,8 @@ void emit_dbus_signal(int action, struct
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -1397,6 +1397,8 @@ void emit_dbus_signal(int action, struct
  #  endif
  #endif
  
@@ -117,10 +111,8 @@ Index: dnsmasq-2.77/src/dnsmasq.h
  /* ipset.c */
  #ifdef HAVE_IPSET
  void ipset_init(void);
-Index: dnsmasq-2.77/src/rfc2131.c
-===================================================================
---- dnsmasq-2.77.orig/src/rfc2131.c
-+++ dnsmasq-2.77/src/rfc2131.c
+--- a/src/rfc2131.c
++++ b/src/rfc2131.c
 @@ -1621,6 +1621,10 @@ static void log_packet(char *type, void
  	      daemon->namebuff,
  	      string ? string : "",
