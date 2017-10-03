@@ -249,14 +249,19 @@ endef
 
 define Build/tplink-v2-header
 	$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
-		-c -V "ver. 2.0" -B $(TPLINK_BOARD_ID) $(1) -k $@ -o $@.new
+		-c -H $(TPLINK_HWID) -W $(TPLINK_HWREV) \
+		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
+		-T $(TPLINK_HVERSION) -V "ver. 2.0" \
+		-k $@ -o $@.new $(1)
 	@mv $@.new $@
 endef
 
 define Build/tplink-v2-image
 	$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
-		-a 0x4 -j -V "ver. 2.0" -B $(TPLINK_BOARD_ID) $(1) \
-		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) \
+		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
+		-T $(TPLINK_HVERSION) -V "ver. 2.0" -a 0x4 -j \
+		-k $(IMAGE_KERNEL) -r $(IMAGE_ROOTFS) -o $@.new $(1)
 	cat $@.new >> $@
 	rm -rf $@.new
 endef

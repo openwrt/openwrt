@@ -2,7 +2,7 @@
 # MT76x8 Profiles
 #
 
-DEVICE_VARS += TPLINK_BOARD_ID
+DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION
 
 define Device/duzun-dm06
   DTS := DUZUN-DM06
@@ -85,12 +85,16 @@ define Device/tl-wr840n-v4
   DTS := TL-WR840NV4
   IMAGE_SIZE := 7808k
   DEVICE_TITLE := TP-Link TL-WR840N v4
-  TPLINK_BOARD_ID := TL-WR840NV4
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x08400004
+  TPLINK_HWREV := 0x1
+  TPLINK_HWREVADD := 0x4
+  TPLINK_HVERSION := 3
   KERNEL := $(KERNEL_DTB)
   IMAGES += tftp-recovery.bin
-  IMAGE/factory.bin := tplink-v2-image
+  IMAGE/factory.bin := tplink-v2-image -e
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
-  IMAGE/sysupgrade.bin := tplink-v2-image -s | append-metadata | \
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -e | append-metadata | \
 	check-size $$$$(IMAGE_SIZE)
 endef
 
@@ -98,7 +102,9 @@ define Device/tl-wr841n-v13
   $(Device/tl-wr840n-v4)
   DTS := TL-WR841NV13
   DEVICE_TITLE := TP-Link TL-WR841N v13
-  TPLINK_BOARD_ID := TL-WR841NV13
+  TPLINK_HWID := 0x08410013
+  TPLINK_HWREV := 0x268
+  TPLINK_HWREVADD := 0x13
 endef
 TARGET_DEVICES += tl-wr840n-v4 tl-wr841n-v13
 
