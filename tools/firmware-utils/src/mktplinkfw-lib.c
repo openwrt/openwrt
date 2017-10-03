@@ -30,8 +30,21 @@
 #include "mktplinkfw-lib.h"
 #include "md5.h"
 
+extern char *ofname;
 extern char *progname;
+extern uint32_t kernel_len;
+extern struct file_info kernel_info;
+extern struct file_info rootfs_info;
+extern struct flash_layout *layout;
+extern uint32_t rootfs_ofs;
+extern uint32_t rootfs_align;
+extern int combined;
+extern int strip_padding;
+extern int add_jffs2_eof;
+
 static unsigned char jffs2_eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
+
+void fill_header(char *buf, int len);
 
 struct flash_layout *find_layout(struct flash_layout *layouts, const char *id)
 {
@@ -102,7 +115,7 @@ out:
 	return ret;
 }
 
-int pad_jffs2(char *buf, int currlen, int maxlen)
+static int pad_jffs2(char *buf, int currlen, int maxlen)
 {
 	int len;
 	uint32_t pad_mask;
@@ -192,4 +205,67 @@ inline void inspect_fw_pmd5sum(const char *label, const uint8_t *val, const char
 	for (i=0; i<MD5SUM_LEN; i++)
 		printf(" %02x", val[i]);
 	printf(" %s\n", text);
+}
+
+// header_size = sizeof(struct fw_header)
+int build_fw(size_t header_size)
+{
+	int buflen;
+	char *buf;
+	char *p;
+	int ret = EXIT_FAILURE;
+	int writelen = 0;
+
+	writelen = header_size + kernel_len;
+
+	if (combined)
+		buflen = writelen;
+	else
+		buflen = layout->fw_max_len;
+
+	buf = malloc(buflen);
+	if (!buf) {
+		ERR("no memory for buffer\n");
+		goto out;
+	}
+
+	memset(buf, 0xff, buflen);
+	p = buf + header_size;
+	ret = read_to_buf(&kernel_info, p);
+	if (ret)
+		goto out_free_buf;
+
+	if (!combined) {
+		if (rootfs_align)
+			p = buf + writelen;
+		else
+			p = buf + rootfs_ofs;
+
+		ret = read_to_buf(&rootfs_info, p);
+		if (ret)
+			goto out_free_buf;
+
+		if (rootfs_align)
+			writelen += rootfs_info.file_size;
+		else
+			writelen = rootfs_ofs + rootfs_info.file_size;
+
+		if (add_jffs2_eof)
+			writelen = pad_jffs2(buf, writelen, layout->fw_max_len);
+	}
+
+	if (!strip_padding)
+		writelen = buflen;
+
+	fill_header(buf, writelen);
+	ret = write_fw(ofname, buf, writelen);
+	if (ret)
+		goto out_free_buf;
+
+	ret = EXIT_SUCCESS;
+
+out_free_buf:
+	free(buf);
+out:
+	return ret;
 }

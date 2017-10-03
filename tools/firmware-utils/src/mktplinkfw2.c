@@ -75,7 +75,7 @@ struct board_info {
 /*
  * Globals
  */
-static char *ofname;
+char *ofname;
 char *progname;
 static char *vendor = "TP-LINK Technologies";
 static char *version = "ver. 1.0";
@@ -87,7 +87,7 @@ static struct board_info custom_board;
 
 static struct board_info *board;
 static char *layout_id;
-static struct flash_layout *layout;
+struct flash_layout *layout;
 static char *opt_hw_id;
 static char *opt_hw_rev;
 static char *opt_hw_ver_add;
@@ -96,17 +96,17 @@ static int fw_ver_mid;
 static int fw_ver_hi;
 static int sver_lo;
 static int sver_hi;
-static struct file_info kernel_info;
+struct file_info kernel_info;
 static uint32_t kernel_la = 0;
 static uint32_t kernel_ep = 0;
-static uint32_t kernel_len = 0;
-static struct file_info rootfs_info;
-static uint32_t rootfs_ofs = 0;
-static uint32_t rootfs_align;
+uint32_t kernel_len = 0;
+struct file_info rootfs_info;
+uint32_t rootfs_ofs = 0;
+uint32_t rootfs_align;
 static struct file_info boot_info;
-static int combined;
-static int strip_padding;
-static int add_jffs2_eof;
+int combined;
+int strip_padding;
+int add_jffs2_eof;
 
 static struct file_info inspect_info;
 static int extract = 0;
@@ -312,7 +312,7 @@ static int check_options(void)
 	return 0;
 }
 
-static void fill_header(char *buf, int len)
+void fill_header(char *buf, int len)
 {
 	struct fw_header *hdr = (struct fw_header *)buf;
 	unsigned ver_len;
@@ -372,65 +372,6 @@ static void fill_header(char *buf, int len)
 	}
 
 	get_md5(buf, len, hdr->md5sum1);
-}
-
-static int build_fw(void)
-{
-	int buflen;
-	char *buf;
-	char *p;
-	int ret = EXIT_FAILURE;
-	int writelen = 0;
-
-	buflen = layout->fw_max_len;
-
-	buf = malloc(buflen);
-	if (!buf) {
-		ERR("no memory for buffer\n");
-		goto out;
-	}
-
-	memset(buf, 0xff, buflen);
-	p = buf + sizeof(struct fw_header);
-	ret = read_to_buf(&kernel_info, p);
-	if (ret)
-		goto out_free_buf;
-
-	writelen = sizeof(struct fw_header) + kernel_len;
-
-	if (!combined) {
-		if (rootfs_align)
-			p = buf + writelen;
-		else
-			p = buf + rootfs_ofs;
-
-		ret = read_to_buf(&rootfs_info, p);
-		if (ret)
-			goto out_free_buf;
-
-		if (rootfs_align)
-			writelen += rootfs_info.file_size;
-		else
-			writelen = rootfs_ofs + rootfs_info.file_size;
-
-		if (add_jffs2_eof)
-			writelen = pad_jffs2(buf, writelen, layout->fw_max_len);
-	}
-
-	if (!strip_padding)
-		writelen = buflen;
-
-	fill_header(buf, writelen);
-	ret = write_fw(ofname, buf, writelen);
-	if (ret)
-		goto out_free_buf;
-
-	ret = EXIT_SUCCESS;
-
- out_free_buf:
-	free(buf);
- out:
-	return ret;
 }
 
 static int inspect_fw(void)
@@ -671,7 +612,7 @@ int main(int argc, char *argv[])
 		goto out;
 
 	if (!inspect_info.file_name)
-		ret = build_fw();
+		ret = build_fw(sizeof(struct fw_header));
 	else
 		ret = inspect_fw();
 
