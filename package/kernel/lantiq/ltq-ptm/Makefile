@@ -24,6 +24,9 @@ define KernelPackage/ltq-ptm-template
   URL:=http://www.lantiq.com/
   VARIANT:=$(1)
   DEPENDS:=@TARGET_lantiq_$(2)
+ifeq ($(1),ase)
+  DEPENDS+=@BROKEN
+endif
   FILES:=$(PKG_BUILD_DIR)/ltq_ptm_$(1).ko 
 endef
 
