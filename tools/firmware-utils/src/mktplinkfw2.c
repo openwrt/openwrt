@@ -28,15 +28,7 @@
 #include <netinet/in.h>
 
 #include "md5.h"
-
-#define ALIGN(x,a) ({ typeof(a) __a = (a); (((x) + __a - 1) & ~(__a - 1)); })
-
-#define MD5SUM_LEN	16
-
-struct file_info {
-	char		*file_name;	/* name of the file */
-	uint32_t	file_size;	/* length of the file */
-};
+#include "mktplinkfw-lib.h"
 
 struct fw_header {
 	uint32_t	version;			/* 0x00: header version */
@@ -68,14 +60,6 @@ struct fw_header {
 	uint8_t		pad[364];
 } __attribute__ ((packed));
 
-struct flash_layout {
-	char		*id;
-	uint32_t	fw_max_len;
-	uint32_t	kernel_la;
-	uint32_t	kernel_ep;
-	uint32_t	rootfs_ofs;
-};
-
 #define FLAG_LE_KERNEL_LA_EP			0x00000001	/* Little-endian used for kernel load address & entry point */
 
 struct board_info {
@@ -92,7 +76,7 @@ struct board_info {
  * Globals
  */
 static char *ofname;
-static char *progname;
+char *progname;
 static char *vendor = "TP-LINK Technologies";
 static char *version = "ver. 1.0";
 static char *fw_ver = "0.0.0";
@@ -123,7 +107,6 @@ static struct file_info boot_info;
 static int combined;
 static int strip_padding;
 static int add_jffs2_eof;
-static unsigned char jffs2_eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
 
 static struct file_info inspect_info;
 static int extract = 0;
@@ -168,42 +151,6 @@ static struct flash_layout layouts[] = {
 	}
 };
 
-/*
- * Message macros
- */
-#define ERR(fmt, ...) do { \
-	fflush(0); \
-	fprintf(stderr, "[%s] *** error: " fmt "\n", \
-			progname, ## __VA_ARGS__ ); \
-} while (0)
-
-#define ERRS(fmt, ...) do { \
-	int save = errno; \
-	fflush(0); \
-	fprintf(stderr, "[%s] *** error: " fmt ": %s\n", \
-			progname, ## __VA_ARGS__, strerror(save)); \
-} while (0)
-
-#define DBG(fmt, ...) do { \
-	fprintf(stderr, "[%s] " fmt "\n", progname, ## __VA_ARGS__ ); \
-} while (0)
-
-static struct flash_layout *find_layout(char *id)
-{
-	struct flash_layout *ret;
-	struct flash_layout *l;
-
-	ret = NULL;
-	for (l = layouts; l->id != NULL; l++){
-		if (strcasecmp(id, l->id) == 0) {
-			ret = l;
-			break;
-		}
-	};
-
-	return ret;
-}
-
 static void usage(int status)
 {
 	FILE *stream = (status != EXIT_SUCCESS) ? stderr : stdout;
@@ -239,59 +186,6 @@ static void usage(int status)
 	);
 
 	exit(status);
-}
-
-static int get_md5(char *data, int size, char *md5)
-{
-	MD5_CTX ctx;
-
-	MD5_Init(&ctx);
-	MD5_Update(&ctx, data, size);
-	MD5_Final(md5, &ctx);
-}
-
-static int get_file_stat(struct file_info *fdata)
-{
-	struct stat st;
-	int res;
-
-	if (fdata->file_name == NULL)
-		return 0;
-
-	res = stat(fdata->file_name, &st);
-	if (res){
-		ERRS("stat failed on %s", fdata->file_name);
-		return res;
-	}
-
-	fdata->file_size = st.st_size;
-	return 0;
-}
-
-static int read_to_buf(struct file_info *fdata, char *buf)
-{
-	FILE *f;
-	int ret = EXIT_FAILURE;
-
-	f = fopen(fdata->file_name, "r");
-	if (f == NULL) {
-		ERRS("could not open \"%s\" for reading", fdata->file_name);
-		goto out;
-	}
-
-	errno = 0;
-	fread(buf, fdata->file_size, 1, f);
-	if (errno != 0) {
-		ERRS("unable to read from file \"%s\"", fdata->file_name);
-		goto out_close;
-	}
-
-	ret = EXIT_SUCCESS;
-
- out_close:
-	fclose(f);
- out:
-	return ret;
 }
 
 static int check_options(void)
@@ -331,7 +225,7 @@ static int check_options(void)
 	if (opt_hw_ver_add)
 		board->hw_ver_add = strtoul(opt_hw_ver_add, NULL, 0);
 
-	layout = find_layout(layout_id);
+	layout = find_layout(layouts, layout_id);
 	if (layout == NULL) {
 		ERR("unknown flash layout \"%s\"", layout_id);
 		return -1;
@@ -480,72 +374,6 @@ static void fill_header(char *buf, int len)
 	get_md5(buf, len, hdr->md5sum1);
 }
 
-static int pad_jffs2(char *buf, int currlen)
-{
-	int len;
-	uint32_t pad_mask;
-
-	len = currlen;
-	pad_mask = (64 * 1024);
-	while ((len < layout->fw_max_len) && (pad_mask != 0)) {
-		uint32_t mask;
-		int i;
-
-		for (i = 10; i < 32; i++) {
-			mask = 1 << i;
-			if (pad_mask & mask)
-				break;
-		}
-
-		len = ALIGN(len, mask);
-
-		for (i = 10; i < 32; i++) {
-			mask = 1 << i;
-			if ((len & (mask - 1)) == 0)
-				pad_mask &= ~mask;
-		}
-
-		for (i = 0; i < sizeof(jffs2_eof_mark); i++)
-			buf[len + i] = jffs2_eof_mark[i];
-
-		len += sizeof(jffs2_eof_mark);
-	}
-
-	return len;
-}
-
-static int write_fw(char *data, int len)
-{
-	FILE *f;
-	int ret = EXIT_FAILURE;
-
-	f = fopen(ofname, "w");
-	if (f == NULL) {
-		ERRS("could not open \"%s\" for writing", ofname);
-		goto out;
-	}
-
-	errno = 0;
-	fwrite(data, len, 1, f);
-	if (errno) {
-		ERRS("unable to write output file");
-		goto out_flush;
-	}
-
-	DBG("firmware file \"%s\" completed", ofname);
-
-	ret = EXIT_SUCCESS;
-
- out_flush:
-	fflush(f);
-	fclose(f);
-	if (ret != EXIT_SUCCESS) {
-		unlink(ofname);
-	}
- out:
-	return ret;
-}
-
 static int build_fw(void)
 {
 	int buflen;
@@ -586,14 +414,14 @@ static int build_fw(void)
 			writelen = rootfs_ofs + rootfs_info.file_size;
 
 		if (add_jffs2_eof)
-			writelen = pad_jffs2(buf, writelen);
+			writelen = pad_jffs2(buf, writelen, layout->fw_max_len);
 	}
 
 	if (!strip_padding)
 		writelen = buflen;
 
 	fill_header(buf, writelen);
-	ret = write_fw(buf, writelen);
+	ret = write_fw(ofname, buf, writelen);
 	if (ret)
 		goto out_free_buf;
 
@@ -603,71 +431,6 @@ static int build_fw(void)
 	free(buf);
  out:
 	return ret;
-}
-
-/* Helper functions to inspect_fw() representing different output formats */
-static inline void inspect_fw_pstr(char *label, char *str)
-{
-	printf("%-23s: %s\n", label, str);
-}
-
-static inline void inspect_fw_phex(char *label, uint32_t val)
-{
-	printf("%-23s: 0x%08x\n", label, val);
-}
-
-static inline void inspect_fw_phexpost(char *label,
-                                       uint32_t val, char *post)
-{
-	printf("%-23s: 0x%08x (%s)\n", label, val, post);
-}
-
-static inline void inspect_fw_phexdef(char *label,
-                                      uint32_t val, uint32_t defval)
-{
-	printf("%-23s: 0x%08x                  ", label, val);
-
-	if (val == defval)
-		printf("(== OpenWrt default)\n");
-	else
-		printf("(OpenWrt default: 0x%08x)\n", defval);
-}
-
-static inline void inspect_fw_phexexp(char *label,
-                                      uint32_t val, uint32_t expval)
-{
-	printf("%-23s: 0x%08x ", label, val);
-
-	if (val == expval)
-		printf("(ok)\n");
-	else
-		printf("(expected: 0x%08x)\n", expval);
-}
-
-static inline void inspect_fw_phexdec(char *label, uint32_t val)
-{
-	printf("%-23s: 0x%08x / %8u bytes\n", label, val, val);
-}
-
-static inline void inspect_fw_phexdecdef(char *label,
-                                         uint32_t val, uint32_t defval)
-{
-	printf("%-23s: 0x%08x / %8u bytes ", label, val, val);
-
-	if (val == defval)
-		printf("(== OpenWrt default)\n");
-	else
-		printf("(OpenWrt default: 0x%08x)\n", defval);
-}
-
-static inline void inspect_fw_pmd5sum(char *label, uint8_t *val, char *text)
-{
-	int i;
-
-	printf("%-23s:", label);
-	for (i=0; i<MD5SUM_LEN; i++)
-		printf(" %02x", val[i]);
-	printf(" %s\n", text);
 }
 
 static int inspect_fw(void)
@@ -740,9 +503,7 @@ static int inspect_fw(void)
 	printf("\n");
 
 	inspect_fw_pstr("Firmware version", hdr->fw_version);
-
-	inspect_fw_phexpost("Hardware ID",
-			    ntohl(hdr->hw_id), "unknown");
+	inspect_fw_phex("Hardware ID", ntohl(hdr->hw_id));
 	inspect_fw_phex("Hardware Revision",
 			ntohl(hdr->hw_rev));
 	inspect_fw_phex("Additional HW Version",
@@ -819,9 +580,6 @@ static int inspect_fw(void)
 int main(int argc, char *argv[])
 {
 	int ret = EXIT_FAILURE;
-	int err;
-
-	FILE *outfile;
 
 	progname = basename(argv[0]);
 
