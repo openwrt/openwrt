@@ -101,7 +101,6 @@ static uint32_t hdr_ver = 2;
 
 static struct board_info custom_board;
 
-static char *board_id;
 static struct board_info *board;
 static char *layout_id;
 static struct flash_layout *layout;
@@ -169,73 +168,6 @@ static struct flash_layout layouts[] = {
 	}
 };
 
-static struct board_info boards[] = {
-	{
-		.id		= "TD-W8970v1",
-		.hw_id		= 0x89700001,
-		.hw_rev		= 1,
-		.layout_id	= "8Mltq",
-	}, {
-		.id		= "TD-W8980v1",
-		.hw_id		= 0x89800001,
-		.hw_rev		= 14,
-		.layout_id	= "8Mltq",
-	}, {
-		.id		= "ArcherC20",
-		.hw_id		= 0xc2000001,
-		.hw_rev		= 0x44,
-		.hw_ver_add	= 0x1,
-		.layout_id	= "8Mmtk",
-		.hdr_ver	= 3,
-		.flags		= FLAG_LE_KERNEL_LA_EP
-	}, {
-		.id		= "ArcherC20i",
-		.hw_id		= 0xc2000001,
-		.hw_rev		= 58,
-		.layout_id	= "8Mmtk",
-		.hdr_ver	= 3,
-		.flags		= FLAG_LE_KERNEL_LA_EP,
-	}, {
-		.id		= "ArcherVR200V",
-		.hw_id		= 0x73b70801,
-		.hw_rev		= 0x2f,
-		.layout_id	= "16Mltq",
-		.hdr_ver	= 2,
-	}, {
-		.id		= "ArcherC50",
-		.hw_id		= 0xc7500001,
-		.hw_rev		= 69,
-		.layout_id	= "8Mmtk",
-		.hdr_ver	= 3,
-		.flags		= FLAG_LE_KERNEL_LA_EP,
-	}, {
-		.id		= "ArcherMR200",
-		.hw_id		= 0xd7500001,
-		.hw_rev		= 0x4a,
-		.layout_id	= "8MLmtk",
-		.hdr_ver	= 3,
-		.flags		= FLAG_LE_KERNEL_LA_EP,
-	}, {
-		.id		= "TL-WR840NV4",
-		.hw_id		= 0x08400004,
-		.hw_rev		= 0x1,
-		.hw_ver_add	= 0x4,
-		.layout_id	= "8Mmtk",
-		.hdr_ver	= 3,
-		.flags		= FLAG_LE_KERNEL_LA_EP,
-	}, {
-		.id		= "TL-WR841NV13",
-		.hw_id		= 0x08410013,
-		.hw_rev		= 0x268,
-		.hw_ver_add	= 0x13,
-		.layout_id	= "8Mmtk",
-		.hdr_ver	= 3,
-		.flags		= FLAG_LE_KERNEL_LA_EP,
-	}, {
-		/* terminating entry */
-	}
-};
-
 /*
  * Message macros
  */
@@ -255,34 +187,6 @@ static struct board_info boards[] = {
 #define DBG(fmt, ...) do { \
 	fprintf(stderr, "[%s] " fmt "\n", progname, ## __VA_ARGS__ ); \
 } while (0)
-
-static struct board_info *find_board(char *id)
-{
-	struct board_info *ret;
-	struct board_info *board;
-
-	ret = NULL;
-	for (board = boards; board->id != NULL; board++){
-		if (strcasecmp(id, board->id) == 0) {
-			ret = board;
-			break;
-		}
-	};
-
-	return ret;
-}
-
-static struct board_info *find_board_by_hwid(uint32_t hw_id)
-{
-	struct board_info *board;
-
-	for (board = boards; board->id != NULL; board++) {
-		if (hw_id == board->hw_id)
-			return board;
-	};
-
-	return NULL;
-}
 
 static struct flash_layout *find_layout(char *id)
 {
@@ -309,7 +213,6 @@ static void usage(int status)
 	fprintf(stream,
 "\n"
 "Options:\n"
-"  -B <board>      create image for the board specified with <board>\n"
 "  -c              use combined kernel image\n"
 "  -e              swap endianness in kernel load address and entry point\n"
 "  -E <ep>         overwrite kernel entry point with <ep> (hexval prefixed with 0x)\n"
@@ -406,35 +309,22 @@ static int check_options(void)
 		return -1;
 	}
 
-	if (board_id == NULL && opt_hw_id == NULL) {
-		ERR("either board or hardware id must be specified");
+	if (opt_hw_id == NULL) {
+		ERR("hardware id must be specified");
 		return -1;
 	}
 
-	if (board_id) {
-		board = find_board(board_id);
-		if (board == NULL) {
-			ERR("unknown/unsupported board id \"%s\"", board_id);
-			return -1;
-		}
-		if (layout_id == NULL)
-			layout_id = board->layout_id;
+	board = &custom_board;
 
-		if (board->hdr_ver)
-			hdr_ver = board->hdr_ver;
-	} else {
-		board = &custom_board;
-
-		if (layout_id == NULL) {
-			ERR("flash layout is not specified");
-			return -1;
-		}
-
-		board->hw_id = strtoul(opt_hw_id, NULL, 0);
-
-		board->hw_rev = 1;
-		board->hw_ver_add = 0;
+	if (layout_id == NULL) {
+		ERR("flash layout is not specified");
+		return -1;
 	}
+
+	board->hw_id = strtoul(opt_hw_id, NULL, 0);
+
+	board->hw_rev = 1;
+	board->hw_ver_add = 0;
 
 	if (opt_hw_rev)
 		board->hw_rev = strtoul(opt_hw_rev, NULL, 0);
@@ -799,9 +689,7 @@ static int inspect_fw(void)
 		goto out_free_buf;
 	hdr = (struct fw_header *)buf;
 
-	board = find_board_by_hwid(ntohl(hdr->hw_id));
-	if (!board)
-		board = &custom_board;
+	board = &custom_board;
 
 	if (board->flags & FLAG_LE_KERNEL_LA_EP) {
 		hdr->kernel_la = bswap_32(hdr->kernel_la);
@@ -853,22 +741,12 @@ static int inspect_fw(void)
 
 	inspect_fw_pstr("Firmware version", hdr->fw_version);
 
-	if (board != &custom_board) {
-		layout = find_layout(board->layout_id);
-		inspect_fw_phexpost("Hardware ID",
-		                    ntohl(hdr->hw_id), board->id);
-		inspect_fw_phexexp("Hardware Revision",
-		                   ntohl(hdr->hw_rev), board->hw_rev);
-		inspect_fw_phexexp("Additional HW Version",
-		                   ntohl(hdr->hw_ver_add), board->hw_ver_add);
-	} else {
-		inspect_fw_phexpost("Hardware ID",
-		                    ntohl(hdr->hw_id), "unknown");
-		inspect_fw_phex("Hardware Revision",
-		                ntohl(hdr->hw_rev));
-		inspect_fw_phex("Additional HW Version",
-		                ntohl(hdr->hw_ver_add));
-	}
+	inspect_fw_phexpost("Hardware ID",
+			    ntohl(hdr->hw_id), "unknown");
+	inspect_fw_phex("Hardware Revision",
+			ntohl(hdr->hw_rev));
+	inspect_fw_phex("Additional HW Version",
+			ntohl(hdr->hw_ver_add));
 
 	printf("%-23s: %d.%d.%d-%d.%d\n", "Software version",
 	       hdr->ver_hi, hdr->ver_mid, hdr->ver_lo,
@@ -880,24 +758,12 @@ static int inspect_fw(void)
 	                   ntohl(hdr->kernel_ofs));
 	inspect_fw_phexdec("Kernel data length",
 	                   ntohl(hdr->kernel_len));
-	if (board != &custom_board) {
-		inspect_fw_phexdef("Kernel load address",
-		                   ntohl(hdr->kernel_la),
-		                   layout ? layout->kernel_la : 0xffffffff);
-		inspect_fw_phexdef("Kernel entry point",
-		                   ntohl(hdr->kernel_ep),
-		                   layout ? layout->kernel_ep : 0xffffffff);
-		inspect_fw_phexdecdef("Rootfs data offset",
-		                      ntohl(hdr->rootfs_ofs),
-		                      layout ? layout->rootfs_ofs : 0xffffffff);
-	} else {
-		inspect_fw_phex("Kernel load address",
-		                ntohl(hdr->kernel_la));
-		inspect_fw_phex("Kernel entry point",
-		                ntohl(hdr->kernel_ep));
-		inspect_fw_phexdec("Rootfs data offset",
-		                   ntohl(hdr->rootfs_ofs));
-	}
+	inspect_fw_phex("Kernel load address",
+			ntohl(hdr->kernel_la));
+	inspect_fw_phex("Kernel entry point",
+			ntohl(hdr->kernel_ep));
+	inspect_fw_phexdec("Rootfs data offset",
+			   ntohl(hdr->rootfs_ofs));
 	inspect_fw_phexdec("Rootfs data length",
 	                   ntohl(hdr->rootfs_len));
 	inspect_fw_phexdec("Boot loader data offset",
@@ -962,16 +828,13 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:w:ci:k:r:R:o:xhsjv:y:T:e");
+		c = getopt(argc, argv, "a:H:E:F:L:V:N:W:w:ci:k:r:R:o:xhsjv:y:T:e");
 		if (c == -1)
 			break;
 
 		switch (c) {
 		case 'a':
 			sscanf(optarg, "0x%x", &rootfs_align);
-			break;
-		case 'B':
-			board_id = optarg;
 			break;
 		case 'H':
 			opt_hw_id = optarg;
