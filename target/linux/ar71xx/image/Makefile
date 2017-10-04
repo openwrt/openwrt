@@ -703,7 +703,14 @@ define Device/tl-wa901nd-v4
     TPLINK_HWID := 0x09010004
 endef
 
-TARGET_DEVICES += tl-wa901nd-v3 tl-wa901nd-v4
+define Device/tl-wa901nd-v5
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA901ND-v5
+    DEVICE_PROFILE := TLWA901
+    TPLINK_HWID := 0x09010005
+endef
+
+TARGET_DEVICES += tl-wa901nd-v3 tl-wa901nd-v4 tl-wa901nd-v5
 
 define Device/tl-wa7210n-v2
     $(Device/tplink-4mlzma)
