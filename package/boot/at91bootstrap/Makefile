@@ -24,13 +24,14 @@ include $(INCLUDE_DIR)/package.mk
 
 define AT91Bootstrap/Default
   BUILD_TARGET:=at91
+  BUILD_SUBTARGET:=sama5
   AT91BOOTSTRAP_IMAGE:=at91bootstrap.bin
 endef
 
 define at91bootstrap/sama5d2_xplaineddf_uboot
-  TITLE:=AT91Bootstrap for the SAMA5D3 Xplained board (SPI Flash)
+  TITLE:=AT91Bootstrap for the SAMA5D2 Xplained board (SPI Flash)
   BUILD_SUBTARGET:=sama5
-  BUILD_DEVICES:=at91-sama5d3_xplained
+  BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
 define at91bootstrap/sama5d2_xplaineddf_qspi_uboot
