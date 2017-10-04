@@ -1,5 +1,14 @@
 
+PKG_TARGETS := bin
+PKG_FLAGS:=nonshared
+
 export GCC_HONOUR_COPTS=s
+
+define Package/at91bootstrap/install/default
+  $(CP) $(PKG_BUILD_DIR)/binaries/*uboot* $(1)/
+endef
+
+Package/at91bootstrap/install = $(Package/at91bootstrap/install/default)
 
 define AT91Bootstrap/Init
   BUILD_TARGET:=
@@ -46,8 +55,7 @@ define Build/AT91Bootstrap/Target
   endef
 
   define Package/at91bootstrap-$(1)/install
-    $(CP) $(PKG_BUILD_DIR)/binaries/*uboot*.bin \
-      $(BIN_DIR)/at91bootstrap-$(1).bin
+    $$(Package/at91bootstrap/install)
   endef
 endef
 
