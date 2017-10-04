@@ -59,6 +59,9 @@
 #include	<unistd.h>
 #include	<fcntl.h>
 #include	<elf.h>
+#if defined(__GNUC__)
+#	include	<byteswap.h>
+#endif
 
 #ifndef TRUE
 #define	TRUE		1

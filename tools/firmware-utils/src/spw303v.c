@@ -25,6 +25,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <arpa/inet.h>
 
 #define IMAGE_LEN 10                   /* Length of Length Field */
 #define ADDRESS_LEN 12                 /* Length of Address field */

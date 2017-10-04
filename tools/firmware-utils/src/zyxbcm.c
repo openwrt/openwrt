@@ -25,6 +25,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <arpa/inet.h>
 
 #define TAGVER_LEN 4			/* Length of Tag Version */
 #define SIG1_LEN 20			/* Company Signature 1 Length */

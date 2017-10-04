@@ -17,6 +17,10 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/stat.h>
+#if defined(__GNUC__)
+#       include <byteswap.h>
+#endif
+
 
 #include "sha1.h"
 

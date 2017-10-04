@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <arpa/inet.h>
  
 #define DES_KEY "H@L9K*(3"
  

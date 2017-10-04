@@ -23,6 +23,9 @@
 #include <stdbool.h>
 #include <endian.h>
 #include <sys/stat.h>
+#if defined(__GNUC__)
+#       include <byteswap.h>
+#endif
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
