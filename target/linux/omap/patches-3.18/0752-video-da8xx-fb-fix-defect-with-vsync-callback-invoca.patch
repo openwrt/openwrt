@@ -18,7 +18,7 @@ Signed-off-by: Darren Etheridge <detheridge@ti.com>
 
 --- a/drivers/video/fbdev/da8xx-fb.c
 +++ b/drivers/video/fbdev/da8xx-fb.c
-@@ -909,6 +909,8 @@ static irqreturn_t lcdc_irq_handler_rev0
+@@ -908,6 +908,8 @@ static irqreturn_t lcdc_irq_handler_rev0
  				   LCD_DMA_FRM_BUF_CEILING_ADDR_1_REG);
  			par->vsync_flag = 1;
  			wake_up_interruptible(&par->vsync_wait);
@@ -27,7 +27,7 @@ Signed-off-by: Darren Etheridge <detheridge@ti.com>
  		}
  
  		/* Set only when controller is disabled and at the end of
-@@ -974,8 +976,6 @@ static irqreturn_t lcdc_irq_handler_rev0
+@@ -973,8 +975,6 @@ static irqreturn_t lcdc_irq_handler_rev0
  				   LCD_DMA_FRM_BUF_CEILING_ADDR_1_REG);
  			par->vsync_flag = 1;
  			wake_up_interruptible(&par->vsync_wait);

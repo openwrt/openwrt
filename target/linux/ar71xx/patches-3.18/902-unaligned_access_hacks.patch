@@ -210,7 +210,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -837,10 +838,10 @@ static void tcp_v6_send_response(struct
+@@ -844,10 +845,10 @@ static void tcp_v6_send_response(struct
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -237,7 +237,7 @@
   */
 --- a/net/ipv6/datagram.c
 +++ b/net/ipv6/datagram.c
-@@ -386,7 +386,7 @@ int ipv6_recv_error(struct sock *sk, str
+@@ -390,7 +390,7 @@ int ipv6_recv_error(struct sock *sk, str
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
  		} else {
@@ -246,7 +246,7 @@
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -720,12 +720,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -724,12 +724,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
@@ -263,16 +263,7 @@
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/ip6_gre.c
 +++ b/net/ipv6/ip6_gre.c
-@@ -394,7 +394,7 @@ static void ip6gre_err(struct sk_buff *s
- 
- 	t = ip6gre_tunnel_lookup(skb->dev, &ipv6h->daddr, &ipv6h->saddr,
- 				flags & GRE_KEY ?
--				*(((__be32 *)p) + (grehlen / 4) - 1) : 0,
-+				net_hdr_word(((__be32 *)p) + (grehlen / 4) - 1) : 0,
- 				p[1]);
- 	if (t == NULL)
- 		return;
-@@ -476,11 +476,11 @@ static int ip6gre_rcv(struct sk_buff *sk
+@@ -479,11 +479,11 @@ static int ip6gre_rcv(struct sk_buff *sk
  			offset += 4;
  		}
  		if (flags&GRE_KEY) {
@@ -286,7 +277,7 @@
  			offset += 4;
  		}
  	}
-@@ -745,7 +745,7 @@ static netdev_tx_t ip6gre_xmit2(struct s
+@@ -748,7 +748,7 @@ static netdev_tx_t ip6gre_xmit2(struct s
  
  		if (tunnel->parms.o_flags&GRE_SEQ) {
  			++tunnel->o_seqno;
@@ -295,7 +286,7 @@
  			ptr--;
  		}
  		if (tunnel->parms.o_flags&GRE_KEY) {
-@@ -841,7 +841,7 @@ static inline int ip6gre_xmit_ipv6(struc
+@@ -844,7 +844,7 @@ static inline int ip6gre_xmit_ipv6(struc
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
@@ -306,7 +297,7 @@
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
 --- a/net/ipv6/ip6_tunnel.c
 +++ b/net/ipv6/ip6_tunnel.c
-@@ -1291,7 +1291,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1301,7 +1301,7 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
@@ -615,7 +606,7 @@
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -221,7 +221,7 @@ static struct sk_buff **ipv6_gro_receive
+@@ -224,7 +224,7 @@ static struct sk_buff **ipv6_gro_receive
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
@@ -626,7 +617,7 @@
  		 * XXX skbs on the gro_list have all been parsed and pulled
 --- a/include/net/addrconf.h
 +++ b/include/net/addrconf.h
-@@ -43,7 +43,7 @@ struct prefix_info {
+@@ -45,7 +45,7 @@ struct prefix_info {
  	__be32			reserved2;
  
  	struct in6_addr		prefix;
@@ -840,7 +831,7 @@
  
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3683,14 +3683,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3682,14 +3682,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  

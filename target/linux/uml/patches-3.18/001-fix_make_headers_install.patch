@@ -48,7 +48,7 @@ you separate patches for 3.7 and 3.8 let me know. Thanks!
  
 --- a/arch/um/include/asm/Kbuild
 +++ /dev/null
-@@ -1,30 +0,0 @@
+@@ -1,31 +0,0 @@
 -generic-y += barrier.h
 -generic-y += bug.h
 -generic-y += clkdev.h
@@ -78,6 +78,7 @@ you separate patches for 3.7 and 3.8 let me know. Thanks!
 -generic-y += switch_to.h
 -generic-y += topology.h
 -generic-y += trace_clock.h
+-generic-y += word-at-a-time.h
 -generic-y += xor.h
 --- a/arch/um/include/asm/a.out-core.h
 +++ /dev/null

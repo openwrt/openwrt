@@ -88,7 +88,7 @@ Signed-off-by: Darren Etheridge <detheridge@ti.com>
  #include <video/da8xx-fb.h>
  #include <asm/div64.h>
  
-@@ -1317,12 +1318,54 @@ static struct fb_ops da8xx_fb_ops = {
+@@ -1316,12 +1317,54 @@ static struct fb_ops da8xx_fb_ops = {
  	.fb_blank = cfb_blank,
  };
  
@@ -143,7 +143,7 @@ Signed-off-by: Darren Etheridge <detheridge@ti.com>
  	for (i = 0, lcdc_info = known_lcd_panels;
  		i < ARRAY_SIZE(known_lcd_panels); i++, lcdc_info++) {
  		if (strcmp(fb_pdata->type, lcdc_info->name) == 0)
-@@ -1351,7 +1394,7 @@ static int fb_probe(struct platform_devi
+@@ -1350,7 +1393,7 @@ static int fb_probe(struct platform_devi
  	int ret;
  	unsigned long ulcm;
  
@@ -152,7 +152,7 @@ Signed-off-by: Darren Etheridge <detheridge@ti.com>
  		dev_err(&device->dev, "Can not get platform data\n");
  		return -ENOENT;
  	}
-@@ -1391,7 +1434,10 @@ static int fb_probe(struct platform_devi
+@@ -1390,7 +1433,10 @@ static int fb_probe(struct platform_devi
  		break;
  	}
  
@@ -164,7 +164,7 @@ Signed-off-by: Darren Etheridge <detheridge@ti.com>
  
  	if (!lcd_cfg) {
  		ret = -EINVAL;
-@@ -1410,7 +1456,7 @@ static int fb_probe(struct platform_devi
+@@ -1409,7 +1455,7 @@ static int fb_probe(struct platform_devi
  	par->dev = &device->dev;
  	par->lcdc_clk = tmp_lcdc_clk;
  	par->lcdc_clk_rate = clk_get_rate(par->lcdc_clk);
@@ -173,7 +173,7 @@ Signed-off-by: Darren Etheridge <detheridge@ti.com>
  		par->panel_power_ctrl = fb_pdata->panel_power_ctrl;
  		par->panel_power_ctrl(1);
  	}
-@@ -1654,12 +1700,26 @@ static int fb_resume(struct device *dev)
+@@ -1653,12 +1699,26 @@ static int fb_resume(struct device *dev)
  
  static SIMPLE_DEV_PM_OPS(fb_pm_ops, fb_suspend, fb_resume);
  

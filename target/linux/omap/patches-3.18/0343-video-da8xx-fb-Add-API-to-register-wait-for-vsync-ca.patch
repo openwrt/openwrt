@@ -26,7 +26,7 @@ Signed-off-by: Prathap M S <msprathap@ti.com>
  static struct fb_videomode known_lcd_panels[] = {
  	/* Sharp LCD035Q3DG01 */
  	[0] = {
-@@ -831,6 +834,32 @@ static int lcd_init(struct da8xx_fb_par
+@@ -830,6 +833,32 @@ static int lcd_init(struct da8xx_fb_par
  	return 0;
  }
  
@@ -59,7 +59,7 @@ Signed-off-by: Prathap M S <msprathap@ti.com>
  /* IRQ handler for version 2 of LCDC */
  static irqreturn_t lcdc_irq_handler_rev02(int irq, void *arg)
  {
-@@ -868,6 +897,8 @@ static irqreturn_t lcdc_irq_handler_rev0
+@@ -867,6 +896,8 @@ static irqreturn_t lcdc_irq_handler_rev0
  				   LCD_DMA_FRM_BUF_CEILING_ADDR_0_REG);
  			par->vsync_flag = 1;
  			wake_up_interruptible(&par->vsync_wait);
@@ -68,7 +68,7 @@ Signed-off-by: Prathap M S <msprathap@ti.com>
  		}
  
  		if (stat & LCD_END_OF_FRAME1) {
-@@ -943,6 +974,8 @@ static irqreturn_t lcdc_irq_handler_rev0
+@@ -942,6 +973,8 @@ static irqreturn_t lcdc_irq_handler_rev0
  				   LCD_DMA_FRM_BUF_CEILING_ADDR_1_REG);
  			par->vsync_flag = 1;
  			wake_up_interruptible(&par->vsync_wait);

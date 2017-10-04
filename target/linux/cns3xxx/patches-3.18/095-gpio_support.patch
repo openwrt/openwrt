@@ -32,7 +32,7 @@
 +cns3xxx-y				+= core.o pm.o gpio.o
  cns3xxx-$(CONFIG_ATAGS)			+= devices.o
  cns3xxx-$(CONFIG_PCI)			+= pcie.o
- cns3xxx-$(CONFIG_MACH_CNS3420VB)	+= cns3420vb.o
+ CFLAGS_pcie.o				+= -Wframe-larger-than=1536 # override default 1024, this is safe here
 --- a/arch/arm/mach-cns3xxx/cns3xxx.h
 +++ b/arch/arm/mach-cns3xxx/cns3xxx.h
 @@ -68,8 +68,10 @@

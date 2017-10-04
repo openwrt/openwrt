@@ -496,7 +496,7 @@
  		return 1;
  
  	ret = read_sr(nor);
-@@ -880,11 +896,11 @@ static int spansion_quad_enable(struct s
+@@ -887,11 +903,11 @@ static int spansion_quad_enable(struct s
  	return 0;
  }
  
@@ -510,7 +510,7 @@
  	case CFI_MFR_MACRONIX:
  		status = macronix_quad_enable(nor);
  		if (status) {
-@@ -910,11 +926,6 @@ static int spi_nor_check(struct spi_nor
+@@ -917,11 +933,6 @@ static int spi_nor_check(struct spi_nor
  		return -EINVAL;
  	}
  
@@ -522,7 +522,7 @@
  	return 0;
  }
  
-@@ -932,16 +943,24 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -939,16 +950,24 @@ int spi_nor_scan(struct spi_nor *nor, co
  	if (ret)
  		return ret;
  
@@ -551,7 +551,7 @@
  		if (IS_ERR(jid)) {
  			return PTR_ERR(jid);
  		} else if (jid != id) {
-@@ -966,10 +985,10 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -973,10 +992,10 @@ int spi_nor_scan(struct spi_nor *nor, co
  	 * up with the software protection bits set
  	 */
  
@@ -566,7 +566,7 @@
  		write_enable(nor);
  		write_sr(nor, 0);
  	}
-@@ -984,7 +1003,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -991,7 +1010,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	mtd->_read = spi_nor_read;
  
  	/* nor protection support for STmicro chips */
@@ -575,7 +575,7 @@
  		mtd->_lock = spi_nor_lock;
  		mtd->_unlock = spi_nor_unlock;
  	}
-@@ -995,9 +1014,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1002,9 +1021,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  	else
  		mtd->_write = spi_nor_write;
  
@@ -587,7 +587,7 @@
  
  #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
  	/* prefer "small sector" erase if possible */
-@@ -1038,7 +1056,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1045,7 +1063,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	/* Quad/Dual-read mode takes precedence over fast/normal */
  	if (mode == SPI_NOR_QUAD && info->flags & SPI_NOR_QUAD_READ) {
@@ -596,7 +596,7 @@
  		if (ret) {
  			dev_err(dev, "quad mode not supported\n");
  			return ret;
-@@ -1074,7 +1092,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1081,7 +1099,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	else if (mtd->size > 0x1000000) {
  		/* enable 4-byte addressing if the device exceeds 16MiB */
  		nor->addr_width = 4;
@@ -605,7 +605,7 @@
  			/* Dedicated 4-byte command set */
  			switch (nor->flash_read) {
  			case SPI_NOR_QUAD:
-@@ -1095,7 +1113,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1102,7 +1120,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  			nor->erase_opcode = SPINOR_OP_SE_4B;
  			mtd->erasesize = info->sector_size;
  		} else

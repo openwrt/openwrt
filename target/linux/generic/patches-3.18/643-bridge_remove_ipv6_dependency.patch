@@ -1,6 +1,6 @@
 --- a/include/net/addrconf.h
 +++ b/include/net/addrconf.h
-@@ -88,6 +88,12 @@ int ipv6_rcv_saddr_equal(const struct so
+@@ -90,6 +90,12 @@ int ipv6_rcv_saddr_equal(const struct so
  void addrconf_join_solict(struct net_device *dev, const struct in6_addr *addr);
  void addrconf_leave_solict(struct inet6_dev *idev, const struct in6_addr *addr);
  
@@ -52,7 +52,7 @@
  
  int __ipv6_get_lladdr(struct inet6_dev *idev, struct in6_addr *addr,
  		      u32 banned_flags)
-@@ -5469,6 +5468,9 @@ int __init addrconf_init(void)
+@@ -5473,6 +5472,9 @@ int __init addrconf_init(void)
  
  	ipv6_addr_label_rtnl_register();
  
@@ -62,7 +62,7 @@
  	return 0;
  errout:
  	rtnl_af_unregister(&inet6_ops);
-@@ -5488,6 +5490,9 @@ void addrconf_cleanup(void)
+@@ -5492,6 +5494,9 @@ void addrconf_cleanup(void)
  	struct net_device *dev;
  	int i;
  

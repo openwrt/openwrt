@@ -15,7 +15,7 @@
  endif
 --- a/arch/arm/mach-cns3xxx/Makefile
 +++ b/arch/arm/mach-cns3xxx/Makefile
-@@ -7,3 +7,5 @@ cns3xxx-$(CONFIG_PCI)			+= pcie.o
+@@ -8,3 +8,5 @@ CFLAGS_pcie.o				+= -Wframe-larger-than=
  cns3xxx-$(CONFIG_MACH_CNS3420VB)	+= cns3420vb.o
  cns3xxx-$(CONFIG_SMP)			+= platsmp.o headsmp.o cns3xxx_fiq.o
  cns3xxx-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o

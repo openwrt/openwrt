@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.73
+PKG_VERSION:=2.77
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_MD5SUM:=b8bfe96d22945c8cf4466826ba9b21bd
+PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq/
+PKG_MD5SUM:=5b973fea8e66e76a0e6bb44adefc6f9b
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
@@ -24,6 +24,7 @@ PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_dhcpv6 \
 	CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_dnssec \
+	CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_noid \
 	CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_auth \
 	CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_ipset
 
@@ -50,7 +51,7 @@ endef
 
 define Package/dnsmasq-full
 $(call Package/dnsmasq/Default)
-  TITLE += (with DNSSEC, DHCPv6, Auth DNS, IPset enabled by default)
+  TITLE += (with DNSSEC, DHCPv6, Auth DNS, IPset, NO_ID enabled by default)
   DEPENDS:=+PACKAGE_dnsmasq_full_dnssec:libnettle \
 	+PACKAGE_dnsmasq_full_dhcpv6:kmod-ipv6 \
 	+PACKAGE_dnsmasq_full_ipset:kmod-ipt-ipset
@@ -70,8 +71,8 @@ endef
 define Package/dnsmasq-full/description
 $(call Package/dnsmasq/description)
 
-This is a fully configurable variant with DHCPv6, DNSSEC, Authroitative DNS and
-IPset support enabled by default.
+This is a fully configurable variant with DHCPv6, DNSSEC, Authoritative DNS and
+IPset, NO_ID support enabled by default.
 endef
 
 define Package/dnsmasq/conffiles
@@ -87,6 +88,9 @@ define Package/dnsmasq-full/config
 		default y
 	config PACKAGE_dnsmasq_full_dnssec
 		bool "Build with DNSSEC support."
+		default y
+	config PACKAGE_dnsmasq_full_noid
+		bool "Build with NO_ID. (hide *.bind pseudo domain)"
 		default y
 	config PACKAGE_dnsmasq_full_auth
 		bool "Build with the facility to act as an authoritative DNS server."
@@ -113,10 +117,11 @@ ifeq ($(BUILD_VARIANT),full)
 	COPTS += $(if $(CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_dhcpv6),,-DNO_DHCP6) \
 		$(if $(CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_dnssec),-DHAVE_DNSSEC) \
 		$(if $(CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_auth),,-DNO_AUTH) \
+		$(if $(CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_noid),-DNO_ID,) \
 		$(if $(CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_ipset),,-DNO_IPSET)
 	COPTS += $(if $(CONFIG_LIBNETTLE_MINI),-DNO_GMP,)
 else
-	COPTS += -DNO_AUTH -DNO_IPSET
+	COPTS += -DNO_AUTH -DNO_IPSET -DNO_ID
 endif
 
 MAKE_FLAGS := \
