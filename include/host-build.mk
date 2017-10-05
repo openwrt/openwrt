@@ -77,6 +77,10 @@ HOST_MAKE_FLAGS =
 
 HOST_CONFIGURE_CMD = $(BASH) ./configure
 
+ifeq ($(HOST_OS),Darwin)
+  HOST_CONFIG_SITE:=$(INCLUDE_DIR)/site/darwin
+endif
+
 define Host/Configure/Default
 	$(if $(HOST_CONFIGURE_PARALLEL),+)(cd $(HOST_BUILD_DIR)/$(3); \
 		if [ -x configure ]; then \
@@ -127,6 +131,7 @@ define Host/Exports/Default
   $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig:$$(HOST_BUILD_PREFIX)/lib/pkgconfig
   $(1) : export PKG_CONFIG_LIBDIR=$$(HOST_BUILD_PREFIX)/lib/pkgconfig
   $(1) : export CCACHE_DIR:=$(STAGING_DIR_HOST)/ccache
+  $(if $(HOST_CONFIG_SITE),$(1) : export CONFIG_SITE:=$(HOST_CONFIG_SITE))
   $(if $(IS_PACKAGE_BUILD),$(1) : export PATH=$$(TARGET_PATH_PKG))
 endef
 Host/Exports=$(Host/Exports/Default)
