@@ -655,6 +655,7 @@ platform_check_image() {
 	# these boards use metadata images
 	fritz300e|\
 	rb-750-r2|\
+	rb-750p-pbr2|\
 	rb-750up-r2|\
 	rb-941-2nd|\
 	rb-951ui-2nd|\
@@ -712,6 +713,7 @@ platform_pre_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	rb-750-r2|\
+	rb-750p-pbr2|\
 	rb-750up-r2|\
 	rb-941-2nd|\
 	rb-951ui-2nd|\

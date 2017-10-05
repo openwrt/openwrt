@@ -160,6 +160,7 @@ ar71xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	rb-750-r2|\
+	rb-750p-pbr2|\
 	rb-750up-r2)
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 		ucidef_add_switch "switch0" \
