@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=2016.74
+PKG_VERSION:=2017.75
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://matt.ucc.asn.au/dropbear/releases/ \
 	https://dropbear.nl/mirror/releases/
-PKG_MD5SUM:=9ad0172731e0f16623937804643b5bd8
+PKG_MD5SUM:=e57e9b9d25705dcb073ba15c416424fd
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
@@ -103,6 +103,10 @@ define Build/Configure
 	       >$(PKG_BUILD_DIR)/options.h.new && \
 	  mv $(PKG_BUILD_DIR)/options.h.new $(PKG_BUILD_DIR)/options.h || exit 1; \
 	done
+
+	# remove protocol idented software version number
+	$(SED) 's,^#define LOCAL_IDENT .*$$$$,#define LOCAL_IDENT "SSH-2.0-dropbear",g' \
+		$(PKG_BUILD_DIR)/sysoptions.h
 
 	# Enforce rebuild of svr-chansession.c
 	rm -f $(PKG_BUILD_DIR)/svr-chansession.o
