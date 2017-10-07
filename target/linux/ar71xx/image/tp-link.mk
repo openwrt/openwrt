@@ -944,6 +944,7 @@ endef
 define Device/tl-wa850re-v1
     $(Device/tplink-4mlzma)
     DEVICE_TITLE := TP-LINK TL-WA850RE
+    DEVICE_PACKAGES := rssileds
     BOARDNAME := TL-WA850RE
     DEVICE_PROFILE := TLWA850
     TPLINK_HWID := 0x08500001
