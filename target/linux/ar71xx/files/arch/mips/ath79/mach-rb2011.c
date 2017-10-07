@@ -125,7 +125,7 @@ static struct ar8327_led_cfg rb2011_ar8327_led_cfg = {
 	.open_drain = false,
 };
 
-static const struct ar8327_led_info rb2011_ar8327_leds[] __initconst = {
+static const struct ar8327_led_info rb2011_ar8327_leds[] = {
 	AR8327_LED_INFO(PHY0_0, HW, "rb:green:eth1"),
 	AR8327_LED_INFO(PHY1_0, HW, "rb:green:eth2"),
 	AR8327_LED_INFO(PHY2_0, HW, "rb:green:eth3"),
