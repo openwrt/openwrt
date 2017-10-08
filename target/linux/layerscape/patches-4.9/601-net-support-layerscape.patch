@@ -2167,7 +2167,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static int br_change_mtu(struct net_device *dev, int new_mtu)
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -6600,9 +6600,18 @@ int dev_set_mtu(struct net_device *dev,
+@@ -6603,9 +6603,18 @@ int dev_set_mtu(struct net_device *dev,
  	if (new_mtu == dev->mtu)
  		return 0;
  
