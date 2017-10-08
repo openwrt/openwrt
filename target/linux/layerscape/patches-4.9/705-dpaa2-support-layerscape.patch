@@ -92,9 +92,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  create mode 100644 drivers/staging/fsl-dpaa2/rtc/dprtc.h
  create mode 100644 drivers/staging/fsl-dpaa2/rtc/rtc.c
 
-diff --git a/drivers/soc/fsl/ls2-console/Kconfig b/drivers/soc/fsl/ls2-console/Kconfig
-new file mode 100644
-index 00000000..47d0dc11
 --- /dev/null
 +++ b/drivers/soc/fsl/ls2-console/Kconfig
 @@ -0,0 +1,4 @@
@@ -102,16 +99,10 @@ index 00000000..47d0dc11
 +        tristate "Layerscape MC and AIOP console support"
 +	depends on ARCH_LAYERSCAPE
 +        default y
-diff --git a/drivers/soc/fsl/ls2-console/Makefile b/drivers/soc/fsl/ls2-console/Makefile
-new file mode 100644
-index 00000000..62b96346
 --- /dev/null
 +++ b/drivers/soc/fsl/ls2-console/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_FSL_LS2_CONSOLE) += ls2-console.o
-diff --git a/drivers/soc/fsl/ls2-console/ls2-console.c b/drivers/soc/fsl/ls2-console/ls2-console.c
-new file mode 100644
-index 00000000..68415ad0
 --- /dev/null
 +++ b/drivers/soc/fsl/ls2-console/ls2-console.c
 @@ -0,0 +1,284 @@
@@ -399,9 +390,6 @@ index 00000000..68415ad0
 +MODULE_AUTHOR("Roy Pledge <roy.pledge@freescale.com>");
 +MODULE_LICENSE("Dual BSD/GPL");
 +MODULE_DESCRIPTION("Freescale LS2 console driver");
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/Makefile b/drivers/staging/fsl-dpaa2/ethernet/Makefile
-new file mode 100644
-index 00000000..e26911d5
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/Makefile
 @@ -0,0 +1,11 @@
@@ -416,9 +404,6 @@ index 00000000..e26911d5
 +
 +# Needed by the tracing framework
 +CFLAGS_dpaa2-eth.o := -I$(src)
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/README b/drivers/staging/fsl-dpaa2/ethernet/README
-new file mode 100644
-index 00000000..410952ec
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/README
 @@ -0,0 +1,186 @@
@@ -608,9 +593,6 @@ index 00000000..410952ec
 +
 +Hardware specific statistics for the network interface as well as some
 +non-standard driver stats can be consulted through ethtool -S option.
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth-debugfs.c b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth-debugfs.c
-new file mode 100644
-index 00000000..445c5d17
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth-debugfs.c
 @@ -0,0 +1,350 @@
@@ -964,9 +946,6 @@ index 00000000..445c5d17
 +{
 +	debugfs_remove(dpaa2_dbg_root);
 +}
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth-debugfs.h b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth-debugfs.h
-new file mode 100644
-index 00000000..551e6c4c
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth-debugfs.h
 @@ -0,0 +1,60 @@
@@ -1030,9 +1009,6 @@ index 00000000..551e6c4c
 +#endif /* CONFIG_FSL_DPAA2_ETH_DEBUGFS */
 +
 +#endif /* DPAA2_ETH_DEBUGFS_H */
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth-trace.h b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth-trace.h
-new file mode 100644
-index 00000000..e8e6522a
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth-trace.h
 @@ -0,0 +1,184 @@
@@ -1220,9 +1196,6 @@ index 00000000..e8e6522a
 +#undef TRACE_INCLUDE_FILE
 +#define TRACE_INCLUDE_FILE	dpaa2-eth-trace
 +#include <trace/define_trace.h>
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth.c b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth.c
-new file mode 100644
-index 00000000..452eca52
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth.c
 @@ -0,0 +1,3155 @@
@@ -4381,9 +4354,6 @@ index 00000000..452eca52
 +
 +module_init(dpaa2_eth_driver_init);
 +module_exit(dpaa2_eth_driver_exit);
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth.h b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth.h
-new file mode 100644
-index 00000000..86cb12e9
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-eth.h
 @@ -0,0 +1,460 @@
@@ -4847,9 +4817,6 @@ index 00000000..86cb12e9
 +
 +int setup_fqs_taildrop(struct dpaa2_eth_priv *priv, bool enable);
 +#endif	/* __DPAA2_H */
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpaa2-ethtool.c b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-ethtool.c
-new file mode 100644
-index 00000000..9859814e
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpaa2-ethtool.c
 @@ -0,0 +1,856 @@
@@ -5709,9 +5676,6 @@ index 00000000..9859814e
 +	.get_rxnfc = dpaa2_eth_get_rxnfc,
 +	.set_rxnfc = dpaa2_eth_set_rxnfc,
 +};
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpkg.h b/drivers/staging/fsl-dpaa2/ethernet/dpkg.h
-new file mode 100644
-index 00000000..02290a08
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpkg.h
 @@ -0,0 +1,176 @@
@@ -5891,9 +5855,6 @@ index 00000000..02290a08
 +};
 +
 +#endif /* __FSL_DPKG_H_ */
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpni-cmd.h b/drivers/staging/fsl-dpaa2/ethernet/dpni-cmd.h
-new file mode 100644
-index 00000000..fa353d75
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpni-cmd.h
 @@ -0,0 +1,600 @@
@@ -6497,9 +6458,6 @@ index 00000000..fa353d75
 +};
 +
 +#endif /* _FSL_DPNI_CMD_H */
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpni.c b/drivers/staging/fsl-dpaa2/ethernet/dpni.c
-new file mode 100644
-index 00000000..3c23e4dc
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpni.c
 @@ -0,0 +1,1770 @@
@@ -8273,9 +8231,6 @@ index 00000000..3c23e4dc
 +
 +	return 0;
 +}
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/dpni.h b/drivers/staging/fsl-dpaa2/ethernet/dpni.h
-new file mode 100644
-index 00000000..600c3574
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/dpni.h
 @@ -0,0 +1,989 @@
@@ -9268,9 +9223,6 @@ index 00000000..600c3574
 +			 const struct dpni_rule_cfg *cfg);
 +
 +#endif /* __FSL_DPNI_H */
-diff --git a/drivers/staging/fsl-dpaa2/ethernet/net.h b/drivers/staging/fsl-dpaa2/ethernet/net.h
-new file mode 100644
-index 00000000..5020dee1
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethernet/net.h
 @@ -0,0 +1,480 @@
@@ -9754,9 +9706,6 @@ index 00000000..5020dee1
 +	    (((u32)((vlan_id) & 0xFFF))))
 +
 +#endif /* __FSL_NET_H */
-diff --git a/drivers/staging/fsl-dpaa2/ethsw/Kconfig b/drivers/staging/fsl-dpaa2/ethsw/Kconfig
-new file mode 100644
-index 00000000..06c70408
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethsw/Kconfig
 @@ -0,0 +1,6 @@
@@ -9766,9 +9715,6 @@ index 00000000..06c70408
 +	default y
 +	---help---
 +	Prototype driver for DPAA2 Ethernet Switch.
-diff --git a/drivers/staging/fsl-dpaa2/ethsw/Makefile b/drivers/staging/fsl-dpaa2/ethsw/Makefile
-new file mode 100644
-index 00000000..20eb3ac4
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethsw/Makefile
 @@ -0,0 +1,10 @@
@@ -9782,9 +9728,6 @@ index 00000000..20eb3ac4
 +
 +clean:
 +	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-diff --git a/drivers/staging/fsl-dpaa2/ethsw/dpsw-cmd.h b/drivers/staging/fsl-dpaa2/ethsw/dpsw-cmd.h
-new file mode 100644
-index 00000000..f7374d1c
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethsw/dpsw-cmd.h
 @@ -0,0 +1,851 @@
@@ -10639,9 +10582,6 @@ index 00000000..f7374d1c
 +};
 +
 +#endif /* __FSL_DPSW_CMD_H */
-diff --git a/drivers/staging/fsl-dpaa2/ethsw/dpsw.c b/drivers/staging/fsl-dpaa2/ethsw/dpsw.c
-new file mode 100644
-index 00000000..179e98c8
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethsw/dpsw.c
 @@ -0,0 +1,2762 @@
@@ -13407,9 +13347,6 @@ index 00000000..179e98c8
 +
 +	return 0;
 +}
-diff --git a/drivers/staging/fsl-dpaa2/ethsw/dpsw.h b/drivers/staging/fsl-dpaa2/ethsw/dpsw.h
-new file mode 100644
-index 00000000..c91abeb4
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethsw/dpsw.h
 @@ -0,0 +1,1269 @@
@@ -14682,9 +14619,6 @@ index 00000000..c91abeb4
 +			 u16 *minor_ver);
 +
 +#endif /* __FSL_DPSW_H */
-diff --git a/drivers/staging/fsl-dpaa2/ethsw/switch.c b/drivers/staging/fsl-dpaa2/ethsw/switch.c
-new file mode 100644
-index 00000000..3f2c9648
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/ethsw/switch.c
 @@ -0,0 +1,1857 @@
@@ -16545,9 +16479,6 @@ index 00000000..3f2c9648
 +
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("DPAA2 Ethernet Switch Driver (prototype)");
-diff --git a/drivers/staging/fsl-dpaa2/evb/Kconfig b/drivers/staging/fsl-dpaa2/evb/Kconfig
-new file mode 100644
-index 00000000..3534f697
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/evb/Kconfig
 @@ -0,0 +1,7 @@
@@ -16558,9 +16489,6 @@ index 00000000..3534f697
 +	default y
 +	---help---
 +	Prototype driver for DPAA2 Edge Virtual Bridge.
-diff --git a/drivers/staging/fsl-dpaa2/evb/Makefile b/drivers/staging/fsl-dpaa2/evb/Makefile
-new file mode 100644
-index 00000000..ecc529d7
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/evb/Makefile
 @@ -0,0 +1,10 @@
@@ -16574,9 +16502,6 @@ index 00000000..ecc529d7
 +
 +clean:
 +	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-diff --git a/drivers/staging/fsl-dpaa2/evb/dpdmux-cmd.h b/drivers/staging/fsl-dpaa2/evb/dpdmux-cmd.h
-new file mode 100644
-index 00000000..66306804
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/evb/dpdmux-cmd.h
 @@ -0,0 +1,279 @@
@@ -16859,9 +16784,6 @@ index 00000000..66306804
 +};
 +
 +#endif /* _FSL_DPDMUX_CMD_H */
-diff --git a/drivers/staging/fsl-dpaa2/evb/dpdmux.c b/drivers/staging/fsl-dpaa2/evb/dpdmux.c
-new file mode 100644
-index 00000000..f7a87633
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/evb/dpdmux.c
 @@ -0,0 +1,1112 @@
@@ -17977,9 +17899,6 @@ index 00000000..f7a87633
 +
 +	return 0;
 +}
-diff --git a/drivers/staging/fsl-dpaa2/evb/dpdmux.h b/drivers/staging/fsl-dpaa2/evb/dpdmux.h
-new file mode 100644
-index 00000000..a6ccc7ef
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/evb/dpdmux.h
 @@ -0,0 +1,453 @@
@@ -18436,9 +18355,6 @@ index 00000000..a6ccc7ef
 +			   u16 *minor_ver);
 +
 +#endif /* __FSL_DPDMUX_H */
-diff --git a/drivers/staging/fsl-dpaa2/evb/evb.c b/drivers/staging/fsl-dpaa2/evb/evb.c
-new file mode 100644
-index 00000000..9ee09b42
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/evb/evb.c
 @@ -0,0 +1,1350 @@
@@ -19792,9 +19708,6 @@ index 00000000..9ee09b42
 +
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Layerscape DPAA Edge Virtual Bridge driver (prototype)");
-diff --git a/drivers/staging/fsl-dpaa2/mac/Kconfig b/drivers/staging/fsl-dpaa2/mac/Kconfig
-new file mode 100644
-index 00000000..c94f7c1b
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/mac/Kconfig
 @@ -0,0 +1,23 @@
@@ -19821,9 +19734,6 @@ index 00000000..c94f7c1b
 +	PHYs.
 +	.
 +	Leave disabled if unsure.
-diff --git a/drivers/staging/fsl-dpaa2/mac/Makefile b/drivers/staging/fsl-dpaa2/mac/Makefile
-new file mode 100644
-index 00000000..bda94101
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/mac/Makefile
 @@ -0,0 +1,10 @@
@@ -19837,9 +19747,6 @@ index 00000000..bda94101
 +
 +clean:
 +	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-diff --git a/drivers/staging/fsl-dpaa2/mac/dpmac-cmd.h b/drivers/staging/fsl-dpaa2/mac/dpmac-cmd.h
-new file mode 100644
-index 00000000..abdc3c0d
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/mac/dpmac-cmd.h
 @@ -0,0 +1,172 @@
@@ -20015,9 +19922,6 @@ index 00000000..abdc3c0d
 +};
 +
 +#endif /* _FSL_DPMAC_CMD_H */
-diff --git a/drivers/staging/fsl-dpaa2/mac/dpmac.c b/drivers/staging/fsl-dpaa2/mac/dpmac.c
-new file mode 100644
-index 00000000..f7827423
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/mac/dpmac.c
 @@ -0,0 +1,620 @@
@@ -20641,9 +20545,6 @@ index 00000000..f7827423
 +
 +	return 0;
 +}
-diff --git a/drivers/staging/fsl-dpaa2/mac/dpmac.h b/drivers/staging/fsl-dpaa2/mac/dpmac.h
-new file mode 100644
-index 00000000..32d4ada2
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/mac/dpmac.h
 @@ -0,0 +1,342 @@
@@ -20989,9 +20890,6 @@ index 00000000..32d4ada2
 +			  u16 *minor_ver);
 +
 +#endif /* __FSL_DPMAC_H */
-diff --git a/drivers/staging/fsl-dpaa2/mac/mac.c b/drivers/staging/fsl-dpaa2/mac/mac.c
-new file mode 100644
-index 00000000..30169639
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/mac/mac.c
 @@ -0,0 +1,666 @@
@@ -21661,9 +21559,6 @@ index 00000000..30169639
 +
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("DPAA2 PHY proxy interface driver");
-diff --git a/drivers/staging/fsl-dpaa2/rtc/Makefile b/drivers/staging/fsl-dpaa2/rtc/Makefile
-new file mode 100644
-index 00000000..541a7acd
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/rtc/Makefile
 @@ -0,0 +1,10 @@
@@ -21677,9 +21572,6 @@ index 00000000..541a7acd
 +
 +clean:
 +	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-diff --git a/drivers/staging/fsl-dpaa2/rtc/dprtc-cmd.h b/drivers/staging/fsl-dpaa2/rtc/dprtc-cmd.h
-new file mode 100644
-index 00000000..618c7e54
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/rtc/dprtc-cmd.h
 @@ -0,0 +1,160 @@
@@ -21843,9 +21735,6 @@ index 00000000..618c7e54
 +};
 +#pragma pack(pop)
 +#endif /* _FSL_DPRTC_CMD_H */
-diff --git a/drivers/staging/fsl-dpaa2/rtc/dprtc.c b/drivers/staging/fsl-dpaa2/rtc/dprtc.c
-new file mode 100644
-index 00000000..399177e4
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/rtc/dprtc.c
 @@ -0,0 +1,746 @@
@@ -22595,9 +22484,6 @@ index 00000000..399177e4
 +
 +	return 0;
 +}
-diff --git a/drivers/staging/fsl-dpaa2/rtc/dprtc.h b/drivers/staging/fsl-dpaa2/rtc/dprtc.h
-new file mode 100644
-index 00000000..fc96cac6
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/rtc/dprtc.h
 @@ -0,0 +1,172 @@
@@ -22773,9 +22659,6 @@ index 00000000..fc96cac6
 +			  uint16_t *minor_ver);
 +
 +#endif /* __FSL_DPRTC_H */
-diff --git a/drivers/staging/fsl-dpaa2/rtc/rtc.c b/drivers/staging/fsl-dpaa2/rtc/rtc.c
-new file mode 100644
-index 00000000..0afc6538
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/rtc/rtc.c
 @@ -0,0 +1,243 @@
@@ -23022,6 +22905,3 @@ index 00000000..0afc6538
 +
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("DPAA2 RTC (PTP 1588 clock) driver (prototype)");
--- 
-2.14.1
-

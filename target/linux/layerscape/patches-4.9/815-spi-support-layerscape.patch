@@ -15,8 +15,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/spi/spi-fsl-dspi.c | 309 ++++++++++++++++++++++++++++++++++++++++++++-
  2 files changed, 305 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index b7995474..8e281e47 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
 @@ -365,6 +365,7 @@ config SPI_FSL_SPI
@@ -27,8 +25,6 @@ index b7995474..8e281e47 100644
  	depends on SOC_VF610 || SOC_LS1021A || ARCH_LAYERSCAPE || COMPILE_TEST
  	help
  	  This enables support for the Freescale DSPI controller in master
-diff --git a/drivers/spi/spi-fsl-dspi.c b/drivers/spi/spi-fsl-dspi.c
-index a67b0ff6..15201645 100644
 --- a/drivers/spi/spi-fsl-dspi.c
 +++ b/drivers/spi/spi-fsl-dspi.c
 @@ -15,6 +15,8 @@
@@ -86,7 +82,7 @@ index a67b0ff6..15201645 100644
  	.max_clock_factor = 2,
  };
  
-@@ -140,6 +151,23 @@ static const struct fsl_dspi_devtype_data ls2085a_data = {
+@@ -140,6 +151,23 @@ static const struct fsl_dspi_devtype_dat
  	.max_clock_factor = 8,
  };
  
@@ -122,7 +118,7 @@ index a67b0ff6..15201645 100644
  static inline int is_double_byte_mode(struct fsl_dspi *dspi)
  {
  	unsigned int val;
-@@ -177,6 +208,255 @@ static inline int is_double_byte_mode(struct fsl_dspi *dspi)
+@@ -177,6 +208,255 @@ static inline int is_double_byte_mode(st
  	return ((val & SPI_FRAME_BITS_MASK) == SPI_FRAME_BITS(8)) ? 0 : 1;
  }
  
@@ -378,7 +374,7 @@ index a67b0ff6..15201645 100644
  static void hz_to_spi_baud(char *pbr, char *br, int speed_hz,
  		unsigned long clkrate)
  {
-@@ -425,6 +705,12 @@ static int dspi_transfer_one_message(struct spi_master *master,
+@@ -425,6 +705,12 @@ static int dspi_transfer_one_message(str
  			regmap_write(dspi->regmap, SPI_RSER, SPI_RSER_TCFQE);
  			dspi_tcfq_write(dspi);
  			break;
@@ -391,7 +387,7 @@ index a67b0ff6..15201645 100644
  		default:
  			dev_err(&dspi->pdev->dev, "unsupported trans_mode %u\n",
  				trans_mode);
-@@ -432,9 +718,13 @@ static int dspi_transfer_one_message(struct spi_master *master,
+@@ -432,9 +718,13 @@ static int dspi_transfer_one_message(str
  			goto out;
  		}
  
@@ -408,7 +404,7 @@ index a67b0ff6..15201645 100644
  
  		if (transfer->delay_usecs)
  			udelay(transfer->delay_usecs);
-@@ -712,7 +1002,8 @@ static int dspi_probe(struct platform_device *pdev)
+@@ -712,7 +1002,8 @@ static int dspi_probe(struct platform_de
  	if (IS_ERR(dspi->regmap)) {
  		dev_err(&pdev->dev, "failed to init regmap: %ld\n",
  				PTR_ERR(dspi->regmap));
@@ -418,7 +414,7 @@ index a67b0ff6..15201645 100644
  	}
  
  	dspi_init(dspi);
-@@ -740,6 +1031,13 @@ static int dspi_probe(struct platform_device *pdev)
+@@ -740,6 +1031,13 @@ static int dspi_probe(struct platform_de
  	if (ret)
  		goto out_master_put;
  
@@ -432,7 +428,7 @@ index a67b0ff6..15201645 100644
  	master->max_speed_hz =
  		clk_get_rate(dspi->clk) / dspi->devtype_data->max_clock_factor;
  
-@@ -768,6 +1066,7 @@ static int dspi_remove(struct platform_device *pdev)
+@@ -768,6 +1066,7 @@ static int dspi_remove(struct platform_d
  	struct fsl_dspi *dspi = spi_master_get_devdata(master);
  
  	/* Disconnect from the SPI framework */
@@ -440,6 +436,3 @@ index a67b0ff6..15201645 100644
  	clk_disable_unprepare(dspi->clk);
  	spi_unregister_master(dspi->master);
  
--- 
-2.14.1
-

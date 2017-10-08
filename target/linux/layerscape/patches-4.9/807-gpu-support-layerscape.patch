@@ -11,11 +11,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/gpu/drm/fsl-dcu/fsl_dcu_drm_drv.c | 18 ++++++++++++++++--
  1 file changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/fsl-dcu/fsl_dcu_drm_drv.c b/drivers/gpu/drm/fsl-dcu/fsl_dcu_drm_drv.c
-index cc2fde2a..54f60ba1 100644
 --- a/drivers/gpu/drm/fsl-dcu/fsl_dcu_drm_drv.c
 +++ b/drivers/gpu/drm/fsl-dcu/fsl_dcu_drm_drv.c
-@@ -225,7 +225,6 @@ static int fsl_dcu_drm_pm_suspend(struct device *dev)
+@@ -225,7 +225,6 @@ static int fsl_dcu_drm_pm_suspend(struct
  	if (!fsl_dev)
  		return 0;
  
@@ -23,7 +21,7 @@ index cc2fde2a..54f60ba1 100644
  	drm_kms_helper_poll_disable(fsl_dev->drm);
  
  	console_lock();
-@@ -243,6 +242,8 @@ static int fsl_dcu_drm_pm_suspend(struct device *dev)
+@@ -243,6 +242,8 @@ static int fsl_dcu_drm_pm_suspend(struct
  		return PTR_ERR(fsl_dev->state);
  	}
  
@@ -32,7 +30,7 @@ index cc2fde2a..54f60ba1 100644
  	clk_disable_unprepare(fsl_dev->pix_clk);
  	clk_disable_unprepare(fsl_dev->clk);
  
-@@ -263,6 +264,14 @@ static int fsl_dcu_drm_pm_resume(struct device *dev)
+@@ -263,6 +264,14 @@ static int fsl_dcu_drm_pm_resume(struct
  		return ret;
  	}
  
@@ -47,7 +45,7 @@ index cc2fde2a..54f60ba1 100644
  	if (fsl_dev->tcon)
  		fsl_tcon_bypass_enable(fsl_dev->tcon);
  	fsl_dcu_drm_init_planes(fsl_dev->drm);
-@@ -273,7 +282,6 @@ static int fsl_dcu_drm_pm_resume(struct device *dev)
+@@ -273,7 +282,6 @@ static int fsl_dcu_drm_pm_resume(struct
  	console_unlock();
  
  	drm_kms_helper_poll_enable(fsl_dev->drm);
@@ -55,7 +53,7 @@ index cc2fde2a..54f60ba1 100644
  
  	return 0;
  }
-@@ -389,6 +397,12 @@ static int fsl_dcu_drm_probe(struct platform_device *pdev)
+@@ -389,6 +397,12 @@ static int fsl_dcu_drm_probe(struct plat
  		goto disable_clk;
  	}
  
@@ -68,6 +66,3 @@ index cc2fde2a..54f60ba1 100644
  	fsl_dev->tcon = fsl_tcon_init(dev);
  
  	drm = drm_dev_alloc(driver, dev);
--- 
-2.14.1
-

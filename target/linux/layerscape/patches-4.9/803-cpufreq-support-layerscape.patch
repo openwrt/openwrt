@@ -13,8 +13,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/firmware/psci.c         |  12 ++-
  3 files changed, 77 insertions(+), 113 deletions(-)
 
-diff --git a/drivers/cpufreq/Kconfig b/drivers/cpufreq/Kconfig
-index d8b164a7..bc9264c7 100644
 --- a/drivers/cpufreq/Kconfig
 +++ b/drivers/cpufreq/Kconfig
 @@ -332,7 +332,7 @@ endif
@@ -26,8 +24,6 @@ index d8b164a7..bc9264c7 100644
  	depends on !CPU_THERMAL || THERMAL
  	select CLK_QORIQ
  	help
-diff --git a/drivers/cpufreq/qoriq-cpufreq.c b/drivers/cpufreq/qoriq-cpufreq.c
-index 53d8c3fb..e2ea433a 100644
 --- a/drivers/cpufreq/qoriq-cpufreq.c
 +++ b/drivers/cpufreq/qoriq-cpufreq.c
 @@ -11,6 +11,7 @@
@@ -151,7 +147,7 @@ index 53d8c3fb..e2ea433a 100644
  
  	if (!cpu_present(cpu))
  		return NULL;
-@@ -112,37 +87,28 @@ static struct device_node *cpu_to_clk_node(int cpu)
+@@ -112,37 +87,28 @@ static struct device_node *cpu_to_clk_no
  	if (!np)
  		return NULL;
  
@@ -197,7 +193,7 @@ index 53d8c3fb..e2ea433a 100644
  }
  
  /* reduce the duplicated frequencies in frequency table */
-@@ -198,10 +164,11 @@ static void freq_table_sort(struct cpufreq_frequency_table *freq_table,
+@@ -198,10 +164,11 @@ static void freq_table_sort(struct cpufr
  
  static int qoriq_cpufreq_cpu_init(struct cpufreq_policy *policy)
  {
@@ -211,7 +207,7 @@ index 53d8c3fb..e2ea433a 100644
  	struct cpufreq_frequency_table *table;
  	struct cpu_data *data;
  	unsigned int cpu = policy->cpu;
-@@ -221,17 +188,13 @@ static int qoriq_cpufreq_cpu_init(struct cpufreq_policy *policy)
+@@ -221,17 +188,13 @@ static int qoriq_cpufreq_cpu_init(struct
  		goto err_nomem2;
  	}
  
@@ -232,7 +228,7 @@ index 53d8c3fb..e2ea433a 100644
  	}
  
  	table = kcalloc(count + 1, sizeof(*table), GFP_KERNEL);
-@@ -240,23 +203,11 @@ static int qoriq_cpufreq_cpu_init(struct cpufreq_policy *policy)
+@@ -240,23 +203,11 @@ static int qoriq_cpufreq_cpu_init(struct
  		goto err_pclk;
  	}
  
@@ -258,7 +254,7 @@ index 53d8c3fb..e2ea433a 100644
  		table[i].driver_data = i;
  	}
  	freq_table_redup(table, count);
-@@ -282,7 +233,6 @@ static int qoriq_cpufreq_cpu_init(struct cpufreq_policy *policy)
+@@ -282,7 +233,6 @@ static int qoriq_cpufreq_cpu_init(struct
  	policy->cpuinfo.transition_latency = u64temp + 1;
  
  	of_node_put(np);
@@ -266,7 +262,7 @@ index 53d8c3fb..e2ea433a 100644
  
  	return 0;
  
-@@ -290,10 +240,7 @@ static int qoriq_cpufreq_cpu_init(struct cpufreq_policy *policy)
+@@ -290,10 +240,7 @@ err_nomem1:
  	kfree(table);
  err_pclk:
  	kfree(data->pclk);
@@ -277,7 +273,7 @@ index 53d8c3fb..e2ea433a 100644
  	kfree(data);
  err_np:
  	of_node_put(np);
-@@ -357,12 +304,25 @@ static struct cpufreq_driver qoriq_cpufreq_driver = {
+@@ -357,12 +304,25 @@ static struct cpufreq_driver qoriq_cpufr
  	.attr		= cpufreq_generic_attr,
  };
  
@@ -308,7 +304,7 @@ index 53d8c3fb..e2ea433a 100644
  	{ .compatible = "fsl,qoriq-clockgen-2.0", },
  	{}
  };
-@@ -380,16 +340,12 @@ static int __init qoriq_cpufreq_init(void)
+@@ -380,16 +340,12 @@ static int __init qoriq_cpufreq_init(voi
  
  	match = of_match_node(node_matches, np);
  	data = match->data;
@@ -328,11 +324,9 @@ index 53d8c3fb..e2ea433a 100644
  	ret = cpufreq_register_driver(&qoriq_cpufreq_driver);
  	if (!ret)
  		pr_info("Freescale QorIQ CPU frequency scaling driver\n");
-diff --git a/drivers/firmware/psci.c b/drivers/firmware/psci.c
-index 8263429e..323c9fc0 100644
 --- a/drivers/firmware/psci.c
 +++ b/drivers/firmware/psci.c
-@@ -418,8 +418,12 @@ CPUIDLE_METHOD_OF_DECLARE(psci, "psci", &psci_cpuidle_ops);
+@@ -418,8 +418,12 @@ CPUIDLE_METHOD_OF_DECLARE(psci, "psci",
  
  static int psci_system_suspend(unsigned long unused)
  {
@@ -347,7 +341,7 @@ index 8263429e..323c9fc0 100644
  }
  
  static int psci_system_suspend_enter(suspend_state_t state)
-@@ -439,6 +443,8 @@ static void __init psci_init_system_suspend(void)
+@@ -439,6 +443,8 @@ static void __init psci_init_system_susp
  	if (!IS_ENABLED(CONFIG_SUSPEND))
  		return;
  
@@ -356,7 +350,7 @@ index 8263429e..323c9fc0 100644
  	ret = psci_features(PSCI_FN_NATIVE(1_0, SYSTEM_SUSPEND));
  
  	if (ret != PSCI_RET_NOT_SUPPORTED)
-@@ -516,6 +522,8 @@ static void __init psci_0_2_set_functions(void)
+@@ -516,6 +522,8 @@ static void __init psci_0_2_set_function
  	arm_pm_restart = psci_sys_reset;
  
  	pm_power_off = psci_sys_poweroff;
@@ -365,6 +359,3 @@ index 8263429e..323c9fc0 100644
  }
  
  /*
--- 
-2.14.1
-

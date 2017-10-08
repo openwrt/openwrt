@@ -11,8 +11,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/ata/ahci_qoriq.c | 63 ++++++++++++++++++++++++++++++++++++++++++------
  1 file changed, 56 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/ata/ahci_qoriq.c b/drivers/ata/ahci_qoriq.c
-index 1eba8dff..2f30a39f 100644
 --- a/drivers/ata/ahci_qoriq.c
 +++ b/drivers/ata/ahci_qoriq.c
 @@ -1,7 +1,7 @@
@@ -57,7 +55,7 @@ index 1eba8dff..2f30a39f 100644
  	{},
  };
  MODULE_DEVICE_TABLE(of, ahci_qoriq_of_match);
-@@ -154,6 +163,8 @@ static int ahci_qoriq_phy_init(struct ahci_host_priv *hpriv)
+@@ -154,6 +163,8 @@ static int ahci_qoriq_phy_init(struct ah
  
  	switch (qpriv->type) {
  	case AHCI_LS1021A:
@@ -66,7 +64,7 @@ index 1eba8dff..2f30a39f 100644
  		writel(SATA_ECC_DISABLE, qpriv->ecc_addr);
  		writel(AHCI_PORT_PHY_1_CFG, reg_base + PORT_PHY1);
  		writel(LS1021A_PORT_PHY2, reg_base + PORT_PHY2);
-@@ -161,19 +172,56 @@ static int ahci_qoriq_phy_init(struct ahci_host_priv *hpriv)
+@@ -161,19 +172,56 @@ static int ahci_qoriq_phy_init(struct ah
  		writel(LS1021A_PORT_PHY4, reg_base + PORT_PHY4);
  		writel(LS1021A_PORT_PHY5, reg_base + PORT_PHY5);
  		writel(AHCI_PORT_TRANS_CFG, reg_base + PORT_TRANS);
@@ -126,7 +124,7 @@ index 1eba8dff..2f30a39f 100644
  		break;
  	}
  
-@@ -204,13 +252,14 @@ static int ahci_qoriq_probe(struct platform_device *pdev)
+@@ -204,13 +252,14 @@ static int ahci_qoriq_probe(struct platf
  
  	qoriq_priv->type = (enum ahci_qoriq_type)of_id->data;
  
@@ -144,6 +142,3 @@ index 1eba8dff..2f30a39f 100644
  
  	rc = ahci_platform_enable_resources(hpriv);
  	if (rc)
--- 
-2.14.1
-

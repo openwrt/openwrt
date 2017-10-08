@@ -17,8 +17,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/mmc/host/sdhci.h          |   3 +
  5 files changed, 306 insertions(+), 46 deletions(-)
 
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 5274f503..a1135a92 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
 @@ -144,6 +144,7 @@ config MMC_SDHCI_OF_ESDHC
@@ -29,8 +27,6 @@ index 5274f503..a1135a92 100644
  	help
  	  This selects the Freescale eSDHC controller support.
  
-diff --git a/drivers/mmc/host/sdhci-esdhc.h b/drivers/mmc/host/sdhci-esdhc.h
-index de132e28..98898a30 100644
 --- a/drivers/mmc/host/sdhci-esdhc.h
 +++ b/drivers/mmc/host/sdhci-esdhc.h
 @@ -24,30 +24,46 @@
@@ -57,10 +53,12 @@ index de132e28..98898a30 100644
 -#define ESDHC_CTRL_4BITBUS          (0x1 << 1)
 -#define ESDHC_CTRL_8BITBUS          (0x2 << 1)
 -#define ESDHC_CTRL_BUSWIDTH_MASK    (0x3 << 1)
- 
+-
 -/* OF-specific */
 -#define ESDHC_DMA_SYSCTL	0x40c
 -#define ESDHC_DMA_SNOOP		0x00000040
+ 
+-#define ESDHC_HOST_CONTROL_RES	0x01
 +/* Present State Register */
 +#define ESDHC_PRSSTAT			0x24
 +#define ESDHC_CLOCK_STABLE		0x00000008
@@ -89,8 +87,7 @@ index de132e28..98898a30 100644
 +/* Tuning Block Control Register */
 +#define ESDHC_TBCTL			0x120
 +#define ESDHC_TB_EN			0x00000004
- 
--#define ESDHC_HOST_CONTROL_RES	0x01
++
 +/* Control Register for DMA transfer */
 +#define ESDHC_DMA_SYSCTL		0x40c
 +#define ESDHC_PERIPHERAL_CLK_SEL	0x00080000
@@ -98,8 +95,6 @@ index de132e28..98898a30 100644
 +#define ESDHC_DMA_SNOOP			0x00000040
  
  #endif /* _DRIVERS_MMC_SDHCI_ESDHC_H */
-diff --git a/drivers/mmc/host/sdhci-of-esdhc.c b/drivers/mmc/host/sdhci-of-esdhc.c
-index 3c27401c..4b0f375b 100644
 --- a/drivers/mmc/host/sdhci-of-esdhc.c
 +++ b/drivers/mmc/host/sdhci-of-esdhc.c
 @@ -16,8 +16,12 @@
@@ -128,7 +123,7 @@ index 3c27401c..4b0f375b 100644
  /**
   * esdhc_read*_fixup - Fixup the value read from incompatible eSDHC register
   *		       to make it compatible with SD spec.
-@@ -80,6 +88,17 @@ static u32 esdhc_readl_fixup(struct sdhci_host *host,
+@@ -80,6 +88,17 @@ static u32 esdhc_readl_fixup(struct sdhc
  		return ret;
  	}
  
@@ -146,7 +141,7 @@ index 3c27401c..4b0f375b 100644
  	ret = value;
  	return ret;
  }
-@@ -87,6 +106,8 @@ static u32 esdhc_readl_fixup(struct sdhci_host *host,
+@@ -87,6 +106,8 @@ static u32 esdhc_readl_fixup(struct sdhc
  static u16 esdhc_readw_fixup(struct sdhci_host *host,
  				     int spec_reg, u32 value)
  {
@@ -155,7 +150,7 @@ index 3c27401c..4b0f375b 100644
  	u16 ret;
  	int shift = (spec_reg & 0x2) * 8;
  
-@@ -94,6 +115,12 @@ static u16 esdhc_readw_fixup(struct sdhci_host *host,
+@@ -94,6 +115,12 @@ static u16 esdhc_readw_fixup(struct sdhc
  		ret = value & 0xffff;
  	else
  		ret = (value >> shift) & 0xffff;
@@ -168,7 +163,7 @@ index 3c27401c..4b0f375b 100644
  	return ret;
  }
  
-@@ -235,7 +262,11 @@ static u32 esdhc_be_readl(struct sdhci_host *host, int reg)
+@@ -235,7 +262,11 @@ static u32 esdhc_be_readl(struct sdhci_h
  	u32 ret;
  	u32 value;
  
@@ -181,7 +176,7 @@ index 3c27401c..4b0f375b 100644
  	ret = esdhc_readl_fixup(host, reg, value);
  
  	return ret;
-@@ -246,7 +277,11 @@ static u32 esdhc_le_readl(struct sdhci_host *host, int reg)
+@@ -246,7 +277,11 @@ static u32 esdhc_le_readl(struct sdhci_h
  	u32 ret;
  	u32 value;
  
@@ -194,7 +189,7 @@ index 3c27401c..4b0f375b 100644
  	ret = esdhc_readl_fixup(host, reg, value);
  
  	return ret;
-@@ -404,15 +439,25 @@ static int esdhc_of_enable_dma(struct sdhci_host *host)
+@@ -404,15 +439,25 @@ static int esdhc_of_enable_dma(struct sd
  static unsigned int esdhc_of_get_max_clock(struct sdhci_host *host)
  {
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
@@ -222,7 +217,7 @@ index 3c27401c..4b0f375b 100644
  }
  
  static void esdhc_of_set_clock(struct sdhci_host *host, unsigned int clock)
-@@ -421,17 +466,34 @@ static void esdhc_of_set_clock(struct sdhci_host *host, unsigned int clock)
+@@ -421,17 +466,34 @@ static void esdhc_of_set_clock(struct sd
  	struct sdhci_esdhc *esdhc = sdhci_pltfm_priv(pltfm_host);
  	int pre_div = 1;
  	int div = 1;
@@ -258,7 +253,7 @@ index 3c27401c..4b0f375b 100644
  	/* Workaround to reduce the clock frequency for p1010 esdhc */
  	if (of_find_compatible_node(NULL, NULL, "fsl,p1010-esdhc")) {
  		if (clock > 20000000)
-@@ -441,8 +503,8 @@ static void esdhc_of_set_clock(struct sdhci_host *host, unsigned int clock)
+@@ -441,8 +503,8 @@ static void esdhc_of_set_clock(struct sd
  	}
  
  	temp = sdhci_readl(host, ESDHC_SYSTEM_CONTROL);
@@ -269,7 +264,7 @@ index 3c27401c..4b0f375b 100644
  	sdhci_writel(host, temp, ESDHC_SYSTEM_CONTROL);
  
  	while (host->max_clk / pre_div / 16 > clock && pre_div < 256)
-@@ -462,7 +524,20 @@ static void esdhc_of_set_clock(struct sdhci_host *host, unsigned int clock)
+@@ -462,7 +524,20 @@ static void esdhc_of_set_clock(struct sd
  		| (div << ESDHC_DIVIDER_SHIFT)
  		| (pre_div << ESDHC_PREDIV_SHIFT));
  	sdhci_writel(host, temp, ESDHC_SYSTEM_CONTROL);
@@ -291,7 +286,7 @@ index 3c27401c..4b0f375b 100644
  }
  
  static void esdhc_pltfm_set_bus_width(struct sdhci_host *host, int width)
-@@ -487,6 +562,33 @@ static void esdhc_pltfm_set_bus_width(struct sdhci_host *host, int width)
+@@ -487,6 +562,33 @@ static void esdhc_pltfm_set_bus_width(st
  	sdhci_writel(host, ctrl, ESDHC_PROCTL);
  }
  
@@ -325,7 +320,7 @@ index 3c27401c..4b0f375b 100644
  static void esdhc_reset(struct sdhci_host *host, u8 mask)
  {
  	sdhci_reset(host, mask);
-@@ -495,6 +597,95 @@ static void esdhc_reset(struct sdhci_host *host, u8 mask)
+@@ -495,6 +597,95 @@ static void esdhc_reset(struct sdhci_hos
  	sdhci_writel(host, host->ier, SDHCI_SIGNAL_ENABLE);
  }
  
@@ -421,7 +416,7 @@ index 3c27401c..4b0f375b 100644
  #ifdef CONFIG_PM_SLEEP
  static u32 esdhc_proctl;
  static int esdhc_of_suspend(struct device *dev)
-@@ -575,10 +766,19 @@ static const struct sdhci_pltfm_data sdhci_esdhc_le_pdata = {
+@@ -575,10 +766,19 @@ static const struct sdhci_pltfm_data sdh
  	.ops = &sdhci_esdhc_le_ops,
  };
  
@@ -441,7 +436,7 @@ index 3c27401c..4b0f375b 100644
  	u16 host_ver;
  
  	pltfm_host = sdhci_priv(host);
-@@ -588,6 +788,36 @@ static void esdhc_init(struct platform_device *pdev, struct sdhci_host *host)
+@@ -588,6 +788,36 @@ static void esdhc_init(struct platform_d
  	esdhc->vendor_ver = (host_ver & SDHCI_VENDOR_VER_MASK) >>
  			     SDHCI_VENDOR_VER_SHIFT;
  	esdhc->spec_ver = host_ver & SDHCI_SPEC_VER_MASK;
@@ -478,7 +473,7 @@ index 3c27401c..4b0f375b 100644
  }
  
  static int sdhci_esdhc_probe(struct platform_device *pdev)
-@@ -610,6 +840,11 @@ static int sdhci_esdhc_probe(struct platform_device *pdev)
+@@ -610,6 +840,11 @@ static int sdhci_esdhc_probe(struct plat
  	if (IS_ERR(host))
  		return PTR_ERR(host);
  
@@ -490,11 +485,9 @@ index 3c27401c..4b0f375b 100644
  	esdhc_init(pdev, host);
  
  	sdhci_get_of_property(pdev);
-diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
-index 7d275e72..099c3bf5 100644
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -1624,26 +1624,24 @@ static void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -1624,26 +1624,24 @@ static void sdhci_set_ios(struct mmc_hos
  
  	ctrl = sdhci_readb(host, SDHCI_HOST_CONTROL);
  
@@ -535,7 +528,7 @@ index 7d275e72..099c3bf5 100644
  		if (!host->preset_enabled) {
  			sdhci_writeb(host, ctrl, SDHCI_HOST_CONTROL);
  			/*
-@@ -1956,7 +1954,7 @@ static int sdhci_prepare_hs400_tuning(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -1956,7 +1954,7 @@ static int sdhci_prepare_hs400_tuning(st
  	return 0;
  }
  
@@ -544,7 +537,7 @@ index 7d275e72..099c3bf5 100644
  {
  	struct sdhci_host *host = mmc_priv(mmc);
  	u16 ctrl;
-@@ -2015,6 +2013,9 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
+@@ -2015,6 +2013,9 @@ static int sdhci_execute_tuning(struct m
  		return err;
  	}
  
@@ -554,7 +547,7 @@ index 7d275e72..099c3bf5 100644
  	ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
  	ctrl |= SDHCI_CTRL_EXEC_TUNING;
  	if (host->quirks2 & SDHCI_QUIRK2_TUNING_WORK_AROUND)
-@@ -2127,9 +2128,10 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
+@@ -2127,9 +2128,10 @@ static int sdhci_execute_tuning(struct m
  
  		ctrl = sdhci_readw(host, SDHCI_HOST_CONTROL2);
  
@@ -568,7 +561,7 @@ index 7d275e72..099c3bf5 100644
  	} while (ctrl & SDHCI_CTRL_EXEC_TUNING);
  
  	/*
-@@ -2165,6 +2167,7 @@ static int sdhci_execute_tuning(struct mmc_host *mmc, u32 opcode)
+@@ -2165,6 +2167,7 @@ out_unlock:
  	spin_unlock_irqrestore(&host->lock, flags);
  	return err;
  }
@@ -576,7 +569,7 @@ index 7d275e72..099c3bf5 100644
  
  static int sdhci_select_drive_strength(struct mmc_card *card,
  				       unsigned int max_dtr, int host_drv,
-@@ -2997,6 +3000,8 @@ struct sdhci_host *sdhci_alloc_host(struct device *dev,
+@@ -2997,6 +3000,8 @@ struct sdhci_host *sdhci_alloc_host(stru
  
  	host->flags = SDHCI_SIGNALING_330;
  
@@ -585,8 +578,6 @@ index 7d275e72..099c3bf5 100644
  	return host;
  }
  
-diff --git a/drivers/mmc/host/sdhci.h b/drivers/mmc/host/sdhci.h
-index 2570455b..088bed43 100644
 --- a/drivers/mmc/host/sdhci.h
 +++ b/drivers/mmc/host/sdhci.h
 @@ -524,6 +524,8 @@ struct sdhci_host {
@@ -598,7 +589,7 @@ index 2570455b..088bed43 100644
  
  	unsigned long private[0] ____cacheline_aligned;
  };
-@@ -689,6 +691,7 @@ void sdhci_set_power_noreg(struct sdhci_host *host, unsigned char mode,
+@@ -689,6 +691,7 @@ void sdhci_set_power_noreg(struct sdhci_
  void sdhci_set_bus_width(struct sdhci_host *host, int width);
  void sdhci_reset(struct sdhci_host *host, u8 mask);
  void sdhci_set_uhs_signaling(struct sdhci_host *host, unsigned timing);
@@ -606,6 +597,3 @@ index 2570455b..088bed43 100644
  
  #ifdef CONFIG_PM
  extern int sdhci_suspend_host(struct sdhci_host *host);
--- 
-2.14.1
-

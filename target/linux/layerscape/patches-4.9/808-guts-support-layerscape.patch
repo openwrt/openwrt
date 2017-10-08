@@ -16,11 +16,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  3 files changed, 323 insertions(+), 52 deletions(-)
  create mode 100644 drivers/soc/fsl/guts.c
 
-diff --git a/drivers/base/soc.c b/drivers/base/soc.c
-index 0c5cf872..0e701e22 100644
 --- a/drivers/base/soc.c
 +++ b/drivers/base/soc.c
-@@ -167,19 +167,23 @@ static int soc_device_match_one(struct device *dev, void *arg)
+@@ -167,19 +167,23 @@ static int soc_device_match_one(struct d
  	const struct soc_device_attribute *match = arg;
  
  	if (match->machine &&
@@ -48,9 +46,6 @@ index 0c5cf872..0e701e22 100644
  		return 0;
  
  	return 1;
-diff --git a/drivers/soc/fsl/guts.c b/drivers/soc/fsl/guts.c
-new file mode 100644
-index 00000000..7d28784a
 --- /dev/null
 +++ b/drivers/soc/fsl/guts.c
 @@ -0,0 +1,238 @@
@@ -292,8 +287,6 @@ index 00000000..7d28784a
 +	platform_driver_unregister(&fsl_guts_driver);
 +}
 +module_exit(fsl_guts_exit);
-diff --git a/include/linux/fsl/guts.h b/include/linux/fsl/guts.h
-index 649e9171..3efa3b86 100644
 --- a/include/linux/fsl/guts.h
 +++ b/include/linux/fsl/guts.h
 @@ -29,83 +29,112 @@
@@ -457,6 +450,3 @@ index 649e9171..3efa3b86 100644
  
  /* Alternate function signal multiplex control */
  #define MPC85xx_PMUXCR_QE(x) (0x8000 >> (x))
--- 
-2.14.1
-

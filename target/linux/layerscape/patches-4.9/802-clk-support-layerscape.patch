@@ -13,8 +13,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/clk/clk-qoriq.c | 170 ++++++++++++++++++++++++++++++++++++++++++++----
  1 file changed, 156 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/clk/clk-qoriq.c b/drivers/clk/clk-qoriq.c
-index 80ae2a51..0e7de00a 100644
 --- a/drivers/clk/clk-qoriq.c
 +++ b/drivers/clk/clk-qoriq.c
 @@ -12,6 +12,7 @@
@@ -34,7 +32,7 @@ index 80ae2a51..0e7de00a 100644
  	struct clockgen_pll pll[6];
  	struct clk *cmux[NUM_CMUX];
  	struct clk *hwaccel[NUM_HWACCEL];
-@@ -266,6 +267,39 @@ static const struct clockgen_muxinfo ls1043a_hwa2 = {
+@@ -266,6 +267,39 @@ static const struct clockgen_muxinfo ls1
  	},
  };
  
@@ -74,11 +72,10 @@ index 80ae2a51..0e7de00a 100644
  static const struct clockgen_muxinfo t1023_hwa1 = {
  	{
  		{},
-@@ -488,6 +522,42 @@ static const struct clockgen_chipinfo chipinfo[] = {
- 		.pll_mask = 0x07,
+@@ -489,6 +523,42 @@ static const struct clockgen_chipinfo ch
  		.flags = CG_PLL_8BIT,
  	},
-+	{
+ 	{
 +		.compat = "fsl,ls1046a-clockgen",
 +		.init_periph = t2080_init_periph,
 +		.cmux_groups = {
@@ -114,10 +111,11 @@ index 80ae2a51..0e7de00a 100644
 +		},
 +		.pll_mask = 0x03,
 +	},
- 	{
++	{
  		.compat = "fsl,ls2080a-clockgen",
  		.cmux_groups = {
-@@ -846,7 +916,12 @@ static void __init create_muxes(struct clockgen *cg)
+ 			&clockgen2_cmux_cga12, &clockgen2_cmux_cgb
+@@ -846,7 +916,12 @@ static void __init create_muxes(struct c
  
  static void __init clockgen_init(struct device_node *np);
  
@@ -154,7 +152,7 @@ index 80ae2a51..0e7de00a 100644
  					0, 1, 1);
  	if (IS_ERR(clk))
  		pr_err("%s: Couldn't register %s: %ld\n", __func__, name,
-@@ -907,6 +977,29 @@ static struct clk *sysclk_from_parent(const char *name)
+@@ -907,6 +977,29 @@ static struct clk *sysclk_from_parent(co
  	return clk;
  }
  
@@ -184,7 +182,7 @@ index 80ae2a51..0e7de00a 100644
  static struct clk * __init create_sysclk(const char *name)
  {
  	struct device_node *sysclk;
-@@ -916,7 +1009,11 @@ static struct clk * __init create_sysclk(const char *name)
+@@ -916,7 +1009,11 @@ static struct clk * __init create_sysclk
  	if (!IS_ERR(clk))
  		return clk;
  
@@ -197,7 +195,7 @@ index 80ae2a51..0e7de00a 100644
  	if (!IS_ERR(clk))
  		return clk;
  
-@@ -927,7 +1024,27 @@ static struct clk * __init create_sysclk(const char *name)
+@@ -927,7 +1024,27 @@ static struct clk * __init create_sysclk
  			return clk;
  	}
  
@@ -226,7 +224,7 @@ index 80ae2a51..0e7de00a 100644
  	return NULL;
  }
  
-@@ -950,11 +1067,19 @@ static void __init create_one_pll(struct clockgen *cg, int idx)
+@@ -950,11 +1067,19 @@ static void __init create_one_pll(struct
  	u32 __iomem *reg;
  	u32 mult;
  	struct clockgen_pll *pll = &cg->pll[idx];
@@ -246,7 +244,7 @@ index 80ae2a51..0e7de00a 100644
  	if (cg->info.flags & CG_VER3) {
  		switch (idx) {
  		case PLATFORM_PLL:
-@@ -1000,12 +1125,13 @@ static void __init create_one_pll(struct clockgen *cg, int idx)
+@@ -1000,12 +1125,13 @@ static void __init create_one_pll(struct
  
  	for (i = 0; i < ARRAY_SIZE(pll->div); i++) {
  		struct clk *clk;
@@ -261,7 +259,7 @@ index 80ae2a51..0e7de00a 100644
  		if (IS_ERR(clk)) {
  			pr_err("%s: %s: register failed %ld\n",
  			       __func__, pll->div[i].name, PTR_ERR(clk));
-@@ -1013,6 +1139,11 @@ static void __init create_one_pll(struct clockgen *cg, int idx)
+@@ -1013,6 +1139,11 @@ static void __init create_one_pll(struct
  		}
  
  		pll->div[i].clk = clk;
@@ -273,7 +271,7 @@ index 80ae2a51..0e7de00a 100644
  	}
  }
  
-@@ -1142,6 +1273,13 @@ static struct clk *clockgen_clk_get(struct of_phandle_args *clkspec, void *data)
+@@ -1142,6 +1273,13 @@ static struct clk *clockgen_clk_get(stru
  			goto bad_args;
  		clk = pll->div[idx].clk;
  		break;
@@ -287,7 +285,7 @@ index 80ae2a51..0e7de00a 100644
  	default:
  		goto bad_args;
  	}
-@@ -1253,6 +1391,7 @@ static void __init clockgen_init(struct device_node *np)
+@@ -1253,6 +1391,7 @@ static void __init clockgen_init(struct
  		clockgen.info.flags |= CG_CMUX_GE_PLAT;
  
  	clockgen.sysclk = create_sysclk("cg-sysclk");
@@ -295,7 +293,7 @@ index 80ae2a51..0e7de00a 100644
  	create_plls(&clockgen);
  	create_muxes(&clockgen);
  
-@@ -1273,8 +1412,11 @@ static void __init clockgen_init(struct device_node *np)
+@@ -1273,8 +1412,11 @@ err:
  
  CLK_OF_DECLARE(qoriq_clockgen_1, "fsl,qoriq-clockgen-1.0", clockgen_init);
  CLK_OF_DECLARE(qoriq_clockgen_2, "fsl,qoriq-clockgen-2.0", clockgen_init);
@@ -307,6 +305,3 @@ index 80ae2a51..0e7de00a 100644
  CLK_OF_DECLARE(qoriq_clockgen_ls2080a, "fsl,ls2080a-clockgen", clockgen_init);
  
  /* Legacy nodes */
--- 
-2.14.1
-

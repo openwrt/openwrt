@@ -13,11 +13,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/i2c/muxes/i2c-mux-pca954x.c | 43 +++++++++++++++++++++++++++++++++++++
  2 files changed, 52 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-imx.c b/drivers/i2c/busses/i2c-imx.c
-index 47fc1f1a..a35c366b 100644
 --- a/drivers/i2c/busses/i2c-imx.c
 +++ b/drivers/i2c/busses/i2c-imx.c
-@@ -889,6 +889,14 @@ static int i2c_imx_xfer(struct i2c_adapter *adapter,
+@@ -889,6 +889,14 @@ static int i2c_imx_xfer(struct i2c_adapt
  
  	dev_dbg(&i2c_imx->adapter.dev, "<%s>\n", __func__);
  
@@ -32,7 +30,7 @@ index 47fc1f1a..a35c366b 100644
  	result = pm_runtime_get_sync(i2c_imx->adapter.dev.parent);
  	if (result < 0)
  		goto out;
-@@ -1100,7 +1108,7 @@ static int i2c_imx_probe(struct platform_device *pdev)
+@@ -1100,7 +1108,7 @@ static int i2c_imx_probe(struct platform
  	}
  
  	/* Request IRQ */
@@ -41,8 +39,6 @@ index 47fc1f1a..a35c366b 100644
  				pdev->name, i2c_imx);
  	if (ret) {
  		dev_err(&pdev->dev, "can't claim irq %d\n", irq);
-diff --git a/drivers/i2c/muxes/i2c-mux-pca954x.c b/drivers/i2c/muxes/i2c-mux-pca954x.c
-index 9c4ac26c..3c27ab84 100644
 --- a/drivers/i2c/muxes/i2c-mux-pca954x.c
 +++ b/drivers/i2c/muxes/i2c-mux-pca954x.c
 @@ -74,6 +74,7 @@ struct pca954x {
@@ -53,7 +49,7 @@ index 9c4ac26c..3c27ab84 100644
  };
  
  /* Provide specs for the PCA954x types we know about */
-@@ -196,6 +197,13 @@ static int pca954x_deselect_mux(struct i2c_mux_core *muxc, u32 chan)
+@@ -196,6 +197,13 @@ static int pca954x_deselect_mux(struct i
  	if (!(data->deselect & (1 << chan)))
  		return 0;
  
@@ -67,7 +63,7 @@ index 9c4ac26c..3c27ab84 100644
  	/* Deselect active channel */
  	data->last_chan = 0;
  	return pca954x_reg_write(muxc->parent, client, data->last_chan);
-@@ -228,6 +236,28 @@ static int pca954x_probe(struct i2c_client *client,
+@@ -228,6 +236,28 @@ static int pca954x_probe(struct i2c_clie
  		return -ENOMEM;
  	data = i2c_mux_priv(muxc);
  
@@ -96,7 +92,7 @@ index 9c4ac26c..3c27ab84 100644
  	i2c_set_clientdata(client, muxc);
  	data->client = client;
  
-@@ -240,11 +270,16 @@ static int pca954x_probe(struct i2c_client *client,
+@@ -240,11 +270,16 @@ static int pca954x_probe(struct i2c_clie
  	 * that the mux is in fact present. This also
  	 * initializes the mux to disconnected state.
  	 */
@@ -113,7 +109,7 @@ index 9c4ac26c..3c27ab84 100644
  	match = of_match_device(of_match_ptr(pca954x_of_match), &client->dev);
  	if (match)
  		data->chip = of_device_get_match_data(&client->dev);
-@@ -252,6 +287,7 @@ static int pca954x_probe(struct i2c_client *client,
+@@ -252,6 +287,7 @@ static int pca954x_probe(struct i2c_clie
  		data->chip = &chips[id->driver_data];
  
  	data->last_chan = 0;		   /* force the first selection */
@@ -121,7 +117,7 @@ index 9c4ac26c..3c27ab84 100644
  
  	idle_disconnect_dt = of_node &&
  		of_property_read_bool(of_node, "i2c-mux-idle-disconnect");
-@@ -312,6 +348,13 @@ static int pca954x_resume(struct device *dev)
+@@ -312,6 +348,13 @@ static int pca954x_resume(struct device
  	struct i2c_mux_core *muxc = i2c_get_clientdata(client);
  	struct pca954x *data = i2c_mux_priv(muxc);
  
@@ -135,6 +131,3 @@ index 9c4ac26c..3c27ab84 100644
  	data->last_chan = 0;
  	return i2c_smbus_write_byte(client, 0);
  }
--- 
-2.14.1
-

@@ -17,8 +17,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  include/linux/fsl_ifc.h         |   7 ++
  6 files changed, 280 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/memory/Kconfig b/drivers/memory/Kconfig
-index 4b4c0c3c..820f5590 100644
 --- a/drivers/memory/Kconfig
 +++ b/drivers/memory/Kconfig
 @@ -115,7 +115,7 @@ config FSL_CORENET_CF
@@ -30,8 +28,6 @@ index 4b4c0c3c..820f5590 100644
  
  config JZ4780_NEMC
  	bool "Ingenic JZ4780 SoC NEMC driver"
-diff --git a/drivers/memory/fsl_ifc.c b/drivers/memory/fsl_ifc.c
-index 1b182b11..10d2a5f8 100644
 --- a/drivers/memory/fsl_ifc.c
 +++ b/drivers/memory/fsl_ifc.c
 @@ -24,6 +24,7 @@
@@ -51,7 +47,7 @@ index 1b182b11..10d2a5f8 100644
  
  /*
   * convert_ifc_address - convert the base address
-@@ -311,6 +314,261 @@ static int fsl_ifc_ctrl_probe(struct platform_device *dev)
+@@ -311,6 +314,261 @@ err:
  	return ret;
  }
  
@@ -313,7 +309,7 @@ index 1b182b11..10d2a5f8 100644
  static const struct of_device_id fsl_ifc_match[] = {
  	{
  		.compatible = "fsl,ifc",
-@@ -318,10 +576,15 @@ static const struct of_device_id fsl_ifc_match[] = {
+@@ -318,10 +576,15 @@ static const struct of_device_id fsl_ifc
  	{},
  };
  
@@ -329,8 +325,6 @@ index 1b182b11..10d2a5f8 100644
  	},
  	.probe       = fsl_ifc_ctrl_probe,
  	.remove      = fsl_ifc_ctrl_remove,
-diff --git a/drivers/mtd/maps/physmap_of.c b/drivers/mtd/maps/physmap_of.c
-index 11d63046..38b90301 100644
 --- a/drivers/mtd/maps/physmap_of.c
 +++ b/drivers/mtd/maps/physmap_of.c
 @@ -20,6 +20,7 @@
@@ -341,7 +335,7 @@ index 11d63046..38b90301 100644
  #include <linux/of.h>
  #include <linux/of_address.h>
  #include <linux/of_platform.h>
-@@ -209,6 +210,9 @@ static int of_flash_probe(struct platform_device *dev)
+@@ -209,6 +210,9 @@ static int of_flash_probe(struct platfor
  			return err;
  		}
  
@@ -351,8 +345,6 @@ index 11d63046..38b90301 100644
  		err = -ENOMEM;
  		info->list[i].map.virt = ioremap(info->list[i].map.phys,
  						 info->list[i].map.size);
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index b254090b..961f1aa1 100644
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
 @@ -438,7 +438,7 @@ config MTD_NAND_FSL_ELBC
@@ -364,11 +356,9 @@ index b254090b..961f1aa1 100644
  	select FSL_IFC
  	select MEMORY
  	help
-diff --git a/drivers/mtd/nand/fsl_ifc_nand.c b/drivers/mtd/nand/fsl_ifc_nand.c
-index d1570f51..785e9ee0 100644
 --- a/drivers/mtd/nand/fsl_ifc_nand.c
 +++ b/drivers/mtd/nand/fsl_ifc_nand.c
-@@ -904,9 +904,12 @@ static int fsl_ifc_chip_init(struct fsl_ifc_mtd *priv)
+@@ -904,9 +904,12 @@ static int fsl_ifc_chip_init(struct fsl_
  		chip->ecc.algo = NAND_ECC_HAMMING;
  	}
  
@@ -382,8 +372,6 @@ index d1570f51..785e9ee0 100644
  	return 0;
  }
  
-diff --git a/include/linux/fsl_ifc.h b/include/linux/fsl_ifc.h
-index c332f0a4..a41d21b6 100644
 --- a/include/linux/fsl_ifc.h
 +++ b/include/linux/fsl_ifc.h
 @@ -274,6 +274,8 @@
@@ -407,6 +395,3 @@ index c332f0a4..a41d21b6 100644
  };
  
  extern struct fsl_ifc_ctrl *fsl_ifc_ctrl_dev;
--- 
-2.14.1
-

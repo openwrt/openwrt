@@ -110,8 +110,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  90 files changed, 468 insertions(+), 298 deletions(-)
  create mode 100644 include/linux/fsl/svr.h
 
-diff --git a/drivers/base/devres.c b/drivers/base/devres.c
-index 8fc654f0..71d57702 100644
 --- a/drivers/base/devres.c
 +++ b/drivers/base/devres.c
 @@ -10,6 +10,7 @@
@@ -122,7 +120,7 @@ index 8fc654f0..71d57702 100644
  
  #include "base.h"
  
-@@ -985,3 +986,68 @@ void devm_free_pages(struct device *dev, unsigned long addr)
+@@ -985,3 +986,68 @@ void devm_free_pages(struct device *dev,
  			       &devres));
  }
  EXPORT_SYMBOL_GPL(devm_free_pages);
@@ -191,8 +189,6 @@ index 8fc654f0..71d57702 100644
 +			       (void *)pdata));
 +}
 +EXPORT_SYMBOL_GPL(devm_free_percpu);
-diff --git a/drivers/base/soc.c b/drivers/base/soc.c
-index b63f23e6..0c5cf872 100644
 --- a/drivers/base/soc.c
 +++ b/drivers/base/soc.c
 @@ -13,6 +13,7 @@
@@ -272,8 +268,6 @@ index b63f23e6..0c5cf872 100644
 +	return NULL;
 +}
 +EXPORT_SYMBOL_GPL(soc_device_match);
-diff --git a/drivers/net/bonding/bond_main.c b/drivers/net/bonding/bond_main.c
-index 5fa36ebc..75ff184a 100644
 --- a/drivers/net/bonding/bond_main.c
 +++ b/drivers/net/bonding/bond_main.c
 @@ -211,8 +211,8 @@ static int lacp_fast;
@@ -287,7 +281,7 @@ index 5fa36ebc..75ff184a 100644
  static void bond_slave_arr_handler(struct work_struct *work);
  static bool bond_time_in_interval(struct bonding *bond, unsigned long last_act,
  				  int mod);
-@@ -3336,8 +3336,8 @@ static void bond_fold_stats(struct rtnl_link_stats64 *_res,
+@@ -3336,8 +3336,8 @@ static void bond_fold_stats(struct rtnl_
  	}
  }
  
@@ -298,7 +292,7 @@ index 5fa36ebc..75ff184a 100644
  {
  	struct bonding *bond = netdev_priv(bond_dev);
  	struct rtnl_link_stats64 temp;
-@@ -3361,8 +3361,6 @@ static struct rtnl_link_stats64 *bond_get_stats(struct net_device *bond_dev,
+@@ -3361,8 +3361,6 @@ static struct rtnl_link_stats64 *bond_ge
  
  	memcpy(&bond->bond_stats, stats, sizeof(*stats));
  	spin_unlock(&bond->stats_lock);
@@ -307,8 +301,6 @@ index 5fa36ebc..75ff184a 100644
  }
  
  static int bond_do_ioctl(struct net_device *bond_dev, struct ifreq *ifr, int cmd)
-diff --git a/drivers/net/dummy.c b/drivers/net/dummy.c
-index 69fc8409..da5b10e0 100644
 --- a/drivers/net/dummy.c
 +++ b/drivers/net/dummy.c
 @@ -54,8 +54,8 @@ struct pcpu_dstats {
@@ -322,7 +314,7 @@ index 69fc8409..da5b10e0 100644
  {
  	int i;
  
-@@ -73,7 +73,6 @@ static struct rtnl_link_stats64 *dummy_get_stats64(struct net_device *dev,
+@@ -73,7 +73,6 @@ static struct rtnl_link_stats64 *dummy_g
  		stats->tx_bytes += tbytes;
  		stats->tx_packets += tpackets;
  	}
@@ -330,11 +322,9 @@ index 69fc8409..da5b10e0 100644
  }
  
  static netdev_tx_t dummy_xmit(struct sk_buff *skb, struct net_device *dev)
-diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
-index bfeaec5b..ddc281c4 100644
 --- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
 +++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
-@@ -2172,19 +2172,19 @@ static void ena_config_debug_area(struct ena_adapter *adapter)
+@@ -2172,19 +2172,19 @@ err:
  	ena_com_delete_debug_area(adapter->ena_dev);
  }
  
@@ -358,7 +348,7 @@ index bfeaec5b..ddc281c4 100644
  
  	stats->tx_bytes = ((u64)ena_stats.tx_bytes_high << 32) |
  		ena_stats.tx_bytes_low;
-@@ -2211,8 +2211,6 @@ static struct rtnl_link_stats64 *ena_get_stats64(struct net_device *netdev,
+@@ -2211,8 +2211,6 @@ static struct rtnl_link_stats64 *ena_get
  
  	stats->rx_errors = 0;
  	stats->tx_errors = 0;
@@ -367,11 +357,9 @@ index bfeaec5b..ddc281c4 100644
  }
  
  static const struct net_device_ops ena_netdev_ops = {
-diff --git a/drivers/net/ethernet/amd/xgbe/xgbe-drv.c b/drivers/net/ethernet/amd/xgbe/xgbe-drv.c
-index 1e4e8b24..5b413ee7 100644
 --- a/drivers/net/ethernet/amd/xgbe/xgbe-drv.c
 +++ b/drivers/net/ethernet/amd/xgbe/xgbe-drv.c
-@@ -1542,8 +1542,8 @@ static void xgbe_tx_timeout(struct net_device *netdev)
+@@ -1542,8 +1542,8 @@ static void xgbe_tx_timeout(struct net_d
  	schedule_work(&pdata->restart_work);
  }
  
@@ -382,7 +370,7 @@ index 1e4e8b24..5b413ee7 100644
  {
  	struct xgbe_prv_data *pdata = netdev_priv(netdev);
  	struct xgbe_mmc_stats *pstats = &pdata->mmc_stats;
-@@ -1569,8 +1569,6 @@ static struct rtnl_link_stats64 *xgbe_get_stats64(struct net_device *netdev,
+@@ -1569,8 +1569,6 @@ static struct rtnl_link_stats64 *xgbe_ge
  	s->tx_dropped = netdev->stats.tx_dropped;
  
  	DBGPR("<--%s\n", __func__);
@@ -391,11 +379,9 @@ index 1e4e8b24..5b413ee7 100644
  }
  
  static int xgbe_vlan_rx_add_vid(struct net_device *netdev, __be16 proto,
-diff --git a/drivers/net/ethernet/apm/xgene/xgene_enet_main.c b/drivers/net/ethernet/apm/xgene/xgene_enet_main.c
-index 8158d469..e62ca66b 100644
 --- a/drivers/net/ethernet/apm/xgene/xgene_enet_main.c
 +++ b/drivers/net/ethernet/apm/xgene/xgene_enet_main.c
-@@ -1199,7 +1199,7 @@ static int xgene_enet_create_desc_rings(struct net_device *ndev)
+@@ -1199,7 +1199,7 @@ err:
  	return ret;
  }
  
@@ -404,7 +390,7 @@ index 8158d469..e62ca66b 100644
  			struct net_device *ndev,
  			struct rtnl_link_stats64 *storage)
  {
-@@ -1230,8 +1230,6 @@ static struct rtnl_link_stats64 *xgene_enet_get_stats64(
+@@ -1230,8 +1230,6 @@ static struct rtnl_link_stats64 *xgene_e
  		}
  	}
  	memcpy(storage, stats, sizeof(struct rtnl_link_stats64));
@@ -413,11 +399,9 @@ index 8158d469..e62ca66b 100644
  }
  
  static int xgene_enet_set_mac_address(struct net_device *ndev, void *addr)
-diff --git a/drivers/net/ethernet/atheros/alx/main.c b/drivers/net/ethernet/atheros/alx/main.c
-index c0f84b73..3c5c8159 100644
 --- a/drivers/net/ethernet/atheros/alx/main.c
 +++ b/drivers/net/ethernet/atheros/alx/main.c
-@@ -1424,8 +1424,8 @@ static void alx_poll_controller(struct net_device *netdev)
+@@ -1424,8 +1424,8 @@ static void alx_poll_controller(struct n
  }
  #endif
  
@@ -428,7 +412,7 @@ index c0f84b73..3c5c8159 100644
  {
  	struct alx_priv *alx = netdev_priv(dev);
  	struct alx_hw_stats *hw_stats = &alx->hw.stats;
-@@ -1469,8 +1469,6 @@ static struct rtnl_link_stats64 *alx_get_stats64(struct net_device *dev,
+@@ -1469,8 +1469,6 @@ static struct rtnl_link_stats64 *alx_get
  	net_stats->rx_packets = hw_stats->rx_ok + net_stats->rx_errors;
  
  	spin_unlock(&alx->stats_lock);
@@ -437,11 +421,9 @@ index c0f84b73..3c5c8159 100644
  }
  
  static const struct net_device_ops alx_netdev_ops = {
-diff --git a/drivers/net/ethernet/broadcom/b44.c b/drivers/net/ethernet/broadcom/b44.c
-index 17aa33c5..55f124d7 100644
 --- a/drivers/net/ethernet/broadcom/b44.c
 +++ b/drivers/net/ethernet/broadcom/b44.c
-@@ -1677,8 +1677,8 @@ static int b44_close(struct net_device *dev)
+@@ -1677,8 +1677,8 @@ static int b44_close(struct net_device *
  	return 0;
  }
  
@@ -452,7 +434,7 @@ index 17aa33c5..55f124d7 100644
  {
  	struct b44 *bp = netdev_priv(dev);
  	struct b44_hw_stats *hwstat = &bp->hw_stats;
-@@ -1721,7 +1721,6 @@ static struct rtnl_link_stats64 *b44_get_stats64(struct net_device *dev,
+@@ -1721,7 +1721,6 @@ static struct rtnl_link_stats64 *b44_get
  #endif
  	} while (u64_stats_fetch_retry_irq(&hwstat->syncp, start));
  
@@ -460,8 +442,6 @@ index 17aa33c5..55f124d7 100644
  }
  
  static int __b44_load_mcast(struct b44 *bp, struct net_device *dev)
-diff --git a/drivers/net/ethernet/broadcom/bnx2.c b/drivers/net/ethernet/broadcom/bnx2.c
-index 1f7034d7..c23dfcb9 100644
 --- a/drivers/net/ethernet/broadcom/bnx2.c
 +++ b/drivers/net/ethernet/broadcom/bnx2.c
 @@ -6828,13 +6828,13 @@ bnx2_save_stats(struct bnx2 *bp)
@@ -480,7 +460,7 @@ index 1f7034d7..c23dfcb9 100644
  
  	net_stats->rx_packets =
  		GET_64BIT_NET_STATS(stat_IfHCInUcastPkts) +
-@@ -6898,7 +6898,6 @@ bnx2_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *net_stats)
+@@ -6898,7 +6898,6 @@ bnx2_get_stats64(struct net_device *dev,
  		GET_32BIT_NET_STATS(stat_IfInMBUFDiscards) +
  		GET_32BIT_NET_STATS(stat_FwRxDrop);
  
@@ -488,11 +468,9 @@ index 1f7034d7..c23dfcb9 100644
  }
  
  /* All ethtool functions called with rtnl_lock */
-diff --git a/drivers/net/ethernet/broadcom/bnxt/bnxt.c b/drivers/net/ethernet/broadcom/bnxt/bnxt.c
-index 20e569bd..d6c10783 100644
 --- a/drivers/net/ethernet/broadcom/bnxt/bnxt.c
 +++ b/drivers/net/ethernet/broadcom/bnxt/bnxt.c
-@@ -5664,7 +5664,7 @@ static int bnxt_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+@@ -5664,7 +5664,7 @@ static int bnxt_ioctl(struct net_device
  	return -EOPNOTSUPP;
  }
  
@@ -501,7 +479,7 @@ index 20e569bd..d6c10783 100644
  bnxt_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	u32 i;
-@@ -5673,7 +5673,7 @@ bnxt_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -5673,7 +5673,7 @@ bnxt_get_stats64(struct net_device *dev,
  	memset(stats, 0, sizeof(struct rtnl_link_stats64));
  
  	if (!bp->bnapi)
@@ -510,7 +488,7 @@ index 20e569bd..d6c10783 100644
  
  	/* TODO check if we need to synchronize with bnxt_close path */
  	for (i = 0; i < bp->cp_nr_rings; i++) {
-@@ -5720,8 +5720,6 @@ bnxt_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -5720,8 +5720,6 @@ bnxt_get_stats64(struct net_device *dev,
  		stats->tx_fifo_errors = le64_to_cpu(tx->tx_fifo_underruns);
  		stats->tx_errors = le64_to_cpu(tx->tx_err);
  	}
@@ -519,11 +497,9 @@ index 20e569bd..d6c10783 100644
  }
  
  static bool bnxt_mc_list_updated(struct bnxt *bp, u32 *rx_mask)
-diff --git a/drivers/net/ethernet/broadcom/tg3.c b/drivers/net/ethernet/broadcom/tg3.c
-index edae2dcc..4d45077e 100644
 --- a/drivers/net/ethernet/broadcom/tg3.c
 +++ b/drivers/net/ethernet/broadcom/tg3.c
-@@ -14145,8 +14145,8 @@ static const struct ethtool_ops tg3_ethtool_ops = {
+@@ -14145,8 +14145,8 @@ static const struct ethtool_ops tg3_etht
  	.set_link_ksettings	= tg3_set_link_ksettings,
  };
  
@@ -534,7 +510,7 @@ index edae2dcc..4d45077e 100644
  {
  	struct tg3 *tp = netdev_priv(dev);
  
-@@ -14154,13 +14154,11 @@ static struct rtnl_link_stats64 *tg3_get_stats64(struct net_device *dev,
+@@ -14154,13 +14154,11 @@ static struct rtnl_link_stats64 *tg3_get
  	if (!tp->hw_stats) {
  		*stats = tp->net_stats_prev;
  		spin_unlock_bh(&tp->lock);
@@ -549,11 +525,9 @@ index edae2dcc..4d45077e 100644
  }
  
  static void tg3_set_rx_mode(struct net_device *dev)
-diff --git a/drivers/net/ethernet/brocade/bna/bnad.c b/drivers/net/ethernet/brocade/bna/bnad.c
-index f42f672b..aa141609 100644
 --- a/drivers/net/ethernet/brocade/bna/bnad.c
 +++ b/drivers/net/ethernet/brocade/bna/bnad.c
-@@ -3111,7 +3111,7 @@ bnad_start_xmit(struct sk_buff *skb, struct net_device *netdev)
+@@ -3111,7 +3111,7 @@ bnad_start_xmit(struct sk_buff *skb, str
   * Used spin_lock to synchronize reading of stats structures, which
   * is written by BNA under the same lock.
   */
@@ -562,7 +536,7 @@ index f42f672b..aa141609 100644
  bnad_get_stats64(struct net_device *netdev, struct rtnl_link_stats64 *stats)
  {
  	struct bnad *bnad = netdev_priv(netdev);
-@@ -3123,8 +3123,6 @@ bnad_get_stats64(struct net_device *netdev, struct rtnl_link_stats64 *stats)
+@@ -3123,8 +3123,6 @@ bnad_get_stats64(struct net_device *netd
  	bnad_netdev_hwstats_fill(bnad, stats);
  
  	spin_unlock_irqrestore(&bnad->bna_lock, flags);
@@ -571,7 +545,7 @@ index f42f672b..aa141609 100644
  }
  
  static void
-@@ -3430,7 +3428,7 @@ static const struct net_device_ops bnad_netdev_ops = {
+@@ -3430,7 +3428,7 @@ static const struct net_device_ops bnad_
  	.ndo_open		= bnad_open,
  	.ndo_stop		= bnad_stop,
  	.ndo_start_xmit		= bnad_start_xmit,
@@ -580,11 +554,9 @@ index f42f672b..aa141609 100644
  	.ndo_set_rx_mode	= bnad_set_rx_mode,
  	.ndo_validate_addr      = eth_validate_addr,
  	.ndo_set_mac_address    = bnad_set_mac_address,
-diff --git a/drivers/net/ethernet/calxeda/xgmac.c b/drivers/net/ethernet/calxeda/xgmac.c
-index 63efa0dc..ccb8fbd6 100644
 --- a/drivers/net/ethernet/calxeda/xgmac.c
 +++ b/drivers/net/ethernet/calxeda/xgmac.c
-@@ -1460,9 +1460,9 @@ static void xgmac_poll_controller(struct net_device *dev)
+@@ -1460,9 +1460,9 @@ static void xgmac_poll_controller(struct
  }
  #endif
  
@@ -596,7 +568,7 @@ index 63efa0dc..ccb8fbd6 100644
  {
  	struct xgmac_priv *priv = netdev_priv(dev);
  	void __iomem *base = priv->base;
-@@ -1490,7 +1490,6 @@ xgmac_get_stats64(struct net_device *dev,
+@@ -1490,7 +1490,6 @@ xgmac_get_stats64(struct net_device *dev
  
  	writel(0, base + XGMAC_MMC_CTRL);
  	spin_unlock_bh(&priv->stats_lock);
@@ -604,11 +576,9 @@ index 63efa0dc..ccb8fbd6 100644
  }
  
  static int xgmac_set_mac_address(struct net_device *dev, void *p)
-diff --git a/drivers/net/ethernet/cavium/thunder/nicvf_main.c b/drivers/net/ethernet/cavium/thunder/nicvf_main.c
-index 8a37012c..87709a9d 100644
 --- a/drivers/net/ethernet/cavium/thunder/nicvf_main.c
 +++ b/drivers/net/ethernet/cavium/thunder/nicvf_main.c
-@@ -1423,8 +1423,8 @@ void nicvf_update_stats(struct nicvf *nic)
+@@ -1423,8 +1423,8 @@ void nicvf_update_stats(struct nicvf *ni
  		nicvf_update_sq_stats(nic, qidx);
  }
  
@@ -619,7 +589,7 @@ index 8a37012c..87709a9d 100644
  {
  	struct nicvf *nic = netdev_priv(netdev);
  	struct nicvf_hw_stats *hw_stats = &nic->hw_stats;
-@@ -1440,7 +1440,6 @@ static struct rtnl_link_stats64 *nicvf_get_stats64(struct net_device *netdev,
+@@ -1440,7 +1440,6 @@ static struct rtnl_link_stats64 *nicvf_g
  	stats->tx_packets = hw_stats->tx_frames;
  	stats->tx_dropped = hw_stats->tx_drops;
  
@@ -627,11 +597,9 @@ index 8a37012c..87709a9d 100644
  }
  
  static void nicvf_tx_timeout(struct net_device *dev)
-diff --git a/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c b/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c
-index 0c2a32a3..c4244913 100644
 --- a/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c
 +++ b/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c
-@@ -2383,8 +2383,8 @@ int cxgb4_remove_server_filter(const struct net_device *dev, unsigned int stid,
+@@ -2383,8 +2383,8 @@ int cxgb4_remove_server_filter(const str
  }
  EXPORT_SYMBOL(cxgb4_remove_server_filter);
  
@@ -642,7 +610,7 @@ index 0c2a32a3..c4244913 100644
  {
  	struct port_stats stats;
  	struct port_info *p = netdev_priv(dev);
-@@ -2397,7 +2397,7 @@ static struct rtnl_link_stats64 *cxgb_get_stats(struct net_device *dev,
+@@ -2397,7 +2397,7 @@ static struct rtnl_link_stats64 *cxgb_ge
  	spin_lock(&adapter->stats_lock);
  	if (!netif_device_present(dev)) {
  		spin_unlock(&adapter->stats_lock);
@@ -651,7 +619,7 @@ index 0c2a32a3..c4244913 100644
  	}
  	t4_get_port_stats_offset(adapter, p->tx_chan, &stats,
  				 &p->stats_base);
-@@ -2431,7 +2431,6 @@ static struct rtnl_link_stats64 *cxgb_get_stats(struct net_device *dev,
+@@ -2431,7 +2431,6 @@ static struct rtnl_link_stats64 *cxgb_ge
  	ns->tx_errors = stats.tx_error_frames;
  	ns->rx_errors = stats.rx_symbol_err + stats.rx_fcs_err +
  		ns->rx_length_errors + stats.rx_len_err + ns->rx_fifo_errors;
@@ -659,11 +627,9 @@ index 0c2a32a3..c4244913 100644
  }
  
  static int cxgb_ioctl(struct net_device *dev, struct ifreq *req, int cmd)
-diff --git a/drivers/net/ethernet/cisco/enic/enic_main.c b/drivers/net/ethernet/cisco/enic/enic_main.c
-index 48f82ab6..662cc676 100644
 --- a/drivers/net/ethernet/cisco/enic/enic_main.c
 +++ b/drivers/net/ethernet/cisco/enic/enic_main.c
-@@ -680,8 +680,8 @@ static netdev_tx_t enic_hard_start_xmit(struct sk_buff *skb,
+@@ -680,8 +680,8 @@ static netdev_tx_t enic_hard_start_xmit(
  }
  
  /* dev_base_lock rwlock held, nominally process context */
@@ -674,7 +640,7 @@ index 48f82ab6..662cc676 100644
  {
  	struct enic *enic = netdev_priv(netdev);
  	struct vnic_stats *stats;
-@@ -693,7 +693,7 @@ static struct rtnl_link_stats64 *enic_get_stats(struct net_device *netdev,
+@@ -693,7 +693,7 @@ static struct rtnl_link_stats64 *enic_ge
  	 * recorded stats.
  	 */
  	if (err == -ENOMEM)
@@ -683,7 +649,7 @@ index 48f82ab6..662cc676 100644
  
  	net_stats->tx_packets = stats->tx.tx_frames_ok;
  	net_stats->tx_bytes = stats->tx.tx_bytes_ok;
-@@ -707,8 +707,6 @@ static struct rtnl_link_stats64 *enic_get_stats(struct net_device *netdev,
+@@ -707,8 +707,6 @@ static struct rtnl_link_stats64 *enic_ge
  	net_stats->rx_over_errors = enic->rq_truncated_pkts;
  	net_stats->rx_crc_errors = enic->rq_bad_fcs;
  	net_stats->rx_dropped = stats->rx.rx_no_bufs + stats->rx.rx_drop;
@@ -692,11 +658,9 @@ index 48f82ab6..662cc676 100644
  }
  
  static int enic_mc_sync(struct net_device *netdev, const u8 *mc_addr)
-diff --git a/drivers/net/ethernet/ec_bhf.c b/drivers/net/ethernet/ec_bhf.c
-index f7b42483..2e7554c7 100644
 --- a/drivers/net/ethernet/ec_bhf.c
 +++ b/drivers/net/ethernet/ec_bhf.c
-@@ -458,7 +458,7 @@ static int ec_bhf_stop(struct net_device *net_dev)
+@@ -458,7 +458,7 @@ static int ec_bhf_stop(struct net_device
  	return 0;
  }
  
@@ -705,7 +669,7 @@ index f7b42483..2e7554c7 100644
  ec_bhf_get_stats(struct net_device *net_dev,
  		 struct rtnl_link_stats64 *stats)
  {
-@@ -473,8 +473,6 @@ ec_bhf_get_stats(struct net_device *net_dev,
+@@ -473,8 +473,6 @@ ec_bhf_get_stats(struct net_device *net_
  
  	stats->tx_bytes = priv->stat_tx_bytes;
  	stats->rx_bytes = priv->stat_rx_bytes;
@@ -714,11 +678,9 @@ index f7b42483..2e7554c7 100644
  }
  
  static const struct net_device_ops ec_bhf_netdev_ops = {
-diff --git a/drivers/net/ethernet/emulex/benet/be_main.c b/drivers/net/ethernet/emulex/benet/be_main.c
-index 5626908f..59852304 100644
 --- a/drivers/net/ethernet/emulex/benet/be_main.c
 +++ b/drivers/net/ethernet/emulex/benet/be_main.c
-@@ -646,8 +646,8 @@ void be_parse_stats(struct be_adapter *adapter)
+@@ -646,8 +646,8 @@ void be_parse_stats(struct be_adapter *a
  	}
  }
  
@@ -729,7 +691,7 @@ index 5626908f..59852304 100644
  {
  	struct be_adapter *adapter = netdev_priv(netdev);
  	struct be_drv_stats *drvs = &adapter->drv_stats;
-@@ -711,7 +711,6 @@ static struct rtnl_link_stats64 *be_get_stats64(struct net_device *netdev,
+@@ -711,7 +711,6 @@ static struct rtnl_link_stats64 *be_get_
  	stats->rx_fifo_errors = drvs->rxpp_fifo_overflow_drop +
  				drvs->rx_input_fifo_overflow_drop +
  				drvs->rx_drops_no_pbuf;
@@ -737,11 +699,9 @@ index 5626908f..59852304 100644
  }
  
  void be_link_status_update(struct be_adapter *adapter, u8 link_status)
-diff --git a/drivers/net/ethernet/hisilicon/hns/hns_enet.c b/drivers/net/ethernet/hisilicon/hns/hns_enet.c
-index c06845b7..249bc6ad 100644
 --- a/drivers/net/ethernet/hisilicon/hns/hns_enet.c
 +++ b/drivers/net/ethernet/hisilicon/hns/hns_enet.c
-@@ -1536,8 +1536,8 @@ void hns_nic_set_rx_mode(struct net_device *ndev)
+@@ -1536,8 +1536,8 @@ void hns_nic_set_rx_mode(struct net_devi
  	hns_set_multicast_list(ndev);
  }
  
@@ -752,7 +712,7 @@ index c06845b7..249bc6ad 100644
  {
  	int idx = 0;
  	u64 tx_bytes = 0;
-@@ -1579,8 +1579,6 @@ struct rtnl_link_stats64 *hns_nic_get_stats64(struct net_device *ndev,
+@@ -1579,8 +1579,6 @@ struct rtnl_link_stats64 *hns_nic_get_st
  	stats->tx_window_errors = ndev->stats.tx_window_errors;
  	stats->rx_compressed = ndev->stats.rx_compressed;
  	stats->tx_compressed = ndev->stats.tx_compressed;
@@ -761,11 +721,9 @@ index c06845b7..249bc6ad 100644
  }
  
  static u16
-diff --git a/drivers/net/ethernet/ibm/ehea/ehea_main.c b/drivers/net/ethernet/ibm/ehea/ehea_main.c
-index bd719e25..a2ff2783 100644
 --- a/drivers/net/ethernet/ibm/ehea/ehea_main.c
 +++ b/drivers/net/ethernet/ibm/ehea/ehea_main.c
-@@ -328,8 +328,8 @@ static void ehea_update_bcmc_registrations(void)
+@@ -328,8 +328,8 @@ out:
  	spin_unlock_irqrestore(&ehea_bcmc_regs.lock, flags);
  }
  
@@ -776,7 +734,7 @@ index bd719e25..a2ff2783 100644
  {
  	struct ehea_port *port = netdev_priv(dev);
  	u64 rx_packets = 0, tx_packets = 0, rx_bytes = 0, tx_bytes = 0;
-@@ -352,7 +352,6 @@ static struct rtnl_link_stats64 *ehea_get_stats64(struct net_device *dev,
+@@ -352,7 +352,6 @@ static struct rtnl_link_stats64 *ehea_ge
  
  	stats->multicast = port->stats.multicast;
  	stats->rx_errors = port->stats.rx_errors;
@@ -784,11 +742,9 @@ index bd719e25..a2ff2783 100644
  }
  
  static void ehea_update_stats(struct work_struct *work)
-diff --git a/drivers/net/ethernet/intel/e1000e/e1000.h b/drivers/net/ethernet/intel/e1000e/e1000.h
-index 879cca47..a29b12e8 100644
 --- a/drivers/net/ethernet/intel/e1000e/e1000.h
 +++ b/drivers/net/ethernet/intel/e1000e/e1000.h
-@@ -493,8 +493,8 @@ int e1000e_setup_rx_resources(struct e1000_ring *ring);
+@@ -493,8 +493,8 @@ int e1000e_setup_rx_resources(struct e10
  int e1000e_setup_tx_resources(struct e1000_ring *ring);
  void e1000e_free_rx_resources(struct e1000_ring *ring);
  void e1000e_free_tx_resources(struct e1000_ring *ring);
@@ -799,11 +755,9 @@ index 879cca47..a29b12e8 100644
  void e1000e_set_interrupt_capability(struct e1000_adapter *adapter);
  void e1000e_reset_interrupt_capability(struct e1000_adapter *adapter);
  void e1000e_get_hw_control(struct e1000_adapter *adapter);
-diff --git a/drivers/net/ethernet/intel/e1000e/netdev.c b/drivers/net/ethernet/intel/e1000e/netdev.c
-index 7017281b..49f3d868 100644
 --- a/drivers/net/ethernet/intel/e1000e/netdev.c
 +++ b/drivers/net/ethernet/intel/e1000e/netdev.c
-@@ -5920,8 +5920,8 @@ static void e1000_reset_task(struct work_struct *work)
+@@ -5939,8 +5939,8 @@ static void e1000_reset_task(struct work
   *
   * Returns the address of the device statistics structure.
   **/
@@ -814,7 +768,7 @@ index 7017281b..49f3d868 100644
  {
  	struct e1000_adapter *adapter = netdev_priv(netdev);
  
-@@ -5958,7 +5958,6 @@ struct rtnl_link_stats64 *e1000e_get_stats64(struct net_device *netdev,
+@@ -5977,7 +5977,6 @@ struct rtnl_link_stats64 *e1000e_get_sta
  	/* Tx Dropped needs to be maintained elsewhere */
  
  	spin_unlock(&adapter->stats64_lock);
@@ -822,11 +776,9 @@ index 7017281b..49f3d868 100644
  }
  
  /**
-diff --git a/drivers/net/ethernet/intel/fm10k/fm10k_netdev.c b/drivers/net/ethernet/intel/fm10k/fm10k_netdev.c
-index 05629381..e97b6c49 100644
 --- a/drivers/net/ethernet/intel/fm10k/fm10k_netdev.c
 +++ b/drivers/net/ethernet/intel/fm10k/fm10k_netdev.c
-@@ -1128,8 +1128,8 @@ void fm10k_reset_rx_state(struct fm10k_intfc *interface)
+@@ -1128,8 +1128,8 @@ void fm10k_reset_rx_state(struct fm10k_i
   * Returns 64bit statistics, for use in the ndo_get_stats64 callback. This
   * function replaces fm10k_get_stats for kernels which support it.
   */
@@ -837,7 +789,7 @@ index 05629381..e97b6c49 100644
  {
  	struct fm10k_intfc *interface = netdev_priv(netdev);
  	struct fm10k_ring *ring;
-@@ -1174,8 +1174,6 @@ static struct rtnl_link_stats64 *fm10k_get_stats64(struct net_device *netdev,
+@@ -1174,8 +1174,6 @@ static struct rtnl_link_stats64 *fm10k_g
  
  	/* following stats updated by fm10k_service_task() */
  	stats->rx_missed_errors	= netdev->stats.rx_missed_errors;
@@ -846,11 +798,9 @@ index 05629381..e97b6c49 100644
  }
  
  int fm10k_setup_tc(struct net_device *dev, u8 tc)
-diff --git a/drivers/net/ethernet/intel/i40e/i40e.h b/drivers/net/ethernet/intel/i40e/i40e.h
-index 6d61e443..3cc0bf29 100644
 --- a/drivers/net/ethernet/intel/i40e/i40e.h
 +++ b/drivers/net/ethernet/intel/i40e/i40e.h
-@@ -797,9 +797,8 @@ static inline void i40e_irq_dynamic_enable(struct i40e_vsi *vsi, int vector)
+@@ -797,9 +797,8 @@ static inline void i40e_irq_dynamic_enab
  void i40e_irq_dynamic_disable_icr0(struct i40e_pf *pf);
  void i40e_irq_dynamic_enable_icr0(struct i40e_pf *pf, bool clearpba);
  #ifdef I40E_FCOE
@@ -862,11 +812,9 @@ index 6d61e443..3cc0bf29 100644
  int i40e_set_mac(struct net_device *netdev, void *p);
  void i40e_set_rx_mode(struct net_device *netdev);
  #endif
-diff --git a/drivers/net/ethernet/intel/i40e/i40e_main.c b/drivers/net/ethernet/intel/i40e/i40e_main.c
-index 31c97e39..2f1554b3 100644
 --- a/drivers/net/ethernet/intel/i40e/i40e_main.c
 +++ b/drivers/net/ethernet/intel/i40e/i40e_main.c
-@@ -408,15 +408,11 @@ struct rtnl_link_stats64 *i40e_get_vsi_stats_struct(struct i40e_vsi *vsi)
+@@ -408,15 +408,11 @@ struct rtnl_link_stats64 *i40e_get_vsi_s
   * Returns the address of the device statistics structure.
   * The statistics are actually updated from the service task.
   **/
@@ -886,7 +834,7 @@ index 31c97e39..2f1554b3 100644
  {
  	struct i40e_netdev_priv *np = netdev_priv(netdev);
  	struct i40e_ring *tx_ring, *rx_ring;
-@@ -425,10 +421,10 @@ static struct rtnl_link_stats64 *i40e_get_netdev_stats_struct(
+@@ -425,10 +421,10 @@ static struct rtnl_link_stats64 *i40e_ge
  	int i;
  
  	if (test_bit(__I40E_DOWN, &vsi->state))
@@ -899,7 +847,7 @@ index 31c97e39..2f1554b3 100644
  
  	rcu_read_lock();
  	for (i = 0; i < vsi->num_queue_pairs; i++) {
-@@ -468,8 +464,6 @@ static struct rtnl_link_stats64 *i40e_get_netdev_stats_struct(
+@@ -468,8 +464,6 @@ static struct rtnl_link_stats64 *i40e_ge
  	stats->rx_dropped	= vsi_stats->rx_dropped;
  	stats->rx_crc_errors	= vsi_stats->rx_crc_errors;
  	stats->rx_length_errors	= vsi_stats->rx_length_errors;
@@ -908,11 +856,9 @@ index 31c97e39..2f1554b3 100644
  }
  
  /**
-diff --git a/drivers/net/ethernet/intel/igb/igb_main.c b/drivers/net/ethernet/intel/igb/igb_main.c
-index 9affd7c1..076ccfa4 100644
 --- a/drivers/net/ethernet/intel/igb/igb_main.c
 +++ b/drivers/net/ethernet/intel/igb/igb_main.c
-@@ -137,8 +137,8 @@ static void igb_update_phy_info(unsigned long);
+@@ -137,8 +137,8 @@ static void igb_update_phy_info(unsigned
  static void igb_watchdog(unsigned long);
  static void igb_watchdog_task(struct work_struct *);
  static netdev_tx_t igb_xmit_frame(struct sk_buff *skb, struct net_device *);
@@ -923,7 +869,7 @@ index 9affd7c1..076ccfa4 100644
  static int igb_change_mtu(struct net_device *, int);
  static int igb_set_mac(struct net_device *, void *);
  static void igb_set_uta(struct igb_adapter *adapter, bool set);
-@@ -5386,8 +5386,8 @@ static void igb_reset_task(struct work_struct *work)
+@@ -5386,8 +5386,8 @@ static void igb_reset_task(struct work_s
   *  @netdev: network interface device structure
   *  @stats: rtnl_link_stats64 pointer
   **/
@@ -934,7 +880,7 @@ index 9affd7c1..076ccfa4 100644
  {
  	struct igb_adapter *adapter = netdev_priv(netdev);
  
-@@ -5395,8 +5395,6 @@ static struct rtnl_link_stats64 *igb_get_stats64(struct net_device *netdev,
+@@ -5395,8 +5395,6 @@ static struct rtnl_link_stats64 *igb_get
  	igb_update_stats(adapter, &adapter->stats64);
  	memcpy(stats, &adapter->stats64, sizeof(*stats));
  	spin_unlock(&adapter->stats64_lock);
@@ -943,11 +889,9 @@ index 9affd7c1..076ccfa4 100644
  }
  
  /**
-diff --git a/drivers/net/ethernet/intel/ixgbe/ixgbe_main.c b/drivers/net/ethernet/intel/ixgbe/ixgbe_main.c
-index fee1f291..ee4f1cc2 100644
 --- a/drivers/net/ethernet/intel/ixgbe/ixgbe_main.c
 +++ b/drivers/net/ethernet/intel/ixgbe/ixgbe_main.c
-@@ -8085,8 +8085,9 @@ static void ixgbe_netpoll(struct net_device *netdev)
+@@ -8085,8 +8085,9 @@ static void ixgbe_netpoll(struct net_dev
  }
  
  #endif
@@ -959,7 +903,7 @@ index fee1f291..ee4f1cc2 100644
  {
  	struct ixgbe_adapter *adapter = netdev_priv(netdev);
  	int i;
-@@ -8124,13 +8125,13 @@ static struct rtnl_link_stats64 *ixgbe_get_stats64(struct net_device *netdev,
+@@ -8124,13 +8125,13 @@ static struct rtnl_link_stats64 *ixgbe_g
  		}
  	}
  	rcu_read_unlock();
@@ -974,11 +918,9 @@ index fee1f291..ee4f1cc2 100644
  }
  
  #ifdef CONFIG_IXGBE_DCB
-diff --git a/drivers/net/ethernet/intel/ixgbevf/ixgbevf_main.c b/drivers/net/ethernet/intel/ixgbevf/ixgbevf_main.c
-index cbf70fe4..3519769e 100644
 --- a/drivers/net/ethernet/intel/ixgbevf/ixgbevf_main.c
 +++ b/drivers/net/ethernet/intel/ixgbevf/ixgbevf_main.c
-@@ -3880,8 +3880,8 @@ static void ixgbevf_shutdown(struct pci_dev *pdev)
+@@ -3880,8 +3880,8 @@ static void ixgbevf_shutdown(struct pci_
  	ixgbevf_suspend(pdev, PMSG_SUSPEND);
  }
  
@@ -989,7 +931,7 @@ index cbf70fe4..3519769e 100644
  {
  	struct ixgbevf_adapter *adapter = netdev_priv(netdev);
  	unsigned int start;
-@@ -3914,8 +3914,6 @@ static struct rtnl_link_stats64 *ixgbevf_get_stats(struct net_device *netdev,
+@@ -3914,8 +3914,6 @@ static struct rtnl_link_stats64 *ixgbevf
  		stats->tx_bytes += bytes;
  		stats->tx_packets += packets;
  	}
@@ -998,11 +940,9 @@ index cbf70fe4..3519769e 100644
  }
  
  #define IXGBEVF_MAX_MAC_HDR_LEN		127
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index 707bc468..100f3af8 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -636,7 +636,7 @@ static void mvneta_mib_counters_clear(struct mvneta_port *pp)
+@@ -636,7 +636,7 @@ static void mvneta_mib_counters_clear(st
  }
  
  /* Get System Network Statistics */
@@ -1011,7 +951,7 @@ index 707bc468..100f3af8 100644
  mvneta_get_stats64(struct net_device *dev,
  		   struct rtnl_link_stats64 *stats)
  {
-@@ -670,8 +670,6 @@ mvneta_get_stats64(struct net_device *dev,
+@@ -670,8 +670,6 @@ mvneta_get_stats64(struct net_device *de
  	stats->rx_dropped	= dev->stats.rx_dropped;
  
  	stats->tx_dropped	= dev->stats.tx_dropped;
@@ -1020,11 +960,9 @@ index 707bc468..100f3af8 100644
  }
  
  /* Rx descriptors helper methods */
-diff --git a/drivers/net/ethernet/marvell/mvpp2.c b/drivers/net/ethernet/marvell/mvpp2.c
-index 0a4e81a2..17032925 100644
 --- a/drivers/net/ethernet/marvell/mvpp2.c
 +++ b/drivers/net/ethernet/marvell/mvpp2.c
-@@ -5762,7 +5762,7 @@ static int mvpp2_change_mtu(struct net_device *dev, int mtu)
+@@ -5762,7 +5762,7 @@ error:
  	return err;
  }
  
@@ -1033,7 +971,7 @@ index 0a4e81a2..17032925 100644
  mvpp2_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	struct mvpp2_port *port = netdev_priv(dev);
-@@ -5794,8 +5794,6 @@ mvpp2_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -5794,8 +5794,6 @@ mvpp2_get_stats64(struct net_device *dev
  	stats->rx_errors	= dev->stats.rx_errors;
  	stats->rx_dropped	= dev->stats.rx_dropped;
  	stats->tx_dropped	= dev->stats.tx_dropped;
@@ -1042,11 +980,9 @@ index 0a4e81a2..17032925 100644
  }
  
  static int mvpp2_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
-diff --git a/drivers/net/ethernet/marvell/sky2.c b/drivers/net/ethernet/marvell/sky2.c
-index 941c8e2c..cff8b633 100644
 --- a/drivers/net/ethernet/marvell/sky2.c
 +++ b/drivers/net/ethernet/marvell/sky2.c
-@@ -3898,8 +3898,8 @@ static void sky2_set_multicast(struct net_device *dev)
+@@ -3898,8 +3898,8 @@ static void sky2_set_multicast(struct ne
  	gma_write16(hw, port, GM_RX_CTRL, reg);
  }
  
@@ -1057,7 +993,7 @@ index 941c8e2c..cff8b633 100644
  {
  	struct sky2_port *sky2 = netdev_priv(dev);
  	struct sky2_hw *hw = sky2->hw;
-@@ -3939,8 +3939,6 @@ static struct rtnl_link_stats64 *sky2_get_stats(struct net_device *dev,
+@@ -3939,8 +3939,6 @@ static struct rtnl_link_stats64 *sky2_ge
  	stats->rx_dropped = dev->stats.rx_dropped;
  	stats->rx_fifo_errors = dev->stats.rx_fifo_errors;
  	stats->tx_fifo_errors = dev->stats.tx_fifo_errors;
@@ -1066,11 +1002,9 @@ index 941c8e2c..cff8b633 100644
  }
  
  /* Can have one global because blinking is controlled by
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 4832223f..6d260da6 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -462,8 +462,8 @@ static void mtk_stats_update(struct mtk_eth *eth)
+@@ -462,8 +462,8 @@ static void mtk_stats_update(struct mtk_
  	}
  }
  
@@ -1081,7 +1015,7 @@ index 4832223f..6d260da6 100644
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_hw_stats *hw_stats = mac->hw_stats;
-@@ -494,8 +494,6 @@ static struct rtnl_link_stats64 *mtk_get_stats64(struct net_device *dev,
+@@ -494,8 +494,6 @@ static struct rtnl_link_stats64 *mtk_get
  	storage->tx_errors = dev->stats.tx_errors;
  	storage->rx_dropped = dev->stats.rx_dropped;
  	storage->tx_dropped = dev->stats.tx_dropped;
@@ -1090,11 +1024,9 @@ index 4832223f..6d260da6 100644
  }
  
  static inline int mtk_max_frag_size(int mtu)
-diff --git a/drivers/net/ethernet/mellanox/mlx4/en_netdev.c b/drivers/net/ethernet/mellanox/mlx4/en_netdev.c
-index d223e7cb..ebf5c7e5 100644
 --- a/drivers/net/ethernet/mellanox/mlx4/en_netdev.c
 +++ b/drivers/net/ethernet/mellanox/mlx4/en_netdev.c
-@@ -1316,7 +1316,7 @@ static void mlx4_en_tx_timeout(struct net_device *dev)
+@@ -1316,7 +1316,7 @@ static void mlx4_en_tx_timeout(struct ne
  }
  
  
@@ -1103,7 +1035,7 @@ index d223e7cb..ebf5c7e5 100644
  mlx4_en_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	struct mlx4_en_priv *priv = netdev_priv(dev);
-@@ -1324,8 +1324,6 @@ mlx4_en_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -1324,8 +1324,6 @@ mlx4_en_get_stats64(struct net_device *d
  	spin_lock_bh(&priv->stats_lock);
  	netdev_stats_to_stats64(stats, &dev->stats);
  	spin_unlock_bh(&priv->stats_lock);
@@ -1112,11 +1044,9 @@ index d223e7cb..ebf5c7e5 100644
  }
  
  static void mlx4_en_set_default_moderation(struct mlx4_en_priv *priv)
-diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en_main.c b/drivers/net/ethernet/mellanox/mlx5/core/en_main.c
-index 9d372293..582ba530 100644
 --- a/drivers/net/ethernet/mellanox/mlx5/core/en_main.c
 +++ b/drivers/net/ethernet/mellanox/mlx5/core/en_main.c
-@@ -2647,7 +2647,7 @@ static int mlx5e_ndo_setup_tc(struct net_device *dev, u32 handle,
+@@ -2647,7 +2647,7 @@ mqprio:
  	return mlx5e_setup_tc(dev, tc->tc);
  }
  
@@ -1125,7 +1055,7 @@ index 9d372293..582ba530 100644
  mlx5e_get_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	struct mlx5e_priv *priv = netdev_priv(dev);
-@@ -2681,7 +2681,6 @@ mlx5e_get_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -2681,7 +2681,6 @@ mlx5e_get_stats(struct net_device *dev,
  	stats->multicast =
  		VPORT_COUNTER_GET(vstats, received_eth_multicast.packets);
  
@@ -1133,11 +1063,9 @@ index 9d372293..582ba530 100644
  }
  
  static void mlx5e_set_rx_mode(struct net_device *dev)
-diff --git a/drivers/net/ethernet/mellanox/mlxsw/spectrum.c b/drivers/net/ethernet/mellanox/mlxsw/spectrum.c
-index 1806b1fc..cf21a83a 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/spectrum.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/spectrum.c
-@@ -948,15 +948,13 @@ static void update_stats_cache(struct work_struct *work)
+@@ -948,15 +948,13 @@ out:
  /* Return the stats from a cache that is updated periodically,
   * as this function might get called in an atomic context.
   */
@@ -1154,11 +1082,9 @@ index 1806b1fc..cf21a83a 100644
  }
  
  int mlxsw_sp_port_vlan_set(struct mlxsw_sp_port *mlxsw_sp_port, u16 vid_begin,
-diff --git a/drivers/net/ethernet/mellanox/mlxsw/switchx2.c b/drivers/net/ethernet/mellanox/mlxsw/switchx2.c
-index d548f0a5..6e9e7fa4 100644
 --- a/drivers/net/ethernet/mellanox/mlxsw/switchx2.c
 +++ b/drivers/net/ethernet/mellanox/mlxsw/switchx2.c
-@@ -351,7 +351,7 @@ static int mlxsw_sx_port_change_mtu(struct net_device *dev, int mtu)
+@@ -351,7 +351,7 @@ static int mlxsw_sx_port_change_mtu(stru
  	return 0;
  }
  
@@ -1167,7 +1093,7 @@ index d548f0a5..6e9e7fa4 100644
  mlxsw_sx_port_get_stats64(struct net_device *dev,
  			  struct rtnl_link_stats64 *stats)
  {
-@@ -380,7 +380,6 @@ mlxsw_sx_port_get_stats64(struct net_device *dev,
+@@ -380,7 +380,6 @@ mlxsw_sx_port_get_stats64(struct net_dev
  		tx_dropped	+= p->tx_dropped;
  	}
  	stats->tx_dropped	= tx_dropped;
@@ -1175,11 +1101,9 @@ index d548f0a5..6e9e7fa4 100644
  }
  
  static const struct net_device_ops mlxsw_sx_port_netdev_ops = {
-diff --git a/drivers/net/ethernet/myricom/myri10ge/myri10ge.c b/drivers/net/ethernet/myricom/myri10ge/myri10ge.c
-index 6d1a956e..d26745cc 100644
 --- a/drivers/net/ethernet/myricom/myri10ge/myri10ge.c
 +++ b/drivers/net/ethernet/myricom/myri10ge/myri10ge.c
-@@ -378,8 +378,8 @@ static inline void put_be32(__be32 val, __be32 __iomem * p)
+@@ -378,8 +378,8 @@ static inline void put_be32(__be32 val,
  	__raw_writel((__force __u32) val, (__force void __iomem *)p);
  }
  
@@ -1190,7 +1114,7 @@ index 6d1a956e..d26745cc 100644
  
  static void set_fw_name(struct myri10ge_priv *mgp, char *name, bool allocated)
  {
-@@ -3119,8 +3119,8 @@ static netdev_tx_t myri10ge_sw_tso(struct sk_buff *skb,
+@@ -3119,8 +3119,8 @@ drop:
  	return NETDEV_TX_OK;
  }
  
@@ -1201,7 +1125,7 @@ index 6d1a956e..d26745cc 100644
  {
  	const struct myri10ge_priv *mgp = netdev_priv(dev);
  	const struct myri10ge_slice_netstats *slice_stats;
-@@ -3135,7 +3135,6 @@ static struct rtnl_link_stats64 *myri10ge_get_stats(struct net_device *dev,
+@@ -3135,7 +3135,6 @@ static struct rtnl_link_stats64 *myri10g
  		stats->rx_dropped += slice_stats->rx_dropped;
  		stats->tx_dropped += slice_stats->tx_dropped;
  	}
@@ -1209,11 +1133,9 @@ index 6d1a956e..d26745cc 100644
  }
  
  static void myri10ge_set_multicast_list(struct net_device *dev)
-diff --git a/drivers/net/ethernet/neterion/vxge/vxge-main.c b/drivers/net/ethernet/neterion/vxge/vxge-main.c
-index e0993eba..9c27728f 100644
 --- a/drivers/net/ethernet/neterion/vxge/vxge-main.c
 +++ b/drivers/net/ethernet/neterion/vxge/vxge-main.c
-@@ -3116,7 +3116,7 @@ static int vxge_change_mtu(struct net_device *dev, int new_mtu)
+@@ -3116,7 +3116,7 @@ static int vxge_change_mtu(struct net_de
   * @stats: pointer to struct rtnl_link_stats64
   *
   */
@@ -1222,7 +1144,7 @@ index e0993eba..9c27728f 100644
  vxge_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *net_stats)
  {
  	struct vxgedev *vdev = netdev_priv(dev);
-@@ -3155,8 +3155,6 @@ vxge_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *net_stats)
+@@ -3155,8 +3155,6 @@ vxge_get_stats64(struct net_device *dev,
  		net_stats->tx_bytes += bytes;
  		net_stats->tx_errors += txstats->tx_errors;
  	}
@@ -1231,11 +1153,9 @@ index e0993eba..9c27728f 100644
  }
  
  static enum vxge_hw_status vxge_timestamp_config(struct __vxge_hw_device *devh)
-diff --git a/drivers/net/ethernet/netronome/nfp/nfp_net_common.c b/drivers/net/ethernet/netronome/nfp/nfp_net_common.c
-index 4ca82bd8..55915cbd 100644
 --- a/drivers/net/ethernet/netronome/nfp/nfp_net_common.c
 +++ b/drivers/net/ethernet/netronome/nfp/nfp_net_common.c
-@@ -2400,8 +2400,8 @@ int nfp_net_set_ring_size(struct nfp_net *nn, u32 rxd_cnt, u32 txd_cnt)
+@@ -2400,8 +2400,8 @@ int nfp_net_set_ring_size(struct nfp_net
  	return err;
  }
  
@@ -1246,7 +1166,7 @@ index 4ca82bd8..55915cbd 100644
  {
  	struct nfp_net *nn = netdev_priv(netdev);
  	int r;
-@@ -2431,8 +2431,6 @@ static struct rtnl_link_stats64 *nfp_net_stat64(struct net_device *netdev,
+@@ -2431,8 +2431,6 @@ static struct rtnl_link_stats64 *nfp_net
  		stats->tx_bytes += data[1];
  		stats->tx_errors += data[2];
  	}
@@ -1255,11 +1175,9 @@ index 4ca82bd8..55915cbd 100644
  }
  
  static bool nfp_net_ebpf_capable(struct nfp_net *nn)
-diff --git a/drivers/net/ethernet/nvidia/forcedeth.c b/drivers/net/ethernet/nvidia/forcedeth.c
-index 9b0d7f46..d7a07928 100644
 --- a/drivers/net/ethernet/nvidia/forcedeth.c
 +++ b/drivers/net/ethernet/nvidia/forcedeth.c
-@@ -1733,7 +1733,7 @@ static void nv_update_stats(struct net_device *dev)
+@@ -1733,7 +1733,7 @@ static void nv_update_stats(struct net_d
   * Called with read_lock(&dev_base_lock) held for read -
   * only synchronized against unregister_netdevice.
   */
@@ -1268,7 +1186,7 @@ index 9b0d7f46..d7a07928 100644
  nv_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *storage)
  	__acquires(&netdev_priv(dev)->hwstats_lock)
  	__releases(&netdev_priv(dev)->hwstats_lock)
-@@ -1793,8 +1793,6 @@ nv_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *storage)
+@@ -1793,8 +1793,6 @@ nv_get_stats64(struct net_device *dev, s
  
  		spin_unlock_bh(&np->hwstats_lock);
  	}
@@ -1277,11 +1195,9 @@ index 9b0d7f46..d7a07928 100644
  }
  
  /*
-diff --git a/drivers/net/ethernet/qlogic/netxen/netxen_nic_main.c b/drivers/net/ethernet/qlogic/netxen/netxen_nic_main.c
-index 7a0281a3..8bb16d64 100644
 --- a/drivers/net/ethernet/qlogic/netxen/netxen_nic_main.c
 +++ b/drivers/net/ethernet/qlogic/netxen/netxen_nic_main.c
-@@ -90,8 +90,8 @@ static irqreturn_t netxen_msix_intr(int irq, void *data);
+@@ -90,8 +90,8 @@ static irqreturn_t netxen_msix_intr(int
  
  static void netxen_free_ip_list(struct netxen_adapter *, bool);
  static void netxen_restore_indev_addr(struct net_device *dev, unsigned long);
@@ -1292,7 +1208,7 @@ index 7a0281a3..8bb16d64 100644
  static int netxen_nic_set_mac(struct net_device *netdev, void *p);
  
  /*  PCI Device ID Table  */
-@@ -2295,8 +2295,8 @@ static void netxen_tx_timeout_task(struct work_struct *work)
+@@ -2295,8 +2295,8 @@ request_reset:
  	clear_bit(__NX_RESETTING, &adapter->state);
  }
  
@@ -1303,7 +1219,7 @@ index 7a0281a3..8bb16d64 100644
  {
  	struct netxen_adapter *adapter = netdev_priv(netdev);
  
-@@ -2306,8 +2306,6 @@ static struct rtnl_link_stats64 *netxen_nic_get_stats(struct net_device *netdev,
+@@ -2306,8 +2306,6 @@ static struct rtnl_link_stats64 *netxen_
  	stats->tx_bytes = adapter->stats.txbytes;
  	stats->rx_dropped = adapter->stats.rxdropped;
  	stats->tx_dropped = adapter->stats.txdropped;
@@ -1312,11 +1228,9 @@ index 7a0281a3..8bb16d64 100644
  }
  
  static irqreturn_t netxen_intr(int irq, void *data)
-diff --git a/drivers/net/ethernet/qlogic/qede/qede_main.c b/drivers/net/ethernet/qlogic/qede/qede_main.c
-index 85f46dbe..645507a9 100644
 --- a/drivers/net/ethernet/qlogic/qede/qede_main.c
 +++ b/drivers/net/ethernet/qlogic/qede/qede_main.c
-@@ -1803,9 +1803,8 @@ void qede_fill_by_demand_stats(struct qede_dev *edev)
+@@ -1803,9 +1803,8 @@ void qede_fill_by_demand_stats(struct qe
  	edev->stats.tx_mac_ctrl_frames = stats.tx_mac_ctrl_frames;
  }
  
@@ -1328,7 +1242,7 @@ index 85f46dbe..645507a9 100644
  {
  	struct qede_dev *edev = netdev_priv(dev);
  
-@@ -1835,8 +1834,6 @@ struct rtnl_link_stats64 *qede_get_stats64(struct net_device *dev,
+@@ -1835,8 +1834,6 @@ struct rtnl_link_stats64 *qede_get_stats
  	stats->collisions = edev->stats.tx_total_collisions;
  	stats->rx_crc_errors = edev->stats.rx_crc_errors;
  	stats->rx_frame_errors = edev->stats.rx_align_errors;
@@ -1337,11 +1251,9 @@ index 85f46dbe..645507a9 100644
  }
  
  #ifdef CONFIG_QED_SRIOV
-diff --git a/drivers/net/ethernet/qualcomm/emac/emac.c b/drivers/net/ethernet/qualcomm/emac/emac.c
-index 57b35aea..babc1025 100644
 --- a/drivers/net/ethernet/qualcomm/emac/emac.c
 +++ b/drivers/net/ethernet/qualcomm/emac/emac.c
-@@ -319,8 +319,8 @@ static int emac_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
+@@ -319,8 +319,8 @@ static int emac_ioctl(struct net_device
  }
  
  /* Provide network statistics info for the interface */
@@ -1352,7 +1264,7 @@ index 57b35aea..babc1025 100644
  {
  	struct emac_adapter *adpt = netdev_priv(netdev);
  	unsigned int addr = REG_MAC_RX_STATUS_BIN;
-@@ -384,8 +384,6 @@ static struct rtnl_link_stats64 *emac_get_stats64(struct net_device *netdev,
+@@ -384,8 +384,6 @@ static struct rtnl_link_stats64 *emac_ge
  	net_stats->tx_window_errors = stats->tx_late_col;
  
  	spin_unlock(&stats->lock);
@@ -1361,11 +1273,9 @@ index 57b35aea..babc1025 100644
  }
  
  static const struct net_device_ops emac_netdev_ops = {
-diff --git a/drivers/net/ethernet/realtek/8139too.c b/drivers/net/ethernet/realtek/8139too.c
-index da4c2d8a..5722e187 100644
 --- a/drivers/net/ethernet/realtek/8139too.c
 +++ b/drivers/net/ethernet/realtek/8139too.c
-@@ -653,9 +653,8 @@ static int rtl8139_poll(struct napi_struct *napi, int budget);
+@@ -653,9 +653,8 @@ static int rtl8139_poll(struct napi_stru
  static irqreturn_t rtl8139_interrupt (int irq, void *dev_instance);
  static int rtl8139_close (struct net_device *dev);
  static int netdev_ioctl (struct net_device *dev, struct ifreq *rq, int cmd);
@@ -1377,7 +1287,7 @@ index da4c2d8a..5722e187 100644
  static void rtl8139_set_rx_mode (struct net_device *dev);
  static void __set_rx_mode (struct net_device *dev);
  static void rtl8139_hw_start (struct net_device *dev);
-@@ -2521,7 +2520,7 @@ static int netdev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+@@ -2521,7 +2520,7 @@ static int netdev_ioctl(struct net_devic
  }
  
  
@@ -1386,7 +1296,7 @@ index da4c2d8a..5722e187 100644
  rtl8139_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	struct rtl8139_private *tp = netdev_priv(dev);
-@@ -2549,8 +2548,6 @@ rtl8139_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -2549,8 +2548,6 @@ rtl8139_get_stats64(struct net_device *d
  		stats->tx_packets = tp->tx_stats.packets;
  		stats->tx_bytes = tp->tx_stats.bytes;
  	} while (u64_stats_fetch_retry_irq(&tp->tx_stats.syncp, start));
@@ -1395,11 +1305,9 @@ index da4c2d8a..5722e187 100644
  }
  
  /* Set or clear the multicast filter for this adaptor.
-diff --git a/drivers/net/ethernet/realtek/r8169.c b/drivers/net/ethernet/realtek/r8169.c
-index 2c4350a1..ac7eab06 100644
 --- a/drivers/net/ethernet/realtek/r8169.c
 +++ b/drivers/net/ethernet/realtek/r8169.c
-@@ -7751,7 +7751,7 @@ static int rtl_open(struct net_device *dev)
+@@ -7751,7 +7751,7 @@ err_pm_runtime_put:
  	goto out;
  }
  
@@ -1408,7 +1316,7 @@ index 2c4350a1..ac7eab06 100644
  rtl8169_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	struct rtl8169_private *tp = netdev_priv(dev);
-@@ -7805,8 +7805,6 @@ rtl8169_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -7805,8 +7805,6 @@ rtl8169_get_stats64(struct net_device *d
  		le16_to_cpu(tp->tc_offset.tx_aborted);
  
  	pm_runtime_put_noidle(&pdev->dev);
@@ -1417,11 +1325,9 @@ index 2c4350a1..ac7eab06 100644
  }
  
  static void rtl8169_net_suspend(struct net_device *dev)
-diff --git a/drivers/net/ethernet/samsung/sxgbe/sxgbe_main.c b/drivers/net/ethernet/samsung/sxgbe/sxgbe_main.c
-index ea44a245..49196846 100644
 --- a/drivers/net/ethernet/samsung/sxgbe/sxgbe_main.c
 +++ b/drivers/net/ethernet/samsung/sxgbe/sxgbe_main.c
-@@ -1721,11 +1721,9 @@ static inline u64 sxgbe_get_stat64(void __iomem *ioaddr, int reg_lo, int reg_hi)
+@@ -1721,11 +1721,9 @@ static inline u64 sxgbe_get_stat64(void
   *  This function is a driver entry point whenever ifconfig command gets
   *  executed to see device statistics. Statistics are number of
   *  bytes sent or received, errors occurred etc.
@@ -1435,7 +1341,7 @@ index ea44a245..49196846 100644
  {
  	struct sxgbe_priv_data *priv = netdev_priv(dev);
  	void __iomem *ioaddr = priv->ioaddr;
-@@ -1776,8 +1774,6 @@ static struct rtnl_link_stats64 *sxgbe_get_stats64(struct net_device *dev,
+@@ -1776,8 +1774,6 @@ static struct rtnl_link_stats64 *sxgbe_g
  						 SXGBE_MMC_TXUFLWHI_GBCNT_REG);
  	writel(0, ioaddr + SXGBE_MMC_CTL_REG);
  	spin_unlock(&priv->stats_lock);
@@ -1444,11 +1350,9 @@ index ea44a245..49196846 100644
  }
  
  /*  sxgbe_set_features - entry point to set offload features of the device.
-diff --git a/drivers/net/ethernet/sfc/efx.c b/drivers/net/ethernet/sfc/efx.c
-index 6b89e4a7..c6209dd4 100644
 --- a/drivers/net/ethernet/sfc/efx.c
 +++ b/drivers/net/ethernet/sfc/efx.c
-@@ -2232,16 +2232,14 @@ int efx_net_stop(struct net_device *net_dev)
+@@ -2232,16 +2232,14 @@ int efx_net_stop(struct net_device *net_
  }
  
  /* Context: process, dev_base_lock or RTNL held, non-blocking. */
@@ -1467,11 +1371,9 @@ index 6b89e4a7..c6209dd4 100644
  }
  
  /* Context: netif_tx_lock held, BHs disabled. */
-diff --git a/drivers/net/ethernet/sun/niu.c b/drivers/net/ethernet/sun/niu.c
-index a2371aa1..680fc756 100644
 --- a/drivers/net/ethernet/sun/niu.c
 +++ b/drivers/net/ethernet/sun/niu.c
-@@ -6294,8 +6294,8 @@ static void niu_get_tx_stats(struct niu *np,
+@@ -6294,8 +6294,8 @@ no_rings:
  	stats->tx_errors = errors;
  }
  
@@ -1482,7 +1384,7 @@ index a2371aa1..680fc756 100644
  {
  	struct niu *np = netdev_priv(dev);
  
-@@ -6303,8 +6303,6 @@ static struct rtnl_link_stats64 *niu_get_stats(struct net_device *dev,
+@@ -6303,8 +6303,6 @@ static struct rtnl_link_stats64 *niu_get
  		niu_get_rx_stats(np, stats);
  		niu_get_tx_stats(np, stats);
  	}
@@ -1491,11 +1393,9 @@ index a2371aa1..680fc756 100644
  }
  
  static void niu_load_hash_xmac(struct niu *np, u16 *hash)
-diff --git a/drivers/net/ethernet/synopsys/dwc_eth_qos.c b/drivers/net/ethernet/synopsys/dwc_eth_qos.c
-index 97d64bfe..bcacd08c 100644
 --- a/drivers/net/ethernet/synopsys/dwc_eth_qos.c
 +++ b/drivers/net/ethernet/synopsys/dwc_eth_qos.c
-@@ -2490,7 +2490,7 @@ static void dwceqos_read_mmc_counters(struct net_local *lp, u32 rx_mask,
+@@ -2490,7 +2490,7 @@ static void dwceqos_read_mmc_counters(st
  			dwceqos_read(lp, DWC_MMC_RXPACKETCOUNT_GB);
  }
  
@@ -1504,7 +1404,7 @@ index 97d64bfe..bcacd08c 100644
  dwceqos_get_stats64(struct net_device *ndev, struct rtnl_link_stats64 *s)
  {
  	unsigned long flags;
-@@ -2522,8 +2522,6 @@ dwceqos_get_stats64(struct net_device *ndev, struct rtnl_link_stats64 *s)
+@@ -2522,8 +2522,6 @@ dwceqos_get_stats64(struct net_device *n
  	else
  		s->tx_errors = hwstats->txunderflowerror +
  			hwstats->txcarriererror;
@@ -1513,11 +1413,9 @@ index 97d64bfe..bcacd08c 100644
  }
  
  static void
-diff --git a/drivers/net/ethernet/tile/tilepro.c b/drivers/net/ethernet/tile/tilepro.c
-index 4ef605a9..9cd7cd3c 100644
 --- a/drivers/net/ethernet/tile/tilepro.c
 +++ b/drivers/net/ethernet/tile/tilepro.c
-@@ -2047,8 +2047,8 @@ static int tile_net_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+@@ -2047,8 +2047,8 @@ static int tile_net_ioctl(struct net_dev
   *
   * Returns the address of the device statistics structure.
   */
@@ -1528,11 +1426,9 @@ index 4ef605a9..9cd7cd3c 100644
  {
  	struct tile_net_priv *priv = netdev_priv(dev);
  	u64 rx_packets = 0, tx_packets = 0;
-diff --git a/drivers/net/ethernet/via/via-rhine.c b/drivers/net/ethernet/via/via-rhine.c
-index 9d14731c..ae891364 100644
 --- a/drivers/net/ethernet/via/via-rhine.c
 +++ b/drivers/net/ethernet/via/via-rhine.c
-@@ -513,8 +513,8 @@ static irqreturn_t rhine_interrupt(int irq, void *dev_instance);
+@@ -513,8 +513,8 @@ static irqreturn_t rhine_interrupt(int i
  static void rhine_tx(struct net_device *dev);
  static int rhine_rx(struct net_device *dev, int limit);
  static void rhine_set_rx_mode(struct net_device *dev);
@@ -1543,7 +1439,7 @@ index 9d14731c..ae891364 100644
  static int netdev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd);
  static const struct ethtool_ops netdev_ethtool_ops;
  static int  rhine_close(struct net_device *dev);
-@@ -2222,7 +2222,7 @@ static void rhine_slow_event_task(struct work_struct *work)
+@@ -2222,7 +2222,7 @@ out_unlock:
  	mutex_unlock(&rp->task_lock);
  }
  
@@ -1552,7 +1448,7 @@ index 9d14731c..ae891364 100644
  rhine_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	struct rhine_private *rp = netdev_priv(dev);
-@@ -2245,8 +2245,6 @@ rhine_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -2245,8 +2245,6 @@ rhine_get_stats64(struct net_device *dev
  		stats->tx_packets = rp->tx_stats.packets;
  		stats->tx_bytes = rp->tx_stats.bytes;
  	} while (u64_stats_fetch_retry_irq(&rp->tx_stats.syncp, start));
@@ -1561,11 +1457,9 @@ index 9d14731c..ae891364 100644
  }
  
  static void rhine_set_rx_mode(struct net_device *dev)
-diff --git a/drivers/net/fjes/fjes_main.c b/drivers/net/fjes/fjes_main.c
-index e46b1ebb..6b944caf 100644
 --- a/drivers/net/fjes/fjes_main.c
 +++ b/drivers/net/fjes/fjes_main.c
-@@ -56,8 +56,7 @@ static void fjes_raise_intr_rxdata_task(struct work_struct *);
+@@ -56,8 +56,7 @@ static void fjes_raise_intr_rxdata_task(
  static void fjes_tx_stall_task(struct work_struct *);
  static void fjes_force_close_task(struct work_struct *);
  static irqreturn_t fjes_intr(int, void*);
@@ -1575,7 +1469,7 @@ index e46b1ebb..6b944caf 100644
  static int fjes_change_mtu(struct net_device *, int);
  static int fjes_vlan_rx_add_vid(struct net_device *, __be16 proto, u16);
  static int fjes_vlan_rx_kill_vid(struct net_device *, __be16 proto, u16);
-@@ -762,14 +761,12 @@ static void fjes_tx_retry(struct net_device *netdev)
+@@ -762,14 +761,12 @@ static void fjes_tx_retry(struct net_dev
  	netif_tx_wake_queue(queue);
  }
  
@@ -1591,11 +1485,9 @@ index e46b1ebb..6b944caf 100644
  }
  
  static int fjes_change_mtu(struct net_device *netdev, int new_mtu)
-diff --git a/drivers/net/hyperv/netvsc_drv.c b/drivers/net/hyperv/netvsc_drv.c
-index 36a04e18..48f20945 100644
 --- a/drivers/net/hyperv/netvsc_drv.c
 +++ b/drivers/net/hyperv/netvsc_drv.c
-@@ -918,8 +918,8 @@ static int netvsc_change_mtu(struct net_device *ndev, int mtu)
+@@ -918,8 +918,8 @@ out:
  	return ret;
  }
  
@@ -1606,7 +1498,7 @@ index 36a04e18..48f20945 100644
  {
  	struct net_device_context *ndev_ctx = netdev_priv(net);
  	int cpu;
-@@ -957,8 +957,6 @@ static struct rtnl_link_stats64 *netvsc_get_stats64(struct net_device *net,
+@@ -957,8 +957,6 @@ static struct rtnl_link_stats64 *netvsc_
  
  	t->rx_dropped	= net->stats.rx_dropped;
  	t->rx_errors	= net->stats.rx_errors;
@@ -1615,11 +1507,9 @@ index 36a04e18..48f20945 100644
  }
  
  static int netvsc_set_mac_addr(struct net_device *ndev, void *p)
-diff --git a/drivers/net/ifb.c b/drivers/net/ifb.c
-index 66c0eeaf..082534e1 100644
 --- a/drivers/net/ifb.c
 +++ b/drivers/net/ifb.c
-@@ -129,8 +129,8 @@ static void ifb_ri_tasklet(unsigned long _txp)
+@@ -129,8 +129,8 @@ resched:
  
  }
  
@@ -1630,7 +1520,7 @@ index 66c0eeaf..082534e1 100644
  {
  	struct ifb_dev_private *dp = netdev_priv(dev);
  	struct ifb_q_private *txp = dp->tx_private;
-@@ -157,8 +157,6 @@ static struct rtnl_link_stats64 *ifb_stats64(struct net_device *dev,
+@@ -157,8 +157,6 @@ static struct rtnl_link_stats64 *ifb_sta
  	}
  	stats->rx_dropped = dev->stats.rx_dropped;
  	stats->tx_dropped = dev->stats.tx_dropped;
@@ -1639,11 +1529,9 @@ index 66c0eeaf..082534e1 100644
  }
  
  static int ifb_dev_init(struct net_device *dev)
-diff --git a/drivers/net/ipvlan/ipvlan_main.c b/drivers/net/ipvlan/ipvlan_main.c
-index dfbc4ef6..6629680d 100644
 --- a/drivers/net/ipvlan/ipvlan_main.c
 +++ b/drivers/net/ipvlan/ipvlan_main.c
-@@ -296,8 +296,8 @@ static void ipvlan_set_multicast_mac_filter(struct net_device *dev)
+@@ -296,8 +296,8 @@ static void ipvlan_set_multicast_mac_fil
  	dev_mc_sync(ipvlan->phy_dev, dev);
  }
  
@@ -1654,7 +1542,7 @@ index dfbc4ef6..6629680d 100644
  {
  	struct ipvl_dev *ipvlan = netdev_priv(dev);
  
-@@ -334,7 +334,6 @@ static struct rtnl_link_stats64 *ipvlan_get_stats64(struct net_device *dev,
+@@ -334,7 +334,6 @@ static struct rtnl_link_stats64 *ipvlan_
  		s->rx_dropped = rx_errs;
  		s->tx_dropped = tx_drps;
  	}
@@ -1662,11 +1550,9 @@ index dfbc4ef6..6629680d 100644
  }
  
  static int ipvlan_vlan_rx_add_vid(struct net_device *dev, __be16 proto, u16 vid)
-diff --git a/drivers/net/loopback.c b/drivers/net/loopback.c
-index 1b65f0f9..0254b2a9 100644
 --- a/drivers/net/loopback.c
 +++ b/drivers/net/loopback.c
-@@ -97,8 +97,8 @@ static netdev_tx_t loopback_xmit(struct sk_buff *skb,
+@@ -97,8 +97,8 @@ static netdev_tx_t loopback_xmit(struct
  	return NETDEV_TX_OK;
  }
  
@@ -1677,7 +1563,7 @@ index 1b65f0f9..0254b2a9 100644
  {
  	u64 bytes = 0;
  	u64 packets = 0;
-@@ -122,7 +122,6 @@ static struct rtnl_link_stats64 *loopback_get_stats64(struct net_device *dev,
+@@ -122,7 +122,6 @@ static struct rtnl_link_stats64 *loopbac
  	stats->tx_packets = packets;
  	stats->rx_bytes   = bytes;
  	stats->tx_bytes   = bytes;
@@ -1685,11 +1571,9 @@ index 1b65f0f9..0254b2a9 100644
  }
  
  static u32 always_on(struct net_device *dev)
-diff --git a/drivers/net/macsec.c b/drivers/net/macsec.c
-index 2caac0c3..880ee985 100644
 --- a/drivers/net/macsec.c
 +++ b/drivers/net/macsec.c
-@@ -2899,13 +2899,13 @@ static int macsec_change_mtu(struct net_device *dev, int new_mtu)
+@@ -2899,13 +2899,13 @@ static int macsec_change_mtu(struct net_
  	return 0;
  }
  
@@ -1706,7 +1590,7 @@ index 2caac0c3..880ee985 100644
  
  	for_each_possible_cpu(cpu) {
  		struct pcpu_sw_netstats *stats;
-@@ -2929,8 +2929,6 @@ static struct rtnl_link_stats64 *macsec_get_stats64(struct net_device *dev,
+@@ -2929,8 +2929,6 @@ static struct rtnl_link_stats64 *macsec_
  
  	s->rx_dropped = dev->stats.rx_dropped;
  	s->tx_dropped = dev->stats.tx_dropped;
@@ -1715,11 +1599,9 @@ index 2caac0c3..880ee985 100644
  }
  
  static int macsec_get_iflink(const struct net_device *dev)
-diff --git a/drivers/net/macvlan.c b/drivers/net/macvlan.c
-index dc8ccac0..94576142 100644
 --- a/drivers/net/macvlan.c
 +++ b/drivers/net/macvlan.c
-@@ -857,8 +857,8 @@ static void macvlan_uninit(struct net_device *dev)
+@@ -857,8 +857,8 @@ static void macvlan_uninit(struct net_de
  		macvlan_port_destroy(port->dev);
  }
  
@@ -1730,7 +1612,7 @@ index dc8ccac0..94576142 100644
  {
  	struct macvlan_dev *vlan = netdev_priv(dev);
  
-@@ -895,7 +895,6 @@ static struct rtnl_link_stats64 *macvlan_dev_get_stats64(struct net_device *dev,
+@@ -895,7 +895,6 @@ static struct rtnl_link_stats64 *macvlan
  		stats->rx_dropped	= rx_errors;
  		stats->tx_dropped	= tx_dropped;
  	}
@@ -1738,11 +1620,9 @@ index dc8ccac0..94576142 100644
  }
  
  static int macvlan_vlan_rx_add_vid(struct net_device *dev,
-diff --git a/drivers/net/nlmon.c b/drivers/net/nlmon.c
-index 7b7c70e2..a0daed8a 100644
 --- a/drivers/net/nlmon.c
 +++ b/drivers/net/nlmon.c
-@@ -76,7 +76,7 @@ static int nlmon_close(struct net_device *dev)
+@@ -76,7 +76,7 @@ static int nlmon_close(struct net_device
  	return netlink_remove_tap(&nlmon->nt);
  }
  
@@ -1751,7 +1631,7 @@ index 7b7c70e2..a0daed8a 100644
  nlmon_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	int i;
-@@ -104,8 +104,6 @@ nlmon_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -104,8 +104,6 @@ nlmon_get_stats64(struct net_device *dev
  
  	stats->rx_bytes = bytes;
  	stats->tx_bytes = 0;
@@ -1760,11 +1640,9 @@ index 7b7c70e2..a0daed8a 100644
  }
  
  static u32 always_on(struct net_device *dev)
-diff --git a/drivers/net/ppp/ppp_generic.c b/drivers/net/ppp/ppp_generic.c
-index 96fa0e61..d3b17318 100644
 --- a/drivers/net/ppp/ppp_generic.c
 +++ b/drivers/net/ppp/ppp_generic.c
-@@ -1312,7 +1312,7 @@ ppp_net_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+@@ -1312,7 +1312,7 @@ ppp_net_ioctl(struct net_device *dev, st
  	return err;
  }
  
@@ -1773,7 +1651,7 @@ index 96fa0e61..d3b17318 100644
  ppp_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats64)
  {
  	struct ppp *ppp = netdev_priv(dev);
-@@ -1332,8 +1332,6 @@ ppp_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats64)
+@@ -1332,8 +1332,6 @@ ppp_get_stats64(struct net_device *dev,
  	stats64->rx_dropped       = dev->stats.rx_dropped;
  	stats64->tx_dropped       = dev->stats.tx_dropped;
  	stats64->rx_length_errors = dev->stats.rx_length_errors;
@@ -1782,11 +1660,9 @@ index 96fa0e61..d3b17318 100644
  }
  
  static int ppp_dev_init(struct net_device *dev)
-diff --git a/drivers/net/slip/slip.c b/drivers/net/slip/slip.c
-index 9ed6d1c1..c8c0c231 100644
 --- a/drivers/net/slip/slip.c
 +++ b/drivers/net/slip/slip.c
-@@ -571,7 +571,7 @@ static int sl_change_mtu(struct net_device *dev, int new_mtu)
+@@ -571,7 +571,7 @@ static int sl_change_mtu(struct net_devi
  
  /* Netdevice get statistics request */
  
@@ -1795,7 +1671,7 @@ index 9ed6d1c1..c8c0c231 100644
  sl_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	struct net_device_stats *devstats = &dev->stats;
-@@ -602,7 +602,6 @@ sl_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -602,7 +602,6 @@ sl_get_stats64(struct net_device *dev, s
  		stats->collisions     += comp->sls_o_misses;
  	}
  #endif
@@ -1803,11 +1679,9 @@ index 9ed6d1c1..c8c0c231 100644
  }
  
  /* Netdevice register callback */
-diff --git a/drivers/net/team/team.c b/drivers/net/team/team.c
-index a380649b..95499313 100644
 --- a/drivers/net/team/team.c
 +++ b/drivers/net/team/team.c
-@@ -1798,7 +1798,7 @@ static int team_change_mtu(struct net_device *dev, int new_mtu)
+@@ -1798,7 +1798,7 @@ unwind:
  	return err;
  }
  
@@ -1816,7 +1690,7 @@ index a380649b..95499313 100644
  team_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	struct team *team = netdev_priv(dev);
-@@ -1835,7 +1835,6 @@ team_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -1835,7 +1835,6 @@ team_get_stats64(struct net_device *dev,
  	stats->rx_dropped	= rx_dropped;
  	stats->tx_dropped	= tx_dropped;
  	stats->rx_nohandler	= rx_nohandler;
@@ -1824,11 +1698,9 @@ index a380649b..95499313 100644
  }
  
  static int team_vlan_rx_add_vid(struct net_device *dev, __be16 proto, u16 vid)
-diff --git a/drivers/net/tun.c b/drivers/net/tun.c
-index a931b733..19fb25b1 100644
 --- a/drivers/net/tun.c
 +++ b/drivers/net/tun.c
-@@ -983,7 +983,7 @@ static void tun_set_headroom(struct net_device *dev, int new_hr)
+@@ -983,7 +983,7 @@ static void tun_set_headroom(struct net_
  	tun->align = new_hr;
  }
  
@@ -1837,7 +1709,7 @@ index a931b733..19fb25b1 100644
  tun_net_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	u32 rx_dropped = 0, tx_dropped = 0, rx_frame_errors = 0;
-@@ -1017,7 +1017,6 @@ tun_net_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -1017,7 +1017,6 @@ tun_net_get_stats64(struct net_device *d
  	stats->rx_dropped  = rx_dropped;
  	stats->rx_frame_errors = rx_frame_errors;
  	stats->tx_dropped = tx_dropped;
@@ -1845,11 +1717,9 @@ index a931b733..19fb25b1 100644
  }
  
  static const struct net_device_ops tun_netdev_ops = {
-diff --git a/drivers/net/veth.c b/drivers/net/veth.c
-index fbc853e6..e25aa62d 100644
 --- a/drivers/net/veth.c
 +++ b/drivers/net/veth.c
-@@ -161,8 +161,8 @@ static u64 veth_stats_one(struct pcpu_vstats *result, struct net_device *dev)
+@@ -161,8 +161,8 @@ static u64 veth_stats_one(struct pcpu_vs
  	return atomic64_read(&priv->dropped);
  }
  
@@ -1860,7 +1730,7 @@ index fbc853e6..e25aa62d 100644
  {
  	struct veth_priv *priv = netdev_priv(dev);
  	struct net_device *peer;
-@@ -180,8 +180,6 @@ static struct rtnl_link_stats64 *veth_get_stats64(struct net_device *dev,
+@@ -180,8 +180,6 @@ static struct rtnl_link_stats64 *veth_ge
  		tot->rx_packets = one.packets;
  	}
  	rcu_read_unlock();
@@ -1869,11 +1739,9 @@ index fbc853e6..e25aa62d 100644
  }
  
  /* fake multicast ability */
-diff --git a/drivers/net/virtio_net.c b/drivers/net/virtio_net.c
-index 1568aedd..15e87add 100644
 --- a/drivers/net/virtio_net.c
 +++ b/drivers/net/virtio_net.c
-@@ -1017,8 +1017,8 @@ static int virtnet_set_mac_address(struct net_device *dev, void *p)
+@@ -1017,8 +1017,8 @@ out:
  	return ret;
  }
  
@@ -1884,7 +1752,7 @@ index 1568aedd..15e87add 100644
  {
  	struct virtnet_info *vi = netdev_priv(dev);
  	int cpu;
-@@ -1051,8 +1051,6 @@ static struct rtnl_link_stats64 *virtnet_stats(struct net_device *dev,
+@@ -1051,8 +1051,6 @@ static struct rtnl_link_stats64 *virtnet
  	tot->rx_dropped = dev->stats.rx_dropped;
  	tot->rx_length_errors = dev->stats.rx_length_errors;
  	tot->rx_frame_errors = dev->stats.rx_frame_errors;
@@ -1893,8 +1761,6 @@ index 1568aedd..15e87add 100644
  }
  
  #ifdef CONFIG_NET_POLL_CONTROLLER
-diff --git a/drivers/net/vmxnet3/vmxnet3_ethtool.c b/drivers/net/vmxnet3/vmxnet3_ethtool.c
-index aabc6ef3..f88ffafe 100644
 --- a/drivers/net/vmxnet3/vmxnet3_ethtool.c
 +++ b/drivers/net/vmxnet3/vmxnet3_ethtool.c
 @@ -113,7 +113,7 @@ vmxnet3_global_stats[] = {
@@ -1906,7 +1772,7 @@ index aabc6ef3..f88ffafe 100644
  vmxnet3_get_stats64(struct net_device *netdev,
  		   struct rtnl_link_stats64 *stats)
  {
-@@ -160,8 +160,6 @@ vmxnet3_get_stats64(struct net_device *netdev,
+@@ -160,8 +160,6 @@ vmxnet3_get_stats64(struct net_device *n
  		stats->rx_dropped += drvRxStats->drop_total;
  		stats->multicast +=  devRxStats->mcastPktsRxOK;
  	}
@@ -1915,11 +1781,9 @@ index aabc6ef3..f88ffafe 100644
  }
  
  static int
-diff --git a/drivers/net/vmxnet3/vmxnet3_int.h b/drivers/net/vmxnet3/vmxnet3_int.h
-index 7dc37a09..ec19df56 100644
 --- a/drivers/net/vmxnet3/vmxnet3_int.h
 +++ b/drivers/net/vmxnet3/vmxnet3_int.h
-@@ -466,8 +466,8 @@ vmxnet3_create_queues(struct vmxnet3_adapter *adapter,
+@@ -466,8 +466,8 @@ vmxnet3_create_queues(struct vmxnet3_ada
  
  void vmxnet3_set_ethtool_ops(struct net_device *netdev);
  
@@ -1930,11 +1794,9 @@ index 7dc37a09..ec19df56 100644
  
  extern char vmxnet3_driver_name[];
  #endif
-diff --git a/drivers/net/vrf.c b/drivers/net/vrf.c
-index 578bd500..499af07a 100644
 --- a/drivers/net/vrf.c
 +++ b/drivers/net/vrf.c
-@@ -79,8 +79,8 @@ static void vrf_tx_error(struct net_device *vrf_dev, struct sk_buff *skb)
+@@ -79,8 +79,8 @@ static void vrf_tx_error(struct net_devi
  	kfree_skb(skb);
  }
  
@@ -1945,7 +1807,7 @@ index 578bd500..499af07a 100644
  {
  	int i;
  
-@@ -104,7 +104,6 @@ static struct rtnl_link_stats64 *vrf_get_stats64(struct net_device *dev,
+@@ -104,7 +104,6 @@ static struct rtnl_link_stats64 *vrf_get
  		stats->rx_bytes += rbytes;
  		stats->rx_packets += rpkts;
  	}
@@ -1953,11 +1815,9 @@ index 578bd500..499af07a 100644
  }
  
  /* Local traffic destined to local address. Reinsert the packet to rx
-diff --git a/drivers/net/xen-netfront.c b/drivers/net/xen-netfront.c
-index cd442e46..f87cae7e 100644
 --- a/drivers/net/xen-netfront.c
 +++ b/drivers/net/xen-netfront.c
-@@ -1081,8 +1081,8 @@ static int xennet_change_mtu(struct net_device *dev, int mtu)
+@@ -1081,8 +1081,8 @@ static int xennet_change_mtu(struct net_
  	return 0;
  }
  
@@ -1968,7 +1828,7 @@ index cd442e46..f87cae7e 100644
  {
  	struct netfront_info *np = netdev_priv(dev);
  	int cpu;
-@@ -1113,8 +1113,6 @@ static struct rtnl_link_stats64 *xennet_get_stats64(struct net_device *dev,
+@@ -1113,8 +1113,6 @@ static struct rtnl_link_stats64 *xennet_
  
  	tot->rx_errors  = dev->stats.rx_errors;
  	tot->tx_dropped = dev->stats.tx_dropped;
@@ -1977,11 +1837,9 @@ index cd442e46..f87cae7e 100644
  }
  
  static void xennet_release_tx_bufs(struct netfront_queue *queue)
-diff --git a/drivers/staging/netlogic/xlr_net.c b/drivers/staging/netlogic/xlr_net.c
-index 552a7dcb..d7dea9d4 100644
 --- a/drivers/staging/netlogic/xlr_net.c
 +++ b/drivers/staging/netlogic/xlr_net.c
-@@ -395,14 +395,6 @@ static void xlr_stats(struct net_device *ndev, struct rtnl_link_stats64 *stats)
+@@ -395,14 +395,6 @@ static void xlr_stats(struct net_device
  			TX_DROP_FRAME_COUNTER);
  }
  
@@ -1996,7 +1854,7 @@ index 552a7dcb..d7dea9d4 100644
  static const struct net_device_ops xlr_netdev_ops = {
  	.ndo_open = xlr_net_open,
  	.ndo_stop = xlr_net_stop,
-@@ -410,7 +402,7 @@ static const struct net_device_ops xlr_netdev_ops = {
+@@ -410,7 +402,7 @@ static const struct net_device_ops xlr_n
  	.ndo_select_queue = xlr_net_select_queue,
  	.ndo_set_mac_address = xlr_net_set_mac_addr,
  	.ndo_set_rx_mode = xlr_set_rx_mode,
@@ -2005,11 +1863,9 @@ index 552a7dcb..d7dea9d4 100644
  };
  
  /*
-diff --git a/include/linux/device.h b/include/linux/device.h
-index 8d732965..6d206930 100644
 --- a/include/linux/device.h
 +++ b/include/linux/device.h
-@@ -688,6 +688,25 @@ void __iomem *devm_ioremap_resource(struct device *dev, struct resource *res);
+@@ -688,6 +688,25 @@ void __iomem *devm_ioremap_resource(stru
  int devm_add_action(struct device *dev, void (*action)(void *), void *data);
  void devm_remove_action(struct device *dev, void (*action)(void *), void *data);
  
@@ -2035,9 +1891,6 @@ index 8d732965..6d206930 100644
  static inline int devm_add_action_or_reset(struct device *dev,
  					   void (*action)(void *), void *data)
  {
-diff --git a/include/linux/fsl/svr.h b/include/linux/fsl/svr.h
-new file mode 100644
-index 00000000..e95c8f43
 --- /dev/null
 +++ b/include/linux/fsl/svr.h
 @@ -0,0 +1,97 @@
@@ -2138,8 +1991,6 @@ index 00000000..e95c8f43
 +#define SVR_Unknown	0xFFFFFF
 +
 +#endif
-diff --git a/include/linux/fsl_devices.h b/include/linux/fsl_devices.h
-index f2912914..22308465 100644
 --- a/include/linux/fsl_devices.h
 +++ b/include/linux/fsl_devices.h
 @@ -99,7 +99,10 @@ struct fsl_usb2_platform_data {
@@ -2153,8 +2004,6 @@ index f2912914..22308465 100644
  	unsigned        check_phy_clk_valid:1;
  
  	/* register save area for suspend/resume */
-diff --git a/include/linux/netdev_features.h b/include/linux/netdev_features.h
-index 9c6c8ef2..90b4107e 100644
 --- a/include/linux/netdev_features.h
 +++ b/include/linux/netdev_features.h
 @@ -74,6 +74,7 @@ enum {
@@ -2173,8 +2022,6 @@ index 9c6c8ef2..90b4107e 100644
  
  #define for_each_netdev_feature(mask_addr, bit)	\
  	for_each_set_bit(bit, (unsigned long *)mask_addr, NETDEV_FEATURE_COUNT)
-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index c3a1537c..67ef59d0 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -916,8 +916,8 @@ struct netdev_xdp {
@@ -2217,8 +2064,6 @@ index c3a1537c..67ef59d0 100644
  	unsigned short		type;
  	unsigned short		hard_header_len;
  	unsigned short		min_header_len;
-diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index 9a0c945e..06f33c98 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
 @@ -903,6 +903,7 @@ void kfree_skb(struct sk_buff *skb);
@@ -2229,7 +2074,7 @@ index 9a0c945e..06f33c98 100644
  void  __kfree_skb(struct sk_buff *skb);
  extern struct kmem_cache *skbuff_head_cache;
  
-@@ -3057,6 +3058,7 @@ static inline void skb_free_datagram_locked(struct sock *sk,
+@@ -3057,6 +3058,7 @@ static inline void skb_free_datagram_loc
  }
  int skb_kill_datagram(struct sock *sk, struct sk_buff *skb, unsigned int flags);
  int skb_copy_bits(const struct sk_buff *skb, int offset, void *to, int len);
@@ -2237,8 +2082,6 @@ index 9a0c945e..06f33c98 100644
  int skb_store_bits(struct sk_buff *skb, int offset, const void *from, int len);
  __wsum skb_copy_and_csum_bits(const struct sk_buff *skb, int offset, u8 *to,
  			      int len, __wsum csum);
-diff --git a/include/linux/sys_soc.h b/include/linux/sys_soc.h
-index 2739ccb6..9f5eb06f 100644
 --- a/include/linux/sys_soc.h
 +++ b/include/linux/sys_soc.h
 @@ -13,6 +13,7 @@ struct soc_device_attribute {
@@ -2249,18 +2092,16 @@ index 2739ccb6..9f5eb06f 100644
  };
  
  /**
-@@ -34,4 +35,6 @@ void soc_device_unregister(struct soc_device *soc_dev);
+@@ -34,4 +35,6 @@ void soc_device_unregister(struct soc_de
   */
  struct device *soc_device_to_device(struct soc_device *soc);
  
 +const struct soc_device_attribute *soc_device_match(
 +	const struct soc_device_attribute *matches);
  #endif /* __SOC_BUS_H */
-diff --git a/include/net/ip_tunnels.h b/include/net/ip_tunnels.h
-index 59557c07..876de4f9 100644
 --- a/include/net/ip_tunnels.h
 +++ b/include/net/ip_tunnels.h
-@@ -261,8 +261,8 @@ int ip_tunnel_ioctl(struct net_device *dev, struct ip_tunnel_parm *p, int cmd);
+@@ -261,8 +261,8 @@ int ip_tunnel_ioctl(struct net_device *d
  int __ip_tunnel_change_mtu(struct net_device *dev, int new_mtu, bool strict);
  int ip_tunnel_change_mtu(struct net_device *dev, int new_mtu);
  
@@ -2271,8 +2112,6 @@ index 59557c07..876de4f9 100644
  struct ip_tunnel *ip_tunnel_lookup(struct ip_tunnel_net *itn,
  				   int link, __be16 flags,
  				   __be32 remote, __be32 local,
-diff --git a/include/uapi/linux/if_ether.h b/include/uapi/linux/if_ether.h
-index 51f38442..5c01afbf 100644
 --- a/include/uapi/linux/if_ether.h
 +++ b/include/uapi/linux/if_ether.h
 @@ -35,6 +35,7 @@
@@ -2283,11 +2122,9 @@ index 51f38442..5c01afbf 100644
  
  /*
   *	These are the defined Ethernet Protocol ID's.
-diff --git a/net/8021q/vlan_dev.c b/net/8021q/vlan_dev.c
-index fbfacd51..ca3cf29b 100644
 --- a/net/8021q/vlan_dev.c
 +++ b/net/8021q/vlan_dev.c
-@@ -671,7 +671,8 @@ static int vlan_ethtool_get_ts_info(struct net_device *dev,
+@@ -671,7 +671,8 @@ static int vlan_ethtool_get_ts_info(stru
  	return 0;
  }
  
@@ -2297,7 +2134,7 @@ index fbfacd51..ca3cf29b 100644
  {
  	struct vlan_pcpu_stats *p;
  	u32 rx_errors = 0, tx_dropped = 0;
-@@ -702,8 +703,6 @@ static struct rtnl_link_stats64 *vlan_dev_get_stats64(struct net_device *dev, st
+@@ -702,8 +703,6 @@ static struct rtnl_link_stats64 *vlan_de
  	}
  	stats->rx_errors  = rx_errors;
  	stats->tx_dropped = tx_dropped;
@@ -2306,11 +2143,9 @@ index fbfacd51..ca3cf29b 100644
  }
  
  #ifdef CONFIG_NET_POLL_CONTROLLER
-diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
-index 5f5e28f2..73d66ae3 100644
 --- a/net/bridge/br_device.c
 +++ b/net/bridge/br_device.c
-@@ -156,8 +156,8 @@ static int br_dev_stop(struct net_device *dev)
+@@ -156,8 +156,8 @@ static int br_dev_stop(struct net_device
  	return 0;
  }
  
@@ -2321,7 +2156,7 @@ index 5f5e28f2..73d66ae3 100644
  {
  	struct net_bridge *br = netdev_priv(dev);
  	struct pcpu_sw_netstats tmp, sum = { 0 };
-@@ -181,8 +181,6 @@ static struct rtnl_link_stats64 *br_get_stats64(struct net_device *dev,
+@@ -181,8 +181,6 @@ static struct rtnl_link_stats64 *br_get_
  	stats->tx_packets = sum.tx_packets;
  	stats->rx_bytes   = sum.rx_bytes;
  	stats->rx_packets = sum.rx_packets;
@@ -2330,11 +2165,9 @@ index 5f5e28f2..73d66ae3 100644
  }
  
  static int br_change_mtu(struct net_device *dev, int new_mtu)
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 912f40ac..17e16cf7 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -6600,9 +6600,18 @@ int dev_set_mtu(struct net_device *dev, int new_mtu)
+@@ -6600,9 +6600,18 @@ int dev_set_mtu(struct net_device *dev,
  	if (new_mtu == dev->mtu)
  		return 0;
  
@@ -2355,11 +2188,9 @@ index 912f40ac..17e16cf7 100644
  
  	if (!netif_device_present(dev))
  		return -ENODEV;
-diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index 7e7b7ce0..0f9c014a 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -842,6 +842,32 @@ void napi_consume_skb(struct sk_buff *skb, int budget)
+@@ -842,6 +842,32 @@ void napi_consume_skb(struct sk_buff *sk
  }
  EXPORT_SYMBOL(napi_consume_skb);
  
@@ -2392,7 +2223,7 @@ index 7e7b7ce0..0f9c014a 100644
  /* Make sure a field is enclosed inside headers_start/headers_end section */
  #define CHECK_SKB_FIELD(field) \
  	BUILD_BUG_ON(offsetof(struct sk_buff, field) <		\
-@@ -1073,7 +1099,7 @@ static void skb_headers_offset_update(struct sk_buff *skb, int off)
+@@ -1073,7 +1099,7 @@ static void skb_headers_offset_update(st
  	skb->inner_mac_header += off;
  }
  
@@ -2401,7 +2232,7 @@ index 7e7b7ce0..0f9c014a 100644
  {
  	__copy_skb_header(new, old);
  
-@@ -1081,6 +1107,7 @@ static void copy_skb_header(struct sk_buff *new, const struct sk_buff *old)
+@@ -1081,6 +1107,7 @@ static void copy_skb_header(struct sk_bu
  	skb_shinfo(new)->gso_segs = skb_shinfo(old)->gso_segs;
  	skb_shinfo(new)->gso_type = skb_shinfo(old)->gso_type;
  }
@@ -2409,11 +2240,9 @@ index 7e7b7ce0..0f9c014a 100644
  
  static inline int skb_alloc_rx_flag(const struct sk_buff *skb)
  {
-diff --git a/net/ipv4/ip_tunnel_core.c b/net/ipv4/ip_tunnel_core.c
-index 0fd1976a..9d6c1009 100644
 --- a/net/ipv4/ip_tunnel_core.c
 +++ b/net/ipv4/ip_tunnel_core.c
-@@ -188,8 +188,8 @@ int iptunnel_handle_offloads(struct sk_buff *skb,
+@@ -188,8 +188,8 @@ int iptunnel_handle_offloads(struct sk_b
  EXPORT_SYMBOL_GPL(iptunnel_handle_offloads);
  
  /* Often modified stats are per cpu, other are shared (netdev->stats) */
@@ -2424,7 +2253,7 @@ index 0fd1976a..9d6c1009 100644
  {
  	int i;
  
-@@ -214,8 +214,6 @@ struct rtnl_link_stats64 *ip_tunnel_get_stats64(struct net_device *dev,
+@@ -214,8 +214,6 @@ struct rtnl_link_stats64 *ip_tunnel_get_
  		tot->rx_bytes   += rx_bytes;
  		tot->tx_bytes   += tx_bytes;
  	}
@@ -2433,11 +2262,9 @@ index 0fd1976a..9d6c1009 100644
  }
  EXPORT_SYMBOL_GPL(ip_tunnel_get_stats64);
  
-diff --git a/net/l2tp/l2tp_eth.c b/net/l2tp/l2tp_eth.c
-index eecc64e1..ce73136a 100644
 --- a/net/l2tp/l2tp_eth.c
 +++ b/net/l2tp/l2tp_eth.c
-@@ -106,8 +106,8 @@ static int l2tp_eth_dev_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -106,8 +106,8 @@ static int l2tp_eth_dev_xmit(struct sk_b
  	return NETDEV_TX_OK;
  }
  
@@ -2448,7 +2275,7 @@ index eecc64e1..ce73136a 100644
  {
  	struct l2tp_eth *priv = netdev_priv(dev);
  
-@@ -117,10 +117,8 @@ static struct rtnl_link_stats64 *l2tp_eth_get_stats64(struct net_device *dev,
+@@ -117,10 +117,8 @@ static struct rtnl_link_stats64 *l2tp_et
  	stats->rx_bytes   = atomic_long_read(&priv->rx_bytes);
  	stats->rx_packets = atomic_long_read(&priv->rx_packets);
  	stats->rx_errors  = atomic_long_read(&priv->rx_errors);
@@ -2459,11 +2286,9 @@ index eecc64e1..ce73136a 100644
  static const struct net_device_ops l2tp_eth_netdev_ops = {
  	.ndo_init		= l2tp_eth_dev_init,
  	.ndo_uninit		= l2tp_eth_dev_uninit,
-diff --git a/net/mac80211/iface.c b/net/mac80211/iface.c
-index 37bec0f8..aee93423 100644
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -1133,7 +1133,7 @@ static u16 ieee80211_netdev_select_queue(struct net_device *dev,
+@@ -1146,7 +1146,7 @@ static u16 ieee80211_netdev_select_queue
  	return ieee80211_select_queue(IEEE80211_DEV_TO_SUB_IF(dev), skb);
  }
  
@@ -2472,7 +2297,7 @@ index 37bec0f8..aee93423 100644
  ieee80211_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	int i;
-@@ -1158,8 +1158,6 @@ ieee80211_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -1171,8 +1171,6 @@ ieee80211_get_stats64(struct net_device
  		stats->rx_bytes   += rx_bytes;
  		stats->tx_bytes   += tx_bytes;
  	}
@@ -2481,11 +2306,9 @@ index 37bec0f8..aee93423 100644
  }
  
  static const struct net_device_ops ieee80211_dataif_ops = {
-diff --git a/net/openvswitch/vport-internal_dev.c b/net/openvswitch/vport-internal_dev.c
-index e7da2902..95fd5744 100644
 --- a/net/openvswitch/vport-internal_dev.c
 +++ b/net/openvswitch/vport-internal_dev.c
-@@ -106,7 +106,7 @@ static void internal_dev_destructor(struct net_device *dev)
+@@ -106,7 +106,7 @@ static void internal_dev_destructor(stru
  	free_netdev(dev);
  }
  
@@ -2494,7 +2317,7 @@ index e7da2902..95fd5744 100644
  internal_get_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
  {
  	int i;
-@@ -134,8 +134,6 @@ internal_get_stats(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -134,8 +134,6 @@ internal_get_stats(struct net_device *de
  		stats->tx_bytes         += local_stats.tx_bytes;
  		stats->tx_packets       += local_stats.tx_packets;
  	}
@@ -2503,11 +2326,9 @@ index e7da2902..95fd5744 100644
  }
  
  static void internal_set_rx_headroom(struct net_device *dev, int new_hr)
-diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
-index a62de9e4..5b287e1d 100644
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
-@@ -309,6 +309,13 @@ static void dev_watchdog(unsigned long arg)
+@@ -309,6 +309,13 @@ static void dev_watchdog(unsigned long a
  					txq->trans_timeout++;
  					break;
  				}
@@ -2521,11 +2342,9 @@ index a62de9e4..5b287e1d 100644
  			}
  
  			if (some_queue_timedout) {
-diff --git a/net/sched/sch_teql.c b/net/sched/sch_teql.c
-index 2cd9b447..5e25213e 100644
 --- a/net/sched/sch_teql.c
 +++ b/net/sched/sch_teql.c
-@@ -401,8 +401,8 @@ static int teql_master_close(struct net_device *dev)
+@@ -401,8 +401,8 @@ static int teql_master_close(struct net_
  	return 0;
  }
  
@@ -2536,7 +2355,7 @@ index 2cd9b447..5e25213e 100644
  {
  	struct teql_master *m = netdev_priv(dev);
  
-@@ -410,7 +410,6 @@ static struct rtnl_link_stats64 *teql_master_stats64(struct net_device *dev,
+@@ -410,7 +410,6 @@ static struct rtnl_link_stats64 *teql_ma
  	stats->tx_bytes		= m->tx_bytes;
  	stats->tx_errors	= m->tx_errors;
  	stats->tx_dropped	= m->tx_dropped;
@@ -2544,6 +2363,3 @@ index 2cd9b447..5e25213e 100644
  }
  
  static int teql_master_mtu(struct net_device *dev, int new_mtu)
--- 
-2.14.1
-

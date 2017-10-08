@@ -13,8 +13,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/tty/serial/fsl_lpuart.c | 66 ++++++++++++++++++++++++++++-------------
  1 file changed, 46 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/tty/serial/fsl_lpuart.c b/drivers/tty/serial/fsl_lpuart.c
-index 76103f2c..61453820 100644
 --- a/drivers/tty/serial/fsl_lpuart.c
 +++ b/drivers/tty/serial/fsl_lpuart.c
 @@ -231,6 +231,8 @@
@@ -26,7 +24,7 @@ index 76103f2c..61453820 100644
  struct lpuart_port {
  	struct uart_port	port;
  	struct clk		*clk;
-@@ -1348,6 +1350,18 @@ lpuart_set_termios(struct uart_port *port, struct ktermios *termios,
+@@ -1348,6 +1350,18 @@ lpuart_set_termios(struct uart_port *por
  	/* ask the core to calculate the divisor */
  	baud = uart_get_baud_rate(port, termios, old, 50, port->uartclk / 16);
  
@@ -45,7 +43,7 @@ index 76103f2c..61453820 100644
  	spin_lock_irqsave(&sport->port.lock, flags);
  
  	sport->port.read_status_mask = 0;
-@@ -1397,22 +1411,11 @@ lpuart_set_termios(struct uart_port *port, struct ktermios *termios,
+@@ -1397,22 +1411,11 @@ lpuart_set_termios(struct uart_port *por
  	/* restore control register */
  	writeb(old_cr2, sport->port.membase + UARTCR2);
  
@@ -71,7 +69,7 @@ index 76103f2c..61453820 100644
  	}
  
  	spin_unlock_irqrestore(&sport->port.lock, flags);
-@@ -1640,6 +1643,13 @@ lpuart_console_write(struct console *co, const char *s, unsigned int count)
+@@ -1640,6 +1643,13 @@ lpuart_console_write(struct console *co,
  {
  	struct lpuart_port *sport = lpuart_ports[co->index];
  	unsigned char  old_cr2, cr2;
@@ -85,7 +83,7 @@ index 76103f2c..61453820 100644
  
  	/* first save CR2 and then disable interrupts */
  	cr2 = old_cr2 = readb(sport->port.membase + UARTCR2);
-@@ -1654,6 +1664,9 @@ lpuart_console_write(struct console *co, const char *s, unsigned int count)
+@@ -1654,6 +1664,9 @@ lpuart_console_write(struct console *co,
  		barrier();
  
  	writeb(old_cr2, sport->port.membase + UARTCR2);
@@ -95,7 +93,7 @@ index 76103f2c..61453820 100644
  }
  
  static void
-@@ -1661,6 +1674,13 @@ lpuart32_console_write(struct console *co, const char *s, unsigned int count)
+@@ -1661,6 +1674,13 @@ lpuart32_console_write(struct console *c
  {
  	struct lpuart_port *sport = lpuart_ports[co->index];
  	unsigned long  old_cr, cr;
@@ -109,7 +107,7 @@ index 76103f2c..61453820 100644
  
  	/* first save CR2 and then disable interrupts */
  	cr = old_cr = lpuart32_read(sport->port.membase + UARTCTRL);
-@@ -1675,6 +1695,9 @@ lpuart32_console_write(struct console *co, const char *s, unsigned int count)
+@@ -1675,6 +1695,9 @@ lpuart32_console_write(struct console *c
  		barrier();
  
  	lpuart32_write(old_cr, sport->port.membase + UARTCTRL);
@@ -119,7 +117,7 @@ index 76103f2c..61453820 100644
  }
  
  /*
-@@ -1899,9 +1922,13 @@ static int lpuart_probe(struct platform_device *pdev)
+@@ -1899,9 +1922,13 @@ static int lpuart_probe(struct platform_
  
  	ret = of_alias_get_id(np, "serial");
  	if (ret < 0) {
@@ -135,7 +133,7 @@ index 76103f2c..61453820 100644
  	sport->port.line = ret;
  	sport->lpuart32 = of_device_is_compatible(np, "fsl,ls1021a-lpuart");
  
-@@ -1983,6 +2010,7 @@ static int lpuart_remove(struct platform_device *pdev)
+@@ -1983,6 +2010,7 @@ static int lpuart_remove(struct platform
  	struct lpuart_port *sport = platform_get_drvdata(pdev);
  
  	uart_remove_one_port(&lpuart_reg, &sport->port);
@@ -143,7 +141,7 @@ index 76103f2c..61453820 100644
  
  	clk_disable_unprepare(sport->clk);
  
-@@ -2067,12 +2095,10 @@ static int lpuart_resume(struct device *dev)
+@@ -2067,12 +2095,10 @@ static int lpuart_resume(struct device *
  
  	if (sport->lpuart_dma_rx_use) {
  		if (sport->port.irq_wake) {
@@ -158,6 +156,3 @@ index 76103f2c..61453820 100644
  		}
  	}
  
--- 
-2.14.1
-

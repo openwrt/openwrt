@@ -16,20 +16,16 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  kernel/irq/msi.c                 |  4 ++--
  5 files changed, 79 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-index e4dbfc85..53d2cd54 100644
 --- a/drivers/irqchip/Makefile
 +++ b/drivers/irqchip/Makefile
-@@ -74,3 +74,4 @@ obj-$(CONFIG_LS_SCFG_MSI)		+= irq-ls-scfg-msi.o
+@@ -74,3 +74,4 @@ obj-$(CONFIG_LS_SCFG_MSI)		+= irq-ls-scf
  obj-$(CONFIG_EZNPS_GIC)			+= irq-eznps.o
  obj-$(CONFIG_ARCH_ASPEED)		+= irq-aspeed-vic.o
  obj-$(CONFIG_STM32_EXTI) 		+= irq-stm32-exti.o
 +obj-$(CONFIG_QUICC_ENGINE)		+= irq-qeic.o
-diff --git a/drivers/irqchip/irq-gic-v3-its.c b/drivers/irqchip/irq-gic-v3-its.c
-index acb9d250..2f1c8826 100644
 --- a/drivers/irqchip/irq-gic-v3-its.c
 +++ b/drivers/irqchip/irq-gic-v3-its.c
-@@ -1659,6 +1659,7 @@ static int its_init_domain(struct fwnode_handle *handle, struct its_node *its)
+@@ -1659,6 +1659,7 @@ static int its_init_domain(struct fwnode
  
  	inner_domain->parent = its_parent;
  	inner_domain->bus_token = DOMAIN_BUS_NEXUS;
@@ -37,8 +33,6 @@ index acb9d250..2f1c8826 100644
  	info->ops = &its_msi_domain_ops;
  	info->data = its;
  	inner_domain->host_data = info;
-diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
-index ffb84604..188eced6 100644
 --- a/include/linux/irqdomain.h
 +++ b/include/linux/irqdomain.h
 @@ -183,6 +183,12 @@ enum {
@@ -54,7 +48,7 @@ index ffb84604..188eced6 100644
  	/*
  	 * Flags starting from IRQ_DOMAIN_FLAG_NONCORE are reserved
  	 * for implementation specific purposes and ignored by the
-@@ -216,6 +222,7 @@ struct irq_domain *irq_domain_add_legacy(struct device_node *of_node,
+@@ -216,6 +222,7 @@ struct irq_domain *irq_domain_add_legacy
  					 void *host_data);
  extern struct irq_domain *irq_find_matching_fwspec(struct irq_fwspec *fwspec,
  						   enum irq_domain_bus_token bus_token);
@@ -62,7 +56,7 @@ index ffb84604..188eced6 100644
  extern void irq_set_default_host(struct irq_domain *host);
  extern int irq_domain_alloc_descs(int virq, unsigned int nr_irqs,
  				  irq_hw_number_t hwirq, int node,
-@@ -446,6 +453,19 @@ static inline bool irq_domain_is_ipi_single(struct irq_domain *domain)
+@@ -446,6 +453,19 @@ static inline bool irq_domain_is_ipi_sin
  {
  	return domain->flags & IRQ_DOMAIN_FLAG_IPI_SINGLE;
  }
@@ -82,7 +76,7 @@ index ffb84604..188eced6 100644
  #else	/* CONFIG_IRQ_DOMAIN_HIERARCHY */
  static inline void irq_domain_activate_irq(struct irq_data *data) { }
  static inline void irq_domain_deactivate_irq(struct irq_data *data) { }
-@@ -477,6 +497,22 @@ static inline bool irq_domain_is_ipi_single(struct irq_domain *domain)
+@@ -477,6 +497,22 @@ static inline bool irq_domain_is_ipi_sin
  {
  	return false;
  }
@@ -105,15 +99,12 @@ index ffb84604..188eced6 100644
  #endif	/* CONFIG_IRQ_DOMAIN_HIERARCHY */
  
  #else /* CONFIG_IRQ_DOMAIN */
-diff --git a/kernel/irq/irqdomain.c b/kernel/irq/irqdomain.c
-index b59e6768..31805f23 100644
 --- a/kernel/irq/irqdomain.c
 +++ b/kernel/irq/irqdomain.c
-@@ -277,6 +277,31 @@ struct irq_domain *irq_find_matching_fwspec(struct irq_fwspec *fwspec,
- }
+@@ -278,6 +278,31 @@ struct irq_domain *irq_find_matching_fws
  EXPORT_SYMBOL_GPL(irq_find_matching_fwspec);
  
-+/**
+ /**
 + * irq_domain_check_msi_remap - Check whether all MSI irq domains implement
 + * IRQ remapping
 + *
@@ -138,10 +129,11 @@ index b59e6768..31805f23 100644
 +}
 +EXPORT_SYMBOL_GPL(irq_domain_check_msi_remap);
 +
- /**
++/**
   * irq_set_default_host() - Set a "default" irq domain
   * @domain: default domain pointer
-@@ -1408,6 +1433,20 @@ static void irq_domain_check_hierarchy(struct irq_domain *domain)
+  *
+@@ -1408,6 +1433,20 @@ static void irq_domain_check_hierarchy(s
  	if (domain->ops->alloc)
  		domain->flags |= IRQ_DOMAIN_FLAG_HIERARCHY;
  }
@@ -162,11 +154,9 @@ index b59e6768..31805f23 100644
  #else	/* CONFIG_IRQ_DOMAIN_HIERARCHY */
  /**
   * irq_domain_get_irq_data - Get irq_data associated with @virq and @domain
-diff --git a/kernel/irq/msi.c b/kernel/irq/msi.c
-index 8a3e8727..2e2b2c45 100644
 --- a/kernel/irq/msi.c
 +++ b/kernel/irq/msi.c
-@@ -272,8 +272,8 @@ struct irq_domain *msi_create_irq_domain(struct fwnode_handle *fwnode,
+@@ -272,8 +272,8 @@ struct irq_domain *msi_create_irq_domain
  	if (info->flags & MSI_FLAG_USE_DEF_CHIP_OPS)
  		msi_domain_update_chip_ops(info);
  
@@ -177,6 +167,3 @@ index 8a3e8727..2e2b2c45 100644
  }
  
  int msi_domain_prepare_irqs(struct irq_domain *domain, struct device *dev,
--- 
-2.14.1
-

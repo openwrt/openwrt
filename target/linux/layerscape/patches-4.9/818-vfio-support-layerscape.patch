@@ -27,8 +27,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  create mode 100644 drivers/vfio/fsl-mc/vfio_fsl_mc_intr.c
  create mode 100644 drivers/vfio/fsl-mc/vfio_fsl_mc_private.h
 
-diff --git a/drivers/vfio/Kconfig b/drivers/vfio/Kconfig
-index da6e2ce7..8a8a33e0 100644
 --- a/drivers/vfio/Kconfig
 +++ b/drivers/vfio/Kconfig
 @@ -48,4 +48,5 @@ menuconfig VFIO_NOIOMMU
@@ -37,18 +35,13 @@ index da6e2ce7..8a8a33e0 100644
  source "drivers/vfio/platform/Kconfig"
 +source "drivers/vfio/fsl-mc/Kconfig"
  source "virt/lib/Kconfig"
-diff --git a/drivers/vfio/Makefile b/drivers/vfio/Makefile
-index 7b8a31f6..560f0c67 100644
 --- a/drivers/vfio/Makefile
 +++ b/drivers/vfio/Makefile
-@@ -7,3 +7,4 @@ obj-$(CONFIG_VFIO_IOMMU_SPAPR_TCE) += vfio_iommu_spapr_tce.o
+@@ -7,3 +7,4 @@ obj-$(CONFIG_VFIO_IOMMU_SPAPR_TCE) += vf
  obj-$(CONFIG_VFIO_SPAPR_EEH) += vfio_spapr_eeh.o
  obj-$(CONFIG_VFIO_PCI) += pci/
  obj-$(CONFIG_VFIO_PLATFORM) += platform/
 +obj-$(CONFIG_VFIO_FSL_MC) += fsl-mc/
-diff --git a/drivers/vfio/fsl-mc/Kconfig b/drivers/vfio/fsl-mc/Kconfig
-new file mode 100644
-index 00000000..b1a527d6
 --- /dev/null
 +++ b/drivers/vfio/fsl-mc/Kconfig
 @@ -0,0 +1,9 @@
@@ -61,17 +54,11 @@ index 00000000..b1a527d6
 +	  fsl-mc bus devices using the VFIO framework.
 +
 +	  If you don't know what to do here, say N.
-diff --git a/drivers/vfio/fsl-mc/Makefile b/drivers/vfio/fsl-mc/Makefile
-new file mode 100644
-index 00000000..2aca75af
 --- /dev/null
 +++ b/drivers/vfio/fsl-mc/Makefile
 @@ -0,0 +1,2 @@
 +vfio-fsl_mc-y := vfio_fsl_mc.o
 +obj-$(CONFIG_VFIO_FSL_MC) += vfio_fsl_mc.o vfio_fsl_mc_intr.o
-diff --git a/drivers/vfio/fsl-mc/vfio_fsl_mc.c b/drivers/vfio/fsl-mc/vfio_fsl_mc.c
-new file mode 100644
-index 00000000..9dc32d27
 --- /dev/null
 +++ b/drivers/vfio/fsl-mc/vfio_fsl_mc.c
 @@ -0,0 +1,753 @@
@@ -828,9 +815,6 @@ index 00000000..9dc32d27
 +MODULE_LICENSE("GPL v2");
 +MODULE_AUTHOR(DRIVER_AUTHOR);
 +MODULE_DESCRIPTION(DRIVER_DESC);
-diff --git a/drivers/vfio/fsl-mc/vfio_fsl_mc_intr.c b/drivers/vfio/fsl-mc/vfio_fsl_mc_intr.c
-new file mode 100644
-index 00000000..eb244bb0
 --- /dev/null
 +++ b/drivers/vfio/fsl-mc/vfio_fsl_mc_intr.c
 @@ -0,0 +1,199 @@
@@ -1033,9 +1017,6 @@ index 00000000..eb244bb0
 +
 +	return ret;
 +}
-diff --git a/drivers/vfio/fsl-mc/vfio_fsl_mc_private.h b/drivers/vfio/fsl-mc/vfio_fsl_mc_private.h
-new file mode 100644
-index 00000000..34e75754
 --- /dev/null
 +++ b/drivers/vfio/fsl-mc/vfio_fsl_mc_private.h
 @@ -0,0 +1,55 @@
@@ -1094,8 +1075,6 @@ index 00000000..34e75754
 +			       unsigned int start, unsigned int count,
 +			       void *data);
 +#endif /* VFIO_PCI_PRIVATE_H */
-diff --git a/drivers/vfio/vfio_iommu_type1.c b/drivers/vfio/vfio_iommu_type1.c
-index 1d48e62f..f0a39331 100644
 --- a/drivers/vfio/vfio_iommu_type1.c
 +++ b/drivers/vfio/vfio_iommu_type1.c
 @@ -36,6 +36,8 @@
@@ -1107,7 +1086,7 @@ index 1d48e62f..f0a39331 100644
  
  #define DRIVER_VERSION  "0.2"
  #define DRIVER_AUTHOR   "Alex Williamson <alex.williamson@redhat.com>"
-@@ -720,6 +722,27 @@ static void vfio_test_domain_fgsp(struct vfio_domain *domain)
+@@ -720,6 +722,27 @@ static void vfio_test_domain_fgsp(struct
  	__free_pages(pages, order);
  }
  
@@ -1135,7 +1114,7 @@ index 1d48e62f..f0a39331 100644
  static int vfio_iommu_type1_attach_group(void *iommu_data,
  					 struct iommu_group *iommu_group)
  {
-@@ -728,6 +751,8 @@ static int vfio_iommu_type1_attach_group(void *iommu_data,
+@@ -728,6 +751,8 @@ static int vfio_iommu_type1_attach_group
  	struct vfio_domain *domain, *d;
  	struct bus_type *bus = NULL;
  	int ret;
@@ -1144,7 +1123,7 @@ index 1d48e62f..f0a39331 100644
  
  	mutex_lock(&iommu->lock);
  
-@@ -774,11 +799,15 @@ static int vfio_iommu_type1_attach_group(void *iommu_data,
+@@ -774,11 +799,15 @@ static int vfio_iommu_type1_attach_group
  	if (ret)
  		goto out_domain;
  
@@ -1162,7 +1141,7 @@ index 1d48e62f..f0a39331 100644
  		pr_warn("%s: No interrupt remapping support.  Use the module param \"allow_unsafe_interrupts\" to enable VFIO IOMMU support on this platform\n",
  		       __func__);
  		ret = -EPERM;
-@@ -820,6 +849,12 @@ static int vfio_iommu_type1_attach_group(void *iommu_data,
+@@ -820,6 +849,12 @@ static int vfio_iommu_type1_attach_group
  	if (ret)
  		goto out_detach;
  
@@ -1175,8 +1154,6 @@ index 1d48e62f..f0a39331 100644
  	list_add(&domain->next, &iommu->domain_list);
  
  	mutex_unlock(&iommu->lock);
-diff --git a/include/uapi/linux/vfio.h b/include/uapi/linux/vfio.h
-index 255a2113..1bbaa13d 100644
 --- a/include/uapi/linux/vfio.h
 +++ b/include/uapi/linux/vfio.h
 @@ -198,6 +198,7 @@ struct vfio_device_info {
@@ -1187,6 +1164,3 @@ index 255a2113..1bbaa13d 100644
  	__u32	num_regions;	/* Max region index + 1 */
  	__u32	num_irqs;	/* Max IRQ index + 1 */
  };
--- 
-2.14.1
-
