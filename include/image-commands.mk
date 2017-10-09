@@ -249,7 +249,8 @@ endef
 
 define Build/tplink-v2-header
 	$(STAGING_DIR_HOST)/bin/mktplinkfw2 \
-		-c -H $(TPLINK_HWID) -W $(TPLINK_HWREV) \
+		-c -H $(TPLINK_HWID) -W $(TPLINK_HWREV) -L $(KERNEL_LOADADDR) \
+		-E $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR))  \
 		-w $(TPLINK_HWREVADD) -F "$(TPLINK_FLASHLAYOUT)" \
 		-T $(TPLINK_HVERSION) -V "ver. 2.0" \
 		-k $@ -o $@.new $(1)
