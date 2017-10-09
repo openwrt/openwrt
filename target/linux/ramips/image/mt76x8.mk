@@ -91,6 +91,7 @@ define Device/tl-wr840n-v4
   TPLINK_HWREVADD := 0x4
   TPLINK_HVERSION := 3
   KERNEL := $(KERNEL_DTB)
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | tplink-v2-header -e
   IMAGES += tftp-recovery.bin
   IMAGE/factory.bin := tplink-v2-image -e
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
