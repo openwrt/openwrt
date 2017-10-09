@@ -199,7 +199,7 @@ ls /lib/modules/$(uname -r)/ltq_atm* 1> /dev/null 2>&1 && \
 	ucidef_add_atm_bridge "$vpi" "$vci" "$encaps" "$payload"
 
 if lantiq_is_vdsl_system; then
-	interface_wan="ptm0"
+	interface_wan="dsl0"
 	ucidef_add_vdsl_modem "$annex" "$tone" "$xfer_mode"
 else
 	interface_wan="nas0"
