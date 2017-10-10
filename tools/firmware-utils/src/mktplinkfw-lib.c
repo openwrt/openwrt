@@ -121,7 +121,7 @@ static int pad_jffs2(char *buf, int currlen, int maxlen)
 	uint32_t pad_mask;
 
 	len = currlen;
-	pad_mask = (64 * 1024);
+	pad_mask = (4 * 1024) | (64 * 1024);	/* EOF at 4KB and at 64KB */
 	while ((len < maxlen) && (pad_mask != 0)) {
 		uint32_t mask;
 		int i;
