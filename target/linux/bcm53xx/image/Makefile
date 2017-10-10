@@ -307,6 +307,8 @@ define Device/smartrg-sr400ac
   DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
   IMAGES := trx
   IMAGE/trx := append-rootfs | trx-serial
+  KERNEL_INITRAMFS_SUFFIX := .bin
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma-d16
 endef
 TARGET_DEVICES += smartrg-sr400ac
 
