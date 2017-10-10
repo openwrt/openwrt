@@ -87,6 +87,7 @@ define Device/ls1012ardb
 endef
 TARGET_DEVICES += ls1012ardb
 
+ifeq ($(SUBTARGET),armv8_64b)
 define Device/ls1088ardb
   DEVICE_TITLE := ls1088ardb-$(SUBTARGET)
   DEVICE_PACKAGES += rcw-layerscape-ls1088ardb uboot-layerscape-$(SUBTARGET)-ls1088ardb mc-binary-ls1088ardb
@@ -106,5 +107,6 @@ define Device/ls2088ardb
 			append-rootfs | pad-rootfs | check-size 51380225
 endef
 TARGET_DEVICES += ls2088ardb
+endif
 
 $(eval $(call BuildImage))
