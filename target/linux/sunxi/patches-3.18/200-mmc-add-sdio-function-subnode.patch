@@ -108,7 +108,7 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  #include "sdio_cis.h"
  #include "sdio_bus.h"
  
-@@ -303,6 +305,13 @@ static void sdio_acpi_set_handle(struct
+@@ -313,6 +315,13 @@ static void sdio_acpi_set_handle(struct
  static inline void sdio_acpi_set_handle(struct sdio_func *func) {}
  #endif
  
@@ -122,7 +122,7 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  /*
   * Register a new SDIO function with the driver model.
   */
-@@ -312,6 +321,7 @@ int sdio_add_func(struct sdio_func *func
+@@ -322,6 +331,7 @@ int sdio_add_func(struct sdio_func *func
  
  	dev_set_name(&func->dev, "%s:%d", mmc_card_id(func->card), func->num);
  
@@ -130,7 +130,7 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  	sdio_acpi_set_handle(func);
  	ret = device_add(&func->dev);
  	if (ret == 0) {
-@@ -335,6 +345,7 @@ void sdio_remove_func(struct sdio_func *
+@@ -345,6 +355,7 @@ void sdio_remove_func(struct sdio_func *
  
  	dev_pm_domain_detach(&func->dev, false);
  	device_del(&func->dev);
