@@ -52,7 +52,7 @@ gcc/Changelog:
  #if (TARGET_DEFAULT & MASK_LITTLE_ENDIAN)
 --- a/gcc/config/rs6000/secureplt.h
 +++ b/gcc/config/rs6000/secureplt.h
-@@ -18,3 +18,4 @@ along with GCC; see the file COPYING3.
+@@ -18,3 +18,4 @@ along with GCC; see the file COPYING3.  
  <http://www.gnu.org/licenses/>.  */
  
  #define CC1_SECURE_PLT_DEFAULT_SPEC "-msecure-plt"
@@ -196,7 +196,7 @@ gcc/Changelog:
 +#define MUSL_DYNAMIC_LINKER_E ENDIAN_SELECT("","le","le")
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -2416,6 +2416,10 @@ powerpc*-*-linux*)
+@@ -2430,6 +2430,10 @@ powerpc*-*-linux*)
  	    powerpc*-*-linux*paired*)
  		tm_file="${tm_file} rs6000/750cl.h" ;;
  	esac

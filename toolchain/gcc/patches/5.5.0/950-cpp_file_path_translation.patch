@@ -64,7 +64,7 @@ Forward ported from attachment to https://gcc.gnu.org/bugzilla/show_bug.cgi?id=4
  
  @item Machine Dependent Options
  @xref{Submodel Options,,Hardware Models and Configurations}.
-@@ -11479,6 +11479,12 @@ be searched for header files only for th
+@@ -11485,6 +11485,12 @@ be searched for header files only for th
  "@var{file}"}; they are not searched for @code{#include <@var{file}>},
  otherwise just like @option{-I}.
  
@@ -79,7 +79,7 @@ Forward ported from attachment to https://gcc.gnu.org/bugzilla/show_bug.cgi?id=4
  Add directory @var{dir} to the list of directories to be searched
 --- a/libcpp/include/cpplib.h
 +++ b/libcpp/include/cpplib.h
-@@ -751,6 +751,9 @@ extern void cpp_set_lang (cpp_reader *,
+@@ -751,6 +751,9 @@ extern void cpp_set_lang (cpp_reader *, 
  /* Set the include paths.  */
  extern void cpp_set_include_chains (cpp_reader *, cpp_dir *, cpp_dir *, int);
  

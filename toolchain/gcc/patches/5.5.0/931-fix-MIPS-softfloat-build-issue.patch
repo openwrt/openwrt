@@ -11,11 +11,9 @@ Signed-off-by: BangLang Huang <banglang.huang@foxmail.com>
  libffi/src/mips/o32.S | 17 +++++++++++++++++
  2 files changed, 34 insertions(+)
 
-diff --git a/libffi/src/mips/n32.S b/libffi/src/mips/n32.S
-index c6985d3..8f25994 100644
 --- a/libffi/src/mips/n32.S
 +++ b/libffi/src/mips/n32.S
-@@ -107,6 +107,16 @@ loadregs:
+@@ -107,6 +107,16 @@ loadregs:	
  
  	REG_L	t6, 3*FFI_SIZEOF_ARG($fp)  # load the flags word into t6.
  
@@ -32,7 +30,7 @@ index c6985d3..8f25994 100644
  	and	t4, t6, ((1<<FFI_FLAG_BITS)-1)
  	REG_L	a0, 0*FFI_SIZEOF_ARG(t9)
  	beqz	t4, arg1_next
-@@ -193,6 +203,7 @@ arg7_next:
+@@ -193,6 +203,7 @@ arg7_next:	
  arg8_doublep:	
   	l.d	$f19, 7*FFI_SIZEOF_ARG(t9)	
  arg8_next:	
@@ -48,7 +46,7 @@ index c6985d3..8f25994 100644
  	bne     t6, FFI_TYPE_FLOAT, retdouble
  	jal	t9
  	REG_L	t4, 4*FFI_SIZEOF_ARG($fp)
-@@ -272,6 +284,7 @@ retstruct_f_d:
+@@ -272,6 +284,7 @@ retstruct_f_d:	
  	s.s	$f0, 0(t4)
  	s.d	$f2, 8(t4)
  	b	epilogue
@@ -80,7 +78,7 @@ index c6985d3..8f25994 100644
  	bne     v0, FFI_TYPE_FLOAT, cls_retdouble
  	l.s	$f0, V0_OFF2($sp)
  	b	cls_epilogue
-@@ -500,6 +516,7 @@ cls_retstruct_f_d:
+@@ -500,6 +516,7 @@ cls_retstruct_f_d:	
  	l.s	$f0, V0_OFF2($sp)
  	l.d	$f2, V1_OFF2($sp)
  	b	cls_epilogue
@@ -88,8 +86,6 @@ index c6985d3..8f25994 100644
  	
  cls_retstruct_small2:	
  	REG_L	v0, V0_OFF2($sp)
-diff --git a/libffi/src/mips/o32.S b/libffi/src/mips/o32.S
-index eb27981..1aff4b1 100644
 --- a/libffi/src/mips/o32.S
 +++ b/libffi/src/mips/o32.S
 @@ -82,13 +82,16 @@ sixteen:
@@ -109,7 +105,7 @@ index eb27981..1aff4b1 100644
  pass_d:
  	bne	t0, FFI_ARGS_D, pass_f
  	l.d	$f12, 0*FFI_SIZEOF_ARG($sp)	# load $fp regs from args
-@@ -130,6 +133,7 @@ pass_f_d:
+@@ -130,6 +133,7 @@ pass_f_d:		
   #	bne	t0, FFI_ARGS_F_D, call_it
  	l.s	$f12, 0*FFI_SIZEOF_ARG($sp)	# load $fp regs from args
  	l.d	$f14, 2*FFI_SIZEOF_ARG($sp)	# passing double and float
@@ -169,6 +165,3 @@ index eb27981..1aff4b1 100644
  1:	
  	REG_L	$3, V1_OFF2($fp)
  	REG_L	$2, V0_OFF2($fp)
--- 
-2.7.4
-
