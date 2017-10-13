@@ -6,11 +6,11 @@ include $(INCLUDE_DIR)/image.mk
 UBIFS_OPTS = -m 2048 -e 124KiB -c 4096 -U -F
 
 define Image/Prepare
-	$(CP) $(LINUX_DIR)/vmlinux $(KDIR)/$(IMG_PREFIX)-vmlinux.elf
+	$(CP) $(LINUX_DIR)/vmlinux $(KDIR)/vmlinux-unstripped.elf
 endef
 
 define Image/BuildKernel
-	$(CP) $(KDIR)/$(IMG_PREFIX)-vmlinux.elf $(BIN_DIR)
+	$(CP) $(KDIR)/vmlinux-unstripped.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf
 endef
 
 define Image/Build/squashfs
