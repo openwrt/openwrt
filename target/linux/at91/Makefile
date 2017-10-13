@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=at91
 MAINTAINER:=Claudio Mignanti <c.mignanti@gmail.com>
 BOARDNAME:=Microchip (Atmel AT91)
-FEATURES:=squashfs targz ext2 usb usbgadget ubifs
+FEATURES:=ext4 squashfs targz usb usbgadget ubifs
 SUBTARGETS:=sama5 legacy
 
 KERNEL_PATCHVER:=4.4
