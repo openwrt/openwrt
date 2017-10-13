@@ -23,51 +23,53 @@ endef
 define U-Boot/at91sam9m10g45ek_nandflash
   NAME:=AT91SAM9M10G45-EK board (NandFlash)
   BUILD_SUBTARGET:=legacy
+  BUILD_DEVICES:=at91sam9m10g45ek
 endef
 
 define U-Boot/at91sam9x5ek_nandflash
   NAME:=AT91SAM9X5-EK board (NandFlash)
   BUILD_SUBTARGET:=legacy
+  BUILD_DEVICES:=at91sam9g15ek at91sam9g25ek at91sam9g35ek at91sam9x25ek at91sam9x35ek
 endef
 
-define uboot/sama5d3_xplained_nandflash
-  TITLE:=U-Boot for the SAMA5D3 Xplained board (NandFlash)
+define U-Boot/sama5d3_xplained_nandflash
+  NAME:=SAMA5D3 Xplained board (NandFlash)
   BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d3_xplained
 endef
 
-define uboot/sama5d3_xplained_mmc
-  TITLE:=U-Boot for the SAMA5D3 Xplained board (SDcard)
+define U-Boot/sama5d3_xplained_mmc
+  NAME:=SAMA5D3 Xplained board (SDcard)
   BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d3_xplained
 endef
 
-define uboot/sama5d2_xplained_spiflash
-  TITLE:=U-Boot for the SAMA5D2 Xplained board (SPI Flash)
+define U-Boot/sama5d2_xplained_spiflash
+  NAME:=SAMA5D2 Xplained board (SPI Flash)
   BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
-define uboot/sama5d2_xplained_mmc
-  TITLE:=U-Boot for the SAMA5D2 Xplained board (SDcard/EMMC)
+define U-Boot/sama5d2_xplained_mmc
+  NAME:=SAMA5D2 Xplained board (SDcard/EMMC)
   BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
-define uboot/sama5d4_xplained_spiflash
-  TITLE:=U-Boot for the SAMA5D4 Xplained board (SPI Flash)
+define U-Boot/sama5d4_xplained_spiflash
+  NAME:=SAMA5D4 Xplained board (SPI Flash)
   BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
 
-define uboot/sama5d4_xplained_mmc
-  TITLE:=U-Boot for the SAMA5D4 Xplained board (SDcard)
+define U-Boot/sama5d4_xplained_mmc
+  NAME:=SAMA5D4 Xplained board (SDcard)
   BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
 
-define uboot/sama5d4_xplained_nandflash
-  TITLE:=U-Boot for the SAMA5D4 Xplained board (NandFlash)
+define U-Boot/sama5d4_xplained_nandflash
+  NAME:=SAMA5D4 Xplained board (NandFlash)
   BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
@@ -75,13 +77,13 @@ endef
 UBOOT_TARGETS := \
 	at91sam9m10g45ek_nandflash \
 	at91sam9x5ek_nandflash \
-    sama5d3_xplained_nandflash \
-    sama5d3_xplained_mmc \
-    sama5d2_xplained_mmc \
-    sama5d2_xplained_spiflash \
-    sama5d4_xplained_mmc \
-    sama5d4_xplained_spiflash \
-    sama5d4_xplained_nandflash
+	sama5d3_xplained_nandflash \
+	sama5d3_xplained_mmc \
+	sama5d2_xplained_mmc \
+	sama5d2_xplained_spiflash \
+	sama5d4_xplained_mmc \
+	sama5d4_xplained_spiflash \
+	sama5d4_xplained_nandflash
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
