@@ -3023,7 +3023,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
        k=0;
        for(j=0;j<4;j++)
        {
-@@ -1620,26 +1640,16 @@ int tn7sar_proc_sar_stat(char* buf, char
+@@ -1620,26 +1640,18 @@ int tn7sar_proc_sar_stat(char* buf, char
          {
            if((char *)*pSarStat == NULL)
              break;
@@ -3034,7 +3034,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -            k += dBytes;
 -          }
 +
-+          k += seq_printf(m, "%s: ",(char *) *pSarStat);
++          seq_printf(m, "%s: ",(char *) *pSarStat);
++          k += strlen((char *) *pSarStat) + strlen(": ");
            pSarStat++;
 -          if(len<=limit)
 -          {
@@ -3042,7 +3043,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -            len += dBytes;
 -            k += dBytes;
 -          }
-+          k += seq_printf(m, "%s;  \n",(char *) *pSarStat);
++          seq_printf(m, "%s;  \n",(char *) *pSarStat);
++          k += strlen((char *) *pSarStat) + strlen(";  \n");
            pSarStat++;
  
            if(k > 60)
@@ -3054,7 +3056,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
            }
          }
  
-@@ -1648,9 +1658,22 @@ int tn7sar_proc_sar_stat(char* buf, char
+@@ -1648,9 +1660,22 @@ int tn7sar_proc_sar_stat(char* buf, char
      }
    }
  

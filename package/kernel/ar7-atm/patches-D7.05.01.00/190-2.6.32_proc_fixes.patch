@@ -9,12 +9,43 @@
  #define MAX_STR_SIZE     256
  #define DSL_MOD_SIZE     256
  
+@@ -350,8 +350,8 @@ static void tn7dsl_chng_modulation(void*
+ static unsigned int tn7dsl_set_modulation(void* data, int flag);
+ static void tn7dsl_ctrl_fineGain(int value);
+ static void tn7dsl_set_fineGainValue(int value);
+-static int dslmod_sysctl (ctl_table * ctl, int write, struct file *filp,
+-                          void *buffer, size_t * lenp);
++static int dslmod_sysctl (ctl_table * ctl, int write, void *buffer,
++                          size_t * lenp, loff_t *ppos);
+ static void tn7dsl_register_dslss_led(void);
+ void tn7dsl_dslmod_sysctl_register(void);
+ void tn7dsl_dslmod_sysctl_unregister(void);
+@@ -3582,8 +3582,8 @@ unsigned int tn7dsl_get_memory(unsigned
+ 
+ 
+ 
+-static int dslmod_sysctl(ctl_table *ctl, int write, struct file * filp,
+-      void *buffer, size_t *lenp)
++static int dslmod_sysctl(ctl_table *ctl, int write, void *buffer,
++      size_t *lenp, loff_t *ppos)
+ {
+   char *ptr;
+   int ret, len = 0;
+@@ -3595,7 +3595,7 @@ static int dslmod_sysctl(ctl_table *ctl,
+   char mod_req[16] = { '\t' };
+   char fst_byt;
+ 
+-  if (!*lenp || (filp->f_pos && !write))
++  if (!*lenp || (*ppos && !write))
+   {
+     *lenp = 0;
+     return 0;
 @@ -3605,9 +3605,9 @@ static int dslmod_sysctl(ctl_table *ctl,
     */
    if(write)
      {
 -    ret = proc_dostring(ctl, write, filp, buffer, lenp, 0);
-+    ret = proc_dostring(ctl, write, buffer, lenp, 0);
++    ret = proc_dostring(ctl, write, buffer, lenp, ppos);
  
 -    switch (ctl->ctl_name)
 +    switch ((long)ctl->extra2)
@@ -26,7 +57,7 @@
      {
      len += sprintf(info+len, mod_req);
 -    ret = proc_dostring(ctl, write, filp, buffer, lenp, 0);
-+    ret = proc_dostring(ctl, write, buffer, lenp, 0);
++    ret = proc_dostring(ctl, write, buffer, lenp, ppos);
      }
    return ret;
  }

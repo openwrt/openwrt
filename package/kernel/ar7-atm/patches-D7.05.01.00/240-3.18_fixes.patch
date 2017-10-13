@@ -4,18 +4,18 @@
  static unsigned int tn7dsl_set_modulation(void* data, int flag);
  static void tn7dsl_ctrl_fineGain(int value);
  static void tn7dsl_set_fineGainValue(int value);
--static int dslmod_sysctl (ctl_table * ctl, int write, struct file *filp,
-+static int dslmod_sysctl (struct ctl_table * ctl, int write, struct file *filp,
-                           void *buffer, size_t * lenp);
+-static int dslmod_sysctl (ctl_table * ctl, int write, void *buffer,
++static int dslmod_sysctl (struct ctl_table * ctl, int write, void *buffer,
+                           size_t * lenp, loff_t *ppos);
  static void tn7dsl_register_dslss_led(void);
  void tn7dsl_dslmod_sysctl_register(void);
 @@ -3488,7 +3488,7 @@ unsigned int tn7dsl_get_memory(unsigned
  
  
  
--static int dslmod_sysctl(ctl_table *ctl, int write, struct file * filp,
-+static int dslmod_sysctl(struct ctl_table *ctl, int write, struct file * filp,
-       void *buffer, size_t *lenp)
+-static int dslmod_sysctl(ctl_table *ctl, int write, void *buffer,
++static int dslmod_sysctl(struct ctl_table *ctl, int write, void *buffer,
+       size_t *lenp, loff_t *ppos)
  {
    char *ptr;
 @@ -3603,7 +3603,7 @@ static int dslmod_sysctl(ctl_table *ctl,
