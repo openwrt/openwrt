@@ -40,8 +40,6 @@ migrate_led_xdsl_ifname()
 	rename_xdsl_ifname system "$1" dev
 }
 
-lantiq_is_vdsl_system || exit 0
-
 config_load network
 config_foreach migrate_network_xdsl_ifname
 

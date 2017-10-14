@@ -20,15 +20,12 @@ led_usb2="$(lantiq_get_dt_led usb2)"
 
 led_dsl="$(lantiq_get_dt_led dsl)"
 [ -n "$led_dsl" ] && {
-	interface="nas0"
-	lantiq_is_vdsl_system && interface="dsl0"
-
 	led_internet="$(lantiq_get_dt_led internet)"
 	if [ -n "$led_internet" ]; then
 		ucidef_set_led_default "dsl" "dsl" "$led_dsl" "0"
 		ucidef_set_led_netdev "internet" "internet" "$led_internet" "pppoe-wan"
 	else
-		ucidef_set_led_netdev "dsl" "dsl" "$led_dsl" "$interface"
+		ucidef_set_led_netdev "dsl" "dsl" "$led_dsl" "dsl0"
 	fi
 }
 
