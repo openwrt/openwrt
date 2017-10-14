@@ -9,8 +9,6 @@ This reverts commit 7452946e7f3742b3ff1cb4a50603e7492aceea88.
  scripts/Makefile.lib | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
-index 80ddb08474..66f8dcbe07 100644
 --- a/scripts/Makefile.lib
 +++ b/scripts/Makefile.lib
 @@ -306,10 +306,10 @@ $(obj)/%.dtb.S: $(obj)/%.dtb
@@ -26,6 +24,3 @@ index 80ddb08474..66f8dcbe07 100644
  		$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) - ; \
  	$(DTC) -O dtb -o $@ -b 0 \
  		-i $(dir $<) $(DTC_FLAGS) \
--- 
-2.11.0
-

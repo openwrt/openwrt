@@ -8,8 +8,6 @@ This reverts commit 208db781cad4c24f538658a9cb17e24fa43ca3c9.
  scripts/Makefile.lib | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
-index 66f8dcbe07..54bcb166b0 100644
 --- a/scripts/Makefile.lib
 +++ b/scripts/Makefile.lib
 @@ -309,7 +309,7 @@ quiet_cmd_dtc = DTC     $@
@@ -21,6 +19,3 @@ index 66f8dcbe07..54bcb166b0 100644
  		$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) - ; \
  	$(DTC) -O dtb -o $@ -b 0 \
  		-i $(dir $<) $(DTC_FLAGS) \
--- 
-2.11.0
-

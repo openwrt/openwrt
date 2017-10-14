@@ -11,8 +11,6 @@ This reverts commit 61b994a386eb6f631dc1c2194d4cce9b1a43542c.
  3 files changed, 6 insertions(+), 18 deletions(-)
  delete mode 100644 arch/arm/dts/sunxi-u-boot.dtsi
 
-diff --git a/Makefile b/Makefile
-index 071efa8926..5349621baf 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -1125,8 +1125,10 @@ u-boot-x86-16bit.bin: u-boot FORCE
@@ -28,9 +26,6 @@ index 071efa8926..5349621baf 100644
  endif
  
  ifneq ($(CONFIG_TEGRA),)
-diff --git a/arch/arm/dts/sunxi-u-boot.dtsi b/arch/arm/dts/sunxi-u-boot.dtsi
-deleted file mode 100644
-index 5adfd9bca2..0000000000
 --- a/arch/arm/dts/sunxi-u-boot.dtsi
 +++ /dev/null
 @@ -1,14 +0,0 @@
@@ -48,8 +43,6 @@ index 5adfd9bca2..0000000000
 -		};
 -	};
 -};
-diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
-index 54bcb166b0..6246265c91 100644
 --- a/scripts/Makefile.lib
 +++ b/scripts/Makefile.lib
 @@ -308,8 +308,8 @@ quiet_cmd_dtc = DTC     $@
@@ -63,6 +56,3 @@ index 54bcb166b0..6246265c91 100644
  		$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) - ; \
  	$(DTC) -O dtb -o $@ -b 0 \
  		-i $(dir $<) $(DTC_FLAGS) \
--- 
-2.11.0
-

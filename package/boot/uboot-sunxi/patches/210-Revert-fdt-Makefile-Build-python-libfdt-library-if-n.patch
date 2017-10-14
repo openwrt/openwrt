@@ -10,8 +10,6 @@ This reverts commit e38ffc42674fedc750ca895046be0bd983b56dd5.
  scripts/Makefile.spl | 17 ++++-------------
  2 files changed, 6 insertions(+), 28 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 119ad49eec..071efa8926 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -1116,7 +1116,7 @@ cmd_ldr = $(LD) $(LDFLAGS_$(@F)) \
@@ -33,7 +31,7 @@ index 119ad49eec..071efa8926 100644
  	$(call if_changed,binman)
  endif
  
-@@ -1355,18 +1354,6 @@ $(version_h): include/config/uboot.release FORCE
+@@ -1355,18 +1354,6 @@ $(version_h): include/config/uboot.relea
  $(timestamp_h): $(srctree)/Makefile FORCE
  	$(call filechk,timestamp.h)
  
@@ -52,8 +50,6 @@ index 119ad49eec..071efa8926 100644
  # ---------------------------------------------------------------------------
  quiet_cmd_cpp_lds = LDS     $@
  cmd_cpp_lds = $(CPP) -Wp,-MD,$(depfile) $(cpp_flags) $(LDPPFLAGS) \
-diff --git a/scripts/Makefile.spl b/scripts/Makefile.spl
-index ac3c2c7f13..135706f21d 100644
 --- a/scripts/Makefile.spl
 +++ b/scripts/Makefile.spl
 @@ -257,12 +257,14 @@ PHONY += dts_dir
@@ -91,6 +87,3 @@ index ac3c2c7f13..135706f21d 100644
  PHONY += FORCE
  FORCE:
  
--- 
-2.11.0
-
