@@ -7,6 +7,15 @@ define Build/alfa-network-rootfs-header
 	@mv $@.new $@
 endef
 
+define Build/append-md5sum-bin
+	$(STAGING_DIR_HOST)/bin/mkhash md5 $@ | sed 's/../\\\\x&/g' |\
+		xargs echo -ne >> $@
+endef
+
+define Build/append-string
+	echo -n $(1) >> $@
+endef
+
 define Build/mkbuffaloimg
 	$(STAGING_DIR_HOST)/bin/mkbuffaloimg -B $(BOARDNAME) \
 		-R $$(($(subst k, * 1024,$(ROOTFS_SIZE)))) \
@@ -66,6 +75,17 @@ endef
 
 define Build/seama-seal
 	$(call Build/seama,-s $@.seama $(1))
+endef
+
+define Build/teltonika-fw-fake-checksum
+	# Teltonika U-Boot web based firmware upgrade/recovery routine compares
+	# 16 bytes from md5sum1[16] field in TP-Link v1 header (offset: 76 bytes
+	# from begin of the firmware file) with 16 bytes stored just before
+	# 0xdeadc0de marker. Values are only compared, MD5 sum is not verified.
+	let \
+		offs="$$(stat -c%s $@) - 20"; \
+		dd if=$@ bs=1 count=16 skip=76 |\
+		dd of=$@ bs=1 count=16 seek=$$offs conv=notrunc
 endef
 
 define Build/uImageHiWiFi
@@ -619,6 +639,28 @@ define Device/r602n
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += r602n
+
+define Device/rut900
+  DEVICE_TITLE := Teltonika RUT900
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -uboot-envtools
+  BOARDNAME := RUT900
+  SUPPORTED_DEVICES := rut900
+  IMAGE_SIZE := 15552k
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(config)ro,64k(art)ro,15552k(firmware),576k(event-log)ro
+  TPLINK_HWID := 0x35000001
+  TPLINK_HWREV := 0x1
+  TPLINK_HEADER_VERSION := 1
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | uImage lzma
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs |\
+	pad-rootfs | teltonika-fw-fake-checksum | append-string master |\
+	append-md5sum-bin | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata |\
+	check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += rut900
 
 define Device/mc-mac1200r
   $(Device/tplink-8mlzma)

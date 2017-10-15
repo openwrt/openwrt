@@ -40,6 +40,7 @@ get_status_led() {
 	db120|\
 	dr342|\
 	dr344|\
+	rut900|\
 	tew-632brp|\
 	tl-wr942n-v1|\
 	wpj344|\

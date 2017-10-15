@@ -995,6 +995,9 @@ ar71xx_board_detect() {
 	*"RouterStation Pro")
 		name="routerstation-pro"
 		;;
+	*"RUT900")
+		name="rut900"
+		;;
 	*"RW2458N")
 		name="rw2458n"
 		;;
