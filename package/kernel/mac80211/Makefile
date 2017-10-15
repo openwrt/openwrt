@@ -244,7 +244,7 @@ define KernelPackage/ath6kl-usb
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n USB wireless cards support
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath6kl
-  DEPENDS+= @USB_SUPPORT +kmod-ath6kl
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-ath6kl
   FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath6kl/ath6kl_usb.ko
   AUTOLOAD:=$(call AutoProbe,ath6kl_usb)
 endef
