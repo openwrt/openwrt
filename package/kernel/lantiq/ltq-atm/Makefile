@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-atm
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/ltq-atm-$(BUILD_VARIANT)
 
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
@@ -24,7 +24,6 @@ define KernelPackage/ltq-atm-template
   VARIANT:=$(1)
   DEPENDS:=@$(2) +kmod-atm +br2684ctl
   FILES:=$(PKG_BUILD_DIR)/ltq_atm_$(1).ko
-  AUTOLOAD:=$(call AutoProbe,ltq_atm_$(1))
 endef
 
 KernelPackage/ltq-atm-danube=$(call KernelPackage/ltq-atm-template,danube,(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy))
