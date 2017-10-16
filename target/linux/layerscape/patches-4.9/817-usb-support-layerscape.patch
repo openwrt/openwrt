@@ -1,4 +1,4 @@
-From f8daa8e984213554008e73cd155530dceec5a109 Mon Sep 17 00:00:00 2001
+From b14460ee524a34d3b94b44032b52155c4cd708e5 Mon Sep 17 00:00:00 2001
 From: Yangbo Lu <yangbo.lu@nxp.com>
 Date: Wed, 27 Sep 2017 10:34:07 +0800
 Subject: [PATCH] usb: support layerscape
@@ -15,6 +15,7 @@ Signed-off-by: Suresh Gupta <suresh.gupta@freescale.com>
 Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
 Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 ---
+ drivers/net/usb/r8152.c               |   4 +
  drivers/usb/common/common.c           |  50 ++++++
  drivers/usb/core/hub.c                |   8 +
  drivers/usb/dwc3/core.c               | 235 ++++++++++++++++++++++++++-
@@ -32,11 +33,28 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/usb/phy/phy-fsl-usb.h         |   8 +
  include/linux/usb.h                   |   1 +
  include/linux/usb/of.h                |   2 +
- 17 files changed, 726 insertions(+), 73 deletions(-)
+ 18 files changed, 730 insertions(+), 73 deletions(-)
 
+diff --git a/drivers/net/usb/r8152.c b/drivers/net/usb/r8152.c
+index afb953a2..c9c86495 100644
+--- a/drivers/net/usb/r8152.c
++++ b/drivers/net/usb/r8152.c
+@@ -1812,6 +1812,10 @@ static int rx_bottom(struct r8152 *tp, int budget)
+ 			unsigned int pkt_len;
+ 			struct sk_buff *skb;
+ 
++			/* limite the skb numbers for rx_queue */
++			if (unlikely(skb_queue_len(&tp->rx_queue) >= 1000))
++				break;
++
+ 			pkt_len = le32_to_cpu(rx_desc->opts1) & RX_LEN_MASK;
+ 			if (pkt_len < ETH_ZLEN)
+ 				break;
+diff --git a/drivers/usb/common/common.c b/drivers/usb/common/common.c
+index 5ef8da6e..176dee01 100644
 --- a/drivers/usb/common/common.c
 +++ b/drivers/usb/common/common.c
-@@ -105,6 +105,56 @@ static const char *const usb_dr_modes[]
+@@ -105,6 +105,56 @@ static const char *const usb_dr_modes[] = {
  	[USB_DR_MODE_OTG]		= "otg",
  };
  
@@ -93,9 +111,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static enum usb_dr_mode usb_get_dr_mode_from_string(const char *str)
  {
  	int ret;
+diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
+index 80d4ef31..e23acf03 100644
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -4412,6 +4412,14 @@ hub_port_init(struct usb_hub *hub, struc
+@@ -4412,6 +4412,14 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
  	else
  		speed = usb_speed_string(udev->speed);
  
@@ -110,9 +130,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	if (udev->speed < USB_SPEED_SUPER)
  		dev_info(&udev->dev,
  				"%s %s USB device number %d using %s\n",
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index fea44690..e34ef90a 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -58,6 +58,7 @@ static int dwc3_get_dr_mode(struct dwc3
+@@ -58,6 +58,7 @@ static int dwc3_get_dr_mode(struct dwc3 *dwc)
  	enum usb_dr_mode mode;
  	struct device *dev = dwc->dev;
  	unsigned int hw_mode;
@@ -120,7 +142,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (dwc->dr_mode == USB_DR_MODE_UNKNOWN)
  		dwc->dr_mode = USB_DR_MODE_OTG;
-@@ -83,6 +84,24 @@ static int dwc3_get_dr_mode(struct dwc3
+@@ -83,6 +84,24 @@ static int dwc3_get_dr_mode(struct dwc3 *dwc)
  		mode = USB_DR_MODE_HOST;
  		break;
  	default:
@@ -145,7 +167,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		if (IS_ENABLED(CONFIG_USB_DWC3_HOST))
  			mode = USB_DR_MODE_HOST;
  		else if (IS_ENABLED(CONFIG_USB_DWC3_GADGET))
-@@ -213,8 +232,9 @@ static void dwc3_frame_length_adjustment
+@@ -213,8 +232,9 @@ static void dwc3_frame_length_adjustment(struct dwc3 *dwc)
  
  	reg = dwc3_readl(dwc->regs, DWC3_GFLADJ);
  	dft = reg & DWC3_GFLADJ_30MHZ_MASK;
@@ -157,7 +179,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		reg &= ~DWC3_GFLADJ_30MHZ_MASK;
  		reg |= DWC3_GFLADJ_30MHZ_SDBND_SEL | dwc->fladj;
  		dwc3_writel(dwc->regs, DWC3_GFLADJ, reg);
-@@ -579,6 +599,99 @@ static int dwc3_phy_setup(struct dwc3 *d
+@@ -579,6 +599,99 @@ static int dwc3_phy_setup(struct dwc3 *dwc)
  	return 0;
  }
  
@@ -257,7 +279,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static void dwc3_core_exit(struct dwc3 *dwc)
  {
  	dwc3_event_buffers_cleanup(dwc);
-@@ -721,6 +834,8 @@ static int dwc3_core_init(struct dwc3 *d
+@@ -721,6 +834,8 @@ static int dwc3_core_init(struct dwc3 *dwc)
  	if (ret)
  		goto err1;
  
@@ -266,7 +288,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Adjust Frame Length */
  	dwc3_frame_length_adjustment(dwc);
  
-@@ -919,11 +1034,109 @@ static void dwc3_core_exit_mode(struct d
+@@ -919,11 +1034,109 @@ static void dwc3_core_exit_mode(struct dwc3 *dwc)
  	}
  }
  
@@ -376,7 +398,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct resource		*res;
  	struct dwc3		*dwc;
  	u8			lpm_nyet_threshold;
-@@ -955,6 +1168,11 @@ static int dwc3_probe(struct platform_de
+@@ -955,6 +1168,11 @@ static int dwc3_probe(struct platform_device *pdev)
  	dwc->xhci_resources[0].flags = res->flags;
  	dwc->xhci_resources[0].name = res->name;
  
@@ -388,7 +410,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	res->start += DWC3_GLOBALS_REGS_START;
  
  	/*
-@@ -997,6 +1215,12 @@ static int dwc3_probe(struct platform_de
+@@ -997,6 +1215,12 @@ static int dwc3_probe(struct platform_device *pdev)
  	dwc->usb3_lpm_capable = device_property_read_bool(dev,
  				"snps,usb3_lpm_capable");
  
@@ -401,7 +423,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	dwc->disable_scramble_quirk = device_property_read_bool(dev,
  				"snps,disable_scramble_quirk");
  	dwc->u2exit_lfps_quirk = device_property_read_bool(dev,
-@@ -1041,6 +1265,8 @@ static int dwc3_probe(struct platform_de
+@@ -1041,6 +1265,8 @@ static int dwc3_probe(struct platform_device *pdev)
  	dwc->hird_threshold = hird_threshold
  		| (dwc->is_utmi_l1_suspend << 4);
  
@@ -410,7 +432,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	platform_set_drvdata(pdev, dwc);
  	dwc3_cache_hwparams(dwc);
  
-@@ -1064,6 +1290,11 @@ static int dwc3_probe(struct platform_de
+@@ -1064,6 +1290,11 @@ static int dwc3_probe(struct platform_device *pdev)
  	if (ret < 0)
  		goto err1;
  
@@ -422,6 +444,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	pm_runtime_forbid(dev);
  
  	ret = dwc3_alloc_event_buffers(dwc, DWC3_EVENT_BUFFERS_SIZE);
+diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
+index 884c4371..9151eef4 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
 @@ -26,6 +26,7 @@
@@ -539,6 +563,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  };
  
  /* -------------------------------------------------------------------------- */
+diff --git a/drivers/usb/dwc3/host.c b/drivers/usb/dwc3/host.c
+index 626d87d5..f1b98273 100644
 --- a/drivers/usb/dwc3/host.c
 +++ b/drivers/usb/dwc3/host.c
 @@ -17,6 +17,8 @@
@@ -574,6 +600,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	dwc->xhci = xhci;
  
  	ret = platform_device_add_resources(xhci, dwc->xhci_resources,
+diff --git a/drivers/usb/gadget/udc/fsl_udc_core.c b/drivers/usb/gadget/udc/fsl_udc_core.c
+index aac0ce8a..fe49e758 100644
 --- a/drivers/usb/gadget/udc/fsl_udc_core.c
 +++ b/drivers/usb/gadget/udc/fsl_udc_core.c
 @@ -198,7 +198,11 @@ __acquires(ep->udc->lock)
@@ -589,7 +617,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	spin_lock(&ep->udc->lock);
  	ep->stopped = stopped;
-@@ -245,10 +249,10 @@ static int dr_controller_setup(struct fs
+@@ -245,10 +249,10 @@ static int dr_controller_setup(struct fsl_udc *udc)
  		if (udc->pdata->have_sysif_regs) {
  			if (udc->pdata->controller_ver) {
  				/* controller version 1.6 or above */
@@ -602,7 +630,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			}
  		}
  		portctrl |= PORTSCX_PTS_ULPI;
-@@ -257,13 +261,14 @@ static int dr_controller_setup(struct fs
+@@ -257,13 +261,14 @@ static int dr_controller_setup(struct fsl_udc *udc)
  		portctrl |= PORTSCX_PTW_16BIT;
  		/* fall through */
  	case FSL_USB2_PHY_UTMI:
@@ -619,7 +647,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				mdelay(FSL_UTMI_PHY_DLY); /* Delay for UTMI
  					PHY CLK to become stable - 10ms*/
  			}
-@@ -329,22 +334,22 @@ static int dr_controller_setup(struct fs
+@@ -329,22 +334,22 @@ static int dr_controller_setup(struct fsl_udc *udc)
  	/* Config control enable i/o output, cpu endian register */
  #ifndef CONFIG_ARCH_MXC
  	if (udc->pdata->have_sysif_regs) {
@@ -647,7 +675,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  #endif
  
-@@ -1057,7 +1062,7 @@ static int fsl_ep_fifo_status(struct usb
+@@ -1057,7 +1062,7 @@ static int fsl_ep_fifo_status(struct usb_ep *_ep)
  	struct ep_queue_head *qh;
  
  	ep = container_of(_ep, struct fsl_ep, ep);
@@ -656,7 +684,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return -ENODEV;
  
  	udc = (struct fsl_udc *)ep->udc;
-@@ -1599,14 +1604,13 @@ static int process_ep_req(struct fsl_udc
+@@ -1599,14 +1604,13 @@ static int process_ep_req(struct fsl_udc *udc, int pipe,
  		struct fsl_req *curr_req)
  {
  	struct ep_td_struct *curr_td;
@@ -672,7 +700,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	actual = curr_req->req.length;
  
  	for (j = 0; j < curr_req->dtd_count; j++) {
-@@ -1651,11 +1655,9 @@ static int process_ep_req(struct fsl_udc
+@@ -1651,11 +1655,9 @@ static int process_ep_req(struct fsl_udc *udc, int pipe,
  				status = -EPROTO;
  				break;
  			} else {
@@ -684,7 +712,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			VDBG("dTD transmitted successful");
  		}
  
-@@ -1698,7 +1700,7 @@ static void dtd_complete_irq(struct fsl_
+@@ -1698,7 +1700,7 @@ static void dtd_complete_irq(struct fsl_udc *udc)
  		curr_ep = get_ep_by_pipe(udc, i);
  
  		/* If the ep is configured */
@@ -693,7 +721,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			WARNING("Invalid EP?");
  			continue;
  		}
-@@ -2420,10 +2422,12 @@ static int fsl_udc_probe(struct platform
+@@ -2420,10 +2422,12 @@ static int fsl_udc_probe(struct platform_device *pdev)
  		usb_sys_regs = (void *)dr_regs + USB_DR_SYS_OFFSET;
  #endif
  
@@ -706,7 +734,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/* Read Device Controller Capability Parameters register */
  	dccparams = fsl_readl(&dr_regs->dccparams);
-@@ -2463,9 +2467,11 @@ static int fsl_udc_probe(struct platform
+@@ -2463,9 +2467,11 @@ static int fsl_udc_probe(struct platform_device *pdev)
  		dr_controller_setup(udc_controller);
  	}
  
@@ -718,7 +746,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/* Setup gadget structure */
  	udc_controller->gadget.ops = &fsl_gadget_ops;
-@@ -2478,6 +2484,7 @@ static int fsl_udc_probe(struct platform
+@@ -2478,6 +2484,7 @@ static int fsl_udc_probe(struct platform_device *pdev)
  	/* Setup gadget.dev and register with kernel */
  	dev_set_name(&udc_controller->gadget.dev, "gadget");
  	udc_controller->gadget.dev.of_node = pdev->dev.of_node;
@@ -726,7 +754,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (!IS_ERR_OR_NULL(udc_controller->transceiver))
  		udc_controller->gadget.is_otg = 1;
-@@ -2529,7 +2536,9 @@ err_free_irq:
+@@ -2529,7 +2536,9 @@ static int fsl_udc_probe(struct platform_device *pdev)
  err_iounmap:
  	if (pdata->exit)
  		pdata->exit(pdev);
@@ -736,7 +764,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  err_iounmap_noclk:
  	iounmap(dr_regs);
  err_release_mem_region:
-@@ -2557,8 +2566,9 @@ static int fsl_udc_remove(struct platfor
+@@ -2557,8 +2566,9 @@ static int fsl_udc_remove(struct platform_device *pdev)
  	udc_controller->done = &done;
  	usb_del_gadget_udc(&udc_controller->gadget);
  
@@ -747,7 +775,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* DR has been stopped in usb_gadget_unregister_driver() */
  	remove_proc_file();
  
-@@ -2570,7 +2580,7 @@ static int fsl_udc_remove(struct platfor
+@@ -2570,7 +2580,7 @@ static int fsl_udc_remove(struct platform_device *pdev)
  	dma_pool_destroy(udc_controller->td_pool);
  	free_irq(udc_controller->irq, udc_controller);
  	iounmap(dr_regs);
@@ -756,6 +784,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		release_mem_region(res->start, resource_size(res));
  
  	/* free udc --wait for the release() finished */
+diff --git a/drivers/usb/gadget/udc/fsl_usb2_udc.h b/drivers/usb/gadget/udc/fsl_usb2_udc.h
+index 84715625..f76c4ddd 100644
 --- a/drivers/usb/gadget/udc/fsl_usb2_udc.h
 +++ b/drivers/usb/gadget/udc/fsl_usb2_udc.h
 @@ -20,6 +20,10 @@
@@ -788,6 +818,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #endif
  
  #endif
+diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
+index 0b80cee3..a57d95c3 100644
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -165,7 +165,7 @@ config XPS_USB_HCD_XILINX
@@ -799,6 +831,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	select USB_EHCI_ROOT_HUB_TT
  	---help---
  	  Variation of ARC USB block used in some Freescale chips.
+diff --git a/drivers/usb/host/ehci-fsl.c b/drivers/usb/host/ehci-fsl.c
+index 9f5ffb62..cd16860c 100644
 --- a/drivers/usb/host/ehci-fsl.c
 +++ b/drivers/usb/host/ehci-fsl.c
 @@ -37,13 +37,141 @@
@@ -943,7 +977,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /* configure so an HC device and id are always provided */
  /* always called with process context; sleeping is OK */
-@@ -131,6 +259,12 @@ static int fsl_ehci_drv_probe(struct pla
+@@ -131,6 +259,12 @@ static int fsl_ehci_drv_probe(struct platform_device *pdev)
  		clrsetbits_be32(hcd->regs + FSL_SOC_USB_CTRL,
  				CONTROL_REGISTER_W1C_MASK, 0x4);
  
@@ -956,7 +990,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/*
  	 * Enable UTMI phy and program PTS field in UTMI mode before asserting
  	 * controller reset for USB Controller version 2.5
-@@ -143,16 +277,20 @@ static int fsl_ehci_drv_probe(struct pla
+@@ -143,16 +277,20 @@ static int fsl_ehci_drv_probe(struct platform_device *pdev)
  
  	/* Don't need to set host mode here. It will be done by tdi_reset() */
  
@@ -979,7 +1013,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		dev_dbg(&pdev->dev, "hcd=0x%p  ehci=0x%p, phy=0x%p\n",
  			hcd, ehci, hcd->usb_phy);
  
-@@ -168,6 +306,11 @@ static int fsl_ehci_drv_probe(struct pla
+@@ -168,6 +306,11 @@ static int fsl_ehci_drv_probe(struct platform_device *pdev)
  			retval = -ENODEV;
  			goto err2;
  		}
@@ -991,7 +1025,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  #endif
  	return retval;
-@@ -181,6 +324,18 @@ static int fsl_ehci_drv_probe(struct pla
+@@ -181,6 +324,18 @@ static int fsl_ehci_drv_probe(struct platform_device *pdev)
  	return retval;
  }
  
@@ -1010,7 +1044,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static int ehci_fsl_setup_phy(struct usb_hcd *hcd,
  			       enum fsl_usb2_phy_modes phy_mode,
  			       unsigned int port_offset)
-@@ -219,6 +374,21 @@ static int ehci_fsl_setup_phy(struct usb
+@@ -219,6 +374,21 @@ static int ehci_fsl_setup_phy(struct usb_hcd *hcd,
  		/* fall through */
  	case FSL_USB2_PHY_UTMI:
  	case FSL_USB2_PHY_UTMI_DUAL:
@@ -1032,7 +1066,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		if (pdata->have_sysif_regs && pdata->controller_ver) {
  			/* controller version 1.6 or above */
  			clrsetbits_be32(non_ehci + FSL_SOC_USB_CTRL,
-@@ -292,14 +462,9 @@ static int ehci_fsl_usb_setup(struct ehc
+@@ -292,14 +462,9 @@ static int ehci_fsl_usb_setup(struct ehci_hcd *ehci)
  			return -EINVAL;
  
  	if (pdata->operating_mode == FSL_USB2_MPH_HOST) {
@@ -1048,7 +1082,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			ehci->has_fsl_port_bug = 1;
  
  		if (pdata->port_enables & FSL_USB2_PORT0_ENABLED)
-@@ -379,16 +544,57 @@ static int ehci_fsl_setup(struct usb_hcd
+@@ -379,16 +544,57 @@ static int ehci_fsl_setup(struct usb_hcd *hcd)
  	return retval;
  }
  
@@ -1113,7 +1147,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  #ifdef CONFIG_PPC_MPC512x
  static int ehci_fsl_mpc512x_drv_suspend(struct device *dev)
-@@ -535,26 +741,43 @@ static inline int ehci_fsl_mpc512x_drv_r
+@@ -535,26 +741,43 @@ static inline int ehci_fsl_mpc512x_drv_resume(struct device *dev)
  }
  #endif /* CONFIG_PPC_MPC512x */
  
@@ -1164,7 +1198,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	if (!fsl_deep_sleep())
  		return 0;
  
-@@ -568,12 +791,34 @@ static int ehci_fsl_drv_resume(struct de
+@@ -568,12 +791,34 @@ static int ehci_fsl_drv_resume(struct device *dev)
  	struct ehci_fsl *ehci_fsl = hcd_to_ehci_fsl(hcd);
  	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
  	void __iomem *non_ehci = hcd->regs;
@@ -1199,6 +1233,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	ehci_prepare_ports_for_controller_resume(ehci);
  	if (!fsl_deep_sleep())
  		return 0;
+diff --git a/drivers/usb/host/ehci-fsl.h b/drivers/usb/host/ehci-fsl.h
+index 1a8a60a5..42ea2976 100644
 --- a/drivers/usb/host/ehci-fsl.h
 +++ b/drivers/usb/host/ehci-fsl.h
 @@ -63,4 +63,7 @@
@@ -1209,9 +1245,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +/* Retry count for checking UTMI PHY CLK validity */
 +#define UTMI_PHY_CLK_VALID_CHK_RETRY 5
  #endif				/* _EHCI_FSL_H */
+diff --git a/drivers/usb/host/ehci-hub.c b/drivers/usb/host/ehci-hub.c
+index 255acca8..c8838c33 100644
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -305,6 +305,8 @@ static int ehci_bus_suspend (struct usb_
+@@ -305,6 +305,8 @@ static int ehci_bus_suspend (struct usb_hcd *hcd)
  						USB_PORT_STAT_HIGH_SPEED)
  				fs_idle_delay = true;
  			ehci_writel(ehci, t2, reg);
@@ -1220,9 +1258,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			changed = 1;
  		}
  	}
+diff --git a/drivers/usb/host/ehci.h b/drivers/usb/host/ehci.h
+index 3b06bb77..f296d1fb 100644
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -180,6 +180,9 @@ struct ehci_hcd {			/* one per controlle
+@@ -180,6 +180,9 @@ struct ehci_hcd {			/* one per controller */
  	unsigned		periodic_count;	/* periodic activity count */
  	unsigned		uframe_periodic_max; /* max periodic time per uframe */
  
@@ -1232,7 +1272,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/* list of itds & sitds completed while now_frame was still active */
  	struct list_head	cached_itd_list;
-@@ -706,8 +709,10 @@ ehci_port_speed(struct ehci_hcd *ehci, u
+@@ -706,8 +709,10 @@ ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
   * incoming packets get corrupted in HS mode
   */
  #define ehci_has_fsl_hs_errata(e)	((e)->has_fsl_hs_errata)
@@ -1243,9 +1283,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #endif
  
  /*
+diff --git a/drivers/usb/host/fsl-mph-dr-of.c b/drivers/usb/host/fsl-mph-dr-of.c
+index f07ccb25..1e59ea9f 100644
 --- a/drivers/usb/host/fsl-mph-dr-of.c
 +++ b/drivers/usb/host/fsl-mph-dr-of.c
-@@ -226,6 +226,18 @@ static int fsl_usb2_mph_dr_of_probe(stru
+@@ -226,6 +226,18 @@ static int fsl_usb2_mph_dr_of_probe(struct platform_device *ofdev)
  		of_property_read_bool(np, "fsl,usb-erratum-a007792");
  	pdata->has_fsl_erratum_a005275 =
  		of_property_read_bool(np, "fsl,usb-erratum-a005275");
@@ -1264,6 +1306,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/*
  	 * Determine whether phy_clk_valid needs to be checked
+diff --git a/drivers/usb/phy/phy-fsl-usb.c b/drivers/usb/phy/phy-fsl-usb.c
+index 94eb2923..836355fa 100644
 --- a/drivers/usb/phy/phy-fsl-usb.c
 +++ b/drivers/usb/phy/phy-fsl-usb.c
 @@ -1,5 +1,5 @@
@@ -1281,7 +1325,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct device *dev;
  	struct fsl_otg *otg_dev =
  		container_of(otg->usb_phy, struct fsl_otg, phy);
-@@ -486,6 +487,7 @@ int fsl_otg_start_host(struct otg_fsm *f
+@@ -486,6 +487,7 @@ int fsl_otg_start_host(struct otg_fsm *fsm, int on)
  			otg_reset_controller();
  			VDBG("host on......\n");
  			if (dev->driver->pm && dev->driver->pm->resume) {
@@ -1289,7 +1333,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				retval = dev->driver->pm->resume(dev);
  				if (fsm->id) {
  					/* default-b */
-@@ -510,8 +512,11 @@ int fsl_otg_start_host(struct otg_fsm *f
+@@ -510,8 +512,11 @@ int fsl_otg_start_host(struct otg_fsm *fsm, int on)
  		else {
  			VDBG("host off......\n");
  			if (dev && dev->driver) {
@@ -1302,7 +1346,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				if (fsm->id)
  					/* default-b */
  					fsl_otg_drv_vbus(fsm, 0);
-@@ -539,8 +544,17 @@ int fsl_otg_start_gadget(struct otg_fsm
+@@ -539,8 +544,17 @@ int fsl_otg_start_gadget(struct otg_fsm *fsm, int on)
  	dev = otg->gadget->dev.parent;
  
  	if (on) {
@@ -1321,7 +1365,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	} else {
  		if (dev->driver->suspend)
  			dev->driver->suspend(dev, otg_suspend_state);
-@@ -672,6 +686,10 @@ static void fsl_otg_event(struct work_st
+@@ -672,6 +686,10 @@ static void fsl_otg_event(struct work_struct *work)
  		fsl_otg_start_host(fsm, 0);
  		otg_drv_vbus(fsm, 0);
  		fsl_otg_start_gadget(fsm, 1);
@@ -1332,7 +1376,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  }
  
-@@ -724,6 +742,7 @@ irqreturn_t fsl_otg_isr(int irq, void *d
+@@ -724,6 +742,7 @@ irqreturn_t fsl_otg_isr(int irq, void *dev_id)
  {
  	struct otg_fsm *fsm = &((struct fsl_otg *)dev_id)->fsm;
  	struct usb_otg *otg = ((struct fsl_otg *)dev_id)->phy.otg;
@@ -1340,7 +1384,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	u32 otg_int_src, otg_sc;
  
  	otg_sc = fsl_readl(&usb_dr_regs->otgsc);
-@@ -753,18 +772,8 @@ irqreturn_t fsl_otg_isr(int irq, void *d
+@@ -753,18 +772,8 @@ irqreturn_t fsl_otg_isr(int irq, void *dev_id)
  				otg->gadget->is_a_peripheral = !fsm->id;
  			VDBG("ID int (ID is %d)\n", fsm->id);
  
@@ -1361,7 +1405,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			return IRQ_HANDLED;
  		}
  	}
-@@ -923,12 +932,32 @@ int usb_otg_start(struct platform_device
+@@ -923,12 +932,32 @@ int usb_otg_start(struct platform_device *pdev)
  	temp &= ~(PORTSC_PHY_TYPE_SEL | PORTSC_PTW);
  	switch (pdata->phy_mode) {
  	case FSL_USB2_PHY_ULPI:
@@ -1394,6 +1438,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		temp |= PORTSC_PTS_UTMI;
  		/* fall through */
  	default:
+diff --git a/drivers/usb/phy/phy-fsl-usb.h b/drivers/usb/phy/phy-fsl-usb.h
+index 23149954..c4c08730 100644
 --- a/drivers/usb/phy/phy-fsl-usb.h
 +++ b/drivers/usb/phy/phy-fsl-usb.h
 @@ -199,6 +199,14 @@
@@ -1411,6 +1457,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /* BCSR5 */
  #define BCSR5_INT_USB			(0x02)
+diff --git a/include/linux/usb.h b/include/linux/usb.h
+index eba1f10e..c334e281 100644
 --- a/include/linux/usb.h
 +++ b/include/linux/usb.h
 @@ -362,6 +362,7 @@ struct usb_bus {
@@ -1421,6 +1469,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	unsigned is_b_host:1;		/* true during some HNP roleswitches */
  	unsigned b_hnp_enable:1;	/* OTG: did A-Host enable HNP? */
  	unsigned no_stop_on_short:1;    /*
+diff --git a/include/linux/usb/of.h b/include/linux/usb/of.h
+index 5ff9032e..2a57e0d2 100644
 --- a/include/linux/usb/of.h
 +++ b/include/linux/usb/of.h
 @@ -11,6 +11,8 @@
@@ -1432,3 +1482,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #if IS_ENABLED(CONFIG_OF)
  enum usb_dr_mode of_usb_get_dr_mode_by_phy(struct device_node *np, int arg0);
  bool of_usb_host_tpl_support(struct device_node *np);
+-- 
+2.14.1
+

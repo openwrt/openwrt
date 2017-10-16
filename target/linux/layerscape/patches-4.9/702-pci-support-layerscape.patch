@@ -1,4 +1,4 @@
-From c4813da334b0c31e9c55eea015f1e898e84ff45b Mon Sep 17 00:00:00 2001
+From 9e6e0a53b29190dbd86a39304b59c3028f5b36c2 Mon Sep 17 00:00:00 2001
 From: Yangbo Lu <yangbo.lu@nxp.com>
 Date: Mon, 25 Sep 2017 11:04:10 +0800
 Subject: [PATCH] pci: support layerscape
@@ -15,21 +15,23 @@ Signed-off-by: Mingkai Hu <mingkai.hu@nxp.com>
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 ---
- drivers/irqchip/irq-ls-scfg-msi.c            | 256 +++++++--
+ drivers/irqchip/irq-ls-scfg-msi.c            | 257 +++++++--
  drivers/pci/host/Makefile                    |   2 +-
  drivers/pci/host/pci-layerscape-ep-debugfs.c | 758 +++++++++++++++++++++++++++
  drivers/pci/host/pci-layerscape-ep.c         | 309 +++++++++++
  drivers/pci/host/pci-layerscape-ep.h         | 115 ++++
- drivers/pci/host/pci-layerscape.c            |  37 +-
+ drivers/pci/host/pci-layerscape.c            |  38 +-
  drivers/pci/host/pcie-designware.c           |   6 +
  drivers/pci/host/pcie-designware.h           |   1 +
  drivers/pci/pcie/portdrv_core.c              | 181 +++----
  include/linux/pci.h                          |   1 +
- 10 files changed, 1518 insertions(+), 148 deletions(-)
+ 10 files changed, 1520 insertions(+), 148 deletions(-)
  create mode 100644 drivers/pci/host/pci-layerscape-ep-debugfs.c
  create mode 100644 drivers/pci/host/pci-layerscape-ep.c
  create mode 100644 drivers/pci/host/pci-layerscape-ep.h
 
+diff --git a/drivers/irqchip/irq-ls-scfg-msi.c b/drivers/irqchip/irq-ls-scfg-msi.c
+index 02cca74c..57e3d900 100644
 --- a/drivers/irqchip/irq-ls-scfg-msi.c
 +++ b/drivers/irqchip/irq-ls-scfg-msi.c
 @@ -17,13 +17,32 @@
@@ -82,7 +84,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  };
  
  static struct irq_chip ls_scfg_msi_irq_chip = {
-@@ -49,19 +71,56 @@ static struct msi_domain_info ls_scfg_ms
+@@ -49,19 +71,56 @@ static struct msi_domain_info ls_scfg_msi_domain_info = {
  	.chip	= &ls_scfg_msi_irq_chip,
  };
  
@@ -141,7 +143,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static struct irq_chip ls_scfg_msi_parent_chip = {
-@@ -81,8 +140,8 @@ static int ls_scfg_msi_domain_irq_alloc(
+@@ -81,8 +140,8 @@ static int ls_scfg_msi_domain_irq_alloc(struct irq_domain *domain,
  	WARN_ON(nr_irqs != 1);
  
  	spin_lock(&msi_data->lock);
@@ -152,7 +154,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		__set_bit(pos, msi_data->used);
  	else
  		err = -ENOSPC;
-@@ -106,7 +165,7 @@ static void ls_scfg_msi_domain_irq_free(
+@@ -106,7 +165,7 @@ static void ls_scfg_msi_domain_irq_free(struct irq_domain *domain,
  	int pos;
  
  	pos = d->hwirq;
@@ -161,7 +163,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		pr_err("failed to teardown msi. Invalid hwirq %d\n", pos);
  		return;
  	}
-@@ -123,15 +182,22 @@ static const struct irq_domain_ops ls_sc
+@@ -123,15 +182,22 @@ static const struct irq_domain_ops ls_scfg_msi_domain_ops = {
  
  static void ls_scfg_msi_irq_handler(struct irq_desc *desc)
  {
@@ -189,7 +191,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		if (virq)
  			generic_handle_irq(virq);
  	}
-@@ -143,7 +209,7 @@ static int ls_scfg_msi_domains_init(stru
+@@ -143,7 +209,7 @@ static int ls_scfg_msi_domains_init(struct ls_scfg_msi *msi_data)
  {
  	/* Initialize MSI domain parent */
  	msi_data->parent = irq_domain_add_linear(NULL,
@@ -198,7 +200,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  						 &ls_scfg_msi_domain_ops,
  						 msi_data);
  	if (!msi_data->parent) {
-@@ -164,16 +230,117 @@ static int ls_scfg_msi_domains_init(stru
+@@ -164,16 +230,118 @@ static int ls_scfg_msi_domains_init(struct ls_scfg_msi *msi_data)
  	return 0;
  }
  
@@ -288,6 +290,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	{ .compatible = "fsl,1s1021a-msi", .data = &ls1021_msi_cfg},
 +	{ .compatible = "fsl,1s1043a-msi", .data = &ls1021_msi_cfg},
 +
++	{ .compatible = "fsl,ls1012a-msi", .data = &ls1021_msi_cfg },
 +	{ .compatible = "fsl,ls1021a-msi", .data = &ls1021_msi_cfg },
 +	{ .compatible = "fsl,ls1043a-msi", .data = &ls1021_msi_cfg },
 +	{ .compatible = "fsl,ls1043a-v1.1-msi", .data = &ls1043_v1_1_msi_cfg },
@@ -317,7 +320,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	msi_data->regs = devm_ioremap_resource(&pdev->dev, res);
  	if (IS_ERR(msi_data->regs)) {
-@@ -182,23 +349,48 @@ static int ls_scfg_msi_probe(struct plat
+@@ -182,23 +350,48 @@ static int ls_scfg_msi_probe(struct platform_device *pdev)
  	}
  	msi_data->msiir_addr = res->start;
  
@@ -376,7 +379,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	platform_set_drvdata(pdev, msi_data);
  
  	return 0;
-@@ -207,8 +399,10 @@ static int ls_scfg_msi_probe(struct plat
+@@ -207,8 +400,10 @@ static int ls_scfg_msi_probe(struct platform_device *pdev)
  static int ls_scfg_msi_remove(struct platform_device *pdev)
  {
  	struct ls_scfg_msi *msi_data = platform_get_drvdata(pdev);
@@ -388,7 +391,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	irq_domain_remove(msi_data->msi_domain);
  	irq_domain_remove(msi_data->parent);
-@@ -218,12 +412,6 @@ static int ls_scfg_msi_remove(struct pla
+@@ -218,12 +413,6 @@ static int ls_scfg_msi_remove(struct platform_device *pdev)
  	return 0;
  }
  
@@ -401,9 +404,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static struct platform_driver ls_scfg_msi_driver = {
  	.driver = {
  		.name = "ls-scfg-msi",
+diff --git a/drivers/pci/host/Makefile b/drivers/pci/host/Makefile
+index 084cb498..88e87704 100644
 --- a/drivers/pci/host/Makefile
 +++ b/drivers/pci/host/Makefile
-@@ -17,7 +17,7 @@ obj-$(CONFIG_PCIE_XILINX) += pcie-xilinx
+@@ -17,7 +17,7 @@ obj-$(CONFIG_PCIE_XILINX) += pcie-xilinx.o
  obj-$(CONFIG_PCIE_XILINX_NWL) += pcie-xilinx-nwl.o
  obj-$(CONFIG_PCI_XGENE) += pci-xgene.o
  obj-$(CONFIG_PCI_XGENE_MSI) += pci-xgene-msi.o
@@ -412,6 +417,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  obj-$(CONFIG_PCI_VERSATILE) += pci-versatile.o
  obj-$(CONFIG_PCIE_IPROC) += pcie-iproc.o
  obj-$(CONFIG_PCIE_IPROC_MSI) += pcie-iproc-msi.o
+diff --git a/drivers/pci/host/pci-layerscape-ep-debugfs.c b/drivers/pci/host/pci-layerscape-ep-debugfs.c
+new file mode 100644
+index 00000000..5f4870ba
 --- /dev/null
 +++ b/drivers/pci/host/pci-layerscape-ep-debugfs.c
 @@ -0,0 +1,758 @@
@@ -1173,6 +1181,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +MODULE_AUTHOR("Minghuan Lian <Minghuan.Lian@freescale.com>");
 +MODULE_DESCRIPTION("Freescale Layerscape PCIe EP controller driver");
 +MODULE_LICENSE("GPL v2");
+diff --git a/drivers/pci/host/pci-layerscape-ep.c b/drivers/pci/host/pci-layerscape-ep.c
+new file mode 100644
+index 00000000..8f1cca6e
 --- /dev/null
 +++ b/drivers/pci/host/pci-layerscape-ep.c
 @@ -0,0 +1,309 @@
@@ -1485,6 +1496,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +MODULE_AUTHOR("Minghuan Lian <Minghuan.Lian@freescale.com>");
 +MODULE_DESCRIPTION("Freescale Layerscape PCIe EP driver");
 +MODULE_LICENSE("GPL v2");
+diff --git a/drivers/pci/host/pci-layerscape-ep.h b/drivers/pci/host/pci-layerscape-ep.h
+new file mode 100644
+index 00000000..990c0ff5
 --- /dev/null
 +++ b/drivers/pci/host/pci-layerscape-ep.h
 @@ -0,0 +1,115 @@
@@ -1603,6 +1617,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +int ls_pcie_ep_dbgfs_remove(struct ls_pcie *pcie);
 +
 +#endif /* _PCIE_LAYERSCAPE_EP_H */
+diff --git a/drivers/pci/host/pci-layerscape.c b/drivers/pci/host/pci-layerscape.c
+index 65370799..7ce32ff0 100644
 --- a/drivers/pci/host/pci-layerscape.c
 +++ b/drivers/pci/host/pci-layerscape.c
 @@ -35,12 +35,14 @@
@@ -1622,7 +1638,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct pcie_host_ops *ops;
  };
  
-@@ -86,6 +88,14 @@ static void ls_pcie_drop_msg_tlp(struct
+@@ -86,6 +88,14 @@ static void ls_pcie_drop_msg_tlp(struct ls_pcie *pcie)
  	iowrite32(val, pcie->pp.dbi_base + PCIE_STRFMR1);
  }
  
@@ -1637,7 +1653,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static int ls1021_pcie_link_up(struct pcie_port *pp)
  {
  	u32 state;
-@@ -134,7 +144,7 @@ static int ls_pcie_link_up(struct pcie_p
+@@ -134,7 +144,7 @@ static int ls_pcie_link_up(struct pcie_port *pp)
  	struct ls_pcie *pcie = to_ls_pcie(pp);
  	u32 state;
  
@@ -1646,7 +1662,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		 pcie->drvdata->ltssm_shift) &
  		 LTSSM_STATE_MASK;
  
-@@ -153,6 +163,9 @@ static void ls_pcie_host_init(struct pci
+@@ -153,6 +163,9 @@ static void ls_pcie_host_init(struct pcie_port *pp)
  	ls_pcie_clear_multifunction(pcie);
  	ls_pcie_drop_msg_tlp(pcie);
  	iowrite32(0, pcie->pp.dbi_base + PCIE_DBI_RO_WR_EN);
@@ -1656,7 +1672,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static int ls_pcie_msi_host_init(struct pcie_port *pp,
-@@ -196,20 +209,38 @@ static struct ls_pcie_drvdata ls1021_drv
+@@ -196,20 +209,39 @@ static struct ls_pcie_drvdata ls1021_drvdata = {
  static struct ls_pcie_drvdata ls1043_drvdata = {
  	.lut_offset = 0x10000,
  	.ltssm_shift = 24,
@@ -1686,6 +1702,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  };
  
  static const struct of_device_id ls_pcie_of_match[] = {
++	{ .compatible = "fsl,ls1012a-pcie", .data = &ls1046_drvdata },
  	{ .compatible = "fsl,ls1021a-pcie", .data = &ls1021_drvdata },
  	{ .compatible = "fsl,ls1043a-pcie", .data = &ls1043_drvdata },
 +	{ .compatible = "fsl,ls1046a-pcie", .data = &ls1046_drvdata },
@@ -1695,9 +1712,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	{ },
  };
  
+diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-designware.c
+index af8f6e92..2358e049 100644
 --- a/drivers/pci/host/pcie-designware.c
 +++ b/drivers/pci/host/pcie-designware.c
-@@ -478,6 +478,12 @@ int dw_pcie_wait_for_link(struct pcie_po
+@@ -478,6 +478,12 @@ int dw_pcie_wait_for_link(struct pcie_port *pp)
  	return -ETIMEDOUT;
  }
  
@@ -1710,18 +1729,22 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  int dw_pcie_link_up(struct pcie_port *pp)
  {
  	u32 val;
+diff --git a/drivers/pci/host/pcie-designware.h b/drivers/pci/host/pcie-designware.h
+index a567ea28..4e6672b2 100644
 --- a/drivers/pci/host/pcie-designware.h
 +++ b/drivers/pci/host/pcie-designware.h
-@@ -82,5 +82,6 @@ int dw_pcie_wait_for_link(struct pcie_po
+@@ -82,5 +82,6 @@ int dw_pcie_wait_for_link(struct pcie_port *pp);
  int dw_pcie_link_up(struct pcie_port *pp);
  void dw_pcie_setup_rc(struct pcie_port *pp);
  int dw_pcie_host_init(struct pcie_port *pp);
 +void dw_pcie_disable_outbound_atu(struct pcie_port *pp, int index);
  
  #endif /* _PCIE_DESIGNWARE_H */
+diff --git a/drivers/pci/pcie/portdrv_core.c b/drivers/pci/pcie/portdrv_core.c
+index e9270b40..1bad877a 100644
 --- a/drivers/pci/pcie/portdrv_core.c
 +++ b/drivers/pci/pcie/portdrv_core.c
-@@ -44,52 +44,30 @@ static void release_pcie_device(struct d
+@@ -44,52 +44,30 @@ static void release_pcie_device(struct device *dev)
  }
  
  /**
@@ -1785,7 +1808,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/*
  	 * Allocate as many entries as the port wants, so that we can check
-@@ -97,20 +75,13 @@ static int pcie_port_enable_msix(struct
+@@ -97,20 +75,13 @@ static int pcie_port_enable_msix(struct pci_dev *dev, int *vectors, int mask)
  	 * equal to the number of entries this port actually uses, we'll happily
  	 * go through without any tricks.
  	 */
@@ -1811,7 +1834,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  		/*
  		 * The code below follows the PCI Express Base Specification 2.0
-@@ -125,18 +96,16 @@ static int pcie_port_enable_msix(struct
+@@ -125,18 +96,16 @@ static int pcie_port_enable_msix(struct pci_dev *dev, int *vectors, int mask)
  		pcie_capability_read_word(dev, PCI_EXP_FLAGS, &reg16);
  		entry = (reg16 & PCI_EXP_FLAGS_IRQ) >> 9;
  		if (entry >= nr_entries)
@@ -1835,7 +1858,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  		/*
  		 * The code below follows Section 7.10.10 of the PCI Express
-@@ -151,13 +120,11 @@ static int pcie_port_enable_msix(struct
+@@ -151,13 +120,11 @@ static int pcie_port_enable_msix(struct pci_dev *dev, int *vectors, int mask)
  		pci_read_config_dword(dev, pos + PCI_ERR_ROOT_STATUS, &reg32);
  		entry = reg32 >> 27;
  		if (entry >= nr_entries)
@@ -1852,7 +1875,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	/*
-@@ -165,41 +132,54 @@ static int pcie_port_enable_msix(struct
+@@ -165,41 +132,54 @@ static int pcie_port_enable_msix(struct pci_dev *dev, int *vectors, int mask)
  	 * what we have.  Otherwise, the port has some extra entries not for the
  	 * services we know and we need to work around that.
  	 */
@@ -1926,7 +1949,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/*
  	 * If MSI cannot be used for PCIe PME or hotplug, we have to use
-@@ -207,41 +187,25 @@ static int init_service_irqs(struct pci_
+@@ -207,41 +187,25 @@ static int init_service_irqs(struct pci_dev *dev, int *irqs, int mask)
  	 */
  	if (((mask & PCIE_PORT_SERVICE_PME) && pcie_pme_no_msi()) ||
  	    ((mask & PCIE_PORT_SERVICE_HP) && pciehp_no_msi())) {
@@ -1980,7 +2003,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  /**
   * get_port_device_capability - discover capabilities of a PCI Express port
   * @dev: PCI Express port to examine
-@@ -378,7 +342,7 @@ int pcie_port_device_register(struct pci
+@@ -378,7 +342,7 @@ int pcie_port_device_register(struct pci_dev *dev)
  	 * that can be used in the absence of irqs.  Allow them to determine
  	 * if that is to be used.
  	 */
@@ -1989,7 +2012,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	if (status) {
  		capabilities &= PCIE_PORT_SERVICE_VC | PCIE_PORT_SERVICE_HP;
  		if (!capabilities)
-@@ -401,7 +365,7 @@ int pcie_port_device_register(struct pci
+@@ -401,7 +365,7 @@ int pcie_port_device_register(struct pci_dev *dev)
  	return 0;
  
  error_cleanup_irqs:
@@ -1998,7 +2021,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  error_disable:
  	pci_disable_device(dev);
  	return status;
-@@ -469,7 +433,7 @@ static int remove_iter(struct device *de
+@@ -469,7 +433,7 @@ static int remove_iter(struct device *dev, void *data)
  void pcie_port_device_remove(struct pci_dev *dev)
  {
  	device_for_each_child(&dev->dev, NULL, remove_iter);
@@ -2007,7 +2030,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	pci_disable_device(dev);
  }
  
-@@ -499,7 +463,6 @@ static int pcie_port_probe_service(struc
+@@ -499,7 +463,6 @@ static int pcie_port_probe_service(struct device *dev)
  	if (status)
  		return status;
  
@@ -2015,7 +2038,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	get_device(dev);
  	return 0;
  }
-@@ -524,8 +487,6 @@ static int pcie_port_remove_service(stru
+@@ -524,8 +487,6 @@ static int pcie_port_remove_service(struct device *dev)
  	pciedev = to_pcie_device(dev);
  	driver = to_service_driver(dev->driver);
  	if (driver && driver->remove) {
@@ -2024,9 +2047,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		driver->remove(pciedev);
  		put_device(dev);
  	}
+diff --git a/include/linux/pci.h b/include/linux/pci.h
+index 1b711796..6738d816 100644
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1823,6 +1823,7 @@ void pcibios_release_device(struct pci_d
+@@ -1823,6 +1823,7 @@ void pcibios_release_device(struct pci_dev *dev);
  void pcibios_penalize_isa_irq(int irq, int active);
  int pcibios_alloc_irq(struct pci_dev *dev);
  void pcibios_free_irq(struct pci_dev *dev);
@@ -2034,3 +2059,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  #ifdef CONFIG_HIBERNATE_CALLBACKS
  extern struct dev_pm_ops pcibios_pm_ops;
+-- 
+2.14.1
+

@@ -1,4 +1,4 @@
-From 464b4d9b8282e0f1e5040e4914505f91ce4d3750 Mon Sep 17 00:00:00 2001
+From afb7254de9f03c3efaf4e306dcf5f88e1873fc6b Mon Sep 17 00:00:00 2001
 From: Yangbo Lu <yangbo.lu@nxp.com>
 Date: Mon, 25 Sep 2017 12:06:25 +0800
 Subject: [PATCH] fsl-mc: layerscape support
@@ -29,7 +29,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  .../{include/dpcon-cmd.h => bus/dpio/dpio-cmd.h}   |   73 +-
  drivers/staging/fsl-mc/bus/dpio/dpio-driver.c      |  296 ++++++
  drivers/staging/fsl-mc/bus/dpio/dpio-driver.txt    |  135 +++
- drivers/staging/fsl-mc/bus/dpio/dpio-service.c     |  689 +++++++++++++
+ drivers/staging/fsl-mc/bus/dpio/dpio-service.c     |  693 +++++++++++++
  drivers/staging/fsl-mc/bus/dpio/dpio.c             |  224 +++++
  drivers/staging/fsl-mc/bus/dpio/dpio.h             |  109 ++
  drivers/staging/fsl-mc/bus/dpio/qbman-portal.c     | 1049 ++++++++++++++++++++
@@ -68,7 +68,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/staging/fsl-mc/include/mc-cmd.h            |   44 +-
  drivers/staging/fsl-mc/include/mc-sys.h            |    3 +-
  drivers/staging/fsl-mc/include/mc.h                |   17 +-
- 49 files changed, 7380 insertions(+), 2612 deletions(-)
+ 49 files changed, 7384 insertions(+), 2612 deletions(-)
  create mode 100644 drivers/staging/fsl-mc/bus/dpbp-cmd.h
  create mode 100644 drivers/staging/fsl-mc/bus/dpcon-cmd.h
  create mode 100644 drivers/staging/fsl-mc/bus/dpcon.c
@@ -94,6 +94,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  create mode 100644 drivers/staging/fsl-mc/include/dpcon.h
  create mode 100644 drivers/staging/fsl-mc/include/dpopr.h
 
+diff --git a/drivers/staging/fsl-mc/bus/Kconfig b/drivers/staging/fsl-mc/bus/Kconfig
+index 1f959339..67847c0e 100644
 --- a/drivers/staging/fsl-mc/bus/Kconfig
 +++ b/drivers/staging/fsl-mc/bus/Kconfig
 @@ -1,25 +1,40 @@
@@ -150,6 +152,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +        help
 +          Driver that provides kernel support for the Freescale Management
 +          Complex resource manager user-space tool.
+diff --git a/drivers/staging/fsl-mc/bus/Makefile b/drivers/staging/fsl-mc/bus/Makefile
+index 38716fd5..e7e2239c 100644
 --- a/drivers/staging/fsl-mc/bus/Makefile
 +++ b/drivers/staging/fsl-mc/bus/Makefile
 @@ -17,4 +17,12 @@ mc-bus-driver-objs := fsl-mc-bus.o \
@@ -166,6 +170,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +
 +# MC restool kernel support
 +obj-$(CONFIG_FSL_MC_RESTOOL) += mc-restool.o
+diff --git a/drivers/staging/fsl-mc/bus/dpbp-cmd.h b/drivers/staging/fsl-mc/bus/dpbp-cmd.h
+new file mode 100644
+index 00000000..8aa65452
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpbp-cmd.h
 @@ -0,0 +1,80 @@
@@ -249,6 +256,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +};
 +
 +#endif /* _FSL_DPBP_CMD_H */
+diff --git a/drivers/staging/fsl-mc/bus/dpbp.c b/drivers/staging/fsl-mc/bus/dpbp.c
+index 5d4cd812..d9e450a6 100644
 --- a/drivers/staging/fsl-mc/bus/dpbp.c
 +++ b/drivers/staging/fsl-mc/bus/dpbp.c
 @@ -1,4 +1,5 @@
@@ -276,10 +285,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /**
   * dpbp_open() - Open a control session for the specified object.
-@@ -105,74 +106,6 @@ int dpbp_close(struct fsl_mc_io *mc_io,
+@@ -104,74 +105,6 @@ int dpbp_close(struct fsl_mc_io *mc_io,
+ }
  EXPORT_SYMBOL(dpbp_close);
  
- /**
+-/**
 - * dpbp_create() - Create the DPBP object.
 - * @mc_io:	Pointer to MC portal's I/O object
 - * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -347,11 +357,10 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	return mc_send_command(mc_io, &cmd);
 -}
 -
--/**
+ /**
   * dpbp_enable() - Enable the DPBP.
   * @mc_io:	Pointer to MC portal's I/O object
-  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
-@@ -250,6 +183,7 @@ int dpbp_is_enabled(struct fsl_mc_io *mc
+@@ -250,6 +183,7 @@ int dpbp_is_enabled(struct fsl_mc_io *mc_io,
  
  	return 0;
  }
@@ -671,7 +680,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /**
   * dpbp_get_attributes - Retrieve DPBP attributes.
-@@ -609,83 +240,40 @@ int dpbp_get_attributes(struct fsl_mc_io
+@@ -609,83 +240,40 @@ int dpbp_get_attributes(struct fsl_mc_io *mc_io,
  	rsp_params = (struct dpbp_rsp_get_attributes *)cmd.params;
  	attr->bpid = le16_to_cpu(rsp_params->bpid);
  	attr->id = le32_to_cpu(rsp_params->id);
@@ -768,6 +777,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return 0;
  }
 +EXPORT_SYMBOL(dpbp_get_api_version);
+diff --git a/drivers/staging/fsl-mc/bus/dpcon-cmd.h b/drivers/staging/fsl-mc/bus/dpcon-cmd.h
+new file mode 100644
+index 00000000..2bb66988
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpcon-cmd.h
 @@ -0,0 +1,85 @@
@@ -856,6 +868,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +};
 +
 +#endif /* _FSL_DPCON_CMD_H */
+diff --git a/drivers/staging/fsl-mc/bus/dpcon.c b/drivers/staging/fsl-mc/bus/dpcon.c
+new file mode 100644
+index 00000000..eb713578
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpcon.c
 @@ -0,0 +1,317 @@
@@ -1176,6 +1191,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	return 0;
 +}
 +EXPORT_SYMBOL(dpcon_get_api_version);
+diff --git a/drivers/staging/fsl-mc/bus/dpio/Makefile b/drivers/staging/fsl-mc/bus/dpio/Makefile
+new file mode 100644
+index 00000000..1c28794e
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/Makefile
 @@ -0,0 +1,11 @@
@@ -1190,48 +1208,53 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +fsl-mc-dpio-objs := dpio.o qbman-portal.o dpio-service.o dpio-driver.o
 +
 +obj-$(CONFIG_FSL_QBMAN_DEBUG) += qbman_debug.o
+diff --git a/drivers/staging/fsl-mc/include/dpcon-cmd.h b/drivers/staging/fsl-mc/bus/dpio/dpio-cmd.h
+similarity index 64%
+rename from drivers/staging/fsl-mc/include/dpcon-cmd.h
+rename to drivers/staging/fsl-mc/bus/dpio/dpio-cmd.h
+index 536b2ef1..b2dc6e76 100644
 --- a/drivers/staging/fsl-mc/include/dpcon-cmd.h
-+++ /dev/null
-@@ -1,62 +0,0 @@
++++ b/drivers/staging/fsl-mc/bus/dpio/dpio-cmd.h
+@@ -1,4 +1,6 @@
 -/* Copyright 2013-2015 Freescale Semiconductor Inc.
++/*
++ * Copyright 2013-2016 Freescale Semiconductor Inc.
++ * Copyright 2016 NXP
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions are met:
+@@ -11,7 +13,6 @@
+  * names of any contributors may be used to endorse or promote products
+  * derived from this software without specific prior written permission.
+  *
 - *
-- * Redistribution and use in source and binary forms, with or without
-- * modification, are permitted provided that the following conditions are met:
-- * * Redistributions of source code must retain the above copyright
-- * notice, this list of conditions and the following disclaimer.
-- * * Redistributions in binary form must reproduce the above copyright
-- * notice, this list of conditions and the following disclaimer in the
-- * documentation and/or other materials provided with the distribution.
-- * * Neither the name of the above-listed copyright holders nor the
-- * names of any contributors may be used to endorse or promote products
-- * derived from this software without specific prior written permission.
-- *
-- *
-- * ALTERNATIVELY, this software may be distributed under the terms of the
-- * GNU General Public License ("GPL") as published by the Free Software
-- * Foundation, either version 2 of that License or (at your option) any
-- * later version.
-- *
-- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-- * POSSIBILITY OF SUCH DAMAGE.
-- */
+  * ALTERNATIVELY, this software may be distributed under the terms of the
+  * GNU General Public License ("GPL") as published by the Free Software
+  * Foundation, either version 2 of that License or (at your option) any
+@@ -29,34 +30,46 @@
+  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  * POSSIBILITY OF SUCH DAMAGE.
+  */
 -#ifndef _FSL_DPCON_CMD_H
 -#define _FSL_DPCON_CMD_H
--
++#ifndef _FSL_DPIO_CMD_H
++#define _FSL_DPIO_CMD_H
++
++/* DPIO Version */
++#define DPIO_VER_MAJOR			4
++#define DPIO_VER_MINOR			2
++
++/* Command Versioning */
++
++#define DPIO_CMD_ID_OFFSET		4
++#define DPIO_CMD_BASE_VERSION		1
+ 
 -/* DPCON Version */
 -#define DPCON_VER_MAJOR				2
 -#define DPCON_VER_MINOR				1
--
--/* Command IDs */
++#define DPIO_CMD(id)	(((id) << DPIO_CMD_ID_OFFSET) | DPIO_CMD_BASE_VERSION)
+ 
+ /* Command IDs */
 -#define DPCON_CMDID_CLOSE				0x800
 -#define DPCON_CMDID_OPEN				0x808
 -#define DPCON_CMDID_CREATE				0x908
@@ -1255,56 +1278,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -#define DPCON_CMDID_SET_NOTIFICATION			0x100
 -
 -#endif /* _FSL_DPCON_CMD_H */
---- /dev/null
-+++ b/drivers/staging/fsl-mc/bus/dpio/dpio-cmd.h
-@@ -0,0 +1,75 @@
-+/*
-+ * Copyright 2013-2016 Freescale Semiconductor Inc.
-+ * Copyright 2016 NXP
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are met:
-+ * * Redistributions of source code must retain the above copyright
-+ * notice, this list of conditions and the following disclaimer.
-+ * * Redistributions in binary form must reproduce the above copyright
-+ * notice, this list of conditions and the following disclaimer in the
-+ * documentation and/or other materials provided with the distribution.
-+ * * Neither the name of the above-listed copyright holders nor the
-+ * names of any contributors may be used to endorse or promote products
-+ * derived from this software without specific prior written permission.
-+ *
-+ * ALTERNATIVELY, this software may be distributed under the terms of the
-+ * GNU General Public License ("GPL") as published by the Free Software
-+ * Foundation, either version 2 of that License or (at your option) any
-+ * later version.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-+ * POSSIBILITY OF SUCH DAMAGE.
-+ */
-+#ifndef _FSL_DPIO_CMD_H
-+#define _FSL_DPIO_CMD_H
-+
-+/* DPIO Version */
-+#define DPIO_VER_MAJOR			4
-+#define DPIO_VER_MINOR			2
-+
-+/* Command Versioning */
-+
-+#define DPIO_CMD_ID_OFFSET		4
-+#define DPIO_CMD_BASE_VERSION		1
-+
-+#define DPIO_CMD(id)	(((id) << DPIO_CMD_ID_OFFSET) | DPIO_CMD_BASE_VERSION)
-+
-+/* Command IDs */
 +#define DPIO_CMDID_CLOSE				DPIO_CMD(0x800)
 +#define DPIO_CMDID_OPEN					DPIO_CMD(0x803)
 +#define DPIO_CMDID_GET_API_VERSION			DPIO_CMD(0xa03)
@@ -1333,6 +1306,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +};
 +
 +#endif /* _FSL_DPIO_CMD_H */
+diff --git a/drivers/staging/fsl-mc/bus/dpio/dpio-driver.c b/drivers/staging/fsl-mc/bus/dpio/dpio-driver.c
+new file mode 100644
+index 00000000..8c8244a1
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/dpio-driver.c
 @@ -0,0 +1,296 @@
@@ -1632,6 +1608,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +}
 +module_init(dpio_driver_init);
 +module_exit(dpio_driver_exit);
+diff --git a/drivers/staging/fsl-mc/bus/dpio/dpio-driver.txt b/drivers/staging/fsl-mc/bus/dpio/dpio-driver.txt
+new file mode 100644
+index 00000000..0ba67716
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/dpio-driver.txt
 @@ -0,0 +1,135 @@
@@ -1770,9 +1749,12 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +   manipulate them are defined in dpaa2-fd.h.
 +
 +   Dequeue result struct and parsing APIs are defined in dpaa2-global.h.
+diff --git a/drivers/staging/fsl-mc/bus/dpio/dpio-service.c b/drivers/staging/fsl-mc/bus/dpio/dpio-service.c
+new file mode 100644
+index 00000000..8449d988
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/dpio-service.c
-@@ -0,0 +1,689 @@
+@@ -0,0 +1,693 @@
 +/*
 + * Copyright 2014-2016 Freescale Semiconductor Inc.
 + * Copyright 2016 NXP
@@ -1852,14 +1834,14 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	if (d)
 +		return d;
 +
-+	if (unlikely(cpu >= num_possible_cpus()))
++	if (unlikely(cpu >= (int)num_possible_cpus()))
 +		return NULL;
 +
 +	/*
 +	 * If cpu == -1, choose the current cpu, with no guarantees about
 +	 * potentially being migrated away.
 +	 */
-+	if (unlikely(cpu < 0))
++	if (cpu < 0)
 +		cpu = smp_processor_id();
 +
 +	/* If a specific cpu was requested, pick it up immediately */
@@ -1868,6 +1850,10 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +
 +static inline struct dpaa2_io *service_select(struct dpaa2_io *d)
 +{
++	if (d)
++		return d;
++
++	d = service_select_by_cpu(d, -1);
 +	if (d)
 +		return d;
 +
@@ -1897,7 +1883,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +		return NULL;
 +
 +	/* check if CPU is out of range (-1 means any cpu) */
-+	if (desc->cpu >= num_possible_cpus()) {
++	if (desc->cpu >= (int)num_possible_cpus()) {
 +		kfree(obj);
 +		return NULL;
 +	}
@@ -2462,6 +2448,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +}
 +EXPORT_SYMBOL(dpaa2_io_query_bp_count);
 +#endif
+diff --git a/drivers/staging/fsl-mc/bus/dpio/dpio.c b/drivers/staging/fsl-mc/bus/dpio/dpio.c
+new file mode 100644
+index 00000000..d81e0232
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/dpio.c
 @@ -0,0 +1,224 @@
@@ -2689,6 +2678,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +
 +	return 0;
 +}
+diff --git a/drivers/staging/fsl-mc/bus/dpio/dpio.h b/drivers/staging/fsl-mc/bus/dpio/dpio.h
+new file mode 100644
+index 00000000..ced1103d
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/dpio.h
 @@ -0,0 +1,109 @@
@@ -2801,6 +2793,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +			 u16 *minor_ver);
 +
 +#endif /* __FSL_DPIO_H */
+diff --git a/drivers/staging/fsl-mc/bus/dpio/qbman-portal.c b/drivers/staging/fsl-mc/bus/dpio/qbman-portal.c
+new file mode 100644
+index 00000000..e14fb65b
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/qbman-portal.c
 @@ -0,0 +1,1049 @@
@@ -3853,6 +3848,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +
 +	return 0;
 +}
+diff --git a/drivers/staging/fsl-mc/bus/dpio/qbman-portal.h b/drivers/staging/fsl-mc/bus/dpio/qbman-portal.h
+new file mode 100644
+index 00000000..4254034c
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/qbman-portal.h
 @@ -0,0 +1,662 @@
@@ -4518,6 +4516,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +#define qb_cl(d) (&(d)->dont_manipulate_directly[0])
 +
 +#endif /* __FSL_QBMAN_PORTAL_H */
+diff --git a/drivers/staging/fsl-mc/bus/dpio/qbman_debug.c b/drivers/staging/fsl-mc/bus/dpio/qbman_debug.c
+new file mode 100644
+index 00000000..1c77fa6a
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/qbman_debug.c
 @@ -0,0 +1,853 @@
@@ -5374,6 +5375,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	return qbman_cgr_statistics_query(s, cgid, clear, 0,
 +					  frame_cnt, byte_cnt);
 +}
+diff --git a/drivers/staging/fsl-mc/bus/dpio/qbman_debug.h b/drivers/staging/fsl-mc/bus/dpio/qbman_debug.h
+new file mode 100644
+index 00000000..0a247a49
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/qbman_debug.h
 @@ -0,0 +1,136 @@
@@ -5513,6 +5517,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +				 u64 *frame_cnt, u64 *byte_cnt);
 +int qbman_cq_dequeue_statistics(struct qbman_swp *s, u32 cgid, int clear,
 +				u64 *frame_cnt, u64 *byte_cnt);
+diff --git a/drivers/staging/fsl-mc/bus/dpio/qbman_private.h b/drivers/staging/fsl-mc/bus/dpio/qbman_private.h
+new file mode 100644
+index 00000000..98a64be2
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/dpio/qbman_private.h
 @@ -0,0 +1,171 @@
@@ -5687,6 +5694,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +
 +	__hexdump(start, end, p, sz, c);
 +}
+diff --git a/drivers/staging/fsl-mc/bus/dpmcp-cmd.h b/drivers/staging/fsl-mc/bus/dpmcp-cmd.h
+index d098a6d8..384a13d0 100644
 --- a/drivers/staging/fsl-mc/bus/dpmcp-cmd.h
 +++ b/drivers/staging/fsl-mc/bus/dpmcp-cmd.h
 @@ -1,4 +1,5 @@
@@ -5710,16 +5719,27 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  /* Minimal supported DPMCP Version */
 -#define DPMCP_MIN_VER_MAJOR				3
 -#define DPMCP_MIN_VER_MINOR				0
--
++#define DPMCP_MIN_VER_MAJOR		3
++#define DPMCP_MIN_VER_MINOR		0
+ 
 -/* Command IDs */
 -#define DPMCP_CMDID_CLOSE				0x800
 -#define DPMCP_CMDID_OPEN				0x80b
 -#define DPMCP_CMDID_CREATE				0x90b
 -#define DPMCP_CMDID_DESTROY				0x900
--
++/* Command versioning */
++#define DPMCP_CMD_BASE_VERSION		1
++#define DPMCP_CMD_ID_OFFSET		4
+ 
 -#define DPMCP_CMDID_GET_ATTR				0x004
 -#define DPMCP_CMDID_RESET				0x005
--
++#define DPMCP_CMD(id)	((id << DPMCP_CMD_ID_OFFSET) | DPMCP_CMD_BASE_VERSION)
++
++/* Command IDs */
++#define DPMCP_CMDID_CLOSE		DPMCP_CMD(0x800)
++#define DPMCP_CMDID_OPEN		DPMCP_CMD(0x80b)
++#define DPMCP_CMDID_GET_API_VERSION	DPMCP_CMD(0xa0b)
+ 
 -#define DPMCP_CMDID_SET_IRQ				0x010
 -#define DPMCP_CMDID_GET_IRQ				0x011
 -#define DPMCP_CMDID_SET_IRQ_ENABLE			0x012
@@ -5727,11 +5747,12 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -#define DPMCP_CMDID_SET_IRQ_MASK			0x014
 -#define DPMCP_CMDID_GET_IRQ_MASK			0x015
 -#define DPMCP_CMDID_GET_IRQ_STATUS			0x016
--
--struct dpmcp_cmd_open {
--	__le32 dpmcp_id;
--};
--
++#define DPMCP_CMDID_RESET		DPMCP_CMD(0x005)
+ 
+ struct dpmcp_cmd_open {
+ 	__le32 dpmcp_id;
+ };
+ 
 -struct dpmcp_cmd_create {
 -	__le32 portal_id;
 -};
@@ -5762,21 +5783,15 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	__le32 irq_num;
 -	__le32 type;
 -};
-+#define DPMCP_MIN_VER_MAJOR		3
-+#define DPMCP_MIN_VER_MINOR		0
- 
+-
 -#define DPMCP_ENABLE		0x1
-+/* Command versioning */
-+#define DPMCP_CMD_BASE_VERSION		1
-+#define DPMCP_CMD_ID_OFFSET		4
- 
+-
 -struct dpmcp_cmd_set_irq_enable {
 -	u8 enable;
 -	u8 pad[3];
 -	u8 irq_index;
 -};
-+#define DPMCP_CMD(id)	((id << DPMCP_CMD_ID_OFFSET) | DPMCP_CMD_BASE_VERSION)
- 
+-
 -struct dpmcp_cmd_get_irq_enable {
 -	__le32 pad;
 -	u8 irq_index;
@@ -5799,17 +5814,12 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -struct dpmcp_rsp_get_irq_mask {
 -	__le32 mask;
 -};
-+/* Command IDs */
-+#define DPMCP_CMDID_CLOSE		DPMCP_CMD(0x800)
-+#define DPMCP_CMDID_OPEN		DPMCP_CMD(0x80b)
-+#define DPMCP_CMDID_GET_API_VERSION	DPMCP_CMD(0xa0b)
- 
+-
 -struct dpmcp_cmd_get_irq_status {
 -	__le32 status;
 -	u8 irq_index;
 -};
-+#define DPMCP_CMDID_RESET		DPMCP_CMD(0x005)
- 
+-
 -struct dpmcp_rsp_get_irq_status {
 -	__le32 status;
 -};
@@ -5821,11 +5831,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	/* response word 1 */
 -	__le16 version_major;
 -	__le16 version_minor;
-+struct dpmcp_cmd_open {
-+	__le32 dpmcp_id;
- };
- 
+-};
+-
  #endif /* _FSL_DPMCP_CMD_H */
+diff --git a/drivers/staging/fsl-mc/bus/dpmcp.c b/drivers/staging/fsl-mc/bus/dpmcp.c
+index 55766f78..ad4c8b43 100644
 --- a/drivers/staging/fsl-mc/bus/dpmcp.c
 +++ b/drivers/staging/fsl-mc/bus/dpmcp.c
 @@ -1,4 +1,5 @@
@@ -5843,10 +5853,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * ALTERNATIVELY, this software may be distributed under the terms of the
   * GNU General Public License ("GPL") as published by the Free Software
   * Foundation, either version 2 of that License or (at your option) any
-@@ -104,76 +104,6 @@ int dpmcp_close(struct fsl_mc_io *mc_io,
+@@ -103,76 +103,6 @@ int dpmcp_close(struct fsl_mc_io *mc_io,
+ 	return mc_send_command(mc_io, &cmd);
  }
  
- /**
+-/**
 - * dpmcp_create() - Create the DPMCP object.
 - * @mc_io:	Pointer to MC portal's I/O object
 - * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -5916,10 +5927,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	return mc_send_command(mc_io, &cmd);
 -}
 -
--/**
+ /**
   * dpmcp_reset() - Reset the DPMCP, returns the object to initial state.
   * @mc_io:	Pointer to MC portal's I/O object
-  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
 @@ -196,309 +126,33 @@ int dpmcp_reset(struct fsl_mc_io *mc_io,
  }
  
@@ -6242,6 +6252,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return 0;
  }
+diff --git a/drivers/staging/fsl-mc/bus/dpmcp.h b/drivers/staging/fsl-mc/bus/dpmcp.h
+index fe79d4d9..f616031e 100644
 --- a/drivers/staging/fsl-mc/bus/dpmcp.h
 +++ b/drivers/staging/fsl-mc/bus/dpmcp.h
 @@ -1,4 +1,5 @@
@@ -6284,9 +6296,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  int dpmcp_close(struct fsl_mc_io *mc_io,
 -		uint32_t cmd_flags,
 -		uint16_t token);
-+		u32 cmd_flags,
-+		u16 token);
- 
+-
 -/**
 - * struct dpmcp_cfg - Structure representing DPMCP configuration
 - * @portal_id:	Portal ID; 'DPMCP_GET_PORTAL_ID_FROM_POOL' to get the portal ID
@@ -6300,7 +6310,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -		 uint32_t		cmd_flags,
 -		 const struct dpmcp_cfg	*cfg,
 -		uint16_t		*token);
--
++		u32 cmd_flags,
++		u16 token);
+ 
 -int dpmcp_destroy(struct fsl_mc_io *mc_io,
 -		  uint32_t cmd_flags,
 -		  uint16_t token);
@@ -6400,6 +6412,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +		u16 token);
  
  #endif /* __FSL_DPMCP_H */
+diff --git a/drivers/staging/fsl-mc/bus/dpmng-cmd.h b/drivers/staging/fsl-mc/bus/dpmng-cmd.h
+index a7b77d58..cdddfb80 100644
 --- a/drivers/staging/fsl-mc/bus/dpmng-cmd.h
 +++ b/drivers/staging/fsl-mc/bus/dpmng-cmd.h
 @@ -12,7 +12,6 @@
@@ -6431,6 +6445,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  struct dpmng_rsp_get_version {
  	__le32 revision;
+diff --git a/drivers/staging/fsl-mc/bus/dpmng.c b/drivers/staging/fsl-mc/bus/dpmng.c
+index 96b1d677..ad5d5bbe 100644
 --- a/drivers/staging/fsl-mc/bus/dpmng.c
 +++ b/drivers/staging/fsl-mc/bus/dpmng.c
 @@ -1,4 +1,5 @@
@@ -6448,7 +6464,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * ALTERNATIVELY, this software may be distributed under the terms of the
   * GNU General Public License ("GPL") as published by the Free Software
   * Foundation, either version 2 of that License or (at your option) any
-@@ -72,36 +72,3 @@ int mc_get_version(struct fsl_mc_io *mc_
+@@ -72,36 +72,3 @@ int mc_get_version(struct fsl_mc_io *mc_io,
  }
  EXPORT_SYMBOL(mc_get_version);
  
@@ -6485,6 +6501,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	return 0;
 -}
 -
+diff --git a/drivers/staging/fsl-mc/bus/dprc-cmd.h b/drivers/staging/fsl-mc/bus/dprc-cmd.h
+index 009d6567..b7d8c345 100644
 --- a/drivers/staging/fsl-mc/bus/dprc-cmd.h
 +++ b/drivers/staging/fsl-mc/bus/dprc-cmd.h
 @@ -12,7 +12,6 @@
@@ -6503,7 +6521,13 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +#define DPRC_MIN_VER_MAJOR			6
  #define DPRC_MIN_VER_MINOR			0
  
--/* Command IDs */
++/* Command versioning */
++#define DPRC_CMD_BASE_VERSION			1
++#define DPRC_CMD_ID_OFFSET			4
++
++#define DPRC_CMD(id)	((id << DPRC_CMD_ID_OFFSET) | DPRC_CMD_BASE_VERSION)
++
+ /* Command IDs */
 -#define DPRC_CMDID_CLOSE			0x800
 -#define DPRC_CMDID_OPEN				0x805
 -#define DPRC_CMDID_CREATE			0x905
@@ -6540,14 +6564,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -#define DPRC_CMDID_DISCONNECT			0x168
 -#define DPRC_CMDID_GET_POOL			0x169
 -#define DPRC_CMDID_GET_POOL_COUNT		0x16A
-+/* Command versioning */
-+#define DPRC_CMD_BASE_VERSION			1
-+#define DPRC_CMD_ID_OFFSET			4
- 
+-
 -#define DPRC_CMDID_GET_CONNECTION		0x16C
-+#define DPRC_CMD(id)	((id << DPRC_CMD_ID_OFFSET) | DPRC_CMD_BASE_VERSION)
-+
-+/* Command IDs */
 +#define DPRC_CMDID_CLOSE                        DPRC_CMD(0x800)
 +#define DPRC_CMDID_OPEN                         DPRC_CMD(0x805)
 +#define DPRC_CMDID_GET_API_VERSION              DPRC_CMD(0xa05)
@@ -6603,6 +6621,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  };
  
  struct dprc_cmd_set_obj_label {
+diff --git a/drivers/staging/fsl-mc/bus/dprc-driver.c b/drivers/staging/fsl-mc/bus/dprc-driver.c
+index c5ee4639..f6e6211b 100644
 --- a/drivers/staging/fsl-mc/bus/dprc-driver.c
 +++ b/drivers/staging/fsl-mc/bus/dprc-driver.c
 @@ -1,7 +1,7 @@
@@ -6614,7 +6634,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * Author: German Rivera <German.Rivera@freescale.com>
   *
   * This file is licensed under the terms of the GNU General Public
-@@ -160,6 +160,8 @@ static void check_plugged_state_change(s
+@@ -160,6 +160,8 @@ static void check_plugged_state_change(struct fsl_mc_device *mc_dev,
   * dprc_add_new_devices - Adds devices to the logical bus for a DPRC
   *
   * @mc_bus_dev: pointer to the fsl-mc device that represents a DPRC object
@@ -6623,7 +6643,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * @obj_desc_array: array of device descriptors for child devices currently
   * present in the physical DPRC.
   * @num_child_objects_in_mc: number of entries in obj_desc_array
-@@ -169,6 +171,7 @@ static void check_plugged_state_change(s
+@@ -169,6 +171,7 @@ static void check_plugged_state_change(struct fsl_mc_device *mc_dev,
   * in the physical DPRC.
   */
  static void dprc_add_new_devices(struct fsl_mc_device *mc_bus_dev,
@@ -6631,7 +6651,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				 struct dprc_obj_desc *obj_desc_array,
  				 int num_child_objects_in_mc)
  {
-@@ -188,11 +191,12 @@ static void dprc_add_new_devices(struct
+@@ -188,11 +191,12 @@ static void dprc_add_new_devices(struct fsl_mc_device *mc_bus_dev,
  		child_dev = fsl_mc_device_lookup(obj_desc, mc_bus_dev);
  		if (child_dev) {
  			check_plugged_state_change(child_dev, obj_desc);
@@ -6645,7 +6665,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		if (error < 0)
  			continue;
  	}
-@@ -202,6 +206,8 @@ static void dprc_add_new_devices(struct
+@@ -202,6 +206,8 @@ static void dprc_add_new_devices(struct fsl_mc_device *mc_bus_dev,
   * dprc_scan_objects - Discover objects in a DPRC
   *
   * @mc_bus_dev: pointer to the fsl-mc device that represents a DPRC object
@@ -6654,7 +6674,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * @total_irq_count: total number of IRQs needed by objects in the DPRC.
   *
   * Detects objects added and removed from a DPRC and synchronizes the
-@@ -217,6 +223,7 @@ static void dprc_add_new_devices(struct
+@@ -217,6 +223,7 @@ static void dprc_add_new_devices(struct fsl_mc_device *mc_bus_dev,
   * of the device drivers for the non-allocatable devices.
   */
  int dprc_scan_objects(struct fsl_mc_device *mc_bus_dev,
@@ -6662,7 +6682,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		      unsigned int *total_irq_count)
  {
  	int num_child_objects;
-@@ -297,7 +304,7 @@ int dprc_scan_objects(struct fsl_mc_devi
+@@ -297,7 +304,7 @@ int dprc_scan_objects(struct fsl_mc_device *mc_bus_dev,
  	dprc_remove_devices(mc_bus_dev, child_obj_desc_array,
  			    num_child_objects);
  
@@ -6671,7 +6691,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			     num_child_objects);
  
  	if (child_obj_desc_array)
-@@ -328,7 +335,7 @@ int dprc_scan_container(struct fsl_mc_de
+@@ -328,7 +335,7 @@ int dprc_scan_container(struct fsl_mc_device *mc_bus_dev)
  	 * Discover objects in the DPRC:
  	 */
  	mutex_lock(&mc_bus->scan_mutex);
@@ -6680,7 +6700,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	mutex_unlock(&mc_bus->scan_mutex);
  	if (error < 0)
  		goto error;
-@@ -415,7 +422,7 @@ static irqreturn_t dprc_irq0_handler_thr
+@@ -415,7 +422,7 @@ static irqreturn_t dprc_irq0_handler_thread(int irq_num, void *arg)
  		      DPRC_IRQ_EVENT_OBJ_CREATED)) {
  		unsigned int irq_count;
  
@@ -6689,7 +6709,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		if (error < 0) {
  			/*
  			 * If the error is -ENXIO, we ignore it, as it indicates
-@@ -505,7 +512,7 @@ static int register_dprc_irq_handler(str
+@@ -505,7 +512,7 @@ static int register_dprc_irq_handler(struct fsl_mc_device *mc_dev)
  					  dprc_irq0_handler,
  					  dprc_irq0_handler_thread,
  					  IRQF_NO_SUSPEND | IRQF_ONESHOT,
@@ -6698,7 +6718,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  					  &mc_dev->dev);
  	if (error < 0) {
  		dev_err(&mc_dev->dev,
-@@ -597,6 +604,7 @@ static int dprc_probe(struct fsl_mc_devi
+@@ -597,6 +604,7 @@ static int dprc_probe(struct fsl_mc_device *mc_dev)
  	struct fsl_mc_bus *mc_bus = to_fsl_mc_bus(mc_dev);
  	bool mc_io_created = false;
  	bool msi_domain_set = false;
@@ -6706,7 +6726,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (WARN_ON(strcmp(mc_dev->obj_desc.type, "dprc") != 0))
  		return -EINVAL;
-@@ -669,13 +677,21 @@ static int dprc_probe(struct fsl_mc_devi
+@@ -669,13 +677,21 @@ static int dprc_probe(struct fsl_mc_device *mc_dev)
  		goto error_cleanup_open;
  	}
  
@@ -6733,6 +6753,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		error = -ENOTSUPP;
  		goto error_cleanup_open;
  	}
+diff --git a/drivers/staging/fsl-mc/bus/dprc.c b/drivers/staging/fsl-mc/bus/dprc.c
+index 9fea3def..764cd3fb 100644
 --- a/drivers/staging/fsl-mc/bus/dprc.c
 +++ b/drivers/staging/fsl-mc/bus/dprc.c
 @@ -1,4 +1,5 @@
@@ -6750,10 +6772,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * ALTERNATIVELY, this software may be distributed under the terms of the
   * GNU General Public License ("GPL") as published by the Free Software
   * Foundation, either version 2 of that License or (at your option) any
-@@ -100,93 +100,6 @@ int dprc_close(struct fsl_mc_io *mc_io,
+@@ -99,93 +99,6 @@ int dprc_close(struct fsl_mc_io *mc_io,
+ }
  EXPORT_SYMBOL(dprc_close);
  
- /**
+-/**
 - * dprc_create_container() - Create child container
 - * @mc_io:	Pointer to MC portal's I/O object
 - * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -6840,11 +6863,10 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	return mc_send_command(mc_io, &cmd);
 -}
 -
--/**
+ /**
   * dprc_reset_container - Reset child container.
   * @mc_io:	Pointer to MC portal's I/O object
-  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
-@@ -565,279 +478,6 @@ int dprc_get_attributes(struct fsl_mc_io
+@@ -565,279 +478,6 @@ int dprc_get_attributes(struct fsl_mc_io *mc_io,
  	attr->icid = le16_to_cpu(rsp_params->icid);
  	attr->options = le32_to_cpu(rsp_params->options);
  	attr->portal_id = le32_to_cpu(rsp_params->portal_id);
@@ -7124,10 +7146,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return 0;
  }
-@@ -934,64 +574,6 @@ int dprc_get_obj(struct fsl_mc_io *mc_io
+@@ -933,64 +573,6 @@ int dprc_get_obj(struct fsl_mc_io *mc_io,
+ }
  EXPORT_SYMBOL(dprc_get_obj);
  
- /**
+-/**
 - * dprc_get_obj_desc() - Get object descriptor.
 - *
 - * @mc_io:	Pointer to MC portal's I/O object
@@ -7185,14 +7208,14 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -}
 -EXPORT_SYMBOL(dprc_get_obj_desc);
 -
--/**
+ /**
   * dprc_set_obj_irq() - Set IRQ information for object to trigger an interrupt.
   * @mc_io:	Pointer to MC portal's I/O object
-  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
-@@ -1130,52 +712,6 @@ int dprc_get_res_count(struct fsl_mc_io
+@@ -1129,52 +711,6 @@ int dprc_get_res_count(struct fsl_mc_io *mc_io,
+ }
  EXPORT_SYMBOL(dprc_get_res_count);
  
- /**
+-/**
 - * dprc_get_res_ids() - Obtains IDs of free resources in the container
 - * @mc_io:	Pointer to MC portal's I/O object
 - * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -7238,11 +7261,10 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -}
 -EXPORT_SYMBOL(dprc_get_res_ids);
 -
--/**
+ /**
   * dprc_get_obj_region() - Get region information for a specified object.
   * @mc_io:	Pointer to MC portal's I/O object
-  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
-@@ -1216,160 +752,66 @@ int dprc_get_obj_region(struct fsl_mc_io
+@@ -1216,160 +752,66 @@ int dprc_get_obj_region(struct fsl_mc_io *mc_io,
  
  	/* retrieve response parameters */
  	rsp_params = (struct dprc_rsp_get_obj_region *)cmd.params;
@@ -7433,7 +7455,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/* send command to mc*/
  	err = mc_send_command(mc_io, &cmd);
-@@ -1377,12 +819,7 @@ int dprc_get_connection(struct fsl_mc_io
+@@ -1377,12 +819,7 @@ int dprc_get_connection(struct fsl_mc_io *mc_io,
  		return err;
  
  	/* retrieve response parameters */
@@ -7447,6 +7469,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	return 0;
  }
+diff --git a/drivers/staging/fsl-mc/bus/fsl-mc-allocator.c b/drivers/staging/fsl-mc/bus/fsl-mc-allocator.c
+index e93ab53b..ce07096c 100644
 --- a/drivers/staging/fsl-mc/bus/fsl-mc-allocator.c
 +++ b/drivers/staging/fsl-mc/bus/fsl-mc-allocator.c
 @@ -1,7 +1,7 @@
@@ -7492,7 +7516,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   */
  static int __must_check fsl_mc_resource_pool_add_device(struct fsl_mc_bus
  								*mc_bus,
-@@ -95,10 +92,10 @@ out:
+@@ -95,10 +92,10 @@ static int __must_check fsl_mc_resource_pool_add_device(struct fsl_mc_bus
   * fsl_mc_resource_pool_remove_device - remove an allocatable device from a
   * resource pool
   *
@@ -7506,7 +7530,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   */
  static int __must_check fsl_mc_resource_pool_remove_device(struct fsl_mc_device
  								   *mc_dev)
-@@ -255,17 +252,18 @@ out_unlock:
+@@ -255,17 +252,18 @@ void fsl_mc_resource_free(struct fsl_mc_resource *resource)
  EXPORT_SYMBOL_GPL(fsl_mc_resource_free);
  
  /**
@@ -7534,7 +7558,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   *
   * NOTE: pool_type must be different from FSL_MC_POOL_MCP, since MC
   * portals are allocated using fsl_mc_portal_allocate(), instead of
-@@ -312,10 +310,9 @@ error:
+@@ -312,10 +310,9 @@ int __must_check fsl_mc_object_allocate(struct fsl_mc_device *mc_dev,
  EXPORT_SYMBOL_GPL(fsl_mc_object_allocate);
  
  /**
@@ -7548,7 +7572,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   */
  void fsl_mc_object_free(struct fsl_mc_device *mc_adev)
  {
-@@ -332,8 +329,14 @@ void fsl_mc_object_free(struct fsl_mc_de
+@@ -332,8 +329,14 @@ void fsl_mc_object_free(struct fsl_mc_device *mc_adev)
  EXPORT_SYMBOL_GPL(fsl_mc_object_free);
  
  /*
@@ -7565,7 +7589,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   */
  int fsl_mc_populate_irq_pool(struct fsl_mc_bus *mc_bus,
  			     unsigned int irq_count)
-@@ -395,7 +398,7 @@ cleanup_msi_irqs:
+@@ -395,7 +398,7 @@ int fsl_mc_populate_irq_pool(struct fsl_mc_bus *mc_bus,
  EXPORT_SYMBOL_GPL(fsl_mc_populate_irq_pool);
  
  /**
@@ -7574,7 +7598,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * It frees the IRQs that were allocated to the pool, back to the GIC-ITS.
   */
  void fsl_mc_cleanup_irq_pool(struct fsl_mc_bus *mc_bus)
-@@ -422,11 +425,7 @@ void fsl_mc_cleanup_irq_pool(struct fsl_
+@@ -422,11 +425,7 @@ void fsl_mc_cleanup_irq_pool(struct fsl_mc_bus *mc_bus)
  EXPORT_SYMBOL_GPL(fsl_mc_cleanup_irq_pool);
  
  /**
@@ -7587,7 +7611,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   */
  int __must_check fsl_mc_allocate_irqs(struct fsl_mc_device *mc_dev)
  {
-@@ -495,8 +494,7 @@ error_resource_alloc:
+@@ -495,8 +494,7 @@ int __must_check fsl_mc_allocate_irqs(struct fsl_mc_device *mc_dev)
  EXPORT_SYMBOL_GPL(fsl_mc_allocate_irqs);
  
  /*
@@ -7597,7 +7621,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   */
  void fsl_mc_free_irqs(struct fsl_mc_device *mc_dev)
  {
-@@ -605,7 +603,7 @@ static int fsl_mc_allocator_probe(struct
+@@ -605,7 +603,7 @@ static int fsl_mc_allocator_probe(struct fsl_mc_device *mc_dev)
  		return error;
  
  	dev_dbg(&mc_dev->dev,
@@ -7606,7 +7630,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return 0;
  }
  
-@@ -627,7 +625,7 @@ static int fsl_mc_allocator_remove(struc
+@@ -627,7 +625,7 @@ static int fsl_mc_allocator_remove(struct fsl_mc_device *mc_dev)
  	}
  
  	dev_dbg(&mc_dev->dev,
@@ -7615,6 +7639,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return 0;
  }
  
+diff --git a/drivers/staging/fsl-mc/bus/fsl-mc-bus.c b/drivers/staging/fsl-mc/bus/fsl-mc-bus.c
+index 44f64b6f..30a48df3 100644
 --- a/drivers/staging/fsl-mc/bus/fsl-mc-bus.c
 +++ b/drivers/staging/fsl-mc/bus/fsl-mc-bus.c
 @@ -1,7 +1,7 @@
@@ -7664,7 +7690,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * structures
   *
   * Returns 1 on success, 0 otherwise.
-@@ -75,8 +75,11 @@ static int fsl_mc_bus_match(struct devic
+@@ -75,8 +75,11 @@ static int fsl_mc_bus_match(struct device *dev, struct device_driver *drv)
  	struct fsl_mc_driver *mc_drv = to_fsl_mc_driver(drv);
  	bool found = false;
  
@@ -7677,7 +7703,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (!mc_drv->match_id_table)
  		goto out;
-@@ -91,7 +94,7 @@ static int fsl_mc_bus_match(struct devic
+@@ -91,7 +94,7 @@ static int fsl_mc_bus_match(struct device *dev, struct device_driver *drv)
  
  	/*
  	 * Traverse the match_id table of the given driver, trying to find
@@ -7686,7 +7712,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	 */
  	for (id = mc_drv->match_id_table; id->vendor != 0x0; id++) {
  		if (id->vendor == mc_dev->obj_desc.vendor &&
-@@ -132,23 +135,141 @@ static ssize_t modalias_show(struct devi
+@@ -132,23 +135,141 @@ static ssize_t modalias_show(struct device *dev, struct device_attribute *attr,
  }
  static DEVICE_ATTR_RO(modalias);
  
@@ -7830,7 +7856,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static int fsl_mc_driver_probe(struct device *dev)
  {
  	struct fsl_mc_driver *mc_drv;
-@@ -164,8 +285,7 @@ static int fsl_mc_driver_probe(struct de
+@@ -164,8 +285,7 @@ static int fsl_mc_driver_probe(struct device *dev)
  
  	error = mc_drv->probe(mc_dev);
  	if (error < 0) {
@@ -7840,7 +7866,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return error;
  	}
  
-@@ -183,9 +303,7 @@ static int fsl_mc_driver_remove(struct d
+@@ -183,9 +303,7 @@ static int fsl_mc_driver_remove(struct device *dev)
  
  	error = mc_drv->remove(mc_dev);
  	if (error < 0) {
@@ -7851,7 +7877,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return error;
  	}
  
-@@ -232,8 +350,6 @@ int __fsl_mc_driver_register(struct fsl_
+@@ -232,8 +350,6 @@ int __fsl_mc_driver_register(struct fsl_mc_driver *mc_driver,
  		return error;
  	}
  
@@ -7860,10 +7886,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return 0;
  }
  EXPORT_SYMBOL_GPL(__fsl_mc_driver_register);
-@@ -249,15 +365,6 @@ void fsl_mc_driver_unregister(struct fsl
+@@ -248,15 +364,6 @@ void fsl_mc_driver_unregister(struct fsl_mc_driver *mc_driver)
+ }
  EXPORT_SYMBOL_GPL(fsl_mc_driver_unregister);
  
- /**
+-/**
 - * fsl_mc_bus_exists - check if a root dprc exists
 - */
 -bool fsl_mc_bus_exists(void)
@@ -7872,11 +7899,10 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -}
 -EXPORT_SYMBOL_GPL(fsl_mc_bus_exists);
 -
--/**
+ /**
   * fsl_mc_get_root_dprc - function to traverse to the root dprc
   */
- void fsl_mc_get_root_dprc(struct device *dev,
-@@ -315,21 +422,6 @@ static int get_dprc_icid(struct fsl_mc_i
+@@ -315,21 +422,6 @@ static int get_dprc_icid(struct fsl_mc_io *mc_io,
  	return error;
  }
  
@@ -7898,7 +7924,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static int translate_mc_addr(struct fsl_mc_device *mc_dev,
  			     enum dprc_region_type mc_region_type,
  			     u64 mc_offset, phys_addr_t *phys_addr)
-@@ -451,18 +543,37 @@ bool fsl_mc_is_root_dprc(struct device *
+@@ -451,18 +543,37 @@ bool fsl_mc_is_root_dprc(struct device *dev)
  	return dev == root_dprc_dev;
  }
  
@@ -7937,7 +7963,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	if (dev_is_fsl_mc(parent_dev))
  		parent_mc_dev = to_fsl_mc_device(parent_dev);
-@@ -473,7 +584,7 @@ int fsl_mc_device_add(struct dprc_obj_de
+@@ -473,7 +584,7 @@ int fsl_mc_device_add(struct dprc_obj_desc *obj_desc,
  		/*
  		 * Allocate an MC bus device object:
  		 */
@@ -7946,7 +7972,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		if (!mc_bus)
  			return -ENOMEM;
  
-@@ -482,16 +593,30 @@ int fsl_mc_device_add(struct dprc_obj_de
+@@ -482,16 +593,30 @@ int fsl_mc_device_add(struct dprc_obj_desc *obj_desc,
  		/*
  		 * Allocate a regular fsl_mc_device object:
  		 */
@@ -7978,7 +8004,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	dev_set_name(&mc_dev->dev, "%s.%d", obj_desc->type, obj_desc->id);
  
  	if (strcmp(obj_desc->type, "dprc") == 0) {
-@@ -524,8 +649,6 @@ int fsl_mc_device_add(struct dprc_obj_de
+@@ -524,8 +649,6 @@ int fsl_mc_device_add(struct dprc_obj_desc *obj_desc,
  			}
  
  			mc_io2 = mc_io;
@@ -7987,7 +8013,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		}
  
  		error = get_dprc_icid(mc_io2, obj_desc->id, &mc_dev->icid);
-@@ -533,8 +656,8 @@ int fsl_mc_device_add(struct dprc_obj_de
+@@ -533,8 +656,8 @@ int fsl_mc_device_add(struct dprc_obj_desc *obj_desc,
  			goto error_cleanup_dev;
  	} else {
  		/*
@@ -7998,7 +8024,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		 */
  		mc_dev->icid = parent_mc_dev->icid;
  		mc_dev->dma_mask = FSL_MC_DEFAULT_DMA_MASK;
-@@ -556,9 +679,14 @@ int fsl_mc_device_add(struct dprc_obj_de
+@@ -556,9 +679,14 @@ int fsl_mc_device_add(struct dprc_obj_desc *obj_desc,
  			goto error_cleanup_dev;
  	}
  
@@ -8016,7 +8042,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/*
  	 * The device-specific probe callback will get invoked by device_add()
-@@ -571,9 +699,7 @@ int fsl_mc_device_add(struct dprc_obj_de
+@@ -571,9 +699,7 @@ int fsl_mc_device_add(struct dprc_obj_desc *obj_desc,
  		goto error_cleanup_dev;
  	}
  
@@ -8027,7 +8053,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	*new_mc_dev = mc_dev;
  	return 0;
-@@ -581,47 +707,34 @@ int fsl_mc_device_add(struct dprc_obj_de
+@@ -581,47 +707,34 @@ int fsl_mc_device_add(struct dprc_obj_desc *obj_desc,
  error_cleanup_dev:
  	kfree(mc_dev->regions);
  	if (mc_bus)
@@ -8065,7 +8091,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 -	if (strcmp(mc_dev->obj_desc.type, "dprc") == 0) {
 -		mc_bus = to_fsl_mc_bus(mc_dev);
--
++	if (strcmp(mc_dev->obj_desc.type, "dprc") != 0)
++		mc_dev->dev.iommu_fwspec = NULL;
+ 
 -		if (fsl_mc_is_root_dprc(&mc_dev->dev)) {
 -			if (atomic_read(&root_dprc_count) > 0)
 -				atomic_dec(&root_dprc_count);
@@ -8073,9 +8101,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -				WARN_ON(1);
 -		}
 -	}
-+	if (strcmp(mc_dev->obj_desc.type, "dprc") != 0)
-+		mc_dev->dev.iommu_fwspec = NULL;
- 
+-
 -	if (mc_bus)
 -		devm_kfree(mc_dev->dev.parent, mc_bus);
 -	else
@@ -8084,7 +8110,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  EXPORT_SYMBOL_GPL(fsl_mc_device_remove);
  
-@@ -629,8 +742,7 @@ static int parse_mc_ranges(struct device
+@@ -629,8 +742,7 @@ static int parse_mc_ranges(struct device *dev,
  			   int *paddr_cells,
  			   int *mc_addr_cells,
  			   int *mc_size_cells,
@@ -8094,7 +8120,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  {
  	const __be32 *prop;
  	int range_tuple_cell_count;
-@@ -643,8 +755,6 @@ static int parse_mc_ranges(struct device
+@@ -643,8 +755,6 @@ static int parse_mc_ranges(struct device *dev,
  		dev_warn(dev,
  			 "missing or empty ranges property for device tree node '%s'\n",
  			 mc_node->name);
@@ -8103,7 +8129,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return 0;
  	}
  
-@@ -671,8 +781,7 @@ static int parse_mc_ranges(struct device
+@@ -671,8 +781,7 @@ static int parse_mc_ranges(struct device *dev,
  		return -EINVAL;
  	}
  
@@ -8113,7 +8139,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static int get_mc_addr_translation_ranges(struct device *dev,
-@@ -680,7 +789,7 @@ static int get_mc_addr_translation_range
+@@ -680,7 +789,7 @@ static int get_mc_addr_translation_ranges(struct device *dev,
  						**ranges,
  					  u8 *num_ranges)
  {
@@ -8122,7 +8148,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	int paddr_cells;
  	int mc_addr_cells;
  	int mc_size_cells;
-@@ -688,16 +797,16 @@ static int get_mc_addr_translation_range
+@@ -688,16 +797,16 @@ static int get_mc_addr_translation_ranges(struct device *dev,
  	const __be32 *ranges_start;
  	const __be32 *cell;
  
@@ -8145,7 +8171,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		/*
  		 * Missing or empty ranges property ("ranges;") for the
  		 * 'fsl,qoriq-mc' node. In this case, identity mapping
-@@ -749,8 +858,6 @@ static int fsl_mc_bus_probe(struct platf
+@@ -749,8 +858,6 @@ static int fsl_mc_bus_probe(struct platform_device *pdev)
  	struct mc_version mc_version;
  	struct resource res;
  
@@ -8154,7 +8180,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	mc = devm_kzalloc(&pdev->dev, sizeof(*mc), GFP_KERNEL);
  	if (!mc)
  		return -ENOMEM;
-@@ -783,8 +890,7 @@ static int fsl_mc_bus_probe(struct platf
+@@ -783,8 +890,7 @@ static int fsl_mc_bus_probe(struct platform_device *pdev)
  		goto error_cleanup_mc_io;
  	}
  
@@ -8164,7 +8190,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		 mc_version.major, mc_version.minor, mc_version.revision);
  
  	error = get_mc_addr_translation_ranges(&pdev->dev,
-@@ -793,16 +899,17 @@ static int fsl_mc_bus_probe(struct platf
+@@ -793,16 +899,17 @@ static int fsl_mc_bus_probe(struct platform_device *pdev)
  	if (error < 0)
  		goto error_cleanup_mc_io;
  
@@ -8186,7 +8212,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	if (error < 0)
  		goto error_cleanup_mc_io;
  
-@@ -812,7 +919,8 @@ static int fsl_mc_bus_probe(struct platf
+@@ -812,7 +919,8 @@ static int fsl_mc_bus_probe(struct platform_device *pdev)
  	obj_desc.irq_count = 1;
  	obj_desc.region_count = 0;
  
@@ -8196,7 +8222,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	if (error < 0)
  		goto error_cleanup_mc_io;
  
-@@ -840,7 +948,6 @@ static int fsl_mc_bus_remove(struct plat
+@@ -840,7 +948,6 @@ static int fsl_mc_bus_remove(struct platform_device *pdev)
  	fsl_destroy_mc_io(mc->root_mc_bus_dev->mc_io);
  	mc->root_mc_bus_dev->mc_io = NULL;
  
@@ -8204,7 +8230,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return 0;
  }
  
-@@ -865,22 +972,12 @@ static int __init fsl_mc_bus_driver_init
+@@ -865,22 +972,12 @@ static int __init fsl_mc_bus_driver_init(void)
  {
  	int error;
  
@@ -8228,7 +8254,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	error = platform_driver_register(&fsl_mc_bus_driver);
  	if (error < 0) {
  		pr_err("platform_driver_register() failed: %d\n", error);
-@@ -914,7 +1011,6 @@ error_cleanup_bus:
+@@ -914,7 +1011,6 @@ static int __init fsl_mc_bus_driver_init(void)
  	bus_unregister(&fsl_mc_bus_type);
  
  error_cleanup_cache:
@@ -8236,6 +8262,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return error;
  }
  postcore_initcall(fsl_mc_bus_driver_init);
+diff --git a/drivers/staging/fsl-mc/bus/fsl-mc-iommu.c b/drivers/staging/fsl-mc/bus/fsl-mc-iommu.c
+new file mode 100644
+index 00000000..86b2cd84
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/fsl-mc-iommu.c
 @@ -0,0 +1,104 @@
@@ -8343,6 +8372,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +
 +	return group;
 +}
+diff --git a/drivers/staging/fsl-mc/bus/fsl-mc-msi.c b/drivers/staging/fsl-mc/bus/fsl-mc-msi.c
+index 3d46b1b1..b8b2c86e 100644
 --- a/drivers/staging/fsl-mc/bus/fsl-mc-msi.c
 +++ b/drivers/staging/fsl-mc/bus/fsl-mc-msi.c
 @@ -1,7 +1,7 @@
@@ -8362,6 +8393,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /*
   * Generate a unique ID identifying the interrupt (only used within the MSI
+diff --git a/drivers/staging/fsl-mc/bus/fsl-mc-private.h b/drivers/staging/fsl-mc/bus/fsl-mc-private.h
+index d459c267..e08b8843 100644
 --- a/drivers/staging/fsl-mc/bus/fsl-mc-private.h
 +++ b/drivers/staging/fsl-mc/bus/fsl-mc-private.h
 @@ -10,13 +10,15 @@
@@ -8382,6 +8415,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  int __init dprc_driver_init(void);
  
  void dprc_driver_exit(void);
+diff --git a/drivers/staging/fsl-mc/bus/irq-gic-v3-its-fsl-mc-msi.c b/drivers/staging/fsl-mc/bus/irq-gic-v3-its-fsl-mc-msi.c
+index 7a6ac640..49127acb 100644
 --- a/drivers/staging/fsl-mc/bus/irq-gic-v3-its-fsl-mc-msi.c
 +++ b/drivers/staging/fsl-mc/bus/irq-gic-v3-its-fsl-mc-msi.c
 @@ -1,7 +1,7 @@
@@ -8405,7 +8440,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	.irq_mask = irq_chip_mask_parent,
  	.irq_unmask = irq_chip_unmask_parent,
  	.irq_eoi = irq_chip_eoi_parent,
-@@ -51,7 +52,7 @@ static int its_fsl_mc_msi_prepare(struct
+@@ -51,7 +52,7 @@ static int its_fsl_mc_msi_prepare(struct irq_domain *msi_domain,
  	return msi_info->ops->msi_prepare(msi_domain->parent, dev, nvec, info);
  }
  
@@ -8425,6 +8460,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  		pr_info("fsl-mc MSI: %s domain created\n", np->full_name);
  	}
+diff --git a/drivers/staging/fsl-mc/bus/mc-io.c b/drivers/staging/fsl-mc/bus/mc-io.c
+index 798c965f..d66b87f0 100644
 --- a/drivers/staging/fsl-mc/bus/mc-io.c
 +++ b/drivers/staging/fsl-mc/bus/mc-io.c
 @@ -1,4 +1,5 @@
@@ -8442,6 +8479,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * ALTERNATIVELY, this software may be distributed under the terms of the
   * GNU General Public License ("GPL") as published by the Free Software
   * Foundation, either version 2 of that License or (at your option) any
+diff --git a/drivers/staging/fsl-mc/bus/mc-ioctl.h b/drivers/staging/fsl-mc/bus/mc-ioctl.h
+new file mode 100644
+index 00000000..8ac502a1
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/mc-ioctl.h
 @@ -0,0 +1,22 @@
@@ -8467,6 +8507,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	_IOWR(RESTOOL_IOCTL_TYPE, 0xE0, struct mc_command)
 +
 +#endif /* _FSL_MC_IOCTL_H_ */
+diff --git a/drivers/staging/fsl-mc/bus/mc-restool.c b/drivers/staging/fsl-mc/bus/mc-restool.c
+new file mode 100644
+index 00000000..d5330b68
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/bus/mc-restool.c
 @@ -0,0 +1,405 @@
@@ -8875,6 +8918,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +MODULE_AUTHOR("Freescale Semiconductor Inc.");
 +MODULE_DESCRIPTION("Freescale's MC restool driver");
 +MODULE_LICENSE("GPL");
+diff --git a/drivers/staging/fsl-mc/bus/mc-sys.c b/drivers/staging/fsl-mc/bus/mc-sys.c
+index 285917c7..cf63c7b6 100644
 --- a/drivers/staging/fsl-mc/bus/mc-sys.c
 +++ b/drivers/staging/fsl-mc/bus/mc-sys.c
 @@ -1,4 +1,5 @@
@@ -8901,7 +8946,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /*
   * usleep_range() min and max values used to throttle down polling
-@@ -67,7 +67,7 @@ static u16 mc_cmd_hdr_read_cmdid(struct
+@@ -67,7 +67,7 @@ static u16 mc_cmd_hdr_read_cmdid(struct mc_command *cmd)
  	struct mc_cmd_header *hdr = (struct mc_cmd_header *)&cmd->header;
  	u16 cmd_id = le16_to_cpu(hdr->cmd_id);
  
@@ -8910,7 +8955,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static int mc_status_to_error(enum mc_cmd_status status)
-@@ -200,7 +200,7 @@ static int mc_polling_wait_preemptible(s
+@@ -200,7 +200,7 @@ static int mc_polling_wait_preemptible(struct fsl_mc_io *mc_io,
  
  		if (time_after_eq(jiffies, jiffies_until_timeout)) {
  			dev_dbg(mc_io->dev,
@@ -8919,7 +8964,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				 mc_io->portal_phys_addr,
  				 (unsigned int)mc_cmd_hdr_read_token(cmd),
  				 (unsigned int)mc_cmd_hdr_read_cmdid(cmd));
-@@ -240,7 +240,7 @@ static int mc_polling_wait_atomic(struct
+@@ -240,7 +240,7 @@ static int mc_polling_wait_atomic(struct fsl_mc_io *mc_io,
  		timeout_usecs -= MC_CMD_COMPLETION_POLLING_MAX_SLEEP_USECS;
  		if (timeout_usecs == 0) {
  			dev_dbg(mc_io->dev,
@@ -8928,7 +8973,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				 mc_io->portal_phys_addr,
  				 (unsigned int)mc_cmd_hdr_read_token(cmd),
  				 (unsigned int)mc_cmd_hdr_read_cmdid(cmd));
-@@ -294,7 +294,7 @@ int mc_send_command(struct fsl_mc_io *mc
+@@ -294,7 +294,7 @@ int mc_send_command(struct fsl_mc_io *mc_io, struct mc_command *cmd)
  
  	if (status != MC_CMD_STATUS_OK) {
  		dev_dbg(mc_io->dev,
@@ -8937,6 +8982,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			 mc_io->portal_phys_addr,
  			 (unsigned int)mc_cmd_hdr_read_token(cmd),
  			 (unsigned int)mc_cmd_hdr_read_cmdid(cmd),
+diff --git a/drivers/staging/fsl-mc/include/dpaa2-fd.h b/drivers/staging/fsl-mc/include/dpaa2-fd.h
+new file mode 100644
+index 00000000..72328415
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/include/dpaa2-fd.h
 @@ -0,0 +1,706 @@
@@ -9646,6 +9694,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +}
 +
 +#endif /* __FSL_DPAA2_FD_H */
+diff --git a/drivers/staging/fsl-mc/include/dpaa2-global.h b/drivers/staging/fsl-mc/include/dpaa2-global.h
+new file mode 100644
+index 00000000..0326447f
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/include/dpaa2-global.h
 @@ -0,0 +1,202 @@
@@ -9851,6 +9902,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +}
 +
 +#endif /* __FSL_DPAA2_GLOBAL_H */
+diff --git a/drivers/staging/fsl-mc/include/dpaa2-io.h b/drivers/staging/fsl-mc/include/dpaa2-io.h
+new file mode 100644
+index 00000000..c7d1d997
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/include/dpaa2-io.h
 @@ -0,0 +1,190 @@
@@ -10044,6 +10098,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +}
 +
 +#endif /* __FSL_DPAA2_IO_H */
+diff --git a/drivers/staging/fsl-mc/include/dpbp-cmd.h b/drivers/staging/fsl-mc/include/dpbp-cmd.h
+deleted file mode 100644
+index 2860411d..00000000
 --- a/drivers/staging/fsl-mc/include/dpbp-cmd.h
 +++ /dev/null
 @@ -1,185 +0,0 @@
@@ -10232,6 +10289,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -};
 -
 -#endif /* _FSL_DPBP_CMD_H */
+diff --git a/drivers/staging/fsl-mc/include/dpbp.h b/drivers/staging/fsl-mc/include/dpbp.h
+index e14e85a5..e9e04cce 100644
 --- a/drivers/staging/fsl-mc/include/dpbp.h
 +++ b/drivers/staging/fsl-mc/include/dpbp.h
 @@ -1,4 +1,5 @@
@@ -10279,10 +10338,11 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  int dpbp_enable(struct fsl_mc_io *mc_io,
  		u32 cmd_flags,
-@@ -82,139 +67,24 @@ int dpbp_reset(struct fsl_mc_io *mc_io,
+@@ -81,140 +66,25 @@ int dpbp_reset(struct fsl_mc_io *mc_io,
+ 	       u32 cmd_flags,
  	       u16 token);
  
- /**
+-/**
 - * struct dpbp_irq_cfg - IRQ configuration
 - * @addr:	Address that must be written to signal a message-based interrupt
 - * @val:	Value to write into irq_addr address
@@ -10343,7 +10403,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -			  u8		irq_index,
 -			  u32		status);
 -
--/**
+ /**
   * struct dpbp_attr - Structure representing DPBP attributes
   * @id:		DPBP object ID
 - * @version:	DPBP version
@@ -10415,19 +10475,21 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -			   u32		cmd_flags,
 -			   u16		token,
 -			   struct dpbp_notification_cfg	*cfg);
--
--/** @} */
 +int dpbp_get_attributes(struct fsl_mc_io *mc_io,
 +			u32 cmd_flags,
 +			u16 token,
 +			struct dpbp_attr *attr);
-+
+ 
+-/** @} */
 +int dpbp_get_api_version(struct fsl_mc_io *mc_io,
 +			 u32 cmd_flags,
 +			 u16 *major_ver,
 +			 u16 *minor_ver);
  
  #endif /* __FSL_DPBP_H */
+diff --git a/drivers/staging/fsl-mc/include/dpcon.h b/drivers/staging/fsl-mc/include/dpcon.h
+new file mode 100644
+index 00000000..efa23906
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/include/dpcon.h
 @@ -0,0 +1,115 @@
@@ -10546,6 +10608,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +			  u16 *minor_ver);
 +
 +#endif /* __FSL_DPCON_H */
+diff --git a/drivers/staging/fsl-mc/include/dpmng.h b/drivers/staging/fsl-mc/include/dpmng.h
+index e5cfd017..170c07dd 100644
 --- a/drivers/staging/fsl-mc/include/dpmng.h
 +++ b/drivers/staging/fsl-mc/include/dpmng.h
 @@ -1,4 +1,5 @@
@@ -10581,6 +10645,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +		   struct mc_version *mc_ver_info);
  
  #endif /* __FSL_DPMNG_H */
+diff --git a/drivers/staging/fsl-mc/include/dpopr.h b/drivers/staging/fsl-mc/include/dpopr.h
+new file mode 100644
+index 00000000..e1110af2
 --- /dev/null
 +++ b/drivers/staging/fsl-mc/include/dpopr.h
 @@ -0,0 +1,110 @@
@@ -10694,6 +10761,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +};
 +
 +#endif /* __FSL_DPOPR_H_ */
+diff --git a/drivers/staging/fsl-mc/include/dprc.h b/drivers/staging/fsl-mc/include/dprc.h
+index 593b2bbe..8dc411ec 100644
 --- a/drivers/staging/fsl-mc/include/dprc.h
 +++ b/drivers/staging/fsl-mc/include/dprc.h
 @@ -1,4 +1,5 @@
@@ -10808,7 +10877,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /* IRQ */
  
-@@ -139,7 +58,7 @@ int dprc_reset_container(struct fsl_mc_i
+@@ -139,7 +58,7 @@ int dprc_reset_container(struct fsl_mc_io *mc_io,
  #define DPRC_IRQ_INDEX          0
  
  /* Number of dprc's IRQs */
@@ -10817,7 +10886,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /* DPRC IRQ events */
  
-@@ -151,12 +70,14 @@ int dprc_reset_container(struct fsl_mc_i
+@@ -151,12 +70,14 @@ int dprc_reset_container(struct fsl_mc_io *mc_io,
  #define DPRC_IRQ_EVENT_RES_ADDED		0x00000004
  /* IRQ event - Indicates that resources removed from the container */
  #define DPRC_IRQ_EVENT_RES_REMOVED		0x00000008
@@ -10834,15 +10903,18 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * destroyed
   */
  #define DPRC_IRQ_EVENT_OBJ_DESTROYED		0x00000020
-@@ -171,59 +92,59 @@ int dprc_reset_container(struct fsl_mc_i
+@@ -171,59 +92,59 @@ int dprc_reset_container(struct fsl_mc_io *mc_io,
   * @irq_num:	A user defined number associated with this IRQ
   */
  struct dprc_irq_cfg {
 -	     phys_addr_t	paddr;
 -	     u32		val;
 -	     int		irq_num;
--};
--
++	     phys_addr_t paddr;
++	     u32 val;
++	     int irq_num;
+ };
+ 
 -int dprc_set_irq(struct fsl_mc_io	*mc_io,
 -		 u32		cmd_flags,
 -		 u16		token,
@@ -10891,11 +10963,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -			  u16		token,
 -			  u8		irq_index,
 -			  u32		status);
-+	     phys_addr_t paddr;
-+	     u32 val;
-+	     int irq_num;
-+};
-+
 +int dprc_set_irq(struct fsl_mc_io *mc_io,
 +		 u32 cmd_flags,
 +		 u16 token,
@@ -10947,7 +11014,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /**
   * struct dprc_attributes - Container attributes
-@@ -231,114 +152,23 @@ int dprc_clear_irq_status(struct fsl_mc_
+@@ -231,114 +152,23 @@ int dprc_clear_irq_status(struct fsl_mc_io	*mc_io,
   * @icid: Container's ICID
   * @portal_id: Container's portal ID
   * @options: Container's options as set at container's creation
@@ -10967,8 +11034,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -		u16 major;
 -		u16 minor;
 -	} version;
- };
- 
+-};
+-
 -int dprc_get_attributes(struct fsl_mc_io	*mc_io,
 -			u32		cmd_flags,
 -			u16		token,
@@ -11030,8 +11097,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 -	u32 num;
 -	u32 options;
 -	int id_base_align;
--};
--
+ };
+ 
 -int dprc_assign(struct fsl_mc_io	*mc_io,
 -		u32		cmd_flags,
 -		u16		token,
@@ -11069,7 +11136,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /* Objects Attributes Flags */
  
-@@ -353,7 +183,7 @@ int dprc_get_obj_count(struct fsl_mc_io
+@@ -353,7 +183,7 @@ int dprc_get_obj_count(struct fsl_mc_io *mc_io,
   * masters;
   * user is responsible for proper memory handling through IOMMU configuration.
   */
@@ -11266,6 +11333,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  #endif /* _FSL_DPRC_H */
  
+diff --git a/drivers/staging/fsl-mc/include/mc-bus.h b/drivers/staging/fsl-mc/include/mc-bus.h
+index 170684a5..4d1f2d3e 100644
 --- a/drivers/staging/fsl-mc/include/mc-bus.h
 +++ b/drivers/staging/fsl-mc/include/mc-bus.h
 @@ -1,7 +1,7 @@
@@ -11296,6 +11365,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		      unsigned int *total_irq_count);
  
  int __init dprc_driver_init(void);
+diff --git a/drivers/staging/fsl-mc/include/mc-cmd.h b/drivers/staging/fsl-mc/include/mc-cmd.h
+index 5decb989..2e08aa31 100644
 --- a/drivers/staging/fsl-mc/include/mc-cmd.h
 +++ b/drivers/staging/fsl-mc/include/mc-cmd.h
 @@ -1,4 +1,5 @@
@@ -11333,7 +11404,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static inline u64 mc_encode_cmd_header(u16 cmd_id,
  				       u32 cmd_flags,
  				       u16 token)
-@@ -84,10 +89,8 @@ static inline u64 mc_encode_cmd_header(u
+@@ -84,10 +89,8 @@ static inline u64 mc_encode_cmd_header(u16 cmd_id,
  	u64 header = 0;
  	struct mc_cmd_header *hdr = (struct mc_cmd_header *)&header;
  
@@ -11346,7 +11417,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	hdr->status = MC_CMD_STATUS_READY;
  	if (cmd_flags & MC_CMD_FLAG_PRI)
  		hdr->flags_hw = MC_CMD_FLAG_PRI;
-@@ -102,7 +105,26 @@ static inline u16 mc_cmd_hdr_read_token(
+@@ -102,7 +105,26 @@ static inline u16 mc_cmd_hdr_read_token(struct mc_command *cmd)
  	struct mc_cmd_header *hdr = (struct mc_cmd_header *)&cmd->header;
  	u16 token = le16_to_cpu(hdr->token);
  
@@ -11374,6 +11445,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  #endif /* __FSL_MC_CMD_H */
+diff --git a/drivers/staging/fsl-mc/include/mc-sys.h b/drivers/staging/fsl-mc/include/mc-sys.h
+index 89ad0cf5..dca7f908 100644
 --- a/drivers/staging/fsl-mc/include/mc-sys.h
 +++ b/drivers/staging/fsl-mc/include/mc-sys.h
 @@ -1,4 +1,5 @@
@@ -11383,6 +11456,8 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   *
   * Interface of the I/O services to send MC commands to the MC hardware
   *
+diff --git a/drivers/staging/fsl-mc/include/mc.h b/drivers/staging/fsl-mc/include/mc.h
+index f6e720e8..c23b78a4 100644
 --- a/drivers/staging/fsl-mc/include/mc.h
 +++ b/drivers/staging/fsl-mc/include/mc.h
 @@ -1,7 +1,7 @@
@@ -11428,7 +11503,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  int __must_check __fsl_mc_driver_register(struct fsl_mc_driver *fsl_mc_driver,
  					  struct module *owner);
  
-@@ -198,4 +202,13 @@ int __must_check fsl_mc_allocate_irqs(st
+@@ -198,4 +202,13 @@ int __must_check fsl_mc_allocate_irqs(struct fsl_mc_device *mc_dev);
  
  void fsl_mc_free_irqs(struct fsl_mc_device *mc_dev);
  
@@ -11442,3 +11517,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +#endif
 +
  #endif /* _FSL_MC_H_ */
+-- 
+2.14.1
+
