@@ -1,14 +1,14 @@
 --- a/src/drivers/drivers.mak
 +++ b/src/drivers/drivers.mak
-@@ -34,7 +34,6 @@ NEED_SME=y
+@@ -36,7 +36,6 @@ NEED_SME=y
  NEED_AP_MLME=y
  NEED_NETLINK=y
  NEED_LINUX_IOCTL=y
 -NEED_RFKILL=y
+ NEED_RADIOTAP=y
  
  ifdef CONFIG_LIBNL32
-   DRV_LIBS += -lnl-3
-@@ -116,7 +115,6 @@ DRV_WPA_CFLAGS += -DCONFIG_DRIVER_WEXT
+@@ -123,7 +122,6 @@ DRV_WPA_CFLAGS += -DCONFIG_DRIVER_WEXT
  CONFIG_WIRELESS_EXTENSION=y
  NEED_NETLINK=y
  NEED_LINUX_IOCTL=y
@@ -16,7 +16,7 @@
  endif
  
  ifdef CONFIG_DRIVER_NDIS
-@@ -142,7 +140,6 @@ endif
+@@ -149,7 +147,6 @@ endif
  ifdef CONFIG_WIRELESS_EXTENSION
  DRV_WPA_CFLAGS += -DCONFIG_WIRELESS_EXTENSION
  DRV_WPA_OBJS += ../src/drivers/driver_wext.o
@@ -24,14 +24,14 @@
  endif
  
  ifdef NEED_NETLINK
-@@ -155,6 +152,7 @@ endif
+@@ -162,6 +159,7 @@ endif
  
  ifdef NEED_RFKILL
  DRV_OBJS += ../src/drivers/rfkill.o
 +DRV_WPA_CFLAGS += -DCONFIG_RFKILL
  endif
  
- ifdef CONFIG_VLAN_NETLINK
+ ifdef NEED_RADIOTAP
 --- a/src/drivers/rfkill.h
 +++ b/src/drivers/rfkill.h
 @@ -18,8 +18,24 @@ struct rfkill_config {

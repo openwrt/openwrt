@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -2254,13 +2254,18 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -2394,13 +2394,18 @@ wpa_driver_nl80211_finish_drv_init(struc
  }
  
  
@@ -22,7 +22,7 @@
  	return send_and_recv_msgs(drv, msg, NULL, NULL);
  }
  
-@@ -2311,7 +2316,7 @@ static void wpa_driver_nl80211_deinit(st
+@@ -2452,7 +2457,7 @@ static void wpa_driver_nl80211_deinit(st
  	nl80211_remove_monitor_interface(drv);
  
  	if (is_ap_interface(drv->nlmode))
@@ -31,7 +31,7 @@
  
  	if (drv->eapol_sock >= 0) {
  		eloop_unregister_read_sock(drv->eapol_sock);
-@@ -4140,8 +4145,7 @@ static void nl80211_teardown_ap(struct i
+@@ -4385,8 +4390,7 @@ static void nl80211_teardown_ap(struct i
  		nl80211_remove_monitor_interface(drv);
  	else
  		nl80211_mgmt_unsubscribe(bss, "AP teardown");
@@ -41,7 +41,7 @@
  }
  
  
-@@ -6066,8 +6070,6 @@ static int wpa_driver_nl80211_if_remove(
+@@ -6387,8 +6391,6 @@ static int wpa_driver_nl80211_if_remove(
  	} else {
  		wpa_printf(MSG_DEBUG, "nl80211: First BSS - reassign context");
  		nl80211_teardown_ap(bss);
@@ -50,7 +50,7 @@
  		nl80211_destroy_bss(bss);
  		if (!bss->added_if)
  			i802_set_iface_flags(bss, 0);
-@@ -6389,8 +6391,7 @@ static int wpa_driver_nl80211_deinit_ap(
+@@ -6750,8 +6752,7 @@ static int wpa_driver_nl80211_deinit_ap(
  	struct wpa_driver_nl80211_data *drv = bss->drv;
  	if (!is_ap_interface(drv->nlmode))
  		return -1;
@@ -60,7 +60,7 @@
  
  	/*
  	 * If the P2P GO interface was dynamically added, then it is
-@@ -6409,8 +6410,7 @@ static int wpa_driver_nl80211_stop_ap(vo
+@@ -6770,8 +6771,7 @@ static int wpa_driver_nl80211_stop_ap(vo
  	struct wpa_driver_nl80211_data *drv = bss->drv;
  	if (!is_ap_interface(drv->nlmode))
  		return -1;

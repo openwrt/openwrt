@@ -1,6 +1,6 @@
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -121,6 +121,11 @@ OBJS += ../src/common/hw_features_common
+@@ -157,6 +157,11 @@ OBJS += ../src/common/hw_features_common
  
  OBJS += ../src/eapol_auth/eapol_auth_sm.o
  
@@ -22,7 +22,7 @@
  
  struct wpa_ctrl_dst;
  struct radius_server_data;
-@@ -103,6 +104,7 @@ struct hostapd_data {
+@@ -118,6 +119,7 @@ struct hostapd_data {
  	struct hostapd_iface *iface;
  	struct hostapd_config *iconf;
  	struct hostapd_bss_config *conf;
@@ -30,7 +30,7 @@
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -286,6 +288,8 @@ struct hostapd_iface {
+@@ -323,6 +325,8 @@ struct hostapd_iface {
  	struct hostapd_config *conf;
  	char phy[16]; /* Name of the PHY (radio) */
  
@@ -41,7 +41,7 @@
  		HAPD_IFACE_DISABLED,
 --- /dev/null
 +++ b/src/ap/ubus.c
-@@ -0,0 +1,511 @@
+@@ -0,0 +1,536 @@
 +/*
 + * hostapd / ubus support
 + * Copyright (c) 2013, Felix Fietkau <nbd@openwrt.org>
@@ -58,6 +58,8 @@
 +#include "wps_hostapd.h"
 +#include "sta_info.h"
 +#include "ubus.h"
++#include "ap_drv_ops.h"
++#include "beacon.h"
 +
 +static struct ubus_context *ctx;
 +static struct blob_buf b;
@@ -417,6 +419,10 @@
 +{
 +	struct blob_attr *tb[__VENDOR_ELEMENTS_MAX];
 +	struct hostapd_data *hapd = get_hapd_from_object(obj);
++	struct hostapd_bss_config *bss = hapd->conf;
++	struct wpabuf *elems;
++	const char *pos;
++	size_t len;
 +
 +	blobmsg_parse(ve_policy, __VENDOR_ELEMENTS_MAX, tb,
 +		      blob_data(msg), blob_len(msg));
@@ -424,10 +430,29 @@
 +	if (!tb[VENDOR_ELEMENTS])
 +		return UBUS_STATUS_INVALID_ARGUMENT;
 +
-+	const char *vendor_elements = blobmsg_data(tb[VENDOR_ELEMENTS]);
-+	if (hostapd_set_iface(hapd->iconf, hapd->conf, "vendor_elements",
-+			      vendor_elements) != 0)
-+		return UBUS_STATUS_NOT_SUPPORTED;
++	pos = blobmsg_data(tb[VENDOR_ELEMENTS]);
++	len = os_strlen(pos);
++	if (len & 0x01)
++			return UBUS_STATUS_INVALID_ARGUMENT;
++
++	len /= 2;
++	if (len == 0) {
++		wpabuf_free(bss->vendor_elements);
++		bss->vendor_elements = NULL;
++		return 0;
++	}
++
++	elems = wpabuf_alloc(len);
++	if (elems == NULL)
++		return 1;
++
++	if (hexstr2bin(pos, wpabuf_put(elems, len), len)) {
++		wpabuf_free(elems);
++		return UBUS_STATUS_INVALID_ARGUMENT;
++	}
++
++	wpabuf_free(bss->vendor_elements);
++	bss->vendor_elements = elems;
 +
 +	/* update beacons if vendor elements were set successfully */
 +	if (ieee802_11_update_beacons(hapd->iface) != 0)
@@ -636,7 +661,7 @@
 +#endif
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -277,6 +277,7 @@ static void hostapd_free_hapd_data(struc
+@@ -284,6 +284,7 @@ static void hostapd_free_hapd_data(struc
  	hapd->started = 0;
  
  	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
@@ -644,7 +669,7 @@
  	iapp_deinit(hapd->iapp);
  	hapd->iapp = NULL;
  	accounting_deinit(hapd);
-@@ -1098,6 +1099,8 @@ static int hostapd_setup_bss(struct host
+@@ -1139,6 +1140,8 @@ static int hostapd_setup_bss(struct host
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -653,7 +678,7 @@
  	return 0;
  }
  
-@@ -1384,6 +1387,7 @@ int hostapd_setup_interface_complete(str
+@@ -1664,6 +1667,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
  
@@ -661,15 +686,15 @@
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->conf->channel) {
  #ifdef NEED_AP_MLME
-@@ -1544,6 +1548,7 @@ dfs_offload:
+@@ -1844,6 +1848,7 @@ dfs_offload:
  
  fail:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
 +	hostapd_ubus_free_iface(iface);
  	hostapd_set_state(iface, HAPD_IFACE_DISABLED);
  	wpa_msg(hapd->msg_ctx, MSG_INFO, AP_EVENT_DISABLED);
- 	if (iface->interfaces && iface->interfaces->terminate_on_error)
-@@ -1873,6 +1878,7 @@ void hostapd_interface_deinit_free(struc
+ #ifdef CONFIG_FST
+@@ -2277,6 +2282,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;
@@ -679,7 +704,7 @@
  		   __func__, driver, drv_priv);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -881,7 +881,8 @@ int auth_sae_init_committed(struct hosta
+@@ -980,7 +980,8 @@ int auth_sae_init_committed(struct hosta
  
  
  static void handle_auth(struct hostapd_data *hapd,
@@ -689,7 +714,7 @@
  {
  	u16 auth_alg, auth_transaction, status_code;
  	u16 resp = WLAN_STATUS_SUCCESS;
-@@ -897,6 +898,11 @@ static void handle_auth(struct hostapd_d
+@@ -996,6 +997,11 @@ static void handle_auth(struct hostapd_d
  	char *identity = NULL;
  	char *radius_cui = NULL;
  	u16 seq_ctrl;
@@ -699,9 +724,9 @@
 +		.frame_info = fi,
 +	};
  
- 	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.auth)) {
- 		wpa_printf(MSG_INFO, "handle_auth - too short payload (len=%lu)",
-@@ -983,6 +989,14 @@ static void handle_auth(struct hostapd_d
+ 	os_memset(&vlan_id, 0, sizeof(vlan_id));
+ 
+@@ -1149,6 +1155,14 @@ static void handle_auth(struct hostapd_d
  		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
  		goto fail;
  	}
@@ -716,7 +741,7 @@
  	if (res == HOSTAPD_ACL_PENDING) {
  		wpa_printf(MSG_DEBUG, "Authentication frame from " MACSTR
  			   " waiting for an external authentication",
-@@ -1694,13 +1708,18 @@ static void send_assoc_resp(struct hosta
+@@ -2033,13 +2047,18 @@ static u16 send_assoc_resp(struct hostap
  
  static void handle_assoc(struct hostapd_data *hapd,
  			 const struct ieee80211_mgmt *mgmt, size_t len,
@@ -724,7 +749,7 @@
 +			 int reassoc, struct hostapd_frame_info *fi)
  {
  	u16 capab_info, listen_interval, seq_ctrl, fc;
- 	u16 resp = WLAN_STATUS_SUCCESS;
+ 	u16 resp = WLAN_STATUS_SUCCESS, reply_res;
  	const u8 *pos;
  	int left, i;
  	struct sta_info *sta;
@@ -736,9 +761,9 @@
  
  	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_req) :
  				      sizeof(mgmt->u.assoc_req))) {
-@@ -1820,6 +1839,13 @@ static void handle_assoc(struct hostapd_
- 		goto fail;
+@@ -2159,6 +2178,13 @@ static void handle_assoc(struct hostapd_
  	}
+ #endif /* CONFIG_MBO */
  
 +	if (hostapd_ubus_handle_event(hapd, &req)) {
 +		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by ubus handler.\n",
@@ -747,10 +772,10 @@
 +		goto fail;
 +	}
 +
- 	sta->capability = capab_info;
- 	sta->listen_interval = listen_interval;
- 
-@@ -2236,7 +2262,7 @@ int ieee802_11_mgmt(struct hostapd_data
+ 	/*
+ 	 * sta->capability is used in check_assoc_ies() for RRM enabled
+ 	 * capability element.
+@@ -2639,7 +2665,7 @@ int ieee802_11_mgmt(struct hostapd_data
  
  
  	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
@@ -759,7 +784,7 @@
  		return 1;
  	}
  
-@@ -2251,17 +2277,17 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -2657,17 +2683,17 @@ int ieee802_11_mgmt(struct hostapd_data
  	switch (stype) {
  	case WLAN_FC_STYPE_AUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::auth");
@@ -782,7 +807,7 @@
  	case WLAN_FC_STYPE_DISASSOC:
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -542,7 +542,7 @@ static enum ssid_match_result ssid_match
+@@ -675,7 +675,7 @@ sta_track_seen_on(struct hostapd_iface *
  
  void handle_probe_req(struct hostapd_data *hapd,
  		      const struct ieee80211_mgmt *mgmt, size_t len,
@@ -791,22 +816,23 @@
  {
  	u8 *resp;
  	struct ieee802_11_elems elems;
-@@ -550,8 +550,14 @@ void handle_probe_req(struct hostapd_dat
- 	size_t ie_len;
- 	struct sta_info *sta = NULL;
+@@ -684,9 +684,15 @@ void handle_probe_req(struct hostapd_dat
  	size_t i, resp_len;
-+	int ssi_signal = fi->ssi_signal;
  	int noack;
  	enum ssid_match_result res;
++	int ssi_signal = fi->ssi_signal;
+ 	int ret;
+ 	u16 csa_offs[2];
+ 	size_t csa_offs_len;
 +	struct hostapd_ubus_request req = {
 +		.type = HOSTAPD_UBUS_PROBE_REQ,
 +		.mgmt_frame = mgmt,
 +		.frame_info = fi,
 +	};
  
- 	ie = mgmt->u.probe_req.variable;
- 	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.probe_req))
-@@ -710,6 +716,12 @@ void handle_probe_req(struct hostapd_dat
+ 	if (len < IEEE80211_HDRLEN)
+ 		return;
+@@ -838,6 +844,12 @@ void handle_probe_req(struct hostapd_dat
  	}
  #endif /* CONFIG_P2P */
  
@@ -832,7 +858,7 @@
  int ieee802_11_update_beacons(struct hostapd_iface *iface);
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -49,6 +49,10 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -52,6 +52,10 @@ int hostapd_notif_assoc(struct hostapd_d
  	u16 reason = WLAN_REASON_UNSPECIFIED;
  	u16 status = WLAN_STATUS_SUCCESS;
  	const u8 *p2p_dev_addr = NULL;
@@ -843,9 +869,9 @@
  
  	if (addr == NULL) {
  		/*
-@@ -113,6 +117,12 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -124,6 +128,12 @@ int hostapd_notif_assoc(struct hostapd_d
+ 		goto fail;
  	}
- 	sta->flags &= ~(WLAN_STA_WPS | WLAN_STA_MAYBE_WPS | WLAN_STA_WPS2);
  
 +	if (hostapd_ubus_handle_event(hapd, &req)) {
 +		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by ubus handler.\n",

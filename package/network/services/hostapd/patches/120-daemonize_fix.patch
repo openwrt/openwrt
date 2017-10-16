@@ -8,7 +8,7 @@
  
  #ifdef ANDROID
  #include <sys/capability.h>
-@@ -155,59 +156,46 @@ int os_gmtime(os_time_t t, struct os_tm
+@@ -179,59 +180,46 @@ int os_gmtime(os_time_t t, struct os_tm
  	return 0;
  }
  
@@ -60,13 +60,13 @@
 +	if (chdir("/") < 0)
  		return -1;
 -	}
--
+ 
 -	return 0;
 -}
 -#else /* __APPLE__ */
 -#define os_daemon daemon
 -#endif /* __APPLE__ */
- 
+-
 -
 -int os_daemonize(const char *pid_file)
 -{

@@ -1,0 +1,12 @@
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -2332,7 +2332,8 @@ wpa_driver_nl80211_finish_drv_init(struc
+ 
+ 	if (drv->hostapd || bss->static_ap)
+ 		nlmode = NL80211_IFTYPE_AP;
+-	else if (bss->if_dynamic)
++	else if (bss->if_dynamic ||
++		 nl80211_get_ifmode(bss) == NL80211_IFTYPE_MESH_POINT)
+ 		nlmode = nl80211_get_ifmode(bss);
+ 	else
+ 		nlmode = NL80211_IFTYPE_STATION;

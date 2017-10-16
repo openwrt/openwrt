@@ -1,6 +1,6 @@
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -36,6 +36,8 @@ struct hapd_global {
+@@ -37,6 +37,8 @@ struct hapd_global {
  };
  
  static struct hapd_global global;
@@ -9,7 +9,7 @@
  
  
  #ifndef CONFIG_NO_HOSTAPD_LOGGER
-@@ -142,6 +144,14 @@ static void hostapd_logger_cb(void *ctx,
+@@ -143,6 +145,14 @@ static void hostapd_logger_cb(void *ctx,
  }
  #endif /* CONFIG_NO_HOSTAPD_LOGGER */
  
@@ -24,7 +24,7 @@
  
  /**
   * hostapd_driver_init - Preparate driver interface
-@@ -160,6 +170,8 @@ static int hostapd_driver_init(struct ho
+@@ -161,6 +171,8 @@ static int hostapd_driver_init(struct ho
  		return -1;
  	}
  
@@ -33,7 +33,7 @@
  	/* Initialize the driver interface */
  	if (!(b[0] | b[1] | b[2] | b[3] | b[4] | b[5]))
  		b = NULL;
-@@ -381,8 +393,6 @@ static void hostapd_global_deinit(const
+@@ -401,8 +413,6 @@ static void hostapd_global_deinit(const
  #endif /* CONFIG_NATIVE_WINDOWS */
  
  	eap_server_unregister_methods();
@@ -42,19 +42,26 @@
  }
  
  
-@@ -408,11 +418,6 @@ static int hostapd_global_run(struct hap
+@@ -428,18 +438,6 @@ static int hostapd_global_run(struct hap
  	}
  #endif /* EAP_SERVER_TNC */
  
--	if (daemonize && os_daemonize(pid_file)) {
--		wpa_printf(MSG_ERROR, "daemon: %s", strerror(errno));
--		return -1;
+-	if (daemonize) {
+-		if (os_daemonize(pid_file)) {
+-			wpa_printf(MSG_ERROR, "daemon: %s", strerror(errno));
+-			return -1;
+-		}
+-		if (eloop_sock_requeue()) {
+-			wpa_printf(MSG_ERROR, "eloop_sock_requeue: %s",
+-				   strerror(errno));
+-			return -1;
+-		}
 -	}
 -
  	eloop_run();
  
  	return 0;
-@@ -542,8 +547,7 @@ int main(int argc, char *argv[])
+@@ -638,8 +636,7 @@ int main(int argc, char *argv[])
  	struct hapd_interfaces interfaces;
  	int ret = 1;
  	size_t i, j;
