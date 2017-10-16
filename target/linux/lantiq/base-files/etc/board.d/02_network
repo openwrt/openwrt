@@ -23,7 +23,7 @@ interface_wan=""
 board=$(board_name)
 
 case "$board" in
-ACMP252|GIGASX76X)
+ACMP252)
 	ucidef_add_switch "switch0" \
 		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5t@eth0"
 	;;
@@ -42,17 +42,24 @@ ARV4510PW)
 		"0:lan:4" "2:lan:2" "1:lan:3" "3:lan:1" "5t@eth0"
 	;;
 
-ARV4519PW|ARV7510PW22|ARV7518PW|ARV752DPW22|ARV8539PW22)
+ARV4519PW|ARV7510PW22|ARV7518PW)
 	ucidef_add_switch "switch0" \
 		"0t@eth0" "2:lan" "3:lan" "4:lan" "5:lan"
 	;;
 
 ARV4520PW)
+	annex="b"
 	ucidef_add_switch "switch0" \
 		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5t@eth0"
 	;;
 
+ARV4525PW|ARV452CQW|ARV7525PW|ARV752DPW)
+	annex="b"
+	ucidef_set_interface_lan 'eth0'
+	;;
+
 ARV7506PW11)
+	annex="b"
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 2)
 	ucidef_add_switch "switch0" \
 		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5t@eth0"
@@ -68,6 +75,12 @@ ARV7519RW22)
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 22)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:5" "2:lan:3" "3:lan:4" "4:lan:1" "5:lan:2" "6t@eth0"
+	;;
+
+ARV752DPW22|ARV8539PW22)
+	annex="b"
+	ucidef_add_switch "switch0" \
+		"0t@eth0" "2:lan" "3:lan" "4:lan" "5:lan"
 	;;
 
 ASL56026)
@@ -97,6 +110,11 @@ BTHOMEHUBV5A)
 		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "5:wan:5" "6t@eth0"
 	;;
 
+DGN1000B)
+	annex="b"
+	ucidef_set_interface_lan 'eth0'
+	;;
+
 DGN3500*)
 	ucidef_add_switch "switch0" \
 		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5t@eth0"
@@ -116,22 +134,32 @@ EASY80920NAND|EASY80920NOR)
 	;;
 
 FRITZ3370)
+	annex="b"
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 2439)" 1)
 	ucidef_set_interface_lan 'eth0'
 	;;
 
 FRITZ7320)
+	annex="b"
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 2705)" 1)
 	ucidef_set_interface_lan 'eth0'
 	;;
 
 FRITZ7360SL)
+	annex="b"
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 2705)" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
 	;;
 
+GIGASX76X)
+	annex="b"
+	ucidef_add_switch "switch0" \
+		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5t@eth0"
+	;;
+
 H201L)
+	annex="b"
 	ucidef_add_switch "switch0" \
 		"0:lan" "1:lan" "2:lan" "3:lan" "4t@eth0"
 	;;
@@ -168,6 +196,7 @@ VR200v)
 	;;
 
 VGV7510KW22*)
+	annex="b"
 	wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 22)" 2)
 	ucidef_add_switch "switch0" \
 		"2:lan:2" "3:lan:1" "4:lan:4" "5:lan:3" "0:wan:5" "6t@eth0"
