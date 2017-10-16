@@ -3379,7 +3379,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	data |= ((0x2<<18) |(0x2<<16));
 +	DRV_WriteReg32(RALINK_SYSCTL_BASE+0x60, data);
 +
-+	hw = &mt7621_nand_hw,
++	hw = &mt7621_nand_hw;
 +	BUG_ON(!hw);
 +	/* Allocate memory for the device structure (and zero it) */
 +	host = kzalloc(sizeof(struct mtk_nand_host), GFP_KERNEL);
