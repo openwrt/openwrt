@@ -24,7 +24,7 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL_SIZE := 4096k
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
-  DTB_SIZE :=
+  DTB_SIZE := 128k
 endef
 
 define Device/dtb
@@ -66,7 +66,6 @@ endef
 define Device/production-dtb
   $(Device/production)
   $(Device/dtb)
-  DTB_SIZE := 128k
   IMAGE/factory.bin := append-dtb | pad-to $$$$(DTB_SIZE) \
 	  | append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
 endef
