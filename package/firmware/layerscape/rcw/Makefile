@@ -46,10 +46,22 @@ define rcw/ls1012ardb
 	CONFIG=ls1012ardb/R_SPNH_3508/PBL_0x35_0x08_800_250_1000_default.bin
 endef
 
+define rcw/ls1088ardb
+	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1088ardb 64b/32b Dev Board
+	CONFIG=ls1088ardb/FCQQQQQQQQ_PPP_H_0x1d_0x0d/PBL_QSPI_1600_700_2100_0x1d_0x0d.bin
+endef
+
+define rcw/ls2088ardb
+	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls2088ardb 64b/32b Dev Board
+	CONFIG=ls2088ardb/FFFFFFFF_PP_HH_0x2a_0x41/PBL_0x2a_0x41_1800_700_1866_1600.bin
+endef
+
 RCWS := \
 	ls1043ardb \
 	ls1046ardb \
-	ls1012ardb
+	ls1012ardb \
+	ls1088ardb \
+	ls2088ardb
 
 define Package/rcw/template
 define Package/rcw-layerscape-$(1)

@@ -20,6 +20,18 @@ define Build/append-ls-fman
 	dd if=$(STAGING_DIR_IMAGE)/$(1)-fman.bin >> $@
 endef
 
+define Build/append-ls-mc
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-mc.itb >> $@
+endef
+
+define Build/append-ls-dpl
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-dpl.dtb >> $@
+endef
+
+define Build/append-ls-dpc
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-dpc.dtb >> $@
+endef
+
 define Build/append-ls-dtb
 	$(call Image/BuildDTB,$(DTS_DIR)/$(1).dts,$(DTS_DIR)/$(1).dtb)
 	dd if=$(DTS_DIR)/$(1).dtb >> $@
@@ -90,21 +102,33 @@ TARGET_DEVICES += ls1012ardb
 ifeq ($(SUBTARGET),armv8_64b)
 define Device/ls1088ardb
   DEVICE_TITLE := ls1088ardb-$(SUBTARGET)
-  DEVICE_PACKAGES += rcw-layerscape-ls1088ardb uboot-layerscape-$(SUBTARGET)-ls1088ardb mc-binary-ls1088ardb
+  DEVICE_PACKAGES +=	rcw-layerscape-ls1088ardb uboot-layerscape-$(SUBTARGET)-ls1088ardb \
+			layerscape-mc-ls1088ardb layerscape-dpl-ls1088ardb restool
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1088a-rdb
-  IMAGE/firmware.bin =	append-ls-dtb $$(DEVICE_DTS) | pad-to 1M | \
-			append-kernel | pad-to 17M | \
-			append-ls-rootfs-ext4 $(1) 17M | check-size 51380225
+  IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
+			append-ls-uboot $(1) | pad-to 10M | \
+			append-ls-mc $(1) | pad-to 13M | \
+			append-ls-dpl $(1) | pad-to 14M | \
+			append-ls-dpc $(1) | pad-to 15M | \
+			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
+			append-kernel | pad-to 32M | \
+			append-ls-rootfs-ext4 $(1) 17M | check-size 67108865
 endef
 TARGET_DEVICES += ls1088ardb
 
 define Device/ls2088ardb
   DEVICE_TITLE := ls2088ardb-$(SUBTARGET)
-  DEVICE_PACKAGES += rcw-layerscape-ls2088ardb uboot-layerscape-$(SUBTARGET)-ls2088ardb mc-binary-ls2088ardb
+  DEVICE_PACKAGES +=	rcw-layerscape-ls2088ardb uboot-layerscape-$(SUBTARGET)-ls2088ardb \
+			layerscape-mc-ls2088ardb layerscape-dpl-ls2088ardb restool
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls2088a-rdb
-  IMAGE/firmware.bin =	append-ls-dtb $$(DEVICE_DTS) | pad-to 1M | \
-			append-kernel | pad-to 17M | \
-			append-rootfs | pad-rootfs | check-size 51380225
+  IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
+			append-ls-uboot $(1) | pad-to 10M | \
+			append-ls-mc $(1) | pad-to 13M | \
+			append-ls-dpl $(1) | pad-to 14M | \
+			append-ls-dpc $(1) | pad-to 15M | \
+			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
+			append-kernel | pad-to 32M | \
+			append-rootfs | pad-rootfs | check-size 67108865
 endef
 TARGET_DEVICES += ls2088ardb
 endif

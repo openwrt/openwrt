@@ -42,10 +42,22 @@ define U-Boot/ls1012ardb
   UBOOT_CONFIG:=ls1012ardb_qspi
 endef
 
+define U-Boot/ls1088ardb
+  NAME:=NXP ls1088ardb 64b Dev Board
+  UBOOT_CONFIG:=ls1088ardb_qspi
+endef
+
+define U-Boot/ls2088ardb
+  NAME:=NXP ls2088ardb 64b Dev Board
+  UBOOT_CONFIG:=ls2080ardb
+endef
+
 UBOOT_TARGETS := \
 	ls1043ardb \
 	ls1046ardb \
-	ls1012ardb
+	ls1012ardb \
+	ls1088ardb \
+	ls2088ardb
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
