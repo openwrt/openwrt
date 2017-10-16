@@ -14,13 +14,11 @@ capability deployed.
 
 Signed-off-by: Jouni Malinen <jouni@qca.qualcomm.com>
 
-diff --git a/src/ap/ieee802_11_vht.c b/src/ap/ieee802_11_vht.c
-index 3236016..e923094 100644
 --- a/src/ap/ieee802_11_vht.c
 +++ b/src/ap/ieee802_11_vht.c
-@@ -82,6 +82,27 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
- 
- 	oper->vht_op_info_chwidth = hapd->iconf->vht_oper_chwidth;
+@@ -102,6 +102,27 @@ u8 * hostapd_eid_vht_operation(struct ho
+ 		oper->vht_op_info_chwidth = 1;
+ 	}
  
 +	if (hapd->iconf->vht_oper_chwidth == 2) {
 +		/*
