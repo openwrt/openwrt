@@ -130,7 +130,7 @@
  		err = br_ip6_multicast_add_group(br, port, &grec->grec_mca,
 -						 vid);
 +						 vid, src);
- 		if (err)
+ 		if (!err)
  			break;
  	}
 @@ -1406,7 +1432,8 @@ br_multicast_leave_group(struct net_brid
