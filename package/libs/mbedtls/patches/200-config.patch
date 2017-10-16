@@ -1,0 +1,208 @@
+--- a/include/mbedtls/config.h
++++ b/include/mbedtls/config.h
+@@ -185,7 +185,7 @@
+  *
+  * Uncomment to get errors on using deprecated functions.
+  */
+-//#define MBEDTLS_DEPRECATED_REMOVED
++#define MBEDTLS_DEPRECATED_REMOVED
+ 
+ /* \} name SECTION: System support */
+ 
+@@ -341,7 +341,7 @@
+  *
+  * Enable Cipher Feedback mode (CFB) for symmetric ciphers.
+  */
+-#define MBEDTLS_CIPHER_MODE_CFB
++//#define MBEDTLS_CIPHER_MODE_CFB
+ 
+ /**
+  * \def MBEDTLS_CIPHER_MODE_CTR
+@@ -435,13 +435,13 @@
+  *
+  * Comment macros to disable the curve and functions for it
+  */
+-#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
+-#define MBEDTLS_ECP_DP_SECP224R1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP224R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP521R1_ENABLED
+-#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
+-#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP256K1_ENABLED
+ #define MBEDTLS_ECP_DP_BP256R1_ENABLED
+ #define MBEDTLS_ECP_DP_BP384R1_ENABLED
+@@ -517,7 +517,7 @@
+  *      MBEDTLS_TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA
+  *      MBEDTLS_TLS_DHE_PSK_WITH_RC4_128_SHA
+  */
+-#define MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
+ 
+ /**
+  * \def MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+@@ -562,7 +562,7 @@
+  *      MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA
+  *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
+  */
+-#define MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+ 
+ /**
+  * \def MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+@@ -616,7 +616,7 @@
+  *      MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA
+  *      MBEDTLS_TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA
+  */
+-#define MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+ 
+ /**
+  * \def MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+@@ -689,7 +689,7 @@
+  *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256
+  *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384
+  */
+-#define MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+ 
+ /**
+  * \def MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+@@ -713,7 +713,7 @@
+  *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256
+  *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384
+  */
+-#define MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+ 
+ /**
+  * \def MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+@@ -879,7 +879,7 @@
+  *
+  * Comment this macro to disable support for external private RSA keys.
+  */
+-#define MBEDTLS_PK_RSA_ALT_SUPPORT
++//#define MBEDTLS_PK_RSA_ALT_SUPPORT
+ 
+ /**
+  * \def MBEDTLS_PKCS1_V15
+@@ -911,14 +911,14 @@
+  * Uncomment this macro to disable the use of CRT in RSA.
+  *
+  */
+-//#define MBEDTLS_RSA_NO_CRT
++#define MBEDTLS_RSA_NO_CRT
+ 
+ /**
+  * \def MBEDTLS_SELF_TEST
+  *
+  * Enable the checkup functions (*_self_test).
+  */
+-#define MBEDTLS_SELF_TEST
++//#define MBEDTLS_SELF_TEST
+ 
+ /**
+  * \def MBEDTLS_SHA256_SMALLER
+@@ -934,7 +934,7 @@
+  *
+  * Uncomment to enable the smaller implementation of SHA256.
+  */
+-//#define MBEDTLS_SHA256_SMALLER
++#define MBEDTLS_SHA256_SMALLER
+ 
+ /**
+  * \def MBEDTLS_SSL_AEAD_RANDOM_IV
+@@ -1271,7 +1271,7 @@
+  *
+  * Comment this macro to disable support for truncated HMAC in SSL
+  */
+-#define MBEDTLS_SSL_TRUNCATED_HMAC
++//#define MBEDTLS_SSL_TRUNCATED_HMAC
+ 
+ /**
+  * \def MBEDTLS_THREADING_ALT
+@@ -1507,7 +1507,7 @@
+  *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
+  *      MBEDTLS_TLS_PSK_WITH_RC4_128_SHA
+  */
+-#define MBEDTLS_ARC4_C
++//#define MBEDTLS_ARC4_C
+ 
+ /**
+  * \def MBEDTLS_ASN1_PARSE_C
+@@ -1572,7 +1572,7 @@
+  *
+  * Module:  library/blowfish.c
+  */
+-#define MBEDTLS_BLOWFISH_C
++//#define MBEDTLS_BLOWFISH_C
+ 
+ /**
+  * \def MBEDTLS_CAMELLIA_C
+@@ -1627,7 +1627,7 @@
+  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
+  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
+  */
+-#define MBEDTLS_CAMELLIA_C
++//#define MBEDTLS_CAMELLIA_C
+ 
+ /**
+  * \def MBEDTLS_CCM_C
+@@ -1641,7 +1641,7 @@
+  * This module enables the AES-CCM ciphersuites, if other requisites are
+  * enabled as well.
+  */
+-#define MBEDTLS_CCM_C
++//#define MBEDTLS_CCM_C
+ 
+ /**
+  * \def MBEDTLS_CERTS_C
+@@ -1653,7 +1653,7 @@
+  *
+  * This module is used for testing (ssl_client/server).
+  */
+-#define MBEDTLS_CERTS_C
++//#define MBEDTLS_CERTS_C
+ 
+ /**
+  * \def MBEDTLS_CIPHER_C
+@@ -1693,7 +1693,7 @@
+  *
+  * This module provides debugging functions.
+  */
+-#define MBEDTLS_DEBUG_C
++//#define MBEDTLS_DEBUG_C
+ 
+ /**
+  * \def MBEDTLS_DES_C
+@@ -1733,7 +1733,7 @@
+  * This module is used by the following key exchanges:
+  *      DHE-RSA, DHE-PSK
+  */
+-#define MBEDTLS_DHM_C
++//#define MBEDTLS_DHM_C
+ 
+ /**
+  * \def MBEDTLS_ECDH_C
+@@ -2151,7 +2151,7 @@
+  * Caller:  library/mbedtls_md.c
+  *
+  */
+-#define MBEDTLS_RIPEMD160_C
++//#define MBEDTLS_RIPEMD160_C
+ 
+ /**
+  * \def MBEDTLS_RSA_C
+@@ -2461,7 +2461,7 @@
+  * Module:  library/xtea.c
+  * Caller:
+  */
+-#define MBEDTLS_XTEA_C
++//#define MBEDTLS_XTEA_C
+ 
+ /* \} name SECTION: mbed TLS modules */
+ 
