@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lzo
-PKG_VERSION:=2.08
+PKG_VERSION:=2.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.oberhumer.com/opensource/lzo/download/
-PKG_MD5SUM:=fcec64c26a0f4f4901468f360029678f
+PKG_MD5SUM:=39d3f3f9c55c87b1e5d6888e1420f4b5
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
