@@ -47,7 +47,7 @@
 +++ b/wpa_supplicant/wpa_supplicant.c
 @@ -118,6 +118,55 @@ const char *const wpa_supplicant_full_li
  static void wpa_bss_tmp_disallow_timeout(void *eloop_ctx, void *timeout_ctx);
-
+ 
  
 +static int hostapd_stop(struct wpa_supplicant *wpa_s)
 +{

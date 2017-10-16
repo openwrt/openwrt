@@ -17,7 +17,7 @@
  
  static int hostapd_cli_cmd_disassoc_imminent(struct wpa_ctrl *ctrl, int argc,
 @@ -1476,7 +1474,6 @@ static const struct hostapd_cli_cmd host
-	{ "sa_query", hostapd_cli_cmd_sa_query, hostapd_complete_stations,
+ 	{ "sa_query", hostapd_cli_cmd_sa_query, hostapd_complete_stations,
  	  "<addr> = send SA Query to a station" },
  #endif /* CONFIG_IEEE80211W */
 -#ifdef CONFIG_WPS
@@ -29,6 +29,6 @@
  	{ "wps_get_status", hostapd_cli_cmd_wps_get_status, NULL,
  	  "= show current WPS status" },
 -#endif /* CONFIG_WPS */
-	{ "disassoc_imminent", hostapd_cli_cmd_disassoc_imminent, NULL,
-	  "= send Disassociation Imminent notification" },
-	{ "ess_disassoc", hostapd_cli_cmd_ess_disassoc, NULL,
+ 	{ "disassoc_imminent", hostapd_cli_cmd_disassoc_imminent, NULL,
+ 	  "= send Disassociation Imminent notification" },
+ 	{ "ess_disassoc", hostapd_cli_cmd_ess_disassoc, NULL,

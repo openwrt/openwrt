@@ -297,7 +297,7 @@
  #ifdef CONFIG_WPS
  static int gen_uuid(const char *txt_addr)
 @@ -670,6 +675,8 @@ int main(int argc, char *argv[])
-	dl_list_init(&interfaces.eth_p_oui);
+ 	dl_list_init(&interfaces.eth_p_oui);
  #endif /* CONFIG_ETH_P_OUI */
  
 +	wpa_supplicant_event = hostapd_wpa_event;
