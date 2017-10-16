@@ -121,7 +121,7 @@
  	if (res == HOSTAPD_ACL_PENDING) {
  		wpa_printf(MSG_DEBUG, "Authentication frame from " MACSTR
  			   " waiting for an external authentication",
-@@ -2391,7 +2405,7 @@ static u16 send_assoc_resp(struct hostap
+@@ -2401,7 +2415,7 @@ static u16 send_assoc_resp(struct hostap
  
  static void handle_assoc(struct hostapd_data *hapd,
  			 const struct ieee80211_mgmt *mgmt, size_t len,
@@ -130,7 +130,7 @@
  {
  	u16 capab_info, listen_interval, seq_ctrl, fc;
  	u16 resp = WLAN_STATUS_SUCCESS, reply_res;
-@@ -2399,6 +2413,11 @@ static void handle_assoc(struct hostapd_
+@@ -2409,6 +2423,11 @@ static void handle_assoc(struct hostapd_
  	int left, i;
  	struct sta_info *sta;
  	u8 *tmp = NULL;
@@ -142,7 +142,7 @@
  
  	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_req) :
  				      sizeof(mgmt->u.assoc_req))) {
-@@ -2518,6 +2537,13 @@ static void handle_assoc(struct hostapd_
+@@ -2528,6 +2547,13 @@ static void handle_assoc(struct hostapd_
  	}
  #endif /* CONFIG_MBO */
  
@@ -156,7 +156,7 @@
  	/*
  	 * sta->capability is used in check_assoc_ies() for RRM enabled
  	 * capability element.
-@@ -3025,7 +3051,7 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -3035,7 +3061,7 @@ int ieee802_11_mgmt(struct hostapd_data
  
  
  	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
@@ -165,7 +165,7 @@
  		return 1;
  	}
  
-@@ -3043,17 +3069,17 @@ int ieee802_11_mgmt(struct hostapd_data
+@@ -3053,17 +3079,17 @@ int ieee802_11_mgmt(struct hostapd_data
  	switch (stype) {
  	case WLAN_FC_STYPE_AUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::auth");
