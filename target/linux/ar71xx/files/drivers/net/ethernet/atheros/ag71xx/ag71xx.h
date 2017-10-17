@@ -40,7 +40,6 @@
 #define AG71XX_DRV_NAME		"ag71xx"
 #define AG71XX_DRV_VERSION	"0.5.35"
 
-#define AG71XX_NAPI_WEIGHT	64
 #define AG71XX_OOM_REFILL	(1 + HZ/10)
 
 #define AG71XX_INT_ERR	(AG71XX_INT_RX_BE | AG71XX_INT_TX_BE)
@@ -136,8 +135,8 @@ struct ag71xx_napi_stats {
 	unsigned long		tx_packets;
 	unsigned long		tx_packets_max;
 
-	unsigned long		rx[AG71XX_NAPI_WEIGHT + 1];
-	unsigned long		tx[AG71XX_NAPI_WEIGHT + 1];
+	unsigned long		rx[NAPI_POLL_WEIGHT + 1];
+	unsigned long		tx[NAPI_POLL_WEIGHT + 1];
 };
 
 struct ag71xx_debug {

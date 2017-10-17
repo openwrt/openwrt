@@ -78,7 +78,7 @@ void ag71xx_debugfs_update_napi_stats(struct ag71xx *ag, int rx, int tx)
 	if (rx) {
 		stats->rx_count++;
 		stats->rx_packets += rx;
-		if (rx <= AG71XX_NAPI_WEIGHT)
+		if (rx <= NAPI_POLL_WEIGHT)
 			stats->rx[rx]++;
 		if (rx > stats->rx_packets_max)
 			stats->rx_packets_max = rx;
@@ -87,7 +87,7 @@ void ag71xx_debugfs_update_napi_stats(struct ag71xx *ag, int rx, int tx)
 	if (tx) {
 		stats->tx_count++;
 		stats->tx_packets += tx;
-		if (tx <= AG71XX_NAPI_WEIGHT)
+		if (tx <= NAPI_POLL_WEIGHT)
 			stats->tx[tx]++;
 		if (tx > stats->tx_packets_max)
 			stats->tx_packets_max = tx;
@@ -121,7 +121,7 @@ static ssize_t read_file_napi_stats(struct file *file, char __user *user_buf,
 	len += snprintf(buf + len, buflen - len, "%3s  %10s %10s\n",
 			"len", "rx", "tx");
 
-	for (i = 1; i <= AG71XX_NAPI_WEIGHT; i++)
+	for (i = 1; i <= NAPI_POLL_WEIGHT; i++)
 		len += snprintf(buf + len, buflen - len,
 				"%3d: %10lu %10lu\n",
 				i, stats->rx[i], stats->tx[i]);

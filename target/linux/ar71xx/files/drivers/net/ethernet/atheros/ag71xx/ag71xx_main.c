@@ -1360,7 +1360,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	memcpy(dev->dev_addr, pdata->mac_addr, ETH_ALEN);
 
-	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
+	netif_napi_add(dev, &ag->napi, ag71xx_poll, NAPI_POLL_WEIGHT);
 
 	ag71xx_dump_regs(ag);
 
