@@ -390,6 +390,12 @@ ar71xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan" "2:lan" "3:lan" "4:lan"
 		;;
+	gl-ar750|\
+	rb-435g)
+		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
+		ucidef_add_switch "switch0" \
+			"0@eth1" "1:lan" "2:lan"
+		;;
 	jwap230)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1.2"
 		ucidef_add_switch "switch0" \
@@ -401,11 +407,6 @@ ar71xx_setup_interfaces()
 		;;
 	onion-omega)
 		ucidef_set_interface_lan "wlan0"
-		;;
-	rb-435g)
-		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
-		ucidef_add_switch "switch0" \
-			"0@eth1" "1:lan" "2:lan"
 		;;
 	rb-450)
 		ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
