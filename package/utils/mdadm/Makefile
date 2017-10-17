@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mdadm
 PKG_VERSION:=4.0
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_URL:=@KERNEL/linux/utils/raid/mdadm
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -32,17 +32,16 @@ endef
 
 define Package/mdadm/description
  A tool for managing Linux Software RAID arrays.
- RAID 0, 1 and 10 support included. 
- If you need RAID 4,5 or 6 functionality please 
+ RAID 0, 1 and 10 support included.
+ If you need RAID 4,5 or 6 functionality please
  install kmod-md-raid456 .
 endef
 
 define Package/mdadm/conffiles
-/etc/mdadm.conf
 /etc/config/mdadm
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections -DNO_COROSYNC -DNO_DLM -DUSE_PTHREADS
+TARGET_CFLAGS += -ffunction-sections -fdata-sections -DNO_COROSYNC -DNO_DLM -DUSE_PTHREADS -DCONFFILE="/var/etc/mdadm.conf" -DMAP_DIR="/var/run/mdadm" -DMDMON_DIR="/var/run/mdadm" -DFAILED_SLOTS_DIR="/var/run/mdadm/failed-slots"
 TARGET_LDFLAGS += -Wl,--gc-sections
 
 define Build/Compile
