@@ -70,3 +70,51 @@ define KernelPackage/iio-dht11/description
 endef
 
 $(eval $(call KernelPackage,iio-dht11))
+
+define KernelPackage/iio-bmp280
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor
+  DEPENDS:=@LINUX_4_9 +kmod-iio-core +kmod-regmap
+  KCONFIG:=CONFIG_BMP280
+  FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280.ko
+endef
+
+define KernelPackage/iio-bmp280/description
+ This driver adds support for Bosch Sensortec BMP180 and BMP280 pressure and
+ temperature sensors. Also supports the BME280 with an additional humidity
+ sensor channel.
+endef
+
+$(eval $(call KernelPackage,iio-bmp280))
+
+
+define KernelPackage/iio-bmp280-i2c
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor (I2C)
+  DEPENDS:=+kmod-iio-bmp280 +kmod-i2c-core
+  KCONFIG:=CONFIG_BMP280_I2C
+  FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280-i2c.ko
+  AUTOLOAD:=$(call AutoProbe,iio-bmp280-i2c)
+endef
+define KernelPackage/iio-bmp280-i2c/description
+ This driver adds support for Bosch Sensortec's digital pressure and
+ temperature sensor connected via I2C.
+endef
+
+$(eval $(call KernelPackage,iio-bmp280-i2c))
+
+
+define KernelPackage/iio-bmp280-spi
+  SUBMENU:=$(IIO_MENU)
+  TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor (SPI)
+  DEPENDS:=+kmod-iio-bmp280 +kmod-spi-bitbang
+  KCONFIG:=CONFIG_BMP280_SPI
+  FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280-spi.ko
+  AUTOLOAD:=$(call AutoProbe,iio-bmp280-spi)
+endef
+define KernelPackage/iio-bmp280-spi/description
+ This driver adds support for Bosch Sensortec's digital pressure and
+ temperature sensor connected via SPI.
+endef
+
+$(eval $(call KernelPackage,iio-bmp280-spi))
