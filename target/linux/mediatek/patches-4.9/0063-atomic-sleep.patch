@@ -1,7 +1,5 @@
-Index: linux-4.9.50/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.9.50.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.9.50/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -1533,7 +1533,10 @@ static void mtk_hwlro_rx_uninit(struct m
  	for (i = 0; i < 10; i++) {
  		val = mtk_r32(eth, MTK_PDMA_LRO_CTRL_DW0);
