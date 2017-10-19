@@ -26,7 +26,7 @@ index 5fe3218..242cdf0 100644
 +		"mtdparts=1550000.quadspi:1M(rcw),2M(u-boot),1M(u-boot-env)," \
 +		"5M(reserved-1),256k(fman),5888k(reserved-2),1M(dtb)," \
 +		"16M(kernel),23M(ext4rfs),9M(user)\0" \
-+	"lede_run=sf probe 0:0 && " \
++	"lede_run=pfe stop && sf probe 0:0 && " \
 +		"sf read $fdtaddr f00000 100000 && " \
 +		"sf read $loadaddr 1000000 1000000 && " \
 +		"bootm $loadaddr - $fdtaddr\0" \
