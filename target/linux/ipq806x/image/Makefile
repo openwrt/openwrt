@@ -220,7 +220,7 @@ define Device/NBG6817
 	BLOCKSIZE := 64k
 	BOARD_NAME := nbg6817
 	DEVICE_TITLE := ZyXEL NBG6817
-	DEVICE_PACKAGES := ath10k-firmware-qca9984 e2fsprogs losetup
+	DEVICE_PACKAGES := ath10k-firmware-qca9984 e2fsprogs kmod-fs-ext4 losetup
 	$(call Device/ZyXELImage)
 endef
 
