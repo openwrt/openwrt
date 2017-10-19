@@ -118,6 +118,18 @@ endef
 TARGET_DEVICES += sun8i-h2-plus-orangepi-r1
 
 
+define Device/sun8i-h3-nanopi-m1-plus
+  DEVICE_TITLE:=FriendlyArm NanoPi M1 Plus
+  DEVICE_PACKAGES:=kmod-rtc-sunxi \
+	kmod-leds-gpio kmod-ledtrig-heartbeat \
+	kmod-brcmfmac brcmfmac-firmware-43430-sdio wpad-mini
+  SUPPORTED_DEVICES:=friendlyarm,nanopi-m1-plus
+  SUNXI_DTS:=sun8i-h3-nanopi-m1-plus
+endef
+
+TARGET_DEVICES += sun8i-h3-nanopi-m1-plus
+
+
 define Device/sun8i-h3-nanopi-neo
   DEVICE_TITLE:=FriendlyARM NanoPi NEO
   SUPPORTED_DEVICES:=friendlyarm,nanopi-neo
