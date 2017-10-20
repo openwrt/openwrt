@@ -15,8 +15,7 @@
 	compatible = "aerohive,hiveap-330";
 
 	chosen {
-		bootargs = "console=ttyS0,9600";
-		bootargs-override = "console=ttyS0,9600 noinitrd";
+		bootargs-override = "console=ttyS0,9600";
 	};
 
 	memory {
@@ -42,7 +41,7 @@
 
 			partition@40000 {
 				reg = <0x40000 0x40000>;
-				label = "initramfs";
+				label = "initrd";
 			};
 
 			partition@80000 {
@@ -61,7 +60,7 @@
 				read-only;
 			};
 
-			partition@3f00000 {
+			hwinfo: partition@3f00000 {
 				reg = <0x3f00000 0x20000>;
 				label = "hw-info";
 				read-only;
@@ -158,7 +157,7 @@
 			status = "okay";
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
-
+			mtd-mac-address = <&hwinfo 0>;
 		};
 
 		enet1: ethernet@b1000 {
@@ -169,6 +168,8 @@
 			status = "okay";
 			phy-handle = <&phy1>;
 			phy-connection-type = "rgmii-id";
+			mtd-mac-address = <&hwinfo 0>;
+			mtd-mac-address-increment = <1>;
 		};
 
 		gpio0: gpio-controller@fc00 {
