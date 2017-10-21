@@ -505,8 +505,9 @@ TARGET_DEVICES += y1s
 
 define Device/youku-yk1
   DTS := YOUKU-YK1
-  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
   DEVICE_TITLE := YOUKU YK1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += youku-yk1
 

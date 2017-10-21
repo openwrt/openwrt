@@ -134,7 +134,8 @@ get_status_led() {
 	wl-330n3g|\
 	wli-tx4-ag300n|\
 	y1|\
-	y1s)
+	y1s|\
+	youku-yk1)
 		status_led="$board:blue:power"
 		;;
 	db-wrt01|\
