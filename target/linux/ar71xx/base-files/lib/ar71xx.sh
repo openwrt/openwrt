@@ -1106,6 +1106,9 @@ ar71xx_board_detect() {
 	*"TL-WA901ND v4")
 		name="tl-wa901nd-v4"
 		;;
+	*"TL-WA901ND v5")
+		name="tl-wa901nd-v5"
+		;;
 	*"TL-WDR3320 v2")
 		name="tl-wdr3320-v2"
 		;;

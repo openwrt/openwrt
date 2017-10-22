@@ -574,7 +574,14 @@ define Device/tl-wa901nd-v4
   TPLINK_HWID := 0x09010004
   IMAGE/factory.bin := append-rootfs | mktplinkfw factory -C EU
 endef
-TARGET_DEVICES += tl-wa901nd-v1 tl-wa901nd-v2 tl-wa901nd-v3 tl-wa901nd-v4
+
+define Device/tl-wa901nd-v5
+  $(Device/tl-wa901nd-v4)
+  DEVICE_TITLE := TP-LINK TL-WA901N/ND v5
+  BOARDNAME := TL-WA901ND-v5
+  TPLINK_HWID := 0x09010005
+endef
+TARGET_DEVICES += tl-wa901nd-v1 tl-wa901nd-v2 tl-wa901nd-v3 tl-wa901nd-v4 tl-wa901nd-v5
 
 define Device/tl-wdr3320-v2
   $(Device/tplink-4mlzma)
