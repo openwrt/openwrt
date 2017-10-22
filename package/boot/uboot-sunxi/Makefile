@@ -96,6 +96,12 @@ define U-Boot/Hummingbird_A31
   NAME:=Hummingbird A31 board
 endef
 
+define U-Boot/Marsboard
+  BUILD_SUBTARGET:=cortexa8
+  NAME:=Marsboard
+  BUILD_DEVICES:=sun4i-a10-marsboard
+endef
+
 define U-Boot/Mele_M9
   BUILD_SUBTARGET:=cortexa7
   NAME:=Mele M9 (A31)
