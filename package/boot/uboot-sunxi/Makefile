@@ -150,6 +150,12 @@ define U-Boot/orangepi_plus
   BUILD_DEVICES:=sun8i-h3-orangepi-plus
 endef
 
+define U-Boot/orangepi_2
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Orange Pi 2 (H3)
+  BUILD_DEVICES:=sun8i-h3-orangepi-2
+endef
+
 define U-Boot/pangolin
   BUILD_SUBTARGET:=cortexa7
   NAME:=Theobroma A31-yQ7 devboard
@@ -185,6 +191,7 @@ UBOOT_TARGETS := \
 	nanopi_neo \
 	orangepi_r1 \
 	orangepi_plus \
+	orangepi_2 \
 	pangolin \
 	pine64_plus
 

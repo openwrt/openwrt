@@ -136,6 +136,15 @@ endef
 
 TARGET_DEVICES += sun8i-h3-orangepi-plus
 
+define Device/sun8i-h3-orangepi-2
+  DEVICE_TITLE:=Xunlong Orange Pi 2
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SUPPORTED_DEVICES:=xunlong,orangepi-2
+  SUNXI_DTS:=sun8i-h3-orangepi-2
+endef
+
+TARGET_DEVICES += sun8i-h3-orangepi-2
+
 
 define Device/sun7i-a20-pcduino3
   DEVICE_TITLE:=LinkSprite pcDuino3
