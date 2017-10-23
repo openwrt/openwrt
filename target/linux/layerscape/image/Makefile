@@ -95,7 +95,7 @@ define Device/ls1046ardb
 			append-ls-fman $(1) | pad-to 15M | \
 			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
 			append-kernel | pad-to 32M | \
-			append-ls-rootfs-ext4 $(1) 22M | check-size 67108865
+			append-ls-rootfs-ext4 $(1) 30M | check-size 67108865
 endef
 TARGET_DEVICES += ls1046ardb
 
@@ -110,7 +110,7 @@ define Device/ls1012ardb
 			append-ls-ppfe | pad-to 15M | \
 			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
 			append-kernel | pad-to 32M | \
-			append-ls-rootfs-ext4 $(1) 23M | check-size 67108865
+			append-ls-rootfs-ext4 $(1) 30M | check-size 67108865
 endef
 TARGET_DEVICES += ls1012ardb
 
@@ -129,7 +129,7 @@ define Device/ls1088ardb
 			append-ls-dpc $(1) | pad-to 15M | \
 			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
 			append-kernel | pad-to 32M | \
-			append-ls-rootfs-ext4 $(1) 17M | check-size 67108865
+			append-ls-rootfs-ext4 $(1) 30M | check-size 67108865
 endef
 TARGET_DEVICES += ls1088ardb
 
