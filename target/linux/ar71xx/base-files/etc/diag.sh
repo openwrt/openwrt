@@ -38,6 +38,7 @@ get_status_led() {
 	ap531b0|\
 	cpe505n|\
 	db120|\
+	dr342|\
 	dr344|\
 	tew-632brp|\
 	tl-wr942n-v1|\

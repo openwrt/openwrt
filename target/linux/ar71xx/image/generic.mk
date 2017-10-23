@@ -349,6 +349,15 @@ define Device/mr16
 endef
 TARGET_DEVICES += mr12 mr16
 
+define Device/dr342
+  DEVICE_TITLE := Wallys DR342
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
+  BOARDNAME := DR342
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:192k(u-boot)ro,64k(u-boot-env),64k(partition-table)ro,16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += dr342
+
 define Device/dr344
   DEVICE_TITLE := Wallys DR344
   BOARDNAME := DR344

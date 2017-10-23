@@ -603,6 +603,9 @@ ar71xx_board_detect() {
 	*"Domino Pi")
 		name="gl-domino"
 		;;
+	*"DR342")
+		name="dr342"
+		;;
 	*"DR344")
 		name="dr344"
 		;;
