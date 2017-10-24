@@ -114,6 +114,21 @@ define Device/ls1012ardb
 endef
 TARGET_DEVICES += ls1012ardb
 
+define Device/ls1012afrdm
+  DEVICE_TITLE := ls1012afrdm-$(SUBTARGET)
+  DEVICE_PACKAGES +=	rcw-layerscape-ls1012afrdm uboot-layerscape-$(SUBTARGET)-ls1012afrdm \
+			kmod-ppfe layerscape-ppfe layerscape-ppa-ls1012afrdm
+  DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1012a-frdm
+  IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
+			append-ls-uboot $(1) | pad-to 4M | \
+			append-ls-ppa $(1) | pad-to 10M | \
+			append-ls-ppfe | pad-to 15M | \
+			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
+			append-kernel | pad-to 32M | \
+			append-ls-rootfs-ext4 $(1) 30M | check-size 67108865
+endef
+TARGET_DEVICES += ls1012afrdm
+
 ifeq ($(SUBTARGET),armv8_64b)
 define Device/ls1088ardb
   DEVICE_TITLE := ls1088ardb-$(SUBTARGET)

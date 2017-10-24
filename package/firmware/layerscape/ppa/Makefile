@@ -53,12 +53,18 @@ define ppa/ls2088ardb
 	CONFIG=ppa-ls2088a.itb
 endef
 
+define ppa/ls1012afrdm
+	TITLE=PPA firmware $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012afrdm 64b/32b Dev Board
+	CONFIG=ppa-ls1012a.itb
+endef
+
 PPAS := \
 	ls1043ardb \
 	ls1046ardb \
 	ls1012ardb \
 	ls1088ardb \
-	ls2088ardb
+	ls2088ardb \
+	ls1012afrdm
 
 define Package/ppa/template
 define Package/layerscape-ppa-$(1)
