@@ -109,7 +109,7 @@ proto_qmi_setup() {
 
 	echo "Starting network $interface"
 
-	pdptype=`echo "$pdptype" | awk '{print tolower($0)}'`
+	pdptype=$(echo "$pdptype" | awk '{print tolower($0)}')
 	[ "$pdptype" = "ip" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] || pdptype="ip"
 
 	if [ "$pdptype" = "ip" ]; then
@@ -120,7 +120,7 @@ proto_qmi_setup() {
 	fi
 
 	[ "$pdptype" = "ip" -o "$pdptype" = "ipv4v6" ] && {
-		cid_4=`uqmi -s -d "$device" --get-client-id wds`
+		cid_4=$(uqmi -s -d "$device" --get-client-id wds)
 		[ $? -ne 0 ] && {
 			echo "Unable to obtain client ID"
 			proto_notify_error "$interface" NO_CID
@@ -134,14 +134,14 @@ proto_qmi_setup() {
 			--stop-network 0xffffffff \
 			--autoconnect > /dev/null
 
-		pdh_4=`uqmi -s -d "$device" --set-client-id wds,"$cid_4" \
+		pdh_4=$(uqmi -s -d "$device" --set-client-id wds,"$cid_4" \
 			--start-network \
 			${apn:+--apn $apn} \
 			${profile:+--profile $profile} \
 			${auth:+--auth-type $auth} \
 			${username:+--username $username} \
 			${password:+--password $password} \
-			${autoconnect:+--autoconnect}`
+			${autoconnect:+--autoconnect})
 		[ $? -ne 0 ] && {
 			echo "Unable to connect IPv4"
 			uqmi -s -d "$device" --set-client-id wds,"$cid_4" --release-client-id wds
@@ -151,7 +151,7 @@ proto_qmi_setup() {
 	}
 
 	[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && {
-		cid_6=`uqmi -s -d "$device" --get-client-id wds`
+		cid_6=$(uqmi -s -d "$device" --get-client-id wds)
 		[ $? -ne 0 ] && {
 			echo "Unable to obtain client ID"
 			proto_notify_error "$interface" NO_CID
@@ -165,14 +165,14 @@ proto_qmi_setup() {
 			--stop-network 0xffffffff \
 			--autoconnect > /dev/null
 
-		pdh_6=`uqmi -s -d "$device" --set-client-id wds,"$cid_6" \
+		pdh_6=$(uqmi -s -d "$device" --set-client-id wds,"$cid_6" \
 			--start-network \
 			${apn:+--apn $apn} \
 			${profile:+--profile $profile} \
 			${auth:+--auth-type $auth} \
 			${username:+--username $username} \
 			${password:+--password $password} \
-			${autoconnect:+--autoconnect}`
+			${autoconnect:+--autoconnect})
 		[ $? -ne 0 ] && {
 			echo "Unable to connect IPv6"
 			uqmi -s -d "$device" --set-client-id wds,"$cid_6" --release-client-id wds
