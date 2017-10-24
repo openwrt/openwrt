@@ -46,10 +46,11 @@ define Device/tl-wdr4900-v1
   TPLINK_HWREV := 1
   TPLINK_FLASHLAYOUT := 16Mppc
   KERNEL_NAME := cuImage.tl-wdr4900-v1
+  SUPPORTED_DEVICES:=tl-wdr4900-v1 tplink,tl-wdr4900-v1
   IMAGES := fdt.bin factory.bin sysupgrade.bin
   IMAGE/fdt.bin := append-dtb
   IMAGE/factory.bin := tplink-v1-image
-  IMAGE/sysupgrade.bin := tplink-v1-image -s
+  IMAGE/sysupgrade.bin := tplink-v1-image -s | append-metadata
 endef
 TARGET_DEVICES += tl-wdr4900-v1
 
@@ -63,12 +64,13 @@ define Device/hiveap-330
   BLOCKSIZE := 128k
   KERNEL_NAME := zImage
   KERNEL_SIZE := 8m
+  SUPPORTED_DEVICES := aerohive,hiveap-330
   IMAGES := fdt.bin sysupgrade.bin
   IMAGE/fdt.bin := append-dtb
   IMAGE/sysupgrade.bin := append-dtb | pad-to 256k | check-size 256k | \
 	append-uImage-fakeramdisk-hdr | pad-to 256k | check-size 512k | \
 	append-rootfs | pad-rootfs $$(BLOCKSIZE) | pad-to 41216k | check-size 41216k | \
-	append-kernel
+	append-kernel | append-metadata
 endef
 TARGET_DEVICES += hiveap-330
 
