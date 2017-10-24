@@ -70,7 +70,7 @@ proto_qmi_setup() {
 	done
 
 	[ -n "$pincode" ] && {
-		uqmi -s -d "$device" --verify-pin1 "$pincode" || {
+		uqmi -s -d "$device" --verify-pin1 "$pincode" || uqmi -s -d "$device" --uim-verify-pin1 "$pincode" || {
 			echo "Unable to verify PIN"
 			proto_notify_error "$interface" PIN_FAILED
 			proto_block_restart "$interface"
