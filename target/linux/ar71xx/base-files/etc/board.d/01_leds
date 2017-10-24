@@ -137,11 +137,11 @@ bsb)
 	ucidef_set_led_default "sys" "SYS" "$board:red:sys" "1"
 	;;
 bullet-m|\
+loco-m-xw|\
 nanostation-m|\
-rocket-m|\
-rocket-m-xw|\
 nanostation-m-xw|\
-loco-m-xw)
+rocket-m|\
+rocket-m-xw)
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "ubnt:red:link1" "wlan0" "1" "100" "0" "13"
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "ubnt:orange:link2" "wlan0" "26" "100" "-25" "13"
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "ubnt:green:link3" "wlan0" "51" "100" "-50" "13"
@@ -302,8 +302,8 @@ rb-962uigs-5hact2hnt)
 rb-2011il|\
 rb-2011l|\
 rb-2011uas|\
-rb-2011uias|\
 rb-2011uas-2hnd|\
+rb-2011uias|\
 rb-2011uias-2hnd)
 	ucidef_set_led_switch "eth6" "ETH6" "rb:green:eth6" "switch1" "0x20"
 	ucidef_set_led_switch "eth7" "ETH7" "rb:green:eth7" "switch1" "0x10"
@@ -501,13 +501,13 @@ nbg6716)
 	ucidef_set_led_usbdev "usb2" "USB2" "$board:white:usb2" "2-1"
 	;;
 om2p|\
-om2pv2|\
-om2pv4|\
 om2p-hs|\
 om2p-hsv2|\
 om2p-hsv3|\
 om2p-hsv4|\
-om2p-lc)
+om2p-lc|\
+om2pv2|\
+om2pv4)
 	ucidef_set_led_netdev "port1" "port1" "om2p:blue:wan" "eth0"
 	ucidef_set_led_netdev "port2" "port2" "om2p:blue:lan" "eth1"
 	ucidef_set_led_default "wlan-red" "WLAN (red)" "om2p:red:wifi" "0"
@@ -640,8 +640,8 @@ tl-wr941nd-v5)
 	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
 
 	case "$board" in
-	tl-wr842n-v2|\
-	tl-mr3420-v2)
+	tl-mr3420-v2|\
+	tl-wr842n-v2)
 		ucidef_set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
 		;;
 	esac
@@ -686,9 +686,9 @@ tl-wa850re-v2)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "tp-link:blue:signal5" "wlan0" "80" "100" "-79" "13"
 	;;
 tl-wa701nd-v2|\
-tl-wa860re|\
-tl-wa830re-v2|\
 tl-wa801nd-v2|\
+tl-wa830re-v2|\
+tl-wa860re|\
 tl-wa901nd-v3|\
 tl-wa901nd-v4)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
