@@ -24,6 +24,10 @@ define Build/append-ls-mc
 	dd if=$(STAGING_DIR_IMAGE)/$(1)-mc.itb >> $@
 endef
 
+define Build/append-ls-ppfe
+	dd if=$(STAGING_DIR_IMAGE)/pfe.itb >> $@
+endef
+
 define Build/append-ls-dpl
 	dd if=$(STAGING_DIR_IMAGE)/$(1)-dpl.dtb >> $@
 endef
@@ -89,10 +93,12 @@ TARGET_DEVICES += ls1046ardb
 
 define Device/ls1012ardb
   DEVICE_TITLE := ls1012ardb-$(SUBTARGET)
-  DEVICE_PACKAGES += rcw-layerscape-ls1012ardb uboot-layerscape-$(SUBTARGET)-ls1012ardb kmod-ppfe ppfe-ls1012ardb
+  DEVICE_PACKAGES +=	rcw-layerscape-ls1012ardb uboot-layerscape-$(SUBTARGET)-ls1012ardb \
+			kmod-ppfe layerscape-ppfe
   DEVICE_DTS = ../../../arm64/boot/dts/freescale/fsl-ls1012a-rdb
   IMAGE/firmware.bin =	append-ls-rcw $(1) | pad-to 1M | \
-			append-ls-uboot $(1) | pad-to 15M | \
+			append-ls-uboot $(1) | pad-to 10M | \
+			append-ls-ppfe | pad-to 15M | \
 			append-ls-dtb $$(DEVICE_DTS) | pad-to 16M | \
 			append-kernel | pad-to 32M | \
 			append-ls-rootfs-ext4 $(1) 23M | check-size 67108865

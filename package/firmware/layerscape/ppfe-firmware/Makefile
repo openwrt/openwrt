@@ -8,80 +8,45 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ppfe
-PKG_VERSION:=v1.0
+PKG_VERSION:=2017.09
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_MIRROR_HASH:=645d9aaaaa39ac1fa50cf805f1866feb5f717b34cb110c80e3f45303ea6d7259
-PKG_SOURCE_URL:=https://github.com/fsl-jyt/ppfe.git
-PKG_SOURCE_VERSION:=b9bb5cc690c0aab2592eb9d443ef55cc9dff8557
-PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
-
-PKG_LICENSE:=GPL-2.0 GPL-2.0+
-PKG_LICENSE_FILES:=Licenses/README
+PKG_SOURCE_URL:=https://github.com/qoriq-open-source/engine-pfe-bin.git
+PKG_SOURCE_VERSION:=97cd13d3070d7199e62881bc495b332194b67edd
+PKG_MIRROR_HASH:=1ef60cdac49dd57c76ec9ef01d00f6eeb025ba62f0d75f54adeeb3362f5edad2
 
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 
-define ppfe/Default
-	TITLE:=
-	CONFIG:=
-endef
+RSTRIP:=:
+STRIP:=:
 
-define ppfe/ls1012ardb
-	TITLE:=PPFE firmware $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012a Dev Board\
-			(must enable CONFIG_NO_STRIP=y for avoid firmware be broke)
-	CONFIG:=ls1012a/Freescale-Binary-EULA ls1012a/ppfe_class_ls1012a.elf ls1012a/ppfe_tmu_ls1012a.elf
+define Package/layerscape-ppfe
+  SECTION:=firmware
+  CATEGORY:=Firmware
+  DEPENDS:=@TARGET_layerscape
+  TITLE:=NXP Layerscape PPFE firmware
+  CONFIG_FW:=ls1012a/u-boot/pfe_fw_sbl.itb
+  CONFIG_BIN1:=ls1012a/slow_path/ppfe_class_ls1012a.elf
+  CONFIG_BIN2:=ls1012a/slow_path/ppfe_tmu_ls1012a.elf
+  CONFIG_LIC:=Freescale-Binary-EULA
 endef
-
-PPFES := \
-	ls1012ardb
-
-define Package/ppfe/template
-define Package/ppfe-$(1)
-	SECTION:=firmware
-	CATEGORY:=Firmware
-	DEPENDS:=@TARGET_layerscape
-	TITLE:=$(2)
-	URL:=https://github.com/fsl-jyt/ppfe.git
-	VARIANT:=$(1)
-	MAINTAINER:=Jiang Yutang <jiangyutang1978@gmail.com>
-endef
-endef
-
-define BuildPPFEPackage
-	$(eval $(ppfe/Default))
-	$(eval $(ppfe/$(1)))
-	$(call Package/ppfe/template,$(1),$(TITLE))
-endef
-
-ifdef BUILD_VARIANT
-$(eval $(call ppfe/$(BUILD_VARIANT)))
-PPFE_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
-endif
 
 define Build/Compile
 endef
 
-define Package/ppfe/install/default
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(foreach i,$(PPFE_CONFIG), \
-		$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(i) $(1)/lib/firmware/ ;\
-	)
+define Package/layerscape-ppfe/install
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(CONFIG_FW) \
+		$(STAGING_DIR_IMAGE)/pfe.itb
+	$(INSTALL_DIR) $(1)/lib/firmware/
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(CONFIG_BIN1) \
+		$(PKG_BUILD_DIR)/$(CONFIG_BIN2) \
+		$(PKG_BUILD_DIR)/$(CONFIG_LIC) \
+		$(1)/lib/firmware/
 endef
 
-define Package/ppfe/install/template
-define Package/ppfe-$(1)/install
-	$(call Package/ppfe/install/default,$$(1),$(2))
-endef
-endef
-
-$(foreach p,$(PPFES), \
-	$(eval $(call Package/ppfe/install/template,$(p),$(p))) \
-)
-
-$(foreach p,$(PPFES), \
-	$(eval $(call BuildPPFEPackage,$(p))) \
-	$(eval $(call BuildPackage,ppfe-$(p))) \
-)
+$(eval $(call BuildPackage,layerscape-ppfe))
