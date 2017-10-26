@@ -365,8 +365,8 @@ static struct device_info boards[] = {
 			{"profile", 0x11700, 0x03900},
 			{"default-config", 0x15000, 0x04000},
 			{"user-config", 0x19000, 0x04000},
-			{"os-image", 0x20000, 0x150000},
-			{"file-system", 0x170000, 0x678000},
+			{"os-image", 0x20000, 0x180000},
+			{"file-system", 0x1a0000, 0x648000},
 			{"certyficate", 0x7e8000, 0x08000},
 			{"radio", 0x7f0000, 0x10000},
 			{NULL, 0, 0}
@@ -439,8 +439,8 @@ static struct device_info boards[] = {
 			{"profile", 0x11700, 0x03900},
 			{"default-config", 0x15000, 0x04000},
 			{"user-config", 0x19000, 0x04000},
-			{"os-image", 0x20000, 0x150000},
-			{"file-system", 0x170000, 0x678000},
+			{"os-image", 0x20000, 0x180000},
+			{"file-system", 0x1a0000, 0x648000},
 			{"certyficate", 0x7e8000, 0x08000},
 			{"radio", 0x7f0000, 0x10000},
 			{NULL, 0, 0}
@@ -730,8 +730,8 @@ static struct device_info boards[] = {
 		*/
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x160000},
-			{"file-system", 0x180000, 0x5d0000},
+			{"os-image", 0x20000, 0x180000},
+			{"file-system", 0x1a0000, 0x5b0000},
 			{"default-mac", 0x750000, 0x00200},
 			{"pin", 0x750200, 0x00200},
 			{"product-info", 0x750400, 0x0fc00},
@@ -763,8 +763,8 @@ static struct device_info boards[] = {
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x150000},
-			{"file-system", 0x170000, 0xcd0000},
+			{"os-image", 0x20000, 0x180000},
+			{"file-system", 0x1a0000, 0xca0000},
 			{"default-mac", 0xe40000, 0x00200},
 			{"pin", 0xe40200, 0x00200},
 			{"product-info", 0xe40400, 0x0fc00},
