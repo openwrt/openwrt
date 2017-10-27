@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mdadm
 PKG_VERSION:=4.0
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_URL:=@KERNEL/linux/utils/raid/mdadm
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -41,16 +41,20 @@ define Package/mdadm/conffiles
 /etc/config/mdadm
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections -DNO_COROSYNC -DNO_DLM -DUSE_PTHREADS -DCONFFILE="/var/etc/mdadm.conf" -DMAP_DIR="/var/run/mdadm" -DMDMON_DIR="/var/run/mdadm" -DFAILED_SLOTS_DIR="/var/run/mdadm/failed-slots"
+TARGET_CFLAGS += \
+	-ffunction-sections -fdata-sections \
+	-DHAVE_STDINT_H -DNO_COROSYNC -DNO_DLM -DUSE_PTHREADS \
+	-DCONFFILE='\"/var/etc/mdadm.conf\"' \
+	-DMAP_DIR='\"/var/run/mdadm\"' \
+	-DMDMON_DIR='\"/var/run/mdadm\"' \
+	-DFAILED_SLOTS_DIR='\"/var/run/mdadm/failed-slots\"'
+
 TARGET_LDFLAGS += -Wl,--gc-sections
 
+MAKE_VARS += CHECK_RUN_DIR=0
+
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		CC="$(TARGET_CC)" \
-		CFLAGS="$(TARGET_CFLAGS) -DHAVE_STDINT_H" \
-		LDFLAGS="$(TARGET_LDFLAGS)" \
-		CHECK_RUN_DIR=0 \
-		mdadm
+	$(call Build/Compile/Default,mdadm)
 endef
 
 define Package/mdadm/install
