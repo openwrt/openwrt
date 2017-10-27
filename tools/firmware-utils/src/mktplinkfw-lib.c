@@ -236,19 +236,13 @@ int build_fw(size_t header_size)
 		goto out_free_buf;
 
 	if (!combined) {
-		if (rootfs_align)
-			p = buf + writelen;
-		else
-			p = buf + rootfs_ofs;
+		p = buf + rootfs_ofs;
 
 		ret = read_to_buf(&rootfs_info, p);
 		if (ret)
 			goto out_free_buf;
 
-		if (rootfs_align)
-			writelen += rootfs_info.file_size;
-		else
-			writelen = rootfs_ofs + rootfs_info.file_size;
+		writelen = rootfs_ofs + rootfs_info.file_size;
 
 		if (add_jffs2_eof)
 			writelen = pad_jffs2(buf, writelen, layout->fw_max_len);
