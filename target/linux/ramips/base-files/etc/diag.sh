@@ -142,6 +142,12 @@ get_status_led() {
 	youku-yk1)
 		status_led="$boardname:blue:power"
 		;;
+	dap-1522-a1|\
+	k2p|\
+	m3|\
+	miwifi-nano)
+		status_led="$boardname:blue:status"
+		;;
 	db-wrt01|\
 	esr-9753|\
 	pbr-d1)
@@ -168,11 +174,6 @@ get_status_led() {
 		;;
 	hc5962)
 		status_led="$boardname:white:status"
-		;;
-	k2p|\
-	m3|\
-	miwifi-nano)
-		status_led="$boardname:blue:status"
 		;;
 	linkits7688)
 		status_led="linkit-smart-7688:orange:wifi"
