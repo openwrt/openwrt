@@ -4,6 +4,7 @@ LDFLAGS += -lubox
 
 obj = mtd.o jffs2.o crc32.o md5.o
 obj.seama = seama.o md5.o
+obj.wrg = wrg.o md5.o
 obj.wrgg = wrgg.o md5.o
 obj.ar71xx = trx.o $(obj.seama) $(obj.wrgg)
 obj.brcm = trx.o
