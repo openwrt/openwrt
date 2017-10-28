@@ -126,6 +126,7 @@ endif
 PKG_EXTMOD_SUBDIRS ?= .
 
 define populate_module_symvers
+	@mkdir -p $(PKG_INFO_DIR)
 	cat /dev/null > $(PKG_INFO_DIR)/$(PKG_NAME).symvers; \
 	for subdir in $(PKG_EXTMOD_SUBDIRS); do \
 		cat $(PKG_INFO_DIR)/*.symvers 2>/dev/null > $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers; \
@@ -133,7 +134,6 @@ define populate_module_symvers
 endef
 
 define collect_module_symvers
-	@mkdir -p $(PKG_INFO_DIR)
 	for subdir in $(PKG_EXTMOD_SUBDIRS); do \
 		grep -F $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
 	done; \
