@@ -133,6 +133,7 @@ define populate_module_symvers
 endef
 
 define collect_module_symvers
+	@mkdir -p $(PKG_INFO_DIR)
 	for subdir in $(PKG_EXTMOD_SUBDIRS); do \
 		grep -F $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
 	done; \
