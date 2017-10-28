@@ -666,7 +666,8 @@ platform_check_image() {
 	rb-952ui-5ac2nd|\
 	rb-962uigs-5hact2hnt|\
 	rb-lhg-5nd|\
-	rb-mapl-2nd)
+	rb-mapl-2nd|\
+	rb-wap-2nd)
 		return 0
 		;;
 	esac
@@ -725,7 +726,8 @@ platform_pre_upgrade() {
 	rb-952ui-5ac2nd|\
 	rb-962uigs-5hact2hnt|\
 	rb-lhg-5nd|\
-	rb-mapl-2nd)
+	rb-mapl-2nd|\
+	rb-wap-2nd)
 		# erase firmware if booted from initramfs
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;

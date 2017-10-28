@@ -974,6 +974,9 @@ ar71xx_board_detect() {
 	*"RouterBOARD SXT Lite5")
 		name="rb-sxt5n"
 		;;
+	*"RouterBOARD wAP 2nD r2")
+		name="rb-wap-2nd"
+		;;
 	*"RouterStation")
 		name="routerstation"
 		;;

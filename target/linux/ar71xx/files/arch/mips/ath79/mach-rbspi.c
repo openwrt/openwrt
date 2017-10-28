@@ -10,9 +10,9 @@
  *  - MikroTik RouterBOARD 750P-PBr2
  *  - MikroTik RouterBOARD 750 r2
  *  - MikroTik RouterBOARD LHG 5nD
+ *  - MikroTik RouterBOARD wAP2nD
  *
  *  Preliminary support for the following hardware
- *  - MikroTik RouterBOARD wAP2nD
  *  - MikroTik RouterBOARD cAP2nD
  *  - MikroTik RouterBOARD mAP2nD
  *  Furthermore, the cAP lite (cAPL2nD) appears to feature the exact same
@@ -873,7 +873,7 @@ static void __init rblhg_setup(void)
 }
 
 /*
- * Init the wAP hardware (EXPERIMENTAL).
+ * Init the wAP hardware.
  * The wAP 2nD has a single ethernet port.
  */
 static void __init rbwap_setup(void)
@@ -889,6 +889,11 @@ static void __init rbwap_setup(void)
 	rbspi_network_setup(flags, 0, 1, 0);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbwap_leds), rbwap_leds);
+
+	/* wAP has a single reset button as GPIO 16 */
+	ath79_register_gpio_keys_polled(-1, RBSPI_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(rbspi_gpio_keys_reset16),
+					rbspi_gpio_keys_reset16);
 }
 
 /*
