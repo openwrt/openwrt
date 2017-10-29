@@ -110,15 +110,9 @@
 	};
 };
 
-
 &spi_0 { /* BLSP1 QUP1 */
-	status = "ok";
 	cs-gpios = <&tlmm 54 0>,
 		   <&tlmm 59 0>;
-
-	mx25l25635e@0 {
-		status = "disabled";
-	};
 
 	m25p80@0 {
 		#address-cells = <1>;
