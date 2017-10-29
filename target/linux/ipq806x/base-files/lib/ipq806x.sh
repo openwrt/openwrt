@@ -14,6 +14,9 @@ ipq806x_board_detect() {
 	machine=$(cat /proc/device-tree/model)
 
 	case "$machine" in
+	*"AP-DK01.1-C1")
+		name="ap-dk01.1-c1"
+		;;
 	*"AP148")
 		name="ap148"
 		;;

@@ -47,6 +47,9 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/pre-cal-ahb-a000000.wifi.bin")
 	case "$board" in
+	ap-dk01.1-c1)
+		ath10kcal_extract "ART" 4096 12064
+		;;
 	fritz4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
 		;;
@@ -54,6 +57,9 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-ahb-a800000.wifi.bin")
 	case "$board" in
+	ap-dk01.1-c1)
+		ath10kcal_extract "ART" 20480 12064
+		;;
 	fritz4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
 		;;
