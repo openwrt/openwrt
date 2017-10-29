@@ -33,8 +33,9 @@
 	};
 
 	chosen {
-		bootargs = "root=/dev/mmcblk0p5 rootfstype=squashfs,ext4 rootwait noinitrd";
+		bootargs = "rootfstype=squashfs,ext4 rootwait noinitrd";
 		linux,stdout-path = "serial0:115200n8";
+		append-rootblock = "root=/dev/mmcblk0p";
 	};
 
 	soc {
