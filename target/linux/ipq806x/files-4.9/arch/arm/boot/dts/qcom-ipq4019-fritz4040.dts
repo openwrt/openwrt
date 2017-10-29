@@ -215,12 +215,3 @@
 		};
 	};
 };
-
-&cpu0_opp_table {
-	/delete-node/ opp@666000000;
-
-	opp@710000000 {
-		opp-hz = /bits/ 64 <710000000>;
-		clock-latency-ns = <256000>;
-	};
-};
