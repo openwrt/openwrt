@@ -59,10 +59,6 @@
 */
 
 	soc {
-		mdio@90000 {
-			status = "okay";
-		};
-
 		qca8075: ess-switch@c000000 {
 			status = "okay";
 
@@ -75,22 +71,6 @@
 				gpios = <0x7 GPIO_ACTIVE_HIGH>;
 				output-high;
 			};
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
-
-		wifi@a000000 {
-			status = "okay";
-		};
-
-		wifi@a800000 {
-			status = "okay";
 		};
 	};
 
