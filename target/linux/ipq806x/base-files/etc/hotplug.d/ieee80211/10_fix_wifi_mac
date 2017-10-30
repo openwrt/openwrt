@@ -23,6 +23,9 @@ case "$board" in
 	ea8500)
 		echo $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) $(($PHYNBR + 1)) ) > /sys${DEVPATH}/macaddress
 		;;
+	nbg6817)
+		echo $(macaddr_add $(mtd_get_mac_ascii 0:APPSBLENV ethaddr) $((1 - $PHYNBR)) ) > /sys${DEVPATH}/macaddress
+		;;
 	vr2600v)
 		echo $(macaddr_add $(mtd_get_mac_binary default-mac 0)  $(($PHYNBR - 1)) ) > /sys${DEVPATH}/macaddress
 		;;
