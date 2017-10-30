@@ -1,3 +1,12 @@
+sanitize_name_x86() {
+	sed -e '
+		y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;
+		s/[^a-z0-9_-]\+/-/g;
+		s/^-//;
+		s/-$//;
+	' "$@"
+}
+
 do_sysinfo_x86() {
 	local vendor product file
 
@@ -17,12 +26,7 @@ do_sysinfo_x86() {
 
 	echo "$vendor $product" > /tmp/sysinfo/model
 
-	sed -e '
-		y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;
-		s/[^a-z0-9_-]\+/-/g;
-		s/^-//;
-		s/-$//;
-	' /tmp/sysinfo/model > /tmp/sysinfo/board_name
+	sanitize_name_x86 /tmp/sysinfo/model > /tmp/sysinfo/board_name
 }
 
 boot_hook_add preinit_main do_sysinfo_x86
