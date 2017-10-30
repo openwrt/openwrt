@@ -17,7 +17,14 @@ do_sysinfo_x86() {
 
 	for file in product_name board_name; do
 		product="$(cat /sys/devices/virtual/dmi/id/$file 2>/dev/null)"
-		[ -n "$product" ] && break
+		case "$vendor:$product" in
+		"Supermicro:Super Server")
+			continue
+			;;
+		?*:?*)
+			break
+			;;
+		esac
 	done
 
 	[ -n "$vendor" -a -n "$product" ] || return
