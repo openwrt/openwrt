@@ -488,6 +488,7 @@ static struct gpio_keys_button rblhg_gpio_keys[] __initdata = {
 
 static struct gen_74x164_chip_platform_data rbspi_ssr_data = {
 	.base = RBSPI_SSR_GPIO_BASE,
+	.num_registers = 1,
 };
 
 /* the spi-ath79 driver can only natively handle CS0. Other CS are bit-banged */
