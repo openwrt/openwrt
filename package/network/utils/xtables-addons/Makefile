@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=xtables-addons
 PKG_VERSION:=2.14
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_HASH:=d215a9a8b8e66aae04b982fa2e1228e8a71e7dfe42320df99e34e5000cbdf152
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -120,6 +120,25 @@ define Package/iptaccount/install
 endef
 
 
+define Package/iptgeoip
+  $(call Package/xtables-addons)
+  CATEGORY:=Network
+  TITLE:=iptables-mod-geoip support scripts for MaxMind GeoIP databases
+  # we could also use wget-nossl but that's more complicated than our
+  # syntax of dependencies permits...
+  DEPENDS:=iptables +iptables-mod-geoip \
+		+perl +perlbase-getopt +perlbase-io +perl-text-csv_xs \
+		+!BUSYBOX_CONFIG_WGET:wget +!BUSYBOX_CONFIG_GZIP:gzip +!BUSYBOX_CONFIG_UNZIP:unzip
+endef
+
+define Package/iptgeoip/install
+	$(INSTALL_DIR) $(1)/usr/lib/xtables-addons
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/xtables-addons/xt_geoip_{build,dl} \
+		$(1)/usr/lib/xtables-addons/
+endef
+
+
 #$(eval $(call BuildTemplate,SUFFIX,DESCRIPTION,EXTENSION,MODULE,PRIORITY,DEPENDS))
 
 $(eval $(call BuildTemplate,compat-xtables,API compatibilty layer,,compat_xtables,+IPV6:kmod-ip6tables))
@@ -147,3 +166,4 @@ $(eval $(call BuildTemplate,sysrq,SYSRQ,xt_SYSRQ,xt_SYSRQ,+kmod-ipt-compat-xtabl
 $(eval $(call BuildTemplate,tarpit,TARPIT,xt_TARPIT,xt_TARPIT,+kmod-ipt-compat-xtables))
 
 $(eval $(call BuildPackage,iptaccount))
+$(eval $(call BuildPackage,iptgeoip))
