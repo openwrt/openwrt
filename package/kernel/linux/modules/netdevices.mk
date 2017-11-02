@@ -304,6 +304,22 @@ endef
 $(eval $(call KernelPackage,r6040))
 
 
+define KernelPackage/niu
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Sun Neptune 10Gbit Ethernet support
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:=CONFIG_NIU
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/sun/niu.ko
+  AUTOLOAD:=$(call AutoProbe,niu)
+endef
+
+define KernelPackage/niu/description
+ This enables support for cards based upon Sun's Neptune chipset.
+endef
+
+$(eval $(call KernelPackage,niu))
+
+
 define KernelPackage/sis900
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SiS 900 Ethernet support
