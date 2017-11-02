@@ -218,7 +218,7 @@ TARGET_DEVICES += archer-c5-v1 archer-c7-v1 archer-c7-v2 archer-c7-v2-il tl-wdr7
 define Device/cpe510-520-v1
   DEVICE_TITLE := TP-LINK CPE510/520 v1
   DEVICE_PACKAGES := rssileds
-  MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),6144k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,1536k(kernel),6144k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
   IMAGE_SIZE := 7680k
   BOARDNAME := CPE510
   TPLINK_BOARD_ID := CPE510
@@ -254,7 +254,7 @@ TARGET_DEVICES += cpe210-220-v1 cpe510-520-v1 wbs210-v1 wbs510-v1
 
 define Device/eap120-v1
   DEVICE_TITLE := TP-LINK EAP120 v1
-  MTDPARTS := spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),14336k(rootfs),192k(config)ro,64k(ART)ro,15872k@0x40000(firmware)
+  MTDPARTS := spi0.0:128k(u-boot)ro,64k(partition-table)ro,64k(product-info)ro,1536k(kernel),14336k(rootfs),192k(config)ro,64k(ART)ro,15872k@0x40000(firmware)
   IMAGE_SIZE := 15872k
   BOARDNAME := EAP120
   TPLINK_BOARD_ID := EAP120
@@ -270,7 +270,7 @@ TARGET_DEVICES += eap120-v1
 define Device/re450-v1
   DEVICE_TITLE := TP-LINK RE450 v1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
-  MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),4672k(rootfs),64k(pation-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro,6016k@0x20000(firmware)
+  MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),4672k(rootfs),64k(partition-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro,6016k@0x20000(firmware)
   IMAGE_SIZE := 7936k
   BOARDNAME := RE450
   TPLINK_BOARD_ID := RE450
