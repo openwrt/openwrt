@@ -225,6 +225,14 @@ define Device/timecloud
 endef
 TARGET_DEVICES += timecloud
 
+define Device/u7621-06-256M-16M
+  DTS := U7621-06-256M-16M
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := UniElec U7621-06 (256M RAM/16M flash)
+  DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3
+endef
+TARGET_DEVICES += u7621-06-256M-16M
+
 define Device/ubnt-erx
   DTS := UBNT-ERX
   FILESYSTEMS := squashfs

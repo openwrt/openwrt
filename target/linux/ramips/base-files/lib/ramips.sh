@@ -511,6 +511,9 @@ ramips_board_detect() {
 	*"U25AWF-H1")
 		name="u25awf-h1"
 		;;
+	*"U7621-06 (256M RAM/16M flash)")
+		name="u7621-06-256M-16M"
+		;;
 	*"UBNT-ERX")
 		name="ubnt-erx"
 		;;

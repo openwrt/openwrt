@@ -145,6 +145,7 @@ platform_check_image() {
 	timecloud|\
 	tiny-ac|\
 	u25awf-h1|\
+	u7621-06-256M-16M|\
 	ur-326n4g|\
 	ur-336un|\
 	v22rw-2x2|\
