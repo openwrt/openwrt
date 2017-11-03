@@ -438,17 +438,16 @@ endef
 ifndef IB
 define Device/Build/dtb
   $(KDIR)/image-$(1).dtb: FORCE
-	$(call Image/BuildDTB,$(2)/$(1).dts,$$@)
+	$(call Image/BuildDTB,$(strip $(2))/$(1).dts,$$@)
 
-  $(3): $(KDIR)/image-$(1).dtb
+  image_prepare: $(KDIR)/image-$(1).dtb
 endef
 endif
 
 define Device/Build/kernel
   $$(eval $$(foreach dts,$$(DEVICE_DTS), \
 	$$(call Device/Build/dtb,$$(dts), \
-		$$(if $$(DEVICE_DTS_DIR),$$(DEVICE_DTS_DIR),$$(DTS_DIR)),\
-		$$(KDIR_KERNEL_IMAGE) $(KDIR)/$$(KERNEL_INITRAMFS_NAME) \
+		$$(if $$(DEVICE_DTS_DIR),$$(DEVICE_DTS_DIR),$$(DTS_DIR)) \
 	) \
   ))
 
