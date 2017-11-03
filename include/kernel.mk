@@ -135,7 +135,7 @@ endef
 
 define collect_module_symvers
 	for subdir in $(PKG_EXTMOD_SUBDIRS); do \
-		grep -F $(PKG_BUILD_DIR) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
+		grep -F $$$$(readlink -f $(PKG_BUILD_DIR)) $(PKG_BUILD_DIR)/$$$$subdir/Module.symvers >> $(PKG_BUILD_DIR)/Module.symvers.tmp; \
 	done; \
 	sort -u $(PKG_BUILD_DIR)/Module.symvers.tmp > $(PKG_BUILD_DIR)/Module.symvers; \
 	mv $(PKG_BUILD_DIR)/Module.symvers $(PKG_INFO_DIR)/$(PKG_NAME).symvers
