@@ -124,6 +124,14 @@ define Device/tl-wr841n-v13
 endef
 TARGET_DEVICES += tl-wr840n-v4 tl-wr840n-v5 tl-wr841n-v13
 
+define Device/u7628-01-128M-16M
+  DTS := U7628-01-128M-16M
+  IMAGE_SIZE := 16064k
+  DEVICE_TITLE := UniElec U7628-01 (128M RAM/16M flash)
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += u7628-01-128M-16M
+
 define Device/vocore2
   DTS := VOCORE2
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

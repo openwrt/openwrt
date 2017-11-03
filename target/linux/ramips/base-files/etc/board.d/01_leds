@@ -372,6 +372,15 @@ u25awf-h1)
 	set_wifi_led "u25awf:red:wifi"
 	ucidef_set_led_netdev "eth" "eth" "u25awf:green:lan" "eth0"
 	;;
+u7628-01-128M-16M)
+	ucidef_set_led_switch "lan1" "lan1" "u7628-01:green:lan1" "switch0" "0x2"
+	ucidef_set_led_switch "lan2" "lan2" "u7628-01:green:lan2" "switch0" "0x4"
+	ucidef_set_led_switch "lan3" "lan3" "u7628-01:green:lan3" "switch0" "0x8"
+	ucidef_set_led_switch "lan4" "lan4" "u7628-01:green:lan4" "switch0" "0x10"
+	ucidef_set_led_switch "wan" "wan" "u7628-01:green:wan" "switch0" "0x01"
+	set_usb_led "u7628-01:green:usb"
+	set_wifi_led "u7628-01:green:wlan"
+	;;
 vocore-8M|\
 vocore-16M)
 	ucidef_set_led_netdev "eth" "ETH" "vocore:orange:eth" "eth0"
