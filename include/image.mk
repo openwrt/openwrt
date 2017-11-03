@@ -437,10 +437,14 @@ endef
 
 ifndef IB
 define Device/Build/dtb
+  ifndef BUILD_DTS_$(1)
+  BUILD_DTS_$(1) := 1
   $(KDIR)/image-$(1).dtb: FORCE
 	$(call Image/BuildDTB,$(strip $(2))/$(1).dts,$$@)
 
   image_prepare: $(KDIR)/image-$(1).dtb
+  endif
+
 endef
 endif
 
