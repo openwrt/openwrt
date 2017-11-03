@@ -490,7 +490,14 @@ static struct device_info boards[] = {
 		.id = "ARCHER-C7-V4",
 		.support_list =
 			"SupportList:\n"
+			"{product_name:Archer C7,product_ver:4.0.0,special_id:00000000}\n"
+			"{product_name:Archer C7,product_ver:4.0.0,special_id:41550000}\n"
 			"{product_name:Archer C7,product_ver:4.0.0,special_id:45550000}\n"
+			"{product_name:Archer C7,product_ver:4.0.0,special_id:4B520000}\n"
+			"{product_name:Archer C7,product_ver:4.0.0,special_id:42520000}\n"
+			"{product_name:Archer C7,product_ver:4.0.0,special_id:4A500000}\n"
+			"{product_name:Archer C7,product_ver:4.0.0,special_id:52550000}\n"
+			"{product_name:Archer C7,product_ver:4.0.0,special_id:54570000}\n"
 			"{product_name:Archer C7,product_ver:4.0.0,special_id:55530000}\n"
 			"{product_name:Archer C7,product_ver:4.0.0,special_id:43410000}\n",
 		.support_trail = '\x00',
