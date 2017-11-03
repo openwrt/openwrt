@@ -30,7 +30,7 @@ define KernelPackage/mwlwifi
   TITLE:=Marvell 88W8864 wireless driver
   DEPENDS:=+kmod-mac80211 +@DRIVER_11N_SUPPORT +@DRIVER_11AC_SUPPORT +@DRIVER_11W_SUPPORT @PCI_SUPPORT @TARGET_mvebu
   FILES:=$(PKG_BUILD_DIR)/mwlwifi.ko
-  AUTOLOAD:=$(call AutoProbe,mwlwifi)
+  AUTOLOAD:=$(call AutoLoad,50,mwlwifi)
 endef
 
 NOSTDINC_FLAGS = \
