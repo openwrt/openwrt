@@ -10,7 +10,9 @@ define Build/elecom-header
 		mkhash md5 $(KDIR)/v_0.0.0.bin && \
 		echo 458 \
 	) | mkhash md5 > $(KDIR)/v_0.0.0.md5
-	$(STAGING_DIR_HOST)/bin/tar -cf $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
+	$(STAGING_DIR_HOST)/bin/tar -c \
+		$(if $(SOURCE_DATE_EPOCH),--mtime=@$(SOURCE_DATE_EPOCH)) \
+		-f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
 define Build/zyimage
