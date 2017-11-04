@@ -24,6 +24,11 @@ define KernelPackage/ltq-ptm-template
   URL:=http://www.lantiq.com/
   VARIANT:=$(1)
   DEPENDS:=@TARGET_lantiq_$(2)
+ifeq ($(1),vr9)
+  DEPENDS+= +kmod-ltq-vdsl-vr9-mei
+else
+  DEPENDS+= +kmod-ltq-adsl-$(1)-mei
+endif
 ifeq ($(1),ase)
   DEPENDS+=@BROKEN
 endif
