@@ -1,6 +1,6 @@
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -279,17 +279,17 @@ build_libcrypto: build_crypto build_engi
+@@ -282,17 +282,17 @@ build_libcrypto: build_crypto build_engi
  build_libssl: build_ssl libssl.pc
  
  build_crypto:
@@ -24,7 +24,7 @@
  
  all_testapps: build_libs build_testapps
  build_testapps:
-@@ -461,7 +461,7 @@ update: errors stacks util/libeay.num ut
+@@ -473,7 +473,7 @@ update: errors stacks util/libeay.num ut
  	@set -e; target=update; $(RECURSIVE_BUILD_CMD)
  
  depend:
@@ -33,7 +33,7 @@
  
  lint:
  	@set -e; target=lint; $(RECURSIVE_BUILD_CMD)
-@@ -523,9 +523,9 @@ dist:
+@@ -535,9 +535,9 @@ dist:
  	@$(MAKE) SDIRS='$(SDIRS)' clean
  	@$(MAKE) TAR='$(TAR)' TARFLAGS='$(TARFLAGS)' $(DISTTARVARS) tar
  
@@ -45,7 +45,7 @@
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
  		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR) \
  		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/engines \
-@@ -534,12 +534,19 @@ install_sw:
+@@ -546,12 +546,19 @@ install_sw:
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/misc \
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/certs \
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/private
@@ -66,7 +66,7 @@
  	@set -e; liblist="$(LIBS)"; for i in $$liblist ;\
  	do \
  		if [ -f "$$i" ]; then \
-@@ -623,12 +630,7 @@ install_html_docs:
+@@ -635,12 +642,7 @@ install_html_docs:
  		done; \
  	done
  
@@ -164,7 +164,7 @@
  	ctags $(SRC)
 --- a/test/Makefile
 +++ b/test/Makefile
-@@ -139,7 +139,7 @@ install:
+@@ -144,7 +144,7 @@ install:
  tags:
  	ctags $(SRC)
  
@@ -173,7 +173,7 @@
  
  apps:
  	@(cd ..; $(MAKE) DIRS=apps all)
-@@ -557,7 +557,7 @@ $(SSLV2CONFTEST)$(EXE_EXT): $(SSLV2CONFT
+@@ -578,7 +578,7 @@ $(DTLSTEST)$(EXE_EXT): $(DTLSTEST).o ssl
  #	fi
  
  dummytest$(EXE_EXT): dummytest.o $(DLIBCRYPTO)
