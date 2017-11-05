@@ -443,6 +443,9 @@ ar71xx_board_detect() {
 	*CAP4200AG)
 		name="cap4200ag"
 		;;
+	*"COMFAST CF-E214N v2")
+		name="cf-e214n-v2"
+		;;
 	*"COMFAST CF-E316N v2")
 		name="cf-e316n-v2"
 		;;

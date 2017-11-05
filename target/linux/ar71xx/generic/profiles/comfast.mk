@@ -5,6 +5,19 @@
 # See /LICENSE for more information.
 #
 
+define Profile/CF-E214N-V2
+        NAME:=COMFAST CF-E214N v2
+        PACKAGES:=
+endef
+
+define Profile/CF-E214N-V2/Description
+        Package set optimised for the COMFAST CF-E214N v2
+        by Shenzhen Four Seas Global Link Network Technology Co., Ltd
+        aka CF-E214V2, CF-E214N-V2 and CF-E214Nv2.0 (no FCC ID)
+endef
+
+$(eval $(call Profile,CF-E214N-V2))
+
 define Profile/CF-E316N-V2
         NAME:=COMFAST CF-E316N v2
         PACKAGES:=

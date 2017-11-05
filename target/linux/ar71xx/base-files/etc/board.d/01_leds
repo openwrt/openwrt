@@ -121,6 +121,17 @@ carambola2)
 	ucidef_set_led_wlan "wlan" "WLAN" "carambola2:green:wlan" "phy0tpt"
 	;;
 
+cf-e214n-v2)
+	ucidef_set_led_netdev "lan" "LAN" "$board:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "$board:wan" "eth1"
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:wlan" "phy0tpt"
+	ucidef_set_rssimon "wlan" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "$board:link1" "wlan" "1" "100" "0" "13"
+	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "$board:link2" "wlan" "26" "100" "-25" "13"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "$board:link3" "wlan" "51" "100" "-50" "13"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "$board:link4" "wlan" "76" "100" "-75" "13"
+	;;
+
 cf-e316n-v2)
 	ucidef_set_led_netdev "lan" "LAN" "$board:blue:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "$board:blue:wan" "eth1"
