@@ -1,6 +1,8 @@
---- a/gencode.c
-+++ b/gencode.c
-@@ -543,20 +543,6 @@ pcap_compile_nopcap(int snaplen_arg, int
+Index: libpcap-1.8.1/gencode.c
+===================================================================
+--- libpcap-1.8.1.orig/gencode.c
++++ libpcap-1.8.1/gencode.c
+@@ -780,20 +780,6 @@ pcap_compile_nopcap(int snaplen_arg, int
  }
  
  /*
@@ -21,9 +23,11 @@
   * Backpatch the blocks in 'list' to 'target'.  The 'sense' field indicates
   * which of the jt and jf fields has been resolved and which is a pointer
   * back to another unresolved block (or nil).  At least one of the fields
---- a/pcap.c
-+++ b/pcap.c
-@@ -1087,6 +1087,59 @@ static const u_char charmap[] = {
+Index: libpcap-1.8.1/pcap.c
+===================================================================
+--- libpcap-1.8.1.orig/pcap.c
++++ libpcap-1.8.1/pcap.c
+@@ -1119,6 +1119,59 @@ static const u_char charmap[] = {
  	(u_char)'\374', (u_char)'\375', (u_char)'\376', (u_char)'\377',
  };
  
@@ -83,58 +87,12 @@
  int
  pcap_strcasecmp(const char *s1, const char *s2)
  {
---- a/optimize.c
-+++ b/optimize.c
-@@ -2203,45 +2203,6 @@ icode_to_fcode(struct block *root, u_int
- 	return fp;
- }
- 
--/*
-- * Make a copy of a BPF program and put it in the "fcode" member of
-- * a "pcap_t".
-- *
-- * If we fail to allocate memory for the copy, fill in the "errbuf"
-- * member of the "pcap_t" with an error message, and return -1;
-- * otherwise, return 0.
-- */
--int
--install_bpf_program(pcap_t *p, struct bpf_program *fp)
--{
--	size_t prog_size;
--
--	/*
--	 * Validate the program.
--	 */
--	if (!bpf_validate(fp->bf_insns, fp->bf_len)) {
--		snprintf(p->errbuf, sizeof(p->errbuf),
--			"BPF program is not valid");
--		return (-1);
--	}
--
--	/*
--	 * Free up any already installed program.
--	 */
--	pcap_freecode(&p->fcode);
--
--	prog_size = sizeof(*fp->bf_insns) * fp->bf_len;
--	p->fcode.bf_len = fp->bf_len;
--	p->fcode.bf_insns = (struct bpf_insn *)malloc(prog_size);
--	if (p->fcode.bf_insns == NULL) {
--		snprintf(p->errbuf, sizeof(p->errbuf),
--			 "malloc: %s", pcap_strerror(errno));
--		return (-1);
--	}
--	memcpy(p->fcode.bf_insns, fp->bf_insns, prog_size);
--	return (0);
--}
--
- #ifdef BDEBUG
- static void
- dot_dump_node(struct block *block, struct bpf_program *prog, FILE *out)
---- a/pcap-common.c
-+++ b/pcap-common.c
-@@ -1372,14 +1372,23 @@ swap_pseudo_headers(int linktype, struct
- 	switch (linktype) {
+Index: libpcap-1.8.1/pcap-common.c
+===================================================================
+--- libpcap-1.8.1.orig/pcap-common.c
++++ libpcap-1.8.1/pcap-common.c
+@@ -1447,14 +1447,23 @@ swap_pseudo_headers(int linktype, struct
+ 		break;
  
  	case DLT_USB_LINUX:
 +#ifndef PCAP_SUPPORT_USB
@@ -157,3 +115,53 @@
  		swap_nflog_header(hdr, data);
  		break;
  	}
+Index: libpcap-1.8.1/optimize.c
+===================================================================
+--- libpcap-1.8.1.orig/optimize.c
++++ libpcap-1.8.1/optimize.c
+@@ -2227,45 +2227,6 @@ icode_to_fcode(compiler_state_t *cstate,
+ 	return fp;
+ }
+ 
+-/*
+- * Make a copy of a BPF program and put it in the "fcode" member of
+- * a "pcap_t".
+- *
+- * If we fail to allocate memory for the copy, fill in the "errbuf"
+- * member of the "pcap_t" with an error message, and return -1;
+- * otherwise, return 0.
+- */
+-int
+-install_bpf_program(pcap_t *p, struct bpf_program *fp)
+-{
+-	size_t prog_size;
+-
+-	/*
+-	 * Validate the program.
+-	 */
+-	if (!bpf_validate(fp->bf_insns, fp->bf_len)) {
+-		pcap_snprintf(p->errbuf, sizeof(p->errbuf),
+-			"BPF program is not valid");
+-		return (-1);
+-	}
+-
+-	/*
+-	 * Free up any already installed program.
+-	 */
+-	pcap_freecode(&p->fcode);
+-
+-	prog_size = sizeof(*fp->bf_insns) * fp->bf_len;
+-	p->fcode.bf_len = fp->bf_len;
+-	p->fcode.bf_insns = (struct bpf_insn *)malloc(prog_size);
+-	if (p->fcode.bf_insns == NULL) {
+-		pcap_snprintf(p->errbuf, sizeof(p->errbuf),
+-			 "malloc: %s", pcap_strerror(errno));
+-		return (-1);
+-	}
+-	memcpy(p->fcode.bf_insns, fp->bf_insns, prog_size);
+-	return (0);
+-}
+-
+ #ifdef BDEBUG
+ static void
+ dot_dump_node(struct icode *ic, struct block *block, struct bpf_program *prog,

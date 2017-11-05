@@ -1,9 +1,11 @@
 Debian-specific modifications to the upstream Makefile.in to
 build a shared library.
 
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -40,6 +40,14 @@ mandir = @mandir@
+Index: libpcap-1.8.1/Makefile.in
+===================================================================
+--- libpcap-1.8.1.orig/Makefile.in
++++ libpcap-1.8.1/Makefile.in
+@@ -38,6 +38,14 @@ mandir = @mandir@
  srcdir = @srcdir@
  VPATH = @srcdir@
  
@@ -18,7 +20,7 @@ build a shared library.
  #
  # You shouldn't need to edit anything below.
  #
-@@ -63,7 +71,8 @@ DEPENDENCY_CFLAG = @DEPENDENCY_CFLAG@
+@@ -62,7 +70,8 @@ DEPENDENCY_CFLAG = @DEPENDENCY_CFLAG@
  PROG=libpcap
  
  # Standard CFLAGS
@@ -28,7 +30,7 @@ build a shared library.
  
  INSTALL = @INSTALL@
  INSTALL_PROGRAM = @INSTALL_PROGRAM@
-@@ -83,7 +92,11 @@ YACC = @V_YACC@
+@@ -77,7 +86,11 @@ YACC = @YACC@
  # problem if you don't own the file but can write to the directory.
  .c.o:
  	@rm -f $@
@@ -39,9 +41,9 @@ build a shared library.
 +	@rm -f $@
 +	$(CC) -fPIC $(FULL_CFLAGS) -c -o $@ $(srcdir)/$*.c
  
- PSRC =	pcap-@V_PCAP@.c @USB_SRC@ @BT_SRC@ @CAN_SRC@ @NETFILTER_SRC@ @CANUSB_SRC@ @DBUS_SRC@
- FSRC =  fad-@V_FINDALLDEVS@.c
-@@ -99,6 +112,7 @@ SRC =	$(PSRC) $(FSRC) $(CSRC) $(SSRC) $(
+ PSRC =	pcap-@V_PCAP@.c @USB_SRC@ @BT_SRC@ @BT_MONITOR_SRC@ @NETFILTER_SRC@ @DBUS_SRC@
+ FSRC =  @V_FINDALLDEVS@
+@@ -93,6 +106,7 @@ SRC =	$(PSRC) $(FSRC) $(CSRC) $(SSRC) $(
  # We would like to say "OBJ = $(SRC:.c=.o)" but Ultrix's make cannot
  # hack the extra indirection
  OBJ =	$(PSRC:.c=.o) $(FSRC:.c=.o) $(CSRC:.c=.o) $(SSRC:.c=.o) $(GENSRC:.c=.o) $(LIBOBJS)
@@ -49,7 +51,7 @@ build a shared library.
  PUBHDR = \
  	pcap.h \
  	pcap-bpf.h \
-@@ -153,7 +167,7 @@ TAGFILES = \
+@@ -157,7 +171,7 @@ TAGFILES = \
  
  CLEANFILES = $(OBJ) libpcap.* $(TESTS) \
  	$(PROG)-`cat $(srcdir)/VERSION`.tar.gz $(GENSRC) $(GENHDR) \
@@ -58,7 +60,7 @@ build a shared library.
  
  MAN1 = pcap-config.1
  
-@@ -363,7 +377,7 @@ libpcap.a: $(OBJ)
+@@ -365,7 +379,7 @@ libpcap.a: $(OBJ)
  	$(AR) rc $@ $(OBJ) $(ADDLARCHIVEOBJS)
  	$(RANLIB) $@
  
@@ -67,7 +69,7 @@ build a shared library.
  
  libpcap.so: $(OBJ)
  	@rm -f $@
-@@ -441,6 +455,13 @@ libpcap.shareda: $(OBJ)
+@@ -443,6 +457,13 @@ libpcap.shareda: $(OBJ)
  #
  libpcap.none:
  
@@ -79,25 +81,25 @@ build a shared library.
 +	ln -s $(SOLIBRARY).$(MAJ) $(SOLIBRARY)
 +
  scanner.c: $(srcdir)/scanner.l
- 	@rm -f $@
- 	$(srcdir)/runlex.sh $(LEX) -o$@ $<
-@@ -448,6 +469,9 @@ scanner.c: $(srcdir)/scanner.l
- scanner.o: scanner.c tokdefs.h
+ 	$(LEX) -P pcap_ --header-file=scanner.h --nounput -o scanner.c $<
+ scanner.h: scanner.c
+@@ -455,6 +476,9 @@ scanner.h: scanner.c
+ scanner.o: scanner.c grammar.h
  	$(CC) $(FULL_CFLAGS) -c scanner.c
  
-+scanner_pic.o: scanner.c tokdefs.h
++scanner_pic.o: scanner.c
 +	$(CC) -fPIC $(FULL_CFLAGS) -o $@ -c scanner.c
 +
- pcap.o: version.h
+ pcap.o: pcap_version.h
  
- tokdefs.h: grammar.c
-@@ -461,9 +485,16 @@ grammar.o: grammar.c
- 	@rm -f $@
- 	$(CC) $(FULL_CFLAGS) -Dyylval=pcap_lval -c grammar.c
+ grammar.c: $(srcdir)/grammar.y
+@@ -472,9 +496,16 @@ grammar.o: grammar.c
+ gencode.o: $(srcdir)/gencode.c grammar.h scanner.h
+ 	$(CC) $(FULL_CFLAGS) -c $(srcdir)/gencode.c
  
 +grammar_pic.o: grammar.c
 +	@rm -f $@
-+	$(CC) -fPIC $(FULL_CFLAGS) -Dyylval=pcap_lval -o $@ -c grammar.c 
++	$(CC) -fPIC $(FULL_CFLAGS) -Dyylval=pcap_lval -o $@ -c grammar.c
 +
  version.o: version.c
  	$(CC) $(FULL_CFLAGS) -c version.c
@@ -118,7 +120,7 @@ build a shared library.
  #
  # Generate the pcap-config script.
  #
-@@ -618,11 +652,9 @@ install-shared: install-shared-$(DYEXT)
+@@ -626,11 +660,9 @@ install-shared: install-shared-$(DYEXT)
  install-shared-so: libpcap.so
  	[ -d $(DESTDIR)$(libdir) ] || \
  	    (mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir))
@@ -133,9 +135,11 @@ build a shared library.
  install-shared-dylib: libpcap.dylib
  	[ -d $(DESTDIR)$(libdir) ] || \
  	    (mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir))
---- a/aclocal.m4
-+++ b/aclocal.m4
-@@ -440,7 +440,7 @@ AC_DEFUN(AC_LBL_SHLIBS_INIT,
+Index: libpcap-1.8.1/aclocal.m4
+===================================================================
+--- libpcap-1.8.1.orig/aclocal.m4
++++ libpcap-1.8.1/aclocal.m4
+@@ -470,7 +470,7 @@ AC_DEFUN(AC_LBL_SHLIBS_INIT,
  			esac
  			;;
  		    esac
@@ -144,7 +148,7 @@ build a shared library.
  		    V_SONAME_OPT="-Wl,-soname,"
  		    V_RPATH_OPT="-Wl,-rpath,"
  		    ;;
-@@ -503,7 +503,7 @@ AC_DEFUN(AC_LBL_SHLIBS_INIT,
+@@ -533,7 +533,7 @@ AC_DEFUN(AC_LBL_SHLIBS_INIT,
  		    #
  		    # "cc" is GCC.
  		    #
@@ -153,8 +157,10 @@ build a shared library.
  		    V_SHLIB_CMD="\$(CC)"
  		    V_SHLIB_OPT="-shared"
  		    V_SONAME_OPT="-Wl,-soname,"
---- a/pcap-config.in
-+++ b/pcap-config.in
+Index: libpcap-1.8.1/pcap-config.in
+===================================================================
+--- libpcap-1.8.1.orig/pcap-config.in
++++ libpcap-1.8.1/pcap-config.in
 @@ -36,16 +36,6 @@ do
  	esac
  	shift
