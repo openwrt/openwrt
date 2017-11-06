@@ -270,7 +270,7 @@ TARGET_DEVICES += eap120-v1
 define Device/re450-v1
   DEVICE_TITLE := TP-LINK RE450 v1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
-  MTDPARTS := spi0.0:128k(u-boot)ro,1344k(kernel),4672k(rootfs),64k(partition-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro,6016k@0x20000(firmware)
+  MTDPARTS := spi0.0:128k(u-boot)ro,6016k(firmware),64k(partition-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro
   IMAGE_SIZE := 7936k
   BOARDNAME := RE450
   TPLINK_BOARD_ID := RE450
