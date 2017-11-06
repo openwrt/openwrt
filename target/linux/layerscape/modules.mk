@@ -11,7 +11,7 @@ define KernelPackage/ppfe
   DEPENDS:=@TARGET_layerscape
   KCONFIG:=CONFIG_FSL_PPFE CONFIG_FSL_PPFE_UTIL_DISABLED
   FILES:=$(LINUX_DIR)/drivers/staging/fsl_ppfe/pfe.ko
-  AUTOLOAD:=$(call AutoLoad,35,ppfe)
+  AUTOLOAD:=$(call AutoLoad,35,pfe)
 endef
 
 define KernelPackage/ppfe/description
