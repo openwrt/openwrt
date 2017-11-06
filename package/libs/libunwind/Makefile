@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libunwind
 PKG_VERSION:=1.2.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SAVANNAH/$(PKG_NAME)
@@ -23,6 +23,7 @@ PKG_LICENSE_FILES:=LICENSE
 
 PKG_MAINTAINER:=Yousong Zhou <yszhou4tech@gmail.com>
 
+PKG_SSP:=0
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libunwind
