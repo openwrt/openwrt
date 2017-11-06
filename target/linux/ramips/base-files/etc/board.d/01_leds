@@ -294,6 +294,10 @@ wndr3700v5)
 wt3020)
 	ucidef_set_led_default "power" "power" "$board:blue:power" "0"
 	;;
+u25awf)
+	set_wifi_led "u25awf:red:wifi"
+	ucidef_set_led_netdev "eth" "eth" "u25awf:green:lan" "eth0"
+	;;
 y1|\
 y1s)
 	ucidef_set_led_default "power" "power" "$board:blue:power" "1"

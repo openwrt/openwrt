@@ -172,6 +172,9 @@ get_status_led() {
 	tew-692gr|\
 	ur-326n4g|\
 	ur-336un|\
+	u25awf)
+		status_led="u25awf:red:wifi"
+		;;
 	wf-2881|\
 	wr512-3gn)
 		status_led="$board:green:wps"
