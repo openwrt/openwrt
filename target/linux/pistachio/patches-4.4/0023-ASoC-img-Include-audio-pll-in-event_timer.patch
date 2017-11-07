@@ -1,0 +1,68 @@
+From c4b293c0a740d130de438061fdbb2dd937c0c019 Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Fri, 10 Jul 2015 15:42:04 +0100
+Subject: ASoC: img: Include audio pll in event_timer
+
+Attempt to acquire a reference to the audio pll from the
+device tree during event timer probe and pass this to
+the atu init function if it exists.
+
+Includes the addition of this reference to pistachio.dtsi
+
+Change-Id: I3f2623d967e385b9fc32ef24ef2cedc93fa87bde
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ .../devicetree/bindings/sound/img,pistachio-event-timer.txt       | 6 +++++-
+ sound/soc/img/pistachio-event-timer.c                             | 8 +++++++-
+ 2 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/sound/img,pistachio-event-timer.txt b/Documentation/devicetree/bindings/sound/img,pistachio-event-timer.txt
+index 252bcd9..7341132 100644
+--- a/Documentation/devicetree/bindings/sound/img,pistachio-event-timer.txt
++++ b/Documentation/devicetree/bindings/sound/img,pistachio-event-timer.txt
+@@ -25,11 +25,15 @@ Required properties:
+ 	"ref0"	Reference clock 0
+ 	"ref1"	Reference clock 1
+ 
++		If ATU (in adjustable pll mode) is to be used, the
++		following is required:
++	"pll"	Audio PLL
++
+   - img,clk-select : Reference select
+ 
+ Optional properties:
+ 
+-  - img,clk-rate : Internal clock rate
++  - img,clk-rate : Initial internal clock rate
+ 
+ Example:
+ 
+diff --git a/sound/soc/img/pistachio-event-timer.c b/sound/soc/img/pistachio-event-timer.c
+index 366e3e0..c0f5d29 100644
+--- a/sound/soc/img/pistachio-event-timer.c
++++ b/sound/soc/img/pistachio-event-timer.c
+@@ -678,6 +678,9 @@ static int pistachio_evt_driver_probe(struct platform_device *pdev)
+ 	u32 clk_select, rate;
+ 	struct resource iomem;
+ 	struct device *dev = &pdev->dev;
++#ifdef CONFIG_ATU
++	struct clk *audio_pll;
++#endif
+ 
+ 	evt = devm_kzalloc(&pdev->dev, sizeof(*evt), GFP_KERNEL);
+ 	if (!evt)
+@@ -801,7 +804,10 @@ static int pistachio_evt_driver_probe(struct platform_device *pdev)
+ 	timecounter_init(&evt->tc, (const struct cyclecounter *)&evt->cc, 0);
+ 
+ #ifdef CONFIG_ATU
+-	ret = atu_cyclecounter_register(&evt->cc, NULL);
++	audio_pll = devm_clk_get(&pdev->dev, "pll");
++	if (IS_ERR(audio_pll))
++		audio_pll = NULL;
++	ret = atu_cyclecounter_register(&evt->cc, audio_pll);
+ 	if(ret)
+ 		goto err_count;
+ #else
+-- 
+2.6.2
+

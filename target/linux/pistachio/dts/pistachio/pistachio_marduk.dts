@@ -1,0 +1,63 @@
+/*
+ * Copyright (C) 2016 Imagination Technologies Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+
+#include "pistachio_marduk_common.dtsi"
+
+/ {
+	model = "IMG Marduk - Ci40 with ca8210";
+
+	/* EXT clock from ca8210 is fed to sc16is752 */
+	ca8210_ext_clk: ca8210-ext-clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <16000000>;
+		clock-output-names = "ca8210_ext_clock";
+	};
+
+	pistachio_audio_card {
+		img,i2s-clk-loopback;
+
+		i2s-out {
+			continuous-clock;
+		};
+	};
+};
+
+&spfi0 {
+	ca8210: ca8210@0 {
+		status = "okay";
+		compatible = "cascoda,ca8210";
+		reg = <0>;
+		spi-max-frequency = <4000000>;
+		spi-cpol;
+		reset-gpio = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		irq-gpio = <&gpio2 12 GPIO_ACTIVE_HIGH>;
+		extclock-enable;
+		extclock-freq = <16000000>;
+		extclock-gpio = <2>;
+	};
+
+	sc16is752: sc16is752@1 {
+		clocks = <&ca8210_ext_clk>;
+	};
+};
+
+&switch1 {
+	gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
+};
+
+&gpio4 {
+	hp_amp_en {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_LOW>;
+		output-high;
+		line-name = "hp-amp-en";
+	};
+};

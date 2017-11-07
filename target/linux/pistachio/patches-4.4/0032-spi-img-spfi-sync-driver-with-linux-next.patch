@@ -1,0 +1,67 @@
+From d7b0924f83b30fbc1ed24d5bbf36f58488ca0151 Mon Sep 17 00:00:00 2001
+From: Sifan Naeem <sifan.naeem@imgtec.com>
+Date: Fri, 14 Aug 2015 15:02:55 +0100
+Subject: spi: img-spfi: sync driver with linux-next
+
+The spfi driver in gerrit is out of sync with the upstream driver in linux-next
+as the patches that were merged in to gerrit needed improvement before being
+merged to the upstream kernel.
+
+linux-next version: 4b9d159ff04a Add linux-next specific files for 20150805
+
+Change-Id: Ic4c6d797353e439feb1a15b614caf703bef086cd
+Signed-off-by: Sifan Naeem <sifan.naeem@imgtec.com>
+---
+ drivers/spi/spi-img-spfi.c | 34 +++++++++++++++++++++++++++-------
+ 1 file changed, 27 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
+index d71953d..823cbc9 100644
+--- a/drivers/spi/spi-img-spfi.c
++++ b/drivers/spi/spi-img-spfi.c
+@@ -445,15 +445,35 @@ static int img_spfi_unprepare(struct spi_master *master,
+ static int img_spfi_setup(struct spi_device *spi)
+ {
+ 	int ret = -EINVAL;
++	struct img_spfi_device_data *spfi_data = spi_get_ctldata(spi);
+ 
+-	if (gpio_is_valid(spi->cs_gpio)) {
+-		int mode = ((spi->mode & SPI_CS_HIGH) ?
+-			     GPIOF_OUT_INIT_LOW : GPIOF_OUT_INIT_HIGH);
+-
+-		ret = gpio_direction_output(spi->cs_gpio, mode);
++	if (!spfi_data) {
++		spfi_data = kzalloc(sizeof(*spfi_data), GFP_KERNEL);
++		if (!spfi_data)
++			return -ENOMEM;
++		spfi_data->gpio_requested = false;
++		spi_set_ctldata(spi, spfi_data);
++	}
++	if (!spfi_data->gpio_requested) {
++		ret = gpio_request_one(spi->cs_gpio,
++				       (spi->mode & SPI_CS_HIGH) ?
++				       GPIOF_OUT_INIT_LOW : GPIOF_OUT_INIT_HIGH,
++				       dev_name(&spi->dev));
+ 		if (ret)
+-			dev_err(&spi->dev, "chipselect gpio %d setup failed (%d)\n",
+-				spi->cs_gpio, ret);
++			dev_err(&spi->dev, "can't request chipselect gpio %d\n",
++				spi->cs_gpio);
++		else
++			spfi_data->gpio_requested = true;
++	} else {
++		if (gpio_is_valid(spi->cs_gpio)) {
++			int mode = ((spi->mode & SPI_CS_HIGH) ?
++				    GPIOF_OUT_INIT_LOW : GPIOF_OUT_INIT_HIGH);
++
++			ret = gpio_direction_output(spi->cs_gpio, mode);
++			if (ret)
++				dev_err(&spi->dev, "chipselect gpio %d setup failed (%d)\n",
++					spi->cs_gpio, ret);
++		}
+ 	}
+ 	return ret;
+ }
+-- 
+2.6.2
+

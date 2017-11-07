@@ -1,0 +1,31 @@
+From 3acab475ebf45b223fc4a29291c0a2caa5abe6b8 Mon Sep 17 00:00:00 2001
+From: Abhijit Mahajani <Abhijit.Mahajani@imgtec.com>
+Date: Tue, 13 Sep 2016 16:42:29 +0530
+Subject: Revert "MIPS: fix cache flushing for highmem pages"
+
+Signed-off-by: Abhijit Mahajani <Abhijit.Mahajani@imgtec.com>
+---
+ arch/mips/mm/cache.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
+index 8b48598..e87bccd 100644
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -111,13 +111,6 @@ void __flush_anon_page(struct page *page, unsigned long vmaddr)
+ {
+ 	unsigned long addr = (unsigned long) page_address(page);
+ 
+-	if (PageHighMem(page)) {
+-		addr = (unsigned long)kmap_atomic(page);
+-		flush_data_cache_page(addr);
+-		__kunmap_atomic((void *)addr);
+-		return;
+-	}
+-
+ 	if (pages_do_alias(addr, vmaddr)) {
+ 		if (page_mapped(page) && !Page_dcache_dirty(page)) {
+ 			void *kaddr;
+-- 
+2.6.2
+

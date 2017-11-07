@@ -1,0 +1,38 @@
+From 2fcf34940e41c90eae63b3baee0fcee9d9d5ffc1 Mon Sep 17 00:00:00 2001
+From: Francois Berder <Francois.Berder@imgtec.com>
+Date: Thu, 30 Jun 2016 18:26:33 +0100
+Subject: sc16is7xx: always write state when configuring GPIO as an output
+
+The regmap_update first reads the IOState register and then triggers
+a write if needed. However, GPIOS might be configured as an input so
+ the read to IOState on this GPIO is the current state which might
+be random.
+
+Signed-off-by: Francois Berder <Francois.Berder@imgtec.com>
+---
+ drivers/tty/serial/sc16is7xx.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/serial/sc16is7xx.c b/drivers/tty/serial/sc16is7xx.c
+index edb5305..7f9f968 100644
+--- a/drivers/tty/serial/sc16is7xx.c
++++ b/drivers/tty/serial/sc16is7xx.c
+@@ -1120,9 +1120,13 @@ static int sc16is7xx_gpio_direction_output(struct gpio_chip *chip,
+ 	struct sc16is7xx_port *s = container_of(chip, struct sc16is7xx_port,
+ 						gpio);
+ 	struct uart_port *port = &s->p[0].port;
++	u8 state = sc16is7xx_port_read(port, SC16IS7XX_IOSTATE_REG);
+ 
+-	sc16is7xx_port_update(port, SC16IS7XX_IOSTATE_REG, BIT(offset),
+-			      val ? BIT(offset) : 0);
++	if (val)
++		state |= BIT(offset);
++	else
++		state &= ~BIT(offset);
++	sc16is7xx_port_write(port, SC16IS7XX_IOSTATE_REG, state);
+ 	sc16is7xx_port_update(port, SC16IS7XX_IODIR_REG, BIT(offset),
+ 			      BIT(offset));
+ 
+-- 
+2.6.2
+

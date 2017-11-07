@@ -1,0 +1,100 @@
+From 69b418b654e8e0c877791a8e764e3271b4aeb5c6 Mon Sep 17 00:00:00 2001
+From: Loic Poulain <loic.poulain@intel.com>
+Date: Mon, 4 Apr 2016 10:48:13 +0200
+Subject: Bluetooth: hci_ldisc: Fix null pointer derefence in case of early
+ data
+
+HCI_UART_PROTO_SET flag is set before hci_uart_set_proto call. If we
+receive data from tty layer during this procedure, proto pointer may
+not be assigned yet, leading to null pointer dereference in rx method
+hci_uart_tty_receive.
+
+This patch fixes this issue by introducing HCI_UART_PROTO_READY flag in
+order to avoid any proto operation before proto opening and assignment.
+
+Signed-off-by: Loic Poulain <loic.poulain@intel.com>
+Signed-off-by: Marcel Holtmann <marcel@holtmann.org>
+(cherry picked from commit 84cb3df02aea4b00405521e67c4c67c2d525c364)
+
+Change-Id: I8f99f4ffe88eb77d5c55ab5d31a10459aa67dda5
+Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
+---
+ drivers/bluetooth/hci_ldisc.c | 11 +++++++----
+ drivers/bluetooth/hci_uart.h  |  1 +
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/bluetooth/hci_ldisc.c b/drivers/bluetooth/hci_ldisc.c
+index 96bcec5..61bb219 100644
+--- a/drivers/bluetooth/hci_ldisc.c
++++ b/drivers/bluetooth/hci_ldisc.c
+@@ -227,7 +227,7 @@ static int hci_uart_flush(struct hci_dev *hdev)
+ 	tty_ldisc_flush(tty);
+ 	tty_driver_flush_buffer(tty);
+ 
+-	if (test_bit(HCI_UART_PROTO_SET, &hu->flags))
++	if (test_bit(HCI_UART_PROTO_READY, &hu->flags))
+ 		hu->proto->flush(hu);
+ 
+ 	return 0;
+@@ -497,7 +497,7 @@ static void hci_uart_tty_close(struct tty_struct *tty)
+ 
+ 	cancel_work_sync(&hu->write_work);
+ 
+-	if (test_and_clear_bit(HCI_UART_PROTO_SET, &hu->flags)) {
++	if (test_and_clear_bit(HCI_UART_PROTO_READY, &hu->flags)) {
+ 		if (hdev) {
+ 			if (test_bit(HCI_UART_REGISTERED, &hu->flags))
+ 				hci_unregister_dev(hdev);
+@@ -505,6 +505,7 @@ static void hci_uart_tty_close(struct tty_struct *tty)
+ 		}
+ 		hu->proto->close(hu);
+ 	}
++	clear_bit(HCI_UART_PROTO_SET, &hu->flags);
+ 
+ 	kfree(hu);
+ }
+@@ -531,7 +532,7 @@ static void hci_uart_tty_wakeup(struct tty_struct *tty)
+ 	if (tty != hu->tty)
+ 		return;
+ 
+-	if (test_bit(HCI_UART_PROTO_SET, &hu->flags))
++	if (test_bit(HCI_UART_PROTO_READY, &hu->flags))
+ 		hci_uart_tx_wakeup(hu);
+ }
+ 
+@@ -555,7 +556,7 @@ static void hci_uart_tty_receive(struct tty_struct *tty, const u8 *data,
+ 	if (!hu || tty != hu->tty)
+ 		return;
+ 
+-	if (!test_bit(HCI_UART_PROTO_SET, &hu->flags))
++	if (!test_bit(HCI_UART_PROTO_READY, &hu->flags))
+ 		return;
+ 
+ 	/* It does not need a lock here as it is already protected by a mutex in
+@@ -643,9 +644,11 @@ static int hci_uart_set_proto(struct hci_uart *hu, int id)
+ 		return err;
+ 
+ 	hu->proto = p;
++	set_bit(HCI_UART_PROTO_READY, &hu->flags);
+ 
+ 	err = hci_uart_register_dev(hu);
+ 	if (err) {
++		clear_bit(HCI_UART_PROTO_READY, &hu->flags);
+ 		p->close(hu);
+ 		return err;
+ 	}
+diff --git a/drivers/bluetooth/hci_uart.h b/drivers/bluetooth/hci_uart.h
+index 82c92f1..a4d52fe 100644
+--- a/drivers/bluetooth/hci_uart.h
++++ b/drivers/bluetooth/hci_uart.h
+@@ -94,6 +94,7 @@ struct hci_uart {
+ /* HCI_UART proto flag bits */
+ #define HCI_UART_PROTO_SET	0
+ #define HCI_UART_REGISTERED	1
++#define HCI_UART_PROTO_READY	2
+ 
+ /* TX states  */
+ #define HCI_UART_SENDING	1
+-- 
+2.6.2
+

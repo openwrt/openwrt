@@ -1,0 +1,54 @@
+From 2033ade5ef150cb0152409691cfd8c9f58c3d202 Mon Sep 17 00:00:00 2001
+From: James Hartley <james.hartley@imgtec.com>
+Date: Tue, 19 Apr 2016 14:08:50 +0100
+Subject: pistachio init: Upstream sync
+
+When upstreaming the change to identify the silicon revision, an if else
+construct was replaced with a switch.
+
+Change-Id: Id361ffcdece688c33872e0f9b9d70dd5eb32c487
+Signed-off-by: James Hartley <james.hartley@imgtec.com>
+(cherry picked from commit 59b52f93bfa975549d5d2416e20d51cb3c8842f2)
+---
+ arch/mips/pistachio/init.c | 22 ++++++++++++++++------
+ 1 file changed, 16 insertions(+), 6 deletions(-)
+
+diff --git a/arch/mips/pistachio/init.c b/arch/mips/pistachio/init.c
+index 622264d..d41c614 100644
+--- a/arch/mips/pistachio/init.c
++++ b/arch/mips/pistachio/init.c
+@@ -40,15 +40,25 @@
+ const char *get_system_type(void)
+ {
+ 	u32 core_rev;
++	const char *sys_type;
+ 
+ 	core_rev = __raw_readl((const void *)PISTACHIO_CORE_REV_REG);
+ 
+-	if (core_rev == PISTACHIO_CORE_REV_B0)
+-		return "IMG Pistachio SoC (B0)";
+-	else if (core_rev == PISTACHIO_CORE_REV_A1)
+-		return "IMG_Pistachio SoC (A1)";
+-	else
+-		return "IMG_Pistachio SoC";
++	switch (core_rev) {
++	case PISTACHIO_CORE_REV_B0:
++		sys_type = "IMG Pistachio SoC (B0)";
++		break;
++
++	case PISTACHIO_CORE_REV_A1:
++		sys_type = "IMG Pistachio SoC (A1)";
++		break;
++
++	default:
++		sys_type = "IMG Pistachio SoC";
++		break;
++	}
++
++	return sys_type;
+ }
+ 
+ static void __init plat_setup_iocoherency(void)
+-- 
+2.6.2
+

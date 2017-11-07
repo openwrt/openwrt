@@ -1,0 +1,145 @@
+From 4a52f280c246e685f57ac0c5630e4a6d2c606db4 Mon Sep 17 00:00:00 2001
+From: Surendra Yeragamreddy <Surendra.Yeragamreddy@imgtec.com>
+Date: Tue, 1 Mar 2016 19:08:15 +0530
+Subject: streamsync : Provide the atu clk adjust freq.
+
+ATU provides the atu clk info such as adjusted freq etc to the
+streamsync application when the txc.modes is set to 0.
+
+Change-Id: I06e33e694ba144b1d4e162f90a953affd21d6f80
+Signed-off-by: Surendra Yeragamreddy <Surendra.Yeragamreddy@imgtec.com>
+---
+ drivers/misc/atu/atu_clk_maintainer.c | 69 ++++++++++++++++++++++++++---------
+ 1 file changed, 52 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/misc/atu/atu_clk_maintainer.c b/drivers/misc/atu/atu_clk_maintainer.c
+index 6094f9e..e563b73 100644
+--- a/drivers/misc/atu/atu_clk_maintainer.c
++++ b/drivers/misc/atu/atu_clk_maintainer.c
+@@ -61,6 +61,7 @@ struct atu_clk_maintainer {
+ 	spinlock_t atu_clk_lock;
+ 	int event_timer_rate;
+ 	struct notifier_block atu_clk_notifier;
++	atomic_t last_ppb;
+ };
+ 
+ static void atu_time_update(void);
+@@ -139,6 +140,17 @@ static int atu_gettimestamp(struct atu_event *event)
+ 	}
+ }
+ 
++static void set_frac_pll_adj_freq(int freq)
++{
++	atomic_set(&patu_clk_mtner->last_ppb, freq);
++}
++
++int get_frac_pll_adj_freq(void)
++{
++	return atomic_read(&patu_clk_mtner->last_ppb);
++}
++EXPORT_SYMBOL(get_frac_pll_adj_freq);
++
+ static long
+ ioctl_img_atu(struct file *file, unsigned int cmd, unsigned long arg)
+ {
+@@ -173,10 +185,42 @@ ioctl_img_atu(struct file *file, unsigned int cmd, unsigned long arg)
+ 		if (copy_from_user(&u_txc, argp, sizeof(u_txc)))
+ 			return -EFAULT;
+ 
+-		if (u_txc.modes == 0)
+-			return -EINVAL;
++		if (!u_txc.modes) {
++			struct timespec	timeofday;
++			struct timespec	sys_timeofday;
++
++			spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
++			if (!patu_clk_mtner->atu_timecntr.cc) {
++				spin_unlock_irqrestore(
++					&patu_clk_mtner->atu_clk_lock, flags);
++				return -EFAULT;
++			}
+ 
+-		ret = atu_adjtimex(&u_txc);
++			/* check for status bit to get clock times */
++			if (u_txc.status) {
++				atu_getnstimeofday(&timeofday);
++				getnstimeofday(&sys_timeofday);
++				u_txc.status = 0;
++				u_txc.time.tv_sec = timeofday.tv_sec;
++				u_txc.time.tv_usec = timeofday.tv_nsec;
++				u_txc.maxerror = sys_timeofday.tv_sec;
++				u_txc.esterror = sys_timeofday.tv_nsec;
++				ret = 0;
++			} else {
++				/* fill ppb and rate change event */
++				u_txc.freq = get_frac_pll_adj_freq();
++				u_txc.tick = patu_clk_mtner->event_timer_rate;
++				if (atu_rate_changed) {
++					u_txc.status = 1;
++					atu_rate_changed = 0;
++				}
++				ret = 0;
++			}
++			spin_unlock_irqrestore(&patu_clk_mtner->atu_clk_lock,
++									flags);
++		} else {
++			ret = atu_adjtimex(&u_txc);
++		}
+ 
+ 		if (copy_to_user(argp, &u_txc, sizeof(u_txc)))
+ 			return -EFAULT;
+@@ -606,20 +650,9 @@ static int atu_adjtimex(struct timex *txc)
+ 
+ 	/* Fractional PLL */
+ 	if (patu_clk_mtner->clk_atu) {
+-
+ 		spin_lock_irqsave(&patu_clk_mtner->atu_clk_lock, flags);
+-		/*
+-		 * Mode (utilizing the txc->modes) to check
+-		 * the rate change on the fly
+-		 */
+ 
+-		if (txc->modes == ATU_MODE_ON_THE_FLY) {
+-			if (atu_rate_changed) {
+-				atu_rate_changed = 0;
+-				ret = 1;
+-			}
+-			goto unlock_and_return;
+-		}
++		/* check rate change flag */
+ 		if (atu_rate_changed) {
+ 			ret = 0;
+ 			goto unlock_and_return;
+@@ -639,6 +672,7 @@ static int atu_adjtimex(struct timex *txc)
+ 			int dir;
+ 
+ 			freq = txc->freq;
++			set_frac_pll_adj_freq(freq);
+ 
+ 			if (freq < 0) {
+ 				dir = -1;
+@@ -856,11 +890,11 @@ static int atu_clk_notifier_cb(struct notifier_block *nb,
+ 
+ 		/*
+ 		 *  Assumption is that card driver rate change
+-		 *  will be more than 100,000 Hz
++		 *  will be more than EVENT_TIMER_RATE_TOLERANCE
+ 		 */
+ 		if (diff > EVENT_TIMER_RATE_TOLERANCE) {
+ 			atu_clk_rate_change_on_the_fly(ndata->new_rate);
+-			pr_debug("ATU rate change %lu\n", ndata->new_rate);
++			pr_info("ATU rate change %lu\n", ndata->new_rate);
+ 		}
+ 		return NOTIFY_OK;
+ 	case POST_RATE_CHANGE:
+@@ -891,6 +925,7 @@ int atu_cyclecounter_register(struct cyclecounter *pcc, struct clk *clk_atu)
+ 				atu_clk_notifier_cb;
+ 		clk_notifier_register(clk_atu,
+ 				      &patu_clk_mtner->atu_clk_notifier);
++		pr_info("ATU rate %d\n", patu_clk_mtner->event_timer_rate);
+ 	}
+ 
+ 	atu_chardev_init();
+-- 
+2.6.2
+

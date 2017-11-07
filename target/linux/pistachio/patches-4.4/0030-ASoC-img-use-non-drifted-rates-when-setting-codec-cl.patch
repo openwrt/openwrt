@@ -1,0 +1,124 @@
+From 3d746233eee500553e7808cf126341bd7e19cfc9 Mon Sep 17 00:00:00 2001
+From: "Damien.Horsley" <Damien.Horsley@imgtec.com>
+Date: Mon, 3 Aug 2015 13:41:34 +0100
+Subject: ASoC: img: use non-drifted rates when setting codec clocks
+
+use non-drifted clock rates when setting codec clocks as
+codecs generally accept only rates that divide exactly
+
+Change-Id: I2f4be6c61af9184da6205c9c6483243228711052
+Signed-off-by: Damien.Horsley <Damien.Horsley@imgtec.com>
+---
+ sound/soc/img/pistachio-bub.c | 36 ++++++++++++++----------------------
+ 1 file changed, 14 insertions(+), 22 deletions(-)
+
+diff --git a/sound/soc/img/pistachio-bub.c b/sound/soc/img/pistachio-bub.c
+index cc85d12..27cfb26 100644
+--- a/sound/soc/img/pistachio-bub.c
++++ b/sound/soc/img/pistachio-bub.c
+@@ -124,24 +124,23 @@ struct pistachio_card_data {
+ 
+ int pistachio_card_get_best_clk_rate(struct pistachio_card_data *pbc,
+ 		long rate, bool is_mclk, unsigned int ratios_start,
+-		unsigned int num_ratios, struct clk *clk,
++		unsigned int num_ratios, long cur_rate,
+ 		unsigned long *new_clk_rate)
+ {
+ 	int i;
+ 	long pre_div_rate, temp, diff, best_diff = LONG_MAX;
+-	unsigned long best_pre_div_rate, clk_max, clk_rate;
++	unsigned long best_pre_div_rate, clk_max;
+ 	bool change = false;
+ 	struct device *dev = pbc->card.dev;
+ 
+ 	clk_max = (is_mclk) ? pbc->mclk_max : ULONG_MAX;
+-	clk_rate = clk_get_rate(clk);
+ 
+ 	dev_dbg(dev, "pistachio_card_get_best_clk_rate()\n");
+ 	dev_dbg(dev, "clk_ratios_start %u num_clk_ratios %u\n",
+ 		ratios_start, num_ratios);
+ 
+ 	for (i = ratios_start; i < (ratios_start + num_ratios); i++) {
+-		temp = clk_rate / pistachio_clk_ratios[i];
++		temp = cur_rate / pistachio_clk_ratios[i];
+ 		diff = abs(temp - rate);
+ 		if (!diff)
+ 			break;
+@@ -158,9 +157,10 @@ int pistachio_card_get_best_clk_rate(struct pistachio_card_data *pbc,
+ 
+ 	for (i = ratios_start; i < (ratios_start + num_ratios); i++) {
+ 		pre_div_rate = rate * pistachio_clk_ratios[i];
+-		pre_div_rate = clk_round_rate(clk, pre_div_rate);
+-		if (pre_div_rate < 0)
+-			return pre_div_rate;
++		temp = (pbc->audio_pll_rate + (pre_div_rate / 2)) / pre_div_rate;
++		if(temp > 256)
++			temp = 256;
++		pre_div_rate = (pbc->audio_pll_rate + (temp / 2)) / temp;
+ 
+ 		diff = abs((pre_div_rate / pistachio_clk_ratios[i]) - rate);
+ 		if ((diff < best_diff) && (pre_div_rate <= clk_max)) {
+@@ -235,7 +235,7 @@ int pistachio_card_set_dac_clk(struct pistachio_card_data *pbc,
+ 			(PCM3168A_PCM3060_NUM_MCLK_RATIOS_ADC);
+ 
+ 	ret = pistachio_card_get_best_clk_rate(pbc, rate, true, 0, num_ratios,
+-			pbc->dac_clk, &new_rate);
++			pbc->dac_clk_rate, &new_rate);
+ 	if (ret <= 0)
+ 		return ret;
+ 
+@@ -253,12 +253,7 @@ int pistachio_card_set_dac_clk(struct pistachio_card_data *pbc,
+ 	if (ret)
+ 		return ret;
+ 
+-	pbc->dac_clk_rate = clk_get_rate(pbc->dac_clk);
+-
+-	if (pbc->dac_clk_rate != new_rate) {
+-		dev_err(pbc->card.dev, "dac clk rate set failure\n");
+-		return -EINVAL;
+-	}
++	pbc->dac_clk_rate = new_rate;
+ 
+ 	return pistachio_card_update_codec_sysclks(pbc, new_rate);
+ }
+@@ -705,7 +700,7 @@ static int pistachio_card_i2s_mclk_setup(struct pistachio_card_data *pbc,
+ {
+ 	int ret;
+ 	unsigned int ratio_start, num_ratios;
+-	unsigned long new_rate;
++	unsigned long new_rate, temp;
+ 
+ 	if (i2s_out) {
+ 		ratio_start = PISTACHIO_I2S_MCLK_RATIO_START;
+@@ -716,7 +711,7 @@ static int pistachio_card_i2s_mclk_setup(struct pistachio_card_data *pbc,
+ 	}
+ 
+ 	ret = pistachio_card_get_best_clk_rate(pbc, rate, i2s_out_mclk_shared,
+-			ratio_start, num_ratios, pbc->i2s_mclk, &new_rate);
++			ratio_start, num_ratios, pbc->i2s_mclk_rate, &new_rate);
+ 	if (ret <= 0)
+ 		return ret;
+ 
+@@ -732,16 +727,13 @@ static int pistachio_card_i2s_mclk_setup(struct pistachio_card_data *pbc,
+ 		}
+ 	}
+ 
++	temp = pbc->i2s_mclk_rate;
+ 	pbc->i2s_mclk_rate = new_rate;
+ 
+ 	ret = clk_set_rate(pbc->i2s_mclk, new_rate);
+-	pbc->i2s_mclk_rate = clk_get_rate(pbc->i2s_mclk);
+-	if (ret)
++	if (ret) {
++		pbc->i2s_mclk_rate = temp;
+ 		return ret;
+-
+-	if (pbc->i2s_mclk_rate != new_rate) {
+-		dev_err(pbc->card.dev, "mclk rate set failure\n");
+-		return -EINVAL;
+ 	}
+ 
+ 	if (i2s_out_mclk_shared)
+-- 
+2.6.2
+

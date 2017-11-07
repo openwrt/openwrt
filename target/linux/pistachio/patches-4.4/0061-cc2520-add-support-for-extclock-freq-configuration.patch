@@ -1,0 +1,138 @@
+From 7160f0644ad4a71e6715c8e1e505cfe4a6f920b1 Mon Sep 17 00:00:00 2001
+From: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+Date: Wed, 29 Jul 2015 12:15:30 +0530
+Subject: cc2520: add support for extclock-freq configuration
+
+cc2520 support generation of external clock on GPIOn pins. This
+patch adds an optional 'extclock-freq' property in device tree for
+configuring the frequency.
+
+cc2520 supports a limited number of frequencies, please check
+datasheet for the exact value to be set.
+extclock is disabled if this property is set to 0, if not specified
+extclock is set to 1MHz which is the default value of cc2520 after reset.
+
+Change-Id: I327b8af13a66d20babc86578d93dfea1fcd32cfc
+Signed-off-by: Shraddha Chaudhari <Shraddha.Chaudhari@imgtec.com>
+---
+ .../devicetree/bindings/net/ieee802154/cc2520.txt  |  5 +++
+ drivers/net/ieee802154/cc2520.c                    | 38 +++++++++++++++++++++-
+ include/linux/spi/cc2520.h                         |  1 +
+ 3 files changed, 43 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/net/ieee802154/cc2520.txt b/Documentation/devicetree/bindings/net/ieee802154/cc2520.txt
+index fb6d49f..3e1356b 100644
+--- a/Documentation/devicetree/bindings/net/ieee802154/cc2520.txt
++++ b/Documentation/devicetree/bindings/net/ieee802154/cc2520.txt
+@@ -15,6 +15,10 @@ Required properties:
+ 	- reset-gpio:		GPIO spec for the RESET pin
+ Optional properties:
+ 	- amplified:		include if the CC2520 is connected to a CC2591 amplifier
++	- extclock-freq:	frequency setting of external clock generator, should be
++				between 1000000-16000000 (check datasheet for supported values)
++				extclock is disabled if extclock-freq = <0>, if not specified
++				defaults to 1MHz (reset value)
+ 
+ Example:
+ 	cc2520@0 {
+@@ -30,4 +34,5 @@ Example:
+ 		cca-gpio = <&gpio1 16 0>;
+ 		vreg-gpio = <&gpio0 31 0>;
+ 		reset-gpio = <&gpio1 12 0>;
++		extclock-freq = <16000000>;
+ 	};
+diff --git a/drivers/net/ieee802154/cc2520.c b/drivers/net/ieee802154/cc2520.c
+index e65b605..89e64ba 100644
+--- a/drivers/net/ieee802154/cc2520.c
++++ b/drivers/net/ieee802154/cc2520.c
+@@ -35,6 +35,11 @@
+ #define	CC2520_RAM_SIZE		640
+ #define	CC2520_FIFO_SIZE	128
+ 
++#define	CC2520_CRYSTAL_FREQ		32000000
++#define	CC2520_EXTCLOCK_DEFAULT_FREQ	1000000
++#define	CC2520_EXTCLOCK_MAX_FREQ	16000000
++#define	CC2520_EXTCLOCK_MIN_FREQ	1000000
++
+ #define	CC2520RAM_TXFIFO	0x100
+ #define	CC2520RAM_RXFIFO	0x180
+ #define	CC2520RAM_IEEEADDR	0x3EA
+@@ -48,6 +53,10 @@
+ #define	CC2520_STATUS_RSSI_VALID	BIT(6)
+ #define	CC2520_STATUS_TX_UNDERFLOW	BIT(3)
+ 
++/* extclock reg */
++#define	CC2520_EXTCLOCK_ENABLE		BIT(5)
++#define	CC2520_EXTCLOCK_MAX_DIV_FACTOR	32
++
+ /* IEEE-802.15.4 defined constants (2.4 GHz logical channels) */
+ #define	CC2520_MINCHANNEL		11
+ #define	CC2520_MAXCHANNEL		26
+@@ -846,10 +855,15 @@ static int cc2520_get_platform_data(struct spi_device *spi,
+ 	pdata->cca = of_get_named_gpio(np, "cca-gpio", 0);
+ 	pdata->vreg = of_get_named_gpio(np, "vreg-gpio", 0);
+ 	pdata->reset = of_get_named_gpio(np, "reset-gpio", 0);
+-
+ 	/* CC2591 front end for CC2520 */
+ 	if (of_property_read_bool(np, "amplified"))
+ 		priv->amplified = true;
++	if (of_property_read_u32(np, "extclock-freq", &pdata->extclockfreq)) {
++		/* if extclock-freq is not specified,
++		 * default to 1MHz(reset value)
++		 */
++		pdata->extclockfreq = CC2520_EXTCLOCK_DEFAULT_FREQ;
++	}
+ 
+ 	return 0;
+ }
+@@ -860,6 +874,7 @@ static int cc2520_hw_init(struct cc2520_private *priv)
+ 	int ret;
+ 	int timeout = 100;
+ 	struct cc2520_platform_data pdata;
++	u8 extclock_reg;
+ 
+ 	ret = cc2520_get_platform_data(priv->spi, &pdata);
+ 	if (ret)
+@@ -971,6 +986,27 @@ static int cc2520_hw_init(struct cc2520_private *priv)
+ 	if (ret)
+ 		goto err_ret;
+ 
++	/* Configure EXTCLOCK register based on 'extclock-freq' property */
++	if (pdata.extclockfreq == 0) {
++		extclock_reg = 0;
++	} else if (pdata.extclockfreq >= CC2520_EXTCLOCK_MIN_FREQ &&
++		   pdata.extclockfreq <= CC2520_EXTCLOCK_MAX_FREQ) {
++		extclock_reg = (CC2520_EXTCLOCK_ENABLE |
++			       (CC2520_EXTCLOCK_MAX_DIV_FACTOR -
++			       (DIV_ROUND_CLOSEST(CC2520_CRYSTAL_FREQ,
++						  pdata.extclockfreq))));
++	} else {
++		dev_err(&priv->spi->dev, "Invalid value specified for 'extclock-freq'\n");
++		ret = -EINVAL;
++		goto err_ret;
++	}
++
++	ret = cc2520_write_register(priv, CC2520_EXTCLOCK, extclock_reg);
++	if (ret) {
++		dev_err(&priv->spi->dev, "Failed to write 'extclock-freq' into CC2520_EXTCLOCK\n");
++		goto err_ret;
++	}
++
+ 	return 0;
+ 
+ err_ret:
+diff --git a/include/linux/spi/cc2520.h b/include/linux/spi/cc2520.h
+index 85b8ee6..dea1af8 100644
+--- a/include/linux/spi/cc2520.h
++++ b/include/linux/spi/cc2520.h
+@@ -21,6 +21,7 @@ struct cc2520_platform_data {
+ 	int sfd;
+ 	int reset;
+ 	int vreg;
++	unsigned int extclockfreq;
+ };
+ 
+ #endif
+-- 
+2.6.2
+

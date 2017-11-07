@@ -1,0 +1,461 @@
+From c1955b50da054b191b6b203db87a2b8ffce9b55f Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Date: Fri, 27 Feb 2015 09:33:59 -0300
+Subject: clk: pistachio: Implement PLL rate adjustment
+
+This commit implements small rate changes to the fractional PLL.
+This is done using the PLL frac parameter. The .set_rate function
+first finds the parameters associated to the closest nominal rate.
+
+Then the new rate is set, using parameters from the table entry,
+except for the frac parameter, which is calculated from the rate
+using the fractional PLL rate formula.
+
+Using .round_rate, the driver guarantees that only rates near
+a table nominal rate is applied. To this extent, add two parameters
+fout_min and fout_max, which allows to define the allowed rate
+adjustment.
+
+Also includes following changes :-
+
+1. clk: pistachio: Extend DIV_F to pass clk_flags as well
+As preparation work to support MIPS PLL rate change propagation, this
+commit extends the DIV_F macro to pass clk_flags in addition to div_flags.
+
+2. clk: pistachio: Add a MUX_F macro to pass clk_flags
+As preparation work to support MIPS PLL rate change propagation, this
+commit adds a MUX_F macro to pass clk_flags.
+
+3. clk: pistachio: Propagate rate changes in the MIPS PLL clock sub-tree
+This commit passes CLK_SET_RATE_PARENT to the "mips_div", "mips_internal_div",
+and "mips_pll_mux" clocks. This flag is needed for the "mips" clock to
+propagate rate changes up to the "mips_pll" root clock.
+
+4. clk: pistachio: Add a rate table for the MIPS PLL
+This commit adds a rate parameter table, which makes it possible for
+the MIPS PLL to support rate change.
+
+5. clocksource: Add Pistachio clocksource-only driver
+The Pistachio SoC provides four general purpose timers, and allow
+to implement a clocksource driver.
+
+This driver can be used as a replacement for the MIPS GIC and MIPS R4K
+clocksources and sched clocks, which are clocked from the CPU clock.
+
+Given the general purpose timers are clocked from an independent clock,
+this new clocksource driver will be useful to introduce CPUFreq support
+for Pistachio machines.
+
+6. clk-pistachio : adding wifi_pll rate table
+
+7. pistachio: pll: Fix 32bit integer overflows
+This commit fixes 32bit integer overflows throughout the pll driver
+(i.e. wherever the result of integer multiplication may exceed the
+range of u32).
+
+One of the functions affected by this problem is .recalc_rate. It
+returns incorrect rate for some pll settings (not for all though)
+which in turn results in the incorrect rate setup of pll's child
+clocks.
+
+8. pistachio: pll: Fix pll rate calculation in integer mode
+Bug: .recalc_rate callback for the fractional pll doesn't take operating
+mode into account when calculating pll rate. This bug results in
+the incorrect pll rates when pll is operating in integer mode.
+
+This commit fixes this bug by checking the operating mode before
+calculating pll rate.
+
+BUG=none
+TEST=Pistachio BuB
+
+9. pistachio: pll: Set operating mode in .set_rate
+This commit sets operating mode of fractional pll based on
+the value of the fractional divider. Previous version assumed that
+the pll will always be configured in fractional mode which may not be
+the case. This may result in the wrong output frequency.
+
+10. pistachio: pll: Fix vco calculation in .set_rate (fractional)
+
+Fix the bug in vco frequency calculation in .set_rate for fractional
+pll. Vco was calculated based on the current operating mode which
+makes no sense because .set_rate is setting operating mode. Instead,
+vco should be calculated using pll settings that are about to be set.
+This bug was introduced in commit d259b8083fb6b51ad9c431ed73d1c745af4eaf08,
+but it doesn't affect clock tree setup.
+
+Change-Id: I429c15e6c76c4f8c4e34a5cdc6e08f8858a705f2
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+Signed-off-by: Zdenko Pulitika <zdenko.pulitika@imgtec.com>
+Signed-off-by: Sridhar Nuvusetty <Sridhar.Nuvusetty@imgtec.com>
+---
+ drivers/clk/pistachio/clk-pistachio.c | 61 ++++++++++++++++++++++++-----------
+ drivers/clk/pistachio/clk-pll.c       | 48 ++++++++++++++++++++-------
+ drivers/clk/pistachio/clk.c           |  5 +--
+ drivers/clk/pistachio/clk.h           | 39 ++++++++++++++++++++--
+ drivers/clocksource/time-pistachio.c  |  4 +--
+ 5 files changed, 122 insertions(+), 35 deletions(-)
+
+diff --git a/drivers/clk/pistachio/clk-pistachio.c b/drivers/clk/pistachio/clk-pistachio.c
+index c4ceb5e..b216902 100644
+--- a/drivers/clk/pistachio/clk-pistachio.c
++++ b/drivers/clk/pistachio/clk-pistachio.c
+@@ -57,17 +57,18 @@ static struct pistachio_fixed_factor pistachio_ffs[] __initdata = {
+ };
+ 
+ static struct pistachio_div pistachio_divs[] __initdata = {
+-	DIV(CLK_MIPS_INTERNAL_DIV, "mips_internal_div", "mips_pll_mux",
+-	    0x204, 2),
+-	DIV(CLK_MIPS_DIV, "mips_div", "mips_internal_div", 0x208, 8),
++	DIV_F(CLK_MIPS_INTERNAL_DIV, "mips_internal_div", "mips_pll_mux",
++		0x204, 2, CLK_SET_RATE_PARENT, CLK_DIVIDER_READ_ONLY),
++	DIV_F(CLK_MIPS_DIV, "mips_div", "mips_internal_div",
++		0x208, 8, CLK_SET_RATE_PARENT, CLK_DIVIDER_READ_ONLY),
+ 	DIV_F(CLK_AUDIO_DIV, "audio_div", "audio_mux",
+-		0x20c, 8, CLK_DIVIDER_ROUND_CLOSEST),
++		0x20c, 8, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_I2S_DIV, "i2s_div", "audio_pll_mux",
+-		0x210, 8, CLK_DIVIDER_ROUND_CLOSEST),
++		0x210, 8, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_SPDIF_DIV, "spdif_div", "audio_pll_mux",
+-		0x214, 8, CLK_DIVIDER_ROUND_CLOSEST),
++		0x214, 8, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_AUDIO_DAC_DIV, "audio_dac_div", "audio_pll_mux",
+-		0x218, 8, CLK_DIVIDER_ROUND_CLOSEST),
++		0x218, 8, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV(CLK_RPU_V_DIV, "rpu_v_div", "rpu_v_pll_mux", 0x21c, 2),
+ 	DIV(CLK_RPU_L_DIV, "rpu_l_div", "rpu_l_mux", 0x220, 2),
+ 	DIV(CLK_RPU_SLEEP_DIV, "rpu_sleep_div", "xtal", 0x224, 10),
+@@ -75,13 +76,13 @@ static struct pistachio_div pistachio_divs[] __initdata = {
+ 	DIV(CLK_USB_PHY_DIV, "usb_phy_div", "sys_internal_div", 0x22c, 6),
+ 	DIV(CLK_ENET_DIV, "enet_div", "enet_mux", 0x230, 6),
+ 	DIV_F(CLK_UART0_INTERNAL_DIV, "uart0_internal_div", "sys_pll_mux",
+-	      0x234, 3, CLK_DIVIDER_ROUND_CLOSEST),
++	      0x234, 3, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_UART0_DIV, "uart0_div", "uart0_internal_div", 0x238, 10,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_UART1_INTERNAL_DIV, "uart1_internal_div", "sys_pll_mux",
+-	      0x23c, 3, CLK_DIVIDER_ROUND_CLOSEST),
++	      0x23c, 3, 0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(CLK_UART1_DIV, "uart1_div", "uart1_internal_div", 0x240, 10,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV(CLK_SYS_INTERNAL_DIV, "sys_internal_div", "sys_pll_mux", 0x244, 3),
+ 	DIV(CLK_SPI0_INTERNAL_DIV, "spi0_internal_div", "sys_pll_mux",
+ 	    0x248, 3),
+@@ -126,7 +127,8 @@ PNAME(mux_xtal_bt) = { "xtal", "bt_pll" };
+ static struct pistachio_mux pistachio_muxes[] __initdata = {
+ 	MUX(CLK_AUDIO_REF_MUX, "audio_refclk_mux", mux_xtal_audio_refclk,
+ 	    0x200, 0),
+-	MUX(CLK_MIPS_PLL_MUX, "mips_pll_mux", mux_xtal_mips, 0x200, 1),
++	MUX_F(CLK_MIPS_PLL_MUX, "mips_pll_mux", mux_xtal_mips,
++	    0x200, 1, CLK_SET_RATE_PARENT),
+ 	MUX(CLK_AUDIO_PLL_MUX, "audio_pll_mux", mux_xtal_audio, 0x200, 2),
+ 	MUX(CLK_AUDIO_MUX, "audio_mux", mux_audio_debug, 0x200, 4),
+ 	MUX(CLK_RPU_V_PLL_MUX, "rpu_v_pll_mux", mux_xtal_rpu_v, 0x200, 5),
+@@ -143,14 +145,37 @@ static struct pistachio_mux pistachio_muxes[] __initdata = {
+ 	MUX(CLK_BT_PLL_MUX, "bt_pll_mux", mux_xtal_bt, 0x200, 17),
+ };
+ 
++static struct pistachio_pll_rate_table mips_pll_rates[] = {
++	INT_PLL_RATES(52000000, 416000000, 1, 16, 2, 1),
++	INT_PLL_RATES(52000000, 442000000, 1, 17, 2, 1),
++	INT_PLL_RATES(52000000, 468000000, 1, 18, 2, 1),
++	INT_PLL_RATES(52000000, 494000000, 1, 19, 2, 1),
++	INT_PLL_RATES(52000000, 520000000, 1, 20, 2, 1),
++	INT_PLL_RATES(52000000, 546000000, 1, 21, 2, 1),
++};
++
++static struct pistachio_pll_rate_table wifi_pll_rates[] = {
++	{
++		.fref		= 52000000,
++		.fout		= 320000000,
++		.refdiv		= 0x1,
++		.fbdiv		= 0x18,
++		.frac		= 0x9d89d9,
++		.postdiv1	= 0x4,
++		.postdiv2	= 0x1,
++	},
++};
++
+ static struct pistachio_pll pistachio_plls[] __initdata = {
+-	PLL_FIXED(CLK_MIPS_PLL, "mips_pll", "xtal", PLL_GF40LP_LAINT, 0x0),
++	PLL(CLK_MIPS_PLL, "mips_pll", "xtal", PLL_GF40LP_LAINT, 0x0,
++	    mips_pll_rates),
+ 	PLL_FIXED(CLK_AUDIO_PLL, "audio_pll", "audio_refclk_mux",
+ 		  PLL_GF40LP_FRAC, 0xc),
+ 	PLL_FIXED(CLK_RPU_V_PLL, "rpu_v_pll", "xtal", PLL_GF40LP_LAINT, 0x20),
+ 	PLL_FIXED(CLK_RPU_L_PLL, "rpu_l_pll", "xtal", PLL_GF40LP_LAINT, 0x2c),
+ 	PLL_FIXED(CLK_SYS_PLL, "sys_pll", "xtal", PLL_GF40LP_FRAC, 0x38),
+-	PLL_FIXED(CLK_WIFI_PLL, "wifi_pll", "xtal", PLL_GF40LP_FRAC, 0x4c),
++	PLL(CLK_WIFI_PLL, "wifi_pll", "xtal", PLL_GF40LP_FRAC,
++	    0x4c, wifi_pll_rates),
+ 	PLL_FIXED(CLK_BT_PLL, "bt_pll", "xtal", PLL_GF40LP_LAINT, 0x60),
+ };
+ 
+@@ -232,13 +257,13 @@ static struct pistachio_div pistachio_periph_divs[] __initdata = {
+ 	DIV(PERIPH_CLK_COUNTER_SLOW_DIV, "counter_slow_div",
+ 	    "counter_slow_pre_div", 0x118, 7),
+ 	DIV_F(PERIPH_CLK_IR_PRE_DIV, "ir_pre_div", "periph_sys", 0x11c, 7,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_IR_DIV, "ir_div", "ir_pre_div", 0x120, 7,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_WD_PRE_DIV, "wd_pre_div", "periph_sys", 0x124, 7,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV_F(PERIPH_CLK_WD_DIV, "wd_div", "wd_pre_div", 0x128, 7,
+-	      CLK_DIVIDER_ROUND_CLOSEST),
++	      0, CLK_DIVIDER_ROUND_CLOSEST),
+ 	DIV(PERIPH_CLK_PDM_PRE_DIV, "pdm_pre_div", "periph_sys", 0x12c, 7),
+ 	DIV(PERIPH_CLK_PDM_DIV, "pdm_div", "pdm_pre_div", 0x130, 7),
+ 	DIV(PERIPH_CLK_PWM_PRE_DIV, "pwm_pre_div", "periph_sys", 0x134, 7),
+diff --git a/drivers/clk/pistachio/clk-pll.c b/drivers/clk/pistachio/clk-pll.c
+index 7e8daab..55d8d48 100644
+--- a/drivers/clk/pistachio/clk-pll.c
++++ b/drivers/clk/pistachio/clk-pll.c
+@@ -132,29 +132,44 @@ static struct pistachio_pll_rate_table *
+ pll_get_params(struct pistachio_clk_pll *pll, unsigned long fref,
+ 	       unsigned long fout)
+ {
+-	unsigned int i;
++	unsigned int i, best;
++	unsigned long err, best_err = ~0;
+ 
+ 	for (i = 0; i < pll->nr_rates; i++) {
+-		if (pll->rates[i].fref == fref && pll->rates[i].fout == fout)
+-			return &pll->rates[i];
++		err = abs(pll->rates[i].fout - fout);
++		if (pll->rates[i].fref == fref && err < best_err) {
++			best = i;
++			best_err = err;
++		}
+ 	}
+ 
+-	return NULL;
++	return &pll->rates[best];
+ }
+ 
+ static long pll_round_rate(struct clk_hw *hw, unsigned long rate,
+ 			   unsigned long *parent_rate)
+ {
+ 	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
+-	unsigned int i;
++	unsigned int i, best;
++	unsigned long err, best_err = ~0;
+ 
+ 	for (i = 0; i < pll->nr_rates; i++) {
+-		if (i > 0 && pll->rates[i].fref == *parent_rate &&
+-		    pll->rates[i].fout <= rate)
+-			return pll->rates[i - 1].fout;
++		err = abs(pll->rates[i].fout - rate);
++		if (pll->rates[i].fref == *parent_rate && err < best_err) {
++			best = i;
++			best_err = err;
++		}
+ 	}
+ 
+-	return pll->rates[0].fout;
++	/*
++	 * If the chosen rate is within the maximum allowed PLL adjustment
++	 * then we accept it.
++	 * Otherwise, just return the closest nominal table rate.
++	 */
++	if (rate <= pll->rates[best].fout_max &&
++	    rate >= pll->rates[best].fout_min)
++		return rate;
++	return pll->rates[best].fout;
+ }
+ 
+ static int pll_gf40lp_frac_enable(struct clk_hw *hw)
+@@ -199,7 +214,7 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 	struct pistachio_clk_pll *pll = to_pistachio_pll(hw);
+ 	struct pistachio_pll_rate_table *params;
+ 	int enabled = pll_gf40lp_frac_is_enabled(hw);
+-	u64 val, vco, old_postdiv1, old_postdiv2;
++	u64 val, vco, old_postdiv1, old_postdiv2, frac;
+ 	const char *name = clk_hw_get_name(hw);
+ 
+ 	if (rate < MIN_OUTPUT_FRAC || rate > MAX_OUTPUT_FRAC)
+@@ -226,6 +241,11 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 		pr_warn("%s: PFD %llu is too high (max %llu)\n",
+ 			name, val, vco / 16);
+ 
++	/* Calculate the frac parameter */
++	frac = rate * params->refdiv * params->postdiv1 * params->postdiv2;
++	frac -= (params->fbdiv * parent_rate);
++	frac = do_div_round_closest(frac << 24, parent_rate);
++
+ 	val = pll_readl(pll, PLL_CTRL1);
+ 	val &= ~((PLL_CTRL1_REFDIV_MASK << PLL_CTRL1_REFDIV_SHIFT) |
+ 		 (PLL_CTRL1_FBDIV_MASK << PLL_CTRL1_FBDIV_SHIFT));
+@@ -252,7 +272,7 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 		  PLL_FRAC_CTRL2_POSTDIV1_SHIFT) |
+ 		 (PLL_FRAC_CTRL2_POSTDIV2_MASK <<
+ 		  PLL_FRAC_CTRL2_POSTDIV2_SHIFT));
+-	val |= (params->frac << PLL_FRAC_CTRL2_FRAC_SHIFT) |
++	val |= (frac << PLL_FRAC_CTRL2_FRAC_SHIFT) |
+ 		(params->postdiv1 << PLL_FRAC_CTRL2_POSTDIV1_SHIFT) |
+ 		(params->postdiv2 << PLL_FRAC_CTRL2_POSTDIV2_SHIFT);
+ 	pll_writel(pll, val, PLL_CTRL2);
+@@ -263,6 +283,12 @@ static int pll_gf40lp_frac_set_rate(struct clk_hw *hw, unsigned long rate,
+ 	else
+ 		pll_frac_set_mode(hw, PLL_MODE_INT);
+ 
++	/* set operating mode */
++	if (params->frac)
++		pll_frac_set_mode(hw, PLL_MODE_FRAC);
++	else
++		pll_frac_set_mode(hw, PLL_MODE_INT);
++
+ 	if (enabled)
+ 		pll_lock(pll);
+ 
+diff --git a/drivers/clk/pistachio/clk.c b/drivers/clk/pistachio/clk.c
+index 698cad4..1b75db6 100644
+--- a/drivers/clk/pistachio/clk.c
++++ b/drivers/clk/pistachio/clk.c
+@@ -83,7 +83,7 @@ void pistachio_clk_register_mux(struct pistachio_clk_provider *p,
+ 	for (i = 0; i < num; i++) {
+ 		clk = clk_register_mux(NULL, mux[i].name, mux[i].parents,
+ 				       mux[i].num_parents,
+-				       CLK_SET_RATE_NO_REPARENT,
++				       mux[i].clk_flags,
+ 				       p->base + mux[i].reg, mux[i].shift,
+ 				       get_count_order(mux[i].num_parents),
+ 				       0, NULL);
+@@ -100,7 +100,8 @@ void pistachio_clk_register_div(struct pistachio_clk_provider *p,
+ 
+ 	for (i = 0; i < num; i++) {
+ 		clk = clk_register_divider(NULL, div[i].name, div[i].parent,
+-					   0, p->base + div[i].reg, 0,
++					   div[i].clk_flags,
++					   p->base + div[i].reg, 0,
+ 					   div[i].width, div[i].div_flags,
+ 					   NULL);
+ 		p->clk_data.clks[div[i].id] = clk;
+diff --git a/drivers/clk/pistachio/clk.h b/drivers/clk/pistachio/clk.h
+index 8d45178..1ae53c2 100644
+--- a/drivers/clk/pistachio/clk.h
++++ b/drivers/clk/pistachio/clk.h
+@@ -32,6 +32,7 @@ struct pistachio_mux {
+ 	unsigned int id;
+ 	unsigned long reg;
+ 	unsigned int shift;
++	unsigned int clk_flags;
+ 	unsigned int num_parents;
+ 	const char *name;
+ 	const char **parents;
+@@ -44,16 +45,28 @@ struct pistachio_mux {
+ 		.id		= _id,				\
+ 		.reg		= _reg,				\
+ 		.shift		= _shift,			\
++		.clk_flags      = CLK_SET_RATE_NO_REPARENT,     \
+ 		.name		= _name,			\
+ 		.parents	= _pnames,			\
+ 		.num_parents	= ARRAY_SIZE(_pnames)		\
+ 	}
+ 
++#define MUX_F(_id, _name, _pnames, _reg, _shift, _clkf)		\
++	{							\
++		.id             = _id,				\
++		.reg            = _reg,				\
++		.shift          = _shift,			\
++		.name           = _name,			\
++		.parents        = _pnames,			\
++		.num_parents    = ARRAY_SIZE(_pnames),		\
++		.clk_flags      = _clkf,			\
++	}
+ 
+ struct pistachio_div {
+ 	unsigned int id;
+ 	unsigned long reg;
+ 	unsigned int width;
++	unsigned int clk_flags;
+ 	unsigned int div_flags;
+ 	const char *name;
+ 	const char *parent;
+@@ -64,17 +77,19 @@ struct pistachio_div {
+ 		.id		= _id,				\
+ 		.reg		= _reg,				\
+ 		.width		= _width,			\
++		.clk_flags	= 0,				\
+ 		.div_flags	= 0,				\
+ 		.name		= _name,			\
+ 		.parent		= _pname,			\
+ 	}
+ 
+-#define DIV_F(_id, _name, _pname, _reg, _width, _div_flags)	\
++#define DIV_F(_id, _name, _pname, _reg, _width, _clkf, _divf)	\
+ 	{							\
+ 		.id		= _id,				\
+ 		.reg		= _reg,				\
+ 		.width		= _width,			\
+-		.div_flags	= _div_flags,			\
++		.clk_flags	= _clkf,			\
++		.div_flags	= _divf,			\
+ 		.name		= _name,			\
+ 		.parent		= _pname,			\
+ 	}
+@@ -94,9 +109,15 @@ struct pistachio_fixed_factor {
+ 		.parent		= _pname,			\
+ 	}
+ 
++/*
++ * in order to avoid u32 multiplication overflow, declare all
++ * members of this structure as u64
++ */
+ struct pistachio_pll_rate_table {
+ 	unsigned long long fref;
+ 	unsigned long long fout;
++	unsigned long long fout_min;
++	unsigned long long fout_max;
+ 	unsigned long long refdiv;
+ 	unsigned long long fbdiv;
+ 	unsigned long long postdiv1;
+@@ -104,6 +125,20 @@ struct pistachio_pll_rate_table {
+ 	unsigned long long frac;
+ };
+ 
++#define INT_PLL_RATES(_fref, _fout, _refdiv, _fbdiv,		\
++		      _postdiv1, _postdiv2)			\
++	{							\
++		.fref		= _fref,			\
++		.fout		= _fout,			\
++		.fout_min	= _fout,			\
++		.fout_max	= _fout,			\
++		.refdiv		= _refdiv,			\
++		.fbdiv		= _fbdiv,			\
++		.postdiv1	= _postdiv1,			\
++		.postdiv2	= _postdiv2,			\
++		.frac		= 0,				\
++	}
++
+ enum pistachio_pll_type {
+ 	PLL_GF40LP_LAINT,
+ 	PLL_GF40LP_FRAC,
+diff --git a/drivers/clocksource/time-pistachio.c b/drivers/clocksource/time-pistachio.c
+index bba6799..039a8d1 100644
+--- a/drivers/clocksource/time-pistachio.c
++++ b/drivers/clocksource/time-pistachio.c
+@@ -27,12 +27,12 @@
+ 
+ /* Top level reg */
+ #define CR_TIMER_CTRL_CFG		0x00
+-#define TIMER_ME_GLOBAL			BIT(0)
++#define  TIMER_ME_GLOBAL		BIT(0)
+ #define CR_TIMER_REV			0x10
+ 
+ /* Timer specific registers */
+ #define TIMER_CFG			0x20
+-#define TIMER_ME_LOCAL			BIT(0)
++#define  TIMER_ME_LOCAL			BIT(0)
+ #define TIMER_RELOAD_VALUE		0x24
+ #define TIMER_CURRENT_VALUE		0x28
+ #define TIMER_CURRENT_OVERFLOW_VALUE	0x2C
+-- 
+2.6.2
+

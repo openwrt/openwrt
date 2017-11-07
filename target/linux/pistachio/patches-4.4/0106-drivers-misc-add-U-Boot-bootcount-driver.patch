@@ -1,0 +1,259 @@
+From 1e77ae47c8cd9c318cf026d7e4d606c7b36844a0 Mon Sep 17 00:00:00 2001
+From: Avinash Tahakik <Avinash.Tahakik@imgtec.com>
+Date: Fri, 11 Dec 2015 13:20:09 +0530
+Subject: drivers, misc: add U-Boot bootcount driver
+
+This driver implements the Linux kernel half of the boot count feature -
+the boot counter can only be reset after it is clear that the
+application has been started and is running correctly, which usually
+can only be determined by the application code itself. Thus the reset
+of the boot counter must be done by application code, which thus needs
+an appropriate driver.
+
+Required feature by the Carrier Grade Linux Requirements Definition;
+see for example document "Carrier Grade Linux Requirements Definition
+Overview V3.0" at
+
+http://www.linuxfoundation.org/collaborate/workgroups/cgl/requirements#SMM.6.0_Boot_Cycle_Detection
+
+            Description: OSDL CGL specifies that carrier grade Linux
+            shall provide support for detecting a repeating reboot cycle
+	due to recurring failures. This detection should happen in
+	user space before system services are started.
+
+This driver provides read/write access to the U-Boot bootcounter
+through sysfs file.
+
+The bootcountregister gets configured via DTS.
+for example on the enbw_cmc board:
+
+bootcount@0x23060 {
+                  compatible = "uboot,bootcount";
+                  reg = <0x23060 0x1>;
+                 };
+
+original post from:
+http://lkml.indiana.edu/hypermail/linux/kernel/1112.0/01142.html
+
+Change-Id: Ie913096961043f918f515233470a9925981857bb
+Signed-off-by: Avinash Tahakik <Avinash.Tahakik@imgtec.com>
+---
+ .../devicetree/bindings/misc/uboot-bootcount.txt   |  34 ++++++
+ drivers/misc/Kconfig                               |   7 ++
+ drivers/misc/Makefile                              |   1 +
+ drivers/misc/uboot_bootcount.c                     | 132 +++++++++++++++++++++
+ 4 files changed, 174 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/misc/uboot-bootcount.txt
+ create mode 100644 drivers/misc/uboot_bootcount.c
+
+diff --git a/Documentation/devicetree/bindings/misc/uboot-bootcount.txt b/Documentation/devicetree/bindings/misc/uboot-bootcount.txt
+new file mode 100644
+index 0000000..7ab1134
+--- /dev/null
++++ b/Documentation/devicetree/bindings/misc/uboot-bootcount.txt
+@@ -0,0 +1,34 @@
++U-Boot bootcount driver
++
++This driver implements the Linux kernel half of the boot count feature -
++the boot counter can only be reset after it is clear that the
++application has been started and is running correctly, which usually
++can only be determined by the application code itself. Thus the reset
++of the boot counter must be done by application code, which thus needs
++an appropriate driver.
++
++Required feature by the Carrier Grade Linux Requirements Definition;
++see for example document "Carrier Grade Linux Requirements Definition
++Overview V3.0" at
++
++http://www.linuxfoundation.org/collaborate/workgroups/cgl/requirements#SMM.6.0_Boot_Cycle_Detection
++
++        Description: OSDL CGL specifies that carrier grade Linux
++        shall provide support for detecting a repeating reboot cycle
++        due to recurring failures. This detection should happen in
++        user space before system services are started.
++
++This driver provides read/write access to the U-Boot bootcounter
++through sysfs file.
++
++Required properties:
++
++  - compatible : should be "uboot,bootcount"
++  - reg: the address of the bootcounter
++
++Example:
++
++bootcount@1c23000 {
++	compatible = "uboot,bootcount";
++	reg = <0x23060 0x1>;
++};
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index d464ac6..bd90b6e 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -538,6 +538,13 @@ config IMG_PDM
+ 	  To compile this driver as a module, choose M here: the module will
+ 	  be called img-pdm.
+ 
++config UBOOT_BOOTCOUNT
++	tristate "U-Boot Bootcount driver"
++	depends on OF
++	help
++	  The U-Boot Bootcount driver allows to access the
++	  bootcounter through sysfs file.
++
+ source "drivers/misc/c2port/Kconfig"
+ source "drivers/misc/eeprom/Kconfig"
+ source "drivers/misc/cb710/Kconfig"
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index 7eee0a1..ed230a8 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -46,6 +46,7 @@ obj-$(CONFIG_PCH_PHUB)		+= pch_phub.o
+ obj-y				+= ti-st/
+ obj-y				+= lis3lv02d/
+ obj-$(CONFIG_USB_SWITCH_FSA9480) += fsa9480.o
++obj-$(CONFIG_UBOOT_BOOTCOUNT)	+= uboot_bootcount.o
+ obj-$(CONFIG_ALTERA_STAPL)	+=altera-stapl/
+ obj-$(CONFIG_INTEL_MEI)		+= mei/
+ obj-$(CONFIG_VMWARE_VMCI)	+= vmw_vmci/
+diff --git a/drivers/misc/uboot_bootcount.c b/drivers/misc/uboot_bootcount.c
+new file mode 100644
+index 0000000..684993a
+--- /dev/null
++++ b/drivers/misc/uboot_bootcount.c
+@@ -0,0 +1,132 @@
++/*
++ * Copyright (C) 2015 Imagination Technologies Ltd.
++ *
++ * This driver gives access(read/write) to the bootcounter used by u-boot.
++ * Access is supported via sysfs.
++ *
++ * Based on work from: Steffen Rumler  <Steffen.Rumler@siemens.com>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++*/
++
++#include <linux/fs.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/slab.h>
++#include <linux/of_address.h>
++#include <linux/of_platform.h>
++
++#define UBOOT_BOOTCOUNT_MAGIC		0xB001C041 /* magic number value */
++#define UBOOT_BOOTCOUNT_MAGIC_MASK	0xFFFF0000 /* magic, when combined */
++#define UBOOT_BOOTCOUNT_COUNT_MASK	0x0000FFFF /* value, when combined */
++
++
++struct bootcount_device {
++	void __iomem *reg;
++};
++
++static int bootcount_show(struct device *dev,
++				struct device_attribute *attr,
++				char *buf)
++{
++	unsigned long bootcount;
++	struct bootcount_device *priv = dev_get_drvdata(dev);
++
++	bootcount = readl(priv->reg);
++	if ((bootcount & UBOOT_BOOTCOUNT_MAGIC_MASK) !=
++		(UBOOT_BOOTCOUNT_MAGIC & UBOOT_BOOTCOUNT_MAGIC_MASK)) {
++		return -EINVAL;
++	}
++	bootcount &= UBOOT_BOOTCOUNT_COUNT_MASK;
++	return sprintf(buf, "%lu\n", bootcount);
++}
++
++static int bootcount_store(struct device *dev,
++			struct device_attribute *attr,
++			const char *buf,
++			size_t count)
++{
++	int ret;
++	u32 value;
++	struct bootcount_device *priv = dev_get_drvdata(dev);
++
++	ret = kstrtou32(buf, 0, &value);
++	if (ret < 0)
++		return ret;
++
++	value = (UBOOT_BOOTCOUNT_MAGIC & UBOOT_BOOTCOUNT_MAGIC_MASK) |
++		(value & UBOOT_BOOTCOUNT_COUNT_MASK);
++	writel(value, priv->reg);
++
++	return count;
++}
++
++static DEVICE_ATTR_RW(bootcount);
++
++static int bootcount_probe(struct platform_device *ofdev)
++{
++	unsigned long magic;
++	struct bootcount_device *priv;
++	struct resource *res;
++	int status;
++
++	priv = devm_kzalloc(&ofdev->dev, sizeof(struct bootcount_device), GFP_KERNEL);
++	if (!priv) {
++		dev_err(&ofdev->dev, "Unable to allocate device private data\n");
++		return -ENOMEM;
++	}
++
++	res = platform_get_resource(ofdev, IORESOURCE_MEM, 0);
++	priv->reg = devm_ioremap_resource(&ofdev->dev, res);
++	 if (IS_ERR(priv->reg)) {
++		dev_err(&ofdev->dev, "unable to map register\n");
++		return PTR_ERR(priv->reg);
++	}
++
++	magic = readl(priv->reg);
++	if ((magic & UBOOT_BOOTCOUNT_MAGIC_MASK) !=
++	    (UBOOT_BOOTCOUNT_MAGIC & UBOOT_BOOTCOUNT_MAGIC_MASK)) {
++		dev_err(&ofdev->dev, "bad magic\n");
++		return -EINVAL;
++	}
++
++	status = device_create_file(&ofdev->dev, &dev_attr_bootcount);
++	if (status) {
++		dev_err(&ofdev->dev, "unable to register sysfs entry\n");
++		return status;
++	}
++	dev_set_drvdata(&ofdev->dev, priv);
++	return 0;
++}
++
++static int bootcount_remove(struct platform_device *ofdev)
++{
++	device_remove_file(&ofdev->dev, &dev_attr_bootcount);
++	return 0;
++}
++
++static const struct of_device_id bootcount_match[] = {
++	{ .compatible = "uboot,bootcount", },
++	{},
++};
++
++MODULE_DEVICE_TABLE(of, bootcount_match);
++
++static struct platform_driver bootcount_driver = {
++	.driver = {
++		.name = "bootcount",
++		.of_match_table = bootcount_match,
++	},
++	.probe = bootcount_probe,
++	.remove = bootcount_remove,
++};
++
++module_platform_driver(bootcount_driver);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Avinash Tahakik <avinash.tahakik@imgtec.com>");
++MODULE_DESCRIPTION("Provide (read/write) access to the U-Boot bootcounter via sysfs");
+-- 
+2.6.2
+

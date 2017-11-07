@@ -1,0 +1,30 @@
+From b421b2b335b858b5653374800de35a3cc7253c37 Mon Sep 17 00:00:00 2001
+From: Surendra Yeragamreddy <Surendra.Yeragamreddy@imgtec.com>
+Date: Tue, 1 Mar 2016 19:16:21 +0530
+Subject: streamsync: modify rate change tolerance value.
+
+Modifying the rate change tolerance to 512000 as app can
+adjust freq upto 512000.
+
+Change-Id: Ib7bd829bde5a9b59b522dcb4816bdcb2edf67160
+Signed-off-by: Surendra Yeragamreddy <Surendra.Yeragamreddy@imgtec.com>
+---
+ drivers/misc/atu/atu_clk_maintainer.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/misc/atu/atu_clk_maintainer.c b/drivers/misc/atu/atu_clk_maintainer.c
+index 4b48c91..6094f9e 100644
+--- a/drivers/misc/atu/atu_clk_maintainer.c
++++ b/drivers/misc/atu/atu_clk_maintainer.c
+@@ -30,7 +30,7 @@
+ static int atu_rate_changed;
+ #define ATU_UPDATE_TIMER_INTRVL	1
+ #define ATU_MODE_ON_THE_FLY	0x80000000
+-#define EVENT_TIMER_RATE_TOLERANCE	100000
++#define EVENT_TIMER_RATE_TOLERANCE	512000
+ 
+ /* Structure holding internal clk managing values. */
+ struct atu_clk_maintainer {
+-- 
+2.6.2
+

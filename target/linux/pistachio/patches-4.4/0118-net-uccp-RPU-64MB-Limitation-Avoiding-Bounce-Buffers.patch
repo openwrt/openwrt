@@ -1,0 +1,109 @@
+From 7b7ed300229674f287bc523ea67a1220fe7af742 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Thu, 16 Jun 2016 17:07:17 +0100
+Subject: net: uccp: RPU 64MB Limitation: Avoiding Bounce Buffers
+
+For the UCCP driver modify alloc functions to make sure
+TX and RX allocations happen in ZONE_DMA.
+
+Change-Id: I22ae606942a403ff23e123184cc5fb8485e2529b
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ net/core/skbuff.c | 67 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+
+diff --git a/net/core/skbuff.c b/net/core/skbuff.c
+index 9835d9a..8469b14 100644
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -79,6 +79,11 @@
+ 
+ struct kmem_cache *skbuff_head_cache __read_mostly;
+ static struct kmem_cache *skbuff_fclone_cache __read_mostly;
++#define CONFIG_UCCP_DMA_ZONE
++#ifdef CONFIG_UCCP_DMA_ZONE
++static struct sk_buff *___alloc_skb(unsigned int size, gfp_t gfp_mask,
++				    int flags, int node);
++#endif
+ int sysctl_max_skb_frags __read_mostly = MAX_SKB_FRAGS;
+ EXPORT_SYMBOL(sysctl_max_skb_frags);
+ 
+@@ -182,6 +187,67 @@ out:
+ 	return skb;
+ }
+ 
++#ifdef CONFIG_UCCP_DMA_ZONE
++/**
++ *	__alloc_skb	-	allocate a network buffer
++ *	@size: size to allocate
++ *	@gfp_mask: allocation mask
++ *	@flags: If SKB_ALLOC_FCLONE is set, allocate from fclone cache
++ *		instead of head cache and allocate a cloned (child) skb.
++ *		If SKB_ALLOC_RX is set, __GFP_MEMALLOC will be used for
++ *		allocations in case the data is required for writeback
++ *	@node: numa node to allocate memory on
++ *
++ *	Allocate a new &sk_buff. The allocation is attempted in the following
++ *	order of priority:
++ *	 1) From ZONE_DMA
++ *	 2) From ZONE_NORMAL if necessary
++ *	On a failure the return is %NULL.
++ *
++ */
++struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
++			    int flags, int node)
++{
++	struct sk_buff *skb = NULL;
++
++	if ((gfp_mask & GFP_DMA) != GFP_DMA) {
++		gfp_t test = gfp_mask;
++
++		/*GFP_KERNEL and GFP_DMA are contradictory
++		 */
++		if (test & GFP_KERNEL)
++			test &= (~GFP_KERNEL);
++
++		test |=  GFP_DMA;
++		skb = ___alloc_skb(size, test, flags, node);
++		if (skb)
++			return skb;
++	}
++
++	skb = ___alloc_skb(size, gfp_mask, flags, node);
++	return skb;
++}
++
++/**
++ *	___alloc_skb	-	allocate a network buffer
++ *	@size: size to allocate
++ *	@gfp_mask: allocation mask
++ *	@flags: If SKB_ALLOC_FCLONE is set, allocate from fclone cache
++ *		instead of head cache and allocate a cloned (child) skb.
++ *		If SKB_ALLOC_RX is set, __GFP_MEMALLOC will be used for
++ *		allocations in case the data is required for writeback
++ *	@node: numa node to allocate memory on
++ *
++ *	Allocate a new &sk_buff. The returned buffer has no headroom and a
++ *	tail room of at least size bytes. The object has a reference count
++ *	of one. The return is the buffer. On a failure the return is %NULL.
++ *
++ *	Buffers may only be allocated from interrupts using a @gfp_mask of
++ *	%GFP_ATOMIC.
++ */
++static struct sk_buff *___alloc_skb(unsigned int size, gfp_t gfp_mask,
++				    int flags, int node)
++#else
+ /**
+  *	__alloc_skb	-	allocate a network buffer
+  *	@size: size to allocate
+@@ -201,6 +267,7 @@ out:
+  */
+ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
+ 			    int flags, int node)
++#endif
+ {
+ 	struct kmem_cache *cache;
+ 	struct skb_shared_info *shinfo;
+-- 
+2.6.2
+

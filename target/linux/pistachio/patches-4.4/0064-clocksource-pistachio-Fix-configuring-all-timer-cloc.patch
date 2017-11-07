@@ -1,0 +1,32 @@
+From f26980072114f552dd67899f3f568e1f9e72ebe1 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Thu, 26 Nov 2015 11:08:35 +0000
+Subject: clocksource: pistachio: Fix configuring all timer clocks
+
+Timer0 which uses fast clock to provide clock source
+is configuring by mistake all other timer block
+to use fast clock, fix this and configure only
+timer0 clock to use fast clock.
+
+Change-Id: I1174bde77c648224ce7d5b0da2c23649fa4dbba3
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/clocksource/time-pistachio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clocksource/time-pistachio.c b/drivers/clocksource/time-pistachio.c
+index 039a8d1..e1288e5 100644
+--- a/drivers/clocksource/time-pistachio.c
++++ b/drivers/clocksource/time-pistachio.c
+@@ -170,7 +170,7 @@ static void __init pistachio_clksrc_of_init(struct device_node *node)
+ 
+ 	/* Switch to using the fast counter clock */
+ 	ret = regmap_update_bits(periph_regs, PERIP_TIMER_CONTROL,
+-				 0xf, 0x0);
++				 0x1, 0x0);
+ 	if (ret)
+ 		return;
+ 
+-- 
+2.6.2
+

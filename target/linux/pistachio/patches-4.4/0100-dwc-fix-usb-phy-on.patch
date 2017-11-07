@@ -1,0 +1,48 @@
+From a8d488f90f7d62d4dda2f504a635ce0156ed54d6 Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <Govindraj.Raja@imgtec.com>
+Date: Thu, 28 Apr 2016 16:10:21 +0100
+Subject: dwc: fix usb phy on.
+
+Fixes :
+892ad7d  usb: dwc2: Keep phy clocks on when device is connected.
+
+Commit had added phy clocks on fix but rebase to new
+dwc driver has caused the impementation to change a bit.
+Test on phy clock should be placed in entry point of
+suspend rather later as done in 4.1 kernel.
+
+Change-Id: Ic4efa7f99bd226653270436a8043f982aa09d6db
+Signed-off-by: Govindraj Raja <Govindraj.Raja@imgtec.com>
+---
+ drivers/usb/dwc2/platform.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/usb/dwc2/platform.c b/drivers/usb/dwc2/platform.c
+index 9a9cafc..d4d61af 100644
+--- a/drivers/usb/dwc2/platform.c
++++ b/drivers/usb/dwc2/platform.c
+@@ -464,17 +464,16 @@ static int __maybe_unused dwc2_suspend(struct device *dev)
+ 	struct dwc2_hsotg *dwc2 = dev_get_drvdata(dev);
+ 	int ret = 0;
+ 
++	/* PHY clocks needs to be active if device is connected */
++	if (dwc2_is_connected(dwc2))
++		return 0;
++
+ 	if (dwc2_is_device_mode(dwc2))
+ 		dwc2_hsotg_suspend(dwc2);
+ 
+ 	if (dwc2->ll_hw_enabled)
+ 		ret = __dwc2_lowlevel_hw_disable(dwc2);
+ 
+-		/* PHY clocks needs to be active if device is connected */
+-		if (dwc2_is_connected(dwc2))
+-			return 0;
+-
+-
+ 	return ret;
+ }
+ 
+-- 
+2.6.2
+

@@ -1,0 +1,161 @@
+From aa8e515a6d0e97c31a1954a15e94e8d36a8b6bd3 Mon Sep 17 00:00:00 2001
+From: Ionela Voinescu <ionela.voinescu@imgtec.com>
+Date: Tue, 29 Mar 2016 18:47:52 +0100
+Subject: mtd: spi-nand: Implement quad-mode for transmit
+
+Until now, only single mode operations were supported for TX
+transfers. With this change, store cache operations will,
+from this moment on, be performed in either quad mode or
+single mode, depending on the bus width set in device tree.
+
+This requires changes to the SPFI driver consisting of setting
+the TX_RX bit which lets the state machine know that the command
+which is going to be sent to the flash is a TX (set)/RX(cleared)
+command. This helps with the scenario in which we have both a
+command transfer (command, address, dummy) which will be pending(TX),
+and a TX data transfer, which was problematic before. This bit of
+the control register is flash specific and has no significance in
+SPI traditional sense.
+
+Performance:
+
+Quad TX:
+$ time nandwrite /dev/mtd1 /dev/zero --input-size=536870912 -q
+real    2m 16.70s
+
+Single TX:
+$ time nandwrite /dev/mtd1 /dev/zero --input-size=536870912 -q
+real    3m 42.77s
+
+$ time nandtest /dev/mtd1 #quad mode TX
+Finished pass 1 successfully
+real	12m 47.02s
+
+$ time nandtest /dev/mtd1 #single mode TX
+Finished pass 1 successfully
+real    14m 21.71s
+
+Change-Id: Ic21752a6ae8a304f52fd46d9ffebd90c93b388c8
+Signed-off-by: Ionela Voinescu <ionela.voinescu@imgtec.com>
+---
+ drivers/mtd/spi-nand/spi-nand-base.c   |  6 ++++++
+ drivers/mtd/spi-nand/spi-nand-device.c |  8 +++++++-
+ drivers/spi/spi-img-spfi.c             | 17 +++++++----------
+ 3 files changed, 20 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/mtd/spi-nand/spi-nand-base.c b/drivers/mtd/spi-nand/spi-nand-base.c
+index 2ac76a5..7dc872f 100644
+--- a/drivers/mtd/spi-nand/spi-nand-base.c
++++ b/drivers/mtd/spi-nand/spi-nand-base.c
+@@ -206,6 +206,12 @@ static int spi_nand_write(struct spi_nand *snand)
+ {
+ 	int ret;
+ 
++	/* Enable quad mode */
++	ret = spi_nand_enable_quad(snand);
++	if (ret) {
++		dev_err(snand->dev, "error %d enabling quad mode\n", ret);
++		return ret;
++	}
+ 	/* Store the page to cache */
+ 	ret = snand->store_cache(snand, 0, snand->buf_size, snand->data_buf);
+ 	if (ret < 0) {
+diff --git a/drivers/mtd/spi-nand/spi-nand-device.c b/drivers/mtd/spi-nand/spi-nand-device.c
+index cf8e2d2..ff78223 100644
+--- a/drivers/mtd/spi-nand/spi-nand-device.c
++++ b/drivers/mtd/spi-nand/spi-nand-device.c
+@@ -161,6 +161,7 @@ struct spi_nand_device_cmd {
+ 	u32 n_rx;
+ 	u8 *rx_buf;
+ 	u8 rx_nbits;
++	u8 tx_nbits;
+ };
+ 
+ struct spi_nand_device {
+@@ -192,12 +193,14 @@ static int spi_nand_send_command(struct spi_device *spi,
+ 	/* Command and address */
+ 	x[0].len = cmd->n_cmd;
+ 	x[0].tx_buf = cmd->cmd;
++	x[0].tx_nbits = cmd->tx_nbits;
+ 	spi_message_add_tail(&x[0], &message);
+ 
+ 	/* Data to be transmitted */
+ 	if (cmd->n_tx) {
+ 		x[1].len = cmd->n_tx;
+ 		x[1].tx_buf = cmd->tx_buf;
++		x[1].tx_nbits = cmd->tx_nbits;
+ 		spi_message_add_tail(&x[1], &message);
+ 	}
+ 
+@@ -312,14 +315,17 @@ static int spi_nand_device_store_cache(struct spi_nand *snand,
+ {
+ 	struct spi_nand_device *snand_dev = snand->priv;
+ 	struct spi_nand_device_cmd *cmd = &snand_dev->cmd;
++	struct spi_device *spi = snand_dev->spi;
+ 
+ 	memset(cmd, 0, sizeof(struct spi_nand_device_cmd));
+ 	cmd->n_cmd = 3;
+-	cmd->cmd[0] = SPI_NAND_PROGRAM_LOAD;
++	cmd->cmd[0] = spi->mode & SPI_TX_QUAD ? SPI_NAND_PROGRAM_LOAD4 :
++			SPI_NAND_PROGRAM_LOAD;
+ 	cmd->cmd[1] = (u8)((page_offset & 0xff00) >> 8);
+ 	cmd->cmd[2] = (u8)(page_offset & 0xff);
+ 	cmd->n_tx = length;
+ 	cmd->tx_buf = write_buf;
++	cmd->tx_nbits = spi->mode & SPI_TX_QUAD ? 4 : 1;
+ 
+ 	dev_dbg(snand->dev, "%s: offset 0x%x\n", __func__, page_offset);
+ 
+diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
+index e67664b..37b0d36 100644
+--- a/drivers/spi/spi-img-spfi.c
++++ b/drivers/spi/spi-img-spfi.c
+@@ -41,6 +41,7 @@
+ #define SPFI_CONTROL_SEND_DMA			BIT(10)
+ #define SPFI_CONTROL_GET_DMA			BIT(9)
+ #define SPFI_CONTROL_SE				BIT(8)
++#define SPFI_CONTROL_TX_RX			BIT(1)
+ #define SPFI_CONTROL_TMODE_SHIFT		5
+ #define SPFI_CONTROL_TMODE_MASK			0x7
+ #define SPFI_CONTROL_TMODE_SINGLE		0
+@@ -52,7 +53,7 @@
+ #define SPFI_TRANSACTION_TSIZE_SHIFT		16
+ #define SPFI_TRANSACTION_TSIZE_MASK		0xffff
+ #define SPFI_TRANSACTION_CMD_SHIFT		13
+-#define SPFI_TRANSACTION_CMD_MASK		0x1
++#define SPFI_TRANSACTION_CMD_MASK		0x7
+ #define SPFI_TRANSACTION_ADDR_SHIFT		10
+ #define SPFI_TRANSACTION_ADDR_MASK		0x7
+ 
+@@ -577,14 +578,6 @@ static void img_spfi_config(struct spi_master *master, struct spi_device *spi,
+ 	} else {
+ 		spfi->complete = true;
+ 		if (is_pending) {
+-			if (xfer->tx_buf) {
+-				/* Finish pending transfer first for transmit */
+-				spfi_start(spfi);
+-				spfi_wait_all_done(spfi);
+-				spfi_writel(spfi, spfi_readl(spfi, SPFI_CONTROL) &
+-				~SPFI_CONTROL_SPFI_EN, SPFI_CONTROL);
+-				transact = 0;
+-			}
+ 			/* Keep setup from pending transfer */
+ 			transact |= ((xfer->len & SPFI_TRANSACTION_TSIZE_MASK) <<
+ 				SPFI_TRANSACTION_TSIZE_SHIFT);
+@@ -603,8 +596,12 @@ static void img_spfi_config(struct spi_master *master, struct spi_device *spi,
+ 	 */
+ 	if ((xfer->tx_buf) || is_pending)
+ 		val |= SPFI_CONTROL_SEND_DMA;
+-	if (xfer->rx_buf)
++	if (xfer->tx_buf)
++		val |= SPFI_CONTROL_TX_RX;
++	if (xfer->rx_buf) {
+ 		val |= SPFI_CONTROL_GET_DMA;
++		val &= ~SPFI_CONTROL_TX_RX;
++	}
+ 	val &= ~(SPFI_CONTROL_TMODE_MASK << SPFI_CONTROL_TMODE_SHIFT);
+ 	if (xfer->tx_nbits == SPI_NBITS_DUAL ||
+ 	    xfer->rx_nbits == SPI_NBITS_DUAL)
+-- 
+2.6.2
+

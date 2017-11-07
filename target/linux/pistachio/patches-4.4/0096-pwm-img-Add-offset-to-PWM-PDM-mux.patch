@@ -1,0 +1,62 @@
+From f64fe62cd172f5527c0de66823f131a86ec19699 Mon Sep 17 00:00:00 2001
+From: Will Thomas <will.thomas@imgtec.com>
+Date: Fri, 1 Apr 2016 17:38:38 +0100
+Subject: pwm: img: Add offset to PWM-PDM mux
+
+The IMG PWM driver used a fixed offset for the PWM-PDM mux register.
+This is SoC specific and can change. This patch updates the driver to
+use the compatible-specific data structure to specify a SoC specific
+offset.
+
+Change-Id: I2a9ddd129521ab6e436193953046a45b3242b4e2
+Signed-off-by: Will Thomas <will.thomas@imgtec.com>
+---
+ drivers/pwm/pwm-img.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pwm/pwm-img.c b/drivers/pwm/pwm-img.c
+index 8a029f9..c5aa001 100644
+--- a/drivers/pwm/pwm-img.c
++++ b/drivers/pwm/pwm-img.c
+@@ -35,7 +35,6 @@
+ #define PWM_CH_CFG_TMBASE_SHIFT			0
+ #define PWM_CH_CFG_DUTY_SHIFT			16
+ 
+-#define PERIP_PWM_PDM_CONTROL			0x0140
+ #define PERIP_PWM_PDM_CONTROL_CH_MASK		0x1
+ #define PERIP_PWM_PDM_CONTROL_CH_SHIFT(ch)	((ch) * 4)
+ 
+@@ -54,6 +53,7 @@
+ 
+ struct img_pwm_soc_data {
+ 	u32 max_timebase;
++	u32 syscon_offset;
+ };
+ 
+ struct img_pwm_chip {
+@@ -140,12 +140,13 @@ static int img_pwm_enable(struct pwm_chip *chip, struct pwm_device *pwm)
+ {
+ 	u32 val;
+ 	struct img_pwm_chip *pwm_chip = to_img_pwm_chip(chip);
++	u32 pdm_mux = pwm_chip->data->syscon_offset;
+ 
+ 	val = img_pwm_readl(pwm_chip, PWM_CTRL_CFG);
+ 	val |= BIT(pwm->hwpwm);
+ 	img_pwm_writel(pwm_chip, PWM_CTRL_CFG, val);
+ 
+-	regmap_update_bits(pwm_chip->periph_regs, PERIP_PWM_PDM_CONTROL,
++	regmap_update_bits(pwm_chip->periph_regs, pdm_mux,
+ 			   PERIP_PWM_PDM_CONTROL_CH_MASK <<
+ 			   PERIP_PWM_PDM_CONTROL_CH_SHIFT(pwm->hwpwm), 0);
+ 
+@@ -171,6 +172,7 @@ static const struct pwm_ops img_pwm_ops = {
+ 
+ static const struct img_pwm_soc_data pistachio_pwm = {
+ 	.max_timebase = 255,
++	.syscon_offset = 0x0140,
+ };
+ 
+ static const struct of_device_id img_pwm_of_match[] = {
+-- 
+2.6.2
+

@@ -1,0 +1,71 @@
+From 2a3b31e7ecf6c114a97868313917b4948ab4d3a6 Mon Sep 17 00:00:00 2001
+From: Sifan Naeem <sifan.naeem@imgtec.com>
+Date: Thu, 16 Jul 2015 14:55:19 +0100
+Subject: spi: img-spfi: fix spfi_setup by removing gpio_request_one
+
+spfi_setup may be called many times bye the spi framework, but
+gpio_request_one can only be called once without freeing, repeatedly
+calling gpio_request_one will cause an error to be thrown, which causes
+the request to spi_setup to be marked as failed.
+
+We can simply use gpio_direction_output to set the direction of the
+gpio instead of gpio_request_one to put the gpio in to initial state,
+after which the spi framework can control the chipselect line via gpio
+using gpio_set_value.
+
+Change-Id: I4a22c4c2e8b8cfc8c6d7a109d6f60b596bade63d
+Signed-off-by: Sifan Naeem <sifan.naeem@imgtec.com>
+---
+ drivers/spi/spi-img-spfi.c | 34 +++++++---------------------------
+ 1 file changed, 7 insertions(+), 27 deletions(-)
+
+diff --git a/drivers/spi/spi-img-spfi.c b/drivers/spi/spi-img-spfi.c
+index 823cbc9..d71953d 100644
+--- a/drivers/spi/spi-img-spfi.c
++++ b/drivers/spi/spi-img-spfi.c
+@@ -445,35 +445,15 @@ static int img_spfi_unprepare(struct spi_master *master,
+ static int img_spfi_setup(struct spi_device *spi)
+ {
+ 	int ret = -EINVAL;
+-	struct img_spfi_device_data *spfi_data = spi_get_ctldata(spi);
+ 
+-	if (!spfi_data) {
+-		spfi_data = kzalloc(sizeof(*spfi_data), GFP_KERNEL);
+-		if (!spfi_data)
+-			return -ENOMEM;
+-		spfi_data->gpio_requested = false;
+-		spi_set_ctldata(spi, spfi_data);
+-	}
+-	if (!spfi_data->gpio_requested) {
+-		ret = gpio_request_one(spi->cs_gpio,
+-				       (spi->mode & SPI_CS_HIGH) ?
+-				       GPIOF_OUT_INIT_LOW : GPIOF_OUT_INIT_HIGH,
+-				       dev_name(&spi->dev));
++	if (gpio_is_valid(spi->cs_gpio)) {
++		int mode = ((spi->mode & SPI_CS_HIGH) ?
++			     GPIOF_OUT_INIT_LOW : GPIOF_OUT_INIT_HIGH);
++
++		ret = gpio_direction_output(spi->cs_gpio, mode);
+ 		if (ret)
+-			dev_err(&spi->dev, "can't request chipselect gpio %d\n",
+-				spi->cs_gpio);
+-		else
+-			spfi_data->gpio_requested = true;
+-	} else {
+-		if (gpio_is_valid(spi->cs_gpio)) {
+-			int mode = ((spi->mode & SPI_CS_HIGH) ?
+-				    GPIOF_OUT_INIT_LOW : GPIOF_OUT_INIT_HIGH);
+-
+-			ret = gpio_direction_output(spi->cs_gpio, mode);
+-			if (ret)
+-				dev_err(&spi->dev, "chipselect gpio %d setup failed (%d)\n",
+-					spi->cs_gpio, ret);
+-		}
++			dev_err(&spi->dev, "chipselect gpio %d setup failed (%d)\n",
++				spi->cs_gpio, ret);
+ 	}
+ 	return ret;
+ }
+-- 
+2.6.2
+

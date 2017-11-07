@@ -1,0 +1,52 @@
+From 7a961bd894d55743187b2304bc8bad73d283255b Mon Sep 17 00:00:00 2001
+From: Govindraj Raja <govindraj.raja@imgtec.com>
+Date: Tue, 18 Aug 2015 12:11:20 +0100
+Subject: pistachio: cpu-freq: update freq table.
+
+Updating mips pll rate table to enter
+lower frequencies.
+
+Current freq table with on-demand governor
+sets low freq to 416Mhz, with this update
+the governor will try to put it to 208Mhz.
+
+Change-Id: Ie90456372a43679a4e70a0896fa893125698e39a
+Signed-off-by: Govindraj Raja <govindraj.raja@imgtec.com>
+---
+ drivers/clk/pistachio/clk-pistachio.c | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/clk/pistachio/clk-pistachio.c b/drivers/clk/pistachio/clk-pistachio.c
+index 7b7e928..87e5b6e 100644
+--- a/drivers/clk/pistachio/clk-pistachio.c
++++ b/drivers/clk/pistachio/clk-pistachio.c
+@@ -148,12 +148,20 @@ static struct pistachio_mux pistachio_muxes[] __initdata = {
+ };
+ 
+ static struct pistachio_pll_rate_table mips_pll_rates[] = {
+-	INT_PLL_RATES(52000000, 416000000, 1, 16, 2, 1),
+-	INT_PLL_RATES(52000000, 442000000, 1, 17, 2, 1),
+-	INT_PLL_RATES(52000000, 468000000, 1, 18, 2, 1),
+-	INT_PLL_RATES(52000000, 494000000, 1, 19, 2, 1),
+-	INT_PLL_RATES(52000000, 520000000, 1, 20, 2, 1),
+-	INT_PLL_RATES(52000000, 546000000, 1, 21, 2, 1),
++	INT_PLL_RATES(52000000, 208000000, 5, 40,  2, 1),
++	INT_PLL_RATES(52000000, 234000000, 5, 45,  2, 1),
++	INT_PLL_RATES(52000000, 260000000, 5, 50,  2, 1),
++	INT_PLL_RATES(52000000, 286000000, 5, 55,  2, 1),
++	INT_PLL_RATES(52000000, 312000000, 5, 60,  2, 1),
++	INT_PLL_RATES(52000000, 338000000, 5, 65,  2, 1),
++	INT_PLL_RATES(52000000, 364000000, 5, 70,  2, 1),
++	INT_PLL_RATES(52000000, 390000000, 5, 75,  2, 1),
++	INT_PLL_RATES(52000000, 416000000, 5, 80,  2, 1),
++	INT_PLL_RATES(52000000, 442000000, 5, 85,  2, 1),
++	INT_PLL_RATES(52000000, 468000000, 5, 90,  2, 1),
++	INT_PLL_RATES(52000000, 494000000, 5, 95,  2, 1),
++	INT_PLL_RATES(52000000, 520000000, 5, 100, 2, 1),
++	INT_PLL_RATES(52000000, 546000000, 5, 105, 2, 1),
+ };
+ 
+ static struct pistachio_pll_rate_table wifi_pll_rates[] = {
+-- 
+2.6.2
+

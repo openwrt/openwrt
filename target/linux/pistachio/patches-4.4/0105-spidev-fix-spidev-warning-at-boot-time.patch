@@ -1,0 +1,30 @@
+From 2751a7d09a0c4ca309576db84f43f26db25db4db Mon Sep 17 00:00:00 2001
+From: Abhishek Singh <Abhishek.Singh@imgtec.com>
+Date: Mon, 23 Nov 2015 14:57:04 +0530
+Subject: spidev: fix spidev warning at boot time
+
+Recently warning was added to spidev if it is instantiated as a DT node
+without an ID in the match table. To fix this add "img,click-interface" to the list
+of compatible strings.
+
+Change-Id: I3107d4af387fac939d7566d91c53edd588a756de
+Signed-off-by: Abhishek Singh <Abhishek.Singh@imgtec.com>
+---
+ drivers/spi/spidev.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/spi/spidev.c b/drivers/spi/spidev.c
+index d0e7dfc..5fb06a7 100644
+--- a/drivers/spi/spidev.c
++++ b/drivers/spi/spidev.c
+@@ -695,6 +695,7 @@ static struct class *spidev_class;
+ static const struct of_device_id spidev_dt_ids[] = {
+ 	{ .compatible = "rohm,dh2228fv" },
+ 	{ .compatible = "lineartechnology,ltc2488" },
++	{ .compatible = "img,click-interface" },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, spidev_dt_ids);
+-- 
+2.6.2
+
