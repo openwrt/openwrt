@@ -13,7 +13,7 @@ FEATURES:=squashfs ext4 vdi vmdk pcmcia targz
 SUBTARGETS=generic legacy xen_domu ep80579 geode 64
 MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
-DEFAULT_PACKAGES += partx-utils
+DEFAULT_PACKAGES += partx-utils kmod-ledtrig-netdev
 
 KERNEL_PATCHVER:=4.4
 

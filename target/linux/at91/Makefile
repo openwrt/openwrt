@@ -17,6 +17,8 @@ KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += kmod-usb-ohci kmod-at91-udc kmod-usb-eth-gadget
+DEFAULT_PACKAGES += kmod-usb-ohci kmod-at91-udc kmod-usb-eth-gadget \
+		    kmod-ledtrig-netdev
+
 
 $(eval $(call BuildTarget))

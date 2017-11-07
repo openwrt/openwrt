@@ -24,6 +24,7 @@ define Target/Description
 	Build images for ARM Ltd. Realview boards to be run with qemu
 endef
 
+DEFAULT_PACKAGES += kmod-ledtrig-netdev
 KERNELNAME:=zImage
 
 $(eval $(call BuildTarget))

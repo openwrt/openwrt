@@ -21,6 +21,7 @@ define Target/Description
 	Build firmware images for AMCC/IBM PPC44x based boards.
 endef
 
+DEFAULT_PACKAGES += kmod-ledtrig-netdev
 KERNELNAME:=uImage cuImage.taishan
 
 $(eval $(call BuildTarget))

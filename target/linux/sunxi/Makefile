@@ -27,6 +27,7 @@ KERNELNAME:=zImage dtbs
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += uboot-envtools kmod-eeprom-sunxi kmod-wdt-sunxi
+DEFAULT_PACKAGES += uboot-envtools kmod-eeprom-sunxi kmod-wdt-sunxi \
+		    kmod-ledtrig-netdev
 
 $(eval $(call BuildTarget))

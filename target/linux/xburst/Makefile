@@ -22,4 +22,6 @@ define Target/Description
 	Build firmware images for XBurst JZ47x0 based boards.
 endef
 
+DEFAULT_PACKAGES += kmod-ledtrig-netdev
+
 $(eval $(call BuildTarget))

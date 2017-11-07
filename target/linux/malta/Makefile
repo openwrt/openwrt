@@ -17,6 +17,7 @@ KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim kmod-pcnet32
+DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim kmod-pcnet32 \
+		    kmod-ledtrig-netdev
 
 $(eval $(call BuildTarget))

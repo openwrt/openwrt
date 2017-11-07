@@ -18,6 +18,7 @@ KERNEL_PATCHVER:=4.4
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += kmod-ledtrig-netdev
 
 define Target/Description
 	Build firmware images for Cavium Networks Octeon-based boards.

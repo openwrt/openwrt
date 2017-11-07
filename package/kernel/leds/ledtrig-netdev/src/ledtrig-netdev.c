@@ -27,8 +27,6 @@
 #include <linux/ctype.h>
 #include <linux/leds.h>
 
-#include "leds.h"
-
 /*
  * Configurable sysfs attributes:
  *

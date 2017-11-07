@@ -54,36 +54,6 @@ endef
 $(eval $(call KernelPackage,ledtrig-gpio))
 
 
-define KernelPackage/ledtrig-morse
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Morse Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_MORSE
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-morse.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-morse)
-endef
-
-define KernelPackage/ledtrig-morse/description
- Kernel module to show morse coded messages on LEDs
-endef
-
-$(eval $(call KernelPackage,ledtrig-morse))
-
-
-define KernelPackage/ledtrig-netdev
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED NETDEV Trigger
-  KCONFIG:=CONFIG_LEDS_TRIGGER_NETDEV
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-netdev.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-netdev)
-endef
-
-define KernelPackage/ledtrig-netdev/description
- Kernel module to drive LEDs based on network activity
-endef
-
-$(eval $(call KernelPackage,ledtrig-netdev))
-
-
 define KernelPackage/ledtrig-netfilter
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED NetFilter Trigger
@@ -103,22 +73,6 @@ define KernelPackage/ledtrig-netfilter/description
 endef
 
 $(eval $(call KernelPackage,ledtrig-netfilter))
-
-
-define KernelPackage/ledtrig-usbdev
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED USB device Trigger
-  DEPENDS:=@USB_SUPPORT kmod-usb-core
-  KCONFIG:=CONFIG_LEDS_TRIGGER_USBDEV
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-usbdev.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-usbdev)
-endef
-
-define KernelPackage/ledtrig-usbdev/description
- Kernel module to drive LEDs based on USB device presence/activity
-endef
-
-$(eval $(call KernelPackage,ledtrig-usbdev))
 
 
 define KernelPackage/ledtrig-default-on

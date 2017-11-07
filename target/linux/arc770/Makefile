@@ -18,6 +18,8 @@ DEVICE_TYPE:=developerboard
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += kmod-ledtrig-netdev
+
 define Target/Description
 	Synopsys DesignWare boards
 endef

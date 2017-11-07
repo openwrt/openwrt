@@ -26,7 +26,7 @@ endif
 DEFAULT_PACKAGES += \
 	kmod-input-core kmod-input-gpio-keys kmod-button-hotplug \
 	kmod-leds-gpio kmod-booke-wdt \
-	swconfig kmod-ath9k wpad-mini
+	swconfig kmod-ath9k wpad-mini kmod-ledtrig-netdev
 
 define Target/Description
 	Build images for the Freescale MPC85xx based boards.
