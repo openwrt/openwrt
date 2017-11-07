@@ -1,0 +1,488 @@
+diff -uprN a/drivers/mtd/nand/mtk_nand.c b/drivers/mtd/nand/mtk_nand.c
+--- a/drivers/mtd/nand/mtk_nand.c
++++ b/drivers/mtd/nand/mtk_nand.c
+@@ -44,10 +44,14 @@
+ 
+ unsigned int CFG_BLOCKSIZE;
+ 
++#if defined(SKIP_BAD_BLOCK)
++#define FILE_SYSTEM_START_ADDRESS	0x180000
+ static int shift_on_bbt = 0;
++static int is_skip_bad_block(struct mtd_info *mtd, int page);
+ extern void nand_bbt_set(struct mtd_info *mtd, int page, int flag);
+ extern int nand_bbt_get(struct mtd_info *mtd, int page);
+ int mtk_nand_read_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page);
++#endif
+ 
+ static const char * const probe_types[] = { "cmdlinepart", "ofpart", NULL };
+ 
+@@ -361,8 +365,14 @@ mtk_nand_check_bch_error(struct mtd_info
+ 					u4ErrByteLoc = u4ErrBitLoc1th / 8;
+ 					u4BitOffset = u4ErrBitLoc1th % 8;
+ 					pDataBuf[u4ErrByteLoc] = pDataBuf[u4ErrByteLoc] ^ (1 << u4BitOffset);
++#if defined(SKIP_BAD_BLOCK)
++					if (!is_skip_bad_block(mtd, u4PageAddr))
++#endif
+ 					mtd->ecc_stats.corrected++;
+ 				} else {
++#if defined(SKIP_BAD_BLOCK)
++					if (!is_skip_bad_block(mtd, u4PageAddr))
++#endif
+ 					mtd->ecc_stats.failed++;
+ 				}
+ 				u4ErrBitLoc2nd = (au4ErrBitLoc[i] >> 16) & 0x1FFF;
+@@ -371,8 +381,14 @@ mtk_nand_check_bch_error(struct mtd_info
+ 						u4ErrByteLoc = u4ErrBitLoc2nd / 8;
+ 						u4BitOffset = u4ErrBitLoc2nd % 8;
+ 						pDataBuf[u4ErrByteLoc] = pDataBuf[u4ErrByteLoc] ^ (1 << u4BitOffset);
++#if defined(SKIP_BAD_BLOCK)
++						if (!is_skip_bad_block(mtd, u4PageAddr))
++#endif
+ 						mtd->ecc_stats.corrected++;
+ 					} else {
++#if defined(SKIP_BAD_BLOCK)
++						if (!is_skip_bad_block(mtd, u4PageAddr))
++#endif
+ 						mtd->ecc_stats.failed++;
+ 						//printk(KERN_ERR"UnCorrectable High ErrLoc=%d\n", au4ErrBitLoc[i]);
+ 					}
+@@ -901,6 +917,7 @@ mtk_nand_exec_write_page(struct mtd_info
+ 	return 0;
+ }
+ 
++#if defined(SKIP_BAD_BLOCK)
+ static int
+ get_start_end_block(struct mtd_info *mtd, int block, int *start_blk, int *end_blk)
+ {
+@@ -1085,6 +1102,20 @@ write_next_on_fail(struct mtd_info *mtd,
+ 	return 0;
+ }
+ 
++static int count = 0;
++static int is_skip_bad_block(struct mtd_info *mtd, int page)
++{
++	struct nand_chip *chip = mtd->priv;
++
++	count ++;
++	if ((page << chip->page_shift) >= FILE_SYSTEM_START_ADDRESS)
++	{
++		return 0;
++	}
++	return 1;
++}
++#endif
++
+ static int
+ mtk_nand_write_page(struct mtd_info *mtd, struct nand_chip *chip, uint32_t offset,
+ 		int data_len, const u8 * buf, int oob_required, int page, int cached, int raw)
+@@ -1094,6 +1125,9 @@ mtk_nand_write_page(struct mtd_info *mtd
+ 	u16 page_in_block = page % page_per_block;
+ 	int mapped_block = block;
+ 
++#if defined(SKIP_BAD_BLOCK)
++	if (!is_skip_bad_block(mtd, page))
++	{
+ #if defined(MTK_NAND_BMT)
+ 	mapped_block = get_mapping_block_index(block);
+ 	// write bad index into oob
+@@ -1101,7 +1135,10 @@ mtk_nand_write_page(struct mtd_info *mtd
+ 		set_bad_index_to_oob(chip->oob_poi, block);
+ 	else
+ 		set_bad_index_to_oob(chip->oob_poi, FAKE_INDEX);
+-#else
++#endif
++	}
++	else
++	{
+ 	if (shift_on_bbt) {
+ 		mapped_block = block_remap(mtd, block);
+ 		if (mapped_block == -1)
+@@ -1109,10 +1146,14 @@ mtk_nand_write_page(struct mtd_info *mtd
+ 		if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
+ 			return NAND_STATUS_FAIL;
+ 	}
++	}
+ #endif
+ 	do {
+ 		if (mtk_nand_exec_write_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, (u8 *)buf, chip->oob_poi)) {
+ 			MSG(INIT, "write fail at block: 0x%x, page: 0x%x\n", mapped_block, page_in_block);
++#if defined(SKIP_BAD_BLOCK)
++			if (!is_skip_bad_block(mtd, page))
++			{
+ #if defined(MTK_NAND_BMT)
+ 			if (update_bmt((page_in_block + mapped_block * page_per_block) << chip->page_shift, UPDATE_WRITE_FAIL, (u8 *) buf, chip->oob_poi)) {
+ 				MSG(INIT, "Update BMT success\n");
+@@ -1122,6 +1163,11 @@ mtk_nand_write_page(struct mtd_info *mtd
+ 				return -EIO;
+ 			}
+ #else
++			return -EIO;
++#endif
++			}
++			else
++			{
+ 			{
+ 				int new_blk;
+ 				nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
+@@ -1133,6 +1179,9 @@ mtk_nand_write_page(struct mtd_info *mtd
+ 				mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
+ 				break;
+ 			}
++			}
++#else
++			return -EIO;
+ #endif
+ 		} else
+ 			break;
+@@ -1332,6 +1381,7 @@ mtk_nand_read_buf(struct mtd_info *mtd,
+ 			}
+ 		} else {
+ 			mtk_nand_exec_read_page(mtd, pkCMD->u4RowAddr, u4PageSize, nand->buffers->databuf, pkCMD->au1OOB);
++			nand->pagebuf=pkCMD->u4RowAddr; //autumn shie: bugfix for nand_read databuf not sync with pagebuf
+ 			memcpy(buf, nand->buffers->databuf + u4ColAddr, len);
+ 		}
+ 		pkCMD->u4OOBRowAddr = pkCMD->u4RowAddr;
+@@ -1340,6 +1390,7 @@ mtk_nand_read_buf(struct mtd_info *mtd,
+ 		u32 u4Size = min(len - u4Offset, sizeof(pkCMD->au1OOB));
+ 		if (pkCMD->u4OOBRowAddr != pkCMD->u4RowAddr) {
+ 			mtk_nand_exec_read_page(mtd, pkCMD->u4RowAddr, u4PageSize, nand->buffers->databuf, pkCMD->au1OOB);
++			nand->pagebuf=pkCMD->u4RowAddr; //autumn shie: bugfix for nand_read databuf not sync with pagebuf
+ 			pkCMD->u4OOBRowAddr = pkCMD->u4RowAddr;
+ 		}
+ 		memcpy(buf, pkCMD->au1OOB + u4Offset, u4Size);
+@@ -1400,12 +1451,22 @@ mtk_nand_read_page(struct mtd_info *mtd,
+ 	u16 page_in_block = page % page_per_block;
+ 	int mapped_block = block;
+ 
++#if defined(SKIP_BAD_BLOCK)
++    if (!is_skip_bad_block(mtd, page))
++    {
+ #if defined (MTK_NAND_BMT)
+ 	mapped_block = get_mapping_block_index(block);
+ 	if (mtk_nand_exec_read_page(mtd, page_in_block + mapped_block * page_per_block,
+ 			mtd->writesize, buf, chip->oob_poi))
+ 		return 0;
+-#else
++#endif
++	if (mtk_nand_exec_read_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, buf, chip->oob_poi))
++		return 0;
++	else
++		return -EIO;
++    }
++    else
++    {
+ 	if (shift_on_bbt) {
+ 		mapped_block = block_remap(mtd, block);
+ 		if (mapped_block == -1)
+@@ -1414,6 +1475,13 @@ mtk_nand_read_page(struct mtd_info *mtd,
+ 			return NAND_STATUS_FAIL;
+ 	}
+ 
++
++	if (mtk_nand_exec_read_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, buf, chip->oob_poi))
++		return 0;
++	else
++		return -EIO;
++    }
++#else
+ 	if (mtk_nand_exec_read_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, buf, chip->oob_poi))
+ 		return 0;
+ 	else
+@@ -1441,9 +1509,15 @@ mtk_nand_erase(struct mtd_info *mtd, int
+ 	int block = page / page_per_block;
+ 	int mapped_block = block;
+ 
++#if defined(SKIP_BAD_BLOCK)
++	if (!is_skip_bad_block(mtd, page))
++	{
+ #if defined(MTK_NAND_BMT)    
+ 	mapped_block = get_mapping_block_index(block);
+-#else
++#endif
++	}
++	else
++	{
+ 	if (shift_on_bbt) {
+ 		mapped_block = block_remap(mtd, block);
+ 		if (mapped_block == -1)
+@@ -1451,12 +1525,16 @@ mtk_nand_erase(struct mtd_info *mtd, int
+ 		if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
+ 			return NAND_STATUS_FAIL;
+ 	}
++	}
+ #endif
+ 
+ 	do {
+ 		int status = mtk_nand_erase_hw(mtd, page_in_block + page_per_block * mapped_block);
+ 
+ 		if (status & NAND_STATUS_FAIL) {
++#if defined(SKIP_BAD_BLOCK)
++			if (!is_skip_bad_block(mtd, page))
++			{
+ #if defined (MTK_NAND_BMT)    	
+ 			if (update_bmt( (page_in_block + mapped_block * page_per_block) << chip->page_shift,
+ 					UPDATE_ERASE_FAIL, NULL, NULL))
+@@ -1467,7 +1545,13 @@ mtk_nand_erase(struct mtd_info *mtd, int
+ 				MSG(INIT, "Erase fail at block: 0x%x, update BMT fail\n", mapped_block);
+ 				return NAND_STATUS_FAIL;
+ 			}
+-#else
++#endif
++				mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
++				nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
++				return -EIO;
++			}
++			else
++			{
+ 			mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
+ 			nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
+ 			if (shift_on_bbt) {
+@@ -1478,6 +1562,9 @@ mtk_nand_erase(struct mtd_info *mtd, int
+ 					return NAND_STATUS_FAIL;
+ 			} else
+ 				return NAND_STATUS_FAIL;
++			}
++#else
++			return NAND_STATUS_FAIL;
+ #endif
+ 		} else
+ 			break;
+@@ -1657,6 +1744,9 @@ static int mtk_nand_write_oob(struct mtd
+ 	u16 page_in_block = page % page_per_block;
+ 	int mapped_block = block;
+ 
++#if defined(SKIP_BAD_BLOCK)
++	if (!is_skip_bad_block(mtd, page))
++	{
+ #if defined(MTK_NAND_BMT)
+ 	mapped_block = get_mapping_block_index(block);
+ 	// write bad index into oob
+@@ -1664,7 +1754,10 @@ static int mtk_nand_write_oob(struct mtd
+ 		set_bad_index_to_oob(chip->oob_poi, block);
+ 	else
+ 		set_bad_index_to_oob(chip->oob_poi, FAKE_INDEX);
+-#else
++#endif
++	}
++	else
++	{
+ 	if (shift_on_bbt)
+ 	{
+ 		mapped_block = block_remap(mtd, block);
+@@ -1673,10 +1766,14 @@ static int mtk_nand_write_oob(struct mtd
+ 		if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
+ 			return NAND_STATUS_FAIL;
+ 	}
++	}
+ #endif
+ 	do {
+ 		if (mtk_nand_write_oob_hw(mtd, chip, page_in_block + mapped_block * page_per_block /* page */)) {
+ 			MSG(INIT, "write oob fail at block: 0x%x, page: 0x%x\n", mapped_block, page_in_block);
++#if defined (SKIP_BAD_BLOCK)
++			if (!is_skip_bad_block(mtd, page))
++			{
+ #if defined(MTK_NAND_BMT)      
+ 			if (update_bmt((page_in_block + mapped_block * page_per_block) << chip->page_shift,
+ 					UPDATE_WRITE_FAIL, NULL, chip->oob_poi))
+@@ -1687,7 +1784,13 @@ static int mtk_nand_write_oob(struct mtd
+ 				MSG(INIT, "Update BMT fail\n");
+ 				return -EIO;
+ 			}
+-#else
++#endif
++				mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
++				nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
++				return -EIO;
++			}
++			else
++			{
+ 			mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
+ 			nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
+ 			if (shift_on_bbt) {
+@@ -1699,6 +1802,9 @@ static int mtk_nand_write_oob(struct mtd
+ 			} else {
+ 				return NAND_STATUS_FAIL;
+ 			}
++			}
++#else
++			return -EIO;
+ #endif
+ 		} else
+ 			break;
+@@ -1730,10 +1836,16 @@ mtk_nand_block_markbad(struct mtd_info *
+ 
+ 	nand_get_device(chip, mtd, FL_WRITING);
+ 
++#if defined(SKIP_BAD_BLOCK)
++	if (!is_skip_bad_block(mtd, offset >> chip->page_shift))
++	{
+ #if defined(MTK_NAND_BMT)    
+ 	mapped_block = get_mapping_block_index(block);
+ 	ret = mtk_nand_block_markbad_hw(mtd, mapped_block << chip->phys_erase_shift);
+-#else
++#endif
++	}
++	else
++	{
+ 	if (shift_on_bbt) {
+ 		mapped_block = block_remap(mtd, block);
+ 		if (mapped_block == -1) {
+@@ -1742,8 +1854,9 @@ mtk_nand_block_markbad(struct mtd_info *
+ 			return NAND_STATUS_FAIL;
+ 		}
+ 	}
+-	ret = mtk_nand_block_markbad_hw(mtd, mapped_block << chip->phys_erase_shift);
++	}
+ #endif
++	ret = mtk_nand_block_markbad_hw(mtd, mapped_block << chip->phys_erase_shift);
+ 	nand_release_device(mtd);
+ 
+ 	return ret;
+@@ -1792,19 +1905,26 @@ mtk_nand_read_oob(struct mtd_info *mtd,
+ 	u16 page_in_block = page % page_per_block;
+ 	int mapped_block = block;
+ 
++#if defined(SKIP_BAD_BLOCK)
++	if (!is_skip_bad_block(mtd, page))
++	{
+ #if defined (MTK_NAND_BMT)
+ 	mapped_block = get_mapping_block_index(block);
+ 	mtk_nand_read_oob_hw(mtd, chip, page_in_block + mapped_block * page_per_block);
+-#else
++#endif
++	}
++	else
++	{
+ 	if (shift_on_bbt) {
+ 		mapped_block = block_remap(mtd, block);
+ 		if (mapped_block == -1)
+ 			return NAND_STATUS_FAIL;
+ 		// allow to read oob even if the block is bad
+ 	}
++	}
++#endif
+ 	if (mtk_nand_read_oob_hw(mtd, chip, page_in_block + mapped_block * page_per_block)!=0)
+ 		return -1;
+-#endif
+ 	return 0;
+ }
+ 
+@@ -1847,9 +1967,15 @@ mtk_nand_block_bad(struct mtd_info *mtd,
+ 		chip->select_chip(mtd, chipnr);
+ 	}
+ 
++#if defined(SKIP_BAD_BLOCK)
++	if (!is_skip_bad_block(mtd, ofs >> chip->page_shift))
++	{
+ #if defined(MTK_NAND_BMT)    
+ 	mapped_block = get_mapping_block_index(block);
+-#else
++#endif
++	}
++	else
++	{
+ 	if (shift_on_bbt) {
+ 		mapped_block = block_remap(mtd, block);
+ 		if (mapped_block == -1) {
+@@ -1858,9 +1984,15 @@ mtk_nand_block_bad(struct mtd_info *mtd,
+ 			return NAND_STATUS_FAIL;
+ 		}
+ 	}
++	}
+ #endif
+ 
++	do
++	{
+ 	ret = mtk_nand_block_bad_hw(mtd, mapped_block << chip->phys_erase_shift);
++#if defined(SKIP_BAD_BLOCK)
++	if (!is_skip_bad_block(mtd, ofs >> chip->page_shift))
++	{
+ #if defined (MTK_NAND_BMT)	
+ 	if (ret) {
+ 		MSG(INIT, "Unmapped bad block: 0x%x\n", mapped_block);
+@@ -1873,6 +2005,10 @@ mtk_nand_block_bad(struct mtd_info *mtd,
+ 		}
+ 	}
+ #endif
++	}
++	break;		    
++#endif 
++	}while(1);
+ 
+ 	if (getchip)
+ 		nand_release_device(mtd);
+@@ -1963,6 +2099,7 @@ static int mtk_nand_dev_ready(struct mtd
+ 	return !(DRV_Reg32(NFI_STA_REG32) & STA_NAND_BUSY);
+ }
+ 
++#ifdef FACT_BBT
+ #define FACT_BBT_BLOCK_NUM  32 // use the latest 32 BLOCK for factory bbt table
+ #define FACT_BBT_OOB_SIGNATURE  1
+ #define FACT_BBT_SIGNATURE_LEN  7
+@@ -1991,6 +2128,7 @@ read_fact_bbt(struct mtd_info *mtd, unsi
+ 		if (mtk_nand_exec_read_page(mtd, page, mtd->writesize, chip->buffers->databuf, chip->oob_poi))
+ 		{
+ 			printk("Signature matched and data read!\n");
++			chip->pagebuf=page; //autumn shie: bugfix for nand_read databuf not sync with pagebuf
+ 			memcpy(fact_bbt, chip->buffers->databuf, (bbt_size <= mtd->writesize)? bbt_size:mtd->writesize);
+ 			return 0;
+ 		}
+@@ -2028,6 +2166,8 @@ load_fact_bbt(struct mtd_info *mtd)
+ 	return -1;
+ }
+ 
++#endif
++
+ static int
+ mtk_nand_probe(struct platform_device *pdev)
+ {
+@@ -2096,7 +2236,7 @@ mtk_nand_probe(struct platform_device *p
+ 
+ 	// For BMT, we need to revise driver architecture
+ 	nand_chip->write_page = mtk_nand_write_page;
+-	nand_chip->ecc.write_oob = mtk_nand_write_oob;
++	nand_chip->ecc.write_oob = NULL; //mtk_nand_write_oob;
+ 	nand_chip->block_markbad = mtk_nand_block_markbad;   // need to add nand_get_device()/nand_release_device().
+ 	nand_chip->erase_mtk = mtk_nand_erase;	
+ 	nand_chip->read_page = mtk_nand_read_page;
+@@ -2237,6 +2377,9 @@ mtk_nand_probe(struct platform_device *p
+ #if defined(MTK_NAND_BMT)  
+ 	nand_chip->chipsize -= (BMT_POOL_SIZE) << nand_chip->phys_erase_shift;
+ #endif
++#if defined(FACT_BBT)
++	nand_chip->chipsize -= (FACT_BBT_POOL_SIZE) << nand_chip->phys_erase_shift;
++#endif  
+ 	mtd->size = nand_chip->chipsize;
+ 
+ 	CFG_BLOCKSIZE = mtd->erasesize;
+@@ -2256,12 +2399,17 @@ mtk_nand_probe(struct platform_device *p
+ 	if (!err) {
+ 		MSG(INIT, "[mtk_nand] probe successfully!\n");
+ 		nand_disable_clock();
++#if defined(SKIP_BAD_BLOCK)
+ 		shift_on_bbt = 1;
++		printk("shift_on_bbt = 1\n");
++#endif
++#if defined(FACT_BBT)
+ 		if (load_fact_bbt(mtd) == 0) {
+ 			int i;
+ 			for (i = 0; i < 0x100; i++)
+ 				nand_chip->bbt[i] |= fact_bbt[i];
+ 		}
++#endif
+ 
+ 		return err;
+ 	}
+diff -uprN a/drivers/mtd/nand/nand_def.h b/drivers/mtd/nand/nand_def.h
+--- a/drivers/mtd/nand/nand_def.h
++++ b/drivers/mtd/nand/nand_def.h
+@@ -21,6 +21,9 @@
+ #define SKIP_BAD_BLOCK
+ #define FACT_BBT
+ 
++#ifdef FACT_BBT
++#define FACT_BBT_POOL_SIZE      (4)
++#endif
+ #ifndef NAND_OTP_SUPPORT
+ #define NAND_OTP_SUPPORT 0
+ #endif
