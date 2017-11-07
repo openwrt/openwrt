@@ -1,16 +1,6 @@
 menu "Configuration"
 	depends on PACKAGE_kexec-tools
 
-config KEXEC_TOOLS_TARGET_NAME
-	string
-	prompt "Target name for kexec kernel"
-	default EXTRA_TARGET_ARCH_NAME	if powerpc64
-	default ARCH
-	help
-	  Defines the target type of the kernels that kexec deals
-	  with. This should be the target specification of
-	  the kernel you're booting.
-
 config KEXEC_TOOLS_kdump
 	bool
 	prompt "kdump support"

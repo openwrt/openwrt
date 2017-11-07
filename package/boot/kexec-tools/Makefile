@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
-PKG_VERSION:=2.0.9
+PKG_VERSION:=2.0.14
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/kexec
-PKG_MD5SUM:=6681319934e22e74c532bd392ccb1bbb
+PKG_MD5SUM:=4164abff8ed21e9f94d57f535c2f77bf
 
 PKG_FIXUP:=autoreconf
 
@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kexec-tools
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@KERNEL_KEXEC @armeb||@arm||@i386||@powerpc64||@mipsel||@mips +KEXEC_ZLIB:zlib +KEXEC_LZMA:liblzma
+  DEPENDS:=@armeb||@arm||@i386||@x86_64||@powerpc64||@mipsel||@mips +KEXEC_ZLIB:zlib +KEXEC_LZMA:liblzma
   TITLE:=Kernel boots kernel
   URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
   MAINTAINER:=Florian Fainelli <florian@openwrt.org>
@@ -40,7 +40,7 @@ define Package/kexec-tools/config
 	source "$(SOURCE)/Config.in"
 endef
 
-KEXEC_TARGET_NAME:=$(call qstrip,$(CONFIG_KEXEC_TOOLS_TARGET_NAME))-linux-$(TARGET_SUFFIX)
+KEXEC_TARGET_NAME:=$(ARCH)-linux-$(TARGET_SUFFIX)
 
 CONFIGURE_ARGS = \
 		--target=$(KEXEC_TARGET_NAME) \
@@ -55,7 +55,8 @@ CONFIGURE_ARGS = \
 		--libexecdir=/usr/lib \
 		--sysconfdir=/etc \
 		$(if $(CONFIG_KEXEC_ZLIB),--with,--without)-zlib \
-		$(if $(CONFIG_KEXEC_LZMA),--with,--without)-lzma
+		$(if $(CONFIG_KEXEC_LZMA),--with,--without)-lzma \
+		TARGET_LD="$(TARGET_CROSS)ld"
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
