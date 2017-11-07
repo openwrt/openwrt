@@ -227,6 +227,13 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_pentium4 = -march=pentium4
     CPU_CFLAGS_geode = -march=geode -mmmx -m3dnow
   endif
+  ifeq ($(ARCH),x86_64)
+    CPU_TYPE ?= x86_64
+    ifneq ($(findstring $(CPU_TYPE), nocona core2 nehalem westmere sandybridge ivybridge haswell broadwell bonnell silvermont knl k8 opteron athlon64 athlon-fx k8-sse3 opteron-sse3 athlon64-sse3 amdfam10 barcelona bdver1 bdver2 bdver3 bdver4 btver1 btver2),)
+       CPU_CFLAGS_$(CPU_TYPE) = -march=$(CPU_TYPE)
+    endif
+    CPU_CFLAGS_x86_64 = -march=x86-64
+  endif
   ifneq ($(findstring arm,$(ARCH)),)
     CPU_TYPE ?= xscale
     CPU_CFLAGS_arm920t = -march=armv4t -mtune=arm920t
