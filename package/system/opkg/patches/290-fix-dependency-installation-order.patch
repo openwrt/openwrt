@@ -1,0 +1,51 @@
+From 2615cb1e47746335a5e312a855cfdbda3a06e5a0 Mon Sep 17 00:00:00 2001
+From: Pieter Smith <pieter.smith@philips.com>
+Date: Thu, 23 Feb 2017 13:54:14 +0100
+Subject: [PATCH] pkg_depends: fix unsatisfied dependency installation order
+    
+Unsatisfied dependencies are not being installed in the correct order. The
+algorithm is not crawling down the dependency chain first when inserting
+unsatisfied dependencies, resulting in a correct installation order only for
+the first layer of dependencies.
+
+This patch changes the unsatisfied dependency insertion order to first add leaf
+dependencies, then move up the chain. The result is a list of unsatisfied
+dependencies ordered most-dependent-first.
+
+An example that resulted in the incorrect installation order was:
+  A -> B
+  A -> C
+  B -> D
+
+Without the fix, a most-dependent-first installation order was not guaranteed
+more than one layer deep, resulting in an installation order where B is
+incorrectly installed before D:
+  B, D, C, A
+
+After the fix, the installation order follows most-dependent first irrespective
+of the number of layers:
+  D, B, C, A
+
+---
+ libopkg/pkg_depends.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libopkg/pkg_depends.c b/libopkg/pkg_depends.c
+index ee63440..c5c859d 100644
+--- a/libopkg/pkg_depends.c
++++ b/libopkg/pkg_depends.c
+@@ -250,10 +250,10 @@ pkg_hash_fetch_unsatisfied_dependencies(pkg_t * pkg, pkg_vec_t *unsatisfied,
+ 
+ 			 if (satisfier_entry_pkg != pkg &&
+ 			     !is_pkg_in_pkg_vec(unsatisfied, satisfier_entry_pkg)) {
+-			      pkg_vec_insert(unsatisfied, satisfier_entry_pkg);
+ 			      pkg_hash_fetch_unsatisfied_dependencies(satisfier_entry_pkg,
+ 								      unsatisfied,
+ 								      &newstuff);
++			      pkg_vec_insert(unsatisfied, satisfier_entry_pkg);
+ 			      the_lost = merge_unresolved(the_lost, newstuff);
+ 			      if (newstuff)
+ 				   free(newstuff);
+-- 
+2.7.4
+
