@@ -244,7 +244,7 @@ default_postinst() {
 		[ -d /tmp/.uci ] || mkdir -p /tmp/.uci
 		for i in $(sed -ne 's!^/etc/uci-defaults/!!p' "/usr/lib/opkg/info/${pkgname}.list"); do (
 			cd /etc/uci-defaults
-			[ -f "$i" ] && . "$i" && rm -f "$i"
+			[ -f "$i" ] && . ./"$i" && rm -f "$i"
 		) done
 		uci commit
 	fi
