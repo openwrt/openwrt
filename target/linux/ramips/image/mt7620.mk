@@ -331,6 +331,20 @@ define Device/rt-n14u
 endef
 TARGET_DEVICES += rt-n14u
 
+define Device/rt-ac54u
+  DTS := RT-AC54U
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Asus RT-AC54U
+endef
+TARGET_DEVICES += rt-ac54u
+
+define Device/rt-ac51u
+  DTS := RT-AC51U
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := Asus RT-AC51U
+endef
+TARGET_DEVICES += rt-ac51u
+
 define Device/wrtnode
   DTS := WRTNODE
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

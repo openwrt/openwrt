@@ -260,6 +260,13 @@ rt-n14u)
 	set_wifi_led "$board:blue:air"
 	set_usb_led "$board:blue:usb"
 	;;
+rt-ac51u|\
+rt-ac54u)
+	ucidef_set_led_default "power" "power" "$board:blue:power" "1"
+	ucidef_set_led_default "power2" "power2" "$board:blue:power2" "1"
+	set_wifi_led "$board:blue:air"
+	set_usb_led "$board:blue:usb"
+	;;
 tiny-ac)
 	set_wifi_led "$board:orange:wifi"
 	set_usb_led "$board:green:usb"

@@ -376,6 +376,12 @@ ramips_board_detect() {
 	*"RT-N14U")
 		name="rt-n14u"
 		;;
+	*"RT-AC54U")
+		name="rt-ac54u"
+		;;
+	*"RT-AC51U")
+		name="rt-ac51u"
+		;;
 	*"RT-N15")
 		name="rt-n15"
 		;;
