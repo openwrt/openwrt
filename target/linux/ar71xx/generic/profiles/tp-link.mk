@@ -116,7 +116,7 @@ $(eval $(call Profile,TLMR3420))
 
 define Profile/TLWR703
 	NAME:=TP-LINK TL-WR703N
-	PACKAGES:=kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb-gadget kmod-usb-chipidea
 endef
 
 
