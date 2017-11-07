@@ -12,7 +12,7 @@ PKG_VERSION:=2017.09
 PKG_RELEASE:=1
 
 # Layerscape ARMv8 platforms use 64-bit u-boot to support both 32-bit and 64-bit
-# kernel/rootfs. Since LEDE could only provide 32-bit toolchain for 32-bit targets,
+# kernel/rootfs. Since OpenWrt could only provide 32-bit toolchain for 32-bit targets,
 # 64-bit u-boot images git tree is provided here whose source code actually is
 # uboot-layerscape's source code.
 PKG_SOURCE_PROTO:=git
