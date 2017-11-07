@@ -113,6 +113,10 @@ sunxi_board_detect() {
 			board="olinuxino-lime"
 			;;
 
+		"Olimex A20-OLinuXino-LIME2")
+			board="olinuxino-lime2"
+			;;
+
 		"Olimex A20-Olinuxino Micro")
 			board="olinuxino-a20-micro"
 			;;

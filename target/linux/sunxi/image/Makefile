@@ -63,6 +63,10 @@ define Image/Build/Profile/A20-OLinuXino-Lime
 	$(call Image/Build/SDCard,$(1),sun7i-a20-olinuxino-lime)
 endef
 
+define Image/Build/Profile/A20-OLinuXino-Lime2
+	$(call Image/Build/SDCard,$(1),sun7i-a20-olinuxino-lime2)
+endef
+
 define Image/Build/Profile/A20-OLinuXino_MICRO
 	$(call Image/Build/SDCard,$(1),sun7i-a20-olinuxino-micro)
 endef
