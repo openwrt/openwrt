@@ -11,7 +11,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -466,7 +466,7 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -469,7 +469,7 @@ static int bgmac_dma_rx_read(struct bgma
  			len -= ETH_FCS_LEN;
  
  			skb = build_skb(buf, BGMAC_RX_ALLOC_SIZE);

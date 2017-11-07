@@ -15,7 +15,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1599,6 +1599,7 @@ static int bgmac_probe(struct bcma_devic
+@@ -1602,6 +1602,7 @@ static int bgmac_probe(struct bcma_devic
  	bgmac->net_dev = net_dev;
  	bgmac->core = core;
  	bcma_set_drvdata(core, bgmac);

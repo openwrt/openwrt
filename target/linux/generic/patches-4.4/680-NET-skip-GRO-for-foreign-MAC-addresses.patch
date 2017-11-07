@@ -17,7 +17,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4205,6 +4205,9 @@ static enum gro_result dev_gro_receive(s
+@@ -4222,6 +4222,9 @@ static enum gro_result dev_gro_receive(s
  	enum gro_result ret;
  	int grow;
  
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!(skb->dev->features & NETIF_F_GRO))
  		goto normal;
  
-@@ -5357,6 +5360,48 @@ static void __netdev_adjacent_dev_unlink
+@@ -5381,6 +5384,48 @@ static void __netdev_adjacent_dev_unlink
  					   &upper_dev->adj_list.lower);
  }
  
@@ -76,7 +76,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int __netdev_upper_dev_link(struct net_device *dev,
  				   struct net_device *upper_dev, bool master,
  				   void *private)
-@@ -5428,6 +5473,7 @@ static int __netdev_upper_dev_link(struc
+@@ -5452,6 +5497,7 @@ static int __netdev_upper_dev_link(struc
  			goto rollback_lower_mesh;
  	}
  
@@ -84,15 +84,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
  				      &changeupper_info.info);
  	return 0;
-@@ -5554,6 +5600,7 @@ void netdev_upper_dev_unlink(struct net_
+@@ -5578,6 +5624,7 @@ void netdev_upper_dev_unlink(struct net_
  	list_for_each_entry(i, &upper_dev->all_adj_list.upper, list)
- 		__netdev_adjacent_dev_unlink(dev, i->dev);
+ 		__netdev_adjacent_dev_unlink(dev, i->dev, i->ref_nr);
  
 +	netdev_update_addr_mask(dev);
  	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
  				      &changeupper_info.info);
  }
-@@ -6094,6 +6141,7 @@ int dev_set_mac_address(struct net_devic
+@@ -6118,6 +6165,7 @@ int dev_set_mac_address(struct net_devic
  	if (err)
  		return err;
  	dev->addr_assign_type = NET_ADDR_SET;
@@ -102,7 +102,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1638,6 +1638,8 @@ struct net_device {
+@@ -1637,6 +1637,8 @@ struct net_device {
  	struct netdev_hw_addr_list	mc;
  	struct netdev_hw_addr_list	dev_addrs;
  

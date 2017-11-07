@@ -32,7 +32,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			bytes_compl += slot->skb->len;
  			pkts_compl++;
  
-@@ -464,6 +468,7 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -467,6 +471,7 @@ static int bgmac_dma_rx_read(struct bgma
  				bgmac_err(bgmac, "Found poisoned packet at slot %d, DMA issue!\n",
  					  ring->start);
  				put_page(virt_to_head_page(buf));
@@ -40,7 +40,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				break;
  			}
  
-@@ -471,6 +476,8 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -474,6 +479,8 @@ static int bgmac_dma_rx_read(struct bgma
  				bgmac_err(bgmac, "Found oversized packet at slot %d, DMA issue!\n",
  					  ring->start);
  				put_page(virt_to_head_page(buf));
@@ -49,7 +49,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				break;
  			}
  
-@@ -481,6 +488,7 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -484,6 +491,7 @@ static int bgmac_dma_rx_read(struct bgma
  			if (unlikely(!skb)) {
  				bgmac_err(bgmac, "build_skb failed\n");
  				put_page(virt_to_head_page(buf));
@@ -57,7 +57,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  				break;
  			}
  			skb_put(skb, BGMAC_RX_FRAME_OFFSET +
-@@ -490,6 +498,8 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -493,6 +501,8 @@ static int bgmac_dma_rx_read(struct bgma
  
  			skb_checksum_none_assert(skb);
  			skb->protocol = eth_type_trans(skb, bgmac->net_dev);

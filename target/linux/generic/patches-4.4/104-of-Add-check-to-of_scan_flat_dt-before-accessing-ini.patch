@@ -1,0 +1,30 @@
+From: Tobias Wolf <dev-NTEO@vplace.de>
+Date: Wed, 23 Nov 2016 10:40:07 +0100
+Subject: [PATCH] of: Add check to of_scan_flat_dt() before accessing
+ initial_boot_params
+
+An empty __dtb_start to __dtb_end section might result in initial_boot_params
+being null for arch/mips/ralink. This showed that the boot process hangs
+indefinitely in of_scan_flat_dt().
+
+Signed-off-by: Tobias Wolf <dev-NTEO@vplace.de>
+---
+
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -632,9 +632,12 @@ int __init of_scan_flat_dt(int (*it)(uns
+ 	const char *pathp;
+ 	int offset, rc = 0, depth = -1;
+ 
+-        for (offset = fdt_next_node(blob, -1, &depth);
+-             offset >= 0 && depth >= 0 && !rc;
+-             offset = fdt_next_node(blob, offset, &depth)) {
++	if (!blob)
++		return 0;
++
++	for (offset = fdt_next_node(blob, -1, &depth);
++	     offset >= 0 && depth >= 0 && !rc;
++	     offset = fdt_next_node(blob, offset, &depth)) {
+ 
+ 		pathp = fdt_get_name(blob, offset, NULL);
+ 		if (*pathp == '/')
