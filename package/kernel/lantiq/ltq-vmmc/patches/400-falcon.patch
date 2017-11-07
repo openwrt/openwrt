@@ -184,7 +184,7 @@
     TRACE (MPS, DBG_LEVEL_HIGH, ("Providing Buffers...\n"));
 --- /dev/null
 +++ b/src/mps/drv_mps_vmmc_falcon.c
-@@ -0,0 +1,463 @@
+@@ -0,0 +1,396 @@
 +/******************************************************************************
 +
 +                              Copyright (c) 2009
@@ -254,12 +254,7 @@
 +IFX_void_t ifx_mps_release (IFX_void_t);
 +extern IFX_uint32_t ifx_mps_reset_structures (mps_comm_dev * pMPSDev);
 +extern IFX_int32_t ifx_mps_bufman_close (IFX_void_t);
-+IFX_int32_t ifx_mps_wdog_callback (IFX_uint32_t wdog_cleared_ok_count);
 +extern IFXOS_event_t fw_ready_evt;
-+/* ============================= */
-+/* Local function declaration    */
-+/* ============================= */
-+static IFX_int32_t ifx_mps_fw_wdog_start_ar9(IFX_void_t);
 +
 +/* ============================= */
 +/* Local variable definition     */
@@ -275,20 +270,6 @@
 +/******************************************************************************
 + * AR9 Specific Routines
 + ******************************************************************************/
-+
-+/**
-+ * Start AR9 EDSP firmware watchdog mechanism.
-+ * Called after download and startup of VPE1.
-+ *
-+ * \param   none
-+ * \return  0         IFX_SUCCESS
-+ * \return  -1        IFX_ERROR
-+ * \ingroup Internal
-+ */
-+IFX_int32_t ifx_mps_fw_wdog_start_ar9()
-+{
-+   return IFX_SUCCESS;
-+}
 +
 +/**
 + * Firmware download to Voice CPU
@@ -447,7 +428,7 @@
 +         TRACE (MPS, DBG_LEVEL_HIGH,
 +                ("MPS: FW checksum error: img=0x%08x calc=0x%08x\r\n",
 +                pFW_img_data->crc32, cksum));
-+         /*return IFX_ERROR;*/
++         return IFX_ERROR;
 +      }
 +   }
 +   else
@@ -458,10 +439,7 @@
 +
 +   /* start VPE1 */
 +   ifx_mps_release ();
-+#if 0
-+   /* start FW watchdog mechanism */
-+   ifx_mps_fw_wdog_start_ar9();
-+#endif
++
 +   /* get FW version */
 +   return ifx_mps_get_fw_version (0);
 +}
@@ -486,8 +464,6 @@
 +   ifx_mps_init_gpt ();
 +   /* let CPU1 run */
 +   ifx_mps_release ();
-+   /* start FW watchdog mechanism */
-+   ifx_mps_fw_wdog_start_ar9();
 +   TRACE (MPS, DBG_LEVEL_HIGH, ("IFX_MPS: Restarting firmware..."));
 +   return ifx_mps_get_fw_version (0);
 +}
@@ -502,10 +478,6 @@
 +{
 +   if (vpe1_started)
 +   {
-+      /* stop software watchdog timer */
-+      vpe1_sw_wdog_stop (0);
-+      /* clean up the BSP callback function */
-+      vpe1_sw_wdog_register_reset_handler (IFX_NULL);
 +      /* stop VPE1 */
 +      vpe1_sw_stop (0);
 +      vpe1_started = 0;
@@ -528,8 +500,6 @@
 +   /* if VPE1 is already started, stop it */
 +   if (vpe1_started)
 +   {
-+      /* stop software watchdog timer first */
-+      vpe1_sw_wdog_stop (0);
 +      vpe1_sw_stop (0);
 +      vpe1_started = 0;
 +   }
@@ -574,43 +544,6 @@
 +      /* dump exception area on a console */
 +      ifx_mps_dump_fw_xcpt(cpu1_base_addr, pFW_img_data);
 +   }
-+}
-+
-+/**
-+ * WDT callback.
-+ * This function is called by BSP (module softdog_vpe) in case if software
-+ * watchdog timer expiration is detected by BSP.
-+ * This function needs to be registered at BSP as WDT callback using
-+ * vpe1_sw_wdog_register_reset_handler() API.
-+ *
-+ * \return  0        IFX_SUCCESS, cannot fail
-+ * \ingroup Internal
-+ */
-+IFX_int32_t ifx_mps_wdog_callback (IFX_uint32_t wdog_cleared_ok_count)
-+{
-+#ifdef DEBUG
-+   TRACE (MPS, DBG_LEVEL_HIGH,
-+          ("MPS: watchdog callback! arg=0x%08x\r\n", wdog_cleared_ok_count));
-+#endif /* DEBUG */
-+
-+   /* reset SmartSLIC is done by FW */
-+   /* recalculate and compare the firmware checksum */
-+   ifx_mps_fw_crc_compare(cpu1_base_addr, pFW_img_data);
-+
-+   /* dump exception area on a console */
-+   ifx_mps_dump_fw_xcpt(cpu1_base_addr, pFW_img_data);
-+
-+   if (IFX_NULL != ifx_wdog_callback)
-+   {
-+      /* call VMMC driver */
-+      ifx_wdog_callback (wdog_cleared_ok_count);
-+   }
-+   else
-+   {
-+      TRACE (MPS, DBG_LEVEL_HIGH,
-+             (KERN_WARNING "MPS: VMMC watchdog timer callback is NULL.\r\n"));
-+   }
-+   return 0;
 +}
 +
 +/**
