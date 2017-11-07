@@ -147,6 +147,8 @@ ramips_setup_interfaces()
 	wt1520 | \
 	xiaomi-miwifi-mini |\
 	y1|\
+	psg1218 |\
+ 	psg1218-16m |\
 	zbt-wg2626)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
@@ -353,7 +355,13 @@ ramips_setup_macs()
 	wcr-150gn)
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
-
+		
+	psg1218 | \
+ 	psg1218-16m)
+ 		lan_mac=$(mtd_get_mac_binary factory 40)
+ 		wan_mac=$(mtd_get_mac_binary factory 46)
+ 		;;
+ 
 	rt-n56u)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$lan_mac")

@@ -256,6 +256,10 @@ get_status_led() {
 	zte-q7)
 		status_led="zte:red:status"
 		;;
+	psg1218|\
+ 	psg1218-16m)
+ 		status_led="phicomm:yellow:status"
+ 		;;
 	esac
 }
 

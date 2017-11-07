@@ -270,6 +270,10 @@ case $board in
 	zte-q7)
 		set_wifi_led "zte:blue:status"
 		;;
+	psg1218 |\
+ 	psg1218-16m)
+ 		ucidef_set_led_default "system" "system" "phicomm:yellow:status" "1"
+ 		;;
 esac
 
 board_config_flush
