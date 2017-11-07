@@ -1,0 +1,31 @@
+Kernel symbol page_offset_base could be unavailable when mm KASLR code is
+not compiled in kernel. It's unappropriate to print out error message
+when failed to search for page_offset_base from /proc/kallsyms. Seems now
+there is not a way to find out if mm KASLR is compiled in or not. An
+alternative approach is only printing out debug message in get_kernel_sym
+if failed to search a expected kernel symbol.
+
+Do it in this patch, a simple fix.
+
+Signed-off-by: Baoquan He <bhe@redhat.com>
+---
+ kexec/arch/i386/crashdump-x86.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kexec/arch/i386/crashdump-x86.c b/kexec/arch/i386/crashdump-x86.c
+index 88aeee3..c4cf201 100644
+--- a/kexec/arch/i386/crashdump-x86.c
++++ b/kexec/arch/i386/crashdump-x86.c
+@@ -127,7 +127,7 @@ static unsigned long long get_kernel_sym(const char *symbol)
+ 		}
+ 	}
+ 
+-	fprintf(stderr, "Cannot get kernel %s symbol address\n", symbol);
++	dbgprintf("Cannot get kernel %s symbol address\n", symbol);
+ 	return 0;
+ }
+ 
+-- 
+2.5.5
+
+
