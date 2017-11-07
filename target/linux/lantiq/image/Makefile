@@ -687,6 +687,14 @@ define LegacyDevice/FRITZ7360SL
 endef
 LEGACY_DEVICES += FRITZ7360L
 
+define Device/RS353
+  DEVICE_PROFILE := RS353
+  DEVICE_TITLE := Bintec RS353
+  IMAGE_SIZE := 31232k
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ath9k wpad-mini kmod-i2c-gpio kmod-swconfig wpad-mini kmod-ledtrig-usbdev
+endef
+TARGET_DEVICES += RS353
+
 Image/Prepare/Profile/VG3503J=$(call Image/Prepare/Template,VG3503J)
 Image/BuildKernel/Profile/VG3503J=$(call Image/BuildKernelLoader/Template,VG3503J)
 Image/Build/Profile/VG3503J=$(call Image/BuildLoader/$(1),$(1),VG3503J)
