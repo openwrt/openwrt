@@ -329,6 +329,17 @@ define Device/zbt-we1326
 endef
 TARGET_DEVICES += zbt-we1326
 
+define Device/zbt-we3526
+  DTS := ZBT-WE3526
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  SUPPORTED_DEVICES += zbt-we3526
+  DEVICE_TITLE := ZBT WE3526
+  DEVICE_PACKAGES := \
+	kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
+	kmod-usb3 kmod-usb-ledtrig-usbport wpad-mini
+endef
+TARGET_DEVICES += zbt-we3526
+
 define Device/zbt-wg2626
   DTS := ZBT-WG2626
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
