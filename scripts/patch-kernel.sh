@@ -36,6 +36,10 @@ for i in ${patchdir}/${patchpattern} ; do
     esac
     [ -d "${i}" ] && echo "Ignoring subdirectory ${i}" && continue	
     echo ""
+    # because some people publish tarballs containing files with modes u-w
+    awk -e '/^\+\+\+ / { n = match($2, "/"); print substr($2, n + 1); }' "${i}" | while read file; do
+	[ ! -f ${targetdir}/$file -o -w ${targetdir}/$file ] || chmod u+w ${targetdir}/$file
+    done
     echo "Applying ${i} using ${type}: " 
     ${uncomp} ${i} | ${PATCH:-patch} -f -p1 -d ${targetdir}
     if [ $? != 0 ] ; then
