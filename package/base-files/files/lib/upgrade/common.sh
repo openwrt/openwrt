@@ -129,7 +129,8 @@ kill_remaining() { # [ <signal> ]
 
 				# Killable process
 				*)
-					if [ $pid -ne $$ ] && [ $ppid -ne $$ ]; then
+					# Don't kill ourselves, our immediate parent, or any of our immediate children
+					if [ $pid -ne $$ ] && [ $pid -ne $my_ppid ] && [ $ppid -ne $$ ]; then
 						echo -n "$name "
 						kill -$sig $pid 2>/dev/null
 					fi
