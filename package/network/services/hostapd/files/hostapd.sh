@@ -723,6 +723,7 @@ wpa_supplicant_add_network() {
 	}
 	local beacon_int brates mrate
 	[ -n "$bssid" ] && append network_data "bssid=$bssid" "$N$T"
+	[ -n "$beacon_int" ] && append network_data "beacon_int=$beacon_int" "$N$T"
 
 	local bssid_blacklist bssid_whitelist
 	json_get_values bssid_blacklist bssid_blacklist
