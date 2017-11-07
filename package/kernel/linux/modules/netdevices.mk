@@ -559,6 +559,25 @@ endef
 $(eval $(call KernelPackage,ixgbe))
 
 
+define KernelPackage/ixgbevf
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel(R) 82599 Virtual Function Ethernet support
+  DEPENDS:=@PCI_SUPPORT +kmod-ixgbe
+  KCONFIG:=CONFIG_IXGBEVF \
+    CONFIG_IXGBE_VXLAN=n \
+    CONFIG_IXGBE_HWMON=n \
+    CONFIG_IXGBE_DCA=n
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbevf/ixgbevf.ko
+  AUTOLOAD:=$(call AutoLoad,35,ixgbevf)
+endef
+
+define KernelPackage/ixgbevf/description
+ Kernel modules for Intel(R) 82599 Virtual Function Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,ixgbevf))
+
+
 define KernelPackage/b44
   TITLE:=Broadcom 44xx driver
   KCONFIG:=CONFIG_B44
