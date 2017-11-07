@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 #   Linksys ADSL2MUE Flash utility.
 #
