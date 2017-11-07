@@ -1,0 +1,30 @@
+From 4ac26558aa2ba788703bf36752741d6e77d69478 Mon Sep 17 00:00:00 2001
+From: Rajesh Bhagat <rajesh.bhagat@freescale.com>
+Date: Thu, 14 Jan 2016 10:58:59 +0530
+Subject: [PATCH 41/70] usb: kconfig: remove dependency FSL_SOC for ehci fsl
+ driver
+
+CONFIG_USB_EHCI_FSL is not dependent on FSL_SOC, it can be built on
+non-PPC platforms.
+
+Signed-off-by: Rajesh Bhagat <rajesh.bhagat@nxp.com>
+---
+ drivers/usb/host/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
+index 3bb0887..903397e 100644
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -145,7 +145,7 @@ config XPS_USB_HCD_XILINX
+ 
+ config USB_EHCI_FSL
+ 	tristate "Support for Freescale PPC on-chip EHCI USB controller"
+-	depends on FSL_SOC
++	depends on USB_EHCI_HCD
+ 	select USB_EHCI_ROOT_HUB_TT
+ 	select USB_FSL_MPH_DR_OF if OF
+ 	---help---
+-- 
+1.7.9.5
+

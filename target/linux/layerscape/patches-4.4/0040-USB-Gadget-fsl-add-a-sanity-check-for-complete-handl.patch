@@ -1,0 +1,36 @@
+From 805d30b24e1d9b7de674953149104d7f5f774b4e Mon Sep 17 00:00:00 2001
+From: Rajesh Bhagat <rajesh.bhagat@freescale.com>
+Date: Mon, 25 Jan 2016 16:11:46 +0530
+Subject: [PATCH 40/70] USB : Gadget : fsl: add a sanity check for complete
+ handler
+
+complete handler is replaced by usb_gadget_giveback_request by below commit,
+which removed the sanity check which was added for fsl specific gadget driver.
+usb: gadget: Refactor request completion (304f7e5e1d08fa2f5674c1323bd0ebd806c86b81).
+
+Above change is causing crash in fsl gadget driver, Hence adding the check back.
+
+Signed-off-by: Rajesh Bhagat <rajesh.bhagat@nxp.com>
+---
+ drivers/usb/gadget/udc/fsl_udc_core.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/gadget/udc/fsl_udc_core.c b/drivers/usb/gadget/udc/fsl_udc_core.c
+index aab5221..e651b22 100644
+--- a/drivers/usb/gadget/udc/fsl_udc_core.c
++++ b/drivers/usb/gadget/udc/fsl_udc_core.c
+@@ -198,7 +198,10 @@ __acquires(ep->udc->lock)
+ 
+ 	spin_unlock(&ep->udc->lock);
+ 
+-	usb_gadget_giveback_request(&ep->ep, &req->req);
++	/* this complete() should a func implemented by gadget layer,
++	* eg fsg->bulk_in_complete() */
++	if (req->req.complete)
++		usb_gadget_giveback_request(&ep->ep, &req->req);
+ 
+ 	spin_lock(&ep->udc->lock);
+ 	ep->stopped = stopped;
+-- 
+1.7.9.5
+
