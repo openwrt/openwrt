@@ -37,6 +37,7 @@ get_status_led() {
 	pwh2004|\
 	r6220|\
 	tl-wr840n-v4|\
+	tl-wr840n-v5|\
 	tl-wr841n-v13|\
 	vr500|\
 	wnce2001|\
