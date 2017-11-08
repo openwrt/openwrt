@@ -116,6 +116,8 @@ DGN1000B)
 	;;
 
 DGN3500*)
+	lan_mac=$(mtd_get_mac_ascii uboot-env ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "5t@eth0"
 	;;
