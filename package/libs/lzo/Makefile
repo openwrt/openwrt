@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2016 OpenWrt.org
+# Copyright (C) 2006-2017 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lzo
-PKG_VERSION:=2.09
+PKG_VERSION:=2.10
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://ftp.osuosl.org/pub/blfs/conglomeration/lzo/
-PKG_MD5SUM:=c7ffc9a103afe2d1bba0b015e7aa887f
+PKG_SOURCE_URL:=http://www.oberhumer.com/opensource/lzo/download/
+PKG_MD5SUM:=39d3f3f9c55c87b1e5d6888e1420f4b5
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
@@ -27,7 +27,7 @@ define Package/liblzo
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=A real-time data compression library
-  URL:=https://ftp.osuosl.org/pub/blfs/conglomeration/lzo/
+  URL:=http://www.oberhumer.com/opensource/lzo/download/
 endef
 
 define Package/liblzo/description
