@@ -202,7 +202,7 @@ add_group_and_user() {
 			if [ -n "$gname" ] && [ -n "$gid" ]; then
 				group_exists "$gname" || group_add "$gname" "$gid"
 			elif [ -n "$gname" ]; then
-				group_add_next "$gname"; gid=$?
+				gid="$(group_add_next "$gname")"
 			fi
 
 			if [ -n "$uname" ]; then
@@ -296,9 +296,7 @@ group_add() {
 	[ -f "${IPKG_INSTROOT}/etc/group" ] || return 1
 	[ -n "$IPKG_INSTROOT" ] || lock /var/lock/group
 	echo "${name}:x:${gid}:" >> ${IPKG_INSTROOT}/etc/group
-	rc=$?
 	[ -n "$IPKG_INSTROOT" ] || lock -u /var/lock/group
-	return $rc
 }
 
 group_exists() {
@@ -308,14 +306,17 @@ group_exists() {
 group_add_next() {
 	local gid gids
 	gid=$(grep -s "^${1}:" ${IPKG_INSTROOT}/etc/group | cut -d: -f3)
-	[ -n "$gid" ] && return $gid
+	if [ -n "$gid" ]; then
+		echo $gid
+		return
+	fi
 	gids=$(cat ${IPKG_INSTROOT}/etc/group | cut -d: -f3)
 	gid=65536
 	while [ -n "$(echo "$gids" | grep "^$gid$")" ] ; do
 	        gid=$((gid + 1))
 	done
 	group_add $1 $gid
-	return $gid
+	echo $gid
 }
 
 group_add_user() {
@@ -348,9 +349,7 @@ user_add() {
 	[ -n "$IPKG_INSTROOT" ] || lock /var/lock/passwd
 	echo "${name}:x:${uid}:${gid}:${desc}:${home}:${shell}" >> ${IPKG_INSTROOT}/etc/passwd
 	echo "${name}:x:0:0:99999:7:::" >> ${IPKG_INSTROOT}/etc/shadow
-	rc=$?
 	[ -n "$IPKG_INSTROOT" ] || lock -u /var/lock/passwd
-	return $rc
 }
 
 user_exists() {
