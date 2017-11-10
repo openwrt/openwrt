@@ -888,6 +888,14 @@ define Device/tl-wr810n-v1
   TPLINK_HWID := 0x08100001
 endef
 
+define Device/tl-wr810n-v2
+  $(Device/tplink-8mlzma)
+  DEVICE_TITLE := TP-LINK TL-WR810N v2
+  BOARDNAME := TL-WR810N-v2
+  DEVICE_PROFILE := TLWR810
+  TPLINK_HWID := 0x08100002
+endef
+
 define Device/tl-wr840n-v2
   $(Device/tplink-4mlzma)
   DEVICE_TITLE := TP-LINK TL-WR840N v2
@@ -904,7 +912,7 @@ define Device/tl-wr840n-v3
   BOARDNAME := TL-WR840N-v3
   TPLINK_HWID := 0x08400003
 endef
-TARGET_DEVICES += tl-wr802n-v1 tl-wr802n-v2 tl-wr810n-v1 tl-wr840n-v2 tl-wr840n-v3
+TARGET_DEVICES += tl-wr802n-v1 tl-wr802n-v2 tl-wr810n-v1 tl-wr810n-v2 tl-wr840n-v2 tl-wr840n-v3
 
 define Device/tl-wr841-v1.5
   $(Device/tplink-4m)
