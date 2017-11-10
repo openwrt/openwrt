@@ -509,6 +509,7 @@ define KernelPackage/usb-serial-edgeport
   FILES:=$(LINUX_DIR)/drivers/usb/serial/io_edgeport.ko
   AUTOLOAD:=$(call AutoProbe,io_edgeport)
   $(call AddDepends/usb-serial)
+  DEPENDS+=+edgeport-firmware
 endef
 
 define KernelPackage/usb-serial-edgeport/description
@@ -529,14 +530,6 @@ define KernelPackage/usb-serial-edgeport/description
 	Edgeport/2 DIN
 	Edgeport/4 DIN
 	Edgeport/16 Dual
-endef
-
-define KernelPackage/usb-serial-edgeport/install
-	$(INSTALL_DIR) $(1)/lib/firmware/edgeport
-	$(INSTALL_DATA) $(LINUX_DIR)/firmware/edgeport/boot.fw $(1)/lib/firmware/edgeport/
-	$(INSTALL_DATA) $(LINUX_DIR)/firmware/edgeport/boot2.fw $(1)/lib/firmware/edgeport/
-	$(INSTALL_DATA) $(LINUX_DIR)/firmware/edgeport/down.fw $(1)/lib/firmware/edgeport/
-	$(INSTALL_DATA) $(LINUX_DIR)/firmware/edgeport/down2.fw $(1)/lib/firmware/edgeport/
 endef
 
 $(eval $(call KernelPackage,usb-serial-edgeport))
