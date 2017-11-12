@@ -120,6 +120,23 @@ endef
 $(eval $(call KernelPackage,crypto-rng))
 
 
+define KernelPackage/crypto-rsa
+  TITLE:=RSA algorithm
+  DEPENDS:=@!LINUX_3_18 +kmod-crypto-manager
+  KCONFIG:= CONFIG_CRYPTO_RSA
+  HIDDEN:=1
+  FILES:= \
+	$(LINUX_DIR)/lib/asn1_decoder.ko \
+	$(LINUX_DIR)/lib/mpi/mpi.ko \
+	$(LINUX_DIR)/crypto/akcipher.ko \
+	$(LINUX_DIR)/crypto/rsa_generic.ko
+  AUTOLOAD:=$(call AutoLoad,10,rsa_generic)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-rsa))
+
+
 define KernelPackage/crypto-iv
   TITLE:=CryptoAPI initialization vectors
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-rng +kmod-crypto-wq
@@ -196,12 +213,13 @@ $(eval $(call KernelPackage,crypto-hw-padlock))
 
 define KernelPackage/crypto-hw-ccp
   TITLE:=AMD Cryptographic Coprocessor
-  DEPENDS:=+kmod-crypto-authenc +kmod-crypto-hash +kmod-crypto-manager +kmod-random-core +kmod-crypto-sha1 +kmod-crypto-sha256
+  DEPENDS:=+kmod-crypto-authenc +kmod-crypto-hash +kmod-crypto-manager +kmod-random-core +kmod-crypto-sha1 +kmod-crypto-sha256 +LINUX_4_14:kmod-crypto-rsa
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_CCP=y \
 	CONFIG_CRYPTO_DEV_CCP_CRYPTO \
-	CONFIG_CRYPTO_DEV_CCP_DD
+	CONFIG_CRYPTO_DEV_CCP_DD \
+	CONFIG_CRYPTO_DEV_SP_CCP=y
   FILES:= \
 	$(LINUX_DIR)/drivers/crypto/ccp/ccp.ko \
 	$(LINUX_DIR)/drivers/crypto/ccp/ccp-crypto.ko
