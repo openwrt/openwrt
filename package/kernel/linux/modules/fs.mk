@@ -106,7 +106,8 @@ define KernelPackage/fs-cifs
 	CONFIG_CIFS \
 	CONFIG_CIFS_XATTR=y \
 	CONFIG_CIFS_DFS_UPCALL=n \
-	CONFIG_CIFS_UPCALL=n
+	CONFIG_CIFS_UPCALL=n \
+	CONFIG_CIFS_SMB311=n
   FILES:=$(LINUX_DIR)/fs/cifs/cifs.ko
   AUTOLOAD:=$(call AutoLoad,30,cifs)
   $(call AddDepends/nls)
