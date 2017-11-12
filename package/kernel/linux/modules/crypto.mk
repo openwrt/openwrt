@@ -137,6 +137,19 @@ endef
 $(eval $(call KernelPackage,crypto-rsa))
 
 
+define KernelPackage/crypto-ecdh
+  TITLE:=ECDH algorithm
+  DEPENDS:=@!(LINUX_3_18||LINUX_4_4) +kmod-crypto-kpp
+  KCONFIG:= CONFIG_CRYPTO_ECDH
+  FILES:= \
+	$(LINUX_DIR)/crypto/ecdh_generic.ko
+  AUTOLOAD:=$(call AutoLoad,10,ecdh_generic)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-ecdh))
+
+
 define KernelPackage/crypto-iv
   TITLE:=CryptoAPI initialization vectors
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-rng +kmod-crypto-wq
@@ -346,6 +359,18 @@ define KernelPackage/crypto-des
 endef
 
 $(eval $(call KernelPackage,crypto-des))
+
+
+define KernelPackage/crypto-kpp
+  TITLE:=Key-agreement Protocol Primitives
+  KCONFIG:=CONFIG_CRYPTO_KPP
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/crypto/kpp.ko
+  AUTOLOAD:=$(call AutoLoad,09,kpp)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-kpp))
 
 
 define KernelPackage/crypto-acompress
