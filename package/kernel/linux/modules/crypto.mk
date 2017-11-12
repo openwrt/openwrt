@@ -330,9 +330,21 @@ endef
 $(eval $(call KernelPackage,crypto-des))
 
 
+define KernelPackage/crypto-acompress
+  TITLE:=Asynchronous Compression operations
+  HIDDEN:=1
+  KCONFIG:=CONFIG_CRYPTO_ACOMP2
+  FILES:=$(LINUX_DIR)/crypto/crypto_acompress.ko
+  AUTOLOAD:=$(call AutoLoad,09,crypto_acompress)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-acompress))
+
+
 define KernelPackage/crypto-deflate
   TITLE:=Deflate compression CryptoAPI module
-  DEPENDS:=+kmod-lib-zlib-inflate +kmod-lib-zlib-deflate
+  DEPENDS:=+kmod-lib-zlib-inflate +kmod-lib-zlib-deflate +LINUX_4_14:kmod-crypto-acompress
   KCONFIG:=CONFIG_CRYPTO_DEFLATE
   FILES:=$(LINUX_DIR)/crypto/deflate.ko
   AUTOLOAD:=$(call AutoLoad,09,deflate)
