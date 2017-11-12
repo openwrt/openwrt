@@ -22,8 +22,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
-@@ -198,6 +199,10 @@ static int m25p_probe(struct spi_device
- 	enum read_mode mode = SPI_NOR_NORMAL;
+@@ -243,6 +244,10 @@ static int m25p_probe(struct spi_device
+ 	};
  	char *flash_name;
  	int ret;
 +	const char __maybe_unused	*of_mtd_name = NULL;
@@ -33,7 +33,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	data = dev_get_platdata(&spi->dev);
  
-@@ -227,6 +232,8 @@ static int m25p_probe(struct spi_device
+@@ -281,6 +286,8 @@ static int m25p_probe(struct spi_device
  
  	if (data && data->name)
  		nor->mtd.name = data->name;

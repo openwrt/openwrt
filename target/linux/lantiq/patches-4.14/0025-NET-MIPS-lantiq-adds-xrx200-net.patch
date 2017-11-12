@@ -16,7 +16,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -104,7 +104,13 @@ config LANTIQ_ETOP
+@@ -107,7 +107,13 @@ config LANTIQ_ETOP
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
  	---help---
@@ -33,7 +33,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
  source "drivers/net/ethernet/mediatek/Kconfig"
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -46,6 +46,7 @@ obj-$(CONFIG_NET_VENDOR_XSCALE) += xscal
+@@ -50,6 +50,7 @@ obj-$(CONFIG_NET_VENDOR_XSCALE) += xscal
  obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1851 @@
+@@ -0,0 +1,1887 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -240,6 +240,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +#include <linux/of_net.h>
 +#include <linux/of_mdio.h>
 +#include <linux/of_gpio.h>
++#include <linux/of_platform.h>
 +
 +#include <xway_dma.h>
 +#include <lantiq_soc.h>
@@ -1460,15 +1461,11 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +static void xrx200_mdio_link(struct net_device *dev)
 +{
 +	struct xrx200_priv *priv = netdev_priv(dev);
-+	bool link = false;
 +	int i;
 +
 +	for (i = 0; i < priv->num_port; i++) {
 +		if (!priv->port[i].phydev)
 +			continue;
-+
-+		if (priv->port[i].phydev->link)
-+			link = true;
 +
 +		if (priv->port[i].link != priv->port[i].phydev->link) {
 +			xrx200_gmac_update(&priv->port[i]);
@@ -1478,8 +1475,6 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +				(priv->port[i].link)?("got"):("lost"));
 +		}
 +	}
-+	if (netif_carrier_ok(dev) && !link)
-+		netif_carrier_off(dev);
 +}
 +
 +static inline int xrx200_mdio_poll(struct mii_bus *bus)
@@ -1525,6 +1520,35 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	return ltq_mdio_r32(MDIO_READ);
 +}
 +
++static int xrx200_phy_has_link(struct net_device *dev)
++{
++	struct xrx200_priv *priv = netdev_priv(dev);
++	int i;
++
++	for (i = 0; i < priv->num_port; i++) {
++		if (!priv->port[i].phydev)
++			continue;
++
++		if (priv->port[i].phydev->link)
++			return 1;
++	}
++
++	return 0;
++}
++
++static void xrx200_phy_link_change(struct phy_device *phydev, bool up, bool do_carrier)
++{
++	struct net_device *netdev = phydev->attached_dev;
++
++	if (do_carrier)
++		if (up)
++			netif_carrier_on(netdev);
++		else if (!xrx200_phy_has_link(netdev))
++			netif_carrier_off(netdev);
++
++	phydev->adjust_link(netdev);
++}
++
 +static int xrx200_mdio_probe(struct net_device *dev, struct xrx200_port *port)
 +{
 +	struct xrx200_priv *priv = netdev_priv(dev);
@@ -1557,7 +1581,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +			| SUPPORTED_TP);
 +	phydev->advertising = phydev->supported;
 +	port->phydev = phydev;
-+	phydev->no_auto_carrier_off = true;
++	phydev->phy_link_change = xrx200_phy_link_change;
 +
 +	phy_attached_info(phydev);
 +
@@ -1880,7 +1904,6 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	.ndo_start_xmit		= xrx200_start_xmit,
 +	.ndo_set_mac_address	= eth_mac_addr,
 +	.ndo_validate_addr	= eth_validate_addr,
-+	.ndo_change_mtu		= eth_change_mtu,
 +	.ndo_get_stats		= xrx200_get_stats,
 +	.ndo_tx_timeout		= xrx200_tx_timeout,
 +};
@@ -1937,7 +1960,9 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +static int xrx200_probe(struct platform_device *pdev)
 +{
 +	struct resource *res[4];
-+	struct device_node *mdio_np, *iface_np;
++	struct device_node *mdio_np, *iface_np, *phy_np;
++	struct of_phandle_iterator it;
++	int err;
 +	int i;
 +
 +	/* load the memory ranges */
@@ -1956,6 +1981,17 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +			!xrx200_mii_membase || !xrx200_pmac_membase) {
 +		dev_err(&pdev->dev, "failed to request and remap io ranges \n");
 +		return -ENOMEM;
++	}
++
++	of_for_each_phandle(&it, err, pdev->dev.of_node, "lantiq,phys", NULL, 0) {
++		phy_np = it.node;
++		if (phy_np) {
++			struct platform_device *phy = of_find_device_by_node(phy_np);
++	
++			of_node_put(phy_np);
++			if (!platform_get_drvdata(phy))
++				return -EPROBE_DEFER;
++		}
 +	}
 +
 +	/* get the clock */

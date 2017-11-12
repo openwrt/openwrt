@@ -41,15 +41,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
-@@ -17,6 +17,7 @@ config SOC_XWAY
+@@ -18,6 +18,7 @@ config SOC_XWAY
  	bool "XWAY"
  	select SOC_TYPE_XWAY
  	select HW_HAS_PCI
 +	select ARCH_SUPPORTS_MSI
+ 	select MFD_SYSCON
+ 	select MFD_CORE
  
- config SOC_FALCON
- 	bool "FALCON"
-@@ -47,6 +48,15 @@ config PCI_LANTIQ
+@@ -50,6 +51,15 @@ config PCI_LANTIQ
  	bool "PCI Support"
  	depends on SOC_XWAY && PCI
  
@@ -67,7 +67,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on SOC_XWAY
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -48,6 +48,8 @@ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o
+@@ -49,6 +49,8 @@ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o
  obj-$(CONFIG_SOC_MT7620)	+= pci-mt7620.o
  obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
@@ -176,7 +176,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 @@ -25,5 +31,10 @@ int pcibios_plat_dev_init(struct pci_dev
  
- int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+ int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
  {
 +#ifdef CONFIG_PCIE_LANTIQ
 +	if (pci_find_capability(dev, PCI_CAP_ID_EXP))
@@ -4143,7 +4143,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- a/arch/mips/pci/pci-legacy.c
 +++ b/arch/mips/pci/pci-legacy.c
-@@ -300,3 +300,30 @@ char *__init pcibios_setup(char *str)
+@@ -309,3 +309,30 @@ char *__init pcibios_setup(char *str)
  		return pcibios_plat_setup(str);
  	return str;
  }
@@ -5494,7 +5494,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	  (transaction layer end-to-end CRC checking).
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1250,6 +1250,8 @@ void pci_walk_bus(struct pci_bus *top, i
+@@ -1300,6 +1300,8 @@ void pci_walk_bus(struct pci_bus *top, i
  		  void *userdata);
  int pci_cfg_space_size(struct pci_dev *dev);
  unsigned char pci_bus_max_busnr(struct pci_bus *bus);
@@ -5505,7 +5505,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  					 unsigned long type);
 --- a/include/linux/pci_ids.h
 +++ b/include/linux/pci_ids.h
-@@ -1056,6 +1056,12 @@
+@@ -1061,6 +1061,12 @@
  #define PCI_DEVICE_ID_SGI_LITHIUM	0x1002
  #define PCI_DEVICE_ID_SGI_IOC4		0x100a
  

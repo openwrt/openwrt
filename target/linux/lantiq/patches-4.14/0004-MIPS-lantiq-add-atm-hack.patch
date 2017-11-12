@@ -431,7 +431,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include <asm/bootinfo.h>
  #include <asm/irq_cpu.h>
-@@ -100,6 +101,7 @@ void ltq_mask_and_ack_irq(struct irq_dat
+@@ -96,6 +97,7 @@ void ltq_mask_and_ack_irq(struct irq_dat
  	ltq_icu_w32(im, ltq_icu_r32(im, ier) & ~BIT(offset), ier);
  	ltq_icu_w32(im, BIT(offset), isr);
  }
@@ -441,7 +441,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
 --- a/arch/mips/mm/cache.c
 +++ b/arch/mips/mm/cache.c
-@@ -63,6 +63,8 @@ void (*_dma_cache_wback)(unsigned long s
+@@ -64,6 +64,8 @@ void (*_dma_cache_wback)(unsigned long s
  void (*_dma_cache_inv)(unsigned long start, unsigned long size);
  
  EXPORT_SYMBOL(_dma_cache_wback_inv);
@@ -452,7 +452,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 --- a/include/uapi/linux/atm.h
 +++ b/include/uapi/linux/atm.h
-@@ -130,8 +130,14 @@
+@@ -131,8 +131,14 @@
  #define ATM_ABR		4
  #define ATM_ANYCLASS	5		/* compatible with everything */
  
@@ -469,16 +469,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	int		max_pcr;	/* maximum PCR in cells per second */
 --- a/net/atm/common.c
 +++ b/net/atm/common.c
-@@ -62,11 +62,17 @@ static void vcc_remove_socket(struct soc
+@@ -62,10 +62,16 @@ static void vcc_remove_socket(struct soc
  	write_unlock_irq(&vcc_sklist_lock);
  }
  
 +struct sk_buff* (*ifx_atm_alloc_tx)(struct atm_vcc *, unsigned int) = NULL;
 +EXPORT_SYMBOL(ifx_atm_alloc_tx);
 +
- static struct sk_buff *alloc_tx(struct atm_vcc *vcc, unsigned int size)
+ static bool vcc_tx_ready(struct atm_vcc *vcc, unsigned int size)
  {
- 	struct sk_buff *skb;
  	struct sock *sk = sk_atm(vcc);
  
 +	if (ifx_atm_alloc_tx != NULL)
@@ -489,7 +488,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			 sk_wmem_alloc_get(sk), size, sk->sk_sndbuf);
 --- a/net/atm/proc.c
 +++ b/net/atm/proc.c
-@@ -154,7 +154,7 @@ static void *vcc_seq_next(struct seq_fil
+@@ -155,7 +155,7 @@ static void *vcc_seq_next(struct seq_fil
  static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
  {
  	static const char *const class_name[] = {

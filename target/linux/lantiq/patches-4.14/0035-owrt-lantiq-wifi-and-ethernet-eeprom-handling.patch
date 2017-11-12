@@ -27,14 +27,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #endif /* _LTQ_XWAY_H__ */
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -8,4 +8,7 @@ endif
+@@ -7,3 +7,6 @@ obj-y += timer.o
+ endif
  
  obj-y += vmmc.o
- 
++
 +obj-y += eth_mac.o
 +obj-$(CONFIG_PCI) += ath5k_eep.o
-+
- obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath5k_eep.c
 @@ -0,0 +1,136 @@
@@ -204,7 +203,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +early_param("ethaddr", setup_ethaddr);
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
-@@ -794,7 +794,11 @@ ltq_etop_init(struct net_device *dev)
+@@ -783,7 +783,11 @@ ltq_etop_init(struct net_device *dev)
  	if (err)
  		goto err_hw;
  

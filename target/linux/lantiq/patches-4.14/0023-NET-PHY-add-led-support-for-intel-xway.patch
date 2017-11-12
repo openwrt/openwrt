@@ -24,34 +24,34 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	/* store the led values if one was passed by the devicetree */
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,ledch", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LEDCH, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LEDCH, tmp);
 +
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,ledcl", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LEDCL, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LEDCL, tmp);
 +
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,led0h", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LED0H, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED0H, tmp);
 +
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,led0l", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LED0L, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED0L, tmp);
 +
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,led1h", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LED1H, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED1H, tmp);
 +
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,led1l", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LED1L, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED1L, tmp);
 +
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,led2h", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LED3H, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED3H,  tmp);
 +
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,led2l", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LED3L, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED3L, tmp);
 +
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,led3h", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LED3H, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED3H, tmp);
 +
 +	if (!of_property_read_u32(phydev->mdio.dev.of_node, "lantiq,led3l", &tmp))
-+		phy_write_mmd_indirect(phydev, XWAY_MMD_LED3L, MDIO_MMD_VEND2, tmp);
++		phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED3L, tmp);
 +
 +	return 0;
 +}
@@ -66,8 +66,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	int err;
 @@ -190,6 +235,7 @@ static int xway_gphy_config_init(struct
- 	phy_write_mmd_indirect(phydev, XWAY_MMD_LED2H, MDIO_MMD_VEND2, ledxh);
- 	phy_write_mmd_indirect(phydev, XWAY_MMD_LED2L, MDIO_MMD_VEND2, ledxl);
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED2H, ledxh);
+ 	phy_write_mmd(phydev, MDIO_MMD_VEND2, XWAY_MMD_LED2L, ledxl);
  
 +	vr9_gphy_of_reg_init(phydev);
  	return 0;

@@ -71,9 +71,9 @@
 +	};
 +	const char **type;
  
- 	if (of_machine_is_compatible("lantiq,falcon") &&
- 			(ltq_boot_select() != BS_FLASH)) {
-@@ -126,75 +162,89 @@ ltq_mtd_probe(struct platform_device *pd
+ 	ltq_mtd = devm_kzalloc(&pdev->dev, sizeof(struct ltq_mtd), GFP_KERNEL);
+ 	if (!ltq_mtd)
+@@ -120,75 +156,89 @@ ltq_mtd_probe(struct platform_device *pd
  
  	platform_set_drvdata(pdev, ltq_mtd);
  
@@ -141,17 +141,7 @@
 -				    GFP_KERNEL);
 -	if (!ltq_mtd->map)
 -		return -ENOMEM;
-+	if (devices_found == 1) {
-+		ltq_mtd->cmtd = ltq_mtd->mtd[0];
-+	} else if (devices_found > 1) {
-+		/*
-+		 * We detected multiple devices. Concatenate them together.
-+		 */
-+		ltq_mtd->cmtd = mtd_concat_create(ltq_mtd->mtd, devices_found, dev_name(&pdev->dev));
-+		if (ltq_mtd->cmtd == NULL)
-+			err = -ENXIO;
-+	}
- 
+-
 -	if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
 -		ltq_mtd->map->phys = NO_XIP;
 -	else
@@ -176,8 +166,17 @@
 -	if (!ltq_mtd->mtd) {
 -		dev_err(&pdev->dev, "probing failed\n");
 -		return -ENXIO;
--	}
--
++	if (devices_found == 1) {
++		ltq_mtd->cmtd = ltq_mtd->mtd[0];
++	} else if (devices_found > 1) {
++		/*
++		 * We detected multiple devices. Concatenate them together.
++		 */
++		ltq_mtd->cmtd = mtd_concat_create(ltq_mtd->mtd, devices_found, dev_name(&pdev->dev));
++		if (ltq_mtd->cmtd == NULL)
++			err = -ENXIO;
+ 	}
+ 
 -	ltq_mtd->mtd->dev.parent = &pdev->dev;
 -	mtd_set_of_node(ltq_mtd->mtd, pdev->dev.of_node);
 -
