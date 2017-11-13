@@ -812,7 +812,11 @@ struct sk_buff* atm_alloc_tx(struct atm_vcc *vcc, unsigned int size)
 		return NULL;
 	}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,13,0))
+	refcount_add(skb->truesize, &sk_atm(vcc)->sk_wmem_alloc);
+#else
 	atomic_add(skb->truesize, &sk_atm(vcc)->sk_wmem_alloc);
+#endif
 
 	return skb;
 }
