@@ -284,7 +284,7 @@ static ssize_t otrx_create_align(FILE *trx, size_t curr_offset, size_t alignment
 
 static int otrx_create_write_hdr(FILE *trx, struct trx_header *hdr) {
 	size_t bytes, length;
-	uint8_t *buf;
+	uint8_t buf[1024];
 	uint32_t crc32;
 
 	hdr->magic = cpu_to_le32(TRX_MAGIC);
@@ -299,20 +299,13 @@ static int otrx_create_write_hdr(FILE *trx, struct trx_header *hdr) {
 
 	length = le32_to_cpu(hdr->length);
 
-	buf = malloc(length);
-	if (!buf) {
-		fprintf(stderr, "Couldn't alloc %zu B buffer\n", length);
-		return -ENOMEM;
+	crc32 = 0xffffffff;
+	fseek(trx, TRX_FLAGS_OFFSET, SEEK_SET);
+	length -= TRX_FLAGS_OFFSET;
+	while ((bytes = fread(buf, 1, otrx_min(sizeof(buf), length), trx)) > 0) {
+		crc32 = otrx_crc32(crc32, buf, bytes);
+		length -= bytes;
 	}
-
-	fseek(trx, 0, SEEK_SET);
-	bytes = fread(buf, 1, length, trx);
-	if (bytes != length) {
-		fprintf(stderr, "Couldn't read %zu B of data from %s\n", length, trx_path);
-		return -ENOMEM;
-	}
-
-	crc32 = otrx_crc32(0xffffffff, buf + TRX_FLAGS_OFFSET, length - TRX_FLAGS_OFFSET);
 	hdr->crc32 = cpu_to_le32(crc32);
 
 	fseek(trx, 0, SEEK_SET);
