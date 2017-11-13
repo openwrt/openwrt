@@ -118,9 +118,9 @@
  	      string ? string : "",
  	      err ? err : "");
 +  if (!strcmp(type, "DHCPACK"))
-+	  ubus_event_bcast("dhcp.ack", addr ? inet_ntoa(a) : NULL, daemon->namebuff, string ? string : NULL);
++	  ubus_event_bcast("dhcp.ack", daemon->namebuff, addr ? inet_ntoa(a) : NULL, string ? string : NULL);
 +  else if (!strcmp(type, "DHCPRELEASE"))
-+	  ubus_event_bcast("dhcp.release", addr ? inet_ntoa(a) : NULL, daemon->namebuff, string ? string : NULL);
++	  ubus_event_bcast("dhcp.release", daemon->namebuff, addr ? inet_ntoa(a) : NULL, string ? string : NULL);
  }
  
  static void log_options(unsigned char *start, u32 xid)
