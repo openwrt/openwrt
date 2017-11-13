@@ -1,7 +1,7 @@
 /*
  * otrx
  *
- * Copyright (C) 2015 Rafał Miłecki <zajec5@gmail.com>
+ * Copyright (C) 2015-2017 Rafał Miłecki <zajec5@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -407,6 +407,12 @@ static int otrx_create(int argc, char **argv) {
 		if (err)
 			break;
 	}
+
+	sbytes = otrx_create_align(trx, curr_offset, 0x1000);
+	if (sbytes < 0)
+		fprintf(stderr, "Failed to append zeros\n");
+	else
+		curr_offset += sbytes;
 
 	hdr.length = curr_offset;
 	otrx_create_write_hdr(trx, &hdr);
