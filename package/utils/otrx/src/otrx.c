@@ -124,9 +124,7 @@ static const uint32_t crc32_tbl[] = {
 	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d,
 };
 
-uint32_t otrx_crc32(uint8_t *buf, size_t len) {
-	uint32_t crc = 0xffffffff;
-
+uint32_t otrx_crc32(uint32_t crc, uint8_t *buf, size_t len) {
 	while (len) {
 		crc = crc32_tbl[(crc ^ *buf) & 0xff] ^ (crc >> 8);
 		buf++;
@@ -158,7 +156,6 @@ static int otrx_check(int argc, char **argv) {
 	size_t bytes, length;
 	uint8_t buf[1024];
 	uint32_t crc32;
-	int i;
 	int err = 0;
 
 	if (argc < 3) {
@@ -203,8 +200,7 @@ static int otrx_check(int argc, char **argv) {
 	fseek(trx, trx_offset + TRX_FLAGS_OFFSET, SEEK_SET);
 	length -= TRX_FLAGS_OFFSET;
 	while ((bytes = fread(buf, 1, otrx_min(sizeof(buf), length), trx)) > 0) {
-		for (i = 0; i < bytes; i++)
-			crc32 = crc32_tbl[(crc32 ^ buf[i]) & 0xff] ^ (crc32 >> 8);
+		crc32 = otrx_crc32(crc32, buf, bytes);
 		length -= bytes;
 	}
 
@@ -316,7 +312,7 @@ static int otrx_create_write_hdr(FILE *trx, struct trx_header *hdr) {
 		return -ENOMEM;
 	}
 
-	crc32 = otrx_crc32(buf + TRX_FLAGS_OFFSET, length - TRX_FLAGS_OFFSET);
+	crc32 = otrx_crc32(0xffffffff, buf + TRX_FLAGS_OFFSET, length - TRX_FLAGS_OFFSET);
 	hdr->crc32 = cpu_to_le32(crc32);
 
 	fseek(trx, 0, SEEK_SET);
