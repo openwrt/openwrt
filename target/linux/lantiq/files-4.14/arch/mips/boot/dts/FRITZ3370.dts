@@ -3,6 +3,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
 	compatible = "avm,fritz3370", "lantiq,xway", "lantiq,vr9";
@@ -24,12 +25,6 @@
 
 	memory@0 {
 		reg = <0x0 0x8000000>;
-	};
-
-	gphy-xrx200 {
-		compatible = "lantiq,phy-xrx200";
-		firmware = "lantiq/xrx200_phy11g_a14.bin";
-		phys = [ 00 01 ];
 	};
 
 	gpio-keys-polled {
@@ -145,6 +140,14 @@
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
+};
+
+&gphy0 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+};
+
+&gphy1 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
 };
 
 &gpio {
@@ -280,9 +283,14 @@
 	};
 };
 
+/*
+ * TODO: add phy-supply, gpio 5 GPIO_ACTIVE_HIGH and gpio 14 GPIO_ACTIVE_HIGH are
+ * related
+ */
+&usb_phy0 {
+	status = "okay";
+};
+
 &usb0 {
 	status = "okay";
-	gpios = <&gpio 5 GPIO_ACTIVE_HIGH
-		&gpio 14 GPIO_ACTIVE_HIGH>;
-	lantiq,portmask = <0x3>;
 };

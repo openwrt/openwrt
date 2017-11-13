@@ -3,6 +3,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
 	compatible = "arcadyan,vg3503j", "lantiq,xway", "lantiq,vr9";
@@ -22,13 +23,6 @@
 
 	memory@0 {
 		reg = <0x0 0x2000000>;
-	};
-
-	gphy-xrx200 {
-		compatible = "lantiq,phy-xrx200";
-		firmware1 = "lantiq/xrx200_phy11g_a14.bin";	/*VR9 1.1*/
-		firmware2 = "lantiq/xrx200_phy11g_a22.bin";	/*VR9 1.2*/
-		phys = [ 00 01 ];
 	};
 
 	gpio-keys-polled {
@@ -107,6 +101,14 @@
 			lantiq,led2l = <0x03>;
 		};
 	};
+};
+
+&gphy0 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+};
+
+&gphy1 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
 };
 
 &gpio {

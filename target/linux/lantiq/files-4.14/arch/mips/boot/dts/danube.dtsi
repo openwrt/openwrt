@@ -83,8 +83,36 @@
 		};
 
 		rcu0: rcu@203000 {
-			compatible = "lantiq,rcu-xway";
+			compatible = "lantiq,danube-rcu", "simple-mfd", "syscon";
 			reg = <0x203000 0x1000>;
+			ranges = <0x0 0x203000 0x100>;
+			big-endian;
+
+			reset: reset-controller@10 {
+				compatible = "lantiq,danube-reset";
+				reg = <0x10 4>, <0x14 4>;
+
+				#reset-cells = <2>;
+			};
+
+			usb_phy: usb2-phy@18 {
+				compatible = "lantiq,danube-usb2-phy";
+				reg = <0x18 4>;
+				status = "disabled";
+
+				resets = <&reset 4 4>;
+				reset-names = "ctrl";
+				#phy-cells = <0>;
+			};
+
+			reboot@10 {
+				compatible = "syscon-reboot";
+				reg = <0x10 4>;
+
+				regmap = <&rcu0>;
+				offset = <0x10>;
+				mask = <0x40000000>;
+			};
 		};
 	};
 
@@ -152,13 +180,15 @@
 			interrupts = <112 113 114>;
 		};
 
-		usb: ifxhcd@e101000 {
-			compatible = "lantiq,danube-usb", "lantiq,ifxhcd-danube";
+		usb: usb@e101000 {
+			compatible = "lantiq,danube-usb";
 			reg = <0xe101000 0x1000
 				0xe120000 0x3f000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <62>;
 			dr_mode = "host";
+			phys = <&usb_phy>;
+			phy-names = "usb2-phy";
 			status = "disabled";
 		};
 

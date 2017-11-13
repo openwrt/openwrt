@@ -128,6 +128,18 @@
 			lantiq,function = "mdio";
 		};
 	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 };
 
 &gsw {
@@ -172,7 +184,11 @@
 	lantiq,groups = <0x3>;
 };
 
+&usb_phy0 {
+	status = "okay";
+	phy-supply = <&usb_vbus>;
+};
+
 &usb0 {
 	status = "okay";
-	gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 };

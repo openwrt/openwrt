@@ -1,6 +1,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
 	compatible = "arcadyan,vgv7510kw22", "lantiq,xway", "lantiq,vr9";
@@ -21,13 +22,6 @@
 
 	memory@0 {
 		reg = <0x0 0x4000000>;
-	};
-
-	gphy-xrx200 {
-		compatible = "lantiq,phy-xrx200";
-		firmware1 = "lantiq/xrx200_phy22f_a14.bin";	/*VR9 1.1*/
-		firmware2 = "lantiq/xrx200_phy22f_a22.bin";	/*VR9 1.2*/
-		phys = [ 00 01 ];
 	};
 
 	gpio-keys-polled {
@@ -97,6 +91,18 @@
 			label = "vgv7510kw22:green:telefon";
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 47 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 };
 
@@ -171,6 +177,14 @@
 	};
 };
 
+&gphy0 {
+	lantiq,gphy-mode = <GPHY_MODE_FE>;
+};
+
+&gphy1 {
+	lantiq,gphy-mode = <GPHY_MODE_FE>;
+};
+
 &gpio {
 	pinctrl-names = "default";
 	pinctrl-0 = <&state_default>;
@@ -237,9 +251,13 @@
 	status = "disabled";
 };
 
+&usb_phy0 {
+	status = "okay";
+	phy-supply = <&usb_vbus>;
+};
+
 &usb0 {
 	status = "okay";
-	gpios = <&gpio 47 GPIO_ACTIVE_HIGH>;
 };
 
 &vmmc {

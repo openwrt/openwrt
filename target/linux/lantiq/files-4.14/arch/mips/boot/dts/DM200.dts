@@ -3,6 +3,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
 	compatible = "netgear,dm200", "lantiq,xway", "lantiq,vr9";
@@ -22,12 +23,6 @@
 
 	memory@0 {
 		reg = <0x0 0x4000000>;
-	};
-
-	gphy-xrx200 {
-		compatible = "lantiq,phy-xrx200";
-		firmware = "lantiq/xrx200_phy22f_a22.bin";
-		phys = [ 01 ];
 	};
 
 	gpio-keys-polled {
@@ -91,6 +86,8 @@
 };
 
 &eth0 {
+	lantiq,phys = <&gphy1>;
+
 	lan: interface@0 {
 		compatible = "lantiq,xrx200-pdi";
 		#address-cells = <1>;
@@ -116,6 +113,10 @@
 			compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
 		};
 	};
+};
+
+&gphy1 {
+	lantiq,gphy-mode = <GPHY_MODE_FE>;
 };
 
 &gpio {

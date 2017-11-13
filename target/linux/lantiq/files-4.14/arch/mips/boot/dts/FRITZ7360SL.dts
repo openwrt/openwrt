@@ -3,6 +3,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
 	compatible = "avm,fritz7360sl", "lantiq,xway", "lantiq,vr9";
@@ -23,12 +24,6 @@
 
 	memory@0 {
 		reg = <0x0 0x8000000>;
-	};
-
-	gphy-xrx200 {
-		compatible = "lantiq,phy-xrx200";
-		firmware = "lantiq/xrx200_phy11g_a22.bin";
-		phys = [ 00 01 ];
 	};
 
 	gpio-keys-polled {
@@ -142,6 +137,14 @@
 	};
 };
 
+&gphy0 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+};
+
+&gphy1 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+};
+
 &gpio {
 	pinctrl-names = "default";
 	pinctrl-0 = <&state_default>;
@@ -219,9 +222,16 @@
 	};
 };
 
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb_phy1 {
+	status = "okay";
+};
+
 &usb0 {
 	status = "okay";
-	lantiq,portmask = <0x3>;
 };
 
 &usb1 {

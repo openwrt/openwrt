@@ -1,6 +1,7 @@
 #include "vr9.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
 
 / {
 	compatible = "zyxel,p-2812hnu", "lantiq,xway", "lantiq,vr9";
@@ -21,13 +22,6 @@
 
 	memory@0 {
 		reg = <0x0 0x8000000>;
-	};
-
-	gphy-xrx200 {
-		compatible = "lantiq,phy-xrx200";
-		firmware1 = "lantiq/xrx200_phy11g_a14.bin";	/*VR9 1.1*/
-		firmware2 = "lantiq/xrx200_phy11g_a22.bin";	/*VR9 1.2*/
-		phys = [ 00 01 ];
 	};
 
 	gpio-keys-polled {
@@ -102,6 +96,18 @@
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 };
 
 &eth0 {
@@ -172,6 +178,14 @@
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
+};
+
+&gphy0 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
+};
+
+&gphy1 {
+	lantiq,gphy-mode = <GPHY_MODE_GE>;
 };
 
 &gpio {
@@ -264,13 +278,20 @@
 	lantiq,phy2 = <0x0>;
 };
 
+&usb_phy0 {
+	status = "okay";
+	phy-supply = <&usb_vbus>;
+};
+
+&usb_phy1 {
+	status = "okay";
+	phy-supply = <&usb_vbus>;
+};
+
 &usb0 {
 	status = "okay";
-	gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
-	lantiq,portmask = <0x3>;
 };
 
 &usb1 {
 	status = "okay";
-	gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 };
