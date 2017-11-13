@@ -346,7 +346,7 @@ static int otrx_create(int argc, char **argv) {
 	fseek(trx, curr_offset, SEEK_SET);
 
 	optind = 3;
-	while ((c = getopt(argc, argv, "f:b:")) != -1) {
+	while ((c = getopt(argc, argv, "f:A:a:b:")) != -1) {
 		switch (c) {
 		case 'f':
 			if (curr_idx >= TRX_MAX_PARTS) {
@@ -369,6 +369,27 @@ static int otrx_create(int argc, char **argv) {
 			else
 				curr_offset += sbytes;
 
+			break;
+		case 'A':
+			sbytes = otrx_create_append_file(trx, optarg);
+			if (sbytes < 0) {
+				fprintf(stderr, "Failed to append file %s\n", optarg);
+			} else {
+				curr_offset += sbytes;
+			}
+
+			sbytes = otrx_create_align(trx, curr_offset, 4);
+			if (sbytes < 0)
+				fprintf(stderr, "Failed to append zeros\n");
+			else
+				curr_offset += sbytes;
+			break;
+		case 'a':
+			sbytes = otrx_create_align(trx, curr_offset, strtol(optarg, NULL, 0));
+			if (sbytes < 0)
+				fprintf(stderr, "Failed to append zeros\n");
+			else
+				curr_offset += sbytes;
 			break;
 		case 'b':
 			sbytes = strtol(optarg, NULL, 0) - curr_offset;
@@ -541,6 +562,8 @@ static void usage() {
 	printf("Creating new TRX file:\n");
 	printf("\totrx create <file> [options] [partitions]\n");
 	printf("\t-f file\t\t\t\t[partition] start new partition with content copied from file\n");
+	printf("\t-A file\t\t\t\t[partition] append current partition with content copied from file\n");
+	printf("\t-a alignment\t\t\t[partition] align current partition\n");
 	printf("\t-b offset\t\t\t[partition] append zeros to partition till reaching absolute offset\n");
 	printf("\n");
 	printf("Extracting from TRX file:\n");
