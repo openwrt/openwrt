@@ -151,6 +151,8 @@ hostapd_common_add_bss_config() {
 		wpa_group_rekey wpa_pair_rekey wpa_master_rekey
 	config_add_boolean wpa_disable_eapol_key_retries
 
+	config_add_boolean tdls_prohibit
+
 	config_add_boolean rsn_preauth auth_cache
 	config_add_int ieee80211w
 	config_add_int eapol_version
@@ -215,7 +217,7 @@ hostapd_set_bss_options() {
 
 	json_get_vars \
 		wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey \
-		wpa_disable_eapol_key_retries \
+		wpa_disable_eapol_key_retries tdls_prohibit \
 		maxassoc max_inactivity disassoc_low_ack isolate auth_cache \
 		wps_pushbutton wps_label ext_registrar wps_pbc_in_m1 wps_ap_setup_locked \
 		wps_independent wps_device_type wps_device_name wps_manufacturer wps_pin \
@@ -232,6 +234,7 @@ hostapd_set_bss_options() {
 	set_default wmm 1
 	set_default uapsd 1
 	set_default wpa_disable_eapol_key_retries 0
+	set_default tdls_prohibit 0
 	set_default eapol_version 0
 	set_default acct_port 1813
 
@@ -251,6 +254,8 @@ hostapd_set_bss_options() {
 	append bss_conf "wmm_enabled=$wmm" "$N"
 	append bss_conf "ignore_broadcast_ssid=$hidden" "$N"
 	append bss_conf "uapsd_advertisement_enabled=$uapsd" "$N"
+
+	[ "$tdls_prohibit" -gt 0 ] && append bss_conf "tdls_prohibit=$tdls_prohibit" "$N"
 
 	[ "$wpa" -gt 0 ] && {
 		[ -n "$wpa_group_rekey"  ] && append bss_conf "wpa_group_rekey=$wpa_group_rekey" "$N"
