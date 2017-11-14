@@ -594,8 +594,31 @@ EOF
 	return 0
 }
 
+wpa_supplicant_set_fixed_freq() {
+	local freq="$1"
+	local htmode="$2"
+
+	append network_data "fixed_freq=1" "$N$T"
+	append network_data "frequency=$freq" "$N$T"
+	case "$htmode" in
+		NOHT) append network_data "disable_ht=1" "$N$T";;
+		HT20|VHT20) append network_data "disable_ht40=1" "$N$T";;
+		HT40*|VHT40*|VHT80*|VHT160*) append network_data "ht40=1" "$N$T";;
+	esac
+	case "$htmode" in
+		VHT*) append network_data "vht=1" "$N$T";;
+	esac
+	case "$htmode" in
+		VHT80) append network_data "max_oper_chwidth=1" "$N$T";;
+		VHT160) append network_data "max_oper_chwidth=2" "$N$T";;
+		*) append network_data "max_oper_chwidth=0" "$N$T";;
+	esac
+}
+
 wpa_supplicant_add_network() {
 	local ifname="$1"
+	local freq="$2"
+	local htmode="$3"
 
 	_wpa_supplicant_common "$1"
 	wireless_vif_parse_encryption
@@ -617,11 +640,7 @@ wpa_supplicant_add_network() {
 
 	[[ "$_w_mode" = "adhoc" ]] && {
 		append network_data "mode=1" "$N$T"
-		[ -n "$channel" ] && {
-			freq="$(get_freq "$phy" "$channel")"
-			append network_data "fixed_freq=1" "$N$T"
-			append network_data "frequency=$freq" "$N$T"
-		}
+		[ -n "$channel" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
 
 		scan_ssid="scan_ssid=0"
 
@@ -633,10 +652,7 @@ wpa_supplicant_add_network() {
 		ssid="${mesh_id}"
 
 		append network_data "mode=5" "$N$T"
-		[ -n "$channel" ] && {
-			freq="$(get_freq "$phy" "$channel")"
-			append network_data "frequency=$freq" "$N$T"
-		}
+		[ -n "$channel" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
 		append wpa_key_mgmt "SAE"
 		scan_ssid=""
 	}
