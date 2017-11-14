@@ -1,6 +1,7 @@
 /*
  *  MikroTik SPI-NOR RouterBOARDs support
  *
+ *  - MikroTik RouterBOARD mAP 2nD
  *  - MikroTik RouterBOARD mAP L-2nD
  *  - MikroTik RouterBOARD 941L-2nD
  *  - MikroTik RouterBOARD 951Ui-2nD
@@ -14,7 +15,6 @@
  *
  *  Preliminary support for the following hardware
  *  - MikroTik RouterBOARD cAP2nD
- *  - MikroTik RouterBOARD mAP2nD
  *  Furthermore, the cAP lite (cAPL2nD) appears to feature the exact same
  *  hardware as the mAP L-2nD. It is unknown if they share the same board
  *  identifier.
@@ -405,7 +405,7 @@ static struct gpio_led rbmap_leds[] __initdata = {
 		.active_low = 1,
 	}, {
 		.name = "rb:green:eth2",
-		.gpio = RBMAP_GPIO_LED_WLAN,
+		.gpio = RBMAP_GPIO_LED_LAN2,
 		.active_low = 1,
 	}, {
 		.name = "rb:red:poe_out",
@@ -920,13 +920,14 @@ static void __init rbcap_setup(void)
 }
 
 /*
- * Init the mAP hardware (EXPERIMENTAL).
- * The mAP 2nD has two ethernet ports, PoE output and an SSR for LED
- * multiplexing.
+ * Init the mAP hardware.
+ * The mAP 2nD has two ethernet ports, PoE output, SSR for LED
+ * multiplexing and USB port.
  */
 static void __init rbmap_setup(void)
 {
-	u32 flags = RBSPI_HAS_WLAN0 | RBSPI_HAS_SSR | RBSPI_HAS_POE;
+	u32 flags = RBSPI_HAS_USB | RBSPI_HAS_WLAN0 |
+			RBSPI_HAS_SSR | RBSPI_HAS_POE;
 
 	if (rbspi_platform_setup())
 		return;
@@ -939,10 +940,22 @@ static void __init rbmap_setup(void)
 
 	if (flags & RBSPI_HAS_POE)
 		gpio_request_one(RBMAP_GPIO_POE_POWER,
-				GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+				GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED,
 				"POE power");
 
+	/* USB power GPIO is inverted, set GPIOF_ACTIVE_LOW for consistency */
+	if (flags & RBSPI_HAS_USB)
+		gpio_request_one(RBMAP_GPIO_USB_POWER,
+				GPIOF_OUT_INIT_HIGH | GPIOF_ACTIVE_LOW |
+					GPIOF_EXPORT_DIR_FIXED,
+				"USB power");
+
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(rbmap_leds), rbmap_leds);
+
+	/* mAP 2nD has a single reset button as gpio 16 */
+	ath79_register_gpio_keys_polled(-1, RBSPI_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(rbspi_gpio_keys_reset16),
+					rbspi_gpio_keys_reset16);
 }
 
 

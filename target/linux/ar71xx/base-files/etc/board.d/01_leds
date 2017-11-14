@@ -320,6 +320,12 @@ rb-lhg-5nd)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "rb:green:rssi3" "wlan0" "60" "100" "-59" "13"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "rb:green:rssi4" "wlan0" "80" "100" "-79" "13"
 	;;
+rb-map-2nd)
+	ucidef_set_led_switch "eth1" "WAN" "rb:green:eth1" "switch0" "0x02"
+	ucidef_set_led_switch "eth2" "LAN" "rb:green:eth2" "switch0" "0x04"
+	ucidef_set_led_gpio "poe" "POE" "rb:red:poe_out" "14" "0"
+	ucidef_set_led_wlan "wlan" "WLAN" "rb:green:wlan" "phy0tpt"
+	;;
 rb-mapl-2nd)
 	ucidef_set_led_default "power" "POWER" "rb:green:power" "1"
 	ucidef_set_led_netdev "lan" "LAN" "rb:green:eth" "eth0"
