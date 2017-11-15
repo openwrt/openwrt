@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(LEDE_GIT)/project/odhcpd.git
-PKG_SOURCE_DATE:=2017-09-16
-PKG_SOURCE_VERSION:=f0bce9cdd0f2d0e21e0d64cb7b653521d18040e2
-PKG_MIRROR_HASH:=c008f339eca7ff24158535ed4be2319164b5f970e06f64fce18ef772358b44a8
+PKG_SOURCE_DATE:=2017-11-09
+PKG_SOURCE_VERSION:=fd80621fea5cafcdca3f7fe762fede374a66e4b2
+PKG_MIRROR_HASH:=150683aa71021b5721ca177b4d0449c3e2bbf7ee696aafde0229c81e5ce50f00
 
 PKG_MAINTAINER:=Hans Dedecker <dedeckeh@gmail.com>
 PKG_LICENSE:=GPL-2.0
@@ -24,11 +24,6 @@ include $(INCLUDE_DIR)/cmake.mk
 
 CMAKE_OPTIONS += -DUBUS=1
 
-ifneq ($(CONFIG_PACKAGE_odhcpd_ext_cer_id),0)
-  CMAKE_OPTIONS += -DEXT_CER_ID=$(CONFIG_PACKAGE_odhcpd_ext_cer_id)
-endif
-
-
 define Package/odhcpd
   SECTION:=net
   CATEGORY:=Network
@@ -37,11 +32,29 @@ define Package/odhcpd
 endef
 
 define Package/odhcpd/config
-  config PACKAGE_odhcpd_ext_cer_id
-    int "CER-ID Extension ID (0 = disabled)"
-    depends on PACKAGE_odhcpd
-    default 0
+menu "Configuration"
+	depends on PACKAGE_odhcpd
+
+config PACKAGE_odhcpd_ext_cer_id
+	int
+	default 0
+	prompt "CER-ID Extension ID (0 = disabled)"
+
+config PACKAGE_odhcpd_dhcpv4_support
+	bool
+	default n
+	prompt "Enable DHCPv4 server support"
+endmenu
 endef
+
+ifneq ($(CONFIG_PACKAGE_odhcpd_ext_cer_id),0)
+  CMAKE_OPTIONS += -DEXT_CER_ID=$(CONFIG_PACKAGE_odhcpd_ext_cer_id)
+endif
+
+ifeq ($(CONFIG_PACKAGE_odhcpd_dhcpv4_support),y)
+  CMAKE_OPTIONS += -DDHCPV4_SUPPORT=1
+endif
+
 
 define Package/odhcpd/description
  odhcpd is a daemon for serving and relaying IP management protocols to
