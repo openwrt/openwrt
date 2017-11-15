@@ -194,6 +194,16 @@ config ATH79_MACH_AP147
 	select ATH79_DEV_WMAC
 	select ATH79_DEV_AP9X_PCI if PCI
 
+config ATH79_MACH_AC9531
+	bool "Atheros AC9531 reference board"
+	select SOC_QCA953X
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+	select ATH79_DEV_AP9X_PCI if PCI
+
 config ATH79_MACH_AP152
 	bool "Atheros AP152 reference board"
 	select SOC_QCA956X

@@ -60,6 +60,22 @@ ap147-010)
 	ucidef_set_led_switch "lan4" "LAN4" "ap147:green:lan4" "switch0" "0x02"
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "ap147:green:wlan-2g" "phy0tpt"
 	;;
+ac9531-010)
+	ucidef_set_led_netdev "wan" "WAN" "ac9531:green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "ac9531:green:lan1" "switch0" "0x02"
+	ucidef_set_led_switch "lan2" "LAN2" "ac9531:green:lan2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "LAN3" "ac9531:green:lan3" "switch0" "0x08"
+	ucidef_set_led_switch "lan4" "LAN4" "ac9531:green:lan4" "switch0" "0x10"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "ac9531:green:wlan-2g" "phy1tpt"
+	;;
+ac9531-020)
+	ucidef_set_led_netdev "wan" "WAN" "ac9531:green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "ac9531:green:lan1" "switch0" "0x10"
+	ucidef_set_led_switch "lan2" "LAN2" "ac9531:green:lan2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "ac9531:green:lan3" "switch0" "0x04"
+	ucidef_set_led_switch "lan4" "LAN4" "ac9531:green:lan4" "switch0" "0x02"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "ac9531:green:wlan-2g" "phy1tpt"
+	;;
 ap90q|\
 cpe505n|\
 cpe830|\

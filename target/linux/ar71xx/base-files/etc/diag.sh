@@ -61,6 +61,10 @@ get_status_led() {
 	ap147-010)
 		status_led="ap147:green:status"
 		;;
+	ac9531-020|\
+	ac9531-010)
+		status_led="ac9531:green:status"
+		;;
 	ap135-020)
 		status_led="ap135:green:status"
 		;;
