@@ -264,8 +264,11 @@ static ssize_t otrx_create_append_zeros(FILE *trx, size_t length) {
 
 	if (fwrite(buf, 1, length, trx) != length) {
 		fprintf(stderr, "Couldn't write %zu B to %s\n", length, trx_path);
+		free(buf);
 		return -EIO;
 	}
+
+	free(buf);
 
 	return length;
 }
