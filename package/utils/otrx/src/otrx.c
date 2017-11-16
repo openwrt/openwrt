@@ -228,9 +228,6 @@ out:
  * Create
  **************************************************/
 
-static void otrx_create_parse_options(int argc, char **argv) {
-}
-
 static ssize_t otrx_create_append_file(FILE *trx, const char *in_path) {
 	FILE *in;
 	size_t bytes;
@@ -333,9 +330,6 @@ static int otrx_create(int argc, char **argv) {
 		goto out;
 	}
 	trx_path = argv[2];
-
-	optind = 3;
-	otrx_create_parse_options(argc, argv);
 
 	trx = fopen(trx_path, "w+");
 	if (!trx) {
