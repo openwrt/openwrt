@@ -56,7 +56,7 @@ Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
  
  	if (txq->sta)
  		tx.sta = container_of(txq->sta, struct sta_info, sta);
-@@ -3790,6 +3791,7 @@ ieee80211_build_data_template(struct iee
+@@ -3795,6 +3796,7 @@ ieee80211_build_data_template(struct iee
  	hdr = (void *)skb->data;
  	tx.sta = sta_info_get(sdata, hdr->addr1);
  	tx.skb = skb;
