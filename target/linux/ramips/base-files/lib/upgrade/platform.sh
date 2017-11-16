@@ -81,7 +81,6 @@ platform_check_image() {
 	kn_rf|\
 	kng_rc|\
 	linkits7688|\
-	linkits7688d|\
 	m2m|\
 	m3|\
 	m4-4M|\

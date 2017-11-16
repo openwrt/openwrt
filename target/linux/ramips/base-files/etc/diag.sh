@@ -170,8 +170,7 @@ get_status_led() {
 	miwifi-nano)
 		status_led="$board:blue:status"
 		;;
-	linkits7688| \
-	linkits7688d)
+	linkits7688)
 		[ "$1" = "upgrade" ] && status_led="mediatek:orange:wifi"
 		;;
 	m2m)

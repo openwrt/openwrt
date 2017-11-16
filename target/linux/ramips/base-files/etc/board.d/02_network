@@ -49,7 +49,6 @@ ramips_setup_interfaces()
 	dcs-930l-b1|\
 	ht-tm02|\
 	linkits7688 | \
-	linkits7688d | \
 	m2m|\
 	microwrt|\
 	mpr-a2|\
@@ -425,8 +424,7 @@ ramips_setup_macs()
 	kng_rc)
 		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
-	linkits7688 | \
-	linkits7688d)
+	linkits7688)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$(mtd_get_mac_binary factory 46)
 		;;
