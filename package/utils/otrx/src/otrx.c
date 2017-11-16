@@ -232,7 +232,7 @@ static ssize_t otrx_create_append_file(FILE *trx, const char *in_path) {
 	FILE *in;
 	size_t bytes;
 	ssize_t length = 0;
-	uint8_t buf[128];
+	uint8_t buf[1024];
 
 	in = fopen(in_path, "r");
 	if (!in) {
