@@ -89,7 +89,7 @@
 	#sound-dai-cells = <0>;
 	status = "okay";
 	pinctrl-names = "default";
-	pinctrl-0 = <&gpio_i2s_pins>, <&wm8960_mclk_pins>;
+	pinctrl-0 = <&wm8960_mclk_pins>;
 };
 
 &spi0 {
@@ -155,6 +155,11 @@
 		gpio {
 			ralink,group = "wdt", "rgmii1";
 			ralink,function = "gpio";
+		};
+
+		gpio_i2s {
+			ralink,group = "uartf";
+			ralink,function = "gpio i2s";
 		};
 
 		pa {
