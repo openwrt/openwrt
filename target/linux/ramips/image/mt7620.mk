@@ -139,7 +139,7 @@ define Device/dch-m225
 	seama-seal -m "signature=wapn22_dlink.2013gui_dap1320b" | \
 	check-size $$$$(IMAGE_SIZE)
   DEVICE_TITLE := D-Link DCH-M225
-  DEVICE_PACKAGES := kmod-mt76
+  DEVICE_PACKAGES := kmod-mt76 kmod-sound-core kmod-sound-mt7620 kmod-i2c-ralink
 endef
 TARGET_DEVICES += dch-m225
 
