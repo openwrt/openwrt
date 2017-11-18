@@ -105,7 +105,9 @@ TARGET_DEVICES += cf-wr800n
 define Device/cs-qr10
   DTS := CS-QR10
   DEVICE_TITLE := Planex CS-QR10
-  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-i2c-core kmod-i2c-ralink kmod-sound-core kmod-sound-mtk kmod-sdhci-mt7620
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci \
+	kmod-sound-core kmod-sound-mt7620 \
+	kmod-i2c-ralink kmod-sdhci-mt7620
 endef
 TARGET_DEVICES += cs-qr10
 
