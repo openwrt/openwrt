@@ -269,6 +269,9 @@ mir3g)
 	ucidef_set_led_switch "lan1-amber" "LAN1 (amber)" "$boardname:amber:lan1" "switch0" "0x08" "0x08"
 	ucidef_set_led_switch "lan2-amber" "LAN2 (amber)" "$boardname:amber:lan2" "switch0" "0x04" "0x08"
 	;;
+xiaomi,miwifi-r3)
+	ucidef_set_led_default "power" "power" "$boardname:blue:status" "1"
+	;;
 miwifi-mini)
 	ucidef_set_led_default "power" "power" "$boardname:red:status" "1"
 	;;
