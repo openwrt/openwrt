@@ -6,7 +6,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/sforshee/wireless-regdb.git
 PKG_SOURCE_DATE:=2017-10-20
 PKG_SOURCE_VERSION:=4343d359ed5e7404de8803a74df186457b26ab79
-PKG_MIRROR_HASH:=b827bf760de57b907df159c8d38d7c3fb5b4a691781114c47739e20bffb3a312
+PKG_MIRROR_HASH:=5f5b669f32ae36cb65b1d99efbbbfd42c2983cda32f6448346e3e54ffaba3889
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
