@@ -30,8 +30,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  create mode 100644 drivers/dma/dpaa2-qdma/fsl_dpdmai_cmd.h
  create mode 100644 drivers/dma/fsl-qdma.c
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index 141aefbe..8caaf091 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -192,6 +192,20 @@ config FSL_EDMA
@@ -79,8 +77,6 @@ index 141aefbe..8caaf091 100644
  
  # driver files
  source "drivers/dma/bestcomm/Kconfig"
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index e4dc9cac..a694da0e 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -29,6 +29,8 @@ obj-$(CONFIG_DW_DMAC_CORE) += dw/
@@ -92,7 +88,7 @@ index e4dc9cac..a694da0e 100644
  obj-$(CONFIG_FSL_RAID) += fsl_raid.o
  obj-$(CONFIG_HSU_DMA) += hsu/
  obj-$(CONFIG_IMG_MDC_DMA) += img-mdc-dma.o
-@@ -67,6 +69,7 @@ obj-$(CONFIG_TI_DMA_CROSSBAR) += ti-dma-crossbar.o
+@@ -67,6 +69,7 @@ obj-$(CONFIG_TI_DMA_CROSSBAR) += ti-dma-
  obj-$(CONFIG_TI_EDMA) += edma.o
  obj-$(CONFIG_XGENE_DMA) += xgene-dma.o
  obj-$(CONFIG_ZX_DMA) += zx296702_dma.o
@@ -100,9 +96,6 @@ index e4dc9cac..a694da0e 100644
  
  obj-y += qcom/
  obj-y += xilinx/
-diff --git a/drivers/dma/caam_dma.c b/drivers/dma/caam_dma.c
-new file mode 100644
-index 00000000..e430b320
 --- /dev/null
 +++ b/drivers/dma/caam_dma.c
 @@ -0,0 +1,563 @@
@@ -669,9 +662,6 @@ index 00000000..e430b320
 +MODULE_LICENSE("Dual BSD/GPL");
 +MODULE_DESCRIPTION("NXP CAAM support for SG DMA");
 +MODULE_AUTHOR("NXP Semiconductors");
-diff --git a/drivers/dma/dpaa2-qdma/Kconfig b/drivers/dma/dpaa2-qdma/Kconfig
-new file mode 100644
-index 00000000..084e34bf
 --- /dev/null
 +++ b/drivers/dma/dpaa2-qdma/Kconfig
 @@ -0,0 +1,8 @@
@@ -683,9 +673,6 @@ index 00000000..084e34bf
 +	---help---
 +	  NXP Data Path Acceleration Architecture 2 QDMA driver,
 +	  using the NXP MC bus driver.
-diff --git a/drivers/dma/dpaa2-qdma/Makefile b/drivers/dma/dpaa2-qdma/Makefile
-new file mode 100644
-index 00000000..ba599ac6
 --- /dev/null
 +++ b/drivers/dma/dpaa2-qdma/Makefile
 @@ -0,0 +1,8 @@
@@ -697,9 +684,6 @@ index 00000000..ba599ac6
 +obj-$(CONFIG_FSL_DPAA2_QDMA) += fsl-dpaa2-qdma.o
 +
 +fsl-dpaa2-qdma-objs    := dpaa2-qdma.o dpdmai.o
-diff --git a/drivers/dma/dpaa2-qdma/dpaa2-qdma.c b/drivers/dma/dpaa2-qdma/dpaa2-qdma.c
-new file mode 100644
-index 00000000..ad6b03f7
 --- /dev/null
 +++ b/drivers/dma/dpaa2-qdma/dpaa2-qdma.c
 @@ -0,0 +1,986 @@
@@ -1689,9 +1673,6 @@ index 00000000..ad6b03f7
 +
 +MODULE_DESCRIPTION("NXP DPAA2 qDMA driver");
 +MODULE_LICENSE("Dual BSD/GPL");
-diff --git a/drivers/dma/dpaa2-qdma/dpaa2-qdma.h b/drivers/dma/dpaa2-qdma/dpaa2-qdma.h
-new file mode 100644
-index 00000000..71a00db8
 --- /dev/null
 +++ b/drivers/dma/dpaa2-qdma/dpaa2-qdma.h
 @@ -0,0 +1,262 @@
@@ -1957,9 +1938,6 @@ index 00000000..71a00db8
 +#define SG_POOL_SIZE (sizeof(struct qdma_sg_blk) +\
 +		sizeof(struct dpaa2_qdma_sg) * NUM_SG_PER_BLK)
 +#endif /* __DPAA2_QDMA_H */
-diff --git a/drivers/dma/dpaa2-qdma/dpdmai.c b/drivers/dma/dpaa2-qdma/dpdmai.c
-new file mode 100644
-index 00000000..ad13fc1e
 --- /dev/null
 +++ b/drivers/dma/dpaa2-qdma/dpdmai.c
 @@ -0,0 +1,454 @@
@@ -2417,9 +2395,6 @@ index 00000000..ad13fc1e
 +
 +	return 0;
 +}
-diff --git a/drivers/dma/dpaa2-qdma/fsl_dpdmai.h b/drivers/dma/dpaa2-qdma/fsl_dpdmai.h
-new file mode 100644
-index 00000000..e931ce16
 --- /dev/null
 +++ b/drivers/dma/dpaa2-qdma/fsl_dpdmai.h
 @@ -0,0 +1,521 @@
@@ -2944,9 +2919,6 @@ index 00000000..e931ce16
 +			struct dpdmai_tx_queue_attr	*attr);
 +
 +#endif /* __FSL_DPDMAI_H */
-diff --git a/drivers/dma/dpaa2-qdma/fsl_dpdmai_cmd.h b/drivers/dma/dpaa2-qdma/fsl_dpdmai_cmd.h
-new file mode 100644
-index 00000000..7d403c01
 --- /dev/null
 +++ b/drivers/dma/dpaa2-qdma/fsl_dpdmai_cmd.h
 @@ -0,0 +1,222 @@
@@ -3172,9 +3144,6 @@ index 00000000..7d403c01
 +	MC_RSP_OP(cmd, 1, 0,  32, uint32_t,  attr->fqid)
 +
 +#endif /* _FSL_DPDMAI_CMD_H */
-diff --git a/drivers/dma/fsl-qdma.c b/drivers/dma/fsl-qdma.c
-new file mode 100644
-index 00000000..6c4c2813
 --- /dev/null
 +++ b/drivers/dma/fsl-qdma.c
 @@ -0,0 +1,1201 @@
@@ -4379,6 +4348,3 @@ index 00000000..6c4c2813
 +MODULE_ALIAS("platform:fsl-qdma");
 +MODULE_DESCRIPTION("Freescale qDMA engine driver");
 +MODULE_LICENSE("GPL v2");
--- 
-2.14.1
-

@@ -43,8 +43,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  create mode 100644 drivers/staging/fsl-dpaa2/Kconfig
  create mode 100644 drivers/staging/fsl-dpaa2/Makefile
 
-diff --git a/drivers/base/Kconfig b/drivers/base/Kconfig
-index e1c0e2e0..4211a7fd 100644
 --- a/drivers/base/Kconfig
 +++ b/drivers/base/Kconfig
 @@ -237,6 +237,7 @@ config GENERIC_CPU_AUTOPROBE
@@ -55,11 +53,9 @@ index e1c0e2e0..4211a7fd 100644
  
  source "drivers/base/regmap/Kconfig"
  
-diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile
-index ad7250fa..6d788fd7 100644
 --- a/drivers/crypto/Makefile
 +++ b/drivers/crypto/Makefile
-@@ -3,7 +3,7 @@ obj-$(CONFIG_CRYPTO_DEV_ATMEL_SHA) += atmel-sha.o
+@@ -3,7 +3,7 @@ obj-$(CONFIG_CRYPTO_DEV_ATMEL_SHA) += at
  obj-$(CONFIG_CRYPTO_DEV_ATMEL_TDES) += atmel-tdes.o
  obj-$(CONFIG_CRYPTO_DEV_BFIN_CRC) += bfin_crc.o
  obj-$(CONFIG_CRYPTO_DEV_CCP) += ccp/
@@ -68,8 +64,6 @@ index ad7250fa..6d788fd7 100644
  obj-$(CONFIG_CRYPTO_DEV_GEODE) += geode-aes.o
  obj-$(CONFIG_CRYPTO_DEV_HIFN_795X) += hifn_795x.o
  obj-$(CONFIG_CRYPTO_DEV_IMGTEC_HASH) += img-hash.o
-diff --git a/drivers/net/ethernet/freescale/Kconfig b/drivers/net/ethernet/freescale/Kconfig
-index d1ca45fb..74a2864e 100644
 --- a/drivers/net/ethernet/freescale/Kconfig
 +++ b/drivers/net/ethernet/freescale/Kconfig
 @@ -5,7 +5,7 @@
@@ -88,8 +82,6 @@ index d1ca45fb..74a2864e 100644
 +source "drivers/net/ethernet/freescale/sdk_fman/Kconfig"
 +source "drivers/net/ethernet/freescale/sdk_dpaa/Kconfig"
  endif # NET_VENDOR_FREESCALE
-diff --git a/drivers/net/ethernet/freescale/Makefile b/drivers/net/ethernet/freescale/Makefile
-index cbe21dc7..a5d4405f 100644
 --- a/drivers/net/ethernet/freescale/Makefile
 +++ b/drivers/net/ethernet/freescale/Makefile
 @@ -21,4 +21,6 @@ gianfar_driver-objs := gianfar.o \
@@ -99,8 +91,6 @@ index cbe21dc7..a5d4405f 100644
 +obj-$(if $(CONFIG_FSL_SDK_FMAN),y) += sdk_fman/
 +obj-$(if $(CONFIG_FSL_SDK_DPAA_ETH),y) += sdk_dpaa/
  obj-$(CONFIG_FSL_FMAN) += fman/
-diff --git a/drivers/ptp/Kconfig b/drivers/ptp/Kconfig
-index ee3de342..4c45beda 100644
 --- a/drivers/ptp/Kconfig
 +++ b/drivers/ptp/Kconfig
 @@ -39,6 +39,35 @@ config PTP_1588_CLOCK_GIANFAR
@@ -139,8 +129,6 @@ index ee3de342..4c45beda 100644
  config PTP_1588_CLOCK_IXP46X
  	tristate "Intel IXP46x as PTP clock"
  	depends on IXP4XX_ETH
-diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
-index 0723c97e..df610dcd 100644
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
 @@ -414,6 +414,14 @@ config RTC_DRV_PCF85063
@@ -158,11 +146,9 @@ index 0723c97e..df610dcd 100644
  config RTC_DRV_PCF8563
  	tristate "Philips PCF8563/Epson RTC8564"
  	help
-diff --git a/drivers/rtc/Makefile b/drivers/rtc/Makefile
-index 1ac694a3..7675b8a7 100644
 --- a/drivers/rtc/Makefile
 +++ b/drivers/rtc/Makefile
-@@ -111,6 +111,7 @@ obj-$(CONFIG_RTC_DRV_PCF2127)	+= rtc-pcf2127.o
+@@ -111,6 +111,7 @@ obj-$(CONFIG_RTC_DRV_PCF2127)	+= rtc-pcf
  obj-$(CONFIG_RTC_DRV_PCF50633)	+= rtc-pcf50633.o
  obj-$(CONFIG_RTC_DRV_PCF85063)	+= rtc-pcf85063.o
  obj-$(CONFIG_RTC_DRV_PCF8523)	+= rtc-pcf8523.o
@@ -170,8 +156,6 @@ index 1ac694a3..7675b8a7 100644
  obj-$(CONFIG_RTC_DRV_PCF8563)	+= rtc-pcf8563.o
  obj-$(CONFIG_RTC_DRV_PCF8583)	+= rtc-pcf8583.o
  obj-$(CONFIG_RTC_DRV_PIC32)	+= rtc-pic32.o
-diff --git a/drivers/soc/Kconfig b/drivers/soc/Kconfig
-index e6e90e80..f31bceb6 100644
 --- a/drivers/soc/Kconfig
 +++ b/drivers/soc/Kconfig
 @@ -1,8 +1,7 @@
@@ -184,9 +168,6 @@ index e6e90e80..f31bceb6 100644
  source "drivers/soc/mediatek/Kconfig"
  source "drivers/soc/qcom/Kconfig"
  source "drivers/soc/rockchip/Kconfig"
-diff --git a/drivers/soc/fsl/Kconfig b/drivers/soc/fsl/Kconfig
-new file mode 100644
-index 00000000..d4cd25f1
 --- /dev/null
 +++ b/drivers/soc/fsl/Kconfig
 @@ -0,0 +1,22 @@
@@ -212,9 +193,6 @@ index 00000000..d4cd25f1
 +if ARM || ARM64
 +source "drivers/soc/fsl/Kconfig.arm"
 +endif
-diff --git a/drivers/soc/fsl/Kconfig.arm b/drivers/soc/fsl/Kconfig.arm
-new file mode 100644
-index 00000000..106c9b98
 --- /dev/null
 +++ b/drivers/soc/fsl/Kconfig.arm
 @@ -0,0 +1,16 @@
@@ -234,8 +212,6 @@ index 00000000..106c9b98
 +if LS_SOC_DRIVERS
 +	source "drivers/soc/fsl/layerscape/Kconfig"
 +endif
-diff --git a/drivers/soc/fsl/Makefile b/drivers/soc/fsl/Makefile
-index 75e1f533..b8708569 100644
 --- a/drivers/soc/fsl/Makefile
 +++ b/drivers/soc/fsl/Makefile
 @@ -5,3 +5,7 @@
@@ -246,9 +222,6 @@ index 75e1f533..b8708569 100644
 +obj-$(CONFIG_FSL_LS2_CONSOLE)		+= ls2-console/
 +obj-$(CONFIG_SUSPEND)			+= rcpm.o
 +obj-$(CONFIG_LS_SOC_DRIVERS)		+= layerscape/
-diff --git a/drivers/soc/fsl/layerscape/Kconfig b/drivers/soc/fsl/layerscape/Kconfig
-new file mode 100644
-index 00000000..e1373aa1
 --- /dev/null
 +++ b/drivers/soc/fsl/layerscape/Kconfig
 @@ -0,0 +1,10 @@
@@ -262,16 +235,10 @@ index 00000000..e1373aa1
 +	Say y here to enable FTM alarm support.  The FTM alarm provides
 +	alarm functions for wakeup system from deep sleep.  There is only
 +	one FTM can be used in ALARM(FTM 0).
-diff --git a/drivers/soc/fsl/layerscape/Makefile b/drivers/soc/fsl/layerscape/Makefile
-new file mode 100644
-index 00000000..6299aa1d
 --- /dev/null
 +++ b/drivers/soc/fsl/layerscape/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_FTM_ALARM) += ftm_alarm.o
-diff --git a/drivers/soc/fsl/rcpm.c b/drivers/soc/fsl/rcpm.c
-new file mode 100644
-index 00000000..a6a31c87
 --- /dev/null
 +++ b/drivers/soc/fsl/rcpm.c
 @@ -0,0 +1,154 @@
@@ -429,8 +396,6 @@ index 00000000..a6a31c87
 +}
 +
 +subsys_initcall(layerscape_rcpm_init);
-diff --git a/drivers/staging/Kconfig b/drivers/staging/Kconfig
-index 58a7b350..6c69e3bd 100644
 --- a/drivers/staging/Kconfig
 +++ b/drivers/staging/Kconfig
 @@ -94,6 +94,8 @@ source "drivers/staging/fbtft/Kconfig"
@@ -451,8 +416,6 @@ index 58a7b350..6c69e3bd 100644
 +source "drivers/staging/fsl_ppfe/Kconfig"
 +
  endif # STAGING
-diff --git a/drivers/staging/Makefile b/drivers/staging/Makefile
-index 2fa9745d..ee817a5e 100644
 --- a/drivers/staging/Makefile
 +++ b/drivers/staging/Makefile
 @@ -36,9 +36,12 @@ obj-$(CONFIG_UNISYSSPAR)	+= unisys/
@@ -468,9 +431,6 @@ index 2fa9745d..ee817a5e 100644
  obj-$(CONFIG_BCM2708_VCHIQ)	+= vc04_services/
 +obj-$(CONFIG_FSL_SDK_DPA)	+= fsl_qbman/
 +obj-$(CONFIG_FSL_PPFE)		+= fsl_ppfe/
-diff --git a/drivers/staging/fsl-dpaa2/Kconfig b/drivers/staging/fsl-dpaa2/Kconfig
-new file mode 100644
-index 00000000..8042d9cc
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/Kconfig
 @@ -0,0 +1,41 @@
@@ -515,9 +475,6 @@ index 00000000..8042d9cc
 +source "drivers/staging/fsl-dpaa2/mac/Kconfig"
 +source "drivers/staging/fsl-dpaa2/evb/Kconfig"
 +source "drivers/staging/fsl-dpaa2/ethsw/Kconfig"
-diff --git a/drivers/staging/fsl-dpaa2/Makefile b/drivers/staging/fsl-dpaa2/Makefile
-new file mode 100644
-index 00000000..cbaa8c20
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/Makefile
 @@ -0,0 +1,9 @@
@@ -530,6 +487,3 @@ index 00000000..cbaa8c20
 +obj-$(CONFIG_FSL_DPAA2_EVB)	+= evb/
 +obj-$(CONFIG_FSL_DPAA2_ETHSW)	+= ethsw/
 +obj-$(CONFIG_PTP_1588_CLOCK_DPAA2) += rtc/
--- 
-2.14.1
-

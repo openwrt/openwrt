@@ -35,11 +35,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  include/linux/usb/of.h                |   2 +
  18 files changed, 730 insertions(+), 73 deletions(-)
 
-diff --git a/drivers/net/usb/r8152.c b/drivers/net/usb/r8152.c
-index afb953a2..c9c86495 100644
 --- a/drivers/net/usb/r8152.c
 +++ b/drivers/net/usb/r8152.c
-@@ -1812,6 +1812,10 @@ static int rx_bottom(struct r8152 *tp, int budget)
+@@ -1812,6 +1812,10 @@ static int rx_bottom(struct r8152 *tp, i
  			unsigned int pkt_len;
  			struct sk_buff *skb;
  
@@ -50,11 +48,9 @@ index afb953a2..c9c86495 100644
  			pkt_len = le32_to_cpu(rx_desc->opts1) & RX_LEN_MASK;
  			if (pkt_len < ETH_ZLEN)
  				break;
-diff --git a/drivers/usb/common/common.c b/drivers/usb/common/common.c
-index 5ef8da6e..176dee01 100644
 --- a/drivers/usb/common/common.c
 +++ b/drivers/usb/common/common.c
-@@ -105,6 +105,56 @@ static const char *const usb_dr_modes[] = {
+@@ -105,6 +105,56 @@ static const char *const usb_dr_modes[]
  	[USB_DR_MODE_OTG]		= "otg",
  };
  
@@ -111,11 +107,9 @@ index 5ef8da6e..176dee01 100644
  static enum usb_dr_mode usb_get_dr_mode_from_string(const char *str)
  {
  	int ret;
-diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
-index 80d4ef31..e23acf03 100644
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -4412,6 +4412,14 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
+@@ -4415,6 +4415,14 @@ hub_port_init(struct usb_hub *hub, struc
  	else
  		speed = usb_speed_string(udev->speed);
  
@@ -130,11 +124,9 @@ index 80d4ef31..e23acf03 100644
  	if (udev->speed < USB_SPEED_SUPER)
  		dev_info(&udev->dev,
  				"%s %s USB device number %d using %s\n",
-diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
-index fea44690..e34ef90a 100644
 --- a/drivers/usb/dwc3/core.c
 +++ b/drivers/usb/dwc3/core.c
-@@ -58,6 +58,7 @@ static int dwc3_get_dr_mode(struct dwc3 *dwc)
+@@ -58,6 +58,7 @@ static int dwc3_get_dr_mode(struct dwc3
  	enum usb_dr_mode mode;
  	struct device *dev = dwc->dev;
  	unsigned int hw_mode;
@@ -142,7 +134,7 @@ index fea44690..e34ef90a 100644
  
  	if (dwc->dr_mode == USB_DR_MODE_UNKNOWN)
  		dwc->dr_mode = USB_DR_MODE_OTG;
-@@ -83,6 +84,24 @@ static int dwc3_get_dr_mode(struct dwc3 *dwc)
+@@ -83,6 +84,24 @@ static int dwc3_get_dr_mode(struct dwc3
  		mode = USB_DR_MODE_HOST;
  		break;
  	default:
@@ -167,7 +159,7 @@ index fea44690..e34ef90a 100644
  		if (IS_ENABLED(CONFIG_USB_DWC3_HOST))
  			mode = USB_DR_MODE_HOST;
  		else if (IS_ENABLED(CONFIG_USB_DWC3_GADGET))
-@@ -213,8 +232,9 @@ static void dwc3_frame_length_adjustment(struct dwc3 *dwc)
+@@ -213,8 +232,9 @@ static void dwc3_frame_length_adjustment
  
  	reg = dwc3_readl(dwc->regs, DWC3_GFLADJ);
  	dft = reg & DWC3_GFLADJ_30MHZ_MASK;
@@ -179,7 +171,7 @@ index fea44690..e34ef90a 100644
  		reg &= ~DWC3_GFLADJ_30MHZ_MASK;
  		reg |= DWC3_GFLADJ_30MHZ_SDBND_SEL | dwc->fladj;
  		dwc3_writel(dwc->regs, DWC3_GFLADJ, reg);
-@@ -579,6 +599,99 @@ static int dwc3_phy_setup(struct dwc3 *dwc)
+@@ -579,6 +599,99 @@ static int dwc3_phy_setup(struct dwc3 *d
  	return 0;
  }
  
@@ -279,7 +271,7 @@ index fea44690..e34ef90a 100644
  static void dwc3_core_exit(struct dwc3 *dwc)
  {
  	dwc3_event_buffers_cleanup(dwc);
-@@ -721,6 +834,8 @@ static int dwc3_core_init(struct dwc3 *dwc)
+@@ -721,6 +834,8 @@ static int dwc3_core_init(struct dwc3 *d
  	if (ret)
  		goto err1;
  
@@ -288,7 +280,7 @@ index fea44690..e34ef90a 100644
  	/* Adjust Frame Length */
  	dwc3_frame_length_adjustment(dwc);
  
-@@ -919,11 +1034,109 @@ static void dwc3_core_exit_mode(struct dwc3 *dwc)
+@@ -919,11 +1034,109 @@ static void dwc3_core_exit_mode(struct d
  	}
  }
  
@@ -398,7 +390,7 @@ index fea44690..e34ef90a 100644
  	struct resource		*res;
  	struct dwc3		*dwc;
  	u8			lpm_nyet_threshold;
-@@ -955,6 +1168,11 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -955,6 +1168,11 @@ static int dwc3_probe(struct platform_de
  	dwc->xhci_resources[0].flags = res->flags;
  	dwc->xhci_resources[0].name = res->name;
  
@@ -410,7 +402,7 @@ index fea44690..e34ef90a 100644
  	res->start += DWC3_GLOBALS_REGS_START;
  
  	/*
-@@ -997,6 +1215,12 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -997,6 +1215,12 @@ static int dwc3_probe(struct platform_de
  	dwc->usb3_lpm_capable = device_property_read_bool(dev,
  				"snps,usb3_lpm_capable");
  
@@ -423,7 +415,7 @@ index fea44690..e34ef90a 100644
  	dwc->disable_scramble_quirk = device_property_read_bool(dev,
  				"snps,disable_scramble_quirk");
  	dwc->u2exit_lfps_quirk = device_property_read_bool(dev,
-@@ -1041,6 +1265,8 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -1041,6 +1265,8 @@ static int dwc3_probe(struct platform_de
  	dwc->hird_threshold = hird_threshold
  		| (dwc->is_utmi_l1_suspend << 4);
  
@@ -432,7 +424,7 @@ index fea44690..e34ef90a 100644
  	platform_set_drvdata(pdev, dwc);
  	dwc3_cache_hwparams(dwc);
  
-@@ -1064,6 +1290,11 @@ static int dwc3_probe(struct platform_device *pdev)
+@@ -1064,6 +1290,11 @@ static int dwc3_probe(struct platform_de
  	if (ret < 0)
  		goto err1;
  
@@ -444,8 +436,6 @@ index fea44690..e34ef90a 100644
  	pm_runtime_forbid(dev);
  
  	ret = dwc3_alloc_event_buffers(dwc, DWC3_EVENT_BUFFERS_SIZE);
-diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
-index 884c4371..9151eef4 100644
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
 @@ -26,6 +26,7 @@
@@ -563,8 +553,6 @@ index 884c4371..9151eef4 100644
  };
  
  /* -------------------------------------------------------------------------- */
-diff --git a/drivers/usb/dwc3/host.c b/drivers/usb/dwc3/host.c
-index 626d87d5..f1b98273 100644
 --- a/drivers/usb/dwc3/host.c
 +++ b/drivers/usb/dwc3/host.c
 @@ -17,6 +17,8 @@
@@ -600,8 +588,6 @@ index 626d87d5..f1b98273 100644
  	dwc->xhci = xhci;
  
  	ret = platform_device_add_resources(xhci, dwc->xhci_resources,
-diff --git a/drivers/usb/gadget/udc/fsl_udc_core.c b/drivers/usb/gadget/udc/fsl_udc_core.c
-index aac0ce8a..fe49e758 100644
 --- a/drivers/usb/gadget/udc/fsl_udc_core.c
 +++ b/drivers/usb/gadget/udc/fsl_udc_core.c
 @@ -198,7 +198,11 @@ __acquires(ep->udc->lock)
@@ -617,7 +603,7 @@ index aac0ce8a..fe49e758 100644
  
  	spin_lock(&ep->udc->lock);
  	ep->stopped = stopped;
-@@ -245,10 +249,10 @@ static int dr_controller_setup(struct fsl_udc *udc)
+@@ -245,10 +249,10 @@ static int dr_controller_setup(struct fs
  		if (udc->pdata->have_sysif_regs) {
  			if (udc->pdata->controller_ver) {
  				/* controller version 1.6 or above */
@@ -630,7 +616,7 @@ index aac0ce8a..fe49e758 100644
  			}
  		}
  		portctrl |= PORTSCX_PTS_ULPI;
-@@ -257,13 +261,14 @@ static int dr_controller_setup(struct fsl_udc *udc)
+@@ -257,13 +261,14 @@ static int dr_controller_setup(struct fs
  		portctrl |= PORTSCX_PTW_16BIT;
  		/* fall through */
  	case FSL_USB2_PHY_UTMI:
@@ -647,7 +633,7 @@ index aac0ce8a..fe49e758 100644
  				mdelay(FSL_UTMI_PHY_DLY); /* Delay for UTMI
  					PHY CLK to become stable - 10ms*/
  			}
-@@ -329,22 +334,22 @@ static int dr_controller_setup(struct fsl_udc *udc)
+@@ -329,22 +334,22 @@ static int dr_controller_setup(struct fs
  	/* Config control enable i/o output, cpu endian register */
  #ifndef CONFIG_ARCH_MXC
  	if (udc->pdata->have_sysif_regs) {
@@ -675,7 +661,7 @@ index aac0ce8a..fe49e758 100644
  	}
  #endif
  
-@@ -1057,7 +1062,7 @@ static int fsl_ep_fifo_status(struct usb_ep *_ep)
+@@ -1057,7 +1062,7 @@ static int fsl_ep_fifo_status(struct usb
  	struct ep_queue_head *qh;
  
  	ep = container_of(_ep, struct fsl_ep, ep);
@@ -684,7 +670,7 @@ index aac0ce8a..fe49e758 100644
  		return -ENODEV;
  
  	udc = (struct fsl_udc *)ep->udc;
-@@ -1599,14 +1604,13 @@ static int process_ep_req(struct fsl_udc *udc, int pipe,
+@@ -1599,14 +1604,13 @@ static int process_ep_req(struct fsl_udc
  		struct fsl_req *curr_req)
  {
  	struct ep_td_struct *curr_td;
@@ -700,7 +686,7 @@ index aac0ce8a..fe49e758 100644
  	actual = curr_req->req.length;
  
  	for (j = 0; j < curr_req->dtd_count; j++) {
-@@ -1651,11 +1655,9 @@ static int process_ep_req(struct fsl_udc *udc, int pipe,
+@@ -1651,11 +1655,9 @@ static int process_ep_req(struct fsl_udc
  				status = -EPROTO;
  				break;
  			} else {
@@ -712,7 +698,7 @@ index aac0ce8a..fe49e758 100644
  			VDBG("dTD transmitted successful");
  		}
  
-@@ -1698,7 +1700,7 @@ static void dtd_complete_irq(struct fsl_udc *udc)
+@@ -1698,7 +1700,7 @@ static void dtd_complete_irq(struct fsl_
  		curr_ep = get_ep_by_pipe(udc, i);
  
  		/* If the ep is configured */
@@ -721,7 +707,7 @@ index aac0ce8a..fe49e758 100644
  			WARNING("Invalid EP?");
  			continue;
  		}
-@@ -2420,10 +2422,12 @@ static int fsl_udc_probe(struct platform_device *pdev)
+@@ -2420,10 +2422,12 @@ static int fsl_udc_probe(struct platform
  		usb_sys_regs = (void *)dr_regs + USB_DR_SYS_OFFSET;
  #endif
  
@@ -734,7 +720,7 @@ index aac0ce8a..fe49e758 100644
  
  	/* Read Device Controller Capability Parameters register */
  	dccparams = fsl_readl(&dr_regs->dccparams);
-@@ -2463,9 +2467,11 @@ static int fsl_udc_probe(struct platform_device *pdev)
+@@ -2463,9 +2467,11 @@ static int fsl_udc_probe(struct platform
  		dr_controller_setup(udc_controller);
  	}
  
@@ -746,7 +732,7 @@ index aac0ce8a..fe49e758 100644
  
  	/* Setup gadget structure */
  	udc_controller->gadget.ops = &fsl_gadget_ops;
-@@ -2478,6 +2484,7 @@ static int fsl_udc_probe(struct platform_device *pdev)
+@@ -2478,6 +2484,7 @@ static int fsl_udc_probe(struct platform
  	/* Setup gadget.dev and register with kernel */
  	dev_set_name(&udc_controller->gadget.dev, "gadget");
  	udc_controller->gadget.dev.of_node = pdev->dev.of_node;
@@ -754,7 +740,7 @@ index aac0ce8a..fe49e758 100644
  
  	if (!IS_ERR_OR_NULL(udc_controller->transceiver))
  		udc_controller->gadget.is_otg = 1;
-@@ -2529,7 +2536,9 @@ static int fsl_udc_probe(struct platform_device *pdev)
+@@ -2529,7 +2536,9 @@ err_free_irq:
  err_iounmap:
  	if (pdata->exit)
  		pdata->exit(pdev);
@@ -764,7 +750,7 @@ index aac0ce8a..fe49e758 100644
  err_iounmap_noclk:
  	iounmap(dr_regs);
  err_release_mem_region:
-@@ -2557,8 +2566,9 @@ static int fsl_udc_remove(struct platform_device *pdev)
+@@ -2557,8 +2566,9 @@ static int fsl_udc_remove(struct platfor
  	udc_controller->done = &done;
  	usb_del_gadget_udc(&udc_controller->gadget);
  
@@ -775,7 +761,7 @@ index aac0ce8a..fe49e758 100644
  	/* DR has been stopped in usb_gadget_unregister_driver() */
  	remove_proc_file();
  
-@@ -2570,7 +2580,7 @@ static int fsl_udc_remove(struct platform_device *pdev)
+@@ -2570,7 +2580,7 @@ static int fsl_udc_remove(struct platfor
  	dma_pool_destroy(udc_controller->td_pool);
  	free_irq(udc_controller->irq, udc_controller);
  	iounmap(dr_regs);
@@ -784,8 +770,6 @@ index aac0ce8a..fe49e758 100644
  		release_mem_region(res->start, resource_size(res));
  
  	/* free udc --wait for the release() finished */
-diff --git a/drivers/usb/gadget/udc/fsl_usb2_udc.h b/drivers/usb/gadget/udc/fsl_usb2_udc.h
-index 84715625..f76c4ddd 100644
 --- a/drivers/usb/gadget/udc/fsl_usb2_udc.h
 +++ b/drivers/usb/gadget/udc/fsl_usb2_udc.h
 @@ -20,6 +20,10 @@
@@ -818,8 +802,6 @@ index 84715625..f76c4ddd 100644
  #endif
  
  #endif
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index 0b80cee3..a57d95c3 100644
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -165,7 +165,7 @@ config XPS_USB_HCD_XILINX
@@ -831,8 +813,6 @@ index 0b80cee3..a57d95c3 100644
  	select USB_EHCI_ROOT_HUB_TT
  	---help---
  	  Variation of ARC USB block used in some Freescale chips.
-diff --git a/drivers/usb/host/ehci-fsl.c b/drivers/usb/host/ehci-fsl.c
-index 9f5ffb62..cd16860c 100644
 --- a/drivers/usb/host/ehci-fsl.c
 +++ b/drivers/usb/host/ehci-fsl.c
 @@ -37,13 +37,141 @@
@@ -977,7 +957,7 @@ index 9f5ffb62..cd16860c 100644
  
  /* configure so an HC device and id are always provided */
  /* always called with process context; sleeping is OK */
-@@ -131,6 +259,12 @@ static int fsl_ehci_drv_probe(struct platform_device *pdev)
+@@ -131,6 +259,12 @@ static int fsl_ehci_drv_probe(struct pla
  		clrsetbits_be32(hcd->regs + FSL_SOC_USB_CTRL,
  				CONTROL_REGISTER_W1C_MASK, 0x4);
  
@@ -990,7 +970,7 @@ index 9f5ffb62..cd16860c 100644
  	/*
  	 * Enable UTMI phy and program PTS field in UTMI mode before asserting
  	 * controller reset for USB Controller version 2.5
-@@ -143,16 +277,20 @@ static int fsl_ehci_drv_probe(struct platform_device *pdev)
+@@ -143,16 +277,20 @@ static int fsl_ehci_drv_probe(struct pla
  
  	/* Don't need to set host mode here. It will be done by tdi_reset() */
  
@@ -1013,7 +993,7 @@ index 9f5ffb62..cd16860c 100644
  		dev_dbg(&pdev->dev, "hcd=0x%p  ehci=0x%p, phy=0x%p\n",
  			hcd, ehci, hcd->usb_phy);
  
-@@ -168,6 +306,11 @@ static int fsl_ehci_drv_probe(struct platform_device *pdev)
+@@ -168,6 +306,11 @@ static int fsl_ehci_drv_probe(struct pla
  			retval = -ENODEV;
  			goto err2;
  		}
@@ -1025,7 +1005,7 @@ index 9f5ffb62..cd16860c 100644
  	}
  #endif
  	return retval;
-@@ -181,6 +324,18 @@ static int fsl_ehci_drv_probe(struct platform_device *pdev)
+@@ -181,6 +324,18 @@ static int fsl_ehci_drv_probe(struct pla
  	return retval;
  }
  
@@ -1044,7 +1024,7 @@ index 9f5ffb62..cd16860c 100644
  static int ehci_fsl_setup_phy(struct usb_hcd *hcd,
  			       enum fsl_usb2_phy_modes phy_mode,
  			       unsigned int port_offset)
-@@ -219,6 +374,21 @@ static int ehci_fsl_setup_phy(struct usb_hcd *hcd,
+@@ -219,6 +374,21 @@ static int ehci_fsl_setup_phy(struct usb
  		/* fall through */
  	case FSL_USB2_PHY_UTMI:
  	case FSL_USB2_PHY_UTMI_DUAL:
@@ -1066,7 +1046,7 @@ index 9f5ffb62..cd16860c 100644
  		if (pdata->have_sysif_regs && pdata->controller_ver) {
  			/* controller version 1.6 or above */
  			clrsetbits_be32(non_ehci + FSL_SOC_USB_CTRL,
-@@ -292,14 +462,9 @@ static int ehci_fsl_usb_setup(struct ehci_hcd *ehci)
+@@ -292,14 +462,9 @@ static int ehci_fsl_usb_setup(struct ehc
  			return -EINVAL;
  
  	if (pdata->operating_mode == FSL_USB2_MPH_HOST) {
@@ -1082,7 +1062,7 @@ index 9f5ffb62..cd16860c 100644
  			ehci->has_fsl_port_bug = 1;
  
  		if (pdata->port_enables & FSL_USB2_PORT0_ENABLED)
-@@ -379,16 +544,57 @@ static int ehci_fsl_setup(struct usb_hcd *hcd)
+@@ -379,16 +544,57 @@ static int ehci_fsl_setup(struct usb_hcd
  	return retval;
  }
  
@@ -1147,7 +1127,7 @@ index 9f5ffb62..cd16860c 100644
  
  #ifdef CONFIG_PPC_MPC512x
  static int ehci_fsl_mpc512x_drv_suspend(struct device *dev)
-@@ -535,26 +741,43 @@ static inline int ehci_fsl_mpc512x_drv_resume(struct device *dev)
+@@ -535,26 +741,43 @@ static inline int ehci_fsl_mpc512x_drv_r
  }
  #endif /* CONFIG_PPC_MPC512x */
  
@@ -1198,7 +1178,7 @@ index 9f5ffb62..cd16860c 100644
  	if (!fsl_deep_sleep())
  		return 0;
  
-@@ -568,12 +791,34 @@ static int ehci_fsl_drv_resume(struct device *dev)
+@@ -568,12 +791,34 @@ static int ehci_fsl_drv_resume(struct de
  	struct ehci_fsl *ehci_fsl = hcd_to_ehci_fsl(hcd);
  	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
  	void __iomem *non_ehci = hcd->regs;
@@ -1233,8 +1213,6 @@ index 9f5ffb62..cd16860c 100644
  	ehci_prepare_ports_for_controller_resume(ehci);
  	if (!fsl_deep_sleep())
  		return 0;
-diff --git a/drivers/usb/host/ehci-fsl.h b/drivers/usb/host/ehci-fsl.h
-index 1a8a60a5..42ea2976 100644
 --- a/drivers/usb/host/ehci-fsl.h
 +++ b/drivers/usb/host/ehci-fsl.h
 @@ -63,4 +63,7 @@
@@ -1245,11 +1223,9 @@ index 1a8a60a5..42ea2976 100644
 +/* Retry count for checking UTMI PHY CLK validity */
 +#define UTMI_PHY_CLK_VALID_CHK_RETRY 5
  #endif				/* _EHCI_FSL_H */
-diff --git a/drivers/usb/host/ehci-hub.c b/drivers/usb/host/ehci-hub.c
-index 255acca8..c8838c33 100644
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -305,6 +305,8 @@ static int ehci_bus_suspend (struct usb_hcd *hcd)
+@@ -305,6 +305,8 @@ static int ehci_bus_suspend (struct usb_
  						USB_PORT_STAT_HIGH_SPEED)
  				fs_idle_delay = true;
  			ehci_writel(ehci, t2, reg);
@@ -1258,11 +1234,9 @@ index 255acca8..c8838c33 100644
  			changed = 1;
  		}
  	}
-diff --git a/drivers/usb/host/ehci.h b/drivers/usb/host/ehci.h
-index 3b06bb77..f296d1fb 100644
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -180,6 +180,9 @@ struct ehci_hcd {			/* one per controller */
+@@ -180,6 +180,9 @@ struct ehci_hcd {			/* one per controlle
  	unsigned		periodic_count;	/* periodic activity count */
  	unsigned		uframe_periodic_max; /* max periodic time per uframe */
  
@@ -1272,7 +1246,7 @@ index 3b06bb77..f296d1fb 100644
  
  	/* list of itds & sitds completed while now_frame was still active */
  	struct list_head	cached_itd_list;
-@@ -706,8 +709,10 @@ ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
+@@ -706,8 +709,10 @@ ehci_port_speed(struct ehci_hcd *ehci, u
   * incoming packets get corrupted in HS mode
   */
  #define ehci_has_fsl_hs_errata(e)	((e)->has_fsl_hs_errata)
@@ -1283,11 +1257,9 @@ index 3b06bb77..f296d1fb 100644
  #endif
  
  /*
-diff --git a/drivers/usb/host/fsl-mph-dr-of.c b/drivers/usb/host/fsl-mph-dr-of.c
-index f07ccb25..1e59ea9f 100644
 --- a/drivers/usb/host/fsl-mph-dr-of.c
 +++ b/drivers/usb/host/fsl-mph-dr-of.c
-@@ -226,6 +226,18 @@ static int fsl_usb2_mph_dr_of_probe(struct platform_device *ofdev)
+@@ -226,6 +226,18 @@ static int fsl_usb2_mph_dr_of_probe(stru
  		of_property_read_bool(np, "fsl,usb-erratum-a007792");
  	pdata->has_fsl_erratum_a005275 =
  		of_property_read_bool(np, "fsl,usb-erratum-a005275");
@@ -1306,8 +1278,6 @@ index f07ccb25..1e59ea9f 100644
  
  	/*
  	 * Determine whether phy_clk_valid needs to be checked
-diff --git a/drivers/usb/phy/phy-fsl-usb.c b/drivers/usb/phy/phy-fsl-usb.c
-index 94eb2923..836355fa 100644
 --- a/drivers/usb/phy/phy-fsl-usb.c
 +++ b/drivers/usb/phy/phy-fsl-usb.c
 @@ -1,5 +1,5 @@
@@ -1325,7 +1295,7 @@ index 94eb2923..836355fa 100644
  	struct device *dev;
  	struct fsl_otg *otg_dev =
  		container_of(otg->usb_phy, struct fsl_otg, phy);
-@@ -486,6 +487,7 @@ int fsl_otg_start_host(struct otg_fsm *fsm, int on)
+@@ -486,6 +487,7 @@ int fsl_otg_start_host(struct otg_fsm *f
  			otg_reset_controller();
  			VDBG("host on......\n");
  			if (dev->driver->pm && dev->driver->pm->resume) {
@@ -1333,7 +1303,7 @@ index 94eb2923..836355fa 100644
  				retval = dev->driver->pm->resume(dev);
  				if (fsm->id) {
  					/* default-b */
-@@ -510,8 +512,11 @@ int fsl_otg_start_host(struct otg_fsm *fsm, int on)
+@@ -510,8 +512,11 @@ int fsl_otg_start_host(struct otg_fsm *f
  		else {
  			VDBG("host off......\n");
  			if (dev && dev->driver) {
@@ -1346,7 +1316,7 @@ index 94eb2923..836355fa 100644
  				if (fsm->id)
  					/* default-b */
  					fsl_otg_drv_vbus(fsm, 0);
-@@ -539,8 +544,17 @@ int fsl_otg_start_gadget(struct otg_fsm *fsm, int on)
+@@ -539,8 +544,17 @@ int fsl_otg_start_gadget(struct otg_fsm
  	dev = otg->gadget->dev.parent;
  
  	if (on) {
@@ -1365,7 +1335,7 @@ index 94eb2923..836355fa 100644
  	} else {
  		if (dev->driver->suspend)
  			dev->driver->suspend(dev, otg_suspend_state);
-@@ -672,6 +686,10 @@ static void fsl_otg_event(struct work_struct *work)
+@@ -672,6 +686,10 @@ static void fsl_otg_event(struct work_st
  		fsl_otg_start_host(fsm, 0);
  		otg_drv_vbus(fsm, 0);
  		fsl_otg_start_gadget(fsm, 1);
@@ -1376,7 +1346,7 @@ index 94eb2923..836355fa 100644
  	}
  }
  
-@@ -724,6 +742,7 @@ irqreturn_t fsl_otg_isr(int irq, void *dev_id)
+@@ -724,6 +742,7 @@ irqreturn_t fsl_otg_isr(int irq, void *d
  {
  	struct otg_fsm *fsm = &((struct fsl_otg *)dev_id)->fsm;
  	struct usb_otg *otg = ((struct fsl_otg *)dev_id)->phy.otg;
@@ -1384,7 +1354,7 @@ index 94eb2923..836355fa 100644
  	u32 otg_int_src, otg_sc;
  
  	otg_sc = fsl_readl(&usb_dr_regs->otgsc);
-@@ -753,18 +772,8 @@ irqreturn_t fsl_otg_isr(int irq, void *dev_id)
+@@ -753,18 +772,8 @@ irqreturn_t fsl_otg_isr(int irq, void *d
  				otg->gadget->is_a_peripheral = !fsm->id;
  			VDBG("ID int (ID is %d)\n", fsm->id);
  
@@ -1405,7 +1375,7 @@ index 94eb2923..836355fa 100644
  			return IRQ_HANDLED;
  		}
  	}
-@@ -923,12 +932,32 @@ int usb_otg_start(struct platform_device *pdev)
+@@ -923,12 +932,32 @@ int usb_otg_start(struct platform_device
  	temp &= ~(PORTSC_PHY_TYPE_SEL | PORTSC_PTW);
  	switch (pdata->phy_mode) {
  	case FSL_USB2_PHY_ULPI:
@@ -1438,8 +1408,6 @@ index 94eb2923..836355fa 100644
  		temp |= PORTSC_PTS_UTMI;
  		/* fall through */
  	default:
-diff --git a/drivers/usb/phy/phy-fsl-usb.h b/drivers/usb/phy/phy-fsl-usb.h
-index 23149954..c4c08730 100644
 --- a/drivers/usb/phy/phy-fsl-usb.h
 +++ b/drivers/usb/phy/phy-fsl-usb.h
 @@ -199,6 +199,14 @@
@@ -1457,8 +1425,6 @@ index 23149954..c4c08730 100644
  
  /* BCSR5 */
  #define BCSR5_INT_USB			(0x02)
-diff --git a/include/linux/usb.h b/include/linux/usb.h
-index eba1f10e..c334e281 100644
 --- a/include/linux/usb.h
 +++ b/include/linux/usb.h
 @@ -362,6 +362,7 @@ struct usb_bus {
@@ -1469,8 +1435,6 @@ index eba1f10e..c334e281 100644
  	unsigned is_b_host:1;		/* true during some HNP roleswitches */
  	unsigned b_hnp_enable:1;	/* OTG: did A-Host enable HNP? */
  	unsigned no_stop_on_short:1;    /*
-diff --git a/include/linux/usb/of.h b/include/linux/usb/of.h
-index 5ff9032e..2a57e0d2 100644
 --- a/include/linux/usb/of.h
 +++ b/include/linux/usb/of.h
 @@ -11,6 +11,8 @@
@@ -1482,6 +1446,3 @@ index 5ff9032e..2a57e0d2 100644
  #if IS_ENABLED(CONFIG_OF)
  enum usb_dr_mode of_usb_get_dr_mode_by_phy(struct device_node *np, int arg0);
  bool of_usb_host_tpl_support(struct device_node *np);
--- 
-2.14.1
-

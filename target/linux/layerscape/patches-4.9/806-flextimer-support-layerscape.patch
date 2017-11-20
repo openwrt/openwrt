@@ -14,11 +14,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  2 files changed, 371 insertions(+), 4 deletions(-)
  create mode 100644 drivers/soc/fsl/layerscape/ftm_alarm.c
 
-diff --git a/drivers/clocksource/fsl_ftm_timer.c b/drivers/clocksource/fsl_ftm_timer.c
-index 738515b8..770bbbca 100644
 --- a/drivers/clocksource/fsl_ftm_timer.c
 +++ b/drivers/clocksource/fsl_ftm_timer.c
-@@ -83,11 +83,11 @@ static inline void ftm_counter_disable(void __iomem *base)
+@@ -83,11 +83,11 @@ static inline void ftm_counter_disable(v
  
  static inline void ftm_irq_acknowledge(void __iomem *base)
  {
@@ -34,9 +32,6 @@ index 738515b8..770bbbca 100644
  }
  
  static inline void ftm_irq_enable(void __iomem *base)
-diff --git a/drivers/soc/fsl/layerscape/ftm_alarm.c b/drivers/soc/fsl/layerscape/ftm_alarm.c
-new file mode 100644
-index 00000000..49865b0b
 --- /dev/null
 +++ b/drivers/soc/fsl/layerscape/ftm_alarm.c
 @@ -0,0 +1,367 @@
@@ -407,6 +402,3 @@ index 00000000..49865b0b
 +	return platform_driver_register(&ftm_alarm_driver);
 +}
 +device_initcall(ftm_alarm_init);
--- 
-2.14.1
-

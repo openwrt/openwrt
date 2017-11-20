@@ -35,7 +35,7 @@ Signed-off-by: Richard Weinberger <richard@nod.at>
  	struct iovec iov;
  
  	if (have_xstate_support) {
-@@ -34,9 +35,9 @@ int save_fp_registers(int pid, unsigned 
+@@ -34,9 +35,9 @@ int save_fp_registers(int pid, unsigned
  		if (ptrace(PTRACE_GETREGSET, pid, NT_X86_XSTATE, &iov) < 0)
  			return -errno;
  		return 0;

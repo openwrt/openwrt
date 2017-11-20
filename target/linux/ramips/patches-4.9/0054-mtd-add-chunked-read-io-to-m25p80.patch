@@ -83,7 +83,7 @@
  
  	if (info->flags & USE_FSR)
  		nor->flags |= SNOR_F_USE_FSR;
-@@ -1735,11 +1798,20 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1737,11 +1800,20 @@ int spi_nor_scan(struct spi_nor *nor, co
  	mtd->writebufsize = nor->page_size;
  
  	if (np) {

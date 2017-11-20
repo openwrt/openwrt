@@ -23,11 +23,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  include/linux/iommu.h        |  55 +++++++---
  10 files changed, 739 insertions(+), 157 deletions(-)
 
-diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index c380b7e8..93199931 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
-@@ -373,6 +373,8 @@ static struct iommu_group *acpihid_device_group(struct device *dev)
+@@ -373,6 +373,8 @@ static struct iommu_group *acpihid_devic
  
  	if (!entry->group)
  		entry->group = generic_device_group(dev);
@@ -36,7 +34,7 @@ index c380b7e8..93199931 100644
  
  	return entry->group;
  }
-@@ -3159,9 +3161,10 @@ static bool amd_iommu_capable(enum iommu_cap cap)
+@@ -3160,9 +3162,10 @@ static bool amd_iommu_capable(enum iommu
  	return false;
  }
  
@@ -49,7 +47,7 @@ index c380b7e8..93199931 100644
  	struct unity_map_entry *entry;
  	int devid;
  
-@@ -3170,41 +3173,56 @@ static void amd_iommu_get_dm_regions(struct device *dev,
+@@ -3171,41 +3174,56 @@ static void amd_iommu_get_dm_regions(str
  		return;
  
  	list_for_each_entry(entry, &amd_iommu_unity_map, list) {
@@ -120,7 +118,7 @@ index c380b7e8..93199931 100644
  {
  	struct dma_ops_domain *dma_dom = to_dma_ops_domain(to_pdomain(domain));
  	unsigned long start, end;
-@@ -3228,9 +3246,9 @@ static const struct iommu_ops amd_iommu_ops = {
+@@ -3229,9 +3247,9 @@ static const struct iommu_ops amd_iommu_
  	.add_device = amd_iommu_add_device,
  	.remove_device = amd_iommu_remove_device,
  	.device_group = amd_iommu_device_group,
@@ -133,8 +131,6 @@ index c380b7e8..93199931 100644
  	.pgsize_bitmap	= AMD_IOMMU_PGSIZES,
  };
  
-diff --git a/drivers/iommu/arm-smmu-v3.c b/drivers/iommu/arm-smmu-v3.c
-index e6f9b2d7..48e2a7c4 100644
 --- a/drivers/iommu/arm-smmu-v3.c
 +++ b/drivers/iommu/arm-smmu-v3.c
 @@ -410,6 +410,9 @@
@@ -173,7 +169,7 @@ index e6f9b2d7..48e2a7c4 100644
  };
  
  struct arm_smmu_domain {
-@@ -1000,9 +1009,9 @@ static void arm_smmu_write_strtab_ent(struct arm_smmu_device *smmu, u32 sid,
+@@ -1000,9 +1009,9 @@ static void arm_smmu_write_strtab_ent(st
  	 * This is hideously complicated, but we only really care about
  	 * three cases at the moment:
  	 *
@@ -186,19 +182,13 @@ index e6f9b2d7..48e2a7c4 100644
  	 *
  	 * Given that we can't update the STE atomically and the SMMU
  	 * doesn't read the thing in a defined order, that leaves us
-@@ -1040,17 +1049,16 @@ static void arm_smmu_write_strtab_ent(struct arm_smmu_device *smmu, u32 sid,
- 		}
+@@ -1041,11 +1050,15 @@ static void arm_smmu_write_strtab_ent(st
  	}
  
--	/* Nuke the existing Config, as we're going to rewrite it */
--	val &= ~(STRTAB_STE_0_CFG_MASK << STRTAB_STE_0_CFG_SHIFT);
-+	/* Nuke the existing STE_0 value, as we're going to rewrite it */
+ 	/* Nuke the existing STE_0 value, as we're going to rewrite it */
+-	val = ste->valid ? STRTAB_STE_0_V : 0;
 +	val = STRTAB_STE_0_V;
- 
--	if (ste->valid)
--		val |= STRTAB_STE_0_V;
--	else
--		val &= ~STRTAB_STE_0_V;
++
 +	/* Bypass/fault */
 +	if (!ste->assigned || !(ste->s1_cfg || ste->s2_cfg)) {
 +		if (!ste->assigned && disable_bypass)
@@ -212,15 +202,7 @@ index e6f9b2d7..48e2a7c4 100644
  		dst[0] = cpu_to_le64(val);
  		dst[1] = cpu_to_le64(STRTAB_STE_1_SHCFG_INCOMING
  			 << STRTAB_STE_1_SHCFG_SHIFT);
-@@ -1081,7 +1089,6 @@ static void arm_smmu_write_strtab_ent(struct arm_smmu_device *smmu, u32 sid,
- 		val |= (ste->s1_cfg->cdptr_dma & STRTAB_STE_0_S1CTXPTR_MASK
- 		        << STRTAB_STE_0_S1CTXPTR_SHIFT) |
- 			STRTAB_STE_0_CFG_S1_TRANS;
--
- 	}
- 
- 	if (ste->s2_cfg) {
-@@ -1114,10 +1121,7 @@ static void arm_smmu_write_strtab_ent(struct arm_smmu_device *smmu, u32 sid,
+@@ -1108,10 +1121,7 @@ static void arm_smmu_write_strtab_ent(st
  static void arm_smmu_init_bypass_stes(u64 *strtab, unsigned int nent)
  {
  	unsigned int i;
@@ -232,7 +214,7 @@ index e6f9b2d7..48e2a7c4 100644
  
  	for (i = 0; i < nent; ++i) {
  		arm_smmu_write_strtab_ent(NULL, -1, strtab, &ste);
-@@ -1370,8 +1374,6 @@ static bool arm_smmu_capable(enum iommu_cap cap)
+@@ -1364,8 +1374,6 @@ static bool arm_smmu_capable(enum iommu_
  	switch (cap) {
  	case IOMMU_CAP_CACHE_COHERENCY:
  		return true;
@@ -241,7 +223,7 @@ index e6f9b2d7..48e2a7c4 100644
  	case IOMMU_CAP_NOEXEC:
  		return true;
  	default:
-@@ -1383,7 +1385,9 @@ static struct iommu_domain *arm_smmu_domain_alloc(unsigned type)
+@@ -1377,7 +1385,9 @@ static struct iommu_domain *arm_smmu_dom
  {
  	struct arm_smmu_domain *smmu_domain;
  
@@ -252,7 +234,7 @@ index e6f9b2d7..48e2a7c4 100644
  		return NULL;
  
  	/*
-@@ -1514,6 +1518,11 @@ static int arm_smmu_domain_finalise(struct iommu_domain *domain)
+@@ -1508,6 +1518,11 @@ static int arm_smmu_domain_finalise(stru
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  	struct arm_smmu_device *smmu = smmu_domain->smmu;
  
@@ -264,7 +246,7 @@ index e6f9b2d7..48e2a7c4 100644
  	/* Restrict the stage to what we can actually support */
  	if (!(smmu->features & ARM_SMMU_FEAT_TRANS_S1))
  		smmu_domain->stage = ARM_SMMU_DOMAIN_S2;
-@@ -1584,7 +1593,7 @@ static __le64 *arm_smmu_get_step_for_sid(struct arm_smmu_device *smmu, u32 sid)
+@@ -1578,7 +1593,7 @@ static __le64 *arm_smmu_get_step_for_sid
  	return step;
  }
  
@@ -273,7 +255,7 @@ index e6f9b2d7..48e2a7c4 100644
  {
  	int i;
  	struct arm_smmu_master_data *master = fwspec->iommu_priv;
-@@ -1596,17 +1605,14 @@ static int arm_smmu_install_ste_for_dev(struct iommu_fwspec *fwspec)
+@@ -1590,17 +1605,14 @@ static int arm_smmu_install_ste_for_dev(
  
  		arm_smmu_write_strtab_ent(smmu, sid, step, &master->ste);
  	}
@@ -293,7 +275,7 @@ index e6f9b2d7..48e2a7c4 100644
  }
  
  static int arm_smmu_attach_dev(struct iommu_domain *domain, struct device *dev)
-@@ -1625,7 +1631,7 @@ static int arm_smmu_attach_dev(struct iommu_domain *domain, struct device *dev)
+@@ -1619,7 +1631,7 @@ static int arm_smmu_attach_dev(struct io
  	ste = &master->ste;
  
  	/* Already attached to a different domain? */
@@ -302,7 +284,7 @@ index e6f9b2d7..48e2a7c4 100644
  		arm_smmu_detach_dev(dev);
  
  	mutex_lock(&smmu_domain->init_mutex);
-@@ -1646,10 +1652,12 @@ static int arm_smmu_attach_dev(struct iommu_domain *domain, struct device *dev)
+@@ -1640,10 +1652,12 @@ static int arm_smmu_attach_dev(struct io
  		goto out_unlock;
  	}
  
@@ -318,7 +300,7 @@ index e6f9b2d7..48e2a7c4 100644
  		ste->s1_cfg = &smmu_domain->s1_cfg;
  		ste->s2_cfg = NULL;
  		arm_smmu_write_ctx_desc(smmu, ste->s1_cfg);
-@@ -1658,10 +1666,7 @@ static int arm_smmu_attach_dev(struct iommu_domain *domain, struct device *dev)
+@@ -1652,10 +1666,7 @@ static int arm_smmu_attach_dev(struct io
  		ste->s2_cfg = &smmu_domain->s2_cfg;
  	}
  
@@ -330,7 +312,7 @@ index e6f9b2d7..48e2a7c4 100644
  out_unlock:
  	mutex_unlock(&smmu_domain->init_mutex);
  	return ret;
-@@ -1709,6 +1714,9 @@ arm_smmu_iova_to_phys(struct iommu_domain *domain, dma_addr_t iova)
+@@ -1703,6 +1714,9 @@ arm_smmu_iova_to_phys(struct iommu_domai
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  	struct io_pgtable_ops *ops = smmu_domain->pgtbl_ops;
  
@@ -340,7 +322,7 @@ index e6f9b2d7..48e2a7c4 100644
  	if (!ops)
  		return 0;
  
-@@ -1807,7 +1815,7 @@ static void arm_smmu_remove_device(struct device *dev)
+@@ -1801,7 +1815,7 @@ static void arm_smmu_remove_device(struc
  		return;
  
  	master = fwspec->iommu_priv;
@@ -349,7 +331,7 @@ index e6f9b2d7..48e2a7c4 100644
  		arm_smmu_detach_dev(dev);
  	iommu_group_remove_device(dev);
  	kfree(master);
-@@ -1836,6 +1844,9 @@ static int arm_smmu_domain_get_attr(struct iommu_domain *domain,
+@@ -1830,6 +1844,9 @@ static int arm_smmu_domain_get_attr(stru
  {
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  
@@ -359,7 +341,7 @@ index e6f9b2d7..48e2a7c4 100644
  	switch (attr) {
  	case DOMAIN_ATTR_NESTING:
  		*(int *)data = (smmu_domain->stage == ARM_SMMU_DOMAIN_NESTED);
-@@ -1851,6 +1862,9 @@ static int arm_smmu_domain_set_attr(struct iommu_domain *domain,
+@@ -1845,6 +1862,9 @@ static int arm_smmu_domain_set_attr(stru
  	int ret = 0;
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  
@@ -369,7 +351,7 @@ index e6f9b2d7..48e2a7c4 100644
  	mutex_lock(&smmu_domain->init_mutex);
  
  	switch (attr) {
-@@ -1880,6 +1894,31 @@ static int arm_smmu_of_xlate(struct device *dev, struct of_phandle_args *args)
+@@ -1874,6 +1894,31 @@ static int arm_smmu_of_xlate(struct devi
  	return iommu_fwspec_add_ids(dev, args->args, 1);
  }
  
@@ -401,7 +383,7 @@ index e6f9b2d7..48e2a7c4 100644
  static struct iommu_ops arm_smmu_ops = {
  	.capable		= arm_smmu_capable,
  	.domain_alloc		= arm_smmu_domain_alloc,
-@@ -1895,6 +1934,8 @@ static struct iommu_ops arm_smmu_ops = {
+@@ -1889,6 +1934,8 @@ static struct iommu_ops arm_smmu_ops = {
  	.domain_get_attr	= arm_smmu_domain_get_attr,
  	.domain_set_attr	= arm_smmu_domain_set_attr,
  	.of_xlate		= arm_smmu_of_xlate,
@@ -410,8 +392,6 @@ index e6f9b2d7..48e2a7c4 100644
  	.pgsize_bitmap		= -1UL, /* Restricted during device attach */
  };
  
-diff --git a/drivers/iommu/arm-smmu.c b/drivers/iommu/arm-smmu.c
-index 8f728144..3243a96d 100644
 --- a/drivers/iommu/arm-smmu.c
 +++ b/drivers/iommu/arm-smmu.c
 @@ -49,6 +49,7 @@
@@ -448,7 +428,7 @@ index 8f728144..3243a96d 100644
  };
  
  struct arm_smmu_domain {
-@@ -821,6 +827,12 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
+@@ -821,6 +827,12 @@ static int arm_smmu_init_domain_context(
  	if (smmu_domain->smmu)
  		goto out_unlock;
  
@@ -461,7 +441,7 @@ index 8f728144..3243a96d 100644
  	/*
  	 * Mapping the requested stage onto what we support is surprisingly
  	 * complicated, mainly because the spec allows S1+S2 SMMUs without
-@@ -981,7 +993,7 @@ static void arm_smmu_destroy_domain_context(struct iommu_domain *domain)
+@@ -981,7 +993,7 @@ static void arm_smmu_destroy_domain_cont
  	void __iomem *cb_base;
  	int irq;
  
@@ -470,7 +450,7 @@ index 8f728144..3243a96d 100644
  		return;
  
  	/*
-@@ -1004,7 +1016,9 @@ static struct iommu_domain *arm_smmu_domain_alloc(unsigned type)
+@@ -1004,7 +1016,9 @@ static struct iommu_domain *arm_smmu_dom
  {
  	struct arm_smmu_domain *smmu_domain;
  
@@ -481,7 +461,7 @@ index 8f728144..3243a96d 100644
  		return NULL;
  	/*
  	 * Allocate the domain and initialise some of its data structures.
-@@ -1202,10 +1216,15 @@ static int arm_smmu_domain_add_master(struct arm_smmu_domain *smmu_domain,
+@@ -1202,10 +1216,15 @@ static int arm_smmu_domain_add_master(st
  {
  	struct arm_smmu_device *smmu = smmu_domain->smmu;
  	struct arm_smmu_s2cr *s2cr = smmu->s2crs;
@@ -498,7 +478,7 @@ index 8f728144..3243a96d 100644
  	for_each_cfg_sme(fwspec, i, idx) {
  		if (type == s2cr[idx].type && cbndx == s2cr[idx].cbndx)
  			continue;
-@@ -1343,6 +1362,9 @@ static phys_addr_t arm_smmu_iova_to_phys(struct iommu_domain *domain,
+@@ -1343,6 +1362,9 @@ static phys_addr_t arm_smmu_iova_to_phys
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  	struct io_pgtable_ops *ops= smmu_domain->pgtbl_ops;
  
@@ -508,7 +488,7 @@ index 8f728144..3243a96d 100644
  	if (!ops)
  		return 0;
  
-@@ -1368,8 +1390,6 @@ static bool arm_smmu_capable(enum iommu_cap cap)
+@@ -1368,8 +1390,6 @@ static bool arm_smmu_capable(enum iommu_
  		 * requests.
  		 */
  		return true;
@@ -517,7 +497,7 @@ index 8f728144..3243a96d 100644
  	case IOMMU_CAP_NOEXEC:
  		return true;
  	default:
-@@ -1478,10 +1498,12 @@ static struct iommu_group *arm_smmu_device_group(struct device *dev)
+@@ -1478,10 +1498,12 @@ static struct iommu_group *arm_smmu_devi
  	}
  
  	if (group)
@@ -531,7 +511,7 @@ index 8f728144..3243a96d 100644
  	else
  		group = generic_device_group(dev);
  
-@@ -1493,6 +1515,9 @@ static int arm_smmu_domain_get_attr(struct iommu_domain *domain,
+@@ -1493,6 +1515,9 @@ static int arm_smmu_domain_get_attr(stru
  {
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  
@@ -541,7 +521,7 @@ index 8f728144..3243a96d 100644
  	switch (attr) {
  	case DOMAIN_ATTR_NESTING:
  		*(int *)data = (smmu_domain->stage == ARM_SMMU_DOMAIN_NESTED);
-@@ -1508,6 +1533,9 @@ static int arm_smmu_domain_set_attr(struct iommu_domain *domain,
+@@ -1508,6 +1533,9 @@ static int arm_smmu_domain_set_attr(stru
  	int ret = 0;
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
  
@@ -551,7 +531,7 @@ index 8f728144..3243a96d 100644
  	mutex_lock(&smmu_domain->init_mutex);
  
  	switch (attr) {
-@@ -1534,17 +1562,44 @@ static int arm_smmu_domain_set_attr(struct iommu_domain *domain,
+@@ -1534,17 +1562,44 @@ out_unlock:
  
  static int arm_smmu_of_xlate(struct device *dev, struct of_phandle_args *args)
  {
@@ -606,7 +586,7 @@ index 8f728144..3243a96d 100644
  	.pgsize_bitmap		= -1UL, /* Restricted during device attach */
  };
  
-@@ -1581,16 +1638,22 @@ static void arm_smmu_device_reset(struct arm_smmu_device *smmu)
+@@ -1581,16 +1638,22 @@ static void arm_smmu_device_reset(struct
  	for (i = 0; i < smmu->num_mapping_groups; ++i)
  		arm_smmu_write_sme(smmu, i);
  
@@ -638,7 +618,7 @@ index 8f728144..3243a96d 100644
  		writel_relaxed(reg, gr0_base + ARM_SMMU_GR0_sACR);
  	}
  
-@@ -2024,6 +2087,11 @@ static int arm_smmu_device_dt_probe(struct platform_device *pdev)
+@@ -2024,6 +2087,11 @@ static int arm_smmu_device_dt_probe(stru
  		bus_set_iommu(&pci_bus_type, &arm_smmu_ops);
  	}
  #endif
@@ -650,8 +630,6 @@ index 8f728144..3243a96d 100644
  	return 0;
  }
  
-diff --git a/drivers/iommu/dma-iommu.c b/drivers/iommu/dma-iommu.c
-index 1520e7f0..3ade4153 100644
 --- a/drivers/iommu/dma-iommu.c
 +++ b/drivers/iommu/dma-iommu.c
 @@ -37,15 +37,50 @@ struct iommu_dma_msi_page {
@@ -709,11 +687,10 @@ index 1520e7f0..3ade4153 100644
  }
  
  int iommu_dma_init(void)
-@@ -61,26 +96,54 @@ int iommu_dma_init(void)
-  * callback when domain->type == IOMMU_DOMAIN_DMA.
+@@ -62,25 +97,53 @@ int iommu_dma_init(void)
   */
  int iommu_get_dma_cookie(struct iommu_domain *domain)
-+{
+ {
 +	if (domain->iova_cookie)
 +		return -EEXIST;
 +
@@ -738,7 +715,7 @@ index 1520e7f0..3ade4153 100644
 + * used by the devices attached to @domain.
 + */
 +int iommu_get_msi_cookie(struct iommu_domain *domain, dma_addr_t base)
- {
++{
  	struct iommu_dma_cookie *cookie;
  
 +	if (domain->type != IOMMU_DOMAIN_UNMANAGED)
@@ -769,7 +746,7 @@ index 1520e7f0..3ade4153 100644
   *
   * IOMMU drivers should normally call this from their domain_free callback.
   */
-@@ -92,7 +155,7 @@ void iommu_put_dma_cookie(struct iommu_domain *domain)
+@@ -92,7 +155,7 @@ void iommu_put_dma_cookie(struct iommu_d
  	if (!cookie)
  		return;
  
@@ -778,7 +755,7 @@ index 1520e7f0..3ade4153 100644
  		put_iova_domain(&cookie->iovad);
  
  	list_for_each_entry_safe(msi, tmp, &cookie->msi_page_list, list) {
-@@ -104,21 +167,99 @@ void iommu_put_dma_cookie(struct iommu_domain *domain)
+@@ -104,21 +167,99 @@ void iommu_put_dma_cookie(struct iommu_d
  }
  EXPORT_SYMBOL(iommu_put_dma_cookie);
  
@@ -884,7 +861,7 @@ index 1520e7f0..3ade4153 100644
  }
  
  /**
-@@ -136,11 +277,12 @@ static void iova_reserve_pci_windows(struct pci_dev *dev,
+@@ -136,11 +277,12 @@ static void iova_reserve_pci_windows(str
  int iommu_dma_init_domain(struct iommu_domain *domain, dma_addr_t base,
  		u64 size, struct device *dev)
  {
@@ -900,7 +877,7 @@ index 1520e7f0..3ade4153 100644
  
  	/* Use the smallest supported page size for IOVA granularity */
  	order = __ffs(domain->pgsize_bitmap);
-@@ -160,22 +302,37 @@ int iommu_dma_init_domain(struct iommu_domain *domain, dma_addr_t base,
+@@ -160,22 +302,37 @@ int iommu_dma_init_domain(struct iommu_d
  		end_pfn = min_t(unsigned long, end_pfn,
  				domain->geometry.aperture_end >> order);
  	}
@@ -947,7 +924,7 @@ index 1520e7f0..3ade4153 100644
  }
  EXPORT_SYMBOL(iommu_dma_init_domain);
  
-@@ -643,11 +800,12 @@ static struct iommu_dma_msi_page *iommu_dma_get_msi_page(struct device *dev,
+@@ -643,11 +800,12 @@ static struct iommu_dma_msi_page *iommu_
  {
  	struct iommu_dma_cookie *cookie = domain->iova_cookie;
  	struct iommu_dma_msi_page *msi_page;
@@ -962,7 +939,7 @@ index 1520e7f0..3ade4153 100644
  	list_for_each_entry(msi_page, &cookie->msi_page_list, list)
  		if (msi_page->phys == msi_addr)
  			return msi_page;
-@@ -656,13 +814,18 @@ static struct iommu_dma_msi_page *iommu_dma_get_msi_page(struct device *dev,
+@@ -656,13 +814,18 @@ static struct iommu_dma_msi_page *iommu_
  	if (!msi_page)
  		return NULL;
  
@@ -987,7 +964,7 @@ index 1520e7f0..3ade4153 100644
  		goto out_free_iova;
  
  	INIT_LIST_HEAD(&msi_page->list);
-@@ -670,7 +833,10 @@ static struct iommu_dma_msi_page *iommu_dma_get_msi_page(struct device *dev,
+@@ -670,7 +833,10 @@ static struct iommu_dma_msi_page *iommu_
  	return msi_page;
  
  out_free_iova:
@@ -999,7 +976,7 @@ index 1520e7f0..3ade4153 100644
  out_free_page:
  	kfree(msi_page);
  	return NULL;
-@@ -711,7 +877,7 @@ void iommu_dma_map_msi_msg(int irq, struct msi_msg *msg)
+@@ -711,7 +877,7 @@ void iommu_dma_map_msi_msg(int irq, stru
  		msg->data = ~0U;
  	} else {
  		msg->address_hi = upper_32_bits(msi_page->iova);
@@ -1008,8 +985,6 @@ index 1520e7f0..3ade4153 100644
  		msg->address_lo += lower_32_bits(msi_page->iova);
  	}
  }
-diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
-index 002f8a42..befbfd30 100644
 --- a/drivers/iommu/intel-iommu.c
 +++ b/drivers/iommu/intel-iommu.c
 @@ -440,6 +440,7 @@ struct dmar_rmrr_unit {
@@ -1020,7 +995,7 @@ index 002f8a42..befbfd30 100644
  };
  
  struct dmar_atsr_unit {
-@@ -4250,27 +4251,40 @@ static inline void init_iommu_pm_ops(void) {}
+@@ -4250,27 +4251,40 @@ static inline void init_iommu_pm_ops(voi
  int __init dmar_parse_one_rmrr(struct acpi_dmar_header *header, void *arg)
  {
  	struct acpi_dmar_reserved_memory *rmrr;
@@ -1074,7 +1049,7 @@ index 002f8a42..befbfd30 100644
  		kfree(rmrru);
  	}
  
-@@ -5219,6 +5234,45 @@ static void intel_iommu_remove_device(struct device *dev)
+@@ -5219,6 +5234,45 @@ static void intel_iommu_remove_device(st
  	iommu_device_unlink(iommu->iommu_dev, dev);
  }
  
@@ -1120,7 +1095,7 @@ index 002f8a42..befbfd30 100644
  #ifdef CONFIG_INTEL_IOMMU_SVM
  #define MAX_NR_PASID_BITS (20)
  static inline unsigned long intel_iommu_get_pts(struct intel_iommu *iommu)
-@@ -5349,19 +5403,21 @@ struct intel_iommu *intel_svm_device_to_iommu(struct device *dev)
+@@ -5349,19 +5403,21 @@ struct intel_iommu *intel_svm_device_to_
  #endif /* CONFIG_INTEL_IOMMU_SVM */
  
  static const struct iommu_ops intel_iommu_ops = {
@@ -1155,8 +1130,6 @@ index 002f8a42..befbfd30 100644
  };
  
  static void quirk_iommu_g4x_gfx(struct pci_dev *dev)
-diff --git a/drivers/iommu/iommu.c b/drivers/iommu/iommu.c
-index 87d3060f..e6a8c225 100644
 --- a/drivers/iommu/iommu.c
 +++ b/drivers/iommu/iommu.c
 @@ -36,6 +36,7 @@
@@ -1181,7 +1154,7 @@ index 87d3060f..e6a8c225 100644
  #define IOMMU_GROUP_ATTR(_name, _mode, _show, _store)		\
  struct iommu_group_attribute iommu_group_attr_##_name =		\
  	__ATTR(_name, _mode, _show, _store)
-@@ -86,6 +94,18 @@ static int __iommu_attach_group(struct iommu_domain *domain,
+@@ -86,6 +94,18 @@ static int __iommu_attach_group(struct i
  static void __iommu_detach_group(struct iommu_domain *domain,
  				 struct iommu_group *group);
  
@@ -1200,7 +1173,7 @@ index 87d3060f..e6a8c225 100644
  static ssize_t iommu_group_attr_show(struct kobject *kobj,
  				     struct attribute *__attr, char *buf)
  {
-@@ -133,8 +153,131 @@ static ssize_t iommu_group_show_name(struct iommu_group *group, char *buf)
+@@ -133,8 +153,131 @@ static ssize_t iommu_group_show_name(str
  	return sprintf(buf, "%s\n", group->name);
  }
  
@@ -1332,7 +1305,7 @@ index 87d3060f..e6a8c225 100644
  static void iommu_group_release(struct kobject *kobj)
  {
  	struct iommu_group *group = to_iommu_group(kobj);
-@@ -212,6 +355,11 @@ struct iommu_group *iommu_group_alloc(void)
+@@ -212,6 +355,11 @@ struct iommu_group *iommu_group_alloc(vo
  	 */
  	kobject_put(&group->kobj);
  
@@ -1344,7 +1317,7 @@ index 87d3060f..e6a8c225 100644
  	pr_debug("Allocated group %d\n", group->id);
  
  	return group;
-@@ -318,7 +466,7 @@ static int iommu_group_create_direct_mappings(struct iommu_group *group,
+@@ -318,7 +466,7 @@ static int iommu_group_create_direct_map
  					      struct device *dev)
  {
  	struct iommu_domain *domain = group->default_domain;
@@ -1353,7 +1326,7 @@ index 87d3060f..e6a8c225 100644
  	struct list_head mappings;
  	unsigned long pg_size;
  	int ret = 0;
-@@ -331,18 +479,21 @@ static int iommu_group_create_direct_mappings(struct iommu_group *group,
+@@ -331,18 +479,21 @@ static int iommu_group_create_direct_map
  	pg_size = 1UL << __ffs(domain->pgsize_bitmap);
  	INIT_LIST_HEAD(&mappings);
  
@@ -1378,7 +1351,7 @@ index 87d3060f..e6a8c225 100644
  		for (addr = start; addr < end; addr += pg_size) {
  			phys_addr_t phys_addr;
  
-@@ -358,7 +509,7 @@ static int iommu_group_create_direct_mappings(struct iommu_group *group,
+@@ -358,7 +509,7 @@ static int iommu_group_create_direct_map
  	}
  
  out:
@@ -1387,11 +1360,10 @@ index 87d3060f..e6a8c225 100644
  
  	return ret;
  }
-@@ -562,6 +713,19 @@ struct iommu_group *iommu_group_get(struct device *dev)
- }
+@@ -563,6 +714,19 @@ struct iommu_group *iommu_group_get(stru
  EXPORT_SYMBOL_GPL(iommu_group_get);
  
-+/**
+ /**
 + * iommu_group_ref_get - Increment reference on a group
 + * @group: the group to use, must not be NULL
 + *
@@ -1404,10 +1376,11 @@ index 87d3060f..e6a8c225 100644
 +	return group;
 +}
 +
- /**
++/**
   * iommu_group_put - Decrement group reference
   * @group: the group to use
-@@ -845,10 +1009,19 @@ struct iommu_group *iommu_group_get_for_dev(struct device *dev)
+  *
+@@ -845,10 +1009,19 @@ struct iommu_group *iommu_group_get_for_
  	 * IOMMU driver.
  	 */
  	if (!group->default_domain) {
@@ -1430,7 +1403,7 @@ index 87d3060f..e6a8c225 100644
  	}
  
  	ret = iommu_group_add_device(group, dev);
-@@ -1557,20 +1730,38 @@ int iommu_domain_set_attr(struct iommu_domain *domain,
+@@ -1557,20 +1730,38 @@ int iommu_domain_set_attr(struct iommu_d
  }
  EXPORT_SYMBOL_GPL(iommu_domain_set_attr);
  
@@ -1475,11 +1448,9 @@ index 87d3060f..e6a8c225 100644
  }
  
  /* Request that a device is direct mapped by the IOMMU */
-diff --git a/drivers/iommu/mtk_iommu.c b/drivers/iommu/mtk_iommu.c
-index b12c12d7..9799daea 100644
 --- a/drivers/iommu/mtk_iommu.c
 +++ b/drivers/iommu/mtk_iommu.c
-@@ -410,6 +410,8 @@ static struct iommu_group *mtk_iommu_device_group(struct device *dev)
+@@ -410,6 +410,8 @@ static struct iommu_group *mtk_iommu_dev
  		data->m4u_group = iommu_group_alloc();
  		if (IS_ERR(data->m4u_group))
  			dev_err(dev, "Failed to allocate M4U IOMMU group\n");
@@ -1488,11 +1459,9 @@ index b12c12d7..9799daea 100644
  	}
  	return data->m4u_group;
  }
-diff --git a/drivers/iommu/mtk_iommu_v1.c b/drivers/iommu/mtk_iommu_v1.c
-index b8aeb076..c7063e9d 100644
 --- a/drivers/iommu/mtk_iommu_v1.c
 +++ b/drivers/iommu/mtk_iommu_v1.c
-@@ -502,6 +502,8 @@ static struct iommu_group *mtk_iommu_device_group(struct device *dev)
+@@ -502,6 +502,8 @@ static struct iommu_group *mtk_iommu_dev
  		data->m4u_group = iommu_group_alloc();
  		if (IS_ERR(data->m4u_group))
  			dev_err(dev, "Failed to allocate M4U IOMMU group\n");
@@ -1501,8 +1470,6 @@ index b8aeb076..c7063e9d 100644
  	}
  	return data->m4u_group;
  }
-diff --git a/include/linux/dma-iommu.h b/include/linux/dma-iommu.h
-index 32c58906..36d3206d 100644
 --- a/include/linux/dma-iommu.h
 +++ b/include/linux/dma-iommu.h
 @@ -27,6 +27,7 @@ int iommu_dma_init(void);
@@ -1513,7 +1480,7 @@ index 32c58906..36d3206d 100644
  void iommu_put_dma_cookie(struct iommu_domain *domain);
  
  /* Setup call for arch DMA mapping code */
-@@ -66,6 +67,7 @@ int iommu_dma_mapping_error(struct device *dev, dma_addr_t dma_addr);
+@@ -66,6 +67,7 @@ int iommu_dma_mapping_error(struct devic
  
  /* The DMA API isn't _quite_ the whole story, though... */
  void iommu_dma_map_msi_msg(int irq, struct msi_msg *msg);
@@ -1521,7 +1488,7 @@ index 32c58906..36d3206d 100644
  
  #else
  
-@@ -82,6 +84,11 @@ static inline int iommu_get_dma_cookie(struct iommu_domain *domain)
+@@ -82,6 +84,11 @@ static inline int iommu_get_dma_cookie(s
  	return -ENODEV;
  }
  
@@ -1533,7 +1500,7 @@ index 32c58906..36d3206d 100644
  static inline void iommu_put_dma_cookie(struct iommu_domain *domain)
  {
  }
-@@ -90,6 +97,10 @@ static inline void iommu_dma_map_msi_msg(int irq, struct msi_msg *msg)
+@@ -90,6 +97,10 @@ static inline void iommu_dma_map_msi_msg
  {
  }
  
@@ -1544,8 +1511,6 @@ index 32c58906..36d3206d 100644
  #endif	/* CONFIG_IOMMU_DMA */
  #endif	/* __KERNEL__ */
  #endif	/* __DMA_IOMMU_H */
-diff --git a/include/linux/iommu.h b/include/linux/iommu.h
-index 436dc213..188599f5 100644
 --- a/include/linux/iommu.h
 +++ b/include/linux/iommu.h
 @@ -117,18 +117,32 @@ enum iommu_attr {
@@ -1614,7 +1579,7 @@ index 436dc213..188599f5 100644
  
  	/* Window handling functions */
  	int (*domain_window_enable)(struct iommu_domain *domain, u32 wnd_nr,
-@@ -233,9 +248,14 @@ extern phys_addr_t iommu_iova_to_phys(struct iommu_domain *domain, dma_addr_t io
+@@ -233,9 +248,14 @@ extern phys_addr_t iommu_iova_to_phys(st
  extern void iommu_set_fault_handler(struct iommu_domain *domain,
  			iommu_fault_handler_t handler, void *token);
  
@@ -1631,7 +1596,7 @@ index 436dc213..188599f5 100644
  
  extern int iommu_attach_group(struct iommu_domain *domain,
  			      struct iommu_group *group);
-@@ -253,6 +273,7 @@ extern void iommu_group_remove_device(struct device *dev);
+@@ -253,6 +273,7 @@ extern void iommu_group_remove_device(st
  extern int iommu_group_for_each_dev(struct iommu_group *group, void *data,
  				    int (*fn)(struct device *, void *));
  extern struct iommu_group *iommu_group_get(struct device *dev);
@@ -1639,7 +1604,7 @@ index 436dc213..188599f5 100644
  extern void iommu_group_put(struct iommu_group *group);
  extern int iommu_group_register_notifier(struct iommu_group *group,
  					 struct notifier_block *nb);
-@@ -439,16 +460,22 @@ static inline void iommu_set_fault_handler(struct iommu_domain *domain,
+@@ -439,16 +460,22 @@ static inline void iommu_set_fault_handl
  {
  }
  
@@ -1664,6 +1629,3 @@ index 436dc213..188599f5 100644
  static inline int iommu_request_dm_for_dev(struct device *dev)
  {
  	return -ENODEV;
--- 
-2.14.1
-

@@ -23,11 +23,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  include/linux/mtd/spi-nor.h       |  14 +-
  4 files changed, 409 insertions(+), 70 deletions(-)
 
-diff --git a/drivers/mtd/mtdchar.c b/drivers/mtd/mtdchar.c
-index 2a47a3f0..4f21401d 100644
 --- a/drivers/mtd/mtdchar.c
 +++ b/drivers/mtd/mtdchar.c
-@@ -451,7 +451,7 @@ static int mtdchar_readoob(struct file *file, struct mtd_info *mtd,
+@@ -451,7 +451,7 @@ static int mtdchar_readoob(struct file *
  	 * data. For our userspace tools it is important to dump areas
  	 * with ECC errors!
  	 * For kernel internal usage it also might return -EUCLEAN
@@ -36,8 +34,6 @@ index 2a47a3f0..4f21401d 100644
  	 * been corrected by the ECC algorithm.
  	 *
  	 * Note: currently the standard NAND function, nand_read_oob_std,
-diff --git a/drivers/mtd/spi-nor/fsl-quadspi.c b/drivers/mtd/spi-nor/fsl-quadspi.c
-index 5c82e4ef..33ecc27a 100644
 --- a/drivers/mtd/spi-nor/fsl-quadspi.c
 +++ b/drivers/mtd/spi-nor/fsl-quadspi.c
 @@ -41,6 +41,8 @@
@@ -90,7 +86,7 @@ index 5c82e4ef..33ecc27a 100644
  	.devtype = FSL_QUADSPI_VYBRID,
  	.rxfifo = 128,
  	.txfifo = 64,
-@@ -232,7 +241,7 @@ static struct fsl_qspi_devtype_data vybrid_data = {
+@@ -232,7 +241,7 @@ static struct fsl_qspi_devtype_data vybr
  	.driver_data = QUADSPI_QUIRK_SWAP_ENDIAN,
  };
  
@@ -99,7 +95,7 @@ index 5c82e4ef..33ecc27a 100644
  	.devtype = FSL_QUADSPI_IMX6SX,
  	.rxfifo = 128,
  	.txfifo = 512,
-@@ -241,7 +250,7 @@ static struct fsl_qspi_devtype_data imx6sx_data = {
+@@ -241,7 +250,7 @@ static struct fsl_qspi_devtype_data imx6
  		       | QUADSPI_QUIRK_TKT245618,
  };
  
@@ -108,7 +104,7 @@ index 5c82e4ef..33ecc27a 100644
  	.devtype = FSL_QUADSPI_IMX7D,
  	.rxfifo = 512,
  	.txfifo = 512,
-@@ -250,7 +259,7 @@ static struct fsl_qspi_devtype_data imx7d_data = {
+@@ -250,7 +259,7 @@ static struct fsl_qspi_devtype_data imx7
  		       | QUADSPI_QUIRK_4X_INT_CLK,
  };
  
@@ -117,7 +113,7 @@ index 5c82e4ef..33ecc27a 100644
  	.devtype = FSL_QUADSPI_IMX6UL,
  	.rxfifo = 128,
  	.txfifo = 512,
-@@ -267,6 +276,14 @@ static struct fsl_qspi_devtype_data ls1021a_data = {
+@@ -267,6 +276,14 @@ static struct fsl_qspi_devtype_data ls10
  	.driver_data = 0,
  };
  
@@ -140,7 +136,7 @@ index 5c82e4ef..33ecc27a 100644
  	unsigned int chip_base_addr; /* We may support two chips. */
  	bool has_second_chip;
  	bool big_endian;
-@@ -309,6 +327,23 @@ static inline int needs_wakeup_wait_mode(struct fsl_qspi *q)
+@@ -309,6 +327,23 @@ static inline int needs_wakeup_wait_mode
  	return q->devtype_data->driver_data & QUADSPI_QUIRK_TKT245618;
  }
  
@@ -164,7 +160,7 @@ index 5c82e4ef..33ecc27a 100644
  /*
   * R/W functions for big- or little-endian registers:
   * The qSPI controller's endian is independent of the CPU core's endian.
-@@ -331,6 +366,31 @@ static u32 qspi_readl(struct fsl_qspi *q, void __iomem *addr)
+@@ -331,6 +366,31 @@ static u32 qspi_readl(struct fsl_qspi *q
  		return ioread32(addr);
  }
  
@@ -196,7 +192,7 @@ index 5c82e4ef..33ecc27a 100644
  /*
   * An IC bug makes us to re-arrange the 32-bit data.
   * The following chips, such as IMX6SLX, have fixed this bug.
-@@ -373,8 +433,15 @@ static void fsl_qspi_init_lut(struct fsl_qspi *q)
+@@ -373,8 +433,15 @@ static void fsl_qspi_init_lut(struct fsl
  	void __iomem *base = q->iobase;
  	int rxfifo = q->devtype_data->rxfifo;
  	u32 lut_base;
@@ -213,13 +209,15 @@ index 5c82e4ef..33ecc27a 100644
  
  	fsl_qspi_unlock_lut(q);
  
-@@ -382,25 +449,51 @@ static void fsl_qspi_init_lut(struct fsl_qspi *q)
+@@ -382,24 +449,50 @@ static void fsl_qspi_init_lut(struct fsl
  	for (i = 0; i < QUADSPI_LUT_NUM; i++)
  		qspi_writel(q, 0, base + QUADSPI_LUT_BASE + i * 4);
  
 -	/* Quad Read */
 -	lut_base = SEQID_QUAD_READ * 4;
--
++	/* Read */
++	lut_base = SEQID_READ * 4;
+ 
 -	if (q->nor_size <= SZ_16M) {
 -		cmd = SPINOR_OP_READ_1_1_4;
 -		addrlen = ADDR24BIT;
@@ -232,9 +230,6 @@ index 5c82e4ef..33ecc27a 100644
 -	}
 -
 -	qspi_writel(q, LUT0(CMD, PAD1, cmd) | LUT1(ADDR, PAD1, addrlen),
-+	/* Read */
-+	lut_base = SEQID_READ * 4;
-+
 +	if (nor->flash_read == SPI_NOR_FAST) {
 +		qspi_writel(q, LUT0(CMD, PAD1, read_op) |
 +			    LUT1(ADDR, PAD1, addrlen),
@@ -247,10 +242,11 @@ index 5c82e4ef..33ecc27a 100644
 +			read_op = 0xEC;
 +		qspi_writel(q,
 +			LUT0(CMD, PAD1, read_op) | LUT1(ADDR, PAD4, addrlen),
-+			base + QUADSPI_LUT(lut_base));
+ 			base + QUADSPI_LUT(lut_base));
+-	qspi_writel(q, LUT0(DUMMY, PAD1, dummy) | LUT1(FSL_READ, PAD4, rxfifo),
 +		qspi_writel(q,
 +			LUT0(MODE, PAD4, 0xff) | LUT1(DUMMY, PAD4, read_dm),
-+			base + QUADSPI_LUT(lut_base + 1));
+ 			base + QUADSPI_LUT(lut_base + 1));
 +		qspi_writel(q,
 +			LUT0(FSL_READ, PAD4, rxfifo),
 +			base + QUADSPI_LUT(lut_base + 2));
@@ -266,22 +262,20 @@ index 5c82e4ef..33ecc27a 100644
 +		/* read mode : 1-4-4, such as Spansion s25fl128s. */
 +		qspi_writel(q, LUT0(CMD, PAD1, read_op)
 +			| LUT1(ADDR_DDR, PAD4, addrlen),
- 			base + QUADSPI_LUT(lut_base));
--	qspi_writel(q, LUT0(DUMMY, PAD1, dummy) | LUT1(FSL_READ, PAD4, rxfifo),
++			base + QUADSPI_LUT(lut_base));
 +
 +		qspi_writel(q, LUT0(MODE_DDR, PAD4, 0xff)
 +			| LUT1(DUMMY, PAD1, read_dm),
- 			base + QUADSPI_LUT(lut_base + 1));
- 
++			base + QUADSPI_LUT(lut_base + 1));
++
 +		qspi_writel(q, LUT0(FSL_READ_DDR, PAD4, rxfifo)
 +			| LUT1(JMP_ON_CS, PAD1, 0),
 +			base + QUADSPI_LUT(lut_base + 2));
 +	}
-+
+ 
  	/* Write enable */
  	lut_base = SEQID_WREN * 4;
- 	qspi_writel(q, LUT0(CMD, PAD1, SPINOR_OP_WREN),
-@@ -409,16 +502,8 @@ static void fsl_qspi_init_lut(struct fsl_qspi *q)
+@@ -409,16 +502,8 @@ static void fsl_qspi_init_lut(struct fsl
  	/* Page Program */
  	lut_base = SEQID_PP * 4;
  
@@ -300,7 +294,7 @@ index 5c82e4ef..33ecc27a 100644
  			base + QUADSPI_LUT(lut_base));
  	qspi_writel(q, LUT0(FSL_WRITE, PAD1, 0),
  			base + QUADSPI_LUT(lut_base + 1));
-@@ -432,10 +517,8 @@ static void fsl_qspi_init_lut(struct fsl_qspi *q)
+@@ -432,10 +517,8 @@ static void fsl_qspi_init_lut(struct fsl
  	/* Erase a sector */
  	lut_base = SEQID_SE * 4;
  
@@ -313,7 +307,7 @@ index 5c82e4ef..33ecc27a 100644
  			base + QUADSPI_LUT(lut_base));
  
  	/* Erase the whole chip */
-@@ -476,6 +559,44 @@ static void fsl_qspi_init_lut(struct fsl_qspi *q)
+@@ -476,6 +559,44 @@ static void fsl_qspi_init_lut(struct fsl
  	qspi_writel(q, LUT0(CMD, PAD1, SPINOR_OP_BRWR),
  			base + QUADSPI_LUT(lut_base));
  
@@ -358,7 +352,7 @@ index 5c82e4ef..33ecc27a 100644
  	fsl_qspi_lock_lut(q);
  }
  
-@@ -483,8 +604,24 @@ static void fsl_qspi_init_lut(struct fsl_qspi *q)
+@@ -483,8 +604,24 @@ static void fsl_qspi_init_lut(struct fsl
  static int fsl_qspi_get_seqid(struct fsl_qspi *q, u8 cmd)
  {
  	switch (cmd) {
@@ -384,7 +378,7 @@ index 5c82e4ef..33ecc27a 100644
  	case SPINOR_OP_WREN:
  		return SEQID_WREN;
  	case SPINOR_OP_WRDI:
-@@ -496,6 +633,7 @@ static int fsl_qspi_get_seqid(struct fsl_qspi *q, u8 cmd)
+@@ -496,6 +633,7 @@ static int fsl_qspi_get_seqid(struct fsl
  	case SPINOR_OP_CHIP_ERASE:
  		return SEQID_CHIP_ERASE;
  	case SPINOR_OP_PP:
@@ -392,7 +386,7 @@ index 5c82e4ef..33ecc27a 100644
  		return SEQID_PP;
  	case SPINOR_OP_RDID:
  		return SEQID_RDID;
-@@ -507,6 +645,8 @@ static int fsl_qspi_get_seqid(struct fsl_qspi *q, u8 cmd)
+@@ -507,6 +645,8 @@ static int fsl_qspi_get_seqid(struct fsl
  		return SEQID_EN4B;
  	case SPINOR_OP_BRWR:
  		return SEQID_BRWR;
@@ -401,7 +395,7 @@ index 5c82e4ef..33ecc27a 100644
  	default:
  		if (cmd == q->nor[0].erase_opcode)
  			return SEQID_SE;
-@@ -531,8 +671,11 @@ fsl_qspi_runcmd(struct fsl_qspi *q, u8 cmd, unsigned int addr, int len)
+@@ -531,8 +671,11 @@ fsl_qspi_runcmd(struct fsl_qspi *q, u8 c
  	/* save the reg */
  	reg = qspi_readl(q, base + QUADSPI_MCR);
  
@@ -415,7 +409,7 @@ index 5c82e4ef..33ecc27a 100644
  	qspi_writel(q, QUADSPI_RBCT_WMRK_MASK | QUADSPI_RBCT_RXBRD_USEIPS,
  			base + QUADSPI_RBCT);
  	qspi_writel(q, reg | QUADSPI_MCR_CLR_RXF_MASK, base + QUADSPI_MCR);
-@@ -582,10 +725,10 @@ static void fsl_qspi_read_data(struct fsl_qspi *q, int len, u8 *rxbuf)
+@@ -582,10 +725,10 @@ static void fsl_qspi_read_data(struct fs
  				q->chip_base_addr, tmp);
  
  		if (len >= 4) {
@@ -428,7 +422,7 @@ index 5c82e4ef..33ecc27a 100644
  			break;
  		}
  
-@@ -619,11 +762,12 @@ static inline void fsl_qspi_invalid(struct fsl_qspi *q)
+@@ -619,11 +762,12 @@ static inline void fsl_qspi_invalid(stru
  }
  
  static ssize_t fsl_qspi_nor_write(struct fsl_qspi *q, struct spi_nor *nor,
@@ -442,7 +436,7 @@ index 5c82e4ef..33ecc27a 100644
  
  	dev_dbg(q->dev, "to 0x%.8x:0x%.8x, len : %d\n",
  		q->chip_base_addr, to, count);
-@@ -633,10 +777,13 @@ static ssize_t fsl_qspi_nor_write(struct fsl_qspi *q, struct spi_nor *nor,
+@@ -633,10 +777,13 @@ static ssize_t fsl_qspi_nor_write(struct
  	qspi_writel(q, tmp | QUADSPI_MCR_CLR_TXF_MASK, q->iobase + QUADSPI_MCR);
  
  	/* fill the TX data to the FIFO */
@@ -458,7 +452,7 @@ index 5c82e4ef..33ecc27a 100644
  	}
  
  	/* fill the TXFIFO upto 16 bytes for i.MX7d */
-@@ -657,11 +804,43 @@ static void fsl_qspi_set_map_addr(struct fsl_qspi *q)
+@@ -657,11 +804,43 @@ static void fsl_qspi_set_map_addr(struct
  {
  	int nor_size = q->nor_size;
  	void __iomem *base = q->iobase;
@@ -506,7 +500,7 @@ index 5c82e4ef..33ecc27a 100644
  }
  
  /*
-@@ -704,6 +883,11 @@ static void fsl_qspi_init_abh_read(struct fsl_qspi *q)
+@@ -704,6 +883,11 @@ static void fsl_qspi_init_abh_read(struc
  	seqid = fsl_qspi_get_seqid(q, q->nor[0].read_opcode);
  	qspi_writel(q, seqid << QUADSPI_BFGENCR_SEQID_SHIFT,
  		q->iobase + QUADSPI_BFGENCR);
@@ -518,7 +512,7 @@ index 5c82e4ef..33ecc27a 100644
  }
  
  /* This function was used to prepare and enable QSPI clock */
-@@ -822,6 +1006,7 @@ static const struct of_device_id fsl_qspi_dt_ids[] = {
+@@ -822,6 +1006,7 @@ static const struct of_device_id fsl_qsp
  	{ .compatible = "fsl,imx7d-qspi", .data = (void *)&imx7d_data, },
  	{ .compatible = "fsl,imx6ul-qspi", .data = (void *)&imx6ul_data, },
  	{ .compatible = "fsl,ls1021a-qspi", .data = (void *)&ls1021a_data, },
@@ -526,7 +520,7 @@ index 5c82e4ef..33ecc27a 100644
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, fsl_qspi_dt_ids);
-@@ -835,8 +1020,12 @@ static int fsl_qspi_read_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
+@@ -835,8 +1020,12 @@ static int fsl_qspi_read_reg(struct spi_
  {
  	int ret;
  	struct fsl_qspi *q = nor->priv;
@@ -540,7 +534,7 @@ index 5c82e4ef..33ecc27a 100644
  	if (ret)
  		return ret;
  
-@@ -848,9 +1037,13 @@ static int fsl_qspi_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
+@@ -848,9 +1037,13 @@ static int fsl_qspi_write_reg(struct spi
  {
  	struct fsl_qspi *q = nor->priv;
  	int ret;
@@ -555,7 +549,7 @@ index 5c82e4ef..33ecc27a 100644
  		if (ret)
  			return ret;
  
-@@ -859,7 +1052,7 @@ static int fsl_qspi_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
+@@ -859,7 +1052,7 @@ static int fsl_qspi_write_reg(struct spi
  
  	} else if (len > 0) {
  		ret = fsl_qspi_nor_write(q, nor, opcode, 0,
@@ -564,7 +558,7 @@ index 5c82e4ef..33ecc27a 100644
  		if (ret > 0)
  			return 0;
  	} else {
-@@ -875,7 +1068,7 @@ static ssize_t fsl_qspi_write(struct spi_nor *nor, loff_t to,
+@@ -875,7 +1068,7 @@ static ssize_t fsl_qspi_write(struct spi
  {
  	struct fsl_qspi *q = nor->priv;
  	ssize_t ret = fsl_qspi_nor_write(q, nor, nor->program_opcode, to,
@@ -573,7 +567,7 @@ index 5c82e4ef..33ecc27a 100644
  
  	/* invalid the data in the AHB buffer. */
  	fsl_qspi_invalid(q);
-@@ -922,7 +1115,7 @@ static ssize_t fsl_qspi_read(struct spi_nor *nor, loff_t from,
+@@ -922,7 +1115,7 @@ static ssize_t fsl_qspi_read(struct spi_
  		len);
  
  	/* Read out the data directly from the AHB buffer.*/
@@ -582,7 +576,7 @@ index 5c82e4ef..33ecc27a 100644
  		len);
  
  	return len;
-@@ -980,6 +1173,8 @@ static int fsl_qspi_probe(struct platform_device *pdev)
+@@ -980,6 +1173,8 @@ static int fsl_qspi_probe(struct platfor
  	struct spi_nor *nor;
  	struct mtd_info *mtd;
  	int ret, i = 0;
@@ -591,7 +585,7 @@ index 5c82e4ef..33ecc27a 100644
  
  	q = devm_kzalloc(dev, sizeof(*q), GFP_KERNEL);
  	if (!q)
-@@ -1027,6 +1222,12 @@ static int fsl_qspi_probe(struct platform_device *pdev)
+@@ -1027,6 +1222,12 @@ static int fsl_qspi_probe(struct platfor
  		goto clk_failed;
  	}
  
@@ -604,7 +598,7 @@ index 5c82e4ef..33ecc27a 100644
  	/* find the irq */
  	ret = platform_get_irq(pdev, 0);
  	if (ret < 0) {
-@@ -1050,6 +1251,7 @@ static int fsl_qspi_probe(struct platform_device *pdev)
+@@ -1050,6 +1251,7 @@ static int fsl_qspi_probe(struct platfor
  
  	mutex_init(&q->lock);
  
@@ -612,7 +606,7 @@ index 5c82e4ef..33ecc27a 100644
  	/* iterate the subnodes. */
  	for_each_available_child_of_node(dev->of_node, np) {
  		/* skip the holes */
-@@ -1076,18 +1278,25 @@ static int fsl_qspi_probe(struct platform_device *pdev)
+@@ -1076,18 +1278,25 @@ static int fsl_qspi_probe(struct platfor
  		ret = of_property_read_u32(np, "spi-max-frequency",
  				&q->clk_rate);
  		if (ret < 0)
@@ -642,7 +636,7 @@ index 5c82e4ef..33ecc27a 100644
  
  		/* Set the correct NOR size now. */
  		if (q->nor_size == 0) {
-@@ -1110,8 +1319,12 @@ static int fsl_qspi_probe(struct platform_device *pdev)
+@@ -1110,8 +1319,12 @@ static int fsl_qspi_probe(struct platfor
  			nor->page_size = q->devtype_data->txfifo;
  
  		i++;
@@ -655,8 +649,6 @@ index 5c82e4ef..33ecc27a 100644
  	/* finish the rest init. */
  	ret = fsl_qspi_nor_setup_last(q);
  	if (ret)
-diff --git a/drivers/mtd/spi-nor/spi-nor.c b/drivers/mtd/spi-nor/spi-nor.c
-index 793d321d..190e0e45 100644
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
 @@ -40,6 +40,13 @@
@@ -704,7 +696,7 @@ index 793d321d..190e0e45 100644
   */
  static int read_cr(struct spi_nor *nor)
  {
-@@ -160,6 +170,8 @@ static inline int spi_nor_read_dummy_cycles(struct spi_nor *nor)
+@@ -160,6 +170,8 @@ static inline int spi_nor_read_dummy_cyc
  	case SPI_NOR_DUAL:
  	case SPI_NOR_QUAD:
  		return 8;
@@ -713,7 +705,7 @@ index 793d321d..190e0e45 100644
  	case SPI_NOR_NORMAL:
  		return 0;
  	}
-@@ -961,6 +973,8 @@ static const struct flash_info spi_nor_ids[] = {
+@@ -961,6 +973,8 @@ static const struct flash_info spi_nor_i
  
  	/* ESMT */
  	{ "f25l32pa", INFO(0x8c2016, 0, 64 * 1024, 64, SECT_4K | SPI_NOR_HAS_LOCK) },
@@ -722,7 +714,7 @@ index 793d321d..190e0e45 100644
  
  	/* Everspin */
  	{ "mr25h256", CAT25_INFO( 32 * 1024, 1, 256, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
-@@ -1014,12 +1028,15 @@ static const struct flash_info spi_nor_ids[] = {
+@@ -1014,12 +1028,15 @@ static const struct flash_info spi_nor_i
  	{ "mx25l3205d",  INFO(0xc22016, 0, 64 * 1024,  64, SECT_4K) },
  	{ "mx25l3255e",  INFO(0xc29e16, 0, 64 * 1024,  64, SECT_4K) },
  	{ "mx25l6405d",  INFO(0xc22017, 0, 64 * 1024, 128, SECT_4K) },
@@ -739,7 +731,7 @@ index 793d321d..190e0e45 100644
  	{ "mx25l25655e", INFO(0xc22619, 0, 64 * 1024, 512, 0) },
  	{ "mx66l51235l", INFO(0xc2201a, 0, 64 * 1024, 1024, SPI_NOR_QUAD_READ) },
  	{ "mx66l1g55g",  INFO(0xc2261b, 0, 64 * 1024, 2048, SPI_NOR_QUAD_READ) },
-@@ -1033,10 +1050,11 @@ static const struct flash_info spi_nor_ids[] = {
+@@ -1033,10 +1050,11 @@ static const struct flash_info spi_nor_i
  	{ "n25q128a11",  INFO(0x20bb18, 0, 64 * 1024,  256, SECT_4K | SPI_NOR_QUAD_READ) },
  	{ "n25q128a13",  INFO(0x20ba18, 0, 64 * 1024,  256, SECT_4K | SPI_NOR_QUAD_READ) },
  	{ "n25q256a",    INFO(0x20ba19, 0, 64 * 1024,  512, SECT_4K | SPI_NOR_QUAD_READ) },
@@ -753,7 +745,7 @@ index 793d321d..190e0e45 100644
  
  	/* PMC */
  	{ "pm25lv512",   INFO(0,        0, 32 * 1024,    2, SECT_4K_PMC) },
-@@ -1054,8 +1072,11 @@ static const struct flash_info spi_nor_ids[] = {
+@@ -1054,8 +1072,11 @@ static const struct flash_info spi_nor_i
  	{ "s70fl01gs",  INFO(0x010221, 0x4d00, 256 * 1024, 256, 0) },
  	{ "s25sl12800", INFO(0x012018, 0x0300, 256 * 1024,  64, 0) },
  	{ "s25sl12801", INFO(0x012018, 0x0301,  64 * 1024, 256, 0) },
@@ -766,7 +758,7 @@ index 793d321d..190e0e45 100644
  	{ "s25fl129p1", INFO(0x012018, 0x4d01,  64 * 1024, 256, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
  	{ "s25sl004a",  INFO(0x010212,      0,  64 * 1024,   8, 0) },
  	{ "s25sl008a",  INFO(0x010213,      0,  64 * 1024,  16, 0) },
-@@ -1130,6 +1151,9 @@ static const struct flash_info spi_nor_ids[] = {
+@@ -1130,6 +1151,9 @@ static const struct flash_info spi_nor_i
  	{ "w25x80", INFO(0xef3014, 0, 64 * 1024,  16, SECT_4K) },
  	{ "w25x16", INFO(0xef3015, 0, 64 * 1024,  32, SECT_4K) },
  	{ "w25x32", INFO(0xef3016, 0, 64 * 1024,  64, SECT_4K) },
@@ -776,7 +768,7 @@ index 793d321d..190e0e45 100644
  	{ "w25q32", INFO(0xef4016, 0, 64 * 1024,  64, SECT_4K) },
  	{
  		"w25q32dw", INFO(0xef6016, 0, 64 * 1024,  64,
-@@ -1192,6 +1216,53 @@ static const struct flash_info *spi_nor_read_id(struct spi_nor *nor)
+@@ -1192,6 +1216,53 @@ static const struct flash_info *spi_nor_
  		id[0], id[1], id[2]);
  	return ERR_PTR(-ENODEV);
  }
@@ -830,7 +822,7 @@ index 793d321d..190e0e45 100644
  
  static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
  			size_t *retlen, u_char *buf)
-@@ -1411,7 +1482,7 @@ static int macronix_quad_enable(struct spi_nor *nor)
+@@ -1411,7 +1482,7 @@ static int macronix_quad_enable(struct s
   * Write status Register and configuration register with 2 bytes
   * The first byte will be written to the status register, while the
   * second byte will be written to the configuration register.
@@ -839,7 +831,7 @@ index 793d321d..190e0e45 100644
   */
  static int write_sr_cr(struct spi_nor *nor, u16 val)
  {
-@@ -1459,6 +1530,24 @@ static int spansion_quad_enable(struct spi_nor *nor)
+@@ -1459,6 +1530,24 @@ static int spansion_quad_enable(struct s
  	return 0;
  }
  
@@ -864,7 +856,7 @@ index 793d321d..190e0e45 100644
  static int set_quad_mode(struct spi_nor *nor, const struct flash_info *info)
  {
  	int status;
-@@ -1604,9 +1693,25 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
+@@ -1604,9 +1693,25 @@ int spi_nor_scan(struct spi_nor *nor, co
  		write_sr(nor, 0);
  		spi_nor_wait_till_ready(nor);
  	}
@@ -890,7 +882,7 @@ index 793d321d..190e0e45 100644
  	mtd->priv = nor;
  	mtd->type = MTD_NORFLASH;
  	mtd->writesize = 1;
-@@ -1639,6 +1744,8 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
+@@ -1639,6 +1744,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  		nor->flags |= SNOR_F_USE_FSR;
  	if (info->flags & SPI_NOR_HAS_TB)
  		nor->flags |= SNOR_F_HAS_SR_TB;
@@ -899,7 +891,7 @@ index 793d321d..190e0e45 100644
  
  #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
  	/* prefer "small sector" erase if possible */
-@@ -1676,9 +1783,15 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
+@@ -1678,9 +1785,15 @@ int spi_nor_scan(struct spi_nor *nor, co
  	/* Some devices cannot do fast-read, no matter what DT tells us */
  	if (info->flags & SPI_NOR_NO_FR)
  		nor->flash_read = SPI_NOR_NORMAL;
@@ -918,7 +910,7 @@ index 793d321d..190e0e45 100644
  		ret = set_quad_mode(nor, info);
  		if (ret) {
  			dev_err(dev, "quad mode not supported\n");
-@@ -1691,6 +1804,9 @@ int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
+@@ -1693,6 +1806,9 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	/* Default commands */
  	switch (nor->flash_read) {
@@ -928,8 +920,6 @@ index 793d321d..190e0e45 100644
  	case SPI_NOR_QUAD:
  		nor->read_opcode = SPINOR_OP_READ_1_1_4;
  		break;
-diff --git a/include/linux/mtd/spi-nor.h b/include/linux/mtd/spi-nor.h
-index f2a71803..5003ff64 100644
 --- a/include/linux/mtd/spi-nor.h
 +++ b/include/linux/mtd/spi-nor.h
 @@ -31,10 +31,10 @@
@@ -994,6 +984,3 @@ index f2a71803..5003ff64 100644
  
  	int (*prepare)(struct spi_nor *nor, enum spi_nor_ops ops);
  	void (*unprepare)(struct spi_nor *nor, enum spi_nor_ops ops);
--- 
-2.14.1
-

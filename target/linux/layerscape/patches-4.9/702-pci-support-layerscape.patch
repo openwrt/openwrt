@@ -30,8 +30,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  create mode 100644 drivers/pci/host/pci-layerscape-ep.c
  create mode 100644 drivers/pci/host/pci-layerscape-ep.h
 
-diff --git a/drivers/irqchip/irq-ls-scfg-msi.c b/drivers/irqchip/irq-ls-scfg-msi.c
-index 02cca74c..57e3d900 100644
 --- a/drivers/irqchip/irq-ls-scfg-msi.c
 +++ b/drivers/irqchip/irq-ls-scfg-msi.c
 @@ -17,13 +17,32 @@
@@ -84,7 +82,7 @@ index 02cca74c..57e3d900 100644
  };
  
  static struct irq_chip ls_scfg_msi_irq_chip = {
-@@ -49,19 +71,56 @@ static struct msi_domain_info ls_scfg_msi_domain_info = {
+@@ -49,19 +71,56 @@ static struct msi_domain_info ls_scfg_ms
  	.chip	= &ls_scfg_msi_irq_chip,
  };
  
@@ -143,7 +141,7 @@ index 02cca74c..57e3d900 100644
  }
  
  static struct irq_chip ls_scfg_msi_parent_chip = {
-@@ -81,8 +140,8 @@ static int ls_scfg_msi_domain_irq_alloc(struct irq_domain *domain,
+@@ -81,8 +140,8 @@ static int ls_scfg_msi_domain_irq_alloc(
  	WARN_ON(nr_irqs != 1);
  
  	spin_lock(&msi_data->lock);
@@ -154,7 +152,7 @@ index 02cca74c..57e3d900 100644
  		__set_bit(pos, msi_data->used);
  	else
  		err = -ENOSPC;
-@@ -106,7 +165,7 @@ static void ls_scfg_msi_domain_irq_free(struct irq_domain *domain,
+@@ -106,7 +165,7 @@ static void ls_scfg_msi_domain_irq_free(
  	int pos;
  
  	pos = d->hwirq;
@@ -163,7 +161,7 @@ index 02cca74c..57e3d900 100644
  		pr_err("failed to teardown msi. Invalid hwirq %d\n", pos);
  		return;
  	}
-@@ -123,15 +182,22 @@ static const struct irq_domain_ops ls_scfg_msi_domain_ops = {
+@@ -123,15 +182,22 @@ static const struct irq_domain_ops ls_sc
  
  static void ls_scfg_msi_irq_handler(struct irq_desc *desc)
  {
@@ -191,7 +189,7 @@ index 02cca74c..57e3d900 100644
  		if (virq)
  			generic_handle_irq(virq);
  	}
-@@ -143,7 +209,7 @@ static int ls_scfg_msi_domains_init(struct ls_scfg_msi *msi_data)
+@@ -143,7 +209,7 @@ static int ls_scfg_msi_domains_init(stru
  {
  	/* Initialize MSI domain parent */
  	msi_data->parent = irq_domain_add_linear(NULL,
@@ -200,7 +198,7 @@ index 02cca74c..57e3d900 100644
  						 &ls_scfg_msi_domain_ops,
  						 msi_data);
  	if (!msi_data->parent) {
-@@ -164,16 +230,118 @@ static int ls_scfg_msi_domains_init(struct ls_scfg_msi *msi_data)
+@@ -164,16 +230,118 @@ static int ls_scfg_msi_domains_init(stru
  	return 0;
  }
  
@@ -320,7 +318,7 @@ index 02cca74c..57e3d900 100644
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	msi_data->regs = devm_ioremap_resource(&pdev->dev, res);
  	if (IS_ERR(msi_data->regs)) {
-@@ -182,23 +350,48 @@ static int ls_scfg_msi_probe(struct platform_device *pdev)
+@@ -182,23 +350,48 @@ static int ls_scfg_msi_probe(struct plat
  	}
  	msi_data->msiir_addr = res->start;
  
@@ -379,7 +377,7 @@ index 02cca74c..57e3d900 100644
  	platform_set_drvdata(pdev, msi_data);
  
  	return 0;
-@@ -207,8 +400,10 @@ static int ls_scfg_msi_probe(struct platform_device *pdev)
+@@ -207,8 +400,10 @@ static int ls_scfg_msi_probe(struct plat
  static int ls_scfg_msi_remove(struct platform_device *pdev)
  {
  	struct ls_scfg_msi *msi_data = platform_get_drvdata(pdev);
@@ -391,7 +389,7 @@ index 02cca74c..57e3d900 100644
  
  	irq_domain_remove(msi_data->msi_domain);
  	irq_domain_remove(msi_data->parent);
-@@ -218,12 +413,6 @@ static int ls_scfg_msi_remove(struct platform_device *pdev)
+@@ -218,12 +413,6 @@ static int ls_scfg_msi_remove(struct pla
  	return 0;
  }
  
@@ -404,11 +402,9 @@ index 02cca74c..57e3d900 100644
  static struct platform_driver ls_scfg_msi_driver = {
  	.driver = {
  		.name = "ls-scfg-msi",
-diff --git a/drivers/pci/host/Makefile b/drivers/pci/host/Makefile
-index 084cb498..88e87704 100644
 --- a/drivers/pci/host/Makefile
 +++ b/drivers/pci/host/Makefile
-@@ -17,7 +17,7 @@ obj-$(CONFIG_PCIE_XILINX) += pcie-xilinx.o
+@@ -17,7 +17,7 @@ obj-$(CONFIG_PCIE_XILINX) += pcie-xilinx
  obj-$(CONFIG_PCIE_XILINX_NWL) += pcie-xilinx-nwl.o
  obj-$(CONFIG_PCI_XGENE) += pci-xgene.o
  obj-$(CONFIG_PCI_XGENE_MSI) += pci-xgene-msi.o
@@ -417,9 +413,6 @@ index 084cb498..88e87704 100644
  obj-$(CONFIG_PCI_VERSATILE) += pci-versatile.o
  obj-$(CONFIG_PCIE_IPROC) += pcie-iproc.o
  obj-$(CONFIG_PCIE_IPROC_MSI) += pcie-iproc-msi.o
-diff --git a/drivers/pci/host/pci-layerscape-ep-debugfs.c b/drivers/pci/host/pci-layerscape-ep-debugfs.c
-new file mode 100644
-index 00000000..5f4870ba
 --- /dev/null
 +++ b/drivers/pci/host/pci-layerscape-ep-debugfs.c
 @@ -0,0 +1,758 @@
@@ -1181,9 +1174,6 @@ index 00000000..5f4870ba
 +MODULE_AUTHOR("Minghuan Lian <Minghuan.Lian@freescale.com>");
 +MODULE_DESCRIPTION("Freescale Layerscape PCIe EP controller driver");
 +MODULE_LICENSE("GPL v2");
-diff --git a/drivers/pci/host/pci-layerscape-ep.c b/drivers/pci/host/pci-layerscape-ep.c
-new file mode 100644
-index 00000000..8f1cca6e
 --- /dev/null
 +++ b/drivers/pci/host/pci-layerscape-ep.c
 @@ -0,0 +1,309 @@
@@ -1496,9 +1486,6 @@ index 00000000..8f1cca6e
 +MODULE_AUTHOR("Minghuan Lian <Minghuan.Lian@freescale.com>");
 +MODULE_DESCRIPTION("Freescale Layerscape PCIe EP driver");
 +MODULE_LICENSE("GPL v2");
-diff --git a/drivers/pci/host/pci-layerscape-ep.h b/drivers/pci/host/pci-layerscape-ep.h
-new file mode 100644
-index 00000000..990c0ff5
 --- /dev/null
 +++ b/drivers/pci/host/pci-layerscape-ep.h
 @@ -0,0 +1,115 @@
@@ -1617,8 +1604,6 @@ index 00000000..990c0ff5
 +int ls_pcie_ep_dbgfs_remove(struct ls_pcie *pcie);
 +
 +#endif /* _PCIE_LAYERSCAPE_EP_H */
-diff --git a/drivers/pci/host/pci-layerscape.c b/drivers/pci/host/pci-layerscape.c
-index 65370799..7ce32ff0 100644
 --- a/drivers/pci/host/pci-layerscape.c
 +++ b/drivers/pci/host/pci-layerscape.c
 @@ -35,12 +35,14 @@
@@ -1638,7 +1623,7 @@ index 65370799..7ce32ff0 100644
  	struct pcie_host_ops *ops;
  };
  
-@@ -86,6 +88,14 @@ static void ls_pcie_drop_msg_tlp(struct ls_pcie *pcie)
+@@ -86,6 +88,14 @@ static void ls_pcie_drop_msg_tlp(struct
  	iowrite32(val, pcie->pp.dbi_base + PCIE_STRFMR1);
  }
  
@@ -1653,7 +1638,7 @@ index 65370799..7ce32ff0 100644
  static int ls1021_pcie_link_up(struct pcie_port *pp)
  {
  	u32 state;
-@@ -134,7 +144,7 @@ static int ls_pcie_link_up(struct pcie_port *pp)
+@@ -134,7 +144,7 @@ static int ls_pcie_link_up(struct pcie_p
  	struct ls_pcie *pcie = to_ls_pcie(pp);
  	u32 state;
  
@@ -1662,7 +1647,7 @@ index 65370799..7ce32ff0 100644
  		 pcie->drvdata->ltssm_shift) &
  		 LTSSM_STATE_MASK;
  
-@@ -153,6 +163,9 @@ static void ls_pcie_host_init(struct pcie_port *pp)
+@@ -153,6 +163,9 @@ static void ls_pcie_host_init(struct pci
  	ls_pcie_clear_multifunction(pcie);
  	ls_pcie_drop_msg_tlp(pcie);
  	iowrite32(0, pcie->pp.dbi_base + PCIE_DBI_RO_WR_EN);
@@ -1672,7 +1657,7 @@ index 65370799..7ce32ff0 100644
  }
  
  static int ls_pcie_msi_host_init(struct pcie_port *pp,
-@@ -196,20 +209,39 @@ static struct ls_pcie_drvdata ls1021_drvdata = {
+@@ -196,20 +209,39 @@ static struct ls_pcie_drvdata ls1021_drv
  static struct ls_pcie_drvdata ls1043_drvdata = {
  	.lut_offset = 0x10000,
  	.ltssm_shift = 24,
@@ -1712,11 +1697,9 @@ index 65370799..7ce32ff0 100644
  	{ },
  };
  
-diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-designware.c
-index af8f6e92..2358e049 100644
 --- a/drivers/pci/host/pcie-designware.c
 +++ b/drivers/pci/host/pcie-designware.c
-@@ -478,6 +478,12 @@ int dw_pcie_wait_for_link(struct pcie_port *pp)
+@@ -478,6 +478,12 @@ int dw_pcie_wait_for_link(struct pcie_po
  	return -ETIMEDOUT;
  }
  
@@ -1729,22 +1712,18 @@ index af8f6e92..2358e049 100644
  int dw_pcie_link_up(struct pcie_port *pp)
  {
  	u32 val;
-diff --git a/drivers/pci/host/pcie-designware.h b/drivers/pci/host/pcie-designware.h
-index a567ea28..4e6672b2 100644
 --- a/drivers/pci/host/pcie-designware.h
 +++ b/drivers/pci/host/pcie-designware.h
-@@ -82,5 +82,6 @@ int dw_pcie_wait_for_link(struct pcie_port *pp);
+@@ -82,5 +82,6 @@ int dw_pcie_wait_for_link(struct pcie_po
  int dw_pcie_link_up(struct pcie_port *pp);
  void dw_pcie_setup_rc(struct pcie_port *pp);
  int dw_pcie_host_init(struct pcie_port *pp);
 +void dw_pcie_disable_outbound_atu(struct pcie_port *pp, int index);
  
  #endif /* _PCIE_DESIGNWARE_H */
-diff --git a/drivers/pci/pcie/portdrv_core.c b/drivers/pci/pcie/portdrv_core.c
-index e9270b40..1bad877a 100644
 --- a/drivers/pci/pcie/portdrv_core.c
 +++ b/drivers/pci/pcie/portdrv_core.c
-@@ -44,52 +44,30 @@ static void release_pcie_device(struct device *dev)
+@@ -44,52 +44,30 @@ static void release_pcie_device(struct d
  }
  
  /**
@@ -1808,7 +1787,7 @@ index e9270b40..1bad877a 100644
  
  	/*
  	 * Allocate as many entries as the port wants, so that we can check
-@@ -97,20 +75,13 @@ static int pcie_port_enable_msix(struct pci_dev *dev, int *vectors, int mask)
+@@ -97,20 +75,13 @@ static int pcie_port_enable_msix(struct
  	 * equal to the number of entries this port actually uses, we'll happily
  	 * go through without any tricks.
  	 */
@@ -1834,7 +1813,7 @@ index e9270b40..1bad877a 100644
  
  		/*
  		 * The code below follows the PCI Express Base Specification 2.0
-@@ -125,18 +96,16 @@ static int pcie_port_enable_msix(struct pci_dev *dev, int *vectors, int mask)
+@@ -125,18 +96,16 @@ static int pcie_port_enable_msix(struct
  		pcie_capability_read_word(dev, PCI_EXP_FLAGS, &reg16);
  		entry = (reg16 & PCI_EXP_FLAGS_IRQ) >> 9;
  		if (entry >= nr_entries)
@@ -1858,7 +1837,7 @@ index e9270b40..1bad877a 100644
  
  		/*
  		 * The code below follows Section 7.10.10 of the PCI Express
-@@ -151,13 +120,11 @@ static int pcie_port_enable_msix(struct pci_dev *dev, int *vectors, int mask)
+@@ -151,13 +120,11 @@ static int pcie_port_enable_msix(struct
  		pci_read_config_dword(dev, pos + PCI_ERR_ROOT_STATUS, &reg32);
  		entry = reg32 >> 27;
  		if (entry >= nr_entries)
@@ -1875,7 +1854,7 @@ index e9270b40..1bad877a 100644
  	}
  
  	/*
-@@ -165,41 +132,54 @@ static int pcie_port_enable_msix(struct pci_dev *dev, int *vectors, int mask)
+@@ -165,41 +132,54 @@ static int pcie_port_enable_msix(struct
  	 * what we have.  Otherwise, the port has some extra entries not for the
  	 * services we know and we need to work around that.
  	 */
@@ -1949,7 +1928,7 @@ index e9270b40..1bad877a 100644
  
  	/*
  	 * If MSI cannot be used for PCIe PME or hotplug, we have to use
-@@ -207,41 +187,25 @@ static int init_service_irqs(struct pci_dev *dev, int *irqs, int mask)
+@@ -207,41 +187,25 @@ static int init_service_irqs(struct pci_
  	 */
  	if (((mask & PCIE_PORT_SERVICE_PME) && pcie_pme_no_msi()) ||
  	    ((mask & PCIE_PORT_SERVICE_HP) && pciehp_no_msi())) {
@@ -2003,7 +1982,7 @@ index e9270b40..1bad877a 100644
  /**
   * get_port_device_capability - discover capabilities of a PCI Express port
   * @dev: PCI Express port to examine
-@@ -378,7 +342,7 @@ int pcie_port_device_register(struct pci_dev *dev)
+@@ -378,7 +342,7 @@ int pcie_port_device_register(struct pci
  	 * that can be used in the absence of irqs.  Allow them to determine
  	 * if that is to be used.
  	 */
@@ -2012,7 +1991,7 @@ index e9270b40..1bad877a 100644
  	if (status) {
  		capabilities &= PCIE_PORT_SERVICE_VC | PCIE_PORT_SERVICE_HP;
  		if (!capabilities)
-@@ -401,7 +365,7 @@ int pcie_port_device_register(struct pci_dev *dev)
+@@ -401,7 +365,7 @@ int pcie_port_device_register(struct pci
  	return 0;
  
  error_cleanup_irqs:
@@ -2021,7 +2000,7 @@ index e9270b40..1bad877a 100644
  error_disable:
  	pci_disable_device(dev);
  	return status;
-@@ -469,7 +433,7 @@ static int remove_iter(struct device *dev, void *data)
+@@ -469,7 +433,7 @@ static int remove_iter(struct device *de
  void pcie_port_device_remove(struct pci_dev *dev)
  {
  	device_for_each_child(&dev->dev, NULL, remove_iter);
@@ -2030,7 +2009,7 @@ index e9270b40..1bad877a 100644
  	pci_disable_device(dev);
  }
  
-@@ -499,7 +463,6 @@ static int pcie_port_probe_service(struct device *dev)
+@@ -499,7 +463,6 @@ static int pcie_port_probe_service(struc
  	if (status)
  		return status;
  
@@ -2038,7 +2017,7 @@ index e9270b40..1bad877a 100644
  	get_device(dev);
  	return 0;
  }
-@@ -524,8 +487,6 @@ static int pcie_port_remove_service(struct device *dev)
+@@ -524,8 +487,6 @@ static int pcie_port_remove_service(stru
  	pciedev = to_pcie_device(dev);
  	driver = to_service_driver(dev->driver);
  	if (driver && driver->remove) {
@@ -2047,11 +2026,9 @@ index e9270b40..1bad877a 100644
  		driver->remove(pciedev);
  		put_device(dev);
  	}
-diff --git a/include/linux/pci.h b/include/linux/pci.h
-index 1b711796..6738d816 100644
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1823,6 +1823,7 @@ void pcibios_release_device(struct pci_dev *dev);
+@@ -1823,6 +1823,7 @@ void pcibios_release_device(struct pci_d
  void pcibios_penalize_isa_irq(int irq, int active);
  int pcibios_alloc_irq(struct pci_dev *dev);
  void pcibios_free_irq(struct pci_dev *dev);
@@ -2059,6 +2036,3 @@ index 1b711796..6738d816 100644
  
  #ifdef CONFIG_HIBERNATE_CALLBACKS
  extern struct dev_pm_ops pcibios_pm_ops;
--- 
-2.14.1
-
