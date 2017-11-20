@@ -746,8 +746,6 @@ wpa_supplicant_add_network() {
 		append network_data "mcast_rate=$mc_rate" "$N$T"
 	}
 
-	local ht_str
-
 	cat >> "$_config" <<EOF
 network={
 	$scan_ssid
