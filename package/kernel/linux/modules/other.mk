@@ -1031,3 +1031,21 @@ define KernelPackage/itco-wdt/description
 endef
 
 $(eval $(call KernelPackage,itco-wdt))
+
+
+define KernelPackage/it87-wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=ITE IT87 Watchdog Timer
+  KCONFIG:=CONFIG_IT87_WDT
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/it87_wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,it87-wdt,1)
+  MODPARAMS.it87-wdt:= \
+	nogameport=1 \
+	nocir=1
+endef
+
+define KernelPackage/it87-wdt/description
+  Kernel module for ITE IT87 Watchdog Timer
+endef
+
+$(eval $(call KernelPackage,it87-wdt))
