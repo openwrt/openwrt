@@ -96,7 +96,7 @@ define U-Boot/Hummingbird_A31
   NAME:=Hummingbird A31 board
 endef
 
-define U-Boot/Marsboard
+define U-Boot/Marsboard_A10
   BUILD_SUBTARGET:=cortexa8
   NAME:=Marsboard
   BUILD_DEVICES:=sun4i-a10-marsboard
@@ -189,6 +189,7 @@ UBOOT_TARGETS := \
 	Cubieboard2 \
 	Cubietruck \
 	Hummingbird_A31 \
+	Marsboard_A10 \
 	Mele_M9 \
 	OLIMEX_A13_SOM \
 	Linksprite_pcDuino \
