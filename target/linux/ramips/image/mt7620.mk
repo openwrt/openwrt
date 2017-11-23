@@ -424,6 +424,14 @@ define Device/tiny-ac
 endef
 TARGET_DEVICES += tiny-ac
 
+define Device/vonets_var11n-300
+  DTS := VAR11N-300
+  IMAGE_SIZE := $(ralink_default_fw_size_4M)
+  BLOCKSIZE := 4k
+  DEVICE_TITLE := Vonets VAR11N-300
+endef
+TARGET_DEVICES += vonets_var11n-300
+
 define Device/whr-1166d
   DTS := WHR-1166D
   IMAGE_SIZE := 15040k
