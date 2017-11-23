@@ -143,13 +143,6 @@ define LegacyDevice/TUBE2H16M
 endef
 LEGACY_DEVICES += TUBE2H16M
 
-define LegacyDevice/WLR8100
-  DEVICE_TITLE := Sitecom WLR-8100
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb3 \
-	kmod-ath10k ath10k-firmware-qca988x
-endef
-LEGACY_DEVICES += WLR8100
-
 define LegacyDevice/F9K1115V2
   DEVICE_TITLE := Belkin AC1750DB (F9K1115V2)
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb3 kmod-usb-ledtrig-usbport \

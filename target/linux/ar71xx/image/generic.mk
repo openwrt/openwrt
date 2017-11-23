@@ -980,6 +980,16 @@ define Device/bhr-4grv2
 endef
 TARGET_DEVICES += bhr-4grv2
 
+define Device/wlr8100
+  DEVICE_TITLE := Sitecom WLR-8100
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb3 \
+	kmod-ath10k ath10k-firmware-qca988x
+  BOARDNAME := WLR8100
+  IMAGE_SIZE := 15424k
+  MTDPARTS := spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,15424k(firmware),256k(manufacture)ro,64k(backup)ro,320k(storage)ro,64k(art)ro
+endef
+TARGET_DEVICES += wlr8100
+
 define Device/wpj-16m
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
   MTDPARTS := spi0.0:192k(u-boot)ro,16128k(firmware),64k(art)ro
