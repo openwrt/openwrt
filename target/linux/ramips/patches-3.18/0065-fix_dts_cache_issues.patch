@@ -1,6 +1,6 @@
 --- a/arch/mips/kernel/setup.c
 +++ b/arch/mips/kernel/setup.c
-@@ -675,7 +675,6 @@ static void __init arch_mem_init(char **
+@@ -679,7 +679,6 @@ static void __init arch_mem_init(char **
  				crashk_res.end - crashk_res.start + 1,
  				BOOTMEM_DEFAULT);
  #endif
@@ -8,7 +8,7 @@
  	sparse_init();
  	plat_swiotlb_setup();
  	paging_init();
-@@ -784,6 +783,7 @@ void __init setup_arch(char **cmdline_p)
+@@ -788,6 +787,7 @@ void __init setup_arch(char **cmdline_p)
  	prefill_possible_map();
  
  	cpu_cache_init();
