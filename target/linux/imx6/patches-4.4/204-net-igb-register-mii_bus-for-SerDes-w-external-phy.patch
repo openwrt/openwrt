@@ -23,7 +23,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
 
 --- a/drivers/net/ethernet/intel/igb/e1000_82575.c
 +++ b/drivers/net/ethernet/intel/igb/e1000_82575.c
-@@ -613,13 +613,25 @@ static s32 igb_get_invariants_82575(stru
+@@ -624,13 +624,25 @@ static s32 igb_get_invariants_82575(stru
  	switch (link_mode) {
  	case E1000_CTRL_EXT_LINK_MODE_1000BASE_KX:
  		hw->phy.media_type = e1000_media_type_internal_serdes;
@@ -49,7 +49,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  		}
  		/* fall through for I2C based SGMII */
  	case E1000_CTRL_EXT_LINK_MODE_PCIE_SERDES:
-@@ -636,8 +648,11 @@ static s32 igb_get_invariants_82575(stru
+@@ -647,8 +659,11 @@ static s32 igb_get_invariants_82575(stru
  				hw->phy.media_type = e1000_media_type_copper;
  				dev_spec->sgmii_active = true;
  			}
@@ -259,7 +259,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  	/* start the watchdog. */
  	hw->mac.get_link_status = 1;
  	schedule_work(&adapter->watchdog_task);
-@@ -7102,21 +7240,41 @@ void igb_alloc_rx_buffers(struct igb_rin
+@@ -7104,21 +7242,41 @@ void igb_alloc_rx_buffers(struct igb_rin
  static int igb_mii_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
  {
  	struct igb_adapter *adapter = netdev_priv(netdev);
