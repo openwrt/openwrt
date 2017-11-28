@@ -20,6 +20,10 @@
 
 	aliases {
 		serial0 = &UART1;
+		led-boot = &status;
+		led-failsafe = &failsafe;
+		led-running = &status;
+		led-upgrade = &status;
 	};
 
 	chosen {
@@ -120,12 +124,12 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power-green {
+		status: power-green {
 			label = "mx60:green:power";
 			gpios = <&GPIO0 18 GPIO_ACTIVE_LOW>;
 		};
 
-		power-orange {
+		failsafe: power-orange {
 			label = "mx60:orange:power";
 			gpios = <&GPIO0 19 GPIO_ACTIVE_LOW>;
 		};

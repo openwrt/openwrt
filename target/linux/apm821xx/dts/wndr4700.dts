@@ -19,6 +19,10 @@
 
 	aliases {
 		serial0 = &UART0;
+		led-boot = &status;
+		led-failsafe = &failsafe;
+		led-running = &status;
+		led-upgrade = &status;
 	};
 
 	chosen {
@@ -348,12 +352,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power-green {
+		status: power-green {
 			label = "wndr4700:green:power";
 			gpios = <&GPIO0 8 GPIO_ACTIVE_HIGH>;
 		};
 
-		power-orange {
+		failsafe: power-orange {
 			label = "wndr4700:orange:power";
 			gpios = <&GPIO0 9 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "panic";
