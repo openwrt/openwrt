@@ -1,8 +1,8 @@
 --- a/ip/Makefile
 +++ b/ip/Makefile
-@@ -28,6 +28,13 @@ ifeq ($(HAVE_MNL),y)
- 	LDLIBS += $(shell $(PKG_CONFIG) libmnl --libs)
- endif
+@@ -15,6 +15,13 @@ RTMONOBJ=rtmon.o
+ 
+ include ../config.mk
  
 +STATIC_SYM_FILTER:=
 +ifeq ($(IP_CONFIG_TINY),y)
@@ -14,7 +14,7 @@
  ALLOBJ=$(IPOBJ) $(RTMONOBJ)
  SCRIPTS=ifcfg rtpr routel routef
  TARGETS=ip rtmon
-@@ -57,7 +64,7 @@ else
+@@ -44,7 +51,7 @@ else
  
  ip: static-syms.o
  static-syms.o: static-syms.h
@@ -72,7 +72,7 @@
  	{ "help",	do_help },
 --- a/lib/utils.c
 +++ b/lib/utils.c
-@@ -787,6 +787,7 @@ const char *rt_addr_n2a_r(int af, int le
+@@ -817,6 +817,7 @@ const char *rt_addr_n2a_r(int af, int le
  		return inet_ntop(af, addr, buf, buflen);
  	case AF_MPLS:
  		return mpls_ntop(af, addr, buf, buflen);
@@ -80,7 +80,7 @@
  	case AF_IPX:
  		return ipx_ntop(af, addr, buf, buflen);
  	case AF_DECnet:
-@@ -796,6 +797,7 @@ const char *rt_addr_n2a_r(int af, int le
+@@ -826,6 +827,7 @@ const char *rt_addr_n2a_r(int af, int le
  		memcpy(dna.a_addr, addr, 2);
  		return dnet_ntop(af, &dna, buf, buflen);
  	}
@@ -90,14 +90,14 @@
  	default:
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -12,6 +12,10 @@ ifeq ($(HAVE_MNL),y)
- 	CFLAGS += -DHAVE_LIBMNL $(shell $(PKG_CONFIG) libmnl --cflags)
- endif
+@@ -2,6 +2,10 @@ include ../config.mk
+ 
+ CFLAGS += $(FPIC)
  
 +ifeq ($(IP_CONFIG_TINY),y)
 +  CFLAGS += -DIPROUTE2_TINY
 +endif
 +
- CFLAGS += $(FPIC)
- 
  UTILOBJ = utils.o rt_names.o ll_types.o ll_proto.o ll_addr.o \
+ 	inet_proto.o namespace.o json_writer.o json_print.o \
+ 	names.o color.o bpf.o exec.o fs.o
