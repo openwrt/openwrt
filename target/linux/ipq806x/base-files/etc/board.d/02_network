@@ -50,6 +50,9 @@ nbg6817)
 	ucidef_set_interface_macaddr "lan" "$(macaddr_add $hw_mac_addr 2)"
 	ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 3)"
 	;;
+openmesh,a42)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	;;
 *)
 	echo "Unsupported hardware. Network interfaces not intialized"
 	;;

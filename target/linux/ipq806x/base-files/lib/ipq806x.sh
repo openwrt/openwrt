@@ -35,6 +35,9 @@ ipq806x_board_detect() {
 	*"NBG6817")
 		name="nbg6817"
 		;;
+	*"OpenMesh A42")
+		name="openmesh,a42"
+		;;
 	*"R7500")
 		name="r7500"
 		;;
