@@ -50,6 +50,9 @@ case "$FIRMWARE" in
 	avm,fritzbox-4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
 		;;
+	openmesh,a42)
+		ath10kcal_extract "0:ART" 4096 12064
+		;;
 	qcom,ap-dk01.1-c1)
 		ath10kcal_extract "ART" 4096 12064
 		;;
@@ -59,6 +62,9 @@ case "$FIRMWARE" in
 	case "$board" in
 	avm,fritzbox-4040)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
+		;;
+	openmesh,a42)
+		ath10kcal_extract "0:ART" 20480 12064
 		;;
 	qcom,ap-dk01.1-c1)
 		ath10kcal_extract "ART" 20480 12064

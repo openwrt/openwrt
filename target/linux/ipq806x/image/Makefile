@@ -192,6 +192,23 @@ define Device/netgear_r7800
 endef
 TARGET_DEVICES += netgear_r7800
 
+define Device/openmesh_a42
+	$(call Device/FitImageLzma)
+	FILESYSTEMS := squashfs
+	DEVICE_DTS := qcom-ipq4019-a42
+	KERNEL_LOADADDR := 0x80208000
+	BLOCKSIZE := 64k
+	SUPPORTED_DEVICES := openmesh,a42
+	DEVICE_TITLE := OpenMesh A42
+	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
+	IMAGE_SIZE := 15616k
+	IMAGES = factory.bin sysupgrade.bin
+	IMAGE/factory.bin/squashfs := append-rootfs | pad-rootfs | openmesh-image ce_type=A42
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := ath10k-firmware-qca4019 uboot-envtools ipq-wifi-openmesh_a42
+endef
+TARGET_DEVICES += openmesh_a42
+
 define Device/qcom_ap-dk01.1-c1
 	PROFILES += $$(DEVICE_NAME)
 	DEVICE_TITLE := QCA AP-DK01.1-C1

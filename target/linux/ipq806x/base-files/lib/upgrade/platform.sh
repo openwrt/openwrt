@@ -22,6 +22,10 @@ platform_do_upgrade() {
 	zyxel,nbg6817)
 		nand_do_upgrade "$ARGV"
 		;;
+	openmesh,a42)
+		PART_NAME="inactive"
+		platform_do_upgrade_openmesh "$ARGV"
+		;;
 	tplink,c2600)
 		PART_NAME="os-image:rootfs"
 		MTD_CONFIG_ARGS="-s 0x200000"
