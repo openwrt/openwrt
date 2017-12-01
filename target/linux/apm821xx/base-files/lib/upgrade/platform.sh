@@ -9,7 +9,7 @@ platform_check_image() {
 
 	case "$board" in
 	mbl)
-		mbl_do_platform_check $board "$1"
+		mbl_do_platform_check "$1"
 		return $?;
 		;;
 
