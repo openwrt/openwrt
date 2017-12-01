@@ -3,9 +3,6 @@
 # Copyright (C) 2010-2013 OpenWrt.org
 #
 
-RAMIPS_BOARD_NAME=
-RAMIPS_MODEL=
-
 ramips_board_detect() {
 	local machine
 	local name
@@ -733,18 +730,13 @@ ramips_board_detect() {
 	*"YK1")
 		name="youku-yk1"
 		;;
-	*)
-		name="$(strings /proc/device-tree/compatible | head -1)"
-		name="${name##*,}"
-		name="${name:-generic}"
-		;;
 	esac
 
-	[ -z "$RAMIPS_BOARD_NAME" ] && RAMIPS_BOARD_NAME="$name"
-	[ -z "$RAMIPS_MODEL" ] && RAMIPS_MODEL="$machine"
+	# use generic board detect if no name is set
+	[ -z "$name" ] && return
 
 	[ -e "/tmp/sysinfo/" ] || mkdir -p "/tmp/sysinfo/"
 
-	echo "$RAMIPS_BOARD_NAME" > /tmp/sysinfo/board_name
-	echo "$RAMIPS_MODEL" > /tmp/sysinfo/model
+	echo "$name" > /tmp/sysinfo/board_name
+	echo "$machine" > /tmp/sysinfo/model
 }
