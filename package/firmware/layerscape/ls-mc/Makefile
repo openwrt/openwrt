@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=mc
+PKG_NAME:=ls-mc
 PKG_VERSION:=2017.09
 PKG_RELEASE:=1
 

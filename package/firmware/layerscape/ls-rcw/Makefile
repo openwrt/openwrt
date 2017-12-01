@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-PKG_NAME:=rcw
+PKG_NAME:=ls-rcw
 PKG_VERSION:=2017.09
 PKG_RELEASE:=1
 
@@ -32,32 +32,32 @@ define rcw/Default
 endef
 
 define rcw/ls1043ardb
-	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1043ardb 64b/32b Dev Board
+	TITLE=RCW binary $(PKG_VERSION) for NXP ls1043ardb 64b/32b Dev Board
 	CONFIG=ls1043ardb/RR_FQPP_1455/rcw_1600.bin
 endef
 
 define rcw/ls1046ardb
-	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1046ardb 64b/32b Dev Board
+	TITLE=RCW binary $(PKG_VERSION) for NXP ls1046ardb 64b/32b Dev Board
 	CONFIG=ls1046ardb/RR_FFSSPPPH_1133_5559/rcw_1800_qspiboot_swap.bin
 endef
 
 define rcw/ls1012ardb
-	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012ardb 64b/32b Dev Board
+	TITLE=RCW binary $(PKG_VERSION) for NXP ls1012ardb 64b/32b Dev Board
 	CONFIG=ls1012ardb/R_SPNH_3508/PBL_0x35_0x08_1000_250_1000_default.bin
 endef
 
 define rcw/ls1088ardb
-	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1088ardb 64b/32b Dev Board
+	TITLE=RCW binary $(PKG_VERSION) for NXP ls1088ardb 64b/32b Dev Board
 	CONFIG=ls1088ardb/FCQQQQQQQQ_PPP_H_0x1d_0x0d/PBL_QSPI_1600_700_2100_0x1d_0x0d.bin
 endef
 
 define rcw/ls2088ardb
-	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls2088ardb 64b/32b Dev Board
+	TITLE=RCW binary $(PKG_VERSION) for NXP ls2088ardb 64b/32b Dev Board
 	CONFIG=ls2088ardb/FFFFFFFF_PP_HH_0x2a_0x41/PBL_0x2a_0x41_1800_700_1866_1600.bin
 endef
 
 define rcw/ls1012afrdm
-	TITLE=RCW binary $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012afrdm 64b/32b Dev Board
+	TITLE=RCW binary $(PKG_VERSION) for NXP ls1012afrdm 64b/32b Dev Board
 	CONFIG=ls1012afrdm/N_SSNP_3305/PBL_0x33_0x05_800_250_1000_default.bin
 endef
 

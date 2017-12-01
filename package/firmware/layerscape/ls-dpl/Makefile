@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=dpl
+PKG_NAME:=ls-dpl
 PKG_VERSION:=2017.09
 PKG_RELEASE:=1
 

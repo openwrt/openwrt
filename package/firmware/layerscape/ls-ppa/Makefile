@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-PKG_NAME:=ppa
+PKG_NAME:=ls-ppa
 PKG_VERSION:=2017.09
 PKG_RELEASE:=1
 
@@ -29,32 +29,32 @@ define ppa/Default
 endef
 
 define ppa/ls1043ardb
-	TITLE=PPA firmware $(PKG_NAME)-$(PKG_VERSION) for NXP ls1043ardb 64b/32b Dev Board
+	TITLE=PPA firmware $(PKG_VERSION) for NXP ls1043ardb 64b/32b Dev Board
 	CONFIG=ppa-ls1043a.itb
 endef
 
 define ppa/ls1046ardb
-	TITLE=PPA firmware $(PKG_NAME)-$(PKG_VERSION) for NXP ls1046ardb 64b/32b Dev Board
+	TITLE=PPA firmware $(PKG_VERSION) for NXP ls1046ardb 64b/32b Dev Board
 	CONFIG=ppa-ls1046a.itb
 endef
 
 define ppa/ls1012ardb
-	TITLE=PPA firmware $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012ardb 64b/32b Dev Board
+	TITLE=PPA firmware $(PKG_VERSION) for NXP ls1012ardb 64b/32b Dev Board
 	CONFIG=ppa-ls1012a.itb
 endef
 
 define ppa/ls1088ardb
-	TITLE=PPA firmware $(PKG_NAME)-$(PKG_VERSION) for NXP ls1088ardb 64b/32b Dev Board
+	TITLE=PPA firmware $(PKG_VERSION) for NXP ls1088ardb 64b/32b Dev Board
 	CONFIG=ppa-ls1088a.itb
 endef
 
 define ppa/ls2088ardb
-	TITLE=PPA firmware $(PKG_NAME)-$(PKG_VERSION) for NXP ls2088ardb 64b/32b Dev Board
+	TITLE=PPA firmware $(PKG_VERSION) for NXP ls2088ardb 64b/32b Dev Board
 	CONFIG=ppa-ls2088a.itb
 endef
 
 define ppa/ls1012afrdm
-	TITLE=PPA firmware $(PKG_NAME)-$(PKG_VERSION) for NXP ls1012afrdm 64b/32b Dev Board
+	TITLE=PPA firmware $(PKG_VERSION) for NXP ls1012afrdm 64b/32b Dev Board
 	CONFIG=ppa-ls1012a.itb
 endef
 
