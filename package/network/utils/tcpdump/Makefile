@@ -63,6 +63,7 @@ CONFIGURE_VARS += \
 	ac_cv_linux_vers=$(LINUX_VERSION) \
 	ac_cv_header_rpc_rpcent_h=no \
 	ac_cv_lib_rpc_main=no \
+	ac_cv_header_pcap_nflog_h=no \
 	ac_cv_path_PCAP_CONFIG=""
 
 MAKE_FLAGS :=
