@@ -153,19 +153,30 @@ struct ag71xx_debug {
 };
 
 struct ag71xx {
-	void __iomem		*mac_base;
+	/*
+	 * Critical data related to the per-packet data path are clustered
+	 * early in this structure to help improve the D-cache footprint.
+	 */
+	struct ag71xx_ring	rx_ring ____cacheline_aligned;
+	struct ag71xx_ring	tx_ring ____cacheline_aligned;
 
-	spinlock_t		lock;
-	struct platform_device	*pdev;
+	unsigned int            max_frame_len;
+	unsigned int            desc_pktlen_mask;
+	unsigned int            rx_buf_size;
+
 	struct net_device	*dev;
+	struct platform_device  *pdev;
+	spinlock_t		lock;
 	struct napi_struct	napi;
 	u32			msg_enable;
 
+	/*
+	 * From this point onwards we're not looking at per-packet fields.
+	 */
+	void __iomem		*mac_base;
+
 	struct ag71xx_desc	*stop_desc;
 	dma_addr_t		stop_desc_dma;
-
-	struct ag71xx_ring	rx_ring;
-	struct ag71xx_ring	tx_ring;
 
 	struct mii_bus		*mii_bus;
 	struct phy_device	*phy_dev;
@@ -174,10 +185,6 @@ struct ag71xx {
 	unsigned int		link;
 	unsigned int		speed;
 	int			duplex;
-
-	unsigned int		max_frame_len;
-	unsigned int		desc_pktlen_mask;
-	unsigned int		rx_buf_size;
 
 	struct delayed_work	restart_work;
 	struct delayed_work	link_work;
