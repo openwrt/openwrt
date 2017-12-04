@@ -36,7 +36,8 @@ SDK_DIRS = \
 		$(STAGING_SUBDIR_HOST) \
 		$(STAGING_SUBDIR_TOOLCHAIN)
 
-GIT_URL:=$(filter git://% http://% https://%,$(shell git config --get remote.origin.url 2>/dev/null))
+GIT_URL:=$(shell git config --get remote.origin.url 2>/dev/null)
+GIT_URL:=$(if $(CONFIG_BUILDBOT),$(filter git://% http://% https://%,$(GIT_URL)),$(GIT_URL))
 GIT_COMMIT:=$(shell git rev-parse HEAD 2>/dev/null)
 GIT_BRANCH:=$(filter-out master HEAD,$(shell git rev-parse --abbrev-ref HEAD 2>/dev/null))
 GIT_TAGNAME:=$(shell git show-ref --tags --dereference 2>/dev/null | sed -ne '/^$(GIT_COMMIT) / { s|^.*/||; s|\^.*||; p }')
