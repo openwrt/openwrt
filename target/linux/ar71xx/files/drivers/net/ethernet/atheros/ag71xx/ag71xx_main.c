@@ -90,41 +90,6 @@ static inline void ag71xx_dump_intr(struct ag71xx *ag, char *label, u32 intr)
 		(intr & AG71XX_INT_RX_BE) ? "RXBE " : "");
 }
 
-static void ag71xx_ring_free(struct ag71xx_ring *ring)
-{
-	int ring_size = BIT(ring->order);
-	kfree(ring->buf);
-
-	if (ring->descs_cpu)
-		dma_free_coherent(NULL, ring_size * AG71XX_DESC_SIZE,
-				  ring->descs_cpu, ring->descs_dma);
-}
-
-static int ag71xx_ring_alloc(struct ag71xx_ring *ring)
-{
-	int ring_size = BIT(ring->order);
-	int err;
-
-	ring->descs_cpu = dma_alloc_coherent(NULL, ring_size * AG71XX_DESC_SIZE,
-					     &ring->descs_dma, GFP_ATOMIC);
-	if (!ring->descs_cpu) {
-		err = -ENOMEM;
-		goto err;
-	}
-
-
-	ring->buf = kzalloc(ring_size * sizeof(*ring->buf), GFP_KERNEL);
-	if (!ring->buf) {
-		err = -ENOMEM;
-		goto err;
-	}
-
-	return 0;
-
-err:
-	return err;
-}
-
 static void ag71xx_ring_tx_clean(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
@@ -315,30 +280,56 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 
 static int ag71xx_rings_init(struct ag71xx *ag)
 {
-	int ret;
+	struct ag71xx_ring *tx = &ag->tx_ring;
+	struct ag71xx_ring *rx = &ag->rx_ring;
+	int ring_size = BIT(tx->order) + BIT(rx->order);
+	int tx_size = BIT(tx->order);
 
-	ret = ag71xx_ring_alloc(&ag->tx_ring);
-	if (ret)
-		return ret;
+	tx->buf = kzalloc(ring_size * sizeof(*tx->buf), GFP_KERNEL);
+	if (!tx->buf)
+		return -ENOMEM;
+
+	tx->descs_cpu = dma_alloc_coherent(NULL, ring_size * AG71XX_DESC_SIZE,
+					   &tx->descs_dma, GFP_ATOMIC);
+	if (!tx->descs_cpu) {
+		kfree(tx->buf);
+		tx->buf = NULL;
+		return -ENOMEM;
+	}
+
+	rx->buf = &tx->buf[BIT(tx->order)];
+	rx->descs_cpu = ((void *)tx->descs_cpu) + tx_size * AG71XX_DESC_SIZE;
+	rx->descs_dma = tx->descs_dma + tx_size * AG71XX_DESC_SIZE;
 
 	ag71xx_ring_tx_init(ag);
+	return ag71xx_ring_rx_init(ag);
+}
 
-	ret = ag71xx_ring_alloc(&ag->rx_ring);
-	if (ret)
-		return ret;
+static void ag71xx_rings_free(struct ag71xx *ag)
+{
+	struct ag71xx_ring *tx = &ag->tx_ring;
+	struct ag71xx_ring *rx = &ag->rx_ring;
+	int ring_size = BIT(tx->order) + BIT(rx->order);
 
-	ret = ag71xx_ring_rx_init(ag);
-	return ret;
+	if (tx->descs_cpu)
+		dma_free_coherent(NULL, ring_size * AG71XX_DESC_SIZE,
+				  tx->descs_cpu, tx->descs_dma);
+
+	kfree(tx->buf);
+
+	tx->descs_cpu = NULL;
+	rx->descs_cpu = NULL;
+	tx->buf = NULL;
+	rx->buf = NULL;
 }
 
 static void ag71xx_rings_cleanup(struct ag71xx *ag)
 {
 	ag71xx_ring_rx_clean(ag);
-	ag71xx_ring_free(&ag->rx_ring);
-
 	ag71xx_ring_tx_clean(ag);
+	ag71xx_rings_free(ag);
+
 	netdev_reset_queue(ag->dev);
-	ag71xx_ring_free(&ag->tx_ring);
 }
 
 static unsigned char *ag71xx_speed_str(struct ag71xx *ag)
