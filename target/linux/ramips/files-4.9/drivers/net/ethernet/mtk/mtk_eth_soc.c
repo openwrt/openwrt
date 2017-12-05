@@ -882,16 +882,16 @@ release_desc:
 			rxd->rxd2 = RX_DMA_LSO;
 
 		ring->rx_calc_idx = idx;
+		done++;
+	}
+
+	if (done) {
 		/* make sure that all changes to the dma ring are flushed before
 		 * we continue
 		 */
 		wmb();
 		fe_reg_w32(ring->rx_calc_idx, FE_REG_RX_CALC_IDX0);
-		done++;
 	}
-
-	if (done < budget)
-		fe_reg_w32(rx_intr, FE_REG_FE_INT_STATUS);
 
 	return done;
 }
@@ -928,16 +928,12 @@ static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
 	}
 	ring->tx_free_idx = idx;
 
-	if (idx == hwidx) {
+	if (idx == hwidx)
 		/* read hw index again make sure no new tx packet */
 		hwidx = fe_reg_r32(FE_REG_TX_DTX_IDX0);
-		if (idx == hwidx)
-			fe_reg_w32(tx_intr, FE_REG_FE_INT_STATUS);
-		else
-			*tx_again = 1;
-	} else {
+
+	if (idx != hwidx)
 		*tx_again = 1;
-	}
 
 	if (done) {
 		netdev_completed_queue(netdev, done, bytes_compl);
@@ -958,8 +954,6 @@ static int fe_poll(struct napi_struct *napi, int budget)
 	u32 status, fe_status, status_reg, mask;
 	u32 tx_intr, rx_intr, status_intr;
 
-	status = fe_reg_r32(FE_REG_FE_INT_STATUS);
-	fe_status = status;
 	tx_intr = priv->soc->tx_int;
 	rx_intr = priv->soc->rx_int;
 	status_intr = priv->soc->status_int;
@@ -967,6 +961,7 @@ static int fe_poll(struct napi_struct *napi, int budget)
 	rx_done = 0;
 	tx_again = 0;
 
+	fe_status = status = fe_reg_r32(FE_REG_FE_INT_STATUS);
 	if (fe_reg_table[FE_REG_FE_INT_STATUS2]) {
 		fe_status = fe_reg_r32(FE_REG_FE_INT_STATUS2);
 		status_reg = FE_REG_FE_INT_STATUS2;
@@ -974,11 +969,14 @@ static int fe_poll(struct napi_struct *napi, int budget)
 		status_reg = FE_REG_FE_INT_STATUS;
 	}
 
+poll_again:
+	fe_reg_w32(status & (rx_intr | tx_intr), FE_REG_FE_INT_STATUS);
+
 	if (status & tx_intr)
-		tx_done = fe_poll_tx(priv, budget, tx_intr, &tx_again);
+		tx_done += fe_poll_tx(priv, budget, tx_intr, &tx_again);
 
 	if (status & rx_intr)
-		rx_done = fe_poll_rx(napi, budget, priv, rx_intr);
+		rx_done += fe_poll_rx(napi, budget - rx_done, priv, rx_intr);
 
 	if (unlikely(fe_status & status_intr)) {
 		if (hwstat && spin_trylock(&hwstat->stats_lock)) {
@@ -1009,7 +1007,6 @@ static int fe_poll(struct napi_struct *napi, int budget)
 		rx_done = budget;
 	}
 
-poll_again:
 	return rx_done;
 }
 
