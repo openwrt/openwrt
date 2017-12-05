@@ -816,7 +816,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	i = (ring->curr + n - 1) & ring_mask;
 	ring->buf[i].len = skb->len;
 	ring->buf[i].skb = skb;
-	ring->buf[i].timestamp = jiffies;
+	ag->timestamp = jiffies;
 
 	netdev_sent_queue(dev, skb->len);
 
@@ -926,11 +926,11 @@ static void ag71xx_restart_work_func(struct work_struct *work)
 	rtnl_unlock();
 }
 
-static bool ag71xx_check_dma_stuck(struct ag71xx *ag, unsigned long timestamp)
+static bool ag71xx_check_dma_stuck(struct ag71xx *ag)
 {
 	u32 rx_sm, tx_sm, rx_fd;
 
-	if (likely(time_before(jiffies, timestamp + HZ/10)))
+	if (likely(time_before(jiffies, ag->timestamp + HZ/10)))
 		return false;
 
 	if (!netif_carrier_ok(ag->dev))
@@ -969,7 +969,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag, bool flush)
 
 		if (!flush && !ag71xx_desc_empty(desc)) {
 			if (pdata->is_ar724x &&
-			    ag71xx_check_dma_stuck(ag, ring->buf[i].timestamp)) {
+			    ag71xx_check_dma_stuck(ag)) {
 				schedule_delayed_work(&ag->restart_work, HZ / 2);
 				dma_stuck = true;
 			}

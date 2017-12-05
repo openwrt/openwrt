@@ -100,9 +100,8 @@ struct ag71xx_buf {
 	};
 	union {
 		dma_addr_t	dma_addr;
-		unsigned long	timestamp;
+		unsigned int		len;
 	};
-	unsigned int		len;
 };
 
 struct ag71xx_ring {
@@ -169,6 +168,8 @@ struct ag71xx {
 	spinlock_t		lock;
 	struct napi_struct	napi;
 	u32			msg_enable;
+
+	unsigned long	timestamp;
 
 	/*
 	 * From this point onwards we're not looking at per-packet fields.
