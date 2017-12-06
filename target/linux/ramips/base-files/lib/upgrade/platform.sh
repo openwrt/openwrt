@@ -130,6 +130,7 @@ platform_check_image() {
 	rt-ac51u|\
 	rt-g32-b1|\
 	rt-n10-plus|\
+	rt-n12p|\
 	rt-n13u|\
 	rt-n14u|\
 	rt-n15|\

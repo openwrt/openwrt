@@ -391,6 +391,12 @@ define Device/rp-n53
 endef
 TARGET_DEVICES += rp-n53
 
+define Device/rt-n12p
+  DTS := RT-N12-PLUS
+  DEVICE_TITLE := Asus RT-N11P/RT-N12+/RT-N12Eb1
+endef
+TARGET_DEVICES += rt-n12p
+
 define Device/rt-n14u
   DTS := RT-N14U
   DEVICE_TITLE := Asus RT-N14u

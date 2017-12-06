@@ -460,6 +460,9 @@ ramips_board_detect() {
 	*"RT-N10+")
 		name="rt-n10-plus"
 		;;
+	*"RT-N12+")
+		name="rt-n12p"
+		;;
 	*"RT-N13U")
 		name="rt-n13u"
 		;;
