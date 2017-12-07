@@ -1159,9 +1159,10 @@ define Device/tl-wr940n-v4
   BOARDNAME := TL-WR940N-v4
   DEVICE_PROFILE := TLWR941
   TPLINK_HWID := 0x09400004
-  IMAGES += factory-us.bin factory-eu.bin
+  IMAGES += factory-us.bin factory-eu.bin factory-br.bin
   IMAGE/factory-us.bin := append-rootfs | mktplinkfw factory -C US
   IMAGE/factory-eu.bin := append-rootfs | mktplinkfw factory -C EU
+  IMAGE/factory-br.bin := append-rootfs | mktplinkfw factory -C BR
 endef
 TARGET_DEVICES += tl-wr940n-v4
 
