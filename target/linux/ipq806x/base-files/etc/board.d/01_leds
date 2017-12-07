@@ -16,6 +16,9 @@ avm,fritzbox-4040)
 	ucidef_set_led_netdev "wan" "WAN" "fritz4040:green:wan" "eth1"
 	ucidef_set_led_switch "lan" "LAN" "fritz4040:green:lan" "switch0" "0x1e"
 	;;
+glinet,gl-b1300)
+	ucidef_set_led_wlan "wlan" "WLAN" "${boardname}:green:wlan" "phy0tpt"
+	;;
 netgear,d7800 |\
 netgear,r7500 |\
 netgear,r7500v2 |\
