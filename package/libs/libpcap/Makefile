@@ -8,12 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
-PKG_VERSION:=1.5.3
+PKG_VERSION:=1.8.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/
-PKG_MD5SUM:=7e7321fb3aff2f2bb05c8229f3795d4a
+PKG_MD5SUM:=3d48f9cd171ff12b0efd9134b52f1447
+PKG_FIXUP:=patch-libtool
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
@@ -53,9 +54,7 @@ CONFIGURE_VARS += \
 
 CONFIGURE_ARGS += \
 	--enable-shared \
-	--enable-static \
 	--disable-yydebug \
-	--with-build-cc="$(HOSTCC)" \
 	--with-pcap=linux \
 	--without-septel \
 	--without-dag \
