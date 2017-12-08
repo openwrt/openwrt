@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_BASE:=1.0.2
-PKG_BUGFIX:=m
+PKG_BUGFIX:=n
 PKG_VERSION:=$(PKG_BASE)$(PKG_BUGFIX)
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
@@ -23,7 +23,7 @@ PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	http://www.openssl.org/source/old/$(PKG_BASE)/ \
 	ftp://ftp.funet.fi/pub/crypt/mirrors/ftp.openssl.org/source \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
-PKG_HASH:=8c6ff15ec6b319b50788f42c7abc2890c08ba5a1cdcd3810eb9092deada37b0f
+PKG_HASH:=370babb75f278c39e0c50e8c4e7493bc0f18db6867478341a832a982fd15a8fe
 
 PKG_LICENSE:=OpenSSL
 PKG_LICENSE_FILES:=LICENSE
@@ -120,7 +120,7 @@ ifndef CONFIG_OPENSSL_WITH_EC2M
 endif
 
 ifndef CONFIG_OPENSSL_WITH_SSL3
-  OPENSSL_OPTIONS += no-ssl3
+  OPENSSL_OPTIONS += no-ssl3 no-ssl3-method
 endif
 
 ifndef CONFIG_OPENSSL_HARDWARE_SUPPORT
