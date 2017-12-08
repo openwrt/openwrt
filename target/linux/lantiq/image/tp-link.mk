@@ -11,32 +11,35 @@ define Device/lantiqTpLink
 	append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 
-define Device/TDW8970
+define Device/tplink_tdw8970
   $(Device/lantiqTpLink)
+  DEVICE_DTS := TDW8970
   TPLINK_FLASHLAYOUT := 8Mltq
   TPLINK_HWID := 0x89700001
   TPLINK_HWREV := 1
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := TP-LINK TD-W8970
   DEVICE_PACKAGES:= kmod-ath9k wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += tplink,tdw8970
+  SUPPORTED_DEVICES += TDW8970
 endef
-TARGET_DEVICES += TDW8970
+TARGET_DEVICES += tplink_tdw8970
 
-define Device/TDW8980
+define Device/tplink_tdw8980
   $(Device/lantiqTpLink)
+  DEVICE_DTS := TDW8980
   TPLINK_FLASHLAYOUT := 8Mltq
   TPLINK_HWID := 0x89800001
   TPLINK_HWREV := 14
   IMAGE_SIZE := 7680k
   DEVICE_TITLE := TP-LINK TD-W8980
   DEVICE_PACKAGES:= kmod-ath9k kmod-owl-loader wpad-mini kmod-usb-dwc2 kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += tplink,tdw8980
+  SUPPORTED_DEVICES += TDW8980
 endef
-TARGET_DEVICES += TDW8980
+TARGET_DEVICES += tplink_tdw8980
 
-define Device/VR200v
+define Device/tplink_vr200v
   $(Device/lantiqTpLink)
+  DEVICE_DTS := VR200v
   TPLINK_BOARD_ID := ArcherVR200V
   TPLINK_FLASHLAYOUT := 16Mltq
   TPLINK_HWID := 0x73b70801
@@ -44,7 +47,6 @@ define Device/VR200v
   IMAGE_SIZE := 15808k
   DEVICE_TITLE := TP-LINK Archer VR200v
   DEVICE_PACKAGES:= kmod-usb-dwc2 kmod-usb-ledtrig-usbport
-  SUPPORTED_DEVICES += tplink,vr200v
+  SUPPORTED_DEVICES += VR200v
 endef
-TARGET_DEVICES += VR200v
-
+TARGET_DEVICES += tplink_vr200v
