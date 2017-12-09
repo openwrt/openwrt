@@ -806,21 +806,21 @@ define Device/linksys-e4200-v1
 endef
 TARGET_DEVICES += linksys-e4200-v1
 
-define Device/netgear-wgr614-v10_north-america
+define Device/netgear-wgr614-v10-na
   DEVICE_TITLE := Netgear WGR614 v10 North America
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H139T01_NETGEAR
   NETGEAR_REGION := 2
 endef
-TARGET_DEVICES += netgear-wgr614-v10_north-america
+TARGET_DEVICES += netgear-wgr614-v10-na
 
-define Device/netgear-wgr614-v10_other-regions
-  DEVICE_TITLE := Netgear WGR614 v10 Other Regions
+define Device/netgear-wgr614-v10
+  DEVICE_TITLE := Netgear WGR614 v10
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H139T01_NETGEAR
   NETGEAR_REGION := 1
 endef
-TARGET_DEVICES += netgear-wgr614-v10_other-regions
+TARGET_DEVICES += netgear-wgr614-v10
 
 define Device/netgear-wn2500rp-v1
   DEVICE_TITLE := Netgear WN2500RP v1
@@ -910,23 +910,23 @@ define Device/netgear-wnr2000v2
 endef
 TARGET_DEVICES += netgear-wnr2000v2
 
-define Device/netgear-wnr3500l-v1-north-america
+define Device/netgear-wnr3500l-v1-na
   DEVICE_TITLE := Netgear WNR3500L v1 North America
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H136T99_NETGEAR
   NETGEAR_REGION := 2
 endef
-TARGET_DEVICES += netgear-wnr3500l-v1-north-america
+TARGET_DEVICES += netgear-wnr3500l-v1-na
 
-define Device/netgear-wnr3500l-v1-other-regions
+define Device/netgear-wnr3500l-v1
   DEVICE_TITLE := Netgear WNR3500L v1 Other Regions
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H136T99_NETGEAR
   NETGEAR_REGION := 1
 endef
-TARGET_DEVICES += netgear-wnr3500l-v1-other-regions
+TARGET_DEVICES += netgear-wnr3500l-v1
 
 define Device/netgear-wnr3500l-v2
   DEVICE_TITLE := Netgear WNR3500L v2
