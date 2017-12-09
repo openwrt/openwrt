@@ -701,14 +701,14 @@ define Device/linksys-e900-v1
 endef
 TARGET_DEVICES += linksys-e900-v1
 
-define Device/linksys-e1000-v1-v2-v2.1
+define Device/linksys-e1000
   DEVICE_TITLE := Linksys E1000 v1 v2 v2.1
   DEVICE_PACKAGES := kmod-b43
   $(Device/linksys)
   DEVICE_ID := E100
   VERSION := 1.1.3
 endef
-TARGET_DEVICES += linksys-e1000-v1-v2-v2.1
+TARGET_DEVICES += linksys-e1000
 
 define Device/linksys-e1200-v1
   DEVICE_TITLE := Linksys E1200 v1
