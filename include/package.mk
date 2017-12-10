@@ -168,11 +168,11 @@ define Build/CoreTargets
 
   $(call Build/Exports,$(STAMP_CONFIGURED))
   $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(STAMP_CONFIGURED_DEPENDS)
+	rm -f $(STAMP_CONFIGURED_WILDCARD)
 	$(CleanStaging)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
 	$(Build/Configure)
 	$(foreach hook,$(Hooks/Configure/Post),$(call $(hook))$(sep))
-	rm -f $(STAMP_CONFIGURED_WILDCARD)
 	touch $$@
 
   $(call Build/Exports,$(STAMP_BUILT))
