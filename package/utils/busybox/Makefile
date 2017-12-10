@@ -101,7 +101,7 @@ ifdef CONFIG_BUSYBOX_CONFIG_PAM
   LDLIBS += pam pam_misc pthread
 endif
 
-ifdef CONFIG_BUSYBOX_DEFAULT_NSLOOKUP_LEDE
+ifdef CONFIG_BUSYBOX_DEFAULT_NSLOOKUP_OPENWRT
   ifeq ($(CONFIG_USE_GLIBC),y)
 	LDLIBS += resolv
   endif
