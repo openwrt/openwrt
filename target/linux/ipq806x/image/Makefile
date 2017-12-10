@@ -109,6 +109,7 @@ define Device/AP148
 	DEVICE_TITLE := Qualcomm AP148
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
+TARGET_DEVICES += AP148
 
 define Device/AP148-legacy
 	$(call Device/LegacyImage)
@@ -120,6 +121,7 @@ define Device/AP148-legacy
 	DEVICE_TITLE := Qualcomm AP148 (legacy)
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
+TARGET_DEVICES += AP148-legacy
 
 define Device/C2600
 	$(call Device/TpSafeImage)
@@ -131,6 +133,7 @@ define Device/C2600
 	DEVICE_TITLE := TP-Link Archer C2600
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
+TARGET_DEVICES += C2600
 
 define Device/D7800
 	$(call Device/DniImage)
@@ -144,6 +147,7 @@ define Device/D7800
 	DEVICE_TITLE := Netgear Nighthawk X4 D7800
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
+TARGET_DEVICES += D7800
 
 define Device/DB149
 	$(call Device/FitImage)
@@ -153,6 +157,7 @@ define Device/DB149
 	DEVICE_TITLE := Qualcomm DB149
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
+TARGET_DEVICES += DB149
 
 define Device/EA8500
 	$(call Device/LegacyImage)
@@ -170,6 +175,7 @@ define Device/EA8500
 	DEVICE_TITLE := Linksys EA8500
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
+TARGET_DEVICES += EA8500
 
 define Device/FRITZ4040
 	$(call Device/FitImageLzma)
@@ -184,6 +190,7 @@ define Device/FRITZ4040
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := kmod-usb-phy-qcom-ipq4019 ipq-wifi-fritz4040 fritz-tffs fritz-caldata u-boot-fritz4040
 endef
+TARGET_DEVICES += FRITZ4040
 
 define Device/R7500
 	$(call Device/DniImage)
@@ -197,6 +204,7 @@ define Device/R7500
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500
 	DEVICE_PACKAGES := ath10k-firmware-qca988x
 endef
+TARGET_DEVICES += R7500
 
 define Device/R7500v2
 	$(call Device/DniImage)
@@ -210,6 +218,7 @@ define Device/R7500v2
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500v2
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0 ath10k-firmware-qca988x
 endef
+TARGET_DEVICES += R7500v2
 
 define Device/R7800
 	$(call Device/DniImage)
@@ -223,6 +232,7 @@ define Device/R7800
 	DEVICE_TITLE := Netgear Nighthawk X4S R7800
 	DEVICE_PACKAGES := ath10k-firmware-qca9984
 endef
+TARGET_DEVICES += R7800
 
 define Device/NBG6817
 	DEVICE_DTS := qcom-ipq8065-nbg6817
@@ -233,6 +243,7 @@ define Device/NBG6817
 	DEVICE_PACKAGES := ath10k-firmware-qca9984 e2fsprogs kmod-fs-ext4 losetup
 	$(call Device/ZyXELImage)
 endef
+TARGET_DEVICES += NBG6817
 
 define Device/VR2600v
 	PROFILES += $$(DEVICE_NAME)
@@ -250,6 +261,7 @@ define Device/VR2600v
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
 endef
+TARGET_DEVICES += VR2600v
 
 define Device/AP-DK01.1-C1
 	PROFILES += $$(DEVICE_NAME)
@@ -266,6 +278,7 @@ define Device/AP-DK01.1-C1
 	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca4019
 endef
+TARGET_DEVICES += AP-DK01.1-C1
 
 define Device/AP-DK04.1-C1
 	$(call Device/FitImage)
@@ -279,8 +292,6 @@ define Device/AP-DK04.1-C1
 	BOARD_NAME := ap-dk04.1-c1
 	DEVICE_TITLE := QCA AP-DK04.1-C1
 endef
-
-TARGET_DEVICES += AP148 AP148-legacy C2600 D7800 DB149 EA8500 FRITZ4040 R7500 \
-		  R7500v2 R7800 NBG6817 VR2600v AP-DK01.1-C1 AP-DK04.1-C1
+TARGET_DEVICES += AP-DK04.1-C1
 
 $(eval $(call BuildImage))

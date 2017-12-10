@@ -341,13 +341,14 @@ define Device/mr12
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
   IMAGES := kernel.bin rootfs.bin sysupgrade.bin
 endef
+TARGET_DEVICES += mr12
 
 define Device/mr16
   $(Device/mr12)
   DEVICE_TITLE := Meraki MR16
   BOARDNAME := MR16
 endef
-TARGET_DEVICES += mr12 mr16
+TARGET_DEVICES += mr16
 
 define Device/dr342
   DEVICE_TITLE := Wallys DR342
@@ -392,6 +393,7 @@ define Device/wndr3700
   IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory-NA.img := $$(IMAGE/default) | netgear-dni NA | check-size $$$$(IMAGE_SIZE)
 endef
+TARGET_DEVICES += wndr3700
 
 define Device/wndr3700v2
   $(Device/wndr3700)
@@ -403,6 +405,7 @@ define Device/wndr3700v2
   MTDPARTS := spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,15872k(firmware),64k(art)ro
   IMAGES := sysupgrade.bin factory.img
 endef
+TARGET_DEVICES += wndr3700v2
 
 define Device/wndr3800
   $(Device/wndr3700v2)
@@ -410,25 +413,28 @@ define Device/wndr3800
   NETGEAR_BOARD_ID := WNDR3800
   NETGEAR_HW_ID := 29763654+16+128
 endef
+TARGET_DEVICES += wndr3800
 
 define Device/wndr3800ch
   $(Device/wndr3800)
   DEVICE_TITLE := NETGEAR WNDR3800 (Ch)
   NETGEAR_BOARD_ID := WNDR3800CH
 endef
+TARGET_DEVICES += wndr3800ch
 
 define Device/wndrmac
   $(Device/wndr3700v2)
   DEVICE_TITLE := NETGEAR WNDRMAC
   NETGEAR_BOARD_ID := WNDRMAC
 endef
+TARGET_DEVICES += wndrmac
 
 define Device/wndrmacv2
   $(Device/wndr3800)
   DEVICE_TITLE := NETGEAR WNDRMAC v2
   NETGEAR_BOARD_ID := WNDRMACv2
 endef
-TARGET_DEVICES += wndr3700 wndr3700v2 wndr3800 wndr3800ch wndrmac wndrmacv2
+TARGET_DEVICES += wndrmacv2
 
 define Device/cap324
   DEVICE_TITLE := PowerCloud CAP324 Cloud AP
@@ -505,6 +511,7 @@ define Device/antminer-s1
   TPLINK_HWID := 0x04440101
   CONSOLE := ttyATH0,115200
 endef
+TARGET_DEVICES += antminer-s1
 
 define Device/antminer-s3
   $(Device/tplink-8mlzma)
@@ -515,6 +522,7 @@ define Device/antminer-s3
   TPLINK_HWID := 0x04440301
   CONSOLE := ttyATH0,115200
 endef
+TARGET_DEVICES += antminer-s3
 
 define Device/antrouter-r1
   $(Device/tplink-8mlzma)
@@ -525,6 +533,7 @@ define Device/antrouter-r1
   TPLINK_HWID := 0x44440101
   CONSOLE := ttyATH0,115200
 endef
+TARGET_DEVICES += antrouter-r1
 
 define Device/el-m150
   $(Device/tplink-8mlzma)
@@ -535,6 +544,7 @@ define Device/el-m150
   TPLINK_HWID := 0x01500101
   CONSOLE := ttyATH0,115200
 endef
+TARGET_DEVICES += el-m150
 
 define Device/el-mini
   $(Device/tplink-8mlzma)
@@ -545,7 +555,7 @@ define Device/el-mini
   TPLINK_HWID := 0x01530001
   CONSOLE := ttyATH0,115200
 endef
-TARGET_DEVICES += antminer-s1 antminer-s3 antrouter-r1 el-m150 el-mini
+TARGET_DEVICES += el-mini
 
 define Device/gl-inet-6408A-v1
   $(Device/tplink-8mlzma)
@@ -556,6 +566,7 @@ define Device/gl-inet-6408A-v1
   TPLINK_HWID := 0x08000001
   CONSOLE := ttyATH0,115200
 endef
+TARGET_DEVICES += gl-inet-6408A-v1
 
 define Device/gl-inet-6416A-v1
   $(Device/tplink-16mlzma)
@@ -566,7 +577,7 @@ define Device/gl-inet-6416A-v1
   TPLINK_HWID := 0x08000001
   CONSOLE := ttyATH0,115200
 endef
-TARGET_DEVICES += gl-inet-6408A-v1 gl-inet-6416A-v1
+TARGET_DEVICES += gl-inet-6416A-v1
 
 define Device/jwap230
   DEVICE_TITLE := jjPlus JWAP230
@@ -625,6 +636,7 @@ define Device/omy-g1
   DEVICE_PROFILE := OMYG1
   TPLINK_HWID := 0x06660101
 endef
+TARGET_DEVICES += omy-g1
 
 define Device/omy-x1
   $(Device/tplink-8mlzma)
@@ -633,7 +645,7 @@ define Device/omy-x1
   DEVICE_PROFILE := OMYX1
   TPLINK_HWID := 0x06660201
 endef
-TARGET_DEVICES += omy-g1 omy-x1
+TARGET_DEVICES += omy-x1
 
 define Device/onion-omega
   $(Device/tplink-16mlzma)
@@ -826,6 +838,7 @@ define Device/dir-869-a1
 	seama | seama-seal -m "signature=$$$$(SEAMA_SIGNATURE)" | \
 	check-size $$$$(IMAGE_SIZE)
 endef
+TARGET_DEVICES += dir-869-a1
 
 define Device/mynet-n600
   $(Device/seama)
@@ -836,6 +849,7 @@ define Device/mynet-n600
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(devdata)ro,64k(devconf)ro,15872k(firmware),64k(radiocfg)ro
   SEAMA_SIGNATURE := wrgnd16_wd_db600
 endef
+TARGET_DEVICES += mynet-n600
 
 define Device/mynet-n750
   $(Device/seama)
@@ -846,6 +860,7 @@ define Device/mynet-n750
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(devdata)ro,64k(devconf)ro,15872k(firmware),64k(radiocfg)ro
   SEAMA_SIGNATURE := wrgnd13_wd_av
 endef
+TARGET_DEVICES += mynet-n750
 
 define Device/qihoo-c301
   $(Device/seama)
@@ -856,7 +871,7 @@ define Device/qihoo-c301
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(devdata),64k(devconf),15744k(firmware),64k(warm_start),64k(action_image_config),64k(radiocfg)ro;spi0.1:15360k(upgrade2),1024k(privatedata)
   SEAMA_SIGNATURE := wrgac26_qihoo360_360rg
 endef
-TARGET_DEVICES += dir-869-a1 mynet-n600 mynet-n750 qihoo-c301
+TARGET_DEVICES += qihoo-c301
 
 define Device/dap-2695-a1
   DEVICE_TITLE := D-Link DAP-2695 rev. A1
@@ -897,6 +912,7 @@ define Device/wpj342
   DEVICE_TITLE := Compex WPJ342 (16MB flash)
   BOARDNAME := WPJ342
 endef
+TARGET_DEVICES += wpj342
 
 define Device/wpj344
   $(Device/wpj-16m)
@@ -906,12 +922,14 @@ define Device/wpj344
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
+TARGET_DEVICES += wpj344
 
 define Device/wpj531
   $(Device/wpj-16m)
   DEVICE_TITLE := Compex WPJ531 (16MB flash)
   BOARDNAME := WPJ531
 endef
+TARGET_DEVICES += wpj531
 
 define Device/wpj558
   $(Device/wpj-16m)
@@ -921,13 +939,14 @@ define Device/wpj558
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
+TARGET_DEVICES += wpj558
 
 define Device/wpj563
   $(Device/wpj-16m)
   DEVICE_TITLE := Compex WPJ563 (16MB flash)
   BOARDNAME := WPJ563
 endef
-TARGET_DEVICES += wpj342 wpj344 wpj531 wpj558 wpj563
+TARGET_DEVICES += wpj563
 
 define Device/wrtnode2q
   DEVICE_TITLE := WRTnode2Q
