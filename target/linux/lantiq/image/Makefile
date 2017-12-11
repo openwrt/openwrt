@@ -368,19 +368,19 @@ DGN3500_KERNEL_OFFSET_DEC=327680
 define Device/DGN3500
   IMAGE_SIZE := 16000k
   IMAGES := \
-	sysupgrade-NA.bin sysupgrade-WW.bin \
-	factory-NA.img factory-WW.img
-  IMAGE/sysupgrade-NA.bin := \
+	sysupgrade-na.bin sysupgrade.bin \
+	factory-na.img factory.img
+  IMAGE/sysupgrade-na.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "NA" | \
 	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/sysupgrade-WW.bin := \
+  IMAGE/sysupgrade.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "WW" | \
 	pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory-NA.img := \
+  IMAGE/factory-na.img := \
 	pad-extra $(DGN3500_KERNEL_OFFSET_DEC) | append-kernel | append-rootfs | \
 	dgn3500-sercom-footer $(DGN3500_KERNEL_OFFSET_HEX) "NA" | pad-rootfs | \
 	check-size 16320k | pad-to 16384k
-  IMAGE/factory-WW.img := \
+  IMAGE/factory.img := \
 	pad-extra $(DGN3500_KERNEL_OFFSET_DEC) | append-kernel | append-rootfs | \
 	dgn3500-sercom-footer $(DGN3500_KERNEL_OFFSET_HEX) "WW" | pad-rootfs | \
 	check-size 16320k | pad-to 16384k
