@@ -1,3 +1,46 @@
+AT91_SD_BOOT_PARTSIZE:=64
+FAT32_BLOCK_SIZE:=1024
+FAT32_BLOCKS:=$(shell echo \
+  $$(($(AT91_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
+
+define Build/at91-sdcard
+  rm -f $@.boot
+  mkfs.fat -C $@.boot $(FAT32_BLOCKS)
+
+  mcopy -i $@.boot $(KDIR)/zImage ::zImage
+
+  $(foreach dts,$(DEVICE_DTS), \
+     mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb \
+        ::$(dts).dtb; \
+     mcopy -i $@.boot \
+        $(BIN_DIR)/u-boot-$(dts:at91-%=%)_mmc/u-boot.bin \
+            ::u-boot.bin; \
+     $(CP) $(BIN_DIR)/at91bootstrap-$(dts:at91-%=%)sd_uboot*/*.bin \
+         $(BIN_DIR)/BOOT.bin; \
+     mcopy -i $@.boot $(BIN_DIR)/BOOT.bin ::BOOT.bin;)
+
+  ./gen_at91_sdcard_img.sh \
+      $(dir $@)$(IMG_PREFIX)-$(PROFILE_SANITIZED)-sdcard.img \
+      $@.boot \
+      $(KDIR)/root.ext4 \
+      $(AT91_SD_BOOT_PARTSIZE) \
+      $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+
+  gzip -nc9 $(dir $@)$(IMG_PREFIX)-$(PROFILE_SANITIZED)-sdcard.img \
+         > $(dir $@)$(IMG_PREFIX)-$(PROFILE_SANITIZED)-sdcard.img.gz
+
+  $(CP) $(dir $@)$(IMG_PREFIX)-$(PROFILE_SANITIZED)-sdcard.img.gz \
+        $(BIN_DIR)/
+
+  rm -f $(BIN_DIR)/BOOT.bin
+  rm -f $@.boot
+endef
+
+define Device/evaluation-sdimage
+  IMAGES += sdcard.img.gz
+  IMAGE/sdcard.img.gz := at91-sdcard
+endef
+
 define Device/default-nand
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -9,6 +52,7 @@ define Device/at91-sama5d3_xplained
   $(Device/evaluation-dtb)
   DEVICE_TITLE := Microchip(Atmel AT91) SAMA5D3 Xplained
   KERNEL_SIZE := 6144k
+  $(Device/evaluation-sdimage)
 endef
 TARGET_DEVICES += at91-sama5d3_xplained
 
@@ -16,6 +60,7 @@ define Device/at91-sama5d2_xplained
   $(Device/evaluation-dtb)
   DEVICE_TITLE := Microchip(Atmel AT91) SAMA5D2 Xplained
   KERNEL_SIZE := 6144k
+  $(Device/evaluation-sdimage)
 endef
 TARGET_DEVICES += at91-sama5d2_xplained
 
@@ -27,6 +72,7 @@ define Device/at91-sama5d4_xplained
   PAGESIZE := 4096
   SUBPAGESIZE := 2048
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 248KiB -c 2082 -x lzo
+  $(Device/evaluation-sdimage)
 endef
 TARGET_DEVICES += at91-sama5d4_xplained
 
