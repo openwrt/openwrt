@@ -23,6 +23,7 @@ PKG_LICENSE:=GPL-2.0
 PKG_CONFIG_DEPENDS += \
 	CONFIG_SIGNED_PACKAGES CONFIG_TARGET_INIT_PATH CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE \
 	CONFIG_NAND_SUPPORT \
+	CONFIG_CLEAN_IPKG \
 	CONFIG_PER_FEED_REPO \
 	CONFIG_PER_FEED_REPO_ADD_DISABLED \
 	CONFIG_PER_FEED_REPO_ADD_COMMENTED \
@@ -190,9 +191,10 @@ define Package/base-files/install
 		echo -e "# Build configuration for board $(BOARD)/$(SUBTARGET)/$(PROFILE)\n" >$(1)/etc/build.config; \
 		cat $(BIN_DIR)/config.seed >>$(1)/etc/build.config)
 
-	mkdir -p $(1)/etc/opkg
-	$(call FeedSourcesAppend,$(1)/etc/opkg/distfeeds.conf)
-	$(VERSION_SED) $(1)/etc/opkg/distfeeds.conf
+	$(if $(CONFIG_CLEAN_IPKG),, \
+		mkdir -p $(1)/etc/opkg; \
+		$(call FeedSourcesAppend,$(1)/etc/opkg/distfeeds.conf); \
+		$(VERSION_SED) $(1)/etc/opkg/distfeeds.conf)
 endef
 
 ifneq ($(DUMP),1)
