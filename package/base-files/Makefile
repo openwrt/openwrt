@@ -190,6 +190,7 @@ define Package/base-files/install
 		echo -e "# Build configuration for board $(BOARD)/$(SUBTARGET)/$(PROFILE)\n" >$(1)/etc/build.config; \
 		cat $(BIN_DIR)/config.seed >>$(1)/etc/build.config)
 
+	mkdir -p $(1)/etc/opkg
 	$(call FeedSourcesAppend,$(1)/etc/opkg/distfeeds.conf)
 	$(VERSION_SED) $(1)/etc/opkg/distfeeds.conf
 endef
