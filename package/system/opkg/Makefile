@@ -23,7 +23,8 @@ PKG_LICENSE_FILES:=COPYING
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 
-PKG_CONFIG_DEPENDS := \
+# Extend depends from version.mk
+PKG_CONFIG_DEPENDS += \
 	CONFIG_SIGNED_PACKAGES \
 	CONFIG_TARGET_INIT_PATH
 
