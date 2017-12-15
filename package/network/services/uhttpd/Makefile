@@ -19,6 +19,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=ISC
 
 PKG_BUILD_DEPENDS = ustream-ssl
+PKG_CONFIG_DEPENDS:= CONFIG_uhttpd_lua
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -43,9 +44,6 @@ define Package/uhttpd/description
 endef
 
 define Package/uhttpd/config
-  config PACKAGE_uhttpd_debug
-    bool "Build with debug messages"
-    default n
   config uhttpd_lua
     depends on PACKAGE_uhttpd-mod-lua
     bool "Enable Integrated Lua interpreter"
