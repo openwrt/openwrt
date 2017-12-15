@@ -125,6 +125,7 @@ get_status_led() {
 	d240|\
 	dap-1350|\
 	na930|\
+	d-team,newifi-d2|\
 	pbr-m1|\
 	re350-v1|\
 	rt-ac51u|\
