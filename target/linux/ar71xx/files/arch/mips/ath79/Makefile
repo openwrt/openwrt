@@ -149,6 +149,7 @@ obj-$(CONFIG_ATH79_MACH_JWAP003)		+= mach-jwap003.o
 obj-$(CONFIG_ATH79_MACH_JWAP230)		+= mach-jwap230.o
 obj-$(CONFIG_ATH79_MACH_KOALA)			+= mach-koala.o
 obj-$(CONFIG_ATH79_MACH_LAN_TURTLE)		+= mach-lan-turtle.o
+obj-$(CONFIG_ATH79_MACH_LIBREROUTERV1)		+= mach-librerouter-v1.o
 obj-$(CONFIG_ATH79_MACH_LIMA)			+= mach-lima.o
 obj-$(CONFIG_ATH79_MACH_MC_MAC1200R)		+= mach-mc-mac1200r.o
 obj-$(CONFIG_ATH79_MACH_MR12)			+= mach-mr12.o

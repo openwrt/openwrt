@@ -804,6 +804,9 @@ ar71xx_board_detect() {
 	*"LAN Turtle")
 		name="lan-turtle"
 		;;
+	*"LibreRouter v1"*)
+		name="librerouter-v1"
+		;;
 	*"Lima"*)
 		name="lima"
 		;;

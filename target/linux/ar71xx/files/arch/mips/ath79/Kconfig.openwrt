@@ -1012,6 +1012,16 @@ config ATH79_MACH_WIFI_PINEAPPLE_NANO
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_LIBREROUTERV1
+	bool "LibreRouter v1 board support"
+	select SOC_QCA955X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_WRT160NL
 	bool "Linksys WRT160NL board support"
 	select SOC_AR913X

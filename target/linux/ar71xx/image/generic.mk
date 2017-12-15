@@ -1388,3 +1388,14 @@ define Device/fritz450e
   IMAGE_SIZE := 15232k
 endef
 TARGET_DEVICES += fritz450e
+
+define Device/librerouter-v1
+  DEVICE_TITLE := LibreRouter v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  BOARDNAME := LIBREROUTERV1
+  IMAGE_SIZE := 32384k
+  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += librerouter-v1

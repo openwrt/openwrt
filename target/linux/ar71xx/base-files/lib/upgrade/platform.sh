@@ -274,6 +274,7 @@ platform_check_image() {
 	hornet-ub-x2|\
 	jwap230|\
 	lbe-m5|\
+	librerouter-v1|\
 	lima|\
 	loco-m-xw|\
 	mzk-w04nu|\
