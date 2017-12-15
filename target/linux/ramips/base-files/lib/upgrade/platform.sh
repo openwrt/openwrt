@@ -240,6 +240,7 @@ platform_check_image() {
 	c20i|\
 	c50|\
 	mr200|\
+	tplink,tl-mr3420-v5|\
 	tl-wr840n-v4|\
 	tl-wr840n-v5|\
 	tl-wr841n-v13)

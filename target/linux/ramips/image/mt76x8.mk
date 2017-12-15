@@ -139,6 +139,20 @@ define Device/tl-wr841n-v13
 endef
 TARGET_DEVICES += tl-wr841n-v13
 
+define Device/tplink_tl-mr3420-v5
+  $(Device/tplink)
+  DTS := TL-MR3420V5
+  IMAGE_SIZE := 7808k
+  DEVICE_TITLE := TP-Link TL-MR3420 v5
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x34200005
+  TPLINK_HWREV := 0x5
+  TPLINK_HWREVADD := 0x5
+  TPLINK_HVERSION := 3
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += tplink_tl-mr3420-v5
+
 define Device/u7628-01-128M-16M
   DTS := U7628-01-128M-16M
   IMAGE_SIZE := 16064k
