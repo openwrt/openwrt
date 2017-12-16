@@ -58,8 +58,7 @@ sc1750|\
 sc450)
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan" "phy0tpt"
 	;;
-archer-c25-v1|\
-archer-c7-v4)
+archer-c25-v1)
 	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:green:wlan5g" "phy0tpt"
@@ -67,12 +66,6 @@ archer-c7-v4)
 	ucidef_set_led_switch "lan2" "LAN2" "$board:green:lan2" "switch0" "0x08"
 	ucidef_set_led_switch "lan3" "LAN3" "$board:green:lan3" "switch0" "0x04"
 	ucidef_set_led_switch "lan4" "LAN4" "$board:green:lan4" "switch0" "0x02"
-	case "$board" in
-		archer-c7-v4)
-			ucidef_set_led_usbdev "usb1" "USB1" "$board:green:usb1" "1-1"
-			ucidef_set_led_usbdev "usb2" "USB2" "$board:green:usb2" "2-1"
-		;;
-	esac
 	;;
 archer-c58-v1|\
 archer-c59-v1|\
@@ -781,6 +774,17 @@ archer-c7)
 	ucidef_set_led_usbdev "usb2" "USB2" "tp-link:green:usb2" "2-1"
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "tp-link:blue:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "tp-link:blue:wlan5g" "phy0tpt"
+	;;
+archer-c7-v4)
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:green:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:green:wlan5g" "phy0tpt"
+	ucidef_set_led_switch "wan" "WAN" "$board:green:wan" "switch0" "0x02"
+	ucidef_set_led_switch "lan1" "LAN1" "$board:green:lan4" "switch0" "0x04"
+	ucidef_set_led_switch "lan2" "LAN2" "$board:green:lan3" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "$board:green:lan2" "switch0" "0x10"
+	ucidef_set_led_switch "lan4" "LAN4" "$board:green:lan1" "switch0" "0x20"
+	ucidef_set_led_usbdev "usb1" "USB1" "$board:green:usb1" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB2" "$board:green:usb2" "2-1"
 	;;
 tl-wpa8630)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
