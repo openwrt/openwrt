@@ -105,7 +105,7 @@
  	case UPIO_AU:
  		p->serial_out(p, offset, value);
  		p->serial_in(p, UART_LCR);	/* safe, no side-effects */
-@@ -2756,6 +2776,7 @@ static int serial8250_request_std_resour
+@@ -2759,6 +2779,7 @@ static int serial8250_request_std_resour
  	case UPIO_MEM32BE:
  	case UPIO_MEM16:
  	case UPIO_MEM:
@@ -113,7 +113,7 @@
  		if (!port->mapbase)
  			break;
  
-@@ -2794,6 +2815,7 @@ static void serial8250_release_std_resou
+@@ -2797,6 +2818,7 @@ static void serial8250_release_std_resou
  	case UPIO_MEM32BE:
  	case UPIO_MEM16:
  	case UPIO_MEM:
