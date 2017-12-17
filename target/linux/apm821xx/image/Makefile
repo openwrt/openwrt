@@ -217,11 +217,11 @@ define Device/MyBookLiveDefault
   KERNEL := kernel-bin | dtb | gzip | uImage gzip
   KERNEL_INITRAMFS := kernel-bin | dtb | gzip | uImage gzip
   BOOT_SIZE := 8
-  IMAGES := rootfs.img kernel.dtb
+  IMAGES := rootfs.img.gz kernel.dtb
   DEVICE_DTB := apollo3g.dtb
   FILESYSTEMS := ext4
   IMAGE/kernel.dtb := export-dtb
-  IMAGE/rootfs.img := boot-script | boot-img | hdd-img
+  IMAGE/rootfs.img.gz := boot-script | boot-img | hdd-img | gzip
 endef
 
 define Device/MyBookLiveSingle
