@@ -1,35 +1,20 @@
 #!/bin/sh
 
 PART_NAME=firmware
+REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
 	local board=$(board_name)
-
-	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
 	mbl)
 		mbl_do_platform_check "$1"
 		return $?;
 		;;
-
-	mr24|\
-	mx60)
-		merakinand_do_platform_check $board "$1"
-		return $?;
-		;;
-
-	wndr4700)
-		nand_do_platform_check $board "$1"
-		return $?;
-		;;
-
 	*)
+		return 0
 		;;
 	esac
-
-	echo "Sysupgrade is not yet supported on $board."
-	return 1
 }
 
 platform_pre_upgrade() {
@@ -37,10 +22,7 @@ platform_pre_upgrade() {
 
 	case "$board" in
 	mr24|\
-	mx60)
-		merakinand_do_upgrade "$1"
-		;;
-
+	mx60|\
 	wndr4700)
 		nand_do_upgrade "$1"
 		;;
