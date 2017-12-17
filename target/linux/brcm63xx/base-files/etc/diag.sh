@@ -12,7 +12,7 @@ set_state() {
 	a4001n)
 		status_led="A4001N:green:power"
 		;;
-	ad1018)
+	ad1018-nor)
 		status_led="AD1018:green:power"
 		;;
 	ar-5315u)
