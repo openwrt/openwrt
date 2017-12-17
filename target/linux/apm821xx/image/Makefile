@@ -5,12 +5,11 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += DEVICE_PROFILE IMAGE_SIZE DTB_SIZE
+DEVICE_VARS += IMAGE_SIZE DTB_SIZE
 
 define Device/Default
   PROFILES := Default
   KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
-  DEVICE_PROFILE :=
   DEVICE_DTS :=
   KERNEL_ENTRY := 0x00000000
   KERNEL_LOADADDR := 0x00000000
@@ -61,7 +60,7 @@ endef
 
 define Build/MerakiNAND
 	-$(STAGING_DIR_HOST)/bin/mkmerakifw \
-		-B $(DEVICE_PROFILE) -s \
+		-B $(BOARD_NAME) -s \
 		-i $@ \
 		-o $@.new
 	@cp $@.new $@
@@ -70,7 +69,7 @@ endef
 define Device/mr24
   DEVICE_TITLE := Cisco Meraki MR24
   DEVICE_PACKAGES := kmod-spi-gpio
-  DEVICE_PROFILE := MR24
+  BOARD_NAME := mr24
   DEVICE_DTS := MR24
   BLOCKSIZE := 63k
   IMAGES := sysupgrade.tar
@@ -91,7 +90,7 @@ define Device/mx60
   DEVICE_TITLE := Cisco Meraki MX60/MX60W
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
   kmod-usb-storage block-mount
-  DEVICE_PROFILE := MX60
+  BOARD_NAME := mx60
   DEVICE_DTS := MX60
   BLOCKSIZE := 63k
   IMAGES := sysupgrade.tar
@@ -145,7 +144,7 @@ define Build/wndr4700-specialImage
 
 	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) -O linux -T multi \
 		-C $(1) -a $(KERNEL_LOADADDR) -e $(KERNEL_ENTRY) \
-		-n '$(DEVICE_PROFILE) initramfs' -d $@:$@.fakerd:$@.dtb $@.new
+		-n '$(BOARD_NAME) initramfs' -d $@:$@.fakerd:$@.dtb $@.new
 	mv $@.new $@
 	rm -rf $@.fakerd
 endef
@@ -157,8 +156,7 @@ define Device/WNDR4700
 	kmod-md-mod kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
 	kmod-nls-utf8 kmod-usb3 kmod-usb-dwc2 kmod-usb-storage \
 	partx-utils
-  DEVICE_NAME := wndr4700
-  DEVICE_PROFILE := wndr4700
+  BOARD_NAME := wndr4700
   DEVICE_DTS := wndr4700
   PAGESIZE := 2048
   SUBPAGESIZE := 512
@@ -228,7 +226,6 @@ define Device/MyBookLiveSingle
 $(Device/MyBookLiveDefault)
   DEVICE_TITLE := Western Digital My Book Live
   DEVICE_DTS := apollo3g
-  DEVICE_PROFILE := apollo3g
 endef
 
 TARGET_DEVICES += MyBookLiveSingle
@@ -238,7 +235,6 @@ $(Device/MyBookLiveDefault)
   DEVICE_TITLE := Western Digital My Book Live Duo
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-mini
   DEVICE_DTS := apollo3g-duo
-  DEVICE_PROFILE := ap2nc
 endef
 
 TARGET_DEVICES += MyBookLiveDuo
