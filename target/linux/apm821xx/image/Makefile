@@ -66,7 +66,7 @@ define Build/MerakiNAND
 	@cp $@.new $@
 endef
 
-define Device/mr24
+define Device/meraki_mr24
   DEVICE_TITLE := Cisco Meraki MR24
   DEVICE_PACKAGES := kmod-spi-gpio
   BOARD_NAME := mr24
@@ -84,9 +84,9 @@ define Device/mr24
   IMAGE/sysupgrade.tar := sysupgrade-tar
   UBINIZE_OPTS := -E 5
 endef
-TARGET_DEVICES += mr24
+TARGET_DEVICES += meraki_mr24
 
-define Device/mx60
+define Device/meraki_mx60
   DEVICE_TITLE := Cisco Meraki MX60/MX60W
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
   kmod-usb-storage block-mount
@@ -109,7 +109,7 @@ define Device/mx60
   IMAGE/sysupgrade.tar := sysupgrade-tar
   UBINIZE_OPTS := -E 5
 endef
-TARGET_DEVICES += mx60
+TARGET_DEVICES += meraki_mx60
 
 define Build/create-uImage-dtb
 	# flat_dt target expect FIT image - which WNDR4700's uboot doesn't support
@@ -149,7 +149,7 @@ define Build/wndr4700-specialImage
 	rm -rf $@.fakerd
 endef
 
-define Device/WNDR4700
+define Device/netgear_wndr4700
   DEVICE_TITLE := Netgear Centria N900 WNDR4700/WNDR4720
   DEVICE_PACKAGES := badblocks block-mount e2fsprogs \
 	kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-usb-ledtrig-usbport \
@@ -176,7 +176,7 @@ define Device/WNDR4700
   NETGEAR_HW_ID := 29763875+128+256
   UBINIZE_OPTS := -E 5
 endef
-TARGET_DEVICES += WNDR4700
+TARGET_DEVICES += netgear_wndr4700
 
 endif
 
@@ -222,22 +222,22 @@ define Device/MyBookLiveDefault
   IMAGE/rootfs.img.gz := boot-script | boot-img | hdd-img | gzip
 endef
 
-define Device/MyBookLiveSingle
+define Device/wd_mybooklive
 $(Device/MyBookLiveDefault)
   DEVICE_TITLE := Western Digital My Book Live
   DEVICE_DTS := wd-mybooklive
 endef
 
-TARGET_DEVICES += MyBookLiveSingle
+TARGET_DEVICES += wd_mybooklive
 
-define Device/MyBookLiveDuo
+define Device/wd_mybooklive-duo
 $(Device/MyBookLiveDefault)
   DEVICE_TITLE := Western Digital My Book Live Duo
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-mini
   DEVICE_DTS := wd-mybooklive-duo
 endef
 
-TARGET_DEVICES += MyBookLiveDuo
+TARGET_DEVICES += wd_mybooklive-duo
 
 endif
 
