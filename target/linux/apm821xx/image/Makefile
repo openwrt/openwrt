@@ -70,7 +70,7 @@ define Device/mr24
   DEVICE_TITLE := Cisco Meraki MR24
   DEVICE_PACKAGES := kmod-spi-gpio
   BOARD_NAME := mr24
-  DEVICE_DTS := MR24
+  DEVICE_DTS := meraki-mr24
   BLOCKSIZE := 63k
   IMAGES := sysupgrade.tar
   DTB_SIZE := 64512
@@ -91,7 +91,7 @@ define Device/mx60
   DEVICE_PACKAGES := kmod-spi-gpio kmod-usb-ledtrig-usbport kmod-usb-dwc2 \
   kmod-usb-storage block-mount
   BOARD_NAME := mx60
-  DEVICE_DTS := MX60
+  DEVICE_DTS := meraki-mx60
   BLOCKSIZE := 63k
   IMAGES := sysupgrade.tar
   DTB_SIZE := 64512
@@ -157,7 +157,7 @@ define Device/WNDR4700
 	kmod-nls-utf8 kmod-usb3 kmod-usb-dwc2 kmod-usb-storage \
 	partx-utils
   BOARD_NAME := wndr4700
-  DEVICE_DTS := wndr4700
+  DEVICE_DTS := netgear-wndr4700
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k
@@ -225,7 +225,7 @@ endef
 define Device/MyBookLiveSingle
 $(Device/MyBookLiveDefault)
   DEVICE_TITLE := Western Digital My Book Live
-  DEVICE_DTS := apollo3g
+  DEVICE_DTS := wd-mybooklive
 endef
 
 TARGET_DEVICES += MyBookLiveSingle
@@ -234,7 +234,7 @@ define Device/MyBookLiveDuo
 $(Device/MyBookLiveDefault)
   DEVICE_TITLE := Western Digital My Book Live Duo
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-mini
-  DEVICE_DTS := apollo3g-duo
+  DEVICE_DTS := wd-mybooklive-duo
 endef
 
 TARGET_DEVICES += MyBookLiveDuo
