@@ -7,7 +7,8 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	mbl)
+	wd,mybooklive|\
+	wd,mybooklive-duo)
 		mbl_do_platform_check "$1"
 		return $?;
 		;;
@@ -21,9 +22,9 @@ platform_pre_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	mr24|\
-	mx60|\
-	wndr4700)
+	meraki,mr24|\
+	meraki,mx60|\
+	netgear,wndr4700)
 		nand_do_upgrade "$1"
 		;;
 
@@ -36,7 +37,8 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	mbl)
+	wd,mybooklive|\
+	wd,mybooklive-duo)
 		mbl_do_upgrade "$ARGV"
 		;;
 
@@ -50,7 +52,8 @@ platform_copy_config() {
 	local board=$(board_name)
 
 	case "$board" in
-	mbl)
+	wd,mybooklive|\
+	wd,mybooklive-duo)
 		mbl_copy_config
 		;;
 

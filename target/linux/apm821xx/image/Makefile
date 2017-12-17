@@ -14,7 +14,7 @@ define Device/Default
   KERNEL_ENTRY := 0x00000000
   KERNEL_LOADADDR := 0x00000000
   DEVICE_DTS_DIR := ../dts
-  SUPPORTED_DEVICES = $$(BOARD_NAME)
+  SUPPORTED_DEVICES = $(subst _,$(comma),$(1))
 endef
 
 define Build/dtb
@@ -84,6 +84,7 @@ define Device/meraki_mr24
 		      MerakiNAND
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
+  SUPPORTED_DEVICES += mr24
 endef
 TARGET_DEVICES += meraki_mr24
 
@@ -109,6 +110,7 @@ define Device/meraki_mx60
 		      MerakiNAND
   IMAGE/sysupgrade.tar := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
+  SUPPORTED_DEVICES += mx60
 endef
 TARGET_DEVICES += meraki_mx60
 
@@ -176,6 +178,7 @@ define Device/netgear_wndr4700
   NETGEAR_BOARD_ID := WNDR4700
   NETGEAR_HW_ID := 29763875+128+256
   UBINIZE_OPTS := -E 5
+  SUPPORTED_DEVICES += wndr4700
 endef
 TARGET_DEVICES += netgear_wndr4700
 
@@ -227,7 +230,7 @@ define Device/wd_mybooklive
 $(Device/MyBookLiveDefault)
   DEVICE_TITLE := Western Digital My Book Live
   DEVICE_DTS := wd-mybooklive
-  SUPPORTED_DEVICES := mbl
+  SUPPORTED_DEVICES += mbl
 endef
 
 TARGET_DEVICES += wd_mybooklive
@@ -237,7 +240,7 @@ $(Device/MyBookLiveDefault)
   DEVICE_TITLE := Western Digital My Book Live Duo
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-mini
   DEVICE_DTS := wd-mybooklive-duo
-  SUPPORTED_DEVICES := mbl
+  SUPPORTED_DEVICES += mbl
 endef
 
 TARGET_DEVICES += wd_mybooklive-duo
