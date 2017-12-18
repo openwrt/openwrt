@@ -129,6 +129,14 @@ dr531)
 		;;
 	esac
 	;;
+ap91-5g)
+	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "signal1" "SIGNAL1" "$board:red:signal1" "wlan0" "1" "100"
+	ucidef_set_led_rssi "signal2" "SIGNAL2" "$board:orange:signal2" "wlan0" "25" "100"
+	ucidef_set_led_rssi "signal3" "SIGNAL3" "$board:green:signal3" "wlan0" "50" "100"
+	ucidef_set_led_rssi "signal4" "SIGNAL4" "$board:green:signal4" "wlan0" "75" "100"
+	;;
 bhr-4grv2)
 	ucidef_set_led_default "power" "POWER" "buffalo:green:power" "1"
 	ucidef_set_led_default "diag" "DIAG" "buffalo:red:diag" "0"

@@ -1,5 +1,12 @@
 DEVICE_VARS += DAP_SIGNATURE NETGEAR_BOARD_ID NETGEAR_HW_ID NETGEAR_KERNEL_MAGIC ROOTFS_SIZE SEAMA_SIGNATURE
 
+define Build/alfa-network-rootfs-header
+	mkimage \
+		-A mips -O linux -T filesystem -C lzma -a 0 -e 0 \
+		-n 'RootfsImage' -d $@ $@.new
+	@mv $@.new $@
+endef
+
 define Build/mkbuffaloimg
 	$(STAGING_DIR_HOST)/bin/mkbuffaloimg -B $(BOARDNAME) \
 		-R $$(($(subst k, * 1024,$(ROOTFS_SIZE)))) \
@@ -104,6 +111,22 @@ define Device/ap90q
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += ap90q
+
+define Device/ap91-5g
+  DEVICE_TITLE := ALFA Network AP91-5G
+  DEVICE_PACKAGES := rssileds -swconfig
+  BOARDNAME := AP91-5G
+  IMAGE_SIZE := 7744k
+  KERNEL_SIZE := 1600k
+  ROOTFS_SIZE := 6144k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),6144k(rootfs),1600k(kernel),64k(config)ro,64k(art)ro,7744k@0x50000(firmware)
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := append-rootfs | pad-rootfs |\
+	alfa-network-rootfs-header | append-kernel | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs |\
+	pad-to $$$$(ROOTFS_SIZE) | append-kernel | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += ap91-5g
 
 define Device/arduino-yun
   DEVICE_TITLE := Arduino Yun

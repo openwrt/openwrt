@@ -225,6 +225,15 @@ config ATH79_MACH_AP90Q
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_AP91_5G
+	bool "ALFA Network AP91-5G support"
+	select SOC_AR724X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+
 config ATH79_MACH_AP96
 	bool "Atheros AP96 board support"
 	select SOC_AR71XX

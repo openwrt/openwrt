@@ -80,6 +80,9 @@ get_status_led() {
 	gl-mifi)
 		status_led="$board:green:lan"
 		;;
+	ap91-5g)
+		status_led="$board:green:signal4"
+		;;
 	ap96)
 		status_led="$board:green:led2"
 		;;

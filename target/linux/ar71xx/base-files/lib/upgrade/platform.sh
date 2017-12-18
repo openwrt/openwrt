@@ -310,6 +310,7 @@ platform_check_image() {
 	ap136-020|\
 	ap147-010|\
 	ap152|\
+	ap91-5g|\
 	ap96|\
 	arduino-yun|\
 	bhr-4grv2|\
