@@ -18,21 +18,6 @@ platform_check_image() {
 	esac
 }
 
-platform_pre_upgrade() {
-	local board=$(board_name)
-
-	case "$board" in
-	meraki,mr24|\
-	meraki,mx60|\
-	netgear,wndr4700)
-		nand_do_upgrade "$1"
-		;;
-
-	*)
-		;;
-	esac
-}
-
 platform_do_upgrade() {
 	local board=$(board_name)
 
@@ -41,7 +26,11 @@ platform_do_upgrade() {
 	wd,mybooklive-duo)
 		mbl_do_upgrade "$ARGV"
 		;;
-
+	meraki,mr24|\
+	meraki,mx60|\
+	netgear,wndr4700)
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$ARGV"
 		;;

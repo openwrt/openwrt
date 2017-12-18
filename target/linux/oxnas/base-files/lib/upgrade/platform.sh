@@ -13,6 +13,6 @@ platform_check_image() {
 	return $?
 }
 
-platform_pre_upgrade() {
+platform_do_upgrade() {
 	nand_do_upgrade $1
 }

@@ -6,13 +6,21 @@ platform_do_upgrade() {
 	local tar_file="$1"
 	local board="$(board_name)"
 
-	echo "flashing kernel"
-	tar xf $tar_file sysupgrade-$board/kernel -O | mtd write - kernel
+	case "$(board_name)" in
+	mediatek,mt7623-rfb-nand-ephy |\
+	mediatek,mt7623-rfb-nand)
+		nand_do_upgrade $1
+		;;
+	*)
+		echo "flashing kernel"
+		tar xf $tar_file sysupgrade-$board/kernel -O | mtd write - kernel
 
-	echo "flashing rootfs"
-	tar xf $tar_file sysupgrade-$board/root -O | mtd write - rootfs
+		echo "flashing rootfs"
+		tar xf $tar_file sysupgrade-$board/root -O | mtd write - rootfs
 
-	return 0
+		return 0
+		;;
+	esac
 }
 
 platform_check_image() {

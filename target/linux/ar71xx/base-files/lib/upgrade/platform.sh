@@ -687,45 +687,6 @@ platform_pre_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	c-60|\
-	hiveap-121|\
-	nbg6716|\
-	r6100|\
-	rambutan|\
-	rb-411|\
-	rb-411u|\
-	rb-433|\
-	rb-433u|\
-	rb-435g|\
-	rb-450|\
-	rb-450g|\
-	rb-493|\
-	rb-493g|\
-	rb-750|\
-	rb-750gl|\
-	rb-751|\
-	rb-751g|\
-	rb-911g-2hpnd|\
-	rb-911g-5hpacd|\
-	rb-911g-5hpnd|\
-	rb-912uag-2hpnd|\
-	rb-912uag-5hpnd|\
-	rb-921gs-5hpacd-r2|\
-	rb-951g-2hnd|\
-	rb-951ui-2hnd|\
-	rb-2011il|\
-	rb-2011l|\
-	rb-2011uas|\
-	rb-2011uas-2hnd|\
-	rb-2011uias|\
-	rb-2011uias-2hnd|\
-	rb-sxt2n|\
-	rb-sxt5n|\
-	wi2a-ac200i|\
-	wndr3700v4|\
-	wndr4300)
-		nand_do_upgrade "$1"
-		;;
 	rb-750-r2|\
 	rb-750p-pbr2|\
 	rb-750up-r2|\
@@ -742,10 +703,6 @@ platform_pre_upgrade() {
 	rb-wapg-5hact2hnd)
 		# erase firmware if booted from initramfs
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
-		;;
-	mr18|\
-	z1)
-		merakinand_do_upgrade "$1"
 		;;
 	esac
 }
@@ -834,6 +791,49 @@ platform_do_upgrade() {
 	om5p-acv2|\
 	om5p-an)
 		platform_do_upgrade_openmesh "$ARGV"
+		;;
+	c-60|\
+	hiveap-121|\
+	nbg6716|\
+	r6100|\
+	rambutan|\
+	rb-411|\
+	rb-411u|\
+	rb-433|\
+	rb-433u|\
+	rb-435g|\
+	rb-450|\
+	rb-450g|\
+	rb-493|\
+	rb-493g|\
+	rb-750|\
+	rb-750gl|\
+	rb-751|\
+	rb-751g|\
+	rb-911g-2hpnd|\
+	rb-911g-5hpacd|\
+	rb-911g-5hpnd|\
+	rb-912uag-2hpnd|\
+	rb-912uag-5hpnd|\
+	rb-921gs-5hpacd-r2
+	rb-951g-2hnd|\
+	rb-951ui-2hnd|\
+	rb-2011il|\
+	rb-2011l|\
+	rb-2011uas|\
+	rb-2011uas-2hnd|\
+	rb-2011uias|\
+	rb-2011uias-2hnd|\
+	rb-sxt2n|\
+	rb-sxt5n|\
+	wi2a-ac200i|\
+	wndr3700v4|\
+	wndr4300)
+		nand_do_upgrade "$1"
+		;;
+	mr18|\
+	z1)
+		merakinand_do_upgrade "$1"
 		;;
 	uap-pro|\
 	unifi-outdoor-plus)
