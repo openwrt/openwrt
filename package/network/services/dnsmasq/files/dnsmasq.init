@@ -1084,7 +1084,7 @@ start_service() {
 
 reload_service() {
 	rc_procd start_service "$@"
-	return 0
+	procd_send_signal dnsmasq "$@"
 }
 
 stop_service() {
