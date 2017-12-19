@@ -54,11 +54,14 @@ case "$FIRMWARE" in
 		ath10kcal_extract "ART" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
 		;;
-	archer-c7-v4|\
 	archer-c25-v1|\
 	tl-wdr6500-v2)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
+		;;
+	archer-c7-v4)
+		ath10kcal_extract "art" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
 		;;
 	cf-e355ac|\
 	cf-e380ac-v1|\
