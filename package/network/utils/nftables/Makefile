@@ -7,19 +7,20 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nftables
-PKG_VERSION:=0.7
+PKG_VERSION:=0.8.1
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=https://git.netfilter.org/nftables
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=79cbd19e7437680561b26109bbf4f48cb2e8e0a7
-PKG_MIRROR_HASH:=2c0af691948519556952097673ad1b57f888c8314b8eb15e83066951de01fc82
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=https://netfilter.org/projects/$(PKG_NAME)/files
+PKG_HASH:=8aead66cce70d68c70e4be917813abcbcf62811ee6de4c7761d0e34391772fc4
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 PKG_LICENSE:=GPL-2.0
 
 PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
+
+DISABLE_NLS:=
 
 CONFIGURE_ARGS += \
         --with-mini-gmp \
