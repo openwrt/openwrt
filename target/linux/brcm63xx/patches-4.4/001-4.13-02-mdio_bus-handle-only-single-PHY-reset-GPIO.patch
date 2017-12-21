@@ -105,7 +105,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	rc = mdiobus_register(mdio);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -194,10 +194,8 @@ struct mii_bus {
+@@ -190,10 +190,8 @@ struct mii_bus {
  
  	/* GPIO reset pulse width in microseconds */
  	int reset_delay_us;
