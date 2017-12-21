@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ppfe
-PKG_VERSION:=2017.09
+PKG_SOURCE_DATE:=2017-10-13
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/qoriq-open-source/engine-pfe-bin.git
 PKG_SOURCE_VERSION:=97cd13d3070d7199e62881bc495b332194b67edd
-PKG_MIRROR_HASH:=1ef60cdac49dd57c76ec9ef01d00f6eeb025ba62f0d75f54adeeb3362f5edad2
+PKG_MIRROR_HASH:=3457bfe7201a8410443f34d4bb5fa67d4ff19e2d0f3957e84e3f20e2ae3fa34a
 
 PKG_FLAGS:=nonshared
 

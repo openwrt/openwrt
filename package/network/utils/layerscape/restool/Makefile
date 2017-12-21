@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=restool
-PKG_VERSION:=2017.09
+PKG_SOURCE_DATE:=2017-10-23
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/qoriq-open-source/restool.git
 PKG_SOURCE_VERSION:=8f08b9d499e84f9057784c2036f0ddf75ae3fc70
-PKG_MIRROR_HASH:=ff672b420041deac190cc9ddf314c52ec325567c429bc0aca3c692b2c7dc818f
+PKG_MIRROR_HASH:=29f70ad27c7ab20bc018f0d0b11c680fcf8b829d10e5af5c30af4a3f9228a2fc
 
 include $(INCLUDE_DIR)/package.mk
 
