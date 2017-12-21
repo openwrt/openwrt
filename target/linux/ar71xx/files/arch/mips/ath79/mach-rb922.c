@@ -256,7 +256,7 @@ static void __init rb922gs_setup(void)
 	if (!info)
 		return;
 
-	scnprintf(buf, sizeof(buf), "Mikrotik RouterBOARD %s",
+	scnprintf(buf, sizeof(buf), "MikroTik RouterBOARD %s",
 		  (info->board_name) ? info->board_name : "");
 	mips_set_machine_name(buf);
 
