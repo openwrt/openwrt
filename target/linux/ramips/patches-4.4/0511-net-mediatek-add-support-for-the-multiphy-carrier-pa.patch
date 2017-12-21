@@ -25,7 +25,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	return IRQ_HANDLED;
 --- a/drivers/net/ethernet/mediatek/gsw_mt7620.h
 +++ b/drivers/net/ethernet/mediatek/gsw_mt7620.h
-@@ -113,5 +113,6 @@ u32 mt7530_mdio_r32(struct mt7620_gsw *g
+@@ -119,5 +119,6 @@ u32 mt7530_mdio_r32(struct mt7620_gsw *g
  u32 _mt7620_mii_write(struct mt7620_gsw *gsw, u32 phy_addr,
  			     u32 phy_register, u32 write_data);
  u32 _mt7620_mii_read(struct mt7620_gsw *gsw, int phy_addr, int phy_reg);

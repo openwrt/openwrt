@@ -33,7 +33,7 @@ Signed-off-by: Thierry Reding <treding@nvidia.com>
 +in simple-panel.txt in this directory.
 --- a/drivers/gpu/drm/panel/panel-simple.c
 +++ b/drivers/gpu/drm/panel/panel-simple.c
-@@ -1003,6 +1003,40 @@ static const struct panel_desc okaya_rs8
+@@ -1005,6 +1005,40 @@ static const struct panel_desc okaya_rs8
  	.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
  };
  
@@ -74,7 +74,7 @@ Signed-off-by: Thierry Reding <treding@nvidia.com>
  static const struct drm_display_mode ortustech_com43h4m85ulc_mode  = {
  	.clock = 25000,
  	.hdisplay = 480,
-@@ -1179,6 +1213,9 @@ static const struct of_device_id platfor
+@@ -1181,6 +1215,9 @@ static const struct of_device_id platfor
  		.compatible = "okaya,rs800480t-7x0gp",
  		.data = &okaya_rs800480t_7x0gp,
  	}, {

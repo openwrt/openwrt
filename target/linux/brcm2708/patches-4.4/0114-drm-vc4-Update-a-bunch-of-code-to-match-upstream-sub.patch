@@ -1869,7 +1869,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	}
 --- a/include/drm/drmP.h
 +++ b/include/drm/drmP.h
-@@ -585,6 +585,13 @@ struct drm_driver {
+@@ -599,6 +599,13 @@ struct drm_driver {
  	int (*gem_open_object) (struct drm_gem_object *, struct drm_file *);
  	void (*gem_close_object) (struct drm_gem_object *, struct drm_file *);
  
@@ -1883,7 +1883,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	/* prime: */
  	/* export handle -> fd (see drm_gem_prime_handle_to_fd() helper) */
  	int (*prime_handle_to_fd)(struct drm_device *dev, struct drm_file *file_priv,
-@@ -639,7 +646,6 @@ struct drm_driver {
+@@ -653,7 +660,6 @@ struct drm_driver {
  
  	u32 driver_features;
  	int dev_priv_size;

@@ -118,7 +118,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			if (ret < 0) {
  				if (use_bufpoi)
  					/* Invalidate page cache */
-@@ -2932,8 +2936,11 @@ int nand_erase_nand(struct mtd_info *mtd
+@@ -2935,8 +2939,11 @@ int nand_erase_nand(struct mtd_info *mtd
  		if (page <= chip->pagebuf && chip->pagebuf <
  		    (page + pages_per_block))
  			chip->pagebuf = -1;
