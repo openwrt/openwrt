@@ -276,9 +276,16 @@ static void __init rb922gs_setup(void)
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ath79_eth0_data.phy_mask = BIT(RB922_PHY_ADDR);
-	ath79_eth0_pll_data.pll_10 = 0x81001313;
-	ath79_eth0_pll_data.pll_100 = 0x81000101;
-	ath79_eth0_pll_data.pll_1000 = 0x8f000000;
+	if (strcmp(info->board_name, "921GS-5HPacD r2") == 0) {
+		ath79_eth0_pll_data.pll_10 = 0xa0001313;
+		ath79_eth0_pll_data.pll_100 = 0xa0000101;
+		ath79_eth0_pll_data.pll_1000 = 0x8f000000;
+	}
+	else {
+		ath79_eth0_pll_data.pll_10 = 0x81001313;
+		ath79_eth0_pll_data.pll_100 = 0x81000101;
+		ath79_eth0_pll_data.pll_1000 = 0x8f000000;
+	}
 
 	ath79_register_eth(0);
 

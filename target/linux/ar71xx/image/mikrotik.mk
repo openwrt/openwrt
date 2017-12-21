@@ -24,6 +24,15 @@ define Device/nand-large
 endef
 TARGET_DEVICES += nand-large
 
+define Device/nand-large-ac
+  $(Device/mikrotik)
+  DEVICE_TITLE := MikroTik RouterBoard (>= 128 MB NAND, 802.11ac)
+  DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x
+  KERNEL := kernel-bin | kernel2minor -s 2048 -e -c
+  SUPPORTED_DEVICES := rb-921gs-5hpacd-r2
+endef
+TARGET_DEVICES += nand-large-ac
+
 define Device/rb-nor-flash-16M
   DEVICE_TITLE := MikroTik RouterBoard (16 MB SPI NOR)
   DEVICE_PACKAGES := rbcfg rssileds -nand-utils kmod-ledtrig-gpio
