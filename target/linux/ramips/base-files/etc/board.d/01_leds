@@ -245,6 +245,9 @@ kng_rc)
 	set_usb_led "$boardname:green:usb"
 	set_wifi_led "$boardname:green:wifi"
 	;;
+linkits7688)
+	ucidef_set_led_wlan "wifi" "wifi" "linkit-smart-7688:orange:wifi" "phy0tpt"
+	;;
 m2m)
 	set_wifi_led "$boardname:blue:wifi"
 	ucidef_set_led_netdev "eth" "Ethernet" "$boardname:green:wan" "eth0"
