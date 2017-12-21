@@ -30,7 +30,7 @@ define KernelPackage/sound-arm-bcm2835
 	CONFIG_SND_BCM2835 \
 	CONFIG_SND_ARMAACI=n
   FILES:= \
-	$(LINUX_DIR)/sound/arm/snd-bcm2835.ko
+	$(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-audio//snd-bcm2835.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-bcm2835)
   DEPENDS:=@TARGET_brcm2708
   $(call AddDepends/sound)
@@ -629,7 +629,7 @@ define KernelPackage/video-bcm2835
   KCONFIG:= \
 	CONFIG_VIDEO_BCM2835=y \
 	CONFIG_VIDEO_BCM2835_MMAL
-  FILES:= $(LINUX_DIR)/drivers/media/platform/bcm2835/bcm2835-v4l2.ko
+  FILES:= $(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-camera/bcm2835-v4l2.ko
   AUTOLOAD:=$(call AutoLoad,65,bcm2835-v4l2)
   $(call AddDepends/video,@TARGET_brcm2708 +kmod-video-videobuf2)
 endef
