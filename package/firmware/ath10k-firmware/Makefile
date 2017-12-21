@@ -223,7 +223,7 @@ define Package/ath10k-firmware-qca4019/install
 		$(PKG_BUILD_DIR)/QCA4019/hw1.0/board-2.bin \
 		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/QCA4019/hw1.0/3.2.1/firmware-5.bin_10.4-3.2.1-00058 \
+		$(PKG_BUILD_DIR)/QCA4019/hw1.0/3.4/firmware-5.bin_10.4-3.4-00104 \
 		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/firmware-5.bin
 endef
 
