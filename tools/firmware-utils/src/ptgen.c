@@ -197,7 +197,7 @@ fail:
 static void usage(char *prog)
 {
 	fprintf(stderr, "Usage: %s [-v] -h <heads> -s <sectors> -o <outputfile> [-a 0..4] [-l <align kB>] [[-t <type>] -p <size>...] \n", prog);
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 int main (int argc, char **argv)
@@ -224,7 +224,7 @@ int main (int argc, char **argv)
 		case 'p':
 			if (part > 3) {
 				fprintf(stderr, "Too many partitions\n");
-				exit(1);
+				exit(EXIT_FAILURE);
 			}
 			parts[part].size = to_kbytes(optarg);
 			parts[part++].type = type;
@@ -252,5 +252,5 @@ int main (int argc, char **argv)
 	if (argc || (heads <= 0) || (sectors <= 0) || !filename)
 		usage(argv[0]);
 
-	return gen_ptable(signature, part);
+	return gen_ptable(signature, part) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
