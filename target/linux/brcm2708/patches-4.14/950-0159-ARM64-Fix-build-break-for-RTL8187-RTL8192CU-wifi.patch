@@ -1,0 +1,38 @@
+From b1dc6c253c7435f15f6a7c4cca93879ddc581bb3 Mon Sep 17 00:00:00 2001
+From: Michael Zoran <mzoran@crowfest.net>
+Date: Sun, 15 Jan 2017 07:25:18 -0800
+Subject: [PATCH 159/210] ARM64: Fix build break for RTL8187/RTL8192CU wifi
+
+These drivers use an ASM function from the base
+system to compute the ipv6 checksum.  These functions
+are not available on ARM64, probably because nobody
+has bother to write them.  The base system does have
+a generic "C" version, so a simple fix is to include
+the header to use the generic version on ARM64 only.
+
+A longer term solution would be to submit the necessary
+ASM function to the upstream source.
+
+With this change, these drivers now compile without
+any errors on ARM64.
+
+Signed-off-by: Michael Zoran <mzoran@crowfest.net>
+---
+ drivers/net/wireless/realtek/rtl8192cu/core/rtw_br_ext.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_br_ext.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_br_ext.c
+index a5ac60130a3c..39289c970543 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_br_ext.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_br_ext.c
+@@ -51,6 +51,7 @@
+ #include <linux/icmpv6.h>
+ #include <net/ndisc.h>
+ #include <net/checksum.h>
++#include <net/ip6_checksum.h>
+ #endif
+ #endif
+ 
+-- 
+2.11.0
+

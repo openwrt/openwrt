@@ -1,0 +1,32 @@
+From 378338e0b89a0de7269caf0f228eaacb5b40e510 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 28 Nov 2017 12:02:37 +0000
+Subject: [PATCH 203/210] lan78xx: Correctly indicate invalid OTP
+
+lan78xx_read_otp tries to return -EINVAL in the event of invalid OTP
+content, but the value gets overwritten before it is returned and the
+read goes ahead anyway. Make the read conditional as it should be
+and preserve the error code.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/net/usb/lan78xx.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
+index 01e72b267de8..126fe75e75b1 100644
+--- a/drivers/net/usb/lan78xx.c
++++ b/drivers/net/usb/lan78xx.c
+@@ -929,7 +929,8 @@ static int lan78xx_read_otp(struct lan78xx_net *dev, u32 offset,
+ 			offset += 0x100;
+ 		else
+ 			ret = -EINVAL;
+-		ret = lan78xx_read_raw_otp(dev, offset, length, data);
++		if (!ret)
++			ret = lan78xx_read_raw_otp(dev, offset, length, data);
+ 	}
+ 
+ 	return ret;
+-- 
+2.11.0
+

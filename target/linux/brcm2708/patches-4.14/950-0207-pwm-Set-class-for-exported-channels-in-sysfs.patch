@@ -1,0 +1,41 @@
+From 9697ec49c6b3b60780a926dda151d4105b0c88a4 Mon Sep 17 00:00:00 2001
+From: Gottfried Haider <gottfried.haider@gmail.com>
+Date: Tue, 26 Sep 2017 11:59:51 +0000
+Subject: [PATCH 207/210] pwm: Set class for exported channels in sysfs
+
+[ Upstream commit 7e5d1fd75c3dde9fc10c4472b9368089d1b81d00 ]
+
+Notifications for devices without bus or class set get dropped by
+dev_uevent_filter(). Adding the class to the exported child matches
+what the GPIO subsystem is doing.
+
+With this change exporting a channel triggers a udev event, which
+gives userspace a chance to fixup permissions and makes it possible
+for non-root users to make use of the PWM subsystem.
+
+Signed-off-by: Gottfried Haider <gottfried.haider@gmail.com>
+CC: Thierry Reding <thierry.reding@gmail.com>
+CC: H Hartley Sweeten <hsweeten@visionengravers.com>
+CC: linux-pwm@vger.kernel.org
+CC: linux-arm-kernel@lists.infradead.org
+CC: linux-rpi-kernel@lists.infradead.org
+Signed-off-by: Thierry Reding <thierry.reding@gmail.com>
+---
+ drivers/pwm/sysfs.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/pwm/sysfs.c b/drivers/pwm/sysfs.c
+index a813239300c3..83f2b0b15712 100644
+--- a/drivers/pwm/sysfs.c
++++ b/drivers/pwm/sysfs.c
+@@ -263,6 +263,7 @@ static int pwm_export_child(struct device *parent, struct pwm_device *pwm)
+ 	export->pwm = pwm;
+ 	mutex_init(&export->lock);
+ 
++	export->child.class = parent->class;
+ 	export->child.release = pwm_export_release;
+ 	export->child.parent = parent;
+ 	export->child.devt = MKDEV(0, 0);
+-- 
+2.11.0
+

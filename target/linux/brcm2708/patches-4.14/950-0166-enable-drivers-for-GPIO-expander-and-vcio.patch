@@ -1,0 +1,33 @@
+From 8754d9a21aec366407140a3a1e00d7224ef7b4ae Mon Sep 17 00:00:00 2001
+From: Bilal Amarni <bamarni@users.noreply.github.com>
+Date: Wed, 24 May 2017 10:52:50 +0200
+Subject: [PATCH 166/210] enable drivers for GPIO expander and vcio
+
+---
+ arch/arm64/configs/bcmrpi3_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm64/configs/bcmrpi3_defconfig b/arch/arm64/configs/bcmrpi3_defconfig
+index 4d85c231c5ea..9dcb58a519d0 100644
+--- a/arch/arm64/configs/bcmrpi3_defconfig
++++ b/arch/arm64/configs/bcmrpi3_defconfig
+@@ -575,6 +575,8 @@ CONFIG_SERIO_RAW=m
+ CONFIG_GAMEPORT=m
+ CONFIG_GAMEPORT_NS558=m
+ CONFIG_GAMEPORT_L4=m
++CONFIG_BRCM_CHAR_DRIVERS=y
++CONFIG_BCM_VCIO=y
+ # CONFIG_BCM2835_DEVGPIOMEM is not set
+ # CONFIG_BCM2835_SMI_DEV is not set
+ # CONFIG_LEGACY_PTYS is not set
+@@ -609,6 +611,7 @@ CONFIG_PPS=m
+ CONFIG_PPS_CLIENT_LDISC=m
+ CONFIG_PPS_CLIENT_GPIO=m
+ CONFIG_GPIO_SYSFS=y
++CONFIG_GPIO_BCM_EXP=y
+ CONFIG_GPIO_BCM_VIRT=y
+ CONFIG_GPIO_ARIZONA=m
+ CONFIG_GPIO_STMPE=y
+-- 
+2.11.0
+

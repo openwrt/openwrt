@@ -1,0 +1,1274 @@
+From 8f8a195850da53f267f6a2112b85ab839db00ae3 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 23 Mar 2016 17:20:58 +0000
+Subject: [PATCH 148/210] net: Fix rtl8192cu build errors on other platforms
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+
+suppress spurious messages
+
+Add #if for 3.14 kernel change (#87)
+
+Fixes compiling after changes in https://github.com/torvalds/linux/commit/f663dd9aaf9ed124f25f0f8452edf238f087ad50 and https://github.com/torvalds/linux/commit/99932d4fc03a13bb3e94938fe25458fabc8f2fc3
+
+Fixes #86
+
+Set dev_type to wlan
+
+Fixes #23
+
+Tentatively added support for more 8188CUS based devices.
+
+Add support for more 8188CUS and 8192CUS devices
+
+Add ProductId for the Netgear N150 - WNA1000M
+
+Fixes CONFIG_CONCURRENT_MODE CONFIG_MULTI_VIR_IFACES
+
+Fixes compatibility with 3.13
+
+Enables warning in the compiler and fixes some issues, reference => https://github.com/diederikdehaas/rtl8812AU
+
+Starts device in station mode instead of monitor, fixes NetworkManager issues
+
+Enable cfg80211 support
+
+Fix cfg80211 for kernel >= 4.7
+
+Fixes rtl8192cu for kernel >= 4.8
+
+rtl8192: Fixup build
+
+fixup: rtl8192cu fixes from milhouse
+
+rtl8192: switch to netdev->priv_destructor()
+
+When trying to build from the rpi-4.11.y branch, I'm getting the
+following error :
+
+drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/ioctl_cfg80211.c:3464:10: error: 'struct net_device' has no member named 'destructor'
+
+It seems to occur since this upstream commit :
+
+https://github.com/torvalds/linux/commit/cf124db566e6b036b8bcbe8decbed740bdfac8c6
+
+[...]
+
+netdev->priv_destructor() performs all actions to free up the private
+resources that used to be freed by netdev->destructor(), except for
+free_netdev().
+
+netdev->needs_free_netdev is a boolean that indicates whether
+free_netdev() should be done at the end of unregister_netdevice().
+
+Signed-off-by: Bilal Amarni <bilal.amarni@gmail.com>
+---
+ drivers/net/wireless/realtek/rtl8192cu/Makefile    |  20 +-
+ .../net/wireless/realtek/rtl8192cu/core/rtw_ap.c   |   7 +-
+ .../realtek/rtl8192cu/core/rtw_ieee80211.c         |   3 +-
+ .../realtek/rtl8192cu/core/rtw_ioctl_set.c         |   5 +-
+ .../wireless/realtek/rtl8192cu/core/rtw_mlme_ext.c |   8 +-
+ .../net/wireless/realtek/rtl8192cu/core/rtw_p2p.c  |   6 +-
+ .../net/wireless/realtek/rtl8192cu/core/rtw_recv.c |   7 +-
+ .../wireless/realtek/rtl8192cu/core/rtw_sta_mgt.c  |   4 +-
+ .../realtek/rtl8192cu/core/rtw_wlan_util.c         |   2 +-
+ .../net/wireless/realtek/rtl8192cu/core/rtw_xmit.c |   2 +-
+ .../rtl8192cu/hal/rtl8192c/rtl8192c_rf6052.c       |   4 +-
+ .../wireless/realtek/rtl8192cu/include/autoconf.h  |   9 +-
+ .../realtek/rtl8192cu/include/ioctl_cfg80211.h     |   9 +-
+ .../realtek/rtl8192cu/include/osdep_service.h      |   6 +-
+ .../wireless/realtek/rtl8192cu/include/rtw_debug.h |   6 +-
+ .../realtek/rtl8192cu/include/rtw_ioctl_set.h      |   5 +-
+ .../wireless/realtek/rtl8192cu/include/sta_info.h  |   4 +-
+ .../net/wireless/realtek/rtl8192cu/include/wifi.h  |   2 +-
+ .../rtl8192cu/os_dep/linux/ioctl_cfg80211.c        | 206 +++++++++++++++------
+ .../realtek/rtl8192cu/os_dep/linux/ioctl_linux.c   |   3 +-
+ .../realtek/rtl8192cu/os_dep/linux/os_intfs.c      |  19 +-
+ .../realtek/rtl8192cu/os_dep/linux/recv_linux.c    |   2 +-
+ .../realtek/rtl8192cu/os_dep/linux/rtw_android.c   |   6 -
+ .../realtek/rtl8192cu/os_dep/linux/usb_intf.c      |   9 +-
+ .../realtek/rtl8192cu/os_dep/osdep_service.c       |   4 +-
+ 25 files changed, 244 insertions(+), 114 deletions(-)
+
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/Makefile b/drivers/net/wireless/realtek/rtl8192cu/Makefile
+index bc137ab9f261..c7f358dd5513 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/Makefile
++++ b/drivers/net/wireless/realtek/rtl8192cu/Makefile
+@@ -1,12 +1,20 @@
+ EXTRA_CFLAGS += $(USER_EXTRA_CFLAGS)
+ EXTRA_CFLAGS += -O1
+ #EXTRA_CFLAGS += -O3
+-#EXTRA_CFLAGS += -Wall
+-#EXTRA_CFLAGS += -Wextra
++EXTRA_CFLAGS += -Wall
++EXTRA_CFLAGS += -Wextra
+ #EXTRA_CFLAGS += -Werror
+ #EXTRA_CFLAGS += -pedantic
+ #EXTRA_CFLAGS += -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes
+ 
++# The "$(call cc-option,-Wxxx)" macro only includes that option when it's
++# supported by the compiler used. It may only work on Debian systems.
++
++# Wdate-time was added in gcc-4.9
++EXTRA_CFLAGS += $(call cc-option,-Werror=date-time)
++# Wincompatible-pointer-types was added in gcc-5.0
++EXTRA_CFLAGS += $(call cc-option,-Werror=incompatible-pointer-types)
++
+ EXTRA_CFLAGS += -Wno-unused-variable
+ EXTRA_CFLAGS += -Wno-unused-value
+ EXTRA_CFLAGS += -Wno-unused-label
+@@ -14,10 +22,16 @@ EXTRA_CFLAGS += -Wno-unused-parameter
+ EXTRA_CFLAGS += -Wno-unused-function
+ EXTRA_CFLAGS += -Wno-unused
+ 
+-EXTRA_CFLAGS += -Wno-uninitialized
++# Relax some warnings from '-Wextra' so we won't get flooded with warnings
++EXTRA_CFLAGS += -Wno-sign-compare
++EXTRA_CFLAGS += -Wno-missing-field-initializers
++
++#EXTRA_CFLAGS += -Wno-uninitialized
+ 
+ EXTRA_CFLAGS += -I$(src)/include
+ 
++EXTRA_LDFLAGS += --strip-debug
++
+ CONFIG_AUTOCFG_CP = n
+ 
+ CONFIG_RTL8192C = y
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ap.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ap.c
+index cd7e5f30a568..e2403d2bc325 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ap.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ap.c
+@@ -210,7 +210,7 @@ void rtw_add_bcn_ie(_adapter *padapter, WLAN_BSSID_EX *pnetwork, u8 index, u8 *d
+ 	PNDIS_802_11_VARIABLE_IEs	pIE;
+ 	u8	bmatch = _FALSE;
+ 	u8	*pie = pnetwork->IEs;
+-	u8	*p, *dst_ie, *premainder_ie=NULL, *pbackup_remainder_ie=NULL;
++	u8	*p=NULL, *dst_ie=NULL, *premainder_ie=NULL, *pbackup_remainder_ie=NULL;
+ 	u32	i, offset, ielen, ie_offset, remainder_ielen = 0;
+ 
+ 	for (i = sizeof(NDIS_802_11_FIXED_IEs); i < pnetwork->IELength;)
+@@ -250,6 +250,9 @@ void rtw_add_bcn_ie(_adapter *padapter, WLAN_BSSID_EX *pnetwork, u8 index, u8 *d
+ 			dst_ie = (p+ielen);
+ 	}
+ 
++	if(dst_ie == NULL)
++		return;
++
+ 	if(remainder_ielen>0)
+ 	{
+ 		pbackup_remainder_ie = rtw_malloc(remainder_ielen);
+@@ -357,7 +360,7 @@ void	expire_timeout_chk(_adapter *padapter)
+ {
+ 	_irqL irqL;
+ 	_list	*phead, *plist;
+-	u8 updated;
++	u8 updated = _FALSE;
+ 	struct sta_info *psta=NULL;
+ 	struct sta_priv *pstapriv = &padapter->stapriv;
+ 	u8 chk_alive_num = 0;
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ieee80211.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ieee80211.c
+index cc0b97a433c5..9470d72ac6a1 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ieee80211.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ieee80211.c
+@@ -1859,7 +1859,8 @@ int rtw_action_frame_parse(const u8 *frame, u32 frame_len, u8* category, u8 *act
+ {
+ 	const u8 *frame_body = frame + sizeof(struct rtw_ieee80211_hdr_3addr);
+ 	u16 fc;
+-	u8 c, a;
++	u8 c;
++	u8 a = ACT_PUBLIC_MAX;
+ 
+ 	fc = le16_to_cpu(((struct rtw_ieee80211_hdr_3addr *)frame)->frame_ctl);
+ 
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ioctl_set.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ioctl_set.c
+index 9d1bcf3af57a..a86fa5f99a91 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ioctl_set.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_ioctl_set.c
+@@ -43,7 +43,7 @@ extern void indicate_wx_scan_complete_event(_adapter *padapter);
+ 		(addr[4] == 0xff) && (addr[5] == 0xff) )  ? _TRUE : _FALSE \
+ )
+ 
+-u8 rtw_validate_bssid(u8 *bssid)
++u8 rtw_validate_bssid(const u8 *bssid)
+ {
+ 	u8 ret = _TRUE;
+ 
+@@ -535,7 +535,8 @@ _func_exit_;
+ 
+ }
+ 
+-u8 rtw_set_802_11_connect(_adapter* padapter, u8 *bssid, NDIS_802_11_SSID *ssid)
++u8 rtw_set_802_11_connect(_adapter *padapter, const u8 *bssid
++	, NDIS_802_11_SSID *ssid)
+ {
+ 	_irqL irqL;
+ 	u8 status = _SUCCESS;
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_mlme_ext.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_mlme_ext.c
+index b7716ae00f7f..6ea526106fcd 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_mlme_ext.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_mlme_ext.c
+@@ -2454,7 +2454,7 @@ unsigned int OnDeAuth(_adapter *padapter, union recv_frame *precv_frame)
+ 		psta = rtw_get_stainfo(pstapriv, GetAddr2Ptr(pframe));
+ 		if(psta)
+ 		{
+-			u8 updated;
++			u8 updated = _FALSE;
+ 
+ 			_enter_critical_bh(&pstapriv->asoc_list_lock, &irqL);
+ 			if(rtw_is_list_empty(&psta->asoc_list)==_FALSE)
+@@ -2548,7 +2548,7 @@ unsigned int OnDisassoc(_adapter *padapter, union recv_frame *precv_frame)
+ 		psta = rtw_get_stainfo(pstapriv, GetAddr2Ptr(pframe));
+ 		if(psta)
+ 		{
+-			u8 updated;
++			u8 updated = _FALSE;
+ 
+ 			_enter_critical_bh(&pstapriv->asoc_list_lock, &irqL);
+ 			if(rtw_is_list_empty(&psta->asoc_list)==_FALSE)
+@@ -5663,7 +5663,7 @@ unsigned int on_action_public_p2p(union recv_frame *precv_frame)
+ 
+ 				//	Commented by Kurt 20120113
+ 				//	Get peer_dev_addr here if peer doesn't issue prov_disc frame.
+-				if( _rtw_memcmp(pwdinfo->rx_prov_disc_info.peerDevAddr, empty_addr, ETH_ALEN) );
++				if( _rtw_memcmp(pwdinfo->rx_prov_disc_info.peerDevAddr, empty_addr, ETH_ALEN) )
+ 					_rtw_memcpy(pwdinfo->rx_prov_disc_info.peerDevAddr, GetAddr2Ptr(pframe), ETH_ALEN);
+ 
+ 				result = process_p2p_group_negotation_req( pwdinfo, frame_body, len );
+@@ -11932,7 +11932,7 @@ u8 setkey_hdl(_adapter *padapter, u8 *pbuf)
+ u8 set_stakey_hdl(_adapter *padapter, u8 *pbuf)
+ {
+ 	u16 ctrl=0;
+-	u8 cam_id;//cam_entry
++	u8 cam_id=0;//cam_entry
+ 	struct mlme_ext_priv	*pmlmeext = &padapter->mlmeextpriv;
+ 	struct mlme_ext_info	*pmlmeinfo = &(pmlmeext->mlmext_info);
+ 	struct set_stakey_parm	*pparm = (struct set_stakey_parm *)pbuf;
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_p2p.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_p2p.c
+index 8f6cad3ec3db..0fe04435bffb 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_p2p.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_p2p.c
+@@ -4896,9 +4896,9 @@ void init_wifidirect_info( _adapter* padapter, enum P2P_ROLE role)
+ #endif
+ #ifdef CONFIG_CONCURRENT_MODE
+ 	_adapter				*pbuddy_adapter = padapter->pbuddy_adapter;
+-	struct wifidirect_info	*pbuddy_wdinfo;
+-	struct mlme_priv		*pbuddy_mlmepriv;
+-	struct mlme_ext_priv	*pbuddy_mlmeext;
++	struct wifidirect_info	*pbuddy_wdinfo = NULL;
++	struct mlme_priv		*pbuddy_mlmepriv = NULL;
++	struct mlme_ext_priv	*pbuddy_mlmeext = NULL;
+ #endif
+ 
+ 	pwdinfo = &padapter->wdinfo;
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_recv.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_recv.c
+index 63aba4a4cf76..1b14673d4939 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_recv.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_recv.c
+@@ -3894,7 +3894,7 @@ int process_recv_indicatepkts(_adapter *padapter, union recv_frame *prframe)
+ 
+ }
+ 
+-int recv_func_prehandle(_adapter *padapter, union recv_frame *rframe)
++static int recv_func_prehandle(_adapter *padapter, union recv_frame *rframe)
+ {
+ 	int ret = _SUCCESS;
+ 	struct rx_pkt_attrib *pattrib = &rframe->u.hdr.attrib;
+@@ -3935,7 +3935,7 @@ int recv_func_prehandle(_adapter *padapter, union recv_frame *rframe)
+ 	return ret;
+ }
+ 
+-int recv_func_posthandle(_adapter *padapter, union recv_frame *prframe)
++static int recv_func_posthandle(_adapter *padapter, union recv_frame *prframe)
+ {
+ 	int ret = _SUCCESS;
+ 	union recv_frame *orig_prframe = prframe;
+@@ -4107,8 +4107,7 @@ int recv_func_posthandle(_adapter *padapter, union recv_frame *prframe)
+ }
+ 
+ 
+-int recv_func(_adapter *padapter, union recv_frame *rframe);
+-int recv_func(_adapter *padapter, union recv_frame *rframe)
++static int recv_func(_adapter *padapter, union recv_frame *rframe)
+ {
+ 	int ret;
+ 	struct rx_pkt_attrib *prxattrib = &rframe->u.hdr.attrib;
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_sta_mgt.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_sta_mgt.c
+index 4483499eb07c..23ccadfb3e8a 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_sta_mgt.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_sta_mgt.c
+@@ -685,7 +685,7 @@ _func_exit_;
+ }
+ 
+ /* any station allocated can be searched by hash list */
+-struct sta_info *rtw_get_stainfo(struct sta_priv *pstapriv, u8 *hwaddr)
++struct sta_info *rtw_get_stainfo(struct sta_priv *pstapriv, const u8 *hwaddr)
+ {
+ 
+ 	_irqL	 irqL;
+@@ -696,7 +696,7 @@ struct sta_info *rtw_get_stainfo(struct sta_priv *pstapriv, u8 *hwaddr)
+ 
+ 	u32	index;
+ 
+-	u8 *addr;
++	const u8 *addr;
+ 
+ 	u8 bc_addr[ETH_ALEN] = {0xff,0xff,0xff,0xff,0xff,0xff};
+ 
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_wlan_util.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_wlan_util.c
+index d671155f16ea..c977cd1eedef 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_wlan_util.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_wlan_util.c
+@@ -853,7 +853,7 @@ void flush_all_cam_entry(_adapter *padapter)
+ 		{
+ 			struct sta_priv	*pstapriv = &padapter->stapriv;
+ 			struct sta_info	*psta;
+-			u8 cam_id;//cam_entry
++			u8 cam_id=0;//cam_entry
+ 
+ 			psta = rtw_get_stainfo(pstapriv, pmlmeinfo->network.MacAddress);
+ 			if(psta) {
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_xmit.c b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_xmit.c
+index fb4e6981f4ff..c0695435e499 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/core/rtw_xmit.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/core/rtw_xmit.c
+@@ -2590,7 +2590,7 @@ struct xmit_frame *rtw_alloc_xmitframe_once(struct xmit_priv *pxmitpriv)
+ s32 rtw_free_xmitframe(struct xmit_priv *pxmitpriv, struct xmit_frame *pxmitframe)
+ {
+ 	_irqL irqL;
+-	_queue *queue;
++	_queue *queue = NULL;
+ 	_adapter *padapter = pxmitpriv->adapter;
+ 	_pkt *pndis_pkt = NULL;
+ 
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/hal/rtl8192c/rtl8192c_rf6052.c b/drivers/net/wireless/realtek/rtl8192cu/hal/rtl8192c/rtl8192c_rf6052.c
+index a3cd013cf04a..7532c63ff0d8 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/hal/rtl8192c/rtl8192c_rf6052.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/hal/rtl8192c/rtl8192c_rf6052.c
+@@ -373,7 +373,7 @@ static void getTxPowerWriteValByRegulatory(
+ {
+ 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
+ 	struct dm_priv	*pdmpriv = &pHalData->dmpriv;
+-	u8	i, chnlGroup, pwr_diff_limit[4];
++	u8	i, chnlGroup = 0, pwr_diff_limit[4];
+ 	u32 	writeVal, customer_limit, rf;
+ 
+ 	//
+@@ -615,7 +615,7 @@ phy_RF6052_Config_ParaFile(
+ 	IN	PADAPTER		Adapter
+ 	)
+ {
+-	u32					u4RegValue;
++	u32					u4RegValue=0;
+ 	u8					eRFPath;
+ 	BB_REGISTER_DEFINITION_T	*pPhyReg;
+ 
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/include/autoconf.h b/drivers/net/wireless/realtek/rtl8192cu/include/autoconf.h
+index dcdb512263bf..001b48f348c5 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/include/autoconf.h
++++ b/drivers/net/wireless/realtek/rtl8192cu/include/autoconf.h
+@@ -31,10 +31,11 @@
+ 
+ #define PLATFORM_LINUX	1
+ 
+-//#define CONFIG_IOCTL_CFG80211 1
++#define CONFIG_IOCTL_CFG80211 1
+ #ifdef CONFIG_IOCTL_CFG80211
+-	//#define RTW_USE_CFG80211_STA_EVENT /* Indecate new sta asoc through cfg80211_new_sta */
+-	#define CONFIG_CFG80211_FORCE_COMPATIBLE_2_6_37_UNDER
++	/* Indicate new sta asoc through cfg80211_new_sta */
++	#define RTW_USE_CFG80211_STA_EVENT
++	/*#define CONFIG_CFG80211_FORCE_COMPATIBLE_2_6_37_UNDER*/
+ 	//#define CONFIG_DEBUG_CFG80211 1
+ 	//#define CONFIG_DRV_ISSUE_PROV_REQ // IOT FOR S2
+ 	#define CONFIG_SET_SCAN_DENY_TIMER
+@@ -324,7 +325,7 @@
+ 
+ //#define DBG_MEMORY_LEAK	1
+ 
+-#define DBG_CONFIG_ERROR_DETECT
++/*#define DBG_CONFIG_ERROR_DETECT*/
+ //#define DBG_CONFIG_ERROR_RESET
+ 
+ //TX use 1 urb
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/include/ioctl_cfg80211.h b/drivers/net/wireless/realtek/rtl8192cu/include/ioctl_cfg80211.h
+index b2b2e9711aa4..610252758582 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/include/ioctl_cfg80211.h
++++ b/drivers/net/wireless/realtek/rtl8192cu/include/ioctl_cfg80211.h
+@@ -149,8 +149,15 @@ bool rtw_cfg80211_pwr_mgmt(_adapter *adapter);
+ #define rtw_cfg80211_rx_mgmt(adapter, freq, sig_dbm, buf, len, gfp) cfg80211_rx_mgmt((adapter)->pnetdev, freq, buf, len, gfp)
+ #elif (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+ #define rtw_cfg80211_rx_mgmt(adapter, freq, sig_dbm, buf, len, gfp) cfg80211_rx_mgmt((adapter)->pnetdev, freq, sig_dbm, buf, len, gfp)
+-#else
++#elif (LINUX_VERSION_CODE < KERNEL_VERSION(3,12,0))
+ #define rtw_cfg80211_rx_mgmt(adapter, freq, sig_dbm, buf, len, gfp) cfg80211_rx_mgmt((adapter)->rtw_wdev, freq, sig_dbm, buf, len, gfp)
++#elif (LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0))
++/* 3.12 added a flags argument which is just set to zero*/
++#define rtw_cfg80211_rx_mgmt(adapter, freq, sig_dbm, buf, len, gfp) \
++	cfg80211_rx_mgmt((adapter)->rtw_wdev, freq, sig_dbm, buf, len, 0, gfp)
++#else
++#define rtw_cfg80211_rx_mgmt(adapter, freq, sig_dbm, buf, len, gfp) \
++	cfg80211_rx_mgmt((adapter)->rtw_wdev, freq, sig_dbm, buf, len, 0)
+ #endif
+ 
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))  && !defined(COMPAT_KERNEL_RELEASE)
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/include/osdep_service.h b/drivers/net/wireless/realtek/rtl8192cu/include/osdep_service.h
+index f1511aadd9b7..b610ed77bc15 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/include/osdep_service.h
++++ b/drivers/net/wireless/realtek/rtl8192cu/include/osdep_service.h
+@@ -786,6 +786,8 @@ __inline static void _set_workitem(_workitem *pwork)
+ 	#include <linux/interrupt.h>	// for struct tasklet_struct
+ 	#include <linux/ip.h>
+ 	#include <linux/kthread.h>
++	#include <linux/signal.h>
++	#include <linux/sched/signal.h>
+ 
+ #ifdef CONFIG_IOCTL_CFG80211
+ //	#include <linux/ieee80211.h>
+@@ -1395,8 +1397,8 @@ void _rtw_usb_buffer_free(struct usb_device *dev, size_t size, void *addr, dma_a
+ extern void*	rtw_malloc2d(int h, int w, int size);
+ extern void	rtw_mfree2d(void *pbuf, int h, int w, int size);
+ 
+-extern void	_rtw_memcpy(void* dec, void* sour, u32 sz);
+-extern int	_rtw_memcmp(void *dst, void *src, u32 sz);
++extern void	_rtw_memcpy(void *dec, const void *sour, u32 sz);
++extern int	_rtw_memcmp(const void *dst, const void *src, u32 sz);
+ extern void	_rtw_memset(void *pbuf, int c, u32 sz);
+ 
+ extern void	_rtw_init_listhead(_list *list);
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/include/rtw_debug.h b/drivers/net/wireless/realtek/rtl8192cu/include/rtw_debug.h
+index 9c72f70ea437..13db6231fe69 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/include/rtw_debug.h
++++ b/drivers/net/wireless/realtek/rtl8192cu/include/rtw_debug.h
+@@ -313,15 +313,15 @@ extern u32 GlobalDebugLevel;
+ #if     defined (_dbgdump)
+         #undef DBG_871X
+ //      #define DBG_871X _dbgdump
+-        #define DBG_871X(...) LOG_LEVEL(_drv_emerg_ , __VA_ARGS__)
++        #define DBG_871X(...) LOG_LEVEL(_drv_debug_ , __VA_ARGS__)
+ 
+         #undef MSG_8192C
+ //      #define MSG_8192C _dbgdump
+-        #define MSG_8192C(...) LOG_LEVEL(_drv_emerg_ , __VA_ARGS__)
++        #define MSG_8192C(...) LOG_LEVEL(_drv_info_ , __VA_ARGS__)
+ 
+         #undef DBG_8192C
+ //      #define DBG_8192C _dbgdump
+-        #define DBG_8192C(...) LOG_LEVEL(_drv_emerg_ ,  __VA_ARGS__)
++        #define DBG_8192C(...) LOG_LEVEL(_drv_debug_ ,  __VA_ARGS__)
+ 
+ 
+ 	#undef WRN_8192C
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/include/rtw_ioctl_set.h b/drivers/net/wireless/realtek/rtl8192cu/include/rtw_ioctl_set.h
+index 5e21408a0e8c..225cadc6be3a 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/include/rtw_ioctl_set.h
++++ b/drivers/net/wireless/realtek/rtl8192cu/include/rtw_ioctl_set.h
+@@ -63,10 +63,11 @@ u8 rtw_set_802_11_bssid_list_scan(_adapter* padapter, NDIS_802_11_SSID *pssid, i
+ u8 rtw_set_802_11_infrastructure_mode(_adapter * padapter, NDIS_802_11_NETWORK_INFRASTRUCTURE networktype);
+ u8 rtw_set_802_11_remove_wep(_adapter * padapter, u32 keyindex);
+ u8 rtw_set_802_11_ssid(_adapter * padapter, NDIS_802_11_SSID * ssid);
+-u8 rtw_set_802_11_connect(_adapter* padapter, u8 *bssid, NDIS_802_11_SSID *ssid);
++u8 rtw_set_802_11_connect(_adapter *padapter, const u8 *bssid
++	, NDIS_802_11_SSID *ssid);
+ u8 rtw_set_802_11_remove_key(_adapter * padapter, NDIS_802_11_REMOVE_KEY * key);
+ 
+-u8 rtw_validate_bssid(u8 *bssid);
++u8 rtw_validate_bssid(const u8 *bssid);
+ u8 rtw_validate_ssid(NDIS_802_11_SSID *ssid);
+ 
+ u16 rtw_get_cur_max_rate(_adapter *adapter);
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/include/sta_info.h b/drivers/net/wireless/realtek/rtl8192cu/include/sta_info.h
+index e7e3dc4472aa..9cbf934fdf7f 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/include/sta_info.h
++++ b/drivers/net/wireless/realtek/rtl8192cu/include/sta_info.h
+@@ -395,7 +395,7 @@ struct	sta_priv {
+ };
+ 
+ 
+-__inline static u32 wifi_mac_hash(u8 *mac)
++__inline static u32 wifi_mac_hash(const u8 *mac)
+ {
+         u32 x;
+ 
+@@ -423,7 +423,7 @@ struct sta_info *rtw_get_stainfo_by_offset(struct sta_priv *stapriv, int offset)
+ extern struct sta_info *rtw_alloc_stainfo(struct	sta_priv *pstapriv, u8 *hwaddr);
+ extern u32	rtw_free_stainfo(_adapter *padapter , struct sta_info *psta);
+ extern void rtw_free_all_stainfo(_adapter *padapter);
+-extern struct sta_info *rtw_get_stainfo(struct sta_priv *pstapriv, u8 *hwaddr);
++extern struct sta_info *rtw_get_stainfo(struct sta_priv *pstapriv, const u8 *hwaddr);
+ extern u32 rtw_init_bcmc_stainfo(_adapter* padapter);
+ extern struct sta_info* rtw_get_bcmc_stainfo(_adapter* padapter);
+ extern u8 rtw_access_ctrl(_adapter *padapter, u8 *mac_addr);
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/include/wifi.h b/drivers/net/wireless/realtek/rtl8192cu/include/wifi.h
+index 1ff400a6e212..c0a748811e08 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/include/wifi.h
++++ b/drivers/net/wireless/realtek/rtl8192cu/include/wifi.h
+@@ -425,7 +425,7 @@ enum WIFI_REG_DOMAIN {
+ 		(addr[4] == 0xff) && (addr[5] == 0xff) )  ? _TRUE : _FALSE \
+ )
+ 
+-__inline static int IS_MCAST(unsigned char *da)
++__inline static int IS_MCAST(const unsigned char *da)
+ {
+ 	if ((*da) & 0x01)
+ 		return _TRUE;
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/ioctl_cfg80211.c b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/ioctl_cfg80211.c
+index 60e92b82aa23..b131a496f95a 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/ioctl_cfg80211.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/ioctl_cfg80211.c
+@@ -57,7 +57,7 @@ static const u32 rtw_cipher_suites[] = {
+ 	}
+ 
+ #define CHAN2G(_channel, _freq, _flags) {			\
+-	.band			= IEEE80211_BAND_2GHZ,		\
++	.band			= NL80211_BAND_2GHZ,		\
+ 	.center_freq		= (_freq),			\
+ 	.hw_value		= (_channel),			\
+ 	.flags			= (_flags),			\
+@@ -66,7 +66,7 @@ static const u32 rtw_cipher_suites[] = {
+ }
+ 
+ #define CHAN5G(_channel, _flags) {				\
+-	.band			= IEEE80211_BAND_5GHZ,		\
++	.band			= NL80211_BAND_5GHZ,		\
+ 	.center_freq		= 5000 + (5 * (_channel)),	\
+ 	.hw_value		= (_channel),			\
+ 	.flags			= (_flags),			\
+@@ -166,18 +166,18 @@ void rtw_5g_rates_init(struct ieee80211_rate *rates)
+ }
+ 
+ struct ieee80211_supported_band *rtw_spt_band_alloc(
+-	enum ieee80211_band band
++	enum nl80211_band band
+ 	)
+ {
+ 	struct ieee80211_supported_band *spt_band = NULL;
+ 	int n_channels, n_bitrates;
+ 
+-	if(band == IEEE80211_BAND_2GHZ)
++	if(band == NL80211_BAND_2GHZ)
+ 	{
+ 		n_channels = RTW_2G_CHANNELS_NUM;
+ 		n_bitrates = RTW_G_RATES_NUM;
+ 	}
+-	else if(band == IEEE80211_BAND_5GHZ)
++	else if(band == NL80211_BAND_5GHZ)
+ 	{
+ 		n_channels = RTW_5G_CHANNELS_NUM;
+ 		n_bitrates = RTW_A_RATES_NUM;
+@@ -201,12 +201,12 @@ struct ieee80211_supported_band *rtw_spt_band_alloc(
+ 	spt_band->n_channels = n_channels;
+ 	spt_band->n_bitrates = n_bitrates;
+ 
+-	if(band == IEEE80211_BAND_2GHZ)
++	if(band == NL80211_BAND_2GHZ)
+ 	{
+ 		rtw_2g_channels_init(spt_band->channels);
+ 		rtw_2g_rates_init(spt_band->bitrates);
+ 	}
+-	else if(band == IEEE80211_BAND_5GHZ)
++	else if(band == NL80211_BAND_5GHZ)
+ 	{
+ 		rtw_5g_channels_init(spt_band->channels);
+ 		rtw_5g_rates_init(spt_band->bitrates);
+@@ -221,18 +221,18 @@ struct ieee80211_supported_band *rtw_spt_band_alloc(
+ 
+ void rtw_spt_band_free(struct ieee80211_supported_band *spt_band)
+ {
+-	u32 size;
++	u32 size = 0;
+ 
+ 	if(!spt_band)
+ 		return;
+ 
+-	if(spt_band->band == IEEE80211_BAND_2GHZ)
++	if(spt_band->band == NL80211_BAND_2GHZ)
+ 	{
+ 		size = sizeof(struct ieee80211_supported_band)
+ 			+ sizeof(struct ieee80211_channel)*RTW_2G_CHANNELS_NUM
+ 			+ sizeof(struct ieee80211_rate)*RTW_G_RATES_NUM;
+ 	}
+-	else if(spt_band->band == IEEE80211_BAND_5GHZ)
++	else if(spt_band->band == NL80211_BAND_5GHZ)
+ 	{
+ 		size = sizeof(struct ieee80211_supported_band)
+ 			+ sizeof(struct ieee80211_channel)*RTW_5G_CHANNELS_NUM
+@@ -301,12 +301,12 @@ static int rtw_ieee80211_channel_to_frequency(int chan, int band)
+ 	/* see 802.11 17.3.8.3.2 and Annex J
+ 	* there are overlapping channel numbers in 5GHz and 2GHz bands */
+ 
+-	if (band == IEEE80211_BAND_5GHZ) {
++	if (band == NL80211_BAND_5GHZ) {
+ 	if (chan >= 182 && chan <= 196)
+ 			return 4000 + chan * 5;
+              else
+                     return 5000 + chan * 5;
+-       } else { /* IEEE80211_BAND_2GHZ */
++       } else { /* NL80211_BAND_2GHZ */
+ 		if (chan == 14)
+ 			return 2484;
+              else if (chan < 14)
+@@ -331,7 +331,7 @@ static int rtw_cfg80211_inform_bss(_adapter *padapter, struct wlan_network *pnet
+ 	u8 *notify_ie;
+ 	size_t notify_ielen;
+ 	s32 notify_signal;
+-	u8 buf[MAX_BSSINFO_LEN], *pbuf;
++	u8 *buf, *pbuf;
+ 	size_t len,bssinf_len=0;
+ 	struct rtw_ieee80211_hdr *pwlanhdr;
+ 	unsigned short *fctrl;
+@@ -391,9 +391,9 @@ static int rtw_cfg80211_inform_bss(_adapter *padapter, struct wlan_network *pnet
+ 					DBG_871X("%s, got sr, but ssid mismatch, to remove this bss\n", __func__);
+ 
+ 					if (pselect_network->Configuration.DSConfig <= RTW_CH_MAX_2G_CHANNEL)
+-						freq = rtw_ieee80211_channel_to_frequency(pselect_network->Configuration.DSConfig, IEEE80211_BAND_2GHZ);
++						freq = rtw_ieee80211_channel_to_frequency(pselect_network->Configuration.DSConfig, NL80211_BAND_2GHZ);
+ 					else
+-						freq = rtw_ieee80211_channel_to_frequency(pselect_network->Configuration.DSConfig, IEEE80211_BAND_5GHZ);
++						freq = rtw_ieee80211_channel_to_frequency(pselect_network->Configuration.DSConfig, NL80211_BAND_5GHZ);
+ 
+ 					notify_channel = ieee80211_get_channel(wiphy, freq);
+ 					pselect_bss = cfg80211_get_bss(wiphy, NULL/*notify_channel*/,
+@@ -424,9 +424,9 @@ static int rtw_cfg80211_inform_bss(_adapter *padapter, struct wlan_network *pnet
+ 
+ 	channel = pnetwork->network.Configuration.DSConfig;
+ 	if (channel <= RTW_CH_MAX_2G_CHANNEL)
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_2GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_2GHZ);
+ 	else
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_5GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_5GHZ);
+ 
+ 	notify_channel = ieee80211_get_channel(wiphy, freq);
+ 
+@@ -459,6 +459,7 @@ static int rtw_cfg80211_inform_bss(_adapter *padapter, struct wlan_network *pnet
+ 	DBG_8192C("notify_timestamp: %#018llx\n", notify_timestamp);
+ */
+ 
++	buf = rtw_zmalloc(MAX_BSSINFO_LEN);
+ 	pbuf = buf;
+ 
+ 	pwlanhdr = (struct rtw_ieee80211_hdr *)pbuf;
+@@ -486,6 +487,8 @@ static int rtw_cfg80211_inform_bss(_adapter *padapter, struct wlan_network *pnet
+ 	_rtw_memcpy(pbuf, pnetwork->network.IEs, pnetwork->network.IELength);
+ 	len += pnetwork->network.IELength;
+ 
++	rtw_mfree(buf, MAX_BSSINFO_LEN);
++
+ 	//#ifdef CONFIG_P2P
+ 	//if(rtw_get_p2p_ie(pnetwork->network.IEs+12, pnetwork->network.IELength-12, NULL, NULL))
+ 	//{
+@@ -569,15 +572,19 @@ int rtw_cfg80211_check_bss(_adapter *padapter)
+ 		return _FALSE;
+ 
+ 	if (pnetwork->Configuration.DSConfig <= RTW_CH_MAX_2G_CHANNEL)
+-		freq = rtw_ieee80211_channel_to_frequency(pnetwork->Configuration.DSConfig, IEEE80211_BAND_2GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(pnetwork->Configuration.DSConfig, NL80211_BAND_2GHZ);
+ 	else
+-		freq = rtw_ieee80211_channel_to_frequency(pnetwork->Configuration.DSConfig, IEEE80211_BAND_5GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(pnetwork->Configuration.DSConfig, NL80211_BAND_5GHZ);
+ 
+ 	notify_channel = ieee80211_get_channel(padapter->rtw_wdev->wiphy, freq);
+ 	bss = cfg80211_get_bss(padapter->rtw_wdev->wiphy, notify_channel,
+ 			pnetwork->MacAddress, pnetwork->Ssid.Ssid,
+ 			pnetwork->Ssid.SsidLength,
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)
+ 			WLAN_CAPABILITY_ESS, WLAN_CAPABILITY_ESS);
++#else
++			IEEE80211_BSS_TYPE_ESS, IEEE80211_PRIVACY_ANY);
++#endif
+ 
+ 	return 	(bss!=NULL);
+ }
+@@ -626,16 +633,29 @@ void rtw_cfg80211_indicate_connect(_adapter *padapter)
+ 		u16 channel = cur_network->network.Configuration.DSConfig;
+ 
+ 		if (channel <= RTW_CH_MAX_2G_CHANNEL)
+-			freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_2GHZ);
++			freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_2GHZ);
+ 		else
+-			freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_5GHZ);
++			freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_5GHZ);
+ 
+ 		notify_channel = ieee80211_get_channel(wiphy, freq);
+ 		#endif
+ 
+ 		DBG_871X("%s call cfg80211_roamed\n", __FUNCTION__);
++		#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
++		{
++			struct cfg80211_roam_info roam_info = {
++				.channel = notify_channel,
++				.bssid = cur_network->network.MacAddress,
++				.req_ie = pmlmepriv->assoc_req+sizeof(struct rtw_ieee80211_hdr_3addr)+2,
++				.req_ie_len = pmlmepriv->assoc_req_len-sizeof(struct rtw_ieee80211_hdr_3addr)-2,
++				.resp_ie = pmlmepriv->assoc_rsp+sizeof(struct rtw_ieee80211_hdr_3addr)+6,
++				.resp_ie_len = pmlmepriv->assoc_rsp_len-sizeof(struct rtw_ieee80211_hdr_3addr)-6,
++			};
++			cfg80211_roamed(padapter->pnetdev, &roam_info, GFP_ATOMIC);
++		}
++		#else
+ 		cfg80211_roamed(padapter->pnetdev
+-			#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 39) || defined(COMPAT_KERNEL_RELEASE)
++			#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 39)
+ 			, notify_channel
+ 			#endif
+ 			, cur_network->network.MacAddress
+@@ -644,6 +664,7 @@ void rtw_cfg80211_indicate_connect(_adapter *padapter)
+ 			, pmlmepriv->assoc_rsp+sizeof(struct rtw_ieee80211_hdr_3addr)+6
+ 			, pmlmepriv->assoc_rsp_len-sizeof(struct rtw_ieee80211_hdr_3addr)-6
+ 			, GFP_ATOMIC);
++		#endif
+ 	}
+ 	else
+ 	#endif
+@@ -700,13 +721,16 @@ void rtw_cfg80211_indicate_disconnect(_adapter *padapter)
+ 	if (!padapter->mlmepriv.not_indic_disco) {
+ 		DBG_8192C("pwdev->sme_state(b)=%d\n", pwdev->sme_state);
+ 
+-		if(pwdev->sme_state==CFG80211_SME_CONNECTING)
++		if (check_fwstate(pmlmepriv, WIFI_UNDER_LINKING)) {
+ 			cfg80211_connect_result(padapter->pnetdev, NULL, NULL, 0, NULL, 0,
+ 				WLAN_STATUS_UNSPECIFIED_FAILURE, GFP_ATOMIC/*GFP_KERNEL*/);
+-		else if(pwdev->sme_state==CFG80211_SME_CONNECTED)
++		} else {
++#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+ 			cfg80211_disconnected(padapter->pnetdev, 0, NULL, 0, GFP_ATOMIC);
+-		//else
+-			//DBG_8192C("pwdev->sme_state=%d\n", pwdev->sme_state);
++#else
++			cfg80211_disconnected(padapter->pnetdev, 0, NULL, 0, false, GFP_ATOMIC);
++#endif
++        }
+ 
+ 		DBG_8192C("pwdev->sme_state(a)=%d\n", pwdev->sme_state);
+ 	}
+@@ -1549,7 +1573,7 @@ static int cfg80211_rtw_set_default_key(struct wiphy *wiphy,
+ 
+ static int cfg80211_rtw_get_station(struct wiphy *wiphy,
+ 				    struct net_device *ndev,
+-				    u8 *mac, struct station_info *sinfo)
++				    const u8 *mac, struct station_info *sinfo)
+ {
+ 	int ret = 0;
+ 	_adapter *padapter = wiphy_to_adapter(wiphy);
+@@ -1589,16 +1613,32 @@ static int cfg80211_rtw_get_station(struct wiphy *wiphy,
+ 			goto exit;
+ 		}
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0))
++		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
++#else
+ 		sinfo->filled |= STATION_INFO_SIGNAL;
++#endif
+ 		sinfo->signal = translate_percentage_to_dbm(padapter->recvpriv.signal_strength);
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0))
++		sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
++#else
+ 		sinfo->filled |= STATION_INFO_TX_BITRATE;
++#endif
+ 		sinfo->txrate.legacy = rtw_get_cur_max_rate(padapter);
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0))
++		sinfo->filled |= BIT(NL80211_STA_INFO_RX_PACKETS);
++#else
+ 		sinfo->filled |= STATION_INFO_RX_PACKETS;
++#endif
+ 		sinfo->rx_packets = sta_rx_data_pkts(psta);
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0))
++		sinfo->filled |= BIT(NL80211_STA_INFO_TX_PACKETS);
++#else
+ 		sinfo->filled |= STATION_INFO_TX_PACKETS;
++#endif
+ 		sinfo->tx_packets = psta->sta_stats.tx_pkts;
+ 
+ 	}
+@@ -1639,10 +1679,17 @@ enum nl80211_iftype {
+        NL80211_IFTYPE_MAX = NUM_NL80211_IFTYPES - 1
+ };
+ */
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
++static int cfg80211_rtw_change_iface(struct wiphy *wiphy,
++				     struct net_device *ndev,
++				     enum nl80211_iftype type,
++				     struct vif_params *params)
++#else
+ static int cfg80211_rtw_change_iface(struct wiphy *wiphy,
+ 				     struct net_device *ndev,
+ 				     enum nl80211_iftype type, u32 *flags,
+ 				     struct vif_params *params)
++#endif
+ {
+ 	enum nl80211_iftype old_type;
+ 	NDIS_802_11_NETWORK_INFRASTRUCTURE networkType ;
+@@ -1789,7 +1836,15 @@ void rtw_cfg80211_indicate_scan_done(struct rtw_wdev_priv *pwdev_priv, bool abor
+ 		}
+ 		else
+ 		{
++			#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0))
+ 			cfg80211_scan_done(pwdev_priv->scan_request, aborted);
++			#else
++			struct cfg80211_scan_info info = {
++				.aborted = aborted,
++			};
++ 	 
++			cfg80211_scan_done(pwdev_priv->scan_request, &info);
++			#endif
+ 		}
+ 
+ 		pwdev_priv->scan_request = NULL;
+@@ -2419,7 +2474,7 @@ static int rtw_cfg80211_set_key_mgt(struct security_priv *psecuritypriv, u32 key
+ 	return 0;
+ }
+ 
+-static int rtw_cfg80211_set_wpa_ie(_adapter *padapter, u8 *pie, size_t ielen)
++static int rtw_cfg80211_set_wpa_ie(_adapter *padapter, const u8 *pie, size_t ielen)
+ {
+ 	u8 *buf=NULL, *pos=NULL;
+ 	u32 left;
+@@ -3089,7 +3144,9 @@ void rtw_cfg80211_indicate_sta_assoc(_adapter *padapter, u8 *pmgmt_frame, uint f
+ 			ie_offset = _REASOCREQ_IE_OFFSET_;
+ 
+ 		sinfo.filled = 0;
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,0,0))
+ 		sinfo.filled = STATION_INFO_ASSOC_REQ_IES;
++#endif
+ 		sinfo.assoc_req_ies = pmgmt_frame + WLAN_HDR_A3_LEN + ie_offset;
+ 		sinfo.assoc_req_ies_len = frame_len - WLAN_HDR_A3_LEN - ie_offset;
+ 		cfg80211_new_sta(ndev, GetAddr2Ptr(pmgmt_frame), &sinfo, GFP_ATOMIC);
+@@ -3097,9 +3154,9 @@ void rtw_cfg80211_indicate_sta_assoc(_adapter *padapter, u8 *pmgmt_frame, uint f
+ #else /* defined(RTW_USE_CFG80211_STA_EVENT) */
+ 	channel = pmlmeext->cur_channel;
+ 	if (channel <= RTW_CH_MAX_2G_CHANNEL)
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_2GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_2GHZ);
+ 	else
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_5GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_5GHZ);
+ 
+ 	#ifdef COMPAT_KERNEL_RELEASE
+ 	rtw_cfg80211_rx_mgmt(padapter, freq, 0, pmgmt_frame, frame_len, GFP_ATOMIC);
+@@ -3142,9 +3199,9 @@ void rtw_cfg80211_indicate_sta_disassoc(_adapter *padapter, unsigned char *da, u
+ #else /* defined(RTW_USE_CFG80211_STA_EVENT) */
+ 	channel = pmlmeext->cur_channel;
+ 	if (channel <= RTW_CH_MAX_2G_CHANNEL)
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_2GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_2GHZ);
+ 	else
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_5GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_5GHZ);
+ 
+ 	pmgmt_frame = mgmt_buf;
+ 	pwlanhdr = (struct rtw_ieee80211_hdr *)pmgmt_frame;
+@@ -3387,7 +3444,11 @@ static const struct net_device_ops rtw_cfg80211_monitor_if_ops = {
+ };
+ #endif
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0))
++static int rtw_cfg80211_add_monitor_if(_adapter *padapter, char *name, unsigned char name_assign_type, struct net_device **ndev)
++#else
+ static int rtw_cfg80211_add_monitor_if(_adapter *padapter, char *name, struct net_device **ndev)
++#endif
+ {
+ 	int ret = 0;
+ 	struct net_device* mon_ndev = NULL;
+@@ -3418,7 +3479,11 @@ static int rtw_cfg80211_add_monitor_if(_adapter *padapter, char *name, struct ne
+ 	mon_ndev->type = ARPHRD_IEEE80211_RADIOTAP;
+ 	strncpy(mon_ndev->name, name, IFNAMSIZ);
+ 	mon_ndev->name[IFNAMSIZ - 1] = 0;
+-	mon_ndev->destructor = rtw_ndev_destructor;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0))
++	mon_ndev->name_assign_type = name_assign_type;
++#endif
++	mon_ndev->needs_free_netdev = true;
++	mon_ndev->priv_destructor = rtw_ndev_destructor;
+ 
+ #if (LINUX_VERSION_CODE>=KERNEL_VERSION(2,6,29))
+ 	mon_ndev->netdev_ops = &rtw_cfg80211_monitor_if_ops;
+@@ -3482,7 +3547,14 @@ static int
+ 	#else
+ 		char *name,
+ 	#endif
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0))
++		unsigned char name_assign_type,
++#endif
++	#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0))
++		enum nl80211_iftype type, struct vif_params *params)
++	#else
+ 		enum nl80211_iftype type, u32 *flags, struct vif_params *params)
++	#endif
+ {
+ 	int ret = 0;
+ 	struct net_device* ndev = NULL;
+@@ -3499,7 +3571,11 @@ static int
+ 		ret = -ENODEV;
+ 		break;
+ 	case NL80211_IFTYPE_MONITOR:
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0))
++		ret = rtw_cfg80211_add_monitor_if(padapter, (char *)name, name_assign_type, &ndev);
++#else
+ 		ret = rtw_cfg80211_add_monitor_if(padapter, (char *)name, &ndev);
++#endif
+ 		break;
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)) || defined(COMPAT_KERNEL_RELEASE)
+@@ -3760,7 +3836,7 @@ static int cfg80211_rtw_stop_ap(struct wiphy *wiphy, struct net_device *ndev)
+ #endif //(LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
+ 
+ static int	cfg80211_rtw_add_station(struct wiphy *wiphy, struct net_device *ndev,
+-			       u8 *mac, struct station_parameters *params)
++			       const u8 *mac, struct station_parameters *params)
+ {
+ 	DBG_871X(FUNC_NDEV_FMT"\n", FUNC_NDEV_ARG(ndev));
+ 
+@@ -3768,12 +3844,19 @@ static int	cfg80211_rtw_add_station(struct wiphy *wiphy, struct net_device *ndev
+ }
+ 
+ static int	cfg80211_rtw_del_station(struct wiphy *wiphy, struct net_device *ndev,
+-			       u8 *mac)
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0))
++			       u8 *mac) {
++#elif (LINUX_VERSION_CODE < KERNEL_VERSION(4,1,0))
++                   const u8 *mac) {
++#else
++                   struct station_del_parameters *params)
+ {
++    const u8 *mac = params->mac;
++#endif
+ 	int ret=0;
+ 	_irqL irqL;
+ 	_list	*phead, *plist;
+-	u8 updated;
++	u8 updated = _FALSE;
+ 	struct sta_info *psta = NULL;
+ 	_adapter *padapter = (_adapter *)rtw_netdev_priv(ndev);
+ 	struct mlme_priv *pmlmepriv = &(padapter->mlmepriv);
+@@ -3859,7 +3942,7 @@ static int	cfg80211_rtw_del_station(struct wiphy *wiphy, struct net_device *ndev
+ }
+ 
+ static int	cfg80211_rtw_change_station(struct wiphy *wiphy, struct net_device *ndev,
+-				  u8 *mac, struct station_parameters *params)
++				  const u8 *mac, struct station_parameters *params)
+ {
+ 	DBG_871X(FUNC_NDEV_FMT"\n", FUNC_NDEV_ARG(ndev));
+ 
+@@ -3950,9 +4033,9 @@ void rtw_cfg80211_rx_action_p2p(_adapter *padapter, u8 *pmgmt_frame, uint frame_
+ 
+ indicate:
+ 	if (channel <= RTW_CH_MAX_2G_CHANNEL)
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_2GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_2GHZ);
+ 	else
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_5GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_5GHZ);
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)) || defined(COMPAT_KERNEL_RELEASE)
+ 	rtw_cfg80211_rx_mgmt(padapter, freq, 0, pmgmt_frame, frame_len, GFP_ATOMIC);
+@@ -3990,9 +4073,9 @@ void rtw_cfg80211_rx_p2p_action_public(_adapter *padapter, u8 *pmgmt_frame, uint
+ 
+ indicate:
+ 	if (channel <= RTW_CH_MAX_2G_CHANNEL)
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_2GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_2GHZ);
+ 	else
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_5GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_5GHZ);
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)) || defined(COMPAT_KERNEL_RELEASE)
+ 	rtw_cfg80211_rx_mgmt(padapter, freq, 0, pmgmt_frame, frame_len, GFP_ATOMIC);
+@@ -4020,9 +4103,9 @@ void rtw_cfg80211_rx_action(_adapter *adapter, u8 *frame, uint frame_len, const
+ 		DBG_871X("RTW_Rx:category(%u), action(%u)\n", category, action);
+ 
+ 	if (channel <= RTW_CH_MAX_2G_CHANNEL)
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_2GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_2GHZ);
+ 	else
+-		freq = rtw_ieee80211_channel_to_frequency(channel, IEEE80211_BAND_5GHZ);
++		freq = rtw_ieee80211_channel_to_frequency(channel, NL80211_BAND_5GHZ);
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)) || defined(COMPAT_KERNEL_RELEASE)
+ 	rtw_cfg80211_rx_mgmt(adapter, freq, 0, frame, frame_len, GFP_ATOMIC);
+@@ -4643,6 +4726,9 @@ static int cfg80211_rtw_mgmt_tx(struct wiphy *wiphy,
+ #else
+ 	struct net_device *ndev,
+ #endif
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
++	struct cfg80211_mgmt_tx_params *params,
++#else
+ 	struct ieee80211_channel *chan,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38)) || defined(COMPAT_KERNEL_RELEASE)
+ 	bool offchan,
+@@ -4663,8 +4749,15 @@ static int cfg80211_rtw_mgmt_tx(struct wiphy *wiphy,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0))
+ 	bool dont_wait_for_ack,
+ #endif
++#endif
+ 	u64 *cookie)
+ {
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
++	struct ieee80211_channel *chan = params->chan;
++	const u8 *buf = params->buf;
++	size_t len = params->len;
++#endif
++
+ 	_adapter *padapter = (_adapter *)wiphy_to_adapter(wiphy);
+ 	struct rtw_wdev_priv *pwdev_priv = wdev_to_priv(padapter->rtw_wdev);
+ 	int ret = 0;
+@@ -5199,7 +5292,7 @@ static struct cfg80211_ops rtw_cfg80211_ops = {
+ #endif
+ };
+ 
+-static void rtw_cfg80211_init_ht_capab(struct ieee80211_sta_ht_cap *ht_cap, enum ieee80211_band band, u8 rf_type)
++static void rtw_cfg80211_init_ht_capab(struct ieee80211_sta_ht_cap *ht_cap, enum nl80211_band band, u8 rf_type)
+ {
+ 
+ #define MAX_BIT_RATE_40MHZ_MCS15 	300	/* Mbps */
+@@ -5223,7 +5316,7 @@ static void rtw_cfg80211_init_ht_capab(struct ieee80211_sta_ht_cap *ht_cap, enum
+ 	ht_cap->mcs.tx_params = IEEE80211_HT_MCS_TX_DEFINED;
+ 
+ 	/*
+-	 *hw->wiphy->bands[IEEE80211_BAND_2GHZ]
++	 *hw->wiphy->bands[NL80211_BAND_2GHZ]
+ 	 *base on ant_num
+ 	 *rx_mask: RX mask
+ 	 *if rx_ant =1 rx_mask[0]=0xff;==>MCS0-MCS7
+@@ -5268,16 +5361,16 @@ void rtw_cfg80211_init_wiphy(_adapter *padapter)
+ 
+ 	/* if (padapter->registrypriv.wireless_mode & WIRELESS_11G) */
+ 	{
+-		bands = wiphy->bands[IEEE80211_BAND_2GHZ];
++		bands = wiphy->bands[NL80211_BAND_2GHZ];
+ 		if(bands)
+-			rtw_cfg80211_init_ht_capab(&bands->ht_cap, IEEE80211_BAND_2GHZ, rf_type);
++			rtw_cfg80211_init_ht_capab(&bands->ht_cap, NL80211_BAND_2GHZ, rf_type);
+ 	}
+ 
+ 	/* if (padapter->registrypriv.wireless_mode & WIRELESS_11A) */
+ 	{
+-		bands = wiphy->bands[IEEE80211_BAND_5GHZ];
++		bands = wiphy->bands[NL80211_BAND_5GHZ];
+ 		if(bands)
+-			rtw_cfg80211_init_ht_capab(&bands->ht_cap, IEEE80211_BAND_5GHZ, rf_type);
++			rtw_cfg80211_init_ht_capab(&bands->ht_cap, NL80211_BAND_5GHZ, rf_type);
+ 	}
+ }
+ 
+@@ -5348,9 +5441,9 @@ static void rtw_cfg80211_preinit_wiphy(_adapter *padapter, struct wiphy *wiphy)
+ 	wiphy->n_cipher_suites = ARRAY_SIZE(rtw_cipher_suites);
+ 
+ 	/* if (padapter->registrypriv.wireless_mode & WIRELESS_11G) */
+-		wiphy->bands[IEEE80211_BAND_2GHZ] = rtw_spt_band_alloc(IEEE80211_BAND_2GHZ);
++		wiphy->bands[NL80211_BAND_2GHZ] = rtw_spt_band_alloc(NL80211_BAND_2GHZ);
+ 	/* if (padapter->registrypriv.wireless_mode & WIRELESS_11A) */
+-		wiphy->bands[IEEE80211_BAND_5GHZ] = rtw_spt_band_alloc(IEEE80211_BAND_5GHZ);
++		wiphy->bands[NL80211_BAND_5GHZ] = rtw_spt_band_alloc(NL80211_BAND_5GHZ);
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38) && LINUX_VERSION_CODE < KERNEL_VERSION(3,0,0))
+ 	wiphy->flags |= WIPHY_FLAG_SUPPORTS_SEPARATE_DEFAULT_KEYS;
+@@ -5402,8 +5495,11 @@ int rtw_wdev_alloc(_adapter *padapter, struct device *dev)
+ 	}
+ 	wdev->wiphy = wiphy;
+ 	wdev->netdev = pnetdev;
+-	//wdev->iftype = NL80211_IFTYPE_STATION;
+-	wdev->iftype = NL80211_IFTYPE_MONITOR; // for rtw_setopmode_cmd() in cfg80211_rtw_change_iface()
++
++	wdev->iftype = NL80211_IFTYPE_STATION; // will be init in rtw_hal_init()
++	                                       // Must sync with _rtw_init_mlme_priv()
++	                                       // pmlmepriv->fw_state = WIFI_STATION_STATE
++	//wdev->iftype = NL80211_IFTYPE_MONITOR; // for rtw_setopmode_cmd() in cfg80211_rtw_change_iface()
+ 	padapter->rtw_wdev = wdev;
+ 	pnetdev->ieee80211_ptr = wdev;
+ 
+@@ -5456,8 +5552,8 @@ void rtw_wdev_free(struct wireless_dev *wdev)
+ 
+ 	pwdev_priv = wdev_to_priv(wdev);
+ 
+-	rtw_spt_band_free(wdev->wiphy->bands[IEEE80211_BAND_2GHZ]);
+-	rtw_spt_band_free(wdev->wiphy->bands[IEEE80211_BAND_5GHZ]);
++	rtw_spt_band_free(wdev->wiphy->bands[NL80211_BAND_2GHZ]);
++	rtw_spt_band_free(wdev->wiphy->bands[NL80211_BAND_5GHZ]);
+ 
+ 	wiphy_free(wdev->wiphy);
+ 
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/ioctl_linux.c b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/ioctl_linux.c
+index 865f57f222e2..1413b27edeee 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/ioctl_linux.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/ioctl_linux.c
+@@ -6584,7 +6584,6 @@ static int rtw_dbg_port(struct net_device *dev,
+ 				case 0x01: //dbg mode
+ 					padapter->recvpriv.is_signal_dbg = 1;
+ 					extra_arg = extra_arg>100?100:extra_arg;
+-					extra_arg = extra_arg<0?0:extra_arg;
+ 					padapter->recvpriv.signal_strength_dbg=extra_arg;
+ 					break;
+ 			}
+@@ -6956,7 +6955,7 @@ static int rtw_dbg_port(struct net_device *dev,
+ 				{
+ 					struct registry_priv	*pregpriv = &padapter->registrypriv;
+ 					// 0: disable, 0x1:enable (but wifi_spec should be 0), 0x2: force enable (don't care wifi_spec)
+-					if( pregpriv && extra_arg >= 0 && extra_arg < 3 )
++					if( pregpriv && extra_arg < 3 )
+ 					{
+ 						pregpriv->ampdu_enable= extra_arg;
+ 						DBG_871X("set ampdu_enable=%d\n",pregpriv->ampdu_enable);
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/os_intfs.c b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/os_intfs.c
+index 3854f27f833f..596eda72899a 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/os_intfs.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/os_intfs.c
+@@ -945,8 +945,14 @@ unsigned int rtw_classify8021d(struct sk_buff *skb)
+ 	return dscp >> 5;
+ }
+ 
+-static u16 rtw_select_queue(struct net_device *dev, struct sk_buff *skb,
+-			    void  *accel_priv, select_queue_fallback_t fallback)
++static u16 rtw_select_queue(struct net_device *dev, struct sk_buff *skb
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
++				, void *accel_priv
++#endif
++#if (LINUX_VERSION_CODE>=KERNEL_VERSION(3,14,0))
++			    , select_queue_fallback_t fallback
++#endif
++)
+ {
+ 	_adapter	*padapter = rtw_netdev_priv(dev);
+ 	struct mlme_priv *pmlmepriv = &padapter->mlmepriv;
+@@ -1057,6 +1063,10 @@ int rtw_init_netdev_name(struct net_device *pnetdev, const char *ifname)
+ 	return 0;
+ }
+ 
++static const struct device_type wlan_type = {
++	.name = "wlan",
++};
++
+ struct net_device *rtw_init_netdev(_adapter *old_padapter)
+ {
+ 	_adapter *padapter;
+@@ -1072,6 +1082,7 @@ struct net_device *rtw_init_netdev(_adapter *old_padapter)
+ 	if (!pnetdev)
+ 		return NULL;
+ 
++	pnetdev->dev.type = &wlan_type;
+ 	padapter = rtw_netdev_priv(pnetdev);
+ 	padapter->pnetdev = pnetdev;
+ 
+@@ -1681,9 +1692,6 @@ int _netdev_vir_if_open(struct net_device *pnetdev)
+ 
+ 		padapter->bup = _TRUE;
+ 		padapter->hw_init_completed = _TRUE;
+-
+-		rtw_start_mbssid_cam(padapter);//start mbssid_cam after bup = _TRUE & hw_init_completed = _TRUE
+-
+ 	}
+ 
+ 	padapter->net_closed = _FALSE;
+@@ -2745,5 +2753,4 @@ void rtw_ndev_destructor(struct net_device *ndev)
+ 	if (ndev->ieee80211_ptr)
+ 		rtw_mfree((u8 *)ndev->ieee80211_ptr, sizeof(struct wireless_dev));
+ #endif
+-	free_netdev(ndev);
+ }
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/recv_linux.c b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/recv_linux.c
+index ba82c4db70dd..c02046db6149 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/recv_linux.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/recv_linux.c
+@@ -136,7 +136,7 @@ int rtw_os_recvbuf_resource_free(_adapter *padapter, struct recv_buf *precvbuf)
+ void rtw_handle_tkip_mic_err(_adapter *padapter,u8 bgroup)
+ {
+ #ifdef CONFIG_IOCTL_CFG80211
+-	enum nl80211_key_type key_type;
++	enum nl80211_key_type key_type = 0;
+ #endif
+ 	union iwreq_data wrqu;
+ 	struct iw_michaelmicfailure    ev;
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/rtw_android.c b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/rtw_android.c
+index aed1a6d8059d..bbd22ef1b819 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/rtw_android.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/rtw_android.c
+@@ -96,13 +96,7 @@ typedef struct cmd_tlv {
+ #endif /* PNO_SUPPORT */
+ 
+ typedef struct android_wifi_priv_cmd {
+-
+-#ifdef CONFIG_COMPAT
+-	compat_uptr_t buf;
+-#else
+ 	char *buf;
+-#endif
+-
+ 	int used_len;
+ 	int total_len;
+ } android_wifi_priv_cmd;
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/usb_intf.c b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/usb_intf.c
+index 09a5238c29a0..be72304d0a07 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/usb_intf.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/os_dep/linux/usb_intf.c
+@@ -102,6 +102,7 @@ static void rtw_dev_remove(struct usb_interface *pusb_intf);
+ 	{USB_DEVICE(0x103C, 0x1629)},/* HP - Lite-On ,8188CUS Slim Combo */ \
+ 	{USB_DEVICE(0x2001, 0x3308)},/* D-Link - Alpha */ \
+ 	{USB_DEVICE(0x050D, 0x1102)},/* Belkin - Edimax */ \
++	{USB_DEVICE(0x050D, 0x11F2)},/* ISY - Edimax */ \
+ 	{USB_DEVICE(0x2019, 0xAB2A)},/* Planex - Abocom */ \
+ 	{USB_DEVICE(0x20F4, 0x648B)},/* TRENDnet - Cameo */ \
+ 	{USB_DEVICE(0x4855, 0x0090)},/*  - Feixun */ \
+@@ -110,6 +111,8 @@ static void rtw_dev_remove(struct usb_interface *pusb_intf);
+ 	{USB_DEVICE(0x0BDA, 0x5088)},/* Thinkware - CC&C */ \
+ 	{USB_DEVICE(0x4856, 0x0091)},/* NetweeN - Feixun */ \
+ 	{USB_DEVICE(0x0846, 0x9041)}, /* Netgear - Cameo */ \
++	{USB_DEVICE(0x0846, 0x9042)}, /* On Networks - N150MA */ \
++	{USB_DEVICE(0x0846, 0x9043)}, /* Netgear N150 -WNA1000M */ \
+ 	{USB_DEVICE(0x2019, 0x4902)},/* Planex - Etop */ \
+ 	{USB_DEVICE(0x2019, 0xAB2E)},/* SW-WF02-AD15 -Abocom */ \
+ 	{USB_DEVICE(0x2001, 0x330B)}, /* D-LINK - T&W */ \
+@@ -117,6 +120,7 @@ static void rtw_dev_remove(struct usb_interface *pusb_intf);
+ 	{USB_DEVICE(0x0B05, 0x17BA)}, /* ASUS - Edimax */ \
+ 	{USB_DEVICE(0x0BDA, 0x1E1E)}, /* Intel - - */ \
+ 	{USB_DEVICE(0x04BB, 0x094c)}, /* I-O DATA - Edimax */ \
++	{USB_DEVICE(0X0BDA, 0x8176)}, /* TP-Link TL-WN723N */ \
+ 	/****** 8188CTV ********/ \
+ 	{USB_DEVICE(0xCDAB, 0x8011)}, /* - - compare */ \
+ 	{USB_DEVICE(0x0BDA, 0x0A8A)}, /* Sony - Foxconn */ \
+@@ -991,7 +995,7 @@ static int rtw_resume(struct usb_interface *pusb_intf)
+ int rtw_resume_process(_adapter *padapter)
+ {
+ 	struct net_device *pnetdev;
+-	struct pwrctrl_priv *pwrpriv;
++	struct pwrctrl_priv *pwrpriv=NULL;
+ 	int ret = -1;
+ 	u32 start_time = rtw_get_current_time();
+ 	_func_enter_;
+@@ -1054,7 +1058,8 @@ int rtw_resume_process(_adapter *padapter)
+ 	rtw_unlock_suspend();
+ 	#endif //CONFIG_RESUME_IN_WORKQUEUE
+ 
+-	pwrpriv->bInSuspend = _FALSE;
++	if (pwrpriv)
++		pwrpriv->bInSuspend = _FALSE;
+ 	DBG_871X("<===  %s return %d.............. in %dms\n", __FUNCTION__
+ 		, ret, rtw_get_passing_time_ms(start_time));
+ 
+diff --git a/drivers/net/wireless/realtek/rtl8192cu/os_dep/osdep_service.c b/drivers/net/wireless/realtek/rtl8192cu/os_dep/osdep_service.c
+index b4a7523ee42d..4b113e945351 100644
+--- a/drivers/net/wireless/realtek/rtl8192cu/os_dep/osdep_service.c
++++ b/drivers/net/wireless/realtek/rtl8192cu/os_dep/osdep_service.c
+@@ -790,7 +790,7 @@ void rtw_mfree2d(void *pbuf, int h, int w, int size)
+ 	rtw_mfree((u8 *)pbuf, h*sizeof(void*) + w*h*size);
+ }
+ 
+-void _rtw_memcpy(void* dst, void* src, u32 sz)
++void _rtw_memcpy(void* dst, const void* src, u32 sz)
+ {
+ 
+ #if defined (PLATFORM_LINUX)|| defined (PLATFORM_FREEBSD)
+@@ -807,7 +807,7 @@ void _rtw_memcpy(void* dst, void* src, u32 sz)
+ 
+ }
+ 
+-int	_rtw_memcmp(void *dst, void *src, u32 sz)
++int	_rtw_memcmp(const void *dst, const void *src, u32 sz)
+ {
+ 
+ #if defined (PLATFORM_LINUX)|| defined (PLATFORM_FREEBSD)
+-- 
+2.11.0
+

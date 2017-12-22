@@ -1,0 +1,67 @@
+From 4b57542126669a5ad8bede61c8e9e07a5fc4a39b Mon Sep 17 00:00:00 2001
+From: Vincent Pelletier <plr.vincent@gmail.com>
+Date: Sun, 26 Nov 2017 06:52:53 +0000
+Subject: [PATCH 035/210] usb: gadget: ffs: Forbid usb_ep_alloc_request from
+ sleeping
+
+commit 30bf90ccdec1da9c8198b161ecbff39ce4e5a9ba upstream.
+
+Found using DEBUG_ATOMIC_SLEEP while submitting an AIO read operation:
+
+[  100.853642] BUG: sleeping function called from invalid context at mm/slab.h:421
+[  100.861148] in_atomic(): 1, irqs_disabled(): 1, pid: 1880, name: python
+[  100.867954] 2 locks held by python/1880:
+[  100.867961]  #0:  (&epfile->mutex){....}, at: [<f8188627>] ffs_mutex_lock+0x27/0x30 [usb_f_fs]
+[  100.868020]  #1:  (&(&ffs->eps_lock)->rlock){....}, at: [<f818ad4b>] ffs_epfile_io.isra.17+0x24b/0x590 [usb_f_fs]
+[  100.868076] CPU: 1 PID: 1880 Comm: python Not tainted 4.14.0-edison+ #118
+[  100.868085] Hardware name: Intel Corporation Merrifield/BODEGA BAY, BIOS 542 2015.01.21:18.19.48
+[  100.868093] Call Trace:
+[  100.868122]  dump_stack+0x47/0x62
+[  100.868156]  ___might_sleep+0xfd/0x110
+[  100.868182]  __might_sleep+0x68/0x70
+[  100.868217]  kmem_cache_alloc_trace+0x4b/0x200
+[  100.868248]  ? dwc3_gadget_ep_alloc_request+0x24/0xe0 [dwc3]
+[  100.868302]  dwc3_gadget_ep_alloc_request+0x24/0xe0 [dwc3]
+[  100.868343]  usb_ep_alloc_request+0x16/0xc0 [udc_core]
+[  100.868386]  ffs_epfile_io.isra.17+0x444/0x590 [usb_f_fs]
+[  100.868424]  ? _raw_spin_unlock_irqrestore+0x27/0x40
+[  100.868457]  ? kiocb_set_cancel_fn+0x57/0x60
+[  100.868477]  ? ffs_ep0_poll+0xc0/0xc0 [usb_f_fs]
+[  100.868512]  ffs_epfile_read_iter+0xfe/0x157 [usb_f_fs]
+[  100.868551]  ? security_file_permission+0x9c/0xd0
+[  100.868587]  ? rw_verify_area+0xac/0x120
+[  100.868633]  aio_read+0x9d/0x100
+[  100.868692]  ? __fget+0xa2/0xd0
+[  100.868727]  ? __might_sleep+0x68/0x70
+[  100.868763]  SyS_io_submit+0x471/0x680
+[  100.868878]  do_int80_syscall_32+0x4e/0xd0
+[  100.868921]  entry_INT80_32+0x2a/0x2a
+[  100.868932] EIP: 0xb7fbb676
+[  100.868941] EFLAGS: 00000292 CPU: 1
+[  100.868951] EAX: ffffffda EBX: b7aa2000 ECX: 00000002 EDX: b7af8368
+[  100.868961] ESI: b7fbb660 EDI: b7aab000 EBP: bfb6c658 ESP: bfb6c638
+[  100.868973]  DS: 007b ES: 007b FS: 0000 GS: 0033 SS: 007b
+
+Signed-off-by: Vincent Pelletier <plr.vincent@gmail.com>
+Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/gadget/function/f_fs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
+index 0202e5132fa7..876cdbec1307 100644
+--- a/drivers/usb/gadget/function/f_fs.c
++++ b/drivers/usb/gadget/function/f_fs.c
+@@ -1016,7 +1016,7 @@ static ssize_t ffs_epfile_io(struct file *file, struct ffs_io_data *io_data)
+ 		else
+ 			ret = ep->status;
+ 		goto error_mutex;
+-	} else if (!(req = usb_ep_alloc_request(ep->ep, GFP_KERNEL))) {
++	} else if (!(req = usb_ep_alloc_request(ep->ep, GFP_ATOMIC))) {
+ 		ret = -ENOMEM;
+ 	} else {
+ 		req->buf      = data;
+-- 
+2.11.0
+

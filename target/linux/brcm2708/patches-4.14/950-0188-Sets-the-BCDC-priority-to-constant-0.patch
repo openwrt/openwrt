@@ -1,0 +1,31 @@
+From 5ab0b2c0abb4bc289a4ba702e7df8d0ef09806f7 Mon Sep 17 00:00:00 2001
+From: James Hughes <james.hughes@raspberrypi.org>
+Date: Fri, 21 Jul 2017 09:55:12 +0100
+Subject: [PATCH 188/210] Sets the BCDC priority to constant 0
+
+This is to workaround for a possible issue in the
+wireless chip firmware where some packets with
+higher priorities seem to go missing.
+
+See https://github.com/raspberrypi/linux/issues/1342 for
+details.
+---
+ drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c
+index 9f2d0b0cf6e5..b009f3083490 100644
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/bcdc.c
+@@ -274,7 +274,7 @@ brcmf_proto_bcdc_hdrpush(struct brcmf_pub *drvr, int ifidx, u8 offset,
+ 	if (pktbuf->ip_summed == CHECKSUM_PARTIAL)
+ 		h->flags |= BCDC_FLAG_SUM_NEEDED;
+ 
+-	h->priority = (pktbuf->priority & BCDC_PRIORITY_MASK);
++	h->priority = 0;
+ 	h->flags2 = 0;
+ 	h->data_offset = offset;
+ 	BCDC_SET_IF_IDX(h, ifidx);
+-- 
+2.11.0
+

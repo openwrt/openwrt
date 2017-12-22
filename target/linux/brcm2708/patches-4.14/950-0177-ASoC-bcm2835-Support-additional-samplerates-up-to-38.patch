@@ -1,0 +1,48 @@
+From f4f99e76487c7c385347ba35669343321c983b46 Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Sun, 7 May 2017 16:19:54 +0200
+Subject: [PATCH 177/210] ASoC: bcm2835: Support additional samplerates up to
+ 384kHz
+
+Sample rates are only restricted by the capabilities of the
+clock driver, so use SNDRV_PCM_RATE_CONTINUOUS instead of
+SNDRV_PCM_RATE_8000_192000.
+
+Tests (eg with pcm5122) have shown that bcm2835 works fine
+in 384kHz/32bit stereo mode, so change the maximum allowed
+rate from 192kHz to 384kHz.
+
+Signed-off-by: Matthias Reichl <hias@horus.com>
+---
+ sound/soc/bcm/bcm2835-i2s.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/bcm/bcm2835-i2s.c b/sound/soc/bcm/bcm2835-i2s.c
+index 3a706fda4f39..43f5715a0d5d 100644
+--- a/sound/soc/bcm/bcm2835-i2s.c
++++ b/sound/soc/bcm/bcm2835-i2s.c
+@@ -765,7 +765,9 @@ static struct snd_soc_dai_driver bcm2835_i2s_dai = {
+ 	.playback = {
+ 		.channels_min = 2,
+ 		.channels_max = 2,
+-		.rates =	SNDRV_PCM_RATE_8000_192000,
++		.rates =	SNDRV_PCM_RATE_CONTINUOUS,
++		.rate_min =	8000,
++		.rate_max =	384000,
+ 		.formats =	SNDRV_PCM_FMTBIT_S16_LE
+ 				| SNDRV_PCM_FMTBIT_S24_LE
+ 				| SNDRV_PCM_FMTBIT_S32_LE
+@@ -773,7 +775,9 @@ static struct snd_soc_dai_driver bcm2835_i2s_dai = {
+ 	.capture = {
+ 		.channels_min = 2,
+ 		.channels_max = 2,
+-		.rates =	SNDRV_PCM_RATE_8000_192000,
++		.rates =	SNDRV_PCM_RATE_CONTINUOUS,
++		.rate_min =	8000,
++		.rate_max =	384000,
+ 		.formats =	SNDRV_PCM_FMTBIT_S16_LE
+ 				| SNDRV_PCM_FMTBIT_S24_LE
+ 				| SNDRV_PCM_FMTBIT_S32_LE
+-- 
+2.11.0
+

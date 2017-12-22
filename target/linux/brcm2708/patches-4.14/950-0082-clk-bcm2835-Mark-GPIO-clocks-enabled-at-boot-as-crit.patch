@@ -1,0 +1,43 @@
+From bc97729209d0442a58247542126966730def384f Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Mon, 9 May 2016 17:28:18 -0700
+Subject: [PATCH 082/210] clk: bcm2835: Mark GPIO clocks enabled at boot as
+ critical.
+
+These divide off of PLLD_PER and are used for the ethernet and wifi
+PHYs source PLLs.  Neither of them is currently represented by a phy
+device that would grab the clock for us.
+
+This keeps other drivers from killing the networking PHYs when they
+disable their own clocks and trigger PLLD_PER's refcount going to 0.
+
+v2: Skip marking as critical if they aren't on at boot.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/clk/bcm/clk-bcm2835.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/clk/bcm/clk-bcm2835.c b/drivers/clk/bcm/clk-bcm2835.c
+index 336f8c9c4432..caa05e5ad0b7 100644
+--- a/drivers/clk/bcm/clk-bcm2835.c
++++ b/drivers/clk/bcm/clk-bcm2835.c
+@@ -1484,6 +1484,15 @@ static struct clk_hw *bcm2835_register_clock(struct bcm2835_cprman *cprman,
+ 	init.flags = data->flags | CLK_IGNORE_UNUSED;
+ 
+ 	/*
++	 * Some GPIO clocks for ethernet/wifi PLLs are marked as
++	 * critical (since some platforms use them), but if the
++	 * firmware didn't have them turned on then they clearly
++	 * aren't actually critical.
++	 */
++	if ((cprman_read(cprman, data->ctl_reg) & CM_ENABLE) == 0)
++		init.flags &= ~CLK_IS_CRITICAL;
++
++	/*
+ 	 * Pass the CLK_SET_RATE_PARENT flag if we are allowed to propagate
+ 	 * rate changes on at least of the parents.
+ 	 */
+-- 
+2.11.0
+

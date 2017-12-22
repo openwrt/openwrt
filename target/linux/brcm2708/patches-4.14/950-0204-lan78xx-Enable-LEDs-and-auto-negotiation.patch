@@ -1,0 +1,53 @@
+From a87aecac4981e4f64db023fcdb85026e891a1bb9 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 17 Oct 2017 15:04:29 +0100
+Subject: [PATCH 204/210] lan78xx: Enable LEDs and auto-negotiation
+
+For applications of the LAN78xx that don't have valid programmed
+EEPROMs or OTPs, enabling both LEDs and auto-negotiation by default
+seems reasonable.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/net/usb/lan78xx.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
+index 126fe75e75b1..26e04c732df4 100644
+--- a/drivers/net/usb/lan78xx.c
++++ b/drivers/net/usb/lan78xx.c
+@@ -2362,6 +2362,11 @@ static int lan78xx_reset(struct lan78xx_net *dev)
+ 	u32 buf;
+ 	int ret = 0;
+ 	unsigned long timeout;
++	bool has_eeprom;
++	bool has_otp;
++
++	has_eeprom = !lan78xx_read_eeprom(dev, 0, 0, NULL);
++	has_otp = !lan78xx_read_otp(dev, 0, 0, NULL);
+ 
+ 	ret = lan78xx_read_reg(dev, HW_CFG, &buf);
+ 	buf |= HW_CFG_LRST_;
+@@ -2414,6 +2419,9 @@ static int lan78xx_reset(struct lan78xx_net *dev)
+ 
+ 	ret = lan78xx_read_reg(dev, HW_CFG, &buf);
+ 	buf |= HW_CFG_MEF_;
++	/* If no valid EEPROM and no valid OTP, enable the LEDs by default */
++	if (!has_eeprom && !has_otp)
++	    buf |= HW_CFG_LED0_EN_ | HW_CFG_LED1_EN_;
+ 	ret = lan78xx_write_reg(dev, HW_CFG, buf);
+ 
+ 	ret = lan78xx_read_reg(dev, USB_CFG0, &buf);
+@@ -2460,6 +2468,9 @@ static int lan78xx_reset(struct lan78xx_net *dev)
+ 	/* LAN7801 only has RGMII mode */
+ 	if (dev->chipid == ID_REV_CHIP_ID_7801_)
+ 		buf &= ~MAC_CR_GMII_EN_;
++	/* If no valid EEPROM and no valid OTP, enable AUTO negotiation */
++	if (!has_eeprom && !has_otp)
++	    buf |= MAC_CR_AUTO_DUPLEX_ | MAC_CR_AUTO_SPEED_;
+ 	ret = lan78xx_write_reg(dev, MAC_CR, buf);
+ 
+ 	ret = lan78xx_read_reg(dev, MAC_TX, &buf);
+-- 
+2.11.0
+

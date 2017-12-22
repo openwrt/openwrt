@@ -1,0 +1,55 @@
+From ce344631dc13717314184ebd47f5e8b0ff3cfcab Mon Sep 17 00:00:00 2001
+From: Daniel Scheller <d.scheller@gmx.net>
+Date: Sun, 29 Oct 2017 11:43:22 -0400
+Subject: [PATCH 051/210] media: dvb-core: always call invoke_release() in
+ fe_free()
+
+commit 62229de19ff2b7f3e0ebf4d48ad99061127d0281 upstream.
+
+Follow-up to: ead666000a5f ("media: dvb_frontend: only use kref after initialized")
+
+The aforementioned commit fixed refcount OOPSes when demod driver attaching
+succeeded but tuner driver didn't. However, the use count of the attached
+demod drivers don't go back to zero and thus couldn't be cleanly unloaded.
+Improve on this by calling dvb_frontend_invoke_release() in
+__dvb_frontend_free() regardless of fepriv being NULL, instead of returning
+when fepriv is NULL. This is safe to do since _invoke_release() will check
+for passed pointers being valid before calling the .release() function.
+
+[mchehab@s-opensource.com: changed the logic a little bit to reduce
+ conflicts with another bug fix patch under review]
+Fixes: ead666000a5f ("media: dvb_frontend: only use kref after initialized")
+Signed-off-by: Daniel Scheller <d.scheller@gmx.net>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@s-opensource.com>
+Cc: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/media/dvb-core/dvb_frontend.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/media/dvb-core/dvb_frontend.c b/drivers/media/dvb-core/dvb_frontend.c
+index 9139d01ba7ed..0a8234846699 100644
+--- a/drivers/media/dvb-core/dvb_frontend.c
++++ b/drivers/media/dvb-core/dvb_frontend.c
+@@ -145,13 +145,14 @@ static void __dvb_frontend_free(struct dvb_frontend *fe)
+ {
+ 	struct dvb_frontend_private *fepriv = fe->frontend_priv;
+ 
+-	if (!fepriv)
+-		return;
+-
+-	dvb_free_device(fepriv->dvbdev);
++	if (fepriv)
++		dvb_free_device(fepriv->dvbdev);
+ 
+ 	dvb_frontend_invoke_release(fe, fe->ops.release);
+ 
++	if (!fepriv)
++		return;
++
+ 	kfree(fepriv);
+ 	fe->frontend_priv = NULL;
+ }
+-- 
+2.11.0
+

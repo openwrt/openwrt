@@ -1,0 +1,37 @@
+From 0946fdc60fc21c345e1c37fb36dcc0ac60e16d09 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Wed, 14 Sep 2016 09:16:19 +0100
+Subject: [PATCH 169/210] raspberrypi-firmware: Export the general transaction
+ function.
+
+The vc4-firmware-kms module is going to be doing the MBOX FB call.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ drivers/firmware/raspberrypi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/firmware/raspberrypi.c b/drivers/firmware/raspberrypi.c
+index 3f070bd38a91..f261b64d1657 100644
+--- a/drivers/firmware/raspberrypi.c
++++ b/drivers/firmware/raspberrypi.c
+@@ -42,7 +42,7 @@ static void response_callback(struct mbox_client *cl, void *msg)
+  * Sends a request to the firmware through the BCM2835 mailbox driver,
+  * and synchronously waits for the reply.
+  */
+-static int
++int
+ rpi_firmware_transaction(struct rpi_firmware *fw, u32 chan, u32 data)
+ {
+ 	u32 message = MBOX_MSG(chan, data);
+@@ -63,6 +63,7 @@ rpi_firmware_transaction(struct rpi_firmware *fw, u32 chan, u32 data)
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(rpi_firmware_transaction);
+ 
+ /**
+  * rpi_firmware_property_list - Submit firmware property list
+-- 
+2.11.0
+
