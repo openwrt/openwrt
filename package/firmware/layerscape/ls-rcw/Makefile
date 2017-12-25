@@ -38,7 +38,7 @@ endef
 
 define rcw/ls1046ardb
 	TITLE=RCW binary $(PKG_VERSION) for NXP ls1046ardb 64b/32b Dev Board
-	CONFIG=ls1046ardb/RR_FFSSPPPH_1133_5559/rcw_1800_qspiboot_swap.bin
+	CONFIG=ls1046ardb/RR_FFSSPPPH_1133_5559/rcw_1800_qspiboot.bin.swap
 endef
 
 define rcw/ls1012ardb
