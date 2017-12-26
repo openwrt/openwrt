@@ -246,7 +246,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  #ifdef CONFIG_IGB_HWMON
  	igb_sysfs_exit(adapter);
  #endif
-@@ -3111,6 +3243,12 @@ static int __igb_open(struct net_device
+@@ -3113,6 +3245,12 @@ static int __igb_open(struct net_device
  	if (!resuming)
  		pm_runtime_put(&pdev->dev);
  
@@ -259,7 +259,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  	/* start the watchdog. */
  	hw->mac.get_link_status = 1;
  	schedule_work(&adapter->watchdog_task);
-@@ -7104,21 +7242,41 @@ void igb_alloc_rx_buffers(struct igb_rin
+@@ -7106,21 +7244,41 @@ void igb_alloc_rx_buffers(struct igb_rin
  static int igb_mii_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
  {
  	struct igb_adapter *adapter = netdev_priv(netdev);
