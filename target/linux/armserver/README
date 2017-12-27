@@ -1,0 +1,36 @@
+This target is intended for ARM machines that use UEFI to boot, this includes
+ARM datacenter machines and some smaller embedded boards with EDK2 or u-boot.
+
+ARM server machines are different from most ARM machines up to now as they use
+ACPI as their hardware description mechanism, instead of device tree.
+Hence the bootup experience on these systems is very similar to a modern
+x86-64 machine.
+
+A related specification is the ARM Embedded Base Boot requirements, which
+provides more latitude for embedded boards, which may use device tree or
+ACPI, but must provide a useful set of EFI Services (Startup, Shutdown,
+RTC etc.).
+
+Machines with u-boot's bootefi command can also use this target, in this case
+the bootloader supplies a device tree blob as well as providing a subset
+of EFI services.
+
+Any preinit scripts in this target should be mindful that a system could use
+either ACPI or device tree.
+
+For more information, see this document about how to create ARM virtual 
+machines:
+https://gitlab.com/traversetech/muvirt/blob/master/ARM-VM-GUIDELINES.md
+
+Note: The EFI partition must be formatted as FAT32, which has a minimum
+size based on the sector size. To ensure the partition is correctly formatted,
+CONFIG_TARGET_KERNEL_PARTSIZE is set to 48MB, well above the minimum size for 
+512-sector disks.
+
+QEMU can be used to emulate an ARM server board with UEFI, for example:
+sudo qemu-system-aarch64 -m 128 -cpu cortex-a57 -M virt -nographic -bios "QEMU_EFI.fd" \
+	-drive if=none,file=openwrt-armserver-64-combined-ext4.img,id=hd0  -serial tcp::4446,server,telnet -monitor stdio \
+	-device virtio-blk-device,drive=hd0
+
+A compiled UEFI binary can be obtained from Linaro:
+http://snapshots.linaro.org/components/kernel/leg-virt-tianocore-edk2-upstream/latest/QEMU-AARCH64/RELEASE_GCC5/
