@@ -49,24 +49,8 @@ kirkwood_board_detect() {
 		name="linksys-viper"
 		;;
 
-	"Globalscale Technologies Guruplug Server Plus")
-		name="guruplug-server-plus"
-		;;
-
-	"Globalscale Technologies SheevaPlug")
-		name="sheevaplug"
-		;;
-
-	"Globalscale Technologies eSATA SheevaPlug")
-		name="sheevaplug-esata"
-		;;
-
 	"ZyXEL NSA310b")
 		name="nsa310b"
-		;;
-
-	"ZyXEL NSA310S")
-		name="nsa310s"
 		;;
 
 	"ZyXEL NSA325")

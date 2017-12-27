@@ -64,10 +64,6 @@ define U-Boot/pogo_e02_second_stage
   NAME:=Cloud Engines Pogoplug E02 (second stage)
 endef
 
-define U-Boot/sheevaplug
-  NAME:=SheevaPlug
-endef
-
 UBOOT_TARGETS := \
 	dockstar dockstar_second_stage \
 	goflexhome \
@@ -75,8 +71,7 @@ UBOOT_TARGETS := \
 	iconnect iconnect_second_stage \
 	nsa310 \
 	nsa325 \
-	pogo_e02 pogo_e02_second_stage \
-	sheevaplug
+	pogo_e02 pogo_e02_second_stage
 
 define Build/Configure
 	$(if $(findstring _second_stage,$(BUILD_VARIANT)),

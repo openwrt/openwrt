@@ -14,14 +14,11 @@ board=$(board_name)
 
 case "$board" in
 dockstar|\
-guruplug-server-plus|\
 ib62x0|\
 linksys-viper|\
 nsa310b|\
 nsa325|\
-pogo_e02|\
-sheevaplug|\
-sheevaplug-esata)
+pogo_e02)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 linksys-audi)

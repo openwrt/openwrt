@@ -16,14 +16,8 @@ case "$board" in
 "goflexnet"|\
 "ib62x0"|\
 "iconnect"|\
-"nsa310s"|\
-"pogo_e02"|\
-"sheevaplug"|\
-"sheevaplug-esata")
+"pogo_e02")
 	ucidef_set_interface_lan "eth0" "dhcp"
-	;;
-"guruplug-server-plus")
-	ucidef_set_interface_lan "eth0 eth1" "dhcp"
 	;;
 "linksys-audi"|\
 "linksys-viper")
