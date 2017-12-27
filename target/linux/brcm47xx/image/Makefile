@@ -282,6 +282,14 @@ define Device/asus-wl-330ge
 endef
 TARGET_DEVICES += asus-wl-330ge
 
+define Device/asus-wl-500gd
+  DEVICE_TITLE := Asus WL-500g Deluxe
+  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  $(Device/asus)
+  PRODUCTID := "WL500gx     "
+endef
+TARGET_DEVICES += asus-wl-500gd
+
 define Device/asus-wl-500gp-v1
   DEVICE_TITLE := Asus WL-500gP v1
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
