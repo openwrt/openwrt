@@ -188,7 +188,7 @@ menu "Target Images"
 
 	config GRUB_IMAGES
 		bool "Build GRUB images (Linux x86 or x86_64 host only)"
-		depends on TARGET_x86
+		depends on TARGET_x86 || TARGET_armserver
 		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 		select PACKAGE_grub2
 		default y
@@ -196,13 +196,14 @@ menu "Target Images"
 	config GRUB_CONSOLE
 		bool "Use Console Terminal (in addition to Serial)"
 		depends on GRUB_IMAGES
-		default n if (TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501 || TARGET_x86_geos || TARGET_x86_alix2)
+		default n if (TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501 || TARGET_x86_geos || TARGET_x86_alix2 || TARGET_armserver)
 		default y
 
 	config GRUB_SERIAL
 		string "Serial port device"
 		depends on GRUB_IMAGES
 		default "hvc0" if TARGET_x86_xen_domu
+		default "ttyAMA0" if TARGET_armserver
 		default "ttyS0" if ! TARGET_x86_xen_domu
 
 	config GRUB_BAUDRATE
@@ -260,6 +261,7 @@ menu "Target Images"
 	config TARGET_KERNEL_PARTSIZE
 		int "Kernel partition size (in MB)"
 		depends on GRUB_IMAGES
+		default 48 if TARGET_armserver
 		default 16
 
 	config TARGET_ROOTFS_PARTSIZE
