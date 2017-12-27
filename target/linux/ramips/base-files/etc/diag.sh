@@ -223,8 +223,7 @@ get_status_led() {
 		;;
 	re6500|\
 	whr-1166d|\
-	whr-600d|\
-	widora-neo)
+	whr-600d)
 		status_led="$boardname:orange:wifi"
 		;;
 	mzk-ex300np|\
@@ -284,6 +283,9 @@ get_status_led() {
 	wlr-6000|\
 	zbt-we2026)
 		status_led="$boardname:red:power"
+		;;
+	widora-neo)
+		status_led="widora:orange:wifi"
 		;;
 	wzr-agl300nh)
 		status_led="$boardname:green:router"
