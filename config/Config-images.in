@@ -245,6 +245,12 @@ menu "Target Images"
 		select TARGET_IMAGES_PAD
 		select PACKAGE_kmod-e1000
 
+	config QCOW_IMAGES
+		bool "Build QEMU image files (QCOW2)"
+		depends on TARGET_armserver
+		select GRUB_IMAGES
+		select TARGET_IMAGES_PAD
+
 	config TARGET_IMAGES_PAD
 		bool "Pad images to filesystem size (for JFFS2)"
 		depends on GRUB_IMAGES
