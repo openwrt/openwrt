@@ -13,15 +13,15 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
-dockstar|\
-ib62x0|\
-linksys-viper|\
-nsa310b|\
-nsa325|\
-pogo_e02)
+seagate,dockstar|\
+raidsonic,ib-nas62x0|\
+linksys,viper|\
+zyxel,nsa310b|\
+zyxel,nsa325|\
+cloudengines,pogoe02)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
-linksys-audi)
+linksys,audi)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x4000" "0x4000"
 	;;
 esac

@@ -11,8 +11,8 @@ platform_do_upgrade() {
 	local board="$(board_name)"
 
 	case "$board" in
-	"linksys-audi"|\
-	"linksys-viper")
+	"linksys,audi"|\
+	"linksys,viper")
 		platform_do_upgrade_linksys "$ARGV"
 		;;
 	*)

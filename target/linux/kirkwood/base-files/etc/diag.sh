@@ -6,24 +6,24 @@
 
 get_status_led() {
 	case $(board_name) in
-	dockstar|\
-	goflexhome|\
-	goflexnet)
+	seagate,dockstar|\
+	seagate,goflexhome|\
+	seagate,goflexnet)
 		status_led="status:orange:fault"
 		;;
-	pogo_e02)
+	cloudengines,pogoe02)
 		status_led="pogo_e02:orange:fault"
 		;;
-	linksys-audi)
+	linksys,audi)
 		status_led="audi:green:power"
 		;;
-	linksys-viper)
+	linksys,viper)
 		status_led="viper:white:health"
 		;;
-	nsa310b)
+	zyxel,nsa310b)
 		status_led="nsa310:green:sys"
 		;;
-	on100)
+	cisco,on100)
 		status_led="on100:green:health"
 		;;
 	esac
