@@ -24,31 +24,34 @@ define Device/Default
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-ubi
-  SUPPORTED_DEVICES := $(1)
+  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 
-define Device/dockstar
+define Device/seagate_dockstar
   DEVICE_DTS := kirkwood-dockstar
   DEVICE_TITLE := Seagate FreeAgent Dockstar
-  SUPPORTED_DEVICES += seagate,dockstar
+  BOARD_NAME := dockstar
+  SUPPORTED_DEVICES += dockstar
 endef
-TARGET_DEVICES += dockstar
+TARGET_DEVICES += seagate_dockstar
 
-define Device/goflexnet
+define Device/seagate_goflexnet
   DEVICE_TITLE := Seagate GoFlexNet
   DEVICE_DTS := kirkwood-goflexnet
-  SUPPORTED_DEVICES += seagate,goflexnet
+  BOARD_NAME := goflexnet
+  SUPPORTED_DEVICES += goflexnet
 endef
-TARGET_DEVICES += goflexnet
+TARGET_DEVICES += seagate_goflexnet
 
-define Device/goflexhome
+define Device/seagate_goflexhome
   DEVICE_TITLE := Seagate GoFlexHome
   DEVICE_DTS := kirkwood-goflexhome
-  SUPPORTED_DEVICES += seagate,goflexhome
+  BOARD_NAME := goflexhome
+  SUPPORTED_DEVICES += goflexhome
 endef
-TARGET_DEVICES += goflexhome
+TARGET_DEVICES += seagate_goflexhome
 
-define Device/linksys-audi
+define Device/linksys_audi
   DEVICE_TITLE := Linksys EA3500 (Audi)
   DEVICE_PACKAGES := kmod-mwl8k swconfig wpad-mini
   DEVICE_DTS := kirkwood-linksys-audi
@@ -56,11 +59,12 @@ define Device/linksys-audi
   KERNEL_IN_UBI := 0
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
-  SUPPORTED_DEVICES += linksys,audi
+  BOARD_NAME := linksys-audi
+  SUPPORTED_DEVICES += linksys-audi
 endef
-TARGET_DEVICES += linksys-audi
+TARGET_DEVICES += linksys_audi
 
-define Device/linksys-viper
+define Device/linksys_viper
   DEVICE_TITLE := Linksys E4200v2 / EA4500 (Viper)
   DEVICE_PACKAGES := kmod-mwl8k swconfig wpad-mini
   DEVICE_DTS := kirkwood-linksys-viper
@@ -68,34 +72,36 @@ define Device/linksys-viper
   KERNEL_IN_UBI := 0
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
-  SUPPORTED_DEVICES += linksys,viper
+  BOARD_NAME := linksys-viper
+  SUPPORTED_DEVICES += linksys-viper
 endef
-TARGET_DEVICES += linksys-viper
+TARGET_DEVICES += linksys_viper
 
-define Device/iconnect
+define Device/iom_iconnect-1.1
   DEVICE_TITLE := Iomega Iconnect
   DEVICE_DTS := kirkwood-iconnect
-  SUPPORTED_DEVICES += iom,iconnect-1.1
+  BOARD_NAME := iconnect
+  SUPPORTED_DEVICES += iconnect
 endef
-TARGET_DEVICES += iconnect
+TARGET_DEVICES += iom_iconnect-1.1
 
-define Device/nsa310b
+define Device/zyxel_nsa310b
   DEVICE_TITLE := ZyXEL NSA310b
   DEVICE_DTS := kirkwood-nsa310b
   DEVICE_PACKAGES := kmod-r8169 kmod-gpio-button-hotplug kmod-hwmon-lm85
-  SUPPORTED_DEVICES += zyxel,nsa310b
+  BOARD_NAME := nsa310b
 endef
-TARGET_DEVICES += nsa310b
+TARGET_DEVICES += zyxel_nsa310b
 
-define Device/nsa325
+define Device/zyxel_nsa325
   DEVICE_TITLE := ZyXEL NSA325 (v1 and v2)
   DEVICE_DTS := kirkwood-nsa325
   DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-rtc-pcf8563 kmod-usb3
-  SUPPORTED_DEVICES += zyxel,nsa325
+  BOARD_NAME := nsa325
 endef
-TARGET_DEVICES += nsa325
+TARGET_DEVICES += zyxel_nsa325
 
-define Device/on100
+define Device/cisco_on100
   DEVICE_TITLE := Cisco Systems ON100
   DEVICE_DTS := kirkwood-on100
   DEVICE_PACKAGES := kmod-i2c-mv64xxx
@@ -103,22 +109,24 @@ define Device/on100
   KERNEL_IN_UBI := 0
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
-  SUPPORTED_DEVICES := cisco,on100
+  BOARD_NAME := on100
 endef
-TARGET_DEVICES += on100
+TARGET_DEVICES += cisco_on100
 
-define Device/pogo_e02
+define Device/cloudengines_pogoe02
   DEVICE_TITLE := Cloud Engines Pogoplug E02
   DEVICE_DTS := kirkwood-pogo_e02
-  SUPPORTED_DEVICES += cloudengines,pogoe02
+  BOARD_NAME := pogo_e02
+  SUPPORTED_DEVICES += pogo_e02
 endef
-TARGET_DEVICES += pogo_e02
+TARGET_DEVICES += cloudengines_pogoe02
 
-define Device/ib62x0
+define Device/raidsonic_ib-nas62x0
   DEVICE_TITLE := RaidSonic ICY BOX IB-NAS62x0
   DEVICE_DTS := kirkwood-ib62x0
-  SUPPORTED_DEVICES += raidsonic,ib-nas62x0
+  BOARD_NAME := ib62x0
+  SUPPORTED_DEVICES += ib62x0
 endef
-TARGET_DEVICES += ib62x0
+TARGET_DEVICES += raidsonic_ib-nas62x0
 
 $(eval $(call BuildImage))

@@ -17,53 +17,61 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=kirkwood
-  BUILD_DEVICES:=$(patsubst %_second_stage,%,$(1))
 endef
 
 define U-Boot/dockstar
   NAME:=Seagate DockStar
+  BUILD_DEVICES:=seagate_dockstar
 endef
 
 define U-Boot/dockstar_second_stage
   NAME:=Seagate DockStar (second stage)
+  BUILD_DEVICES:=seagate_dockstar
 endef
 
 define U-Boot/goflexhome
   NAME:=the Seagate GoFlexHome/GoFlexNet
-  BUILD_DEVICES+=goflexnet
+  BUILD_DEVICES:=seagate_goflexhome seagate_goflexnet
 endef
 
 define U-Boot/ib62x0
   NAME:=RaidSonic ICY BOX NAS6210 and NAS6220
+  BUILD_DEVICES:=raidsonic_ib-nas62x0
 endef
 
 define U-Boot/ib62x0_second_stage
   NAME:=RaidSonic ICY BOX NAS6210 and NAS6220 (second stage)
+  BUILD_DEVICES:=raidsonic_ib-nas62x0
 endef
 
 define U-Boot/iconnect
   NAME:=Iomega iConnect Wireless
+  BUILD_DEVICES:=iom_iconnect-1.1
 endef
 
 define U-Boot/iconnect_second_stage
   NAME:=Iomega iConnect Wireless (second stage)
+  BUILD_DEVICES:=iom_iconnect-1.1
 endef
 
 define U-Boot/nsa310
   NAME:=Zyxel NSA310
-  BUILD_DEVICES:=nsa310b
+  BUILD_DEVICES:=zyxel_nsa310b
 endef
 
 define U-Boot/nsa325
   NAME:=Zyxel NSA325v1 and v2
+  BUILD_DEVICES:=zyxel_nsa325
 endef
 
 define U-Boot/pogo_e02
   NAME:=Cloud Engines Pogoplug E02
+  BUILD_DEVICES:=cloudengines_pogoe02
 endef
 
 define U-Boot/pogo_e02_second_stage
   NAME:=Cloud Engines Pogoplug E02 (second stage)
+  BUILD_DEVICES:=cloudengines_pogoe02
 endef
 
 UBOOT_TARGETS := \
