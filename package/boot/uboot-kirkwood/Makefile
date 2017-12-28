@@ -30,6 +30,7 @@ endef
 
 define U-Boot/goflexhome
   NAME:=the Seagate GoFlexHome/GoFlexNet
+  BUILD_DEVICES+=goflexnet
 endef
 
 define U-Boot/ib62x0
@@ -50,6 +51,7 @@ endef
 
 define U-Boot/nsa310
   NAME:=Zyxel NSA310
+  BUILD_DEVICES:=nsa310b
 endef
 
 define U-Boot/nsa325
