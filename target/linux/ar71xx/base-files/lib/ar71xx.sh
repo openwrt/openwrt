@@ -847,6 +847,9 @@ ar71xx_board_detect() {
 	*"Qihoo 360 C301")
 		name="qihoo-c301"
 		;;
+	*"R36A")
+		name="r36a"
+		;;
 	*"R602N")
 		name="r602n"
 		;;

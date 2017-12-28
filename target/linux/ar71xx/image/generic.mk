@@ -631,6 +631,18 @@ define Device/jwap230
 endef
 TARGET_DEVICES += jwap230
 
+define Device/r36a
+  DEVICE_TITLE := ALFA Network R36A
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport -swconfig
+  BOARDNAME := R36A
+  SUPPORTED_DEVICES := r36a
+  IMAGE_SIZE := 15872k
+  MTDPARTS := spi0.0:384k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += r36a
+
 define Device/r602n
   DEVICE_TITLE := P&W R602N
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

@@ -934,6 +934,16 @@ config ATH79_MACH_WRTNODE2Q
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_R36A
+	bool "ALFA Network R36A support"
+	select SOC_QCA953X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_R602N
 	bool "P&W R602N support"
 	select SOC_QCA953X

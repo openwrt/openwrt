@@ -181,7 +181,8 @@ get_status_led() {
 	oolite)
 		status_led="$board:red:system"
 		;;
-	dw33d)
+	dw33d|\
+	r36a)
 		status_led="$board:blue:status"
 		;;
 	eap300v2)

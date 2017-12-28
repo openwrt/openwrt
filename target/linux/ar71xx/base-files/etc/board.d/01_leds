@@ -580,6 +580,12 @@ pqi-air-pen)
 qihoo-c301)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "qihoo:red:status" "phy1tpt"
 	;;
+r36a)
+	ucidef_set_led_netdev "lan" "LAN" "$board:blue:lan" "eth0"
+	ucidef_set_led_usbdev "usb" "USB" "$board:blue:usb" "1-1"
+	ucidef_set_led_netdev "wan" "WAN" "$board:blue:wan" "eth1"
+	ucidef_set_led_wlan "wlan" "WLAN" "$board:blue:wlan" "phy0tpt"
+	;;
 r602n|\
 zbt-we1526)
 	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth1"
