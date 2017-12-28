@@ -22,8 +22,9 @@ define Device/Default
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-ubi
+  SUPPORTED_DEVICES := $(1)
 endef
 
 define Device/dockstar
