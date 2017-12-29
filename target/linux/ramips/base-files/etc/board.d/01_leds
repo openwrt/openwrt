@@ -453,8 +453,7 @@ y1)
 	set_usb_led "$boardname:blue:usb"
 	ucidef_set_led_netdev "wifi" "WIFI" "$boardname:blue:wifi" "wlan1"
 	ucidef_set_led_netdev "wifi5g" "WIFI5G" "$boardname:blue:wifi5g" "wlan0"
-	ucidef_set_led_netdev "lan" "LAN" "$boardname:blue:lan" "eth0.1" "tx rx"
-	ucidef_set_led_netdev "wan" "WAN" "$boardname:blue:internet" "eth0.2" "tx rx"
+	ucidef_set_led_switch "lan" "LAN" "$boardname:blue:lan" "switch0" "0x03"
 	;;
 y1s)
 	set_usb_led "$boardname:blue:usb"
