@@ -2,7 +2,7 @@
 [ -e /tmp/.failsafe ] && export FAILSAFE=1
 
 [ -f /etc/banner ] && cat /etc/banner
-[ -n "$FAILSAFE" ] || cat /etc/banner.failsafe
+[ -n "$FAILSAFE" ] && cat /etc/banner.failsafe
 
 fgrep -sq '/ overlay ro,' /proc/mounts && {
 	echo 'Your JFFS2-partition seems full and overlayfs is mounted read-only.'
