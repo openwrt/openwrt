@@ -20,12 +20,10 @@ Acked-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
  ip/ipnetns.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/ip/ipnetns.c b/ip/ipnetns.c
-index af87065..ccc652c 100644
 --- a/ip/ipnetns.c
 +++ b/ip/ipnetns.c
-@@ -72,8 +72,8 @@ static int ipnetns_have_nsid(void)
- 	if (have_rtnl_getnsid < 0) {
+@@ -73,8 +73,8 @@ static int ipnetns_have_nsid(void)
+ 
  		fd = open("/proc/self/ns/net", O_RDONLY);
  		if (fd < 0) {
 -			perror("open(\"/proc/self/ns/net\")");
@@ -35,6 +33,3 @@ index af87065..ccc652c 100644
  		}
  
  		addattr32(&req.n, 1024, NETNSA_FD, fd);
--- 
-2.6.4
-

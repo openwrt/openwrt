@@ -1,8 +1,6 @@
-diff --git a/include/linux/pkt_sched.h b/include/linux/pkt_sched.h
-index 8d2530d..c55a9a8 100644
 --- a/include/linux/pkt_sched.h
 +++ b/include/linux/pkt_sched.h
-@@ -850,4 +850,60 @@ struct tc_pie_xstats {
+@@ -850,4 +850,63 @@ struct tc_pie_xstats {
  	__u32 maxq;             /* maximum queue size */
  	__u32 ecn_mark;         /* packets marked with ecn*/
  };
@@ -23,6 +21,8 @@ index 8d2530d..c55a9a8 100644
 +	TCA_CAKE_ETHERNET,
 +	TCA_CAKE_WASH,
 +	TCA_CAKE_MPU,
++	TCA_CAKE_INGRESS,
++	TCA_CAKE_ACK_FILTER,
 +	__TCA_CAKE_MAX
 +};
 +#define TCA_CAKE_MAX	(__TCA_CAKE_MAX - 1)
@@ -35,7 +35,7 @@ index 8d2530d..c55a9a8 100644
 +
 +#define TC_CAKE_MAX_TINS (8)
 +struct tc_cake_xstats {
-+	__u16 version;  /* == 4, increments when struct extended */
++	__u16 version;  /* == 5, increments when struct extended */
 +	__u8  max_tins; /* == TC_CAKE_MAX_TINS */
 +	__u8  tin_cnt;  /* <= TC_CAKE_MAX_TINS */
 +
@@ -64,8 +64,6 @@ index 8d2530d..c55a9a8 100644
 +};
 +
  #endif
-diff --git a/tc/Makefile b/tc/Makefile
-index 56acbaa..d421b8e 100644
 --- a/tc/Makefile
 +++ b/tc/Makefile
 @@ -63,6 +63,7 @@ TCMODULES += q_codel.o
@@ -76,9 +74,6 @@ index 56acbaa..d421b8e 100644
  TCMODULES += q_hhf.o
  TCMODULES += e_bpf.o
  
-diff --git a/tc/q_cake.c b/tc/q_cake.c
-new file mode 100644
-index 0000000..acbe56c
 --- /dev/null
 +++ b/tc/q_cake.c
 @@ -0,0 +1,771 @@
