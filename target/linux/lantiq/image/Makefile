@@ -55,12 +55,11 @@ endef
 # Shared device definition: applies to every defined device
 define Device/Default
   PROFILES = Default
-  KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
+  KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_NAME = $$(KERNEL_NAME)-initramfs
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
   FILESYSTEMS := squashfs
-  DEVICE_DTS_DIR := ../dts
   IMAGE_SIZE :=
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
   IMAGES := sysupgrade.bin
