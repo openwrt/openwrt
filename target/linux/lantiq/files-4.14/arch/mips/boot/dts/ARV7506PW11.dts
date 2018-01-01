@@ -26,69 +26,6 @@
 		reg = <0x0 0x4000000>;
 	};
 
-	fpi@10000000 {
-		localbus@0 {
-			nor-boot@0 {
-				compatible = "lantiq,nor";
-				bank-width = <2>;
-				reg = <0 0x0 0x800000>;
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					partition@0 {
-						label = "uboot";
-						reg = <0x00000 0x40000>;
-						read-only;
-					};
-
-					partition@40000 {
-						label = "uboot_env";
-						reg = <0x40000 0x10000>;
-						read-only;
-					};
-
-					partition@50000 {
-						label = "firmware";
-						reg = <0x50000 0x7a0000>;
-					};
-
-					boardconfig: partition@7f0000 {
-						label = "board_config";
-						reg = <0x7f0000 0x10000>;
-						read-only;
-					};
-				};
-			};
-		};
-
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				pci {
-					lantiq,groups = "gnt1";
-					lantiq,function = "pci";
-					lantiq,output = <1>;
-				};
-				pci_rst {
-					lantiq,pins = "io21";
-					lantiq,pull = <2>;
-					lantiq,output = <1>;
-				};
-			};
-		};
-
-		/* GPIO 19: switch reset */
-		etop@E180000 {
-			phy-mode = "rmii";
-			mtd-mac-address = <&boardconfig 0x16>;
-		};
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -145,6 +82,67 @@
 		info_red {
 			label = "arv7506pw11:red:info";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		pci {
+			lantiq,groups = "gnt1";
+			lantiq,function = "pci";
+			lantiq,output = <1>;
+		};
+		pci_rst {
+			lantiq,pins = "io21";
+			lantiq,pull = <2>;
+			lantiq,output = <1>;
+		};
+	};
+};
+
+/* GPIO 19: switch reset */
+&gsw {
+	phy-mode = "rmii";
+	mtd-mac-address = <&boardconfig 0x16>;
+};
+
+&localbus {
+	nor@0 {
+		compatible = "lantiq,nor";
+		bank-width = <2>;
+		reg = <0 0x0 0x800000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "uboot";
+				reg = <0x00000 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "uboot_env";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "firmware";
+				reg = <0x50000 0x7a0000>;
+			};
+
+			boardconfig: partition@7f0000 {
+				label = "board_config";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+			};
 		};
 	};
 };

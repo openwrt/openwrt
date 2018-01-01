@@ -25,97 +25,6 @@
 		reg = <0x0 0x8000000>;
 	};
 
-	fpi@10000000 {
-		localbus@0 {
-			nand-parts@0 {
-				compatible = "lantiq,nand-xway";
-				lantiq,cs = <1>;
-				bank-width = <2>;
-				reg = <0x1 0x0 0x2000000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				nand-on-flash-bbt;
-				nand-ecc-strength = <3>;
-				nand-ecc-step-size = <256>;
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					partition@0 {
-						label = "u-boot";
-						reg = <0x0 0xa0000>;
-						read-only;
-					};
-					partition@a0000 {
-						label = "uboot-env";
-						reg = <0xa0000 0x20000>;
-						read-only;
-					};
-					partition@c0000 {
-						label = "unused";
-						reg = <0xc0000 0x40000>;
-					};
-					partition@100000 {
-						label = "ubi";
-						reg = <0x100000 0x7e80000>;
-					};
-					/*
-					 * last 512 KiB are for the bad block table, not writable
-					 */
-				};
-			};
-		};
-
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				mdio {
-					lantiq,groups = "mdio";
-					lantiq,function = "mdio";
-				};
-				pci_rst {
-					lantiq,pins = "io21";
-					lantiq,output = <1>;
-					lantiq,open-drain;
-				};
-				pcie_rst {
-					lantiq,pins = "io38";
-					lantiq,pull = <0>;
-					lantiq,output = <1>;
-					lantiq,open-drain;
-				};
-				usb_vbus {
-					lantiq,pins = "io33";
-					lantiq,pull = <0>;
-					lantiq,open-drain = <0>;
-					lantiq,output = <1>;
-				};
-				nand_out {
-					lantiq,groups = "nand cle", "nand ale";
-					lantiq,function = "ebu";
-					lantiq,output = <1>;
-					lantiq,open-drain = <0>;
-					lantiq,pull = <0>;
-				};
-				nand_cs1 {
-					lantiq,groups = "nand cs1";
-					lantiq,function = "ebu";
-					lantiq,open-drain = <0>;
-					lantiq,pull = <0>;
-				};
-			};
-		};
-
-		ifxhcd@E101000 {
-			status = "okay";
-			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	gphy-xrx200 {
 		compatible = "lantiq,phy-xrx200";
 		firmware1 = "lantiq/xrx200_phy11g_a14.bin";	/*VR9 1.1*/
@@ -201,18 +110,6 @@
 	};
 };
 
-&pci0 {
-	status = "okay";
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-
-	wifi@168c,002d {
-		compatible = "pci168c,002d";
-		reg = <0x7000 0 0 0 0>;
-		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
-		qca,disable-5ghz;
-	};
-};
-
 &eth0 {
 	lan: interface@0 {
 		compatible = "lantiq,xrx200-pdi";
@@ -257,6 +154,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "lantiq,xrx200-mdio";
+		reg = <0>;
 
 		phy0: ethernet-phy@0 {
 			reg = <0x0>;
@@ -279,4 +177,105 @@
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		mdio {
+			lantiq,groups = "mdio";
+			lantiq,function = "mdio";
+		};
+		pci_rst {
+			lantiq,pins = "io21";
+			lantiq,output = <1>;
+			lantiq,open-drain;
+		};
+		pcie_rst {
+			lantiq,pins = "io38";
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+			lantiq,open-drain;
+		};
+		usb_vbus {
+			lantiq,pins = "io33";
+			lantiq,pull = <0>;
+			lantiq,open-drain = <0>;
+			lantiq,output = <1>;
+		};
+		nand_out {
+			lantiq,groups = "nand cle", "nand ale";
+			lantiq,function = "ebu";
+			lantiq,output = <1>;
+			lantiq,open-drain = <0>;
+			lantiq,pull = <0>;
+		};
+		nand_cs1 {
+			lantiq,groups = "nand cs1";
+			lantiq,function = "ebu";
+			lantiq,open-drain = <0>;
+			lantiq,pull = <0>;
+		};
+	};
+};
+
+&localbus {
+	nand@1 {
+		compatible = "lantiq,nand-xway";
+		lantiq,cs = <1>;
+		bank-width = <2>;
+		reg = <0x1 0x0 0x2000000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		nand-on-flash-bbt;
+		nand-ecc-strength = <3>;
+		nand-ecc-step-size = <256>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xa0000>;
+				read-only;
+			};
+			partition@a0000 {
+				label = "uboot-env";
+				reg = <0xa0000 0x20000>;
+				read-only;
+			};
+			partition@c0000 {
+				label = "unused";
+				reg = <0xc0000 0x40000>;
+			};
+			partition@100000 {
+				label = "ubi";
+				reg = <0x100000 0x7e80000>;
+			};
+			/*
+			 * last 512 KiB are for the bad block table, not writable
+			 */
+		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
+	wifi@168c,002d {
+		compatible = "pci168c,002d";
+		reg = <0x7000 0 0 0 0>;
+		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		qca,disable-5ghz;
+	};
+};
+
+&usb0 {
+	status = "okay";
+	gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 };

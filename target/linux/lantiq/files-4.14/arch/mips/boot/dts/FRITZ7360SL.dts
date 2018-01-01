@@ -25,77 +25,6 @@
 		reg = <0x0 0x8000000>;
 	};
 
-	fpi@10000000 {
-		localbus@0 {
-			nor-boot@0 {
-				compatible = "lantiq,nor";
-				bank-width = <2>;
-				reg = <0 0x0 0x1000000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-					urlader: partition@0 {
-						label = "urlader";
-						reg = <0x00000 0x20000>;
-						read-only;
-					};
-
-					partition@20000 {
-						label = "firmware";
-						reg = <0x20000 0xf60000>;
-					};
-
-					partition@f80000 {
-						label = "tffs (1)";
-						reg = <0xf80000 0x40000>;
-						read-only;
-					};
-
-					partition@fc0000 {
-						label = "tffs (2)";
-						reg = <0xfc0000 0x40000>;
-						read-only;
-					};
-				};
-			};
-		};
-
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				mdio {
-					lantiq,groups = "mdio";
-					lantiq,function = "mdio";
-				};
-				phy-rst {
-					lantiq,pins = "io37", "io44";
-					lantiq,pull = <0>;
-					lantiq,open-drain;
-					lantiq,output = <1>;
-				};
-				pcie-rst {
-					lantiq,pins = "io38";
-					lantiq,pull = <0>;
-					lantiq,output = <1>;
-				};
-			};
-		};
-
-		ifxhcd@E101000 {
-			status = "okay";
-			lantiq,portmask = <0x3>;
-		};
-
-		ifxhcd@E106000 {
-			status = "okay";
-		};
-	};
-
 	gphy-xrx200 {
 		compatible = "lantiq,phy-xrx200";
 		firmware = "lantiq/xrx200_phy11g_a22.bin";
@@ -190,6 +119,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "lantiq,xrx200-mdio";
+		reg = <0>;
+
 		phy0: ethernet-phy@0 {
 			reg = <0x00>;
 			compatible = "ethernet-phy-ieee802.3-c22";
@@ -211,6 +142,67 @@
 	};
 };
 
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		mdio {
+			lantiq,groups = "mdio";
+			lantiq,function = "mdio";
+		};
+		phy-rst {
+			lantiq,pins = "io37", "io44";
+			lantiq,pull = <0>;
+			lantiq,open-drain;
+			lantiq,output = <1>;
+		};
+		pcie-rst {
+			lantiq,pins = "io38";
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+	};
+};
+
+&localbus {
+	nor@0 {
+		compatible = "lantiq,nor";
+		bank-width = <2>;
+		reg = <0 0x0 0x1000000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			urlader: partition@0 {
+				label = "urlader";
+				reg = <0x00000 0x20000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "firmware";
+				reg = <0x20000 0xf60000>;
+			};
+
+			partition@f80000 {
+				label = "tffs (1)";
+				reg = <0xf80000 0x40000>;
+				read-only;
+			};
+
+			partition@fc0000 {
+				label = "tffs (2)";
+				reg = <0xfc0000 0x40000>;
+				read-only;
+			};
+		};
+	};
+};
+
 &pcie0 {
 	pcie@0 {
 		reg = <0 0 0 0 0>;
@@ -225,4 +217,13 @@
 			qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:01:00.0.bin */
 		};
 	};
+};
+
+&usb0 {
+	status = "okay";
+	lantiq,portmask = <0x3>;
+};
+
+&usb1 {
+	status = "okay";
 };

@@ -19,64 +19,12 @@
 
 		led-dsl = &dsl;
 		led-internet = &online;
-		led-usb = &usb;
+		led-usb = &led_usb;
 		led-wifi = &wifi;
 	};
 
 	memory@0 {
 		reg = <0x0 0x2000000>;
-	};
-
-	fpi@10000000 {
-		localbus@0 {
-			nor-boot@0 {
-				compatible = "lantiq,nor";
-				bank-width = <2>;
-				reg = <0 0x0 0x2000000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					partition@0 {
-						label = "uboot";
-						reg = <0x00000 0x20000>;
-						read-only;
-					};
-
-					partition@20000 {
-						label = "uboot_env";
-						reg = <0x20000 0x10000>;
-						read-only;
-					};
-
-					partition@30000 {
-						label = "firmware";
-						reg = <0x30000 0x7d0000>;
-					};
-				};
-			};
-		};
-
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-			};
-		};
-
-		etop@E180000 {
-			phy-mode = "rgmii";
-		};
-
-		ifxhcd@E101000 {
-			status = "okay";
-			gpios = <&gpio 36 GPIO_ACTIVE_HIGH>;
-		};
 	};
 
 	gpio-keys-polled {
@@ -130,7 +78,7 @@
 			label = "h201l:green:wlan";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
-		usb: usb {
+		led_usb: usb {
 			label = "h201l:green:usb";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
@@ -156,4 +104,54 @@
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+	};
+};
+
+&gsw {
+	phy-mode = "rgmii";
+};
+
+&localbus {
+	nor@0 {
+		compatible = "lantiq,nor";
+		bank-width = <2>;
+		reg = <0 0x0 0x2000000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "uboot";
+				reg = <0x00000 0x20000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "uboot_env";
+				reg = <0x20000 0x10000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "firmware";
+				reg = <0x30000 0x7d0000>;
+			};
+		};
+	};
+};
+
+&usb0 {
+	status = "okay";
+	gpios = <&gpio 36 GPIO_ACTIVE_HIGH>;
 };

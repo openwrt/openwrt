@@ -14,61 +14,12 @@
 
 		led-dsl = &dsl;
 		led-internet = &internet;
-		led-usb = &usb;
+		led-usb = &led_usb;
 		led-wifi = &wifi_green;
 	};
 
 	memory@0 {
 		reg = <0x0 0x4000000>;
-	};
-
-	fpi@10000000 {
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				exin {
-					lantiq,groups = "exin1";
-					lantiq,function = "exin";
-				};
-				pci {
-					lantiq,groups = "gnt1", "req1";
-					lantiq,function = "pci";
-				};
-				pci-in {
-					lantiq,groups = "req1";
-					lantiq,output = <0>;
-					lantiq,open-drain = <1>;
-					lantiq,pull = <2>;
-				};
-				pci-out {
-					lantiq,groups = "gnt1";
-					lantiq,output = <1>;
-					lantiq,pull = <0>;
-				};
-			};
-			pins_spi_default: pins_spi_default {
-				spi_in {
-					lantiq,groups = "spi_di";
-					lantiq,function = "spi";
-				};
-				spi_out {
-					lantiq,groups = "spi_do", "spi_clk",
-						"spi_cs4";
-					lantiq,function = "spi";
-					lantiq,output = <1>;
-				};
-			};
-		};
-
-		etop@E180000 {
-			phy-mode = "mii";
-		};
-
-		ifxhcd@E101000 {
-			status = "okay";
-		};
 	};
 
 	rtl8366rb {
@@ -89,8 +40,6 @@
 			0x0431 0x0960
 		>;
 	};
-
-
 
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
@@ -129,7 +78,7 @@
 			label = "dgn3500:green:dsl";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
-		usb: usb {
+		led_usb: usb {
 			label = "dgn3500:green:usb";
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
@@ -157,6 +106,49 @@
 	};
 };
 
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		exin {
+			lantiq,groups = "exin1";
+			lantiq,function = "exin";
+		};
+		pci {
+			lantiq,groups = "gnt1", "req1";
+			lantiq,function = "pci";
+		};
+		pci-in {
+			lantiq,groups = "req1";
+			lantiq,output = <0>;
+			lantiq,open-drain = <1>;
+			lantiq,pull = <2>;
+		};
+		pci-out {
+			lantiq,groups = "gnt1";
+			lantiq,output = <1>;
+			lantiq,pull = <0>;
+		};
+	};
+	pins_spi_default: pins_spi_default {
+		spi_in {
+			lantiq,groups = "spi_di";
+			lantiq,function = "spi";
+		};
+		spi_out {
+			lantiq,groups = "spi_do", "spi_clk",
+				"spi_cs4";
+			lantiq,function = "spi";
+			lantiq,output = <1>;
+		};
+	};
+};
+
+&gsw {
+	phy-mode = "mii";
+};
+
 &pci0 {
 	status = "okay";
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
@@ -169,10 +161,10 @@
 };
 
 &spi {
+	status = "okay";
+
 	pinctrl-names = "default";
 	pinctrl-0 = <&pins_spi_default>;
-
-	status = "ok";
 
 	m25p80@4 {
 		#address-cells = <1>;
@@ -210,4 +202,8 @@
 			};
 		};
 	};
+};
+
+&usb0 {
+	status = "okay";
 };

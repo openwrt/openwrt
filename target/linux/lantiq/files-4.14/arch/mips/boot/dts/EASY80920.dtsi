@@ -14,94 +14,12 @@
 		led-failsafe = &power;
 		led-running = &power;
 
-		led-usb = &usb1;
-		led-usb2 = &usb2;
+		led-usb = &led_usb1;
+		led-usb2 = &led_usb2;
 	};
 
 	memory@0 {
 		reg = <0x0 0x4000000>;
-	};
-
-	fpi@10000000 {
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				exin3 {
-					lantiq,groups = "exin3";
-					lantiq,function = "exin";
-				};
-				stp {
-					lantiq,groups = "stp";
-					lantiq,function = "stp";
-				};
-				nand {
-					lantiq,groups = "nand cle", "nand ale",
-							"nand rd", "nand rdy";
-					lantiq,function = "ebu";
-				};
-				mdio {
-					lantiq,groups = "mdio";
-					lantiq,function = "mdio";
-				};
-				pci {
-					lantiq,groups = "gnt1", "req1";
-					lantiq,function = "pci";
-				};
-				conf_out {
-					lantiq,pins = "io24", "io13", "io49", /* nand cle, ale and rd */
-							"io4", "io5", "io6", /* stp */
-							"io21",
-							"io33";
-					lantiq,open-drain;
-					lantiq,pull = <0>;
-					lantiq,output = <1>;
-				};
-				pcie-rst {
-					lantiq,pins = "io38";
-					lantiq,pull = <0>;
-					lantiq,output = <1>;
-				};
-				conf_in {
-					lantiq,pins = "io39", /* exin3 */
-							"io48"; /* nand rdy */
-					lantiq,pull = <2>;
-				};
-			};
-			pins_spi_default: pins_spi_default {
-				spi_in {
-					lantiq,groups = "spi_di";
-					lantiq,function = "spi";
-				};
-				spi_out {
-					lantiq,groups = "spi_do", "spi_clk",
-						"spi_cs4";
-					lantiq,function = "spi";
-					lantiq,output = <1>;
-				};
-			};
-		};
-
-		stp: stp@E100BB0 {
-			compatible = "lantiq,gpio-stp-xway";
-			reg = <0xE100BB0 0x40>;
-			#gpio-cells = <2>;
-			gpio-controller;
-
-			lantiq,shadow = <0xffff>;
-			lantiq,groups = <0x7>;
-			lantiq,dsl = <0x3>;
-			lantiq,phy1 = <0x7>;
-			lantiq,phy2 = <0x7>;
-			/* lantiq,rising; */
-		};
-
-		ifxhcd@E101000 {
-			status = "okay";
-			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
-			lantiq,portmask = <0x3>;
-		};
 	};
 
 	gphy-xrx200 {
@@ -152,11 +70,11 @@
 			label = "easy80920:green:fxo";
 			gpios = <&stp 19 GPIO_ACTIVE_HIGH>;
 		};
-		usb1: usb1 {
+		led_usb1: usb1 {
 			label = "easy80920:green:usb1";
 			gpios = <&stp 18 GPIO_ACTIVE_HIGH>;
 		};
-		usb2: usb2 {
+		led_usb2: usb2 {
 			label = "easy80920:green:usb2";
 			gpios = <&stp 15 GPIO_ACTIVE_HIGH>;
 		};
@@ -167,56 +85,6 @@
 		wps {
 			label = "easy80920:green:wps";
 			gpios = <&stp 12 GPIO_ACTIVE_HIGH>;
-		};
-	};
-};
-
-&spi {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pins_spi_default>;
-
-	status = "ok";
-
-	m25p80@4 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		compatible = "jedec,spi-nor";
-		reg = <4 0>;
-		spi-max-frequency = <1000000>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				reg = <0x0 0x20000>;
-				label = "SPI (RO) U-Boot Image";
-				read-only;
-			};
-
-			partition@20000 {
-				reg = <0x20000 0x10000>;
-				label = "ENV_MAC";
-				read-only;
-			};
-
-			partition@30000 {
-				reg = <0x30000 0x10000>;
-				label = "DPF";
-				read-only;
-			};
-
-			partition@40000 {
-				reg = <0x40000 0x10000>;
-				label = "NVRAM";
-				read-only;
-			};
-
-			partition@500000 {
-				reg = <0x50000 0x003a0000>;
-				label = "kernel";
-			};
 		};
 	};
 };
@@ -274,6 +142,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "lantiq,xrx200-mdio";
+		reg = <0>;
+
 		phy0: ethernet-phy@0 {
 			reg = <0x0>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
@@ -295,4 +165,131 @@
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		exin3 {
+			lantiq,groups = "exin3";
+			lantiq,function = "exin";
+		};
+		stp {
+			lantiq,groups = "stp";
+			lantiq,function = "stp";
+		};
+		nand {
+			lantiq,groups = "nand cle", "nand ale",
+					"nand rd", "nand rdy";
+			lantiq,function = "ebu";
+		};
+		mdio {
+			lantiq,groups = "mdio";
+			lantiq,function = "mdio";
+		};
+		pci {
+			lantiq,groups = "gnt1", "req1";
+			lantiq,function = "pci";
+		};
+		conf_out {
+			lantiq,pins = "io24", "io13", "io49", /* nand cle, ale and rd */
+					"io4", "io5", "io6", /* stp */
+					"io21",
+					"io33";
+			lantiq,open-drain;
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+		pcie-rst {
+			lantiq,pins = "io38";
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+		conf_in {
+			lantiq,pins = "io39", /* exin3 */
+					"io48"; /* nand rdy */
+			lantiq,pull = <2>;
+		};
+	};
+	pins_spi_default: pins_spi_default {
+		spi_in {
+			lantiq,groups = "spi_di";
+			lantiq,function = "spi";
+		};
+		spi_out {
+			lantiq,groups = "spi_do", "spi_clk",
+				"spi_cs4";
+			lantiq,function = "spi";
+			lantiq,output = <1>;
+		};
+	};
+};
+
+&spi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pins_spi_default>;
+
+	status = "okay";
+
+	m25p80@4 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <4 0>;
+		spi-max-frequency = <1000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x20000>;
+				label = "SPI (RO) U-Boot Image";
+				read-only;
+			};
+
+			partition@20000 {
+				reg = <0x20000 0x10000>;
+				label = "ENV_MAC";
+				read-only;
+			};
+
+			partition@30000 {
+				reg = <0x30000 0x10000>;
+				label = "DPF";
+				read-only;
+			};
+
+			partition@40000 {
+				reg = <0x40000 0x10000>;
+				label = "NVRAM";
+				read-only;
+			};
+
+			partition@500000 {
+				reg = <0x50000 0x003a0000>;
+				label = "kernel";
+			};
+		};
+	};
+};
+
+&stp {
+	status = "okay";
+
+	lantiq,shadow = <0xffff>;
+	lantiq,groups = <0x7>;
+	lantiq,dsl = <0x3>;
+	lantiq,phy1 = <0x7>;
+	lantiq,phy2 = <0x7>;
+	/* lantiq,rising; */
+};
+
+&usb0 {
+	status = "okay";
+	gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
+	lantiq,portmask = <0x3>;
 };

@@ -24,36 +24,6 @@
 		reg = <0x0 0x4000000>;
 	};
 
-	fpi@10000000 {
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				mdio {
-					lantiq,groups = "mdio";
-					lantiq,function = "mdio";
-				};
-			};
-
-			pins_spi_default: pins_spi_default {
-				spi_in {
-					lantiq,groups = "spi_di";
-					lantiq,function = "spi";
-				};
-				spi_out {
-					lantiq,groups = "spi_do", "spi_clk", "spi_cs4";
-					lantiq,function = "spi";
-					lantiq,output = <1>;
-				};
-			};
-		};
-
-		pcie@d900000 {
-			status = "disabled";
-		};
-	};
-
 	gphy-xrx200 {
 		compatible = "lantiq,phy-xrx200";
 		firmware = "lantiq/xrx200_phy22f_a22.bin";
@@ -120,11 +90,67 @@
 	};
 };
 
+&eth0 {
+	lan: interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+
+		ethernet@4 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "mii";
+			phy-handle = <&phy13>;
+		};
+	};
+
+	mdio@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "lantiq,xrx200-mdio";
+		reg = <0>;
+
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+		};
+	};
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		mdio {
+			lantiq,groups = "mdio";
+			lantiq,function = "mdio";
+		};
+	};
+
+	pins_spi_default: pins_spi_default {
+		spi_in {
+			lantiq,groups = "spi_di";
+			lantiq,function = "spi";
+		};
+		spi_out {
+			lantiq,groups = "spi_do", "spi_clk", "spi_cs4";
+			lantiq,function = "spi";
+			lantiq,output = <1>;
+		};
+	};
+};
+
+&pcie0 {
+	status = "disabled";
+};
+
 &spi {
+	status = "okay";
+
 	pinctrl-names = "default";
 	pinctrl-0 = <&pins_spi_default>;
-
-	status = "ok";
 
 	m25p80@4 {
 		#address-cells = <1>;
@@ -184,32 +210,6 @@
 				label = "ret";
 				read-only;
 			};
-		};
-	};
-};
-
-&eth0 {
-	lan: interface@0 {
-		compatible = "lantiq,xrx200-pdi";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0>;
-
-		ethernet@4 {
-			compatible = "lantiq,xrx200-pdi-port";
-			reg = <4>;
-			phy-mode = "mii";
-			phy-handle = <&phy13>;
-		};
-	};
-
-	mdio@0 {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "lantiq,xrx200-mdio";
-		phy13: ethernet-phy@13 {
-			reg = <0x13>;
-			compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
 		};
 	};
 };

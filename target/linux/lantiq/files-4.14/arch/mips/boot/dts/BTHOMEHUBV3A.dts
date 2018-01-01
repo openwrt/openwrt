@@ -25,111 +25,6 @@
 		reg = <0x0 0x4000000>;
 	};
 
-	sram@1F000000 {
-		vmmc@107000 {
-			status = "okay";
-			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
-	fpi@10000000 {
-		localbus@0 {
-			nand-parts@0 {		  /* NAND Flash: Samsung K9F5608U0D-JIB0 32MB */
-				compatible = "lantiq,nand-xway";
-				lantiq,cs = <1>;
-				bank-width = <2>;
-				reg = <1 0x0 0x2000000 >;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				req-mask = <0x1>;  /* PCI request lines to mask during NAND access */
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					partition@0 {
-						label = "preboot";
-						reg = <0x00000 0x8000>;
-						read-only;
-					};
-					partition@8000 {
-						label = "u-boot";
-						reg = <0x8000 0x05c000>;
-						read-only;
-					};
-					partition@64000 {
-						label = "uboot_env";
-						reg = <0x64000 0x004000>;
-					};
-					ath9k_cal: partition@68000 {
-						label = "art-copy";
-						reg = <0x68000 0x004000>;
-					};
-					partition@6c000 {
-						label = "kernel";
-						reg = <0x6c000 0x200000>;
-					};
-					partition@26c000 {
-						label = "ubi";
-						reg = <0x26c000 0x1d94000>;
-					};
-				};
-			};
-		};
-
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				nand_out {
-					lantiq,groups = "nand cle", "nand ale";
-					lantiq,function = "ebu";
-					lantiq,output = <1>;
-					lantiq,open-drain = <0>;
-					lantiq,pull = <0>;
-				};
-				nand_cs1 {
-					lantiq,groups = "nand cs1";
-					lantiq,function = "ebu";
-					lantiq,open-drain = <0>;
-					lantiq,pull = <0>;
-				};
-
-				pci_in {
-					lantiq,groups = "req1";
-					lantiq,function = "pci";
-					lantiq,output = <0>;
-					lantiq,open-drain = <1>;
-					lantiq,pull = <2>;
-				};
-				pci_out {
-					lantiq,groups = "gnt1";
-					lantiq,function = "pci";
-					lantiq,output = <1>;
-					lantiq,open-drain = <0>;
-					lantiq,pull = <0>;
-				};
-
-				pci_rst {
-					lantiq,pins = "io21";
-					lantiq,output = <1>;
-					lantiq,open-drain = <0>;
-				};
-			};
-		};
-
-		etop@E180000 {
-			phy-mode = "rgmii";
-		};
-
-		ifxhcd@E101000 {
-			status = "okay";
-			gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -197,6 +92,97 @@
 	};
 };
 
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		nand_out {
+			lantiq,groups = "nand cle", "nand ale";
+			lantiq,function = "ebu";
+			lantiq,output = <1>;
+			lantiq,open-drain = <0>;
+			lantiq,pull = <0>;
+		};
+		nand_cs1 {
+			lantiq,groups = "nand cs1";
+			lantiq,function = "ebu";
+			lantiq,open-drain = <0>;
+			lantiq,pull = <0>;
+		};
+
+		pci_in {
+			lantiq,groups = "req1";
+			lantiq,function = "pci";
+			lantiq,output = <0>;
+			lantiq,open-drain = <1>;
+			lantiq,pull = <2>;
+		};
+		pci_out {
+			lantiq,groups = "gnt1";
+			lantiq,function = "pci";
+			lantiq,output = <1>;
+			lantiq,open-drain = <0>;
+			lantiq,pull = <0>;
+		};
+
+		pci_rst {
+			lantiq,pins = "io21";
+			lantiq,output = <1>;
+			lantiq,open-drain = <0>;
+		};
+	};
+};
+
+&gsw {
+	phy-mode = "rgmii";
+};
+
+&localbus {
+	nand@1 {		  /* NAND Flash: Samsung K9F5608U0D-JIB0 32MB */
+		compatible = "lantiq,nand-xway";
+		lantiq,cs = <1>;
+		bank-width = <2>;
+		reg = <1 0x0 0x2000000 >;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		req-mask = <0x1>;  /* PCI request lines to mask during NAND access */
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "preboot";
+				reg = <0x00000 0x8000>;
+				read-only;
+			};
+			partition@8000 {
+				label = "u-boot";
+				reg = <0x8000 0x05c000>;
+				read-only;
+			};
+			partition@64000 {
+				label = "uboot_env";
+				reg = <0x64000 0x004000>;
+			};
+			ath9k_cal: partition@68000 {
+				label = "art-copy";
+				reg = <0x68000 0x004000>;
+			};
+			partition@6c000 {
+				label = "kernel";
+				reg = <0x6c000 0x200000>;
+			};
+			partition@26c000 {
+				label = "ubi";
+				reg = <0x26c000 0x1d94000>;
+			};
+		};
+	};
+};
+
 &pci0 {
 	status = "okay";
 	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
@@ -205,4 +191,9 @@
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
 	};
+};
+
+&usb0 {
+	status = "okay";
+	gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 };

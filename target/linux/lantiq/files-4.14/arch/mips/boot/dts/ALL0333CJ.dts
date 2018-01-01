@@ -24,70 +24,6 @@
 		reg = <0x0 0x1000000>;
 	};
 
-	fpi@b0000000 {
-		etop@E180000 {
-			phy-mode = "mii";
-		};
-	};
-
-	fpi@10000000 {
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				asc {
-					lantiq,groups = "asc";
-					lantiq,function = "asc";
-				};
-				keys_in {
-					lantiq,pins = "io0",/* "io25", */"io29";
-					lantiq,pull = <2>;
-					lantiq,open-drain = <1>;
-				};
-			};
-		};
-
-		localbus@0 {
-			nor-boot@0 {
-				compatible = "lantiq,nor";
-				bank-width = <2>;
-				reg = <0 0x0 0x400000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					partition@0 {
-						label = "uboot";
-						reg = <0x00000 0x10000>;
-						read-only;
-					};
-
-					partition@10000 {
-						label = "firmware";
-						reg = <0x10000 0x3ef200>;
-					};
-
-					partition@3ff200 {
-						label = "uboot_env";
-						reg = <0x3ff200 0xc00>;
-						read-only;
-					};
-
-					partition@3ffe00 {
-						label = "dummy_bits";
-						reg = <0x3ffe00 0x200>;
-						read-only;
-					};
-				};
-			};
-		};
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
@@ -115,6 +51,66 @@
 		online_red {
 			label = "all0333cj:red:online";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		asc {
+			lantiq,groups = "asc";
+			lantiq,function = "asc";
+		};
+		keys_in {
+			lantiq,pins = "io0",/* "io25", */"io29";
+			lantiq,pull = <2>;
+			lantiq,open-drain = <1>;
+		};
+	};
+};
+
+&gsw {
+	phy-mode = "mii";
+};
+
+&localbus {
+	nor@0 {
+		compatible = "lantiq,nor";
+		bank-width = <2>;
+		reg = <0 0x0 0x400000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "uboot";
+				reg = <0x00000 0x10000>;
+				read-only;
+			};
+
+			partition@10000 {
+				label = "firmware";
+				reg = <0x10000 0x3ef200>;
+			};
+
+			partition@3ff200 {
+				label = "uboot_env";
+				reg = <0x3ff200 0xc00>;
+				read-only;
+			};
+
+			partition@3ffe00 {
+				label = "dummy_bits";
+				reg = <0x3ffe00 0x200>;
+				read-only;
+			};
 		};
 	};
 };

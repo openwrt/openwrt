@@ -19,98 +19,12 @@
 
 		led-dsl = &dsl;
 		led-internet = &internet_green;
-		led-usb = &usb;
+		led-usb = &led_usb;
 		led-wifi = &wifi;
 	};
 
 	memory@0 {
 		reg = <0x0 0x2000000>;
-	};
-
-	sram@1F000000 {
-		vmmc@107000 {
-			status = "okay";
-			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
-	fpi@10000000 {
-		localbus@0 {
-			nor-boot@0 {
-				compatible = "lantiq,nor";
-				bank-width = <2>;
-				reg = <0 0x0 0x2000000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					partition@0 {
-						label = "uboot";
-						reg = <0x00000 0x10000>;
-						read-only;
-					};
-
-					partition@10000 {
-						label = "uboot_env";
-						reg = <0x10000 0x10000>;
-					};
-
-					partition@20000 {
-						label = "firmware";
-						reg = <0x20000 0x3d0000>;
-					};
-
-					boardconfig: partition@3f0000 {
-						label = "boardconfig";
-						reg = <0x3f0000 0x10000>;
-						read-only;
-					};
-				};
-			};
-
-			gpiomm: gpiomm@4000000 {
-				compatible = "lantiq,gpio-mm";
-				reg = <1 0x0 0x10 >;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				#gpio-cells = <2>;
-				gpio-controller;
-				lantiq,shadow = <0x400>;
-			};
-		};
-
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				ebu {
-					lantiq,groups = "ebu cs1";
-					lantiq,function = "ebu";
-				};
-			};
-		};
-
-		etop@E180000 {
-			phy-mode = "mii";
-			mtd-mac-address = <&boardconfig 0x16>;
-		};
-
-		ifxhcd@E101000 {
-			status = "okay";
-			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
-		};
-
-		pci@E105400 {
-			status = "okay";
-			lantiq,external-clock;
-			gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-			req-mask = <0xf>;
-		};
 	};
 
 	gpio-keys-polled {
@@ -159,7 +73,7 @@
 			label = "arv4519pw:red:internet";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
-		usb: usb {
+		led_usb: usb {
 			label = "arv4519pw:green:usb";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
@@ -192,4 +106,81 @@
 			gpios = <&gpiomm 6 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		ebu {
+			lantiq,groups = "ebu cs1";
+			lantiq,function = "ebu";
+		};
+	};
+};
+
+&gpiomm {
+	status = "okay";
+	lantiq,shadow = <0x400>;
+};
+
+&gsw {
+	phy-mode = "mii";
+	mtd-mac-address = <&boardconfig 0x16>;
+};
+
+&localbus {
+	nor@0 {
+		compatible = "lantiq,nor";
+		bank-width = <2>;
+		reg = <0 0x0 0x2000000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "uboot";
+				reg = <0x00000 0x10000>;
+				read-only;
+			};
+
+			partition@10000 {
+				label = "uboot_env";
+				reg = <0x10000 0x10000>;
+			};
+
+			partition@20000 {
+				label = "firmware";
+				reg = <0x20000 0x3d0000>;
+			};
+
+			boardconfig: partition@3f0000 {
+				label = "boardconfig";
+				reg = <0x3f0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&pci0  {
+	status = "okay";
+	lantiq,external-clock;
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	req-mask = <0xf>;
+};
+
+&usb {
+	status = "okay";
+	gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+};
+
+&vmmc {
+	status = "okay";
+	gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
 };

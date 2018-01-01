@@ -19,102 +19,8 @@
 		led-wifi = &wireless_green;
 	};
 
-	sram@1F000000 {
-	        vmmc@107000 {
-	                status = "okay";
-	                gpios = <&gpio 30 GPIO_ACTIVE_HIGH  //fxs relay
-	                         &gpio 31 GPIO_ACTIVE_HIGH  //still unknown
-	                         &gpio 3  GPIO_ACTIVE_HIGH>; //reset_slic?
-	        };
-	};
-
 	memory@0 {
 		reg = <0x0 0x4000000>;
-	};
-
-	fpi@10000000 {
-		localbus@0 {
-			nor-boot@0 {
-				compatible = "lantiq,nor";
-				bank-width = <2>;
-				reg = <0 0x0 0x800000>, <1 0x800000 0x800000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					boardconfig: partition@40000 {
-						label = "board_config";
-						reg = <0x40000 0x10000>;
-						read-only;
-					};
-				};
-			};
-		};
-
-		gpio: pinmux@E100B10 {
-			pinctrl-names = "default";
-			pinctrl-0 = <&state_default>;
-
-			state_default: pinmux {
-				stp {
-					lantiq,groups = "stp";
-					lantiq,function = "stp";
-					lantiq,open-drain = <0>;
-					lantiq,output = <1>;
-					lantiq,pull = <0>;
-				};
-				mdio {
-					lantiq,groups = "mdio";
-					lantiq,function = "mdio";
-				};
-				pci-rst {
-					lantiq,pins = "io21";
-					lantiq,open-drain = <0>;
-					lantiq,pull = <0>;
-					lantiq,output = <1>;
-				};
-				gphy-leds {
-					lantiq,groups = "gphy0 led1", "gphy1 led0";
-					lantiq,function = "gphy";
-					lantiq,open-drain = <0>;
-					lantiq,pull = <0>;
-					lantiq,output = <1>;
-				};
-			};
-		};
-
-		stp: stp@E100BB0 {
-			compatible = "lantiq,gpio-stp-xway";
-			reg = <0xE100BB0 0x40>;
-			#gpio-cells = <2>;
-			gpio-controller;
-
-			lantiq,shadow = <0xffff>;
-			lantiq,groups = <0x3>;
-			lantiq,dsl = <0x0>;
-			lantiq,phy1 = <0x0>;
-			lantiq,phy2 = <0x0>;
-			/* lantiq,rising; */
-		};
-
-		ifxhcd@E101000 {
-			status = "okay";
-			gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
-			lantiq,portmask = <0x3>;
-		};
-
-		ifxhcd@E106000 {
-			status = "okay";
-			gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
-		};
-
-		pcie@d900000 {
-			status = "disabled";
-		};
 	};
 
 	gphy-xrx200 {
@@ -214,20 +120,6 @@
 	};
 };
 
-&pci0 {
-	status = "okay";
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
-
-	wifi@1814,3091 {
-		compatible = "pci1814,3091";
-		reg = <0x7000 0 0 0 0>;
-		ralink,mtd-eeprom = <&boardconfig 0x410>;
-		ralink,mtd-eeprom-swap;
-		mtd-mac-address = <&boardconfig 0x16>;
-		mtd-mac-address-increment = <1>;
-	};
-};
-
 &eth0 {
 	lan: interface@0 {
 		compatible = "lantiq,xrx200-pdi";
@@ -274,6 +166,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "lantiq,xrx200-mdio";
+		reg = <0>;
+
 		phy0: ethernet-phy@0 {
 			reg = <0x0>;
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
@@ -295,4 +189,103 @@
 			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
 		};
 	};
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		stp {
+			lantiq,groups = "stp";
+			lantiq,function = "stp";
+			lantiq,open-drain = <0>;
+			lantiq,output = <1>;
+			lantiq,pull = <0>;
+		};
+		mdio {
+			lantiq,groups = "mdio";
+			lantiq,function = "mdio";
+		};
+		pci-rst {
+			lantiq,pins = "io21";
+			lantiq,open-drain = <0>;
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+		gphy-leds {
+			lantiq,groups = "gphy0 led1", "gphy1 led0";
+			lantiq,function = "gphy";
+			lantiq,open-drain = <0>;
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+	};
+};
+
+&localbus {
+	nor@0 {
+		compatible = "lantiq,nor";
+		bank-width = <2>;
+		reg = <0 0x0 0x800000>, <1 0x800000 0x800000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boardconfig: partition@40000 {
+				label = "board_config";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&pci0 {
+	status = "okay";
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+
+	wifi@1814,3091 {
+		compatible = "pci1814,3091";
+		reg = <0x7000 0 0 0 0>;
+		ralink,mtd-eeprom = <&boardconfig 0x410>;
+		ralink,mtd-eeprom-swap;
+		mtd-mac-address = <&boardconfig 0x16>;
+		mtd-mac-address-increment = <1>;
+	};
+};
+
+&pcie0 {
+	status = "disabled";
+};
+
+&stp {
+	lantiq,shadow = <0xffff>;
+	lantiq,groups = <0x3>;
+	lantiq,dsl = <0x0>;
+	lantiq,phy1 = <0x0>;
+	lantiq,phy2 = <0x0>;
+	/* lantiq,rising; */
+};
+
+&usb0 {
+	status = "okay";
+	gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
+	lantiq,portmask = <0x3>;
+};
+
+&usb1 {
+	status = "okay";
+	gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
+};
+
+&vmmc {
+	status = "okay";
+	gpios = <&gpio 30 GPIO_ACTIVE_HIGH  //fxs relay
+		 &gpio 31 GPIO_ACTIVE_HIGH  //still unknown
+		 &gpio 3  GPIO_ACTIVE_HIGH>; //reset_slic?
 };
