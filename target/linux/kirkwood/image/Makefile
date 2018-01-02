@@ -120,6 +120,14 @@ $(Device/dockstar)
 endef
 TARGET_DEVICES += pogo_e02
 
+define Device/pogo_v4
+$(Device/dockstar)
+  DEVICE_TITLE := Cloud Engines Pogoplug V4
+  DEVICE_DTS := kirkwood-pogoplug-series-4
+  DEVICE_PACKAGES := kmod-usb3
+endef
+TARGET_DEVICES += pogo_v4
+
 define Device/ib62x0
 $(Device/dockstar)
   DEVICE_TITLE := RaidSonic ICY BOX IB-NAS62x0
