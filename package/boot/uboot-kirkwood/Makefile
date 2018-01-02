@@ -74,6 +74,11 @@ define U-Boot/pogo_e02_second_stage
   BUILD_DEVICES:=cloudengines_pogoe02
 endef
 
+define U-Boot/pogoplugv4
+  NAME:=Cloud Engines Pogoplug V4
+  BUILD_DEVICES:=cloudengines_pogoplugv4
+endef
+
 UBOOT_TARGETS := \
 	dockstar dockstar_second_stage \
 	goflexhome \
@@ -81,7 +86,8 @@ UBOOT_TARGETS := \
 	iconnect iconnect_second_stage \
 	nsa310 \
 	nsa325 \
-	pogo_e02 pogo_e02_second_stage
+	pogo_e02 pogo_e02_second_stage \
+	pogoplugv4
 
 define Build/Configure
 	$(if $(findstring _second_stage,$(BUILD_VARIANT)),
