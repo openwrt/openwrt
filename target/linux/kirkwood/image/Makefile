@@ -121,6 +121,13 @@ define Device/cloudengines_pogoe02
 endef
 TARGET_DEVICES += cloudengines_pogoe02
 
+define Device/cloudengines_pogoplugv4
+  DEVICE_TITLE := Cloud Engines Pogoplug V4
+  DEVICE_DTS := kirkwood-pogoplug-series-4
+  DEVICE_PACKAGES := kmod-usb3
+endef
+TARGET_DEVICES += cloudengines_pogoplugv4
+
 define Device/raidsonic_ib-nas62x0
   DEVICE_TITLE := RaidSonic ICY BOX IB-NAS62x0
   DEVICE_DTS := kirkwood-ib62x0

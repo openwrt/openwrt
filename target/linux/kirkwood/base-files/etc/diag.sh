@@ -14,6 +14,9 @@ get_status_led() {
 	cloudengines,pogoe02)
 		status_led="pogo_e02:orange:fault"
 		;;
+	cloudengines,pogoplugv4)
+		status_led="pogoplugv4:green:health"
+		;;
 	linksys,audi)
 		status_led="audi:green:power"
 		;;
