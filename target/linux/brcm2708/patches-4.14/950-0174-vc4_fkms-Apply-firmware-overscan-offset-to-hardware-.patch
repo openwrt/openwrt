@@ -1,0 +1,62 @@
+From 4ae7f31aa1e08a762fd0afa6755c705ab589db5a Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 18 Apr 2017 21:43:46 +0100
+Subject: [PATCH 174/210] vc4_fkms: Apply firmware overscan offset to hardware
+ cursor
+
+---
+ drivers/gpu/drm/vc4/vc4_firmware_kms.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/drivers/gpu/drm/vc4/vc4_firmware_kms.c b/drivers/gpu/drm/vc4/vc4_firmware_kms.c
+index 4d7b7f218cbb..d170775ccc98 100644
+--- a/drivers/gpu/drm/vc4/vc4_firmware_kms.c
++++ b/drivers/gpu/drm/vc4/vc4_firmware_kms.c
+@@ -39,6 +39,7 @@ struct vc4_crtc {
+ 	void __iomem *regs;
+ 
+ 	struct drm_pending_vblank_event *event;
++	u32 overscan[4];
+ };
+ 
+ static inline struct vc4_crtc *to_vc4_crtc(struct drm_crtc *crtc)
+@@ -180,6 +181,7 @@ static void vc4_cursor_plane_atomic_update(struct drm_plane *plane,
+ 					   struct drm_plane_state *old_state)
+ {
+ 	struct vc4_dev *vc4 = to_vc4_dev(plane->dev);
++	struct vc4_crtc *vc4_crtc = to_vc4_crtc(plane->crtc);
+ 	struct drm_plane_state *state = plane->state;
+ 	struct drm_framebuffer *fb = state->fb;
+ 	struct drm_gem_cma_object *bo = drm_fb_cma_get_gem_obj(fb, 0);
+@@ -200,6 +202,12 @@ static void vc4_cursor_plane_atomic_update(struct drm_plane *plane,
+ 			 bo->paddr + fb->offsets[0],
+ 			 fb->pitches[0]);
+ 
++	/* add on the top/left offsets when overscan is active */
++	if (vc4_crtc) {
++		packet_state[1] += vc4_crtc->overscan[0];
++		packet_state[2] += vc4_crtc->overscan[1];
++	}
++
+ 	ret = rpi_firmware_property(vc4->firmware,
+ 				    RPI_FIRMWARE_SET_CURSOR_STATE,
+ 				    &packet_state,
+@@ -641,6 +649,15 @@ static int vc4_fkms_bind(struct device *dev, struct device *master, void *data)
+ 	if (ret)
+ 		goto err_destroy_connector;
+ 
++	ret = rpi_firmware_property(vc4->firmware,
++				    RPI_FIRMWARE_FRAMEBUFFER_GET_OVERSCAN,
++				    &vc4_crtc->overscan,
++				    sizeof(vc4_crtc->overscan));
++	if (ret) {
++		DRM_ERROR("Failed to get overscan state: 0x%08x\n", vc4_crtc->overscan[0]);
++		memset(&vc4_crtc->overscan, 0, sizeof(vc4_crtc->overscan));
++	}
++
+ 	platform_set_drvdata(pdev, vc4_crtc);
+ 
+ 	return 0;
+-- 
+2.11.0
+

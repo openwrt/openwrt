@@ -1,0 +1,159 @@
+From 7263f11b567193235a676584dfefd0b46c8b08a1 Mon Sep 17 00:00:00 2001
+From: Mike Maloney <maloney@google.com>
+Date: Tue, 28 Nov 2017 10:44:29 -0500
+Subject: [PATCH 011/210] packet: fix crash in fanout_demux_rollover()
+
+syzkaller found a race condition fanout_demux_rollover() while removing
+a packet socket from a fanout group.
+
+po->rollover is read and operated on during packet_rcv_fanout(), via
+fanout_demux_rollover(), but the pointer is currently cleared before the
+synchronization in packet_release().   It is safer to delay the cleanup
+until after synchronize_net() has been called, ensuring all calls to
+packet_rcv_fanout() for this socket have finished.
+
+To further simplify synchronization around the rollover structure, set
+po->rollover in fanout_add() only if there are no errors.  This removes
+the need for rcu in the struct and in the call to
+packet_getsockopt(..., PACKET_ROLLOVER_STATS, ...).
+
+Crashing stack trace:
+ fanout_demux_rollover+0xb6/0x4d0 net/packet/af_packet.c:1392
+ packet_rcv_fanout+0x649/0x7c8 net/packet/af_packet.c:1487
+ dev_queue_xmit_nit+0x835/0xc10 net/core/dev.c:1953
+ xmit_one net/core/dev.c:2975 [inline]
+ dev_hard_start_xmit+0x16b/0xac0 net/core/dev.c:2995
+ __dev_queue_xmit+0x17a4/0x2050 net/core/dev.c:3476
+ dev_queue_xmit+0x17/0x20 net/core/dev.c:3509
+ neigh_connected_output+0x489/0x720 net/core/neighbour.c:1379
+ neigh_output include/net/neighbour.h:482 [inline]
+ ip6_finish_output2+0xad1/0x22a0 net/ipv6/ip6_output.c:120
+ ip6_finish_output+0x2f9/0x920 net/ipv6/ip6_output.c:146
+ NF_HOOK_COND include/linux/netfilter.h:239 [inline]
+ ip6_output+0x1f4/0x850 net/ipv6/ip6_output.c:163
+ dst_output include/net/dst.h:459 [inline]
+ NF_HOOK.constprop.35+0xff/0x630 include/linux/netfilter.h:250
+ mld_sendpack+0x6a8/0xcc0 net/ipv6/mcast.c:1660
+ mld_send_initial_cr.part.24+0x103/0x150 net/ipv6/mcast.c:2072
+ mld_send_initial_cr net/ipv6/mcast.c:2056 [inline]
+ ipv6_mc_dad_complete+0x99/0x130 net/ipv6/mcast.c:2079
+ addrconf_dad_completed+0x595/0x970 net/ipv6/addrconf.c:4039
+ addrconf_dad_work+0xac9/0x1160 net/ipv6/addrconf.c:3971
+ process_one_work+0xbf0/0x1bc0 kernel/workqueue.c:2113
+ worker_thread+0x223/0x1990 kernel/workqueue.c:2247
+ kthread+0x35e/0x430 kernel/kthread.c:231
+ ret_from_fork+0x2a/0x40 arch/x86/entry/entry_64.S:432
+
+Fixes: 0648ab70afe6 ("packet: rollover prepare: per-socket state")
+Fixes: 509c7a1ecc860 ("packet: avoid panic in packet_getsockopt()")
+Reported-by: syzbot <syzkaller@googlegroups.com>
+Signed-off-by: Mike Maloney <maloney@google.com>
+Reviewed-by: Eric Dumazet <edumazet@google.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ net/packet/af_packet.c | 32 ++++++++++----------------------
+ net/packet/internal.h  |  1 -
+ 2 files changed, 10 insertions(+), 23 deletions(-)
+
+diff --git a/net/packet/af_packet.c b/net/packet/af_packet.c
+index 2986941164b1..2eb4f1e5b861 100644
+--- a/net/packet/af_packet.c
++++ b/net/packet/af_packet.c
+@@ -1697,7 +1697,6 @@ static int fanout_add(struct sock *sk, u16 id, u16 type_flags)
+ 		atomic_long_set(&rollover->num, 0);
+ 		atomic_long_set(&rollover->num_huge, 0);
+ 		atomic_long_set(&rollover->num_failed, 0);
+-		po->rollover = rollover;
+ 	}
+ 
+ 	if (type_flags & PACKET_FANOUT_FLAG_UNIQUEID) {
+@@ -1755,6 +1754,8 @@ static int fanout_add(struct sock *sk, u16 id, u16 type_flags)
+ 		if (refcount_read(&match->sk_ref) < PACKET_FANOUT_MAX) {
+ 			__dev_remove_pack(&po->prot_hook);
+ 			po->fanout = match;
++			po->rollover = rollover;
++			rollover = NULL;
+ 			refcount_set(&match->sk_ref, refcount_read(&match->sk_ref) + 1);
+ 			__fanout_link(sk, po);
+ 			err = 0;
+@@ -1768,10 +1769,7 @@ static int fanout_add(struct sock *sk, u16 id, u16 type_flags)
+ 	}
+ 
+ out:
+-	if (err && rollover) {
+-		kfree_rcu(rollover, rcu);
+-		po->rollover = NULL;
+-	}
++	kfree(rollover);
+ 	mutex_unlock(&fanout_mutex);
+ 	return err;
+ }
+@@ -1795,11 +1793,6 @@ static struct packet_fanout *fanout_release(struct sock *sk)
+ 			list_del(&f->list);
+ 		else
+ 			f = NULL;
+-
+-		if (po->rollover) {
+-			kfree_rcu(po->rollover, rcu);
+-			po->rollover = NULL;
+-		}
+ 	}
+ 	mutex_unlock(&fanout_mutex);
+ 
+@@ -3039,6 +3032,7 @@ static int packet_release(struct socket *sock)
+ 	synchronize_net();
+ 
+ 	if (f) {
++		kfree(po->rollover);
+ 		fanout_release_data(f);
+ 		kfree(f);
+ 	}
+@@ -3853,7 +3847,6 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
+ 	void *data = &val;
+ 	union tpacket_stats_u st;
+ 	struct tpacket_rollover_stats rstats;
+-	struct packet_rollover *rollover;
+ 
+ 	if (level != SOL_PACKET)
+ 		return -ENOPROTOOPT;
+@@ -3932,18 +3925,13 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
+ 		       0);
+ 		break;
+ 	case PACKET_ROLLOVER_STATS:
+-		rcu_read_lock();
+-		rollover = rcu_dereference(po->rollover);
+-		if (rollover) {
+-			rstats.tp_all = atomic_long_read(&rollover->num);
+-			rstats.tp_huge = atomic_long_read(&rollover->num_huge);
+-			rstats.tp_failed = atomic_long_read(&rollover->num_failed);
+-			data = &rstats;
+-			lv = sizeof(rstats);
+-		}
+-		rcu_read_unlock();
+-		if (!rollover)
++		if (!po->rollover)
+ 			return -EINVAL;
++		rstats.tp_all = atomic_long_read(&po->rollover->num);
++		rstats.tp_huge = atomic_long_read(&po->rollover->num_huge);
++		rstats.tp_failed = atomic_long_read(&po->rollover->num_failed);
++		data = &rstats;
++		lv = sizeof(rstats);
+ 		break;
+ 	case PACKET_TX_HAS_OFF:
+ 		val = po->tp_tx_has_off;
+diff --git a/net/packet/internal.h b/net/packet/internal.h
+index 562fbc155006..a1d2b2319ae9 100644
+--- a/net/packet/internal.h
++++ b/net/packet/internal.h
+@@ -95,7 +95,6 @@ struct packet_fanout {
+ 
+ struct packet_rollover {
+ 	int			sock;
+-	struct rcu_head		rcu;
+ 	atomic_long_t		num;
+ 	atomic_long_t		num_huge;
+ 	atomic_long_t		num_failed;
+-- 
+2.11.0
+

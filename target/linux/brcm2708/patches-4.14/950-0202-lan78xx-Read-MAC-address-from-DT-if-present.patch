@@ -1,0 +1,52 @@
+From 0d74803854df69c98b799799b69c49cc61da192d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 21 Jul 2017 11:30:18 +0100
+Subject: [PATCH 202/210] lan78xx: Read MAC address from DT if present
+
+There is a standard mechanism for locating and using a MAC address from
+the Device Tree. Use this facility in the lan78xx driver to support
+applications without programmed EEPROM or OTP.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.org>
+---
+ drivers/net/usb/lan78xx.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
+index 0161f77641fa..01e72b267de8 100644
+--- a/drivers/net/usb/lan78xx.c
++++ b/drivers/net/usb/lan78xx.c
+@@ -37,6 +37,7 @@
+ #include <linux/irqchip/chained_irq.h>
+ #include <linux/microchipphy.h>
+ #include <linux/phy.h>
++#include <linux/of_net.h>
+ #include "lan78xx.h"
+ 
+ #define DRIVER_AUTHOR	"WOOJUNG HUH <woojung.huh@microchip.com>"
+@@ -1639,6 +1640,14 @@ static void lan78xx_init_mac_address(struct lan78xx_net *dev)
+ 	u32 addr_lo, addr_hi;
+ 	int ret;
+ 	u8 addr[6];
++	const u8 *mac_addr;
++
++	/* maybe the boot loader passed the MAC address in devicetree */
++	mac_addr = of_get_mac_address(dev->udev->dev.of_node);
++	if (mac_addr) {
++		ether_addr_copy(addr, mac_addr);
++		goto set_mac_addr;
++	}
+ 
+ 	ret = lan78xx_read_reg(dev, RX_ADDRL, &addr_lo);
+ 	ret = lan78xx_read_reg(dev, RX_ADDRH, &addr_hi);
+@@ -1667,6 +1676,7 @@ static void lan78xx_init_mac_address(struct lan78xx_net *dev)
+ 					  "MAC address set to random addr");
+ 			}
+ 
++set_mac_addr:
+ 			addr_lo = addr[0] | (addr[1] << 8) |
+ 				  (addr[2] << 16) | (addr[3] << 24);
+ 			addr_hi = addr[4] | (addr[5] << 8);
+-- 
+2.11.0
+

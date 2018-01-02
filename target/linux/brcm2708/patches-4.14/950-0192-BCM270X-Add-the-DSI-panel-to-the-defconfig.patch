@@ -1,0 +1,26 @@
+From 8f8dfbfec975a66611f1e4a852fe06fa3c16676a Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Thu, 2 Jun 2016 12:29:45 -0700
+Subject: [PATCH 192/210] BCM270X: Add the DSI panel to the defconfig.
+
+Signed-off-by: Eric Anholt <eric@anholt.net>
+---
+ arch/arm64/configs/bcmrpi3_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/configs/bcmrpi3_defconfig b/arch/arm64/configs/bcmrpi3_defconfig
+index 9dcb58a519d0..003209bf2362 100644
+--- a/arch/arm64/configs/bcmrpi3_defconfig
++++ b/arch/arm64/configs/bcmrpi3_defconfig
+@@ -815,6 +815,8 @@ CONFIG_VIDEO_OV7640=m
+ CONFIG_VIDEO_MT9V011=m
+ CONFIG_DRM=m
+ CONFIG_DRM_LOAD_EDID_FIRMWARE=y
++CONFIG_DRM_PANEL_SIMPLE=m
++CONFIG_DRM_PANEL_RASPBERRYPI_TOUCHSCREEN=m
+ CONFIG_DRM_UDL=m
+ CONFIG_DRM_VC4=m
+ CONFIG_FB=y
+-- 
+2.11.0
+
