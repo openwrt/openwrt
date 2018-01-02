@@ -383,6 +383,10 @@ _procd_send_signal() {
 	local instance="$2"
 	local signal="$3"
 
+	case "$signal" in
+		[A-Z]*)	signal="$(kill -l "$signal" 2>/dev/null)" || return 1;;
+	esac
+
 	json_init
 	json_add_string name "$service"
 	[ -n "$instance" -a "$instance" != "*" ] && json_add_string instance "$instance"
