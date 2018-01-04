@@ -539,7 +539,7 @@ sub gen_package_mk() {
 				} elsif (defined($srcpackage{$dep})) {
 					$idx = $subdir{$dep}.$dep;
 				}
-				undef $idx if $idx eq 'base-files';
+
 				if ($idx) {
 					$idx .= $suffix;
 
