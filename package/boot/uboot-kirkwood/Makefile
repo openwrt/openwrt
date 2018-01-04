@@ -64,6 +64,10 @@ define U-Boot/pogo_e02_second_stage
   NAME:=Cloud Engines Pogoplug E02 (second stage)
 endef
 
+define U-Boot/pogo_v4
+  NAME:=Cloud Engines Pogoplug V4
+endef
+
 define U-Boot/sheevaplug
   NAME:=SheevaPlug
 endef
@@ -76,6 +80,7 @@ UBOOT_TARGETS := \
 	nsa310 \
 	nsa325 \
 	pogo_e02 pogo_e02_second_stage \
+	pogo_v4\
 	sheevaplug
 
 define Build/Configure
