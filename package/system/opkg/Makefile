@@ -13,7 +13,7 @@ PKG_RELEASE:=2
 PKG_FLAGS:=essential
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.lede-project.org/project/opkg-lede.git
+PKG_SOURCE_URL:=https://git.openwrt.org/project/opkg-lede.git
 PKG_SOURCE_DATE:=2017-12-07
 PKG_SOURCE_VERSION:=3b417b9f41b4ceb5912d82f867dd5534e5675b5c
 PKG_MIRROR_HASH:=1c9c21e56186345d0034d15051c1d9c5ebb5aa6658d6ae8886d8403207a914a3
@@ -43,7 +43,7 @@ define Package/opkg
   CATEGORY:=Base system
   TITLE:=opkg package manager
   DEPENDS:=+uclient-fetch +libpthread +libubox
-  URL:=https://git.lede-project.org/?p=project/opkg-lede.git
+  URL:=$(PKG_SOURCE_URL)
   MENU:=1
 endef
 
