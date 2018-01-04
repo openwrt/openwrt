@@ -525,7 +525,7 @@ sub install_package {
 	};
 
 	# install all dependencies referenced from the source package
-	foreach my $vpkg (@{$feed_src->{$src}}) {
+	foreach my $vpkg (@{$feed_src->{$src}{packages}}) {
 		foreach my $dep (@{$vpkg->{depends}}, @{$vpkg->{builddepends}}, @{$vpkg->{"builddepends/host"}}) {
 			next if $dep =~ /@/;
 			$dep =~ s/^\+//;

@@ -445,7 +445,7 @@ sub gen_package_mk() {
 			print "buildtypes-$pkg->{subdir}$pkg->{src} = ".join(' ', @{$pkg->{buildtypes}})."\n";
 		}
 
-		foreach my $spkg (@{$srcpackage{$pkg->{src}}}) {
+		foreach my $spkg (@{$srcpackage{$pkg->{src}}{packages}}) {
 			foreach my $dep (@{$spkg->{depends}}, @{$spkg->{builddepends}}) {
 				$dep =~ /@/ or do {
 					$dep =~ s/\+//g;

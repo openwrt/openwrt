@@ -212,7 +212,9 @@ sub parse_package_metadata($) {
 			$src = $3;
 			$subdir =~ s/^package\///;
 			$subdir{$src} = $subdir;
-			$srcpackage{$src} = [];
+			$srcpackage{$src} = {
+				packages => [],
+			};
 			$override = "";
 			undef $pkg;
 		};
@@ -237,7 +239,7 @@ sub parse_package_metadata($) {
 			$pkg->{tristate} = 1;
 			$pkg->{override} = $override;
 			$package{$1} = $pkg;
-			push @{$srcpackage{$src}}, $pkg;
+			push @{$srcpackage{$src}{packages}}, $pkg;
 		};
 		/^Feature:\s*(.+?)\s*$/ and do {
 			undef $pkg;
