@@ -468,7 +468,7 @@ define Device/buffalo_wbmr-hp-g300h-a
 	kmod-ltq-adsl-ar9-fw-a kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ath9k kmod-owl-loader wpad-mini
-  SUPPORTED_DEVICES := WBMRA buffalo,wbmr-hp-g300h
+  SUPPORTED_DEVICES := WBMR buffalo,wbmr-hp-g300h
 endef
 TARGET_DEVICES += buffalo_wbmr-hp-g300h-a
 
@@ -481,7 +481,7 @@ define Device/buffalo_wbmr-hp-g300h-b
 	kmod-ltq-adsl-ar9-fw-b kmod-ltq-atm-ar9 \
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ath9k kmod-owl-loader wpad-mini
-  SUPPORTED_DEVICES := WBMRB buffalo,wbmr-hp-g300h
+  SUPPORTED_DEVICES := WBMR buffalo,wbmr-hp-g300h
 endef
 TARGET_DEVICES += buffalo_wbmr-hp-g300h-b
 
