@@ -143,6 +143,7 @@ enum ath79_mach_type {
 	ATH79_MACH_MYNET_REXT,			/* WD My Net Wi-Fi Range Extender */
 	ATH79_MACH_MZK_W04NU,			/* Planex MZK-W04NU */
 	ATH79_MACH_MZK_W300NH,			/* Planex MZK-W300NH */
+	ATH79_MACH_N5Q,				/* ALFA Network N5Q */
 	ATH79_MACH_NBG460N,			/* Zyxel NBG460N/550N/550NH */
 	ATH79_MACH_NBG6616,			/* Zyxel NBG6616 */
 	ATH79_MACH_NBG6716,			/* Zyxel NBG6716 */

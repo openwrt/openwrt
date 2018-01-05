@@ -757,6 +757,18 @@ define Device/oolite
 endef
 TARGET_DEVICES += oolite
 
+define Device/n5q
+  DEVICE_TITLE := ALFA Network N5Q
+  DEVICE_PACKAGES := rssileds -swconfig
+  BOARDNAME := N5Q
+  SUPPORTED_DEVICES := n5q
+  IMAGE_SIZE := 15872k
+  MTDPARTS := spi0.0:384k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += n5q
+
 define Device/NBG6616
   DEVICE_TITLE := ZyXEL NBG6616
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-rtc-pcf8563 kmod-ath10k ath10k-firmware-qca988x

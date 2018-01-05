@@ -768,6 +768,9 @@ ar71xx_board_detect() {
 	*"MZK-W300NH")
 		name="mzk-w300nh"
 		;;
+	*"N5Q")
+		name="n5q"
+		;;
 	*"Nanostation M")
 		name="nanostation-m"
 		ubnt_xm_board_detect

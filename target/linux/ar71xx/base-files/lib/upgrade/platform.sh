@@ -252,6 +252,7 @@ platform_check_image() {
 	loco-m-xw|\
 	mzk-w04nu|\
 	mzk-w300nh|\
+	n5q|\
 	nanostation-m|\
 	nanostation-m-xw|\
 	nbg460n_550n_550nh|\
