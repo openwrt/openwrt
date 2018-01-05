@@ -12,25 +12,25 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
-ap148 |\
-d7800 |\
-r7500 |\
-r7500v2 |\
-r7800 |\
-vr2600v)
+netgear,d7800 |\
+netgear,r7500 |\
+netgear,r7500v2 |\
+netgear,r7800 |\
+qcom,ipq8064-ap148 |\
+tplink,vr2600v)
 	ucidef_add_switch "switch0" \
 		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
 	;;
-c2600)
+tplink,c2600)
 	ucidef_add_switch "switch0" \
 		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "6@eth1" "5:wan" "0@eth0"
 	;;
-db149)
+qcom,ipq8064-db149)
 	ucidef_set_interface_lan "eth1 eth2 eth3"
 	ucidef_add_switch "switch0" \
 		"1:lan" "2:lan" "3:lan" "4:lan" "6u@eth1" "5:wan" "0u@eth0"
 	;;
-ea8500)
+linksys,ea8500)
 
 	hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 	ucidef_add_switch "switch0" \
@@ -38,12 +38,12 @@ ea8500)
 	ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
 	ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
 	;;
-fritz4040)
+avm,fritzbox-4040)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
 	;;
-nbg6817)
+zyxel,nbg6817)
 	hw_mac_addr=$(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
 	ucidef_add_switch "switch0" \
 		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
