@@ -74,7 +74,7 @@ zyxel_do_upgrade() {
 
 	[ -b "${rootfs}" ] || return 1
 	case "$board" in
-	nbg6817)
+	zyxel,nbg6817)
 		case "$rootfs" in
 			"/dev/mmcblk0p5")
 				kernel=mmcblk0p4

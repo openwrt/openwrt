@@ -29,7 +29,7 @@ define Device/Default
 	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
 	KERNEL_LOADADDR = 0x42208000
-	SUPPORTED_DEVICES = $$(BOARD_NAME)
+	SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 	IMAGE/sysupgrade.tar = sysupgrade-tar | append-metadata
 endef
 
@@ -106,6 +106,7 @@ define Device/qcom_ipq8064-ap148
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
+	SUPPORTED_DEVICES += ap148
 	DEVICE_TITLE := Qualcomm AP148
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
@@ -118,6 +119,7 @@ define Device/qcom_ipq8064-ap148-legacy
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := ap148
+	SUPPORTED_DEVICES := qcom,ipq8064-ap148 ap148
 	DEVICE_TITLE := Qualcomm AP148 (legacy)
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
@@ -129,6 +131,7 @@ define Device/tplink_c2600
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := c2600
+	SUPPORTED_DEVICES += c2600
 	TPLINK_BOARD_ID := C2600
 	DEVICE_TITLE := TP-Link Archer C2600
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
@@ -144,6 +147,7 @@ define Device/netgear_d7800
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := d7800
+	SUPPORTED_DEVICES += d7800
 	DEVICE_TITLE := Netgear Nighthawk X4 D7800
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 endef
@@ -169,6 +173,7 @@ define Device/linksys_ea8500
 	KERNEL = kernel-bin | append-dtb | uImage none | append-uImage-fakeroot-hdr
 	PROFILES += $$(DEVICE_NAME)
 	BOARD_NAME := ea8500
+	SUPPORTED_DEVICES += ea8500
 	UBINIZE_OPTS := -E 5
 	IMAGES := factory.bin sysupgrade.tar
 	IMAGE/factory.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi
@@ -201,6 +206,7 @@ define Device/netgear_r7500
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := r7500
+	SUPPORTED_DEVICES += r7500
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500
 	DEVICE_PACKAGES := ath10k-firmware-qca988x
 endef
@@ -215,6 +221,7 @@ define Device/netgear_r7500v2
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := r7500v2
+	SUPPORTED_DEVICES += r7500v2
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500v2
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0 ath10k-firmware-qca988x
 endef
@@ -229,6 +236,7 @@ define Device/netgear_r7800
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := r7800
+	SUPPORTED_DEVICES += r7800
 	DEVICE_TITLE := Netgear Nighthawk X4S R7800
 	DEVICE_PACKAGES := ath10k-firmware-qca9984
 endef
@@ -239,6 +247,7 @@ define Device/zyxel_nbg6817
 	KERNEL_SIZE := 4096k
 	BLOCKSIZE := 64k
 	BOARD_NAME := nbg6817
+	SUPPORTED_DEVICES += nbg6817
 	DEVICE_TITLE := ZyXEL NBG6817
 	DEVICE_PACKAGES := ath10k-firmware-qca9984 e2fsprogs kmod-fs-ext4 losetup
 	$(call Device/ZyXELImage)
@@ -256,6 +265,7 @@ define Device/tplink_vr2600v
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := vr2600v
+	SUPPORTED_DEVICES += vr2600v
 	DEVICE_TITLE := TP-Link Archer VR2600v
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
 	IMAGES := sysupgrade.bin
