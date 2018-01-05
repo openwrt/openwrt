@@ -90,7 +90,6 @@ define BuildTemplate
     SUBMENU:=Netfilter Extensions
     TITLE:=$(2) netfilter module
     DEPENDS:=+kmod-ipt-core $(5)
-    KCONFIG:=CONFIG_NF_CONNTRACK_MARK=y
     FILES:=$(foreach mod,$(4),$(PKG_BUILD_DIR)/extensions/$(mod).$(LINUX_KMOD_SUFFIX))
     AUTOLOAD:=$(call AutoProbe,$(notdir $(4)))
   endef
