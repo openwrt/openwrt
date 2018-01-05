@@ -61,10 +61,10 @@
 			compatible = "cache";
 			cache-level = <2>;
 			qcom,saw = <&saw_l2>;
-		};
-
-		qcom,l2 {
-			qcom,l2-rates = <384000000 1000000000 1200000000>;
+			l2-rates = <384000000 1000000000 1200000000>;
+			l2-cpufreq = <384000000 600000000 1200000000>;
+			l2-volt = <1100000 1100000 1150000>;
+			l2-supply = <&smb208_s1a>;
 		};
 
 		idle-states {
