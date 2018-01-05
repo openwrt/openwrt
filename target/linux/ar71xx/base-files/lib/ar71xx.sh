@@ -627,8 +627,17 @@ ar71xx_board_detect() {
 	*"DW33D")
 		name="dw33d"
 		;;
+	*"E1700AC v2")
+		name="e1700ac-v2"
+		;;
 	*"E2100L")
 		name="e2100l"
+		;;
+	*"E600G v2")
+		name="e600g-v2"
+		;;
+	*"E600GAC v2")
+		name="e600gac-v2"
 		;;
 	*"EAP120")
 		name="eap120"

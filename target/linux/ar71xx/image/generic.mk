@@ -281,6 +281,65 @@ define Device/dragino2
 endef
 TARGET_DEVICES += dragino2
 
+define Device/e1700ac-v2-16M
+  DEVICE_TITLE := WHQX E1700AC v2 (16MB flash)
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x kmod-usb-core \
+	kmod-usb2 kmod-usb-ledtrig-usbport
+  BOARDNAME := E1700AC-V2
+  SUPPORTED_DEVICES := e1700ac-v2
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art)ro,-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e1700ac-v2-16M
+
+define Device/e1700ac-v2-8M
+  $(Device/e1700ac-v2-16M)
+  DEVICE_TITLE := WHQX E1700AC v2 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e1700ac-v2-8M
+
+define Device/e600g-v2-16M
+  DEVICE_TITLE := WHQX E600G v2 (16MB flash)
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig
+  BOARDNAME := E600G-V2
+  SUPPORTED_DEVICES := e600g-v2
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art)ro,-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e600g-v2-16M
+
+define Device/e600g-v2-8M
+  $(Device/e600g-v2-16M)
+  DEVICE_TITLE := WHQX E600G v2 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e600g-v2-8M
+
+define Device/e600gac-v2-16M
+  DEVICE_TITLE := WHQX E600GAC v2 (16MB flash)
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887 kmod-usb-core \
+	kmod-usb2 -swconfig
+  BOARDNAME := E600GAC-V2
+  SUPPORTED_DEVICES := e600gac-v2
+  IMAGE_SIZE := 15936k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),64k(pri-data)ro,64k(art)ro,-(firmware)
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) |\
+	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += e600gac-v2-16M
+
+define Device/e600gac-v2-8M
+  $(Device/e600gac-v2-16M)
+  DEVICE_TITLE := WHQX E600GAC v2 (8MB flash)
+  IMAGE_SIZE := 7744k
+endef
+TARGET_DEVICES += e600gac-v2-8M
+
 define Device/ew-balin
   DEVICE_TITLE := Embedded Wireless Balin Platform
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea 

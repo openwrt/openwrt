@@ -64,7 +64,9 @@ ap90q|\
 cpe505n|\
 cpe830|\
 cpe870|\
-dr531)
+dr531|\
+e600g-v2|\
+e600gac-v2)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "$board:green:wan" "eth1"
 
@@ -341,6 +343,10 @@ dlan-pro-1200-ac)
 	ucidef_set_led_wlan "wlan" "WLAN" "devolo:status:wlan" "phy0radio"
 	ucidef_set_led_gpio "plcw" "dLAN" "devolo:status:dlan" "17" "0"
 	ucidef_set_led_gpio "plcr" "dLAN" "devolo:error:dlan" "16" "0"
+	;;
+e1700ac-v2)
+	ucidef_set_led_usbdev "usb" "USB" "$board:green:usb" "1-1"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:green:wlan2g" "phy1tpt"
 	;;
 esr900)
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "engenius:blue:wlan-2g" "phy0tpt"
