@@ -193,9 +193,7 @@ sub parse_package_metadata($) {
 	my $file = shift;
 	my $pkg;
 	my $feature;
-	my $makefile;
 	my $preconfig;
-	my $subdir;
 	my $src;
 	my $override;
 	my %ignore = map { $_ => 1 } @ignore;
@@ -206,41 +204,42 @@ sub parse_package_metadata($) {
 	};
 	while (<FILE>) {
 		chomp;
-		/^Source-Makefile: \s*((.+\/)([^\/]+)\/Makefile)\s*$/ and do {
-			$makefile = $1;
-			$subdir = $2;
-			$src = $3;
-			$subdir =~ s/^package\///;
-			$subdir{$src} = $subdir;
-			$srcpackage{$src} = {
-				makefile => $makefile,
+		/^Source-Makefile: \s*((?:package\/)?((?:.+\/)?)([^\/]+)\/Makefile)\s*$/ and do {
+			$subdir{$3} = $2;
+
+			$src = {
+				makefile => $1,
+				subdir => $2,
+				name => $3,
+				ignore => $ignore{$3},
 				packages => [],
 				buildtypes => [],
 				builddepends => [],
 			};
+			$srcpackage{$3} = $src;
 			$override = "";
 			undef $pkg;
 		};
 		/^Override: \s*(.+?)\s*$/ and do {
 			$override = $1;
-			$overrides{$src} = 1;
+			$overrides{$src->{name}} = 1;
 		};
 		next unless $src;
 		/^Package:\s*(.+?)\s*$/ and do {
 			undef $feature;
 			$pkg = {};
-			$pkg->{ignore} = $ignore{$src};
+			$pkg->{ignore} = $src->{ignore};
 			$pkg->{src} = $src;
-			$pkg->{makefile} = $makefile;
+			$pkg->{makefile} = $src->{makefile};
 			$pkg->{name} = $1;
 			$pkg->{title} = "";
 			$pkg->{depends} = [];
 			$pkg->{mdepends} = [];
-			$pkg->{subdir} = $subdir;
+			$pkg->{subdir} = $src->{subdir};
 			$pkg->{tristate} = 1;
 			$pkg->{override} = $override;
 			$package{$1} = $pkg;
-			push @{$srcpackage{$src}{packages}}, $pkg;
+			push @{$src->{packages}}, $pkg;
 		};
 		/^Feature:\s*(.+?)\s*$/ and do {
 			undef $pkg;
@@ -251,7 +250,7 @@ sub parse_package_metadata($) {
 		$feature and do {
 			/^Target-Name:\s*(.+?)\s*$/ and do {
 				$features{$1} or $features{$1} = [];
-				push @{$features{$1}}, $feature unless $ignore{$src};
+				push @{$features{$1}}, $feature unless $src->{ignore};
 			};
 			/^Target-Title:\s*(.+?)\s*$/ and $feature->{target_title} = $1;
 			/^Feature-Priority:\s*(\d+)\s*$/ and $feature->{priority} = $1;
@@ -259,9 +258,9 @@ sub parse_package_metadata($) {
 			/^Feature-Description:/ and $feature->{description} = get_multiline(\*FILE, "\t\t\t");
 			next;
 		};
-		/^Build-Depends: \s*(.+)\s*$/ and $srcpackage{$src}{builddepends} = [ split /\s+/, $1 ];
-		/^Build-Depends\/(\w+): \s*(.+)\s*$/ and $srcpackage{$src}{"builddepends/$1"} = [ split /\s+/, $2 ];
-		/^Build-Types:\s*(.+)\s*$/ and $srcpackage{$src}{buildtypes} = [ split /\s+/, $1 ];
+		/^Build-Depends: \s*(.+)\s*$/ and $src->{builddepends} = [ split /\s+/, $1 ];
+		/^Build-Depends\/(\w+): \s*(.+)\s*$/ and $src->{"builddepends/$1"} = [ split /\s+/, $2 ];
+		/^Build-Types:\s*(.+)\s*$/ and $src->{buildtypes} = [ split /\s+/, $1 ];
 		next unless $pkg;
 		/^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
 		/^Title: \s*(.+)\s*$/ and $pkg->{title} = $1;
@@ -279,8 +278,8 @@ sub parse_package_metadata($) {
 					name => $vpkg,
 					vdepends => [],
 					src => $src,
-					subdir => $subdir,
-					makefile => $makefile
+					subdir => $src->{subdir},
+					makefile => $src->{makefile},
 				};
 				push @{$package{$vpkg}->{vdepends}}, $pkg->{name};
 			}
@@ -296,8 +295,8 @@ sub parse_package_metadata($) {
 		/^Category: \s*(.+)\s*$/ and do {
 			$pkg->{category} = $1;
 			defined $category{$1} or $category{$1} = {};
-			defined $category{$1}->{$src} or $category{$1}->{$src} = [];
-			push @{$category{$1}->{$src}}, $pkg;
+			defined $category{$1}{$src->{name}} or $category{$1}{$src->{name}} = [];
+			push @{$category{$1}{$src->{name}}}, $pkg;
 		};
 		/^Description: \s*(.*)\s*$/ and $pkg->{description} = "\t\t $1\n". get_multiline(*FILE, "\t\t ");
 		/^Type: \s*(.+)\s*$/ and do {
@@ -318,7 +317,7 @@ sub parse_package_metadata($) {
 				$preconfig = {
 					id => $1
 				};
-				$preconfig{$pkgname}->{$1} = $preconfig unless $ignore{$src};
+				$preconfig{$pkgname}{$1} = $preconfig unless $src->{ignore};
 			}
 		};
 		/^Preconfig-Type:\s*(.*?)\s*$/ and $preconfig->{type} = $1;
@@ -329,9 +328,9 @@ sub parse_package_metadata($) {
 
 			for my $ugspec (@ugspecs) {
 				my @ugspec = split /:/, $ugspec, 2;
-				parse_package_metadata_usergroup($makefile, "user", \%usernames, \%userids, $ugspec[0]) or return 0;
+				parse_package_metadata_usergroup($src->{makefile}, "user", \%usernames, \%userids, $ugspec[0]) or return 0;
 				if (@ugspec > 1) {
-					parse_package_metadata_usergroup($makefile, "group", \%groupnames, \%groupids, $ugspec[1]) or return 0;
+					parse_package_metadata_usergroup($src->{makefile}, "group", \%groupnames, \%groupids, $ugspec[1]) or return 0;
 				}
 			}
 		};

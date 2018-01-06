@@ -484,12 +484,12 @@ sub gen_package_mk() {
 				my $idx = "";
 				my $pkg_dep = $package{$dep};
 				if (defined($pkg_dep) && defined($pkg_dep->{src})) {
-					unless (!$deptype || grep { $_ eq $deptype } @{$srcpackage{$pkg_dep->{src}}{buildtypes}}) {
+					unless (!$deptype || grep { $_ eq $deptype } @{$pkg_dep->{src}{buildtypes}}) {
 						warn sprintf "WARNING: Makefile '%s' has a %s build dependency on '%s/%s' but '%s' does not implement a '%s' build type\n",
-							$src->{makefile}, $type, $pkg_dep->{src}, $deptype, $pkg_dep->{makefile}, $deptype;
+							$src->{makefile}, $type, $pkg_dep->{src}{name}, $deptype, $pkg_dep->{makefile}, $deptype;
 						next;
 					}
-					$idx = $pkg_dep->{subdir}.$pkg_dep->{src};
+					$idx = $pkg_dep->{subdir}.$pkg_dep->{src}{name};
 				} elsif (defined($srcpackage{$dep})) {
 					$idx = $subdir{$dep}.$dep;
 				} else {
@@ -538,12 +538,12 @@ sub gen_package_mk() {
 			foreach my $dep (@deps) {
 				$pkg_dep = $package{$deps};
 				if (defined $pkg_dep->{src}) {
-					unless (!$deptype || grep { $_ eq $deptype } @{$srcpackage{$pkg_dep->{src}}{buildtypes}}) {
+					unless (!$deptype || grep { $_ eq $deptype } @{$pkg_dep->{src}{buildtypes}}) {
 						warn sprintf "WARNING: Makefile '%s' has a build dependency on '%s/%s' but '%s' does not implement a '%s' build type\n",
-							$src->{makefile}, $pkg_dep->{src}, $deptype, $pkg_dep->{makefile}, $deptype;
+							$src->{makefile}, $pkg_dep->{src}{name}, $deptype, $pkg_dep->{makefile}, $deptype;
 						next;
 					}
-					$idx = $pkg_dep->{subdir}.$pkg_dep->{src};
+					$idx = $pkg_dep->{subdir}.$pkg_dep->{src}{name};
 				} elsif (defined($srcpackage{$dep})) {
 					$idx = $subdir{$dep}.$dep;
 				}
@@ -552,7 +552,7 @@ sub gen_package_mk() {
 					$idx .= $suffix;
 
 					my $depline;
-					next if $srcname eq $pkg_dep->{src}.$suffix;
+					next if $srcname eq $pkg_dep->{src}{name}.$suffix;
 					next if $dep{$condition.":".$srcname."->".$idx};
 					next if $dep{$srcname."->($dep)".$idx} and $pkg_dep->{vdepends};
 					my $depstr;

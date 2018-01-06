@@ -494,7 +494,7 @@ sub install_package {
 		warn "WARNING: Package '$name' is not available in feed $feed->[1].\n";
 		return 0;
 	};
-	my $src = $pkg->{src};
+	my $src = $pkg->{src}{name};
 	my $type = $feed->[0];
 	$src or $src = $name;
 
@@ -663,7 +663,7 @@ sub uninstall {
 				warn "WARNING: $name not installed\n";
 				next;
 			};
-			$pkg->{src} and $name = $pkg->{src};
+			$pkg->{src} and $name = $pkg->{src}{name};
 			warn "Uninstalling package '$name'\n";
 			system("rm -f ./package/feeds/*/$name");
 			$uninstall = 1;
