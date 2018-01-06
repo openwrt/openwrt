@@ -373,10 +373,14 @@ sub list {
 	return 0;
 }
 
+# TODO: do_install_package etc. should deal with source packages rather
+# than binary packages
 sub do_install_package($$) {
 	my $feed = shift;
 	my $pkg = shift;
-	my $path = $pkg->{makefile};
+
+	my $path;
+	$pkg->{src} and $path = $pkg->{src}{makefile};
 
 	if($path) {
 		$path =~ s/\/Makefile$//;

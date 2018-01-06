@@ -290,7 +290,7 @@ sub print_package_config_category($) {
 			print "menu \"$menu\"\n";
 		}
 		foreach my $pkg (@pkgs) {
-			next if $pkg->{ignore};
+			next if $pkg->{src}{ignore};
 			my $title = $pkg->{name};
 			my $c = (72 - length($pkg->{name}) - length($pkg->{title}));
 			if ($c > 0) {
@@ -485,7 +485,7 @@ sub gen_package_mk() {
 				if (defined($pkg_dep) && defined($pkg_dep->{src})) {
 					unless (!$deptype || grep { $_ eq $deptype } @{$pkg_dep->{src}{buildtypes}}) {
 						warn sprintf "WARNING: Makefile '%s' has a %s build dependency on '%s/%s' but '%s' does not implement a '%s' build type\n",
-							$src->{makefile}, $type, $pkg_dep->{src}{name}, $deptype, $pkg_dep->{makefile}, $deptype;
+							$src->{makefile}, $type, $pkg_dep->{src}{name}, $deptype, $pkg_dep->{src}{makefile}, $deptype;
 						next;
 					}
 					$idx = $pkg_dep->{src}{path};
@@ -539,7 +539,7 @@ sub gen_package_mk() {
 				if (defined $pkg_dep->{src}) {
 					unless (!$deptype || grep { $_ eq $deptype } @{$pkg_dep->{src}{buildtypes}}) {
 						warn sprintf "WARNING: Makefile '%s' has a build dependency on '%s/%s' but '%s' does not implement a '%s' build type\n",
-							$src->{makefile}, $pkg_dep->{src}{name}, $deptype, $pkg_dep->{makefile}, $deptype;
+							$src->{makefile}, $pkg_dep->{src}{name}, $deptype, $pkg_dep->{src}{makefile}, $deptype;
 						next;
 					}
 					$idx = $pkg_dep->{src}{path};
@@ -640,7 +640,7 @@ sub gen_package_license($) {
 			} else {
 				if ($level == 1) {
 					print "$pkg->{name}: Missing license! ";
-					print "Please fix $pkg->{makefile}\n";
+					print "Please fix $pkg->{src}{makefile}\n";
 				}
 			}
 		}

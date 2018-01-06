@@ -224,9 +224,7 @@ sub parse_package_metadata($) {
 		/^Package:\s*(.+?)\s*$/ and do {
 			undef $feature;
 			$pkg = {};
-			$pkg->{ignore} = $src->{ignore};
 			$pkg->{src} = $src;
-			$pkg->{makefile} = $src->{makefile};
 			$pkg->{name} = $1;
 			$pkg->{title} = "";
 			$pkg->{depends} = [];
@@ -273,7 +271,6 @@ sub parse_package_metadata($) {
 					name => $vpkg,
 					vdepends => [],
 					src => $src,
-					makefile => $src->{makefile},
 				};
 				push @{$package{$vpkg}->{vdepends}}, $pkg->{name};
 			}
