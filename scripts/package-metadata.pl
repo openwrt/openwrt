@@ -419,7 +419,6 @@ sub gen_package_mk() {
 	parse_package_metadata($ARGV[0]) or exit 1;
 	foreach my $srcname (sort {uc($a) cmp uc($b)} keys %srcpackage) {
 		my $src = $srcpackage{$srcname};
-		my $path = $subdir{$srcname}.$srcname;
 		my $variant_default;
 		my @srcdeps;
 
@@ -429,30 +428,30 @@ sub gen_package_mk() {
 			my $config = '';
 			$config = "\$(CONFIG_PACKAGE_$pkg->{name})" unless $pkg->{buildonly};
 
-			$pkg->{prereq} and print "prereq-$config += $path\n";
+			$pkg->{prereq} and print "prereq-$config += $src->{path}\n";
 
 			next if $pkg->{buildonly};
 
-			print "package-$config += $path\n";
+			print "package-$config += $src->{path}\n";
 
 			if ($pkg->{variant}) {
 				if (!defined($variant_default) or $pkg->{variant_default}) {
 					$variant_default = $pkg->{variant};
 				}
-				print "\$(curdir)/$path/variants += \$(if $config,$pkg->{variant})\n";
+				print "\$(curdir)/$src->{path}/variants += \$(if $config,$pkg->{variant})\n";
 			}
 		}
 
 		if (defined($variant_default)) {
-			print "\$(curdir)/$path/default-variant := $variant_default\n";
+			print "\$(curdir)/$src->{path}/default-variant := $variant_default\n";
 		}
 
 		unless (grep {!$_->{buildonly}} @{$src->{packages}}) {
-			print "package- += $path\n";
+			print "package- += $src->{path}\n";
 		}
 
 		if (@{$src->{buildtypes}} > 0) {
-			print "buildtypes-$path = ".join(' ', @{$src->{buildtypes}})."\n";
+			print "buildtypes-$src->{path} = ".join(' ', @{$src->{buildtypes}})."\n";
 		}
 
 		foreach my $dep (@{$src->{builddepends}}, map { @{$_->{depends}} } @{$src->{packages}}) {
@@ -489,9 +488,9 @@ sub gen_package_mk() {
 							$src->{makefile}, $type, $pkg_dep->{src}{name}, $deptype, $pkg_dep->{makefile}, $deptype;
 						next;
 					}
-					$idx = $pkg_dep->{subdir}.$pkg_dep->{src}{name};
+					$idx = $pkg_dep->{src}{path};
 				} elsif (defined($srcpackage{$dep})) {
-					$idx = $subdir{$dep}.$dep;
+					$idx = $srcpackage{$dep}{path};
 				} else {
 					next;
 				}
@@ -503,7 +502,7 @@ sub gen_package_mk() {
 			}
 			my $depline = join(" ", sort keys %deplines);
 			if ($depline) {
-				$line .= "\$(curdir)/$path/$type/compile += $depline\n";
+				$line .= "\$(curdir)/$src->{path}/$type/compile += $depline\n";
 			}
 		}
 
@@ -543,9 +542,9 @@ sub gen_package_mk() {
 							$src->{makefile}, $pkg_dep->{src}{name}, $deptype, $pkg_dep->{makefile}, $deptype;
 						next;
 					}
-					$idx = $pkg_dep->{subdir}.$pkg_dep->{src}{name};
+					$idx = $pkg_dep->{src}{path};
 				} elsif (defined($srcpackage{$dep})) {
-					$idx = $subdir{$dep}.$dep;
+					$idx = $srcpackage{$dep}{path};
 				}
 
 				if ($idx) {
@@ -573,7 +572,7 @@ sub gen_package_mk() {
 		}
 		my $depline = join(" ", sort keys %deplines);
 		if ($depline) {
-			$line .= "\$(curdir)/$path/compile += $depline\n";
+			$line .= "\$(curdir)/$src->{path}/compile += $depline\n";
 		}
 	}
 

@@ -2,13 +2,12 @@ package metadata;
 use base 'Exporter';
 use strict;
 use warnings;
-our @EXPORT = qw(%package %srcpackage %category %subdir %preconfig %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore %usernames %groupnames);
+our @EXPORT = qw(%package %srcpackage %category %preconfig %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore %usernames %groupnames);
 
 our %package;
 our %preconfig;
 our %srcpackage;
 our %category;
-our %subdir;
 our %features;
 our %overrides;
 our @ignore;
@@ -178,7 +177,6 @@ sub parse_target_metadata($) {
 }
 
 sub clear_packages() {
-	%subdir = ();
 	%preconfig = ();
 	%package = ();
 	%srcpackage = ();
@@ -204,12 +202,10 @@ sub parse_package_metadata($) {
 	};
 	while (<FILE>) {
 		chomp;
-		/^Source-Makefile: \s*((?:package\/)?((?:.+\/)?)([^\/]+)\/Makefile)\s*$/ and do {
-			$subdir{$3} = $2;
-
+		/^Source-Makefile: \s*((?:package\/)?((?:.+\/)?([^\/]+))\/Makefile)\s*$/ and do {
 			$src = {
 				makefile => $1,
-				subdir => $2,
+				path => $2,
 				name => $3,
 				ignore => $ignore{$3},
 				packages => [],
@@ -235,7 +231,6 @@ sub parse_package_metadata($) {
 			$pkg->{title} = "";
 			$pkg->{depends} = [];
 			$pkg->{mdepends} = [];
-			$pkg->{subdir} = $src->{subdir};
 			$pkg->{tristate} = 1;
 			$pkg->{override} = $override;
 			$package{$1} = $pkg;
@@ -278,7 +273,6 @@ sub parse_package_metadata($) {
 					name => $vpkg,
 					vdepends => [],
 					src => $src,
-					subdir => $src->{subdir},
 					makefile => $src->{makefile},
 				};
 				push @{$package{$vpkg}->{vdepends}}, $pkg->{name};
