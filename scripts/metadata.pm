@@ -213,6 +213,7 @@ sub parse_package_metadata($) {
 			$subdir =~ s/^package\///;
 			$subdir{$src} = $subdir;
 			$srcpackage{$src} = {
+				makefile => $makefile,
 				packages => [],
 				buildtypes => [],
 				builddepends => [],

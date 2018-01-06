@@ -414,36 +414,45 @@ sub get_conditional_dep($$) {
 sub gen_package_mk() {
 	my %conf;
 	my %dep;
-	my %done;
 	my $line;
 
 	parse_package_metadata($ARGV[0]) or exit 1;
-	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
-		my $config;
-		my $pkg = $package{$name};
-		my $src = $srcpackage{$pkg->{src}};
+	foreach my $srcname (sort {uc($a) cmp uc($b)} keys %srcpackage) {
+		my $src = $srcpackage{$srcname};
+		my $path = $subdir{$srcname}.$srcname;
+		my $variant_default;
 		my @srcdeps;
 
-		next if defined $pkg->{vdepends};
+		foreach my $pkg (@{$src->{packages}}) {
+			next if defined $pkg->{vdepends};
 
-		$config = "\$(CONFIG_PACKAGE_$name)";
-		if ($config) {
-			$pkg->{buildonly} and $config = "";
-			print "package-$config += $pkg->{subdir}$pkg->{src}\n";
+			my $config = '';
+			$config = "\$(CONFIG_PACKAGE_$pkg->{name})" unless $pkg->{buildonly};
+
+			$pkg->{prereq} and print "prereq-$config += $path\n";
+
+			next if $pkg->{buildonly};
+
+			print "package-$config += $path\n";
+
 			if ($pkg->{variant}) {
-				if (!defined($done{$pkg->{src}}) or $pkg->{variant_default}) {
-					print "\$(curdir)/$pkg->{subdir}$pkg->{src}/default-variant := $pkg->{variant}\n";
+				if (!defined($variant_default) or $pkg->{variant_default}) {
+					$variant_default = $pkg->{variant};
 				}
-				print "\$(curdir)/$pkg->{subdir}$pkg->{src}/variants += \$(if $config,$pkg->{variant})\n"
+				print "\$(curdir)/$path/variants += \$(if $config,$pkg->{variant})\n";
 			}
-			$pkg->{prereq} and print "prereq-$config += $pkg->{subdir}$pkg->{src}\n";
 		}
 
-		next if $done{$pkg->{src}};
-		$done{$pkg->{src}} = 1;
+		if (defined($variant_default)) {
+			print "\$(curdir)/$path/default-variant := $variant_default\n";
+		}
+
+		unless (grep {!$_->{buildonly}} @{$src->{packages}}) {
+			print "package- += $path\n";
+		}
 
 		if (@{$src->{buildtypes}} > 0) {
-			print "buildtypes-$pkg->{subdir}$pkg->{src} = ".join(' ', @{$src->{buildtypes}})."\n";
+			print "buildtypes-$path = ".join(' ', @{$src->{buildtypes}})."\n";
 		}
 
 		foreach my $dep (@{$src->{builddepends}}, map { @{$_->{depends}} } @{$src->{packages}}) {
@@ -477,7 +486,7 @@ sub gen_package_mk() {
 				if (defined($pkg_dep) && defined($pkg_dep->{src})) {
 					unless (!$deptype || grep { $_ eq $deptype } @{$srcpackage{$pkg_dep->{src}}{buildtypes}}) {
 						warn sprintf "WARNING: Makefile '%s' has a %s build dependency on '%s/%s' but '%s' does not implement a '%s' build type\n",
-							$pkg->{makefile}, $type, $pkg_dep->{src}, $deptype, $pkg_dep->{makefile}, $deptype;
+							$src->{makefile}, $type, $pkg_dep->{src}, $deptype, $pkg_dep->{makefile}, $deptype;
 						next;
 					}
 					$idx = $pkg_dep->{subdir}.$pkg_dep->{src};
@@ -494,7 +503,7 @@ sub gen_package_mk() {
 			}
 			my $depline = join(" ", sort keys %deplines);
 			if ($depline) {
-				$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/$type/compile += $depline\n";
+				$line .= "\$(curdir)/$path/$type/compile += $depline\n";
 			}
 		}
 
@@ -531,7 +540,7 @@ sub gen_package_mk() {
 				if (defined $pkg_dep->{src}) {
 					unless (!$deptype || grep { $_ eq $deptype } @{$srcpackage{$pkg_dep->{src}}{buildtypes}}) {
 						warn sprintf "WARNING: Makefile '%s' has a build dependency on '%s/%s' but '%s' does not implement a '%s' build type\n",
-							$pkg->{makefile}, $pkg_dep->{src}, $deptype, $pkg_dep->{makefile}, $deptype;
+							$src->{makefile}, $pkg_dep->{src}, $deptype, $pkg_dep->{makefile}, $deptype;
 						next;
 					}
 					$idx = $pkg_dep->{subdir}.$pkg_dep->{src};
@@ -543,17 +552,17 @@ sub gen_package_mk() {
 					$idx .= $suffix;
 
 					my $depline;
-					next if $pkg->{src} eq $pkg_dep->{src}.$suffix;
-					next if $dep{$condition.":".$pkg->{src}."->".$idx};
-					next if $dep{$pkg->{src}."->($dep)".$idx} and $pkg_dep->{vdepends};
+					next if $srcname eq $pkg_dep->{src}.$suffix;
+					next if $dep{$condition.":".$srcname."->".$idx};
+					next if $dep{$srcname."->($dep)".$idx} and $pkg_dep->{vdepends};
 					my $depstr;
 
 					if ($pkg_dep->{vdepends}) {
 						$depstr = "\$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx/compile)";
-						$dep{$pkg->{src}."->($dep)".$idx} = 1;
+						$dep{$srcname."->($dep)".$idx} = 1;
 					} else {
 						$depstr = "\$(curdir)/$idx/compile";
-						$dep{$pkg->{src}."->".$idx} = 1;
+						$dep{$srcname."->".$idx} = 1;
 					}
 					$depline = get_conditional_dep($condition, $depstr);
 					if ($depline) {
@@ -564,7 +573,7 @@ sub gen_package_mk() {
 		}
 		my $depline = join(" ", sort keys %deplines);
 		if ($depline) {
-			$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/compile += $depline\n";
+			$line .= "\$(curdir)/$path/compile += $depline\n";
 		}
 	}
 
