@@ -215,6 +215,7 @@ sub parse_package_metadata($) {
 			$srcpackage{$src} = {
 				packages => [],
 				buildtypes => [],
+				builddepends => [],
 			};
 			$override = "";
 			undef $pkg;
@@ -234,7 +235,6 @@ sub parse_package_metadata($) {
 			$pkg->{title} = "";
 			$pkg->{depends} = [];
 			$pkg->{mdepends} = [];
-			$pkg->{builddepends} = [];
 			$pkg->{subdir} = $subdir;
 			$pkg->{tristate} = 1;
 			$pkg->{override} = $override;
@@ -258,6 +258,8 @@ sub parse_package_metadata($) {
 			/^Feature-Description:/ and $feature->{description} = get_multiline(\*FILE, "\t\t\t");
 			next;
 		};
+		/^Build-Depends: \s*(.+)\s*$/ and $srcpackage{$src}{builddepends} = [ split /\s+/, $1 ];
+		/^Build-Depends\/(\w+): \s*(.+)\s*$/ and $srcpackage{$src}{"builddepends/$1"} = [ split /\s+/, $2 ];
 		/^Build-Types:\s*(.+)\s*$/ and $srcpackage{$src}{buildtypes} = [ split /\s+/, $1 ];
 		next unless $pkg;
 		/^Version: \s*(.+)\s*$/ and $pkg->{version} = $1;
@@ -289,8 +291,6 @@ sub parse_package_metadata($) {
 		/^Build-Variant: \s*([\w\-]+)\s*/ and $pkg->{variant} = $1;
 		/^Default-Variant: .*/ and $pkg->{variant_default} = 1;
 		/^Build-Only: \s*(.+)\s*$/ and $pkg->{buildonly} = 1;
-		/^Build-Depends: \s*(.+)\s*$/ and $pkg->{builddepends} = [ split /\s+/, $1 ];
-		/^Build-Depends\/(\w+): \s*(.+)\s*$/ and $pkg->{"builddepends/$1"} = [ split /\s+/, $2 ];
 		/^Repository:\s*(.+?)\s*$/ and $pkg->{repository} = $1;
 		/^Category: \s*(.+)\s*$/ and do {
 			$pkg->{category} = $1;

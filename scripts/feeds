@@ -525,15 +525,17 @@ sub install_package {
 	};
 
 	# install all dependencies referenced from the source package
-	foreach my $vpkg (@{$feed_src->{$src}{packages}}) {
-		foreach my $dep (@{$vpkg->{depends}}, @{$vpkg->{builddepends}}, @{$vpkg->{"builddepends/host"}}) {
-			next if $dep =~ /@/;
-			$dep =~ s/^\+//;
-			$dep =~ s/^.+://;
-			$dep =~ s/\/.+$//;
-			next unless $dep;
-			install_package($feed, $dep, 0) == 0 or $ret = 1;
-		}
+	foreach my $dep (
+		@{$feed_src->{$src}{builddepends}},
+		@{$feed_src->{$src}{"builddepends/host"}},
+		map { @{$_->{depends}} } @{$feed_src->{$src}{packages}}
+	) {
+		next if $dep =~ /@/;
+		$dep =~ s/^\+//;
+		$dep =~ s/^.+://;
+		$dep =~ s/\/.+$//;
+		next unless $dep;
+		install_package($feed, $dep, 0) == 0 or $ret = 1;
 	}
 
 	return $ret;

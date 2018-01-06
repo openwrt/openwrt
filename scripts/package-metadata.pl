@@ -446,20 +446,18 @@ sub gen_package_mk() {
 			print "buildtypes-$pkg->{subdir}$pkg->{src} = ".join(' ', @{$src->{buildtypes}})."\n";
 		}
 
-		foreach my $spkg (@{$src->{packages}}) {
-			foreach my $dep (@{$spkg->{depends}}, @{$spkg->{builddepends}}) {
-				$dep =~ /@/ or do {
-					$dep =~ s/\+//g;
-					push @srcdeps, $dep;
-				};
-			}
+		foreach my $dep (@{$src->{builddepends}}, map { @{$_->{depends}} } @{$src->{packages}}) {
+			$dep =~ /@/ or do {
+				$dep =~ s/\+//g;
+				push @srcdeps, $dep;
+			};
 		}
 		foreach my $type (@{$src->{buildtypes}}) {
 			my @extra_deps;
 			my %deplines;
 
-			next unless $pkg->{"builddepends/$type"};
-			foreach my $dep (@{$pkg->{"builddepends/$type"}}) {
+			next unless $src->{"builddepends/$type"};
+			foreach my $dep (@{$src->{"builddepends/$type"}}) {
 				my $suffix = "";
 				my $deptype = "";
 				my $condition;
