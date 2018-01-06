@@ -421,6 +421,7 @@ sub gen_package_mk() {
 	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
 		my $config;
 		my $pkg = $package{$name};
+		my $src = $srcpackage{$pkg->{src}};
 		my @srcdeps;
 
 		next if defined $pkg->{vdepends};
@@ -441,11 +442,11 @@ sub gen_package_mk() {
 		next if $done{$pkg->{src}};
 		$done{$pkg->{src}} = 1;
 
-		if (@{$pkg->{buildtypes}} > 0) {
-			print "buildtypes-$pkg->{subdir}$pkg->{src} = ".join(' ', @{$pkg->{buildtypes}})."\n";
+		if (@{$src->{buildtypes}} > 0) {
+			print "buildtypes-$pkg->{subdir}$pkg->{src} = ".join(' ', @{$src->{buildtypes}})."\n";
 		}
 
-		foreach my $spkg (@{$srcpackage{$pkg->{src}}{packages}}) {
+		foreach my $spkg (@{$src->{packages}}) {
 			foreach my $dep (@{$spkg->{depends}}, @{$spkg->{builddepends}}) {
 				$dep =~ /@/ or do {
 					$dep =~ s/\+//g;
@@ -453,7 +454,7 @@ sub gen_package_mk() {
 				};
 			}
 		}
-		foreach my $type (@{$pkg->{buildtypes}}) {
+		foreach my $type (@{$src->{buildtypes}}) {
 			my @extra_deps;
 			my %deplines;
 
@@ -476,7 +477,7 @@ sub gen_package_mk() {
 				my $idx = "";
 				my $pkg_dep = $package{$dep};
 				if (defined($pkg_dep) && defined($pkg_dep->{src})) {
-					unless (!$deptype || grep { $_ eq $deptype } @{$pkg_dep->{buildtypes}}) {
+					unless (!$deptype || grep { $_ eq $deptype } @{$srcpackage{$pkg_dep->{src}}{buildtypes}}) {
 						warn sprintf "WARNING: Makefile '%s' has a %s build dependency on '%s/%s' but '%s' does not implement a '%s' build type\n",
 							$pkg->{makefile}, $type, $pkg_dep->{src}, $deptype, $pkg_dep->{makefile}, $deptype;
 						next;
@@ -530,7 +531,7 @@ sub gen_package_mk() {
 			foreach my $dep (@deps) {
 				$pkg_dep = $package{$deps};
 				if (defined $pkg_dep->{src}) {
-					unless (!$deptype || grep { $_ eq $deptype } @{$pkg_dep->{buildtypes}}) {
+					unless (!$deptype || grep { $_ eq $deptype } @{$srcpackage{$pkg_dep->{src}}{buildtypes}}) {
 						warn sprintf "WARNING: Makefile '%s' has a build dependency on '%s/%s' but '%s' does not implement a '%s' build type\n",
 							$pkg->{makefile}, $pkg_dep->{src}, $deptype, $pkg_dep->{makefile}, $deptype;
 						next;
