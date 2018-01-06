@@ -13,6 +13,6 @@ KERNEL_PATCHVER:=5.15
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += uboot-envtools kmod-gpio-button-hotplug
+DEFAULT_PACKAGES += uboot-envtools kmod-gpio-button-hotplug wpad-basic-mbedtls
 
 $(eval $(call BuildTarget))

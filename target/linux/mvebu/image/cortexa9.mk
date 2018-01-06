@@ -124,7 +124,7 @@ TARGET_DEVICES += kobol_helios4
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-mwlwifi wpad-basic-mbedtls
+  DEVICE_PACKAGES := kmod-mwlwifi
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | pad-to $$$$(PAGESIZE)

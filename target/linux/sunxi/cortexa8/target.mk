@@ -7,3 +7,5 @@ include $(TOPDIR)/rules.mk
 BOARDNAME:=Allwinner A1x
 CPU_TYPE:=cortex-a8
 CPU_SUBTYPE:=vfpv3
+
+DEFAULT_PACKAGES += wpad-basic-mbedtls

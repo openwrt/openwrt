@@ -22,7 +22,7 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=zImage dtbs
 
-DEFAULT_PACKAGES += nvram \
+DEFAULT_PACKAGES += nvram wpad-basic-mbedtls \
 	osafeloader oseama otrx \
 	kmod-gpio-button-hotplug \
 	kmod-leds-gpio

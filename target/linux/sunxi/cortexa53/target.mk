@@ -8,3 +8,5 @@ ARCH:=aarch64
 BOARDNAME:=Allwinner A64/H5
 CPU_TYPE:=cortex-a53
 KERNELNAME:=Image dtbs
+
+DEFAULT_PACKAGES += wpad-basic-mbedtls

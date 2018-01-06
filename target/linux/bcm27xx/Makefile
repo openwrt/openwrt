@@ -26,7 +26,7 @@ DEFAULT_PACKAGES += \
 	kmod-usb-hid \
 	kmod-sound-core kmod-sound-arm-bcm2835 \
 	kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
-	partx-utils mkf2fs e2fsprogs
+	partx-utils mkf2fs e2fsprogs wpad-basic-mbedtls
 
 KERNELNAME:=Image dtbs
 
