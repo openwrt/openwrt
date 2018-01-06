@@ -27,5 +27,3 @@ case "$(strings /proc/device-tree/compatible)" in
 esac
 
 modprobe ltq_atm_${soc}
-
-/etc/init.d/br2684ctl reload
