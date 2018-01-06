@@ -30,7 +30,7 @@ define Device/cznic_turris-omnia
   KERNEL_INITRAMFS := kernel-bin
   DEVICE_PACKAGES :=  \
     mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
-    wpad-basic kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
     partx-utils kmod-i2c-mux-pca954x
   IMAGES := $$(IMAGE_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(IMAGE_PREFIX)-initramfs.tar.gz
   IMAGE/$$(IMAGE_PREFIX)-sysupgrade.img.gz := boot-img | sdcard-img | gzip | append-metadata
@@ -53,7 +53,7 @@ TARGET_DEVICES += globalscale_mirabox
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-mwlwifi swconfig wpad-basic
+  DEVICE_PACKAGES := kmod-mwlwifi swconfig
   IMAGES += factory.img
   KERNEL_SIZE := 6144k
 endef
