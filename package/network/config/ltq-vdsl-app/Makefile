@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-app
 PKG_VERSION:=4.17.18.6
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_BASE_NAME:=dsl_cpe_control
 PKG_SOURCE:=$(PKG_BASE_NAME)_vrx-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
@@ -28,7 +28,7 @@ define Package/ltq-vdsl-app
   CATEGORY:=Network
   TITLE:=Lantiq VDSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_xrx200 +libpthread +librt +ip
+  DEPENDS:=@TARGET_lantiq_xrx200 +libpthread +librt
 endef
 
 define Package/ltq-vdsl-app/description
@@ -58,11 +58,10 @@ CONFIGURE_ARGS += \
 #CONFIGURE_ARGS += --enable-model=debug
 
 define Package/ltq-vdsl-app/install
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/sbin $(1)/etc/hotplug.d/dsl $(1)/etc/hotplug.d/net
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/sbin $(1)/etc/hotplug.d/dsl
 	$(INSTALL_BIN) ./files/dsl_control $(1)/etc/init.d/
 	$(INSTALL_BIN) ./files/10_atm.sh $(1)/etc/hotplug.d/dsl
 	$(INSTALL_BIN) ./files/10_ptm.sh $(1)/etc/hotplug.d/dsl
-	$(INSTALL_BIN) ./files/10-xdsl_rename $(1)/etc/hotplug.d/net
 
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dsl_cpe_control $(1)/sbin/vdsl_cpe_control
 	$(INSTALL_BIN) ./files/dsl_cpe_pipe.sh $(1)/sbin/
