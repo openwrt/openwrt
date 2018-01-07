@@ -32,6 +32,9 @@ comma:=,
 merge=$(subst $(space),,$(1))
 confvar=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(STAGING_DIR_HOST)/bin/mkhash md5)
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
+# if you have a value containing dollars which is being interpolated
+# into a macro, then protect it with this
+dollar2=$(subst $$,$$$$,$(1))
 
 paren_left = (
 paren_right = )
