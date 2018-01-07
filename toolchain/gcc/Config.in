@@ -37,6 +37,21 @@ config EXTRA_GCC_CONFIG_OPTIONS
 	help
 	    Any additional gcc options you may want to include....
 
+config GCC_DEFAULT_PIE
+	bool
+	prompt "Build executable with PIE enabled by default" if TOOLCHAINOPTS
+	depends on !GCC_USE_VERSION_5
+	default n
+	help
+	    Use gcc configure option --enable-default-pie to turn on -fPIE and -pie by default.
+
+config GCC_DEFAULT_SSP
+	bool
+	prompt "Build executable with Stack-Smashing Protection enabled by default" if TOOLCHAINOPTS
+	default n
+	help
+	    Use gcc configure option --enable-default-ssp to turn on -fstack-protector-strong by default.
+
 config SSP_SUPPORT
 	bool
 	prompt "Enable Stack-Smashing Protection support" if TOOLCHAINOPTS
