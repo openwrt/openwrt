@@ -37,9 +37,9 @@ config EXTRA_GCC_CONFIG_OPTIONS
 	help
 	    Any additional gcc options you may want to include....
 
-config SSP_SUPPORT
+config GCC_LIBSSP
 	bool
-	prompt "Enable Stack-Smashing Protection support" if TOOLCHAINOPTS
+	prompt "Build gcc libssp" if TOOLCHAINOPTS
 	depends on !USE_MUSL
 	default y if !USE_MUSL
 	help

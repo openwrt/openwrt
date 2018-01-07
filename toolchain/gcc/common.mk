@@ -133,7 +133,7 @@ ifndef GCC_VERSION_4_8
   GCC_CONFIGURE += --with-diagnostics-color=auto-if-env
 endif
 
-ifneq ($(CONFIG_SSP_SUPPORT),)
+ifneq ($(CONFIG_GCC_LIBSSP),)
   GCC_CONFIGURE+= \
 		--enable-libssp
 else
