@@ -32,6 +32,7 @@ comma:=,
 merge=$(subst $(space),,$(1))
 confvar=$(shell echo '$(foreach v,$(1),$(v)=$(subst ','\'',$($(v))))' | $(STAGING_DIR_HOST)/bin/mkhash md5)
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
+dollar2=$(subst $$,$$$$,$(1))
 
 paren_left = (
 paren_right = )
