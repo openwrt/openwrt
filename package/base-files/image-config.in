@@ -97,6 +97,13 @@ config TARGET_PREINIT_BROADCAST
 		Broadcast address to which to send preinit network messages, as
 		as failsafe messages
 
+config TARGET_ROOT_PASSWORD
+	string
+	prompt "Default root password (encrypted, with dollars doubled up)"
+	default ""
+	help
+		Default root password.
+
 
 menuconfig INITOPT
 	bool "Init configuration options" if IMAGEOPT
