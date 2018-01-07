@@ -9,19 +9,6 @@ ifneq ($(DUMP),)
 
 dumpinfo: FORCE
 
-define Config/template
-Preconfig: $(1)
-Preconfig-Type: $(2)
-Preconfig-Default: $(3)
-Preconfig-Label: $(4)
-
-endef
-
-define Config
-  Preconfig/$(1) = $$(call Config/template,$(1),$(2),$(3),$(4))
-  preconfig_$$(1) += $(1)
-endef
-
 define Dumpinfo/Package
 $(info Package: $(1)
 $(if $(MENU),Menu: $(MENU)
@@ -59,8 +46,7 @@ $(if $(URL),$(URL)
 $(if $(Package/$(1)/config),Config:
 $(Package/$(1)/config)
 @@
-)$(foreach pc,$(preconfig_$(1)),
-$(Preconfig/$(pc))))
+))
 endef
 
 define Feature/Default

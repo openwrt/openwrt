@@ -2,10 +2,9 @@ package metadata;
 use base 'Exporter';
 use strict;
 use warnings;
-our @EXPORT = qw(%package %srcpackage %category %preconfig %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore %usernames %groupnames);
+our @EXPORT = qw(%package %srcpackage %category %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore %usernames %groupnames);
 
 our %package;
-our %preconfig;
 our %srcpackage;
 our %category;
 our %features;
@@ -177,7 +176,6 @@ sub parse_target_metadata($) {
 }
 
 sub clear_packages() {
-	%preconfig = ();
 	%package = ();
 	%srcpackage = ();
 	%category = ();
@@ -191,7 +189,6 @@ sub parse_package_metadata($) {
 	my $file = shift;
 	my $pkg;
 	my $feature;
-	my $preconfig;
 	my $src;
 	my $override;
 	my %ignore = map { $_ => 1 } @ignore;
@@ -299,21 +296,6 @@ sub parse_package_metadata($) {
 		};
 		/^Config:\s*(.*)\s*$/ and $pkg->{config} = "$1\n".get_multiline(*FILE, "\t");
 		/^Prereq-Check:/ and $pkg->{prereq} = 1;
-		/^Preconfig:\s*(.+)\s*$/ and do {
-			my $pkgname = $pkg->{name};
-			$preconfig{$pkgname} or $preconfig{$pkgname} = {};
-			if (exists $preconfig{$pkgname}->{$1}) {
-				$preconfig = $preconfig{$pkgname}->{$1};
-			} else {
-				$preconfig = {
-					id => $1
-				};
-				$preconfig{$pkgname}{$1} = $preconfig unless $src->{ignore};
-			}
-		};
-		/^Preconfig-Type:\s*(.*?)\s*$/ and $preconfig->{type} = $1;
-		/^Preconfig-Label:\s*(.*?)\s*$/ and $preconfig->{label} = $1;
-		/^Preconfig-Default:\s*(.*?)\s*$/ and $preconfig->{default} = $1;
 		/^Require-User:\s*(.*?)\s*$/ and do {
 			my @ugspecs = split /\s+/, $1;
 

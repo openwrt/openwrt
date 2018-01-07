@@ -372,19 +372,6 @@ sub print_package_overrides() {
 sub gen_package_config() {
 	parse_package_metadata($ARGV[0]) or exit 1;
 	print "menuconfig IMAGEOPT\n\tbool \"Image configuration\"\n\tdefault n\n";
-	foreach my $preconfig (keys %preconfig) {
-		foreach my $cfg (keys %{$preconfig{$preconfig}}) {
-			my $conf = $preconfig{$preconfig}->{$cfg}->{id};
-			$conf =~ tr/\.-/__/;
-			print <<EOF
-	config UCI_PRECONFIG_$conf
-		string "$preconfig{$preconfig}->{$cfg}->{label}" if IMAGEOPT
-		depends on PACKAGE_$preconfig
-		default "$preconfig{$preconfig}->{$cfg}->{default}"
-
-EOF
-		}
-	}
 	print "source \"package/*/image-config.in\"\n";
 	if (scalar glob "package/feeds/*/*/image-config.in") {
 	    print "source \"package/feeds/*/*/image-config.in\"\n";
@@ -578,29 +565,6 @@ sub gen_package_mk() {
 
 	if ($line ne "") {
 		print "\n$line";
-	}
-	foreach my $preconfig (keys %preconfig) {
-		my $cmds;
-		foreach my $cfg (keys %{$preconfig{$preconfig}}) {
-			my $conf = $preconfig{$preconfig}->{$cfg}->{id};
-			$conf =~ tr/\.-/__/;
-			$cmds .= "\techo \"uci set '$preconfig{$preconfig}->{$cfg}->{id}=\$(subst \",,\$(CONFIG_UCI_PRECONFIG_$conf))'\"; \\\n";
-		}
-		next unless $cmds;
-		print <<EOF
-
-ifndef DUMP_TARGET_DB
-\$(TARGET_DIR)/etc/uci-defaults/$preconfig: FORCE
-	( \\
-$cmds \\
-	) > \$@
-
-ifneq (\$(IMAGEOPT)\$(CONFIG_IMAGEOPT),)
-  package/preconfig: \$(TARGET_DIR)/etc/uci-defaults/$preconfig
-endif
-endif
-
-EOF
 	}
 }
 
