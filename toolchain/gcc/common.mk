@@ -143,7 +143,7 @@ ifneq ($(CONFIG_GCC_DEFAULT_SSP),)
 		--enable-default-ssp
 endif
 
-ifneq ($(CONFIG_SSP_SUPPORT),)
+ifneq ($(CONFIG_GCC_LIBSSP),)
   GCC_CONFIGURE+= \
 		--enable-libssp
 else
