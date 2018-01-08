@@ -284,8 +284,11 @@ get_status_led() {
 	zbt-we2026)
 		status_led="$boardname:red:power"
 		;;
-	widora-neo)
-		status_led="widora:orange:wifi"
+	widora-neo-16M)
+		status_led="$boardname:orange:wifi"
+		;;
+	widora-neo-32M)
+		status_led="$boardname:orange:wifi"
 		;;
 	wzr-agl300nh)
 		status_led="$boardname:green:router"

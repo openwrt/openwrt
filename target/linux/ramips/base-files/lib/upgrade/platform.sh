@@ -166,7 +166,8 @@ platform_check_image() {
 	whr-300hp2|\
 	whr-600d|\
 	whr-g300n|\
-	widora-neo|\
+	widora-neo-16M|\
+	widora-neo-32M|\
 	witi|\
 	wizfi630a|\
 	wl-330n|\
