@@ -30,49 +30,41 @@ endef
 
 define AT91Bootstrap/sama5d2_xplaineddf_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 Xplained board (SPI Flash)
-  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
 define AT91Bootstrap/sama5d2_xplaineddf_qspi_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 Xplained board (QSPI Flash)
-  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
 define AT91Bootstrap/sama5d2_xplainedsd_uboot
   TITLE:=AT91Bootstrap for SAMA5D2 Xplained board (SDcard/EMMC)
-  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d2_xplained
 endef
 
 define AT91Bootstrap/sama5d3_xplainednf_uboot
   TITLE:=AT91Bootstrap for SAMA5D3 Xplained board (Nand Flash)
-  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d3_xplained
 endef
 
 define AT91Bootstrap/sama5d3_xplainedsd_uboot
   TITLE:=AT91Bootstrap for SAMA5D3 Xplained board (SDcard)
-  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d3_xplained
 endef
 
 define AT91Bootstrap/sama5d4_xplainednf_uboot_secure
   TITLE:=AT91Bootstrap for SAMA5D4 Xplained board (Nand Flash)
-  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
 
 define AT91Bootstrap/sama5d4_xplaineddf_uboot_secure
   TITLE:=AT91Bootstrap for SAMA5D4 Xplained board (SPI Flash)
-  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
 
 define AT91Bootstrap/sama5d4_xplainedsd_uboot_secure
   TITLE:=AT91Bootstrap for SAMA5D4 Xplained board (SDcard)
-  BUILD_SUBTARGET:=sama5
   BUILD_DEVICES:=at91-sama5d4_xplained
 endef
 
