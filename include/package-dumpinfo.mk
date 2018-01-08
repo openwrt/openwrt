@@ -49,29 +49,4 @@ $(Package/$(1)/config)
 ))
 endef
 
-define Feature/Default
-  TARGET_NAME:=
-  TARGET_TITLE:=
-  PRIORITY:=
-  NAME:=
-endef
-
-define Feature
-  $(eval $(Feature/Default))
-  $(eval $(Feature/$(1)))
-  $(if $(DUMP),$(call Dumpinfo/Feature,$(1)))
-endef
-
-define Dumpinfo/Feature
-$(info Feature: $(TARGET_NAME)_$(1)
-Target-Name: $(TARGET_NAME)
-Target-Title: $(TARGET_TITLE)
-Feature-Name: $(NAME)
-$(if $(PRIORITY),Feature-Priority: $(PRIORITY)
-)Feature-Description:
-$(Feature/$(1)/description)
-@@
-)
-endef
-
 endif

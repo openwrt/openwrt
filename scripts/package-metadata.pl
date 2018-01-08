@@ -337,31 +337,6 @@ sub print_package_config_category($) {
 	undef $category{$cat};
 }
 
-sub print_package_features() {
-	keys %features > 0 or return;
-	print "menu \"Package features\"\n";
-	foreach my $n (keys %features) {
-		my @features = sort { $b->{priority} <=> $a->{priority} or $a->{title} cmp $b->{title} } @{$features{$n}};
-		print <<EOF;
-choice
-	prompt "$features[0]->{target_title}"
-	default FEATURE_$features[0]->{name}
-EOF
-
-		foreach my $feature (@features) {
-			print <<EOF;
-	config FEATURE_$feature->{name}
-		bool "$feature->{title}"
-EOF
-			$feature->{description} =~ /\w/ and do {
-				print "\t\thelp\n".$feature->{description}."\n";
-			};
-		}
-		print "endchoice\n"
-	}
-	print "endmenu\n\n";
-}
-
 sub print_package_overrides() {
 	keys %overrides > 0 or return;
 	print "\tconfig OVERRIDE_PKGS\n";
@@ -376,7 +351,6 @@ sub gen_package_config() {
 	if (scalar glob "package/feeds/*/*/image-config.in") {
 	    print "source \"package/feeds/*/*/image-config.in\"\n";
 	}
-	print_package_features();
 	print_package_config_category 'Base system';
 	foreach my $cat (sort {uc($a) cmp uc($b)} keys %category) {
 		print_package_config_category $cat;

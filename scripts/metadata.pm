@@ -2,13 +2,12 @@ package metadata;
 use base 'Exporter';
 use strict;
 use warnings;
-our @EXPORT = qw(%package %vpackage %srcpackage %category %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore %usernames %groupnames);
+our @EXPORT = qw(%package %vpackage %srcpackage %category %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore %usernames %groupnames);
 
 our %package;
 our %vpackage;
 our %srcpackage;
 our %category;
-our %features;
 our %overrides;
 our @ignore;
 
@@ -181,7 +180,6 @@ sub clear_packages() {
 	%vpackage = ();
 	%srcpackage = ();
 	%category = ();
-	%features = ();
 	%overrides = ();
 	%usernames = ();
 	%groupnames = ();
@@ -190,7 +188,6 @@ sub clear_packages() {
 sub parse_package_metadata($) {
 	my $file = shift;
 	my $pkg;
-	my $feature;
 	my $src;
 	my $override;
 	my %ignore = map { $_ => 1 } @ignore;
@@ -221,7 +218,6 @@ sub parse_package_metadata($) {
 		};
 		next unless $src;
 		/^Package:\s*(.+?)\s*$/ and do {
-			undef $feature;
 			$pkg = {};
 			$pkg->{src} = $src;
 			$pkg->{name} = $1;
@@ -236,23 +232,6 @@ sub parse_package_metadata($) {
 
 			$vpackage{$1} or $vpackage{$1} = [];
 			unshift @{$vpackage{$1}}, $pkg;
-		};
-		/^Feature:\s*(.+?)\s*$/ and do {
-			undef $pkg;
-			$feature = {};
-			$feature->{name} = $1;
-			$feature->{priority} = 0;
-		};
-		$feature and do {
-			/^Target-Name:\s*(.+?)\s*$/ and do {
-				$features{$1} or $features{$1} = [];
-				push @{$features{$1}}, $feature unless $src->{ignore};
-			};
-			/^Target-Title:\s*(.+?)\s*$/ and $feature->{target_title} = $1;
-			/^Feature-Priority:\s*(\d+)\s*$/ and $feature->{priority} = $1;
-			/^Feature-Name:\s*(.+?)\s*$/ and $feature->{title} = $1;
-			/^Feature-Description:/ and $feature->{description} = get_multiline(\*FILE, "\t\t\t");
-			next;
 		};
 		/^Build-Depends: \s*(.+)\s*$/ and $src->{builddepends} = [ split /\s+/, $1 ];
 		/^Build-Depends\/(\w+): \s*(.+)\s*$/ and $src->{"builddepends/$1"} = [ split /\s+/, $2 ];
