@@ -25,6 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define AT91Bootstrap/Default
   BUILD_TARGET:=at91
   BUILD_SUBTARGET:=sama5
+  HIDDEN:=1
   AT91BOOTSTRAP_IMAGE:=at91bootstrap.bin
 endef
 
