@@ -17,6 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=at91
+  HIDDEN:=1
   UBOOT_IMAGE:=u-boot.bin boot.bin
 endef
 
