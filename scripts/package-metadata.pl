@@ -404,9 +404,9 @@ sub gen_package_mk() {
 				my @vdeps = grep { $srcname ne $_->{src}{name} } @{$vpkg_dep};
 
 				foreach my $vdep (@vdeps) {
-					my $depstr = "\$(curdir)/$vdep->{src}{path}/compile";
+					my $depstr = sprintf '$(curdir)/%s/compile', $vdep->{src}{path};
 					if (@vdeps > 1) {
-						$depstr = "\$(if \$(CONFIG_PACKAGE_$vdep->{name}),$depstr)";
+						$depstr = sprintf '$(if $(CONFIG_PACKAGE_%s),%s)', $vdep->{name}, $depstr;
 					}
 					my $depline = get_conditional_dep($condition, $depstr);
 					if ($depline) {
@@ -416,32 +416,32 @@ sub gen_package_mk() {
 			}
 
 			my $config = '';
-			$config = "\$(CONFIG_PACKAGE_$pkg->{name})" unless $pkg->{buildonly};
+			$config = sprintf '$(CONFIG_PACKAGE_%s)', $pkg->{name} unless $pkg->{buildonly};
 
-			$pkg->{prereq} and print "prereq-$config += $src->{path}\n";
+			$pkg->{prereq} and printf "prereq-%s += %s\n", $config, $src->{path};
 
 			next if $pkg->{buildonly};
 
-			print "package-$config += $src->{path}\n";
+			printf "package-%s += %s\n", $config, $src->{path};
 
 			if ($pkg->{variant}) {
 				if (!defined($variant_default) or $pkg->{variant_default}) {
 					$variant_default = $pkg->{variant};
 				}
-				print "\$(curdir)/$src->{path}/variants += \$(if $config,$pkg->{variant})\n";
+				printf "\$(curdir)/%s/variants += \$(if %s,%s)\n", $src->{path}, $config, $pkg->{variant};
 			}
 		}
 
 		if (defined($variant_default)) {
-			print "\$(curdir)/$src->{path}/default-variant := $variant_default\n";
+			printf "\$(curdir)/%s/default-variant := %s\n", $src->{path}, $variant_default;
 		}
 
 		unless (grep {!$_->{buildonly}} @{$src->{packages}}) {
-			print "package- += $src->{path}\n";
+			printf "package- += %s\n", $src->{path};
 		}
 
 		if (@{$src->{buildtypes}} > 0) {
-			print "buildtypes-$src->{path} = ".join(' ', @{$src->{buildtypes}})."\n";
+			printf "buildtypes-%s = %s\n", $src->{path}, join(' ', @{$src->{buildtypes}});
 		}
 
 		foreach my $type ('', @{$src->{buildtypes}}) {
@@ -472,12 +472,12 @@ sub gen_package_mk() {
 
 				my $src_dep = $srcpackage{$dep};
 				unless (defined($src_dep) && (!$deptype || grep { $_ eq $deptype } @{$src_dep->{buildtypes}})) {
-					warn sprintf "WARNING: Makefile '%s' has a build dependency on '%s%s', which does not exist\n",
-						$src->{makefile}, $dep, $depsuffix;
+					warn sprintf "WARNING: Makefile '%s' has a build dependency on '%s', which does not exist\n",
+						$src->{makefile}, $dep.$depsuffix;
 					next;
 				}
 
-				my $depstr = "\$(curdir)/$src_dep->{path}$depsuffix/compile";
+				my $depstr = sprintf '$(curdir)/%s/compile', $src_dep->{path}.$depsuffix;
 				my $depline = get_conditional_dep($condition, $depstr);
 				if ($depline) {
 					$deplines{$suffix}{$depline}++;
@@ -488,7 +488,7 @@ sub gen_package_mk() {
 		foreach my $suffix (sort keys %deplines) {
 			my $depline = join(" ", sort keys %{$deplines{$suffix}});
 			if ($depline) {
-				$line .= "\$(curdir)/$src->{path}$suffix/compile += $depline\n";
+				$line .= sprintf "\$(curdir)/%s/compile += %s\n", $src->{path}.$suffix, $depline;
 			}
 		}
 	}
