@@ -20,13 +20,8 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	mediatek,mt7623-rfb-nand-ephy |\
-	mediatek,mt7623-rfb-nand)
-		nand_do_platform_check $board $1
-		return $?
-		;;
 	bananapi,bpi-r2 |\
-	mediatek,mt7623-rfb-emmc)
+	mediatek,mt7623a-rfb-emmc)
 		local kernel_length=`(tar xf $tar_file sysupgrade-$board/kernel -O | wc -c) 2> /dev/null`
 		local rootfs_length=`(tar xf $tar_file sysupgrade-$board/root -O | wc -c) 2> /dev/null`
 		;;
@@ -43,13 +38,4 @@ platform_check_image() {
 	}
 
 	return 0
-}
-
-platform_pre_upgrade() {
-	case "$(board_name)" in
-	mediatek,mt7623-rfb-nand-ephy |\
-	mediatek,mt7623-rfb-nand)
-		nand_do_upgrade $1
-		;;
-	esac
 }

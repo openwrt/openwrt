@@ -8,9 +8,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/dsa/mt7530.c | 23 +++++++++++++++--------
  1 file changed, 15 insertions(+), 8 deletions(-)
 
---- a/drivers/net/dsa/mt7530.c
-+++ b/drivers/net/dsa/mt7530.c
-@@ -1035,10 +1035,10 @@ static struct dsa_switch_ops mt7530_swit
+Index: linux-4.14.12/drivers/net/dsa/mt7530.c
+===================================================================
+--- linux-4.14.12.orig/drivers/net/dsa/mt7530.c
++++ linux-4.14.12/drivers/net/dsa/mt7530.c
+@@ -1049,10 +1049,10 @@ static const struct dsa_switch_ops mt753
  };
  
  static int
@@ -23,7 +25,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  	dn = mdiodev->dev.of_node;
  
-@@ -1086,7 +1086,12 @@ mt7530_probe(struct mdio_device *mdiodev
+@@ -1100,7 +1100,12 @@ mt7530_probe(struct mdio_device *mdiodev
  		}
  	}
  
@@ -36,9 +38,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +		return -EPROBE_DEFER;
  	priv->dev = &mdiodev->dev;
  	priv->ds->priv = priv;
- 	priv->ds->dev = &mdiodev->dev;
-@@ -1098,8 +1103,8 @@ mt7530_probe(struct mdio_device *mdiodev
- 	return dsa_register_switch(priv->ds, priv->ds->dev->of_node);
+ 	priv->ds->ops = &mt7530_switch_ops;
+@@ -1110,8 +1115,8 @@ mt7530_probe(struct mdio_device *mdiodev
+ 	return dsa_register_switch(priv->ds);
  }
  
 -static void
@@ -48,7 +50,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  {
  	struct mt7530_priv *priv = dev_get_drvdata(&mdiodev->dev);
  	int ret = 0;
-@@ -1116,6 +1121,8 @@ mt7530_remove(struct mdio_device *mdiode
+@@ -1128,6 +1133,8 @@ mt7530_remove(struct mdio_device *mdiode
  
  	dsa_unregister_switch(priv->ds);
  	mutex_destroy(&priv->reg_mutex);
@@ -57,7 +59,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  }
  
  static const struct of_device_id mt7530_of_match[] = {
-@@ -1123,16 +1130,16 @@ static const struct of_device_id mt7530_
+@@ -1135,16 +1142,16 @@ static const struct of_device_id mt7530_
  	{ /* sentinel */ },
  };
  

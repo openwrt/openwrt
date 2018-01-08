@@ -16,9 +16,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c | 35 +++++++++++++++++------------
  1 file changed, 21 insertions(+), 14 deletions(-)
 
---- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -710,7 +710,16 @@ static int mtk_tx_map(struct sk_buff *sk
+Index: linux-4.14.11/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+===================================================================
+--- linux-4.14.11.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ linux-4.14.11/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -779,7 +779,16 @@ static int mtk_tx_map(struct sk_buff *sk
  	WRITE_ONCE(itxd->txd3, (TX_DMA_SWC | TX_DMA_PLEN0(skb_headlen(skb)) |
  				(!nr_frags * TX_DMA_LS0)));
  
@@ -36,7 +38,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	skb_tx_timestamp(skb);
  
  	ring->next_free = mtk_qdma_phys_to_virt(ring, txd->txd2);
-@@ -1002,21 +1011,18 @@ static int mtk_poll_tx(struct mtk_eth *e
+@@ -1076,20 +1085,17 @@ static int mtk_poll_tx(struct mtk_eth *e
  	struct mtk_tx_dma *desc;
  	struct sk_buff *skb;
  	struct mtk_tx_buf *tx_buf;
@@ -45,7 +47,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +	int total = 0, done = 0;
 +	unsigned int bytes = 0;
  	u32 cpu, dma;
- 	static int condition;
 -	int total = 0, i;
 -
 -	memset(done, 0, sizeof(done));
@@ -58,12 +59,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	desc = mtk_qdma_phys_to_virt(ring, cpu);
  
 -	while ((cpu != dma) && budget) {
-+	while ((cpu != dma) && done < budget) {
++	while ((cpu != dma) && (done < budget)) {
  		u32 next_cpu = desc->txd2;
  		int mac = 0;
  
-@@ -1035,9 +1041,8 @@ static int mtk_poll_tx(struct mtk_eth *e
- 		}
+@@ -1106,9 +1112,8 @@ static int mtk_poll_tx(struct mtk_eth *e
+ 			break;
  
  		if (skb != (struct sk_buff *)MTK_DMA_DUMMY_DESC) {
 -			bytes[mac] += skb->len;
@@ -74,7 +75,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  		}
  		mtk_tx_unmap(eth, tx_buf);
  
-@@ -1049,11 +1054,13 @@ static int mtk_poll_tx(struct mtk_eth *e
+@@ -1120,11 +1125,13 @@ static int mtk_poll_tx(struct mtk_eth *e
  
  	mtk_w32(eth, cpu, MTK_QTX_CRX_PTR);
  
