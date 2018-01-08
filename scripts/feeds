@@ -252,7 +252,6 @@ sub search_feed {
 		my $substr;
 		my $pkgmatch = 1;
 
-		next if $pkg->{vdepends};
 		foreach my $substr (@substr) {
 			my $match;
 			foreach my $key (qw(name title description src)) {
@@ -306,7 +305,6 @@ sub list_feed {
 	get_feed($feed);
 	foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_package) {
 		my $pkg = $feed_package->{$name};
-		next if $pkg->{vdepends};
 		if($pkg->{name}) {
 			printf "\%-32s\t\%s\n", $pkg->{name}, $pkg->{title};
 		}
@@ -534,6 +532,7 @@ sub install_package {
 		@{$feed_src->{$src}{"builddepends/host"}},
 		map { @{$_->{depends}} } @{$feed_src->{$src}{packages}}
 	) {
+		# TODO: handle virtual packages and PROVIDES
 		next if $dep =~ /@/;
 		$dep =~ s/^\+//;
 		$dep =~ s/^.+://;
@@ -594,7 +593,6 @@ sub install {
 				get_feed($f->[1]);
 				foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_package) {
 					my $p = $feed_package->{$name};
-					next if $p->{vdepends};
 					if( $p->{name} ) {
 						install_package($feed, $p->{name}, exists($opts{f})) == 0 or $ret = 1;
 						get_feed($f->[1]);

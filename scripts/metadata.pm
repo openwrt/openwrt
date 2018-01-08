@@ -2,9 +2,10 @@ package metadata;
 use base 'Exporter';
 use strict;
 use warnings;
-our @EXPORT = qw(%package %srcpackage %category %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore %usernames %groupnames);
+our @EXPORT = qw(%package %vpackage %srcpackage %category %features %overrides clear_packages parse_package_metadata parse_target_metadata get_multiline @ignore %usernames %groupnames);
 
 our %package;
+our %vpackage;
 our %srcpackage;
 our %category;
 our %features;
@@ -177,6 +178,7 @@ sub parse_target_metadata($) {
 
 sub clear_packages() {
 	%package = ();
+	%vpackage = ();
 	%srcpackage = ();
 	%category = ();
 	%features = ();
@@ -230,6 +232,9 @@ sub parse_package_metadata($) {
 			$pkg->{override} = $override;
 			$package{$1} = $pkg;
 			push @{$src->{packages}}, $pkg;
+
+			$vpackage{$1} or $vpackage{$1} = [];
+			unshift @{$vpackage{$1}}, $pkg;
 		};
 		/^Feature:\s*(.+?)\s*$/ and do {
 			undef $pkg;
@@ -264,12 +269,8 @@ sub parse_package_metadata($) {
 		/^Provides: \s*(.+)\s*$/ and do {
 			my @vpkg = split /\s+/, $1;
 			foreach my $vpkg (@vpkg) {
-				$package{$vpkg} or $package{$vpkg} = {
-					name => $vpkg,
-					vdepends => [],
-					src => $src,
-				};
-				push @{$package{$vpkg}->{vdepends}}, $pkg->{name};
+				$vpackage{$vpkg} or $vpackage{$vpkg} = [];
+				push @{$vpackage{$vpkg}}, $pkg;
 			}
 		};
 		/^Menu-Depends: \s*(.+)\s*$/ and $pkg->{mdepends} = [ split /\s+/, $1 ];

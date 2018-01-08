@@ -101,14 +101,16 @@ my %dep_check;
 sub __find_package_dep($$) {
 	my $pkg = shift;
 	my $name = shift;
-	my $deps = ($pkg->{vdepends} or $pkg->{depends});
+	my $deps = $pkg->{depends};
 
 	return 0 unless defined $deps;
-	foreach my $dep (@{$deps}) {
-		next if $dep_check{$dep};
-		$dep_check{$dep} = 1;
-		return 1 if $dep eq $name;
-		return 1 if ($package{$dep} and (__find_package_dep($package{$dep},$name) == 1));
+	foreach my $vpkg (@{$deps}) {
+		foreach my $dep (@{$vpackage{$vpkg}}) {
+			next if $dep_check{$dep->{name}};
+			$dep_check{$dep->{name}} = 1;
+			return 1 if $dep->{name} eq $name;
+			return 1 if (__find_package_dep($dep, $name) == 1);
+		}
 	}
 	return 0;
 }
@@ -156,7 +158,6 @@ sub mconf_depends {
 		my $m = "depends on";
 		my $flags = "";
 		$depend =~ s/^([@\+]+)// and $flags = $1;
-		my $vdep;
 		my $condition = $parent_condition;
 
 		next if $condition eq $depend;
@@ -173,23 +174,21 @@ sub mconf_depends {
 			}
 			$depend = $2;
 		}
-		next if $package{$depend} and $package{$depend}->{buildonly};
 		if ($flags =~ /\+/) {
-			if ($vdep = $package{$depend}->{vdepends}) {
+			my $vdep = $vpackage{$depend};
+			if ($vdep) {
 				my @vdeps;
-				$depend = undef;
 
 				foreach my $v (@$vdep) {
-					if ($package{$v} && $package{$v}->{variant_default}) {
-						$depend = $v;
+					next if $v->{buildonly};
+					if ($v->{variant_default}) {
+						unshift @vdeps, $v->{name};
 					} else {
-						push @vdeps, $v;
+						push @vdeps, $v->{name};
 					}
 				}
 
-				if (!$depend) {
-					$depend = shift @vdeps;
-				}
+				$depend = shift @vdeps;
 
 				if (@vdeps > 1) {
 					$condition = ($condition ? "$condition && " : '') . '!('.join("||", map { "PACKAGE_".$_ } @vdeps).')';
@@ -209,8 +208,9 @@ sub mconf_depends {
 
 			$flags =~ /@/ or $depend = "PACKAGE_$depend";
 		} else {
-			if ($vdep = $package{$depend}->{vdepends}) {
-				$depend = join("||", map { "PACKAGE_".$_ } @$vdep);
+			my $vdep = $vpackage{$depend};
+			if ($vdep) {
+				$depend = join("||", map { "PACKAGE_".$_->{name} } @$vdep);
 			} else {
 				$flags =~ /@/ or $depend = "PACKAGE_$depend";
 			}
@@ -419,37 +419,27 @@ sub gen_package_mk() {
 					$dep = $2;
 				}
 
-				my $pkg_dep = $package{$dep};
-				unless (defined $pkg_dep) {
+				my $vpkg_dep = $vpackage{$dep};
+				unless (defined $vpkg_dep) {
 					warn sprintf "WARNING: Makefile '%s' has a dependency on '%s', which does not exist\n",
 						$src->{makefile}, $dep;
 					next;
 				}
 
-				unless ($pkg_dep->{vdepends}) {
-					next if $srcname eq $pkg_dep->{src}{name};
+				# Filter out self-depends
+				my @vdeps = grep { $srcname ne $_->{src}{name} } @{$vpkg_dep};
 
-					my $depstr = "\$(curdir)/$pkg_dep->{src}{path}/compile";
-					my $depline = get_conditional_dep($condition, $depstr);
-					if ($depline) {
-						$deplines{''}{$depline}++;
+				foreach my $vdep (@vdeps) {
+					my $depstr = "\$(curdir)/$vdep->{src}{path}/compile";
+					if (@vdeps > 1) {
+						$depstr = "\$(if \$(CONFIG_PACKAGE_$vdep->{name}),$depstr)";
 					}
-					next;
-				}
-
-				foreach my $vdep (@{$pkg_dep->{vdepends}}) {
-					my $pkg_vdep = $package{$vdep};
-					next if $srcname eq $pkg_vdep->{src}{name};
-
-					my $depstr = "\$(if \$(CONFIG_PACKAGE_$vdep),\$(curdir)/$pkg_vdep->{src}{path}/compile)";
 					my $depline = get_conditional_dep($condition, $depstr);
 					if ($depline) {
 						$deplines{''}{$depline}++;
 					}
 				}
 			}
-
-			next if defined $pkg->{vdepends};
 
 			my $config = '';
 			$config = "\$(CONFIG_PACKAGE_$pkg->{name})" unless $pkg->{buildonly};
