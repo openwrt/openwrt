@@ -1,0 +1,16 @@
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -4109,12 +4109,7 @@ static void rt2800_config_channel(struct
+ 		rt2800_bbp_write(rt2x00dev, 196, reg);
+ 
+ 		/* AGC init */
+-		if (rt2x00_rt(rt2x00dev, RT6352))
+-			reg = 0x04;
+-		else
+-			reg = rf->channel <= 14 ? 0x1c : 0x24;
+-
+-		reg += 2 * rt2x00dev->lna_gain;
++		reg = (rf->channel <= 14 ? 0x1c : 0x24) + 2 * rt2x00dev->lna_gain;
+ 		rt2800_bbp_write_with_rx_chain(rt2x00dev, 66, reg);
+ 
+ 		rt2800_iq_calibrate(rt2x00dev, rf->channel);
