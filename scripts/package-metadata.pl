@@ -399,18 +399,56 @@ sub get_conditional_dep($$) {
 }
 
 sub gen_package_mk() {
-	my %conf;
-	my %dep;
 	my $line;
 
 	parse_package_metadata($ARGV[0]) or exit 1;
 	foreach my $srcname (sort {uc($a) cmp uc($b)} keys %srcpackage) {
 		my $src = $srcpackage{$srcname};
 		my $variant_default;
-		my @srcdeps;
 		my %deplines = ('' => {});
 
 		foreach my $pkg (@{$src->{packages}}) {
+			foreach my $dep (@{$pkg->{depends}}) {
+				next if ($dep =~ /@/);
+
+				my $condition;
+
+				$dep =~ s/\+//g;
+				if ($dep =~ /^(.+):(.+)/) {
+					$condition = $1;
+					$dep = $2;
+				}
+
+				my $pkg_dep = $package{$dep};
+				unless (defined $pkg_dep) {
+					warn sprintf "WARNING: Makefile '%s' has a dependency on '%s', which does not exist\n",
+						$src->{makefile}, $dep;
+					next;
+				}
+
+				unless ($pkg_dep->{vdepends}) {
+					next if $srcname eq $pkg_dep->{src}{name};
+
+					my $depstr = "\$(curdir)/$pkg_dep->{src}{path}/compile";
+					my $depline = get_conditional_dep($condition, $depstr);
+					if ($depline) {
+						$deplines{''}{$depline}++;
+					}
+					next;
+				}
+
+				foreach my $vdep (@{$pkg_dep->{vdepends}}) {
+					my $pkg_vdep = $package{$vdep};
+					next if $srcname eq $pkg_vdep->{src}{name};
+
+					my $depstr = "\$(if \$(CONFIG_PACKAGE_$vdep),\$(curdir)/$pkg_vdep->{src}{path}/compile)";
+					my $depline = get_conditional_dep($condition, $depstr);
+					if ($depline) {
+						$deplines{''}{$depline}++;
+					}
+				}
+			}
+
 			next if defined $pkg->{vdepends};
 
 			my $config = '';
@@ -442,12 +480,6 @@ sub gen_package_mk() {
 			print "buildtypes-$src->{path} = ".join(' ', @{$src->{buildtypes}})."\n";
 		}
 
-		foreach my $dep (map { @{$_->{depends}} } @{$src->{packages}}) {
-			$dep =~ /@/ or do {
-				$dep =~ s/\+//g;
-				push @srcdeps, $dep;
-			};
-		}
 		foreach my $type ('', @{$src->{buildtypes}}) {
 			my $suffix = '';
 
@@ -489,68 +521,6 @@ sub gen_package_mk() {
 			}
 		}
 
-		foreach my $deps (@srcdeps) {
-			my $idx;
-			my $condition;
-			my $prefix = "";
-			my $suffix = "";
-			my $deptype = "";
-
-			if ($deps =~ /^(.+):(.+)/) {
-				$condition = $1;
-				$deps = $2;
-			}
-			if ($deps =~ /^(.+)\/(.+)/) {
-				$deps = $1;
-				$deptype = $2;
-				$suffix = "/$2";
-			}
-
-			my $pkg_dep = $package{$deps};
-			my @deps;
-
-			if ($pkg_dep->{vdepends}) {
-				@deps = @{$pkg_dep->{vdepends}};
-			} else {
-				@deps = ($deps);
-			}
-
-			foreach my $dep (@deps) {
-				$pkg_dep = $package{$deps};
-				if (defined $pkg_dep->{src}) {
-					unless (!$deptype || grep { $_ eq $deptype } @{$pkg_dep->{src}{buildtypes}}) {
-						warn sprintf "WARNING: Makefile '%s' has a build dependency on '%s/%s' but '%s' does not implement a '%s' build type\n",
-							$src->{makefile}, $pkg_dep->{src}{name}, $deptype, $pkg_dep->{src}{makefile}, $deptype;
-						next;
-					}
-					$idx = $pkg_dep->{src}{path};
-				} elsif (defined($srcpackage{$dep})) {
-					$idx = $srcpackage{$dep}{path};
-				}
-
-				if ($idx) {
-					$idx .= $suffix;
-
-					my $depline;
-					next if $srcname eq $pkg_dep->{src}{name}.$suffix;
-					next if $dep{$condition.":".$srcname."->".$idx};
-					next if $dep{$srcname."->($dep)".$idx} and $pkg_dep->{vdepends};
-					my $depstr;
-
-					if ($pkg_dep->{vdepends}) {
-						$depstr = "\$(if \$(CONFIG_PACKAGE_$dep),\$(curdir)/$idx/compile)";
-						$dep{$srcname."->($dep)".$idx} = 1;
-					} else {
-						$depstr = "\$(curdir)/$idx/compile";
-						$dep{$srcname."->".$idx} = 1;
-					}
-					$depline = get_conditional_dep($condition, $depstr);
-					if ($depline) {
-						$deplines{''}{$depline}++;
-					}
-				}
-			}
-		}
 		foreach my $suffix (sort keys %deplines) {
 			my $depline = join(" ", sort keys %{$deplines{$suffix}});
 			if ($depline) {
