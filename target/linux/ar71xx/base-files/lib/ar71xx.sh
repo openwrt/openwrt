@@ -995,6 +995,9 @@ ar71xx_board_detect() {
 	*"RouterBOARD wAP 2nD r2")
 		name="rb-wap-2nd"
 		;;
+	*"RouterBOARD wAP G-5HacT2HnD")
+		name="rb-wapg-5hact2hnd"
+		;;
 	*"RouterStation")
 		name="routerstation"
 		;;
