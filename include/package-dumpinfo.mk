@@ -7,10 +7,17 @@
 
 ifneq ($(DUMP),)
 
-dumpinfo: FORCE
+
+define SOURCE_INFO
+$(if $(PKG_BUILD_DEPENDS),Build-Depends: $(PKG_BUILD_DEPENDS)
+)$(if $(HOST_BUILD_DEPENDS),Build-Depends/host: $(HOST_BUILD_DEPENDS)
+)$(if $(BUILD_TYPES),Build-Types: $(BUILD_TYPES)
+)
+
+endef
 
 define Dumpinfo/Package
-$(info Package: $(1)
+$(info $(SOURCE_INFO)Package: $(1)
 $(if $(MENU),Menu: $(MENU)
 )$(if $(SUBMENU),Submenu: $(SUBMENU)
 )$(if $(SUBMENUDEP),Submenu-Depends: $(SUBMENUDEP)
@@ -23,10 +30,7 @@ Menu-Depends: $(MDEPENDS)
 Provides: $(PROVIDES)
 $(if $(VARIANT),Build-Variant: $(VARIANT)
 $(if $(DEFAULT_VARIANT),Default-Variant: $(VARIANT)
-))$(if $(PKG_BUILD_DEPENDS),Build-Depends: $(PKG_BUILD_DEPENDS)
-)$(if $(HOST_BUILD_DEPENDS),Build-Depends/host: $(HOST_BUILD_DEPENDS)
-)$(if $(BUILD_TYPES),Build-Types: $(BUILD_TYPES)
-)Section: $(SECTION)
+))Section: $(SECTION)
 Category: $(CATEGORY)
 $(if $(filter nonshared,$(PKGFLAGS)),,Repository: $(if $(FEED),$(FEED),base)
 )Title: $(TITLE)
@@ -47,6 +51,10 @@ $(if $(Package/$(1)/config),Config:
 $(Package/$(1)/config)
 @@
 ))
+SOURCE_INFO :=
 endef
+
+dumpinfo: FORCE
+	$(if $(SOURCE_INFO),$(info $(SOURCE_INFO)))
 
 endif
