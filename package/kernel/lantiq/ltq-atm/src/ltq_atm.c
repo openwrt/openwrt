@@ -191,8 +191,6 @@ struct sk_buff* atm_alloc_tx(struct atm_vcc *, unsigned int);
 static inline void atm_free_tx_skb_vcc(struct sk_buff *, struct atm_vcc *);
 static inline struct sk_buff *get_skb_rx_pointer(unsigned int);
 static inline int get_tx_desc(unsigned int);
-static struct sk_buff* skb_duplicate(struct sk_buff *);
-static struct sk_buff* skb_break_away_from_protocol(struct sk_buff *);
 
 /*
  *  mailbox handler and signal function
@@ -523,7 +521,6 @@ static int ppe_send(struct atm_vcc *vcc, struct sk_buff *skb)
 	unsigned long flags;
 	struct tx_descriptor reg_desc = {0};
 	struct tx_inband_header *header;
-	struct sk_buff *new_skb;
 
 	if ( vcc == NULL || skb == NULL )
 		return -EINVAL;
@@ -854,44 +851,6 @@ static inline int get_tx_desc(unsigned int conn)
 	}
 
 	return desc_base;
-}
-
-static struct sk_buff* skb_duplicate(struct sk_buff *skb)
-{
-	struct sk_buff *new_skb;
-
-	new_skb = alloc_skb_tx(skb->len);
-	if ( new_skb == NULL )
-		return NULL;
-
-	skb_put(new_skb, skb->len);
-	memcpy(new_skb->data, skb->data, skb->len);
-
-	return new_skb;
-}
-
-static struct sk_buff* skb_break_away_from_protocol(struct sk_buff *skb)
-{
-	struct sk_buff *new_skb;
-
-	if ( skb_shared(skb) ) {
-		new_skb = skb_clone(skb, GFP_ATOMIC);
-		if ( new_skb == NULL )
-			return NULL;
-	} else
-		new_skb = skb_get(skb);
-
-	skb_dst_drop(new_skb);
-#if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
-	nf_conntrack_put(new_skb->nfct);
-	new_skb->nfct = NULL;
-  #ifdef CONFIG_BRIDGE_NETFILTER
-	nf_bridge_put(new_skb->nf_bridge);
-	new_skb->nf_bridge = NULL;
-  #endif
-#endif
-
-	return new_skb;
 }
 
 static void free_tx_ring(unsigned int queue)
