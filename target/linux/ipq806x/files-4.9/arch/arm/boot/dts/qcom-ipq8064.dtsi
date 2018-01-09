@@ -473,6 +473,15 @@
 		};
 	};
 
+	fab-scaling {
+		compatible = "qcom,fab-scaling";
+		clocks = <&rpmcc RPM_APPS_FABRIC_A_CLK>, <&rpmcc RPM_EBI1_A_CLK>;
+		clock-names = "apps-fab-clk", "ddr-fab-clk";
+		fab_freq_high = <533000000>;
+		fab_freq_nominal = <400000000>;
+		cpu_freq_threshold = <1000000000>;
+	};
+
 	firmware {
 		scm {
 			compatible = "qcom,scm-ipq806x";

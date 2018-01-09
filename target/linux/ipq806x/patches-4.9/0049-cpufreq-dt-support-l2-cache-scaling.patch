@@ -74,16 +74,16 @@ Signed-off-by: Pavel Kubelun <be.dissent@gmail.com>
 +		for (i = 2; i >= 0; i--) {
 +			if (max_cpu_freq >= policy->l2_cpufreq[i]) {
 +				new_l2_freq = policy->l2_rate[i];
-+
+ 
+-	return dev_pm_opp_set_rate(priv->cpu_dev,
+-				   policy->freq_table[index].frequency * 1000);
 +				clk_set_rate(l2_clk, new_l2_freq);
 +
 +				break;
 +			}
 +		}
 +	}
- 
--	return dev_pm_opp_set_rate(priv->cpu_dev,
--				   policy->freq_table[index].frequency * 1000);
++
 +	return ret;
  }
  
