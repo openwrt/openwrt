@@ -18,9 +18,15 @@ setup_interface () {
 	proto_add_ipv4_address "$ip" "${subnet:-255.255.255.0}"
 	# TODO: apply $broadcast
 
+	local ip_net
+	eval "$(ipcalc.sh "$ip/$mask")";ip_net="$NETWORK"
+
 	local i
 	for i in $router; do
-		proto_add_ipv4_route "$i" 32 "" "$ip"
+		local gw_net
+		eval "$(ipcalc.sh "$i/$mask")";gw_net="$NETWORK"
+
+		[ "$ip_net" != "$gw_net" ] && proto_add_ipv4_route "$i" 32 "" "$ip"
 		proto_add_ipv4_route 0.0.0.0 0 "$i" "$ip"
 
 		local r
