@@ -38,6 +38,7 @@ get_status_led() {
 	nbg-419n2|\
 	pwh2004|\
 	r6220|\
+	tplink,c20-v4|\
 	tplink,tl-mr3420-v5|\
 	tl-wr840n-v4|\
 	tl-wr840n-v5|\

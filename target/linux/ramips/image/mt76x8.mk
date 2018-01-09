@@ -139,6 +139,19 @@ define Device/tl-wr841n-v13
 endef
 TARGET_DEVICES += tl-wr841n-v13
 
+define Device/tplink_c20-v4
+  $(Device/tplink)
+  DTS := ArcherC20v4
+  IMAGE_SIZE := 7808k
+  DEVICE_TITLE := TP-Link ArcherC20 v4
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0xc200004
+  TPLINK_HWREV := 0x1
+  TPLINK_HWREVADD := 0x4
+  TPLINK_HVERSION := 3
+endef
+TARGET_DEVICES += tplink_c20-v4
+
 define Device/tplink_tl-mr3420-v5
   $(Device/tplink)
   DTS := TL-MR3420V5

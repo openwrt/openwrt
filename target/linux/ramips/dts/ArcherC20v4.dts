@@ -1,0 +1,170 @@
+/dts-v1/;
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "tplink,c20-v4", "mediatek,mt7628an-soc";
+	model = "TP-Link Archer C20 v4";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		lan {
+			label = "c20-v4:green:lan";
+			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+		};
+
+		power {
+			label = "c20-v4:green:power";
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			label = "c20-v4:green:wan";
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_orange {
+			label = "c20-v4:orange:wan";
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		};
+		
+		wlan5g {
+			label = "c20-v4:green:wlan5g";
+			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan2g {
+			label = "c20-v4:green:wlan2g";
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "c20-v4:green:wps";
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x4000000>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		m25p,chunked-io = <32>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x20000>;
+			read-only;
+		};
+
+		partition@20000 {
+			label = "firmware";
+			reg = <0x20000 0x7a0000>;
+		};
+
+		partition@7c0000 {
+			label = "config";
+			reg = <0x7c0000 0x10000>;
+			read-only;
+		};
+
+		rom: partition@7d0000 {
+			label = "rom";
+			reg = <0x7d0000 0x10000>;
+			read-only;
+		};
+
+		partition@7e0000 {
+			label = "romfile";
+			reg = <0x7e0000 0x10000>;
+			read-only;
+		};
+
+		radio: partition@7f0000 {
+			label = "radio";
+			reg = <0x7f0000 0x10000>;
+			read-only;
+		};
+	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
+&wmac {
+	status = "okay";
+	mediatek,mtd-eeprom = <&radio 0x0>;
+	mtd-mac-address = <&rom 0xf100>;
+	mtd-mac-address-increment = <(-2)>;
+};
+
+&ethernet {
+	mtd-mac-address = <&rom 0xf100>;
+	mediatek,portmap = "wllll";
+};
+
+&pinctrl {
+	state_default: pinctrl0 {
+		gpio {
+			ralink,group = "i2s", "refclk", "p0led_an", "p1led_an", "p2led_an", "p3led_an", "p4led_an", "wdt";
+			ralink,function = "gpio";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	pcie-bridge {
+		mt76@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
+			mediatek,mtd-eeprom = <&radio 0x8000>;
+			ieee80211-freq-limit = <5000000 6000000>;
+			mtd-mac-address = <&rom 0xf100>;
+			mtd-mac-address-increment = <(-1)>;
+		};
+	};
+};
