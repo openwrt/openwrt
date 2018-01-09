@@ -13,13 +13,6 @@
 
 #include "ag71xx.h"
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
-static inline void skb_free_frag(void *data)
-{
-	put_page(virt_to_head_page(data));
-}
-#endif
-
 #define AG71XX_DEFAULT_MSG_ENABLE	\
 	(NETIF_MSG_DRV			\
 	| NETIF_MSG_PROBE		\
