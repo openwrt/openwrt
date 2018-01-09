@@ -19,14 +19,12 @@ setup_interface () {
 	# TODO: apply $broadcast
 
 	local i
+	local ip_net
+	eval "$(ipcalc.sh $ip/$mask)";ip_net="$NETWORK"
 	for i in $router; do
-		local ip_net
 		local gw_net
-		ip_net=$(ipcalc.sh $ip/$mask | grep "NETWORK" | awk -F '=' '{print $2}')
-		gw_net=$(ipcalc.sh $i/$mask | grep "NETWORK" | awk -F '=' '{print $2}')
-		if [ "$ip_net" != "$gw_net" ]; then
-			proto_add_ipv4_route "$i" 32 "" "$ip"
-		fi
+		eval "$(ipcalc.sh $i/$mask)";gw_net="$NETWORK"
+		[ "$ip_net" != "$gw_net" ] && proto_add_ipv4_route "$i" 32 "" "$ip"
 		proto_add_ipv4_route 0.0.0.0 0 "$i" "$ip"
 
 		local r
