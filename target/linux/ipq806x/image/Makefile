@@ -29,7 +29,7 @@ define Device/Default
 	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
 	KERNEL_LOADADDR = 0x42208000
-	SUPPORTED_DEVICES = $$(BOARD_NAME)
+	SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 	IMAGE/sysupgrade.tar = sysupgrade-tar | append-metadata
 endef
 
@@ -98,86 +98,7 @@ define Device/ZyXELImage
 	IMAGE/mmcblk0p4-kernel.bin := append-kernel
 endef
 
-define Device/AP148
-	$(call Device/FitImage)
-	$(call Device/UbiFit)
-	DEVICE_DTS := qcom-ipq8064-ap148
-	KERNEL_INSTALL := 1
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	BOARD_NAME := ap148
-	DEVICE_TITLE := Qualcomm AP148
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0
-endef
-TARGET_DEVICES += AP148
-
-define Device/AP148-legacy
-	$(call Device/LegacyImage)
-	$(call Device/UbiFit)
-	DEVICE_DTS := qcom-ipq8064-ap148
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	BOARD_NAME := ap148
-	DEVICE_TITLE := Qualcomm AP148 (legacy)
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0
-endef
-TARGET_DEVICES += AP148-legacy
-
-define Device/C2600
-	$(call Device/TpSafeImage)
-	DEVICE_DTS := qcom-ipq8064-c2600
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	BOARD_NAME := c2600
-	TPLINK_BOARD_ID := C2600
-	DEVICE_TITLE := TP-Link Archer C2600
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0
-endef
-TARGET_DEVICES += C2600
-
-define Device/D7800
-	$(call Device/DniImage)
-	DEVICE_DTS := qcom-ipq8064-d7800
-	KERNEL_SIZE := 2097152
-	NETGEAR_BOARD_ID := D7800
-	NETGEAR_HW_ID := 29764958+0+128+512+4x4+4x4
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	BOARD_NAME := d7800
-	DEVICE_TITLE := Netgear Nighthawk X4 D7800
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0
-endef
-TARGET_DEVICES += D7800
-
-define Device/DB149
-	$(call Device/FitImage)
-	DEVICE_DTS := qcom-ipq8064-db149
-	KERNEL_INSTALL := 1
-	BOARD_NAME := db149
-	DEVICE_TITLE := Qualcomm DB149
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0
-endef
-TARGET_DEVICES += DB149
-
-define Device/EA8500
-	$(call Device/LegacyImage)
-	DEVICE_DTS := qcom-ipq8064-ea8500
-	PAGESIZE := 2048
-	BLOCKSIZE := 128k
-	KERNEL_SIZE := 3072k
-	FILESYSTEMS := squashfs
-	KERNEL = kernel-bin | append-dtb | uImage none | append-uImage-fakeroot-hdr
-	PROFILES += $$(DEVICE_NAME)
-	BOARD_NAME := ea8500
-	UBINIZE_OPTS := -E 5
-	IMAGES := factory.bin sysupgrade.tar
-	IMAGE/factory.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi
-	DEVICE_TITLE := Linksys EA8500
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0
-endef
-TARGET_DEVICES += EA8500
-
-define Device/FRITZ4040
+define Device/avm_fritzbox-4040
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4019-fritz4040
 	KERNEL_LOADADDR := 0x80208000
@@ -190,9 +111,43 @@ define Device/FRITZ4040
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := kmod-usb-phy-qcom-ipq4019 ipq-wifi-fritz4040 fritz-tffs fritz-caldata u-boot-fritz4040
 endef
-TARGET_DEVICES += FRITZ4040
+TARGET_DEVICES += avm_fritzbox-4040
 
-define Device/R7500
+define Device/linksys_ea8500
+	$(call Device/LegacyImage)
+	DEVICE_DTS := qcom-ipq8064-ea8500
+	PAGESIZE := 2048
+	BLOCKSIZE := 128k
+	KERNEL_SIZE := 3072k
+	FILESYSTEMS := squashfs
+	KERNEL = kernel-bin | append-dtb | uImage none | append-uImage-fakeroot-hdr
+	PROFILES += $$(DEVICE_NAME)
+	BOARD_NAME := ea8500
+	SUPPORTED_DEVICES += ea8500
+	UBINIZE_OPTS := -E 5
+	IMAGES := factory.bin sysupgrade.tar
+	IMAGE/factory.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi
+	DEVICE_TITLE := Linksys EA8500
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+endef
+TARGET_DEVICES += linksys_ea8500
+
+define Device/netgear_d7800
+	$(call Device/DniImage)
+	DEVICE_DTS := qcom-ipq8064-d7800
+	KERNEL_SIZE := 2097152
+	NETGEAR_BOARD_ID := D7800
+	NETGEAR_HW_ID := 29764958+0+128+512+4x4+4x4
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := d7800
+	SUPPORTED_DEVICES += d7800
+	DEVICE_TITLE := Netgear Nighthawk X4 D7800
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+endef
+TARGET_DEVICES += netgear_d7800
+
+define Device/netgear_r7500
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8064-r7500
 	KERNEL_SIZE := 2097152
@@ -201,12 +156,13 @@ define Device/R7500
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := r7500
+	SUPPORTED_DEVICES += r7500
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500
 	DEVICE_PACKAGES := ath10k-firmware-qca988x
 endef
-TARGET_DEVICES += R7500
+TARGET_DEVICES += netgear_r7500
 
-define Device/R7500v2
+define Device/netgear_r7500v2
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8064-r7500v2
 	KERNEL_SIZE := 2097152
@@ -215,12 +171,13 @@ define Device/R7500v2
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := r7500v2
+	SUPPORTED_DEVICES += r7500v2
 	DEVICE_TITLE := Netgear Nighthawk X4 R7500v2
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0 ath10k-firmware-qca988x
 endef
-TARGET_DEVICES += R7500v2
+TARGET_DEVICES += netgear_r7500v2
 
-define Device/R7800
+define Device/netgear_r7800
 	$(call Device/DniImage)
 	DEVICE_DTS := qcom-ipq8065-r7800
 	KERNEL_SIZE := 2097152
@@ -229,41 +186,13 @@ define Device/R7800
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	BOARD_NAME := r7800
+	SUPPORTED_DEVICES += r7800
 	DEVICE_TITLE := Netgear Nighthawk X4S R7800
 	DEVICE_PACKAGES := ath10k-firmware-qca9984
 endef
-TARGET_DEVICES += R7800
+TARGET_DEVICES += netgear_r7800
 
-define Device/NBG6817
-	DEVICE_DTS := qcom-ipq8065-nbg6817
-	KERNEL_SIZE := 4096k
-	BLOCKSIZE := 64k
-	BOARD_NAME := nbg6817
-	DEVICE_TITLE := ZyXEL NBG6817
-	DEVICE_PACKAGES := ath10k-firmware-qca9984 e2fsprogs kmod-fs-ext4 losetup
-	$(call Device/ZyXELImage)
-endef
-TARGET_DEVICES += NBG6817
-
-define Device/VR2600v
-	PROFILES += $$(DEVICE_NAME)
-	FILESYSTEMS := squashfs
-	KERNEL_SUFFIX := -uImage
-	KERNEL = kernel-bin | append-dtb | uImage none
-	KERNEL_NAME := zImage
-	KERNEL_SIZE := 2097152
-	DEVICE_DTS := qcom-ipq8064-vr2600v
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	BOARD_NAME := vr2600v
-	DEVICE_TITLE := TP-Link Archer VR2600v
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0
-	IMAGES := sysupgrade.bin
-	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
-endef
-TARGET_DEVICES += VR2600v
-
-define Device/AP-DK01.1-C1
+define Device/qcom_ap-dk01.1-c1
 	PROFILES += $$(DEVICE_NAME)
 	DEVICE_TITLE := QCA AP-DK01.1-C1
 	BOARD_NAME := ap-dk01.1-c1
@@ -278,9 +207,9 @@ define Device/AP-DK01.1-C1
 	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca4019
 endef
-TARGET_DEVICES += AP-DK01.1-C1
+TARGET_DEVICES += qcom_ap-dk01.1-c1
 
-define Device/AP-DK04.1-C1
+define Device/qcom_ap-dk04.1-c1
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	DEVICE_DTS := qcom-ipq4019-ap.dk04.1-c1
@@ -292,6 +221,87 @@ define Device/AP-DK04.1-C1
 	BOARD_NAME := ap-dk04.1-c1
 	DEVICE_TITLE := QCA AP-DK04.1-C1
 endef
-TARGET_DEVICES += AP-DK04.1-C1
+TARGET_DEVICES += qcom_ap-dk04.1-c1
+
+define Device/qcom_ipq8064-ap148
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_DTS := qcom-ipq8064-ap148
+	KERNEL_INSTALL := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := ap148
+	SUPPORTED_DEVICES += ap148
+	DEVICE_TITLE := Qualcomm AP148
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+endef
+TARGET_DEVICES += qcom_ipq8064-ap148
+
+define Device/qcom_ipq8064-ap148-legacy
+	$(call Device/LegacyImage)
+	$(call Device/UbiFit)
+	DEVICE_DTS := qcom-ipq8064-ap148
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := ap148
+	SUPPORTED_DEVICES := qcom,ipq8064-ap148 ap148
+	DEVICE_TITLE := Qualcomm AP148 (legacy)
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+endef
+TARGET_DEVICES += qcom_ipq8064-ap148-legacy
+
+define Device/qcom_ipq8064-db149
+	$(call Device/FitImage)
+	DEVICE_DTS := qcom-ipq8064-db149
+	KERNEL_INSTALL := 1
+	BOARD_NAME := db149
+	DEVICE_TITLE := Qualcomm DB149
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+endef
+TARGET_DEVICES += qcom_ipq8064-db149
+
+define Device/tplink_c2600
+	$(call Device/TpSafeImage)
+	DEVICE_DTS := qcom-ipq8064-c2600
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := c2600
+	SUPPORTED_DEVICES += c2600
+	TPLINK_BOARD_ID := C2600
+	DEVICE_TITLE := TP-Link Archer C2600
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+endef
+TARGET_DEVICES += tplink_c2600
+
+define Device/tplink_vr2600v
+	PROFILES += $$(DEVICE_NAME)
+	FILESYSTEMS := squashfs
+	KERNEL_SUFFIX := -uImage
+	KERNEL = kernel-bin | append-dtb | uImage none
+	KERNEL_NAME := zImage
+	KERNEL_SIZE := 2097152
+	DEVICE_DTS := qcom-ipq8064-vr2600v
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := vr2600v
+	SUPPORTED_DEVICES += vr2600v
+	DEVICE_TITLE := TP-Link Archer VR2600v
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := pad-extra 512 | append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += tplink_vr2600v
+
+define Device/zyxel_nbg6817
+	DEVICE_DTS := qcom-ipq8065-nbg6817
+	KERNEL_SIZE := 4096k
+	BLOCKSIZE := 64k
+	BOARD_NAME := nbg6817
+	SUPPORTED_DEVICES += nbg6817
+	DEVICE_TITLE := ZyXEL NBG6817
+	DEVICE_PACKAGES := ath10k-firmware-qca9984 e2fsprogs kmod-fs-ext4 losetup
+	$(call Device/ZyXELImage)
+endef
+TARGET_DEVICES += zyxel_nbg6817
 
 $(eval $(call BuildImage))
