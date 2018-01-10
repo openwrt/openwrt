@@ -27,6 +27,10 @@ platform_do_upgrade() {
 	ea8500)
 		platform_do_upgrade_linksys "$ARGV"
 		;;
+	openmesh,a42)
+		PART_NAME="inactive"
+		platform_do_upgrade_openmesh "$ARGV"
+		;;
 	vr2600v)
 		PART_NAME="kernel:rootfs"
 		MTD_CONFIG_ARGS="-s 0x200000"

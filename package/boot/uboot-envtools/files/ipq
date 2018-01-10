@@ -40,6 +40,9 @@ ea8500)
 nbg6817)
 	ubootenv_add_uci_config "/dev/mtdblock9" "0x0" "0x10000" "0x10000"
 	;;
+openmesh,a42)
+	ubootenv_add_uci_config "/dev/mtd5" "0x0" "0x10000" "0x10000"
+	;;
 esac
 
 config_load ubootenv
