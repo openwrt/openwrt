@@ -313,6 +313,7 @@ platform_do_upgrade() {
 	r6220|\
 	ubnt-erx|\
 	ubnt-erx-sfp)
+		REQUIRE_IMAGE_METADATA=1
 		nand_do_upgrade "$ARGV"
 		;;
 	*)
