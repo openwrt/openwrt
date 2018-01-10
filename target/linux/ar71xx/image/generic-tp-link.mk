@@ -360,6 +360,27 @@ define Device/tl-wdr6500-v2
 endef
 TARGET_DEVICES += tl-wdr6500-v2
 
+define Device/tl-wdx6501-v7
+  TPLINK_HWREV := 0x1
+  TPLINK_HEADER_VERSION := 1
+  LOADER_TYPE := gz
+  KERNEL := kernel-bin | patch-cmdline | lzma
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade
+  TPLINK_FLASHLAYOUT := 8Mlzma
+  IMAGE_SIZE := 7936k
+  DEVICE_TITLE := TP-LINK TL-WDX6501 v7
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct
+  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | uImage lzma | tplink-v1-header
+  BOARDNAME := TL-WDX6501-v7
+  DEVICE_PROFILE := TLWDX6501V7
+  TPLINK_HWID := 0x65010007
+  TPLINK_HEADER_VERSION := 2
+endef
+TARGET_DEVICES += tl-wdx6501-v7
+
 define Device/mw4530r-v1
   $(Device/tl-wdr4300-v1)
   DEVICE_TITLE := Mercury MW4530R v1
