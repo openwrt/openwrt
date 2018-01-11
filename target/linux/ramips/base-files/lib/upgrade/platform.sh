@@ -264,9 +264,11 @@ platform_check_image() {
 		;;
 	hc5962|\
 	mir3g|\
-	r6220)
-		# these boards use metadata images
-		return 0
+	r6220|\
+	ubnt-erx|\
+	ubnt-erx-sfp)
+		nand_do_platform_check "$board" "$1"
+		return $?;
 		;;
 	re350-v1)
 		[ "$magic" != "01000000" ] && {
@@ -274,11 +276,6 @@ platform_check_image() {
 			return 1
 		}
 		return 0
-		;;
-	ubnt-erx|\
-	ubnt-erx-sfp)
-		nand_do_platform_check "$board" "$1"
-		return $?;
 		;;
 	wcr-1166ds|\
 	wsr-1166)
