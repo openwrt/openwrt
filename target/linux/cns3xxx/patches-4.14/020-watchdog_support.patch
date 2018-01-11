@@ -4,7 +4,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -324,6 +324,13 @@ config KS8695_WATCHDOG
+@@ -355,6 +355,13 @@ config KS8695_WATCHDOG
  	  Watchdog timer embedded into KS8695 processor. This will reboot your
  	  system when the timeout is reached.
  
@@ -20,8 +20,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	help
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -47,6 +47,7 @@ obj-$(CONFIG_21285_WATCHDOG) += wdt285.o
- obj-$(CONFIG_977_WATCHDOG) += wdt977.o
+@@ -49,6 +49,7 @@ obj-$(CONFIG_977_WATCHDOG) += wdt977.o
+ obj-$(CONFIG_GEMINI_WATCHDOG) += gemini_wdt.o
  obj-$(CONFIG_IXP4XX_WATCHDOG) += ixp4xx_wdt.o
  obj-$(CONFIG_KS8695_WATCHDOG) += ks8695_wdt.o
 +obj-$(CONFIG_MPCORE_WATCHDOG) += mpcore_wdt.o
@@ -151,7 +151,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +MODULE_LICENSE("GPL");
 --- a/arch/arm/include/asm/smp_twd.h
 +++ b/arch/arm/include/asm/smp_twd.h
-@@ -33,5 +33,6 @@ struct twd_local_timer name __initdata =
+@@ -34,5 +34,6 @@ struct twd_local_timer name __initdata =
  };
  
  int twd_local_timer_register(struct twd_local_timer *);

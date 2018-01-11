@@ -13,7 +13,7 @@
  }
 --- a/arch/arm/mach-cns3xxx/Kconfig
 +++ b/arch/arm/mach-cns3xxx/Kconfig
-@@ -2,6 +2,8 @@ menuconfig ARCH_CNS3XXX
+@@ -3,6 +3,8 @@ menuconfig ARCH_CNS3XXX
  	bool "Cavium Networks CNS3XXX family"
  	depends on ARCH_MULTI_V6
  	select ARM_GIC
@@ -24,7 +24,7 @@
  	select HAVE_SMP
 --- a/arch/arm/mach-cns3xxx/Makefile
 +++ b/arch/arm/mach-cns3xxx/Makefile
-@@ -1,7 +1,7 @@
+@@ -2,7 +2,7 @@
  ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/$(src)/include
  
  obj-$(CONFIG_ARCH_CNS3XXX)		+= cns3xxx.o

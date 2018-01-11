@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/Kconfig
 +++ b/arch/arm/mach-cns3xxx/Kconfig
-@@ -22,4 +22,12 @@ config MACH_CNS3420VB
+@@ -23,4 +23,12 @@ config MACH_CNS3420VB
  	  This is a platform with an on-board ARM11 MPCore and has support
  	  for USB, USB-OTG, MMC/SD/SDIO, SATA, PCI-E, etc.
  
@@ -15,7 +15,7 @@
  endif
 --- a/arch/arm/mach-cns3xxx/Makefile
 +++ b/arch/arm/mach-cns3xxx/Makefile
-@@ -7,3 +7,5 @@ cns3xxx-$(CONFIG_PCI)			+= pcie.o
+@@ -8,3 +8,5 @@ cns3xxx-$(CONFIG_PCI)			+= pcie.o
  cns3xxx-$(CONFIG_MACH_CNS3420VB)	+= cns3420vb.o
  cns3xxx-$(CONFIG_SMP)			+= platsmp.o headsmp.o cns3xxx_fiq.o
  cns3xxx-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o

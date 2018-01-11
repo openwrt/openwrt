@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/Makefile
 +++ b/arch/arm/mach-cns3xxx/Makefile
-@@ -5,3 +5,5 @@ cns3xxx-y				+= core.o pm.o
+@@ -6,3 +6,5 @@ cns3xxx-y				+= core.o pm.o
  cns3xxx-$(CONFIG_ATAGS)			+= devices.o
  cns3xxx-$(CONFIG_PCI)			+= pcie.o
  cns3xxx-$(CONFIG_MACH_CNS3420VB)	+= cns3420vb.o
@@ -8,7 +8,7 @@
 +cns3xxx-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o
 --- a/arch/arm/mach-cns3xxx/Kconfig
 +++ b/arch/arm/mach-cns3xxx/Kconfig
-@@ -2,6 +2,9 @@ menuconfig ARCH_CNS3XXX
+@@ -3,6 +3,9 @@ menuconfig ARCH_CNS3XXX
  	bool "Cavium Networks CNS3XXX family"
  	depends on ARCH_MULTI_V6
  	select ARM_GIC

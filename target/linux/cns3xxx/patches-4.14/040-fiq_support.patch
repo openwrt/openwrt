@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/Kconfig
 +++ b/arch/arm/mach-cns3xxx/Kconfig
-@@ -5,6 +5,7 @@ menuconfig ARCH_CNS3XXX
+@@ -6,6 +6,7 @@ menuconfig ARCH_CNS3XXX
  	select HAVE_ARM_SCU if SMP
  	select HAVE_ARM_TWD
  	select HAVE_SMP
@@ -10,7 +10,7 @@
  
 --- a/arch/arm/mach-cns3xxx/Makefile
 +++ b/arch/arm/mach-cns3xxx/Makefile
-@@ -5,5 +5,5 @@ cns3xxx-y				+= core.o pm.o
+@@ -6,5 +6,5 @@ cns3xxx-y				+= core.o pm.o
  cns3xxx-$(CONFIG_ATAGS)			+= devices.o
  cns3xxx-$(CONFIG_PCI)			+= pcie.o
  cns3xxx-$(CONFIG_MACH_CNS3420VB)	+= cns3420vb.o
@@ -29,7 +29,7 @@
   */
 --- a/arch/arm/mm/Kconfig
 +++ b/arch/arm/mm/Kconfig
-@@ -856,7 +856,7 @@ config VDSO
+@@ -882,7 +882,7 @@ config VDSO
  
  config DMA_CACHE_RWFO
  	bool "Enable read/write for ownership DMA cache maintenance"

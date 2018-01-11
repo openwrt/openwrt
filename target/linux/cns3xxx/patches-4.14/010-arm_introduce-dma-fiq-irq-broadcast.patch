@@ -20,7 +20,7 @@
  #endif
 --- a/arch/arm/mm/Kconfig
 +++ b/arch/arm/mm/Kconfig
-@@ -873,6 +873,17 @@ config DMA_CACHE_RWFO
+@@ -899,6 +899,17 @@ config DMA_CACHE_RWFO
  	  in hardware, other workarounds are needed (e.g. cache
  	  maintenance broadcasting in software via FIQ).
  
@@ -48,7 +48,7 @@
  
  	/*
  	 * The zero page is never written to, so never has any dirty
-@@ -329,7 +330,10 @@ void flush_dcache_page(struct page *page
+@@ -335,7 +336,10 @@ void flush_dcache_page(struct page *page
  
  	mapping = page_mapping(page);
  
@@ -62,7 +62,7 @@
  	else {
 --- a/arch/arm/mm/dma.h
 +++ b/arch/arm/mm/dma.h
-@@ -4,8 +4,13 @@
+@@ -5,8 +5,13 @@
  #include <asm/glue-cache.h>
  
  #ifndef MULTI_CACHE
