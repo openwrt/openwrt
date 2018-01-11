@@ -261,12 +261,6 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	hc5962|\
-	mir3g|\
-	r6220)
-		# these boards use metadata images
-		return 0
-		;;
 	re350-v1)
 		[ "$magic" != "01000000" ] && {
 			echo "Invalid image type."
@@ -274,6 +268,9 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	hc5962|\
+	mir3g|\
+	r6220|\
 	ubnt-erx|\
 	ubnt-erx-sfp)
 		nand_do_platform_check "$board" "$1"
