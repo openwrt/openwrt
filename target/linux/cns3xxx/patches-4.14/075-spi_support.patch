@@ -1,6 +1,6 @@
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -199,6 +199,13 @@ config SPI_CLPS711X
+@@ -206,6 +206,13 @@ config SPI_CLPS711X
  	  This enables dedicated general purpose SPI/Microwire1-compatible
  	  master mode interface (SSI1) for CLPS711X-based CPUs.
  
@@ -16,7 +16,7 @@
  	depends on (M520x || M523x || M5249 || M525x || M527x || M528x || M532x)
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -29,6 +29,7 @@ obj-$(CONFIG_SPI_BITBANG)		+= spi-bitban
+@@ -31,6 +31,7 @@ obj-$(CONFIG_SPI_BITBANG)		+= spi-bitban
  obj-$(CONFIG_SPI_BUTTERFLY)		+= spi-butterfly.o
  obj-$(CONFIG_SPI_CADENCE)		+= spi-cadence.o
  obj-$(CONFIG_SPI_CLPS711X)		+= spi-clps711x.o
@@ -26,7 +26,7 @@
  obj-$(CONFIG_SPI_DLN2)			+= spi-dln2.o
 --- a/include/linux/spi/spi.h
 +++ b/include/linux/spi/spi.h
-@@ -763,6 +763,10 @@ struct spi_transfer {
+@@ -799,6 +799,10 @@ struct spi_transfer {
  	u32		speed_hz;
  
  	struct list_head transfer_list;
@@ -39,13 +39,13 @@
  /**
 --- a/drivers/spi/spi.c
 +++ b/drivers/spi/spi.c
-@@ -985,6 +985,9 @@ static int spi_transfer_one_message(stru
+@@ -1021,6 +1021,9 @@ static int spi_transfer_one_message(stru
  	list_for_each_entry(xfer, &msg->transfers, transfer_list) {
  		trace_spi_transfer_start(msg, xfer);
  
 +		xfer->last_in_message_list =
 +			list_is_last(&xfer->transfer_list, &msg->transfers);
 +
- 		spi_statistics_add_transfer_stats(statm, xfer, master);
- 		spi_statistics_add_transfer_stats(stats, xfer, master);
+ 		spi_statistics_add_transfer_stats(statm, xfer, ctlr);
+ 		spi_statistics_add_transfer_stats(stats, xfer, ctlr);
  
