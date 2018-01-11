@@ -228,6 +228,7 @@ sub parse_package_metadata($) {
 			$pkg->{title} = "";
 			$pkg->{depends} = [];
 			$pkg->{mdepends} = [];
+			$pkg->{provides} = [$1];
 			$pkg->{tristate} = 1;
 			$pkg->{override} = $override;
 			$package{$1} = $pkg;
@@ -268,6 +269,7 @@ sub parse_package_metadata($) {
 		/^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 		/^Provides: \s*(.+)\s*$/ and do {
 			my @vpkg = split /\s+/, $1;
+			@{$pkg->{provides}} = ($pkg->{name}, @vpkg);
 			foreach my $vpkg (@vpkg) {
 				$vpackage{$vpkg} or $vpackage{$vpkg} = [];
 				push @{$vpackage{$vpkg}}, $pkg;
