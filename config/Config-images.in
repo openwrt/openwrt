@@ -52,6 +52,13 @@ menu "Target Images"
 			help
 			  Kernel uses specified external cpio as INITRAMFS_SOURCE.
 
+		config TARGET_INITRAMFS_FORCE
+                        bool "Force"
+                        depends on TARGET_ROOTFS_INITRAMFS
+                        default n
+                        help
+                          Ignore the initramfs passed by the bootloader.
+
 	comment "Root filesystem archives"
 
 	config TARGET_ROOTFS_CPIOGZ
