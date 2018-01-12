@@ -19,6 +19,10 @@ include ./generic-senao.mk
 include ./generic-tp-link.mk
 include ./generic-ubnt.mk
 endif
+ifeq ($(SUBTARGET),tiny)
+include ./tiny-tp-link.mk
+include ./tiny-legacy-devices.mk
+endif
 ifeq ($(SUBTARGET),nand)
 include ./nand.mk
 endif

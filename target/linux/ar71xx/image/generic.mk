@@ -231,7 +231,7 @@ TARGET_DEVICES += dragino2
 
 define Device/ew-dorin
   DEVICE_TITLE := Embedded Wireless Dorin Platform
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea 
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea
   BOARDNAME = EW-DORIN
   CONSOLE := ttyATH0,115200
   IMAGE_SIZE = 16000k
@@ -241,7 +241,7 @@ TARGET_DEVICES += ew-dorin
 
 define Device/ew-dorin-router
   DEVICE_TITLE := Embedded Wireless Dorin Router Platform
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea 
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea
   BOARDNAME = EW-DORIN-ROUTER
   CONSOLE := ttyATH0,115200
   IMAGE_SIZE = 16000k
@@ -596,16 +596,6 @@ define Device/r602n
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += r602n
-
-define Device/rnx-n360rt
-  $(Device/tplink-4m)
-  DEVICE_TITLE := Rosewill RNX-N360RT
-  BOARDNAME := TL-WR941ND
-  DEVICE_PROFILE := RNXN360RT
-  TPLINK_HWID := 0x09410002
-  TPLINK_HWREV := 0x00420001
-endef
-TARGET_DEVICES += rnx-n360rt
 
 define Device/mc-mac1200r
   $(Device/tplink-8mlzma)
