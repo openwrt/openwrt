@@ -138,6 +138,7 @@ enum ath79_mach_type {
 	ATH79_MACH_GL_MIFI,			/* GL-MIFI support */
 	ATH79_MACH_GL_USB150,			/* GL.iNet GL-USB150 */
 	ATH79_MACH_GS_MINIBOX_V1,		/* GainStrong MiniBox V1.0 */
+	ATH79_MACH_GS_MINIBOX_V32,		/* Gainstrong MiniBox V3.2 */
 	ATH79_MACH_GS_OOLITE_V1,		/* GainStrong Oolite V1.0 */
 	ATH79_MACH_GS_OOLITE_V5_2,		/* GainStrong Oolite V5.2 */
 	ATH79_MACH_GS_OOLITE_V5_2_DEV,		/* GainStrong Oolite V5.2-Dev */

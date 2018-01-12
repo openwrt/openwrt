@@ -140,6 +140,7 @@ obj-$(CONFIG_ATH79_MACH_GL_DOMINO)		+= mach-gl-domino.o
 obj-$(CONFIG_ATH79_MACH_GL_INET)		+= mach-gl-inet.o
 obj-$(CONFIG_ATH79_MACH_GL_MIFI)		+= mach-gl-mifi.o
 obj-$(CONFIG_ATH79_MACH_GL_USB150)		+= mach-gl-usb150.o
+obj-$(CONFIG_ATH79_MACH_GS_MINIBOX_V32)		+= mach-gs-minibox-v32.o
 obj-$(CONFIG_ATH79_MACH_GS_OOLITE_V1)		+= mach-gs-oolite-v1.o
 obj-$(CONFIG_ATH79_MACH_GS_OOLITE_V5_2)		+= mach-gs-oolite-v5-2.o
 obj-$(CONFIG_ATH79_MACH_HIVEAP_121)		+= mach-hiveap-121.o
