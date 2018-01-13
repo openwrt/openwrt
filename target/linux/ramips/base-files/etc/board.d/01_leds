@@ -91,12 +91,6 @@ c108)
 	ucidef_set_led_netdev "lan" "lan" "$boardname:green:lan" "eth0"
 	ucidef_set_led_netdev "modem" "modem" "$boardname:green:modem" "wwan0"
 	;;
-c20)
-	ucidef_set_led_switch "lan" "lan" "$boardname:blue:lan" "switch0" "0x1e"
-	ucidef_set_led_switch "wan" "wan" "$boardname:blue:wan" "switch0" "0x01"
-	set_usb_led "$boardname:blue:usb"
-	ucidef_set_led_netdev "wlan2g" "wlan2g" "$boardname:blue:wlan2g" "wlan0"
-	;;
 c20i)
 	ucidef_set_led_switch "lan" "lan" "$boardname:blue:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "$boardname:blue:wan" "switch0" "0x01"
@@ -387,6 +381,12 @@ tl-wr841n-v13)
 	ucidef_set_led_switch "lan3" "lan3" "$boardname:green:lan3" "switch0" "0x8"
 	ucidef_set_led_switch "lan4" "lan4" "$boardname:green:lan4" "switch0" "0x10"
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
+	;;
+tplink,c20-v1)
+	ucidef_set_led_switch "lan" "lan" "$boardname:blue:lan" "switch0" "0x1e"
+	ucidef_set_led_switch "wan" "wan" "$boardname:blue:wan" "switch0" "0x01"
+	set_usb_led "$boardname:blue:usb"
+	ucidef_set_led_netdev "wlan2g" "wlan2g" "$boardname:blue:wlan2g" "wlan0"
 	;;
 tplink,tl-mr3420-v5)
 	set_usb_led "$boardname:green:usb"

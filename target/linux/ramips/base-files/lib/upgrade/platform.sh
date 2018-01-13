@@ -237,10 +237,10 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	c20|\
 	c20i|\
 	c50|\
 	mr200|\
+	tplink,c20-v1|\
 	tplink,tl-mr3420-v5|\
 	tl-wr840n-v4|\
 	tl-wr840n-v5|\
