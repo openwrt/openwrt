@@ -778,7 +778,7 @@ void hostapd_ubus_free_bss(struct hostapd_data *hapd)
 
 struct ubus_event_req {
 	struct ubus_notify_request nreq;
-	bool deny;
+	int resp;
 };
 
 static void
@@ -786,8 +786,7 @@ ubus_event_cb(struct ubus_notify_request *req, int idx, int ret)
 {
 	struct ubus_event_req *ureq = container_of(req, struct ubus_event_req, nreq);
 
-	if (ret)
-		ureq->deny = true;
+	ureq->resp = ret;
 }
 
 int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req)
@@ -809,10 +808,10 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 
 	ban = avl_find_element(&hapd->ubus.banned, addr, ban, avl);
 	if (ban)
-		return -2;
+		return WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
 
 	if (!hapd->ubus.obj.has_subscribers)
-		return 0;
+		return WLAN_STATUS_SUCCESS;
 
 	if (req->type < ARRAY_SIZE(types))
 		type = types[req->type];
@@ -827,19 +826,19 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 
 	if (!hapd->ubus.notify_response) {
 		ubus_notify(ctx, &hapd->ubus.obj, type, b.head, -1);
-		return 0;
+		return WLAN_STATUS_SUCCESS;
 	}
 
 	if (ubus_notify_async(ctx, &hapd->ubus.obj, type, b.head, &ureq.nreq))
-		return 0;
+		return WLAN_STATUS_SUCCESS;
 
 	ureq.nreq.status_cb = ubus_event_cb;
 	ubus_complete_request(ctx, &ureq.nreq.req, 100);
 
-	if (ureq.deny)
-		return -1;
+	if (ureq.resp)
+		return ureq.resp;
 
-	return 0;
+	return WLAN_STATUS_SUCCESS;
 }
 
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *addr)
