@@ -5,24 +5,6 @@ include $(INCLUDE_DIR)/image.mk
 
 UBIFS_OPTS = -m 2048 -e 124KiB -c 4096 -U -F
 
-define Image/Prepare
-	$(CP) $(LINUX_DIR)/vmlinux $(KDIR)/vmlinux-unstripped.elf
-endef
-
-define Image/BuildKernel
-	$(CP) $(KDIR)/vmlinux-unstripped.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf
-endef
-
-define Image/Build/squashfs
-	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-raw
-	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-endef
-
-define Image/Build
-	$(call Image/Build/$(1),$(1))
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1)-root.img bs=2k conv=sync
-endef
-
 define Device/Default
 	PROFILES := Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -60,7 +42,6 @@ define Device/UbiFit
 endef
 
 define Device/DniImage
-	PROFILES += $$(DEVICE_NAME)
 	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
@@ -75,7 +56,6 @@ endef
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
 define Device/TpSafeImage
-	PROFILES += $$(DEVICE_NAME)
 	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
@@ -88,7 +68,6 @@ endef
 DEVICE_VARS += TPLINK_BOARD_ID
 
 define Device/ZyXELImage
-	PROFILES += $$(DEVICE_NAME)
 	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $${KERNEL_SIZE}
@@ -122,7 +101,6 @@ define Device/linksys_ea8500
 	KERNEL_SIZE := 3072k
 	FILESYSTEMS := squashfs
 	KERNEL = kernel-bin | append-dtb | uImage none | append-uImage-fakeroot-hdr
-	PROFILES += $$(DEVICE_NAME)
 	BOARD_NAME := ea8500
 	SUPPORTED_DEVICES += ea8500
 	UBINIZE_OPTS := -E 5
@@ -211,7 +189,6 @@ endef
 TARGET_DEVICES += openmesh_a42
 
 define Device/qcom_ap-dk01.1-c1
-	PROFILES += $$(DEVICE_NAME)
 	DEVICE_TITLE := QCA AP-DK01.1-C1
 	BOARD_NAME := ap-dk01.1-c1
 	DEVICE_DTS := qcom-ipq4019-ap.dk01.1-c1
@@ -292,7 +269,6 @@ endef
 TARGET_DEVICES += tplink_c2600
 
 define Device/tplink_vr2600v
-	PROFILES += $$(DEVICE_NAME)
 	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
