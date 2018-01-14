@@ -209,7 +209,7 @@ sub mconf_depends {
 			$flags =~ /@/ or $depend = "PACKAGE_$depend";
 		} else {
 			my $vdep = $vpackage{$depend};
-			if ($vdep) {
+			if ($vdep && @$vdep > 0) {
 				$depend = join("||", map { "PACKAGE_".$_->{name} } @$vdep);
 			} else {
 				$flags =~ /@/ or $depend = "PACKAGE_$depend";
