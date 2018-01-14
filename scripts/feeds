@@ -580,7 +580,7 @@ sub install_target_or_package {
 	};
 
 	my $this_feed_src = lookup_src($feed, $name);
-	$this_feed_src or do {
+	$this_feed_src and do {
 		return install_src($this_feed_src, $name, $force);
 	};
 
