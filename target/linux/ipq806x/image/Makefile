@@ -30,7 +30,7 @@ define Device/Default
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
 	KERNEL_LOADADDR = 0x42208000
 	SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
-	IMAGE/sysupgrade.tar = sysupgrade-tar | append-metadata
+	IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
 endef
 
 define Device/LegacyImage
@@ -53,9 +53,9 @@ endef
 
 define Device/UbiFit
 	KERNEL_IN_UBI := 1
-	IMAGES := nand-factory.ubi nand-sysupgrade.tar
+	IMAGES := nand-factory.ubi nand-sysupgrade.bin
 	IMAGE/nand-factory.ubi := append-ubi
-	IMAGE/nand-sysupgrade.tar := sysupgrade-tar | append-metadata
+	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
 define Device/DniImage
@@ -67,9 +67,9 @@ define Device/DniImage
 	NETGEAR_BOARD_ID :=
 	NETGEAR_HW_ID :=
 	UBINIZE_OPTS := -E 5
-	IMAGES := factory.img sysupgrade.tar
+	IMAGES := factory.img sysupgrade.bin
 	IMAGE/factory.img := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakeroot-hdr | pad-to $$$$(KERNEL_SIZE) | append-ubi | netgear-dni
-	IMAGE/sysupgrade.tar := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakeroot-hdr | sysupgrade-tar kernel=$$$$@ | append-metadata
+	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakeroot-hdr | sysupgrade-tar kernel=$$$$@ | append-metadata
 endef
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
@@ -92,8 +92,8 @@ define Device/ZyXELImage
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $${KERNEL_SIZE}
 	KERNEL_NAME := zImage
-	IMAGES := sysupgrade.tar mmcblk0p5-rootfs.bin mmcblk0p4-kernel.bin
-	IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-to $$$${BLOCKSIZE} | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	IMAGES := sysupgrade.bin mmcblk0p5-rootfs.bin mmcblk0p4-kernel.bin
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to $$$${BLOCKSIZE} | sysupgrade-tar rootfs=$$$$@ | append-metadata
 	IMAGE/mmcblk0p5-rootfs.bin := append-rootfs | pad-rootfs | pad-to $$$${BLOCKSIZE}
 	IMAGE/mmcblk0p4-kernel.bin := append-kernel
 endef
@@ -125,7 +125,7 @@ define Device/linksys_ea8500
 	BOARD_NAME := ea8500
 	SUPPORTED_DEVICES += ea8500
 	UBINIZE_OPTS := -E 5
-	IMAGES := factory.bin sysupgrade.tar
+	IMAGES := factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-ubi
 	DEVICE_TITLE := Linksys EA8500
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0
