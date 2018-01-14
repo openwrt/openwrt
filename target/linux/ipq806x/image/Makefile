@@ -31,6 +31,7 @@ define Device/Default
 	KERNEL_LOADADDR = 0x42208000
 	SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 	IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
+	IMAGE/sysupgrade.bin/squashfs :=
 endef
 
 define Device/LegacyImage
