@@ -3,8 +3,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-UBIFS_OPTS = -m 2048 -e 124KiB -c 4096 -U -F
-
 define Device/Default
 	PROFILES := Default
 	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
@@ -42,7 +40,6 @@ define Device/UbiFit
 endef
 
 define Device/DniImage
-	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
@@ -56,7 +53,6 @@ endef
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 
 define Device/TpSafeImage
-	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
@@ -68,7 +64,6 @@ endef
 DEVICE_VARS += TPLINK_BOARD_ID
 
 define Device/ZyXELImage
-	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none | pad-to $${KERNEL_SIZE}
 	KERNEL_NAME := zImage
@@ -99,7 +94,6 @@ define Device/linksys_ea8500
 	PAGESIZE := 2048
 	BLOCKSIZE := 128k
 	KERNEL_SIZE := 3072k
-	FILESYSTEMS := squashfs
 	KERNEL = kernel-bin | append-dtb | uImage none | append-uImage-fakeroot-hdr
 	BOARD_NAME := ea8500
 	SUPPORTED_DEVICES += ea8500
@@ -173,7 +167,6 @@ TARGET_DEVICES += netgear_r7800
 
 define Device/openmesh_a42
 	$(call Device/FitImageLzma)
-	FILESYSTEMS := squashfs
 	DEVICE_DTS := qcom-ipq4019-a42
 	KERNEL_LOADADDR := 0x80208000
 	BLOCKSIZE := 64k
@@ -196,7 +189,6 @@ define Device/qcom_ap-dk01.1-c1
 	KERNEL_INSTALL := 1
 	KERNEL_SIZE := 4096k
 	IMAGE_SIZE := 26624k
-	FILESYSTEMS := squashfs
 	$(call Device/FitImage)
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
@@ -269,7 +261,6 @@ endef
 TARGET_DEVICES += tplink_c2600
 
 define Device/tplink_vr2600v
-	FILESYSTEMS := squashfs
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
