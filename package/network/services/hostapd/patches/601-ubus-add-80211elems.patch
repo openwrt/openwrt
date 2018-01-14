@@ -1,0 +1,10 @@
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -733,6 +733,7 @@ void handle_probe_req(struct hostapd_dat
+ 		.type = HOSTAPD_UBUS_PROBE_REQ,
+ 		.mgmt_frame = mgmt,
+ 		.frame_info = fi,
++		.elems = &elems,
+ 	};
+ 
+ 	if (len < IEEE80211_HDRLEN)
