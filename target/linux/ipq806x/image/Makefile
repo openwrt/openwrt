@@ -203,7 +203,7 @@ define Device/openmesh_a42
 	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
 	IMAGE_SIZE := 15616k
 	IMAGES = factory.bin sysupgrade.bin
-	IMAGE/factory.bin/squashfs := append-rootfs | pad-rootfs | openmesh-image ce_type=A42
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A42
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca4019 uboot-envtools ipq-wifi-openmesh_a42
 endef
