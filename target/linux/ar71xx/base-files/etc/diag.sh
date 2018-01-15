@@ -64,6 +64,7 @@ get_status_led() {
 	archer-c58-v1|\
 	archer-c59-v1|\
 	archer-c60-v1|\
+	archer-c60-v2|\
 	archer-c7-v4|\
 	fritz300e|\
 	gl-usb150|\

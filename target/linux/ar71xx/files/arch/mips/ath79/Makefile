@@ -63,6 +63,7 @@ obj-$(CONFIG_ATH79_MACH_ARCHER_C25_V1)		+= mach-archer-c25-v1.o
 obj-$(CONFIG_ATH79_MACH_ARCHER_C58_V1)		+= mach-archer-c59-v1.o
 obj-$(CONFIG_ATH79_MACH_ARCHER_C59_V1)		+= mach-archer-c59-v1.o
 obj-$(CONFIG_ATH79_MACH_ARCHER_C60_V1)		+= mach-archer-c60-v1.o
+obj-$(CONFIG_ATH79_MACH_ARCHER_C60_V2)		+= mach-archer-c60-v1.o
 obj-$(CONFIG_ATH79_MACH_ARCHER_C7)		+= mach-archer-c7.o
 obj-$(CONFIG_ATH79_MACH_ARCHER_C7)		+= mach-archer-c7-v4.o
 obj-$(CONFIG_ATH79_MACH_ARDUINO_YUN)		+= mach-arduino-yun.o
