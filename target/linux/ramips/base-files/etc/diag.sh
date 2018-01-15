@@ -174,6 +174,7 @@ get_status_led() {
 		;;
 	k2p|\
 	m3|\
+	mir3g|\
 	miwifi-nano)
 		status_led="$boardname:blue:status"
 		;;
@@ -189,9 +190,6 @@ get_status_led() {
 	m4-4M|\
 	m4-8M)
 		status_led="m4:blue:status"
-		;;
-	mir3g)
-		status_led="$boardname:yellow:status"
 		;;
 	miwifi-mini|\
 	zte-q7)
