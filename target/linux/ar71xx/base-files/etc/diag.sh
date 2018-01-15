@@ -199,6 +199,9 @@ get_status_led() {
 	el-mini)
 		status_led="easylink:green:system"
 		;;
+	ew-balin)
+		status_led="balin:green:status"
+		;;
 	ew-dorin|\
 	ew-dorin-router)
 		status_led="dorin:green:status"

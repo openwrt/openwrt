@@ -643,6 +643,9 @@ ar71xx_board_detect() {
 	*"EL-MINI")
 		name="el-mini"
 		;;
+	*"EmbWir-Balin")
+		name="ew-balin"
+		;;
 	*"EmbWir-Dorin")
 		name="ew-dorin"
 		;;
