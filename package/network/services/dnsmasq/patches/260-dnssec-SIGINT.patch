@@ -1,0 +1,120 @@
+From 3c973ad92d317df736d5a8fde67baba6b102d91e Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sun, 14 Jan 2018 21:05:37 +0000
+Subject: [PATCH] Use SIGINT (instead of overloading SIGHUP) to turn on DNSSEC
+ time validation.
+
+---
+ src/dnsmasq.c |   36 +++++++++++++++++++++++++-----------
+ src/dnsmasq.h |    1 +
+ src/helper.c  |    3 ++-
+ 5 files changed, 38 insertions(+), 14 deletions(-)
+
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -137,7 +137,8 @@ int main (int argc, char **argv)
+   sigaction(SIGTERM, &sigact, NULL);
+   sigaction(SIGALRM, &sigact, NULL);
+   sigaction(SIGCHLD, &sigact, NULL);
+-
++  sigaction(SIGINT, &sigact, NULL);
++  
+   /* ignore SIGPIPE */
+   sigact.sa_handler = SIG_IGN;
+   sigaction(SIGPIPE, &sigact, NULL);
+@@ -815,7 +816,7 @@ int main (int argc, char **argv)
+       
+       daemon->dnssec_no_time_check = option_bool(OPT_DNSSEC_TIME);
+       if (option_bool(OPT_DNSSEC_TIME) && !daemon->back_to_the_future)
+-	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until first cache reload"));
++	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until receipt of SIGINT"));
+       
+       if (rc == 1)
+ 	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until system time valid"));
+@@ -1142,7 +1143,7 @@ static void sig_handler(int sig)
+     {
+       /* ignore anything other than TERM during startup
+ 	 and in helper proc. (helper ignore TERM too) */
+-      if (sig == SIGTERM)
++      if (sig == SIGTERM || sig == SIGINT)
+ 	exit(EC_MISC);
+     }
+   else if (pid != getpid())
+@@ -1168,6 +1169,15 @@ static void sig_handler(int sig)
+ 	event = EVENT_DUMP;
+       else if (sig == SIGUSR2)
+ 	event = EVENT_REOPEN;
++      else if (sig == SIGINT)
++	{
++	  /* Handle SIGINT normally in debug mode, so
++	     ctrl-c continues to operate. */
++	  if (option_bool(OPT_DEBUG))
++	    exit(EC_MISC);
++	  else
++	    event = EVENT_TIME;
++	}
+       else
+ 	return;
+ 
+@@ -1295,14 +1305,7 @@ static void async_event(int pipe, time_t
+       {
+       case EVENT_RELOAD:
+ 	daemon->soa_sn++; /* Bump zone serial, as it may have changed. */
+-
+-#ifdef HAVE_DNSSEC
+-	if (daemon->dnssec_no_time_check && option_bool(OPT_DNSSEC_VALID) && option_bool(OPT_DNSSEC_TIME))
+-	  {
+-	    my_syslog(LOG_INFO, _("now checking DNSSEC signature timestamps"));
+-	    daemon->dnssec_no_time_check = 0;
+-	  } 
+-#endif
++	
+ 	/* fall through */
+ 	
+       case EVENT_INIT:
+@@ -1411,6 +1414,17 @@ static void async_event(int pipe, time_t
+ 	poll_resolv(0, 1, now);
+ 	break;
+ 
++      case EVENT_TIME:
++#ifdef HAVE_DNSSEC
++	if (daemon->dnssec_no_time_check && option_bool(OPT_DNSSEC_VALID) && option_bool(OPT_DNSSEC_TIME))
++	  {
++	    my_syslog(LOG_INFO, _("now checking DNSSEC signature timestamps"));
++	    daemon->dnssec_no_time_check = 0;
++	    clear_cache_and_reload(now);
++	  }
++#endif
++	break;
++	
+       case EVENT_TERM:
+ 	/* Knock all our children on the head. */
+ 	for (i = 0; i < MAX_PROCS; i++)
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -175,6 +175,7 @@ struct event_desc {
+ #define EVENT_NEWROUTE   23
+ #define EVENT_TIME_ERR   24
+ #define EVENT_SCRIPT_LOG 25
++#define EVENT_TIME       26
+ 
+ /* Exit codes. */
+ #define EC_GOOD        0
+--- a/src/helper.c
++++ b/src/helper.c
+@@ -97,13 +97,14 @@ int create_helper(int event_fd, int err_
+       return pipefd[1];
+     }
+ 
+-  /* ignore SIGTERM, so that we can clean up when the main process gets hit
++  /* ignore SIGTERM and SIGINT, so that we can clean up when the main process gets hit
+      and SIGALRM so that we can use sleep() */
+   sigact.sa_handler = SIG_IGN;
+   sigact.sa_flags = 0;
+   sigemptyset(&sigact.sa_mask);
+   sigaction(SIGTERM, &sigact, NULL);
+   sigaction(SIGALRM, &sigact, NULL);
++  sigaction(SIGINT, &sigact, NULL);
+ 
+   if (!option_bool(OPT_DEBUG) && uid != 0)
+     {
