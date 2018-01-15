@@ -667,7 +667,8 @@ platform_check_image() {
 	rb-lhg-5nd|\
 	rb-map-2nd|\
 	rb-mapl-2nd|\
-	rb-wap-2nd)
+	rb-wap-2nd|\
+	rb-wapg-5hact2hnd)
 		return 0
 		;;
 	esac
@@ -729,7 +730,8 @@ platform_pre_upgrade() {
 	rb-lhg-5nd|\
 	rb-map-2nd|\
 	rb-mapl-2nd|\
-	rb-wap-2nd)
+	rb-wap-2nd|\
+	rb-wapg-5hact2hnd)
 		# erase firmware if booted from initramfs
 		[ -z "$(rootfs_type)" ] && mtd erase firmware
 		;;
