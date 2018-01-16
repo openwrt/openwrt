@@ -133,8 +133,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
 +#endif
  
-	check_modinfo_retpoline(mod, info);
-
+ 	check_modinfo_retpoline(mod, info);
+ 
 --- a/scripts/mod/modpost.c
 +++ b/scripts/mod/modpost.c
 @@ -1982,7 +1982,9 @@ static void read_symbols(char *modname)
@@ -172,12 +172,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void add_retpoline(struct buffer *b)
  {
 +#ifndef CONFIG_MODULE_STRIPPED
-	buf_printf(b, "\n#ifdef RETPOLINE\n");
-	buf_printf(b, "MODULE_INFO(retpoline, \"Y\");\n");
-	buf_printf(b, "#endif\n");
+ 	buf_printf(b, "\n#ifdef RETPOLINE\n");
+ 	buf_printf(b, "MODULE_INFO(retpoline, \"Y\");\n");
+ 	buf_printf(b, "#endif\n");
 +#endif
  }
-
+ 
  static void add_staging_flag(struct buffer *b, const char *name)
  {
 +#ifndef CONFIG_MODULE_STRIPPED

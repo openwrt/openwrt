@@ -24,11 +24,9 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  kernel/exit.c                 | 1 +
  4 files changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/arch/arm/kernel/traps.c b/arch/arm/kernel/traps.c
-index 5cf04888c581..3e26c6f7a191 100644
 --- a/arch/arm/kernel/traps.c
 +++ b/arch/arm/kernel/traps.c
-@@ -793,7 +793,6 @@ void abort(void)
+@@ -790,7 +790,6 @@ void abort(void)
  	/* if that doesn't kill us, halt */
  	panic("Oops failed to kill thread");
  }
@@ -36,8 +34,6 @@ index 5cf04888c581..3e26c6f7a191 100644
  
  void __init trap_init(void)
  {
-diff --git a/arch/m32r/kernel/traps.c b/arch/m32r/kernel/traps.c
-index cb79fba79d43..b88a8dd14933 100644
 --- a/arch/m32r/kernel/traps.c
 +++ b/arch/m32r/kernel/traps.c
 @@ -122,7 +122,6 @@ void abort(void)
@@ -48,8 +44,6 @@ index cb79fba79d43..b88a8dd14933 100644
  
  void __init trap_init(void)
  {
-diff --git a/arch/unicore32/kernel/traps.c b/arch/unicore32/kernel/traps.c
-index 5f25b39f04d4..c4ac6043ebb0 100644
 --- a/arch/unicore32/kernel/traps.c
 +++ b/arch/unicore32/kernel/traps.c
 @@ -298,7 +298,6 @@ void abort(void)
@@ -60,8 +54,6 @@ index 5f25b39f04d4..c4ac6043ebb0 100644
  
  void __init trap_init(void)
  {
-diff --git a/kernel/exit.c b/kernel/exit.c
-index df0c91d5606c..995453d9fb55 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
 @@ -1763,3 +1763,4 @@ __weak void abort(void)
@@ -69,6 +61,3 @@ index df0c91d5606c..995453d9fb55 100644
  	panic("Oops failed to kill thread");
  }
 +EXPORT_SYMBOL(abort);
--- 
-2.11.0
-

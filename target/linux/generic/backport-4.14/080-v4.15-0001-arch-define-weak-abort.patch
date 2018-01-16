@@ -30,11 +30,9 @@ Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
  kernel/exit.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/kernel/exit.c b/kernel/exit.c
-index 6b4298a41167..df0c91d5606c 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -1755,3 +1755,11 @@ COMPAT_SYSCALL_DEFINE5(waitid,
+@@ -1755,3 +1755,11 @@ Efault:
  	return -EFAULT;
  }
  #endif
@@ -46,6 +44,3 @@ index 6b4298a41167..df0c91d5606c 100644
 +	/* if that doesn't kill us, halt */
 +	panic("Oops failed to kill thread");
 +}
--- 
-2.11.0
-

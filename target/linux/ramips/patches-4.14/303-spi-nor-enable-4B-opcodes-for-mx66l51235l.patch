@@ -1,0 +1,64 @@
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -1083,7 +1083,7 @@ static const struct flash_info spi_nor_i
+ 	{ "mx25l25635e", INFO(0xc22019, 0, 64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+ 	{ "mx25u25635f", INFO(0xc22539, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_4B_OPCODES) },
+ 	{ "mx25l25655e", INFO(0xc22619, 0, 64 * 1024, 512, 0) },
+-	{ "mx66l51235l", INFO(0xc2201a, 0, 64 * 1024, 1024, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++	{ "mx66l51235l", INFO(0xc2201a, 0, 64 * 1024, 1024, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
+ 	{ "mx66u51235f", INFO(0xc2253a, 0, 64 * 1024, 1024, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
+ 	{ "mx66l1g45g",  INFO(0xc2201b, 0, 64 * 1024, 2048, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+ 	{ "mx66l1g55g",  INFO(0xc2261b, 0, 64 * 1024, 2048, SPI_NOR_QUAD_READ) },
+@@ -1947,7 +1947,11 @@ static int spi_nor_read_sfdp(struct spi_
+ 	nor->read_dummy = 8;
+ 
+ 	while (len) {
+-		ret = nor->read(nor, addr, len, (u8 *)buf);
++		size_t _len = len;
++
++		if (nor->chunk_size)
++			_len = min(len, nor->chunk_size);
++		ret = nor->read(nor, addr, _len, (u8 *)buf);
+ 		if (!ret || ret > len) {
+ 			ret = -EIO;
+ 			goto read_err;
+@@ -2791,6 +2795,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	struct device *dev = nor->dev;
+ 	struct mtd_info *mtd = &nor->mtd;
+ 	struct device_node *np = spi_nor_get_flash_node(nor);
++	u32 val;
+ 	int ret;
+ 	int i;
+ 
+@@ -2803,6 +2808,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	nor->read_proto = SNOR_PROTO_1_1_1;
+ 	nor->write_proto = SNOR_PROTO_1_1_1;
+ 
++	if (np && !of_property_read_u32(np, "m25p,chunked-io", &val))
++		nor->chunk_size = val;
++
+ 	if (name)
+ 		info = spi_nor_match_id(name);
+ 	/* Try to auto-detect if chip name wasn't specified or not found */
+@@ -2916,19 +2924,16 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	mtd->writebufsize = nor->page_size;
+ 
+ 	if (np) {
+-		u32 val;
+-
+ 		/* If we were instantiated by DT, use it */
+ 		if (of_property_read_bool(np, "m25p,fast-read"))
+ 			params.hwcaps.mask |= SNOR_HWCAPS_READ_FAST;
+ 		else
+ 			params.hwcaps.mask &= ~SNOR_HWCAPS_READ_FAST;
+ 
+-		if (!of_property_read_u32(np, "m25p,chunked-io", &val)) {
+-			dev_info(dev, "using chunked io (size=%d)\n", val);
++		if (nor->chunk_size) {
++			dev_info(dev, "using chunked io (size=%d)\n", nor->chunk_size);
+ 			mtd->_read = spi_nor_chunked_read;
+ 			mtd->_write = spi_nor_chunked_write;
+-			nor->chunk_size = val;
+ 		}
+ 	} else {
+ 		/* If we weren't instantiated by DT, default to fast-read */
