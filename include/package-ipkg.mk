@@ -199,6 +199,15 @@ $(_endef)
 	$(CheckDependencies)
 
 	$(RSTRIP) $$(IDIR_$(1))
+
+    ifneq ($$(CONFIG_IPK_FILES_CHECKSUMS),)
+	(cd $$(IDIR_$(1)); \
+		( \
+			find . -type f \! -path ./CONTROL/\* -exec sha256sum \{\} \; 2> /dev/null | \
+			sed 's|\([[:blank:]]\)\./|\1/|' > $$(IDIR_$(1))/CONTROL/files-sha256 \
+		) || true \
+	)
+    endif
 	(cd $$(IDIR_$(1))/CONTROL; \
 		( \
 			echo "$$$$CONTROL"; \
