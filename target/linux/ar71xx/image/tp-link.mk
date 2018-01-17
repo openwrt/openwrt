@@ -1004,3 +1004,12 @@ define Device/tl-wa7210n-v2
     CONSOLE := ttyATH0,115200
 endef
 TARGET_DEVICES += tl-wa7210n-v2
+
+define Device/tl-hs110
+  DEVICE_TITLE := TP-LINK TL-HS110
+  BOARDNAME := TL-HS110
+  IMAGE_SIZE := 3776k
+  MTDPARTS := spi0.0:64k(u-boot),3968k(firmware),64k(ART),12288k(archon)
+  CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += tl-hs110
