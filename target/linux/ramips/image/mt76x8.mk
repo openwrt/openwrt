@@ -79,7 +79,7 @@ define Device/omega2
   DEVICE_TITLE := Onion Omega2
   DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci uboot-envtools
 endef
-TARGET_DEVICES += omega2
+
 
 define Device/omega2p
   DTS := OMEGA2P
@@ -215,13 +215,23 @@ define Device/wl-wn575a3
 endef
 TARGET_DEVICES += wl-wn575a3
 
-define Device/widora-neo
-  DTS := WIDORA-NEO
+define Device/widora-neo-16M
+  DTS := WIDORA-NEO-16M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := Widora-NEO
+  DEVICE_TITLE := Widora-NEO-16M
+  SUPPORTED_DEVICES += widora-neo
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
-TARGET_DEVICES += widora-neo
+TARGET_DEVICES += widora-neo-16M
+
+define Device/widora-neo-32M
+  DTS := WIDORA-NEO-32M
+  IMAGE_SIZE := $(ralink_default_fw_size_32M)
+  DEVICE_TITLE := Widora-NEO-32M
+  SUPPORTED_DEVICES += widora-neo
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += widora-neo-32M
 
 define Device/wrtnode2p
   DTS := WRTNODE2P
