@@ -19,9 +19,8 @@ zyxel_get_rootfs() {
 
 zyxel_do_flash() {
 	local tar_file=$1
-	local board=$2
-	local kernel=$3
-	local rootfs=$4
+	local kernel=$2
+	local rootfs=$3
 
 	# keep sure its unbound
 	losetup --detach-all || {
@@ -29,14 +28,18 @@ zyxel_do_flash() {
 		reboot -f
 	}
 
+	# use the first found directory in the tar archive
+	local board_dir=$(tar tf $tar_file | grep -m 1 '^sysupgrade-.*/$')
+	board_dir=${board_dir%/}
+
 	echo "flashing kernel to /dev/${kernel}"
-	tar xf $tar_file sysupgrade-$board/kernel -O >/dev/$kernel
+	tar xf $tar_file ${board_dir}/kernel -O >/dev/$kernel
 
 	echo "flashing rootfs to ${rootfs}"
-	tar xf $tar_file sysupgrade-$board/root -O >"${rootfs}"
+	tar xf $tar_file ${board_dir}/root -O >"${rootfs}"
 
 	# a padded rootfs is needed for overlay fs creation
-	local offset=$(tar xf $tar_file sysupgrade-$board/root -O | wc -c)
+	local offset=$(tar xf $tar_file ${board_dir}/root -O | wc -c)
 	[ $offset -lt 65536 ] && {
 		echo Wrong size for rootfs: $offset
 		sleep 10
@@ -92,7 +95,7 @@ zyxel_do_upgrade() {
 		;;
 	esac
 
-	zyxel_do_flash $tar_file $board $kernel $rootfs
+	zyxel_do_flash $tar_file $kernel $rootfs
 
 	return 0
 }
