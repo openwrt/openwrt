@@ -215,13 +215,14 @@ define Device/wl-wn575a3
 endef
 TARGET_DEVICES += wl-wn575a3
 
-define Device/widora-neo
-  DTS := WIDORA-NEO
+define Device/widora_neo-16m
+  DTS := WIDORA-NEO-16M
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
-  DEVICE_TITLE := Widora-NEO
+  DEVICE_TITLE := Widora-NEO (16M)
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SUPPORTED_DEVICES += widora-neo
 endef
-TARGET_DEVICES += widora-neo
+TARGET_DEVICES += widora_neo-16m
 
 define Device/wrtnode2p
   DTS := WRTNODE2P
