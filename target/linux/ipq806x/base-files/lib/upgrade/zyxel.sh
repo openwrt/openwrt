@@ -32,8 +32,8 @@ zyxel_do_flash() {
 	local board_dir=$(tar tf $tar_file | grep -m 1 '^sysupgrade-.*/$')
 	board_dir=${board_dir%/}
 
-	echo "flashing kernel to /dev/${kernel}"
-	tar xf $tar_file ${board_dir}/kernel -O >/dev/$kernel
+	echo "flashing kernel to $kernel"
+	tar xf $tar_file ${board_dir}/kernel -O >$kernel
 
 	echo "flashing rootfs to ${rootfs}"
 	tar xf $tar_file ${board_dir}/root -O >"${rootfs}"
@@ -80,10 +80,10 @@ zyxel_do_upgrade() {
 	zyxel,nbg6817)
 		case "$rootfs" in
 			"/dev/mmcblk0p5")
-				kernel=mmcblk0p4
+				kernel="/dev/mmcblk0p4"
 			;;
 			"/dev/mmcblk0p8")
-				kernel=mmcblk0p7
+				kernel="/dev/mmcblk0p7"
 			;;
 			*)
 				return 1
