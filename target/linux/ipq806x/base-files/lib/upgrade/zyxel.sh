@@ -21,6 +21,7 @@ zyxel_do_flash() {
 	local tar_file=$1
 	local kernel=$2
 	local rootfs=$3
+	local dualflagmtd=$4
 
 	# keep sure its unbound
 	losetup --detach-all || {
@@ -63,6 +64,16 @@ zyxel_do_flash() {
 		umount /tmp/new_root
 	}
 
+	# flashing successful, toggle the dualflag
+	case "$rootfs" in
+		"/dev/mmcblk0p5")
+			printf "\xff" >$dualflagmtd
+			;;
+		"/dev/mmcblk0p8")
+			printf "\x01" >$dualflagmtd
+			;;
+	esac
+
 	# Cleanup
 	losetup -d $loopdev >/dev/null 2>&1
 	sync
@@ -79,12 +90,21 @@ zyxel_do_upgrade() {
 	[ -b "${rootfs}" ] || return 1
 	case "$board" in
 	zyxel,nbg6817)
+		local dualflagmtd="$(find_mtd_part 0:DUAL_FLAG)"
+		[ -b $dualflagmtd ] || return 1
+
 		case "$rootfs" in
 			"/dev/mmcblk0p5")
-				kernel="/dev/mmcblk0p4"
+				# booted from the primary partition set
+				# write to the alternative set
+				kernel="/dev/mmcblk0p7"
+				rootfs="/dev/mmcblk0p8"
 			;;
 			"/dev/mmcblk0p8")
-				kernel="/dev/mmcblk0p7"
+				# booted from the alternative partition set
+				# write to the primary set
+				kernel="/dev/mmcblk0p4"
+				rootfs="/dev/mmcblk0p5"
 			;;
 			*)
 				return 1
@@ -96,7 +116,7 @@ zyxel_do_upgrade() {
 		;;
 	esac
 
-	zyxel_do_flash $tar_file $kernel $rootfs
+	zyxel_do_flash $tar_file $kernel $rootfs $dualflagmtd
 
 	return 0
 }
