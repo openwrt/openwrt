@@ -215,49 +215,6 @@
 			 */
 		};
 
-		gsbi5: gsbi@1a200000 {
-			qcom,mode = <GSBI_PROT_SPI>;
-			status = "ok";
-
-			spi5: spi@1a280000 {
-				status = "ok";
-
-				pinctrl-0 = <&spi_pins>;
-				pinctrl-names = "default";
-
-				cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
-
-				flash: m25p80@0 {
-					compatible = "jedec,spi-nor";
-					#address-cells = <1>;
-					#size-cells = <1>;
-					spi-max-frequency = <50000000>;
-					reg = <0>;
-
-					linux,part-probe = "qcom-smem";
-				};
-			};
-		};
-
-		gsbi6: gsbi@16500000 {
-			qcom,mode = <GSBI_PROT_SPI>;
-			status = "ok";
-			spi6: spi@16580000 {
-				status = "ok";
-
-				pinctrl-0 = <&spi6_pins>;
-				pinctrl-names = "default";
-
-				cs-gpios = <&qcom_pinmux 57 GPIO_ACTIVE_HIGH>;
-
-				spi-nor@0 {
-					compatible = "jedec,spi-nor";
-					reg = <0>;
-					spi-max-frequency = <6000000>;
-				};
-			};
-		};
-
 		sata-phy@1b400000 {
 			status = "ok";
 		};
