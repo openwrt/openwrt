@@ -3,6 +3,8 @@
  *
  *  - MikroTik RouterBOARD mAP 2nD
  *  - MikroTik RouterBOARD mAP L-2nD
+ *  - MikroTik RouterBOARD 911-2Hn (911 Lite2)
+ *  - MikroTik RouterBOARD 911-5Hn (911 Lite5)
  *  - MikroTik RouterBOARD 941L-2nD
  *  - MikroTik RouterBOARD 951Ui-2nD
  *  - MikroTik RouterBOARD 952Ui-5ac2nD
@@ -506,6 +508,56 @@ static struct platform_device rbwapgsc_phy_device = {
 	.id = 1,
 	.dev = {
 		.platform_data = &rbwapgsc_mdio_data
+	},
+};
+
+/* RB911L GPIOs */
+#define RB911L_GPIO_BTN_RESET	15
+#define RB911L_GPIO_LED_1	13
+#define RB911L_GPIO_LED_2	12
+#define RB911L_GPIO_LED_3	4
+#define RB911L_GPIO_LED_4	21
+#define RB911L_GPIO_LED_5	18
+#define RB911L_GPIO_LED_ETH	20
+#define RB911L_GPIO_LED_POWER	11
+#define RB911L_GPIO_LED_USER	3
+#define RB911L_GPIO_PIN_HOLE	14 /* for reference */
+
+static struct gpio_led rb911l_leds[] __initdata = {
+	{
+		.name = "rb:green:eth",
+		.gpio = RB911L_GPIO_LED_ETH,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:led1",
+		.gpio = RB911L_GPIO_LED_1,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:led2",
+		.gpio = RB911L_GPIO_LED_2,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:led3",
+		.gpio = RB911L_GPIO_LED_3,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:led4",
+		.gpio = RB911L_GPIO_LED_4,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:led5",
+		.gpio = RB911L_GPIO_LED_5,
+		.active_low = 1,
+	}, {
+		.name = "rb:green:power",
+		.gpio = RB911L_GPIO_LED_POWER,
+		.default_state = LEDS_GPIO_DEFSTATE_ON,
+		.open_drain = 1,
+	}, {
+		.name = "rb:green:user",
+		.gpio = RB911L_GPIO_LED_USER,
+		.active_low = 1,
+		.open_drain = 1,
 	},
 };
 
@@ -1015,8 +1067,53 @@ static void __init rbwapgsc_setup(void)
 			rbwapgsc_leds);
 }
 
+/*
+ * Setup the 911L hardware (AR9344).
+ */
+static void __init rb911l_setup(void)
+{
+	const struct rb_info *info;
+
+	info = rbspi_platform_setup();
+	if (!info)
+		return;
+
+	if (!rb_has_hw_option(info, RB_HW_OPT_NO_NAND)) {
+		/*
+		 * Old hardware revisions might be equipped with a NAND flash
+		 * chip instead of the 16MiB SPI NOR device. Those boards are
+		 * not supported at the moment, so throw a warning and skip
+		 * the peripheral setup to avoid messing up the data in the
+		 * flash chip.
+		 */
+		WARN(1, "The NAND flash on this board is not supported.\n");
+	} else {
+		rbspi_peripherals_setup(0);
+	}
+
+	ath79_register_mdio(1, 0x0);
+
+	ath79_init_mac(ath79_eth1_data.mac_addr, ath79_mac_base, 0);
+
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ath79_eth1_data.speed = SPEED_1000;
+	ath79_eth1_data.duplex = DUPLEX_FULL;
+
+	ath79_register_eth(1);
+
+	rbspi_wlan_init(0, 1);
+
+	rbspi_register_reset_button(RB911L_GPIO_BTN_RESET);
+
+	/* Make the eth LED controllable by software. */
+	ath79_gpio_output_select(RB911L_GPIO_LED_ETH, AR934X_GPIO_OUT_GPIO);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(rb911l_leds), rb911l_leds);
+}
+
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_MAPL, "map-hb", rbmapl_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_941, "H951L", rbhapl_setup);
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_911L, "911L", rb911l_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_952, "952-hb", rb952_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_962, "962", rb962_setup);
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_750UPR2, "750-hb", rb750upr2_setup);
