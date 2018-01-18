@@ -564,7 +564,7 @@ void __init rbspi_wlan_init(u16 id, int wmac_offset)
 /*
  * Common platform init routine for all SPI NOR devices.
  */
-static int __init rbspi_platform_setup(void)
+static __init const struct rb_info *rbspi_platform_setup(void)
 {
 	const struct rb_info *info;
 	char buf[RBSPI_MACH_BUFLEN] = "MikroTik ";
@@ -573,7 +573,7 @@ static int __init rbspi_platform_setup(void)
 
 	info = rb_init_info((void *)(KSEG1ADDR(AR71XX_SPI_BASE)), 0x20000);
 	if (!info)
-		return -ENODEV;
+		return NULL;
 
 	if (info->board_name) {
 		str = "RouterBOARD ";
@@ -591,7 +591,7 @@ static int __init rbspi_platform_setup(void)
 	/* fix partitions based on flash parsing */
 	rbspi_init_partitions(info);
 
-	return 0;
+	return info;
 }
 
 /*
@@ -683,7 +683,7 @@ static void __init rbmapl_setup(void)
 {
 	u32 flags = RBSPI_HAS_WLAN0;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
@@ -712,7 +712,7 @@ static void __init rbhapl_setup(void)
 {
 	u32 flags = RBSPI_HAS_WLAN0;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
@@ -774,7 +774,7 @@ static void __init rb952_setup(void)
 	u32 flags = RBSPI_HAS_WAN4 | RBSPI_HAS_USB |
 			RBSPI_HAS_SSR | RBSPI_HAS_POE;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	/* differentiate the hAP from the hAP ac lite */
@@ -797,7 +797,7 @@ static void __init rb750upr2_setup(void)
 {
 	u32 flags = RBSPI_HAS_WAN4 | RBSPI_HAS_SSR;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	/* differentiate the hEX lite from the hEX PoE lite */
@@ -827,7 +827,7 @@ static void __init rb962_setup(void)
 {
 	u32 flags = RBSPI_HAS_USB | RBSPI_HAS_POE | RBSPI_HAS_PCI;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
@@ -880,7 +880,7 @@ static void __init rblhg_setup(void)
 {
 	u32 flags = RBSPI_HAS_WLAN1 | RBSPI_HAS_MDIO1;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
@@ -901,7 +901,7 @@ static void __init rbwap_setup(void)
 {
 	u32 flags = RBSPI_HAS_WLAN0;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
@@ -923,7 +923,7 @@ static void __init rbcap_setup(void)
 {
 	u32 flags = RBSPI_HAS_WLAN0;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
@@ -948,7 +948,7 @@ static void __init rbmap_setup(void)
 	u32 flags = RBSPI_HAS_USB | RBSPI_HAS_WLAN0 |
 			RBSPI_HAS_SSR | RBSPI_HAS_POE;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	rbspi_spi_cs_gpios[1] = RBMAP_GPIO_SSR_CS;
@@ -985,7 +985,7 @@ static void __init rbwapgsc_setup(void)
 {
 	u32 flags = RBSPI_HAS_PCI;
 
-	if (rbspi_platform_setup())
+	if (!rbspi_platform_setup())
 		return;
 
 	rbspi_peripherals_setup(flags);
