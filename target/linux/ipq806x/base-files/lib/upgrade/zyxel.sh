@@ -47,23 +47,24 @@ zyxel_do_flash() {
 	}
 
 	# Mount loop for rootfs_data
-	losetup -o $offset /dev/loop0 "${rootfs}" || {
+	local loopdev="$(losetup -f)"
+	losetup -o $offset $loopdev $rootfs || {
 		echo "Failed to mount looped rootfs_data."
 		sleep 10
 		reboot -f
 	}
 
 	echo "Format new rootfs_data at position ${offset}."
-	mkfs.ext4 -F -L rootfs_data /dev/loop0
+	mkfs.ext4 -F -L rootfs_data $loopdev
 	mkdir /tmp/new_root
-	mount -t ext4 /dev/loop0 /tmp/new_root && {
+	mount -t ext4 $loopdev /tmp/new_root && {
 		echo "Saving config to rootfs_data at position ${offset}."
 		cp -v /tmp/sysupgrade.tgz /tmp/new_root/
 		umount /tmp/new_root
 	}
 
 	# Cleanup
-	losetup -d /dev/loop0 >/dev/null 2>&1
+	losetup -d $loopdev >/dev/null 2>&1
 	sync
 	umount -a
 	reboot -f
