@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-layerscape-armv8_32b
-PKG_SOURCE_DATE:=2017-10-24
+PKG_SOURCE_DATE:=2018-01-19
 PKG_RELEASE:=1
 
 # Layerscape ARMv8 platforms use 64-bit u-boot to support both 32-bit and 64-bit
@@ -17,8 +17,8 @@ PKG_RELEASE:=1
 # uboot-layerscape's source code.
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/yangbolu1991/u-boot-lede.git
-PKG_SOURCE_VERSION:=43cb4c0fcab237f8daa39c393cc1441b76b99fcf
-PKG_MIRROR_HASH:=ff7d1fcb85dda2be6a9e3785821b5791c7189d2d412b160a9621bb2dcad24dea
+PKG_SOURCE_VERSION:=9fbc70acb44171a3a9be232c17dbed6067a22dfb
+PKG_MIRROR_HASH:=4ad42eb27952fc427e5763295b530b43d29894b9fe9b2cc34b66216ba0cdad70
 
 PKG_MAINTAINER:=Yangbo Lu <yangbo.lu@nxp.com>
 
