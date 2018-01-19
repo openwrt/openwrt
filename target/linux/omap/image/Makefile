@@ -8,12 +8,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 FAT32_BLOCK_SIZE=1024
-FAT32_BLOCKS=$(shell echo $$(($(CONFIG_OMAP_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_TARGET_SDCARD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
 UBIFS_OPTS = -F -m 2048 -e 124KiB -c 4096 -U
 UBI_OPTS = -m 2048 -p 128KiB -s 512 -O 2048
 
-define Build/omap-sdcard
+define Build/sdcard-boot
 	rm -f $@.boot
 	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
 
@@ -23,12 +23,6 @@ define Build/omap-sdcard
 	mmd -i $@.boot ::/dtbs
 	mcopy -i $@.boot $(DTS_DIR)/$(DEVICE_DTS).dtb ::/dtbs/$(DEVICE_DTS).dtb
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::/zImage
-	./gen_omap_sdcard_img.sh $@ \
-		$@.boot \
-		$(IMAGE_ROOTFS) \
-		$(CONFIG_OMAP_SD_BOOT_PARTSIZE) \
-		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
-	rm -f $@.boot
 endef
 
 define Device/Default
@@ -37,7 +31,7 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := omap-sdcard | append-metadata | gzip
+  IMAGE/sdcard.img.gz := sdcard-boot | sdcard-image | append-metadata | gzip
   SUPPORTED_DEVICES = $$(DEVICE_DTS)
 endef
 
