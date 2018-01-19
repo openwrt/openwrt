@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 FAT32_BLOCK_SIZE=1024
-FAT32_BLOCKS=$(shell echo $$(($(CONFIG_BRCM2708_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_TARGET_SDCARD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
 define Build/Compile
 	$(CP) $(LINUX_DIR)/COPYING $(KDIR)/COPYING.linux
@@ -40,17 +40,12 @@ define Build/boot-img
 	mcopy -i $@.boot $(DTS_DIR)/overlays/README ::/overlays/
 endef
 
-define Build/sdcard-img
-	./gen_rpi_sdcard_img.sh $@ $@.boot $(IMAGE_ROOTFS) \
-		$(CONFIG_BRCM2708_SD_BOOT_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
-endef
-
 ### Devices ###
 define Device/Default
   KERNEL := kernel-bin | kernel-img
   KERNEL_IMG := kernel.img
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-img | sdcard-image | gzip | append-metadata
 endef
 
 define Device/rpi
