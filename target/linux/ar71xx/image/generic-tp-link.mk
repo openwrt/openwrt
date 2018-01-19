@@ -153,6 +153,18 @@ define Device/cpe210-220-v1
 endef
 TARGET_DEVICES += cpe210-220-v1
 
+define Device/cpe210-v2
+  $(Device/cpe510-520-v1)
+  DEVICE_TITLE := TP-LINK CPE210 v2
+  BOARDNAME := CPE210V2
+  TPLINK_BOARD_ID := CPE210V2
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  TPLINK_HEADER_VERSION := 1
+endef
+TARGET_DEVICES += cpe210-v2
+
 define Device/wbs210-v1
   $(Device/cpe510-520-v1)
   DEVICE_TITLE := TP-LINK WBS210 v1
