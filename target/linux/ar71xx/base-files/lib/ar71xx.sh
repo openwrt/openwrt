@@ -676,10 +676,10 @@ ar71xx_board_detect() {
 	*"FRITZ!WLAN Repeater 300E")
 		name="fritz300e"
 		;;
-	*"GL AR150")
+	*"GL-AR150")
 		name="gl-ar150"
 		;;
-	*"GL AR300")
+	*"GL-AR300")
 		name="gl-ar300"
 		;;
 	*"GL-AR300M")
