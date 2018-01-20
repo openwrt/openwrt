@@ -1,0 +1,27 @@
+From b993d2cca536870ecdf3b4611de9f77215af8eb8 Mon Sep 17 00:00:00 2001
+From: Antoine Aubert <a.aubert@overkiz.com>
+Date: Fri, 20 Jan 2017 08:10:28 +0100
+Subject: [PATCH] vtls: fix mbedtls multi non blocking handshake.
+
+When using multi, mbedtls handshake is in non blocking mode.
+vtls must set wait for read/write flags for the socket.
+---
+ lib/vtls/vtls.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/lib/vtls/vtls.c b/lib/vtls/vtls.c
+index fad9335bbf..871622fef1 100644
+--- a/lib/vtls/vtls.c
++++ b/lib/vtls/vtls.c
+@@ -485,8 +485,9 @@ void Curl_ssl_close_all(struct Curl_easy *data)
+ }
+ 
+ #if defined(USE_OPENSSL) || defined(USE_GNUTLS) || defined(USE_SCHANNEL) || \
+-    defined(USE_DARWINSSL) || defined(USE_NSS)
+-/* This function is for OpenSSL, GnuTLS, darwinssl, and schannel only. */
++    defined(USE_DARWINSSL) || defined(USE_NSS) || defined(USE_MBEDTLS)
++/* This function is for OpenSSL, GnuTLS, darwinssl, mbedtls, and schannel
++   only. */
+ int Curl_ssl_getsock(struct connectdata *conn, curl_socket_t *socks,
+                      int numsocks)
+ {
