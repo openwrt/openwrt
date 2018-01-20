@@ -50,11 +50,18 @@ $(Package/ath10k-firmware-default)
 endef
 
 CT_FIRMWARE_FILE = $(1)-$($(1)_FIRMWARE_FILE_CT)
+CT_FIRMWARE_FILE_HTT = $(1)-$($(1)_FIRMWARE_FILE_CT_HTT)
 
 define Download/ct-firmware
   URL:=https://www.candelatech.com/downloads/$(2)
   FILE:=$(call CT_FIRMWARE_FILE,$(1))
   URL_FILE:=$($(1)_FIRMWARE_FILE_CT)
+endef
+
+define Download/ct-firmware-htt
+  URL:=https://www.candelatech.com/downloads/$(2)
+  FILE:=$(call CT_FIRMWARE_FILE_HTT,$(1))
+  URL_FILE:=$($(1)_FIRMWARE_FILE_CT_HTT)
 endef
 
 QCA988X_FIRMWARE_FILE_CT:=firmware-2-ct-full-community-19.bin.lede
@@ -84,6 +91,20 @@ define Download/ath10k-firmware-qca9984-ct
   HASH:=d997eed9a8bc6809c01d367759ba8545c10e3be93ea1f33d6d753127ef0f7c5e
 endef
 $(eval $(call Download,ath10k-firmware-qca9984-ct))
+
+QCA4019_FIRMWARE_FILE_CT_HTT:=firmware-5-ct-full-htt-mgt-community-10.bin-lede.002
+define Download/ath10k-firmware-qca4019-ct-htt
+  $(call Download/ct-firmware-htt,QCA4019,ath10k-4019-10-4)
+  HASH:=e67bbc8eba56bc72c1aa99a6304ea98345bddc34f4844d5d79a51db1d6d8c425
+endef
+$(eval $(call Download,ath10k-firmware-qca4019-ct-htt))
+
+QCA4019_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-10.bin-lede.002
+define Download/ath10k-firmware-qca4019-ct
+  $(call Download/ct-firmware,QCA4019,ath10k-4019-10-4)
+  HASH:=f1ebb73903e4e6a6209b8acdc623bc43d355d32cce838ce0448befe9196c7866
+endef
+$(eval $(call Download,ath10k-firmware-qca4019-ct))
 
 QCA9888_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-9.bin-lede.004
 define Download/ath10k-firmware-qca9888-ct
@@ -146,6 +167,18 @@ This firmware conflicts with the standard 9984 firmware, so select only
 one.
 endef
 
+define Package/ath10k-firmware-qca4019-ct-htt/description
+Alternative ath10k firmware for IPQ4019 radio from Candela Technologies.
+Enables IBSS and other features.  Requires ath10k-ct driver to function.
+See:  http://www.candelatech.com/ath10k-10.4.php
+endef
+
+define Package/ath10k-firmware-qca4019-ct/description
+Alternative ath10k firmware for IPQ4019 radio from Candela Technologies.
+Enables IBSS and other features.  Works with standard or ath10k-ct driver.
+See:  http://www.candelatech.com/ath10k-10.4.php
+endef
+
 define Package/ath10k-firmware-qca9888-ct/description
 Alternative ath10k firmware for QCA9886 and QCA9888 from Candela Technologies.
 Enables IBSS and other features.  See:
@@ -162,21 +195,34 @@ endef
 
 define Package/ath10k-firmware-qca99x0-ct
 $(Package/ath10k-firmware-default)
-  TITLE:=ath10k CT 10.4.3 firmware for QCA99x0 devices
+  TITLE:=ath10k CT 10.4 firmware for QCA99x0 devices
   SECTION:=firmware
   CATEGORY:=Firmware
 endef
 
 define Package/ath10k-firmware-qca9984-ct
 $(Package/ath10k-firmware-default)
-  TITLE:=ath10k CT 10.4.3 firmware for QCA9984 devices
+  TITLE:=ath10k CT 10.4 firmware for QCA9984 devices
+  SECTION:=firmware
+  CATEGORY:=Firmware
+endef
+
+define Package/ath10k-firmware-qca4019-ct-htt
+$(Package/ath10k-firmware-default)
+  TITLE:=ath10k CT 10.4 htt-mgt for QCA4018/9
+  SECTION:=firmware
+  CATEGORY:=Firmware
+endef
+define Package/ath10k-firmware-qca4019-ct
+$(Package/ath10k-firmware-default)
+  TITLE:=ath10k CT 10.4 firmware for QCA4018/9
   SECTION:=firmware
   CATEGORY:=Firmware
 endef
 
 define Package/ath10k-firmware-qca9888-ct
 $(Package/ath10k-firmware-default)
-  TITLE:=ath10k CT 10.4.3 firmware for QCA9886 and QCA9888 devices
+  TITLE:=ath10k CT 10.4 fw for QCA9886/8 devices
   SECTION:=firmware
   CATEGORY:=Firmware
 endef
@@ -328,6 +374,26 @@ define Package/ath10k-firmware-qca9984-ct/install
 		$(1)/lib/firmware/ath10k/QCA9984/hw1.0/firmware-5.bin
 endef
 
+define Package/ath10k-firmware-qca4019-ct-htt/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA4019/hw1.0
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/QCA4019/hw1.0/board-2.bin \
+		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/
+	$(INSTALL_DATA) \
+		$(DL_DIR)/$(call CT_FIRMWARE_FILE_HTT,QCA4019) \
+		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/ct-firmware-5.bin
+endef
+
+define Package/ath10k-firmware-qca4019-ct/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA4019/hw1.0
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/QCA4019/hw1.0/board-2.bin \
+		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/
+	$(INSTALL_DATA) \
+		$(DL_DIR)/$(call CT_FIRMWARE_FILE,QCA4019) \
+		$(1)/lib/firmware/ath10k/QCA4019/hw1.0/firmware-5.bin
+endef
+
 define Package/ath10k-firmware-qca9888-ct/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA9888/hw2.0
 	ln -s \
@@ -353,4 +419,6 @@ $(eval $(call BuildPackage,ath10k-firmware-qca9887-ct))
 $(eval $(call BuildPackage,ath10k-firmware-qca988x-ct))
 $(eval $(call BuildPackage,ath10k-firmware-qca99x0-ct))
 $(eval $(call BuildPackage,ath10k-firmware-qca9984-ct))
+$(eval $(call BuildPackage,ath10k-firmware-qca4019-ct-htt))
+$(eval $(call BuildPackage,ath10k-firmware-qca4019-ct))
 $(eval $(call BuildPackage,ath10k-firmware-qca9888-ct))
