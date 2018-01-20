@@ -160,7 +160,7 @@ in a domain which includes a wildcard for NSEC.
 +		       int type_covered;
 +		       unsigned char *psav = p1;
 +		       
-+		       if (rdlen < 18)
++		       if (rdlen1 < 18)
 +			 return 0; /* bad packet */
 +
 +		       GETSHORT(type_covered, p1);
