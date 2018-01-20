@@ -187,6 +187,7 @@ $(eval $(call KernelPackage,usb-gadget-mass-storage))
 define KernelPackage/usb-uhci
   TITLE:=Support for UHCI controllers
   KCONFIG:= \
+	CONFIG_USB_PCI=y \
 	CONFIG_USB_UHCI_ALT \
 	CONFIG_USB_UHCI_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/uhci-hcd.ko
@@ -236,7 +237,9 @@ $(eval $(call KernelPackage,usb-ohci,1))
 define KernelPackage/usb-ohci-pci
   TITLE:=Support for PCI OHCI controllers
   DEPENDS:=@PCI_SUPPORT +kmod-usb-ohci
-  KCONFIG:=CONFIG_USB_OHCI_HCD_PCI
+  KCONFIG:= \
+	CONFIG_USB_PCI=y \
+	CONFIG_USB_OHCI_HCD_PCI
   FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-pci.ko
   AUTOLOAD:=$(call AutoLoad,51,ohci-pci,1)
   $(call AddDepends/usb)
@@ -324,7 +327,9 @@ $(eval $(call KernelPackage,usb2))
 define KernelPackage/usb2-pci
   TITLE:=Support for PCI USB2 controllers
   DEPENDS:=@PCI_SUPPORT +kmod-usb2
-  KCONFIG:=CONFIG_USB_EHCI_PCI
+  KCONFIG:= \
+	CONFIG_USB_PCI=y \
+	CONFIG_USB_EHCI_PCI
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-pci.ko
   AUTOLOAD:=$(call AutoLoad,42,ehci-pci,1)
   $(call AddDepends/usb)
@@ -341,6 +346,7 @@ define KernelPackage/usb-dwc2
   TITLE:=DWC2 USB controller driver
   DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget
   KCONFIG:= \
+	CONFIG_USB_PCI=y \
 	CONFIG_USB_DWC2 \
 	CONFIG_USB_DWC2_PCI \
 	CONFIG_USB_DWC2_PLATFORM \
@@ -1499,6 +1505,7 @@ define KernelPackage/usb3
 	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3
   KCONFIG:= \
+	CONFIG_USB_PCI=y \
 	CONFIG_USB_XHCI_HCD \
 	CONFIG_USB_XHCI_PCI \
 	CONFIG_USB_XHCI_PLATFORM \
@@ -1520,7 +1527,9 @@ $(eval $(call KernelPackage,usb3))
 
 define KernelPackage/usb-net2280
   TITLE:=Support for NetChip 228x PCI USB peripheral controller
-  KCONFIG:= CONFIG_USB_NET2280
+  KCONFIG:= \
+	CONFIG_USB_PCI=y \
+	CONFIG_USB_NET2280
   DEPENDS:=@PCI_SUPPORT +kmod-usb-gadget
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/udc/net2280.ko
   AUTOLOAD:=$(call AutoLoad,46,net2280)
