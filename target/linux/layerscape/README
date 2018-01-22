@@ -46,22 +46,20 @@ $ ./scripts/feeds install -a
   +-----------------------------------------------------------------+
   | [*] Enable all profiles by default                              |
   |-----------------------------------------------------------------|
-  | [ ] Use a per-device root filesystem that adds profile packages |
+  | [*] Use a per-device root filesystem that adds profile packages |
   |-----------------------------------------------------------------|
-  | [*] ls1012afrdm-armv8_64b  ----                                 |
+  | [*] ls1012afrdm-armv8_64b  --->                                 |
   |-----------------------------------------------------------------|
-  | [*] ls1012ardb-armv8_64b  ----                                  |
+  | [*] ls1012ardb-armv8_64b  --->                                  |
   |-----------------------------------------------------------------|
-  | [*] ls1043ardb-armv8_64b  ----                                  |
+  | [*] ls1043ardb-armv8_64b  --->                                  |
   |-----------------------------------------------------------------|
-  | [*] ls1046ardb-armv8_64b  ----                                  |
+  | [*] ls1046ardb-armv8_64b  --->                                  |
   |-----------------------------------------------------------------|
-  | [*] ls1088ardb-armv8_64b  ----                                  |
+  | [*] ls1088ardb-armv8_64b  --->                                  |
   |-----------------------------------------------------------------|
-  | [*] ls2088ardb-armv8_64b  ----                                  |
+  | [*] ls2088ardb-armv8_64b  --->                                  |
   +-----------------------------------------------------------------+
-
-  Note: per-device root filesystem hasn't been supported for now.
 
 2.2 make (or make -j<n>)
 ------------------------
@@ -69,7 +67,7 @@ $ ./scripts/feeds install -a
 2.3 Final firmware
 ------------------
 Final firmware would be in bin/targets/layerscape/<subtarget>/, and
-named as lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin.
+named as openwrt-layerscape-<subtarget>-<device>-<rootfs>-firmware.bin.
 
 
 3. Program firmware to NOR/QSPI flash
@@ -77,9 +75,9 @@ named as lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin.
 * LS1043ARDB (NOR flash)
 
   Start up from bank0, and program firmware to bank4 with below commands.
-  Switch to bank4 to start up LEDE.
+  Switch to bank4 to start up OpenWrt.
 
-  => tftp a0000000 lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin
+  => tftp a0000000 <firmware_name>.bin
   => protect off all
   => erase 64000000 +$filesize
   => cp.b a0000000 64000000 $filesize
@@ -88,9 +86,9 @@ named as lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin.
 * LS2088ARDB (NOR flash)
 
   Start up from bank0, and program firmware to bank4 with below commands.
-  Switch to bank4 to start up LEDE.
+  Switch to bank4 to start up OpenWrt.
 
-  => tftp a0000000 lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin
+  => tftp a0000000 <firmware_name>.bin
   => protect off all
   => erase 584000000 +$filesize
   => cp.b a0000000 584000000 $filesize
@@ -99,9 +97,9 @@ named as lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin.
 * LS1012ARDB (QSPI flash)
 
   Start up from bank1, and program firmware to bank2 with below commands.
-  Switch to bank2 to start up LEDE.
+  Switch to bank2 to start up OpenWrt.
 
-  => tftp a0000000 lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin
+  => tftp a0000000 <firmware_name>.bin
   => i2c mw 0x24 0x7 0xfc;i2c mw 0x24 0x3 0xf5
   => sf probe 0:0
   => sf erase 0 +$filesize
@@ -111,9 +109,9 @@ named as lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin.
 * LS1012AFRDM (QSPI flash)
 
   LS1012AFRDM board only has one bank. Start up board, and program firmware
-  with below commands. Reset to start up LEDE.
+  with below commands. Reset to start up OpenWrt.
 
-  => tftp 96000000 lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin
+  => tftp 96000000 <firmware_name>.bin
   => sf probe 0:0
   => sf erase 0 +$filesize
   => sf write 96000000 0 $filesize
@@ -122,9 +120,9 @@ named as lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin.
 * LS1046ARDB (QSPI flash)
 
   Start up from bank1, and program firmware to bank2 with below commands.
-  Switch to bank2 to start up LEDE.
+  Switch to bank2 to start up OpenWrt.
 
-  => tftp a0000000 lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin
+  => tftp a0000000 <firmware_name>.bin
   => sf probe 0:1
   => sf erase 0 +$filesize
   => sf write a0000000 0 $filesize
@@ -133,9 +131,9 @@ named as lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin.
 * LS1088ARDB (QSPI flash)
 
   Start up from bank0, and program firmware to bank1 with below commands.
-  Switch to bank1 to start up LEDE.
+  Switch to bank1 to start up OpenWrt.
 
-  => tftp a0000000 lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin
+  => tftp a0000000 <firmware_name>.bin
   => sf probe 0:1
   => sf erase 0 +$filesize
   => sf write a0000000 0 $filesize
@@ -146,7 +144,18 @@ named as lede-layerscape-<subtarget>-<device>-squashfs-firmware.bin.
   => i2c mw 66 50 20;i2c mw 66 10 20;i2c mw 66 10 21
 
 
-4. Other references and sources
+4. Known issues and limitation
+------------------------------
+* u-boot may fail to read MAC addresses from EEPROM on some boards and there
+  won't be MAC addresses set in environment. This may cause kernel fails to
+  probe these network interfaces. The workaround is to set MAC addresses
+  manually, for example,
+
+  => setenv ethaddr 00:04:9F:04:65:4b
+  => setenv eth1addr 00:04:9F:04:65:4c
+
+
+5. Other references and sources
 -------------------------------
 - NXP LSDK site: https://lsdk.github.io/
 
