@@ -928,7 +928,7 @@ const char *sym_escape_string_value(const char *in)
 
 	p = in;
 	for (;;) {
-		l = strcspn(p, "\"\\");
+		l = strcspn(p, "\"\\$");
 		p += l;
 
 		if (p[0] == '\0')
@@ -945,14 +945,17 @@ const char *sym_escape_string_value(const char *in)
 
 	p = in;
 	for (;;) {
-		l = strcspn(p, "\"\\");
+		l = strcspn(p, "\"\\$");
 		strncat(res, p, l);
 		p += l;
 
 		if (p[0] == '\0')
 			break;
 
-		strcat(res, "\\");
+		if (p[0] == '$')
+			strcat(res, "$");
+		else
+			strcat(res, "\\");
 		strncat(res, p++, 1);
 	}
 
