@@ -203,6 +203,14 @@ define Device/cf-e355ac
 endef
 TARGET_DEVICES += cf-e355ac
 
+define Device/cf-e355ac-v2
+  $(Device/cf-e355ac)
+  DEVICE_TITLE := COMFAST CF-E355AC v2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9888
+  BOARDNAME := CF-E355AC-V2
+endef
+TARGET_DEVICES += cf-e355ac-v2
+
 define Device/cf-e375ac
   DEVICE_TITLE := COMFAST CF-E375AC
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9888
