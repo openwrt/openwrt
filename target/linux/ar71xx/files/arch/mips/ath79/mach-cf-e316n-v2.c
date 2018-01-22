@@ -2,7 +2,8 @@
  *  Support for COMFAST boards:
  *  - CF-E316N v2 (AR9341)
  *  - CF-E320N v2 (QCA9531)
- *  - CF-E355AC (QCA9531)
+ *  - CF-E355AC (QCA9531 + QCA9882)
+ *  - CF-E355AC v2 (QCA9531 + QCA9886)
  *  - CF-E380AC v1/v2 (QCA9558)
  *  - CF-E520N/CF-E530N (QCA9531)
  *
@@ -418,6 +419,8 @@ static void __init cf_e355ac_setup(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_CF_E355AC, "CF-E355AC", "COMFAST CF-E355AC",
+	     cf_e355ac_setup);
+MIPS_MACHINE(ATH79_MACH_CF_E355AC_V2, "CF-E355AC-V2", "COMFAST CF-E355AC v2",
 	     cf_e355ac_setup);
 
 static void __init cf_e380ac_v1v2_common_setup(unsigned long art_ofs)
