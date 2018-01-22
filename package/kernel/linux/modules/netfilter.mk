@@ -187,6 +187,21 @@ endef
 
 $(eval $(call KernelPackage,ipt-conntrack-extra))
 
+define KernelPackage/ipt-conntrack-label
+  TITLE:=Module for handling connection tracking labels
+  KCONFIG:=$(KCONFIG_IPT_CONNTRACK_LABEL)
+  FILES:=$(foreach mod,$(IPT_CONNTRACK_LABEL-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_CONNTRACK_LABEL-m)))
+  $(call AddDepends/ipt,+kmod-ipt-conntrack)
+endef
+
+define KernelPackage/ipt-conntrack-label/description
+ Netfilter (IPv4) module for handling connection tracking labels
+ Includes:
+ - connlabel
+endef
+
+$(eval $(call KernelPackage,ipt-conntrack-label))
 
 define KernelPackage/ipt-filter
   TITLE:=Modules for packet content inspection

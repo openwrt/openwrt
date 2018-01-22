@@ -86,6 +86,10 @@ $(eval $(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_MATCH_RECENT, $(P_X
 
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CONNTRACK_EXTRA,CONFIG_NETFILTER_XT_CONNMARK, $(P_XT)xt_CONNMARK)))
 
+#conntrack-label
+
+$(eval $(call nf_add,IPT_CONNTRACK_LABEL,CONFIG_NETFILTER_XT_MATCH_CONNLABEL, $(P_XT)xt_connlabel))
+
 # extra
 
 $(eval $(call nf_add,IPT_EXTRA,CONFIG_NETFILTER_XT_MATCH_ADDRTYPE, $(if $(NF_KMOD),$(P_XT)xt_addrtype,$(P_XT)ipt_addrtype)))
