@@ -10,14 +10,14 @@ define Build/mkubntimage
 		-o $@
 endef
 
-# all UBNT XM device expect the kernel image to have 1024k while flash, when
+# all UBNT XM/WA devices expect the kernel image to have 1024k while flash, when
 # booting the image, the size doesn't matter.
 define Build/mkubntimage-split
 	-[ -f $@ ] && ( \
 	dd if=$@ of=$@.old1 bs=1024k count=1; \
 	dd if=$@ of=$@.old2 bs=1024k skip=1; \
 	$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-$(VERSION_DIST)-$(REVISION) \
+		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v$(UBNT_VERSION)-$(VERSION_DIST)-$(REVISION) \
 		-k $@.old1 \
 		-r $@.old2 \
 		-o $@; \
@@ -31,6 +31,7 @@ define Device/ubnt
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   IMAGE_SIZE := 7552k
   UBNT_BOARD := XM
+  UBNT_VERSION := 6.0.0
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | mkubntimage-split
@@ -50,6 +51,15 @@ define Device/ubnt-bz
   UBNT_TYPE := BZ
   UBNT_CHIP := ar7240
   ATH_SOC := ar7241
+endef
+
+define Device/ubnt-wa
+  $(Device/ubnt)
+  UBNT_TYPE := WA
+  UBNT_CHIP := ar934x
+  UBNT_BOARD := WA
+  UBNT_VERSION := 8.5.0
+  ATH_SOC := ar9342
 endef
 
 define Device/ubnt_bullet-m
@@ -72,6 +82,16 @@ define Device/ubnt_nano-m
   SUPPORTED_DEVICES += nano-m
 endef
 TARGET_DEVICES += ubnt_nano-m
+
+define Device/ubnt_nanostation-ac-loco
+  $(Device/ubnt-wa)
+  DEVICE_TITLE := Ubiquiti Nanostation AC loco
+  DEVICE_PACKAGES += kmod-ath10k ath10k-firmware-qca988x
+  IMAGE_SIZE := 15744k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | mkubntimage-split
+endef
+TARGET_DEVICES += ubnt_nanostation-ac-loco
 
 define Device/ubnt_unifi
   $(Device/ubnt-bz)
