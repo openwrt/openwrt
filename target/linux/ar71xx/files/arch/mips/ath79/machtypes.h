@@ -315,6 +315,7 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_LOCO_M_XW,		/* Ubiquiti Loco M XW */
 	ATH79_MACH_UBNT_LSSR71,			/* Ubiquiti LS-SR71 */
 	ATH79_MACH_UBNT_LSX,			/* Ubiquiti LSX */
+	ATH79_MACH_UBNT_NANOSTATIONACL,		/* Ubiquiti Nanostation AC loco */
 	ATH79_MACH_UBNT_NANO_M,			/* Ubiquiti NanoStation M */
 	ATH79_MACH_UBNT_NANO_M_XW,		/* Ubiquiti NanoStation M XW */
 	ATH79_MACH_UBNT_ROCKET_M,		/* Ubiquiti Rocket M */
@@ -328,6 +329,7 @@ enum ath79_mach_type {
 	ATH79_MACH_UBNT_UNIFIAC_PRO,		/* Ubiquiti Unifi AC PRO */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR,		/* Ubiquiti UnifiAP Outdoor */
 	ATH79_MACH_UBNT_UNIFI_OUTDOOR_PLUS,	/* Ubiquiti UnifiAP Outdoor+ */
+	ATH79_MACH_UBNT_WA,			/* Ubiquiti Networks WA board */
 	ATH79_MACH_UBNT_XM,			/* Ubiquiti Networks XM board rev 1.0 */
 	ATH79_MACH_WAM250,			/* Samsung WAM250 */
 	ATH79_MACH_WBS210,			/* TP-LINK WBS210 */
