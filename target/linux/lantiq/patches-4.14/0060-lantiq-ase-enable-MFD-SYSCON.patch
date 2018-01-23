@@ -1,0 +1,24 @@
+From 24af63c6cce57cf88eda7c863035208fba59ee1c Mon Sep 17 00:00:00 2001
+From: Mathias Kresin <dev@kresin.me>
+Date: Tue, 23 Jan 2018 22:14:28 +0100
+Subject: [PATCH] MIPS: lantiq: ase: Enable MFD_SYSCON
+
+Enable syscon to use it for the RCU MFD on Amazon SE as well.
+
+Fixes: 2b6639d4c794 ("MIPS: lantiq: Enable MFD_SYSCON to be able to use it for the RCU MFD")
+Signed-off-by: Mathias Kresin <dev@kresin.me>
+---
+ arch/mips/lantiq/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/mips/lantiq/Kconfig
++++ b/arch/mips/lantiq/Kconfig
+@@ -13,6 +13,8 @@ choice
+ config SOC_AMAZON_SE
+ 	bool "Amazon SE"
+ 	select SOC_TYPE_XWAY
++	select MFD_SYSCON
++	select MFD_CORE
+ 
+ config SOC_XWAY
+ 	bool "XWAY"
