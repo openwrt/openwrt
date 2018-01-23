@@ -149,7 +149,8 @@ get_status_led() {
 		status_led="$board:blue:wlan"
 		;;
 	cf-e380ac-v1|\
-	cf-e380ac-v2)
+	cf-e380ac-v2|\
+	cf-e385ac)
 		status_led="$board:blue:wlan2g"
 		;;
 	cpe510)

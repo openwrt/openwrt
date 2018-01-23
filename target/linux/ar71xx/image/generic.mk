@@ -242,6 +242,16 @@ define Device/cf-e380ac-v2
 endef
 TARGET_DEVICES += cf-e380ac-v2
 
+define Device/cf-e385ac
+  DEVICE_TITLE := COMFAST CF-E385AC
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9984 \
+	-uboot-envtools
+  BOARDNAME := CF-E385AC
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(art)ro,16000k(firmware),64k(art-backup)ro
+endef
+TARGET_DEVICES += cf-e385ac
+
 define Device/cf-e520n
   DEVICE_TITLE := COMFAST CF-E520N
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig -uboot-envtools

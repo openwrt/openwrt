@@ -218,10 +218,19 @@ cf-e375ac)
 cf-e355ac-v1|\
 cf-e355ac-v2|\
 cf-e380ac-v1|\
-cf-e380ac-v2)
-	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
+cf-e380ac-v2|\
+cf-e385ac)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "$board:blue:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:red:wlan5g" "phy0tpt"
+
+	case "$board" in
+	cf-e385ac)
+		ucidef_set_led_switch "lan" "LAN" "$board:green:lan" "switch0" "0x04"
+		;;
+	*)
+		ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth0"
+		;;
+	esac
 	;;
 cf-e520n|\
 cf-e530n)
