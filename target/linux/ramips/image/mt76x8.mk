@@ -238,3 +238,10 @@ define Device/wrtnode2r
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += wrtnode2r
+
+define Device/zbt-we1226
+  DTS := ZBT-WE1226
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := ZBTlink ZBT-WE1226
+endef
+TARGET_DEVICES += zbt-we1226
