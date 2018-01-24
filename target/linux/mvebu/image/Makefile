@@ -13,8 +13,10 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR := 0x00008000
 
+SIGNATURE:=$(shell printf "%.8s" $(SOURCE_DATE_EPOCH))
+
 define Build/dtb
-        $(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb)
+	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb)
 endef
 
 # SD-Card Images:
@@ -43,6 +45,7 @@ endef
 
 define Build/sdcard-img
 	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
+	SIGNATURE="$(SIGNATURE)" \
 	./gen_mvebu_sdcard_img.sh $@ \
 		"$(STAGING_DIR_IMAGE)/clearfog-u-boot-spl.kwb" \
 		c 32768 $@.boot \

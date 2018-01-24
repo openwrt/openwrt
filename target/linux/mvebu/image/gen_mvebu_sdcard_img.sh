@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Copyright (C) 2016 Josua Mayer
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
@@ -40,7 +40,7 @@ dd if=/dev/zero of="$OUTFILE" bs=512 count=1 >/dev/null
 printf "Done\n"
 
 while [ "$#" -ge 3 ]; do
-	ptgen_args="$ptgen_args -p $(($2 / 2 + 256)) -S 0x$1"
+	ptgen_args="$ptgen_args -t $1 -p $(($2 / 2 + 256))"
 	parts="$parts$3 "
 	shift; shift; shift
 done
@@ -50,7 +50,7 @@ sect=63
 
 # create real partition table using fdisk
 printf "Creating partition table: "
-set `ptgen -o "$OUTFILE" -h $head -s $sect -l 1024 $ptgen_args`
+set `ptgen -o "$OUTFILE" -h $head -s $sect -l 1024 -S 0x$SIGNATURE $ptgen_args`
 printf "Done\n"
 
 # install bootloader
