@@ -162,6 +162,7 @@ get_status_led() {
 		;;
 	hc5*61|\
 	hc5661a|\
+	hc5611|\
 	jhr-n805r|\
 	jhr-n926r|\
 	mlw221|\

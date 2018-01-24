@@ -41,6 +41,13 @@ define Device/hc5661a
 endef
 TARGET_DEVICES += hc5661a
 
+define Device/hc5611
+  DTS := HC5611
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+  DEVICE_TITLE := HiWiFi HC5611
+endef
+TARGET_DEVICES += hc5611
+
 define Device/LinkIt7688
   DTS := LINKIT7688
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
