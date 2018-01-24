@@ -25,7 +25,7 @@ platform_do_upgrade_clearfog() {
 
 platform_copy_config_clearfog() {
 	mkdir -p /boot
-	[ -f /boot/kernel.img ] || mount -t vfat -o rw,noatime /dev/mmcblk0p1 /boot
+	[ -f /boot/kernel.img ] || mount -o rw,noatime /dev/mmcblk0p1 /boot
 	cp -af "$CONF_TAR" /boot/
 	sync
 	umount /boot
