@@ -17,7 +17,7 @@ platform_do_upgrade() {
 		platform_do_upgrade_linksys "$ARGV"
 		;;
 	armada-388-clearfog-base|armada-388-clearfog-pro)
-		platform_do_upgrade_clearfog "$ARGV"
+		platform_do_upgrade_sdcard "$ARGV"
 		;;
 	*)
 		default_do_upgrade "$ARGV"
@@ -30,7 +30,7 @@ platform_copy_config() {
 		platform_copy_config_linksys
 		;;
 	armada-388-clearfog-base|armada-388-clearfog-pro)
-		platform_copy_config_clearfog "$ARGV"
+		platform_copy_config_sdcard "$ARGV"
 		;;
 	esac
 }
