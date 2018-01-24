@@ -248,9 +248,9 @@ define Device/wrtnode2r
 endef
 TARGET_DEVICES += wrtnode2r
 
-define Device/zbt-we1226
+define Device/zbtlink_zbt-we1226
   DTS := ZBT-WE1226
   IMAGE_SIZE := $(ralink_default_fw_size_8M)
   DEVICE_TITLE := ZBTlink ZBT-WE1226
 endef
-TARGET_DEVICES += zbt-we1226
+TARGET_DEVICES += zbtlink_zbt-we1226

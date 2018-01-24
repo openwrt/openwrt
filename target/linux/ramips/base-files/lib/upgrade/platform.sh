@@ -204,7 +204,7 @@ platform_check_image() {
 	zbt-ape522ii|\
 	zbt-cpe102|\
 	zbt-wa05|\
-	zbt-we1226|\
+	zbtlink,zbt-we1226|\
 	zbt-we1326|\
 	zbt-we2026|\
 	zbtlink,zbt-we3526|\

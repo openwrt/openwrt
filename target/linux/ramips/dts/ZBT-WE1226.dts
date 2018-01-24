@@ -5,7 +5,7 @@
 #include "mt7628an.dtsi"
 
 / {
-	compatible = "zbt,we1226", "mediatek,mt7628an-soc";
+	compatible = "zbtlink,zbt-we1226", "mediatek,mt7628an-soc";
 	model = "Zbtlink ZBT-WE1226";
 
 	chosen {
@@ -33,19 +33,19 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		lan2 {
-			label = "zbt-we1226:green:lan2";
+		wan {
+			label = "zbt-we1226:green:wan";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 		};
 
 		lan1 {
 			label = "zbt-we1226:green:lan1";
-			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 		};
 
-		wan {
-			label = "zbt-we1226:green:wan";
-			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		lan2 {
+			label = "zbt-we1226:green:lan2";
+			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
@@ -58,7 +58,7 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "i2c", "wled_an";
+			ralink,group = "p0led_an", "p1led_an", "p4led_an", "wdt", "wled_an";
 			ralink,function = "gpio";
 		};
 	};

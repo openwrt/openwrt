@@ -315,8 +315,8 @@ get_status_led() {
 	zbt-we826-32M)
 		status_led="zbt-we826:green:power"
 		;;
-	zbt-we1226)
-		status_led="zbt-we1226:green:wlan"
+	zbtlink,zbt-we1226)
+		status_led="$boardname:green:wlan"
 		;;
 	zbt-wg3526-16M|\
 	zbt-wg3526-32M)
