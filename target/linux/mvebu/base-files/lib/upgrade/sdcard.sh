@@ -4,7 +4,7 @@ get_magic_at() {
 	get_image "$file" | dd bs=1 count=2 skip="$pos" 2>/dev/null | hexdump -v -n 2 -e '1/1 "%02x"'
 }
 
-platform_check_image_clearfog() {
+platform_check_image_sdcard() {
 	local file="$1"
 	local magic
 
@@ -17,13 +17,13 @@ platform_check_image_clearfog() {
 	return 0;
 }
 
-platform_do_upgrade_clearfog() {
+platform_do_upgrade_sdcard() {
 	sync
 	get_image "$1" | dd of=/dev/mmcblk0 bs=2M conv=fsync
 	sleep 1
 }
 
-platform_copy_config_clearfog() {
+platform_copy_config_sdcard() {
 	mkdir -p /boot
 	[ -f /boot/kernel.img ] || mount -o rw,noatime /dev/mmcblk0p1 /boot
 	cp -af "$CONF_TAR" /boot/
