@@ -521,7 +521,7 @@ define KernelPackage/igb
   TITLE:=Intel(R) 82575/82576 PCI-Express Gigabit Ethernet support
   DEPENDS:=@PCI_SUPPORT +kmod-i2c-core +kmod-i2c-algo-bit +kmod-ptp
   KCONFIG:=CONFIG_IGB \
-    CONFIG_IGB_HWMON=n \
+    CONFIG_IGB_HWMON=y \
     CONFIG_IGB_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igb/igb.ko
   AUTOLOAD:=$(call AutoLoad,35,igb)
@@ -539,7 +539,7 @@ define KernelPackage/igbvf
   TITLE:=Intel(R) 82576 Virtual Function Ethernet support
   DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-algo-bit +kmod-ptp
   KCONFIG:=CONFIG_IGBVF \
-    CONFIG_IGB_HWMON=n \
+    CONFIG_IGB_HWMON=y \
     CONFIG_IGB_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igbvf/igbvf.ko
   AUTOLOAD:=$(call AutoLoad,35,igbvf)
@@ -558,7 +558,7 @@ define KernelPackage/ixgbe
   DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_VXLAN=n \
-    CONFIG_IXGBE_HWMON=n \
+    CONFIG_IXGBE_HWMON=y \
     CONFIG_IXGBE_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbe/ixgbe.ko
   AUTOLOAD:=$(call AutoLoad,35,ixgbe)
@@ -577,7 +577,7 @@ define KernelPackage/ixgbevf
   DEPENDS:=@PCI_SUPPORT +kmod-ixgbe
   KCONFIG:=CONFIG_IXGBEVF \
     CONFIG_IXGBE_VXLAN=n \
-    CONFIG_IXGBE_HWMON=n \
+    CONFIG_IXGBE_HWMON=y \
     CONFIG_IXGBE_DCA=n
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/ixgbevf/ixgbevf.ko
   AUTOLOAD:=$(call AutoLoad,35,ixgbevf)
