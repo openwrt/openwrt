@@ -355,10 +355,6 @@ define shexport
 export $(call shvar,$(1))=$$(call $(1))
 endef
 
-define include_mk
-$(eval -include $(if $(DUMP),,$(STAGING_DIR)/mk/$(strip $(1))))
-endef
-
 # Execute commands under flock
 # $(1) => The shell expression.
 # $(2) => The lock name. If not given, the global lock will be used.
