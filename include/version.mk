@@ -85,7 +85,7 @@ $(subst &,\&,$(subst $(comma),\$(comma),$(subst ','\'',$(subst \,\\,$(1)))))
 endef
 #'
 
-VERSION_SED:=$(SED) 's,%U,$(call sed_escape,$(VERSION_REPO)),g' \
+VERSION_SED_SCRIPT:=$(SED) 's,%U,$(call sed_escape,$(VERSION_REPO)),g' \
 	-e 's,%V,$(call sed_escape,$(VERSION_NUMBER)),g' \
 	-e 's,%v,\L$(call sed_escape,$(subst $(space),_,$(VERSION_NUMBER))),g' \
 	-e 's,%C,$(call sed_escape,$(VERSION_CODE)),g' \
@@ -104,4 +104,3 @@ VERSION_SED:=$(SED) 's,%U,$(call sed_escape,$(VERSION_REPO)),g' \
 	-e 's,%P,$(call sed_escape,$(VERSION_PRODUCT)),g' \
 	-e 's,%h,$(call sed_escape,$(VERSION_HWREV)),g'
 
-VERSION_SED_SCRIPT:=$(VERSION_SED)
