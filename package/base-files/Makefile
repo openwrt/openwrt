@@ -137,7 +137,7 @@ define Package/base-files/install
 		fi; \
 	)
 
-	$(VERSION_SED) \
+	$(VERSION_SED_SCRIPT) \
 		$(1)/etc/banner \
 		$(1)/etc/openwrt_version \
 		$(1)/usr/lib/os-release
@@ -194,7 +194,7 @@ define Package/base-files/install
 	$(if $(CONFIG_CLEAN_IPKG),, \
 		mkdir -p $(1)/etc/opkg; \
 		$(call FeedSourcesAppend,$(1)/etc/opkg/distfeeds.conf); \
-		$(VERSION_SED) $(1)/etc/opkg/distfeeds.conf)
+		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
 endef
 
 ifneq ($(DUMP),1)
