@@ -1,7 +1,7 @@
-From 72b1e89ab8edb5e883e812d07d0751fe2b140548 Mon Sep 17 00:00:00 2001
+From e729e648e4259940473e256dd4f9c8df99e774b0 Mon Sep 17 00:00:00 2001
 From: Yangbo Lu <yangbo.lu@nxp.com>
 Date: Wed, 17 Jan 2018 15:12:58 +0800
-Subject: [PATCH 11/30] dpaa2: support layerscape
+Subject: [PATCH] dpaa2: support layerscape
 
 This is an integrated patch for layerscape dpaa2 support.
 
@@ -46,13 +46,13 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/staging/fsl-dpaa2/mac/dpmac-cmd.h          |  172 +
  drivers/staging/fsl-dpaa2/mac/dpmac.c              |  620 ++++
  drivers/staging/fsl-dpaa2/mac/dpmac.h              |  342 ++
- drivers/staging/fsl-dpaa2/mac/mac.c                |  669 ++++
+ drivers/staging/fsl-dpaa2/mac/mac.c                |  670 ++++
  drivers/staging/fsl-dpaa2/rtc/Makefile             |   10 +
  drivers/staging/fsl-dpaa2/rtc/dprtc-cmd.h          |  160 +
  drivers/staging/fsl-dpaa2/rtc/dprtc.c              |  746 +++++
  drivers/staging/fsl-dpaa2/rtc/dprtc.h              |  172 +
  drivers/staging/fsl-dpaa2/rtc/rtc.c                |  243 ++
- 39 files changed, 23364 insertions(+)
+ 39 files changed, 23365 insertions(+)
  create mode 100644 drivers/soc/fsl/ls2-console/Kconfig
  create mode 100644 drivers/soc/fsl/ls2-console/Makefile
  create mode 100644 drivers/soc/fsl/ls2-console/ls2-console.c
@@ -21558,7 +21558,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +#endif /* __FSL_DPMAC_H */
 --- /dev/null
 +++ b/drivers/staging/fsl-dpaa2/mac/mac.c
-@@ -0,0 +1,669 @@
+@@ -0,0 +1,670 @@
 +/* Copyright 2015 Freescale Semiconductor Inc.
 + *
 + * Redistribution and use in source and binary forms, with or without
@@ -21725,7 +21725,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	return phy_ethtool_sset(netdev->phydev, cmd);
 +}
 +
-+static void dpaa2_mac_get_stats(struct net_device *netdev,
++static struct rtnl_link_stats64 *dpaa2_mac_get_stats(struct net_device *netdev,
 +				struct rtnl_link_stats64 *storage)
 +{
 +	struct dpaa2_mac_priv	*priv = netdev_priv(netdev);
@@ -21788,9 +21788,10 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	if (err)
 +		goto error;
 +
-+	return;
++	return storage;
 +error:
 +	netdev_err(netdev, "dpmac_get_counter err %d\n", err);
++	return storage;
 +}
 +
 +static struct {
