@@ -20,6 +20,7 @@ include $(INCLUDE_DIR)/kernel-defaults.mk
 
 define Kernel/Prepare
 	$(call Kernel/Prepare/Default)
+	$(if $(CONFIG_STRIP_KERNEL_EXPORTS), touch $(KERNEL_BUILD_DIR)/symtab.h)
 endef
 
 define Kernel/Configure
