@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.6.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.netfilter.org/iptables
@@ -218,7 +218,7 @@ define Package/iptables-mod-nflog/description
 endef
 
 define Package/iptables-mod-trace
-$(call Package/iptables/Module, +kmod-ipt-debug +kmod-ipt-raw)
+$(call Package/iptables/Module, +kmod-ipt-debug)
   TITLE:=Netfilter TRACE target
 endef
 

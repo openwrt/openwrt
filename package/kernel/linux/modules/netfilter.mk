@@ -447,10 +447,9 @@ $(eval $(call KernelPackage,ipt-nfqueue))
 define KernelPackage/ipt-debug
   TITLE:=Module for debugging/development
   KCONFIG:=$(KCONFIG_IPT_DEBUG)
-  DEFAULT:=n
   FILES:=$(foreach mod,$(IPT_DEBUG-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_DEBUG-m)))
-  $(call AddDepends/ipt)
+  $(call AddDepends/ipt,+kmod-ipt-raw +IPV6:kmod-ipt-raw6)
 endef
 
 define KernelPackage/ipt-debug/description
