@@ -19,6 +19,15 @@ endef
 DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION
 
 
+define Device/alfa-network_awusfree1
+  DTS := AWUSFREE1
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := ALFA Network AWUSFREE1
+  DEVICE_PACKAGES := uboot-envtools
+  SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
+endef
+TARGET_DEVICES += alfa-network_awusfree1
+
 define Device/tama_w06
   DTS := W06
   IMAGE_SIZE := 15040k

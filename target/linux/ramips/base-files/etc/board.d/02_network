@@ -126,6 +126,27 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
+	alfa-network,awusfree1|\
+	cs-qr10|\
+	d105|\
+	dlink,dap-1522-a1|\
+	dch-m225|\
+	ex2700|\
+	ex3700|\
+	hpm|\
+	mzk-ex300np|\
+	mzk-ex750np|\
+	na930|\
+	pbr-d1|\
+	tama,w06|\
+	u25awf-h1|\
+	wli-tx4-ag300n|\
+	wmdr-143n|\
+	wmr-300|\
+	wn3000rpv3|\
+	wrh-300cr)
+		ucidef_set_interface_lan "eth0"
+		;;
 	mir3g)
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "1:wan" "6t@eth0"
@@ -236,26 +257,6 @@ ramips_setup_interfaces()
 	cy-swr1100)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "9@eth0"
-		;;
-	cs-qr10|\
-	d105|\
-	dlink,dap-1522-a1|\
-	dch-m225|\
-	ex2700|\
-	ex3700|\
-	hpm|\
-	mzk-ex300np|\
-	mzk-ex750np|\
-	na930|\
-	pbr-d1|\
-	tama,w06|\
-	u25awf-h1|\
-	wli-tx4-ag300n|\
-	wmdr-143n|\
-	wmr-300|\
-	wn3000rpv3|\
-	wrh-300cr)
-		ucidef_set_interface_lan "eth0"
 		;;
 	duzun-dm06)
 		ucidef_add_switch "switch0" \

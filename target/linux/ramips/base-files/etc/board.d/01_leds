@@ -60,6 +60,9 @@ alfa-network,ac1200rm)
 	set_wifi_led "$boardname:green:wlan2g" "wlan1"
 	ucidef_set_led_default "wps" "wps" "$boardname:green:wps" "0"
 	;;
+alfa-network,awusfree1)
+	set_wifi_led "$boardname:blue:wlan"
+	;;
 all0256n-4M|\
 all0256n-8M)
 	ucidef_set_rssimon "wlan0" "200000" "1"
