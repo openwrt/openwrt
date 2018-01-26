@@ -1,0 +1,60 @@
+From: Matthias Schiffer <mschiffer@universe-factory.net>
+Date: Fri, 26 Jan 2018 23:23:37 +0100
+Subject: [PATCH] Revert "wireless: set correct mandatory rate flags"
+
+This reverts commit 1bd773c077deeeb2d9ced1fdb6d846169b8e7e4a.
+---
+ net/wireless/util.c | 30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
+
+diff --git a/net/wireless/util.c b/net/wireless/util.c
+index c69160694b6c..2bb37231c8fe 100644
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -157,30 +157,32 @@ static void set_mandatory_flags_band(str
+ 	case NL80211_BAND_2GHZ:
+ 		want = 7;
+ 		for (i = 0; i < sband->n_bitrates; i++) {
+-			switch (sband->bitrates[i].bitrate) {
+-			case 10:
+-			case 20:
+-			case 55:
+-			case 110:
++			if (sband->bitrates[i].bitrate == 10) {
+ 				sband->bitrates[i].flags |=
+ 					IEEE80211_RATE_MANDATORY_B |
+ 					IEEE80211_RATE_MANDATORY_G;
+ 				want--;
+-				break;
+-			case 60:
+-			case 120:
+-			case 240:
++			}
++
++			if (sband->bitrates[i].bitrate == 20 ||
++			    sband->bitrates[i].bitrate == 55 ||
++			    sband->bitrates[i].bitrate == 110 ||
++			    sband->bitrates[i].bitrate == 60 ||
++			    sband->bitrates[i].bitrate == 120 ||
++			    sband->bitrates[i].bitrate == 240) {
+ 				sband->bitrates[i].flags |=
+ 					IEEE80211_RATE_MANDATORY_G;
+ 				want--;
+-				/* fall through */
+-			default:
++			}
++
++			if (sband->bitrates[i].bitrate != 10 &&
++			    sband->bitrates[i].bitrate != 20 &&
++			    sband->bitrates[i].bitrate != 55 &&
++			    sband->bitrates[i].bitrate != 110)
+ 				sband->bitrates[i].flags |=
+ 					IEEE80211_RATE_ERP_G;
+-				break;
+-			}
+ 		}
+-		WARN_ON(want != 0 && want != 3);
++		WARN_ON(want != 0 && want != 3 && want != 6);
+ 		break;
+ 	case NL80211_BAND_60GHZ:
+ 		/* check for mandatory HT MCS 1..4 */
