@@ -1,0 +1,63 @@
+From 1ac0409ddba0c09f84800d7e3a84bf9dd0bf3577 Mon Sep 17 00:00:00 2001
+From: Julien Dusser <julien.dusser@free.fr>
+Date: Mon, 8 Jan 2018 23:20:07 +0100
+Subject: [PATCH 942/942] MIPS: increase ASLR space
+
+Set ELF_ET_DYN_BASE to a lower value and increase brk randomness.
+
+Signed-off-by: Julien Dusser <julien.dusser@free.fr>
+---
+ arch/mips/Kconfig           | 4 ++--
+ arch/mips/include/asm/elf.h | 2 +-
+ arch/mips/kernel/process.c  | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index c36350c3850a..2cc0de834ee0 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -3123,13 +3123,13 @@ config ARCH_MMAP_RND_BITS_MIN
+ 
+ config ARCH_MMAP_RND_BITS_MAX
+ 	default 18 if 64BIT
+-	default 15
++	default 16
+ 
+ config ARCH_MMAP_RND_COMPAT_BITS_MIN
+        default 8
+ 
+ config ARCH_MMAP_RND_COMPAT_BITS_MAX
+-       default 15
++       default 16
+ 
+ config I8253
+ 	bool
+diff --git a/arch/mips/include/asm/elf.h b/arch/mips/include/asm/elf.h
+index 2b3dc2973670..c22110df3a13 100644
+--- a/arch/mips/include/asm/elf.h
++++ b/arch/mips/include/asm/elf.h
+@@ -455,7 +455,7 @@ extern const char *__elf_platform;
+    that it will "exec", and that there is sufficient room for the brk.	*/
+ 
+ #ifndef ELF_ET_DYN_BASE
+-#define ELF_ET_DYN_BASE		(TASK_SIZE / 3 * 2)
++#define ELF_ET_DYN_BASE		0x00400000UL
+ #endif
+ 
+ /* update AT_VECTOR_SIZE_ARCH if the number of NEW_AUX_ENT entries changes */
+diff --git a/arch/mips/kernel/process.c b/arch/mips/kernel/process.c
+index 2341f8c13677..5921837aaf5c 100644
+--- a/arch/mips/kernel/process.c
++++ b/arch/mips/kernel/process.c
+@@ -624,7 +624,7 @@ unsigned long get_wchan(struct task_struct *task)
+ unsigned long arch_randomize_brk(struct mm_struct *mm)
+ {
+ 	if (TASK_IS_32BIT_ADDR)
+-		return randomize_page(mm->brk, 0x00800000);
++		return randomize_page(mm->brk, 0x02000000);
+ 	else
+ 		return randomize_page(mm->brk, 0x10000000);
+ }
+-- 
+2.15.1
+
