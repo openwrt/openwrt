@@ -94,6 +94,9 @@ get_status_led() {
 	tl-wr941nd-v6)
 		status_led="tp-link:blue:system"
 		;;
+	cloud-easy-power)
+		status_led="pisen:blue:system"
+		;;
 	ap90q|\
 	cpe830|\
 	cpe870|\

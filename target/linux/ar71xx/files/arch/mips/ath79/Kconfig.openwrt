@@ -2289,6 +2289,16 @@ config ATH79_MACH_CF_E530N
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_CLOUD_EASY_POWER
+	bool "Pisen Cloud Easy Power support"
+	select SOC_AR933X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_BHU_BXU2000N2_A
 	bool "BHU BXU2000n-2 rev. A support"
 	select SOC_AR934X
