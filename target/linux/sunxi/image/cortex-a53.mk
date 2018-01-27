@@ -27,4 +27,15 @@ endef
 
 TARGET_DEVICES += sun50i-a64-pine64-plus
 
+
+define Device/sun50i-h5-orangepi-zero-plus
+  DEVICE_TITLE:=Xunlong Orange Pi Zero Plus
+  SUPPORTED_DEVICES:=xunlong,orangepi-zero-plus
+  SUNXI_DTS:=allwinner/sun50i-h5-orangepi-zero-plus
+  KERNEL_NAME := Image
+  KERNEL := kernel-bin
+endef
+
+TARGET_DEVICES += sun50i-h5-orangepi-zero-plus
+
 endif
