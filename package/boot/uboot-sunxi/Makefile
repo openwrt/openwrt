@@ -184,6 +184,14 @@ define U-Boot/pine64_plus
   UENV:=a64
 endef
 
+define U-Boot/orangepi_zero_plus
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Xunlong Orange Pi Zero Plus
+  BUILD_DEVICES:=sun50i-h5-orangepi-zero-plus
+  DEPENDS:=+PACKAGE_u-boot-orangepi_zero_plus:arm-trusted-firmware-sunxi
+  UENV:=a64
+endef
+
 UBOOT_TARGETS := \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
@@ -210,7 +218,8 @@ UBOOT_TARGETS := \
 	orangepi_plus \
 	orangepi_2 \
 	pangolin \
-	pine64_plus
+	pine64_plus \
+	orangepi_zero_plus
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
