@@ -72,7 +72,7 @@ CONFIGURE_VARS += \
 	IPROUTE=/sbin/ip \
 	NETSTAT=/sbin/netstat
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_CFLAGS += -ffunction-sections -fdata-sections -O3
 TARGET_LDFLAGS += -Wl,--gc-sections
 
 define Build/Configure
