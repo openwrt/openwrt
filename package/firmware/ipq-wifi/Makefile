@@ -13,7 +13,7 @@ endef
 define Build/Compile
 endef
 
-ALLWIFIBOARDS:=avm_fritzbox-4040 openmesh_a42
+ALLWIFIBOARDS:=avm_fritzbox-4040
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
 define Package/ipq-wifi-default
@@ -48,6 +48,5 @@ Don't install it for any other device!
 endef
 
 $(eval $(call generate-ipq-wifi-package,avm_fritzbox-4040,board-avm_fritzbox-4040.bin,AVM FRITZ!Box 4040))
-$(eval $(call generate-ipq-wifi-package,openmesh_a42,board-openmesh_a42.bin,OpenMesh A42))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
