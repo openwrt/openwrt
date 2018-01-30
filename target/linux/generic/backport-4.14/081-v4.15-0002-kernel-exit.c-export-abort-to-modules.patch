@@ -1,0 +1,74 @@
+From dc8635b78cd8669c37e230058d18c33af7451ab1 Mon Sep 17 00:00:00 2001
+From: Andrew Morton <akpm@linux-foundation.org>
+Date: Thu, 4 Jan 2018 16:17:56 -0800
+Subject: [PATCH] kernel/exit.c: export abort() to modules
+
+gcc -fisolate-erroneous-paths-dereference can generate calls to abort()
+from modular code too.
+
+[arnd@arndb.de: drop duplicate exports of abort()]
+  Link: http://lkml.kernel.org/r/20180102103311.706364-1-arnd@arndb.de
+Reported-by: Vineet Gupta <Vineet.Gupta1@synopsys.com>
+Cc: Sudip Mukherjee <sudipm.mukherjee@gmail.com>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Alexey Brodkin <Alexey.Brodkin@synopsys.com>
+Cc: Russell King <rmk+kernel@armlinux.org.uk>
+Cc: Jose Abreu <Jose.Abreu@synopsys.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+---
+ arch/arm/kernel/traps.c       | 1 -
+ arch/m32r/kernel/traps.c      | 1 -
+ arch/unicore32/kernel/traps.c | 1 -
+ kernel/exit.c                 | 1 +
+ 4 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/arch/arm/kernel/traps.c b/arch/arm/kernel/traps.c
+index 5cf04888c581..3e26c6f7a191 100644
+--- a/arch/arm/kernel/traps.c
++++ b/arch/arm/kernel/traps.c
+@@ -793,7 +793,6 @@ void abort(void)
+ 	/* if that doesn't kill us, halt */
+ 	panic("Oops failed to kill thread");
+ }
+-EXPORT_SYMBOL(abort);
+ 
+ void __init trap_init(void)
+ {
+diff --git a/arch/m32r/kernel/traps.c b/arch/m32r/kernel/traps.c
+index cb79fba79d43..b88a8dd14933 100644
+--- a/arch/m32r/kernel/traps.c
++++ b/arch/m32r/kernel/traps.c
+@@ -122,7 +122,6 @@ void abort(void)
+ 	/* if that doesn't kill us, halt */
+ 	panic("Oops failed to kill thread");
+ }
+-EXPORT_SYMBOL(abort);
+ 
+ void __init trap_init(void)
+ {
+diff --git a/arch/unicore32/kernel/traps.c b/arch/unicore32/kernel/traps.c
+index 5f25b39f04d4..c4ac6043ebb0 100644
+--- a/arch/unicore32/kernel/traps.c
++++ b/arch/unicore32/kernel/traps.c
+@@ -298,7 +298,6 @@ void abort(void)
+ 	/* if that doesn't kill us, halt */
+ 	panic("Oops failed to kill thread");
+ }
+-EXPORT_SYMBOL(abort);
+ 
+ void __init trap_init(void)
+ {
+diff --git a/kernel/exit.c b/kernel/exit.c
+index df0c91d5606c..995453d9fb55 100644
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -1763,3 +1763,4 @@ __weak void abort(void)
+ 	/* if that doesn't kill us, halt */
+ 	panic("Oops failed to kill thread");
+ }
++EXPORT_SYMBOL(abort);
+-- 
+2.11.0
+

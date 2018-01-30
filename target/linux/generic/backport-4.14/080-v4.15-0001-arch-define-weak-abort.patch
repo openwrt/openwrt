@@ -1,0 +1,51 @@
+From 7c2c11b208be09c156573fc0076b7b3646e05219 Mon Sep 17 00:00:00 2001
+From: Sudip Mukherjee <sudipm.mukherjee@gmail.com>
+Date: Thu, 14 Dec 2017 15:33:19 -0800
+Subject: [PATCH] arch: define weak abort()
+
+gcc toggle -fisolate-erroneous-paths-dereference (default at -O2
+onwards) isolates faulty code paths such as null pointer access, divide
+by zero etc.  If gcc port doesnt implement __builtin_trap, an abort() is
+generated which causes kernel link error.
+
+In this case, gcc is generating abort due to 'divide by zero' in
+lib/mpi/mpih-div.c.
+
+Currently 'frv' and 'arc' are failing.  Previously other arch was also
+broken like m32r was fixed by commit d22e3d69ee1a ("m32r: fix build
+failure").
+
+Let's define this weak function which is common for all arch and fix the
+problem permanently.  We can even remove the arch specific 'abort' after
+this is done.
+
+Link: http://lkml.kernel.org/r/1513118956-8718-1-git-send-email-sudipm.mukherjee@gmail.com
+Signed-off-by: Sudip Mukherjee <sudipm.mukherjee@gmail.com>
+Cc: Alexey Brodkin <Alexey.Brodkin@synopsys.com>
+Cc: Vineet Gupta <Vineet.Gupta1@synopsys.com>
+Cc: Sudip Mukherjee <sudipm.mukherjee@gmail.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+---
+ kernel/exit.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/kernel/exit.c b/kernel/exit.c
+index 6b4298a41167..df0c91d5606c 100644
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -1755,3 +1755,11 @@ COMPAT_SYSCALL_DEFINE5(waitid,
+ 	return -EFAULT;
+ }
+ #endif
++
++__weak void abort(void)
++{
++	BUG();
++
++	/* if that doesn't kill us, halt */
++	panic("Oops failed to kill thread");
++}
+-- 
+2.11.0
+
