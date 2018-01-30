@@ -4,6 +4,11 @@
 
 DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION
 
+define Build/edimax_cap1200
+	$(STAGING_DIR_HOST)/bin/mkedimax-cap1200 -i $@ -o $@.xor
+	mv -f $@.xor $@
+endef
+
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
 	( \
@@ -35,6 +40,17 @@ define Device/alfa-network_ac1200rm
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 TARGET_DEVICES += alfa-network_ac1200rm
+
+define Device/edimax_cap1200-8m
+  DTS := CAP1200
+  DEVICE_TITLE := Edimax CAP1200
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  IMAGE_SIZE := 7118848
+  IMAGES += factory.bin
+  IMAGE/factory.bin :=  $$(sysupgrade_bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) |\
+	 edimax_cap1200
+endef
+TARGET_DEVICES += edimax_cap1200-8m
 
 define Device/Archer
   TPLINK_HWREVADD := 0

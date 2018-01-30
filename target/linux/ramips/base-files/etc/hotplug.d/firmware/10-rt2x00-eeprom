@@ -46,6 +46,9 @@ case "$FIRMWARE" in
 		rt2x00_eeprom_extract "factory" 0 512
 		rt2x00_eeprom_set_macaddr $wifi_mac
 		;;
+	edimax,cap1200-8m)
+		rt2x00_eeprom_extract "factory" 0 512
+		;;
 	*)
 		rt2x00_eeprom_die "Please define mtd-eeprom in $board DTS file!"
 		;;

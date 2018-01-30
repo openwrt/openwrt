@@ -52,6 +52,7 @@ platform_check_image() {
 	duzun-dm06|\
 	dwr-512-b|\
 	e1700|\
+	edimax,cap1200-8m|\
 	esr-9753|\
 	ew1200|\
 	ex2700|\
