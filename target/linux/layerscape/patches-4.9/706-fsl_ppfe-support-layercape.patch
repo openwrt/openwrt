@@ -1,7 +1,7 @@
-From 8089957ac5ac5f4f8436b1052dda7840f3bff3ea Mon Sep 17 00:00:00 2001
+From 79fb41b6040d00d3bdfca9eb70a7848441eb7447 Mon Sep 17 00:00:00 2001
 From: Yangbo Lu <yangbo.lu@nxp.com>
 Date: Wed, 17 Jan 2018 15:14:12 +0800
-Subject: [PATCH 12/30] fsl_ppfe: support layercape
+Subject: [PATCH] fsl_ppfe: support layercape
 
 This is an integrated patch for layerscape pfe support.
 
@@ -36,13 +36,13 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  drivers/staging/fsl_ppfe/pfe_hif_lib.h             |  240 ++
  drivers/staging/fsl_ppfe/pfe_hw.c                  |  176 ++
  drivers/staging/fsl_ppfe/pfe_hw.h                  |   27 +
- drivers/staging/fsl_ppfe/pfe_ls1012a_platform.c    |  394 ++++
+ drivers/staging/fsl_ppfe/pfe_ls1012a_platform.c    |  385 +++
  drivers/staging/fsl_ppfe/pfe_mod.c                 |  141 ++
  drivers/staging/fsl_ppfe/pfe_mod.h                 |  112 +
  drivers/staging/fsl_ppfe/pfe_perfmon.h             |   38 +
  drivers/staging/fsl_ppfe/pfe_sysfs.c               |  818 +++++++
  drivers/staging/fsl_ppfe/pfe_sysfs.h               |   29 +
- 34 files changed, 10443 insertions(+)
+ 34 files changed, 10434 insertions(+)
  create mode 100644 drivers/staging/fsl_ppfe/Kconfig
  create mode 100644 drivers/staging/fsl_ppfe/Makefile
  create mode 100644 drivers/staging/fsl_ppfe/TODO
@@ -9075,7 +9075,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +#endif /* _PFE_HW_H_ */
 --- /dev/null
 +++ b/drivers/staging/fsl_ppfe/pfe_ls1012a_platform.c
-@@ -0,0 +1,394 @@
+@@ -0,0 +1,385 @@
 +/*
 + * Copyright 2015-2016 Freescale Semiconductor, Inc.
 + * Copyright 2017 NXP
@@ -9247,13 +9247,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +
 +	pfe->ddr_phys_baseaddr = res.start;
 +	pfe->ddr_size = resource_size(&res);
-+
 +	pfe->ddr_baseaddr = phys_to_virt(res.start);
-+	if (!pfe->ddr_baseaddr) {
-+		pr_err("ioremap() ddr failed\n");
-+		rc = -ENOMEM;
-+		goto err_ddr;
-+	}
 +
 +	pfe->scfg =
 +		syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
@@ -9335,8 +9329,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	iounmap(pfe->cbus_baseaddr);
 +
 +err_axi:
-+	iounmap(pfe->ddr_baseaddr);
-+
 +err_ddr:
 +	platform_set_drvdata(pdev, NULL);
 +
@@ -9359,7 +9351,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 +	rc = pfe_remove(pfe);
 +
 +	iounmap(pfe->cbus_baseaddr);
-+	iounmap(pfe->ddr_baseaddr);
 +
 +	platform_set_drvdata(pdev, NULL);
 +
