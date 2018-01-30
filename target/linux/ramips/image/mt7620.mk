@@ -4,6 +4,11 @@
 
 DEVICE_VARS += TPLINK_FLASHLAYOUT TPLINK_HWID TPLINK_HWREV TPLINK_HWREVADD TPLINK_HVERSION
 
+define Build/v7_apac1200
+	$(STAGING_DIR_HOST)/bin/mkv7apac -i $@ -o $@.xor
+	mv -f $@.xor $@
+endef
+
 define Build/elecom-header
 	cp $@ $(KDIR)/v_0.0.0.bin
 	( \
@@ -35,6 +40,17 @@ define Device/alfa-network_ac1200rm
   SUPPORTED_DEVICES := $(subst _,$(comma),$(1))
 endef
 TARGET_DEVICES += alfa-network_ac1200rm
+
+define Device/v7_apac1200
+  DTS := APAC1200
+  DEVICE_TITLE := V7 APAC1200
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  IMAGE_SIZE := 7118848
+  IMAGES += factory.bin
+  IMAGE/factory.bin :=  $$(sysupgrade_bin) | pad-to 64k | check-size $$$$(IMAGE_SIZE) |\
+	 v7_apac1200
+endef
+TARGET_DEVICES += v7_apac1200
 
 define Device/Archer
   TPLINK_HWREVADD := 0
