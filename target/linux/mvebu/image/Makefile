@@ -105,6 +105,7 @@ define Device/linksys-wrt1200ac
   $(call Device/linksys,WRT1200AC (Caiman))
   $(Device/armada-385-linksys)
   DEVICE_DTS := armada-385-linksys-caiman
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
 endef
 TARGET_DEVICES += linksys-wrt1200ac
 
@@ -112,6 +113,7 @@ define Device/linksys-wrt1900acv2
   $(call Device/linksys,WRT1900ACv2 (Cobra))
   $(Device/armada-385-linksys)
   DEVICE_DTS := armada-385-linksys-cobra
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
 endef
 TARGET_DEVICES += linksys-wrt1900acv2
 
@@ -119,7 +121,7 @@ define Device/linksys-wrt3200acm
   $(call Device/linksys,WRT3200ACM (Rango))
   $(Device/armada-385-linksys)
   DEVICE_DTS := armada-385-linksys-rango
-  DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio
+  DEVICE_PACKAGES += kmod-btmrvl kmod-mwifiex-sdio mwlwifi-firmware-88w8964
 endef
 TARGET_DEVICES += linksys-wrt3200acm
 
@@ -127,12 +129,14 @@ define Device/linksys-wrt1900acs
   $(call Device/linksys,WRT1900ACS (Shelby))
   $(Device/armada-385-linksys)
   DEVICE_DTS := armada-385-linksys-shelby
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
 endef
 TARGET_DEVICES += linksys-wrt1900acs
 
 define Device/linksys-wrt1900ac
   $(call Device/linksys,WRT1900AC (Mamba))
   DEVICE_DTS := armada-xp-linksys-mamba
+  DEVICE_PACKAGES += mwlwifi-firmware-88w8864
   $(Device/NAND-128K)
   $(Device/UBI-factory)
   KERNEL_SIZE := 3072k
