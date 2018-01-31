@@ -503,7 +503,7 @@ $(eval $(call KernelPackage,ipt-led))
 
 define KernelPackage/ipt-tproxy
   TITLE:=Transparent proxying support
-  DEPENDS+=+kmod-ipt-conntrack +IPV6:kmod-ip6tables
+  DEPENDS+=+kmod-ipt-conntrack +IPV6:kmod-nf-conntrack6 +IPV6:kmod-ip6tables
   KCONFIG:= \
   	CONFIG_NETFILTER_XT_MATCH_SOCKET \
   	CONFIG_NETFILTER_XT_TARGET_TPROXY
