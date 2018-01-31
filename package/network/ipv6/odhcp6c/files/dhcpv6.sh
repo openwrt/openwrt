@@ -11,6 +11,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string 'reqprefix:or("auto","no",range(0, 64))'
 	proto_config_add_string clientid
 	proto_config_add_string 'reqopts:list(uinteger)'
+	proto_config_add_string 'defaultreqopts:bool'
 	proto_config_add_string 'noslaaconly:bool'
 	proto_config_add_string 'forceprefix:bool'
 	proto_config_add_string 'extendprefix:bool'
@@ -39,8 +40,8 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff
-	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff
+	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff
+	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff
 
 
 	# Configure
@@ -51,6 +52,8 @@ proto_dhcpv6_setup() {
 	[ "$reqprefix" != "no" ] && append opts "-P$reqprefix"
 
 	[ -n "$clientid" ] && append opts "-c$clientid"
+
+	[ "$defaultreqopts" = "0" ] && append opts "-R"
 
 	[ "$noslaaconly" = "1" ] && append opts "-S"
 
