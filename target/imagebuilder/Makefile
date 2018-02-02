@@ -44,7 +44,7 @@ endif
 	echo '## This is the local package repository, do not remove!' >> $(PKG_BUILD_DIR)/repositories.conf
 	echo 'src imagebuilder file:packages'                          >> $(PKG_BUILD_DIR)/repositories.conf
 
-	$(VERSION_SED) $(PKG_BUILD_DIR)/repositories.conf
+	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories.conf
 
 ifeq ($(CONFIG_IB_STANDALONE),)
 	(cd $(call FeedPackageDir,libc); $(FIND) -type f -name 'libc_*.ipk' -or -name 'kernel_*.ipk' -or -name 'kmod-*.ipk') | \
