@@ -134,8 +134,7 @@ export_bootdevice() {
 		esac
 
 		if [ -e "$uevent" ]; then
-			. "$uevent"
-
+			eval "$(sed "s/=\(.*\)/=\'\1\'/" < "$uevent")"
 			export BOOTDEV_MAJOR=$MAJOR
 			export BOOTDEV_MINOR=$MINOR
 			return 0
@@ -150,7 +149,7 @@ export_partdevice() {
 	local uevent MAJOR MINOR DEVNAME DEVTYPE
 
 	for uevent in /sys/class/block/*/uevent; do
-		. "$uevent"
+		eval "$(sed "s/=\(.*\)/=\'\1\'/" < "$uevent")"
 		if [ $BOOTDEV_MAJOR = $MAJOR -a $(($BOOTDEV_MINOR + $offset)) = $MINOR -a -b "/dev/$DEVNAME" ]; then
 			export "$var=$DEVNAME"
 			return 0
