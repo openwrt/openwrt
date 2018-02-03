@@ -1,0 +1,5 @@
+#!/bin/sh
+
+logger Resetting the SD card reader
+echo "0" > /sys/class/gpio/gpio18/value
+echo "1" > /sys/class/gpio/gpio18/value

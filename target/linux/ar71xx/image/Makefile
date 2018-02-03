@@ -66,3 +66,10 @@ define Device/Default
 endef
 
 $(eval $(call BuildImage))
+define Device/zsun-sdreader
+  BOARDNAME := ZSUN-SDREADER
+  CONSOLE = ttyATH0,115200
+endef
+TARGET_DEVICES += zsun-sdreader
+
+$(eval $(call SingleProfile,AthLzma,64k,ZSUNSDREADER,zsun-sdreader,ZSUN-SDREADER,ttyATH0,115200,$$(zsun_sdreader_mtdlayout),RKuImage))
