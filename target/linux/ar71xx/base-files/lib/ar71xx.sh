@@ -315,6 +315,9 @@ tplink_board_detect() {
 	"49000002")
 		model="TP-Link TL-WDR4900"
 		;;
+	"535152"*)
+		model="packet-squirrel"
+		;;
 	"640000"*)
 		model="TP-Link TL-MR6400"
 		;;
@@ -843,6 +846,9 @@ ar71xx_board_detect() {
 		;;
 	*"Oolite V1.0")
 		name="oolite"
+		;;
+	*"Packet Squirrel")
+		name="packet-squirrel"
 		;;
 	*"PB42")
 		name="pb42"

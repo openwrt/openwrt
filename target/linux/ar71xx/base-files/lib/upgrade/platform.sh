@@ -389,6 +389,7 @@ platform_check_image() {
 	omy-x1|\
 	onion-omega|\
 	oolite|\
+	packet-squirrel|\
 	re450|\
 	rut900|\
 	smart-300|\

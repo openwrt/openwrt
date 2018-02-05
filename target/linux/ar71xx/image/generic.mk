@@ -747,6 +747,17 @@ define Device/onion-omega
 endef
 TARGET_DEVICES += onion-omega
 
+define Device/packet-squirrel
+    $(Device/tplink-16mlzma)
+    DEVICE_TITLE := Hak5 Packet Squirrel
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ledtrig-usbdev kmod-ath9k-htc
+    BOARDNAME := PACKET-SQUIRREL
+    DEVICE_PROFILE := HAK5_PACKET_SQUIRREL
+    TPLINK_HWID := 0x5351524c
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += packet-squirrel
+
 define Device/sc1750
   DEVICE_TITLE := Abicom SC1750
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport

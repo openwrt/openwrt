@@ -298,6 +298,9 @@ get_status_led() {
 	pb44)
 		status_led="$board:amber:jump1"
 		;;
+	packet-squirrel)
+		status_led="squirrel:green"
+		;;
 	r602n)
 		status_led="$board:green:wan"
 		;;
