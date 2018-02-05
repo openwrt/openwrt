@@ -27,7 +27,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string 'ifaceid:ip6addr'
 	proto_config_add_string "userclass"
 	proto_config_add_string "vendorclass"
-	proto_config_add_string "sendopts"
+	proto_config_add_array "sendopts:list(string)"
 	proto_config_add_boolean delegate
 	proto_config_add_int "soltimeout"
 	proto_config_add_boolean fakeroutes
@@ -41,8 +41,7 @@ proto_dhcpv6_setup() {
 	local iface="$2"
 
 	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff
-	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff
-
+	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff
 
 	# Configure
 	local opts=""
@@ -76,9 +75,12 @@ proto_dhcpv6_setup() {
 		append opts "-r$opt"
 	done
 
-	for opt in $sendopts; do
-		append opts "-x$opt"
-	done
+	sendopts_cb() {
+		local val="$1"
+		append opts "-x$val"
+	}
+
+	json_for_each_item sendopts_cb sendopts
 
 	append opts "-t${soltimeout:-120}"
 
