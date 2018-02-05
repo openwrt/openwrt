@@ -91,6 +91,7 @@ get_status_led() {
 	dir-620-d1|\
 	dwr-512-b|\
 	gb-pc1|\
+	gb-pc2|\
 	hpm|\
 	hw550-3g|\
 	mac1200rv2|\

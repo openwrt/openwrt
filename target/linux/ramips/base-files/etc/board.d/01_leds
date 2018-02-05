@@ -191,6 +191,12 @@ gb-pc1)
 	ucidef_set_led_switch "lan1" "lan1" "$boardname:green:lan1" "switch0" "0x01"
 	ucidef_set_led_switch "lan2" "lan2" "$boardname:green:lan2" "switch0" "0x10"
 	;;
+gb-pc2)
+	ucidef_set_led_switch "lan" "lan" "$board:green:lan" "switch0" "0x01"
+	ucidef_set_led_switch "wan" "wan" "$board:green:wan" "switch0" "0x10"
+	ucidef_set_led_netdev "eth1-g" "eth1-g" "$board:green:eth1-g" "eth1"
+	ucidef_set_led_netdev "eth1-y" "eth1-y" "$board:green:eth1-y" "eth1"
+	;;
 gl-mt300a|\
 gl-mt300n|\
 gl-mt750)

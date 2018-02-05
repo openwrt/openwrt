@@ -61,6 +61,7 @@ platform_check_image() {
 	fonera20n|\
 	freestation5|\
 	gb-pc1|\
+	gb-pc2|\
 	gl-mt300a|\
 	gl-mt300n|\
 	gl-mt750|\
