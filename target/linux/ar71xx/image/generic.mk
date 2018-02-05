@@ -350,7 +350,7 @@ TARGET_DEVICES += e600gac-v2-8M
 
 define Device/ew-balin
   DEVICE_TITLE := Embedded Wireless Balin Platform
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea 
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea
   BOARDNAME = EW-BALIN
   IMAGE_SIZE = 16000k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
