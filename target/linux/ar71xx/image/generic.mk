@@ -110,7 +110,7 @@ define Device/ap121f
   CONSOLE := ttyATH0,115200
   MTDPARTS := spi0.0:192k(u-boot)ro,64k(u-boot-env),64k(art)ro,-(firmware)
   SUPPORTED_DEVICES := ap121f
-  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += ap121f
@@ -153,7 +153,7 @@ define Device/arduino-yun
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := Yun
   IMAGE_SIZE := 15936k
-  CONSOLE = ttyATH0,250000
+  CONSOLE := ttyATH0,250000
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),15936k(firmware),64k(nvram),64k(art)ro
 endef
 TARGET_DEVICES += arduino-yun
@@ -351,29 +351,29 @@ TARGET_DEVICES += e600gac-v2-8M
 define Device/ew-balin
   DEVICE_TITLE := Embedded Wireless Balin Platform
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea
-  BOARDNAME = EW-BALIN
-  IMAGE_SIZE = 16000k
-  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
+  BOARDNAME := EW-BALIN
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += ew-balin
 
 define Device/ew-dorin
   DEVICE_TITLE := Embedded Wireless Dorin Platform
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea
-  BOARDNAME = EW-DORIN
+  BOARDNAME := EW-DORIN
   CONSOLE := ttyATH0,115200
-  IMAGE_SIZE = 16000k
-  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += ew-dorin
 
 define Device/ew-dorin-router
   DEVICE_TITLE := Embedded Wireless Dorin Router Platform
   DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea
-  BOARDNAME = EW-DORIN-ROUTER
+  BOARDNAME := EW-DORIN-ROUTER
   CONSOLE := ttyATH0,115200
-  IMAGE_SIZE = 16000k
-  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
+  IMAGE_SIZE := 16000k
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += ew-dorin-router
 
@@ -383,10 +383,10 @@ define Device/rme-eg200
 	kmod-usb-serial kmod-usb-serial-ftdi \
 	kmod-usb-storage \
 	kmod-fs-ext4
-  BOARDNAME = RME-EG200
-  IMAGE_SIZE = 16000k
-  CONSOLE = ttyATH0,115200
-  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+  BOARDNAME := RME-EG200
+  IMAGE_SIZE := 16000k
+  CONSOLE := ttyATH0,115200
+  MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += rme-eg200
 
@@ -469,7 +469,7 @@ define Device/gl-usb150
   CONSOLE := ttyATH0,115200
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
   SUPPORTED_DEVICES := gl-usb150
-  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += gl-usb150
