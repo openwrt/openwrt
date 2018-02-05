@@ -1,0 +1,24 @@
+From: Pablo Neira Ayuso <pablo@netfilter.org>
+Date: Tue, 19 Dec 2017 12:01:21 +0100
+Subject: [PATCH] netfilter: nf_tables: fix chain filter in
+ nf_tables_dump_rules()
+
+ctx->chain may be null now that we have very large object names,
+so we cannot check for ctx->chain[0] here.
+
+Fixes: b7263e071aba7 ("netfilter: nf_tables: Allow table names of up to 255 chars")
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+Acked-by: Phil Sutter <phil@nwl.cc>
+---
+
+--- a/net/netfilter/nf_tables_api.c
++++ b/net/netfilter/nf_tables_api.c
+@@ -2090,7 +2090,7 @@ static int nf_tables_dump_rules(struct s
+ 				continue;
+ 
+ 			list_for_each_entry_rcu(chain, &table->chains, list) {
+-				if (ctx && ctx->chain[0] &&
++				if (ctx && ctx->chain &&
+ 				    strcmp(ctx->chain, chain->name) != 0)
+ 					continue;
+ 
