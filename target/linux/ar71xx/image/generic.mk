@@ -194,17 +194,17 @@ define Device/cf-e320n-v2
 endef
 TARGET_DEVICES += cf-e320n-v2
 
-define Device/cf-e355ac
-  DEVICE_TITLE := COMFAST CF-E355AC
+define Device/cf-e355ac-v1
+  DEVICE_TITLE := COMFAST CF-E355AC v1
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
-  BOARDNAME := CF-E355AC
+  BOARDNAME := CF-E355AC-V1
   IMAGE_SIZE := 16192k
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(art)ro,16192k(firmware),64k(art-backup)ro
 endef
-TARGET_DEVICES += cf-e355ac
+TARGET_DEVICES += cf-e355ac-v1
 
 define Device/cf-e355ac-v2
-  $(Device/cf-e355ac)
+  $(Device/cf-e355ac-v1)
   DEVICE_TITLE := COMFAST CF-E355AC v2
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9888
   BOARDNAME := CF-E355AC-V2

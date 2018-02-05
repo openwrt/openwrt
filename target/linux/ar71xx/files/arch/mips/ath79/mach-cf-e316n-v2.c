@@ -2,7 +2,7 @@
  *  Support for COMFAST boards:
  *  - CF-E316N v2 (AR9341)
  *  - CF-E320N v2 (QCA9531)
- *  - CF-E355AC (QCA9531 + QCA9882)
+ *  - CF-E355AC v1 (QCA9531 + QCA9882)
  *  - CF-E355AC v2 (QCA9531 + QCA9886)
  *  - CF-E375AC (QCA9563 + QCA9886 + QCA8337)
  *  - CF-E380AC v1/v2 (QCA9558)
@@ -134,7 +134,7 @@ static struct gpio_keys_button cf_e320n_v2_gpio_keys[] __initdata = {
 	},
 };
 
-/* CF-E355AC */
+/* CF-E355AC v1/v2 */
 #define CF_E355AC_GPIO_LED_LAN		3
 #define CF_E355AC_GPIO_LED_WLAN2G	0
 #define CF_E355AC_GPIO_LED_WLAN5G	2
@@ -143,17 +143,33 @@ static struct gpio_keys_button cf_e320n_v2_gpio_keys[] __initdata = {
 
 #define CF_E355AC_GPIO_BTN_RESET	17
 
-static struct gpio_led cf_e355ac_leds_gpio[] __initdata = {
+static struct gpio_led cf_e355ac_v1_leds_gpio[] __initdata = {
 	{
-		.name		= "cf-e355ac:green:lan",
+		.name		= "cf-e355ac-v1:green:lan",
 		.gpio		= CF_E355AC_GPIO_LED_LAN,
 		.active_low	= 0,
 	}, {
-		.name		= "cf-e355ac:blue:wlan2g",
+		.name		= "cf-e355ac-v1:blue:wlan2g",
 		.gpio		= CF_E355AC_GPIO_LED_WLAN2G,
 		.active_low	= 0,
 	}, {
-		.name		= "cf-e355ac:red:wlan5g",
+		.name		= "cf-e355ac-v1:red:wlan5g",
+		.gpio		= CF_E355AC_GPIO_LED_WLAN5G,
+		.active_low	= 0,
+	},
+};
+
+static struct gpio_led cf_e355ac_v2_leds_gpio[] __initdata = {
+	{
+		.name		= "cf-e355ac-v2:green:lan",
+		.gpio		= CF_E355AC_GPIO_LED_LAN,
+		.active_low	= 0,
+	}, {
+		.name		= "cf-e355ac-v2:blue:wlan2g",
+		.gpio		= CF_E355AC_GPIO_LED_WLAN2G,
+		.active_low	= 0,
+	}, {
+		.name		= "cf-e355ac-v2:red:wlan5g",
 		.gpio		= CF_E355AC_GPIO_LED_WLAN5G,
 		.active_low	= 0,
 	},
@@ -471,19 +487,32 @@ static void __init cf_e355ac_setup(void)
 
 	ap91_pci_init(art + 0x5000, NULL);
 
-	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_e355ac_leds_gpio),
-				 cf_e355ac_leds_gpio);
-
 	ath79_register_gpio_keys_polled(1, CF_EXXXN_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(cf_e355ac_gpio_keys),
 					cf_e355ac_gpio_keys);
 }
 
-MIPS_MACHINE(ATH79_MACH_CF_E355AC, "CF-E355AC", "COMFAST CF-E355AC",
-	     cf_e355ac_setup);
+static void __init cf_e355ac_v1_setup(void)
+{
+	cf_e355ac_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_e355ac_v1_leds_gpio),
+				 cf_e355ac_v1_leds_gpio);
+}
+
+static void __init cf_e355ac_v2_setup(void)
+{
+	cf_e355ac_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_e355ac_v2_leds_gpio),
+				 cf_e355ac_v2_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_CF_E355AC, "CF-E355AC-V1", "COMFAST CF-E355AC v1",
+	     cf_e355ac_v1_setup);
 
 MIPS_MACHINE(ATH79_MACH_CF_E355AC_V2, "CF-E355AC-V2", "COMFAST CF-E355AC v2",
-	     cf_e355ac_setup);
+	     cf_e355ac_v2_setup);
 
 static void __init cf_e375ac_setup(void)
 {
