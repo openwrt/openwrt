@@ -232,6 +232,9 @@ get_status_led() {
 	jwap230)
 		status_led="$board:green:led1"
 		;;
+	lan-turtle)
+		status_led="turtle:yellow"
+		;;
 	ls-sr71)
 		status_led="ubnt:green:d22"
 		;;

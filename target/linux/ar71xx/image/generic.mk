@@ -696,6 +696,17 @@ define Device/rut900
 endef
 TARGET_DEVICES += rut900
 
+define Device/lan-turtle
+    $(Device/tplink-16mlzma)
+    DEVICE_TITLE := Hak5 LAN Turtle
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ledtrig-usbdev kmod-ath9k-htc
+    BOARDNAME := LAN-TURTLE
+    DEVICE_PROFILE := HAK5_LAN_TURTLE
+    TPLINK_HWID := 0x5348334c
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += lan-turtle
+
 define Device/mc-mac1200r
   $(Device/tplink-8mlzma)
   DEVICE_TITLE := Mercury MAC1200R

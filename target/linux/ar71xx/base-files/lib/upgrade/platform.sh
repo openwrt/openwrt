@@ -383,6 +383,7 @@ platform_check_image() {
 	el-m150|\
 	el-mini|\
 	gl-inet|\
+	lan-turtle|\
 	mc-mac1200r|\
 	minibox-v1|\
 	omy-g1|\

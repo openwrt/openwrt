@@ -315,6 +315,9 @@ tplink_board_detect() {
 	"49000002")
 		model="TP-Link TL-WDR4900"
 		;;
+	"534833"*)
+		model="lan-turtle"
+		;;
 	"640000"*)
 		model="TP-Link TL-MR6400"
 		;;
@@ -719,6 +722,9 @@ ar71xx_board_detect() {
 		;;
 	*"JWAP230")
 		name="jwap230"
+		;;
+	*"LAN Turtle")
+		name="lan-turtle"
 		;;
 	*"Lima"*)
 		name="lima"
