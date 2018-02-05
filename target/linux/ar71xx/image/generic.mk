@@ -747,6 +747,17 @@ define Device/onion-omega
 endef
 TARGET_DEVICES += onion-omega
 
+define Device/pineapple-nano
+    $(Device/tplink-16mlzma)
+    DEVICE_TITLE := Hak5 WiFi Pineapple NANO
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ledtrig-usbdev kmod-ath9k-htc
+    BOARDNAME := PINEAPPLE-NANO
+    DEVICE_PROFILE := HAK5_PINEAPPLE_NANO
+    TPLINK_HWID := 0x4e414e4f
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += pineapple-nano
+
 define Device/sc1750
   DEVICE_TITLE := Abicom SC1750
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport

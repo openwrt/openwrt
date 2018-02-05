@@ -162,6 +162,7 @@ obj-$(CONFIG_ATH79_MACH_OMY_X1)			+= mach-omy-x1.o
 obj-$(CONFIG_ATH79_MACH_ONION_OMEGA)		+= mach-onion-omega.o
 obj-$(CONFIG_ATH79_MACH_PB42)			+= mach-pb42.o
 obj-$(CONFIG_ATH79_MACH_PB44)			+= mach-pb44.o
+obj-$(CONFIG_ATH79_MACH_PINEAPPLE_NANO)	+= mach-pineapple-nano.o
 obj-$(CONFIG_ATH79_MACH_PQI_AIR_PEN)		+= mach-pqi-air-pen.o
 obj-$(CONFIG_ATH79_MACH_QIHOO_C301)		+= mach-qihoo-c301.o
 obj-$(CONFIG_ATH79_MACH_R36A)			+= mach-r36a.o

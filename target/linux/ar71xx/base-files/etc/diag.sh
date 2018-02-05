@@ -181,6 +181,9 @@ get_status_led() {
 	oolite)
 		status_led="$board:red:system"
 		;;
+	pineapple-nano)
+		status_led="nano:blue"
+		;;
 	dw33d|\
 	r36a)
 		status_led="$board:blue:status"

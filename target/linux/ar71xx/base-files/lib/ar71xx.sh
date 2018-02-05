@@ -315,6 +315,9 @@ tplink_board_detect() {
 	"49000002")
 		model="TP-Link TL-WDR4900"
 		;;
+	"4e414e4f"*)
+		model="pineapple-nano"
+		;;
 	"640000"*)
 		model="TP-Link TL-MR6400"
 		;;
@@ -1296,6 +1299,9 @@ ar71xx_board_detect() {
 		;;
 	*"WHR-HP-GN")
 		name="whr-hp-gn"
+		;;
+	*"WiFi Pineapple NANO")
+		name="pineapple-nano"
 		;;
 	*"WLAE-AG300N")
 		name="wlae-ag300n"
