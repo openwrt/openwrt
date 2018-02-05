@@ -50,12 +50,12 @@ config KERNEL_MIPS_FPU_EMULATOR
 config KERNEL_ARM_PMU
 	bool
 	default n
-	depends on (arm || arm64)
+	depends on (arm || aarch64)
 
 config KERNEL_PERF_EVENTS
 	bool "Compile the kernel with performance events and counters"
 	default n
-	select KERNEL_ARM_PMU if (arm || arm64)
+	select KERNEL_ARM_PMU if (arm || aarch64)
 
 config KERNEL_PROFILING
 	bool "Compile the kernel with profiling enabled"
