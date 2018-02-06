@@ -184,6 +184,25 @@ define Device/eap120-v1
 endef
 TARGET_DEVICES += eap120-v1
 
+define Device/re355-v1
+  DEVICE_TITLE := TP-LINK RE355 v1
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x
+  MTDPARTS := spi0.0:128k(u-boot)ro,6016k(firmware),64k(partition-table)ro,64k(product-info)ro,1856k(config)ro,64k(art)ro
+  IMAGE_SIZE := 7936k
+  BOARDNAME := RE355
+  TPLINK_BOARD_ID := RE355
+  DEVICE_PROFILE := RE355
+  LOADER_TYPE := elf
+  TPLINK_HWID := 0x0
+  TPLINK_HWREV := 0
+  TPLINK_HEADER_VERSION := 1
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | tplink-safeloader sysupgrade
+  IMAGE/factory.bin := append-rootfs | tplink-safeloader factory
+endef
+TARGET_DEVICES += re355-v1
+
 define Device/re450-v1
   DEVICE_TITLE := TP-LINK RE450 v1
   DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca988x

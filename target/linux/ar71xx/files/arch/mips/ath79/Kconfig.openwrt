@@ -1305,6 +1305,16 @@ config ATH79_MACH_MZK_W300NH
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_RE355
+	bool "TP-LINK RE355 board support"
+	select SOC_QCA955X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_RE450
 	bool "TP-LINK RE450 board support"
 	select SOC_QCA955X
