@@ -359,6 +359,7 @@ get_status_led() {
 	rb-sxt5n)
 		status_led="rb:green:power"
 		;;
+	re355|\
 	re450|\
 	sc300m)
 		status_led="$board:blue:power"

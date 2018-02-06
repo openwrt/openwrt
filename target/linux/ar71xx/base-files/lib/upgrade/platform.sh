@@ -390,6 +390,7 @@ platform_check_image() {
 	omy-x1|\
 	onion-omega|\
 	oolite|\
+	re355|\
 	re450|\
 	rut900|\
 	smart-300|\
