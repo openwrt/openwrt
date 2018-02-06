@@ -180,6 +180,7 @@ TARGET_DEVICES += carambola2
 
 define Device/cf-e316n-v2
   DEVICE_TITLE := COMFAST CF-E316N v2
+  DEVICE_PACKAGES := -swconfig -uboot-envtools
   BOARDNAME := CF-E316N-V2
   IMAGE_SIZE := 16192k
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(art)ro,16192k(firmware),64k(art-backup)ro
@@ -189,14 +190,15 @@ TARGET_DEVICES += cf-e316n-v2
 define Device/cf-e320n-v2
   $(Device/cf-e316n-v2)
   DEVICE_TITLE := COMFAST CF-E320N v2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES += kmod-usb-core kmod-usb2
   BOARDNAME := CF-E320N-V2
 endef
 TARGET_DEVICES += cf-e320n-v2
 
 define Device/cf-e355ac-v1
   DEVICE_TITLE := COMFAST CF-E355AC v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x \
+	-swconfig -uboot-envtools
   BOARDNAME := CF-E355AC-V1
   IMAGE_SIZE := 16192k
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(art)ro,16192k(firmware),64k(art-backup)ro
@@ -206,7 +208,8 @@ TARGET_DEVICES += cf-e355ac-v1
 define Device/cf-e355ac-v2
   $(Device/cf-e355ac-v1)
   DEVICE_TITLE := COMFAST CF-E355AC v2
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9888
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca9888 \
+	-swconfig -uboot-envtools
   BOARDNAME := CF-E355AC-V2
 endef
 TARGET_DEVICES += cf-e355ac-v2
@@ -222,7 +225,8 @@ TARGET_DEVICES += cf-e375ac
 
 define Device/cf-e380ac-v1
   DEVICE_TITLE := COMFAST CF-E380AC v1
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-ath10k ath10k-firmware-qca988x \
+	-swconfig -uboot-envtools
   BOARDNAME := CF-E380AC-V1
   IMAGE_SIZE := 16128k
   MTDPARTS := spi0.0:128k(u-boot)ro,64k(art)ro,16128k(firmware),64k(art-backup)ro
@@ -240,7 +244,7 @@ TARGET_DEVICES += cf-e380ac-v2
 
 define Device/cf-e520n
   DEVICE_TITLE := COMFAST CF-E520N
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 -swconfig -uboot-envtools
   BOARDNAME := CF-E520N
   IMAGE_SIZE := 8000k
   MTDPARTS := spi0.0:64k(u-boot)ro,64k(art)ro,8000k(firmware),64k(art-backup)ro
