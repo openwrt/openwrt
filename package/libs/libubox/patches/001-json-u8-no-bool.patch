@@ -1,0 +1,11 @@
+--- a/blobmsg_json.c
++++ b/blobmsg_json.c
+@@ -247,7 +247,7 @@ static void blobmsg_format_element(struc
+ 		sprintf(buf, "null");
+ 		break;
+ 	case BLOBMSG_TYPE_BOOL:
+-		sprintf(buf, "%s", *(uint8_t *)data ? "true" : "false");
++		sprintf(buf, "%d", *(uint8_t *)data);
+ 		break;
+ 	case BLOBMSG_TYPE_INT16:
+ 		sprintf(buf, "%d", be16_to_cpu(*(uint16_t *)data));
