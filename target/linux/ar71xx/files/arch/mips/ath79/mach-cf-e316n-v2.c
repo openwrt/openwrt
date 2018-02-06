@@ -4,6 +4,7 @@
  *  - CF-E320N v2 (QCA9531)
  *  - CF-E355AC (QCA9531)
  *  - CF-E380AC v1/v2 (QCA9558)
+ *  - CF-E385AC (QCA9558 + QCA9984 + QCA8337)
  *  - CF-E520N/CF-E530N (QCA9531)
  *
  *  Copyright (C) 2016 Piotr Dymacz <pepe2k@gmail.com>
@@ -16,6 +17,7 @@
  */
 
 #include <linux/gpio.h>
+#include <linux/ar8216_platform.h>
 #include <linux/platform_data/phy-at803x.h>
 #include <linux/platform_device.h>
 #include <linux/timer.h>
@@ -228,6 +230,88 @@ static struct mdio_board_info cf_e380ac_v1v2_mdio0_info[] = {
 		.bus_id = "ag71xx-mdio.0",
 		.phy_addr = 0,
 		.platform_data = &cf_e380ac_v1v2_at803x_data,
+	},
+};
+
+#define CF_E385AC_GPIO_XWDT_TRIGGER	17
+
+#define CF_E385AC_GPIO_BTN_RESET_WPS	19
+
+#define CF_E385AC_GPIO_LED_WAN		3
+#define CF_E385AC_GPIO_LED_LAN		0
+#define CF_E385AC_GPIO_LED_WLAN		2
+
+#define CF_E385AC_LAN_PHYMASK		BIT(0)
+
+static struct gpio_led cf_e385ac_leds_gpio[] __initdata = {
+	{
+		.name		= "cf-e385ac:red:wlan5g",
+		.gpio		= CF_E385AC_GPIO_LED_WAN,
+		.active_low	= 0,
+	},
+	{
+		.name		= "cf-e385ac:green:lan",
+		.gpio		= CF_E385AC_GPIO_LED_LAN,
+		.active_low	= 0,
+	},
+	{
+		.name		= "cf-e385ac:blue:wlan2g",
+		.gpio		= CF_E385AC_GPIO_LED_WLAN,
+		.active_low	= 0,
+	}
+};
+
+static struct gpio_keys_button cf_e385ac_gpio_keys[] __initdata = {
+	{
+		.desc		= "Reset button/WPS button",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = CF_EXXXN_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= CF_E385AC_GPIO_BTN_RESET_WPS,
+		.active_low	= 1,
+	},
+};
+
+static struct ar8327_pad_cfg cf_e385ac_ar8337_pad0_cfg = {
+	/* GMAC0 of the AR8337 switch is connected to GMAC0 via RGMII */
+	.mode = AR8327_PAD_MAC_RGMII,
+	.txclk_delay_en = true,
+	.rxclk_delay_en = true,
+	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
+	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+};
+
+static struct ar8327_pad_cfg cf_e385ac_ar8337_pad6_cfg = {
+	/* GMAC6 of the AR8337 switch is connected to GMAC1 via SGMII */
+	.mode = AR8327_PAD_MAC_SGMII,
+	.rxclk_delay_en = true,
+	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0,
+};
+
+static struct ar8327_platform_data cf_e385ac_ar8337_data = {
+	.pad0_cfg = &cf_e385ac_ar8337_pad0_cfg,
+	.pad6_cfg = &cf_e385ac_ar8337_pad6_cfg,
+	.port0_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+	.port6_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+};
+
+static struct mdio_board_info cf_e385ac_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &cf_e385ac_ar8337_data,
 	},
 };
 
@@ -484,6 +568,57 @@ static void __init cf_e380ac_v2_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_CF_E380AC_V2, "CF-E380AC-V2", "COMFAST CF-E380AC v2",
 	     cf_e380ac_v2_setup);
+
+static void __init cf_e385ac_setup(void)
+{
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f040000);
+	u8 *art = (u8 *) KSEG1ADDR(0x1f040000);
+	u8 wlan0_mac[ETH_ALEN];
+	u8 wlan1_mac[ETH_ALEN];
+
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 1);
+	ath79_init_mac(wlan0_mac, art, 1);
+	ath79_init_mac(wlan1_mac, art, 3);
+
+	/* Disable JTAG, enabling GPIOs 0-3 */
+	/* Configure OBS4 line, for GPIO 4*/
+	ath79_gpio_function_setup(AR934X_GPIO_FUNC_JTAG_DISABLE, 0);
+
+	cf_exxxn_common_setup(0x40000, CF_E385AC_GPIO_XWDT_TRIGGER);
+
+	ath79_gpio_output_select(CF_E385AC_GPIO_LED_WAN, 0);
+	ath79_gpio_output_select(CF_E385AC_GPIO_LED_LAN, 0);
+	ath79_gpio_output_select(CF_E385AC_GPIO_LED_WLAN, 0);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_e385ac_leds_gpio),
+					cf_e385ac_leds_gpio);
+	ath79_register_gpio_keys_polled(-1, CF_EXXXN_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(cf_e385ac_gpio_keys),
+					cf_e385ac_gpio_keys);
+
+	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
+	ath79_register_mdio(0, 0x0);
+	mdiobus_register_board_info(cf_e385ac_mdio0_info,
+				    ARRAY_SIZE(cf_e385ac_mdio0_info));
+
+	/* GMAC0 is connected to the RMGII interface */
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ath79_eth0_data.phy_mask = CF_E385AC_LAN_PHYMASK;
+	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
+	ath79_eth0_pll_data.pll_1000 = 0xa6000000;
+	ath79_register_eth(0);
+
+	/* GMAC1 is connected to the SGMII interface */
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ath79_eth1_data.speed = SPEED_1000;
+	ath79_eth1_data.duplex = DUPLEX_FULL;
+	ath79_eth1_pll_data.pll_1000 = 0x03000101;
+	ath79_register_eth(1);
+
+	ap91_pci_init(art + 0x5000, wlan1_mac);
+}
+MIPS_MACHINE(ATH79_MACH_CF_E385AC, "CF-E385AC", "COMFAST CF-E385AC", cf_e385ac_setup);
 
 static void __init cf_e5x0n_gpio_setup(void)
 {
