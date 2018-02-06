@@ -2821,6 +2821,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
    
     host->dma.used_gpd = 0;
     host->dma.used_bd = 0;
+    mmc_dev(mmc)->dma_mask = NULL;
 
     /* using dma_alloc_coherent*/  /* todo: using 1, for all 4 slots */
     host->dma.gpd = dma_alloc_coherent(NULL, MAX_GPD_NUM * sizeof(gpd_t), &host->dma.gpd_addr, GFP_KERNEL); 
