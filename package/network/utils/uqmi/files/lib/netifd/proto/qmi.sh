@@ -156,12 +156,14 @@ proto_qmi_setup() {
 			${username:+--username $username} \
 			${password:+--password $password} \
 			${autoconnect:+--autoconnect})
-		[ $? -ne 0 ] && {
+
+        # pdh_4 is a numeric value on success
+		if ! [ "$pdh_4" -eq "$pdh_4" ] 2> /dev/null; then
 			echo "Unable to connect IPv4"
 			uqmi -s -d "$device" --set-client-id wds,"$cid_4" --release-client-id wds
 			proto_notify_error "$interface" CALL_FAILED
 			return 1
-		}
+		fi
 	}
 
 	[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && {
@@ -182,12 +184,14 @@ proto_qmi_setup() {
 			${username:+--username $username} \
 			${password:+--password $password} \
 			${autoconnect:+--autoconnect})
-		[ $? -ne 0 ] && {
+
+        # pdh_6 is a numeric value on success
+		if ! [ "$pdh_6" -eq "$pdh_6" ] 2> /dev/null; then
 			echo "Unable to connect IPv6"
 			uqmi -s -d "$device" --set-client-id wds,"$cid_6" --release-client-id wds
 			proto_notify_error "$interface" CALL_FAILED
 			return 1
-		}
+		fi
 	}
 
 	echo "Setting up $ifname"
