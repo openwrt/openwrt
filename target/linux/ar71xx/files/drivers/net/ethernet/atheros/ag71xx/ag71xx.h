@@ -169,8 +169,6 @@ struct ag71xx {
 	struct napi_struct	napi;
 	u32			msg_enable;
 
-	unsigned long	timestamp;
-
 	/*
 	 * From this point onwards we're not looking at per-packet fields.
 	 */

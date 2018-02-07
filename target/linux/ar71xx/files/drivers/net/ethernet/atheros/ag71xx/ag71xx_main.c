@@ -816,7 +816,6 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	i = (ring->curr + n - 1) & ring_mask;
 	ring->buf[i].len = skb->len;
 	ring->buf[i].skb = skb;
-	ag->timestamp = jiffies;
 
 	netdev_sent_queue(dev, skb->len);
 
@@ -928,9 +927,11 @@ static void ag71xx_restart_work_func(struct work_struct *work)
 
 static bool ag71xx_check_dma_stuck(struct ag71xx *ag)
 {
+	unsigned long timestamp;
 	u32 rx_sm, tx_sm, rx_fd;
 
-	if (likely(time_before(jiffies, ag->timestamp + HZ/10)))
+	timestamp = netdev_get_tx_queue(ag->dev, 0)->trans_start;
+	if (likely(time_before(jiffies, timestamp + HZ/10)))
 		return false;
 
 	if (!netif_carrier_ok(ag->dev))
