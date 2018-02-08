@@ -948,6 +948,16 @@ config ATH79_MACH_JWAP230
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_WAM250
+	bool "Samsung WAM250 support"
+	select SOC_AR934X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_WRT160NL
 	bool "Linksys WRT160NL board support"
 	select SOC_AR913X

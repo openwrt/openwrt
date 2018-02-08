@@ -286,6 +286,7 @@ platform_check_image() {
 	unifi-outdoor|\
 	unifiac-lite|\
 	unifiac-pro|\
+	wam250|\
 	weio|\
 	whr-g301n|\
 	whr-hp-g300n|\

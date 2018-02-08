@@ -1298,6 +1298,9 @@ ar71xx_board_detect() {
 	*"UniFiAP Outdoor+")
 		name="unifi-outdoor-plus"
 		;;
+	*"WAM250")
+		name="wam250"
+		;;
 	*"WBS210")
 		name="wbs210"
 		tplink_pharos_board_detect

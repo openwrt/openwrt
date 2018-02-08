@@ -236,7 +236,8 @@ get_status_led() {
 		;;
 	gl-ar750|\
 	hiveap-121|\
-	nbg6716)
+	nbg6716|\
+	wam250)
 		status_led="$board:white:power"
 		;;
 	hiwifi-hc6361)
