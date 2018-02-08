@@ -104,7 +104,9 @@ define Device/ventana
   BLOCKSIZE := 128k
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB
 endef
-TARGET_DEVICES += ventana
+ifeq ($(SUBTARGET),generic)
+  TARGET_DEVICES += ventana
+endif
 
 define Device/ventana-large
   $(Device/ventana)
@@ -115,12 +117,16 @@ define Device/ventana-large
   BLOCKSIZE := 256k
   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 248KiB
 endef
-TARGET_DEVICES += ventana-large
+ifeq ($(SUBTARGET),generic)
+  TARGET_DEVICES += ventana-large
+endif
 
 define Device/wandboard
   DEVICE_TITLE := Wandboard Dual
   DEVICE_DTS := imx6dl-wandboard
 endef
-TARGET_DEVICES += wandboard
+ifeq ($(SUBTARGET),generic)
+  TARGET_DEVICES += wandboard
+endif
 
 $(eval $(call BuildImage))
