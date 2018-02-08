@@ -77,7 +77,7 @@ proto_dhcpv6_setup() {
 
 	sendopts_cb() {
 		local val="$1"
-		append opts "-x$val"
+		[ -n "$val" ] && append opts "-x$val"
 	}
 
 	json_for_each_item sendopts_cb sendopts
