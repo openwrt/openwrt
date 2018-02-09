@@ -7,6 +7,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+FAT32_BLOCK_SIZE=1024
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_BOOT_FATFS_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
+ROOTFS_EXT4_SIZE=$(shell echo $$((($(CONFIG_TARGET_ROOTFS_PARTSIZE) \
+				 + $(CONFIG_BOOT_FATFS_PARTSIZE)+5)*1024*1024)))
+ROOTFS_PARTOFFSET=$(shell echo $$(($(CONFIG_BOOT_FATFS_PARTSIZE)+4)))
+
 define Build/append-ls-rcw
 	rm -f $@
 	dd if=$(STAGING_DIR_IMAGE)/$(1)-rcw.bin >> $@
@@ -14,6 +20,13 @@ endef
 
 define Build/append-ls-uboot
 	dd if=$(STAGING_DIR_IMAGE)/$(1)-$(SUBTARGET)-uboot.bin >> $@
+endef
+
+define Build/append-ls1012a-uboot
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-rcw.bin of=$(BIN_DIR)/$(1)-$(SUBTARGET)-rcw-uboot.bin \
+		bs=1M count=1 conv=sync
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-SD-$(SUBTARGET)-uboot.bin \
+		of=$(BIN_DIR)/$(1)-$(SUBTARGET)-rcw-uboot.bin bs=1M seek=1 count=3 conv=sync
 endef
 
 define Build/append-ls-ppa
@@ -46,8 +59,28 @@ define Build/append-ls-dtb
 endef
 
 define Build/append-ls-rootfs-ext4
-	$(STAGING_DIR_HOST)/bin/make_ext4fs -l $(word 2,$(1)) -b 4096 -i 6000 -m 0 -J $(KDIR)/$(word 1,$(1))-$(word 2,$(1)).root.ext4 $(TARGET_DIR)
+	$(STAGING_DIR_HOST)/bin/make_ext4fs -l $(word 2,$(1)) -b 4096 -i 6000 -m 0 -J \
+		$(KDIR)/$(word 1,$(1))-$(word 2,$(1)).root.ext4 $(TARGET_DIR)
 	dd if=$(KDIR)/$(word 1,$(1))-$(word 2,$(1)).root.ext4 >> $@
+endef
+
+define Build/append-ls-head
+	./gen_layerscape_sdcard_img_head.sh $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-sdcard-head.bin \
+		$(CONFIG_BOOT_FATFS_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+	dd if=$(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-sdcard-head.bin  >> $@
+endef
+
+define Build/append-ls-ubootEnv
+	dd if=$(STAGING_DIR_IMAGE)/$(1)-uboot-env.bin >> $@
+endef
+
+define Build/append-ls-bootImage
+	$(call Image/BuildDTB,$(DTS_DIR)/$(word 1,$(1)).dts,$(DTS_DIR)/$(word 1,$(1)).dtb)
+	rm -f $(KDIR_TMP)/$(word 2,$(1))-$(SUBTARGET)-boot.img
+	mkfs.fat $(KDIR_TMP)/$(word 2,$(1))-$(SUBTARGET)-boot.img -C $(FAT32_BLOCKS)
+	mcopy -i $(KDIR_TMP)/$(word 2,$(1))-$(SUBTARGET)-boot.img $(DTS_DIR)/$(word 1,$(1)).dtb ::
+	mcopy -i $(KDIR_TMP)/$(word 2,$(1))-$(SUBTARGET)-boot.img $(IMAGE_KERNEL) ::uImage
+	dd if=$(KDIR_TMP)/$(word 2,$(1))-$(SUBTARGET)-boot.img >> $@
 endef
 
 define Device/Default
@@ -67,7 +100,29 @@ ifeq ($(SUBTARGET),armv8_32b)
   KERNEL_LOADADDR = 0x80008000
   KERNEL_ENTRY_POINT = 0x80008000
 endif
+ifeq ($(SUBTARGET),armv7)
+  KERNEL := kernel-bin | uImage none
+  KERNEL_NAME := zImage
+  KERNEL_LOADADDR = 0x80080000
+  KERNEL_ENTRY_POINT = 0x80080000
+endif
 endef
+
+ifeq ($(SUBTARGET),armv7)
+define Device/ls1021aiot
+  DEVICE_TITLE := ls1021aiot
+  FILESYSTEMS := ext4
+  DEVICE_PACKAGES += uboot-layerscape-$(SUBTARGET)-ls1021aiot
+  DEVICE_DTS = ls1021a-iot
+  IMAGE/firmware.bin = append-ls-head | pad-to 4K | \
+		append-ls-uboot $(1) | pad-to 1M | \
+		append-ls-ubootEnv $(1) | pad-to 2M | \
+		append-ls-bootImage $$(DEVICE_DTS) $(1) | pad-to $(ROOTFS_PARTOFFSET)M | \
+		append-rootfs | pad-rootfs | check-size $(ROOTFS_EXT4_SIZE) 
+endef
+TARGET_DEVICES += ls1021aiot
+
+else
 
 define Device/ls1043ardb
   DEVICE_TITLE := ls1043ardb-$(SUBTARGET)
@@ -128,6 +183,8 @@ define Device/ls1012afrdm
 			append-ls-rootfs-ext4 $(1) 30M | check-size 67108865
 endef
 TARGET_DEVICES += ls1012afrdm
+
+endif
 
 ifeq ($(SUBTARGET),armv8_64b)
 define Device/ls1088ardb

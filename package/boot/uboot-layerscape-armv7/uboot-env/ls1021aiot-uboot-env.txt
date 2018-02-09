@@ -1,0 +1,19 @@
+baudrate=115200
+bootargs=root=/dev/ram0 rootwait rw console=ttyS0,115200
+bootcmd=run mmcboot
+mmcboot=setenv bootargs root=/dev/mmcblk0p2 rootwait rw console=ttyS0,115200;mmcinfo;fatload mmc 0:1 ${loadaddr} ${bootfile};fatload mmc 0:1 $fdtaddr $fdtfile;bootm $loadaddr - $fdtaddr
+rollbackboot=root=/dev/ram0 rootwait rw console=ttyS0,115200;mmcinfo;fatload mmc 0:1 ${loadaddr} ${bootfile};fatload mmc 0:1 $fdtaddr $fdtfile;fatload mmc 0:1 0x88000000 backup/root.ext4.gz.uboot;bootm $loadaddr 0x88000000 $fdtaddr
+bootdelay=3
+bootfile=uImage
+eth1addr=00:1F:7B:63:35:E9
+eth2addr=00:1F:7B:63:35:EA
+ethact=eTSEC1
+ethaddr=00:1F:7B:63:35:E8
+ethprime=eTSEC1
+fdt_high=0xffffffff
+fdtaddr=0x8f000000
+fdtcontroladdr=beeefe44
+fdtfile=ls1021a-iot.dtb
+initrd_high=0xffffffff
+loadaddr=0x82000000
+scsidevs=0

@@ -1,0 +1,28 @@
+From c268f9cdc3cb7bceb323a77a7f857d546a5bd30d Mon Sep 17 00:00:00 2001
+From: Xiaoliang Yang <xiaoliang.yang@nxp.com>
+Date: Tue, 11 Apr 2017 18:03:14 +0800
+Subject: [PATCH] increse CONFIG_SYS_BOOTM_LEN
+
+Set CONFIG_SYS_BOOTM_LEN to 10M
+
+Signed-off-by: Xiaoliang Yang <xiaoliang.yang@nxp.com>
+---
+ common/bootm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/bootm.c b/common/bootm.c
+index a4d22a6..32b1949 100644
+--- a/common/bootm.c
++++ b/common/bootm.c
+@@ -32,7 +32,7 @@
+ 
+ #ifndef CONFIG_SYS_BOOTM_LEN
+ /* use 8MByte as default max gunzip size */
+-#define CONFIG_SYS_BOOTM_LEN	0x800000
++#define CONFIG_SYS_BOOTM_LEN	0xA00000
+ #endif
+ 
+ #define IH_INITRD_ARCH IH_ARCH_DEFAULT
+-- 
+2.1.0.27.g96db324
+
