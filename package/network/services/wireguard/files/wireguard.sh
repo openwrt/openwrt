@@ -158,7 +158,7 @@ proto_wireguard_setup() {
         proto_add_ipv6_address "${address%%/*}" "${address##*/}"
       ;;
       *.*/*)
-        proto_add_ipv4_address "${address%%/*}" "${address##*/}"
+        proto_add_ipv4_address ${address//\// }
       ;;
       *:*)
         proto_add_ipv6_address "${address%%/*}" "128"
