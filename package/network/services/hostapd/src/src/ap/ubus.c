@@ -18,6 +18,7 @@
 #include "ubus.h"
 #include "ap_drv_ops.h"
 #include "beacon.h"
+#include "rrm.h"
 
 static struct ubus_context *ctx;
 static struct blob_buf b;
@@ -719,6 +720,94 @@ invalid:
 	return 0;
 }
 
+enum {
+	BEACON_REQ_ADDR,
+	BEACON_REQ_MODE,
+	BEACON_REQ_OP_CLASS,
+	BEACON_REQ_CHANNEL,
+	BEACON_REQ_DURATION,
+	BEACON_REQ_BSSID,
+	BEACON_REQ_SSID,
+	__BEACON_REQ_MAX,
+};
+
+static const struct blobmsg_policy beacon_req_policy[__BEACON_REQ_MAX] = {
+	[BEACON_REQ_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_OP_CLASS] { "op_class", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_CHANNEL] { "channel", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_DURATION] { "duration", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_MODE] { "mode", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_BSSID] { "bssid", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_SSID] { "ssid", BLOBMSG_TYPE_STRING },
+};
+
+static int
+hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
+		       struct ubus_request_data *ureq, const char *method,
+		       struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct blob_attr *tb[__BEACON_REQ_MAX];
+	struct blob_attr *cur;
+	struct wpabuf *req;
+	u8 bssid[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+	u8 addr[ETH_ALEN];
+	int mode, rem, ret;
+	int buf_len = 13;
+
+	blobmsg_parse(beacon_req_policy, __BEACON_REQ_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[BEACON_REQ_ADDR] || !tb[BEACON_REQ_MODE] || !tb[BEACON_REQ_DURATION] ||
+	    !tb[BEACON_REQ_OP_CLASS] || !tb[BEACON_REQ_CHANNEL])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (tb[BEACON_REQ_SSID])
+		buf_len += blobmsg_data_len(tb[BEACON_REQ_SSID]) + 2 - 1;
+
+	mode = blobmsg_get_u32(tb[BEACON_REQ_MODE]);
+	if (hwaddr_aton(blobmsg_data(tb[BEACON_REQ_ADDR]), addr))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (tb[BEACON_REQ_BSSID] &&
+	    hwaddr_aton(blobmsg_data(tb[BEACON_REQ_BSSID]), bssid))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	req = wpabuf_alloc(buf_len);
+	if (!req)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+	/* 1: regulatory class */
+	wpabuf_put_u8(req, blobmsg_get_u32(tb[BEACON_REQ_OP_CLASS]));
+
+	/* 2: channel number */
+	wpabuf_put_u8(req, blobmsg_get_u32(tb[BEACON_REQ_CHANNEL]));
+
+	/* 3-4: randomization interval */
+	wpabuf_put_le16(req, 0);
+
+	/* 5-6: duration */
+	wpabuf_put_le16(req, blobmsg_get_u32(tb[BEACON_REQ_DURATION]));
+
+	/* 7: mode */
+	wpabuf_put_u8(req, blobmsg_get_u32(tb[BEACON_REQ_MODE]));
+
+	/* 8-13: BSSID */
+	wpabuf_put_data(req, bssid, ETH_ALEN);
+
+	if ((cur = tb[BEACON_REQ_SSID]) != NULL) {
+		wpabuf_put_u8(req, WLAN_EID_SSID);
+		wpabuf_put_u8(req, blobmsg_data_len(cur) - 1);
+		wpabuf_put_data(req, blobmsg_data(cur), blobmsg_data_len(cur) - 1);
+	}
+
+	ret = hostapd_send_beacon_req(hapd, addr, 0, req);
+	if (ret < 0)
+		return -ret;
+
+	return 0;
+}
+
+
 static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("get_clients", hostapd_bss_get_clients),
 	UBUS_METHOD("del_client", hostapd_bss_del_client, del_policy),
@@ -735,6 +824,7 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("rrm_nr_get_own", hostapd_rrm_nr_get_own),
 	UBUS_METHOD_NOARG("rrm_nr_list", hostapd_rrm_nr_list),
 	UBUS_METHOD("rrm_nr_set", hostapd_rrm_nr_set, nr_set_policy),
+	UBUS_METHOD("rrm_beacon_req", hostapd_rrm_beacon_req, beacon_req_policy),
 };
 
 static struct ubus_object_type bss_object_type =
