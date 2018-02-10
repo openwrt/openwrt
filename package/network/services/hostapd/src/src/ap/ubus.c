@@ -469,6 +469,110 @@ hostapd_rrm_print_nr(struct hostapd_neighbor_entry *nr)
 	blobmsg_add_string_buffer(&b);
 }
 
+enum {
+	BSS_MGMT_EN_NEIGHBOR,
+	BSS_MGMT_EN_BEACON,
+#ifdef CONFIG_WNM_AP
+	BSS_MGMT_EN_BSS_TRANSITION,
+#endif
+	__BSS_MGMT_EN_MAX
+};
+
+static bool
+__hostapd_bss_mgmt_enable_f(struct hostapd_data *hapd, int flag)
+{
+	struct hostapd_bss_config *bss = hapd->conf;
+	uint32_t flags;
+
+	switch (flag) {
+	case BSS_MGMT_EN_NEIGHBOR:
+		if (bss->radio_measurements[0] &
+		    WLAN_RRM_CAPS_NEIGHBOR_REPORT)
+			return false;
+
+		bss->radio_measurements[0] |=
+			WLAN_RRM_CAPS_NEIGHBOR_REPORT;
+		hostapd_set_own_neighbor_report(hapd);
+		return true;
+	case BSS_MGMT_EN_BEACON:
+		flags = WLAN_RRM_CAPS_BEACON_REPORT_PASSIVE |
+			WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE |
+			WLAN_RRM_CAPS_BEACON_REPORT_TABLE;
+
+		if (bss->radio_measurements[0] & flags == flags)
+			return false;
+
+		bss->radio_measurements[0] |= (u8) flags;
+		return true;
+#ifdef CONFIG_WNM_AP
+	case BSS_MGMT_EN_BSS_TRANSITION:
+		if (bss->bss_transition)
+			return false;
+
+		bss->bss_transition = 1;
+		return true;
+#endif
+	}
+}
+
+static void
+__hostapd_bss_mgmt_enable(struct hostapd_data *hapd, uint32_t flags)
+{
+	bool update = false;
+	int i;
+
+	for (i = 0; i < __BSS_MGMT_EN_MAX; i++) {
+		if (!(flags & (1 << i)))
+			continue;
+
+		update |= __hostapd_bss_mgmt_enable_f(hapd, i);
+	}
+
+	if (update)
+		ieee802_11_update_beacons(hapd->iface);
+}
+
+
+static const struct blobmsg_policy bss_mgmt_enable_policy[__BSS_MGMT_EN_MAX] = {
+	[BSS_MGMT_EN_NEIGHBOR] = { "neighbor_report", BLOBMSG_TYPE_BOOL },
+	[BSS_MGMT_EN_BEACON] = { "beacon_report", BLOBMSG_TYPE_BOOL },
+#ifdef CONFIG_WNM_AP
+	[BSS_MGMT_EN_BSS_TRANSITION] = { "bss_transition", BLOBMSG_TYPE_BOOL },
+#endif
+};
+
+static int
+hostapd_bss_mgmt_enable(struct ubus_context *ctx, struct ubus_object *obj,
+		   struct ubus_request_data *req, const char *method,
+		   struct blob_attr *msg)
+
+{
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct blob_attr *tb[__BSS_MGMT_EN_MAX];
+	struct blob_attr *cur;
+	uint32_t flags = 0;
+	int i;
+	bool neigh = false, beacon = false;
+
+	blobmsg_parse(bss_mgmt_enable_policy, __BSS_MGMT_EN_MAX, tb, blob_data(msg), blob_len(msg));
+
+	for (i = 0; i < ARRAY_SIZE(tb); i++) {
+		if (!tb[i] || !blobmsg_get_bool(tb[i]))
+			continue;
+
+		flags |= (1 << i);
+	}
+
+	__hostapd_bss_mgmt_enable(hapd, flags);
+}
+
+
+static void
+hostapd_rrm_nr_enable(struct hostapd_data *hapd)
+{
+	__hostapd_bss_mgmt_enable(hapd, 1 << BSS_MGMT_EN_NEIGHBOR);
+}
+
 static int
 hostapd_rrm_nr_get_own(struct ubus_context *ctx, struct ubus_object *obj,
 		       struct ubus_request_data *req, const char *method,
@@ -478,8 +582,7 @@ hostapd_rrm_nr_get_own(struct ubus_context *ctx, struct ubus_object *obj,
 	struct hostapd_neighbor_entry *nr;
 	void *c;
 
-	if (!(hapd->conf->radio_measurements[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT))
-		return UBUS_STATUS_NOT_SUPPORTED;
+	hostapd_rrm_nr_enable(hapd);
 
 	nr = hostapd_neighbor_get(hapd, hapd->own_addr, NULL);
 	if (!nr)
@@ -505,9 +608,7 @@ hostapd_rrm_nr_list(struct ubus_context *ctx, struct ubus_object *obj,
 	struct hostapd_neighbor_entry *nr;
 	void *c;
 
-	if (!(hapd->conf->radio_measurements[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT))
-		return UBUS_STATUS_NOT_SUPPORTED;
-
+	hostapd_rrm_nr_enable(hapd);
 	blob_buf_init(&b, 0);
 
 	c = blobmsg_open_array(&b, "list");
@@ -570,8 +671,7 @@ hostapd_rrm_nr_set(struct ubus_context *ctx, struct ubus_object *obj,
 	int ret = 0;
 	int rem;
 
-	if (!(hapd->conf->radio_measurements[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT))
-		return UBUS_STATUS_NOT_SUPPORTED;
+	hostapd_rrm_nr_enable(hapd);
 
 	blobmsg_parse(nr_set_policy, __NR_SET_LIST_MAX, tb_l, blob_data(msg), blob_len(msg));
 	if (!tb_l[NR_SET_LIST])
@@ -625,6 +725,7 @@ static const struct ubus_method bss_methods[] = {
 #endif
 	UBUS_METHOD("set_vendor_elements", hostapd_vendor_elements, ve_policy),
 	UBUS_METHOD("notify_response", hostapd_notify_response, notify_policy),
+	UBUS_METHOD("bss_mgmt_enable", hostapd_bss_mgmt_enable, bss_mgmt_enable_policy),
 	UBUS_METHOD_NOARG("rrm_nr_get_own", hostapd_rrm_nr_get_own),
 	UBUS_METHOD_NOARG("rrm_nr_list", hostapd_rrm_nr_list),
 	UBUS_METHOD("rrm_nr_set", hostapd_rrm_nr_set, nr_set_policy),

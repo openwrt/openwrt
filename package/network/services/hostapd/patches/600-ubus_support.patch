@@ -39,6 +39,14 @@
  	enum hostapd_iface_state {
  		HAPD_IFACE_UNINITIALIZED,
  		HAPD_IFACE_DISABLED,
+@@ -518,6 +522,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+ 		       struct hostapd_bss_config *bss);
+ int hostapd_setup_interface(struct hostapd_iface *iface);
+ int hostapd_setup_interface_complete(struct hostapd_iface *iface, int err);
++void hostapd_set_own_neighbor_report(struct hostapd_data *hapd);
+ void hostapd_interface_deinit(struct hostapd_iface *iface);
+ void hostapd_interface_free(struct hostapd_iface *iface);
+ struct hostapd_iface * hostapd_alloc_iface(void);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
 @@ -309,6 +309,7 @@ static void hostapd_free_hapd_data(struc
@@ -58,6 +66,15 @@
  	return 0;
  }
  
+@@ -1600,7 +1603,7 @@ static enum nr_chan_width hostapd_get_nr
+ #endif /* NEED_AP_MLME */
+ 
+ 
+-static void hostapd_set_own_neighbor_report(struct hostapd_data *hapd)
++void hostapd_set_own_neighbor_report(struct hostapd_data *hapd)
+ {
+ #ifdef NEED_AP_MLME
+ 	u16 capab = hostapd_own_capab_info(hapd);
 @@ -1711,6 +1714,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
