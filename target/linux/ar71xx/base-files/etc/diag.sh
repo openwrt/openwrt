@@ -73,6 +73,23 @@ get_status_led() {
 	tl-wr902ac-v1)
 		status_led="$board:green:power"
 		;;
+	archer-c5|\
+	archer-c7|\
+	tl-mr10u|\
+	tl-mr12u|\
+	tl-mr13u|\
+	tl-wdr4300|\
+	tl-wdr4900-v2|\
+	tl-wr703n|\
+	tl-wr710n|\
+	tl-wr720n-v3|\
+	tl-wr802n-v1|\
+	tl-wr810n|\
+	tl-wr810n-v2|\
+	tl-wr940n-v4|\
+	tl-wr941nd-v6)
+		status_led="tp-link:blue:system"
+		;;
 	ap90q|\
 	cpe830|\
 	cpe870|\
@@ -107,9 +124,6 @@ get_status_led() {
 	rocket-m|\
 	rocket-m-xw)
 		status_led="ubnt:green:link4"
-		;;
-	rocket-m-ti)
-		status_led="ubnt:green:link6"
 		;;
 	bxu2000n-2-a1)
 		status_led="bhu:green:status"
@@ -349,6 +363,9 @@ get_status_led() {
 	sc300m)
 		status_led="$board:blue:power"
 		;;
+	rocket-m-ti)
+		status_led="ubnt:green:link6"
+		;;
 	routerstation|\
 	routerstation-pro)
 		status_led="ubnt:green:rf"
@@ -425,23 +442,6 @@ get_status_led() {
 	tl-wr941nd|\
 	tl-wr941nd-v5)
 		status_led="tp-link:green:system"
-		;;
-	archer-c5|\
-	archer-c7|\
-	tl-mr10u|\
-	tl-mr12u|\
-	tl-mr13u|\
-	tl-wdr4300|\
-	tl-wdr4900-v2|\
-	tl-wr703n|\
-	tl-wr710n|\
-	tl-wr720n-v3|\
-	tl-wr802n-v1|\
-	tl-wr810n|\
-	tl-wr810n-v2|\
-	tl-wr940n-v4|\
-	tl-wr941nd-v6)
-		status_led="tp-link:blue:system"
 		;;
 	tl-wr841n-v9)
 		status_led="tp-link:green:qss"
