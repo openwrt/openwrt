@@ -29,7 +29,7 @@ define U-Boot/fritz4040
 endef
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
-UBOOT_MAKE_FLAGS += USE_PRIVATE_LIBGCC=yes
+UBOOT_MAKE_FLAGS = USE_PRIVATE_LIBGCC=yes
 export DTC
 
 define Build/Configure
