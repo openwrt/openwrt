@@ -168,6 +168,7 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 	blobmsg_add_u32(&b, "freq", hapd->iface->freq);
 	list = blobmsg_open_table(&b, "clients");
 	for (sta = hapd->sta_list; sta; sta = sta->next) {
+		void *r;
 		int i;
 
 		sprintf(mac_buf, MACSTR, MAC2STR(sta->addr));
@@ -175,6 +176,11 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 		for (i = 0; i < ARRAY_SIZE(sta_flags); i++)
 			blobmsg_add_u8(&b, sta_flags[i].name,
 				       !!(sta->flags & sta_flags[i].flag));
+
+		r = blobmsg_open_array(&b, "rrm");
+		for (i = 0; i < ARRAY_SIZE(sta->rrm_enabled_capa); i++)
+			blobmsg_add_u32(&b, "", sta->rrm_enabled_capa[i]);
+		blobmsg_close_array(&b, r);
 		blobmsg_add_u32(&b, "aid", sta->aid);
 		blobmsg_close_table(&b, c);
 	}
