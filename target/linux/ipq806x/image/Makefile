@@ -177,7 +177,7 @@ define Device/openmesh_a42
 	IMAGES = factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A42
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca4019 uboot-envtools ipq-wifi-openmesh_a42
+	DEVICE_PACKAGES := ath10k-firmware-qca4019 uboot-envtools
 endef
 TARGET_DEVICES += openmesh_a42
 
