@@ -393,6 +393,12 @@ tplink,c20-v4)
 	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
 	ucidef_set_led_netdev "wlan2g" "wlan2g" "$boardname:green:wlan2g" "wlan0"
 	;;
+tplink,c50-v3)
+	ucidef_set_led_switch "lan" "lan" "$boardname:green:lan" "switch0" "0x1e"
+	ucidef_set_led_switch "wan" "wan" "$boardname:green:wan" "switch0" "0x01"
+	ucidef_set_led_netdev "wlan2g" "wlan2g" "$boardname:green:wlan2g" "wlan1"
+	set_wifi_led "$boardname:green:wlan5g"
+	;;
 tplink,tl-mr3420-v5)
 	set_usb_led "$boardname:green:usb"
 	set_wifi_led "$boardname:green:wlan"
