@@ -21,23 +21,7 @@ DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Try to guess the download method from the URL
 define dl_method
-$(strip \
-  $(if $(2),$(2), \
-    $(if $(filter @APACHE/% @GITHUB/% @GNOME/% @GNU/% @KERNEL/% @SF/% @SAVANNAH/% ftp://% http://% https://% file://%,$(1)),default, \
-      $(if $(filter git://%,$(1)),git, \
-        $(if $(filter svn://%,$(1)),svn, \
-          $(if $(filter cvs://%,$(1)),cvs, \
-            $(if $(filter hg://%,$(1)),hg, \
-              $(if $(filter sftp://%,$(1)),bzr, \
-                unknown \
-              ) \
-            ) \
-          ) \
-        ) \
-      ) \
-    ) \
-  ) \
-)
+$(shell $(SCRIPT_DIR)/download.py dl_method --url $(foreach url,$(1),"$(url)") --proto="$(2)")
 endef
 
 # code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
@@ -56,6 +40,10 @@ ifdef CHECK
 check_escape=$(subst ','\'',$(1))
 #')
 
+# $(1): suffix of the F_, C_ variables, e.g. hash_deprecated, hash_mismatch, etc.
+# $(2): filename
+# $(3): expected hash value
+# $(4): hash var name: MD5SUM, HASH
 check_warn_nofix = $(info $(shell printf "$(_R)WARNING: %s$(_N)" '$(call check_escape,$(call C_$(1),$(2),$(3),$(4)))'))
 ifndef FIXUP
   check_warn = $(check_warn_nofix)
@@ -71,6 +59,9 @@ F_hash_mismatch = $(F_hash_deprecated)
 F_hash_missing = $(SCRIPT_DIR)/fixup-makefile.pl $(CURDIR)/Makefile add-hash $(3) $(call gen_sha256sum,$(1))
 endif
 
+# $(1): filename
+# $(2): expected hash value
+# $(3): hash var name: MD5SUM, HASH
 C_download_missing = $(1) is missing, please run make download before re-running this check
 C_hash_mismatch = $(3) does not match $(1) hash $(call gen_sha256sum,$(1))
 C_hash_deprecated = $(3) uses deprecated hash, set to $(call gen_sha256sum,$(1))
@@ -116,6 +107,9 @@ define DownloadMethod/default
 	)
 endef
 
+# $(1): "check"
+# $(2): "PKG_" if <name> as in Download/<name> is "default", otherwise "Download/<name>:"
+# $(3): shell command sequence to do the download
 define wrap_mirror
 $(if $(if $(MIRROR),$(filter-out x,$(MIRROR_HASH))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_HASH)" "" || ( $(3) ),$(3)) \
 $(if $(filter check,$(1)), \
@@ -159,21 +153,39 @@ endef
 
 define DownloadMethod/git
 	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the git repository..."; \
-		mkdir -p $(TMP_DIR)/dl && \
-		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
-		[ \! -d $(SUBDIR) ] && \
-		git clone $(OPTS) $(URL) $(SUBDIR) && \
-		(cd $(SUBDIR) && git checkout $(VERSION) && \
-		git submodule update --init --recursive) && \
-		echo "Packing checkout..." && \
-		export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --format='@%ct'` && \
-		rm -rf $(SUBDIR)/.git && \
-		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
+		$(call DownloadMethod/git-raw) \
 	)
+endef
+
+define DownloadMethod/github-tarball
+	$(call wrap_mirror,$(1),$(2), \
+		$(SCRIPT_DIR)/download.py dl \
+			--dl-dir="$(DL_DIR)" \
+			--url $(foreach url,$(URL),"$(url)") \
+			--proto="$(PROTO)" \
+			--version="$(VERSION)" \
+			--subdir="$(SUBDIR)" \
+			--source="$(FILE)" \
+		|| ( $(call DownloadMethod/git-raw) ); \
+	)
+endef
+
+# Only intends to be called as a submethod from other DownloadMethod
+define DownloadMethod/git-raw
+	echo "Checking out files from the git repository..."; \
+	mkdir -p $(TMP_DIR)/dl && \
+	cd $(TMP_DIR)/dl && \
+	rm -rf $(SUBDIR) && \
+	[ \! -d $(SUBDIR) ] && \
+	git clone $(OPTS) $(URL) $(SUBDIR) && \
+	(cd $(SUBDIR) && git checkout $(VERSION) && \
+	git submodule update --init --recursive) && \
+	echo "Packing checkout..." && \
+	export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --format='@%ct'` && \
+	rm -rf $(SUBDIR)/.git && \
+	$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+	mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+	rm -rf $(SUBDIR);
 endef
 
 define DownloadMethod/bzr
