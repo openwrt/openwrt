@@ -165,6 +165,21 @@ define Device/netgear_r7800
 endef
 TARGET_DEVICES += netgear_r7800
 
+define Device/glinet_gl-b1300
+	DEVICE_TITLE := GL.iNet GL-B1300
+	BOARD_NAME := gl-b1300
+	DEVICE_DTS := qcom-ipq4019-gl-b1300
+	KERNEL_LOADADDR := 0x80208000
+	KERNEL_INSTALL := 1
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 26624k
+	$(call Device/FitImage)
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$${KERNEL_SIZE} | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-b1300
+endef
+TARGET_DEVICES += glinet_gl-b1300
+
 define Device/openmesh_a42
 	$(call Device/FitImageLzma)
 	DEVICE_DTS := qcom-ipq4019-a42
