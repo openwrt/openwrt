@@ -19,6 +19,7 @@
 #include "ap_drv_ops.h"
 #include "beacon.h"
 #include "rrm.h"
+#include "wnm_ap.h"
 
 static struct ubus_context *ctx;
 static struct blob_buf b;
@@ -808,6 +809,99 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 }
 
 
+#ifdef CONFIG_WNM_AP
+enum {
+	WNM_DISASSOC_ADDR,
+	WNM_DISASSOC_DURATION,
+	WNM_DISASSOC_NEIGHBORS,
+	__WNM_DISASSOC_MAX,
+};
+
+static const struct blobmsg_policy wnm_disassoc_policy[__WNM_DISASSOC_MAX] = {
+	[WNM_DISASSOC_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
+	[WNM_DISASSOC_DURATION] { "duration", BLOBMSG_TYPE_INT32 },
+	[WNM_DISASSOC_NEIGHBORS] { "neighbors", BLOBMSG_TYPE_ARRAY },
+};
+
+static int
+hostapd_wnm_disassoc_imminent(struct ubus_context *ctx, struct ubus_object *obj,
+			      struct ubus_request_data *ureq, const char *method,
+			      struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct blob_attr *tb[__WNM_DISASSOC_MAX];
+	struct blob_attr *cur;
+	struct sta_info *sta;
+	int duration = 10;
+	int rem;
+	int nr_len = 0;
+	u8 *nr = NULL;
+	u8 req_mode = WNM_BSS_TM_REQ_DISASSOC_IMMINENT;
+	u8 addr[ETH_ALEN];
+
+	blobmsg_parse(wnm_disassoc_policy, __WNM_DISASSOC_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[WNM_DISASSOC_ADDR])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (hwaddr_aton(blobmsg_data(tb[WNM_DISASSOC_ADDR]), addr))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if ((cur = tb[WNM_DISASSOC_DURATION]) != NULL)
+		duration = blobmsg_get_u32(cur);
+
+	sta = ap_get_sta(hapd, addr);
+	if (!sta)
+		return UBUS_STATUS_NOT_FOUND;
+
+	if (tb[WNM_DISASSOC_NEIGHBORS]) {
+		u8 *nr_cur;
+
+		if (blobmsg_check_array(tb[WNM_DISASSOC_NEIGHBORS],
+					BLOBMSG_TYPE_STRING) < 0)
+			return UBUS_STATUS_INVALID_ARGUMENT;
+
+		blobmsg_for_each_attr(cur, tb[WNM_DISASSOC_NEIGHBORS], rem) {
+			int len = strlen(blobmsg_get_string(cur));
+
+			if (len % 2)
+				return UBUS_STATUS_INVALID_ARGUMENT;
+
+			nr_len += (len / 2) + 2;
+		}
+
+		if (nr_len) {
+			nr = os_zalloc(nr_len);
+			if (!nr)
+				return UBUS_STATUS_UNKNOWN_ERROR;
+		}
+
+		nr_cur = nr;
+		blobmsg_for_each_attr(cur, tb[WNM_DISASSOC_NEIGHBORS], rem) {
+			int len = strlen(blobmsg_get_string(cur)) / 2;
+
+			*nr_cur++ = WLAN_EID_NEIGHBOR_REPORT;
+			*nr_cur++ = (u8) len;
+			if (hexstr2bin(blobmsg_data(cur), nr_cur, len)) {
+				free(nr);
+				return UBUS_STATUS_INVALID_ARGUMENT;
+			}
+
+			nr_cur += len;
+		}
+	}
+
+	if (nr)
+		req_mode |= WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED;
+
+	if (wnm_send_bss_tm_req(hapd, sta, req_mode, duration, 0, NULL,
+				NULL, nr, nr_len, NULL, 0))
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+	return 0;
+}
+#endif
+
 static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("get_clients", hostapd_bss_get_clients),
 	UBUS_METHOD("del_client", hostapd_bss_del_client, del_policy),
@@ -825,6 +919,9 @@ static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("rrm_nr_list", hostapd_rrm_nr_list),
 	UBUS_METHOD("rrm_nr_set", hostapd_rrm_nr_set, nr_set_policy),
 	UBUS_METHOD("rrm_beacon_req", hostapd_rrm_beacon_req, beacon_req_policy),
+#ifdef CONFIG_WNM_AP
+	UBUS_METHOD("wnm_disassoc_imminent", hostapd_wnm_disassoc_imminent, wnm_disassoc_policy),
+#endif
 };
 
 static struct ubus_object_type bss_object_type =
