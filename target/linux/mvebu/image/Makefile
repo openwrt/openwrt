@@ -199,6 +199,7 @@ define Device/armada-388-clearfog-pro
   IMAGE/sdcard.img.gz := boot-scr-cfpro | boot-img | sdcard-img | gzip | append-metadata
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
+  SUPPORTED_DEVICES := armada-388-clearfog-pro armada-388-clearfog
 endef
 TARGET_DEVICES += armada-388-clearfog-pro
 
