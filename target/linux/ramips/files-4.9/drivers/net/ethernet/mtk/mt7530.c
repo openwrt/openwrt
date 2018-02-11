@@ -497,6 +497,52 @@ mt7530_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 	return 0;
 }
 
+static void
+mt7530_write_vlan_entry(struct mt7530_priv *priv, int vlan, u16 vid,
+	                    u8 ports, u8 etags)
+{
+	int port;
+	u32 val;
+
+#ifndef CONFIG_SOC_MT7621
+	/* vid of vlan */
+	val = mt7530_r32(priv, REG_ESW_VLAN_VTIM(vlan));
+	if (vlan % 2 == 0) {
+		val &= 0xfff000;
+		val |= vid;
+	} else {
+		val &= 0xfff;
+		val |= (vid << 12);
+	}
+	mt7530_w32(priv, REG_ESW_VLAN_VTIM(vlan), val);
+#endif
+
+	/* vlan port membership */
+	if (ports)
+		mt7530_w32(priv, REG_ESW_VLAN_VAWD1, REG_ESW_VLAN_VAWD1_IVL_MAC |
+			REG_ESW_VLAN_VAWD1_VTAG_EN | (ports << 16) |
+			REG_ESW_VLAN_VAWD1_VALID);
+	else
+		mt7530_w32(priv, REG_ESW_VLAN_VAWD1, 0);
+
+	/* egress mode */
+	val = 0;
+	for (port = 0; port < MT7530_NUM_PORTS; port++) {
+		if (etags & BIT(port))
+			val |= ETAG_CTRL_TAG << (port * 2);
+		else
+			val |= ETAG_CTRL_UNTAG << (port * 2);
+	}
+	mt7530_w32(priv, REG_ESW_VLAN_VAWD2, val);
+
+	/* write to vlan table */
+#ifdef CONFIG_SOC_MT7621
+	mt7530_vtcr(priv, 1, vid);
+#else
+	mt7530_vtcr(priv, 1, vlan);
+#endif
+}
+
 static int
 mt7530_apply_config(struct switch_dev *dev)
 {
@@ -553,48 +599,19 @@ mt7530_apply_config(struct switch_dev *dev)
 		mt7530_w32(priv, REG_ESW_PORT_PVC(i), pvc_mode);
 	}
 
+	/* first clear the swtich vlan table */
+	for (i = 0; i < MT7530_NUM_VLANS; i++)
+		mt7530_write_vlan_entry(priv, i, i, 0, 0);
+
+	/* now program only vlans with members to avoid
+	   clobbering remapped entries in later iterations */
 	for (i = 0; i < MT7530_NUM_VLANS; i++) {
 		u16 vid = priv->vlan_entries[i].vid;
 		u8 member = priv->vlan_entries[i].member;
 		u8 etags = priv->vlan_entries[i].etags;
-		u32 val;
 
-#ifndef CONFIG_SOC_MT7621
-		/* vid of vlan */
-		val = mt7530_r32(priv, REG_ESW_VLAN_VTIM(i));
-		if (i % 2 == 0) {
-			val &= 0xfff000;
-			val |= vid;
-		} else {
-			val &= 0xfff;
-			val |= (vid << 12);
-		}
-		mt7530_w32(priv, REG_ESW_VLAN_VTIM(i), val);
-#endif
-		/* vlan port membership */
 		if (member)
-			mt7530_w32(priv, REG_ESW_VLAN_VAWD1, REG_ESW_VLAN_VAWD1_IVL_MAC |
-				REG_ESW_VLAN_VAWD1_VTAG_EN | (member << 16) |
-				REG_ESW_VLAN_VAWD1_VALID);
-		else
-			mt7530_w32(priv, REG_ESW_VLAN_VAWD1, 0);
-
-		/* egress mode */
-		val = 0;
-		for (j = 0; j < MT7530_NUM_PORTS; j++) {
-			if (etags & BIT(j))
-				val |= ETAG_CTRL_TAG << (j * 2);
-			else
-				val |= ETAG_CTRL_UNTAG << (j * 2);
-		}
-		mt7530_w32(priv, REG_ESW_VLAN_VAWD2, val);
-
-		/* write to vlan table */
-#ifdef CONFIG_SOC_MT7621
-		mt7530_vtcr(priv, 1, vid);
-#else
-		mt7530_vtcr(priv, 1, i);
-#endif
+			mt7530_write_vlan_entry(priv, i, vid, member, etags);
 	}
 
 	/* Port Default PVID */
