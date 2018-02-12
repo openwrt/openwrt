@@ -37,10 +37,12 @@ endef
 
 define Host/Install
 	$(CP) $(HOST_BUILD_DIR)/tools/mkimage $(STAGING_DIR_HOST)/bin/
+	$(CP) $(HOST_BUILD_DIR)/tools/mkenvimage $(STAGING_DIR_HOST)/bin/
 endef
 
 define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/bin/mkimage
+	rm -f $(STAGING_DIR_HOST)/bin/mkenvimage
 endef
 
 $(eval $(call HostBuild))
