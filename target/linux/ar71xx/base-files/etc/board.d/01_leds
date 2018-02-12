@@ -616,6 +616,7 @@ rb-wap-2nd)
 	ucidef_set_led_timer "user" "USER" "rb:green:user" "1000" "1000"
 	ucidef_set_led_wlan "wlan" "WLAN" "rb:green:wlan" "phy0tpt"
 	;;
+re355|\
 re450)
 	ucidef_set_led_netdev "lan_data" "LAN Data" "$board:green:lan_data" "eth0" "tx rx"
 	ucidef_set_led_netdev "lan_link" "LAN Link" "$board:green:lan_link" "eth0" "link"
