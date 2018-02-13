@@ -27,6 +27,7 @@ get_status_led() {
 	e600gac-v2|\
 	eap120|\
 	minibox-v1|\
+	packet-squirrel|\
 	som9331|\
 	sr3200|\
 	tl-wr802n-v2|\
@@ -203,7 +204,8 @@ get_status_led() {
 	r36a)
 		status_led="$board:blue:status"
 		;;
-	e600g-v2)
+	e600g-v2|\
+	wifi-pineapple-nano)
 		status_led="$board:blue:system"
 		;;
 	eap300v2)
@@ -253,6 +255,9 @@ get_status_led() {
 		;;
 	jwap230)
 		status_led="$board:green:led1"
+		;;
+	lan-turtle)
+		status_led="$board:orange:system"
 		;;
 	ls-sr71)
 		status_led="ubnt:green:d22"

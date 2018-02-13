@@ -392,12 +392,14 @@ platform_check_image() {
 	el-m150|\
 	el-mini|\
 	gl-inet|\
+	lan-turtle|\
 	mc-mac1200r|\
 	minibox-v1|\
 	omy-g1|\
 	omy-x1|\
 	onion-omega|\
 	oolite|\
+	packet-squirrel|\
 	re355|\
 	re450|\
 	rut900|\
@@ -466,7 +468,8 @@ platform_check_image() {
 	tl-wr940n-v4|\
 	tl-wr941nd|\
 	tl-wr941nd-v5|\
-	tl-wr941nd-v6)
+	tl-wr941nd-v6|\
+	wifi-pineapple-nano)
 		local magic_ver="0100"
 
 		case "$board" in

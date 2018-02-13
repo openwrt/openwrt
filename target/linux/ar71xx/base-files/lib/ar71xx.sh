@@ -741,6 +741,9 @@ ar71xx_board_detect() {
 	*"JWAP230")
 		name="jwap230"
 		;;
+	*"LAN Turtle")
+		name="lan-turtle"
+		;;
 	*"Lima"*)
 		name="lima"
 		;;
@@ -864,6 +867,9 @@ ar71xx_board_detect() {
 		;;
 	*"Oolite V1.0")
 		name="oolite"
+		;;
+	*"Packet Squirrel")
+		name="packet-squirrel"
 		;;
 	*"PB42")
 		name="pb42"
@@ -1326,6 +1332,9 @@ ar71xx_board_detect() {
 		;;
 	*"WHR-HP-GN")
 		name="whr-hp-gn"
+		;;
+	*"WiFi Pineapple NANO")
+		name="wifi-pineapple-nano"
 		;;
 	*"WLAE-AG300N")
 		name="wlae-ag300n"

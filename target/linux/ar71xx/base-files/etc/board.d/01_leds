@@ -405,6 +405,9 @@ hornet-ub-x2)
 	ucidef_set_led_wlan "wlan" "WLAN" "alfa:blue:wlan" "phy0tpt"
 	ucidef_set_led_usbdev "usb" "USB" "alfa:blue:usb" "1-1"
 	;;
+lan-turtle)
+	ucidef_set_led_netdev "wan" "WAN" "$board:orange:system" "eth1"
+	;;
 mc-mac1200r)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "mercury:green:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "mercury:green:wlan5g" "phy0tpt"
@@ -950,6 +953,9 @@ whr-hp-gn)
 	ucidef_set_led_switch "lan2" "LAN2" "buffalo:green:lan2" "switch0" "0x04"
 	ucidef_set_led_switch "lan3" "LAN3" "buffalo:green:lan3" "switch0" "0x08"
 	ucidef_set_led_switch "lan4" "LAN4" "buffalo:green:lan4" "switch0" "0x10"
+	;;
+wifi-pineapple-nano)
+	ucidef_set_led_wlan "wlan0" "WLAN0" "$board:blue:system" "phy0tpt"
 	;;
 wlae-ag300n)
 	ucidef_set_led_netdev "wireless" "WIRELESS" "buffalo:green:wireless" "wlan0"

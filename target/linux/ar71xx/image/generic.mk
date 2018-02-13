@@ -484,6 +484,19 @@ define Device/gl-usb150
 endef
 TARGET_DEVICES += gl-usb150
 
+define Device/lan-turtle
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Hak5 LAN Turtle
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage \
+	-kmod-ath9k -swconfig -uboot-envtools -wpad-mini
+  BOARDNAME := LAN-TURTLE
+  DEVICE_PROFILE := LANTURTLE
+  TPLINK_HWID := 0x5348334c
+  CONSOLE := ttyATH0,115200
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += lan-turtle
+
 define Device/lima
   DEVICE_TITLE := 8devices Lima
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
@@ -655,6 +668,19 @@ define Device/cr5000-nocloud
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7808k(firmware),64k(art)ro
 endef
 TARGET_DEVICES += cr5000-nocloud
+
+define Device/packet-squirrel
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Hak5 Packet Squirrel
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 \
+	-kmod-ath9k -swconfig -uboot-envtools -wpad-mini
+  BOARDNAME := PACKET-SQUIRREL
+  DEVICE_PROFILE := PACKETSQUIRREL
+  TPLINK_HWID := 0x5351524c
+  CONSOLE := ttyATH0,115200
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += packet-squirrel
 
 define Device/pqi-air-pen
   DEVICE_TITLE := PQI Air Pen
@@ -1124,6 +1150,19 @@ define Device/wam250
 	append-rootfs | pad-rootfs | append-metadata | check-size $$$$(IMAGE_SIZE)
 endef
 TARGET_DEVICES += wam250
+
+define Device/wifi-pineapple-nano
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Hak5 WiFi Pineapple NANO
+  DEVICE_PACKAGES := kmod-ath9k-htc kmod-usb-core kmod-usb2 kmod-usb-storage \
+	-swconfig -uboot-envtools
+  BOARDNAME := WIFI-PINEAPPLE-NANO
+  DEVICE_PROFILE := WIFIPINEAPPLENANO
+  TPLINK_HWID := 0x4e414e4f
+  CONSOLE := ttyATH0,115200
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += wifi-pineapple-nano
 
 define Device/wlr8100
   DEVICE_TITLE := Sitecom WLR-8100

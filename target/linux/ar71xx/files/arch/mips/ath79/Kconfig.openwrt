@@ -958,6 +958,16 @@ config ATH79_MACH_WAM250
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_WIFI_PINEAPPLE_NANO
+	bool "Hak5 WiFi Pineapple NANO support"
+	select SOC_AR933X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_WRT160NL
 	bool "Linksys WRT160NL board support"
 	select SOC_AR913X
@@ -2153,6 +2163,15 @@ config ATH79_MACH_CARAMBOLA2
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_USB
 	select ATH79_DEV_WMAC
+
+config ATH79_MACH_LAN_TURTLE
+	bool "Hak5 LAN Turtle and Packet Squirrel support"
+	select SOC_AR933X
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_USB
 
 config ATH79_MACH_LIMA
 	bool "8devices Lima board"

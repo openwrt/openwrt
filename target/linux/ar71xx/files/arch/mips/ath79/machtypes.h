@@ -135,6 +135,7 @@ enum ath79_mach_type {
 	ATH79_MACH_JA76PF2,			/* jjPlus JA76PF2 */
 	ATH79_MACH_JWAP003,			/* jjPlus JWAP003 */
 	ATH79_MACH_JWAP230,			/* jjPlus JWAP230 */
+	ATH79_MACH_LAN_TURTLE,			/* Hak5 LAN Turtle */
 	ATH79_MACH_LIMA,			/* 8devices Lima */
 	ATH79_MACH_MC_MAC1200R,			/* MERCURY MAC1200R */
 	ATH79_MACH_MR12,			/* Cisco Meraki MR12 */
@@ -170,6 +171,7 @@ enum ath79_mach_type {
 	ATH79_MACH_OMY_G1,			/* OMYlink OMY-G1 */
 	ATH79_MACH_OMY_X1,			/* OMYlink OMY-X1 */
 	ATH79_MACH_ONION_OMEGA,			/* ONION OMEGA */
+	ATH79_MACH_PACKET_SQUIRREL,		/* Hak5 Packet Squirrel */
 	ATH79_MACH_PB42,			/* Atheros PB42 */
 	ATH79_MACH_PB44,			/* Atheros PB44 reference board */
 	ATH79_MACH_PQI_AIR_PEN,			/* PQI Air Pen */
@@ -323,6 +325,7 @@ enum ath79_mach_type {
 	ATH79_MACH_WHR_G301N,			/* Buffalo WHR-G301N */
 	ATH79_MACH_WHR_HP_G300N,		/* Buffalo WHR-HP-G300N */
 	ATH79_MACH_WHR_HP_GN,			/* Buffalo WHR-HP-GN */
+	ATH79_MACH_WIFI_PINEAPPLE_NANO,		/* Hak5 WiFi Pineapple NANO */
 	ATH79_MACH_WLAE_AG300N,			/* Buffalo WLAE-AG300N */
 	ATH79_MACH_WLR8100,			/* SITECOM WLR-8100 */
 	ATH79_MACH_WNDAP360,			/* NETGEAR WNDAP360 */
