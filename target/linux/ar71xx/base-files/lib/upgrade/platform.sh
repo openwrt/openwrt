@@ -385,6 +385,7 @@ platform_check_image() {
 	el-mini|\
 	gl-inet|\
 	hak5-lan-turtle|\
+	hak5-packet-squirrel|\
 	hak5-pineapple-nano|\
 	mc-mac1200r|\
 	minibox-v1|\

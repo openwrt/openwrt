@@ -235,6 +235,9 @@ get_status_led() {
 	hak5-lan-turtle)
 		status_led="hak5:yellow:system"
 		;;
+	hak5-packet-squirrel)
+		status_led="hak5:green:system"
+		;;
 	hak5-pineapple-nano)
 		status_led="hak5:blue:system"
 		;;

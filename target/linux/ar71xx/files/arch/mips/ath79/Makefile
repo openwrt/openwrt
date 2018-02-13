@@ -132,6 +132,7 @@ obj-$(CONFIG_ATH79_MACH_GL_USB150)		+= mach-gl-usb150.o
 obj-$(CONFIG_ATH79_MACH_GS_MINIBOX_V1)		+= mach-gs-minibox-v1.o
 obj-$(CONFIG_ATH79_MACH_GS_OOLITE)		+= mach-gs-oolite.o
 obj-$(CONFIG_ATH79_MACH_HAK5_LAN_TURTLE)	+= mach-hak5-lan-turtle.o
+obj-$(CONFIG_ATH79_MACH_HAK5_PACKET_SQUIRREL)	+= mach-hak5-packet-squirrel.o
 obj-$(CONFIG_ATH79_MACH_HAK5_PINEAPPLE_NANO)	+= mach-hak5-pineapple-nano.o
 obj-$(CONFIG_ATH79_MACH_HIVEAP_121)		+= mach-hiveap-121.o
 obj-$(CONFIG_ATH79_MACH_HIWIFI_HC6361)		+= mach-hiwifi-hc6361.o
