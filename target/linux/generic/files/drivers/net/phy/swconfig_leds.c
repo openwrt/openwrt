@@ -124,18 +124,16 @@ swconfig_trig_port_mask_store(struct device *dev, struct device_attribute *attr,
 		return ret;
 
 	write_lock(&trig_data->lock);
-
 	changed = (trig_data->port_mask != port_mask);
-	if (changed) {
-		trig_data->port_mask = port_mask;
-		if (port_mask == 0)
-			swconfig_trig_set_brightness(trig_data, LED_OFF);
-	}
-
+	trig_data->port_mask = port_mask;
 	write_unlock(&trig_data->lock);
 
-	if (changed)
+	if (changed) {
+		if (port_mask == 0)
+			swconfig_trig_set_brightness(trig_data, LED_OFF);
+
 		swconfig_trig_update_port_mask(led_cdev->trigger);
+	}
 
 	return size;
 }
@@ -146,10 +144,13 @@ swconfig_trig_port_mask_show(struct device *dev, struct device_attribute *attr,
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct swconfig_trig_data *trig_data = led_cdev->trigger_data;
+	u32 port_mask;
 
 	read_lock(&trig_data->lock);
-	sprintf(buf, "%#x\n", trig_data->port_mask);
+	port_mask = trig_data->port_mask;
 	read_unlock(&trig_data->lock);
+
+	sprintf(buf, "%#x\n", port_mask);
 
 	return strlen(buf) + 1;
 }
@@ -164,10 +165,13 @@ static ssize_t swconfig_trig_speed_mask_show(struct device *dev,
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct swconfig_trig_data *trig_data = led_cdev->trigger_data;
+	u8 speed_mask;
 
 	read_lock(&trig_data->lock);
-	sprintf(buf, "%#x\n", trig_data->speed_mask);
+	speed_mask = trig_data->speed_mask;
 	read_unlock(&trig_data->lock);
+
+	sprintf(buf, "%#x\n", speed_mask);
 
 	return strlen(buf) + 1;
 }
