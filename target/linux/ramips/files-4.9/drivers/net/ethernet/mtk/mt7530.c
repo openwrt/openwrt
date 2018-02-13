@@ -616,10 +616,16 @@ mt7530_apply_config(struct switch_dev *dev)
 
 	/* Port Default PVID */
 	for (i = 0; i < MT7530_NUM_PORTS; i++) {
+		int vlan = priv->port_entries[i].pvid;
+		u16 pvid = 0;
 		u32 val;
+
+		if (vlan < MT7530_NUM_VLANS && priv->vlan_entries[vlan].member)
+			pvid = priv->vlan_entries[vlan].vid;
+
 		val = mt7530_r32(priv, REG_ESW_PORT_PPBV1(i));
 		val &= ~0xfff;
-		val |= priv->port_entries[i].pvid;
+		val |= pvid;
 		mt7530_w32(priv, REG_ESW_PORT_PPBV1(i), val);
 	}
 
