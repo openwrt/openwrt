@@ -384,6 +384,7 @@ platform_check_image() {
 	el-m150|\
 	el-mini|\
 	gl-inet|\
+	hak5-lan-turtle|\
 	hak5-pineapple-nano|\
 	mc-mac1200r|\
 	minibox-v1|\

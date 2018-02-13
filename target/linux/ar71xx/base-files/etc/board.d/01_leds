@@ -381,6 +381,9 @@ gl-inet)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:red:wlan" "phy0tpt"
 	;;
+hak5-lan-turtle)
+	ucidef_set_led_netdev "wan" "WAN" "hak5:yellow:system" "eth1"
+	;;
 hak5-pineapple-nano)
 	ucidef_set_led_netdev "wlan0" "WLAN" "hak5:blue:system" "wlan0"
 	;;

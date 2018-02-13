@@ -232,6 +232,9 @@ get_status_led() {
 	nbg6716)
 		status_led="$board:white:power"
 		;;
+	hak5-lan-turtle)
+		status_led="hak5:yellow:system"
+		;;
 	hak5-pineapple-nano)
 		status_led="hak5:blue:system"
 		;;
