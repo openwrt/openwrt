@@ -381,6 +381,9 @@ gl-inet)
 	ucidef_set_led_netdev "lan" "LAN" "$board:green:lan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:red:wlan" "phy0tpt"
 	;;
+hak5-pineapple-nano)
+	ucidef_set_led_netdev "wlan0" "WLAN" "hak5:blue:system" "wlan0"
+	;;
 hiwifi-hc6361)
 	ucidef_set_led_netdev "inet" "INET" "hiwifi:blue:internet" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "hiwifi:blue:wlan-2p4" "phy0tpt"

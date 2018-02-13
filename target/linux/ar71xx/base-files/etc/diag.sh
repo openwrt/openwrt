@@ -232,6 +232,9 @@ get_status_led() {
 	nbg6716)
 		status_led="$board:white:power"
 		;;
+	hak5-pineapple-nano)
+		status_led="hak5:blue:system"
+		;;
 	hiwifi-hc6361)
 		status_led="hiwifi:blue:system"
 		;;

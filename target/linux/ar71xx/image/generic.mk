@@ -394,6 +394,17 @@ define Device/gl-usb150
 endef
 TARGET_DEVICES += gl-usb150
 
+define Device/hak5-pineapple-nano
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Hak5 WiFi Pineapple NANO
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath9k-htc -swconfig -uboot-envtools
+  BOARDNAME := HAK5-PINEAPPLE-NANO
+  DEVICE_PROFILE := HAK5_PINEAPPLE_NANO
+  TPLINK_HWID := 0x4e414e4f
+  CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += hak5-pineapple-nano
+
 define Device/lima
   DEVICE_TITLE := 8devices Lima
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
