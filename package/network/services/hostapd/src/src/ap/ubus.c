@@ -729,14 +729,14 @@ int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_req
 		if (req->elems->supp_rates) {
 			supp_rates = blobmsg_open_array(&b, "supp_rates");
 			for (i = 0; req->elems->supp_rates && i < req->elems->supp_rates_len; i++) {
-				blobmsg_add_u8(&b, NULL, req->elems->supp_rates[i]);
+				blobmsg_add_u16(&b, NULL, req->elems->supp_rates[i]);
 			}
 			blobmsg_close_array(&b, supp_rates);
 		}
 		if (req->elems->ext_supp_rates) {
 			ext_supp_rates = blobmsg_open_array(&b, "ext_supp_rates");
 			for (i = 0; req->elems->ext_supp_rates && i < req->elems->ext_supp_rates_len; i++) {
-				blobmsg_add_u8(&b, NULL, req->elems->ext_supp_rates[i]);
+				blobmsg_add_u16(&b, NULL, req->elems->ext_supp_rates[i]);
 			}
 			blobmsg_close_array(&b, ext_supp_rates);
 		}
