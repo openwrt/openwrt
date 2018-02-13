@@ -479,6 +479,14 @@ mt7530_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 }
 
 static int
+mt7621_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
+		struct switch_val *val)
+{
+	val->value.i = val->port_vlan;
+	return 0;
+}
+
+static int
 mt7530_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 		struct switch_val *val)
 {
@@ -835,6 +843,17 @@ static const struct switch_attr mt7621_port[] = {
 	},
 };
 
+static const struct switch_attr mt7621_vlan[] = {
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "vid",
+		.description = "VLAN ID (0-4094)",
+		.set = mt7530_set_vid,
+		.get = mt7621_get_vid,
+		.max = 4094,
+	},
+};
+
 static const struct switch_attr mt7530_port[] = {
 	{
 		.type = SWITCH_TYPE_STRING,
@@ -866,8 +885,8 @@ static const struct switch_dev_ops mt7621_ops = {
 		.n_attr = ARRAY_SIZE(mt7621_port),
 	},
 	.attr_vlan = {
-		.attr = mt7530_vlan,
-		.n_attr = ARRAY_SIZE(mt7530_vlan),
+		.attr = mt7621_vlan,
+		.n_attr = ARRAY_SIZE(mt7621_vlan),
 	},
 	.get_vlan_ports = mt7530_get_vlan_ports,
 	.set_vlan_ports = mt7530_set_vlan_ports,
