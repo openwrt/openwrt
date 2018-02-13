@@ -68,6 +68,10 @@ define Profile
   $(eval $(call ProfileDefault))
   $(eval $(call Profile/$(1)))
   dumpinfo : $(call shexport,Profile/$(1)/Description)
+  _UNWANTED := $(filter -%,$(PACKAGES))
+  UNWANTED := $(patsubst -%,%,$(_UNWANTED))
+  DEFAULT_PACKAGES := $(filter-out $(UNWANTED),$(DEFAULT_PACKAGES))
+  PACKAGES := $(filter-out $(_UNWANTED),$(PACKAGES))
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
 	$(if $(PRIORITY), echo "Target-Profile-Priority: $(PRIORITY)"; ) \
