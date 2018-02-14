@@ -201,7 +201,6 @@ define Device/armada-388-clearfog-pro
   DEVICE_PACKAGES := mkf2fs e2fsprogs swconfig kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr-cfpro | boot-img | sdcard-img | gzip | append-metadata
-  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
   SUPPORTED_DEVICES := armada-388-clearfog-pro armada-388-clearfog
 endef
@@ -214,7 +213,6 @@ define Device/armada-388-clearfog-base
   DEVICE_PACKAGES := mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr-cfbase | boot-img | sdcard-img | gzip | append-metadata
-  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(2)
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
 endef
 TARGET_DEVICES += armada-388-clearfog-base
