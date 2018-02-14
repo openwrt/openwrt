@@ -44,10 +44,11 @@ define Build/boot-img
 endef
 
 define Build/sdcard-img
+	if [ -n "$(UBOOT)" ]; then UBOOT="$(STAGING_DIR_IMAGE)/$(UBOOT)"; fi; \
 	ROOTFS_SIZE=$$(( $(CONFIG_TARGET_ROOTFS_PARTSIZE) * 1024 * 2 )); \
 	SIGNATURE="$(SIGNATURE)" \
 	./gen_mvebu_sdcard_img.sh $@ \
-		"$(STAGING_DIR_IMAGE)/clearfog-u-boot-spl.kwb" \
+		$$UBOOT \
 		c 32768 $@.boot \
 		83 $$ROOTFS_SIZE $(IMAGE_ROOTFS)
 endef
@@ -206,6 +207,7 @@ define Device/armada-388-clearfog-pro
   IMAGE/sdcard.img.gz := boot-scr-cfpro | boot-img | sdcard-img | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
   SUPPORTED_DEVICES := armada-388-clearfog-pro armada-388-clearfog
+  UBOOT := clearfog-u-boot-spl.kwb
 endef
 TARGET_DEVICES += armada-388-clearfog-pro
 
@@ -217,6 +219,7 @@ define Device/armada-388-clearfog-base
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr-cfbase | boot-img | sdcard-img | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
+  UBOOT := clearfog-u-boot-spl.kwb
 endef
 TARGET_DEVICES += armada-388-clearfog-base
 
