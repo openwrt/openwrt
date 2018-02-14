@@ -670,15 +670,29 @@ static int _mvsw61xx_reset(struct switch_dev *dev, bool full)
 					    BMCR_SPEED1000);
 		}
 
-		/* enable SerDes if necessary */
-		if (full && i >= 5 && state->model == MV_IDENT_VALUE_6176) {
+		if (state->model == MV_IDENT_VALUE_6176) {
 			u16 sts = sr16(dev, MV_PORTREG(STATUS, i));
 			u16 mode = sts & MV_PORT_STATUS_CMODE_MASK;
 
-			if (mode == MV_PORT_STATUS_CMODE_100BASE_X ||
-			    mode == MV_PORT_STATUS_CMODE_1000BASE_X ||
-			    mode == MV_PORT_STATUS_CMODE_SGMII) {
+			/* enable SerDes if necessary */
+			if (i >= 5 && full &&
+				(mode == MV_PORT_STATUS_CMODE_100BASE_X ||
+				 mode == MV_PORT_STATUS_CMODE_1000BASE_X ||
+				 mode == MV_PORT_STATUS_CMODE_SGMII)) {
 				mvsw61xx_enable_serdes(dev);
+			}
+
+			/* Enable RGMII internal delay for CPU ports */
+			if (i == state->cpu_port0 || i == state->cpu_port1) {
+				u16 reg = sr16(dev, MV_PORTREG(PHYCTL, i));
+				if ((reg & (MV_PHYCTL_RGMII_DELAY_RXCLK |
+					    MV_PHYCTL_RGMII_DELAY_TXCLK)) !=
+					   (MV_PHYCTL_RGMII_DELAY_RXCLK |
+					    MV_PHYCTL_RGMII_DELAY_TXCLK)) {
+					reg |= MV_PHYCTL_RGMII_DELAY_RXCLK |
+					       MV_PHYCTL_RGMII_DELAY_TXCLK;
+					sw16(dev, MV_PORTREG(PHYCTL, i), reg);
+				}
 			}
 		}
 	}
