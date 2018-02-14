@@ -62,6 +62,7 @@ get_status_led() {
 	archer-c59-v1|\
 	archer-c60-v1|\
 	archer-c7-v4|\
+	dlb-5|\
 	fritz300e|\
 	gl-usb150|\
 	mr12|\
@@ -534,6 +535,10 @@ set_state() {
 	done)
 		status_led_on
 		case $(board_name) in
+		dlb-5)
+			active_fw=$(fw_printenv -n active)
+                	fw_setenv linux_fail${active_fw}=0
+			;;
 		gl-ar300m|\
 		gl-ar750)
 			fw_printenv lc >/dev/null 2>&1 && fw_setenv "bootcount" 0
