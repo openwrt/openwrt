@@ -25,14 +25,9 @@ endef
 # Partition 1:   32768 sectors
 # Partition 2:   98304 sectors (configurable)
 
-define Build/boot-scr-cfpro
-	rm -f $@.bootscript
-	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d cfpro-boot.script $@.bootscript
-endef
-
-define Build/boot-scr-cfbase
-	rm -f $@.bootscript
-	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d cfbase-boot.script $@.bootscript
+define Build/boot-scr
+	rm -f $@-boot.scr
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d $(DEVICE_NAME).bootscript $@-boot.scr
 endef
 
 define Build/boot-img
@@ -40,7 +35,7 @@ define Build/boot-img
 	mkfs.fat -C $@.boot 16384
 	$(foreach dts,$(DEVICE_DTS), mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::$(dts).dtb;)
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::zImage
-	mcopy -i $@.boot $@.bootscript ::boot.scr
+	-mcopy -i $@.boot $@-boot.scr ::boot.scr
 endef
 
 define Build/sdcard-img
@@ -204,7 +199,7 @@ define Device/armada-388-clearfog-pro
   DEVICE_TITLE := SolidRun ClearFog Pro
   DEVICE_PACKAGES := mkf2fs e2fsprogs swconfig kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-cfpro | boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
   SUPPORTED_DEVICES := armada-388-clearfog-pro armada-388-clearfog
   UBOOT := clearfog-u-boot-spl.kwb
@@ -217,7 +212,7 @@ define Device/armada-388-clearfog-base
   DEVICE_TITLE := SolidRun ClearFog Base
   DEVICE_PACKAGES := mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1
   IMAGES := sdcard.img.gz
-  IMAGE/sdcard.img.gz := boot-scr-cfbase | boot-img | sdcard-img | gzip | append-metadata
+  IMAGE/sdcard.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
   UBOOT := clearfog-u-boot-spl.kwb
 endef
