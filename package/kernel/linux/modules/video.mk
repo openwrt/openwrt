@@ -204,6 +204,7 @@ define KernelPackage/drm-imx
   DEPENDS:=@TARGET_imx6 +kmod-drm +kmod-fb +kmod-fb-cfb-copyarea +kmod-fb-cfb-imgblt +kmod-fb-cfb-fillrect +kmod-fb-sys-fops
   KCONFIG:=CONFIG_DRM_IMX \
 	CONFIG_DRM_FBDEV_EMULATION=y \
+	CONFIG_DRM_FBDEV_OVERALLOC=100 \
 	CONFIG_IMX_IPUV3_CORE \
 	CONFIG_RESET_CONTROLLER=y \
 	CONFIG_DRM_IMX_IPUV3 \
@@ -242,7 +243,8 @@ define KernelPackage/drm-imx-hdmi
   TITLE:=Freescale i.MX HDMI DRM support
   DEPENDS:=+kmod-sound-core kmod-drm-imx
   KCONFIG:=CONFIG_DRM_IMX_HDMI \
-	CONFIG_DRM_DW_HDMI_AHB_AUDIO
+	CONFIG_DRM_DW_HDMI_AHB_AUDIO \
+	CONFIG_DRM_DW_HDMI_I2S_AUDIO
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw-hdmi.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw-hdmi-ahb-audio.ko \
@@ -267,7 +269,9 @@ define KernelPackage/drm-imx-ldb
 	CONFIG_DRM_PANEL_SAMSUNG_S6E8AA0=n \
 	CONFIG_DRM_PANEL_LG_LG4573=n \
 	CONFIG_DRM_PANEL_LD9040=n \
-	CONFIG_DRM_PANEL_S6E8AA0=n
+	CONFIG_DRM_PANEL_LVDS=n \
+	CONFIG_DRM_PANEL_S6E8AA0=n \
+	CONFIG_DRM_PANEL_SITRONIX_ST7789V=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/imx/imx-ldb.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko
   AUTOLOAD:=$(call AutoLoad,05,imx-ldb)
