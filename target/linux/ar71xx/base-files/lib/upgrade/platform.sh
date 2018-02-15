@@ -399,6 +399,8 @@ platform_check_image() {
 	omy-x1|\
 	onion-omega|\
 	oolite-v1|\
+	oolite-v5.2|\
+	oolite-v5.2-dev|\
 	packet-squirrel|\
 	re355|\
 	re450|\

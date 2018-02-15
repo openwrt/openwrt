@@ -852,6 +852,25 @@ define Device/oolite-v1
 endef
 TARGET_DEVICES += oolite-v1
 
+define Device/oolite-v5.2
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := GainStrong Oolite V5.2
+  DEVICE_PACKAGES := ath10k-firmware-qca9887 kmod-ath10k kmod-usb-core kmod-usb2
+  BOARDNAME := OOLITE-V5-2
+  DEVICE_PROFILE := OOLITEV52
+  TPLINK_HWID := 0x3C00010B
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += oolite-v5.2
+
+define Device/oolite-v5.2-dev
+  $(Device/oolite-v5.2)
+  DEVICE_TITLE := GainStrong Oolite V5.2-Dev (development board)
+  BOARDNAME := OOLITE-V5-2-DEV
+  DEVICE_PROFILE := OOLITEV52DEV
+endef
+TARGET_DEVICES += oolite-v5.2-dev
+
 define Device/omy-g1
   $(Device/tplink-16mlzma)
   DEVICE_TITLE := OMYlink OMY-G1

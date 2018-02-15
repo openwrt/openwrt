@@ -865,6 +865,12 @@ ar71xx_board_detect() {
 	*"Packet Squirrel")
 		name="packet-squirrel"
 		;;
+	*"Oolite V5.2")
+		name="oolite-v5.2"
+		;;
+	*"Oolite V5.2-Dev")
+		name="oolite-v5.2-dev"
+		;;
 	*"PB42")
 		name="pb42"
 		;;
