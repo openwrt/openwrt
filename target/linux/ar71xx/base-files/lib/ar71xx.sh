@@ -290,12 +290,6 @@ tplink_board_detect() {
 	"360000"*)
 		model="TP-Link TL-WDR3600"
 		;;
-	"3C0001"*)
-		model="OOLITE"
-		;;
-	"3C0002"*)
-		model="MINIBOX_V1"
-		;;
 	"430000"*)
 		model="TP-Link TL-WDR4300"
 		;;
@@ -866,7 +860,7 @@ ar71xx_board_detect() {
 		name="onion-omega"
 		;;
 	*"Oolite V1.0")
-		name="oolite"
+		name="oolite-v1"
 		;;
 	*"Packet Squirrel")
 		name="packet-squirrel"

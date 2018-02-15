@@ -398,7 +398,7 @@ platform_check_image() {
 	omy-g1|\
 	omy-x1|\
 	onion-omega|\
-	oolite|\
+	oolite-v1|\
 	packet-squirrel|\
 	re355|\
 	re450|\

@@ -833,14 +833,24 @@ TARGET_DEVICES += mc-mac1200r
 
 define Device/minibox-v1
   $(Device/tplink-16mlzma)
-  DEVICE_TITLE := Gainstrong MiniBox V1.0
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2  kmod-usb-ledtrig-usbport
+  DEVICE_TITLE := GainStrong MiniBox V1.0
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   BOARDNAME := MINIBOX-V1
   DEVICE_PROFILE := MINIBOXV1
   TPLINK_HWID := 0x3C000201
   CONSOLE := ttyATH0,115200
+  IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += minibox-v1
+
+define Device/oolite-v1
+  $(Device/minibox-v1)
+  DEVICE_TITLE := GainStrong Oolite V1.0
+  BOARDNAME := OOLITE-V1
+  DEVICE_PROFILE := OOLITEV1
+  TPLINK_HWID := 0x3C000101
+endef
+TARGET_DEVICES += oolite-v1
 
 define Device/omy-g1
   $(Device/tplink-16mlzma)
@@ -958,17 +968,6 @@ define Device/tellstick-znet-lite
   CONSOLE := ttyATH0,115200
 endef
 TARGET_DEVICES += tellstick-znet-lite
-
-define Device/oolite
-  $(Device/tplink-16mlzma)
-  DEVICE_TITLE := Gainstrong OOLITE
-  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-ledtrig-usbport
-  BOARDNAME := GS-OOLITE
-  DEVICE_PROFILE := OOLITE
-  TPLINK_HWID := 0x3C000101
-  CONSOLE := ttyATH0,115200
-endef
-TARGET_DEVICES += oolite
 
 define Device/n5q
   DEVICE_TITLE := ALFA Network N5Q
