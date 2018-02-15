@@ -27,7 +27,7 @@ proto_qmi_init_config() {
 
 proto_qmi_setup() {
 	local interface="$1"
-	local dataformat
+	local dataformat connstat
 	local device apn auth username password pincode delay modes pdptype profile dhcpv6 autoconnect plmn $PROTO_DEFAULT_OPTIONS
 	local cid_4 pdh_4 cid_6 pdh_6
 	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
@@ -164,6 +164,15 @@ proto_qmi_setup() {
 			proto_notify_error "$interface" CALL_FAILED
 			return 1
 		fi
+
+        # Check data connection state
+		connstat=$(uqmi -s -d "$device" --get-data-status)
+                [ "$connstat" == '"connected"' ] || {
+                        echo "No data link!"
+                        uqmi -s -d "$device" --set-client-id wds,"$cid_4" --release-client-id wds
+                        proto_notify_error "$interface" CALL_FAILED
+                        return 1
+                }
 	}
 
 	[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && {
@@ -192,6 +201,15 @@ proto_qmi_setup() {
 			proto_notify_error "$interface" CALL_FAILED
 			return 1
 		fi
+
+        # Check data connection state
+		connstat=$(uqmi -s -d "$device" --get-data-status)
+                [ "$connstat" == '"connected"' ] || {
+                        echo "No data link!"
+                        uqmi -s -d "$device" --set-client-id wds,"$cid_6" --release-client-id wds
+                        proto_notify_error "$interface" CALL_FAILED
+                        return 1
+                }
 	}
 
 	echo "Setting up $ifname"
