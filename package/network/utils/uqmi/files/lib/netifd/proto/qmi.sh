@@ -27,7 +27,7 @@ proto_qmi_init_config() {
 
 proto_qmi_setup() {
 	local interface="$1"
-
+	local dataformat
 	local device apn auth username password pincode delay modes pdptype profile dhcpv6 autoconnect plmn $PROTO_DEFAULT_OPTIONS
 	local cid_4 pdh_4 cid_6 pdh_6
 	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
@@ -99,6 +99,19 @@ proto_qmi_setup() {
 
 	uqmi -s -d "$device" --set-data-format 802.3
 	uqmi -s -d "$device" --wda-set-data-format 802.3
+	dataformat="$(uqmi -s -d "$device" --wda-get-data-format)"
+
+	if [ "$dataformat" = '"raw-ip"' ]; then
+
+		[ -f /sys/class/net/$ifname/qmi/raw_ip ] || {
+			echo "Device only supports raw-ip mode but is missing this required driver attribute: /sys/class/net/$ifname/qmi/raw_ip"
+			return 1
+		}
+
+		echo "Device does not support 802.3 mode. Informing driver of raw-ip only for $ifname .."
+		echo "Y" > /sys/class/net/$ifname/qmi/raw_ip
+	fi
+
 	uqmi -s -d "$device" --sync
 
 	echo "Waiting for network registration"
