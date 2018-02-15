@@ -41,8 +41,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/usb/qmi_wwan.c | 22 +++++++++++++++-------
  1 file changed, 15 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
-index 98add3bf8821..babc84a3946c 100644
 --- a/drivers/net/usb/qmi_wwan.c
 +++ b/drivers/net/usb/qmi_wwan.c
 @@ -16,6 +16,7 @@
@@ -53,7 +51,7 @@ index 98add3bf8821..babc84a3946c 100644
  #include <linux/usb.h>
  #include <linux/usb/cdc.h>
  #include <linux/usb/usbnet.h>
-@@ -92,7 +93,7 @@ static ssize_t raw_ip_store(struct device *d,  struct device_attribute *attr, co
+@@ -92,7 +93,7 @@ static ssize_t raw_ip_store(struct devic
  	struct usbnet *dev = netdev_priv(to_net_dev(d));
  	struct qmi_wwan_state *info = (void *)&dev->data;
  	bool enable;
@@ -62,7 +60,7 @@ index 98add3bf8821..babc84a3946c 100644
  
  	if (strtobool(buf, &enable))
  		return -EINVAL;
-@@ -101,18 +102,22 @@ static ssize_t raw_ip_store(struct device *d,  struct device_attribute *attr, co
+@@ -101,18 +102,22 @@ static ssize_t raw_ip_store(struct devic
  	if (enable == (info->flags & QMI_WWAN_FLAG_RAWIP))
  		return len;
  
@@ -90,7 +88,7 @@ index 98add3bf8821..babc84a3946c 100644
  	}
  
  	if (enable)
-@@ -121,7 +126,10 @@ static ssize_t raw_ip_store(struct device *d,  struct device_attribute *attr, co
+@@ -121,7 +126,10 @@ static ssize_t raw_ip_store(struct devic
  		info->flags &= ~QMI_WWAN_FLAG_RAWIP;
  	qmi_wwan_netdev_setup(dev->net);
  	call_netdevice_notifiers(NETDEV_POST_TYPE_CHANGE, dev->net);
@@ -102,6 +100,3 @@ index 98add3bf8821..babc84a3946c 100644
  }
  
  static DEVICE_ATTR_RW(raw_ip);
--- 
-2.7.4
-

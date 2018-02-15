@@ -18,11 +18,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/usb/usbnet.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/usb/usbnet.c b/drivers/net/usb/usbnet.c
-index 0744bf2ef2d6..0b0ba7ef14e4 100644
 --- a/drivers/net/usb/usbnet.c
 +++ b/drivers/net/usb/usbnet.c
-@@ -324,7 +324,10 @@ void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
+@@ -324,7 +324,10 @@ void usbnet_skb_return (struct usbnet *d
  		return;
  	}
  
@@ -34,6 +32,3 @@ index 0744bf2ef2d6..0b0ba7ef14e4 100644
  	dev->net->stats.rx_packets++;
  	dev->net->stats.rx_bytes += skb->len;
  
--- 
-2.7.4
-

@@ -64,11 +64,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/usb/qmi_wwan.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
-index a4f229edcceb..8d4a6f7cba61 100644
 --- a/drivers/net/usb/qmi_wwan.c
 +++ b/drivers/net/usb/qmi_wwan.c
-@@ -499,6 +499,7 @@ static int qmi_wwan_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
+@@ -203,6 +203,7 @@ static int qmi_wwan_rx_fixup(struct usbn
  		return 1;
  	}
  	if (rawip) {
@@ -76,6 +74,3 @@ index a4f229edcceb..8d4a6f7cba61 100644
  		skb->dev = dev->net; /* normally set by eth_type_trans */
  		skb->protocol = proto;
  		return 1;
--- 
-2.7.4
-

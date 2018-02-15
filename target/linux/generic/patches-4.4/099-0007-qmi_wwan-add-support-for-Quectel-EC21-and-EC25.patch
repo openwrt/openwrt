@@ -23,8 +23,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/usb/qmi_wwan.c | 30 ++++++++++++++++++++++++++++--
  1 file changed, 28 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
-index 9d1fce8a6e84..3ff76c6db4f6 100644
 --- a/drivers/net/usb/qmi_wwan.c
 +++ b/drivers/net/usb/qmi_wwan.c
 @@ -59,6 +59,10 @@ enum qmi_wwan_flags {
@@ -38,7 +36,7 @@ index 9d1fce8a6e84..3ff76c6db4f6 100644
  static void qmi_wwan_netdev_setup(struct net_device *net)
  {
  	struct usbnet *dev = netdev_priv(net);
-@@ -411,9 +415,14 @@ static int qmi_wwan_bind(struct usbnet *dev, struct usb_interface *intf)
+@@ -411,9 +415,14 @@ static int qmi_wwan_bind(struct usbnet *
  	 * clearing out state the clients might need.
  	 *
  	 * MDM9x30 is the first QMI chipset with USB3 support. Abuse
@@ -55,7 +53,7 @@ index 9d1fce8a6e84..3ff76c6db4f6 100644
  		qmi_wwan_manage_power(dev, 1);
  		qmi_wwan_change_dtr(dev, true);
  	}
-@@ -526,6 +535,16 @@ static const struct driver_info	qmi_wwan_info = {
+@@ -526,6 +535,16 @@ static const struct driver_info	qmi_wwan
  	.rx_fixup       = qmi_wwan_rx_fixup,
  };
  
@@ -72,7 +70,7 @@ index 9d1fce8a6e84..3ff76c6db4f6 100644
  #define HUAWEI_VENDOR_ID	0x12D1
  
  /* map QMI/wwan function by a fixed interface number */
-@@ -533,6 +552,11 @@ static const struct driver_info	qmi_wwan_info = {
+@@ -533,6 +552,11 @@ static const struct driver_info	qmi_wwan
  	USB_DEVICE_INTERFACE_NUMBER(vend, prod, num), \
  	.driver_info = (unsigned long)&qmi_wwan_info
  
@@ -84,7 +82,7 @@ index 9d1fce8a6e84..3ff76c6db4f6 100644
  /* Gobi 1000 QMI/wwan interface number is 3 according to qcserial */
  #define QMI_GOBI1K_DEVICE(vend, prod) \
  	QMI_FIXED_INTF(vend, prod, 3)
-@@ -895,6 +919,8 @@ static const struct usb_device_id products[] = {
+@@ -908,6 +932,8 @@ static const struct usb_device_id produc
  	{QMI_FIXED_INTF(0x03f0, 0x4e1d, 8)},	/* HP lt4111 LTE/EV-DO/HSPA+ Gobi 4G Module */
  	{QMI_FIXED_INTF(0x22de, 0x9061, 3)},	/* WeTelecom WPD-600N */
  	{QMI_FIXED_INTF(0x1e0e, 0x9001, 5)},	/* SIMCom 7230E */
@@ -93,6 +91,3 @@ index 9d1fce8a6e84..3ff76c6db4f6 100644
  
  	/* 4. Gobi 1000 devices */
  	{QMI_GOBI1K_DEVICE(0x05c6, 0x9212)},	/* Acer Gobi Modem Device */
--- 
-2.7.4
-

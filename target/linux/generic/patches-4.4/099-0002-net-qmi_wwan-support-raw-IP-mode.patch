@@ -51,8 +51,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/usb/qmi_wwan.c | 98 +++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 97 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
-index e3727b66d850..98add3bf8821 100644
 --- a/drivers/net/usb/qmi_wwan.c
 +++ b/drivers/net/usb/qmi_wwan.c
 @@ -14,6 +14,7 @@
@@ -158,7 +156,7 @@ index e3727b66d850..98add3bf8821 100644
  /* default ethernet address used by the modem */
  static const u8 default_modem_addr[ETH_ALEN] = {0x02, 0x50, 0xf3};
  
-@@ -80,6 +163,8 @@ static const u8 buggy_fw_addr[ETH_ALEN] = {0x00, 0xa0, 0xc6, 0x00, 0x00, 0x00};
+@@ -80,6 +163,8 @@ static const u8 buggy_fw_addr[ETH_ALEN]
   */
  static int qmi_wwan_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
  {
@@ -167,7 +165,7 @@ index e3727b66d850..98add3bf8821 100644
  	__be16 proto;
  
  	/* This check is no longer done by usbnet */
-@@ -94,15 +179,25 @@ static int qmi_wwan_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
+@@ -94,15 +179,25 @@ static int qmi_wwan_rx_fixup(struct usbn
  		proto = htons(ETH_P_IPV6);
  		break;
  	case 0x00:
@@ -193,7 +191,7 @@ index e3727b66d850..98add3bf8821 100644
  	if (skb_headroom(skb) < ETH_HLEN)
  		return 0;
  	skb_push(skb, ETH_HLEN);
-@@ -326,6 +421,7 @@ static int qmi_wwan_bind(struct usbnet *dev, struct usb_interface *intf)
+@@ -294,6 +389,7 @@ static int qmi_wwan_bind(struct usbnet *
  		dev->net->dev_addr[0] &= 0xbf;	/* clear "IP" bit */
  	}
  	dev->net->netdev_ops = &qmi_wwan_netdev_ops;
@@ -201,6 +199,3 @@ index e3727b66d850..98add3bf8821 100644
  err:
  	return status;
  }
--- 
-2.7.4
-

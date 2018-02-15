@@ -24,11 +24,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  include/linux/usb/usbnet.h | 1 +
  3 files changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/usb/qmi_wwan.c b/drivers/net/usb/qmi_wwan.c
-index c750cf7c042b..304ec6555cd8 100644
 --- a/drivers/net/usb/qmi_wwan.c
 +++ b/drivers/net/usb/qmi_wwan.c
-@@ -261,9 +261,11 @@ static void qmi_wwan_netdev_setup(struct net_device *net)
+@@ -70,9 +70,11 @@ static void qmi_wwan_netdev_setup(struct
  		net->hard_header_len = 0;
  		net->addr_len        = 0;
  		net->flags           = IFF_POINTOPOINT | IFF_NOARP | IFF_MULTICAST;
@@ -40,11 +38,9 @@ index c750cf7c042b..304ec6555cd8 100644
  		netdev_dbg(net, "mode: Ethernet\n");
  	}
  
-diff --git a/drivers/net/usb/usbnet.c b/drivers/net/usb/usbnet.c
-index 80348b6a8646..d56fe32bf48d 100644
 --- a/drivers/net/usb/usbnet.c
 +++ b/drivers/net/usb/usbnet.c
-@@ -484,7 +484,10 @@ static int rx_submit (struct usbnet *dev, struct urb *urb, gfp_t flags)
+@@ -482,7 +482,10 @@ static int rx_submit (struct usbnet *dev
  		return -ENOLINK;
  	}
  
@@ -56,11 +52,9 @@ index 80348b6a8646..d56fe32bf48d 100644
  	if (!skb) {
  		netif_dbg(dev, rx_err, dev->net, "no rx skb\n");
  		usbnet_defer_kevent (dev, EVENT_RX_MEMORY);
-diff --git a/include/linux/usb/usbnet.h b/include/linux/usb/usbnet.h
-index a69877734c4e..e2ec3582e549 100644
 --- a/include/linux/usb/usbnet.h
 +++ b/include/linux/usb/usbnet.h
-@@ -82,6 +82,7 @@ struct usbnet {
+@@ -79,6 +79,7 @@ struct usbnet {
  #		define EVENT_RX_KILL	10
  #		define EVENT_LINK_CHANGE	11
  #		define EVENT_SET_RX_MODE	12
@@ -68,6 +62,3 @@ index a69877734c4e..e2ec3582e549 100644
  };
  
  static inline struct usb_driver *driver_of(struct usb_interface *intf)
--- 
-2.7.4
-
