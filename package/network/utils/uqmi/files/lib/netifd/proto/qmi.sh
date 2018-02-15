@@ -97,6 +97,10 @@ proto_qmi_setup() {
 		}
 	}
 
+	# Cleanup current state if any
+	uqmi -s -d "$device" --stop-network 0xffffffff --autoconnect
+
+	# Set IP format
 	uqmi -s -d "$device" --set-data-format 802.3
 	uqmi -s -d "$device" --wda-set-data-format 802.3
 	dataformat="$(uqmi -s -d "$device" --wda-get-data-format)"
@@ -144,11 +148,6 @@ proto_qmi_setup() {
 
 		uqmi -s -d "$device" --set-client-id wds,"$cid_4" --set-ip-family ipv4 > /dev/null
 
-		# try to clear previous autoconnect state
-		uqmi -s -d "$device" --set-client-id wds,"$cid_4" \
-			--stop-network 0xffffffff \
-			--autoconnect > /dev/null
-
 		pdh_4=$(uqmi -s -d "$device" --set-client-id wds,"$cid_4" \
 			--start-network \
 			${apn:+--apn $apn} \
@@ -174,11 +173,6 @@ proto_qmi_setup() {
 		}
 
 		uqmi -s -d "$device" --set-client-id wds,"$cid_6" --set-ip-family ipv6 > /dev/null
-
-		# try to clear previous autoconnect state
-		uqmi -s -d "$device" --set-client-id wds,"$cid_6" \
-			--stop-network 0xffffffff \
-			--autoconnect > /dev/null
 
 		pdh_6=$(uqmi -s -d "$device" --set-client-id wds,"$cid_6" \
 			--start-network \
