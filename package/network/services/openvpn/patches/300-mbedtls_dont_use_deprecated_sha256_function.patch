@@ -1,0 +1,11 @@
+--- a/src/openvpn/ssl_mbedtls.c
++++ b/src/openvpn/ssl_mbedtls.c
+@@ -803,7 +803,7 @@ tls_ctx_personalise_random(struct tls_ro
+     {
+         mbedtls_x509_crt *cert = ctx->crt_chain;
+ 
+-        mbedtls_sha256(cert->tbs.p, cert->tbs.len, sha256_hash, false);
++        mbedtls_sha256_ret(cert->tbs.p, cert->tbs.len, sha256_hash, false);
+         if (0 != memcmp(old_sha256_hash, sha256_hash, sizeof(sha256_hash)))
+         {
+             mbedtls_ctr_drbg_update(cd_ctx, sha256_hash, 32);
