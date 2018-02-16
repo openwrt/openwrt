@@ -276,6 +276,7 @@ platform_check_image() {
 	sc300m|\
 	sc450|\
 	sr3200|\
+	t830|\
 	tew-632brp|\
 	tew-712br|\
 	tew-732br|\

@@ -1064,6 +1064,9 @@ ar71xx_board_detect() {
 	*"SR3200")
 		name="sr3200"
 		;;
+	*"T830")
+		name="t830"
+		;;
 	*"TellStick ZNet Lite")
 		name="tellstick-znet-lite"
 		;;

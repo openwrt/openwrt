@@ -388,6 +388,9 @@ get_status_led() {
 	qihoo-c301)
 		status_led="qihoo:green:status"
 		;;
+	t830)
+		status_led="$board:green:usb"
+		;;
 	tellstick-znet-lite)
 		status_led="tellstick:white:system"
 		;;
