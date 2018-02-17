@@ -30,7 +30,7 @@ define Device/ar725w
 endef
 TARGET_DEVICES += ar725w
 
-define Device/dap-1522-a1
+define Device/dlink_dap-1522-a1
   DTS := DAP-1522-A1
   BLOCKSIZE := 64k
   IMAGE_SIZE := 3801088
@@ -44,7 +44,7 @@ define Device/dap-1522-a1
 	wrg-header wapnd01_dlink_dap1522 | \
 	check-size $$$$(IMAGE_SIZE)
 endef
-TARGET_DEVICES += dap-1522-a1
+TARGET_DEVICES += dlink_dap-1522-a1
 
 define Device/f5d8235-v1
   IMAGE_SIZE := 7744k

@@ -112,9 +112,6 @@ ramips_board_detect() {
 	*"DAP-1350")
 		name="dap-1350"
 		;;
-	*"DAP-1522 A1")
-		name="dap-1522-a1"
-		;;
 	*"DB-WRT01")
 		name="db-wrt01"
 		;;
