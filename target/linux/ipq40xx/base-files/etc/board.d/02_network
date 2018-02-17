@@ -17,7 +17,11 @@ avm,fritzbox-4040)
 	ucidef_add_switch "switch0" \
 		"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
 	;;
-glinet,gl-b1300 |\
+glinet,gl-b1300)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_add_switch "switch0" \
+		"0u@eth0" "3:lan" "4:lan"
+	;;
 openmesh,a42)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
