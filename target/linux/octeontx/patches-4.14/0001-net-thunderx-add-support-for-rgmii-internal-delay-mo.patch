@@ -17,8 +17,6 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  drivers/net/ethernet/cavium/thunder/thunder_xcv.c | 31 ++++++++++++++++++-----
  3 files changed, 35 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/net/ethernet/cavium/thunder/thunder_bgx.c b/drivers/net/ethernet/cavium/thunder/thunder_bgx.c
-index 5e5c4d7..805c02a 100644
 --- a/drivers/net/ethernet/cavium/thunder/thunder_bgx.c
 +++ b/drivers/net/ethernet/cavium/thunder/thunder_bgx.c
 @@ -55,6 +55,7 @@ struct bgx {
@@ -29,7 +27,7 @@ index 5e5c4d7..805c02a 100644
  };
  
  static struct bgx *bgx_vnic[MAX_BGX_THUNDER];
-@@ -841,12 +842,12 @@ static void bgx_poll_for_link(struct work_struct *work)
+@@ -841,12 +842,12 @@ static void bgx_poll_for_link(struct wor
  	queue_delayed_work(lmac->check_link, &lmac->dwork, HZ * 2);
  }
  
@@ -44,7 +42,7 @@ index 5e5c4d7..805c02a 100644
  
  	return PHY_INTERFACE_MODE_SGMII;
  }
-@@ -912,7 +913,8 @@ static int bgx_lmac_enable(struct bgx *bgx, u8 lmacid)
+@@ -912,7 +913,8 @@ static int bgx_lmac_enable(struct bgx *b
  
  		if (phy_connect_direct(&lmac->netdev, lmac->phydev,
  				       bgx_lmac_handler,
@@ -54,7 +52,7 @@ index 5e5c4d7..805c02a 100644
  			return -ENODEV;
  
  		phy_start_aneg(lmac->phydev);
-@@ -1287,6 +1289,8 @@ static int bgx_init_of_phy(struct bgx *bgx)
+@@ -1287,6 +1289,8 @@ static int bgx_init_of_phy(struct bgx *b
  		bgx->lmac[lmac].lmacid = lmac;
  
  		phy_np = of_parse_phandle(node, "phy-handle", 0);
@@ -63,7 +61,7 @@ index 5e5c4d7..805c02a 100644
  		/* If there is no phy or defective firmware presents
  		 * this cortina phy, for which there is no driver
  		 * support, ignore it.
-@@ -1390,7 +1394,6 @@ static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+@@ -1390,7 +1394,6 @@ static int bgx_probe(struct pci_dev *pde
  		bgx->max_lmac = 1;
  		bgx->bgx_id = MAX_BGX_PER_CN81XX - 1;
  		bgx_vnic[bgx->bgx_id] = bgx;
@@ -71,7 +69,7 @@ index 5e5c4d7..805c02a 100644
  	}
  
  	/* On 81xx all are DLMs and on 83xx there are 3 BGX QLMs and one
-@@ -1407,6 +1410,8 @@ static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+@@ -1407,6 +1410,8 @@ static int bgx_probe(struct pci_dev *pde
  	if (err)
  		goto err_enable;
  
@@ -80,11 +78,9 @@ index 5e5c4d7..805c02a 100644
  	bgx_init_hw(bgx);
  
  	/* Enable all LMACs */
-diff --git a/drivers/net/ethernet/cavium/thunder/thunder_bgx.h b/drivers/net/ethernet/cavium/thunder/thunder_bgx.h
-index 23acdc5..2bba9d1 100644
 --- a/drivers/net/ethernet/cavium/thunder/thunder_bgx.h
 +++ b/drivers/net/ethernet/cavium/thunder/thunder_bgx.h
-@@ -226,7 +226,7 @@ void bgx_lmac_internal_loopback(int node, int bgx_idx,
+@@ -226,7 +226,7 @@ void bgx_lmac_internal_loopback(int node
  void bgx_lmac_get_pfc(int node, int bgx_idx, int lmacid, void *pause);
  void bgx_lmac_set_pfc(int node, int bgx_idx, int lmacid, void *pause);
  
@@ -93,8 +89,6 @@ index 23acdc5..2bba9d1 100644
  void xcv_setup_link(bool link_up, int link_speed);
  
  u64 bgx_get_rx_stats(int node, int bgx_idx, int lmac, int idx);
-diff --git a/drivers/net/ethernet/cavium/thunder/thunder_xcv.c b/drivers/net/ethernet/cavium/thunder/thunder_xcv.c
-index 578c7f8..7e0c4cb 100644
 --- a/drivers/net/ethernet/cavium/thunder/thunder_xcv.c
 +++ b/drivers/net/ethernet/cavium/thunder/thunder_xcv.c
 @@ -65,7 +65,7 @@ MODULE_LICENSE("GPL v2");
@@ -143,6 +137,3 @@ index 578c7f8..7e0c4cb 100644
  	writeq_relaxed(cfg, xcv->reg_base + XCV_DLL_CTL);
  
  	/* Enable compensation controller and force the
--- 
-2.7.4
-

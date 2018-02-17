@@ -13,8 +13,6 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  drivers/net/ethernet/cavium/thunder/thunder_bgx.h |  9 ++++
  2 files changed, 63 insertions(+)
 
-diff --git a/drivers/net/ethernet/cavium/thunder/thunder_bgx.c b/drivers/net/ethernet/cavium/thunder/thunder_bgx.c
-index 805c02a..0690966 100644
 --- a/drivers/net/ethernet/cavium/thunder/thunder_bgx.c
 +++ b/drivers/net/ethernet/cavium/thunder/thunder_bgx.c
 @@ -1344,6 +1344,54 @@ static int bgx_init_phy(struct bgx *bgx)
@@ -72,7 +70,7 @@ index 805c02a..0690966 100644
  static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
  {
  	int err;
-@@ -1414,6 +1462,8 @@ static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+@@ -1414,6 +1462,8 @@ static int bgx_probe(struct pci_dev *pde
  		xcv_init_hw(bgx->phy_mode);
  	bgx_init_hw(bgx);
  
@@ -81,7 +79,7 @@ index 805c02a..0690966 100644
  	/* Enable all LMACs */
  	for (lmac = 0; lmac < bgx->lmac_count; lmac++) {
  		err = bgx_lmac_enable(bgx, lmac);
-@@ -1424,6 +1474,10 @@ static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+@@ -1424,6 +1474,10 @@ static int bgx_probe(struct pci_dev *pde
  				bgx_lmac_disable(bgx, --lmac);
  			goto err_enable;
  		}
@@ -92,8 +90,6 @@ index 805c02a..0690966 100644
  	}
  
  	return 0;
-diff --git a/drivers/net/ethernet/cavium/thunder/thunder_bgx.h b/drivers/net/ethernet/cavium/thunder/thunder_bgx.h
-index 2bba9d1..be9148f9 100644
 --- a/drivers/net/ethernet/cavium/thunder/thunder_bgx.h
 +++ b/drivers/net/ethernet/cavium/thunder/thunder_bgx.h
 @@ -179,6 +179,15 @@
@@ -112,6 +108,3 @@ index 2bba9d1..be9148f9 100644
  
  #define BGX_MSIX_VEC_0_29_ADDR		0x400000 /* +(0..29) << 4 */
  #define BGX_MSIX_VEC_0_29_CTL		0x400008
--- 
-2.7.4
-

@@ -9,10 +9,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.h | 8 +++++++-
  2 files changed, 13 insertions(+), 2 deletions(-)
 
-Index: linux-4.14.11/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.14.11.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.14.11/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -1994,6 +1994,7 @@ static int mtk_hw_init(struct mtk_eth *e
  
  	/* enable interrupt delay for RX */

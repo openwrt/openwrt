@@ -1,7 +1,5 @@
-Index: linux-4.14.18/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
-===================================================================
---- linux-4.14.18.orig/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
-+++ linux-4.14.18/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
+--- a/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
++++ b/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
 @@ -21,6 +21,10 @@
  		stdout-path = "serial2:115200n8";
  	};
@@ -117,10 +115,8 @@ Index: linux-4.14.18/arch/arm/boot/dts/mt7623n-bananapi-bpi-r2.dts
  
  &i2c0 {
  	pinctrl-names = "default";
-Index: linux-4.14.18/arch/arm/boot/dts/Makefile
-===================================================================
---- linux-4.14.18.orig/arch/arm/boot/dts/Makefile
-+++ linux-4.14.18/arch/arm/boot/dts/Makefile
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
 @@ -1061,6 +1061,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt6580-evbp1.dtb \
  	mt6589-aquaris5.dtb \
@@ -129,10 +125,8 @@ Index: linux-4.14.18/arch/arm/boot/dts/Makefile
  	mt7623n-rfb-nand.dtb \
  	mt7623n-bananapi-bpi-r2.dtb \
  	mt8127-moose.dtb \
-Index: linux-4.14.18/arch/arm/boot/dts/mt7623a-rfb-emmc.dts
-===================================================================
 --- /dev/null
-+++ linux-4.14.18/arch/arm/boot/dts/mt7623a-rfb-emmc.dts
++++ b/arch/arm/boot/dts/mt7623a-rfb-emmc.dts
 @@ -0,0 +1,449 @@
 +/*
 + * Copyright 2017 Sean Wang <sean.wang@mediatek.com>
@@ -583,10 +577,8 @@ Index: linux-4.14.18/arch/arm/boot/dts/mt7623a-rfb-emmc.dts
 +	status = "okay";
 +};
 +
-Index: linux-4.14.18/arch/arm/boot/dts/mt7623.dtsi
-===================================================================
---- linux-4.14.18.orig/arch/arm/boot/dts/mt7623.dtsi
-+++ linux-4.14.18/arch/arm/boot/dts/mt7623.dtsi
+--- a/arch/arm/boot/dts/mt7623.dtsi
++++ b/arch/arm/boot/dts/mt7623.dtsi
 @@ -753,6 +753,7 @@
  			     "syscon";
  		reg = <0 0x1b000000 0 0x1000>;

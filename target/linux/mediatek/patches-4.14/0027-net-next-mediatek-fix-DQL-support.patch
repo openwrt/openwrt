@@ -16,10 +16,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c | 35 +++++++++++++++++------------
  1 file changed, 21 insertions(+), 14 deletions(-)
 
-Index: linux-4.14.11/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.14.11.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.14.11/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -779,7 +779,16 @@ static int mtk_tx_map(struct sk_buff *sk
  	WRITE_ONCE(itxd->txd3, (TX_DMA_SWC | TX_DMA_PLEN0(skb_headlen(skb)) |
  				(!nr_frags * TX_DMA_LS0)));

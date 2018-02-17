@@ -1,7 +1,5 @@
-Index: linux-4.14.14/drivers/net/dsa/mt7530.c
-===================================================================
---- linux-4.14.14.orig/drivers/net/dsa/mt7530.c
-+++ linux-4.14.14/drivers/net/dsa/mt7530.c
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
 @@ -670,6 +670,9 @@ static int
  mt7530_cpu_port_enable(struct mt7530_priv *priv,
  		       int port)
@@ -98,10 +96,8 @@ Index: linux-4.14.14/drivers/net/dsa/mt7530.c
  	val |= MHWTRAP_MANUAL;
  	if (!dsa_is_cpu_port(ds, 5)) {
  		val |= MHWTRAP_P5_DIS;
-Index: linux-4.14.14/include/net/dsa.h
-===================================================================
---- linux-4.14.14.orig/include/net/dsa.h
-+++ linux-4.14.14/include/net/dsa.h
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
 @@ -185,6 +185,10 @@ struct dsa_port {
  	u8			stp_state;
  	struct net_device	*bridge_dev;
@@ -144,10 +140,8 @@ Index: linux-4.14.14/include/net/dsa.h
  typedef int dsa_fdb_dump_cb_t(const unsigned char *addr, u16 vid,
  			      bool is_static, void *data);
  struct dsa_switch_ops {
-Index: linux-4.14.14/net/dsa/dsa2.c
-===================================================================
---- linux-4.14.14.orig/net/dsa/dsa2.c
-+++ linux-4.14.14/net/dsa/dsa2.c
+--- a/net/dsa/dsa2.c
++++ b/net/dsa/dsa2.c
 @@ -253,6 +253,8 @@ static int dsa_cpu_port_apply(struct dsa
  	memset(&port->devlink_port, 0, sizeof(port->devlink_port));
  	err = devlink_port_register(ds->devlink, &port->devlink_port,
@@ -232,10 +226,8 @@ Index: linux-4.14.14/net/dsa/dsa2.c
  			/* Initialize enabled_port_mask now for drv->setup()
  			 * to have access to a correct value, just like what
  			 * net/dsa/dsa.c::dsa_switch_setup_one does.
-Index: linux-4.14.14/net/dsa/dsa_priv.h
-===================================================================
---- linux-4.14.14.orig/net/dsa/dsa_priv.h
-+++ linux-4.14.14/net/dsa/dsa_priv.h
+--- a/net/dsa/dsa_priv.h
++++ b/net/dsa/dsa_priv.h
 @@ -91,6 +91,8 @@ struct dsa_slave_priv {
  
  	/* TC context */
@@ -255,10 +247,8 @@ Index: linux-4.14.14/net/dsa/dsa_priv.h
  	return p->dp->cpu_dp->netdev;
  }
  
-Index: linux-4.14.14/net/dsa/slave.c
-===================================================================
---- linux-4.14.14.orig/net/dsa/slave.c
-+++ linux-4.14.14/net/dsa/slave.c
+--- a/net/dsa/slave.c
++++ b/net/dsa/slave.c
 @@ -1257,7 +1257,7 @@ int dsa_slave_create(struct dsa_port *po
  	int ret;
  

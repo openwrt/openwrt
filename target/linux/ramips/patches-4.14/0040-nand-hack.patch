@@ -18,7 +18,7 @@
  			if (ret < 0) {
  				if (use_bufpoi)
  					/* Invalidate page cache */
-@@ -3076,8 +3080,11 @@ int nand_erase_nand(struct mtd_info *mtd
+@@ -3079,8 +3083,11 @@ int nand_erase_nand(struct mtd_info *mtd
  		    (page + pages_per_block))
  			chip->pagebuf = -1;
  
@@ -31,7 +31,7 @@
  		/* See if block erase succeeded */
  		if (status & NAND_STATUS_FAIL) {
  			pr_debug("%s: failed erase, page 0x%08x\n",
-@@ -4207,6 +4214,7 @@ int nand_scan_ident(struct mtd_info *mtd
+@@ -4210,6 +4217,7 @@ int nand_scan_ident(struct mtd_info *mtd
  		 * cmdfunc() both expect cmd_ctrl() to be populated,
  		 * so we need to check that that's the case
  		 */

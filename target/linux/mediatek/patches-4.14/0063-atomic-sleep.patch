@@ -1,7 +1,5 @@
-Index: linux-4.14.12/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-===================================================================
---- linux-4.14.12.orig/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-+++ linux-4.14.12/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -409,6 +409,7 @@ static int mtk_mdio_init(struct mtk_eth
  
  	snprintf(eth->mii_bus->id, MII_BUS_ID_SIZE, "%s", mii_np->name);

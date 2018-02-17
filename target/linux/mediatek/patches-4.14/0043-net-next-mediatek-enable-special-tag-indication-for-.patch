@@ -17,7 +17,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1894,6 +1894,8 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -1983,6 +1983,8 @@ static int mtk_hw_init(struct mtk_eth *e
  	 */
  	val = mtk_r32(eth, MTK_CDMQ_IG_CTRL);
  	mtk_w32(eth, val | MTK_CDMQ_STAG_EN, MTK_CDMQ_IG_CTRL);
@@ -28,7 +28,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	if (MTK_HW_FEATURES & NETIF_F_HW_VLAN_CTAG_RX)
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -76,6 +76,10 @@
+@@ -72,6 +72,10 @@
  #define MTK_CDMQ_IG_CTRL	0x1400
  #define MTK_CDMQ_STAG_EN	BIT(0)
  

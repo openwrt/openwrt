@@ -17,7 +17,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -933,10 +933,16 @@ static int mtk_poll_rx(struct napi_struc
+@@ -999,10 +999,16 @@ static int mtk_poll_rx(struct napi_struc
  		if (!(trxd.rxd2 & RX_DMA_DONE))
  			break;
  
@@ -36,11 +36,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +			mac--;
 +		}
  
- 		netdev = eth->netdev[mac];
- 
+ 		if (unlikely(mac < 0 || mac >= MTK_MAC_COUNT ||
+ 			     !eth->netdev[mac]))
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -284,6 +284,7 @@
+@@ -287,6 +287,7 @@
  
  /* QDMA descriptor rxd4 */
  #define RX_DMA_L4_VALID		BIT(24)
