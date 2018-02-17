@@ -78,10 +78,12 @@ list() {
 	config_get len "$CONFIG_SECTION" "${varname}_LENGTH" 0
 	[ $len = 0 ] && append CONFIG_LIST_STATE "${CONFIG_SECTION}_${varname}"
 	len=$(($len + 1))
-	config_set "$CONFIG_SECTION" "${varname}_ITEM$len" "$value"
-	config_set "$CONFIG_SECTION" "${varname}_LENGTH" "$len"
+
+	export ${NO_EXPORT:+-n} "CONFIG_${CONFIG_SECTION}_${varname}_ITEM$len=$value"
+	export ${NO_EXPORT:+-n} "CONFIG_${CONFIG_SECTION}_${varname}_LENGTH=$len"
+
 	append "CONFIG_${CONFIG_SECTION}_${varname}" "$value" "$LIST_SEP"
-	list_cb "$varname" "$*"
+	[ -n "$NO_CALLBACK" ] || list_cb "$varname" "$*"
 }
 
 config_unset() {
