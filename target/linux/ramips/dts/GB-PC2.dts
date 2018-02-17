@@ -18,12 +18,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	palmbus: palmbus@1E000000 {
-		i2c@900 {
-			status = "okay";
-		};
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -50,23 +44,23 @@
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
-		lan {
-			label = "gb-pc2:green:lan";
+		lan1 {
+			label = "gb-pc2:green:lan1";
 			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
 		};
 
-		wan {
-			label = "gb-pc2:green:wan";
+		lan2 {
+			label = "gb-pc2:green:lan2";
 			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
 		};
 
-		eth1-y {
-			label = "gb-pc2:yellow:eth1-y";
+		lan3-yellow {
+			label = "gb-pc2:yellow:lan3";
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 
-		eth1-g {
-			label = "gb-pc2:green:eth1-g";
+		lan3-green {
+			label = "gb-pc2:green:lan3";
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		};
 
@@ -75,6 +69,9 @@
 
 &sdhci {
 	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdhci_pins>;
 };
 
 &spi0 {
@@ -114,8 +111,8 @@
 };
 
 &cpuclock {
-			compatible = "fixed-clock";
-			clock-frequency = <900000000>;
+	compatible = "fixed-clock";
+	clock-frequency = <900000000>;
 };
 
 &pcie {
@@ -129,7 +126,7 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "uart3";
+			ralink,group = "jtag", "rgmii3", "uart3", "wdt";
 			ralink,function = "gpio";
 		};
 	};

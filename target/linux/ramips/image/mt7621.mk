@@ -83,13 +83,13 @@ define Device/gb-pc1
 endef
 TARGET_DEVICES += gb-pc1
 
-define Device/gb-pc2
+define Device/gnubee_gb-pc2
   DTS := GB-PC2
   DEVICE_TITLE := GnuBee Personal Cloud Two
   DEVICE_PACKAGES := kmod-ata-core kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620
   IMAGE_SIZE := $(ralink_default_fw_size_32M)
 endef
-TARGET_DEVICES += gb-pc2
+TARGET_DEVICES += gnubee_gb-pc2
 
 define Device/hc5962
   DTS := HC5962
