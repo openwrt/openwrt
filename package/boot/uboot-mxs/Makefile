@@ -35,7 +35,7 @@ UBOOT_TARGETS := \
 	mx23_olinuxino \
 	duckbill
 
-UBOOT_MAKE_FLAGS = $(UBOOT_IMAGE)
+UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE)
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
