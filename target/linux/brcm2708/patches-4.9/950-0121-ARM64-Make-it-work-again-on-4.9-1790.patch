@@ -65,6 +65,14 @@ Signed-off-by: Michael Zoran <mzoran@crowfest.net>
  
  always		:= $(dtb-y)
  subdir-y	:= $(dts-dirs)
+diff --git a/arch/arm64/boot/dts/overlays b/arch/arm64/boot/dts/overlays
+new file mode 120000
+index 0000000..ded0864
+--- /dev/null
++++ b/arch/arm64/boot/dts/overlays
+@@ -0,0 +1 @@
++../../../arm/boot/dts/overlays
+\ No newline at end of file
 --- a/arch/arm64/configs/bcmrpi3_defconfig
 +++ b/arch/arm64/configs/bcmrpi3_defconfig
 @@ -1,52 +1,9 @@
