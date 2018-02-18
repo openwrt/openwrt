@@ -148,6 +148,7 @@ get_status_led() {
 	cf-e320n-v2)
 		status_led="$board:blue:wlan"
 		;;
+	cf-e375ac|\
 	cf-e380ac-v1|\
 	cf-e380ac-v2|\
 	cf-e385ac)

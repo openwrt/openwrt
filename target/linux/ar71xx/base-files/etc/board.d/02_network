@@ -266,6 +266,11 @@ ar71xx_setup_interfaces()
 	rme-eg200)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
+	cf-e375ac|\
+	rb-map-2nd)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:wan" "2:lan"
+		;;
 	cf-e385ac)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1.2"
 		ucidef_add_switch "switch0" \
@@ -446,11 +451,6 @@ ar71xx_setup_interfaces()
 			"0@eth0" "1:lan:4" "2:lan:1" "3:lan:2" "4:lan:3"
 		ucidef_add_switch "switch1" \
 			"0@eth1" "1:lan:4" "2:lan:1" "3:lan:3" "4:lan:2" "5:wan"
-		;;
-	cf-e375ac |\
-	rb-map-2nd)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "1:wan" "2:lan"
 		;;
 	rut900)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth1"

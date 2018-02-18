@@ -188,37 +188,38 @@ static struct gpio_keys_button cf_e355ac_gpio_keys[] __initdata = {
 	},
 };
 
-#define CF_E375AC_GPIO_XWDT_TRIGGER	6
-
-#define CF_E375AC_GPIO_BTN_RESET_WPS	2
-
-#define CF_E375AC_GPIO_LED_WAN		15
+/* CF-E375AC */
 #define CF_E375AC_GPIO_LED_LAN		17
-#define CF_E375AC_GPIO_LED_WLAN		16
+#define CF_E375AC_GPIO_LED_WLAN2G	16
+#define CF_E375AC_GPIO_LED_WLAN5G	15
+
+#define CF_E375AC_GPIO_EXT_WDT		6
+
+#define CF_E375AC_GPIO_BTN_RESET	2
 
 static struct gpio_led cf_e375ac_leds_gpio[] __initdata = {
 	{
-		.name		= "comfast:red:wan",
-		.gpio		= CF_E375AC_GPIO_LED_WAN,
-		.active_low	= 0,
-	}, {
-		.name		= "comfast:green:lan",
+		.name		= "cf-e375ac:green:lan",
 		.gpio		= CF_E375AC_GPIO_LED_LAN,
 		.active_low	= 0,
 	}, {
-		.name		= "comfast:blue:wlan",
-		.gpio		= CF_E375AC_GPIO_LED_WLAN,
+		.name		= "cf-e375ac:red:wlan5g",
+		.gpio		= CF_E375AC_GPIO_LED_WLAN5G,
+		.active_low	= 0,
+	}, {
+		.name		= "cf-e375ac:blue:wlan2g",
+		.gpio		= CF_E375AC_GPIO_LED_WLAN2G,
 		.active_low	= 0,
 	},
 };
 
 static struct gpio_keys_button cf_e375ac_gpio_keys[] __initdata = {
 	{
-		.desc		= "Reset button/WPS button",
+		.desc		= "Reset button",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
 		.debounce_interval = CF_EXXXN_KEYS_DEBOUNCE_INTERVAL,
-		.gpio		= CF_E375AC_GPIO_BTN_RESET_WPS,
+		.gpio		= CF_E375AC_GPIO_BTN_RESET,
 		.active_low	= 1,
 	},
 };
@@ -535,25 +536,19 @@ MIPS_MACHINE(ATH79_MACH_CF_E355AC_V2, "CF-E355AC-V2", "COMFAST CF-E355AC v2",
 static void __init cf_e375ac_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f040000);
-	u8 *art = (u8 *) KSEG1ADDR(0x1f040000);
-	u8 wlan1_mac[ETH_ALEN];
-
-	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
-	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 1);
-	ath79_init_mac(wlan1_mac, art, 3);
 
 	/* Disable JTAG, enabling GPIOs 0-3 */
-	/* Configure OBS4 line, for GPIO 4*/
 	ath79_gpio_function_setup(AR934X_GPIO_FUNC_JTAG_DISABLE, 0);
 
-	cf_exxxn_common_setup(0x40000, CF_E375AC_GPIO_XWDT_TRIGGER);
+	cf_exxxn_common_setup(0x40000, CF_E375AC_GPIO_EXT_WDT);
 
-	ath79_gpio_output_select(CF_E375AC_GPIO_LED_WAN, 0);
 	ath79_gpio_output_select(CF_E375AC_GPIO_LED_LAN, 0);
-	ath79_gpio_output_select(CF_E375AC_GPIO_LED_WLAN, 0);
+	ath79_gpio_output_select(CF_E375AC_GPIO_LED_WLAN2G, 0);
+	ath79_gpio_output_select(CF_E375AC_GPIO_LED_WLAN5G, 0);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(cf_e375ac_leds_gpio),
-					cf_e375ac_leds_gpio);
+				 cf_e375ac_leds_gpio);
+
 	ath79_register_gpio_keys_polled(-1, CF_EXXXN_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(cf_e375ac_gpio_keys),
 					cf_e375ac_gpio_keys);
@@ -569,11 +564,14 @@ static void __init cf_e375ac_setup(void)
 	ath79_eth0_data.duplex = DUPLEX_FULL;
 	ath79_eth0_data.phy_mask = BIT(0);
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
 	ath79_register_eth(0);
 
-	ap91_pci_init(art + 0x5000, wlan1_mac);
+	ath79_register_pci();
 }
-MIPS_MACHINE(ATH79_MACH_CF_E375AC, "CF-E375AC", "COMFAST CF-E375AC", cf_e375ac_setup);
+
+MIPS_MACHINE(ATH79_MACH_CF_E375AC, "CF-E375AC", "COMFAST CF-E375AC",
+	     cf_e375ac_setup);
 
 static void __init cf_e38xac_common_setup(unsigned long art_ofs)
 {

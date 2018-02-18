@@ -210,13 +210,9 @@ cf-e320n-v2)
 	ucidef_set_led_netdev "wan" "WAN" "$board:red:wan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "$board:blue:wlan" "phy0tpt"
 	;;
-cf-e375ac)
-	ucidef_set_led_switch "wan" "WAN" "comfast:red:wan" "switch0" "0x02"
-	ucidef_set_led_switch "lan" "LAN" "comfast:green:lan" "switch0" "0x04"
-	ucidef_set_led_wlan "wlan1" "WLAN" "comfast:blue:wlan" "phy1tpt"
-	;;
 cf-e355ac-v1|\
 cf-e355ac-v2|\
+cf-e375ac|\
 cf-e380ac-v1|\
 cf-e380ac-v2|\
 cf-e385ac)
@@ -224,6 +220,7 @@ cf-e385ac)
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "$board:red:wlan5g" "phy0tpt"
 
 	case "$board" in
+	cf-e375ac|\
 	cf-e385ac)
 		ucidef_set_led_switch "lan" "LAN" "$board:green:lan" "switch0" "0x04"
 		;;
