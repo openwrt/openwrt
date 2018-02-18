@@ -45,6 +45,9 @@ set_state() {
 	vh4032n)
 		status_led="VH4032N:red:power"
 		;;
+	vr-3022eu)
+		status_led="VR-3022eu:green:power"
+		;;
 	vr-3025un)
 		status_led="VR-3025un:green:power"
 		;;

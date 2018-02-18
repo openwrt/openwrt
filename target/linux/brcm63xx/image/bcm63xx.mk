@@ -429,6 +429,18 @@ define Device/CT-6373
 endef
 TARGET_DEVICES += CT-6373
 
+define Device/VR-3022eu
+  $(Device/bcm63xx)
+  DEVICE_TITLE := Comtrend VR-3022eu
+  DEVICE_DTS := vr-3022eu
+  CFE_BOARD_ID := 96368MT-1341N
+  CFE_CHIP_ID := 6368
+  FLASH_MB := 8
+  DEVICE_PACKAGES := \
+    $(B43_PACKAGES) $(USB2_PACKAGES)
+endef
+TARGET_DEVICES += VR-3022eu
+
 define Device/VR-3025u
   $(Device/bcm63xx)
   IMAGES += sysupgrade.bin

@@ -105,6 +105,9 @@ brcm63xx_dt_detect() {
 	"Comtrend CT-6373")
 		board_name="ct-6373"
 		;;
+	"Comtrend VR-3022eu")
+		board_name="vr-3022eu"
+		;;
 	"Comtrend VR-3025u")
 		board_name="vr-3025u"
 		;;
