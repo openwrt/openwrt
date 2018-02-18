@@ -781,7 +781,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  };
  
  struct tcrypt_result {
-@@ -1331,6 +1331,10 @@ static int do_test(const char *alg, u32
+@@ -1333,6 +1333,10 @@ static int do_test(const char *alg, u32
  		ret += tcrypt_test("hmac(sha3-512)");
  		break;
  
@@ -792,7 +792,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	case 150:
  		ret += tcrypt_test("ansi_cprng");
  		break;
-@@ -1392,6 +1396,9 @@ static int do_test(const char *alg, u32
+@@ -1394,6 +1398,9 @@ static int do_test(const char *alg, u32
  	case 190:
  		ret += tcrypt_test("authenc(hmac(sha512),cbc(des3_ede))");
  		break;
@@ -802,7 +802,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	case 200:
  		test_cipher_speed("ecb(aes)", ENCRYPT, sec, NULL, 0,
  				speed_template_16_24_32);
-@@ -1406,9 +1413,9 @@ static int do_test(const char *alg, u32
+@@ -1408,9 +1415,9 @@ static int do_test(const char *alg, u32
  		test_cipher_speed("lrw(aes)", DECRYPT, sec, NULL, 0,
  				speed_template_32_40_48);
  		test_cipher_speed("xts(aes)", ENCRYPT, sec, NULL, 0,
@@ -814,7 +814,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		test_cipher_speed("cts(cbc(aes))", ENCRYPT, sec, NULL, 0,
  				speed_template_16_24_32);
  		test_cipher_speed("cts(cbc(aes))", DECRYPT, sec, NULL, 0,
-@@ -1839,9 +1846,9 @@ static int do_test(const char *alg, u32
+@@ -1841,9 +1848,9 @@ static int do_test(const char *alg, u32
  		test_acipher_speed("lrw(aes)", DECRYPT, sec, NULL, 0,
  				   speed_template_32_40_48);
  		test_acipher_speed("xts(aes)", ENCRYPT, sec, NULL, 0,
@@ -23462,7 +23462,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  /*
   * Descriptor to instantiate RNG State Handle 0 in normal mode and
-@@ -270,7 +271,7 @@ static int deinstantiate_rng(struct devi
+@@ -274,7 +275,7 @@ static int deinstantiate_rng(struct devi
  		/*
  		 * If the corresponding bit is set, then it means the state
  		 * handle was initialized by us, and thus it needs to be
@@ -23471,7 +23471,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		 */
  		if ((1 << sh_idx) & state_handle_mask) {
  			/*
-@@ -303,20 +304,24 @@ static int caam_remove(struct platform_d
+@@ -307,20 +308,24 @@ static int caam_remove(struct platform_d
  	struct device *ctrldev;
  	struct caam_drv_private *ctrlpriv;
  	struct caam_ctrl __iomem *ctrl;
@@ -23504,7 +23504,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		deinstantiate_rng(ctrldev, ctrlpriv->rng4_sh_init);
  
  	/* Shut down debug views */
-@@ -331,8 +336,8 @@ static int caam_remove(struct platform_d
+@@ -335,8 +340,8 @@ static int caam_remove(struct platform_d
  	clk_disable_unprepare(ctrlpriv->caam_ipg);
  	clk_disable_unprepare(ctrlpriv->caam_mem);
  	clk_disable_unprepare(ctrlpriv->caam_aclk);
@@ -23515,7 +23515,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return 0;
  }
  
-@@ -366,11 +371,8 @@ static void kick_trng(struct platform_de
+@@ -370,11 +375,8 @@ static void kick_trng(struct platform_de
  	 */
  	val = (rd_reg32(&r4tst->rtsdctl) & RTSDCTL_ENT_DLY_MASK)
  	      >> RTSDCTL_ENT_DLY_SHIFT;
@@ -23529,7 +23529,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	val = rd_reg32(&r4tst->rtsdctl);
  	val = (val & ~RTSDCTL_ENT_DLY_MASK) |
-@@ -382,15 +384,12 @@ static void kick_trng(struct platform_de
+@@ -386,15 +388,12 @@ static void kick_trng(struct platform_de
  	wr_reg32(&r4tst->rtfrqmax, RTFRQMAX_DISABLE);
  	/* read the control register */
  	val = rd_reg32(&r4tst->rtmctl);
@@ -23548,7 +23548,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  /**
-@@ -411,28 +410,26 @@ int caam_get_era(void)
+@@ -415,28 +414,26 @@ int caam_get_era(void)
  }
  EXPORT_SYMBOL(caam_get_era);
  
@@ -23592,7 +23592,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct device *dev;
  	struct device_node *nprop, *np;
  	struct caam_ctrl __iomem *ctrl;
-@@ -452,9 +449,10 @@ static int caam_probe(struct platform_de
+@@ -456,9 +453,10 @@ static int caam_probe(struct platform_de
  
  	dev = &pdev->dev;
  	dev_set_drvdata(dev, ctrlpriv);
@@ -23604,7 +23604,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Enable clocking */
  	clk = caam_drv_identify_clk(&pdev->dev, "ipg");
  	if (IS_ERR(clk)) {
-@@ -483,14 +481,16 @@ static int caam_probe(struct platform_de
+@@ -487,14 +485,16 @@ static int caam_probe(struct platform_de
  	}
  	ctrlpriv->caam_aclk = clk;
  
@@ -23628,7 +23628,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	ret = clk_prepare_enable(ctrlpriv->caam_ipg);
  	if (ret < 0) {
-@@ -511,11 +511,13 @@ static int caam_probe(struct platform_de
+@@ -515,11 +515,13 @@ static int caam_probe(struct platform_de
  		goto disable_caam_mem;
  	}
  
@@ -23647,7 +23647,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	/* Get configuration properties from device tree */
-@@ -542,13 +544,13 @@ static int caam_probe(struct platform_de
+@@ -546,13 +548,13 @@ static int caam_probe(struct platform_de
  	else
  		BLOCK_OFFSET = PG_SIZE_64K;
  
@@ -23666,7 +23666,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  			 BLOCK_OFFSET * DECO_BLOCK_NUMBER
  			 );
  
-@@ -557,12 +559,17 @@ static int caam_probe(struct platform_de
+@@ -561,12 +563,17 @@ static int caam_probe(struct platform_de
  
  	/*
  	 * Enable DECO watchdogs and, if this is a PHYS_ADDR_T_64BIT kernel,
@@ -23689,7 +23689,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/*
  	 *  Read the Compile Time paramters and SCFGR to determine
-@@ -590,64 +597,69 @@ static int caam_probe(struct platform_de
+@@ -594,64 +601,69 @@ static int caam_probe(struct platform_de
  			      JRSTART_JR1_START | JRSTART_JR2_START |
  			      JRSTART_JR3_START);
  
@@ -23797,7 +23797,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	/* If no QI and no rings specified, quit and go home */
-@@ -662,8 +674,10 @@ static int caam_probe(struct platform_de
+@@ -666,8 +678,10 @@ static int caam_probe(struct platform_de
  	/*
  	 * If SEC has RNG version >= 4 and RNG state handle has not been
  	 * already instantiated, do RNG instantiation
@@ -23809,7 +23809,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		ctrlpriv->rng4_sh_init =
  			rd_reg32(&ctrl->r4tst[0].rdsta);
  		/*
-@@ -730,78 +744,47 @@ static int caam_probe(struct platform_de
+@@ -734,78 +748,47 @@ static int caam_probe(struct platform_de
  
  	/* Report "alive" for developer to see */
  	dev_info(dev, "device ID = 0x%016llx (Era %d)\n", caam_id,
@@ -23923,7 +23923,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	ctrlpriv->ctl_kek_wrap.size = KEK_KEY_SIZE * sizeof(u32);
  	ctrlpriv->ctl_kek = debugfs_create_blob("kek",
  						S_IRUSR |
-@@ -809,7 +792,7 @@ static int caam_probe(struct platform_de
+@@ -813,7 +796,7 @@ static int caam_probe(struct platform_de
  						ctrlpriv->ctl,
  						&ctrlpriv->ctl_kek_wrap);
  
@@ -23932,7 +23932,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	ctrlpriv->ctl_tkek_wrap.size = KEK_KEY_SIZE * sizeof(u32);
  	ctrlpriv->ctl_tkek = debugfs_create_blob("tkek",
  						 S_IRUSR |
-@@ -817,7 +800,7 @@ static int caam_probe(struct platform_de
+@@ -821,7 +804,7 @@ static int caam_probe(struct platform_de
  						 ctrlpriv->ctl,
  						 &ctrlpriv->ctl_tkek_wrap);
  
@@ -23941,7 +23941,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	ctrlpriv->ctl_tdsk_wrap.size = KEK_KEY_SIZE * sizeof(u32);
  	ctrlpriv->ctl_tdsk = debugfs_create_blob("tdsk",
  						 S_IRUSR |
-@@ -828,13 +811,17 @@ static int caam_probe(struct platform_de
+@@ -832,13 +815,17 @@ static int caam_probe(struct platform_de
  	return 0;
  
  caam_remove:
@@ -23960,7 +23960,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  disable_caam_aclk:
  	clk_disable_unprepare(ctrlpriv->caam_aclk);
  disable_caam_mem:
-@@ -844,17 +831,6 @@ disable_caam_ipg:
+@@ -848,17 +835,6 @@ disable_caam_ipg:
  	return ret;
  }
  

@@ -145,7 +145,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/net/ipv4/tcp_timer.c
 +++ b/net/ipv4/tcp_timer.c
-@@ -311,7 +311,7 @@ static void tcp_delack_timer(unsigned lo
+@@ -326,7 +326,7 @@ static void tcp_delack_timer(unsigned lo
  		inet_csk(sk)->icsk_ack.blocked = 1;
  		__NET_INC_STATS(sock_net(sk), LINUX_MIB_DELAYEDACKLOCKED);
  		/* deleguate our work to tcp_release_cb() */
@@ -154,7 +154,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			sock_hold(sk);
  	}
  	bh_unlock_sock(sk);
-@@ -594,7 +594,7 @@ static void tcp_write_timer(unsigned lon
+@@ -609,7 +609,7 @@ static void tcp_write_timer(unsigned lon
  		tcp_write_timer_handler(sk);
  	} else {
  		/* delegate our work to tcp_release_cb() */
