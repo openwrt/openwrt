@@ -125,7 +125,7 @@ endef
 TARGET_DEVICES += ap531b0
 
 define Device/ap90q
-  DEVICE_TITLE := YunCore AP90Q
+  DEVICE_TITLE := YunCore AP80Q/AP90Q
   BOARDNAME := AP90Q
   IMAGE_SIZE := 16000k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)ro
