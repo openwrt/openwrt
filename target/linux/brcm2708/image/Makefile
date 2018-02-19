@@ -50,8 +50,8 @@ define Device/Default
   FILESYSTEMS := ext4
   KERNEL := kernel-bin | kernel-img
   KERNEL_IMG := kernel.img
-  IMAGES := sdcard.img
-  IMAGE/sdcard.img := boot-img | sdcard-img | gzip | append-metadata
+  IMAGES := sdcard.img.gz
+  IMAGE/sdcard.img.gz := boot-img | sdcard-img | gzip | append-metadata
 endef
 
 define Device/rpi
