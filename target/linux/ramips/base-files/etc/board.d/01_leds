@@ -362,6 +362,10 @@ rt-n14u)
 	set_wifi_led "$boardname:blue:air"
 	set_usb_led "$boardname:blue:usb"
 	;;
+tama,w06)
+	ucidef_set_led_netdev "wan" "WAN" "$boardname:green:wan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "$boardname:green:wlan" "phy0tpt"
+	;;
 tew-714tru)
 	set_usb_led "$boardname:red:usb"
 	set_wifi_led "$boardname:green:wifi"
