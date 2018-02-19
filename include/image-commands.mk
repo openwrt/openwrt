@@ -133,7 +133,7 @@ define Build/lzma-no-dict
 endef
 
 define Build/gzip
-	gzip -9n -c $@ $(1) > $@.new
+	gzip --force -9n -c $@ $(1) > $@.new
 	@mv $@.new $@
 endef
 
