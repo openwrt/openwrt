@@ -47,11 +47,9 @@ Will send separate patches to stable as this file got moved/renamed
  drivers/pci/dwc/pcie-designware-host.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pci/dwc/pcie-designware-host.c b/drivers/pci/dwc/pcie-designware-host.c
-index bf558df5b7b3..2b5470173196 100644
 --- a/drivers/pci/dwc/pcie-designware-host.c
 +++ b/drivers/pci/dwc/pcie-designware-host.c
-@@ -616,7 +616,7 @@ void dw_pcie_setup_rc(struct pcie_port *pp)
+@@ -607,7 +607,7 @@ void dw_pcie_setup_rc(struct pcie_port *
  	/* setup bus numbers */
  	val = dw_pcie_readl_dbi(pci, PCI_PRIMARY_BUS);
  	val &= 0xff000000;
