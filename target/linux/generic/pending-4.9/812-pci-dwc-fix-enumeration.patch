@@ -1,0 +1,62 @@
+From patchwork Tue Jan  9 14:42:21 2018
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: PCI: dwc: fix enumeration end when reaching root subordinate
+From: Koen Vandeputte <koen.vandeputte@ncentric.com>
+X-Patchwork-Id: 10152443
+Message-Id: <1515508941-20055-1-git-send-email-koen.vandeputte@ncentric.com>
+To: linux-pci@vger.kernel.org
+Cc: bhelgaas@google.com, lorenzo.pieralisi@arm.com,
+ Joao.Pinto@synopsys.com, jingoohan1@gmail.com, niklas.cassel@axis.com,
+ Koen Vandeputte <koen.vandeputte@ncentric.com>,
+ Mika Westerberg <mika.westerberg@linux.intel.com>
+Date: Tue,  9 Jan 2018 15:42:21 +0100
+
+The subordinate value indicates the highest bus number which can be
+reached downstream though a certain device.
+
+Commit a20c7f36bd3d ("PCI: Do not allocate more buses than available in
+parent")
+ensures that downstream devices cannot assign busnumbers higher than the
+upstream device subordinate number, which was indeed illogical.
+
+By default, dw_pcie_setup_rc() inits the Root Complex subordinate to a
+value of 0x01.
+
+Due to this combined with above commit, enumeration stops digging deeper
+downstream as soon as bus num 0x01 has been assigned, which is always
+the case for a bridge device.
+
+This results in all devices behind a bridge bus to remain undetected, as
+these would be connected to bus 0x02 or higher.
+
+Fix this by initializing the RC to a subordinate value of 0xff, meaning
+that all busses [0x00-0xff] are reachable through this RC.
+
+Fixes: a20c7f36bd3d ("PCI: Do not allocate more buses than available in
+parent")
+Signed-off-by: Koen Vandeputte <koen.vandeputte@ncentric.com>
+Tested-by: Niklas Cassel <niklas.cassel@axis.com>
+Cc: Mika Westerberg <mika.westerberg@linux.intel.com>
+---
+
+Will send separate patches to stable as this file got moved/renamed
+
+
+ drivers/pci/host/pcie-designware.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pci/host/pcie-designware.c b/drivers/pci/host/pcie-designware.c
+index bf558df5b7b3..2b5470173196 100644
+--- a/drivers/pci/host/pcie-designware.c
++++ b/drivers/pci/host/pcie-designware.c
+@@ -861,7 +861,7 @@ void dw_pcie_setup_rc(struct pcie_port *
+ 	/* setup bus numbers */
+ 	val = dw_pcie_readl_rc(pp, PCI_PRIMARY_BUS);
+ 	val &= 0xff000000;
+-	val |= 0x00010100;
++	val |= 0x00ff0100;
+ 	dw_pcie_writel_rc(pp, PCI_PRIMARY_BUS, val);
+ 
+ 	/* setup command register */
