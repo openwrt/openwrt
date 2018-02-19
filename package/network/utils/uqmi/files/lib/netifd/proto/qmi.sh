@@ -140,11 +140,11 @@ proto_qmi_setup() {
 
 	[ "$pdptype" = "ip" -o "$pdptype" = "ipv4v6" ] && {
 		cid_4=$(uqmi -s -d "$device" --get-client-id wds)
-		[ $? -ne 0 ] && {
+		if ! [ "$cid_4" -eq "$cid_4" ] 2> /dev/null; then
 			echo "Unable to obtain client ID"
 			proto_notify_error "$interface" NO_CID
 			return 1
-		}
+		fi
 
 		uqmi -s -d "$device" --set-client-id wds,"$cid_4" --set-ip-family ipv4 > /dev/null
 
@@ -177,11 +177,11 @@ proto_qmi_setup() {
 
 	[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && {
 		cid_6=$(uqmi -s -d "$device" --get-client-id wds)
-		[ $? -ne 0 ] && {
+		if ! [ "$cid_6" -eq "$cid_6" ] 2> /dev/null; then
 			echo "Unable to obtain client ID"
 			proto_notify_error "$interface" NO_CID
 			return 1
-		}
+		fi
 
 		uqmi -s -d "$device" --set-client-id wds,"$cid_6" --set-ip-family ipv6 > /dev/null
 
