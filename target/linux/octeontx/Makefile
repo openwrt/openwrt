@@ -10,7 +10,6 @@ ARCH:=aarch64
 BOARD:=octeontx
 BOARDNAME:=Octeon-TX
 FEATURES:=targz pcie gpio rtc usb
-CFLAGS:=-Os -pipe -fno-caller-saves
 
 MAINTAINER:=Tim Harvey <tharvey@gateworks.com>
 
