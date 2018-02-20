@@ -407,6 +407,39 @@ define Device/gl-usb150
 endef
 TARGET_DEVICES += gl-usb150
 
+define Device/hak5-lan-turtle
+    $(Device/tplink-16mlzma)
+    DEVICE_TITLE := Hak5 LAN Turtle
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath9k-htc -swconfig -uboot-envtools
+    BOARDNAME := HAK5-LAN-TURTLE
+    DEVICE_PROFILE := HAK5_LAN_TURTLE
+    TPLINK_HWID := 0x5348334c
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += hak5-lan-turtle
+
+define Device/hak5-packet-squirrel
+    $(Device/tplink-16mlzma)
+    DEVICE_TITLE := Hak5 Packet Squirrel
+    DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath9k-htc -swconfig -uboot-envtools
+    BOARDNAME := HAK5-PACKET-SQUIRREL
+    DEVICE_PROFILE := HAK5_PACKET_SQUIRREL
+    TPLINK_HWID := 0x5351524c
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += hak5-packet-squirrel
+
+define Device/hak5-pineapple-nano
+  $(Device/tplink-16mlzma)
+  DEVICE_TITLE := Hak5 WiFi Pineapple NANO
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath9k-htc -swconfig -uboot-envtools
+  BOARDNAME := HAK5-PINEAPPLE-NANO
+  DEVICE_PROFILE := HAK5_PINEAPPLE_NANO
+  TPLINK_HWID := 0x4e414e4f
+  CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += hak5-pineapple-nano
+
 define Device/lima
   DEVICE_TITLE := 8devices Lima
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2

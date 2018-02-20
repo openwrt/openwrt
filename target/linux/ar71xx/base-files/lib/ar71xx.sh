@@ -702,6 +702,15 @@ ar71xx_board_detect() {
 	*"GL-USB150")
 		name="gl-usb150"
 		;;
+	*"Hak5 LAN Turtle")
+		name="hak5-lan-turtle"
+		;;
+	*"Hak5 Packet Squirrel")
+		name="hak5-packet-squirrel"
+		;;
+	*"Hak5 WiFi Pineapple NANO")
+		name="hak5-pineapple-nano"
+		;;
 	*"HiveAP-121")
 		name="hiveap-121"
 		;;

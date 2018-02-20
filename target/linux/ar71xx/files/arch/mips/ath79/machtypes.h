@@ -123,6 +123,9 @@ enum ath79_mach_type {
 	ATH79_MACH_GL_USB150,			/* GL.iNet GL-USB150 */
 	ATH79_MACH_GS_MINIBOX_V1,		/* Gainstrong MiniBox V1.0 */
 	ATH79_MACH_GS_OOLITE,			/* GS OOLITE V1.0 */
+	ATH79_MACH_HAK5_LAN_TURTLE,		/* Hak5 LAN Turtle */
+	ATH79_MACH_HAK5_PACKET_SQUIRREL,/* Hak5 Packet Squirrel */
+	ATH79_MACH_HAK5_PINEAPPLE_NANO,	/* Hak5 WiFi Pineapple NANO */
 	ATH79_MACH_HIVEAP_121,			/* Aerohive HiveAP-121*/
 	ATH79_MACH_HIWIFI_HC6361,		/* HiWiFi HC6361 */
 	ATH79_MACH_HORNET_UB,			/* ALFA Networks Hornet-UB */
