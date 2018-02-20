@@ -227,7 +227,7 @@ $(eval $(call KernelPackage,gpio-dev))
 define KernelPackage/gpio-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
-  DEPENDS:=@GPIO_SUPPORT +PACKAGE_kmod-i2c-core:kmod-i2c-core
+  DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
   KCONFIG:=CONFIG_GPIO_MCP23S08
   FILES:=$(LINUX_DIR)/drivers/gpio/gpio-mcp23s08.ko
   AUTOLOAD:=$(call AutoLoad,40,gpio-mcp23s08)
