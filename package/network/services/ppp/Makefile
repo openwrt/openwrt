@@ -182,6 +182,8 @@ $(call Build/Configure/Default,, \
 		$(LINUX_DIR)/include/linux/compiler.h \
 		$(LINUX_DIR)/include/$(LINUX_UAPI_DIR)linux/atm*.h \
 		$(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux/
+	-cp $(LINUX_DIR)/include/linux/compiler_types.h \
+			$(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux/
 endef
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
