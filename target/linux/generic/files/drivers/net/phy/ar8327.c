@@ -926,7 +926,7 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 
 	t = pvid << AR8327_PORT_VLAN0_DEF_SVID_S;
 	t |= pvid << AR8327_PORT_VLAN0_DEF_CVID_S;
-	if (priv->vlan && priv->port_vlan_prio[port] > 0) {
+	if (priv->vlan && priv->port_vlan_prio[port]) {
 		u32 prio = priv->port_vlan_prio[port];
 
 		t |= prio << AR8327_PORT_VLAN0_DEF_SPRI_S;
@@ -936,7 +936,7 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 
 	t = AR8327_PORT_VLAN1_PORT_VLAN_PROP;
 	t |= egress << AR8327_PORT_VLAN1_OUT_MODE_S;
-	if (priv->vlan && priv->port_vlan_prio[port] > 0)
+	if (priv->vlan && priv->port_vlan_prio[port])
 		t |= AR8327_PORT_VLAN1_VLAN_PRI_PROP;
 
 	ar8xxx_write(priv, AR8327_REG_PORT_VLAN1(port), t);
@@ -1354,7 +1354,7 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.set = ar8xxx_sw_set_mirror_source_port,
 		.get = ar8xxx_sw_get_mirror_source_port,
 		.max = AR8327_NUM_PORTS - 1
- 	},
+	},
 	{
 		.type = SWITCH_TYPE_INT,
 		.name = "arl_age_time",
