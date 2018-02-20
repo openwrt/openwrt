@@ -147,7 +147,7 @@ define KernelPackage/nf-flow
 	CONFIG_NETFILTER_INGRESS=y \
 	CONFIG_NF_FLOW_TABLE \
 	CONFIG_NF_FLOW_TABLE_HW
-  DEPENDS:=+kmod-nf-conntrack +kmod-nft-core @!LINUX_3_18 @!LINUX_4_4 @!LINUX_4_9
+  DEPENDS:=+kmod-nf-conntrack @!LINUX_3_18 @!LINUX_4_4 @!LINUX_4_9
   FILES:= \
 	$(LINUX_DIR)/net/netfilter/nf_flow_table.ko \
 	$(LINUX_DIR)/net/netfilter/nf_flow_table_hw.ko
@@ -235,6 +235,17 @@ define KernelPackage/ipt-filter/description
 endef
 
 $(eval $(call KernelPackage,ipt-filter))
+
+
+define KernelPackage/ipt-offload
+  TITLE:=Netfilter routing/NAT offload support
+  KCONFIG:=CONFIG_NETFILTER_XT_TARGET_FLOWOFFLOAD
+  FILES:=$(foreach mod,$(IPT_FLOW-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_FLOW-m)))
+  $(call AddDepends/ipt,+kmod-nf-flow)
+endef
+
+$(eval $(call KernelPackage,ipt-offload))
 
 
 define KernelPackage/ipt-ipopt
