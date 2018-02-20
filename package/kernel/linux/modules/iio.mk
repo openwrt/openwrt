@@ -54,7 +54,7 @@ $(eval $(call KernelPackage,iio-ad799x))
 
 define KernelPackage/iio-mxs-lradc
   SUBMENU:=$(IIO_MENU)
-  DEPENDS:=+kmod-iio-core
+  DEPENDS:=@TARGET_mxs +kmod-iio-core
   TITLE:=Freescale i.MX23/i.MX28 LRADC ADC driver
   KCONFIG:= \
 	CONFIG_MXS_LRADC_ADC
