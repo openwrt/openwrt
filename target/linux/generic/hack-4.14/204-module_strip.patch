@@ -158,7 +158,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	buf_printf(b, "\n");
  	buf_printf(b, "__visible struct module __this_module\n");
  	buf_printf(b, "__attribute__((section(\".gnu.linkonce.this_module\"))) = {\n");
-@@ -2161,24 +2165,30 @@ static void add_header(struct buffer *b,
+@@ -2161,8 +2165,10 @@ static void add_header(struct buffer *b,
  
  static void add_intree_flag(struct buffer *b, int is_intree)
  {
@@ -169,14 +169,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  /* Cannot check for assembler */
- static void add_retpoline(struct buffer *b)
- {
-+#ifndef CONFIG_MODULE_STRIPPED
- 	buf_printf(b, "\n#ifdef RETPOLINE\n");
- 	buf_printf(b, "MODULE_INFO(retpoline, \"Y\");\n");
- 	buf_printf(b, "#endif\n");
-+#endif
- }
+@@ -2175,10 +2181,12 @@ static void add_retpoline(struct buffer
  
  static void add_staging_flag(struct buffer *b, const char *name)
  {
@@ -189,7 +182,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  /**
-@@ -2277,11 +2287,13 @@ static void add_depends(struct buffer *b
+@@ -2277,11 +2285,13 @@ static void add_depends(struct buffer *b
  
  static void add_srcversion(struct buffer *b, struct module *mod)
  {
@@ -203,7 +196,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void write_if_changed(struct buffer *b, const char *fname)
-@@ -2518,7 +2530,9 @@ int main(int argc, char **argv)
+@@ -2518,7 +2528,9 @@ int main(int argc, char **argv)
  		add_staging_flag(&buf, mod->name);
  		err |= add_versions(&buf, mod);
  		add_depends(&buf, mod, modules);
