@@ -20,7 +20,7 @@ define Package/ipq-wifi-default
   SUBMENU:=ath10k IPQ4019 Boarddata
   SECTION:=firmware
   CATEGORY:=Firmware
-  DEPENDS:=@TARGET_ipq806x +ath10k-firmware-qca4019
+  DEPENDS:=@TARGET_ipq40xx +ath10k-firmware-qca4019
   TITLE:=Custom Board
 endef
 

@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
-  BUILD_TARGET:=ipq806x
+  BUILD_TARGET:=ipq40xx
   UBOOT_IMAGE:=uboot-fritz4040.bin
 endef
 
