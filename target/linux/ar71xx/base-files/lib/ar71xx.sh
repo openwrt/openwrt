@@ -726,6 +726,9 @@ ar71xx_board_detect() {
 	*"JWAP230")
 		name="jwap230"
 		;;
+	*"LigoDLB Propeller 5")
+		name="dlb-5"
+		;;
 	*"Lima"*)
 		name="lima"
 		;;
