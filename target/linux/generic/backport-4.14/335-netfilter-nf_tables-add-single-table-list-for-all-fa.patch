@@ -548,24 +548,24 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 -		if (family != NFPROTO_UNSPEC && family != afi->family)
 +	list_for_each_entry_rcu(table, &net->nft.tables, list) {
 +		if (family != NFPROTO_UNSPEC && family != table->afi->family)
++			continue;
++
++		if (ctx && ctx->table && strcmp(ctx->table, table->name) != 0)
  			continue;
  
 -		list_for_each_entry_rcu(table, &afi->tables, list) {
 -			if (ctx && ctx->table &&
 -			    strcmp(ctx->table, table->name) != 0)
--				continue;
-+		if (ctx && ctx->table && strcmp(ctx->table, table->name) != 0)
-+			continue;
++		list_for_each_entry_rcu(chain, &table->chains, list) {
++			if (ctx && ctx->chain &&
++			    strcmp(ctx->chain, chain->name) != 0)
+ 				continue;
  
 -			list_for_each_entry_rcu(chain, &table->chains, list) {
 -				if (ctx && ctx->chain &&
 -				    strcmp(ctx->chain, chain->name) != 0)
 -					continue;
-+		list_for_each_entry_rcu(chain, &table->chains, list) {
-+			if (ctx && ctx->chain &&
-+			    strcmp(ctx->chain, chain->name) != 0)
-+				continue;
- 
+-
 -				list_for_each_entry_rcu(rule, &chain->rules, list) {
 -					if (!nft_is_active(net, rule))
 -						goto cont;
@@ -703,19 +703,23 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 -		if (cur_family) {
 -			if (afi->family != cur_family)
+-				continue;
 +		if (ctx->table && ctx->table != table)
 +			continue;
-+
+ 
+-			cur_family = 0;
+-		}
+-		list_for_each_entry_rcu(table, &afi->tables, list) {
+-			if (ctx->table && ctx->table != table)
 +		if (cur_table) {
 +			if (cur_table != table)
  				continue;
  
--			cur_family = 0;
+-			if (cur_table) {
+-				if (cur_table != table)
+-					continue;
 +			cur_table = NULL;
- 		}
--		list_for_each_entry_rcu(table, &afi->tables, list) {
--			if (ctx->table && ctx->table != table)
--				continue;
++		}
 +		idx = 0;
 +		list_for_each_entry_rcu(set, &table->sets, list) {
 +			if (idx < s_idx)
@@ -723,14 +727,11 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +			if (!nft_is_active(net, set))
 +				goto cont;
  
--			if (cur_table) {
--				if (cur_table != table)
--					continue;
+-				cur_table = NULL;
 +			ctx_set = *ctx;
 +			ctx_set.table = table;
 +			ctx_set.family = table->afi->family;
- 
--				cur_table = NULL;
++
 +			if (nf_tables_fill_set(skb, &ctx_set, set,
 +					       NFT_MSG_NEWSET,
 +					       NLM_F_MULTI) < 0) {

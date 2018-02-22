@@ -90,11 +90,12 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 -		afi = &nft_af_ipv4;
 -	else
 -		afi = &nft_af_ipv6;
-+	nft_set_pktinfo(&pkt, skb, state);
- 
+-
 -	ops->pf = afi->family;
 -	if (afi->hooks[ops->hooknum])
 -		ops->hook = afi->hooks[ops->hooknum];
++	nft_set_pktinfo(&pkt, skb, state);
++
 +	switch (state->pf) {
 +	case NFPROTO_IPV4:
 +		nft_set_pktinfo_ipv4(&pkt, skb);
