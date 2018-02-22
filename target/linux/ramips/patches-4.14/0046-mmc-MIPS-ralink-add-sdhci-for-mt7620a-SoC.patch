@@ -1761,7 +1761,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/sd.c
-@@ -0,0 +1,3068 @@
+@@ -0,0 +1,3065 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -1928,7 +1928,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +//#define PERI_MSDC2_PDN    (17)
 +//#define PERI_MSDC3_PDN    (18)
 +
-+struct msdc_host *msdc_6575_host[] = {NULL,NULL,NULL,NULL};
 +#if 0 /* --- by chhung */
 +/* gate means clock power down */
 +static int g_clk_gate = 0; 
@@ -4602,8 +4601,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    host->dma.bd =  dma_alloc_coherent(NULL, MAX_BD_NUM  * sizeof(bd_t),  &host->dma.bd_addr,  GFP_KERNEL); 
 +    BUG_ON((!host->dma.gpd) || (!host->dma.bd));    
 +    msdc_init_gpd_bd(host, &host->dma);
-+    /*for emmc*/
-+    msdc_6575_host[pdev->id] = host;
 +    
 +#if 0
 +    tasklet_init(&host->card_tasklet, msdc_tasklet_card, (ulong)host);
