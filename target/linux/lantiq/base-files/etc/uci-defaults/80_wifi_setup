@@ -1,0 +1,72 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+. /lib/functions/lantiq.sh
+
+board=$(board_name)
+
+case "$board" in
+lantiq,vgv952cjw33-e-ir*)
+        wlan_dev=$(uci get network.wlan_dev.name)
+        if [ "$wlan_dev" = "eth0.66" ]; then
+           echo "wlan seems to intially setup - don't touch config"
+           return
+        fi
+
+	# Add interface for communicating with the iNIC
+	uci -q batch <<-EOF
+		set network.inic_dev='device'
+		set network.inic_dev.name='eth0.3'
+
+		set network.inic='interface'
+		set network.inic.proto='none'
+		set network.inic.ifname='eth0.3'
+	EOF
+
+	# Add VLAN with untagged port for communicating with the iNIC
+	uci -q batch <<-EOF
+		add network switch_vlan
+		set network.@switch_vlan[-1].device='switch0'
+		set network.@switch_vlan[-1].vlan='3'
+		set network.@switch_vlan[-1].vid='3'
+		set network.@switch_vlan[-1].fid='3'
+		set network.@switch_vlan[-1].ports='5 6t'
+	EOF
+
+	# Add interface for normal wlan traffic
+	uci -q batch <<-EOF
+		set network.wlan_dev='device'
+		set network.wlan_dev.name='eth0.66'
+		add_list network.lan.ifname='eth0.66'
+	EOF
+
+	# Add interface for guest wlan traffic
+	uci -q batch <<-EOF
+		set network.guest_wlan_dev='device'
+		set network.guest_wlan_dev.name='eth0.71'
+	EOF
+
+	# Add VLAN with tagged port for communicating with the iNIC wlan
+	uci -q batch <<-EOF
+		add network switch_vlan
+		set network.@switch_vlan[-1].device='switch0'
+		set network.@switch_vlan[-1].vlan='4'
+		set network.@switch_vlan[-1].vid='66'
+		set network.@switch_vlan[-1].fid='4'
+		set network.@switch_vlan[-1].ports='5t 6t'
+	EOF
+
+	# Add VLAN with tagged port for communicating with the iNIC guest wlan
+	uci -q batch <<-EOF
+		add network switch_vlan
+		set network.@switch_vlan[-1].device='switch0'
+		set network.@switch_vlan[-1].vlan='5'
+		set network.@switch_vlan[-1].vid='71'
+		set network.@switch_vlan[-1].fid='5'
+		set network.@switch_vlan[-1].ports='5t 6t'
+	EOF
+	;;
+esac
+
+exit 0
