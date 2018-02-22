@@ -38,7 +38,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
 --- /dev/null
 +++ b/drivers/spi/spi-mt7621.c
-@@ -0,0 +1,483 @@
+@@ -0,0 +1,491 @@
 +/*
 + * spi-mt7621.c -- MediaTek MT7621 SPI controller driver
 + *
@@ -243,10 +243,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		if (t->speed_hz < speed)
 +			speed = t->speed_hz;
 +
-+		if (WARN_ON(len + t->len > 36)) {
-+			status = -EIO;
-+			goto msg_done;
-+		}
++		/*
++		 * m25p80 might attempt to write more data than we can handle.
++		 * truncate the message to what we can fit into the registers
++		 */
++		if (len + t->len > 36)
++			t->len = 36 - len;
 +
 +		for (i = 0; i < t->len; i++, len++)
 +			data[len / 4] |= buf[i] << (8 * (len & 3));
@@ -426,6 +428,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +MODULE_DEVICE_TABLE(of, mt7621_spi_match);
 +
++static size_t mt7621_max_transfer_size(struct spi_device *spi)
++{
++	return 32;
++}
++
 +static int mt7621_spi_probe(struct platform_device *pdev)
 +{
 +	const struct of_device_id *match;
@@ -472,6 +479,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	master->bits_per_word_mask = SPI_BPW_MASK(8);
 +	master->dev.of_node = pdev->dev.of_node;
 +	master->num_chipselect = 2;
++	master->max_transfer_size = mt7621_max_transfer_size;
 +
 +	dev_set_drvdata(&pdev->dev, master);
 +

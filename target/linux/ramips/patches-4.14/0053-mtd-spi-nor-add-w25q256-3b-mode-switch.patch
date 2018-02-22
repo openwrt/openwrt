@@ -165,7 +165,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	for (i = 0; i < len; ) {
  		ssize_t written;
  		loff_t addr = to + i;
-@@ -1392,6 +1463,7 @@ static int spi_nor_write(struct mtd_info
+@@ -1385,6 +1456,7 @@ static int spi_nor_write(struct mtd_info
  	}
  
  write_err:
@@ -173,7 +173,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_WRITE);
  	return ret;
  }
-@@ -2808,8 +2880,10 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -2801,8 +2873,10 @@ int spi_nor_scan(struct spi_nor *nor, co
  	} else if (mtd->size > 0x1000000) {
  		/* enable 4-byte addressing if the device exceeds 16MiB */
  		nor->addr_width = 4;
