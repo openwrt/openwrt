@@ -57,6 +57,14 @@ define Device/dir-860l-b1
 endef
 TARGET_DEVICES += dir-860l-b1
 
+define Device/mediatek_ap-mt7621a-v60
+  DTS := AP-MT7621A-V60
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
+  DEVICE_TITLE := Mediatek AP-MT7621A-V60 EVB
+  DEVICE_PACKAGES := kmod-usb3 kmod-sdhci-mt7620 kmod-sound-mt7620
+endef
+TARGET_DEVICES += mediatek_ap-mt7621a-v60
+
 define Device/ew1200
   DTS := EW1200
   IMAGE_SIZE := $(ralink_default_fw_size_16M)

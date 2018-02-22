@@ -23,6 +23,7 @@ platform_check_image() {
 	all0256n-8M|\
 	all5002|\
 	all5003|\
+	mediatek,ap-mt7621a-v60|\
 	ar725w|\
 	asl26555-8M|\
 	asl26555-16M|\
