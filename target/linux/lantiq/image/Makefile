@@ -12,6 +12,7 @@ KERNEL_LOADADDR = 0x80002000
 KERNEL_ENTRY = 0x80002000
 
 include $(TOPDIR)/rules.mk
+include eb904.mk
 include $(INCLUDE_DIR)/image.mk
 
 ifeq ($(SUBTARGET),xway)
