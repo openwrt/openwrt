@@ -1761,7 +1761,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/sd.c
-@@ -0,0 +1,3067 @@
+@@ -0,0 +1,3066 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -4759,7 +4759,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 +    .driver  = {
 +        .name  = DRV_NAME,
-+        .owner = THIS_MODULE,
 +	.of_match_table = mt7620_sdhci_match,
 +    },
 +};
