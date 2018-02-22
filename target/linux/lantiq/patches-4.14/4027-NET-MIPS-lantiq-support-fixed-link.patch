@@ -1,0 +1,84 @@
+--- a/drivers/net/ethernet/lantiq_xrx200.c
++++ b/drivers/net/ethernet/lantiq_xrx200.c
+@@ -1319,31 +1319,43 @@ static int xrx200_mdio_probe(struct net_
+ 	struct phy_device *phydev = NULL;
+ 	unsigned val;
+ 
+-	phydev = mdiobus_get_phy(priv->hw->mii_bus, port->phy_addr);
++	if (of_phy_is_fixed_link(port->phy_node)) {
++		netdev_info(dev, "Connect as fixed link.\n");
++		phydev = of_phy_connect(dev, port->phy_node, &xrx200_mdio_link, 0,
++				port->phy_if);
+ 
+-	if (!phydev) {
+-		netdev_err(dev, "no PHY found\n");
+-		return -ENODEV;
+-	}
++		if (IS_ERR(phydev)) {
++			netdev_err(dev, "Could not attach to PHY\n");
++			return PTR_ERR(phydev);
++		}
++	}else{
++		netdev_info(dev, "Connect as common phy link.\n");
++		phydev = mdiobus_get_phy(priv->hw->mii_bus, port->phy_addr);
++		if (!phydev) {
++			netdev_err(dev, "no PHY found\n");
++			return -ENODEV;
++		}
+ 
+-	phydev = phy_connect(dev, phydev_name(phydev), &xrx200_mdio_link,
+-				port->phy_if);
++		phydev = phy_connect(dev, phydev_name(phydev), &xrx200_mdio_link,
++					port->phy_if);
+ 
+-	if (IS_ERR(phydev)) {
+-		netdev_err(dev, "Could not attach to PHY\n");
+-		return PTR_ERR(phydev);
++		if (IS_ERR(phydev)) {
++			netdev_err(dev, "Could not attach to PHY\n");
++			return PTR_ERR(phydev);
++		}
++
++		phydev->supported &= (SUPPORTED_10baseT_Half
++				| SUPPORTED_10baseT_Full
++				| SUPPORTED_100baseT_Half
++				| SUPPORTED_100baseT_Full
++				| SUPPORTED_1000baseT_Half
++				| SUPPORTED_1000baseT_Full
++				| SUPPORTED_Autoneg
++				| SUPPORTED_MII
++				| SUPPORTED_TP);
++		phydev->advertising = phydev->supported;
+ 	}
+ 
+-	phydev->supported &= (SUPPORTED_10baseT_Half
+-			| SUPPORTED_10baseT_Full
+-			| SUPPORTED_100baseT_Half
+-			| SUPPORTED_100baseT_Full
+-			| SUPPORTED_1000baseT_Half
+-			| SUPPORTED_1000baseT_Full
+-			| SUPPORTED_Autoneg
+-			| SUPPORTED_MII
+-			| SUPPORTED_TP);
+-	phydev->advertising = phydev->supported;
+ 	port->phydev = phydev;
+ 	phydev->no_auto_carrier_off = true;
+ 
+@@ -1630,6 +1642,17 @@ static void xrx200_of_port(struct xrx200
+ 
+ 	memset(p, 0, sizeof(struct xrx200_port));
+ 	p->phy_node = of_parse_phandle(port, "phy-handle", 0);
++
++	if (!p->phy_node && of_phy_is_fixed_link(port)) {
++		pr_info("Static link. Port <%d>!\n", p->num);
++		if (of_phy_register_fixed_link(port)<0){
++			pr_info("invalid fixed-link\n");
++		}else{
++			pr_info("Registered fixed-link\n");
++		}
++		p->phy_node = of_node_get(port);
++	}
++
+ 	addr = of_get_property(p->phy_node, "reg", NULL);
+ 	if (!addr)
+ 		return;
