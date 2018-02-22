@@ -1,0 +1,391 @@
+/dts-v1/;
+
+#include "vr9.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
+
+/ {
+	model = "EasyBox 904 xDSL";
+	compatible = "lantiq,vgv952cjw33-e-ir", "lantiq,xway", "lantiq,vr9";
+
+	chosen {
+		// Bootargs when no vpe is used
+		// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77 root=/dev/ubiblock0_0 rootdelay=7";
+
+		// Bootargs when vpe is used
+			// Bootargs to boot from mtd12 ubifs
+			// bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77  root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+			bootargs = "console=ttyLTQ0,115200 ubi.mtd=12,2048 panic=1 DTS-TEST-SEQNO=77 root=/dev/ubiblock0_0 rootdelay=7 mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+
+			// Bootargs to boot from sda1
+			// bootargs = "console=ttyLTQ0,115200 panic=1 DTS-TEST-SEQNO=77 root=/dev/sda1 rootdelay=7 rootfstype=f2fs mem=116M phym=128M vpe1_load_addr=0x87e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
+	};
+
+	memory@0 {
+		reg = <0x0 0x8000000>;
+	};
+
+	easybox904-display{
+		compatible = "ilitek,ili9341_eb904";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+		rotate = <270>;
+		fps = <30>;
+		bgr;
+		buswidth = <8>;
+		reset-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		led-gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+		debug = <1>;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+		rfkill {
+			label = "wps";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	gpio-leds {
+			compatible = "gpio-leds";
+			power_green: power {
+			label = "VGV952CJW33:red:power";
+			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
+			default-state = "keep";
+		};
+	};
+
+	i2c {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		gpios = <&gpio 19 GPIO_ACTIVE_HIGH /* sda */
+			&gpio 14 GPIO_ACTIVE_HIGH /* scl */
+		>;
+		//i2c-gpio,sda-open-drain;
+		//i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <5>;
+		/* Add touch panel Support */
+		tp: eb904tp@0x14 {
+			compatible = "lantiq,eb904_keypad";
+			reg = <0x14>;
+			interrupt-parent = <&icu0>;
+			interrupts = <135>;
+			eb904,interrupt-gpio = <&gpio  0 GPIO_ACTIVE_HIGH /* EXIN */>;
+			eb904,ctrl-clk-gpios = <&gpio 29 GPIO_ACTIVE_HIGH /* clk */>;
+			eb904,ctrl-dat-gpios = <&gpio 30 GPIO_ACTIVE_HIGH /* dat */>;
+			eb904,ctrl-out-gpios = <&gpio 39 GPIO_ACTIVE_HIGH /* out */>;
+			eb904,alphas = /bits/ 8
+				 <0x07 /* left */
+				  0x0a /* down */
+				  0x0a /* right */
+				  0x0a /* ok */
+				  0x07 /* up */
+			>;
+			keypad,num-rows = <3>;
+			keypad,num-columns = <3>;
+			linux,keymap = <
+				    MATRIX_KEY(0x0, 0x1, KEY_UP)         /* ROW0, COL1 */
+				    MATRIX_KEY(0x1, 0x0, KEY_LEFT)       /* ROW1, COL0 */
+				    MATRIX_KEY(0x1, 0x1, KEY_ENTER)      /* ROW1, COL1 */
+				    MATRIX_KEY(0x1, 0x2, KEY_RIGHT)      /* ROW1, COL2 */
+				    MATRIX_KEY(0x2, 0x1, KEY_DOWN)       /* ROW2, COL1 */
+				    >;
+		};
+	};
+
+	mdio: mdio {
+			compatible = "lantiq,xrx200-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			phy0: ethernet-phy@0 {
+				reg = <0x0>;
+				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			};
+			phy1: ethernet-phy@1 {
+				reg = <0x1>;
+				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			};
+			/*
+			phy5: ethernet-phy@5 {
+				reg = <0x5>;
+			};
+			*/
+			phy11: ethernet-phy@11 {
+				reg = <0x11>;
+				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			};
+			phy12: ethernet-phy@12 {
+				reg = <0x12>;
+				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			};
+			phy13: ethernet-phy@13 {
+				reg = <0x13>;
+				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			};				
+			phy14: ethernet-phy@14 {
+				reg = <0x14>;
+				compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+			};
+		};
+
+	rtl8367b {
+		compatible = "realtek,rtl8367b";
+		//gpio-sda = <&gpio0 1 0>;
+		//gpio-sck = <&gpio0 2 0>;
+		//cpu_port = <7>;
+		realtek,extif0 = <1 0 1 1 1 1 1 1 2>; // default found on other profiles
+		//realtek,extif1   = <1 0 1 1 0 0 1 1 2>; // based on vendor uboot-config
+		mdio = <&mdio>;
+	};
+};
+
+&vmmc {
+	status = "okay";
+	gpios = <&gpio 37 GPIO_ACTIVE_HIGH>; //reset_slic!
+};
+
+&localbus {
+    ranges = <0 0 0x4000000 0x3ffffff>; // Default in vr9.dtsi is crashing the machine.
+    nand@0 {
+            compatible = "lantiq,nand-xway";
+            bank-width = <2>;
+            reg = <0 0x0 0x2000000>;
+            #address-cells = <1>;
+            #size-cells = <1>;
+            lantiq,cs = <1>;			// Seems to be needed (EASY80920NAND.dts)
+
+            nand-on-flash-bbt;
+            nand-ecc-strength = <3>;
+            nand-ecc-step-size = <256>;
+
+            partitions {
+                compatible = "fixed-partitions";
+                #address-cells = <1>;
+                #size-cells = <1>;
+                partition@0 {
+                    label = "uboot";
+                    reg = <0x0 0x40000>;
+                };
+
+                partition@40000 {
+                    label = "rootfs";		// Called "rootfs" in u-boot env. Contains orig. squashfs rootfs
+                    reg = <0x40000 0x3C00000>;
+                };
+
+                partition@3C40000 {
+                    label = "kernel";		// Called "kernel" in u-boot env. Contains orig. kernel
+                    reg = <0x3C40000 0x500000>;
+                };
+
+                partition@4140000 {
+                    label = "tmp1";
+                    reg = <0x4140000 0x100000>;
+                };
+
+                partition@4240000 {
+                    label = "tmp2";
+                    reg = <0x4240000 0x200000>;
+                };
+
+                partition@4440000 {
+                    label = "sysconfig";
+                    reg = <0x4440000 0x100000>;
+                };
+
+                partition@4540000 {
+                    label = "ubootconfig";
+                    reg = <0x4540000 0x100000>;
+                };
+
+                partition@4640000 {
+                    label = "fwdiag";
+                    reg = <0x4640000 0xC0000>;
+                };
+
+                partition@4700000 {
+                    label = "lcdimage";
+                    reg = <0x4700000 0x300000>;
+                };
+
+                partition@4A00000 {
+                    label = "mfgconfig";
+                    reg = <0x4A00000 0x100000>;
+                };
+
+                partition@4B00000 {
+                    label = "sipdata";
+                    reg = <0x4B00000 0x100000>;
+                };
+
+                partition@4C00000 {
+                    label = "voice";
+                    reg = <0x4C00000 0x4000000>;
+                };
+
+                partition@8C00000 {			// Used for our real open OpenWrt system for ubi-squashfs (rootfs) and ubifs (rootfs_data)
+                    label = "ubi";			// Rename to "firmware" for special squashfs-rootfs/jffs2-rootfs_data treatment by OpenWrt
+                    reg = <0x8C00000 0x13200000>;
+                };
+
+                partition@1BE00000 {
+                    label = "rootfs2";
+                    reg = <0x1BE00000 0x3c00000>;
+                };
+
+                partition@1FA00000 {
+                    label = "kernel2";
+                    reg = <0x1FA00000 0x500000>;
+                };
+
+                partition@1FF00000 {
+                    label = "mystery";		// Missing in original u-boot environment, seems to be empty (erased)
+                    reg = <0x1FF00000 0x100000>;
+                };
+            };
+    };
+};
+
+/*
+*  Following is the very experimental part which is broken and requires much more elaboration
+*/
+
+&stp {
+	compatible = "lantiq,gpio-stp-xway";
+	reg = <0xE100BB0 0x40>;
+	#gpio-cells = <2>;
+	gpio-controller;
+
+	lantiq,shadow = <0xffff>;
+	lantiq,groups = <0x7>;
+	lantiq,dsl = <0x3>;
+	lantiq,phy1 = <0x7>;
+	lantiq,phy2 = <0x7>;
+};
+
+
+// From FRITZ3370.dts
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		mdio {
+			lantiq,groups = "mdio";
+			lantiq,function = "mdio";
+		};
+
+		phy-rst {	// I have no idea wether this makes sense
+			lantiq,pins = "io37", "io44";			// FRITZ3370.dts
+		  //	lantiq,pins = "io42";				// TDW8970.dts
+			lantiq,pull = <0>;
+			lantiq,open-drain = <0>;
+			lantiq,output = <1>;
+						};
+
+		pcie-rst {
+			lantiq,pins = "io38";				// FRITZ3370.dts, TDW8970.dts, EASY80920.dtsi, P2812HNUFX.dtsi
+		   //  	lantiq,pins = "io21";				// ARV7519RW22.dts
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+
+		exin1 {
+			lantiq,groups = "exin1";
+			lantiq,function = "exin";
+		};
+
+		conf_tp {
+			lantiq,pins = "io1"; /* exin1 */
+			lantiq,open-drain;
+			lantiq,pull = <0>;
+		};
+	};
+};
+
+&usb_phy0 {
+    status = "okay";
+};
+
+&usb0 {
+    status = "okay";
+    vbus-supply = <&usb_vbus>;
+};
+
+&eth0 {
+	lan: interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;                                
+		mac-address = [ 00 11 22 33 44 55 ];
+		lantiq,switch;
+		ethernet@2 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <2>;
+			phy-mode = "gmii";
+			// phy-handle = <&phy11>;
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+		/* wan port */
+		ethernet@4 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "gmii";
+			phy-handle = <&phy13>;
+		};
+		/* rt3883 soc */
+		/*
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy5>;
+		};
+		*/
+	};
+};
+
+&pci0 {
+	status = "disabled";
+	//gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+};
+
+&pcie0 {
+	pcie@0 {
+		reg = <0 0 0 0 0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		device_type = "pci";
+	};
+};
+
+
+
