@@ -154,6 +154,7 @@ platform_check_image() {
 	ur-326n4g|\
 	ur-336un|\
 	v22rw-2x2|\
+	v7,apac1200|\
 	vonets,var11n-300|\
 	vocore-8M|\
 	vocore-16M|\

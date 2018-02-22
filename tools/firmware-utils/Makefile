@@ -24,6 +24,7 @@ define Host/Compile
 	$(call cc,motorola-bin)
 	$(call cc,dgfirmware)
 	$(call cc,mksenaofw md5)
+	$(call cc,mkv7apac md5)
 	$(call cc,trx2usr)
 	$(call cc,ptgen)
 	$(call cc,srec2bin)
