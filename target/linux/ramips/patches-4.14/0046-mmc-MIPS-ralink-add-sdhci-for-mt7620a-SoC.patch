@@ -247,7 +247,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/dbg.c
-@@ -0,0 +1,347 @@
+@@ -0,0 +1,348 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -298,16 +298,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include "mt6575_sd.h"
 +#include <linux/seq_file.h>
 +
-+static char cmd_buf[256];
-+
-+/* for debug zone */
-+unsigned int sd_debug_zone[4]={
-+	0,
-+	0,
-+	0,
-+	0
-+};
-+
 +/* mode select */
 +u32 dma_size[4]={
 +	512,
@@ -323,6 +313,17 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +};
 +
 +#if defined (MT6575_SD_DEBUG)
++static char cmd_buf[256];
++
++/* for debug zone */
++static unsigned int sd_debug_zone[4]={
++	0,
++	0,
++	0,
++	0
++};
++
++
 +/* for driver profile */
 +#define TICKS_ONE_MS  (13000)
 +u32 gpt_enable = 0;
@@ -1761,7 +1762,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/sd.c
-@@ -0,0 +1,3065 @@
+@@ -0,0 +1,3057 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -1913,10 +1914,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define MAX_PHY_SGMTS       (MAX_BD_NUM)
 +#define MAX_SGMT_SZ         (MAX_DMA_CNT)
 +#define MAX_REQ_SZ          (MAX_SGMT_SZ * 8)  
-+
-+#ifdef MT6575_SD_DEBUG
-+static struct msdc_regs *msdc_reg[HOST_MAX_NUM];
-+#endif 
 +
 +static int mtk_sw_poll;
 +
@@ -4358,10 +4355,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +    u32 base = host->base;
 +    struct msdc_hw *hw = host->hw;
-+
-+#ifdef MT6575_SD_DEBUG	
-+    msdc_reg[host->id] = (struct msdc_regs *)host->base;
-+#endif
 +
 +    /* Power on */
 +#if 0 /* --- by chhung */
