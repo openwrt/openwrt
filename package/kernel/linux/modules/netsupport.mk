@@ -42,28 +42,6 @@ endef
 $(eval $(call KernelPackage,atmtcp))
 
 
-define KernelPackage/appletalk
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=Appletalk protocol support
-  KCONFIG:= \
-	CONFIG_ATALK \
-	CONFIG_DEV_APPLETALK \
-	CONFIG_IPDDP \
-	CONFIG_IPDDP_ENCAP=y \
-	CONFIG_IPDDP_DECAP=y
-  FILES:= \
-	$(LINUX_DIR)/net/appletalk/appletalk.ko \
-	$(LINUX_DIR)/drivers/net/appletalk/ipddp.ko
-  AUTOLOAD:=$(call AutoLoad,40,appletalk ipddp)
-endef
-
-define KernelPackage/appletalk/description
- Kernel module for AppleTalk protocol.
-endef
-
-$(eval $(call KernelPackage,appletalk))
-
-
 define KernelPackage/bonding
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Ethernet bonding driver
