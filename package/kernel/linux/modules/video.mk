@@ -224,7 +224,6 @@ define KernelPackage/drm-imx
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/imxdrm.ko \
 	$(LINUX_DIR)/drivers/gpu/ipu-v3/imx-ipu-v3.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/imx/imx-ipuv3-crtc.ko \
 	$(LINUX_DIR)/drivers/video/fbdev/core/syscopyarea.ko \
 	$(LINUX_DIR)/drivers/video/fbdev/core/sysfillrect.ko \
 	$(LINUX_DIR)/drivers/video/fbdev/core/sysimgblt.ko \
@@ -246,8 +245,8 @@ define KernelPackage/drm-imx-hdmi
 	CONFIG_DRM_DW_HDMI_AHB_AUDIO \
 	CONFIG_DRM_DW_HDMI_I2S_AUDIO
   FILES:= \
-	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw-hdmi.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/bridge/dw-hdmi-ahb-audio.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-ahb-audio.ko \
 	$(LINUX_DIR)/drivers/gpu/drm/imx/dw_hdmi-imx.ko
   AUTOLOAD:=$(call AutoLoad,05,dw-hdmi dw-hdmi-ahb-audio.ko dw_hdmi-imx)
 endef
