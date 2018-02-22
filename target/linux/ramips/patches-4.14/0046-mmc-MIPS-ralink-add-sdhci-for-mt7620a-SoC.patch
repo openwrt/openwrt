@@ -4748,7 +4748,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	{ .compatible = "ralink,mt7620-sdhci" },
 +	{},
 +};
-+MODULE_DEVICE_TABLE(of, rt288x_wdt_match);
++MODULE_DEVICE_TABLE(of, mt7620_sdhci_match);
 +
 +static struct platform_driver mt_msdc_driver = {
 +    .probe   = msdc_drv_probe,
