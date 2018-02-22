@@ -127,11 +127,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int match_export(struct device *dev, const void *desc)
 --- a/include/asm-generic/gpio.h
 +++ b/include/asm-generic/gpio.h
-@@ -126,6 +126,12 @@ static inline int gpio_export(unsigned g
+@@ -126,6 +126,11 @@ static inline int gpio_export(unsigned g
  	return gpiod_export(gpio_to_desc(gpio), direction_may_change);
  }
  
-+int __gpiod_export(struct gpio_desc *desc, bool direction_may_change, const char *name);
 +static inline int gpio_export_with_name(unsigned gpio, bool direction_may_change, const char *name)
 +{
 +	return __gpiod_export(gpio_to_desc(gpio), direction_may_change, name);
@@ -142,21 +141,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
 --- a/include/linux/gpio/consumer.h
 +++ b/include/linux/gpio/consumer.h
-@@ -427,6 +427,7 @@ static inline struct gpio_desc *devm_get
- 
- #if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
- 
-+int _gpiod_export(struct gpio_desc *desc, bool direction_may_change, const char *name);
- int gpiod_export(struct gpio_desc *desc, bool direction_may_change);
- int gpiod_export_link(struct device *dev, const char *name,
- 		      struct gpio_desc *desc);
 @@ -434,6 +435,13 @@ void gpiod_unexport(struct gpio_desc *de
  
  #else  /* CONFIG_GPIOLIB && CONFIG_GPIO_SYSFS */
  
 +static inline int _gpiod_export(struct gpio_desc *desc,
-+			       bool direction_may_change,
-+			       const char *name)
++				 bool direction_may_change,
++				 const char *name)
 +{
 +	return -ENOSYS;
 +}
