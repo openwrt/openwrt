@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=musl
 PKG_VERSION:=1.1.20
-PKG_RELEASE=1
+PKG_RELEASE=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
@@ -28,6 +28,8 @@ HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)-$(PKG_VERSION)
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/hardening.mk
 
+TARGET_CFLAGS:= $(filter-out -O%,$(TARGET_CFLAGS))
+
 MUSL_CONFIGURE:= \
 	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(TARGET_CFLAGS)" \
@@ -37,7 +39,8 @@ MUSL_CONFIGURE:= \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
 		--disable-gcc-wrapper \
-		--enable-debug
+		--enable-debug \
+		--enable-optimize
 
 define Host/Configure
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
