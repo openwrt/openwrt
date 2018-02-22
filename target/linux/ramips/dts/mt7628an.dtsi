@@ -298,6 +298,13 @@
 			};
 		};
 
+		i2c_pins_gpio: i2c_gpio {
+			i2c {
+				ralink,group = "i2c";
+				ralink,function = "gpio";
+			};
+		};
+
 		i2s_pins: i2s {
 			i2s {
 				ralink,group = "i2s";
@@ -488,5 +495,21 @@
 		status = "disabled";
 
 		mediatek,mtd-eeprom = <&factory 0x0000>;
+	};
+
+	i2cgpio: i2c@0 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio0 5 GPIO_ACTIVE_HIGH /* sda */
+			 &gpio0 4 GPIO_ACTIVE_HIGH /* scl */
+			>;
+		i2c-gpio,delay-us = <2>; /* ~100 kHz */
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "disabled";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c_pins_gpio>;
 	};
 };
