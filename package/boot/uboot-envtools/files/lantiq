@@ -30,6 +30,10 @@ buffalo,wbmr-300hpd)
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x2000" "0x1000" "2"
 	;;
+lantiq,vgv952cjw33-e-ir*)
+	ubootenv_add_uci_config "/dev/mtd6" "0x0" "0x40000" "0x100000" "1"
+	;;
+
 esac
 
 config_load ubootenv
