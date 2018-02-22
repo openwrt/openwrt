@@ -1,0 +1,24 @@
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -87,6 +87,8 @@ extern __iomem void *ltq_cgu_membase;
+ #define LTQ_EBU_PCC_ISTAT	0x00A0
+ #define LTQ_EBU_BUSCON1		0x0064
+ #define LTQ_EBU_ADDRSEL1	0x0024
++#define LTQ_EBU_BUSCON2		0x0068
++#define LTQ_EBU_ADDRSEL2	0x0028
+ #define EBU_WRDIS		0x80000000
+ 
+ /* WDT */
+--- a/arch/mips/lantiq/xway/sysctrl.c
++++ b/arch/mips/lantiq/xway/sysctrl.c
+@@ -514,6 +514,10 @@ void __init ltq_soc_init(void)
+ 
+ 	/* make sure to unprotect the memory region where flash is located */
+ 	ltq_ebu_w32(ltq_ebu_r32(LTQ_EBU_BUSCON0) & ~EBU_WRDIS, LTQ_EBU_BUSCON0);
++	printk("%s:%s:%d LTQ_EBU_BUSCON2: 0x%08x\n",__FILE__,__FUNCTION__,__LINE__, ltq_ebu_r32(LTQ_EBU_BUSCON2));
++	//ltq_ebu_w32(0x0001d7ff, LTQ_EBU_BUSCON2); // U-Boot setting
++	ltq_ebu_w32(0x0001d3dd, LTQ_EBU_BUSCON2);   // init script setting
++	printk("%s:%s:%d LTQ_EBU_BUSCON2: 0x%08x\n",__FILE__,__FUNCTION__,__LINE__, ltq_ebu_r32(LTQ_EBU_BUSCON2));
+ 
+ 	/* add our generic xway clocks */
+ 	clkdev_add_pmu("10000000.fpi", NULL, 0, 0, PMU_FPI);
